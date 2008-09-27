@@ -10,8 +10,6 @@
 #include "../h/common.h"
 #include "../h/multiboot.h"
 
-#define TEST_MM
-
 /* the physical start-address of the kernel-area */
 #define KERNEL_AREA_P_ADDR	0x0
 /* the physical start-address of the kernel itself */

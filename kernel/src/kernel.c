@@ -16,6 +16,10 @@
 #include "../h/debug.h"
 
 u32 dummy = 0;
+	
+#define FRAME_COUNT 1024
+
+u32 frames[FRAME_COUNT];
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table
@@ -75,11 +79,13 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
 	
-	/*u32 frames[5];
-	mm_allocateFrames(MM_DEF,frames,5);
-	paging_map(procs[pi].pageDir,(s8*)0xB0000000,frames,5,PG_WRITABLE);
+	mm_allocateFrames(MM_DEF,frames,FRAME_COUNT);
+	for(i = 0;i < FRAME_COUNT;i++) {
+		vid_printf("frame %d: %x\n",i,frames[i]);
+	}
+	paging_map(procs[pi].pageDir,0xB0004000,frames,FRAME_COUNT,PG_WRITABLE);
 	
-	dbg_printPageDir(procs[pi].pageDir);*/
+	dbg_printPageDir(procs[pi].pageDir);
 	
 	/* jetzt wo wir schon im Kernel drin sind, wollen wir auch nicht mehr raus ;) */
 	while (1);

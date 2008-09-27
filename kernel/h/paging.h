@@ -18,9 +18,21 @@
 /* the number of entries in a page-directory or page-table */
 #define PT_ENTRY_COUNT		(PAGE_SIZE / 4)
 
+/* the start of the mapped page-tables area */
+#define MAPPED_PTS_START	(KERNEL_AREA_V_ADDR + 0x1000000)
+
 /* flags for paging_map() */
 #define PG_WRITABLE		1
 #define PG_SUPERVISOR	2
+
+/* converts a virtual address to the page-directory-index for that address */
+#define ADDR_TO_PDINDEX(addr) ((u32)(addr) / PAGE_SIZE / PT_ENTRY_COUNT)
+
+/* builds the address of the page in the mapped page-tables to which the given addr belongs */
+#define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + ((u32)(addr) / PT_ENTRY_COUNT))
+
+/* converts a virtual address to the index in the corresponding page-table */
+#define ADDR_TO_PTINDEX(addr) (((u32)(addr) / PAGE_SIZE) % PT_ENTRY_COUNT)
 
 /* represents a page-directory-entry */
 typedef struct {
@@ -73,6 +85,7 @@ typedef struct {
 	/* can be used by the OS */
 						: 3,
 	/* the physical address of the page */
+	/* TODO change name to frameNumber */
 	physAddress			: 20;
 } tPTEntry;
 
@@ -95,7 +108,7 @@ void paging_init(void);
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
  */
-void paging_map(tPDEntry *pdir,s8 *virtual,u32 *frames,u32 count,u8 flags);
+void paging_map(tPDEntry *pdir,u32 virtual,u32 *frames,u32 count,u8 flags);
 
 /**
  * Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as
@@ -111,6 +124,6 @@ void paging_gdtFinished(void);
  * @param virtual the virtual start-address
  * @param count the number of pages to unmap
  */
-void paging_unmap(tPDEntry *pdir,s8 *virtual,u32 count);
+void paging_unmap(tPDEntry *pdir,u32 virtual,u32 count);
 
 #endif /*PAGING_H_*/

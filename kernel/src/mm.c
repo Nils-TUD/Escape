@@ -127,7 +127,6 @@ void mm_init(void) {
  * @param used wether the frame is used
  */
 static void mm_markAddrRangeUsed(u32 from,u32 to,bool used) {
-	vid_printf("from=%x, to=%x, => %d\n",from,to,used);
 	/* ensure that we start at a page-start */
 	from &= ~PAGE_SIZE;
 	for(; from < to; from += PAGE_SIZE) {

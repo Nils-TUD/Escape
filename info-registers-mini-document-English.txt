@@ -1,0 +1,77 @@
+First written by: Mulyadi Santosa (mulyadi.santosa@gmail.com)
+
+Feel free to correct the informations below as I am also
+not an x86 expert. Please kindly list your name and e-mail address
+on "Reviewer" section below. Send me a copy of your diff against this
+text file.
+
+REVIEWER:
+(your name here) (your e-mail address here)
+
+
+"INFO REGISTERS" CHEAT SHEET
+(information was taken from cpu_dump_state() on target-i386/helper2.c)
+
+EAX, EBX ECX EDX 
+ESI, EDI, EBP, ESP
+EIP, EFL directly show their contents
+
+
+ES,CS DS, FS, GS are shown in following format
+column #1 segment selector
+  "    #2 linear address of first byte of the related segment
+  "    #3 segment length
+  "    #4 flags
+
+LDT (Local Descriptor Table) dan TR (Task Register)
+column #1 segment selector
+   "   #2 linear address of first byte of the related segment
+   "   #3 segment length 
+   "   #4 flags
+
+GDT (Global Descriptor Table) dan IDT (Interrupt Description Table)
+column #1 base address of the table
+  "    #2 length of the table
+
+EFLAGS 
+(reference IA-32 Intel Architecture  Software Developer's Manual
+Volume 1: Basic Architecture page 63 -- 253665-014.pdf Figure 3.7)
+
+these below symbols are defined  inside target-i386/cpu.h
+
+        D : Direction Flag
+        C : Carry Flag
+        P : Parity Flag 
+        A : Auxiliary Carry Flag
+        Z : Zero Flag
+        S : Sign Flag
+        O : Overflow Flag
+
+
+CPL : Current Privilege level
+
+        0 = OS kernel  3=Applications (Linux only use these two CPL mode)
+        
+II : Inhibit IRQ (true if hardware interrupts must be disabled for next instruction)
+
+        0=false 1=true
+        
+A20 : A20 gate status -- enable/disable memory addressing above 1 MB
+         (read more on http://www.answers.com/topic/a20-line)
+
+CR0-CR4 (Control Registers)
+* See page 52 of 253668-014.pdf -- 
+IA-32 Intel Architecture  Software Developer's Manual
+Volume 3:  System Programming Guide)
+
+        CR0 : System control flag
+        CR2 : page fault linear address
+        CR3 : physical address of the base of the page directory
+        CR4 : contains a group of flags that enable several architecture  extensions
+                and indicate OS or executive support for spesific processor capabilities
+                
+CCS : Compiled Code Source (?)
+CCD : Compiled Code Destination (?)
+CCO : (?) instruction name
+
+ST0-ST7 : stack register (?) used in MMX operation

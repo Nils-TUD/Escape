@@ -1,0 +1,22 @@
+#ifndef DEBUG_H_
+#define DEBUG_H_
+
+#include "common.h"
+#include "paging.h"
+
+/**
+ * Prints the given page-directory
+ * 
+ * @param pagedir the page-directory
+ */
+void dbg_printPageDir(tPDEntry *pagedir);
+
+/**
+ * Prints the given page-table
+ * 
+ * @param no the number of the page-table
+ * @param pagetable the page-table
+ */
+void dbg_printPageTable(u32 no,tPTEntry *pagetable);
+
+#endif /*DEBUG_H_*/

@@ -25,4 +25,11 @@ void dbg_printPageDir(tPDEntry *pagedir);
  */
 void dbg_printPageTable(u32 no,tPTEntry *pagetable);
 
+/**
+ * Prints the given page
+ * 
+ * @param page a pointer to a page-table-entry
+ */
+void dbg_printPage(tPTEntry *page);
+
 #endif /*DEBUG_H_*/

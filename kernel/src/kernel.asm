@@ -1,3 +1,9 @@
+;
+; @version		$Id$
+; @author		Nils Asmussen <nils@script-solution.de>
+; @copyright	2008 Nils Asmussen
+;
+
 [BITS 32]      ; 32 bit code
 
 ; exports

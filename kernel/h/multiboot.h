@@ -1,3 +1,9 @@
+/**
+ * @version		$Id$
+ * @author		Nils Asmussen <nils@script-solution.de>
+ * @copyright	2008 Nils Asmussen
+ */
+
 #ifndef MULTIBOOT_H_
 #define MULTIBOOT_H_
 

@@ -1,3 +1,9 @@
+/**
+ * @version		$Id$
+ * @author		Nils Asmussen <nils@script-solution.de>
+ * @copyright	2008 Nils Asmussen
+ */
+
 #ifndef PROC_H_
 #define PROC_H_
 

@@ -1,3 +1,9 @@
+/**
+ * @version		$Id$
+ * @author		Nils Asmussen <nils@script-solution.de>
+ * @copyright	2008 Nils Asmussen
+ */
+
 #ifndef UTIL_H_
 #define UTIL_H_
 

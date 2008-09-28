@@ -29,6 +29,48 @@ static u32 *u16mStack = NULL;
 static void mm_markAddrRangeUsed(u32 from,u32 to,bool used);
 static void mm_markFrameUsed(u32 frame,bool used);
 
+void mm_init(void) {
+	tMemMap *mmap;
+	
+	/* init stack */
+	u16mStackFrameCount = (U16M_PAGE_COUNT + (PAGE_SIZE - 1) / sizeof(u32)) / (PAGE_SIZE / sizeof(u32));
+	/*vid_printf("MEMSIZE=%d bytes, PAGE_COUNT=%d, stackFrameCount=%d\n",
+			MEMSIZE,U16M_PAGE_COUNT,u16mStackFrameCount);*/
+	u16mStack = (u32*)&KernelEnd;
+	
+	/* at first we mark all frames as used in the bitmap for 0..16M */
+	memset(l16mBitmap,0xFFFFFFFF,L16M_PAGE_COUNT / 32);
+	
+	/* now walk through the memory-map and mark all free areas as free */
+	for(mmap = mb->mmapAddr;
+		(u32)mmap < (u32)mb->mmapAddr + mb->mmapLength;
+		mmap = (tMemMap*)((u32)mmap + mmap->size + sizeof(mmap->size))) {
+		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
+			mm_markAddrRangeUsed(mmap->baseAddr,mmap->baseAddr + mmap->length,false);
+		}
+	}
+	
+	/* mark the kernel-code and data (including stack for free frames) as used */
+	/* Note that we have to remove the 0xC0000000 since we want to work with physical addresses */
+	mm_markAddrRangeUsed((u32)&KernelStart & ~KERNEL_AREA_V_ADDR,
+			(u32)(((u32)&KernelEnd & ~KERNEL_AREA_V_ADDR) + u16mStackFrameCount * PAGE_SIZE),true);
+}
+
+u32 mm_getNumberOfFreeFrames(void) {
+	u32 i,bmIndex,count = 0;
+	u32 *stackPtr;
+	/* count < 16MB frames */
+	for(i = 0; i < L16M_PAGE_COUNT; i++) {
+		bmIndex = l16mSearchPos >> 5;
+		if((l16mBitmap[bmIndex] & (1 << (l16mSearchPos & 0x1f))) == 1) {
+			count++;
+		}
+	}
+	/* count > 16MB frames */
+	count += ((u32)u16mStack - (u32)&KernelEnd) / sizeof(u32*);
+	return count;
+}
+
 void mm_allocateFrames(memType type,u32* frames,u32 count) {
 	while(count-- > 0) {
 		*(frames++) = mm_allocateFrame(type);
@@ -76,6 +118,12 @@ u32 mm_allocateFrame(memType type) {
 	return 0;
 }
 
+void mm_freeFrames(memType type,u32 *frames,u32 count) {
+	while(count-- > 0) {
+		mm_freeFrame(*(frames++),type);
+	}
+}
+
 void mm_freeFrame(u32 frame,memType type) {
 	u32 *bitmapEntry;
 	/* TODO what do we need for DMA? */
@@ -90,33 +138,6 @@ void mm_freeFrame(u32 frame,memType type) {
 	else {
 		*(u16mStack++) = frame;
 	}
-}
-
-void mm_init(void) {
-	tMemMap *mmap;
-	
-	/* init stack */
-	u16mStackFrameCount = (U16M_PAGE_COUNT + (PAGE_SIZE - 1) / sizeof(u32)) / (PAGE_SIZE / sizeof(u32));
-	/*vid_printf("MEMSIZE=%d bytes, PAGE_COUNT=%d, stackFrameCount=%d\n",
-			MEMSIZE,U16M_PAGE_COUNT,u16mStackFrameCount);*/
-	u16mStack = (u32*)&KernelEnd;
-	
-	/* at first we mark all frames as used in the bitmap for 0..16M */
-	memset(l16mBitmap,0xFFFFFFFF,L16M_PAGE_COUNT / 32);
-	
-	/* now walk through the memory-map and mark all free areas as free */
-	for(mmap = mb->mmapAddr;
-		(u32)mmap < (u32)mb->mmapAddr + mb->mmapLength;
-		mmap = (tMemMap*)((u32)mmap + mmap->size + sizeof(mmap->size))) {
-		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
-			mm_markAddrRangeUsed(mmap->baseAddr,mmap->baseAddr + mmap->length,false);
-		}
-	}
-	
-	/* mark the kernel-code and data (including stack for free frames) as used */
-	/* Note that we have to remove the 0xC0000000 since we want to work with physical addresses */
-	mm_markAddrRangeUsed((u32)&KernelStart & ~KERNEL_AREA_V_ADDR,
-			(u32)(((u32)&KernelEnd & ~KERNEL_AREA_V_ADDR) + u16mStackFrameCount * PAGE_SIZE),true);
 }
 
 /**

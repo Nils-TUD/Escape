@@ -10,6 +10,8 @@
 #include "common.h"
 #include "mm.h"
 
+/*#define TEST_PAGING*/
+
 /* the virtual address of the kernel-area */
 #define KERNEL_AREA_V_ADDR	((u32)0xC0000000)
 /* the virtual address of the kernel itself */
@@ -20,6 +22,13 @@
 
 /* the start of the mapped page-tables area */
 #define MAPPED_PTS_START	(KERNEL_AREA_V_ADDR + 0x1000000)
+/* the start of the temporary mapped page-tables area */
+/*#define TMPMAP_PTS_START	(MAPPED_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))*/
+
+/* page-directories in virtual memory */
+#define PAGE_DIR_AREA		(MAPPED_PTS_START - PAGE_SIZE)
+/* needed for building a new page-dir */
+#define PAGE_DIR_TMP_AREA	(PAGE_DIR_AREA - PAGE_SIZE)
 
 /* flags for paging_map() */
 #define PG_WRITABLE		1
@@ -98,17 +107,36 @@ extern tPDEntry proc0PD[];
 void paging_init(void);
 
 /**
- * Maps <count> virtual addresses starting at <virtual> to the given frames
+ * Counts the number of pages that are currently present in the given page-directory
+ * 
+ * @param pdir the page-directory
+ * @return the number of pages
+ */
+u32 paging_getPageCount(void);
+
+/**
+ * Maps <count> virtual addresses starting at <virtual> to the given frames (in the CURRENT
+ * page-dir!)
+ * Note that the function will NOT flush the TLB!
  * 
  * @panic if there is not enough memory to get a frame for a page-table
  * 
- * @param pdir the page-directory
  * @param virtual the virtual start-address
  * @param frames an array with <count> elements which contains the frame-numbers to use
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
  */
-void paging_map(tPDEntry *pdir,u32 virtual,u32 *frames,u32 count,u8 flags);
+void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags);
+
+/**
+ * Removes <count> pages starting at <virtual> from the page-directory and page-tables (in the
+ * CURRENT page-dir!).
+ * Note that the function will NOT free the frames and that it will NOT flush the TLB!
+ * 
+ * @param virtual the virtual start-address
+ * @param count the number of pages to unmap
+ */
+void paging_unmap(u32 virtual,u32 count);
 
 /**
  * Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as
@@ -116,14 +144,8 @@ void paging_map(tPDEntry *pdir,u32 virtual,u32 *frames,u32 count,u8 flags);
  */
 void paging_gdtFinished(void);
 
-/**
- * Removes <count> pages starting at <virtual> from the page-directory and page-tables.
- * Note that the function will NOT free the frames!
- * 
- * @param pdir the page-directory
- * @param virtual the virtual start-address
- * @param count the number of pages to unmap
- */
-void paging_unmap(tPDEntry *pdir,u32 virtual,u32 count);
+#ifdef TEST_PAGING
+void test_paging(void);
+#endif
 
 #endif /*PAGING_H_*/

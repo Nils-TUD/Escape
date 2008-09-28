@@ -45,29 +45,19 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 
 	/* init video */
 	vid_init();
-	
-	/*vid_printf("Magic-Number=0x%x, Multiboot-Structure=0x%08x\n",magic,mb);
-	
-	vid_printf("abla %:09x,%:12x,%:63c,%d,%c,%c,%x\nbla und nun\nueberschreiben\rwahh",
-			0x456,0x789,'a',magic,'b','c',0x123);
-	
-	vid_printf("Address=0x%x\n",&dummy);
-	vid_printf("%16s, %8s, %4s, %2s\n","bla","bla","bla","bla");*/
-	printMultiBootInfo();
-	
-	/*vid_printf("Initializing GDT...");
-	gdt_init();
+
+	vid_printf("GDT exchanged, paging enabled, video initialized");
 	vid_toLineEnd(vid_getswidth("DONE"));
-	vid_printf("%:02s","DONE");*/
+	vid_printf("%:02s\n","DONE");
+	
+	printMultiBootInfo();
 	
 	vid_printf("Initializing memory-management...");
 	mm_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
-	
-#ifdef TEST_MM
-	test_mm();
-#endif
+
+	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(),paging_getPageCount());
 	
 	vid_printf("Initializing process-management...");
 	proc_init();
@@ -79,13 +69,12 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
 	
-	mm_allocateFrames(MM_DEF,frames,FRAME_COUNT);
-	for(i = 0;i < FRAME_COUNT;i++) {
-		vid_printf("frame %d: %x\n",i,frames[i]);
-	}
-	paging_map(procs[pi].pageDir,0xB0004000,frames,FRAME_COUNT,PG_WRITABLE);
-	
-	dbg_printPageDir(procs[pi].pageDir);
+#ifdef TEST_MM
+	test_mm();
+#endif
+#ifdef TEST_PAGING
+	test_paging();
+#endif
 	
 	/* jetzt wo wir schon im Kernel drin sind, wollen wir auch nicht mehr raus ;) */
 	while (1);

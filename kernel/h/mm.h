@@ -10,6 +10,8 @@
 #include "../h/common.h"
 #include "../h/multiboot.h"
 
+/*#define TEST_MM*/
+
 /* the physical start-address of the kernel-area */
 #define KERNEL_AREA_P_ADDR	0x0
 /* the physical start-address of the kernel itself */
@@ -32,6 +34,18 @@ extern u32 KernelStart;
 extern u32 KernelEnd;
 
 /**
+ * Initializes the memory-management
+ */
+void mm_init(void);
+
+/**
+ * Counts the number of free frames. This is primarly intended for debugging!
+ * 
+ * @return the number of free frames
+ */
+u32 mm_getNumberOfFreeFrames(void);
+
+/**
  * A convenience-method to allocate multiple frames. Simply calls <count> times
  * mm_allocateFrame(<type>) and stores the frames in <frames>.
  * 
@@ -52,17 +66,22 @@ void mm_allocateFrames(memType type,u32* frames,u32 count);
 u32 mm_allocateFrame(memType type);
 
 /**
+ * A convenience-method to free multiple frames. Simply calls <count> times
+ * mm_freeFrame(<frame>,<type>).
+ * 
+ * @param type the frame-type: MM_DMA or MM_DEF
+ * @param frames the array with <count> frames
+ * @param count the number of frames you want to free
+ */
+void mm_freeFrames(memType type,u32 *frames,u32 count);
+
+/**
  * Frees the given frame of the given type
  * 
  * @param frame the frame-number
  * @param type the frame-type: MM_DMA or MM_DEF
  */
 void mm_freeFrame(u32 frame,memType type);
-
-/**
- * Initializes the memory-management
- */
-void mm_init(void);
 
 /**
  * Prints the bitmap for the lower 16MB memory

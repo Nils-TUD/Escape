@@ -94,8 +94,7 @@ typedef struct {
 	/* can be used by the OS */
 						: 3,
 	/* the physical address of the page */
-	/* TODO change name to frameNumber */
-	physAddress			: 20;
+	frameNumber			: 20;
 } tPTEntry;
 
 /* the page-directory for the first process */

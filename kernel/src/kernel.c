@@ -15,8 +15,6 @@
 #include "../h/intrpt.h"
 #include "../h/debug.h"
 
-u32 dummy = 0;
-
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table
 	0x00000400 - 0x000004FF : BIOS data area
@@ -32,7 +30,6 @@ u32 dummy = 0;
 */
 
 u32 main(tMultiBoot *mbp,u32 magic) {
-	s32 i,x;
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
 	 * and "correct" the GDT */
 	paging_init();

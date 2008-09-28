@@ -39,7 +39,7 @@ void dbg_printPageTable(u32 no,u32 frame,tPTEntry *pagetable) {
 
 void dbg_printPage(tPTEntry *page) {
 	if(page->present) {
-		vid_printf("raw=%x, frame=%x [%c%c]",*(u32*)page,page->physAddress,page->notSuperVisor ? 'u' : 'k',
+		vid_printf("raw=%x, frame=%x [%c%c]",*(u32*)page,page->frameNumber,page->notSuperVisor ? 'u' : 'k',
 				page->writable ? 'w' : 'r');
 	}
 	else {

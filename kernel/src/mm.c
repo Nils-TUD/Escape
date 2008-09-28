@@ -58,7 +58,6 @@ void mm_init(void) {
 
 u32 mm_getNumberOfFreeFrames(void) {
 	u32 i,bmIndex,count = 0;
-	u32 *stackPtr;
 	/* count < 16MB frames */
 	for(i = 0; i < L16M_PAGE_COUNT; i++) {
 		bmIndex = l16mSearchPos >> 5;

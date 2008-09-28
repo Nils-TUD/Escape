@@ -47,7 +47,7 @@ extern void tlb_flush(void);
 static void paging_mapPageTable(u32 virtual,u32 frame,bool flush) {
 	u32 addr = ADDR_TO_MAPPED(virtual);
 	tPTEntry* pt = (tPTEntry*)(mapPT + ADDR_TO_PTINDEX(addr));
-	pt->physAddress = frame;
+	pt->frameNumber = frame;
 	pt->present = 1;
 	pt->writable = 1;
 	
@@ -125,7 +125,7 @@ void paging_init(void) {
 	end = KERNEL_AREA_P_ADDR + PT_ENTRY_COUNT * PAGE_SIZE;
 	for(i = 0; addr < end; i++, addr += PAGE_SIZE) {
 		/* build page-table entry */
-		proc0PT[i].physAddress = (u32)addr >> PAGE_SIZE_SHIFT;
+		proc0PT[i].frameNumber = (u32)addr >> PAGE_SIZE_SHIFT;
 		proc0PT[i].present = 1;
 		proc0PT[i].writable = 1;
 	}
@@ -153,7 +153,7 @@ void paging_init(void) {
 	
 	/* insert the page into the page-table for the page-directory area */
 	i = ADDR_TO_PTINDEX(PAGE_DIR_AREA);
-	pdirPT[i].physAddress = (u32)pd >> PAGE_SIZE_SHIFT;
+	pdirPT[i].frameNumber = (u32)pd >> PAGE_SIZE_SHIFT;
 	pdirPT[i].present = 1;
 	pdirPT[i].writable = 1;
 	
@@ -221,7 +221,7 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
 		
 		/* setup page */
 		pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
-		pt->physAddress = *frames;
+		pt->frameNumber = *frames;
 		pt->present = 1;
 		pt->writable = flags & PG_WRITABLE;
 		pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0;

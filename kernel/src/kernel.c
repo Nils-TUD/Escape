@@ -16,10 +16,6 @@
 #include "../h/debug.h"
 
 u32 dummy = 0;
-	
-#define FRAME_COUNT 1024
-
-u32 frames[FRAME_COUNT];
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table

@@ -279,6 +279,7 @@ u32 frames[TEST_MAX_FRAMES];
 
 static bool test_paging_cycle(u32 i,u32 addr,u32 count);
 static void test_paging_allocate(u32 addr,u32 count);
+static void test_paging_access(u32 addr,u32 count);
 static void test_paging_free(u32 addr,u32 count);
 	
 void test_paging(void) {
@@ -303,6 +304,7 @@ static bool test_paging_cycle(u32 i,u32 addr,u32 count) {
 	oldFF = mm_getNumberOfFreeFrames();
 	
 	test_paging_allocate(addr,count);
+	test_paging_access(addr,count);
 	test_paging_free(addr,count);
 
 	newPC = paging_getPageCount();
@@ -323,6 +325,19 @@ static void test_paging_allocate(u32 addr,u32 count) {
 	paging_map(addr,frames,count,PG_WRITABLE);
 	
 	tlb_flush();
+}
+
+static void test_paging_access(u32 addr,u32 count) {
+	u32 i;
+	/* make page-aligned */
+	addr &= ~(PAGE_SIZE - 1);
+	for(i = 0; i < count; i++) {
+		/* write to the first word */
+		*(u32*)addr = 0xDEADBEEF;
+		/* write to the last word */
+		*(u32*)(addr + PAGE_SIZE - sizeof(u32)) = 0xDEADBEEF;
+		addr += PAGE_SIZE;
+	}
 }
 
 static void test_paging_free(u32 addr,u32 count) {

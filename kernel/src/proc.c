@@ -33,7 +33,16 @@ bool proc_clone(tProc *p) {
 	tPDEntry *pd,*npd,*pdapt;
 	tPTEntry *pt;
 	
-	/* TODO check wether we have enough mem */
+	/* frames needed:
+	 * 	- page directory
+	 * 	- page directory area page-table
+	 * 	- map area page-table
+	 * The frames for the page-content is not yet needed since we're using copy-on-write!
+	 */
+	if(mm_getNumberOfFreeFrames(MM_DEF) < 3) {
+		return false;
+	}
+	
 	/* TODO note that interrupts have to be disabled, because no other process is allowed to
 	 * run during this function since we are calculating the memory we need at the beginning! */
 	
@@ -143,5 +152,16 @@ bool proc_clone(tProc *p) {
 	/*vid_printf("========= OLD PAGE TABLE =========\n");
 	dbg_printPageDir();*/
 	
-	return false;
+	return true;
 }
+
+#ifdef TEST_PROC
+void test_proc(void) {
+	while(1) {
+		vid_printf("free frames (MM_DEF) = %d\n",mm_getNumberOfFreeFrames(MM_DEF));
+		if(!proc_clone(procs + 1)) {
+			panic("proc_clone: Not enough memory!!!");
+		}
+	}
+}
+#endif

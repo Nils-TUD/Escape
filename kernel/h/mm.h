@@ -27,7 +27,8 @@
 
 #define L16M_CACHE_SIZE 16
 
-typedef enum {MM_DMA,MM_DEF} memType;
+/* set values to support bit-masks of the types */
+typedef enum {MM_DMA = 1,MM_DEF = 2} memType;
 
 /* start- and end-address of the kernel */
 extern u32 KernelStart;
@@ -41,9 +42,10 @@ void mm_init(void);
 /**
  * Counts the number of free frames. This is primarly intended for debugging!
  * 
+ * @param types a bit-mask with all types (MM_DMA,MM_DEF) to use for counting
  * @return the number of free frames
  */
-u32 mm_getNumberOfFreeFrames(void);
+u32 mm_getNumberOfFreeFrames(u32 types);
 
 /**
  * A convenience-method to allocate multiple frames. Simply calls <count> times

@@ -285,14 +285,14 @@ static bool test_paging_cycle(u32 i,u32 addr,u32 count) {
 	vid_printf("TEST %d: addr=0x%x, count=%d\n",i,addr,count);
 	
 	oldPC = paging_getPageCount();
-	oldFF = mm_getNumberOfFreeFrames();
+	oldFF = mm_getNumberOfFreeFrames(MM_DMA | MM_DEF);
 	
 	test_paging_allocate(addr,count);
 	test_paging_access(addr,count);
 	test_paging_free(addr,count);
 
 	newPC = paging_getPageCount();
-	newFF = mm_getNumberOfFreeFrames();
+	newFF = mm_getNumberOfFreeFrames(MM_DMA | MM_DEF);
 	
 	if(oldFF != newFF || oldPC != newPC) {
 		vid_printf("FAILED: oldPC=%d, oldFF=%d, newPC=%d, newFF=%d\n\n",oldPC,oldFF,newPC,newFF);

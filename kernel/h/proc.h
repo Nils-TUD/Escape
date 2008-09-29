@@ -10,6 +10,8 @@
 #include "common.h"
 #include "paging.h"
 
+/*#define TEST_PROC*/
+
 /* max number of processes */
 #define PROC_COUNT 1024
 
@@ -45,5 +47,9 @@ void proc_init(void);
  * @return true if successfull
  */
 bool proc_clone(tProc *p);
+
+#ifdef TEST_PROC
+void test_proc(void);
+#endif
 
 #endif /*PROC_H_*/

@@ -56,17 +56,22 @@ void mm_init(void) {
 			(u32)(((u32)&KernelEnd & ~KERNEL_AREA_V_ADDR) + u16mStackFrameCount * PAGE_SIZE),true);
 }
 
-u32 mm_getNumberOfFreeFrames(void) {
+/* TODO may be we should store and manipulate the current number of free frames? */
+u32 mm_getNumberOfFreeFrames(u32 types) {
 	u32 i,bmIndex,count = 0;
-	/* count < 16MB frames */
-	for(i = 0; i < L16M_PAGE_COUNT; i++) {
-		bmIndex = l16mSearchPos >> 5;
-		if((l16mBitmap[bmIndex] & (1 << (l16mSearchPos & 0x1f))) == 1) {
-			count++;
+	if(types & MM_DMA) {
+		/* count < 16MB frames */
+		for(i = 0; i < L16M_PAGE_COUNT; i++) {
+			bmIndex = l16mSearchPos >> 5;
+			if((l16mBitmap[bmIndex] & (1 << (l16mSearchPos & 0x1f))) == 1) {
+				count++;
+			}
 		}
 	}
-	/* count > 16MB frames */
-	count += ((u32)u16mStack - (u32)&KernelEnd) / sizeof(u32*);
+	if(types & MM_DEF) {
+		/* count > 16MB frames */
+		count += ((u32)u16mStack - (u32)&KernelEnd) / sizeof(u32*);
+	}
 	return count;
 }
 

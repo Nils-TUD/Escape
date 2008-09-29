@@ -50,7 +50,8 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
 
-	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(),paging_getPageCount());
+	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),
+			paging_getPageCount());
 	
 	vid_printf("Initializing process-management...");
 	proc_init();
@@ -68,8 +69,9 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 #ifdef TEST_PAGING
 	test_paging();
 #endif
-	
-	proc_clone(procs + 1);
+#ifdef TEST_PROC
+	test_proc();
+#endif
 	
 	/* jetzt wo wir schon im Kernel drin sind, wollen wir auch nicht mehr raus ;) */
 	while (1);

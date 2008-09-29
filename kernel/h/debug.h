@@ -9,6 +9,14 @@
 
 #include "common.h"
 #include "paging.h"
+#include "proc.h"
+
+/**
+ * Prints the given process
+ * 
+ * @param p the pointer to the process
+ */
+void dbg_printProcess(tProc *p);
 
 /**
  * Prints the current page-directory

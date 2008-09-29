@@ -75,7 +75,7 @@ u32 mm_getNumberOfFreeFrames(u32 types) {
 	return count;
 }
 
-void mm_allocateFrames(memType type,u32* frames,u32 count) {
+void mm_allocateFrames(memType type,u32 *frames,u32 count) {
 	while(count-- > 0) {
 		*(frames++) = mm_allocateFrame(type);
 	}

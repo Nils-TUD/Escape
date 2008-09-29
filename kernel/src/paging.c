@@ -130,7 +130,7 @@ void paging_init(void) {
 	paging_enable();
 }
 
-void paging_mapPageTable(tPTEntry* pt,u32 virtual,u32 frame,bool flush) {
+void paging_mapPageTable(tPTEntry *pt,u32 virtual,u32 frame,bool flush) {
 	u32 addr = ADDR_TO_MAPPED(virtual);
 	pt = (tPTEntry*)(pt + ADDR_TO_PTINDEX(addr));
 	pt->frameNumber = frame;
@@ -143,7 +143,7 @@ void paging_mapPageTable(tPTEntry* pt,u32 virtual,u32 frame,bool flush) {
 	}
 }
 
-void paging_unmapPageTable(tPTEntry* pt,u32 virtual,bool flush) {
+void paging_unmapPageTable(tPTEntry *pt,u32 virtual,bool flush) {
 	u32 addr = ADDR_TO_MAPPED(virtual);
 	pt = (tPTEntry*)(pt + ADDR_TO_PTINDEX(addr));
 	pt->present = 0;

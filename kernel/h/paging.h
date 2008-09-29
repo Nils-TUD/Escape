@@ -132,7 +132,7 @@ extern void paging_exchangePDir(u32 physAddr);
  * @param frame the frame-number
  * @param flush flush the TLB?
  */
-void paging_mapPageTable(tPTEntry* pt,u32 virtual,u32 frame,bool flush);
+void paging_mapPageTable(tPTEntry *pt,u32 virtual,u32 frame,bool flush);
 
 /**
  * Unmaps the page-table for the given virtual address to <frame> out of the mapped
@@ -142,7 +142,7 @@ void paging_mapPageTable(tPTEntry* pt,u32 virtual,u32 frame,bool flush);
  * @param virtual the virtual address
  * @param flush flush the TLB?
  */
-void paging_unmapPageTable(tPTEntry* pt,u32 virtual,bool flush);
+void paging_unmapPageTable(tPTEntry *pt,u32 virtual,bool flush);
 
 /**
  * Counts the number of pages that are currently present in the given page-directory

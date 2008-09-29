@@ -55,7 +55,7 @@ u32 mm_getNumberOfFreeFrames(u32 types);
  * @param frames the array for <count> frames
  * @param count the number of frames you want to get
  */
-void mm_allocateFrames(memType type,u32* frames,u32 count);
+void mm_allocateFrames(memType type,u32 *frames,u32 count);
 
 /**
  * Allocates a frame of the given type and returns the frame-number

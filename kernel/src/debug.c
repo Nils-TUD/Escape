@@ -8,6 +8,18 @@
 #include "../h/common.h"
 #include "../h/video.h"
 #include "../h/paging.h"
+#include "../h/proc.h"
+
+void dbg_printProcess(tProc *p) {
+	vid_printf("process @ 0x%08x:\n",p);
+	vid_printf("\tpid = %d\n",p->pid);
+	vid_printf("\tparentPid = %d\n",p->parentPid);
+	vid_printf("\tphysPDirAddr = 0x%08x\n",p->physPDirAddr);
+	vid_printf("\ttextPages = %d\n",p->textPages);
+	vid_printf("\tdataPages = %d\n",p->dataPages);
+	vid_printf("\tstackPages = %d\n",p->stackPages);
+	vid_printf("\n");
+}
 
 void dbg_printPageDir(void) {
 	u32 i;

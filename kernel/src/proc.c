@@ -155,13 +155,127 @@ bool proc_clone(tProc *p) {
 	return true;
 }
 
+bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages) {
+	u32 maxPages = KERNEL_AREA_V_ADDR / PAGE_SIZE;
+	return textPages + dataPages + stackPages <= maxPages;
+}
+
+bool proc_changeSize(s32 change,chgArea area) {
+	u32 addr,i,chg = change;
+	tPTEntry *pt;
+	/* determine start-address */
+	if(area == CHG_DATA) {
+		addr = (procs[pi].textPages + procs[pi].dataPages) * PAGE_SIZE;
+	}
+	else {
+		addr = KERNEL_AREA_V_ADDR - (procs[pi].stackPages + change) * PAGE_SIZE;
+	}
+	
+	if(change > 0) {
+		u32 ts,ds,ss;
+		/* not enough mem? */
+		if(mm_getNumberOfFreeFrames(MM_DEF) < paging_countFramesForMap(addr,change)) {
+			return false;
+		}
+		/* invalid segment sizes? */
+		ts = procs[pi].textPages;
+		ds = procs[pi].dataPages;
+		ss = procs[pi].stackPages;
+		if((area == CHG_DATA && !proc_segSizesValid(ts,ds + change,ss))
+				|| (area == CHG_STACK && !proc_segSizesValid(ts,ds,ss + change))) {
+			return false;
+		}
+		
+		paging_map(addr,NULL,change,PG_WRITABLE);
+		
+		/* now clear the memory */
+		paging_flushTLB();
+		while(change-- > 0) {
+			memset((void*)addr,0,PT_ENTRY_COUNT);
+			addr += PAGE_SIZE;
+		}
+	}
+	else {
+		/* we have to correct the address */
+		addr += change * PAGE_SIZE;
+		
+		/* we have to free the frames for the data first (the page-table may not exist anymore 
+		 * after paging_unmap) */
+		pt = (tPTEntry*)ADDR_TO_MAPPED(addr);
+		i = -change;
+		while(i-- > 0) {
+			mm_freeFrame(pt->frameNumber,MM_DEF);
+			pt++;
+		}
+		
+		/* now unmap the area and - maybe - free page-tables */
+		paging_unmap(addr,-change);
+		/* finally, ensure that the TLB contains no invalid entries */
+		paging_flushTLB();
+	}
+	
+	/* adjust sizes */
+	if(area == CHG_DATA) {
+		procs[pi].dataPages += chg;
+	}
+	else {
+		procs[pi].stackPages += chg;
+	}
+	
+	return true;
+}
+
 #ifdef TEST_PROC
+
+static void test_proc_chgSize(u32 no,s32 change,chgArea area);
+
 void test_proc(void) {
-	while(1) {
+	/*while(1) {
 		vid_printf("free frames (MM_DEF) = %d\n",mm_getNumberOfFreeFrames(MM_DEF));
 		if(!proc_clone(procs + 1)) {
 			panic("proc_clone: Not enough memory!!!");
 		}
+	}*/
+	
+	u32 i = 0,x,y;
+	s32 changes[] = {0,1,10,1024,1025,2048,2047,2049,mm_getNumberOfFreeFrames(MM_DEF) + 1};
+	chgArea areas[] = {CHG_DATA,CHG_STACK};
+	
+	for(y = 0; y < sizeof(areas) / sizeof(areas[0]); y++) {
+		for(x = 0; x < sizeof(changes) / sizeof(changes[0]); x++) {
+			test_proc_chgSize(i++,changes[x],areas[y]);
+		}
 	}
 }
+
+static void test_proc_chgSize(u32 no,s32 change,chgArea area) {
+	bool res = true;
+	u32 oldFF, newFF, oldPC, newPC;
+	
+	vid_printf("TEST %d (change=%d, area=%d)\n",no,change,area);
+
+	oldPC = paging_getPageCount();
+	oldFF = mm_getNumberOfFreeFrames(MM_DEF);
+	
+	res = res && (change > oldFF ? !proc_changeSize(change,area) : proc_changeSize(change,area));
+	if(change <= oldFF) {
+		res = res && proc_changeSize(-change,area);
+	}
+	else {
+		vid_printf("Not enough mem or invalid segment sizes!\n");
+	}
+
+	newPC = paging_getPageCount();
+	newFF = mm_getNumberOfFreeFrames(MM_DEF);
+	
+	if(!res || oldFF != newFF || oldPC != newPC) {
+		vid_printf("FAILED: oldPC=%d, oldFF=%d, newPC=%d, newFF=%d\n\n",oldPC,oldFF,newPC,newFF);
+	}
+	else {
+		vid_printf("SUCCESS!\n");
+	}
+	
+	vid_printf("\n");
+}
+
 #endif

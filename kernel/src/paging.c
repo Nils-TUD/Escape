@@ -171,6 +171,26 @@ u32 paging_getPageCount(void) {
 	return count;
 }
 
+u32 paging_countFramesForMap(u32 virtual,u32 count) {
+	/* we need at least <count> frames */
+	u32 res = count;
+	/* signed is better here :) */
+	s32 c = count;
+	tPDEntry *pd;
+	while(c > 0) {
+		/* page-table not present yet? */
+		pd = (tPDEntry*)(PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual) * sizeof(tPDEntry));
+		if(!pd->present) {
+			res++;
+		}
+		
+		/* advance to next page-table */
+		c -= PT_ENTRY_COUNT;
+		virtual += PAGE_SIZE * PT_ENTRY_COUNT;
+	}
+	return res;
+}
+
 void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
 	u32 frame;
 	tPDEntry *pd;

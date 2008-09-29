@@ -144,6 +144,15 @@ void mm_freeFrame(u32 frame,memType type) {
 	}
 }
 
+void mm_printFreeFrames(void) {
+	vid_printf("Free frames > 16MB:\n");
+	u32 i,*ptr;
+	for(i = 0,ptr = u16mStack - 1; ptr >= &KernelEnd; i++,ptr--) {
+		vid_printf("0x%08x\n",*ptr);
+	}
+	vid_printf("\n");
+}
+
 /**
  * Marks the given range as used or not used
  * 

@@ -12,6 +12,43 @@
 
 /*#define TEST_PAGING*/
 
+/**
+ * Virtual memory layout:
+ * 0x00000000: -------------------------------------
+ *             |                                   |
+ *             |               code                |
+ *             |                                   |
+ *             -------------------------------------
+ *             |                                   |
+ *      |      |               data                |
+ *      v      |                                   |
+ *             -------------------------------------
+ *             |                ...                |
+ *             -------------------------------------
+ *      ^      |                                   |
+ *      |      |               stack               |
+ *             |                                   |
+ * 0xC0000000: -------------------------------------
+ *             |         kernel code+data          |
+ *             -------------------------------------
+ *      |      |             mm-stack              |
+ *      v      -------------------------------------
+ *             |                ...                |
+ * 0xC0FFD000: -------------------------------------
+ *             |       mapped temp page-table      |
+ * 0xC0FFE000: -------------------------------------
+ *             |        mapped temp page-dir       |
+ * 0xC0FFF000: -------------------------------------
+ *             |          mapped page-dir          |
+ * 0xC1000000: -------------------------------------
+ *             |        mapped page-tables         |
+ * 0xC1400000: -------------------------------------
+ *             |     temp mapped page-tables       |
+ * 0xC1800000: -------------------------------------
+ *             |                ...                |
+ * 0xFFFFFFFF: -------------------------------------
+ */
+
 /* the virtual address of the kernel-area */
 #define KERNEL_AREA_V_ADDR	((u32)0xC0000000)
 /* the virtual address of the kernel itself */
@@ -151,6 +188,15 @@ void paging_unmapPageTable(tPTEntry *pt,u32 virtual,bool flush);
  * @return the number of pages
  */
 u32 paging_getPageCount(void);
+
+/**
+ * Determines how many new frames we need for calling paging_map(<virtual>,...,<count>,...).
+ * 
+ * @param virtual the virtual start-address
+ * @param count the number of pages to map
+ * @return the number of new frames we would need
+ */
+u32 paging_countFramesForMap(u32 virtual,u32 count);
 
 /**
  * Maps <count> virtual addresses starting at <virtual> to the given frames (in the CURRENT

@@ -9,7 +9,7 @@ OSTITLE=hrniels-OS
 DUMP=$(BUILD)/kernel.dump
 
 CC = gcc
-CFLAGS = -g -ffreestanding -Wall -ansi -nostdlib -nostartfiles -nodefaultlibs
+CFLAGS = -g -O2 -ffreestanding -Wall -ansi -nostdlib -nostartfiles -nodefaultlibs
 
 # sources
 ASRC=src/kernel.asm

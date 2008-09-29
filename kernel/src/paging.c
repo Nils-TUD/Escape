@@ -25,6 +25,11 @@ tPTEntry mapPT[PAGE_SIZE / sizeof(tPTEntry)] __attribute__ ((aligned (PAGE_SIZE)
 tPTEntry pdirPT[PAGE_SIZE / sizeof(tPTEntry)] __attribute__ ((aligned (PAGE_SIZE)));
 
 /**
+ * Assembler routine to enable paging 
+ */
+extern void paging_enable(void);
+
+/**
  * Checks wether the given page-table is empty
  * 
  * @param pt the pointer to the first entry of the page-table
@@ -120,8 +125,9 @@ void paging_init(void) {
 	paging_mapPageTable(mapPT,PAGE_DIR_AREA,(u32)pdpt >> PAGE_SIZE_SHIFT,false);
 	paging_mapPageTable(mapPT,MAPPED_PTS_START,(u32)mpt >> PAGE_SIZE_SHIFT,false);
 	
-	/* now enable paging */
-	paging_enable(pd);
+	/* now set page-dir and enable paging */
+	paging_exchangePDir((u32)pd);
+	paging_enable();
 }
 
 void paging_mapPageTable(tPTEntry* pt,u32 virtual,u32 frame,bool flush) {
@@ -133,7 +139,7 @@ void paging_mapPageTable(tPTEntry* pt,u32 virtual,u32 frame,bool flush) {
 	
 	/* TODO necessary? */
 	if(flush) {
-		tlb_flush();
+		paging_flushTLB();
 	}
 }
 
@@ -144,7 +150,7 @@ void paging_unmapPageTable(tPTEntry* pt,u32 virtual,bool flush) {
 	
 	/* TODO necessary? */
 	if(flush) {
-		tlb_flush();
+		paging_flushTLB();
 	}
 }
 
@@ -247,7 +253,7 @@ void paging_gdtFinished(void) {
 	 * for the kernel */
 	proc0PD[0].present = 0;
 	/* TODO necessary? */
-	tlb_flush();
+	paging_flushTLB();
 }
 
 #ifdef TEST_PAGING
@@ -302,7 +308,7 @@ static void test_paging_allocate(u32 addr,u32 count) {
 	mm_allocateFrames(MM_DEF,frames,count);
 	paging_map(addr,frames,count,PG_WRITABLE);
 	
-	tlb_flush();
+	paging_flushTLB();
 }
 
 static void test_paging_access(u32 addr,u32 count) {
@@ -322,7 +328,7 @@ static void test_paging_free(u32 addr,u32 count) {
 	paging_unmap(addr,count);
 	mm_freeFrames(MM_DEF,frames,count);
 
-	tlb_flush();
+	paging_flushTLB();
 }
 
 #endif

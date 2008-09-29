@@ -13,11 +13,12 @@
 [global inb]
 [global KernelStart]
 [global halt]
-[global paging_enable]
 [global intrpt_enable]
 [global intrpt_disable]
 [global intrpt_loadidt]
-[global tlb_flush]
+[global paging_enable]
+[global paging_flushTLB]
+[global paging_exchangePDir]
 
 ; imports
 [extern main] ; our C kernel main
@@ -118,19 +119,23 @@ inb:
 	in		al,dx								; read from port
 	ret
 
-; void tlb_flush(void);
-tlb_flush:
+; void paging_enable(void);
+paging_enable:
+	mov		eax,cr0
+	or		eax,1 << 31					; set bit for paging-enabled
+	mov		cr0,eax							; now paging is enabled :)
+	ret
+
+; void paging_flushTLB(void);
+paging_flushTLB:
 	mov		eax,cr3
 	mov		cr3,eax
 	ret
 
-; void paging_enable(tPDEntry *pageDir);
-paging_enable:
+; void paging_exchangePDir(u32 physAddr);
+paging_exchangePDir:
 	mov		eax,[esp+4]					; load page-dir-address
 	mov		cr3,eax							; set page-dir
-	mov		eax,cr0
-	or		eax,1 << 31					; set bit for paging-enabled
-	mov		cr0,eax							; now paging is enabled :)
 	ret
 
 ; void intrpt_enable(void);

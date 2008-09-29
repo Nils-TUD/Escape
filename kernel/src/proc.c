@@ -28,12 +28,6 @@ void proc_init(void) {
 	procs[pi].physPDirAddr = (u32)proc0PD & ~KERNEL_AREA_V_ADDR;
 }
 
-static void tlb_refresh(u32 pagedir) {
-	tPDEntry *cpdir = (tPDEntry*)(ADDR_TO_MAPPED(pagedir));
-	vid_printf("pagedir=0x%x, cpdir=0x%x, *cpdir=0x%x\n",pagedir,cpdir,*cpdir);
-	paging_enable((tPDEntry*)(cpdir->ptFrameNo << PAGE_SIZE_SHIFT));
-}
-
 bool proc_clone(tProc *p) {
 	u32 x,pdirFrame,pdirAreaFrame,mapAreaFrame;
 	tPDEntry *pd,*npd,*pdapt;
@@ -52,7 +46,7 @@ bool proc_clone(tProc *p) {
 	 * lies in the same page-table */
 	paging_map(PAGE_DIR_TMP_AREA,&pdirFrame,1,PG_WRITABLE | PG_SUPERVISOR);
 	/* we have to write to the temp-area */
-	tlb_flush();
+	paging_flushTLB();
 	
 	pd = (tPDEntry*)PAGE_DIR_AREA;
 	npd = (tPDEntry*)PAGE_DIR_TMP_AREA;
@@ -61,27 +55,24 @@ bool proc_clone(tProc *p) {
 	memset(npd,0,PT_ENTRY_COUNT);
 
 	/* copy pd-entry for kernel */
-	vid_printf("ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR)=%x\n",ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR));
 	npd[ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR)] = pd[ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR)];
 
 	/* we need a new frame for the page-dir-area */
 	pdirAreaFrame = mm_allocateFrame(MM_DEF);
 	pdapt = (tPDEntry*)(npd + ADDR_TO_PDINDEX(PAGE_DIR_AREA));
-	vid_printf("pdapt=0x%08x, ADDR_TO_PDINDEX(PAGE_DIR_AREA)=%x\n",pdapt,ADDR_TO_PDINDEX(PAGE_DIR_AREA));
 	pdapt->ptFrameNo = pdirAreaFrame;
 	pdapt->present = 1;
 	pdapt->writable = 1;
 	
 	/* we have to write to the page-table */
 	paging_map(PAGE_TABLE_AREA,&pdirAreaFrame,1,PG_WRITABLE | PG_SUPERVISOR);
-	tlb_flush();
+	paging_flushTLB();
 	
 	/* clear new page-table */
 	memset((void*)PAGE_TABLE_AREA,0,PT_ENTRY_COUNT);
 	
 	/* create the page-table-entry for the page-dir-area of the new process */
 	pt = (tPTEntry*)(PAGE_TABLE_AREA + ADDR_TO_PTINDEX(PAGE_DIR_AREA) * sizeof(tPTEntry));
-	vid_printf("pt=0x%08x, ADDR_TO_PTINDEX(PAGE_DIR_AREA)=%x\n",pt,ADDR_TO_PTINDEX(PAGE_DIR_AREA));
 	pt->frameNumber = pdirFrame;
 	pt->present = 1;
 	pt->writable = 1;
@@ -91,7 +82,7 @@ bool proc_clone(tProc *p) {
 
 	/* we have to write to the page-table */
 	paging_map(PAGE_TABLE_AREA,&mapAreaFrame,1,PG_WRITABLE | PG_SUPERVISOR);
-	tlb_flush();
+	paging_flushTLB();
 	
 	/* clear new page-table */
 	memset((void*)PAGE_TABLE_AREA,0,PT_ENTRY_COUNT);
@@ -114,8 +105,7 @@ bool proc_clone(tProc *p) {
 			pd[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo,false);
 	
 	/* exchange page-dir */
-	/* TODO clean up the tlb-functions */
-	tlb_refresh(PAGE_DIR_TMP_AREA);
+	paging_exchangePDir(pdirFrame << PAGE_SIZE_SHIFT);
 	
 	/* map pages for text to the frames of the old process */
 	paging_map(0,(u32*)TMPMAP_PTS_START,procs[pi].textPages,0);
@@ -143,13 +133,12 @@ bool proc_clone(tProc *p) {
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
 	
 	/* change back to the original page-dir */
-	/* TODO clean up the tlb-functions */
-	paging_enable(procs[pi].physPDirAddr);
+	paging_exchangePDir(procs[pi].physPDirAddr);
 	
 	/* remove the temp-mappings */
 	paging_unmap(PAGE_TABLE_AREA,1);
 	paging_unmap(PAGE_DIR_TMP_AREA,1);
-	tlb_flush();
+	paging_flushTLB();
 
 	/*vid_printf("========= OLD PAGE TABLE =========\n");
 	dbg_printPageDir();*/

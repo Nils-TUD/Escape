@@ -112,16 +112,16 @@ extern tPDEntry proc0PD[];
 void paging_init(void);
 
 /**
- * Assembler routine to enable paging
- * 
- * @param pageDir the pointer to the page-directory
- */
-extern void paging_enable(tPDEntry *pageDir);
-
-/**
  * Assembler routine to flush the TLB
  */
-extern void tlb_flush(void);
+extern void paging_flushTLB(void);
+
+/**
+ * Assembler routine to exchange the page-directory to the given one
+ * 
+ * @param physAddr the physical address of the page-directory
+ */
+extern void paging_exchangePDir(u32 physAddr);
 
 /**
  * Maps the page-table for the given virtual address to <frame> in the mapped

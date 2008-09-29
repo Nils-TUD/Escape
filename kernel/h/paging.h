@@ -23,16 +23,19 @@
 /* the start of the mapped page-tables area */
 #define MAPPED_PTS_START	(KERNEL_AREA_V_ADDR + 0x1000000)
 /* the start of the temporary mapped page-tables area */
-/*#define TMPMAP_PTS_START	(MAPPED_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))*/
+#define TMPMAP_PTS_START	(MAPPED_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
 
 /* page-directories in virtual memory */
 #define PAGE_DIR_AREA		(MAPPED_PTS_START - PAGE_SIZE)
 /* needed for building a new page-dir */
 #define PAGE_DIR_TMP_AREA	(PAGE_DIR_AREA - PAGE_SIZE)
+/* area for a page-table */
+#define PAGE_TABLE_AREA		(PAGE_DIR_TMP_AREA - PAGE_SIZE)
 
 /* flags for paging_map() */
 #define PG_WRITABLE		1
 #define PG_SUPERVISOR	2
+#define PG_COPYONWRITE	4
 
 /* converts a virtual address to the page-directory-index for that address */
 #define ADDR_TO_PDINDEX(addr) ((u32)(addr) / PAGE_SIZE / PT_ENTRY_COUNT)
@@ -66,7 +69,7 @@ typedef struct {
 	/* can be used by the OS */
 						: 3,
 	/* the physical address of the page-table */
-	ptAddress			: 20;
+	ptFrameNo			: 20;
 } tPDEntry;
 
 /* represents a page-table-entry */
@@ -91,8 +94,11 @@ typedef struct {
 	 * it's cache if CR3 is reset. Note, that the page global enable bit in CR4 must be set
 	 * to enable this feature. */
 	global				: 1,
-	/* can be used by the OS */
-						: 3,
+	/* 3 Bits for the OS */
+	/* Indicates wether this page is currently readonly, shared with another process and should
+	 * be copied as soon as the user writes to it */
+	copyOnWrite			: 1,
+						: 2,
 	/* the physical address of the page */
 	frameNumber			: 20;
 } tPTEntry;
@@ -104,6 +110,39 @@ extern tPDEntry proc0PD[];
  * Inits the paging. Sets up the page-dir and page-tables for the kernel and enables paging
  */
 void paging_init(void);
+
+/**
+ * Assembler routine to enable paging
+ * 
+ * @param pageDir the pointer to the page-directory
+ */
+extern void paging_enable(tPDEntry *pageDir);
+
+/**
+ * Assembler routine to flush the TLB
+ */
+extern void tlb_flush(void);
+
+/**
+ * Maps the page-table for the given virtual address to <frame> in the mapped
+ * page-tables area.
+ * 
+ * @param pt the page-table for the mapping
+ * @param virtual the virtual address
+ * @param frame the frame-number
+ * @param flush flush the TLB?
+ */
+void paging_mapPageTable(tPTEntry* pt,u32 virtual,u32 frame,bool flush);
+
+/**
+ * Unmaps the page-table for the given virtual address to <frame> out of the mapped
+ * page-tables area.
+ * 
+ * @param pt the page-table for the mapping
+ * @param virtual the virtual address
+ * @param flush flush the TLB?
+ */
+void paging_unmapPageTable(tPTEntry* pt,u32 virtual,bool flush);
 
 /**
  * Counts the number of pages that are currently present in the given page-directory
@@ -121,7 +160,8 @@ u32 paging_getPageCount(void);
  * @panic if there is not enough memory to get a frame for a page-table
  * 
  * @param virtual the virtual start-address
- * @param frames an array with <count> elements which contains the frame-numbers to use
+ * @param frames an array with <count> elements which contains the frame-numbers to use.
+ * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
  */

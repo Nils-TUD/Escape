@@ -69,6 +69,8 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	test_paging();
 #endif
 	
+	proc_clone(procs + 1);
+	
 	/* jetzt wo wir schon im Kernel drin sind, wollen wir auch nicht mehr raus ;) */
 	while (1);
 	return 0;

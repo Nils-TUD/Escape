@@ -25,57 +25,6 @@ tPTEntry mapPT[PAGE_SIZE / sizeof(tPTEntry)] __attribute__ ((aligned (PAGE_SIZE)
 tPTEntry pdirPT[PAGE_SIZE / sizeof(tPTEntry)] __attribute__ ((aligned (PAGE_SIZE)));
 
 /**
- * Assembler routine to enable paging
- * 
- * @param pageDir the pointer to the page-directory
- */
-extern void paging_enable(tPDEntry *pageDir);
-
-/**
- * Assembler routine to flush the TLB
- */
-extern void tlb_flush(void);
-
-/**
- * Maps the page-table for the given virtual address to <frame> in the mapped
- * page-tables area.
- * 
- * @param virtual the virtual address
- * @param frame the frame-number
- * @param flush flush the TLB?
- */
-static void paging_mapPageTable(u32 virtual,u32 frame,bool flush) {
-	u32 addr = ADDR_TO_MAPPED(virtual);
-	tPTEntry* pt = (tPTEntry*)(mapPT + ADDR_TO_PTINDEX(addr));
-	pt->frameNumber = frame;
-	pt->present = 1;
-	pt->writable = 1;
-	
-	/* TODO necessary? */
-	if(flush) {
-		tlb_flush();
-	}
-}
-
-/**
- * Unmaps the page-table for the given virtual address to <frame> out of the mapped
- * page-tables area.
- * 
- * @param virtual the virtual address
- * @param flush flush the TLB?
- */
-static void paging_unmapPageTable(u32 virtual,bool flush) {
-	u32 addr = ADDR_TO_MAPPED(virtual);
-	tPTEntry* pt = (tPTEntry*)(mapPT + ADDR_TO_PTINDEX(addr));
-	pt->present = 0;
-	
-	/* TODO necessary? */
-	if(flush) {
-		tlb_flush();
-	}
-}
-
-/**
  * Checks wether the given page-table is empty
  * 
  * @param pt the pointer to the first entry of the page-table
@@ -132,13 +81,13 @@ void paging_init(void) {
 
 	/* insert page-table in the page-directory */
 	pde = (tPDEntry*)(proc0PD + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR));
-	pde->ptAddress = (u32)pt >> PAGE_SIZE_SHIFT;
+	pde->ptFrameNo = (u32)pt >> PAGE_SIZE_SHIFT;
 	pde->present = 1;
 	pde->writable = 1;
 	
 	/* map it at 0x0, too, because we need it until we've "corrected" our GDT */
 	pde = (tPDEntry*)proc0PD;
-	pde->ptAddress = (u32)pt >> PAGE_SIZE_SHIFT;
+	pde->ptFrameNo = (u32)pt >> PAGE_SIZE_SHIFT;
 	pde->present = 1;
 	pde->writable = 1;
 	
@@ -147,7 +96,7 @@ void paging_init(void) {
 	
 	/* build pd-entry for pdir pt */
 	pde = (tPDEntry*)(proc0PD + ADDR_TO_PDINDEX(PAGE_DIR_AREA));
-	pde->ptAddress = (u32)pdpt >> PAGE_SIZE_SHIFT;
+	pde->ptFrameNo = (u32)pdpt >> PAGE_SIZE_SHIFT;
 	pde->present = 1;
 	pde->writable = 1;
 	
@@ -162,17 +111,41 @@ void paging_init(void) {
 	
 	/* build pd-entry for map pt */
 	pde = (tPDEntry*)(proc0PD + ADDR_TO_PDINDEX(MAPPED_PTS_START));
-	pde->ptAddress = (u32)mpt >> PAGE_SIZE_SHIFT;
+	pde->ptFrameNo = (u32)mpt >> PAGE_SIZE_SHIFT;
 	pde->present = 1;
 	pde->writable = 1;
 	
 	/* map kernel, page-dir and ourself :) */
-	paging_mapPageTable(KERNEL_AREA_V_ADDR,(u32)pt >> PAGE_SIZE_SHIFT,false);
-	paging_mapPageTable(PAGE_DIR_AREA,(u32)pdpt >> PAGE_SIZE_SHIFT,false);
-	paging_mapPageTable(MAPPED_PTS_START,(u32)mpt >> PAGE_SIZE_SHIFT,false);
+	paging_mapPageTable(mapPT,KERNEL_AREA_V_ADDR,(u32)pt >> PAGE_SIZE_SHIFT,false);
+	paging_mapPageTable(mapPT,PAGE_DIR_AREA,(u32)pdpt >> PAGE_SIZE_SHIFT,false);
+	paging_mapPageTable(mapPT,MAPPED_PTS_START,(u32)mpt >> PAGE_SIZE_SHIFT,false);
 	
 	/* now enable paging */
 	paging_enable(pd);
+}
+
+void paging_mapPageTable(tPTEntry* pt,u32 virtual,u32 frame,bool flush) {
+	u32 addr = ADDR_TO_MAPPED(virtual);
+	pt = (tPTEntry*)(pt + ADDR_TO_PTINDEX(addr));
+	pt->frameNumber = frame;
+	pt->present = 1;
+	pt->writable = 1;
+	
+	/* TODO necessary? */
+	if(flush) {
+		tlb_flush();
+	}
+}
+
+void paging_unmapPageTable(tPTEntry* pt,u32 virtual,bool flush) {
+	u32 addr = ADDR_TO_MAPPED(virtual);
+	pt = (tPTEntry*)(pt + ADDR_TO_PTINDEX(addr));
+	pt->present = 0;
+	
+	/* TODO necessary? */
+	if(flush) {
+		tlb_flush();
+	}
 }
 
 u32 paging_getPageCount(void) {
@@ -206,13 +179,13 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
 				panic("Not enough memory");
 			}
 			
-			pd->ptAddress = frame;
+			pd->ptFrameNo = frame;
 			pd->present = 1;
 			/* TODO always writable? */
 			pd->writable = 1;
 			
 			/* map the page-table because we need to write to it */
-			paging_mapPageTable(virtual,frame,true);
+			paging_mapPageTable(mapPT,virtual,frame,true);
 			
 			/* clear frame (ensure that we start at the beginning of the frame) */
 			memset((void*)ADDR_TO_MAPPED(virtual & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),
@@ -221,14 +194,19 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
 		
 		/* setup page */
 		pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
-		pt->frameNumber = *frames;
+		if(frames == NULL) {
+			pt->frameNumber = mm_allocateFrame(MM_DEF);
+		}
+		else {
+			pt->frameNumber = *frames++;
+		}
 		pt->present = 1;
 		pt->writable = flags & PG_WRITABLE;
 		pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0;
+		pt->copyOnWrite = flags & PG_COPYONWRITE;
 		
 		/* to next page */
 		virtual += PAGE_SIZE;
-		frames++;
 	}
 }
 
@@ -251,9 +229,9 @@ void paging_unmap(u32 virtual,u32 count) {
 				pdir = (tPDEntry*)PAGE_DIR_AREA;
 				/* so remove it from page-dir and free the frame for it */
 				pdir[pdIndex].present = 0;
-				mm_freeFrame(pdir[pdIndex].ptAddress,MM_DEF);
+				mm_freeFrame(pdir[pdIndex].ptFrameNo,MM_DEF);
 				/* unmap the page-table */
-				paging_unmapPageTable(virtual,true);
+				paging_unmapPageTable(mapPT,virtual,true);
 			}
 		}
 

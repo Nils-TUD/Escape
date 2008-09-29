@@ -18,8 +18,8 @@ typedef struct {
 	u16 pid;
 	/* parent process id */
 	u16 parentPid;
-	/* the page-directory of this process */
-	tPDEntry *pageDir;
+	/* the physical address for the page-directory of this process */
+	u32 physPDirAddr;
 	/* the number of pages per segment */
 	u32 textPages;
 	u32 dataPages;
@@ -36,5 +36,14 @@ extern u32 pi;
  * Initializes the process-management
  */
 void proc_init(void);
+
+/**
+ * Clones the current process into the given one. The function returns false if there is
+ * not enough memory.
+ * 
+ * @param p the target-process
+ * @return true if successfull
+ */
+bool proc_clone(tProc *p);
 
 #endif /*PROC_H_*/

@@ -11,11 +11,9 @@
 #include "paging.h"
 
 /**
- * Prints the given page-directory
- * 
- * @param pagedir the page-directory
+ * Prints the current page-directory
  */
-void dbg_printPageDir(tPDEntry *pagedir);
+void dbg_printPageDir(void);
 
 /**
  * Prints the given page-table

@@ -55,6 +55,7 @@ bool proc_clone(tProc *p) {
 	 * lies in the same page-table */
 	paging_map(PAGE_DIR_TMP_AREA,&pdirFrame,1,PG_WRITABLE | PG_SUPERVISOR);
 	/* we have to write to the temp-area */
+	/* TODO optimize! */
 	paging_flushTLB();
 	
 	pd = (tPDEntry*)PAGE_DIR_AREA;
@@ -75,6 +76,7 @@ bool proc_clone(tProc *p) {
 	
 	/* we have to write to the page-table */
 	paging_map(PAGE_TABLE_AREA,&pdirAreaFrame,1,PG_WRITABLE | PG_SUPERVISOR);
+	/* TODO optimize! */
 	paging_flushTLB();
 	
 	/* clear new page-table */
@@ -91,6 +93,7 @@ bool proc_clone(tProc *p) {
 
 	/* we have to write to the page-table */
 	paging_map(PAGE_TABLE_AREA,&mapAreaFrame,1,PG_WRITABLE | PG_SUPERVISOR);
+	/* TODO optimize! */
 	paging_flushTLB();
 	
 	/* clear new page-table */
@@ -147,6 +150,7 @@ bool proc_clone(tProc *p) {
 	/* remove the temp-mappings */
 	paging_unmap(PAGE_TABLE_AREA,1);
 	paging_unmap(PAGE_DIR_TMP_AREA,1);
+	/* TODO optimize! */
 	paging_flushTLB();
 
 	/*vid_printf("========= OLD PAGE TABLE =========\n");
@@ -189,6 +193,7 @@ bool proc_changeSize(s32 change,chgArea area) {
 		paging_map(addr,NULL,change,PG_WRITABLE);
 		
 		/* now clear the memory */
+		/* TODO optimize! */
 		paging_flushTLB();
 		while(change-- > 0) {
 			memset((void*)addr,0,PT_ENTRY_COUNT);
@@ -211,6 +216,7 @@ bool proc_changeSize(s32 change,chgArea area) {
 		/* now unmap the area and - maybe - free page-tables */
 		paging_unmap(addr,-change);
 		/* finally, ensure that the TLB contains no invalid entries */
+		/* TODO optimize! */
 		paging_flushTLB();
 	}
 	

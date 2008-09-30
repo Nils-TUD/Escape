@@ -14,6 +14,7 @@
 #include "../h/proc.h"
 #include "../h/intrpt.h"
 #include "../h/debug.h"
+#include "../h/cpu.h"
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table
@@ -28,6 +29,12 @@
 	0x000C8000 - 0x000EFFFF : BIOS shadow area
 	0x000F0000 - 0x000FFFFF : System BIOS 
 */
+
+/*
+ * Important information:
+ * 	- EFLAGS-register:		see intel manual, vol3a, page 66
+ * 	- Control-Registers:	see intel manual, vol3a, page 71
+ */
 
 u32 main(tMultiBoot *mbp,u32 magic) {
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
@@ -45,23 +52,29 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	
 	printMultiBootInfo();
 	
+	dbg_startTimer();
 	vid_printf("Initializing memory-management...");
 	mm_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
+	dbg_stopTimer();
 
 	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),
 			paging_getPageCount());
-	
+
+	dbg_startTimer();
 	vid_printf("Initializing process-management...");
 	proc_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
-	
+	dbg_stopTimer();
+
+	dbg_startTimer();
 	vid_printf("Initializing IDT...");
 	intrpt_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
+	dbg_stopTimer();
 	
 #ifdef TEST_MM
 	test_mm();
@@ -73,7 +86,6 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	test_proc();
 #endif
 	
-	/* jetzt wo wir schon im Kernel drin sind, wollen wir auch nicht mehr raus ;) */
-	while (1);
+	while(1);
 	return 0;
 }

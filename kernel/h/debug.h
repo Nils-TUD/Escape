@@ -12,6 +12,16 @@
 #include "proc.h"
 
 /**
+ * Starts the timer
+ */
+void dbg_startTimer(void);
+
+/**
+ * Stops the timer and prints the number of clock-cycles done until startTimer()
+ */
+void dbg_stopTimer(void);
+
+/**
  * Prints the given process
  * 
  * @param p the pointer to the process

@@ -8,6 +8,7 @@
 #include "../h/video.h"
 #include "../h/util.h"
 #include "../h/keyboard.h"
+#include "../h/cpu.h"
 
 #define IDT_COUNT		256
 /* the privilege level */
@@ -741,6 +742,10 @@ void intrpt_handler(tIntrptStackFrame stack) {
 		
 		case IRQ_TIMER:
 			/* TODO schedule */
+			break;
+		
+		case EX_PAGE_FAULT:
+			vid_printf("Page fault: address=0x%08x\n",cpu_getCR2());
 			break;
 		
 		default:

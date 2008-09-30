@@ -9,16 +9,6 @@
 
 #include "../h/common.h"
 
-typedef s8 *va_list;
-
-#define va_start(list, start) \
-	((void)((list) = (sizeof(start)<4 ? \
-	(char *)((s32 *)&(start)+1) : (s8*)(&(start)+1))))
-
-#define va_arg(list, mode) *(mode *)(&(list += 4)[-4])
-
-#define va_end(list) ((void)0)
-
 typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} tColor;
 
 /**

@@ -7,6 +7,7 @@
 #include "../h/video.h"
 #include "../h/common.h"
 #include "../h/util.h"
+#include <stdarg.h>
 
 #define COL_WOB 0x07				/* white on black */
 #define VIDEO_BASE 0xC00B8000
@@ -284,7 +285,7 @@ void vid_printf(s8 *fmt,...) {
 				break;
 			/* character */
 			case 'c':
-				b = va_arg(ap, s8);
+				b = (s8)va_arg(ap, u32);
 				vid_putchar(b);
 				break;
 			/* all other */

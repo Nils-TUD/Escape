@@ -9,6 +9,19 @@
 #include "../h/video.h"
 #include "../h/paging.h"
 #include "../h/proc.h"
+#include "../h/cpu.h"
+
+static u64 start = 0;
+
+void dbg_startTimer(void) {
+	start = cpu_rdtsc();
+}
+
+void dbg_stopTimer(void) {
+	u64 diff = cpu_rdtsc() - start;
+	u32 *ptr = &diff;
+	vid_printf("Clock cycles: 0x%08x%08x\n",*(ptr + 1),*ptr);
+}
 
 void dbg_printProcess(tProc *p) {
 	vid_printf("process @ 0x%08x:\n",p);

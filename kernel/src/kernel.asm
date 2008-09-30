@@ -19,6 +19,8 @@
 [global paging_enable]
 [global paging_flushTLB]
 [global paging_exchangePDir]
+[global cpu_rdtsc]
+[global cpu_getCR2]
 
 ; imports
 [extern main] ; our C kernel main
@@ -117,6 +119,16 @@ outb:
 inb:
 	mov		dx,[esp+4]					; load port
 	in		al,dx								; read from port
+	ret
+
+; u64 cpu_rdtsc(void);
+cpu_rdtsc:
+	rdtsc
+	ret
+
+; u32 cpu_getCR2(void);
+cpu_getCR2:
+	mov		eax,cr2
 	ret
 
 ; void paging_enable(void);

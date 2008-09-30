@@ -10,7 +10,7 @@
 #include "common.h"
 #include "paging.h"
 
-#define TEST_PROC
+/*#define TEST_PROC*/
 
 /* max number of processes */
 #define PROC_COUNT 1024

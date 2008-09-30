@@ -95,7 +95,7 @@ typedef struct {
 	pageWriteThrough	: 1,
 	/* >= 80486 only. if enabled the CPU will not put anything from the page in the cache */
 	pageCacheDisable	: 1,
-	/* enabled if the page-table has been accessed */
+	/* enabled if the page-table has been accessed (has to be cleared by the OS!) */
 	accessed			: 1,
 	/* 1 ignored bit */
 						: 1,
@@ -121,15 +121,15 @@ typedef struct {
 	pageWriteThrough	: 1,
 	/* >= 80486 only. if enabled the CPU will not put anything from the page in the cache */
 	pageCacheDisable	: 1,
-	/* enabled if the page has been accessed */
+	/* enabled if the page has been accessed (has to be cleared by the OS!) */
 	accessed			: 1,
-	/* enabled if the page can not be removed currently */
+	/* enabled if the page can not be removed currently (has to be cleared by the OS!) */
 	dirty				: 1,
 	/* 1 ignored bit */
 						: 1,
 	/* The Global, or 'G' above, flag, if set, prevents the TLB from updating the address in
 	 * it's cache if CR3 is reset. Note, that the page global enable bit in CR4 must be set
-	 * to enable this feature. */
+	 * to enable this feature. (>= pentium pro) */
 	global				: 1,
 	/* 3 Bits for the OS */
 	/* Indicates wether this page is currently readonly, shared with another process and should

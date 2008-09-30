@@ -4,7 +4,7 @@
 ; @copyright	2008 Nils Asmussen
 ;
 
-[BITS 32]      ; 32 bit code
+[BITS 32]      							; 32 bit code
 
 ; exports
 [global loader]
@@ -23,7 +23,7 @@
 [global cpu_getCR2]
 
 ; imports
-[extern main] ; our C kernel main
+[extern main]
 [extern intrpt_handler]
 
 ; Multiboot constants
@@ -37,9 +37,9 @@ MULTIBOOT_CHECKSUM	equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 %macro BUILD_DEF_ISR 1
 	[global isr%1]
 	isr%1:
-	cli									; disable interrupts
-	push	0							; error-code (no error here)
-	push	dword %1			; the interrupt-number
+	cli												; disable interrupts
+	push	0										; error-code (no error here)
+	push	dword %1						; the interrupt-number
 	jmp		isrCommon
 %endmacro
 
@@ -47,9 +47,9 @@ MULTIBOOT_CHECKSUM	equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 %macro BUILD_ERR_ISR 1
 	[global isr%1]
 	isr%1:
-	cli									; disable interrupts
+	cli												; disable interrupts
 	; the error-code has already been pushed
-	push	dword %1			; the interrupt-number
+	push	dword %1						; the interrupt-number
 	jmp		isrCommon
 %endmacro
 
@@ -63,7 +63,7 @@ multiboot_header:
 
 ; the kernel entry point
 loader:
-	; here's the trick: we load a GDT with a base address
+	; here is the trick: we load a GDT with a base address
 	; of 0x40000000 for the code (0x08) and data (0x10) segments
 	lgdt	[setupGDT]
 	mov		ax,0x10
@@ -80,11 +80,11 @@ higherhalf:
 	; from now the CPU will translate automatically every address
 	; by adding the base 0x40000000
 	
-	mov		esp, sys_stack ; set up a new stack for our kernel
+	mov		esp, sys_stack			; set up a new stack for our kernel
 
-	push	eax									; Multiboot Magicnumber auf den Stack legen
-  push	ebx									; Adresse der Multiboot-Structure auf den Stack legen
-  call	main ; jump to our C kernel ;)
+	push	eax									; push Multiboot Magicnumber onto the stack
+  push	ebx									; push address of Multiboot-Structure
+  call	main								; jump to our C kernel ;)
 
 	; just a simple protection...
 	jmp		$
@@ -442,6 +442,9 @@ isrCommon:
 	; call c-routine
 	push	esp									; pointer to the "beginning" of the stack
 	call	intrpt_handler
+	
+	; restore stack-pointer
+	;pop		esp
 	
 	; remove argument from stack
 	add		esp,4

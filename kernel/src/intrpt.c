@@ -734,7 +734,22 @@ void intrpt_init(void) {
 	intrpt_enable();
 }
 
+#include <stdarg.h>
+
+static u32 varargs(char* ptr,...) {
+	va_list ap;
+	u32 x;
+	
+	va_start(ap,ptr);
+	x = va_arg(ap,u32);
+	va_end(ap);
+	return x;
+}
+
 void intrpt_handler(tIntrptStackFrame stack) {
+	/*vid_printf("HUHU\n",0x123);*/
+	u32 res = varargs("bla",0x123);
+#if 0
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
 			kbd_handleIntrpt();
@@ -745,14 +760,17 @@ void intrpt_handler(tIntrptStackFrame stack) {
 			break;
 		
 		case EX_PAGE_FAULT:
-			vid_printf("Page fault: address=0x%08x\n",cpu_getCR2());
+			vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
 			break;
 		
 		default:
-			vid_printf("Got interrupt %d (%s)\n",stack.intrptNo,intrpt_no2Name(stack.intrptNo));
+			vid_printf("Got interrupt %d (%s) @ 0x%x\n",stack.intrptNo,
+					intrpt_no2Name(stack.intrptNo),stack.eip);
 			break;
 	}
 	
 	/* send EOI to PIC */
+	/*vid_printf("HAHA\n");*/
 	intrpt_eoi(stack.intrptNo);
+#endif
 }

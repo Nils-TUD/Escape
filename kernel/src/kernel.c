@@ -34,6 +34,10 @@
  * Important information:
  * 	- EFLAGS-register:		see intel manual, vol3a, page 66
  * 	- Control-Registers:	see intel manual, vol3a, page 71
+ * 	- Segment-descriptors:	see intel manual, vol3a, page 101
+ * 	- pt- and pd-entries:	see intel manual, vol3a, page 116
+ * 	- pmode exceptions:		see intel manual, vol3a, page 191
+ * 	- idt-descriptors:		see intel manual, vol3a, page 202
  */
 
 u32 main(tMultiBoot *mbp,u32 magic) {
@@ -75,6 +79,50 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
+
+#if 0
+esp = 0xc0110f8c
+ebp = 0xc0110fe8
+0xc01010a0 <isrCommon+14>:	call   0xc0101520 <intrpt_handler>
+
+esp = 0xc0110f88
+ebp = 0xc0110fe8
+0xc0101520 <intrpt_handler+0>:	push   %ebp
+
+esp = 0xc0110f84
+ebp = 0xc0110fe8
+0xc0101521 <intrpt_handler+1>:	mov    %esp,%ebp
+
+esp = 0xc0110f84
+ebp = 0xc0110f84
+0xc0101523 <intrpt_handler+3>:	movl   $0x123,0xc(%ebp)
+0xc010152a <intrpt_handler+10>:	movl   $0xc01052a4,0x8(%ebp)
+0xc0101531 <intrpt_handler+17>:	pop    %ebp
+
+esp = 0xc0110f88
+ebp = 0xc0110fe8
+0xc0101532 <intrpt_handler+18>:	jmp    0xc0101510 <varargs>
+
+0xc0101510 <varargs+0>:	push   %ebp
+
+esp = 0xc0110f84
+ebp = 0xc0110fe8
+0xc0101511 <varargs+1>:	mov    %esp,%ebp
+
+esp = 0xc0110f84
+ebp = 0xc0110f84
+0xc0101513 <varargs+3>:	sub    $0x10,%esp
+0xc0101516 <varargs+6>:	mov    0xc(%ebp),%eax
+0xc0101519 <varargs+9>:	leave  
+
+esp = 0xc0110f88
+ebp = 0xc0110fe8
+0xc010151a <varargs+10>:	ret
+
+esp = 0xc0110f8c
+ebp = 0xc0110fe8
+#endif
+	
 	
 #ifdef TEST_MM
 	test_mm();
@@ -85,6 +133,8 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 #ifdef TEST_PROC
 	test_proc();
 #endif
+	
+	*(u32*)0x4000 = 1;
 	
 	while(1);
 	return 0;

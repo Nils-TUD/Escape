@@ -166,7 +166,7 @@
 
 /* the stack frame for the interrupt-handler */
 typedef struct {
-	u32 dummy;
+	u32 esp;
 	u32 es;
 	u32 ds;
 	u32 fs;
@@ -180,6 +180,9 @@ typedef struct {
 	u32 eax;
 	u32 intrptNo;
 	u32 errorCode;
+	u32 eip;
+	u32 cs;
+	u32 eflags;
 } __attribute__((packed)) tIntrptStackFrame;
 
 /**

@@ -9,6 +9,7 @@
 ; exports
 [global loader]
 [global gdt_flush]
+[global tss_load]
 [global outb]
 [global inb]
 [global KernelStart]
@@ -79,7 +80,7 @@ loader:
 higherhalf:
 	; from now the CPU will translate automatically every address
 	; by adding the base 0x40000000
-	
+
 	mov		esp, sys_stack			; set up a new stack for our kernel
 
 	push	eax									; push Multiboot Magicnumber onto the stack
@@ -89,11 +90,11 @@ higherhalf:
 	; just a simple protection...
 	jmp		$
 
-; void gdt_flush(tGDTDesc *gdt);
+; void gdt_flush(tGDTTable *gdt);
 gdt_flush:
 	mov		eax,[esp+4]					; load gdt-pointer into eax
 	lgdt	[eax]								; load gdt
-	
+
 	mov		eax,0x10						; set the value for the segment-registers
 	mov		ds,eax							; reload segments
 	mov		es,eax
@@ -103,6 +104,11 @@ gdt_flush:
 	jmp		0x08:gdt_flush_ljmp	; reload code-segment via far-jump
 gdt_flush_ljmp:
 	ret												; we're done
+
+; void tss_load(u16 gdtOffset);
+tss_load:
+	ltr		[esp+4]							; load tss
+	ret
 
 ; void halt(void);
 halt:
@@ -438,17 +444,14 @@ isrCommon:
 	push	fs
 	push	ds
 	push	es
-	
+
 	; call c-routine
 	push	esp									; pointer to the "beginning" of the stack
 	call	intrpt_handler
-	
-	; restore stack-pointer
-	;pop		esp
-	
+
 	; remove argument from stack
 	add		esp,4
-	
+
 	; restore registers
 	pop		es
 	pop		ds
@@ -461,10 +464,10 @@ isrCommon:
 	pop		ecx
 	pop		ebx
 	pop		eax
-	
+
 	; remove error-code and interrupt-number from stack
 	add		esp,8
-	
+
 	; enable interrupts and return
 	sti
 	iret
@@ -482,10 +485,10 @@ setupGDT:
 setupGDTEntries:
 	; null gate
 	dd 0,0
-	
+
 	; code selector 0x08: base 0x40000000, limit 0xFFFFFFFF, type 0x9A, granularity 0xCF
 	db 0xFF, 0xFF, 0, 0, 0, 10011010b, 11001111b, 0x40
-	
+
 	; data selector 0x10: base 0x40000000, limit 0xFFFFFFFF, type 0x92, granularity 0xCF
 	db 0xFF, 0xFF, 0, 0, 0, 10010010b, 11001111b, 0x40
 setupGDTEntriesEnd:

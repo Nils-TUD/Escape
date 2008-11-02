@@ -386,7 +386,7 @@ extern void isr255(void);
 
 /**
  * An assembler routine to load an IDT
- * 
+ *
  * @param idt the IDT to load
  */
 /*extern void idt_flush(tIDTPtr *idt);*/
@@ -408,11 +408,11 @@ static void intrpt_initPic(void)
 	/* continue */
 	outb(PIC_MASTER_DATA,4);
 	outb(PIC_SLAVE_DATA,2);
-	
+
 	/* we want to use 8086 mode */
 	outb(PIC_MASTER_DATA,ICW4_8086);
 	outb(PIC_SLAVE_DATA,ICW4_8086);
-	
+
 	/* enable all interrupts (set masks to 0) */
 	outb(PIC_MASTER_DATA,0x00);
 	outb(PIC_SLAVE_DATA,0x00);
@@ -420,7 +420,7 @@ static void intrpt_initPic(void)
 
 /**
  * Sets the IDT-entry for the given interrupt
- * 
+ *
  * @param number the interrupt-number
  * @param handler the ISR
  * @param dpl the privilege-level
@@ -436,7 +436,7 @@ static void intrpt_setIDT(u16 number,isr handler,u8 dpl) {
 
 /**
  * Sends EOI to the PIC, if necessary
- * 
+ *
  * @param intrptNo the interrupt-number
  */
 static void intrpt_eoi(u32 intrptNo) {
@@ -446,7 +446,7 @@ static void intrpt_eoi(u32 intrptNo) {
 	    	/* notify the slave */
 	        outb(PIC_SLAVE_CMD,PIC_EOI);
 	    }
-	    
+
 	    /* notify the master */
 	    outb(PIC_MASTER_CMD,PIC_EOI);
     }
@@ -456,7 +456,7 @@ s8 *intrpt_no2Name(u32 intrptNo) {
 	if(intrptNo >= 0 && intrptNo < (sizeof(intrptNo2Name) / sizeof(intrptNo2Name[0]))) {
 		return intrptNo2Name[intrptNo];
 	}
-	
+
 	return "Unknown interrupt";
 }
 
@@ -465,7 +465,7 @@ void intrpt_init(void) {
 	tIDTPtr idtPtr;
 	idtPtr.address = (u32)idt;
 	idtPtr.size = sizeof(idt) - 1;
-	
+
 	/* setup the idt */
 	intrpt_setIDT(0,isr0,IDT_DPL_KERNEL);
 	intrpt_setIDT(1,isr1,IDT_DPL_KERNEL);
@@ -723,54 +723,37 @@ void intrpt_init(void) {
 	intrpt_setIDT(253,isr253,IDT_DPL_KERNEL);
 	intrpt_setIDT(254,isr254,IDT_DPL_KERNEL);
 	intrpt_setIDT(255,isr255,IDT_DPL_KERNEL);
-	
+
 	/* now we can use our idt */
 	intrpt_loadidt(&idtPtr);
-	
+
 	/* now init the PIC */
 	intrpt_initPic();
-	
+
 	/* finally enable interrupts */
 	intrpt_enable();
 }
 
-#include <stdarg.h>
-
-static u32 varargs(char* ptr,...) {
-	va_list ap;
-	u32 x;
-	
-	va_start(ap,ptr);
-	x = va_arg(ap,u32);
-	va_end(ap);
-	return x;
-}
-
 void intrpt_handler(tIntrptStackFrame stack) {
-	/*vid_printf("HUHU\n",0x123);*/
-	u32 res = varargs("bla",0x123);
-#if 0
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
 			kbd_handleIntrpt();
 			break;
-		
+
 		case IRQ_TIMER:
 			/* TODO schedule */
 			break;
-		
+
 		case EX_PAGE_FAULT:
 			vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
 			break;
-		
+
 		default:
 			vid_printf("Got interrupt %d (%s) @ 0x%x\n",stack.intrptNo,
 					intrpt_no2Name(stack.intrptNo),stack.eip);
 			break;
 	}
-	
+
 	/* send EOI to PIC */
-	/*vid_printf("HAHA\n");*/
 	intrpt_eoi(stack.intrptNo);
-#endif
 }

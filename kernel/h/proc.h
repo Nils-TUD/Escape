@@ -45,7 +45,7 @@ void proc_init(void);
 /**
  * Clones the current process into the given one. The function returns false if there is
  * not enough memory.
- * 
+ *
  * @param p the target-process
  * @return true if successfull
  */
@@ -53,7 +53,7 @@ bool proc_clone(tProc *p);
 
 /**
  * Checks wether the given segment-sizes are valid
- * 
+ *
  * @param textPages the number of text-pages
  * @param dataPages the number of data-pages
  * @param stackPages the number of stack-pages
@@ -67,7 +67,7 @@ bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages);
  * will always be cleared.
  * If there is not enough memory the function returns false.
  * Note that the size of the current process (dataPages / stackPages) will be adjusted!
- * 
+ *
  * @param change the number of pages to add or remove
  * @param area the data or stack? (CHG_*)
  * @return true if successfull

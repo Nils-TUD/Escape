@@ -26,6 +26,7 @@
 ; imports
 [extern main]
 [extern intrpt_handler]
+[extern entryPoint]
 
 ; Multiboot constants
 MULTIBOOT_PAGE_ALIGN	equ 1<<0
@@ -86,6 +87,9 @@ higherhalf:
 	push	eax									; push Multiboot Magicnumber onto the stack
   push	ebx									; push address of Multiboot-Structure
   call	main								; jump to our C kernel ;)
+
+	add		esp,8								; remove args from stack
+	jmp		[entryPoint]				; continue at our loaded prog (TODO temporary!!)
 
 	; just a simple protection...
 	jmp		$

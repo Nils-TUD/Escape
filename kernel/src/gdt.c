@@ -8,6 +8,7 @@
 #include "../h/mm.h"
 #include "../h/video.h"
 #include "../h/util.h"
+#include "../h/paging.h"
 
 /* the GDT table */
 typedef struct {

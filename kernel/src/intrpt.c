@@ -734,6 +734,10 @@ void intrpt_init(void) {
 	intrpt_enable();
 }
 
+#define MAX_EX_COUNT 3
+static u32 exCount = 0;
+static u32 lastEx = 0xFFFFFFFF;
+
 void intrpt_handler(tIntrptStackFrame stack) {
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
@@ -741,12 +745,30 @@ void intrpt_handler(tIntrptStackFrame stack) {
 			break;
 
 		case IRQ_TIMER:
+			vid_printf("Timer interrupt...\n");
 			/* TODO schedule */
 			break;
 
-		case EX_PAGE_FAULT:
-			vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
-			break;
+		/* exceptions */
+		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
+			if(stack.intrptNo == EX_PAGE_FAULT) {
+				vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
+				break;
+			}
+
+			/* count consecutive occurrences */
+			if(lastEx == stack.intrptNo) {
+				exCount++;
+
+				/* stop here? */
+				if(exCount >= MAX_EX_COUNT)
+					panic("Got this exception %d times. Stopping here\n",exCount);
+			}
+			else {
+				exCount = 0;
+				lastEx = stack.intrptNo;
+			}
+			/* fall through */
 
 		default:
 			vid_printf("Got interrupt %d (%s) @ 0x%x\n",stack.intrptNo,

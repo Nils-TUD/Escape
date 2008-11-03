@@ -19,6 +19,7 @@ typedef unsigned long long u64;
 
 typedef u8 bool;
 typedef s8 *string;
+typedef u32 size_t;
 
 /* TODO use <stddef.h>? */
 #define NULL (void*)0

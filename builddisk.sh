@@ -3,8 +3,11 @@ BUILD=build
 DISK=$BUILD/disk.img
 DISKMOUNT=disk
 BINNAME=kernel.bin
-BIN=$BUILD/$BINNAME
+KERNELBIN=$BUILD/$BINNAME
 OSTITLE=hrniels-OS
+USERTITLE=Task1
+USERNAME=user_task1.bin
+USERBIN=$BUILD/$USERNAME
 
 sudo umount $DISKMOUNT || true;
 dd if=/dev/zero of=$DISK bs=1024 count=1440;
@@ -19,7 +22,12 @@ echo '' >> $DISKMOUNT/grub/menu.lst;
 echo "title $OSTITLE" >> $DISKMOUNT/grub/menu.lst;
 echo "kernel /$BINNAME" >> $DISKMOUNT/grub/menu.lst;
 echo 'root (fd0)' >> $DISKMOUNT/grub/menu.lst;
+echo '' >> $DISKMOUNT/grub/menu.lst;
+echo "title $USERTITLE" >> $DISKMOUNT/grub/menu.lst;
+echo "kernel /$USERNAME" >> $DISKMOUNT/grub/menu.lst;
+echo 'root (fd0)' >> $DISKMOUNT/grub/menu.lst;
 echo -n -e "device (fd0) $DISK\nroot (fd0)\nsetup (fd0)\nquit\n" | /usr/sbin/grub;
 make all;
-cp $BIN $DISKMOUNT;
+cp $KERNELBIN $DISKMOUNT;
+cp $USERBIN $DISKMOUNT;
 sudo umount $DISKMOUNT;

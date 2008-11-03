@@ -15,6 +15,21 @@
 /* max number of processes */
 #define PROC_COUNT 1024
 
+/* the process-state which will be saved for context-switching */
+typedef struct {
+	u32 esp;
+	u32 edi;
+	u32 esi;
+	u32 ebp;
+	u32 edx;
+	u32 ecx;
+	u32 ebx;
+	u32 eax;
+	u32 eip;
+	u32 eflags;
+} tProcSave;
+
+/* represents a process */
 typedef struct {
 	/* process id (2^16 processes should be enough :)) */
 	u16 pid;
@@ -26,11 +41,13 @@ typedef struct {
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
+	tProcSave save;
 } tProc;
 
 /* the area for proc_changeSize() */
 typedef enum {CHG_DATA,CHG_STACK} chgArea;
 
+/* all processes */
 extern tProc procs[PROC_COUNT];
 
 /* the current process (index in procs) */

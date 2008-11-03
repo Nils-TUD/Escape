@@ -15,6 +15,7 @@
 #include "../h/intrpt.h"
 #include "../h/debug.h"
 #include "../h/cpu.h"
+#include "../h/elf.h"
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table
@@ -39,6 +40,19 @@
  * 	- pmode exceptions:		see intel manual, vol3a, page 191
  * 	- idt-descriptors:		see intel manual, vol3a, page 202
  */
+
+static u8 task1[] = {
+	#include "../../build/user_task1.dump"
+};
+
+/*
+ * load the given elf program, with all its segments.
+ * 2 segments are expected. one for text, and the other for data.
+ * return 0 for success, nonzero for fail.
+ */
+s32 loadElfProg(u8 *code);
+
+u32 entryPoint;
 
 u32 main(tMultiBoot *mbp,u32 magic) {
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
@@ -93,6 +107,69 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	test_proc();
 #endif
 
-	while(1);
+	loadElfProg(task1) == 0 ? vid_printf("SUCCESS\n") : vid_printf("FAILED\n");
+
+	/*while(1);*/
+	return 0;
+}
+
+s32 loadElfProg(u8 *code) {
+	u32 seenLoadSegments = 0;
+
+	u32 j;
+	u8 const *datPtr;
+	Elf32_Ehdr *eheader = (Elf32_Ehdr*)code;
+	Elf32_Phdr *pheader = NULL;
+
+	entryPoint = (u32)eheader->e_entry;
+
+	if(*(u32*)eheader->e_ident != *(u32*)ELFMAG) {
+		vid_printf("Error: Invalid magic-number\n");
+		return -1;
+	}
+
+	procs[pi].textPages = 0;
+	procs[pi].dataPages = 0;
+
+	/* load the LOAD segments. */
+	for(datPtr = (u8 const*)(code + eheader->e_phoff), j = 0; j < eheader->e_phnum;
+		datPtr += eheader->e_phentsize, j++) {
+		pheader = (Elf32_Phdr*)datPtr;
+		if(pheader->p_type == PT_LOAD) {
+			u32 pages;
+			u8 const* segmentSrc;
+			segmentSrc = code + pheader->p_offset;
+
+			/* get to know the lowest virtual address. must be 0x0.  */
+			if(seenLoadSegments == 0) {
+				if(pheader->p_vaddr != 0) {
+					vid_printf("Error: p_vaddr != 0\n");
+					return -1;
+				}
+			}
+			else if(seenLoadSegments == 2) {
+				/* uh oh a third LOAD segment. that's not allowed
+				* indeed */
+				vid_printf("Error: too many LOAD segments\n");
+				return -1;
+			}
+
+			/* Note that we put everything in the data-segment here because otherwise we would
+			* steal the text from the parent-process after fork, exec & exit */
+			pages = BYTES_2_PAGES(pheader->p_memsz);
+			if(seenLoadSegments != 0) {
+				if(pheader->p_vaddr & (0x1000-1))
+					pages++;
+			}
+
+			/* get more space for the data area. */
+			proc_changeSize(pages,CHG_DATA);
+
+			/* copy the data, and zero remaining bytes */
+			memcpy((void*)pheader->p_vaddr, (void*)segmentSrc, pheader->p_filesz);
+			memset((void*)(pheader->p_vaddr + pheader->p_filesz), 0, pheader->p_memsz - pheader->p_filesz);
+			++seenLoadSegments;
+		}
+	}
 	return 0;
 }

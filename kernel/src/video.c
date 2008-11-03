@@ -114,14 +114,14 @@ static void vid_move(void) {
 void vid_putchar(s8 c) {
 	u32 i;
 	vid_move();
-	
+
 	/* write to bochs/qemu console (\r not necessary here) */
 	if(c != '\r') {
 		outb(0xe9,c);
 	    outb(0x3f8,c);
 	    while((inb(0x3fd) & 0x20) == 0);
 	}
-    
+
 	if(c == '\n') {
 		/* to next line */
 		video += COLS * 2;
@@ -181,7 +181,7 @@ void vid_printn(s32 n) {
 		vid_putchar('-');
 		n = -n;
 	}
-	
+
 	if(n >= 10) {
 		vid_printn(n / 10);
 	}
@@ -204,30 +204,34 @@ u8 vid_getnwidth(s32 n) {
 
 void vid_printf(s8 *fmt,...) {
 	va_list ap;
+	va_start(ap, fmt);
+	vid_vprintf(fmt,ap);
+	va_end(ap);
+}
+
+void vid_vprintf(s8 *fmt,va_list ap) {
 	s8 c,b,*s,oldcolor = color,pad,padchar;
 	s32 n;
 	u32 u;
 	u8 width,base;
-	
-	va_start(ap, fmt);
+
 	while (1) {
 		/* wait for a '%' */
 		while ((c = *fmt++) != '%') {
 			/* finished? */
 			if (c == '\0') {
-				va_end(ap);
 				return;
 			}
 			vid_putchar(c);
 		}
-		
+
 		/* color given? */
 		if(*fmt == ':') {
 			color = ((*(++fmt) - '0') & 0xF) << 4;
 			color |= (*(++fmt) - '0') & 0xF;
 			fmt++;
 		}
-		
+
 		/* read pad-character */
 		pad = 0;
 		if(*fmt == '0') {
@@ -237,13 +241,13 @@ void vid_printf(s8 *fmt,...) {
 		else {
 			padchar = ' ';
 		}
-		
+
 		/* read pad-width */
 		while(*fmt >= '0' && *fmt <= '9') {
 			pad = pad * 10 + (*fmt - '0');
 			fmt++;
 		}
-		
+
 		/* determine format */
 		switch(c = *fmt++) {
 			/* signed integer */
@@ -293,7 +297,7 @@ void vid_printf(s8 *fmt,...) {
 				vid_putchar(c);
 				break;
 		}
-		
+
 		/* restore color */
 		color = oldcolor;
 	}

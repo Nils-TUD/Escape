@@ -23,10 +23,17 @@ void dbg_stopTimer(void);
 
 /**
  * Prints the given process
- * 
+ *
  * @param p the pointer to the process
  */
 void dbg_printProcess(tProc *p);
+
+/**
+ * Prints the given process-state
+ *
+ * @param state the pointer to the state-struct
+ */
+void dbg_printProcessState(tProcSave *state);
 
 /**
  * Prints the current page-directory
@@ -35,7 +42,7 @@ void dbg_printPageDir(void);
 
 /**
  * Prints the given page-table
- * 
+ *
  * @param no the number of the page-table
  * @param frame the frame of the page-table
  * @param pagetable the page-table
@@ -44,7 +51,7 @@ void dbg_printPageTable(u32 no,u32 frame,tPTEntry *pagetable);
 
 /**
  * Prints the given page
- * 
+ *
  * @param page a pointer to a page-table-entry
  */
 void dbg_printPage(tPTEntry *page);

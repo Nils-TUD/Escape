@@ -757,6 +757,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 			}
 
 			/* count consecutive occurrences */
+			/* TODO we should consider irqs, too! */
 			if(lastEx == stack.intrptNo) {
 				exCount++;
 

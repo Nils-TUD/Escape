@@ -4,7 +4,7 @@
 ; @copyright	2008 Nils Asmussen
 ;
 
-[BITS 32]      							; 32 bit code
+[BITS 32]      												; 32 bit code
 
 ; exports
 [global loader]
@@ -22,6 +22,8 @@
 [global paging_exchangePDir]
 [global cpu_rdtsc]
 [global cpu_getCR2]
+[global proc_save]
+[global proc_resume]
 
 ; imports
 [extern main]
@@ -35,13 +37,25 @@ MULTIBOOT_HEADER_MAGIC	equ 0x1BADB002
 MULTIBOOT_HEADER_FLAGS	equ MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
 MULTIBOOT_CHECKSUM	equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
+; process save area offsets
+STATE_ESP			equ 0
+STATE_EDI			equ 4
+STATE_ESI			equ 8
+STATE_EBP			equ 12
+STATE_EDX			equ	16
+STATE_ECX			equ	20
+STATE_EBX			equ	24
+STATE_EAX			equ	28
+STATE_EIP			equ	32
+STATE_EFLAGS	equ	36
+
 ; macro to build a default-isr-handler
 %macro BUILD_DEF_ISR 1
 	[global isr%1]
 	isr%1:
-	cli												; disable interrupts
-	push	0										; error-code (no error here)
-	push	dword %1						; the interrupt-number
+	cli																	; disable interrupts
+	push	0															; error-code (no error here)
+	push	dword %1											; the interrupt-number
 	jmp		isrCommon
 %endmacro
 
@@ -49,9 +63,9 @@ MULTIBOOT_CHECKSUM	equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 %macro BUILD_ERR_ISR 1
 	[global isr%1]
 	isr%1:
-	cli												; disable interrupts
+	cli																	; disable interrupts
 	; the error-code has already been pushed
-	push	dword %1						; the interrupt-number
+	push	dword %1											; the interrupt-number
 	jmp		isrCommon
 %endmacro
 
@@ -82,36 +96,36 @@ higherhalf:
 	; from now the CPU will translate automatically every address
 	; by adding the base 0x40000000
 
-	mov		esp, sys_stack			; set up a new stack for our kernel
+	mov		esp, sys_stack								; set up a new stack for our kernel
 
-	push	eax									; push Multiboot Magicnumber onto the stack
-  push	ebx									; push address of Multiboot-Structure
-  call	main								; jump to our C kernel ;)
+	push	eax														; push Multiboot Magicnumber onto the stack
+  push	ebx														; push address of Multiboot-Structure
+  call	main													; jump to our C kernel ;)
 
-	add		esp,8								; remove args from stack
-	jmp		[entryPoint]				; continue at our loaded prog (TODO temporary!!)
+	add		esp,8													; remove args from stack
+	jmp		[entryPoint]									; continue at our loaded prog (TODO temporary!!)
 
 	; just a simple protection...
 	jmp		$
 
 ; void gdt_flush(tGDTTable *gdt);
 gdt_flush:
-	mov		eax,[esp+4]					; load gdt-pointer into eax
-	lgdt	[eax]								; load gdt
+	mov		eax,[esp+4]										; load gdt-pointer into eax
+	lgdt	[eax]													; load gdt
 
-	mov		eax,0x10						; set the value for the segment-registers
-	mov		ds,eax							; reload segments
+	mov		eax,0x10											; set the value for the segment-registers
+	mov		ds,eax												; reload segments
 	mov		es,eax
 	mov		fs,eax
 	mov		gs,eax
 	mov		ss,eax
-	jmp		0x08:gdt_flush_ljmp	; reload code-segment via far-jump
+	jmp		0x08:gdt_flush_ljmp						; reload code-segment via far-jump
 gdt_flush_ljmp:
-	ret												; we're done
+	ret																	; we're done
 
 ; void tss_load(u16 gdtOffset);
 tss_load:
-	ltr		[esp+4]							; load tss
+	ltr		[esp+4]												; load tss
 	ret
 
 ; void halt(void);
@@ -120,15 +134,15 @@ halt:
 
 ; void outb(u16 port,u8 val);
 outb:
-	mov		dx,[esp+4]					; load port
-	mov		al,[esp+8]					; load value
-	out		dx,al								; write to port
+	mov		dx,[esp+4]										; load port
+	mov		al,[esp+8]										; load value
+	out		dx,al													; write to port
 	ret
 
 ; u8 inb(u16 port);
 inb:
-	mov		dx,[esp+4]					; load port
-	in		al,dx								; read from port
+	mov		dx,[esp+4]										; load port
+	in		al,dx													; read from port
 	ret
 
 ; u64 cpu_rdtsc(void);
@@ -141,11 +155,62 @@ cpu_getCR2:
 	mov		eax,cr2
 	ret
 
+; u32 proc_save(tProcSave *saveArea);
+proc_save:
+	push	ebp
+	mov		ebp,esp
+	cli																	; disable interrupts
+
+	push	esp														; save esp
+	push	eax														; save eax
+	mov		eax,[esp+16]									; get saveArea
+	pop		DWORD [eax + STATE_EAX]				; store eax
+	pop		DWORD [eax + STATE_ESP]				; store esp
+	mov		[eax + STATE_EDI],edi
+	mov		[eax + STATE_ESI],esi
+	mov		[eax + STATE_EBP],ebp
+	mov		[eax + STATE_EDX],edx
+	mov		[eax + STATE_ECX],ecx
+	mov		[eax + STATE_EBX],ebx
+	pushfd															; load eflags
+	pop		DWORD [eax + STATE_EFLAGS]		; store
+	mov		DWORD [eax + STATE_EIP],$			; store instruction-pointer
+
+	sti																	; enable interrupts
+	mov		eax,0													; return 0
+	leave
+	ret
+
+; void proc_resume(tProcSave *saveArea);
+proc_resume:
+	push	ebp
+	mov		ebp,esp
+	cli																	; disable interrupts
+
+	mov		eax,[esp+8]										; get saveArea
+	mov		edi,[eax + STATE_EDI]
+	mov		esi,[eax + STATE_ESI]
+	mov		ebp,[eax + STATE_EBP]
+	mov		edx,[eax + STATE_EDX]
+	mov		ecx,[eax + STATE_ECX]
+	mov		ebx,[eax + STATE_EBX]
+	push	DWORD [eax + STATE_EFLAGS]
+	popfd																; load eflags
+
+	; now load esp and eax
+	mov		esp,[eax + STATE_ESP]
+	mov		eax,[eax + STATE_EAX]
+
+	sti																	; enable interrupts
+	mov		eax,1													; return 1
+	leave
+	ret
+
 ; void paging_enable(void);
 paging_enable:
 	mov		eax,cr0
-	or		eax,1 << 31					; set bit for paging-enabled
-	mov		cr0,eax							; now paging is enabled :)
+	or		eax,1 << 31										; set bit for paging-enabled
+	mov		cr0,eax												; now paging is enabled :)
 	ret
 
 ; void paging_flushTLB(void);
@@ -156,24 +221,24 @@ paging_flushTLB:
 
 ; void paging_exchangePDir(u32 physAddr);
 paging_exchangePDir:
-	mov		eax,[esp+4]					; load page-dir-address
-	mov		cr3,eax							; set page-dir
+	mov		eax,[esp+4]										; load page-dir-address
+	mov		cr3,eax												; set page-dir
 	ret
 
 ; void intrpt_enable(void);
 intrpt_enable:
-	sti												; enable interrupts
+	sti																	; enable interrupts
 	ret
 
 ; void intrpt_disable(void);
 intrpt_disable:
-	cli												; disable interrupts
+	cli																	; disable interrupts
 	ret
 
 ; void intrpt_loadidt(tIDTPtr *idt);
 intrpt_loadidt:
-	mov		eax,[esp+4]					; load idt-address
-	lidt	[eax]								; load idt
+	mov		eax,[esp+4]										; load idt-address
+	lidt	[eax]													; load idt
 	ret
 
 ; our ISRs
@@ -450,7 +515,7 @@ isrCommon:
 	push	es
 
 	; call c-routine
-	push	esp									; pointer to the "beginning" of the stack
+	push	esp														; pointer to the "beginning" of the stack
 	call	intrpt_handler
 
 	; remove argument from stack

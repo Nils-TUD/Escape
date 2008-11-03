@@ -109,6 +109,10 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 
 	loadElfProg(task1) == 0 ? vid_printf("SUCCESS\n") : vid_printf("FAILED\n");
 
+	proc_save(&procs[pi].save);
+	dbg_printProcess(&procs[pi]);
+	proc_resume(&procs[pi].save);
+
 	/*while(1);*/
 	return 0;
 }

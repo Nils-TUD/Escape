@@ -55,6 +55,20 @@ extern tProc procs[PROC_COUNT];
 extern u32 pi;
 
 /**
+ * Saves the state of the current process in the given area
+ *
+ * @param saveArea the area where to save the state
+ */
+extern void proc_save(tProcSave *saveArea);
+
+/**
+ * Resumes the given state
+ *
+ * @param saveArea the area to load the state from
+ */
+extern void proc_resume(tProcSave *saveArea);
+
+/**
  * Initializes the process-management
  */
 void proc_init(void);

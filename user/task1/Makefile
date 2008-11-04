@@ -12,7 +12,6 @@ AOBJ=$(patsubst %.asm,$(BUILD)/user_$(NAME)_%.o,$(ASRC))
 .PHONY: all clean
 
 all:	$(BIN) $(DUMP)
-		echo $(AOBJ)
 
 $(BIN):	$(AOBJ) $(LDCONF)
 		@echo "===== LINKING =====";

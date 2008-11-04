@@ -37,6 +37,9 @@ MULTIBOOT_HEADER_MAGIC	equ 0x1BADB002
 MULTIBOOT_HEADER_FLAGS	equ MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
 MULTIBOOT_CHECKSUM	equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
+; general constants
+USER_STACK		equ 0xC0000000
+
 ; process save area offsets
 STATE_ESP			equ 0
 STATE_EDI			equ 4
@@ -103,6 +106,7 @@ higherhalf:
   call	main													; jump to our C kernel ;)
 
 	add		esp,8													; remove args from stack
+	mov		esp,USER_STACK - 4						; set stack-pointer for prog
 	jmp		[entryPoint]									; continue at our loaded prog (TODO temporary!!)
 
 	; just a simple protection...

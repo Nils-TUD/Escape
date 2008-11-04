@@ -25,13 +25,13 @@ tPTEntry mapPT[PAGE_SIZE / sizeof(tPTEntry)] __attribute__ ((aligned (PAGE_SIZE)
 tPTEntry pdirPT[PAGE_SIZE / sizeof(tPTEntry)] __attribute__ ((aligned (PAGE_SIZE)));
 
 /**
- * Assembler routine to enable paging 
+ * Assembler routine to enable paging
  */
 extern void paging_enable(void);
 
 /**
  * Checks wether the given page-table is empty
- * 
+ *
  * @param pt the pointer to the first entry of the page-table
  * @return true if empty
  */
@@ -48,7 +48,7 @@ static bool paging_isPTEmpty(tPTEntry *pt) {
 
 /**
  * Counts the number of present pages in the given page-table
- * 
+ *
  * @param pt the page-table
  * @return the number of present pages
  */
@@ -68,7 +68,7 @@ void paging_init(void) {
 	tPTEntry *pt,*mpt,*pdpt;
 	u32 i,addr,end;
 	/* note that we assume here that the kernel is not larger than a complete page-table (4MiB)! */
-	
+
 	pd = (tPDEntry*)virt2phys(proc0PD);
 	pt = (tPTEntry*)virt2phys(proc0PT);
 	mpt = (tPTEntry*)virt2phys(mapPT);
@@ -89,42 +89,42 @@ void paging_init(void) {
 	pde->ptFrameNo = (u32)pt >> PAGE_SIZE_SHIFT;
 	pde->present = 1;
 	pde->writable = 1;
-	
+
 	/* map it at 0x0, too, because we need it until we've "corrected" our GDT */
 	pde = (tPDEntry*)proc0PD;
 	pde->ptFrameNo = (u32)pt >> PAGE_SIZE_SHIFT;
 	pde->present = 1;
 	pde->writable = 1;
-	
+
 	/* clear pdir page-table */
 	memset(pdpt,0,PT_ENTRY_COUNT);
-	
+
 	/* build pd-entry for pdir pt */
 	pde = (tPDEntry*)(proc0PD + ADDR_TO_PDINDEX(PAGE_DIR_AREA));
 	pde->ptFrameNo = (u32)pdpt >> PAGE_SIZE_SHIFT;
 	pde->present = 1;
 	pde->writable = 1;
-	
+
 	/* insert the page into the page-table for the page-directory area */
 	i = ADDR_TO_PTINDEX(PAGE_DIR_AREA);
 	pdirPT[i].frameNumber = (u32)pd >> PAGE_SIZE_SHIFT;
 	pdirPT[i].present = 1;
 	pdirPT[i].writable = 1;
-	
+
 	/* clear map page-table */
 	memset(mpt,0,PT_ENTRY_COUNT);
-	
+
 	/* build pd-entry for map pt */
 	pde = (tPDEntry*)(proc0PD + ADDR_TO_PDINDEX(MAPPED_PTS_START));
 	pde->ptFrameNo = (u32)mpt >> PAGE_SIZE_SHIFT;
 	pde->present = 1;
 	pde->writable = 1;
-	
+
 	/* map kernel, page-dir and ourself :) */
 	paging_mapPageTable(mapPT,KERNEL_AREA_V_ADDR,(u32)pt >> PAGE_SIZE_SHIFT,false);
 	paging_mapPageTable(mapPT,PAGE_DIR_AREA,(u32)pdpt >> PAGE_SIZE_SHIFT,false);
 	paging_mapPageTable(mapPT,MAPPED_PTS_START,(u32)mpt >> PAGE_SIZE_SHIFT,false);
-	
+
 	/* now set page-dir and enable paging */
 	paging_exchangePDir((u32)pd);
 	paging_enable();
@@ -136,7 +136,7 @@ void paging_mapPageTable(tPTEntry *pt,u32 virtual,u32 frame,bool flush) {
 	pt->frameNumber = frame;
 	pt->present = 1;
 	pt->writable = 1;
-	
+
 	/* TODO necessary? */
 	if(flush) {
 		paging_flushTLB();
@@ -147,7 +147,7 @@ void paging_unmapPageTable(tPTEntry *pt,u32 virtual,bool flush) {
 	u32 addr = ADDR_TO_MAPPED(virtual);
 	pt = (tPTEntry*)(pt + ADDR_TO_PTINDEX(addr));
 	pt->present = 0;
-	
+
 	/* TODO necessary? */
 	if(flush) {
 		paging_flushTLB();
@@ -183,7 +183,7 @@ u32 paging_countFramesForMap(u32 virtual,u32 count) {
 		if(!pd->present) {
 			res++;
 		}
-		
+
 		/* advance to next page-table */
 		c -= PT_ENTRY_COUNT;
 		virtual += PAGE_SIZE * PT_ENTRY_COUNT;
@@ -196,7 +196,7 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
 	tPDEntry *pd;
 	tPTEntry *pt;
 	while(count-- > 0) {
-		pd = (tPDEntry*)(PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual) * sizeof(tPDEntry));
+		pd = (tPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual);
 		/* page table not present? */
 		if(!pd->present) {
 			/* get new frame for page-table */
@@ -204,20 +204,20 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
 			if(frame == 0) {
 				panic("Not enough memory");
 			}
-			
+
 			pd->ptFrameNo = frame;
 			pd->present = 1;
 			/* TODO always writable? */
 			pd->writable = 1;
-			
+
 			/* map the page-table because we need to write to it */
 			paging_mapPageTable(mapPT,virtual,frame,true);
-			
+
 			/* clear frame (ensure that we start at the beginning of the frame) */
 			memset((void*)ADDR_TO_MAPPED(virtual & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),
 					0,PT_ENTRY_COUNT);
 		}
-		
+
 		/* setup page */
 		pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
 		if(frames == NULL) {
@@ -230,7 +230,7 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
 		pt->writable = flags & PG_WRITABLE;
 		pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0;
 		pt->copyOnWrite = flags & PG_COPYONWRITE;
-		
+
 		/* to next page */
 		virtual += PAGE_SIZE;
 	}
@@ -244,7 +244,7 @@ void paging_unmap(u32 virtual,u32 count) {
 	tPTEntry *addr = (tPTEntry*)ADDR_TO_MAPPED(virtual);
 	while(count-- > 0) {
 		addr->present = 0;
-		
+
 		/* check if the page-table is empty if we have reached the end of it
 		 * or if we're finished now */
 		if(count == 0 || (index % PT_ENTRY_COUNT) == PT_ENTRY_COUNT - 1) {
@@ -285,12 +285,12 @@ static bool test_paging_cycle(u32 i,u32 addr,u32 count);
 static void test_paging_allocate(u32 addr,u32 count);
 static void test_paging_access(u32 addr,u32 count);
 static void test_paging_free(u32 addr,u32 count);
-	
+
 void test_paging(void) {
 	u32 i,x,y;
 	u32 addr[] = {0x0,0xB0000000,0xA0000000,0x4000,0x1234};
 	u32 count[] = {0,1,50,1024,1025,2048,2051};
-	
+
 	i = 0;
 	for(y = 0; y < sizeof(addr) / sizeof(addr[0]); y++) {
 		for(x = 0; x < sizeof(count) / sizeof(count[0]); x++) {
@@ -303,31 +303,31 @@ static bool test_paging_cycle(u32 i,u32 addr,u32 count) {
 	u32 oldFF, newFF, oldPC, newPC;
 
 	vid_printf("TEST %d: addr=0x%x, count=%d\n",i,addr,count);
-	
+
 	oldPC = paging_getPageCount();
 	oldFF = mm_getNumberOfFreeFrames(MM_DMA | MM_DEF);
-	
+
 	test_paging_allocate(addr,count);
 	test_paging_access(addr,count);
 	test_paging_free(addr,count);
 
 	newPC = paging_getPageCount();
 	newFF = mm_getNumberOfFreeFrames(MM_DMA | MM_DEF);
-	
+
 	if(oldFF != newFF || oldPC != newPC) {
 		vid_printf("FAILED: oldPC=%d, oldFF=%d, newPC=%d, newFF=%d\n\n",oldPC,oldFF,newPC,newFF);
 		return false;
 	}
-	
+
 	vid_printf("SUCCESS!\n\n");
-	
+
 	return true;
 }
 
 static void test_paging_allocate(u32 addr,u32 count) {
 	mm_allocateFrames(MM_DEF,frames,count);
 	paging_map(addr,frames,count,PG_WRITABLE);
-	
+
 	paging_flushTLB();
 }
 

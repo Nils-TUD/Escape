@@ -45,6 +45,10 @@ static u8 task1[] = {
 	#include "../../build/user_task1.dump"
 };
 
+static u8 task2[] = {
+	#include "../../build/user_task2.dump"
+};
+
 /*
  * load the given elf program, with all its segments.
  * 2 segments are expected. one for text, and the other for data.
@@ -107,13 +111,21 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	test_proc();
 #endif
 
-	loadElfProg(task1) == 0 ? vid_printf("SUCCESS\n") : vid_printf("FAILED\n");
+	/*loadElfProg(task1) == 0 ? vid_printf("SUCCESS\n") : vid_printf("FAILED\n");
 
-	proc_save(&procs[pi].save);
-	dbg_printProcess(&procs[pi]);
-	proc_resume(&procs[pi].save);
+	dbg_printPageDir();
 
-	/*while(1);*/
+	u16 pid = proc_getFreePid();
+	proc_clone(procs + pid);
+
+	dbg_printPageDir();
+
+	if(proc_save(&procs[pid].save)) {
+		loadElfProg(task2);
+		return 0;
+	}*/
+
+	while(1);
 	return 0;
 }
 
@@ -175,5 +187,9 @@ s32 loadElfProg(u8 *code) {
 			++seenLoadSegments;
 		}
 	}
+
+	/* give the process 2 stack pages */
+	proc_changeSize(2,CHG_STACK);
+
 	return 0;
 }

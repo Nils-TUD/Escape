@@ -59,19 +59,26 @@ extern u32 pi;
  *
  * @param saveArea the area where to save the state
  */
-extern void proc_save(tProcSave *saveArea);
+extern u32 proc_save(tProcSave *saveArea);
 
 /**
  * Resumes the given state
  *
  * @param saveArea the area to load the state from
  */
-extern void proc_resume(tProcSave *saveArea);
+extern u32 proc_resume(tProcSave *saveArea);
 
 /**
  * Initializes the process-management
  */
 void proc_init(void);
+
+/**
+ * Searches for a free pid and returns it or 0 if there is no free process-slot
+ *
+ * @return the pid or 0
+ */
+u16 proc_getFreePid(void);
 
 /**
  * Clones the current process into the given one. The function returns false if there is

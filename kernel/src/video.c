@@ -142,7 +142,11 @@ void vid_putchar(s8 c) {
 		*video = c;
 		video++;
 		*video = color;
-		video++;
+		/* do an explicit newline if necessary */
+		if(((u32)(video - VIDEO_BASE) % (COLS * 2)) == COLS * 2 - 1)
+			vid_putchar('\n');
+		else
+			video++;
 	}
 }
 

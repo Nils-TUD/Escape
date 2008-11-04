@@ -30,4 +30,8 @@ typedef u32 size_t;
 #define M 1024 * K
 #define G 1024 * M
 
+
+/* debugging */
+#define DBG_PROC_CLONE(s) s
+
 #endif /*COMMON_H_*/

@@ -17,7 +17,7 @@ mkdir $DISKMOUNT/grub;
 cp /boot/grub/stage1 $DISKMOUNT/grub;
 cp /boot/grub/stage2 $DISKMOUNT/grub;
 echo 'default 0' > $DISKMOUNT/grub/menu.lst;
-echo 'timeout 1' >> $DISKMOUNT/grub/menu.lst;
+echo 'timeout 0' >> $DISKMOUNT/grub/menu.lst;
 echo '' >> $DISKMOUNT/grub/menu.lst;
 echo "title $OSTITLE" >> $DISKMOUNT/grub/menu.lst;
 echo "kernel /$BINNAME" >> $DISKMOUNT/grub/menu.lst;

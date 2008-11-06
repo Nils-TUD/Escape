@@ -24,6 +24,8 @@
 [global cpu_getCR2]
 [global proc_save]
 [global proc_resume]
+[global getStackFrameStart]
+[global kernelStack]
 
 ; imports
 [extern main]
@@ -72,6 +74,8 @@ STATE_EFLAGS	equ	36
 	jmp		isrCommon
 %endmacro
 
+[section .setup]
+
 ; Multiboot header (needed to boot from GRUB)
 ALIGN 4
 KernelStart:
@@ -95,11 +99,15 @@ loader:
 	; jump to the higher half kernel
 	jmp		0x08:higherhalf
 
+[section .text]
+
 higherhalf:
 	; from now the CPU will translate automatically every address
 	; by adding the base 0x40000000
 
-	mov		esp, sys_stack								; set up a new stack for our kernel
+	mov		esp,kernelStack								; set up a new stack for our kernel
+	mov		ebp,esp
+	push	ebp														; push ebp on the stack to ensure that the stack-trace works
 
 	push	eax														; push Multiboot Magicnumber onto the stack
   push	ebx														; push address of Multiboot-Structure
@@ -147,6 +155,11 @@ outb:
 inb:
 	mov		dx,[esp+4]										; load port
 	in		al,dx													; read from port
+	ret
+
+; u32 getStackFrameStart(void);
+getStackFrameStart:
+	mov		eax,ebp
 	ret
 
 ; u64 cpu_rdtsc(void);
@@ -569,5 +582,5 @@ setupGDTEntriesEnd:
 [section .bss]
 
 resb 0x1000
-sys_stack:
+kernelStack:
 	; our kernel stack

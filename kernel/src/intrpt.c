@@ -453,7 +453,7 @@ static void intrpt_eoi(u32 intrptNo) {
 }
 
 s8 *intrpt_no2Name(u32 intrptNo) {
-	if(intrptNo >= 0 && intrptNo < (sizeof(intrptNo2Name) / sizeof(intrptNo2Name[0]))) {
+	if(intrptNo >= 0 && intrptNo < ARRAY_SIZE(intrptNo2Name)) {
 		return intrptNo2Name[intrptNo];
 	}
 
@@ -746,6 +746,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 
 		case IRQ_TIMER:
 			vid_printf("Timer interrupt...\n");
+			printStackTrace();
 			/* TODO schedule */
 			break;
 

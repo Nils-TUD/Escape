@@ -279,8 +279,8 @@ void test_proc(void) {
 	s32 changes[] = {0,1,10,1024,1025,2048,2047,2049,mm_getNumberOfFreeFrames(MM_DEF) + 1};
 	chgArea areas[] = {CHG_DATA,CHG_STACK};
 
-	for(y = 0; y < sizeof(areas) / sizeof(areas[0]); y++) {
-		for(x = 0; x < sizeof(changes) / sizeof(changes[0]); x++) {
+	for(y = 0; y < ARRAY_SIZE(areas); y++) {
+		for(x = 0; x < ARRAY_SIZE(changes); x++) {
 			test_proc_chgSize(i++,changes[x],areas[y]);
 		}
 	}

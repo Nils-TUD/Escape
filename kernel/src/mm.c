@@ -31,16 +31,16 @@ static void mm_markFrameUsed(u32 frame,bool used);
 
 void mm_init(void) {
 	tMemMap *mmap;
-	
+
 	/* init stack */
 	u16mStackFrameCount = (U16M_PAGE_COUNT + (PAGE_SIZE - 1) / sizeof(u32)) / (PAGE_SIZE / sizeof(u32));
 	/*vid_printf("MEMSIZE=%d bytes, PAGE_COUNT=%d, stackFrameCount=%d\n",
 			MEMSIZE,U16M_PAGE_COUNT,u16mStackFrameCount);*/
 	u16mStack = (u32*)&KernelEnd;
-	
+
 	/* at first we mark all frames as used in the bitmap for 0..16M */
 	memset(l16mBitmap,0xFFFFFFFF,L16M_PAGE_COUNT / 32);
-	
+
 	/* now walk through the memory-map and mark all free areas as free */
 	for(mmap = mb->mmapAddr;
 		(u32)mmap < (u32)mb->mmapAddr + mb->mmapLength;
@@ -49,7 +49,7 @@ void mm_init(void) {
 			mm_markAddrRangeUsed(mmap->baseAddr,mmap->baseAddr + mmap->length,false);
 		}
 	}
-	
+
 	/* mark the kernel-code and data (including stack for free frames) as used */
 	/* Note that we have to remove the 0xC0000000 since we want to work with physical addresses */
 	mm_markAddrRangeUsed((u32)&KernelStart & ~KERNEL_AREA_V_ADDR,
@@ -90,7 +90,7 @@ u32 mm_allocateFrame(memType type) {
 			mm_markFrameUsed(l16mCache[l16mCachePos - 1],true);
 			return l16mCache[--l16mCachePos];
 		}
-		
+
 		/* fill the cache */
 		for(; l16mSearchPos < L16M_PAGE_COUNT; l16mSearchPos++) {
 			bmIndex = l16mSearchPos >> 5;
@@ -101,12 +101,12 @@ u32 mm_allocateFrame(memType type) {
 				}
 			}
 		}
-		
+
 		/* no frame found? */
 		if(l16mCachePos == 0) {
 			panic("Not enough memory :(");
 		}
-		
+
 		mm_markFrameUsed(l16mCache[l16mCachePos - 1],true);
 		return l16mCache[--l16mCachePos];
 	}
@@ -115,10 +115,10 @@ u32 mm_allocateFrame(memType type) {
 		if((u32)u16mStack == (u32)&KernelEnd) {
 			panic("Not enough memory :(");
 		}
-		
+
 		return *(--u16mStack);
 	}
-	
+
 	return 0;
 }
 
@@ -155,7 +155,7 @@ void mm_printFreeFrames(void) {
 
 /**
  * Marks the given range as used or not used
- * 
+ *
  * @param from the start-address
  * @param to the end-address
  * @param used wether the frame is used
@@ -170,7 +170,7 @@ static void mm_markAddrRangeUsed(u32 from,u32 to,bool used) {
 
 /**
  * Marks the given frame-number as used or not used
- * 
+ *
  * @param frame the frame-number
  * @param used wether the frame is used
  */
@@ -213,14 +213,14 @@ static void test_mm_free(memType type);
 void test_printFreeFrames(void) {
 	u32 i,pos = 0;
 	/*u32 *ptr;*/
-	for(i = 0; i < sizeof(l16mBitmap) / sizeof(l16mBitmap[0]); i++) {
+	for(i = 0; i < ARRAY_SIZE(l16mBitmap); i++) {
 		if(l16mBitmap[i]) {
 			vid_printf("%08x..%08x: %032b\n",pos,pos + PAGE_SIZE * 32 - 1,l16mBitmap[i]);
 			/*for(x = 0; x < 0xffffff; x++);*/
 		}
 		pos += PAGE_SIZE * 32;
 	}
-	
+
 	vid_printf("Free frames cache:\n");
 	for(i = 0;i < l16mCachePos; i++) {
 		vid_printf("0x%08x, ",l16mCache[i]);
@@ -228,7 +228,7 @@ void test_printFreeFrames(void) {
 			vid_printf("\n");
 		}
 	}
-	
+
 	/*vid_printf("Free frames > 16MB:\n");
 	for(i = 0,ptr = u16mStack - 1;ptr >= &KernelEnd; i++,ptr--) {
 		vid_printf("0x%08x, ",*ptr);
@@ -240,11 +240,11 @@ void test_printFreeFrames(void) {
 
 void test_mm(void) {
 	test_printFreeFrames();
-	
+
 	vid_printf("Requesting frames < 16MB...\n");
 	test_mm_allocate(MM_DMA);
 	vid_printf("\n");
-	
+
 	vid_printf("Freeing frames < 16MB...\n");
 	test_mm_free(MM_DMA);
 	vid_printf("\n");

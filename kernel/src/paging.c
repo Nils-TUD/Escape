@@ -292,8 +292,8 @@ void test_paging(void) {
 	u32 count[] = {0,1,50,1024,1025,2048,2051};
 
 	i = 0;
-	for(y = 0; y < sizeof(addr) / sizeof(addr[0]); y++) {
-		for(x = 0; x < sizeof(count) / sizeof(count[0]); x++) {
+	for(y = 0; y < ARRAY_SIZE(addr); y++) {
+		for(x = 0; x < ARRAY_SIZE(count); x++) {
 			test_paging_cycle(i++,addr[y],count[x]);
 		}
 	}

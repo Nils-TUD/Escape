@@ -30,6 +30,8 @@ typedef u32 size_t;
 #define M 1024 * K
 #define G 1024 * M
 
+#define ARRAY_SIZE(array) (sizeof((array)) / sizeof((array)[0]))
+
 
 /* debugging */
 #define DBG_PROC_CLONE(s) s

@@ -67,11 +67,11 @@ tColor vid_getBGColor(void) {
 }
 
 void vid_setFGColor(tColor col) {
-	color |= col & 0xF;
+	color = (color & 0xF0) | (col & 0xF);
 }
 
 void vid_setBGColor(tColor col) {
-	color |= (col << 4) & 0xF0;
+	color = (color & 0x0F) | ((col << 4) & 0xF0);
 }
 
 void vid_setLineBG(u8 line,tColor bg) {

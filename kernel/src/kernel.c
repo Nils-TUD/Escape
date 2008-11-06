@@ -125,6 +125,8 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 		return 0;
 	}*/
 
+	panic("Naja, irgendwann reichts mal :P");
+
 	while(1);
 	return 0;
 }

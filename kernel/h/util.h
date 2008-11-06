@@ -10,6 +10,18 @@
 #include "../h/common.h"
 
 /**
+ * Represents one function-call
+ */
+typedef struct {
+	u32 addr;
+	u32 funcAddr;
+	string funcName;
+} tFuncCall;
+
+/* The max. stack-depth getStackTrace() supports */
+#define MAX_STACK_DEPTH 100
+
+/**
  * Assembler routine to halt the processor
  */
 extern void halt(void);
@@ -36,6 +48,19 @@ extern u8 inb(u16 port);
  * @param fmt the format of the message to display
  */
 void panic(string fmt,...);
+
+/**
+ * Builds a stack-trace and returns a pointer to the first element. The addr-field in the
+ * struct-array is terminated with 0. Note that it is a static-array!
+ *
+ * @return a pointer to the first stack-trace-element
+ */
+tFuncCall *getStackTrace(void);
+
+/**
+ * Prints the stack-trace
+ */
+void printStackTrace(void);
 
 /**
  * Prints the memory from <addr> to <addr> + <dwordCount>

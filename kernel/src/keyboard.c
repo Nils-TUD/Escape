@@ -189,14 +189,14 @@ void kbd_handleIntrpt(void) {
 		case SCAN_SEQ_INIT:
 			/* ignore */
 			break;
-		
+
 		case SCAN_LSHIFT:
 		case SCAN_RSHIFT:
 			shiftDown = !isBrk;
 			break;
-		
+
 		default:
-			if(scanCode < sizeof(germanKeys) / sizeof(germanKeys[0])) {
+			if(scanCode < ARRAY_SIZE(germanKeys)) {
 				if(shiftDown) {
 					key = germanKeys[scanCode].shift;
 				}
@@ -209,13 +209,13 @@ void kbd_handleIntrpt(void) {
 			}
 			break;
 	}
-	
+
 	/* store into buffer */
 	if(key && key != A_NPRINT/* && keyBufferPos < KBD_BUF_SIZE*/) {
 		/*keyBuffer[keyBufferPos++] = key;*/
 		/*vid_printf("%c",key);*/
 	}
-	
+
 	vid_printf("ScanCode=%x\n",scanCode);
 	/* acknowledge scancode */
 	outb(0x20,0x20);

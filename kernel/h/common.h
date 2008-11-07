@@ -17,14 +17,13 @@ typedef unsigned long u32;
 typedef long long s64;
 typedef unsigned long long u64;
 
-typedef u8 bool;
+/*typedef u8 bool;*/
 typedef s8 *string;
 typedef u32 size_t;
 
 /* TODO use <stddef.h>? */
 #define NULL (void*)0
-#define true 1
-#define false 0
+typedef enum {false = 0, true = 1} bool;
 
 #define K 1024
 #define M 1024 * K

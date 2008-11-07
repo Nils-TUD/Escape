@@ -27,15 +27,16 @@ qemu:	all
 		qemu -serial stdio -no-kqemu -fda $(DISK) > log.txt 2>&1
 
 bochs: all
-		bochs -f bochs.cfg -q > log.txt 2>&1;
+		bochs -f bochs.cfg -q;
+		# > log.txt 2>&1
 
 debugm: all
-		@#qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
-		bochs -f bochs.cfg -q > log.txt 2>&1 &
+		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
+		@#bochs -f bochs.cfg -q > log.txt 2>&1 &
 
 debug: all
-		@#qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
-		bochs -f bochs.cfg -q > log.txt 2>&1 &
+		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
+		@#bochs -f bochs.cfg -q > log.txt 2>&1 &
 		sleep 1;
 		gdb --command=gdb.start --symbols $(BIN)
 

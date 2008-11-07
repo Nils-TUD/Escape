@@ -9,6 +9,7 @@
 #include "../h/util.h"
 #include "../h/keyboard.h"
 #include "../h/cpu.h"
+#include "../h/proc.h"
 
 #define IDT_COUNT		256
 /* the privilege level */
@@ -738,6 +739,8 @@ void intrpt_init(void) {
 static u32 exCount = 0;
 static u32 lastEx = 0xFFFFFFFF;
 
+extern bool procsReady;
+
 void intrpt_handler(tIntrptStackFrame stack) {
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
@@ -746,7 +749,32 @@ void intrpt_handler(tIntrptStackFrame stack) {
 
 		case IRQ_TIMER:
 			vid_printf("Timer interrupt...\n");
-			printStackTrace();
+			if(!procsReady)
+				break;
+
+			vid_printf("Process %d\n",pi);
+			if(!proc_save(&procs[pi].save)) {
+				/* select next process */
+				pi = (pi + 1) % 2;
+				vid_printf("Resuming %d\n",pi);
+				/*stack.eax = procs[pi].save.eax;
+				stack.ebx = procs[pi].save.ebx;
+				stack.ecx = procs[pi].save.ecx;
+				stack.edx = procs[pi].save.edx;
+				stack.edi = procs[pi].save.edi;
+				stack.esi = procs[pi].save.esi;
+				stack.esp = procs[pi].save.esp;
+				stack.ebp = procs[pi].save.ebp;
+				stack.eflags = procs[pi].save.eflags;
+				stack.eip = procs[pi].save.eip;*/
+				intrpt_eoi(stack.intrptNo);
+				proc_resume(procs[pi].physPDirAddr,&procs[pi].save);
+				break;
+			}
+			vid_printf("Continuing %d\n",pi);
+
+			/*vid_printf("Timer interrupt...\n");
+			printStackTrace();*/
 			/* TODO schedule */
 			break;
 
@@ -754,6 +782,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
 			if(stack.intrptNo == EX_PAGE_FAULT) {
 				vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
+				printStackTrace();
 				break;
 			}
 

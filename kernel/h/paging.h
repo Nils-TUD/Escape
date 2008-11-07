@@ -68,6 +68,8 @@
 #define PAGE_DIR_TMP_AREA	(PAGE_DIR_AREA - PAGE_SIZE)
 /* area for a page-table */
 #define PAGE_TABLE_AREA		(PAGE_DIR_TMP_AREA - PAGE_SIZE)
+/* our kernel-stack */
+#define KERNEL_STACK		(PAGE_TABLE_AREA - PAGE_SIZE)
 
 /* flags for paging_map() */
 #define PG_WRITABLE		1
@@ -155,7 +157,7 @@ extern void paging_flushTLB(void);
 
 /**
  * Assembler routine to exchange the page-directory to the given one
- * 
+ *
  * @param physAddr the physical address of the page-directory
  */
 extern void paging_exchangePDir(u32 physAddr);
@@ -163,7 +165,7 @@ extern void paging_exchangePDir(u32 physAddr);
 /**
  * Maps the page-table for the given virtual address to <frame> in the mapped
  * page-tables area.
- * 
+ *
  * @param pt the page-table for the mapping
  * @param virtual the virtual address
  * @param frame the frame-number
@@ -174,7 +176,7 @@ void paging_mapPageTable(tPTEntry *pt,u32 virtual,u32 frame,bool flush);
 /**
  * Unmaps the page-table for the given virtual address to <frame> out of the mapped
  * page-tables area.
- * 
+ *
  * @param pt the page-table for the mapping
  * @param virtual the virtual address
  * @param flush flush the TLB?
@@ -183,7 +185,7 @@ void paging_unmapPageTable(tPTEntry *pt,u32 virtual,bool flush);
 
 /**
  * Counts the number of pages that are currently present in the given page-directory
- * 
+ *
  * @param pdir the page-directory
  * @return the number of pages
  */
@@ -191,7 +193,7 @@ u32 paging_getPageCount(void);
 
 /**
  * Determines how many new frames we need for calling paging_map(<virtual>,...,<count>,...).
- * 
+ *
  * @param virtual the virtual start-address
  * @param count the number of pages to map
  * @return the number of new frames we would need
@@ -202,9 +204,9 @@ u32 paging_countFramesForMap(u32 virtual,u32 count);
  * Maps <count> virtual addresses starting at <virtual> to the given frames (in the CURRENT
  * page-dir!)
  * Note that the function will NOT flush the TLB!
- * 
+ *
  * @panic if there is not enough memory to get a frame for a page-table
- * 
+ *
  * @param virtual the virtual start-address
  * @param frames an array with <count> elements which contains the frame-numbers to use.
  * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
@@ -217,7 +219,7 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags);
  * Removes <count> pages starting at <virtual> from the page-directory and page-tables (in the
  * CURRENT page-dir!).
  * Note that the function will NOT free the frames and that it will NOT flush the TLB!
- * 
+ *
  * @param virtual the virtual start-address
  * @param count the number of pages to unmap
  */

@@ -21,7 +21,11 @@
 [global paging_flushTLB]
 [global paging_exchangePDir]
 [global cpu_rdtsc]
+[global cpu_getCR0]
+[global cpu_getCR1]
 [global cpu_getCR2]
+[global cpu_getCR3]
+[global cpu_getCR4]
 [global proc_save]
 [global proc_resume]
 [global getStackFrameStart]
@@ -40,6 +44,9 @@ MULTIBOOT_HEADER_FLAGS	equ MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
 MULTIBOOT_CHECKSUM	equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
 ; general constants
+; TODO better way which uses the defines from paging.h?
+PAGE_SIZE			equ 4096
+KERNEL_STACK	equ 0xC0000000 + 0x1000000 - PAGE_SIZE * 4
 USER_STACK		equ 0xC0000000
 
 ; process save area offsets
@@ -54,11 +61,18 @@ STATE_EAX			equ	28
 STATE_EIP			equ	32
 STATE_EFLAGS	equ	36
 
+; TODO consider callee-save-registers!!
+
 ; macro to build a default-isr-handler
 %macro BUILD_DEF_ISR 1
 	[global isr%1]
 	isr%1:
 	cli																	; disable interrupts
+	; init kernel-stack
+	cmp		esp,KERNEL_STACK
+	jb		isr%1StackSet
+	mov		esp,KERNEL_STACK + PAGE_SIZE - 4
+	isr%1StackSet:
 	push	0															; error-code (no error here)
 	push	dword %1											; the interrupt-number
 	jmp		isrCommon
@@ -69,6 +83,11 @@ STATE_EFLAGS	equ	36
 	[global isr%1]
 	isr%1:
 	cli																	; disable interrupts
+	; init kernel-stack
+	cmp		esp,KERNEL_STACK
+	jb		isr%1StackSet
+	mov		esp,KERNEL_STACK + PAGE_SIZE - 4
+	isr%1StackSet:
 	; the error-code has already been pushed
 	push	dword %1											; the interrupt-number
 	jmp		isrCommon
@@ -167,9 +186,30 @@ cpu_rdtsc:
 	rdtsc
 	ret
 
+; u32 cpu_getCR0(void);
+cpu_getCR0:
+	mov		eax,cr0
+	ret
+
+; u32 cpu_getCR1(void);
+cpu_getCR1:
+	;mov		eax,cr1
+	mov		eax,0
+	ret
+
 ; u32 cpu_getCR2(void);
 cpu_getCR2:
 	mov		eax,cr2
+	ret
+
+; u32 cpu_getCR3(void);
+cpu_getCR3:
+	mov		eax,cr3
+	ret
+
+; u32 cpu_getCR4(void);
+cpu_getCR4:
+	mov		eax,cr4
 	ret
 
 ; u32 proc_save(tProcSave *saveArea);
@@ -198,24 +238,27 @@ proc_save:
 	leave
 	ret
 
-; void proc_resume(tProcSave *saveArea);
+; void proc_resume(u32 pageDir,tProcSave *saveArea);
 proc_resume:
 	push	ebp
 	mov		ebp,esp
 	cli																	; disable interrupts
 
-	mov		eax,[esp+8]										; get saveArea
+	mov		eax,[esp+12]									; get saveArea
 	mov		edi,[eax + STATE_EDI]
 	mov		esi,[eax + STATE_ESI]
 	mov		ebp,[eax + STATE_EBP]
 	mov		edx,[eax + STATE_EDX]
 	mov		ecx,[eax + STATE_ECX]
-	mov		ebx,[eax + STATE_EBX]
 	push	DWORD [eax + STATE_EFLAGS]
 	popfd																; load eflags
 
+	mov		ebx,[esp+8]										; load page-dir-address
+	mov		cr3,ebx												; set page-dir
+
 	; now load esp and eax
 	mov		esp,[eax + STATE_ESP]
+	mov		ebx,[eax + STATE_EBX]
 	mov		eax,[eax + STATE_EAX]
 
 	sti																	; enable interrupts
@@ -581,6 +624,7 @@ setupGDTEntriesEnd:
 
 [section .bss]
 
+; TODO size ok?
 resb 0x1000
 kernelStack:
-	; our kernel stack
+	; our temporary kernel stack

@@ -57,6 +57,7 @@ static u8 task2[] = {
 s32 loadElfProg(u8 *code);
 
 u32 entryPoint;
+bool procsReady = false;
 
 u32 main(tMultiBoot *mbp,u32 magic) {
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
@@ -111,23 +112,32 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	test_proc();
 #endif
 
-	/*loadElfProg(task1) == 0 ? vid_printf("SUCCESS\n") : vid_printf("FAILED\n");
+	/* TODO the following is just temporary! */
 
-	dbg_printPageDir();
+	/* load task1 */
+	loadElfProg(task1);
 
+	/* clone ourself */
 	u16 pid = proc_getFreePid();
 	proc_clone(procs + pid);
-
-	dbg_printPageDir();
-
+	/* save the state for task2 */
 	if(proc_save(&procs[pid].save)) {
+		/* now load task2 */
+		vid_printf("Loading process %d\n",pid);
 		loadElfProg(task2);
+		vid_printf("Starting...\n");
 		return 0;
-	}*/
+	}
 
-	panic("Naja, irgendwann reichts mal :P");
+	procsReady = true;
 
-	while(1);
+	/* FIXME note that this is REALLY dangerous! we have just 1 stack at the moment. That means
+	 * if we do anything here that manipulates the stack the process we create above will get
+	 * an invalid stack
+	 */
+
+	/*panic("Naja, irgendwann reichts mal :P");
+	while(1);*/
 	return 0;
 }
 

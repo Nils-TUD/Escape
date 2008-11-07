@@ -111,6 +111,13 @@ void paging_init(void) {
 	pdirPT[i].present = 1;
 	pdirPT[i].writable = 1;
 
+	/* insert the page for the kernel-stack */
+	i = ADDR_TO_PTINDEX(KERNEL_STACK);
+	addr = mm_allocateFrame(MM_DEF);
+	pdirPT[i].frameNumber = (u32)addr >> PAGE_SIZE_SHIFT;
+	pdirPT[i].present = 1;
+	pdirPT[i].writable = 1;
+
 	/* clear map page-table */
 	memset(mpt,0,PT_ENTRY_COUNT);
 
@@ -195,6 +202,7 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
 	u32 frame;
 	tPDEntry *pd;
 	tPTEntry *pt;
+	tPTEntry *mapPageTable = (tPTEntry*)ADDR_TO_MAPPED(MAPPED_PTS_START);
 	while(count-- > 0) {
 		pd = (tPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual);
 		/* page table not present? */
@@ -211,7 +219,7 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
 			pd->writable = 1;
 
 			/* map the page-table because we need to write to it */
-			paging_mapPageTable(mapPT,virtual,frame,true);
+			paging_mapPageTable(mapPageTable,virtual,frame,true);
 
 			/* clear frame (ensure that we start at the beginning of the frame) */
 			memset((void*)ADDR_TO_MAPPED(virtual & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),
@@ -242,6 +250,7 @@ void paging_unmap(u32 virtual,u32 count) {
 	u32 index = ADDR_TO_PTINDEX(virtual);
 	tPDEntry *pdir;
 	tPTEntry *addr = (tPTEntry*)ADDR_TO_MAPPED(virtual);
+	tPTEntry *mapPageTable = (tPTEntry*)ADDR_TO_MAPPED(MAPPED_PTS_START);
 	while(count-- > 0) {
 		addr->present = 0;
 
@@ -257,7 +266,7 @@ void paging_unmap(u32 virtual,u32 count) {
 				pdir[pdIndex].present = 0;
 				mm_freeFrame(pdir[pdIndex].ptFrameNo,MM_DEF);
 				/* unmap the page-table */
-				paging_unmapPageTable(mapPT,virtual,true);
+				paging_unmapPageTable(mapPageTable,virtual,true);
 			}
 		}
 

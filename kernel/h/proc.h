@@ -64,9 +64,10 @@ extern u32 proc_save(tProcSave *saveArea);
 /**
  * Resumes the given state
  *
+ * @param pageDir the physical address of the page-dir
  * @param saveArea the area to load the state from
  */
-extern u32 proc_resume(tProcSave *saveArea);
+extern u32 proc_resume(u32 pageDir,tProcSave *saveArea);
 
 /**
  * Initializes the process-management

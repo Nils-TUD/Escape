@@ -39,7 +39,7 @@ u16 proc_getFreePid(void) {
 }
 
 bool proc_clone(tProc *p) {
-	u32 x,pdirFrame,pdirAreaFrame,mapAreaFrame;
+	u32 x,pdirFrame,pdirAreaFrame,mapAreaFrame,stackFrame;
 	tPDEntry *pd,*npd,*pdapt;
 	tPTEntry *pt;
 
@@ -47,9 +47,10 @@ bool proc_clone(tProc *p) {
 	 * 	- page directory
 	 * 	- page directory area page-table
 	 * 	- map area page-table
+	 * 	- kernel stack
 	 * The frames for the page-content is not yet needed since we're using copy-on-write!
 	 */
-	if(mm_getNumberOfFreeFrames(MM_DEF) < 3) {
+	if(mm_getNumberOfFreeFrames(MM_DEF) < 4) {
 		DBG_PROC_CLONE(vid_printf("Not enough free frames!\n"));
 		return false;
 	}
@@ -142,11 +143,17 @@ bool proc_clone(tProc *p) {
 	DBG_PROC_CLONE(vid_printf("Exchange page-dir to the new one\n"));
 	paging_exchangePDir(pdirFrame << PAGE_SIZE_SHIFT);
 
+	/* kernel-stack */
+	stackFrame = mm_allocateFrame(MM_DEF);
+	paging_map(KERNEL_STACK,&stackFrame,1,PG_WRITABLE | PG_SUPERVISOR);
+
+	/*dbg_printPageDir();*/
+
 	/* map pages for text to the frames of the old process */
 	DBG_PROC_CLONE(vid_printf("Mapping text-pages (shared)\n"));
 	paging_map(0,(u32*)TMPMAP_PTS_START,procs[pi].textPages,0);
 
-	dbg_printPageDir();
+	/*dbg_printPageDir();*/
 
 	/* map pages for data. we will copy the data with copyonwrite. */
 	DBG_PROC_CLONE(vid_printf("Mapping data (copy-on-write)\n"));

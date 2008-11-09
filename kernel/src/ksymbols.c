@@ -1,5 +1,5 @@
 /**
- * @version		$Id: util.c 26 2008-11-03 19:42:54Z nasmussen $
+ * @version		$Id$
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */

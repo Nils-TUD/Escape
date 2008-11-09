@@ -1,5 +1,5 @@
 /**
- * @version		$Id: test.h 37 2008-11-09 16:58:20Z nasmussen $
+ * @version		$Id$
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */

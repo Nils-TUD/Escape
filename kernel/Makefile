@@ -4,7 +4,7 @@ DISK=$(BUILD)/disk.img
 DISKMOUNT=../disk
 BINNAME=kernel.bin
 BIN=$(BUILD)/$(BINNAME)
-LDCONF=src/ld.conf
+LDCONF=ld.conf
 OSTITLE=hrniels-OS
 
 CC = gcc
@@ -14,8 +14,8 @@ CFLAGS = -g -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -W
 				 -Wstrict-prototypes
 
 # sources
-ASRC=src/kernel.asm
-ASRCEND=src/end.asm
+ASRC=kernel.asm
+ASRCEND=end.asm
 CSRC=$(wildcard src/*.c)
 
 # objects

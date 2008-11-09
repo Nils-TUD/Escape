@@ -21,7 +21,7 @@ KSRC=$(filter-out ../src/kernel.c,$(wildcard ../src/*.c))
 AOBJ=$(BUILD)/kernel_asm.o
 AOBJEND=$(BUILD)/end.o
 KOBJ=$(patsubst ../src/%.c,$(BUILD)/%.o,$(KSRC))
-TOBJ=$(patsubst %.c,$(BUILD)/%.o,$(TSRC))
+TOBJ=$(patsubst %.c,$(BUILD)/test_%.o,$(TSRC))
 
 SYMBOLS=$(BUILD)/tsymbols.txt
 SYMBOLSCRIPT=../../tools/gensymbols.sh
@@ -54,7 +54,7 @@ $(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ)
 		cp $(BIN) $(DISKMOUNT);
 		sudo umount $(DISKMOUNT);
 
-$(BUILD)/%.o:		%.c
+$(BUILD)/test_%.o:		%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 

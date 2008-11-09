@@ -289,9 +289,3 @@ void paging_gdtFinished(void) {
 	/* TODO necessary? */
 	paging_flushTLB();
 }
-
-#ifdef TEST_PAGING
-
-
-
-#endif

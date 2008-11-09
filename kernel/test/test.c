@@ -52,7 +52,7 @@ void test_caseFailed(cstring fmt,...) {
 	va_start(ap,fmt);
 	vid_vprintf(fmt,ap);
 	va_end(ap);
-	vid_printf(" ==\n");
+	vid_printf(" ==\n\n");
 	totalFail++;
 	failCount++;
 }

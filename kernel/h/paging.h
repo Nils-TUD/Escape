@@ -10,8 +10,6 @@
 #include "common.h"
 #include "mm.h"
 
-/*#define TEST_PAGING*/
-
 /**
  * Virtual memory layout:
  * 0x00000000: +-----------------------------------+
@@ -248,9 +246,5 @@ void paging_unmap(u32 virtual,u32 count);
  * soon as the GDT is setup for a flat memory layout!
  */
 void paging_gdtFinished(void);
-
-#ifdef TEST_PAGING
-void test_paging(void);
-#endif
 
 #endif /*PAGING_H_*/

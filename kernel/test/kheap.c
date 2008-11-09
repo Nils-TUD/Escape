@@ -9,7 +9,7 @@
 #include "../h/paging.h"
 #include "../h/mm.h"
 #include "../h/video.h"
-#include "testkheap.h"
+#include "kheap.h"
 #include <stdarg.h>
 
 /* forward declarations */

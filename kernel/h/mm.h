@@ -10,8 +10,6 @@
 #include "../h/common.h"
 #include "../h/multiboot.h"
 
-/*#define TEST_MM*/
-
 /* the physical start-address of the kernel-area */
 #define KERNEL_AREA_P_ADDR	0x0
 /* the physical start-address of the kernel itself */
@@ -97,9 +95,5 @@ void mm_freeFrame(u32 frame,memType type);
  * Prints the bitmap for the lower 16MB memory
  */
 void mm_printl16MBitmap(void);
-
-#ifdef TEST_MM
-void test_mm(void);
-#endif
 
 #endif /*MM_H_*/

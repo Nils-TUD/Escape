@@ -8,7 +8,7 @@
 #include "../h/paging.h"
 #include "../h/video.h"
 #include "test.h"
-#include "testpaging.h"
+#include "paging.h"
 
 /* forward declarations */
 static void test_paging(void);

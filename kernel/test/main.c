@@ -19,8 +19,10 @@
 #include "../h/kheap.h"
 
 #include "test.h"
-#include "testkheap.h"
-#include "testpaging.h"
+#include "kheap.h"
+#include "paging.h"
+#include "proc.h"
+#include "mm.h"
 
 /* TODO just temporary! */
 u32 entryPoint;
@@ -72,8 +74,10 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 
 
 	/* start tests */
-	test_register(&tModKHeap);
+	test_register(&tModMM);
 	test_register(&tModPaging);
+	test_register(&tModProc);
+	test_register(&tModKHeap);
 	test_start();
 
 

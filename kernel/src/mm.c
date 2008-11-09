@@ -202,15 +202,8 @@ static void mm_markFrameUsed(u32 frame,bool used) {
 	}
 }
 
-#ifdef TEST_MM
-#define FRAME_COUNT 50
-
-static u32 frames[FRAME_COUNT];
-
-static void test_mm_allocate(memType type);
-static void test_mm_free(memType type);
-
-void test_printFreeFrames(void) {
+#if 0
+static void test_printFreeFrames(void) {
 	u32 i,pos = 0;
 	/*u32 *ptr;*/
 	for(i = 0; i < ARRAY_SIZE(l16mBitmap); i++) {
@@ -236,49 +229,5 @@ void test_printFreeFrames(void) {
 			vid_printf("\n");
 		}
 	}*/
-}
-
-void test_mm(void) {
-	test_printFreeFrames();
-
-	vid_printf("Requesting frames < 16MB...\n");
-	test_mm_allocate(MM_DMA);
-	vid_printf("\n");
-
-	vid_printf("Freeing frames < 16MB...\n");
-	test_mm_free(MM_DMA);
-	vid_printf("\n");
-
-	vid_printf("Requesting frames > 16MB...\n");
-	test_mm_allocate(MM_DEF);
-	vid_printf("\n");
-
-	vid_printf("Freeing frames > 16MB...\n");
-	test_mm_free(MM_DEF);
-	vid_printf("\n");
-}
-
-static void test_mm_allocate(memType type) {
-	s32 i = 0;
-	while(i < FRAME_COUNT) {
-		frames[i] = mm_allocateFrame(type);
-		vid_printf("%d=0x%08x ",i,frames[i]);
-		if(i % 4 == 3) {
-			vid_printf("\n");
-		}
-		i++;
-	}
-}
-
-static void test_mm_free(memType type) {
-	s32 i = FRAME_COUNT - 1;
-	while(i >= 0) {
-		vid_printf("i=%d,f=0x%08x, ",i,frames[i]);
-		mm_freeFrame(frames[i],type);
-		if(i % 4 == 0) {
-			vid_printf("\n");
-		}
-		i--;
-	}
 }
 #endif

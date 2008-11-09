@@ -9,8 +9,6 @@
 
 #include "../h/common.h"
 
-#define TEST_KHEAP
-
 /**
  * Inits the kernel-heap
  */
@@ -41,9 +39,5 @@ void *kheap_alloc(u32 size);
  * Frees the via kmalloc() allocated area starting at <addr>.
  */
 void kheap_free(void *addr);
-
-#ifdef TEST_KHEAP
-void test_kheap(void);
-#endif
 
 #endif /* KHEAP_H_ */

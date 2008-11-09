@@ -1,13 +1,14 @@
 # general
 BUILD=build
 DISK=$(BUILD)/disk.img
+DISKMOUNT=disk
 BINNAME=kernel.bin
 BIN=$(BUILD)/$(BINNAME)
 SYMBOLS=$(BUILD)/kernel.symbols
 
-DIRS = tools user kernel
+DIRS = tools user kernel kernel/test
 
-.PHONY: all qemu disk dis debug debugm bochs clean
+.PHONY: all disk dis qemu bochs debug debugm test clean
 
 all: $(BUILD)
 		@for i in $(DIRS); do \
@@ -23,22 +24,35 @@ disk:
 dis: all
 		objdump -d -S $(BIN) | less
 
-qemu:	all
+qemu:	all prepareRun
 		qemu -serial stdio -no-kqemu -fda $(DISK) > log.txt 2>&1
 
-bochs: all
+bochs: all prepareRun
 		bochs -f bochs.cfg -q;
 		# > log.txt 2>&1
 
-debugm: all
-		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
-		@#bochs -f bochs.cfg -q > log.txt 2>&1 &
-
-debug: all
+debug: all prepareRun
 		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
 		@#bochs -f bochs.cfg -q > log.txt 2>&1 &
 		sleep 1;
 		gdb --command=gdb.start --symbols $(BIN)
+
+debugm: all prepareRun
+		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
+		@#bochs -f bochs.cfg -q > log.txt 2>&1 &
+
+test: all prepareTest
+		qemu -serial stdio -no-kqemu -fda $(DISK) > log.txt 2>&1
+
+prepareTest:
+		sudo mount -o loop $(DISK) $(DISKMOUNT) || true;
+		sed --in-place -e "s/^kernel.*/kernel \/kernel_test.bin/g" $(DISKMOUNT)/grub/menu.lst;
+		sudo umount $(DISKMOUNT);
+
+prepareRun:
+		sudo mount -o loop $(DISK) $(DISKMOUNT) || true;
+		sed --in-place -e "s/^kernel.*/kernel \/kernel.bin/g" $(DISKMOUNT)/grub/menu.lst;
+		sudo umount $(DISKMOUNT);
 
 clean:
 		@for i in $(DIRS); do \

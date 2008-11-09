@@ -1,11 +1,11 @@
 # general
-BUILD=../build
+BUILD=../../build
 DISK=$(BUILD)/disk.img
-DISKMOUNT=../disk
-BINNAME=kernel.bin
+DISKMOUNT=../../disk
+BINNAME=kernel_test.bin
 BIN=$(BUILD)/$(BINNAME)
-LDCONF=ld.conf
-DEP=$(BUILD)/kernel.dep
+LDCONF=../ld.conf
+DEP=$(BUILD)/test.dep
 
 CC = gcc
 CFLAGS = -g -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wall -ansi \
@@ -14,62 +14,53 @@ CFLAGS = -g -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -W
 				 -Wstrict-prototypes
 
 # sources
-ASRC=kernel.asm
-ASRCEND=end.asm
-CSRC=$(wildcard src/*.c)
+TSRC=$(wildcard *.c)
+KSRC=$(filter-out ../src/kernel.c,$(wildcard ../src/*.c))
 
 # objects
 AOBJ=$(BUILD)/kernel_asm.o
 AOBJEND=$(BUILD)/end.o
-COBJ=$(patsubst src/%.c,$(BUILD)/%.o,$(CSRC))
+KOBJ=$(patsubst ../src/%.c,$(BUILD)/%.o,$(KSRC))
+TOBJ=$(patsubst %.c,$(BUILD)/%.o,$(TSRC))
 
-SYMBOLS=$(BUILD)/ksymbols.txt
-SYMBOLSCRIPT=../tools/gensymbols.sh
-SYMBOLSRC=src/ksymbols.c
+SYMBOLS=$(BUILD)/tsymbols.txt
+SYMBOLSCRIPT=../../tools/gensymbols.sh
+SYMBOLSRC=../src/ksymbols.c
 
 .PHONY: all pre clean
 
-all:	pre $(BIN)
+all:	$(BIN)
 
-# ensure that the symbols exist
-pre:
-		if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
-
-$(BIN):	$(LDCONF) $(AOBJ) $(COBJ)
+$(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ)
 		@echo "===== LINKING =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(AOBJEND);
+		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(AOBJEND);
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 		@# since it's size is 0 at the first time. In the second part the size is correct
 		@# and therefore the symbol-table will be generated correctly :)
 		@echo "===== BUILDING SYMBOL-FILE =====";
 		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "===== COMPILING SYMBOL-C-FILE =====";
-		$(CC) $(CFLAGS) -o $(patsubst src/%.c,$(BUILD)/%.o,$(SYMBOLSRC)) -c $(SYMBOLSRC)
+		$(CC) $(CFLAGS) -o $(patsubst ../src/%.c,$(BUILD)/t%.o,$(SYMBOLSRC)) -c $(SYMBOLSRC)
 		@echo "===== LINKING AGAIN =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(AOBJEND);
+		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(AOBJEND);
 		@echo "===== BUILDING SYMBOL-FILE =====";
 		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "===== COMPILING SYMBOL-C-FILE =====";
-		$(CC) $(CFLAGS) -o $(patsubst src/%.c,$(BUILD)/%.o,$(SYMBOLSRC)) -c $(SYMBOLSRC)
+		$(CC) $(CFLAGS) -o $(patsubst ../src/%.c,$(BUILD)/t%.o,$(SYMBOLSRC)) -c $(SYMBOLSRC)
 		@echo "===== LINKING AGAIN =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(AOBJEND);
+		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(AOBJEND);
 		@echo "===== COPYING BINARY =====";
 		sudo mount -o loop $(DISK) $(DISKMOUNT) || true;
 		cp $(BIN) $(DISKMOUNT);
 		sudo umount $(DISKMOUNT);
 
-$(AOBJ):	$(ASRC) $(ASRCEND)
-		@echo "===== ASSEMBLING =====";
-		nasm -g -f elf -o $(AOBJ) $(ASRC);
-		nasm -g -f elf -o $(AOBJEND) $(ASRCEND);
-
-$(BUILD)/%.o:		src/%.c
+$(BUILD)/%.o:		%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
-$(DEP):	$(CSRC)
+$(DEP):	$(TSRC)
 		@echo "===== GENERATING DEPENDENCIES =====";
-		$(CC) $(CFLAGS) -MM $(CSRC) > $(DEP);
+		$(CC) $(CFLAGS) -MM $(TSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
 		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/\1.o:/g" $(DEP);
 
@@ -77,5 +68,4 @@ $(DEP):	$(CSRC)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(DEP) $(BIN) $(COBJ) $(AOBJ) $(AOBJEND) $(SYMBOLS) \
-			$(BUILD)/tools_gensymbols.c $(BUILD)/tools_gensymbols.o;
+		rm -f $(DEP) $(BIN) $(TOBJ);

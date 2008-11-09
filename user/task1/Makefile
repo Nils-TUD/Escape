@@ -29,4 +29,4 @@ $(DUMP):	$(BIN)
 		$(BUILD)/dump $(BIN) $(DUMP)
 
 clean:
-		rm -f $(BIN) $(AOBJ)
+		rm -f $(BIN) $(AOBJ) $(DUMP)

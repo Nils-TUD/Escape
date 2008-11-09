@@ -8,7 +8,10 @@ LDCONF=src/ld.conf
 OSTITLE=hrniels-OS
 
 CC = gcc
-CFLAGS = -g -fno-inline -ffreestanding -Wall -ansi -nostdlib -nostartfiles -nodefaultlibs
+CFLAGS = -g -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wall -ansi \
+				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
+				 -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wno-long-long \
+				 -Wstrict-prototypes
 
 # sources
 ASRC=src/kernel.asm

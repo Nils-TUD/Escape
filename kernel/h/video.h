@@ -110,7 +110,7 @@ u8 vid_getuwidth(u32 n,u8 base);
  *
  * @param str the string
  */
-void vid_puts(s8 *str);
+void vid_puts(cstring str);
 
 /**
  * Determines the width of the given string
@@ -118,7 +118,7 @@ void vid_puts(s8 *str);
  * @param str the string
  * @return the width
  */
-u8 vid_getswidth(s8 *str);
+u8 vid_getswidth(cstring str);
 
 /**
  * Prints the given signed 32-bit integer in base 10
@@ -147,7 +147,7 @@ u8 vid_getnwidth(s32 n);
  *
  * @param fmt the format
  */
-void vid_printf(s8 *fmt,...);
+void vid_printf(cstring fmt,...);
 
 /**
  * Same as vid_printf, but with the va_list as argument
@@ -155,6 +155,6 @@ void vid_printf(s8 *fmt,...);
  * @param fmt the format
  * @param ap the argument-list
  */
-void vid_vprintf(s8 *fmt,va_list ap);
+void vid_vprintf(cstring fmt,va_list ap);
 
 #endif

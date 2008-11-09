@@ -37,8 +37,10 @@ void dbg_printProcessState(tProcSave *state);
 
 /**
  * Prints the current page-directory
+ *
+ * @param includeKernel wether the kernel-page-table should be printed
  */
-void dbg_printPageDir(void);
+void dbg_printPageDir(bool includeKernel);
 
 /**
  * Prints the given page-table

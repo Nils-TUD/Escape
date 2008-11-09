@@ -166,13 +166,13 @@ u8 vid_getuwidth(u32 n,u8 base) {
 	return width;
 }
 
-void vid_puts(s8 *str) {
+void vid_puts(cstring str) {
 	while(*str) {
 		vid_putchar(*str++);
 	}
 }
 
-u8 vid_getswidth(s8 *str) {
+u8 vid_getswidth(cstring str) {
 	u8 width = 0;
 	while(*str++) {
 		width++;
@@ -206,15 +206,16 @@ u8 vid_getnwidth(s32 n) {
 	return width;
 }
 
-void vid_printf(s8 *fmt,...) {
+void vid_printf(cstring fmt,...) {
 	va_list ap;
 	va_start(ap, fmt);
 	vid_vprintf(fmt,ap);
 	va_end(ap);
 }
 
-void vid_vprintf(s8 *fmt,va_list ap) {
-	s8 c,b,*s,oldcolor = color,pad,padchar;
+void vid_vprintf(cstring fmt,va_list ap) {
+	s8 c,b,oldcolor = color,pad,padchar;
+	string s;
 	s32 n;
 	u32 u;
 	u8 width,base;
@@ -282,7 +283,7 @@ void vid_vprintf(s8 *fmt,va_list ap) {
 				break;
 			/* string */
 			case 's':
-				s = va_arg(ap, s8*);
+				s = va_arg(ap, string);
 				if(pad > 0) {
 					width = vid_getswidth(s);
 					while(width++ < pad) {

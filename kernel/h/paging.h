@@ -14,39 +14,45 @@
 
 /**
  * Virtual memory layout:
- * 0x00000000: -------------------------------------
+ * 0x00000000: +-----------------------------------+
  *             |                                   |
- *             |               code                |
+ *             |             user-code             |
  *             |                                   |
- *             -------------------------------------
+ *             +-----------------------------------+
  *             |                                   |
- *      |      |               data                |
+ *      |      |             user-data             |
  *      v      |                                   |
- *             -------------------------------------
+ *             +-----------------------------------+
  *             |                ...                |
- *             -------------------------------------
+ *             +-----------------------------------+
  *      ^      |                                   |
- *      |      |               stack               |
+ *      |      |            user-stack             |
  *             |                                   |
- * 0xC0000000: -------------------------------------
+ * 0xC0000000: +-----------------------------------+
  *             |         kernel code+data          |
- *             -------------------------------------
+ *             +-----------------------------------+
  *      |      |             mm-stack              |
- *      v      -------------------------------------
+ *      v      +-----------------------------------+
  *             |                ...                |
- * 0xC0FFD000: -------------------------------------
+ * 0xC0FFC000: +-----------------------------------+
+ *             |            kernel-stack           |
+ * 0xC0FFD000: +-----------------------------------+
  *             |       mapped temp page-table      |
- * 0xC0FFE000: -------------------------------------
+ * 0xC0FFE000: +-----------------------------------+
  *             |        mapped temp page-dir       |
- * 0xC0FFF000: -------------------------------------
+ * 0xC0FFF000: +-----------------------------------+
  *             |          mapped page-dir          |
- * 0xC1000000: -------------------------------------
+ * 0xC1000000: +-----------------------------------+
  *             |        mapped page-tables         |
- * 0xC1400000: -------------------------------------
+ * 0xC1400000: +-----------------------------------+
  *             |     temp mapped page-tables       |
- * 0xC1800000: -------------------------------------
+ * 0xC1800000: +-----------------------------------+
+ *      ^      |                                   |
+ *      |      |            kernel-heap            |
+ *             |                                   |
+ * 0xC9800000: +-----------------------------------+
  *             |                ...                |
- * 0xFFFFFFFF: -------------------------------------
+ * 0xFFFFFFFF: +-----------------------------------+
  */
 
 /* the virtual address of the kernel-area */
@@ -61,6 +67,10 @@
 #define MAPPED_PTS_START	(KERNEL_AREA_V_ADDR + 0x1000000)
 /* the start of the temporary mapped page-tables area */
 #define TMPMAP_PTS_START	(MAPPED_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
+/* the start of the kernel-heap */
+#define KERNEL_HEAP_START	(TMPMAP_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
+/* the size of the kernel-heap (128 MiB) */
+#define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE * 4)
 
 /* page-directories in virtual memory */
 #define PAGE_DIR_AREA		(MAPPED_PTS_START - PAGE_SIZE)
@@ -190,6 +200,14 @@ void paging_unmapPageTable(tPTEntry *pt,u32 virtual,bool flush);
  * @return the number of pages
  */
 u32 paging_getPageCount(void);
+
+/**
+ * Determines the frame-number for the given virtual-address
+ *
+ * @param virtual the virtual address
+ * @return the frame-number to which it is currently mapped
+ */
+u32 paging_getFrameOf(u32 virtual);
 
 /**
  * Determines how many new frames we need for calling paging_map(<virtual>,...,<count>,...).

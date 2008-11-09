@@ -31,7 +31,7 @@
 /* Exceptions */
 
 /*
- * Occurs during a DIV or an IDIV instruction when the 
+ * Occurs during a DIV or an IDIV instruction when the
  * divisor is zero or a quotient overflow occurs.
  */
 #define EX_DIVIDE_BY_ZERO	0x0
@@ -57,7 +57,7 @@
 #define EX_BREAKPOINT		0x3
 
 /*
- * Occurs when the processor encounters an INTO instruction 
+ * Occurs when the processor encounters an INTO instruction
  * and the OF (overflow) flag is set.
  */
 #define EX_OVERFLOW			0x4
@@ -93,7 +93,7 @@
 #define EX_DOUBLE_FAULT		0x8
 
 /*
- * Occurs when a page or segment violation is detected while 
+ * Occurs when a page or segment violation is detected while
  * transferring the middle portion of a coprocessor operand
  * to the NPX.
  */
@@ -187,11 +187,11 @@ typedef struct {
 
 /**
  * Returns the name for the given interrupt-number
- * 
+ *
  * @param intrptNo the interrupt-number
  * @return the name
  */
-s8 *intrpt_no2Name(u32 intrptNo);
+cstring intrpt_no2Name(u32 intrptNo);
 
 /**
  * Enable interrupts
@@ -210,7 +210,7 @@ void intrpt_init(void);
 
 /**
  * Handles an interrupt
- * 
+ *
  * @param number the interrupt-number
  */
 void intrpt_handler(tIntrptStackFrame stack);

@@ -16,6 +16,7 @@
 #include "../h/debug.h"
 #include "../h/cpu.h"
 #include "../h/elf.h"
+#include "../h/kheap.h"
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table
@@ -75,10 +76,11 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 
 	printMultiBootInfo();
 
-	/* mm */
+	/* mm && kheap */
 	dbg_startTimer();
 	vid_printf("Initializing memory-management...");
 	mm_init();
+	kheap_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
@@ -111,9 +113,15 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 #ifdef TEST_PROC
 	test_proc();
 #endif
+#ifdef TEST_KHEAP
+	dbg_startTimer();
+	test_kheap();
+	dbg_stopTimer();
+#endif
 
 	/* TODO the following is just temporary! */
 
+#if 0
 	/* load task1 */
 	loadElfProg(task1);
 
@@ -136,8 +144,56 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	 * an invalid stack
 	 */
 
-	/*panic("Naja, irgendwann reichts mal :P");
-	while(1);*/
+	dbg_printPageDir(false);
+	vid_printf("START: free-frames=%d\n",mm_getNumberOfFreeFrames(MM_DEF));
+
+	u32 *a,*b,*c;
+	vid_printf("Reserving mem for 3 ints\n");
+	a = (u32*)kheap_alloc(3 * sizeof(u32));
+	*(a+0) = 1;
+	*(a+1) = 2;
+	*(a+2) = 3;
+	dumpMem(a,3);
+
+	kheap_print();
+
+	vid_printf("Reserving mem for 5 ints\n");
+	b = (u32*)kheap_alloc(5 * sizeof(u32));
+	*(b+0) = 4;
+	*(b+1) = 5;
+	*(b+2) = 6;
+	*(b+3) = 7;
+	*(b+4) = 8;
+	dumpMem(b,5);
+
+	kheap_print();
+
+	vid_printf("Reserving mem for 1024 ints\n");
+	c = (u32*)kheap_alloc(1024 * sizeof(u32));
+	*(c+0) = 9;
+	*(c+1) = 10;
+	*(c+2) = 11;
+	*(c+3) = 12;
+	*(c+4) = 13;
+	dumpMem(c,5);
+
+	vid_printf("AFTER ALLOC: free-frames=%d\n",mm_getNumberOfFreeFrames(MM_DEF));
+	kheap_print();
+
+	vid_printf("Freeing 3 ints\n");
+	kheap_free(a);
+	kheap_print();
+	vid_printf("Freeing 5 ints\n");
+	kheap_free(b);
+	kheap_print();
+	vid_printf("Freeing 1024 ints\n");
+	kheap_free(c);
+	kheap_print();
+
+	vid_printf("END: free-frames=%d\n",mm_getNumberOfFreeFrames(MM_DEF));
+#endif
+
+	while(1);
 	return 0;
 }
 

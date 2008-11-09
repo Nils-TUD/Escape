@@ -96,8 +96,8 @@ bool proc_clone(tProc *p) {
 
 	/* clear new page-table */
 	DBG_PROC_CLONE(vid_printf("Clearing %x .. %x..\n",PAGE_TABLE_AREA,
-			(void*)PAGE_TABLE_AREA + PT_ENTRY_COUNT));
-	memset((void*)PAGE_TABLE_AREA,0,PT_ENTRY_COUNT);
+			(u32*)PAGE_TABLE_AREA + PT_ENTRY_COUNT));
+	memset((u32*)PAGE_TABLE_AREA,0,PT_ENTRY_COUNT);
 
 	/* create the page-table-entry for the page-dir-area of the new process */
 	DBG_PROC_CLONE(vid_printf("Building page-table-entry for the page-dir-area\n"));
@@ -117,8 +117,8 @@ bool proc_clone(tProc *p) {
 
 	/* clear new page-table */
 	DBG_PROC_CLONE(vid_printf("Clearing %x .. %x..\n",PAGE_TABLE_AREA,
-			(void*)PAGE_TABLE_AREA + PT_ENTRY_COUNT));
-	memset((void*)PAGE_TABLE_AREA,0,PT_ENTRY_COUNT);
+			(u32*)PAGE_TABLE_AREA + PT_ENTRY_COUNT));
+	memset((u32*)PAGE_TABLE_AREA,0,PT_ENTRY_COUNT);
 
 	/* map kernel, page-dir and ourself :) */
 	DBG_PROC_CLONE(vid_printf("Mapping kernel, page-dir and ourself\n"));

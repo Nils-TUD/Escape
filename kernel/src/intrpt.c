@@ -68,7 +68,7 @@ typedef struct {
 } __attribute__((packed)) tIDTPtr;
 
 /* interrupt -> name */
-static s8 *intrptNo2Name[] = {
+static cstring intrptNo2Name[] = {
 	/* 0x00 */	"Divide by zero",
 	/* 0x01 */	"Single step",
 	/* 0x02 */	"Non maskable",
@@ -453,8 +453,8 @@ static void intrpt_eoi(u32 intrptNo) {
     }
 }
 
-s8 *intrpt_no2Name(u32 intrptNo) {
-	if(intrptNo >= 0 && intrptNo < ARRAY_SIZE(intrptNo2Name)) {
+cstring intrpt_no2Name(u32 intrptNo) {
+	if(intrptNo < ARRAY_SIZE(intrptNo2Name)) {
 		return intrptNo2Name[intrptNo];
 	}
 
@@ -748,6 +748,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 			break;
 
 		case IRQ_TIMER:
+#if 0
 			vid_printf("Timer interrupt...\n");
 			if(!procsReady)
 				break;
@@ -772,10 +773,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 				break;
 			}
 			vid_printf("Continuing %d\n",pi);
-
-			/*vid_printf("Timer interrupt...\n");
-			printStackTrace();*/
-			/* TODO schedule */
+#endif
 			break;
 
 		/* exceptions */

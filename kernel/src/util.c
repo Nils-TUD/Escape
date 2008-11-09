@@ -23,7 +23,7 @@ extern u32 getStackFrameStart(void);
  */
 extern u32 kernelStack;
 
-void panic(string fmt,...) {
+void panic(cstring fmt,...) {
 	va_list ap;
 	vid_printf("\n");
 	vid_setLineBG(vid_getLine(),RED);

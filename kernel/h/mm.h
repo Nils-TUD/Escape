@@ -61,6 +61,11 @@ u32 mm_getNumberOfFreeFrames(u32 types);
 void mm_allocateFrames(memType type,u32 *frames,u32 count);
 
 /**
+ * Prints all free frames
+ */
+void mm_printFreeFrames(void);
+
+/**
  * Allocates a frame of the given type and returns the frame-number
  *
  * @panic if there is no frame left anymore

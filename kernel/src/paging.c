@@ -178,6 +178,11 @@ u32 paging_getPageCount(void) {
 	return count;
 }
 
+u32 paging_getFrameOf(u32 virtual) {
+	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
+	return pt->frameNumber;
+}
+
 u32 paging_countFramesForMap(u32 virtual,u32 count) {
 	/* we need at least <count> frames */
 	u32 res = count;

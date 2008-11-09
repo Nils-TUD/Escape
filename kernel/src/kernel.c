@@ -104,24 +104,8 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
 
-#ifdef TEST_MM
-	test_mm();
-#endif
-#ifdef TEST_PAGING
-	test_paging();
-#endif
-#ifdef TEST_PROC
-	test_proc();
-#endif
-#ifdef TEST_KHEAP
-	dbg_startTimer();
-	test_kheap();
-	dbg_stopTimer();
-#endif
-
-	/* TODO the following is just temporary! */
-
 #if 0
+	/* TODO the following is just temporary! */
 	/* load task1 */
 	loadElfProg(task1);
 

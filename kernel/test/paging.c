@@ -12,7 +12,7 @@
 
 /* forward declarations */
 static void test_paging(void);
-static bool test_paging_cycle(u32 i,u32 addr,u32 count);
+static bool test_paging_cycle(u32 addr,u32 count);
 static void test_paging_allocate(u32 addr,u32 count);
 static void test_paging_access(u32 addr,u32 count);
 static void test_paging_free(u32 addr,u32 count);
@@ -27,19 +27,18 @@ tTestModule tModPaging = {
 u32 frames[TEST_MAX_FRAMES];
 
 static void test_paging(void) {
-	u32 i,x,y;
+	u32 x,y;
 	u32 addr[] = {0x0,0xB0000000,0xA0000000,0x4000,0x1234};
 	u32 count[] = {0,1,50,1024,1025,2048,2051};
 
-	i = 0;
 	for(y = 0; y < ARRAY_SIZE(addr); y++) {
 		for(x = 0; x < ARRAY_SIZE(count); x++) {
-			test_paging_cycle(i++,addr[y],count[x]);
+			test_paging_cycle(addr[y],count[x]);
 		}
 	}
 }
 
-static bool test_paging_cycle(u32 i,u32 addr,u32 count) {
+static bool test_paging_cycle(u32 addr,u32 count) {
 	u32 oldFF, newFF, oldPC, newPC;
 
 	test_caseStart("Mapping %d pages to 0x%08x",count,addr);
@@ -84,7 +83,7 @@ static void test_paging_access(u32 addr,u32 count) {
 }
 
 static void test_paging_free(u32 addr,u32 count) {
-	paging_unmap(addr,count);
+	paging_unmap(addr,count,false);
 	mm_freeFrames(MM_DEF,frames,count);
 	paging_flushTLB();
 }

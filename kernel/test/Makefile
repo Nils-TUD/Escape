@@ -26,6 +26,7 @@ TOBJ=$(patsubst %.c,$(BUILD)/test_%.o,$(TSRC))
 SYMBOLS=$(BUILD)/tsymbols.txt
 SYMBOLSCRIPT=../../tools/gensymbols.sh
 SYMBOLSRC=../src/ksymbols.c
+SYMBOLOBJ=$(patsubst ../src/%.c,$(BUILD)/t%.o,$(SYMBOLSRC))
 
 .PHONY: all pre clean
 
@@ -40,13 +41,13 @@ $(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ)
 		@echo "===== BUILDING SYMBOL-FILE =====";
 		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "===== COMPILING SYMBOL-C-FILE =====";
-		$(CC) $(CFLAGS) -o $(patsubst ../src/%.c,$(BUILD)/t%.o,$(SYMBOLSRC)) -c $(SYMBOLSRC)
+		$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "===== LINKING AGAIN =====";
 		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(AOBJEND);
 		@echo "===== BUILDING SYMBOL-FILE =====";
 		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "===== COMPILING SYMBOL-C-FILE =====";
-		$(CC) $(CFLAGS) -o $(patsubst ../src/%.c,$(BUILD)/t%.o,$(SYMBOLSRC)) -c $(SYMBOLSRC)
+		$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "===== LINKING AGAIN =====";
 		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(AOBJEND);
 		@echo "===== COPYING BINARY =====";
@@ -62,10 +63,10 @@ $(DEP):	$(TSRC)
 		@echo "===== GENERATING DEPENDENCIES =====";
 		$(CC) $(CFLAGS) -MM $(TSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/\1.o:/g" $(DEP);
+		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/test_\1.o:/g" $(DEP);
 
 -include $(DEP)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(DEP) $(BIN) $(TOBJ);
+		rm -f $(DEP) $(BIN) $(TOBJ) $(SYMBOLS) $(SYMBOLOBJ);

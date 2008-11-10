@@ -6,6 +6,7 @@
 
 #include "../h/common.h"
 #include "../h/proc.h"
+#include "../h/video.h"
 #include "test.h"
 #include "proc.h"
 

@@ -45,6 +45,9 @@
 #define ICW4_BUF_MASTER	0x0C				/* Buffered mode/master */
 #define ICW4_SFNM		0x10				/* Special fully nested */
 
+/* maximum number of a exception in a row */
+#define MAX_EX_COUNT	3
+
 /* represents an IDT-entry */
 typedef struct {
 	/* The address[0..15] of the ISR */
@@ -118,6 +121,10 @@ static cstring intrptNo2Name[] = {
 	/* 0x2E */	"ATA1",
 	/* 0x2F */	"ATA2"
 };
+
+/* stuff to count exceptions */
+static u32 exCount = 0;
+static u32 lastEx = 0xFFFFFFFF;
 
 /**
  * Assembler routine to load an IDT
@@ -735,10 +742,7 @@ void intrpt_init(void) {
 	intrpt_enable();
 }
 
-#define MAX_EX_COUNT 3
-static u32 exCount = 0;
-static u32 lastEx = 0xFFFFFFFF;
-
+/* TODO temporary! */
 extern bool procsReady;
 
 void intrpt_handler(tIntrptStackFrame stack) {

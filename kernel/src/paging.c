@@ -9,6 +9,9 @@
 #include "../h/video.h"
 #include "../h/proc.h"
 
+/* builds the address of the page in the mapped page-tables to which the given addr belongs */
+#define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + ((u32)(addr) / PT_ENTRY_COUNT))
+
 /* converts the given virtual address to a physical
  * (this assumes that the kernel lies at 0xC0000000) */
 #define VIRT2PHYS(addr) ((u32)(addr) + 0x40000000)
@@ -124,6 +127,10 @@ void paging_mapHigherHalf(void) {
 	}
 }
 
+tPDEntry *paging_getProc0PD(void) {
+	return proc0PD;
+}
+
 u32 paging_getPageCount(void) {
 	u32 i,x,count = 0;
 	tPTEntry *pagetable;
@@ -192,48 +199,61 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
 
 		/* setup page */
 		pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
-		if(frames == NULL) {
-			pt->frameNumber = mm_allocateFrame(MM_DEF);
+		/* ignore already present entries */
+		if(!pt->present) {
+			if(frames == NULL) {
+				pt->frameNumber = mm_allocateFrame(MM_DEF);
+			}
+			else {
+				pt->frameNumber = *frames++;
+			}
+			pt->present = 1;
+			pt->writable = flags & PG_WRITABLE;
+			pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0;
+			pt->copyOnWrite = flags & PG_COPYONWRITE;
 		}
-		else {
-			pt->frameNumber = *frames++;
-		}
-		pt->present = 1;
-		pt->writable = flags & PG_WRITABLE;
-		pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0;
-		pt->copyOnWrite = flags & PG_COPYONWRITE;
 
 		/* to next page */
 		virtual += PAGE_SIZE;
 	}
 }
 
-void paging_unmap(u32 virtual,u32 count) {
+void paging_unmap(u32 virtual,u32 count,bool freeFrames) {
 	u32 pdIndex;
 	bool ptEmpty;
 	u32 index = ADDR_TO_PTINDEX(virtual);
+	/* don't free page-tables in the kernel-area */
+	bool freePT = virtual < KERNEL_AREA_V_ADDR;
 	tPDEntry *pdir;
-	tPTEntry *addr = (tPTEntry*)ADDR_TO_MAPPED(virtual);
+	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
 	while(count-- > 0) {
-		addr->present = 0;
+		/* remove and free, if desired */
+		if(pt->present) {
+			if(freeFrames)
+				mm_freeFrame(pt->frameNumber,MM_DEF);
+			pt->present = false;
+		}
 
 		/* check if the page-table is empty if we have reached the end of it
 		 * or if we're finished now */
-		if(count == 0 || (index % PT_ENTRY_COUNT) == PT_ENTRY_COUNT - 1) {
-			pdIndex = ADDR_TO_PDINDEX(virtual);
-			ptEmpty = paging_isPTEmpty((tPTEntry*)(MAPPED_PTS_START + pdIndex * PAGE_SIZE));
-			/* page-table empty? */
-			if(ptEmpty) {
-				pdir = (tPDEntry*)PAGE_DIR_AREA;
-				/* so remove it from page-dir and free the frame for it */
-				pdir[pdIndex].present = 0;
-				mm_freeFrame(pdir[pdIndex].ptFrameNo,MM_DEF);
+		if(freePT) {
+			if(count == 0 || (index % PT_ENTRY_COUNT) == PT_ENTRY_COUNT - 1) {
+				pdIndex = ADDR_TO_PDINDEX(virtual);
+				ptEmpty = paging_isPTEmpty((tPTEntry*)(MAPPED_PTS_START + pdIndex * PAGE_SIZE));
+				/* page-table empty? */
+				if(ptEmpty) {
+					pdir = (tPDEntry*)PAGE_DIR_AREA;
+					/* so remove it from page-dir and free the frame for it */
+					pdir[pdIndex].present = 0;
+					mm_freeFrame(pdir[pdIndex].ptFrameNo,MM_DEF);
+				}
 			}
+
+			index = (index + 1) % PT_ENTRY_COUNT;
 		}
 
 		/* to next page */
-		addr++;
-		index = (index + 1) % PT_ENTRY_COUNT;
+		pt++;
 		virtual += PAGE_SIZE;
 	}
 }

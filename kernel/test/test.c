@@ -41,14 +41,14 @@ void test_caseStartv(cstring fmt,va_list ap) {
 }
 
 void test_caseSucceded(void) {
-	vid_printf("== >> SUCCESS ==\n\n");
+	vid_printf("== >> %:02s ==\n\n","SUCCESS");
 	totalSucc++;
 	succCount++;
 }
 
 void test_caseFailed(cstring fmt,...) {
 	va_list ap;
-	vid_printf("== >> FAILED : ");
+	vid_printf("== >> %:04s : ","FAILED");
 	va_start(ap,fmt);
 	vid_vprintf(fmt,ap);
 	va_end(ap);
@@ -79,15 +79,15 @@ void test_start(void) {
 			modsFailed++;
 
 		vid_printf("---- Module \"%s\" finished. Summary: ----\n",modules[i]->name);
-		vid_printf("-- %d testcases successfull --\n",succCount);
-		vid_printf("-- %d testcases failed --\n",failCount);
+		vid_printf("-- %:02d testcases successfull --\n",succCount);
+		vid_printf("-- %:04d testcases failed --\n",failCount);
 		vid_printf("----------------------------------\n\n");
 	}
 
 	vid_printf("====== All modules done ======\n");
-	vid_printf("== %d modules successfull ==\n",modsSucc);
-	vid_printf("== %d modules failed ==\n",modsFailed);
-	vid_printf("== %d testcases successfull ==\n",totalSucc);
-	vid_printf("== %d testcases failed ==\n",totalFail);
+	vid_printf("== %:02d modules successfull ==\n",modsSucc);
+	vid_printf("== %:04d modules failed ==\n",modsFailed);
+	vid_printf("== %:02d testcases successfull ==\n",totalSucc);
+	vid_printf("== %:04d testcases failed ==\n",totalFail);
 	vid_printf("============================\n");
 }

@@ -153,10 +153,8 @@ static void kheap_deleteArea(tMemArea *area) {
 	/* decrease usages and free frame if possible */
 	*usageCount = *usageCount - 1;
 	if(*usageCount == 0) {
-		tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED((u32)usageCount);
-		DBG_KMALLOC(vid_printf("usageCount=0, freeing frame 0x%x @ 0x%x\n",pt->frameNumber,usageCount));
-		mm_freeFrame(pt->frameNumber,MM_DEF);
-		pt->present = false;
+		DBG_KMALLOC(vid_printf("usageCount=0, freeing frame @ 0x%x\n",usageCount));
+		paging_unmap((u32)usageCount,1,true);
 	}
 }
 
@@ -205,7 +203,6 @@ void kheap_print(void) {
 void *kheap_alloc(u32 size) {
 	u32 address,caddress,endAddr;
 	tMemArea *area, *lastArea = NULL, *nArea;
-	tPTEntry *pt;
 
 	DBG_KMALLOC(vid_printf(">>===== kheap_alloc(size=%d) =====\n",size));
 	DBG_KMALLOC(vid_printf("totalSize=%d, first=0x%x\n",lowestAddr,first));
@@ -240,22 +237,8 @@ void *kheap_alloc(u32 size) {
 	else
 		address += area->size - size;
 
-	/* reserve frames, if necessary */
-	caddress = address;
-	endAddr = caddress + size;
-	while(caddress < endAddr) {
-		DBG_KMALLOC(vid_printf("caddress=0x%x\n",caddress));
-		pt = (tPTEntry*)ADDR_TO_MAPPED(caddress & ~(PAGE_SIZE - 1));
-		if(!pt->present) {
-			u32 frame = mm_allocateFrame(MM_DEF);
-			DBG_KMALLOC(vid_printf("Allocating frame for 0x%x -> 0x%x\n",caddress,frame));
-			pt->present = true;
-			pt->writable = true;
-			pt->notSuperVisor = false;
-			pt->frameNumber = frame;
-		}
-		caddress += PAGE_SIZE;
-	}
+	/* reserve frames and map them, if necessary */
+	paging_map(address & ~(PAGE_SIZE - 1),NULL,BYTES_2_PAGES(size),PG_SUPERVISOR | PG_WRITABLE);
 
 	DBG_KMALLOC(vid_printf("OldArea(@0x%x): free=%d, size=%d, next=0x%x\n",area,area->free,
 			area->size,area->next));
@@ -379,21 +362,8 @@ void kheap_free(void *addr) {
 	/* don't free to much */
 	freeSize = address - startAddr > freeSize ? 0 : freeSize - (address - startAddr);
 	freeSize &= ~(PAGE_SIZE - 1);
-	DBG_KMALLOC(vid_printf("After: address=0x%x, totalSize=%d\n",address,freeSize));
-	while(freeSize > 0) {
-		DBG_KMALLOC(vid_printf("address=0x%x, totalSize=%d\n",address,freeSize));
-		tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(address);
-		/* not already free'd? */
-		if(pt->present) {
-			DBG_KMALLOC(vid_printf("Freeing frame %x\n",pt->frameNumber));
-			mm_freeFrame(pt->frameNumber,MM_DEF);
-			/* Note that we don't remove the page-table! */
-			pt->present = false;
-		}
-		/* to next */
-		freeSize -= PAGE_SIZE;
-		address += PAGE_SIZE;
-	}
+
+	paging_unmap(address,BYTES_2_PAGES(freeSize),true);
 
 	DBG_KMALLOC(vid_printf("<<===== kheap_free =====\n"));
 }

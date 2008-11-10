@@ -48,7 +48,7 @@
  *      ^      |                                   |     |
  *      |      |            kernel-heap            |     |
  *             |                                   |     |
- * 0xC8800000: +-----------------------------------+     |
+ * 0xC1800000: +-----------------------------------+     |
  *             |                ...                |     |
  * 0xFFBFFFFF: +-----------------------------------+     |
  *             |        mapped page-tables         |     |
@@ -69,8 +69,8 @@
 #define TMPMAP_PTS_START	(KERNEL_AREA_V_ADDR + (PT_ENTRY_COUNT * PAGE_SIZE))
 /* the start of the kernel-heap */
 #define KERNEL_HEAP_START	(TMPMAP_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
-/* the size of the kernel-heap (128 MiB) */
-#define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE * 32)
+/* the size of the kernel-heap (16 MiB) */
+#define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE * 4)
 
 /* page-directories in virtual memory */
 #define PAGE_DIR_AREA		(TMPMAP_PTS_START - PAGE_SIZE)
@@ -88,9 +88,6 @@
 
 /* converts a virtual address to the page-directory-index for that address */
 #define ADDR_TO_PDINDEX(addr) ((u32)(addr) / PAGE_SIZE / PT_ENTRY_COUNT)
-
-/* builds the address of the page in the mapped page-tables to which the given addr belongs */
-#define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + ((u32)(addr) / PT_ENTRY_COUNT))
 
 /* converts a virtual address to the index in the corresponding page-table */
 #define ADDR_TO_PTINDEX(addr) (((u32)(addr) / PAGE_SIZE) % PT_ENTRY_COUNT)
@@ -152,9 +149,6 @@ typedef struct {
 	frameNumber			: 20;
 } tPTEntry;
 
-/* the page-directory for the first process */
-extern tPDEntry proc0PD[];
-
 /**
  * Inits the paging. Sets up the page-dir and page-tables for the kernel and enables paging
  */
@@ -165,6 +159,13 @@ void paging_init(void);
  * This should be done ONCE at the beginning as soon as the physical memory management is set up
  */
 void paging_mapHigherHalf(void);
+
+/**
+ * Note that this should just be used by proc_init()!
+ *
+ * @return the address of the page-directory of process 0
+ */
+tPDEntry *paging_getProc0PD(void);
 
 /**
  * Assembler routine to flush the TLB
@@ -207,6 +208,7 @@ u32 paging_countFramesForMap(u32 virtual,u32 count);
  * Maps <count> virtual addresses starting at <virtual> to the given frames (in the CURRENT
  * page-dir!)
  * Note that the function will NOT flush the TLB!
+ * Another note: Already present entries will be ignored and NOT replaced!
  *
  * @panic if there is not enough memory to get a frame for a page-table
  *
@@ -219,14 +221,15 @@ u32 paging_countFramesForMap(u32 virtual,u32 count);
 void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags);
 
 /**
- * Removes <count> pages starting at <virtual> from the page-directory and page-tables (in the
- * CURRENT page-dir!).
- * Note that the function will NOT free the frames and that it will NOT flush the TLB!
+ * Removes <count> pages starting at <virtual> from the page-directory and page-tables, if
+ * necessary (in the CURRENT page-dir!). If you like the function free's the frames.
+ * Note that the function will NOT flush the TLB!
  *
  * @param virtual the virtual start-address
  * @param count the number of pages to unmap
+ * @param freeFrames wether the frames should be free'd and not just unmapped
  */
-void paging_unmap(u32 virtual,u32 count);
+void paging_unmap(u32 virtual,u32 count,bool freeFrames);
 
 /**
  * Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as

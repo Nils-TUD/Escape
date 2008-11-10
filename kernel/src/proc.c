@@ -26,7 +26,7 @@ void proc_init(void) {
 	procs[pi].dataPages = 0;
 	procs[pi].stackPages = 0;
 	/* note that this assumes that the page-dir is initialized */
-	procs[pi].physPDirAddr = (u32)proc0PD & ~KERNEL_AREA_V_ADDR;
+	procs[pi].physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 }
 
 u16 proc_getFreePid(void) {
@@ -175,8 +175,8 @@ bool proc_clone(tProc *p) {
 
 	/* remove the temp-mappings */
 	DBG_PROC_CLONE(vid_printf("Removing temp mappings\n"));
-	paging_unmap(PAGE_TABLE_AREA,1);
-	paging_unmap(PAGE_DIR_TMP_AREA,1);
+	paging_unmap(PAGE_TABLE_AREA,1,false);
+	paging_unmap(PAGE_DIR_TMP_AREA,1,false);
 	/* TODO optimize! */
 	paging_flushTLB();
 
@@ -232,18 +232,10 @@ bool proc_changeSize(s32 change,chgArea area) {
 		/* we have to correct the address */
 		addr += change * PAGE_SIZE;
 
-		/* we have to free the frames for the data first (the page-table may not exist anymore
-		 * after paging_unmap) */
-		pt = (tPTEntry*)ADDR_TO_MAPPED(addr);
-		i = -change;
-		while(i-- > 0) {
-			mm_freeFrame(pt->frameNumber,MM_DEF);
-			pt++;
-		}
+		/* free and unmap memory */
+		paging_unmap(addr,-change,true);
 
-		/* now unmap the area and - maybe - free page-tables */
-		paging_unmap(addr,-change);
-		/* finally, ensure that the TLB contains no invalid entries */
+		/* ensure that the TLB contains no invalid entries */
 		/* TODO optimize! */
 		paging_flushTLB();
 	}

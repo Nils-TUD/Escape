@@ -48,6 +48,7 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	dbg_startTimer();
 	vid_printf("Initializing memory-management...");
 	mm_init();
+	paging_mapHigherHalf();
 	kheap_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");

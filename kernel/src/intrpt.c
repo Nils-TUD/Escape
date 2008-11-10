@@ -778,12 +778,6 @@ void intrpt_handler(tIntrptStackFrame stack) {
 
 		/* exceptions */
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
-			if(stack.intrptNo == EX_PAGE_FAULT) {
-				vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
-				printStackTrace();
-				break;
-			}
-
 			/* count consecutive occurrences */
 			/* TODO we should consider irqs, too! */
 			if(lastEx == stack.intrptNo) {
@@ -796,6 +790,12 @@ void intrpt_handler(tIntrptStackFrame stack) {
 			else {
 				exCount = 0;
 				lastEx = stack.intrptNo;
+			}
+
+			if(stack.intrptNo == EX_PAGE_FAULT) {
+				vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
+				printStackTrace();
+				break;
 			}
 			/* fall through */
 

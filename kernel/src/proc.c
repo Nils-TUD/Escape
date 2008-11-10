@@ -120,13 +120,6 @@ bool proc_clone(tProc *p) {
 			(u32*)PAGE_TABLE_AREA + PT_ENTRY_COUNT));
 	memset((u32*)PAGE_TABLE_AREA,0,PT_ENTRY_COUNT);
 
-	/* map kernel, page-dir and ourself :) */
-	DBG_PROC_CLONE(vid_printf("Mapping kernel, page-dir and ourself\n"));
-	paging_mapPageTable((tPTEntry*)PAGE_TABLE_AREA,KERNEL_AREA_V_ADDR,
-			pd[ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR)].ptFrameNo,false);
-	paging_mapPageTable((tPTEntry*)PAGE_TABLE_AREA,PAGE_DIR_AREA,pdirAreaFrame,false);
-	paging_mapPageTable((tPTEntry*)PAGE_TABLE_AREA,MAPPED_PTS_START,mapAreaFrame,false);
-
 	/* insert into page-dir */
 	DBG_PROC_CLONE(vid_printf("Insert into page-dir\n"));
 	npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo = mapAreaFrame;
@@ -135,9 +128,6 @@ bool proc_clone(tProc *p) {
 
 	/* make the page-tables of the old process accessible in a different page-table */
 	npd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = pd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
-	/* map the page-table for the page-tables of the old-process */
-	paging_mapPageTable((tPTEntry*)PAGE_TABLE_AREA,TMPMAP_PTS_START,
-			pd[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo,false);
 
 	/* exchange page-dir */
 	DBG_PROC_CLONE(vid_printf("Exchange page-dir to the new one\n"));
@@ -169,7 +159,6 @@ bool proc_clone(tProc *p) {
 	DBG_PROC_CLONE(vid_printf("Removing temp-area\n"));
 	npd = (tPDEntry*)PAGE_DIR_AREA;
 	npd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)].present = 0;
-	paging_unmapPageTable((tPTEntry*)ADDR_TO_MAPPED(MAPPED_PTS_START),TMPMAP_PTS_START,false);
 
 	/*vid_printf("========= NEW PAGE TABLE =========\n");
 	dbg_printPageDir();*/

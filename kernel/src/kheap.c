@@ -10,10 +10,6 @@
 #include "../h/util.h"
 #include "../h/video.h"
 
-/* TODO this does not work since we would assign new page-tables just to the current process! */
-/* perhaps we should create all page-tables for 0xC0000000 - 0xFFFFFFFF at the beginning? */
-/* hmm...or is it not necessary to share the kernel-heap between processes ? */
-
 /*
  * Consider the following actions:
  * 	ptr1 = kheap_alloc(16);
@@ -165,24 +161,6 @@ static void kheap_deleteArea(tMemArea *area) {
 }
 
 void kheap_init(void) {
-	/* TODO move that to somewhere else! */
-	/* create all page-tables for this area */
-	u32 addr = KERNEL_HEAP_START;
-	tPTEntry *mapPageTable = (tPTEntry*)ADDR_TO_MAPPED(MAPPED_PTS_START);
-	tPDEntry *pd = (tPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(addr);
-	while(addr < KERNEL_HEAP_START + KERNEL_HEAP_SIZE) {
-		/* insert into page-dir and map it */
-		pd->present = true;
-		pd->writable = true;
-		pd->ptFrameNo = mm_allocateFrame(MM_DEF);
-		paging_mapPageTable(mapPageTable,addr,pd->ptFrameNo,true);
-		/* clear */
-		memset((void*)ADDR_TO_MAPPED(addr),0,PT_ENTRY_COUNT);
-		/* to next */
-		addr += PAGE_SIZE * PT_ENTRY_COUNT;
-		pd++;
-	}
-
 	/* get frame and map it */
 	initial = (tMemArea*)KERNEL_HEAP_START + 1;
 	u32 frame = mm_allocateFrame(MM_DEF);

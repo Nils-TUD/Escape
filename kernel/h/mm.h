@@ -59,11 +59,6 @@ u32 mm_getNumberOfFreeFrames(u32 types);
 void mm_allocateFrames(memType type,u32 *frames,u32 count);
 
 /**
- * Prints all free frames
- */
-void mm_printFreeFrames(void);
-
-/**
  * Allocates a frame of the given type and returns the frame-number
  *
  * @panic if there is no frame left anymore
@@ -90,6 +85,11 @@ void mm_freeFrames(memType type,u32 *frames,u32 count);
  * @param type the frame-type: MM_DMA or MM_DEF
  */
 void mm_freeFrame(u32 frame,memType type);
+
+/**
+ * Prints all free frames
+ */
+void mm_printFreeFrames(void);
 
 /**
  * Prints the bitmap for the lower 16MB memory

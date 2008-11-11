@@ -86,9 +86,6 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
 
-	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),
-			paging_getPageCount());
-
 	/* processes */
 	dbg_startTimer();
 	vid_printf("Initializing process-management...");
@@ -105,12 +102,17 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
 
+	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),
+			paging_getPageCount());
+
 	/*dbg_printPageDir(true);*/
 
-#if 0
+#if 1
 	/* TODO the following is just temporary! */
 	/* load task1 */
 	loadElfProg(task1);
+
+	/*dbg_printPageDir(false);*/
 
 	/* clone ourself */
 	u16 pid = proc_getFreePid();
@@ -124,15 +126,18 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 		return 0;
 	}
 
+	/*dbg_printPageDir(false);*/
+
 	procsReady = true;
 
 	/* FIXME note that this is REALLY dangerous! we have just 1 stack at the moment. That means
 	 * if we do anything here that manipulates the stack the process we create above will get
 	 * an invalid stack
 	 */
+#else
+	while(1);
 #endif
 
-	while(1);
 	return 0;
 }
 

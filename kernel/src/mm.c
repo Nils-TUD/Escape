@@ -52,6 +52,7 @@ void mm_init(void) {
 
 	/* mark the kernel-code and data (including stack for free frames) as used */
 	/* Note that we have to remove the 0xC0000000 since we want to work with physical addresses */
+	/* TODO we can use a little bit more because the kernel does not use the last few frames */
 	mm_markAddrRangeUsed((u32)&KernelStart & ~KERNEL_AREA_V_ADDR,
 			(u32)(((u32)&KernelEnd & ~KERNEL_AREA_V_ADDR) + u16mStackFrameCount * PAGE_SIZE),true);
 }

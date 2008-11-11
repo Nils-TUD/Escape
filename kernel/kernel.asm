@@ -37,29 +37,30 @@
 [extern entryPoint]
 
 ; Multiboot constants
-MULTIBOOT_PAGE_ALIGN	equ 1<<0
-MULTIBOOT_MEMORY_INFO	equ 1<<1
+MULTIBOOT_PAGE_ALIGN		equ 1<<0
+MULTIBOOT_MEMORY_INFO		equ 1<<1
 MULTIBOOT_HEADER_MAGIC	equ 0x1BADB002
 MULTIBOOT_HEADER_FLAGS	equ MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
-MULTIBOOT_CHECKSUM	equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
+MULTIBOOT_CHECKSUM			equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
 ; general constants
 ; TODO better way which uses the defines from paging.h?
-PAGE_SIZE			equ 4096
-KERNEL_STACK	equ 0xC0000000 + 0x1000000 - PAGE_SIZE * 4
-USER_STACK		equ 0xC0000000
+PAGE_SIZE								equ 4096
+KERNEL_STACK_SIZE				equ PAGE_SIZE
+KERNEL_STACK						equ (0xFFFFFFFF - 0x400000 - KERNEL_STACK_SIZE) + 1
+USER_STACK							equ 0xC0000000
 
 ; process save area offsets
-STATE_ESP			equ 0
-STATE_EDI			equ 4
-STATE_ESI			equ 8
-STATE_EBP			equ 12
-STATE_EDX			equ	16
-STATE_ECX			equ	20
-STATE_EBX			equ	24
-STATE_EAX			equ	28
-STATE_EIP			equ	32
-STATE_EFLAGS	equ	36
+STATE_ESP								equ 0
+STATE_EDI								equ 4
+STATE_ESI								equ 8
+STATE_EBP								equ 12
+STATE_EDX								equ	16
+STATE_ECX								equ	20
+STATE_EBX								equ	24
+STATE_EAX								equ	28
+STATE_EIP								equ	32
+STATE_EFLAGS						equ	36
 
 ; TODO consider callee-save-registers!!
 
@@ -71,7 +72,7 @@ STATE_EFLAGS	equ	36
 	; init kernel-stack
 	cmp		esp,KERNEL_STACK
 	jb		isr%1StackSet
-	mov		esp,KERNEL_STACK + PAGE_SIZE - 4
+	mov		esp,KERNEL_STACK + KERNEL_STACK_SIZE - 4
 	isr%1StackSet:
 	push	0															; error-code (no error here)
 	push	dword %1											; the interrupt-number
@@ -86,7 +87,7 @@ STATE_EFLAGS	equ	36
 	; init kernel-stack
 	cmp		esp,KERNEL_STACK
 	jb		isr%1StackSet
-	mov		esp,KERNEL_STACK + PAGE_SIZE - 4
+	mov		esp,KERNEL_STACK + KERNEL_STACK_SIZE - 4
 	isr%1StackSet:
 	; the error-code has already been pushed
 	push	dword %1											; the interrupt-number

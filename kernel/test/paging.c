@@ -65,7 +65,7 @@ static bool test_paging_cycle(u32 addr,u32 count) {
 
 static void test_paging_allocate(u32 addr,u32 count) {
 	mm_allocateFrames(MM_DEF,frames,count);
-	paging_map(addr,frames,count,PG_WRITABLE);
+	paging_map(addr,frames,count,PG_WRITABLE,false);
 	paging_flushTLB();
 }
 

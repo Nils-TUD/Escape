@@ -51,7 +51,9 @@ void dbg_printProcessState(tProcSave *state) {
 
 void dbg_printPageDir(bool includeKernel) {
 	u32 i;
-	tPDEntry *pagedir = (tPDEntry*)PAGE_DIR_AREA;
+	tPDEntry *pagedir;
+	paging_mapPageDir();
+	pagedir = (tPDEntry*)PAGE_DIR_AREA;
 	vid_printf("page-dir @ 0x%08x:\n",pagedir);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
 		if(pagedir[i].present && (includeKernel || i != ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR))) {

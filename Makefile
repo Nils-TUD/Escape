@@ -28,8 +28,7 @@ qemu:	all prepareRun
 		qemu -serial stdio -no-kqemu -fda $(DISK) > log.txt 2>&1
 
 bochs: all prepareRun
-		bochs -f bochs.cfg -q;
-		# > log.txt 2>&1
+		bochs -f bochs.cfg -q > log.txt 2>&1
 
 debug: all prepareRun
 		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &

@@ -30,29 +30,29 @@
  *             |                ...                |     |
  * 0xC0100000: +-----------------------------------+     |
  *             |         kernel code+data          |     |
- *             +-----------------------------------+     |
- *      |      |             mm-stack              |     |
- *      v      +-----------------------------------+     |
- *             |                ...                |
- * 0xC03FC000: +-----------------------------------+     k
- *             |            kernel-stack           |     e
- * 0xC03FD000: +-----------------------------------+     r
- *             |       mapped temp page-table      |     n
- * 0xC03FE000: +-----------------------------------+     e
- *             |        mapped temp page-dir       |     l
- * 0xC03FF000: +-----------------------------------+     a
- *             |          mapped page-dir          |     r
- * 0xC0400000: +-----------------------------------+     e
- *             |     temp mapped page-tables       |     a
- * 0xC0800000: +-----------------------------------+
- *      ^      |                                   |     |
- *      |      |            kernel-heap            |     |
- *             |                                   |     |
+ *             +-----------------------------------+
+ *      |      |             mm-stack              |     k
+ *      v      +-----------------------------------+     e
+ *             |                ...                |     r
+ * 0xC03FE000: +-----------------------------------+     n
+ *             |        mapped temp page-dir       |     e
+ * 0xC03FF000: +-----------------------------------+     l
+ *             |          mapped page-dir          |     a
+ * 0xC0400000: +-----------------------------------+     r
+ *      ^      |                                   |     e
+ *      |      |            kernel-heap            |     a
+ *             |                                   |
  * 0xC1800000: +-----------------------------------+     |
  *             |                ...                |     |
- * 0xFFBFFFFF: +-----------------------------------+     |
- *             |        mapped page-tables         |     |
- * 0xFFFFFFFF: +-----------------------------------+   -----
+ * 0xFF400000: +-----------------------------------+     |      -----
+ *             |     temp mapped page-tables       |     |        |
+ * 0xFF800000: +-----------------------------------+     |        |
+ *             |                ...                |     |
+ * 0xFFBFC000: +-----------------------------------+     |     not shared page-tables (3)
+ *             |            kernel-stack           |     |
+ * 0xFFC00000: +-----------------------------------+     |        |
+ *             |        mapped page-tables         |     |        |
+ * 0xFFFFFFFF: +-----------------------------------+   -----    -----
  */
 
 /* the virtual address of the kernel-area */
@@ -66,20 +66,18 @@
 /* the start of the mapped page-tables area */
 #define MAPPED_PTS_START	(0xFFFFFFFF - (PT_ENTRY_COUNT * PAGE_SIZE) + 1)
 /* the start of the temporary mapped page-tables area */
-#define TMPMAP_PTS_START	(KERNEL_AREA_V_ADDR + (PT_ENTRY_COUNT * PAGE_SIZE))
+#define TMPMAP_PTS_START	(MAPPED_PTS_START - (PT_ENTRY_COUNT * PAGE_SIZE * 2))
 /* the start of the kernel-heap */
-#define KERNEL_HEAP_START	(TMPMAP_PTS_START + (PT_ENTRY_COUNT * PAGE_SIZE))
+#define KERNEL_HEAP_START	(KERNEL_AREA_V_ADDR + (PT_ENTRY_COUNT * PAGE_SIZE))
 /* the size of the kernel-heap (16 MiB) */
 #define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE * 4)
 
 /* page-directories in virtual memory */
-#define PAGE_DIR_AREA		(TMPMAP_PTS_START - PAGE_SIZE)
+#define PAGE_DIR_AREA		(KERNEL_HEAP_START - PAGE_SIZE)
 /* needed for building a new page-dir */
 #define PAGE_DIR_TMP_AREA	(PAGE_DIR_AREA - PAGE_SIZE)
-/* area for a page-table */
-#define PAGE_TABLE_AREA		(PAGE_DIR_TMP_AREA - PAGE_SIZE)
 /* our kernel-stack */
-#define KERNEL_STACK		(PAGE_TABLE_AREA - PAGE_SIZE)
+#define KERNEL_STACK		(MAPPED_PTS_START - PAGE_SIZE)
 
 /* flags for paging_map() */
 #define PG_WRITABLE		1
@@ -168,6 +166,11 @@ void paging_mapHigherHalf(void);
 tPDEntry *paging_getProc0PD(void);
 
 /**
+ * Ensures that the current page-dir is mapped and can be accessed at PAGE_DIR_AREA
+ */
+void paging_mapPageDir(void);
+
+/**
  * Assembler routine to flush the TLB
  */
 extern void paging_flushTLB(void);
@@ -206,9 +209,9 @@ u32 paging_countFramesForMap(u32 virtual,u32 count);
 
 /**
  * Maps <count> virtual addresses starting at <virtual> to the given frames (in the CURRENT
- * page-dir!)
+ * page-dir!). You can decide (via <force>) wether the mapping should be done in every
+ * case or just if the page is not already mapped.
  * Note that the function will NOT flush the TLB!
- * Another note: Already present entries will be ignored and NOT replaced!
  *
  * @panic if there is not enough memory to get a frame for a page-table
  *
@@ -217,8 +220,9 @@ u32 paging_countFramesForMap(u32 virtual,u32 count);
  * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
+ * @param force wether the mapping should be overwritten
  */
-void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags);
+void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags,bool force);
 
 /**
  * Removes <count> pages starting at <virtual> from the page-directory and page-tables, if

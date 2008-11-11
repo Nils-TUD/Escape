@@ -54,9 +54,6 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
 
-	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),
-			paging_getPageCount());
-
 	/* processes */
 	dbg_startTimer();
 	vid_printf("Initializing process-management...");
@@ -72,6 +69,9 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
+
+	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),
+			paging_getPageCount());
 
 
 	/* start tests */

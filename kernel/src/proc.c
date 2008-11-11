@@ -10,6 +10,7 @@
 #include "../h/mm.h"
 #include "../h/util.h"
 #include "../h/video.h"
+#include "../h/intrpt.h"
 
 /* our processes */
 tProc procs[PROC_COUNT];
@@ -39,129 +40,28 @@ u16 proc_getFreePid(void) {
 }
 
 bool proc_clone(tProc *p) {
-	u32 x,pdirFrame,pdirAreaFrame,mapAreaFrame,stackFrame;
-	tPDEntry *pd,*npd,*pdapt;
-	tPTEntry *pt;
+	u32 x,pdirFrame,stackFrame,stackPTFrame;
+	tPDEntry *pd,*npd;
+
+	/* note that interrupts have to be disabled, because no other process is allowed to
+	 * run during this function since we are calculating the memory we need at the beginning! */
+	intrpt_disable();
 
 	/* frames needed:
 	 * 	- page directory
-	 * 	- page directory area page-table
-	 * 	- map area page-table
+	 * 	- kernel-stack page-table
 	 * 	- kernel stack
 	 * The frames for the page-content is not yet needed since we're using copy-on-write!
+	 * TODO several page-tables are missing here!
 	 */
-	if(mm_getNumberOfFreeFrames(MM_DEF) < 4) {
+	if(mm_getNumberOfFreeFrames(MM_DEF) < 3) {
 		DBG_PROC_CLONE(vid_printf("Not enough free frames!\n"));
 		return false;
 	}
 
-	/* TODO note that interrupts have to be disabled, because no other process is allowed to
-	 * run during this function since we are calculating the memory we need at the beginning! */
-
 	/* we need a new page-directory */
 	pdirFrame = mm_allocateFrame(MM_DEF);
 	DBG_PROC_CLONE(vid_printf("Got page-dir-frame %x\n",pdirFrame));
-
-	/* Map page-dir into temporary area, so we can access both page-dirs atm.
-	 * Note that we assume here that we don't need a new page-table for it (may cause panic).
-	 * We can do that because we already have the page-table for the current page-dir which
-	 * lies in the same page-table */
-	paging_map(PAGE_DIR_TMP_AREA,&pdirFrame,1,PG_WRITABLE | PG_SUPERVISOR);
-	/* we have to write to the temp-area */
-	/* TODO optimize! */
-	paging_flushTLB();
-
-	pd = (tPDEntry*)PAGE_DIR_AREA;
-	npd = (tPDEntry*)PAGE_DIR_TMP_AREA;
-
-	/* clear new page-dir */
-	DBG_PROC_CLONE(vid_printf("Clearing new page-dir @ %x\n",npd));
-	memset(npd,0,PT_ENTRY_COUNT);
-
-	/* copy pd-entry for kernel */
-	npd[ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR)] = pd[ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR)];
-
-	/* we need a new frame for the page-dir-area */
-	pdirAreaFrame = mm_allocateFrame(MM_DEF);
-	DBG_PROC_CLONE(vid_printf("Building page-dir-entry for the page-dir-area\n"));
-	pdapt = (tPDEntry*)(npd + ADDR_TO_PDINDEX(PAGE_DIR_AREA));
-	pdapt->ptFrameNo = pdirAreaFrame;
-	pdapt->present = 1;
-	pdapt->writable = 1;
-
-	/* we have to write to the page-table */
-	paging_map(PAGE_TABLE_AREA,&pdirAreaFrame,1,PG_WRITABLE | PG_SUPERVISOR);
-	/* TODO optimize! */
-	paging_flushTLB();
-
-	/* clear new page-table */
-	DBG_PROC_CLONE(vid_printf("Clearing %x .. %x..\n",PAGE_TABLE_AREA,
-			(u32*)PAGE_TABLE_AREA + PT_ENTRY_COUNT));
-	memset((u32*)PAGE_TABLE_AREA,0,PT_ENTRY_COUNT);
-
-	/* create the page-table-entry for the page-dir-area of the new process */
-	DBG_PROC_CLONE(vid_printf("Building page-table-entry for the page-dir-area\n"));
-	pt = (tPTEntry*)(PAGE_TABLE_AREA + ADDR_TO_PTINDEX(PAGE_DIR_AREA) * sizeof(tPTEntry));
-	pt->frameNumber = pdirFrame;
-	pt->present = 1;
-	pt->writable = 1;
-
-	/* we need a frame for the page-tables map page-table :) */
-	mapAreaFrame = mm_allocateFrame(MM_DEF);
-
-	/* we have to write to the page-table */
-	DBG_PROC_CLONE(vid_printf("Mapping page-tables-frame\n"));
-	paging_map(PAGE_TABLE_AREA,&mapAreaFrame,1,PG_WRITABLE | PG_SUPERVISOR);
-	/* TODO optimize! */
-	paging_flushTLB();
-
-	/* clear new page-table */
-	DBG_PROC_CLONE(vid_printf("Clearing %x .. %x..\n",PAGE_TABLE_AREA,
-			(u32*)PAGE_TABLE_AREA + PT_ENTRY_COUNT));
-	memset((u32*)PAGE_TABLE_AREA,0,PT_ENTRY_COUNT);
-
-	/* insert into page-dir */
-	DBG_PROC_CLONE(vid_printf("Insert into page-dir\n"));
-	npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo = mapAreaFrame;
-	npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)].present = 1;
-	npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)].writable = 1;
-
-	/* make the page-tables of the old process accessible in a different page-table */
-	npd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = pd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
-
-	/* exchange page-dir */
-	DBG_PROC_CLONE(vid_printf("Exchange page-dir to the new one\n"));
-	paging_exchangePDir(pdirFrame << PAGE_SIZE_SHIFT);
-
-	/* kernel-stack */
-	stackFrame = mm_allocateFrame(MM_DEF);
-	paging_map(KERNEL_STACK,&stackFrame,1,PG_WRITABLE | PG_SUPERVISOR);
-
-	/*dbg_printPageDir();*/
-
-	/* map pages for text to the frames of the old process */
-	DBG_PROC_CLONE(vid_printf("Mapping text-pages (shared)\n"));
-	paging_map(0,(u32*)TMPMAP_PTS_START,procs[pi].textPages,0);
-
-	/*dbg_printPageDir();*/
-
-	/* map pages for data. we will copy the data with copyonwrite. */
-	DBG_PROC_CLONE(vid_printf("Mapping data (copy-on-write)\n"));
-	x = 0 + procs[pi].textPages * PAGE_SIZE;
-	paging_map(x,(u32*)TMPMAP_PTS_START + ADDR_TO_PTINDEX(x),procs[pi].dataPages,PG_COPYONWRITE);
-
-	/* map pages for stack. we will copy the data with copyonwrite. */
-	DBG_PROC_CLONE(vid_printf("Mapping stack (copy-on-write)\n"));
-	x = KERNEL_AREA_V_ADDR - procs[pi].stackPages * PAGE_SIZE;
-	paging_map(x,(u32*)TMPMAP_PTS_START + ADDR_TO_PTINDEX(x),procs[pi].stackPages,PG_COPYONWRITE);
-
-	/* remove the temp-map-area */
-	DBG_PROC_CLONE(vid_printf("Removing temp-area\n"));
-	npd = (tPDEntry*)PAGE_DIR_AREA;
-	npd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)].present = 0;
-
-	/*vid_printf("========= NEW PAGE TABLE =========\n");
-	dbg_printPageDir();*/
 
 	/* set page-dir and pages for segments */
 	p->textPages = procs[pi].textPages;
@@ -169,19 +69,77 @@ bool proc_clone(tProc *p) {
 	p->stackPages = procs[pi].stackPages;
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
 
+	/* Map page-dir into temporary area, so we can access both page-dirs atm */
+	paging_map(PAGE_DIR_TMP_AREA,&pdirFrame,1,PG_WRITABLE | PG_SUPERVISOR,true);
+	/* we have to write to the temp-area */
+	/* TODO optimize! */
+	paging_flushTLB();
+
+	pd = (tPDEntry*)PAGE_DIR_AREA;
+	npd = (tPDEntry*)PAGE_DIR_TMP_AREA;
+
+	dbg_printPageDir(true);
+
+	/* copy old page-dir to new one */
+	DBG_PROC_CLONE(vid_printf("Copying old page-dir to new one (%x)\n",npd));
+	/* clear user-space page-tables */
+	memset(npd,0,ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR));
+	/* copy kernel-space page-tables*/
+	memcpy(npd + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR),
+			pd + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR),
+			(PT_ENTRY_COUNT - ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR)) * sizeof(u32));
+
+	dbg_printPageDir(true);
+
+	/* map our new page-dir in the last slot of the new page-dir */
+	npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo = pdirFrame;
+
+	/* make the page-tables of the old process accessible in a different page-table */
+	npd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = pd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
+
+	/* get new page-table for the kernel-stack-area */
+	/* TODO we have to finish the new stack here!! */
+	stackPTFrame = mm_allocateFrame(MM_DEF);
+	npd[ADDR_TO_PDINDEX(KERNEL_STACK)].ptFrameNo = stackPTFrame;
+
+	/* exchange page-dir */
+	DBG_PROC_CLONE(vid_printf("Exchange page-dir to the new one\n"));
+	paging_exchangePDir(pdirFrame << PAGE_SIZE_SHIFT);
+	/* TODO we have to exchange the pid for paging_map() and so on */
+	pi = 1;
+
+	/* kernel-stack */
+	stackFrame = mm_allocateFrame(MM_DEF);
+	paging_map(KERNEL_STACK,&stackFrame,1,PG_WRITABLE | PG_SUPERVISOR,true);
+
+	/* map pages for text to the frames of the old process */
+	DBG_PROC_CLONE(vid_printf("Mapping text-pages (shared)\n"));
+	paging_map(0,(u32*)TMPMAP_PTS_START,procs[pi].textPages,0,true);
+
+	/* map pages for data. we will copy the data with copyonwrite. */
+	DBG_PROC_CLONE(vid_printf("Mapping data (copy-on-write)\n"));
+	x = 0 + procs[pi].textPages * PAGE_SIZE;
+	paging_map(x,(u32*)TMPMAP_PTS_START + ADDR_TO_PTINDEX(x),procs[pi].dataPages,PG_COPYONWRITE,true);
+
+	/* map pages for stack. we will copy the data with copyonwrite. */
+	DBG_PROC_CLONE(vid_printf("Mapping stack (copy-on-write)\n"));
+	x = KERNEL_AREA_V_ADDR - procs[pi].stackPages * PAGE_SIZE;
+	paging_map(x,(u32*)TMPMAP_PTS_START + ADDR_TO_PTINDEX(x),procs[pi].stackPages,PG_COPYONWRITE,true);
+
 	/* change back to the original page-dir */
 	DBG_PROC_CLONE(vid_printf("Exchanging page-dir back\n"));
 	paging_exchangePDir(procs[pi].physPDirAddr);
+	/* TODO exchange pid back */
+	pi = 0;
 
-	/* remove the temp-mappings */
-	DBG_PROC_CLONE(vid_printf("Removing temp mappings\n"));
-	paging_unmap(PAGE_TABLE_AREA,1,false);
+	/* remove the temp page-dir */
+	DBG_PROC_CLONE(vid_printf("Removing temp page-dir\n"));
 	paging_unmap(PAGE_DIR_TMP_AREA,1,false);
 	/* TODO optimize! */
 	paging_flushTLB();
 
-	/*vid_printf("========= OLD PAGE TABLE =========\n");
-	dbg_printPageDir();*/
+	intrpt_enable();
+
 	DBG_PROC_CLONE(vid_printf("Done :)\n"));
 
 	return true;
@@ -193,8 +151,7 @@ bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages) {
 }
 
 bool proc_changeSize(s32 change,chgArea area) {
-	u32 addr,i,chg = change;
-	tPTEntry *pt;
+	u32 addr,chg = change;
 	/* determine start-address */
 	if(area == CHG_DATA) {
 		addr = (procs[pi].textPages + procs[pi].dataPages) * PAGE_SIZE;
@@ -218,7 +175,7 @@ bool proc_changeSize(s32 change,chgArea area) {
 			return false;
 		}
 
-		paging_map(addr,NULL,change,PG_WRITABLE);
+		paging_map(addr,NULL,change,PG_WRITABLE,false);
 
 		/* now clear the memory */
 		/* TODO optimize! */

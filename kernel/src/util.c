@@ -126,9 +126,12 @@ void dumpMem(void *addr,u32 dwordCount) {
 
 void *memcpy(void *dest,const void *src,size_t len) {
 	u8 *d = dest;
+	vid_printf("dest=0x%x, src=0x%x, len=%d\n",dest,src,len);
 	const u8 *s = src;
-	while(len--)
+	while(len--) {
+		/*vid_printf("d=0x%x, s=0x%x\n",d,s);*/
 		*d++ = *s++;
+	}
 	return dest;
 }
 

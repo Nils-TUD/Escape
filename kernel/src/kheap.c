@@ -112,7 +112,7 @@ static tMemArea *kheap_newArea(void) {
 				DBG_KMALLOC(vid_printf("Reached new page 0x%x\n",area));
 				/* get frame and map it */
 				u32 frame = mm_allocateFrame(MM_DEF);
-				paging_map((u32)area,&frame,1,PG_WRITABLE | PG_SUPERVISOR);
+				paging_map((u32)area,&frame,1,PG_WRITABLE | PG_SUPERVISOR,false);
 				/* we have to clear the area-pages */
 				memset(area,0,PT_ENTRY_COUNT);
 			}
@@ -162,7 +162,7 @@ void kheap_init(void) {
 	/* get frame and map it */
 	initial = (tMemArea*)KERNEL_HEAP_START + 1;
 	u32 frame = mm_allocateFrame(MM_DEF);
-	paging_map((u32)initial,&frame,1,PG_WRITABLE | PG_SUPERVISOR);
+	paging_map((u32)initial,&frame,1,PG_WRITABLE | PG_SUPERVISOR,false);
 	/* we have to clear the area-pages */
 	memset(initial - 1,0,PT_ENTRY_COUNT);
 
@@ -238,7 +238,7 @@ void *kheap_alloc(u32 size) {
 		address += area->size - size;
 
 	/* reserve frames and map them, if necessary */
-	paging_map(address & ~(PAGE_SIZE - 1),NULL,BYTES_2_PAGES(size),PG_SUPERVISOR | PG_WRITABLE);
+	paging_map(address & ~(PAGE_SIZE - 1),NULL,BYTES_2_PAGES(size),PG_SUPERVISOR | PG_WRITABLE,false);
 
 	DBG_KMALLOC(vid_printf("OldArea(@0x%x): free=%d, size=%d, next=0x%x\n",area,area->free,
 			area->size,area->next));

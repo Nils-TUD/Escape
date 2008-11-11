@@ -109,9 +109,9 @@ void paging_init(void) {
 void paging_mapHigherHalf(void) {
 	u32 addr,end;
 	tPDEntry *pde;
-	/* insert all page-tables for 0xC0400000 .. 0xFFBFFFFF into the page dir */
+	/* insert all page-tables for 0xC0400000 .. 0xFF3FFFFF into the page dir */
 	addr = KERNEL_AREA_V_ADDR + (PAGE_SIZE * PT_ENTRY_COUNT);
-	end = MAPPED_PTS_START;
+	end = TMPMAP_PTS_START;
 	pde = (tPDEntry*)(proc0PD + ADDR_TO_PDINDEX(addr));
 	while(addr < end) {
 		/* get frame and insert into page-dir */
@@ -131,10 +131,23 @@ tPDEntry *paging_getProc0PD(void) {
 	return proc0PD;
 }
 
+void paging_mapPageDir(void) {
+	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(PAGE_DIR_AREA);
+	u32 pdirFrame = (procs[pi].physPDirAddr >> PAGE_SIZE_SHIFT);
+	vid_printf("pt=0x%x, pt->frameNumber=0x%x, pdirFrame=0x%x\n",pt,pt->frameNumber,pdirFrame);
+	/* not the current one? */
+	if(pt->frameNumber != pdirFrame) {
+		pt->frameNumber = pdirFrame;
+		/* TODO optimize! */
+		paging_flushTLB();
+	}
+}
+
 u32 paging_getPageCount(void) {
 	u32 i,x,count = 0;
 	tPTEntry *pagetable;
 	tPDEntry *pdir = (tPDEntry*)PAGE_DIR_AREA;
+	paging_mapPageDir();
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
 		if(pdir[i].present) {
 			pagetable = (tPTEntry*)(MAPPED_PTS_START + i * PAGE_SIZE);
@@ -159,6 +172,7 @@ u32 paging_countFramesForMap(u32 virtual,u32 count) {
 	/* signed is better here :) */
 	s32 c = count;
 	tPDEntry *pd;
+	paging_mapPageDir();
 	while(c > 0) {
 		/* page-table not present yet? */
 		pd = (tPDEntry*)(PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual) * sizeof(tPDEntry));
@@ -173,10 +187,11 @@ u32 paging_countFramesForMap(u32 virtual,u32 count) {
 	return res;
 }
 
-void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
+void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags,bool force) {
 	u32 frame;
 	tPDEntry *pd;
 	tPTEntry *pt;
+	paging_mapPageDir();
 	while(count-- > 0) {
 		pd = (tPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual);
 		/* page table not present? */
@@ -200,7 +215,7 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
 		/* setup page */
 		pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
 		/* ignore already present entries */
-		if(!pt->present) {
+		if(force || !pt->present) {
 			if(frames == NULL) {
 				pt->frameNumber = mm_allocateFrame(MM_DEF);
 			}
@@ -219,13 +234,16 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags) {
 }
 
 void paging_unmap(u32 virtual,u32 count,bool freeFrames) {
-	u32 pdIndex;
-	bool ptEmpty;
-	u32 index = ADDR_TO_PTINDEX(virtual);
-	/* don't free page-tables in the kernel-area */
-	bool freePT = virtual < KERNEL_AREA_V_ADDR;
+	bool ptEmpty,freePT;
+	u32 pdIndex,index = ADDR_TO_PTINDEX(virtual);
 	tPDEntry *pdir;
 	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
+
+	/* don't free page-tables in the kernel-area */
+	freePT = virtual < KERNEL_AREA_V_ADDR;
+	if(freePT)
+		paging_mapPageDir();
+
 	while(count-- > 0) {
 		/* remove and free, if desired */
 		if(pt->present) {

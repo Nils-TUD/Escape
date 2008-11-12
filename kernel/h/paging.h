@@ -241,6 +241,14 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags,bool force);
 void paging_unmap(u32 virtual,u32 count,bool freeFrames);
 
 /**
+ * Clones the current page-directory for the process with given pid.
+ *
+ * @param newPid the pid of the new process
+ * @return the frame-number of the new page-directory
+ */
+u32 paging_clonePageDir(u16 newPid);
+
+/**
  * Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as
  * soon as the GDT is setup for a flat memory layout!
  */

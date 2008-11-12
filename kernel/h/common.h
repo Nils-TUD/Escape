@@ -35,7 +35,7 @@ typedef enum {false = 0, true = 1} bool;
 #define MIN(a,b) ((a) > (b) ? (b) : (a))
 
 /* debugging */
-#define DBG_PROC_CLONE(s) s
+#define DBG_PGCLONEPD(s) s
 #define DBG_KMALLOC(s)
 
 #endif /*COMMON_H_*/

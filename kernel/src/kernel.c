@@ -116,7 +116,7 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 
 	/* clone ourself */
 	u16 pid = proc_getFreePid();
-	proc_clone(procs + pid);
+	proc_clone(pid);
 	/* save the state for task2 */
 	if(proc_save(&procs[pid].save)) {
 		/* now load task2 */

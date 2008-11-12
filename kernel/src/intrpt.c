@@ -753,15 +753,15 @@ void intrpt_handler(tIntrptStackFrame stack) {
 
 		case IRQ_TIMER:
 #if 1
-			vid_printf("Timer interrupt...\n");
+			/*vid_printf("Timer interrupt...\n");*/
 			if(!procsReady)
 				break;
 
-			vid_printf("Process %d\n",pi);
+			/*vid_printf("Process %d\n",pi);*/
 			if(!proc_save(&procs[pi].save)) {
 				/* select next process */
 				pi = (pi + 1) % 2;
-				vid_printf("Resuming %d\n",pi);
+				/*vid_printf("Resuming %d\n",pi);*/
 				/*stack.eax = procs[pi].save.eax;
 				stack.ebx = procs[pi].save.ebx;
 				stack.ecx = procs[pi].save.ecx;
@@ -776,7 +776,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 				proc_resume(procs[pi].physPDirAddr,&procs[pi].save);
 				break;
 			}
-			vid_printf("Continuing %d\n",pi);
+			/*vid_printf("Continuing %d\n",pi);*/
 #endif
 			break;
 
@@ -794,6 +794,12 @@ void intrpt_handler(tIntrptStackFrame stack) {
 			else {
 				exCount = 0;
 				lastEx = stack.intrptNo;
+			}
+
+			if(stack.intrptNo == EX_GEN_PROT_FAULT) {
+				vid_printf("GPF for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
+				printStackTrace();
+				break;
 			}
 
 			if(stack.intrptNo == EX_PAGE_FAULT) {

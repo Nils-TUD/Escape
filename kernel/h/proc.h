@@ -85,10 +85,10 @@ u16 proc_getFreePid(void);
  * Clones the current process into the given one. The function returns false if there is
  * not enough memory.
  *
- * @param p the target-process
+ * @param newPid the target-pid
  * @return true if successfull
  */
-bool proc_clone(tProc *p);
+bool proc_clone(u16 newPid);
 
 /**
  * Checks wether the given segment-sizes are valid

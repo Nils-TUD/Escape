@@ -123,8 +123,7 @@
  * Each protection violation that does not cause another
  * exception causes a general protection exception.
  * - Exceeding segment limit when using CS, DS, ES, FS, or GS
- * - Exceeding segment limit when referencing a descriptor
- *   table
+ * - Exceeding segment limit when referencing a descriptor table
  * - Transferring control to a segment that is not executable
  * - Writing to a read-only data segment or a code segment
  * - Reading from an execute-only segment

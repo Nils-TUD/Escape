@@ -80,15 +80,20 @@
 #define KERNEL_STACK		(MAPPED_PTS_START - PAGE_SIZE)
 
 /* flags for paging_map() */
-#define PG_WRITABLE		1
-#define PG_SUPERVISOR	2
-#define PG_COPYONWRITE	4
+#define PG_WRITABLE			1
+#define PG_SUPERVISOR		2
+#define PG_COPYONWRITE		4
+/* tells paging_map() that it gets the frame-address and should convert it to a frame-number first */
+#define PG_ADDR_TO_FRAME	8
 
 /* converts a virtual address to the page-directory-index for that address */
 #define ADDR_TO_PDINDEX(addr) ((u32)(addr) / PAGE_SIZE / PT_ENTRY_COUNT)
 
 /* converts a virtual address to the index in the corresponding page-table */
 #define ADDR_TO_PTINDEX(addr) (((u32)(addr) / PAGE_SIZE) % PT_ENTRY_COUNT)
+
+/* converts pages to page-tables (how many page-tables are required for the pages?) */
+#define PAGES_TO_PTS(pageCount) (((pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
 
 /* represents a page-directory-entry */
 typedef struct {

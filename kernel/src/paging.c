@@ -134,7 +134,6 @@ tPDEntry *paging_getProc0PD(void) {
 void paging_mapPageDir(void) {
 	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(PAGE_DIR_AREA);
 	u32 pdirFrame = (procs[pi].physPDirAddr >> PAGE_SIZE_SHIFT);
-	vid_printf("pt=0x%x, pt->frameNumber=0x%x, pdirFrame=0x%x\n",pt,pt->frameNumber,pdirFrame);
 	/* not the current one? */
 	if(pt->frameNumber != pdirFrame) {
 		pt->frameNumber = pdirFrame;
@@ -216,11 +215,13 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags,bool force) {
 		pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
 		/* ignore already present entries */
 		if(force || !pt->present) {
-			if(frames == NULL) {
+			if(frames == NULL)
 				pt->frameNumber = mm_allocateFrame(MM_DEF);
-			}
 			else {
-				pt->frameNumber = *frames++;
+				if(flags & PG_ADDR_TO_FRAME)
+					pt->frameNumber = *frames++ >> PAGE_SIZE_SHIFT;
+				else
+					pt->frameNumber = *frames++;
 			}
 			pt->present = 1;
 			pt->writable = flags & PG_WRITABLE;

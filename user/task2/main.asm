@@ -48,8 +48,10 @@ putsFinished:
 putchar:
 	push	ebp
 	mov		ebp,esp
-	mov		dx,0xe9							; load port
 	mov		al,[esp+8]					; load value
+	mov		dx,0xe9							; load port
+	out		dx,al								; write to port
+	mov		dx,0x3f8						; load port
 	out		dx,al								; write to port
 putcharWait:
 	mov		dx,0x3fd						; load port

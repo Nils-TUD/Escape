@@ -70,9 +70,6 @@ STATE_EFLAGS						equ	36
 	isr%1:
 	cli																	; disable interrupts
 	; init kernel-stack
-	cmp		esp,KERNEL_STACK
-	jb		isr%1StackSet
-	mov		esp,KERNEL_STACK + KERNEL_STACK_SIZE - 4
 	isr%1StackSet:
 	push	0															; error-code (no error here)
 	push	dword %1											; the interrupt-number
@@ -85,9 +82,6 @@ STATE_EFLAGS						equ	36
 	isr%1:
 	cli																	; disable interrupts
 	; init kernel-stack
-	cmp		esp,KERNEL_STACK
-	jb		isr%1StackSet
-	mov		esp,KERNEL_STACK + KERNEL_STACK_SIZE - 4
 	isr%1StackSet:
 	; the error-code has already been pushed
 	push	dword %1											; the interrupt-number
@@ -125,6 +119,7 @@ higherhalf:
 	; from now the CPU will translate automatically every address
 	; by adding the base 0x40000000
 
+	cli																	; disable interrupts during startup
 	mov		esp,kernelStack								; set up a new stack for our kernel
 	mov		ebp,esp
 	push	ebp														; push ebp on the stack to ensure that the stack-trace works
@@ -132,10 +127,21 @@ higherhalf:
 	push	eax														; push Multiboot Magicnumber onto the stack
   push	ebx														; push address of Multiboot-Structure
   call	main													; jump to our C kernel ;)
-
 	add		esp,8													; remove args from stack
-	mov		esp,USER_STACK - 4						; set stack-pointer for prog
-	jmp		[entryPoint]									; continue at our loaded prog (TODO temporary!!)
+
+	; setup env for first task
+	push	DWORD 0x23										; ss
+	push	USER_STACK - 4								; esp
+	pushfd															; eflags
+	push	DWORD 0x1B										; cs
+	mov		eax,[entryPoint]
+	push	eax														; eip
+	mov		eax,0x23											; set the value for the segment-registers
+	mov		ds,eax												; reload segments
+	mov		es,eax
+	mov		fs,eax
+	mov		gs,eax
+	iret																; jump to task and switch to user-mode
 
 	; just a simple protection...
 	jmp		$
@@ -580,7 +586,8 @@ isrCommon:
 	call	intrpt_handler
 
 	; remove argument from stack
-	add		esp,4
+	pop		esp
+	;add		esp,4
 
 	; restore registers
 	pop		es

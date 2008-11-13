@@ -9,6 +9,7 @@
 
 #include "common.h"
 #include "paging.h"
+#include "intrpt.h"
 
 /*#define TEST_PROC*/
 
@@ -82,13 +83,21 @@ void proc_init(void);
 u16 proc_getFreePid(void);
 
 /**
- * Clones the current process into the given one. The function returns false if there is
+ * Clones the current process into the given one, saves the new process in proc_clone() so that
+ * it will start there on proc_resume(). The function returns -1 if there is
  * not enough memory.
  *
  * @param newPid the target-pid
- * @return true if successfull
+ * @return -1 if an error occurred, 0 for parent, 1 for child
  */
-bool proc_clone(u16 newPid);
+s32 proc_clone(u16 newPid);
+
+/**
+ * Setups the given interrupt-stack for the current process
+ *
+ * @param frame the interrupt-stack-frame
+ */
+void proc_setupIntrptStack(tIntrptStackFrame *frame);
 
 /**
  * Checks wether the given segment-sizes are valid

@@ -12,6 +12,7 @@
 
 /* builds the address of the page in the mapped page-tables to which the given addr belongs */
 #define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + ((u32)(addr) / PT_ENTRY_COUNT))
+#define ADDR_TO_MAPPED_CUSTOM(mappingArea,addr) ((mappingArea) + ((u32)(addr) / PT_ENTRY_COUNT))
 
 /* converts the given virtual address to a physical
  * (this assumes that the kernel lies at 0xC0000000) */
@@ -61,6 +62,15 @@ static u32 paging_getPTEntryCount(tPTEntry *pt) {
 	return count;
 }
 
+/**
+ * paging_map() for internal usages
+ *
+ * @param pageDir the address of the page-directory to use
+ * @param mappingArea the address of the mapping area to use
+ */
+static void paging_mapintern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames,u32 count,u8 flags,
+		bool force);
+
 void paging_init(void) {
 	tPDEntry *pd,*pde;
 	tPTEntry *pt;
@@ -76,21 +86,21 @@ void paging_init(void) {
 	for(i = 0; addr < end; i++, addr += PAGE_SIZE) {
 		/* build page-table entry */
 		proc0PT[i].frameNumber = (u32)addr >> PAGE_SIZE_SHIFT;
-		proc0PT[i].present = 1;
-		proc0PT[i].writable = 1;
+		proc0PT[i].present = true;
+		proc0PT[i].writable = true;
 	}
 
 	/* insert page-table in the page-directory */
 	pde = (tPDEntry*)(proc0PD + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR));
 	pde->ptFrameNo = (u32)pt >> PAGE_SIZE_SHIFT;
-	pde->present = 1;
-	pde->writable = 1;
+	pde->present = true;
+	pde->writable = true;
 
 	/* map it at 0x0, too, because we need it until we've "corrected" our GDT */
 	pde = (tPDEntry*)proc0PD;
 	pde->ptFrameNo = (u32)pt >> PAGE_SIZE_SHIFT;
-	pde->present = 1;
-	pde->writable = 1;
+	pde->present = true;
+	pde->writable = true;
 
 	/* insert page-dir into page-table so that we can access our page-dir */
 	i = ADDR_TO_PTINDEX(PAGE_DIR_AREA);
@@ -99,8 +109,8 @@ void paging_init(void) {
 	/* put the page-directory in the last page-dir-slot */
 	pde = (tPDEntry*)(proc0PD + ADDR_TO_PDINDEX(MAPPED_PTS_START));
 	pde->ptFrameNo = (u32)pd >> PAGE_SIZE_SHIFT;
-	pde->present = 1;
-	pde->writable = 1;
+	pde->present = true;
+	pde->writable = true;
 
 	/* now set page-dir and enable paging */
 	paging_exchangePDir((u32)pd);
@@ -118,8 +128,8 @@ void paging_mapHigherHalf(void) {
 		/* get frame and insert into page-dir */
 		u32 frame = mm_allocateFrame(MM_DEF);
 		pde->ptFrameNo = frame;
-		pde->present = 1;
-		pde->writable = 1;
+		pde->present = true;
+		pde->writable = true;
 		/* clear */
 		memset((void*)ADDR_TO_MAPPED(addr),0,PT_ENTRY_COUNT);
 		/* to next */
@@ -188,12 +198,20 @@ u32 paging_countFramesForMap(u32 virtual,u32 count) {
 }
 
 void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags,bool force) {
+	paging_mapintern(PAGE_DIR_AREA,MAPPED_PTS_START,virtual,frames,count,flags,force);
+}
+
+static void paging_mapintern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames,u32 count,u8 flags,
+		bool force) {
 	u32 frame;
 	tPDEntry *pd;
 	tPTEntry *pt;
-	paging_mapPageDir();
+	/* just if we use the default one */
+	if(pageDir == PAGE_DIR_AREA)
+		paging_mapPageDir();
+
 	while(count-- > 0) {
-		pd = (tPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual);
+		pd = (tPDEntry*)pageDir + ADDR_TO_PDINDEX(virtual);
 		/* page table not present? */
 		if(!pd->present) {
 			/* get new frame for page-table */
@@ -203,17 +221,18 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags,bool force) {
 			}
 
 			pd->ptFrameNo = frame;
-			pd->present = 1;
+			pd->present = true;
 			/* TODO always writable? */
-			pd->writable = 1;
+			pd->writable = true;
+			pd->notSuperVisor = (flags & PG_SUPERVISOR) == 0;
 
 			/* clear frame (ensure that we start at the beginning of the frame) */
-			memset((void*)ADDR_TO_MAPPED(virtual & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),
-					0,PT_ENTRY_COUNT);
+			memset((void*)ADDR_TO_MAPPED_CUSTOM(mappingArea,
+					virtual & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),0,PT_ENTRY_COUNT);
 		}
 
 		/* setup page */
-		pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
+		pt = (tPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
 		/* ignore already present entries */
 		if(force || !pt->present) {
 			if(frames == NULL)
@@ -224,7 +243,7 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags,bool force) {
 				else
 					pt->frameNumber = *frames++;
 			}
-			pt->present = 1;
+			pt->present = true;
 			pt->writable = flags & PG_WRITABLE;
 			pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0;
 			pt->copyOnWrite = flags & PG_COPYONWRITE;
@@ -278,7 +297,7 @@ void paging_unmap(u32 virtual,u32 count,bool freeFrames) {
 	}
 }
 
-u32 paging_clonePageDir(u16 newPid) {
+u32 paging_clonePageDir(u16 newPid,u32 *stackFrame) {
 	u32 x,pdirFrame,frameCount;
 	u32 tPages,dPages,sPages;
 	tPDEntry *pd,*npd,*tpd;
@@ -336,64 +355,49 @@ u32 paging_clonePageDir(u16 newPid) {
 	/* map our new page-dir in the last slot of the new page-dir */
 	npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo = pdirFrame;
 
-	/* make the page-tables of the old process accessible in a different page-table */
-	npd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = pd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
+	/* map the page-tables of the new process so that we can access them */
+	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
 
 	/* get new page-table for the kernel-stack-area and the stack itself */
-	/* Note that we have to do this here because as soon as we exchange the page-dir
-	 * we will use the new stack. So it has to be present before! */
+	DBG_PGCLONEPD(vid_printf("Create kernel-stack and copy old one into it\n"));
 	tpd = npd + ADDR_TO_PDINDEX(KERNEL_STACK);
 	tpd->ptFrameNo = mm_allocateFrame(MM_DEF);
 	tpd->present = true;
 	tpd->writable = true;
-	/* map the page-tables of the new process so that we can access them */
-	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
 	/* TODO optimize! */
 	paging_flushTLB();
 	/* now setup the new stack */
 	pt = (tPTEntry*)(TMPMAP_PTS_START + (KERNEL_STACK / PT_ENTRY_COUNT));
 	pt->frameNumber = mm_allocateFrame(MM_DEF);
+	*stackFrame = pt->frameNumber;
 	pt->present = true;
 	pt->writable = true;
-	/* unmap page-tables of the new process */
-	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)].present = false;
-
-	/* exchange page-dir */
-	/* TODO we should prevent that by making the mapping-area and page-dir in paging_(un)map()
-	 * exchangeable. This would simplify the stack-stuff above, too */
-	DBG_PGCLONEPD(vid_printf("Exchange page-dir to the new one\n"));
-	paging_exchangePDir(pdirFrame << PAGE_SIZE_SHIFT);
-	/* we have to exchange the pid for paging_map() and so on */
-	pi = newPid;
 
 	/* map pages for text to the frames of the old process */
 	DBG_PGCLONEPD(vid_printf("Mapping %d text-pages (shared)\n",tPages));
-	paging_map(0,(u32*)TMPMAP_PTS_START,tPages,PG_ADDR_TO_FRAME,true);
+	paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,
+			0,(u32*)MAPPED_PTS_START,tPages,PG_ADDR_TO_FRAME,true);
 
 	/* map pages for data. we will copy the data with copyonwrite. */
 	DBG_PGCLONEPD(vid_printf("Mapping %d data-pages (copy-on-write)\n",dPages));
 	x = 0 + tPages * PAGE_SIZE;
-	paging_map(x,NULL,dPages,PG_WRITABLE,true);
+	paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,NULL,dPages,PG_WRITABLE,true);
 	/* TODO use copy-on-write */
-	/*paging_map(x,(u32*)(TMPMAP_PTS_START + (x / PT_ENTRY_COUNT)),p->dataPages,
+	/*paging_map(x,(u32*)(MAPPED_PTS_START + (x / PT_ENTRY_COUNT)),p->dataPages,
 			PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);*/
 
 	/* map pages for stack. we will copy the data with copyonwrite. */
 	DBG_PGCLONEPD(vid_printf("Mapping %d stack-pages (copy-on-write)\n",sPages));
 	x = KERNEL_AREA_V_ADDR - sPages * PAGE_SIZE;
-	paging_map(x,NULL,sPages,PG_WRITABLE,true);
+	paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,NULL,sPages,PG_WRITABLE,true);
 	/* TODO use copy-on-write */
-	/*paging_map(x,(u32*)(TMPMAP_PTS_START + (x / PT_ENTRY_COUNT)),p->stackPages,
+	/*paging_map(x,(u32*)(MAPPED_PTS_START + (x / PT_ENTRY_COUNT)),p->stackPages,
 			PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);*/
 
-	/* change back to the original page-dir */
-	DBG_PGCLONEPD(vid_printf("Exchanging page-dir back\n"));
-	pi = oldPid;
-	paging_exchangePDir(procs[pi].physPDirAddr);
-
-	/* remove the temp page-dir */
-	DBG_PGCLONEPD(vid_printf("Removing temp page-dir\n"));
+	/* unmap stuff */
+	DBG_PGCLONEPD(vid_printf("Removing temp mappings\n"));
 	paging_unmap(PAGE_DIR_TMP_AREA,1,false);
+	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)].present = false;
 	/* TODO optimize! */
 	paging_flushTLB();
 

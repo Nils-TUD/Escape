@@ -47,9 +47,11 @@
  * 0xFF400000: +-----------------------------------+     |      -----
  *             |     temp mapped page-tables       |     |        |
  * 0xFF800000: +-----------------------------------+     |        |
- *             |                ...                |     |
- * 0xFFBFC000: +-----------------------------------+     |     not shared page-tables (3)
- *             |            kernel-stack           |     |
+ *             |                ...                |     |        |
+ * 0xFFBFE000: +-----------------------------------+     |
+ *             |            kernel-stack           |     |     not shared page-tables (3)
+ * 0xFFBFF000: +-----------------------------------+     |
+ *             |            kernel-stack           |     |        |
  * 0xFFC00000: +-----------------------------------+     |        |
  *             |        mapped page-tables         |     |        |
  * 0xFFFFFFFF: +-----------------------------------+   -----    -----
@@ -78,6 +80,8 @@
 #define PAGE_DIR_TMP_AREA	(PAGE_DIR_AREA - PAGE_SIZE)
 /* our kernel-stack */
 #define KERNEL_STACK		(MAPPED_PTS_START - PAGE_SIZE)
+/* temporary stack for cloning the stack */
+#define KERNEL_STACK_TMP	(KERNEL_STACK - PAGE_SIZE)
 
 /* flags for paging_map() */
 #define PG_WRITABLE			1
@@ -244,9 +248,10 @@ void paging_unmap(u32 virtual,u32 count,bool freeFrames);
  * Clones the current page-directory for the process with given pid.
  *
  * @param newPid the pid of the new process
- * @return the frame-number of the new page-directory
+ * @param stackFrame will contain the stack-frame after the call
+ * @return the frame-number of the new page-directory or 0 if there is not enough mem
  */
-u32 paging_clonePageDir(u16 newPid);
+u32 paging_clonePageDir(u16 newPid,u32 *stackFrame);
 
 /**
  * Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as

@@ -165,11 +165,14 @@
 
 /* the stack frame for the interrupt-handler */
 typedef struct {
+	/* stack-pointer before calling isr-handler */
 	u32 esp;
+	/* segment-registers */
 	u32 es;
 	u32 ds;
 	u32 fs;
 	u32 gs;
+	/* general purpose registers */
 	u32 edi;
 	u32 esi;
 	u32 ebp;
@@ -177,11 +180,17 @@ typedef struct {
 	u32 ecx;
 	u32 ebx;
 	u32 eax;
+	/* interrupt-number */
 	u32 intrptNo;
+	/* error-code (for exceptions); default = 0 */
 	u32 errorCode;
+	/* pushed by the CPU */
 	u32 eip;
 	u32 cs;
 	u32 eflags;
+	/* if we come from user-mode this fields will be present and will be restored with iret */
+	u32 uesp;
+	u32 uss;
 } __attribute__((packed)) tIntrptStackFrame;
 
 /**

@@ -42,23 +42,12 @@
  * 	- idt-descriptors:		see intel manual, vol3a, page 202
  */
 
-static u8 task1[] = {
+u8 task1[] = {
 	#include "../../build/user_task1.dump"
 };
 
-static u8 task2[] = {
-	#include "../../build/user_task2.dump"
-};
-
-/*
- * load the given elf program, with all its segments.
- * 2 segments are expected. one for text, and the other for data.
- * return 0 for success, nonzero for fail.
- */
-s32 loadElfProg(u8 *code);
-
-u32 entryPoint;
-bool procsReady = false;
+bool procsReady;
+extern s32 loadElfProg(u8 *code);
 
 u32 main(tMultiBoot *mbp,u32 magic) {
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
@@ -105,15 +94,13 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),
 			paging_getPageCount());
 
-	/*dbg_printPageDir(true);*/
-
 #if 1
 	/* TODO the following is just temporary! */
 	/* load task1 */
 	loadElfProg(task1);
+	procsReady = true;
 
-	/*dbg_printPageDir(false);*/
-
+#if 0
 	/* clone ourself */
 	u16 pid = proc_getFreePid();
 	proc_clone(pid);
@@ -128,7 +115,7 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 
 	/*dbg_printPageDir(false);*/
 
-	procsReady = true;
+#endif
 
 	/* FIXME note that this is REALLY dangerous! we have just 1 stack at the moment. That means
 	 * if we do anything here that manipulates the stack the process we create above will get
@@ -137,71 +124,6 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 #else
 	while(1);
 #endif
-
-	return 0;
-}
-
-s32 loadElfProg(u8 *code) {
-	u32 seenLoadSegments = 0;
-
-	u32 j;
-	u8 const *datPtr;
-	Elf32_Ehdr *eheader = (Elf32_Ehdr*)code;
-	Elf32_Phdr *pheader = NULL;
-
-	entryPoint = (u32)eheader->e_entry;
-
-	if(*(u32*)eheader->e_ident != *(u32*)ELFMAG) {
-		vid_printf("Error: Invalid magic-number\n");
-		return -1;
-	}
-
-	procs[pi].textPages = 0;
-	procs[pi].dataPages = 0;
-
-	/* load the LOAD segments. */
-	for(datPtr = (u8 const*)(code + eheader->e_phoff), j = 0; j < eheader->e_phnum;
-		datPtr += eheader->e_phentsize, j++) {
-		pheader = (Elf32_Phdr*)datPtr;
-		if(pheader->p_type == PT_LOAD) {
-			u32 pages;
-			u8 const* segmentSrc;
-			segmentSrc = code + pheader->p_offset;
-
-			/* get to know the lowest virtual address. must be 0x0.  */
-			if(seenLoadSegments == 0) {
-				if(pheader->p_vaddr != 0) {
-					vid_printf("Error: p_vaddr != 0\n");
-					return -1;
-				}
-			}
-			else if(seenLoadSegments == 2) {
-				/* uh oh a third LOAD segment. that's not allowed
-				* indeed */
-				vid_printf("Error: too many LOAD segments\n");
-				return -1;
-			}
-
-			/* Note that we put everything in the data-segment here because otherwise we would
-			* steal the text from the parent-process after fork, exec & exit */
-			pages = BYTES_2_PAGES(pheader->p_memsz);
-			if(seenLoadSegments != 0) {
-				if(pheader->p_vaddr & (0x1000-1))
-					pages++;
-			}
-
-			/* get more space for the data area. */
-			proc_changeSize(pages,CHG_DATA);
-
-			/* copy the data, and zero remaining bytes */
-			memcpy((void*)pheader->p_vaddr, (void*)segmentSrc, pheader->p_filesz);
-			memset((void*)(pheader->p_vaddr + pheader->p_filesz), 0, pheader->p_memsz - pheader->p_filesz);
-			++seenLoadSegments;
-		}
-	}
-
-	/* give the process 2 stack pages */
-	proc_changeSize(2,CHG_STACK);
 
 	return 0;
 }

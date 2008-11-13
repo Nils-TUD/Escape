@@ -46,10 +46,9 @@ void dbg_printPageDir(bool includeKernel);
  * Prints the given page-table
  *
  * @param no the number of the page-table
- * @param frame the frame of the page-table
- * @param pagetable the page-table
+ * @param pde the page-dir-entry
  */
-void dbg_printPageTable(u32 no,u32 frame,tPTEntry *pagetable);
+void dbg_printPageTable(u32 no,tPDEntry *pde);
 
 /**
  * Prints the given page

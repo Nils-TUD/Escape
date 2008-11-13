@@ -153,6 +153,7 @@ typedef struct {
 
 #define GDT_DATA_WRITE			(1 << 1)
 #define GDT_CODE_READ			(1 << 1)
+#define GDT_CODE_CONFORMING		(1 << 2)
 
 #define GDT_32BIT_PMODE			(1 << 6)
 #define GDT_PAGE_GRANULARITY	(1 << 7)
@@ -224,6 +225,8 @@ void gdt_init(void) {
 			GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,GDT_DPL_USER);
 
 	/* tss */
+	tss.esp0 = KERNEL_STACK + PAGE_SIZE - 4;
+	tss.ss0 = 0x10;
 	gdt_set_tss_desc(5,(u32)&tss,sizeof(tTSS) - 1);
 
 	/*int i;

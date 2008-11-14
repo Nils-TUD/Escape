@@ -9,6 +9,10 @@
 #include "../h/video.h"
 #include "../h/paging.h"
 
+/* start- and end-address of the kernel */
+extern u32 KernelStart;
+extern u32 KernelEnd;
+
 /* the bitmap for the frames of the lower 16MB
  * 0 = free, 1 = used
  */

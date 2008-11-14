@@ -27,8 +27,13 @@ typedef struct {
 	u32 eflags;
 } tProcSave;
 
+/* the process states */
+typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3} tProcState;
+
 /* represents a process */
 typedef struct {
+	/* process state. see tProcState */
+	u8 state;
 	/* process id (2^16 processes should be enough :)) */
 	u16 pid;
 	/* parent process id */
@@ -44,13 +49,6 @@ typedef struct {
 
 /* the area for proc_changeSize() */
 typedef enum {CHG_DATA,CHG_STACK} chgArea;
-
-/* all processes */
-extern tProc procs[PROC_COUNT];
-
-/* the current process (index in procs) */
-/* TODO keep that? */
-extern u32 pi;
 
 /**
  * Saves the state of the current process in the given area
@@ -78,6 +76,24 @@ void proc_init(void);
  * @return the pid or 0
  */
 u16 proc_getFreePid(void);
+
+/**
+ * @return the running process
+ */
+tProc *proc_getRunning(void);
+
+/**
+ * @param pid the pid of the process
+ * @return the process with given pid
+ */
+tProc *proc_getByPid(u16 pid);
+
+/**
+ * Determines the next process to run
+ *
+ * @return the process
+ */
+tProc *proc_getNextRunning(void);
 
 /**
  * Clones the current process into the given one, saves the new process in proc_clone() so that

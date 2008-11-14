@@ -762,6 +762,7 @@ u8 task2[] = {
 };
 
 void intrpt_handler(tIntrptStackFrame stack) {
+	tProc *p;
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
 			kbd_handleIntrpt();
@@ -786,16 +787,17 @@ void intrpt_handler(tIntrptStackFrame stack) {
 				break;
 			}
 
-			vid_printf("Process %d\n",pi);
-			if(!proc_save(&procs[pi].save)) {
+			p = proc_getRunning();
+			vid_printf("Process %d\n",p->pid);
+			if(!proc_save(&p->save)) {
 				/* select next process */
-				pi = (pi + 1) % 2;
-				vid_printf("Resuming %d\n",pi);
+				p = proc_getNextRunning();
+				vid_printf("Resuming %d\n",p->pid);
 				intrpt_eoi(stack.intrptNo);
-				proc_resume(procs[pi].physPDirAddr,&procs[pi].save);
+				proc_resume(p->physPDirAddr,&p->save);
 				break;
 			}
-			vid_printf("Continuing %d\n",pi);
+			vid_printf("Continuing %d\n",p->pid);
 			break;
 
 		/* exceptions */
@@ -839,6 +841,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 
 s32 loadElfProg(u8 *code) {
 	u32 seenLoadSegments = 0;
+	tProc *p = proc_getRunning();
 
 	u32 j;
 	u8 const *datPtr;
@@ -852,8 +855,8 @@ s32 loadElfProg(u8 *code) {
 		return -1;
 	}
 
-	procs[pi].textPages = 0;
-	procs[pi].dataPages = 0;
+	p->textPages = 0;
+	p->dataPages = 0;
 
 	/* load the LOAD segments. */
 	for(datPtr = (u8 const*)(code + eheader->e_phoff), j = 0; j < eheader->e_phnum;

@@ -94,6 +94,8 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),
 			paging_getPageCount());
 
+	vid_printf("sizeof(tProcState) = %d\n",sizeof(tProcState));
+
 #if 0
 	/* TODO the following is just temporary! */
 	/* load task1 */
@@ -105,7 +107,7 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	u16 pid = proc_getFreePid();
 	proc_clone(pid);
 	/* save the state for task2 */
-	if(proc_save(&procs[pid].save)) {
+	if(proc_save(&proc_getByPid(pid)->save)) {
 		/* now load task2 */
 		vid_printf("Loading process %d\n",pid);
 		loadElfProg(task2);

@@ -13,13 +13,15 @@
 #include "../h/intrpt.h"
 
 /* our processes */
-tProc procs[PROC_COUNT];
+static tProc procs[PROC_COUNT];
+/* TODO keep that? */
 /* the process-index */
-u32 pi;
+static u32 pi;
 
 void proc_init(void) {
 	/* init the first process */
 	pi = 0;
+	procs[pi].state = ST_RUNNING;
 	procs[pi].pid = 0;
 	procs[pi].parentPid = 0;
 	/* the first process has no text, data and stack */
@@ -35,17 +37,35 @@ void proc_init(void) {
 
 u16 proc_getFreePid(void) {
 	u16 pid;
+	/* we can skip our initial process */
 	for(pid = 1; pid < PROC_COUNT; pid++) {
-		if(procs[pid].pid == 0)
+		if(procs[pid].state == ST_UNUSED)
 			return pid;
 	}
 	return 0;
+}
+
+tProc *proc_getRunning(void) {
+	return &procs[pi];
+}
+
+tProc *proc_getByPid(u16 pid) {
+	return &procs[pid];
+}
+
+tProc *proc_getNextRunning(void) {
+	/* TODO temporary! */
+	pi = (pi + 1) % 2;
+	return procs + pi;
 }
 
 s32 proc_clone(u16 newPid) {
 	u32 i,pdirFrame,stackFrame;
 	u32 *src,*dst;
 	tProc *p;
+
+	if((procs + newPid)->state != ST_UNUSED)
+		panic("The process slot 0x%x is already in use!",procs + newPid);
 
 	/* clone page-dir */
 	if((pdirFrame = paging_clonePageDir(newPid,&stackFrame)) == 0)
@@ -59,6 +79,7 @@ s32 proc_clone(u16 newPid) {
 	p->dataPages = procs[pi].dataPages;
 	p->stackPages = procs[pi].stackPages;
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
+	p->state = ST_READY;
 
 	/* map stack temporary (copy later) */
 	paging_map(KERNEL_STACK_TMP,&stackFrame,1,PG_SUPERVISOR | PG_WRITABLE,true);
@@ -84,8 +105,7 @@ s32 proc_clone(u16 newPid) {
 
 void proc_destroy(tProc *p) {
 	/* don't delete initial or unused processes */
-	/* TODO it would be better to set the page-dir to 0 to mark a process as unused, right? */
-	if(p->pid == 0) {
+	if(p->pid == 0 || p->state == ST_UNUSED) {
 		panic("The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
 	}
 
@@ -96,7 +116,9 @@ void proc_destroy(tProc *p) {
 	p->textPages = 0;
 	p->dataPages = 0;
 	p->stackPages = 0;
+	p->state = ST_UNUSED;
 	p->pid = 0;
+	p->physPDirAddr = 0;
 }
 
 void proc_setupIntrptStack(tIntrptStackFrame *frame) {

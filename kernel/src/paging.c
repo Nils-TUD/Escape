@@ -160,7 +160,8 @@ tPDEntry *paging_getProc0PD(void) {
 
 void paging_mapPageDir(void) {
 	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(PAGE_DIR_AREA);
-	u32 pdirFrame = (procs[pi].physPDirAddr >> PAGE_SIZE_SHIFT);
+	tProc *p = proc_getRunning();
+	u32 pdirFrame = (p->physPDirAddr >> PAGE_SIZE_SHIFT);
 	/* not the current one? */
 	if(pt->frameNumber != pdirFrame) {
 		pt->frameNumber = pdirFrame;
@@ -308,11 +309,13 @@ u32 paging_clonePageDir(u16 newPid,u32 *stackFrame) {
 	u32 tPages,dPages,sPages;
 	tPDEntry *pd,*npd,*tpd;
 	tPTEntry *pt;
+	tProc *p;
 
 	DBG_PGCLONEPD(vid_printf(">>===== paging_clonePageDir(newPid=%d) =====\n",newPid));
 
 	/* note that interrupts have to be disabled, because no other process is allowed to
 	 * run during this function since we are calculating the memory we need at the beginning! */
+	/* TODO is this really necessary? we won't do a context-switch if we are in kernel-mode... */
 	intrpt_disable();
 
 	/* frames needed:
@@ -323,9 +326,10 @@ u32 paging_clonePageDir(u16 newPid,u32 *stackFrame) {
 	 *  - page-tables for stack
 	 * The frames for the page-content is not yet needed since we're using copy-on-write!
 	 */
-	tPages = procs[pi].textPages;
-	dPages = procs[pi].dataPages;
-	sPages = procs[pi].stackPages;
+	p = proc_getRunning();
+	tPages = p->textPages;
+	dPages = p->dataPages;
+	sPages = p->stackPages;
 	frameCount = 3 + PAGES_TO_PTS(tPages + dPages) + PAGES_TO_PTS(sPages);
 	if(mm_getNumberOfFreeFrames(MM_DEF) < frameCount) {
 		DBG_PGCLONEPD(vid_printf("Not enough free frames!\n"));
@@ -335,8 +339,6 @@ u32 paging_clonePageDir(u16 newPid,u32 *stackFrame) {
 
 	/* we need a new page-directory */
 	pdirFrame = mm_allocateFrame(MM_DEF);
-	/* needed for paging_mapPageDir() */
-	procs[newPid].physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
 	DBG_PGCLONEPD(vid_printf("Got page-dir-frame %x\n",pdirFrame));
 
 	/* Map page-dir into temporary area, so we can access both page-dirs atm */

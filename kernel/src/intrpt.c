@@ -12,6 +12,7 @@
 #include "../h/cpu.h"
 #include "../h/paging.h"
 #include "../h/proc.h"
+#include "../h/elf.h"
 
 #define IDT_COUNT		256
 /* the privilege level */
@@ -739,27 +740,12 @@ void intrpt_init(void) {
 
 	/* now init the PIC */
 	intrpt_initPic();
-
-	/* finally enable interrupts */
-	intrpt_enable();
 }
 
-/* TODO temporary! */
-#include "../h/elf.h"
-bool proc2Ready;
-extern bool procsReady;
-u32 entryPoint;
-
-/*
- * load the given elf program, with all its segments.
- * 2 segments are expected. one for text, and the other for data.
- * return 0 for success, nonzero for fail.
- */
-s32 loadElfProg(u8 *code);
-
-u8 task2[] = {
+static u8 task2[] = {
 	#include "../../build/user_task2.dump"
 };
+static bool proc2Ready = false;
 
 void intrpt_handler(tIntrptStackFrame stack) {
 	tProc *p;
@@ -769,10 +755,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 			break;
 
 		case IRQ_TIMER:
-			/*vid_printf("Timer interrupt...\n");*/
-			if(!procsReady)
-				break;
-
+			vid_printf("Timer interrupt...\n");
 			if(!proc2Ready) {
 				proc2Ready = true;
 				/* clone proc1 */
@@ -780,7 +763,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 				if(proc_clone(pid)) {
 					/* now load task2 */
 					vid_printf("Loading process %d\n",pid);
-					loadElfProg(task2);
+					elf_loadprog(task2);
 					vid_printf("Starting...\n");
 					proc_setupIntrptStack(&stack);
 				}
@@ -837,70 +820,4 @@ void intrpt_handler(tIntrptStackFrame stack) {
 
 	/* send EOI to PIC */
 	intrpt_eoi(stack.intrptNo);
-}
-
-s32 loadElfProg(u8 *code) {
-	u32 seenLoadSegments = 0;
-	tProc *p = proc_getRunning();
-
-	u32 j;
-	u8 const *datPtr;
-	Elf32_Ehdr *eheader = (Elf32_Ehdr*)code;
-	Elf32_Phdr *pheader = NULL;
-
-	entryPoint = (u32)eheader->e_entry;
-
-	if(*(u32*)eheader->e_ident != *(u32*)ELFMAG) {
-		vid_printf("Error: Invalid magic-number\n");
-		return -1;
-	}
-
-	p->textPages = 0;
-	p->dataPages = 0;
-
-	/* load the LOAD segments. */
-	for(datPtr = (u8 const*)(code + eheader->e_phoff), j = 0; j < eheader->e_phnum;
-		datPtr += eheader->e_phentsize, j++) {
-		pheader = (Elf32_Phdr*)datPtr;
-		if(pheader->p_type == PT_LOAD) {
-			u32 pages;
-			u8 const* segmentSrc;
-			segmentSrc = code + pheader->p_offset;
-
-			/* get to know the lowest virtual address. must be 0x0.  */
-			if(seenLoadSegments == 0) {
-				if(pheader->p_vaddr != 0) {
-					vid_printf("Error: p_vaddr != 0\n");
-					return -1;
-				}
-			}
-			else if(seenLoadSegments == 2) {
-				/* uh oh a third LOAD segment. that's not allowed
-				* indeed */
-				vid_printf("Error: too many LOAD segments\n");
-				return -1;
-			}
-
-			/* Note that we put everything in the data-segment here because otherwise we would
-			* steal the text from the parent-process after fork, exec & exit */
-			pages = BYTES_2_PAGES(pheader->p_memsz);
-			if(seenLoadSegments != 0) {
-				if(pheader->p_vaddr & (0x1000-1))
-					pages++;
-			}
-
-			/* get more space for the data area. */
-			proc_changeSize(pages,CHG_DATA);
-
-			/* copy the data, and zero remaining bytes */
-			memcpy((void*)pheader->p_vaddr, (void*)segmentSrc, pheader->p_filesz);
-			memset((void*)(pheader->p_vaddr + pheader->p_filesz), 0, pheader->p_memsz - pheader->p_filesz);
-			++seenLoadSegments;
-		}
-	}
-
-	/* give the process 2 stack pages */
-	proc_changeSize(2,CHG_STACK);
-
-	return 0;
 }

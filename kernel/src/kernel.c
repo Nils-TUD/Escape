@@ -17,6 +17,7 @@
 #include "../h/cpu.h"
 #include "../h/elf.h"
 #include "../h/kheap.h"
+#include "../h/elf.h"
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table
@@ -42,12 +43,9 @@
  * 	- idt-descriptors:		see intel manual, vol3a, page 202
  */
 
-u8 task1[] = {
+static u8 task1[] = {
 	#include "../../build/user_task1.dump"
 };
-
-bool procsReady;
-extern s32 loadElfProg(u8 *code);
 
 u32 main(tMultiBoot *mbp,u32 magic) {
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
@@ -94,38 +92,12 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),
 			paging_getPageCount());
 
-	vid_printf("sizeof(tProcState) = %d\n",sizeof(tProcState));
-
-#if 0
+#if 1
 	/* TODO the following is just temporary! */
 	/* load task1 */
-	loadElfProg(task1);
-	procsReady = true;
-
-#if 0
-	/* clone ourself */
-	u16 pid = proc_getFreePid();
-	proc_clone(pid);
-	/* save the state for task2 */
-	if(proc_save(&proc_getByPid(pid)->save)) {
-		/* now load task2 */
-		vid_printf("Loading process %d\n",pid);
-		loadElfProg(task2);
-		vid_printf("Starting...\n");
-		return 0;
-	}
-
-	/*dbg_printPageDir(false);*/
-
-#endif
-
-	/* FIXME note that this is REALLY dangerous! we have just 1 stack at the moment. That means
-	 * if we do anything here that manipulates the stack the process we create above will get
-	 * an invalid stack
-	 */
+	return elf_loadprog(task1);
 #else
 	while(1);
-#endif
-
 	return 0;
+#endif
 }

@@ -126,16 +126,18 @@ higherhalf:
 
 	push	eax														; push Multiboot Magicnumber onto the stack
   push	ebx														; push address of Multiboot-Structure
-  call	main													; jump to our C kernel ;)
+  call	main													; jump to our C kernel (returns entry-point)
 	add		esp,8													; remove args from stack
 
 	; setup env for first task
 	push	DWORD 0x23										; ss
 	push	USER_STACK - 4								; esp
 	pushfd															; eflags
+	mov		ebx,[esp]
+	or		ebx,1 << 9										; enable IF-flag
+	mov		[esp],ebx
 	push	DWORD 0x1B										; cs
-	mov		eax,[entryPoint]
-	push	eax														; eip
+	push	eax														; eip (entry-point)
 	mov		eax,0x23											; set the value for the segment-registers
 	mov		ds,eax												; reload segments
 	mov		es,eax

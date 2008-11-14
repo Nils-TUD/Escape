@@ -21,6 +21,18 @@
 #ifndef _ELF_H
 #define	_ELF_H 1
 
+#include "common.h"
+
+#define ELF_INVALID_ENTRYPOINT 0xFFFFFFFF
+
+/**
+ * Loads the given code into the user-space
+ *
+ * @param code the address of the binary
+ * @return entry-point on success, ELF_INVALID_ENTRYPOINT on failure
+ */
+u32 elf_loadprog(u8 *code);
+
 /* Standard ELF types.  */
 
 /*#include <stdint.h>*/

@@ -71,6 +71,20 @@ static u32 paging_getPTEntryCount(tPTEntry *pt) {
 static void paging_mapintern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames,u32 count,u8 flags,
 		bool force);
 
+/**
+ * paging_unmap() for internal usages
+ *
+ * @param mappingArea the address of the mapping area to use
+ */
+static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFrames);
+
+/**
+ * paging_unmapPageTables() for internal usages
+ *
+ * @param pageDir the address of the page-directory to use
+ */
+static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count);
+
 void paging_init(void) {
 	tPDEntry *pd,*pde;
 	tPTEntry *pt;
@@ -80,9 +94,9 @@ void paging_init(void) {
 	pd = (tPDEntry*)VIRT2PHYS(proc0PD);
 	pt = (tPTEntry*)VIRT2PHYS(proc0PT);
 
-	/* map the first 4MiB at 0xC0000000 */
+	/* map the first 4MiB at 0xC0000000 (exclude page-dir and temp page-dir) */
 	addr = KERNEL_AREA_P_ADDR;
-	end = KERNEL_AREA_P_ADDR + PT_ENTRY_COUNT * PAGE_SIZE;
+	end = KERNEL_AREA_P_ADDR + (PT_ENTRY_COUNT - 2) * PAGE_SIZE;
 	for(i = 0; addr < end; i++, addr += PAGE_SIZE) {
 		/* build page-table entry */
 		proc0PT[i].frameNumber = (u32)addr >> PAGE_SIZE_SHIFT;
@@ -103,8 +117,10 @@ void paging_init(void) {
 	pde->writable = true;
 
 	/* insert page-dir into page-table so that we can access our page-dir */
-	i = ADDR_TO_PTINDEX(PAGE_DIR_AREA);
-	proc0PT[i].frameNumber = (u32)pd >> PAGE_SIZE_SHIFT;
+	pt = (tPTEntry*)(proc0PT + ADDR_TO_PTINDEX(PAGE_DIR_AREA));
+	pt->frameNumber = (u32)pd >> PAGE_SIZE_SHIFT;
+	pt->present = true;
+	pt->writable = true;
 
 	/* put the page-directory in the last page-dir-slot */
 	pde = (tPDEntry*)(proc0PD + ADDR_TO_PDINDEX(MAPPED_PTS_START));
@@ -255,16 +271,11 @@ static void paging_mapintern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 }
 
 void paging_unmap(u32 virtual,u32 count,bool freeFrames) {
-	bool ptEmpty,freePT;
-	u32 pdIndex,index = ADDR_TO_PTINDEX(virtual);
-	tPDEntry *pdir;
-	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
+	paging_unmapIntern(MAPPED_PTS_START,virtual,count,freeFrames);
+}
 
-	/* don't free page-tables in the kernel-area */
-	freePT = virtual < KERNEL_AREA_V_ADDR;
-	if(freePT)
-		paging_mapPageDir();
-
+static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFrames) {
+	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
 	while(count-- > 0) {
 		/* remove and free, if desired */
 		if(pt->present) {
@@ -273,27 +284,22 @@ void paging_unmap(u32 virtual,u32 count,bool freeFrames) {
 			pt->present = false;
 		}
 
-		/* check if the page-table is empty if we have reached the end of it
-		 * or if we're finished now */
-		if(freePT) {
-			if(count == 0 || (index % PT_ENTRY_COUNT) == PT_ENTRY_COUNT - 1) {
-				pdIndex = ADDR_TO_PDINDEX(virtual);
-				ptEmpty = paging_isPTEmpty((tPTEntry*)(MAPPED_PTS_START + pdIndex * PAGE_SIZE));
-				/* page-table empty? */
-				if(ptEmpty) {
-					pdir = (tPDEntry*)PAGE_DIR_AREA;
-					/* so remove it from page-dir and free the frame for it */
-					pdir[pdIndex].present = 0;
-					mm_freeFrame(pdir[pdIndex].ptFrameNo,MM_DEF);
-				}
-			}
-
-			index = (index + 1) % PT_ENTRY_COUNT;
-		}
-
 		/* to next page */
 		pt++;
 		virtual += PAGE_SIZE;
+	}
+}
+
+void paging_unmapPageTables(u32 start,u32 count) {
+	paging_unmapPageTablesIntern(PAGE_DIR_AREA,start,count);
+}
+
+static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
+	tPDEntry *pde = (tPDEntry*)pageDir + start;
+	while(count-- > 0) {
+		pde->present = 0;
+		mm_freeFrame(pde->ptFrameNo,MM_DEF);
+		pde++;
 	}
 }
 
@@ -302,7 +308,6 @@ u32 paging_clonePageDir(u16 newPid,u32 *stackFrame) {
 	u32 tPages,dPages,sPages;
 	tPDEntry *pd,*npd,*tpd;
 	tPTEntry *pt;
-	u16 oldPid = pi;
 
 	DBG_PGCLONEPD(vid_printf(">>===== paging_clonePageDir(newPid=%d) =====\n",newPid));
 
@@ -407,6 +412,45 @@ u32 paging_clonePageDir(u16 newPid,u32 *stackFrame) {
 	DBG_PGCLONEPD(vid_printf("<<===== paging_clonePageDir() =====\n"));
 
 	return pdirFrame;
+}
+
+void paging_destroyPageDir(tProc *p) {
+	tPDEntry *pd,*ppd;
+
+	/* map page-dir of process */
+	paging_map(PAGE_DIR_TMP_AREA,&(p->physPDirAddr),1,
+			PG_SUPERVISOR | PG_WRITABLE | PG_ADDR_TO_FRAME,true);
+	/* TODO optimize */
+	paging_flushTLB();
+
+	/* map page-tables */
+	pd = (tPDEntry*)PAGE_DIR_AREA;
+	ppd = (tPDEntry*)PAGE_DIR_TMP_AREA;
+	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = ppd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
+	/* TODO optimize */
+	paging_flushTLB();
+
+	/* TODO text should be shared, right? */
+
+	/* free data-pages and page-tables */
+	paging_unmapIntern(TMPMAP_PTS_START,p->textPages * PAGE_SIZE,p->dataPages,true);
+	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,PAGES_TO_PTS(p->textPages),
+			PAGES_TO_PTS(p->textPages + p->dataPages) - PAGES_TO_PTS(p->textPages));
+
+	/* free stack-pages */
+	paging_unmapIntern(TMPMAP_PTS_START,KERNEL_AREA_V_ADDR - p->stackPages * PAGE_SIZE,
+			p->stackPages,true);
+	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,
+			ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) - PAGES_TO_PTS(p->stackPages),
+			PAGES_TO_PTS(p->stackPages));
+
+	/* free kernel-stack */
+	paging_unmapIntern(TMPMAP_PTS_START,KERNEL_STACK,1,true);
+	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,ADDR_TO_PDINDEX(KERNEL_STACK),1);
+
+	/* unmap stuff & free page-dir */
+	paging_unmap(PAGE_DIR_TMP_AREA,1,true);
+	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)].present = false;
 }
 
 void paging_gdtFinished(void) {

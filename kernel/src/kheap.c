@@ -201,7 +201,7 @@ void kheap_print(void) {
 }
 
 void *kheap_alloc(u32 size) {
-	u32 address,caddress,endAddr;
+	u32 address;
 	tMemArea *area, *lastArea = NULL, *nArea;
 
 	DBG_KMALLOC(vid_printf(">>===== kheap_alloc(size=%d) =====\n",size));

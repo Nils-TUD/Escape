@@ -4,11 +4,13 @@
  * @copyright	2008 Nils Asmussen
  */
 
+#include "../h/common.h"
 #include "../h/intrpt.h"
 #include "../h/video.h"
 #include "../h/util.h"
 #include "../h/keyboard.h"
 #include "../h/cpu.h"
+#include "../h/paging.h"
 #include "../h/proc.h"
 
 #define IDT_COUNT		256
@@ -766,7 +768,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 			break;
 
 		case IRQ_TIMER:
-			vid_printf("Timer interrupt...\n");
+			/*vid_printf("Timer interrupt...\n");*/
 			if(!procsReady)
 				break;
 

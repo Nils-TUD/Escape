@@ -8,10 +8,7 @@
 #define PROC_H_
 
 #include "common.h"
-#include "paging.h"
 #include "intrpt.h"
-
-/*#define TEST_PROC*/
 
 /* max number of processes */
 #define PROC_COUNT 1024
@@ -93,6 +90,14 @@ u16 proc_getFreePid(void);
 s32 proc_clone(u16 newPid);
 
 /**
+ * Destroyes the given process. That means the process-slot will be marked as "unused" and the
+ * paging-structure will be freed.
+ *
+ * @param p the process
+ */
+void proc_destroy(tProc *p);
+
+/**
  * Setups the given interrupt-stack for the current process
  *
  * @param frame the interrupt-stack-frame
@@ -121,9 +126,5 @@ bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages);
  * @return true if successfull
  */
 bool proc_changeSize(s32 change,chgArea area);
-
-#ifdef TEST_PROC
-void test_proc(void);
-#endif
 
 #endif /*PROC_H_*/

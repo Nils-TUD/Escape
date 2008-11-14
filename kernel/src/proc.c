@@ -53,6 +53,8 @@ s32 proc_clone(u16 newPid) {
 
 	/* set page-dir and pages for segments */
 	p = procs + newPid;
+	p->pid = newPid;
+	p->parentPid = pi;
 	p->textPages = procs[pi].textPages;
 	p->dataPages = procs[pi].dataPages;
 	p->stackPages = procs[pi].stackPages;
@@ -78,6 +80,23 @@ s32 proc_clone(u16 newPid) {
 
 	/* parent */
 	return 0;
+}
+
+void proc_destroy(tProc *p) {
+	/* don't delete initial or unused processes */
+	/* TODO it would be better to set the page-dir to 0 to mark a process as unused, right? */
+	if(p->pid == 0) {
+		panic("The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
+	}
+
+	/* destroy paging-structure */
+	paging_destroyPageDir(p);
+
+	/* mark as unused */
+	p->textPages = 0;
+	p->dataPages = 0;
+	p->stackPages = 0;
+	p->pid = 0;
 }
 
 void proc_setupIntrptStack(tIntrptStackFrame *frame) {
@@ -107,13 +126,15 @@ bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages) {
 }
 
 bool proc_changeSize(s32 change,chgArea area) {
-	u32 addr,chg = change;
+	u32 addr,chg = change,origPages;
 	/* determine start-address */
 	if(area == CHG_DATA) {
 		addr = (procs[pi].textPages + procs[pi].dataPages) * PAGE_SIZE;
+		origPages = procs[pi].textPages + procs[pi].dataPages;
 	}
 	else {
 		addr = KERNEL_AREA_V_ADDR - (procs[pi].stackPages + change) * PAGE_SIZE;
+		origPages = procs[pi].stackPages;
 	}
 
 	if(change > 0) {
@@ -147,6 +168,31 @@ bool proc_changeSize(s32 change,chgArea area) {
 
 		/* free and unmap memory */
 		paging_unmap(addr,-change,true);
+
+		/* can we remove all page-tables? */
+		if(origPages + change == 0) {
+			paging_unmapPageTables(ADDR_TO_PDINDEX(addr),PAGES_TO_PTS(-change));
+		}
+		/* ok, remove just the free ones */
+		else {
+			/* at first calculate the max. pts we may free (based on the pages we removed) */
+			s32 start = ADDR_TO_PDINDEX(addr & ~(PAGE_SIZE * PT_ENTRY_COUNT - 1));
+			s32 count = ADDR_TO_PDINDEX(addr - (change + 1) * PAGE_SIZE) - ADDR_TO_PDINDEX(addr) + 1;
+			/* don't delete the first pt? */
+			if(area == CHG_DATA && (addr & (PAGE_SIZE * PT_ENTRY_COUNT - 1)) > 0) {
+				start++;
+				count--;
+			}
+			/* don't delete last pt? */
+			else if(area == CHG_STACK &&
+					((addr - change * PAGE_SIZE) & (PAGE_SIZE * PT_ENTRY_COUNT - 1)) > 0) {
+				count--;
+			}
+
+			/* finally unmap the pts */
+			if(count > 0)
+				paging_unmapPageTables(start,count);
+		}
 
 		/* ensure that the TLB contains no invalid entries */
 		/* TODO optimize! */

@@ -43,6 +43,11 @@ void dbg_printProcessState(tProcSave *state);
 void dbg_printPageDir(bool includeKernel);
 
 /**
+ * Prints the user-space page-directory
+ */
+void dbg_printUserPageDir(void);
+
+/**
  * Prints the given page-table
  *
  * @param no the number of the page-table

@@ -94,7 +94,7 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),
 			paging_getPageCount());
 
-#if 1
+#if 0
 	/* TODO the following is just temporary! */
 	/* load task1 */
 	loadElfProg(task1);

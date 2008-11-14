@@ -9,6 +9,7 @@
 
 #include "common.h"
 #include "mm.h"
+#include "proc.h"
 
 /**
  * Virtual memory layout:
@@ -49,7 +50,7 @@
  * 0xFF800000: +-----------------------------------+     |        |
  *             |                ...                |     |        |
  * 0xFFBFE000: +-----------------------------------+     |
- *             |            kernel-stack           |     |     not shared page-tables (3)
+ *             |         temp kernel-stack         |     |     not shared page-tables (3)
  * 0xFFBFF000: +-----------------------------------+     |
  *             |            kernel-stack           |     |        |
  * 0xFFC00000: +-----------------------------------+     |        |
@@ -234,15 +235,23 @@ u32 paging_countFramesForMap(u32 virtual,u32 count);
 void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags,bool force);
 
 /**
- * Removes <count> pages starting at <virtual> from the page-directory and page-tables, if
- * necessary (in the CURRENT page-dir!). If you like the function free's the frames.
- * Note that the function will NOT flush the TLB!
+ * Removes <count> pages starting at <virtual> from the page-tables (in the CURRENT page-dir!).
+ * If you like the function free's the frames.
+ * Note that the function will NOT flush the TLB and will not delete page-tables!
  *
  * @param virtual the virtual start-address
  * @param count the number of pages to unmap
  * @param freeFrames wether the frames should be free'd and not just unmapped
  */
 void paging_unmap(u32 virtual,u32 count,bool freeFrames);
+
+/**
+ * Unmaps and free's page-tables from the index <start> to <start> + <count>.
+ *
+ * @param start the index of the page-table to start with
+ * @param count the number of page-tables to remove
+ */
+void paging_unmapPageTables(u32 start,u32 count);
 
 /**
  * Clones the current page-directory for the process with given pid.
@@ -252,6 +261,13 @@ void paging_unmap(u32 virtual,u32 count,bool freeFrames);
  * @return the frame-number of the new page-directory or 0 if there is not enough mem
  */
 u32 paging_clonePageDir(u16 newPid,u32 *stackFrame);
+
+/**
+ * Destroyes the page-dir of the given process. That means all frames will be freed.
+ *
+ * @param p the process
+ */
+void paging_destroyPageDir(tProc *p);
 
 /**
  * Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as

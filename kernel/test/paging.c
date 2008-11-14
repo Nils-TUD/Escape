@@ -84,6 +84,11 @@ static void test_paging_access(u32 addr,u32 count) {
 
 static void test_paging_free(u32 addr,u32 count) {
 	paging_unmap(addr,count,false);
+	if(count > 0) {
+		/* unmap & remove affected page-tables */
+		paging_unmapPageTables(ADDR_TO_PDINDEX(addr),
+				PAGES_TO_PTS((addr - (addr & ~(PAGE_SIZE * PT_ENTRY_COUNT - 1))) / PAGE_SIZE + count));
+	}
 	mm_freeFrames(MM_DEF,frames,count);
 	paging_flushTLB();
 }

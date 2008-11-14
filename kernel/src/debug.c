@@ -63,6 +63,20 @@ void dbg_printPageDir(bool includeKernel) {
 	vid_printf("\n");
 }
 
+void dbg_printUserPageDir(void) {
+	u32 i;
+	tPDEntry *pagedir;
+	paging_mapPageDir();
+	pagedir = (tPDEntry*)PAGE_DIR_AREA;
+	vid_printf("page-dir @ 0x%08x:\n",pagedir);
+	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR); i++) {
+		if(pagedir[i].present) {
+			dbg_printPageTable(i,pagedir + i);
+		}
+	}
+	vid_printf("\n");
+}
+
 void dbg_printPageTable(u32 no,tPDEntry *pde) {
 	u32 i;
 	u32 addr = PAGE_SIZE * PT_ENTRY_COUNT * no;

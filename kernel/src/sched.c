@@ -84,6 +84,22 @@ void sched_enqueueReady(tProc *p) {
 	}
 }
 
+tProc *sched_dequeueReady(void) {
+	tQueueNode *node;
+	if(rqFirst == NULL)
+		return NULL;
+
+	/* put in free-queue & remove from ready-queue */
+	node = rqFirst;
+	rqFirst = rqFirst->next;
+	if(rqFirst == NULL)
+		rqLast = NULL;
+	node->next = rqFree;
+	rqFree = node;
+
+	return node->p;
+}
+
 void sched_dequeueProc(tProc *p) {
 	tQueueNode *n = rqFirst,*l = NULL;
 	while(n != NULL) {
@@ -99,20 +115,4 @@ void sched_dequeueProc(tProc *p) {
 		l = n;
 		n = n->next;
 	}
-}
-
-tProc *sched_dequeueReady(void) {
-	tQueueNode *node;
-	if(rqFirst == NULL)
-		return NULL;
-
-	/* put in free-queue & remove from ready-queue */
-	node = rqFirst;
-	rqFirst = rqFirst->next;
-	if(rqFirst == NULL)
-		rqLast = NULL;
-	node->next = rqFree;
-	rqFree = node;
-
-	return node->p;
 }

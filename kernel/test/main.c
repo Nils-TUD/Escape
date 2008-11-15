@@ -24,6 +24,7 @@
 #include "paging.h"
 #include "proc.h"
 #include "mm.h"
+#include "sched.h"
 
 /* TODO just temporary! */
 u32 entryPoint;
@@ -81,6 +82,7 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	test_register(&tModPaging);
 	test_register(&tModProc);
 	test_register(&tModKHeap);
+	test_register(&tModSched);
 	test_start();
 
 

@@ -194,12 +194,6 @@ typedef struct {
 	/* if we come from user-mode this fields will be present and will be restored with iret */
 	u32 uesp;
 	u32 uss;
-	/* for syscalls */
-	u32 sysCallNo;		/* = error-code */
-	u32 sysCallArg1;	/* = ret-val 1 */
-	u32 sysCallArg2;	/* = ret-val 2 */
-	u32 sysCallArg3;
-	u32 sysCallArg4;
 } __attribute__((packed)) tIntrptStackFrame;
 
 /**

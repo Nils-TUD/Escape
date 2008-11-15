@@ -55,7 +55,7 @@ tProc *proc_getByPid(u16 pid) {
 
 tProc *proc_getNextRunning(void) {
 	/* TODO temporary! */
-	pi = (pi + 1) % 2;
+	pi = (pi + 1) % 3;
 	return procs + pi;
 }
 
@@ -132,7 +132,7 @@ void proc_setupIntrptStack(tIntrptStackFrame *frame) {
 	frame->gs = 0x23;
 	frame->uss = 0x23;
 	/* TODO entry-point */
-	frame->eip = 0xc;
+	frame->eip = 0;
 	/* general purpose register */
 	frame->eax = 0;
 	frame->ebx = 0;

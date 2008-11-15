@@ -8,8 +8,9 @@
 #include "../h/syscalls.h"
 #include "../h/intrpt.h"
 #include "../h/proc.h"
+#include "../h/video.h"
 
-#define SYSCALL_COUNT 1
+#define SYSCALL_COUNT 3
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode) ((stack)->sysCallNo = (errorCode))
@@ -17,7 +18,7 @@
 #define SYSC_RET2(stack,val) ((stack)->sysCallArg2 = (val))
 
 /* syscall-handlers */
-typedef void (*tSyscallHandler)(tIntrptStackFrame *stack);
+typedef void (*tSyscallHandler)(tSysCallStack *stack);
 
 /* for syscall-definitions */
 typedef struct {
@@ -28,32 +29,42 @@ typedef struct {
 /**
  * Returns the pid of the current process
  */
-static void sysc_getpid(tIntrptStackFrame *stack);
+static void sysc_getpid(tSysCallStack *stack);
 /**
  * Returns the parent-pid of the current process
  */
-static void sysc_getppid(tIntrptStackFrame *stack);
+static void sysc_getppid(tSysCallStack *stack);
+/**
+ * Temporary syscall to print out a character
+ */
+static void sysc_debugc(tSysCallStack *stack);
 
 /* our syscalls */
 static tSysCall syscalls[SYSCALL_COUNT] = {
-	/* 0 */	{sysc_getpid,0},
-	/* 1 */	{sysc_getppid,0}
+	/* 0 */	{sysc_getpid,		0},
+	/* 1 */	{sysc_getppid,		0},
+	/* 2 */ {sysc_debugc,		1}
 };
 
-void sysc_handle(tIntrptStackFrame *stack) {
-	if(stack->sysCallNo < SYSCALL_COUNT) {
+void sysc_handle(tSysCallStack *stack) {
+	u32 sysCallNo = stack->sysCallNo;
+	if(sysCallNo < SYSCALL_COUNT) {
 		/* no error by default */
 		SYSC_ERROR(stack,0);
-		syscalls[stack->sysCallNo].handler(stack);
+		syscalls[sysCallNo].handler(stack);
 	}
 }
 
-static void sysc_getpid(tIntrptStackFrame *stack) {
+static void sysc_getpid(tSysCallStack *stack) {
 	tProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->pid);
 }
 
-static void sysc_getppid(tIntrptStackFrame *stack) {
+static void sysc_getppid(tSysCallStack *stack) {
 	tProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->parentPid);
+}
+
+static void sysc_debugc(tSysCallStack *stack) {
+	vid_putchar((s8)stack->sysCallArg1);
 }

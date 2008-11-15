@@ -527,7 +527,7 @@ void intrpt_init(void) {
 	intrpt_setIDT(45,isr45,IDT_DPL_KERNEL);
 	intrpt_setIDT(46,isr46,IDT_DPL_KERNEL);
 	intrpt_setIDT(47,isr47,IDT_DPL_KERNEL);
-	intrpt_setIDT(48,isr48,IDT_DPL_KERNEL);
+	intrpt_setIDT(48,isr48,IDT_DPL_USER);	/* syscall */
 	intrpt_setIDT(49,isr49,IDT_DPL_KERNEL);
 	intrpt_setIDT(50,isr50,IDT_DPL_KERNEL);
 	intrpt_setIDT(51,isr51,IDT_DPL_KERNEL);
@@ -774,11 +774,11 @@ void intrpt_handler(tIntrptStackFrame stack) {
 					vid_printf("Starting...\n");
 					proc_setupIntrptStack(&stack);
 				}
-				/*else if(proc_clone(proc_getFreePid())) {
+				else if(proc_getRunning()->pid == 0 && proc_clone(proc_getFreePid())) {
 					p = proc_getRunning();
 					vid_printf("Starting process %d\n",p->pid);
 					proc_setupIntrptStack(&stack);
-				}*/
+				}
 				break;
 			}
 
@@ -797,7 +797,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 
 		/* syscall */
 		case IRQ_SYSCALL:
-			sysc_handle(&stack);
+			sysc_handle((tSysCallStack*)stack.uesp);
 			break;
 
 		/* exceptions */

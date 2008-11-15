@@ -6,9 +6,10 @@
 
 #include <common.h>
 #include <debug.h>
+#include <proc.h>
 
 void main(void) {
 	while(true) {
-		debugf("Hallo, meine pid ist %d\n",1);
+		debugf("Hi, my pid is %d, parent is %d\n",getpid(),getppid());
 	}
 }

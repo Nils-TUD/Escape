@@ -45,7 +45,8 @@ tProc *sched_dequeueReady(void);
  * Removes the given process from the queue
  *
  * @param p the process
+ * @return true if the process has been removed
  */
-void sched_dequeueProc(tProc *p);
+bool sched_dequeueProc(tProc *p);
 
 #endif /* SCHED_H_ */

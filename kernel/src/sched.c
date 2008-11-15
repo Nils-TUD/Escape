@@ -48,15 +48,16 @@ tProc *sched_perform(void) {
 
 	/* get new process */
 	p = sched_dequeueReady();
+	/* TODO idle if there is no runnable process */
 	p->state = ST_RUNNING;
 	return p;
 }
 
 void sched_printReadyQueue(void) {
 	tQueueNode *n = rqFirst;
-	vid_printf("Ready-Queue:\n");
+	vid_printf("Ready-Queue: rqFirst=0x%x, rqLast=0x%x, rqFree=0x%x\n",rqFirst,rqLast,rqFree);
 	while(n != NULL) {
-		vid_printf("\tpid=%d, next=0x%x\n",n->p->pid,n->next);
+		vid_printf("\t[0x%x]: p=0x%x, next=0x%x\n",n,n->p,n->next);
 		n = n->next;
 	}
 }
@@ -100,19 +101,25 @@ tProc *sched_dequeueReady(void) {
 	return node->p;
 }
 
-void sched_dequeueProc(tProc *p) {
+bool sched_dequeueProc(tProc *p) {
 	tQueueNode *n = rqFirst,*l = NULL;
 	while(n != NULL) {
 		/* found it? */
 		if(n->p == p) {
 			/* dequeue */
-			l->next = n->next;
+			if(l == NULL)
+				l = rqFirst = n->next;
+			else
+				l->next = n->next;
+			if(n->next == NULL)
+				rqLast = l;
 			n->next = rqFree;
 			rqFree = n;
-			break;
+			return true;
 		}
 		/* to next */
 		l = n;
 		n = n->next;
 	}
+	return false;
 }

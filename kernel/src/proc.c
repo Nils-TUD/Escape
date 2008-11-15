@@ -125,6 +125,9 @@ void proc_destroy(tProc *p) {
 	p->textPages = 0;
 	p->dataPages = 0;
 	p->stackPages = 0;
+	/* remove from ready-queue, if necessary */
+	if(p->state == ST_READY)
+		sched_dequeueProc(p);
 	p->state = ST_UNUSED;
 	p->pid = 0;
 	p->physPDirAddr = 0;

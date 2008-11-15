@@ -19,9 +19,7 @@ all:		$(BIN)
 install:	$(BIN)
 
 $(BIN):		$(SRC)
-		@echo '﻿------------------------------------------------'
-		@echo '|             COMPILING $(BIN)                 |'
-		@echo '------------------------------------------------'
+		@echo "===== BUILDING $(BIN) =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(SRC)
 
 clean:

@@ -12,11 +12,11 @@
 
 /* the user-stack within a syscall */
 typedef struct {
-	u32 sysCallNo;		/* = error-code */
-	u32 sysCallArg1;	/* = ret-val 1 */
-	u32 sysCallArg2;	/* = ret-val 2 */
-	u32 sysCallArg3;
-	u32 sysCallArg4;
+	u32 number;		/* = error-code */
+	u32 arg1;	/* = ret-val 1 */
+	u32 arg2;	/* = ret-val 2 */
+	u32 arg3;
+	u32 arg4;
 } tSysCallStack;
 
 /**

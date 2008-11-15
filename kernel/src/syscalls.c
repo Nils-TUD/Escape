@@ -13,9 +13,9 @@
 #define SYSCALL_COUNT 3
 
 /* some convenience-macros */
-#define SYSC_ERROR(stack,errorCode) ((stack)->sysCallNo = (errorCode))
-#define SYSC_RET1(stack,val) ((stack)->sysCallArg1 = (val))
-#define SYSC_RET2(stack,val) ((stack)->sysCallArg2 = (val))
+#define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
+#define SYSC_RET1(stack,val) ((stack)->arg1 = (val))
+#define SYSC_RET2(stack,val) ((stack)->arg2 = (val))
 
 /* syscall-handlers */
 typedef void (*tSyscallHandler)(tSysCallStack *stack);
@@ -47,7 +47,7 @@ static tSysCall syscalls[SYSCALL_COUNT] = {
 };
 
 void sysc_handle(tSysCallStack *stack) {
-	u32 sysCallNo = stack->sysCallNo;
+	u32 sysCallNo = stack->number;
 	if(sysCallNo < SYSCALL_COUNT) {
 		/* no error by default */
 		SYSC_ERROR(stack,0);
@@ -66,5 +66,5 @@ static void sysc_getppid(tSysCallStack *stack) {
 }
 
 static void sysc_debugc(tSysCallStack *stack) {
-	vid_putchar((s8)stack->sysCallArg1);
+	vid_putchar((s8)stack->arg1);
 }

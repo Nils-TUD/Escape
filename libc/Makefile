@@ -17,21 +17,27 @@ STARTO = $(BUILD)/libc_startup.o
 all: $(LIB)
 
 $(LIB): $(OBJS) $(STARTO)
+		@echo "===== BUILDING ARCHIVE =====";
 		ar rcs $(LIB) $(OBJS)
 
 $(BUILD)/libc_%.o: src/%.c
+		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
 $(BUILD)/libc_a%.o: src/%.s
+		@echo "===== ASSEMBLING $< =====";
 		nasm -g -f elf -o $@ $<
 
 $(STARTO): $(START)
+		@echo "===== ASSEMBLING $(START) =====";
 		nasm -g -f elf -o $(STARTO) $(START)
 
 $(DEP):	$(CSRCS)
+		@echo "===== GENERATING DEPENDENCIES =====";
 		$(CC) $(CFLAGS) -MM $(CSRCS) > $(DEP)
 
 -include $(DEP)
 
 clean:
+		@echo "===== REMOVING FILES =====";
 		rm -f $(OBJS) $(LIB) $(DEP)

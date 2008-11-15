@@ -11,6 +11,7 @@
 #include "../h/util.h"
 #include "../h/video.h"
 #include "../h/intrpt.h"
+#include "../h/sched.h"
 
 /* our processes */
 static tProc procs[PROC_COUNT];
@@ -53,10 +54,17 @@ tProc *proc_getByPid(u16 pid) {
 	return &procs[pid];
 }
 
-tProc *proc_getNextRunning(void) {
-	/* TODO temporary! */
-	pi = (pi + 1) % 3;
-	return procs + pi;
+void proc_switch(void) {
+	tProc *p = procs + pi;
+	vid_printf("Process %d\n",p->pid);
+	if(!proc_save(&p->save)) {
+		/* select next process */
+		p = sched_perform();
+		pi = p->pid;
+		vid_printf("Resuming %d\n",p->pid);
+		proc_resume(p->physPDirAddr,&p->save);
+	}
+	vid_printf("Continuing %d\n",p->pid);
 }
 
 s32 proc_clone(u16 newPid) {
@@ -80,6 +88,7 @@ s32 proc_clone(u16 newPid) {
 	p->stackPages = procs[pi].stackPages;
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
 	p->state = ST_READY;
+	sched_enqueueReady(p);
 
 	/* map stack temporary (copy later) */
 	paging_map(KERNEL_STACK_TMP,&stackFrame,1,PG_SUPERVISOR | PG_WRITABLE,true);

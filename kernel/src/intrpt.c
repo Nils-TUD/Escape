@@ -782,17 +782,8 @@ void intrpt_handler(tIntrptStackFrame stack) {
 				break;
 			}
 
-			p = proc_getRunning();
-			vid_printf("Process %d\n",p->pid);
-			if(!proc_save(&p->save)) {
-				/* select next process */
-				p = proc_getNextRunning();
-				vid_printf("Resuming %d\n",p->pid);
-				intrpt_eoi(stack.intrptNo);
-				proc_resume(p->physPDirAddr,&p->save);
-				break;
-			}
-			vid_printf("Continuing %d\n",p->pid);
+			intrpt_eoi(stack.intrptNo);
+			proc_switch();
 			break;
 
 		/* syscall */

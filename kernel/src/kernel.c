@@ -18,6 +18,7 @@
 #include "../h/elf.h"
 #include "../h/kheap.h"
 #include "../h/elf.h"
+#include "../h/sched.h"
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table
@@ -79,6 +80,7 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	dbg_startTimer();
 	vid_printf("Initializing process-management...");
 	proc_init();
+	sched_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();

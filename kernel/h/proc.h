@@ -89,11 +89,9 @@ tProc *proc_getRunning(void);
 tProc *proc_getByPid(u16 pid);
 
 /**
- * Determines the next process to run
- *
- * @return the process
+ * Switches to another process
  */
-tProc *proc_getNextRunning(void);
+void proc_switch(void);
 
 /**
  * Clones the current process into the given one, saves the new process in proc_clone() so that

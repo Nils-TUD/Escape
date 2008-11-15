@@ -17,6 +17,7 @@
 #include "../h/cpu.h"
 #include "../h/elf.h"
 #include "../h/kheap.h"
+#include "../h/sched.h"
 
 #include "test.h"
 #include "kheap.h"
@@ -58,6 +59,7 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	dbg_startTimer();
 	vid_printf("Initializing process-management...");
 	proc_init();
+	sched_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();

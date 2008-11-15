@@ -98,8 +98,9 @@ void dbg_printPageTable(u32 no,tPDEntry *pde) {
 
 void dbg_printPage(tPTEntry *page) {
 	if(page->present) {
-		vid_printf("raw=0x%08x, frame=0x%x [%c%c]",*(u32*)page,
-				page->frameNumber,page->notSuperVisor ? 'u' : 'k',page->writable ? 'w' : 'r');
+		vid_printf("raw=0x%08x, frame=0x%x [%c%c%c%c]",*(u32*)page,
+				page->frameNumber,page->notSuperVisor ? 'u' : 'k',page->writable ? 'w' : 'r',
+				page->global ? 'g' : '-',page->copyOnWrite ? 'c' : '-');
 	}
 	else {
 		vid_printf("-");

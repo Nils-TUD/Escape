@@ -742,6 +742,7 @@ void intrpt_init(void) {
 	intrpt_initPic();
 }
 
+/* TODO temporary */
 static u8 task2[] = {
 	#include "../../build/user_task2.dump"
 };
@@ -755,16 +756,26 @@ void intrpt_handler(tIntrptStackFrame stack) {
 			break;
 
 		case IRQ_TIMER:
-			vid_printf("Timer interrupt...\n");
+			/*vid_printf("Timer interrupt...\n");*/
 			if(!proc2Ready) {
 				proc2Ready = true;
 				/* clone proc1 */
 				u16 pid = proc_getFreePid();
 				if(proc_clone(pid)) {
+					p = proc_getRunning();
+					/* overwrite pages (copyonwrite is enabled) */
+					paging_map(p->textPages * PAGE_SIZE,NULL,p->dataPages,PG_WRITABLE,true);
+					paging_map(KERNEL_V_ADDR - p->stackPages * PAGE_SIZE,NULL,p->stackPages,
+							PG_WRITABLE,true);
 					/* now load task2 */
-					vid_printf("Loading process %d\n",pid);
+					vid_printf("Loading process %d\n",p->pid);
 					elf_loadprog(task2);
 					vid_printf("Starting...\n");
+					proc_setupIntrptStack(&stack);
+				}
+				else if(proc_clone(proc_getFreePid())) {
+					p = proc_getRunning();
+					vid_printf("Starting process %d\n",p->pid);
 					proc_setupIntrptStack(&stack);
 				}
 				break;
@@ -807,7 +818,8 @@ void intrpt_handler(tIntrptStackFrame stack) {
 
 			if(stack.intrptNo == EX_PAGE_FAULT) {
 				vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
-				printStackTrace();
+				paging_handlePageFault(cpu_getCR2());
+				/*printStackTrace();*/
 				break;
 			}
 			/* fall through */

@@ -158,6 +158,31 @@ tPDEntry *paging_getProc0PD(void) {
 	return proc0PD;
 }
 
+void paging_handlePageFault(u32 address) {
+	u32 frameNumber;
+	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(address & ~(PAGE_SIZE - 1));
+	if(!pt->copyOnWrite) {
+		/* TODO what to do here? */
+		return;
+	}
+
+	/* map the frame to copy it */
+	frameNumber = pt->frameNumber;
+	paging_map(KERNEL_STACK_TMP,&frameNumber,1,PG_WRITABLE | PG_SUPERVISOR,true);
+
+	pt->frameNumber = mm_allocateFrame(MM_DEF);
+	pt->copyOnWrite = false;
+	pt->writable = true;
+	/* TODO optimize! */
+	paging_flushTLB();
+
+	/* copy content */
+	memcpy((void*)(address & ~(PAGE_SIZE - 1)),(void*)KERNEL_STACK_TMP,PAGE_SIZE);
+
+	/* unmap */
+	paging_unmap(KERNEL_STACK_TMP,1,false);
+}
+
 void paging_mapPageDir(void) {
 	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(PAGE_DIR_AREA);
 	tProc *p = proc_getRunning();
@@ -241,7 +266,7 @@ static void paging_mapintern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 			pd->present = true;
 			/* TODO always writable? */
 			pd->writable = true;
-			pd->notSuperVisor = (flags & PG_SUPERVISOR) == 0;
+			pd->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
 
 			/* clear frame (ensure that we start at the beginning of the frame) */
 			memset((void*)ADDR_TO_MAPPED_CUSTOM(mappingArea,
@@ -261,9 +286,9 @@ static void paging_mapintern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 					pt->frameNumber = *frames++;
 			}
 			pt->present = true;
-			pt->writable = flags & PG_WRITABLE;
-			pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0;
-			pt->copyOnWrite = flags & PG_COPYONWRITE;
+			pt->writable = flags & PG_WRITABLE ? true : false;
+			pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
+			pt->copyOnWrite = flags & PG_COPYONWRITE ? true : false;
 		}
 
 		/* to next page */
@@ -387,19 +412,19 @@ u32 paging_clonePageDir(u16 newPid,u32 *stackFrame) {
 
 	/* map pages for data. we will copy the data with copyonwrite. */
 	DBG_PGCLONEPD(vid_printf("Mapping %d data-pages (copy-on-write)\n",dPages));
-	x = 0 + tPages * PAGE_SIZE;
-	paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,NULL,dPages,PG_WRITABLE,true);
+	x = tPages * PAGE_SIZE;
+	/*paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,NULL,dPages,PG_WRITABLE,true);*/
 	/* TODO use copy-on-write */
-	/*paging_map(x,(u32*)(MAPPED_PTS_START + (x / PT_ENTRY_COUNT)),p->dataPages,
-			PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);*/
+	paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,
+			(u32*)ADDR_TO_MAPPED(x),dPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);
 
 	/* map pages for stack. we will copy the data with copyonwrite. */
 	DBG_PGCLONEPD(vid_printf("Mapping %d stack-pages (copy-on-write)\n",sPages));
 	x = KERNEL_AREA_V_ADDR - sPages * PAGE_SIZE;
-	paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,NULL,sPages,PG_WRITABLE,true);
+	/*paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,NULL,sPages,PG_WRITABLE,true);*/
 	/* TODO use copy-on-write */
-	/*paging_map(x,(u32*)(MAPPED_PTS_START + (x / PT_ENTRY_COUNT)),p->stackPages,
-			PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);*/
+	paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,
+			(u32*)ADDR_TO_MAPPED(x),sPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);
 
 	/* unmap stuff */
 	DBG_PGCLONEPD(vid_printf("Removing temp mappings\n"));
@@ -458,7 +483,7 @@ void paging_destroyPageDir(tProc *p) {
 void paging_gdtFinished(void) {
 	/* we can simply remove the first page-table since it just a "link" to the "real" page-table
 	 * for the kernel */
-	proc0PD[0].present = 0;
+	proc0PD[0].present = false;
 	/* TODO necessary? */
 	paging_flushTLB();
 }

@@ -176,6 +176,13 @@ void paging_mapHigherHalf(void);
 tPDEntry *paging_getProc0PD(void);
 
 /**
+ * Handles a page-fault for the given address
+ *
+ * @param address the address that caused the page-fault
+ */
+void paging_handlePageFault(u32 address);
+
+/**
  * Ensures that the current page-dir is mapped and can be accessed at PAGE_DIR_AREA
  */
 void paging_mapPageDir(void);

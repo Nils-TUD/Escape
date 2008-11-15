@@ -55,7 +55,7 @@ tProc *proc_getByPid(u16 pid) {
 
 tProc *proc_getNextRunning(void) {
 	/* TODO temporary! */
-	pi = (pi + 1) % 2;
+	pi = (pi + 1) % 3;
 	return procs + pi;
 }
 

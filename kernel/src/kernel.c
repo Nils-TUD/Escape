@@ -48,6 +48,8 @@ static u8 task1[] = {
 };
 
 u32 main(tMultiBoot *mbp,u32 magic) {
+	u32 entryPoint;
+
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
 	 * and "correct" the GDT */
 	paging_init();
@@ -95,7 +97,10 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 #if 1
 	/* TODO the following is just temporary! */
 	/* load task1 */
-	return elf_loadprog(task1);
+	entryPoint = elf_loadprog(task1);
+	/* give the process 2 stack pages */
+	proc_changeSize(2,CHG_STACK);
+	return entryPoint;
 #else
 	while(1);
 	return 0;

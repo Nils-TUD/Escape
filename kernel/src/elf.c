@@ -67,8 +67,5 @@ u32 elf_loadprog(u8 *code) {
 		}
 	}
 
-	/* give the process 2 stack pages */
-	proc_changeSize(2,CHG_STACK);
-
 	return (u32)eheader->e_entry;
 }

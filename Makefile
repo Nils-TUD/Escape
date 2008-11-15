@@ -6,9 +6,15 @@ BINNAME=kernel.bin
 BIN=$(BUILD)/$(BINNAME)
 SYMBOLS=$(BUILD)/kernel.symbols
 
-DIRS = tools user kernel kernel/test
+DIRS = tools libc user kernel kernel/test
 
-.PHONY: all disk dis qemu bochs debug debugm debugt test clean
+# warning flags for gcc
+export CWFLAGS=-Wall -ansi \
+				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
+				 -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wno-long-long \
+				 -Wstrict-prototypes
+
+.PHONY: all disk dis qemu bochs debug debugu debugm debugt test clean
 
 all: $(BUILD)
 		@for i in $(DIRS); do \
@@ -34,7 +40,13 @@ debug: all prepareRun
 		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
 		@#bochs -f bochs.cfg -q > log.txt 2>&1 &
 		sleep 1;
-		gdb --command=gdb.start --symbols $(BIN)
+		gdb --command=gdb.start
+		# --symbols $(BIN)
+
+debugu: all prepareRun
+		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
+		sleep 1;
+		gdb --command=gdb.start --symbols $(BUILD)/user_task1.bin
 
 debugm: all prepareRun
 		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &

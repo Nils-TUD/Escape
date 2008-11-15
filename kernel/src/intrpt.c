@@ -13,6 +13,7 @@
 #include "../h/paging.h"
 #include "../h/proc.h"
 #include "../h/elf.h"
+#include "../h/syscalls.h"
 
 #define IDT_COUNT		256
 /* the privilege level */
@@ -773,11 +774,11 @@ void intrpt_handler(tIntrptStackFrame stack) {
 					vid_printf("Starting...\n");
 					proc_setupIntrptStack(&stack);
 				}
-				else if(proc_clone(proc_getFreePid())) {
+				/*else if(proc_clone(proc_getFreePid())) {
 					p = proc_getRunning();
 					vid_printf("Starting process %d\n",p->pid);
 					proc_setupIntrptStack(&stack);
-				}
+				}*/
 				break;
 			}
 
@@ -792,6 +793,11 @@ void intrpt_handler(tIntrptStackFrame stack) {
 				break;
 			}
 			vid_printf("Continuing %d\n",p->pid);
+			break;
+
+		/* syscall */
+		case IRQ_SYSCALL:
+			sysc_handle(&stack);
 			break;
 
 		/* exceptions */
@@ -810,12 +816,14 @@ void intrpt_handler(tIntrptStackFrame stack) {
 				lastEx = stack.intrptNo;
 			}
 
+			/* #GPF */
 			if(stack.intrptNo == EX_GEN_PROT_FAULT) {
 				vid_printf("GPF for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
 				printStackTrace();
 				break;
 			}
 
+			/* #PF */
 			if(stack.intrptNo == EX_PAGE_FAULT) {
 				vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
 				paging_handlePageFault(cpu_getCR2());

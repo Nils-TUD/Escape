@@ -8,6 +8,8 @@
 #include "../h/proc.h"
 #include "../h/paging.h"
 #include "../h/elf.h"
+#include "../h/util.h"
+#include "../h/video.h"
 
 u32 elf_loadprog(u8 *code) {
 	u32 seenLoadSegments = 0;
@@ -53,7 +55,7 @@ u32 elf_loadprog(u8 *code) {
 			* steal the text from the parent-process after fork, exec & exit */
 			pages = BYTES_2_PAGES(pheader->p_memsz);
 			if(seenLoadSegments != 0) {
-				if(pheader->p_vaddr & (0x1000-1))
+				if(pheader->p_vaddr & (PAGE_SIZE - 1))
 					pages++;
 			}
 

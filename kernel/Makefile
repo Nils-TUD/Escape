@@ -8,10 +8,7 @@ LDCONF=ld.conf
 DEP=$(BUILD)/kernel.dep
 
 CC = gcc
-CFLAGS = -g -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wall -ansi \
-				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
-				 -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wno-long-long \
-				 -Wstrict-prototypes
+CFLAGS = -g -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CWFLAGS)
 
 # sources
 ASRC=kernel.asm

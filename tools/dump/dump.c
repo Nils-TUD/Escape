@@ -11,7 +11,7 @@
 int main(int argc, char *argv[]) {
   FILE *infile, *outfile;
   int n;
-  char c;
+  int c;
   if (argc != 3) {
     printf("Usage: %s <infile> <outfile>\n", argv[0]);
     return 1;

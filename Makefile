@@ -56,6 +56,7 @@ debugt: all prepareTest
 		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
 
 test: all prepareTest
+		#bochs -f bochs.cfg -q > log.txt 2>&1 &
 		qemu -serial stdio -no-kqemu -fda $(DISK) > log.txt 2>&1
 
 prepareTest:

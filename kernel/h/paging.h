@@ -73,7 +73,7 @@
 /* the start of the kernel-heap */
 #define KERNEL_HEAP_START	(KERNEL_AREA_V_ADDR + (PT_ENTRY_COUNT * PAGE_SIZE))
 /* the size of the kernel-heap (16 MiB) */
-#define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE * 4)
+#define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE/* * 4*/)
 
 /* page-directories in virtual memory */
 #define PAGE_DIR_AREA		(KERNEL_HEAP_START - PAGE_SIZE)
@@ -208,6 +208,14 @@ extern void paging_exchangePDir(u32 physAddr);
 u32 paging_getPageCount(void);
 
 /**
+ * Checks wether the given virtual-address is currently mapped
+ *
+ * @param virtual the virtual address
+ * @return true if so
+ */
+bool paging_isMapped(u32 virtual);
+
+/**
  * Determines the frame-number for the given virtual-address
  *
  * @param virtual the virtual address
@@ -261,13 +269,12 @@ void paging_unmap(u32 virtual,u32 count,bool freeFrames);
 void paging_unmapPageTables(u32 start,u32 count);
 
 /**
- * Clones the current page-directory for the process with given pid.
+ * Clones the current page-directory.
  *
- * @param newPid the pid of the new process
  * @param stackFrame will contain the stack-frame after the call
  * @return the frame-number of the new page-directory or 0 if there is not enough mem
  */
-u32 paging_clonePageDir(u16 newPid,u32 *stackFrame);
+u32 paging_clonePageDir(u32 *stackFrame);
 
 /**
  * Destroyes the page-dir of the given process. That means all frames will be freed.

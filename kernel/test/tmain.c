@@ -20,11 +20,12 @@
 #include "../h/sched.h"
 
 #include "test.h"
-#include "kheap.h"
-#include "paging.h"
-#include "proc.h"
-#include "mm.h"
-#include "sched.h"
+#include "tkheap.h"
+#include "tpaging.h"
+#include "tproc.h"
+#include "tmm.h"
+#include "tsched.h"
+#include "tsllist.h"
 
 /* TODO just temporary! */
 u32 entryPoint;
@@ -78,11 +79,12 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 
 
 	/* start tests */
-	test_register(&tModMM);
+	/*test_register(&tModMM);
 	test_register(&tModPaging);
-	test_register(&tModProc);
+	test_register(&tModProc);*/
 	test_register(&tModKHeap);
-	test_register(&tModSched);
+	/*test_register(&tModSched);
+	test_register(&tModSLList);*/
 	test_start();
 
 

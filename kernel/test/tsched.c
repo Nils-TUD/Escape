@@ -8,7 +8,7 @@
 #include "../h/sched.h"
 
 #include "test.h"
-#include "sched.h"
+#include "tsched.h"
 
 /* forward declarations */
 static void test_sched(void);
@@ -21,7 +21,7 @@ tTestModule tModSched = {
 
 static void test_sched(void) {
 	s32 i;
-	tProc *rand[5] = {0x1040,0x1000,0x1100,0x1080,0x10C0};
+	tProc *rand[5] = {(void*)0x1040,(void*)0x1000,(void*)0x1100,(void*)0x1080,(void*)0x10C0};
 	bool res = true;
 	/* not relevant here */
 	tProc *p = (tProc*)0x1000, *pp;

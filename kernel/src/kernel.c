@@ -93,8 +93,9 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
 
-	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),
-			paging_getPageCount());
+	vid_printf("Free frames=%d, pages mapped=%d, free mem=%d KiB\n",
+			mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),paging_getPageCount(),
+			mm_getNumberOfFreeFrames(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 
 #if 1
 	/* TODO the following is just temporary! */

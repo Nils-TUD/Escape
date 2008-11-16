@@ -11,8 +11,9 @@
 #include "../h/intrpt.h"
 
 /* builds the address of the page in the mapped page-tables to which the given addr belongs */
-#define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + ((u32)(addr) / PT_ENTRY_COUNT))
-#define ADDR_TO_MAPPED_CUSTOM(mappingArea,addr) ((mappingArea) + ((u32)(addr) / PT_ENTRY_COUNT))
+#define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + (((u32)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
+#define ADDR_TO_MAPPED_CUSTOM(mappingArea,addr) ((mappingArea) + \
+		(((u32)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
 
 /* converts the given virtual address to a physical
  * (this assumes that the kernel lies at 0xC0000000) */
@@ -160,7 +161,7 @@ tPDEntry *paging_getProc0PD(void) {
 
 void paging_handlePageFault(u32 address) {
 	u32 frameNumber;
-	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(address & ~(PAGE_SIZE - 1));
+	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(address);
 	if(!pt->copyOnWrite) {
 		/* TODO what to do here? */
 		return;
@@ -213,6 +214,11 @@ u32 paging_getPageCount(void) {
 	return count;
 }
 
+bool paging_isMapped(u32 virtual) {
+	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
+	return pt->present;
+}
+
 u32 paging_getFrameOf(u32 virtual) {
 	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
 	return pt->frameNumber;
@@ -252,6 +258,7 @@ static void paging_mapintern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 	if(pageDir == PAGE_DIR_AREA)
 		paging_mapPageDir();
 
+	virtual &= ~(PAGE_SIZE - 1);
 	while(count-- > 0) {
 		pd = (tPDEntry*)pageDir + ADDR_TO_PDINDEX(virtual);
 		/* page table not present? */
@@ -329,7 +336,7 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
 	}
 }
 
-u32 paging_clonePageDir(u16 newPid,u32 *stackFrame) {
+u32 paging_clonePageDir(u32 *stackFrame) {
 	u32 x,pdirFrame,frameCount;
 	u32 tPages,dPages,sPages;
 	tPDEntry *pd,*npd,*tpd;

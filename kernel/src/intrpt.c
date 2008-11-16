@@ -775,11 +775,13 @@ void intrpt_handler(tIntrptStackFrame stack) {
 					vid_printf("Starting...\n");
 					proc_setupIntrptStack(&stack);
 				}
+#if 0
 				else if(proc_getRunning()->pid == 0 && proc_clone(proc_getFreePid())) {
 					p = proc_getRunning();
 					vid_printf("Starting process %d\n",p->pid);
 					proc_setupIntrptStack(&stack);
 				}
+#endif
 				break;
 			}
 

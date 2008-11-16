@@ -10,11 +10,10 @@
 #include "../h/paging.h"
 #include "../h/mm.h"
 #include "test.h"
-#include "proc.h"
+#include "tproc.h"
 
 /* forward declarations */
 static void test_proc(void);
-static void test_proc_chgSize(s32 change,chgArea area);
 
 /* our test-module */
 tTestModule tModProc = {

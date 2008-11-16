@@ -38,7 +38,7 @@ void panic(cstring fmt,...) {
 	vid_printf("\n");
 	vid_restoreColor();
 	printStackTrace();
-	intrpt_disable();
+	intrpt_setEnabled(false);
 	halt();
 }
 

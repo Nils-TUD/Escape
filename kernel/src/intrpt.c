@@ -757,7 +757,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 			break;
 
 		case IRQ_TIMER:
-#if 0
+#if 1
 			/*vid_printf("Timer interrupt...\n");*/
 			if(!proc2Ready) {
 				proc2Ready = true;

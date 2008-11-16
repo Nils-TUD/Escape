@@ -14,8 +14,7 @@
 [global inb]
 [global KernelStart]
 [global halt]
-[global intrpt_enable]
-[global intrpt_disable]
+[global intrpt_setEnabled]
 [global intrpt_loadidt]
 [global paging_enable]
 [global paging_flushTLB]
@@ -225,7 +224,15 @@ cpu_getCR4:
 proc_save:
 	push	ebp
 	mov		ebp,esp
-	cli																	; disable interrupts
+	; save eax & ensure interrupts are disabled
+	push	eax
+	pushfd
+	mov		eax,[esp]
+	and		eax,1 << 9
+	mov		[ebp-12],eax
+	cli
+	add		esp,4
+	pop		eax
 
 	push	esp														; save esp
 	push	eax														; save eax
@@ -242,7 +249,12 @@ proc_save:
 	pop		DWORD [eax + STATE_EFLAGS]		; store
 	mov		DWORD [eax + STATE_EIP],$			; store instruction-pointer
 
-	sti																	; enable interrupts
+	; restore interrupt-state
+	mov		eax,[ebp-12]
+	cmp		eax,eax
+	jz		proc_saveIFD
+	sti
+proc_saveIFD:
 	mov		eax,0													; return 0
 	leave
 	ret
@@ -251,7 +263,15 @@ proc_save:
 proc_resume:
 	push	ebp
 	mov		ebp,esp
-	cli																	; disable interrupts
+	; save eax & ensure interrupts are disabled
+	push	eax
+	pushfd
+	mov		eax,[esp]
+	and		eax,1 << 9
+	mov		[ebp-12],eax
+	cli
+	add		esp,4
+	pop		eax
 
 	mov		eax,[esp+12]									; get saveArea
 	mov		edi,[eax + STATE_EDI]
@@ -270,7 +290,12 @@ proc_resume:
 	mov		ebx,[eax + STATE_EBX]
 	mov		eax,[eax + STATE_EAX]
 
-	sti																	; enable interrupts
+	; restore interrupt-state
+	mov		eax,[ebp-12]
+	cmp		eax,eax
+	jz		proc_resumeIFD
+	sti
+proc_resumeIFD:
 	mov		eax,1													; return 1
 	leave
 	ret
@@ -294,14 +319,21 @@ paging_exchangePDir:
 	mov		cr3,eax												; set page-dir
 	ret
 
-; void intrpt_enable(void);
-intrpt_enable:
-	sti																	; enable interrupts
-	ret
-
-; void intrpt_disable(void);
-intrpt_disable:
-	cli																	; disable interrupts
+; bool intrpt_setEnabled(bool enabled);
+intrpt_setEnabled:
+	push	ebp
+	mov		ebp,esp
+	mov		ebx,[esp + 8]
+	shl		ebx,9
+	pushfd
+	mov		ecx,[esp]
+	mov		eax,ecx
+	and		eax,1 << 9										; extract IF-flag
+	shr		eax,9
+	or		ecx,ebx												; set new value
+	mov		[esp],ecx
+	popfd
+	leave
 	ret
 
 ; void intrpt_loadidt(tIDTPtr *idt);

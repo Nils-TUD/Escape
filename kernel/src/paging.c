@@ -337,6 +337,7 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
 }
 
 u32 paging_clonePageDir(u32 *stackFrame) {
+	bool oldIntrptState;
 	u32 x,pdirFrame,frameCount;
 	u32 tPages,dPages,sPages;
 	tPDEntry *pd,*npd,*tpd;
@@ -348,7 +349,7 @@ u32 paging_clonePageDir(u32 *stackFrame) {
 	/* note that interrupts have to be disabled, because no other process is allowed to
 	 * run during this function since we are calculating the memory we need at the beginning! */
 	/* TODO is this really necessary? we won't do a context-switch if we are in kernel-mode... */
-	intrpt_disable();
+	oldIntrptState = intrpt_setEnabled(false);
 
 	/* frames needed:
 	 * 	- page directory
@@ -365,7 +366,7 @@ u32 paging_clonePageDir(u32 *stackFrame) {
 	frameCount = 3 + PAGES_TO_PTS(tPages + dPages) + PAGES_TO_PTS(sPages);
 	if(mm_getNumberOfFreeFrames(MM_DEF) < frameCount) {
 		DBG_PGCLONEPD(vid_printf("Not enough free frames!\n"));
-		intrpt_enable();
+		intrpt_setEnabled(oldIntrptState);
 		return 0;
 	}
 
@@ -441,7 +442,7 @@ u32 paging_clonePageDir(u32 *stackFrame) {
 	paging_flushTLB();
 
 	/* we're done */
-	intrpt_enable();
+	intrpt_setEnabled(oldIntrptState);
 
 	DBG_PGCLONEPD(vid_printf("<<===== paging_clonePageDir() =====\n"));
 

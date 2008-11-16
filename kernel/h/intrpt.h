@@ -208,14 +208,12 @@ cstring intrpt_no2Name(u32 intrptNo);
  * intrpt-state */
 
 /**
- * Enable interrupts
+ * Enables / disables the interrupts
+ *
+ * @param enabled the new value
+ * @return the old value
  */
-extern void intrpt_enable(void);
-
-/**
- * Disable interrupts
- */
-extern void intrpt_disable(void);
+extern bool intrpt_setEnabled(bool enabled);
 
 /**
  * Initializes the interrupts

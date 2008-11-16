@@ -21,6 +21,7 @@ static void test_4(void);
 static void test_5(void);
 static void test_6(void);
 static void test_7(void);
+static void test_8(void);
 
 /* our test-module */
 tTestModule tModSLList = {
@@ -36,6 +37,7 @@ static void test_sllist(void) {
 	test_5();
 	test_6();
 	test_7();
+	test_8();
 }
 
 static void test_1(void) {
@@ -206,7 +208,7 @@ static void test_6(void) {
 }
 
 static void test_7(void) {
-	u32 i = 0,free,x = 0x100;
+	u32 free,x = 0x100;
 	bool res;
 	tSLList *list;
 	free = kheap_getFreeMem();
@@ -226,4 +228,28 @@ static void test_7(void) {
 		test_caseFailed("Memory not freed (before=%d, after=%d)",free,kheap_getFreeMem());
 	else
 		test_caseSucceded();
+}
+
+static void test_8(void) {
+	tSLList *list;
+	tSLNode *n;
+
+	test_caseStart("Walking through the list");
+
+	list = sll_create();
+	sll_append(list,(void*)0x123);
+	sll_append(list,(void*)0x456);
+	sll_append(list,(void*)0x789);
+
+	tprintf("Starting at index 0\n");
+	for(n = sll_begin(list); n != NULL; n = n->next) {
+		tprintf("element @ 0x%x : 0x%x\n",n,n->data);
+	}
+	tprintf("Starting at index 2\n");
+	for(n = sll_nodeAt(list,2); n != NULL; n = n->next) {
+		tprintf("element @ 0x%x : 0x%x\n",n,n->data);
+	}
+	sll_destroy(list);
+
+	test_caseSucceded();
 }

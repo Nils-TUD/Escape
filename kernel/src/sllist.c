@@ -67,6 +67,14 @@ void sll_print(tSLList *list) {
 	}
 }
 
+tSLNode *sll_begin(tSLList *list) {
+	return (tSLNode*)sll_getNode(list,0);
+}
+
+tSLNode *sll_nodeAt(tSLList *list,u32 index) {
+	return (tSLNode*)sll_getNode(list,index);
+}
+
 u32 sll_length(tSLList *list) {
 	tList *l = (tList*)list;
 	return l->length;

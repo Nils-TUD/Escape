@@ -12,6 +12,14 @@
 /* our list (the user should not know about the internal structure) */
 typedef void* tSLList;
 
+/* a node in the list (public view) */
+typedef struct tSLNode tSLNode;
+struct tSLNode {
+	/* the user should not be able to change them */
+	tSLNode *const next;
+	void *const data;
+};
+
 /**
  * Creates a new list
  *
@@ -38,6 +46,30 @@ void sll_print(tSLList *list);
  * @return the number of elements in the list
  */
 u32 sll_length(tSLList *list);
+
+/**
+ * Returns the first node in the list. That allows you to iterate through it:
+ * <code>
+ * tSLNode *n;
+ * for(n = sll_begin(list); n != NULL; n = n->next) {
+ *   \/* do something with n->data *\/
+ * }
+ * </code>
+ *
+ * @param list the list
+ * @return the first node (NULL if the list is empty)
+ */
+tSLNode *sll_begin(tSLList *list);
+
+/**
+ * Returns the node at given index. See sll_begin().
+ * Note that the index HAS TO exist!
+ *
+ * @param list the list
+ * @param index the index
+ * @return the node at given index
+ */
+tSLNode *sll_nodeAt(tSLList *list,u32 index);
 
 /**
  * Searches for the element at given index. First and last one can be found in O(1).

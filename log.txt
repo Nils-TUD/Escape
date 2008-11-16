@@ -5,46 +5,64 @@ MultiBoot-Structure:
 flags=0x7E7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
-cmdLine=/kernel.bin
-ELF: num=18, size=40, addr=0x11E000, shndx=0xF
+cmdLine=/kernel_test.bin
+ELF: num=19, size=40, addr=0x158000, shndx=0x10
 mmapLength=144, mmapAddr=0xC0053B04
 Available memory:
 	  0: addr=0x00000000, size=0x0009FC00, type=0x00000001
 	  1: addr=0x00100000, size=0x07EF0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0xC011AFD800546CCC
-Free frames=28912, pages mapped=1028
+Clock cycles: 0x0000000001E1C51E
 Initializing process-management...DONE
-Clock cycles: 0xC011AFD80005AD6E
+Clock cycles: 0x00000000000AA3F1
 Initializing IDT...DONE
-Clock cycles: 0xC011AFD8000DEE88
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
-Timer interrupt...
+Clock cycles: 0x000000000016CBCC
+Free frames=28656, pages mapped=1280
+
+====== Starting test-procedure ======
+---- Starting with module 0 : "Single linked list" ----
+
+== Testcase 1 : Append & check & remove index 0 ==
+== >> SUCCESS ==
+
+== Testcase 2 : Append & remove first (NULL) ==
+== >> SUCCESS ==
+
+== Testcase 3 : Append & remove first (x) ==
+== >> SUCCESS ==
+
+== Testcase 4 : Create & append & destroy ==
+== >> SUCCESS ==
+
+== Testcase 5 : Create & append & insert somewhere & destroy ==
+== >> SUCCESS ==
+
+== Testcase 6 : Create & append & set somewhere & destroy ==
+== >> SUCCESS ==
+
+== Testcase 7 : Append until no mem left & destroy ==
+Appended 261630 elements
+Freeing...done
+== >> FAILED : Memory not freed (before=4190208, after=2093056) ==
+
+== Testcase 8 : Walking through the list ==
+Starting at index 0
+element @ 0xC07FFFEC : 0x123
+element @ 0xC07FFFE4 : 0x456
+element @ 0xC07FFFDC : 0x789
+Starting at index 2
+element @ 0xC07FFFDC : 0x789
+== >> SUCCESS ==
+
+---- Module "Single linked list" finished. Summary: ----
+-- 7 testcases successfull --
+-- 1 testcases failed --
+----------------------------------
+
+====== All modules done ======
+== 0 modules successfull ==
+== 1 modules failed ==
+== 7 testcases successfull ==
+== 1 testcases failed ==
+============================

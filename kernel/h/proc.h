@@ -19,11 +19,6 @@ typedef struct {
 	u32 edi;
 	u32 esi;
 	u32 ebp;
-	u32 edx;
-	u32 ecx;
-	u32 ebx;
-	u32 eax;
-	u32 eip;
 	u32 eflags;
 } tProcSave;
 

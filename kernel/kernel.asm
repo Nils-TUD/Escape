@@ -54,12 +54,7 @@ STATE_ESP								equ 0
 STATE_EDI								equ 4
 STATE_ESI								equ 8
 STATE_EBP								equ 12
-STATE_EDX								equ	16
-STATE_ECX								equ	20
-STATE_EBX								equ	24
-STATE_EAX								equ	28
-STATE_EIP								equ	32
-STATE_EFLAGS						equ	36
+STATE_EFLAGS						equ 16
 
 ; TODO consider callee-save-registers!!
 
@@ -224,33 +219,26 @@ cpu_getCR4:
 proc_save:
 	push	ebp
 	mov		ebp,esp
+	sub		esp,4
 	; save eax & ensure interrupts are disabled
-	push	eax
 	pushfd
 	mov		eax,[esp]
 	and		eax,1 << 9
-	mov		[ebp-12],eax
+	mov		[ebp-4],eax
 	cli
 	add		esp,4
-	pop		eax
 
-	push	esp														; save esp
-	push	eax														; save eax
-	mov		eax,[esp+16]									; get saveArea
-	pop		DWORD [eax + STATE_EAX]				; store eax
-	pop		DWORD [eax + STATE_ESP]				; store esp
+	; save register
+	mov		eax,[ebp + 8]									; get saveArea
+	mov		[eax + STATE_ESP],esp					; store esp
 	mov		[eax + STATE_EDI],edi
 	mov		[eax + STATE_ESI],esi
 	mov		[eax + STATE_EBP],ebp
-	mov		[eax + STATE_EDX],edx
-	mov		[eax + STATE_ECX],ecx
-	mov		[eax + STATE_EBX],ebx
 	pushfd															; load eflags
 	pop		DWORD [eax + STATE_EFLAGS]		; store
-	mov		DWORD [eax + STATE_EIP],$			; store instruction-pointer
 
 	; restore interrupt-state
-	mov		eax,[ebp-12]
+	mov		eax,[ebp-4]
 	cmp		eax,eax
 	jz		proc_saveIFD
 	sti
@@ -263,39 +251,34 @@ proc_saveIFD:
 proc_resume:
 	push	ebp
 	mov		ebp,esp
-	; save eax & ensure interrupts are disabled
-	push	eax
+	; ensure interrupts are disabled
 	pushfd
 	mov		eax,[esp]
 	and		eax,1 << 9
-	mov		[ebp-12],eax
 	cli
 	add		esp,4
-	pop		eax
 
-	mov		eax,[esp+12]									; get saveArea
+	; restore register
+	mov		eax,[ebp + 12]								; get saveArea
 	mov		edi,[eax + STATE_EDI]
 	mov		esi,[eax + STATE_ESI]
 	mov		ebp,[eax + STATE_EBP]
-	mov		edx,[eax + STATE_EDX]
-	mov		ecx,[eax + STATE_ECX]
 	push	DWORD [eax + STATE_EFLAGS]
 	popfd																; load eflags
 
-	mov		ebx,[esp+8]										; load page-dir-address
-	mov		cr3,ebx												; set page-dir
+	; load new page-dir
+	mov		ecx,[esp + 8]									; load page-dir-address
+	mov		cr3,ecx												; set page-dir
 
-	; now load esp and eax
+	; now load esp
 	mov		esp,[eax + STATE_ESP]
-	mov		ebx,[eax + STATE_EBX]
-	mov		eax,[eax + STATE_EAX]
 
 	; restore interrupt-state
-	mov		eax,[ebp-12]
-	cmp		eax,eax
-	jz		proc_resumeIFD
+	mov		ecx,[eax + STATE_EFLAGS]
+	cmp		ecx,ecx
+	jz		proc_resumeIFRes
 	sti
-proc_resumeIFD:
+proc_resumeIFRes:
 	mov		eax,1													; return 1
 	leave
 	ret

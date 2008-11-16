@@ -41,11 +41,6 @@ void dbg_printProcessState(tProcSave *state) {
 	vid_printf("\t\tedi = 0x%08x\n",state->edi);
 	vid_printf("\t\tesi = 0x%08x\n",state->esi);
 	vid_printf("\t\tebp = 0x%08x\n",state->ebp);
-	vid_printf("\t\tedx = 0x%08x\n",state->edx);
-	vid_printf("\t\tecx = 0x%08x\n",state->ecx);
-	vid_printf("\t\tebx = 0x%08x\n",state->ebx);
-	vid_printf("\t\teax = 0x%08x\n",state->eax);
-	vid_printf("\t\teip = 0x%08x\n",state->eip);
 	vid_printf("\t\teflags = 0x%08x\n",state->eflags);
 }
 

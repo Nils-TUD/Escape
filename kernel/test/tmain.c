@@ -79,11 +79,11 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 
 
 	/* start tests */
-	/*test_register(&tModMM);
+	test_register(&tModMM);
 	test_register(&tModPaging);
 	test_register(&tModProc);
 	test_register(&tModKHeap);
-	test_register(&tModSched);*/
+	test_register(&tModSched);
 	test_register(&tModSLList);
 	test_start();
 

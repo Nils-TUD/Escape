@@ -255,4 +255,9 @@ static void test_kheap_t5(void) {
 		test_caseSucceded();
 	else
 		test_caseFailed("Contents not equal");
+
+	kheap_free(ptr1);
+	kheap_free(ptr3);
+	kheap_free(ptr4);
+	kheap_free(ptr5);
 }

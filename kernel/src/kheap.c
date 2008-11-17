@@ -88,9 +88,11 @@ static tMemArea *firstUnused;
 /**
  * Finds a place for a new mem-area
  *
+ * @param size the desired size
+ * @param isInitial wether the initial area should be splitted
  * @return the address or NULL if there is not enough mem
  */
-static tMemArea *kheap_newArea(void) {
+static tMemArea *kheap_newArea(u32 size,bool isInitial) {
 	DBG_KMALLOC(vid_printf("Getting new mem-area...\n"));
 	/* start-point (skip page-usage-count and initial area) */
 	tMemArea *area = firstUnused;
@@ -120,6 +122,8 @@ static tMemArea *kheap_newArea(void) {
 			if(highestMemArea < area) {
 				/* not enough mem? */
 				if(initial->size < PAGE_SIZE)
+					return NULL;
+				if(isInitial && initial->size < PAGE_SIZE + size)
 					return NULL;
 
 				DBG_KMALLOC(vid_printf("Reached new page 0x%x\n",area));
@@ -228,8 +232,9 @@ u32 kheap_getFreeMem(void) {
 void kheap_print(void) {
 	u32 address = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;
 	tMemArea *area = first;
-	vid_printf("Kernel-Heap (first=0x%x, highestMemArea=0x%x, startArea=0x%x):\n",first,
-			highestMemArea,startArea);
+	vid_printf("Kernel-Heap (first=0x%x, highestMemArea=0x%x, startArea=0x%x, startAddr=0x%x, "
+			"startPrev=0x%x, firstUnused=0x%x):\n",first,highestMemArea,startArea,startAddr,
+			startPrev,firstUnused);
 	do {
 		vid_printf("\t(@0x%08x) 0x%08x .. 0x%08x (%d bytes) [%s]\n",area,address - area->size,
 				address - 1,area->size,area->free ? "free" : "occupied");
@@ -266,19 +271,21 @@ void *kheap_alloc(u32 size) {
 	DBG_KMALLOC(vid_printf("FINALLY: address=0x%x, area=0x%x, free=%d, size=%d, next=0x%x\n",
 			address,area,area->free,area->size,area->next));
 
-	/* at first reserve mem for a new area (may adjust the total available mem) */
-	if(area->size > size) {
-		nArea = kheap_newArea();
-		if(nArea == NULL)
-			return NULL;
-	}
-
 	/* not enough mem? */
 	if(area->size < size)
 		return NULL;
 	/* initial area has to be free! */
 	if(area->size == size && area == initial)
 		return NULL;
+
+	/* at first reserve mem for a new area (may adjust the total available mem) */
+	if(area->size > size) {
+		nArea = kheap_newArea(size,area == initial);
+		if(nArea == NULL)
+			return NULL;
+
+		/* now everything has to be ok because kheap_newArea() might have changed our state! */
+	}
 
 	/* do we need a new area? */
 	if(area->next == NULL)

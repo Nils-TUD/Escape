@@ -204,9 +204,6 @@ typedef struct {
  */
 cstring intrpt_no2Name(u32 intrptNo);
 
-/* TODO intrpt_disable() should return the prev value and we need a function to restore
- * intrpt-state */
-
 /**
  * Enables / disables the interrupts
  *

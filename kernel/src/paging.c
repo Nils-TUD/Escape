@@ -332,7 +332,8 @@ static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFr
 	while(count-- > 0) {
 		/* remove and free, if desired */
 		if(pt->present) {
-			if(freeFrames)
+			/* we don't want to free copy-on-write pages */
+			if(freeFrames && !pt->copyOnWrite)
 				mm_freeFrame(pt->frameNumber,MM_DEF);
 			pt->present = false;
 
@@ -480,6 +481,7 @@ void paging_handlePageFault(u32 address) {
 	tProc *cp = proc_getRunning();
 	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(address);
 	if(!pt->copyOnWrite || !pt->present) {
+		vid_printf("Could not handle page-fault\n");
 		/* TODO what to do here? */
 		return;
 	}
@@ -511,15 +513,16 @@ void paging_handlePageFault(u32 address) {
 	sll_removeNode(cowFrames,ourCOW,ourPrevCOW);
 	pt->copyOnWrite = false;
 	pt->writable = true;
-
 	/* if there is another process who wants to get the frame, we make a copy for us */
 	/* otherwise we keep the frame for ourself */
+	if(foundOther)
+		pt->frameNumber = mm_allocateFrame(MM_DEF);
+	paging_flushAddr(address);
+
+	/* copy? */
 	if(foundOther) {
 		/* map the frame to copy it */
 		paging_map(KERNEL_STACK_TMP,&frameNumber,1,PG_WRITABLE | PG_SUPERVISOR,true);
-
-		pt->frameNumber = mm_allocateFrame(MM_DEF);
-		paging_flushAddr(address);
 
 		/* copy content */
 		memcpy((void*)(address & ~(PAGE_SIZE - 1)),(void*)KERNEL_STACK_TMP,PAGE_SIZE);

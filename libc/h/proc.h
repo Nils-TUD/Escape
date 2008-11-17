@@ -24,4 +24,11 @@ u32 getppid(void);
  */
 u16 fork(void);
 
+/**
+ * Destroys the process and provides the parent the given error-code
+ *
+ * @param errorCode the error-code for the parent
+ */
+void exit(u32 errorCode);
+
 #endif /* PROC_H_ */

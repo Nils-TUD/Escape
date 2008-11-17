@@ -23,7 +23,7 @@ typedef struct {
 } tProcSave;
 
 /* the process states */
-typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3} tProcState;
+typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE = 4} tProcState;
 
 /* represents a process */
 typedef struct {
@@ -97,6 +97,12 @@ void proc_switch(void);
  * @return -1 if an error occurred, 0 for parent, 1 for child
  */
 s32 proc_clone(u16 newPid);
+
+/**
+ * Commit suicide. Marks the current process as destroyable. After the next context-switch
+ * the process will be removed.
+ */
+void proc_suicide(void);
 
 /**
  * Destroyes the given process. That means the process-slot will be marked as "unused" and the

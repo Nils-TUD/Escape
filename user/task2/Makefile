@@ -3,30 +3,32 @@ BUILD=../../build
 DISK=$(BUILD)/disk.img
 DISKMOUNT=../../disk
 BIN=$(BUILD)/user_$(NAME).bin
-LDCONF=ld.conf
 DUMP=$(BUILD)/user_$(NAME).dump
+LIBC=../../libc
+LDCONF=$(LIBC)/ld.conf
+LIBCA=$(BUILD)/libc.a
+START=$(BUILD)/libc_startup.o
+LIBCOBJS=$(filter-out $(START),$(wildcard $(BUILD)/libc_*.o))
 
-ASRC=main.asm
-AOBJ=$(patsubst %.asm,$(BUILD)/user_$(NAME)_%.o,$(ASRC))
+CC = gcc
+CFLAGS = -g -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/h -Wl,-T,$(LDCONF) $(CWFLAGS) 
+CSRC=$(wildcard *.c)
 
 .PHONY: all clean
 
 all:	$(BIN) $(DUMP)
-		
-$(BIN):	$(AOBJ) $(LDCONF)
-		@echo "===== LINKING =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ);
+
+$(BIN):	$(LDCONF) $(CSRC) $(START) $(LIBCA)
+		@echo "===== COMPILING & LINKING =====";
+		$(CC) $(CFLAGS) -o $(BIN) $(START) $(CSRC) $(LIBCA);
 		@echo "===== COPYING BINARY =====";
 		sudo mount -o loop $(DISK) $(DISKMOUNT);
 		cp $(BIN) $(DISKMOUNT);
 		sudo umount $(DISKMOUNT);
 
-$(BUILD)/user_$(NAME)_%.o:	%.asm
-		@echo "===== ASSEMBLING $< =====";
-		nasm -f elf -o $@ $<;
-
 $(DUMP):	$(BIN)
+		@echo "===== GENERATING DUMP =====";
 		$(BUILD)/dump $(BIN) $(DUMP)
 
 clean:
-		rm -f $(BIN) $(AOBJ) $(DUMP)
+		rm -f $(BIN) $(DUMP)

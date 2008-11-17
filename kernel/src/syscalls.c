@@ -10,7 +10,7 @@
 #include "../h/proc.h"
 #include "../h/video.h"
 
-#define SYSCALL_COUNT 4
+#define SYSCALL_COUNT 5
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
@@ -42,13 +42,18 @@ static void sysc_debugc(tSysCallStack *stack);
  * Clones the current process
  */
 static void sysc_fork(tSysCallStack *stack);
+/**
+ * Destroys the process and issues a context-switch
+ */
+static void sysc_exit(tSysCallStack *stack);
 
 /* our syscalls */
 static tSysCall syscalls[SYSCALL_COUNT] = {
 	/* 0 */	{sysc_getpid,		0},
 	/* 1 */	{sysc_getppid,		0},
 	/* 2 */ {sysc_debugc,		1},
-	/* 3 */	{sysc_fork,			0}
+	/* 3 */	{sysc_fork,			0},
+	/* 4 */ {sysc_exit,			1}
 };
 
 void sysc_handle(tSysCallStack *stack) {
@@ -74,13 +79,6 @@ static void sysc_debugc(tSysCallStack *stack) {
 	vid_putchar((s8)stack->arg1);
 }
 
-/*
- * parent [pcow]
- *  |--clone [cow]
- *  |   |--clone [cow]
- *  |       |--clone [cow]
- *  |--clone [cow]
- */
 static void sysc_fork(tSysCallStack *stack) {
 	u16 newPid = proc_getFreePid();
 	s32 res = proc_clone(newPid);
@@ -96,4 +94,10 @@ static void sysc_fork(tSysCallStack *stack) {
 	else {
 		SYSC_RET1(stack,newPid);
 	}
+}
+
+static void sysc_exit(tSysCallStack *stack) {
+	vid_printf("Process %d exited with exit-code %d\n",proc_getRunning()->pid,stack->arg1);
+	proc_suicide();
+	proc_switch();
 }

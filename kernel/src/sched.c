@@ -42,9 +42,11 @@ void sched_init(void) {
 
 tProc *sched_perform(void) {
 	tProc *p = proc_getRunning();
-	/* put current in the ready-queue */
-	p->state = ST_READY;
-	sched_enqueueReady(p);
+	if(p->state == ST_RUNNING) {
+		/* put current in the ready-queue */
+		p->state = ST_READY;
+		sched_enqueueReady(p);
+	}
 
 	/* get new process */
 	p = sched_dequeueReady();

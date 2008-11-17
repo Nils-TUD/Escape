@@ -19,6 +19,9 @@ static tProc procs[PROC_COUNT];
 /* the process-index */
 static u32 pi;
 
+/* pointer to a dead proc that has to be deleted */
+static tProc *deadProc = NULL;
+
 void proc_init(void) {
 	/* init the first process */
 	pi = 0;
@@ -56,6 +59,7 @@ tProc *proc_getByPid(u16 pid) {
 
 void proc_switch(void) {
 	tProc *p = procs + pi;
+	vid_printf("Free memory: %d KiB\n",mm_getNumberOfFreeFrames(MM_DEF) * PAGE_SIZE / K);
 	vid_printf("Process %d\n",p->pid);
 	if(!proc_save(&p->save)) {
 		/* select next process */
@@ -64,6 +68,13 @@ void proc_switch(void) {
 		vid_printf("Resuming %d\n",p->pid);
 		proc_resume(p->physPDirAddr,&p->save);
 	}
+
+	/* destroy process, if there is any */
+	if(deadProc != NULL) {
+		proc_destroy(deadProc);
+		deadProc = NULL;
+	}
+
 	vid_printf("Continuing %d\n",p->pid);
 }
 
@@ -112,11 +123,22 @@ s32 proc_clone(u16 newPid) {
 	return 0;
 }
 
+void proc_suicide(void) {
+	if(pi == 0)
+		panic("The initial process has to be alive!!");
+
+	/* mark ourself as destroyable */
+	deadProc = procs + pi;
+	/* ensure that we will not be selected on the next resched */
+	deadProc->state = ST_ZOMBIE;
+}
+
 void proc_destroy(tProc *p) {
 	/* don't delete initial or unused processes */
-	if(p->pid == 0 || p->state == ST_UNUSED) {
+	if(p->pid == 0 || p->state == ST_UNUSED)
 		panic("The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
-	}
+	if(p->pid == pi)
+		panic("You can't destroy yourself!");
 
 	/* destroy paging-structure */
 	paging_destroyPageDir(p);

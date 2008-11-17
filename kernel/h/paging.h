@@ -169,6 +169,11 @@ void paging_init(void);
 void paging_mapHigherHalf(void);
 
 /**
+ * Inits the COW-list. Is possible as soon as the kheap is initialized.
+ */
+void paging_initCOWList(void);
+
+/**
  * Note that this should just be used by proc_init()!
  *
  * @return the address of the page-directory of process 0

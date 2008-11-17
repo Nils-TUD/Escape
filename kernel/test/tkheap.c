@@ -228,10 +228,8 @@ static void test_kheap_t5(void) {
 	ptr3 = kheap_alloc(12 * sizeof(u32));
 	for(i = 0;i < 12;i++)
 		*(ptr3+i) = 3;
-	kheap_print();
 	tprintf("Freeing region 2...\n");
 	kheap_free(ptr2);
-	kheap_print();
 	tprintf("Reusing region 2...\n");
 	ptr4 = kheap_alloc(6 * sizeof(u32));
 	for(i = 0;i < 6;i++)
@@ -239,13 +237,6 @@ static void test_kheap_t5(void) {
 	ptr5 = kheap_alloc(2 * sizeof(u32));
 	for(i = 0;i < 2;i++)
 		*(ptr5+i) = 5;
-
-	kheap_print();
-	dumpMem(ptr1,4);
-	dumpMem(ptr2,8);
-	dumpMem(ptr3,12);
-	dumpMem(ptr4,6);
-	dumpMem(ptr5,2);
 
 	tprintf("Testing contents...\n");
 	if(test_checkContent(ptr1,4,1) &&

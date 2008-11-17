@@ -226,7 +226,8 @@ u32 kheap_getFreeMem(void) {
 			free += area->size;
 		area = area->next;
 	}
-	return free;
+	/* the last byte can't be used */
+	return free - 1;
 }
 
 void kheap_print(void) {

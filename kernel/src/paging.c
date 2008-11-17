@@ -189,6 +189,12 @@ void paging_mapHigherHalf(void) {
 	}
 }
 
+void paging_initCOWList(void) {
+	cowFrames = sll_create();
+	if(cowFrames == NULL)
+		panic("Not enough mem for copy-on-write-list!");
+}
+
 tPDEntry *paging_getProc0PD(void) {
 	return proc0PD;
 }
@@ -347,7 +353,7 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
 
 u32 paging_clonePageDir(u32 *stackFrame,tProc *newProc) {
 	bool oldIntrptState;
-	u32 x,pdirFrame,frameCount;
+	u32 x,pdirFrame,frameCount,kheapCount;
 	u32 tPages,dPages,sPages;
 	tPDEntry *pd,*npd,*tpd;
 	tPTEntry *pt;
@@ -357,7 +363,6 @@ u32 paging_clonePageDir(u32 *stackFrame,tProc *newProc) {
 
 	/* note that interrupts have to be disabled, because no other process is allowed to
 	 * run during this function since we are calculating the memory we need at the beginning! */
-	/* TODO is this really necessary? we won't do a context-switch if we are in kernel-mode... */
 	oldIntrptState = intrpt_setEnabled(false);
 
 	/* frames needed:
@@ -373,8 +378,9 @@ u32 paging_clonePageDir(u32 *stackFrame,tProc *newProc) {
 	dPages = p->dataPages;
 	sPages = p->stackPages;
 	frameCount = 3 + PAGES_TO_PTS(tPages + dPages) + PAGES_TO_PTS(sPages);
-	/* TODO we have to consider the kheap-usage for the COW-list */
-	if(mm_getNumberOfFreeFrames(MM_DEF) < frameCount) {
+	/* worstcase heap-usage. NOTE THAT THIS ASSUMES A BIT ABOUT THE INTERNAL STRUCTURE OF SLL! */
+	kheapCount = (dPages + sPages) * (sizeof(tCOW) + sizeof(tSLNode)) * 2;
+	if(mm_getNumberOfFreeFrames(MM_DEF) < frameCount || kheap_getFreeMem() < kheapCount) {
 		DBG_PGCLONEPD(vid_printf("Not enough free frames!\n"));
 		intrpt_setEnabled(oldIntrptState);
 		return 0;
@@ -460,9 +466,9 @@ u32 paging_clonePageDir(u32 *stackFrame,tProc *newProc) {
 }
 
 void paging_handlePageFault(u32 address) {
-	tSLNode *n;
+	tSLNode *n,*ln;
 	tCOW *cow;
-	tCOW *ourCOW = NULL;
+	tSLNode *ourCOW = NULL,*ourPrevCOW = NULL;
 	bool foundOther = false;
 	u32 frameNumber;
 	tProc *cp = proc_getRunning();
@@ -475,11 +481,14 @@ void paging_handlePageFault(u32 address) {
 	/* search through the copy-on-write-list wether there is another one who wants to get
 	 * the frame */
 	frameNumber = pt->frameNumber;
-	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
+	ln = NULL;
+	for(n = sll_begin(cowFrames); n != NULL; ln = n, n = n->next) {
 		cow = (tCOW*)n->data;
 		if(cow->frameNumber == frameNumber) {
-			if(cow->proc == cp)
-				ourCOW = cow;
+			if(cow->proc == cp) {
+				ourCOW = n;
+				ourPrevCOW = ln;
+			}
 			else
 				foundOther = true;
 			/* if we have both, we can stop here */
@@ -488,9 +497,12 @@ void paging_handlePageFault(u32 address) {
 		}
 	}
 
+	/* should never happen */
+	if(ourCOW == NULL)
+		panic("No COW entry for process %d and address 0x%x",cp->pid,address);
+
 	/* remove our from list and adjust pte */
-	/* TODO speed that up! */
-	sll_removeFirst(cowFrames,ourCOW);
+	sll_removeNode(cowFrames,ourCOW,ourPrevCOW);
 	pt->copyOnWrite = false;
 	pt->writable = true;
 
@@ -525,13 +537,6 @@ static void paging_printCOW(void) {
 static void paging_setCOW(u32 virtual,u32 *frames,u32 count,tProc *newProc) {
 	tPTEntry *ownPt;
 	tCOW *cow;
-
-	/* create cow-list if not already done */
-	if(cowFrames == NULL) {
-		cowFrames = sll_create();
-		if(cowFrames == NULL)
-			panic("Not enough mem for copy-on-write-list!");
-	}
 
 	virtual &= ~(PAGE_SIZE - 1);
 	while(count-- > 0) {
@@ -594,7 +599,17 @@ void paging_destroyPageDir(tProc *p) {
 			ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) - PAGES_TO_PTS(p->stackPages),
 			PAGES_TO_PTS(p->stackPages));
 
-	/* TODO remove process from COW-list */
+	/* remove process from COW-list */
+	tSLNode *n,*ln;
+	tCOW *cow;
+	ln = NULL;
+	for(n = sll_begin(cowFrames); n != NULL; ln = n, n = n->next) {
+		cow = (tCOW*)n->data;
+		if(cow->proc == p) {
+			sll_removeNode(cowFrames,n,ln);
+			n = ln;
+		}
+	}
 
 	/* free kernel-stack */
 	paging_unmapIntern(TMPMAP_PTS_START,KERNEL_STACK,1,true);

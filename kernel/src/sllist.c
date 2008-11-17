@@ -138,20 +138,12 @@ bool sll_insert(tSLList *list,void *data,u32 index) {
 	return true;
 }
 
-void sll_removeFirst(tSLList *list,void *data) {
+void sll_removeNode(tSLList *list,tSLNode *node,tSLNode *prev) {
 	tList *l = (tList*)list;
-	tNode *n = l->first,*ln = NULL;
-	if(data != NULL) {
-		while(n != NULL) {
-			if(n->data == data)
-				break;
-			ln = n;
-			n = n->next;
-		}
-	}
+	tNode *n = (tNode*)node,*ln = (tNode*)prev;
 
-	if(n == NULL)
-		panic("Data 0x%x does not exist!",data);
+	if(ln != NULL && ln->next != n)
+		panic("<prev> is not the previous node of <node>!");
 
 	/* remove */
 	if(ln != NULL)
@@ -166,6 +158,25 @@ void sll_removeFirst(tSLList *list,void *data) {
 	kheap_free(n);
 }
 
+void sll_removeFirst(tSLList *list,void *data) {
+	tList *l = (tList*)list;
+	tNode *n = l->first,*ln = NULL;
+	if(data != NULL) {
+		while(n != NULL) {
+			if(n->data == data)
+				break;
+			ln = n;
+			n = n->next;
+		}
+	}
+
+	/* TODO keep that? */
+	if(n == NULL)
+		panic("Data 0x%x does not exist!",data);
+
+	sll_removeNode(list,n,ln);
+}
+
 void sll_removeIndex(tSLList *list,u32 index) {
 	tList *l = (tList*)list;
 	tNode *n = l->first,*ln = NULL;
@@ -178,17 +189,7 @@ void sll_removeIndex(tSLList *list,u32 index) {
 	if(n == NULL)
 		panic("Index %d does not exist!",index);
 
-	/* remove */
-	if(ln != NULL)
-		ln->next = n->next;
-	else
-		l->first = n->next;
-	if(n->next == NULL)
-		l->last = ln;
-	l->length--;
-
-	/* free */
-	kheap_free(n);
+	sll_removeNode(list,n,ln);
 }
 
 static tNode *sll_getNode(tSLList *list,u32 index) {

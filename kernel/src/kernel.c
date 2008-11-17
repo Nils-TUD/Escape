@@ -72,6 +72,7 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	mm_init();
 	paging_mapHigherHalf();
 	kheap_init();
+	paging_initCOWList();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();

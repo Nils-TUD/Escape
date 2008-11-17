@@ -111,6 +111,16 @@ bool sll_append(tSLList *list,void *data);
 bool sll_insert(tSLList *list,void *data,u32 index);
 
 /**
+ * Removes the given node from the list. This is a faster alternative to sll_removeIndex()
+ * because it is not required to loop through the list.
+ *
+ * @param list the list
+ * @param node the node to remove
+ * @param prev the previous node of <node>. NULL if there is no previous
+ */
+void sll_removeNode(tSLList *list,tSLNode *node,tSLNode *prev);
+
+/**
  * Removes the first found element with given data. If the data is NULL the first element will
  * be removed.
  *

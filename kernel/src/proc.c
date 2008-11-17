@@ -189,8 +189,6 @@ bool proc_changeSize(s32 change,chgArea area) {
 		paging_map(addr,NULL,change,PG_WRITABLE,false);
 
 		/* now clear the memory */
-		/* TODO optimize! */
-		paging_flushTLB();
 		while(change-- > 0) {
 			memset((void*)addr,0,PT_ENTRY_COUNT);
 			addr += PAGE_SIZE;
@@ -227,10 +225,6 @@ bool proc_changeSize(s32 change,chgArea area) {
 			if(count > 0)
 				paging_unmapPageTables(start,count);
 		}
-
-		/* ensure that the TLB contains no invalid entries */
-		/* TODO optimize! */
-		paging_flushTLB();
 	}
 
 	/* adjust sizes */

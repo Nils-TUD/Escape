@@ -198,6 +198,13 @@ void paging_mapPageDir(void);
 extern void paging_flushTLB(void);
 
 /**
+ * Flushes the TLB-entry for the given address
+ *
+ * @param address the virtual address
+ */
+extern void paging_flushAddr(u32 address);
+
+/**
  * Assembler routine to exchange the page-directory to the given one
  *
  * @param physAddr the physical address of the page-directory
@@ -213,7 +220,8 @@ extern void paging_exchangePDir(u32 physAddr);
 u32 paging_getPageCount(void);
 
 /**
- * Checks wether the given virtual-address is currently mapped
+ * Checks wether the given virtual-address is currently mapped. This should not be used
+ * for user-space addresses!
  *
  * @param virtual the virtual address
  * @return true if so
@@ -221,10 +229,11 @@ u32 paging_getPageCount(void);
 bool paging_isMapped(u32 virtual);
 
 /**
- * Determines the frame-number for the given virtual-address
+ * Determines the frame-number for the given virtual-address. This should not be used
+ * for user-space addresses!
  *
  * @param virtual the virtual address
- * @return the frame-number to which it is currently mapped
+ * @return the frame-number to which it is currently mapped or 0 if not mapped
  */
 u32 paging_getFrameOf(u32 virtual);
 

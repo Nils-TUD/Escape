@@ -17,6 +17,7 @@
 [global intrpt_setEnabled]
 [global intrpt_loadidt]
 [global paging_enable]
+[global paging_flushAddr]
 [global paging_flushTLB]
 [global paging_exchangePDir]
 [global cpu_rdtsc]
@@ -288,6 +289,12 @@ paging_enable:
 	mov		eax,cr0
 	or		eax,1 << 31										; set bit for paging-enabled
 	mov		cr0,eax												; now paging is enabled :)
+	ret
+
+; NOTE: supported for >= Intel486
+; void paging_flushAddr(u32 address);
+paging_flushAddr:
+	invlpg	[esp + 4]
 	ret
 
 ; void paging_flushTLB(void);

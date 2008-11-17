@@ -66,7 +66,6 @@ static bool test_paging_cycle(u32 addr,u32 count) {
 static void test_paging_allocate(u32 addr,u32 count) {
 	mm_allocateFrames(MM_DEF,frames,count);
 	paging_map(addr,frames,count,PG_WRITABLE,false);
-	paging_flushTLB();
 }
 
 static void test_paging_access(u32 addr,u32 count) {
@@ -90,5 +89,4 @@ static void test_paging_free(u32 addr,u32 count) {
 				PAGES_TO_PTS((addr - (addr & ~(PAGE_SIZE * PT_ENTRY_COUNT - 1))) / PAGE_SIZE + count));
 	}
 	mm_freeFrames(MM_DEF,frames,count);
-	paging_flushTLB();
 }

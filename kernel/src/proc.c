@@ -76,7 +76,7 @@ s32 proc_clone(u16 newPid) {
 		panic("The process slot 0x%x is already in use!",procs + newPid);
 
 	/* clone page-dir */
-	if((pdirFrame = paging_clonePageDir(&stackFrame)) == 0)
+	if((pdirFrame = paging_clonePageDir(&stackFrame,procs + newPid)) == 0)
 		return -1;
 
 	/* set page-dir and pages for segments */

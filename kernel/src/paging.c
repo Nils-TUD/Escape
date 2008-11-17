@@ -9,6 +9,8 @@
 #include "../h/video.h"
 #include "../h/proc.h"
 #include "../h/intrpt.h"
+#include "../h/sllist.h"
+#include "../h/kheap.h"
 
 /* builds the address of the page in the mapped page-tables to which the given addr belongs */
 #define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + (((u32)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
@@ -23,6 +25,19 @@
 tPDEntry proc0PD[PAGE_SIZE / sizeof(tPDEntry)] __attribute__ ((aligned (PAGE_SIZE)));
 /* the page-table for process 0 */
 tPTEntry proc0PT[PAGE_SIZE / sizeof(tPTEntry)] __attribute__ ((aligned (PAGE_SIZE)));
+
+/* copy-on-write */
+typedef struct {
+	u32 frameNumber;
+	tProc *proc;
+} tCOW;
+
+/**
+ * A list which contains each frame for each process that is marked as copy-on-write.
+ * If a process causes a page-fault we will remove it from the list. If there is no other
+ * entry for the frame in the list, the process can keep the frame, otherwise it is copied.
+ */
+static tSLList *cowFrames = NULL;
 
 /**
  * Assembler routine to enable paging
@@ -85,6 +100,25 @@ static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFr
  * @param pageDir the address of the page-directory to use
  */
 static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count);
+
+/**
+ * Helper function to put the given frames for the given new process and the current one
+ * in the copy-on-write list and mark the pages for the parent as copy-on-write if not
+ * already done.
+ *
+ * @panic not enough mem for linked-list nodes and entries
+ *
+ * @param virtual the virtual address to map
+ * @param frames the frames array
+ * @param count the number of pages to map
+ * @param newProc the new process
+ */
+static void paging_setCOW(u32 virtual,u32 *frames,u32 count,tProc *newProc);
+
+/**
+ * Prints all entries in the copy-on-write-list
+ */
+static void paging_printCOW(void);
 
 void paging_init(void) {
 	tPDEntry *pd,*pde;
@@ -157,31 +191,6 @@ void paging_mapHigherHalf(void) {
 
 tPDEntry *paging_getProc0PD(void) {
 	return proc0PD;
-}
-
-void paging_handlePageFault(u32 address) {
-	u32 frameNumber;
-	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(address);
-	if(!pt->copyOnWrite) {
-		/* TODO what to do here? */
-		return;
-	}
-
-	/* map the frame to copy it */
-	frameNumber = pt->frameNumber;
-	paging_map(KERNEL_STACK_TMP,&frameNumber,1,PG_WRITABLE | PG_SUPERVISOR,true);
-
-	pt->frameNumber = mm_allocateFrame(MM_DEF);
-	pt->copyOnWrite = false;
-	pt->writable = true;
-	/* TODO optimize! */
-	paging_flushTLB();
-
-	/* copy content */
-	memcpy((void*)(address & ~(PAGE_SIZE - 1)),(void*)KERNEL_STACK_TMP,PAGE_SIZE);
-
-	/* unmap */
-	paging_unmap(KERNEL_STACK_TMP,1,false);
 }
 
 void paging_mapPageDir(void) {
@@ -336,7 +345,7 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
 	}
 }
 
-u32 paging_clonePageDir(u32 *stackFrame) {
+u32 paging_clonePageDir(u32 *stackFrame,tProc *newProc) {
 	bool oldIntrptState;
 	u32 x,pdirFrame,frameCount;
 	u32 tPages,dPages,sPages;
@@ -364,6 +373,7 @@ u32 paging_clonePageDir(u32 *stackFrame) {
 	dPages = p->dataPages;
 	sPages = p->stackPages;
 	frameCount = 3 + PAGES_TO_PTS(tPages + dPages) + PAGES_TO_PTS(sPages);
+	/* TODO we have to consider the kheap-usage for the COW-list */
 	if(mm_getNumberOfFreeFrames(MM_DEF) < frameCount) {
 		DBG_PGCLONEPD(vid_printf("Not enough free frames!\n"));
 		intrpt_setEnabled(oldIntrptState);
@@ -421,18 +431,18 @@ u32 paging_clonePageDir(u32 *stackFrame) {
 	/* map pages for data. we will copy the data with copyonwrite. */
 	DBG_PGCLONEPD(vid_printf("Mapping %d data-pages (copy-on-write)\n",dPages));
 	x = tPages * PAGE_SIZE;
-	/*paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,NULL,dPages,PG_WRITABLE,true);*/
-	/* TODO use copy-on-write */
 	paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,
 			(u32*)ADDR_TO_MAPPED(x),dPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);
+	/* mark as copy-on-write for the current and new process */
+	paging_setCOW(x,(u32*)ADDR_TO_MAPPED(x),dPages,newProc);
 
 	/* map pages for stack. we will copy the data with copyonwrite. */
 	DBG_PGCLONEPD(vid_printf("Mapping %d stack-pages (copy-on-write)\n",sPages));
 	x = KERNEL_AREA_V_ADDR - sPages * PAGE_SIZE;
-	/*paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,NULL,sPages,PG_WRITABLE,true);*/
-	/* TODO use copy-on-write */
 	paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,
 			(u32*)ADDR_TO_MAPPED(x),sPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);
+	/* mark as copy-on-write for the current and new process */
+	paging_setCOW(x,(u32*)ADDR_TO_MAPPED(x),sPages,newProc);
 
 	/* unmap stuff */
 	DBG_PGCLONEPD(vid_printf("Removing temp mappings\n"));
@@ -447,6 +457,111 @@ u32 paging_clonePageDir(u32 *stackFrame) {
 	DBG_PGCLONEPD(vid_printf("<<===== paging_clonePageDir() =====\n"));
 
 	return pdirFrame;
+}
+
+void paging_handlePageFault(u32 address) {
+	tSLNode *n;
+	tCOW *cow;
+	tCOW *ourCOW = NULL;
+	bool foundOther = false;
+	u32 frameNumber;
+	tProc *cp = proc_getRunning();
+	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(address);
+	if(!pt->copyOnWrite || !pt->present) {
+		/* TODO what to do here? */
+		return;
+	}
+
+	/* search through the copy-on-write-list wether there is another one who wants to get
+	 * the frame */
+	frameNumber = pt->frameNumber;
+	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
+		cow = (tCOW*)n->data;
+		if(cow->frameNumber == frameNumber) {
+			if(cow->proc == cp)
+				ourCOW = cow;
+			else
+				foundOther = true;
+			/* if we have both, we can stop here */
+			if(ourCOW && foundOther)
+				break;
+		}
+	}
+
+	/* remove our from list and adjust pte */
+	/* TODO speed that up! */
+	sll_removeFirst(cowFrames,ourCOW);
+	pt->copyOnWrite = false;
+	pt->writable = true;
+
+	/* if there is another process who wants to get the frame, we make a copy for us */
+	/* otherwise we keep the frame for ourself */
+	if(foundOther) {
+		/* map the frame to copy it */
+		paging_map(KERNEL_STACK_TMP,&frameNumber,1,PG_WRITABLE | PG_SUPERVISOR,true);
+
+		pt->frameNumber = mm_allocateFrame(MM_DEF);
+		/* TODO optimize! */
+		paging_flushTLB();
+
+		/* copy content */
+		memcpy((void*)(address & ~(PAGE_SIZE - 1)),(void*)KERNEL_STACK_TMP,PAGE_SIZE);
+
+		/* unmap */
+		paging_unmap(KERNEL_STACK_TMP,1,false);
+	}
+}
+
+static void paging_printCOW(void) {
+	tSLNode *n;
+	tCOW *cow;
+	vid_printf("COW-Frames:\n");
+	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
+		cow = (tCOW*)n->data;
+		vid_printf("\tframe=0x%x, proc=0x%x\n",cow->frameNumber,cow->proc);
+	}
+}
+
+static void paging_setCOW(u32 virtual,u32 *frames,u32 count,tProc *newProc) {
+	tPTEntry *ownPt;
+	tCOW *cow;
+
+	/* create cow-list if not already done */
+	if(cowFrames == NULL) {
+		cowFrames = sll_create();
+		if(cowFrames == NULL)
+			panic("Not enough mem for copy-on-write-list!");
+	}
+
+	virtual &= ~(PAGE_SIZE - 1);
+	while(count-- > 0) {
+		/* build cow-entry for child */
+		cow = (tCOW*)kheap_alloc(sizeof(tCOW));
+		if(cow == NULL)
+			panic("Not enough mem for copy-on-write!");
+		cow->frameNumber = *frames >> PAGE_SIZE_SHIFT;
+		cow->proc = newProc;
+		if(!sll_append(cowFrames,cow))
+			panic("Not enough mem for copy-on-write!");
+
+		/* build cow-entry for parent if not already done */
+		ownPt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
+		if(!ownPt->copyOnWrite) {
+			cow = (tCOW*)kheap_alloc(sizeof(tCOW));
+			if(cow == NULL)
+				panic("Not enough mem for copy-on-write!");
+			cow->frameNumber = *frames >> PAGE_SIZE_SHIFT;
+			cow->proc = proc_getRunning();
+			if(!sll_append(cowFrames,cow))
+				panic("Not enough mem for copy-on-write!");
+
+			ownPt->copyOnWrite = true;
+			ownPt->writable = false;
+		}
+
+		frames++;
+		virtual += PAGE_SIZE;
+	}
 }
 
 void paging_destroyPageDir(tProc *p) {
@@ -478,6 +593,8 @@ void paging_destroyPageDir(tProc *p) {
 	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,
 			ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) - PAGES_TO_PTS(p->stackPages),
 			PAGES_TO_PTS(p->stackPages));
+
+	/* TODO remove process from COW-list */
 
 	/* free kernel-stack */
 	paging_unmapIntern(TMPMAP_PTS_START,KERNEL_STACK,1,true);

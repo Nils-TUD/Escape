@@ -272,9 +272,10 @@ void paging_unmapPageTables(u32 start,u32 count);
  * Clones the current page-directory.
  *
  * @param stackFrame will contain the stack-frame after the call
+ * @param newProc the process for which to create the page-dir
  * @return the frame-number of the new page-directory or 0 if there is not enough mem
  */
-u32 paging_clonePageDir(u32 *stackFrame);
+u32 paging_clonePageDir(u32 *stackFrame,tProc *newProc);
 
 /**
  * Destroyes the page-dir of the given process. That means all frames will be freed.

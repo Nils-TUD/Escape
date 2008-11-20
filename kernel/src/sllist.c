@@ -174,7 +174,7 @@ void sll_removeFirst(tSLList *list,void *data) {
 	if(n == NULL)
 		panic("Data 0x%x does not exist!",data);
 
-	sll_removeNode(list,n,ln);
+	sll_removeNode(list,(tSLNode*)n,(tSLNode*)ln);
 }
 
 void sll_removeIndex(tSLList *list,u32 index) {
@@ -189,7 +189,7 @@ void sll_removeIndex(tSLList *list,u32 index) {
 	if(n == NULL)
 		panic("Index %d does not exist!",index);
 
-	sll_removeNode(list,n,ln);
+	sll_removeNode(list,(tSLNode*)n,(tSLNode*)ln);
 }
 
 static tNode *sll_getNode(tSLList *list,u32 index) {

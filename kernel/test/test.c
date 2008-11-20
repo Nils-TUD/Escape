@@ -1,5 +1,5 @@
 /**
- * @version		$Id$
+ * @version		$Id: test.c 60 2008-11-16 18:29:11Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */
@@ -20,6 +20,8 @@ u32 totalFail = 0;
 u32 succCount = 0;
 u32 failCount = 0;
 
+u32 assertCount = 0;
+
 void test_noPrint(cstring fmt,...) {
 	/* do nothing */
 }
@@ -38,12 +40,77 @@ void test_caseStartv(cstring fmt,va_list ap) {
 	vid_printf("== Testcase %d : ",testCase++);
 	vid_vprintf(fmt,ap);
 	vid_printf(" ==\n");
+	assertCount = 0;
 }
 
 void test_caseSucceded(void) {
 	vid_printf("== >> %:02s ==\n\n","SUCCESS");
 	totalSucc++;
 	succCount++;
+}
+
+bool test_assertTrue(bool received) {
+	assertCount++;
+	if(!received) {
+		test_caseFailed("Assert %d: Received false, expected true",assertCount);
+		return false;
+	}
+	return true;
+}
+
+bool test_assertFalse(bool received) {
+	assertCount++;
+	if(received) {
+		test_caseFailed("Assert %d: Received true, expected false",assertCount);
+		return false;
+	}
+	return true;
+}
+
+bool test_assertPtr(void *received,void *expected) {
+	assertCount++;
+	if(expected != received) {
+		test_caseFailed("Assert %d: Pointers are not equal: 0x%x != 0x%x",assertCount,expected,received);
+		return false;
+	}
+	return true;
+}
+
+bool test_assertInt(s32 received,s32 expected) {
+	assertCount++;
+	if(expected != received) {
+		test_caseFailed("Assert %d: Integers are not equal: %d != %d",assertCount,expected,received);
+		return false;
+	}
+	return true;
+}
+
+bool test_assertUInt(u32 received,u32 expected) {
+	assertCount++;
+	if(expected != received) {
+		test_caseFailed("Assert %d: Integers are not equal: 0x%x != 0x%x",assertCount,expected,received);
+		return false;
+	}
+	return true;
+}
+
+bool test_assertStr(string received,string expected) {
+	string s1 = expected;
+	string s2 = received;
+	assertCount++;
+	while(*s1 && *s2) {
+		if(*s1 != *s2) {
+			test_caseFailed("Assert %d: Strings are not equal: %s != %s",assertCount,expected,received);
+			return false;
+		}
+		s1++;
+		s2++;
+	}
+	if(*s1 != *s2) {
+		test_caseFailed("Assert %d: Strings are not equal: %s != %s",assertCount,expected,received);
+		return false;
+	}
+	return true;
 }
 
 void test_caseFailed(cstring fmt,...) {

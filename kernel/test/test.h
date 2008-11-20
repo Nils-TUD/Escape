@@ -1,5 +1,5 @@
 /**
- * @version		$Id$
+ * @version		$Id: test.h 60 2008-11-16 18:29:11Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */
@@ -57,6 +57,64 @@ void test_caseSucceded(void);
  * @param fmt the format of the string
  */
 void test_caseFailed(cstring fmt,...);
+
+/**
+ * Checks wether the given argument is true. If not it calls test_caseFailed() and returns
+ * false.
+ *
+ * @param received your received value
+ * @return true if received is true
+ */
+bool test_assertTrue(bool received);
+
+/**
+ * Checks wether the given argument is false. If not it calls test_caseFailed() and returns
+ * false.
+ *
+ * @param received your received value
+ * @return true if received is false
+ */
+bool test_assertFalse(bool received);
+
+/**
+ * Checks wether the given pointers are equal. If not it calls test_caseFailed() and returns
+ * false.
+ *
+ * @param received the result you received
+ * @param expected your expected result
+ * @return true if the pointers are equal
+ */
+bool test_assertPtr(void *received,void *expected);
+
+/**
+ * Checks wether the given integers are equal. If not it calls test_caseFailed() and returns
+ * false.
+ *
+ * @param received the result you received
+ * @param expected your expected result
+ * @return true if the integers are equal
+ */
+bool test_assertInt(s32 received,s32 expected);
+
+/**
+ * Checks wether the given integers are equal. If not it calls test_caseFailed() and returns
+ * false.
+ *
+ * @param received the result you received
+ * @param expected your expected result
+ * @return true if the integers are equal
+ */
+bool test_assertUInt(u32 received,u32 expected);
+
+/**
+ * Checks wether the given strings are equal. If not it calls test_caseFailed() and returns
+ * false.
+ *
+ * @param received the result you received
+ * @param expected your expected result
+ * @return true if the strings are equal
+ */
+bool test_assertStr(string received,string expected);
 
 /**
  * Registers the given test-module to the test-framework

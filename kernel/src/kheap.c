@@ -8,6 +8,7 @@
 #include "../h/common.h"
 #include "../h/paging.h"
 #include "../h/util.h"
+#include "../h/string.h"
 #include "../h/video.h"
 
 /*

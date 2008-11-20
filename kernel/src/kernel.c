@@ -19,6 +19,7 @@
 #include "../h/kheap.h"
 #include "../h/elf.h"
 #include "../h/sched.h"
+#include "../h/vfs.h"
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table
@@ -94,11 +95,21 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
 
+	/* vfs */
+	dbg_startTimer();
+	vid_printf("Initializing VFS...");
+	vfs_init();
+	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_printf("%:02s","DONE");
+	dbg_stopTimer();
+
 	vid_printf("Free frames=%d, pages mapped=%d, free mem=%d KiB\n",
 			mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),paging_getPageCount(),
 			mm_getNumberOfFreeFrames(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 
-#if 1
+	vfs_printTree();
+
+#if 0
 	/* TODO the following is just temporary! */
 	/* load task1 */
 	entryPoint = elf_loadprog(task1);

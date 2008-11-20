@@ -9,6 +9,7 @@
 #include "../h/paging.h"
 #include "../h/mm.h"
 #include "../h/util.h"
+#include "../h/string.h"
 #include "../h/video.h"
 #include "../h/intrpt.h"
 #include "../h/sched.h"

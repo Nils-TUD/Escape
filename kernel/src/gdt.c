@@ -7,7 +7,7 @@
 #include "../h/gdt.h"
 #include "../h/mm.h"
 #include "../h/video.h"
-#include "../h/util.h"
+#include "../h/string.h"
 #include "../h/paging.h"
 
 /* the GDT table */

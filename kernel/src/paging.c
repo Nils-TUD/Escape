@@ -6,6 +6,7 @@
 
 #include "../h/paging.h"
 #include "../h/util.h"
+#include "../h/string.h"
 #include "../h/video.h"
 #include "../h/proc.h"
 #include "../h/intrpt.h"

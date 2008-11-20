@@ -123,30 +123,3 @@ void dumpMem(void *addr,u32 dwordCount) {
 		ptr++;
 	}
 }
-
-void *memcpy(void *dest,const void *src,size_t len) {
-	u8 *d = dest;
-	const u8 *s = src;
-	while(len--) {
-		*d++ = *s++;
-	}
-	return dest;
-}
-
-s32 memcmp(const void *str1,const void *str2,size_t count) {
-	const u8 *s1 = str1;
-	const u8 *s2 = str2;
-
-	while(count-- > 0) {
-		if(*s1++ != *s2++)
-			return s1[-1] < s2[-1] ? -1 : 1;
-	}
-	return 0;
-}
-
-void memset(void *addr,u32 value,size_t count) {
-	u32 *ptr = (u32*)addr;
-	while(count-- > 0) {
-		*ptr++ = value;
-	}
-}

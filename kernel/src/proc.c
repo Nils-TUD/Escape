@@ -159,6 +159,7 @@ void proc_setupIntrptStack(tIntrptStackFrame *frame) {
 	frame->uesp = KERNEL_AREA_V_ADDR - sizeof(u32);
 	frame->ebp = frame->uesp;
 	/* user-mode segments */
+	/* TODO remove the hard-coded stuff here! */
 	frame->cs = 0x1b;
 	frame->ds = 0x23;
 	frame->es = 0x23;

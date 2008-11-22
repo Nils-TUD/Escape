@@ -13,12 +13,6 @@
 #define IO_READ		1
 #define IO_WRITE	2
 
-/* a VFS-node */
-typedef struct {
-	tVFSNodeNo nodeNo;
-	u8 nameLen;
-} sVFSNode;
-
 /**
  * Opens the given path with given mode and returns the associated file-descriptor
  *

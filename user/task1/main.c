@@ -8,6 +8,7 @@
 #include <debug.h>
 #include <proc.h>
 #include <io.h>
+#include <dir.h>
 #include <string.h>
 
 s32 main(void) {
@@ -27,21 +28,13 @@ s32 main(void) {
 	}*/
 
 	debugf("Listing directory '/':\n");
-	s32 fd = open("/",IO_READ);
-	if(fd < 0)
-		printLastError();
-	else {
-		sVFSNode node;
-		s8 nameBuf[255];
-		s32 c;
-		while((c = read(fd,(u8*)&node,sizeof(sVFSNode))) > 0) {
-			if((c = read(fd,(u8*)nameBuf,node.nameLen)) > 0) {
-				debugf("- %s\n",nameBuf);
-			}
+	s32 dd;
+	sDir *entry;
+	if((dd = opendir("/")) >= 0) {
+		while((entry = readdir(dd)) != NULL) {
+			debugf("- %d : %s\n",entry->nodeNo,entry->name);
 		}
-		debugf("done\n");
-
-		close(fd);
+		closedir(dd);
 	}
-	return fd;
+	return dd;
 }

@@ -34,6 +34,13 @@ typedef enum {false = 0, true = 1} bool;
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) > (b) ? (b) : (a))
 
+/* error-codes */
+#define ERR_FILE_IN_USE			-1
+#define ERR_NO_FREE_FD			-2
+#define	ERR_MAX_PROC_FDS		-3
+#define ERR_VFS_NODE_NOT_FOUND	-4
+#define ERR_INVALID_SYSC_ARGS	-5
+
 /* debugging */
 #define DBG_PGCLONEPD(s)
 #define DBG_KMALLOC(s)

@@ -24,6 +24,7 @@ void dbg_stopTimer(void) {
 }
 
 void dbg_printProcess(tProc *p) {
+	u32 i;
 	vid_printf("process @ 0x%08x:\n",p);
 	vid_printf("\tpid = %d\n",p->pid);
 	vid_printf("\tparentPid = %d\n",p->parentPid);
@@ -31,6 +32,11 @@ void dbg_printProcess(tProc *p) {
 	vid_printf("\ttextPages = %d\n",p->textPages);
 	vid_printf("\tdataPages = %d\n",p->dataPages);
 	vid_printf("\tstackPages = %d\n",p->stackPages);
+	vid_printf("\tfileDescs:\n");
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(p->fileDescs[i] != -1)
+			vid_printf("\t\t%d : %d\n",i,p->fileDescs[i]);
+	}
 	dbg_printProcessState(&p->save);
 	vid_printf("\n");
 }

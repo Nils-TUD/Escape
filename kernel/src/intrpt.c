@@ -758,7 +758,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 
 		case IRQ_TIMER:
 			/* TODO don't resched if we come from kernel-mode! */
-#if 1
+#if 0
 			/*vid_printf("Timer interrupt...\n");*/
 			if(!proc2Ready) {
 				proc2Ready = true;
@@ -802,7 +802,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 			if(stack.intrptNo == EX_PAGE_FAULT) {
 				vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
 				paging_handlePageFault(cpu_getCR2());
-				/*printStackTrace();*/
+				printStackTrace();
 				break;
 			}
 

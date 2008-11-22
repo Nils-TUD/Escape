@@ -27,12 +27,13 @@
 #include "tsched.h"
 #include "tsllist.h"
 #include "tstring.h"
+#include "tvfs.h"
 
 /* TODO just temporary! */
 u32 entryPoint;
 bool procsReady = false;
 
-u32 main(tMultiBoot *mbp,u32 magic) {
+s32 main(tMultiBoot *mbp,u32 magic) {
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
 	 * and "correct" the GDT */
 	paging_init();
@@ -86,8 +87,9 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 	test_register(&tModProc);
 	test_register(&tModKHeap);
 	test_register(&tModSched);
-	test_register(&tModSLList);*/
-	test_register(&tModString);
+	test_register(&tModSLList);
+	test_register(&tModString);*/
+	test_register(&tModVFS);
 	test_start();
 
 

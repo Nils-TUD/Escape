@@ -44,7 +44,7 @@ void mm_init(void) {
 	u16mStack = (u32*)&KernelEnd;
 
 	/* at first we mark all frames as used in the bitmap for 0..16M */
-	memset(l16mBitmap,0xFFFFFFFF,L16M_PAGE_COUNT / 32);
+	memset(l16mBitmap,0xFFFFFFFF,L16M_PAGE_COUNT / 8);
 
 	/* now walk through the memory-map and mark all free areas as free */
 	for(mmap = mb->mmapAddr;

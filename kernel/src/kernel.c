@@ -49,7 +49,7 @@ static u8 task1[] = {
 	#include "../../build/user_task1.dump"
 };
 
-u32 main(tMultiBoot *mbp,u32 magic) {
+s32 main(tMultiBoot *mbp,u32 magic) {
 	u32 entryPoint;
 
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
@@ -107,9 +107,38 @@ u32 main(tMultiBoot *mbp,u32 magic) {
 			mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),paging_getPageCount(),
 			mm_getNumberOfFreeFrames(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 
-	vfs_printTree();
+	/*vfs_printTree();
+	cstring path = vfs_cleanPath("//system///services//");
+	vid_printf("Resolving %s\n",path);
+	s32 n = vfs_resolvePath(path);
+	vfs_printNode(vfs_getNode(n));
+	vid_printf("\n");
 
-#if 0
+	path = vfs_cleanPath("/system");
+	vid_printf("Resolving %s\n",path);
+	n = vfs_resolvePath(path);
+	vfs_printNode(vfs_getNode(n));
+	vid_printf("\n");
+
+	path = vfs_cleanPath("/fs");
+	vid_printf("Resolving %s\n",path);
+	n = vfs_resolvePath(path);
+	vfs_printNode(vfs_getNode(n));
+	vid_printf("\n");
+
+	path = vfs_cleanPath("/");
+	vid_printf("Resolving %s\n",path);
+	n = vfs_resolvePath(path);
+	vfs_printNode(vfs_getNode(n));
+	vid_printf("\n");
+
+	path = vfs_cleanPath("/fs/home");
+	vid_printf("Resolving %s\n",path);
+	n = vfs_resolvePath(path);
+	vfs_printNode(vfs_getNode(n));
+	vid_printf("\n");*/
+
+#if 1
 	/* TODO the following is just temporary! */
 	/* load task1 */
 	entryPoint = elf_loadprog(task1);

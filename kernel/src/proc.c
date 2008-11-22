@@ -13,6 +13,7 @@
 #include "../h/video.h"
 #include "../h/intrpt.h"
 #include "../h/sched.h"
+#include "../h/vfs.h"
 
 /* our processes */
 static tProc procs[PROC_COUNT];
@@ -24,6 +25,7 @@ static u32 pi;
 static tProc *deadProc = NULL;
 
 void proc_init(void) {
+	u32 i;
 	/* init the first process */
 	pi = 0;
 	procs[pi].state = ST_RUNNING;
@@ -35,6 +37,9 @@ void proc_init(void) {
 	procs[pi].stackPages = 0;
 	/* note that this assumes that the page-dir is initialized */
 	procs[pi].physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
+	/* init fds */
+	for(i = 0; i < MAX_FD_COUNT; i++)
+		procs[pi].fileDescs[i] = -1;
 
 	/* setup kernel-stack for us */
 	paging_map(KERNEL_STACK,NULL,1,PG_WRITABLE | PG_SUPERVISOR,false);
@@ -79,6 +84,29 @@ void proc_switch(void) {
 	vid_printf("Continuing %d\n",p->pid);
 }
 
+s32 proc_openFile(u32 fd) {
+	u32 i;
+	s16 *fds = procs[pi].fileDescs;
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(fds[i] == -1) {
+			fds[i] = fd;
+			return 0;
+		}
+	}
+	return ERR_MAX_PROC_FDS;
+}
+
+void proc_closeFile(u32 fd) {
+	u32 i;
+	s16 *fds = procs[pi].fileDescs;
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(fds[i] == (s32)fd) {
+			fds[i] = -1;
+			return;
+		}
+	}
+}
+
 s32 proc_clone(u16 newPid) {
 	u32 i,pdirFrame,stackFrame;
 	u32 *src,*dst;
@@ -99,6 +127,10 @@ s32 proc_clone(u16 newPid) {
 	p->dataPages = procs[pi].dataPages;
 	p->stackPages = procs[pi].stackPages;
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
+	/* init fds */
+	for(i = 0; i < MAX_FD_COUNT; i++)
+		p->fileDescs[i] = -1;
+	/* make ready */
 	p->state = ST_READY;
 	sched_enqueueReady(p);
 
@@ -135,6 +167,7 @@ void proc_suicide(void) {
 }
 
 void proc_destroy(tProc *p) {
+	u32 i;
 	/* don't delete initial or unused processes */
 	if(p->pid == 0 || p->state == ST_UNUSED)
 		panic("The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
@@ -143,6 +176,14 @@ void proc_destroy(tProc *p) {
 
 	/* destroy paging-structure */
 	paging_destroyPageDir(p);
+
+	/* release file-descriptors */
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(p->fileDescs[i] != -1) {
+			vfs_closeFile(p->fileDescs[i]);
+			p->fileDescs[i] = -1;
+		}
+	}
 
 	/* mark as unused */
 	p->textPages = 0;
@@ -214,7 +255,7 @@ bool proc_changeSize(s32 change,chgArea area) {
 
 		/* now clear the memory */
 		while(change-- > 0) {
-			memset((void*)addr,0,PT_ENTRY_COUNT);
+			memset((void*)addr,0,PAGE_SIZE);
 			addr += PAGE_SIZE;
 		}
 	}

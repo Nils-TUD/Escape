@@ -132,7 +132,7 @@ static tMemArea *kheap_newArea(u32 size,bool isInitial) {
 				u32 frame = mm_allocateFrame(MM_DEF);
 				paging_map((u32)area,&frame,1,PG_WRITABLE | PG_SUPERVISOR,false);
 				/* we have to clear the area-pages */
-				memset(area,0,PT_ENTRY_COUNT);
+				memset(area,0,PAGE_SIZE);
 				/* reduce available mem */
 				initial->size -= PAGE_SIZE;
 			}
@@ -195,7 +195,7 @@ void kheap_init(void) {
 	u32 frame = mm_allocateFrame(MM_DEF);
 	paging_map((u32)initial,&frame,1,PG_WRITABLE | PG_SUPERVISOR,false);
 	/* we have to clear the area-pages */
-	memset(initial - 1,0,PT_ENTRY_COUNT);
+	memset(initial - 1,0,PAGE_SIZE);
 
 	*(u32*)KERNEL_HEAP_START = 1; /* 1 usage atm */
 

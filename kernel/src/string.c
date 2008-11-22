@@ -60,7 +60,7 @@ s32 memcmp(const void *str1,const void *str2,size_t count) {
 }
 
 void memset(void *addr,u32 value,size_t count) {
-	u32 *ptr = (u32*)addr;
+	u8 *ptr = (u8*)addr;
 	while(count-- > 0) {
 		*ptr++ = value;
 	}
@@ -150,6 +150,16 @@ string strchr(cstring str,s32 ch) {
 	return NULL;
 }
 
+s32 strchri(cstring str,s32 ch) {
+	s32 pos = 0;
+	while(*str) {
+		if(*str++ == ch)
+			return pos;
+		pos++;
+	}
+	return pos;
+}
+
 string strrchr(cstring str,s32 ch) {
 	string pos = NULL;
 	while(*str) {
@@ -166,10 +176,10 @@ string strstr(cstring str1,cstring str2) {
 	if(!*str2)
 		return NULL;
 	while(*str1) {
-		res = (string)str1;
-		sub = (string)str2;
 		/* matching char? */
-		if(*str1 == *sub) {
+		if(*str1++ == *str2) {
+			res = (string)--str1;
+			sub = (string)str2;
 			/* continue until the strings don't match anymore */
 			while(*sub && *str1 == *sub) {
 				str1++;
@@ -179,8 +189,6 @@ string strstr(cstring str1,cstring str2) {
 			if(!*sub)
 				return res;
 		}
-		else
-			str1++;
 	}
 	return NULL;
 }
@@ -193,6 +201,19 @@ size_t strcspn(cstring str1,cstring str2) {
 		count++;
 	}
 	return count;
+}
+
+string strcut(string str,u32 count) {
+	string res = str;
+	if(count > 0) {
+		str += count;
+		while(*str) {
+			*(str - count) = *str;
+			str++;
+		}
+		*(str - count) = '\0';
+	}
+	return res;
 }
 
 size_t strlen(string str) {

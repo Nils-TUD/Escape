@@ -24,9 +24,11 @@ static void test_strncat(void);
 static void test_strcmp(void);
 static void test_strncmp(void);
 static void test_strchr(void);
+static void test_strchri(void);
 static void test_strrchr(void);
 static void test_strstr(void);
 static void test_strcspn(void);
+static void test_strcut(void);
 static void test_strlen(void);
 static void test_tolower(void);
 static void test_toupper(void);
@@ -49,9 +51,11 @@ static void test_string(void) {
 	test_strcmp();
 	test_strncmp();
 	test_strchr();
+	test_strchri();
 	test_strrchr();
 	test_strstr();
 	test_strcspn();
+	test_strcut();
 	test_strlen();
 	test_tolower();
 	test_toupper();
@@ -72,6 +76,8 @@ static void test_atoi(void) {
 	if(!test_assertInt(atoi("-2147483648"),-2147483648)) return;
 	if(!test_assertInt(atoi(""),0)) return;
 	if(!test_assertInt(atoi("-"),0)) return;
+	if(!test_assertInt(atoi("abc"),0)) return;
+	if(!test_assertInt(atoi("a123b"),0)) return;
 
 	test_caseSucceded();
 }
@@ -228,6 +234,18 @@ static void test_strchr(void) {
 	test_caseSucceded();
 }
 
+static void test_strchri(void) {
+	s8 str1[] = "abcdef";
+	test_caseStart("Testing strchri()");
+
+	if(!test_assertTrue(strchri(str1,'a') == 0)) return;
+	if(!test_assertTrue(strchri(str1,'b') == 1)) return;
+	if(!test_assertTrue(strchri(str1,'c') == 2)) return;
+	if(!test_assertTrue(strchri(str1,'g') == (s32)strlen(str1))) return;
+
+	test_caseSucceded();
+}
+
 static void test_strrchr(void) {
 	s8 str1[] = "abcdefabc";
 	test_caseStart("Testing strrchr()");
@@ -269,6 +287,23 @@ static void test_strcspn(void) {
 	if(!test_assertUInt(strcspn("abc","cdef"),2)) return;
 	if(!test_assertUInt(strcspn("","123"),0)) return;
 	if(!test_assertUInt(strcspn("",""),0)) return;
+
+	test_caseSucceded();
+}
+
+static void test_strcut(void) {
+	s8 str1[] = "abc def ghi";
+	s8 str2[] = "abc";
+	s8 str3[] = "a";
+	s8 str4[] = "";
+	s8 str5[] = "123456";
+	test_caseStart("Testing strcut()");
+
+	if(!test_assertStr(strcut(str1,4),(string)"def ghi")) return;
+	if(!test_assertStr(strcut(str2,3),(string)"")) return;
+	if(!test_assertStr(strcut(str3,0),(string)"a")) return;
+	if(!test_assertStr(strcut(str4,0),(string)"")) return;
+	if(!test_assertStr(strcut(str5,5),(string)"6")) return;
 
 	test_caseSucceded();
 }

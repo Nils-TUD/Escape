@@ -11,7 +11,8 @@
 #include "intrpt.h"
 
 /* max number of processes */
-#define PROC_COUNT 1024
+#define PROC_COUNT		1024
+#define MAX_FD_COUNT	16
 
 /* the process-state which will be saved for context-switching */
 typedef struct {
@@ -26,6 +27,7 @@ typedef struct {
 typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE = 4} tProcState;
 
 /* represents a process */
+/* TODO move stuff for existing processes to the kernel-stack-page */
 typedef struct {
 	/* process state. see tProcState */
 	u8 state;
@@ -40,6 +42,8 @@ typedef struct {
 	u32 dataPages;
 	u32 stackPages;
 	tProcSave save;
+	/* file descriptors: indices of the global file table */
+	s16 fileDescs[MAX_FD_COUNT];
 } tProc;
 
 /* the area for proc_changeSize() */
@@ -87,6 +91,23 @@ tProc *proc_getByPid(u16 pid);
  * Switches to another process
  */
 void proc_switch(void);
+
+/**
+ * Opens the given file-descriptor. That means the function searches for a free slot in the
+ * fd-array of the process and inserts the fd.
+ *
+ * @param fd the file-descriptor
+ * @return 0 if successfull or ERR_MAX_PROC_FDS if an error occurred
+ */
+s32 proc_openFile(u32 fd);
+
+/**
+ * Closes the given file-descriptor. That means it searches for it in the fd-array of the process
+ * and marks the slot as unused
+ *
+ * @param fd the file-descriptor
+ */
+void proc_closeFile(u32 fd);
 
 /**
  * Clones the current process into the given one, saves the new process in proc_clone() so that

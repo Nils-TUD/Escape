@@ -50,12 +50,12 @@ void *memcpy(void *dest,const void *src,size_t len);
 s32 memcmp(const void *str1,const void *str2,size_t count);
 
 /**
- * Sets all dwords in memory beginning at <addr> and ending at <addr> + <count>
+ * Sets all bytes in memory beginning at <addr> and ending at <addr> + <count>
  * to <value>.
  *
  * @param addr the starting address
  * @param value the value to set
- * @param count the number of dwords
+ * @param count the number of bytes
  */
 void memset(void *addr,u32 value,size_t count);
 
@@ -138,6 +138,15 @@ s32 strncmp(cstring str1,cstring str2,size_t count);
 string strchr(cstring str,s32 ch);
 
 /**
+ * Returns the index of the first occurrences of ch in str or strlen(str) if ch is not found.
+ *
+ * @param str the string
+ * @param ch the character
+ * @return the index of the character or strlen(str) if not found
+ */
+s32 strchri(cstring str,s32 ch);
+
+/**
  * @param str the string to search
  * @param ch the character to search for
  * @return a pointer to the last occurrence of ch in str, or NULL if no match is found
@@ -160,6 +169,16 @@ string strstr(cstring str1,cstring str2);
  * @return the index of the first character in str1 that matches any of the characters in str2.
  */
 size_t strcspn(cstring str1,cstring str2);
+
+/**
+ * Cuts out the first count characters in the given string. That means all characters behind
+ * will be moved count chars back.
+ *
+ * @param str the string
+ * @param count the number of chars to remove
+ * @return the string
+ */
+string strcut(string str,u32 count);
 
 /**
  * @param str the string

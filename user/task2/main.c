@@ -8,8 +8,8 @@
 #include <debug.h>
 #include <proc.h>
 
-u32 main(void) {
-	u32 i;
+s32 main(void) {
+	/*u32 i;
 	debugf("Hi, my pid is %d, parent %d\n",getpid(),getppid());
 	for(i = 0;i < 10;i++) {
 		debugf("Idling a bit...\n");
@@ -23,6 +23,6 @@ u32 main(void) {
 	for(i = 0;i < 3;i++) {
 		fork();
 	}
-	debugf("Bye (%d)\n",getpid());
+	debugf("Bye (%d)\n",getpid());*/
 	return 123;
 }

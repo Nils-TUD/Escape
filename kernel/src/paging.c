@@ -183,7 +183,7 @@ void paging_mapHigherHalf(void) {
 		pde->present = true;
 		pde->writable = true;
 		/* clear */
-		memset((void*)ADDR_TO_MAPPED(addr),0,PT_ENTRY_COUNT);
+		memset((void*)ADDR_TO_MAPPED(addr),0,PAGE_SIZE);
 		/* to next */
 		pde++;
 		addr += PAGE_SIZE * PT_ENTRY_COUNT;
@@ -232,6 +232,17 @@ u32 paging_getPageCount(void) {
 bool paging_isMapped(u32 virtual) {
 	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
 	return pt->present;
+}
+
+bool paging_isRangedMapped(u32 virtual,s32 count) {
+	tPTEntry *pt = (tPTEntry*)ADDR_TO_MAPPED(virtual);
+	while(count > 0) {
+		if(!pt->present)
+			return false;
+		count -= PAGE_SIZE;
+		pt++;
+	}
+	return true;
 }
 
 u32 paging_getFrameOf(u32 virtual) {
@@ -294,7 +305,7 @@ static void paging_mapintern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 
 			/* clear frame (ensure that we start at the beginning of the frame) */
 			memset((void*)ADDR_TO_MAPPED_CUSTOM(mappingArea,
-					virtual & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),0,PT_ENTRY_COUNT);
+					virtual & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),0,PAGE_SIZE);
 		}
 
 		/* setup page */
@@ -411,11 +422,11 @@ u32 paging_clonePageDir(u32 *stackFrame,tProc *newProc) {
 	/* copy old page-dir to new one */
 	DBG_PGCLONEPD(vid_printf("Copying old page-dir to new one (%x)\n",npd));
 	/* clear user-space page-tables */
-	memset(npd,0,ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR));
+	memset(npd,0,ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) * sizeof(tPDEntry));
 	/* copy kernel-space page-tables*/
 	memcpy(npd + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR),
 			pd + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR),
-			(PT_ENTRY_COUNT - ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR)) * sizeof(u32));
+			(PT_ENTRY_COUNT - ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR)) * sizeof(tPDEntry));
 
 	/* map our new page-dir in the last slot of the new page-dir */
 	npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo = pdirFrame;

@@ -70,7 +70,8 @@ bool test_assertFalse(bool received) {
 bool test_assertPtr(void *received,void *expected) {
 	assertCount++;
 	if(expected != received) {
-		test_caseFailed("Assert %d: Pointers are not equal: 0x%x != 0x%x",assertCount,expected,received);
+		test_caseFailed("Assert %d: Pointers are not equal: 0x%x != 0x%x",assertCount,
+				expected,received);
 		return false;
 	}
 	return true;
@@ -79,7 +80,8 @@ bool test_assertPtr(void *received,void *expected) {
 bool test_assertInt(s32 received,s32 expected) {
 	assertCount++;
 	if(expected != received) {
-		test_caseFailed("Assert %d: Integers are not equal: %d != %d",assertCount,expected,received);
+		test_caseFailed("Assert %d: Integers are not equal: %d != %d",assertCount,
+				expected,received);
 		return false;
 	}
 	return true;
@@ -88,7 +90,8 @@ bool test_assertInt(s32 received,s32 expected) {
 bool test_assertUInt(u32 received,u32 expected) {
 	assertCount++;
 	if(expected != received) {
-		test_caseFailed("Assert %d: Integers are not equal: 0x%x != 0x%x",assertCount,expected,received);
+		test_caseFailed("Assert %d: Integers are not equal: 0x%x != 0x%x",assertCount,
+				expected,received);
 		return false;
 	}
 	return true;
@@ -100,16 +103,19 @@ bool test_assertStr(string received,string expected) {
 	assertCount++;
 	while(*s1 && *s2) {
 		if(*s1 != *s2) {
-			test_caseFailed("Assert %d: Strings are not equal: %s != %s",assertCount,expected,received);
+			test_caseFailed("Assert %d: Strings are not equal: '%s' != '%s'",assertCount,
+					expected,received);
 			return false;
 		}
 		s1++;
 		s2++;
 	}
 	if(*s1 != *s2) {
-		test_caseFailed("Assert %d: Strings are not equal: %s != %s",assertCount,expected,received);
+		test_caseFailed("Assert %d: Strings are not equal: '%s' != '%s'",assertCount,
+				expected,received);
 		return false;
 	}
+	vid_printf("ASSERT %d succeded\n",assertCount);
 	return true;
 }
 

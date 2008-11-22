@@ -16,7 +16,8 @@
 #define TAB_WIDTH 2
 
 static s8 *video = (s8*)VIDEO_BASE;
-static s8 hexChars[] = "0123456789ABCDEF";
+static s8 hexCharsBig[] = "0123456789ABCDEF";
+static s8 hexCharsSmall[] = "0123456789abcdef";
 static u8 color = 0;
 
 static u8 oldBG = 0, oldFG = 0;
@@ -154,7 +155,14 @@ void vid_printu(u32 n,u8 base) {
 	if(n >= base) {
 		vid_printu(n / base,base);
 	}
-	vid_putchar(hexChars[(n % base)]);
+	vid_putchar(hexCharsBig[(n % base)]);
+}
+
+static void vid_printuSmall(u32 n,u8 base) {
+	if(n >= base) {
+		vid_printuSmall(n / base,base);
+	}
+	vid_putchar(hexCharsSmall[(n % base)]);
 }
 
 u8 vid_getuwidth(u32 n,u8 base) {
@@ -271,6 +279,7 @@ void vid_vprintf(cstring fmt,va_list ap) {
 			case 'u':
 			case 'o':
 			case 'x':
+			case 'X':
 				u = va_arg(ap, u32);
 				base = c == 'o' ? 8 : (c == 'x' ? 16 : (c == 'b' ? 2 : 10));
 				if(pad > 0) {
@@ -279,7 +288,10 @@ void vid_vprintf(cstring fmt,va_list ap) {
 						vid_putchar(padchar);
 					}
 				}
-				vid_printu(u,base);
+				if(c == 'x')
+					vid_printuSmall(u,base);
+				else
+					vid_printu(u,base);
 				break;
 			/* string */
 			case 's':

@@ -8,6 +8,8 @@
 #include "../h/video.h"
 #include "../h/intrpt.h"
 #include "../h/ksymbols.h"
+#include "../h/paging.h"
+#include "../h/string.h"
 #include <stdarg.h>
 
 /* the x86-call instruction is 5 bytes long */
@@ -122,4 +124,11 @@ void dumpMem(void *addr,u32 dwordCount) {
 		vid_printf("0x%x: 0x%x\n",ptr,*ptr);
 		ptr++;
 	}
+}
+
+bool copyUserToKernel(u8 *src,u8 *dst,u32 count) {
+	if(!paging_isRangedMapped((u32)src,count))
+		return false;
+	memcpy(dst,src,count);
+	return true;
 }

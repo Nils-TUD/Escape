@@ -9,13 +9,14 @@
 
 /**
  * Debugging version of printf. Supports the following formatting:
- * %d
- * %u
- * %b
- * %x
- * %o
- * %s
- * %c
+ * %d: signed integer
+ * %u: unsigned integer, base 10
+ * %o: unsigned integer, base 8
+ * %x: unsigned integer, base 16 (small letters)
+ * %X: unsigned integer, base 16 (big letters)
+ * %b: unsigned integer, base 2
+ * %s: string
+ * %c: character
  *
  * @param fmt the format
  */

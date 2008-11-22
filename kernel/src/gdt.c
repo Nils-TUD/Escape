@@ -208,7 +208,7 @@ void gdt_init(void) {
 	gdtTable.size = GDT_ENTRY_COUNT * sizeof(tGDTDesc) - 1;
 
 	/* clear gdt */
-	memset(gdt,0,GDT_ENTRY_COUNT * (sizeof(tGDTDesc) / sizeof(u32)));
+	memset(gdt,0,GDT_ENTRY_COUNT * sizeof(tGDTDesc));
 
 	/* kernel code */
 	gdt_set_desc(1,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,

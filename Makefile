@@ -45,8 +45,8 @@ debug: all prepareRun
 
 debugu: all prepareRun
 		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
-		sleep 1;
-		gdb --command=gdb.start --symbols $(BUILD)/user_task2.bin
+		#sleep 1;
+		#gdb --command=gdb.start --symbols $(BUILD)/user_task1.bin
 
 debugm: all prepareRun
 		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &

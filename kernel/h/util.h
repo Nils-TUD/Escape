@@ -70,4 +70,15 @@ void printStackTrace(void);
  */
 void dumpMem(void *addr,u32 dwordCount);
 
+/**
+ * Copies <src> to <src> + <count> to <dst>. If the source is not completely mapped
+ * the function returns false
+ *
+ * @param src the address in user-space
+ * @param dst the address in kernel-space
+ * @param count the number of bytes to copy
+ * @return true if successfull
+ */
+bool copyUserToKernel(u8 *src,u8 *dst,u32 count);
+
 #endif /*UTIL_H_*/

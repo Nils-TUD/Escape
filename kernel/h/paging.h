@@ -229,6 +229,15 @@ u32 paging_getPageCount(void);
 bool paging_isMapped(u32 virtual);
 
 /**
+ * Checks wether the given address-range is currently mapped.
+ *
+ * @param virtual the start-address
+ * @param count the number of bytes
+ * @return true if so
+ */
+bool paging_isRangedMapped(u32 virtual,s32 count);
+
+/**
  * Determines the frame-number for the given virtual-address. This should not be used
  * for user-space addresses!
  *

@@ -10,6 +10,6 @@
 #include "../h/common.h"
 #include "test.h"
 
-extern tTestModule tModSLList;
+extern sTestModule tModSLList;
 
 #endif /* SLLIST_H_ */

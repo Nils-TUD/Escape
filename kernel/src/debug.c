@@ -52,9 +52,9 @@ void dbg_printProcessState(tProcSave *state) {
 
 void dbg_printPageDir(bool includeKernel) {
 	u32 i;
-	tPDEntry *pagedir;
+	sPDEntry *pagedir;
 	paging_mapPageDir();
-	pagedir = (tPDEntry*)PAGE_DIR_AREA;
+	pagedir = (sPDEntry*)PAGE_DIR_AREA;
 	vid_printf("page-dir @ 0x%08x:\n",pagedir);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
 		if(pagedir[i].present && (includeKernel || i != ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR))) {
@@ -66,9 +66,9 @@ void dbg_printPageDir(bool includeKernel) {
 
 void dbg_printUserPageDir(void) {
 	u32 i;
-	tPDEntry *pagedir;
+	sPDEntry *pagedir;
 	paging_mapPageDir();
-	pagedir = (tPDEntry*)PAGE_DIR_AREA;
+	pagedir = (sPDEntry*)PAGE_DIR_AREA;
 	vid_printf("page-dir @ 0x%08x:\n",pagedir);
 	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR); i++) {
 		if(pagedir[i].present) {
@@ -78,10 +78,10 @@ void dbg_printUserPageDir(void) {
 	vid_printf("\n");
 }
 
-void dbg_printPageTable(u32 no,tPDEntry *pde) {
+void dbg_printPageTable(u32 no,sPDEntry *pde) {
 	u32 i;
 	u32 addr = PAGE_SIZE * PT_ENTRY_COUNT * no;
-	tPTEntry *pte = (tPTEntry*)(MAPPED_PTS_START + no * PAGE_SIZE);
+	sPTEntry *pte = (sPTEntry*)(MAPPED_PTS_START + no * PAGE_SIZE);
 	vid_printf("\tpt 0x%x [frame 0x%x, %c%c] @ 0x%08x: (VM: 0x%08x - 0x%08x)\n",no,
 			pde->ptFrameNo,pde->notSuperVisor ? 'u' : 'k',pde->writable ? 'w' : 'r',pte,addr,
 			addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
@@ -97,7 +97,7 @@ void dbg_printPageTable(u32 no,tPDEntry *pde) {
 	}
 }
 
-void dbg_printPage(tPTEntry *page) {
+void dbg_printPage(sPTEntry *page) {
 	if(page->present) {
 		vid_printf("raw=0x%08x, frame=0x%x [%c%c%c%c]",*(u32*)page,
 				page->frameNumber,page->notSuperVisor ? 'u' : 'k',page->writable ? 'w' : 'r',

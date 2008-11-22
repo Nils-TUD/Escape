@@ -10,6 +10,6 @@
 #include "../h/common.h"
 #include "test.h"
 
-extern tTestModule tModMM;
+extern sTestModule tModMM;
 
 #endif /* TESTMM_H_ */

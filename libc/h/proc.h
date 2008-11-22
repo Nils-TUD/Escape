@@ -10,19 +10,19 @@
 /**
  * @return the process-id
  */
-u32 getpid(void);
+tPid getpid(void);
 
 /**
  * @return the parent-pid
  */
-u32 getppid(void);
+tPid getppid(void);
 
 /**
  * Clones the current process. Will return the pid for the old process and 0 for the new one.
  *
  * @return new pid or 0 or -1 if failed
  */
-u16 fork(void);
+s32 fork(void);
 
 /**
  * Destroys the process and provides the parent the given error-code

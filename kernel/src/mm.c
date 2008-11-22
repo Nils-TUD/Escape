@@ -35,7 +35,7 @@ static void mm_markAddrRangeUsed(u32 from,u32 to,bool used);
 static void mm_markFrameUsed(u32 frame,bool used);
 
 void mm_init(void) {
-	tMemMap *mmap;
+	sMemMap *mmap;
 
 	/* init stack */
 	u16mStackFrameCount = (U16M_PAGE_COUNT + (PAGE_SIZE - 1) / sizeof(u32)) / (PAGE_SIZE / sizeof(u32));
@@ -49,7 +49,7 @@ void mm_init(void) {
 	/* now walk through the memory-map and mark all free areas as free */
 	for(mmap = mb->mmapAddr;
 		(u32)mmap < (u32)mb->mmapAddr + mb->mmapLength;
-		mmap = (tMemMap*)((u32)mmap + mmap->size + sizeof(mmap->size))) {
+		mmap = (sMemMap*)((u32)mmap + mmap->size + sizeof(mmap->size))) {
 		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
 			mm_markAddrRangeUsed(mmap->baseAddr,mmap->baseAddr + mmap->length,false);
 		}
@@ -81,13 +81,13 @@ u32 mm_getNumberOfFreeFrames(u32 types) {
 	return count;
 }
 
-void mm_allocateFrames(memType type,u32 *frames,u32 count) {
+void mm_allocateFrames(eMemType type,u32 *frames,u32 count) {
 	while(count-- > 0) {
 		*(frames++) = mm_allocateFrame(type);
 	}
 }
 
-u32 mm_allocateFrame(memType type) {
+u32 mm_allocateFrame(eMemType type) {
 	u32 bmIndex;
 	/* TODO what do we need for DMA? */
 	if(type == MM_DMA) {
@@ -128,13 +128,13 @@ u32 mm_allocateFrame(memType type) {
 	return 0;
 }
 
-void mm_freeFrames(memType type,u32 *frames,u32 count) {
+void mm_freeFrames(eMemType type,u32 *frames,u32 count) {
 	while(count-- > 0) {
 		mm_freeFrame(*(frames++),type);
 	}
 }
 
-void mm_freeFrame(u32 frame,memType type) {
+void mm_freeFrame(u32 frame,eMemType type) {
 	u32 *bitmapEntry;
 	/* TODO what do we need for DMA? */
 	if(type == MM_DMA) {

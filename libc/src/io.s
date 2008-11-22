@@ -2,10 +2,12 @@
 
 [extern lastError]
 [global open]
+[global read]
 [global close]
 
 SYSCALL_OPEN	equ 5
 SYSCALL_CLOSE	equ 6
+SYSCALL_READ	equ 7
 SYSCALL_IRQ		equ	0x30
 
 ; s32 open(cstring path,u8 mode);
@@ -31,7 +33,32 @@ openRet:
 	leave
 	ret
 
-; void close(s32 fd);
+; s32 read(tFD fd,void *buffer,u32 count);
+read:
+	push	ebp
+	mov		ebp,esp
+	mov		eax,[ebp + 16]				; push count
+	push	eax
+	mov		eax,[ebp + 12]				; push buffer
+	push	eax
+	mov		eax,[ebp + 8]					; push fd
+	push	eax
+	push	DWORD SYSCALL_READ		; push syscall-number
+	int		SYSCALL_IRQ
+	pop		eax										; pop error-code
+	test	eax,eax
+	jz		readNoError						; no-error?
+	mov		[lastError],eax				; store error-code
+	add		esp,12
+	jmp		readRet
+readNoError:
+	pop		eax
+	add		esp,8
+readRet:
+	leave
+	ret
+
+; void close(tFD fd);
 close:
 	push	ebp
 	mov		ebp,esp
@@ -42,4 +69,3 @@ close:
 	add		esp,4									; remove from stack
 	leave
 	ret
-

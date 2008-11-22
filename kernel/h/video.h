@@ -10,7 +10,7 @@
 #include "../h/common.h"
 #include <stdarg.h>
 
-typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} tColor;
+typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
 
 /**
  * Inits the video-stuff
@@ -28,7 +28,7 @@ void vid_clearScreen(void);
  * @param line the line (0..n-1)
  * @param bg the background-color
  */
-void vid_setLineBG(u8 line,tColor bg);
+void vid_setLineBG(u8 line,eColor bg);
 
 /**
  * Restores the color that has been saved by vid_useColor.
@@ -38,26 +38,26 @@ void vid_restoreColor(void);
 /**
  * @return the current foreground color
  */
-tColor vid_getFGColor(void);
+eColor vid_getFGColor(void);
 
 /**
  * @return the current background color
  */
-tColor vid_getBGColor(void);
+eColor vid_getBGColor(void);
 
 /**
  * Sets the foreground color to given value
  *
  * @param col the new color
  */
-void vid_setFGColor(tColor col);
+void vid_setFGColor(eColor col);
 
 /**
  * Sets the background color to given value
  *
  * @param col the new color
  */
-void vid_setBGColor(tColor col);
+void vid_setBGColor(eColor col);
 
 /**
  * Sets the given color and stores the current one. You may restore the previous state
@@ -66,7 +66,7 @@ void vid_setBGColor(tColor col);
  * @param bg your background-color
  * @param fg your foreground-color
  */
-void vid_useColor(tColor bg,tColor fg);
+void vid_useColor(eColor bg,eColor fg);
 
 /**
  * @return the line-number

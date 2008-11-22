@@ -14,6 +14,7 @@
 /* forward declarations */
 static void test_string(void);
 static void test_atoi(void);
+static void test_itoa(void);
 static void test_memchr(void);
 static void test_memcpy(void);
 static void test_memcmp(void);
@@ -34,13 +35,14 @@ static void test_tolower(void);
 static void test_toupper(void);
 
 /* our test-module */
-tTestModule tModString = {
+sTestModule tModString = {
 	"String",
 	&test_string
 };
 
 static void test_string(void) {
 	test_atoi();
+	test_itoa();
 	test_memchr();
 	test_memcpy();
 	test_memcmp();
@@ -78,6 +80,30 @@ static void test_atoi(void) {
 	if(!test_assertInt(atoi("-"),0)) return;
 	if(!test_assertInt(atoi("abc"),0)) return;
 	if(!test_assertInt(atoi("a123b"),0)) return;
+
+	test_caseSucceded();
+}
+
+static bool test_itoacpy(s32 n,cstring expected) {
+	static s8 str[12];
+	itoa(str,n);
+	return test_assertStr(str,(string)expected);
+}
+
+static void test_itoa(void) {
+	test_caseStart("Testing itoa()");
+
+	if(!test_itoacpy(1,"1")) return;
+	if(!test_itoacpy(2,"2")) return;
+	if(!test_itoacpy(8,"8")) return;
+	if(!test_itoacpy(12,"12")) return;
+	if(!test_itoacpy(7123,"7123")) return;
+	if(!test_itoacpy(2147483647,"2147483647")) return;
+	if(!test_itoacpy(0,"0")) return;
+	if(!test_itoacpy(-1,"-1")) return;
+	if(!test_itoacpy(-10,"-10")) return;
+	if(!test_itoacpy(-8123,"-8123")) return;
+	if(!test_itoacpy(-2147483648,"-2147483648")) return;
 
 	test_caseSucceded();
 }

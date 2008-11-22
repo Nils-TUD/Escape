@@ -24,7 +24,7 @@ static void test_kheap_t4(void);
 static void test_kheap_t5(void);
 
 /* our test-module */
-tTestModule tModKHeap = {
+sTestModule tModKHeap = {
 	"Kernel-Heap",
 	&test_kheap
 };

@@ -15,7 +15,7 @@
 #include "../h/util.h"
 #include "../h/debug.h"
 
-#define SYSCALL_COUNT 7
+#define SYSCALL_COUNT 8
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
@@ -23,58 +23,64 @@
 #define SYSC_RET2(stack,val) ((stack)->arg2 = (val))
 
 /* syscall-handlers */
-typedef void (*tSyscallHandler)(tSysCallStack *stack);
+typedef void (*fSyscall)(sSysCallStack *stack);
 
 /* for syscall-definitions */
 typedef struct {
-	tSyscallHandler handler;
+	fSyscall handler;
 	u8 argCount;
-} tSysCall;
+} sSyscall;
 
 /**
  * Returns the pid of the current process
  */
-static void sysc_getpid(tSysCallStack *stack);
+static void sysc_getpid(sSysCallStack *stack);
 /**
  * Returns the parent-pid of the current process
  */
-static void sysc_getppid(tSysCallStack *stack);
+static void sysc_getppid(sSysCallStack *stack);
 /**
  * Temporary syscall to print out a character
  */
-static void sysc_debugc(tSysCallStack *stack);
+static void sysc_debugc(sSysCallStack *stack);
 /**
  * Clones the current process
  */
-static void sysc_fork(tSysCallStack *stack);
+static void sysc_fork(sSysCallStack *stack);
 /**
  * Destroys the process and issues a context-switch
  */
-static void sysc_exit(tSysCallStack *stack);
+static void sysc_exit(sSysCallStack *stack);
 
 /**
  * Open-syscall. Opens a given path with given mode and returns the file-descriptor to use
  * to the user.
  */
-static void sysc_open(tSysCallStack *stack);
+static void sysc_open(sSysCallStack *stack);
+
+/**
+ * Read-syscall. Reads a given number of bytes in a given file at the current position
+ */
+static void sysc_read(sSysCallStack *stack);
 
 /**
  * Closes the given file-descriptor
  */
-static void sysc_close(tSysCallStack *stack);
+static void sysc_close(sSysCallStack *stack);
 
 /* our syscalls */
-static tSysCall syscalls[SYSCALL_COUNT] = {
+static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 0 */	{sysc_getpid,		0},
 	/* 1 */	{sysc_getppid,		0},
 	/* 2 */ {sysc_debugc,		1},
 	/* 3 */	{sysc_fork,			0},
 	/* 4 */ {sysc_exit,			1},
 	/* 5 */ {sysc_open,			2},
-	/* 6 */ {sysc_close,		1}
+	/* 6 */ {sysc_close,		1},
+	/* 7 */ {sysc_read,			3}
 };
 
-void sysc_handle(tSysCallStack *stack) {
+void sysc_handle(sSysCallStack *stack) {
 	u32 sysCallNo = (u32)stack->number;
 	if(sysCallNo < SYSCALL_COUNT) {
 		/* no error by default */
@@ -83,22 +89,22 @@ void sysc_handle(tSysCallStack *stack) {
 	}
 }
 
-static void sysc_getpid(tSysCallStack *stack) {
+static void sysc_getpid(sSysCallStack *stack) {
 	tProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->pid);
 }
 
-static void sysc_getppid(tSysCallStack *stack) {
+static void sysc_getppid(sSysCallStack *stack) {
 	tProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->parentPid);
 }
 
-static void sysc_debugc(tSysCallStack *stack) {
+static void sysc_debugc(sSysCallStack *stack) {
 	vid_putchar((s8)stack->arg1);
 }
 
-static void sysc_fork(tSysCallStack *stack) {
-	u16 newPid = proc_getFreePid();
+static void sysc_fork(sSysCallStack *stack) {
+	tPid newPid = proc_getFreePid();
 	s32 res = proc_clone(newPid);
 	/* error? */
 	if(res == -1) {
@@ -114,18 +120,18 @@ static void sysc_fork(tSysCallStack *stack) {
 	}
 }
 
-static void sysc_exit(tSysCallStack *stack) {
+static void sysc_exit(sSysCallStack *stack) {
 	vid_printf("Process %d exited with exit-code %d\n",proc_getRunning()->pid,stack->arg1);
 	proc_suicide();
 	proc_switch();
 }
 
-static void sysc_open(tSysCallStack *stack) {
+static void sysc_open(sSysCallStack *stack) {
 	s8 path[255];
 	s8 *cleanPath;
-	bool isReal;
 	u8 flags;
-	s32 nodeNo,fd,err;
+	tVFSNodeNo nodeNo;
+	s32 fd,err;
 
 	/* copy path */
 	copyUserToKernel((u8*)stack->arg1,(u8*)path,MIN(strlen((string)stack->arg1) + 1,255));
@@ -139,39 +145,63 @@ static void sysc_open(tSysCallStack *stack) {
 
 	/* resolve path */
 	cleanPath = vfs_cleanPath(path);
-	nodeNo = vfs_resolvePath(cleanPath,&isReal);
-	if(nodeNo < 0) {
-		SYSC_ERROR(stack,nodeNo);
+	err = vfs_resolvePath(cleanPath,&nodeNo);
+	if(err < 0) {
+		SYSC_ERROR(stack,err);
 		return;
 	}
-	flags |= isReal ? GFT_REAL : GFT_VIRTUAL;
 
 	/* open file */
-	fd = vfs_openFile(flags,nodeNo);
+	fd = proc_openFile(flags,nodeNo);
 	if(fd < 0) {
 		SYSC_ERROR(stack,fd);
 		return;
 	}
 
-	err = proc_openFile(fd);
-	if(err < 0) {
-		vfs_closeFile(fd);
-		SYSC_ERROR(stack,err);
-		return;
-	}
-
 	/* return fd */
-	dbg_printProcess(proc_getRunning());
+	/*dbg_printProcess(proc_getRunning());
 	vfs_printNode(vfs_getNode(nodeNo));
-	vfs_printGFT();
+	vfs_printGFT();*/
 	SYSC_RET1(stack,fd);
 }
 
-static void sysc_close(tSysCallStack *stack) {
-	u32 fd = stack->arg1;
-	proc_closeFile(fd);
-	vfs_closeFile(fd);
+static void sysc_read(sSysCallStack *stack) {
+	tProc *p = proc_getRunning();
+	tFD fd = (s32)stack->arg1;
+	void *buffer = (void*)stack->arg2;
+	u32 count = stack->arg3;
+	s32 readBytes;
 
-	dbg_printProcess(proc_getRunning());
-	vfs_printGFT();
+	/* check fd */
+	if(!proc_isValidFileDesc(fd)) {
+		SYSC_ERROR(stack,ERR_INVALID_FD);
+		return;
+	}
+
+	/* validate count and buffer */
+	if(count <= 0) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+	if(!paging_isRangedMapped((u32)buffer,count)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	/* read */
+	readBytes = vfs_readFile(p->fileDescs[fd],buffer,count);
+	if(readBytes < 0) {
+		SYSC_ERROR(stack,readBytes);
+		return;
+	}
+
+	SYSC_RET1(stack,readBytes);
+}
+
+static void sysc_close(sSysCallStack *stack) {
+	tFD fd = stack->arg1;
+	proc_closeFile(fd);
+
+	/*dbg_printProcess(proc_getRunning());
+	vfs_printGFT();*/
 }

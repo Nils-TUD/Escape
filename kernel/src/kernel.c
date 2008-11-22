@@ -49,7 +49,7 @@ static u8 task1[] = {
 	#include "../../build/user_task1.dump"
 };
 
-s32 main(tMultiBoot *mbp,u32 magic) {
+s32 main(sMultiBoot *mbp,u32 magic) {
 	u32 entryPoint;
 
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
@@ -78,6 +78,14 @@ s32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
 
+	/* vfs */
+	dbg_startTimer();
+	vid_printf("Initializing VFS...");
+	vfs_init();
+	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_printf("%:02s","DONE");
+	dbg_stopTimer();
+
 	/* processes */
 	dbg_startTimer();
 	vid_printf("Initializing process-management...");
@@ -95,20 +103,12 @@ s32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
 
-	/* vfs */
-	dbg_startTimer();
-	vid_printf("Initializing VFS...");
-	vfs_init();
-	vid_toLineEnd(vid_getswidth("DONE"));
-	vid_printf("%:02s","DONE");
-	dbg_stopTimer();
-
 	vid_printf("Free frames=%d, pages mapped=%d, free mem=%d KiB\n",
 			mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),paging_getPageCount(),
 			mm_getNumberOfFreeFrames(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 
-	/*vfs_printTree();
-	cstring path = vfs_cleanPath("//system///services//");
+	vfs_printTree();
+	/*cstring path = vfs_cleanPath("//system///services//");
 	vid_printf("Resolving %s\n",path);
 	s32 n = vfs_resolvePath(path);
 	vfs_printNode(vfs_getNode(n));

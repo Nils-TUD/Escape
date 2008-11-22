@@ -11,22 +11,22 @@
 
 #define CHECK_FLAG(flags,bit) (flags & (1 << bit))
 
-tMultiBoot *mb;
+sMultiBoot *mb;
 
-void mboot_init(tMultiBoot *mbp) {
+void mboot_init(sMultiBoot *mbp) {
 	/* save the multiboot-structure
 	 * (change to 0xC...0 since we get the address at 0x0...0 from GRUB) */
-	mb = (tMultiBoot*)((u32)mbp | KERNEL_AREA_V_ADDR);
+	mb = (sMultiBoot*)((u32)mbp | KERNEL_AREA_V_ADDR);
 	
 	/* change the address of the pointers in the structure, too */
 	mb->cmdLine = (s8*)((u32)mb->cmdLine | KERNEL_AREA_V_ADDR);
-	mb->modsAddr = (tModule*)((u32)mb->modsAddr | KERNEL_AREA_V_ADDR);
-	mb->mmapAddr = (tMemMap*)((u32)mb->mmapAddr | KERNEL_AREA_V_ADDR);
+	mb->modsAddr = (sModule*)((u32)mb->modsAddr | KERNEL_AREA_V_ADDR);
+	mb->mmapAddr = (sMemMap*)((u32)mb->mmapAddr | KERNEL_AREA_V_ADDR);
 }
 
 void printMultiBootInfo(void) {
 	u32 x;
-	tMemMap *mmap;
+	sMemMap *mmap;
 	vid_printf("MultiBoot-Structure:\n---------------------\nflags=0x%x\n",mb->flags);
 	if(CHECK_FLAG(mb->flags,0)) {
 		vid_printf("memLower=%d KB, memUpper=%d KB\n",mb->memLower,mb->memUpper);
@@ -53,9 +53,9 @@ void printMultiBootInfo(void) {
 		vid_printf("mmapLength=%d, mmapAddr=0x%x\n",mb->mmapLength,mb->mmapAddr);
 		vid_printf("Available memory:\n");
 		x = 0;
-		for(mmap = (tMemMap*)mb->mmapAddr;
+		for(mmap = (sMemMap*)mb->mmapAddr;
 			(u32)mmap < (u32)mb->mmapAddr + mb->mmapLength;
-			mmap = (tMemMap*)((u32)mmap + mmap->size + sizeof(mmap->size))) {
+			mmap = (sMemMap*)((u32)mmap + mmap->size + sizeof(mmap->size))) {
 			if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
 				vid_printf("\t%d: addr=0x%08x, size=0x%08x, type=0x%08x\n",
 						x,(u32)mmap->baseAddr,(u32)mmap->length,mmap->type);

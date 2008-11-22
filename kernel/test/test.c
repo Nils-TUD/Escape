@@ -9,7 +9,7 @@
 #include "test.h"
 #include <stdarg.h>
 
-tTestModule *modules[MAX_TESTS];
+sTestModule *modules[MAX_TESTS];
 u32 moduleCount = 0;
 u32 testCase = 0;
 
@@ -130,7 +130,7 @@ void test_caseFailed(cstring fmt,...) {
 	failCount++;
 }
 
-void test_register(tTestModule *mod) {
+void test_register(sTestModule *mod) {
 	modules[moduleCount++] = mod;
 }
 

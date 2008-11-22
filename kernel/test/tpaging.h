@@ -10,6 +10,6 @@
 #include "../h/common.h"
 #include "test.h"
 
-extern tTestModule tModPaging;
+extern sTestModule tModPaging;
 
 #endif /* TESTPAGING_H_ */

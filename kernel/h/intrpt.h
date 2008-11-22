@@ -194,7 +194,7 @@ typedef struct {
 	/* if we come from user-mode this fields will be present and will be restored with iret */
 	u32 uesp;
 	u32 uss;
-} __attribute__((packed)) tIntrptStackFrame;
+} __attribute__((packed)) sIntrptStackFrame;
 
 /**
  * Returns the name for the given interrupt-number
@@ -222,6 +222,6 @@ void intrpt_init(void);
  *
  * @param number the interrupt-number
  */
-void intrpt_handler(tIntrptStackFrame stack);
+void intrpt_handler(sIntrptStackFrame stack);
 
 #endif /*INTRPT_H_*/

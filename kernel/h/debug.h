@@ -53,13 +53,13 @@ void dbg_printUserPageDir(void);
  * @param no the number of the page-table
  * @param pde the page-dir-entry
  */
-void dbg_printPageTable(u32 no,tPDEntry *pde);
+void dbg_printPageTable(u32 no,sPDEntry *pde);
 
 /**
  * Prints the given page
  *
  * @param page a pointer to a page-table-entry
  */
-void dbg_printPage(tPTEntry *page);
+void dbg_printPage(sPTEntry *page);
 
 #endif /*DEBUG_H_*/

@@ -87,17 +87,17 @@ void panic(cstring fmt,...) {
  *  0x104FB8      |                            |    <-- Current ESP
  *                 \/\/\/\/\/\/\/\/\/\/\/\/\/\/
  */
-tFuncCall *getStackTrace(void) {
+sFuncCall *getStackTrace(void) {
 	/* TODO we need a kmalloc here :P */
-	static tFuncCall frames[MAX_STACK_DEPTH];
+	static sFuncCall frames[MAX_STACK_DEPTH];
 	u32 i;
-	tFuncCall *frame = &frames[0];
-	tSymbol *sym;
+	sFuncCall *frame = &frames[0];
+	sSymbol *sym;
 	u32* ebp = (u32*)getStackFrameStart();
 	/* TODO we assume here that we always have kernelStack as limit! */
 	for(i = 0; i < MAX_STACK_DEPTH && ebp < &kernelStack; i++) {
 		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;
-		sym = ksym_getSymbolAt(frame->addr);
+		sym = ksym_gesSymbolAt(frame->addr);
 		frame->funcAddr = sym->address;
 		frame->funcName = sym->funcName;
 		ebp = (u32*)*ebp;
@@ -109,7 +109,7 @@ tFuncCall *getStackTrace(void) {
 }
 
 void printStackTrace(void) {
-	tFuncCall *trace = getStackTrace();
+	sFuncCall *trace = getStackTrace();
 	vid_printf("Stack-trace:\n");
 	/* TODO maybe we should skip printStackTrace here? */
 	while(trace->addr != 0) {

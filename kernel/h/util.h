@@ -16,7 +16,7 @@ typedef struct {
 	u32 addr;
 	u32 funcAddr;
 	cstring funcName;
-} tFuncCall;
+} sFuncCall;
 
 /* The max. stack-depth getStackTrace() supports */
 #define MAX_STACK_DEPTH 100
@@ -55,7 +55,7 @@ void panic(cstring fmt,...);
  *
  * @return a pointer to the first stack-trace-element
  */
-tFuncCall *getStackTrace(void);
+sFuncCall *getStackTrace(void);
 
 /**
  * Prints the stack-trace

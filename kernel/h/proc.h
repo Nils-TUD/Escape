@@ -32,9 +32,9 @@ typedef struct {
 	/* process state. see tProcState */
 	u8 state;
 	/* process id (2^16 processes should be enough :)) */
-	u16 pid;
+	tPid pid;
 	/* parent process id */
-	u16 parentPid;
+	tPid parentPid;
 	/* the physical address for the page-directory of this process */
 	u32 physPDirAddr;
 	/* the number of pages per segment */
@@ -43,7 +43,7 @@ typedef struct {
 	u32 stackPages;
 	tProcSave save;
 	/* file descriptors: indices of the global file table */
-	s16 fileDescs[MAX_FD_COUNT];
+	tFile fileDescs[MAX_FD_COUNT];
 } tProc;
 
 /* the area for proc_changeSize() */
@@ -53,6 +53,7 @@ typedef enum {CHG_DATA,CHG_STACK} chgArea;
  * Saves the state of the current process in the given area
  *
  * @param saveArea the area where to save the state
+ * @return false for the caller-process, true for the resumed process
  */
 extern u32 proc_save(tProcSave *saveArea);
 
@@ -61,6 +62,7 @@ extern u32 proc_save(tProcSave *saveArea);
  *
  * @param pageDir the physical address of the page-dir
  * @param saveArea the area to load the state from
+ * @return always true
  */
 extern u32 proc_resume(u32 pageDir,tProcSave *saveArea);
 
@@ -74,7 +76,7 @@ void proc_init(void);
  *
  * @return the pid or 0
  */
-u16 proc_getFreePid(void);
+tPid proc_getFreePid(void);
 
 /**
  * @return the running process
@@ -85,7 +87,7 @@ tProc *proc_getRunning(void);
  * @param pid the pid of the process
  * @return the process with given pid
  */
-tProc *proc_getByPid(u16 pid);
+tProc *proc_getByPid(tPid pid);
 
 /**
  * Switches to another process
@@ -93,21 +95,31 @@ tProc *proc_getByPid(u16 pid);
 void proc_switch(void);
 
 /**
- * Opens the given file-descriptor. That means the function searches for a free slot in the
- * fd-array of the process and inserts the fd.
+ * Checks wether the given file-descriptor is valid
  *
  * @param fd the file-descriptor
- * @return 0 if successfull or ERR_MAX_PROC_FDS if an error occurred
+ * @return true if so
  */
-s32 proc_openFile(u32 fd);
+bool proc_isValidFileDesc(tFD fd);
 
 /**
- * Closes the given file-descriptor. That means it searches for it in the fd-array of the process
- * and marks the slot as unused
+ * Opens the given node-number with given flags. The function opens it in the VFS and inserts
+ * it in the fd-array of the process. If anything fails it returns the error-code and ensures
+ * that nothing has changed.
+ *
+ * @param flags wether it is a virtual or real file and wether you want to read or write
+ * @param nodeNo the node-number (in the virtual or real environment)
+ * @return the file-descriptor if successfull or the error-code (< 0)
+ */
+s32 proc_openFile(u8 flags,tVFSNodeNo nodeNo);
+
+/**
+ * Closes the given file-descriptor. That means it releases the fd-slot with given index
+ * and calls vfs_closeFile().
  *
  * @param fd the file-descriptor
  */
-void proc_closeFile(u32 fd);
+void proc_closeFile(tFD fd);
 
 /**
  * Clones the current process into the given one, saves the new process in proc_clone() so that
@@ -117,7 +129,7 @@ void proc_closeFile(u32 fd);
  * @param newPid the target-pid
  * @return -1 if an error occurred, 0 for parent, 1 for child
  */
-s32 proc_clone(u16 newPid);
+s32 proc_clone(tPid newPid);
 
 /**
  * Commit suicide. Marks the current process as destroyable. After the next context-switch
@@ -138,7 +150,7 @@ void proc_destroy(tProc *p);
  *
  * @param frame the interrupt-stack-frame
  */
-void proc_setupIntrptStack(tIntrptStackFrame *frame);
+void proc_setupIntrptStack(sIntrptStackFrame *frame);
 
 /**
  * Checks wether the given segment-sizes are valid

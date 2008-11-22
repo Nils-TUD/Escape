@@ -14,7 +14,7 @@
 typedef struct {
 	u16 size;		/* the size of the table -1 (size=0 is not allowed) */
 	u32 offset;
-} __attribute__((packed)) tGDTTable;
+} __attribute__((packed)) sGDTTable;
 
 /* a GDT descriptor */
 typedef struct {
@@ -66,7 +66,7 @@ typedef struct {
 
 	/* address[24..31] */
 	u8 addrHigh;
-} __attribute__((packed)) tGDTDesc;
+} __attribute__((packed)) sGDTDesc;
 
 /* the Task State Segment */
 typedef struct {
@@ -133,7 +133,7 @@ typedef struct {
 	 * TSS at higher addresses. The I/O map base address points to the beginning of the
 	 * I/O permission bit map and the end of the interrupt redirection bit map. */
 	u16 ioMapBaseAddr;
-} __attribute__((packed)) tTSS;
+} __attribute__((packed)) sTSS;
 
 /* we need 6 entries: null-entry, code for kernel, data for kernel, user-code, user-data
  * and one entry for our TSS */
@@ -167,7 +167,7 @@ typedef struct {
  *
  * @param gdt the pointer to the GDT-pointer
  */
-extern void gdt_flush(tGDTTable *gdt);
+extern void gdt_flush(sGDTTable *gdt);
 
 /**
  * Loads the TSS at the given offset in the GDT
@@ -197,18 +197,18 @@ static void gdt_set_desc(u16 index,u32 address,u32 size,u8 access,u8 ringLevel);
 static void gdt_set_tss_desc(u16 index,u32 address,u32 size);
 
 /* the GDT */
-static tGDTDesc gdt[GDT_ENTRY_COUNT];
+static sGDTDesc gdt[GDT_ENTRY_COUNT];
 
 /* our TSS (should not contain a page-boundary) */
-static tTSS tss __attribute__((aligned (PAGE_SIZE)));
+static sTSS tss __attribute__((aligned (PAGE_SIZE)));
 
 void gdt_init(void) {
-	tGDTTable gdtTable;
+	sGDTTable gdtTable;
 	gdtTable.offset = (u32)gdt;
-	gdtTable.size = GDT_ENTRY_COUNT * sizeof(tGDTDesc) - 1;
+	gdtTable.size = GDT_ENTRY_COUNT * sizeof(sGDTDesc) - 1;
 
 	/* clear gdt */
-	memset(gdt,0,GDT_ENTRY_COUNT * sizeof(tGDTDesc));
+	memset(gdt,0,GDT_ENTRY_COUNT * sizeof(sGDTDesc));
 
 	/* kernel code */
 	gdt_set_desc(1,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
@@ -227,7 +227,7 @@ void gdt_init(void) {
 	/* tss */
 	tss.esp0 = KERNEL_STACK + PAGE_SIZE - 4;
 	tss.ss0 = 0x10;
-	gdt_set_tss_desc(5,(u32)&tss,sizeof(tTSS) - 1);
+	gdt_set_tss_desc(5,(u32)&tss,sizeof(sTSS) - 1);
 
 	/*int i;
 	for(i = 0;i < GDT_ENTRY_COUNT; i++) {
@@ -241,7 +241,7 @@ void gdt_init(void) {
 	gdt_flush(&gdtTable);
 
 	/* load tss */
-	tss_load(5 * sizeof(tGDTDesc));
+	tss_load(5 * sizeof(sGDTDesc));
 
 	/* We needed the area 0x0 .. 0x00400000 because in the first phase the GDT was setup so that
 	 * the stuff at 0xC0000000 has been mapped to 0x00000000. Therefore, after enabling paging

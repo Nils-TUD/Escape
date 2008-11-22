@@ -9,6 +9,6 @@
 
 #include "test.h"
 
-extern tTestModule tModSched;
+extern sTestModule tModSched;
 
 #endif /* TESTSCHED_H_ */

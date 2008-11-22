@@ -8,7 +8,7 @@
 #include "../h/ksymbols.h"
 #include "../h/video.h"
 
-static tSymbol ksymbols[] = {
+static sSymbol ksymbols[] = {
 	#include "../../build/ksymbols.txt"
 };
 
@@ -19,8 +19,8 @@ void ksym_print(void) {
 		vid_printf("\t0x%08x -> %s\n",ksymbols[i].address,ksymbols[i].funcName);
 }
 
-tSymbol *ksym_getSymbolAt(u32 address) {
-	tSymbol *sym = &ksymbols[ARRAY_SIZE(ksymbols) - 2];
+sSymbol *ksym_gesSymbolAt(u32 address) {
+	sSymbol *sym = &ksymbols[ARRAY_SIZE(ksymbols) - 2];
 	while(sym >= &ksymbols[0]) {
 		if(address > sym->address)
 			return sym;

@@ -10,6 +10,6 @@
 #include "../h/common.h"
 #include "test.h"
 
-extern tTestModule tModProc;
+extern sTestModule tModProc;
 
 #endif /* TESTPROC_H_ */

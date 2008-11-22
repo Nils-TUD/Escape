@@ -5,6 +5,7 @@
  */
 
 #include "../h/common.h"
+#include "../h/debug.h"
 
 s32 lastError = 0;
 
@@ -29,6 +30,18 @@ void printLastError(void) {
 
 		case ERR_VFS_NODE_NOT_FOUND:
 			debugf("Unable to resolve the path\n");
+			break;
+
+		case ERR_INVALID_FD:
+			debugf("Invalid file-descriptor\n");
+			break;
+
+		case ERR_INVALID_FILE:
+			debugf("Invalid file\n");
+			break;
+
+		case ERR_NO_READ_PERM:
+			debugf("No read-permission\n");
 			break;
 
 		default:

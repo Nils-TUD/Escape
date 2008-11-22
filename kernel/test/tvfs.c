@@ -18,7 +18,7 @@ static void test_vfs_cleanPath(void);
 static bool test_vfs_cleanPathCpy(cstring a,cstring b);
 
 /* our test-module */
-tTestModule tModVFS = {
+sTestModule tModVFS = {
 	"VFS",
 	&test_vfs
 };

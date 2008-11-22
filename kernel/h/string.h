@@ -20,6 +20,14 @@
 s32 atoi(cstring str);
 
 /**
+ * Converts the given signed integer to a string
+ *
+ * @param target the target-string (needs max. 12 elements)
+ * @param n the integer
+ */
+void itoa(string target,s32 n);
+
+/**
  * The memchr() function looks for the first occurrence of c within count characters in
  * the array pointed to by buffer.
  *
@@ -28,7 +36,7 @@ s32 atoi(cstring str);
  * @param count the number of characters to loop through
  * @return NULL if not found or the pointer to the found element
  */
-void *memchr(const void *buffer,s32 c,size_t count);
+void *memchr(const void *buffer,s32 c,u32 count);
 
 /**
  * Copies <len> words from <src> to <dest>
@@ -37,7 +45,7 @@ void *memchr(const void *buffer,s32 c,size_t count);
  * @param src the source-address
  * @param len the number of words to copy
  */
-void *memcpy(void *dest,const void *src,size_t len);
+void *memcpy(void *dest,const void *src,u32 len);
 
 /**
  * Compares <count> words of <str1> and <str2> and returns wether they are equal
@@ -47,7 +55,7 @@ void *memcpy(void *dest,const void *src,size_t len);
  * @param count the number of words
  * @return -1 if <str1> lt <str2>, 0 if equal and 1 if <str1> gt <str2>
  */
-s32 memcmp(const void *str1,const void *str2,size_t count);
+s32 memcmp(const void *str1,const void *str2,u32 count);
 
 /**
  * Sets all bytes in memory beginning at <addr> and ending at <addr> + <count>
@@ -57,7 +65,7 @@ s32 memcmp(const void *str1,const void *str2,size_t count);
  * @param value the value to set
  * @param count the number of bytes
  */
-void memset(void *addr,u32 value,size_t count);
+void memset(void *addr,u32 value,u32 count);
 
 /**
  * The strcpy() function copies characters in the string from to the string to, including the
@@ -80,7 +88,7 @@ string strcpy(string to,cstring from);
  * @param count the number of chars to copy
  * @return the target string
  */
-string strncpy(string to,cstring from,size_t count);
+string strncpy(string to,cstring from,u32 count);
 
 /**
  * The strcat() function concatenates str2 onto the end of str1, and returns str1.
@@ -100,7 +108,7 @@ string strcat(string str1,cstring str2);
  * @param count the number of elements to concatenate to str1
  * @return resulting string
  */
-string strncat(string str1,cstring str2,size_t count);
+string strncat(string str1,cstring str2,u32 count);
 
 /**
  * The function strcmp() compares str1 and str2, then returns:
@@ -125,7 +133,7 @@ s32 strcmp(cstring str1,cstring str2);
  * @param count the number of chars to compare
  * @return the result
  */
-s32 strncmp(cstring str1,cstring str2,size_t count);
+s32 strncmp(cstring str1,cstring str2,u32 count);
 
 /**
  * The function strchr() returns a pointer to the first occurence of ch in str, or NULL
@@ -168,7 +176,7 @@ string strstr(cstring str1,cstring str2);
  * @param str2 the character list
  * @return the index of the first character in str1 that matches any of the characters in str2.
  */
-size_t strcspn(cstring str1,cstring str2);
+u32 strcspn(cstring str1,cstring str2);
 
 /**
  * Cuts out the first count characters in the given string. That means all characters behind
@@ -184,7 +192,7 @@ string strcut(string str,u32 count);
  * @param str the string
  * @return the length of str (determined by the number of characters before null termination).
  */
-size_t strlen(string str);
+u32 strlen(string str);
 
 /**
  * @param ch the char

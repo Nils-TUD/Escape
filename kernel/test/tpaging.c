@@ -18,7 +18,7 @@ static void test_paging_access(u32 addr,u32 count);
 static void test_paging_free(u32 addr,u32 count);
 
 /* our test-module */
-tTestModule tModPaging = {
+sTestModule tModPaging = {
 	"Paging",
 	&test_paging
 };

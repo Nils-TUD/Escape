@@ -9,6 +9,6 @@
 
 #include "test.h"
 
-extern tTestModule tModVFS;
+extern sTestModule tModVFS;
 
 #endif /* TVFS_H_ */

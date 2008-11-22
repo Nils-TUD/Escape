@@ -17,13 +17,13 @@ typedef struct {
 	u32 arg2;	/* = ret-val 2 */
 	u32 arg3;
 	u32 arg4;
-} tSysCallStack;
+} sSysCallStack;
 
 /**
  * Handles the syscall for the given interrupt-stack
  *
  * @param stack the pointer to the syscall-stack
  */
-void sysc_handle(tSysCallStack *stack);
+void sysc_handle(sSysCallStack *stack);
 
 #endif /* SYSCALLS_H_ */

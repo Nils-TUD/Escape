@@ -29,7 +29,7 @@
 #define L16M_CACHE_SIZE			16
 
 /* set values to support bit-masks of the types */
-typedef enum {MM_DMA = 1,MM_DEF = 2} memType;
+typedef enum {MM_DMA = 1,MM_DEF = 2} eMemType;
 
 /**
  * Initializes the memory-management
@@ -52,7 +52,7 @@ u32 mm_getNumberOfFreeFrames(u32 types);
  * @param frames the array for <count> frames
  * @param count the number of frames you want to get
  */
-void mm_allocateFrames(memType type,u32 *frames,u32 count);
+void mm_allocateFrames(eMemType type,u32 *frames,u32 count);
 
 /**
  * Allocates a frame of the given type and returns the frame-number
@@ -62,7 +62,7 @@ void mm_allocateFrames(memType type,u32 *frames,u32 count);
  * @param type the frame-type: MM_DMA or MM_DEF
  * @return the frame-number
  */
-u32 mm_allocateFrame(memType type);
+u32 mm_allocateFrame(eMemType type);
 
 /**
  * A convenience-method to free multiple frames. Simply calls <count> times
@@ -72,7 +72,7 @@ u32 mm_allocateFrame(memType type);
  * @param frames the array with <count> frames
  * @param count the number of frames you want to free
  */
-void mm_freeFrames(memType type,u32 *frames,u32 count);
+void mm_freeFrames(eMemType type,u32 *frames,u32 count);
 
 /**
  * Frees the given frame of the given type
@@ -80,7 +80,7 @@ void mm_freeFrames(memType type,u32 *frames,u32 count);
  * @param frame the frame-number
  * @param type the frame-type: MM_DMA or MM_DEF
  */
-void mm_freeFrame(u32 frame,memType type);
+void mm_freeFrame(u32 frame,eMemType type);
 
 /**
  * Prints all free frames

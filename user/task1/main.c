@@ -8,6 +8,7 @@
 #include <debug.h>
 #include <proc.h>
 #include <io.h>
+#include <string.h>
 
 s32 main(void) {
 	/*u16 pid = fork();
@@ -25,24 +26,20 @@ s32 main(void) {
 		debugf("Hi, my pid is %d, parent is %d\n",getpid(),getppid());
 	}*/
 
-	s32 fd = open("/system/services",IO_READ | IO_WRITE), fd2, fd3, fd4;
+	debugf("Listing directory '/':\n");
+	s32 fd = open("/",IO_READ);
 	if(fd < 0)
 		printLastError();
 	else {
-		if((fd2 = open("/system/services",IO_WRITE)) < 0)
-			printLastError();
-		else
-			close(fd2);
-
-		if((fd3 = open("/system/services",IO_READ)) < 0)
-			printLastError();
-		else
-			close(fd3);
-
-		if((fd4 = open("/..",IO_READ)) < 0)
-			printLastError();
-		else
-			close(fd4);
+		sVFSNode node;
+		s8 nameBuf[255];
+		s32 c;
+		while((c = read(fd,(u8*)&node,sizeof(sVFSNode))) > 0) {
+			if((c = read(fd,(u8*)nameBuf,node.nameLen)) > 0) {
+				debugf("- %s\n",nameBuf);
+			}
+		}
+		debugf("done\n");
 
 		close(fd);
 	}

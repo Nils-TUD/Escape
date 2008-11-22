@@ -16,7 +16,7 @@
 static void test_proc(void);
 
 /* our test-module */
-tTestModule tModProc = {
+sTestModule tModProc = {
 	"Process-Management",
 	&test_proc
 };
@@ -59,7 +59,7 @@ static void test_proc(void) {
 	/* test process clone & destroy */
 	test_init("Cloning and destroying processes");
 	for(x = 0; x < 5; x++) {
-		u32 newPid = proc_getFreePid();
+		tPid newPid = proc_getFreePid();
 		tprintf("Cloning process to pid=%d\n",newPid);
 		proc_clone(newPid);
 		tprintf("Destroying process\n",newPid);

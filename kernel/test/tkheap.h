@@ -10,6 +10,6 @@
 #include "../h/common.h"
 #include "test.h"
 
-extern tTestModule tModKHeap;
+extern sTestModule tModKHeap;
 
 #endif /* TESTKHEAP_H_ */

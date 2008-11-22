@@ -14,7 +14,7 @@
 static void test_sched(void);
 
 /* our test-module */
-tTestModule tModSched = {
+sTestModule tModSched = {
 	"Scheduling",
 	&test_sched
 };

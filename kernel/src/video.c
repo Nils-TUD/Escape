@@ -47,7 +47,7 @@ void vid_clearScreen(void) {
 	}
 }
 
-void vid_useColor(tColor bg,tColor fg) {
+void vid_useColor(eColor bg,eColor fg) {
 	oldBG = vid_getBGColor();
 	oldFG = vid_getFGColor();
 	vid_setBGColor(bg);
@@ -59,23 +59,23 @@ void vid_restoreColor(void) {
 	vid_setFGColor(oldFG);
 }
 
-tColor vid_getFGColor(void) {
+eColor vid_getFGColor(void) {
 	return color & 0xF;
 }
 
-tColor vid_getBGColor(void) {
+eColor vid_getBGColor(void) {
 	return (color >> 4) & 0xF;
 }
 
-void vid_setFGColor(tColor col) {
+void vid_setFGColor(eColor col) {
 	color = (color & 0xF0) | (col & 0xF);
 }
 
-void vid_setBGColor(tColor col) {
+void vid_setBGColor(eColor col) {
 	color = (color & 0x0F) | ((col << 4) & 0xF0);
 }
 
-void vid_setLineBG(u8 line,tColor bg) {
+void vid_setLineBG(u8 line,eColor bg) {
 	u8 col = ((bg << 4) & 0xF0) | color;
 	u8 *addr = (u8*)(VIDEO_BASE + line * COLS * 2);
 	u8 *end = (u8*)((u32)addr + COLS * 2);

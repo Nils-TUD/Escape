@@ -18,6 +18,7 @@
 #include "../h/elf.h"
 #include "../h/kheap.h"
 #include "../h/sched.h"
+#include "../h/vfs.h"
 
 #include "test.h"
 #include "tkheap.h"
@@ -33,7 +34,7 @@
 u32 entryPoint;
 bool procsReady = false;
 
-s32 main(tMultiBoot *mbp,u32 magic) {
+s32 main(sMultiBoot *mbp,u32 magic) {
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
 	 * and "correct" the GDT */
 	paging_init();
@@ -60,6 +61,14 @@ s32 main(tMultiBoot *mbp,u32 magic) {
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
 
+	/* vfs */
+	dbg_startTimer();
+	vid_printf("Initializing VFS...");
+	vfs_init();
+	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_printf("%:02s","DONE");
+	dbg_stopTimer();
+
 	/* processes */
 	dbg_startTimer();
 	vid_printf("Initializing process-management...");
@@ -82,13 +91,13 @@ s32 main(tMultiBoot *mbp,u32 magic) {
 
 
 	/* start tests */
-	/*test_register(&tModMM);
+	test_register(&tModMM);
 	test_register(&tModPaging);
 	test_register(&tModProc);
 	test_register(&tModKHeap);
 	test_register(&tModSched);
 	test_register(&tModSLList);
-	test_register(&tModString);*/
+	test_register(&tModString);
 	test_register(&tModVFS);
 	test_start();
 

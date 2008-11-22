@@ -124,7 +124,7 @@ typedef struct {
 						: 3,
 	/* the physical address of the page-table */
 	ptFrameNo			: 20;
-} tPDEntry;
+} sPDEntry;
 
 /* represents a page-table-entry */
 typedef struct {
@@ -155,7 +155,7 @@ typedef struct {
 						: 2,
 	/* the physical address of the page */
 	frameNumber			: 20;
-} tPTEntry;
+} sPTEntry;
 
 /**
  * Inits the paging. Sets up the page-dir and page-tables for the kernel and enables paging
@@ -178,7 +178,7 @@ void paging_initCOWList(void);
  *
  * @return the address of the page-directory of process 0
  */
-tPDEntry *paging_getProc0PD(void);
+sPDEntry *paging_getProc0PD(void);
 
 /**
  * Handles a page-fault for the given address

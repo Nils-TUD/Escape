@@ -19,7 +19,16 @@ typedef unsigned long long u64;
 
 typedef s8* string;
 typedef const s8* cstring;
-typedef u32 size_t;
+
+/* process id */
+typedef u16 tPid;
+/* VFS node number */
+typedef u32 tVFSNodeNo;
+/* file-number (in global file table) */
+typedef s32 tFile;
+/* file-descriptor */
+typedef u16 tFD;
+
 
 /* TODO use <stddef.h>? */
 #define NULL (void*)0
@@ -40,6 +49,9 @@ typedef enum {false = 0, true = 1} bool;
 #define	ERR_MAX_PROC_FDS		-3
 #define ERR_VFS_NODE_NOT_FOUND	-4
 #define ERR_INVALID_SYSC_ARGS	-5
+#define ERR_INVALID_FD			-6
+#define ERR_INVALID_FILE		-7
+#define ERR_NO_READ_PERM		-8
 
 /* debugging */
 #define DBG_PGCLONEPD(s)

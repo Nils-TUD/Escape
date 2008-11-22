@@ -16,14 +16,14 @@ typedef struct {
 	u32 modEnd;
 	s8 *name;					/* may be 0 */
 	u32 reserved;				/* should be ignored */
-} tModule;
+} sModule;
 
 typedef struct {
 	u32 size;
 	u64 baseAddr;
 	u64 length;
 	u32 type;
-} tMemMap;
+} sMemMap;
 
 typedef struct {
 	u16 version;
@@ -35,7 +35,7 @@ typedef struct {
 	u16 csegLen;
 	u16 cseg16Len;
 	u16 dsegLen;
-} tAPMTable;
+} sAPMTable;
 
 /* multi-boot-information */
 typedef struct {
@@ -52,7 +52,7 @@ typedef struct {
 	} bootDevice;				/* present if flags[1] is set */
 	s8 *cmdLine;				/* present if flags[2] is set */
 	u32 modsCount;				/* present if flags[3] is set */
-	tModule *modsAddr;			/* present if flags[3] is set */
+	sModule *modsAddr;			/* present if flags[3] is set */
 	union {
 		struct {
 			u32 tabSize;
@@ -68,25 +68,25 @@ typedef struct {
 		} ELF;					/* present if flags[5] is set */
 	} syms;
 	u32 mmapLength;				/* present if flags[6] is set */
-	tMemMap *mmapAddr;			/* present if flags[6] is set */
+	sMemMap *mmapAddr;			/* present if flags[6] is set */
 #if 0
 	u32 drivesLength;			/* present if flags[7] is set */
 	tDrive *drivesAddr;			/* present if flags[7] is set */
 	u32 configTable;			/* present if flags[8] is set */
 	s8 *bootLoaderName;			/* present if flags[9] is set */
-	tAPMTable *apmTable;		/* present if flags[10] is set */
+	sAPMTable *apmTable;		/* present if flags[10] is set */
 #endif
-} tMultiBoot;
+} sMultiBoot;
 
 /* the multiboot-information */
-extern tMultiBoot *mb;
+extern sMultiBoot *mb;
 
 /**
  * Inits the multi-boot infos
  * 
  * @param mbp the pointer to the multi-boot-structure
  */
-void mboot_init(tMultiBoot *mbp);
+void mboot_init(sMultiBoot *mbp);
 
 /**
  * Prints all interesting elements of the multi-boot-structure

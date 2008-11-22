@@ -24,7 +24,7 @@ static void test_7(void);
 static void test_8(void);
 
 /* our test-module */
-tTestModule tModSLList = {
+sTestModule tModSLList = {
 	"Single linked list",
 	&test_sllist
 };
@@ -43,7 +43,7 @@ static void test_sllist(void) {
 static void test_1(void) {
 	u32 i,free,x = 0x100,len;
 	bool res = true;
-	tSLList *list;
+	sSLList *list;
 	free = kheap_getFreeMem();
 	test_caseStart("Append & check & remove index 0");
 
@@ -74,7 +74,7 @@ static void test_1(void) {
 
 static void test_2(void) {
 	u32 i,free,x = 0x100,len;
-	tSLList *list;
+	sSLList *list;
 	free = kheap_getFreeMem();
 	test_caseStart("Append & remove first (NULL)");
 
@@ -96,7 +96,7 @@ static void test_2(void) {
 
 static void test_3(void) {
 	u32 i,free,x = 0x100,len;
-	tSLList *list;
+	sSLList *list;
 	free = kheap_getFreeMem();
 	test_caseStart("Append & remove first (x)");
 
@@ -119,7 +119,7 @@ static void test_3(void) {
 
 static void test_4(void) {
 	u32 i,free,x = 0x100;
-	tSLList *list;
+	sSLList *list;
 	free = kheap_getFreeMem();
 	test_caseStart("Create & append & destroy");
 
@@ -137,7 +137,7 @@ static void test_4(void) {
 
 static void test_5(void) {
 	u32 i,free,x = 0x100;
-	tSLList *list;
+	sSLList *list;
 	bool res = true;
 	free = kheap_getFreeMem();
 	test_caseStart("Create & append & insert somewhere & destroy");
@@ -173,7 +173,7 @@ static void test_5(void) {
 
 static void test_6(void) {
 	u32 i,free,x = 0x100;
-	tSLList *list;
+	sSLList *list;
 	bool res = true;
 	free = kheap_getFreeMem();
 	test_caseStart("Create & append & set somewhere & destroy");
@@ -210,7 +210,7 @@ static void test_6(void) {
 static void test_7(void) {
 	u32 free,x = 0x100;
 	bool res;
-	tSLList *list;
+	sSLList *list;
 	free = kheap_getFreeMem();
 	test_caseStart("Append until no mem left & destroy");
 
@@ -231,8 +231,8 @@ static void test_7(void) {
 }
 
 static void test_8(void) {
-	tSLList *list;
-	tSLNode *n;
+	sSLList *list;
+	sSLNode *n;
 
 	test_caseStart("Walking through the list");
 

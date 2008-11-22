@@ -10,6 +10,6 @@
 #include "../h/common.h"
 #include "test.h"
 
-extern tTestModule tModString;
+extern sTestModule tModString;
 
 #endif /* TSTRING_H_ */

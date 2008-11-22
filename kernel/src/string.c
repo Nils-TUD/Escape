@@ -30,7 +30,39 @@ s32 atoi(cstring str) {
 	return i;
 }
 
-void *memchr(const void *buffer,s32 c,size_t count) {
+void itoa(string target,s32 n) {
+	s8 *s = target,*a = target,*b;
+
+	/* handle sign */
+	if(n < 0) {
+		*s++ = '-';
+		a = s;
+	}
+	/* 0 is a special case */
+	else if(n == 0)
+		*s++ = '0';
+	/* use negative numbers because otherwise we would get problems with -2147483648 */
+	else
+		n = -n;
+
+	/* divide by 10 and put the remainer in the string */
+	while(n < 0) {
+		*s++ = -(n % 10) + '0';
+		n = n / 10;
+	}
+	/* terminate */
+	*s = '\0';
+
+	/* reverse string */
+	b = s - 1;
+	while(a < b) {
+		s8 t = *a;
+		*a++ = *b;
+		*b-- = t;
+	}
+}
+
+void *memchr(const void *buffer,s32 c,u32 count) {
 	cstring str = buffer;
 	while(*str && count-- > 0) {
 		if(*str == c)
@@ -40,7 +72,7 @@ void *memchr(const void *buffer,s32 c,size_t count) {
 	return NULL;
 }
 
-void *memcpy(void *dest,const void *src,size_t len) {
+void *memcpy(void *dest,const void *src,u32 len) {
 	u8 *d = dest;
 	const u8 *s = src;
 	while(len--) {
@@ -49,7 +81,7 @@ void *memcpy(void *dest,const void *src,size_t len) {
 	return dest;
 }
 
-s32 memcmp(const void *str1,const void *str2,size_t count) {
+s32 memcmp(const void *str1,const void *str2,u32 count) {
 	const u8 *s1 = str1;
 	const u8 *s2 = str2;
 	while(count-- > 0) {
@@ -59,7 +91,7 @@ s32 memcmp(const void *str1,const void *str2,size_t count) {
 	return 0;
 }
 
-void memset(void *addr,u32 value,size_t count) {
+void memset(void *addr,u32 value,u32 count) {
 	u8 *ptr = (u8*)addr;
 	while(count-- > 0) {
 		*ptr++ = value;
@@ -75,7 +107,7 @@ string strcpy(string to,cstring from) {
 	return res;
 }
 
-string strncpy(string to,cstring from,size_t count) {
+string strncpy(string to,cstring from,u32 count) {
 	string res = to;
 	/* copy source string */
 	while(*from && count > 0) {
@@ -101,7 +133,7 @@ string strcat(string str1,cstring str2) {
 	return res;
 }
 
-string strncat(string str1,cstring str2,size_t count) {
+string strncat(string str1,cstring str2,u32 count) {
 	string res = str1;
 	/* walk to end */
 	while(*str1)
@@ -134,7 +166,7 @@ s32 strcmp(cstring str1,cstring str2) {
 	return 1;
 }
 
-s32 strncmp(cstring str1,cstring str2,size_t count) {
+s32 strncmp(cstring str1,cstring str2,u32 count) {
 	while(count-- > 0) {
 		if(*str1++ != *str2++)
 			return str1[-1] < str2[-1] ? -1 : 1;
@@ -193,8 +225,8 @@ string strstr(cstring str1,cstring str2) {
 	return NULL;
 }
 
-size_t strcspn(cstring str1,cstring str2) {
-	size_t count = 0;
+u32 strcspn(cstring str1,cstring str2) {
+	u32 count = 0;
 	while(*str1) {
 		if(strchr(str2,*str1++) != NULL)
 			return count;
@@ -216,8 +248,8 @@ string strcut(string str,u32 count) {
 	return res;
 }
 
-size_t strlen(string str) {
-	size_t len = 0;
+u32 strlen(string str) {
+	u32 len = 0;
 	while(*str++)
 		len++;
 	return len;

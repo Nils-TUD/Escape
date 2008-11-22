@@ -14,18 +14,43 @@
 #include "../h/intrpt.h"
 #include "../h/sched.h"
 #include "../h/vfs.h"
+#include "../h/kheap.h"
 
 /* our processes */
 static tProc procs[PROC_COUNT];
 /* TODO keep that? */
 /* the process-index */
-static u32 pi;
+static tPid pi;
 
 /* pointer to a dead proc that has to be deleted */
 static tProc *deadProc = NULL;
 
+/**
+ * Our VFS read handler that should read process information into a given buffer
+ *
+ * @param node the VFS node
+ * @param buffer the buffer where to copy the info to
+ * @param offset the offset where to start
+ * @param count the number of bytes
+ * @return the number of read bytes
+ */
+static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+
+}
+
+/**
+ * Creates a VFS node for the given pid
+ *
+ * @param pid the process-id
+ */
+static void proc_createVFSNode(tPid pid) {
+	string name = (string)kheap_alloc(sizeof(s8) * 12);
+	itoa(name,pid);
+	vfs_createProcessNode(name,&proc_vfsReadHandler);
+}
+
 void proc_init(void) {
-	u32 i;
+	tFD i;
 	/* init the first process */
 	pi = 0;
 	procs[pi].state = ST_RUNNING;
@@ -40,13 +65,14 @@ void proc_init(void) {
 	/* init fds */
 	for(i = 0; i < MAX_FD_COUNT; i++)
 		procs[pi].fileDescs[i] = -1;
+	proc_createVFSNode(0);
 
 	/* setup kernel-stack for us */
 	paging_map(KERNEL_STACK,NULL,1,PG_WRITABLE | PG_SUPERVISOR,false);
 }
 
-u16 proc_getFreePid(void) {
-	u16 pid;
+tPid proc_getFreePid(void) {
+	tPid pid;
 	/* we can skip our initial process */
 	for(pid = 1; pid < PROC_COUNT; pid++) {
 		if(procs[pid].state == ST_UNUSED)
@@ -59,7 +85,7 @@ tProc *proc_getRunning(void) {
 	return &procs[pi];
 }
 
-tProc *proc_getByPid(u16 pid) {
+tProc *proc_getByPid(tPid pid) {
 	return &procs[pid];
 }
 
@@ -84,30 +110,51 @@ void proc_switch(void) {
 	vid_printf("Continuing %d\n",p->pid);
 }
 
-s32 proc_openFile(u32 fd) {
-	u32 i;
-	s16 *fds = procs[pi].fileDescs;
+bool proc_isValidFileDesc(tFD fd) {
+	if(fd >= MAX_FD_COUNT)
+		return false;
+
+	if((procs + pi)->fileDescs[fd] == -1)
+		return false;
+	return true;
+}
+
+s32 proc_openFile(u8 flags,tVFSNodeNo nodeNo) {
+	tFD i;
+	s32 res;
+	tFile fileNo;
+
+	/* open file in VFS */
+	res = vfs_openFile(flags,nodeNo,&fileNo);
+	if(res < 0)
+		return res;
+
+	tFile *fds = procs[pi].fileDescs;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(fds[i] == -1) {
-			fds[i] = fd;
-			return 0;
+			fds[i] = fileNo;
+			return i;
 		}
 	}
+
+	vfs_closeFile(fileNo);
 	return ERR_MAX_PROC_FDS;
 }
 
-void proc_closeFile(u32 fd) {
-	u32 i;
-	s16 *fds = procs[pi].fileDescs;
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(fds[i] == (s32)fd) {
-			fds[i] = -1;
-			return;
-		}
-	}
+void proc_closeFile(tFD fd) {
+	tFile fileNo;
+	if(fd >= MAX_FD_COUNT)
+		return;
+
+	fileNo = procs[pi].fileDescs[fd];
+	if(fileNo == -1)
+		return;
+
+	vfs_closeFile(fileNo);
+	procs[pi].fileDescs[fd] = -1;
 }
 
-s32 proc_clone(u16 newPid) {
+s32 proc_clone(tPid newPid) {
 	u32 i,pdirFrame,stackFrame;
 	u32 *src,*dst;
 	tProc *p;
@@ -132,6 +179,7 @@ s32 proc_clone(u16 newPid) {
 		p->fileDescs[i] = -1;
 	/* make ready */
 	p->state = ST_READY;
+	proc_createVFSNode(newPid);
 	sched_enqueueReady(p);
 
 	/* map stack temporary (copy later) */
@@ -167,7 +215,7 @@ void proc_suicide(void) {
 }
 
 void proc_destroy(tProc *p) {
-	u32 i;
+	tFD i;
 	/* don't delete initial or unused processes */
 	if(p->pid == 0 || p->state == ST_UNUSED)
 		panic("The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
@@ -197,7 +245,7 @@ void proc_destroy(tProc *p) {
 	p->physPDirAddr = 0;
 }
 
-void proc_setupIntrptStack(tIntrptStackFrame *frame) {
+void proc_setupIntrptStack(sIntrptStackFrame *frame) {
 	frame->uesp = KERNEL_AREA_V_ADDR - sizeof(u32);
 	frame->ebp = frame->uesp;
 	/* user-mode segments */

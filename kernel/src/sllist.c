@@ -11,18 +11,18 @@
 #include "../h/video.h"
 
 /* a node in a list */
-typedef struct tNode tNode;
-struct tNode {
-	tNode *next;
+typedef struct sNode sNode;
+struct sNode {
+	sNode *next;
 	void *data;
 };
 
 /* represents a list */
 typedef struct {
-	tNode *first;
-	tNode *last;
+	sNode *first;
+	sNode *last;
 	u32 length;
-} tList;
+} sList;
 
 /**
  * Searches for the node at given index
@@ -31,23 +31,23 @@ typedef struct {
  * @param index the index
  * @return the node
  */
-static tNode *sll_getNode(tSLList *list,u32 index);
+static sNode *sll_gesNode(sSLList *list,u32 index);
 
-tSLList *sll_create(void) {
-	tList *l = kheap_alloc(sizeof(tList));
+sSLList *sll_create(void) {
+	sList *l = kheap_alloc(sizeof(sList));
 	if(l == NULL)
 		return NULL;
 
 	l->first = NULL;
 	l->last = NULL;
 	l->length = 0;
-	return (tSLList*)l;
+	return (sSLList*)l;
 }
 
-void sll_destroy(tSLList *list) {
+void sll_destroy(sSLList *list) {
 	/* free nodes */
-	tList *l = (tList*)list;
-	tNode *nn,*n = l->first;
+	sList *l = (sList*)list;
+	sNode *nn,*n = l->first;
 	while(n != NULL) {
 		nn = n->next;
 		kheap_free(n);
@@ -57,9 +57,9 @@ void sll_destroy(tSLList *list) {
 	kheap_free(list);
 }
 
-void sll_print(tSLList *list) {
-	tList *l = (tList*)list;
-	tNode *n = l->first;
+void sll_print(sSLList *list) {
+	sList *l = (sList*)list;
+	sNode *n = l->first;
 	vid_printf("Linked list @ 0x%x\n",list);
 	while(n != NULL) {
 		vid_printf("\t[0x%x] data=0x%x, next=0x%x\n",n,n->data,n->next);
@@ -67,40 +67,40 @@ void sll_print(tSLList *list) {
 	}
 }
 
-tSLNode *sll_begin(tSLList *list) {
-	return (tSLNode*)sll_getNode(list,0);
+sSLNode *sll_begin(sSLList *list) {
+	return (sSLNode*)sll_gesNode(list,0);
 }
 
-tSLNode *sll_nodeAt(tSLList *list,u32 index) {
-	return (tSLNode*)sll_getNode(list,index);
+sSLNode *sll_nodeAt(sSLList *list,u32 index) {
+	return (sSLNode*)sll_gesNode(list,index);
 }
 
-u32 sll_length(tSLList *list) {
-	tList *l = (tList*)list;
+u32 sll_length(sSLList *list) {
+	sList *l = (sList*)list;
 	return l->length;
 }
 
-void *sll_get(tSLList *list,u32 index) {
-	return sll_getNode(list,index)->data;
+void *sll_get(sSLList *list,u32 index) {
+	return sll_gesNode(list,index)->data;
 }
 
-void sll_set(tSLList *list,void *data,u32 index) {
-	tNode *n;
+void sll_set(sSLList *list,void *data,u32 index) {
+	sNode *n;
 	if(data == NULL)
 		panic("data has to be != NULL");
 
-	n = sll_getNode(list,index);
+	n = sll_gesNode(list,index);
 	n->data = data;
 }
 
-bool sll_append(tSLList *list,void *data) {
-	tList *l = (tList*)list;
+bool sll_append(sSLList *list,void *data) {
+	sList *l = (sList*)list;
 	return sll_insert(list,data,l->length);
 }
 
-bool sll_insert(tSLList *list,void *data,u32 index) {
-	tList *l = (tList*)list;
-	tNode *nn,*n = l->first,*ln = NULL;
+bool sll_insert(sSLList *list,void *data,u32 index) {
+	sList *l = (sList*)list;
+	sNode *nn,*n = l->first,*ln = NULL;
 	if(data == NULL)
 		panic("data has to be != NULL");
 
@@ -117,7 +117,7 @@ bool sll_insert(tSLList *list,void *data,u32 index) {
 	}
 
 	/* allocate node? */
-	nn = kheap_alloc(sizeof(tNode));
+	nn = kheap_alloc(sizeof(sNode));
 	if(nn == NULL)
 		return false;
 
@@ -138,9 +138,9 @@ bool sll_insert(tSLList *list,void *data,u32 index) {
 	return true;
 }
 
-void sll_removeNode(tSLList *list,tSLNode *node,tSLNode *prev) {
-	tList *l = (tList*)list;
-	tNode *n = (tNode*)node,*ln = (tNode*)prev;
+void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev) {
+	sList *l = (sList*)list;
+	sNode *n = (sNode*)node,*ln = (sNode*)prev;
 
 	if(ln != NULL && ln->next != n)
 		panic("<prev> is not the previous node of <node>!");
@@ -158,9 +158,9 @@ void sll_removeNode(tSLList *list,tSLNode *node,tSLNode *prev) {
 	kheap_free(n);
 }
 
-void sll_removeFirst(tSLList *list,void *data) {
-	tList *l = (tList*)list;
-	tNode *n = l->first,*ln = NULL;
+void sll_removeFirst(sSLList *list,void *data) {
+	sList *l = (sList*)list;
+	sNode *n = l->first,*ln = NULL;
 	if(data != NULL) {
 		while(n != NULL) {
 			if(n->data == data)
@@ -174,12 +174,12 @@ void sll_removeFirst(tSLList *list,void *data) {
 	if(n == NULL)
 		panic("Data 0x%x does not exist!",data);
 
-	sll_removeNode(list,(tSLNode*)n,(tSLNode*)ln);
+	sll_removeNode(list,(sSLNode*)n,(sSLNode*)ln);
 }
 
-void sll_removeIndex(tSLList *list,u32 index) {
-	tList *l = (tList*)list;
-	tNode *n = l->first,*ln = NULL;
+void sll_removeIndex(sSLList *list,u32 index) {
+	sList *l = (sList*)list;
+	sNode *n = l->first,*ln = NULL;
 	/* walk to the desired position */
 	while(index-- > 0) {
 		ln = n;
@@ -189,12 +189,12 @@ void sll_removeIndex(tSLList *list,u32 index) {
 	if(n == NULL)
 		panic("Index %d does not exist!",index);
 
-	sll_removeNode(list,(tSLNode*)n,(tSLNode*)ln);
+	sll_removeNode(list,(sSLNode*)n,(sSLNode*)ln);
 }
 
-static tNode *sll_getNode(tSLList *list,u32 index) {
-	tList *l = (tList*)list;
-	tNode *n;
+static sNode *sll_gesNode(sSLList *list,u32 index) {
+	sList *l = (sList*)list;
+	sNode *n;
 	/* invalid index? */
 	if(index > l->length)
 		panic("The index %d does not exist",index);

@@ -66,13 +66,13 @@ typedef struct {
 	present		: 1;
 	/* The address[16..31] of the ISR */
 	u16	offsetHigh;
-} __attribute__((packed)) tIDTEntry;
+} __attribute__((packed)) sIDTEntry;
 
 /* represents an IDT-pointer */
 typedef struct {
 	u16 size;
 	u32 address;
-} __attribute__((packed)) tIDTPtr;
+} __attribute__((packed)) sIDTPtr;
 
 /* interrupt -> name */
 static cstring intrptNo2Name[] = {
@@ -133,12 +133,12 @@ static u32 lastEx = 0xFFFFFFFF;
 /**
  * Assembler routine to load an IDT
  */
-extern void intrpt_loadidt(tIDTPtr *idt);
+extern void intrpt_loadidt(sIDTPtr *idt);
 
 /**
  * Our ISRs
  */
-typedef void (*isr)(void);
+typedef void (*fISR)(void);
 extern void isr0(void);
 extern void isr1(void);
 extern void isr2(void);
@@ -401,10 +401,10 @@ extern void isr255(void);
  *
  * @param idt the IDT to load
  */
-/*extern void idt_flush(tIDTPtr *idt);*/
+/*extern void idt_flush(sIDTPtr *idt);*/
 
 /* the IDT */
-static tIDTEntry idt[IDT_COUNT];
+static sIDTEntry idt[IDT_COUNT];
 
 /**
  * Inits the programmable interrupt controller
@@ -437,7 +437,7 @@ static void intrpt_initPic(void)
  * @param handler the ISR
  * @param dpl the privilege-level
  */
-static void intrpt_setIDT(u16 number,isr handler,u8 dpl) {
+static void intrpt_setIDT(u16 number,fISR handler,u8 dpl) {
 	idt[number].fix = 0xE00;
 	idt[number].dpl = dpl;
 	idt[number].present = number != IDT_INTEL_RES1 && number != IDT_INTEL_RES2;
@@ -474,7 +474,7 @@ cstring intrpt_no2Name(u32 intrptNo) {
 
 void intrpt_init(void) {
 	/* setup the idt-pointer */
-	tIDTPtr idtPtr;
+	sIDTPtr idtPtr;
 	idtPtr.address = (u32)idt;
 	idtPtr.size = sizeof(idt) - 1;
 
@@ -749,7 +749,7 @@ static u8 task2[] = {
 };
 static bool proc2Ready = false;
 
-void intrpt_handler(tIntrptStackFrame stack) {
+void intrpt_handler(sIntrptStackFrame stack) {
 	tProc *p;
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
@@ -763,7 +763,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 			if(!proc2Ready) {
 				proc2Ready = true;
 				/* clone proc1 */
-				u16 pid = proc_getFreePid();
+				tPid pid = proc_getFreePid();
 				if(proc_clone(pid)) {
 					p = proc_getRunning();
 					/* overwrite pages (copyonwrite is enabled) */
@@ -793,7 +793,7 @@ void intrpt_handler(tIntrptStackFrame stack) {
 
 		/* syscall */
 		case IRQ_SYSCALL:
-			sysc_handle((tSysCallStack*)stack.uesp);
+			sysc_handle((sSysCallStack*)stack.uesp);
 			break;
 
 		/* exceptions */

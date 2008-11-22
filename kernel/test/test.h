@@ -13,13 +13,13 @@
 #define MAX_TESTS 100
 #define MAX_TEST_CASES 20
 
-typedef void (*startFunc)(void);
+typedef void (*fStart)(void);
 
 /* one test-module */
 typedef struct {
 	cstring name;
-	startFunc start;
-} tTestModule;
+	fStart start;
+} sTestModule;
 
 #ifdef TESTSQUIET
 #define tprintf test_noPrint
@@ -121,7 +121,7 @@ bool test_assertStr(string received,string expected);
  *
  * @param mod the module
  */
-void test_register(tTestModule *mod);
+void test_register(sTestModule *mod);
 
 /**
  * Runs all registered tests

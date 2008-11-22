@@ -14,11 +14,11 @@
 /* forward declarations */
 static void test_mm(void);
 static void test_printFreeFrames(void);
-static void test_mm_allocate(memType type);
-static void test_mm_free(memType type);
+static void test_mm_allocate(eMemType type);
+static void test_mm_free(eMemType type);
 
 /* our test-module */
-tTestModule tModMM = {
+sTestModule tModMM = {
 	"Physical memory-management",
 	&test_mm
 };
@@ -46,7 +46,7 @@ static void test_mm(void) {
 		test_caseSucceded();
 }
 
-static void test_mm_allocate(memType type) {
+static void test_mm_allocate(eMemType type) {
 	s32 i = 0;
 	while(i < FRAME_COUNT) {
 		frames[i] = mm_allocateFrame(type);
@@ -54,7 +54,7 @@ static void test_mm_allocate(memType type) {
 	}
 }
 
-static void test_mm_free(memType type) {
+static void test_mm_free(eMemType type) {
 	s32 i = FRAME_COUNT - 1;
 	while(i >= 0) {
 		mm_freeFrame(frames[i],type);

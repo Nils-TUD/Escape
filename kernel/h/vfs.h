@@ -1,5 +1,5 @@
 /**
- * @version		$Id: sched.c 73 2008-11-20 13:21:59Z nasmussen $
+ * @version		$Id$
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */

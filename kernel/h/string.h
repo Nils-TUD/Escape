@@ -1,5 +1,5 @@
 /**
- * @version		$Id: kernel.c 69 2008-11-17 15:58:00Z nasmussen $
+ * @version		$Id$
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */

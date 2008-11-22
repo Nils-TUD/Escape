@@ -92,9 +92,16 @@ s32 memcmp(const void *str1,const void *str2,u32 count) {
 }
 
 void memset(void *addr,u32 value,u32 count) {
-	u8 *ptr = (u8*)addr;
-	while(count-- > 0) {
-		*ptr++ = value;
+	u32 rCount = count % sizeof(u32);
+	u32 dwordCount = (count - rCount) / sizeof(u32);
+	u32 *dptr = (u32*)addr;
+	u8 *bptr;
+	while(dwordCount-- > 0) {
+		*dptr++ = value;
+	}
+	bptr = (u8*)dptr;
+	while(rCount-- > 0) {
+		*bptr++ = value;
 	}
 }
 

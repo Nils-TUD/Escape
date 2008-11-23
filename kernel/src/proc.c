@@ -48,7 +48,7 @@ static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	/* don't use the cache here to prevent that one process occupies it for all others */
 	/* (if the process doesn't call close() the cache will not be invalidated and therefore
 	 * other processes might miss changes) */
-	sProc *p = procs + pi;
+	sProc *p = procs + atoi(node->name);
 	sProcPub *proc;
 	/* can we copy it directly? */
 	if(offset == 0 && count == sizeof(sProcPub))

@@ -23,7 +23,7 @@ void dbg_stopTimer(void) {
 	vid_printf("Clock cycles: 0x%08x%08x\n",*(ptr + 1),*ptr);
 }
 
-void dbg_printProcess(tProc *p) {
+void dbg_printProcess(sProc *p) {
 	u32 i;
 	vid_printf("process @ 0x%08x:\n",p);
 	vid_printf("\tpid = %d\n",p->pid);
@@ -41,7 +41,7 @@ void dbg_printProcess(tProc *p) {
 	vid_printf("\n");
 }
 
-void dbg_printProcessState(tProcSave *state) {
+void dbg_printProcessState(sProcSave *state) {
 	vid_printf("\tprocessState @ 0x%08x:\n",state);
 	vid_printf("\t\tesp = 0x%08x\n",state->esp);
 	vid_printf("\t\tedi = 0x%08x\n",state->edi);

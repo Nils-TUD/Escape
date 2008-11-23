@@ -20,7 +20,7 @@ void sched_init(void);
  *
  * @return the process to run
  */
-tProc *sched_perform(void);
+sProc *sched_perform(void);
 
 /**
  * Prints the ready-queue
@@ -32,14 +32,14 @@ void sched_printReadyQueue(void);
  *
  * @param p the process
  */
-void sched_enqueueReady(tProc *p);
+void sched_enqueueReady(sProc *p);
 
 /**
  * Removes the first process from the ready-queue and returns it
  *
  * @return the process or NULL if there is no process
  */
-tProc *sched_dequeueReady(void);
+sProc *sched_dequeueReady(void);
 
 /**
  * Removes the given process from the queue
@@ -47,6 +47,6 @@ tProc *sched_dequeueReady(void);
  * @param p the process
  * @return true if the process has been removed
  */
-bool sched_dequeueProc(tProc *p);
+bool sched_dequeueProc(sProc *p);
 
 #endif /* SCHED_H_ */

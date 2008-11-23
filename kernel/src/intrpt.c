@@ -750,7 +750,7 @@ static u8 task2[] = {
 static bool proc2Ready = false;
 
 void intrpt_handler(sIntrptStackFrame stack) {
-	tProc *p;
+	sProc *p;
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
 			kbd_handleIntrpt();
@@ -786,9 +786,9 @@ void intrpt_handler(sIntrptStackFrame stack) {
 				break;
 			}
 
+#endif
 			intrpt_eoi(stack.intrptNo);
 			proc_switch();
-#endif
 			break;
 
 		/* syscall */
@@ -802,7 +802,6 @@ void intrpt_handler(sIntrptStackFrame stack) {
 			if(stack.intrptNo == EX_PAGE_FAULT) {
 				vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
 				paging_handlePageFault(cpu_getCR2());
-				printStackTrace();
 				break;
 			}
 

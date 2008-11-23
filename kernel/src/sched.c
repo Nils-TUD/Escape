@@ -12,7 +12,7 @@
 
 #if 0
 typedef struct {
-	tProc *proc;
+	sProc *proc;
 	s8 name[32];
 	u32 hash;
 	sSLList *queue;
@@ -67,7 +67,7 @@ sSLList *services;
 typedef struct sQueueNode sQueueNode;
 struct sQueueNode {
 	sQueueNode *next;
-	tProc *p;
+	sProc *p;
 };
 
 /* ready-queue stuff */
@@ -93,8 +93,8 @@ void sched_init(void) {
 	rqLast = NULL;
 }
 
-tProc *sched_perform(void) {
-	tProc *p = proc_getRunning();
+sProc *sched_perform(void) {
+	sProc *p = proc_getRunning();
 	if(p->state == ST_RUNNING) {
 		/* put current in the ready-queue */
 		p->state = ST_READY;
@@ -117,7 +117,7 @@ void sched_printReadyQueue(void) {
 	}
 }
 
-void sched_enqueueReady(tProc *p) {
+void sched_enqueueReady(sProc *p) {
 	sQueueNode *nn,*n;
 	if(rqFree == NULL)
 		panic("No free slots in the ready-queue!?");
@@ -140,7 +140,7 @@ void sched_enqueueReady(tProc *p) {
 	}
 }
 
-tProc *sched_dequeueReady(void) {
+sProc *sched_dequeueReady(void) {
 	sQueueNode *node;
 	if(rqFirst == NULL)
 		return NULL;
@@ -156,7 +156,7 @@ tProc *sched_dequeueReady(void) {
 	return node->p;
 }
 
-bool sched_dequeueProc(tProc *p) {
+bool sched_dequeueProc(sProc *p) {
 	sQueueNode *n = rqFirst,*l = NULL;
 	while(n != NULL) {
 		/* found it? */

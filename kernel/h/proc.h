@@ -21,15 +21,15 @@ typedef struct {
 	u32 esi;
 	u32 ebp;
 	u32 eflags;
-} tProcSave;
+} sProcSave;
 
 /* the process states */
-typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE = 4} tProcState;
+typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE = 4} eProcState;
 
 /* represents a process */
 /* TODO move stuff for existing processes to the kernel-stack-page */
 typedef struct {
-	/* process state. see tProcState */
+	/* process state. see eProcState */
 	u8 state;
 	/* process id (2^16 processes should be enough :)) */
 	tPid pid;
@@ -41,13 +41,13 @@ typedef struct {
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
-	tProcSave save;
+	sProcSave save;
 	/* file descriptors: indices of the global file table */
 	tFile fileDescs[MAX_FD_COUNT];
-} tProc;
+} sProc;
 
 /* the area for proc_changeSize() */
-typedef enum {CHG_DATA,CHG_STACK} chgArea;
+typedef enum {CHG_DATA,CHG_STACK} eChgArea;
 
 /**
  * Saves the state of the current process in the given area
@@ -55,7 +55,7 @@ typedef enum {CHG_DATA,CHG_STACK} chgArea;
  * @param saveArea the area where to save the state
  * @return false for the caller-process, true for the resumed process
  */
-extern u32 proc_save(tProcSave *saveArea);
+extern bool proc_save(sProcSave *saveArea);
 
 /**
  * Resumes the given state
@@ -64,7 +64,7 @@ extern u32 proc_save(tProcSave *saveArea);
  * @param saveArea the area to load the state from
  * @return always true
  */
-extern u32 proc_resume(u32 pageDir,tProcSave *saveArea);
+extern bool proc_resume(u32 pageDir,sProcSave *saveArea);
 
 /**
  * Initializes the process-management
@@ -81,13 +81,13 @@ tPid proc_getFreePid(void);
 /**
  * @return the running process
  */
-tProc *proc_getRunning(void);
+sProc *proc_getRunning(void);
 
 /**
  * @param pid the pid of the process
  * @return the process with given pid
  */
-tProc *proc_getByPid(tPid pid);
+sProc *proc_getByPid(tPid pid);
 
 /**
  * Switches to another process
@@ -95,31 +95,28 @@ tProc *proc_getByPid(tPid pid);
 void proc_switch(void);
 
 /**
- * Checks wether the given file-descriptor is valid
+ * Returns the file-number for the given file-descriptor
  *
  * @param fd the file-descriptor
- * @return true if so
+ * @return the file-number or < 0 if the fd is invalid
  */
-bool proc_isValidFileDesc(tFD fd);
+tFile proc_fdToFile(tFD fd);
 
 /**
- * Opens the given node-number with given flags. The function opens it in the VFS and inserts
- * it in the fd-array of the process. If anything fails it returns the error-code and ensures
- * that nothing has changed.
+ * Opens the given file
  *
- * @param flags wether it is a virtual or real file and wether you want to read or write
- * @param nodeNo the node-number (in the virtual or real environment)
+ * @param fileNo the file-number
  * @return the file-descriptor if successfull or the error-code (< 0)
  */
-s32 proc_openFile(u8 flags,tVFSNodeNo nodeNo);
+s32 proc_openFile(tFile fileNo);
 
 /**
- * Closes the given file-descriptor. That means it releases the fd-slot with given index
- * and calls vfs_closeFile().
+ * Closes the given file-descriptor. That means it releases the fd-slot with given index.
  *
  * @param fd the file-descriptor
+ * @return the file-number that was associated with the fd (or ERR_INVALID_FD)
  */
-void proc_closeFile(tFD fd);
+tFile proc_closeFile(tFD fd);
 
 /**
  * Clones the current process into the given one, saves the new process in proc_clone() so that
@@ -143,7 +140,7 @@ void proc_suicide(void);
  *
  * @param p the process
  */
-void proc_destroy(tProc *p);
+void proc_destroy(sProc *p);
 
 /**
  * Setups the given interrupt-stack for the current process
@@ -173,6 +170,6 @@ bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages);
  * @param area the data or stack? (CHG_*)
  * @return true if successfull
  */
-bool proc_changeSize(s32 change,chgArea area);
+bool proc_changeSize(s32 change,eChgArea area);
 
 #endif /*PROC_H_*/

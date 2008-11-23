@@ -216,7 +216,7 @@ cpu_getCR4:
 	mov		eax,cr4
 	ret
 
-; u32 proc_save(tProcSave *saveArea);
+; bool proc_save(sProcSave *saveArea);
 proc_save:
 	push	ebp
 	mov		ebp,esp
@@ -248,7 +248,7 @@ proc_saveIFD:
 	leave
 	ret
 
-; void proc_resume(u32 pageDir,tProcSave *saveArea);
+; bool proc_resume(u32 pageDir,sProcSave *saveArea);
 proc_resume:
 	push	ebp
 	mov		ebp,esp

@@ -13,7 +13,7 @@
 
 u32 elf_loadprog(u8 *code) {
 	u32 seenLoadSegments = 0;
-	tProc *p = proc_getRunning();
+	sProc *p = proc_getRunning();
 
 	u32 j;
 	u8 const *datPtr;

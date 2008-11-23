@@ -20,12 +20,12 @@ sTestModule tModSched = {
 };
 
 static void test_sched(void) {
-	tProc *x = (tProc*)0x1000;
-	tProc *rand[5] = {x + 1,x,x + 4,x + 2,x + 3};
+	sProc *x = (sProc*)0x1000;
+	sProc *rand[5] = {x + 1,x,x + 4,x + 2,x + 3};
 	s32 i;
 	bool res = true;
 	/* not relevant here */
-	tProc *p = (tProc*)x, *pp;
+	sProc *p = (sProc*)x, *pp;
 
 	test_caseStart("Enqueuing - dequeuing");
 	/* enqueue */
@@ -33,7 +33,7 @@ static void test_sched(void) {
 		sched_enqueueReady(p++);
 	}
 	/* dequeue */
-	pp = (tProc*)x;
+	pp = (sProc*)x;
 	while((p = sched_dequeueReady()) != NULL) {
 		if(p != pp) {
 			res = false;
@@ -50,7 +50,7 @@ static void test_sched(void) {
 	res = true;
 	test_caseStart("Dequeue specific processes (opposite order)");
 	/* enqueue some processes */
-	p = (tProc*)x;
+	p = (sProc*)x;
 	for(i = 0; i < 5; i++)
 		sched_enqueueReady(p++);
 	/* dequeue */
@@ -69,7 +69,7 @@ static void test_sched(void) {
 	res = true;
 	test_caseStart("Dequeue specific processes (random order)");
 	/* enqueue some processes */
-	p = (tProc*)x;
+	p = (sProc*)x;
 	for(i = 0; i < 5; i++)
 		sched_enqueueReady(p++);
 	/* dequeue */

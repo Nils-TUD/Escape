@@ -30,7 +30,7 @@ sPTEntry proc0PT[PAGE_SIZE / sizeof(sPTEntry)] __attribute__ ((aligned (PAGE_SIZ
 /* copy-on-write */
 typedef struct {
 	u32 frameNumber;
-	tProc *proc;
+	sProc *proc;
 } sCOW;
 
 /**
@@ -114,7 +114,7 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count);
  * @param count the number of pages to map
  * @param newProc the new process
  */
-static void paging_setCOW(u32 virtual,u32 *frames,u32 count,tProc *newProc);
+static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc);
 
 /**
  * Prints all entries in the copy-on-write-list
@@ -202,7 +202,7 @@ sPDEntry *paging_getProc0PD(void) {
 
 void paging_mapPageDir(void) {
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(PAGE_DIR_AREA);
-	tProc *p = proc_getRunning();
+	sProc *p = proc_getRunning();
 	u32 pdirFrame = (p->physPDirAddr >> PAGE_SIZE_SHIFT);
 	/* not the current one? */
 	if(pt->frameNumber != pdirFrame) {
@@ -234,12 +234,38 @@ bool paging_isMapped(u32 virtual) {
 	return pt->present;
 }
 
-bool paging_isRangedMapped(u32 virtual,s32 count) {
+bool paging_isRangedUserReadable(u32 virtual,s32 count) {
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
+	/* kernel area? */
+	if(virtual + count >= KERNEL_AREA_V_ADDR)
+		return false;
 	while(count > 0) {
 		if(!pt->present)
 			return false;
 		count -= PAGE_SIZE;
+		pt++;
+	}
+	return true;
+}
+
+bool paging_isRangedUserWritable(u32 virtual,s32 count) {
+	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
+	/* kernel area? */
+	if(virtual + count >= KERNEL_AREA_V_ADDR)
+		return false;
+	while(count > 0) {
+		if(!pt->present)
+			return false;
+		if(!pt->writable) {
+			/* we have to handle copy-on-write here manually because the kernel can write
+			 * to the page anyway */
+			if(pt->copyOnWrite)
+				paging_handlePageFault(virtual);
+			else
+				return false;
+		}
+		count -= PAGE_SIZE;
+		virtual += PAGE_SIZE;
 		pt++;
 	}
 	return true;
@@ -374,13 +400,13 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
 	paging_flushTLB();
 }
 
-u32 paging_clonePageDir(u32 *stackFrame,tProc *newProc) {
+u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	bool oldIntrptState;
 	u32 x,pdirFrame,frameCount,kheapCount;
 	u32 tPages,dPages,sPages;
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;
-	tProc *p;
+	sProc *p;
 
 	DBG_PGCLONEPD(vid_printf(">>===== paging_clonePageDir(newPid=%d) =====\n",newPid));
 
@@ -490,7 +516,7 @@ void paging_handlePageFault(u32 address) {
 	sSLNode *ourCOW = NULL,*ourPrevCOW = NULL;
 	bool foundOther = false;
 	u32 frameNumber;
-	tProc *cp = proc_getRunning();
+	sProc *cp = proc_getRunning();
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(address);
 	if(!pt->copyOnWrite || !pt->present) {
 		vid_printf("Could not handle page-fault\n");
@@ -554,7 +580,7 @@ static void paging_printCOW(void) {
 	}
 }
 
-static void paging_setCOW(u32 virtual,u32 *frames,u32 count,tProc *newProc) {
+static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
 	sPTEntry *ownPt;
 	sCOW *cow;
 
@@ -589,7 +615,7 @@ static void paging_setCOW(u32 virtual,u32 *frames,u32 count,tProc *newProc) {
 	}
 }
 
-void paging_destroyPageDir(tProc *p) {
+void paging_destroyPageDir(sProc *p) {
 	sPDEntry *pd,*ppd;
 
 	/* map page-dir of process */
@@ -625,7 +651,7 @@ void paging_destroyPageDir(tProc *p) {
 		cow = (sCOW*)n->data;
 		if(cow->proc == p) {
 			sll_removeNode(cowFrames,n,ln);
-			n = ln;
+			n = n->next;
 		}
 	}
 

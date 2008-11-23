@@ -90,12 +90,12 @@ void sysc_handle(sSysCallStack *stack) {
 }
 
 static void sysc_getpid(sSysCallStack *stack) {
-	tProc *p = proc_getRunning();
+	sProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->pid);
 }
 
 static void sysc_getppid(sSysCallStack *stack) {
-	tProc *p = proc_getRunning();
+	sProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->parentPid);
 }
 
@@ -131,7 +131,8 @@ static void sysc_open(sSysCallStack *stack) {
 	s8 *cleanPath;
 	u8 flags;
 	tVFSNodeNo nodeNo;
-	s32 fd,err;
+	tFD fd;
+	s32 err;
 
 	/* copy path */
 	copyUserToKernel((u8*)stack->arg1,(u8*)path,MIN(strlen((string)stack->arg1) + 1,255));
@@ -152,9 +153,9 @@ static void sysc_open(sSysCallStack *stack) {
 	}
 
 	/* open file */
-	fd = proc_openFile(flags,nodeNo);
-	if(fd < 0) {
-		SYSC_ERROR(stack,fd);
+	err = vfs_openFile(flags,nodeNo,&fd);
+	if(err < 0) {
+		SYSC_ERROR(stack,err);
 		return;
 	}
 
@@ -166,30 +167,23 @@ static void sysc_open(sSysCallStack *stack) {
 }
 
 static void sysc_read(sSysCallStack *stack) {
-	tProc *p = proc_getRunning();
 	tFD fd = (s32)stack->arg1;
 	void *buffer = (void*)stack->arg2;
 	u32 count = stack->arg3;
 	s32 readBytes;
-
-	/* check fd */
-	if(!proc_isValidFileDesc(fd)) {
-		SYSC_ERROR(stack,ERR_INVALID_FD);
-		return;
-	}
 
 	/* validate count and buffer */
 	if(count <= 0) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
-	if(!paging_isRangedMapped((u32)buffer,count)) {
+	if(!paging_isRangedUserWritable((u32)buffer,count)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
 
 	/* read */
-	readBytes = vfs_readFile(p->fileDescs[fd],buffer,count);
+	readBytes = vfs_readFile(fd,buffer,count);
 	if(readBytes < 0) {
 		SYSC_ERROR(stack,readBytes);
 		return;
@@ -200,7 +194,7 @@ static void sysc_read(sSysCallStack *stack) {
 
 static void sysc_close(sSysCallStack *stack) {
 	tFD fd = stack->arg1;
-	proc_closeFile(fd);
+	vfs_closeFile(fd);
 
 	/*dbg_printProcess(proc_getRunning());
 	vfs_printGFT();*/

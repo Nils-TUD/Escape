@@ -10,10 +10,12 @@
 #include "common.h"
 #include "io.h"
 
+#define MAX_NAME_LEN 60
+
 /* a directory-entry */
 typedef struct {
 	tVFSNodeNo nodeNo;
-	string name;
+	s8 name[MAX_NAME_LEN];
 } sDir;
 
 /**

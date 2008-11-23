@@ -16,14 +16,24 @@
 #include "../h/vfs.h"
 #include "../h/kheap.h"
 
+/* public process-data */
+typedef struct {
+	u8 state;
+	tPid pid;
+	tPid parentPid;
+	u32 textPages;
+	u32 dataPages;
+	u32 stackPages;
+} sProcPub;
+
 /* our processes */
-static tProc procs[PROC_COUNT];
+static sProc procs[PROC_COUNT];
 /* TODO keep that? */
 /* the process-index */
 static tPid pi;
 
 /* pointer to a dead proc that has to be deleted */
-static tProc *deadProc = NULL;
+static sProc *deadProc = NULL;
 
 /**
  * Our VFS read handler that should read process information into a given buffer
@@ -35,24 +45,56 @@ static tProc *deadProc = NULL;
  * @return the number of read bytes
  */
 static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	s32 byteCount;
+	/* not cached yet? */
+	if(node->dataCache == NULL) {
+		node->dataCache = kheap_alloc(sizeof(sProcPub));
+		if(node->dataCache == NULL)
+			node->dataSize = 0;
+		else {
+			node->dataSize = sizeof(sProcPub);
+			tPid pid = atoi(node->name);
+			sProc *p = procs + pid;
+			sProcPub *proc = (sProcPub*)node->dataCache;
+			proc->state = p->state;
+			proc->pid = p->pid;
+			proc->parentPid = p->parentPid;
+			proc->textPages = p->textPages;
+			proc->dataPages = p->dataPages;
+			proc->stackPages = p->stackPages;
+		}
+	}
 
+	byteCount = MIN(node->dataSize - offset,count);
+	if(byteCount > 0) {
+		/* simply copy the data to the buffer */
+		memcpy(buffer,(u8*)node->dataCache + offset,byteCount);
+	}
+
+	return byteCount;
 }
 
 /**
  * Creates a VFS node for the given pid
  *
  * @param pid the process-id
+ * @return true if successfull
  */
-static void proc_createVFSNode(tPid pid) {
+static bool proc_createVFSNode(tPid pid) {
 	string name = (string)kheap_alloc(sizeof(s8) * 12);
+	if(name == NULL)
+		return false;
+
 	itoa(name,pid);
-	vfs_createProcessNode(name,&proc_vfsReadHandler);
+	return vfs_createProcessNode(name,&proc_vfsReadHandler);
 }
 
 void proc_init(void) {
 	tFD i;
 	/* init the first process */
 	pi = 0;
+	if(!proc_createVFSNode(0))
+		panic("Not enough mem for init process");
 	procs[pi].state = ST_RUNNING;
 	procs[pi].pid = 0;
 	procs[pi].parentPid = 0;
@@ -65,7 +107,6 @@ void proc_init(void) {
 	/* init fds */
 	for(i = 0; i < MAX_FD_COUNT; i++)
 		procs[pi].fileDescs[i] = -1;
-	proc_createVFSNode(0);
 
 	/* setup kernel-stack for us */
 	paging_map(KERNEL_STACK,NULL,1,PG_WRITABLE | PG_SUPERVISOR,false);
@@ -81,16 +122,16 @@ tPid proc_getFreePid(void) {
 	return 0;
 }
 
-tProc *proc_getRunning(void) {
+sProc *proc_getRunning(void) {
 	return &procs[pi];
 }
 
-tProc *proc_getByPid(tPid pid) {
+sProc *proc_getByPid(tPid pid) {
 	return &procs[pid];
 }
 
 void proc_switch(void) {
-	tProc *p = procs + pi;
+	sProc *p = procs + pi;
 	vid_printf("Free memory: %d KiB\n",mm_getNumberOfFreeFrames(MM_DEF) * PAGE_SIZE / K);
 	vid_printf("Process %d\n",p->pid);
 	if(!proc_save(&p->save)) {
@@ -110,25 +151,20 @@ void proc_switch(void) {
 	vid_printf("Continuing %d\n",p->pid);
 }
 
-bool proc_isValidFileDesc(tFD fd) {
+tFile proc_fdToFile(tFD fd) {
+	tFile fileNo;
 	if(fd >= MAX_FD_COUNT)
-		return false;
+		return ERR_INVALID_FD;
 
-	if((procs + pi)->fileDescs[fd] == -1)
-		return false;
-	return true;
+	fileNo = (procs + pi)->fileDescs[fd];
+	if(fileNo == -1)
+		return ERR_INVALID_FD;
+
+	return fileNo;
 }
 
-s32 proc_openFile(u8 flags,tVFSNodeNo nodeNo) {
+s32 proc_openFile(tFile fileNo) {
 	tFD i;
-	s32 res;
-	tFile fileNo;
-
-	/* open file in VFS */
-	res = vfs_openFile(flags,nodeNo,&fileNo);
-	if(res < 0)
-		return res;
-
 	tFile *fds = procs[pi].fileDescs;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(fds[i] == -1) {
@@ -137,30 +173,33 @@ s32 proc_openFile(u8 flags,tVFSNodeNo nodeNo) {
 		}
 	}
 
-	vfs_closeFile(fileNo);
 	return ERR_MAX_PROC_FDS;
 }
 
-void proc_closeFile(tFD fd) {
+tFile proc_closeFile(tFD fd) {
 	tFile fileNo;
 	if(fd >= MAX_FD_COUNT)
-		return;
+		return ERR_INVALID_FD;
 
 	fileNo = procs[pi].fileDescs[fd];
 	if(fileNo == -1)
-		return;
+		return ERR_INVALID_FD;
 
-	vfs_closeFile(fileNo);
 	procs[pi].fileDescs[fd] = -1;
+	return fileNo;
 }
 
 s32 proc_clone(tPid newPid) {
 	u32 i,pdirFrame,stackFrame;
 	u32 *src,*dst;
-	tProc *p;
+	sProc *p;
 
 	if((procs + newPid)->state != ST_UNUSED)
 		panic("The process slot 0x%x is already in use!",procs + newPid);
+
+	/* first create the VFS node (we may not have enough mem) */
+	if(!proc_createVFSNode(newPid))
+		return -1;
 
 	/* clone page-dir */
 	if((pdirFrame = paging_clonePageDir(&stackFrame,procs + newPid)) == 0)
@@ -179,7 +218,6 @@ s32 proc_clone(tPid newPid) {
 		p->fileDescs[i] = -1;
 	/* make ready */
 	p->state = ST_READY;
-	proc_createVFSNode(newPid);
 	sched_enqueueReady(p);
 
 	/* map stack temporary (copy later) */
@@ -214,7 +252,7 @@ void proc_suicide(void) {
 	deadProc->state = ST_ZOMBIE;
 }
 
-void proc_destroy(tProc *p) {
+void proc_destroy(sProc *p) {
 	tFD i;
 	/* don't delete initial or unused processes */
 	if(p->pid == 0 || p->state == ST_UNUSED)
@@ -232,6 +270,9 @@ void proc_destroy(tProc *p) {
 			p->fileDescs[i] = -1;
 		}
 	}
+
+	/* remove from VFS */
+	vfs_removeProcessNode(p->pid);
 
 	/* mark as unused */
 	p->textPages = 0;
@@ -272,7 +313,7 @@ bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages) {
 	return textPages + dataPages + stackPages <= maxPages;
 }
 
-bool proc_changeSize(s32 change,chgArea area) {
+bool proc_changeSize(s32 change,eChgArea area) {
 	u32 addr,chg = change,origPages;
 	/* determine start-address */
 	if(area == CHG_DATA) {

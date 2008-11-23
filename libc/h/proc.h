@@ -7,6 +7,16 @@
 #ifndef PROC_H_
 #define PROC_H_
 
+/* process-data */
+typedef struct {
+	u8 state;
+	tPid pid;
+	tPid parentPid;
+	u32 textPages;
+	u32 dataPages;
+	u32 stackPages;
+} sProc;
+
 /**
  * @return the process-id
  */

@@ -178,7 +178,7 @@ void paging_initCOWList(void);
  *
  * @return the address of the page-directory of process 0
  */
-sPDEntry *paging_getProc0PD(void);
+sPDEntry *paging_gesProc0PD(void);
 
 /**
  * Handles a page-fault for the given address
@@ -229,13 +229,24 @@ u32 paging_getPageCount(void);
 bool paging_isMapped(u32 virtual);
 
 /**
- * Checks wether the given address-range is currently mapped.
+ * Checks wether the given address-range is currently readable for the user
  *
  * @param virtual the start-address
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangedMapped(u32 virtual,s32 count);
+bool paging_isRangedUserReadable(u32 virtual,s32 count);
+
+/**
+ * Checks wether the given address-range is currently readable for the user.
+ * Note that the function handles copy-on-write if necessary. So you can be sure that you
+ * can write to the page(s) after calling the function.
+ *
+ * @param virtual the start-address
+ * @param count the number of bytes
+ * @return true if so
+ */
+bool paging_isRangedUserWritable(u32 virtual,s32 count);
 
 /**
  * Determines the frame-number for the given virtual-address. This should not be used
@@ -298,14 +309,14 @@ void paging_unmapPageTables(u32 start,u32 count);
  * @param newProc the process for which to create the page-dir
  * @return the frame-number of the new page-directory or 0 if there is not enough mem
  */
-u32 paging_clonePageDir(u32 *stackFrame,tProc *newProc);
+u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc);
 
 /**
  * Destroyes the page-dir of the given process. That means all frames will be freed.
  *
  * @param p the process
  */
-void paging_destroyPageDir(tProc *p);
+void paging_destroyPageDir(sProc *p);
 
 /**
  * Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as

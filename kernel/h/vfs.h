@@ -48,29 +48,29 @@ sVFSNode *vfs_getNode(tVFSNodeNo nodeNo);
  *
  * @param flags wether it is a virtual or real file and wether you want to read or write
  * @param nodeNo the node-number (in the virtual or real environment)
- * @param file will be set to the file-number if successfull
+ * @param fd will be set to the file-descriptor if successfull
  * @return 0 if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FD)
  */
-s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFile *file);
+s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd);
 
 /**
- * Reads max. count bytes from the given file into the given buffer and returns the number
+ * Reads max. count bytes from the given fd into the given buffer and returns the number
  * of read bytes.
  *
- * @param fileNo the file-number
+ * @param fd the file-descriptor
  * @param buffer the buffer to write to
  * @param count the max. number of bytes to read
  * @return the number of bytes read
  */
-s32 vfs_readFile(tFile fileNo,u8 *buffer,u32 count);
+s32 vfs_readFile(tFD fd,u8 *buffer,u32 count);
 
 /**
- * Closes the given file-number. That means it decrements the reference-count in the
- * global file table. If there are no references anymore it releases the slot.
+ * Closes the given fd. That means it calls proc_closeFile() and decrements the reference-count
+ * in the global file table. If there are no references anymore it releases the slot.
  *
- * @param fileNo the file-number
+ * @param fd the file-descriptor
  */
-void vfs_closeFile(tFile fileNo);
+void vfs_closeFile(tFD fd);
 
 void vfs_printGFT(void);
 
@@ -101,7 +101,15 @@ s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo);
  *
  * @param name the node-name
  * @param handler the read-handler
+ * @return true if successfull
  */
-void vfs_createProcessNode(string name,fRead handler);
+bool vfs_createProcessNode(string name,fRead handler);
+
+/**
+ * Removes the node for the process with given id from the VFS
+ *
+ * @param pid the process-id
+ */
+void vfs_removeProcessNode(tPid pid);
 
 #endif /* VFS_H_ */

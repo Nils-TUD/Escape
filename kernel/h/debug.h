@@ -26,14 +26,14 @@ void dbg_stopTimer(void);
  *
  * @param p the pointer to the process
  */
-void dbg_printProcess(tProc *p);
+void dbg_printProcess(sProc *p);
 
 /**
  * Prints the given process-state
  *
  * @param state the pointer to the state-struct
  */
-void dbg_printProcessState(tProcSave *state);
+void dbg_printProcessState(sProcSave *state);
 
 /**
  * Prints the current page-directory

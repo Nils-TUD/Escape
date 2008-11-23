@@ -22,6 +22,9 @@
 /* the processes node */
 #define PROCESSES()	(nodes + 3)
 
+/* max node-name len */
+#define MAX_NAME_LEN 59
+
 /* determines the node-number (for a virtual node) from the given node-address */
 #define NADDR_TO_VNNO(naddr) ((((u32)(naddr) - (u32)&nodes[0]) / sizeof(sVFSNode)) | (1 << 31))
 
@@ -35,7 +38,7 @@
 /* the public VFS-node (passed to the user) */
 typedef struct {
 	tVFSNodeNo nodeNo;
-	u8 nameLen;
+	u8 name[MAX_NAME_LEN + 1];
 } sVFSNodePub;
 
 /* an entry in the global file table */
@@ -118,24 +121,26 @@ static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 		byteCount = 0;
 		sVFSNode *n = node->childs;
 		while(n != NULL) {
-			byteCount += sizeof(sVFSNodePub) + strlen(n->name) + 1;
+			byteCount += sizeof(sVFSNodePub);
 			n = n->next;
 		}
 		node->dataSize = byteCount;
 		if(byteCount > 0) {
 			/* now allocate mem on the heap and copy all data into it */
 			u8 *childs = (u8*)kheap_alloc(byteCount);
-			node->dataCache = childs;
-			n = node->childs;
-			while(n != NULL) {
-				u16 len = strlen(n->name) + 1;
-				sVFSNodePub *pub = (sVFSNodePub*)childs;
-				pub->nodeNo = NADDR_TO_VNNO(n);
-				pub->nameLen = len;
-				childs += sizeof(sVFSNodePub);
-				memcpy(childs,n->name,len);
-				childs += len;
-				n = n->next;
+			if(childs == NULL)
+				node->dataSize = 0;
+			else {
+				node->dataCache = childs;
+				n = node->childs;
+				while(n != NULL) {
+					u16 len = strlen(n->name) + 1;
+					sVFSNodePub *pub = (sVFSNodePub*)childs;
+					pub->nodeNo = NADDR_TO_VNNO(n);
+					memcpy(pub->name,n->name,len);
+					childs += sizeof(sVFSNodePub);
+					n = n->next;
+				}
 			}
 		}
 	}
@@ -158,7 +163,14 @@ static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
  * @return the node
  */
 static sVFSNode *vfs_createNode(sVFSNode *parent,sVFSNode *prev,string name) {
-	sVFSNode *node = vfs_requestNode();
+	sVFSNode *node;
+	if(strlen(name) > MAX_NAME_LEN)
+		return NULL;
+
+	node = vfs_requestNode();
+	if(node == NULL)
+		return NULL;
+
 	node->name = name;
 	node->next = NULL;
 	node->childs = NULL;
@@ -181,6 +193,9 @@ static sVFSNode *vfs_createNode(sVFSNode *parent,sVFSNode *prev,string name) {
  */
 static sVFSNode *vfs_createDir(sVFSNode *parent,sVFSNode *prev,string name) {
 	sVFSNode *node = vfs_createNode(parent,prev,name);
+	if(node == NULL)
+		return NULL;
+
 	node->type = T_DIR;
 	node->readHandler = &vfs_dirReadHandler;
 	return node;
@@ -197,6 +212,9 @@ static sVFSNode *vfs_createDir(sVFSNode *parent,sVFSNode *prev,string name) {
  */
 static sVFSNode *vfs_createInfo(sVFSNode *parent,sVFSNode *prev,string name,fRead handler) {
 	sVFSNode *node = vfs_createNode(parent,prev,name);
+	if(node == NULL)
+		return NULL;
+
 	node->type = T_INFO;
 	node->readHandler = handler;
 	return node;
@@ -212,6 +230,9 @@ static sVFSNode *vfs_createInfo(sVFSNode *parent,sVFSNode *prev,string name,fRea
  */
 static sVFSNode *vfs_createService(sVFSNode *parent,sVFSNode *prev,string name) {
 	sVFSNode *node = vfs_createNode(parent,prev,name);
+	if(node == NULL)
+		return NULL;
+
 	/* TODO */
 	node->type = T_SERVICE;
 	node->readHandler = NULL;
@@ -246,8 +267,9 @@ sVFSNode *vfs_getNode(tVFSNodeNo nodeNo) {
 	return nodes + nodeNo;
 }
 
-s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFile *file) {
+s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd) {
 	tFile i;
+	s32 res;
 	s32 freeSlot = ERR_NO_FREE_FD;
 	bool write = flags & GFT_WRITE;
 	sGFTEntry *e = &globalFileTable[0];
@@ -258,16 +280,21 @@ s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFile *file) {
 
 	for(i = 0; i < FILE_COUNT; i++) {
 		/* used slot and same node? */
-		if(e->flags != 0 && e->nodeNo == nodeNo) {
-			/* writing to the same file is not possible */
-			if(write && e->flags & GFT_WRITE)
-				return ERR_FILE_IN_USE;
+		if(e->flags != 0) {
+			if(e->nodeNo == nodeNo) {
+				/* writing to the same file is not possible */
+				if(write && e->flags & GFT_WRITE)
+					return ERR_FILE_IN_USE;
 
-			/* if the flags are different we need a different slot */
-			if(e->flags == flags) {
-				e->refCount++;
-				*file = i;
-				return 0;
+				/* if the flags are different we need a different slot */
+				if(e->flags == flags) {
+					res = proc_openFile(i);
+					if(res < 0)
+						return res;
+					e->refCount++;
+					*fd = res;
+					return 0;
+				}
 			}
 		}
 		/* remember free slot */
@@ -279,20 +306,28 @@ s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFile *file) {
 
 	/* reserve slot */
 	if(freeSlot >= 0) {
+		res = proc_openFile(freeSlot);
+		if(res < 0)
+			return res;
+
 		e = &globalFileTable[freeSlot];
 		e->flags = flags;
 		e->refCount = 1;
 		e->position = 0;
 		e->nodeNo = nodeNo;
+		*fd = res;
 	}
 
-	*file = freeSlot;
-	return 0;
+	return freeSlot;
 }
 
-s32 vfs_readFile(tFile fileNo,u8 *buffer,u32 count) {
+s32 vfs_readFile(tFD fd,u8 *buffer,u32 count) {
 	s32 readBytes;
 	sGFTEntry *e;
+	tFile fileNo = proc_fdToFile(fd);
+	if(fileNo < 0)
+		return fileNo;
+
 	/* invalid file-number? */
 	if(fileNo >= FILE_COUNT)
 		return ERR_INVALID_FILE;
@@ -319,8 +354,12 @@ s32 vfs_readFile(tFile fileNo,u8 *buffer,u32 count) {
 	return readBytes;
 }
 
-void vfs_closeFile(tFile fileNo) {
+void vfs_closeFile(tFD fd) {
 	sGFTEntry *e;
+	tFile fileNo = proc_closeFile(fd);
+	if(fileNo < 0)
+		return;
+
 	/* invalid file-number? */
 	if(fileNo >= FILE_COUNT)
 		return;
@@ -520,7 +559,7 @@ s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 	return 0;
 }
 
-void vfs_createProcessNode(string name,fRead handler) {
+bool vfs_createProcessNode(string name,fRead handler) {
 	sVFSNode *proc = PROCESSES();
 	sVFSNode *n = proc->childs,*prev = NULL;
 	while(n != NULL) {
@@ -528,5 +567,27 @@ void vfs_createProcessNode(string name,fRead handler) {
 		n = n->next;
 	}
 
-	vfs_createInfo(proc,prev,name,handler);
+	return vfs_createInfo(proc,prev,name,handler) != NULL;
+}
+
+void vfs_removeProcessNode(tPid pid) {
+	sVFSNode *proc = PROCESSES();
+	s8 name[12];
+	itoa(name,pid);
+
+	/* TODO maybe we should store the node-id in the process-struct? */
+	sVFSNode *n = proc->childs,*prev = NULL;
+	while(n != NULL) {
+		/* found node? */
+		if(strcmp(n->name,name) == 0) {
+			if(prev != NULL)
+				prev->next = n->next;
+			else
+				proc->childs = n->next;
+			vfs_releaseNode(n);
+			break;
+		}
+		prev = n;
+		n = n->next;
+	}
 }

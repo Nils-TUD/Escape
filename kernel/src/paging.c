@@ -358,9 +358,9 @@ static void paging_mapintern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 					pt->frameNumber = *frames++;
 			}
 			pt->present = true;
-			pt->writable = flags & PG_WRITABLE ? true : false;
+			pt->writable = (flags & PG_WRITABLE) ? true : false;
 			pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
-			pt->copyOnWrite = flags & PG_COPYONWRITE ? true : false;
+			pt->copyOnWrite = (flags & PG_COPYONWRITE) ? true : false;
 
 			/* invalidate TLB-entry */
 			if(pageDir == PAGE_DIR_AREA)
@@ -477,6 +477,10 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	tpd->ptFrameNo = mm_allocateFrame(MM_DEF);
 	tpd->present = true;
 	tpd->writable = true;
+	/* clear the page-table */
+	memset((void*)ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,
+			KERNEL_STACK & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),0,PAGE_SIZE);
+
 	/* now setup the new stack */
 	pt = (sPTEntry*)(TMPMAP_PTS_START + (KERNEL_STACK / PT_ENTRY_COUNT));
 	pt->frameNumber = mm_allocateFrame(MM_DEF);

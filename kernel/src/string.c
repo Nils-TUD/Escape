@@ -190,13 +190,12 @@ string strchr(cstring str,s32 ch) {
 }
 
 s32 strchri(cstring str,s32 ch) {
-	s32 pos = 0;
+	cstring save = str;
 	while(*str) {
 		if(*str++ == ch)
-			return pos;
-		pos++;
+			return str - save - 1;
 	}
-	return pos;
+	return str - save;
 }
 
 string strrchr(cstring str,s32 ch) {
@@ -263,13 +262,13 @@ u32 strlen(string str) {
 }
 
 s32 tolower(s32 ch) {
-	if(isupper(ch))
+	if(ch >= 'A' && ch <= 'Z')
 		return ch - ('A' - 'a');
 	return ch;
 }
 
 s32 toupper(s32 ch) {
-	if(islower(ch))
+	if(ch >= 'a' && ch <= 'z')
 		return ch + ('A' - 'a');
 	return ch;
 }

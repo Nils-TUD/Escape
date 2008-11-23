@@ -235,25 +235,37 @@ bool paging_isMapped(u32 virtual) {
 }
 
 bool paging_isRangedUserReadable(u32 virtual,s32 count) {
-	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
+	sPTEntry *pt;
+	u32 end;
 	/* kernel area? */
 	if(virtual + count >= KERNEL_AREA_V_ADDR)
 		return false;
-	while(count > 0) {
+
+	/* calc start and end pt */
+	virtual &= ~(PAGE_SIZE - 1);
+	end = (virtual + count) & ~(PAGE_SIZE - 1);
+	pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
+	while(virtual <= end) {
 		if(!pt->present)
 			return false;
-		count -= PAGE_SIZE;
+		virtual += PAGE_SIZE;
 		pt++;
 	}
 	return true;
 }
 
-bool paging_isRangedUserWritable(u32 virtual,s32 count) {
-	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
+bool paging_isRangeUserWritable(u32 virtual,s32 count) {
+	sPTEntry *pt;
+	u32 end;
 	/* kernel area? */
 	if(virtual + count >= KERNEL_AREA_V_ADDR)
 		return false;
-	while(count > 0) {
+
+	/* calc start and end pt */
+	virtual &= ~(PAGE_SIZE - 1);
+	end = (virtual + count) & ~(PAGE_SIZE - 1);
+	pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
+	while(virtual <= end) {
 		if(!pt->present)
 			return false;
 		if(!pt->writable) {
@@ -264,7 +276,6 @@ bool paging_isRangedUserWritable(u32 virtual,s32 count) {
 			else
 				return false;
 		}
-		count -= PAGE_SIZE;
 		virtual += PAGE_SIZE;
 		pt++;
 	}
@@ -652,6 +663,8 @@ void paging_destroyPageDir(sProc *p) {
 		if(cow->proc == p) {
 			sll_removeNode(cowFrames,n,ln);
 			n = n->next;
+			if(n == NULL)
+				break;
 		}
 	}
 

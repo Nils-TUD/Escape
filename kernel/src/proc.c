@@ -65,6 +65,8 @@ static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 		}
 	}
 
+	if(offset > node->dataSize)
+		offset = node->dataSize;
 	byteCount = MIN(node->dataSize - offset,count);
 	if(byteCount > 0) {
 		/* simply copy the data to the buffer */

@@ -145,6 +145,8 @@ static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 		}
 	}
 
+	if(offset > node->dataSize)
+		offset = node->dataSize;
 	byteCount = MIN(node->dataSize - offset,count);
 	if(byteCount > 0) {
 		/* simply copy the data to the buffer */
@@ -567,7 +569,16 @@ bool vfs_createProcessNode(string name,fRead handler) {
 		n = n->next;
 	}
 
-	return vfs_createInfo(proc,prev,name,handler) != NULL;
+	n = vfs_createInfo(proc,prev,name,handler);
+	if(n != NULL) {
+		/* invalidate cache */
+		if(proc->dataCache != NULL) {
+			kheap_free(proc->dataCache);
+			proc->dataCache = NULL;
+		}
+		return true;
+	}
+	return false;
 }
 
 void vfs_removeProcessNode(tPid pid) {
@@ -589,5 +600,11 @@ void vfs_removeProcessNode(tPid pid) {
 		}
 		prev = n;
 		n = n->next;
+	}
+
+	/* invalidate cache */
+	if(proc->dataCache != NULL) {
+		kheap_free(proc->dataCache);
+		proc->dataCache = NULL;
 	}
 }

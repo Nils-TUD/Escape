@@ -44,7 +44,7 @@ s32 main(void) {
 		sProc proc;
 		s8 path[] = "/system/processes/";
 		s8 ppath[255];
-		debugf("Listing all processes:\n");
+		debugf("(%d) Listing all processes:\n",getpid());
 		if((dd = opendir(path)) >= 0) {
 			while((entry = readdir(dd)) != NULL) {
 				strncpy(ppath,path,strlen(path));
@@ -65,11 +65,12 @@ s32 main(void) {
 }
 
 static void printProcess(sProc *p) {
-	debugf("Process:\n");
-	debugf("\tpid=%d\n",p->pid);
-	debugf("\tparentPid=%d\n",p->parentPid);
-	debugf("\tstate=%d\n",p->state);
-	debugf("\ttextPages=%d\n",p->textPages);
-	debugf("\tdataPages=%d\n",p->dataPages);
-	debugf("\tstackPages=%d\n",p->stackPages);
+	tPid pid = getpid();
+	debugf("(%d) Process:\n",pid);
+	debugf("(%d) \tpid=%d\n",pid,p->pid);
+	debugf("(%d) \tparentPid=%d\n",pid,p->parentPid);
+	debugf("(%d) \tstate=%d\n",pid,p->state);
+	debugf("(%d) \ttextPages=%d\n",pid,p->textPages);
+	debugf("(%d) \tdataPages=%d\n",pid,p->dataPages);
+	debugf("(%d) \tstackPages=%d\n",pid,p->stackPages);
 }

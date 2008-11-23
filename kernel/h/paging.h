@@ -246,7 +246,7 @@ bool paging_isRangedUserReadable(u32 virtual,s32 count);
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangedUserWritable(u32 virtual,s32 count);
+bool paging_isRangeUserWritable(u32 virtual,s32 count);
 
 /**
  * Determines the frame-number for the given virtual-address. This should not be used

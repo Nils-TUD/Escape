@@ -177,7 +177,7 @@ static void sysc_read(sSysCallStack *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
-	if(!paging_isRangedUserWritable((u32)buffer,count)) {
+	if(!paging_isRangeUserWritable((u32)buffer,count)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}

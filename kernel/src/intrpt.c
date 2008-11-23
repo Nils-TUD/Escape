@@ -758,6 +758,9 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 		case IRQ_TIMER:
 			/* TODO don't resched if we come from kernel-mode! */
+			if(stack.ds != 0x23)
+				panic("Timer interrupt from kernel-mode!");
+
 #if 0
 			/*vid_printf("Timer interrupt...\n");*/
 			if(!proc2Ready) {

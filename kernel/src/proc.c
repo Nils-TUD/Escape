@@ -45,35 +45,43 @@ static sProc *deadProc = NULL;
  * @return the number of read bytes
  */
 static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
-	s32 byteCount;
-	/* not cached yet? */
-	if(node->dataCache == NULL) {
-		node->dataCache = kheap_alloc(sizeof(sProcPub));
-		if(node->dataCache == NULL)
-			node->dataSize = 0;
-		else {
-			node->dataSize = sizeof(sProcPub);
-			tPid pid = atoi(node->name);
-			sProc *p = procs + pid;
-			sProcPub *proc = (sProcPub*)node->dataCache;
-			proc->state = p->state;
-			proc->pid = p->pid;
-			proc->parentPid = p->parentPid;
-			proc->textPages = p->textPages;
-			proc->dataPages = p->dataPages;
-			proc->stackPages = p->stackPages;
-		}
+	/* don't use the cache here to prevent that one process occupies it for all others */
+	/* (if the process doesn't call close() the cache will not be invalidated and therefore
+	 * other processes might miss changes) */
+	sProc *p = procs + pi;
+	sProcPub *proc;
+	/* can we copy it directly? */
+	if(offset == 0 && count == sizeof(sProcPub))
+		proc = (sProcPub*)buffer;
+	/* ok, use the heap as temporary storage */
+	else {
+		proc = kheap_alloc(sizeof(sProcPub));
+		if(proc == NULL)
+			return 0;
 	}
 
-	if(offset > node->dataSize)
-		offset = node->dataSize;
-	byteCount = MIN(node->dataSize - offset,count);
-	if(byteCount > 0) {
-		/* simply copy the data to the buffer */
-		memcpy(buffer,(u8*)node->dataCache + offset,byteCount);
+	/* copy values to public struct */
+	proc->state = p->state;
+	proc->pid = p->pid;
+	proc->parentPid = p->parentPid;
+	proc->textPages = p->textPages;
+	proc->dataPages = p->dataPages;
+	proc->stackPages = p->stackPages;
+
+	/* stored on kheap? */
+	if((u32)proc != (u32)buffer) {
+		/* correct vars */
+		if(offset > sizeof(sProcPub))
+			offset = sizeof(sProcPub);
+		count = MIN(sizeof(sProcPub) - offset,count);
+		/* copy */
+		if(count > 0)
+			memcpy(buffer,(u8*)proc + offset,count);
+		/* free temp storage */
+		kheap_free(proc);
 	}
 
-	return byteCount;
+	return count;
 }
 
 /**

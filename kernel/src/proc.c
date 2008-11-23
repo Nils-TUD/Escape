@@ -53,6 +53,9 @@ static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	/* can we copy it directly? */
 	if(offset == 0 && count == sizeof(sProcPub))
 		proc = (sProcPub*)buffer;
+	/* don't waste time in this case */
+	else if(offset >= sizeof(sProcPub))
+		return 0;
 	/* ok, use the heap as temporary storage */
 	else {
 		proc = kheap_alloc(sizeof(sProcPub));

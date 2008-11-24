@@ -178,7 +178,7 @@ void paging_initCOWList(void);
  *
  * @return the address of the page-directory of process 0
  */
-sPDEntry *paging_gesProc0PD(void);
+sPDEntry *paging_getProc0PD(void);
 
 /**
  * Handles a page-fault for the given address

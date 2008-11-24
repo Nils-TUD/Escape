@@ -50,7 +50,9 @@ typedef enum {false = 0, true = 1} bool;
 #define ERR_INVALID_FILE		-7
 #define ERR_NO_READ_PERM		-8
 
-/* the last error-code received */
-extern s32 lastError;
+/**
+ * Prints the last error-message
+ */
+void printLastError(void);
 
 #endif /*COMMON_H_*/

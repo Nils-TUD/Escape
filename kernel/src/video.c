@@ -4,11 +4,16 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/util.h"
+#include "../h/video.h"
+#include "../h/common.h"
+#include "../h/util.h"
 #include <stdarg.h>
 
-#include "../priv/video.h"
+#define COL_WOB 0x07				/* white on black */
+#define VIDEO_BASE 0xC00B8000
+#define COLS 80
+#define ROWS 25
+#define TAB_WIDTH 2
 
 static s8 *video = (s8*)VIDEO_BASE;
 static s8 hexCharsBig[] = "0123456789ABCDEF";
@@ -16,6 +21,16 @@ static s8 hexCharsSmall[] = "0123456789abcdef";
 static u8 color = 0;
 
 static u8 oldBG = 0, oldFG = 0;
+
+/**
+ * Removes the BIOS-cursor from the screen
+ */
+static void vid_removeBIOSCursor(void) {
+	outb(0x3D4,14);
+	outb(0x3D5,0x07);
+	outb(0x3D4,15);
+	outb(0x3D5,0xd0);
+}
 
 void vid_init(void) {
 	vid_removeBIOSCursor();
@@ -76,6 +91,25 @@ u8 vid_getLine(void) {
 void vid_toLineEnd(u8 pad) {
 	u16 col = (u32)(video - VIDEO_BASE) % (COLS * 2);
 	video = (s8*)((u32)video + ((COLS * 2) - col) - pad * 2);
+}
+
+/**
+ * Moves all lines one line up, if necessary
+ */
+static void vid_move(void) {
+	u32 i;
+	s8 *src,*dst;
+	/* last line? */
+	if(video >= (s8*)(VIDEO_BASE + (ROWS - 1) * COLS * 2)) {
+		/* copy all chars one line back */
+		src = (s8*)(VIDEO_BASE + COLS * 2);
+		dst = (s8*)VIDEO_BASE;
+		for(i = 0; i < ROWS * COLS * 2; i++) {
+			*dst++ = *src++;
+		}
+		/* to prev line */
+		video -= COLS * 2;
+	}
 }
 
 void vid_putchar(s8 c) {
@@ -286,25 +320,3 @@ void vid_vprintf(cstring fmt,va_list ap) {
 	}
 }
 
-static void vid_move(void) {
-	u32 i;
-	s8 *src,*dst;
-	/* last line? */
-	if(video >= (s8*)(VIDEO_BASE + (ROWS - 1) * COLS * 2)) {
-		/* copy all chars one line back */
-		src = (s8*)(VIDEO_BASE + COLS * 2);
-		dst = (s8*)VIDEO_BASE;
-		for(i = 0; i < ROWS * COLS * 2; i++) {
-			*dst++ = *src++;
-		}
-		/* to prev line */
-		video -= COLS * 2;
-	}
-}
-
-static void vid_removeBIOSCursor(void) {
-	outb(0x3D4,14);
-	outb(0x3D5,0x07);
-	outb(0x3D4,15);
-	outb(0x3D5,0xd0);
-}

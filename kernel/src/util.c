@@ -4,15 +4,21 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/video.h"
-#include "../pub/intrpt.h"
-#include "../pub/ksymbols.h"
-#include "../pub/paging.h"
-#include "../pub/string.h"
+#include "../h/util.h"
+#include "../h/video.h"
+#include "../h/intrpt.h"
+#include "../h/ksymbols.h"
+#include "../h/paging.h"
+#include "../h/string.h"
 #include <stdarg.h>
 
-#include "../priv/util.h"
+/* the x86-call instruction is 5 bytes long */
+#define CALL_INSTR_SIZE 5
+
+/**
+ * @return the address of the stack-frame-start
+ */
+extern u32 getStackFrameStart(void);
 
 /**
  * The beginning of the kernel-stack

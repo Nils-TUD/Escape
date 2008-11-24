@@ -1,5 +1,5 @@
 /**
- * @version		$Id$
+ * @version		$Id: gdt.h 65 2008-11-16 21:51:42Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */
@@ -7,7 +7,7 @@
 #ifndef GDT_H_
 #define GDT_H_
 
-#include "../pub/common.h"
+#include "../h/common.h"
 
 /**
  * Inits the GDT

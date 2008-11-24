@@ -1,5 +1,5 @@
 /**
- * @version		$Id$
+ * @version		$Id: ksymbols.h 77 2008-11-22 22:27:35Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */
@@ -7,7 +7,7 @@
 #ifndef KSYMBOLS_H_
 #define KSYMBOLS_H_
 
-#include "../pub/common.h"
+#include "../h/common.h"
 
 /* Represents one symbol (address -> name) */
 typedef struct {

@@ -4,9 +4,9 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/string.h"
-#include "../pub/video.h"
+#include "../h/common.h"
+#include "../h/string.h"
+#include "../h/video.h"
 
 #include "tstring.h"
 #include "test.h"

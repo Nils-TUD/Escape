@@ -1,5 +1,5 @@
 /**
- * @version		$Id$
+ * @version		$Id: debug.h 81 2008-11-23 12:43:27Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */

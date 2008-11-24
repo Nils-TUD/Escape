@@ -4,14 +4,54 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/proc.h"
-#include "../pub/video.h"
-#include "../pub/string.h"
-#include "../pub/util.h"
-#include "../pub/kheap.h"
+#include "../h/common.h"
+#include "../h/vfs.h"
+#include "../h/proc.h"
+#include "../h/video.h"
+#include "../h/string.h"
+#include "../h/util.h"
+#include "../h/kheap.h"
 
-#include "../priv/vfs.h"
+/*
+ * dirs: /, /fs, /system, /system/processes, /system/services
+ * files: /system/processes/%, /system/services/%
+ */
+#define NODE_COUNT	(PROC_COUNT * 8 + 4 + 64)
+/* max number of open files */
+#define FILE_COUNT	(PROC_COUNT * 16)
+/* the processes node */
+#define PROCESSES()	(nodes + 3)
+
+/* max node-name len */
+#define MAX_NAME_LEN 59
+
+/* determines the node-number (for a virtual node) from the given node-address */
+#define NADDR_TO_VNNO(naddr) ((((u32)(naddr) - (u32)&nodes[0]) / sizeof(sVFSNode)) | (1 << 31))
+
+/* checks wether the given node-number is a virtual one */
+#define IS_VIRT(nodeNo) (((nodeNo) & (1 << 31)) != 0)
+/* makes a virtual node number */
+#define MAKE_VIRT(nodeNo) ((nodeNo) | (1 << 31))
+/* removes the virtual-flag */
+#define VIRT_INDEX(nodeNo) ((nodeNo) & ~(1 << 31))
+
+/* the public VFS-node (passed to the user) */
+typedef struct {
+	tVFSNodeNo nodeNo;
+	u8 name[MAX_NAME_LEN + 1];
+} sVFSNodePub;
+
+/* an entry in the global file table */
+typedef struct {
+	/* read OR write; flags = 0 => entry unused */
+	u8 flags;
+	/* number of references */
+	u16 refCount;
+	/* current position in file */
+	u32 position;
+	/* node-number; if MSB = 1 => virtual, otherwise real (fs) */
+	tVFSNodeNo nodeNo;
+} sGFTEntry;
 
 /* all nodes */
 static sVFSNode nodes[NODE_COUNT];
@@ -20,6 +60,186 @@ static sVFSNode *freeList;
 
 /* global file table */
 static sGFTEntry globalFileTable[FILE_COUNT];
+
+/**
+ * Requests a new node and returns the pointer to it. Panics if there are no free nodes anymore.
+ *
+ * @return the pointer to the node
+ */
+static sVFSNode *vfs_requestNode(void) {
+	sVFSNode *node;
+	if(freeList == NULL)
+		panic("No free vfs-nodes!");
+
+	node = freeList;
+	freeList = freeList->next;
+	return node;
+}
+
+/**
+ * Releases the given node
+ *
+ * @param node the node
+ */
+static void vfs_releaseNode(sVFSNode *node) {
+	node->next = freeList;
+	freeList = node;
+}
+
+/**
+ * The recursive function to print the VFS-tree
+ *
+ * @param level the current recursion level
+ * @param parent the parent node
+ */
+static void vfs_doPrintTree(u32 level,sVFSNode *parent) {
+	u32 i;
+	sVFSNode *n = parent->childs;
+	while(n != NULL) {
+		for(i = 0;i < level;i++)
+			vid_printf(" |");
+		vid_printf("- %s\n",n->name);
+		vfs_doPrintTree(level + 1,n);
+		n = n->next;
+	}
+}
+
+/**
+ * The read-handler for directories
+ *
+ * @param node the VFS node
+ * @param buffer the buffer where to copy the info to
+ * @param offset the offset where to start
+ * @param count the number of bytes
+ * @return the number of read bytes
+ */
+static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	s32 byteCount;
+	/* not cached yet? */
+	if(node->dataCache == NULL) {
+		/* we need the number of bytes first */
+		byteCount = 0;
+		sVFSNode *n = node->childs;
+		while(n != NULL) {
+			byteCount += sizeof(sVFSNodePub);
+			n = n->next;
+		}
+		node->dataSize = byteCount;
+		if(byteCount > 0) {
+			/* now allocate mem on the heap and copy all data into it */
+			u8 *childs = (u8*)kheap_alloc(byteCount);
+			if(childs == NULL)
+				node->dataSize = 0;
+			else {
+				node->dataCache = childs;
+				n = node->childs;
+				while(n != NULL) {
+					u16 len = strlen(n->name) + 1;
+					sVFSNodePub *pub = (sVFSNodePub*)childs;
+					pub->nodeNo = NADDR_TO_VNNO(n);
+					memcpy(pub->name,n->name,len);
+					childs += sizeof(sVFSNodePub);
+					n = n->next;
+				}
+			}
+		}
+	}
+
+	if(offset > node->dataSize)
+		offset = node->dataSize;
+	byteCount = MIN(node->dataSize - offset,count);
+	if(byteCount > 0) {
+		/* simply copy the data to the buffer */
+		memcpy(buffer,(u8*)node->dataCache + offset,byteCount);
+	}
+
+	return byteCount;
+}
+
+/**
+ * Creates a (incomplete) node
+ *
+ * @param parent the parent-node
+ * @param prev the previous node
+ * @param name the node-name
+ * @return the node
+ */
+static sVFSNode *vfs_createNode(sVFSNode *parent,sVFSNode *prev,string name) {
+	sVFSNode *node;
+	if(strlen(name) > MAX_NAME_LEN)
+		return NULL;
+
+	node = vfs_requestNode();
+	if(node == NULL)
+		return NULL;
+
+	node->name = name;
+	node->next = NULL;
+	node->childs = NULL;
+	node->dataCache = NULL;
+
+	if(prev != NULL)
+		prev->next = node;
+	else if(parent != NULL)
+		parent->childs = node;
+	return node;
+}
+
+/**
+ * Creates a directory-node
+ *
+ * @param parent the parent-node
+ * @param prev the previous node
+ * @param name the node-name
+ * @return the node
+ */
+static sVFSNode *vfs_createDir(sVFSNode *parent,sVFSNode *prev,string name) {
+	sVFSNode *node = vfs_createNode(parent,prev,name);
+	if(node == NULL)
+		return NULL;
+
+	node->type = T_DIR;
+	node->readHandler = &vfs_dirReadHandler;
+	return node;
+}
+
+/**
+ * Creates an info-node
+ *
+ * @param parent the parent-node
+ * @param prev the previous node
+ * @param name the node-name
+ * @param handler the read-handler
+ * @return the node
+ */
+static sVFSNode *vfs_createInfo(sVFSNode *parent,sVFSNode *prev,string name,fRead handler) {
+	sVFSNode *node = vfs_createNode(parent,prev,name);
+	if(node == NULL)
+		return NULL;
+
+	node->type = T_INFO;
+	node->readHandler = handler;
+	return node;
+}
+
+/**
+ * Creates a service-node
+ *
+ * @param parent the parent-node
+ * @param prev the previous node
+ * @param name the node-name
+ * @return the node
+ */
+static sVFSNode *vfs_createService(sVFSNode *parent,sVFSNode *prev,string name) {
+	sVFSNode *node = vfs_createNode(parent,prev,name);
+	if(node == NULL)
+		return NULL;
+
+	/* TODO */
+	node->type = T_SERVICE;
+	node->readHandler = NULL;
+	return node;
+}
 
 void vfs_init(void) {
 	tVFSNodeNo i;
@@ -415,126 +635,4 @@ void vfs_removeProcessNode(tPid pid) {
 		kheap_free(proc->dataCache);
 		proc->dataCache = NULL;
 	}
-}
-
-static sVFSNode *vfs_requestNode(void) {
-	sVFSNode *node;
-	if(freeList == NULL)
-		panic("No free vfs-nodes!");
-
-	node = freeList;
-	freeList = freeList->next;
-	return node;
-}
-
-static void vfs_releaseNode(sVFSNode *node) {
-	node->next = freeList;
-	freeList = node;
-}
-
-static void vfs_doPrintTree(u32 level,sVFSNode *parent) {
-	u32 i;
-	sVFSNode *n = parent->childs;
-	while(n != NULL) {
-		for(i = 0;i < level;i++)
-			vid_printf(" |");
-		vid_printf("- %s\n",n->name);
-		vfs_doPrintTree(level + 1,n);
-		n = n->next;
-	}
-}
-
-static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
-	s32 byteCount;
-	/* not cached yet? */
-	if(node->dataCache == NULL) {
-		/* we need the number of bytes first */
-		byteCount = 0;
-		sVFSNode *n = node->childs;
-		while(n != NULL) {
-			byteCount += sizeof(sVFSNodePub);
-			n = n->next;
-		}
-		node->dataSize = byteCount;
-		if(byteCount > 0) {
-			/* now allocate mem on the heap and copy all data into it */
-			u8 *childs = (u8*)kheap_alloc(byteCount);
-			if(childs == NULL)
-				node->dataSize = 0;
-			else {
-				node->dataCache = childs;
-				n = node->childs;
-				while(n != NULL) {
-					u16 len = strlen(n->name) + 1;
-					sVFSNodePub *pub = (sVFSNodePub*)childs;
-					pub->nodeNo = NADDR_TO_VNNO(n);
-					memcpy(pub->name,n->name,len);
-					childs += sizeof(sVFSNodePub);
-					n = n->next;
-				}
-			}
-		}
-	}
-
-	if(offset > node->dataSize)
-		offset = node->dataSize;
-	byteCount = MIN(node->dataSize - offset,count);
-	if(byteCount > 0) {
-		/* simply copy the data to the buffer */
-		memcpy(buffer,(u8*)node->dataCache + offset,byteCount);
-	}
-
-	return byteCount;
-}
-
-static sVFSNode *vfs_createNode(sVFSNode *parent,sVFSNode *prev,string name) {
-	sVFSNode *node;
-	if(strlen(name) > MAX_NAME_LEN)
-		return NULL;
-
-	node = vfs_requestNode();
-	if(node == NULL)
-		return NULL;
-
-	node->name = name;
-	node->next = NULL;
-	node->childs = NULL;
-	node->dataCache = NULL;
-
-	if(prev != NULL)
-		prev->next = node;
-	else if(parent != NULL)
-		parent->childs = node;
-	return node;
-}
-
-static sVFSNode *vfs_createDir(sVFSNode *parent,sVFSNode *prev,string name) {
-	sVFSNode *node = vfs_createNode(parent,prev,name);
-	if(node == NULL)
-		return NULL;
-
-	node->type = T_DIR;
-	node->readHandler = &vfs_dirReadHandler;
-	return node;
-}
-
-static sVFSNode *vfs_createInfo(sVFSNode *parent,sVFSNode *prev,string name,fRead handler) {
-	sVFSNode *node = vfs_createNode(parent,prev,name);
-	if(node == NULL)
-		return NULL;
-
-	node->type = T_INFO;
-	node->readHandler = handler;
-	return node;
-}
-
-static sVFSNode *vfs_createService(sVFSNode *parent,sVFSNode *prev,string name) {
-	sVFSNode *node = vfs_createNode(parent,prev,name);
-	if(node == NULL)
-		return NULL;
-
-	/* TODO */
-	node->type = T_SERVICE;
-	node->readHandler = NULL;
-	return node;
 }

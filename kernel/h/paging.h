@@ -1,5 +1,5 @@
 /**
- * @version		$Id$
+ * @version		$Id: paging.h 88 2008-11-24 14:36:16Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */

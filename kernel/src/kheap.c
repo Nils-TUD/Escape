@@ -4,13 +4,72 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/paging.h"
-#include "../pub/util.h"
-#include "../pub/string.h"
-#include "../pub/video.h"
+#include "../h/kheap.h"
+#include "../h/common.h"
+#include "../h/paging.h"
+#include "../h/util.h"
+#include "../h/string.h"
+#include "../h/video.h"
 
-#include "../priv/kheap.h"
+/*
+ * Consider the following actions:
+ * 	ptr1 = kheap_alloc(16);
+ *  ptr2 = kheap_alloc(29);
+ *  ptr3 = kheap_alloc(15);
+ *  kheap_free(ptr2);
+ *  ptr2 = kheap_alloc(14);
+ *  kheap_free(ptr3);
+ *  kheap_free(ptr1);
+ *
+ * That would lead to the following situation:
+ * Kernel-Heap:
+ *   (@0xC1800010) 0xC27FFFF0 .. 0xC27FFFFF (16 bytes) [free]
+ *   (@0xC1800028) 0xC27FFFE2 .. 0xC27FFFEF (14 bytes) [occupied]
+ *   (@0xC1800008) 0xC1800030 .. 0xC27FFFE1 (16777138 bytes) [free]
+ *
+ * Memory-view:
+ *    +    +--------------+--------------+  @ 0xC1800000 = KERNEL_HEAP_START
+ *    |    | usageCount=5 |       0      |                  <- usageCount on each page
+ *    |    +---+----------+--------------+ <--------\       <- initial
+ *    |    |f=1|  s=<all> |  next(NULL)  |          |          (<all> = remaining heapmem)
+ *    |    +---+----------+--------------+          |       <- first
+ *    |    |f=1|   s=16   |     next     | ---\     |
+ *   mem   +---+----------+--------------+    |     |
+ *  areas  |f=?|   s=?    |  next(NULL)  |    |     |
+ *    |    +---+----------+--------------+    |     |
+ *    |    |f=?|   s=?    |  next(NULL)  |    |     |
+ *    |    +---+----------+--------------+ <--/     |       <- highessMemArea
+ *    |    |f=0|   s=14   |     next     | ---------/
+ *    .    +---+----------+--------------+  @ 0xC1800030
+ *    .    |             ...             |
+ *    v    +-----------------------------+
+ *         .                             .
+ *    ^    .                             .
+ *    .    .                             .
+ *    .    +-----------------------------+  @ 0xC27FFFE2
+ *    |    |           14 bytes          |
+ *  data   +-----------------------------+  @ 0xC27FFFF0
+ *    |    |       16 bytes (free)       |
+ *    +    +-----------------------------+  @ 0xC2800000 = KERNEL_HEAP_START + KERNEL_HEAP_SIZE
+ */
+
+/*
+ * TODO would the following mem-area-concept be better:
+ *  - declare a max. number of mem-areas and reserve the memory for them
+ *  - introduce a free-list which will be filled with all areas at the beginning
+ * That means we can get and delete areas with 0(1).
+ */
+
+/* represents one area of memory which may be free or occupied */
+typedef struct sMemArea sMemArea;
+struct sMemArea {
+	/* wether this area is free */
+	u32 free				: 1,
+	/* the size of this area in bytes */
+		size				: 31;
+	/* the pointer to the next area; NULL if there is no */
+	sMemArea *next;
+};
 
 /* our initial area which contains the remaining free mem */
 static sMemArea *initial;
@@ -26,6 +85,109 @@ static sMemArea *startPrev;
 
 /* the first unused area */
 static sMemArea *firstUnused;
+
+/**
+ * Finds a place for a new mem-area
+ *
+ * @param size the desired size
+ * @param isInitial wether the initial area should be splitted
+ * @return the address or NULL if there is not enough mem
+ */
+static sMemArea *kheap_newArea(u32 size,bool isInitial) {
+	DBG_KMALLOC(vid_printf("Getting new mem-area...\n"));
+	/* start-point (skip page-usage-count and initial area) */
+	sMemArea *area = firstUnused;
+	/* TODO may this loop cause trouble? */
+	while(1) {
+		DBG_KMALLOC(vid_printf("Testing area 0x%x\n",area));
+		/* area not in use? */
+		if(area->next == NULL) {
+			DBG_KMALLOC(vid_printf("FOUND, breaking here\n"));
+			/* increase usage-count for this page */
+			u32 *usageCount = (u32*)((u32)area & ~(PAGE_SIZE - 1));
+			*usageCount = *usageCount + 1;
+			/* set highessMemArea */
+			if(area > highessMemArea)
+				highessMemArea = area;
+			/* prevent a page-fault */
+			if(((u32)area & (PAGE_SIZE - 1)) == PAGE_SIZE - sizeof(sMemArea))
+				firstUnused = area;
+			else
+				firstUnused = area + 1;
+			break;
+		}
+		area++;
+
+		/* reached new page? */
+		if(((u32)area & (PAGE_SIZE - 1)) == 0) {
+			if(highessMemArea < area) {
+				/* not enough mem? */
+				if(initial->size < PAGE_SIZE)
+					return NULL;
+				if(isInitial && initial->size < PAGE_SIZE + size)
+					return NULL;
+
+				DBG_KMALLOC(vid_printf("Reached new page 0x%x\n",area));
+				/* get frame and map it */
+				u32 frame = mm_allocateFrame(MM_DEF);
+				paging_map((u32)area,&frame,1,PG_WRITABLE | PG_SUPERVISOR,false);
+				/* we have to clear the area-pages */
+				memset(area,0,PAGE_SIZE);
+				/* reduce available mem */
+				initial->size -= PAGE_SIZE;
+			}
+			/* skip page-usage-count */
+			area++;
+		}
+	}
+	return area;
+}
+
+/**
+ * Deletes the given area
+ *
+ * @param area the area
+ */
+static void kheap_deleteArea(sMemArea *area) {
+	sMemArea *oldHighest = highessMemArea;
+	u32 *usageCount = (u32*)((u32)area & ~(PAGE_SIZE - 1));
+	/* mark slot as free */
+	area->next = NULL;
+
+	if(area < firstUnused)
+		firstUnused = area;
+
+	/* adjust highest-mem-area if necessary */
+	if(area == highessMemArea) {
+		do {
+			area--;
+			/* skip usage-count */
+			if(((u32)area & (PAGE_SIZE - 1)) == 0) {
+				area--;
+				/* skip not mapped pages */
+				while(!paging_isMapped((u32)area))
+					area -= PAGE_SIZE / sizeof(sMemArea);
+			}
+		}
+		while(area->next == NULL && area > initial);
+		highessMemArea = area;
+	}
+
+	/* decrease usages and free frame if possible */
+	*usageCount = *usageCount - 1;
+	if(*usageCount == 0) {
+		DBG_KMALLOC(vid_printf("usageCount=0, freeing frame @ 0x%x\n",usageCount));
+		paging_unmap((u32)usageCount,1,true);
+		/* TODO we can choose a better one, right? */
+		firstUnused = (sMemArea*)KERNEL_HEAP_START + 2;
+		/* TODO optimize (required here because we test if a page is mapped) */
+		paging_flushTLB();
+
+		/* give the memory back */
+		initial->size += ((u32)oldHighest & ~(PAGE_SIZE - 1))
+			- ((u32)highessMemArea & ~(PAGE_SIZE - 1));
+	}
+}
 
 void kheap_init(void) {
 	/* get frame and map it */
@@ -271,95 +433,4 @@ void kheap_free(void *addr) {
 	startPrev = NULL;
 
 	DBG_KMALLOC(vid_printf("<<===== kheap_free =====\n"));
-}
-
-static sMemArea *kheap_newArea(u32 size,bool isInitial) {
-	DBG_KMALLOC(vid_printf("Getting new mem-area...\n"));
-	/* start-point (skip page-usage-count and initial area) */
-	sMemArea *area = firstUnused;
-	/* TODO may this loop cause trouble? */
-	while(1) {
-		DBG_KMALLOC(vid_printf("Testing area 0x%x\n",area));
-		/* area not in use? */
-		if(area->next == NULL) {
-			DBG_KMALLOC(vid_printf("FOUND, breaking here\n"));
-			/* increase usage-count for this page */
-			u32 *usageCount = (u32*)((u32)area & ~(PAGE_SIZE - 1));
-			*usageCount = *usageCount + 1;
-			/* set highessMemArea */
-			if(area > highessMemArea)
-				highessMemArea = area;
-			/* prevent a page-fault */
-			if(((u32)area & (PAGE_SIZE - 1)) == PAGE_SIZE - sizeof(sMemArea))
-				firstUnused = area;
-			else
-				firstUnused = area + 1;
-			break;
-		}
-		area++;
-
-		/* reached new page? */
-		if(((u32)area & (PAGE_SIZE - 1)) == 0) {
-			if(highessMemArea < area) {
-				/* not enough mem? */
-				if(initial->size < PAGE_SIZE)
-					return NULL;
-				if(isInitial && initial->size < PAGE_SIZE + size)
-					return NULL;
-
-				DBG_KMALLOC(vid_printf("Reached new page 0x%x\n",area));
-				/* get frame and map it */
-				u32 frame = mm_allocateFrame(MM_DEF);
-				paging_map((u32)area,&frame,1,PG_WRITABLE | PG_SUPERVISOR,false);
-				/* we have to clear the area-pages */
-				memset(area,0,PAGE_SIZE);
-				/* reduce available mem */
-				initial->size -= PAGE_SIZE;
-			}
-			/* skip page-usage-count */
-			area++;
-		}
-	}
-	return area;
-}
-
-static void kheap_deleteArea(sMemArea *area) {
-	sMemArea *oldHighest = highessMemArea;
-	u32 *usageCount = (u32*)((u32)area & ~(PAGE_SIZE - 1));
-	/* mark slot as free */
-	area->next = NULL;
-
-	if(area < firstUnused)
-		firstUnused = area;
-
-	/* adjust highest-mem-area if necessary */
-	if(area == highessMemArea) {
-		do {
-			area--;
-			/* skip usage-count */
-			if(((u32)area & (PAGE_SIZE - 1)) == 0) {
-				area--;
-				/* skip not mapped pages */
-				while(!paging_isMapped((u32)area))
-					area -= PAGE_SIZE / sizeof(sMemArea);
-			}
-		}
-		while(area->next == NULL && area > initial);
-		highessMemArea = area;
-	}
-
-	/* decrease usages and free frame if possible */
-	*usageCount = *usageCount - 1;
-	if(*usageCount == 0) {
-		DBG_KMALLOC(vid_printf("usageCount=0, freeing frame @ 0x%x\n",usageCount));
-		paging_unmap((u32)usageCount,1,true);
-		/* TODO we can choose a better one, right? */
-		firstUnused = (sMemArea*)KERNEL_HEAP_START + 2;
-		/* TODO optimize (required here because we test if a page is mapped) */
-		paging_flushTLB();
-
-		/* give the memory back */
-		initial->size += ((u32)oldHighest & ~(PAGE_SIZE - 1))
-			- ((u32)highessMemArea & ~(PAGE_SIZE - 1));
-	}
 }

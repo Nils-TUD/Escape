@@ -4,12 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/proc.h"
-#include "../pub/paging.h"
-#include "../pub/elf.h"
-#include "../pub/string.h"
-#include "../pub/video.h"
+#include "../h/common.h"
+#include "../h/proc.h"
+#include "../h/paging.h"
+#include "../h/elf.h"
+#include "../h/string.h"
+#include "../h/video.h"
 
 u32 elf_loadprog(u8 *code) {
 	u32 seenLoadSegments = 0;

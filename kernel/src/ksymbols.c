@@ -4,9 +4,9 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/ksymbols.h"
-#include "../pub/video.h"
+#include "../h/common.h"
+#include "../h/ksymbols.h"
+#include "../h/video.h"
 
 static sSymbol ksymbols[] = {
 	#include "../../build/ksymbols.txt"

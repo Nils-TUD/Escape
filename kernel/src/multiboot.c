@@ -4,11 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/video.h"
-#include "../pub/paging.h"
+#include "../h/multiboot.h"
+#include "../h/video.h"
+#include "../h/common.h"
+#include "../h/paging.h"
 
-#include "../priv/multiboot.h"
+#define CHECK_FLAG(flags,bit) (flags & (1 << bit))
 
 sMultiBoot *mb;
 
@@ -16,7 +17,7 @@ void mboot_init(sMultiBoot *mbp) {
 	/* save the multiboot-structure
 	 * (change to 0xC...0 since we get the address at 0x0...0 from GRUB) */
 	mb = (sMultiBoot*)((u32)mbp | KERNEL_AREA_V_ADDR);
-
+	
 	/* change the address of the pointers in the structure, too */
 	mb->cmdLine = (s8*)((u32)mb->cmdLine | KERNEL_AREA_V_ADDR);
 	mb->modsAddr = (sModule*)((u32)mb->modsAddr | KERNEL_AREA_V_ADDR);

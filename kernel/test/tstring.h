@@ -7,7 +7,7 @@
 #ifndef TSTRING_H_
 #define TSTRING_H_
 
-#include "../pub/common.h"
+#include "../h/common.h"
 #include "test.h"
 
 extern sTestModule tModString;

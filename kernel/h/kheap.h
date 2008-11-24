@@ -1,5 +1,5 @@
 /**
- * @version		$Id$
+ * @version		$Id: kheap.h 36 2008-11-09 16:57:55Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */
@@ -7,7 +7,7 @@
 #ifndef KHEAP_H_
 #define KHEAP_H_
 
-#include "../pub/common.h"
+#include "../h/common.h"
 
 /**
  * Inits the kernel-heap

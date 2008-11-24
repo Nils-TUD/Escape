@@ -4,11 +4,11 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/proc.h"
-#include "../pub/video.h"
-#include "../pub/paging.h"
-#include "../pub/mm.h"
+#include "../h/common.h"
+#include "../h/proc.h"
+#include "../h/video.h"
+#include "../h/paging.h"
+#include "../h/mm.h"
 #include "test.h"
 #include "tproc.h"
 

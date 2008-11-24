@@ -4,10 +4,10 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/sllist.h"
-#include "../pub/kheap.h"
-#include "../pub/video.h"
+#include "../h/common.h"
+#include "../h/sllist.h"
+#include "../h/kheap.h"
+#include "../h/video.h"
 
 #include "tsllist.h"
 #include "test.h"

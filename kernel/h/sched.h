@@ -1,5 +1,5 @@
 /**
- * @version		$Id$
+ * @version		$Id: sched.h 81 2008-11-23 12:43:27Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */
@@ -7,8 +7,8 @@
 #ifndef SCHED_H_
 #define SCHED_H_
 
-#include "../pub/common.h"
-#include "../pub/proc.h"
+#include "../h/common.h"
+#include "../h/proc.h"
 
 /**
  * Inits the scheduler

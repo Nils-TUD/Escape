@@ -1,5 +1,5 @@
 /**
- * @version		$Id$
+ * @version		$Id: video.h 77 2008-11-22 22:27:35Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */
@@ -7,7 +7,7 @@
 #ifndef STDIO_H_
 #define STDIO_H_
 
-#include "../pub/common.h"
+#include "../h/common.h"
 #include <stdarg.h>
 
 typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;

@@ -1,5 +1,5 @@
 /**
- * @version		$Id$
+ * @version		$Id: mm.h 77 2008-11-22 22:27:35Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */
@@ -7,8 +7,8 @@
 #ifndef MM_H_
 #define MM_H_
 
-#include "../pub/common.h"
-#include "../pub/multiboot.h"
+#include "../h/common.h"
+#include "../h/multiboot.h"
 
 /* the physical start-address of the kernel-area */
 #define KERNEL_AREA_P_ADDR		0x0

@@ -4,13 +4,11 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/util.h"
-#include "../pub/string.h"
-#include "../pub/video.h"
-#include "../pub/paging.h"
-
-#include "../priv/mm.h"
+#include "../h/mm.h"
+#include "../h/util.h"
+#include "../h/string.h"
+#include "../h/video.h"
+#include "../h/paging.h"
 
 /* start- and end-address of the kernel */
 extern u32 KernelStart;
@@ -31,6 +29,10 @@ static u32 l16mSearchPos = 0;
 /* the number of frames we need for our stack */
 static u32 u16mStackFrameCount = 0;
 static u32 *u16mStack = NULL;
+
+/* private prototypes */
+static void mm_markAddrRangeUsed(u32 from,u32 to,bool used);
+static void mm_markFrameUsed(u32 frame,bool used);
 
 void mm_init(void) {
 	sMemMap *mmap;
@@ -157,6 +159,13 @@ void mm_printFreeFrames(void) {
 	vid_printf("\n");
 }
 
+/**
+ * Marks the given range as used or not used
+ *
+ * @param from the start-address
+ * @param to the end-address
+ * @param used wether the frame is used
+ */
 static void mm_markAddrRangeUsed(u32 from,u32 to,bool used) {
 	/* ensure that we start at a page-start */
 	from &= ~PAGE_SIZE;
@@ -165,6 +174,12 @@ static void mm_markAddrRangeUsed(u32 from,u32 to,bool used) {
 	}
 }
 
+/**
+ * Marks the given frame-number as used or not used
+ *
+ * @param frame the frame-number
+ * @param used wether the frame is used
+ */
 static void mm_markFrameUsed(u32 frame,bool used) {
 	u32 *bitmapEntry;
 	/* we use a bitmap for the lower 16MB */

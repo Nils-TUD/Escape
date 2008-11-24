@@ -4,11 +4,11 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/kheap.h"
-#include "../pub/paging.h"
-#include "../pub/mm.h"
-#include "../pub/video.h"
+#include "../h/common.h"
+#include "../h/kheap.h"
+#include "../h/paging.h"
+#include "../h/mm.h"
+#include "../h/video.h"
 #include "tkheap.h"
 #include <stdarg.h>
 

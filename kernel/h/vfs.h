@@ -1,5 +1,5 @@
 /**
- * @version		$Id$
+ * @version		$Id: vfs.h 87 2008-11-24 14:32:19Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */
@@ -7,7 +7,7 @@
 #ifndef VFS_H_
 #define VFS_H_
 
-#include "../pub/common.h"
+#include "../h/common.h"
 
 /* the possible node-types */
 typedef enum {T_DIR,T_INFO,T_SERVICE} eNodeType;

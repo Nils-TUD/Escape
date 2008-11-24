@@ -4,12 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../pub/common.h"
-#include "../pub/vfs.h"
-#include "../pub/video.h"
-#include "../pub/string.h"
-#include "../pub/proc.h"
-#include "../pub/kheap.h"
+#include "../h/common.h"
+#include "../h/vfs.h"
+#include "../h/video.h"
+#include "../h/string.h"
+#include "../h/proc.h"
+#include "../h/kheap.h"
 
 #include "tvfs.h"
 #include "test.h"

@@ -78,25 +78,6 @@ void vid_toLineEnd(u8 pad) {
 	video = (s8*)((u32)video + ((COLS * 2) - col) - pad * 2);
 }
 
-/**
- * Moves all lines one line up, if necessary
- */
-static void vid_move(void) {
-	u32 i;
-	s8 *src,*dst;
-	/* last line? */
-	if(video >= (s8*)(VIDEO_BASE + (ROWS - 1) * COLS * 2)) {
-		/* copy all chars one line back */
-		src = (s8*)(VIDEO_BASE + COLS * 2);
-		dst = (s8*)VIDEO_BASE;
-		for(i = 0; i < ROWS * COLS * 2; i++) {
-			*dst++ = *src++;
-		}
-		/* to prev line */
-		video -= COLS * 2;
-	}
-}
-
 void vid_putchar(s8 c) {
 	u32 i;
 	vid_move();
@@ -302,6 +283,22 @@ void vid_vprintf(cstring fmt,va_list ap) {
 
 		/* restore color */
 		color = oldcolor;
+	}
+}
+
+static void vid_move(void) {
+	u32 i;
+	s8 *src,*dst;
+	/* last line? */
+	if(video >= (s8*)(VIDEO_BASE + (ROWS - 1) * COLS * 2)) {
+		/* copy all chars one line back */
+		src = (s8*)(VIDEO_BASE + COLS * 2);
+		dst = (s8*)VIDEO_BASE;
+		for(i = 0; i < ROWS * COLS * 2; i++) {
+			*dst++ = *src++;
+		}
+		/* to prev line */
+		video -= COLS * 2;
 	}
 }
 

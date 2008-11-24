@@ -82,64 +82,6 @@ static u32 lastEx = 0xFFFFFFFF;
 /* the IDT */
 static sIDTEntry idt[IDT_COUNT];
 
-/**
- * Inits the programmable interrupt controller
- */
-static void intrpt_initPic(void)
-{
-	/* starts the initialization. we want to send a ICW4 */
-	outb(PIC_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
-	outb(PIC_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
-	/* remap the irqs to 0x20 and 0x28 */
-	outb(PIC_MASTER_DATA,IRQ_MASTER_BASE);
-	outb(PIC_SLAVE_DATA,IRQ_SLAVE_BASE);
-	/* continue */
-	outb(PIC_MASTER_DATA,4);
-	outb(PIC_SLAVE_DATA,2);
-
-	/* we want to use 8086 mode */
-	outb(PIC_MASTER_DATA,ICW4_8086);
-	outb(PIC_SLAVE_DATA,ICW4_8086);
-
-	/* enable all interrupts (set masks to 0) */
-	outb(PIC_MASTER_DATA,0x00);
-	outb(PIC_SLAVE_DATA,0x00);
-}
-
-/**
- * Sets the IDT-entry for the given interrupt
- *
- * @param number the interrupt-number
- * @param handler the ISR
- * @param dpl the privilege-level
- */
-static void intrpt_setIDT(u16 number,fISR handler,u8 dpl) {
-	idt[number].fix = 0xE00;
-	idt[number].dpl = dpl;
-	idt[number].present = number != IDT_INTEL_RES1 && number != IDT_INTEL_RES2;
-	idt[number].selector = IDT_CODE_SEL;
-	idt[number].offsetHigh = ((u32)handler >> 16) & 0xFFFF;
-	idt[number].offsetLow = (u32)handler & 0xFFFF;
-}
-
-/**
- * Sends EOI to the PIC, if necessary
- *
- * @param intrptNo the interrupt-number
- */
-static void intrpt_eoi(u32 intrptNo) {
-	/* do we have to send EOI? */
-	if(intrptNo >= IRQ_MASTER_BASE && intrptNo <= IRQ_MASTER_BASE + IRQ_NUM) {
-	    if(intrptNo >= IRQ_SLAVE_BASE) {
-	    	/* notify the slave */
-	        outb(PIC_SLAVE_CMD,PIC_EOI);
-	    }
-
-	    /* notify the master */
-	    outb(PIC_MASTER_CMD,PIC_EOI);
-    }
-}
-
 cstring intrpt_no2Name(u32 intrptNo) {
 	if(intrptNo < ARRAY_SIZE(intrptNo2Name)) {
 		return intrptNo2Name[intrptNo];
@@ -514,4 +456,46 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 	/* send EOI to PIC */
 	intrpt_eoi(stack.intrptNo);
+}
+
+static void intrpt_initPic(void) {
+	/* starts the initialization. we want to send a ICW4 */
+	outb(PIC_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
+	outb(PIC_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
+	/* remap the irqs to 0x20 and 0x28 */
+	outb(PIC_MASTER_DATA,IRQ_MASTER_BASE);
+	outb(PIC_SLAVE_DATA,IRQ_SLAVE_BASE);
+	/* continue */
+	outb(PIC_MASTER_DATA,4);
+	outb(PIC_SLAVE_DATA,2);
+
+	/* we want to use 8086 mode */
+	outb(PIC_MASTER_DATA,ICW4_8086);
+	outb(PIC_SLAVE_DATA,ICW4_8086);
+
+	/* enable all interrupts (set masks to 0) */
+	outb(PIC_MASTER_DATA,0x00);
+	outb(PIC_SLAVE_DATA,0x00);
+}
+
+static void intrpt_setIDT(u16 number,fISR handler,u8 dpl) {
+	idt[number].fix = 0xE00;
+	idt[number].dpl = dpl;
+	idt[number].present = number != IDT_INTEL_RES1 && number != IDT_INTEL_RES2;
+	idt[number].selector = IDT_CODE_SEL;
+	idt[number].offsetHigh = ((u32)handler >> 16) & 0xFFFF;
+	idt[number].offsetLow = (u32)handler & 0xFFFF;
+}
+
+static void intrpt_eoi(u32 intrptNo) {
+	/* do we have to send EOI? */
+	if(intrptNo >= IRQ_MASTER_BASE && intrptNo <= IRQ_MASTER_BASE + IRQ_NUM) {
+	    if(intrptNo >= IRQ_SLAVE_BASE) {
+	    	/* notify the slave */
+	        outb(PIC_SLAVE_CMD,PIC_EOI);
+	    }
+
+	    /* notify the master */
+	    outb(PIC_MASTER_CMD,PIC_EOI);
+    }
 }

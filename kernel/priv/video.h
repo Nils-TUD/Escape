@@ -21,4 +21,17 @@
  */
 static void vid_removeBIOSCursor(void);
 
+/**
+ * printu() with small hexadecimal letters
+ *
+ * @param n the number
+ * @param base the base
+ */
+static void vid_printuSmall(u32 n,u8 base);
+
+/**
+ * Moves all lines one line up, if necessary
+ */
+static void vid_move(void);
+
 #endif /* PRIVVIDEO_H_ */

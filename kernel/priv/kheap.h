@@ -70,4 +70,20 @@ struct sMemArea {
 	sMemArea *next;
 };
 
+/**
+ * Finds a place for a new mem-area
+ *
+ * @param size the desired size
+ * @param isInitial wether the initial area should be splitted
+ * @return the address or NULL if there is not enough mem
+ */
+static sMemArea *kheap_newArea(u32 size,bool isInitial);
+
+/**
+ * Deletes the given area
+ *
+ * @param area the area
+ */
+static void kheap_deleteArea(sMemArea *area);
+
 #endif /* PRIVKHEAP_H_ */

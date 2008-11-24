@@ -335,4 +335,25 @@ extern void isr253(void);
 extern void isr254(void);
 extern void isr255(void);
 
+/**
+ * Inits the programmable interrupt controller
+ */
+static void intrpt_initPic(void);
+
+/**
+ * Sets the IDT-entry for the given interrupt
+ *
+ * @param number the interrupt-number
+ * @param handler the ISR
+ * @param dpl the privilege-level
+ */
+static void intrpt_setIDT(u16 number,fISR handler,u8 dpl);
+
+/**
+ * Sends EOI to the PIC, if necessary
+ *
+ * @param intrptNo the interrupt-number
+ */
+static void intrpt_eoi(u32 intrptNo);
+
 #endif /* PRIVINTRPT_H_ */

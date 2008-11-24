@@ -79,6 +79,11 @@ void vfs_printTree(void);
 void vfs_printNode(sVFSNode *node);
 
 /**
+ * @return the number of entries in the global file table
+ */
+u32 vfs_getGFTEntryCount(void);
+
+/**
  * Cleans the given path. That means multiple slashes are removed and "." and ".." are resolved.
  * After the call you can be sure that you have a "clean" path.
  *
@@ -97,13 +102,13 @@ string vfs_cleanPath(string path);
 s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo);
 
 /**
- * Creates a process-node with given name and handler-function
+ * Creates a process-node with given pid and handler-function
  *
- * @param name the node-name
+ * @param pid the process-id
  * @param handler the read-handler
  * @return true if successfull
  */
-bool vfs_createProcessNode(string name,fRead handler);
+bool vfs_createProcessNode(tPid pid,fRead handler);
 
 /**
  * Removes the node for the process with given id from the VFS

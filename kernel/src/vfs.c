@@ -421,6 +421,15 @@ void vfs_printNode(sVFSNode *node) {
 	}
 }
 
+u32 vfs_getGFTEntryCount(void) {
+	u32 i,count = 0;
+	for(i = 0; i < FILE_COUNT; i++) {
+		if(globalFileTable[i].flags != 0)
+			count++;
+	}
+	return count;
+}
+
 string vfs_cleanPath(string path) {
 	s32 pos = 0;
 	bool root;
@@ -561,10 +570,25 @@ s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 	return 0;
 }
 
-bool vfs_createProcessNode(string name,fRead handler) {
+bool vfs_createProcessNode(tPid pid,fRead handler) {
+	string name;
 	sVFSNode *proc = PROCESSES();
 	sVFSNode *n = proc->childs,*prev = NULL;
+
+	/* build name */
+	name = (string)kheap_alloc(sizeof(s8) * 12);
+	if(name == NULL)
+		return false;
+
+	itoa(name,pid);
+
+	/* go to last entry */
 	while(n != NULL) {
+		/* entry already existing? */
+		if(strcmp(n->name,name) == 0) {
+			kheap_free(name);
+			return false;
+		}
 		prev = n;
 		n = n->next;
 	}
@@ -578,6 +602,8 @@ bool vfs_createProcessNode(string name,fRead handler) {
 		}
 		return true;
 	}
+
+	kheap_free(name);
 	return false;
 }
 
@@ -595,6 +621,8 @@ void vfs_removeProcessNode(tPid pid) {
 				prev->next = n->next;
 			else
 				proc->childs = n->next;
+			/* free node */
+			kheap_free(n->name);
 			vfs_releaseNode(n);
 			break;
 		}

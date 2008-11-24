@@ -87,26 +87,11 @@ static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	return count;
 }
 
-/**
- * Creates a VFS node for the given pid
- *
- * @param pid the process-id
- * @return true if successfull
- */
-static bool proc_createVFSNode(tPid pid) {
-	string name = (string)kheap_alloc(sizeof(s8) * 12);
-	if(name == NULL)
-		return false;
-
-	itoa(name,pid);
-	return vfs_createProcessNode(name,&proc_vfsReadHandler);
-}
-
 void proc_init(void) {
 	tFD i;
 	/* init the first process */
 	pi = 0;
-	if(!proc_createVFSNode(0))
+	if(!vfs_createProcessNode(0,&proc_vfsReadHandler))
 		panic("Not enough mem for init process");
 	procs[pi].state = ST_RUNNING;
 	procs[pi].pid = 0;
@@ -211,7 +196,7 @@ s32 proc_clone(tPid newPid) {
 		panic("The process slot 0x%x is already in use!",procs + newPid);
 
 	/* first create the VFS node (we may not have enough mem) */
-	if(!proc_createVFSNode(newPid))
+	if(!vfs_createProcessNode(newPid,&proc_vfsReadHandler))
 		return -1;
 
 	/* clone page-dir */

@@ -4,16 +4,11 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/video.h"
-#include "../h/common.h"
-#include "../h/util.h"
+#include "../pub/common.h"
+#include "../pub/util.h"
 #include <stdarg.h>
 
-#define COL_WOB 0x07				/* white on black */
-#define VIDEO_BASE 0xC00B8000
-#define COLS 80
-#define ROWS 25
-#define TAB_WIDTH 2
+#include "../priv/video.h"
 
 static s8 *video = (s8*)VIDEO_BASE;
 static s8 hexCharsBig[] = "0123456789ABCDEF";
@@ -21,16 +16,6 @@ static s8 hexCharsSmall[] = "0123456789abcdef";
 static u8 color = 0;
 
 static u8 oldBG = 0, oldFG = 0;
-
-/**
- * Removes the BIOS-cursor from the screen
- */
-static void vid_removeBIOSCursor(void) {
-	outb(0x3D4,14);
-	outb(0x3D5,0x07);
-	outb(0x3D4,15);
-	outb(0x3D5,0xd0);
-}
 
 void vid_init(void) {
 	vid_removeBIOSCursor();
@@ -320,3 +305,9 @@ void vid_vprintf(cstring fmt,va_list ap) {
 	}
 }
 
+static void vid_removeBIOSCursor(void) {
+	outb(0x3D4,14);
+	outb(0x3D5,0x07);
+	outb(0x3D4,15);
+	outb(0x3D5,0xd0);
+}

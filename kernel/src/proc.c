@@ -4,27 +4,18 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/proc.h"
-#include "../h/paging.h"
-#include "../h/mm.h"
-#include "../h/util.h"
-#include "../h/string.h"
-#include "../h/video.h"
-#include "../h/intrpt.h"
-#include "../h/sched.h"
-#include "../h/vfs.h"
-#include "../h/kheap.h"
+#include "../pub/common.h"
+#include "../pub/paging.h"
+#include "../pub/mm.h"
+#include "../pub/util.h"
+#include "../pub/string.h"
+#include "../pub/video.h"
+#include "../pub/intrpt.h"
+#include "../pub/sched.h"
+#include "../pub/vfs.h"
+#include "../pub/kheap.h"
 
-/* public process-data */
-typedef struct {
-	u8 state;
-	tPid pid;
-	tPid parentPid;
-	u32 textPages;
-	u32 dataPages;
-	u32 stackPages;
-} sProcPub;
+#include "../priv/proc.h"
 
 /* our processes */
 static sProc procs[PROC_COUNT];
@@ -34,58 +25,6 @@ static tPid pi;
 
 /* pointer to a dead proc that has to be deleted */
 static sProc *deadProc = NULL;
-
-/**
- * Our VFS read handler that should read process information into a given buffer
- *
- * @param node the VFS node
- * @param buffer the buffer where to copy the info to
- * @param offset the offset where to start
- * @param count the number of bytes
- * @return the number of read bytes
- */
-static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
-	/* don't use the cache here to prevent that one process occupies it for all others */
-	/* (if the process doesn't call close() the cache will not be invalidated and therefore
-	 * other processes might miss changes) */
-	sProc *p = procs + atoi(node->name);
-	sProcPub *proc;
-	/* can we copy it directly? */
-	if(offset == 0 && count == sizeof(sProcPub))
-		proc = (sProcPub*)buffer;
-	/* don't waste time in this case */
-	else if(offset >= sizeof(sProcPub))
-		return 0;
-	/* ok, use the heap as temporary storage */
-	else {
-		proc = kheap_alloc(sizeof(sProcPub));
-		if(proc == NULL)
-			return 0;
-	}
-
-	/* copy values to public struct */
-	proc->state = p->state;
-	proc->pid = p->pid;
-	proc->parentPid = p->parentPid;
-	proc->textPages = p->textPages;
-	proc->dataPages = p->dataPages;
-	proc->stackPages = p->stackPages;
-
-	/* stored on kheap? */
-	if((u32)proc != (u32)buffer) {
-		/* correct vars */
-		if(offset > sizeof(sProcPub))
-			offset = sizeof(sProcPub);
-		count = MIN(sizeof(sProcPub) - offset,count);
-		/* copy */
-		if(count > 0)
-			memcpy(buffer,(u8*)proc + offset,count);
-		/* free temp storage */
-		kheap_free(proc);
-	}
-
-	return count;
-}
 
 void proc_init(void) {
 	tFD i;
@@ -388,4 +327,47 @@ bool proc_changeSize(s32 change,eChgArea area) {
 	}
 
 	return true;
+}
+
+static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	/* don't use the cache here to prevent that one process occupies it for all others */
+	/* (if the process doesn't call close() the cache will not be invalidated and therefore
+	 * other processes might miss changes) */
+	sProc *p = procs + atoi(node->name);
+	sProcPub *proc;
+	/* can we copy it directly? */
+	if(offset == 0 && count == sizeof(sProcPub))
+		proc = (sProcPub*)buffer;
+	/* don't waste time in this case */
+	else if(offset >= sizeof(sProcPub))
+		return 0;
+	/* ok, use the heap as temporary storage */
+	else {
+		proc = kheap_alloc(sizeof(sProcPub));
+		if(proc == NULL)
+			return 0;
+	}
+
+	/* copy values to public struct */
+	proc->state = p->state;
+	proc->pid = p->pid;
+	proc->parentPid = p->parentPid;
+	proc->textPages = p->textPages;
+	proc->dataPages = p->dataPages;
+	proc->stackPages = p->stackPages;
+
+	/* stored on kheap? */
+	if((u32)proc != (u32)buffer) {
+		/* correct vars */
+		if(offset > sizeof(sProcPub))
+			offset = sizeof(sProcPub);
+		count = MIN(sizeof(sProcPub) - offset,count);
+		/* copy */
+		if(count > 0)
+			memcpy(buffer,(u8*)proc + offset,count);
+		/* free temp storage */
+		kheap_free(proc);
+	}
+
+	return count;
 }

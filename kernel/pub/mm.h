@@ -7,8 +7,8 @@
 #ifndef MM_H_
 #define MM_H_
 
-#include "../h/common.h"
-#include "../h/multiboot.h"
+#include "../pub/common.h"
+#include "../pub/multiboot.h"
 
 /* the physical start-address of the kernel-area */
 #define KERNEL_AREA_P_ADDR		0x0

@@ -7,7 +7,7 @@
 #ifndef SLLIST_H_
 #define SLLIST_H_
 
-#include "../h/common.h"
+#include "../pub/common.h"
 #include "test.h"
 
 extern sTestModule tModSLList;

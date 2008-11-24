@@ -7,7 +7,7 @@
 #ifndef TEST_H_
 #define TEST_H_
 
-#include "../h/common.h"
+#include "../pub/common.h"
 #include <stdarg.h>
 
 #define MAX_TESTS 100

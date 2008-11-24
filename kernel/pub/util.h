@@ -7,7 +7,7 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
-#include "../h/common.h"
+#include "../pub/common.h"
 
 /**
  * Represents one function-call

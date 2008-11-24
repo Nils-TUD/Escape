@@ -7,7 +7,7 @@
 #ifndef GDT_H_
 #define GDT_H_
 
-#include "../h/common.h"
+#include "../pub/common.h"
 
 /**
  * Inits the GDT

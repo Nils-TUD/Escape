@@ -7,7 +7,7 @@
 #ifndef KSYMBOLS_H_
 #define KSYMBOLS_H_
 
-#include "../h/common.h"
+#include "../pub/common.h"
 
 /* Represents one symbol (address -> name) */
 typedef struct {

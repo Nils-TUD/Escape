@@ -7,7 +7,7 @@
 #ifndef STDIO_H_
 #define STDIO_H_
 
-#include "../h/common.h"
+#include "../pub/common.h"
 #include <stdarg.h>
 
 typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;

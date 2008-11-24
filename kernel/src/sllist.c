@@ -4,34 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/sllist.h"
-#include "../h/kheap.h"
-#include "../h/util.h"
-#include "../h/video.h"
+#include "../pub/common.h"
+#include "../pub/kheap.h"
+#include "../pub/util.h"
+#include "../pub/video.h"
 
-/* a node in a list */
-typedef struct sNode sNode;
-struct sNode {
-	sNode *next;
-	void *data;
-};
-
-/* represents a list */
-typedef struct {
-	sNode *first;
-	sNode *last;
-	u32 length;
-} sList;
-
-/**
- * Searches for the node at given index
- *
- * @param list the list
- * @param index the index
- * @return the node
- */
-static sNode *sll_gesNode(sSLList *list,u32 index);
+#include "../priv/sllist.h"
 
 sSLList *sll_create(void) {
 	sList *l = kheap_alloc(sizeof(sList));

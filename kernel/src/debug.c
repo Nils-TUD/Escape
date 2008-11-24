@@ -4,12 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/debug.h"
-#include "../h/common.h"
-#include "../h/video.h"
-#include "../h/paging.h"
-#include "../h/proc.h"
-#include "../h/cpu.h"
+#include "../pub/debug.h"
+#include "../pub/common.h"
+#include "../pub/video.h"
+#include "../pub/paging.h"
+#include "../pub/proc.h"
+#include "../pub/cpu.h"
 
 static u64 start = 0;
 

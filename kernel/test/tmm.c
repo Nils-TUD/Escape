@@ -4,8 +4,8 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/mm.h"
+#include "../pub/common.h"
+#include "../pub/mm.h"
 #include "test.h"
 #include "tmm.h"
 

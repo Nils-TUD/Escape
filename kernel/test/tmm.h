@@ -7,7 +7,7 @@
 #ifndef TESTMM_H_
 #define TESTMM_H_
 
-#include "../h/common.h"
+#include "../pub/common.h"
 #include "test.h"
 
 extern sTestModule tModMM;

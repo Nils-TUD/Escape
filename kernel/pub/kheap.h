@@ -7,7 +7,7 @@
 #ifndef KHEAP_H_
 #define KHEAP_H_
 
-#include "../h/common.h"
+#include "../pub/common.h"
 
 /**
  * Inits the kernel-heap

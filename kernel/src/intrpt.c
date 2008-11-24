@@ -74,61 +74,8 @@ typedef struct {
 	u32 address;
 } __attribute__((packed)) sIDTPtr;
 
-/* interrupt -> name */
-static cstring intrptNo2Name[] = {
-	/* 0x00 */	"Divide by zero",
-	/* 0x01 */	"Single step",
-	/* 0x02 */	"Non maskable",
-	/* 0x03 */	"Breakpoint",
-	/* 0x04 */	"Overflow",
-	/* 0x05 */	"Bounds check",
-	/* 0x06 */	"Invalid opcode",
-	/* 0x07 */	"Co-processor not available",
-	/* 0x08 */	"Double fault",
-	/* 0x09 */	"Co-processor segment overrun",
-	/* 0x0A */	"Invalid TSS",
-	/* 0x0B */	"Segment not present",
-	/* 0x0C */	"Stack exception",
-	/* 0x0D */	"General protection fault",
-	/* 0x0E */	"Page fault",
-	/* 0x0F */	"<unknown>",
-	/* 0x10 */	"Co-processor error",
-	/* 0x11 */	"<unknown>",
-	/* 0x12 */	"<unknown>",
-	/* 0x13 */	"<unknown>",
-	/* 0x14 */	"<unknown>",
-	/* 0x15 */	"<unknown>",
-	/* 0x16 */	"<unknown>",
-	/* 0x17 */	"<unknown>",
-	/* 0x18 */	"<unknown>",
-	/* 0x19 */	"<unknown>",
-	/* 0x1A */	"<unknown>",
-	/* 0x1B */	"<unknown>",
-	/* 0x1C */	"<unknown>",
-	/* 0x1D */	"<unknown>",
-	/* 0x1E */	"<unknown>",
-	/* 0x1F */	"<unknown>",
-	/* 0x20 */	"Timer",
-	/* 0x21 */	"Keyboard",
-	/* 0x22 */	"<Cascade>",
-	/* 0x23 */	"COM2",
-	/* 0x24 */	"COM1",
-	/* 0x25 */	"<unknown>",
-	/* 0x26 */	"Floppy",
-	/* 0x27 */	"<unknown>",
-	/* 0x28 */	"CMOS real-time-clock",
-	/* 0x29 */	"<unknown>",
-	/* 0x2A */	"<unknown>",
-	/* 0x2B */	"<unknown>",
-	/* 0x2C */	"<unknown>",
-	/* 0x2D */	"<unknown>",
-	/* 0x2E */	"ATA1",
-	/* 0x2F */	"ATA2"
-};
-
-/* stuff to count exceptions */
-static u32 exCount = 0;
-static u32 lastEx = 0xFFFFFFFF;
+/* isr prototype */
+typedef void (*fISR)(void);
 
 /**
  * Assembler routine to load an IDT
@@ -138,7 +85,6 @@ extern void intrpt_loadidt(sIDTPtr *idt);
 /**
  * Our ISRs
  */
-typedef void (*fISR)(void);
 extern void isr0(void);
 extern void isr1(void);
 extern void isr2(void);
@@ -397,37 +343,9 @@ extern void isr254(void);
 extern void isr255(void);
 
 /**
- * An assembler routine to load an IDT
- *
- * @param idt the IDT to load
- */
-/*extern void idt_flush(sIDTPtr *idt);*/
-
-/* the IDT */
-static sIDTEntry idt[IDT_COUNT];
-
-/**
  * Inits the programmable interrupt controller
  */
-static void intrpt_initPic(void) {
-	/* starts the initialization. we want to send a ICW4 */
-	outb(PIC_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
-	outb(PIC_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
-	/* remap the irqs to 0x20 and 0x28 */
-	outb(PIC_MASTER_DATA,IRQ_MASTER_BASE);
-	outb(PIC_SLAVE_DATA,IRQ_SLAVE_BASE);
-	/* continue */
-	outb(PIC_MASTER_DATA,4);
-	outb(PIC_SLAVE_DATA,2);
-
-	/* we want to use 8086 mode */
-	outb(PIC_MASTER_DATA,ICW4_8086);
-	outb(PIC_SLAVE_DATA,ICW4_8086);
-
-	/* enable all interrupts (set masks to 0) */
-	outb(PIC_MASTER_DATA,0x00);
-	outb(PIC_SLAVE_DATA,0x00);
-}
+static void intrpt_initPic(void);
 
 /**
  * Sets the IDT-entry for the given interrupt
@@ -436,32 +354,80 @@ static void intrpt_initPic(void) {
  * @param handler the ISR
  * @param dpl the privilege-level
  */
-static void intrpt_setIDT(u16 number,fISR handler,u8 dpl) {
-	idt[number].fix = 0xE00;
-	idt[number].dpl = dpl;
-	idt[number].present = number != IDT_INTEL_RES1 && number != IDT_INTEL_RES2;
-	idt[number].selector = IDT_CODE_SEL;
-	idt[number].offsetHigh = ((u32)handler >> 16) & 0xFFFF;
-	idt[number].offsetLow = (u32)handler & 0xFFFF;
-}
+static void intrpt_setIDT(u16 number,fISR handler,u8 dpl);
 
 /**
  * Sends EOI to the PIC, if necessary
  *
  * @param intrptNo the interrupt-number
  */
-static void intrpt_eoi(u32 intrptNo) {
-	/* do we have to send EOI? */
-	if(intrptNo >= IRQ_MASTER_BASE && intrptNo <= IRQ_MASTER_BASE + IRQ_NUM) {
-	    if(intrptNo >= IRQ_SLAVE_BASE) {
-	    	/* notify the slave */
-	        outb(PIC_SLAVE_CMD,PIC_EOI);
-	    }
+static void intrpt_eoi(u32 intrptNo);
 
-	    /* notify the master */
-	    outb(PIC_MASTER_CMD,PIC_EOI);
-    }
-}
+/* interrupt -> name */
+static cstring intrptNo2Name[] = {
+	/* 0x00 */	"Divide by zero",
+	/* 0x01 */	"Single step",
+	/* 0x02 */	"Non maskable",
+	/* 0x03 */	"Breakpoint",
+	/* 0x04 */	"Overflow",
+	/* 0x05 */	"Bounds check",
+	/* 0x06 */	"Invalid opcode",
+	/* 0x07 */	"Co-processor not available",
+	/* 0x08 */	"Double fault",
+	/* 0x09 */	"Co-processor segment overrun",
+	/* 0x0A */	"Invalid TSS",
+	/* 0x0B */	"Segment not present",
+	/* 0x0C */	"Stack exception",
+	/* 0x0D */	"General protection fault",
+	/* 0x0E */	"Page fault",
+	/* 0x0F */	"<unknown>",
+	/* 0x10 */	"Co-processor error",
+	/* 0x11 */	"<unknown>",
+	/* 0x12 */	"<unknown>",
+	/* 0x13 */	"<unknown>",
+	/* 0x14 */	"<unknown>",
+	/* 0x15 */	"<unknown>",
+	/* 0x16 */	"<unknown>",
+	/* 0x17 */	"<unknown>",
+	/* 0x18 */	"<unknown>",
+	/* 0x19 */	"<unknown>",
+	/* 0x1A */	"<unknown>",
+	/* 0x1B */	"<unknown>",
+	/* 0x1C */	"<unknown>",
+	/* 0x1D */	"<unknown>",
+	/* 0x1E */	"<unknown>",
+	/* 0x1F */	"<unknown>",
+	/* 0x20 */	"Timer",
+	/* 0x21 */	"Keyboard",
+	/* 0x22 */	"<Cascade>",
+	/* 0x23 */	"COM2",
+	/* 0x24 */	"COM1",
+	/* 0x25 */	"<unknown>",
+	/* 0x26 */	"Floppy",
+	/* 0x27 */	"<unknown>",
+	/* 0x28 */	"CMOS real-time-clock",
+	/* 0x29 */	"<unknown>",
+	/* 0x2A */	"<unknown>",
+	/* 0x2B */	"<unknown>",
+	/* 0x2C */	"<unknown>",
+	/* 0x2D */	"<unknown>",
+	/* 0x2E */	"ATA1",
+	/* 0x2F */	"ATA2"
+};
+
+/* stuff to count exceptions */
+static u32 exCount = 0;
+static u32 lastEx = 0xFFFFFFFF;
+
+/**
+ * An assembler routine to load an IDT
+ *
+ * @param idt the IDT to load
+ */
+/*extern void idt_flush(sIDTPtr *idt);*/
+
+/* the IDT */
+static sIDTEntry idt[IDT_COUNT];
 
 cstring intrpt_no2Name(u32 intrptNo) {
 	if(intrptNo < ARRAY_SIZE(intrptNo2Name)) {
@@ -836,4 +802,46 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 	/* send EOI to PIC */
 	intrpt_eoi(stack.intrptNo);
+}
+
+static void intrpt_initPic(void) {
+	/* starts the initialization. we want to send a ICW4 */
+	outb(PIC_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
+	outb(PIC_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
+	/* remap the irqs to 0x20 and 0x28 */
+	outb(PIC_MASTER_DATA,IRQ_MASTER_BASE);
+	outb(PIC_SLAVE_DATA,IRQ_SLAVE_BASE);
+	/* continue */
+	outb(PIC_MASTER_DATA,4);
+	outb(PIC_SLAVE_DATA,2);
+
+	/* we want to use 8086 mode */
+	outb(PIC_MASTER_DATA,ICW4_8086);
+	outb(PIC_SLAVE_DATA,ICW4_8086);
+
+	/* enable all interrupts (set masks to 0) */
+	outb(PIC_MASTER_DATA,0x00);
+	outb(PIC_SLAVE_DATA,0x00);
+}
+
+static void intrpt_setIDT(u16 number,fISR handler,u8 dpl) {
+	idt[number].fix = 0xE00;
+	idt[number].dpl = dpl;
+	idt[number].present = number != IDT_INTEL_RES1 && number != IDT_INTEL_RES2;
+	idt[number].selector = IDT_CODE_SEL;
+	idt[number].offsetHigh = ((u32)handler >> 16) & 0xFFFF;
+	idt[number].offsetLow = (u32)handler & 0xFFFF;
+}
+
+static void intrpt_eoi(u32 intrptNo) {
+	/* do we have to send EOI? */
+	if(intrptNo >= IRQ_MASTER_BASE && intrptNo <= IRQ_MASTER_BASE + IRQ_NUM) {
+	    if(intrptNo >= IRQ_SLAVE_BASE) {
+	    	/* notify the slave */
+	        outb(PIC_SLAVE_CMD,PIC_EOI);
+	    }
+
+	    /* notify the master */
+	    outb(PIC_MASTER_CMD,PIC_EOI);
+    }
 }

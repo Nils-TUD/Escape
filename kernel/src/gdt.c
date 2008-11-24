@@ -10,6 +10,33 @@
 #include "../h/string.h"
 #include "../h/paging.h"
 
+/* we need 6 entries: null-entry, code for kernel, data for kernel, user-code, user-data
+ * and one entry for our TSS */
+#define GDT_ENTRY_COUNT 6
+
+/* == for the access-field == */
+
+/* the GDT entry types */
+#define GDT_TYPE_DATA			(0 | GDT_NOSYS)
+#define GDT_TYPE_CODE			(1 << 3 | GDT_NOSYS)
+#define GDT_TYPE_32BIT_TSS		(1 << 3 | 1 << 0)	/* requires GDT_NOSYS_SEG = 0 */
+
+/* flag to switch between system- and code/data-segment */
+#define GDT_NOSYS				(1 << 4)
+#define GDT_PRESENT				(1 << 7)
+#define GDT_DPL					(1 << 5 | 1 << 6)
+
+#define GDT_DATA_WRITE			(1 << 1)
+#define GDT_CODE_READ			(1 << 1)
+#define GDT_CODE_CONFORMING		(1 << 2)
+
+#define GDT_32BIT_PMODE			(1 << 6)
+#define GDT_PAGE_GRANULARITY	(1 << 7)
+
+/* privilege level */
+#define GDT_DPL_KERNEL			0
+#define GDT_DPL_USER			3
+
 /* the GDT table */
 typedef struct {
 	u16 size;		/* the size of the table -1 (size=0 is not allowed) */
@@ -134,33 +161,6 @@ typedef struct {
 	 * I/O permission bit map and the end of the interrupt redirection bit map. */
 	u16 ioMapBaseAddr;
 } __attribute__((packed)) sTSS;
-
-/* we need 6 entries: null-entry, code for kernel, data for kernel, user-code, user-data
- * and one entry for our TSS */
-#define GDT_ENTRY_COUNT 6
-
-/* == for the access-field == */
-
-/* the GDT entry types */
-#define GDT_TYPE_DATA			(0 | GDT_NOSYS)
-#define GDT_TYPE_CODE			(1 << 3 | GDT_NOSYS)
-#define GDT_TYPE_32BIT_TSS		(1 << 3 | 1 << 0)	/* requires GDT_NOSYS_SEG = 0 */
-
-/* flag to switch between system- and code/data-segment */
-#define GDT_NOSYS				(1 << 4)
-#define GDT_PRESENT				(1 << 7)
-#define GDT_DPL					(1 << 5 | 1 << 6)
-
-#define GDT_DATA_WRITE			(1 << 1)
-#define GDT_CODE_READ			(1 << 1)
-#define GDT_CODE_CONFORMING		(1 << 2)
-
-#define GDT_32BIT_PMODE			(1 << 6)
-#define GDT_PAGE_GRANULARITY	(1 << 7)
-
-/* privilege level */
-#define GDT_DPL_KERNEL			0
-#define GDT_DPL_USER			3
 
 /**
  * Assembler routine to flush the GDT

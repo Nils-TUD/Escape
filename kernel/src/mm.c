@@ -10,6 +10,32 @@
 #include "../h/video.h"
 #include "../h/paging.h"
 
+/**
+ * Marks the given range as used or not used
+ *
+ * @param from the start-address
+ * @param to the end-address
+ * @param used wether the frame is used
+ */
+static void mm_markAddrRangeUsed(u32 from,u32 to,bool used);
+
+/**
+ * Marks the given frame-number as used or not used
+ *
+ * @param frame the frame-number
+ * @param used wether the frame is used
+ */
+static void mm_markFrameUsed(u32 frame,bool used);
+
+/**
+ * Checks wether the given frame of given type is free
+ *
+ * @param type the type: MM_DEF or MM_DMA
+ * @param frame the frame-number
+ * @return true if it is free
+ */
+static bool mm_isFrameFree(eMemType type,u32 frame);
+
 /* start- and end-address of the kernel */
 extern u32 KernelStart;
 extern u32 KernelEnd;
@@ -29,11 +55,6 @@ static u32 l16mSearchPos = 0;
 /* the number of frames we need for our stack */
 static u32 u16mStackFrameCount = 0;
 static u32 *u16mStack = NULL;
-
-/* private prototypes */
-static void mm_markAddrRangeUsed(u32 from,u32 to,bool used);
-static void mm_markFrameUsed(u32 frame,bool used);
-static bool mm_isFrameFree(eMemType type,u32 frame);
 
 void mm_init(void) {
 	sMemMap *mmap;
@@ -176,13 +197,6 @@ void mm_printFreeFrames(void) {
 	vid_printf("\n");
 }
 
-/**
- * Checks wether the given frame of given type is free
- *
- * @param type the type: MM_DEF or MM_DMA
- * @param frame the frame-number
- * @return true if it is free
- */
 static bool mm_isFrameFree(eMemType type,u32 frame) {
 	u32 *ptr;
 	if(type == MM_DEF) {
@@ -199,13 +213,6 @@ static bool mm_isFrameFree(eMemType type,u32 frame) {
 	return (*ptr & (1 << (frame & 0x1f))) == 0;
 }
 
-/**
- * Marks the given range as used or not used
- *
- * @param from the start-address
- * @param to the end-address
- * @param used wether the frame is used
- */
 static void mm_markAddrRangeUsed(u32 from,u32 to,bool used) {
 	/* ensure that we start at a page-start */
 	from &= ~PAGE_SIZE;
@@ -214,12 +221,6 @@ static void mm_markAddrRangeUsed(u32 from,u32 to,bool used) {
 	}
 }
 
-/**
- * Marks the given frame-number as used or not used
- *
- * @param frame the frame-number
- * @param used wether the frame is used
- */
 static void mm_markFrameUsed(u32 frame,bool used) {
 	u32 *bitmapEntry;
 	/* we use a bitmap for the lower 16MB */

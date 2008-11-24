@@ -22,23 +22,11 @@
  * (this assumes that the kernel lies at 0xC0000000) */
 #define VIRT2PHYS(addr) ((u32)(addr) + 0x40000000)
 
-/* the page-directory for process 0 */
-sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] __attribute__ ((aligned (PAGE_SIZE)));
-/* the page-table for process 0 */
-sPTEntry proc0PT[PAGE_SIZE / sizeof(sPTEntry)] __attribute__ ((aligned (PAGE_SIZE)));
-
 /* copy-on-write */
 typedef struct {
 	u32 frameNumber;
 	sProc *proc;
 } sCOW;
-
-/**
- * A list which contains each frame for each process that is marked as copy-on-write.
- * If a process causes a page-fault we will remove it from the list. If there is no other
- * entry for the frame in the list, the process can keep the frame, otherwise it is copied.
- */
-static sSLList *cowFrames = NULL;
 
 /**
  * Assembler routine to enable paging
@@ -51,16 +39,7 @@ extern void paging_enable(void);
  * @param pt the pointer to the first entry of the page-table
  * @return true if empty
  */
-static bool paging_isPTEmpty(sPTEntry *pt) {
-	u32 i;
-	for(i = 0; i < PT_ENTRY_COUNT; i++) {
-		if(pt->present) {
-			return false;
-		}
-		pt++;
-	}
-	return true;
-}
+static bool paging_isPTEmpty(sPTEntry *pt);
 
 /**
  * Counts the number of present pages in the given page-table
@@ -68,16 +47,7 @@ static bool paging_isPTEmpty(sPTEntry *pt) {
  * @param pt the page-table
  * @return the number of present pages
  */
-static u32 paging_getPTEntryCount(sPTEntry *pt) {
-	u32 i,count = 0;
-	for(i = 0; i < PT_ENTRY_COUNT; i++) {
-		if(pt->present) {
-			count++;
-		}
-		pt++;
-	}
-	return count;
-}
+static u32 paging_getPTEntryCount(sPTEntry *pt);
 
 /**
  * paging_map() for internal usages
@@ -120,6 +90,18 @@ static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc);
  * Prints all entries in the copy-on-write-list
  */
 static void paging_printCOW(void);
+
+/* the page-directory for process 0 */
+sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] __attribute__ ((aligned (PAGE_SIZE)));
+/* the page-table for process 0 */
+sPTEntry proc0PT[PAGE_SIZE / sizeof(sPTEntry)] __attribute__ ((aligned (PAGE_SIZE)));
+
+/**
+ * A list which contains each frame for each process that is marked as copy-on-write.
+ * If a process causes a page-fault we will remove it from the list. If there is no other
+ * entry for the frame in the list, the process can keep the frame, otherwise it is copied.
+ */
+static sSLList *cowFrames = NULL;
 
 void paging_init(void) {
 	sPDEntry *pd,*pde;
@@ -384,48 +366,8 @@ void paging_unmap(u32 virtual,u32 count,bool freeFrames) {
 	paging_unmapIntern(MAPPED_PTS_START,virtual,count,freeFrames);
 }
 
-static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFrames) {
-	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
-
-	ASSERT(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
-	ASSERT(freeFrames == true || freeFrames == false,"freeFrames invalid");
-
-	while(count-- > 0) {
-		/* remove and free, if desired */
-		if(pt->present) {
-			/* we don't want to free copy-on-write pages */
-			if(freeFrames && !pt->copyOnWrite)
-				mm_freeFrame(pt->frameNumber,MM_DEF);
-			pt->present = false;
-
-			/* invalidate TLB-entry */
-			if(mappingArea == MAPPED_PTS_START)
-				paging_flushAddr(virtual);
-		}
-
-		/* to next page */
-		pt++;
-		virtual += PAGE_SIZE;
-	}
-}
-
 void paging_unmapPageTables(u32 start,u32 count) {
 	paging_unmapPageTablesIntern(PAGE_DIR_AREA,start,count);
-}
-
-static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
-	sPDEntry *pde = (sPDEntry*)pageDir + start;
-
-	ASSERT(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
-	ASSERT(start < PT_ENTRY_COUNT,"start >= PT_ENTRY_COUNT");
-	ASSERT(count < PT_ENTRY_COUNT,"count >= PT_ENTRY_COUNT");
-
-	while(count-- > 0) {
-		pde->present = 0;
-		mm_freeFrame(pde->ptFrameNo,MM_DEF);
-		pde++;
-	}
-	paging_flushTLB();
 }
 
 u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
@@ -605,51 +547,6 @@ void paging_handlePageFault(u32 address) {
 	}
 }
 
-static void paging_printCOW(void) {
-	sSLNode *n;
-	sCOW *cow;
-	vid_printf("COW-Frames:\n");
-	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
-		cow = (sCOW*)n->data;
-		vid_printf("\tframe=0x%x, proc=0x%x\n",cow->frameNumber,cow->proc);
-	}
-}
-
-static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
-	sPTEntry *ownPt;
-	sCOW *cow;
-
-	virtual &= ~(PAGE_SIZE - 1);
-	while(count-- > 0) {
-		/* build cow-entry for child */
-		cow = (sCOW*)kheap_alloc(sizeof(sCOW));
-		if(cow == NULL)
-			panic("Not enough mem for copy-on-write!");
-		cow->frameNumber = *frames >> PAGE_SIZE_SHIFT;
-		cow->proc = newProc;
-		if(!sll_append(cowFrames,cow))
-			panic("Not enough mem for copy-on-write!");
-
-		/* build cow-entry for parent if not already done */
-		ownPt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
-		if(!ownPt->copyOnWrite) {
-			cow = (sCOW*)kheap_alloc(sizeof(sCOW));
-			if(cow == NULL)
-				panic("Not enough mem for copy-on-write!");
-			cow->frameNumber = *frames >> PAGE_SIZE_SHIFT;
-			cow->proc = proc_getRunning();
-			if(!sll_append(cowFrames,cow))
-				panic("Not enough mem for copy-on-write!");
-
-			ownPt->copyOnWrite = true;
-			ownPt->writable = false;
-		}
-
-		frames++;
-		virtual += PAGE_SIZE;
-	}
-}
-
 void paging_destroyPageDir(sProc *p) {
 	sPDEntry *pd,*ppd;
 
@@ -708,4 +605,111 @@ void paging_gdtFinished(void) {
 	 * for the kernel */
 	proc0PD[0].present = false;
 	paging_flushTLB();
+}
+
+static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFrames) {
+	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
+
+	ASSERT(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
+	ASSERT(freeFrames == true || freeFrames == false,"freeFrames invalid");
+
+	while(count-- > 0) {
+		/* remove and free, if desired */
+		if(pt->present) {
+			/* we don't want to free copy-on-write pages */
+			if(freeFrames && !pt->copyOnWrite)
+				mm_freeFrame(pt->frameNumber,MM_DEF);
+			pt->present = false;
+
+			/* invalidate TLB-entry */
+			if(mappingArea == MAPPED_PTS_START)
+				paging_flushAddr(virtual);
+		}
+
+		/* to next page */
+		pt++;
+		virtual += PAGE_SIZE;
+	}
+}
+
+static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
+	sPDEntry *pde = (sPDEntry*)pageDir + start;
+
+	ASSERT(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
+	ASSERT(start < PT_ENTRY_COUNT,"start >= PT_ENTRY_COUNT");
+	ASSERT(count < PT_ENTRY_COUNT,"count >= PT_ENTRY_COUNT");
+
+	while(count-- > 0) {
+		pde->present = 0;
+		mm_freeFrame(pde->ptFrameNo,MM_DEF);
+		pde++;
+	}
+	paging_flushTLB();
+}
+
+static void paging_printCOW(void) {
+	sSLNode *n;
+	sCOW *cow;
+	vid_printf("COW-Frames:\n");
+	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
+		cow = (sCOW*)n->data;
+		vid_printf("\tframe=0x%x, proc=0x%x\n",cow->frameNumber,cow->proc);
+	}
+}
+
+static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
+	sPTEntry *ownPt;
+	sCOW *cow;
+
+	virtual &= ~(PAGE_SIZE - 1);
+	while(count-- > 0) {
+		/* build cow-entry for child */
+		cow = (sCOW*)kheap_alloc(sizeof(sCOW));
+		if(cow == NULL)
+			panic("Not enough mem for copy-on-write!");
+		cow->frameNumber = *frames >> PAGE_SIZE_SHIFT;
+		cow->proc = newProc;
+		if(!sll_append(cowFrames,cow))
+			panic("Not enough mem for copy-on-write!");
+
+		/* build cow-entry for parent if not already done */
+		ownPt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
+		if(!ownPt->copyOnWrite) {
+			cow = (sCOW*)kheap_alloc(sizeof(sCOW));
+			if(cow == NULL)
+				panic("Not enough mem for copy-on-write!");
+			cow->frameNumber = *frames >> PAGE_SIZE_SHIFT;
+			cow->proc = proc_getRunning();
+			if(!sll_append(cowFrames,cow))
+				panic("Not enough mem for copy-on-write!");
+
+			ownPt->copyOnWrite = true;
+			ownPt->writable = false;
+		}
+
+		frames++;
+		virtual += PAGE_SIZE;
+	}
+}
+
+static bool paging_isPTEmpty(sPTEntry *pt) {
+	u32 i;
+	for(i = 0; i < PT_ENTRY_COUNT; i++) {
+		if(pt->present) {
+			return false;
+		}
+		pt++;
+	}
+	return true;
+}
+
+static u32 paging_getPTEntryCount(sPTEntry *pt) {
+	u32 i,count = 0;
+	for(i = 0; i < PT_ENTRY_COUNT; i++) {
+		if(pt->present) {
+			count++;
+		}
+		pt++;
+	}
+	return count;
 }

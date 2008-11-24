@@ -42,7 +42,7 @@ void mm_init(void);
  * @param types a bit-mask with all types (MM_DMA,MM_DEF) to use for counting
  * @return the number of free frames
  */
-u32 mm_getNumberOfFreeFrames(u32 types);
+u32 mm_getFreeFrmCount(u32 types);
 
 /**
  * A convenience-method to allocate multiple frames. Simply calls <count> times
@@ -82,14 +82,13 @@ void mm_freeFrames(eMemType type,u32 *frames,u32 count);
  */
 void mm_freeFrame(u32 frame,eMemType type);
 
+#if DEBUGGING
+
 /**
  * Prints all free frames
  */
-void mm_printFreeFrames(void);
+void mm_dbg_printFreeFrames(void);
 
-/**
- * Prints the bitmap for the lower 16MB memory
- */
-void mm_printl16MBitmap(void);
+#endif
 
 #endif /*MM_H_*/

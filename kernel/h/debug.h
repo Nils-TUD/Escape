@@ -21,45 +21,4 @@ void dbg_startTimer(void);
  */
 void dbg_stopTimer(void);
 
-/**
- * Prints the given process
- *
- * @param p the pointer to the process
- */
-void dbg_printProcess(sProc *p);
-
-/**
- * Prints the given process-state
- *
- * @param state the pointer to the state-struct
- */
-void dbg_printProcessState(sProcSave *state);
-
-/**
- * Prints the current page-directory
- *
- * @param includeKernel wether the kernel-page-table should be printed
- */
-void dbg_printPageDir(bool includeKernel);
-
-/**
- * Prints the user-space page-directory
- */
-void dbg_printUserPageDir(void);
-
-/**
- * Prints the given page-table
- *
- * @param no the number of the page-table
- * @param pde the page-dir-entry
- */
-void dbg_printPageTable(u32 no,sPDEntry *pde);
-
-/**
- * Prints the given page
- *
- * @param page a pointer to a page-table-entry
- */
-void dbg_printPage(sPTEntry *page);
-
 #endif /*DEBUG_H_*/

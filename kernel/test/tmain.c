@@ -48,7 +48,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("%:02s\n","DONE");
 
-	printMultiBootInfo();
+	mboot_dbg_print();
 
 	/* mm && kheap */
 	dbg_startTimer();
@@ -86,8 +86,8 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("%:02s","DONE");
 	dbg_stopTimer();
 
-	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),
-			paging_getPageCount());
+	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getFreeFrmCount(MM_DMA | MM_DEF),
+			paging_dbg_getPageCount());
 
 
 	/* start tests */

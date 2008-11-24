@@ -90,7 +90,7 @@ sProc *proc_getByPid(tPid pid) {
 
 void proc_switch(void) {
 	sProc *p = procs + pi;
-	vid_printf("Free memory: %d KiB\n",mm_getNumberOfFreeFrames(MM_DEF) * PAGE_SIZE / K);
+	vid_printf("Free memory: %d KiB\n",mm_getFreeFrmCount(MM_DEF) * PAGE_SIZE / K);
 	vid_printf("Process %d\n",p->pid);
 	if(!proc_save(&p->save)) {
 		/* select next process */
@@ -291,7 +291,7 @@ bool proc_changeSize(s32 change,eChgArea area) {
 	if(change > 0) {
 		u32 ts,ds,ss;
 		/* not enough mem? */
-		if(mm_getNumberOfFreeFrames(MM_DEF) < paging_countFramesForMap(addr,change)) {
+		if(mm_getFreeFrmCount(MM_DEF) < paging_countFramesForMap(addr,change)) {
 			return false;
 		}
 		/* invalid segment sizes? */
@@ -401,3 +401,36 @@ static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 
 	return count;
 }
+
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+void proc_dbg_print(sProc *p) {
+	u32 i;
+	vid_printf("process @ 0x%08x:\n",p);
+	vid_printf("\tpid = %d\n",p->pid);
+	vid_printf("\tparentPid = %d\n",p->parentPid);
+	vid_printf("\tphysPDirAddr = 0x%08x\n",p->physPDirAddr);
+	vid_printf("\ttextPages = %d\n",p->textPages);
+	vid_printf("\tdataPages = %d\n",p->dataPages);
+	vid_printf("\tstackPages = %d\n",p->stackPages);
+	vid_printf("\tfileDescs:\n");
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(p->fileDescs[i] != -1)
+			vid_printf("\t\t%d : %d\n",i,p->fileDescs[i]);
+	}
+	proc_dbg_printState(&p->save);
+	vid_printf("\n");
+}
+
+void proc_dbg_printState(sProcSave *state) {
+	vid_printf("\tprocessState @ 0x%08x:\n",state);
+	vid_printf("\t\tesp = 0x%08x\n",state->esp);
+	vid_printf("\t\tedi = 0x%08x\n",state->edi);
+	vid_printf("\t\tesi = 0x%08x\n",state->esi);
+	vid_printf("\t\tebp = 0x%08x\n",state->ebp);
+	vid_printf("\t\teflags = 0x%08x\n",state->eflags);
+}
+
+#endif

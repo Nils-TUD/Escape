@@ -212,14 +212,6 @@ extern void paging_flushAddr(u32 address);
 extern void paging_exchangePDir(u32 physAddr);
 
 /**
- * Counts the number of pages that are currently present in the given page-directory
- *
- * @param pdir the page-directory
- * @return the number of pages
- */
-u32 paging_getPageCount(void);
-
-/**
  * Checks wether the given virtual-address is currently mapped. This should not be used
  * for user-space addresses!
  *
@@ -323,5 +315,65 @@ void paging_destroyPageDir(sProc *p);
  * soon as the GDT is setup for a flat memory layout!
  */
 void paging_gdtFinished(void);
+
+#if DEBUGGING
+
+/**
+ * Prints all entries in the copy-on-write-list
+ */
+void paging_dbg_printCOW(void);
+
+/**
+ * Counts the number of pages that are currently present in the given page-directory
+ *
+ * @param pdir the page-directory
+ * @return the number of pages
+ */
+u32 paging_dbg_getPageCount(void);
+
+/**
+ * Checks wether the given page-table is empty
+ *
+ * @param pt the pointer to the first entry of the page-table
+ * @return true if empty
+ */
+bool paging_dbg_isPTEmpty(sPTEntry *pt);
+
+/**
+ * Counts the number of present pages in the given page-table
+ *
+ * @param pt the page-table
+ * @return the number of present pages
+ */
+u32 paging_dbg_getPTEntryCount(sPTEntry *pt);
+
+/**
+ * Prints the current page-directory
+ *
+ * @param includeKernel wether the kernel-page-table should be printed
+ */
+void paging_dbg_printPageDir(bool includeKernel);
+
+/**
+ * Prints the user-space page-directory
+ */
+void paging_dbg_printUserPageDir(void);
+
+/**
+ * Prints the given page-table
+ *
+ * @param no the number of the page-table
+ * @param pde the page-dir-entry
+ */
+void paging_dbg_printPageTable(u32 no,sPDEntry *pde);
+
+/**
+ * Prints the given page
+ *
+ * @param page a pointer to a page-table-entry
+ */
+void paging_dbg_printPage(sPTEntry *page);
+
+#endif
 
 #endif /*PAGING_H_*/

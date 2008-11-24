@@ -85,7 +85,7 @@ void mm_init(void) {
 }
 
 /* TODO may be we should store and manipulate the current number of free frames? */
-u32 mm_getNumberOfFreeFrames(u32 types) {
+u32 mm_getFreeFrmCount(u32 types) {
 	u32 i,bmIndex,count = 0;
 
 	ASSERT(types & (MM_DMA | MM_DEF),"types is empty");
@@ -188,15 +188,6 @@ void mm_freeFrame(u32 frame,eMemType type) {
 	}
 }
 
-void mm_printFreeFrames(void) {
-	vid_printf("Free frames > 16MB:\n");
-	u32 i,*ptr;
-	for(i = 0,ptr = u16mStack - 1; ptr >= &KernelEnd; i++,ptr--) {
-		vid_printf("0x%08x\n",*ptr);
-	}
-	vid_printf("\n");
-}
-
 static bool mm_isFrameFree(eMemType type,u32 frame) {
 	u32 *ptr;
 	if(type == MM_DEF) {
@@ -249,32 +240,32 @@ static void mm_markFrameUsed(u32 frame,bool used) {
 	}
 }
 
-#if 0
-static void test_printFreeFrames(void) {
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+void mm_dbg_printFreeFrames(void) {
 	u32 i,pos = 0;
-	/*u32 *ptr;*/
+	u32 *ptr;
 	for(i = 0; i < ARRAY_SIZE(l16mBitmap); i++) {
-		if(l16mBitmap[i]) {
+		if(l16mBitmap[i])
 			vid_printf("%08x..%08x: %032b\n",pos,pos + PAGE_SIZE * 32 - 1,l16mBitmap[i]);
-			/*for(x = 0; x < 0xffffff; x++);*/
-		}
 		pos += PAGE_SIZE * 32;
 	}
 
 	vid_printf("Free frames cache:\n");
 	for(i = 0;i < l16mCachePos; i++) {
 		vid_printf("0x%08x, ",l16mCache[i]);
-		if(i % 4 == 3) {
+		if(i % 4 == 3)
 			vid_printf("\n");
-		}
 	}
 
-	/*vid_printf("Free frames > 16MB:\n");
+	vid_printf("Free frames > 16MB:\n");
 	for(i = 0,ptr = u16mStack - 1;ptr >= &KernelEnd; i++,ptr--) {
 		vid_printf("0x%08x, ",*ptr);
-		if(i % 4 == 3) {
+		if(i % 4 == 3)
 			vid_printf("\n");
-		}
-	}*/
+	}
 }
+
 #endif

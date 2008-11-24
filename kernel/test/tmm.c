@@ -26,22 +26,22 @@ sTestModule tModMM = {
 static u32 frames[FRAME_COUNT];
 
 static void test_mm(void) {
-	u32 freeDefFrames = mm_getNumberOfFreeFrames(MM_DEF);
-	u32 freeDmaFrames = mm_getNumberOfFreeFrames(MM_DMA);
+	u32 freeDefFrames = mm_getFreeFrmCount(MM_DEF);
+	u32 freeDmaFrames = mm_getFreeFrmCount(MM_DMA);
 
 	test_caseStart("Requesting and freeing %d frames < 16MB...\n",FRAME_COUNT);
 	test_mm_allocate(MM_DMA);
 	test_mm_free(MM_DMA);
-	if(freeDmaFrames != mm_getNumberOfFreeFrames(MM_DMA))
-		test_caseFailed("oldDma=%d, newDma=%d",freeDmaFrames,mm_getNumberOfFreeFrames(MM_DMA));
+	if(freeDmaFrames != mm_getFreeFrmCount(MM_DMA))
+		test_caseFailed("oldDma=%d, newDma=%d",freeDmaFrames,mm_getFreeFrmCount(MM_DMA));
 	else
 		test_caseSucceded();
 
 	test_caseStart("Requesting and freeing %d frames > 16MB...\n",FRAME_COUNT);
 	test_mm_allocate(MM_DEF);
 	test_mm_free(MM_DEF);
-	if(freeDefFrames != mm_getNumberOfFreeFrames(MM_DEF))
-		test_caseFailed("oldDef=%d, newDef=%d",freeDefFrames,mm_getNumberOfFreeFrames(MM_DEF));
+	if(freeDefFrames != mm_getFreeFrmCount(MM_DEF))
+		test_caseFailed("oldDef=%d, newDef=%d",freeDefFrames,mm_getFreeFrmCount(MM_DEF));
 	else
 		test_caseSucceded();
 }

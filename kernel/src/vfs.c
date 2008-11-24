@@ -285,50 +285,6 @@ void vfs_closeFile(tFD fd) {
 	}
 }
 
-void vfs_printGFT(void) {
-	tFile i;
-	sGFTEntry *e = globalFileTable;
-	vid_printf("Global File Table:\n");
-	for(i = 0; i < FILE_COUNT; i++) {
-		if(e->flags != 0) {
-			vid_printf("\tfile @ index %d\n",i);
-			vid_printf("\t\tread: %d\n",(e->flags & GFT_READ) ? true : false);
-			vid_printf("\t\twrite: %d\n",(e->flags & GFT_WRITE) ? true : false);
-			vid_printf("\t\tenv: %s\n",IS_VIRT(e->nodeNo) ? "virtual" : "real");
-			vid_printf("\t\tnodeNo: %d\n",VIRT_INDEX(e->nodeNo));
-			vid_printf("\t\tpos: %d\n",e->position);
-			vid_printf("\t\trefCount: %d\n",e->refCount);
-		}
-		e++;
-	}
-}
-
-void vfs_printTree(void) {
-	vid_printf("VFS:\n");
-	vid_printf("/\n");
-	vfs_doPrintTree(1,&nodes[0]);
-}
-
-void vfs_printNode(sVFSNode *node) {
-	vid_printf("VFSNode @ 0x%x:\n",node);
-	if(node) {
-		vid_printf("\tname: %s\n",node->name);
-		vid_printf("\ttype: %s\n",node->type == T_DIR ? "DIR" : node->type == T_INFO ? "INFO" : "SERVICE");
-		vid_printf("\tchilds: 0x%x\n",node->childs);
-		vid_printf("\tnext: 0x%x\n",node->next);
-		vid_printf("\treadHandler: 0x%x\n",node->readHandler);
-	}
-}
-
-u32 vfs_getGFTEntryCount(void) {
-	u32 i,count = 0;
-	for(i = 0; i < FILE_COUNT; i++) {
-		if(globalFileTable[i].flags != 0)
-			count++;
-	}
-	return count;
-}
-
 string vfs_cleanPath(string path) {
 	s32 pos = 0;
 	bool root;
@@ -662,3 +618,53 @@ static sVFSNode *vfs_createService(sVFSNode *parent,sVFSNode *prev,string name) 
 	node->readHandler = NULL;
 	return node;
 }
+
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+u32 vfs_dbg_getGFTEntryCount(void) {
+	u32 i,count = 0;
+	for(i = 0; i < FILE_COUNT; i++) {
+		if(globalFileTable[i].flags != 0)
+			count++;
+	}
+	return count;
+}
+
+void vfs_dbg_printGFT(void) {
+	tFile i;
+	sGFTEntry *e = globalFileTable;
+	vid_printf("Global File Table:\n");
+	for(i = 0; i < FILE_COUNT; i++) {
+		if(e->flags != 0) {
+			vid_printf("\tfile @ index %d\n",i);
+			vid_printf("\t\tread: %d\n",(e->flags & GFT_READ) ? true : false);
+			vid_printf("\t\twrite: %d\n",(e->flags & GFT_WRITE) ? true : false);
+			vid_printf("\t\tenv: %s\n",IS_VIRT(e->nodeNo) ? "virtual" : "real");
+			vid_printf("\t\tnodeNo: %d\n",VIRT_INDEX(e->nodeNo));
+			vid_printf("\t\tpos: %d\n",e->position);
+			vid_printf("\t\trefCount: %d\n",e->refCount);
+		}
+		e++;
+	}
+}
+
+void vfs_dbg_printTree(void) {
+	vid_printf("VFS:\n");
+	vid_printf("/\n");
+	vfs_doPrintTree(1,&nodes[0]);
+}
+
+void vfs_dbg_printNode(sVFSNode *node) {
+	vid_printf("VFSNode @ 0x%x:\n",node);
+	if(node) {
+		vid_printf("\tname: %s\n",node->name);
+		vid_printf("\ttype: %s\n",node->type == T_DIR ? "DIR" : node->type == T_INFO ? "INFO" : "SERVICE");
+		vid_printf("\tchilds: 0x%x\n",node->childs);
+		vid_printf("\tnext: 0x%x\n",node->next);
+		vid_printf("\treadHandler: 0x%x\n",node->readHandler);
+	}
+}
+
+#endif

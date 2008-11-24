@@ -15,11 +15,6 @@
 void kheap_init(void);
 
 /**
- * Prints the kernel-heap data-structure
- */
-void kheap_print(void);
-
-/**
  * Note that this function is intended for debugging-purposes only!
  *
  * @return the number of free bytes
@@ -39,5 +34,14 @@ void *kheap_alloc(u32 size);
  * Frees the via kmalloc() allocated area starting at <addr>.
  */
 void kheap_free(void *addr);
+
+#if DEBUGGING
+
+/**
+ * Prints the kernel-heap data-structure
+ */
+void kheap_dbg_print(void);
+
+#endif
 
 #endif /* KHEAP_H_ */

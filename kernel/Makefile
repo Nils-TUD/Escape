@@ -26,11 +26,7 @@ SYMBOLSRC=src/ksymbols.c
 
 .PHONY: all pre clean
 
-all:	pre $(BIN)
-
-# ensure that the symbols exist
-pre:
-		if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
+all:	$(BIN)
 
 $(BIN):	$(LDCONF) $(AOBJ) $(COBJ)
 		@echo "===== LINKING =====";
@@ -66,6 +62,7 @@ $(BUILD)/%.o:		src/%.c
 
 $(DEP):	$(CSRC)
 		@echo "===== GENERATING DEPENDENCIES =====";
+		if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
 		$(CC) $(CFLAGS) -MM $(CSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
 		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/\1.o:/g" $(DEP);

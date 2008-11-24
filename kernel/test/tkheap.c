@@ -49,14 +49,14 @@ static void test_init(cstring fmt,...) {
 	test_caseStartv(fmt,ap);
 	va_end(ap);
 
-	oldPC = paging_getPageCount();
-	oldFC = mm_getNumberOfFreeFrames(MM_DEF);
+	oldPC = paging_dbg_getPageCount();
+	oldFC = mm_getFreeFrmCount(MM_DEF);
 	oldFH = kheap_getFreeMem();
 }
 
 static void test_check(void) {
-	newPC = paging_getPageCount();
-	newFC = mm_getNumberOfFreeFrames(MM_DEF);
+	newPC = paging_dbg_getPageCount();
+	newFC = mm_getFreeFrmCount(MM_DEF);
 	newFH = kheap_getFreeMem();
 	if(newPC != oldPC || newFC != oldFC || newFH != oldFH) {
 		test_caseFailed("old-page-count=%d, new-page-count=%d,"
@@ -78,7 +78,7 @@ static bool test_checkContent(u32 *ptr,u32 count,u32 value) {
 
 static void test_t1alloc(void) {
 	u32 size;
-	tprintf("Allocating...(%d free frames)\n",mm_getNumberOfFreeFrames(MM_DEF));
+	tprintf("Allocating...(%d free frames)\n",mm_getFreeFrmCount(MM_DEF));
 	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
 		tprintf("%d bytes\n",sizes[size] * sizeof(u32));
 		ptrs[size] = (u32*)kheap_alloc(sizes[size] * sizeof(u32));

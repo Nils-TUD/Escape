@@ -8,10 +8,8 @@ LDCONF=../ld.conf
 DEP=$(BUILD)/test.dep
 
 CC = gcc
-CFLAGS = -g -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs -Wall -ansi \
-				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
-				 -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wno-long-long \
-				 -Wstrict-prototypes
+CFLAGS = -g -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CWFLAGS) \
+	-D DEBUGGING=1
 
 # sources
 TSRC=$(wildcard *.c)
@@ -20,7 +18,7 @@ KSRC=$(filter-out ../src/kernel.c,$(wildcard ../src/*.c))
 # objects
 AOBJ=$(BUILD)/kernel_asm.o
 AOBJEND=$(BUILD)/end.o
-KOBJ=$(patsubst ../src/%.c,$(BUILD)/%.o,$(KSRC))
+KOBJ=$(patsubst ../src/%.c,$(BUILD)/test_%.o,$(KSRC))
 TOBJ=$(patsubst %.c,$(BUILD)/test_%.o,$(TSRC))
 
 SYMBOLS=$(BUILD)/tsymbols.txt
@@ -30,7 +28,7 @@ SYMBOLOBJ=$(patsubst ../src/%.c,$(BUILD)/t%.o,$(SYMBOLSRC))
 
 .PHONY: all pre clean
 
-all:	$(BIN)
+all: $(BIN)
 
 $(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ)
 		@echo "===== LINKING =====";
@@ -55,13 +53,18 @@ $(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ)
 		cp $(BIN) $(DISKMOUNT);
 		sudo umount $(DISKMOUNT);
 
+$(BUILD)/test_%.o:	../src/%.c
+		@echo "===== COMPILING $< =====";
+		$(CC) $(CFLAGS) -o $@ -c $<
+
 $(BUILD)/test_%.o:		%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
-$(DEP):	$(TSRC)
+$(DEP):	$(TSRC) $(KSRC)
 		@echo "===== GENERATING DEPENDENCIES =====";
-		$(CC) $(CFLAGS) -MM $(TSRC) > $(DEP);
+		if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
+		$(CC) $(CFLAGS) -MM $(TSRC) $(KSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
 		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/test_\1.o:/g" $(DEP);
 
@@ -69,4 +72,4 @@ $(DEP):	$(TSRC)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(DEP) $(BIN) $(TOBJ) $(SYMBOLS) $(SYMBOLOBJ);
+		rm -f $(DEP) $(BIN) $(TOBJ) $(KOBJ) $(SYMBOLS) $(SYMBOLOBJ);

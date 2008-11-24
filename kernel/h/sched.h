@@ -23,11 +23,6 @@ void sched_init(void);
 sProc *sched_perform(void);
 
 /**
- * Prints the ready-queue
- */
-void sched_printReadyQueue(void);
-
-/**
  * Enqueues the given process on the ready-queue
  *
  * @param p the process
@@ -48,5 +43,14 @@ sProc *sched_dequeueReady(void);
  * @return true if the process has been removed
  */
 bool sched_dequeueProc(sProc *p);
+
+#if DEBUGGING
+
+/**
+ * Prints the ready-queue
+ */
+void sched_dbg_printReadyQueue(void);
+
+#endif
 
 #endif /* SCHED_H_ */

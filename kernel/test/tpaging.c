@@ -43,15 +43,15 @@ static bool test_paging_cycle(u32 addr,u32 count) {
 
 	test_caseStart("Mapping %d pages to 0x%08x",count,addr);
 
-	oldPC = paging_getPageCount();
-	oldFF = mm_getNumberOfFreeFrames(MM_DMA | MM_DEF);
+	oldPC = paging_dbg_getPageCount();
+	oldFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
 
 	test_paging_allocate(addr,count);
 	test_paging_access(addr,count);
 	test_paging_free(addr,count);
 
-	newPC = paging_getPageCount();
-	newFF = mm_getNumberOfFreeFrames(MM_DMA | MM_DEF);
+	newPC = paging_dbg_getPageCount();
+	newFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
 
 	if(oldFF != newFF || oldPC != newPC) {
 		test_caseFailed("oldPC=%d, oldFF=%d, newPC=%d, newFF=%d",oldPC,oldFF,newPC,newFF);

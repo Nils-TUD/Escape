@@ -60,7 +60,7 @@ static void test_vfs_readFileSystem(void) {
 	u32 oldHeap,oldGFT,newHeap,newGFT;
 
 	oldHeap = kheap_getFreeMem();
-	oldGFT = vfs_getGFTEntryCount();
+	oldGFT = vfs_dbg_getGFTEntryCount();
 
 	test_caseStart("Testing vfs_readFile() for /system");
 
@@ -122,7 +122,7 @@ static void test_vfs_readFileSystem(void) {
 	vfs_closeFile(fd);
 
 	newHeap = kheap_getFreeMem();
-	newGFT = vfs_getGFTEntryCount();
+	newGFT = vfs_dbg_getGFTEntryCount();
 	if(oldHeap != newHeap || oldGFT != newGFT) {
 		test_caseFailed("oldHeap=%d, newHeap=%d, oldGFT=%d, newGFT=%d",oldHeap,newHeap,oldGFT,newGFT);
 		return;
@@ -140,7 +140,7 @@ static void test_vfs_readFileProcess0(void) {
 	u32 oldHeap,oldGFT,newHeap,newGFT;
 
 	oldHeap = kheap_getFreeMem();
-	oldGFT = vfs_getGFTEntryCount();
+	oldGFT = vfs_dbg_getGFTEntryCount();
 
 	test_caseStart("Testing vfs_readFile() for /system/processes/0");
 
@@ -176,7 +176,7 @@ static void test_vfs_readFileProcess0(void) {
 	vfs_closeFile(fd);
 
 	newHeap = kheap_getFreeMem();
-	newGFT = vfs_getGFTEntryCount();
+	newGFT = vfs_dbg_getGFTEntryCount();
 	if(oldHeap != newHeap || oldGFT != newGFT) {
 		test_caseFailed("oldHeap=%d, newHeap=%d, oldGFT=%d, newGFT=%d",oldHeap,newHeap,oldGFT,newGFT);
 		return;

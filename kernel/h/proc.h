@@ -172,4 +172,22 @@ bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages);
  */
 bool proc_changeSize(s32 change,eChgArea area);
 
+#if DEBUGGING
+
+/**
+ * Prints the given process
+ *
+ * @param p the pointer to the process
+ */
+void proc_dbg_print(sProc *p);
+
+/**
+ * Prints the given process-state
+ *
+ * @param state the pointer to the state-struct
+ */
+void proc_dbg_printState(sProcSave *state);
+
+#endif
+
 #endif /*PROC_H_*/

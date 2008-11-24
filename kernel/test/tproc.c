@@ -32,16 +32,16 @@ static void test_init(cstring fmt,...) {
 	test_caseStartv(fmt,ap);
 	va_end(ap);
 
-	oldPC = paging_getPageCount();
-	oldFF = mm_getNumberOfFreeFrames(MM_DEF);
+	oldPC = paging_dbg_getPageCount();
+	oldFF = mm_getFreeFrmCount(MM_DEF);
 }
 
 /**
  * Checks wether the page-count and free-frames are still the same and finishes the test-case
  */
 static void test_check(void) {
-	newPC = paging_getPageCount();
-	newFF = mm_getNumberOfFreeFrames(MM_DEF);
+	newPC = paging_dbg_getPageCount();
+	newFF = mm_getFreeFrmCount(MM_DEF);
 	if(oldFF != newFF || oldPC != newPC) {
 		test_caseFailed("oldPC=%d, oldFF=%d, newPC=%d, newFF=%d",oldPC,oldFF,newPC,newFF);
 	}
@@ -53,7 +53,7 @@ static void test_check(void) {
 static void test_proc(void) {
 	u32 x,y,z;
 	bool res;
-	s32 changes[] = {0,1,10,1024,1025,2048,2047,2049,mm_getNumberOfFreeFrames(MM_DEF) + 1};
+	s32 changes[] = {0,1,10,1024,1025,2048,2047,2049,mm_getFreeFrmCount(MM_DEF) + 1};
 	eChgArea areas[] = {CHG_DATA,CHG_STACK};
 
 	/* test process clone & destroy */

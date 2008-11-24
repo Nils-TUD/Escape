@@ -34,22 +34,6 @@ typedef struct {
 extern void paging_enable(void);
 
 /**
- * Checks wether the given page-table is empty
- *
- * @param pt the pointer to the first entry of the page-table
- * @return true if empty
- */
-static bool paging_isPTEmpty(sPTEntry *pt);
-
-/**
- * Counts the number of present pages in the given page-table
- *
- * @param pt the page-table
- * @return the number of present pages
- */
-static u32 paging_getPTEntryCount(sPTEntry *pt);
-
-/**
  * paging_map() for internal usages
  *
  * @param pageDir the address of the page-directory to use
@@ -85,11 +69,6 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count);
  * @param newProc the new process
  */
 static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc);
-
-/**
- * Prints all entries in the copy-on-write-list
- */
-static void paging_printCOW(void);
 
 /* the page-directory for process 0 */
 sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] __attribute__ ((aligned (PAGE_SIZE)));
@@ -191,24 +170,6 @@ void paging_mapPageDir(void) {
 		pt->frameNumber = pdirFrame;
 		paging_flushAddr(PAGE_DIR_AREA);
 	}
-}
-
-u32 paging_getPageCount(void) {
-	u32 i,x,count = 0;
-	sPTEntry *pagetable;
-	sPDEntry *pdir = (sPDEntry*)PAGE_DIR_AREA;
-	paging_mapPageDir();
-	for(i = 0; i < PT_ENTRY_COUNT; i++) {
-		if(pdir[i].present) {
-			pagetable = (sPTEntry*)(MAPPED_PTS_START + i * PAGE_SIZE);
-			for(x = 0; x < PT_ENTRY_COUNT; x++) {
-				if(pagetable[x].present) {
-					count++;
-				}
-			}
-		}
-	}
-	return count;
 }
 
 bool paging_isMapped(u32 virtual) {
@@ -402,7 +363,7 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	frameCount = 3 + PAGES_TO_PTS(tPages + dPages) + PAGES_TO_PTS(sPages);
 	/* worstcase heap-usage. NOTE THAT THIS ASSUMES A BIT ABOUT THE INTERNAL STRUCTURE OF SLL! */
 	kheapCount = (dPages + sPages) * (sizeof(sCOW) + sizeof(sSLNode)) * 2;
-	if(mm_getNumberOfFreeFrames(MM_DEF) < frameCount || kheap_getFreeMem() < kheapCount) {
+	if(mm_getFreeFrmCount(MM_DEF) < frameCount || kheap_getFreeMem() < kheapCount) {
 		DBG_PGCLONEPD(vid_printf("Not enough free frames!\n"));
 		intrpt_setEnabled(oldIntrptState);
 		return 0;
@@ -647,16 +608,6 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
 	paging_flushTLB();
 }
 
-static void paging_printCOW(void) {
-	sSLNode *n;
-	sCOW *cow;
-	vid_printf("COW-Frames:\n");
-	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
-		cow = (sCOW*)n->data;
-		vid_printf("\tframe=0x%x, proc=0x%x\n",cow->frameNumber,cow->proc);
-	}
-}
-
 static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
 	sPTEntry *ownPt;
 	sCOW *cow;
@@ -692,7 +643,39 @@ static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
 	}
 }
 
-static bool paging_isPTEmpty(sPTEntry *pt) {
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+void paging_dbg_printCOW(void) {
+	sSLNode *n;
+	sCOW *cow;
+	vid_printf("COW-Frames:\n");
+	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
+		cow = (sCOW*)n->data;
+		vid_printf("\tframe=0x%x, proc=0x%x\n",cow->frameNumber,cow->proc);
+	}
+}
+
+u32 paging_dbg_getPageCount(void) {
+	u32 i,x,count = 0;
+	sPTEntry *pagetable;
+	sPDEntry *pdir = (sPDEntry*)PAGE_DIR_AREA;
+	paging_mapPageDir();
+	for(i = 0; i < PT_ENTRY_COUNT; i++) {
+		if(pdir[i].present) {
+			pagetable = (sPTEntry*)(MAPPED_PTS_START + i * PAGE_SIZE);
+			for(x = 0; x < PT_ENTRY_COUNT; x++) {
+				if(pagetable[x].present) {
+					count++;
+				}
+			}
+		}
+	}
+	return count;
+}
+
+bool paging_dbg_isPTEmpty(sPTEntry *pt) {
 	u32 i;
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
 		if(pt->present) {
@@ -703,7 +686,7 @@ static bool paging_isPTEmpty(sPTEntry *pt) {
 	return true;
 }
 
-static u32 paging_getPTEntryCount(sPTEntry *pt) {
+u32 paging_dbg_getPTEntryCount(sPTEntry *pt) {
 	u32 i,count = 0;
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
 		if(pt->present) {
@@ -713,3 +696,63 @@ static u32 paging_getPTEntryCount(sPTEntry *pt) {
 	}
 	return count;
 }
+
+void paging_dbg_printPageDir(bool includeKernel) {
+	u32 i;
+	sPDEntry *pagedir;
+	paging_mapPageDir();
+	pagedir = (sPDEntry*)PAGE_DIR_AREA;
+	vid_printf("page-dir @ 0x%08x:\n",pagedir);
+	for(i = 0; i < PT_ENTRY_COUNT; i++) {
+		if(pagedir[i].present && (includeKernel || i != ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR))) {
+			paging_dbg_printPageTable(i,pagedir + i);
+		}
+	}
+	vid_printf("\n");
+}
+
+void paging_dbg_printUserPageDir(void) {
+	u32 i;
+	sPDEntry *pagedir;
+	paging_mapPageDir();
+	pagedir = (sPDEntry*)PAGE_DIR_AREA;
+	vid_printf("page-dir @ 0x%08x:\n",pagedir);
+	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR); i++) {
+		if(pagedir[i].present) {
+			paging_dbg_printPageTable(i,pagedir + i);
+		}
+	}
+	vid_printf("\n");
+}
+
+void paging_dbg_printPageTable(u32 no,sPDEntry *pde) {
+	u32 i;
+	u32 addr = PAGE_SIZE * PT_ENTRY_COUNT * no;
+	sPTEntry *pte = (sPTEntry*)(MAPPED_PTS_START + no * PAGE_SIZE);
+	vid_printf("\tpt 0x%x [frame 0x%x, %c%c] @ 0x%08x: (VM: 0x%08x - 0x%08x)\n",no,
+			pde->ptFrameNo,pde->notSuperVisor ? 'u' : 'k',pde->writable ? 'w' : 'r',pte,addr,
+			addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
+	if(pte) {
+		for(i = 0; i < PT_ENTRY_COUNT; i++) {
+			if(pte[i].present) {
+				vid_printf("\t\t0x%x: ",i);
+				paging_dbg_printPage(pte + i);
+				vid_printf(" (VM: 0x%08x - 0x%08x)\n",addr,addr + PAGE_SIZE - 1);
+			}
+			addr += PAGE_SIZE;
+		}
+	}
+}
+
+void paging_dbg_printPage(sPTEntry *page) {
+	if(page->present) {
+		vid_printf("raw=0x%08x, frame=0x%x [%c%c%c%c]",*(u32*)page,
+				page->frameNumber,page->notSuperVisor ? 'u' : 'k',page->writable ? 'w' : 'r',
+				page->global ? 'g' : '-',page->copyOnWrite ? 'c' : '-');
+	}
+	else {
+		vid_printf("-");
+	}
+}
+
+#endif

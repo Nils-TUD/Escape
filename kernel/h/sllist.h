@@ -35,13 +35,6 @@ sSLList *sll_create(void);
 void sll_destroy(sSLList *list);
 
 /**
- * Prints the given list
- *
- * @param list the list
- */
-void sll_print(sSLList *list);
-
-/**
  * @param list the list
  * @return the number of elements in the list
  */
@@ -136,5 +129,16 @@ void sll_removeFirst(sSLList *list,void *data);
  * @param index the index
  */
 void sll_removeIndex(sSLList *list,u32 index);
+
+#if DEBUGGING
+
+/**
+ * Prints the given list
+ *
+ * @param list the list
+ */
+void sll_dbg_print(sSLList *list);
+
+#endif
 
 #endif /* SLLIST_H_ */

@@ -108,15 +108,6 @@ sProc *sched_perform(void) {
 	return p;
 }
 
-void sched_printReadyQueue(void) {
-	sQueueNode *n = rqFirst;
-	vid_printf("Ready-Queue: rqFirst=0x%x, rqLast=0x%x, rqFree=0x%x\n",rqFirst,rqLast,rqFree);
-	while(n != NULL) {
-		vid_printf("\t[0x%x]: p=0x%x, next=0x%x\n",n,n->p,n->next);
-		n = n->next;
-	}
-}
-
 void sched_enqueueReady(sProc *p) {
 	sQueueNode *nn,*n;
 
@@ -182,3 +173,18 @@ bool sched_dequeueProc(sProc *p) {
 	}
 	return false;
 }
+
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+void sched_dbg_printReadyQueue(void) {
+	sQueueNode *n = rqFirst;
+	vid_printf("Ready-Queue: rqFirst=0x%x, rqLast=0x%x, rqFree=0x%x\n",rqFirst,rqLast,rqFree);
+	while(n != NULL) {
+		vid_printf("\t[0x%x]: p=0x%x, next=0x%x\n",n,n->p,n->next);
+		n = n->next;
+	}
+}
+
+#endif

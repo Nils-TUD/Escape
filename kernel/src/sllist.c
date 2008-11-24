@@ -60,19 +60,6 @@ void sll_destroy(sSLList *list) {
 	kheap_free(list);
 }
 
-void sll_print(sSLList *list) {
-	sList *l = (sList*)list;
-	sNode *n = l->first;
-
-	ASSERT(list != NULL,"list == NULL");
-
-	vid_printf("Linked list @ 0x%x\n",list);
-	while(n != NULL) {
-		vid_printf("\t[0x%x] data=0x%x, next=0x%x\n",n,n->data,n->next);
-		n = n->next;
-	}
-}
-
 sSLNode *sll_begin(sSLList *list) {
 	return (sSLNode*)sll_gesNode(list,0);
 }
@@ -224,3 +211,22 @@ static sNode *sll_gesNode(sSLList *list,u32 index) {
 		n = n->next;
 	return n;
 }
+
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+void sll_dbg_print(sSLList *list) {
+	sList *l = (sList*)list;
+	sNode *n = l->first;
+
+	ASSERT(list != NULL,"list == NULL");
+
+	vid_printf("Linked list @ 0x%x\n",list);
+	while(n != NULL) {
+		vid_printf("\t[0x%x] data=0x%x, next=0x%x\n",n,n->data,n->next);
+		n = n->next;
+	}
+}
+
+#endif

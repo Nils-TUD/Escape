@@ -24,7 +24,11 @@ void mboot_init(sMultiBoot *mbp) {
 	mb->mmapAddr = (sMemMap*)((u32)mb->mmapAddr | KERNEL_AREA_V_ADDR);
 }
 
-void printMultiBootInfo(void) {
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+void mboot_dbg_print(void) {
 	u32 x;
 	sMemMap *mmap;
 	vid_printf("MultiBoot-Structure:\n---------------------\nflags=0x%x\n",mb->flags);
@@ -66,3 +70,5 @@ void printMultiBootInfo(void) {
 
 	vid_printf("---------------------\n");
 }
+
+#endif

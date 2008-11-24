@@ -83,15 +83,19 @@ extern sMultiBoot *mb;
 
 /**
  * Inits the multi-boot infos
- * 
+ *
  * @param mbp the pointer to the multi-boot-structure
  */
 void mboot_init(sMultiBoot *mbp);
 
+#if DEBUGGING
+
 /**
  * Prints all interesting elements of the multi-boot-structure
  */
-void printMultiBootInfo(void);
+void mboot_dbg_print(void);
+
+#endif
 
 #endif
 

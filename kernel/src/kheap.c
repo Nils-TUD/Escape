@@ -140,21 +140,6 @@ u32 kheap_getFreeMem(void) {
 	return free - 1;
 }
 
-void kheap_print(void) {
-	u32 address = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;
-	sMemArea *area = first;
-	vid_printf("Kernel-Heap (first=0x%x, highessMemArea=0x%x, startArea=0x%x, startAddr=0x%x, "
-			"startPrev=0x%x, firstUnused=0x%x):\n",first,highessMemArea,startArea,startAddr,
-			startPrev,firstUnused);
-	do {
-		vid_printf("\t(@0x%08x) 0x%08x .. 0x%08x (%d bytes) [%s]\n",area,address - area->size,
-				address - 1,area->size,area->free ? "free" : "occupied");
-		address -= area->size;
-		area = area->next;
-	}
-	while(area != NULL);
-}
-
 void *kheap_alloc(u32 size) {
 	u32 address;
 	sMemArea *area, *lastArea, *nArea;
@@ -442,3 +427,24 @@ static void kheap_deleteArea(sMemArea *area) {
 			- ((u32)highessMemArea & ~(PAGE_SIZE - 1));
 	}
 }
+
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+void kheap_dbg_print(void) {
+	u32 address = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;
+	sMemArea *area = first;
+	vid_printf("Kernel-Heap (first=0x%x, highessMemArea=0x%x, startArea=0x%x, startAddr=0x%x, "
+			"startPrev=0x%x, firstUnused=0x%x):\n",first,highessMemArea,startArea,startAddr,
+			startPrev,firstUnused);
+	do {
+		vid_printf("\t(@0x%08x) 0x%08x .. 0x%08x (%d bytes) [%s]\n",area,address - area->size,
+				address - 1,area->size,area->free ? "free" : "occupied");
+		address -= area->size;
+		area = area->next;
+	}
+	while(area != NULL);
+}
+
+#endif

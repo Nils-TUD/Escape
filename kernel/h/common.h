@@ -38,10 +38,18 @@ typedef enum {false = 0, true = 1} bool;
 #define M 1024 * K
 #define G 1024 * M
 
+#ifndef DEBUGGING
+#define DEBUGGING 1
+#endif
+
+#if DEBUGGING
 #define ASSERT(cond,errorMsg,...) if(!(cond)) { \
 		panic("Assert failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
 				__LINE__,## __VA_ARGS__); \
 	}
+#else
+#define ASSERT(cond,errorMsg,...)
+#endif
 
 #define ARRAY_SIZE(array) (sizeof((array)) / sizeof((array)[0]))
 

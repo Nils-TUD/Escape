@@ -72,17 +72,6 @@ s32 vfs_readFile(tFD fd,u8 *buffer,u32 count);
  */
 void vfs_closeFile(tFD fd);
 
-void vfs_printGFT(void);
-
-void vfs_printTree(void);
-
-void vfs_printNode(sVFSNode *node);
-
-/**
- * @return the number of entries in the global file table
- */
-u32 vfs_getGFTEntryCount(void);
-
 /**
  * Cleans the given path. That means multiple slashes are removed and "." and ".." are resolved.
  * After the call you can be sure that you have a "clean" path.
@@ -116,5 +105,29 @@ bool vfs_createProcessNode(tPid pid,fRead handler);
  * @param pid the process-id
  */
 void vfs_removeProcessNode(tPid pid);
+
+#if DEBUGGING
+
+/**
+ * Prints all used entries in the global file table
+ */
+void vfs_dbg_printGFT(void);
+
+/**
+ * Prints the VFS tree
+ */
+void vfs_dbg_printTree(void);
+
+/**
+ * Prints the given VFS node
+ */
+void vfs_dbg_printNode(sVFSNode *node);
+
+/**
+ * @return the number of entries in the global file table
+ */
+u32 vfs_dbg_getGFTEntryCount(void);
+
+#endif
 
 #endif /* VFS_H_ */

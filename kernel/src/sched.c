@@ -119,8 +119,9 @@ void sched_printReadyQueue(void) {
 
 void sched_enqueueReady(sProc *p) {
 	sQueueNode *nn,*n;
-	if(rqFree == NULL)
-		panic("No free slots in the ready-queue!?");
+
+	ASSERT(p != NULL,"p == NULL");
+	ASSERT(rqFree != NULL,"No free slots in the ready-queue!?");
 
 	/* use first free node */
 	nn = rqFree;
@@ -158,6 +159,9 @@ sProc *sched_dequeueReady(void) {
 
 bool sched_dequeueProc(sProc *p) {
 	sQueueNode *n = rqFirst,*l = NULL;
+
+	ASSERT(p != NULL,"p == NULL");
+
 	while(n != NULL) {
 		/* found it? */
 		if(n->p == p) {

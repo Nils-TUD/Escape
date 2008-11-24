@@ -234,7 +234,7 @@ bool paging_isMapped(u32 virtual) {
 	return pt->present;
 }
 
-bool paging_isRangedUserReadable(u32 virtual,s32 count) {
+bool paging_isRangedUserReadable(u32 virtual,u32 count) {
 	sPTEntry *pt;
 	u32 end;
 	/* kernel area? */
@@ -254,7 +254,7 @@ bool paging_isRangedUserReadable(u32 virtual,s32 count) {
 	return true;
 }
 
-bool paging_isRangeUserWritable(u32 virtual,s32 count) {
+bool paging_isRangeUserWritable(u32 virtual,u32 count) {
 	sPTEntry *pt;
 	u32 end;
 	/* kernel area? */
@@ -319,6 +319,14 @@ static void paging_mapintern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 	u32 frame;
 	sPDEntry *pd;
 	sPTEntry *pt;
+
+	ASSERT(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
+	ASSERT(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
+	ASSERT(flags & (PG_WRITABLE | PG_SUPERVISOR | PG_COPYONWRITE | PG_ADDR_TO_FRAME),"flags empty");
+	ASSERT(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_COPYONWRITE | PG_ADDR_TO_FRAME)),
+			"flags contain invalid bits");
+	ASSERT(force == true || force == false,"force invalid");
+
 	/* just if we use the default one */
 	if(pageDir == PAGE_DIR_AREA)
 		paging_mapPageDir();
@@ -378,6 +386,10 @@ void paging_unmap(u32 virtual,u32 count,bool freeFrames) {
 
 static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFrames) {
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
+
+	ASSERT(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
+	ASSERT(freeFrames == true || freeFrames == false,"freeFrames invalid");
+
 	while(count-- > 0) {
 		/* remove and free, if desired */
 		if(pt->present) {
@@ -403,6 +415,11 @@ void paging_unmapPageTables(u32 start,u32 count) {
 
 static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
 	sPDEntry *pde = (sPDEntry*)pageDir + start;
+
+	ASSERT(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
+	ASSERT(start < PT_ENTRY_COUNT,"start >= PT_ENTRY_COUNT");
+	ASSERT(count < PT_ENTRY_COUNT,"count >= PT_ENTRY_COUNT");
+
 	while(count-- > 0) {
 		pde->present = 0;
 		mm_freeFrame(pde->ptFrameNo,MM_DEF);
@@ -418,6 +435,9 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;
 	sProc *p;
+
+	ASSERT(stackFrame != NULL,"stackFrame == NULL");
+	ASSERT(newProc != NULL,"newProc == NULL");
 
 	DBG_PGCLONEPD(vid_printf(">>===== paging_clonePageDir(newPid=%d) =====\n",newPid));
 
@@ -632,6 +652,8 @@ static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
 
 void paging_destroyPageDir(sProc *p) {
 	sPDEntry *pd,*ppd;
+
+	ASSERT(p != NULL,"p == NULL");
 
 	/* map page-dir of process */
 	paging_map(PAGE_DIR_TMP_AREA,&(p->physPDirAddr),1,

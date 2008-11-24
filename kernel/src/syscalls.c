@@ -81,6 +81,8 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 };
 
 void sysc_handle(sSysCallStack *stack) {
+	ASSERT(stack != NULL,"stack == NULL");
+
 	u32 sysCallNo = (u32)stack->number;
 	if(sysCallNo < SYSCALL_COUNT) {
 		/* no error by default */

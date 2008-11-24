@@ -82,6 +82,7 @@ static sVFSNode *vfs_requestNode(void) {
  * @param node the node
  */
 static void vfs_releaseNode(sVFSNode *node) {
+	ASSERT(node != NULL,"node == NULL");
 	node->next = freeList;
 	freeList = node;
 }
@@ -115,6 +116,10 @@ static void vfs_doPrintTree(u32 level,sVFSNode *parent) {
  */
 static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	s32 byteCount;
+
+	ASSERT(node != NULL,"node == NULL");
+	ASSERT(buffer != NULL,"buffer == NULL");
+
 	/* not cached yet? */
 	if(node->dataCache == NULL) {
 		/* we need the number of bytes first */
@@ -275,6 +280,11 @@ s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd) {
 	s32 freeSlot = ERR_NO_FREE_FD;
 	bool write = flags & GFT_WRITE;
 	sGFTEntry *e = &globalFileTable[0];
+
+	ASSERT(flags & (GFT_READ | GFT_WRITE),"flags empty");
+	ASSERT(!(flags & ~(GFT_READ | GFT_WRITE)),"flags contains invalid bits");
+	ASSERT(VIRT_INDEX(nodeNo) >= 0 && VIRT_INDEX(nodeNo) < NODE_COUNT,"nodeNo invalid");
+	ASSERT(fd != NULL,"fd == NULL");
 
 	/* ensure that we don't increment usages of an unused slot */
 	if(flags == 0)

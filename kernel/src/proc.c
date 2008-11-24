@@ -50,6 +50,10 @@ static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	 * other processes might miss changes) */
 	sProc *p = procs + atoi(node->name);
 	sProcPub *proc;
+
+	ASSERT(node != NULL,"node == NULL");
+	ASSERT(buffer != NULL,"buffer == NULL");
+
 	/* can we copy it directly? */
 	if(offset == 0 && count == sizeof(sProcPub))
 		proc = (sProcPub*)buffer;
@@ -125,6 +129,7 @@ sProc *proc_getRunning(void) {
 }
 
 sProc *proc_getByPid(tPid pid) {
+	ASSERT(pid < PROC_COUNT,"pid >= PROC_COUNT");
 	return &procs[pid];
 }
 
@@ -192,8 +197,9 @@ s32 proc_clone(tPid newPid) {
 	u32 *src,*dst;
 	sProc *p;
 
-	if((procs + newPid)->state != ST_UNUSED)
-		panic("The process slot 0x%x is already in use!",procs + newPid);
+	ASSERT(newPid < PROC_COUNT,"newPid >= PROC_COUNT");
+	ASSERT((procs + newPid)->state == ST_UNUSED,"The process slot 0x%x is already in use!",
+			procs + newPid);
 
 	/* first create the VFS node (we may not have enough mem) */
 	if(!vfs_createProcessNode(newPid,&proc_vfsReadHandler))
@@ -253,10 +259,9 @@ void proc_suicide(void) {
 void proc_destroy(sProc *p) {
 	tFD i;
 	/* don't delete initial or unused processes */
-	if(p->pid == 0 || p->state == ST_UNUSED)
-		panic("The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
-	if(p->pid == pi)
-		panic("You can't destroy yourself!");
+	ASSERT(p->pid != 0 && p->state != ST_UNUSED,
+			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
+	ASSERT(p->pid != pi,"You can't destroy yourself!");
 
 	/* destroy paging-structure */
 	paging_destroyPageDir(p);
@@ -285,6 +290,8 @@ void proc_destroy(sProc *p) {
 }
 
 void proc_setupIntrptStack(sIntrptStackFrame *frame) {
+	ASSERT(frame != NULL,"frame == NULL");
+
 	frame->uesp = KERNEL_AREA_V_ADDR - sizeof(u32);
 	frame->ebp = frame->uesp;
 	/* user-mode segments */
@@ -313,6 +320,9 @@ bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages) {
 
 bool proc_changeSize(s32 change,eChgArea area) {
 	u32 addr,chg = change,origPages;
+
+	ASSERT(area == CHG_DATA || area== CHG_STACK,"area invalid");
+
 	/* determine start-address */
 	if(area == CHG_DATA) {
 		addr = (procs[pi].textPages + procs[pi].dataPages) * PAGE_SIZE;

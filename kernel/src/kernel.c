@@ -107,6 +107,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 			mm_getNumberOfFreeFrames(MM_DMA | MM_DEF),paging_getPageCount(),
 			mm_getNumberOfFreeFrames(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 
+
 	vfs_printTree();
 	/*cstring path = vfs_cleanPath("//system///services//");
 	vid_printf("Resolving %s\n",path);

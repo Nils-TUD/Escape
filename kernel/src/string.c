@@ -11,6 +11,9 @@ s32 atoi(cstring str) {
 	s32 i = 0;
 	bool neg = false;
 	s8 c;
+
+	ASSERT(str != NULL,"str == NULL");
+
 	/* skip leading whitespace */
 	while(isspace(*str))
 		str++;
@@ -32,6 +35,8 @@ s32 atoi(cstring str) {
 
 void itoa(string target,s32 n) {
 	s8 *s = target,*a = target,*b;
+
+	ASSERT(target != NULL,"target == NULL");
 
 	/* handle sign */
 	if(n < 0) {
@@ -107,6 +112,10 @@ void memset(void *addr,u32 value,u32 count) {
 
 string strcpy(string to,cstring from) {
 	string res = to;
+
+	ASSERT(from != NULL,"from == NULL");
+	ASSERT(to != NULL,"to == NULL");
+
 	while(*from) {
 		*to++ = *from++;
 	}
@@ -116,6 +125,10 @@ string strcpy(string to,cstring from) {
 
 string strncpy(string to,cstring from,u32 count) {
 	string res = to;
+
+	ASSERT(from != NULL,"from == NULL");
+	ASSERT(to != NULL,"to == NULL");
+
 	/* copy source string */
 	while(*from && count > 0) {
 		*to++ = *from++;
@@ -131,6 +144,10 @@ string strncpy(string to,cstring from,u32 count) {
 
 string strcat(string str1,cstring str2) {
 	string res = str1;
+
+	ASSERT(str1 != NULL,"str1 == NULL");
+	ASSERT(str2 != NULL,"str2 == NULL");
+
 	/* walk to end */
 	while(*str1)
 		str1++;
@@ -142,6 +159,10 @@ string strcat(string str1,cstring str2) {
 
 string strncat(string str1,cstring str2,u32 count) {
 	string res = str1;
+
+	ASSERT(str1 != NULL,"str1 == NULL");
+	ASSERT(str2 != NULL,"str2 == NULL");
+
 	/* walk to end */
 	while(*str1)
 		str1++;
@@ -155,6 +176,10 @@ string strncat(string str1,cstring str2,u32 count) {
 
 s32 strcmp(cstring str1,cstring str2) {
 	s8 c1 = *str1,c2 = *str2;
+
+	ASSERT(str1 != NULL,"str1 == NULL");
+	ASSERT(str2 != NULL,"str2 == NULL");
+
 	while(c1 && c2) {
 		/* different? */
 		if(c1 != c2) {
@@ -174,6 +199,9 @@ s32 strcmp(cstring str1,cstring str2) {
 }
 
 s32 strncmp(cstring str1,cstring str2,u32 count) {
+	ASSERT(str1 != NULL,"str1 == NULL");
+	ASSERT(str2 != NULL,"str2 == NULL");
+
 	while(count-- > 0) {
 		if(*str1++ != *str2++)
 			return str1[-1] < str2[-1] ? -1 : 1;
@@ -182,6 +210,8 @@ s32 strncmp(cstring str1,cstring str2,u32 count) {
 }
 
 string strchr(cstring str,s32 ch) {
+	ASSERT(str != NULL,"str == NULL");
+
 	while(*str) {
 		if(*str++ == ch)
 			return (string)(str - 1);
@@ -191,6 +221,9 @@ string strchr(cstring str,s32 ch) {
 
 s32 strchri(cstring str,s32 ch) {
 	cstring save = str;
+
+	ASSERT(str != NULL,"str == NULL");
+
 	while(*str) {
 		if(*str++ == ch)
 			return str - save - 1;
@@ -200,6 +233,9 @@ s32 strchri(cstring str,s32 ch) {
 
 string strrchr(cstring str,s32 ch) {
 	string pos = NULL;
+
+	ASSERT(str != NULL,"str == NULL");
+
 	while(*str) {
 		if(*str++ == ch)
 			pos = (string)(str - 1);
@@ -210,6 +246,10 @@ string strrchr(cstring str,s32 ch) {
 string strstr(cstring str1,cstring str2) {
 	string res = NULL;
 	string sub;
+
+	ASSERT(str1 != NULL,"str1 == NULL");
+	ASSERT(str2 != NULL,"str2 == NULL");
+
 	/* handle special case to prevent looping the string */
 	if(!*str2)
 		return NULL;
@@ -233,6 +273,10 @@ string strstr(cstring str1,cstring str2) {
 
 u32 strcspn(cstring str1,cstring str2) {
 	u32 count = 0;
+
+	ASSERT(str1 != NULL,"str1 == NULL");
+	ASSERT(str2 != NULL,"str2 == NULL");
+
 	while(*str1) {
 		if(strchr(str2,*str1++) != NULL)
 			return count;
@@ -243,6 +287,9 @@ u32 strcspn(cstring str1,cstring str2) {
 
 string strcut(string str,u32 count) {
 	string res = str;
+
+	ASSERT(str != NULL,"str == NULL");
+
 	if(count > 0) {
 		str += count;
 		while(*str) {
@@ -256,6 +303,9 @@ string strcut(string str,u32 count) {
 
 u32 strlen(string str) {
 	u32 len = 0;
+
+	ASSERT(str != NULL,"str == NULL");
+
 	while(*str++)
 		len++;
 	return len;

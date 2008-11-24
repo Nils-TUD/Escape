@@ -48,6 +48,9 @@ void sll_destroy(sSLList *list) {
 	/* free nodes */
 	sList *l = (sList*)list;
 	sNode *nn,*n = l->first;
+
+	ASSERT(list != NULL,"list == NULL");
+
 	while(n != NULL) {
 		nn = n->next;
 		kheap_free(n);
@@ -60,6 +63,9 @@ void sll_destroy(sSLList *list) {
 void sll_print(sSLList *list) {
 	sList *l = (sList*)list;
 	sNode *n = l->first;
+
+	ASSERT(list != NULL,"list == NULL");
+
 	vid_printf("Linked list @ 0x%x\n",list);
 	while(n != NULL) {
 		vid_printf("\t[0x%x] data=0x%x, next=0x%x\n",n,n->data,n->next);
@@ -77,6 +83,7 @@ sSLNode *sll_nodeAt(sSLList *list,u32 index) {
 
 u32 sll_length(sSLList *list) {
 	sList *l = (sList*)list;
+	ASSERT(list != NULL,"list == NULL");
 	return l->length;
 }
 
@@ -86,9 +93,7 @@ void *sll_get(sSLList *list,u32 index) {
 
 void sll_set(sSLList *list,void *data,u32 index) {
 	sNode *n;
-	if(data == NULL)
-		panic("data has to be != NULL");
-
+	ASSERT(data != NULL,"data == NULL");
 	n = sll_gesNode(list,index);
 	n->data = data;
 }
@@ -101,8 +106,9 @@ bool sll_append(sSLList *list,void *data) {
 bool sll_insert(sSLList *list,void *data,u32 index) {
 	sList *l = (sList*)list;
 	sNode *nn,*n = l->first,*ln = NULL;
-	if(data == NULL)
-		panic("data has to be != NULL");
+
+	ASSERT(list != NULL,"list == NULL");
+	ASSERT(data != NULL,"data == NULL");
 
 	/* walk to the desired position */
 	if(index == l->length) {
@@ -142,8 +148,9 @@ void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev) {
 	sList *l = (sList*)list;
 	sNode *n = (sNode*)node,*ln = (sNode*)prev;
 
-	if(ln != NULL && ln->next != n)
-		panic("<prev> is not the previous node of <node>!");
+	ASSERT(list != NULL,"list == NULL");
+	ASSERT(node != NULL,"node == NULL");
+	ASSERT(ln == NULL || ln->next == n,"<prev> is not the previous node of <node>!");
 
 	/* remove */
 	if(ln != NULL)
@@ -161,6 +168,9 @@ void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev) {
 void sll_removeFirst(sSLList *list,void *data) {
 	sList *l = (sList*)list;
 	sNode *n = l->first,*ln = NULL;
+
+	ASSERT(list != NULL,"list == NULL");
+
 	if(data != NULL) {
 		while(n != NULL) {
 			if(n->data == data)
@@ -171,8 +181,7 @@ void sll_removeFirst(sSLList *list,void *data) {
 	}
 
 	/* TODO keep that? */
-	if(n == NULL)
-		panic("Data 0x%x does not exist!",data);
+	ASSERT(n != NULL,"Data 0x%x does not exist!",data);
 
 	sll_removeNode(list,(sSLNode*)n,(sSLNode*)ln);
 }
@@ -180,6 +189,9 @@ void sll_removeFirst(sSLList *list,void *data) {
 void sll_removeIndex(sSLList *list,u32 index) {
 	sList *l = (sList*)list;
 	sNode *n = l->first,*ln = NULL;
+
+	ASSERT(list != NULL,"list == NULL");
+
 	/* walk to the desired position */
 	while(index-- > 0) {
 		ln = n;
@@ -195,6 +207,9 @@ void sll_removeIndex(sSLList *list,u32 index) {
 static sNode *sll_gesNode(sSLList *list,u32 index) {
 	sList *l = (sList*)list;
 	sNode *n;
+
+	ASSERT(list != NULL,"list == NULL");
+
 	/* invalid index? */
 	if(index > l->length)
 		panic("The index %d does not exist",index);

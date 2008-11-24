@@ -235,7 +235,7 @@ bool paging_isMapped(u32 virtual);
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangedUserReadable(u32 virtual,s32 count);
+bool paging_isRangedUserReadable(u32 virtual,u32 count);
 
 /**
  * Checks wether the given address-range is currently readable for the user.
@@ -246,7 +246,7 @@ bool paging_isRangedUserReadable(u32 virtual,s32 count);
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangeUserWritable(u32 virtual,s32 count);
+bool paging_isRangeUserWritable(u32 virtual,u32 count);
 
 /**
  * Determines the frame-number for the given virtual-address. This should not be used

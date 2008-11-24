@@ -409,8 +409,7 @@ static sIDTEntry idt[IDT_COUNT];
 /**
  * Inits the programmable interrupt controller
  */
-static void intrpt_initPic(void)
-{
+static void intrpt_initPic(void) {
 	/* starts the initialization. we want to send a ICW4 */
 	outb(PIC_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
 	outb(PIC_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
@@ -758,8 +757,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 		case IRQ_TIMER:
 			/* TODO don't resched if we come from kernel-mode! */
-			if(stack.ds != 0x23)
-				panic("Timer interrupt from kernel-mode!");
+			ASSERT(stack.ds == 0x23,"Timer interrupt from kernel-mode!");
 
 #if 0
 			/*vid_printf("Timer interrupt...\n");*/

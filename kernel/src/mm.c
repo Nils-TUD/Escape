@@ -33,6 +33,7 @@ static u32 *u16mStack = NULL;
 /* private prototypes */
 static void mm_markAddrRangeUsed(u32 from,u32 to,bool used);
 static void mm_markFrameUsed(u32 frame,bool used);
+static bool mm_isFrameFree(eMemType type,u32 frame);
 
 void mm_init(void) {
 	sMemMap *mmap;
@@ -65,6 +66,10 @@ void mm_init(void) {
 /* TODO may be we should store and manipulate the current number of free frames? */
 u32 mm_getNumberOfFreeFrames(u32 types) {
 	u32 i,bmIndex,count = 0;
+
+	ASSERT(types & (MM_DMA | MM_DEF),"types is empty");
+	ASSERT(!(types & ~(MM_DMA | MM_DEF)),"types contains invalid bits");
+
 	if(types & MM_DMA) {
 		/* count < 16MB frames */
 		for(i = 0; i < L16M_PAGE_COUNT; i++) {
@@ -82,6 +87,9 @@ u32 mm_getNumberOfFreeFrames(u32 types) {
 }
 
 void mm_allocateFrames(eMemType type,u32 *frames,u32 count) {
+	ASSERT(type == MM_DEF || type == MM_DMA,"Invalid type");
+	ASSERT(frames != NULL,"frames == NULL");
+
 	while(count-- > 0) {
 		*(frames++) = mm_allocateFrame(type);
 	}
@@ -89,6 +97,9 @@ void mm_allocateFrames(eMemType type,u32 *frames,u32 count) {
 
 u32 mm_allocateFrame(eMemType type) {
 	u32 bmIndex;
+
+	ASSERT(type == MM_DEF || type == MM_DMA,"Invalid type");
+
 	/* TODO what do we need for DMA? */
 	if(type == MM_DMA) {
 		/* is there a frame in the cache? */
@@ -129,6 +140,9 @@ u32 mm_allocateFrame(eMemType type) {
 }
 
 void mm_freeFrames(eMemType type,u32 *frames,u32 count) {
+	ASSERT(type == MM_DEF || type == MM_DMA,"Invalid type");
+	ASSERT(frames != NULL,"frames == NULL");
+
 	while(count-- > 0) {
 		mm_freeFrame(*(frames++),type);
 	}
@@ -136,6 +150,9 @@ void mm_freeFrames(eMemType type,u32 *frames,u32 count) {
 
 void mm_freeFrame(u32 frame,eMemType type) {
 	u32 *bitmapEntry;
+
+	/*ASSERT(!mm_isFrameFree(type,frame),"Frame 0x%x (type %d) is already free",frame,type);*/
+
 	/* TODO what do we need for DMA? */
 	if(type == MM_DMA) {
 		bitmapEntry = (u32*)(l16mBitmap + (frame >> 5));
@@ -157,6 +174,29 @@ void mm_printFreeFrames(void) {
 		vid_printf("0x%08x\n",*ptr);
 	}
 	vid_printf("\n");
+}
+
+/**
+ * Checks wether the given frame of given type is free
+ *
+ * @param type the type: MM_DEF or MM_DMA
+ * @param frame the frame-number
+ * @return true if it is free
+ */
+static bool mm_isFrameFree(eMemType type,u32 frame) {
+	u32 *ptr;
+	if(type == MM_DEF) {
+		ptr = u16mStack - 1;
+		while((u32)ptr > (u32)&KernelEnd) {
+			if(*ptr == frame)
+				return true;
+			ptr--;
+		}
+		return false;
+	}
+
+	ptr = (u32*)(l16mBitmap + (frame >> 5));
+	return (*ptr & (1 << (frame & 0x1f))) == 0;
 }
 
 /**

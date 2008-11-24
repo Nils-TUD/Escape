@@ -151,6 +151,9 @@ static sMemArea *kheap_newArea(u32 size,bool isInitial) {
 static void kheap_deleteArea(sMemArea *area) {
 	sMemArea *oldHighest = highessMemArea;
 	u32 *usageCount = (u32*)((u32)area & ~(PAGE_SIZE - 1));
+
+	ASSERT(area != NULL,"area is NULL");
+
 	/* mark slot as free */
 	area->next = NULL;
 
@@ -246,6 +249,8 @@ void *kheap_alloc(u32 size) {
 	u32 address;
 	sMemArea *area, *lastArea, *nArea;
 
+	ASSERT(size > 0,"size == 0");
+
 	DBG_KMALLOC(vid_printf(">>===== kheap_alloc(size=%d) =====\n",size));
 	DBG_KMALLOC(vid_printf("firstUnused=0x%x, first=0x%x\n",firstUnused,first));
 	DBG_KMALLOC(vid_printf("startAddr=0x%x, startPrev=0x%x, startArea=0x%x\n",
@@ -337,11 +342,12 @@ void kheap_free(void *addr) {
 	u32 address, freeSize, lstartAddr, lastAddr;
 	sMemArea *area, *lastArea, *lastLastArea, *next;
 
+	ASSERT(addr != NULL,"addr == NULL");
+
 	DBG_KMALLOC(vid_printf(">>===== kheap_free(addr=0x%x) =====\n",addr));
 	DBG_KMALLOC(vid_printf("firstUnused=0x%x, first=0x%x\n",firstUnused,first));
 	DBG_KMALLOC(vid_printf("startAddr=0x%x, startPrev=0x%x, startArea=0x%x\n",
 			startAddr,startPrev,startArea));
-	/*kheap_print();*/
 
 	/* search the matching area */
 	address = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;
@@ -361,10 +367,8 @@ void kheap_free(void *addr) {
 	}
 
 	/* check if area is valid */
-	if(area == NULL)
-		panic("MemArea for address 0x%08x doesn't exist!",addr);
-	if(area->free)
-		panic("Duplicate free of address 0x%08x!",addr);
+	ASSERT(area != NULL,"MemArea for address 0x%08x doesn't exist!",addr);
+	ASSERT(!area->free,"Duplicate free of address 0x%08x!",addr);
 
 	DBG_KMALLOC(vid_printf("area=0x%x, area->free=%d, area->size=%d, area->next=0x%x\n",
 			area,area->free,area->size,area->next));

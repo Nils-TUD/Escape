@@ -103,14 +103,14 @@ s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo);
  * @param name the service-name
  * @return 0 if ok, negative if an error occurred
  */
-s32 vfs_createServiceNode(sProc *p,cstring name);
+s32 vfs_createService(sProc *p,cstring name);
 
 /**
  * Removes the service of the given process
  *
  * @param p the process
  */
-void vfs_removeServiceNode(sProc *p);
+void vfs_removeService(sProc *p);
 
 /**
  * Creates a process-node with given pid and handler-function
@@ -119,14 +119,14 @@ void vfs_removeServiceNode(sProc *p);
  * @param handler the read-handler
  * @return true if successfull
  */
-bool vfs_createProcessNode(tPid pid,fRead handler);
+bool vfs_createProcess(tPid pid,fRead handler);
 
 /**
  * Removes the node for the process with given id from the VFS
  *
  * @param pid the process-id
  */
-void vfs_removeProcessNode(tPid pid);
+void vfs_removeProcess(tPid pid);
 
 #if DEBUGGING
 

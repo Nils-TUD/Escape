@@ -18,8 +18,8 @@
 static void test_vfs(void);
 static void test_vfs_readFileSystem(void);
 static void test_vfs_readFileProcess0(void);
-static void test_vfs_createProcessNode(void);
-static void test_vfs_createServiceNode(void);
+static void test_vfs_createProcess(void);
+static void test_vfs_createService(void);
 static void test_vfs_cleanPath(void);
 static bool test_vfs_cleanPathCpy(cstring a,cstring b);
 
@@ -50,8 +50,8 @@ static void test_vfs(void) {
 	test_vfs_cleanPath();
 	test_vfs_readFileSystem();
 	test_vfs_readFileProcess0();
-	test_vfs_createProcessNode();
-	test_vfs_createServiceNode();
+	test_vfs_createProcess();
+	test_vfs_createService();
 }
 
 static void test_vfs_readFileSystem(void) {
@@ -191,25 +191,25 @@ static s32 dummyReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	return 0;
 }
 
-static void test_vfs_createProcessNode(void) {
+static void test_vfs_createProcess(void) {
 	u32 oldHeap,newHeap;
 
-	test_caseStart("Testing vfs_createProcessNode()");
+	test_caseStart("Testing vfs_createProcess()");
 
 	oldHeap = kheap_getFreeMem();
 
 	/* create */
-	if(!vfs_createProcessNode(123,&dummyReadHandler)) {
+	if(!vfs_createProcess(123,&dummyReadHandler)) {
 		test_caseFailed("Unable to create node with process id 123");
 		return;
 	}
 	/* try another create with same pid */
-	if(vfs_createProcessNode(123,&dummyReadHandler)) {
+	if(vfs_createProcess(123,&dummyReadHandler)) {
 		test_caseFailed("Created another node with pid 123");
 		return;
 	}
 	/* remove */
-	vfs_removeProcessNode(123);
+	vfs_removeProcess(123);
 
 	/* check mem-usage */
 	newHeap = kheap_getFreeMem();
@@ -221,22 +221,22 @@ static void test_vfs_createProcessNode(void) {
 	test_caseSucceded();
 }
 
-static void test_vfs_createServiceNode(void) {
+static void test_vfs_createService(void) {
 	u32 oldHeap,newHeap;
 	sProc *p = proc_getRunning();
 
-	test_caseStart("Testing vfs_createServiceNode()");
+	test_caseStart("Testing vfs_createService()");
 
 	oldHeap = kheap_getFreeMem();
 
-	if(!test_assertInt(vfs_createServiceNode(p,"test"),0)) return;
-	if(!test_assertInt(vfs_createServiceNode(p,"test2"),ERR_PROC_DUP_SERVICE)) return;
-	if(!test_assertInt(vfs_createServiceNode(p + 1,"test"),ERR_SERVICE_EXISTS)) return;
-	if(!test_assertInt(vfs_createServiceNode(p + 1,""),ERR_INV_SERVICE_NAME)) return;
-	if(!test_assertInt(vfs_createServiceNode(p + 1,"abc.def"),ERR_INV_SERVICE_NAME)) return;
-	if(!test_assertInt(vfs_createServiceNode(p + 1,"test2"),0)) return;
-	vfs_removeServiceNode(p);
-	vfs_removeServiceNode(p + 1);
+	if(!test_assertInt(vfs_createService(p,"test"),0)) return;
+	if(!test_assertInt(vfs_createService(p,"test2"),ERR_PROC_DUP_SERVICE)) return;
+	if(!test_assertInt(vfs_createService(p + 1,"test"),ERR_SERVICE_EXISTS)) return;
+	if(!test_assertInt(vfs_createService(p + 1,""),ERR_INV_SERVICE_NAME)) return;
+	if(!test_assertInt(vfs_createService(p + 1,"abc.def"),ERR_INV_SERVICE_NAME)) return;
+	if(!test_assertInt(vfs_createService(p + 1,"test2"),0)) return;
+	vfs_removeService(p);
+	vfs_removeService(p + 1);
 
 	/* check mem-usage */
 	newHeap = kheap_getFreeMem();

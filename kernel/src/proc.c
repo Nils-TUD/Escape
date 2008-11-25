@@ -50,7 +50,7 @@ void proc_init(void) {
 	tFD i;
 	/* init the first process */
 	pi = 0;
-	if(!vfs_createProcessNode(0,&proc_vfsReadHandler))
+	if(!vfs_createProcess(0,&proc_vfsReadHandler))
 		panic("Not enough mem for init process");
 	procs[pi].state = ST_RUNNING;
 	procs[pi].pid = 0;
@@ -157,7 +157,7 @@ s32 proc_clone(tPid newPid) {
 			procs + newPid);
 
 	/* first create the VFS node (we may not have enough mem) */
-	if(!vfs_createProcessNode(newPid,&proc_vfsReadHandler))
+	if(!vfs_createProcess(newPid,&proc_vfsReadHandler))
 		return -1;
 
 	/* clone page-dir */
@@ -230,7 +230,7 @@ void proc_destroy(sProc *p) {
 	}
 
 	/* remove from VFS */
-	vfs_removeProcessNode(p->pid);
+	vfs_removeProcess(p->pid);
 
 	/* mark as unused */
 	p->textPages = 0;

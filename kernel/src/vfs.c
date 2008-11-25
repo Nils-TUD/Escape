@@ -127,7 +127,7 @@ static sVFSNode *vfs_createInfo(sVFSNode *parent,sVFSNode *prev,string name,fRea
  * @param name the node-name
  * @return the node
  */
-static sVFSNode *vfs_createService(sVFSNode *parent,sVFSNode *prev,string name);
+static sVFSNode *vfs_createServiceNode(sVFSNode *parent,sVFSNode *prev,string name);
 
 /* all nodes */
 static sVFSNode nodes[NODE_COUNT];
@@ -155,7 +155,7 @@ void vfs_init(void) {
 	 *     \-services
 	 */
 	root = vfs_createDir(NULL,NULL,(string)"");
-	node = vfs_createService(root,NULL,(string)"fs");
+	node = vfs_createServiceNode(root,NULL,(string)"fs");
 	sys = vfs_createDir(root,node,(string)"system");
 	node = vfs_createDir(sys,NULL,(string)"processes");
 	node = vfs_createDir(sys,node,(string)"services");
@@ -427,7 +427,7 @@ s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 	return 0;
 }
 
-s32 vfs_createServiceNode(sProc *p,cstring name) {
+s32 vfs_createService(sProc *p,cstring name) {
 	sVFSNode *serv = SERVICES();
 	sVFSNode *n = serv->childs,*prev = NULL;
 	u32 len;
@@ -456,7 +456,7 @@ s32 vfs_createServiceNode(sProc *p,cstring name) {
 	strncpy(hname,name,len);
 
 	/* create node */
-	n = vfs_createService(serv,prev,hname);
+	n = vfs_createServiceNode(serv,prev,hname);
 	if(n != NULL) {
 		n->data.proc = p;
 		return 0;
@@ -467,7 +467,7 @@ s32 vfs_createServiceNode(sProc *p,cstring name) {
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-void vfs_removeServiceNode(sProc *p) {
+void vfs_removeService(sProc *p) {
 	sVFSNode *serv = SERVICES();
 	sVFSNode *n = serv->childs,*prev = NULL;
 
@@ -490,7 +490,7 @@ void vfs_removeServiceNode(sProc *p) {
 	}
 }
 
-bool vfs_createProcessNode(tPid pid,fRead handler) {
+bool vfs_createProcess(tPid pid,fRead handler) {
 	string name;
 	sVFSNode *proc = PROCESSES();
 	sVFSNode *n = proc->childs,*prev = NULL;
@@ -527,7 +527,7 @@ bool vfs_createProcessNode(tPid pid,fRead handler) {
 	return false;
 }
 
-void vfs_removeProcessNode(tPid pid) {
+void vfs_removeProcess(tPid pid) {
 	sVFSNode *proc = PROCESSES();
 	s8 name[12];
 	itoa(name,pid);
@@ -674,7 +674,7 @@ static sVFSNode *vfs_createInfo(sVFSNode *parent,sVFSNode *prev,string name,fRea
 	return node;
 }
 
-static sVFSNode *vfs_createService(sVFSNode *parent,sVFSNode *prev,string name) {
+static sVFSNode *vfs_createServiceNode(sVFSNode *parent,sVFSNode *prev,string name) {
 	sVFSNode *node = vfs_createNode(parent,prev,name);
 	if(node == NULL)
 		return NULL;

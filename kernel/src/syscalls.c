@@ -207,7 +207,7 @@ static void sysc_regService(sSysCallStack *stack) {
 	sProc *p = proc_getRunning();
 	s32 res;
 
-	res = vfs_createServiceNode(p,stack->arg1);
+	res = vfs_createService(p,stack->arg1);
 	if(res < 0) {
 		SYSC_ERROR(stack,res);
 		return;
@@ -220,7 +220,7 @@ static void sysc_regService(sSysCallStack *stack) {
 
 static void sysc_unregService(sSysCallStack *stack) {
 	sProc *p = proc_getRunning();
-	vfs_removeServiceNode(p);
+	vfs_removeService(p);
 
 	vfs_dbg_printTree();
 }

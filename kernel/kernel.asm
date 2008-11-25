@@ -221,11 +221,11 @@ proc_save:
 	push	ebp
 	mov		ebp,esp
 	sub		esp,4
-	; save eax & ensure interrupts are disabled
+	; ensure interrupts are disabled
 	pushfd
 	mov		eax,[esp]
 	and		eax,1 << 9
-	mov		[ebp-4],eax
+	mov		[ebp - 4],eax
 	cli
 	add		esp,4
 
@@ -239,7 +239,7 @@ proc_save:
 	pop		DWORD [eax + STATE_EFLAGS]		; store
 
 	; restore interrupt-state
-	mov		eax,[ebp-4]
+	mov		eax,[ebp - 4]
 	cmp		eax,eax
 	jz		proc_saveIFD
 	sti

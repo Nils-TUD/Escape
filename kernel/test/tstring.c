@@ -33,6 +33,7 @@ static void test_strcut(void);
 static void test_strlen(void);
 static void test_tolower(void);
 static void test_toupper(void);
+static void test_isalnumstr(void);
 
 /* our test-module */
 sTestModule tModString = {
@@ -61,6 +62,7 @@ static void test_string(void) {
 	test_strlen();
 	test_tolower();
 	test_toupper();
+	test_isalnumstr();
 }
 
 static void test_atoi(void) {
@@ -367,6 +369,22 @@ static void test_toupper(void) {
 	if(!test_assertInt(toupper('A'),'A')) return;
 	if(!test_assertInt(toupper('X'),'X')) return;
 	if(!test_assertInt(toupper('Z'),'Z')) return;
+
+	test_caseSucceded();
+}
+
+static void test_isalnumstr(void) {
+	test_caseStart("Testing isalnumstr()");
+
+	if(!test_assertTrue(isalnumstr("abc123"))) return;
+	if(!test_assertTrue(isalnumstr("Axer123084"))) return;
+	if(!test_assertTrue(isalnumstr(""))) return;
+	if(!test_assertTrue(isalnumstr("a"))) return;
+	if(!test_assertTrue(isalnumstr("0"))) return;
+	if(!test_assertFalse(isalnumstr("_"))) return;
+	if(!test_assertFalse(isalnumstr("abc123*"))) return;
+	if(!test_assertFalse(isalnumstr("../*/\\"))) return;
+	if(!test_assertFalse(isalnumstr("12.5"))) return;
 
 	test_caseSucceded();
 }

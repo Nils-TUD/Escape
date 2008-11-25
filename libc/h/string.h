@@ -207,6 +207,14 @@ s32 tolower(s32 ch);
 s32 toupper(s32 ch);
 
 /**
+ * Checks wether the given string contains just alphanumeric characters
+ *
+ * @param str the string
+ * @return true if so
+ */
+bool isalnumstr(cstring str);
+
+/**
  * @param c the character
  * @return non-zero if its argument is a numeric digit or a letter of the alphabet.
  * 	Otherwise, zero is returned.

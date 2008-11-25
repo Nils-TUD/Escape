@@ -21,6 +21,8 @@
 #define FILE_COUNT	(PROC_COUNT * 16)
 /* the processes node */
 #define PROCESSES()	(nodes + 3)
+/* the services node */
+#define SERVICES() (nodes + 4)
 
 /* max node-name len */
 #define MAX_NAME_LEN 59
@@ -172,7 +174,7 @@ s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd) {
 
 	ASSERT(flags & (GFT_READ | GFT_WRITE),"flags empty");
 	ASSERT(!(flags & ~(GFT_READ | GFT_WRITE)),"flags contains invalid bits");
-	ASSERT(VIRT_INDEX(nodeNo) >= 0 && VIRT_INDEX(nodeNo) < NODE_COUNT,"nodeNo invalid");
+	ASSERT(VIRT_INDEX(nodeNo) < NODE_COUNT,"nodeNo invalid");
 	ASSERT(fd != NULL,"fd == NULL");
 
 	/* ensure that we don't increment usages of an unused slot */
@@ -244,7 +246,7 @@ s32 vfs_readFile(tFD fd,u8 *buffer,u32 count) {
 	if(IS_VIRT(e->nodeNo)) {
 		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
 		/* use the read-handler */
-		readBytes = nodes[i].readHandler(nodes + i,buffer,e->position,count);
+		readBytes = nodes[i].data.info.readHandler(nodes + i,buffer,e->position,count);
 		e->position += readBytes;
 	}
 	else {
@@ -275,9 +277,9 @@ void vfs_closeFile(tFD fd) {
 		/* free cache if there is any */
 		if(IS_VIRT(e->nodeNo)) {
 			tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
-			if(nodes[i].dataCache != NULL) {
-				kheap_free(nodes[i].dataCache);
-				nodes[i].dataCache = NULL;
+			if(nodes[i].type != T_SERVICE && nodes[i].data.info.cache != NULL) {
+				kheap_free(nodes[i].data.info.cache);
+				nodes[i].data.info.cache = NULL;
 			}
 		}
 		/* mark unused */
@@ -425,6 +427,69 @@ s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 	return 0;
 }
 
+s32 vfs_createServiceNode(sProc *p,cstring name) {
+	sVFSNode *serv = SERVICES();
+	sVFSNode *n = serv->childs,*prev = NULL;
+	u32 len;
+	string hname;
+
+	ASSERT(p != NULL,"p == NULL");
+
+	/* we don't want to have exotic service-names */
+	if((len = strlen(name)) == 0 || !isalnumstr(name))
+		return ERR_INV_SERVICE_NAME;
+
+	while(n != NULL) {
+		/* entry already existing? */
+		if(strcmp(n->name,name) == 0)
+			return ERR_SERVICE_EXISTS;
+		if(n->type == T_SERVICE && n->data.proc == p)
+			return ERR_PROC_DUP_SERVICE;
+		prev = n;
+		n = n->next;
+	}
+
+	/* copy name to kernel-heap */
+	hname = (string)kheap_alloc(len + 1);
+	if(hname == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+	strncpy(hname,name,len);
+
+	/* create node */
+	n = vfs_createService(serv,prev,hname);
+	if(n != NULL) {
+		n->data.proc = p;
+		return 0;
+	}
+
+	/* failed, so cleanup */
+	kheap_free(hname);
+	return ERR_NOT_ENOUGH_MEM;
+}
+
+void vfs_removeServiceNode(sProc *p) {
+	sVFSNode *serv = SERVICES();
+	sVFSNode *n = serv->childs,*prev = NULL;
+
+	ASSERT(p != NULL,"p == NULL");
+
+	while(n != NULL) {
+		/* process found? */
+		if(n->type == T_SERVICE && n->data.proc == p) {
+			if(prev != NULL)
+				prev->next = n->next;
+			else
+				serv->childs = n->next;
+			/* free node */
+			kheap_free(n->name);
+			vfs_releaseNode(n);
+			break;
+		}
+		prev = n;
+		n = n->next;
+	}
+}
+
 bool vfs_createProcessNode(tPid pid,fRead handler) {
 	string name;
 	sVFSNode *proc = PROCESSES();
@@ -451,9 +516,9 @@ bool vfs_createProcessNode(tPid pid,fRead handler) {
 	n = vfs_createInfo(proc,prev,name,handler);
 	if(n != NULL) {
 		/* invalidate cache */
-		if(proc->dataCache != NULL) {
-			kheap_free(proc->dataCache);
-			proc->dataCache = NULL;
+		if(proc->data.info.cache != NULL) {
+			kheap_free(proc->data.info.cache);
+			proc->data.info.cache = NULL;
 		}
 		return true;
 	}
@@ -486,9 +551,9 @@ void vfs_removeProcessNode(tPid pid) {
 	}
 
 	/* invalidate cache */
-	if(proc->dataCache != NULL) {
-		kheap_free(proc->dataCache);
-		proc->dataCache = NULL;
+	if(proc->data.info.cache != NULL) {
+		kheap_free(proc->data.info.cache);
+		proc->data.info.cache = NULL;
 	}
 }
 
@@ -527,7 +592,7 @@ static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	ASSERT(buffer != NULL,"buffer == NULL");
 
 	/* not cached yet? */
-	if(node->dataCache == NULL) {
+	if(node->data.info.cache == NULL) {
 		/* we need the number of bytes first */
 		byteCount = 0;
 		sVFSNode *n = node->childs;
@@ -535,14 +600,14 @@ static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 			byteCount += sizeof(sVFSNodePub);
 			n = n->next;
 		}
-		node->dataSize = byteCount;
+		node->data.info.size = byteCount;
 		if(byteCount > 0) {
 			/* now allocate mem on the heap and copy all data into it */
 			u8 *childs = (u8*)kheap_alloc(byteCount);
 			if(childs == NULL)
-				node->dataSize = 0;
+				node->data.info.size = 0;
 			else {
-				node->dataCache = childs;
+				node->data.info.cache = childs;
 				n = node->childs;
 				while(n != NULL) {
 					u16 len = strlen(n->name) + 1;
@@ -556,12 +621,12 @@ static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 		}
 	}
 
-	if(offset > node->dataSize)
-		offset = node->dataSize;
-	byteCount = MIN(node->dataSize - offset,count);
+	if(offset > node->data.info.size)
+		offset = node->data.info.size;
+	byteCount = MIN(node->data.info.size - offset,count);
 	if(byteCount > 0) {
 		/* simply copy the data to the buffer */
-		memcpy(buffer,(u8*)node->dataCache + offset,byteCount);
+		memcpy(buffer,(u8*)node->data.info.cache + offset,byteCount);
 	}
 
 	return byteCount;
@@ -579,7 +644,8 @@ static sVFSNode *vfs_createNode(sVFSNode *parent,sVFSNode *prev,string name) {
 	node->name = name;
 	node->next = NULL;
 	node->childs = NULL;
-	node->dataCache = NULL;
+	node->data.info.cache = NULL;
+	node->data.info.size = 0;
 
 	if(prev != NULL)
 		prev->next = node;
@@ -594,7 +660,7 @@ static sVFSNode *vfs_createDir(sVFSNode *parent,sVFSNode *prev,string name) {
 		return NULL;
 
 	node->type = T_DIR;
-	node->readHandler = &vfs_dirReadHandler;
+	node->data.info.readHandler = &vfs_dirReadHandler;
 	return node;
 }
 
@@ -604,7 +670,7 @@ static sVFSNode *vfs_createInfo(sVFSNode *parent,sVFSNode *prev,string name,fRea
 		return NULL;
 
 	node->type = T_INFO;
-	node->readHandler = handler;
+	node->data.info.readHandler = handler;
 	return node;
 }
 
@@ -615,7 +681,7 @@ static sVFSNode *vfs_createService(sVFSNode *parent,sVFSNode *prev,string name) 
 
 	/* TODO */
 	node->type = T_SERVICE;
-	node->readHandler = NULL;
+	node->data.info.readHandler = NULL;
 	return node;
 }
 
@@ -663,7 +729,13 @@ void vfs_dbg_printNode(sVFSNode *node) {
 		vid_printf("\ttype: %s\n",node->type == T_DIR ? "DIR" : node->type == T_INFO ? "INFO" : "SERVICE");
 		vid_printf("\tchilds: 0x%x\n",node->childs);
 		vid_printf("\tnext: 0x%x\n",node->next);
-		vid_printf("\treadHandler: 0x%x\n",node->readHandler);
+		if(node->type == T_SERVICE)
+			vid_printf("\tProcess: 0x%x\n",node->data.proc);
+		else {
+			vid_printf("\treadHandler: 0x%x\n",node->data.info.readHandler);
+			vid_printf("\tcache: 0x%x\n",node->data.info.cache);
+			vid_printf("\tsize: %d\n",node->data.info.size);
+		}
 	}
 }
 

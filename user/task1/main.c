@@ -10,6 +10,7 @@
 #include <io.h>
 #include <dir.h>
 #include <string.h>
+#include <service.h>
 
 static void printProcess(sProc *p);
 
@@ -29,7 +30,12 @@ s32 main(void) {
 		debugf("Hi, my pid is %d, parent is %d\n",getpid(),getppid());
 	}*/
 
-	s32 dd;
+	if(regService("test") < 0)
+		printLastError();
+	else
+		unregService();
+
+	/*s32 dd;
 	sDir *entry;
 	debugf("Listing directory '/':\n");
 	if((dd = opendir("/")) >= 0) {
@@ -58,7 +64,7 @@ s32 main(void) {
 			closedir(dd);
 		}
 		return 0;
-	}
+	}*/
 
 	while(1);
 	return 0;

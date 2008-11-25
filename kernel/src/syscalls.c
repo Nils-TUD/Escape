@@ -15,7 +15,7 @@
 #include "../h/util.h"
 #include "../h/debug.h"
 
-#define SYSCALL_COUNT 8
+#define SYSCALL_COUNT 10
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
@@ -51,22 +51,27 @@ static void sysc_fork(sSysCallStack *stack);
  * Destroys the process and issues a context-switch
  */
 static void sysc_exit(sSysCallStack *stack);
-
 /**
  * Open-syscall. Opens a given path with given mode and returns the file-descriptor to use
  * to the user.
  */
 static void sysc_open(sSysCallStack *stack);
-
 /**
  * Read-syscall. Reads a given number of bytes in a given file at the current position
  */
 static void sysc_read(sSysCallStack *stack);
-
 /**
  * Closes the given file-descriptor
  */
 static void sysc_close(sSysCallStack *stack);
+/**
+ * Registers a service
+ */
+static void sysc_regService(sSysCallStack *stack);
+/**
+ * Unregisters a service
+ */
+static void sysc_unregService(sSysCallStack *stack);
 
 /* our syscalls */
 static sSyscall syscalls[SYSCALL_COUNT] = {
@@ -77,7 +82,9 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 4 */ {sysc_exit,			1},
 	/* 5 */ {sysc_open,			2},
 	/* 6 */ {sysc_close,		1},
-	/* 7 */ {sysc_read,			3}
+	/* 7 */ {sysc_read,			3},
+	/* 8 */ {sysc_regService,	1},
+	/* 9 */ {sysc_unregService,	0},
 };
 
 void sysc_handle(sSysCallStack *stack) {
@@ -162,9 +169,6 @@ static void sysc_open(sSysCallStack *stack) {
 	}
 
 	/* return fd */
-	/*dbg_printProcess(proc_getRunning());
-	vfs_printNode(vfs_getNode(nodeNo));
-	vfs_printGFT();*/
 	SYSC_RET1(stack,fd);
 }
 
@@ -197,7 +201,26 @@ static void sysc_read(sSysCallStack *stack) {
 static void sysc_close(sSysCallStack *stack) {
 	tFD fd = stack->arg1;
 	vfs_closeFile(fd);
+}
 
-	/*dbg_printProcess(proc_getRunning());
-	vfs_printGFT();*/
+static void sysc_regService(sSysCallStack *stack) {
+	sProc *p = proc_getRunning();
+	s32 res;
+
+	res = vfs_createServiceNode(p,stack->arg1);
+	if(res < 0) {
+		SYSC_ERROR(stack,res);
+		return;
+	}
+
+	vfs_dbg_printTree();
+
+	SYSC_RET1(stack,res);
+}
+
+static void sysc_unregService(sSysCallStack *stack) {
+	sProc *p = proc_getRunning();
+	vfs_removeServiceNode(p);
+
+	vfs_dbg_printTree();
 }

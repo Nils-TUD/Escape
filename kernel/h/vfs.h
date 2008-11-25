@@ -8,6 +8,7 @@
 #define VFS_H_
 
 #include "../h/common.h"
+#include "../h/proc.h"
 
 /* the possible node-types */
 typedef enum {T_DIR,T_INFO,T_SERVICE} eNodeType;
@@ -22,10 +23,15 @@ typedef s32 (*fRead)(sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 struct sVFSNode {
 	string name;
-	fRead readHandler;
 	u16 type;
-	u16 dataSize;
-	void *dataCache;
+	union {
+		struct {
+			fRead readHandler;
+			u16 size;
+			void *cache;
+		} info;
+		sProc *proc;
+	} data;
 	sVFSNode *next;
 	sVFSNode *childs;
 };
@@ -89,6 +95,22 @@ string vfs_cleanPath(string path);
  * @return 0 if successfull or the error-code
  */
 s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo);
+
+/**
+ * Creates a service-node for the given process and given name
+ *
+ * @param p the process
+ * @param name the service-name
+ * @return 0 if ok, negative if an error occurred
+ */
+s32 vfs_createServiceNode(sProc *p,cstring name);
+
+/**
+ * Removes the service of the given process
+ *
+ * @param p the process
+ */
+void vfs_removeServiceNode(sProc *p);
 
 /**
  * Creates a process-node with given pid and handler-function

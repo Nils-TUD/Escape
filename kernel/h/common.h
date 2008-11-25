@@ -65,6 +65,10 @@ typedef enum {false = 0, true = 1} bool;
 #define ERR_INVALID_FD			-6
 #define ERR_INVALID_FILE		-7
 #define ERR_NO_READ_PERM		-8
+#define ERR_INV_SERVICE_NAME	-9
+#define ERR_NOT_ENOUGH_MEM		-10
+#define ERR_SERVICE_EXISTS		-11
+#define ERR_PROC_DUP_SERVICE	-12
 
 /* debugging */
 #define DBG_PGCLONEPD(s)

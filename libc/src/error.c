@@ -44,6 +44,22 @@ void printLastError(void) {
 			debugf("No read-permission\n");
 			break;
 
+		case ERR_INV_SERVICE_NAME:
+			debugf("Invalid service name. Alphanumeric, not empty name expected!\n");
+			break;
+
+		case ERR_NOT_ENOUGH_MEM:
+			debugf("Not enough memory!\n");
+			break;
+
+		case ERR_SERVICE_EXISTS:
+			debugf("The service with desired name does already exist!\n");
+			break;
+
+		case ERR_PROC_DUP_SERVICE:
+			debugf("You are already a service!\n");
+			break;
+
 		default:
 			debugf("No error\n");
 			break;

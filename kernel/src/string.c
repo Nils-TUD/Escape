@@ -323,6 +323,14 @@ s32 toupper(s32 ch) {
 	return ch;
 }
 
+bool isalnumstr(cstring str) {
+	while(*str) {
+		if(!isalnum(*str++))
+			return false;
+	}
+	return true;
+}
+
 bool isalnum(s32 c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
 }

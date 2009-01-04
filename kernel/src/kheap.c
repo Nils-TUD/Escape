@@ -114,10 +114,9 @@ static sMemArea *startPrev;
 static sMemArea *firstUnused;
 
 void kheap_init(void) {
-	/* get frame and map it */
+	/* map frame for the initial area */
 	initial = (sMemArea*)KERNEL_HEAP_START + 1;
-	u32 frame = mm_allocateFrame(MM_DEF);
-	paging_map((u32)initial,&frame,1,PG_WRITABLE | PG_SUPERVISOR,false);
+	paging_map((u32)initial,NULL,1,PG_WRITABLE | PG_SUPERVISOR,false);
 	/* we have to clear the area-pages */
 	memset(initial - 1,0,PAGE_SIZE);
 

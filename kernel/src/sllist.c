@@ -31,7 +31,7 @@ typedef struct {
  * @param index the index
  * @return the node
  */
-static sNode *sll_gesNode(sSLList *list,u32 index);
+static sNode *sll_getNode(sSLList *list,u32 index);
 
 sSLList *sll_create(void) {
 	sList *l = kheap_alloc(sizeof(sList));
@@ -61,11 +61,11 @@ void sll_destroy(sSLList *list) {
 }
 
 sSLNode *sll_begin(sSLList *list) {
-	return (sSLNode*)sll_gesNode(list,0);
+	return (sSLNode*)sll_getNode(list,0);
 }
 
 sSLNode *sll_nodeAt(sSLList *list,u32 index) {
-	return (sSLNode*)sll_gesNode(list,index);
+	return (sSLNode*)sll_getNode(list,index);
 }
 
 u32 sll_length(sSLList *list) {
@@ -75,13 +75,13 @@ u32 sll_length(sSLList *list) {
 }
 
 void *sll_get(sSLList *list,u32 index) {
-	return sll_gesNode(list,index)->data;
+	return sll_getNode(list,index)->data;
 }
 
 void sll_set(sSLList *list,void *data,u32 index) {
 	sNode *n;
 	ASSERT(data != NULL,"data == NULL");
-	n = sll_gesNode(list,index);
+	n = sll_getNode(list,index);
 	n->data = data;
 }
 
@@ -191,7 +191,7 @@ void sll_removeIndex(sSLList *list,u32 index) {
 	sll_removeNode(list,(sSLNode*)n,(sSLNode*)ln);
 }
 
-static sNode *sll_gesNode(sSLList *list,u32 index) {
+static sNode *sll_getNode(sSLList *list,u32 index) {
 	sList *l = (sList*)list;
 	sNode *n;
 

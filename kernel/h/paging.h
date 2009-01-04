@@ -227,7 +227,7 @@ bool paging_isMapped(u32 virtual);
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangedUserReadable(u32 virtual,u32 count);
+bool paging_isRangeUserReadable(u32 virtual,u32 count);
 
 /**
  * Checks wether the given address-range is currently readable for the user.

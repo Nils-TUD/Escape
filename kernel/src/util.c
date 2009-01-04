@@ -127,7 +127,7 @@ void dumpMem(void *addr,u32 dwordCount) {
 }
 
 bool copyUserToKernel(u8 *src,u8 *dst,u32 count) {
-	if(!paging_isRangedUserReadable((u32)src,count))
+	if(!paging_isRangeUserReadable((u32)src,count))
 		return false;
 	memcpy(dst,src,count);
 	return true;

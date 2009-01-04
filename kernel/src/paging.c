@@ -39,7 +39,7 @@ extern void paging_enable(void);
  * @param pageDir the address of the page-directory to use
  * @param mappingArea the address of the mapping area to use
  */
-static void paging_mapintern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames,u32 count,u8 flags,
+static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames,u32 count,u8 flags,
 		bool force);
 
 /**
@@ -177,7 +177,7 @@ bool paging_isMapped(u32 virtual) {
 	return pt->present;
 }
 
-bool paging_isRangedUserReadable(u32 virtual,u32 count) {
+bool paging_isRangeUserReadable(u32 virtual,u32 count) {
 	sPTEntry *pt;
 	u32 end;
 	/* kernel area? */
@@ -254,10 +254,10 @@ u32 paging_countFramesForMap(u32 virtual,u32 count) {
 }
 
 void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags,bool force) {
-	paging_mapintern(PAGE_DIR_AREA,MAPPED_PTS_START,virtual,frames,count,flags,force);
+	paging_mapIntern(PAGE_DIR_AREA,MAPPED_PTS_START,virtual,frames,count,flags,force);
 }
 
-static void paging_mapintern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames,u32 count,u8 flags,
+static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames,u32 count,u8 flags,
 		bool force) {
 	u32 frame;
 	sPDEntry *pd;
@@ -413,13 +413,13 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 
 	/* map pages for text to the frames of the old process */
 	DBG_PGCLONEPD(vid_printf("Mapping %d text-pages (shared)\n",tPages));
-	paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,
+	paging_mapIntern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,
 			0,(u32*)MAPPED_PTS_START,tPages,PG_ADDR_TO_FRAME,true);
 
 	/* map pages for data. we will copy the data with copyonwrite. */
 	DBG_PGCLONEPD(vid_printf("Mapping %d data-pages (copy-on-write)\n",dPages));
 	x = tPages * PAGE_SIZE;
-	paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,
+	paging_mapIntern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,
 			(u32*)ADDR_TO_MAPPED(x),dPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);
 	/* mark as copy-on-write for the current and new process */
 	paging_setCOW(x,(u32*)ADDR_TO_MAPPED(x),dPages,newProc);
@@ -427,7 +427,7 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	/* map pages for stack. we will copy the data with copyonwrite. */
 	DBG_PGCLONEPD(vid_printf("Mapping %d stack-pages (copy-on-write)\n",sPages));
 	x = KERNEL_AREA_V_ADDR - sPages * PAGE_SIZE;
-	paging_mapintern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,
+	paging_mapIntern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,
 			(u32*)ADDR_TO_MAPPED(x),sPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);
 	/* mark as copy-on-write for the current and new process */
 	paging_setCOW(x,(u32*)ADDR_TO_MAPPED(x),sPages,newProc);
@@ -547,6 +547,7 @@ void paging_destroyPageDir(sProc *p) {
 		if(cow->proc == p) {
 			sll_removeNode(cowFrames,n,ln);
 			n = n->next;
+			/* necessary because otherwise n->next would cause a trouble */
 			if(n == NULL)
 				break;
 		}

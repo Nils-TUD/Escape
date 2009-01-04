@@ -192,7 +192,7 @@ string strcut(string str,u32 count);
  * @param str the string
  * @return the length of str (determined by the number of characters before null termination).
  */
-u32 strlen(string str);
+u32 strlen(cstring str);
 
 /**
  * @param ch the char

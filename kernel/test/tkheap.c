@@ -22,6 +22,7 @@ static void test_kheap_t2(void);
 static void test_kheap_t3(void);
 static void test_kheap_t4(void);
 static void test_kheap_t5(void);
+static void test_kheap_realloc(void);
 
 /* our test-module */
 sTestModule tModKHeap = {
@@ -99,7 +100,8 @@ static void test_kheap(void) {
 		&test_kheap_t2,
 		&test_kheap_t3,
 		&test_kheap_t4,
-		&test_kheap_t5
+		&test_kheap_t5,
+		&test_kheap_realloc
 	};
 
 	u32 i;
@@ -251,4 +253,89 @@ static void test_kheap_t5(void) {
 	kheap_free(ptr3);
 	kheap_free(ptr4);
 	kheap_free(ptr5);
+}
+
+static void test_kheap_realloc(void) {
+	u32 i;
+	u32 *p,*ptr1,*ptr2,*ptr3;
+	test_init("Testing realloc()");
+
+	ptr1 = (u32*)kheap_alloc(10 * sizeof(u32));
+	for(p = ptr1,i = 0;i < 10;i++)
+		*p++ = 1;
+
+	ptr2 = (u32*)kheap_alloc(5 * sizeof(u32));
+	for(p = ptr2,i = 0;i < 5;i++)
+		*p++ = 2;
+
+	ptr3 = (u32*)kheap_alloc(2 * sizeof(u32));
+	for(p = ptr3,i = 0;i < 2;i++)
+		*p++ = 3;
+
+	ptr2 = (u32*)kheap_realloc(ptr2,10 * sizeof(u32));
+
+	/* check content */
+	if(!test_checkContent(ptr1,10,1)) {
+		test_caseFailed("Content of unaffected area (ptr1) changed");
+		return;
+	}
+	if(!test_checkContent(ptr3,2,3)) {
+		test_caseFailed("Content of unaffected area (ptr3) changed");
+		return;
+	}
+	if(!test_checkContent(ptr2,5,2)) {
+		test_caseFailed("Content of affected area (ptr2) not copied");
+		return;
+	}
+
+	/* fill 2 completely */
+	for(p = ptr2,i = 0;i < 10;i++)
+		*p++ = 2;
+
+	ptr3 = (u32*)kheap_realloc(ptr3,6 * sizeof(u32));
+
+	/* check content */
+	if(!test_checkContent(ptr1,10,1)) {
+		test_caseFailed("Content of unaffected area (ptr1) changed");
+		return;
+	}
+	if(!test_checkContent(ptr2,10,2)) {
+		test_caseFailed("Content of unaffected area (ptr2) changed");
+		return;
+	}
+	if(!test_checkContent(ptr3,2,3)) {
+		test_caseFailed("Content of affected area (ptr3) not copied");
+		return;
+	}
+
+	/* fill 3 completely */
+	for(p = ptr3,i = 0;i < 6;i++)
+		*p++ = 3;
+
+	ptr3 = (u32*)kheap_realloc(ptr3,7 * sizeof(u32));
+
+	/* check content */
+	if(!test_checkContent(ptr1,10,1)) {
+		test_caseFailed("Content of unaffected area (ptr1) changed");
+		return;
+	}
+	if(!test_checkContent(ptr2,10,2)) {
+		test_caseFailed("Content of unaffected area (ptr2) changed");
+		return;
+	}
+	if(!test_checkContent(ptr3,6,3)) {
+		test_caseFailed("Content of affected area (ptr3) not copied");
+		return;
+	}
+
+	/* fill 3 completely */
+	for(p = ptr3,i = 0;i < 7;i++)
+		*p++ = 3;
+
+	/* free all */
+	kheap_free(ptr1);
+	kheap_free(ptr2);
+	kheap_free(ptr3);
+
+	test_check();
 }

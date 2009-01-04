@@ -31,6 +31,16 @@ u32 kheap_getFreeMem(void);
 void *kheap_alloc(u32 size);
 
 /**
+ * Reallocates the area at given address to the given size. That means either your data will
+ * be copied to a different address or your area will be resized.
+ *
+ * @param addr the address of your area
+ * @param size the number of bytes your area should be resized to
+ * @return the address (may be different) of your area or NULL if there is not enough mem
+ */
+void *kheap_realloc(void *addr,u32 size);
+
+/**
  * Frees the via kmalloc() allocated area starting at <addr>.
  */
 void kheap_free(void *addr);

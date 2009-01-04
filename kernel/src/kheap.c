@@ -72,6 +72,17 @@ struct sMemArea {
 };
 
 /**
+ * Intern free function. Frees the given area with given address. You have to provide the
+ * last and last-last area, too.
+ *
+ * @param address the address of the area
+ * @param area the area to free
+ * @param lastArea the previous of area
+ * @param lastLastArea the previous of the previous area
+ */
+static void kheap_freeIntern(u32 address,sMemArea *area,sMemArea *lastArea,sMemArea *lastLastArea);
+
+/**
  * Finds a place for a new mem-area
  *
  * @param size the desired size
@@ -234,8 +245,8 @@ void *kheap_alloc(u32 size) {
 }
 
 void kheap_free(void *addr) {
-	u32 address, freeSize, lstartAddr, lastAddr;
-	sMemArea *area, *lastArea, *lastLastArea, *next;
+	u32 address;
+	sMemArea *area, *lastArea, *lastLastArea;
 
 	ASSERT(addr != NULL,"addr == NULL");
 
@@ -246,7 +257,6 @@ void kheap_free(void *addr) {
 
 	/* search the matching area */
 	address = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;
-	lastAddr = 0;
 	area = first;
 	lastArea = NULL, lastLastArea = NULL;
 	while(area != NULL) {
@@ -255,15 +265,85 @@ void kheap_free(void *addr) {
 		if((void*)address == addr)
 			break;
 
-		lastAddr = address;
 		lastLastArea = lastArea;
 		lastArea = area;
 		area = area->next;
 	}
 
+	kheap_freeIntern(address,area,lastArea,lastLastArea);
+
+	DBG_KMALLOC(vid_printf("<<===== kheap_free =====\n"));
+}
+
+void *kheap_realloc(void *addr,u32 size) {
+	u32 address, newAddress;
+	sMemArea *area, *lastArea, *lastLastArea;
+
+	/* search the matching area */
+	address = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;
+	area = first;
+	lastArea = NULL, lastLastArea = NULL;
+	while(area != NULL) {
+		address -= area->size;
+		/* area found? */
+		if((void*)address == addr)
+			break;
+
+		lastLastArea = lastArea;
+		lastArea = area;
+		area = area->next;
+	}
+
+	/* ignore shrinks */
+	/* TODO keep that? */
+	if(size < area->size)
+		return (void*)address;
+
+	/* if the prev area is not big enough or occupied we need a new one */
+	if(lastArea == NULL || !lastArea->free || lastArea->size < size - area->size) {
+		/* get new area */
+		newAddress = (u32)kheap_alloc(size);
+		if((void*)newAddress == NULL)
+			return NULL;
+
+		/* copy data */
+		memcpy((void*)newAddress,(void*)address,area->size);
+
+		/* free old area */
+		/*kheap_freeIntern(address,area,lastArea,lastLastArea);*/
+		kheap_free(address);
+		return (void*)newAddress;
+	}
+
+	/* ok, the prev is enough, so we have to add it to our area */
+
+	/* do we need the complete prev area? */
+	if(lastArea->size == size - area->size) {
+		/* remove lastArea */
+		if(lastLastArea != NULL)
+			lastLastArea->next = area;
+		else
+			first = area;
+		kheap_deleteArea(lastArea);
+		/* increase size */
+		area->size = size;
+	}
+	/* otherwise simply change sizes */
+	else {
+		lastArea->size -= size - area->size;
+		area->size = size;
+	}
+
+	return (void*)address;
+}
+
+static void kheap_freeIntern(u32 address,sMemArea *area,sMemArea *lastArea,sMemArea *lastLastArea) {
+	u32 freeSize, lstartAddr;
+	sMemArea *next;
+
 	/* check if area is valid */
-	ASSERT(area != NULL,"MemArea for address 0x%08x doesn't exist!",addr);
-	ASSERT(!area->free,"Duplicate free of address 0x%08x!",addr);
+	ASSERT(area != NULL,"MemArea for address 0x%08x doesn't exist!",address);
+	ASSERT(!area->free,"Duplicate free of address 0x%08x!",address);
 
 	DBG_KMALLOC(vid_printf("area=0x%x, area->free=%d, area->size=%d, area->next=0x%x\n",
 			area,area->free,area->size,area->next));
@@ -330,8 +410,6 @@ void kheap_free(void *addr) {
 	startArea = first;
 	startAddr = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;
 	startPrev = NULL;
-
-	DBG_KMALLOC(vid_printf("<<===== kheap_free =====\n"));
 }
 
 static sMemArea *kheap_newArea(u32 size,bool isInitial) {

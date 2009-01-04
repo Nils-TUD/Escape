@@ -11,7 +11,7 @@
 #include "../h/proc.h"
 
 /* the possible node-types */
-typedef enum {T_DIR,T_INFO,T_SERVICE} eNodeType;
+typedef enum {T_DIR,T_INFO,T_SERVICE,T_SERVQUEUE} eNodeType;
 
 /* flags for the GFTEntries */
 enum {GFT_READ = 1,GFT_WRITE = 2};
@@ -24,6 +24,10 @@ typedef s32 (*fRead)(sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 struct sVFSNode {
 	string name;
 	u16 type;
+	sVFSNode *prev;
+	sVFSNode *next;
+	sVFSNode *firstChild;
+	sVFSNode *lastChild;
 	union {
 		struct {
 			fRead readHandler;
@@ -32,8 +36,6 @@ struct sVFSNode {
 		} info;
 		sProc *proc;
 	} data;
-	sVFSNode *next;
-	sVFSNode *childs;
 };
 
 /**

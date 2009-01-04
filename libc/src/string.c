@@ -254,7 +254,7 @@ string strcut(string str,u32 count) {
 	return res;
 }
 
-u32 strlen(string str) {
+u32 strlen(cstring str) {
 	u32 len = 0;
 	while(*str++)
 		len++;

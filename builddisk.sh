@@ -26,7 +26,7 @@ echo 'root (fd0)' >> $DISKMOUNT/grub/menu.lst;
 #echo "title $USERTITLE" >> $DISKMOUNT/grub/menu.lst;
 #echo "kernel /$USERNAME" >> $DISKMOUNT/grub/menu.lst;
 #echo 'root (fd0)' >> $DISKMOUNT/grub/menu.lst;
-echo -n -e "device (fd0) $DISK\nroot (fd0)\nsetup (fd0)\nquit\n" | /usr/sbin/grub;
+echo -n "device (fd0) $DISK\nroot (fd0)\nsetup (fd0)\nquit\n" | grub --batch;
 sudo umount $DISKMOUNT;
 make all;
 sudo mount -o loop $DISK $DISKMOUNT;

@@ -90,13 +90,13 @@ sProc *proc_getByPid(tPid pid) {
 
 void proc_switch(void) {
 	sProc *p = procs + pi;
-	vid_printf("Free memory: %d KiB\n",mm_getFreeFrmCount(MM_DEF) * PAGE_SIZE / K);
-	vid_printf("Process %d\n",p->pid);
+	/*vid_printf("Free memory: %d KiB\n",mm_getFreeFrmCount(MM_DEF) * PAGE_SIZE / K);
+	vid_printf("Process %d\n",p->pid);*/
 	if(!proc_save(&p->save)) {
 		/* select next process */
 		p = sched_perform();
 		pi = p->pid;
-		vid_printf("Resuming %d\n",p->pid);
+		/*vid_printf("Resuming %d\n",p->pid);*/
 		proc_resume(p->physPDirAddr,&p->save);
 	}
 
@@ -106,7 +106,7 @@ void proc_switch(void) {
 		deadProc = NULL;
 	}
 
-	vid_printf("Continuing %d\n",p->pid);
+	/*vid_printf("Continuing %d\n",p->pid);*/
 }
 
 tFile proc_fdToFile(tFD fd) {

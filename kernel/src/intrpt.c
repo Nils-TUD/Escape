@@ -714,8 +714,18 @@ static u8 task2[] = {
 };
 static bool proc2Ready = false;
 
+static u64 umodeTime = 0;
+static u64 kmodeTime = 0;
+static u64 kmodeStart = 0;
+static u64 kmodeEnd = 0;
+
 void intrpt_handler(sIntrptStackFrame stack) {
 	sProc *p;
+
+	kmodeStart = cpu_rdtsc();
+	umodeTime += kmodeStart - kmodeEnd;
+
+	/*vid_printf("umodeTime=%d%%\n",(s32)(100. / (cpu_rdtsc() / (double)umodeTime)));*/
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
 			kbd_handleIntrpt();
@@ -802,6 +812,9 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 	/* send EOI to PIC */
 	intrpt_eoi(stack.intrptNo);
+
+	kmodeEnd = cpu_rdtsc();
+	kmodeTime += kmodeEnd - kmodeStart;
 }
 
 static void intrpt_initPic(void) {

@@ -20,15 +20,19 @@
 /* max number of open files */
 #define FILE_COUNT	(PROC_COUNT * 16)
 /* the processes node */
-#define PROCESSES()	(nodes + 3)
+#define PROCESSES()	(nodes + 7)
 /* the services node */
-#define SERVICES() (nodes + 4)
+#define SERVICES() (nodes + 8)
 
 /* max node-name len */
 #define MAX_NAME_LEN 59
 
 /* determines the node-number (for a virtual node) from the given node-address */
 #define NADDR_TO_VNNO(naddr) ((((u32)(naddr) - (u32)&nodes[0]) / sizeof(sVFSNode)) | (1 << 31))
+
+/* fetches the first-child from the given node, taking care of links */
+#define NODE_FIRST_CHILD(node) (((node)->type != T_LINK) ? \
+		((node)->firstChild) : (((sVFSNode*)((node)->data.info.cache))->firstChild))
 
 /* checks wether the given node-number is a virtual one */
 #define IS_VIRT(nodeNo) (((nodeNo) & (1 << 31)) != 0)
@@ -312,100 +316,17 @@ void vfs_closeFile(tFD fd) {
 	}
 }
 
-string vfs_cleanPath(string path) {
-	s32 pos = 0;
-	bool root;
-	string res,last = NULL;
-
-	/* remove additional leading slashes */
-	while(path[pos] == '/')
-		pos++;
-	res = strcut(path,MAX(pos - 1,0));
-	/* skip slash */
-	if((root = pos > 0))
-		path++;
-
-	while(*path) {
-		pos = strchri(path,'/');
-
-		/* "." or ".." ? */
-		if(*path == '.') {
-			bool valid = true;
-			u32 count = 1;
-			s8 first = *(path + 1),sec;
-			/* ".." ? */
-			if(first == '.') {
-				sec = *(path + 2);
-				if(sec != '/' && sec != '\0')
-					valid = false;
-				else
-					count++;
-			}
-			else if((path - 1) != res) {
-				if(first != '/' && first != '\0')
-					valid = false;
-				else if(path != res && root) {
-					/* remove last slash */
-					path--;
-					count++;
-				}
-			}
-
-			/* treat other names than "." and ".." as normal names */
-			if(!valid) {
-				last = path;
-				path += pos;
-			}
-			else {
-				/* remove current component */
-				if(first != '.' || last == NULL) {
-					path = strcut(path,count);
-					last = path;
-				}
-				/* remove current + last component */
-				else {
-					path = strcut(last,(path - last) + count);
-					last = path;
-				}
-				/* ensure that we keep just one slash */
-				if(path != res)
-					path--;
-			}
-		}
-		/* simply go to next */
-		else {
-			last = path;
-			path += pos;
-		}
-
-		/* handle next slashes */
-		pos = 0;
-		while(path[pos] == '/')
-			pos++;
-		/* remove last slash (but not the first!) */
-		if((res != path && !*(path + pos)) || !root)
-			path = strcut(path,pos);
-		/* walk behind slash */
-		else {
-			path = strcut(path,MAX(pos - 1,0));
-			path++;
-		}
-	}
-
-	/* ensure that the path is not terminated with a "/" */
-	if(res != path && *path == '/')
-		*path = '\0';
-
-	return res;
-}
-
 s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 	sVFSNode *n;
 	s32 pos;
 	/* select start */
 	if(*path == '/') {
 		n = &nodes[0];
-		path++;
+		/* skip slashes (we have at least 1) */
+		do {
+			path++;
+		}
+		while(*path == '/');
 	}
 	else
 		panic("TODO: use current path");
@@ -417,7 +338,7 @@ s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 	}
 
 	pos = strchri(path,'/');
-	n = n->firstChild;
+	n = NODE_FIRST_CHILD(n);
 	while(n != NULL) {
 		if(strncmp(n->name,path,pos) == 0) {
 			path += pos;
@@ -425,8 +346,10 @@ s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 			if(!*path)
 				break;
 
-			/* skip slash */
-			path++;
+			/* skip slashes */
+			while(*path == '/') {
+				path++;
+			}
 			/* "/" at the end is optional */
 			if(!*path)
 				break;
@@ -438,7 +361,7 @@ s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 
 			/* move to childs of this node */
 			pos = strchri(path,'/');
-			n = n->firstChild;
+			n = NODE_FIRST_CHILD(n);
 			continue;
 		}
 		n = n->next;
@@ -446,6 +369,10 @@ s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 
 	if(n == NULL)
 		return ERR_VFS_NODE_NOT_FOUND;
+
+	/* resolve link */
+	if(n->type == T_LINK)
+		n = (sVFSNode*)n->data.info.cache;
 
 	/* virtual node */
 	*nodeNo = NADDR_TO_VNNO(n);
@@ -634,12 +561,14 @@ static void vfs_removeChild(sVFSNode *parent,sVFSNode *node) {
 
 static void vfs_doPrintTree(u32 level,sVFSNode *parent) {
 	u32 i;
-	sVFSNode *n = parent->firstChild;
+	sVFSNode *n = NODE_FIRST_CHILD(parent);
 	while(n != NULL) {
 		for(i = 0;i < level;i++)
 			vid_printf(" |");
 		vid_printf("- %s\n",n->name);
-		vfs_doPrintTree(level + 1,n);
+		/* don't recurse for "." and ".." */
+		if(strncmp(n->name,".",1) != 0 && strncmp(n->name,"..",2) != 0)
+			vfs_doPrintTree(level + 1,n);
 		n = n->next;
 	}
 }
@@ -654,7 +583,7 @@ static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	if(node->data.info.cache == NULL) {
 		/* we need the number of bytes first */
 		byteCount = 0;
-		sVFSNode *n = node->firstChild;
+		sVFSNode *n = NODE_FIRST_CHILD(node);
 		while(n != NULL) {
 			byteCount += sizeof(sVFSNodePub);
 			n = n->next;
@@ -667,7 +596,7 @@ static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 				node->data.info.size = 0;
 			else {
 				node->data.info.cache = childs;
-				n = node->firstChild;
+				n = NODE_FIRST_CHILD(node);
 				while(n != NULL) {
 					u16 len = strlen(n->name) + 1;
 					sVFSNodePub *pub = (sVFSNodePub*)childs;
@@ -717,8 +646,19 @@ static sVFSNode *vfs_createDir(sVFSNode *parent,string name) {
 	if(node == NULL)
 		return NULL;
 
+	sVFSNode *dot = vfs_createNode(node,".");
+	if(dot == NULL)
+		return NULL;
+	sVFSNode *dotdot = vfs_createNode(node,"..");
+	if(dotdot == NULL)
+		return NULL;
+
 	node->type = T_DIR;
 	node->data.info.readHandler = &vfs_dirReadHandler;
+	dot->type = T_LINK;
+	dot->data.info.cache = node;
+	dotdot->type = T_LINK;
+	dotdot->data.info.cache = parent == NULL ? node : parent;
 	return node;
 }
 

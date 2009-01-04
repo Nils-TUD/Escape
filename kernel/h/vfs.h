@@ -11,7 +11,7 @@
 #include "../h/proc.h"
 
 /* the possible node-types */
-typedef enum {T_DIR,T_INFO,T_SERVICE,T_SERVQUEUE} eNodeType;
+typedef enum {T_DIR,T_LINK,T_INFO,T_SERVICE,T_SERVQUEUE} eNodeType;
 
 /* flags for the GFTEntries */
 enum {GFT_READ = 1,GFT_WRITE = 2};
@@ -81,18 +81,9 @@ s32 vfs_readFile(tFD fd,u8 *buffer,u32 count);
 void vfs_closeFile(tFD fd);
 
 /**
- * Cleans the given path. That means multiple slashes are removed and "." and ".." are resolved.
- * After the call you can be sure that you have a "clean" path.
- *
- * @param path the path to clean
- * @return the clean path
- */
-string vfs_cleanPath(string path);
-
-/**
  * Resolves the given path to a VFS-node
  *
- * @param path the CLEAN path to resolve
+ * @param path the path to resolve
  * @param nodeNo the node-number for that path (will be set)
  * @return 0 if successfull or the error-code
  */

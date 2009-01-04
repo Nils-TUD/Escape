@@ -20,8 +20,8 @@ static void test_vfs_readFileSystem(void);
 static void test_vfs_readFileProcess0(void);
 static void test_vfs_createProcess(void);
 static void test_vfs_createService(void);
-static void test_vfs_cleanPath(void);
-static bool test_vfs_cleanPathCpy(cstring a,cstring b);
+static void test_vfs_resolvePath(void);
+static bool test_vfs_resolvePathCpy(cstring a,cstring b);
 
 /* public vfs-node for test-purposes */
 #define MAX_NAME_LEN 59
@@ -47,7 +47,7 @@ sTestModule tModVFS = {
 };
 
 static void test_vfs(void) {
-	test_vfs_cleanPath();
+	test_vfs_resolvePath();
 	test_vfs_readFileSystem();
 	test_vfs_readFileProcess0();
 	test_vfs_createProcess();
@@ -77,6 +77,10 @@ static void test_vfs_readFileSystem(void) {
 		test_caseFailed("Unable to open '/system'!");
 		return;
 	}
+
+	/* skip "." and ".." */
+	vfs_readFile(fd,(u8*)&node,sizeof(sVFSNodePub));
+	vfs_readFile(fd,(u8*)&node,sizeof(sVFSNodePub));
 
 	/* read "processes" */
 	if((res = vfs_readFile(fd,(u8*)&node,sizeof(sVFSNodePub))) != sizeof(sVFSNodePub)) {
@@ -248,44 +252,40 @@ static void test_vfs_createService(void) {
 	test_caseSucceded();
 }
 
-static void test_vfs_cleanPath(void) {
-	test_caseStart("Testing vfs_cleanPath()");
+static void test_vfs_resolvePath(void) {
+	test_caseStart("Testing vfs_resolvePath()");
 
-	if(!test_vfs_cleanPathCpy("/","/")) return;
-	if(!test_vfs_cleanPathCpy("//","/")) return;
-	if(!test_vfs_cleanPathCpy("///","/")) return;
-	if(!test_vfs_cleanPathCpy("","")) return;
-	if(!test_vfs_cleanPathCpy("/abc","/abc")) return;
-	if(!test_vfs_cleanPathCpy("/abc/","/abc")) return;
-	if(!test_vfs_cleanPathCpy("//abc//","/abc")) return;
-	if(!test_vfs_cleanPathCpy("/..","/")) return;
-	if(!test_vfs_cleanPathCpy("/../..","/")) return;
-	if(!test_vfs_cleanPathCpy("/./.","/")) return;
-	if(!test_vfs_cleanPathCpy("/system/..","/")) return;
-	if(!test_vfs_cleanPathCpy("/system/.","/system")) return;
-	if(!test_vfs_cleanPathCpy("/system/./","/system")) return;
-	if(!test_vfs_cleanPathCpy("/system/./.","/system")) return;
-	if(!test_vfs_cleanPathCpy("/////system/./././.","/system")) return;
-	if(!test_vfs_cleanPathCpy("/../system/../system/./","/system")) return;
-	if(!test_vfs_cleanPathCpy(".....",".....")) return;
-	if(!test_vfs_cleanPathCpy("..","")) return;
-	if(!test_vfs_cleanPathCpy(".","")) return;
-	if(!test_vfs_cleanPathCpy("//..//..//..","/")) return;
-	if(!test_vfs_cleanPathCpy("..//..//..","")) return;
-	if(!test_vfs_cleanPathCpy("../..","")) return;
-	if(!test_vfs_cleanPathCpy("./.","")) return;
-	if(!test_vfs_cleanPathCpy("system/..","")) return;
-	if(!test_vfs_cleanPathCpy("system/.","system")) return;
-	if(!test_vfs_cleanPathCpy("system/./","system")) return;
-	if(!test_vfs_cleanPathCpy("system/./.","system")) return;
-	if(!test_vfs_cleanPathCpy("../system/../system/./","system")) return;
-	if(!test_vfs_cleanPathCpy(".////////","")) return;
+	if(!test_vfs_resolvePathCpy("/","")) return;
+	if(!test_vfs_resolvePathCpy("//","")) return;
+	if(!test_vfs_resolvePathCpy("///","")) return;
+	if(!test_vfs_resolvePathCpy("/..","")) return;
+	if(!test_vfs_resolvePathCpy("/../..","")) return;
+	if(!test_vfs_resolvePathCpy("/./.","")) return;
+	if(!test_vfs_resolvePathCpy("/system/..","")) return;
+	if(!test_vfs_resolvePathCpy("/system/.","system")) return;
+	if(!test_vfs_resolvePathCpy("/system/./","system")) return;
+	if(!test_vfs_resolvePathCpy("/system/./.","system")) return;
+	if(!test_vfs_resolvePathCpy("/////system/./././.","system")) return;
+	if(!test_vfs_resolvePathCpy("/../system/../system/./","system")) return;
+	if(!test_vfs_resolvePathCpy("//..//..//..","")) return;
+	/* TODO test as soon as relative paths are possible
+	if(!test_vfs_resolvePathCpy("system/.","system")) return;
+	if(!test_vfs_resolvePathCpy("system/./","system")) return;
+	if(!test_vfs_resolvePathCpy("system/./.","system")) return;
+	if(!test_vfs_resolvePathCpy("../system/../system/./","system")) return; */
 
 	test_caseSucceded();
 }
 
-static bool test_vfs_cleanPathCpy(cstring a,cstring b) {
+static bool test_vfs_resolvePathCpy(cstring a,cstring b) {
 	static s8 c[100];
+	s32 err;
+	tVFSNodeNo no;
+	sVFSNode *node;
 	strncpy(c,b,99);
-	return test_assertStr(vfs_cleanPath((string)a),c);
+	if((err = vfs_resolvePath(a,&no)) != 0)
+		return err;
+
+	node = vfs_getNode(no);
+	return test_assertStr(node->name,c);
 }

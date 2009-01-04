@@ -137,7 +137,6 @@ static void sysc_exit(sSysCallStack *stack) {
 
 static void sysc_open(sSysCallStack *stack) {
 	s8 path[255];
-	s8 *cleanPath;
 	u8 flags;
 	tVFSNodeNo nodeNo;
 	tFD fd;
@@ -154,8 +153,7 @@ static void sysc_open(sSysCallStack *stack) {
 	}
 
 	/* resolve path */
-	cleanPath = vfs_cleanPath(path);
-	err = vfs_resolvePath(cleanPath,&nodeNo);
+	err = vfs_resolvePath(path,&nodeNo);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;

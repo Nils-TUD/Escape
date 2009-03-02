@@ -4,23 +4,35 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/video.h"
-#include "test.h"
+#ifdef IN_KERNEL
+#	include "../../kernel/h/common.h"
+#	include "../../kernel/h/video.h"
+
+#	define testPrintf	vid_printf
+#	define testvPrintf	vid_vprintf
+#else
+#	include "../../libc/h/common.h"
+#	include "../../libc/h/debug.h"
+
+#	define testPrintf	debugf
+#	define testvPrintf	vdebugf
+#endif
+
+#include "../h/test.h"
 #include <stdarg.h>
 
-sTestModule *modules[MAX_TESTS];
-u32 moduleCount = 0;
-u32 testCase = 0;
+static sTestModule *modules[MAX_TESTS];
+static u32 moduleCount = 0;
+static u32 testCase = 0;
 
-u32 modsSucc = 0;
-u32 modsFailed = 0;
-u32 totalSucc = 0;
-u32 totalFail = 0;
-u32 succCount = 0;
-u32 failCount = 0;
+static u32 modsSucc = 0;
+static u32 modsFailed = 0;
+static u32 totalSucc = 0;
+static u32 totalFail = 0;
+static u32 succCount = 0;
+static u32 failCount = 0;
 
-u32 assertCount = 0;
+static u32 assertCount = 0;
 
 void test_noPrint(cstring fmt,...) {
 	/* do nothing */
@@ -37,14 +49,14 @@ void test_caseStart(cstring fmt,...) {
 }
 
 void test_caseStartv(cstring fmt,va_list ap) {
-	vid_printf("== Testcase %d : ",testCase++);
-	vid_vprintf(fmt,ap);
-	vid_printf(" ==\n");
+	testPrintf("== Testcase %d : ",testCase++);
+	testvPrintf(fmt,ap);
+	testPrintf(" ==\n");
 	assertCount = 0;
 }
 
 void test_caseSucceded(void) {
-	vid_printf("== >> %:02s ==\n\n","SUCCESS");
+	testPrintf("== >> %:02s ==\n\n","SUCCESS");
 	totalSucc++;
 	succCount++;
 }
@@ -115,17 +127,17 @@ bool test_assertStr(string received,string expected) {
 				expected,received);
 		return false;
 	}
-	vid_printf("ASSERT %d succeded\n",assertCount);
+	testPrintf("ASSERT %d succeded\n",assertCount);
 	return true;
 }
 
 void test_caseFailed(cstring fmt,...) {
 	va_list ap;
-	vid_printf("== >> %:04s : ","FAILED");
+	testPrintf("== >> %:04s : ","FAILED");
 	va_start(ap,fmt);
-	vid_vprintf(fmt,ap);
+	testvPrintf(fmt,ap);
 	va_end(ap);
-	vid_printf(" ==\n\n");
+	testPrintf(" ==\n\n");
 	totalFail++;
 	failCount++;
 }
@@ -135,11 +147,11 @@ void test_register(sTestModule *mod) {
 }
 
 void test_start(void) {
-	vid_printf("\n====== Starting test-procedure ======\n");
+	testPrintf("\n====== Starting test-procedure ======\n");
 
 	u32 i;
 	for(i = 0; i < moduleCount; i++) {
-		vid_printf("---- Starting with module %d : \"%s\" ----\n\n",i,modules[i]->name);
+		testPrintf("---- Starting with module %d : \"%s\" ----\n\n",i,modules[i]->name);
 
 		testCase = 1;
 		succCount = 0;
@@ -151,16 +163,16 @@ void test_start(void) {
 		else
 			modsFailed++;
 
-		vid_printf("---- Module \"%s\" finished. Summary: ----\n",modules[i]->name);
-		vid_printf("-- %:02d testcases successfull --\n",succCount);
-		vid_printf("-- %:04d testcases failed --\n",failCount);
-		vid_printf("----------------------------------\n\n");
+		testPrintf("---- Module \"%s\" finished. Summary: ----\n",modules[i]->name);
+		testPrintf("-- %:02d testcases successfull --\n",succCount);
+		testPrintf("-- %:04d testcases failed --\n",failCount);
+		testPrintf("----------------------------------\n\n");
 	}
 
-	vid_printf("====== All modules done ======\n");
-	vid_printf("== %:02d modules successfull ==\n",modsSucc);
-	vid_printf("== %:04d modules failed ==\n",modsFailed);
-	vid_printf("== %:02d testcases successfull ==\n",totalSucc);
-	vid_printf("== %:04d testcases failed ==\n",totalFail);
-	vid_printf("============================\n");
+	testPrintf("====== All modules done ======\n");
+	testPrintf("== %:02d modules successfull ==\n",modsSucc);
+	testPrintf("== %:04d modules failed ==\n",modsFailed);
+	testPrintf("== %:02d testcases successfull ==\n",totalSucc);
+	testPrintf("== %:04d testcases failed ==\n",totalFail);
+	testPrintf("============================\n");
 }

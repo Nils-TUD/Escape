@@ -11,10 +11,10 @@
 #include "../h/proc.h"
 
 /* the possible node-types */
-typedef enum {T_DIR,T_LINK,T_INFO,T_SERVICE,T_SERVQUEUE} eNodeType;
+typedef enum {T_DIR,T_LINK,T_INFO,T_SERVICE,T_SERVUSE} eNodeType;
 
-/* flags for the GFTEntries */
-enum {GFT_READ = 1,GFT_WRITE = 2};
+/* vfs-node and GFT flags */
+enum {VFS_NOACCESS = 0,VFS_READ = 1,VFS_WRITE = 2};
 
 /* a node in our virtual file system */
 typedef struct sVFSNode sVFSNode;
@@ -23,11 +23,16 @@ typedef s32 (*fRead)(sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 struct sVFSNode {
 	string name;
-	u16 type;
+	u8 type;
+	u8 flags;
+	sVFSNode *parent;
 	sVFSNode *prev;
 	sVFSNode *next;
 	sVFSNode *firstChild;
 	sVFSNode *lastChild;
+	/* we want to be able to lock a node for one process and one mode at a time */
+	u16 activeMode;
+	tPid activePid;
 	union {
 		struct {
 			fRead readHandler;
@@ -44,10 +49,36 @@ struct sVFSNode {
 void vfs_init(void);
 
 /**
+ * Checks wether the given node-number is valid
+ *
+ * @param nodeNo the number
+ * @return true if so
+ */
+bool vfs_isValidNodeNo(tVFSNodeNo nodeNo);
+
+/**
  * @param nodeNo the node-number
  * @return the node for given index
  */
 sVFSNode *vfs_getNode(tVFSNodeNo nodeNo);
+
+/**
+ * Determines the path for the given node. Note that static memory will be used for that!
+ * So you have to copy the path to another location if you want to keep the path.
+ *
+ * @param node the node
+ * @return the path
+ */
+string vfs_getPath(sVFSNode *node);
+
+/**
+ * Resolves the given path to a VFS-node
+ *
+ * @param path the path to resolve
+ * @param nodeNo the node-number for that path (will be set)
+ * @return 0 if successfull or the error-code
+ */
+s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo);
 
 /**
  * Opens the file with given number and given flags. That means it walks through the global
@@ -73,21 +104,32 @@ s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd);
 s32 vfs_readFile(tFD fd,u8 *buffer,u32 count);
 
 /**
+ * Writes count bytes from the given buffer into the given fd and returns the number of written
+ * bytes.
+ *
+ * @param fd the file-descriptor
+ * @param buffer the buffer to read from
+ * @param count the number of bytes to write
+ * @return the number of bytes written
+ */
+s32 vfs_writeFile(tFD fd,u8 *buffer,u32 count);
+
+/**
+ * Sends an "End-Of-Transfer" for the given file-descriptor. This will release the lock for
+ * service-usages so that the other side can start working.
+ *
+ * @param fd the file-descriptor
+ * @return the negative error-code or 0
+ */
+s32 vfs_sendEOT(tFD fd);
+
+/**
  * Closes the given fd. That means it calls proc_closeFile() and decrements the reference-count
  * in the global file table. If there are no references anymore it releases the slot.
  *
  * @param fd the file-descriptor
  */
 void vfs_closeFile(tFD fd);
-
-/**
- * Resolves the given path to a VFS-node
- *
- * @param path the path to resolve
- * @param nodeNo the node-number for that path (will be set)
- * @return 0 if successfull or the error-code
- */
-s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo);
 
 /**
  * Creates a service-node for the given process and given name
@@ -99,11 +141,20 @@ s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo);
 s32 vfs_createService(sProc *p,cstring name);
 
 /**
- * Removes the service of the given process
+ * For services: Waits until a clients wants to be served and returns a file-descriptor
+ * for it.
  *
- * @param p the process
+ * @param no the node-number
+ * @return the error-code (negative) or the file-descriptor to use
  */
-void vfs_removeService(sProc *p);
+s32 vfs_waitForClient(tVFSNodeNo no);
+
+/**
+ * Removes the service with given node-number
+ *
+ * @param nodeNo the node-number of the service
+ */
+s32 vfs_removeService(tVFSNodeNo nodeNo);
 
 /**
  * Creates a process-node with given pid and handler-function

@@ -15,23 +15,34 @@
  */
 extern void debugChar(s8 c);
 
-void debugf(cstring fmt, ...) {
+void debugf(cstring fmt,...) {
 	va_list ap;
+	va_start(ap, fmt);
+	vdebugf(fmt,ap);
+	va_end(ap);
+}
+
+void vdebugf(cstring fmt,va_list ap) {
 	s8 c,ch;
 	s32 n;
 	u32 u;
 	string s;
 	u64 l;
 
-	va_start(ap, fmt);
 	while(1) {
 		while((c = *fmt++) != '%') {
 			if(c == '\0') {
-				va_end(ap);
 				return;
 			}
 			debugChar(c);
 		}
+
+		/* color given? */
+		if(*fmt == ':') {
+			/* TODO ignore color since it is not supported yet */
+			fmt += 3;
+		}
+
 		c = *fmt++;
 		if(c == 'd') {
 			n = va_arg(ap, s32);

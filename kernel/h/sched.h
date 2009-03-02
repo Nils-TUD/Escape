@@ -23,11 +23,18 @@ void sched_init(void);
 sProc *sched_perform(void);
 
 /**
- * Enqueues the given process on the ready-queue
+ * Enqueues the given process on the ready-queue and sets the state to ST_READY
  *
  * @param p the process
  */
-void sched_enqueueReady(sProc *p);
+void sched_setReady(sProc *p);
+
+/**
+ * Sets the process in the blocked-state
+ *
+ * @param p the process
+ */
+void sched_setBlocked(sProc *p);
 
 /**
  * Removes the first process from the ready-queue and returns it
@@ -37,12 +44,19 @@ void sched_enqueueReady(sProc *p);
 sProc *sched_dequeueReady(void);
 
 /**
- * Removes the given process from the queue
+ * Removes the given process from the scheduler (depending on the state)
+ *
+ * @param p the process
+ */
+void sched_removeProc(sProc *p);
+
+/**
+ * Removes the given process from the ready-queue
  *
  * @param p the process
  * @return true if the process has been removed
  */
-bool sched_dequeueProc(sProc *p);
+bool sched_dequeueReadyProc(sProc *p);
 
 #if DEBUGGING
 

@@ -11,7 +11,8 @@ START=$(BUILD)/libc_startup.o
 LIBCOBJS=$(filter-out $(START),$(wildcard $(BUILD)/libc_*.o))
 
 CC = gcc
-CFLAGS = -g -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/h -Wl,-T,$(LDCONF) $(CWFLAGS) 
+CFLAGS = -g -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/h -I../../lib/h -I$(LIBC)/test \
+	-Wl,-T,$(LDCONF) $(CWFLAGS) 
 CSRC=$(wildcard *.c)
 
 .PHONY: all clean

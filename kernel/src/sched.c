@@ -9,59 +9,7 @@
 #include "../h/proc.h"
 #include "../h/video.h"
 #include "../h/util.h"
-
-#if 0
-typedef struct {
-	sProc *proc;
-	s8 name[32];
-	u32 hash;
-	sSLList *queue;
-} tService;
-sSLList *services;
-
-/*
- * - register service:
- * 		- pass service name to kernel
- * 			- calculate hash, put into services-list
- *
- * - connect to service:
- * 		- pass service name to kernel
- * 			- search for name in services-list and return hash
- *
- * - send command:
- * 		- pass service hash, command id, data and data-size to kernel
- * 			- look in the service-list for the given hash
- * 			- put caller to sleep
- *			- put all required information in the service-queue
- * 			- if service waiting:
- * 				- put command-id and data on service-stack
- * 				- wakeup service
- *
- * - send reply:
- * 		- pass reply-data and data-size to kernel
- * 		- data has the following format: <ptr1>,<size1>,<ptr2>,<size2>,...,<ptrn>,<sizen>
- * 			- kernel copies data to caller stack
- * 			- remove entry from service-queue
- * 			- if queue empty, put service to sleep
- * 			- else put service on ready-queue
- * 			- wake caller
- *
- * - disconnect from service:
- * 		- pass service hash to kernel
- * 			- anything to do?
- *
- * - unregister service:
- * 		- pass service hash to kernel
- * 			- search in services for hash
- * 			- if there are waiting apps, put error-code on their stack, put all in ready-queue
- * 			- remove service
- *
- *
- * Additional stuff:
- * 	- let the user provide a timeout for a command
- *  - provide an ansynchronous call, too. Some commands simply don't need a reply
- */
-#endif
+#include <sllist.h>
 
 /* the queue for all runnable (but not currently running) processes */
 typedef struct sQueueNode sQueueNode;
@@ -75,6 +23,8 @@ static sQueueNode readyQueue[PROC_COUNT];
 static sQueueNode *rqFree;
 static sQueueNode *rqFirst;
 static sQueueNode *rqLast;
+
+static sSLList *blockedQueue;
 
 void sched_init(void) {
 	s32 i;
@@ -91,14 +41,16 @@ void sched_init(void) {
 	rqFree = &readyQueue[0];
 	rqFirst = NULL;
 	rqLast = NULL;
+
+	/* init sleep-queue */
+	blockedQueue = sll_create();
 }
 
 sProc *sched_perform(void) {
 	sProc *p = proc_getRunning();
 	if(p->state == ST_RUNNING) {
 		/* put current in the ready-queue */
-		p->state = ST_READY;
-		sched_enqueueReady(p);
+		sched_setReady(p);
 	}
 
 	/* get new process */
@@ -108,11 +60,33 @@ sProc *sched_perform(void) {
 	return p;
 }
 
-void sched_enqueueReady(sProc *p) {
+void sched_setBlocked(sProc *p) {
+	ASSERT(p != NULL,"p == NULL");
+
+	/* nothing to do? */
+	if(p->state == ST_BLOCKED)
+		return;
+	if(p->state == ST_READY)
+		sched_dequeueReadyProc(p);
+	p->state = ST_BLOCKED;
+
+	/* insert in blocked-list */
+	sll_append(blockedQueue,p);
+}
+
+void sched_setReady(sProc *p) {
 	sQueueNode *nn,*n;
 
 	ASSERT(p != NULL,"p == NULL");
 	ASSERT(rqFree != NULL,"No free slots in the ready-queue!?");
+
+	/* nothing to do? */
+	if(p->state == ST_READY)
+		return;
+	/* remove from blocked-list? */
+	if(p->state == ST_BLOCKED)
+		sll_removeFirst(blockedQueue,p);
+	p->state = ST_READY;
 
 	/* use first free node */
 	nn = rqFree;
@@ -148,7 +122,18 @@ sProc *sched_dequeueReady(void) {
 	return node->p;
 }
 
-bool sched_dequeueProc(sProc *p) {
+void sched_removeProc(sProc *p) {
+	switch(p->state) {
+		case ST_READY:
+			sched_dequeueReadyProc(p);
+			break;
+		case ST_BLOCKED:
+			sll_removeFirst(blockedQueue,p);
+			break;
+	}
+}
+
+bool sched_dequeueReadyProc(sProc *p) {
 	sQueueNode *n = rqFirst,*l = NULL;
 
 	ASSERT(p != NULL,"p == NULL");

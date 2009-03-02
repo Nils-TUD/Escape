@@ -14,6 +14,11 @@
 #define PROC_COUNT		1024
 #define MAX_FD_COUNT	16
 
+/* the signals
+#define SIG_TERM		1
+#define SIG_KILL		2
+#define SIG_SEGFAULT	3 */
+
 /* the process-state which will be saved for context-switching */
 typedef struct {
 	u32 esp;
@@ -44,6 +49,8 @@ typedef struct {
 	sProcSave save;
 	/* file descriptors: indices of the global file table */
 	tFile fileDescs[MAX_FD_COUNT];
+	/* a bitfield with signals the process should get
+	u16 signals; */
 } sProc;
 
 /* the area for proc_changeSize() */

@@ -6,12 +6,12 @@
 
 #include "../h/paging.h"
 #include "../h/util.h"
-#include "../h/string.h"
 #include "../h/video.h"
 #include "../h/proc.h"
 #include "../h/intrpt.h"
-#include "../h/sllist.h"
 #include "../h/kheap.h"
+#include <sllist.h>
+#include <string.h>
 
 /* builds the address of the page in the mapped page-tables to which the given addr belongs */
 #define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + (((u32)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
@@ -19,7 +19,8 @@
 		(((u32)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
 
 /* converts the given virtual address to a physical
- * (this assumes that the kernel lies at 0xC0000000) */
+ * (this assumes that the kernel lies at 0xC0000000)
+ * Note that this does not work anymore as soon as the GDT is "corrected" and paging enabled! */
 #define VIRT2PHYS(addr) ((u32)(addr) + 0x40000000)
 
 /* copy-on-write */
@@ -578,8 +579,9 @@ static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFr
 	while(count-- > 0) {
 		/* remove and free, if desired */
 		if(pt->present) {
-			/* we don't want to free copy-on-write pages */
-			if(freeFrames && !pt->copyOnWrite)
+			/* we don't want to free copy-on-write pages and not frames in front of the kernel
+			 * because they may be mapped more than once and will never be free'd */
+			if(freeFrames && !pt->copyOnWrite && pt->frameNumber * PAGE_SIZE >= KERNEL_P_ADDR)
 				mm_freeFrame(pt->frameNumber,MM_DEF);
 			pt->present = false;
 

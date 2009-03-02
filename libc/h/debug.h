@@ -7,6 +7,16 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
+#include <stdarg.h>
+
+/**
+ * Same as debugf, but with the va_list as argument
+ *
+ * @param fmt the format
+ * @param ap the argument-list
+ */
+void vdebugf(cstring fmt,va_list ap);
+
 /**
  * Debugging version of printf. Supports the following formatting:
  * %d: signed integer

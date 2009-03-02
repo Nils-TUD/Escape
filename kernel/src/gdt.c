@@ -7,8 +7,8 @@
 #include "../h/gdt.h"
 #include "../h/mm.h"
 #include "../h/video.h"
-#include "../h/string.h"
 #include "../h/paging.h"
+#include <string.h>
 
 /* we need 6 entries: null-entry, code for kernel, data for kernel, user-code, user-data
  * and one entry for our TSS */

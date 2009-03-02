@@ -9,12 +9,12 @@
 #include "../h/paging.h"
 #include "../h/mm.h"
 #include "../h/util.h"
-#include "../h/string.h"
 #include "../h/video.h"
 #include "../h/intrpt.h"
 #include "../h/sched.h"
 #include "../h/vfs.h"
 #include "../h/kheap.h"
+#include <string.h>
 
 /* public process-data */
 typedef struct {
@@ -173,11 +173,13 @@ s32 proc_clone(tPid newPid) {
 	p->stackPages = procs[pi].stackPages;
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
 	/* init fds */
+	/*for(i = 0; i < MAX_FD_COUNT; i++)
+		p->fileDescs[i] = -1;*/
+	/* copy fds */
 	for(i = 0; i < MAX_FD_COUNT; i++)
-		p->fileDescs[i] = -1;
+		p->fileDescs[i] = procs[pi].fileDescs[i];
 	/* make ready */
-	p->state = ST_READY;
-	sched_enqueueReady(p);
+	sched_setReady(p);
 
 	/* map stack temporary (copy later) */
 	paging_map(KERNEL_STACK_TMP,&stackFrame,1,PG_SUPERVISOR | PG_WRITABLE,true);
@@ -236,9 +238,8 @@ void proc_destroy(sProc *p) {
 	p->textPages = 0;
 	p->dataPages = 0;
 	p->stackPages = 0;
-	/* remove from ready-queue, if necessary */
-	if(p->state == ST_READY)
-		sched_dequeueProc(p);
+	/* remove from scheduler */
+	sched_removeProc(p);
 	p->state = ST_UNUSED;
 	p->pid = 0;
 	p->physPDirAddr = 0;

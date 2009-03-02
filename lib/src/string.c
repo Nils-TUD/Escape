@@ -4,7 +4,16 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
+#ifdef IN_KERNEL
+#	include "../../kernel/h/common.h"
+#	include "../../kernel/h/util.h"
+#else
+#	include "../../libc/h/common.h"
+/* for exit and debugf (ASSERT) */
+#	include "../../libc/h/proc.h"
+#	include "../../libc/h/debug.h"
+#endif
+
 #include "../h/string.h"
 
 s32 atoi(cstring str) {

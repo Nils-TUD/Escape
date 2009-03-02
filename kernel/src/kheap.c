@@ -8,8 +8,8 @@
 #include "../h/common.h"
 #include "../h/paging.h"
 #include "../h/util.h"
-#include "../h/string.h"
 #include "../h/video.h"
+#include <string.h>
 
 /*
  * Consider the following actions:
@@ -310,7 +310,7 @@ void *kheap_realloc(void *addr,u32 size) {
 
 		/* free old area */
 		/*kheap_freeIntern(address,area,lastArea,lastLastArea);*/
-		kheap_free(address);
+		kheap_free((void*)address);
 		return (void*)newAddress;
 	}
 

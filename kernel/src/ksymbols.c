@@ -19,7 +19,7 @@ void ksym_print(void) {
 		vid_printf("\t0x%08x -> %s\n",ksymbols[i].address,ksymbols[i].funcName);
 }
 
-sSymbol *ksym_gesSymbolAt(u32 address) {
+sSymbol *ksym_getSymbolAt(u32 address) {
 	sSymbol *sym = &ksymbols[ARRAY_SIZE(ksymbols) - 2];
 	while(sym >= &ksymbols[0]) {
 		if(address > sym->address)

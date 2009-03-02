@@ -5,12 +5,12 @@
  */
 
 #include "../h/common.h"
-#include "../h/sllist.h"
 #include "../h/kheap.h"
 #include "../h/video.h"
 
 #include "tsllist.h"
-#include "test.h"
+#include <sllist.h>
+#include <test.h>
 
 /* forward declarations */
 static void test_sllist(void);
@@ -22,6 +22,7 @@ static void test_5(void);
 static void test_6(void);
 static void test_7(void);
 static void test_8(void);
+static void test_9(void);
 
 /* our test-module */
 sTestModule tModSLList = {
@@ -38,6 +39,7 @@ static void test_sllist(void) {
 	test_6();
 	test_7();
 	test_8();
+	test_9();
 }
 
 static void test_1(void) {
@@ -250,6 +252,28 @@ static void test_8(void) {
 		tprintf("element @ 0x%x : 0x%x\n",n,n->data);
 	}
 	sll_destroy(list);
+
+	test_caseSucceded();
+}
+
+static void test_9(void) {
+	sSLList *list;
+
+	test_caseStart("Testing sll_indexOf and sll_nodeWith");
+
+	list = sll_create();
+	sll_append(list,(void*)0x123);
+	sll_append(list,(void*)0x456);
+	sll_append(list,(void*)0x789);
+
+	test_assertInt(sll_indexOf(list,(void*)0x123),0);
+	test_assertInt(sll_indexOf(list,(void*)0x456),1);
+	test_assertInt(sll_indexOf(list,(void*)0x789),2);
+	test_assertInt(sll_indexOf(list,(void*)0x123123),-1);
+	test_assertPtr(sll_nodeWith(list,(void*)0x123),sll_nodeAt(list,0));
+	test_assertPtr(sll_nodeWith(list,(void*)0x456),sll_nodeAt(list,1));
+	test_assertPtr(sll_nodeWith(list,(void*)0x789),sll_nodeAt(list,2));
+	test_assertPtr(sll_nodeWith(list,(void*)0x123123),NULL);
 
 	test_caseSucceded();
 }

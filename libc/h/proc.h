@@ -35,6 +35,11 @@ tPid getppid(void);
 s32 fork(void);
 
 /**
+ * Releases the CPU (reschedule)
+ */
+void yield(void);
+
+/**
  * Destroys the process and provides the parent the given error-code
  *
  * @param errorCode the error-code for the parent

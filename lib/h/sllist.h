@@ -7,7 +7,11 @@
 #ifndef SLLIST_H_
 #define SLLIST_H_
 
-#include "common.h"
+#ifdef IN_KERNEL
+#	include "../../kernel/h/common.h"
+#else
+#	include "../../libc/h/common.h"
+#endif
 
 /* our list (the user should not know about the internal structure) */
 typedef void* sSLList;
@@ -45,7 +49,7 @@ u32 sll_length(sSLList *list);
  * <code>
  * sSLNode *n;
  * for(n = sll_begin(list); n != NULL; n = n->next) {
- *   \/* do something with n->data *\/
+ *   do something with n->data
  * }
  * </code>
  *
@@ -63,6 +67,24 @@ sSLNode *sll_begin(sSLList *list);
  * @return the node at given index
  */
 sSLNode *sll_nodeAt(sSLList *list,u32 index);
+
+/**
+ * Determines the index of the given data
+ *
+ * @param list the list
+ * @param data the data to search for
+ * @return the index of the first matching node or -1 if not found
+ */
+s32 sll_indexOf(sSLList *list,void *data);
+
+/**
+ * Determines the node with given data
+ *
+ * @param list the list
+ * @param data the data to search for
+ * @return the first matching node or NULL if not found
+ */
+sSLNode *sll_nodeWith(sSLList *list,void *data);
 
 /**
  * Searches for the element at given index. First and last one can be found in O(1).

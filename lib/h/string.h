@@ -7,7 +7,11 @@
 #ifndef STRING_H_
 #define STRING_H_
 
-#include "common.h"
+#ifdef IN_KERNEL
+#	include "../../kernel/h/common.h"
+#else
+#	include "../../libc/h/common.h"
+#endif
 
 /**
  * The atoi() function converts str into an integer, and returns that integer. str should start

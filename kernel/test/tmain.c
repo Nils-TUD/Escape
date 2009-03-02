@@ -20,7 +20,7 @@
 #include "../h/sched.h"
 #include "../h/vfs.h"
 
-#include "test.h"
+#include <test.h>
 #include "tkheap.h"
 #include "tpaging.h"
 #include "tproc.h"
@@ -91,13 +91,13 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 
 	/* start tests */
-	/*test_register(&tModMM);
+	test_register(&tModMM);
 	test_register(&tModPaging);
 	test_register(&tModProc);
 	test_register(&tModKHeap);
 	test_register(&tModSched);
 	test_register(&tModSLList);
-	test_register(&tModString);*/
+	test_register(&tModString);
 	test_register(&tModVFS);
 	test_start();
 

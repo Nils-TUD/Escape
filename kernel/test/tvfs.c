@@ -7,12 +7,12 @@
 #include "../h/common.h"
 #include "../h/vfs.h"
 #include "../h/video.h"
-#include "../h/string.h"
 #include "../h/proc.h"
 #include "../h/kheap.h"
+#include <string.h>
 
 #include "tvfs.h"
-#include "test.h"
+#include <test.h>
 
 /* forward declarations */
 static void test_vfs(void);
@@ -22,6 +22,7 @@ static void test_vfs_createProcess(void);
 static void test_vfs_createService(void);
 static void test_vfs_resolvePath(void);
 static bool test_vfs_resolvePathCpy(cstring a,cstring b);
+static void test_vfs_getPath(void);
 
 /* public vfs-node for test-purposes */
 #define MAX_NAME_LEN 59
@@ -52,6 +53,7 @@ static void test_vfs(void) {
 	test_vfs_readFileProcess0();
 	test_vfs_createProcess();
 	test_vfs_createService();
+	test_vfs_getPath();
 }
 
 static void test_vfs_readFileSystem(void) {
@@ -73,7 +75,7 @@ static void test_vfs_readFileSystem(void) {
 	}
 
 	/* open */
-	if(vfs_openFile(GFT_READ,nodeNo,&fd) < 0) {
+	if(vfs_openFile(VFS_READ,nodeNo,&fd) < 0) {
 		test_caseFailed("Unable to open '/system'!");
 		return;
 	}
@@ -157,7 +159,7 @@ static void test_vfs_readFileProcess0(void) {
 	}
 
 	/* open */
-	if(vfs_openFile(GFT_READ,nodeNo,&fd) < 0) {
+	if(vfs_openFile(VFS_READ,nodeNo,&fd) < 0) {
 		test_caseFailed("Unable to open '/system/processes/0'!");
 		return;
 	}
@@ -288,4 +290,29 @@ static bool test_vfs_resolvePathCpy(cstring a,cstring b) {
 
 	node = vfs_getNode(no);
 	return test_assertStr(node->name,c);
+}
+
+static void test_vfs_getPath(void) {
+	tVFSNodeNo no;
+	sVFSNode *node;
+
+	test_caseStart("Testing vfs_getPath()");
+
+	vfs_resolvePath("/",&no);
+	node = vfs_getNode(no);
+	test_assertStr(vfs_getPath(node),(string)"/");
+
+	vfs_resolvePath("/system",&no);
+	node = vfs_getNode(no);
+	test_assertStr(vfs_getPath(node),(string)"/system");
+
+	vfs_resolvePath("/system/processes",&no);
+	node = vfs_getNode(no);
+	test_assertStr(vfs_getPath(node),(string)"/system/processes");
+
+	vfs_resolvePath("/system/processes/0",&no);
+	node = vfs_getNode(no);
+	test_assertStr(vfs_getPath(node),(string)"/system/processes/0");
+
+	test_caseSucceded();
 }

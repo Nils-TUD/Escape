@@ -9,8 +9,8 @@
 #include "../h/intrpt.h"
 #include "../h/ksymbols.h"
 #include "../h/paging.h"
-#include "../h/string.h"
 #include <stdarg.h>
+#include <string.h>
 
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE 5
@@ -97,7 +97,7 @@ sFuncCall *getStackTrace(void) {
 	/* TODO we assume here that we always have kernelStack as limit! */
 	for(i = 0; i < MAX_STACK_DEPTH && ebp < &kernelStack; i++) {
 		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;
-		sym = ksym_gesSymbolAt(frame->addr);
+		sym = ksym_getSymbolAt(frame->addr);
 		frame->funcAddr = sym->address;
 		frame->funcName = sym->funcName;
 		ebp = (u32*)*ebp;

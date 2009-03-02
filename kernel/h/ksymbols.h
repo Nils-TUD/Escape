@@ -27,6 +27,6 @@ void ksym_print(void);
  * @param address the address
  * @return the pointer to the symbol (no copy!)
  */
-sSymbol *ksym_gesSymbolAt(u32 address);
+sSymbol *ksym_getSymbolAt(u32 address);
 
 #endif /* KSYMBOLS_H_ */

@@ -7,7 +7,12 @@
 #ifndef TEST_H_
 #define TEST_H_
 
-#include "../h/common.h"
+#ifdef IN_KERNEL
+#	include "../../kernel/h/common.h"
+#else
+#	include "../../libc/h/common.h"
+#endif
+
 #include <stdarg.h>
 
 #define MAX_TESTS 100
@@ -22,12 +27,26 @@ typedef struct {
 } sTestModule;
 
 #ifdef TESTSQUIET
-#define tprintf test_noPrint
-#define tvprintf test_vnoPrint
+#	define tprintf test_noPrint
+#	define tvprintf test_vnoPrint
 #else
-#define tprintf vid_printf
-#define tvprintf vid_vprintf
+#	ifdef IN_KERNEL
+#		define tprintf vid_printf
+#		define tvprintf vid_vprintf
+#	else
+#		define tprintf debugf
+#		define tvprintf vdebugf
+#	endif
 #endif
+
+/**
+ * The "do-nothing" printf-function
+ */
+void test_noPrint(cstring fmt,...);
+/**
+ * The "do-nothing" vprintf-function
+ */
+void test_vnoPrint(cstring fmt,va_list ap);
 
 /**
  * Starts a test-case with given name. This ends with a call of test_caseSucceded() or

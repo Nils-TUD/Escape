@@ -7,7 +7,7 @@
 #ifndef TVFS_H_
 #define TVFS_H_
 
-#include "test.h"
+#include <test.h>
 
 extern sTestModule tModVFS;
 

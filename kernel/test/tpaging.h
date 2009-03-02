@@ -8,7 +8,7 @@
 #define TESTPAGING_H_
 
 #include "../h/common.h"
-#include "test.h"
+#include <test.h>
 
 extern sTestModule tModPaging;
 

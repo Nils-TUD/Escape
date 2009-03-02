@@ -6,19 +6,23 @@ BINNAME=kernel.bin
 BIN=$(BUILD)/$(BINNAME)
 LDCONF=ld.conf
 DEP=$(BUILD)/kernel.dep
+LIB=../lib
 
 CC = gcc
-CFLAGS = -g -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CWFLAGS)
+CFLAGS = -g -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CWFLAGS) \
+	-D IN_KERNEL=1 -I$(LIB)/h
 
 # sources
 ASRC=kernel.asm
 ASRCEND=end.asm
 CSRC=$(wildcard src/*.c)
+LSRC=$(wildcard $(LIB)/src/*.c)
 
 # objects
 AOBJ=$(BUILD)/kernel_asm.o
 AOBJEND=$(BUILD)/end.o
 COBJ=$(patsubst src/%.c,$(BUILD)/%.o,$(CSRC))
+LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILD)/kernel_lib_%.o,$(LSRC))
 
 SYMBOLS=$(BUILD)/ksymbols.txt
 SYMBOLSCRIPT=../tools/gensymbols.sh
@@ -28,9 +32,9 @@ SYMBOLSRC=src/ksymbols.c
 
 all:	$(BIN)
 
-$(BIN):	$(LDCONF) $(AOBJ) $(COBJ)
+$(BIN):	$(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@echo "===== LINKING =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(AOBJEND);
+		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(AOBJEND);
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 		@# since it's size is 0 at the first time. In the second part the size is correct
 		@# and therefore the symbol-table will be generated correctly :)
@@ -39,13 +43,13 @@ $(BIN):	$(LDCONF) $(AOBJ) $(COBJ)
 		@echo "===== COMPILING SYMBOL-C-FILE =====";
 		$(CC) $(CFLAGS) -o $(patsubst src/%.c,$(BUILD)/%.o,$(SYMBOLSRC)) -c $(SYMBOLSRC)
 		@echo "===== LINKING AGAIN =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(AOBJEND);
+		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(AOBJEND);
 		@echo "===== BUILDING SYMBOL-FILE =====";
 		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "===== COMPILING SYMBOL-C-FILE =====";
 		$(CC) $(CFLAGS) -o $(patsubst src/%.c,$(BUILD)/%.o,$(SYMBOLSRC)) -c $(SYMBOLSRC)
 		@echo "===== LINKING AGAIN =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(AOBJEND);
+		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(AOBJEND);
 		@echo "===== COPYING BINARY =====";
 		sudo mount -o loop $(DISK) $(DISKMOUNT) || true;
 		cp $(BIN) $(DISKMOUNT);
@@ -60,7 +64,11 @@ $(BUILD)/%.o:		src/%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
-$(DEP):	$(CSRC)
+$(BUILD)/kernel_lib_%.o:	$(LIB)/src/%.c
+		@echo "===== COMPILING $< =====";
+		$(CC) $(CFLAGS) -o $@ -c $<
+
+$(DEP):	$(CSRC) $(LSRC)
 		@echo "===== GENERATING DEPENDENCIES =====";
 		if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
 		$(CC) $(CFLAGS) -MM $(CSRC) > $(DEP);
@@ -71,5 +79,5 @@ $(DEP):	$(CSRC)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(DEP) $(BIN) $(COBJ) $(AOBJ) $(AOBJEND) $(SYMBOLS) \
+		rm -f $(DEP) $(BIN) $(COBJ) $(AOBJ) $(AOBJEND) $(LOBJ) $(SYMBOLS) \
 			$(BUILD)/tools_gensymbols.c $(BUILD)/tools_gensymbols.o;

@@ -4,12 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#ifndef SLLIST_H_
-#define SLLIST_H_
+#ifndef TSLLIST_H_
+#define TSLLIST_H_
 
 #include "../h/common.h"
-#include "test.h"
+#include <test.h>
 
 extern sTestModule tModSLList;
 
-#endif /* SLLIST_H_ */
+#endif /* TSLLIST_H_ */

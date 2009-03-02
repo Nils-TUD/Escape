@@ -34,6 +34,8 @@
 <option id="gnu.c.compiler.option.preprocessor.undef.symbol.141493437" name="Undefined symbols (-U)" superClass="gnu.c.compiler.option.preprocessor.undef.symbol"/>
 <option id="gnu.c.compiler.option.include.paths.1389048965" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 <listOptionValue builtIn="false" value="&quot;${workspace_loc:/OSFirstTest/libc/h}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OSFirstTest/lib/h}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OSFirstTest/libc/test}&quot;"/>
 </option>
 <option id="gnu.c.compiler.option.optimization.flags.379513439" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags"/>
 <option id="gnu.c.compiler.option.debugging.other.1282269511" name="Other debugging flags" superClass="gnu.c.compiler.option.debugging.other"/>
@@ -73,7 +75,7 @@
 <tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.157238410" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug"/>
 <tool id="cdt.managedbuild.tool.gnu.assembler.exe.debug.171855791" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.debug">
 <option id="gnu.both.asm.option.flags.510815220" name="Assembler flags" superClass="gnu.both.asm.option.flags"/>
-<option id="gnu.both.asm.option.include.paths.530921058" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath"/>
+<option id="gnu.both.asm.option.include.paths.530921058" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths"/>
 <option id="gnu.both.asm.option.warnings.nowarn.873505313" name="Suppress warnings (-W)" superClass="gnu.both.asm.option.warnings.nowarn"/>
 <option id="gnu.both.asm.option.version.880033669" name="Announce version (-v)" superClass="gnu.both.asm.option.version"/>
 <inputType id="cdt.managedbuild.tool.gnu.assembler.input.1103220106" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
@@ -86,6 +88,7 @@
 <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 <storageModule moduleId="org.eclipse.cdt.core.language.mapping"/>
 <storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
+
 <storageModule moduleId="scannerConfiguration">
 <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile"/>
 <profile id="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile">
@@ -441,6 +444,7 @@
 <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 <storageModule moduleId="org.eclipse.cdt.core.language.mapping"/>
 <storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
+
 <storageModule moduleId="scannerConfiguration">
 <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile"/>
 <profile id="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile">

@@ -6,14 +6,13 @@
 
 #include "../h/common.h"
 #include "../h/mm.h"
-#include "test.h"
+#include <test.h>
 #include "tmm.h"
 
 #define FRAME_COUNT 50
 
 /* forward declarations */
 static void test_mm(void);
-static void test_printFreeFrames(void);
 static void test_mm_allocate(eMemType type);
 static void test_mm_free(eMemType type);
 

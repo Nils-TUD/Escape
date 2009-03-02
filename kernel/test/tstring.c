@@ -5,11 +5,11 @@
  */
 
 #include "../h/common.h"
-#include "../h/string.h"
 #include "../h/video.h"
+#include <string.h>
 
 #include "tstring.h"
-#include "test.h"
+#include <test.h>
 
 /* forward declarations */
 static void test_string(void);

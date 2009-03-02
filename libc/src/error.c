@@ -44,6 +44,10 @@ void printLastError(void) {
 			debugf("No read-permission\n");
 			break;
 
+		case ERR_NO_WRITE_PERM:
+			debugf("No write-permission\n");
+			break;
+
 		case ERR_INV_SERVICE_NAME:
 			debugf("Invalid service name. Alphanumeric, not empty name expected!\n");
 			break;
@@ -58,6 +62,18 @@ void printLastError(void) {
 
 		case ERR_PROC_DUP_SERVICE:
 			debugf("You are already a service!\n");
+			break;
+
+		case ERR_PROC_DUP_SERVICE_USE:
+			debugf("You are already using the requested service!\n");
+			break;
+
+		case ERR_SERVICE_NOT_IN_USE:
+			debugf("You are not using the service at the moment!\n");
+			break;
+
+		case ERR_NOT_OWN_SERVICE:
+			debugf("The service-node is not your own!\n");
 			break;
 
 		default:

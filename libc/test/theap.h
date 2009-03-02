@@ -4,11 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#ifndef TESTSCHED_H_
-#define TESTSCHED_H_
+#ifndef THEAP_H_
+#define THEAP_H_
 
+#include "../h/common.h"
 #include <test.h>
 
-extern sTestModule tModSched;
+extern sTestModule tModHeap;
 
-#endif /* TESTSCHED_H_ */
+#endif /* THEAP_H_ */

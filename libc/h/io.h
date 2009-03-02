@@ -34,6 +34,26 @@ s32 open(cstring path,u8 mode);
 s32 read(tFD fd,void *buffer,u32 count);
 
 /**
+ * Writes count bytes from the given buffer into the given fd and returns the number of written
+ * bytes.
+ *
+ * @param fd the file-descriptor
+ * @param buffer the buffer to read from
+ * @param count the number of bytes to write
+ * @return the number of bytes written; negative if an error occurred
+ */
+s32 write(tFD fd,void *buffer,u32 count);
+
+/**
+ * Sends an "End-Of-Transfer" for the given file-descriptor. This will release the lock for
+ * service-usages so that the other side can start working.
+ *
+ * @param fd the file-descriptor
+ * @return the negative error-code or 0
+ */
+s32 sendEOT(tFD fd);
+
+/**
  * Closes the given file-descriptor
  *
  * @param fd the file-descriptor

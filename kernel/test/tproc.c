@@ -9,7 +9,7 @@
 #include "../h/video.h"
 #include "../h/paging.h"
 #include "../h/mm.h"
-#include "test.h"
+#include <test.h>
 #include "tproc.h"
 
 /* forward declarations */

@@ -1,71 +1,11 @@
 [BITS 32]
 
+%include "syscalls.s"
+
 [extern lastError]
-[global open]
-[global read]
-[global close]
 
-SYSCALL_OPEN	equ 5
-SYSCALL_CLOSE	equ 6
-SYSCALL_READ	equ 7
-SYSCALL_IRQ		equ	0x30
-
-; s32 open(cstring path,u8 mode);
-open:
-	push	ebp
-	mov		ebp,esp
-	mov		eax,[ebp + 12]				; push mode
-	push	eax
-	mov		eax,[ebp + 8]					; push path
-	push	eax
-	push	DWORD SYSCALL_OPEN		; push syscall-number
-	int		SYSCALL_IRQ
-	pop		eax										; pop error-code
-	test	eax,eax
-	jz		openNoError						; no-error?
-	mov		[lastError],eax				; store error-code
-	add		esp,8
-	jmp		openRet
-openNoError:
-	pop		eax
-	add		esp,4
-openRet:
-	leave
-	ret
-
-; s32 read(tFD fd,void *buffer,u32 count);
-read:
-	push	ebp
-	mov		ebp,esp
-	mov		eax,[ebp + 16]				; push count
-	push	eax
-	mov		eax,[ebp + 12]				; push buffer
-	push	eax
-	mov		eax,[ebp + 8]					; push fd
-	push	eax
-	push	DWORD SYSCALL_READ		; push syscall-number
-	int		SYSCALL_IRQ
-	pop		eax										; pop error-code
-	test	eax,eax
-	jz		readNoError						; no-error?
-	mov		[lastError],eax				; store error-code
-	add		esp,12
-	jmp		readRet
-readNoError:
-	pop		eax
-	add		esp,8
-readRet:
-	leave
-	ret
-
-; void close(tFD fd);
-close:
-	push	ebp
-	mov		ebp,esp
-	mov		eax,[ebp + 8]					; push fd
-	push	eax
-	push	DWORD SYSCALL_CLOSE		; push syscall-number
-	int		SYSCALL_IRQ
-	add		esp,4									; remove from stack
-	leave
-	ret
+SYSC_RET_2ARGS_ERR open,SYSCALL_OPEN
+SYSC_RET_3ARGS_ERR read,SYSCALL_READ
+SYSC_RET_3ARGS_ERR write,SYSCALL_WRITE
+SYSC_RET_1ARGS_ERR sendEOT,SYSCALL_EOT
+SYSC_VOID_1ARGS close,SYSCALL_CLOSE

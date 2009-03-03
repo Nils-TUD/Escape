@@ -6,9 +6,9 @@
 
 #include "../h/common.h"
 #include "../h/proc.h"
-#include "../h/video.h"
 #include "../h/paging.h"
 #include "../h/mm.h"
+#include <video.h>
 #include <test.h>
 #include "tproc.h"
 

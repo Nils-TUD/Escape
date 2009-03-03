@@ -6,7 +6,7 @@
 
 #ifdef IN_KERNEL
 #	include "../../kernel/h/common.h"
-#	include "../../kernel/h/video.h"
+#	include <video.h>
 
 #	define testPrintf	vid_printf
 #	define testvPrintf	vid_vprintf
@@ -56,7 +56,7 @@ void test_caseStartv(cstring fmt,va_list ap) {
 }
 
 void test_caseSucceded(void) {
-	testPrintf("== >> %:02s ==\n\n","SUCCESS");
+	testPrintf("== >> \e[32m%s\e[0m ==\n\n","SUCCESS");
 	totalSucc++;
 	succCount++;
 }
@@ -133,7 +133,7 @@ bool test_assertStr(string received,string expected) {
 
 void test_caseFailed(cstring fmt,...) {
 	va_list ap;
-	testPrintf("== >> %:04s : ","FAILED");
+	testPrintf("== >> \e[31m%s\e[0m : ","FAILED");
 	va_start(ap,fmt);
 	testvPrintf(fmt,ap);
 	va_end(ap);
@@ -164,15 +164,15 @@ void test_start(void) {
 			modsFailed++;
 
 		testPrintf("---- Module \"%s\" finished. Summary: ----\n",modules[i]->name);
-		testPrintf("-- %:02d testcases successfull --\n",succCount);
-		testPrintf("-- %:04d testcases failed --\n",failCount);
+		testPrintf("-- \e[32m%d\e[0m testcases successfull --\n",succCount);
+		testPrintf("-- \e[31m%d\e[0m testcases failed --\n",failCount);
 		testPrintf("----------------------------------\n\n");
 	}
 
 	testPrintf("====== All modules done ======\n");
-	testPrintf("== %:02d modules successfull ==\n",modsSucc);
-	testPrintf("== %:04d modules failed ==\n",modsFailed);
-	testPrintf("== %:02d testcases successfull ==\n",totalSucc);
-	testPrintf("== %:04d testcases failed ==\n",totalFail);
+	testPrintf("== \e[32m%d\e[0m modules successfull ==\n",modsSucc);
+	testPrintf("== \e[31m%d\e[0m modules failed ==\n",modsFailed);
+	testPrintf("== \e[32m%d\e[0m testcases successfull ==\n",totalSucc);
+	testPrintf("== \e[31m%d\e[0m testcases failed ==\n",totalFail);
 	testPrintf("============================\n");
 }

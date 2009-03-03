@@ -6,7 +6,7 @@
 
 #include "../h/common.h"
 #include "../h/paging.h"
-#include "../h/video.h"
+#include <video.h>
 #include <test.h>
 #include "tpaging.h"
 

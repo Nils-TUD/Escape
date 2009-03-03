@@ -9,12 +9,12 @@
 #include "../h/paging.h"
 #include "../h/mm.h"
 #include "../h/util.h"
-#include "../h/video.h"
 #include "../h/intrpt.h"
 #include "../h/sched.h"
 #include "../h/vfs.h"
 #include "../h/kheap.h"
 #include "../h/gdt.h"
+#include <video.h>
 #include <string.h>
 
 /* public process-data */

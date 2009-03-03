@@ -6,11 +6,10 @@
 
 #include "../h/common.h"
 #include "../h/kheap.h"
-#include "../h/video.h"
-
-#include "tsllist.h"
+#include <video.h>
 #include <sllist.h>
 #include <test.h>
+#include "tsllist.h"
 
 /* forward declarations */
 static void test_sllist(void);

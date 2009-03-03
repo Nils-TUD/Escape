@@ -6,8 +6,8 @@
 
 #include "../h/mm.h"
 #include "../h/util.h"
-#include "../h/video.h"
 #include "../h/paging.h"
+#include <video.h>
 #include <string.h>
 
 /**

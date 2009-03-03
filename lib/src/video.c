@@ -4,10 +4,15 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "cvideo.h"
-#include <common.h>
-#include <mem.h>
-#include <io.h>
+#include "../h/video.h"
+#if IN_KERNEL
+#	include "../../kernel/h/common.h"
+#	include "../../kernel/h/util.h"
+#else
+#	include <common.h>
+#	include <mem.h>
+#	include <io.h>
+#endif
 #include <stdarg.h>
 
 #define COL_WOB		0x07				/* white on black */
@@ -26,6 +31,10 @@
  * @param str a pointer to the current string-position (will be changed)
  */
 static void vid_handleColorCode(cstring *str);
+
+#if IN_KERNEL
+static void vid_removeBIOSCursor(void);
+#endif
 
 /**
  * Sames as vid_printu() but with lowercase letters
@@ -54,6 +63,14 @@ static u8 colorTable[] = {
 };
 
 void vid_init(void) {
+#if IN_KERNEL
+	videoBase = 0xC00B8000;
+	SET_POS(0);
+	vid_removeBIOSCursor();
+	vid_clearScreen();
+	vid_setFGColor(WHITE);
+	vid_setBGColor(BLACK);
+#else
 	videoBase = (u32)mapPhysical(0xB8000,COLS * (ROWS + 2) * 2 + 1);
 	if(videoBase == 0)
 		printLastError();
@@ -66,6 +83,7 @@ void vid_init(void) {
 		requestIOPort(0x3f8);
 		requestIOPort(0x3fd);
 	}
+#endif
 }
 
 void vid_clearScreen(void) {
@@ -148,7 +166,6 @@ void vid_putchar(s8 c) {
 	u32 i;
 	vid_move();
 	s8 *video = (s8*)(videoBase + GET_POS());
-	/*debugf("addr=0x%x, pos=%d\n",videoBase + COLS * (ROWS + 2) * 2,GET_POS());*/
 
 	/* write to bochs/qemu console (\r not necessary here) */
 	if(c != '\r') {
@@ -206,7 +223,17 @@ u8 vid_getuwidth(u32 n,u8 base) {
 }
 
 void vid_puts(cstring str) {
-	while(*str) {
+	s8 c;
+	while((c = *str)) {
+		/* color-code? */
+		if(c == '\033' || c == '\e') {
+			if(*(str + 1) == '[') {
+				str += 2;
+				vid_handleColorCode(&str);
+				continue;
+			}
+		}
+
 		vid_putchar(*str++);
 	}
 }
@@ -404,6 +431,15 @@ static void vid_handleColorCode(cstring *str) {
 
 	*str = fmt;
 }
+
+#if IN_KERNEL
+static void vid_removeBIOSCursor(void) {
+	outb(0x3D4,14);
+	outb(0x3D5,0x07);
+	outb(0x3D4,15);
+	outb(0x3D5,0xd0);
+}
+#endif
 
 static void vid_printuSmall(u32 n,u8 base) {
 	if(n >= base) {

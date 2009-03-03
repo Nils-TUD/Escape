@@ -6,8 +6,8 @@
 
 #include "../h/gdt.h"
 #include "../h/mm.h"
-#include "../h/video.h"
 #include "../h/paging.h"
+#include <video.h>
 #include <string.h>
 /* for offsetof() */
 #include <stddef.h>

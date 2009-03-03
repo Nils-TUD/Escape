@@ -56,7 +56,7 @@ s32 main(void) {
 			"\e[30;44mwithbg\e[0m, \e[34;43mwithbg\e[0m\n";
 	sConsoleMsg *msg = createConsoleMsg(CONSOLE_MSG_OUT,strlen(str) + 1,str);
 	u32 i;
-	for(i = 0;i < 10;i++) {
+	for(i = 0;i < 2;i++) {
 		if(write(fd,msg,sizeof(sConsoleMsg) + msg->length) < 0)
 			printLastError();
 		else {

@@ -5,9 +5,9 @@
  */
 
 #include "../h/multiboot.h"
-#include "../h/video.h"
 #include "../h/common.h"
 #include "../h/paging.h"
+#include <video.h>
 
 #define CHECK_FLAG(flags,bit) (flags & (1 << bit))
 

@@ -12,7 +12,7 @@
 #include <string.h>
 #include <debug.h>
 
-#include "cvideo.h"
+#include <video.h>
 
 s32 main(void) {
 	s32 id = regService("console");
@@ -38,9 +38,7 @@ s32 main(void) {
 					if(msg.id == CONSOLE_MSG_OUT) {
 						s8 *readBuf = malloc(msg.length * sizeof(s8));
 						read(fd,readBuf,msg.length);
-						vid_printf("Read (%d): ",x);
-						vid_printf(readBuf);
-						vid_printf("\n");
+						vid_printf("Read (%d): %s\n",x,readBuf);
 						free(readBuf);
 					}
 					else if(msg.id == CONSOLE_MSG_IN) {

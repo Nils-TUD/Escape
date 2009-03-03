@@ -6,7 +6,7 @@
 
 #include "../h/keyboard.h"
 #include "../h/util.h"
-#include "../h/video.h"
+#include <video.h>
 
 #define KBD_DATA_PORT	0x60
 

@@ -6,7 +6,6 @@
 
 #include "../h/common.h"
 #include "../h/intrpt.h"
-#include "../h/video.h"
 #include "../h/util.h"
 #include "../h/keyboard.h"
 #include "../h/cpu.h"
@@ -14,6 +13,7 @@
 #include "../h/proc.h"
 #include "../h/elf.h"
 #include "../h/syscalls.h"
+#include <video.h>
 
 #define IDT_COUNT		256
 /* the privilege level */

@@ -7,8 +7,8 @@
 #include "../h/common.h"
 #include "../h/sched.h"
 #include "../h/proc.h"
-#include "../h/video.h"
 #include "../h/util.h"
+#include <video.h>
 #include <sllist.h>
 
 /* the queue for all runnable (but not currently running) processes */

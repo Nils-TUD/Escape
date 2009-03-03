@@ -8,12 +8,12 @@
 #include "../h/syscalls.h"
 #include "../h/intrpt.h"
 #include "../h/proc.h"
-#include "../h/video.h"
 #include "../h/vfs.h"
 #include "../h/paging.h"
 #include "../h/util.h"
 #include "../h/debug.h"
 #include "../h/kheap.h"
+#include <video.h>
 #include <string.h>
 
 #define SYSCALL_COUNT 18

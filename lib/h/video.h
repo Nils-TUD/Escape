@@ -4,10 +4,14 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#ifndef STDIO_H_
-#define STDIO_H_
+#ifndef VIDEO_H_
+#define VIDEO_H_
 
-#include "../h/common.h"
+#if IN_KERNEL
+#	include "../../kernel/h/common.h"
+#else
+#	include "../../libc/h/common.h"
+#endif
 #include <stdarg.h>
 
 typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;

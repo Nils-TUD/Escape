@@ -5,7 +5,6 @@
  */
 
 #include "../h/common.h"
-#include "../h/video.h"
 #include "../h/multiboot.h"
 #include "../h/gdt.h"
 #include "../h/mm.h"
@@ -20,6 +19,7 @@
 #include "../h/elf.h"
 #include "../h/sched.h"
 #include "../h/vfs.h"
+#include <video.h>
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table
@@ -63,7 +63,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 	vid_printf("GDT exchanged, paging enabled, video initialized");
 	vid_toLineEnd(vid_getswidth("DONE"));
-	vid_printf("%:02s\n","DONE");
+	vid_printf("\e[32m%s\e[0m\n","DONE");
 
 #if DEBUGGING
 	mboot_dbg_print();
@@ -77,7 +77,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	kheap_init();
 	paging_initCOWList();
 	vid_toLineEnd(vid_getswidth("DONE"));
-	vid_printf("%:02s","DONE");
+	vid_printf("\e[32m%s\e[0m","DONE");
 	dbg_stopTimer();
 
 	/* vfs */
@@ -85,7 +85,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("Initializing VFS...");
 	vfs_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
-	vid_printf("%:02s","DONE");
+	vid_printf("\e[32m%s\e[0m","DONE");
 	dbg_stopTimer();
 
 	/* processes */
@@ -94,7 +94,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	proc_init();
 	sched_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
-	vid_printf("%:02s","DONE");
+	vid_printf("\e[32m%s\e[0m","DONE");
 	dbg_stopTimer();
 
 	/* idt */
@@ -102,7 +102,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("Initializing IDT...");
 	intrpt_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
-	vid_printf("%:02s","DONE");
+	vid_printf("\e[32m%s\e[0m","DONE");
 	dbg_stopTimer();
 
 #if DEBUGGING
@@ -110,7 +110,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 			mm_getFreeFrmCount(MM_DMA | MM_DEF),paging_dbg_getPageCount(),
 			mm_getFreeFrmCount(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 
-	vfs_dbg_printTree();
+	/*vfs_dbg_printTree();*/
 #endif
 
 #if 1

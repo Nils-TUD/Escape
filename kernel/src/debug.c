@@ -6,10 +6,10 @@
 
 #include "../h/debug.h"
 #include "../h/common.h"
-#include "../h/video.h"
 #include "../h/paging.h"
 #include "../h/proc.h"
 #include "../h/cpu.h"
+#include <video.h>
 
 static u64 start = 0;
 

@@ -6,10 +6,10 @@
 
 #include "../h/paging.h"
 #include "../h/util.h"
-#include "../h/video.h"
 #include "../h/proc.h"
 #include "../h/intrpt.h"
 #include "../h/kheap.h"
+#include <video.h>
 #include <sllist.h>
 #include <string.h>
 

@@ -8,9 +8,9 @@
 #include "../h/kheap.h"
 #include "../h/paging.h"
 #include "../h/mm.h"
-#include "../h/video.h"
 #include "tkheap.h"
 #include <test.h>
+#include <video.h>
 #include <stdarg.h>
 
 /* forward declarations */

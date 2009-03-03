@@ -6,9 +6,9 @@
 
 #include "../h/common.h"
 #include "../h/vfs.h"
-#include "../h/video.h"
 #include "../h/proc.h"
 #include "../h/kheap.h"
+#include <video.h>
 #include <string.h>
 
 #include "tvfs.h"

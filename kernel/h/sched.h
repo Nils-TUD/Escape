@@ -61,9 +61,9 @@ bool sched_dequeueReadyProc(sProc *p);
 #if DEBUGGING
 
 /**
- * Prints the ready-queue
+ * Prints the status of the scheduler
  */
-void sched_dbg_printReadyQueue(void);
+void sched_dbg_print(void);
 
 #endif
 

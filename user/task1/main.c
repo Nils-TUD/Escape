@@ -42,13 +42,65 @@ void logChar(char c) {
 }
 
 s32 main(void) {
-	s32 fd;
+	s32 fd1,fd;
 	do {
-		fd = open("/system/services/console",IO_READ | IO_WRITE);
-		if(fd < 0)
+		fd1 = open("/system/services/console",IO_READ | IO_WRITE);
+		if(fd1 < 0)
 			yield();
 	}
-	while(fd < 0);
+	while(fd1 < 0);
+
+	fd = dupFd(fd1);
+	debugf("fd=%d, fd1=%d\n",fd,fd1);
+
+	if(fork() == 0) {
+		s32 id = regService("test");
+
+		static sConsoleMsg msg;
+		while(1) {
+			s32 cfd = waitForClient(id);
+			if(cfd < 0)
+				printLastError();
+			else {
+				u32 x = 0;
+				s32 c = 0;
+				do {
+					if((c = read(cfd,&msg,sizeof(sConsoleMsg))) < 0)
+						printLastError();
+					else if(c > 0) {
+						write(fd,&msg,sizeof(sConsoleMsg));
+						if(msg.id == CONSOLE_MSG_OUT) {
+							s8 *readBuf = malloc(msg.length * sizeof(s8));
+							if(read(cfd,readBuf,msg.length) < 0)
+								printLastError();
+							if(write(fd,readBuf,msg.length) < 0)
+								printLastError();
+							free(readBuf);
+						}
+						x++;
+					}
+				}
+				while(c > 0);
+				sendEOT(fd);
+				close(cfd);
+			}
+		}
+		unregService(id);
+	}
+
+	s32 fd2;
+	do {
+		fd2 = open("/system/services/test",IO_READ | IO_WRITE);
+		if(fd2 < 0)
+			yield();
+	}
+	while(fd2 < 0);
+	debugf("fd2=%d\n",fd2);
+
+	if(redirFd(fd,fd2) < 0)
+		printLastError();
+	else
+		debugf("Redirected %d to %d\n",fd,fd2);
 
 	s8 str[] = "Test: \e[30mblack\e[0m, \e[31mred\e[0m, \e[32mgreen\e[0m"
 			", \e[33morange\e[0m, \e[34mblue\e[0m, \e[35mmargenta\e[0m, \e[36mcyan\e[0m"
@@ -56,7 +108,7 @@ s32 main(void) {
 			"\e[30;44mwithbg\e[0m, \e[34;43mwithbg\e[0m\n";
 	sConsoleMsg *msg = createConsoleMsg(CONSOLE_MSG_OUT,strlen(str) + 1,str);
 	u32 i;
-	for(i = 0;i < 2;i++) {
+	for(i = 0; i < 4 ;i++) {
 		if(write(fd,msg,sizeof(sConsoleMsg) + msg->length) < 0)
 			printLastError();
 		else {

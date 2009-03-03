@@ -138,6 +138,23 @@ tFile proc_fdToFile(tFD fd);
 s32 proc_openFile(tFile fileNo);
 
 /**
+ * Duplicates the given file-descriptor
+ *
+ * @param fd the file-descriptor
+ * @return the error-code or the new file-descriptor
+ */
+s32 proc_dupFd(tFD fd);
+
+/**
+ * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
+ *
+ * @param src the source-file-descriptor
+ * @param dst the destination-file-descriptor
+ * @return the error-code or 0 if successfull
+ */
+s32 proc_redirFd(tFD src,tFD dst);
+
+/**
  * Closes the given file-descriptor. That means it releases the fd-slot with given index.
  *
  * @param fd the file-descriptor

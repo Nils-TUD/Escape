@@ -95,6 +95,23 @@ s32 read(tFD fd,void *buffer,u32 count);
 s32 write(tFD fd,void *buffer,u32 count);
 
 /**
+ * Duplicates the given file-descriptor
+ *
+ * @param fd the file-descriptor
+ * @return the error-code or the new file-descriptor
+ */
+s32 dupFd(tFD fd);
+
+/**
+ * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
+ *
+ * @param src the source-file-descriptor
+ * @param dst the destination-file-descriptor
+ * @return the error-code or 0 if successfull
+ */
+s32 redirFd(tFD src,tFD dst);
+
+/**
  * Sends an "End-Of-Transfer" for the given file-descriptor. This will release the lock for
  * service-usages so that the other side can start working.
  *

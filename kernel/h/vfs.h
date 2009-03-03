@@ -43,6 +43,18 @@ struct sVFSNode {
 	} data;
 };
 
+/* an entry in the global file table */
+typedef struct {
+	/* read OR write; flags = 0 => entry unused */
+	u8 flags;
+	/* number of references */
+	u16 refCount;
+	/* current position in file */
+	u32 position;
+	/* node-number; if MSB = 1 => virtual, otherwise real (fs) */
+	tVFSNodeNo nodeNo;
+} sGFTEntry;
+
 /**
  * Initializes the virtual file system
  */
@@ -61,6 +73,12 @@ bool vfs_isValidNodeNo(tVFSNodeNo nodeNo);
  * @return the node for given index
  */
 sVFSNode *vfs_getNode(tVFSNodeNo nodeNo);
+
+/**
+ * @param no the file-number
+ * @return the entry in the global-file-table
+ */
+sGFTEntry *vfs_getFile(tFile no);
 
 /**
  * Determines the path for the given node. Note that static memory will be used for that!

@@ -189,6 +189,38 @@ s32 proc_openFile(tFile fileNo) {
 	return ERR_MAX_PROC_FDS;
 }
 
+s32 proc_dupFd(tFD fd) {
+	tFile f;
+	/* check fd */
+	if(fd >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	f = procs[pi].fileDescs[fd];
+	if(f == -1)
+		return ERR_INVALID_FD;
+
+	/* we'll get a new fd for the same file */
+	return proc_openFile(f);
+}
+
+s32 proc_redirFd(tFD src,tFD dst) {
+	tFile fSrc,fDst;
+	/* check fds */
+	if(src >= MAX_FD_COUNT || dst >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	fSrc = procs[pi].fileDescs[src];
+	fDst = procs[pi].fileDescs[dst];
+	if(fSrc == -1 || fDst == -1)
+		return ERR_INVALID_FD;
+
+	/* we have to close the source because no one else will do it anymore... */
+	vfs_closeFile(src);
+	/* now redirect src to dst */
+	procs[pi].fileDescs[src] = fDst;
+	return 0;
+}
+
 tFile proc_closeFile(tFD fd) {
 	tFile fileNo;
 	if(fd >= MAX_FD_COUNT)
@@ -231,8 +263,12 @@ s32 proc_clone(tPid newPid) {
 	/*for(i = 0; i < MAX_FD_COUNT; i++)
 		p->fileDescs[i] = -1;*/
 	/* copy fds */
-	for(i = 0; i < MAX_FD_COUNT; i++)
+	for(i = 0; i < MAX_FD_COUNT; i++) {
 		p->fileDescs[i] = procs[pi].fileDescs[i];
+		/* increase references */
+		if(p->fileDescs[i] != -1)
+			vfs_getFile(p->fileDescs[i])->refCount++;
+	}
 	/* make ready */
 	sched_setReady(p);
 

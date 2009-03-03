@@ -52,18 +52,6 @@ typedef struct {
 	u8 name[MAX_NAME_LEN + 1];
 } sVFSNodePub;
 
-/* an entry in the global file table */
-typedef struct {
-	/* read OR write; flags = 0 => entry unused */
-	u8 flags;
-	/* number of references */
-	u16 refCount;
-	/* current position in file */
-	u32 position;
-	/* node-number; if MSB = 1 => virtual, otherwise real (fs) */
-	tVFSNodeNo nodeNo;
-} sGFTEntry;
-
 /**
  * Requests a new node and returns the pointer to it. Panics if there are no free nodes anymore.
  *
@@ -224,6 +212,10 @@ bool vfs_isValidNodeNo(tVFSNodeNo nodeNo) {
 
 sVFSNode *vfs_getNode(tVFSNodeNo nodeNo) {
 	return nodes + nodeNo;
+}
+
+sGFTEntry *vfs_getFile(tFile no) {
+	return globalFileTable + no;
 }
 
 string vfs_getPath(sVFSNode *node) {
@@ -459,6 +451,8 @@ s32 vfs_readFile(tFD fd,u8 *buffer,u32 count) {
 s32 vfs_writeFile(tFD fd,u8 *buffer,u32 count) {
 	s32 writtenBytes;
 	sGFTEntry *e;
+	void *oldCache;
+	sVFSNode *n;
 	u32 size;
 	tFile fileNo = proc_fdToFile(fd);
 	if(fileNo < 0)
@@ -478,7 +472,7 @@ s32 vfs_writeFile(tFD fd,u8 *buffer,u32 count) {
 
 	if(IS_VIRT(e->nodeNo)) {
 		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
-		sVFSNode *n = nodes + i;
+		n = nodes + i;
 		sProc *p = proc_getRunning();
 
 		/* node not present anymore? */
@@ -499,21 +493,25 @@ s32 vfs_writeFile(tFD fd,u8 *buffer,u32 count) {
 			n->activePid = p->pid;
 		}
 
+		oldCache = n->data.info.cache;
+
 		/* need to create cache? */
 		if(n->data.info.cache == NULL) {
 			size = MAX(count,VFS_INITIAL_WRITECACHE);
 			n->data.info.cache = kheap_alloc(size);
 			if(n->data.info.cache == NULL)
-				return ERR_NOT_ENOUGH_MEM;
+				goto notEnoughMem;
 			n->data.info.size = size;
 		}
 		/* need to increase cache-size? */
 		else if(n->data.info.size < e->position + count) {
 			/* ensure that we allocate enough memory */
-			size = MAX(e->position + count,(u32)n->data.info.size * 2);
+			/* TODO we have to store the actual data-size in info.size, therefore
+			 * we can't use size * 2. Is there a better way? */
+			size = e->position + count;/*MAX(e->position + count,(u32)n->data.info.size * 2);*/
 			n->data.info.cache = kheap_realloc(n->data.info.cache,size);
 			if(n->data.info.cache == NULL)
-				return ERR_NOT_ENOUGH_MEM;
+				goto notEnoughMem;
 			n->data.info.size = size;
 		}
 
@@ -529,6 +527,18 @@ s32 vfs_writeFile(tFD fd,u8 *buffer,u32 count) {
 	}
 
 	return writtenBytes;
+
+notEnoughMem:
+	/* try to activate the service so that the data can be read */
+	n->data.info.cache = oldCache;
+	e->position = 0;
+	n->activeMode = 0;
+	n->activePid = 0;
+	/* make the service ready and hope that we choose them :) */
+	/* TODO we need a function to change to a specific process... */
+	sched_setReady(n->parent->data.proc);
+	proc_switch();
+	return ERR_NOT_ENOUGH_MEM;
 }
 
 s32 vfs_sendEOT(tFD fd) {
@@ -695,6 +705,8 @@ s32 vfs_waitForClient(tVFSNodeNo no) {
 
 	/* search for a slot that needs work */
 	do {
+		/*vid_printf("Proc 0x%x waits for client\n===BEFORE===\n",p);
+		sched_dbg_print();*/
 		n = NODE_FIRST_CHILD(node);
 		while(n != NULL) {
 			/* writing not in progress and data available? */
@@ -706,6 +718,8 @@ s32 vfs_waitForClient(tVFSNodeNo no) {
 		/* wait until someone wakes us up */
 		if(n == NULL) {
 			sched_setBlocked(p);
+			/*vid_printf("===AFTER===\n",p);
+			sched_dbg_print();*/
 			proc_switch();
 		}
 	}

@@ -16,7 +16,7 @@
 #include <video.h>
 #include <string.h>
 
-#define SYSCALL_COUNT 18
+#define SYSCALL_COUNT 20
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
@@ -95,6 +95,21 @@ static void sysc_write(sSysCallStack *stack);
  * @return s32 0 on success
  */
 static void sysc_sendEOT(sSysCallStack *stack);
+/**
+ * Duplicates the given file-descriptor
+ *
+ * @param tFD the file-descriptor
+ * @return s32 the error-code or the new file-descriptor
+ */
+static void sysc_dupFd(sSysCallStack *stack);
+/**
+ * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
+ *
+ * @param tFD src the source-file-descriptor
+ * @param tFD dst the destination-file-descriptor
+ * @return s32 the error-code or 0 if successfull
+ */
+static void sysc_redirFd(sSysCallStack *stack);
 /**
  * Closes the given file-descriptor
  *
@@ -179,6 +194,8 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 15 */	{sysc_waitForClient,	1},
 	/* 16 */	{sys_requestIOPorts,	2},
 	/* 17 */	{sys_releaseIOPorts,	2},
+	/* 18 */	{sysc_dupFd,			1},
+	/* 19 */	{sysc_redirFd,			2},
 };
 
 void sysc_handle(sSysCallStack *stack) {
@@ -267,7 +284,7 @@ static void sysc_open(sSysCallStack *stack) {
 }
 
 static void sysc_read(sSysCallStack *stack) {
-	tFD fd = (s32)stack->arg1;
+	tFD fd = (tFD)stack->arg1;
 	void *buffer = (void*)stack->arg2;
 	u32 count = stack->arg3;
 	s32 readBytes;
@@ -293,7 +310,7 @@ static void sysc_read(sSysCallStack *stack) {
 }
 
 static void sysc_write(sSysCallStack *stack) {
-	tFD fd = (s32)stack->arg1;
+	tFD fd = (tFD)stack->arg1;
 	void *buffer = (void*)stack->arg2;
 	u32 count = stack->arg3;
 	s32 writtenBytes;
@@ -318,7 +335,7 @@ static void sysc_write(sSysCallStack *stack) {
 }
 
 static void sysc_sendEOT(sSysCallStack *stack) {
-	tFD fd = (s32)stack->arg1;
+	tFD fd = (tFD)stack->arg1;
 	s32 err = vfs_sendEOT(fd);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
@@ -328,8 +345,31 @@ static void sysc_sendEOT(sSysCallStack *stack) {
 	SYSC_RET1(stack,0);
 }
 
+static void sysc_dupFd(sSysCallStack *stack) {
+	tFD fd = (tFD)stack->arg1;
+	s32 err = proc_dupFd(fd);
+	if(err < 0) {
+		SYSC_ERROR(stack,err);
+		return;
+	}
+
+	SYSC_RET1(stack,err);
+}
+
+static void sysc_redirFd(sSysCallStack *stack) {
+	tFD src = (tFD)stack->arg1;
+	tFD dst = (tFD)stack->arg2;
+	s32 err = proc_redirFd(src,dst);
+	if(err < 0) {
+		SYSC_ERROR(stack,err);
+		return;
+	}
+
+	SYSC_RET1(stack,err);
+}
+
 static void sysc_close(sSysCallStack *stack) {
-	tFD fd = stack->arg1;
+	tFD fd = (tFD)stack->arg1;
 	vfs_closeFile(fd);
 }
 

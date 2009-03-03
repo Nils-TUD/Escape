@@ -91,11 +91,11 @@ void *memcpy(void *dest,const void *src,u32 len) {
 	u8 *d = dest;
 	const u8 *s = src;
 	while(len--) {
-		/*if(d == 0xc07e7000 || s == 0xc07e7000) {
 #if IN_KERNEL
-			paging_dbg_printPageDir(true);
+		if(d == 0xc0965e51 || s == 0xc0965e51) {
+			panic("HERE IT IS\n");
+		}
 #endif
-		}*/
 		*d++ = *s++;
 	}
 	return dest;

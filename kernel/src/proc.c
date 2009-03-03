@@ -14,6 +14,7 @@
 #include "../h/sched.h"
 #include "../h/vfs.h"
 #include "../h/kheap.h"
+#include "../h/gdt.h"
 #include <string.h>
 
 /* public process-data */
@@ -96,6 +97,9 @@ void proc_switch(void) {
 		/* select next process */
 		p = sched_perform();
 		pi = p->pid;
+		/* remove the io-map. it will be set as soon as the process accesses an io-port
+		 * (we'll get an exception) */
+		tss_removeIOMap();
 		/*vid_printf("Resuming %d\n",p->pid);*/
 		proc_resume(p->physPDirAddr,&p->save);
 	}
@@ -107,6 +111,57 @@ void proc_switch(void) {
 	}
 
 	/*vid_printf("Continuing %d\n",p->pid);*/
+}
+
+s32 proc_requestIOPorts(u16 start,u16 count) {
+	sProc *p = procs + pi;
+	u16 end;
+	if(p->ioMap == NULL) {
+		p->ioMap = (u8*)kheap_alloc(IO_MAP_SIZE / 8);
+		if(p->ioMap == NULL)
+			return ERR_NOT_ENOUGH_MEM;
+	}
+
+	end = start + count;
+	/* 0xF8 .. 0xFF is reserved */
+	if((start >= 0xF8 && start <= 0xFF) ||	/* start in range */
+		(end > 0xF8 && end <= 0x100) ||		/* end in range */
+		(start < 0xF8 && end > 0x100))		/* range between start and end */
+		return ERR_IO_MAP_RANGE_RESERVED;
+
+	while(count-- > 0) {
+		p->ioMap[start / 8] &= ~(1 << (start % 8));
+		start++;
+	}
+
+	/* refresh io-map */
+	tss_setIOMap(p->ioMap);
+
+	return 0;
+}
+
+s32 proc_releaseIOPorts(u16 start,u16 count) {
+	sProc *p = procs + pi;
+	u16 end;
+	if(p->ioMap == NULL)
+		return ERR_IOMAP_NOT_PRESENT;
+
+	end = start + count;
+	/* 0xF8 .. 0xFF is reserved */
+	if((start >= 0xF8 && start <= 0xFF) ||	/* start in range */
+		(end > 0xF8 && end <= 0x100) ||		/* end in range */
+		(start < 0xF8 && end > 0x100))		/* range between start and end */
+		return ERR_IO_MAP_RANGE_RESERVED;
+
+	while(count-- > 0) {
+		p->ioMap[start / 8] |= 1 << (start % 8);
+		start++;
+	}
+
+	/* refresh io-map */
+	tss_setIOMap(p->ioMap);
+
+	return 0;
 }
 
 tFile proc_fdToFile(tFD fd) {
@@ -233,6 +288,8 @@ void proc_destroy(sProc *p) {
 
 	/* remove from VFS */
 	vfs_removeProcess(p->pid);
+
+	/* TODO we have to unregister services, if p is on */
 
 	/* mark as unused */
 	p->textPages = 0;

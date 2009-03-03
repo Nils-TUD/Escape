@@ -203,7 +203,7 @@ void *kheap_alloc(u32 size) {
 		address += area->size - size;
 
 	/* reserve frames and map them, if necessary */
-	paging_map(address,NULL,BYTES_2_PAGES(size),PG_SUPERVISOR | PG_WRITABLE,false);
+	paging_map(address,NULL,BYTES_2_PAGES((address & (PAGE_SIZE - 1)) + size),PG_SUPERVISOR | PG_WRITABLE,false);
 
 	DBG_KMALLOC(vid_printf("OldArea(@0x%x): free=%d, size=%d, next=0x%x\n",area,area->free,
 			area->size,area->next));
@@ -300,6 +300,9 @@ void *kheap_realloc(void *addr,u32 size) {
 
 	/* if the prev area is not big enough or occupied we need a new one */
 	if(lastArea == NULL || !lastArea->free || lastArea->size < size - area->size) {
+		/*vid_printf("BEFORE:\n");
+		paging_dbg_printPageDir(true);*/
+
 		/* get new area */
 		newAddress = (u32)kheap_alloc(size);
 		if((void*)newAddress == NULL)
@@ -311,6 +314,8 @@ void *kheap_realloc(void *addr,u32 size) {
 		/* free old area */
 		/*kheap_freeIntern(address,area,lastArea,lastLastArea);*/
 		kheap_free((void*)address);
+		/*vid_printf("AFTER:\n");
+		paging_dbg_printPageDir(true);*/
 		return (void*)newAddress;
 	}
 

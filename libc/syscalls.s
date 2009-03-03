@@ -17,6 +17,8 @@ SYSCALL_WRITE				equ	12
 SYSCALL_EOT					equ 13
 SYSCALL_YIELD				equ 14
 SYSCALL_SWAIT				equ 15
+SYSCALL_REQIOPORTS	equ 16
+SYSCALL_RELIOPORTS	equ 17
 
 ; the IRQ for syscalls
 SYSCALL_IRQ					equ	0x30
@@ -100,7 +102,6 @@ SYSCALL_IRQ					equ	0x30
 	test	eax,eax
 	jz		%1NoError							; no-error?
 	mov		[lastError],eax				; store error-code
-	mov		eax,0									; return NULL
 	add		esp,8
 	jmp		%1Ret
 %1NoError:

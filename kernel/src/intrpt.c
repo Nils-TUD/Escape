@@ -708,11 +708,14 @@ void intrpt_init(void) {
 	intrpt_initPic();
 }
 
+
 /* TODO temporary */
-static u8 task2[] = {
+#include "../../build/services.txt"
+static bool servicesLoaded = false;
+/*static u8 task2[] = {
 	#include "../../build/user_task2.dump"
 };
-static bool proc2Ready = false;
+static bool proc2Ready = false;*/
 
 static u64 umodeTime = 0;
 static u64 kmodeTime = 0;
@@ -734,6 +737,32 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		case IRQ_TIMER:
 			/* TODO don't resched if we come from kernel-mode! */
 			ASSERT(stack.ds == 0x23,"Timer interrupt from kernel-mode!");
+
+			if(!servicesLoaded) {
+				u32 i;
+				servicesLoaded = true;
+				vid_printf("Loading services...\n");
+				for(i = 0; i < ARRAY_SIZE(services); i++) {
+					/* clone proc */
+					tPid pid = proc_getFreePid();
+					if(proc_clone(pid)) {
+						/* we'll reach this as soon as the scheduler has chosen the created process */
+						p = proc_getRunning();
+						/* remove data-pages */
+						proc_changeSize(-p->dataPages,CHG_DATA);
+						/* overwrite stack-pages (copyonwrite is enabled) */
+						paging_map(KERNEL_V_ADDR - p->stackPages * PAGE_SIZE,NULL,p->stackPages,
+								PG_WRITABLE,true);
+						/* now load service */
+						vid_printf("Loading service %d\n",p->pid);
+						elf_loadprog(services[i]);
+						vid_printf("Starting...\n");
+						proc_setupIntrptStack(&stack);
+					}
+				}
+				vid_printf("Done\n");
+				break;
+			}
 
 #if 0
 			/*vid_printf("Timer interrupt...\n");*/
@@ -798,6 +827,15 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 			/* #GPF */
 			if(stack.intrptNo == EX_GEN_PROT_FAULT) {
+				p = proc_getRunning();
+				/* io-map not loaded yet? */
+				if(p->ioMap != NULL && !tss_ioMapPresent()) {
+					/* load it and give the process another try */
+					tss_setIOMap(p->ioMap);
+					exCount = 0;
+					break;
+				}
+
 				vid_printf("GPF for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
 				printStackTrace();
 				break;

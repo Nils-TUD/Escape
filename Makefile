@@ -7,7 +7,7 @@ BIN=$(BUILD)/$(BINNAME)
 SYMBOLS=$(BUILD)/kernel.symbols
 OSTITLE=hrniels-OS
 
-DIRS = tools libc user kernel kernel/test
+DIRS = tools libc services user kernel kernel/test
 
 # warning flags for gcc
 export CWFLAGS=-Wall -ansi \
@@ -67,6 +67,11 @@ debugu: all prepareRun
 		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
 		#sleep 1;
 		#gdb --command=gdb.start --symbols $(BUILD)/user_task1.bin
+
+debugc: all prepareRun
+		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &
+		sleep 1;
+		gdb --command=gdb.start --symbols $(BUILD)/service_console.bin
 
 debugm: all prepareRun
 		qemu -serial stdio -s -S -no-kqemu -fda $(DISK) > log.txt 2>&1 &

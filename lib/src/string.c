@@ -7,6 +7,7 @@
 #ifdef IN_KERNEL
 #	include "../../kernel/h/common.h"
 #	include "../../kernel/h/util.h"
+#	include "../../kernel/h/paging.h"
 #else
 #	include "../../libc/h/common.h"
 /* for exit and debugf (ASSERT) */
@@ -90,6 +91,11 @@ void *memcpy(void *dest,const void *src,u32 len) {
 	u8 *d = dest;
 	const u8 *s = src;
 	while(len--) {
+		/*if(d == 0xc07e7000 || s == 0xc07e7000) {
+#if IN_KERNEL
+			paging_dbg_printPageDir(true);
+#endif
+		}*/
 		*d++ = *s++;
 	}
 	return dest;

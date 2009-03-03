@@ -1,29 +1,31 @@
 /**
- * @version		$Id$
+ * @version		$Id: video.c 95 2008-11-24 18:16:31Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/video.h"
-#include "../h/common.h"
-#include "../h/util.h"
+#include "cvideo.h"
+#include <common.h>
+#include <mem.h>
+#include <io.h>
 #include <stdarg.h>
 
 #define COL_WOB		0x07				/* white on black */
-#define VIDEO_BASE	0xC00B8000
 #define COLS		80
 #define ROWS		25
 #define TAB_WIDTH	2
 
 /* we need some way to share the current position between the kernel and the console-service.
  * therefore we store the position behind the video-mem (seems like that's ok :)). */
-#define SET_POS(x) (*(u32*)(VIDEO_BASE + COLS * (ROWS + 2) * 2) = (x))
-#define GET_POS() (*(u32*)(VIDEO_BASE + COLS * (ROWS + 2) * 2))
+#define SET_POS(x) (*(u32*)(videoBase + COLS * (ROWS + 2) * 2) = (x))
+#define GET_POS() (*(u32*)(videoBase + COLS * (ROWS + 2) * 2))
 
 /**
- * Removes the BIOS-cursor from the screen
+ * Handles a color-code
+ *
+ * @param str a pointer to the current string-position (will be changed)
  */
-static void vid_removeBIOSCursor(void);
+static void vid_handleColorCode(cstring *str);
 
 /**
  * Sames as vid_printu() but with lowercase letters
@@ -33,22 +35,41 @@ static void vid_removeBIOSCursor(void);
  */
 static void vid_printuSmall(u32 n,u8 base);
 
-/*static s8 *video = (s8*)VIDEO_BASE;*/
+static u32 videoBase = 0;
 static s8 hexCharsBig[] = "0123456789ABCDEF";
 static s8 hexCharsSmall[] = "0123456789abcdef";
 static u8 color = 0;
 static u8 oldBG = 0, oldFG = 0;
 
+/* escape-code-color to video-color */
+static u8 colorTable[] = {
+	BLACK,
+	RED,
+	GREEN,
+	ORANGE /* should be brown */,
+	BLUE,
+	MARGENTA,
+	CYAN,
+	GRAY
+};
+
 void vid_init(void) {
-	SET_POS(0);
-	vid_removeBIOSCursor();
-	vid_clearScreen();
-	vid_setFGColor(WHITE);
-	vid_setBGColor(BLACK);
+	videoBase = (u32)mapPhysical(0xB8000,COLS * (ROWS + 2) * 2 + 1);
+	if(videoBase == 0)
+		printLastError();
+	else {
+		vid_setFGColor(WHITE);
+		vid_setBGColor(BLACK);
+
+		/* request io-ports for qemu and bochs */
+		requestIOPort(0xe9);
+		requestIOPort(0x3f8);
+		requestIOPort(0x3fd);
+	}
 }
 
 void vid_clearScreen(void) {
-	u8 *addr = (u8*)VIDEO_BASE;
+	u8 *addr = (u8*)videoBase;
 	u8 *end = (u8*)((u32)addr + COLS * 2 * ROWS);
 	for(; addr < end; addr++) {
 		*addr = 0;
@@ -85,7 +106,7 @@ void vid_setBGColor(eColor col) {
 
 void vid_setLineBG(u8 line,eColor bg) {
 	u8 col = ((bg << 4) & 0xF0) | color;
-	u8 *addr = (u8*)(VIDEO_BASE + line * COLS * 2);
+	u8 *addr = (u8*)(videoBase + line * COLS * 2);
 	u8 *end = (u8*)((u32)addr + COLS * 2);
 	for(addr++; addr < end; addr += 2) {
 		*addr = col;
@@ -93,8 +114,8 @@ void vid_setLineBG(u8 line,eColor bg) {
 }
 
 u8 vid_getLine(void) {
-	s8 *video = (s8*)(VIDEO_BASE + GET_POS());
-	return ((u32)video - VIDEO_BASE) / (COLS * 2);
+	s8 *video = (s8*)(videoBase + GET_POS());
+	return ((u32)video - videoBase) / (COLS * 2);
 }
 
 void vid_toLineEnd(u8 pad) {
@@ -109,12 +130,12 @@ void vid_toLineEnd(u8 pad) {
 static void vid_move(void) {
 	u32 i;
 	s8 *src,*dst;
-	s8 *video = (s8*)(VIDEO_BASE + GET_POS());
+	s8 *video = (s8*)(videoBase + GET_POS());
 	/* last line? */
-	if(video >= (s8*)(VIDEO_BASE + (ROWS - 1) * COLS * 2)) {
+	if(video >= (s8*)(videoBase + (ROWS - 1) * COLS * 2)) {
 		/* copy all chars one line back */
-		src = (s8*)(VIDEO_BASE + COLS * 2);
-		dst = (s8*)VIDEO_BASE;
+		src = (s8*)(videoBase + COLS * 2);
+		dst = (s8*)videoBase;
 		for(i = 0; i < ROWS * COLS * 2; i++) {
 			*dst++ = *src++;
 		}
@@ -126,7 +147,8 @@ static void vid_move(void) {
 void vid_putchar(s8 c) {
 	u32 i;
 	vid_move();
-	s8 *video = (s8*)(VIDEO_BASE + GET_POS());
+	s8 *video = (s8*)(videoBase + GET_POS());
+	/*debugf("addr=0x%x, pos=%d\n",videoBase + COLS * (ROWS + 2) * 2,GET_POS());*/
 
 	/* write to bochs/qemu console (\r not necessary here) */
 	if(c != '\r') {
@@ -158,7 +180,7 @@ void vid_putchar(s8 c) {
 		video++;
 		*video = color;
 		/* do an explicit newline if necessary */
-		if(((u32)(video - VIDEO_BASE) % (COLS * 2)) == COLS * 2 - 1)
+		if(((u32)(video - videoBase) % (COLS * 2)) == COLS * 2 - 1)
 			vid_putchar('\n');
 		else {
 			video++;
@@ -231,7 +253,7 @@ void vid_printf(cstring fmt,...) {
 }
 
 void vid_vprintf(cstring fmt,va_list ap) {
-	s8 c,b,oldcolor = color,pad,padchar;
+	s8 c,b,pad,padchar;
 	string s;
 	s32 n;
 	u32 u;
@@ -240,18 +262,20 @@ void vid_vprintf(cstring fmt,va_list ap) {
 	while (1) {
 		/* wait for a '%' */
 		while ((c = *fmt++) != '%') {
+			/* color-code? */
+			if(c == '\033' || c == '\e') {
+				if(*fmt == '[') {
+					fmt++;
+					vid_handleColorCode(&fmt);
+					continue;
+				}
+			}
+
 			/* finished? */
 			if (c == '\0') {
 				return;
 			}
 			vid_putchar(c);
-		}
-
-		/* color given? */
-		if(*fmt == ':') {
-			color = ((*(++fmt) - '0') & 0xF) << 4;
-			color |= (*(++fmt) - '0') & 0xF;
-			fmt++;
 		}
 
 		/* read pad-character */
@@ -323,10 +347,62 @@ void vid_vprintf(cstring fmt,va_list ap) {
 				vid_putchar(c);
 				break;
 		}
-
-		/* restore color */
-		color = oldcolor;
 	}
+}
+
+static void vid_handleColorCode(cstring *str) {
+	cstring fmt = *str;
+	while(1) {
+		/* read code */
+		u8 colCode = 0;
+		while(*fmt >= '0' && *fmt <= '9') {
+			colCode = colCode * 10 + (*fmt - '0');
+			fmt++;
+		}
+
+		switch(colCode) {
+			/* reset all */
+			case 0:
+				vid_setFGColor(WHITE);
+				vid_setBGColor(BLACK);
+				break;
+
+			/* foreground */
+			case 30 ... 37:
+				colCode = colorTable[colCode - 30];
+				vid_setFGColor(colCode);
+				break;
+
+			/* default foreground */
+			case 39:
+				vid_setFGColor(WHITE);
+				break;
+
+			/* background */
+			case 40 ... 47:
+				colCode = colorTable[colCode - 40];
+				vid_setBGColor(colCode);
+				break;
+
+			/* default background */
+			case 49:
+				vid_setBGColor(BLACK);
+				break;
+		}
+
+		/* end of code? */
+		if(*fmt == 'm') {
+			fmt++;
+			break;
+		}
+		/* we should stop on \0, too */
+		if(*fmt == '\0')
+			break;
+		/* otherwise skip ';' */
+		fmt++;
+	}
+
+	*str = fmt;
 }
 
 static void vid_printuSmall(u32 n,u8 base) {
@@ -334,11 +410,4 @@ static void vid_printuSmall(u32 n,u8 base) {
 		vid_printuSmall(n / base,base);
 	}
 	vid_putchar(hexCharsSmall[(n % base)]);
-}
-
-static void vid_removeBIOSCursor(void) {
-	outb(0x3D4,14);
-	outb(0x3D5,0x07);
-	outb(0x3D4,15);
-	outb(0x3D5,0xd0);
 }

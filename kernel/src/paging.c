@@ -597,7 +597,13 @@ static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFr
 }
 
 static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
-	sPDEntry *pde = (sPDEntry*)pageDir + start;
+	sPDEntry *pde;
+
+	/* just if we use the default one */
+	if(pageDir == PAGE_DIR_AREA)
+		paging_mapPageDir();
+
+	pde = (sPDEntry*)pageDir + start;
 
 	ASSERT(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
 	ASSERT(start < PT_ENTRY_COUNT,"start >= PT_ENTRY_COUNT");

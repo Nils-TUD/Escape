@@ -9,6 +9,8 @@
 #include "../h/video.h"
 #include "../h/paging.h"
 #include <string.h>
+/* for offsetof() */
+#include <stddef.h>
 
 /* we need 6 entries: null-entry, code for kernel, data for kernel, user-code, user-data
  * and one entry for our TSS */
@@ -36,6 +38,11 @@
 /* privilege level */
 #define GDT_DPL_KERNEL			0
 #define GDT_DPL_USER			3
+
+/* the offset of the io-bitmap */
+#define IO_MAP_OFFSET			offsetof(sTSS,ioMap)
+/* an invalid offset for the io-bitmap => not loaded yet */
+#define IO_MAP_OFFSET_INVALID	sizeof(sTSS) + 16
 
 /* the GDT table */
 typedef struct {
@@ -159,7 +166,9 @@ typedef struct {
 	 * and interrupt redirection bitmap. When present, these maps are stored in the
 	 * TSS at higher addresses. The I/O map base address points to the beginning of the
 	 * I/O permission bit map and the end of the interrupt redirection bit map. */
-	u16 ioMapBaseAddr;
+	u16 ioMapOffset;
+	u8 ioMap[IO_MAP_SIZE / 8];
+	u8 ioMapEnd;
 } __attribute__((packed)) sTSS;
 
 /**
@@ -227,6 +236,9 @@ void gdt_init(void) {
 	/* tss */
 	tss.esp0 = KERNEL_STACK + PAGE_SIZE - 4;
 	tss.ss0 = 0x10;
+	/* init io-map */
+	tss.ioMapOffset = IO_MAP_OFFSET_INVALID;
+	tss.ioMapEnd = 0xFF;
 	gdt_set_tss_desc(5,(u32)&tss,sizeof(sTSS) - 1);
 
 	/*int i;
@@ -251,6 +263,19 @@ void gdt_init(void) {
 	 * Now our GDT is setup in the "right" way, so that 0xC0000000 will arrive at the MMU.
 	 * Therefore we can unmap the 0x0 area. */
 	paging_gdtFinished();
+}
+
+void tss_removeIOMap(void) {
+	tss.ioMapOffset = IO_MAP_OFFSET_INVALID;
+}
+
+bool tss_ioMapPresent(void) {
+	return tss.ioMapOffset != IO_MAP_OFFSET_INVALID;
+}
+
+void tss_setIOMap(u8 *ioMap) {
+	tss.ioMapOffset = IO_MAP_OFFSET;
+	memcpy(tss.ioMap,ioMap,IO_MAP_SIZE / 8);
 }
 
 static void gdt_set_tss_desc(u16 index,u32 address,u32 size) {

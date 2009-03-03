@@ -16,7 +16,7 @@
 #include "../h/kheap.h"
 #include <string.h>
 
-#define SYSCALL_COUNT 16
+#define SYSCALL_COUNT 18
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
@@ -142,25 +142,43 @@ static void sysc_mapPhysical(sSysCallStack *stack);
  * Releases the CPU (reschedule)
  */
 static void sysc_yield(sSysCallStack *stack);
+/**
+ * Requests some IO-ports
+ *
+ * @param u16 start-port
+ * @param u16 number of ports
+ * @return s32 0 if successfull or a negative error-code
+ */
+static void sys_requestIOPorts(sSysCallStack *stack);
+/**
+ * Releases some IO-ports
+ *
+ * @param u16 start-port
+ * @param u16 number of ports
+ * @return s32 0 if successfull or a negative error-code
+ */
+static void sys_releaseIOPorts(sSysCallStack *stack);
 
 /* our syscalls */
 static sSyscall syscalls[SYSCALL_COUNT] = {
-	/* 0 */		{sysc_getpid,		0},
-	/* 1 */		{sysc_getppid,		0},
-	/* 2 */ 	{sysc_debugc,		1},
-	/* 3 */		{sysc_fork,			0},
-	/* 4 */ 	{sysc_exit,			1},
-	/* 5 */ 	{sysc_open,			2},
-	/* 6 */ 	{sysc_close,		1},
-	/* 7 */ 	{sysc_read,			3},
-	/* 8 */		{sysc_regService,	1},
-	/* 9 */ 	{sysc_unregService,	0},
-	/* 10 */	{sysc_changeSize,	1},
-	/* 11 */	{sysc_mapPhysical,	2},
-	/* 12 */	{sysc_write,		3},
-	/* 13 */	{sysc_sendEOT,		1},
-	/* 14 */	{sysc_yield,		0},
-	/* 15 */	{sysc_waitForClient,1},
+	/* 0 */		{sysc_getpid,			0},
+	/* 1 */		{sysc_getppid,			0},
+	/* 2 */ 	{sysc_debugc,			1},
+	/* 3 */		{sysc_fork,				0},
+	/* 4 */ 	{sysc_exit,				1},
+	/* 5 */ 	{sysc_open,				2},
+	/* 6 */ 	{sysc_close,			1},
+	/* 7 */ 	{sysc_read,				3},
+	/* 8 */		{sysc_regService,		1},
+	/* 9 */ 	{sysc_unregService,		0},
+	/* 10 */	{sysc_changeSize,		1},
+	/* 11 */	{sysc_mapPhysical,		2},
+	/* 12 */	{sysc_write,			3},
+	/* 13 */	{sysc_sendEOT,			1},
+	/* 14 */	{sysc_yield,			0},
+	/* 15 */	{sysc_waitForClient,	1},
+	/* 16 */	{sys_requestIOPorts,	2},
+	/* 17 */	{sys_releaseIOPorts,	2},
 };
 
 void sysc_handle(sSysCallStack *stack) {
@@ -453,4 +471,42 @@ static void sysc_mapPhysical(sSysCallStack *stack) {
 
 static void sysc_yield(sSysCallStack *stack) {
 	proc_switch();
+}
+
+static void sys_requestIOPorts(sSysCallStack *stack) {
+	u16 start = stack->arg1;
+	u16 count = stack->arg2;
+
+	/* check range */
+	if(count == 0 || (u32)start + (u32)count > 0xFFFF) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	s32 err = proc_requestIOPorts(start,count);
+	if(err < 0) {
+		SYSC_ERROR(stack,err);
+		return;
+	}
+
+	SYSC_RET1(stack,0);
+}
+
+static void sys_releaseIOPorts(sSysCallStack *stack) {
+	u16 start = stack->arg1;
+	u16 count = stack->arg2;
+
+	/* check range */
+	if(count == 0 || (u32)start + (u32)count > 0xFFFF) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	s32 err = proc_releaseIOPorts(start,count);
+	if(err < 0) {
+		SYSC_ERROR(stack,err);
+		return;
+	}
+
+	SYSC_RET1(stack,0);
 }

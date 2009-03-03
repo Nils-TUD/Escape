@@ -76,6 +76,14 @@ void printLastError(void) {
 			debugf("The service-node is not your own!\n");
 			break;
 
+		case ERR_IO_MAP_RANGE_RESERVED:
+			debugf("The given io-port range is reserved!\n");
+			break;
+
+		case ERR_IOMAP_NOT_PRESENT:
+			debugf("The io-port-map is not present (have you reserved ports?)\n");
+			break;
+
 		default:
 			debugf("No error\n");
 			break;

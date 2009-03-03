@@ -36,7 +36,7 @@ struct sVFSNode {
 	union {
 		struct {
 			fRead readHandler;
-			u16 size;
+			u32 size;
 			void *cache;
 		} info;
 		sProc *proc;

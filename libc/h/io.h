@@ -14,6 +14,56 @@
 #define IO_WRITE	2
 
 /**
+ * Request the given IO-port
+ *
+ * @param port the port
+ * @return a negative error-code or 0 if successfull
+ */
+s32 requestIOPort(u16 port);
+
+/**
+ * Request the given IO-ports
+ *
+ * @param start the start-port
+ * @param count the number of ports to reserve
+ * @return a negative error-code or 0 if successfull
+ */
+s32 requestIOPorts(u16 start,u16 count);
+
+/**
+ * Releases the given IO-port
+ *
+ * @param port the port
+ * @return a negative error-code or 0 if successfull
+ */
+s32 releaseIOPort(u16 port);
+
+/**
+ * Releases the given IO-ports
+ *
+ * @param start the start-port
+ * @param count the number of ports to reserve
+ * @return a negative error-code or 0 if successfull
+ */
+s32 releaseIOPorts(u16 start,u16 count);
+
+/**
+ * Outputs the <val> to the I/O-Port <port>
+ *
+ * @param port the port
+ * @param val the value
+ */
+extern void outb(u16 port,u8 val);
+
+/**
+ * Reads the value from the I/O-Port <port>
+ *
+ * @param port the port
+ * @return the value
+ */
+extern u8 inb(u16 port);
+
+/**
  * Opens the given path with given mode and returns the associated file-descriptor
  *
  * @param path the path to open

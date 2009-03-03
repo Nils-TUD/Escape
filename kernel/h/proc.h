@@ -49,6 +49,8 @@ typedef struct {
 	sProcSave save;
 	/* file descriptors: indices of the global file table */
 	tFile fileDescs[MAX_FD_COUNT];
+	/* the io-map (NULL by default) */
+	u8 *ioMap;
 	/* a bitfield with signals the process should get
 	u16 signals; */
 } sProc;
@@ -100,6 +102,24 @@ sProc *proc_getByPid(tPid pid);
  * Switches to another process
  */
 void proc_switch(void);
+
+/**
+ * Requests some IO-ports for the current process
+ *
+ * @param start the start-port
+ * @param count the number of ports
+ * @return the error-code or 0
+ */
+s32 proc_requestIOPorts(u16 start,u16 count);
+
+/**
+ * Releases some IO-ports for the current process
+ *
+ * @param start the start-port
+ * @param count the number of ports
+ * @return the error-code or 0
+ */
+s32 proc_releaseIOPorts(u16 start,u16 count);
 
 /**
  * Returns the file-number for the given file-descriptor

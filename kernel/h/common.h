@@ -73,6 +73,8 @@ typedef enum {false = 0, true = 1} bool;
 #define ERR_PROC_DUP_SERVICE_USE	-14
 #define ERR_SERVICE_NOT_IN_USE		-15
 #define ERR_NOT_OWN_SERVICE			-16
+#define ERR_IO_MAP_RANGE_RESERVED	-17
+#define ERR_IOMAP_NOT_PRESENT		-18
 
 /* debugging */
 #define DBG_PGCLONEPD(s)

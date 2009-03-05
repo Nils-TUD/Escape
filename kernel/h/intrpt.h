@@ -218,6 +218,27 @@ extern bool intrpt_setEnabled(bool enabled);
 void intrpt_init(void);
 
 /**
+ * Adds a listener for the given IRQ-number. That means the given vfs-node will be notified
+ * with the given message as soon as the given interrupt occurs.
+ *
+ * @param irq the irq-number
+ * @param node the vfs-node
+ * @param message the message to send
+ * @param msgLen the length of the message (in bytes)
+ * @return 0 on success or the negative error-code
+ */
+s32 intrpt_addListener(u16 irq,void *node,void *message,u32 msgLen);
+
+/**
+ * Removes the listener for the given node and IRQ
+ *
+ * @param irq the irq-number
+ * @param node the vfs-node
+ * @return 0 on success or the negative error-code
+ */
+s32 intrpt_removeListener(u16 irq,void *node);
+
+/**
  * Handles an interrupt
  *
  * @param number the interrupt-number

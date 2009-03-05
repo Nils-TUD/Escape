@@ -75,6 +75,9 @@ typedef enum {false = 0, true = 1} bool;
 #define ERR_NOT_OWN_SERVICE			-16
 #define ERR_IO_MAP_RANGE_RESERVED	-17
 #define ERR_IOMAP_NOT_PRESENT		-18
+#define ERR_INTRPT_LISTENER_MSGLEN	-19
+#define ERR_INVALID_IRQ_NUMBER		-20
+#define ERR_IRQ_LISTENER_MISSING	-21
 
 /* debugging */
 #define DBG_PGCLONEPD(s)

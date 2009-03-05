@@ -53,6 +53,13 @@ typedef struct {
 } sVFSNodePub;
 
 /**
+ * Closes the given GFT-entry
+ *
+ * @param e the gft-entry
+ */
+static void vfs_closeFileImpl(sGFTEntry *e);
+
+/**
  * Requests a new node and returns the pointer to it. Panics if there are no free nodes anymore.
  *
  * @return the pointer to the node
@@ -111,6 +118,16 @@ static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count);
  * @return the number of read bytes
  */
 static s32 vfs_serviceUseReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+
+/**
+ * Creates and appends a (incomplete) node
+ *
+ * @param parent the parent-node
+ * @param prev the previous node
+ * @param name the node-name
+ * @return the node
+ */
+static sVFSNode *vfs_createNodeAppend(sVFSNode *parent,string name);
 
 /**
  * Creates a (incomplete) node
@@ -208,6 +225,11 @@ bool vfs_isValidNodeNo(tVFSNodeNo nodeNo) {
 	if(IS_VIRT(nodeNo))
 		return VIRT_INDEX(nodeNo) < NODE_COUNT;
 	return nodeNo < NODE_COUNT;
+}
+
+bool vfs_isOwnServiceNode(sVFSNode *node) {
+	sProc *p = proc_getRunning();
+	return node->data.proc == p && node->type == T_SERVICE;
 }
 
 sVFSNode *vfs_getNode(tVFSNodeNo nodeNo) {
@@ -448,13 +470,19 @@ s32 vfs_readFile(tFD fd,u8 *buffer,u32 count) {
 	return readBytes;
 }
 
+bool vfs_isFileLocked(tPid pid,tFile f) {
+	sGFTEntry *e = globalFileTable + f;
+	if(IS_VIRT(e->nodeNo)) {
+		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
+		sVFSNode *n = nodes + i;
+		return n->activeMode != 0 && n->activePid != pid;
+	}
+	return false;
+}
+
 s32 vfs_writeFile(tFD fd,u8 *buffer,u32 count) {
-	s32 writtenBytes;
-	sGFTEntry *e;
-	void *oldCache;
-	sVFSNode *n;
-	u32 size;
 	tFile fileNo = proc_fdToFile(fd);
+	sProc *p = proc_getRunning();
 	if(fileNo < 0)
 		return fileNo;
 
@@ -462,8 +490,18 @@ s32 vfs_writeFile(tFD fd,u8 *buffer,u32 count) {
 	if(fileNo >= FILE_COUNT)
 		return ERR_INVALID_FILE;
 
+	return vfs_writeFileGFT(p->pid,fileNo,buffer,count);
+}
+
+s32 vfs_writeFileGFT(tPid pid,tFile f,u8 *buffer,u32 count) {
+	s32 writtenBytes;
+	sGFTEntry *e;
+	void *oldCache;
+	sVFSNode *n;
+	u32 size;
+
 	/* not in use? */
-	e = globalFileTable + fileNo;
+	e = globalFileTable + f;
 	if(e->flags == 0)
 		return ERR_INVALID_FILE;
 
@@ -473,14 +511,13 @@ s32 vfs_writeFile(tFD fd,u8 *buffer,u32 count) {
 	if(IS_VIRT(e->nodeNo)) {
 		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
 		n = nodes + i;
-		sProc *p = proc_getRunning();
 
 		/* node not present anymore? */
 		if(n->name == NULL)
 			return ERR_INVALID_FILE;
 
 		/* node locked? */
-		if(n->activeMode != VFS_WRITE || n->activePid != p->pid) {
+		if(n->activeMode != VFS_WRITE || n->activePid != pid) {
 			/* wait until it is unlocked */
 			while(n->activeMode != 0) {
 				proc_switch();
@@ -490,14 +527,14 @@ s32 vfs_writeFile(tFD fd,u8 *buffer,u32 count) {
 		/* lock node, if unlocked */
 		if(n->type == T_SERVUSE && n->activeMode == 0) {
 			n->activeMode = VFS_WRITE;
-			n->activePid = p->pid;
+			n->activePid = pid;
 		}
 
 		oldCache = n->data.info.cache;
 
 		/* need to create cache? */
 		if(n->data.info.cache == NULL) {
-			size = MAX(count,VFS_INITIAL_WRITECACHE);
+			size = count;/*MAX(count,VFS_INITIAL_WRITECACHE);*/
 			n->data.info.cache = kheap_alloc(size);
 			if(n->data.info.cache == NULL)
 				goto notEnoughMem;
@@ -542,8 +579,8 @@ notEnoughMem:
 }
 
 s32 vfs_sendEOT(tFD fd) {
-	sGFTEntry *e;
 	tFile fileNo = proc_fdToFile(fd);
+	sProc *p = proc_getRunning();
 	if(fileNo < 0)
 		return fileNo;
 
@@ -551,21 +588,26 @@ s32 vfs_sendEOT(tFD fd) {
 	if(fileNo >= FILE_COUNT)
 		return ERR_INVALID_FILE;
 
+	return vfs_sendEOTGFT(p->pid,fileNo);
+}
+
+s32 vfs_sendEOTGFT(tPid pid,tFile f) {
+	sGFTEntry *e;
+
 	/* not in use? */
-	e = globalFileTable + fileNo;
+	e = globalFileTable + f;
 	if(e->flags == 0)
 		return ERR_INVALID_FILE;
 
 	if(IS_VIRT(e->nodeNo)) {
 		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
 		sVFSNode *n = nodes + i;
-		sProc *p = proc_getRunning();
 
 		/* node not present anymore? */
 		if(n->name == NULL)
 			return ERR_INVALID_FILE;
 
-		if(n->activeMode != 0 && n->activePid == p->pid) {
+		if(n->activeMode != 0 && n->activePid == pid) {
 			/* free cache, if reading is finished */
 			if(n->activeMode == VFS_READ && n->data.info.cache != NULL) {
 				kheap_free(n->data.info.cache);
@@ -604,6 +646,10 @@ void vfs_closeFile(tFD fd) {
 
 	/* not in use? */
 	e = globalFileTable + fileNo;
+	vfs_closeFileImpl(e);
+}
+
+static void vfs_closeFileImpl(sGFTEntry *e) {
 	if(e->flags == 0)
 		return;
 
@@ -655,13 +701,13 @@ void vfs_closeFile(tFD fd) {
 	}
 }
 
-s32 vfs_createService(sProc *p,cstring name) {
+s32 vfs_createService(tPid pid,cstring name) {
 	sVFSNode *serv = SERVICES();
 	sVFSNode *n = serv->firstChild;
+	sProc *p = proc_getByPid(pid);
 	u32 len;
 	string hname;
 
-	ASSERT(p != NULL,"p == NULL");
 	ASSERT(name != NULL,"name == NULL");
 
 	/* we don't want to have exotic service-names */
@@ -693,6 +739,42 @@ s32 vfs_createService(sProc *p,cstring name) {
 	/* failed, so cleanup */
 	kheap_free(hname);
 	return ERR_NOT_ENOUGH_MEM;
+}
+
+s32 vfs_openIntrptMsgNode(sVFSNode *node) {
+	sVFSNode *n = NODE_FIRST_CHILD(node);
+	s32 err;
+	tFD fd;
+
+	/* not not already present? */
+	if(n == NULL || strcmp(n->name,"k") != 0) {
+		n = vfs_createNode(node,"k");
+		if(n == NULL)
+			return NULL;
+
+		/* init node */
+		n->type = T_SERVUSE;
+		n->flags = VFS_READ | VFS_WRITE;
+		n->data.info.readHandler = &vfs_serviceUseReadHandler;
+
+		/* insert as first child */
+		n->prev = NULL;
+		n->next = node->firstChild;
+		node->firstChild = n;
+		if(node->lastChild == NULL)
+			node->lastChild = n;
+		n->parent = node;
+	}
+
+	/* open the file and return it */
+	/* we don't need the file-descriptor here */
+	err = vfs_openFile(VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n),&fd);
+	return err;
+}
+
+void vfs_closeIntrptMsgNode(tFile f) {
+	sGFTEntry *e = vfs_getFile(f);
+	vfs_closeFileImpl(e);
 }
 
 s32 vfs_waitForClient(tVFSNodeNo no) {
@@ -955,6 +1037,12 @@ static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	return byteCount;
 }
 
+static sVFSNode *vfs_createNodeAppend(sVFSNode *parent,string name) {
+	sVFSNode *node = vfs_createNode(parent,name);
+	vfs_appendChild(parent,node);
+	return node;
+}
+
 static sVFSNode *vfs_createNode(sVFSNode *parent,string name) {
 	sVFSNode *node;
 
@@ -976,20 +1064,18 @@ static sVFSNode *vfs_createNode(sVFSNode *parent,string name) {
 	node->data.info.cache = NULL;
 	node->data.info.size = 0;
 	node->activeMode = 0;
-
-	vfs_appendChild(parent,node);
 	return node;
 }
 
 static sVFSNode *vfs_createDir(sVFSNode *parent,string name) {
-	sVFSNode *node = vfs_createNode(parent,name);
+	sVFSNode *node = vfs_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
-	sVFSNode *dot = vfs_createNode(node,(string)".");
+	sVFSNode *dot = vfs_createNodeAppend(node,(string)".");
 	if(dot == NULL)
 		return NULL;
-	sVFSNode *dotdot = vfs_createNode(node,(string)"..");
+	sVFSNode *dotdot = vfs_createNodeAppend(node,(string)"..");
 	if(dotdot == NULL)
 		return NULL;
 
@@ -1004,7 +1090,7 @@ static sVFSNode *vfs_createDir(sVFSNode *parent,string name) {
 }
 
 static sVFSNode *vfs_createInfo(sVFSNode *parent,string name,fRead handler) {
-	sVFSNode *node = vfs_createNode(parent,name);
+	sVFSNode *node = vfs_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
@@ -1015,7 +1101,7 @@ static sVFSNode *vfs_createInfo(sVFSNode *parent,string name,fRead handler) {
 }
 
 static sVFSNode *vfs_createServiceNode(sVFSNode *parent,string name) {
-	sVFSNode *node = vfs_createNode(parent,name);
+	sVFSNode *node = vfs_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
@@ -1058,7 +1144,7 @@ static s32 vfs_createServiceUse(sVFSNode *n,sVFSNode **child) {
 }
 
 static sVFSNode *vfs_createServiceUseNode(sVFSNode *parent,string name) {
-	sVFSNode *node = vfs_createNode(parent,name);
+	sVFSNode *node = vfs_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 

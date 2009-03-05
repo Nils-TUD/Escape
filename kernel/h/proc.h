@@ -219,6 +219,11 @@ bool proc_changeSize(s32 change,eChgArea area);
 #if DEBUGGING
 
 /**
+ * Prints all existing processes
+ */
+void proc_dbg_printAll(void);
+
+/**
  * Prints the given process
  *
  * @param p the pointer to the process

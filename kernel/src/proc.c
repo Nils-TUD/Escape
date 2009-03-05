@@ -500,6 +500,14 @@ static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
+void proc_dbg_printAll(void) {
+	u32 i;
+	for(i = 0; i < PROC_COUNT; i++) {
+		if(procs[i].state != ST_UNUSED)
+			proc_dbg_print(procs + i);
+	}
+}
+
 void proc_dbg_print(sProc *p) {
 	u32 i;
 	vid_printf("process @ 0x%08x:\n",p);

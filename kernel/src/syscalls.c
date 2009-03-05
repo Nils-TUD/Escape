@@ -16,7 +16,7 @@
 #include <video.h>
 #include <string.h>
 
-#define SYSCALL_COUNT 20
+#define SYSCALL_COUNT 22
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
@@ -139,6 +139,24 @@ static void sysc_unregService(sSysCallStack *stack);
  */
 static void sysc_waitForClient(sSysCallStack *stack);
 /**
+ * Adds an interrupt-listener (for services)
+ *
+ * @param s32 the node-id
+ * @param u16 the irq-number
+ * @param void* the message
+ * @param u32 the message-length
+ * @return s32 0 on success or a negative error-code
+ */
+static void sysc_addIntrptListener(sSysCallStack *stack);
+/**
+ * Removes an interrupt-listener (for services)
+ *
+ * @param s32 the node-id
+ * @param u16 the irq-number
+ * @return s32 0 on success or a negative error-code
+ */
+static void sysc_remIntrptListener(sSysCallStack *stack);
+/**
  * Changes the process-size
  *
  * @param u32 number of pages
@@ -176,26 +194,28 @@ static void sys_releaseIOPorts(sSysCallStack *stack);
 
 /* our syscalls */
 static sSyscall syscalls[SYSCALL_COUNT] = {
-	/* 0 */		{sysc_getpid,			0},
-	/* 1 */		{sysc_getppid,			0},
-	/* 2 */ 	{sysc_debugc,			1},
-	/* 3 */		{sysc_fork,				0},
-	/* 4 */ 	{sysc_exit,				1},
-	/* 5 */ 	{sysc_open,				2},
-	/* 6 */ 	{sysc_close,			1},
-	/* 7 */ 	{sysc_read,				3},
-	/* 8 */		{sysc_regService,		1},
-	/* 9 */ 	{sysc_unregService,		0},
-	/* 10 */	{sysc_changeSize,		1},
-	/* 11 */	{sysc_mapPhysical,		2},
-	/* 12 */	{sysc_write,			3},
-	/* 13 */	{sysc_sendEOT,			1},
-	/* 14 */	{sysc_yield,			0},
-	/* 15 */	{sysc_waitForClient,	1},
-	/* 16 */	{sys_requestIOPorts,	2},
-	/* 17 */	{sys_releaseIOPorts,	2},
-	/* 18 */	{sysc_dupFd,			1},
-	/* 19 */	{sysc_redirFd,			2},
+	/* 0 */		{sysc_getpid,				0},
+	/* 1 */		{sysc_getppid,				0},
+	/* 2 */ 	{sysc_debugc,				1},
+	/* 3 */		{sysc_fork,					0},
+	/* 4 */ 	{sysc_exit,					1},
+	/* 5 */ 	{sysc_open,					2},
+	/* 6 */ 	{sysc_close,				1},
+	/* 7 */ 	{sysc_read,					3},
+	/* 8 */		{sysc_regService,			1},
+	/* 9 */ 	{sysc_unregService,			0},
+	/* 10 */	{sysc_changeSize,			1},
+	/* 11 */	{sysc_mapPhysical,			2},
+	/* 12 */	{sysc_write,				3},
+	/* 13 */	{sysc_sendEOT,				1},
+	/* 14 */	{sysc_yield,				0},
+	/* 15 */	{sysc_waitForClient,		1},
+	/* 16 */	{sys_requestIOPorts,		2},
+	/* 17 */	{sys_releaseIOPorts,		2},
+	/* 18 */	{sysc_dupFd,				1},
+	/* 19 */	{sysc_redirFd,				2},
+	/* 20 */	{sysc_addIntrptListener,	4},
+	/* 21 */	{sysc_remIntrptListener,	2},
 };
 
 void sysc_handle(sSysCallStack *stack) {
@@ -377,7 +397,7 @@ static void sysc_regService(sSysCallStack *stack) {
 	sProc *p = proc_getRunning();
 	s32 res;
 
-	res = vfs_createService(p,(cstring)stack->arg1);
+	res = vfs_createService(p->pid,(cstring)stack->arg1);
 	if(res < 0) {
 		SYSC_ERROR(stack,res);
 		return;
@@ -390,7 +410,6 @@ static void sysc_regService(sSysCallStack *stack) {
 
 static void sysc_unregService(sSysCallStack *stack) {
 	tVFSNodeNo no = stack->arg1;
-	sProc *p = proc_getRunning();
 	s32 err;
 
 	/* check node-number */
@@ -426,6 +445,70 @@ static void sysc_waitForClient(sSysCallStack *stack) {
 	}
 
 	SYSC_RET1(stack,res);
+}
+
+static void sysc_addIntrptListener(sSysCallStack *stack) {
+	s32 id = (s32)stack->arg1;
+	u16 irq = (u16)stack->arg2;
+	void *msg = (void*)stack->arg3;
+	u32 msgLen = stack->arg4;
+	sVFSNode *node;
+	s32 err;
+
+	/* check id */
+	if(!vfs_isValidNodeNo(id)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	node = vfs_getNode((tVFSNodeNo)id);
+	if(!vfs_isOwnServiceNode(node)) {
+		SYSC_ERROR(stack,ERR_NOT_OWN_SERVICE);
+		return;
+	}
+
+	/* check msg */
+	if(msgLen == 0 || !paging_isRangeUserReadable((u32)msg,msgLen)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	/* now add the listener */
+	err = intrpt_addListener(irq,node,msg,msgLen);
+	if(err < 0) {
+		SYSC_ERROR(stack,err);
+		return;
+	}
+
+	SYSC_RET1(stack,err);
+}
+
+static void sysc_remIntrptListener(sSysCallStack *stack) {
+	s32 id = (s32)stack->arg1;
+	u16 irq = (u16)stack->arg2;
+	sVFSNode *node;
+	s32 err;
+
+	/* check id */
+	if(!vfs_isValidNodeNo(id)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	node = vfs_getNode((tVFSNodeNo)id);
+	if(!vfs_isOwnServiceNode(node)) {
+		SYSC_ERROR(stack,ERR_NOT_OWN_SERVICE);
+		return;
+	}
+
+	/* now remove the listener */
+	err = intrpt_removeListener(irq,node);
+	if(err < 0) {
+		SYSC_ERROR(stack,err);
+		return;
+	}
+
+	SYSC_RET1(stack,err);
 }
 
 static void sysc_changeSize(sSysCallStack *stack) {

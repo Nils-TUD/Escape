@@ -8,8 +8,6 @@
 #define DEBUG_H_
 
 #include "common.h"
-#include "paging.h"
-#include "proc.h"
 
 /**
  * Starts the timer

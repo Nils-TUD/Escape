@@ -69,6 +69,14 @@ void vfs_init(void);
 bool vfs_isValidNodeNo(tVFSNodeNo nodeNo);
 
 /**
+ * Checks wether the given node is a service-node and belongs to the current process
+ *
+ * @param node the node
+ * @return true if so
+ */
+bool vfs_isOwnServiceNode(sVFSNode *node);
+
+/**
  * @param nodeNo the node-number
  * @return the node for given index
  */
@@ -122,6 +130,14 @@ s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd);
 s32 vfs_readFile(tFD fd,u8 *buffer,u32 count);
 
 /**
+ * Checks wether the given file is locked by a different pid
+ *
+ * @param pid the pid to check
+ * @param f the file
+ */
+bool vfs_isFileLocked(tPid pid,tFile f);
+
+/**
  * Writes count bytes from the given buffer into the given fd and returns the number of written
  * bytes.
  *
@@ -133,6 +149,17 @@ s32 vfs_readFile(tFD fd,u8 *buffer,u32 count);
 s32 vfs_writeFile(tFD fd,u8 *buffer,u32 count);
 
 /**
+ * Same as vfs_writeFile, but without file-descriptor
+ *
+ * @param pid the pid to use for locking
+ * @param f the file
+ * @param buffer the buffer to read from
+ * @param count the number of bytes to write
+ * @return the number of bytes written
+ */
+s32 vfs_writeFileGFT(tPid pid,tFile f,u8 *buffer,u32 count);
+
+/**
  * Sends an "End-Of-Transfer" for the given file-descriptor. This will release the lock for
  * service-usages so that the other side can start working.
  *
@@ -140,6 +167,15 @@ s32 vfs_writeFile(tFD fd,u8 *buffer,u32 count);
  * @return the negative error-code or 0
  */
 s32 vfs_sendEOT(tFD fd);
+
+/**
+ * Same as vfs_sendEOT, but without file-descriptor
+ *
+ * @param pid the pid to use for locking
+ * @param f the file
+ * @return the negative error-code or 0
+ */
+s32 vfs_sendEOTGFT(tPid pid,tFile f);
 
 /**
  * Closes the given fd. That means it calls proc_closeFile() and decrements the reference-count
@@ -152,11 +188,26 @@ void vfs_closeFile(tFD fd);
 /**
  * Creates a service-node for the given process and given name
  *
- * @param p the process
+ * @param pid the process-id
  * @param name the service-name
  * @return 0 if ok, negative if an error occurred
  */
-s32 vfs_createService(sProc *p,cstring name);
+s32 vfs_createService(tPid pid,cstring name);
+
+/**
+ * Opens a file for the interrupt-message-sending. Creates a node for it, if not already done
+ *
+ * @param node the service-node
+ * @return the file-number or a negative error-code
+ */
+s32 vfs_openIntrptMsgNode(sVFSNode *node);
+
+/**
+ * Closes the given file for interrupt-message-sending. Removes the node, if no longer used
+ *
+ * @param f the file
+ */
+void vfs_closeIntrptMsgNode(tFile f);
 
 /**
  * For services: Waits until a clients wants to be served and returns a file-descriptor

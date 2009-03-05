@@ -4,10 +4,8 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/debug.h"
 #include "../h/common.h"
-#include "../h/paging.h"
-#include "../h/proc.h"
+#include "../h/debug.h"
 #include "../h/cpu.h"
 #include <video.h>
 

@@ -21,6 +21,8 @@ SYSCALL_REQIOPORTS	equ 16
 SYSCALL_RELIOPORTS	equ 17
 SYSCALL_DUPFD				equ	18
 SYSCALL_REDIRFD			equ 19
+SYSCALL_ADDINTRPTL	equ 20
+SYSCALL_REMINTRPTL	equ 21
 
 ; the IRQ for syscalls
 SYSCALL_IRQ					equ	0x30
@@ -136,6 +138,35 @@ SYSCALL_IRQ					equ	0x30
 %1NoError:
 	pop		eax
 	add		esp,8
+%1Ret:
+	leave
+	ret
+%endmacro
+
+%macro SYSC_RET_4ARGS_ERR 2
+[global %1]
+%1:
+	push	ebp
+	mov		ebp,esp
+	mov		eax,[ebp + 20]				; push arg4
+	push	eax
+	mov		eax,[ebp + 16]				; push arg3
+	push	eax
+	mov		eax,[ebp + 12]				; push arg2
+	push	eax
+	mov		eax,[ebp + 8]					; push arg1
+	push	eax
+	push	DWORD %2							; push syscall-number
+	int		SYSCALL_IRQ
+	pop		eax										; pop error-code
+	test	eax,eax
+	jz		%1NoError							; no-error?
+	mov		[lastError],eax				; store error-code
+	add		esp,16
+	jmp		%1Ret
+%1NoError:
+	pop		eax
+	add		esp,12
 %1Ret:
 	leave
 	ret

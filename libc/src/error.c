@@ -84,6 +84,18 @@ void printLastError(void) {
 			debugf("The io-port-map is not present (have you reserved ports?)\n");
 			break;
 
+		case ERR_INTRPT_LISTENER_MSGLEN:
+			debugf("The length of the interrupt-notify-message is too long!\n");
+			break;
+
+		case ERR_INVALID_IRQ_NUMBER:
+			debugf("The given IRQ-number is invalid!\n");
+			break;
+
+		case ERR_IRQ_LISTENER_MISSING:
+			debugf("The IRQ-listener is not present!\n");
+			break;
+
 		default:
 			debugf("No error\n");
 			break;

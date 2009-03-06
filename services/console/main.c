@@ -46,6 +46,7 @@ s32 main(void) {
 	else
 		vid_printf("Reserved IO-port 0x60\n");
 
+	u32 msgCount = 0;
 	static sConsoleMsg msg;
 	while(1) {
 		s32 fd = waitForClient(id);
@@ -68,8 +69,15 @@ s32 main(void) {
 					else if(msg.id == CONSOLE_MSG_OUT) {
 						s8 *readBuf = malloc(msg.length * sizeof(s8));
 						read(fd,readBuf,msg.length);
-						vid_printf("Read (%d): %s\n",x,readBuf);
 						free(readBuf);
+						/*vid_printf("Read (%d, %d bytes): %s\n",x,msg.length,readBuf);*/
+						msgCount++;
+						if(msgCount % 1000 == 0)
+							vid_printf("Got %d messages\n",msgCount);
+						/*s8 *readBuf = malloc(msg.length * sizeof(s8));
+						read(fd,readBuf,msg.length);
+						vid_printf("Read (%d, %d bytes): %s\n",x,msg.length,readBuf);
+						free(readBuf);*/
 					}
 					else if(msg.id == CONSOLE_MSG_IN) {
 

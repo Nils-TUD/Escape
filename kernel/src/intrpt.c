@@ -436,32 +436,8 @@ static void intrpt_handleListener(u16 irq,sSLList *list) {
 	for(node = sll_begin(list); node != NULL; node = node->next) {
 		l = (sIntrptListener*)node->data;
 		while(l->pending > 0) {
-			/* Note that we lock with (PROC_COUNT + irq) because it is an invalid-pid and
-			 * even more important: we won't get the same interrupt while handling it. But
-			 * it may be possible to get another one. If a service has added a listener for
-			 * both of them and we're writing to the node in the first interrupt, the second
-			 * one would destroy the state. Therefore we lock with the irq-number which is
-			 * different.
-			 * TODO correct? :)
-			 */
-
-			/* TODO interrupts are disabled while handling an interrupts. So atm the stuff here
-			 * is overkill... */
-
-			/* disable interrupts while checking the lock */
-			oldState = intrpt_setEnabled(false);
-			/* file locked? so break here and try it again next time */
-			if(vfs_isFileLocked(PROC_COUNT + irq,l->file)) {
-				intrptsPending = true;
-				break;
-			}
-			/* reenable interrupts */
-			intrpt_setEnabled(oldState);
-
-			/* send message */
-			vfs_writeFileGFT(PROC_COUNT + irq,l->file,l->message,MSG_MAX_LEN);
-			/* mark ready */
-			vfs_sendEOTGFT(PROC_COUNT + irq,l->file);
+			/* send message (use PROC_COUNT to write to the service) */
+			vfs_writeFile(PROC_COUNT,vfs_getFile(l->file),l->message,MSG_MAX_LEN);
 			l->pending--;
 		}
 	}
@@ -469,11 +445,10 @@ static void intrpt_handleListener(u16 irq,sSLList *list) {
 
 void intrpt_handler(sIntrptStackFrame stack) {
 	sProc *p;
+	/*u32 syscallNo = ((sSysCallStack*)stack.uesp)->number;*/
 
 	kmodeStart = cpu_rdtsc();
 	umodeTime += kmodeStart - kmodeEnd;
-
-	ASSERT(stack.ds == 0x23,"Interrupt from kernel-mode!");
 
 	/* check if we have listeners for this interrupt */
 	if(stack.intrptNo >= IRQ_MASTER_BASE && stack.intrptNo < IRQ_MASTER_BASE + IRQ_NUM) {
@@ -620,6 +595,10 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 	kmodeEnd = cpu_rdtsc();
 	kmodeTime += kmodeEnd - kmodeStart;
+	/*if((u32)(kmodeEnd - kmodeStart) > 2000000)
+		vid_printf("SLOW(%d) %d %d\n",(u32)(kmodeEnd - kmodeStart),stack.intrptNo,syscallNo);
+	else
+		vid_printf("FAST(%d) %d %d\n",(u32)(kmodeEnd - kmodeStart),stack.intrptNo,syscallNo);*/
 }
 
 static void intrpt_initPic(void) {

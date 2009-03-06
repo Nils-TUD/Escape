@@ -9,7 +9,6 @@
 
 #include "../h/common.h"
 #include "../h/proc.h"
-#include <sllist.h>
 
 /* the possible node-types */
 typedef enum {T_DIR,T_LINK,T_INFO,T_SERVICE,T_SERVUSE} eNodeType;
@@ -40,8 +39,15 @@ struct sVFSNode {
 		} service;
 		/* for service-usages */
 		struct {
-			sSLList *sendList;
-			sSLList *recvList;
+			u16 readPos;
+			/* send channel */
+			u16 sendChanSize;	/* size of the buffer */
+			u16 sendChanPos;	/* currently used size */
+			void *sendChan;
+			/* receive channel */
+			u16 recvChanSize;	/* size of the buffer */
+			u16 recvChanPos;	/* currently used size */
+			void *recvChan;
 		} servuse;
 		/* for all other nodes-types */
 		struct {

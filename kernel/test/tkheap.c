@@ -31,7 +31,7 @@ sTestModule tModKHeap = {
 	&test_kheap
 };
 
-#define SINGLE_BYTE_COUNT 50000
+#define SINGLE_BYTE_COUNT 100000
 u32 *ptrsSingle[SINGLE_BYTE_COUNT];
 
 u32 sizes[] = {1,4,10,1023,1024,1025,2048,4097};

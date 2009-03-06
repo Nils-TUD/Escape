@@ -230,7 +230,16 @@ bool paging_isMapped(u32 virtual);
 bool paging_isRangeUserReadable(u32 virtual,u32 count);
 
 /**
- * Checks wether the given address-range is currently readable for the user.
+ * Checks wether the given address-range is currently readable
+ *
+ * @param virtual the start-address
+ * @param count the number of bytes
+ * @return true if so
+ */
+bool paging_isRangeReadable(u32 virtual,u32 count);
+
+/**
+ * Checks wether the given address-range is currently writable for the user.
  * Note that the function handles copy-on-write if necessary. So you can be sure that you
  * can write to the page(s) after calling the function.
  *
@@ -239,6 +248,17 @@ bool paging_isRangeUserReadable(u32 virtual,u32 count);
  * @return true if so
  */
 bool paging_isRangeUserWritable(u32 virtual,u32 count);
+
+/**
+ * Checks wether the given address-range is currently writable.
+ * Note that the function handles copy-on-write if necessary. So you can be sure that you
+ * can write to the page(s) after calling the function.
+ *
+ * @param virtual the start-address
+ * @param count the number of bytes
+ * @return true if so
+ */
+bool paging_isRangeWritable(u32 virtual,u32 count);
 
 /**
  * Determines the frame-number for the given virtual-address. This should not be used
@@ -346,6 +366,11 @@ bool paging_dbg_isPTEmpty(sPTEntry *pt);
  * @return the number of present pages
  */
 u32 paging_dbg_getPTEntryCount(sPTEntry *pt);
+
+/**
+ * Prints the page-directory part that is occupied by the heap
+ */
+void paging_dbg_printHeap(void);
 
 /**
  * Prints the current page-directory

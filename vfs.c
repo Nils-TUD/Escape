@@ -1,5 +1,5 @@
 /**
- * @version		$Id$
+ * @version		$Id: vfs.c 106 2009-03-05 10:46:13Z nasmussen $
  * @author		Nils Asmussen <nils@script-solution.de>
  * @copyright	2008 Nils Asmussen
  */
@@ -12,7 +12,6 @@
 #include "../h/sched.h"
 #include <video.h>
 #include <string.h>
-#include <sllist.h>
 
 /*
  * dirs: /, /fs, /system, /system/processes, /system/services
@@ -413,6 +412,8 @@ s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd) {
 					if(IS_VIRT(nodeNo)) {
 						sVFSNode *n = nodes + VIRT_INDEX(nodeNo);
 						n->refCount++;
+						if(n->type == T_SERVUSE)
+							e->position = n->data.servuse.readPos;
 					}
 					e->refCount++;
 					*fd = res;
@@ -421,12 +422,8 @@ s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd) {
 			}
 		}
 		/* remember free slot */
-		else if(freeSlot == ERR_NO_FREE_FD) {
+		else if(freeSlot == ERR_NO_FREE_FD)
 			freeSlot = i;
-			/* if we want to write we need our own file anyway */
-			if(write)
-				break;
-		}
 
 		e++;
 	}
@@ -441,6 +438,8 @@ s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd) {
 		if(IS_VIRT(nodeNo)) {
 			sVFSNode *n = nodes + VIRT_INDEX(nodeNo);
 			n->refCount++;
+			if(n->type == T_SERVUSE)
+				e->position = n->data.servuse.readPos;
 		}
 
 		e = &globalFileTable[freeSlot];
@@ -488,18 +487,8 @@ s32 vfs_readFile(sGFTEntry *e,u8 *buffer,u32 count) {
 		/* use the read-handler */
 		readBytes = n->readHandler(n,buffer,e->position,count);
 
-		if(n->type == T_SERVUSE) {
-			/* store position in first message */
-			if(readBytes < 0) {
-				readBytes = -readBytes;
-				e->position = 0;
-			}
-			else
-				e->position = readBytes;
-		}
-		else {
-			e->position += readBytes;
-		}
+		/* service-usages have always a read-position of 0 */
+		e->position += readBytes;
 	}
 	else {
 		/* TODO redirect to fs-service! */
@@ -546,6 +535,7 @@ void vfs_closeFile(sGFTEntry *e) {
 		if(IS_VIRT(e->nodeNo)) {
 			tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
 			sVFSNode *n = nodes + i;
+			sProc *p = proc_getRunning();
 
 			/* last usage? */
 			if(n->name != NULL && --(n->refCount) == 0) {
@@ -554,15 +544,14 @@ void vfs_closeFile(sGFTEntry *e) {
 					kheap_free(n->name);
 					vfs_removeChild(n->parent,n);
 
-					/* free send and receive list */
-					/* TODO free elements */
-					if(n->data.servuse.recvList != NULL) {
-						sll_destroy(n->data.servuse.recvList);
-						n->data.servuse.recvList = NULL;
+					/* free send and receive buffer */
+					if(n->data.servuse.recvChan != NULL) {
+						kheap_free(n->data.servuse.recvChan);
+						n->data.servuse.recvChan = NULL;
 					}
-					if(n->data.servuse.sendList != NULL) {
-						sll_destroy(n->data.servuse.sendList);
-						n->data.servuse.sendList = NULL;
+					if(n->data.servuse.sendChan != NULL) {
+						kheap_free(n->data.servuse.sendChan);
+						n->data.servuse.sendChan = NULL;
 					}
 				}
 				/* free cache, if present */
@@ -570,6 +559,12 @@ void vfs_closeFile(sGFTEntry *e) {
 					kheap_free(n->data.def.cache);
 					n->data.def.cache = NULL;
 				}
+			}
+			/* service ready? */
+			else if(p == n->parent->data.service.proc) {
+				/* so clean the pipe so that we start at the beginning next time */
+				vfs_cleanServicePipe(n,n->data.servuse.sendChan,
+						&(n->data.servuse.sendChanPos),e->position);
 			}
 		}
 		/* mark unused */
@@ -667,8 +662,8 @@ s32 vfs_waitForClient(tVFSNodeNo no) {
 		sched_dbg_print();*/
 		n = NODE_FIRST_CHILD(node);
 		while(n != NULL) {
-			/* data available? */
-			if(n->data.servuse.sendList != NULL && sll_length(n->data.servuse.sendList) > 0)
+			/* writing not in progress and data available? */
+			if(n->data.servuse.sendChan != NULL && n->data.servuse.sendChanPos > 0)
 				break;
 			n = n->next;
 		}
@@ -707,18 +702,10 @@ s32 vfs_removeService(tVFSNodeNo nodeNo) {
 		t = m->next;
 		/* free memory */
 		kheap_free(m->name);
-
-		/* free send and receive list */
-		/* TODO free elements */
-		if(m->data.servuse.recvList != NULL) {
-			sll_destroy(m->data.servuse.recvList);
-			m->data.servuse.recvList = NULL;
+		if(m->data.def.cache != NULL) {
+			kheap_free(m->data.def.cache);
+			m->data.def.cache = NULL;
 		}
-		if(m->data.servuse.sendList != NULL) {
-			sll_destroy(m->data.servuse.sendList);
-			m->data.servuse.sendList = NULL;
-		}
-
 		/* remove and release node */
 		vfs_removeChild(n,m);
 		vfs_releaseNode(m);
@@ -857,44 +844,81 @@ static void vfs_doPrintTree(u32 level,sVFSNode *parent) {
 	}
 }
 
-typedef struct {
-	u32 length;
-} sMessage;
-
 static s32 vfs_serviceUseReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
-	sSLList *list;
+	u32 byteCount;
+	u8 *cache,*end;
+	u16 size,*pos;
 	sProc *p = proc_getRunning();
-	sMessage *msg;
 
-	/* services reads from the send-list */
-	if(node->parent->data.service.proc == p)
-		list = node->data.servuse.sendList;
-	/* other processes read from the receive-list */
-	else
-		list = node->data.servuse.recvList;
-
-	/* list not present or empty? */
-	if(list == NULL || sll_length(list) == 0)
-		return 0;
-
-	/* get first element and copy data to buffer */
-	msg = sll_get(list,0);
-	offset = MIN(msg->length - 1,offset);
-	count = MIN(msg->length - offset,count);
-	/* the data is behind the message */
-	memcpy(buffer,(u8*)(msg + 1) + offset,count);
-
-	/* free data and remove element from list if the complete message has been read */
-	if(offset + count >= msg->length) {
-		/*dbg_startTimer();*/
-		kheap_free(msg);
-		/*dbg_stopTimer();*/
-		sll_removeIndex(list,0);
-		/* negative because we have read the complete msg */
-		return -count;
+	/* services reads from the send-channel */
+	if(node->parent->data.service.proc == p) {
+		cache = (u8*)node->data.servuse.sendChan;
+		size = node->data.servuse.sendChanSize;
+		pos = &(node->data.servuse.sendChanPos);
+	}
+	/* other processes read from the receive-channel */
+	else {
+		cache = (u8*)node->data.servuse.recvChan;
+		size = node->data.servuse.recvChanSize;
+		pos = &(node->data.servuse.recvChanPos);
 	}
 
-	return count;
+	/* cache not present? */
+	if(cache == NULL)
+		return 0;
+
+	if(offset > *pos)
+		offset = *pos;
+	byteCount = MIN(*pos - offset,count);
+	if(byteCount > 0) {
+		/* simply copy the data to the buffer */
+		memcpy(buffer,cache + offset,byteCount);
+
+		vfs_cleanServicePipe(node,cache,pos,offset + byteCount);
+		node->data.servuse.readPos = offset + byteCount;
+	}
+
+	return byteCount;
+}
+
+static void vfs_cleanServicePipe(sVFSNode *node,u8 *cache,u16 *pos,u32 offset) {
+	u8 *end;
+	if(offset >= 16384) {
+		/* now remove the just read data */
+		end = cache + *pos;
+		cache = cache + offset;
+		while(cache < end) {
+			*(cache - (offset)) = *cache;
+			cache++;
+		}
+
+		/* reduce the used size */
+		*pos -= offset;
+
+		/* now we have to reset the position of all files for this node */
+		u32 i,x;
+		tVFSNodeNo no = NADDR_TO_VNNO(node);
+		tPid pid = (tPid)atoi(node->name);
+		/* it is enough to search in the fds of the service and the service-using process */
+		sProc *procs[2] = {
+			proc_getByPid(pid),
+			node->parent->data.service.proc
+		};
+		sProc *p;
+		for(x = 0; x < 2; x++) {
+			p = procs[x];
+			for(i = 0; i < MAX_FD_COUNT; i++) {
+				if(p->fileDescs[i] != -1) {
+					sGFTEntry *e = vfs_getFile(p->fileDescs[i]);
+					/* TODO this does not work. we don't know wether the user reads or writes.. */
+					if(e->flags && e->nodeNo == no)
+						e->position = x == 1 ? 0 : *pos;
+				}
+			}
+		}
+
+		node->data.servuse.readPos = 0;
+	}
 }
 
 static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count) {
@@ -906,35 +930,19 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 
 	/* determine the cache to use */
 	if(n->type == T_SERVUSE) {
-		sSLList **list;
-		sMessage *msg;
-		/* services write to the receive-list (which will be read by other processes) */
+		/* services write to the receive-channel (which will be read by other processes) */
 		/* special-case: pid >= PROC_COUNT: the kernel wants to write to a service */
-		if(pid < PROC_COUNT && n->parent->data.service.proc->pid == pid)
-			list = &(n->data.servuse.recvList);
-		/* other processes write to the send-list (which will be read by the service) */
-		else
-			list = &(n->data.servuse.sendList);
-
-		if(*list == NULL)
-			*list = sll_create();
-
-		/* create message and copy data to it */
-		/*dbg_startTimer();*/
-		msg = kheap_alloc(sizeof(sMessage) + count * sizeof(u8));
-		if(msg == NULL)
-			return ERR_NOT_ENOUGH_MEM;
-
-		/*dbg_stopTimer();*/
-		msg->length = count;
-		memcpy(msg + 1,buffer,count);
-
-		/* append to list */
-		sll_append(*list,msg);
-
-		/* notify the service */
-		sched_setReady(n->parent->data.service.proc);
-		return count;
+		if(pid < PROC_COUNT && n->parent->data.service.proc->pid == pid) {
+			cachePtr = &(n->data.servuse.recvChan);
+			size = &(n->data.servuse.recvChanSize);
+			pos = &(n->data.servuse.recvChanPos);
+		}
+		/* other processes write to the send-channel (which will be read by the service) */
+		else {
+			cachePtr = &(n->data.servuse.sendChan);
+			size = &(n->data.servuse.sendChanSize);
+			pos = &(n->data.servuse.sendChanPos);
+		}
 	}
 	else {
 		/* use the default one */
@@ -983,15 +991,20 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 		/* we have checked size for overflow. so it is ok here */
 		*pos = MAX(*pos,offset + count);
 
+		/* if it is a service-usage, notify the service */
+		if(n->type == T_SERVUSE)
+			sched_setReady(n->parent->data.service.proc);
+
 		return count;
 	}
 
 	/* restore cache-ptr */
 	*cachePtr = oldCache;
 
-	/* make the service ready and hope that we choose them :)
+	/* make the service ready and hope that we choose them :) */
+	/* TODO we need a function to change to a specific process... */
 	sched_setReady(n->parent->data.service.proc);
-	proc_switch();*/
+	proc_switch();
 	return ERR_NOT_ENOUGH_MEM;
 }
 
@@ -1076,6 +1089,7 @@ static sVFSNode *vfs_createNode(sVFSNode *parent,string name) {
 	node->data.def.cache = NULL;
 	node->data.def.size = 0;
 	node->data.def.pos = 0;
+	node->data.servuse.readPos = 0;
 	return node;
 }
 
@@ -1217,8 +1231,12 @@ void vfs_dbg_printNode(sVFSNode *node) {
 		if(node->type == T_SERVICE)
 			vid_printf("\tProcess: 0x%x\n",node->data.service.proc);
 		else if(node->type == T_SERVUSE) {
-			vid_printf("\tSendList: 0x%x\n",node->data.servuse.sendList);
-			vid_printf("\tRecvList: 0x%x\n",node->data.servuse.recvList);
+			vid_printf("\tSendChan: 0x%x\n",node->data.servuse.sendChan);
+			vid_printf("\tSendChanSize: %d\n",node->data.servuse.sendChanSize);
+			vid_printf("\tSendChanPos: %d\n",node->data.servuse.sendChanPos);
+			vid_printf("\tRecvChan: 0x%x\n",node->data.servuse.recvChan);
+			vid_printf("\tRecvChanSize: %d\n",node->data.servuse.recvChanSize);
+			vid_printf("\tRecvChanPos: %d\n",node->data.servuse.recvChanPos);
 		}
 		else {
 			vid_printf("\treadHandler: 0x%x\n",node->readHandler);

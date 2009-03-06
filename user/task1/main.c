@@ -53,10 +53,11 @@ s32 main(void) {
 	fd = dupFd(fd1);
 	debugf("fd=%d, fd1=%d\n",fd,fd1);
 
+#if 0
 	if(fork() == 0) {
 		s32 id = regService("test");
 
-		static sConsoleMsg msg;
+		static sConsoleMsg header;
 		while(1) {
 			s32 cfd = waitForClient(id);
 			if(cfd < 0)
@@ -65,18 +66,25 @@ s32 main(void) {
 				u32 x = 0;
 				s32 c = 0;
 				do {
-					if((c = read(cfd,&msg,sizeof(sConsoleMsg))) < 0)
+					if((c = read(cfd,&header,sizeof(sConsoleMsg))) < 0)
 						printLastError();
 					else if(c > 0) {
-						write(fd,&msg,sizeof(sConsoleMsg));
-						if(msg.id == CONSOLE_MSG_OUT) {
-							s8 *readBuf = malloc(msg.length * sizeof(s8));
-							if(read(cfd,readBuf,msg.length) < 0)
+						sConsoleMsg *msg;
+						u8 *data = NULL;
+						/* read data */
+						if(header.length > 0) {
+							data = malloc(header.length * sizeof(u8));
+							if(read(cfd,data,header.length) < 0)
 								printLastError();
-							if(write(fd,readBuf,msg.length) < 0)
-								printLastError();
-							free(readBuf);
 						}
+
+						/* build msg and send */
+						msg = createConsoleMsg(header.id,header.length,data);
+						if(write(fd,msg,sizeof(sConsoleMsg) + header.length) < 0)
+							printLastError();
+
+						if(header.length > 0)
+							free(data);
 						x++;
 					}
 				}
@@ -101,6 +109,7 @@ s32 main(void) {
 		printLastError();
 	else
 		debugf("Redirected %d to %d\n",fd,fd2);
+#endif
 
 	s8 str[] = "Test: \e[30mblack\e[0m, \e[31mred\e[0m, \e[32mgreen\e[0m"
 			", \e[33morange\e[0m, \e[34mblue\e[0m, \e[35mmargenta\e[0m, \e[36mcyan\e[0m"
@@ -108,7 +117,7 @@ s32 main(void) {
 			"\e[30;44mwithbg\e[0m, \e[34;43mwithbg\e[0m\n";
 	sConsoleMsg *msg = createConsoleMsg(CONSOLE_MSG_OUT,strlen(str) + 1,str);
 	u32 i;
-	for(i = 0; i < 4 ;i++) {
+	for(i = 0; ;i++) {
 		if(write(fd,msg,sizeof(sConsoleMsg) + msg->length) < 0)
 			printLastError();
 		else {

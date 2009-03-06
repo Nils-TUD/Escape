@@ -308,6 +308,7 @@ static void sysc_read(sSysCallStack *stack) {
 	void *buffer = (void*)stack->arg2;
 	u32 count = stack->arg3;
 	s32 readBytes;
+	s32 e;
 
 	/* validate count and buffer */
 	if(count <= 0) {
@@ -319,8 +320,15 @@ static void sysc_read(sSysCallStack *stack) {
 		return;
 	}
 
+	/* get file */
+	e = vfs_fdToFile(fd);
+	if(!vfs_isValidFile(e)) {
+		SYSC_ERROR(stack,e);
+		return;
+	}
+
 	/* read */
-	readBytes = vfs_readFile(fd,buffer,count);
+	readBytes = vfs_readFile((sGFTEntry*)e,buffer,count);
 	if(readBytes < 0) {
 		SYSC_ERROR(stack,readBytes);
 		return;
@@ -334,6 +342,7 @@ static void sysc_write(sSysCallStack *stack) {
 	void *buffer = (void*)stack->arg2;
 	u32 count = stack->arg3;
 	s32 writtenBytes;
+	s32 e;
 	/* validate count and buffer */
 	if(count <= 0) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
@@ -344,8 +353,15 @@ static void sysc_write(sSysCallStack *stack) {
 		return;
 	}
 
+	/* get file */
+	e = vfs_fdToFile(fd);
+	if(!vfs_isValidFile(e)) {
+		SYSC_ERROR(stack,e);
+		return;
+	}
+
 	/* read */
-	writtenBytes = vfs_writeFile(fd,buffer,count);
+	writtenBytes = vfs_writeFile(proc_getRunning()->pid,(sGFTEntry*)e,buffer,count);
 	if(writtenBytes < 0) {
 		SYSC_ERROR(stack,writtenBytes);
 		return;
@@ -355,13 +371,13 @@ static void sysc_write(sSysCallStack *stack) {
 }
 
 static void sysc_sendEOT(sSysCallStack *stack) {
-	tFD fd = (tFD)stack->arg1;
+	/*tFD fd = (tFD)stack->arg1;
 	s32 err = vfs_sendEOT(fd);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
 	}
-
+	*/
 	SYSC_RET1(stack,0);
 }
 
@@ -390,7 +406,15 @@ static void sysc_redirFd(sSysCallStack *stack) {
 
 static void sysc_close(sSysCallStack *stack) {
 	tFD fd = (tFD)stack->arg1;
-	vfs_closeFile(fd);
+	s32 e;
+
+	/* close fd */
+	tFile fileNo = proc_closeFile(fd);
+	if(fileNo < 0)
+		return;
+
+	/* close file */
+	vfs_closeFile(vfs_getFile(fileNo));
 }
 
 static void sysc_regService(sSysCallStack *stack) {

@@ -126,6 +126,16 @@ void dumpMem(void *addr,u32 dwordCount) {
 	}
 }
 
+void dumpBytes(void *addr,u32 byteCount) {
+	u8 *ptr = (u8*)addr;
+	while(byteCount-- > 0) {
+		vid_printf("%02x ",*ptr);
+		ptr++;
+		if(byteCount % 8 == 0)
+			vid_printf("\n");
+	}
+}
+
 bool copyUserToKernel(u8 *src,u8 *dst,u32 count) {
 	if(!paging_isRangeUserReadable((u32)src,count))
 		return false;

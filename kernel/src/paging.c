@@ -179,17 +179,27 @@ bool paging_isMapped(u32 virtual) {
 }
 
 bool paging_isRangeUserReadable(u32 virtual,u32 count) {
-	sPTEntry *pt;
-	u32 end;
 	/* kernel area? */
 	if(virtual + count >= KERNEL_AREA_V_ADDR)
 		return false;
 
+	return paging_isRangeReadable(virtual,count);
+}
+
+bool paging_isRangeReadable(u32 virtual,u32 count) {
+	sPTEntry *pt;
+	sPDEntry *pd;
+	u32 end;
 	/* calc start and end pt */
+	paging_mapPageDir();
 	virtual &= ~(PAGE_SIZE - 1);
 	end = (virtual + count) & ~(PAGE_SIZE - 1);
 	pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
 	while(virtual <= end) {
+		/* check page-table first */
+		pd = (sPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual);
+		if(!pd->present)
+			return false;
 		if(!pt->present)
 			return false;
 		virtual += PAGE_SIZE;
@@ -199,17 +209,27 @@ bool paging_isRangeUserReadable(u32 virtual,u32 count) {
 }
 
 bool paging_isRangeUserWritable(u32 virtual,u32 count) {
-	sPTEntry *pt;
-	u32 end;
 	/* kernel area? */
 	if(virtual + count >= KERNEL_AREA_V_ADDR)
 		return false;
 
+	return paging_isRangeWritable(virtual,count);
+}
+
+bool paging_isRangeWritable(u32 virtual,u32 count) {
+	sPTEntry *pt;
+	sPDEntry *pd;
+	u32 end;
 	/* calc start and end pt */
+	paging_mapPageDir();
 	virtual &= ~(PAGE_SIZE - 1);
 	end = (virtual + count) & ~(PAGE_SIZE - 1);
 	pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
 	while(virtual <= end) {
+		/* check page-table first */
+		pd = (sPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual);
+		if(!pd->present)
+			return false;
 		if(!pt->present)
 			return false;
 		if(!pt->writable) {
@@ -364,7 +384,8 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	frameCount = 3 + PAGES_TO_PTS(tPages + dPages) + PAGES_TO_PTS(sPages);
 	/* worstcase heap-usage. NOTE THAT THIS ASSUMES A BIT ABOUT THE INTERNAL STRUCTURE OF SLL! */
 	kheapCount = (dPages + sPages) * (sizeof(sCOW) + sizeof(sSLNode)) * 2;
-	if(mm_getFreeFrmCount(MM_DEF) < frameCount || kheap_getFreeMem() < kheapCount) {
+	/* TODO finish! */
+	if(mm_getFreeFrmCount(MM_DEF) < frameCount/* || kheap_getFreeMem() < kheapCount*/) {
 		DBG_PGCLONEPD(vid_printf("Not enough free frames!\n"));
 		intrpt_setEnabled(oldIntrptState);
 		return 0;
@@ -704,6 +725,20 @@ u32 paging_dbg_getPTEntryCount(sPTEntry *pt) {
 		pt++;
 	}
 	return count;
+}
+
+void paging_dbg_printHeap(void) {
+	u32 i;
+	sPDEntry *pagedir;
+	paging_mapPageDir();
+	pagedir = (sPDEntry*)PAGE_DIR_AREA;
+	vid_printf("page-dir @ 0x%08x:\n",pagedir);
+	for(i = ADDR_TO_PDINDEX(KERNEL_HEAP_START); i < ADDR_TO_PDINDEX(KERNEL_HEAP_START + KERNEL_HEAP_SIZE); i++) {
+		if(pagedir[i].present) {
+			paging_dbg_printPageTable(i,pagedir + i);
+		}
+	}
+	vid_printf("\n");
 }
 
 void paging_dbg_printPageDir(bool includeKernel) {

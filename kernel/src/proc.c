@@ -66,6 +66,7 @@ void proc_init(void) {
 	for(i = 0; i < MAX_FD_COUNT; i++)
 		procs[pi].fileDescs[i] = -1;
 
+	paging_exchangePDir(procs[pi].physPDirAddr);
 	/* setup kernel-stack for us */
 	paging_map(KERNEL_STACK,NULL,1,PG_WRITABLE | PG_SUPERVISOR,false);
 }
@@ -215,7 +216,9 @@ s32 proc_redirFd(tFD src,tFD dst) {
 		return ERR_INVALID_FD;
 
 	/* we have to close the source because no one else will do it anymore... */
-	vfs_closeFile(src);
+	s32 e = vfs_fdToFile(src);
+	if(e >= 0)
+		vfs_closeFile((sGFTEntry*)e);
 	/* now redirect src to dst */
 	procs[pi].fileDescs[src] = fDst;
 	return 0;
@@ -317,7 +320,9 @@ void proc_destroy(sProc *p) {
 	/* release file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != -1) {
-			vfs_closeFile(p->fileDescs[i]);
+			s32 e = vfs_fdToFile(i);
+			if(e >= 0)
+				vfs_closeFile((sGFTEntry*)e);
 			p->fileDescs[i] = -1;
 		}
 	}

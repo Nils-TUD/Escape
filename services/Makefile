@@ -5,11 +5,11 @@ SERVICES = $(BUILD)/services.txt
 .PHONY:  all clean
 
 all:
-		for i in $(DIRS) ; do \
+		@for i in $(DIRS) ; do \
 			$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done;
 		
-		echo "" > $(SERVICES)
+		@echo "" > $(SERVICES)
 		@for i in $(DIRS) ; do \
 			echo "static u8 service_"$$i"[] = {" >> $(SERVICES); \
 			echo "		#include \"../../build/service_$$i.dump\"" >> $(SERVICES); \

@@ -25,6 +25,8 @@
 
 #include "../h/sllist.h"
 
+#define CACHE_SIZE 1
+
 /* a node in a list */
 typedef struct sNode sNode;
 struct sNode {
@@ -40,6 +42,20 @@ typedef struct {
 } sList;
 
 /**
+ * Allocates a new node
+ *
+ * @return the node or NULL if failed
+ */
+static sNode *sll_allocNode(void);
+
+/**
+ * Free's the given node
+ *
+ * @param node the node
+ */
+static void sll_freeNode(sNode *node);
+
+/**
  * Searches for the node at given index
  *
  * @param list the list
@@ -48,8 +64,25 @@ typedef struct {
  */
 static sNode *sll_getNode(sSLList *list,u32 index);
 
+static bool cacheInit = false;
+static sNode nodeCache[CACHE_SIZE];
+static sNode *freeNode = NULL;
+
 sSLList *sll_create(void) {
-	sList *l = malloc(sizeof(sList));
+	sList *l;
+
+	if(!cacheInit) {
+		sNode *end = nodeCache + CACHE_SIZE;
+		sNode *n = nodeCache;
+		while(n < end) {
+			n->next = freeNode;
+			freeNode = n;
+			n++;
+		}
+		cacheInit = true;
+	}
+
+	l = malloc(sizeof(sList));
 	if(l == NULL)
 		return NULL;
 
@@ -68,7 +101,7 @@ void sll_destroy(sSLList *list) {
 
 	while(n != NULL) {
 		nn = n->next;
-		free(n);
+		sll_freeNode(n);
 		n = nn;
 	}
 	/* free list */
@@ -148,7 +181,8 @@ bool sll_insert(sSLList *list,void *data,u32 index) {
 	}
 
 	/* allocate node? */
-	nn = malloc(sizeof(sNode));
+	/*nn = malloc(sizeof(sNode));*/
+	nn = sll_allocNode();
 	if(nn == NULL)
 		return false;
 
@@ -187,7 +221,7 @@ void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev) {
 	l->length--;
 
 	/* free */
-	free(n);
+	sll_freeNode(n);
 }
 
 void sll_removeFirst(sSLList *list,void *data) {
@@ -227,6 +261,28 @@ void sll_removeIndex(sSLList *list,u32 index) {
 	ASSERT(n != NULL,"Index %d does not exist!",index);
 
 	sll_removeNode(list,(sSLNode*)n,(sSLNode*)ln);
+}
+
+static sNode *sll_allocNode(void) {
+	sNode *n;
+	if(freeNode == NULL) {
+		return malloc(sizeof(sNode));
+	}
+
+	/*sllprintf("Used node cache\n");*/
+	n = freeNode;
+	freeNode = freeNode->next;
+	return n;
+}
+
+static void sll_freeNode(sNode *node) {
+	if(node >= nodeCache && node < nodeCache + CACHE_SIZE) {
+		node->next = freeNode;
+		freeNode = node;
+	}
+	else {
+		free(node);
+	}
 }
 
 static sNode *sll_getNode(sSLList *list,u32 index) {

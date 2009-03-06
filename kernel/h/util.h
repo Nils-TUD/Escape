@@ -71,6 +71,14 @@ void printStackTrace(void);
 void dumpMem(void *addr,u32 dwordCount);
 
 /**
+ * Prints <byteCount> bytes at <addr>
+ *
+ * @param addr the start-address
+ * @param byteCount the number of bytes
+ */
+void dumpBytes(void *addr,u32 byteCount);
+
+/**
  * Copies <src> to <src> + <count> to <dst>. If the source is not completely mapped
  * the function returns false
  *

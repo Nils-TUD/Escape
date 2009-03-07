@@ -112,15 +112,6 @@ s32 dupFd(tFD fd);
 s32 redirFd(tFD src,tFD dst);
 
 /**
- * Sends an "End-Of-Transfer" for the given file-descriptor. This will release the lock for
- * service-usages so that the other side can start working.
- *
- * @param fd the file-descriptor
- * @return the negative error-code or 0
- */
-s32 sendEOT(tFD fd);
-
-/**
  * Closes the given file-descriptor
  *
  * @param fd the file-descriptor

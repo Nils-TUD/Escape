@@ -53,7 +53,6 @@ s32 main(void) {
 	fd = dupFd(fd1);
 	debugf("fd=%d, fd1=%d\n",fd,fd1);
 
-#if 0
 	if(fork() == 0) {
 		s32 id = regService("test");
 
@@ -89,7 +88,6 @@ s32 main(void) {
 					}
 				}
 				while(c > 0);
-				sendEOT(fd);
 				close(cfd);
 			}
 		}
@@ -109,7 +107,6 @@ s32 main(void) {
 		printLastError();
 	else
 		debugf("Redirected %d to %d\n",fd,fd2);
-#endif
 
 	s8 str[] = "Test: \e[30mblack\e[0m, \e[31mred\e[0m, \e[32mgreen\e[0m"
 			", \e[33morange\e[0m, \e[34mblue\e[0m, \e[35mmargenta\e[0m, \e[36mcyan\e[0m"
@@ -117,16 +114,49 @@ s32 main(void) {
 			"\e[30;44mwithbg\e[0m, \e[34;43mwithbg\e[0m\n";
 	sConsoleMsg *msg = createConsoleMsg(CONSOLE_MSG_OUT,strlen(str) + 1,str);
 	u32 i;
-	for(i = 0; ;i++) {
-		if(write(fd,msg,sizeof(sConsoleMsg) + msg->length) < 0)
-			printLastError();
-		else {
-			/*if(i % 1000 == 0) {*/
-				sendEOT(fd);
+	s32 err;
+	for(i = 0; i < 0 ;i++) {
+		if((err = write(fd,msg,sizeof(sConsoleMsg) + msg->length)) < 0) {
+			if(err == ERR_NOT_ENOUGH_MEM)
 				yield();
+			else
+				printLastError();
+		}
+		else {
+			yield();
+			/*if(i % 1000 == 0) {*/
+				/*yield();*/
 			/*}*/
 		}
 	}
+
+	/* read from keyboard */
+	s32 fd3;
+	do {
+		fd3 = open("/system/services/keyboard",IO_READ | IO_WRITE);
+		if(fd3 < 0)
+			yield();
+	}
+	while(fd3 < 0);
+
+	static sMsgKbRequest kbReq;
+	static sMsgKbResponse kbRes;
+
+	kbReq.id = KEYBOARD_MSG_READ;
+	while(true) {
+		if(write(fd3,&kbReq,sizeof(sMsgKbRequest)) > 0) {
+			if(read(fd3,&kbRes,sizeof(kbRes)) <= 0)
+				yield();
+			else {
+				if(kbRes.isBreak)
+					debugf("Key %d released\n",kbRes.keycode);
+				else
+					debugf("Key %d pressed\n",kbRes.keycode);
+			}
+		}
+	}
+	close(fd3);
+
 	freeConsoleMsg(msg);
 	close(fd);
 
@@ -146,9 +176,6 @@ s32 main(void) {
 				do {
 					if(write(sfd,msg,sizeof(sConsoleMsg) + msg->length) < 0)
 						printLastError();
-					else {
-						sendEOT(sfd);
-					}
 					yield();
 				}
 				while(1);
@@ -167,9 +194,6 @@ s32 main(void) {
 				do {
 					if(write(sfd,msg,sizeof(sConsoleMsg)) < 0)
 						printLastError();
-					else {
-						sendEOT(sfd);
-					}
 					yield();
 				}
 				while(1);
@@ -234,7 +258,6 @@ s32 main(void) {
 						if(read(fd,readBuf,strlen(buf)) < 0)
 							printLastError();
 						else {
-							sendEOT(fd);
 							debugf("Read: %s\n",readBuf);
 							/* reset buffer */
 							*readBuf = '\0';
@@ -249,7 +272,6 @@ s32 main(void) {
 					if(write(fd,buf,strlen(buf)) < 0)
 						printLastError();
 					else {
-						sendEOT(fd);
 						debugf("Wrote: %s\n",buf);
 					}
 					yield();

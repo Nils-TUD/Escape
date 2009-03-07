@@ -240,7 +240,10 @@ s32 vfs_writeFile(tPid pid,sGFTEntry *e,u8 *buffer,u32 count) {
 		if(writtenBytes < 0)
 			return writtenBytes;
 
-		e->position += writtenBytes;
+		/* don't change the position for service-usages */
+		/* since we don't need it and it would cause problems with the next read-op */
+		if(n->type != T_SERVUSE)
+			e->position += writtenBytes;
 	}
 	else {
 		/* TODO redirect to fs-service! */

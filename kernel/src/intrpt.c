@@ -87,6 +87,7 @@ typedef struct {
 	sVFSNode *node;
 	tFile file;
 	u8 pending;
+	u8 msgLen;
 	u8 message[MSG_MAX_LEN];
 } sIntrptListener;
 
@@ -350,6 +351,7 @@ s32 intrpt_addListener(u16 irq,void *node,void *message,u32 msgLen) {
 
 	/* init list-element */
 	memcpy(l->message,message,msgLen);
+	l->msgLen = msgLen;
 	l->node = node;
 	/* create a node for it and open it */
 	err = vfs_openIntrptMsgNode(node);
@@ -437,7 +439,7 @@ static void intrpt_handleListener(u16 irq,sSLList *list) {
 		l = (sIntrptListener*)node->data;
 		while(l->pending > 0) {
 			/* send message (use PROC_COUNT to write to the service) */
-			vfs_writeFile(PROC_COUNT,vfs_getFile(l->file),l->message,MSG_MAX_LEN);
+			vfs_writeFile(PROC_COUNT,vfs_getFile(l->file),l->message,l->msgLen);
 			l->pending--;
 		}
 	}
@@ -500,6 +502,8 @@ void intrpt_handler(sIntrptStackFrame stack) {
 						elf_loadprog(services[i]);
 						vid_printf("Starting...\n");
 						proc_setupIntrptStack(&stack);
+						/* we don't want to continue the loop ;) */
+						break;
 					}
 				}
 				vid_printf("Done\n");
@@ -548,7 +552,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
 			/* #PF */
 			if(stack.intrptNo == EX_PAGE_FAULT) {
-				vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
+				/*vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);*/
 				paging_handlePageFault(cpu_getCR2());
 				break;
 			}

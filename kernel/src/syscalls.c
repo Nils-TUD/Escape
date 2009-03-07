@@ -17,7 +17,7 @@
 #include <video.h>
 #include <string.h>
 
-#define SYSCALL_COUNT 22
+#define SYSCALL_COUNT 21
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
@@ -88,14 +88,6 @@ static void sysc_read(sSysCallStack *stack);
  * @return u32 the number of written bytes
  */
 static void sysc_write(sSysCallStack *stack);
-/**
- * Sends an "End-Of-Transfer" for the given file-descriptor. This will release the lock for
- * service-usages so that the other side can start working.
- *
- * @param tFD the file-descriptor
- * @return s32 0 on success
- */
-static void sysc_sendEOT(sSysCallStack *stack);
 /**
  * Duplicates the given file-descriptor
  *
@@ -208,15 +200,14 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 10 */	{sysc_changeSize,			1},
 	/* 11 */	{sysc_mapPhysical,			2},
 	/* 12 */	{sysc_write,				3},
-	/* 13 */	{sysc_sendEOT,				1},
-	/* 14 */	{sysc_yield,				0},
-	/* 15 */	{sysc_waitForClient,		1},
-	/* 16 */	{sys_requestIOPorts,		2},
-	/* 17 */	{sys_releaseIOPorts,		2},
-	/* 18 */	{sysc_dupFd,				1},
-	/* 19 */	{sysc_redirFd,				2},
-	/* 20 */	{sysc_addIntrptListener,	4},
-	/* 21 */	{sysc_remIntrptListener,	2},
+	/* 13 */	{sysc_yield,				0},
+	/* 14 */	{sysc_waitForClient,		1},
+	/* 15 */	{sys_requestIOPorts,		2},
+	/* 16 */	{sys_releaseIOPorts,		2},
+	/* 17 */	{sysc_dupFd,				1},
+	/* 18 */	{sysc_redirFd,				2},
+	/* 19 */	{sysc_addIntrptListener,	4},
+	/* 20 */	{sysc_remIntrptListener,	2},
 };
 
 void sysc_handle(sSysCallStack *stack) {
@@ -369,17 +360,6 @@ static void sysc_write(sSysCallStack *stack) {
 	}
 
 	SYSC_RET1(stack,writtenBytes);
-}
-
-static void sysc_sendEOT(sSysCallStack *stack) {
-	/*tFD fd = (tFD)stack->arg1;
-	s32 err = vfs_sendEOT(fd);
-	if(err < 0) {
-		SYSC_ERROR(stack,err);
-		return;
-	}
-	*/
-	SYSC_RET1(stack,0);
 }
 
 static void sysc_dupFd(sSysCallStack *stack) {

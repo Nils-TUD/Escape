@@ -35,8 +35,10 @@ sSLList *sll_create(void);
  * Destroyes the given list
  *
  * @param list the list
+ * @param freeData wether the data of the nodes should be free'd. Requires that they are allocated
+ * 	on the heap
  */
-void sll_destroy(sSLList *list);
+void sll_destroy(sSLList *list,bool freeData);
 
 /**
  * @param list the list

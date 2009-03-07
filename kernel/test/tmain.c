@@ -29,6 +29,7 @@
 #include "tsllist.h"
 #include "tstring.h"
 #include "tvfs.h"
+#include "tvfsnode.h"
 
 /* TODO just temporary! */
 u32 entryPoint;
@@ -91,14 +92,15 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 
 	/* start tests */
-	/*test_register(&tModMM);
+	test_register(&tModMM);
 	test_register(&tModPaging);
-	test_register(&tModProc);*/
+	test_register(&tModProc);
 	test_register(&tModKHeap);
-	/*test_register(&tModSched);
+	test_register(&tModSched);
 	test_register(&tModSLList);
 	test_register(&tModString);
-	test_register(&tModVFS);*/
+	test_register(&tModVFS);
+	test_register(&tModVFSn);
 	test_start();
 
 

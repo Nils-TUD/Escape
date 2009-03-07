@@ -6,6 +6,7 @@
 
 #include "../h/common.h"
 #include "../h/vfs.h"
+#include "../h/vfsnode.h"
 #include "../h/proc.h"
 #include "../h/kheap.h"
 #include <video.h>
@@ -20,9 +21,6 @@ static void test_vfs_readFileSystem(void);
 static void test_vfs_readFileProcess0(void);
 static void test_vfs_createProcess(void);
 static void test_vfs_createService(void);
-static void test_vfs_resolvePath(void);
-static bool test_vfs_resolvePathCpy(cstring a,cstring b);
-static void test_vfs_getPath(void);
 
 /* public vfs-node for test-purposes */
 #define MAX_NAME_LEN 59
@@ -48,12 +46,10 @@ sTestModule tModVFS = {
 };
 
 static void test_vfs(void) {
-	test_vfs_resolvePath();
 	test_vfs_readFileSystem();
 	test_vfs_readFileProcess0();
 	test_vfs_createProcess();
 	test_vfs_createService();
-	test_vfs_getPath();
 }
 
 static void test_vfs_readFileSystem(void) {
@@ -61,6 +57,7 @@ static void test_vfs_readFileSystem(void) {
 	tFD fd;
 	s32 res;
 	sVFSNodePub node;
+	sGFTEntry *e;
 	u32 oldHeap,oldGFT,newHeap,newGFT;
 
 	oldHeap = kheap_getFreeMem();
@@ -69,7 +66,7 @@ static void test_vfs_readFileSystem(void) {
 	test_caseStart("Testing vfs_readFile() for /system");
 
 	/* resolve path */
-	if(vfs_resolvePath("/system",&nodeNo) < 0) {
+	if(vfsn_resolvePath("/system",&nodeNo) < 0) {
 		test_caseFailed("Unable to resolve path '/system'!");
 		return;
 	}
@@ -81,53 +78,54 @@ static void test_vfs_readFileSystem(void) {
 	}
 
 	/* skip "." and ".." */
-	vfs_readFile(fd,(u8*)&node,sizeof(sVFSNodePub));
-	vfs_readFile(fd,(u8*)&node,sizeof(sVFSNodePub));
+	e = (sGFTEntry*)vfs_fdToFile(fd);
+	vfs_readFile(e,(u8*)&node,sizeof(sVFSNodePub));
+	vfs_readFile(e,(u8*)&node,sizeof(sVFSNodePub));
 
 	/* read "processes" */
-	if((res = vfs_readFile(fd,(u8*)&node,sizeof(sVFSNodePub))) != sizeof(sVFSNodePub)) {
-		vfs_closeFile(fd);
+	if((res = vfs_readFile(e,(u8*)&node,sizeof(sVFSNodePub))) != sizeof(sVFSNodePub)) {
+		vfs_closeFile(e);
 		test_caseFailed("Unable to read with fd=%d! Expected %d bytes, read %d",
 				fd,sizeof(sVFSNodePub),res);
 		return;
 	}
 
 	/* check data */
-	vfs_resolvePath("/system/processes",&procNode);
+	vfsn_resolvePath("/system/processes",&procNode);
 	if(strcmp((cstring)node.name,"processes") != 0) {
-		vfs_closeFile(fd);
+		vfs_closeFile(e);
 		test_caseFailed("Node-name='%s', expected 'system'",node.name);
 		return;
 	}
 	if(node.nodeNo != procNode) {
-		vfs_closeFile(fd);
+		vfs_closeFile(e);
 		test_caseFailed("nodeNo=%d, expected %d",node.nodeNo);
 		return;
 	}
 
 	/* read "services" */
-	if((res = vfs_readFile(fd,(u8*)&node,sizeof(sVFSNodePub))) != sizeof(sVFSNodePub)) {
-		vfs_closeFile(fd);
+	if((res = vfs_readFile(e,(u8*)&node,sizeof(sVFSNodePub))) != sizeof(sVFSNodePub)) {
+		vfs_closeFile(e);
 		test_caseFailed("Unable to read with fd=%d! Expected %d bytes, read %d",
 				fd,sizeof(sVFSNodePub),res);
 		return;
 	}
 
 	/* check data */
-	vfs_resolvePath("/system/services",&servNode);
+	vfsn_resolvePath("/system/services",&servNode);
 	if(strcmp((cstring)node.name,"services") != 0) {
-		vfs_closeFile(fd);
+		vfs_closeFile(e);
 		test_caseFailed("Node-name='%s', expected 'system'",node.name);
 		return;
 	}
 	if(node.nodeNo != servNode) {
-		vfs_closeFile(fd);
+		vfs_closeFile(e);
 		test_caseFailed("nodeNo=%d, expected %d",node.nodeNo);
 		return;
 	}
 
 	/* close */
-	vfs_closeFile(fd);
+	vfs_closeFile(e);
 
 	newHeap = kheap_getFreeMem();
 	newGFT = vfs_dbg_getGFTEntryCount();
@@ -145,6 +143,7 @@ static void test_vfs_readFileProcess0(void) {
 	s32 res;
 	sProcPub proc;
 	sProc *p0 = proc_getByPid(0);
+	sGFTEntry *e;
 	u32 oldHeap,oldGFT,newHeap,newGFT;
 
 	oldHeap = kheap_getFreeMem();
@@ -153,7 +152,7 @@ static void test_vfs_readFileProcess0(void) {
 	test_caseStart("Testing vfs_readFile() for /system/processes/0");
 
 	/* resolve path */
-	if(vfs_resolvePath("/system/processes/0",&nodeNo) < 0) {
+	if(vfsn_resolvePath("/system/processes/0",&nodeNo) < 0) {
 		test_caseFailed("Unable to resolve path '/system/processes/0'!");
 		return;
 	}
@@ -165,23 +164,24 @@ static void test_vfs_readFileProcess0(void) {
 	}
 
 	/* read */
-	if((res = vfs_readFile(fd,(u8*)&proc,sizeof(sProcPub))) != sizeof(sProcPub)) {
-		vfs_closeFile(fd);
+	e = (sGFTEntry*)vfs_fdToFile(fd);
+	if((res = vfs_readFile(e,(u8*)&proc,sizeof(sProcPub))) != sizeof(sProcPub)) {
+		vfs_closeFile(e);
 		test_caseFailed("Unable to read with fd=%d! Expected %d bytes, read %d",
 				fd,sizeof(sProcPub),res);
 		return;
 	}
 
 	/* check data */
-	if(!test_assertInt(proc.textPages,p0->textPages)) {vfs_closeFile(fd); return;}
-	if(!test_assertInt(proc.dataPages,p0->dataPages)) {vfs_closeFile(fd); return;}
-	if(!test_assertInt(proc.stackPages,p0->stackPages)) {vfs_closeFile(fd); return;}
-	if(!test_assertInt(proc.pid,p0->pid)) {vfs_closeFile(fd); return;}
-	if(!test_assertInt(proc.parentPid,p0->parentPid)) {vfs_closeFile(fd); return;}
-	if(!test_assertInt(proc.state,p0->state)) {vfs_closeFile(fd); return;}
+	if(!test_assertInt(proc.textPages,p0->textPages)) {vfs_closeFile(e); return;}
+	if(!test_assertInt(proc.dataPages,p0->dataPages)) {vfs_closeFile(e); return;}
+	if(!test_assertInt(proc.stackPages,p0->stackPages)) {vfs_closeFile(e); return;}
+	if(!test_assertInt(proc.pid,p0->pid)) {vfs_closeFile(e); return;}
+	if(!test_assertInt(proc.parentPid,p0->parentPid)) {vfs_closeFile(e); return;}
+	if(!test_assertInt(proc.state,p0->state)) {vfs_closeFile(e); return;}
 
 	/* close */
-	vfs_closeFile(fd);
+	vfs_closeFile(e);
 
 	newHeap = kheap_getFreeMem();
 	newGFT = vfs_dbg_getGFTEntryCount();
@@ -229,20 +229,23 @@ static void test_vfs_createProcess(void) {
 
 static void test_vfs_createService(void) {
 	u32 oldHeap,newHeap;
-	sProc *p = proc_getRunning();
+	s32 id,id2;
 
 	test_caseStart("Testing vfs_createService()");
 
 	oldHeap = kheap_getFreeMem();
 
-	if(!test_assertInt(vfs_createService(p->pid,"test"),0)) return;
-	if(!test_assertInt(vfs_createService(p->pid,"test2"),ERR_PROC_DUP_SERVICE)) return;
-	if(!test_assertInt(vfs_createService((p + 1)->pid,"test"),ERR_SERVICE_EXISTS)) return;
-	if(!test_assertInt(vfs_createService((p + 1)->pid,""),ERR_INV_SERVICE_NAME)) return;
-	if(!test_assertInt(vfs_createService((p + 1)->pid,"abc.def"),ERR_INV_SERVICE_NAME)) return;
-	if(!test_assertInt(vfs_createService((p + 1)->pid,"test2"),0)) return;
-	vfs_removeService(p);
-	vfs_removeService(p + 1);
+	id = vfs_createService(0,"test");
+	if(!test_assertTrue(vfsn_isValidNodeNo(id))) return;
+	if(!test_assertInt(vfs_createService(0,"test2"),ERR_PROC_DUP_SERVICE)) return;
+	if(!test_assertInt(vfs_createService(1,"test"),ERR_SERVICE_EXISTS)) return;
+	if(!test_assertInt(vfs_createService(1,""),ERR_INV_SERVICE_NAME)) return;
+	if(!test_assertInt(vfs_createService(1,"abc.def"),ERR_INV_SERVICE_NAME)) return;
+	id2 = vfs_createService(1,"test2");
+	if(!test_assertTrue(vfsn_isValidNodeNo(id2))) return;
+
+	vfs_removeService(0,id);
+	vfs_removeService(1,id2);
 
 	/* check mem-usage */
 	newHeap = kheap_getFreeMem();
@@ -250,69 +253,6 @@ static void test_vfs_createService(void) {
 		test_caseFailed("oldHeap=%d, newHeap=%d",oldHeap,newHeap);
 		return;
 	}
-
-	test_caseSucceded();
-}
-
-static void test_vfs_resolvePath(void) {
-	test_caseStart("Testing vfs_resolvePath()");
-
-	if(!test_vfs_resolvePathCpy("/","")) return;
-	if(!test_vfs_resolvePathCpy("//","")) return;
-	if(!test_vfs_resolvePathCpy("///","")) return;
-	if(!test_vfs_resolvePathCpy("/..","")) return;
-	if(!test_vfs_resolvePathCpy("/../..","")) return;
-	if(!test_vfs_resolvePathCpy("/./.","")) return;
-	if(!test_vfs_resolvePathCpy("/system/..","")) return;
-	if(!test_vfs_resolvePathCpy("/system/.","system")) return;
-	if(!test_vfs_resolvePathCpy("/system/./","system")) return;
-	if(!test_vfs_resolvePathCpy("/system/./.","system")) return;
-	if(!test_vfs_resolvePathCpy("/////system/./././.","system")) return;
-	if(!test_vfs_resolvePathCpy("/../system/../system/./","system")) return;
-	if(!test_vfs_resolvePathCpy("//..//..//..","")) return;
-	/* TODO test as soon as relative paths are possible
-	if(!test_vfs_resolvePathCpy("system/.","system")) return;
-	if(!test_vfs_resolvePathCpy("system/./","system")) return;
-	if(!test_vfs_resolvePathCpy("system/./.","system")) return;
-	if(!test_vfs_resolvePathCpy("../system/../system/./","system")) return; */
-
-	test_caseSucceded();
-}
-
-static bool test_vfs_resolvePathCpy(cstring a,cstring b) {
-	static s8 c[100];
-	s32 err;
-	tVFSNodeNo no;
-	sVFSNode *node;
-	strncpy(c,b,99);
-	if((err = vfs_resolvePath(a,&no)) != 0)
-		return err;
-
-	node = vfs_getNode(no);
-	return test_assertStr(node->name,c);
-}
-
-static void test_vfs_getPath(void) {
-	tVFSNodeNo no;
-	sVFSNode *node;
-
-	test_caseStart("Testing vfs_getPath()");
-
-	vfs_resolvePath("/",&no);
-	node = vfs_getNode(no);
-	test_assertStr(vfs_getPath(node),(string)"/");
-
-	vfs_resolvePath("/system",&no);
-	node = vfs_getNode(no);
-	test_assertStr(vfs_getPath(node),(string)"/system");
-
-	vfs_resolvePath("/system/processes",&no);
-	node = vfs_getNode(no);
-	test_assertStr(vfs_getPath(node),(string)"/system/processes");
-
-	vfs_resolvePath("/system/processes/0",&no);
-	node = vfs_getNode(no);
-	test_assertStr(vfs_getPath(node),(string)"/system/processes/0");
 
 	test_caseSucceded();
 }

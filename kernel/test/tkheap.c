@@ -31,7 +31,7 @@ sTestModule tModKHeap = {
 	&test_kheap
 };
 
-#define SINGLE_BYTE_COUNT 100000
+#define SINGLE_BYTE_COUNT 50000
 u32 *ptrsSingle[SINGLE_BYTE_COUNT];
 
 u32 sizes[] = {1,4,10,1023,1024,1025,2048,4097};
@@ -84,11 +84,15 @@ static void test_t1alloc(void) {
 	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
 		tprintf("%d bytes\n",sizes[size] * sizeof(u32));
 		ptrs[size] = (u32*)kheap_alloc(sizes[size] * sizeof(u32));
-		tprintf("Write test for 0x%x...",ptrs[size]);
-		/* write test */
-		*(ptrs[size]) = 4;
-		*(ptrs[size] + sizes[size] - 1) = 2;
-		tprintf("done\n");
+		if(ptrs[size] == NULL)
+			tprintf("Not enough mem\n");
+		else {
+			tprintf("Write test for 0x%x...",ptrs[size]);
+			/* write test */
+			*(ptrs[size]) = 4;
+			*(ptrs[size] + sizes[size] - 1) = 2;
+			tprintf("done\n");
+		}
 	}
 }
 
@@ -120,13 +124,17 @@ static void test_kheap_t1v1(void) {
 	test_t1alloc();
 	tprintf("Freeing...\n");
 	for(size = 0; size < ARRAY_SIZE(sizes); size++) {
-		tprintf("FREE1: address=0x%x, i=%d\n",ptrs[size],size);
-		kheap_free(ptrs[size]);
-		/* write test */
-		u32 i;
-		for(i = size + 1; i < ARRAY_SIZE(sizes); i++) {
-			*(ptrs[i]) = 1;
-			*(ptrs[i] + sizes[i] - 1) = 2;
+		if(ptrs[size] != NULL) {
+			tprintf("FREE1: address=0x%x, i=%d\n",ptrs[size],size);
+			kheap_free(ptrs[size]);
+			/* write test */
+			u32 i;
+			for(i = size + 1; i < ARRAY_SIZE(sizes); i++) {
+				if(ptrs[i] != NULL) {
+					*(ptrs[i]) = 1;
+					*(ptrs[i] + sizes[i] - 1) = 2;
+				}
+			}
 		}
 	}
 	test_check();
@@ -139,13 +147,17 @@ static void test_kheap_t1v2(void) {
 	test_t1alloc();
 	tprintf("Freeing...\n");
 	for(size = ARRAY_SIZE(sizes) - 1; size >= 0; size--) {
-		tprintf("FREE2: address=0x%x, i=%d\n",ptrs[size],size);
-		kheap_free(ptrs[size]);
-		/* write test */
-		s32 i;
-		for(i = size - 1; i >= 0; i--) {
-			*(ptrs[i]) = 1;
-			*(ptrs[i] + sizes[i] - 1) = 2;
+		if(ptrs[size] != NULL) {
+			tprintf("FREE2: address=0x%x, i=%d\n",ptrs[size],size);
+			kheap_free(ptrs[size]);
+			/* write test */
+			s32 i;
+			for(i = size - 1; i >= 0; i--) {
+				if(ptrs[i] != NULL) {
+					*(ptrs[i]) = 1;
+					*(ptrs[i] + sizes[i] - 1) = 2;
+				}
+			}
 		}
 	}
 	return test_check();
@@ -158,8 +170,10 @@ static void test_kheap_t1v3(void) {
 	test_t1alloc();
 	tprintf("Freeing...\n");
 	for(size = 0; (u32)size < ARRAY_SIZE(sizes); size++) {
-		tprintf("FREE3: address=0x%x, i=%d\n",ptrs[randFree1[size]],size);
-		kheap_free(ptrs[randFree1[size]]);
+		if(ptrs[randFree1[size]] != NULL) {
+			tprintf("FREE3: address=0x%x, i=%d\n",ptrs[randFree1[size]],size);
+			kheap_free(ptrs[randFree1[size]]);
+		}
 	}
 	test_check();
 }
@@ -171,8 +185,10 @@ static void test_kheap_t1v4(void) {
 	test_t1alloc();
 	tprintf("Freeing...\n");
 	for(size = 0; (u32)size < ARRAY_SIZE(sizes); size++) {
-		tprintf("FREE4: address=0x%x, i=%d\n",ptrs[randFree2[size]],size);
-		kheap_free(ptrs[randFree2[size]]);
+		if(ptrs[randFree2[size]] != NULL) {
+			tprintf("FREE4: address=0x%x, i=%d\n",ptrs[randFree2[size]],size);
+			kheap_free(ptrs[randFree2[size]]);
+		}
 	}
 	test_check();
 }
@@ -184,15 +200,21 @@ static void test_kheap_t2(void) {
 		test_init("Allocate and free %d bytes",sizes[size] * sizeof(u32));
 
 		ptrs[0] = (u32*)kheap_alloc(sizes[size] * sizeof(u32));
-		tprintf("Write test for 0x%x...",ptrs[0]);
-		/* write test */
-		*(ptrs[0]) = 1;
-		*(ptrs[0] + sizes[size] - 1) = 2;
-		tprintf("done\n");
-		tprintf("Freeing mem @ 0x%x\n",ptrs[0]);
-		kheap_free(ptrs[0]);
+		if(ptrs[0] != NULL) {
+			tprintf("Write test for 0x%x...",ptrs[0]);
+			/* write test */
+			*(ptrs[0]) = 1;
+			*(ptrs[0] + sizes[size] - 1) = 2;
+			tprintf("done\n");
+			tprintf("Freeing mem @ 0x%x\n",ptrs[0]);
+			kheap_free(ptrs[0]);
 
-		test_check();
+			test_check();
+		}
+		else {
+			tprintf("Not enough mem\n");
+			test_caseSucceded();
+		}
 	}
 }
 

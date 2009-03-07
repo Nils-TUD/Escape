@@ -311,7 +311,7 @@ s32 main(void) {
 
 	sll_dbg_print(l);
 
-	sll_destroy(l);*/
+	sll_destroy(l,false);*/
 
 	/*test_register(&tModHeap);
 	test_start();*/

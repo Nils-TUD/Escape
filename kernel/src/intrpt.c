@@ -445,7 +445,7 @@ static void intrpt_handleListener(u16 irq,sSLList *list) {
 
 void intrpt_handler(sIntrptStackFrame stack) {
 	sProc *p;
-	/*u32 syscallNo = ((sSysCallStack*)stack.uesp)->number;*/
+	/*u32 syscallNo = stack.intrptNo == IRQ_SYSCALL ? ((sSysCallStack*)stack.uesp)->number : 0;*/
 
 	kmodeStart = cpu_rdtsc();
 	umodeTime += kmodeStart - kmodeEnd;

@@ -16,7 +16,7 @@
 #define HEAP_PAGE_COUNT			KERNEL_HEAP_SIZE / PAGE_SIZE
 
 /* determines the heap-page-index for the given address */
-#define ADDR_TO_PAGEINDEX(addr) ((((u32)(addr) - KERNEL_HEAP_START) & ~(PAGE_SIZE - 1)) / PAGE_SIZE)
+#define ADDR_TO_PAGEINDEX(addr) (((u32)(addr) - KERNEL_HEAP_START) / PAGE_SIZE)
 
 /* an area in memory */
 typedef struct sMemArea sMemArea;
@@ -446,7 +446,7 @@ static bool kheap_loadNewSpace(u32 size) {
 	sMemArea *area;
 	s32 c,count;
 	u16 page;
-	bool free;
+	bool free = false;
 
 	/* no free areas? */
 	if(freeList == NULL) {
@@ -522,6 +522,7 @@ static bool kheap_loadNewAreas(void) {
 	end = area + (PAGE_SIZE / sizeof(sMemArea));
 
 	/* put all areas in the freelist */
+	area->next = freeList;
 	freeList = area;
 	area++;
 	while(area < end) {

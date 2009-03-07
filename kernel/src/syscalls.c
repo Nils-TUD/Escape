@@ -9,6 +9,7 @@
 #include "../h/intrpt.h"
 #include "../h/proc.h"
 #include "../h/vfs.h"
+#include "../h/vfsnode.h"
 #include "../h/paging.h"
 #include "../h/util.h"
 #include "../h/debug.h"
@@ -284,7 +285,7 @@ static void sysc_open(sSysCallStack *stack) {
 	}
 
 	/* resolve path */
-	err = vfs_resolvePath(path,&nodeNo);
+	err = vfsn_resolvePath(path,&nodeNo);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
@@ -322,7 +323,7 @@ static void sysc_read(sSysCallStack *stack) {
 
 	/* get file */
 	e = vfs_fdToFile(fd);
-	if(!vfs_isValidFile(e)) {
+	if(!vfs_isValidFile((sGFTEntry*)e)) {
 		SYSC_ERROR(stack,e);
 		return;
 	}
@@ -355,7 +356,7 @@ static void sysc_write(sSysCallStack *stack) {
 
 	/* get file */
 	e = vfs_fdToFile(fd);
-	if(!vfs_isValidFile(e)) {
+	if(!vfs_isValidFile((sGFTEntry*)e)) {
 		SYSC_ERROR(stack,e);
 		return;
 	}
@@ -406,7 +407,6 @@ static void sysc_redirFd(sSysCallStack *stack) {
 
 static void sysc_close(sSysCallStack *stack) {
 	tFD fd = (tFD)stack->arg1;
-	s32 e;
 
 	/* close fd */
 	tFile fileNo = proc_closeFile(fd);
@@ -437,13 +437,13 @@ static void sysc_unregService(sSysCallStack *stack) {
 	s32 err;
 
 	/* check node-number */
-	if(!vfs_isValidNodeNo(no)) {
+	if(!vfsn_isValidNodeNo(no)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
 
 	/* remove the service */
-	err = vfs_removeService(no);
+	err = vfs_removeService(proc_getRunning()->pid,no);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
@@ -457,7 +457,7 @@ static void sysc_waitForClient(sSysCallStack *stack) {
 	s32 res;
 
 	/* check argument */
-	if(!vfs_isValidNodeNo(no)) {
+	if(!vfsn_isValidNodeNo(no)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
@@ -480,13 +480,13 @@ static void sysc_addIntrptListener(sSysCallStack *stack) {
 	s32 err;
 
 	/* check id */
-	if(!vfs_isValidNodeNo(id)) {
+	if(!vfsn_isValidNodeNo(id)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
 
-	node = vfs_getNode((tVFSNodeNo)id);
-	if(!vfs_isOwnServiceNode(node)) {
+	node = vfsn_getNode((tVFSNodeNo)id);
+	if(!vfsn_isOwnServiceNode(node)) {
 		SYSC_ERROR(stack,ERR_NOT_OWN_SERVICE);
 		return;
 	}
@@ -514,13 +514,13 @@ static void sysc_remIntrptListener(sSysCallStack *stack) {
 	s32 err;
 
 	/* check id */
-	if(!vfs_isValidNodeNo(id)) {
+	if(!vfsn_isValidNodeNo(id)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
 
-	node = vfs_getNode((tVFSNodeNo)id);
-	if(!vfs_isOwnServiceNode(node)) {
+	node = vfsn_getNode((tVFSNodeNo)id);
+	if(!vfsn_isOwnServiceNode(node)) {
 		SYSC_ERROR(stack,ERR_NOT_OWN_SERVICE);
 		return;
 	}

@@ -70,14 +70,6 @@ typedef struct {
 void vfs_init(void);
 
 /**
- * Checks wether the given node-number is valid
- *
- * @param nodeNo the number
- * @return true if so
- */
-bool vfs_isValidNodeNo(tVFSNodeNo nodeNo);
-
-/**
  * Checks if the given file is valid
  *
  * @param f the file
@@ -86,42 +78,10 @@ bool vfs_isValidNodeNo(tVFSNodeNo nodeNo);
 bool vfs_isValidFile(sGFTEntry *f);
 
 /**
- * Checks wether the given node is a service-node and belongs to the current process
- *
- * @param node the node
- * @return true if so
- */
-bool vfs_isOwnServiceNode(sVFSNode *node);
-
-/**
- * @param nodeNo the node-number
- * @return the node for given index
- */
-sVFSNode *vfs_getNode(tVFSNodeNo nodeNo);
-
-/**
  * @param no the file-number
  * @return the entry in the global-file-table
  */
 sGFTEntry *vfs_getFile(tFile no);
-
-/**
- * Determines the path for the given node. Note that static memory will be used for that!
- * So you have to copy the path to another location if you want to keep the path.
- *
- * @param node the node
- * @return the path
- */
-string vfs_getPath(sVFSNode *node);
-
-/**
- * Resolves the given path to a VFS-node
- *
- * @param path the path to resolve
- * @param nodeNo the node-number for that path (will be set)
- * @return 0 if successfull or the error-code
- */
-s32 vfs_resolvePath(cstring path,tVFSNodeNo *nodeNo);
 
 /**
  * Determines the GFT-File for the given file-descriptor
@@ -210,9 +170,10 @@ s32 vfs_waitForClient(tVFSNodeNo no);
 /**
  * Removes the service with given node-number
  *
+ * @param pid the process-id
  * @param nodeNo the node-number of the service
  */
-s32 vfs_removeService(tVFSNodeNo nodeNo);
+s32 vfs_removeService(tPid pid,tVFSNodeNo nodeNo);
 
 /**
  * Creates a process-node with given pid and handler-function
@@ -230,22 +191,23 @@ bool vfs_createProcess(tPid pid,fRead handler);
  */
 void vfs_removeProcess(tPid pid);
 
+/**
+ * The read-handler for service-usages
+ *
+ * @param node the VFS node
+ * @param buffer the buffer where to copy the info to
+ * @param offset the offset where to start
+ * @param count the number of bytes
+ * @return the number of read bytes
+ */
+s32 vfs_serviceUseReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+
 #if DEBUGGING
 
 /**
  * Prints all used entries in the global file table
  */
 void vfs_dbg_printGFT(void);
-
-/**
- * Prints the VFS tree
- */
-void vfs_dbg_printTree(void);
-
-/**
- * Prints the given VFS node
- */
-void vfs_dbg_printNode(sVFSNode *node);
 
 /**
  * @return the number of entries in the global file table

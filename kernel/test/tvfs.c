@@ -63,17 +63,17 @@ static void test_vfs_readFileSystem(void) {
 	oldHeap = kheap_getFreeMem();
 	oldGFT = vfs_dbg_getGFTEntryCount();
 
-	test_caseStart("Testing vfs_readFile() for /system");
+	test_caseStart("Testing vfs_readFile() for system:");
 
 	/* resolve path */
-	if(vfsn_resolvePath("/system",&nodeNo) < 0) {
-		test_caseFailed("Unable to resolve path '/system'!");
+	if(vfsn_resolvePath("system:",&nodeNo) < 0) {
+		test_caseFailed("Unable to resolve path 'system:'!");
 		return;
 	}
 
 	/* open */
 	if(vfs_openFile(VFS_READ,nodeNo,&fd) < 0) {
-		test_caseFailed("Unable to open '/system'!");
+		test_caseFailed("Unable to open 'system:'!");
 		return;
 	}
 
@@ -91,34 +91,13 @@ static void test_vfs_readFileSystem(void) {
 	}
 
 	/* check data */
-	vfsn_resolvePath("/system/processes",&procNode);
+	vfsn_resolvePath("system:/processes",&procNode);
 	if(strcmp((cstring)node.name,"processes") != 0) {
 		vfs_closeFile(e);
-		test_caseFailed("Node-name='%s', expected 'system'",node.name);
+		test_caseFailed("Node-name='%s', expected 'processes'",node.name);
 		return;
 	}
 	if(node.nodeNo != procNode) {
-		vfs_closeFile(e);
-		test_caseFailed("nodeNo=%d, expected %d",node.nodeNo);
-		return;
-	}
-
-	/* read "services" */
-	if((res = vfs_readFile(e,(u8*)&node,sizeof(sVFSNodePub))) != sizeof(sVFSNodePub)) {
-		vfs_closeFile(e);
-		test_caseFailed("Unable to read with fd=%d! Expected %d bytes, read %d",
-				fd,sizeof(sVFSNodePub),res);
-		return;
-	}
-
-	/* check data */
-	vfsn_resolvePath("/system/services",&servNode);
-	if(strcmp((cstring)node.name,"services") != 0) {
-		vfs_closeFile(e);
-		test_caseFailed("Node-name='%s', expected 'system'",node.name);
-		return;
-	}
-	if(node.nodeNo != servNode) {
 		vfs_closeFile(e);
 		test_caseFailed("nodeNo=%d, expected %d",node.nodeNo);
 		return;
@@ -149,17 +128,17 @@ static void test_vfs_readFileProcess0(void) {
 	oldHeap = kheap_getFreeMem();
 	oldGFT = vfs_dbg_getGFTEntryCount();
 
-	test_caseStart("Testing vfs_readFile() for /system/processes/0");
+	test_caseStart("Testing vfs_readFile() for system:/processes/0");
 
 	/* resolve path */
-	if(vfsn_resolvePath("/system/processes/0",&nodeNo) < 0) {
-		test_caseFailed("Unable to resolve path '/system/processes/0'!");
+	if(vfsn_resolvePath("system:/processes/0",&nodeNo) < 0) {
+		test_caseFailed("Unable to resolve path 'system:/processes/0'!");
 		return;
 	}
 
 	/* open */
 	if(vfs_openFile(VFS_READ,nodeNo,&fd) < 0) {
-		test_caseFailed("Unable to open '/system/processes/0'!");
+		test_caseFailed("Unable to open 'system:/processes/0'!");
 		return;
 	}
 

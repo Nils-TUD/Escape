@@ -44,7 +44,7 @@ void logChar(char c) {
 s32 main(void) {
 	s32 fd1,fd;
 	do {
-		fd1 = open("/system/services/video",IO_READ | IO_WRITE);
+		fd1 = open("services:/video",IO_READ | IO_WRITE);
 		if(fd1 < 0)
 			yield();
 	}
@@ -97,7 +97,7 @@ s32 main(void) {
 
 	s32 fd2;
 	do {
-		fd2 = open("/system/services/test",IO_READ | IO_WRITE);
+		fd2 = open("services:/test",IO_READ | IO_WRITE);
 		if(fd2 < 0)
 			yield();
 	}
@@ -150,7 +150,7 @@ s32 main(void) {
 	/* read from keyboard */
 	s32 fd3;
 	do {
-		fd3 = open("/system/services/keyboard",IO_READ | IO_WRITE);
+		fd3 = open("services:/keyboard",IO_READ | IO_WRITE);
 		if(fd3 < 0)
 			yield();
 	}
@@ -185,7 +185,7 @@ s32 main(void) {
 		printLastError();
 	else {
 		if(fork() == 0) {
-			s32 sfd = open("/system/services/console",IO_READ | IO_WRITE);
+			s32 sfd = open("services:/console",IO_READ | IO_WRITE);
 			if(sfd < 0)
 				printLastError();
 			else {
@@ -204,7 +204,7 @@ s32 main(void) {
 		}
 
 		if(fork() == 0) {
-			s32 sfd = open("/system/services/console",IO_READ | IO_WRITE);
+			s32 sfd = open("services:/console",IO_READ | IO_WRITE);
 			if(sfd < 0)
 				printLastError();
 			else {
@@ -263,7 +263,7 @@ s32 main(void) {
 		printLastError();
 	else {
 		s8 buf[] = "Das ist ein Teststring\n";
-		s32 fd = open("/system/services/console",IO_READ | IO_WRITE);
+		s32 fd = open("services:/console",IO_READ | IO_WRITE);
 		if(fd < 0)
 			printLastError();
 		else {
@@ -310,7 +310,7 @@ s32 main(void) {
 		if(fork() == 0) {
 			debugf("mypid=%d, ppid=%d\n",getpid(),getppid());
 			s8 buf[100];
-			s32 sfd = open("/system/services/console",IO_READ | IO_WRITE);
+			s32 sfd = open("services:/console",IO_READ | IO_WRITE);
 			debugf("Opened service with fd %d\n",sfd);
 			yield();
 			if(read(sfd,buf,100) < 0)
@@ -456,7 +456,7 @@ s32 main(void) {
 	if(fork() == 0) {
 		tFD fd;
 		sProc proc;
-		s8 path[] = "/system/processes/";
+		s8 path[] = "system:/processes/";
 		s8 ppath[255];
 		debugf("(%d) Listing all processes:\n",getpid());
 		if((dd = opendir(path)) >= 0) {

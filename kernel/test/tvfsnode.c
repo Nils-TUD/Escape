@@ -30,19 +30,22 @@ static void test_vfsn(void) {
 static void test_vfsn_resolvePath(void) {
 	test_caseStart("Testing vfsn_resolvePath()");
 
-	if(!test_vfsn_resolvePathCpy("/","")) return;
-	if(!test_vfsn_resolvePathCpy("//","")) return;
-	if(!test_vfsn_resolvePathCpy("///","")) return;
-	if(!test_vfsn_resolvePathCpy("/..","")) return;
-	if(!test_vfsn_resolvePathCpy("/../..","")) return;
-	if(!test_vfsn_resolvePathCpy("/./.","")) return;
-	if(!test_vfsn_resolvePathCpy("/system/..","")) return;
-	if(!test_vfsn_resolvePathCpy("/system/.","system")) return;
-	if(!test_vfsn_resolvePathCpy("/system/./","system")) return;
-	if(!test_vfsn_resolvePathCpy("/system/./.","system")) return;
-	if(!test_vfsn_resolvePathCpy("/////system/./././.","system")) return;
-	if(!test_vfsn_resolvePathCpy("/../system/../system/./","system")) return;
-	if(!test_vfsn_resolvePathCpy("//..//..//..","")) return;
+	if(!test_vfsn_resolvePathCpy("/","file")) return;
+	if(!test_vfsn_resolvePathCpy("//","file")) return;
+	if(!test_vfsn_resolvePathCpy("///","file")) return;
+	if(!test_vfsn_resolvePathCpy("system:/..","system")) return;
+	if(!test_vfsn_resolvePathCpy("system://../..","system")) return;
+	if(!test_vfsn_resolvePathCpy("system://./.","system")) return;
+	if(!test_vfsn_resolvePathCpy("system:/","system")) return;
+	if(!test_vfsn_resolvePathCpy("system://","system")) return;
+	if(!test_vfsn_resolvePathCpy("system:///","system")) return;
+	if(!test_vfsn_resolvePathCpy("system:/processes/..","system")) return;
+	if(!test_vfsn_resolvePathCpy("system:/processes/.","processes")) return;
+	if(!test_vfsn_resolvePathCpy("system:/processes/./","processes")) return;
+	if(!test_vfsn_resolvePathCpy("system:/./.","system")) return;
+	if(!test_vfsn_resolvePathCpy("system://///processes/./././.","processes")) return;
+	if(!test_vfsn_resolvePathCpy("system:/../processes/../processes/./","processes")) return;
+	if(!test_vfsn_resolvePathCpy("system://..//..//..","system")) return;
 	/* TODO test as soon as relative paths are possible
 	if(!test_vfsn_resolvePathCpy("system/.","system")) return;
 	if(!test_vfsn_resolvePathCpy("system/./","system")) return;
@@ -58,8 +61,10 @@ static bool test_vfsn_resolvePathCpy(cstring a,cstring b) {
 	tVFSNodeNo no;
 	sVFSNode *node;
 	strncpy(c,b,99);
-	if((err = vfsn_resolvePath(a,&no)) != 0)
-		return err;
+	if((err = vfsn_resolvePath(a,&no)) != 0) {
+		test_caseFailed("Unable to resolve the path %s",a);
+		return false;
+	}
 
 	node = vfsn_getNode(no);
 	return test_assertStr(node->name,c);
@@ -73,19 +78,23 @@ static void test_vfsn_getPath(void) {
 
 	vfsn_resolvePath("/",&no);
 	node = vfsn_getNode(no);
-	test_assertStr(vfsn_getPath(node),(string)"/");
+	test_assertStr(vfsn_getPath(node),(string)"file:");
 
-	vfsn_resolvePath("/system",&no);
+	vfsn_resolvePath("file:/",&no);
 	node = vfsn_getNode(no);
-	test_assertStr(vfsn_getPath(node),(string)"/system");
+	test_assertStr(vfsn_getPath(node),(string)"file:");
 
-	vfsn_resolvePath("/system/processes",&no);
+	vfsn_resolvePath("system:",&no);
 	node = vfsn_getNode(no);
-	test_assertStr(vfsn_getPath(node),(string)"/system/processes");
+	test_assertStr(vfsn_getPath(node),(string)"system:");
 
-	vfsn_resolvePath("/system/processes/0",&no);
+	vfsn_resolvePath("system:/processes",&no);
 	node = vfsn_getNode(no);
-	test_assertStr(vfsn_getPath(node),(string)"/system/processes/0");
+	test_assertStr(vfsn_getPath(node),(string)"system:/processes");
+
+	vfsn_resolvePath("system:/processes/0",&no);
+	node = vfsn_getNode(no);
+	test_assertStr(vfsn_getPath(node),(string)"system:/processes/0");
 
 	test_caseSucceded();
 }

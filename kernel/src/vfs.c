@@ -63,21 +63,21 @@ static s32 vfs_dirReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 static sGFTEntry globalFileTable[FILE_COUNT];
 
 void vfs_init(void) {
-	sVFSNode *root,*sys,*node;
+	sVFSNode *root,*sys;
 	vfsn_init();
 
 	/*
 	 *  /
-	 *   |-fs
-	 *   \-system
+	 *   file:
+	 *   system:
 	 *     |-processes
-	 *     \-services
+	 *   services:
 	 */
 	root = vfsn_createDir(NULL,(string)"",vfs_dirReadHandler);
-	node = vfsn_createServiceNode(root,(string)"fs");
+	vfsn_createServiceNode(root,(string)"file");
 	sys = vfsn_createDir(root,(string)"system",vfs_dirReadHandler);
-	node = vfsn_createDir(sys,(string)"processes",vfs_dirReadHandler);
-	node = vfsn_createDir(sys,(string)"services",vfs_dirReadHandler);
+	vfsn_createDir(sys,(string)"processes",vfs_dirReadHandler);
+	vfsn_createDir(root,(string)"services",vfs_dirReadHandler);
 }
 
 bool vfs_isValidFile(sGFTEntry *f) {

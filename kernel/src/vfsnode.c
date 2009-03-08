@@ -12,6 +12,8 @@
 #include <string.h>
 #include <video.h>
 
+#define FILE_ROOT()	(nodes + 3)
+
 /**
  * Appends a service-usage-node to the given node and stores the pointer to the new node
  * at <child>.
@@ -81,36 +83,35 @@ string vfsn_getPath(sVFSNode *node) {
 	u32 nlen,len = 0;
 	sVFSNode *n = node;
 	ASSERT(node != NULL,"node = NULL");
+	/* the root-node of the whole vfs has no path */
+	ASSERT(n->parent != NULL,"node->parent == NULL");
 
-	/* '/' is a special case */
-	if(n->parent == NULL) {
-		*path = '/';
-		len = 1;
+	u32 total = 0;
+	while(n->parent != NULL) {
+		/* name + slash */
+		total += strlen(n->name) + 1;
+		n = n->parent;
 	}
-	else {
-		u32 total = 0;
-		while(n->parent != NULL) {
-			/* name + slash */
-			total += strlen(n->name) + 1;
-			n = n->parent;
-		}
 
-		/* not nice, but ensures that we don't overwrite something :) */
-		if(total > MAX_PATH_LEN)
-			total = MAX_PATH_LEN;
+	/* not nice, but ensures that we don't overwrite something :) */
+	if(total > MAX_PATH_LEN)
+		total = MAX_PATH_LEN;
 
-		n = node;
-		len = total;
-		while(n->parent != NULL) {
-			nlen = strlen(n->name) + 1;
-			/* move the current string forward */
-			/* insert the new element */
-			*(path + total - nlen) = '/';
-			memcpy(path + total + 1 - nlen,n->name,nlen - 1);
-			total -= nlen;
-			n = n->parent;
-		}
+	n = node;
+	len = total;
+	while(n->parent->parent != NULL) {
+		nlen = strlen(n->name) + 1;
+		/* insert the new element */
+		*(path + total - nlen) = '/';
+		memcpy(path + total + 1 - nlen,n->name,nlen - 1);
+		total -= nlen;
+		n = n->parent;
 	}
+
+	/* now handle the protocol */
+	nlen = strlen(n->name) + 1;
+	memcpy(path + total - nlen,n->name,nlen - 1);
+	*(path + total - 1) = ':';
 
 	/* terminate */
 	*(path + len) = '\0';
@@ -121,17 +122,37 @@ string vfsn_getPath(sVFSNode *node) {
 s32 vfsn_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 	sVFSNode *n;
 	s32 pos;
-	/* select start */
-	if(*path == '/') {
-		n = &nodes[0];
-		/* skip slashes (we have at least 1) */
-		do {
-			path++;
-		}
-		while(*path == '/');
+
+	/* search for xyz:// */
+	pos = strchri(path,':');
+
+	/* no "protocol" given, so assume file: */
+	if(*(path + pos) == '\0') {
+		if(*path != '/')
+			panic("TODO use current path");
+		n = FILE_ROOT();
 	}
-	else
-		panic("TODO: use current path");
+	else {
+		/* search our root node */
+		n = NODE_FIRST_CHILD(nodes);
+		while(n != NULL) {
+			if(strncmp(n->name,path,pos) == 0) {
+				path += pos + 1;
+				if(*path != '/' && *path != '\0')
+					panic("TODO what to do here?");
+				break;
+			}
+			n = n->next;
+		}
+
+		/* no matching root found? */
+		if(n == NULL)
+			return ERR_VFS_NODE_NOT_FOUND;
+	}
+
+	/* skip slashes */
+	while(*path == '/')
+		path++;
 
 	/* root/current node requested? */
 	if(!*path) {
@@ -241,7 +262,8 @@ sVFSNode *vfsn_createDir(sVFSNode *parent,string name,fRead handler) {
 	dot->type = T_LINK;
 	dot->data.def.cache = node;
 	dotdot->type = T_LINK;
-	dotdot->data.def.cache = parent == NULL ? node : parent;
+	/* the root-node and all "protocol-roots" have no parent */
+	dotdot->data.def.cache = parent == NULL || parent->parent == NULL ? node : parent;
 	return node;
 }
 

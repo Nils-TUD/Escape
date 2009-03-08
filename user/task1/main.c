@@ -13,6 +13,7 @@
 #include <service.h>
 #include <mem.h>
 #include <heap.h>
+#include <print.h>
 
 #include <test.h>
 #include <theap.h>
@@ -44,7 +45,7 @@ void logChar(char c) {
 s32 main(void) {
 	s32 fd1,fd;
 	do {
-		fd1 = open("services:/video",IO_READ | IO_WRITE);
+		fd1 = open("services:/vterm",IO_READ | IO_WRITE);
 		if(fd1 < 0)
 			yield();
 	}
@@ -57,7 +58,7 @@ s32 main(void) {
 	if(fork() == 0) {
 		s32 id = regService("test",SERVICE_TYPE_MULTIPIPE);
 
-		static sMsgConRequest header;
+		static sMsgDefHeader header;
 		while(1) {
 			s32 cfd = getClient(id);
 			if(cfd < 0)
@@ -66,10 +67,10 @@ s32 main(void) {
 				u32 x = 0;
 				s32 c = 0;
 				do {
-					if((c = read(cfd,&header,sizeof(sMsgConRequest))) < 0)
+					if((c = read(cfd,&header,sizeof(sMsgDefHeader))) < 0)
 						printLastError();
 					else if(c > 0) {
-						sMsgConRequest *msg;
+						sMsgDefHeader *msg;
 						u8 *data = NULL;
 						/* read data */
 						if(header.length > 0) {
@@ -79,8 +80,8 @@ s32 main(void) {
 						}
 
 						/* build msg and send */
-						msg = createConsoleMsg(header.id,header.length,data);
-						if(write(fd,msg,sizeof(sMsgConRequest) + header.length) < 0)
+						msg = createDefMsg(header.id,header.length,data);
+						if(write(fd,msg,sizeof(sMsgDefHeader) + header.length) < 0)
 							printLastError();
 
 						if(header.length > 0)
@@ -114,11 +115,11 @@ s32 main(void) {
 			", \e[33morange\e[0m, \e[34mblue\e[0m, \e[35mmargenta\e[0m, \e[36mcyan\e[0m"
 			", \e[37mgray\e[0m\n"
 			"\e[30;44mwithbg\e[0m, \e[34;43mwithbg\e[0m\n";
-	sMsgConRequest *msg = createConsoleMsg(MSG_VIDEO_PUTS,strlen(str) + 1,str);
-	u32 i;
+	sMsgDefHeader *msg = createDefMsg(MSG_VTERM_WRITE,strlen(str) + 1,str);
+	/*u32 i;
 	s32 err;
-	for(i = 0; i < 0 ;i++) {
-		if((err = write(fd,msg,sizeof(sMsgConRequest) + msg->length)) < 0) {
+	for(i = 0; i < 3 ;i++) {
+		if((err = write(fd,msg,sizeof(sMsgDefHeader) + msg->length)) < 0) {
 			if(err == ERR_NOT_ENOUGH_MEM)
 				yield();
 			else
@@ -127,32 +128,62 @@ s32 main(void) {
 		else {
 			yield();
 		}
+	}*/
+
+	u32 i;
+	for(i = 0;  ;) {
+		printf("\e[30mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[31mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[32mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[33mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[34mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[35mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[36mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[37mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[40mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[41mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[42mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[43mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[44mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[45mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[46mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[47mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[37;40mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[36;41mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[35;42mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[34;43mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[33;44mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[32;45mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[31;46mDas ist der %dte Test!!\e[0m\n",i++);
+		printf("\e[30;47mDas ist der %dte Test!!\e[0m\n",i++);
+		volatile u32 x;
+		for(x = 0; x < 0xFFFFFFF; x++);
 	}
 
 	/*
 	sMsgDataVidGoto vidgoto;
 	vidgoto.col = 0;
 	vidgoto.row = 10;
-	msg = createConsoleMsg(MSG_VIDEO_GOTO,sizeof(sMsgDataVidGoto),&vidgoto);
-	write(fd,msg,sizeof(sMsgConRequest) + msg->length);
+	msg = createDefMsg(MSG_VIDEO_GOTO,sizeof(sMsgDataVidGoto),&vidgoto);
+	write(fd,msg,sizeof(sMsgDefHeader) + msg->length);
 
-	msg = createConsoleMsg(MSG_VIDEO_PUTS,5,"Test");
-	write(fd,msg,sizeof(sMsgConRequest) + msg->length);
+	msg = createDefMsg(MSG_VIDEO_PUTS,5,"Test");
+	write(fd,msg,sizeof(sMsgDefHeader) + msg->length);
 
 	vidgoto.col = 0;
 	vidgoto.row = 13;
-	msg = createConsoleMsg(MSG_VIDEO_GOTO,sizeof(sMsgDataVidGoto),&vidgoto);
-	write(fd,msg,sizeof(sMsgConRequest) + msg->length);
+	msg = createDefMsg(MSG_VIDEO_GOTO,sizeof(sMsgDataVidGoto),&vidgoto);
+	write(fd,msg,sizeof(sMsgDefHeader) + msg->length);
 
-	msg = createConsoleMsg(MSG_VIDEO_PUTS,5,"Test");
-	write(fd,msg,sizeof(sMsgConRequest) + msg->length);*/
+	msg = createDefMsg(MSG_VIDEO_PUTS,5,"Test");
+	write(fd,msg,sizeof(sMsgDefHeader) + msg->length);*/
 
-	freeConsoleMsg(msg);
+	freeDefMsg(msg);
 	close(fd);
 
-	fork();
+	/*fork();
 
-	/* read from keyboard */
+	 read from keyboard
 	s32 fd3;
 	do {
 		fd3 = open("services:/keyboard",IO_READ);
@@ -161,7 +192,6 @@ s32 main(void) {
 	}
 	while(fd3 < 0);
 
-	static sMsgKbRequest kbReq;
 	static sMsgKbResponse kbRes;
 
 	kbReq.id = MSG_KEYBOARD_READ;
@@ -175,7 +205,7 @@ s32 main(void) {
 				debugf("(pid=%d) Key %d pressed\n",getpid(),kbRes.keycode);
 		}
 	}
-	close(fd3);
+	close(fd3);*/
 
 
 #if 0
@@ -189,9 +219,9 @@ s32 main(void) {
 				printLastError();
 			else {
 				s8 str[] = "Test";
-				sMsgConRequest *msg = createMsg(ID_OUT,5,str);
+				sMsgDefHeader *msg = createMsg(ID_OUT,5,str);
 				do {
-					if(write(sfd,msg,sizeof(sMsgConRequest) + msg->length) < 0)
+					if(write(sfd,msg,sizeof(sMsgDefHeader) + msg->length) < 0)
 						printLastError();
 					yield();
 				}
@@ -207,9 +237,9 @@ s32 main(void) {
 			if(sfd < 0)
 				printLastError();
 			else {
-				sMsgConRequest *msg = createMsg(ID_CLEAR,0,NULL);
+				sMsgDefHeader *msg = createMsg(ID_CLEAR,0,NULL);
 				do {
-					if(write(sfd,msg,sizeof(sMsgConRequest)) < 0)
+					if(write(sfd,msg,sizeof(sMsgDefHeader)) < 0)
 						printLastError();
 					yield();
 				}
@@ -226,13 +256,13 @@ s32 main(void) {
 		vid_setFGColor(WHITE);
 		vid_setBGColor(BLACK);
 
-		static sMsgConRequest msg;
+		static sMsgDefHeader msg;
 		do {
 			s32 fd = getClient(id);
 			if(fd < 0)
 				printLastError();
 			else {
-				read(fd,&msg,sizeof(sMsgConRequest));
+				read(fd,&msg,sizeof(sMsgDefHeader));
 				if(msg.id == ID_OUT) {
 					s8 *readBuf = malloc(msg.length * sizeof(s8));
 					read(fd,readBuf,msg.length);

@@ -9,29 +9,21 @@
 
 #include "common.h"
 
-#define MSG_CONSOLE_OUT		0
-#define MSG_CONSOLE_IN		1
-#define MSG_CONSOLE_CLEAR	2
+#define MSG_VTERM_WRITE		0
+#define MSG_VTERM_READ		1
 
 #define MSG_KEYBOARD_READ	0
 
-#define MSG_VIDEO_PUTCHAR	0
-#define MSG_VIDEO_PUTS		1
-#define MSG_VIDEO_GOTO		2
+#define MSG_VIDEO_SET		0
+#define MSG_VIDEO_MOVEUP	1
 
-/* a message that can be send to the console-service */
+/* the header for all default-messages */
 typedef struct {
 	/* the message-id */
 	u8 id;
 	/* the length of the data behind this struct */
 	u32 length;
-} sMsgConRequest;
-
-/* a request-message for the keyboard-service */
-typedef struct {
-	/* the message-id */
-	u8 id;
-} sMsgKbRequest;
+} sMsgDefHeader;
 
 /* a message that will be send from the keyboard-service */
 typedef struct {
@@ -41,35 +33,29 @@ typedef struct {
 	u8 isBreak;
 } sMsgKbResponse;
 
-/* a message that can be send to the video-service */
-typedef struct {
-	/* the message-id */
-	u8 id;
-	/* the length of the data behind this struct */
-	u32 length;
-} sMsgVidRequest;
-
-/* the message-data for the video-GOTO-message */
+/* the message-data for the video-set-message */
 typedef struct {
 	u8 col;
 	u8 row;
-} sMsgDataVidGoto;
+	u8 color;
+	s8 character;
+} sMsgDataVidSet;
 
 /**
- * Creates a console-message with the given data
+ * Creates a default-message with the given data
  *
  * @param id the message-id
  * @param length the length of the data to send
  * @param buf the data to send
  * @return the message or NULL if failed
  */
-sMsgConRequest *createConsoleMsg(u8 id,u32 length,void *buf);
+sMsgDefHeader *createDefMsg(u8 id,u32 length,void *buf);
 
 /**
- * Frees the messages that has been build with createConsoleMsg().
+ * Frees the messages that has been build with createDefMsg().
  *
  * @param msg the message
  */
-void freeConsoleMsg(sMsgConRequest *msg);
+void freeDefMsg(sMsgDefHeader *msg);
 
 #endif /* MESSAGES_H_ */

@@ -1,4 +1,4 @@
-NAME=console
+NAME=vterm
 BUILD=../../build
 LIBDIR=../../lib
 DISK=$(BUILD)/disk.img

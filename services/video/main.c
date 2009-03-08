@@ -18,69 +18,38 @@
 
 #define COLS		80
 #define ROWS		25
-#define TAB_WIDTH	2
-
-/* the colors */
-typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
 
 /* our state */
-typedef struct {
-	u8 *data;
-	u8 col;
-	u8 row;
-	u8 foreground;
-	u8 background;
-} sVideo;
+static u8 *videoData;
 
 /**
- * Moves all lines one line up, if necessary
+ * Moves all lines one line up
  */
-static void vid_move(void);
-/**
- * Prints the given character at the current position
- *
- * @param c the character
- */
-static void vid_putchar(s8 c);
-/**
- * Prints the given string at the current position
- *
- * @param str the string
- */
-static void vid_puts(s8 *str);
-
-static sVideo video;
+static void vid_moveUp(void);
 
 s32 main(void) {
-	s32 id = regService("video",SERVICE_TYPE_MULTIPIPE);
+	s32 id;
+
+	debugf("Service video has pid %d\n",getpid());
+
+	id = regService("video",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
 		printLastError();
 		return 1;
 	}
 
 	/* map video-memory for our process */
-	video.data = (u8*)mapPhysical(VIDEO_MEM,COLS * (ROWS + 2) * 2 + 1);
-	if(video.data == 0) {
+	videoData = (u8*)mapPhysical(VIDEO_MEM,COLS * (ROWS + 1) * 2);
+	if(videoData == NULL) {
 		printLastError();
 		return 1;
 	}
 
-	/* init state */
-	video.col = 0;
-	video.row = 0;
-	video.foreground = WHITE;
-	video.background = BLACK;
-
-	/* request io-ports for qemu and bochs */
-	requestIOPort(0xe9);
-	requestIOPort(0x3f8);
-	requestIOPort(0x3fd);
-
 	/* clear screen */
-	memset(video.data,0,COLS * ROWS * 2);
+	memset(videoData,0,COLS * ROWS * 2);
 
 	/* wait for messages */
-	static sMsgVidRequest msg;
+	static sMsgDefHeader msg;
 	while(1) {
 		s32 fd = getClient(id);
 		if(fd < 0)
@@ -90,41 +59,27 @@ s32 main(void) {
 			s32 c;
 			do {
 				/* read header */
-				if((c = read(fd,&msg,sizeof(sMsgVidRequest))) < 0)
+				if((c = read(fd,&msg,sizeof(sMsgDefHeader))) < 0)
 					printLastError();
 				else if(c > 0) {
 					/* see what we have to do */
 					switch(msg.id) {
-						/* print character */
-						case MSG_VIDEO_PUTCHAR: {
-							s8 character;
-							read(fd,&character,sizeof(s8));
-							vid_putchar(character);
+						/* set character */
+						case MSG_VIDEO_SET: {
+							static sMsgDataVidSet data;
+							if(read(fd,&data,sizeof(sMsgDataVidSet)) > 0) {
+								/*debugf("Got %d, color %d for row %d, col %d\n",data.character,
+									data.color,data.row,data.col);*/
+								u8 *ptr = videoData + (data.row * COLS * 2) + data.col * 2;
+								*ptr = data.character;
+								*(ptr + 1) = data.color;
+							}
 						}
 						break;
 
-						/* print string */
-						case MSG_VIDEO_PUTS: {
-							s8 *readBuf = malloc(msg.length * sizeof(s8));
-							read(fd,readBuf,msg.length);
-							/* ensure termination */
-							*(readBuf + msg.length - 1) = '\0';
-							/*vid_puts((s8*)"Read: ");*/
-							vid_puts(readBuf);
-							/*vid_putchar('\n');*/
-							free(readBuf);
-						}
-						break;
-
-						/* goto x/y */
-						case MSG_VIDEO_GOTO: {
-							static sMsgDataVidGoto msgData;
-							read(fd,&msgData,sizeof(msgData));
-							debugf("col=%d, row=%d\n",msgData.col,msgData.row);
-							if(msgData.col < COLS)
-								video.col = msgData.col;
-							if(msgData.row < ROWS)
-								video.row = msgData.row;
+						/* move up */
+						case MSG_VIDEO_MOVEUP: {
+							vid_moveUp();
 						}
 						break;
 					}
@@ -135,74 +90,18 @@ s32 main(void) {
 		}
 	}
 
-	releaseIOPort(0xe9);
-	releaseIOPort(0x3f8);
-	releaseIOPort(0x3fd);
-
 	unregService(id);
 	return 0;
 }
 
 
-static void vid_move(void) {
+static void vid_moveUp(void) {
 	u32 i;
 	s8 *src,*dst;
-	/* last line? */
-	if(video.row >= ROWS) {
-		/* copy all chars one line back */
-		src = (s8*)(video.data + COLS * 2);
-		dst = (s8*)video.data;
-		for(i = 0; i < ROWS * COLS * 2; i++) {
-			*dst++ = *src++;
-		}
-		/* to prev line */
-		video.col = 0;
-		video.row--;
-	}
-}
-
-static void vid_putchar(s8 c) {
-	u32 i;
-	vid_move();
-
-	/* write to bochs/qemu console (\r not necessary here) */
-	if(c != '\r') {
-		outb(0xe9,c);
-	    outb(0x3f8,c);
-	    while((inb(0x3fd) & 0x20) == 0);
-	}
-
-	if(c == '\n') {
-		/* to next line */
-		video.row++;
-		/* move cursor to line start */
-		vid_putchar('\r');
-	}
-	else if(c == '\r') {
-		/* to line-start */
-		video.col = 0;
-	}
-	else if(c == '\t') {
-		i = TAB_WIDTH;
-		while(i-- > 0) {
-			vid_putchar(' ');
-		}
-	}
-	else {
-		s8 *data = video.data + (video.row * COLS * 2) + (video.col * 2);
-		*data = c;
-		data++;
-		*data = (video.background << 4) | video.foreground;
-
-		video.col++;
-		/* do an explicit newline if necessary */
-		if(video.col >= COLS)
-			vid_putchar('\n');
-	}
-}
-
-static void vid_puts(s8 *str) {
-	while(*str) {
-		vid_putchar(*str++);
+	/* copy all chars one line back */
+	src = (s8*)(videoData + COLS * 2);
+	dst = (s8*)videoData;
+	for(i = 0; i < ROWS * COLS * 2; i++) {
+		*dst++ = *src++;
 	}
 }

@@ -26,6 +26,12 @@
 /* the keyboard msg-id */
 #define KEYBOARD_MSG_INTRPT	0xFF
 
+/* a request-message for the keyboard-service */
+typedef struct {
+	/* the message-id */
+	u8 id;
+} sMsgKbRequest;
+
 /* the interrupt-msg */
 static sMsgKbRequest kbIntrptMsg = {
 	.id = KEYBOARD_MSG_INTRPT
@@ -33,7 +39,11 @@ static sMsgKbRequest kbIntrptMsg = {
 
 s32 main(void) {
 	s32 selfFd;
-	s32 id = regService("keyboard",SERVICE_TYPE_SINGLEPIPE);
+	s32 id;
+
+	debugf("Service keyboard has pid %d\n",getpid());
+
+	id = regService("keyboard",SERVICE_TYPE_SINGLEPIPE);
 	if(id < 0) {
 		printLastError();
 		return 1;

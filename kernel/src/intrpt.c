@@ -552,7 +552,8 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
 			/* #PF */
 			if(stack.intrptNo == EX_PAGE_FAULT) {
-				/*vid_printf("Page fault for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);*/
+				vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
+						stack.eip,proc_getRunning()->pid);
 				paging_handlePageFault(cpu_getCR2());
 				break;
 			}

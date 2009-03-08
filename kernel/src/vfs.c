@@ -546,6 +546,10 @@ s32 vfs_serviceUseReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	/* the data is behind the message */
 	memcpy(buffer,(u8*)(msg + 1) + offset,count);
 
+	/*vid_printf("\n%d read msg:\n---\n",p->pid);
+	dumpBytes(buffer,count);
+	vid_printf("\n---\n");*/
+
 	/* free data and remove element from list if the complete message has been read */
 	if(offset + count >= msg->length) {
 		kheap_free(msg);
@@ -584,6 +588,10 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 
 		msg->length = count;
 		memcpy(msg + 1,buffer,count);
+
+		/*vid_printf("\n%d Wrote msg:\n---\n",pid);
+		dumpBytes(buffer,count);
+		vid_printf("\n---\n");*/
 
 		/* append to list */
 		sll_append(*list,msg);

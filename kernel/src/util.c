@@ -127,11 +127,12 @@ void dumpMem(void *addr,u32 dwordCount) {
 }
 
 void dumpBytes(void *addr,u32 byteCount) {
+	u32 i = 0;
 	u8 *ptr = (u8*)addr;
-	while(byteCount-- > 0) {
+	for(i = 0; byteCount-- > 0; i++) {
 		vid_printf("%02x ",*ptr);
 		ptr++;
-		if(byteCount % 8 == 0)
+		if(i % 12 == 11)
 			vid_printf("\n");
 	}
 }

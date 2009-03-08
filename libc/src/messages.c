@@ -9,9 +9,9 @@
 #include "../h/heap.h"
 #include "../h/string.h"
 
-sMsgConRequest *createConsoleMsg(u8 id,u32 length,void *buf)
+sMsgDefHeader *createDefMsg(u8 id,u32 length,void *buf)
 {
-	sMsgConRequest *msg = (sMsgConRequest*)malloc(sizeof(sMsgConRequest) + length * sizeof(u8));
+	sMsgDefHeader *msg = (sMsgDefHeader*)malloc(sizeof(sMsgDefHeader) + length * sizeof(u8));
 	if(msg == NULL)
 		return NULL;
 
@@ -22,6 +22,6 @@ sMsgConRequest *createConsoleMsg(u8 id,u32 length,void *buf)
 	return msg;
 }
 
-void freeConsoleMsg(sMsgConRequest *msg) {
+void freeDefMsg(sMsgDefHeader *msg) {
 	free(msg);
 }

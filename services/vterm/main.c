@@ -14,8 +14,13 @@
 
 #include <video.h>
 
+typedef struct {
+	u8 col;
+	u8 row;
+} sVTerm;
+
 s32 main(void) {
-	s32 id = regService("console",SERVICE_TYPE_MULTIPIPE);
+	s32 id = regService("vterm",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
 		printLastError();
 		return 1;
@@ -26,9 +31,9 @@ s32 main(void) {
 	u32 msgCount = 0;
 	static sMsgConRequest msg;
 	while(1) {
-		s32 fd = waitForClient(id);
+		s32 fd = getClient(id);
 		if(fd < 0)
-			printLastError();
+			yield();
 		else {
 			s32 x = 0,c = 0;
 			do {

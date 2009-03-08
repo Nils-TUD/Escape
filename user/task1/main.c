@@ -59,7 +59,7 @@ s32 main(void) {
 
 		static sMsgConRequest header;
 		while(1) {
-			s32 cfd = waitForClient(id);
+			s32 cfd = getClient(id);
 			if(cfd < 0)
 				printLastError();
 			else {
@@ -228,7 +228,7 @@ s32 main(void) {
 
 		static sMsgConRequest msg;
 		do {
-			s32 fd = waitForClient(id);
+			s32 fd = getClient(id);
 			if(fd < 0)
 				printLastError();
 			else {

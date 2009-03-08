@@ -96,6 +96,10 @@ void printLastError(void) {
 			debugf("The IRQ-listener is not present!\n");
 			break;
 
+		case ERR_NO_CLIENT_WAITING:
+			debugf("No client is currently waiting\n");
+			break;
+
 		default:
 			debugf("No error\n");
 			break;

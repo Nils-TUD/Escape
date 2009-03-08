@@ -392,7 +392,7 @@ void vfs_closeIntrptMsgNode(tFile f) {
 	vfs_closeFile(e);
 }
 
-s32 vfs_waitForClient(tVFSNodeNo no) {
+s32 vfs_getClient(tVFSNodeNo no) {
 	sVFSNode *n,*node = nodes + no;
 	tFD fd;
 	s32 err;
@@ -401,22 +401,16 @@ s32 vfs_waitForClient(tVFSNodeNo no) {
 		return ERR_NOT_OWN_SERVICE;
 
 	/* search for a slot that needs work */
-	do {
-		n = NODE_FIRST_CHILD(node);
-		while(n != NULL) {
-			/* data available? */
-			if(n->data.servuse.sendList != NULL && sll_length(n->data.servuse.sendList) > 0)
-				break;
-			n = n->next;
-		}
-
-		/* wait until someone wakes us up */
-		if(n == NULL) {
-			sched_setBlocked(p);
-			proc_switch();
-		}
+	n = NODE_FIRST_CHILD(node);
+	while(n != NULL) {
+		/* data available? */
+		if(n->data.servuse.sendList != NULL && sll_length(n->data.servuse.sendList) > 0)
+			break;
+		n = n->next;
 	}
-	while(n == NULL);
+
+	if(n == NULL)
+		return ERR_NO_CLIENT_WAITING;
 
 	/* open a file for it and return the file-descriptor so that the service can read and write
 	 * with it */

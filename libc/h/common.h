@@ -76,6 +76,7 @@ typedef enum {false = 0, true = 1} bool;
 #define ERR_INTRPT_LISTENER_MSGLEN	-19
 #define ERR_INVALID_IRQ_NUMBER		-20
 #define ERR_IRQ_LISTENER_MISSING	-21
+#define ERR_NO_CLIENT_WAITING		-22
 
 /**
  * Prints the last error-message

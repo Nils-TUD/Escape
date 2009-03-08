@@ -82,9 +82,9 @@ s32 main(void) {
 	/* wait for messages */
 	static sMsgVidRequest msg;
 	while(1) {
-		s32 fd = waitForClient(id);
+		s32 fd = getClient(id);
 		if(fd < 0)
-			printLastError();
+			yield();
 		else {
 			/* read all available messages */
 			s32 c;

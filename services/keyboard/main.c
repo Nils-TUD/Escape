@@ -39,20 +39,23 @@ s32 main(void) {
 		return 1;
 	}
 
-	if(addIntrptListener(id,IRQ_KEYBOARD,&kbIntrptMsg,sizeof(sMsgKbRequest)) < 0)
+	/* we want to get notified about keyboard interrupts */
+	if(addIntrptListener(id,IRQ_KEYBOARD,&kbIntrptMsg,sizeof(sMsgKbRequest)) < 0) {
 		printLastError();
-	else
-		debugf("Announced keyboard interrupt-handler\n");
+		return 1;
+	}
 
-	if(requestIOPort(IOPORT_PIC) < 0)
+	/* request io-ports */
+	if(requestIOPort(IOPORT_PIC) < 0) {
 		printLastError();
-	else
-		debugf("Reserved IO-port 0x%02x\n",IOPORT_PIC);
-	if(requestIOPort(IOPORT_KB_CTRL) < 0)
+		return 1;
+	}
+	if(requestIOPort(IOPORT_KB_CTRL) < 0) {
 		printLastError();
-	else
-		debugf("Reserved IO-port 0x%02x\n",IOPORT_KB_CTRL);
+		return 1;
+	}
 
+	/* open ourself to write keycodes into the receive-pipe (which can be read by other processes) */
 	selfFd = open("services:/keyboard",IO_WRITE);
 	if(selfFd < 0) {
 		printLastError();
@@ -62,9 +65,9 @@ s32 main(void) {
 	static sMsgKbResponse resp;
 	static sMsgKbRequest msg;
 	while(1) {
-		s32 fd = waitForClient(id);
+		s32 fd = getClient(id);
 		if(fd < 0)
-			printLastError();
+			yield();
 		else {
 			s32 c = 0;
 			do {
@@ -74,8 +77,8 @@ s32 main(void) {
 					if(msg.id == KEYBOARD_MSG_INTRPT) {
 						u8 scanCode = inb(IOPORT_KB_CTRL);
 						if(kb_set1_getKeycode(&resp,scanCode)) {
+							/* write in receive-pipe */
 							write(selfFd,&resp,sizeof(sMsgKbResponse));
-							/*debugf("Got scancode %d => keycode %d\n",scanCode,(buffer + writePos)->keycode);*/
 						}
 						/* ack scancode */
 						outb(IOPORT_PIC,PIC_ICW1);
@@ -87,6 +90,7 @@ s32 main(void) {
 		}
 	}
 
+	/* clean up */
 	releaseIOPort(IOPORT_PIC);
 	releaseIOPort(IOPORT_KB_CTRL);
 

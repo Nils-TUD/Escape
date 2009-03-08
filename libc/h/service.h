@@ -58,11 +58,11 @@ s32 addIntrptListener(s32 service,u16 irq,void *msg,u32 msgLen);
 s32 remIntrptListener(s32 service,u16 irq);
 
 /**
- * Waits for a client to serve
+ * Looks wether a client wants to be served and returns a file-descriptor for it.
  *
  * @param service the service-id
  * @return the file-descriptor if successfull or the error-code
  */
-s32 waitForClient(s32 service);
+s32 getClient(s32 service);
 
 #endif /* SERVICE_H_ */

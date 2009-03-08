@@ -172,13 +172,13 @@ s32 vfs_openIntrptMsgNode(sVFSNode *node);
 void vfs_closeIntrptMsgNode(tFile f);
 
 /**
- * For services: Waits until a clients wants to be served and returns a file-descriptor
+ * For services: Looks wether a client wants to be served and returns a file-descriptor
  * for it.
  *
  * @param no the node-number
  * @return the error-code (negative) or the file-descriptor to use
  */
-s32 vfs_waitForClient(tVFSNodeNo no);
+s32 vfs_getClient(tVFSNodeNo no);
 
 /**
  * Removes the service with given node-number

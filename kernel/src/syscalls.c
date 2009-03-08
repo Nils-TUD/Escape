@@ -125,13 +125,13 @@ static void sysc_regService(sSysCallStack *stack);
  */
 static void sysc_unregService(sSysCallStack *stack);
 /**
- * For services: Waits until a clients wants to be served and returns a file-descriptor
+ * For services: Looks wether a client wants to be served and returns a file-descriptor
  * for it.
  *
  * @param sVFSNode* node the service-node
  * @return tFD the file-descriptor to use
  */
-static void sysc_waitForClient(sSysCallStack *stack);
+static void sysc_getClient(sSysCallStack *stack);
 /**
  * Adds an interrupt-listener (for services)
  *
@@ -202,7 +202,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 11 */	{sysc_mapPhysical,			2},
 	/* 12 */	{sysc_write,				3},
 	/* 13 */	{sysc_yield,				0},
-	/* 14 */	{sysc_waitForClient,		1},
+	/* 14 */	{sysc_getClient,			1},
 	/* 15 */	{sys_requestIOPorts,		2},
 	/* 16 */	{sys_releaseIOPorts,		2},
 	/* 17 */	{sysc_dupFd,				1},
@@ -435,7 +435,7 @@ static void sysc_unregService(sSysCallStack *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static void sysc_waitForClient(sSysCallStack *stack) {
+static void sysc_getClient(sSysCallStack *stack) {
 	tVFSNodeNo no = stack->arg1;
 	s32 res;
 
@@ -445,7 +445,7 @@ static void sysc_waitForClient(sSysCallStack *stack) {
 		return;
 	}
 
-	res = vfs_waitForClient(no);
+	res = vfs_getClient(no);
 	if(res < 0) {
 		SYSC_ERROR(stack,res);
 		return;

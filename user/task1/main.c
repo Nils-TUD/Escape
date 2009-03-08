@@ -55,7 +55,7 @@ s32 main(void) {
 
 #if 0
 	if(fork() == 0) {
-		s32 id = regService("test");
+		s32 id = regService("test",SERVICE_TYPE_MULTIPIPE);
 
 		static sMsgConRequest header;
 		while(1) {
@@ -117,7 +117,7 @@ s32 main(void) {
 	sMsgConRequest *msg = createConsoleMsg(MSG_VIDEO_PUTS,strlen(str) + 1,str);
 	u32 i;
 	s32 err;
-	for(i = 0; i < 1 ;i++) {
+	for(i = 0; i < 0 ;i++) {
 		if((err = write(fd,msg,sizeof(sMsgConRequest) + msg->length)) < 0) {
 			if(err == ERR_NOT_ENOUGH_MEM)
 				yield();
@@ -129,6 +129,7 @@ s32 main(void) {
 		}
 	}
 
+	/*
 	sMsgDataVidGoto vidgoto;
 	vidgoto.col = 0;
 	vidgoto.row = 10;
@@ -144,13 +145,17 @@ s32 main(void) {
 	write(fd,msg,sizeof(sMsgConRequest) + msg->length);
 
 	msg = createConsoleMsg(MSG_VIDEO_PUTS,5,"Test");
-	write(fd,msg,sizeof(sMsgConRequest) + msg->length);
+	write(fd,msg,sizeof(sMsgConRequest) + msg->length);*/
 
-#if 0
+	freeConsoleMsg(msg);
+	close(fd);
+
+	fork();
+
 	/* read from keyboard */
 	s32 fd3;
 	do {
-		fd3 = open("services:/keyboard",IO_READ | IO_WRITE);
+		fd3 = open("services:/keyboard",IO_READ);
 		if(fd3 < 0)
 			yield();
 	}
@@ -161,26 +166,20 @@ s32 main(void) {
 
 	kbReq.id = MSG_KEYBOARD_READ;
 	while(true) {
-		if(write(fd3,&kbReq,sizeof(sMsgKbRequest)) > 0) {
-			if(read(fd3,&kbRes,sizeof(kbRes)) <= 0)
-				yield();
-			else {
-				if(kbRes.isBreak)
-					debugf("Key %d released\n",kbRes.keycode);
-				else
-					debugf("Key %d pressed\n",kbRes.keycode);
-			}
+		if(read(fd3,&kbRes,sizeof(kbRes)) <= 0)
+			yield();
+		else {
+			if(kbRes.isBreak)
+				debugf("(pid=%d) Key %d released\n",getpid(),kbRes.keycode);
+			else
+				debugf("(pid=%d) Key %d pressed\n",getpid(),kbRes.keycode);
 		}
 	}
 	close(fd3);
-#endif
-
-	freeConsoleMsg(msg);
-	close(fd);
 
 
 #if 0
-	s32 id = regService("console");
+	s32 id = regService("console",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0)
 		printLastError();
 	else {
@@ -258,7 +257,7 @@ s32 main(void) {
 #else
 
 #if 0
-	s32 id = regService("console");
+	s32 id = regService("console",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0)
 		printLastError();
 	else {
@@ -301,7 +300,7 @@ s32 main(void) {
 	}
 
 
-	s32 id = regService("console");
+	s32 id = regService("console",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0)
 		printLastError();
 	else {
@@ -438,7 +437,7 @@ s32 main(void) {
 		debugf("Hi, my pid is %d, parent is %d\n",getpid(),getppid());
 	}*/
 
-	/*if(regService("test") < 0)
+	/*if(regService("test",SERVICE_TYPE_MULTIPIPE) < 0)
 		printLastError();
 	else
 		unregService();*/

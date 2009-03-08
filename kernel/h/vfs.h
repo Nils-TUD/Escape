@@ -11,11 +11,22 @@
 #include "../h/proc.h"
 #include <sllist.h>
 
+/* special service-client names */
+#define SERVICE_CLIENT_KERNEL		"k"
+#define SERVICE_CLIENT_ALL			"a"
+
 /* the possible node-types */
 typedef enum {T_DIR,T_LINK,T_INFO,T_SERVICE,T_SERVUSE} eNodeType;
 
 /* vfs-node and GFT flags */
-enum {VFS_NOACCESS = 0,VFS_READ = 1,VFS_WRITE = 2};
+enum {
+	/* no read and write */
+	VFS_NOACCESS = 0,
+	VFS_READ = 1,
+	VFS_WRITE = 2,
+	/* for services: not a node for each client-process but one for all */
+	VFS_SINGLEPIPE = 4
+};
 
 /* a node in our virtual file system */
 typedef struct sVFSNode sVFSNode;
@@ -40,6 +51,7 @@ struct sVFSNode {
 		} service;
 		/* for service-usages */
 		struct {
+			sProc *locked;
 			sSLList *sendList;
 			sSLList *recvList;
 		} servuse;
@@ -139,9 +151,10 @@ void vfs_closeFile(sGFTEntry *e);
  *
  * @param pid the process-id
  * @param name the service-name
+ * @param type single-pipe or multi-pipe
  * @return 0 if ok, negative if an error occurred
  */
-s32 vfs_createService(tPid pid,cstring name);
+s32 vfs_createService(tPid pid,cstring name,u8 type);
 
 /**
  * Opens a file for the interrupt-message-sending. Creates a node for it, if not already done

@@ -278,14 +278,14 @@ sVFSNode *vfsn_createInfo(sVFSNode *parent,string name,fRead handler) {
 	return node;
 }
 
-sVFSNode *vfsn_createServiceNode(sVFSNode *parent,string name) {
+sVFSNode *vfsn_createServiceNode(sVFSNode *parent,string name,u8 type) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
 	/* TODO */
 	node->type = T_SERVICE;
-	node->flags = VFS_NOACCESS;
+	node->flags = VFS_NOACCESS | type;
 	node->readHandler = NULL;
 	return node;
 }
@@ -298,6 +298,7 @@ sVFSNode *vfsn_createServiceUseNode(sVFSNode *parent,string name,fRead handler) 
 	node->type = T_SERVUSE;
 	node->flags = VFS_READ | VFS_WRITE;
 	node->readHandler = handler;
+	node->data.servuse.locked = NULL;
 	return node;
 }
 
@@ -336,30 +337,48 @@ static s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
 	sVFSNode *m;
 	sProc *p = proc_getRunning();
 
-	/* TODO we should check for duplicates and if so just reserve a different file for it */
+	if(n->flags & VFS_SINGLEPIPE) {
+		/* check if the node does already exist */
+		m = NODE_FIRST_CHILD(n);
+		while(m != NULL) {
+			if(strcmp(m->name,SERVICE_CLIENT_ALL) == 0) {
+				*child = m;
+				return 0;
+			}
+			m = m->next;
+		}
 
-	/* check duplicate usage
-	m = NODE_FIRST_CHILD(n);
-	while(m != NULL) {
-		if(m->data.service.proc == p)
-			return ERR_PROC_DUP_SERVICE_USE;
-		m = m->next;
-	}*/
+		name = SERVICE_CLIENT_ALL;
+	}
+	else {
+		/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
+		name = kheap_alloc(12 * sizeof(s8));
+		if(name == NULL)
+			return ERR_NOT_ENOUGH_MEM;
 
-	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
-	name = kheap_alloc(12 * sizeof(s8));
-	if(name == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		/* create usage-node */
+		itoa(name,p->pid);
 
-	/* create usage-node */
-	itoa(name,p->pid);
+		/* check duplicate usage */
+		m = NODE_FIRST_CHILD(n);
+		while(m != NULL) {
+			if(strcmp(m->name,name) == 0) {
+				kheap_free(name);
+				*child = m;
+				return 0;
+			}
+			m = m->next;
+		}
+	}
+
+	/* ok, create a service-usage-node */
 	m = vfsn_createServiceUseNode(n,name,vfs_serviceUseReadHandler);
 	if(m == NULL) {
-		kheap_free(name);
+		if((n->flags & VFS_SINGLEPIPE) == 0)
+			kheap_free(name);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
-	/*m->data.service.proc = p;*/
 	*child = m;
 	return 0;
 }

@@ -127,9 +127,10 @@ sVFSNode *vfsn_createInfo(sVFSNode *parent,string name,fRead handler);
  * @param parent the parent-node
  * @param prev the previous node
  * @param name the node-name
+ * @param type single-pipe or multi-pipe
  * @return the node
  */
-sVFSNode *vfsn_createServiceNode(sVFSNode *parent,string name);
+sVFSNode *vfsn_createServiceNode(sVFSNode *parent,string name,u8 type);
 
 /**
  * Creates a service-use-node

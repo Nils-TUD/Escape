@@ -113,6 +113,7 @@ static void sysc_close(sSysCallStack *stack);
  * Registers a service
  *
  * @param cstring name of the service
+ * @param u8 type: SINGLE-PIPE OR MULTI-PIPE
  * @return s32 0 if successfull
  */
 static void sysc_regService(sSysCallStack *stack);
@@ -195,7 +196,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 5 */ 	{sysc_open,					2},
 	/* 6 */ 	{sysc_close,				1},
 	/* 7 */ 	{sysc_read,					3},
-	/* 8 */		{sysc_regService,			1},
+	/* 8 */		{sysc_regService,			2},
 	/* 9 */ 	{sysc_unregService,			0},
 	/* 10 */	{sysc_changeSize,			1},
 	/* 11 */	{sysc_mapPhysical,			2},
@@ -398,10 +399,12 @@ static void sysc_close(sSysCallStack *stack) {
 }
 
 static void sysc_regService(sSysCallStack *stack) {
+	cstring name = (cstring)stack->arg1;
+	u8 type = (u8)stack->arg2;
 	sProc *p = proc_getRunning();
 	s32 res;
 
-	res = vfs_createService(p->pid,(cstring)stack->arg1);
+	res = vfs_createService(p->pid,name,type);
 	if(res < 0) {
 		SYSC_ERROR(stack,res);
 		return;

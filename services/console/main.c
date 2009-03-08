@@ -15,7 +15,7 @@
 #include <video.h>
 
 s32 main(void) {
-	s32 id = regService("console");
+	s32 id = regService("console",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
 		printLastError();
 		return 1;

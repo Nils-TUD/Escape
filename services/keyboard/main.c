@@ -31,14 +31,9 @@ static sMsgKbRequest kbIntrptMsg = {
 	.id = KEYBOARD_MSG_INTRPT
 };
 
-/* the keycode-buffer */
-static u32 keyCount = 0;
-static u32 readPos = 0;
-static u32 writePos = 0;
-static sMsgKbResponse buffer[BUFFER_SIZE];
-
 s32 main(void) {
-	s32 id = regService("keyboard");
+	s32 selfFd;
+	s32 id = regService("keyboard",SERVICE_TYPE_SINGLEPIPE);
 	if(id < 0) {
 		printLastError();
 		return 1;
@@ -58,6 +53,13 @@ s32 main(void) {
 	else
 		debugf("Reserved IO-port 0x%02x\n",IOPORT_KB_CTRL);
 
+	selfFd = open("services:/keyboard",IO_WRITE);
+	if(selfFd < 0) {
+		printLastError();
+		return 1;
+	}
+
+	static sMsgKbResponse resp;
 	static sMsgKbRequest msg;
 	while(1) {
 		s32 fd = waitForClient(id);
@@ -71,33 +73,17 @@ s32 main(void) {
 				else if(c > 0) {
 					if(msg.id == KEYBOARD_MSG_INTRPT) {
 						u8 scanCode = inb(IOPORT_KB_CTRL);
-						/* overwrite old scancodes if the buffer is full */
-						if(kb_set1_getKeycode(buffer + writePos,scanCode)) {
+						if(kb_set1_getKeycode(&resp,scanCode)) {
+							write(selfFd,&resp,sizeof(sMsgKbResponse));
 							/*debugf("Got scancode %d => keycode %d\n",scanCode,(buffer + writePos)->keycode);*/
-							writePos = (writePos + 1) % BUFFER_SIZE;
-							if(keyCount == BUFFER_SIZE)
-								readPos = (readPos + 1) % BUFFER_SIZE;
-							else
-								keyCount++;
 						}
 						/* ack scancode */
 						outb(IOPORT_PIC,PIC_ICW1);
-					}
-					else if(msg.id == MSG_KEYBOARD_READ) {
-						/* the client has to wait until there is a keycode */
-						if(keyCount > 0) {
-							if(write(fd,buffer + readPos,sizeof(sMsgKbResponse)) > 0) {
-								readPos = (readPos + 1) % BUFFER_SIZE;
-								keyCount--;
-							}
-						}
 					}
 				}
 			}
 			while(c > 0);
 			close(fd);
-
-			/*debugf("writePos=%d, readPos=%d, keyCount=%d\n",writePos,readPos,keyCount);*/
 		}
 	}
 

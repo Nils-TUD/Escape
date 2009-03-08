@@ -74,7 +74,7 @@ void vfs_init(void) {
 	 *   services:
 	 */
 	root = vfsn_createDir(NULL,(string)"",vfs_dirReadHandler);
-	vfsn_createServiceNode(root,(string)"file");
+	vfsn_createServiceNode(root,(string)"file",0);
 	sys = vfsn_createDir(root,(string)"system",vfs_dirReadHandler);
 	vfsn_createDir(sys,(string)"processes",vfs_dirReadHandler);
 	vfsn_createDir(root,(string)"services",vfs_dirReadHandler);
@@ -196,6 +196,17 @@ s32 vfs_readFile(sGFTEntry *e,u8 *buffer,u32 count) {
 		if(n->name == NULL)
 			return ERR_INVALID_FILE;
 
+		/* NOTE: we have to lock service-usages for reading because if we have a single-pipe-
+		 * service it would be possible to steal a message if no locking is made.
+		 * P1 reads the header of a message (-> message still present), P2 reads the complete
+		 * message (-> message deleted). So P1 missed the data of the message. */
+
+		/* wait until the node is unlocked, if necessary */
+		if(n->type == T_SERVUSE && n->data.servuse.locked != proc_getRunning()) {
+			while(n->data.servuse.locked)
+				proc_switch();
+		}
+
 		/* use the read-handler */
 		readBytes = n->readHandler(n,buffer,e->position,count);
 
@@ -204,9 +215,14 @@ s32 vfs_readFile(sGFTEntry *e,u8 *buffer,u32 count) {
 			if(readBytes < 0) {
 				readBytes = -readBytes;
 				e->position = 0;
+				/* unlock node */
+				n->data.servuse.locked = NULL;
 			}
-			else
+			else {
 				e->position += readBytes;
+				/* lock node */
+				n->data.servuse.locked = proc_getRunning();
+			}
 		}
 		else {
 			e->position += readBytes;
@@ -283,7 +299,8 @@ void vfs_closeFile(sGFTEntry *e) {
 						}
 
 						/* free node */
-						kheap_free(n->name);
+						if((n->parent->flags & VFS_SINGLEPIPE) == 0)
+							kheap_free(n->name);
 						vfsn_removeChild(n->parent,n);
 					}
 				}
@@ -299,7 +316,7 @@ void vfs_closeFile(sGFTEntry *e) {
 	}
 }
 
-s32 vfs_createService(tPid pid,cstring name) {
+s32 vfs_createService(tPid pid,cstring name,u8 type) {
 	sVFSNode *serv = SERVICES();
 	sVFSNode *n = serv->firstChild;
 	sProc *p = proc_getByPid(pid);
@@ -328,7 +345,7 @@ s32 vfs_createService(tPid pid,cstring name) {
 	strncpy(hname,name,len);
 
 	/* create node */
-	n = vfsn_createServiceNode(serv,hname);
+	n = vfsn_createServiceNode(serv,hname,type);
 	if(n != NULL) {
 		n->data.service.proc = p;
 		return NADDR_TO_VNNO(n);
@@ -345,8 +362,8 @@ s32 vfs_openIntrptMsgNode(sVFSNode *node) {
 	tFD fd;
 
 	/* not not already present? */
-	if(n == NULL || strcmp(n->name,"k") != 0) {
-		n = vfsn_createNode(node,(string)"k");
+	if(n == NULL || strcmp(n->name,SERVICE_CLIENT_KERNEL) != 0) {
+		n = vfsn_createNode(node,(string)SERVICE_CLIENT_KERNEL);
 		if(n == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 
@@ -385,8 +402,6 @@ s32 vfs_waitForClient(tVFSNodeNo no) {
 
 	/* search for a slot that needs work */
 	do {
-		/*vid_printf("Proc 0x%x waits for client\n===BEFORE===\n",p);
-		sched_dbg_print();*/
 		n = NODE_FIRST_CHILD(node);
 		while(n != NULL) {
 			/* data available? */
@@ -398,8 +413,6 @@ s32 vfs_waitForClient(tVFSNodeNo no) {
 		/* wait until someone wakes us up */
 		if(n == NULL) {
 			sched_setBlocked(p);
-			/*vid_printf("===AFTER===\n",p);
-			sched_dbg_print();*/
 			proc_switch();
 		}
 	}
@@ -428,7 +441,8 @@ s32 vfs_removeService(tPid pid,tVFSNodeNo nodeNo) {
 	while(m != NULL) {
 		t = m->next;
 		/* free memory */
-		kheap_free(m->name);
+		if((n->flags & VFS_SINGLEPIPE) == 0)
+			kheap_free(m->name);
 
 		/* free send and receive list */
 		if(m->data.servuse.recvList != NULL) {

@@ -6,22 +6,21 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x1d8000, shndx=0x10
+ELF: num=19, size=40, addr=0x1e0000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000001e7e531
+Clock cycles: 0x00000000017e47ff
 Initializing VFS...DONE
-Clock cycles: 0x00000000000f9ddd
+Clock cycles: 0x00000000000f9684
 Initializing process-management...DONE
-Clock cycles: 0x00000000000d01a6
+Clock cycles: 0x00000000000d7358
 Initializing IDT...DONE
-Clock cycles: 0x00000000000b12f7
+Clock cycles: 0x00000000000ace4e
 Free frames=28655, pages mapped=1281, free mem=114620 KiB
-Got interrupt 39 (<unknown>) @ 0x0
 Loading services...
 Done
 Loading service 1
@@ -37,9 +36,117 @@ Loading service 3
 Starting...
 Done
 fd=1, fd1=0
-Test: [30mblack[0m, [31mred[0m, [32mgreen[0m, [33morange[0m, [34mblue[
-0m, [35mmargenta[0m, [36mcyan[0m, [37mgray[0m
-[30;44mwithbg[0m, [34;43mwithbg[0m
-col=0, row=10
-Testcol=0, row=13
-Test
+(pid=0) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=0) Key 31 released
+(pid=0) Key 50 pressed
+(pid=4) Key 50 pressed
+(pid=0) Key 50 pressed
+(pid=4) Key 50 pressed
+(pid=0) Key 50 pressed
+(pid=0) Key 50 pressed
+(pid=4) Key 50 pressed
+(pid=4) Key 50 pressed
+(pid=0) Key 50 pressed
+(pid=4) Key 50 pressed
+(pid=0) Key 50 pressed
+(pid=4) Key 50 released
+(pid=0) Key 48 pressed
+(pid=4) Key 48 pressed
+(pid=4) Key 48 pressed
+(pid=4) Key 48 pressed
+(pid=0) Key 48 pressed
+(pid=4) Key 48 pressed
+(pid=0) Key 48 pressed
+(pid=4) Key 48 pressed
+(pid=0) Key 48 pressed
+(pid=0) Key 48 pressed
+(pid=0) Key 48 pressed
+(pid=4) Key 48 pressed
+(pid=4) Key 48 pressed
+(pid=0) Key 48 pressed
+(pid=0) Key 48 released
+(pid=0) Key 32 pressed
+(pid=0) Key 32 pressed
+(pid=0) Key 32 pressed
+(pid=4) Key 32 pressed
+(pid=0) Key 32 pressed
+(pid=0) Key 32 pressed
+(pid=4) Key 32 pressed
+(pid=0) Key 32 pressed
+(pid=0) Key 32 pressed
+(pid=0) Key 32 released
+(pid=0) Key 33 pressed
+(pid=4) Key 33 pressed
+(pid=0) Key 33 pressed
+(pid=4) Key 33 pressed
+(pid=0) Key 33 pressed
+(pid=4) Key 33 pressed
+(pid=4) Key 33 pressed
+(pid=4) Key 33 pressed
+(pid=0) Key 33 pressed
+(pid=4) Key 33 pressed
+(pid=4) Key 33 pressed
+(pid=0) Key 33 pressed
+(pid=4) Key 33 pressed
+(pid=0) Key 33 released
+(pid=4) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=4) Key 31 pressed
+(pid=0) Key 31 pressed
+(pid=4) Key 31 released
+(pid=4) Key 32 pressed
+(pid=4) Key 32 released
+(pid=4) Key 32 pressed
+(pid=0) Key 32 released
+(pid=4) Key 31 pressed
+(pid=0) Key 31 released
+(pid=0) Key 31 pressed
+(pid=0) Key 31 released
+(pid=4) Key 33 pressed
+(pid=0) Key 33 released
+(pid=4) Key 33 pressed
+(pid=4) Key 33 released
+(pid=4) Key 33 pressed
+(pid=0) Key 33 released
+(pid=0) Key 48 pressed
+(pid=4) Key 48 released
+(pid=0) Key 48 pressed
+(pid=0) Key 48 released
+(pid=4) Key 48 pressed
+(pid=4) Key 48 released
+(pid=0) Key 48 pressed
+(pid=0) Key 48 released

@@ -214,13 +214,13 @@ static void test_vfs_createService(void) {
 
 	oldHeap = kheap_getFreeMem();
 
-	id = vfs_createService(0,"test");
+	id = vfs_createService(0,"test",0);
 	if(!test_assertTrue(vfsn_isValidNodeNo(id))) return;
-	if(!test_assertInt(vfs_createService(0,"test2"),ERR_PROC_DUP_SERVICE)) return;
-	if(!test_assertInt(vfs_createService(1,"test"),ERR_SERVICE_EXISTS)) return;
-	if(!test_assertInt(vfs_createService(1,""),ERR_INV_SERVICE_NAME)) return;
-	if(!test_assertInt(vfs_createService(1,"abc.def"),ERR_INV_SERVICE_NAME)) return;
-	id2 = vfs_createService(1,"test2");
+	if(!test_assertInt(vfs_createService(0,"test2",0),ERR_PROC_DUP_SERVICE)) return;
+	if(!test_assertInt(vfs_createService(1,"test",0),ERR_SERVICE_EXISTS)) return;
+	if(!test_assertInt(vfs_createService(1,"",0),ERR_INV_SERVICE_NAME)) return;
+	if(!test_assertInt(vfs_createService(1,"abc.def",0),ERR_INV_SERVICE_NAME)) return;
+	id2 = vfs_createService(1,"test2",0);
 	if(!test_assertTrue(vfsn_isValidNodeNo(id2))) return;
 
 	vfs_removeService(0,id);

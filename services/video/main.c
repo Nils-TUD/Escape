@@ -52,7 +52,7 @@ static void vid_puts(s8 *str);
 static sVideo video;
 
 s32 main(void) {
-	s32 id = regService("video");
+	s32 id = regService("video",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
 		printLastError();
 		return 1;

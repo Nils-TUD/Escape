@@ -83,7 +83,7 @@ s32 main(void) {
 						/* ack scancode */
 						outb(IOPORT_PIC,PIC_ICW1);
 					}
-					else if(msg.id == KEYBOARD_MSG_READ) {
+					else if(msg.id == MSG_KEYBOARD_READ) {
 						/* the client has to wait until there is a keycode */
 						if(keyCount > 0) {
 							if(write(fd,buffer + readPos,sizeof(sMsgKbResponse)) > 0) {

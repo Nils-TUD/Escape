@@ -6,86 +6,40 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x1cb000, shndx=0x10
+ELF: num=19, size=40, addr=0x1d8000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000002a34b3c
+Clock cycles: 0x0000000001e7e531
 Initializing VFS...DONE
-Clock cycles: 0x000000000017acf0
+Clock cycles: 0x00000000000f9ddd
 Initializing process-management...DONE
-Clock cycles: 0x0000000000132e58
+Clock cycles: 0x00000000000d01a6
 Initializing IDT...DONE
-Clock cycles: 0x00000000000fe2ce
+Clock cycles: 0x00000000000b12f7
 Free frames=28655, pages mapped=1281, free mem=114620 KiB
 Got interrupt 39 (<unknown>) @ 0x0
 Loading services...
 Done
-Page fault for address=0xbfffff04 @ 0x15c
-Page fault for address=0x00003000 @ 0x779
 Loading service 1
 Starting...
 Done
-Page fault for address=0xbffffff8 @ 0x0
+Loading service 2
+Starting...
+Done
 Announced keyboard interrupt-handler
-Reserved IO-port 0x20
-Reserved IO-port 0x60
+Reserved IO-port 0x02x
+Reserved IO-port 0x02x
+Loading service 3
+Starting...
+Done
 fd=1, fd1=0
-Got 1000 messages
-Got 2000 messages
-Got 3000 messages
-Got 4000 messages
-Got 5000 messages
-Got 6000 messages
-Got 7000 messages
-Got 8000 messages
-Got 9000 messages
-Got 10000 messages
-Got 11000 messages
-Got 12000 messages
-Got 13000 messages
-Got 14000 messages
-Got 15000 messages
-Got 16000 messages
-Got 17000 messages
-Got 18000 messages
-Got 19000 messages
-Got 20000 messages
-Got 21000 messages
-Got 22000 messages
-Got 23000 messages
-Got 24000 messages
-Got 25000 messages
-Got 26000 messages
-Got 27000 messages
-Got 28000 messages
-Got 29000 messages
-Got 30000 messages
-Got 31000 messages
-Got 32000 messages
-Got 33000 messages
-Got 34000 messages
-Got 35000 messages
-Got 36000 messages
-Got 37000 messages
-Got 38000 messages
-Got 39000 messages
-Got 40000 messages
-Got 41000 messages
-Got 42000 messages
-Got 43000 messages
-Got 44000 messages
-Got 45000 messages
-Got 46000 messages
-Got 47000 messages
-Got 48000 messages
-Got 49000 messages
-Got 50000 messages
-Got 51000 messages
-Got 52000 messages
-Got 53000 messages
-Got 54000 messages
-Got 55000 messages
+Test: [30mblack[0m, [31mred[0m, [32mgreen[0m, [33morange[0m, [34mblue[
+0m, [35mmargenta[0m, [36mcyan[0m, [37mgray[0m
+[30;44mwithbg[0m, [34;43mwithbg[0m
+col=0, row=10
+Testcol=0, row=13
+Test

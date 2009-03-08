@@ -24,7 +24,7 @@ s32 main(void) {
 	vid_init();
 
 	u32 msgCount = 0;
-	static sConsoleMsg msg;
+	static sMsgConRequest msg;
 	while(1) {
 		s32 fd = waitForClient(id);
 		if(fd < 0)
@@ -32,10 +32,10 @@ s32 main(void) {
 		else {
 			s32 x = 0,c = 0;
 			do {
-				if((c = read(fd,&msg,sizeof(sConsoleMsg))) < 0)
+				if((c = read(fd,&msg,sizeof(sMsgConRequest))) < 0)
 					printLastError();
 				else if(c > 0) {
-					if(msg.id == CONSOLE_MSG_OUT) {
+					if(msg.id == MSG_CONSOLE_OUT) {
 						s8 *readBuf = malloc(msg.length * sizeof(s8));
 						read(fd,readBuf,msg.length);
 						free(readBuf);
@@ -44,10 +44,10 @@ s32 main(void) {
 						if(msgCount % 1000 == 0)
 							vid_printf("Got %d messages\n",msgCount);*/
 					}
-					else if(msg.id == CONSOLE_MSG_IN) {
+					else if(msg.id == MSG_CONSOLE_IN) {
 
 					}
-					else if(msg.id == CONSOLE_MSG_CLEAR) {
+					else if(msg.id == MSG_CONSOLE_CLEAR) {
 						vid_clearScreen();
 					}
 					x++;

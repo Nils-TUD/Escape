@@ -206,7 +206,7 @@ s32 vfs_readFile(sGFTEntry *e,u8 *buffer,u32 count) {
 				e->position = 0;
 			}
 			else
-				e->position = readBytes;
+				e->position += readBytes;
 		}
 		else {
 			e->position += readBytes;
@@ -265,19 +265,27 @@ void vfs_closeFile(sGFTEntry *e) {
 			if(n->name != NULL && --(n->refCount) == 0) {
 				/* we have to remove the service-usage-node, if it is one */
 				if(n->type == T_SERVUSE) {
-					/* free send and receive list */
-					if(n->data.servuse.recvList != NULL) {
-						sll_destroy(n->data.servuse.recvList,true);
-						n->data.servuse.recvList = NULL;
-					}
-					if(n->data.servuse.sendList != NULL) {
-						sll_destroy(n->data.servuse.sendList,true);
-						n->data.servuse.sendList = NULL;
-					}
+					/* if there are message for the service we don't want to throw them away */
+					/* if there are any in the receivelist (and no references of the node) we
+					 * can throw them away because no one will read them anymore
+					 * (it means that the client has already closed the file) */
+					/* note also that we can assume that the service is still running since we
+					 * would have deleted the whole service-node otherwise */
+					if(n->data.servuse.sendList == NULL || sll_length(n->data.servuse.sendList) == 0) {
+						/* free send and receive list */
+						if(n->data.servuse.recvList != NULL) {
+							sll_destroy(n->data.servuse.recvList,true);
+							n->data.servuse.recvList = NULL;
+						}
+						if(n->data.servuse.sendList != NULL) {
+							sll_destroy(n->data.servuse.sendList,true);
+							n->data.servuse.sendList = NULL;
+						}
 
-					/* free node */
-					kheap_free(n->name);
-					vfsn_removeChild(n->parent,n);
+						/* free node */
+						kheap_free(n->name);
+						vfsn_removeChild(n->parent,n);
+					}
 				}
 				/* free cache, if present */
 				else if(n->type != T_SERVICE && n->data.def.cache != NULL) {

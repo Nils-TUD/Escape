@@ -44,7 +44,7 @@ void logChar(char c) {
 s32 main(void) {
 	s32 fd1,fd;
 	do {
-		fd1 = open("/system/services/console",IO_READ | IO_WRITE);
+		fd1 = open("/system/services/video",IO_READ | IO_WRITE);
 		if(fd1 < 0)
 			yield();
 	}
@@ -53,10 +53,11 @@ s32 main(void) {
 	fd = dupFd(fd1);
 	debugf("fd=%d, fd1=%d\n",fd,fd1);
 
+#if 0
 	if(fork() == 0) {
 		s32 id = regService("test");
 
-		static sConsoleMsg header;
+		static sMsgConRequest header;
 		while(1) {
 			s32 cfd = waitForClient(id);
 			if(cfd < 0)
@@ -65,10 +66,10 @@ s32 main(void) {
 				u32 x = 0;
 				s32 c = 0;
 				do {
-					if((c = read(cfd,&header,sizeof(sConsoleMsg))) < 0)
+					if((c = read(cfd,&header,sizeof(sMsgConRequest))) < 0)
 						printLastError();
 					else if(c > 0) {
-						sConsoleMsg *msg;
+						sMsgConRequest *msg;
 						u8 *data = NULL;
 						/* read data */
 						if(header.length > 0) {
@@ -79,7 +80,7 @@ s32 main(void) {
 
 						/* build msg and send */
 						msg = createConsoleMsg(header.id,header.length,data);
-						if(write(fd,msg,sizeof(sConsoleMsg) + header.length) < 0)
+						if(write(fd,msg,sizeof(sMsgConRequest) + header.length) < 0)
 							printLastError();
 
 						if(header.length > 0)
@@ -107,16 +108,17 @@ s32 main(void) {
 		printLastError();
 	else
 		debugf("Redirected %d to %d\n",fd,fd2);
+#endif
 
 	s8 str[] = "Test: \e[30mblack\e[0m, \e[31mred\e[0m, \e[32mgreen\e[0m"
 			", \e[33morange\e[0m, \e[34mblue\e[0m, \e[35mmargenta\e[0m, \e[36mcyan\e[0m"
 			", \e[37mgray\e[0m\n"
 			"\e[30;44mwithbg\e[0m, \e[34;43mwithbg\e[0m\n";
-	sConsoleMsg *msg = createConsoleMsg(CONSOLE_MSG_OUT,strlen(str) + 1,str);
+	sMsgConRequest *msg = createConsoleMsg(MSG_VIDEO_PUTS,strlen(str) + 1,str);
 	u32 i;
 	s32 err;
-	for(i = 0; i < 0 ;i++) {
-		if((err = write(fd,msg,sizeof(sConsoleMsg) + msg->length)) < 0) {
+	for(i = 0; i < 1 ;i++) {
+		if((err = write(fd,msg,sizeof(sMsgConRequest) + msg->length)) < 0) {
 			if(err == ERR_NOT_ENOUGH_MEM)
 				yield();
 			else
@@ -124,12 +126,27 @@ s32 main(void) {
 		}
 		else {
 			yield();
-			/*if(i % 1000 == 0) {*/
-				/*yield();*/
-			/*}*/
 		}
 	}
 
+	sMsgDataVidGoto vidgoto;
+	vidgoto.col = 0;
+	vidgoto.row = 10;
+	msg = createConsoleMsg(MSG_VIDEO_GOTO,sizeof(sMsgDataVidGoto),&vidgoto);
+	write(fd,msg,sizeof(sMsgConRequest) + msg->length);
+
+	msg = createConsoleMsg(MSG_VIDEO_PUTS,5,"Test");
+	write(fd,msg,sizeof(sMsgConRequest) + msg->length);
+
+	vidgoto.col = 0;
+	vidgoto.row = 13;
+	msg = createConsoleMsg(MSG_VIDEO_GOTO,sizeof(sMsgDataVidGoto),&vidgoto);
+	write(fd,msg,sizeof(sMsgConRequest) + msg->length);
+
+	msg = createConsoleMsg(MSG_VIDEO_PUTS,5,"Test");
+	write(fd,msg,sizeof(sMsgConRequest) + msg->length);
+
+#if 0
 	/* read from keyboard */
 	s32 fd3;
 	do {
@@ -142,7 +159,7 @@ s32 main(void) {
 	static sMsgKbRequest kbReq;
 	static sMsgKbResponse kbRes;
 
-	kbReq.id = KEYBOARD_MSG_READ;
+	kbReq.id = MSG_KEYBOARD_READ;
 	while(true) {
 		if(write(fd3,&kbReq,sizeof(sMsgKbRequest)) > 0) {
 			if(read(fd3,&kbRes,sizeof(kbRes)) <= 0)
@@ -156,6 +173,7 @@ s32 main(void) {
 		}
 	}
 	close(fd3);
+#endif
 
 	freeConsoleMsg(msg);
 	close(fd);
@@ -172,9 +190,9 @@ s32 main(void) {
 				printLastError();
 			else {
 				s8 str[] = "Test";
-				sConsoleMsg *msg = createMsg(ID_OUT,5,str);
+				sMsgConRequest *msg = createMsg(ID_OUT,5,str);
 				do {
-					if(write(sfd,msg,sizeof(sConsoleMsg) + msg->length) < 0)
+					if(write(sfd,msg,sizeof(sMsgConRequest) + msg->length) < 0)
 						printLastError();
 					yield();
 				}
@@ -190,9 +208,9 @@ s32 main(void) {
 			if(sfd < 0)
 				printLastError();
 			else {
-				sConsoleMsg *msg = createMsg(ID_CLEAR,0,NULL);
+				sMsgConRequest *msg = createMsg(ID_CLEAR,0,NULL);
 				do {
-					if(write(sfd,msg,sizeof(sConsoleMsg)) < 0)
+					if(write(sfd,msg,sizeof(sMsgConRequest)) < 0)
 						printLastError();
 					yield();
 				}
@@ -209,13 +227,13 @@ s32 main(void) {
 		vid_setFGColor(WHITE);
 		vid_setBGColor(BLACK);
 
-		static sConsoleMsg msg;
+		static sMsgConRequest msg;
 		do {
 			s32 fd = waitForClient(id);
 			if(fd < 0)
 				printLastError();
 			else {
-				read(fd,&msg,sizeof(sConsoleMsg));
+				read(fd,&msg,sizeof(sMsgConRequest));
 				if(msg.id == ID_OUT) {
 					s8 *readBuf = malloc(msg.length * sizeof(s8));
 					read(fd,readBuf,msg.length);

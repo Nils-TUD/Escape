@@ -234,7 +234,8 @@ void vid_puts(cstring str) {
 			}
 		}
 
-		vid_putchar(*str++);
+		vid_putchar(c);
+		str++;
 	}
 }
 

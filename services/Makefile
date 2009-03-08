@@ -18,7 +18,7 @@ all:
 		@echo "" >> $(SERVICES)
 		@echo "static u8 *services[] = {" >> $(SERVICES)
 		@for i in $(DIRS) ; do \
-			echo "	service_"$$i >> $(SERVICES); \
+			echo "	service_"$$i"," >> $(SERVICES); \
 		done;
 		@echo "};" >> $(SERVICES)
 

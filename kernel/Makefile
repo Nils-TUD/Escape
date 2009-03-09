@@ -28,11 +28,16 @@ SYMBOLS=$(BUILD)/ksymbols.txt
 SYMBOLSCRIPT=../tools/gensymbols.sh
 SYMBOLSRC=src/ksymbols.c
 
+SERVDIRS = $(filter-out $(wildcard *.*) ../services/Makefile,$(wildcard ../services/*))
+SERVDIRNAMES = $(patsubst ../services/%,%,$(SERVDIRS))
+SERVBINS = $(patsubst %,$(BUILD)/service_%.bin,$(SERVDIRNAMES))
+SERVICES = $(BUILD)/services.txt
+
 .PHONY: all pre clean
 
 all:	$(BIN)
 
-$(BIN):	$(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
+$(BIN):	$(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@echo "===== LINKING =====";
 		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(AOBJEND);
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
@@ -55,6 +60,20 @@ $(BIN):	$(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		cp $(BIN) $(DISKMOUNT);
 		sudo umount $(DISKMOUNT);
 
+$(SERVICES): $(SERVBINS)
+		@echo "" > $(SERVICES)
+		@for i in $(SERVDIRNAMES) ; do \
+			echo "static u8 service_"$$i"[] = {" >> $(SERVICES); \
+			echo "		#include \"../../build/service_$$i.dump\"" >> $(SERVICES); \
+			echo "};" >> $(SERVICES); \
+		done;
+		@echo "" >> $(SERVICES)
+		@echo "static u8 *services[] = {" >> $(SERVICES)
+		@for i in $(SERVDIRNAMES) ; do \
+			echo "	service_"$$i"," >> $(SERVICES); \
+		done;
+		@echo "};" >> $(SERVICES)
+
 $(AOBJ):	$(ASRC) $(ASRCEND)
 		@echo "===== ASSEMBLING =====";
 		nasm -g -f elf -o $(AOBJ) $(ASRC);
@@ -68,10 +87,10 @@ $(BUILD)/kernel_lib_%.o:	$(LIB)/src/%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
-$(DEP):	$(CSRC) $(LSRC)
+$(DEP):	$(SERVICES) $(CSRC) $(LSRC)
 		@echo "===== GENERATING DEPENDENCIES =====";
 		if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
-		$(CC) $(CFLAGS) -MM $(CSRC) > $(DEP);
+		$(CC) $(CFLAGS) -MM $(CSRC) $(LSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
 		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/\1.o:/g" $(DEP);
 
@@ -80,4 +99,4 @@ $(DEP):	$(CSRC) $(LSRC)
 clean:
 		@echo "===== REMOVING FILES =====";
 		rm -f $(DEP) $(BIN) $(COBJ) $(AOBJ) $(AOBJEND) $(LOBJ) $(SYMBOLS) \
-			$(BUILD)/tools_gensymbols.c $(BUILD)/tools_gensymbols.o;
+			$(BUILD)/tools_gensymbols.c $(BUILD)/tools_gensymbols.o $(SERVICES);

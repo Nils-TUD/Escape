@@ -23,6 +23,13 @@ void sched_init(void);
 sProc *sched_perform(void);
 
 /**
+ * Choses the given process for running
+ *
+ * @param p the process
+ */
+void sched_setRunning(sProc *p);
+
+/**
  * Enqueues the given process on the ready-queue and sets the state to ST_READY
  *
  * @param p the process
@@ -35,6 +42,11 @@ void sched_setReady(sProc *p);
  * @param p the process
  */
 void sched_setBlocked(sProc *p);
+
+/**
+ * Unblocks all blocked processes
+ */
+void sched_unblockAll(void);
 
 /**
  * Removes the first process from the ready-queue and returns it

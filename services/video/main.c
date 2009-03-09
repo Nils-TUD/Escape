@@ -14,10 +14,24 @@
 #include <debug.h>
 
 /* the physical memory of the 80x25 device */
-#define VIDEO_MEM	0xB8000
+#define VIDEO_MEM			0xB8000
+
+/* cursor io-ports and data bit-masks */
+#define CURSOR_PORT_INDEX	0x3D4
+#define CURSOR_PORT_DATA	0x3D5
+#define CURSOR_DATA_LOCLOW	0x0F
+#define CURSOR_DATA_LOCHIGH	0x0E
 
 #define COLS		80
 #define ROWS		25
+
+/**
+ * Sets the cursor to given position
+ *
+ * @param row the row
+ * @param col the col
+ */
+static void vid_setCursor(u8 row,u8 col);
 
 /* our state */
 static u8 *videoData;
@@ -45,6 +59,10 @@ s32 main(void) {
 		return 1;
 	}
 
+	/* reserve ports for cursor */
+	requestIOPort(CURSOR_PORT_INDEX);
+	requestIOPort(CURSOR_PORT_DATA);
+
 	/* clear screen */
 	memset(videoData,0,COLS * ROWS * 2);
 
@@ -53,7 +71,7 @@ s32 main(void) {
 	while(1) {
 		s32 fd = getClient(id);
 		if(fd < 0)
-			yield();
+			sleep();
 		else {
 			/* read all available messages */
 			s32 c;
@@ -68,11 +86,14 @@ s32 main(void) {
 						case MSG_VIDEO_SET: {
 							static sMsgDataVidSet data;
 							if(read(fd,&data,sizeof(sMsgDataVidSet)) > 0) {
-								/*debugf("Got %d, color %d for row %d, col %d\n",data.character,
-									data.color,data.row,data.col);*/
-								u8 *ptr = videoData + (data.row * COLS * 2) + data.col * 2;
-								*ptr = data.character;
-								*(ptr + 1) = data.color;
+								if(data.row < ROWS && data.col < COLS) {
+									/*debugf("Got %d, color %d for row %d, col %d\n",data.character,
+										data.color,data.row,data.col);*/
+									u8 *ptr = videoData + (data.row * COLS * 2) + data.col * 2;
+									*ptr = data.character;
+									*(ptr + 1) = data.color;
+									vid_setCursor(data.row,data.col);
+								}
 							}
 						}
 						break;
@@ -80,6 +101,17 @@ s32 main(void) {
 						/* move up */
 						case MSG_VIDEO_MOVEUP: {
 							vid_moveUp();
+						}
+						break;
+
+						/* set cursor */
+						case MSG_VIDEO_SETCURSOR: {
+							static sMsgDataVidSetCursor data;
+							if(read(fd,&data,sizeof(sMsgDataVidSetCursor)) > 0) {
+								if(data.row < ROWS && data.col < COLS) {
+									vid_setCursor(data.row,data.col);
+								}
+							}
 						}
 						break;
 					}
@@ -90,10 +122,23 @@ s32 main(void) {
 		}
 	}
 
+	/* clean up */
+	releaseIOPort(CURSOR_PORT_INDEX);
+	releaseIOPort(CURSOR_PORT_DATA);
 	unregService(id);
 	return 0;
 }
 
+static void vid_setCursor(u8 row,u8 col) {
+   u16 position = (row * COLS) + col;
+
+   /* cursor LOW port to vga INDEX register */
+   outb(CURSOR_PORT_INDEX,CURSOR_DATA_LOCLOW);
+   outb(CURSOR_PORT_DATA,(u8)(position & 0xFF));
+   /* cursor HIGH port to vga INDEX register */
+   outb(CURSOR_PORT_INDEX,CURSOR_DATA_LOCHIGH);
+   outb(CURSOR_PORT_DATA,(u8)((position >> 8) & 0xFF));
+}
 
 static void vid_moveUp(void) {
 	u32 i;

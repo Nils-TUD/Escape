@@ -25,6 +25,7 @@ typedef struct {
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
+	u64 cycleCount;
 } sProcPub;
 
 /**
@@ -60,6 +61,7 @@ void proc_init(void) {
 	procs[pi].textPages = 0;
 	procs[pi].dataPages = 0;
 	procs[pi].stackPages = 0;
+	procs[pi].cycleCount = 0;
 	/* note that this assumes that the page-dir is initialized */
 	procs[pi].physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 	/* init fds */
@@ -91,17 +93,24 @@ sProc *proc_getByPid(tPid pid) {
 }
 
 void proc_switch(void) {
+	proc_switchTo(sched_perform()->pid);
+}
+
+void proc_switchTo(tPid pid) {
+	static u64 startTime = 0;
 	sProc *p = procs + pi;
-	/*vid_printf("Free memory: %d KiB\n",mm_getFreeFrmCount(MM_DEF) * PAGE_SIZE / K);
-	vid_printf("Process %d\n",p->pid);*/
-	if(!proc_save(&p->save)) {
-		/* select next process */
-		p = sched_perform();
-		pi = p->pid;
+
+	if(startTime > 0)
+		p->cycleCount += cpu_rdtsc() - startTime;
+
+	if(pid != pi && !proc_save(&p->save)) {
+		pi = pid;
+		p = procs + pi;
+		sched_setRunning(p);
 		/* remove the io-map. it will be set as soon as the process accesses an io-port
 		 * (we'll get an exception) */
 		tss_removeIOMap();
-		/*vid_printf("Resuming %d\n",p->pid);*/
+		startTime = cpu_rdtsc();
 		proc_resume(p->physPDirAddr,&p->save);
 	}
 
@@ -110,8 +119,6 @@ void proc_switch(void) {
 		proc_destroy(deadProc);
 		deadProc = NULL;
 	}
-
-	/*vid_printf("Continuing %d\n",p->pid);*/
 }
 
 s32 proc_requestIOPorts(u16 start,u16 count) {
@@ -262,6 +269,7 @@ s32 proc_clone(tPid newPid) {
 	p->dataPages = procs[pi].dataPages;
 	p->stackPages = procs[pi].stackPages;
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
+	p->cycleCount = 0;
 	/* init fds */
 	/*for(i = 0; i < MAX_FD_COUNT; i++)
 		p->fileDescs[i] = -1;*/
@@ -484,6 +492,7 @@ static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	proc->textPages = p->textPages;
 	proc->dataPages = p->dataPages;
 	proc->stackPages = p->stackPages;
+	proc->cycleCount = p->cycleCount;
 
 	/* stored on kheap? */
 	if((u32)proc != (u32)buffer) {
@@ -515,6 +524,7 @@ void proc_dbg_printAll(void) {
 
 void proc_dbg_print(sProc *p) {
 	u32 i;
+	u32 *ptr;
 	vid_printf("process @ 0x%08x:\n",p);
 	vid_printf("\tpid = %d\n",p->pid);
 	vid_printf("\tparentPid = %d\n",p->parentPid);
@@ -522,6 +532,8 @@ void proc_dbg_print(sProc *p) {
 	vid_printf("\ttextPages = %d\n",p->textPages);
 	vid_printf("\tdataPages = %d\n",p->dataPages);
 	vid_printf("\tstackPages = %d\n",p->stackPages);
+	ptr = &p->cycleCount;
+	vid_printf("\tcycleCount = 0x%08x%08x\n",*(ptr + 1),*ptr);
 	vid_printf("\tfileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != -1)

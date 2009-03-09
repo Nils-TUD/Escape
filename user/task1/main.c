@@ -25,13 +25,15 @@
 
 static void printProcess(sProc *p) {
 	tPid pid = getpid();
-	debugf("(%d) Process:\n",pid);
-	debugf("(%d) \tpid=%d\n",pid,p->pid);
-	debugf("(%d) \tparentPid=%d\n",pid,p->parentPid);
-	debugf("(%d) \tstate=%d\n",pid,p->state);
-	debugf("(%d) \ttextPages=%d\n",pid,p->textPages);
-	debugf("(%d) \tdataPages=%d\n",pid,p->dataPages);
-	debugf("(%d) \tstackPages=%d\n",pid,p->stackPages);
+	printf("Process:\n");
+	printf("\tpid=%d\n",p->pid);
+	printf("\tparentPid=%d\n",p->parentPid);
+	printf("\tstate=%d\n",p->state);
+	printf("\ttextPages=%d\n",p->textPages);
+	printf("\tdataPages=%d\n",p->dataPages);
+	printf("\tstackPages=%d\n",p->stackPages);
+	u32 *ptr = &p->cycleCount;
+	printf("\tcycleCount=0x%08x%08x\n",*(ptr + 1),*ptr);
 }
 
 #include <messages.h>
@@ -130,8 +132,8 @@ s32 main(void) {
 		}
 	}*/
 
-	u32 i;
-	for(i = 0;  ;) {
+	u32 i,x;
+	for(i = 0,x = 0; x < 10 ;x++) {
 		printf("\e[30mDas ist der %dte Test!!\e[0m\n",i++);
 		printf("\e[31mDas ist der %dte Test!!\e[0m\n",i++);
 		printf("\e[32mDas ist der %dte Test!!\e[0m\n",i++);
@@ -156,8 +158,33 @@ s32 main(void) {
 		printf("\e[32;45mDas ist der %dte Test!!\e[0m\n",i++);
 		printf("\e[31;46mDas ist der %dte Test!!\e[0m\n",i++);
 		printf("\e[30;47mDas ist der %dte Test!!\e[0m\n",i++);
-		volatile u32 x;
-		for(x = 0; x < 0xFFFFFFF; x++);
+		/*volatile u32 x;
+		for(x = 0; x < 0xFFFFFFF; x++);*/
+	}
+
+	tFD dd,dfd;
+	sProc proc;
+	sDir *entry;
+	s8 path[] = "system:/processes/";
+	s8 ppath[255];
+	while(1) {
+		printf("\r");
+		if((dd = opendir(path)) >= 0) {
+			while((entry = readdir(dd)) != NULL) {
+				if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
+					continue;
+
+				strncpy(ppath,path,strlen(path));
+				strncat(ppath,entry->name,strlen(entry->name));
+				if((dfd = open(ppath,IO_READ)) >= 0) {
+					read(dfd,&proc,sizeof(sProc));
+					u32 *ptr = &proc.cycleCount;
+					printf("%s: %08x%08x ",entry->name,*(ptr + 1),*ptr);
+					close(dfd);
+				}
+			}
+			closedir(dd);
+		}
 	}
 
 	/*

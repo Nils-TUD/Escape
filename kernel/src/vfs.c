@@ -597,7 +597,23 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 		sll_append(*list,msg);
 
 		/* notify the service */
-		sched_setReady(n->parent->data.service.proc);
+		if(list == &(n->data.servuse.sendList))
+			sched_setReady(n->parent->data.service.proc);
+		else {
+			if(n->parent->flags & VFS_SINGLEPIPE) {
+				/* we don't know who uses the service. Therefore we have to unblock all :/ */
+				/* TODO is there a better way? */
+				sched_unblockAll();
+			}
+			else {
+				/* notify the process that there is a message */
+				/* TODO is there a better way than parsing the pid from the node-name? */
+				if(strcmp(n->name,SERVICE_CLIENT_KERNEL) != 0) {
+					tPid pid = atoi(n->name);
+					sched_setReady(proc_getByPid(pid));
+				}
+			}
+		}
 		return count;
 	}
 

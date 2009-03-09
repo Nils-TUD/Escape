@@ -18,6 +18,13 @@ struct sQueueNode {
 	sProc *p;
 };
 
+/**
+ * Enqueues the given process in the ready-queue
+ *
+ * @param p the process
+ */
+static void sched_enqueueReadyProc(sProc *p);
+
 /* ready-queue stuff */
 static sQueueNode readyQueue[PROC_COUNT];
 static sQueueNode *rqFree;
@@ -60,6 +67,37 @@ sProc *sched_perform(void) {
 	return p;
 }
 
+void sched_setRunning(sProc *p) {
+	ASSERT(p != NULL,"p == NULL");
+
+	switch(p->state) {
+		case ST_RUNNING:
+			return;
+		case ST_READY:
+			sched_dequeueReadyProc(p);
+			break;
+		case ST_BLOCKED:
+			sll_removeFirst(blockedQueue,p);
+			break;
+	}
+
+	p->state = ST_RUNNING;
+}
+
+void sched_setReady(sProc *p) {
+	ASSERT(p != NULL,"p == NULL");
+
+	/* nothing to do? */
+	if(p->state == ST_READY)
+		return;
+	/* remove from blocked-list? */
+	if(p->state == ST_BLOCKED)
+		sll_removeFirst(blockedQueue,p);
+	p->state = ST_READY;
+
+	sched_enqueueReadyProc(p);
+}
+
 void sched_setBlocked(sProc *p) {
 	ASSERT(p != NULL,"p == NULL");
 
@@ -74,35 +112,14 @@ void sched_setBlocked(sProc *p) {
 	sll_append(blockedQueue,p);
 }
 
-void sched_setReady(sProc *p) {
-	sQueueNode *nn,*n;
-
-	ASSERT(p != NULL,"p == NULL");
-	ASSERT(rqFree != NULL,"No free slots in the ready-queue!?");
-
-	/* nothing to do? */
-	if(p->state == ST_READY)
-		return;
-	/* remove from blocked-list? */
-	if(p->state == ST_BLOCKED)
-		sll_removeFirst(blockedQueue,p);
-	p->state = ST_READY;
-
-	/* use first free node */
-	nn = rqFree;
-	rqFree = rqFree->next;
-	nn->p = p;
-	nn->next = NULL;
-
-	/* put at the end of the ready-queue */
-	n = rqFirst;
-	if(n != NULL) {
-		rqLast->next = nn;
-		rqLast = nn;
-	}
-	else {
-		rqFirst = nn;
-		rqLast = nn;
+void sched_unblockAll(void) {
+	sSLNode *n;
+	sProc *p;
+	for(n = sll_begin(blockedQueue); n != NULL; n = n->next) {
+		p = (sProc*)n->data;
+		p->state = ST_READY;
+		sched_enqueueReadyProc(p);
+		sll_removeNode(blockedQueue,n,NULL);
 	}
 }
 
@@ -130,6 +147,28 @@ void sched_removeProc(sProc *p) {
 		case ST_BLOCKED:
 			sll_removeFirst(blockedQueue,p);
 			break;
+	}
+}
+
+static void sched_enqueueReadyProc(sProc *p) {
+	sQueueNode *nn,*n;
+	ASSERT(rqFree != NULL,"No free slots in the ready-queue!?");
+
+	/* use first free node */
+	nn = rqFree;
+	rqFree = rqFree->next;
+	nn->p = p;
+	nn->next = NULL;
+
+	/* put at the end of the ready-queue */
+	n = rqFirst;
+	if(n != NULL) {
+		rqLast->next = nn;
+		rqLast = nn;
+	}
+	else {
+		rqFirst = nn;
+		rqLast = nn;
 	}
 }
 

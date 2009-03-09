@@ -53,6 +53,7 @@ typedef struct {
 	u8 *ioMap;
 	/* a bitfield with signals the process should get
 	u16 signals; */
+	u64 cycleCount;
 } sProc;
 
 /* the area for proc_changeSize() */
@@ -102,6 +103,13 @@ sProc *proc_getByPid(tPid pid);
  * Switches to another process
  */
 void proc_switch(void);
+
+/**
+ * Switches to the process with given pid
+ *
+ * @param pid the process-id
+ */
+void proc_switchTo(tPid pid);
 
 /**
  * Requests some IO-ports for the current process

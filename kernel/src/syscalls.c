@@ -17,7 +17,7 @@
 #include <video.h>
 #include <string.h>
 
-#define SYSCALL_COUNT 21
+#define SYSCALL_COUNT 22
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
@@ -166,6 +166,10 @@ static void sysc_changeSize(sSysCallStack *stack);
  */
 static void sysc_mapPhysical(sSysCallStack *stack);
 /**
+ * Blocks the process until a message arrives
+ */
+static void sysc_sleep(sSysCallStack *stack);
+/**
  * Releases the CPU (reschedule)
  */
 static void sysc_yield(sSysCallStack *stack);
@@ -209,6 +213,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 18 */	{sysc_redirFd,				2},
 	/* 19 */	{sysc_addIntrptListener,	4},
 	/* 20 */	{sysc_remIntrptListener,	2},
+	/* 21 */	{sysc_sleep,				0},
 };
 
 void sysc_handle(sSysCallStack *stack) {
@@ -600,6 +605,11 @@ static void sysc_mapPhysical(sSysCallStack *stack) {
 }
 
 static void sysc_yield(sSysCallStack *stack) {
+	proc_switch();
+}
+
+static void sysc_sleep(sSysCallStack *stack) {
+	sched_setBlocked(proc_getRunning());
 	proc_switch();
 }
 

@@ -77,7 +77,7 @@ s32 main(void) {
 	while(1) {
 		s32 fd = getClient(id);
 		if(fd < 0)
-			yield();
+			sleep();
 		else {
 			s32 c = 0;
 			do {

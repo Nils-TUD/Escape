@@ -168,10 +168,12 @@ s32 main(void) {
 		}
 	}
 
-	printf("Enter your name: ");
-	s8 *buffer = malloc(20 * sizeof(s8));
-	u16 count = readLine(buffer,20);
-	printf("You entered: %s\n",buffer);
+	while(1) {
+		printf("Type something: ");
+		s8 *buffer = malloc(20 * sizeof(s8));
+		u16 count = readLine(buffer,20);
+		printf("You typed: %s\n",buffer);
+	}
 
 	/*tFD dd,dfd;
 	sProc proc;

@@ -24,7 +24,7 @@ static sKeymapEntry keymap[] = {
 	/* VK_MINUS */		{'-',		'_',		NPRINT},
 	/* VK_EQ */			{'=',		'+',		NPRINT},
 	/* --- */			{NPRINT,	NPRINT,		NPRINT},
-	/* VK_BACKSP */		{NPRINT,	NPRINT,		NPRINT},
+	/* VK_BACKSP */		{'\b',		'\b',		NPRINT},
 	/* VK_TAB */		{'\t',		'\t',		NPRINT},
 	/* VK_Q */			{'q',		'Q',		NPRINT},
 	/* VK_W */			{'w',		'W',		NPRINT},

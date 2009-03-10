@@ -113,4 +113,9 @@
 #define VK_SCROLL		125
 #define VK_PAUSE		126
 
+/* special escape-codes */
+#define VK_ESC_FG		128
+#define VK_ESC_BG		129
+#define VK_ESC_RESET	130
+
 #endif /* KEYCODES_H_ */

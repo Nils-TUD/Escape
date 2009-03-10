@@ -24,6 +24,7 @@ typedef struct {
 	bool altDown;
 	bool ctrlDown;
 	tFD video;
+	tFD self;
 } sVTerm;
 
 /* the messages we'll send */
@@ -40,6 +41,13 @@ typedef struct {
 #define ROWS		25
 #define TAB_WIDTH	2
 
+#define BUFFER_SIZE	256
+
+/* the number of left-shifts for each state */
+#define STATE_SHIFT	0
+#define STATE_CTRL	1
+#define STATE_ALT	2
+
 /* the colors */
 typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
 
@@ -49,21 +57,19 @@ typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eC
 static void vterm_setCursor(void);
 
 /**
- * Deletes the next character while reading a line
- */
-static void vterm_deleteNext(void);
-
-/**
- * Deletes the last character while reading a line
- */
-static void vterm_deletePrev(void);
-
-/**
  * Prints the given character to screen
  *
  * @param c the character
  */
 static void vterm_putchar(s8 c);
+
+/**
+ * Writes the given character to the video-driver (at the current position).
+ * Will not move forward.
+ *
+ * @param c the character
+ */
+static void vterm_writeChar(u8 c);
 
 /**
  * Handles the escape-code
@@ -115,13 +121,9 @@ static sMsgDefHeader msgVidMove = {
 };
 
 static sVTerm vterm;
-static u8 readStart,readEnd;
-static bool readingFinished = false;
-static u16 bufferSize = 0;
-static s8 *buffer = NULL;
 
 void vterm_init(void) {
-	s32 vidFd;
+	s32 vidFd,selfFd;
 	/* open video */
 	do {
 		vidFd = open("services:/video",IO_WRITE);
@@ -129,6 +131,13 @@ void vterm_init(void) {
 			yield();
 	}
 	while(vidFd < 0);
+
+	/* open ourself to write keycodes into the receive-pipe (which can be read by other processes) */
+	selfFd = open("services:/vterm",IO_WRITE);
+	if(selfFd < 0) {
+		printLastError();
+		return;
+	}
 
 	/* init state */
 	vterm.col = 0;
@@ -139,121 +148,54 @@ void vterm_init(void) {
 	vterm.altDown = false;
 	vterm.ctrlDown = false;
 	vterm.video = vidFd;
+	vterm.self = selfFd;
 }
 
 void vterm_destroy(void) {
 	close(vterm.video);
 }
 
-bool vterm_isReading(void) {
-	return buffer != NULL && !readingFinished;
-}
-
-void vterm_startReading(u16 maxLength) {
-	/* free previously allocated mem */
-	if(buffer)
-		free(buffer);
-
-	buffer = (s8*)malloc(sizeof(s8) * maxLength);
-	/* ignore error here, since buffer is still NULL */
-	readingFinished = false;
-	readStart = vterm.col;
-	readEnd = vterm.col;
-	bufferSize = maxLength;
-}
-
-u16 vterm_getReadLength(void) {
-	if(buffer == NULL || !readingFinished)
-		return 0;
-	return bufferSize;
-}
-
-s8 *vterm_getReadLine(void) {
-	if(buffer == NULL || !readingFinished)
-		return NULL;
-	return buffer;
-}
-
 void vterm_handleKeycode(sMsgKbResponse *msg) {
-	/* in readline mode? */
-	if(buffer != NULL) {
-		/* handle shift, alt and ctrl */
-		switch(msg->keycode) {
-			case VK_LSHIFT:
-			case VK_RSHIFT:
-				vterm.shiftDown = !msg->isBreak;
-				break;
-			case VK_LALT:
-			case VK_RALT:
-				vterm.altDown = !msg->isBreak;
-				break;
-			case VK_LCTRL:
-			case VK_RCTRL:
-				vterm.ctrlDown = !msg->isBreak;
-				break;
+	sKeymapEntry *e;
+	s8 c;
+
+	/* handle shift, alt and ctrl */
+	switch(msg->keycode) {
+		case VK_LSHIFT:
+		case VK_RSHIFT:
+			vterm.shiftDown = !msg->isBreak;
+			break;
+		case VK_LALT:
+		case VK_RALT:
+			vterm.altDown = !msg->isBreak;
+			break;
+		case VK_LCTRL:
+		case VK_RCTRL:
+			vterm.ctrlDown = !msg->isBreak;
+			break;
+	}
+
+	/* we don't need breakcodes anymore */
+	if(msg->isBreak)
+		return;
+
+	e = keymap_get(msg->keycode);
+	if(e != NULL) {
+		if(vterm.shiftDown)
+			c = e->shift;
+		else if(vterm.altDown)
+			c = e->alt;
+		else
+			c = e->def;
+
+		if(c == NPRINT) {
+			s8 escape[3] = {'\033',msg->keycode,(vterm.altDown << STATE_ALT) |
+					(vterm.ctrlDown << STATE_CTRL) |
+					(vterm.shiftDown << STATE_SHIFT)};
+			write(vterm.self,&escape,sizeof(s8) * 3);
 		}
-
-		if(!msg->isBreak) {
-			sKeymapEntry *e;
-			s8 c;
-			switch(msg->keycode) {
-				case VK_LEFT:
-					if(vterm.col > readStart)
-						vterm.col--;
-					vterm_setCursor();
-					break;
-				case VK_RIGHT:
-					if(vterm.col < readEnd)
-						vterm.col++;
-					vterm_setCursor();
-					break;
-				case VK_HOME:
-					if(vterm.col != readStart) {
-						vterm.col = readStart;
-						vterm_setCursor();
-					}
-					break;
-				case VK_END:
-					if(vterm.col != readEnd) {
-						vterm.col = readEnd;
-						vterm_setCursor();
-					}
-					break;
-				case VK_DELETE:
-					vterm_deleteNext();
-					break;
-				case VK_BACKSP:
-					vterm_deletePrev();
-					break;
-			}
-
-			e = keymap_get(msg->keycode);
-			if(e != NULL) {
-				if(vterm.shiftDown)
-					c = e->shift;
-				else if(vterm.altDown)
-					c = e->alt;
-				else
-					c = e->def;
-
-				if(c != NPRINT) {
-					u16 pos = vterm.col - readStart;
-					if(c == '\n' || pos >= bufferSize) {
-						readingFinished = true;
-						buffer[bufferSize - 1] = '\0';
-						vterm_putchar('\n');
-					}
-					else {
-						buffer[pos] = c;
-						if(vterm.col == readEnd)
-							readEnd++;
-						vterm_putchar(c);
-					}
-					vterm_setCursor();
-				}
-				/*yield();*/
-			}
-		}
+		else
+			write(vterm.self,&c,sizeof(s8));
 	}
 }
 
@@ -261,56 +203,14 @@ void vterm_puts(s8 *str) {
 	s8 c;
 	while((c = *str)) {
 		if(c == '\e' || c == '\033') {
-			if(*(str + 1) == '[') {
-				str += 2;
-				vterm_handleEscape(&str);
-				continue;
-			}
+			str++;
+			vterm_handleEscape(&str);
+			continue;
 		}
 		vterm_putchar(c);
 		str++;
 	}
 	vterm_setCursor();
-}
-
-static void vterm_deleteNext(void) {
-	if(vterm.col < readEnd) {
-		/* to next char */
-		vterm.col++;
-		/* now we can delete the prev char */
-		vterm_deletePrev();
-	}
-}
-
-static void vterm_deletePrev(void) {
-	u16 col = vterm.col;
-	if(col > readStart) {
-		/* are we at the end? */
-		if(col == readEnd) {
-			vterm.col--;
-			vterm_putchar(' ');
-			vterm.col--;
-		}
-		else {
-			u16 pos = col - readStart;
-			/* move chars in the buffer */
-			memmove(buffer + pos - 1,buffer + pos,readEnd - col);
-			/* refresh screen */
-			vterm.col--;
-			col--;
-			while(col < readEnd - 1) {
-				vterm_putchar(buffer[col - readStart]);
-				col++;
-			}
-			/* delete last char */
-			vterm_putchar(' ');
-			/* set column (putchar changed it) */
-			vterm.col = pos + readStart - 1;
-		}
-		/* refresh cursor-pos */
-		vterm_setCursor();
-		readEnd--;
-	}
 }
 
 static void vterm_setCursor(void) {
@@ -345,6 +245,16 @@ static void vterm_putchar(s8 c) {
 		/* to line-start */
 		vterm.col = 0;
 	}
+	else if(c == '\b') {
+		if(vterm.col > 0)
+			vterm.col--;
+		else if(vterm.row > 0) {
+			vterm.row--;
+			vterm.col = COLS -1;
+		}
+		/* overwrite */
+		vterm_writeChar(' ');
+	}
 	else if(c == '\t') {
 		i = TAB_WIDTH;
 		while(i-- > 0) {
@@ -352,11 +262,7 @@ static void vterm_putchar(s8 c) {
 		}
 	}
 	else {
-		msgVidSet.data.character = c;
-		msgVidSet.data.color = (vterm.background << 4) | vterm.foreground;
-		msgVidSet.data.row = vterm.row;
-		msgVidSet.data.col = vterm.col;
-		write(vterm.video,&msgVidSet,sizeof(sMsgVidSet));
+		vterm_writeChar(c);
 
 		vterm.col++;
 		/* do an explicit newline if necessary */
@@ -365,55 +271,61 @@ static void vterm_putchar(s8 c) {
 	}
 }
 
+static void vterm_writeChar(u8 c) {
+	msgVidSet.data.character = c;
+	msgVidSet.data.color = (vterm.background << 4) | vterm.foreground;
+	msgVidSet.data.row = vterm.row;
+	msgVidSet.data.col = vterm.col;
+	write(vterm.video,&msgVidSet,sizeof(sMsgVidSet));
+}
+
 static void vterm_handleEscape(s8 **str) {
-	cstring fmt = *str;
-	while(1) {
-		/* read code */
-		u8 colCode = 0;
-		while(*fmt >= '0' && *fmt <= '9') {
-			colCode = colCode * 10 + (*fmt - '0');
-			fmt++;
-		}
-
-		switch(colCode) {
-			/* reset all */
-			case 0:
-				vterm.foreground = WHITE;
-				vterm.background = BLACK;
-				break;
-
-			/* foreground */
-			case 30 ... 37:
-				vterm.foreground = colorTable[colCode - 30];
-				break;
-
-			/* default foreground */
-			case 39:
-				vterm.foreground = WHITE;
-				break;
-
-			/* background */
-			case 40 ... 47:
-				vterm.background = colorTable[colCode - 40];
-				break;
-
-			/* default background */
-			case 49:
-				vterm.background = BLACK;
-				break;
-		}
-
-		/* end of code? */
-		if(*fmt == 'm') {
-			fmt++;
+	u8 *fmt = *str;
+	u8 keycode = *fmt;
+	u8 value = *(fmt + 1);
+	switch(keycode) {
+		case VK_LEFT:
+			if(vterm.col > 0) {
+				vterm.col--;
+				vterm_setCursor();
+			}
 			break;
-		}
-		/* we should stop on \0, too */
-		if(*fmt == '\0')
+		case VK_RIGHT:
+			if(vterm.col < COLS - 1) {
+				vterm.col++;
+				vterm_setCursor();
+			}
 			break;
-		/* otherwise skip ';' */
-		fmt++;
+		case VK_HOME:
+			if(value > 0) {
+				if(value > vterm.col)
+					vterm.col = 0;
+				else
+					vterm.col -= value;
+				vterm_setCursor();
+			}
+			break;
+		case VK_END:
+			if(value > 0) {
+				if(vterm.col + value > COLS - 1)
+					vterm.col = COLS - 1;
+				else
+					vterm.col += value;
+				vterm_setCursor();
+			}
+			break;
+		case VK_ESC_RESET:
+			vterm.foreground = WHITE;
+			vterm.background = BLACK;
+			break;
+		case VK_ESC_FG:
+			vterm.foreground = MIN(9,value);
+			break;
+		case VK_ESC_BG:
+			vterm.background = MIN(9,value);
+			break;
 	}
 
-	*str = fmt;
+	/* skip escape code */
+	*str += 2;
 }

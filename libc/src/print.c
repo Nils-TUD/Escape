@@ -9,6 +9,7 @@
 #include "../h/io.h"
 #include "../h/proc.h"
 #include "../h/print.h"
+#include "../h/keycodes.h"
 #include <string.h>
 #include <stdarg.h>
 
@@ -104,24 +105,99 @@ static sSendMsg msg = {
 	.chars = {0}
 };
 
-u16 readLine(s8 *buffer,u16 max) {
-	sMsgDataVTermReadLine rlData;
-	sMsgDefHeader reply;
-	sMsgDefHeader *rlmsg;
-
-	/* send readline message */
-	rlData.maxLength = max;
-	rlmsg = createDefMsg(MSG_VTERM_READLINE,sizeof(sMsgDataVTermReadLine),&rlData);
-	write(termFD,rlmsg,sizeof(sMsgDefHeader) + rlmsg->length);
-
+s8 readChar(void) {
+	s8 c;
+	/* TODO we should use stdin here later */
 	/* go to sleep until the reply is available */
-	do {
+	while(read(termFD,&c,sizeof(s8)) <= 0) {
 		sleep();
 	}
-	while(read(termFD,&reply,sizeof(sMsgDefHeader)) <= 0);
+	return c;
+}
 
-	read(termFD,buffer,reply.length);
-	return reply.length;
+u16 readLine(s8 *buffer,u16 max) {
+	s8 c;
+	u16 cursorPos = 0;
+	u32 i = 0;
+	while(i < max) {
+		c = readChar();
+
+		switch(c) {
+			case '\b':
+				if(cursorPos > 0) {
+					/* remove last char */
+					if(cursorPos < i)
+						memmove(buffer + cursorPos - 1,buffer + cursorPos,i - cursorPos);
+					i--;
+					cursorPos--;
+					buffer[i] = '\0';
+					/* send backspace */
+					putchar(c);
+					flush();
+				}
+				continue;
+
+			case '\033': {
+				bool writeBack = false;
+				u8 keycode = readChar();
+				u8 modifier = readChar();
+				switch(keycode) {
+					/* write escape-code back */
+					case VK_RIGHT:
+						if(cursorPos < i) {
+							writeBack = true;
+							cursorPos++;
+						}
+						break;
+					case VK_HOME:
+						if(cursorPos > 0) {
+							writeBack = true;
+							/* send the number of chars to move */
+							modifier = cursorPos;
+							cursorPos = 0;
+						}
+						break;
+					case VK_END:
+						if(cursorPos < i) {
+							writeBack = true;
+							/* send the number of chars to move */
+							modifier = i - cursorPos;
+							cursorPos = i;
+						}
+						break;
+					case VK_LEFT:
+						if(cursorPos > 0) {
+							writeBack = true;
+							cursorPos--;
+						}
+						break;
+				}
+
+				/* write escape-code back */
+				if(writeBack) {
+					putchar(c);
+					putchar(keycode);
+					putchar(modifier);
+					flush();
+				}
+			}
+			continue;
+		}
+
+		/* echo */
+		putchar(c);
+		flush();
+
+		if(c == '\n')
+			break;
+
+		/* put in buffer */
+		buffer[cursorPos++] = c;
+		if(cursorPos > i)
+			i++;
+	}
+
+	return i;
 }
 
 void printf(cstring fmt,...) {
@@ -242,15 +318,17 @@ void putchar(s8 c) {
 }
 
 static void flush(void) {
-	if(termFD == -1)
-		init();
+	if(bufferPos > 0) {
+		if(termFD == -1)
+			init();
 
-	msg.header.length = bufferPos + 1;
-	msg.chars[bufferPos] = '\0';
-	write(termFD,&msg,sizeof(sMsgDefHeader) + (bufferPos + 1) * sizeof(s8));
-	bufferPos = 0;
-	/* a process switch improves the performance by far :) */
-	yield();
+		msg.header.length = bufferPos + 1;
+		msg.chars[bufferPos] = '\0';
+		write(termFD,&msg,sizeof(sMsgDefHeader) + (bufferPos + 1) * sizeof(s8));
+		bufferPos = 0;
+		/* a process switch improves the performance by far :) */
+		yield();
+	}
 }
 
 static void init(void) {

@@ -18,6 +18,13 @@
 void putchar(s8 c);
 
 /**
+ * Reads one character from the vterm
+ *
+ * @return the character
+ */
+s8 readChar(void);
+
+/**
  * Reads a line from the vterm
  *
  * @param buffer the buffer to use

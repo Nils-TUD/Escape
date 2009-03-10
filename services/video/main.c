@@ -88,8 +88,6 @@ s32 main(void) {
 							static sMsgDataVidSet data;
 							if(read(fd,&data,sizeof(sMsgDataVidSet)) > 0) {
 								if(data.row < ROWS && data.col < COLS) {
-									/*debugf("Got %d, color %d for row %d, col %d\n",data.character,
-										data.color,data.row,data.col);*/
 									u8 *ptr = videoData + (data.row * COLS * 2) + data.col * 2;
 									*ptr = data.character;
 									*(ptr + 1) = data.color;

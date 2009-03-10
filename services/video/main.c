@@ -38,9 +38,12 @@ static void vid_setCursor(u8 row,u8 col);
 static u8 *videoData;
 
 /**
- * Moves all lines one line up
+ * Sets the screen-content
+ *
+ * @param buffer the buffer
+ * @param length the buffer-size
  */
-static void vid_moveUp(void);
+static void vid_setScreen(s8 *buffer,u32 length);
 
 s32 main(void) {
 	s32 id;
@@ -97,9 +100,14 @@ s32 main(void) {
 						}
 						break;
 
-						/* move up */
-						case MSG_VIDEO_MOVEUP: {
-							vid_moveUp();
+						/* set screen */
+						case MSG_VIDEO_SETSCREEN: {
+							if(msg.length > 0 && msg.length <= COLS * ROWS * 2) {
+								s8 *buf = (s8*)malloc(msg.length * sizeof(s8));
+								read(fd,buf,msg.length);
+								vid_setScreen(buf,msg.length);
+								free(buf);
+							}
 						}
 						break;
 
@@ -139,13 +147,8 @@ static void vid_setCursor(u8 row,u8 col) {
    outb(CURSOR_PORT_DATA,(u8)((position >> 8) & 0xFF));
 }
 
-static void vid_moveUp(void) {
-	u32 i;
-	s8 *src,*dst;
-	/* copy all chars one line back */
-	src = (s8*)(videoData + COLS * 2);
-	dst = (s8*)videoData;
-	for(i = 0; i < ROWS * COLS * 2; i++) {
-		*dst++ = *src++;
-	}
+static void vid_setScreen(s8 *buffer,u32 length) {
+	s8 *ptr = (s8*)videoData;
+	while(length-- > 0)
+		*ptr++ = *buffer++;
 }

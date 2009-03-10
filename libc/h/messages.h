@@ -16,7 +16,7 @@
 #define MSG_KEYBOARD_READ			0
 
 #define MSG_VIDEO_SET				0
-#define MSG_VIDEO_MOVEUP			1
+#define MSG_VIDEO_SETSCREEN			1
 #define MSG_VIDEO_SETCURSOR			2
 
 /* the header for all default-messages */

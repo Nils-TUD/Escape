@@ -12,6 +12,14 @@
 extern u64 cpu_rdtsc(void);
 
 /**
+ * Prints <byteCount> bytes at <addr>
+ *
+ * @param addr the start-address
+ * @param byteCount the number of bytes
+ */
+void dumpBytes(void *addr,u32 byteCount);
+
+/**
  * Same as debugf, but with the va_list as argument
  *
  * @param fmt the format

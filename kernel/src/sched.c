@@ -118,6 +118,8 @@ void sched_unblockAll(void) {
 	for(n = sll_begin(blockedQueue); n != NULL; n = n->next) {
 		p = (sProc*)n->data;
 		p->state = ST_READY;
+		/* TODO not the right place here */
+		p->msgCount++;
 		sched_enqueueReadyProc(p);
 		sll_removeNode(blockedQueue,n,NULL);
 	}

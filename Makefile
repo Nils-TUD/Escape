@@ -13,7 +13,7 @@ DIRS = tools libc services user kernel kernel/test
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wno-long-long \
-				 -Wstrict-prototypes
+				 -Wstrict-prototypes -fno-builtin
 
 .PHONY: all disk dis qemu bochs debug debugu debugm debugt test clean
 

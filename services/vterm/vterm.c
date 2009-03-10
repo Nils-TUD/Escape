@@ -9,7 +9,10 @@
 #include <io.h>
 #include <proc.h>
 #include <keycodes.h>
+#include <heap.h>
+#include <string.h>
 #include "vterm.h"
+#include "keymap.h"
 
 /* our vterm-state */
 typedef struct {
@@ -17,6 +20,9 @@ typedef struct {
 	u8 row;
 	u8 foreground;
 	u8 background;
+	bool shiftDown;
+	bool altDown;
+	bool ctrlDown;
 	tFD video;
 } sVTerm;
 
@@ -41,6 +47,16 @@ typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eC
  * Sets the cursor
  */
 static void vterm_setCursor(void);
+
+/**
+ * Deletes the next character while reading a line
+ */
+static void vterm_deleteNext(void);
+
+/**
+ * Deletes the last character while reading a line
+ */
+static void vterm_deletePrev(void);
 
 /**
  * Prints the given character to screen
@@ -99,6 +115,10 @@ static sMsgDefHeader msgVidMove = {
 };
 
 static sVTerm vterm;
+static u8 readStart,readEnd;
+static bool readingFinished = false;
+static u16 bufferSize = 0;
+static s8 *buffer = NULL;
 
 void vterm_init(void) {
 	s32 vidFd;
@@ -110,10 +130,14 @@ void vterm_init(void) {
 	}
 	while(vidFd < 0);
 
+	/* init state */
 	vterm.col = 0;
 	vterm.row = ROWS - 1;
 	vterm.foreground = WHITE;
 	vterm.background = BLACK;
+	vterm.shiftDown = false;
+	vterm.altDown = false;
+	vterm.ctrlDown = false;
 	vterm.video = vidFd;
 }
 
@@ -121,29 +145,114 @@ void vterm_destroy(void) {
 	close(vterm.video);
 }
 
+bool vterm_isReading(void) {
+	return buffer != NULL && !readingFinished;
+}
+
+void vterm_startReading(u16 maxLength) {
+	/* free previously allocated mem */
+	if(buffer)
+		free(buffer);
+
+	buffer = (s8*)malloc(sizeof(s8) * maxLength);
+	/* ignore error here, since buffer is still NULL */
+	readingFinished = false;
+	readStart = vterm.col;
+	readEnd = vterm.col;
+	bufferSize = maxLength;
+}
+
+u16 vterm_getReadLength(void) {
+	if(buffer == NULL || !readingFinished)
+		return 0;
+	return bufferSize;
+}
+
+s8 *vterm_getReadLine(void) {
+	if(buffer == NULL || !readingFinished)
+		return NULL;
+	return buffer;
+}
+
 void vterm_handleKeycode(sMsgKbResponse *msg) {
-	if(!msg->isBreak) {
+	/* in readline mode? */
+	if(buffer != NULL) {
+		/* handle shift, alt and ctrl */
 		switch(msg->keycode) {
-			case VK_LEFT:
-				if(vterm.col > 0)
-					vterm.col--;
-				vterm_setCursor();
+			case VK_LSHIFT:
+			case VK_RSHIFT:
+				vterm.shiftDown = !msg->isBreak;
 				break;
-			case VK_RIGHT:
-				if(vterm.col < COLS - 1)
-					vterm.col++;
-				vterm_setCursor();
+			case VK_LALT:
+			case VK_RALT:
+				vterm.altDown = !msg->isBreak;
 				break;
-			case VK_UP:
-				if(vterm.row > 0)
-					vterm.row--;
-				vterm_setCursor();
+			case VK_LCTRL:
+			case VK_RCTRL:
+				vterm.ctrlDown = !msg->isBreak;
 				break;
-			case VK_DOWN:
-				if(vterm.row < ROWS - 1)
-					vterm.row++;
-				vterm_setCursor();
-				break;
+		}
+
+		if(!msg->isBreak) {
+			sKeymapEntry *e;
+			s8 c;
+			switch(msg->keycode) {
+				case VK_LEFT:
+					if(vterm.col > readStart)
+						vterm.col--;
+					vterm_setCursor();
+					break;
+				case VK_RIGHT:
+					if(vterm.col < readEnd)
+						vterm.col++;
+					vterm_setCursor();
+					break;
+				case VK_HOME:
+					if(vterm.col != readStart) {
+						vterm.col = readStart;
+						vterm_setCursor();
+					}
+					break;
+				case VK_END:
+					if(vterm.col != readEnd) {
+						vterm.col = readEnd;
+						vterm_setCursor();
+					}
+					break;
+				case VK_DELETE:
+					vterm_deleteNext();
+					break;
+				case VK_BACKSP:
+					vterm_deletePrev();
+					break;
+			}
+
+			e = keymap_get(msg->keycode);
+			if(e != NULL) {
+				if(vterm.shiftDown)
+					c = e->shift;
+				else if(vterm.altDown)
+					c = e->alt;
+				else
+					c = e->def;
+
+				if(c != NPRINT) {
+					u16 pos = vterm.col - readStart;
+					if(c == '\n' || pos >= bufferSize) {
+						readingFinished = true;
+						buffer[bufferSize - 1] = '\0';
+						vterm_putchar('\n');
+					}
+					else {
+						buffer[pos] = c;
+						if(vterm.col == readEnd)
+							readEnd++;
+						vterm_putchar(c);
+					}
+					vterm_setCursor();
+				}
+				/*yield();*/
+			}
 		}
 	}
 }
@@ -160,6 +269,47 @@ void vterm_puts(s8 *str) {
 		}
 		vterm_putchar(c);
 		str++;
+	}
+	vterm_setCursor();
+}
+
+static void vterm_deleteNext(void) {
+	if(vterm.col < readEnd) {
+		/* to next char */
+		vterm.col++;
+		/* now we can delete the prev char */
+		vterm_deletePrev();
+	}
+}
+
+static void vterm_deletePrev(void) {
+	u16 col = vterm.col;
+	if(col > readStart) {
+		/* are we at the end? */
+		if(col == readEnd) {
+			vterm.col--;
+			vterm_putchar(' ');
+			vterm.col--;
+		}
+		else {
+			u16 pos = col - readStart;
+			/* move chars in the buffer */
+			memmove(buffer + pos - 1,buffer + pos,readEnd - col);
+			/* refresh screen */
+			vterm.col--;
+			col--;
+			while(col < readEnd - 1) {
+				vterm_putchar(buffer[col - readStart]);
+				col++;
+			}
+			/* delete last char */
+			vterm_putchar(' ');
+			/* set column (putchar changed it) */
+			vterm.col = pos + readStart - 1;
+		}
+		/* refresh cursor-pos */
+		vterm_setCursor();
+		readEnd--;
 	}
 }
 

@@ -72,6 +72,18 @@ s32 memcmp(const void *str1,const void *str2,u32 count);
 void memset(void *addr,u32 value,u32 count);
 
 /**
+ * Copies the values of num bytes from the location pointed by source to the memory block pointed
+ * by destination. Copying takes place as if an intermediate buffer was used, allowing the
+ * destination and source to overlap.
+ *
+ * @param dest the destination
+ * @param src the source
+ * @param count the number of bytes to move
+ * @return the destination
+ */
+void *memmove(void *dest,const void *src,u32 count);
+
+/**
  * The strcpy() function copies characters in the string from to the string to, including the
  * null termination.
  * Note that strcpy() does not perform bounds checking, and thus risks overrunning from or to.

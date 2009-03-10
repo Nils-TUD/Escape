@@ -300,7 +300,7 @@ void kheap_free(void *addr) {
 }
 
 void *kheap_realloc(void *addr,u32 size) {
-	sMemArea *area,*a,*prev,*narea;
+	sMemArea *area,*a,*prev;
 	/* find the area with given address */
 	area = occupiedMap[(u32)addr % OCC_MAP_SIZE];
 	while(area != NULL) {
@@ -311,13 +311,13 @@ void *kheap_realloc(void *addr,u32 size) {
 
 	/* area not found? */
 	if(area == NULL)
-		return;
+		return NULL;
 
 	a = usableList;
 	prev = NULL;
 	while(a != NULL) {
 		/* found the area behind? */
-		if(a->address == area->address + area->size) {
+		if(a->address == (u8*)area->address + area->size) {
 			/* if the size of both is big enough we can use them */
 			if(area->size + a->size >= size) {
 				/* space left? */

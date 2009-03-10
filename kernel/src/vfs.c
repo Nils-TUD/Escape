@@ -212,7 +212,7 @@ s32 vfs_readFile(sGFTEntry *e,u8 *buffer,u32 count) {
 
 		if(n->type == T_SERVUSE) {
 			/* store position in first message */
-			if(readBytes < 0) {
+			if(readBytes <= 0) {
 				readBytes = -readBytes;
 				e->position = 0;
 				/* unlock node */
@@ -392,11 +392,55 @@ void vfs_closeIntrptMsgNode(tFile f) {
 	vfs_closeFile(e);
 }
 
-s32 vfs_getClient(tVFSNodeNo no) {
+bool vfs_msgAvailableFor(sProc *p) {
+	sVFSNode *n = SERVICES();
+	bool isService = false;
+	bool isClient = false;
+	tFD i;
+
+	/* at first we check wether the process is a service */
+	n = NODE_FIRST_CHILD(n);
+	while(n != NULL) {
+		if(n->data.service.proc == p) {
+			isService = true;
+			break;
+		}
+		n = n->next;
+	}
+
+	/* p is a service */
+	if(n != NULL) {
+		tVFSNodeNo client = vfs_getClient(p,NADDR_TO_VNNO(n));
+		if(vfsn_isValidNodeNo(client))
+			return true;
+	}
+
+	/* now search through the file-descriptors if there is any message */
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(p->fileDescs[i] != -1) {
+			sGFTEntry *e = vfs_getFile(p->fileDescs[i]);
+			if(IS_VIRT(e->nodeNo)) {
+				n = vfsn_getNode(e->nodeNo);
+				/* service-usage and a message in the receive-list? */
+				/* we don't want to check that if it is our own service. because it makes no
+				 * sense to read from ourself ;) */
+				if(n->type == T_SERVUSE && n->parent->data.service.proc != p) {
+					isClient = true;
+					if(n->data.servuse.recvList != NULL && sll_length(n->data.servuse.recvList) > 0)
+						return true;
+				}
+			}
+		}
+	}
+
+	/* if we are no client and no service we'll never receive a message */
+	/*if(isClient || isService)*/
+		return false;
+	/*return true;*/
+}
+
+s32 vfs_getClient(sProc *p,tVFSNodeNo no) {
 	sVFSNode *n,*node = nodes + no;
-	tFD fd;
-	s32 err;
-	sProc *p = proc_getRunning();
 	if(node->data.service.proc != p || node->type != T_SERVICE)
 		return ERR_NOT_OWN_SERVICE;
 
@@ -412,9 +456,21 @@ s32 vfs_getClient(tVFSNodeNo no) {
 	if(n == NULL)
 		return ERR_NO_CLIENT_WAITING;
 
+	return NADDR_TO_VNNO(n);
+}
+
+s32 vfs_openClient(tVFSNodeNo no) {
+	s32 err;
+	tFD fd;
+	sProc *p = proc_getRunning();
+	tVFSNodeNo client = vfs_getClient(p,no);
+	/* error? */
+	if(!vfsn_isValidNodeNo(client))
+		return client;
+
 	/* open a file for it and return the file-descriptor so that the service can read and write
 	 * with it */
-	err = vfs_openFile(VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n),&fd);
+	err = vfs_openFile(VFS_READ | VFS_WRITE,client,&fd);
 	if(err < 0)
 		return err;
 	return fd;
@@ -552,6 +608,7 @@ s32 vfs_serviceUseReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 
 	/* free data and remove element from list if the complete message has been read */
 	if(offset + count >= msg->length) {
+		p->msgCount--;
 		kheap_free(msg);
 		sll_removeIndex(list,0);
 		/* negative because we have read the complete msg */
@@ -597,8 +654,10 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 		sll_append(*list,msg);
 
 		/* notify the service */
-		if(list == &(n->data.servuse.sendList))
+		if(list == &(n->data.servuse.sendList)) {
+			n->parent->data.service.proc->msgCount++;
 			sched_setReady(n->parent->data.service.proc);
+		}
 		else {
 			if(n->parent->flags & VFS_SINGLEPIPE) {
 				/* we don't know who uses the service. Therefore we have to unblock all :/ */
@@ -609,8 +668,9 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 				/* notify the process that there is a message */
 				/* TODO is there a better way than parsing the pid from the node-name? */
 				if(strcmp(n->name,SERVICE_CLIENT_KERNEL) != 0) {
-					tPid pid = atoi(n->name);
-					sched_setReady(proc_getByPid(pid));
+					tPid procid = atoi(n->name);
+					proc_getByPid(procid)->msgCount++;
+					sched_setReady(proc_getByPid(procid));
 				}
 			}
 		}

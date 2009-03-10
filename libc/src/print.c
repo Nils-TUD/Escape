@@ -7,6 +7,8 @@
 #include "../h/common.h"
 #include "../h/messages.h"
 #include "../h/io.h"
+#include "../h/proc.h"
+#include "../h/print.h"
 #include <string.h>
 #include <stdarg.h>
 
@@ -101,6 +103,26 @@ static sSendMsg msg = {
 	},
 	.chars = {0}
 };
+
+u16 readLine(s8 *buffer,u16 max) {
+	sMsgDataVTermReadLine rlData;
+	sMsgDefHeader reply;
+	sMsgDefHeader *rlmsg;
+
+	/* send readline message */
+	rlData.maxLength = max;
+	rlmsg = createDefMsg(MSG_VTERM_READLINE,sizeof(sMsgDataVTermReadLine),&rlData);
+	write(termFD,rlmsg,sizeof(sMsgDefHeader) + rlmsg->length);
+
+	/* go to sleep until the reply is available */
+	do {
+		sleep();
+	}
+	while(read(termFD,&reply,sizeof(sMsgDefHeader)) <= 0);
+
+	read(termFD,buffer,reply.length);
+	return reply.length;
+}
 
 void printf(cstring fmt,...) {
 	va_list ap;

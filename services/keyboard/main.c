@@ -11,6 +11,7 @@
 #include <heap.h>
 #include <string.h>
 #include <debug.h>
+#include <proc.h>
 
 #include "set1.h"
 
@@ -76,8 +77,9 @@ s32 main(void) {
 	static sMsgKbRequest msg;
 	while(1) {
 		s32 fd = getClient(id);
-		if(fd < 0)
+		if(fd < 0) {
 			sleep();
+		}
 		else {
 			s32 c = 0;
 			do {

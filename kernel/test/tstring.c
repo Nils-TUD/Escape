@@ -18,6 +18,7 @@ static void test_itoa(void);
 static void test_memchr(void);
 static void test_memcpy(void);
 static void test_memcmp(void);
+static void test_memmove(void);
 static void test_strcpy(void);
 static void test_strncpy(void);
 static void test_strcat(void);
@@ -47,6 +48,7 @@ static void test_string(void) {
 	test_memchr();
 	test_memcpy();
 	test_memcmp();
+	test_memmove();
 	test_strcpy();
 	test_strncpy();
 	test_strcat();
@@ -152,6 +154,22 @@ static void test_memcmp(void) {
 	if(!test_assertTrue(memcmp(str2+3,str3,3) == 0)) return;
 	if(!test_assertFalse(memcmp(str1,str2,4) == 0)) return;
 	if(!test_assertFalse(memcmp(str2,str3,2) == 0)) return;
+
+	test_caseSucceded();
+}
+
+static void test_memmove(void) {
+	const s8 str1[10] = "abc";
+	const s8 str2[10] = "def";
+	const s8 str3[10] = "";
+	const s8 dest[4];
+	test_caseStart("Testing memmove()");
+
+	if(!test_assertStr(memmove(dest,str1,4),"abc")) return;
+	if(!test_assertStr(memmove(str1 + 1,str1,4),"abc") || !test_assertStr(str1,"aabc")) return;
+	if(!test_assertStr(memmove(str2,str2 + 1,3),"ef") || !test_assertStr(str2,"ef")) return;
+	if(!test_assertStr(memmove(str3,str3,0),"")) return;
+	if(!test_assertStr(memmove(str3,"abcdef",7),"abcdef")) return;
 
 	test_caseSucceded();
 }

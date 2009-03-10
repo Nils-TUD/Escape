@@ -18,6 +18,15 @@
 void putchar(s8 c);
 
 /**
+ * Reads a line from the vterm
+ *
+ * @param buffer the buffer to use
+ * @param max the maximum number of chars to read
+ * @return the number of read chars
+ */
+u16 readLine(s8 *buffer,u16 max);
+
+/**
  * The kernel-version of printf. Currently it supports:
  * %d: signed integer
  * %u: unsigned integer, base 10

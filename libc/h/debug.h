@@ -9,6 +9,8 @@
 
 #include <stdarg.h>
 
+extern u64 cpu_rdtsc(void);
+
 /**
  * Same as debugf, but with the va_list as argument
  *

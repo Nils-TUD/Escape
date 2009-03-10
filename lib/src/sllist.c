@@ -40,20 +40,6 @@ typedef struct {
 } sList;
 
 /**
- * Allocates a new node
- *
- * @return the node or NULL if failed
- */
-static sNode *sll_allocNode(void);
-
-/**
- * Free's the given node
- *
- * @param node the node
- */
-static void sll_freeNode(sNode *node);
-
-/**
  * Searches for the node at given index
  *
  * @param list the list
@@ -230,6 +216,7 @@ void sll_removeFirst(sSLList *list,void *data) {
 void sll_removeIndex(sSLList *list,u32 index) {
 	sList *l = (sList*)list;
 	sNode *n = l->first,*ln = NULL;
+	u32 i = index;
 
 	ASSERT(list != NULL,"list == NULL");
 
@@ -240,7 +227,7 @@ void sll_removeIndex(sSLList *list,u32 index) {
 	}
 
 	/* TODO keep that? */
-	ASSERT(n != NULL,"Index %d does not exist!",index);
+	ASSERT(n != NULL,"Index %d does not exist!",i);
 
 	sll_removeNode(list,(sSLNode*)n,(sSLNode*)ln);
 }

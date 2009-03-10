@@ -12,6 +12,7 @@
 #include <mem.h>
 #include <string.h>
 #include <debug.h>
+#include <proc.h>
 
 /* the physical memory of the 80x25 device */
 #define VIDEO_MEM			0xB8000
@@ -92,7 +93,7 @@ s32 main(void) {
 									u8 *ptr = videoData + (data.row * COLS * 2) + data.col * 2;
 									*ptr = data.character;
 									*(ptr + 1) = data.color;
-									vid_setCursor(data.row,data.col);
+									vid_setCursor(data.row,data.col + 1);
 								}
 							}
 						}

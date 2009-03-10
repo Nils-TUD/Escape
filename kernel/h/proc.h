@@ -51,6 +51,8 @@ typedef struct {
 	tFile fileDescs[MAX_FD_COUNT];
 	/* the io-map (NULL by default) */
 	u8 *ioMap;
+	/* the number of waiting messages */
+	u16 msgCount;
 	/* a bitfield with signals the process should get
 	u16 signals; */
 	u64 cycleCount;

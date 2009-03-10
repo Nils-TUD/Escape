@@ -348,7 +348,7 @@ static s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
 			m = m->next;
 		}
 
-		name = SERVICE_CLIENT_ALL;
+		name = (string)SERVICE_CLIENT_ALL;
 	}
 	else {
 		/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */

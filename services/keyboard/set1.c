@@ -7,6 +7,7 @@
 #include <common.h>
 #include <messages.h>
 #include <keycodes.h>
+#include "set1.h"
 
 /* an entry in the set1-map */
 typedef struct {
@@ -167,5 +168,6 @@ bool kb_set1_getKeycode(sMsgKbResponse *res,u8 scanCode) {
 		res->keycode = e->ext;
 	else
 		res->keycode = e->def;
+	set = 0;
 	return true;
 }

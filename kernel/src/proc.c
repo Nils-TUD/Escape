@@ -14,6 +14,7 @@
 #include "../h/vfs.h"
 #include "../h/kheap.h"
 #include "../h/gdt.h"
+#include "../h/cpu.h"
 #include <video.h>
 #include <string.h>
 
@@ -532,7 +533,7 @@ void proc_dbg_print(sProc *p) {
 	vid_printf("\ttextPages = %d\n",p->textPages);
 	vid_printf("\tdataPages = %d\n",p->dataPages);
 	vid_printf("\tstackPages = %d\n",p->stackPages);
-	ptr = &p->cycleCount;
+	ptr = (u32*)&p->cycleCount;
 	vid_printf("\tcycleCount = 0x%08x%08x\n",*(ptr + 1),*ptr);
 	vid_printf("\tfileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {

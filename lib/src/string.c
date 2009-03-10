@@ -120,6 +120,31 @@ void memset(void *addr,u32 value,u32 count) {
 	}
 }
 
+void *memmove(void *dest,const void *src,u32 count) {
+	u8 *s,*d;
+	/* nothing to do? */
+	if((u8*)dest == (u8*)src)
+		return dest;
+
+	/* moving forward */
+	if((u8*)dest > (u8*)src) {
+		s = (u8*)src + count - 1;
+		d = (u8*)dest + count - 1;
+		while(count-- > 0)
+			*d-- = *s--;
+	}
+	/* moving backwards */
+	else {
+		s = (u8*)src;
+		d = (u8*)dest;
+		while(count-- > 0) {
+			*d++ = *s++;
+		}
+	}
+
+	return dest;
+}
+
 string strcpy(string to,cstring from) {
 	string res = to;
 

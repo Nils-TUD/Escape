@@ -172,13 +172,30 @@ s32 vfs_openIntrptMsgNode(sVFSNode *node);
 void vfs_closeIntrptMsgNode(tFile f);
 
 /**
- * For services: Looks wether a client wants to be served and returns a file-descriptor
- * for it.
+ * Checks wether there is a message for the given process. That if the process is a service
+ * and should serve a client or if the process has got a message from a service.
  *
+ * @param p the process
+ * @return true if there is a message
+ */
+bool vfs_msgAvailableFor(sProc *p);
+
+/**
+ * For services: Looks wether a client wants to be served and return the node-number
+ *
+ * @param p the service
  * @param no the node-number
+ * @return the error-code or the node-number of the client
+ */
+s32 vfs_getClient(sProc *p,tVFSNodeNo no);
+
+/**
+ * Opens a file for a client of the given service-node
+ *
+ * @param no the service-node-number
  * @return the error-code (negative) or the file-descriptor to use
  */
-s32 vfs_getClient(tVFSNodeNo no);
+s32 vfs_openClient(tVFSNodeNo no);
 
 /**
  * Removes the service with given node-number

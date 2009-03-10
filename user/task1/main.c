@@ -132,7 +132,7 @@ s32 main(void) {
 		}
 	}*/
 
-	u32 i,x;
+	/*u32 i,x;
 	for(i = 0,x = 0; x < 10 ;x++) {
 		printf("\e[30mDas ist der %dte Test!!\e[0m\n",i++);
 		printf("\e[31mDas ist der %dte Test!!\e[0m\n",i++);
@@ -158,11 +158,22 @@ s32 main(void) {
 		printf("\e[32;45mDas ist der %dte Test!!\e[0m\n",i++);
 		printf("\e[31;46mDas ist der %dte Test!!\e[0m\n",i++);
 		printf("\e[30;47mDas ist der %dte Test!!\e[0m\n",i++);
-		/*volatile u32 x;
-		for(x = 0; x < 0xFFFFFFF; x++);*/
+		volatile u32 x;
+		for(x = 0; x < 0xFFFFFFF; x++);
+	}*/
+
+	if(fork() == 0) {
+		while(1) {
+			yield();
+		}
 	}
 
-	tFD dd,dfd;
+	printf("Enter your name: ");
+	s8 *buffer = malloc(20 * sizeof(s8));
+	u16 count = readLine(buffer,20);
+	printf("You entered: %s\n",buffer);
+
+	/*tFD dd,dfd;
 	sProc proc;
 	sDir *entry;
 	s8 path[] = "system:/processes/";
@@ -185,7 +196,7 @@ s32 main(void) {
 			}
 			closedir(dd);
 		}
-	}
+	}*/
 
 	/*
 	sMsgDataVidGoto vidgoto;

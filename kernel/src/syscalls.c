@@ -14,6 +14,7 @@
 #include "../h/util.h"
 #include "../h/debug.h"
 #include "../h/kheap.h"
+#include "../h/sched.h"
 #include <video.h>
 #include <string.h>
 
@@ -450,7 +451,7 @@ static void sysc_getClient(sSysCallStack *stack) {
 		return;
 	}
 
-	res = vfs_getClient(no);
+	res = vfs_openClient(no);
 	if(res < 0) {
 		SYSC_ERROR(stack,res);
 		return;
@@ -609,8 +610,12 @@ static void sysc_yield(sSysCallStack *stack) {
 }
 
 static void sysc_sleep(sSysCallStack *stack) {
-	sched_setBlocked(proc_getRunning());
-	proc_switch();
+	sProc *p = proc_getRunning();
+	bool msgAv = vfs_msgAvailableFor(p);
+	if(!msgAv) {
+		sched_setBlocked(p);
+		proc_switch();
+	}
 }
 
 static void sys_requestIOPorts(sSysCallStack *stack) {

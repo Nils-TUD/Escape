@@ -9,14 +9,15 @@
 
 #include "common.h"
 
-#define MSG_VTERM_WRITE		0
-#define MSG_VTERM_READ		1
+#define MSG_VTERM_WRITE				0
+#define MSG_VTERM_READLINE			1
+#define MSG_VTERM_READLINE_REPL		2
 
-#define MSG_KEYBOARD_READ	0
+#define MSG_KEYBOARD_READ			0
 
-#define MSG_VIDEO_SET		0
-#define MSG_VIDEO_MOVEUP	1
-#define MSG_VIDEO_SETCURSOR	2
+#define MSG_VIDEO_SET				0
+#define MSG_VIDEO_MOVEUP			1
+#define MSG_VIDEO_SETCURSOR			2
 
 /* the header for all default-messages */
 typedef struct {
@@ -47,6 +48,11 @@ typedef struct {
 	u8 col;
 	u8 row;
 } sMsgDataVidSetCursor;
+
+/* the message-data for the vterm-readline-message */
+typedef struct {
+	u16 maxLength;
+} sMsgDataVTermReadLine;
 
 /**
  * Creates a default-message with the given data

@@ -18,6 +18,9 @@ typedef struct {
 	u64 cycleCount;
 } sProc;
 
+/* the process states */
+typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE = 4} eProcState;
+
 /**
  * @return the process-id
  */

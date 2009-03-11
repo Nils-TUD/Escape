@@ -13,7 +13,7 @@ LIBCOBJS=$(filter-out $(START),$(wildcard $(BUILD)/libc_*.o))
 CC = gcc
 CFLAGS = -g -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/h -I../../lib/h -I$(LIBC)/test \
 	-Wl,-T,$(LDCONF) $(CWFLAGS) 
-CSRC=$(wildcard *.c)
+CSRC=$(wildcard *.c) $(wildcard cmd/*.c)
 
 .PHONY: all clean
 

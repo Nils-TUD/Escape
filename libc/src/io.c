@@ -229,6 +229,7 @@ u16 readLine(s8 *buffer,u16 max) {
 			i++;
 	}
 
+	buffer[i] = '\0';
 	return i;
 }
 

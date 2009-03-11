@@ -11,9 +11,14 @@ main.c: In function ‘main’:
 main.c:111: warning: comparison between signed and unsigned
 main.c:19: warning: return type of ‘main’ is not ‘int’
 main.c:11: warning: return type of ‘main’ is not ‘int’
-main.c:17: warning: return type of ‘main’ is not ‘int’
+main.c:46: warning: initialization discards qualifiers from pointer target type
+main.c:49: warning: return type of ‘main’ is not ‘int’
 main.c: In function ‘main’:
-main.c:21: warning: unused variable ‘count’
+main.c:51: warning: unused variable ‘res’
+main.c: In function ‘getCmd’:
+main.c:86: warning: passing argument 2 of ‘strchri’ makes integer from pointer without a cast
+cmd/echo.c:10: warning: unused parameter ‘argc’
+cmd/echo.c:10: warning: unused parameter ‘argv’
 main.c: In function ‘printProcess’:
 main.c:34: warning: initialization from incompatible pointer type
 main.c:26: warning: unused variable ‘pid’
@@ -26,10 +31,10 @@ main.c:462:2: warning: "/*" within comment
 main.c: At top level:
 main.c:25: warning: ‘printProcess’ defined but not used
 src/intrpt.c: In function ‘intrpt_handleListener’:
-src/intrpt.c:431: warning: unused variable ‘i’
-src/intrpt.c:430: warning: unused variable ‘oldState’
+src/intrpt.c:433: warning: unused variable ‘i’
+src/intrpt.c:432: warning: unused variable ‘oldState’
 src/intrpt.c: At top level:
-src/intrpt.c:427: warning: unused parameter ‘irq’
+src/intrpt.c:429: warning: unused parameter ‘irq’
 src/kernel.c:52: warning: unused parameter ‘magic’
 src/ksymbols.c: In function ‘ksym_print’:
 src/ksymbols.c:18: warning: comparison of unsigned expression < 0 is always false
@@ -41,10 +46,10 @@ src/vfsnode.c:212: warning: unused parameter ‘parent’
 ../lib/src/test.c:40: warning: unused parameter ‘fmt’
 ../lib/src/test.c:40: warning: unused parameter ‘ap’
 ../src/intrpt.c: In function ‘intrpt_handleListener’:
-../src/intrpt.c:431: warning: unused variable ‘i’
-../src/intrpt.c:430: warning: unused variable ‘oldState’
+../src/intrpt.c:433: warning: unused variable ‘i’
+../src/intrpt.c:432: warning: unused variable ‘oldState’
 ../src/intrpt.c: At top level:
-../src/intrpt.c:427: warning: unused parameter ‘irq’
+../src/intrpt.c:429: warning: unused parameter ‘irq’
 ../src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
 ../src/syscalls.c:608: warning: unused parameter ‘stack’
 ../src/syscalls.c:612: warning: unused parameter ‘stack’

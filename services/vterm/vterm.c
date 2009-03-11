@@ -345,7 +345,7 @@ static void vterm_putchar(s8 c) {
 			break;
 
 		case '\t':
-			i = TAB_WIDTH;
+			i = TAB_WIDTH - vterm.col % TAB_WIDTH;
 			while(i-- > 0) {
 				vterm_putchar(' ');
 			}

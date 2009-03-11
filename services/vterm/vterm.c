@@ -53,6 +53,10 @@ typedef struct {
 		sMsgDefHeader header;
 		s8 data[BUFFER_SIZE];
 	} __attribute__((packed)) buffer;
+	struct {
+		sMsgDefHeader header;
+		s8 data[COLS * 2];
+	} __attribute__((packed)) titleBar;
 } sVTerm;
 
 /* the messages we'll send */
@@ -141,6 +145,9 @@ static sVTerm vterm;
 
 void vterm_init(void) {
 	s32 vidFd,selfFd;
+	u32 i;
+	s8 *ptr;
+
 	/* open video */
 	do {
 		vidFd = open("services:/video",IO_WRITE);
@@ -170,6 +177,28 @@ void vterm_init(void) {
 	vterm.firstLine = HISTORY_SIZE - ROWS;
 	vterm.currLine = HISTORY_SIZE - ROWS;
 	vterm.firstVisLine = HISTORY_SIZE - ROWS;
+
+	/* build title bar */
+	vterm.titleBar.header.id = MSG_VIDEO_SETSCREEN;
+	vterm.titleBar.header.length = COLS * 2;
+	ptr = vterm.titleBar.data;
+	for(i = 0; i < COLS; i++) {
+		*ptr++ = ' ';
+		*ptr++ = 0x17;
+	}
+	i = (((COLS * 2) / 2) - (22 / 2)) & ~0x1;
+	ptr = vterm.titleBar.data;
+	*(ptr + i) = 'E';
+	*(ptr + i + 2) = 's';
+	*(ptr + i + 4) = 'c';
+	*(ptr + i + 6) = 'a';
+	*(ptr + i + 8) = 'p';
+	*(ptr + i + 10) = 'e';
+	*(ptr + i + 14) = 'v';
+	*(ptr + i + 16) = '0';
+	*(ptr + i + 18) = '.';
+	*(ptr + i + 20) = '1';
+	vterm_refreshScreen();
 }
 
 void vterm_destroy(void) {
@@ -357,6 +386,9 @@ static void vterm_refreshScreen(void) {
 	header->id = MSG_VIDEO_SETSCREEN;
 	header->length = ROWS * COLS * 2;
 	write(vterm.video,ptr - sizeof(sMsgDefHeader),sizeof(sMsgDefHeader) + ROWS * COLS * 2);
+
+	/* send message for titleBar */
+	write(vterm.video,&vterm.titleBar,sizeof(vterm.titleBar));
 
 	/* restore screen-data */
 	memcpy(ptr - sizeof(sMsgDefHeader),back,sizeof(sMsgDefHeader));

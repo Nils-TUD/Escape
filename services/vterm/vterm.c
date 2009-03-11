@@ -27,7 +27,18 @@
 #define STATE_CTRL			1
 #define STATE_ALT			2
 
-#define OS_TITLE			"E\027s\027c\027a\027p\027e\027 \027v\0270\027.\0271"
+#define TITLE_BAR_COLOR		0x90
+#define OS_TITLE			"E\x90" \
+							"s\x90" \
+							"c\x90" \
+							"a\x90" \
+							"p\x90" \
+							"e\x90" \
+							" \x90" \
+							"v\x90" \
+							"0\x90" \
+							".\x90" \
+							"1\x90"
 
 /* the header for the set-screen message */
 typedef struct {
@@ -204,7 +215,7 @@ void vterm_init(void) {
 	ptr = vterm.titleBar.data;
 	for(i = 0; i < COLS; i++) {
 		*ptr++ = ' ';
-		*ptr++ = 0x17;
+		*ptr++ = TITLE_BAR_COLOR;
 	}
 	len = strlen(OS_TITLE);
 	i = (((COLS * 2) / 2) - (len / 2)) & ~0x1;
@@ -246,6 +257,7 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 
 	e = keymap_get(msg->keycode);
 	if(e != NULL) {
+		bool sendMsg = true;
 		if(vterm.shiftDown)
 			c = e->shift;
 		else if(vterm.altDown)
@@ -256,35 +268,43 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 		switch(msg->keycode) {
 			case VK_PGUP:
 				vterm_scroll(ROWS);
+				sendMsg = false;
 				break;
 			case VK_PGDOWN:
 				vterm_scroll(-ROWS);
+				sendMsg = false;
 				break;
 			case VK_UP:
-				if(vterm.shiftDown)
+				if(vterm.shiftDown) {
 					vterm_scroll(1);
+					sendMsg = false;
+				}
 				break;
 			case VK_DOWN:
-				if(vterm.shiftDown)
+				if(vterm.shiftDown) {
 					vterm_scroll(-1);
+					sendMsg = false;
+				}
 				break;
 		}
 
-		if(c == NPRINT) {
-			s8 escape[3] = {'\033',msg->keycode,(vterm.altDown << STATE_ALT) |
-					(vterm.ctrlDown << STATE_CTRL) |
-					(vterm.shiftDown << STATE_SHIFT)};
-			write(vterm.self,&escape,sizeof(s8) * 3);
+		if(sendMsg) {
+			if(c == NPRINT) {
+				s8 escape[3] = {'\033',msg->keycode,(vterm.altDown << STATE_ALT) |
+						(vterm.ctrlDown << STATE_CTRL) |
+						(vterm.shiftDown << STATE_SHIFT)};
+				write(vterm.self,&escape,sizeof(s8) * 3);
+			}
+			else
+				write(vterm.self,&c,sizeof(s8));
 		}
-		else
-			write(vterm.self,&c,sizeof(s8));
 	}
 }
 
 void vterm_puts(s8 *str) {
 	s8 c;
 	while((c = *str)) {
-		if(c == '\e' || c == '\033') {
+		if(c == '\033') {
 			str++;
 			vterm_handleEscape(&str);
 			continue;

@@ -88,7 +88,7 @@ s32 main(void) {
 	u32 i;
 	s8 *buffer;
 
-	printf("Welcome to Escape v0.1!\n");
+	printf("\033f\011Welcome to Escape v0.1!\033r\00\n");
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");

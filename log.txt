@@ -13,49 +13,55 @@ Available memory:
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x000000000186e8d4
+Clock cycles: 0x000000000221cf01
 Initializing VFS...DONE
-Clock cycles: 0x00000000000fdd2e
+Clock cycles: 0x000000000010596c
 Initializing process-management...DONE
-Clock cycles: 0x00000000000ec436
+Clock cycles: 0x00000000000e088c
 Initializing IDT...DONE
-Clock cycles: 0x00000000000b8458
+Clock cycles: 0x00000000000b5bd8
 Free frames=28655, pages mapped=1281, free mem=114620 KiB
+Got interrupt 39 (<unknown>) @ 0x0
 Service keyboard has pid 1
 Service video has pid 2
 Service vterm has pid 3
 Welcome to Escape v0.1!
-
 Try 'help' to see the current features :)
 
-# bla
-bla: Command not found
-# blub
-blub: Command not found
-# blubblablubblablub
-blub: Command not found
-# blubblablubblablubblablubblaps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  006	 	  	  Ready  	 	  0x0003b7cde19b47c7	  init
-01	  	  00	  	  007	 	  	  Blocked	 	  0x0000000005199999	  keyboard
-02	  	  00	  	  011	 	  	  Ready  	 	  0x00000000060d9f0e	  video
-03	  	  00	  	  012	 	  	  Blocked	 	  0x000000000634f91d	  vterm
-04	  	  00	  	  010	 	  	  Running	 	  0x00000000014bfc71	  shell
+# help
+Currently you can use the following commands:
+	  echo
+	  ps
+	  help
 
-# psblubblapsblablubpstest
-test: Command not found
-# ecoho test
-test 
-# echo test
-test 
-# poss
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  006	 	  	  Ready  	 	  0x000911af5f914e2d	  init
-01	  	  00	  	  007	 	  	  Blocked	 	  0x0000000009350ef8	  keyboard
-02	  	  00	  	  011	 	  	  Ready  	 	  0x000000000c0cd692	  video
-03	  	  00	  	  012	 	  	  Blocked	 	  0x000000000be0b621	  vterm
-04	  	  00	  	  010	 	  	  Running	 	  0x000000000294e670	  shell
+You can scroll the screen with pageUp, pageDown, shift+arrowUp, shift+arrowDown
 
-# psecho test
-test 
-# echo testpsecho testtestpsblubblaecho testpsecho testblablubpstestecho testpsecho testblablubpstestecho testpsecho testblablubpstestecho testps
+# echo  ynumbers 
+ numbers  
+# ps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
+00	  	  00	  	  006	 	  	  Ready  	 	  0x05d3a94c5e0119bb	  init
+01	  	  00	  	  007	 	  	  Blocked	 	  0x00000000034c3938	  keyboard
+02	  	  00	  	  011	 	  	  Ready  	 	  0x000000000635f44e	  video
+03	  	  00	  	  012	 	  	  Blocked	 	  0x000000000627f00c	  vterm
+04	  	  00	  	  010	 	  	  Running	 	  0x000000000133bd0b	  shell
+
+# ps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
+00	  	  00	  	  006	 	  	  Ready  	 	  0xa8aa78ded7fe2fd2	  init
+01	  	  00	  	  007	 	  	  Blocked	 	  0x0000000004e13119	  keyboard
+02	  	  00	  	  011	 	  	  Ready  	 	  0x00000000095b57f8	  video
+03	  	  00	  	  012	 	  	  Blocked	 	  0x0000000008ae8a31	  vterm
+04	  	  00	  	  010	 	  	  Running	 	  0x0000000002356641	  shell
+
+# ps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
+00	  	  00	  	  006	 	  	  Ready  	 	  0xa8bf35a74825b6a4	  init
+01	  	  00	  	  007	 	  	  Blocked	 	  0x00000000053d4cf5	  keyboard
+02	  	  00	  	  011	 	  	  Ready  	 	  0x000000000c5fbad9	  video
+03	  	  00	  	  012	 	  	  Blocked	 	  0x000000000af305cc	  vterm
+04	  	  00	  	  010	 	  	  Running	 	  0x0000000003073584	  shell
+
+# helpecho  numbers pshelppsecho  numbers helpecho  numbers pshelptestpshelpecho  numbers pshelpecho  numbers quit
+quit: Command not found
+# 

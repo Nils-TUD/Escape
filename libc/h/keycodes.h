@@ -114,8 +114,8 @@
 #define VK_PAUSE		126
 
 /* special escape-codes */
-#define VK_ESC_FG		128
-#define VK_ESC_BG		129
-#define VK_ESC_RESET	130
+#define VK_ESC_FG		'f'
+#define VK_ESC_BG		'b'
+#define VK_ESC_RESET	'r'
 
 #endif /* KEYCODES_H_ */

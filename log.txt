@@ -13,15 +13,14 @@ Available memory:
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000001ec434d
+Clock cycles: 0x00000000017cf463
 Initializing VFS...DONE
-Clock cycles: 0x00000000001091d9
+Clock cycles: 0x00000000000f9927
 Initializing process-management...DONE
-Clock cycles: 0x00000000000dac31
+Clock cycles: 0x00000000000ca968
 Initializing IDT...DONE
-Clock cycles: 0x00000000000b1375
+Clock cycles: 0x00000000000a72a7
 Free frames=28655, pages mapped=1281, free mem=114620 KiB
-Got interrupt 39 (<unknown>) @ 0x0
 Loading services...
 Done
 Loading service 1
@@ -37,148 +36,26 @@ Starting...
 Done
 Service vterm has pid 3
 fd=1, fd1=0
-Type something: aaaaaaaaaaaabbbccc
-src=5FE2, dest=5F42, count=4000
-You typed: bbbaaaaaaaaaccc
-src=5F42, dest=5EA2, count=4160
-Type something: asdasd ba la bkuybasd und mehr
-src=5EA2, dest=5E02, count=4320
-You typed: asd und mehr
-src=5E02, dest=5D62, count=4480
-Type something: tja, das geht <(:)
-src=5D62, dest=5CC2, count=4640
-You typed: tja, das geht :)
-src=5CC2, dest=5C22, count=4800
-Type something: aabbasdaabbccaabbbcdefasdasdtest=)-asdtest
-src=5C22, dest=5B82, count=4960
-You typed: asdtest
-src=5B82, dest=5AE2, count=5120
-Type something: aaabbccaabb
-src=5AE2, dest=5A42, count=5280
-You typed: aaabbccaabb
-src=5A42, dest=59A2, count=5440
+Type something: asd das bin ich
+You typed: asd das bin ich
+Type something: bla
+You typed: bla
+Type something: du arsch
+You typed: du arsch
 Type something: 
-src=59A2, dest=5902, count=5600
 You typed: 
-src=5902, dest=5862, count=5760
 Type something: 
-src=5862, dest=57C2, count=5920
 You typed: 
-src=57C2, dest=5722, count=6080
 Type something: 
-src=5722, dest=5682, count=6240
 You typed: 
-src=5682, dest=55E2, count=6400
 Type something: 
-src=55E2, dest=5542, count=6560
 You typed: 
-src=5542, dest=54A2, count=6720
 Type something: 
-src=54A2, dest=5402, count=6880
 You typed: 
-src=5402, dest=5362, count=7040
 Type something: 
-src=5362, dest=52C2, count=7200
 You typed: 
-src=52C2, dest=5222, count=7360
 Type something: 
-src=5222, dest=5182, count=7520
 You typed: 
-src=5182, dest=50E2, count=7680
 Type something: 
-src=50E2, dest=5042, count=7840
 You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: aaaaaaaa
-src=50E2, dest=5042, count=8000
-You typed: aaaaaaaa
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
-Type something: 
-src=50E2, dest=5042, count=8000
-You typed: 
-src=50E2, dest=5042, count=8000
 Type something: 

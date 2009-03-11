@@ -27,6 +27,14 @@
 #define STATE_CTRL			1
 #define STATE_ALT			2
 
+#define OS_TITLE			"E\027s\027c\027a\027p\027e\027 \027v\0270\027.\0271"
+
+/* the header for the set-screen message */
+typedef struct {
+	sMsgDefHeader header;
+	u16 startPos;
+} __attribute__((packed)) sMsgVidSetScr;
+
 /* our vterm-state */
 typedef struct {
 	/* position (on the current page) */
@@ -50,11 +58,11 @@ typedef struct {
 	u16 firstVisLine;
 	/* in message form for performance-issues */
 	struct {
-		sMsgDefHeader header;
+		sMsgVidSetScr header;
 		s8 data[BUFFER_SIZE];
 	} __attribute__((packed)) buffer;
 	struct {
-		sMsgDefHeader header;
+		sMsgVidSetScr header;
 		s8 data[COLS * 2];
 	} __attribute__((packed)) titleBar;
 } sVTerm;
@@ -110,6 +118,14 @@ static void vterm_scroll(s16 lines);
 static void vterm_refreshScreen(void);
 
 /**
+ * Refreshes <count> lines beginning with <start>
+ *
+ * @param start the start-line
+ * @param count the number of lines
+ */
+static void vterm_refreshLines(u16 start,u16 count);
+
+/**
  * Handles the escape-code
  *
  * @param str the current position (will be changed)
@@ -145,7 +161,7 @@ static sVTerm vterm;
 
 void vterm_init(void) {
 	s32 vidFd,selfFd;
-	u32 i;
+	u32 i,len;
 	s8 *ptr;
 
 	/* open video */
@@ -178,27 +194,26 @@ void vterm_init(void) {
 	vterm.currLine = HISTORY_SIZE - ROWS;
 	vterm.firstVisLine = HISTORY_SIZE - ROWS;
 
+	/* fill buffer with spaces to ensure that the cursor is visible (spaces, white on black) */
+	memset(vterm.buffer.data,0x07200720,BUFFER_SIZE);
+
 	/* build title bar */
-	vterm.titleBar.header.id = MSG_VIDEO_SETSCREEN;
-	vterm.titleBar.header.length = COLS * 2;
+	vterm.titleBar.header.header.id = MSG_VIDEO_SETSCREEN;
+	vterm.titleBar.header.header.length = sizeof(u16) + COLS * 2;
+	vterm.titleBar.header.startPos = 0;
 	ptr = vterm.titleBar.data;
 	for(i = 0; i < COLS; i++) {
 		*ptr++ = ' ';
 		*ptr++ = 0x17;
 	}
-	i = (((COLS * 2) / 2) - (22 / 2)) & ~0x1;
+	len = strlen(OS_TITLE);
+	i = (((COLS * 2) / 2) - (len / 2)) & ~0x1;
 	ptr = vterm.titleBar.data;
-	*(ptr + i) = 'E';
-	*(ptr + i + 2) = 's';
-	*(ptr + i + 4) = 'c';
-	*(ptr + i + 6) = 'a';
-	*(ptr + i + 8) = 'p';
-	*(ptr + i + 10) = 'e';
-	*(ptr + i + 14) = 'v';
-	*(ptr + i + 16) = '0';
-	*(ptr + i + 18) = '.';
-	*(ptr + i + 20) = '1';
+	memcpy(ptr + i,OS_TITLE,len);
+
+	/* refresh screen and write titlebar (once) */
 	vterm_refreshScreen();
+	write(vterm.video,&vterm.titleBar,sizeof(vterm.titleBar));
 }
 
 void vterm_destroy(void) {
@@ -241,23 +256,17 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 		switch(msg->keycode) {
 			case VK_PGUP:
 				vterm_scroll(ROWS);
-				vterm_refreshScreen();
 				break;
 			case VK_PGDOWN:
 				vterm_scroll(-ROWS);
-				vterm_refreshScreen();
 				break;
 			case VK_UP:
-				if(vterm.shiftDown) {
+				if(vterm.shiftDown)
 					vterm_scroll(1);
-					vterm_refreshScreen();
-				}
 				break;
 			case VK_DOWN:
-				if(vterm.shiftDown) {
+				if(vterm.shiftDown)
 					vterm_scroll(-1);
-					vterm_refreshScreen();
-				}
 				break;
 		}
 
@@ -309,39 +318,47 @@ static void vterm_putchar(s8 c) {
 		while((inb(0x3fd) & 0x20) == 0);
 	}
 
-	if(c == '\n') {
-		/* to next line */
-		vterm.row++;
-		/* move cursor to line start */
-		vterm_putchar('\r');
-	}
-	else if(c == '\r') {
-		/* to line-start */
-		vterm.col = 0;
-	}
-	else if(c == '\b') {
-		if(vterm.col > 0)
-			vterm.col--;
-		else if(vterm.row > 0) {
-			vterm.row--;
-			vterm.col = COLS -1;
-		}
-		/* overwrite */
-		vterm_writeChar(' ');
-	}
-	else if(c == '\t') {
-		i = TAB_WIDTH;
-		while(i-- > 0) {
-			vterm_putchar(' ');
-		}
-	}
-	else {
-		vterm_writeChar(c);
+	switch(c) {
+		case '\n':
+			/* to next line */
+			vterm.row++;
+			/* move cursor to line start */
+			vterm_putchar('\r');
+			break;
 
-		vterm.col++;
-		/* do an explicit newline if necessary */
-		if(vterm.col >= COLS)
-			vterm_putchar('\n');
+		case '\r':
+			/* to line-start */
+			vterm.col = 0;
+			break;
+
+		case '\b':
+			if(vterm.col > 0) {
+				i = (vterm.currLine * COLS * 2) + (vterm.row * COLS * 2) + (vterm.col * 2);
+				/* move the characters back in the buffer */
+				memmove(vterm.buffer.data + i - 2,vterm.buffer.data + i,(COLS - vterm.col) * 2);
+				vterm.col--;
+
+				/* overwrite line */
+				vterm_refreshLines(vterm.row,1);
+				vterm_setCursor();
+			}
+			break;
+
+		case '\t':
+			i = TAB_WIDTH;
+			while(i-- > 0) {
+				vterm_putchar(' ');
+			}
+			break;
+
+		default:
+			vterm_writeChar(c);
+
+			vterm.col++;
+			/* do an explicit newline if necessary */
+			if(vterm.col >= COLS)
+				vterm_putchar('\n');
+			break;
 	}
 }
 
@@ -361,10 +378,11 @@ static void vterm_newLine(void) {
 	}
 
 	/* clear last line */
-	memset(vterm.buffer.data + (vterm.currLine + vterm.row - 1) * COLS * 2,0,COLS * 2);
+	memset(vterm.buffer.data + (vterm.currLine + vterm.row - 1) * COLS * 2,0x07200720,COLS * 2);
 }
 
 static void vterm_scroll(s16 lines) {
+	u16 old = vterm.firstVisLine;
 	if(lines > 0) {
 		/* ensure that we don't scroll above the first line with content */
 		vterm.firstVisLine = MAX(vterm.firstLine,(s16)vterm.firstVisLine - lines);
@@ -373,25 +391,30 @@ static void vterm_scroll(s16 lines) {
 		/* ensure that we don't scroll behind the last line */
 		vterm.firstVisLine = MIN(HISTORY_SIZE - ROWS,vterm.firstVisLine - lines);
 	}
+
+	if(old != vterm.firstVisLine)
+		vterm_refreshScreen();
 }
 
 static void vterm_refreshScreen(void) {
-	u8 back[sizeof(sMsgDefHeader)];
-	s8 *ptr = vterm.buffer.data + vterm.firstVisLine * COLS * 2;
+	vterm_refreshLines(1,ROWS - 1);
+}
+
+static void vterm_refreshLines(u16 start,u16 count) {
+	u8 back[sizeof(sMsgVidSetScr)];
+	s8 *ptr = vterm.buffer.data + (vterm.firstVisLine + start) * COLS * 2;
 	/* backup screen-data */
-	memcpy(back,ptr - sizeof(sMsgDefHeader),sizeof(sMsgDefHeader));
+	memcpy(back,ptr - sizeof(sMsgVidSetScr),sizeof(sMsgVidSetScr));
 
 	/* send message */
-	sMsgDefHeader *header = (sMsgDefHeader*)(ptr - sizeof(sMsgDefHeader));
-	header->id = MSG_VIDEO_SETSCREEN;
-	header->length = ROWS * COLS * 2;
-	write(vterm.video,ptr - sizeof(sMsgDefHeader),sizeof(sMsgDefHeader) + ROWS * COLS * 2);
-
-	/* send message for titleBar */
-	write(vterm.video,&vterm.titleBar,sizeof(vterm.titleBar));
+	sMsgVidSetScr *header = (sMsgVidSetScr*)(ptr - sizeof(sMsgVidSetScr));
+	header->header.id = MSG_VIDEO_SETSCREEN;
+	header->header.length = count * COLS * 2;
+	header->startPos = start * COLS;
+	write(vterm.video,ptr - sizeof(sMsgVidSetScr),sizeof(sMsgVidSetScr) + count * COLS * 2);
 
 	/* restore screen-data */
-	memcpy(ptr - sizeof(sMsgDefHeader),back,sizeof(sMsgDefHeader));
+	memcpy(ptr - sizeof(sMsgVidSetScr),back,sizeof(sMsgVidSetScr));
 }
 
 static void vterm_writeChar(u8 c) {
@@ -399,10 +422,8 @@ static void vterm_writeChar(u8 c) {
 	u32 i = (vterm.currLine * COLS * 2) + (vterm.row * COLS * 2) + (vterm.col * 2);
 
 	/* scroll to current line, if necessary */
-	if(vterm.firstVisLine != vterm.currLine) {
+	if(vterm.firstVisLine != vterm.currLine)
 		vterm_scroll(vterm.firstVisLine - vterm.currLine);
-		vterm_refreshScreen();
-	}
 
 	/* write to buffer */
 	vterm.buffer.data[i] = c;

@@ -122,9 +122,6 @@ void memset(void *addr,u32 value,u32 count) {
 
 void *memmove(void *dest,const void *src,u32 count) {
 	u8 *s,*d;
-#if !IN_KERNEL
-	debugf("src=%x, dest=%x, count=%d\n",src,dest,count);
-#endif
 	/* nothing to do? */
 	if((u8*)dest == (u8*)src)
 		return dest;

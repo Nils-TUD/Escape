@@ -159,17 +159,17 @@ static void test_memcmp(void) {
 }
 
 static void test_memmove(void) {
-	const s8 str1[10] = "abc";
-	const s8 str2[10] = "def";
-	const s8 str3[10] = "";
-	const s8 dest[4];
+	s8 str1[10] = "abc";
+	s8 str2[10] = "def";
+	s8 str3[10] = "";
+	s8 dest[4];
 	test_caseStart("Testing memmove()");
 
-	if(!test_assertStr(memmove(dest,str1,4),"abc")) return;
-	if(!test_assertStr(memmove(str1 + 1,str1,4),"abc") || !test_assertStr(str1,"aabc")) return;
-	if(!test_assertStr(memmove(str2,str2 + 1,3),"ef") || !test_assertStr(str2,"ef")) return;
-	if(!test_assertStr(memmove(str3,str3,0),"")) return;
-	if(!test_assertStr(memmove(str3,"abcdef",7),"abcdef")) return;
+	if(!test_assertStr(memmove(dest,str1,4),(string)"abc")) return;
+	if(!test_assertStr(memmove(str1 + 1,str1,4),(string)"abc") || !test_assertStr(str1,(string)"aabc")) return;
+	if(!test_assertStr(memmove(str2,str2 + 1,3),(string)"ef") || !test_assertStr(str2,(string)"ef")) return;
+	if(!test_assertStr(memmove(str3,str3,0),(string)"")) return;
+	if(!test_assertStr(memmove(str3,"abcdef",7),(string)"abcdef")) return;
 
 	test_caseSucceded();
 }

@@ -53,7 +53,7 @@ static void test_vfs(void) {
 }
 
 static void test_vfs_readFileSystem(void) {
-	tVFSNodeNo nodeNo,procNode,servNode;
+	tVFSNodeNo nodeNo,procNode;
 	tFD fd;
 	s32 res;
 	sVFSNodePub node;

@@ -36,7 +36,7 @@ static void flush(void);
  * @param str the escape-code
  * @param length the number of chars
  */
-static void putEscape(s8 *str,u8 length);
+static void putEscape(const s8 *str,u8 length);
 
 /**
  * Prints the given unsigned 32-bit integer in the given base
@@ -220,7 +220,7 @@ void vprintf(cstring fmt,va_list ap) {
 			/* escape-code? */
 			if(c == '\033' || c == '\e') {
 				if(*fmt == '[') {
-					s8 *escape = fmt - 1;
+					const s8 *escape = fmt - 1;
 					fmt++;
 					while(*fmt && *fmt != 'm')
 						fmt++;
@@ -340,12 +340,13 @@ static void init(void) {
 	while(termFD < 0);
 }
 
-static void putEscape(s8 *str,u8 length) {
+static void putEscape(const s8 *str,u8 length) {
+	s8 *ptr = (s8*)str;
 	if(bufferPos + length >= BUFFER_SIZE - 1)
 		flush();
 
 	while(length-- > 0)
-		putchar(*str++);
+		putchar(*ptr++);
 }
 
 static void printu(u32 n,u8 base) {
@@ -370,7 +371,7 @@ static void puts(cstring str) {
 		/* escape-code? */
 		if(c == '\033' || c == '\e') {
 			if(*(str + 1) == '[') {
-				s8 *escape = str - 1;
+				const s8 *escape = str - 1;
 				str += 2;
 				while(*str && *str != 'm')
 					str++;

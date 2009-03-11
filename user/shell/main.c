@@ -64,13 +64,9 @@ s32 main(void) {
 	u32 i;
 	s8 *buffer;
 
-	/* given the other processes the chance to init */
-	for(i = 0; i < 10; i++)
-		yield();
-
 	printf("Welcome to Escape v0.1!\n");
 	printf("\n");
-	printf("Type 'help' to see the current features :)\n");
+	printf("Try 'help' to see the current features :)\n");
 	printf("\n");
 
 	/* create buffer */

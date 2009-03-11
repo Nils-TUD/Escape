@@ -11,8 +11,9 @@
 #include "intrpt.h"
 
 /* max number of processes */
-#define PROC_COUNT		1024
-#define MAX_FD_COUNT	16
+#define PROC_COUNT			1024
+#define MAX_FD_COUNT		16
+#define MAX_PROC_NAME_LEN	15
 
 /* the signals
 #define SIG_TERM		1
@@ -56,6 +57,7 @@ typedef struct {
 	/* a bitfield with signals the process should get
 	u16 signals; */
 	u64 cycleCount;
+	s8 name[MAX_PROC_NAME_LEN + 1];
 } sProc;
 
 /* the area for proc_changeSize() */

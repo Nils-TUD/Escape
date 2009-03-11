@@ -33,7 +33,7 @@ s32 cmdPs(u32 argc,s8 **argv) {
 	s8 path[] = "system:/processes/";
 	s8 ppath[255];
 
-	printf("PID\t\tPPID\tPAGES\t\tSTATE\t\t\tCYCLES\n");
+	printf("PID\t\tPPID\tPAGES\t\tSTATE\t\t\tCYCLES\t\t\t\t\t\t\tNAME\n");
 
 	if((dd = opendir(path)) >= 0) {
 		while((entry = readdir(dd)) != NULL) {
@@ -66,7 +66,7 @@ s32 cmdPs(u32 argc,s8 **argv) {
 
 static void printProcess(sProc *p) {
 	u32 *ptr = &p->cycleCount;
-	printf("%02d\t\t%02d\t\t%03d\t\t\t%s\t\t0x%08x%08x\n",
+	printf("%02d\t\t%02d\t\t%03d\t\t\t%s\t\t0x%08x%08x\t%s\n",
 			p->pid,p->parentPid,p->textPages + p->dataPages + p->stackPages,
-			states[p->state],*(ptr + 1),*ptr);
+			states[p->state],*(ptr + 1),*ptr,p->name);
 }

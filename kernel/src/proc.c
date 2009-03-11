@@ -27,6 +27,7 @@ typedef struct {
 	u32 dataPages;
 	u32 stackPages;
 	u64 cycleCount;
+	s8 name[MAX_PROC_NAME_LEN + 1];
 } sProcPub;
 
 /**
@@ -68,6 +69,8 @@ void proc_init(void) {
 	/* init fds */
 	for(i = 0; i < MAX_FD_COUNT; i++)
 		procs[pi].fileDescs[i] = -1;
+	/* TODO just temporary */
+	memcpy(procs[pi].name,"init",5);
 
 	paging_exchangePDir(procs[pi].physPDirAddr);
 	/* setup kernel-stack for us */
@@ -492,6 +495,7 @@ static s32 proc_vfsReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	proc->dataPages = p->dataPages;
 	proc->stackPages = p->stackPages;
 	proc->cycleCount = p->cycleCount;
+	memcpy(proc->name,p->name,strlen(p->name) + 1);
 
 	/* stored on kheap? */
 	if((u32)proc != (u32)buffer) {

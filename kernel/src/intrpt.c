@@ -410,6 +410,10 @@ s32 intrpt_removeListener(u16 irq,void *node) {
 
 
 /* TODO temporary */
+typedef struct {
+	s8 name[MAX_PROC_NAME_LEN + 1];
+	u8 *data;
+} sProcData;
 #include "../../build/services.txt"
 static bool servicesLoaded = false;
 static bool firstProcLoaded = false;
@@ -517,7 +521,9 @@ void intrpt_handler(sIntrptStackFrame stack) {
 							proc_changeSize(-p->dataPages,CHG_DATA);
 							/* now load service */
 							/*vid_printf("Loading service %d\n",p->pid);*/
-							elf_loadprog(services[i]);
+							/* TODO just temporary */
+							memcpy(p->name,services[i].name,strlen(services[i].name) + 1);
+							elf_loadprog(services[i].data);
 							/*vid_printf("Starting...\n");*/
 							proc_setupIntrptStack(&stack);
 							/* we don't want to continue the loop ;) */

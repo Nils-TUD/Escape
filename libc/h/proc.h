@@ -7,6 +7,8 @@
 #ifndef PROC_H_
 #define PROC_H_
 
+#define MAX_PROC_NAME_LEN	15
+
 /* process-data */
 typedef struct {
 	u8 state;
@@ -16,6 +18,7 @@ typedef struct {
 	u32 dataPages;
 	u32 stackPages;
 	u64 cycleCount;
+	s8 name[MAX_PROC_NAME_LEN + 1];
 } sProc;
 
 /* the process states */

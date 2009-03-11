@@ -74,12 +74,12 @@ $(SERVICES): $(SERVBINS)
 			echo "};" >> $(SERVICES); \
 		done;
 		@echo "" >> $(SERVICES)
-		@echo "static u8 *services[] = {" >> $(SERVICES)
+		@echo "static sProcData services[] = {" >> $(SERVICES)
 		@for i in $(USERPROCNAMES) ; do \
-			echo "	user_"$$i"," >> $(SERVICES); \
+			echo "	{\"$$i\", user_"$$i"}," >> $(SERVICES); \
 		done;
 		@for i in $(SERVDIRNAMES) ; do \
-			echo "	service_"$$i"," >> $(SERVICES); \
+			echo "	{\"$$i\", service_"$$i"}," >> $(SERVICES); \
 		done;
 		@echo "};" >> $(SERVICES)
 

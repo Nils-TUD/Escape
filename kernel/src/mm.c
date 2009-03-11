@@ -7,7 +7,7 @@
 #include "../h/mm.h"
 #include "../h/util.h"
 #include "../h/paging.h"
-#include <video.h>
+#include "../h/video.h"
 #include <string.h>
 
 /**
@@ -95,7 +95,7 @@ u32 mm_getFreeFrmCount(u32 types) {
 		/* count < 16MB frames */
 		for(i = 0; i < L16M_PAGE_COUNT; i++) {
 			bmIndex = l16mSearchPos >> 5;
-			if((l16mBitmap[bmIndex] & (1 << (l16mSearchPos & 0x1f))) == 1) {
+			if((l16mBitmap[bmIndex] & (1 << (l16mSearchPos & 0x1f))) == 0) {
 				count++;
 			}
 		}

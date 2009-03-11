@@ -8,7 +8,7 @@
 #include "../h/proc.h"
 #include "../h/paging.h"
 #include "../h/elf.h"
-#include <video.h>
+#include "../h/video.h"
 #include <string.h>
 
 u32 elf_loadprog(u8 *code) {

@@ -6,62 +6,41 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x202000, shndx=0x10
+ELF: num=19, size=40, addr=0x209000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x000000000221cf01
+Clock cycles: 0x0000000001cc4bce
 Initializing VFS...DONE
-Clock cycles: 0x000000000010596c
+Clock cycles: 0x00000000001b86ca
 Initializing process-management...DONE
-Clock cycles: 0x00000000000e088c
+Clock cycles: 0x00000000000d1331
 Initializing IDT...DONE
-Clock cycles: 0x00000000000b5bd8
-Free frames=28655, pages mapped=1281, free mem=114620 KiB
+Clock cycles: 0x00000000000afeff
+Free frames=32495, pages mapped=1281, free mem=129980 KiB
 Got interrupt 39 (<unknown>) @ 0x0
 Service keyboard has pid 1
-Service video has pid 2
-Service vterm has pid 3
+Service video has pid 3
+Service vterm has pid 4
 Welcome to Escape v0.1!
 Try 'help' to see the current features :)
 
-# help
-Currently you can use the following commands:
-	  echo
-	  ps
-	  help
-
-You can scroll the screen with pageUp, pageDown, shift+arrowUp, shift+arrowDown
-
-# echo  ynumbers 
- numbers  
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  006	 	  	  Ready  	 	  0x05d3a94c5e0119bb	  init
-01	  	  00	  	  007	 	  	  Blocked	 	  0x00000000034c3938	  keyboard
-02	  	  00	  	  011	 	  	  Ready  	 	  0x000000000635f44e	  video
-03	  	  00	  	  012	 	  	  Blocked	 	  0x000000000627f00c	  vterm
-04	  	  00	  	  010	 	  	  Running	 	  0x000000000133bd0b	  shell
+# echon ic
+ic 
+# echo ich bonsins
+ich bins 
+# ecohona
 
 # ps
 PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  006	 	  	  Ready  	 	  0xa8aa78ded7fe2fd2	  init
-01	  	  00	  	  007	 	  	  Blocked	 	  0x0000000004e13119	  keyboard
-02	  	  00	  	  011	 	  	  Ready  	 	  0x00000000095b57f8	  video
-03	  	  00	  	  012	 	  	  Blocked	 	  0x0000000008ae8a31	  vterm
-04	  	  00	  	  010	 	  	  Running	 	  0x0000000002356641	  shell
+00	  	  00	  	  006	 	  	  Ready  	 	  0x006b1742705b43c5	  init
+01	  	  00	  	  007	 	  	  Blocked	 	  0x00000000046c5615	  keyboard
+02	  	  00	  	  007	 	  	  Blocked	 	  0x00000000009c375c	  speaker
+03	  	  00	  	  011	 	  	  Ready  	 	  0x000000000568e0ea	  video
+04	  	  00	  	  012	 	  	  Blocked	 	  0x00000000065c9601	  vterm
+05	  	  00	  	  010	 	  	  Running	 	  0x00000000015bf217	  shell
 
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  006	 	  	  Ready  	 	  0xa8bf35a74825b6a4	  init
-01	  	  00	  	  007	 	  	  Blocked	 	  0x00000000053d4cf5	  keyboard
-02	  	  00	  	  011	 	  	  Ready  	 	  0x000000000c5fbad9	  video
-03	  	  00	  	  012	 	  	  Blocked	 	  0x000000000af305cc	  vterm
-04	  	  00	  	  010	 	  	  Running	 	  0x0000000003073584	  shell
-
-# helpecho  numbers pshelppsecho  numbers helpecho  numbers pshelptestpshelpecho  numbers pshelpecho  numbers quit
-quit: Command not found
 # 

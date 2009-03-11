@@ -56,6 +56,9 @@ typedef enum {false = 0, true = 1} bool;
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) > (b) ? (b) : (a))
 
+/* for declaring unused parameters */
+#define UNUSED(x) (void)(x)
+
 /* error-codes */
 #define ERR_FILE_IN_USE				-1
 #define ERR_NO_FREE_FD				-2

@@ -19,7 +19,8 @@
 #include "../h/elf.h"
 #include "../h/sched.h"
 #include "../h/vfs.h"
-#include <video.h>
+#include "../h/vfsinfo.h"
+#include "../h/video.h"
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table
@@ -51,6 +52,8 @@ static u8 init[] = {
 
 s32 main(sMultiBoot *mbp,u32 magic) {
 	u32 entryPoint;
+
+	UNUSED(magic);
 
 	/* the first thing we've to do is set up the page-dir and page-table for the kernel and so on
 	 * and "correct" the GDT */
@@ -84,6 +87,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	dbg_startTimer();
 	vid_printf("Initializing VFS...");
 	vfs_init();
+	vfsinfo_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("\e[32m%s\e[0m","DONE");
 	dbg_stopTimer();

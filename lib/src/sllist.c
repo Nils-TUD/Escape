@@ -8,7 +8,7 @@
 #ifdef IN_KERNEL
 #	include "../../kernel/h/common.h"
 #	include "../../kernel/h/kheap.h"
-#	include <video.h>
+#	include "../../kernel/h/video.h"
 /* for panic (ASSERT) */
 #	include "../../kernel/h/util.h"
 #	define sllprintf	vid_printf

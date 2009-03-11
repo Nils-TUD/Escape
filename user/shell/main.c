@@ -18,6 +18,7 @@
 #include "history.h"
 #include "cmd/echo.h"
 #include "cmd/ps.h"
+#include "cmd/memusage.h"
 
 #define MAX_CMD_LEN			40
 #define MAX_ARG_COUNT		10
@@ -51,7 +52,16 @@ static u16 shell_readLine(s8 *buffer,u16 max);
  * @param modifier the modifier of the escape-code
  * @return true if the escape-code was handled
  */
-static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u32 *charcount,s8 c,u8 keycode,u8 modifier);
+static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,s8 c,u8 keycode,u8 modifier);
+
+/**
+ * Completes the current input, if possible
+ *
+ * @param line the input
+ * @param cursorPos the cursor-position (may be changed)
+ * @param length the number of entered characters yet (may be changed)
+ */
+static void shell_complete(s8 *line,u16 *cursorPos,u16 *length);
 
 /**
  * Determines the command for the given line
@@ -79,13 +89,15 @@ static sShellCmd commands[] = {
 	{"echo"		, shell_cmdEcho		},
 	{"ps"		, shell_cmdPs		},
 	{"help"		, shell_cmdHelp		},
+	{"memusage"	, shell_cmdMemUsage	},
+	{"memabc"	, shell_cmdMemUsage },
 };
 
 /* buffer for arguments */
+static u32 tabCount = 0;
 static s8 *args[MAX_ARG_COUNT];
 
 s32 main(void) {
-	u32 i;
 	s8 *buffer;
 
 	printf("\033f\011Welcome to Escape v0.1!\033r\00\n");
@@ -118,7 +130,7 @@ static u16 shell_readLine(s8 *buffer,u16 max) {
 	u8 keycode;
 	u8 modifier;
 	u16 cursorPos = 0;
-	u32 i = 0;
+	u16 i = 0;
 	while(i < max) {
 		c = readChar();
 
@@ -126,6 +138,10 @@ static u16 shell_readLine(s8 *buffer,u16 max) {
 			continue;
 		if(c == '\033') {
 			shell_handleEscapeCodes(buffer,&cursorPos,&i,c,keycode,modifier);
+			continue;
+		}
+		if(c == '\t') {
+			shell_complete(buffer,&cursorPos,&i);
 			continue;
 		}
 
@@ -146,10 +162,11 @@ static u16 shell_readLine(s8 *buffer,u16 max) {
 	return i;
 }
 
-static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u32 *charcount,s8 c,u8 keycode,u8 modifier) {
+static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,s8 c,u8 keycode,u8 modifier) {
 	bool res = false;
 	s8 *line = NULL;
-	/*shell_histPrint();*/
+
+	UNUSED(modifier);
 
 	switch(keycode) {
 		case VK_UP:
@@ -190,13 +207,72 @@ static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u32 *charcount,s8 
 	return res;
 }
 
+static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
+	s32 i;
+	u16 icursorPos = *cursorPos;
+	u32 cmdlen,ilength = *length;
+
+	/* ignore tabs when the cursor is not at the end of the input */
+	if(icursorPos == ilength) {
+		/* search in commands */
+		s32 index = -1;
+		u32 count = 0;
+		for(i = 0; i < ARRAY_SIZE(commands); i++) {
+			cmdlen = strlen(commands[i].name);
+			/* beginning matches? */
+			if(ilength < cmdlen && strncmp(line,commands[i].name,ilength) == 0) {
+				count++;
+				index = i;
+			}
+		}
+
+		/* found one match? */
+		if(count == 1) {
+			/* add chars */
+			cmdlen = strlen(commands[index].name);
+			for(; ilength < cmdlen; ilength++) {
+				s8 c = commands[index].name[ilength];
+				line[ilength] = c;
+				putchar(c);
+			}
+			/* set length and cursor */
+			*length = ilength;
+			*cursorPos = ilength;
+			flush();
+		}
+		else if(count > 1) {
+			/* show all on second tab */
+			if(tabCount == 0) {
+				tabCount++;
+				/* beep */
+				putchar('\a');
+				flush();
+			}
+			else {
+				tabCount = 0;
+				printf("\n");
+				for(i = 0; i < ARRAY_SIZE(commands); i++) {
+					cmdlen = strlen(commands[i].name);
+					/* beginning matches? */
+					if(ilength < cmdlen && strncmp(line,commands[i].name,ilength) == 0) {
+						printf("%s ",commands[i].name);
+					}
+				}
+				/* print the prompt + entered chars again */
+				printf("\n# %s",line);
+			}
+		}
+	}
+}
+
 static sShellCmd *shell_getCmd(s8 *line) {
-	u32 i,pos;
+	u32 i,pos,len;
 	s8 c;
 	pos = strchri(line,' ');
 
 	for(i = 0; i < ARRAY_SIZE(commands); i++) {
-		if(strncmp(line,commands[i].name,MIN(strlen(commands[i].name),pos)) == 0)
+		len = strlen(commands[i].name);
+		if(pos >= len && strncmp(line,commands[i].name,len) == 0)
 			return commands + i;
 	}
 
@@ -242,6 +318,10 @@ static s32 shell_executeCmd(s8 *line) {
 
 static s32 shell_cmdHelp(u32 argc,s8 **argv) {
 	u32 i;
+
+	UNUSED(argc);
+	UNUSED(argv);
+
 	printf("Currently you can use the following commands:\n");
 	for(i = 0; i < ARRAY_SIZE(commands); i++) {
 		printf("\t%s\n",commands[i].name);

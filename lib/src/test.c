@@ -6,7 +6,7 @@
 
 #ifdef IN_KERNEL
 #	include "../../kernel/h/common.h"
-#	include <video.h>
+#	include "../../kernel/h/video.h"
 
 #	define testPrintf	vid_printf
 #	define testvPrintf	vid_vprintf
@@ -36,9 +36,12 @@ static u32 assertCount = 0;
 
 void test_noPrint(cstring fmt,...) {
 	/* do nothing */
+	UNUSED(fmt);
 }
 void test_vnoPrint(cstring fmt,va_list ap) {
 	/* do nothing */
+	UNUSED(fmt);
+	UNUSED(ap);
 }
 
 void test_caseStart(cstring fmt,...) {

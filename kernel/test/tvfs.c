@@ -9,7 +9,7 @@
 #include "../h/vfsnode.h"
 #include "../h/proc.h"
 #include "../h/kheap.h"
-#include <video.h>
+#include "../h/video.h"
 #include <string.h>
 
 #include "tvfs.h"
@@ -173,6 +173,10 @@ static void test_vfs_readFileProcess0(void) {
 }
 
 static s32 dummyReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	UNUSED(node);
+	UNUSED(buffer);
+	UNUSED(offset);
+	UNUSED(count);
 	return 0;
 }
 

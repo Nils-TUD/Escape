@@ -9,7 +9,7 @@
 #include "../h/proc.h"
 #include "../h/intrpt.h"
 #include "../h/kheap.h"
-#include <video.h>
+#include "../h/video.h"
 #include <sllist.h>
 #include <string.h>
 

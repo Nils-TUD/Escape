@@ -7,7 +7,7 @@
 #include "../h/common.h"
 #include "../h/debug.h"
 #include "../h/cpu.h"
-#include <video.h>
+#include "../h/video.h"
 
 static u64 start = 0;
 

@@ -11,7 +11,7 @@
 #include "../h/util.h"
 #include "../h/kheap.h"
 #include "../h/sched.h"
-#include <video.h>
+#include "../h/video.h"
 #include <string.h>
 #include <sllist.h>
 
@@ -408,6 +408,9 @@ s32 vfs_createService(tPid pid,cstring name,u8 type) {
 
 s32 vfs_openIntrptMsgNode(sVFSNode *node) {
 	sVFSNode *n = NODE_FIRST_CHILD(node);
+	sGFTEntry *e;
+	tVFSNodeNo nodeNo;
+	tFile f;
 	s32 err;
 	tFD fd;
 
@@ -433,8 +436,15 @@ s32 vfs_openIntrptMsgNode(sVFSNode *node) {
 
 	/* open the file and return it */
 	/* we don't need the file-descriptor here */
-	err = vfs_openFile(VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n),&fd);
-	return err;
+	nodeNo = NADDR_TO_VNNO(n);
+	f = vfs_getFreeFile(VFS_READ | VFS_WRITE,nodeNo);
+	if(f < 0)
+		return f;
+
+	/* open file */
+	e = globalFileTable + f;
+	vfs_openFileImpl(e,VFS_READ | VFS_WRITE,nodeNo);
+	return f;
 }
 
 void vfs_closeIntrptMsgNode(tFile f) {
@@ -629,6 +639,45 @@ void vfs_removeProcess(tPid pid) {
 	}
 }
 
+s32 vfs_defReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
+		readCallBack callback) {
+	void *mem;
+
+	ASSERT(node != NULL,"node == NULL");
+	ASSERT(buffer != NULL,"buffer == NULL");
+
+	/* can we copy it directly? */
+	if(offset == 0 && count == dataSize)
+		mem = buffer;
+	/* don't waste time in this case */
+	else if(offset >= dataSize)
+		return 0;
+	/* ok, use the heap as temporary storage */
+	else {
+		mem = kheap_alloc(dataSize);
+		if(mem == NULL)
+			return 0;
+	}
+
+	/* copy values to public struct */
+	callback(node,mem);
+
+	/* stored on kheap? */
+	if((u32)mem != (u32)buffer) {
+		/* correct vars */
+		if(offset > dataSize)
+			offset = dataSize;
+		count = MIN(dataSize - offset,count);
+		/* copy */
+		if(count > 0)
+			memcpy(buffer,(u8*)mem + offset,count);
+		/* free temp storage */
+		kheap_free(mem);
+	}
+
+	return count;
+}
+
 s32 vfs_serviceUseReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	sSLList *list;
 	sProc *p = proc_getRunning();
@@ -658,7 +707,6 @@ s32 vfs_serviceUseReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 
 	/* free data and remove element from list if the complete message has been read */
 	if(offset + count >= msg->length) {
-		p->msgCount--;
 		kheap_free(msg);
 		sll_removeIndex(list,0);
 		/* negative because we have read the complete msg */
@@ -705,7 +753,6 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 
 		/* notify the service */
 		if(list == &(n->data.servuse.sendList)) {
-			n->parent->data.service.proc->msgCount++;
 			sched_setReady(n->parent->data.service.proc);
 		}
 		else {
@@ -719,7 +766,6 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 				/* TODO is there a better way than parsing the pid from the node-name? */
 				if(strcmp(n->name,SERVICE_CLIENT_KERNEL) != 0) {
 					tPid procid = atoi(n->name);
-					proc_getByPid(procid)->msgCount++;
 					sched_setReady(proc_getByPid(procid));
 				}
 			}

@@ -7,11 +7,7 @@
 #ifndef VIDEO_H_
 #define VIDEO_H_
 
-#if IN_KERNEL
-#	include "../../kernel/h/common.h"
-#else
-#	include "../../libc/h/common.h"
-#endif
+#include "common.h"
 #include <stdarg.h>
 
 typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
@@ -52,16 +48,16 @@ eColor vid_getBGColor(void);
 /**
  * Sets the foreground color to given value
  *
- * @param col the new color
+ * @param ncol the new color
  */
-void vid_setFGColor(eColor col);
+void vid_setFGColor(eColor ncol);
 
 /**
  * Sets the background color to given value
  *
- * @param col the new color
+ * @param ncol the new color
  */
-void vid_setBGColor(eColor col);
+void vid_setBGColor(eColor ncol);
 
 /**
  * Sets the given color and stores the current one. You may restore the previous state

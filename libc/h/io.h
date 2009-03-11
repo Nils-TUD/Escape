@@ -53,7 +53,7 @@ u16 readLine(s8 *buffer,u16 max);
  * @param modifier if c was an escape-code modifier will be set
  * @return true if the escape-code was handled
  */
-bool handleDefaultEscapeCodes(s8 *buffer,u16 *cursorPos,u32 *charcount,s8 c,u8 *keycode,u8 *modifier);
+bool handleDefaultEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,s8 c,u8 *keycode,u8 *modifier);
 
 /**
  * Prints the given character to the current position on the screen

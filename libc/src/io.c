@@ -85,7 +85,6 @@ static void printuSmall(u32 n,u8 base);
 static u16 bufferPos = 0;
 static s8 hexCharsBig[] = "0123456789ABCDEF";
 static s8 hexCharsSmall[] = "0123456789abcdef";
-static s32 termFD = -1;
 static sSendMsg msg = {
 	.header = {
 		.id = MSG_VIDEO_SET,
@@ -142,7 +141,7 @@ u16 readLine(s8 *buffer,u16 max) {
 	u8 keycode;
 	u8 modifier;
 	u16 cursorPos = 0;
-	u32 i = 0;
+	u16 i = 0;
 	while(i < max) {
 		c = readChar();
 
@@ -169,10 +168,10 @@ u16 readLine(s8 *buffer,u16 max) {
 	return i;
 }
 
-bool handleDefaultEscapeCodes(s8 *buffer,u16 *cursorPos,u32 *charcount,s8 c,u8 *keycode,u8 *modifier) {
+bool handleDefaultEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,s8 c,u8 *keycode,u8 *modifier) {
 	bool res = false;
 	u16 icursorPos = *cursorPos;
-	u32 icharcount = *charcount;
+	u16 icharcount = *charcount;
 	switch(c) {
 		case '\b':
 			if(icursorPos > 0) {
@@ -287,12 +286,10 @@ void vprintf(cstring fmt,va_list ap) {
 
 		/* read pad-character */
 		pad = 0;
-		if(*fmt == '0') {
-			padchar = '0';
+		padchar = ' ';
+		if(*fmt == '0' || *fmt == ' ') {
+			padchar = *fmt;
 			fmt++;
-		}
-		else {
-			padchar = ' ';
 		}
 
 		/* read pad-width */

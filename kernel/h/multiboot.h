@@ -88,6 +88,11 @@ extern sMultiBoot *mb;
  */
 void mboot_init(sMultiBoot *mbp);
 
+/**
+ * @return the usable memory in bytes
+ */
+u32 mboot_getUsableMemCount(void);
+
 #if DEBUGGING
 
 /**

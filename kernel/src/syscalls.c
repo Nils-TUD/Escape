@@ -15,7 +15,7 @@
 #include "../h/debug.h"
 #include "../h/kheap.h"
 #include "../h/sched.h"
-#include <video.h>
+#include "../h/video.h"
 #include <string.h>
 
 #define SYSCALL_COUNT 22
@@ -606,12 +606,19 @@ static void sysc_mapPhysical(sSysCallStack *stack) {
 }
 
 static void sysc_yield(sSysCallStack *stack) {
+	UNUSED(stack);
+
 	proc_switch();
 }
 
 static void sysc_sleep(sSysCallStack *stack) {
-	sProc *p = proc_getRunning();
-	bool msgAv = vfs_msgAvailableFor(p);
+	sProc *p;
+	bool msgAv;
+
+	UNUSED(stack);
+
+	p = proc_getRunning();
+	msgAv = vfs_msgAvailableFor(p);
 	if(!msgAv) {
 		sched_setBlocked(p);
 		proc_switch();

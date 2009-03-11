@@ -19,6 +19,8 @@
 #define MSG_VIDEO_SETSCREEN			1
 #define MSG_VIDEO_SETCURSOR			2
 
+#define MSG_SPEAKER_BEEP			0
+
 /* the header for all default-messages */
 typedef struct {
 	/* the message-id */
@@ -34,6 +36,12 @@ typedef struct {
 	/* wether the key was released */
 	u8 isBreak;
 } sMsgKbResponse;
+
+/* the message-data for the speaker-beep-message */
+typedef struct {
+	u16 frequency;
+	u16 duration;	/* in ms */
+} sMsgDataSpeakerBeep;
 
 /* the message-data for the video-set-message */
 typedef struct {

@@ -7,7 +7,7 @@
 #include "../h/multiboot.h"
 #include "../h/common.h"
 #include "../h/paging.h"
-#include <video.h>
+#include "../h/video.h"
 
 #define CHECK_FLAG(flags,bit) (flags & (1 << bit))
 
@@ -22,6 +22,18 @@ void mboot_init(sMultiBoot *mbp) {
 	mb->cmdLine = (s8*)((u32)mb->cmdLine | KERNEL_AREA_V_ADDR);
 	mb->modsAddr = (sModule*)((u32)mb->modsAddr | KERNEL_AREA_V_ADDR);
 	mb->mmapAddr = (sMemMap*)((u32)mb->mmapAddr | KERNEL_AREA_V_ADDR);
+}
+
+u32 mboot_getUsableMemCount(void) {
+	sMemMap *mmap;
+	u32 size = 0;
+	for(mmap = mb->mmapAddr;
+		(u32)mmap < (u32)mb->mmapAddr + mb->mmapLength;
+		mmap = (sMemMap*)((u32)mmap + mmap->size + sizeof(mmap->size))) {
+		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE)
+			size += mmap->length;
+	}
+	return size;
 }
 
 

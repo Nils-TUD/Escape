@@ -8,7 +8,7 @@
 #include "../h/intrpt.h"
 #include "../h/ksymbols.h"
 #include "../h/paging.h"
-#include <video.h>
+#include "../h/video.h"
 #include <stdarg.h>
 #include <string.h>
 

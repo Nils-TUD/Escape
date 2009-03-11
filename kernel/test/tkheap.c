@@ -10,7 +10,7 @@
 #include "../h/mm.h"
 #include "tkheap.h"
 #include <test.h>
-#include <video.h>
+#include "../h/video.h"
 #include <stdarg.h>
 
 /* forward declarations */

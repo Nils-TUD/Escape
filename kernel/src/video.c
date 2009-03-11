@@ -5,25 +5,15 @@
  */
 
 #include "../h/video.h"
-#if IN_KERNEL
-#	include "../../kernel/h/common.h"
-#	include "../../kernel/h/util.h"
-#else
-#	include <common.h>
-#	include <mem.h>
-#	include <io.h>
-#endif
+#include "../h/common.h"
+#include "../h/util.h"
 #include <stdarg.h>
 
+#define VIDEO_BASE	0xC00B8000
 #define COL_WOB		0x07				/* white on black */
 #define COLS		80
 #define ROWS		25
 #define TAB_WIDTH	2
-
-/* we need some way to share the current position between the kernel and the console-service.
- * therefore we store the position behind the video-mem (seems like that's ok :)). */
-#define SET_POS(x) (*(u32*)(videoBase + COLS * (ROWS + 2) * 2) = (x))
-#define GET_POS() (*(u32*)(videoBase + COLS * (ROWS + 2) * 2))
 
 /**
  * Handles a color-code
@@ -32,9 +22,10 @@
  */
 static void vid_handleColorCode(cstring *str);
 
-#if IN_KERNEL
+/**
+ * Removes the BIOS-cursor
+ */
 static void vid_removeBIOSCursor(void);
-#endif
 
 /**
  * Sames as vid_printu() but with lowercase letters
@@ -44,7 +35,8 @@ static void vid_removeBIOSCursor(void);
  */
 static void vid_printuSmall(u32 n,u8 base);
 
-static u32 videoBase = 0;
+static u16 col = 0;
+static u16 row = 0;
 static s8 hexCharsBig[] = "0123456789ABCDEF";
 static s8 hexCharsSmall[] = "0123456789abcdef";
 static u8 color = 0;
@@ -63,31 +55,14 @@ static u8 colorTable[] = {
 };
 
 void vid_init(void) {
-#if IN_KERNEL
-	videoBase = 0xC00B8000;
-	SET_POS(0);
 	vid_removeBIOSCursor();
 	vid_clearScreen();
 	vid_setFGColor(WHITE);
 	vid_setBGColor(BLACK);
-#else
-	videoBase = (u32)mapPhysical(0xB8000,COLS * (ROWS + 2) * 2 + 1);
-	if(videoBase == 0)
-		printLastError();
-	else {
-		vid_setFGColor(WHITE);
-		vid_setBGColor(BLACK);
-
-		/* request io-ports for qemu and bochs */
-		requestIOPort(0xe9);
-		requestIOPort(0x3f8);
-		requestIOPort(0x3fd);
-	}
-#endif
 }
 
 void vid_clearScreen(void) {
-	u8 *addr = (u8*)videoBase;
+	u8 *addr = (u8*)VIDEO_BASE;
 	u8 *end = (u8*)((u32)addr + COLS * 2 * ROWS);
 	for(; addr < end; addr++) {
 		*addr = 0;
@@ -114,32 +89,30 @@ eColor vid_getBGColor(void) {
 	return (color >> 4) & 0xF;
 }
 
-void vid_setFGColor(eColor col) {
-	color = (color & 0xF0) | (col & 0xF);
+void vid_setFGColor(eColor ncol) {
+	color = (color & 0xF0) | (ncol & 0xF);
 }
 
-void vid_setBGColor(eColor col) {
-	color = (color & 0x0F) | ((col << 4) & 0xF0);
+void vid_setBGColor(eColor ncol) {
+	color = (color & 0x0F) | ((ncol << 4) & 0xF0);
 }
 
 void vid_setLineBG(u8 line,eColor bg) {
-	u8 col = ((bg << 4) & 0xF0) | color;
-	u8 *addr = (u8*)(videoBase + line * COLS * 2);
+	u8 ncol = ((bg << 4) & 0xF0) | color;
+	u8 *addr = (u8*)(VIDEO_BASE + line * COLS * 2);
 	u8 *end = (u8*)((u32)addr + COLS * 2);
 	for(addr++; addr < end; addr += 2) {
-		*addr = col;
+		*addr = ncol;
 	}
 }
 
 u8 vid_getLine(void) {
-	s8 *video = (s8*)(videoBase + GET_POS());
-	return ((u32)video - videoBase) / (COLS * 2);
+	s8 *video = (s8*)(VIDEO_BASE + row * COLS * 2 + col * 2);
+	return ((u32)video - VIDEO_BASE) / (COLS * 2);
 }
 
 void vid_toLineEnd(u8 pad) {
-	u32 pos = GET_POS();
-	u16 col = pos % (COLS * 2);
-	SET_POS(pos + ((COLS * 2) - col) - pad * 2);
+	col = COLS - pad;
 }
 
 /**
@@ -148,24 +121,23 @@ void vid_toLineEnd(u8 pad) {
 static void vid_move(void) {
 	u32 i;
 	s8 *src,*dst;
-	s8 *video = (s8*)(videoBase + GET_POS());
 	/* last line? */
-	if(video >= (s8*)(videoBase + (ROWS - 1) * COLS * 2)) {
+	if(row >= ROWS) {
 		/* copy all chars one line back */
-		src = (s8*)(videoBase + COLS * 2);
-		dst = (s8*)videoBase;
+		src = (s8*)(VIDEO_BASE + COLS * 2);
+		dst = (s8*)VIDEO_BASE;
 		for(i = 0; i < ROWS * COLS * 2; i++) {
 			*dst++ = *src++;
 		}
 		/* to prev line */
-		SET_POS(GET_POS() - COLS * 2);
+		row--;
 	}
 }
 
 void vid_putchar(s8 c) {
 	u32 i;
 	vid_move();
-	s8 *video = (s8*)(videoBase + GET_POS());
+	s8 *video = (s8*)(VIDEO_BASE + row * COLS * 2 + col * 2);
 
 	/* write to bochs/qemu console (\r not necessary here) */
 	if(c != '\r') {
@@ -176,33 +148,29 @@ void vid_putchar(s8 c) {
 
 	if(c == '\n') {
 		/* to next line */
-		SET_POS(GET_POS() + COLS * 2);
+		row++;
 		/* move cursor to line start */
 		vid_putchar('\r');
 	}
 	else if(c == '\r') {
 		/* to line-start */
-		u32 pos = GET_POS();
-		SET_POS(pos - (pos % (COLS * 2)));
+		col = 0;
 	}
 	else if(c == '\t') {
-		i = TAB_WIDTH;
+		i = TAB_WIDTH - col % TAB_WIDTH;
 		while(i-- > 0) {
 			vid_putchar(' ');
 		}
 	}
 	else {
-		u32 pos = GET_POS();
 		*video = c;
 		video++;
 		*video = color;
+
 		/* do an explicit newline if necessary */
-		if(((u32)(video - videoBase) % (COLS * 2)) == COLS * 2 - 1)
+		col++;
+		if(col >= COLS)
 			vid_putchar('\n');
-		else {
-			video++;
-			SET_POS(pos + 2);
-		}
 	}
 }
 
@@ -433,14 +401,12 @@ static void vid_handleColorCode(cstring *str) {
 	*str = fmt;
 }
 
-#if IN_KERNEL
 static void vid_removeBIOSCursor(void) {
 	outb(0x3D4,14);
 	outb(0x3D5,0x07);
 	outb(0x3D4,15);
 	outb(0x3D5,0xd0);
 }
-#endif
 
 static void vid_printuSmall(u32 n,u8 base) {
 	if(n >= base) {

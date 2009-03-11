@@ -10,7 +10,7 @@
 #include "../h/util.h"
 #include "../h/kheap.h"
 #include <string.h>
-#include <video.h>
+#include "../h/video.h"
 
 #define FILE_ROOT()	(nodes + 3)
 

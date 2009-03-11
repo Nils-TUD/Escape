@@ -8,7 +8,7 @@
 #include "../h/sched.h"
 #include "../h/proc.h"
 #include "../h/util.h"
-#include <video.h>
+#include "../h/video.h"
 #include <sllist.h>
 
 /* the queue for all runnable (but not currently running) processes */
@@ -118,8 +118,6 @@ void sched_unblockAll(void) {
 	for(n = sll_begin(blockedQueue); n != NULL; n = n->next) {
 		p = (sProc*)n->data;
 		p->state = ST_READY;
-		/* TODO not the right place here */
-		p->msgCount++;
 		sched_enqueueReadyProc(p);
 		sll_removeNode(blockedQueue,n,NULL);
 	}

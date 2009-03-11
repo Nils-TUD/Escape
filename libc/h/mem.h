@@ -7,6 +7,11 @@
 #ifndef MEM_H_
 #define MEM_H_
 
+typedef struct {
+	u32 totalMem;
+	u32 freeMem;
+} sMemUsage;
+
 /**
  * Changes the size of the process's data-area. If <count> is positive <count> pages
  * will be added to the end of the data-area. Otherwise <count> pages will be removed at the

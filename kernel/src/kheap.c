@@ -8,7 +8,7 @@
 #include "../h/kheap.h"
 #include "../h/paging.h"
 #include <string.h>
-#include <video.h>
+#include "../h/video.h"
 
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024

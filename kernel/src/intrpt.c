@@ -18,7 +18,7 @@
 #include "../h/kheap.h"
 #include <string.h>
 #include <sllist.h>
-#include <video.h>
+#include "../h/video.h"
 
 #define IDT_COUNT		256
 /* the privilege level */
@@ -174,6 +174,13 @@ static void intrpt_setIDT(u16 number,fISR handler,u8 dpl);
  * @param intrptNo the interrupt-number
  */
 static void intrpt_eoi(u32 intrptNo);
+
+/**
+ * Notifies the listeners in the given list
+ *
+ * @param list the interrupt-listener-list
+ */
+static void intrpt_handleListener(sSLList *list);
 
 /* interrupt -> name */
 static cstring intrptNo2Name[] = {
@@ -430,11 +437,9 @@ static u64 kmodeEnd = 0;
 
 static bool intrptsPending = false;
 
-static void intrpt_handleListener(u16 irq,sSLList *list) {
+static void intrpt_handleListener(sSLList *list) {
 	sSLNode *node;
 	sIntrptListener *l;
-	bool oldState;
-	u32 i;
 	/* first increase the number of pending interrupts (there may be some already) */
 	for(node = sll_begin(list); node != NULL; node = node->next) {
 		l = (sIntrptListener*)node->data;
@@ -462,7 +467,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 	if(stack.intrptNo >= IRQ_MASTER_BASE && stack.intrptNo < IRQ_MASTER_BASE + IRQ_NUM) {
 		sSLList *list = intrptListener[stack.intrptNo - IRQ_MASTER_BASE];
 		if(list != NULL)
-			intrpt_handleListener(stack.intrptNo,list);
+			intrpt_handleListener(list);
 	}
 	/* are there undelivered interrupts? */
 	else if(intrptsPending) {
@@ -474,14 +479,14 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		for(i = 0; i < IRQ_NUM; i++) {
 			list = intrptListener[i];
 			if(list != NULL)
-				intrpt_handleListener(i + IRQ_MASTER_BASE,list);
+				intrpt_handleListener(list);
 		}
 	}
 
 	/*vid_printf("umodeTime=%d%%\n",(s32)(100. / (cpu_rdtsc() / (double)umodeTime)));*/
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
-			/*kbd_handleIntrpt();*/
+			/* don't print info about intrpt */
 			break;
 
 		case IRQ_TIMER:

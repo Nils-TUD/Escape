@@ -6,7 +6,7 @@
 
 #include "../h/common.h"
 #include "../h/ksymbols.h"
-#include <video.h>
+#include "../h/video.h"
 
 static sSymbol ksymbols[] = {
 	#include "../../build/ksymbols.txt"

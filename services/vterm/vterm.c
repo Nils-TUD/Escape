@@ -60,6 +60,7 @@ typedef struct {
 	bool ctrlDown;
 	/* file-descriptors */
 	tFD video;
+	tFD speaker;
 	tFD self;
 	/* the first line with content */
 	u16 firstLine;
@@ -87,6 +88,10 @@ typedef struct {
 	sMsgDefHeader header;
 	sMsgDataVidSetCursor data;
 } __attribute__((packed)) sMsgVidSetCursor;
+typedef struct {
+	sMsgDefHeader header;
+	sMsgDataSpeakerBeep data;
+} __attribute__((packed)) sMsgSpeaker;
 
 /* the colors */
 typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
@@ -167,11 +172,22 @@ static sMsgVidSetCursor msgVidSetCursor = {
 		.row = 0
 	}
 };
+/* the speaker-message */
+static sMsgSpeaker msgSpeaker = {
+	.header = {
+		.id = MSG_SPEAKER_BEEP,
+		.length = sizeof(sMsgDataSpeakerBeep)
+	},
+	.data = {
+		.frequency = 1000,
+		.duration = 1
+	}
+};
 
 static sVTerm vterm;
 
 void vterm_init(void) {
-	s32 vidFd,selfFd;
+	s32 vidFd,selfFd,speakerFd;
 	u32 i,len;
 	s8 *ptr;
 
@@ -182,6 +198,14 @@ void vterm_init(void) {
 			yield();
 	}
 	while(vidFd < 0);
+
+	/* open speaker */
+	do {
+		speakerFd = open("services:/speaker",IO_WRITE);
+		if(speakerFd < 0)
+			yield();
+	}
+	while(speakerFd < 0);
 
 	/* open ourself to write into the receive-pipe (which can be read by other processes) */
 	selfFd = open("services:/vterm",IO_WRITE);
@@ -199,6 +223,7 @@ void vterm_init(void) {
 	vterm.altDown = false;
 	vterm.ctrlDown = false;
 	vterm.video = vidFd;
+	vterm.speaker = speakerFd;
 	vterm.self = selfFd;
 	/* start on first line of the last page */
 	vterm.firstLine = HISTORY_SIZE - ROWS;
@@ -229,6 +254,8 @@ void vterm_init(void) {
 
 void vterm_destroy(void) {
 	close(vterm.video);
+	close(vterm.speaker);
+	close(vterm.self);
 }
 
 void vterm_handleKeycode(sMsgKbResponse *msg) {
@@ -349,6 +376,11 @@ static void vterm_putchar(s8 c) {
 		case '\r':
 			/* to line-start */
 			vterm.col = 0;
+			break;
+
+		case '\a':
+			/* beep */
+			write(vterm.speaker,&msgSpeaker,sizeof(sMsgSpeaker));
 			break;
 
 		case '\b':

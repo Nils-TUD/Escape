@@ -32,6 +32,8 @@ enum {
 typedef struct sVFSNode sVFSNode;
 /* the function for read-requests on info-nodes */
 typedef s32 (*fRead)(sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+/* callback function for the default read-handler */
+typedef void (*readCallBack)(sVFSNode *node,void *buffer);
 
 struct sVFSNode {
 	string name;
@@ -228,6 +230,20 @@ bool vfs_createProcess(tPid pid,fRead handler);
  * @param pid the process-id
  */
 void vfs_removeProcess(tPid pid);
+
+/**
+ * The default read-handler. Creates space, calls the callback which should fill the space
+ * with data and writes the corresponding part to the buffer of the user
+ *
+ * @param node the vfs-node
+ * @param buffer the buffer
+ * @param offset the offset
+ * @param count the number of bytes to copy
+ * @param dataSize the total size of the data
+ * @param callback the callback-function
+ */
+s32 vfs_defReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
+		readCallBack callback);
 
 /**
  * The read-handler for service-usages

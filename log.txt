@@ -13,13 +13,13 @@ Available memory:
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000001cc4bce
+Clock cycles: 0x000000000230c037
 Initializing VFS...DONE
-Clock cycles: 0x00000000001b86ca
+Clock cycles: 0x0000000000138e37
 Initializing process-management...DONE
-Clock cycles: 0x00000000000d1331
+Clock cycles: 0x00000000000d2be8
 Initializing IDT...DONE
-Clock cycles: 0x00000000000afeff
+Clock cycles: 0x00000000000a9de5
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
 Got interrupt 39 (<unknown>) @ 0x0
 Service keyboard has pid 1
@@ -28,19 +28,54 @@ Service vterm has pid 4
 Welcome to Escape v0.1!
 Try 'help' to see the current features :)
 
-# echon ic
-ic 
-# echo ich bonsins
-ich bins 
-# ecohona
+# echo
+
+# echo hier
+hier 
+# echobla
+echobla: Command not found
+# echo und mehr
+und mehr 
+# taja, so gehts :)
+tja,: Command not found
+# tja, so gehts :)echo tja g
+: Command not found
+# asd
+asd: Command not found
+# ps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
+00	  	  00	  	  006	 	  	  Ready  	 	  0x003aaf88ea74d003	  init
+01	  	  00	  	  007	 	  	  Blocked	 	  0x0000000009f73aeb	  keyboard
+02	  	  00	  	  007	 	  	  Blocked	 	  0x000000000108105f	  speaker
+03	  	  00	  	  011	 	  	  Ready  	 	  0x000000000a314684	  video
+04	  	  00	  	  012	 	  	  Blocked	 	  0x000000000c0feabd	  vterm
+05	  	  00	  	  010	 	  	  Running	 	  0x00000000026b2e1c	  shell
 
 # ps
 PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  006	 	  	  Ready  	 	  0x006b1742705b43c5	  init
-01	  	  00	  	  007	 	  	  Blocked	 	  0x00000000046c5615	  keyboard
-02	  	  00	  	  007	 	  	  Blocked	 	  0x00000000009c375c	  speaker
-03	  	  00	  	  011	 	  	  Ready  	 	  0x000000000568e0ea	  video
-04	  	  00	  	  012	 	  	  Blocked	 	  0x00000000065c9601	  vterm
-05	  	  00	  	  010	 	  	  Running	 	  0x00000000015bf217	  shell
+00	  	  00	  	  006	 	  	  Ready  	 	  0x003cb98345148a7b	  init
+01	  	  00	  	  007	 	  	  Blocked	 	  0x000000000a58b494	  keyboard
+02	  	  00	  	  007	 	  	  Blocked	 	  0x00000000010f94c1	  speaker
+03	  	  00	  	  011	 	  	  Ready  	 	  0x000000000d0bdf2c	  video
+04	  	  00	  	  012	 	  	  Blocked	 	  0x000000000e63f424	  vterm
+05	  	  00	  	  010	 	  	  Running	 	  0x00000000035a0c93	  shell
+
+# ps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
+00	  	  00	  	  006	 	  	  Ready  	 	  0x003d009e6dac7a8f	  init
+01	  	  00	  	  007	 	  	  Blocked	 	  0x000000000a95448e	  keyboard
+02	  	  00	  	  007	 	  	  Blocked	 	  0x000000000114bbda	  speaker
+03	  	  00	  	  011	 	  	  Ready  	 	  0x000000000ff293bb	  video
+04	  	  00	  	  012	 	  	  Blocked	 	  0x0000000010c78e93	  vterm
+05	  	  00	  	  010	 	  	  Running	 	  0x000000000416da83	  shell
+
+# ps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
+00	  	  00	  	  006	 	  	  Ready  	 	  0x00448cc338bddd31	  init
+01	  	  00	  	  007	 	  	  Blocked	 	  0x000000000ade12fe	  keyboard
+02	  	  00	  	  007	 	  	  Blocked	 	  0x00000000011909af	  speaker
+03	  	  00	  	  011	 	  	  Ready  	 	  0x00000000129a9e99	  video
+04	  	  00	  	  012	 	  	  Blocked	 	  0x0000000013060482	  vterm
+05	  	  00	  	  010	 	  	  Running	 	  0x00000000052df7b1	  shell
 
 # 

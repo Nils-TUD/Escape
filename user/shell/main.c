@@ -272,7 +272,7 @@ static sShellCmd *shell_getCmd(s8 *line) {
 
 	for(i = 0; i < ARRAY_SIZE(commands); i++) {
 		len = strlen(commands[i].name);
-		if(pos >= len && strncmp(line,commands[i].name,len) == 0)
+		if(pos == len && strncmp(line,commands[i].name,len) == 0)
 			return commands + i;
 	}
 

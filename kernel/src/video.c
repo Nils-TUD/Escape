@@ -346,6 +346,7 @@ void vid_vprintf(cstring fmt,va_list ap) {
 	}
 }
 
+/* TODO change escape-codes! */
 static void vid_handleColorCode(cstring *str) {
 	cstring fmt = *str;
 	while(1) {

@@ -412,6 +412,8 @@ s32 intrpt_removeListener(u16 irq,void *node) {
 /* TODO temporary */
 #include "../../build/services.txt"
 static bool servicesLoaded = false;
+static bool firstProcLoaded = false;
+
 /*static u8 task2[] = {
 	#include "../../build/user_task2.dump"
 };
@@ -482,63 +484,51 @@ void intrpt_handler(sIntrptStackFrame stack) {
 			/* TODO don't resched if we come from kernel-mode! */
 			ASSERT(stack.ds == 0x23,"Timer interrupt from kernel-mode!");
 
-			if(!servicesLoaded) {
-				u32 i;
-				servicesLoaded = true;
-				vid_printf("Loading services...\n");
-				for(i = 0; i < ARRAY_SIZE(services); i++) {
-					/* clone proc */
-					tPid pid = proc_getFreePid();
-					if(proc_clone(pid)) {
-						/* we'll reach this as soon as the scheduler has chosen the created process */
-						p = proc_getRunning();
-						/* remove data-pages */
-						proc_changeSize(-p->dataPages,CHG_DATA);
-						/* overwrite stack-pages (copyonwrite is enabled) */
-						paging_map(KERNEL_V_ADDR - p->stackPages * PAGE_SIZE,NULL,p->stackPages,
-								PG_WRITABLE,true);
-						/* now load service */
-						vid_printf("Loading service %d\n",p->pid);
-						elf_loadprog(services[i]);
-						vid_printf("Starting...\n");
-						proc_setupIntrptStack(&stack);
-						/* we don't want to continue the loop ;) */
-						break;
+			if(!servicesLoaded || !firstProcLoaded) {
+				u32 i = 0xFFFFFFFF,end;
+
+				/* TODO a little hack that loads the services and processes as soon as
+				 * the first process (init) has set stderr */
+				/* later init will load the services and so on. therefore this will no longer be
+				 * necessary */
+				if(!firstProcLoaded && proc_getRunning()->pid == 0 && proc_getByPid(0)->fileDescs[2] != -1) {
+					/* load first process */
+					i = 0;
+					end = 1;
+					firstProcLoaded = true;
+					/*vid_printf("Loading first proc...\n");*/
+				}
+				else if(!servicesLoaded) {
+					/* load services */
+					i = 1;
+					end = ARRAY_SIZE(services);
+					servicesLoaded = true;
+					/*vid_printf("Loading services...\n");*/
+				}
+
+				if(i != 0xFFFFFFFF) {
+					for(; i < end; i++) {
+						/* clone proc */
+						tPid pid = proc_getFreePid();
+						if(proc_clone(pid)) {
+							/* we'll reach this as soon as the scheduler has chosen the created process */
+							p = proc_getRunning();
+							/* remove data-pages */
+							proc_changeSize(-p->dataPages,CHG_DATA);
+							/* now load service */
+							/*vid_printf("Loading service %d\n",p->pid);*/
+							elf_loadprog(services[i]);
+							/*vid_printf("Starting...\n");*/
+							proc_setupIntrptStack(&stack);
+							/* we don't want to continue the loop ;) */
+							break;
+						}
 					}
+					/*vid_printf("Done\n");*/
 				}
-				vid_printf("Done\n");
 				break;
 			}
 
-#if 0
-			/*vid_printf("Timer interrupt...\n");*/
-			if(!proc2Ready) {
-				proc2Ready = true;
-				/* clone proc1 */
-				tPid pid = proc_getFreePid();
-				if(proc_clone(pid)) {
-					p = proc_getRunning();
-					/* overwrite pages (copyonwrite is enabled) */
-					paging_map(p->textPages * PAGE_SIZE,NULL,p->dataPages,PG_WRITABLE,true);
-					paging_map(KERNEL_V_ADDR - p->stackPages * PAGE_SIZE,NULL,p->stackPages,
-							PG_WRITABLE,true);
-					/* now load task2 */
-					vid_printf("Loading process %d\n",p->pid);
-					elf_loadprog(task2);
-					vid_printf("Starting...\n");
-					proc_setupIntrptStack(&stack);
-				}
-#if 0
-				else if(proc_getRunning()->pid == 0 && proc_clone(proc_getFreePid())) {
-					p = proc_getRunning();
-					vid_printf("Starting process %d\n",p->pid);
-					proc_setupIntrptStack(&stack);
-				}
-#endif
-				break;
-			}
-
-#endif
 			intrpt_eoi(stack.intrptNo);
 			proc_switch();
 			break;

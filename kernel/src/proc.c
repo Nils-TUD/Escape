@@ -271,16 +271,14 @@ s32 proc_clone(tPid newPid) {
 	p->stackPages = procs[pi].stackPages;
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
 	p->cycleCount = 0;
-	/* init fds */
-	/*for(i = 0; i < MAX_FD_COUNT; i++)
-		p->fileDescs[i] = -1;*/
-	/* copy fds */
+
+	/* inherit file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		p->fileDescs[i] = procs[pi].fileDescs[i];
-		/* increase references */
 		if(p->fileDescs[i] != -1)
-			vfs_getFile(p->fileDescs[i])->refCount++;
+			p->fileDescs[i] = vfs_inheritFile(p->fileDescs[i]);
 	}
+
 	/* make ready */
 	sched_setReady(p);
 

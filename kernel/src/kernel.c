@@ -45,8 +45,8 @@
  * 	- idt-descriptors:		see intel manual, vol3a, page 202
  */
 
-static u8 task1[] = {
-	#include "../../build/user_task1.dump"
+static u8 init[] = {
+	#include "../../build/user_init.dump"
 };
 
 s32 main(sMultiBoot *mbp,u32 magic) {
@@ -116,7 +116,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 #if 1
 	/* TODO the following is just temporary! */
 	/* load task1 */
-	entryPoint = elf_loadprog(task1);
+	entryPoint = elf_loadprog(init);
 	/* give the process 2 stack pages */
 	proc_changeSize(2,CHG_STACK);
 	return entryPoint;

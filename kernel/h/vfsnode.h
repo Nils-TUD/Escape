@@ -158,6 +158,16 @@ void vfsn_appendChild(sVFSNode *parent,sVFSNode *node);
  */
 void vfsn_removeChild(sVFSNode *parent,sVFSNode *node);
 
+/**
+ * Appends a service-usage-node to the given node and stores the pointer to the new node
+ * at <child>.
+ *
+ * @param n the node to which the new node should be appended
+ * @param child will contain the pointer to the new node, if successfull
+ * @return the error-code if negative or 0 if successfull
+ */
+s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child);
+
 #if DEBUGGING
 
 /**

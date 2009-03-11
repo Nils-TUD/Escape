@@ -37,6 +37,24 @@ typedef struct {
 } sMessage;
 
 /**
+ * Searches for a free file for the given flags and node-number
+ *
+ * @param flags the flags (read, write)
+ * @param nodeNo the node-number to open
+ * @return the file-number on success or the negative error-code
+ */
+static tFile vfs_getFreeFile(u8 flags,tVFSNodeNo nodeNo);
+
+/**
+ * Initializes the given GFT-entry, increases references and so on
+ *
+ * @param e the GFT-entry
+ * @param flags the flags (read, write)
+ * @param nodeNo the node-number to open
+ */
+static void vfs_openFileImpl(sGFTEntry *e,u8 flags,tVFSNodeNo nodeNo);
+
+/**
  * The write-handler for the VFS
  *
  * @param pid the process to use
@@ -88,81 +106,31 @@ sGFTEntry *vfs_getFile(tFile no) {
 	return globalFileTable + no;
 }
 
-s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd) {
-	tFile i;
-	s32 res;
-	s32 freeSlot = ERR_NO_FREE_FD;
-	bool write = flags & VFS_WRITE;
-	sGFTEntry *e = &globalFileTable[0];
+tFile vfs_inheritFile(tFile file) {
+	sGFTEntry *e = globalFileTable + file;
+	sVFSNode *n = vfsn_getNode(e->nodeNo);
+	/* we can't share multipipe-service-usages since each process has his own node */
+	if(n->type == T_SERVUSE && !(n->parent->flags & VFS_SINGLEPIPE)) {
+		sVFSNode *child;
+		tVFSNodeNo nodeNo;
+		tFile newFile;
+		s32 err = vfsn_createServiceUse(n->parent,&child);
+		if(err < 0)
+			return -1;
 
-	ASSERT(flags & (VFS_READ | VFS_WRITE),"flags empty");
-	ASSERT(!(flags & ~(VFS_READ | VFS_WRITE)),"flags contains invalid bits");
-	ASSERT(VIRT_INDEX(nodeNo) < NODE_COUNT,"nodeNo invalid");
-	ASSERT(fd != NULL,"fd == NULL");
-	/* ensure that we don't increment usages of an unused slot */
-	ASSERT(flags != 0,"No flags given");
+		nodeNo = NADDR_TO_VNNO(child);
+		newFile = vfs_getFreeFile(e->flags,nodeNo);
+		if(newFile < 0)
+			return -1;
 
-	for(i = 0; i < FILE_COUNT; i++) {
-		/* used slot and same node? */
-		if(e->flags != 0) {
-			if(e->nodeNo == nodeNo) {
-				/* TODO we have to check wether writing twice to a file is allowed */
-				/* TODO should be for service-messages. other situations? */
-				/* writing to the same file is not possible */
-				if(write && e->flags & VFS_WRITE) {
-					e++;
-					continue;
-				}
-				/*return ERR_FILE_IN_USE;*/
-
-				/* if the flags are different we need a different slot */
-				if(e->flags == flags) {
-					res = proc_openFile(i);
-					if(res < 0)
-						return res;
-					/* count references of virtual nodes */
-					if(IS_VIRT(nodeNo)) {
-						sVFSNode *n = nodes + VIRT_INDEX(nodeNo);
-						n->refCount++;
-					}
-					e->refCount++;
-					*fd = res;
-					return 0;
-				}
-			}
-		}
-		/* remember free slot */
-		else if(freeSlot == ERR_NO_FREE_FD) {
-			freeSlot = i;
-			/* if we want to write we need our own file anyway */
-			if(write)
-				break;
-		}
-
-		e++;
+		vfs_openFileImpl(globalFileTable + newFile,e->flags,nodeNo);
+		return newFile;
 	}
-
-	/* reserve slot */
-	if(freeSlot >= 0) {
-		res = proc_openFile(freeSlot);
-		if(res < 0)
-			return res;
-
-		/* count references of virtual nodes */
-		if(IS_VIRT(nodeNo)) {
-			sVFSNode *n = nodes + VIRT_INDEX(nodeNo);
-			n->refCount++;
-		}
-
-		e = &globalFileTable[freeSlot];
-		e->flags = flags;
-		e->refCount = 1;
-		e->position = 0;
-		e->nodeNo = nodeNo;
-		*fd = res;
+	else {
+		/* just increase references */
+		e->refCount++;
+		return file;
 	}
-
-	return freeSlot;
 }
 
 s32 vfs_fdToFile(tFD fd) {
@@ -181,6 +149,88 @@ s32 vfs_fdToFile(tFD fd) {
 		return ERR_INVALID_FILE;
 
 	return (s32)e;
+}
+
+s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd) {
+	s32 res;
+	sGFTEntry *e;
+
+	/* determine free file */
+	tFile f = vfs_getFreeFile(flags,nodeNo);
+	if(f < 0)
+		return res;
+
+	/* open file */
+	e = globalFileTable + f;
+	res = proc_openFile(f);
+	if(res < 0)
+		return res;
+
+	vfs_openFileImpl(e,flags,nodeNo);
+	*fd = res;
+	return 0;
+}
+
+static void vfs_openFileImpl(sGFTEntry *e,u8 flags,tVFSNodeNo nodeNo) {
+	/* count references of virtual nodes */
+	if(IS_VIRT(nodeNo)) {
+		sVFSNode *n = nodes + VIRT_INDEX(nodeNo);
+		n->refCount++;
+	}
+
+	/* unused file? */
+	if(e->flags == 0) {
+		e->flags = flags;
+		e->refCount = 1;
+		e->position = 0;
+		e->nodeNo = nodeNo;
+	}
+	else
+		e->refCount++;
+}
+
+static tFile vfs_getFreeFile(u8 flags,tVFSNodeNo nodeNo) {
+	tFile i;
+	tFile freeSlot = ERR_NO_FREE_FD;
+	bool write = flags & VFS_WRITE;
+	sGFTEntry *e = &globalFileTable[0];
+
+	ASSERT(flags & (VFS_READ | VFS_WRITE),"flags empty");
+	ASSERT(!(flags & ~(VFS_READ | VFS_WRITE)),"flags contains invalid bits");
+	ASSERT(VIRT_INDEX(nodeNo) < NODE_COUNT,"nodeNo invalid");
+	/* ensure that we don't increment usages of an unused slot */
+	ASSERT(flags != 0,"No flags given");
+
+	for(i = 0; i < FILE_COUNT; i++) {
+		/* used slot and same node? */
+		if(e->flags != 0) {
+			if(e->nodeNo == nodeNo) {
+				/* TODO we have to check wether writing twice to a file is allowed */
+				/* TODO should be for service-messages. other situations? */
+				/* writing to the same file is not possible */
+				if(write && e->flags & VFS_WRITE) {
+					e++;
+					continue;
+				}
+				/*return ERR_FILE_IN_USE;*/
+
+				/* if the flags are different we need a different slot */
+				if(e->flags == flags)
+					return i;
+			}
+		}
+		/* remember free slot */
+		else if(freeSlot == ERR_NO_FREE_FD) {
+			freeSlot = i;
+			/* if we want to write we need our own file anyway */
+			if(write)
+				break;
+		}
+
+		e++;
+	}
+
+	return freeSlot;
 }
 
 s32 vfs_readFile(sGFTEntry *e,u8 *buffer,u32 count) {
@@ -801,6 +851,7 @@ void vfs_dbg_printGFT(void) {
 	vid_printf("Global File Table:\n");
 	for(i = 0; i < FILE_COUNT; i++) {
 		if(e->flags != 0) {
+			sVFSNode *n = vfsn_getNode(e->nodeNo);
 			vid_printf("\tfile @ index %d\n",i);
 			vid_printf("\t\tread: %d\n",(e->flags & VFS_READ) ? true : false);
 			vid_printf("\t\twrite: %d\n",(e->flags & VFS_WRITE) ? true : false);
@@ -808,6 +859,8 @@ void vfs_dbg_printGFT(void) {
 			vid_printf("\t\tnodeNo: %d\n",VIRT_INDEX(e->nodeNo));
 			vid_printf("\t\tpos: %d\n",e->position);
 			vid_printf("\t\trefCount: %d\n",e->refCount);
+			if(n->type == T_SERVUSE)
+				vid_printf("\t\tService-Usage of %s @ %s\n",n->name,n->parent->name);
 		}
 		e++;
 	}

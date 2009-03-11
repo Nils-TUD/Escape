@@ -1,4 +1,4 @@
-NAME=task1
+NAME=init
 BUILD=../../build
 DISK=$(BUILD)/disk.img
 DISKMOUNT=../../disk

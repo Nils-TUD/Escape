@@ -15,16 +15,6 @@
 #define FILE_ROOT()	(nodes + 3)
 
 /**
- * Appends a service-usage-node to the given node and stores the pointer to the new node
- * at <child>.
- *
- * @param n the node to which the new node should be appended
- * @param child will contain the pointer to the new node, if successfull
- * @return the error-code if negative or 0 if successfull
- */
-static s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child);
-
-/**
  * The recursive function to print the VFS-tree
  *
  * @param level the current recursion level
@@ -332,7 +322,7 @@ void vfsn_removeChild(sVFSNode *parent,sVFSNode *node) {
 	vfsn_releaseNode(node);
 }
 
-static s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
+s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
 	string name;
 	sVFSNode *m;
 	sProc *p = proc_getRunning();

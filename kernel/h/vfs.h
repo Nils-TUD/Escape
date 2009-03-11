@@ -104,6 +104,14 @@ sGFTEntry *vfs_getFile(tFile no);
 s32 vfs_fdToFile(tFD fd);
 
 /**
+ * Inherits the given file for the current process
+ *
+ * @param file the file
+ * @return file the file to use (may be the same)
+ */
+tFile vfs_inheritFile(tFile file);
+
+/**
  * Opens the file with given number and given flags. That means it walks through the global
  * file table and searches for a free entry or an entry for that file.
  * Note that multiple processes may read from the same file simultaneously but NOT write!

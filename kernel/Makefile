@@ -30,6 +30,7 @@ SYMBOLSRC=src/ksymbols.c
 
 SERVDIRS = $(filter-out $(wildcard *.*) ../services/Makefile,$(wildcard ../services/*))
 SERVDIRNAMES = $(patsubst ../services/%,%,$(SERVDIRS))
+USERPROCNAMES = shell
 SERVBINS = $(patsubst %,$(BUILD)/service_%.bin,$(SERVDIRNAMES))
 SERVICES = $(BUILD)/services.txt
 
@@ -62,6 +63,11 @@ $(BIN):	$(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 
 $(SERVICES): $(SERVBINS)
 		@echo "" > $(SERVICES)
+		@for i in $(USERPROCNAMES) ; do \
+			echo "static u8 user_"$$i"[] = {" >> $(SERVICES); \
+			echo "		#include \"../../build/user_$$i.dump\"" >> $(SERVICES); \
+			echo "};" >> $(SERVICES); \
+		done;
 		@for i in $(SERVDIRNAMES) ; do \
 			echo "static u8 service_"$$i"[] = {" >> $(SERVICES); \
 			echo "		#include \"../../build/service_$$i.dump\"" >> $(SERVICES); \
@@ -69,6 +75,9 @@ $(SERVICES): $(SERVBINS)
 		done;
 		@echo "" >> $(SERVICES)
 		@echo "static u8 *services[] = {" >> $(SERVICES)
+		@for i in $(USERPROCNAMES) ; do \
+			echo "	user_"$$i"," >> $(SERVICES); \
+		done;
 		@for i in $(SERVDIRNAMES) ; do \
 			echo "	service_"$$i"," >> $(SERVICES); \
 		done;

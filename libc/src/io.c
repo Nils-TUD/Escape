@@ -20,16 +20,6 @@ typedef struct {
 } __attribute__((packed)) sSendMsg;
 
 /**
- * Opens the vterm-service
- */
-static void init(void);
-
-/**
- * Flushes the buffer
- */
-static void flush(void);
-
-/**
  * Writes an escape-code to the vterminal
  *
  * @param str the escape-code
@@ -149,72 +139,18 @@ s8 readChar(void) {
 
 u16 readLine(s8 *buffer,u16 max) {
 	s8 c;
+	u8 keycode;
+	u8 modifier;
 	u16 cursorPos = 0;
 	u32 i = 0;
 	while(i < max) {
 		c = readChar();
 
-		switch(c) {
-			case '\b':
-				if(cursorPos > 0) {
-					/* remove last char */
-					if(cursorPos < i)
-						memmove(buffer + cursorPos - 1,buffer + cursorPos,i - cursorPos);
-					i--;
-					cursorPos--;
-					buffer[i] = '\0';
-					/* send backspace */
-					putchar(c);
-					flush();
-				}
-				continue;
-
-			case '\033': {
-				bool writeBack = false;
-				u8 keycode = readChar();
-				u8 modifier = readChar();
-				switch(keycode) {
-					/* write escape-code back */
-					case VK_RIGHT:
-						if(cursorPos < i) {
-							writeBack = true;
-							cursorPos++;
-						}
-						break;
-					case VK_HOME:
-						if(cursorPos > 0) {
-							writeBack = true;
-							/* send the number of chars to move */
-							modifier = cursorPos;
-							cursorPos = 0;
-						}
-						break;
-					case VK_END:
-						if(cursorPos < i) {
-							writeBack = true;
-							/* send the number of chars to move */
-							modifier = i - cursorPos;
-							cursorPos = i;
-						}
-						break;
-					case VK_LEFT:
-						if(cursorPos > 0) {
-							writeBack = true;
-							cursorPos--;
-						}
-						break;
-				}
-
-				/* write escape-code back */
-				if(writeBack) {
-					putchar(c);
-					putchar(keycode);
-					putchar(modifier);
-					flush();
-				}
-			}
+		if(handleDefaultEscapeCodes(buffer,&cursorPos,&i,c,&keycode,&modifier))
 			continue;
-		}
+		/* the above function does not handle all escape-codes */
+		if(c == '\033')
+			continue;
 
 		/* echo */
 		putchar(c);
@@ -231,6 +167,83 @@ u16 readLine(s8 *buffer,u16 max) {
 
 	buffer[i] = '\0';
 	return i;
+}
+
+bool handleDefaultEscapeCodes(s8 *buffer,u16 *cursorPos,u32 *charcount,s8 c,u8 *keycode,u8 *modifier) {
+	bool res = false;
+	u16 icursorPos = *cursorPos;
+	u32 icharcount = *charcount;
+	switch(c) {
+		case '\b':
+			if(icursorPos > 0) {
+				/* remove last char */
+				if(icursorPos < icharcount)
+					memmove(buffer + icursorPos - 1,buffer + icursorPos,icharcount - icursorPos);
+				icharcount--;
+				icursorPos--;
+				buffer[icharcount] = '\0';
+				/* send backspace */
+				putchar(c);
+				flush();
+			}
+			res = true;
+			break;
+
+		case '\033': {
+			bool writeBack = false;
+			*keycode = readChar();
+			*modifier = readChar();
+			switch(*keycode) {
+				/* write escape-code back */
+				case VK_RIGHT:
+					if(icursorPos < icharcount) {
+						writeBack = true;
+						icursorPos++;
+					}
+					res = true;
+					break;
+				case VK_HOME:
+					if(icursorPos > 0) {
+						writeBack = true;
+						/* send the number of chars to move */
+						*modifier = icursorPos;
+						icursorPos = 0;
+					}
+					res = true;
+					break;
+				case VK_END:
+					if(icursorPos < icharcount) {
+						writeBack = true;
+						/* send the number of chars to move */
+						*modifier = icharcount - icursorPos;
+						icursorPos = icharcount;
+					}
+					res = true;
+					break;
+				case VK_LEFT:
+					if(icursorPos > 0) {
+						writeBack = true;
+						icursorPos--;
+					}
+					res = true;
+					break;
+			}
+
+			/* write escape-code back */
+			if(writeBack) {
+				putchar(c);
+				putchar(*keycode);
+				putchar(*modifier);
+				flush();
+			}
+		}
+		break;
+	}
+
+	*cursorPos = icursorPos;
+	*charcount = icharcount;
+
+	return res;
 }
 
 void printf(cstring fmt,...) {
@@ -350,7 +363,7 @@ void putchar(s8 c) {
 	msg.chars[bufferPos++] = c;
 }
 
-static void flush(void) {
+void flush(void) {
 	if(bufferPos > 0) {
 		msg.header.length = bufferPos + 1;
 		msg.chars[bufferPos] = '\0';

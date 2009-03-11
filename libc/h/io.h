@@ -25,13 +25,6 @@
 void initIO(void);
 
 /**
- * Prints the given character to the current position on the screen
- *
- * @param c the character
- */
-void putchar(s8 c);
-
-/**
  * Reads one character from the vterm
  *
  * @return the character
@@ -46,6 +39,33 @@ s8 readChar(void);
  * @return the number of read chars
  */
 u16 readLine(s8 *buffer,u16 max);
+
+/**
+ * Handles the default escape-codes for readLine. This is just intended for the programs
+ * that want to support additional escape-codes, such as the shell.
+ * It handles \b, VK_LEFT, VK_RIGHT, VK_HOME and VK_END.
+ *
+ * @param buffer the buffer with read characters
+ * @param cursorPos the current cursor-position in the buffer (may be changed)
+ * @param charcount the number of read characters so far (may be changed)
+ * @param c the character
+ * @param keycode if c was an escape-code keycode will be set
+ * @param modifier if c was an escape-code modifier will be set
+ * @return true if the escape-code was handled
+ */
+bool handleDefaultEscapeCodes(s8 *buffer,u16 *cursorPos,u32 *charcount,s8 c,u8 *keycode,u8 *modifier);
+
+/**
+ * Prints the given character to the current position on the screen
+ *
+ * @param c the character
+ */
+void putchar(s8 c);
+
+/**
+ * Flushes the buffer
+ */
+void flush(void);
 
 /**
  * The kernel-version of printf. Currently it supports:

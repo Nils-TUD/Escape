@@ -6,22 +6,21 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x200000, shndx=0x10
+ELF: num=19, size=40, addr=0x202000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x000000000246c2fd
+Clock cycles: 0x000000000186e8d4
 Initializing VFS...DONE
-Clock cycles: 0x0000000000193599
+Clock cycles: 0x00000000000fdd2e
 Initializing process-management...DONE
-Clock cycles: 0x00000000000e28db
+Clock cycles: 0x00000000000ec436
 Initializing IDT...DONE
-Clock cycles: 0x0000000000107f76
+Clock cycles: 0x00000000000b8458
 Free frames=28655, pages mapped=1281, free mem=114620 KiB
-Got interrupt 39 (<unknown>) @ 0x0
 Service keyboard has pid 1
 Service video has pid 2
 Service vterm has pid 3
@@ -29,14 +28,34 @@ Welcome to Escape v0.1!
 
 Try 'help' to see the current features :)
 
-# pas
-pas: Command not found
-# ps
+# bla
+bla: Command not found
+# blub
+blub: Command not found
+# blubblablubblablub
+blub: Command not found
+# blubblablubblablubblablubblaps
 PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  006	 	  	  Ready  	 	  0x00159d12471ca7f0	  init
-01	  	  00	  	  007	 	  	  Blocked	 	  0x000000000111f6c0	  keyboard
-02	  	  00	  	  011	 	  	  Ready  	 	  0x00000000033ee9f2	  video
-03	  	  00	  	  012	 	  	  Blocked	 	  0x00000000034103a0	  vterm
-04	  	  00	  	  009	 	  	  Running	 	  0x0000000000e153ac	  shell
+00	  	  00	  	  006	 	  	  Ready  	 	  0x0003b7cde19b47c7	  init
+01	  	  00	  	  007	 	  	  Blocked	 	  0x0000000005199999	  keyboard
+02	  	  00	  	  011	 	  	  Ready  	 	  0x00000000060d9f0e	  video
+03	  	  00	  	  012	 	  	  Blocked	 	  0x000000000634f91d	  vterm
+04	  	  00	  	  010	 	  	  Running	 	  0x00000000014bfc71	  shell
 
-# bla blubaaaaaaaaaaa
+# psblubblapsblablubpstest
+test: Command not found
+# ecoho test
+test 
+# echo test
+test 
+# poss
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
+00	  	  00	  	  006	 	  	  Ready  	 	  0x000911af5f914e2d	  init
+01	  	  00	  	  007	 	  	  Blocked	 	  0x0000000009350ef8	  keyboard
+02	  	  00	  	  011	 	  	  Ready  	 	  0x000000000c0cd692	  video
+03	  	  00	  	  012	 	  	  Blocked	 	  0x000000000be0b621	  vterm
+04	  	  00	  	  010	 	  	  Running	 	  0x000000000294e670	  shell
+
+# psecho test
+test 
+# echo testpsecho testtestpsblubblaecho testpsecho testblablubpstestecho testpsecho testblablubpstestecho testpsecho testblablubpstestecho testps

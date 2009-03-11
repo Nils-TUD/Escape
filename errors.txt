@@ -1,24 +1,23 @@
-src/heap.c:216: warning: unused parameter ‘addr’
-src/heap.c:216: warning: unused parameter ‘size’
-src/io.c:25: warning: ‘init’ declared ‘static’ but never defined
-src/io.c:98: warning: ‘termFD’ defined but not used
-../lib/src/test.c:37: warning: unused parameter ‘fmt’
-../lib/src/test.c:40: warning: unused parameter ‘fmt’
-../lib/src/test.c:40: warning: unused parameter ‘ap’
+src/io.c:88: warning: ‘termFD’ defined but not used
 main.c:41: warning: return type of ‘main’ is not ‘int’
 main.c:49: warning: return type of ‘main’ is not ‘int’
 main.c: In function ‘main’:
 main.c:111: warning: comparison between signed and unsigned
 main.c:19: warning: return type of ‘main’ is not ‘int’
 main.c:11: warning: return type of ‘main’ is not ‘int’
-main.c:46: warning: initialization discards qualifiers from pointer target type
-main.c:49: warning: return type of ‘main’ is not ‘int’
+main.c:85: warning: return type of ‘main’ is not ‘int’
 main.c: In function ‘main’:
-main.c:51: warning: unused variable ‘res’
-main.c: In function ‘getCmd’:
-main.c:86: warning: passing argument 2 of ‘strchri’ makes integer from pointer without a cast
-cmd/echo.c:10: warning: unused parameter ‘argc’
-cmd/echo.c:10: warning: unused parameter ‘argv’
+main.c:86: warning: unused variable ‘i’
+main.c: In function ‘shell_handleEscapeCodes’:
+main.c:147: warning: unused variable ‘modifier’
+main.c: At top level:
+main.c:144: warning: unused parameter ‘c’
+main.c:235: warning: unused parameter ‘argc’
+main.c:235: warning: unused parameter ‘argv’
+cmd/ps.c:29: warning: unused parameter ‘argc’
+cmd/ps.c:29: warning: unused parameter ‘argv’
+cmd/ps.c: In function ‘ps_printProcess’:
+cmd/ps.c:68: warning: initialization from incompatible pointer type
 main.c: In function ‘printProcess’:
 main.c:34: warning: initialization from incompatible pointer type
 main.c:26: warning: unused variable ‘pid’
@@ -31,38 +30,13 @@ main.c:462:2: warning: "/*" within comment
 main.c: At top level:
 main.c:25: warning: ‘printProcess’ defined but not used
 src/intrpt.c: In function ‘intrpt_handleListener’:
-src/intrpt.c:433: warning: unused variable ‘i’
-src/intrpt.c:432: warning: unused variable ‘oldState’
+src/intrpt.c:437: warning: unused variable ‘i’
+src/intrpt.c:436: warning: unused variable ‘oldState’
 src/intrpt.c: At top level:
-src/intrpt.c:429: warning: unused parameter ‘irq’
+src/intrpt.c:433: warning: unused parameter ‘irq’
 src/kernel.c:52: warning: unused parameter ‘magic’
-src/ksymbols.c: In function ‘ksym_print’:
-src/ksymbols.c:18: warning: comparison of unsigned expression < 0 is always false
-src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
-src/syscalls.c:608: warning: unused parameter ‘stack’
-src/syscalls.c:612: warning: unused parameter ‘stack’
-src/vfsnode.c:212: warning: unused parameter ‘parent’
-../lib/src/test.c:37: warning: unused parameter ‘fmt’
-../lib/src/test.c:40: warning: unused parameter ‘fmt’
-../lib/src/test.c:40: warning: unused parameter ‘ap’
 ../src/intrpt.c: In function ‘intrpt_handleListener’:
-../src/intrpt.c:433: warning: unused variable ‘i’
-../src/intrpt.c:432: warning: unused variable ‘oldState’
+../src/intrpt.c:437: warning: unused variable ‘i’
+../src/intrpt.c:436: warning: unused variable ‘oldState’
 ../src/intrpt.c: At top level:
-../src/intrpt.c:429: warning: unused parameter ‘irq’
-../src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
-../src/syscalls.c:608: warning: unused parameter ‘stack’
-../src/syscalls.c:612: warning: unused parameter ‘stack’
-../src/vfsnode.c:212: warning: unused parameter ‘parent’
-tmain.c:38: warning: unused parameter ‘magic’
-tstring.c: In function ‘test_atoi’:
-tstring.c:82: warning: this decimal constant is unsigned only in ISO C90
-tstring.c: In function ‘test_itoa’:
-tstring.c:110: warning: this decimal constant is unsigned only in ISO C90
-tvfs.c:175: warning: unused parameter ‘node’
-tvfs.c:175: warning: unused parameter ‘buffer’
-tvfs.c:175: warning: unused parameter ‘offset’
-tvfs.c:175: warning: unused parameter ‘count’
-../../lib/src/test.c:37: warning: unused parameter ‘fmt’
-../../lib/src/test.c:40: warning: unused parameter ‘fmt’
-../../lib/src/test.c:40: warning: unused parameter ‘ap’
+../src/intrpt.c:433: warning: unused parameter ‘irq’

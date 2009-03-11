@@ -12,6 +12,6 @@
 /**
  * The command "echo"
  */
-s32 cmdEcho(u32 argc,s8 **argv);
+s32 shell_cmdEcho(u32 argc,s8 **argv);
 
 #endif /* ECHO_H_ */

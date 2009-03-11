@@ -12,6 +12,6 @@
 /**
  * The command "ps"
  */
-s32 cmdPs(u32 argc,s8 **argv);
+s32 shell_cmdPs(u32 argc,s8 **argv);
 
 #endif /* PS_H_ */

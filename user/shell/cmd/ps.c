@@ -16,7 +16,7 @@
  *
  * @param p the process
  */
-static void printProcess(sProc *p);
+static void ps_printProcess(sProc *p);
 
 static cstring states[] = {
 	"Unused ",
@@ -26,7 +26,7 @@ static cstring states[] = {
 	"Zombie "
 };
 
-s32 cmdPs(u32 argc,s8 **argv) {
+s32 shell_cmdPs(u32 argc,s8 **argv) {
 	s32 dd,dfd;
 	sProc proc;
 	sDir *entry;
@@ -44,7 +44,7 @@ s32 cmdPs(u32 argc,s8 **argv) {
 			strncat(ppath,entry->name,strlen(entry->name));
 			if((dfd = open(ppath,IO_READ)) >= 0) {
 				read(dfd,&proc,sizeof(sProc));
-				printProcess(&proc);
+				ps_printProcess(&proc);
 				close(dfd);
 			}
 			else {
@@ -64,7 +64,7 @@ s32 cmdPs(u32 argc,s8 **argv) {
 	return 0;
 }
 
-static void printProcess(sProc *p) {
+static void ps_printProcess(sProc *p) {
 	u32 *ptr = &p->cycleCount;
 	printf("%02d\t\t%02d\t\t%03d\t\t\t%s\t\t0x%08x%08x\t%s\n",
 			p->pid,p->parentPid,p->textPages + p->dataPages + p->stackPages,

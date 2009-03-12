@@ -39,7 +39,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer);
 /**
  * The read-handler for the mem-usage-node
  */
-static s32 vfsinfo_memUsageReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+static s32 vfsinfo_memUsageReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * The read-callback for the VFS memusage-read-handler
@@ -52,11 +52,11 @@ void vfsinfo_init(void) {
 	vfsn_createInfo(vfsn_getNode(nodeNo),(string)"memusage",vfsinfo_memUsageReadHandler);
 }
 
-s32 vfsinfo_procReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+s32 vfsinfo_procReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	/* don't use the cache here to prevent that one process occupies it for all others */
 	/* (if the process doesn't call close() the cache will not be invalidated and therefore
 	 * other processes might miss changes) */
-	return vfs_defReadHandler(node,buffer,offset,count,sizeof(sProcPub),vfsinfo_procReadCallback);
+	return vfs_defReadHandler(pid,node,buffer,offset,count,sizeof(sProcPub),vfsinfo_procReadCallback);
 }
 
 static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer) {
@@ -72,8 +72,8 @@ static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer) {
 	memcpy(proc->name,p->name,strlen(p->name) + 1);
 }
 
-static s32 vfsinfo_memUsageReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
-	return vfs_defReadHandler(node,buffer,offset,count,sizeof(sMemUsage),vfsinfo_memUsageReadCallback);
+static s32 vfsinfo_memUsageReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	return vfs_defReadHandler(pid,node,buffer,offset,count,sizeof(sMemUsage),vfsinfo_memUsageReadCallback);
 }
 
 static void vfsinfo_memUsageReadCallback(sVFSNode *node,void *buffer) {

@@ -1,15 +1,16 @@
 src/heap.c:216: warning: unused parameter ‘addr’
 src/heap.c:216: warning: unused parameter ‘size’
+main.c:51: warning: return type of ‘main’ is not ‘int’
 main.c:41: warning: return type of ‘main’ is not ‘int’
 main.c:39: warning: return type of ‘main’ is not ‘int’
 main.c:49: warning: return type of ‘main’ is not ‘int’
 main.c:19: warning: return type of ‘main’ is not ‘int’
 main.c:11: warning: return type of ‘main’ is not ‘int’
-main.c:100: warning: return type of ‘main’ is not ‘int’
-main.c:165: warning: unused parameter ‘c’
+main.c:101: warning: return type of ‘main’ is not ‘int’
+main.c:166: warning: unused parameter ‘c’
 main.c: In function ‘shell_complete’:
-main.c:220: warning: comparison between signed and unsigned
-main.c:254: warning: comparison between signed and unsigned
+main.c:221: warning: comparison between signed and unsigned
+main.c:255: warning: comparison between signed and unsigned
 main.c: In function ‘printProcess’:
 main.c:34: warning: initialization from incompatible pointer type
 main.c:26: warning: unused variable ‘pid’
@@ -22,11 +23,13 @@ main.c:462:2: warning: "/*" within comment
 main.c: At top level:
 main.c:25: warning: ‘printProcess’ defined but not used
 src/ksymbols.c: In function ‘ksym_print’:
-src/ksymbols.c:18: warning: comparison of unsigned expression < 0 is always false
+src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
 src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
-src/vfsnode.c:212: warning: unused parameter ‘parent’
+src/vfsnode.c:216: warning: unused parameter ‘parent’
+../src/ksymbols.c: In function ‘ksym_print’:
+../src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
 ../src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
-../src/vfsnode.c:212: warning: unused parameter ‘parent’
+../src/vfsnode.c:216: warning: unused parameter ‘parent’
 tstring.c: In function ‘test_atoi’:
 tstring.c:82: warning: this decimal constant is unsigned only in ISO C90
 tstring.c: In function ‘test_itoa’:

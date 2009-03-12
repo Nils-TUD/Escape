@@ -10,6 +10,7 @@
 #include "../h/proc.h"
 #include "../h/vfs.h"
 #include "../h/vfsnode.h"
+#include "../h/vfsreal.h"
 #include "../h/paging.h"
 #include "../h/util.h"
 #include "../h/debug.h"
@@ -284,20 +285,35 @@ static void sysc_open(sSysCallStack *stack) {
 
 	/* resolve path */
 	err = vfsn_resolvePath(path,&nodeNo);
-	if(err < 0) {
-		SYSC_ERROR(stack,err);
-		return;
+	if(err == ERR_REAL_PATH) {
+		/* send msg to fs and wait for reply */
+		file = vfsr_openFile(proc_getRunning()->pid,flags,path + strlen("file:"));
+
+		/* get free fd */
+		fd = proc_getFreeFd();
+		if(fd < 0) {
+			/* TODO clean up */
+			SYSC_ERROR(stack,fd);
+			return;
+		}
+	}
+	else {
+		/* handle virtual files */
+		if(err < 0) {
+			SYSC_ERROR(stack,err);
+			return;
+		}
+
+		/* get free fd */
+		fd = proc_getFreeFd();
+		if(fd < 0) {
+			SYSC_ERROR(stack,fd);
+			return;
+		}
+		/* open file */
+		file = vfs_openFile(flags,nodeNo);
 	}
 
-	/* get free fd */
-	fd = proc_getFreeFd();
-	if(fd < 0) {
-		SYSC_ERROR(stack,fd);
-		return;
-	}
-
-	/* open file */
-	file = vfs_openFile(flags,nodeNo);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;

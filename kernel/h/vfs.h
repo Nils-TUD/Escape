@@ -31,7 +31,7 @@ enum {
 /* a node in our virtual file system */
 typedef struct sVFSNode sVFSNode;
 /* the function for read-requests on info-nodes */
-typedef s32 (*fRead)(sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+typedef s32 (*fRead)(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 /* callback function for the default read-handler */
 typedef void (*readCallBack)(sVFSNode *node,void *buffer);
 
@@ -82,12 +82,12 @@ struct sVFSNode {
 void vfs_init(void);
 
 /**
- * Determines the GFT-File for the given file-descriptor
+ * Determines the node-number for the given file
  *
- * @param fd the file-descriptor
- * @return the GFT-File (sGFTEntry*) or a negative error-code
+ * @param file the file
+ * @return the node-number or an error (both may be negative :/, check with vfsn_isValidNodeNo())
  */
-s32 vfs_fdToFile(tFD fd);
+tVFSNodeNo vfs_getNodeNo(tFile file);
 
 /**
  * Inherits the given file for the current process
@@ -107,6 +107,14 @@ tFile vfs_inheritFile(tFile file);
  * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FD)
  */
 tFile vfs_openFile(u8 flags,tVFSNodeNo nodeNo);
+
+/**
+ * Opens a file for the kernel. Creates a node for it, if not already done
+ *
+ * @param nodeNo the service-node-number
+ * @return the file-number or a negative error-code
+ */
+tFile vfs_openFileForKernel(tVFSNodeNo nodeNo);
 
 /**
  * Reads max. count bytes from the given file into the given buffer and returns the number
@@ -149,21 +157,6 @@ void vfs_closeFile(tFile file);
  * @return 0 if ok, negative if an error occurred
  */
 s32 vfs_createService(tPid pid,cstring name,u8 type);
-
-/**
- * Opens a file for the interrupt-message-sending. Creates a node for it, if not already done
- *
- * @param nodeNo the service-node-number
- * @return the file-number or a negative error-code
- */
-tFile vfs_openIntrptMsgNode(tVFSNodeNo nodeNo);
-
-/**
- * Closes the given file for interrupt-message-sending. Removes the node, if no longer used
- *
- * @param f the file
- */
-void vfs_closeIntrptMsgNode(tFile f);
 
 /**
  * Checks wether there is a message for the given process. That if the process is a service
@@ -220,6 +213,7 @@ void vfs_removeProcess(tPid pid);
  * The default read-handler. Creates space, calls the callback which should fill the space
  * with data and writes the corresponding part to the buffer of the user
  *
+ * @param pid the process-id
  * @param node the vfs-node
  * @param buffer the buffer
  * @param offset the offset
@@ -227,19 +221,20 @@ void vfs_removeProcess(tPid pid);
  * @param dataSize the total size of the data
  * @param callback the callback-function
  */
-s32 vfs_defReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
+s32 vfs_defReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
 		readCallBack callback);
 
 /**
  * The read-handler for service-usages
  *
+ * @param pid the process-id
  * @param node the VFS node
  * @param buffer the buffer where to copy the info to
  * @param offset the offset where to start
  * @param count the number of bytes
  * @return the number of read bytes
  */
-s32 vfs_serviceUseReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfs_serviceUseReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 #if DEBUGGING
 

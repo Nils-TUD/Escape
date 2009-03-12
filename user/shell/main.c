@@ -19,6 +19,7 @@
 #include "cmd/echo.h"
 #include "cmd/ps.h"
 #include "cmd/memusage.h"
+#include "cmd/test.h"
 
 #define MAX_CMD_LEN			40
 #define MAX_ARG_COUNT		10
@@ -90,7 +91,7 @@ static sShellCmd commands[] = {
 	{"ps"		, shell_cmdPs		},
 	{"help"		, shell_cmdHelp		},
 	{"memusage"	, shell_cmdMemUsage	},
-	{"memabc"	, shell_cmdMemUsage },
+	{"test"		, shell_cmdTest		},
 };
 
 /* buffer for arguments */

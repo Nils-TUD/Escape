@@ -84,6 +84,8 @@ typedef enum {false = 0, true = 1} bool;
 #define ERR_INVALID_IRQ_NUMBER		-20
 #define ERR_IRQ_LISTENER_MISSING	-21
 #define ERR_NO_CLIENT_WAITING		-22
+#define ERR_FS_NOT_FOUND			-23
+#define ERR_REAL_PATH				-200
 
 /* debugging */
 #define DBG_PGCLONEPD(s)

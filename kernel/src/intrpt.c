@@ -14,11 +14,12 @@
 #include "../h/elf.h"
 #include "../h/syscalls.h"
 #include "../h/vfs.h"
+#include "../h/vfsreal.h"
 #include "../h/gdt.h"
 #include "../h/kheap.h"
+#include "../h/video.h"
 #include <string.h>
 #include <sllist.h>
-#include "../h/video.h"
 
 #define IDT_COUNT		256
 /* the privilege level */
@@ -361,7 +362,7 @@ s32 intrpt_addListener(u16 irq,tVFSNodeNo nodeNo,void *message,u32 msgLen) {
 	l->msgLen = msgLen;
 	l->nodeNo = nodeNo;
 	/* create a node for it and open it */
-	err = vfs_openIntrptMsgNode(nodeNo);
+	err = vfs_openFileForKernel(nodeNo);
 	if(err < 0) {
 		kheap_free(l);
 		return err;
@@ -375,7 +376,7 @@ s32 intrpt_addListener(u16 irq,tVFSNodeNo nodeNo,void *message,u32 msgLen) {
 		list = sll_create();
 		if(list == NULL) {
 			/* close file and free element */
-			vfs_closeIntrptMsgNode(l->file);
+			vfs_closeFile(l->file);
 			kheap_free(l);
 			return ERR_NOT_ENOUGH_MEM;
 		}
@@ -404,7 +405,7 @@ s32 intrpt_removeListener(u16 irq,tVFSNodeNo nodeNo) {
 	for(ln = sll_begin(list); ln != NULL; ln = ln->next) {
 		if(((sIntrptListener*)ln->data)->nodeNo == nodeNo) {
 			sll_removeNode(list,ln,lnp);
-			vfs_closeIntrptMsgNode(((sIntrptListener*)ln->data)->file);
+			vfs_closeFile(((sIntrptListener*)ln->data)->file);
 			/* free the data */
 			kheap_free(ln->data);
 			return 0;
@@ -483,6 +484,9 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		}
 	}
 
+	if(servicesLoaded && firstProcLoaded)
+		vfsr_checkForMsgs();
+
 	/*vid_printf("umodeTime=%d%%\n",(s32)(100. / (cpu_rdtsc() / (double)umodeTime)));*/
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
@@ -553,9 +557,10 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
 			/* #PF */
 			if(stack.intrptNo == EX_PAGE_FAULT) {
-				vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
-						stack.eip,proc_getRunning()->pid);
-				paging_handlePageFault(cpu_getCR2());
+				if(!paging_handlePageFault(cpu_getCR2())) {
+					panic("Page fault for address=0x%08x @ 0x%x, process %d",cpu_getCR2(),
+							stack.eip,proc_getRunning()->pid);
+				}
 				break;
 			}
 

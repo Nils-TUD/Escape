@@ -470,7 +470,7 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	return pdirFrame;
 }
 
-void paging_handlePageFault(u32 address) {
+bool paging_handlePageFault(u32 address) {
 	sSLNode *n,*ln;
 	sCOW *cow;
 	sSLNode *ourCOW = NULL,*ourPrevCOW = NULL;
@@ -481,7 +481,7 @@ void paging_handlePageFault(u32 address) {
 	if(!pt->copyOnWrite || !pt->present) {
 		vid_printf("Could not handle page-fault\n");
 		/* TODO what to do here? */
-		return;
+		return false;
 	}
 
 	/* search through the copy-on-write-list wether there is another one who wants to get
@@ -528,6 +528,8 @@ void paging_handlePageFault(u32 address) {
 		/* unmap */
 		paging_unmap(KERNEL_STACK_TMP,1,false);
 	}
+
+	return true;
 }
 
 void paging_destroyPageDir(sProc *p) {

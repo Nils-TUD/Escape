@@ -220,7 +220,8 @@ static void test_vfs_readFileProcess0(void) {
 	test_caseSucceded();
 }
 
-static s32 dummyReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+static s32 dummyReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	UNUSED(pid);
 	UNUSED(node);
 	UNUSED(buffer);
 	UNUSED(offset);

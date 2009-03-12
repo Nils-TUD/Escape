@@ -53,7 +53,7 @@ sFuncCall *getStackTrace(void) {
 	u32* ebp = (u32*)getStackFrameStart();
 
 	/* determine the stack-bounds; we have a temp stack at the beginning */
-	if(ebp >= KERNEL_STACK && ebp < KERNEL_STACK + PAGE_SIZE) {
+	if((u32)ebp >= KERNEL_STACK && (u32)ebp < KERNEL_STACK + PAGE_SIZE) {
 		start = KERNEL_STACK;
 		end = KERNEL_STACK + PAGE_SIZE;
 	}
@@ -64,7 +64,7 @@ sFuncCall *getStackTrace(void) {
 
 	for(i = 0; i < MAX_STACK_DEPTH; i++) {
 		/* prevent page-fault */
-		if(ebp < start || ebp >= end)
+		if((u32)ebp < start || (u32)ebp >= end)
 			break;
 		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;
 		sym = ksym_getSymbolAt(frame->addr);

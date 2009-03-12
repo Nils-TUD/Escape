@@ -26,6 +26,8 @@ typedef u16 tPid;
 typedef u32 tVFSNodeNo;
 /* file-descriptor */
 typedef u16 tFD;
+/* inode-number */
+typedef u32 tInodeNo;
 
 /* TODO use <stddef.h>? */
 #define NULL (void*)0
@@ -85,6 +87,7 @@ typedef enum {false = 0, true = 1} bool;
 #define ERR_INVALID_IRQ_NUMBER		-20
 #define ERR_IRQ_LISTENER_MISSING	-21
 #define ERR_NO_CLIENT_WAITING		-22
+#define ERR_FS_NOT_FOUND			-23
 
 /**
  * Prints the last error-message

@@ -100,6 +100,10 @@ void printLastError(void) {
 			debugf("No client is currently waiting\n");
 			break;
 
+		case ERR_FS_NOT_FOUND:
+			debugf("Filesystem-service not found\n");
+			break;
+
 		default:
 			debugf("No error\n");
 			break;

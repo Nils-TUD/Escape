@@ -17,6 +17,6 @@ void vfsinfo_init(void);
 /**
  * The proc-read-handler
  */
-s32 vfsinfo_procReadHandler(sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfsinfo_procReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 #endif /* VFSINFO_H_ */

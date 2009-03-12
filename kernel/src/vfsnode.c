@@ -120,11 +120,8 @@ s32 vfsn_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 	pos = strchri(path,':');
 
 	/* no "protocol" given, so assume file: */
-	if(*(path + pos) == '\0') {
-		if(*path != '/')
-			panic("TODO use current path");
-		n = FILE_ROOT();
-	}
+	if(*(path + pos) == '\0')
+		return ERR_REAL_PATH;
 	else {
 		/* search our root node */
 		n = NODE_FIRST_CHILD(nodes);
@@ -141,6 +138,10 @@ s32 vfsn_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 		/* no matching root found? */
 		if(n == NULL)
 			return ERR_VFS_NODE_NOT_FOUND;
+
+		/* found file: ? */
+		if(n == FILE_ROOT())
+			return ERR_REAL_PATH;
 	}
 
 	/* skip slashes */
@@ -235,6 +236,7 @@ sVFSNode *vfsn_createNode(sVFSNode *parent,string name) {
 	node->data.def.cache = NULL;
 	node->data.def.size = 0;
 	node->data.def.pos = 0;
+	node->data.servuse.inodeNo = 0;
 	return node;
 }
 

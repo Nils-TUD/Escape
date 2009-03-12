@@ -66,7 +66,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 	vid_printf("GDT exchanged, paging enabled, video initialized");
 	vid_toLineEnd(vid_getswidth("DONE"));
-	vid_printf("\e[32m%s\e[0m\n","DONE");
+	vid_printf("\033f\x2%s\033r\x0\n","DONE");
 
 #if DEBUGGING
 	mboot_dbg_print();
@@ -80,7 +80,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	kheap_init();
 	paging_initCOWList();
 	vid_toLineEnd(vid_getswidth("DONE"));
-	vid_printf("\e[32m%s\e[0m","DONE");
+	vid_printf("\033f\x2%s\033r\x0\n","DONE");
 	dbg_stopTimer();
 
 	/* vfs */
@@ -89,7 +89,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vfs_init();
 	vfsinfo_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
-	vid_printf("\e[32m%s\e[0m","DONE");
+	vid_printf("\033f\x2%s\033r\x0\n","DONE");
 	dbg_stopTimer();
 
 	/* processes */
@@ -98,7 +98,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	proc_init();
 	sched_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
-	vid_printf("\e[32m%s\e[0m","DONE");
+	vid_printf("\033f\x2%s\033r\x0\n","DONE");
 	dbg_stopTimer();
 
 	/* idt */
@@ -106,7 +106,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("Initializing IDT...");
 	intrpt_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
-	vid_printf("\e[32m%s\e[0m","DONE");
+	vid_printf("\033f\x2%s\033r\x0\n","DONE");
 	dbg_stopTimer();
 
 #if DEBUGGING

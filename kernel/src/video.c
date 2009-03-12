@@ -15,6 +15,11 @@
 #define ROWS		25
 #define TAB_WIDTH	2
 
+/* special escape-codes */
+#define ESC_FG		'f'
+#define ESC_BG		'b'
+#define ESC_RESET	'r'
+
 /**
  * Handles a color-code
  *
@@ -41,18 +46,6 @@ static s8 hexCharsBig[] = "0123456789ABCDEF";
 static s8 hexCharsSmall[] = "0123456789abcdef";
 static u8 color = 0;
 static u8 oldBG = 0, oldFG = 0;
-
-/* escape-code-color to video-color */
-static u8 colorTable[] = {
-	BLACK,
-	RED,
-	GREEN,
-	ORANGE /* should be brown */,
-	BLUE,
-	MARGENTA,
-	CYAN,
-	GRAY
-};
 
 void vid_init(void) {
 	vid_removeBIOSCursor();
@@ -195,11 +188,9 @@ void vid_puts(cstring str) {
 	while((c = *str)) {
 		/* color-code? */
 		if(c == '\033' || c == '\e') {
-			if(*(str + 1) == '[') {
-				str += 2;
-				vid_handleColorCode(&str);
-				continue;
-			}
+			str++;
+			vid_handleColorCode(&str);
+			continue;
 		}
 
 		vid_putchar(c);
@@ -260,11 +251,8 @@ void vid_vprintf(cstring fmt,va_list ap) {
 		while ((c = *fmt++) != '%') {
 			/* color-code? */
 			if(c == '\033' || c == '\e') {
-				if(*fmt == '[') {
-					fmt++;
-					vid_handleColorCode(&fmt);
-					continue;
-				}
+				vid_handleColorCode(&fmt);
+				continue;
 			}
 
 			/* finished? */
@@ -276,12 +264,10 @@ void vid_vprintf(cstring fmt,va_list ap) {
 
 		/* read pad-character */
 		pad = 0;
-		if(*fmt == '0') {
-			padchar = '0';
+		padchar = ' ';
+		if(*fmt == '0' || *fmt == ' ') {
+			padchar = *fmt;
 			fmt++;
-		}
-		else {
-			padchar = ' ';
 		}
 
 		/* read pad-width */
@@ -346,60 +332,25 @@ void vid_vprintf(cstring fmt,va_list ap) {
 	}
 }
 
-/* TODO change escape-codes! */
 static void vid_handleColorCode(cstring *str) {
-	cstring fmt = *str;
-	while(1) {
-		/* read code */
-		u8 colCode = 0;
-		while(*fmt >= '0' && *fmt <= '9') {
-			colCode = colCode * 10 + (*fmt - '0');
-			fmt++;
-		}
-
-		switch(colCode) {
-			/* reset all */
-			case 0:
-				vid_setFGColor(WHITE);
-				vid_setBGColor(BLACK);
-				break;
-
-			/* foreground */
-			case 30 ... 37:
-				colCode = colorTable[colCode - 30];
-				vid_setFGColor(colCode);
-				break;
-
-			/* default foreground */
-			case 39:
-				vid_setFGColor(WHITE);
-				break;
-
-			/* background */
-			case 40 ... 47:
-				colCode = colorTable[colCode - 40];
-				vid_setBGColor(colCode);
-				break;
-
-			/* default background */
-			case 49:
-				vid_setBGColor(BLACK);
-				break;
-		}
-
-		/* end of code? */
-		if(*fmt == 'm') {
-			fmt++;
+	u8 *fmt = (u8*)*str;
+	u8 keycode = *fmt;
+	u8 value = *(fmt + 1);
+	switch(keycode) {
+		case ESC_RESET:
+			vid_setFGColor(WHITE);
+			vid_setBGColor(BLACK);
 			break;
-		}
-		/* we should stop on \0, too */
-		if(*fmt == '\0')
+		case ESC_FG:
+			vid_setFGColor(MIN(9,value));
 			break;
-		/* otherwise skip ';' */
-		fmt++;
+		case ESC_BG:
+			vid_setBGColor(MIN(9,value));
+			break;
 	}
 
-	*str = fmt;
+	/* skip escape code */
+	*str += 2;
 }
 
 static void vid_removeBIOSCursor(void) {

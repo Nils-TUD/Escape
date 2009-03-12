@@ -59,7 +59,7 @@ void test_caseStartv(cstring fmt,va_list ap) {
 }
 
 void test_caseSucceded(void) {
-	testPrintf("== >> \e[32m%s\e[0m ==\n\n","SUCCESS");
+	testPrintf("== >> \033f\x2%s\033r\x0 ==\n\n","SUCCESS");
 	totalSucc++;
 	succCount++;
 }
@@ -136,7 +136,7 @@ bool test_assertStr(string received,string expected) {
 
 void test_caseFailed(cstring fmt,...) {
 	va_list ap;
-	testPrintf("== >> \e[31m%s\e[0m : ","FAILED");
+	testPrintf("== >> \033f\x4%s\033r\x0 : ","FAILED");
 	va_start(ap,fmt);
 	testvPrintf(fmt,ap);
 	va_end(ap);
@@ -167,15 +167,15 @@ void test_start(void) {
 			modsFailed++;
 
 		testPrintf("---- Module \"%s\" finished. Summary: ----\n",modules[i]->name);
-		testPrintf("-- \e[32m%d\e[0m testcases successfull --\n",succCount);
-		testPrintf("-- \e[31m%d\e[0m testcases failed --\n",failCount);
+		testPrintf("-- \033f\x2%d\033r\x0 testcases successfull --\n",succCount);
+		testPrintf("-- \033f\x4%d\033r\x0 testcases failed --\n",failCount);
 		testPrintf("----------------------------------\n\n");
 	}
 
 	testPrintf("====== All modules done ======\n");
-	testPrintf("== \e[32m%d\e[0m modules successfull ==\n",modsSucc);
-	testPrintf("== \e[31m%d\e[0m modules failed ==\n",modsFailed);
-	testPrintf("== \e[32m%d\e[0m testcases successfull ==\n",totalSucc);
-	testPrintf("== \e[31m%d\e[0m testcases failed ==\n",totalFail);
+	testPrintf("== \033f\x2%d\033r\x0 modules successfull ==\n",modsSucc);
+	testPrintf("== \033f\x4%d\033r\x0 modules failed ==\n",modsFailed);
+	testPrintf("== \033f\x2%d\033r\x0 testcases successfull ==\n",totalSucc);
+	testPrintf("== \033f\x4%d\033r\x0 testcases failed ==\n",totalFail);
 	testPrintf("============================\n");
 }

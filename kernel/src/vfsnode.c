@@ -69,10 +69,12 @@ sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo) {
 	return nodes + nodeNo;
 }
 
-string vfsn_getPath(sVFSNode *node) {
+string vfsn_getPath(tVFSNodeNo nodeNo) {
 	static s8 path[MAX_PATH_LEN];
 	u32 nlen,len = 0;
+	sVFSNode *node = nodes + nodeNo;
 	sVFSNode *n = node;
+
 	ASSERT(node != NULL,"node = NULL");
 	/* the root-node of the whole vfs has no path */
 	ASSERT(n->parent != NULL,"node->parent == NULL");

@@ -65,10 +65,10 @@ sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo);
  * Determines the path for the given node. Note that static memory will be used for that!
  * So you have to copy the path to another location if you want to keep the path.
  *
- * @param node the node
+ * @param nodeNo the node-number
  * @return the path
  */
-string vfsn_getPath(sVFSNode *node);
+string vfsn_getPath(tVFSNodeNo nodeNo);
 
 /**
  * Resolves the given path to a VFS-node

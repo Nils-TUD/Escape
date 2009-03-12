@@ -72,29 +72,23 @@ static bool test_vfsn_resolvePathCpy(cstring a,cstring b) {
 
 static void test_vfsn_getPath(void) {
 	tVFSNodeNo no;
-	sVFSNode *node;
 
 	test_caseStart("Testing vfsn_getPath()");
 
 	vfsn_resolvePath("/",&no);
-	node = vfsn_getNode(no);
-	test_assertStr(vfsn_getPath(node),(string)"file:");
+	test_assertStr(vfsn_getPath(no),(string)"file:");
 
 	vfsn_resolvePath("file:/",&no);
-	node = vfsn_getNode(no);
-	test_assertStr(vfsn_getPath(node),(string)"file:");
+	test_assertStr(vfsn_getPath(no),(string)"file:");
 
 	vfsn_resolvePath("system:",&no);
-	node = vfsn_getNode(no);
-	test_assertStr(vfsn_getPath(node),(string)"system:");
+	test_assertStr(vfsn_getPath(no),(string)"system:");
 
 	vfsn_resolvePath("system:/processes",&no);
-	node = vfsn_getNode(no);
-	test_assertStr(vfsn_getPath(node),(string)"system:/processes");
+	test_assertStr(vfsn_getPath(no),(string)"system:/processes");
 
 	vfsn_resolvePath("system:/processes/0",&no);
-	node = vfsn_getNode(no);
-	test_assertStr(vfsn_getPath(node),(string)"system:/processes/0");
+	test_assertStr(vfsn_getPath(no),(string)"system:/processes/0");
 
 	test_caseSucceded();
 }

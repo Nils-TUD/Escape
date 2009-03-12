@@ -46,8 +46,7 @@ MULTIBOOT_CHECKSUM			equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 ; general constants
 ; TODO better way which uses the defines from paging.h?
 PAGE_SIZE								equ 4096
-KERNEL_STACK_SIZE				equ PAGE_SIZE
-KERNEL_STACK						equ (0xFFFFFFFF - 0x400000 - KERNEL_STACK_SIZE) + 1
+TMP_STACK_SIZE					equ PAGE_SIZE
 USER_STACK							equ 0xC0000000
 
 ; process save area offsets
@@ -453,7 +452,6 @@ setupGDTEntriesEnd:
 
 [section .bss]
 
-; TODO size ok?
-resb 0x1000
+resb TMP_STACK_SIZE
 kernelStack:
 	; our temporary kernel stack

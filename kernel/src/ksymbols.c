@@ -9,7 +9,11 @@
 #include "../h/video.h"
 
 static sSymbol ksymbols[] = {
-	#include "../../build/ksymbols.txt"
+#if TESTING
+#	include "../../build/tsymbols.txt"
+#else
+#	include "../../build/ksymbols.txt"
+#endif
 };
 
 void ksym_print(void) {

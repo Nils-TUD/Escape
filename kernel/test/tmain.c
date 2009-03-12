@@ -32,10 +32,6 @@
 #include "tvfs.h"
 #include "tvfsnode.h"
 
-/* TODO just temporary! */
-u32 entryPoint;
-bool procsReady = false;
-
 s32 main(sMultiBoot *mbp,u32 magic) {
 	UNUSED(magic);
 
@@ -91,8 +87,9 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 	dbg_stopTimer();
 
-	vid_printf("Free frames=%d, pages mapped=%d\n",mm_getFreeFrmCount(MM_DMA | MM_DEF),
-			paging_dbg_getPageCount());
+	vid_printf("Free frames=%d, pages mapped=%d, free mem=%d KiB\n",
+			mm_getFreeFrmCount(MM_DMA | MM_DEF),paging_dbg_getPageCount(),
+			mm_getFreeFrmCount(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 
 
 	/* start tests */

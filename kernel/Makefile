@@ -27,6 +27,7 @@ LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILD)/kernel_lib_%.o,$(LSRC))
 SYMBOLS=$(BUILD)/ksymbols.txt
 SYMBOLSCRIPT=../tools/gensymbols.sh
 SYMBOLSRC=src/ksymbols.c
+SYMBOLOBJ=$(patsubst src/%.c,$(BUILD)/%.o,$(SYMBOLSRC))
 
 SERVDIRS = $(filter-out $(wildcard *.*) ../services/Makefile,$(wildcard ../services/*))
 SERVDIRNAMES = $(patsubst ../services/%,%,$(SERVDIRS))
@@ -47,13 +48,13 @@ $(BIN):	$(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@echo "===== BUILDING SYMBOL-FILE =====";
 		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "===== COMPILING SYMBOL-C-FILE =====";
-		$(CC) $(CFLAGS) -o $(patsubst src/%.c,$(BUILD)/%.o,$(SYMBOLSRC)) -c $(SYMBOLSRC)
+		$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "===== LINKING AGAIN =====";
 		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(AOBJEND);
 		@echo "===== BUILDING SYMBOL-FILE =====";
 		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "===== COMPILING SYMBOL-C-FILE =====";
-		$(CC) $(CFLAGS) -o $(patsubst src/%.c,$(BUILD)/%.o,$(SYMBOLSRC)) -c $(SYMBOLSRC)
+		$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "===== LINKING AGAIN =====";
 		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(AOBJEND);
 		@echo "===== COPYING BINARY =====";
@@ -107,5 +108,5 @@ $(DEP):	$(SERVICES) $(CSRC) $(LSRC)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(DEP) $(BIN) $(COBJ) $(AOBJ) $(AOBJEND) $(LOBJ) $(SYMBOLS) \
+		rm -f $(DEP) $(BIN) $(COBJ) $(AOBJ) $(AOBJEND) $(LOBJ) $(SYMBOLS) $(SYMBOLOBJ) \
 			$(BUILD)/tools_gensymbols.c $(BUILD)/tools_gensymbols.o $(SERVICES);

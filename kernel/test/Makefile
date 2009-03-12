@@ -10,7 +10,7 @@ LIB=../../lib
 
 CC = gcc
 CFLAGS = -g -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CWFLAGS) \
-	-D DEBUGGING=1 -D IN_KERNEL=1 -I$(LIB)/h
+	-D DEBUGGING=1 -D TESTING=1 -D IN_KERNEL=1 -I$(LIB)/h
 
 # sources
 TSRC=$(wildcard *.c)

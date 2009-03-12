@@ -43,4 +43,4 @@ $(DEP):	$(CSRC)
 -include $(DEP)
 
 clean:
-		rm -f $(BIN) $(DUMP) $(COBJ)
+		rm -f $(BIN) $(DUMP) $(COBJ) $(DEP)

@@ -63,4 +63,4 @@ $(TDEP): $(TSRCS)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(OBJS) $(LOBJ) $(LIB) $(DEP) $(TDEP)
+		rm -f $(OBJS) $(LOBJ) $(LIB) $(DEP) $(TDEP) $(STARTO)

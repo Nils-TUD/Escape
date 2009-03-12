@@ -44,58 +44,28 @@ void panic(cstring fmt,...) {
 	halt();
 }
 
-/**
- * Memory address:   Stack elements:
- *
- *                +----------------------------+
- *  0x105000      | Parameter 1 for routine 1  | \
- *                +----------------------------+  |
- *  0x104FFC      | First callers return addr. |   >  Stack frame 1
- *                +----------------------------+  |
- *  0x104FF8      | First callers EBP          | /
- *                +----------------------------+
- *  0x104FF4   +->| Parameter 2 for routine 2  | \  <-- Routine 1's EBP
- *             |  +----------------------------+  |
- *  0x104FF0   |  | Parameter 1 for routine 2  |  |
- *             |  +----------------------------+  |
- *  0x104FEC   |  | Return address, routine 1  |  |
- *             |  +----------------------------+  |
- *  0x104FE8   +--| EBP value for routine 1    |   >  Stack frame 2
- *                +----------------------------+  |
- *  0x104FE4   +->| Local data                 |  | <-- Routine 2's EBP
- *             |  +----------------------------+  |
- *  0x104FE0   |  | Local data                 |  |
- *             |  +----------------------------+  |
- *  0x104FDC   |  | Local data                 | /
- *             |  +----------------------------+
- *  0x104FD8   |  | Parameter 1 for routine 3  | \
- *             |  +----------------------------+  |
- *  0x104FD4   |  | Return address, routine 2  |  |
- *             |  +----------------------------+   >  Stack frame 3
- *  0x104FD0   +--| EBP value for routine 2    |  |
- *                +----------------------------+  |
- *  0x104FCC   +->| Local data                 | /  <-- Routine 3's EBP
- *             |  +----------------------------+
- *  0x104FC8   |  | Return address, routine 3  | \
- *             |  +----------------------------+  |
- *  0x104FC4   +--| EBP value for routine 3    |  |
- *                +----------------------------+   >  Stack frame 4
- *  0x104FC0      | Local data                 |  | <-- Current EBP
- *                +----------------------------+  |
- *  0x104FBC      | Local data                 | /
- *                +----------------------------+
- *  0x104FB8      |                            |    <-- Current ESP
- *                 \/\/\/\/\/\/\/\/\/\/\/\/\/\/
- */
 sFuncCall *getStackTrace(void) {
-	/* TODO we need a kmalloc here :P */
 	static sFuncCall frames[MAX_STACK_DEPTH];
+	u32 start,end;
 	u32 i;
 	sFuncCall *frame = &frames[0];
 	sSymbol *sym;
 	u32* ebp = (u32*)getStackFrameStart();
-	/* TODO we assume here that we always have kernelStack as limit! */
-	for(i = 0; i < MAX_STACK_DEPTH && ebp < &kernelStack; i++) {
+
+	/* determine the stack-bounds; we have a temp stack at the beginning */
+	if(ebp >= KERNEL_STACK && ebp < KERNEL_STACK + PAGE_SIZE) {
+		start = KERNEL_STACK;
+		end = KERNEL_STACK + PAGE_SIZE;
+	}
+	else {
+		start = ((u32)&kernelStack) - TMP_STACK_SIZE;
+		end = (u32)&kernelStack;
+	}
+
+	for(i = 0; i < MAX_STACK_DEPTH; i++) {
+		/* prevent page-fault */
+		if(ebp < start || ebp >= end)
+			break;
 		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;
 		sym = ksym_getSymbolAt(frame->addr);
 		frame->funcAddr = sym->address;
@@ -103,6 +73,7 @@ sFuncCall *getStackTrace(void) {
 		ebp = (u32*)*ebp;
 		frame++;
 	}
+
 	/* terminate */
 	frame->addr = 0;
 	return &frames[0];

@@ -84,6 +84,9 @@
 /* temporary stack for cloning the stack */
 #define KERNEL_STACK_TMP	(KERNEL_STACK - PAGE_SIZE)
 
+/* the size of the temporary stack we use at the beginning */
+#define TMP_STACK_SIZE		PAGE_SIZE
+
 /* flags for paging_map() */
 #define PG_WRITABLE			1
 #define PG_SUPERVISOR		2

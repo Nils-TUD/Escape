@@ -15,6 +15,11 @@
 #define MAX_FD_COUNT		16
 #define MAX_PROC_NAME_LEN	15
 
+/* use an invalid pid to identify the kernel */
+#define KERNEL_PID			PROC_COUNT + 1
+/* for marking unused */
+#define INVALID_PID			PROC_COUNT + 2
+
 /* the signals
 #define SIG_TERM		1
 #define SIG_KILL		2

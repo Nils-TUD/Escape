@@ -449,8 +449,8 @@ static void intrpt_handleListener(sSLList *list) {
 	for(node = sll_begin(list); node != NULL; node = node->next) {
 		l = (sIntrptListener*)node->data;
 		while(l->pending > 0) {
-			/* send message (use PROC_COUNT to write to the service) */
-			vfs_writeFile(PROC_COUNT,vfs_getFile(l->file),l->message,l->msgLen);
+			/* send message */
+			vfs_writeFile(KERNEL_PID,vfs_getFile(l->file),l->message,l->msgLen);
 			l->pending--;
 		}
 	}

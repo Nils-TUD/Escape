@@ -46,14 +46,11 @@ struct sVFSNode {
 	sVFSNode *firstChild;
 	sVFSNode *lastChild;
 	fRead readHandler;
+	tPid owner;
 	union {
-		/* for services */
-		struct {
-			sProc *proc;
-		} service;
 		/* for service-usages */
 		struct {
-			sProc *locked;
+			tPid locked;
 			sSLList *sendList;
 			sSLList *recvList;
 		} servuse;
@@ -129,12 +126,13 @@ s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd);
  * Reads max. count bytes from the given file into the given buffer and returns the number
  * of read bytes.
  *
+ * @param pid will be used to check wether the service writes or a service-user
  * @param e the file
  * @param buffer the buffer to write to
  * @param count the max. number of bytes to read
  * @return the number of bytes read
  */
-s32 vfs_readFile(sGFTEntry *e,u8 *buffer,u32 count);
+s32 vfs_readFile(tPid pid,sGFTEntry *e,u8 *buffer,u32 count);
 
 /**
  * Writes count bytes from the given buffer into the given file and returns the number of written
@@ -185,27 +183,28 @@ void vfs_closeIntrptMsgNode(tFile f);
  * Checks wether there is a message for the given process. That if the process is a service
  * and should serve a client or if the process has got a message from a service.
  *
- * @param p the process
+ * @param pid the process-id
  * @return true if there is a message
  */
-bool vfs_msgAvailableFor(sProc *p);
+bool vfs_msgAvailableFor(tPid pid);
 
 /**
  * For services: Looks wether a client wants to be served and return the node-number
  *
- * @param p the service
+ * @param pid the service-process-id
  * @param no the node-number
  * @return the error-code or the node-number of the client
  */
-s32 vfs_getClient(sProc *p,tVFSNodeNo no);
+s32 vfs_getClient(tPid pid,tVFSNodeNo no);
 
 /**
  * Opens a file for a client of the given service-node
  *
+ * @param pid the process to use
  * @param no the service-node-number
  * @return the error-code (negative) or the file-descriptor to use
  */
-s32 vfs_openClient(tVFSNodeNo no);
+s32 vfs_openClient(tPid pid,tVFSNodeNo no);
 
 /**
  * Removes the service with given node-number

@@ -306,6 +306,7 @@ static void sysc_read(sSysCallStack *stack) {
 	tFD fd = (tFD)stack->arg1;
 	void *buffer = (void*)stack->arg2;
 	u32 count = stack->arg3;
+	sProc *p = proc_getRunning();
 	s32 readBytes;
 	s32 e;
 
@@ -327,7 +328,7 @@ static void sysc_read(sSysCallStack *stack) {
 	}
 
 	/* read */
-	readBytes = vfs_readFile((sGFTEntry*)e,buffer,count);
+	readBytes = vfs_readFile(p->pid,(sGFTEntry*)e,buffer,count);
 	if(readBytes < 0) {
 		SYSC_ERROR(stack,readBytes);
 		return;
@@ -340,6 +341,7 @@ static void sysc_write(sSysCallStack *stack) {
 	tFD fd = (tFD)stack->arg1;
 	void *buffer = (void*)stack->arg2;
 	u32 count = stack->arg3;
+	sProc *p = proc_getRunning();
 	s32 writtenBytes;
 	s32 e;
 	/* validate count and buffer */
@@ -360,7 +362,7 @@ static void sysc_write(sSysCallStack *stack) {
 	}
 
 	/* read */
-	writtenBytes = vfs_writeFile(proc_getRunning()->pid,(sGFTEntry*)e,buffer,count);
+	writtenBytes = vfs_writeFile(p->pid,(sGFTEntry*)e,buffer,count);
 	if(writtenBytes < 0) {
 		SYSC_ERROR(stack,writtenBytes);
 		return;
@@ -443,6 +445,7 @@ static void sysc_unregService(sSysCallStack *stack) {
 
 static void sysc_getClient(sSysCallStack *stack) {
 	tVFSNodeNo no = stack->arg1;
+	sProc *p = proc_getRunning();
 	s32 res;
 
 	/* check argument */
@@ -451,7 +454,7 @@ static void sysc_getClient(sSysCallStack *stack) {
 		return;
 	}
 
-	res = vfs_openClient(no);
+	res = vfs_openClient(p->pid,no);
 	if(res < 0) {
 		SYSC_ERROR(stack,res);
 		return;
@@ -618,7 +621,7 @@ static void sysc_sleep(sSysCallStack *stack) {
 	UNUSED(stack);
 
 	p = proc_getRunning();
-	msgAv = vfs_msgAvailableFor(p);
+	msgAv = vfs_msgAvailableFor(p->pid);
 	if(!msgAv) {
 		sched_setBlocked(p);
 		proc_switch();

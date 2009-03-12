@@ -79,11 +79,11 @@ static void test_vfs_readFileSystem(void) {
 
 	/* skip "." and ".." */
 	e = (sGFTEntry*)vfs_fdToFile(fd);
-	vfs_readFile(e,(u8*)&node,sizeof(sVFSNodePub));
-	vfs_readFile(e,(u8*)&node,sizeof(sVFSNodePub));
+	vfs_readFile(KERNEL_PID,e,(u8*)&node,sizeof(sVFSNodePub));
+	vfs_readFile(KERNEL_PID,e,(u8*)&node,sizeof(sVFSNodePub));
 
 	/* read "processes" */
-	if((res = vfs_readFile(e,(u8*)&node,sizeof(sVFSNodePub))) != sizeof(sVFSNodePub)) {
+	if((res = vfs_readFile(KERNEL_PID,e,(u8*)&node,sizeof(sVFSNodePub))) != sizeof(sVFSNodePub)) {
 		vfs_closeFile(e);
 		test_caseFailed("Unable to read with fd=%d! Expected %d bytes, read %d",
 				fd,sizeof(sVFSNodePub),res);
@@ -144,7 +144,7 @@ static void test_vfs_readFileProcess0(void) {
 
 	/* read */
 	e = (sGFTEntry*)vfs_fdToFile(fd);
-	if((res = vfs_readFile(e,(u8*)&proc,sizeof(sProcPub))) != sizeof(sProcPub)) {
+	if((res = vfs_readFile(KERNEL_PID,e,(u8*)&proc,sizeof(sProcPub))) != sizeof(sProcPub)) {
 		vfs_closeFile(e);
 		test_caseFailed("Unable to read with fd=%d! Expected %d bytes, read %d",
 				fd,sizeof(sProcPub),res);

@@ -61,7 +61,7 @@ bool vfsn_isValidNodeNo(tVFSNodeNo nodeNo) {
 
 bool vfsn_isOwnServiceNode(sVFSNode *node) {
 	sProc *p = proc_getRunning();
-	return node->data.service.proc == p && node->type == T_SERVICE;
+	return node->owner == p->pid && node->type == T_SERVICE;
 }
 
 sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo) {
@@ -223,6 +223,7 @@ sVFSNode *vfsn_createNode(sVFSNode *parent,string name) {
 
 	/* ensure that all values are initialized properly */
 	node->name = name;
+	node->owner = INVALID_PID;
 	node->refCount = 0;
 	node->next = NULL;
 	node->prev = NULL;
@@ -268,12 +269,13 @@ sVFSNode *vfsn_createInfo(sVFSNode *parent,string name,fRead handler) {
 	return node;
 }
 
-sVFSNode *vfsn_createServiceNode(sVFSNode *parent,string name,u8 type) {
+sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,string name,u8 type) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
 	/* TODO */
+	node->owner = pid;
 	node->type = T_SERVICE;
 	node->flags = VFS_NOACCESS | type;
 	node->readHandler = NULL;
@@ -285,10 +287,11 @@ sVFSNode *vfsn_createServiceUseNode(sVFSNode *parent,string name,fRead handler) 
 	if(node == NULL)
 		return NULL;
 
+	node->owner = proc_getRunning()->pid;
 	node->type = T_SERVUSE;
 	node->flags = VFS_READ | VFS_WRITE;
 	node->readHandler = handler;
-	node->data.servuse.locked = NULL;
+	node->data.servuse.locked = INVALID_PID;
 	return node;
 }
 
@@ -424,9 +427,8 @@ void vfsn_dbg_printNode(sVFSNode *node) {
 		vid_printf("\tlastChild: 0x%x\n",node->lastChild);
 		vid_printf("\tnext: 0x%x\n",node->next);
 		vid_printf("\tprev: 0x%x\n",node->prev);
-		if(node->type == T_SERVICE)
-			vid_printf("\tProcess: 0x%x\n",node->data.service.proc);
-		else if(node->type == T_SERVUSE) {
+		vid_printf("\towner: %d\n",node->owner);
+		if(node->type == T_SERVUSE) {
 			vid_printf("\tSendList: 0x%x\n",node->data.servuse.sendList);
 			vid_printf("\tRecvList: 0x%x\n",node->data.servuse.recvList);
 		}

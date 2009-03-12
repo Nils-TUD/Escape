@@ -54,8 +54,9 @@ static void test_vfs(void) {
 
 static void test_vfs_readFileSystem(void) {
 	tVFSNodeNo nodeNo,procNode;
-	tFD fd;
+	s32 fd;
 	s32 res;
+	tFile file;
 	sVFSNodePub node;
 	sGFTEntry *e;
 	u32 oldHeap,oldGFT,newHeap,newGFT;
@@ -71,9 +72,24 @@ static void test_vfs_readFileSystem(void) {
 		return;
 	}
 
+	/* get free fd */
+	fd = proc_getFreeFd();
+	if(fd < 0) {
+		test_caseFailed("Unable to get free fd!");
+		return;
+	}
+
 	/* open */
-	if(vfs_openFile(VFS_READ,nodeNo,&fd) < 0) {
+	file = vfs_openFile(VFS_READ,nodeNo);
+	if(file < 0) {
 		test_caseFailed("Unable to open 'system:'!");
+		return;
+	}
+
+	/* assoc fd with file */
+	res = proc_assocFd(fd,file);
+	if(res < 0) {
+		test_caseFailed("Unable to assoc fd!");
 		return;
 	}
 
@@ -84,6 +100,7 @@ static void test_vfs_readFileSystem(void) {
 
 	/* read "processes" */
 	if((res = vfs_readFile(KERNEL_PID,e,(u8*)&node,sizeof(sVFSNodePub))) != sizeof(sVFSNodePub)) {
+		proc_unassocFD(fd);
 		vfs_closeFile(e);
 		test_caseFailed("Unable to read with fd=%d! Expected %d bytes, read %d",
 				fd,sizeof(sVFSNodePub),res);
@@ -93,13 +110,23 @@ static void test_vfs_readFileSystem(void) {
 	/* check data */
 	vfsn_resolvePath("system:/processes",&procNode);
 	if(strcmp((cstring)node.name,"processes") != 0) {
+		proc_unassocFD(fd);
 		vfs_closeFile(e);
 		test_caseFailed("Node-name='%s', expected 'processes'",node.name);
 		return;
 	}
 	if(node.nodeNo != procNode) {
+		proc_unassocFD(fd);
 		vfs_closeFile(e);
 		test_caseFailed("nodeNo=%d, expected %d",node.nodeNo);
+		return;
+	}
+
+	/* unassoc fd */
+	tFile fileNo = proc_unassocFD(fd);
+	if(fileNo < 0) {
+		vfs_closeFile(e);
+		test_caseFailed("Unable to unassoc the fd!");
 		return;
 	}
 
@@ -118,8 +145,9 @@ static void test_vfs_readFileSystem(void) {
 
 static void test_vfs_readFileProcess0(void) {
 	tVFSNodeNo nodeNo;
-	tFD fd;
+	s32 fd;
 	s32 res;
+	tFile file;
 	sProcPub proc;
 	sProc *p0 = proc_getByPid(0);
 	sGFTEntry *e;
@@ -136,15 +164,31 @@ static void test_vfs_readFileProcess0(void) {
 		return;
 	}
 
+	/* get free fd */
+	fd = proc_getFreeFd();
+	if(fd < 0) {
+		test_caseFailed("Unable to get free fd!");
+		return;
+	}
+
 	/* open */
-	if(vfs_openFile(VFS_READ,nodeNo,&fd) < 0) {
+	file = vfs_openFile(VFS_READ,nodeNo);
+	if(file < 0) {
 		test_caseFailed("Unable to open 'system:/processes/0'!");
+		return;
+	}
+
+	/* assoc fd with file */
+	res = proc_assocFd(fd,file);
+	if(res < 0) {
+		test_caseFailed("Unable to assoc fd!");
 		return;
 	}
 
 	/* read */
 	e = (sGFTEntry*)vfs_fdToFile(fd);
 	if((res = vfs_readFile(KERNEL_PID,e,(u8*)&proc,sizeof(sProcPub))) != sizeof(sProcPub)) {
+		proc_unassocFD(fd);
 		vfs_closeFile(e);
 		test_caseFailed("Unable to read with fd=%d! Expected %d bytes, read %d",
 				fd,sizeof(sProcPub),res);
@@ -152,12 +196,20 @@ static void test_vfs_readFileProcess0(void) {
 	}
 
 	/* check data */
-	if(!test_assertInt(proc.textPages,p0->textPages)) {vfs_closeFile(e); return;}
-	if(!test_assertInt(proc.dataPages,p0->dataPages)) {vfs_closeFile(e); return;}
-	if(!test_assertInt(proc.stackPages,p0->stackPages)) {vfs_closeFile(e); return;}
-	if(!test_assertInt(proc.pid,p0->pid)) {vfs_closeFile(e); return;}
-	if(!test_assertInt(proc.parentPid,p0->parentPid)) {vfs_closeFile(e); return;}
-	if(!test_assertInt(proc.state,p0->state)) {vfs_closeFile(e); return;}
+	if(!test_assertInt(proc.textPages,p0->textPages)) {proc_unassocFD(fd); vfs_closeFile(e); return;}
+	if(!test_assertInt(proc.dataPages,p0->dataPages)) {proc_unassocFD(fd); vfs_closeFile(e); return;}
+	if(!test_assertInt(proc.stackPages,p0->stackPages)) {proc_unassocFD(fd); vfs_closeFile(e); return;}
+	if(!test_assertInt(proc.pid,p0->pid)) {proc_unassocFD(fd); vfs_closeFile(e); return;}
+	if(!test_assertInt(proc.parentPid,p0->parentPid)) {proc_unassocFD(fd); vfs_closeFile(e); return;}
+	if(!test_assertInt(proc.state,p0->state)) {proc_unassocFD(fd); vfs_closeFile(e); return;}
+
+	/* unassoc fd */
+	tFile fileNo = proc_unassocFD(fd);
+	if(fileNo < 0) {
+		vfs_closeFile(e);
+		test_caseFailed("Unable to unassoc the fd!");
+		return;
+	}
 
 	/* close */
 	vfs_closeFile(e);

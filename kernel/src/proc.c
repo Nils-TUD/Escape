@@ -166,21 +166,31 @@ tFile proc_fdToFile(tFD fd) {
 	return fileNo;
 }
 
-s32 proc_openFile(tFile fileNo) {
+s32 proc_getFreeFd(void) {
 	tFD i;
 	tFile *fds = procs[pi].fileDescs;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(fds[i] == -1) {
-			fds[i] = fileNo;
+		if(fds[i] == -1)
 			return i;
-		}
 	}
 
 	return ERR_MAX_PROC_FDS;
 }
 
+s32 proc_assocFd(tFD fd,tFile fileNo) {
+	if(fd >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	if(procs[pi].fileDescs[fd] != -1)
+		return ERR_INVALID_FD;
+
+	procs[pi].fileDescs[fd] = fileNo;
+	return 0;
+}
+
 s32 proc_dupFd(tFD fd) {
 	tFile f;
+	s32 nfd;
 	/* check fd */
 	if(fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
@@ -189,8 +199,12 @@ s32 proc_dupFd(tFD fd) {
 	if(f == -1)
 		return ERR_INVALID_FD;
 
-	/* we'll get a new fd for the same file */
-	return proc_openFile(f);
+	nfd = proc_getFreeFd();
+	if(nfd < 0)
+		return nfd;
+
+	procs[pi].fileDescs[nfd] = f;
+	return 0;
 }
 
 s32 proc_redirFd(tFD src,tFD dst) {
@@ -213,7 +227,7 @@ s32 proc_redirFd(tFD src,tFD dst) {
 	return 0;
 }
 
-tFile proc_closeFile(tFD fd) {
+tFile proc_unassocFD(tFD fd) {
 	tFile fileNo;
 	if(fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;

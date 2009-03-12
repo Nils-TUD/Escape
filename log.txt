@@ -6,20 +6,20 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x211000, shndx=0x10
+ELF: num=19, size=40, addr=0x221000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000002b0e1e0
+Clock cycles: 0x0000000002c00874
 Initializing VFS...DONE
-Clock cycles: 0x00000000001c0536
+Clock cycles: 0x00000000001bf162
 Initializing process-management...DONE
-Clock cycles: 0x000000000013d853
+Clock cycles: 0x000000000015c789
 Initializing IDT...DONE
-Clock cycles: 0x000000000011695b
+Clock cycles: 0x00000000000faa46
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
 Got interrupt 39 (<unknown>) @ 0x0
 Service keyboard has pid 1
@@ -28,15 +28,15 @@ Service vterm has pid 4
 Welcome to Escape v0.1!
 Try 'help' to see the current features :)
 
-# echo huhu
-huhu 
+# echo ich bisn
+ich bisn 
 # ps
 PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  006	 	  	  Ready  	 	  0x00008039387db004	  init
-01	  	  00	  	  007	 	  	  Blocked	 	  0x00000000018e5d5b	  keyboard
-02	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000680bf5	  speaker
-03	  	  00	  	  011	 	  	  Ready  	 	  0x00000000037ced47	  video
-04	  	  00	  	  012	 	  	  Blocked	 	  0x0000000003e3cdea	  vterm
-05	  	  00	  	  010	 	  	  Running	 	  0x0000000000f2138a	  shell
+00	  	  00	  	  006	 	  	  Ready  	 	  0x00006bd135717d4d	  init
+01	  	  00	  	  007	 	  	  Blocked	 	  0x000000000252fbd3	  keyboard
+02	  	  00	  	  007	 	  	  Blocked	 	  0x000000000076efbd	  speaker
+03	  	  00	  	  011	 	  	  Blocked	 	  0x0000000003f17352	  video
+04	  	  00	  	  012	 	  	  Blocked	 	  0x00000000042f7347	  vterm
+05	  	  00	  	  010	 	  	  Running	 	  0x000000000106a9ac	  shell
 
 # 

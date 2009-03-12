@@ -152,24 +152,18 @@ s32 vfs_fdToFile(tFD fd) {
 	return (s32)e;
 }
 
-s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd) {
-	s32 res;
+tFile vfs_openFile(u8 flags,tVFSNodeNo nodeNo) {
 	sGFTEntry *e;
 
 	/* determine free file */
 	tFile f = vfs_getFreeFile(flags,nodeNo);
 	if(f < 0)
-		return res;
+		return f;
 
 	/* open file */
 	e = globalFileTable + f;
-	res = proc_openFile(f);
-	if(res < 0)
-		return res;
-
 	vfs_openFileImpl(e,flags,nodeNo);
-	*fd = res;
-	return 0;
+	return f;
 }
 
 static void vfs_openFileImpl(sGFTEntry *e,u8 flags,tVFSNodeNo nodeNo) {
@@ -520,18 +514,13 @@ s32 vfs_getClient(tPid pid,tVFSNodeNo no) {
 
 s32 vfs_openClient(tPid pid,tVFSNodeNo no) {
 	s32 err;
-	tFD fd;
 	tVFSNodeNo client = vfs_getClient(pid,no);
 	/* error? */
 	if(!vfsn_isValidNodeNo(client))
 		return client;
 
-	/* open a file for it and return the file-descriptor so that the service can read and write
-	 * with it */
-	err = vfs_openFile(VFS_READ | VFS_WRITE,client,&fd);
-	if(err < 0)
-		return err;
-	return fd;
+	/* open a file for it so that the service can read and write with it */
+	return vfs_openFile(VFS_READ | VFS_WRITE,client);
 }
 
 s32 vfs_removeService(tPid pid,tVFSNodeNo nodeNo) {

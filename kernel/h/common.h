@@ -28,6 +28,8 @@ typedef u32 tVFSNodeNo;
 typedef s32 tFile;
 /* file-descriptor */
 typedef u16 tFD;
+/* inode-number */
+typedef u32 tInodeNo;
 
 
 /* TODO use <stddef.h>? */

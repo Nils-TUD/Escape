@@ -39,25 +39,38 @@ struct sVFSNode {
 	string name;
 	u8 type;
 	u8 flags;
-	u8 refCount;	/* number of open files for this node */
+	/* number of open files for this node */
+	u8 refCount;
+	/* for the vfs-structure */
 	sVFSNode *parent;
 	sVFSNode *prev;
 	sVFSNode *next;
 	sVFSNode *firstChild;
 	sVFSNode *lastChild;
+	/* the handler that performs a read-operation on this node */
 	fRead readHandler;
+	/* the owner of this node: used for service-usages */
 	tPid owner;
 	union {
 		/* for service-usages */
 		struct {
+			/* for usages of the fs-service: the inode-number and position */
+			/* we need this for building messages for the fs */
+			tInodeNo inodeNo;
+			u32 position;
+			/* we have to lock reads */
 			tPid locked;
+			/* a list for sending messages to the service */
 			sSLList *sendList;
+			/* a list for reading messages from the service */
 			sSLList *recvList;
 		} servuse;
 		/* for all other nodes-types */
 		struct {
-			u16 size;			/* size of the buffer */
-			u16 pos;			/* currently used size */
+			/* size of the buffer */
+			u16 size;
+			/* currently used size */
+			u16 pos;
 			void *cache;
 		} def;
 	} data;
@@ -117,10 +130,9 @@ tFile vfs_inheritFile(tFile file);
  *
  * @param flags wether it is a virtual or real file and wether you want to read or write
  * @param nodeNo the node-number (in the virtual or real environment)
- * @param fd will be set to the file-descriptor if successfull
- * @return 0 if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FD)
+ * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FD)
  */
-s32 vfs_openFile(u8 flags,tVFSNodeNo nodeNo,tFD *fd);
+tFile vfs_openFile(u8 flags,tVFSNodeNo nodeNo);
 
 /**
  * Reads max. count bytes from the given file into the given buffer and returns the number

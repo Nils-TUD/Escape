@@ -269,8 +269,8 @@ static void sysc_open(sSysCallStack *stack) {
 	s8 path[255];
 	u8 flags;
 	tVFSNodeNo nodeNo;
-	tFD fd;
-	s32 err;
+	tFile file;
+	s32 err,fd;
 
 	/* copy path */
 	copyUserToKernel((u8*)stack->arg1,(u8*)path,MIN(strlen((string)stack->arg1) + 1,255));
@@ -289,14 +289,26 @@ static void sysc_open(sSysCallStack *stack) {
 		return;
 	}
 
+	/* get free fd */
+	fd = proc_getFreeFd();
+	if(fd < 0) {
+		SYSC_ERROR(stack,fd);
+		return;
+	}
+
 	/* open file */
-	err = vfs_openFile(flags,nodeNo,&fd);
+	file = vfs_openFile(flags,nodeNo);
+	if(file < 0) {
+		SYSC_ERROR(stack,file);
+		return;
+	}
+
+	/* assoc fd with file */
+	err = proc_assocFd(fd,file);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
 	}
-
-	/*vfs_dbg_printTree();*/
 
 	/* return fd */
 	SYSC_RET1(stack,fd);
@@ -397,8 +409,8 @@ static void sysc_redirFd(sSysCallStack *stack) {
 static void sysc_close(sSysCallStack *stack) {
 	tFD fd = (tFD)stack->arg1;
 
-	/* close fd */
-	tFile fileNo = proc_closeFile(fd);
+	/* unassoc fd */
+	tFile fileNo = proc_unassocFD(fd);
 	if(fileNo < 0)
 		return;
 
@@ -446,7 +458,8 @@ static void sysc_unregService(sSysCallStack *stack) {
 static void sysc_getClient(sSysCallStack *stack) {
 	tVFSNodeNo no = stack->arg1;
 	sProc *p = proc_getRunning();
-	s32 res;
+	s32 fd,res;
+	tFile file;
 
 	/* check argument */
 	if(!vfsn_isValidNodeNo(no)) {
@@ -454,13 +467,30 @@ static void sysc_getClient(sSysCallStack *stack) {
 		return;
 	}
 
-	res = vfs_openClient(p->pid,no);
+	/* we need a file-desc */
+	fd = proc_getFreeFd();
+	if(fd < 0) {
+		SYSC_ERROR(stack,fd);
+		return;
+	}
+
+	/* open a client */
+	file = vfs_openClient(p->pid,no);
+	if(file < 0) {
+		SYSC_ERROR(stack,file);
+		return;
+	}
+
+	/* associate fd with file */
+	res = proc_assocFd(fd,file);
 	if(res < 0) {
+		/* we have already opened the file */
+		vfs_closeFile(vfs_getFile(file));
 		SYSC_ERROR(stack,res);
 		return;
 	}
 
-	SYSC_RET1(stack,res);
+	SYSC_RET1(stack,fd);
 }
 
 static void sysc_addIntrptListener(sSysCallStack *stack) {

@@ -145,12 +145,20 @@ s32 proc_releaseIOPorts(u16 start,u16 count);
 tFile proc_fdToFile(tFD fd);
 
 /**
- * Opens the given file
+ * Searches for a free file-descriptor
  *
- * @param fileNo the file-number
- * @return the file-descriptor if successfull or the error-code (< 0)
+ * @return the file-descriptor or the error-code (< 0)
  */
-s32 proc_openFile(tFile fileNo);
+s32 proc_getFreeFd(void);
+
+/**
+ * Associates the given file-descriptor with the given file-number
+ *
+ * @param fd the file-descriptor
+ * @param fileNo the file-number
+ * @return 0 on success
+ */
+s32 proc_assocFd(tFD fd,tFile fileNo);
 
 /**
  * Duplicates the given file-descriptor
@@ -170,12 +178,12 @@ s32 proc_dupFd(tFD fd);
 s32 proc_redirFd(tFD src,tFD dst);
 
 /**
- * Closes the given file-descriptor. That means it releases the fd-slot with given index.
+ * Releases the given file-descriptor (marks it unused)
  *
  * @param fd the file-descriptor
  * @return the file-number that was associated with the fd (or ERR_INVALID_FD)
  */
-tFile proc_closeFile(tFD fd);
+tFile proc_unassocFD(tFD fd);
 
 /**
  * Clones the current process into the given one, saves the new process in proc_clone() so that

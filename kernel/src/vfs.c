@@ -46,15 +46,6 @@ typedef struct {
 static tFile vfs_getFreeFile(u8 flags,tVFSNodeNo nodeNo);
 
 /**
- * Initializes the given GFT-entry, increases references and so on
- *
- * @param e the GFT-entry
- * @param flags the flags (read, write)
- * @param nodeNo the node-number to open
- */
-static void vfs_openFileImpl(sGFTEntry *e,u8 flags,tVFSNodeNo nodeNo);
-
-/**
  * The write-handler for the VFS
  *
  * @param pid the process to use
@@ -120,11 +111,9 @@ tFile vfs_inheritFile(tFile file) {
 			return -1;
 
 		nodeNo = NADDR_TO_VNNO(child);
-		newFile = vfs_getFreeFile(e->flags,nodeNo);
+		newFile = vfs_openFile(e->flags,nodeNo);
 		if(newFile < 0)
 			return -1;
-
-		vfs_openFileImpl(globalFileTable + newFile,e->flags,nodeNo);
 		return newFile;
 	}
 	else {
@@ -160,13 +149,6 @@ tFile vfs_openFile(u8 flags,tVFSNodeNo nodeNo) {
 	if(f < 0)
 		return f;
 
-	/* open file */
-	e = globalFileTable + f;
-	vfs_openFileImpl(e,flags,nodeNo);
-	return f;
-}
-
-static void vfs_openFileImpl(sGFTEntry *e,u8 flags,tVFSNodeNo nodeNo) {
 	/* count references of virtual nodes */
 	if(IS_VIRT(nodeNo)) {
 		sVFSNode *n = nodes + VIRT_INDEX(nodeNo);
@@ -174,6 +156,7 @@ static void vfs_openFileImpl(sGFTEntry *e,u8 flags,tVFSNodeNo nodeNo) {
 	}
 
 	/* unused file? */
+	e = globalFileTable + f;
 	if(e->flags == 0) {
 		e->flags = flags;
 		e->refCount = 1;
@@ -182,6 +165,8 @@ static void vfs_openFileImpl(sGFTEntry *e,u8 flags,tVFSNodeNo nodeNo) {
 	}
 	else
 		e->refCount++;
+
+	return f;
 }
 
 static tFile vfs_getFreeFile(u8 flags,tVFSNodeNo nodeNo) {
@@ -400,9 +385,6 @@ s32 vfs_createService(tPid pid,cstring name,u8 type) {
 
 s32 vfs_openIntrptMsgNode(sVFSNode *node) {
 	sVFSNode *n = NODE_FIRST_CHILD(node);
-	sGFTEntry *e;
-	tVFSNodeNo nodeNo;
-	tFile f;
 
 	/* not not already present? */
 	if(n == NULL || n->owner != KERNEL_PID) {
@@ -428,15 +410,7 @@ s32 vfs_openIntrptMsgNode(sVFSNode *node) {
 
 	/* open the file and return it */
 	/* we don't need the file-descriptor here */
-	nodeNo = NADDR_TO_VNNO(n);
-	f = vfs_getFreeFile(VFS_READ | VFS_WRITE,nodeNo);
-	if(f < 0)
-		return f;
-
-	/* open file */
-	e = globalFileTable + f;
-	vfs_openFileImpl(e,VFS_READ | VFS_WRITE,nodeNo);
-	return f;
+	return vfs_openFile(VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n));
 }
 
 void vfs_closeIntrptMsgNode(tFile f) {

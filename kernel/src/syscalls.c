@@ -320,7 +320,7 @@ static void sysc_read(sSysCallStack *stack) {
 	u32 count = stack->arg3;
 	sProc *p = proc_getRunning();
 	s32 readBytes;
-	s32 e;
+	tFile file;
 
 	/* validate count and buffer */
 	if(count <= 0) {
@@ -333,14 +333,14 @@ static void sysc_read(sSysCallStack *stack) {
 	}
 
 	/* get file */
-	e = vfs_fdToFile(fd);
-	if(!vfs_isValidFile((sGFTEntry*)e)) {
-		SYSC_ERROR(stack,e);
+	file = proc_fdToFile(fd);
+	if(file < 0) {
+		SYSC_ERROR(stack,file);
 		return;
 	}
 
 	/* read */
-	readBytes = vfs_readFile(p->pid,(sGFTEntry*)e,buffer,count);
+	readBytes = vfs_readFile(p->pid,file,buffer,count);
 	if(readBytes < 0) {
 		SYSC_ERROR(stack,readBytes);
 		return;
@@ -355,7 +355,8 @@ static void sysc_write(sSysCallStack *stack) {
 	u32 count = stack->arg3;
 	sProc *p = proc_getRunning();
 	s32 writtenBytes;
-	s32 e;
+	tFile file;
+
 	/* validate count and buffer */
 	if(count <= 0) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
@@ -367,14 +368,14 @@ static void sysc_write(sSysCallStack *stack) {
 	}
 
 	/* get file */
-	e = vfs_fdToFile(fd);
-	if(!vfs_isValidFile((sGFTEntry*)e)) {
-		SYSC_ERROR(stack,e);
+	file = proc_fdToFile(fd);
+	if(file < 0) {
+		SYSC_ERROR(stack,file);
 		return;
 	}
 
 	/* read */
-	writtenBytes = vfs_writeFile(p->pid,(sGFTEntry*)e,buffer,count);
+	writtenBytes = vfs_writeFile(p->pid,file,buffer,count);
 	if(writtenBytes < 0) {
 		SYSC_ERROR(stack,writtenBytes);
 		return;
@@ -415,7 +416,7 @@ static void sysc_close(sSysCallStack *stack) {
 		return;
 
 	/* close file */
-	vfs_closeFile(vfs_getFile(fileNo));
+	vfs_closeFile(fileNo);
 }
 
 static void sysc_regService(sSysCallStack *stack) {
@@ -485,7 +486,7 @@ static void sysc_getClient(sSysCallStack *stack) {
 	res = proc_assocFd(fd,file);
 	if(res < 0) {
 		/* we have already opened the file */
-		vfs_closeFile(vfs_getFile(file));
+		vfs_closeFile(file);
 		SYSC_ERROR(stack,res);
 		return;
 	}
@@ -498,7 +499,6 @@ static void sysc_addIntrptListener(sSysCallStack *stack) {
 	u16 irq = (u16)stack->arg2;
 	void *msg = (void*)stack->arg3;
 	u32 msgLen = stack->arg4;
-	sVFSNode *node;
 	s32 err;
 
 	/* check id */
@@ -507,8 +507,7 @@ static void sysc_addIntrptListener(sSysCallStack *stack) {
 		return;
 	}
 
-	node = vfsn_getNode((tVFSNodeNo)id);
-	if(!vfsn_isOwnServiceNode(node)) {
+	if(!vfsn_isOwnServiceNode((tVFSNodeNo)id)) {
 		SYSC_ERROR(stack,ERR_NOT_OWN_SERVICE);
 		return;
 	}
@@ -520,7 +519,7 @@ static void sysc_addIntrptListener(sSysCallStack *stack) {
 	}
 
 	/* now add the listener */
-	err = intrpt_addListener(irq,node,msg,msgLen);
+	err = intrpt_addListener(irq,(tVFSNodeNo)id,msg,msgLen);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
@@ -532,7 +531,6 @@ static void sysc_addIntrptListener(sSysCallStack *stack) {
 static void sysc_remIntrptListener(sSysCallStack *stack) {
 	s32 id = (s32)stack->arg1;
 	u16 irq = (u16)stack->arg2;
-	sVFSNode *node;
 	s32 err;
 
 	/* check id */
@@ -541,14 +539,13 @@ static void sysc_remIntrptListener(sSysCallStack *stack) {
 		return;
 	}
 
-	node = vfsn_getNode((tVFSNodeNo)id);
-	if(!vfsn_isOwnServiceNode(node)) {
+	if(!vfsn_isOwnServiceNode((tVFSNodeNo)id)) {
 		SYSC_ERROR(stack,ERR_NOT_OWN_SERVICE);
 		return;
 	}
 
 	/* now remove the listener */
-	err = intrpt_removeListener(irq,node);
+	err = intrpt_removeListener(irq,(tVFSNodeNo)id);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;

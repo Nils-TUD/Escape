@@ -25,6 +25,18 @@
 /* the initial size of the write-cache for service-usage-nodes */
 #define VFS_INITIAL_WRITECACHE		128
 
+/* an entry in the global file table */
+typedef struct {
+	/* read OR write; flags = 0 => entry unused */
+	u8 flags;
+	/* number of references */
+	u16 refCount;
+	/* current position in file */
+	u32 position;
+	/* node-number; if MSB = 1 => virtual, otherwise real (fs) */
+	tVFSNodeNo nodeNo;
+} sGFTEntry;
+
 /* the public VFS-node (passed to the user) */
 typedef struct {
 	tVFSNodeNo nodeNo;
@@ -88,14 +100,6 @@ void vfs_init(void) {
 	sys = vfsn_createDir(root,(string)"system",vfs_dirReadHandler);
 	vfsn_createDir(sys,(string)"processes",vfs_dirReadHandler);
 	vfsn_createDir(root,(string)"services",vfs_dirReadHandler);
-}
-
-bool vfs_isValidFile(sGFTEntry *f) {
-	return f >= globalFileTable && f < globalFileTable + FILE_COUNT;
-}
-
-sGFTEntry *vfs_getFile(tFile no) {
-	return globalFileTable + no;
 }
 
 tFile vfs_inheritFile(tFile file) {
@@ -213,8 +217,10 @@ static tFile vfs_getFreeFile(u8 flags,tVFSNodeNo nodeNo) {
 	return freeSlot;
 }
 
-s32 vfs_readFile(tPid pid,sGFTEntry *e,u8 *buffer,u32 count) {
+s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count) {
 	s32 readBytes;
+	sGFTEntry *e = globalFileTable + file;
+
 	if((e->flags & VFS_READ) == 0)
 		return ERR_NO_READ_PERM;
 
@@ -266,9 +272,10 @@ s32 vfs_readFile(tPid pid,sGFTEntry *e,u8 *buffer,u32 count) {
 	return readBytes;
 }
 
-s32 vfs_writeFile(tPid pid,sGFTEntry *e,u8 *buffer,u32 count) {
+s32 vfs_writeFile(tPid pid,tFile file,u8 *buffer,u32 count) {
 	s32 writtenBytes;
 	sVFSNode *n;
+	sGFTEntry *e = globalFileTable + file;
 
 	if((e->flags & VFS_WRITE) == 0)
 		return ERR_NO_WRITE_PERM;
@@ -299,7 +306,9 @@ s32 vfs_writeFile(tPid pid,sGFTEntry *e,u8 *buffer,u32 count) {
 	return writtenBytes;
 }
 
-void vfs_closeFile(sGFTEntry *e) {
+void vfs_closeFile(tFile file) {
+	sGFTEntry *e = globalFileTable + file;
+
 	/* decrement references */
 	if(--(e->refCount) == 0) {
 		/* free cache if there is any */
@@ -383,7 +392,8 @@ s32 vfs_createService(tPid pid,cstring name,u8 type) {
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-s32 vfs_openIntrptMsgNode(sVFSNode *node) {
+tFile vfs_openIntrptMsgNode(tVFSNodeNo nodeNo) {
+	sVFSNode *node = vfsn_getNode(nodeNo);
 	sVFSNode *n = NODE_FIRST_CHILD(node);
 
 	/* not not already present? */
@@ -414,8 +424,7 @@ s32 vfs_openIntrptMsgNode(sVFSNode *node) {
 }
 
 void vfs_closeIntrptMsgNode(tFile f) {
-	sGFTEntry *e = vfs_getFile(f);
-	vfs_closeFile(e);
+	vfs_closeFile(f);
 }
 
 bool vfs_msgAvailableFor(tPid pid) {
@@ -445,7 +454,7 @@ bool vfs_msgAvailableFor(tPid pid) {
 	/* now search through the file-descriptors if there is any message */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != -1) {
-			sGFTEntry *e = vfs_getFile(p->fileDescs[i]);
+			sGFTEntry *e = globalFileTable + p->fileDescs[i];
 			if(IS_VIRT(e->nodeNo)) {
 				n = vfsn_getNode(e->nodeNo);
 				/* service-usage and a message in the receive-list? */

@@ -50,10 +50,10 @@ bool vfsn_isValidNodeNo(tVFSNodeNo nodeNo);
 /**
  * Checks wether the given node is a service-node and belongs to the current process
  *
- * @param node the node
+ * @param nodeNo the node-number
  * @return true if so
  */
-bool vfsn_isOwnServiceNode(sVFSNode *node);
+bool vfsn_isOwnServiceNode(tVFSNodeNo nodeNo);
 
 /**
  * @param nodeNo the node-number

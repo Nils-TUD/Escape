@@ -84,7 +84,7 @@ typedef struct {
 
 /* the stuff we need to know about interrupt-listeners */
 typedef struct {
-	sVFSNode *node;
+	tVFSNodeNo nodeNo;
 	tFile file;
 	u8 pending;
 	u8 msgLen;
@@ -338,10 +338,10 @@ void intrpt_init(void) {
 	intrpt_initPic();
 }
 
-s32 intrpt_addListener(u16 irq,void *node,void *message,u32 msgLen) {
+s32 intrpt_addListener(u16 irq,tVFSNodeNo nodeNo,void *message,u32 msgLen) {
 	sIntrptListener *l;
 	sSLList *list;
-	s32 err;
+	tFile err;
 	if(msgLen > MSG_MAX_LEN)
 		return ERR_INTRPT_LISTENER_MSGLEN;
 
@@ -359,9 +359,9 @@ s32 intrpt_addListener(u16 irq,void *node,void *message,u32 msgLen) {
 	/* init list-element */
 	memcpy(l->message,message,msgLen);
 	l->msgLen = msgLen;
-	l->node = node;
+	l->nodeNo = nodeNo;
 	/* create a node for it and open it */
-	err = vfs_openIntrptMsgNode(node);
+	err = vfs_openIntrptMsgNode(nodeNo);
 	if(err < 0) {
 		kheap_free(l);
 		return err;
@@ -387,7 +387,7 @@ s32 intrpt_addListener(u16 irq,void *node,void *message,u32 msgLen) {
 	return 0;
 }
 
-s32 intrpt_removeListener(u16 irq,void *node) {
+s32 intrpt_removeListener(u16 irq,tVFSNodeNo nodeNo) {
 	sSLList *list;
 	sSLNode *ln,*lnp;
 	/* check irq */
@@ -402,7 +402,7 @@ s32 intrpt_removeListener(u16 irq,void *node) {
 	/* search for the node */
 	lnp = NULL;
 	for(ln = sll_begin(list); ln != NULL; ln = ln->next) {
-		if(((sIntrptListener*)ln->data)->node == node) {
+		if(((sIntrptListener*)ln->data)->nodeNo == nodeNo) {
 			sll_removeNode(list,ln,lnp);
 			vfs_closeIntrptMsgNode(((sIntrptListener*)ln->data)->file);
 			/* free the data */
@@ -450,7 +450,7 @@ static void intrpt_handleListener(sSLList *list) {
 		l = (sIntrptListener*)node->data;
 		while(l->pending > 0) {
 			/* send message */
-			vfs_writeFile(KERNEL_PID,vfs_getFile(l->file),l->message,l->msgLen);
+			vfs_writeFile(KERNEL_PID,l->file,l->message,l->msgLen);
 			l->pending--;
 		}
 	}

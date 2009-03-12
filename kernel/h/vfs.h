@@ -76,36 +76,10 @@ struct sVFSNode {
 	} data;
 };
 
-/* an entry in the global file table */
-typedef struct {
-	/* read OR write; flags = 0 => entry unused */
-	u8 flags;
-	/* number of references */
-	u16 refCount;
-	/* current position in file */
-	u32 position;
-	/* node-number; if MSB = 1 => virtual, otherwise real (fs) */
-	tVFSNodeNo nodeNo;
-} sGFTEntry;
-
 /**
  * Initializes the virtual file system
  */
 void vfs_init(void);
-
-/**
- * Checks if the given file is valid
- *
- * @param f the file
- * @return true if so
- */
-bool vfs_isValidFile(sGFTEntry *f);
-
-/**
- * @param no the file-number
- * @return the entry in the global-file-table
- */
-sGFTEntry *vfs_getFile(tFile no);
 
 /**
  * Determines the GFT-File for the given file-descriptor
@@ -139,32 +113,32 @@ tFile vfs_openFile(u8 flags,tVFSNodeNo nodeNo);
  * of read bytes.
  *
  * @param pid will be used to check wether the service writes or a service-user
- * @param e the file
+ * @param file the file
  * @param buffer the buffer to write to
  * @param count the max. number of bytes to read
  * @return the number of bytes read
  */
-s32 vfs_readFile(tPid pid,sGFTEntry *e,u8 *buffer,u32 count);
+s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count);
 
 /**
  * Writes count bytes from the given buffer into the given file and returns the number of written
  * bytes.
  *
  * @param pid will be used to check wether the service writes or a service-user
- * @param e the file
+ * @param file the file
  * @param buffer the buffer to read from
  * @param count the number of bytes to write
  * @return the number of bytes written
  */
-s32 vfs_writeFile(tPid pid,sGFTEntry *e,u8 *buffer,u32 count);
+s32 vfs_writeFile(tPid pid,tFile file,u8 *buffer,u32 count);
 
 /**
  * Closes the given file. That means it calls proc_closeFile() and decrements the reference-count
  * in the global file table. If there are no references anymore it releases the slot.
  *
- * @param e the file
+ * @param file the file
  */
-void vfs_closeFile(sGFTEntry *e);
+void vfs_closeFile(tFile file);
 
 /**
  * Creates a service-node for the given process and given name
@@ -179,10 +153,10 @@ s32 vfs_createService(tPid pid,cstring name,u8 type);
 /**
  * Opens a file for the interrupt-message-sending. Creates a node for it, if not already done
  *
- * @param node the service-node
+ * @param nodeNo the service-node-number
  * @return the file-number or a negative error-code
  */
-s32 vfs_openIntrptMsgNode(sVFSNode *node);
+tFile vfs_openIntrptMsgNode(tVFSNodeNo nodeNo);
 
 /**
  * Closes the given file for interrupt-message-sending. Removes the node, if no longer used

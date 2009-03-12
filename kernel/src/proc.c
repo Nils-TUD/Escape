@@ -219,9 +219,8 @@ s32 proc_redirFd(tFD src,tFD dst) {
 		return ERR_INVALID_FD;
 
 	/* we have to close the source because no one else will do it anymore... */
-	s32 e = vfs_fdToFile(src);
-	if(e >= 0)
-		vfs_closeFile((sGFTEntry*)e);
+	vfs_closeFile(fSrc);
+
 	/* now redirect src to dst */
 	procs[pi].fileDescs[src] = fDst;
 	return 0;
@@ -322,9 +321,7 @@ void proc_destroy(sProc *p) {
 	/* release file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != -1) {
-			s32 e = vfs_fdToFile(i);
-			if(e >= 0)
-				vfs_closeFile((sGFTEntry*)e);
+			vfs_closeFile(p->fileDescs[i]);
 			p->fileDescs[i] = -1;
 		}
 	}

@@ -59,8 +59,9 @@ bool vfsn_isValidNodeNo(tVFSNodeNo nodeNo) {
 	return nodeNo < NODE_COUNT;
 }
 
-bool vfsn_isOwnServiceNode(sVFSNode *node) {
+bool vfsn_isOwnServiceNode(tVFSNodeNo nodeNo) {
 	sProc *p = proc_getRunning();
+	sVFSNode *node = nodes + nodeNo;
 	return node->owner == p->pid && node->type == T_SERVICE;
 }
 

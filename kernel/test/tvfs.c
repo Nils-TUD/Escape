@@ -58,7 +58,6 @@ static void test_vfs_readFileSystem(void) {
 	s32 res;
 	tFile file;
 	sVFSNodePub node;
-	sGFTEntry *e;
 	u32 oldHeap,oldGFT,newHeap,newGFT;
 
 	oldHeap = kheap_getFreeMem();
@@ -94,14 +93,13 @@ static void test_vfs_readFileSystem(void) {
 	}
 
 	/* skip "." and ".." */
-	e = (sGFTEntry*)vfs_fdToFile(fd);
-	vfs_readFile(KERNEL_PID,e,(u8*)&node,sizeof(sVFSNodePub));
-	vfs_readFile(KERNEL_PID,e,(u8*)&node,sizeof(sVFSNodePub));
+	vfs_readFile(KERNEL_PID,file,(u8*)&node,sizeof(sVFSNodePub));
+	vfs_readFile(KERNEL_PID,file,(u8*)&node,sizeof(sVFSNodePub));
 
 	/* read "processes" */
-	if((res = vfs_readFile(KERNEL_PID,e,(u8*)&node,sizeof(sVFSNodePub))) != sizeof(sVFSNodePub)) {
+	if((res = vfs_readFile(KERNEL_PID,file,(u8*)&node,sizeof(sVFSNodePub))) != sizeof(sVFSNodePub)) {
 		proc_unassocFD(fd);
-		vfs_closeFile(e);
+		vfs_closeFile(file);
 		test_caseFailed("Unable to read with fd=%d! Expected %d bytes, read %d",
 				fd,sizeof(sVFSNodePub),res);
 		return;
@@ -111,13 +109,13 @@ static void test_vfs_readFileSystem(void) {
 	vfsn_resolvePath("system:/processes",&procNode);
 	if(strcmp((cstring)node.name,"processes") != 0) {
 		proc_unassocFD(fd);
-		vfs_closeFile(e);
+		vfs_closeFile(file);
 		test_caseFailed("Node-name='%s', expected 'processes'",node.name);
 		return;
 	}
 	if(node.nodeNo != procNode) {
 		proc_unassocFD(fd);
-		vfs_closeFile(e);
+		vfs_closeFile(file);
 		test_caseFailed("nodeNo=%d, expected %d",node.nodeNo);
 		return;
 	}
@@ -125,13 +123,13 @@ static void test_vfs_readFileSystem(void) {
 	/* unassoc fd */
 	tFile fileNo = proc_unassocFD(fd);
 	if(fileNo < 0) {
-		vfs_closeFile(e);
+		vfs_closeFile(file);
 		test_caseFailed("Unable to unassoc the fd!");
 		return;
 	}
 
 	/* close */
-	vfs_closeFile(e);
+	vfs_closeFile(file);
 
 	newHeap = kheap_getFreeMem();
 	newGFT = vfs_dbg_getGFTEntryCount();
@@ -150,7 +148,6 @@ static void test_vfs_readFileProcess0(void) {
 	tFile file;
 	sProcPub proc;
 	sProc *p0 = proc_getByPid(0);
-	sGFTEntry *e;
 	u32 oldHeap,oldGFT,newHeap,newGFT;
 
 	oldHeap = kheap_getFreeMem();
@@ -186,33 +183,32 @@ static void test_vfs_readFileProcess0(void) {
 	}
 
 	/* read */
-	e = (sGFTEntry*)vfs_fdToFile(fd);
-	if((res = vfs_readFile(KERNEL_PID,e,(u8*)&proc,sizeof(sProcPub))) != sizeof(sProcPub)) {
+	if((res = vfs_readFile(KERNEL_PID,file,(u8*)&proc,sizeof(sProcPub))) != sizeof(sProcPub)) {
 		proc_unassocFD(fd);
-		vfs_closeFile(e);
+		vfs_closeFile(file);
 		test_caseFailed("Unable to read with fd=%d! Expected %d bytes, read %d",
 				fd,sizeof(sProcPub),res);
 		return;
 	}
 
 	/* check data */
-	if(!test_assertInt(proc.textPages,p0->textPages)) {proc_unassocFD(fd); vfs_closeFile(e); return;}
-	if(!test_assertInt(proc.dataPages,p0->dataPages)) {proc_unassocFD(fd); vfs_closeFile(e); return;}
-	if(!test_assertInt(proc.stackPages,p0->stackPages)) {proc_unassocFD(fd); vfs_closeFile(e); return;}
-	if(!test_assertInt(proc.pid,p0->pid)) {proc_unassocFD(fd); vfs_closeFile(e); return;}
-	if(!test_assertInt(proc.parentPid,p0->parentPid)) {proc_unassocFD(fd); vfs_closeFile(e); return;}
-	if(!test_assertInt(proc.state,p0->state)) {proc_unassocFD(fd); vfs_closeFile(e); return;}
+	if(!test_assertInt(proc.textPages,p0->textPages)) {proc_unassocFD(fd); vfs_closeFile(file); return;}
+	if(!test_assertInt(proc.dataPages,p0->dataPages)) {proc_unassocFD(fd); vfs_closeFile(file); return;}
+	if(!test_assertInt(proc.stackPages,p0->stackPages)) {proc_unassocFD(fd); vfs_closeFile(file); return;}
+	if(!test_assertInt(proc.pid,p0->pid)) {proc_unassocFD(fd); vfs_closeFile(file); return;}
+	if(!test_assertInt(proc.parentPid,p0->parentPid)) {proc_unassocFD(fd); vfs_closeFile(file); return;}
+	if(!test_assertInt(proc.state,p0->state)) {proc_unassocFD(fd); vfs_closeFile(file); return;}
 
 	/* unassoc fd */
 	tFile fileNo = proc_unassocFD(fd);
 	if(fileNo < 0) {
-		vfs_closeFile(e);
+		vfs_closeFile(file);
 		test_caseFailed("Unable to unassoc the fd!");
 		return;
 	}
 
 	/* close */
-	vfs_closeFile(e);
+	vfs_closeFile(file);
 
 	newHeap = kheap_getFreeMem();
 	newGFT = vfs_dbg_getGFTEntryCount();

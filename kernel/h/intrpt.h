@@ -222,21 +222,21 @@ void intrpt_init(void);
  * with the given message as soon as the given interrupt occurs.
  *
  * @param irq the irq-number
- * @param node the vfs-node
+ * @param nodeNo the vfs-node-number
  * @param message the message to send
  * @param msgLen the length of the message (in bytes)
  * @return 0 on success or the negative error-code
  */
-s32 intrpt_addListener(u16 irq,void *node,void *message,u32 msgLen);
+s32 intrpt_addListener(u16 irq,tVFSNodeNo nodeNo,void *message,u32 msgLen);
 
 /**
  * Removes the listener for the given node and IRQ
  *
  * @param irq the irq-number
- * @param node the vfs-node
+ * @param nodeNo the vfs-node-number
  * @return 0 on success or the negative error-code
  */
-s32 intrpt_removeListener(u16 irq,void *node);
+s32 intrpt_removeListener(u16 irq,tVFSNodeNo nodeNo);
 
 /**
  * Handles an interrupt

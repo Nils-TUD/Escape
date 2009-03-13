@@ -272,6 +272,7 @@ static void sysc_open(sSysCallStack *stack) {
 	tVFSNodeNo nodeNo;
 	tFile file;
 	s32 err,fd;
+	sProc *p = proc_getRunning();
 
 	/* copy path */
 	copyUserToKernel((u8*)stack->arg1,(u8*)path,MIN(strlen((string)stack->arg1) + 1,255));
@@ -287,7 +288,7 @@ static void sysc_open(sSysCallStack *stack) {
 	err = vfsn_resolvePath(path,&nodeNo);
 	if(err == ERR_REAL_PATH) {
 		/* send msg to fs and wait for reply */
-		file = vfsr_openFile(proc_getRunning()->pid,flags,path + strlen("file:"));
+		file = vfsr_openFile(p->pid,flags,path + strlen("file:"));
 
 		/* get free fd */
 		fd = proc_getFreeFd();
@@ -311,7 +312,7 @@ static void sysc_open(sSysCallStack *stack) {
 			return;
 		}
 		/* open file */
-		file = vfs_openFile(flags,nodeNo);
+		file = vfs_openFile(p->pid,flags,nodeNo);
 	}
 
 	if(file < 0) {

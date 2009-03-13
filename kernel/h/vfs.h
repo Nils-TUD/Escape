@@ -54,10 +54,6 @@ struct sVFSNode {
 	union {
 		/* for service-usages */
 		struct {
-			/* for usages of the fs-service: the inode-number and position */
-			/* we need this for building messages for the fs */
-			tInodeNo inodeNo;
-			u32 position;
 			/* we have to lock reads */
 			tPid locked;
 			/* a list for sending messages to the service */
@@ -92,29 +88,32 @@ tVFSNodeNo vfs_getNodeNo(tFile file);
 /**
  * Inherits the given file for the current process
  *
+ * @param pid the process-id
  * @param file the file
  * @return file the file to use (may be the same)
  */
-tFile vfs_inheritFile(tFile file);
+tFile vfs_inheritFile(tPid pid,tFile file);
 
 /**
  * Opens the file with given number and given flags. That means it walks through the global
  * file table and searches for a free entry or an entry for that file.
  * Note that multiple processes may read from the same file simultaneously but NOT write!
  *
+ * @param pid the process-id with which the file should be opened
  * @param flags wether it is a virtual or real file and wether you want to read or write
  * @param nodeNo the node-number (in the virtual or real environment)
  * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FD)
  */
-tFile vfs_openFile(u8 flags,tVFSNodeNo nodeNo);
+tFile vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo);
 
 /**
  * Opens a file for the kernel. Creates a node for it, if not already done
  *
+ * @param pid the process-id with which the file should be opened
  * @param nodeNo the service-node-number
  * @return the file-number or a negative error-code
  */
-tFile vfs_openFileForKernel(tVFSNodeNo nodeNo);
+tFile vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo);
 
 /**
  * Reads max. count bytes from the given file into the given buffer and returns the number

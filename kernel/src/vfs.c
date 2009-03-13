@@ -30,11 +30,13 @@
 typedef struct {
 	/* read OR write; flags = 0 => entry unused */
 	u8 flags;
+	/* the owner of this file; sharing of a file is not possible for different processes */
+	tPid owner;
 	/* number of references */
 	u16 refCount;
 	/* current position in file */
 	u32 position;
-	/* node-number; if MSB = 1 => virtual, otherwise real (fs) */
+	/* node-number; if MSB = 1 => virtual, otherwise real inode-number */
 	tVFSNodeNo nodeNo;
 } sGFTEntry;
 
@@ -52,11 +54,12 @@ typedef struct {
 /**
  * Searches for a free file for the given flags and node-number
  *
+ * @param pid the process to use
  * @param flags the flags (read, write)
  * @param nodeNo the node-number to open
  * @return the file-number on success or the negative error-code
  */
-static tFile vfs_getFreeFile(u8 flags,tVFSNodeNo nodeNo);
+static tFile vfs_getFreeFile(tPid pid,u8 flags,tVFSNodeNo nodeNo);
 
 /**
  * The write-handler for the VFS
@@ -97,7 +100,7 @@ void vfs_init(void) {
 	vfsn_createDir(root,(string)"services",vfs_dirReadHandler);
 }
 
-tFile vfs_inheritFile(tFile file) {
+tFile vfs_inheritFile(tPid pid,tFile file) {
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n = vfsn_getNode(e->nodeNo);
 	/* we can't share multipipe-service-usages since each process has his own node */
@@ -110,7 +113,7 @@ tFile vfs_inheritFile(tFile file) {
 			return -1;
 
 		nodeNo = NADDR_TO_VNNO(child);
-		newFile = vfs_openFile(e->flags,nodeNo);
+		newFile = vfs_openFile(pid,e->flags,nodeNo);
 		if(newFile < 0)
 			return -1;
 		return newFile;
@@ -137,11 +140,11 @@ tVFSNodeNo vfs_getNodeNo(tFile file) {
 	return e->nodeNo;
 }
 
-tFile vfs_openFile(u8 flags,tVFSNodeNo nodeNo) {
+tFile vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
 	sGFTEntry *e;
 
 	/* determine free file */
-	tFile f = vfs_getFreeFile(flags,nodeNo);
+	tFile f = vfs_getFreeFile(pid,flags,nodeNo);
 	if(f < 0)
 		return f;
 
@@ -154,6 +157,7 @@ tFile vfs_openFile(u8 flags,tVFSNodeNo nodeNo) {
 	/* unused file? */
 	e = globalFileTable + f;
 	if(e->flags == 0) {
+		e->owner = pid;
 		e->flags = flags;
 		e->refCount = 1;
 		e->position = 0;
@@ -165,10 +169,11 @@ tFile vfs_openFile(u8 flags,tVFSNodeNo nodeNo) {
 	return f;
 }
 
-static tFile vfs_getFreeFile(u8 flags,tVFSNodeNo nodeNo) {
+static tFile vfs_getFreeFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
 	tFile i;
 	tFile freeSlot = ERR_NO_FREE_FD;
 	bool write = flags & VFS_WRITE;
+	bool isServUse = false;
 	sGFTEntry *e = &globalFileTable[0];
 
 	ASSERT(flags & (VFS_READ | VFS_WRITE),"flags empty");
@@ -177,18 +182,27 @@ static tFile vfs_getFreeFile(u8 flags,tVFSNodeNo nodeNo) {
 	/* ensure that we don't increment usages of an unused slot */
 	ASSERT(flags != 0,"No flags given");
 
+	if(IS_VIRT(nodeNo)) {
+		sVFSNode *n = vfsn_getNode(nodeNo);
+		isServUse = n->type == T_SERVUSE;
+	}
+
 	for(i = 0; i < FILE_COUNT; i++) {
 		/* used slot and same node? */
 		if(e->flags != 0) {
-			if(e->nodeNo == nodeNo) {
-				/* TODO we have to check wether writing twice to a file is allowed */
-				/* TODO should be for service-messages. other situations? */
-				/* writing to the same file is not possible */
-				if(write && e->flags & VFS_WRITE) {
-					e++;
-					continue;
-				}
-				/*return ERR_FILE_IN_USE;*/
+			/* we don't want to share files with different processes */
+			/* this is allowed only if we create a child-process. he will inherit the files.
+			 * in this case we trust the processes that they know what they do :) */
+			if(e->nodeNo == nodeNo && e->owner == pid) {
+				/* service-usages may use a file twice for reading and writing because we
+				 * will prevent trouble anyway */
+				if(isServUse && e->flags == flags)
+					return i;
+
+				/* someone does already write to this file? so it's not really good
+				 * to use it atm, right? */
+				if(!isServUse && e->flags & VFS_WRITE)
+					return ERR_FILE_IN_USE;
 
 				/* if the flags are different we need a different slot */
 				if(e->flags == flags)
@@ -198,8 +212,11 @@ static tFile vfs_getFreeFile(u8 flags,tVFSNodeNo nodeNo) {
 		/* remember free slot */
 		else if(freeSlot == ERR_NO_FREE_FD) {
 			freeSlot = i;
-			/* if we want to write we need our own file anyway */
-			if(write)
+			/* just for performance: if we've found an unused file and want to use a service,
+			 * use this slot because it doesn't really matter wether we use a new file or an
+			 * existing one (if there even is any) */
+			/* note: we can share a file for writing in this case! */
+			if(isServUse)
 				break;
 		}
 
@@ -209,7 +226,7 @@ static tFile vfs_getFreeFile(u8 flags,tVFSNodeNo nodeNo) {
 	return freeSlot;
 }
 
-tFile vfs_openFileForKernel(tVFSNodeNo nodeNo) {
+tFile vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo) {
 	sVFSNode *node = vfsn_getNode(nodeNo);
 	sVFSNode *n = NODE_FIRST_CHILD(node);
 
@@ -237,41 +254,39 @@ tFile vfs_openFileForKernel(tVFSNodeNo nodeNo) {
 
 	/* open the file and return it */
 	/* we don't need the file-descriptor here */
-	return vfs_openFile(VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n));
+	return vfs_openFile(pid,VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n));
 }
 
 s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count) {
 	s32 readBytes;
 	sGFTEntry *e = globalFileTable + file;
-	tVFSNodeNo i;
-	sVFSNode *n;
 
 	if((e->flags & VFS_READ) == 0)
 		return ERR_NO_READ_PERM;
 
-	i = VIRT_INDEX(e->nodeNo);
-	n = nodes + i;
+	if(IS_VIRT(e->nodeNo)) {
+		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
+		sVFSNode *n = nodes + i;
 
-	/* node not present anymore? */
-	if(n->name == NULL)
-		return ERR_INVALID_FILE;
+		/* node not present anymore? */
+		if(n->name == NULL)
+			return ERR_INVALID_FILE;
 
-	/* NOTE: we have to lock service-usages for reading because if we have a single-pipe-
-	 * service it would be possible to steal a message if no locking is made.
-	 * P1 reads the header of a message (-> message still present), P2 reads the complete
-	 * message (-> message deleted). So P1 missed the data of the message. */
+		/* NOTE: we have to lock service-usages for reading because if we have a single-pipe-
+		 * service it would be possible to steal a message if no locking is made.
+		 * P1 reads the header of a message (-> message still present), P2 reads the complete
+		 * message (-> message deleted). So P1 missed the data of the message. */
 
-	/* wait until the node is unlocked, if necessary */
-	if(n->type == T_SERVUSE && n->data.servuse.locked != pid) {
-		/* don't let the kernel wait here (-> deadlock) */
-		if(n->data.servuse.locked != INVALID_PID && pid == KERNEL_PID)
-			return 0;
+		/* wait until the node is unlocked, if necessary */
+		if(n->type == T_SERVUSE && n->data.servuse.locked != pid) {
+			/* don't let the kernel wait here (-> deadlock) */
+			if(n->data.servuse.locked != INVALID_PID && pid == KERNEL_PID)
+				return 0;
 
-		while(n->data.servuse.locked != INVALID_PID)
-			proc_switch();
-	}
+			while(n->data.servuse.locked != INVALID_PID)
+				proc_switch();
+		}
 
-	if(n->data.servuse.inodeNo == 0) {
 		/* use the read-handler */
 		readBytes = n->readHandler(pid,n,buffer,e->position,count);
 
@@ -294,8 +309,8 @@ s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count) {
 	}
 	else {
 		/* query the fs-service to read from the inode */
-		readBytes = vfsr_readFile(pid,n->data.servuse.inodeNo,buffer,n->data.servuse.position,count);
-		n->data.servuse.position += readBytes;
+		readBytes = vfsr_readFile(pid,e->nodeNo,buffer,e->position,count);
+		e->position += readBytes;
 	}
 
 	return readBytes;
@@ -309,14 +324,14 @@ s32 vfs_writeFile(tPid pid,tFile file,u8 *buffer,u32 count) {
 	if((e->flags & VFS_WRITE) == 0)
 		return ERR_NO_WRITE_PERM;
 
-	tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
-	n = nodes + i;
+	if(IS_VIRT(e->nodeNo)) {
+		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
+		n = nodes + i;
 
-	/* node not present anymore? */
-	if(n->name == NULL)
-		return ERR_INVALID_FILE;
+		/* node not present anymore? */
+		if(n->name == NULL)
+			return ERR_INVALID_FILE;
 
-	if(n->data.servuse.inodeNo == 0) {
 		/* write to the node */
 		writtenBytes = vfs_writeHandler(pid,n,buffer,e->position,count);
 		if(writtenBytes < 0)
@@ -329,9 +344,8 @@ s32 vfs_writeFile(tPid pid,tFile file,u8 *buffer,u32 count) {
 	}
 	else {
 		/* query the fs-service to write to the inode */
-		writtenBytes = vfsr_writeFile(pid,n->data.servuse.inodeNo,buffer,
-				n->data.servuse.position,count);
-		n->data.servuse.position += writtenBytes;
+		writtenBytes = vfsr_writeFile(pid,e->nodeNo,buffer,e->position,count);
+		e->position += writtenBytes;
 	}
 
 	return writtenBytes;
@@ -345,7 +359,7 @@ void vfs_closeFile(tFile file) {
 		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
 		sVFSNode *n = nodes + i;
 
-		if(n->data.servuse.inodeNo == 0) {
+		if(IS_VIRT(e->nodeNo)) {
 			/* last usage? */
 			if(n->name != NULL && --(n->refCount) == 0) {
 				/* we have to remove the service-usage-node, if it is one */
@@ -381,7 +395,7 @@ void vfs_closeFile(tFile file) {
 			}
 		}
 		else
-			vfsr_closeFile(n->data.servuse.inodeNo);
+			vfsr_closeFile(e->nodeNo);
 
 		/* mark unused */
 		e->flags = 0;
@@ -504,7 +518,7 @@ s32 vfs_openClient(tPid pid,tVFSNodeNo no) {
 		return client;
 
 	/* open a file for it so that the service can read and write with it */
-	return vfs_openFile(VFS_READ | VFS_WRITE,client);
+	return vfs_openFile(pid,VFS_READ | VFS_WRITE,client);
 }
 
 s32 vfs_removeService(tPid pid,tVFSNodeNo nodeNo) {
@@ -875,6 +889,7 @@ void vfs_dbg_printGFT(void) {
 			vid_printf("\t\tnodeNo: %d\n",VIRT_INDEX(e->nodeNo));
 			vid_printf("\t\tpos: %d\n",e->position);
 			vid_printf("\t\trefCount: %d\n",e->refCount);
+			vid_printf("\t\towner: %d\n",e->owner);
 			if(n->type == T_SERVUSE)
 				vid_printf("\t\tService-Usage of %s @ %s\n",n->name,n->parent->name);
 		}

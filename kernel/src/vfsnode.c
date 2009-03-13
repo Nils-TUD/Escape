@@ -236,7 +236,6 @@ sVFSNode *vfsn_createNode(sVFSNode *parent,string name) {
 	node->data.def.cache = NULL;
 	node->data.def.size = 0;
 	node->data.def.pos = 0;
-	node->data.servuse.inodeNo = 0;
 	return node;
 }
 

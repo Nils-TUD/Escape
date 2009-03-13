@@ -362,7 +362,7 @@ s32 intrpt_addListener(u16 irq,tVFSNodeNo nodeNo,void *message,u32 msgLen) {
 	l->msgLen = msgLen;
 	l->nodeNo = nodeNo;
 	/* create a node for it and open it */
-	err = vfs_openFileForKernel(nodeNo);
+	err = vfs_openFileForKernel(KERNEL_PID,nodeNo);
 	if(err < 0) {
 		kheap_free(l);
 		return err;

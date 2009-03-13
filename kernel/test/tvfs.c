@@ -79,7 +79,7 @@ static void test_vfs_readFileSystem(void) {
 	}
 
 	/* open */
-	file = vfs_openFile(VFS_READ,nodeNo);
+	file = vfs_openFile(KERNEL_PID,VFS_READ,nodeNo);
 	if(file < 0) {
 		test_caseFailed("Unable to open 'system:'!");
 		return;
@@ -169,7 +169,7 @@ static void test_vfs_readFileProcess0(void) {
 	}
 
 	/* open */
-	file = vfs_openFile(VFS_READ,nodeNo);
+	file = vfs_openFile(KERNEL_PID,VFS_READ,nodeNo);
 	if(file < 0) {
 		test_caseFailed("Unable to open 'system:/processes/0'!");
 		return;

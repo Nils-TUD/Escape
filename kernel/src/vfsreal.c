@@ -95,7 +95,7 @@ static sSLList *requests = NULL;
 static tFile fsServiceFile = -1;
 
 void vfsr_setFSService(tVFSNodeNo nodeNo) {
-	fsServiceFile = vfs_openFileForKernel(nodeNo);
+	fsServiceFile = vfs_openFileForKernel(KERNEL_PID,nodeNo);
 	if(fsServiceFile >= 0) {
 		requests = sll_create();
 		/* not enough mem */
@@ -216,6 +216,7 @@ s32 vfsr_openFile(tPid pid,u8 flags,s8 *path) {
 	}
 
 	/* enqueue request and wait for a reply of the fs */
+	kheap_free(msg);
 	req = vfsr_addRequest(pid);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
@@ -224,23 +225,8 @@ s32 vfsr_openFile(tPid pid,u8 flags,s8 *path) {
 	/* process is now running again, and we've received the reply */
 	/* that's magic, isn't it? ;D */
 
-	kheap_free(msg);
-
-	/* now we have to create a service-usage for the process */
-	nodeNo = vfs_getNodeNo(fsServiceFile);
-	res = vfsn_createServiceUse(vfsn_getNode(nodeNo),&child);
-	if(res < 0) {
-		kheap_free(req);
-		return res;
-	}
-
-	/* set inode-number in node */
-	child->data.servuse.inodeNo = req->inodeNo;
-
-	/* TODO create a new file for every real-file */
-
 	/* now open the file */
-	res = vfs_openFile(flags,NADDR_TO_VNNO(child));
+	res = vfs_openFile(pid,flags,req->inodeNo);
 	kheap_free(req);
 	return res;
 }

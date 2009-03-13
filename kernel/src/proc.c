@@ -270,7 +270,7 @@ s32 proc_clone(tPid newPid) {
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		p->fileDescs[i] = procs[pi].fileDescs[i];
 		if(p->fileDescs[i] != -1)
-			p->fileDescs[i] = vfs_inheritFile(p->fileDescs[i]);
+			p->fileDescs[i] = vfs_inheritFile(newPid,p->fileDescs[i]);
 	}
 
 	/* make ready */

@@ -748,7 +748,6 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 			}
 			else {
 				/* notify the process that there is a message */
-				/* TODO is there a better way than parsing the pid from the node-name? */
 				if(n->owner != KERNEL_PID)
 					sched_setReady(proc_getByPid(n->owner));
 			}

@@ -125,20 +125,36 @@ s32 releaseIOPort(u16 port);
 s32 releaseIOPorts(u16 start,u16 count);
 
 /**
- * Outputs the <val> to the I/O-Port <port>
+ * Outputs the byte <val> to the I/O-Port <port>
  *
  * @param port the port
  * @param val the value
  */
-extern void outb(u16 port,u8 val);
+extern void outByte(u16 port,u8 val);
 
 /**
- * Reads the value from the I/O-Port <port>
+ * Outputs the word <val> to the I/O-Port <port>
+ *
+ * @param port the port
+ * @param val the value
+ */
+extern void outWord(u16 port,u16 val);
+
+/**
+ * Reads a byte from the I/O-Port <port>
  *
  * @param port the port
  * @return the value
  */
-extern u8 inb(u16 port);
+extern u8 inByte(u16 port);
+
+/**
+ * Reads a word from the I/O-Port <port>
+ *
+ * @param port the port
+ * @return the value
+ */
+extern u16 inWord(u16 port);
 
 /**
  * Opens the given path with given mode and returns the associated file-descriptor

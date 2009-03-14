@@ -38,9 +38,9 @@ static void printProcess(sProc *p) {
 #include <messages.h>
 
 void logChar(char c) {
-	outb(0xe9,c);
-	outb(0x3f8,c);
-	while((inb(0x3fd) & 0x20) == 0);
+	outByte(0xe9,c);
+	outByte(0x3f8,c);
+	while((inByte(0x3fd) & 0x20) == 0);
 }
 
 s32 main(void) {

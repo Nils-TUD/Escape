@@ -21,6 +21,10 @@
 
 #define MSG_SPEAKER_BEEP			0
 
+#define MSG_ATA_READ_REQ			0
+#define MSG_ATA_WRITE_REQ			1
+#define MSG_ATA_READ_RESP			2
+
 /* the header for all default-messages */
 typedef struct {
 	/* the message-id */
@@ -56,6 +60,14 @@ typedef struct {
 	u8 col;
 	u8 row;
 } sMsgDataVidSetCursor;
+
+/* the message-data for a ATA-read- and write-request.
+ * A write-request transports the data directly behind this struct */
+typedef struct {
+	u8 drive;
+	u64 lba;
+	u16 secCount;
+} sMsgDataATAReq;
 
 /**
  * Creates a default-message with the given data

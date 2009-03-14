@@ -589,7 +589,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 					break;
 				}
 
-				vid_printf("GPF for address=0x%08x @ 0x%x\n",cpu_getCR2(),stack.eip);
+				vid_printf("GPF @ 0x%x\n",stack.eip);
 				printStackTrace();
 				break;
 			}

@@ -110,17 +110,17 @@ static void playSound(u32 frequency) {
 
 	/* Set the PIT to the desired frequency */
 	f = PIC_FREQUENCY / frequency;
-	outb(IOPORT_PIT_CTRL_WORD_REG,0xb6);
-	outb(IOPORT_PIT_SPEAKER,(u8)(f));
-	outb(IOPORT_PIT_SPEAKER,(u8)(f >> 8));
+	outByte(IOPORT_PIT_CTRL_WORD_REG,0xb6);
+	outByte(IOPORT_PIT_SPEAKER,(u8)(f));
+	outByte(IOPORT_PIT_SPEAKER,(u8)(f >> 8));
 
 	/* And play the sound using the PC speaker */
-	tmp = inb(IOPORT_KB_CTRL_B);
+	tmp = inByte(IOPORT_KB_CTRL_B);
 	if(tmp != (tmp | 3))
-		outb(IOPORT_KB_CTRL_B,tmp | 3);
+		outByte(IOPORT_KB_CTRL_B,tmp | 3);
 }
 
 static void stopSound(void) {
-	u8 tmp = inb(IOPORT_KB_CTRL_B) & 0xFC;
-	outb(IOPORT_KB_CTRL_B,tmp);
+	u8 tmp = inByte(IOPORT_KB_CTRL_B) & 0xFC;
+	outByte(IOPORT_KB_CTRL_B,tmp);
 }

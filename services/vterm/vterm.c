@@ -19,7 +19,7 @@
 #define TAB_WIDTH			2
 
 /* the number of lines to keep in history */
-#define HISTORY_SIZE		(ROWS * 2)
+#define HISTORY_SIZE		(ROWS * 8)
 #define BUFFER_SIZE			(COLS * 2 * HISTORY_SIZE)
 
 /* the number of left-shifts for each state */
@@ -360,9 +360,9 @@ static void vterm_putchar(s8 c) {
 
 	/* write to bochs/qemu console (\r not necessary here) */
 	if(c != '\r') {
-		outb(0xe9,c);
-		outb(0x3f8,c);
-		while((inb(0x3fd) & 0x20) == 0);
+		outByte(0xe9,c);
+		outByte(0x3f8,c);
+		while((inByte(0x3fd) & 0x20) == 0);
 	}
 
 	switch(c) {

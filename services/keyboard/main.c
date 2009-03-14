@@ -87,13 +87,13 @@ s32 main(void) {
 					printLastError();
 				else if(c > 0) {
 					if(msg.id == KEYBOARD_MSG_INTRPT) {
-						u8 scanCode = inb(IOPORT_KB_CTRL);
+						u8 scanCode = inByte(IOPORT_KB_CTRL);
 						if(kb_set1_getKeycode(&resp,scanCode)) {
 							/* write in receive-pipe */
 							write(selfFd,&resp,sizeof(sMsgKbResponse));
 						}
 						/* ack scancode */
-						outb(IOPORT_PIC,PIC_ICW1);
+						outByte(IOPORT_PIC,PIC_ICW1);
 					}
 				}
 			}

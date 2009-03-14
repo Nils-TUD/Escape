@@ -144,11 +144,11 @@ static void vid_setCursor(u8 row,u8 col) {
    u16 position = (row * COLS) + col;
 
    /* cursor LOW port to vga INDEX register */
-   outb(CURSOR_PORT_INDEX,CURSOR_DATA_LOCLOW);
-   outb(CURSOR_PORT_DATA,(u8)(position & 0xFF));
+   outByte(CURSOR_PORT_INDEX,CURSOR_DATA_LOCLOW);
+   outByte(CURSOR_PORT_DATA,(u8)(position & 0xFF));
    /* cursor HIGH port to vga INDEX register */
-   outb(CURSOR_PORT_INDEX,CURSOR_DATA_LOCHIGH);
-   outb(CURSOR_PORT_DATA,(u8)((position >> 8) & 0xFF));
+   outByte(CURSOR_PORT_INDEX,CURSOR_DATA_LOCHIGH);
+   outByte(CURSOR_PORT_DATA,(u8)((position >> 8) & 0xFF));
 }
 
 static void vid_setScreen(u16 startPos,s8 *buffer,u32 length) {

@@ -18,14 +18,11 @@ extern void debugChar(s8 c);
 void dumpBytes(void *addr,u32 byteCount) {
 	u32 i = 0;
 	u8 *ptr = (u8*)addr;
-	debugf("%x: ",ptr);
 	for(i = 0; byteCount-- > 0; i++) {
-		if(*ptr < 0x10)
-			debugf("0");
-		debugf("%x ",*ptr);
+		if(i % 17 == 0)
+			printf("\n%08x: ",i);
+		printf("%02x ",*ptr);
 		ptr++;
-		if(i % 12 == 11)
-			debugf("\n%x: ",ptr);
 	}
 }
 

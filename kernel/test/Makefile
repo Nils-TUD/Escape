@@ -20,7 +20,7 @@ LSRC=$(wildcard $(LIB)/src/*.c)
 # objects
 AOBJ=$(BUILD)/kernel_asm.o
 AOBJEND=$(BUILD)/end.o
-KOBJ=$(patsubst ../src/%.c,$(BUILD)/test_%.o,$(KSRC))
+KOBJ=$(patsubst ../src/%.c,$(BUILD)/testk_%.o,$(KSRC))
 TOBJ=$(patsubst %.c,$(BUILD)/test_%.o,$(TSRC))
 LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILD)/test_lib_%.o,$(LSRC))
 
@@ -56,7 +56,7 @@ $(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		cp $(BIN) $(DISKMOUNT);
 		sudo umount $(DISKMOUNT);
 
-$(BUILD)/test_%.o:	../src/%.c
+$(BUILD)/testk_%.o:	../src/%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 

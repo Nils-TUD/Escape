@@ -7,14 +7,20 @@
 #include <common.h>
 #include <messages.h>
 #include <io.h>
+#include <heap.h>
+#include <debug.h>
 #include <proc.h>
+#include "ata.h"
 
 typedef struct {
 	sMsgDefHeader header;
 	sMsgDataATAReq data;
-} sMsgATAReq;
+} __attribute__((packed)) sMsgATAReq;
 
 s32 shell_cmdAta(u32 argc,s8 **argv) {
+	UNUSED(argc);
+	UNUSED(argv);
+
 	tFD fd;
 	sMsgATAReq req = {
 		.header = {
@@ -34,17 +40,16 @@ s32 shell_cmdAta(u32 argc,s8 **argv) {
 	write(fd,&req,sizeof(sMsgATAReq));
 	/* wait for response */
 	do {
-		printf("Waiting...\n");
 		sleep();
 	}
 	while(read(fd,&res,sizeof(sMsgDefHeader)) <= 0);
 
-	printf("Got response\n");
 	/* read response */
-	buffer = malloc(sizeof(u16) * res.length);
+	buffer = (u16*)malloc(sizeof(u16) * res.length);
 	read(fd,buffer,res.length);
 	dumpBytes(buffer,res.length);
-	free(buffer);
 
+	free(buffer);
+	close(fd);
 	return 0;
 }

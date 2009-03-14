@@ -8,7 +8,9 @@
 #include <service.h>
 #include <messages.h>
 #include <io.h>
+#include <heap.h>
 #include <proc.h>
+#include <debug.h>
 
 /* port-bases */
 #define REG_BASE_PRIMARY			0x1F0
@@ -81,7 +83,7 @@ typedef struct {
 static void ata_wait(void);
 static bool ata_isDrivePresent(u8 drive);
 static void ata_detectDrives(void);
-static bool ata_readWrite(sATADrive *drive,bool write,u16 *buffer,u64 lba,u16 secCount);
+static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
 static void ata_selectDrive(sATADrive *drive);
 static bool ata_identifyDrive(sATADrive *drive);
 
@@ -122,7 +124,6 @@ s32 main(void) {
 			sleep();
 		}
 		else {
-			s32 c = 0;
 			while(read(fd,&header,sizeof(sMsgDefHeader)) > 0) {
 				sMsgDataATAReq req;
 				/* TODO: better error-handling */
@@ -132,10 +133,10 @@ s32 main(void) {
 						if(ata_isDrivePresent(req.drive)) {
 							sMsgDefHeader *res;
 							u32 msgLen = sizeof(sMsgDefHeader) + BYTES_PER_SECTOR * req.secCount;
-							res = malloc(msgLen);
+							res = (sMsgDefHeader*)malloc(msgLen);
 							if(res != NULL) {
 								res->id = MSG_ATA_READ_RESP;
-								if(!ata_readWrite(drives + req.drive,false,res + 1,req.lba,req.secCount)) {
+								if(!ata_readWrite(drives + req.drive,false,(u16*)(res + 1),req.lba,req.secCount)) {
 									debugf("Read failed\n");
 									/* write empty response */
 									res->length = 0;
@@ -157,7 +158,7 @@ s32 main(void) {
 					case MSG_ATA_WRITE_REQ:
 						read(fd,&req,header.length);
 						if(ata_isDrivePresent(req.drive)) {
-							if(!ata_readWrite(drives + req.drive,true,&req + 1,req.lba,req.secCount))
+							if(!ata_readWrite(drives + req.drive,true,(u16*)(&req + 1),req.lba,req.secCount))
 								debugf("Write failed\n");
 							/* TODO we should respond something, right? */
 						}
@@ -193,7 +194,7 @@ static void ata_detectDrives(void) {
 	}
 }
 
-static bool ata_readWrite(sATADrive *drive,bool write,u16 *buffer,u64 lba,u16 secCount) {
+static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount) {
 	u8 status;
 	u32 i,x;
 	u16 *buf = buffer;
@@ -218,7 +219,7 @@ static bool ata_readWrite(sATADrive *drive,bool write,u16 *buffer,u64 lba,u16 se
 	outByte(basePort + REG_PART_DISK_SECADDR2,(u8)(lba >> 8));
 	outByte(basePort + REG_PART_DISK_SECADDR3,(u8)(lba >> 16));
 	/* send command */
-	if(write)
+	if(opWrite)
 		outByte(basePort + REG_COMMAND,COMMAND_WRITE_SEC_EXT);
 	else
 		outByte(basePort + REG_COMMAND,COMMAND_READ_SEC_EXT);
@@ -235,7 +236,7 @@ static bool ata_readWrite(sATADrive *drive,bool write,u16 *buffer,u64 lba,u16 se
 		while(true);
 
 		/* now read / write the data */
-		if(write) {
+		if(opWrite) {
 			for(x = 0; x < 256; x++)
 				outWord(basePort + REG_DATA,*buf++);
 		}
@@ -286,13 +287,13 @@ static bool ata_identifyDrive(sATADrive *drive) {
 		/* check for LBA48 */
 		if((data[83] & (1 << 10)) != 0) {
 			drive->lba48 = 1;
-			drive->sectorCount = ((u32)data[103] << 48) | ((u32)data[102] << 32) |
-				((u32)data[101] << 16) | (u32)data[100];
+			drive->sectorCount = ((u64)data[103] << 48) | ((u64)data[102] << 32) |
+				((u64)data[101] << 16) | (u64)data[100];
 		}
 		/* check for LBA28 */
 		else {
 			drive->lba48 = 0;
-			drive->sectorCount = ((u32)data[61] << 16) | (u32)data[60];
+			drive->sectorCount = ((u64)data[61] << 16) | (u64)data[60];
 			/* LBA28 not supported? */
 			if(drive->sectorCount == 0)
 				return false;

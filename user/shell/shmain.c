@@ -49,12 +49,11 @@ static u16 shell_readLine(s8 *buffer,u16 max);
  * @param buffer the buffer with read characters
  * @param cursorPos the current cursor-position in the buffer (may be changed)
  * @param charcount the number of read characters so far (may be changed)
- * @param c the character
  * @param keycode the keycode of the escape-code
  * @param modifier the modifier of the escape-code
  * @return true if the escape-code was handled
  */
-static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,s8 c,u8 keycode,u8 modifier);
+static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,u8 keycode,u8 modifier);
 
 /**
  * Completes the current input, if possible
@@ -140,7 +139,7 @@ static u16 shell_readLine(s8 *buffer,u16 max) {
 		if(handleDefaultEscapeCodes(buffer,&cursorPos,&i,c,&keycode,&modifier))
 			continue;
 		if(c == '\033') {
-			shell_handleEscapeCodes(buffer,&cursorPos,&i,c,keycode,modifier);
+			shell_handleEscapeCodes(buffer,&cursorPos,&i,keycode,modifier);
 			continue;
 		}
 		if(c == '\t') {
@@ -165,7 +164,7 @@ static u16 shell_readLine(s8 *buffer,u16 max) {
 	return i;
 }
 
-static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,s8 c,u8 keycode,u8 modifier) {
+static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,u8 keycode,u8 modifier) {
 	bool res = false;
 	s8 *line = NULL;
 
@@ -220,7 +219,7 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 		/* search in commands */
 		s32 index = -1;
 		u32 count = 0;
-		for(i = 0; i < ARRAY_SIZE(commands); i++) {
+		for(i = 0; (u32)i < ARRAY_SIZE(commands); i++) {
 			cmdlen = strlen(commands[i].name);
 			/* beginning matches? */
 			if(ilength < cmdlen && strncmp(line,commands[i].name,ilength) == 0) {
@@ -254,7 +253,7 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 			else {
 				tabCount = 0;
 				printf("\n");
-				for(i = 0; i < ARRAY_SIZE(commands); i++) {
+				for(i = 0; (u32)i < ARRAY_SIZE(commands); i++) {
 					cmdlen = strlen(commands[i].name);
 					/* beginning matches? */
 					if(ilength < cmdlen && strncmp(line,commands[i].name,ilength) == 0) {

@@ -1,27 +1,16 @@
 src/heap.c:216: warning: unused parameter ‘addr’
 src/heap.c:216: warning: unused parameter ‘size’
-main.c:51: warning: return type of ‘main’ is not ‘int’
-main.c:41: warning: return type of ‘main’ is not ‘int’
-main.c:39: warning: return type of ‘main’ is not ‘int’
-main.c:49: warning: return type of ‘main’ is not ‘int’
-main.c:19: warning: return type of ‘main’ is not ‘int’
-main.c:11: warning: return type of ‘main’ is not ‘int’
-main.c:101: warning: return type of ‘main’ is not ‘int’
-main.c:166: warning: unused parameter ‘c’
-main.c: In function ‘shell_complete’:
-main.c:221: warning: comparison between signed and unsigned
-main.c:255: warning: comparison between signed and unsigned
-main.c: In function ‘printProcess’:
-main.c:34: warning: initialization from incompatible pointer type
-main.c:26: warning: unused variable ‘pid’
-main.c: At top level:
-main.c:40: warning: no previous prototype for ‘logChar’
-main.c:46: warning: return type of ‘main’ is not ‘int’
-main.c: In function ‘main’:
-main.c:156: warning: unused variable ‘count’
-main.c:462:2: warning: "/*" within comment
-main.c: At top level:
-main.c:25: warning: ‘printProcess’ defined but not used
+atamain.c:102: warning: return type of ‘main’ is not ‘int’
+fsmain.c:51: warning: return type of ‘main’ is not ‘int’
+kbmain.c:41: warning: return type of ‘main’ is not ‘int’
+spkmain.c:39: warning: return type of ‘main’ is not ‘int’
+vidmain.c:49: warning: return type of ‘main’ is not ‘int’
+vtmain.c:19: warning: return type of ‘main’ is not ‘int’
+imain.c:11: warning: return type of ‘main’ is not ‘int’
+shmain.c:102: warning: return type of ‘main’ is not ‘int’
+t2main.c:44: warning: return type of ‘main’ is not ‘int’
+t2main.c:26: warning: ‘printProcess’ defined but not used
+t2main.c:38: warning: ‘logChar’ defined but not used
 src/ksymbols.c: In function ‘ksym_print’:
 src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
 src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used

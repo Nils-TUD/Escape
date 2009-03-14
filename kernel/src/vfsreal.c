@@ -188,8 +188,6 @@ s32 vfsr_openFile(tPid pid,u8 flags,s8 *path) {
 	u32 pathLen = strlen(path);
 	u32 msgLen;
 	sRequest *req;
-	sVFSNode *child;
-	tVFSNodeNo nodeNo;
 
 	if(fsServiceFile < 0)
 		return ERR_FS_NOT_FOUND;

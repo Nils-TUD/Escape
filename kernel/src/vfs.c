@@ -172,7 +172,6 @@ tFile vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
 static tFile vfs_getFreeFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
 	tFile i;
 	tFile freeSlot = ERR_NO_FREE_FD;
-	bool write = flags & VFS_WRITE;
 	bool isServUse = false;
 	sGFTEntry *e = &globalFileTable[0];
 

@@ -13,6 +13,7 @@
 #include <service.h>
 #include <mem.h>
 #include <heap.h>
+#include <messages.h>
 
 #include <test.h>
 #include <theap.h>
@@ -23,7 +24,6 @@
 #define ID_CLEAR	2
 
 static void printProcess(sProc *p) {
-	tPid pid = getpid();
 	printf("Process:\n");
 	printf("\tpid=%d\n",p->pid);
 	printf("\tparentPid=%d\n",p->parentPid);
@@ -31,13 +31,11 @@ static void printProcess(sProc *p) {
 	printf("\ttextPages=%d\n",p->textPages);
 	printf("\tdataPages=%d\n",p->dataPages);
 	printf("\tstackPages=%d\n",p->stackPages);
-	u32 *ptr = &p->cycleCount;
+	u32 *ptr = (u32*)(&p->cycleCount);
 	printf("\tcycleCount=0x%08x%08x\n",*(ptr + 1),*ptr);
 }
 
-#include <messages.h>
-
-void logChar(char c) {
+static void logChar(char c) {
 	outByte(0xe9,c);
 	outByte(0x3f8,c);
 	while((inByte(0x3fd) & 0x20) == 0);
@@ -153,7 +151,7 @@ s32 main(void) {
 	while(1) {
 		printf("Type something: ");
 		s8 *buffer = malloc(20 * sizeof(s8));
-		u16 count = readLine(buffer,20);
+		readLine(buffer,20);
 		printf("You typed: %s\n",buffer);
 	}
 
@@ -459,7 +457,7 @@ s32 main(void) {
 	free(ptr[0]);
 	free(ptr[1]);
 
-	/*for(i = 0;i < 25;i++) {
+	for(i = 0;i < 25;i++) {
 		debugf("0x%x = 0x%x\n",first,*first);
 		first++;
 	}
@@ -471,9 +469,9 @@ s32 main(void) {
 	debugf("ptr=0x%x\n",malloc(3996));
 	debugf("ptr=0x%x\n",malloc(10));
 
-	printHeap();*/
+	printHeap();
 
-	/*u16 pid = fork();
+	u16 pid = fork();
 	if(pid == 0) {
 		debugf("I am the child with pid %d\n",getpid());
 	}
@@ -486,14 +484,14 @@ s32 main(void) {
 
 	while(true) {
 		debugf("Hi, my pid is %d, parent is %d\n",getpid(),getppid());
-	}*/
+	}
 
-	/*if(regService("test",SERVICE_TYPE_MULTIPIPE) < 0)
+	if(regService("test",SERVICE_TYPE_MULTIPIPE) < 0)
 		printLastError();
 	else
-		unregService();*/
+		unregService();
 
-	/*s32 dd;
+	s32 dd;
 	sDir *entry;
 	debugf("Listing directory '/':\n");
 	if((dd = opendir("/")) >= 0) {

@@ -3,12 +3,18 @@ BUILD=build
 FLOPPYDISK=$(BUILD)/disk.img
 FLOPPYDISKMOUNT=disk
 HDD=$(BUILD)/hd.img
+HDDBAK=$(BUILD)/hd.img.bak
+# 5 MB disk (10 * 16 * 63 * 512 = 5,160,960 byte)
+HDDCYL=10
+HDDHEADS=16
+HDDTRACKSECS=63
+TMPFILE=$(BUILD)/disktmp
 BINNAME=kernel.bin
 BIN=$(BUILD)/$(BINNAME)
 SYMBOLS=$(BUILD)/kernel.symbols
 OSTITLE=hrniels-OS
 
-QEMUARGS=-serial stdio -no-kqemu -fda $(FLOPPYDISK) -hda $(HDD)
+QEMUARGS=-serial stdio -no-kqemu -fda $(FLOPPYDISK) -hda $(HDD) -boot a
 
 DIRS = tools libc services user kernel kernel/test
 
@@ -18,10 +24,11 @@ export CWFLAGS=-Wall -ansi \
 				 -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wno-long-long \
 				 -Wstrict-prototypes -fno-builtin
 
-.PHONY: all disk dis qemu bochs debug debugu debugm debugt test clean
+.PHONY: all floppy mounthdd umounthdd createhdd dis qemu bochs debug debugu debugm debugt test clean
 
 all: $(BUILD)
-		[ -f $(FLOPPYDISK) ] && [ -f $(HDD) ] || make disk;
+		@[ -f $(FLOPPYDISK) ] || make floppy;
+		@[ -f $(HDD) ] || make createhdd;
 		@for i in $(DIRS); do \
 			make -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
@@ -29,12 +36,10 @@ all: $(BUILD)
 $(BUILD):
 		[ -d $(BUILD) ] || mkdir -p $(BUILD);
 
-disk: clean
+floppy: clean
 		sudo umount $(FLOPPYDISKMOUNT) || true;
 		dd if=/dev/zero of=$(FLOPPYDISK) bs=1024 count=1440;
 		/sbin/mke2fs -F $(FLOPPYDISK);
-		dd if=/dev/zero of=$(HDD) bs=512 count=2880;
-		/sbin/mke2fs -F $(HDD)
 		sudo mount -o loop $(FLOPPYDISK) $(FLOPPYDISKMOUNT);
 		mkdir $(FLOPPYDISKMOUNT)/grub;
 		cp boot/stage1 $(FLOPPYDISKMOUNT)/grub;
@@ -47,6 +52,34 @@ disk: clean
 		echo 'root (fd0)' >> $(FLOPPYDISKMOUNT)/grub/menu.lst;
 		echo -n "device (fd0) $(FLOPPYDISK)\nroot (fd0)\nsetup (fd0)\nquit\n" | grub --batch;
 		sudo umount $(FLOPPYDISKMOUNT);
+
+mounthdd:
+		sudo umount $(FLOPPYDISKMOUNT) || true;
+		sudo mount -text2 -oloop=/dev/loop0,offset=`expr $(HDDTRACKSECS) \* 512` $(HDD) $(FLOPPYDISKMOUNT);
+
+umounthdd:
+		sudo umount /dev/loop0
+
+createhdd:
+		sudo umount /dev/loop0 || true
+		sudo losetup -d /dev/loop0 || true
+		dd if=/dev/zero of=$(HDD) bs=`expr $(HDDTRACKSECS) \* $(HDDHEADS) \* 512`c count=$(HDDCYL)
+		sudo losetup /dev/loop0 $(HDD) || true
+		echo "n" > $(TMPFILE) && \
+			echo "p" >> $(TMPFILE) && \
+			echo "1" >> $(TMPFILE) && \
+			echo "" >> $(TMPFILE) && \
+			echo "" >> $(TMPFILE) && \
+			echo "w" >> $(TMPFILE);
+		sudo fdisk -u -C$(HDDCYL) -S$(HDDTRACKSECS) -H$(HDDHEADS) /dev/loop0 < $(TMPFILE) || true
+		sudo losetup -d /dev/loop0
+		sudo losetup -o`expr $(HDDTRACKSECS) \* 512` /dev/loop0 $(HDD)
+		@# WE HAVE TO CHANGE THE BLOCK-COUNT HERE IF THE DISK-GEOMETRY CHANGES!
+		sudo mke2fs -b1024 /dev/loop0 5008
+		sudo umount /dev/loop0 || true
+		sudo losetup -d /dev/loop0 || true
+		rm -f $(TMPFILE)
+		cp $(HDD) $(HDDBAK)
 
 dis: all
 		objdump -d -S $(BIN) | less

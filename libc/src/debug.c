@@ -6,6 +6,7 @@
 
 #include "../h/common.h"
 #include "../h/debug.h"
+#include "../h/io.h"
 #include <stdarg.h>
 
 /**

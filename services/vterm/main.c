@@ -20,8 +20,6 @@ s32 main(void) {
 	s32 kbFd;
 	s32 id;
 
-	debugf("Service vterm has pid %d\n",getpid());
-
 	id = regService("vterm",SERVICE_TYPE_SINGLEPIPE);
 	if(id < 0) {
 		printLastError();

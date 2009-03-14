@@ -13,6 +13,8 @@
 #include <string.h>
 #include "vterm.h"
 #include "keymap.h"
+#include "keymap.us.h"
+#include "keymap.ger.h"
 
 #define COLS				80
 #define ROWS				25
@@ -39,6 +41,8 @@
 							"0\x90" \
 							".\x90" \
 							"1\x90"
+
+typedef sKeymapEntry *(*keymapGetFunc)(u8 keyCode);
 
 /* the header for the set-screen message */
 typedef struct {
@@ -184,6 +188,13 @@ static sMsgSpeaker msgSpeaker = {
 	}
 };
 
+/* our keymaps */
+static u32 keymap = 1;
+static keymapGetFunc keymaps[] = {
+	keymap_us_get,
+	keymap_ger_get
+};
+
 static sVTerm vterm;
 
 void vterm_init(void) {
@@ -282,7 +293,7 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 	if(msg->isBreak)
 		return;
 
-	e = keymap_get(msg->keycode);
+	e = keymaps[keymap](msg->keycode);
 	if(e != NULL) {
 		bool sendMsg = true;
 		if(vterm.shiftDown)

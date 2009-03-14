@@ -49,8 +49,6 @@ static void vid_setScreen(u16 startPos,s8 *buffer,u32 length);
 s32 main(void) {
 	s32 id;
 
-	debugf("Service video has pid %d\n",getpid());
-
 	id = regService("video",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
 		printLastError();

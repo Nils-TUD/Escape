@@ -112,6 +112,7 @@
 #define VK_PRINT		124
 #define VK_SCROLL		125
 #define VK_PAUSE		126
+#define VK_PIPE			127
 
 /* special escape-codes */
 #define VK_ESC_FG		'f'

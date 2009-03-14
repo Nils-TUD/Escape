@@ -102,7 +102,7 @@ static sScanCodeEntry scanCode2KeyCode[] = {
 	/* 53 */	{VK_KPDOT,		VK_DELETE},
 	/* 54 */	{0,				0},
 	/* 55 */	{0,				0},
-	/* 56 */	{0,				0},
+	/* 56 */	{VK_PIPE,		0},
 	/* 57 */	{VK_F11,		0},
 	/* 58 */	{VK_F12,		0},
 	/* 59 */	{0,				0},

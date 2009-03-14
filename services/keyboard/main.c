@@ -42,8 +42,6 @@ s32 main(void) {
 	s32 selfFd;
 	s32 id;
 
-	debugf("Service keyboard has pid %d\n",getpid());
-
 	id = regService("keyboard",SERVICE_TYPE_SINGLEPIPE);
 	if(id < 0) {
 		printLastError();

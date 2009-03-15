@@ -550,7 +550,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 		/* syscall */
 		case IRQ_SYSCALL:
-			sysc_handle((sSysCallStack*)stack.uesp);
+			sysc_handle(&stack);
 			break;
 
 		/* exceptions */

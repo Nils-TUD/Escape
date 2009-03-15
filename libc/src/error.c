@@ -104,6 +104,14 @@ void printLastError(void) {
 			debugf("Filesystem-service not found\n");
 			break;
 
+		case ERR_SIG_HANDLER_EXISTS:
+			debugf("Signal-handler does already exist\n");
+			break;
+
+		case ERR_INVALID_SIGNAL:
+			debugf("Invalid signal\n");
+			break;
+
 		default:
 			debugf("No error\n");
 			break;

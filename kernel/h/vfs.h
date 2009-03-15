@@ -33,7 +33,7 @@ typedef struct sVFSNode sVFSNode;
 /* the function for read-requests on info-nodes */
 typedef s32 (*fRead)(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 /* callback function for the default read-handler */
-typedef void (*readCallBack)(sVFSNode *node,void *buffer);
+typedef void (*fReadCallBack)(sVFSNode *node,void *buffer);
 
 struct sVFSNode {
 	string name;
@@ -221,7 +221,7 @@ void vfs_removeProcess(tPid pid);
  * @param callback the callback-function
  */
 s32 vfs_defReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
-		readCallBack callback);
+		fReadCallBack callback);
 
 /**
  * The read-handler for service-usages

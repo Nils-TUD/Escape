@@ -42,7 +42,7 @@
 							".\x90" \
 							"1\x90"
 
-typedef sKeymapEntry *(*keymapGetFunc)(u8 keyCode);
+typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 
 /* the header for the set-screen message */
 typedef struct {
@@ -190,7 +190,7 @@ static sMsgSpeaker msgSpeaker = {
 
 /* our keymaps */
 static u32 keymap = 1;
-static keymapGetFunc keymaps[] = {
+static fKeymapGet keymaps[] = {
 	keymap_us_get,
 	keymap_ger_get
 };

@@ -8,10 +8,20 @@
 #include <io.h>
 #include <heap.h>
 #include <string.h>
+#include <proc.h>
 #include "test.h"
 
+static void signalHandler(u32 arg) {
+	printf("Signal handler...got arg 0x%x\n",arg);
+}
+
 s32 shell_cmdTest(u32 argc,s8 **argv) {
-	s8 *buffer;
+
+	/*printf("Testing signal...\n");
+	sigTest((u32)signalHandler);
+	printf("Back\n");*/
+
+	/*s8 *buffer;
 	u32 res;
 	tFD fd;
 
@@ -31,7 +41,7 @@ s32 shell_cmdTest(u32 argc,s8 **argv) {
 	printf("Wrote '%s' (%d bytes)\n",buffer,res);
 
 	printf("Closing file\n");
-	close(fd);
+	close(fd);*/
 
 	return 0;
 }

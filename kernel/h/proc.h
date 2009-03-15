@@ -16,14 +16,9 @@
 #define MAX_PROC_NAME_LEN	15
 
 /* use an invalid pid to identify the kernel */
-#define KERNEL_PID			PROC_COUNT + 1
+#define KERNEL_PID			(PROC_COUNT + 1)
 /* for marking unused */
-#define INVALID_PID			PROC_COUNT + 2
-
-/* the signals
-#define SIG_TERM		1
-#define SIG_KILL		2
-#define SIG_SEGFAULT	3 */
+#define INVALID_PID			(PROC_COUNT + 2)
 
 /* the process-state which will be saved for context-switching */
 typedef struct {
@@ -57,9 +52,9 @@ typedef struct {
 	tFile fileDescs[MAX_FD_COUNT];
 	/* the io-map (NULL by default) */
 	u8 *ioMap;
-	/* a bitfield with signals the process should get
-	u16 signals; */
+	/* number of cpu-cycles the process has got so far; TODO: should be cpu-time later */
 	u64 cycleCount;
+	/* process-name (TODO temporary, should be the start-command later) */
 	s8 name[MAX_PROC_NAME_LEN + 1];
 } sProc;
 

@@ -20,10 +20,10 @@ typedef struct {
 } sSysCallStack;
 
 /**
- * Handles the syscall for the given interrupt-stack
+ * Handles the syscall for the given stack
  *
- * @param stack the pointer to the syscall-stack
+ * @param intrptStack the pointer to the interrupt-stack
  */
-void sysc_handle(sSysCallStack *stack);
+void sysc_handle(sIntrptStackFrame *intrptStack);
 
 #endif /* SYSCALLS_H_ */

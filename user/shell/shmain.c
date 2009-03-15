@@ -28,10 +28,10 @@
 #define ERR_CMD_NOT_FOUND	-100
 
 /* for shell commands */
-typedef s32 (*cmdFunc)(u32 argc,s8 **argv);
+typedef s32 (*fCommand)(u32 argc,s8 **argv);
 typedef struct {
 	cstring name;
-	cmdFunc func;
+	fCommand func;
 } sShellCmd;
 
 /**

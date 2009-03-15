@@ -88,11 +88,22 @@ void *memchr(const void *buffer,s32 c,u32 count) {
 }
 
 void *memcpy(void *dest,const void *src,u32 len) {
-	u8 *d = dest;
-	const u8 *s = src;
-	while(len--) {
-		*d++ = *s++;
-	}
+	u32 rCount = len % sizeof(u32);
+	u32 dWordCount = (len - rCount) / sizeof(u32);
+	u32 *ddest = (u32*)dest;
+	u32 *dsrc = (u32*)src;
+	u8 *bdest,*bsrc;
+
+	/* copy dwords to increase performance */
+	while(dWordCount-- > 0)
+		*ddest++ = *dsrc++;
+
+	/* copy the last few bytes */
+	bdest = (u8*)ddest;
+	bsrc = (u8*)dsrc;
+	while(rCount-- > 0)
+		*bdest++ = *bsrc++;
+
 	return dest;
 }
 

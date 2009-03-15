@@ -91,28 +91,26 @@ bochs: all prepareRun
 		bochs -f bochs.cfg -q > log.txt 2>&1
 
 debug: all prepareRun
-		qemu $(QEMUARGS) > log.txt 2>&1 &
-		@#bochs -f bochs.cfg -q > log.txt 2>&1 &
+		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
-		gdb --command=gdb.start
-		@# --symbols $(BIN)
+		gdb --command=gdb.start --symbols $(BUILD)/user_shell.bin
 
 debugu: all prepareRun
-		qemu $(QEMUARGS) > log.txt 2>&1 &
+		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
 		gdb --command=gdb.start --symbols $(BUILD)/user_task1.bin
 
 debugc: all prepareRun
-		qemu $(QEMUARGS) > log.txt 2>&1 &
+		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
 		gdb --command=gdb.start --symbols $(BUILD)/service_console.bin
 
 debugm: all prepareRun
-		qemu $(QEMUARGS) > log.txt 2>&1 &
+		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
 		@#bochs -f bochs.cfg -q > log.txt 2>&1 &
 
 debugt: all prepareTest
-		qemu $(QEMUARGS) > log.txt 2>&1 &
+		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
 
 test: all prepareTest
 		@#bochs -f bochs.cfg -q > log.txt 2>&1 &

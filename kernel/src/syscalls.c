@@ -17,9 +17,10 @@
 #include "../h/kheap.h"
 #include "../h/sched.h"
 #include "../h/video.h"
+#include "../h/signals.h"
 #include <string.h>
 
-#define SYSCALL_COUNT 22
+#define SYSCALL_COUNT 25
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
@@ -182,7 +183,7 @@ static void sysc_yield(sSysCallStack *stack);
  * @param u16 number of ports
  * @return s32 0 if successfull or a negative error-code
  */
-static void sys_requestIOPorts(sSysCallStack *stack);
+static void sysc_requestIOPorts(sSysCallStack *stack);
 /**
  * Releases some IO-ports
  *
@@ -190,7 +191,26 @@ static void sys_requestIOPorts(sSysCallStack *stack);
  * @param u16 number of ports
  * @return s32 0 if successfull or a negative error-code
  */
-static void sys_releaseIOPorts(sSysCallStack *stack);
+static void sysc_releaseIOPorts(sSysCallStack *stack);
+/**
+ * Sets a handler-function for a specific signal
+ *
+ * @param u8 signal
+ * @param fSigHandler handler
+ */
+static void sysc_setSigHandler(sSysCallStack *stack);
+/**
+ * Unsets the handler-function for a specific signal
+ *
+ * @param u8 signal
+ */
+static void sysc_unsetSigHandler(sSysCallStack *stack);
+/**
+ * Acknoledges that the processing of a signal is finished
+ *
+ * @param u8 signal
+ */
+static void sysc_ackSignal(sSysCallStack *stack);
 
 /* our syscalls */
 static sSyscall syscalls[SYSCALL_COUNT] = {
@@ -209,16 +229,20 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 12 */	{sysc_write,				3},
 	/* 13 */	{sysc_yield,				0},
 	/* 14 */	{sysc_getClient,			1},
-	/* 15 */	{sys_requestIOPorts,		2},
-	/* 16 */	{sys_releaseIOPorts,		2},
+	/* 15 */	{sysc_requestIOPorts,		2},
+	/* 16 */	{sysc_releaseIOPorts,		2},
 	/* 17 */	{sysc_dupFd,				1},
 	/* 18 */	{sysc_redirFd,				2},
 	/* 19 */	{sysc_addIntrptListener,	4},
 	/* 20 */	{sysc_remIntrptListener,	2},
 	/* 21 */	{sysc_sleep,				0},
+	/* 22 */	{sysc_setSigHandler,		2},
+	/* 23 */	{sysc_unsetSigHandler,		1},
+	/* 24 */	{sysc_ackSignal,			1},
 };
 
-void sysc_handle(sSysCallStack *stack) {
+void sysc_handle(sIntrptStackFrame *intrptStack) {
+	sSysCallStack *stack = (sSysCallStack*)intrptStack->uesp;
 	ASSERT(stack != NULL,"stack == NULL");
 
 	u32 sysCallNo = (u32)stack->number;
@@ -228,6 +252,53 @@ void sysc_handle(sSysCallStack *stack) {
 		syscalls[sysCallNo].handler(stack);
 	}
 }
+
+#if 0
+static void sysc_sigTest(sSysCallStack *stack) {
+	u32 *esp = (u32*)stack;
+	/* save regs */
+	*esp-- = intrptStack->eip;
+	*esp-- = intrptStack->eax;
+	*esp-- = intrptStack->ebx;
+	*esp-- = intrptStack->ecx;
+	*esp-- = intrptStack->edx;
+	*esp-- = intrptStack->edi;
+	*esp-- = intrptStack->esi;
+	/* dummy arg */
+	*esp-- = 0x1337;
+	/* address of sigRetFunc */
+	*esp = 0xd;
+	intrptStack->eip = stack->arg1;
+	intrptStack->uesp = esp;
+	SYSC_RET1(stack,0);
+}
+#endif
+
+/*
+ * esp		: eip
+ * 		- 4	: eax
+ * 		- 8 : ebx
+ * 		- 12: ecx
+ * 		- 16: edx
+ * 		- 20: edi
+ * 		- 24: esi
+ * 		- 28: sig-count (for interrupts)
+ * 		- 32: retFunc
+ * 		- 36:
+ *
+ * set eip to sig-handler
+ * set esp to esp - 36
+ *
+ * retFunc:
+ * 		add esp,4
+ * 		pop esi
+ * 		pop edi
+ * 		pop edx
+ * 		pop ecx
+ * 		pop ebx
+ * 		pop eax
+ * 		ret
+ */
 
 static void sysc_getpid(sSysCallStack *stack) {
 	sProc *p = proc_getRunning();
@@ -246,6 +317,7 @@ static void sysc_debugc(sSysCallStack *stack) {
 static void sysc_fork(sSysCallStack *stack) {
 	tPid newPid = proc_getFreePid();
 	s32 res = proc_clone(newPid);
+
 	/* error? */
 	if(res == -1) {
 		SYSC_RET1(stack,-1);
@@ -403,7 +475,9 @@ static void sysc_write(sSysCallStack *stack) {
 
 static void sysc_dupFd(sSysCallStack *stack) {
 	tFD fd = (tFD)stack->arg1;
-	s32 err = proc_dupFd(fd);
+	s32 err;
+
+	err = proc_dupFd(fd);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
@@ -415,7 +489,9 @@ static void sysc_dupFd(sSysCallStack *stack) {
 static void sysc_redirFd(sSysCallStack *stack) {
 	tFD src = (tFD)stack->arg1;
 	tFD dst = (tFD)stack->arg2;
-	s32 err = proc_redirFd(src,dst);
+	s32 err;
+
+	err = proc_redirFd(src,dst);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
@@ -672,7 +748,7 @@ static void sysc_sleep(sSysCallStack *stack) {
 	}
 }
 
-static void sys_requestIOPorts(sSysCallStack *stack) {
+static void sysc_requestIOPorts(sSysCallStack *stack) {
 	u16 start = stack->arg1;
 	u16 count = stack->arg2;
 
@@ -691,7 +767,7 @@ static void sys_requestIOPorts(sSysCallStack *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static void sys_releaseIOPorts(sSysCallStack *stack) {
+static void sysc_releaseIOPorts(sSysCallStack *stack) {
 	u16 start = stack->arg1;
 	u16 count = stack->arg2;
 
@@ -707,5 +783,51 @@ static void sys_releaseIOPorts(sSysCallStack *stack) {
 		return;
 	}
 
+	SYSC_RET1(stack,0);
+}
+
+static void sysc_setSigHandler(sSysCallStack *stack) {
+	u8 signal = (u8)stack->arg1;
+	fSigHandler handler = (fSigHandler)stack->arg2;
+	sProc *p = proc_getRunning();
+	s32 err;
+
+	if(!sig_canHandle(signal)) {
+		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
+		return;
+	}
+
+	err = sig_setHandler(p->pid,signal,handler);
+	if(err < 0) {
+		SYSC_ERROR(stack,err);
+		return;
+	}
+
+	SYSC_RET1(stack,err);
+}
+
+static void sysc_unsetSigHandler(sSysCallStack *stack) {
+	u8 signal = (u8)stack->arg1;
+	sProc *p = proc_getRunning();
+
+	if(!sig_canHandle(signal)) {
+		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
+		return;
+	}
+
+	sig_unsetHandler(p->pid,signal);
+	SYSC_RET1(stack,0);
+}
+
+static void sysc_ackSignal(sSysCallStack *stack) {
+	u8 signal = (u8)stack->arg1;
+	sProc *p = proc_getRunning();
+
+	if(!sig_canHandle(signal)) {
+		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
+		return;
+	}
+
+	sig_ackHandling(p->pid,signal);
 	SYSC_RET1(stack,0);
 }

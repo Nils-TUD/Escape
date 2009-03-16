@@ -17,23 +17,22 @@ u32 sigCount = 0;
 
 static void signalHandler(u8 sigNo) {
 	UNUSED(sigNo);
-	/*GET_REGS(buffer);
-	dumpDwords(buffer[R_ESP] - 10*4,60);
-	PRINT_REGS();*/
 	printf("Got signal %d (%d)\n",sigNo,sigCount++);
 }
 
 s32 shell_cmdTest(u32 argc,s8 **argv) {
-	UNUSED(argc);
-	UNUSED(argv);
+	u32 target = 10;
+	if(argc == 2) {
+		target = atoi(argv[1]);
+		if(target == 0)
+			target = 10;
+	}
 
 	sigCount = 0;
-	setSigHandler(SIG_INTRPT_TIMER,signalHandler);
 	setSigHandler(SIG_INTRPT_KB,signalHandler);
-	while(sigCount < 10)
+	while(sigCount < target)
 		sleep();
 	unsetSigHandler(SIG_INTRPT_KB);
-	unsetSigHandler(SIG_INTRPT_TIMER);
 
 	/*printf("Testing signal...\n");
 	sigTest((u32)signalHandler);

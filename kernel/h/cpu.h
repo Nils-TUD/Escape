@@ -12,11 +12,6 @@ extern u64 cpu_rdtsc(void);
 extern u32 cpu_getCR0(void);
 
 /**
- * @return the value of the CR1 register
- */
-extern u32 cpu_getCR1(void);
-
-/**
  * @return the value of the CR2 register, that means the linear address that caused a page-fault
  */
 extern u32 cpu_getCR2(void);

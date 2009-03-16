@@ -22,7 +22,6 @@
 [global paging_exchangePDir]
 [global cpu_rdtsc]
 [global cpu_getCR0]
-[global cpu_getCR1]
 [global cpu_getCR2]
 [global cpu_getCR3]
 [global cpu_getCR4]
@@ -188,12 +187,6 @@ cpu_rdtsc:
 ; u32 cpu_getCR0(void);
 cpu_getCR0:
 	mov		eax,cr0
-	ret
-
-; u32 cpu_getCR1(void);
-cpu_getCR1:
-	;mov		eax,cr1
-	mov		eax,0
 	ret
 
 ; u32 cpu_getCR2(void);

@@ -9,13 +9,27 @@
 #include <heap.h>
 #include <string.h>
 #include <proc.h>
+#include <signals.h>
+#include <debug.h>
 #include "test.h"
 
-static void signalHandler(u32 arg) {
-	printf("Signal handler...got arg 0x%x\n",arg);
+u32 sigCount = 0;
+
+static void signalHandler(u8 sigNo) {
+	/*GET_REGS(buffer);
+	dumpDwords(buffer[R_ESP] - 10*4,60);
+	PRINT_REGS();*/
+	printf("Got signal %d (%d)\n",sigNo,sigCount++);
 }
 
 s32 shell_cmdTest(u32 argc,s8 **argv) {
+	sigCount = 0;
+	setSigHandler(SIG_INTRPT_TIMER,signalHandler);
+	setSigHandler(SIG_INTRPT_KB,signalHandler);
+	while(sigCount < 10)
+		sleep();
+	unsetSigHandler(SIG_INTRPT_KB);
+	unsetSigHandler(SIG_INTRPT_TIMER);
 
 	/*printf("Testing signal...\n");
 	sigTest((u32)signalHandler);

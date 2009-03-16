@@ -27,6 +27,17 @@ void dumpBytes(void *addr,u32 byteCount) {
 	}
 }
 
+void dumpDwords(void *addr,u32 dwordCount) {
+	u32 i = 0;
+	u32 *ptr = (u32*)addr;
+	for(i = 0; dwordCount-- > 0; i++) {
+		if(i % 4 == 0)
+			printf("\n%08x: ",ptr);
+		printf("%08x ",*ptr);
+		ptr++;
+	}
+}
+
 void debugf(cstring fmt,...) {
 	va_list ap;
 	va_start(ap, fmt);

@@ -13,6 +13,7 @@
 
 static void test_vfsn(void);
 static void test_vfsn_resolvePath(void);
+static bool test_vfsn_resolveRealPath(cstring a);
 static bool test_vfsn_resolvePathCpy(cstring a,cstring b);
 static void test_vfsn_getPath(void);
 
@@ -30,9 +31,9 @@ static void test_vfsn(void) {
 static void test_vfsn_resolvePath(void) {
 	test_caseStart("Testing vfsn_resolvePath()");
 
-	if(!test_vfsn_resolvePathCpy("/","file")) return;
-	if(!test_vfsn_resolvePathCpy("//","file")) return;
-	if(!test_vfsn_resolvePathCpy("///","file")) return;
+	if(!test_vfsn_resolveRealPath("/")) return;
+	if(!test_vfsn_resolveRealPath("//")) return;
+	if(!test_vfsn_resolveRealPath("///")) return;
 	if(!test_vfsn_resolvePathCpy("system:/..","system")) return;
 	if(!test_vfsn_resolvePathCpy("system://../..","system")) return;
 	if(!test_vfsn_resolvePathCpy("system://./.","system")) return;
@@ -55,31 +56,28 @@ static void test_vfsn_resolvePath(void) {
 	test_caseSucceded();
 }
 
+static bool test_vfsn_resolveRealPath(cstring a) {
+	tVFSNodeNo no;
+	return test_assertInt(vfsn_resolvePath(a,&no),ERR_REAL_PATH);
+}
+
 static bool test_vfsn_resolvePathCpy(cstring a,cstring b) {
-	static s8 c[100];
 	s32 err;
 	tVFSNodeNo no;
 	sVFSNode *node;
-	strncpy(c,b,99);
 	if((err = vfsn_resolvePath(a,&no)) != 0) {
 		test_caseFailed("Unable to resolve the path %s",a);
 		return false;
 	}
 
 	node = vfsn_getNode(no);
-	return test_assertStr(node->name,c);
+	return test_assertStr(node->name,b);
 }
 
 static void test_vfsn_getPath(void) {
 	tVFSNodeNo no;
 
 	test_caseStart("Testing vfsn_getPath()");
-
-	vfsn_resolvePath("/",&no);
-	test_assertStr(vfsn_getPath(no),(string)"file:");
-
-	vfsn_resolvePath("file:/",&no);
-	test_assertStr(vfsn_getPath(no),(string)"file:");
 
 	vfsn_resolvePath("system:",&no);
 	test_assertStr(vfsn_getPath(no),(string)"system:");

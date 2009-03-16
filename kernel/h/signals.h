@@ -26,12 +26,7 @@
 #define SIG_INTRPT_ATA2		11
 
 /* signal-handler-signature */
-typedef void (*fSigHandler)(u8 sigNo);
-
-/**
- * Inits the signal-handling
- */
-void sig_init(void);
+typedef void (*fSigHandler)(tSig sigNo);
 
 /**
  * Checks wether we can handle the given signal
@@ -39,7 +34,7 @@ void sig_init(void);
  * @param signal the signal
  * @return true if so
  */
-bool sig_canHandle(u8 signal);
+bool sig_canHandle(tSig signal);
 
 /**
  * Sets the given signal-handler for <signal>
@@ -49,7 +44,7 @@ bool sig_canHandle(u8 signal);
  * @param func the handler-function
  * @return 0 if successfull
  */
-s32 sig_setHandler(tPid pid,u8 signal,fSigHandler func);
+s32 sig_setHandler(tPid pid,tSig signal,fSigHandler func);
 
 /**
  * Removes the signal-handler for <signal>
@@ -57,7 +52,14 @@ s32 sig_setHandler(tPid pid,u8 signal,fSigHandler func);
  * @param pid the process-id
  * @param signal the signal
  */
-void sig_unsetHandler(tPid pid,u8 signal);
+void sig_unsetHandler(tPid pid,tSig signal);
+
+/**
+ * Removes all handler for the given process
+ *
+ * @param pid the process-id
+ */
+void sig_removeHandlerFor(tPid pid);
 
 /**
  * Checks wether there is any signal to handle. If so <sig> and <pid> will be set
@@ -67,7 +69,7 @@ void sig_unsetHandler(tPid pid,u8 signal);
  * @param pid the process-id (will be set on success)
  * @return true if there is a signal
  */
-bool sig_hasSignal(u8 *sig,tPid *pid);
+bool sig_hasSignal(tSig *sig,tPid *pid);
 
 /**
  * Adds the given signal for the given process
@@ -77,7 +79,7 @@ bool sig_hasSignal(u8 *sig,tPid *pid);
  * @return true if we should directly switch to the process (handle the signal) or false
  * 	if the process is active and we should do this later
  */
-bool sig_addSignalFor(tPid pid,u8 signal);
+bool sig_addSignalFor(tPid pid,tSig signal);
 
 /**
  * Adds the given signal to all processes that have announced a handler for it
@@ -85,7 +87,7 @@ bool sig_addSignalFor(tPid pid,u8 signal);
  * @param signal the signal
  * @return the process-id to which we should switch now or INVALID_PID if we should do this later
  */
-tPid sig_addSignal(u8 signal);
+tPid sig_addSignal(tSig signal);
 
 /**
  * Starts handling the given signal. That means the signal will be marked as "active" until
@@ -93,8 +95,9 @@ tPid sig_addSignal(u8 signal);
  *
  * @param pid the process-id
  * @param signal the signal
+ * @return the handler-function or NULL
  */
-void sig_startHandling(tPid pid,u8 signal);
+fSigHandler sig_startHandling(tPid pid,tSig signal);
 
 /**
  * Acknoledges the given signal (marks handling as finished)
@@ -102,6 +105,27 @@ void sig_startHandling(tPid pid,u8 signal);
  * @param pid the process-id
  * @param signal the signal
  */
-void sig_ackHandling(tPid pid,u8 signal);
+void sig_ackHandling(tPid pid,tSig signal);
+
+
+#if DEBUGGING
+
+/**
+ * @return the total number of announced handlers
+ */
+u32 sig_dbg_getHandlerCount(void);
+
+/**
+ * @param signal the signal-number
+ * @return the name of the given signal
+ */
+cstring sig_dbg_getName(tSig signal);
+
+/**
+ * Prints all announced signal-handlers
+ */
+void sig_dbg_print(void);
+
+#endif
 
 #endif /* SIGNALS_H_ */

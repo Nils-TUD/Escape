@@ -28,14 +28,6 @@ typedef struct {
 static void putEscape(const s8 *str,u8 length);
 
 /**
- * Prints the given unsigned 32-bit integer in the given base
- *
- * @param n the integer
- * @param base the base (2..16)
- */
-static void printu(u32 n,u8 base);
-
-/**
  * Determines the width of the given unsigned 32-bit integer in the given base
  *
  * @param n the integer
@@ -45,26 +37,12 @@ static void printu(u32 n,u8 base);
 static u8 getuwidth(u32 n,u8 base);
 
 /**
- * Prints the given string on the screen
- *
- * @param str the string
- */
-static void puts(cstring str);
-
-/**
  * Determines the width of the given string
  *
  * @param str the string
  * @return the width
  */
 static u8 getswidth(cstring str);
-
-/**
- * Prints the given signed 32-bit integer in base 10
- *
- * @param n the integer
- */
-static void printn(s32 n);
 
 /**
  * Determines the width of the given signed 32-bit integer in base 10
@@ -380,7 +358,7 @@ static void putEscape(const s8 *str,u8 length) {
 		putchar(*ptr++);
 }
 
-static void printu(u32 n,u8 base) {
+void printu(u32 n,u8 base) {
 	if(n >= base) {
 		printu(n / base,base);
 	}
@@ -396,7 +374,7 @@ static u8 getuwidth(u32 n,u8 base) {
 	return width;
 }
 
-static void puts(cstring str) {
+void puts(cstring str) {
 	s8 c;
 	while((c = *str)) {
 		/* escape-code? */
@@ -425,7 +403,7 @@ static u8 getswidth(cstring str) {
 	return width;
 }
 
-static void printn(s32 n) {
+void printn(s32 n) {
 	if(n < 0) {
 		putchar('-');
 		n = -n;

@@ -63,9 +63,26 @@ bool handleDefaultEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,s8 c,u8 *
 void putchar(s8 c);
 
 /**
- * Flushes the buffer
+ * Prints the given string on the screen
+ *
+ * @param str the string
  */
-void flush(void);
+void puts(cstring str);
+
+/**
+ * Prints the given unsigned 32-bit integer in the given base
+ *
+ * @param n the integer
+ * @param base the base (2..16)
+ */
+void printu(u32 n,u8 base);
+
+/**
+ * Prints the given signed 32-bit integer in base 10
+ *
+ * @param n the integer
+ */
+void printn(s32 n);
 
 /**
  * The kernel-version of printf. Currently it supports:
@@ -89,6 +106,11 @@ void printf(cstring fmt,...);
  * @param ap the argument-list
  */
 void vprintf(cstring fmt,va_list ap);
+
+/**
+ * Flushes the buffer
+ */
+void flush(void);
 
 /**
  * Request the given IO-port

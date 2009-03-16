@@ -12,6 +12,7 @@
 #include <string.h>
 #include <debug.h>
 #include <proc.h>
+#include <signals.h>
 
 #include "set1.h"
 
@@ -22,34 +23,19 @@
 /* ICW = initialisation command word */
 #define PIC_ICW1			0x20
 
-/* the size of the keycode-buffer */
-#define BUFFER_SIZE			256
-/* the keyboard msg-id */
-#define KEYBOARD_MSG_INTRPT	0xFF
+/**
+ * The keyboard-interrupt handler
+ */
+static void kbIntrptHandler(tSig sig);
 
-/* a request-message for the keyboard-service */
-typedef struct {
-	/* the message-id */
-	u8 id;
-} sMsgKbRequest;
-
-/* the interrupt-msg */
-static sMsgKbRequest kbIntrptMsg = {
-	.id = KEYBOARD_MSG_INTRPT
-};
+/* file-descriptor for ourself */
+static s32 selfFd;
 
 s32 main(void) {
-	s32 selfFd;
 	s32 id;
 
 	id = regService("keyboard",SERVICE_TYPE_SINGLEPIPE);
 	if(id < 0) {
-		printLastError();
-		return 1;
-	}
-
-	/* we want to get notified about keyboard interrupts */
-	if(addIntrptListener(id,IRQ_KEYBOARD,&kbIntrptMsg,sizeof(sMsgKbRequest)) < 0) {
 		printLastError();
 		return 1;
 	}
@@ -71,39 +57,33 @@ s32 main(void) {
 		return 1;
 	}
 
-	static sMsgKbResponse resp;
-	static sMsgKbRequest msg;
-	while(1) {
-		s32 fd = getClient(id);
-		if(fd < 0) {
-			sleep();
-		}
-		else {
-			s32 c = 0;
-			do {
-				if((c = read(fd,&msg,sizeof(sMsgKbRequest))) < 0)
-					printLastError();
-				else if(c > 0) {
-					if(msg.id == KEYBOARD_MSG_INTRPT) {
-						u8 scanCode = inByte(IOPORT_KB_CTRL);
-						if(kb_set1_getKeycode(&resp,scanCode)) {
-							/* write in receive-pipe */
-							write(selfFd,&resp,sizeof(sMsgKbResponse));
-						}
-						/* ack scancode */
-						outByte(IOPORT_PIC,PIC_ICW1);
-					}
-				}
-			}
-			while(c > 0);
-			close(fd);
-		}
+	/* we want to get notified about keyboard interrupts */
+	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0) {
+		printLastError();
+		return 1;
 	}
 
+	/* wait for interrupts */
+	while(1)
+		sleep();
+
 	/* clean up */
+	unsetSigHandler(SIG_INTRPT_KB);
+	close(selfFd);
 	releaseIOPort(IOPORT_PIC);
 	releaseIOPort(IOPORT_KB_CTRL);
-
 	unregService(id);
+
 	return 0;
+}
+
+static void kbIntrptHandler(tSig sig) {
+	static sMsgKbResponse resp;
+	u8 scanCode = inByte(IOPORT_KB_CTRL);
+	if(kb_set1_getKeycode(&resp,scanCode)) {
+		/* write in receive-pipe */
+		write(selfFd,&resp,sizeof(sMsgKbResponse));
+	}
+	/* ack scancode */
+	outByte(IOPORT_PIC,PIC_ICW1);
 }

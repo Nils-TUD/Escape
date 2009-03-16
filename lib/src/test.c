@@ -70,6 +70,7 @@ bool test_assertTrue(bool received) {
 		test_caseFailed("Assert %d: Received false, expected true",assertCount);
 		return false;
 	}
+	testPrintf("ASSERT %d succeded\n",assertCount);
 	return true;
 }
 
@@ -79,6 +80,7 @@ bool test_assertFalse(bool received) {
 		test_caseFailed("Assert %d: Received true, expected false",assertCount);
 		return false;
 	}
+	testPrintf("ASSERT %d succeded\n",assertCount);
 	return true;
 }
 
@@ -89,6 +91,7 @@ bool test_assertPtr(void *received,void *expected) {
 				expected,received);
 		return false;
 	}
+	testPrintf("ASSERT %d succeded\n",assertCount);
 	return true;
 }
 
@@ -99,6 +102,7 @@ bool test_assertInt(s32 received,s32 expected) {
 				expected,received);
 		return false;
 	}
+	testPrintf("ASSERT %d succeded\n",assertCount);
 	return true;
 }
 
@@ -109,6 +113,7 @@ bool test_assertUInt(u32 received,u32 expected) {
 				expected,received);
 		return false;
 	}
+	testPrintf("ASSERT %d succeded\n",assertCount);
 	return true;
 }
 

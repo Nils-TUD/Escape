@@ -3,6 +3,7 @@
 [global init]
 [extern main]
 [extern exit]
+[extern ackSignal]
 
 ALIGN 4
 
@@ -16,21 +17,20 @@ init:
 	; just to be sure
 	jmp		$
 
-;[extern sigTest]
-; restores registers and stack after a signal-handling
-;sigRetFunc:
-;	add		esp,4
-;	pop		esi
-;	pop		edi
-;	pop		edx
-;	pop		ecx
-;	pop		ebx
-;	pop		eax
-;	cmp		DWORD [esp-6*4],0
-;	je		sigFinished
-;	mov		eax,[esp]
-;	push  eax
-;	call	sigTest
-;	add		esp,4
-;sigFinished:
-;	ret
+
+; all signal-handler return to this "function" (address 0xd)
+sigRetFunc:
+	; ack signal so that the kernel knows that we accept another signal
+	push	DWORD [esp - 7 * 4]
+	call	ackSignal
+	; remove arg of ackSignal and the signal-handler
+	add		esp,8
+	; restore register
+	pop		esi
+	pop		edi
+	pop		edx
+	pop		ecx
+	pop		ebx
+	pop		eax
+	; return to the instruction before the signal
+	ret

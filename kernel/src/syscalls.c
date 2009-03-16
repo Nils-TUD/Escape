@@ -253,53 +253,6 @@ void sysc_handle(sIntrptStackFrame *intrptStack) {
 	}
 }
 
-#if 0
-static void sysc_sigTest(sSysCallStack *stack) {
-	u32 *esp = (u32*)stack;
-	/* save regs */
-	*esp-- = intrptStack->eip;
-	*esp-- = intrptStack->eax;
-	*esp-- = intrptStack->ebx;
-	*esp-- = intrptStack->ecx;
-	*esp-- = intrptStack->edx;
-	*esp-- = intrptStack->edi;
-	*esp-- = intrptStack->esi;
-	/* dummy arg */
-	*esp-- = 0x1337;
-	/* address of sigRetFunc */
-	*esp = 0xd;
-	intrptStack->eip = stack->arg1;
-	intrptStack->uesp = esp;
-	SYSC_RET1(stack,0);
-}
-#endif
-
-/*
- * esp		: eip
- * 		- 4	: eax
- * 		- 8 : ebx
- * 		- 12: ecx
- * 		- 16: edx
- * 		- 20: edi
- * 		- 24: esi
- * 		- 28: sig-count (for interrupts)
- * 		- 32: retFunc
- * 		- 36:
- *
- * set eip to sig-handler
- * set esp to esp - 36
- *
- * retFunc:
- * 		add esp,4
- * 		pop esi
- * 		pop edi
- * 		pop edx
- * 		pop ecx
- * 		pop ebx
- * 		pop eax
- * 		ret
- */
-
 static void sysc_getpid(sSysCallStack *stack) {
 	sProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->pid);
@@ -816,6 +769,7 @@ static void sysc_unsetSigHandler(sSysCallStack *stack) {
 	}
 
 	sig_unsetHandler(p->pid,signal);
+
 	SYSC_RET1(stack,0);
 }
 

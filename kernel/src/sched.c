@@ -203,14 +203,19 @@ bool sched_dequeueReadyProc(sProc *p) {
 #if DEBUGGING
 
 void sched_dbg_print(void) {
+	sSLNode *node;
+	sProc *p;
 	sQueueNode *n = rqFirst;
 	vid_printf("Ready-Queue: rqFirst=0x%x, rqLast=0x%x, rqFree=0x%x\n",rqFirst,rqLast,rqFree);
 	while(n != NULL) {
-		vid_printf("\t[0x%x]: p=0x%x, next=0x%x\n",n,n->p,n->next);
+		vid_printf("\t[0x%x]: p=0x%x, pid=%d, next=0x%x\n",n,n->p,n->p->pid,n->next);
 		n = n->next;
 	}
 	vid_printf("Blocked-queue:\n");
-	sll_dbg_print(blockedQueue);
+	for(node = sll_begin(blockedQueue); node != NULL; node = node->next) {
+		p = (sProc*)node->data;
+		vid_printf("\t[0x%x]: p=0x%x, pid=%d\n",node,p,p->pid);
+	}
 	vid_printf("\n");
 }
 

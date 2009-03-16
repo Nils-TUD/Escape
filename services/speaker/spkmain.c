@@ -9,8 +9,7 @@
 #include <service.h>
 #include <proc.h>
 #include <messages.h>
-
-#define MSG_SPEAKER_TIMERINTRPT		0xFF
+#include <signals.h>
 
 #define PIC_FREQUENCY				1193180
 #define IOPORT_PIT_SPEAKER			0x42
@@ -29,12 +28,13 @@ static void playSound(u32 frequency);
  */
 static void stopSound(void);
 
+/**
+ * The timer-interrupt-handler
+ */
+static void timerIntrptHandler(tSig sig);
+
 static u16 intrptCount = 0;
 static u16 intrptTarget = 0;
-static sMsgDefHeader msgTimerIntrpt = {
-	.id = MSG_SPEAKER_TIMERINTRPT,
-	.length = 0
-};
 
 s32 main(void) {
 	s32 fd,id;
@@ -64,26 +64,12 @@ s32 main(void) {
 			sMsgDefHeader header;
 			while(read(fd,&header,sizeof(sMsgDefHeader)) > 0) {
 				switch(header.id) {
-					case MSG_SPEAKER_TIMERINTRPT: {
-						if(intrptTarget > 0) {
-							intrptCount++;
-							if(intrptCount == intrptTarget) {
-								stopSound();
-								/* reset */
-								intrptTarget = 0;
-								intrptCount = 0;
-								remIntrptListener(id,IRQ_TIMER);
-							}
-						}
-					}
-					break;
-
 					case MSG_SPEAKER_BEEP: {
 						sMsgDataSpeakerBeep data;
 						read(fd,&data,sizeof(sMsgDataSpeakerBeep));
 						if(data.frequency > 0 && data.duration > 0) {
 							/* add timer-interrupt listener */
-							if(addIntrptListener(id,IRQ_TIMER,&msgTimerIntrpt,sizeof(sMsgDefHeader)) == 0) {
+							if(setSigHandler(SIG_INTRPT_TIMER,timerIntrptHandler) == 0) {
 								playSound(data.frequency);
 								intrptTarget = data.duration;
 							}
@@ -102,6 +88,19 @@ s32 main(void) {
 	unregService(id);
 
 	return 0;
+}
+
+static void timerIntrptHandler(tSig sig) {
+	if(intrptTarget > 0) {
+		intrptCount++;
+		if(intrptCount == intrptTarget) {
+			stopSound();
+			/* reset */
+			intrptTarget = 0;
+			intrptCount = 0;
+			unsetSigHandler(SIG_INTRPT_TIMER);
+		}
+	}
 }
 
 static void playSound(u32 frequency) {

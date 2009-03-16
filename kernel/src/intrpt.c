@@ -18,6 +18,7 @@
 #include "../h/gdt.h"
 #include "../h/kheap.h"
 #include "../h/video.h"
+#include "../h/signals.h"
 #include <string.h>
 #include <sllist.h>
 
@@ -61,6 +62,9 @@
 /* the maximum length of messages (for interrupt-listeners) */
 #define MSG_MAX_LEN		8
 
+/* the address of the return-from-signal "function" in the startup.s */
+#define SIGRETFUNC_ADDR	0xd
+
 /* represents an IDT-entry */
 typedef struct {
 	/* The address[0..15] of the ISR */
@@ -91,6 +95,13 @@ typedef struct {
 	u8 msgLen;
 	u8 message[MSG_MAX_LEN];
 } sIntrptListener;
+
+/* storage for "delayed" signal handling */
+typedef struct {
+	u8 active;
+	tSig sig;
+	fSigHandler handler;
+} sSignalData;
 
 /* isr prototype */
 typedef void (*fISR)(void);
@@ -183,6 +194,18 @@ static void intrpt_eoi(u32 intrptNo);
  */
 static void intrpt_handleListener(sSLList *list);
 
+/**
+ * Checks for signals and notifies the corresponding process, if necessary
+ */
+static void intrpt_handleSignal(void);
+
+/**
+ * Finishes the signal-handling (does the user-stack-manipulation and so on)
+ *
+ * @param stack the interrupt-stack
+ */
+static void intrpt_handleSignalFinish(sIntrptStackFrame *stack);
+
 /* interrupt -> name */
 static cstring intrptNo2Name[] = {
 	/* 0x00 */	"Divide by zero",
@@ -245,6 +268,32 @@ static u32 lastEx = 0xFFFFFFFF;
  * as an interrupt occurres. The linked list will be NULL if it was not used yet.
  */
 static sSLList *intrptListener[IRQ_NUM];
+
+/* the signal for a irq. SIG_COUNT = invalid */
+static tSig irq2Signal[] = {
+	SIG_INTRPT_TIMER,
+	SIG_INTRPT_KB,
+	SIG_COUNT,
+	SIG_INTRPT_COM2,
+	SIG_INTRPT_COM1,
+	SIG_COUNT,
+	SIG_INTRPT_FLOPPY,
+	SIG_COUNT,
+	SIG_INTRPT_CMOS,
+	SIG_COUNT,
+	SIG_COUNT,
+	SIG_COUNT,
+	SIG_COUNT,
+	SIG_COUNT,
+	SIG_INTRPT_ATA1,
+	SIG_INTRPT_ATA2
+};
+
+/* temporary storage for signal-handling */
+static sSignalData signalData;
+
+/* wether we have to handle prior interrupts */
+static bool intrptsPending = false;
 
 /**
  * An assembler routine to load an IDT
@@ -416,28 +465,6 @@ s32 intrpt_removeListener(u16 irq,tVFSNodeNo nodeNo) {
 	return ERR_IRQ_LISTENER_MISSING;
 }
 
-
-/* TODO temporary */
-typedef struct {
-	s8 name[MAX_PROC_NAME_LEN + 1];
-	u8 *data;
-} sProcData;
-#include "../../build/services.txt"
-static bool servicesLoaded = false;
-static bool firstProcLoaded = false;
-
-/*static u8 task2[] = {
-	#include "../../build/user_task2.dump"
-};
-static bool proc2Ready = false;*/
-
-static u64 umodeTime = 0;
-static u64 kmodeTime = 0;
-static u64 kmodeStart = 0;
-static u64 kmodeEnd = 0;
-
-static bool intrptsPending = false;
-
 static void intrpt_handleListener(sSLList *list) {
 	sSLNode *node;
 	sIntrptListener *l;
@@ -456,6 +483,77 @@ static void intrpt_handleListener(sSLList *list) {
 		}
 	}
 }
+
+static void intrpt_handleSignal(void) {
+	tPid pid;
+	tSig sig;
+	/* already handling a signal? */
+	if(signalData.active == 1)
+		return;
+
+	if(sig_hasSignal(&sig,&pid)) {
+		fSigHandler handler = sig_startHandling(pid,sig);
+		if(handler != NULL) {
+			signalData.active = 1;
+			signalData.sig = sig;
+			signalData.handler = handler;
+			/* a little trick: we store the signal to handle and manipulate the user-stack
+			 * and so on later. if the process is currently running everything is fine. we return
+			 * from here and intrpt_handleSignalFinish() will be called.
+			 * if the target-process is not running we switch to him now. the process is somewhere
+			 * in the kernel but he will leave the kernel IN EVERY CASE at the end of the interrupt-
+			 * handler. So if we do the signal-stuff at the end we'll get there and will
+			 * manipulate the user-stack.
+			 * This is simpler than mapping the user-stack and kernel-stack of the other process
+			 * in the current page-dir and so on :)
+			 */
+			if(proc_getRunning()->pid != pid) {
+				/* ensure that the process is ready */
+				sched_setReady(proc_getByPid(pid));
+				proc_switchTo(pid);
+			}
+		}
+	}
+}
+
+static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
+	u32 *esp = (u32*)stack->uesp;
+	/* save regs */
+	*--esp = stack->eip;
+	*--esp = stack->eax;
+	*--esp = stack->ebx;
+	*--esp = stack->ecx;
+	*--esp = stack->edx;
+	*--esp = stack->edi;
+	*--esp = stack->esi;
+	/* signal-number as argument */
+	*--esp = signalData.sig;
+	/* sigRet will remove the argument, restore the register,
+	 * acknoledge the signal and return to eip */
+	*--esp = SIGRETFUNC_ADDR;
+	stack->eip = (u32)signalData.handler;
+	stack->uesp = (u32)esp;
+
+	/* we don't want to do this again */
+	signalData.active = 0;
+}
+
+/* TODO temporary */
+typedef struct {
+	s8 name[MAX_PROC_NAME_LEN + 1];
+	u8 *data;
+} sProcData;
+#include "../../build/services.txt"
+static bool servicesLoaded = false;
+static bool firstProcLoaded = false;
+/*static u8 task2[] = {
+	#include "../../build/user_task2.dump"
+};
+static bool proc2Ready = false;*/
+static u64 umodeTime = 0;
+static u64 kmodeTime = 0;
+static u64 kmodeStart = 0;
+static u64 kmodeEnd = 0;
 
 void intrpt_handler(sIntrptStackFrame stack) {
 	sProc *p;
@@ -482,6 +580,23 @@ void intrpt_handler(sIntrptStackFrame stack) {
 			if(list != NULL)
 				intrpt_handleListener(list);
 		}
+	}
+
+	/* add signal */
+	switch(stack.intrptNo) {
+		case IRQ_KEYBOARD:
+		case IRQ_TIMER:
+		case IRQ_ATA1:
+		case IRQ_ATA2:
+		case IRQ_CMOS_RTC:
+		case IRQ_FLOPPY:
+		case IRQ_COM1:
+		case IRQ_COM2: {
+			tSig sig = irq2Signal[stack.intrptNo - IRQ_MASTER_BASE];
+			if(sig != SIG_COUNT)
+				sig_addSignal(sig);
+		}
+		break;
 	}
 
 	if(servicesLoaded && firstProcLoaded)
@@ -600,6 +715,11 @@ void intrpt_handler(sIntrptStackFrame stack) {
 					intrpt_no2Name(stack.intrptNo),stack.eip);
 			break;
 	}
+
+	/* handle signals */
+	intrpt_handleSignal();
+	if(signalData.active == 1)
+		intrpt_handleSignalFinish(&stack);
 
 	/* send EOI to PIC */
 	intrpt_eoi(stack.intrptNo);

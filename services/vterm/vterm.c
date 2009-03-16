@@ -405,6 +405,10 @@ static void vterm_putchar(s8 c) {
 				vterm_refreshLines(vterm.row,1);
 				vterm_setCursor();
 			}
+			else {
+				/* beep */
+				write(vterm.speaker,&msgSpeaker,sizeof(sMsgSpeaker));
+			}
 			break;
 
 		case '\t':

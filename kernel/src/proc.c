@@ -17,6 +17,7 @@
 #include "../h/gdt.h"
 #include "../h/cpu.h"
 #include "../h/video.h"
+#include "../h/signals.h"
 #include <string.h>
 
 /* our processes */
@@ -86,6 +87,10 @@ void proc_switchTo(tPid pid) {
 		p->cycleCount += cpu_rdtsc() - startTime;
 
 	if(pid != pi && !proc_save(&p->save)) {
+		/* mark old process ready, if it should not be blocked, killed or something */
+		if(p->state == ST_RUNNING)
+			sched_setReady(p);
+
 		pi = pid;
 		p = procs + pi;
 		sched_setRunning(p);
@@ -328,6 +333,8 @@ void proc_destroy(sProc *p) {
 
 	/* remove from VFS */
 	vfs_removeProcess(p->pid);
+	/* remove signals */
+	sig_removeHandlerFor(p->pid);
 
 	/* TODO we have to unregister services, if p is on */
 

@@ -28,6 +28,8 @@ typedef u32 tVFSNodeNo;
 typedef u16 tFD;
 /* inode-number */
 typedef u32 tInodeNo;
+/* signal-number */
+typedef u8 tSig;
 
 /* TODO use <stddef.h>? */
 #define NULL (void*)0
@@ -88,8 +90,7 @@ typedef enum {false = 0, true = 1} bool;
 #define ERR_IRQ_LISTENER_MISSING	-21
 #define ERR_NO_CLIENT_WAITING		-22
 #define ERR_FS_NOT_FOUND			-23
-#define ERR_SIG_HANDLER_EXISTS		-24
-#define ERR_INVALID_SIGNAL			-25
+#define ERR_INVALID_SIGNAL			-24
 
 /**
  * Prints the last error-message

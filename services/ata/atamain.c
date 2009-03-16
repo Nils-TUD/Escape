@@ -11,6 +11,7 @@
 #include <heap.h>
 #include <proc.h>
 #include <debug.h>
+#include "partition.h"
 
 /* port-bases */
 #define REG_BASE_PRIMARY			0x1F0
@@ -78,8 +79,11 @@ typedef struct {
 	u8 lba48;
 	/* number of sectors of the drive */
 	u64 sectorCount;
+	/* the partition-table */
+	sPartition partTable[PARTITION_COUNT];
 } sATADrive;
 
+static void ata_printDrives(void);
 static void ata_wait(void);
 static bool ata_isDrivePresent(u8 drive);
 static void ata_detectDrives(void);
@@ -116,6 +120,13 @@ s32 main(void) {
 	}
 
 	ata_detectDrives();
+	ata_printDrives();
+
+	u32 i;
+	for(i = 0; i < DRIVE_COUNT; i++) {
+		if(drives[i].present) {
+		}
+	}
 
 	sMsgDefHeader header;
 	while(1) {
@@ -177,6 +188,27 @@ s32 main(void) {
 	return 0;
 }
 
+static void ata_printDrives(void) {
+	static cstring names[] = {"Primary Master","Primary Slave","Secondary Master","Secondary Slave"};
+	u32 d,p;
+	sATADrive *drive = drives;
+	sPartition *part;
+	debugf("Drives:\n");
+	for(d = 0; d < DRIVE_COUNT; d++) {
+		debugf("\t%s (present=%d,sectors=%d)\n",names[d],drives[d].present,drives[d].sectorCount);
+		if(drives[d].present) {
+			part = drives[d].partTable;
+			for(p = 0; p < PARTITION_COUNT; p++) {
+				if(part->present) {
+					debugf("\t\t%d: start=0x%x, sectors=%d size=%d byte\n",p,part->start,
+							part->size,part->size * 512);
+				}
+				part++;
+			}
+		}
+	}
+}
+
 static void ata_wait(void) {
 	volatile u32 i;
 	for(i = 0; i < 100000; i++);
@@ -188,9 +220,13 @@ static bool ata_isDrivePresent(u8 drive) {
 
 static void ata_detectDrives(void) {
 	u32 i;
+	u16 buffer[256];
 	for(i = 0; i < DRIVE_COUNT; i++) {
-		if(ata_identifyDrive(drives + i))
+		if(ata_identifyDrive(drives + i)) {
 			drives[i].present = 1;
+			ata_readWrite(drives + i,false,buffer,0,1);
+			part_fillPartitions(drives[i].partTable,buffer);
+		}
 	}
 }
 

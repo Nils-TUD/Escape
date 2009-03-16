@@ -91,6 +91,7 @@ s32 main(void) {
 }
 
 static void timerIntrptHandler(tSig sig) {
+	UNUSED(sig);
 	if(intrptTarget > 0) {
 		intrptCount++;
 		if(intrptCount == intrptTarget) {

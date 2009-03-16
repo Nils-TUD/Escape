@@ -2,7 +2,7 @@ src/heap.c:216: warning: unused parameter ‘addr’
 src/heap.c:216: warning: unused parameter ‘size’
 atamain.c:102: warning: return type of ‘main’ is not ‘int’
 fsmain.c:51: warning: return type of ‘main’ is not ‘int’
-kbmain.c:41: warning: return type of ‘main’ is not ‘int’
+kbmain.c:34: warning: return type of ‘main’ is not ‘int’
 spkmain.c:39: warning: return type of ‘main’ is not ‘int’
 vidmain.c:49: warning: return type of ‘main’ is not ‘int’
 vtmain.c:19: warning: return type of ‘main’ is not ‘int’
@@ -23,3 +23,5 @@ tstring.c: In function ‘test_atoi’:
 tstring.c:82: warning: this decimal constant is unsigned only in ISO C90
 tstring.c: In function ‘test_itoa’:
 tstring.c:110: warning: this decimal constant is unsigned only in ISO C90
+tvfsnode.c: In function ‘test_vfsn_resolvePathCpy’:
+tvfsnode.c:74: warning: passing argument 2 of ‘test_assertStr’ discards qualifiers from pointer target type

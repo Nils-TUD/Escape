@@ -78,6 +78,7 @@ s32 main(void) {
 }
 
 static void kbIntrptHandler(tSig sig) {
+	UNUSED(sig);
 	static sMsgKbResponse resp;
 	u8 scanCode = inByte(IOPORT_KB_CTRL);
 	if(kb_set1_getKeycode(&resp,scanCode)) {

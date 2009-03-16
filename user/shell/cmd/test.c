@@ -16,6 +16,7 @@
 u32 sigCount = 0;
 
 static void signalHandler(u8 sigNo) {
+	UNUSED(sigNo);
 	/*GET_REGS(buffer);
 	dumpDwords(buffer[R_ESP] - 10*4,60);
 	PRINT_REGS();*/
@@ -23,6 +24,9 @@ static void signalHandler(u8 sigNo) {
 }
 
 s32 shell_cmdTest(u32 argc,s8 **argv) {
+	UNUSED(argc);
+	UNUSED(argv);
+
 	sigCount = 0;
 	setSigHandler(SIG_INTRPT_TIMER,signalHandler);
 	setSigHandler(SIG_INTRPT_KB,signalHandler);

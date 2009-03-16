@@ -224,7 +224,6 @@ static sHandler *sig_get(tPid pid,tSig signal) {
 u32 sig_dbg_getHandlerCount(void) {
 	u32 i,c;
 	sSLNode *n;
-	sHandler *h;
 	sSLList **list;
 
 	c = 0;

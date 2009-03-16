@@ -1,378 +1,1034 @@
-00000000000i[     ] Bochs x86 Emulator 2.3.7
-00000000000i[     ]   Build from CVS snapshot, on June 3, 2008
-00000000000i[     ] System configuration
-00000000000i[     ]   processors: 1 (cores=1, HT threads=1)
-00000000000i[     ]   A20 line support: yes
-00000000000i[     ]   APIC support: no
-00000000000i[     ] CPU configuration
-00000000000i[     ]   level: 5
-00000000000i[     ]   SMP support: no
-00000000000i[     ]   FPU support: yes
-00000000000i[     ]   MMX support: yes
-0000000GDT exchanged, paging enabled, video initializedDONE
+GDT exchanged, paging enabled, video initializedDONE
 MultiBoot-Structure:
 ---------------------
 flags=0x7e7
-memLower=639 KB, memUpper=31680 KB
+memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
-cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x23f000, shndx=0x10
+cmdLine=/kernel_test.bin
+ELF: num=19, size=40, addr=0x270000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
-	  1: addr=0x00100000, size=0x01ef0000, type=0x00000001
+	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000000282816
+Clock cycles: 0x0000000001893a4d
 Initializing VFS...DONE
-Clock cycles: 0x0000000000011760
+Clock cycles: 0x000000000013904a
 Initializing process-management...DONE
-Clock cycles: 0x00000000000058dd
+Clock cycles: 0x00000000000e436f
 Initializing IDT...DONE
-Clock cycles: 0x00000000000048b5
-Free frames=7919, pages mapped=1281, free mem=31676 KiB
-Welcome to Escape v0.1!
-Try 'help' to see the current features :)
+Clock cycles: 0x00000000000b0e6e
+Free frames=32495, pages mapped=1281, free mem=129980 KiB
 
-# test
-Got signal 4 (0)
-Got signal 5 (1)
-Got signal 4 (2)
-Got signal 4 (3)
-Got signal 4 (4)
-Got signal 4 (5)
-Got signal 4 (6)
-Got signal 4 (7)
-Got signal 4 (8)
-Got signal 4 (9)
-# aaaasdtest
-Got signal 5 (0)
-Got signal 4 (1)
-Got signal 4 (2)
-Got signal 4 (3)
-Got signal 4 (4)
-Got signal 4 (5)
-Got signal 4 (6)
-Got signal 4 (7)
-Got signal 4 (8)
-Got signal 4 (9)
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  007	 	  	  Ready  	 	  0x000001c08621f079	  init
-01	  	  00	  	  008	 	  	  Blocked	 	  0x000000000029524d	  ata
-02	  	  00	  	  007	 	  	  Blocked	 	  0x000000000003c769	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000278f58	  keyboard
-04	  	  00	  	  007	 	  	  Blocked	 	  0x000000000004c7a1	  speaker
-05	  	  00	  	  011	 	  	  Blocked	 	  0x000000000057b367	  video
-06	  	  00	  	  018	 	  	  Blocked	 	  0x000000000061c6bf	  vterm
-07	  	  00	  	  010	 	  	  Running	 	  0x00000000001cdbb4	  shell
+====== Starting test-procedure ======
+---- Starting with module 0 : "Physical memory-management" ----
 
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  007	 	  	  Ready  	 	  0x000001db486ffb56	  init
-01	  	  00	  	  008	 	  	  Blocked	 	  0x0000000000297a8d	  ata
-02	  	  00	  	  007	 	  	  Blocked	 	  0x000000000003f04f	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x00000000002a3b70	  keyboard
-04	  	  00	  	  007	 	  	  Blocked	 	  0x000000000004f149	  speaker
-05	  	  00	  	  011	 	  	  Ready  	 	  0x00000000007b0100	  video
-06	  	  00	  	  018	 	  	  Blocked	 	  0x000000000085e12d	  vterm
-07	  	  00	  	  010	 	  	  Running	 	  0x0000000000351091	  shell
+== Testcase 1 : Requesting and freeing 50 frames < 16MB...
+ ==
+== >> SUCCESS ==
 
-# ========================================================================
-Bochs is exiting with the following message:
-[     ] SIGNAL 2 caught
-========================================================================
-00000i[     ] init_dev of 'extfpuirq' plugin device by virtual method
-00000000000i[     ] init_dev of 'speaker' plugin device by virtual method
-00000000000i[SPEAK] Failed to open /dev/console: Resource temporarily unavailable
-00000000000i[SPEAK] Deactivating beep on console
-00000000000i[     ] register state of 'harddrv' plugin device by virtual method
-00000000000i[     ] register state of 'keyboard' plugin device by virtual method
-00000000000i[     ] register state of 'extfpuirq' plugin device by virtual method
-00000000000i[     ] register state of 'speaker' plugin device by virtual method
-00000000000i[SYS  ] bx_pc_system_c::Reset(HARDWARE) called
-00000000000i[CPU  ] cpu hardware reset
-00000000000i[     ] reset of 'harddrv' plugin device by virtual method
-00000000000i[     ] reset of 'keyboard' plugin device by virtual method
-00000000000i[     ] reset of 'extfpuirq' plugin device by virtual method
-00000000000i[     ] reset of 'speaker' plugin device by virtual method
-00000003302i[BIOS ] $Revision: 1.209 $ $Date: 2008/06/02 20:08:10 $
-00000321059i[KBD  ] reset-disable command received
-00000450248i[VBIOS] VGABios $Id$
-00000450319i[VGA  ] VBE known Display Interface b0c0
-00000450351i[VGA  ] VBE known Display Interface b0c4
-00000453276i[VBIOS] VBE Bios $Id$
-00000781064i[BIOS ] Starting rombios32
-00000781745i[BIOS ] ram_size=0x02000000
-00000782241i[BIOS ] Found 1 cpu(s)
-00000872462i[BIOS ] ata0-0: PCHS=10/16/63 translation=none LCHS=10/16/63
-00004752411i[BIOS ] IDE time out
-00041409720i[BIOS ] Booting from 0000:7c00
-00069349185i[BIOS ] int13_harddisk: function 41, unmapped device for ELDL=81
-00069353962i[BIOS ] int13_harddisk: function 08, unmapped device for ELDL=81
-00069358621i[BIOS ] *** int 15h function AX=00c0, BX=0000 not yet supported!
-00301432001e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00301489949e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00301576016e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00301722896e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00301751209e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00301882983e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00302068927e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00302184740e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00302271374e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00302306339e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00315484868e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00316156906e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00319420673e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00320140929e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00321772906e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00322516973e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00328072920e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00328123585e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00328157858e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00328288837e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00328344848e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00328379121e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00328624752e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00328828940e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00329584941e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00329641877e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00329676150e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00330040731e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00330097386e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00330131659e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00330556726e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00330892770e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00333604693e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00333661629e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00333814868e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00334179666e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00334286193e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00334316046e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00334445098e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00334555032e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00334589022e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00334838497e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00334955673e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00335497910e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00335616899e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00336156907e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00336277656e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00336816104e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00336938613e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00337475111e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00337599380e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00338134318e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00338260347e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00338793335e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00338921124e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00339452552e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00339586899e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00339718248e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00339753840e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00346037705e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00346589031e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00347500763e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00348016954e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00348808952e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00349361048e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00350116776e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00350680962e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00351448780e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00351952824e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00351976660e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00352709027e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00353297003e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00354761053e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00354812418e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00354846837e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00355240833e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00355264669e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00356008940e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00356065655e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00356100074e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00356381002e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00356956999e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00357014785e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00357049204e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00357628954e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00359141033e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00359198811e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00359224378e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00359266268e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00359645085e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00360629100e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00360689278e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00360732869e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00361121046e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00361912795e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00361970573e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00362014186e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00362428883e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00363208932e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00363761057e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00364516583e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00365200865e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00365956772e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00366604783e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00367144841e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00367888817e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00400768963e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00400820328e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00400854747e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00401081043e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00401137750e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00401172169e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00401584999e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00401642454e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00401676873e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00401788931e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00402076726e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00402713024e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00402736860e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00407428999e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00407486777e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00407530346e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00407897073e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00408508950e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00408566728e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00408610319e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00409048888e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00409612795e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00409670573e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00409714186e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00410141055e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00419981090e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00420038876e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00420073295e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00420376843e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00420434298e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00420468717e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00420557067e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00420760922e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00421228830e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00421286616e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00421321035e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00421816853e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00421840689e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00421898183e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00421932602e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00422056750e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00422584777e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00424312857e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00424370643e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00424547749e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00424697172e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00424724938e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00424757119e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00424896781e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00425136078e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00425271215e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00425795173e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00425932052e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00426454350e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00426593094e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00427113610e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00427254009e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00427772797e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00427915061e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00428431677e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00428575596e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00429090874e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00429236658e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00429749764e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00429897203e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00430408971e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00430562695e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00430694125e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00430729662e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00435017002e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00435074098e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00435108444e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00435617057e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00435664316e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00435695972e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00435729048e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00435757005e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00436289079e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00437368754e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00437426115e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00437619284e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00437647764e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00438009285e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00438037424e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00438240870e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00438314649e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00438681220e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00438975480e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00439339575e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00439632826e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00439997972e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00440291607e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00440692605e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00441122572e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00441676121e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00442159043e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00442442100e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00442729993e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00442993366e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00443240155e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00443391165e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00443478418e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00443514010e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00452944991e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00453001793e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00453036212e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00453592952e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00453629099e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00453683267e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00453717656e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00454529034e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00455224906e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00455281621e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00455450347e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00455825959e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00455901555e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00456289439e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00456534146e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00456947970e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00456976840e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00457364713e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00457428121e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00457818389e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00458087480e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00458480648e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00458746420e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00459140352e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00459405653e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00459799270e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00460066183e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00460461576e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00460723582e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00460951290e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00461325202e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00461492787e[CPU  ] allow_io(): IO addr e9 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00461584048e[CPU  ] allow_io(): IO addr 3d4 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00468113036e[CPU  ] allow_io(): IO addr 60 (len 1) outside TSS IO permission map (base=2078, limit=2067) #GP(0)
-00469859116p[     ] >>PANIC<< SIGNAL 2 caught
-00469859116i[CPU  ] CPU is in protected mode (active)
-00469859116i[CPU  ] CS.d_b = 32 bit
-00469859116i[CPU  ] SS.d_b = 32 bit
-00469859116i[CPU  ] | EAX=00000030  EBX=00000000  ECX=c01da400  EDX=000001e8
-00469859116i[CPU  ] | ESP=ffbfff50  EBP=ffbfff58  ESI=00053bbe  EDI=00053bbf
-00469859116i[CPU  ] | IOPL=0 id vip vif ac vm rf nt of df if tf sf zf AF PF cf
-00469859116i[CPU  ] | SEG selector     base    limit G D
-00469859116i[CPU  ] | SEG sltr(index|ti|rpl)     base    limit G D
-00469859116i[CPU  ] |  CS:0008( 0001| 0|  0) 00000000 000fffff 1 1
-00469859116i[CPU  ] |  DS:0023( 0004| 0|  3) 00000000 000fffff 1 1
-00469859116i[CPU  ] |  SS:0010( 0002| 0|  0) 00000000 000fffff 1 1
-00469859116i[CPU  ] |  ES:0023( 0004| 0|  3) 00000000 000fffff 1 1
-00469859116i[CPU  ] |  FS:0023( 0004| 0|  3) 00000000 000fffff 1 1
-00469859116i[CPU  ] |  GS:0023( 0004| 0|  3) 00000000 000fffff 1 1
-00469859116i[CPU  ] | EIP=c01019af (c01019af)
-00469859116i[CPU  ] | CR0=0xe0000011 CR1=0 CR2=0xbffffff8
-00469859116i[CPU  ] | CR3=0x00172000 CR4=0x00000000
-00469859116i[CPU  ] >> call .+0xffffe704 (0xc01000b8) : E804E7FFFF
-00469859116i[CMOS ] Last time is 1237224264 (Mon Mar 16 18:24:24 2009)
-00469859116i[     ] restoring default signal behavior
-00469859116i[CTRL ] quit_sim called with exit code 1
+== Testcase 2 : Requesting and freeing 50 frames > 16MB...
+ ==
+== >> SUCCESS ==
+
+---- Module "Physical memory-management" finished. Summary: ----
+-- 2 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 1 : "Paging" ----
+
+== Testcase 1 : Mapping 0 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 2 : Mapping 1 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 3 : Mapping 50 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 4 : Mapping 1024 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 5 : Mapping 1025 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 6 : Mapping 2048 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 7 : Mapping 2051 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 8 : Mapping 0 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 9 : Mapping 1 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 10 : Mapping 50 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 11 : Mapping 1024 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 12 : Mapping 1025 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 13 : Mapping 2048 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 14 : Mapping 2051 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 15 : Mapping 0 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 16 : Mapping 1 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 17 : Mapping 50 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 18 : Mapping 1024 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 19 : Mapping 1025 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 20 : Mapping 2048 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 21 : Mapping 2051 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 22 : Mapping 0 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 23 : Mapping 1 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 24 : Mapping 50 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 25 : Mapping 1024 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 26 : Mapping 1025 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 27 : Mapping 2048 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 28 : Mapping 2051 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 29 : Mapping 0 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+== Testcase 30 : Mapping 1 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+== Testcase 31 : Mapping 50 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+== Testcase 32 : Mapping 1024 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+== Testcase 33 : Mapping 1025 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+== Testcase 34 : Mapping 2048 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+== Testcase 35 : Mapping 2051 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+---- Module "Paging" finished. Summary: ----
+-- 35 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 2 : "Process-Management" ----
+
+== Testcase 1 : Cloning and destroying processes ==
+Cloning process to pid=1
+Destroying process
+Cloning process to pid=1
+Destroying process
+Cloning process to pid=1
+Destroying process
+Cloning process to pid=1
+Destroying process
+Cloning process to pid=1
+Destroying process
+== >> SUCCESS ==
+
+== Testcase 2 : Change area 0 by 0 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 3 : Change area 0 by 1 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 4 : Change area 0 by 10 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 5 : Change area 0 by 1024 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 6 : Change area 0 by 1025 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 7 : Change area 0 by 2048 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 8 : Change area 0 by 2047 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 9 : Change area 0 by 2049 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 10 : Change area 0 by 28656 (allocate, free) ==
+Not enough mem or invalid segment sizes!
+== >> SUCCESS ==
+
+== Testcase 11 : Change area 1 by 0 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 12 : Change area 1 by 1 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 13 : Change area 1 by 10 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 14 : Change area 1 by 1024 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 15 : Change area 1 by 1025 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 16 : Change area 1 by 2048 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 17 : Change area 1 by 2047 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 18 : Change area 1 by 2049 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 19 : Change area 1 by 28656 (allocate, free) ==
+Not enough mem or invalid segment sizes!
+== >> SUCCESS ==
+
+== Testcase 20 : Change area 0 by 0 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 21 : Change area 0 by 1 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 22 : Change area 0 by 10 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 23 : Change area 0 by 1024 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 24 : Change area 0 by 1025 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 25 : Change area 0 by 2048 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 26 : Change area 0 by 2047 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 27 : Change area 0 by 2049 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 28 : Change area 1 by 0 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 29 : Change area 1 by 1 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 30 : Change area 1 by 10 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 31 : Change area 1 by 1024 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 32 : Change area 1 by 1025 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 33 : Change area 1 by 2048 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 34 : Change area 1 by 2047 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 35 : Change area 1 by 2049 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 36 : Change area 0 (allocate all, free all) ==
+Allocating 0 pages
+Allocating 1 pages
+Allocating 10 pages
+Allocating 1024 pages
+Allocating 1025 pages
+Allocating 2048 pages
+Allocating 2047 pages
+Allocating 2049 pages
+Freeing 0 pages
+Freeing 1 pages
+Freeing 10 pages
+Freeing 1024 pages
+Freeing 1025 pages
+Freeing 2048 pages
+Freeing 2047 pages
+Freeing 2049 pages
+== >> SUCCESS ==
+
+== Testcase 37 : Change area 1 (allocate all, free all) ==
+Allocating 0 pages
+Allocating 1 pages
+Allocating 10 pages
+Allocating 1024 pages
+Allocating 1025 pages
+Allocating 2048 pages
+Allocating 2047 pages
+Allocating 2049 pages
+Freeing 0 pages
+Freeing 1 pages
+Freeing 10 pages
+Freeing 1024 pages
+Freeing 1025 pages
+Freeing 2048 pages
+Freeing 2047 pages
+Freeing 2049 pages
+== >> SUCCESS ==
+
+---- Module "Process-Management" finished. Summary: ----
+-- 37 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 3 : "Kernel-Heap" ----
+
+== Testcase 1 : Allocate, then free in same direction ==
+Allocating...(28655 free frames)
+4 bytes
+Write test for 0xc0401024...done
+16 bytes
+Write test for 0xc0401028...done
+40 bytes
+Write test for 0xc0401038...done
+4092 bytes
+Write test for 0xc0402000...done
+4096 bytes
+Write test for 0xc0403000...done
+4100 bytes
+Write test for 0xc0404000...done
+8192 bytes
+Write test for 0xc0406000...done
+16388 bytes
+Write test for 0xc0408000...done
+Freeing...
+FREE1: address=0xc0401024, i=0
+FREE1: address=0xc0401028, i=1
+FREE1: address=0xc0401038, i=2
+FREE1: address=0xc0402000, i=3
+FREE1: address=0xc0403000, i=4
+FREE1: address=0xc0404000, i=5
+FREE1: address=0xc0406000, i=6
+FREE1: address=0xc0408000, i=7
+== >> SUCCESS ==
+
+== Testcase 2 : Allocate, then free in opposite direction ==
+Allocating...(28655 free frames)
+4 bytes
+Write test for 0xc0401024...done
+16 bytes
+Write test for 0xc0401028...done
+40 bytes
+Write test for 0xc0401038...done
+4092 bytes
+Write test for 0xc0402000...done
+4096 bytes
+Write test for 0xc0403000...done
+4100 bytes
+Write test for 0xc0404000...done
+8192 bytes
+Write test for 0xc0406000...done
+16388 bytes
+Write test for 0xc0408000...done
+Freeing...
+FREE2: address=0xc0408000, i=7
+FREE2: address=0xc0406000, i=6
+FREE2: address=0xc0404000, i=5
+FREE2: address=0xc0403000, i=4
+FREE2: address=0xc0402000, i=3
+FREE2: address=0xc0401038, i=2
+FREE2: address=0xc0401028, i=1
+FREE2: address=0xc0401024, i=0
+== >> SUCCESS ==
+
+== Testcase 3 : Allocate, then free in "random" direction 1 ==
+Allocating...(28655 free frames)
+4 bytes
+Write test for 0xc0401024...done
+16 bytes
+Write test for 0xc0401028...done
+40 bytes
+Write test for 0xc0401038...done
+4092 bytes
+Write test for 0xc0402000...done
+4096 bytes
+Write test for 0xc0403000...done
+4100 bytes
+Write test for 0xc0404000...done
+8192 bytes
+Write test for 0xc0406000...done
+16388 bytes
+Write test for 0xc0408000...done
+Freeing...
+FREE3: address=0xc0408000, i=0
+FREE3: address=0xc0404000, i=1
+FREE3: address=0xc0401038, i=2
+FREE3: address=0xc0401024, i=3
+FREE3: address=0xc0406000, i=4
+FREE3: address=0xc0402000, i=5
+FREE3: address=0xc0403000, i=6
+FREE3: address=0xc0401028, i=7
+== >> SUCCESS ==
+
+== Testcase 4 : Allocate, then free in "random" direction 2 ==
+Allocating...(28655 free frames)
+4 bytes
+Write test for 0xc0401024...done
+16 bytes
+Write test for 0xc0401028...done
+40 bytes
+Write test for 0xc0401038...done
+4092 bytes
+Write test for 0xc0402000...done
+4096 bytes
+Write test for 0xc0403000...done
+4100 bytes
+Write test for 0xc0404000...done
+8192 bytes
+Write test for 0xc0406000...done
+16388 bytes
+Write test for 0xc0408000...done
+Freeing...
+FREE4: address=0xc0402000, i=0
+FREE4: address=0xc0403000, i=1
+FREE4: address=0xc0401028, i=2
+FREE4: address=0xc0404000, i=3
+FREE4: address=0xc0406000, i=4
+FREE4: address=0xc0401024, i=5
+FREE4: address=0xc0408000, i=6
+FREE4: address=0xc0401038, i=7
+== >> SUCCESS ==
+
+== Testcase 5 : Allocate and free 4 bytes ==
+Write test for 0xc0401024...done
+Freeing mem @ 0xc0401024
+== >> SUCCESS ==
+
+== Testcase 6 : Allocate and free 16 bytes ==
+Write test for 0xc0401024...done
+Freeing mem @ 0xc0401024
+== >> SUCCESS ==
+
+== Testcase 7 : Allocate and free 40 bytes ==
+Write test for 0xc0401024...done
+Freeing mem @ 0xc0401024
+== >> SUCCESS ==
+
+== Testcase 8 : Allocate and free 4092 bytes ==
+Write test for 0xc0402000...done
+Freeing mem @ 0xc0402000
+== >> SUCCESS ==
+
+== Testcase 9 : Allocate and free 4096 bytes ==
+Write test for 0xc0402000...done
+Freeing mem @ 0xc0402000
+== >> SUCCESS ==
+
+== Testcase 10 : Allocate and free 4100 bytes ==
+Write test for 0xc0402000...done
+Freeing mem @ 0xc0402000
+== >> SUCCESS ==
+
+== Testcase 11 : Allocate and free 8192 bytes ==
+Write test for 0xc0402000...done
+Freeing mem @ 0xc0402000
+== >> SUCCESS ==
+
+== Testcase 12 : Allocate and free 16388 bytes ==
+Write test for 0xc0402000...done
+Freeing mem @ 0xc0402000
+== >> SUCCESS ==
+
+== Testcase 13 : Allocate 50000 times 1 byte ==
+== >> SUCCESS ==
+
+== Testcase 14 : Allocate all and free it ==
+== >> SUCCESS ==
+
+== Testcase 15 : Allocating 3 regions ==
+Freeing region 2...
+Reusing region 2...
+Testing contents...
+== >> SUCCESS ==
+
+== Testcase 16 : Testing realloc() ==
+== >> SUCCESS ==
+
+---- Module "Kernel-Heap" finished. Summary: ----
+-- 16 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 4 : "Scheduling" ----
+
+== Testcase 1 : Enqueuing - dequeuing ==
+== >> SUCCESS ==
+
+== Testcase 2 : Dequeue specific processes (opposite order) ==
+== >> SUCCESS ==
+
+== Testcase 3 : Dequeue specific processes (random order) ==
+== >> SUCCESS ==
+
+---- Module "Scheduling" finished. Summary: ----
+-- 3 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 5 : "Single linked list" ----
+
+== Testcase 1 : Append & check & remove index 0 ==
+== >> SUCCESS ==
+
+== Testcase 2 : Append & remove first (NULL) ==
+== >> SUCCESS ==
+
+== Testcase 3 : Append & remove first (x) ==
+== >> SUCCESS ==
+
+== Testcase 4 : Create & append & destroy ==
+== >> SUCCESS ==
+
+== Testcase 5 : Create & append & insert somewhere & destroy ==
+== >> SUCCESS ==
+
+== Testcase 6 : Create & append & set somewhere & destroy ==
+== >> SUCCESS ==
+
+== Testcase 7 : Append until no mem left & destroy ==
+Appended 209402 elements
+Freeing...done
+== >> SUCCESS ==
+
+== Testcase 8 : Walking through the list ==
+Starting at index 0
+element @ 0xc0401030 : 0x123
+element @ 0xc0401038 : 0x456
+element @ 0xc0401040 : 0x789
+Starting at index 2
+element @ 0xc0401040 : 0x789
+== >> SUCCESS ==
+
+== Testcase 9 : Testing sll_indexOf and sll_nodeWith ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+== >> SUCCESS ==
+
+---- Module "Single linked list" finished. Summary: ----
+-- 9 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 6 : "String" ----
+
+== Testcase 1 : Testing atoi() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+ASSERT 12 succeded
+ASSERT 13 succeded
+ASSERT 14 succeded
+== >> SUCCESS ==
+
+== Testcase 2 : Testing itoa() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+== >> SUCCESS ==
+
+== Testcase 3 : Testing memchr() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 4 : Testing memcpy() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+== >> SUCCESS ==
+
+== Testcase 5 : Testing memcmp() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 6 : Testing memmove() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+== >> SUCCESS ==
+
+== Testcase 7 : Testing strcpy() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+== >> SUCCESS ==
+
+== Testcase 8 : Testing strncpy() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+== >> SUCCESS ==
+
+== Testcase 9 : Testing strcat() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+== >> SUCCESS ==
+
+== Testcase 10 : Testing strnat() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 11 : Testing strcmp() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+== >> SUCCESS ==
+
+== Testcase 12 : Testing strncmp() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+ASSERT 12 succeded
+== >> SUCCESS ==
+
+== Testcase 13 : Testing strchr() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+== >> SUCCESS ==
+
+== Testcase 14 : Testing strchri() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+== >> SUCCESS ==
+
+== Testcase 15 : Testing strrchr() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+== >> SUCCESS ==
+
+== Testcase 16 : Testing strstr() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+== >> SUCCESS ==
+
+== Testcase 17 : Testing strcspn() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 18 : Testing strcut() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+== >> SUCCESS ==
+
+== Testcase 19 : Testing strchr() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+== >> SUCCESS ==
+
+== Testcase 20 : Testing tolower() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 21 : Testing toupper() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 22 : Testing isalnumstr() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+== >> SUCCESS ==
+
+---- Module "String" finished. Summary: ----
+-- 22 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 7 : "VFS" ----
+
+== Testcase 1 : Testing vfs_readFile() for system: ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing vfs_readFile() for system:/processes/0 ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 3 : Testing vfs_createProcess() ==
+== >> SUCCESS ==
+
+== Testcase 4 : Testing vfs_createService() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+---- Module "VFS" finished. Summary: ----
+-- 4 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 8 : "VFSNode" ----
+
+== Testcase 1 : Testing vfsn_resolvePath() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+ASSERT 12 succeded
+ASSERT 13 succeded
+ASSERT 14 succeded
+ASSERT 15 succeded
+ASSERT 16 succeded
+== >> SUCCESS ==
+
+== Testcase 2 : Testing vfsn_getPath() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+== >> SUCCESS ==
+
+---- Module "VFSNode" finished. Summary: ----
+-- 2 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 9 : "Signals" ----
+
+== Testcase 1 : Testing sig_canHandle() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+ASSERT 12 succeded
+ASSERT 13 succeded
+== >> SUCCESS ==
+
+== Testcase 2 : Testing sig_setHandler() ==
+ASSERT 1 succeded
+== >> SUCCESS ==
+
+== Testcase 3 : Adding and handling a signal ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+== >> SUCCESS ==
+
+== Testcase 4 : Adding nested signals ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+== >> SUCCESS ==
+
+== Testcase 5 : Adding signal for process ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+== >> SUCCESS ==
+
+== Testcase 6 : Testing sig_unsetHandler() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+== >> SUCCESS ==
+
+== Testcase 7 : Testing sig_removeHandlerFor() ==
+ASSERT 1 succeded
+== >> SUCCESS ==
+
+---- Module "Signals" finished. Summary: ----
+-- 7 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+====== All modules done ======
+== 10 modules successfull ==
+== 0 modules failed ==
+== 137 testcases successfull ==
+== 0 testcases failed ==
+============================

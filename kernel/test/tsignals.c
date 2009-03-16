@@ -52,7 +52,6 @@ static void test_canHandle(void) {
 }
 
 static void test_setHandler(void) {
-	u32 i;
 	sProc *p = proc_getRunning();
 	tSig sig = 0xFF;
 	tPid pid = 0x1337;

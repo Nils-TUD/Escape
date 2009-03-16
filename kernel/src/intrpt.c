@@ -18,6 +18,7 @@
 #include "../h/gdt.h"
 #include "../h/kheap.h"
 #include "../h/video.h"
+#include "../h/sched.h"
 #include "../h/signals.h"
 #include <string.h>
 #include <sllist.h>

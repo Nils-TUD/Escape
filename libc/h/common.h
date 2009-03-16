@@ -91,6 +91,7 @@ typedef enum {false = 0, true = 1} bool;
 #define ERR_NO_CLIENT_WAITING		-22
 #define ERR_FS_NOT_FOUND			-23
 #define ERR_INVALID_SIGNAL			-24
+#define ERR_INVALID_PID				-25
 
 /**
  * Prints the last error-message

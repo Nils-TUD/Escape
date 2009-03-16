@@ -15,9 +15,8 @@
 
 u32 sigCount = 0;
 
-static void signalHandler(u8 sigNo) {
-	UNUSED(sigNo);
-	printf("Got signal %d (%d)\n",sigNo,sigCount++);
+static void kbHandler(tSig sig) {
+	printf("Got signal %d (%d)\n",sig,sigCount++);
 }
 
 s32 shell_cmdTest(u32 argc,s8 **argv) {
@@ -29,7 +28,7 @@ s32 shell_cmdTest(u32 argc,s8 **argv) {
 	}
 
 	sigCount = 0;
-	setSigHandler(SIG_INTRPT_KB,signalHandler);
+	setSigHandler(SIG_INTRPT_KB,kbHandler);
 	while(sigCount < target)
 		sleep();
 	unsetSigHandler(SIG_INTRPT_KB);

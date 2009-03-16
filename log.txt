@@ -5,24 +5,37 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x23f000, shndx=0x10
+ELF: num=19, size=40, addr=0x240000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000002d0c447
+Clock cycles: 0x0000000001ceaaf4
 Initializing VFS...DONE
-Clock cycles: 0x000000000017bc29
+Clock cycles: 0x000000000015ed15
 Initializing process-management...DONE
-Clock cycles: 0x00000000000e4fb4
+Clock cycles: 0x00000000000e1225
 Initializing IDT...DONE
-Clock cycles: 0x00000000000d83d5
+Clock cycles: 0x00000000000b8e1e
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
 Got interrupt 39 (<unknown>) @ 0x0
 Welcome to Escape v0.1!
 Try 'help' to see the current features :)
+
+# kill 0123.a
+Error -25: Invalid process-id
+# ps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
+00	  	  00	  	  007	 	  	  Ready  	 	  0x00044f5fc898e290	  init
+01	  	  00	  	  008	 	  	  Blocked	 	  0x0000000000f681f6	  ata
+02	  	  00	  	  007	 	  	  Blocked	 	  0x00000000003b4cf6	  fs
+03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000c98166	  keyboard
+04	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000402cc3	  speaker
+05	  	  00	  	  011	 	  	  Ready  	 	  0x0000000002c67dd1	  video
+06	  	  00	  	  018	 	  	  Blocked	 	  0x00000000035273e8	  vterm
+07	  	  00	  	  010	 	  	  Running	 	  0x00000000013e63b1	  shell
 
 # test
 Got signal 5 (0)
@@ -35,7 +48,7 @@ Got signal 5 (6)
 Got signal 5 (7)
 Got signal 5 (8)
 Got signal 5 (9)
-# aaaaaatest
+# aa231test
 Got signal 5 (0)
 Got signal 5 (1)
 Got signal 5 (2)
@@ -46,151 +59,19 @@ Got signal 5 (6)
 Got signal 5 (7)
 Got signal 5 (8)
 Got signal 5 (9)
-# aaaaaaaatest 3
-Got signal 5 (0)
-Got signal 5 (1)
-Got signal 5 (2)
-# tttest 0
-Got signal 5 (0)
-Got signal 5 (1)
-Got signal 5 (2)
-Got signal 5 (3)
-Got signal 5 (4)
-Got signal 5 (5)
-Got signal 5 (6)
-Got signal 5 (7)
-Got signal 5 (8)
-Got signal 5 (9)
-# aaaaaatest 123
-Got signal 5 (0)
-Got signal 5 (1)
-Got signal 5 (2)
-Got signal 5 (3)
-Got signal 5 (4)
-Got signal 5 (5)
-Got signal 5 (6)
-Got signal 5 (7)
-Got signal 5 (8)
-Got signal 5 (9)
-Got signal 5 (10)
-Got signal 5 (11)
-Got signal 5 (12)
-Got signal 5 (13)
-Got signal 5 (14)
-Got signal 5 (15)
-Got signal 5 (16)
-Got signal 5 (17)
-Got signal 5 (18)
-Got signal 5 (19)
-Got signal 5 (20)
-Got signal 5 (21)
-Got signal 5 (22)
-Got signal 5 (23)
-Got signal 5 (24)
-Got signal 5 (25)
-Got signal 5 (26)
-Got signal 5 (27)
-Got signal 5 (28)
-Got signal 5 (29)
-Got signal 5 (30)
-Got signal 5 (31)
-Got signal 5 (32)
-Got signal 5 (33)
-Got signal 5 (34)
-Got signal 5 (35)
-Got signal 5 (36)
-Got signal 5 (37)
-Got signal 5 (38)
-Got signal 5 (39)
-Got signal 5 (40)
-Got signal 5 (41)
-Got signal 5 (42)
-Got signal 5 (43)
-Got signal 5 (44)
-Got signal 5 (45)
-Got signal 5 (46)
-Got signal 5 (47)
-Got signal 5 (48)
-Got signal 5 (49)
-Got signal 5 (50)
-Got signal 5 (51)
-Got signal 5 (52)
-Got signal 5 (53)
-Got signal 5 (54)
-Got signal 5 (55)
-Got signal 5 (56)
-Got signal 5 (57)
-Got signal 5 (58)
-Got signal 5 (59)
-Got signal 5 (60)
-Got signal 5 (61)
-Got signal 5 (62)
-Got signal 5 (63)
-Got signal 5 (64)
-Got signal 5 (65)
-Got signal 5 (66)
-Got signal 5 (67)
-Got signal 5 (68)
-Got signal 5 (69)
-Got signal 5 (70)
-Got signal 5 (71)
-Got signal 5 (72)
-Got signal 5 (73)
-Got signal 5 (74)
-Got signal 5 (75)
-Got signal 5 (76)
-Got signal 5 (77)
-Got signal 5 (78)
-Got signal 5 (79)
-Got signal 5 (80)
-Got signal 5 (81)
-Got signal 5 (82)
-Got signal 5 (83)
-Got signal 5 (84)
-Got signal 5 (85)
-Got signal 5 (86)
-Got signal 5 (87)
-Got signal 5 (88)
-Got signal 5 (89)
-Got signal 5 (90)
-Got signal 5 (91)
-Got signal 5 (92)
-Got signal 5 (93)
-Got signal 5 (94)
-Got signal 5 (95)
-Got signal 5 (96)
-Got signal 5 (97)
-Got signal 5 (98)
-Got signal 5 (99)
-Got signal 5 (100)
-Got signal 5 (101)
-Got signal 5 (102)
-Got signal 5 (103)
-Got signal 5 (104)
-Got signal 5 (105)
-Got signal 5 (106)
-Got signal 5 (107)
-Got signal 5 (108)
-Got signal 5 (109)
-Got signal 5 (110)
-Got signal 5 (111)
-Got signal 5 (112)
-Got signal 5 (113)
-Got signal 5 (114)
-Got signal 5 (115)
-Got signal 5 (116)
-Got signal 5 (117)
-Got signal 5 (118)
-Got signal 5 (119)
-Got signal 5 (120)
-Got signal 5 (121)
-Got signal 5 (122)
-# aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-aa: Command not found
-# aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-aa: Command not found
-# aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-aa: Command not found
-# aaaaaaaecho blub
-blub 
-# aa
+# 1ssssssssssssssdas ist ein testecho 
+st ein test 
+# echo st ein testtestpskill 0123.aecho st ein testkill 0123.apstestecho st ein testkill 0123.apstestecho st ein testkill 0123.apstestecho st ein testkill 0123.apstestecho st ein testkill 0123.a
+Error -25: Invalid process-id
+# ps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
+00	  	  00	  	  007	 	  	  Ready  	 	  0x000bc8375179f3b1	  init
+01	  	  00	  	  008	 	  	  Blocked	 	  0x0000000001bda7e7	  ata
+02	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000faf5de	  fs
+03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000004e3d659	  keyboard
+04	  	  00	  	  007	 	  	  Blocked	 	  0x00000000010a2a9d	  speaker
+05	  	  00	  	  011	 	  	  Blocked	 	  0x000000000f58b08d	  video
+06	  	  00	  	  018	 	  	  Blocked	 	  0x0000000010b7a7d5	  vterm
+07	  	  00	  	  010	 	  	  Running	 	  0x000000011d51b466	  shell
+
+# 

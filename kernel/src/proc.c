@@ -19,6 +19,7 @@
 #include "../h/video.h"
 #include "../h/signals.h"
 #include <string.h>
+#include <sllist.h>
 
 /* our processes */
 static sProc procs[PROC_COUNT];
@@ -26,8 +27,8 @@ static sProc procs[PROC_COUNT];
 /* the process-index */
 static tPid pi;
 
-/* pointer to a dead proc that has to be deleted */
-static sProc *deadProc = NULL;
+/* list of dead processes that should be destroyed */
+static sSLList* deadProcs = NULL;
 
 void proc_init(void) {
 	tFD i;
@@ -75,6 +76,10 @@ sProc *proc_getByPid(tPid pid) {
 	return &procs[pid];
 }
 
+bool proc_exists(tPid pid) {
+	return pid < PROC_COUNT && procs[pid].state != ST_UNUSED;
+}
+
 void proc_switch(void) {
 	proc_switchTo(sched_perform()->pid);
 }
@@ -102,9 +107,12 @@ void proc_switchTo(tPid pid) {
 	}
 
 	/* destroy process, if there is any */
-	if(deadProc != NULL) {
-		proc_destroy(deadProc);
-		deadProc = NULL;
+	if(deadProcs != NULL) {
+		sSLNode *n;
+		for(n = sll_begin(deadProcs); n != NULL; n = n->next)
+			proc_destroy((sProc*)n->data);
+		sll_destroy(deadProcs,false);
+		deadProcs = NULL;
 	}
 }
 
@@ -303,22 +311,27 @@ s32 proc_clone(tPid newPid) {
 	return 0;
 }
 
-void proc_suicide(void) {
-	if(pi == 0)
-		panic("The initial process has to be alive!!");
-
-	/* mark ourself as destroyable */
-	deadProc = procs + pi;
-	/* ensure that we will not be selected on the next resched */
-	deadProc->state = ST_ZOMBIE;
-}
-
 void proc_destroy(sProc *p) {
 	tFD i;
 	/* don't delete initial or unused processes */
 	ASSERT(p->pid != 0 && p->state != ST_UNUSED,
 			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
-	ASSERT(p->pid != pi,"You can't destroy yourself!");
+
+	/* we can't destroy ourself so we mark us as dead and do this later */
+	if(p->pid == pi) {
+		/* create list if not already done */
+		if(deadProcs == NULL) {
+			deadProcs = sll_create();
+			if(deadProcs == NULL)
+				panic("Not enough mem for deadProcs");
+		}
+
+		/* mark ourself as destroyable */
+		sll_append(deadProcs,procs + pi);
+		/* ensure that we will not be selected on the next resched */
+		(procs + pi)->state = ST_ZOMBIE;
+		return;
+	}
 
 	/* destroy paging-structure */
 	paging_destroyPageDir(p);

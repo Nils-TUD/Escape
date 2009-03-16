@@ -22,7 +22,11 @@ s32 shell_cmdMemUsage(u32 argc,s8 **argv) {
 		return 1;
 	}
 
-	read(fd,&mem,sizeof(sMemUsage));
+	if(read(fd,&mem,sizeof(sMemUsage)) < 0) {
+		printLastError();
+		return 1;
+	}
+
 	printf("Total memory:\t% 7d KiB\n",mem.totalMem / K);
 	printf("Used memory:\t% 7d KiB\n",(mem.totalMem - mem.freeMem) / K);
 	printf("Free memory:\t% 7d KiB\n",mem.freeMem / K);

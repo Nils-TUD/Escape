@@ -37,6 +37,14 @@ typedef void (*fSigHandler)(tSig sigNo);
 bool sig_canHandle(tSig signal);
 
 /**
+ * Checks wether the given signal is an interrupt
+ *
+ * @param signal the signal
+ * @return true if so
+ */
+bool sig_isInterrupt(tSig signal);
+
+/**
  * Sets the given signal-handler for <signal>
  *
  * @param pid the process-id

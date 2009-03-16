@@ -598,18 +598,29 @@ bool vfs_createProcess(tPid pid,fRead handler) {
 
 void vfs_removeProcess(tPid pid) {
 	sVFSNode *proc = PROCESSES();
+	sVFSNode *serv = SERVICES();
 	s8 name[12];
 	sVFSNode *n;
 	itoa(name,pid);
 
-	/* TODO maybe we should store the node-id in the process-struct? */
-	n = proc->firstChild;
+	/* remove from system:/processes */
+	n = NODE_FIRST_CHILD(proc->firstChild);
 	while(n != NULL) {
 		/* found node? */
 		if(strcmp(n->name,name) == 0) {
 			/* free node */
 			kheap_free(n->name);
 			vfsn_removeChild(proc,n);
+			break;
+		}
+		n = n->next;
+	}
+
+	/* check if the process is a service */
+	n = NODE_FIRST_CHILD(serv->firstChild);
+	while(n != NULL) {
+		if(n->type == T_SERVICE && n->owner == pid) {
+			vfs_removeService(pid,NADDR_TO_VNNO(n));
 			break;
 		}
 		n = n->next;

@@ -21,6 +21,7 @@
 #include "cmd/memusage.h"
 #include "cmd/test.h"
 #include "cmd/ata.h"
+#include "cmd/kill.h"
 
 #define MAX_CMD_LEN			40
 #define MAX_ARG_COUNT		10
@@ -93,6 +94,7 @@ static sShellCmd commands[] = {
 	{"memusage"	, shell_cmdMemUsage	},
 	{"test"		, shell_cmdTest		},
 	{"ata"		, shell_cmdAta		},
+	{"kill"		, shell_cmdKill		},
 };
 
 /* buffer for arguments */

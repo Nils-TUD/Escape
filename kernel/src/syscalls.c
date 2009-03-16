@@ -20,7 +20,7 @@
 #include "../h/signals.h"
 #include <string.h>
 
-#define SYSCALL_COUNT 25
+#define SYSCALL_COUNT 26
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
@@ -195,22 +195,33 @@ static void sysc_releaseIOPorts(sSysCallStack *stack);
 /**
  * Sets a handler-function for a specific signal
  *
- * @param u8 signal
+ * @param tSig signal
  * @param fSigHandler handler
+ * @return s32 0 if no error
  */
 static void sysc_setSigHandler(sSysCallStack *stack);
 /**
  * Unsets the handler-function for a specific signal
  *
- * @param u8 signal
+ * @param tSig signal
+ * @return s32 0 if no error
  */
 static void sysc_unsetSigHandler(sSysCallStack *stack);
 /**
  * Acknoledges that the processing of a signal is finished
  *
- * @param u8 signal
+ * @param tSig signal
+ * @return s32 0 if no error
  */
 static void sysc_ackSignal(sSysCallStack *stack);
+/**
+ * Sends a signal to a process
+ *
+ * @param tPid pid
+ * @param tSig signal
+ * @return s32 0 if no error
+ */
+static void sysc_sendSignal(sSysCallStack *stack);
 
 /* our syscalls */
 static sSyscall syscalls[SYSCALL_COUNT] = {
@@ -239,6 +250,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 22 */	{sysc_setSigHandler,		2},
 	/* 23 */	{sysc_unsetSigHandler,		1},
 	/* 24 */	{sysc_ackSignal,			1},
+	/* 25 */	{sysc_sendSignal,			2},
 };
 
 void sysc_handle(sIntrptStackFrame *intrptStack) {
@@ -286,8 +298,9 @@ static void sysc_fork(sSysCallStack *stack) {
 }
 
 static void sysc_exit(sSysCallStack *stack) {
-	vid_printf("Process %d exited with exit-code %d\n",proc_getRunning()->pid,stack->arg1);
-	proc_suicide();
+	sProc *p = proc_getRunning();
+	vid_printf("Process %d exited with exit-code %d\n",p->pid,stack->arg1);
+	proc_destroy(p);
 	proc_switch();
 }
 
@@ -740,7 +753,7 @@ static void sysc_releaseIOPorts(sSysCallStack *stack) {
 }
 
 static void sysc_setSigHandler(sSysCallStack *stack) {
-	u8 signal = (u8)stack->arg1;
+	tSig signal = (tSig)stack->arg1;
 	fSigHandler handler = (fSigHandler)stack->arg2;
 	sProc *p = proc_getRunning();
 	s32 err;
@@ -760,7 +773,7 @@ static void sysc_setSigHandler(sSysCallStack *stack) {
 }
 
 static void sysc_unsetSigHandler(sSysCallStack *stack) {
-	u8 signal = (u8)stack->arg1;
+	tSig signal = (tSig)stack->arg1;
 	sProc *p = proc_getRunning();
 
 	if(!sig_canHandle(signal)) {
@@ -774,7 +787,7 @@ static void sysc_unsetSigHandler(sSysCallStack *stack) {
 }
 
 static void sysc_ackSignal(sSysCallStack *stack) {
-	u8 signal = (u8)stack->arg1;
+	tSig signal = (tSig)stack->arg1;
 	sProc *p = proc_getRunning();
 
 	if(!sig_canHandle(signal)) {
@@ -783,5 +796,23 @@ static void sysc_ackSignal(sSysCallStack *stack) {
 	}
 
 	sig_ackHandling(p->pid,signal);
+	SYSC_RET1(stack,0);
+}
+
+static void sysc_sendSignal(sSysCallStack *stack) {
+	tPid pid = (tPid)stack->arg1;
+	tSig signal = (tSig)stack->arg2;
+
+	if(sig_isInterrupt(signal) || signal >= SIG_COUNT) {
+		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
+		return;
+	}
+
+	if(!proc_exists(pid)) {
+		SYSC_ERROR(stack,ERR_INVALID_PID);
+		return;
+	}
+
+	sig_addSignalFor(pid,signal);
 	SYSC_RET1(stack,0);
 }

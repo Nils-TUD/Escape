@@ -21,6 +21,16 @@ typedef struct {
 } sHandler;
 
 /**
+ * Adds a signal to the given handler and performs the corresponding action for SIG_KILL, SIG_TERM
+ * and so on.
+ *
+ * @param h the handler (may be NULL)
+ * @param pid the pid (may be INVALID_PID)
+ * @param signal the signal
+ */
+static void sig_addSig(sHandler *h,tPid pid,tSig signal);
+
+/**
  * Finds the handler for the given process and signal
  *
  * @param pid the process-id
@@ -37,6 +47,10 @@ static sSLList *handler[SIG_COUNT - 1] = {NULL};
 bool sig_canHandle(tSig signal) {
 	/* we can't add a handler for SIG_KILL */
 	return signal >= 1 && signal < SIG_COUNT;
+}
+
+bool sig_isInterrupt(tSig signal) {
+	return signal >= SIG_INTRPT_TIMER && signal < SIG_INTRPT_ATA2;
 }
 
 s32 sig_setHandler(tPid pid,tSig signal,fSigHandler func) {
@@ -145,14 +159,12 @@ bool sig_hasSignal(tSig *sig,tPid *pid) {
 
 bool sig_addSignalFor(tPid pid,tSig signal) {
 	sHandler *h;
-	ASSERT(sig_canHandle(signal),"Unable to handle signal %d");
+	ASSERT(signal < SIG_COUNT,"Unable to handle signal %d");
 
 	h = sig_get(pid,signal);
-	if(h != NULL) {
-		totalSigs++;
-		h->sigCount++;
+	sig_addSig(h,pid,signal);
+	if(h != NULL)
 		return !h->active;
-	}
 	return false;
 }
 
@@ -162,14 +174,13 @@ tPid sig_addSignal(tSig signal) {
 	sSLNode *n;
 	tPid res = INVALID_PID;
 
-	ASSERT(sig_canHandle(signal),"Unable to handle signal %d");
+	ASSERT(signal < SIG_COUNT,"Unable to handle signal %d");
 
 	list = handler[signal - 1];
 	if(list != NULL) {
 		for(n = sll_begin(list); n != NULL; n = n->next) {
 			h = (sHandler*)n->data;
-			h->sigCount++;
-			totalSigs++;
+			sig_addSig(h,INVALID_PID,signal);
 			/* remember first proc for direct notification */
 			if(!h->active && res == INVALID_PID)
 				res = h->pid;
@@ -202,6 +213,27 @@ void sig_ackHandling(tPid pid,tSig signal) {
 	h = sig_get(pid,signal);
 	if(h != NULL)
 		h->active = 0;
+}
+
+static void sig_addSig(sHandler *h,tPid pid,tSig signal) {
+	if(h != NULL) {
+		h->sigCount++;
+		totalSigs++;
+	}
+
+	if(pid != INVALID_PID) {
+		switch(signal) {
+			case SIG_TERM:
+			case SIG_KILL:
+			case SIG_SEGFAULT:
+				if(signal == SIG_KILL || h == NULL)
+					proc_destroy(proc_getByPid(pid));
+				else if(h != NULL) {
+					/* TODO */
+				}
+				break;
+		}
+	}
 }
 
 static sHandler *sig_get(tPid pid,tSig signal) {

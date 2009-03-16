@@ -53,4 +53,13 @@ s32 unsetSigHandler(tSig signal);
  */
 s32 ackSignal(tSig signal);
 
+/**
+ * Sends the given signal to given process (interrupts can't be sended)
+ *
+ * @param pid the process-id
+ * @param signal the signal
+ * @return 0 on success
+ */
+s32 sendSignal(tPid pid,tSig signal);
+
 #endif /* SIGNALS_H_ */

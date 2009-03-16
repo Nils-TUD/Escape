@@ -21,7 +21,7 @@ s32 shell_cmdAta(u32 argc,s8 **argv) {
 	UNUSED(argc);
 	UNUSED(argv);
 
-	tFD fd;
+	s32 fd;
 	sMsgATAReq req = {
 		.header = {
 			.id = MSG_ATA_READ_REQ,
@@ -37,7 +37,17 @@ s32 shell_cmdAta(u32 argc,s8 **argv) {
 	u16 *buffer;
 
 	fd = open("services:/ata",IO_WRITE | IO_READ);
-	write(fd,&req,sizeof(sMsgATAReq));
+	if(fd < 0) {
+		printLastError();
+		return 1;
+	}
+
+	if(write(fd,&req,sizeof(sMsgATAReq)) < 0) {
+		printLastError();
+		close(fd);
+		return 1;
+	}
+
 	/* wait for response */
 	do {
 		sleep();
@@ -46,7 +56,13 @@ s32 shell_cmdAta(u32 argc,s8 **argv) {
 
 	/* read response */
 	buffer = (u16*)malloc(sizeof(u16) * res.length);
-	read(fd,buffer,res.length);
+	if(read(fd,buffer,res.length) < 0) {
+		printLastError();
+		free(buffer);
+		close(fd);
+		return 1;
+	}
+
 	dumpBytes(buffer,res.length);
 
 	free(buffer);

@@ -102,6 +102,14 @@ sProc *proc_getRunning(void);
 sProc *proc_getByPid(tPid pid);
 
 /**
+ * Checks wether the process with given id exists
+ *
+ * @param pid the process-id
+ * @return true if so
+ */
+bool proc_exists(tPid pid);
+
+/**
  * Switches to another process
  */
 void proc_switch(void);
@@ -189,12 +197,6 @@ tFile proc_unassocFD(tFD fd);
  * @return -1 if an error occurred, 0 for parent, 1 for child
  */
 s32 proc_clone(tPid newPid);
-
-/**
- * Commit suicide. Marks the current process as destroyable. After the next context-switch
- * the process will be removed.
- */
-void proc_suicide(void);
 
 /**
  * Destroyes the given process. That means the process-slot will be marked as "unused" and the

@@ -108,6 +108,10 @@ void printLastError(void) {
 			debugf("Invalid signal\n");
 			break;
 
+		case ERR_INVALID_PID:
+			debugf("Invalid process-id\n");
+			break;
+
 		default:
 			debugf("No error\n");
 			break;

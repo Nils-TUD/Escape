@@ -18,7 +18,6 @@ LIBCA=$(BUILD)/libc.a
 START=$(BUILD)/libc_startup.o
 COBJ=$(patsubst %.c,$(BUILD)/user_$(NAME)_%.o,$(CSRC))
 CCMDOBJ=$(patsubst cmd/%.c,$(BUILD)/user_$(NAME)_cmd_%.o,$(CCMDSRC))
-LIBCOBJS=$(filter-out $(START),$(wildcard $(BUILD)/libc_*.o))
 
 .PHONY: all clean
 

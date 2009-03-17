@@ -24,7 +24,7 @@ export CWFLAGS=-Wall -ansi \
 				 -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wno-long-long \
 				 -Wstrict-prototypes -fno-builtin
 
-.PHONY: all floppy mounthdd umounthdd createhdd dis qemu bochs debug debugu debugm debugt test clean
+.PHONY: all floppy mounthdd debughdd umounthdd createhdd dis qemu bochs debug debugu debugm debugt test clean
 
 all: $(BUILD)
 		@[ -f $(FLOPPYDISK) ] || make floppy;
@@ -57,6 +57,11 @@ mounthdd:
 		sudo umount $(FLOPPYDISKMOUNT) || true;
 		sudo mount -text2 -oloop=/dev/loop0,offset=`expr $(HDDTRACKSECS) \* 512` $(HDD) $(FLOPPYDISKMOUNT);
 
+debughdd:
+		make mounthdd;
+		sudo debugfs /dev/loop0
+		make umounthdd;
+
 umounthdd:
 		sudo umount /dev/loop0
 
@@ -75,9 +80,17 @@ createhdd:
 		sudo losetup -d /dev/loop0
 		sudo losetup -o`expr $(HDDTRACKSECS) \* 512` /dev/loop0 $(HDD)
 		@# WE HAVE TO CHANGE THE BLOCK-COUNT HERE IF THE DISK-GEOMETRY CHANGES!
-		sudo mke2fs -b1024 /dev/loop0 5008
+		sudo mke2fs -r0 -Onone -b1024 /dev/loop0 5008
 		sudo umount /dev/loop0 || true
 		sudo losetup -d /dev/loop0 || true
+		@# store some test-data on the disk
+		make mounthdd
+		sudo mkdir $(FLOPPYDISKMOUNT)/test
+		sudo touch $(FLOPPYDISKMOUNT)/file.txt
+		sudo chmod 0666 $(FLOPPYDISKMOUNT)/file.txt
+		echo "Das ist ein Test-String!!" > $(FLOPPYDISKMOUNT)/file.txt
+		sudo cp $(FLOPPYDISKMOUNT)/file.txt $(FLOPPYDISKMOUNT)/test/file.txt
+		make umounthdd
 		rm -f $(TMPFILE)
 		cp $(HDD) $(HDDBAK)
 

@@ -20,7 +20,7 @@ static void kbHandler(tSig sig) {
 }
 
 s32 shell_cmdTest(u32 argc,s8 **argv) {
-	u32 target = 10;
+	/*u32 target = 10;
 	if(argc == 2) {
 		target = atoi(argv[1]);
 		if(target == 0)
@@ -31,20 +31,16 @@ s32 shell_cmdTest(u32 argc,s8 **argv) {
 	setSigHandler(SIG_INTRPT_KB,kbHandler);
 	while(sigCount < target)
 		sleep();
-	unsetSigHandler(SIG_INTRPT_KB);
+	unsetSigHandler(SIG_INTRPT_KB);*/
 
-	/*printf("Testing signal...\n");
-	sigTest((u32)signalHandler);
-	printf("Back\n");*/
-
-	/*s8 *buffer;
+	s8 *buffer;
 	u32 res;
 	tFD fd;
 
 	UNUSED(argc);
 	UNUSED(argv);
 
-	fd = open("file:/bla",IO_READ | IO_WRITE);
+	fd = open("file:/test",IO_READ | IO_WRITE);
 	printf("Got fd=%d\n",fd);
 
 	buffer = (s8*)malloc(10 * sizeof(s8));
@@ -57,7 +53,7 @@ s32 shell_cmdTest(u32 argc,s8 **argv) {
 	printf("Wrote '%s' (%d bytes)\n",buffer,res);
 
 	printf("Closing file\n");
-	close(fd);*/
+	close(fd);
 
 	return 0;
 }

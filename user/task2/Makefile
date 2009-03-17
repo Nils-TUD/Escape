@@ -16,7 +16,6 @@ CSRC=$(wildcard *.c)
 LIBCA=$(BUILD)/libc.a
 START=$(BUILD)/libc_startup.o
 COBJ=$(patsubst %.c,$(BUILD)/user_$(NAME)_%.o,$(CSRC))
-LIBCOBJS=$(filter-out $(START),$(wildcard $(BUILD)/libc_*.o))
 
 .PHONY: all clean
 

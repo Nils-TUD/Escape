@@ -5,73 +5,69 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x240000, shndx=0x10
+ELF: num=19, size=40, addr=0x245000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000001ceaaf4
+Clock cycles: 0x0000000001dfd07e
 Initializing VFS...DONE
-Clock cycles: 0x000000000015ed15
+Clock cycles: 0x000000000013a310
 Initializing process-management...DONE
-Clock cycles: 0x00000000000e1225
+Clock cycles: 0x00000000000e7d17
 Initializing IDT...DONE
-Clock cycles: 0x00000000000b8e1e
+Clock cycles: 0x00000000000ae75f
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
 Got interrupt 39 (<unknown>) @ 0x0
+Drives:
+	  Primary Master (present=1,sectors=10080)
+	  	  0: start=0x3F, sectors=10017 size=5128704 byte
+	  Primary Slave (present=0,sectors=0)
+	  Secondary Master (present=0,sectors=0)
+	  Secondary Slave (present=0,sectors=0)
 Welcome to Escape v0.1!
 Try 'help' to see the current features :)
 
-# kill 0123.a
-Error -25: Invalid process-id
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  007	 	  	  Ready  	 	  0x00044f5fc898e290	  init
-01	  	  00	  	  008	 	  	  Blocked	 	  0x0000000000f681f6	  ata
-02	  	  00	  	  007	 	  	  Blocked	 	  0x00000000003b4cf6	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000c98166	  keyboard
-04	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000402cc3	  speaker
-05	  	  00	  	  011	 	  	  Ready  	 	  0x0000000002c67dd1	  video
-06	  	  00	  	  018	 	  	  Blocked	 	  0x00000000035273e8	  vterm
-07	  	  00	  	  010	 	  	  Running	 	  0x00000000013e63b1	  shell
-
 # test
-Got signal 5 (0)
-Got signal 5 (1)
-Got signal 5 (2)
-Got signal 5 (3)
-Got signal 5 (4)
-Got signal 5 (5)
-Got signal 5 (6)
-Got signal 5 (7)
-Got signal 5 (8)
-Got signal 5 (9)
-# aa231test
-Got signal 5 (0)
-Got signal 5 (1)
-Got signal 5 (2)
-Got signal 5 (3)
-Got signal 5 (4)
-Got signal 5 (5)
-Got signal 5 (6)
-Got signal 5 (7)
-Got signal 5 (8)
-Got signal 5 (9)
-# 1ssssssssssssssdas ist ein testecho 
-st ein test 
-# echo st ein testtestpskill 0123.aecho st ein testkill 0123.apstestecho st ein testkill 0123.apstestecho st ein testkill 0123.apstestecho st ein testkill 0123.apstestecho st ein testkill 0123.a
-Error -25: Invalid process-id
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  007	 	  	  Ready  	 	  0x000bc8375179f3b1	  init
-01	  	  00	  	  008	 	  	  Blocked	 	  0x0000000001bda7e7	  ata
-02	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000faf5de	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000004e3d659	  keyboard
-04	  	  00	  	  007	 	  	  Blocked	 	  0x00000000010a2a9d	  speaker
-05	  	  00	  	  011	 	  	  Blocked	 	  0x000000000f58b08d	  video
-06	  	  00	  	  018	 	  	  Blocked	 	  0x0000000010b7a7d5	  vterm
-07	  	  00	  	  010	 	  	  Running	 	  0x000000011d51b466	  shell
-
+	  mode=0x41ED
+	  uid=0
+	  gid=0
+	  size=1024
+	  accesstime=1237325976
+	  createtime=1237325960
+	  modifytime=1237325960
+	  deletetime=0
+	  linkCount=2
+	  blocks=2
+	  flags=0x0
+	  osd1=0x0
+	  block0=513
+	  block1=0
+	  block2=0
+	  block3=0
+	  block4=0
+	  block5=0
+	  block6=0
+	  block7=0
+	  block8=0
+	  block9=0
+	  block10=0
+	  block11=0
+	  singlyIBlock=0
+	  doublyIBlock=0
+	  triplyIBlock=0
+	  generation=1295004098
+	  fileACL=0
+	  dirACL=0
+	  fragAddr=0
+	  osd2=0x0000
+Received an open from 7 of '/test' for READ and WRITE
+Got fd=3
+Read 'test' (5 bytes)
+Got 'Das ist mein string :)' (23 bytes) for offset 5 in inode 4919
+Wrote 'Das ist mein string :)' (23 bytes)
+Closing file
+Closing inode 4919
 # 

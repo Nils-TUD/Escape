@@ -13,6 +13,7 @@
 #include <messages.h>
 #include <string.h>
 
+#include "ext2/ext2.h"
 #include <fsinterface.h>
 
 /* open-response */
@@ -48,6 +49,8 @@ static sMsgWriteResp writeResp = {
 	}
 };
 
+static sExt2 ext2;
+
 s32 main(void) {
 	s32 fd,id;
 
@@ -55,6 +58,14 @@ s32 main(void) {
 	id = regService("fs",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
 		printLastError();
+		return 1;
+	}
+
+	/* TODO */
+	ext2.drive = 0;
+	ext2.partition = 0;
+	if(!ext2_init(&ext2)) {
+		unregService(id);
 		return 1;
 	}
 
@@ -70,6 +81,8 @@ s32 main(void) {
 						/* read data */
 						sMsgDataFSOpenReq data;
 						read(fd,&data,header.length);
+
+						ext2_dbg_printInode(ext2_resolvePath(&ext2,&data + 1));
 
 						debugf("Received an open from %d of '%s' for ",data.pid,&data + 1);
 						if(data.flags & IO_READ)

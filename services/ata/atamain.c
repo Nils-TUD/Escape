@@ -122,12 +122,6 @@ s32 main(void) {
 	ata_detectDrives();
 	ata_printDrives();
 
-	u32 i;
-	for(i = 0; i < DRIVE_COUNT; i++) {
-		if(drives[i].present) {
-		}
-	}
-
 	sMsgDefHeader header;
 	while(1) {
 		s32 fd = getClient(id);
@@ -146,8 +140,11 @@ s32 main(void) {
 							u32 msgLen = sizeof(sMsgDefHeader) + BYTES_PER_SECTOR * req.secCount;
 							res = (sMsgDefHeader*)malloc(msgLen);
 							if(res != NULL) {
+								/* TODO the client has to select the partition... */
+								u32 partOffset = drives[req.drive].partTable[0].start;
 								res->id = MSG_ATA_READ_RESP;
-								if(!ata_readWrite(drives + req.drive,false,(u16*)(res + 1),req.lba,req.secCount)) {
+								if(!ata_readWrite(drives + req.drive,false,(u16*)(res + 1),
+										req.lba + partOffset,req.secCount)) {
 									debugf("Read failed\n");
 									/* write empty response */
 									res->length = 0;

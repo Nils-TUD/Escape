@@ -60,11 +60,13 @@ void vdebugf(cstring fmt,va_list ap) {
 			debugChar(c);
 		}
 
-		/* color given? */
-		if(*fmt == ':') {
-			/* TODO ignore color since it is not supported yet */
-			fmt += 3;
-		}
+		/* read pad-character */
+		if(*fmt == '0' || *fmt == ' ')
+			fmt++;
+
+		/* read pad-width */
+		while(*fmt >= '0' && *fmt <= '9')
+			fmt++;
 
 		c = *fmt++;
 		if(c == 'd') {

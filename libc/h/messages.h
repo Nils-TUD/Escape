@@ -65,6 +65,7 @@ typedef struct {
  * A write-request transports the data directly behind this struct */
 typedef struct {
 	u8 drive;
+	u8 partition;
 	u64 lba;
 	u16 secCount;
 } sMsgDataATAReq;

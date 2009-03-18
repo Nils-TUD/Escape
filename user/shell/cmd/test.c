@@ -33,27 +33,38 @@ s32 shell_cmdTest(u32 argc,s8 **argv) {
 		sleep();
 	unsetSigHandler(SIG_INTRPT_KB);*/
 
-	s8 *buffer;
+	u8 buffer[1024];
+	u32 count;
 	u32 res;
 	tFD fd;
 
-	UNUSED(argc);
-	UNUSED(argv);
+	for(count = 0; count < 160; count++)
+		buffer[count] = 'a' + (count % 26);
+	buffer[count] = '\0';
+	for(count = 0; count < 1024; count++)
+		printf("%s\n",buffer);
 
-	fd = open("file:/test",IO_READ | IO_WRITE);
+	/*string path = (string)"file:/bigfile";
+	if(argc == 2)
+		path = argv[1];
+
+	printf("Opening '%s'\n",path);
+	fd = open(path,IO_READ | IO_WRITE);
 	printf("Got fd=%d\n",fd);
 
-	buffer = (s8*)malloc(10 * sizeof(s8));
-	res = read(fd,buffer,10 * sizeof(s8));
-	printf("Read '%s' (%d bytes)\n",buffer,res);
-	free(buffer);
+	printf("Reading...\n");
+	while((count = read(fd,buffer,16)) > 0) {
+		*(buffer + count) = '\0';
+		printf("%s",buffer);
+	}
+	printf("\nFinished\n");*/
 
-	buffer = (string)"Das ist mein string :)";
+	/*buffer = (string)"Das ist mein string :)";
 	res = write(fd,buffer,strlen(buffer) + 1);
 	printf("Wrote '%s' (%d bytes)\n",buffer,res);
 
 	printf("Closing file\n");
-	close(fd);
+	close(fd);*/
 
 	return 0;
 }

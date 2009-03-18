@@ -57,6 +57,9 @@ void *malloc(u32 size) {
 	sMemArea *area,*prev,*narea;
 	sMemArea **list;
 
+	if(size == 0)
+		return NULL;
+
 	/* find a suitable area */
 	prev = NULL;
 	area = usableList;
@@ -228,12 +231,12 @@ void printHeap(void) {
 		area = area->next;
 	}
 
-	debugf("FreeList:\n");
+	/*debugf("FreeList:\n");
 	area = freeList;
 	while(area != NULL) {
 		debugf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
 		area = area->next;
-	}
+	}*/
 
 	debugf("OccupiedMap:\n");
 	for(i = 0; i < OCC_MAP_SIZE; i++) {

@@ -46,10 +46,10 @@ typedef enum {false = 0, true = 1} bool;
 #endif
 
 #if DEBUGGING
-#define ASSERT(cond,errorMsg,...) if(!(cond)) { \
-		panic("Assert failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
+#define ASSERT(cond,errorMsg,...) do { if(!(cond)) { \
+		panic("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
 				__LINE__,## __VA_ARGS__); \
-	}
+	} } while(0);
 #else
 #define ASSERT(cond,errorMsg,...)
 #endif

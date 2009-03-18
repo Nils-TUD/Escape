@@ -264,6 +264,9 @@ static cstring intrptNo2Name[] = {
 static u32 exCount = 0;
 static u32 lastEx = 0xFFFFFFFF;
 
+/* pointer to the current interrupt-stack */
+static sIntrptStackFrame *curIntrptStack = NULL;
+
 /**
  * A linked list for each hardware-interrupt with vfs-nodes that should be "notified" as soon
  * as an interrupt occurres. The linked list will be NULL if it was not used yet.
@@ -387,6 +390,10 @@ void intrpt_init(void) {
 
 	/* now init the PIC */
 	intrpt_initPic();
+}
+
+sIntrptStackFrame *intrpt_getCurStack(void) {
+	return curIntrptStack;
 }
 
 s32 intrpt_addListener(u16 irq,tVFSNodeNo nodeNo,void *message,u32 msgLen) {
@@ -558,6 +565,8 @@ static u64 kmodeEnd = 0;
 
 void intrpt_handler(sIntrptStackFrame stack) {
 	sProc *p;
+	curIntrptStack = &stack;
+
 	/*u32 syscallNo = stack.intrptNo == IRQ_SYSCALL ? ((sSysCallStack*)stack.uesp)->number : 0;*/
 
 	kmodeStart = cpu_rdtsc();
@@ -673,9 +682,10 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
 			/* #PF */
 			if(stack.intrptNo == EX_PAGE_FAULT) {
+				vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
+						stack.eip,proc_getRunning()->pid);
 				if(!paging_handlePageFault(cpu_getCR2())) {
-					panic("Page fault for address=0x%08x @ 0x%x, process %d",cpu_getCR2(),
-							stack.eip,proc_getRunning()->pid);
+					panic("Page fault for address=0x%08x @ 0x%x",cpu_getCR2(),stack.eip);
 				}
 				break;
 			}
@@ -706,7 +716,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 				}
 
 				vid_printf("GPF @ 0x%x\n",stack.eip);
-				printStackTrace();
+				printStackTrace(getUserStackTrace(p,&stack));
 				break;
 			}
 			/* fall through */

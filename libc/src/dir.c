@@ -8,15 +8,27 @@
 #include "../h/dir.h"
 #include "../h/io.h"
 
+/* the dir-entry in which we'll write */
+typedef struct {
+	sDirEntry header;
+	s8 name[MAX_NAME_LEN + 1];
+} __attribute__((packed)) sDirEntryRead;
+
+static sDirEntryRead dirEntry;
+
 s32 opendir(cstring path) {
 	return open(path,IO_READ);
 }
 
-sDir *readdir(tFD dir) {
-	static sDir dirEntry;
-	s32 c;
-	if((c = read(dir,(u8*)&dirEntry,sizeof(sDir))) > 0)
-		return &dirEntry;
+sDirEntry *readdir(tFD dir) {
+	u32 len;
+	if(read(dir,(u8*)&dirEntry,sizeof(sDirEntry)) > 0) {
+		len = dirEntry.header.recLen - sizeof(sDirEntry);
+		if(read(dir,(u8*)dirEntry.name,len) > 0) {
+			dirEntry.name[dirEntry.header.nameLen] = '\0';
+			return (sDirEntry*)&dirEntry;
+		}
+	}
 	return NULL;
 }
 

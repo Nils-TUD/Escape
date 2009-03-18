@@ -10,13 +10,16 @@
 #include "common.h"
 #include "io.h"
 
-#define MAX_NAME_LEN 60
+#define MAX_NAME_LEN 255
 
 /* a directory-entry */
 typedef struct {
 	tVFSNodeNo nodeNo;
-	s8 name[MAX_NAME_LEN];
-} sDir;
+	u16 recLen;
+	u8 nameLen;
+	u8 fileType;
+	s8 name[];
+} __attribute__((packed)) sDirEntry;
 
 /**
  * Opens the given directory
@@ -33,7 +36,7 @@ s32 opendir(cstring path);
  * @param dir the file-descriptor
  * @return a pointer to the directory-entry or NULL if the end has been reached
  */
-sDir *readdir(tFD dir);
+sDirEntry *readdir(tFD dir);
 
 /**
  * Closes the given directory

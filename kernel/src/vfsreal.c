@@ -109,7 +109,7 @@ void vfsr_setFSService(tVFSNodeNo nodeNo) {
 void vfsr_checkForMsgs(void) {
 	sMsgDefHeader header;
 	sRequest *req;
-	if(sll_length(requests) == 0)
+	if(requests == NULL || sll_length(requests) == 0)
 		return;
 
 	/* ok, let's see what we've got.. */
@@ -145,12 +145,14 @@ void vfsr_checkForMsgs(void) {
 					sll_removeFirst(requests,req);
 					req->finished = true;
 					req->count = res->count;
-					/* unfortunatly we need a temp-buffer because we might do this here with
-					 * another process :/ */
-					/* TODO or should we map the other process in our page-dir? */
-					req->tmpBuffer = kheap_alloc(res->count);
-					if(req->tmpBuffer != NULL)
-						memcpy(req->tmpBuffer,res + 1,res->count);
+					if(res->count > 0) {
+						/* unfortunatly we need a temp-buffer because we might do this here with
+						 * another process :/ */
+						/* TODO or should we map the other process in our page-dir? */
+						req->tmpBuffer = kheap_alloc(res->count);
+						if(req->tmpBuffer != NULL)
+							memcpy(req->tmpBuffer,res + 1,res->count);
+					}
 
 					/* the process can continue now */
 					sched_setReady(proc_getByPid(res->pid));

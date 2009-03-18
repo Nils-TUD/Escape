@@ -22,6 +22,12 @@ void kheap_init(void);
 u32 kheap_getFreeMem(void);
 
 /**
+ * @param addr the area-address
+ * @return the size of the area at given address (0 if not found)
+ */
+u32 kheap_getAreaSize(void *addr);
+
+/**
  * Allocates <size> bytes in kernel-space and returns the pointer to the beginning of
  * the allocated memory. If there is not enough memory the function returns NULL.
  *

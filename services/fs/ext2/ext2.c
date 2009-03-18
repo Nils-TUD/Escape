@@ -30,6 +30,9 @@ bool ext2_init(sExt2 *e) {
 		return false;
 	}
 
+	/* init inode-cache */
+	ext2_icache_init(e);
+
 	return true;
 }
 

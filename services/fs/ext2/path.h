@@ -11,12 +11,12 @@
 #include "ext2.h"
 
 /**
- * Resolves the given path to the inode
+ * Resolves the given path to the inode-number
  *
  * @param e the ext2-handle
  * @param path the path
- * @return the inode or NULL
+ * @return the inode-Number or EXT2_BAD_INO
  */
-sInode *ext2_resolvePath(sExt2 *e,string path);
+tInodeNo ext2_resolvePath(sExt2 *e,string path);
 
 #endif /* PATH_H_ */

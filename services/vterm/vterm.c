@@ -476,7 +476,7 @@ static void vterm_refreshLines(u16 start,u16 count) {
 	/* send message */
 	sMsgVidSetScr *header = (sMsgVidSetScr*)(ptr - sizeof(sMsgVidSetScr));
 	header->header.id = MSG_VIDEO_SETSCREEN;
-	header->header.length = count * COLS * 2;
+	header->header.length = (sizeof(sMsgVidSetScr) - sizeof(sMsgDefHeader)) + count * COLS * 2;
 	header->startPos = start * COLS;
 	write(vterm.video,ptr - sizeof(sMsgVidSetScr),sizeof(sMsgVidSetScr) + count * COLS * 2);
 

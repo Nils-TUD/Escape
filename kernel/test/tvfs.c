@@ -15,6 +15,8 @@
 #include "tvfs.h"
 #include <test.h>
 
+#define MAX_NAME_LEN 255
+
 /* forward declarations */
 static void test_vfs(void);
 static void test_vfs_readFileSystem(void);
@@ -23,11 +25,16 @@ static void test_vfs_createProcess(void);
 static void test_vfs_createService(void);
 
 /* public vfs-node for test-purposes */
-#define MAX_NAME_LEN 59
 typedef struct {
 	tVFSNodeNo nodeNo;
-	u8 name[MAX_NAME_LEN + 1];
-} sVFSNodePub;
+	u16 recLen;
+	u16 nameLen;
+	/* name follows (up to 255 bytes) */
+} __attribute__((packed)) sVFSDirEntry;
+typedef struct {
+	sVFSDirEntry header;
+	s8 name[MAX_NAME_LEN + 1];
+} __attribute__((packed)) sVFSDirEntryRead;
 
 /* public process-data for test-purposes */
 typedef struct {
@@ -57,7 +64,7 @@ static void test_vfs_readFileSystem(void) {
 	s32 fd;
 	s32 res;
 	tFile file;
-	sVFSNodePub node;
+	sVFSDirEntryRead node;
 	u32 oldHeap,oldGFT,newHeap,newGFT;
 
 	oldHeap = kheap_getFreeMem();
@@ -93,17 +100,21 @@ static void test_vfs_readFileSystem(void) {
 	}
 
 	/* skip "." and ".." */
-	vfs_readFile(KERNEL_PID,file,(u8*)&node,sizeof(sVFSNodePub));
-	vfs_readFile(KERNEL_PID,file,(u8*)&node,sizeof(sVFSNodePub));
+	vfs_readFile(KERNEL_PID,file,(u8*)&node,sizeof(sVFSDirEntry));
+	vfs_readFile(KERNEL_PID,file,(u8*)node.name,node.header.nameLen);
+	vfs_readFile(KERNEL_PID,file,(u8*)&node,sizeof(sVFSDirEntry));
+	vfs_readFile(KERNEL_PID,file,(u8*)node.name,node.header.nameLen);
 
 	/* read "processes" */
-	if((res = vfs_readFile(KERNEL_PID,file,(u8*)&node,sizeof(sVFSNodePub))) != sizeof(sVFSNodePub)) {
+	if((res = vfs_readFile(KERNEL_PID,file,(u8*)&node,sizeof(sVFSDirEntry))) != sizeof(sVFSDirEntry)) {
 		proc_unassocFD(fd);
 		vfs_closeFile(file);
 		test_caseFailed("Unable to read with fd=%d! Expected %d bytes, read %d",
-				fd,sizeof(sVFSNodePub),res);
+				fd,sizeof(sVFSDirEntry),res);
 		return;
 	}
+	vfs_readFile(KERNEL_PID,file,(u8*)node.name,node.header.nameLen);
+	node.name[node.header.nameLen] = '\0';
 
 	/* check data */
 	vfsn_resolvePath("system:/processes",&procNode);
@@ -113,10 +124,10 @@ static void test_vfs_readFileSystem(void) {
 		test_caseFailed("Node-name='%s', expected 'processes'",node.name);
 		return;
 	}
-	if(node.nodeNo != procNode) {
+	if(node.header.nodeNo != procNode) {
 		proc_unassocFD(fd);
 		vfs_closeFile(file);
-		test_caseFailed("nodeNo=%d, expected %d",node.nodeNo);
+		test_caseFailed("nodeNo=%d, expected %d",node.header.nodeNo);
 		return;
 	}
 

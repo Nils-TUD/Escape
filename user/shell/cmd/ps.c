@@ -29,7 +29,7 @@ static cstring states[] = {
 s32 shell_cmdPs(u32 argc,s8 **argv) {
 	s32 dd,dfd;
 	sProc proc;
-	sDir *entry;
+	sDirEntry *entry;
 	s8 path[] = "system:/processes/";
 	s8 ppath[255];
 

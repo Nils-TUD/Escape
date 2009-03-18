@@ -119,8 +119,8 @@ void sched_unblockAll(void) {
 		p = (sProc*)n->data;
 		p->state = ST_READY;
 		sched_enqueueReadyProc(p);
-		sll_removeNode(blockedQueue,n,NULL);
 	}
+	sll_removeAll(blockedQueue);
 }
 
 sProc *sched_dequeueReady(void) {

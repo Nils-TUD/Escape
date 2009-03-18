@@ -14,6 +14,10 @@
 #include <string.h>
 
 #include "ext2/ext2.h"
+#include "ext2/path.h"
+#include "ext2/inode.h"
+#include "ext2/inodecache.h"
+#include "ext2/file.h"
 #include <fsinterface.h>
 
 /* open-response */
@@ -54,6 +58,8 @@ static sExt2 ext2;
 s32 main(void) {
 	s32 fd,id;
 
+	return 0;
+
 	/* register service */
 	id = regService("fs",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
@@ -79,61 +85,83 @@ s32 main(void) {
 				switch(header.id) {
 					case MSG_FS_OPEN: {
 						/* read data */
-						sMsgDataFSOpenReq data;
-						read(fd,&data,header.length);
+						sMsgDataFSOpenReq *data = (sMsgDataFSOpenReq*)malloc(sizeof(u8) * header.length);
+						if(data != NULL) {
+							/* TODO we need a way to skip a message or something.. */
+							tInodeNo no;
+							read(fd,data,header.length);
 
-						ext2_dbg_printInode(ext2_resolvePath(&ext2,&data + 1));
+							no = ext2_resolvePath(&ext2,(string)(data + 1));
+							if(no != EXT2_BAD_INO) {
+								/*sCachedInode *cnode = ext2_icache_request(&ext2,no);
+								ext2_dbg_printInode(&(cnode->inode));
+								ext2_icache_release(&ext2,cnode);*/
+							}
 
-						debugf("Received an open from %d of '%s' for ",data.pid,&data + 1);
-						if(data.flags & IO_READ)
-							debugf("READ");
-						if(data.flags & IO_WRITE) {
-							if(data.flags & IO_READ)
-								debugf(" and ");
-							debugf("WRITE");
+							/*debugf("Received an open from %d of '%s' for ",data->pid,data + 1);
+							if(data->flags & IO_READ)
+								debugf("READ");
+							if(data->flags & IO_WRITE) {
+								if(data->flags & IO_READ)
+									debugf(" and ");
+								debugf("WRITE");
+							}
+							debugf("\n");*/
+
+							/* write response */
+							openResp.data.pid = data->pid;
+							openResp.data.inodeNo = no;
+							write(fd,&openResp,sizeof(sMsgOpenResp));
+							free(data);
 						}
-						debugf("\n");
-
-						/* write response */
-						openResp.data.pid = data.pid;
-						openResp.data.inodeNo = 0x1337;
-						write(fd,&openResp,sizeof(sMsgOpenResp));
 					}
 					break;
 
 					case MSG_FS_READ: {
+						sMsgDefHeader *rhead;
+						sMsgDataFSReadResp *rdata;
+						u32 dlen;
+						u32 count;
+
 						/* read data */
 						sMsgDataFSReadReq data;
 						read(fd,&data,header.length);
 
-						/* write response */
-						u32 dlen = sizeof(sMsgDataFSReadResp) + 5 * sizeof(s8);
-						sMsgDefHeader *rhead = malloc(sizeof(sMsgDefHeader) + dlen);
-						rhead->id = MSG_FS_READ_RESP;
-						rhead->length = dlen;
-						sMsgDataFSReadResp *rdata = (sMsgDataFSReadResp*)(rhead + 1);
-						rdata->count = 5;
-						rdata->pid = data.pid;
-						s8 *str = (s8*)(rdata + 1);
-						memcpy(str,"test",5);
+						/* write response  */
+						dlen = sizeof(sMsgDataFSReadResp) + data.count * sizeof(u8);
+						rhead = (u8*)malloc(sizeof(sMsgDefHeader) + dlen);
+						if(rhead != NULL) {
+							rdata = (sMsgDataFSReadResp*)(rhead + 1);
+							count = ext2_readFile(&ext2,data.inodeNo,(u8*)(rdata + 1),
+										data.offset,data.count);
 
-						write(fd,rhead,sizeof(sMsgDefHeader) + dlen);
-						free(rhead);
+							dlen = sizeof(sMsgDataFSReadResp) + count * sizeof(u8);
+							rhead->length = dlen;
+							rhead->id = MSG_FS_READ_RESP;
+							rdata->count = count;
+							rdata->pid = data.pid;
+
+							write(fd,rhead,sizeof(sMsgDefHeader) + dlen);
+							free(rhead);
+						}
 					}
 					break;
 
 					case MSG_FS_WRITE: {
 						/* read data */
-						sMsgDataFSWriteReq *data = malloc(header.length);
-						read(fd,data,header.length);
+						sMsgDataFSWriteReq *data = (sMsgDataFSWriteReq*)malloc(header.length);
+						if(data != NULL) {
+							read(fd,data,header.length);
 
-						debugf("Got '%s' (%d bytes) for offset %d in inode %d\n",data + 1,
-								data->count,data->offset,data->inodeNo);
+							debugf("Got '%s' (%d bytes) for offset %d in inode %d\n",data + 1,
+									data->count,data->offset,data->inodeNo);
 
-						/* write response */
-						writeResp.data.pid = data->pid;
-						writeResp.data.count = data->count;
-						write(fd,&writeResp,sizeof(sMsgWriteResp));
+							/* write response */
+							writeResp.data.pid = data->pid;
+							writeResp.data.count = data->count;
+							write(fd,&writeResp,sizeof(sMsgWriteResp));
+							free(data);
+						}
 					}
 					break;
 
@@ -142,7 +170,7 @@ s32 main(void) {
 						sMsgDataFSCloseReq data;
 						read(fd,&data,sizeof(sMsgDataFSCloseReq));
 
-						debugf("Closing inode %d\n",data.inodeNo);
+						/*debugf("Closing inode %d\n",data.inodeNo);*/
 					}
 					break;
 				}

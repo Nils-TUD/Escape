@@ -6,6 +6,7 @@
 
 #include "../h/util.h"
 #include "../h/intrpt.h"
+#include "../h/proc.h"
 #include "../h/ksymbols.h"
 #include "../h/paging.h"
 #include "../h/video.h"
@@ -26,6 +27,7 @@ extern u32 getStackFrameStart(void);
 extern u32 kernelStack;
 
 void panic(cstring fmt,...) {
+	sProc *p = proc_getRunning();
 	va_list ap;
 	vid_printf("\n");
 	vid_setLineBG(vid_getLine(),RED);
@@ -39,17 +41,20 @@ void panic(cstring fmt,...) {
 
 	vid_printf("\n");
 	vid_restoreColor();
-	printStackTrace();
+	vid_printf("Caused by process %d (%s)\n\n",p->pid,p->name);
+	printStackTrace(getKernelStackTrace());
+	printStackTrace(getUserStackTrace(p,intrpt_getCurStack()));
 	intrpt_setEnabled(false);
 	halt();
 }
 
-sFuncCall *getStackTrace(void) {
-	static sFuncCall frames[MAX_STACK_DEPTH];
+sFuncCall *getUserStackTrace(sProc *p,sIntrptStackFrame *stack) {
+	return getStackTrace((u32*)stack->ebp,
+			KERNEL_AREA_V_ADDR - p->stackPages * PAGE_SIZE,KERNEL_AREA_V_ADDR);
+}
+
+sFuncCall *getKernelStackTrace(void) {
 	u32 start,end;
-	u32 i;
-	sFuncCall *frame = &frames[0];
-	sSymbol *sym;
 	u32* ebp = (u32*)getStackFrameStart();
 
 	/* determine the stack-bounds; we have a temp stack at the beginning */
@@ -62,14 +67,30 @@ sFuncCall *getStackTrace(void) {
 		end = (u32)&kernelStack;
 	}
 
+	return getStackTrace(ebp,start,end);
+}
+
+sFuncCall *getStackTrace(u32 *ebp,u32 start,u32 end) {
+	static sFuncCall frames[MAX_STACK_DEPTH];
+	u32 i;
+	bool isKernel = (u32)ebp >= KERNEL_AREA_V_ADDR;
+	sFuncCall *frame = &frames[0];
+	sSymbol *sym;
+
 	for(i = 0; i < MAX_STACK_DEPTH; i++) {
 		/* prevent page-fault */
 		if((u32)ebp < start || (u32)ebp >= end)
 			break;
 		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;
-		sym = ksym_getSymbolAt(frame->addr);
-		frame->funcAddr = sym->address;
-		frame->funcName = sym->funcName;
+		if(isKernel) {
+			sym = ksym_getSymbolAt(frame->addr);
+			frame->funcAddr = sym->address;
+			frame->funcName = sym->funcName;
+		}
+		else {
+			frame->funcAddr = frame->addr;
+			frame->funcName = "Unknown";
+		}
 		ebp = (u32*)*ebp;
 		frame++;
 	}
@@ -79,9 +100,12 @@ sFuncCall *getStackTrace(void) {
 	return &frames[0];
 }
 
-void printStackTrace(void) {
-	sFuncCall *trace = getStackTrace();
-	vid_printf("Stack-trace:\n");
+void printStackTrace(sFuncCall *trace) {
+	if(trace->addr < KERNEL_AREA_V_ADDR)
+		vid_printf("User-Stacktrace:\n");
+	else
+		vid_printf("Kernel-Stacktrace:\n");
+
 	/* TODO maybe we should skip printStackTrace here? */
 	while(trace->addr != 0) {
 		vid_printf("\t0x%08x -> 0x%08x (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);

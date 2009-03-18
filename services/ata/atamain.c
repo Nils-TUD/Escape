@@ -106,6 +106,8 @@ static sATADrive drives[DRIVE_COUNT] = {
 s32 main(void) {
 	s32 id;
 
+	return 0;
+
 	/* reg service */
 	id = regService("ata",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {

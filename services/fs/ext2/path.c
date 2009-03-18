@@ -10,19 +10,23 @@
 #include "ext2.h"
 #include "path.h"
 #include "inode.h"
+#include "inodecache.h"
 #include "request.h"
 
-sInode *ext2_resolvePath(sExt2 *e,string path) {
-	sInode *inode = NULL;
+tInodeNo ext2_resolvePath(sExt2 *e,string path) {
+	sCachedInode *cnode = NULL;
+	tInodeNo res;
 	s8 *p = path;
 	u32 pos;
 
 	if(*p != '/') {
 		/* TODO */
-		return NULL;
+		return EXT2_BAD_INO;
 	}
 
-	inode = ext2_getInode(e,EXT2_ROOT_INO - 1);
+	cnode = ext2_icache_request(e,EXT2_ROOT_INO);
+	if(cnode == NULL)
+		return EXT2_BAD_INO;
 	/* skip '/' */
 	p++;
 
@@ -30,16 +34,23 @@ sInode *ext2_resolvePath(sExt2 *e,string path) {
 	while(*p) {
 		sDirEntry *eBak;
 		sDirEntry *entry = (sDirEntry*)malloc(sizeof(u8) * BLOCK_SIZE(e));
-		if(entry == NULL)
-			return NULL;
+		if(entry == NULL) {
+			ext2_icache_release(e,cnode);
+			return EXT2_BAD_INO;
+		}
 
 		/* TODO a directory may have more blocks */
 		eBak = entry;
-		ext2_readBlocks(e,(u8*)entry,inode->dBlocks[0],1);
+		ext2_readBlocks(e,(u8*)entry,cnode->inode.dBlocks[0],1);
 		while(entry->inode != 0) {
-			if(strncmp(entry + 1,p,pos) == 0) {
+			if(strncmp((cstring)(entry + 1),p,pos) == 0) {
 				p += pos;
-				inode = ext2_getInode(e,entry->inode - 1);
+				ext2_icache_release(e,cnode);
+				cnode = ext2_icache_request(e,entry->inode);
+				if(cnode == NULL) {
+					free(eBak);
+					return EXT2_BAD_INO;
+				}
 
 				/* skip slashes */
 				while(*p == '/')
@@ -50,19 +61,29 @@ sInode *ext2_resolvePath(sExt2 *e,string path) {
 
 				/* move to childs of this node */
 				pos = strchri(p,'/');
-				if((inode->mode & EXT2_S_IFDIR) == 0) {
-					free(entry);
-					return NULL;
+				if((cnode->inode.mode & EXT2_S_IFDIR) == 0) {
+					ext2_icache_release(e,cnode);
+					free(eBak);
+					return EXT2_BAD_INO;
 				}
 				break;
 			}
 
 			/* to next dir-entry */
-			entry = (u8*)entry + entry->recLen;
+			entry = (sDirEntry*)((u8*)entry + entry->recLen);
+		}
+
+		/* no match? */
+		if(entry->inode == 0) {
+			free(eBak);
+			ext2_icache_release(e,cnode);
+			return EXT2_BAD_INO;
 		}
 
 		free(eBak);
 	}
 
-	return inode;
+	res = cnode->inodeNo;
+	ext2_icache_release(e,cnode);
+	return res;
 }

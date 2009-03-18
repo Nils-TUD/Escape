@@ -22,6 +22,7 @@
 #include "cmd/test.h"
 #include "cmd/ata.h"
 #include "cmd/kill.h"
+#include "cmd/ls.h"
 
 #define MAX_CMD_LEN			40
 #define MAX_ARG_COUNT		10
@@ -95,6 +96,7 @@ static sShellCmd commands[] = {
 	{"test"		, shell_cmdTest		},
 	{"ata"		, shell_cmdAta		},
 	{"kill"		, shell_cmdKill		},
+	{"ls"		, shell_cmdLs		},
 };
 
 /* buffer for arguments */
@@ -122,8 +124,8 @@ s32 main(void) {
 		shell_readLine(buffer,MAX_CMD_LEN);
 
 		/* execute it */
-		shell_addToHistory(buffer);
 		shell_executeCmd(buffer);
+		shell_addToHistory(buffer);
 	}
 
 	return 0;

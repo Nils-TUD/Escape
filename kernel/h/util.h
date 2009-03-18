@@ -8,6 +8,9 @@
 #define UTIL_H_
 
 #include "../h/common.h"
+#include "../h/ksymbols.h"
+#include "../h/intrpt.h"
+#include "../h/proc.h"
 
 /**
  * Represents one function-call
@@ -50,17 +53,37 @@ extern u8 inb(u16 port);
 void panic(cstring fmt,...);
 
 /**
- * Builds a stack-trace and returns a pointer to the first element. The addr-field in the
- * struct-array is terminated with 0. Note that it is a static-array!
+ * Builds the stack-trace for a user-app
  *
- * @return a pointer to the first stack-trace-element
+ * @param p the process
+ * @param stack the interrupt-stack
+ * @return the first function-call (for printStackTrace())
  */
-sFuncCall *getStackTrace(void);
+sFuncCall *getUserStackTrace(sProc *p,sIntrptStackFrame *stack);
 
 /**
- * Prints the stack-trace
+ * Builds the stack-trace for the kernel
+ *
+ * @return the first function-call (for printStackTrace())
  */
-void printStackTrace(void);
+sFuncCall *getKernelStackTrace(void);
+
+/**
+ * Builds the stacktrace with given vars
+ *
+ * @param ebp the current value of ebp
+ * @param start the stack-start
+ * @param end the stack-end
+ * @return the first function-call (for printStackTrace())
+ */
+sFuncCall *getStackTrace(u32 *ebp,u32 start,u32 end);
+
+/**
+ * Prints the given stack-trace
+ *
+ * @param trace the first function-call (NULL-terminated)
+ */
+void printStackTrace(sFuncCall *trace);
 
 /**
  * Prints the memory from <addr> to <addr> + <dwordCount>

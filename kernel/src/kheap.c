@@ -98,9 +98,23 @@ void kheap_init(void) {
 
 }
 
+u32 kheap_getAreaSize(void *addr) {
+	sMemArea *area;
+	area = occupiedMap[(u32)addr % OCC_MAP_SIZE];
+	while(area != NULL) {
+		if(area->address == addr)
+			return area->size;
+		area = area->next;
+	}
+	return 0;
+}
+
 void *kheap_alloc(u32 size) {
 	sMemArea *area,*prev,*narea;
 	sMemArea **list;
+
+	if(size == 0)
+		return NULL;
 
 	/* find a suitable area */
 	prev = NULL;

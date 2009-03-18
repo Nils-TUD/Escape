@@ -21,8 +21,11 @@ static s8 *history[HISTORY_SIZE] = {NULL};
 void shell_addToHistory(s8 *line) {
 	u16 lastPos = histWritePos == 0 ? HISTORY_SIZE - 1 : histWritePos - 1;
 	/* don't add an entry twice in a row */
-	if(lastPos < histSize && strcmp(history[lastPos],line) == 0)
+	if(lastPos < histSize && strcmp(history[lastPos],line) == 0) {
+		/* we don't need the line anymore */
+		free(line);
 		return;
+	}
 
 	/* free occupied places since we overwrite them */
 	if(history[histWritePos])

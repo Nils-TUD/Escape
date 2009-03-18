@@ -128,6 +128,13 @@ bool sll_append(sSLList *list,void *data);
 bool sll_insert(sSLList *list,void *data,u32 index);
 
 /**
+ * Removes all elements from the list
+ *
+ * @param list the list
+ */
+void sll_removeAll(sSLList *list);
+
+/**
  * Removes the given node from the list. This is a faster alternative to sll_removeIndex()
  * because it is not required to loop through the list.
  *

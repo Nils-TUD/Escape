@@ -9,19 +9,6 @@
 #include "ext2.h"
 #include "inode.h"
 
-sInode *ext2_getInode(sExt2 *e,tInodeNo no) {
-	return ext2_getInodeInGroup(e,e->groups + ext2_getInodeGroup(e,no),ext2_getGroupInodeNo(e,no));
-}
-
-u32 ext2_getGroupInodeNo(sExt2 *e,tInodeNo no) {
-	return no % e->superBlock.inodesPerGroup;
-}
-
-u32 ext2_getInodeGroup(sExt2 *e,tInodeNo no) {
-	return no / e->superBlock.inodesPerGroup;
-}
-
-
 #if DEBUGGING
 
 void ext2_dbg_printInode(sInode *inode) {

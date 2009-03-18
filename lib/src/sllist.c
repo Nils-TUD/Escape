@@ -171,6 +171,25 @@ bool sll_insert(sSLList *list,void *data,u32 index) {
 	return true;
 }
 
+void sll_removeAll(sSLList *list) {
+	sList *l = (sList*)list;
+	sNode *m,*n = (sNode*)l->first;
+
+	ASSERT(list != NULL,"list == NULL");
+
+	/* free all nodes */
+	while(n != NULL) {
+		m = n->next;
+		free(n);
+		n = m;
+	}
+
+	/* adjust list-properties */
+	l->length = 0;
+	l->first = NULL;
+	l->last = NULL;
+}
+
 void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev) {
 	sList *l = (sList*)list;
 	sNode *n = (sNode*)node,*ln = (sNode*)prev;
@@ -207,8 +226,9 @@ void sll_removeFirst(sSLList *list,void *data) {
 		}
 	}
 
-	/* TODO keep that? */
-	ASSERT(n != NULL,"Data 0x%x does not exist!",data);
+	/* ignore */
+	if(n == NULL)
+		return;
 
 	sll_removeNode(list,(sSLNode*)n,(sSLNode*)ln);
 }
@@ -226,8 +246,9 @@ void sll_removeIndex(sSLList *list,u32 index) {
 		n = n->next;
 	}
 
-	/* TODO keep that? */
-	ASSERT(n != NULL,"Index %d does not exist!",i);
+	/* ignore */
+	if(n == NULL)
+		return;
 
 	sll_removeNode(list,(sSLNode*)n,(sSLNode*)ln);
 }

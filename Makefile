@@ -90,6 +90,9 @@ createhdd:
 		sudo chmod 0666 $(FLOPPYDISKMOUNT)/file.txt
 		echo "Das ist ein Test-String!!" > $(FLOPPYDISKMOUNT)/file.txt
 		sudo cp $(FLOPPYDISKMOUNT)/file.txt $(FLOPPYDISKMOUNT)/test/file.txt
+		sudo touch $(FLOPPYDISKMOUNT)/bigfile
+		sudo chmod 0666 $(FLOPPYDISKMOUNT)/bigfile
+		./tools/createStr.sh 'Das ist der %d Test\n' 200 > $(FLOPPYDISKMOUNT)/bigfile;
 		make umounthdd
 		rm -f $(TMPFILE)
 		cp $(HDD) $(HDDBAK)

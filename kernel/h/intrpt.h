@@ -218,6 +218,11 @@ extern bool intrpt_setEnabled(bool enabled);
 void intrpt_init(void);
 
 /**
+ * @return the current interrupt-stack (may be NULL)
+ */
+sIntrptStackFrame *intrpt_getCurStack(void);
+
+/**
  * Adds a listener for the given IRQ-number. That means the given vfs-node will be notified
  * with the given message as soon as the given interrupt occurs.
  *

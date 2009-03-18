@@ -40,11 +40,13 @@ typedef struct {
 	tVFSNodeNo nodeNo;
 } sGFTEntry;
 
-/* the public VFS-node (passed to the user) */
+/* VFS-directory-entry (equal to the direntry of ext2) */
 typedef struct {
 	tVFSNodeNo nodeNo;
-	u8 name[MAX_NAME_LEN + 1];
-} sVFSNodePub;
+	u16 recLen;
+	u16 nameLen;
+	/* name follows (up to 255 bytes) */
+} __attribute__((packed)) sVFSDirEntry;
 
 /* a message (for communicating with services) */
 typedef struct {
@@ -690,12 +692,14 @@ s32 vfs_serviceUseReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 
 	/* get first element and copy data to buffer */
 	msg = sll_get(list,0);
+	if(msg == 0x41e85000)
+		vid_printf("ICH BINS");
 	offset = MIN(msg->length - 1,offset);
 	count = MIN(msg->length - offset,count);
 	/* the data is behind the message */
 	memcpy(buffer,(u8*)(msg + 1) + offset,count);
 
-	/*vid_printf("\n%d read msg:\n---\n",p->pid);
+	/*vid_printf("\n%d read msg:\n---\n",pid);
 	dumpBytes(buffer,count);
 	vid_printf("\n---\n");*/
 
@@ -830,7 +834,7 @@ static s32 vfs_dirReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 		byteCount = 0;
 		sVFSNode *n = NODE_FIRST_CHILD(node);
 		while(n != NULL) {
-			byteCount += sizeof(sVFSNodePub);
+			byteCount += sizeof(sVFSDirEntry) + strlen(n->name);
 			n = n->next;
 		}
 
@@ -846,14 +850,17 @@ static s32 vfs_dirReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 				node->data.def.pos = 0;
 			}
 			else {
+				u16 len;
+				sVFSDirEntry *dirEntry = (sVFSDirEntry*)childs;
 				node->data.def.cache = childs;
 				n = NODE_FIRST_CHILD(node);
 				while(n != NULL) {
-					u16 len = strlen(n->name) + 1;
-					sVFSNodePub *pub = (sVFSNodePub*)childs;
-					pub->nodeNo = NADDR_TO_VNNO(n);
-					memcpy(pub->name,n->name,len);
-					childs += sizeof(sVFSNodePub);
+					len = strlen(n->name);
+					dirEntry->nodeNo = NADDR_TO_VNNO(n);
+					dirEntry->nameLen = len;
+					dirEntry->recLen = sizeof(sVFSDirEntry) + len;
+					memcpy(dirEntry + 1,n->name,len);
+					dirEntry = (sVFSDirEntry*)((u8*)dirEntry + dirEntry->recLen);
 					n = n->next;
 				}
 			}

@@ -77,56 +77,49 @@ s32 main(void) {
 			sleep();
 		else {
 			/* read all available messages */
-			s32 c;
-			do {
-				/* read header */
-				if((c = read(fd,&msg,sizeof(sMsgDefHeader))) < 0)
-					printLastError();
-				else if(c > 0) {
-					/* see what we have to do */
-					switch(msg.id) {
-						/* set character */
-						case MSG_VIDEO_SET: {
-							static sMsgDataVidSet data;
-							if(read(fd,&data,sizeof(sMsgDataVidSet)) > 0) {
-								if(data.row < ROWS && data.col < COLS) {
-									u8 *ptr = videoData + (data.row * COLS * 2) + data.col * 2;
-									*ptr = data.character;
-									*(ptr + 1) = data.color;
-									vid_setCursor(data.row,data.col + 1);
-								}
+			while(read(fd,&msg,sizeof(sMsgDefHeader)) > 0) {
+				/* see what we have to do */
+				switch(msg.id) {
+					/* set character */
+					case MSG_VIDEO_SET: {
+						static sMsgDataVidSet data;
+						if(read(fd,&data,sizeof(sMsgDataVidSet)) > 0) {
+							if(data.row < ROWS && data.col < COLS) {
+								u8 *ptr = videoData + (data.row * COLS * 2) + data.col * 2;
+								*ptr = data.character;
+								*(ptr + 1) = data.color;
+								vid_setCursor(data.row,data.col + 1);
 							}
 						}
-						break;
-
-						/* set screen */
-						case MSG_VIDEO_SETSCREEN: {
-							if(msg.length > sizeof(u16) && msg.length <= COLS * ROWS * 2 + sizeof(u16)) {
-								u16 *startPos;
-								s8 *buf = (s8*)malloc(msg.length * sizeof(s8));
-								read(fd,buf,msg.length);
-								startPos = (u16*)buf;
-								if(msg.length - sizeof(u16) <= (u32)*startPos * 2 + COLS * ROWS * 2)
-									vid_setScreen(*startPos,buf + sizeof(u16),msg.length - sizeof(u16));
-								free(buf);
-							}
-						}
-						break;
-
-						/* set cursor */
-						case MSG_VIDEO_SETCURSOR: {
-							static sMsgDataVidSetCursor data;
-							if(read(fd,&data,sizeof(sMsgDataVidSetCursor)) > 0) {
-								if(data.row < ROWS && data.col < COLS) {
-									vid_setCursor(data.row,data.col);
-								}
-							}
-						}
-						break;
 					}
+					break;
+
+					/* set screen */
+					case MSG_VIDEO_SETSCREEN: {
+						if(msg.length > sizeof(u16) && msg.length <= COLS * ROWS * 2 + sizeof(u16)) {
+							u16 *startPos;
+							s8 *buf = (s8*)malloc(msg.length * sizeof(s8));
+							read(fd,buf,msg.length);
+							startPos = (u16*)buf;
+							if(msg.length - sizeof(u16) <= (u32)*startPos * 2 + COLS * ROWS * 2)
+								vid_setScreen(*startPos,buf + sizeof(u16),msg.length - sizeof(u16));
+							free(buf);
+						}
+					}
+					break;
+
+					/* set cursor */
+					case MSG_VIDEO_SETCURSOR: {
+						static sMsgDataVidSetCursor data;
+						if(read(fd,&data,sizeof(sMsgDataVidSetCursor)) > 0) {
+							if(data.row < ROWS && data.col < COLS) {
+								vid_setCursor(data.row,data.col);
+							}
+						}
+					}
+					break;
 				}
 			}
-			while(c > 0);
 			close(fd);
 		}
 	}

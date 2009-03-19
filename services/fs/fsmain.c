@@ -58,8 +58,6 @@ static sExt2 ext2;
 s32 main(void) {
 	s32 fd,id;
 
-	return 0;
-
 	/* register service */
 	id = regService("fs",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {

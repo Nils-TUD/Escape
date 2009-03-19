@@ -38,6 +38,28 @@ void dumpDwords(void *addr,u32 dwordCount) {
 	}
 }
 
+void debugBytes(void *addr,u32 byteCount) {
+	u32 i = 0;
+	u8 *ptr = (u8*)addr;
+	for(i = 0; byteCount-- > 0; i++) {
+		if(i % 17 == 0)
+			debugf("\n%08x: ",i);
+		debugf("%02x ",*ptr);
+		ptr++;
+	}
+}
+
+void debugDwords(void *addr,u32 dwordCount) {
+	u32 i = 0;
+	u32 *ptr = (u32*)addr;
+	for(i = 0; dwordCount-- > 0; i++) {
+		if(i % 4 == 0)
+			debugf("\n%08x: ",ptr);
+		debugf("%08x ",*ptr);
+		ptr++;
+	}
+}
+
 void debugf(cstring fmt,...) {
 	va_list ap;
 	va_start(ap, fmt);

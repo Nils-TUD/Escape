@@ -488,6 +488,18 @@ static bool kheap_loadNewSpace(u32 size) {
 			/* map pages */
 			paging_map(KERNEL_HEAP_START + (page - count) * PAGE_SIZE,
 					NULL,count,PG_WRITABLE | PG_SUPERVISOR,false);
+
+			/* TODO I have no idea why this is required here :( */
+			/* but I've searched more than 12 hours to figure out that something that seams
+			 * to occurr in the messaging-system (memcpy overwrites linked-list-entries??)
+			 * occurrs here if we don't do a flushTLB(). There are many strange requirements for
+			 * the bug to show:
+			 * - we have to send big messages
+			 * - somehow the error doesn't occurr in bochs, but just in qemu !?
+			 * - it depends on wether I do a yield() after sending the big message or not
+			 * And many more that I don't remember exactly.
+			 * However, the following call fixes it. That's enough for now :P */
+			paging_flushTLB();
 			break;
 		}
 		page++;

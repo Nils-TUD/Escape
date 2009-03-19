@@ -88,6 +88,22 @@ void dumpBytes(void *addr,u32 byteCount);
 void dumpDwords(void *addr,u32 dwordCount);
 
 /**
+ * Prints <byteCount> bytes at <addr> with debugf
+ *
+ * @param addr the start-address
+ * @param byteCount the number of bytes
+ */
+void debugBytes(void *addr,u32 byteCount);
+
+/**
+ * Prints <dwordCount> dwords at <addr> with debugf
+ *
+ * @param addr the start-address
+ * @param dwordCount the number of dwords
+ */
+void debugDwords(void *addr,u32 dwordCount);
+
+/**
  * Same as debugf, but with the va_list as argument
  *
  * @param fmt the format

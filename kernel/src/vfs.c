@@ -692,14 +692,15 @@ s32 vfs_serviceUseReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 
 	/* get first element and copy data to buffer */
 	msg = sll_get(list,0);
-	if(msg == 0x41e85000)
-		vid_printf("ICH BINS");
 	offset = MIN(msg->length - 1,offset);
 	count = MIN(msg->length - offset,count);
 	/* the data is behind the message */
 	memcpy(buffer,(u8*)(msg + 1) + offset,count);
 
-	/*vid_printf("\n%d read msg:\n---\n",pid);
+	/*vid_printf("\n%s read msg from %s; src=0x%x,length=%d\n",
+					proc_getByPid(pid)->name,node->parent->name,(u8*)(msg + 1) + offset,count);*/
+
+	/*vid_printf("\n%s read msg from %s:\n---\n",proc_getByPid(pid)->name,node->parent->name);
 	dumpBytes(buffer,count);
 	vid_printf("\n---\n");*/
 
@@ -742,8 +743,9 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 		msg->length = count;
 		memcpy(msg + 1,buffer,count);
 
-		/*vid_printf("\n%d Wrote msg:\n---\n",pid);
-		dumpBytes(buffer,count);
+		/*vid_printf("\n%s Wrote msg to %s; dest=0x%x,length=%d\n",
+				proc_getByPid(pid)->name,n->parent->name,msg + 1,count);*/
+		/*dumpBytes(buffer,count);
 		vid_printf("\n---\n");*/
 
 		/* append to list */

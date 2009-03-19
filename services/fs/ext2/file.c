@@ -21,8 +21,6 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	if(cnode == NULL)
 		return 0;
 
-	debugf("org.offset=%d, org.count=%d\n",offset,count);
-
 	/* nothing left to read? */
 	if((s32)offset < 0 || (s32)offset >= cnode->inode.size)
 		return 0;
@@ -37,8 +35,6 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	tmpBuffer = (u8*)malloc(blockSize * sizeof(u8));
 	if(tmpBuffer == NULL)
 		return 0;
-
-	debugf("offset=%d, count=%d, startBLock=%d, blockCount=%d\n",offset,count,startBlock,blockCount);
 
 	/* TODO try to read multiple blocks at once */
 

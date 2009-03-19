@@ -58,9 +58,12 @@ s32 main(void) {
 					case MSG_VTERM_WRITE: {
 						if(msg.length > 0) {
 							s8 *buffer = malloc(msg.length * sizeof(s8));
-							read(fd,buffer,msg.length);
-							*(buffer + msg.length - 1) = '\0';
-							vterm_puts(buffer);
+							if(read(fd,buffer,msg.length) < 0)
+								printLastError();
+							else {
+								*(buffer + msg.length - 1) = '\0';
+								vterm_puts(buffer);
+							}
 							free(buffer);
 						}
 					}

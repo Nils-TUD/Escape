@@ -195,7 +195,7 @@ bool paging_isRangeReadable(u32 virtual,u32 count) {
 	virtual &= ~(PAGE_SIZE - 1);
 	end = (virtual + count) & ~(PAGE_SIZE - 1);
 	pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
-	while(virtual <= end) {
+	while(virtual < end) {
 		/* check page-table first */
 		pd = (sPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual);
 		if(!pd->present)
@@ -225,7 +225,7 @@ bool paging_isRangeWritable(u32 virtual,u32 count) {
 	virtual &= ~(PAGE_SIZE - 1);
 	end = (virtual + count) & ~(PAGE_SIZE - 1);
 	pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
-	while(virtual <= end) {
+	while(virtual < end) {
 		/* check page-table first */
 		pd = (sPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual);
 		if(!pd->present)

@@ -101,8 +101,10 @@ s32 main(void) {
 							s8 *buf = (s8*)malloc(msg.length * sizeof(s8));
 							read(fd,buf,msg.length);
 							startPos = (u16*)buf;
-							if(msg.length - sizeof(u16) <= (u32)*startPos * 2 + COLS * ROWS * 2)
-								vid_setScreen(*startPos,buf + sizeof(u16),msg.length - sizeof(u16));
+							if(*startPos < COLS * ROWS - 1) {
+								if(msg.length - sizeof(u16) <= (u32)*startPos * 2 + COLS * ROWS * 2)
+									vid_setScreen(*startPos,buf + sizeof(u16),msg.length - sizeof(u16));
+							}
 							free(buf);
 						}
 					}

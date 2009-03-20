@@ -24,10 +24,6 @@ all:	$(BIN) $(DUMP)
 $(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCA)
 		@echo "===== COMPILING & LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA);
-		@# temporary ;)
-		make -C ../../ mounthdd
-		sudo cp $(BIN) $(DISKMOUNT)/task2.bin
-		make -C ../../ umounthdd
 
 $(BUILD)/user_$(NAME)_%.o:		%.c
 		@echo "===== COMPILING $< =====";

@@ -9,6 +9,73 @@
 #include "ext2.h"
 #include "inode.h"
 
+u32 ext2_getBlockOfInode(sExt2 *e,sInode *inode,u32 block) {
+	u32 i,blockSize,blocksPerBlock;
+	u32 blperBlSq;
+	u32 *buffer;
+
+	/* direct block */
+	if(block < EXT2_DIRBLOCK_COUNT)
+		return inode->dBlocks[block];
+
+	/* singly indirect */
+	block -= EXT2_DIRBLOCK_COUNT;
+	blockSize = BLOCK_SIZE(e);
+	blocksPerBlock = blockSize / sizeof(u32);
+	if(block < blocksPerBlock) {
+		buffer = ext2_bcache_request(e,inode->singlyIBlock);
+		if(buffer == NULL)
+			return 0;
+		i = *(buffer + block);
+		return i;
+	}
+
+	/* TODO we have to verify if this is all correct here... */
+
+	/* doubly indirect */
+	block -= blocksPerBlock;
+	blperBlSq = blocksPerBlock * blocksPerBlock;
+	if(block < blperBlSq) {
+		/* read the first block with block-numbers of the indirect blocks */
+		buffer = ext2_bcache_request(e,inode->doublyIBlock);
+		if(buffer == NULL)
+			return 0;
+		i = *(buffer + block / blocksPerBlock);
+
+		/* read the indirect block */
+		buffer = ext2_bcache_request(e,i);
+		if(buffer == NULL)
+			return 0;
+		i = *(buffer + block % blocksPerBlock);
+
+		return i;
+	}
+
+	/* triply indirect */
+	block -= blperBlSq;
+
+	/* read the first block with block-numbers of the indirect blocks of indirect-blocks */
+	buffer = ext2_bcache_request(e,inode->triplyIBlock);
+	if(buffer == NULL)
+		return 0;
+	i = *(buffer + block / blperBlSq);
+
+	/* read the indirect block of indirect blocks */
+	block %= blperBlSq;
+	buffer = ext2_bcache_request(e,i);
+	if(buffer == NULL)
+		return 0;
+	i = *(buffer + block / blocksPerBlock);
+
+	/* read the indirect block */
+	buffer = ext2_bcache_request(e,i);
+	if(buffer == NULL)
+		return 0;
+	i = *(buffer + block % blocksPerBlock);
+
+	return i;
+}
+
 #if DEBUGGING
 
 void ext2_dbg_printInode(sInode *inode) {

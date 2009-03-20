@@ -93,6 +93,7 @@ static sMsgCloseReq msgClose = {
 /* the vfs-service-file */
 static sSLList *requests = NULL;
 static tFile fsServiceFile = -1;
+static bool gotMsg = false;
 
 void vfsr_setFSService(tVFSNodeNo nodeNo) {
 	fsServiceFile = vfs_openFileForKernel(KERNEL_PID,nodeNo);
@@ -106,10 +107,14 @@ void vfsr_setFSService(tVFSNodeNo nodeNo) {
 	}
 }
 
+void vfsr_setGotMsg(void) {
+	gotMsg = true;
+}
+
 void vfsr_checkForMsgs(void) {
 	sMsgDefHeader header;
 	sRequest *req;
-	if(requests == NULL || sll_length(requests) == 0)
+	if(requests == NULL || !gotMsg || sll_length(requests) == 0)
 		return;
 
 	/* ok, let's see what we've got.. */
@@ -181,6 +186,8 @@ void vfsr_checkForMsgs(void) {
 			break;
 		}
 	}
+
+	gotMsg = false;
 }
 
 s32 vfsr_openFile(tPid pid,u8 flags,s8 *path) {

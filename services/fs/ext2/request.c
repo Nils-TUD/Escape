@@ -17,28 +17,31 @@ typedef struct {
 	sMsgDataATAReq data;
 } __attribute__((packed)) sMsgATAReq;
 
+static sMsgATAReq req = {
+	.header = {
+		.id = MSG_ATA_READ_REQ,
+		.length = sizeof(sMsgDataATAReq)
+	},
+	.data = {
+		.drive = 0,
+		.partition = 0,
+		.lba = 0,
+		.secCount = 0
+	}
+};
+
 bool ext2_readBlocks(sExt2 *e,u8 *buffer,u32 start,u16 blockCount) {
 	return ext2_readSectors(e,buffer,BLOCKS_TO_SECS(e,start),BLOCKS_TO_SECS(e,blockCount));
 }
 
 bool ext2_readSectors(sExt2 *e,u8 *buffer,u64 lba,u16 secCount) {
-	sMsgATAReq req = {
-		.header = {
-			.id = MSG_ATA_READ_REQ,
-			.length = sizeof(sMsgDataATAReq)
-		},
-		.data = {
-			.drive = e->drive,
-			.partition = e->partition,
-			.lba = lba,
-			.secCount = secCount
-		}
-	};
 	sMsgDefHeader res;
 
-	/*debugf("Reading sectors %d .. %d\n",(u32)lba,(u32)lba + secCount - 1);*/
-
 	/* send read-request */
+	req.data.drive = e->drive;
+	req.data.partition = e->partition;
+	req.data.lba = lba;
+	req.data.secCount = secCount;
 	if(write(e->ataFd,&req,sizeof(sMsgATAReq)) < 0) {
 		printLastError();
 		return false;
@@ -46,7 +49,7 @@ bool ext2_readSectors(sExt2 *e,u8 *buffer,u64 lba,u16 secCount) {
 
 	/* wait for response */
 	do {
-		sleep();
+		sleep(EV_RECEIVED_MSG);
 	}
 	while(read(e->ataFd,&res,sizeof(sMsgDefHeader)) <= 0);
 

@@ -26,6 +26,10 @@ all:	$(BIN) $(DUMP)
 $(BIN):	$(LDCONF) $(COBJ) $(CCMDOBJ) $(START) $(LIBCA)
 		@echo "===== COMPILING & LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(CCMDOBJ) $(LIBCA);
+		@echo "===== COPYING ON DISK =====";
+		@make -C ../../ mounthdd
+		sudo cp $(BIN) $(DISKMOUNT)/apps/$(NAME)
+		@make -C ../../ umounthdd
 
 $(BUILD)/user_$(NAME)_%.o:		%.c
 		@echo "===== COMPILING $< =====";

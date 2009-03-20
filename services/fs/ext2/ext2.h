@@ -21,6 +21,7 @@
 #define EXT2_DIRBLOCK_COUNT					12
 
 #define INODE_CACHE_SIZE					64
+#define BLOCK_CACHE_SIZE					64
 
 /* magic number */
 #define EXT2_SUPER_MAGIC					0xEF53
@@ -304,6 +305,12 @@ typedef struct {
 } sCachedInode;
 
 typedef struct {
+	u32 blockNo;
+	/* NULL indicates an unused entry */
+	u8 *buffer;
+} sBCacheEntry;
+
+typedef struct {
 	/* ATA drive and partition */
 	u8 drive;
 	u8 partition;
@@ -315,8 +322,10 @@ typedef struct {
 	sSuperBlock superBlock;
 	sBlockGroup *groups;
 
-	/* inode-cache */
+	/* caches */
 	sCachedInode inodeCache[INODE_CACHE_SIZE];
+	u32 blockCachePos;
+	sBCacheEntry blockCache[BLOCK_CACHE_SIZE];
 } sExt2;
 
 /**

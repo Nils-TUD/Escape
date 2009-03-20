@@ -44,9 +44,9 @@ void sched_setReady(sProc *p);
 void sched_setBlocked(sProc *p);
 
 /**
- * Unblocks all blocked processes
+ * Unblocks all blocked processes that are waiting for the given event
  */
-void sched_unblockAll(void);
+void sched_unblockAll(u8 event);
 
 /**
  * Removes the first process from the ready-queue and returns it

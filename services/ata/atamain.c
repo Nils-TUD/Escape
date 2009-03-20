@@ -138,7 +138,7 @@ s32 main(void) {
 	while(1) {
 		s32 fd = getClient(id);
 		if(fd < 0) {
-			sleep();
+			sleep(EV_CLIENT);
 		}
 		else {
 			while(read(fd,&header,sizeof(sMsgDefHeader)) > 0) {

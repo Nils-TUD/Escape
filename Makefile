@@ -85,7 +85,10 @@ createhdd:
 		sudo losetup -d /dev/loop0 || true
 		@# store some test-data on the disk
 		make mounthdd
-		sudo cp $(BUILD)/user_task2.bin $(FLOPPYDISKMOUNT)/task2.bin
+		sudo mkdir $(FLOPPYDISKMOUNT)/apps
+		sudo mkdir $(FLOPPYDISKMOUNT)/etc
+		sudo mkdir $(FLOPPYDISKMOUNT)/services
+		sudo cp services/services.txt $(FLOPPYDISKMOUNT)/etc/services
 		sudo mkdir $(FLOPPYDISKMOUNT)/test
 		sudo touch $(FLOPPYDISKMOUNT)/file.txt
 		sudo chmod 0666 $(FLOPPYDISKMOUNT)/file.txt

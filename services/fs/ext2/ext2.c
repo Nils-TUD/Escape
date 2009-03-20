@@ -6,17 +6,28 @@
 
 #include <common.h>
 #include <io.h>
+#include <heap.h>
 #include "ext2.h"
+#include "inodecache.h"
 #include "request.h"
 
 bool ext2_init(sExt2 *e) {
-	e->ataFd = open("services:/ata",IO_WRITE | IO_READ);
-	if((s32)e->ataFd < 0) {
+	s32 fd;
+	do {
+		fd = open("services:/ata",IO_WRITE | IO_READ);
+		if(fd < 0)
+			yield();
+	}
+	while(fd < 0);
+	/*
+	fd = open("services:/ata",IO_WRITE | IO_READ);
+	if(fd < 0) {
 		printLastError();
 		return false;
-	}
+	}*/
 
-	if(!ext2_readSectors(e,&(e->superBlock),2,1)) {
+	e->ataFd = fd;
+	if(!ext2_readSectors(e,(u8*)&(e->superBlock),2,1)) {
 		close(e->ataFd);
 		printLastError();
 		return false;
@@ -30,8 +41,9 @@ bool ext2_init(sExt2 *e) {
 		return false;
 	}
 
-	/* init inode-cache */
+	/* init caches */
 	ext2_icache_init(e);
+	ext2_bcache_init(e);
 
 	return true;
 }

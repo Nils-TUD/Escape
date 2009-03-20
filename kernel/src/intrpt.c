@@ -553,11 +553,7 @@ typedef struct {
 } sProcData;
 #include "../../build/services.txt"
 static bool servicesLoaded = false;
-static bool firstProcLoaded = false;
-/*static u8 task2[] = {
-	#include "../../build/user_task2.dump"
-};
-static bool proc2Ready = false;*/
+
 static u64 umodeTime = 0;
 static u64 kmodeTime = 0;
 static u64 kmodeStart = 0;
@@ -609,7 +605,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		break;
 	}
 
-	if(servicesLoaded && firstProcLoaded)
+	if(servicesLoaded)
 		vfsr_checkForMsgs();
 
 	/*vid_printf("umodeTime=%d%%\n",(s32)(100. / (cpu_rdtsc() / (double)umodeTime)));*/
@@ -622,49 +618,25 @@ void intrpt_handler(sIntrptStackFrame stack) {
 			/* TODO don't resched if we come from kernel-mode! */
 			ASSERT(stack.ds == 0x23,"Timer interrupt from kernel-mode!");
 
-			if(!servicesLoaded || !firstProcLoaded) {
-				u32 i = 0xFFFFFFFF,end;
-
-				/* TODO a little hack that loads the services and processes as soon as
-				 * the first process (init) has set stderr */
-				/* later init will load the services and so on. therefore this will no longer be
-				 * necessary */
-				if(!firstProcLoaded && proc_getRunning()->pid == 0 && proc_getByPid(0)->fileDescs[2] != -1) {
-					/* load first process */
-					i = 0;
-					end = 1;
-					firstProcLoaded = true;
-					/*vid_printf("Loading first proc...\n");*/
-				}
-				else if(!servicesLoaded) {
-					/* load services */
-					i = 1;
-					end = ARRAY_SIZE(services);
-					servicesLoaded = true;
-					/*vid_printf("Loading services...\n");*/
-				}
-
-				if(i != 0xFFFFFFFF) {
-					for(; i < end; i++) {
-						/* clone proc */
-						tPid pid = proc_getFreePid();
-						if(proc_clone(pid)) {
-							/* we'll reach this as soon as the scheduler has chosen the created process */
-							p = proc_getRunning();
-							/* remove data-pages */
-							proc_changeSize(-p->dataPages,CHG_DATA);
-							/* now load service */
-							/*vid_printf("Loading service %d\n",p->pid);*/
-							/* TODO just temporary */
-							memcpy(p->name,services[i].name,strlen(services[i].name) + 1);
-							elf_loadprog(services[i].data);
-							/*vid_printf("Starting...\n");*/
-							proc_setupIntrptStack(&stack);
-							/* we don't want to continue the loop ;) */
-							break;
-						}
+			if(!servicesLoaded) {
+				u32 i;
+				servicesLoaded = true;
+				for(i = 0; i < ARRAY_SIZE(services); i++) {
+					/* clone proc */
+					tPid pid = proc_getFreePid();
+					if(proc_clone(pid)) {
+						/* we'll reach this as soon as the scheduler has chosen the created process */
+						p = proc_getRunning();
+						/* remove data-pages */
+						proc_changeSize(-p->dataPages,CHG_DATA);
+						/* now load service */
+						/* TODO just temporary */
+						memcpy(p->name,services[i].name,strlen(services[i].name) + 1);
+						elf_loadprog(services[i].data);
+						proc_setupIntrptStack(&stack);
+						/* we don't want to continue the loop ;) */
+						break;
 					}
-					/*vid_printf("Done\n");*/
 				}
 				break;
 			}

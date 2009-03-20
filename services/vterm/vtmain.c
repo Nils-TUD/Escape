@@ -50,7 +50,7 @@ s32 main(void) {
 			while(read(kbFd,&keycode,sizeof(sMsgKbResponse)) > 0) {
 				vterm_handleKeycode(&keycode);
 			}
-			sleep();
+			sleep(EV_CLIENT | EV_RECEIVED_MSG);
 		}
 		else {
 			while(read(fd,&msg,sizeof(sMsgDefHeader)) > 0) {

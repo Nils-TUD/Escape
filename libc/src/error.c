@@ -10,7 +10,7 @@
 s32 lastError = 0;
 
 void printLastError(void) {
-	debugf("Error %d: ",lastError);
+	debugf("[proc %d] Error %d: ",getpid(),lastError);
 	switch(lastError) {
 		case ERR_FILE_IN_USE:
 			debugf("The file is already in use\n");

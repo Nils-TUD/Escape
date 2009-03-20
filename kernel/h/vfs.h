@@ -162,9 +162,10 @@ s32 vfs_createService(tPid pid,cstring name,u8 type);
  * and should serve a client or if the process has got a message from a service.
  *
  * @param pid the process-id
+ * @param events the events to wait for
  * @return true if there is a message
  */
-bool vfs_msgAvailableFor(tPid pid);
+bool vfs_msgAvailableFor(tPid pid,u8 events);
 
 /**
  * For services: Looks wether a client wants to be served and return the node-number

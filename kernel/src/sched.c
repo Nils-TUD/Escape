@@ -112,15 +112,24 @@ void sched_setBlocked(sProc *p) {
 	sll_append(blockedQueue,p);
 }
 
-void sched_unblockAll(void) {
-	sSLNode *n;
+void sched_unblockAll(u8 event) {
+	sSLNode *n,*m,*prev;
 	sProc *p;
-	for(n = sll_begin(blockedQueue); n != NULL; n = n->next) {
+	prev = NULL;
+	for(n = sll_begin(blockedQueue); n != NULL; ) {
 		p = (sProc*)n->data;
-		p->state = ST_READY;
-		sched_enqueueReadyProc(p);
+		if(p->waitFor & event) {
+			p->state = ST_READY;
+			sched_enqueueReadyProc(p);
+			m = n->next;
+			sll_removeNode(blockedQueue,n,prev);
+			n = m;
+		}
+		else {
+			prev = n;
+			n = n->next;
+		}
 	}
-	sll_removeAll(blockedQueue);
 }
 
 sProc *sched_dequeueReady(void) {

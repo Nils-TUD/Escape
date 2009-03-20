@@ -16,6 +16,18 @@
  */
 extern void debugChar(s8 c);
 
+static u64 start = 0;
+
+void dbg_startTimer(void) {
+	start = cpu_rdtsc();
+}
+
+void dbg_stopTimer(string prefix) {
+	u64 diff = cpu_rdtsc() - start;
+	u32 *ptr = (u32*)&diff;
+	debugf("%s: 0x%08x%08x\n",prefix,*(ptr + 1),*ptr);
+}
+
 void dumpBytes(void *addr,u32 byteCount) {
 	u32 i = 0;
 	u8 *ptr = (u8*)addr;

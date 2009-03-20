@@ -714,15 +714,19 @@ static void sysc_yield(sSysCallStack *stack) {
 }
 
 static void sysc_sleep(sSysCallStack *stack) {
+	u8 events = (u8)stack->arg1;
 	sProc *p;
 	bool msgAv;
 
-	UNUSED(stack);
+	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG)) != 0) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
 
 	p = proc_getRunning();
-	msgAv = vfs_msgAvailableFor(p->pid);
+	msgAv = vfs_msgAvailableFor(p->pid,events);
 	if(!msgAv) {
-		sched_setBlocked(p);
+		proc_sleep(events);
 		proc_switch();
 	}
 }
@@ -831,6 +835,7 @@ static void sysc_sendSignal(sSysCallStack *stack) {
 }
 
 static void sysc_exec(sSysCallStack *stack) {
+	s8 pathSave[MAX_PATH_LEN + 1];
 	s8 *path = (s8*)stack->arg1;
 	const u32 bytesPerReq = 1 * K;
 	u8 *buffer;
@@ -840,12 +845,19 @@ static void sysc_exec(sSysCallStack *stack) {
 	tVFSNodeNo nodeNo;
 	tFile file;
 	sProc *p = proc_getRunning();
+	u64 totalTime = 0;
+	u64 start = cpu_rdtsc();
+
+	vid_printf("%d loads '%s'\n",p->pid,path);
 
 	pathLen = strnlen(path,MAX_PATH_LEN);
 	if(pathLen == -1 || !paging_isRangeUserReadable((u32)path,pathLen)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
+
+	/* save path (we'll overwrite the process-data) */
+	memcpy(pathSave,path,pathLen + 1);
 
 	/* open file */
 	res = vfsn_resolvePath(path,&nodeNo);
@@ -871,7 +883,7 @@ static void sysc_exec(sSysCallStack *stack) {
 
 	/* read the file */
 	do {
-		readBytes = vfs_readFile(p->pid,file,buffer + fileSize,512);
+		readBytes = vfs_readFile(p->pid,file,buffer + fileSize,bytesPerReq);
 		if(readBytes > 0) {
 			bufSize += bytesPerReq * sizeof(u8);
 			buffer = (u8*)kheap_realloc(buffer,bufSize);
@@ -896,6 +908,14 @@ static void sysc_exec(sSysCallStack *stack) {
 
 	/* now remove the process-data */
 	proc_changeSize(-p->dataPages,CHG_DATA);
+	/* copy path so that we can identify the process */
+	memcpy(p->name,pathSave + (pathLen > MAX_PROC_NAME_LEN ? (pathLen - MAX_PROC_NAME_LEN) : 0),
+			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
+
+	u64 end = cpu_rdtsc();
+	totalTime = end - start;
+	u32 *ptr = (u32*)&totalTime;
+	vid_printf("Total: %08x%08x\n",*(ptr + 1),*ptr);
 
 	/* load program and prepare interrupt-stack */
 	if(elf_loadprog(buffer) == ELF_INVALID_ENTRYPOINT) {
@@ -905,6 +925,7 @@ static void sysc_exec(sSysCallStack *stack) {
 		proc_switch();
 	}
 	else {
+		vid_printf("%d is finished with '%s'\n",p->pid,pathSave);
 		proc_setupIntrptStack(intrpt_getCurStack());
 
 		/* finally free the buffer */

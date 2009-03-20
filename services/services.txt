@@ -1,0 +1,4 @@
+keyboard:
+speaker:
+video:
+vterm: keyboard,speaker,video

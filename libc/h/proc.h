@@ -9,6 +9,11 @@
 
 #define MAX_PROC_NAME_LEN	15
 
+/* the events we can wait for */
+#define EV_NOEVENT			0
+#define EV_CLIENT			1
+#define EV_RECEIVED_MSG		2
+
 /* process-data */
 typedef struct {
 	u8 state;
@@ -54,9 +59,12 @@ void exec(string path);
 void yield(void);
 
 /**
- * Puts the process to sleep until a message arrives.
+ * Puts the process to sleep until one of the given events occurrs. Note that you will
+ * always be waked up for signals!
+ *
+ * @param events the events on which you want to wake up
  */
-void sleep(void);
+void sleep(u8 events);
 
 /**
  * Destroys the process and provides the parent the given error-code

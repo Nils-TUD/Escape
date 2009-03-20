@@ -74,7 +74,7 @@ s32 main(void) {
 	while(1) {
 		s32 fd = getClient(id);
 		if(fd < 0)
-			sleep();
+			sleep(EV_CLIENT);
 		else {
 			/* read all available messages */
 			while(read(fd,&msg,sizeof(sMsgDefHeader)) > 0) {

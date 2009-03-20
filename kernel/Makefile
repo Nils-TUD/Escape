@@ -29,9 +29,9 @@ SYMBOLSCRIPT=../tools/gensymbols.sh
 SYMBOLSRC=src/ksymbols.c
 SYMBOLOBJ=$(patsubst src/%.c,$(BUILD)/%.o,$(SYMBOLSRC))
 
-SERVDIRS = $(filter-out $(wildcard *.*) ../services/Makefile,$(wildcard ../services/*))
-SERVDIRNAMES = $(patsubst ../services/%,%,$(SERVDIRS))
-USERPROCNAMES = shell
+# we have to put ata and fs into the kernel
+# TODO we can put them as modules in grub, too, right?
+SERVDIRNAMES = ata fs
 SERVBINS = $(patsubst %,$(BUILD)/service_%.bin,$(SERVDIRNAMES))
 SERVICES = $(BUILD)/services.txt
 
@@ -64,11 +64,6 @@ $(BIN):	$(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 
 $(SERVICES): $(SERVBINS)
 		@echo "" > $(SERVICES)
-		@for i in $(USERPROCNAMES) ; do \
-			echo "static u8 user_"$$i"[] = {" >> $(SERVICES); \
-			echo "		#include \"../../build/user_$$i.dump\"" >> $(SERVICES); \
-			echo "};" >> $(SERVICES); \
-		done;
 		@for i in $(SERVDIRNAMES) ; do \
 			echo "static u8 service_"$$i"[] = {" >> $(SERVICES); \
 			echo "		#include \"../../build/service_$$i.dump\"" >> $(SERVICES); \
@@ -76,9 +71,6 @@ $(SERVICES): $(SERVBINS)
 		done;
 		@echo "" >> $(SERVICES)
 		@echo "static sProcData services[] = {" >> $(SERVICES)
-		@for i in $(USERPROCNAMES) ; do \
-			echo "	{\"$$i\", user_"$$i"}," >> $(SERVICES); \
-		done;
 		@for i in $(SERVDIRNAMES) ; do \
 			echo "	{\"$$i\", service_"$$i"}," >> $(SERVICES); \
 		done;

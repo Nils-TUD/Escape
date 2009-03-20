@@ -20,6 +20,11 @@
 /* for marking unused */
 #define INVALID_PID			(PROC_COUNT + 2)
 
+/* the events we can wait for */
+#define EV_NOEVENT			0
+#define EV_CLIENT			1
+#define EV_RECEIVED_MSG		2
+
 /* the process-state which will be saved for context-switching */
 typedef struct {
 	u32 esp;
@@ -37,6 +42,8 @@ typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE
 typedef struct {
 	/* process state. see eProcState */
 	u8 state;
+	/* the events the process waits for (if sleeping) */
+	u8 waitFor;
 	/* process id (2^16 processes should be enough :)) */
 	tPid pid;
 	/* parent process id */
@@ -120,6 +127,29 @@ void proc_switch(void);
  * @param pid the process-id
  */
 void proc_switchTo(tPid pid);
+
+/**
+ * Puts the process to sleep with given wake-up-events
+ *
+ * @param events the events on which the process should wakeup
+ */
+void proc_sleep(u8 events);
+
+/**
+ * Wakes up all blocked processes that wait for the given event
+ *
+ * @param event the event
+ */
+void proc_wakeupAll(u8 event);
+
+/**
+ * Wakes up the given process with the given event. If the process is not waiting for it
+ * the event is ignored
+ *
+ * @param pid the process to wakeup
+ * @param event the event to send
+ */
+void proc_wakeup(tPid pid,u8 event);
 
 /**
  * Requests some IO-ports for the current process

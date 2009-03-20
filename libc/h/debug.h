@@ -72,6 +72,18 @@
 extern u64 cpu_rdtsc(void);
 
 /**
+ * Starts the timer (cpu_rdtsc())
+ */
+void dbg_startTimer(void);
+
+/**
+ * Stops the timer and prints "<prefix>: <clockCycles>\n"
+ *
+ * @param prefix the prefix for the output
+ */
+void dbg_stopTimer(string prefix);
+
+/**
  * Prints <byteCount> bytes at <addr>
  *
  * @param addr the start-address

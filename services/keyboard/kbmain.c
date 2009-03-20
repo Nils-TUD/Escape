@@ -63,9 +63,9 @@ s32 main(void) {
 		return 1;
 	}
 
-	/* wait for interrupts */
+	/* we don't want to be waked up. we'll get signals anyway */
 	while(1)
-		sleep();
+		sleep(EV_NOEVENT);
 
 	/* clean up */
 	unsetSigHandler(SIG_INTRPT_KB);

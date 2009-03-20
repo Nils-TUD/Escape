@@ -24,6 +24,10 @@ all:	$(BIN) $(DUMP)
 $(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCA)
 		@echo "===== COMPILING & LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA);
+		@echo "===== COPYING ON DISK =====";
+		@make -C ../../ mounthdd
+		sudo cp $(BIN) $(DISKMOUNT)/services/$(NAME)
+		@make -C ../../ umounthdd
 
 $(BUILD)/service_$(NAME)_%.o:		%.c
 		@echo "===== COMPILING $< =====";

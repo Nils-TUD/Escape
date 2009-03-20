@@ -109,7 +109,7 @@ s8 readChar(void) {
 	s8 c;
 	/* go to sleep until the reply is available */
 	while(read(STDIN_FILENO,&c,sizeof(s8)) <= 0) {
-		sleep();
+		sleep(EV_RECEIVED_MSG);
 	}
 	return c;
 }

@@ -3,7 +3,6 @@ BUILD=../../build
 DISK=$(BUILD)/disk.img
 DISKMOUNT=../../disk
 BIN=$(BUILD)/user_$(NAME).bin
-DUMP=$(BUILD)/user_$(NAME).dump
 DEP=$(BUILD)/user_$(NAME).dep
 LIBC=../../libc
 LDCONF=$(LIBC)/ld.conf
@@ -19,19 +18,19 @@ COBJ=$(patsubst %.c,$(BUILD)/user_$(NAME)_%.o,$(CSRC))
 
 .PHONY: all clean
 
-all:	$(BIN) $(DUMP)
+all:	$(BIN)
 
 $(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCA)
 		@echo "===== COMPILING & LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA);
+		@echo "===== COPYING ON DISK =====";
+		@make -C ../../ mounthdd
+		sudo cp $(BIN) $(DISKMOUNT)/apps/$(NAME)
+		@make -C ../../ umounthdd
 
 $(BUILD)/user_$(NAME)_%.o:		%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
-
-$(DUMP):	$(BIN)
-		@echo "===== GENERATING DUMP =====";
-		$(BUILD)/dump $(BIN) $(DUMP)
 
 $(DEP):	$(CSRC)
 		@echo "===== GENERATING DEPENDENCIES =====";
@@ -42,4 +41,4 @@ $(DEP):	$(CSRC)
 -include $(DEP)
 
 clean:
-		rm -f $(BIN) $(DUMP) $(COBJ) $(DEP)
+		rm -f $(BIN) $(COBJ) $(DEP)

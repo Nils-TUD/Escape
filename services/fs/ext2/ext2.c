@@ -13,11 +13,14 @@
 
 bool ext2_init(sExt2 *e) {
 	s32 fd;
-	fd = open("services:/ata",IO_WRITE | IO_READ);
-	if(fd < 0) {
-		printLastError();
-		return false;
+	/* we have to try it multiple times in this case since the kernel loads ata and fs
+	 * directly after another and we don't know who's ready first */
+	do {
+		fd = open("services:/ata",IO_WRITE | IO_READ);
+		if(fd < 0)
+			yield();
 	}
+	while(fd < 0);
 
 	e->ataFd = fd;
 	if(!ext2_readSectors(e,(u8*)&(e->superBlock),2,1)) {

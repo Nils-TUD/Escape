@@ -38,7 +38,7 @@ $(BUILD):
 
 floppy: clean
 		sudo umount $(FLOPPYDISKMOUNT) || true;
-		dd if=/dev/zero of=$(FLOPPYDISK) bs=1024 count=2880;
+		dd if=/dev/zero of=$(FLOPPYDISK) bs=1024 count=1440;
 		/sbin/mke2fs -F $(FLOPPYDISK);
 		sudo mount -o loop $(FLOPPYDISK) $(FLOPPYDISKMOUNT);
 		mkdir $(FLOPPYDISKMOUNT)/grub;

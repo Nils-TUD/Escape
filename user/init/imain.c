@@ -54,7 +54,10 @@ s32 main(void) {
 
 	/* now load the shell */
 	if(fork() == 0) {
-		exec("file:/apps/shell");
+		s8 *args[] = {"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+				"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+				"ccccccccccccccccccccccccccccccccccccc","abc","def","ghi","a","b","","c",NULL};
+		exec("file:/apps/shell",args);
 		exit(0);
 	}
 
@@ -193,7 +196,7 @@ static bool loadService(s8 *services,s8 *name) {
 		/* dependencies are running, so fork & exec */
 		if(fork() == 0) {
 			strncat(path,servName,p);
-			exec(path);
+			exec(path,NULL);
 			/* just to be sure */
 			exit(0);
 		}

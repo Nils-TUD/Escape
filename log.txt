@@ -12,56 +12,33 @@ Available memory:
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000002135fbb
+Clock cycles: 0x00000000018091f2
 Initializing VFS...DONE
-Clock cycles: 0x0000000000130b4b
+Clock cycles: 0x000000000012e079
 Initializing process-management...DONE
-Clock cycles: 0x00000000000d9de2
+Clock cycles: 0x00000000000df06e
 Initializing IDT...DONE
-Clock cycles: 0x00000000000ab6ed
+Clock cycles: 0x00000000000aab89
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
+Got interrupt 39 (<unknown>) @ 0x0
 Drives:
 	  Primary Master (present=1,sectors=10080)
 	  	  0: start=0x3F, sectors=10017 size=5128704 byte
 	  Primary Slave (present=0,sectors=0)
 	  Secondary Master (present=0,sectors=0)
 	  Secondary Slave (present=0,sectors=0)
+argc=8, argv=0xbfffffdc
+	  arg0: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccc
+	  arg1: abc
+	  arg2: def
+	  arg3: ghi
+	  arg4: a
+	  arg5: b
+	  arg6: 
+	  arg7: c
 Welcome to Escape v0.1!
+
 Try 'help' to see the current features :)
-
-# echo hier
-hier 
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  010	 	  	  Ready  	 	  0x000200ccfdd58fa0	  init
-01	  	  00	  	  010	 	  	  Blocked	 	  0x000000003f4278ff	  ata
-02	  	  00	  	  029	 	  	  Blocked	 	  0x000000000935d5b5	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000c026f1	  ervices/speaker
-04	  	  00	  	  007	 	  	  Blocked	 	  0x00000000013a3acf	  rvices/keyboard
-05	  	  00	  	  012	 	  	  Ready  	 	  0x0000000003a3b5dc	  /services/video
-06	  	  00	  	  018	 	  	  Blocked	 	  0x000000000405079e	  /services/vterm
-07	  	  00	  	  010	 	  	  Running	 	  0x000000000223fa9d	  ile:/apps/shell
-
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  010	 	  	  Ready  	 	  0x00024241d979608d	  init
-01	  	  00	  	  010	 	  	  Blocked	 	  0x000000003f4278ff	  ata
-02	  	  00	  	  029	 	  	  Blocked	 	  0x000000000935d5b5	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000c026f1	  ervices/speaker
-04	  	  00	  	  007	 	  	  Blocked	 	  0x00000000015d7115	  rvices/keyboard
-05	  	  00	  	  012	 	  	  Ready  	 	  0x0000000006706dc4	  /services/video
-06	  	  00	  	  018	 	  	  Blocked	 	  0x000000000645e511	  /services/vterm
-07	  	  00	  	  010	 	  	  Running	 	  0x0000000003098688	  ile:/apps/shell
-
-# sps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
-00	  	  00	  	  010	 	  	  Ready  	 	  0x00028a705132d903	  init
-01	  	  00	  	  010	 	  	  Blocked	 	  0x000000003f4278ff	  ata
-02	  	  00	  	  029	 	  	  Blocked	 	  0x000000000935d5b5	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000c026f1	  ervices/speaker
-04	  	  00	  	  007	 	  	  Blocked	 	  0x00000000019a5a6d	  rvices/keyboard
-05	  	  00	  	  012	 	  	  Ready  	 	  0x000000000975c80a	  /services/video
-06	  	  00	  	  018	 	  	  Blocked	 	  0x0000000008cdf507	  /services/vterm
-07	  	  00	  	  010	 	  	  Running	 	  0x0000000003f22806	  ile:/apps/shell
 
 # 

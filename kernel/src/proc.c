@@ -379,10 +379,40 @@ void proc_destroy(sProc *p) {
 	p->physPDirAddr = 0;
 }
 
-void proc_setupIntrptStack(sIntrptStackFrame *frame) {
+void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args) {
+	u32 *esp,*argv;
 	ASSERT(frame != NULL,"frame == NULL");
 
-	frame->uesp = KERNEL_AREA_V_ADDR - sizeof(u32);
+	/* copy arguments on the user-stack */
+	esp = (u32*)KERNEL_AREA_V_ADDR - 1;
+	argv = NULL;
+	if(argc > 0) {
+		s8 *str;
+		u32 i,len;
+		argv = esp - argc;
+		/* space for the argument-pointer */
+		esp -= argc;
+		/* start for the arguments */
+		str = esp;
+		for(i = 0; i < argc; i++) {
+			/* start <len> bytes backwards */
+			len = strlen(args) + 1;
+			str -= len;
+			/* store arg-pointer and copy arg */
+			argv[i] = str;
+			memcpy(str,args,len);
+			/* to next */
+			args += len;
+		}
+		/* ensure that we don't overwrites the characters */
+		esp = ((u32)str & ~(sizeof(u32) - 1)) - sizeof(u32);
+	}
+
+	/* store argc and argv */
+	*esp-- = (u32)argv;
+	*esp = argc;
+
+	frame->uesp = (u32)esp;
 	frame->ebp = frame->uesp;
 	/* user-mode segments */
 	/* TODO remove the hard-coded stuff here! */

@@ -20,14 +20,6 @@ typedef struct {
 } __attribute__((packed)) sSendMsg;
 
 /**
- * Writes an escape-code to the vterminal
- *
- * @param str the escape-code
- * @param length the number of chars
- */
-static void putEscape(const s8 *str,u8 length);
-
-/**
  * Determines the width of the given unsigned 32-bit integer in the given base
  *
  * @param n the integer
@@ -232,20 +224,6 @@ void vprintf(cstring fmt,va_list ap) {
 	while (1) {
 		/* wait for a '%' */
 		while ((c = *fmt++) != '%') {
-			/* escape-code? */
-			if(c == '\033' || c == '\e') {
-				if(*fmt == '[') {
-					const s8 *escape = fmt - 1;
-					fmt++;
-					while(*fmt && *fmt != 'm')
-						fmt++;
-					putEscape(escape,fmt - escape + 1);
-					if(*fmt)
-						fmt++;
-					continue;
-				}
-			}
-
 			/* finished? */
 			if (c == '\0') {
 				flush();
@@ -341,15 +319,6 @@ void flush(void) {
 	}
 }
 
-static void putEscape(const s8 *str,u8 length) {
-	s8 *ptr = (s8*)str;
-	if(bufferPos + length >= BUFFER_SIZE - 1)
-		flush();
-
-	while(length-- > 0)
-		putchar(*ptr++);
-}
-
 void printu(u32 n,u8 base) {
 	if(n >= base) {
 		printu(n / base,base);
@@ -369,19 +338,6 @@ static u8 getuwidth(u32 n,u8 base) {
 void puts(cstring str) {
 	s8 c;
 	while((c = *str)) {
-		/* escape-code? */
-		if(c == '\033' || c == '\e') {
-			if(*(str + 1) == '[') {
-				const s8 *escape = str - 1;
-				str += 2;
-				while(*str && *str != 'm')
-					str++;
-				putEscape(escape,str - escape + 1);
-				if(*str)
-					str++;
-			}
-		}
-
 		putchar(c);
 		str++;
 	}

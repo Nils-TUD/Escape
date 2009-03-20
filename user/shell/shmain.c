@@ -101,10 +101,10 @@ static sShellCmd commands[] = {
 static u32 tabCount = 0;
 static s8 *args[MAX_ARG_COUNT];
 
-s32 main(void) {
+s32 main(u32 argc,s8 **argv) {
 	s8 *buffer;
 
-	printf("\033f\011Welcome to Escape v0.1!\033r\00\n");
+	printf("\033f\011Welcome to Escape v0.1!\033r\011\n");
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");

@@ -180,7 +180,7 @@ bool paging_isMapped(u32 virtual) {
 
 bool paging_isRangeUserReadable(u32 virtual,u32 count) {
 	/* kernel area? */
-	if(virtual + count >= KERNEL_AREA_V_ADDR)
+	if(virtual + count > KERNEL_AREA_V_ADDR)
 		return false;
 
 	return paging_isRangeReadable(virtual,count);
@@ -210,7 +210,7 @@ bool paging_isRangeReadable(u32 virtual,u32 count) {
 
 bool paging_isRangeUserWritable(u32 virtual,u32 count) {
 	/* kernel area? */
-	if(virtual + count >= KERNEL_AREA_V_ADDR)
+	if(virtual + count > KERNEL_AREA_V_ADDR)
 		return false;
 
 	return paging_isRangeWritable(virtual,count);
@@ -315,6 +315,8 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 			/* clear frame (ensure that we start at the beginning of the frame) */
 			memset((void*)ADDR_TO_MAPPED_CUSTOM(mappingArea,
 					virtual & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),0,PAGE_SIZE);
+
+			paging_flushTLB();
 		}
 
 		/* setup page */
@@ -584,6 +586,8 @@ void paging_destroyPageDir(sProc *p) {
 	/* unmap stuff & free page-dir */
 	paging_unmap(PAGE_DIR_TMP_AREA,1,true);
 	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)].present = false;
+
+	paging_flushTLB();
 }
 
 void paging_gdtFinished(void) {
@@ -668,6 +672,7 @@ static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
 
 			ownPt->copyOnWrite = true;
 			ownPt->writable = false;
+			paging_flushAddr(virtual);
 		}
 
 		frames++;

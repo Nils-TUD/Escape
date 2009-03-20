@@ -633,7 +633,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 						/* TODO just temporary */
 						memcpy(p->name,services[i].name,strlen(services[i].name) + 1);
 						elf_loadprog(services[i].data);
-						proc_setupIntrptStack(&stack);
+						proc_setupIntrptStack(&stack,0,NULL);
 						/* we don't want to continue the loop ;) */
 						break;
 					}

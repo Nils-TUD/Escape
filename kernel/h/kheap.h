@@ -54,11 +54,6 @@ void kheap_free(void *addr);
 #if DEBUGGING
 
 /**
- * Prints the page-references
- */
-void kheap_dbg_printPageRefs(void);
-
-/**
  * Prints the kernel-heap data-structure
  */
 void kheap_dbg_print(void);

@@ -12,11 +12,6 @@
 
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024
-/* the number of pages for the heap */
-#define HEAP_PAGE_COUNT			KERNEL_HEAP_SIZE / PAGE_SIZE
-
-/* determines the heap-page-index for the given address */
-#define ADDR_TO_PAGEINDEX(addr) (((u32)(addr) - KERNEL_HEAP_START) / PAGE_SIZE)
 
 /* an area in memory */
 typedef struct sMemArea sMemArea;
@@ -33,27 +28,7 @@ static sMemArea *freeList = NULL;
 /* a hashmap with occupied-lists, key is (address % OCC_MAP_SIZE) */
 static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
 
-/* the first free page we know about (just to speed it up a little bit) */
-static u16 pageFirstFree = 0;
-/* reference-counter for each page */
-static u16 pageRefs[HEAP_PAGE_COUNT] = {0};
-
-/**
- * Decreases the page-references for the given address-range. Will free the memory if necessary
- *
- * @param addr the start-address
- * @param size the number of bytes
- * @return wether the page(s) have been free'd. If so the area is no longer usable
- */
-static bool kheap_decRefs(u32 addr,u32 size);
-
-/**
- * Increases the page-references for the given address-range
- *
- * @param addr the start-address
- * @param size the number of bytes
- */
-static void kheap_incRefs(u32 addr,u32 size);
+static u32 pages = 0;
 
 /**
  * Allocates a new area. Assumes that there are any
@@ -165,9 +140,6 @@ void *kheap_alloc(u32 size) {
 		usableList = narea;
 	}
 
-	/* increase page-references */
-	kheap_incRefs((u32)area->address,area->size);
-
 	/* insert in occupied-map */
 	list = occupiedMap + ((u32)area->address % OCC_MAP_SIZE);
 	area->next = *list;
@@ -178,6 +150,7 @@ void *kheap_alloc(u32 size) {
 
 void kheap_free(void *addr) {
 	sMemArea *area,*oprev;
+	sMemArea *a,*prev,*next,*nprev,*pprev,*tprev;
 
 	/* addr may be null */
 	if(addr == NULL)
@@ -203,114 +176,75 @@ void kheap_free(void *addr) {
 	else
 		occupiedMap[(u32)addr % OCC_MAP_SIZE] = area->next;
 
-	/* if the pages are still usable look what we can merge */
-	if(!kheap_decRefs((u32)addr,area->size)) {
-		sMemArea *a,*prev,*next,*nprev,*pprev,*tprev;
-
-		/* find the previous and next free areas */
-		prev = NULL;
-		next = NULL;
-		tprev = NULL;
-		a = usableList;
-		while(a != NULL) {
-			if((u32)a->address + a->size == (u32)addr) {
-				prev = a;
-				pprev = tprev;
-			}
-			if((u32)a->address == (u32)addr + area->size) {
-				next = a;
-				nprev = tprev;
-			}
-			/* do we have both? */
-			if(prev && next)
-				break;
-			tprev = a;
-			a = a->next;
+	/* look what we can merge */
+	/* find the previous and next free areas */
+	prev = NULL;
+	next = NULL;
+	tprev = NULL;
+	a = usableList;
+	while(a != NULL) {
+		if((u32)a->address + a->size == (u32)addr) {
+			prev = a;
+			pprev = tprev;
 		}
+		if((u32)a->address == (u32)addr + area->size) {
+			next = a;
+			nprev = tprev;
+		}
+		/* do we have both? */
+		if(prev && next)
+			break;
+		tprev = a;
+		a = a->next;
+	}
 
-		if(prev && next) {
-			/* merge prev & area & next */
-			area->size += prev->size + next->size;
-			area->address = prev->address;
-			/* remove prev and next from the list */
+	if(prev && next) {
+		/* merge prev & area & next */
+		area->size += prev->size + next->size;
+		area->address = prev->address;
+		/* remove prev and next from the list */
+		if(nprev)
+			nprev->next = next->next;
+		else
+			usableList = next->next;
+		/* special-case if next is the previous of prev */
+		if(pprev == next) {
 			if(nprev)
-				nprev->next = next->next;
+				nprev->next = prev->next;
 			else
-				usableList = next->next;
-			/* special-case if next is the previous of prev */
-			if(pprev == next) {
-				if(nprev)
-					nprev->next = prev->next;
-				else
-					usableList = prev->next;
-			}
-			else {
-				if(pprev)
-					pprev->next = prev->next;
-				else
-					usableList = prev->next;
-			}
-			/* put area on the usable-list */
-			area->next = usableList;
-			usableList = area;
-			/* put prev and next on the freelist */
-			kheap_freeArea(prev);
-			kheap_freeArea(next);
-		}
-		else if(prev) {
-			/* merge preg & area */
-			prev->size += area->size;
-			/* put area on the freelist */
-			kheap_freeArea(area);
-		}
-		else if(next) {
-			/* merge area & next */
-			next->address = area->address;
-			next->size += area->size;
-			/* put area on the freelist */
-			kheap_freeArea(area);
+				usableList = prev->next;
 		}
 		else {
-			/* insert area in usableList */
-			area->next = usableList;
-			usableList = area;
+			if(pprev)
+				pprev->next = prev->next;
+			else
+				usableList = prev->next;
 		}
+		/* put area on the usable-list */
+		area->next = usableList;
+		usableList = area;
+		/* put prev and next on the freelist */
+		kheap_freeArea(prev);
+		kheap_freeArea(next);
 	}
-	else {
-		sMemArea *a,*prev,*temp;
-		u32 start = (u32)addr & ~(PAGE_SIZE - 1);
-		u32 end = ((u32)addr + area->size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-
-		/* go through the usable-list and remove areas that are in the free'd pages */
-		prev = NULL;
-		a = usableList;
-		while(a != NULL) {
-			/* area in one of the free'd pages? */
-			if(((u32)a->address >= start && (u32)a->address <= end) ||
-				((u32)a->address + a->size > start && (u32)a->address + a->size < end)) {
-				/* remove from usable-list */
-				if(prev == NULL)
-					usableList = a->next;
-				else
-					prev->next = a->next;
-				temp = a->next;
-				/* put on freelist */
-				kheap_freeArea(a);
-				/* go to next */
-				a = temp;
-			}
-			else {
-				prev = a;
-				a = a->next;
-			}
-		}
-
-		/* free our area since it was on the occupied map and it is not usable anymore */
+	else if(prev) {
+		/* merge preg & area */
+		prev->size += area->size;
+		/* put area on the freelist */
 		kheap_freeArea(area);
 	}
-
-	/* TODO improve! */
-	pageFirstFree = 0;
+	else if(next) {
+		/* merge area & next */
+		next->address = area->address;
+		next->size += area->size;
+		/* put area on the freelist */
+		kheap_freeArea(area);
+	}
+	else {
+		/* insert area in usableList */
+		area->next = usableList;
+		usableList = area;
+	}
 }
 
 void *kheap_realloc(void *addr,u32 size) {
@@ -373,38 +307,6 @@ void *kheap_realloc(void *addr,u32 size) {
 	return a;
 }
 
-static bool kheap_decRefs(u32 addr,u32 size) {
-	u16 page;
-	u16 total,free = 0;
-	u32 start = addr & ~(PAGE_SIZE - 1);
-	u32 end = (addr + size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	total = (end - start) / PAGE_SIZE;
-	while(start < end) {
-		page = ADDR_TO_PAGEINDEX(start);
-		/* no references any more? */
-		if(--(pageRefs[page]) == 0)
-			free++;
-		start += PAGE_SIZE;
-	}
-
-	/* all free? */
-	if(free == total) {
-		/* so free the memory */
-		paging_unmap(addr,total,true);
-		return true;
-	}
-	return false;
-}
-
-static void kheap_incRefs(u32 addr,u32 size) {
-	u32 start = addr & ~(PAGE_SIZE - 1);
-	u32 end = (addr + size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	while(start < end) {
-		pageRefs[ADDR_TO_PAGEINDEX(start)]++;
-		start += PAGE_SIZE;
-	}
-}
-
 static sMemArea *kheap_allocArea(void) {
 	sMemArea *area;
 
@@ -416,50 +318,18 @@ static sMemArea *kheap_allocArea(void) {
 	area = freeList;
 	freeList = freeList->next;
 
-	/* increase page-references */
-	pageRefs[ADDR_TO_PAGEINDEX(area)]++;
-
 	return area;
 }
 
 static void kheap_freeArea(sMemArea *area) {
-	u16 page = ADDR_TO_PAGEINDEX(area);
-	/* decrease page-references */
-	if(--(pageRefs[page]) == 0) {
-		sMemArea *prev = NULL;
-		u32 addr = (u32)area & ~(PAGE_SIZE - 1);
-		/* if the page for this area has been free'd we have to search through the free-list
-		 * what areas have to be free'd, too */
-		area = freeList;
-		while(area != NULL) {
-			if(((u32)area & ~(PAGE_SIZE - 1)) == addr) {
-				if(prev == NULL)
-					freeList = area->next;
-				else
-					prev->next = area->next;
-				area = area->next;
-			}
-			else {
-				prev = area;
-				area = area->next;
-			}
-		}
-
-		/* unmap the page */
-		paging_unmap(addr,1,true);
-	}
-	else {
-		/* insert in freelist */
-		area->next = freeList;
-		freeList = area;
-	}
+	/* insert in freelist */
+	area->next = freeList;
+	freeList = area;
 }
 
 static bool kheap_loadNewSpace(u32 size) {
 	sMemArea *area;
-	s32 c,count;
-	u16 page;
-	bool free = false;
+	s32 count;
 
 	/* no free areas? */
 	if(freeList == NULL) {
@@ -471,79 +341,36 @@ static bool kheap_loadNewSpace(u32 size) {
 
 	/* allocate the required pages */
 	count = BYTES_2_PAGES(size);
-	page = pageFirstFree;
-	while(page + count <= HEAP_PAGE_COUNT) {
-		free = true;
-		/* TODO if we KNOW that pageFirstFree is free we can skip the first one */
-		for(c = count; c > 0; c--) {
-			if(pageRefs[page] > 0) {
-				free = false;
-				break;
-			}
-			page++;
-		}
-		/* found count free pages in a row? */
-		if(free) {
-			/* map pages */
-			paging_map(KERNEL_HEAP_START + (page - count) * PAGE_SIZE,
-					NULL,count,PG_WRITABLE | PG_SUPERVISOR,false);
-
-			/* TODO I have no idea why this is required here :( */
-			/* but I've searched more than 12 hours to figure out that something that seams
-			 * to occurr in the messaging-system (memcpy overwrites linked-list-entries??)
-			 * occurrs here if we don't do a flushTLB(). There are many strange requirements for
-			 * the bug to show:
-			 * - we have to send big messages
-			 * - somehow the error doesn't occurr in bochs, but just in qemu !?
-			 * - it depends on wether I do a yield() after sending the big message or not
-			 * And many more that I don't remember exactly.
-			 * However, the following call fixes it. That's enough for now :P */
-			paging_flushTLB();
-			break;
-		}
-		page++;
-	}
-
-	/* not enough mem? */
-	/* TODO we may already have added areas..should we free them? */
-	if(free == false)
+	if((pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return false;
-
-	pageFirstFree = page;
+	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,PG_WRITABLE | PG_SUPERVISOR,false);
 
 	/* take one area from the freelist and put the memory in it */
 	area = kheap_allocArea();
 	if(area == NULL)
 		return false;
 
-	area->address = (void*)(KERNEL_HEAP_START + (page - count) * PAGE_SIZE);
+	area->address = (void*)(KERNEL_HEAP_START + pages * PAGE_SIZE);
 	area->size = PAGE_SIZE * count;
 	/* put area in the usable-list */
 	area->next = usableList;
 	usableList = area;
+
+	pages += count;
 	return true;
 }
 
 static bool kheap_loadNewAreas(void) {
 	sMemArea *area,*end;
-	u16 page = pageFirstFree;
 
-	/* search for a free page */
-	while(page < HEAP_PAGE_COUNT) {
-		if(pageRefs[page] == 0)
-			break;
-		page++;
-	}
-
-	/* no free pages anymore? */
-	if(page == HEAP_PAGE_COUNT)
+	if((pages + 1) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return false;
 
 	/* allocate one page for area-structs */
-	paging_map(KERNEL_HEAP_START + page * PAGE_SIZE,NULL,1,PG_WRITABLE | PG_SUPERVISOR,false);
+	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,1,PG_WRITABLE | PG_SUPERVISOR,false);
 
 	/* determine start- and end-address */
-	area = (sMemArea*)(KERNEL_HEAP_START + page * PAGE_SIZE);
+	area = (sMemArea*)(KERNEL_HEAP_START + pages * PAGE_SIZE);
 	end = area + (PAGE_SIZE / sizeof(sMemArea));
 
 	/* put all areas in the freelist */
@@ -556,7 +383,7 @@ static bool kheap_loadNewAreas(void) {
 		area++;
 	}
 
-	pageFirstFree = page + 1;
+	pages++;
 
 	return true;
 }
@@ -564,15 +391,6 @@ static bool kheap_loadNewAreas(void) {
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
-
-void kheap_dbg_printPageRefs(void) {
-	u32 i;
-	vid_printf("Page-References:\n");
-	for(i = 0; i < HEAP_PAGE_COUNT; i++) {
-		if(pageRefs[i] > 0)
-			vid_printf("\tPage %d: %d\n",i,pageRefs[i]);
-	}
-}
 
 void kheap_dbg_print(void) {
 	sMemArea *area;

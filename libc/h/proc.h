@@ -50,8 +50,10 @@ s32 fork(void);
  * Exchanges the process-data with the given program
  *
  * @param path the program-path
+ * @param args a NULL-terminated array of arguments
+ * @return a negative error-code if failed
  */
-void exec(string path);
+s32 exec(string path,s8 **args);
 
 /**
  * Releases the CPU (reschedule)
@@ -63,8 +65,9 @@ void yield(void);
  * always be waked up for signals!
  *
  * @param events the events on which you want to wake up
+ * @return a negative error-code if failed
  */
-void sleep(u8 events);
+s32 sleep(u8 events);
 
 /**
  * Destroys the process and provides the parent the given error-code

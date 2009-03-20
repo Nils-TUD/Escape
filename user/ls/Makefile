@@ -1,20 +1,20 @@
-NAME=vterm
+NAME=ls
 BUILD=../../build
 DISK=$(BUILD)/disk.img
 DISKMOUNT=../../disk
-BIN=$(BUILD)/service_$(NAME).bin
-DEP=$(BUILD)/service_$(NAME).dep
+BIN=$(BUILD)/user_$(NAME).bin
+DEP=$(BUILD)/user_$(NAME).dep
 LIBC=../../libc
 LDCONF=$(LIBC)/ld.conf
 
 CC = gcc
-CFLAGS = -g -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/h -I../../lib/h \
+CFLAGS = -g -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/h -I../../lib/h -I$(LIBC)/test \
 	-Wl,-T,$(LDCONF) $(CWFLAGS) 
 CSRC=$(wildcard *.c)
 
 LIBCA=$(BUILD)/libc.a
 START=$(BUILD)/libc_startup.o
-COBJ=$(patsubst %.c,$(BUILD)/service_$(NAME)_%.o,$(CSRC))
+COBJ=$(patsubst %.c,$(BUILD)/user_$(NAME)_%.o,$(CSRC))
 
 .PHONY: all clean
 
@@ -25,10 +25,10 @@ $(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCA)
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA);
 		@echo "===== COPYING ON DISK =====";
 		@make -C ../../ mounthdd
-		sudo cp $(BIN) $(DISKMOUNT)/services/$(NAME)
+		sudo cp $(BIN) $(DISKMOUNT)/apps/$(NAME)
 		@make -C ../../ umounthdd
 
-$(BUILD)/service_$(NAME)_%.o:		%.c
+$(BUILD)/user_$(NAME)_%.o:		%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
@@ -36,7 +36,7 @@ $(DEP):	$(CSRC)
 		@echo "===== GENERATING DEPENDENCIES =====";
 		$(CC) $(CFLAGS) -MM $(CSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/service_$(NAME)_)\1.o:/g" $(DEP);
+		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/user_$(NAME)_)\1.o:/g" $(DEP);
 
 -include $(DEP)
 

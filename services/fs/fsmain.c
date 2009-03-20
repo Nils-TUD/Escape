@@ -62,7 +62,6 @@ s32 main(void) {
 	ext2.drive = 0;
 	ext2.partition = 0;
 	if(!ext2_init(&ext2)) {
-		printLastError();
 		unregService(id);
 		return 1;
 	}

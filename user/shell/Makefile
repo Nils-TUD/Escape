@@ -3,7 +3,6 @@ BUILD=../../build
 DISK=$(BUILD)/disk.img
 DISKMOUNT=../../disk
 BIN=$(BUILD)/user_$(NAME).bin
-DUMP=$(BUILD)/user_$(NAME).dump
 DEP=$(BUILD)/user_$(NAME).dep
 LIBC=../../libc
 LDCONF=$(LIBC)/ld.conf
@@ -21,7 +20,7 @@ CCMDOBJ=$(patsubst cmd/%.c,$(BUILD)/user_$(NAME)_cmd_%.o,$(CCMDSRC))
 
 .PHONY: all clean
 
-all:	$(BIN) $(DUMP)
+all:	$(BIN)
 
 $(BIN):	$(LDCONF) $(COBJ) $(CCMDOBJ) $(START) $(LIBCA)
 		@echo "===== COMPILING & LINKING =====";
@@ -39,10 +38,6 @@ $(BUILD)/user_$(NAME)_cmd_%.o:		cmd/%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
-$(DUMP):	$(BIN)
-		@echo "===== GENERATING DUMP =====";
-		$(BUILD)/dump $(BIN) $(DUMP)
-
 $(DEP):	$(CSRC) $(CCMDSRC)
 		@echo "===== GENERATING DEPENDENCIES =====";
 		$(CC) $(CFLAGS) -MM $(CSRC) $(CCMDSRC) > $(DEP);
@@ -55,4 +50,4 @@ $(DEP):	$(CSRC) $(CCMDSRC)
 -include $(DEP)
 
 clean:
-		rm -f $(BIN) $(DUMP) $(DEP) $(COBJ) $(CCMDOBJ)
+		rm -f $(BIN) $(DEP) $(COBJ) $(CCMDOBJ)

@@ -21,12 +21,15 @@
 #include "../h/elf.h"
 #include <string.h>
 
-#define SYSCALL_COUNT 27
+/* the max. size we'll allow for exec()-arguments */
+#define EXEC_MAX_ARGSIZE				(2 * K)
+
+#define SYSCALL_COUNT					27
 
 /* some convenience-macros */
-#define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
-#define SYSC_RET1(stack,val) ((stack)->arg1 = (val))
-#define SYSC_RET2(stack,val) ((stack)->arg2 = (val))
+#define SYSC_ERROR(stack,errorCode)		((stack)->number = (errorCode))
+#define SYSC_RET1(stack,val)			((stack)->arg1 = (val))
+#define SYSC_RET2(stack,val)			((stack)->arg2 = (val))
 
 /* syscall-handlers */
 typedef void (*fSyscall)(sSysCallStack *stack);
@@ -230,6 +233,14 @@ static void sysc_sendSignal(sSysCallStack *stack);
  */
 static void sysc_exec(sSysCallStack *stack);
 
+/**
+ * Checks wether the given null-terminated string (in user-space) is readable
+ *
+ * @param string the string
+ * @return true if so
+ */
+static bool sysc_isStringReadable(s8 *string);
+
 /* our syscalls */
 static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 0 */		{sysc_getpid,				0},
@@ -321,8 +332,14 @@ static void sysc_open(sSysCallStack *stack) {
 	s32 err,fd;
 	sProc *p = proc_getRunning();
 
+	/* at first make sure that we'll cause no page-fault */
+	if(!sysc_isStringReadable(path)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
 	pathLen = strnlen(path,MAX_PATH_LEN);
-	if(pathLen == -1 || !paging_isRangeUserReadable((u32)path,pathLen)) {
+	if(pathLen == -1) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
@@ -835,10 +852,14 @@ static void sysc_sendSignal(sSysCallStack *stack) {
 }
 
 static void sysc_exec(sSysCallStack *stack) {
+	const u32 bytesPerReq = 1 * K;
 	s8 pathSave[MAX_PATH_LEN + 1];
 	s8 *path = (s8*)stack->arg1;
-	const u32 bytesPerReq = 1 * K;
+	s8 **args = (s8**)stack->arg2;
+	s8 **arg;
+	s8 *argBuffer;
 	u8 *buffer;
+	u32 argc;
 	u32 fileSize,bufSize;
 	s32 pathLen,readBytes;
 	s32 res;
@@ -846,7 +867,51 @@ static void sysc_exec(sSysCallStack *stack) {
 	tFile file;
 	sProc *p = proc_getRunning();
 
-	/*vid_printf("%d loads '%s'\n",p->pid,path);*/
+	argc = 0;
+	argBuffer = NULL;
+	if(args != NULL) {
+		s8 *bufPos;
+		s32 remaining = EXEC_MAX_ARGSIZE;
+		s32 len;
+
+		/* alloc space for the arguments */
+		argBuffer = kheap_alloc(EXEC_MAX_ARGSIZE);
+		if(argBuffer == NULL) {
+			SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+			return;
+		}
+
+		/* count args and copy them on the kernel-heap */
+		/* note that we have to create a copy since we don't know where the args are. Maybe
+		 * they are on the user-stack at the position we want to copy them for the
+		 * new process... */
+		bufPos = argBuffer;
+		arg = args;
+		while(*arg != NULL) {
+			/* at first we have to check wether the string is readable */
+			if(!sysc_isStringReadable(*arg)) {
+				kheap_free(argBuffer);
+				SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+				return;
+			}
+
+			/* ensure that the argument is not longer than the left space */
+			len = strnlen(*arg,remaining - 1);
+			if(len == -1) {
+				/* too long */
+				kheap_free(argBuffer);
+				SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+				return;
+			}
+
+			/* copy to heap */
+			memcpy(bufPos,*arg,len + 1);
+			bufPos += len + 1;
+			remaining -= len + 1;
+			arg++;
+			argc++;
+		}
+	}
 
 	pathLen = strnlen(path,MAX_PATH_LEN);
 	if(pathLen == -1 || !paging_isRangeUserReadable((u32)path,pathLen)) {
@@ -914,14 +979,32 @@ static void sysc_exec(sSysCallStack *stack) {
 	if(elf_loadprog(buffer) == ELF_INVALID_ENTRYPOINT) {
 		/* there is no undo for proc_changeSize() :/ */
 		proc_destroy(p);
+		if(argBuffer != NULL)
+			kheap_free(argBuffer);
 		kheap_free(buffer);
 		proc_switch();
 	}
 	else {
 		/*vid_printf("%d is finished with '%s'\n",p->pid,pathSave);*/
-		proc_setupIntrptStack(intrpt_getCurStack());
+		proc_setupIntrptStack(intrpt_getCurStack(),argc,argBuffer);
 
 		/* finally free the buffer */
+		if(argBuffer != NULL)
+			kheap_free(argBuffer);
 		kheap_free(buffer);
 	}
+}
+
+static bool sysc_isStringReadable(s8 *string) {
+	u32 addr = (u32)string & ~(PAGE_SIZE - 1);
+	u32 rem = (addr + PAGE_SIZE) - (u32)string;
+	while(paging_isRangeUserReadable(addr,PAGE_SIZE)) {
+		while(rem-- > 0 && *string)
+			string++;
+		if(!*string)
+			return true;
+		addr += PAGE_SIZE;
+		rem = PAGE_SIZE;
+	}
+	return false;
 }

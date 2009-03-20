@@ -240,8 +240,10 @@ void proc_destroy(sProc *p);
  * Setups the given interrupt-stack for the current process
  *
  * @param frame the interrupt-stack-frame
+ * @param argc the argument-count
+ * @param args the arguments on after another, allocated on the heap; may be NULL
  */
-void proc_setupIntrptStack(sIntrptStackFrame *frame);
+void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args);
 
 /**
  * Checks wether the given segment-sizes are valid

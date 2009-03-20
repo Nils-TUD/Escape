@@ -217,7 +217,64 @@ void free(void *addr) {
 }
 
 void *realloc(void *addr,u32 size) {
-	return NULL;
+	sMemArea *area,*a,*prev;
+	/* find the area with given address */
+	area = occupiedMap[(u32)addr % OCC_MAP_SIZE];
+	while(area != NULL) {
+		if(area->address == addr)
+			break;
+		area = area->next;
+	}
+
+	/* area not found? */
+	if(area == NULL)
+		return NULL;
+
+	a = usableList;
+	prev = NULL;
+	while(a != NULL) {
+		/* found the area behind? */
+		if(a->address == (u8*)area->address + area->size) {
+			/* if the size of both is big enough we can use them */
+			if(area->size + a->size >= size) {
+				/* space left? */
+				if(size < area->size + a->size) {
+					/* so move the area forward */
+					a->address = (void*)((u32)area->address + size);
+					a->size = (area->size + a->size) - size;
+				}
+				/* otherwise we don't need a anymore */
+				else {
+					/* remove a from usable-list */
+					if(prev == NULL)
+						usableList = a->next;
+					else
+						prev->next = a->next;
+					/* free a */
+					a->next = freeList;
+					freeList = a;
+				}
+
+				area->size = size;
+				return addr;
+			}
+
+			/* makes no sense to continue since we've found the area behind */
+			break;
+		}
+		prev = a;
+		a = a->next;
+	}
+
+	/* the areas are not big enough, so allocate a new one */
+	a = malloc(size);
+	if(a == NULL)
+		return NULL;
+
+	/* copy the old data and free it */
+	memcpy(a,addr,area->size);
+	free(addr);
+	return a;
 }
 
 void printHeap(void) {

@@ -27,12 +27,11 @@ s32 main(void) {
 	}
 
 	/* open keyboard */
-	do {
-		kbFd = open("services:/keyboard",IO_READ);
-		if(kbFd < 0)
-			yield();
+	kbFd = open("services:/keyboard",IO_READ);
+	if(kbFd < 0) {
+		printLastError();
+		return 1;
 	}
-	while(kbFd < 0);
 
 	/* request io-ports for qemu and bochs */
 	requestIOPort(0xe9);

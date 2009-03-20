@@ -112,13 +112,6 @@ static void diskIntrptHandler(tSig sig) {
 s32 main(void) {
 	s32 id;
 
-	/* reg service */
-	id = regService("ata",SERVICE_TYPE_MULTIPIPE);
-	if(id < 0) {
-		printLastError();
-		return 1;
-	}
-
 	/* request ports */
 	if(requestIOPorts(REG_BASE_PRIMARY,8) < 0 || requestIOPorts(REG_BASE_SECONDARY,8) < 0) {
 		printLastError();
@@ -133,6 +126,13 @@ s32 main(void) {
 
 	ata_detectDrives();
 	ata_printDrives();
+
+	/* reg service */
+	id = regService("ata",SERVICE_TYPE_MULTIPIPE);
+	if(id < 0) {
+		printLastError();
+		return 1;
+	}
 
 	sMsgDefHeader header;
 	while(1) {

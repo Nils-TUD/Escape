@@ -5,45 +5,63 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x20c000, shndx=0x10
+ELF: num=19, size=40, addr=0x210000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000001d394c6
+Clock cycles: 0x0000000002135fbb
 Initializing VFS...DONE
-Clock cycles: 0x000000000012be8c
+Clock cycles: 0x0000000000130b4b
 Initializing process-management...DONE
-Clock cycles: 0x00000000000d7535
+Clock cycles: 0x00000000000d9de2
 Initializing IDT...DONE
-Clock cycles: 0x00000000000abe19
+Clock cycles: 0x00000000000ab6ed
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
-Loading service 1
 Drives:
 	  Primary Master (present=1,sectors=10080)
 	  	  0: start=0x3F, sectors=10017 size=5128704 byte
 	  Primary Slave (present=0,sectors=0)
 	  Secondary Master (present=0,sectors=0)
 	  Secondary Slave (present=0,sectors=0)
-Loading service 2
-3 loads 'file:/services/keyboard'
-4 loads 'file:/services/speaker'
-5 loads 'file:/services/video'
-6 loads 'file:/services/vterm'
-Total: 0000000033040f71
-4 is finished with 'file:/services/speaker'
-Total: 0000000034196118
-3 is finished with 'file:/services/keyboard'
-Total: 000000003614781c
-5 is finished with 'file:/services/video'
-Total: 0000000039ca8c6f
-6 is finished with 'file:/services/vterm'
-7 loads 'file:/apps/shell'
-Total: 000000001179e1bd
-7 is finished with 'file:/apps/shell'
 Welcome to Escape v0.1!
 Try 'help' to see the current features :)
+
+# echo hier
+hier 
+# ps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
+00	  	  00	  	  010	 	  	  Ready  	 	  0x000200ccfdd58fa0	  init
+01	  	  00	  	  010	 	  	  Blocked	 	  0x000000003f4278ff	  ata
+02	  	  00	  	  029	 	  	  Blocked	 	  0x000000000935d5b5	  fs
+03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000c026f1	  ervices/speaker
+04	  	  00	  	  007	 	  	  Blocked	 	  0x00000000013a3acf	  rvices/keyboard
+05	  	  00	  	  012	 	  	  Ready  	 	  0x0000000003a3b5dc	  /services/video
+06	  	  00	  	  018	 	  	  Blocked	 	  0x000000000405079e	  /services/vterm
+07	  	  00	  	  010	 	  	  Running	 	  0x000000000223fa9d	  ile:/apps/shell
+
+# ps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
+00	  	  00	  	  010	 	  	  Ready  	 	  0x00024241d979608d	  init
+01	  	  00	  	  010	 	  	  Blocked	 	  0x000000003f4278ff	  ata
+02	  	  00	  	  029	 	  	  Blocked	 	  0x000000000935d5b5	  fs
+03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000c026f1	  ervices/speaker
+04	  	  00	  	  007	 	  	  Blocked	 	  0x00000000015d7115	  rvices/keyboard
+05	  	  00	  	  012	 	  	  Ready  	 	  0x0000000006706dc4	  /services/video
+06	  	  00	  	  018	 	  	  Blocked	 	  0x000000000645e511	  /services/vterm
+07	  	  00	  	  010	 	  	  Running	 	  0x0000000003098688	  ile:/apps/shell
+
+# sps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  NAME
+00	  	  00	  	  010	 	  	  Ready  	 	  0x00028a705132d903	  init
+01	  	  00	  	  010	 	  	  Blocked	 	  0x000000003f4278ff	  ata
+02	  	  00	  	  029	 	  	  Blocked	 	  0x000000000935d5b5	  fs
+03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000c026f1	  ervices/speaker
+04	  	  00	  	  007	 	  	  Blocked	 	  0x00000000019a5a6d	  rvices/keyboard
+05	  	  00	  	  012	 	  	  Ready  	 	  0x000000000975c80a	  /services/video
+06	  	  00	  	  018	 	  	  Blocked	 	  0x0000000008cdf507	  /services/vterm
+07	  	  00	  	  010	 	  	  Running	 	  0x0000000003f22806	  ile:/apps/shell
 
 # 

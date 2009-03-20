@@ -22,7 +22,7 @@
 /**
  * Inits IO. That means stdin, stdout and stderr will be created and some other stuff
  */
-void initIO(void);
+bool initIO(void);
 
 /**
  * Reads one character from the vterm

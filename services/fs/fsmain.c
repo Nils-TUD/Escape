@@ -58,19 +58,19 @@ static sExt2 ext2;
 s32 main(void) {
 	s32 fd,id;
 
-	/* register service */
-	id = regService("fs",SERVICE_TYPE_MULTIPIPE);
-	if(id < 0) {
-		printLastError();
-		return 1;
-	}
-
 	/* TODO */
 	ext2.drive = 0;
 	ext2.partition = 0;
 	if(!ext2_init(&ext2)) {
 		printLastError();
 		unregService(id);
+		return 1;
+	}
+
+	/* register service */
+	id = regService("fs",SERVICE_TYPE_MULTIPIPE);
+	if(id < 0) {
+		printLastError();
 		return 1;
 	}
 

@@ -79,30 +79,22 @@ s32 releaseIOPort(u16 port) {
 	return releaseIOPorts(port,1);
 }
 
-void initIO(void) {
+bool initIO(void) {
 	s32 in,out;
 
-	/* TODO as soon as we start the services first (in a specific order) we don't want to have
-	 * loops here anymore */
-
 	/* open stdin */
-	do {
-		in = open("services:/vterm",IO_READ);
-		if(in < 0)
-			yield();
-	}
-	while(in < 0);
+	in = open("services:/vterm",IO_READ);
+	if(in < 0)
+		return false;
 
 	/* open stdout */
-	do {
-		out = open("services:/vterm",IO_WRITE);
-		if(out < 0)
-			yield();
-	}
-	while(out < 0);
+	out = open("services:/vterm",IO_WRITE);
+	if(out < 0)
+		return false;
 
 	/* dup stdout to stderr */
 	dupFd(out);
+	return true;
 }
 
 s8 readChar(void) {

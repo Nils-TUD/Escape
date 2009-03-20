@@ -1,4 +1,4 @@
-keyboard:
 speaker:
-video:
+keyboard:
 vterm: keyboard,speaker,video
+video:

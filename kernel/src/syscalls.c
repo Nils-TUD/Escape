@@ -845,10 +845,8 @@ static void sysc_exec(sSysCallStack *stack) {
 	tVFSNodeNo nodeNo;
 	tFile file;
 	sProc *p = proc_getRunning();
-	u64 totalTime = 0;
-	u64 start = cpu_rdtsc();
 
-	vid_printf("%d loads '%s'\n",p->pid,path);
+	/*vid_printf("%d loads '%s'\n",p->pid,path);*/
 
 	pathLen = strnlen(path,MAX_PATH_LEN);
 	if(pathLen == -1 || !paging_isRangeUserReadable((u32)path,pathLen)) {
@@ -912,11 +910,6 @@ static void sysc_exec(sSysCallStack *stack) {
 	memcpy(p->name,pathSave + (pathLen > MAX_PROC_NAME_LEN ? (pathLen - MAX_PROC_NAME_LEN) : 0),
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
-	u64 end = cpu_rdtsc();
-	totalTime = end - start;
-	u32 *ptr = (u32*)&totalTime;
-	vid_printf("Total: %08x%08x\n",*(ptr + 1),*ptr);
-
 	/* load program and prepare interrupt-stack */
 	if(elf_loadprog(buffer) == ELF_INVALID_ENTRYPOINT) {
 		/* there is no undo for proc_changeSize() :/ */
@@ -925,7 +918,7 @@ static void sysc_exec(sSysCallStack *stack) {
 		proc_switch();
 	}
 	else {
-		vid_printf("%d is finished with '%s'\n",p->pid,pathSave);
+		/*vid_printf("%d is finished with '%s'\n",p->pid,pathSave);*/
 		proc_setupIntrptStack(intrpt_getCurStack());
 
 		/* finally free the buffer */

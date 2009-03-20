@@ -13,18 +13,11 @@
 
 bool ext2_init(sExt2 *e) {
 	s32 fd;
-	do {
-		fd = open("services:/ata",IO_WRITE | IO_READ);
-		if(fd < 0)
-			yield();
-	}
-	while(fd < 0);
-	/*
 	fd = open("services:/ata",IO_WRITE | IO_READ);
 	if(fd < 0) {
 		printLastError();
 		return false;
-	}*/
+	}
 
 	e->ataFd = fd;
 	if(!ext2_readSectors(e,(u8*)&(e->superBlock),2,1)) {

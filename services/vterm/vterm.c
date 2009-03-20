@@ -203,20 +203,18 @@ void vterm_init(void) {
 	s8 *ptr;
 
 	/* open video */
-	do {
-		vidFd = open("services:/video",IO_WRITE);
-		if(vidFd < 0)
-			yield();
+	vidFd = open("services:/video",IO_WRITE);
+	if(vidFd < 0) {
+		printLastError();
+		return;
 	}
-	while(vidFd < 0);
 
 	/* open speaker */
-	do {
-		speakerFd = open("services:/speaker",IO_WRITE);
-		if(speakerFd < 0)
-			yield();
+	speakerFd = open("services:/speaker",IO_WRITE);
+	if(speakerFd < 0) {
+		printLastError();
+		return;
 	}
-	while(speakerFd < 0);
 
 	/* open ourself to write into the receive-pipe (which can be read by other processes) */
 	selfFd = open("services:/vterm",IO_WRITE);

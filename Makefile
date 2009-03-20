@@ -65,7 +65,7 @@ debughdd:
 umounthdd:
 		sudo umount /dev/loop0
 
-createhdd:
+createhdd: clean
 		sudo umount /dev/loop0 || true
 		sudo losetup -d /dev/loop0 || true
 		dd if=/dev/zero of=$(HDD) bs=`expr $(HDDTRACKSECS) \* $(HDDHEADS) \* 512`c count=$(HDDCYL)
@@ -100,6 +100,7 @@ createhdd:
 		make umounthdd
 		rm -f $(TMPFILE)
 		cp $(HDD) $(HDDBAK)
+		make all
 
 dis: all
 		objdump -d -S $(BIN) | less

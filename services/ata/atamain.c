@@ -11,6 +11,7 @@
 #include <heap.h>
 #include <proc.h>
 #include <debug.h>
+#include <signals.h>
 #include "partition.h"
 
 /* port-bases */
@@ -103,6 +104,11 @@ static sATADrive drives[DRIVE_COUNT] = {
 	{ .present = 0, .slaveBit = 1, .basePort = REG_BASE_SECONDARY }
 };
 
+static bool gotInterrupt = false;
+static void diskIntrptHandler(tSig sig) {
+	gotInterrupt = true;
+}
+
 s32 main(void) {
 	s32 id;
 
@@ -115,6 +121,12 @@ s32 main(void) {
 
 	/* request ports */
 	if(requestIOPorts(REG_BASE_PRIMARY,8) < 0 || requestIOPorts(REG_BASE_SECONDARY,8) < 0) {
+		printLastError();
+		return 1;
+	}
+
+	if(setSigHandler(SIG_INTRPT_ATA1,diskIntrptHandler) < 0 ||
+			setSigHandler(SIG_INTRPT_ATA2,diskIntrptHandler) < 0) {
 		printLastError();
 		return 1;
 	}
@@ -145,7 +157,6 @@ s32 main(void) {
 								res->id = MSG_ATA_READ_RESP;
 								if(!ata_readWrite(drives + req.drive,false,(u16*)(res + 1),
 										req.lba + partOffset,req.secCount)) {
-									debugf("Read failed\n");
 									/* write empty response */
 									res->length = 0;
 									write(fd,res,sizeof(sMsgDefHeader));
@@ -207,6 +218,9 @@ static void ata_printDrives(void) {
 }
 
 static void ata_wait(void) {
+	/*gotInterrupt = false;
+	while(!gotInterrupt)
+		;*/
 	volatile u32 i;
 	for(i = 0; i < 100000; i++);
 }
@@ -263,8 +277,10 @@ static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 
 			status = inByte(basePort + REG_STATUS);
 			if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == CMD_ST_DRQ)
 				break;
-			if((status & CMD_ST_ERROR) != 0)
+			if((status & CMD_ST_ERROR) != 0) {
+				debugf("[ata] error\n");
 				return false;
+			}
 		}
 		while(true);
 

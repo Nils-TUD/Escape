@@ -5,10 +5,15 @@
  */
 
 #include <common.h>
+#include <heap.h>
+#include <debug.h>
+#include <string.h>
 #include "ext2.h"
 #include "request.h"
 #include "inodecache.h"
 #include "file.h"
+
+static u32 ext2_getBlockOfInode(sExt2 *e,sInode *inode,u32 block);
 
 s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	sCachedInode *cnode;
@@ -43,16 +48,11 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	leftBytes = count;
 	bufWork = buffer;
 	for(i = 0; i < blockCount; i++) {
-		u32 block = startBlock + i;
-		if(block < 12) {
-			ext2_readBlocks(e,tmpBuffer,cnode->inode.dBlocks[block],1);
-			memcpy(bufWork,tmpBuffer + offset,MIN(leftBytes,blockSize - offset));
-		}
-		else {
-			/* TODO read indirect blocks */
-			free(tmpBuffer);
-			return 0;
-		}
+		u32 block = ext2_getBlockOfInode(e,&(cnode->inode),startBlock + i);
+
+		ext2_readBlocks(e,tmpBuffer,block,1);
+		memcpy(bufWork,tmpBuffer + offset,MIN(leftBytes,blockSize - offset));
+
 		bufWork += blockSize;
 		/* offset is always 0 for additional blocks */
 		offset = 0;
@@ -63,4 +63,66 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 
 	free(tmpBuffer);
 	return count;
+}
+
+static u32 ext2_getBlockOfInode(sExt2 *e,sInode *inode,u32 block) {
+	u32 i,blockSize,blocksPerBlock;
+	u32 blperBlSq;
+	u32 *buffer;
+
+	/* direct block */
+	if(block < EXT2_DIRBLOCK_COUNT)
+		return inode->dBlocks[block];
+
+	/* singly indirect */
+	block -= EXT2_DIRBLOCK_COUNT;
+	blockSize = BLOCK_SIZE(e);
+	blocksPerBlock = blockSize / sizeof(u32);
+	if(block < blocksPerBlock) {
+		buffer = (u32*)malloc(blockSize);
+		ext2_readBlocks(e,(u8*)buffer,inode->singlyIBlock,1);
+		i = *(buffer + block);
+		free(buffer);
+		return i;
+	}
+
+	/* TODO we have to verify if this is all correct here... */
+
+	/* doubly indirect */
+	block -= blocksPerBlock;
+	blperBlSq = blocksPerBlock * blocksPerBlock;
+	if(block < blperBlSq) {
+		buffer = (u32*)malloc(blockSize);
+
+		/* read the first block with block-numbers of the indirect blocks */
+		ext2_readBlocks(e,(u8*)buffer,inode->doublyIBlock,1);
+		i = *(buffer + block / blocksPerBlock);
+
+		/* read the indirect block */
+		ext2_readBlocks(e,(u8*)buffer,i,1);
+		i = *(buffer + block % blocksPerBlock);
+
+		free(buffer);
+		return i;
+	}
+
+	/* triply indirect */
+	block -= blperBlSq;
+	buffer = (u32*)malloc(blockSize);
+
+	/* read the first block with block-numbers of the indirect blocks of indirect-blocks */
+	ext2_readBlocks(e,(u8*)buffer,inode->triplyIBlock,1);
+	i = *(buffer + block / blperBlSq);
+
+	/* read the indirect block of indirect blocks */
+	block %= blperBlSq;
+	ext2_readBlocks(e,(u8*)buffer,i,1);
+	i = *(buffer + block / blocksPerBlock);
+
+	/* read the indirect block */
+	ext2_readBlocks(e,(u8*)buffer,i,1);
+	i = *(buffer + block % blocksPerBlock);
+
+	free(buffer);
+	return i;
 }

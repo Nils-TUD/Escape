@@ -19,6 +19,7 @@
 #include <theap.h>
 #include <sllist.h>
 
+#if 0
 #define ID_OUT		0
 #define ID_IN		1
 #define ID_CLEAR	2
@@ -40,8 +41,17 @@ static void logChar(char c) {
 	outByte(0x3f8,c);
 	while((inByte(0x3fd) & 0x20) == 0);
 }
+#endif
 
 s32 main(void) {
+	printf("I am task2....yeah!! pid=%d\n",getpid());
+	printf("Ok, that's enough for now...\n");
+	while(1) {
+		yield();
+	}
+	return 0;
+
+
 #if 0
 	if(fork() == 0) {
 		s32 id = regService("test",SERVICE_TYPE_MULTIPIPE);
@@ -97,7 +107,6 @@ s32 main(void) {
 		printLastError();
 	else
 		debugf("Redirected %d to %d\n",fd,fd2);
-#endif
 
 	s8 str[] = "Test: \e[30mblack\e[0m, \e[31mred\e[0m, \e[32mgreen\e[0m"
 			", \e[33morange\e[0m, \e[34mblue\e[0m, \e[35mmargenta\e[0m, \e[36mcyan\e[0m"
@@ -227,7 +236,6 @@ s32 main(void) {
 	close(fd3);*/
 
 
-#if 0
 	s32 id = regService("console",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0)
 		printLastError();
@@ -303,9 +311,6 @@ s32 main(void) {
 		unregService();
 	}
 
-#else
-
-#if 0
 	s32 id = regService("console",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0)
 		printLastError();
@@ -375,8 +380,6 @@ s32 main(void) {
 		else
 			debugf("Unregistered service\n");
 	}
-#endif
-#endif
 
 	/*videoBase = mapPhysical(0xB8000,COLS * ROWS * 2);
 	debugf("videoBase=0x%x\n",videoBase);
@@ -524,4 +527,5 @@ s32 main(void) {
 
 	while(1);
 	return 0;
+#endif
 }

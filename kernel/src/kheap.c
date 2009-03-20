@@ -358,10 +358,9 @@ void *kheap_realloc(void *addr,u32 size) {
 			/* makes no sense to continue since we've found the area behind */
 			break;
 		}
-		prev = area;
+		prev = a;
 		a = a->next;
 	}
-
 
 	/* the areas are not big enough, so allocate a new one */
 	a = kheap_alloc(size);

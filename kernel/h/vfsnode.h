@@ -18,7 +18,7 @@
 
 /* max node-name len */
 #define MAX_NAME_LEN				59
-#define MAX_PATH_LEN				(MAX_NAME_LEN * 6)
+#define MAX_PATH_LEN				255
 
 /* determines the node-number (for a virtual node) from the given node-address */
 #define NADDR_TO_VNNO(naddr)		((((u32)(naddr) - (u32)&nodes[0]) / sizeof(sVFSNode)) | (1 << 30))

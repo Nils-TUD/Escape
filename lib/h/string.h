@@ -211,6 +211,16 @@ string strcut(string str,u32 count);
 u32 strlen(cstring str);
 
 /**
+ * Determines the length of the string to the given maximum length. That means the function
+ * does not walk further than (str + max).
+ *
+ * @param str the string
+ * @param max the maximum number of characters
+ * @return the length of the string or -1 if the string is too long
+ */
+s32 strnlen(cstring str,s32 max);
+
+/**
  * @param ch the char
  * @return the lowercase version of the character ch.
  */

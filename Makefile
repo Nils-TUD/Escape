@@ -38,7 +38,7 @@ $(BUILD):
 
 floppy: clean
 		sudo umount $(FLOPPYDISKMOUNT) || true;
-		dd if=/dev/zero of=$(FLOPPYDISK) bs=1024 count=1440;
+		dd if=/dev/zero of=$(FLOPPYDISK) bs=1024 count=2880;
 		/sbin/mke2fs -F $(FLOPPYDISK);
 		sudo mount -o loop $(FLOPPYDISK) $(FLOPPYDISKMOUNT);
 		mkdir $(FLOPPYDISKMOUNT)/grub;
@@ -85,6 +85,7 @@ createhdd:
 		sudo losetup -d /dev/loop0 || true
 		@# store some test-data on the disk
 		make mounthdd
+		sudo cp $(BUILD)/user_task2.bin $(FLOPPYDISKMOUNT)/task2.bin
 		sudo mkdir $(FLOPPYDISKMOUNT)/test
 		sudo touch $(FLOPPYDISKMOUNT)/file.txt
 		sudo chmod 0666 $(FLOPPYDISKMOUNT)/file.txt

@@ -18,9 +18,10 @@
 #include "../h/sched.h"
 #include "../h/video.h"
 #include "../h/signals.h"
+#include "../h/elf.h"
 #include <string.h>
 
-#define SYSCALL_COUNT 26
+#define SYSCALL_COUNT 27
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode) ((stack)->number = (errorCode))
@@ -222,6 +223,12 @@ static void sysc_ackSignal(sSysCallStack *stack);
  * @return s32 0 if no error
  */
 static void sysc_sendSignal(sSysCallStack *stack);
+/**
+ * Exchanges the process-data with another program
+ *
+ * @param string the program-path
+ */
+static void sysc_exec(sSysCallStack *stack);
 
 /* our syscalls */
 static sSyscall syscalls[SYSCALL_COUNT] = {
@@ -251,6 +258,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 23 */	{sysc_unsetSigHandler,		1},
 	/* 24 */	{sysc_ackSignal,			1},
 	/* 25 */	{sysc_sendSignal,			2},
+	/* 26 */	{sysc_exec,					1},
 };
 
 void sysc_handle(sIntrptStackFrame *intrptStack) {
@@ -305,15 +313,19 @@ static void sysc_exit(sSysCallStack *stack) {
 }
 
 static void sysc_open(sSysCallStack *stack) {
-	s8 path[255];
+	s8 *path = (s8*)stack->arg1;
+	s32 pathLen;
 	u8 flags;
 	tVFSNodeNo nodeNo;
 	tFile file;
 	s32 err,fd;
 	sProc *p = proc_getRunning();
 
-	/* copy path */
-	copyUserToKernel((u8*)stack->arg1,(u8*)path,MIN(strlen((string)stack->arg1) + 1,255));
+	pathLen = strnlen(path,MAX_PATH_LEN);
+	if(pathLen == -1 || !paging_isRangeUserReadable((u32)path,pathLen)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
 
 	/* check flags */
 	flags = ((u8)stack->arg2) & (VFS_WRITE | VFS_READ);
@@ -326,6 +338,7 @@ static void sysc_open(sSysCallStack *stack) {
 	err = vfsn_resolvePath(path,&nodeNo);
 	if(err == ERR_REAL_PATH) {
 		/* send msg to fs and wait for reply */
+		/* TODO file:/ is not necessarily at the beginning */
 		file = vfsr_openFile(p->pid,flags,path + strlen("file:"));
 
 		/* get free fd */
@@ -815,4 +828,86 @@ static void sysc_sendSignal(sSysCallStack *stack) {
 
 	sig_addSignalFor(pid,signal);
 	SYSC_RET1(stack,0);
+}
+
+static void sysc_exec(sSysCallStack *stack) {
+	s8 *path = (s8*)stack->arg1;
+	const u32 bytesPerReq = 1 * K;
+	u8 *buffer;
+	u32 fileSize,bufSize;
+	s32 pathLen,readBytes;
+	s32 res;
+	tVFSNodeNo nodeNo;
+	tFile file;
+	sProc *p = proc_getRunning();
+
+	pathLen = strnlen(path,MAX_PATH_LEN);
+	if(pathLen == -1 || !paging_isRangeUserReadable((u32)path,pathLen)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	/* open file */
+	res = vfsn_resolvePath(path,&nodeNo);
+	if(res != ERR_REAL_PATH) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+	/* TODO file:/ is not necessarily at the beginning */
+	file = vfsr_openFile(p->pid,VFS_READ,path + strlen("file:"));
+	if(file < 0) {
+		SYSC_ERROR(stack,file);
+		return;
+	}
+
+	fileSize = 0;
+	bufSize = bytesPerReq * sizeof(u8);
+	buffer = (u8*)kheap_alloc(bufSize);
+	if(buffer == NULL) {
+		vfs_closeFile(file);
+		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+		return;
+	}
+
+	/* read the file */
+	do {
+		readBytes = vfs_readFile(p->pid,file,buffer + fileSize,512);
+		if(readBytes > 0) {
+			bufSize += bytesPerReq * sizeof(u8);
+			buffer = (u8*)kheap_realloc(buffer,bufSize);
+			if(buffer == NULL) {
+				vfs_closeFile(file);
+				SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+				return;
+			}
+			fileSize += readBytes;
+		}
+	}
+	while(readBytes > 0);
+
+	/* we don't need the file anymore */
+	vfs_closeFile(file);
+
+	/* error? */
+	if(readBytes < 0) {
+		SYSC_ERROR(stack,readBytes);
+		return;
+	}
+
+	/* now remove the process-data */
+	proc_changeSize(-p->dataPages,CHG_DATA);
+
+	/* load program and prepare interrupt-stack */
+	if(elf_loadprog(buffer) == ELF_INVALID_ENTRYPOINT) {
+		/* there is no undo for proc_changeSize() :/ */
+		proc_destroy(p);
+		kheap_free(buffer);
+		proc_switch();
+	}
+	else {
+		proc_setupIntrptStack(intrpt_getCurStack());
+
+		/* finally free the buffer */
+		kheap_free(buffer);
+	}
 }

@@ -42,6 +42,13 @@ tPid getppid(void);
 s32 fork(void);
 
 /**
+ * Exchanges the process-data with the given program
+ *
+ * @param path the program-path
+ */
+void exec(string path);
+
+/**
  * Releases the CPU (reschedule)
  */
 void yield(void);

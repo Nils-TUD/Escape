@@ -32,6 +32,7 @@ static void test_strstr(void);
 static void test_strcspn(void);
 static void test_strcut(void);
 static void test_strlen(void);
+static void test_strnlen(void);
 static void test_tolower(void);
 static void test_toupper(void);
 static void test_isalnumstr(void);
@@ -62,6 +63,7 @@ static void test_string(void) {
 	test_strcspn();
 	test_strcut();
 	test_strlen();
+	test_strnlen();
 	test_tolower();
 	test_toupper();
 	test_isalnumstr();
@@ -355,12 +357,30 @@ static void test_strcut(void) {
 }
 
 static void test_strlen(void) {
-	test_caseStart("Testing strchr()");
+	test_caseStart("Testing strlen()");
 
 	if(!test_assertUInt(strlen((string)"abc"),3)) return;
 	if(!test_assertUInt(strlen((string)""),0)) return;
 	if(!test_assertUInt(strlen((string)"abcdef"),6)) return;
 	if(!test_assertUInt(strlen((string)"1"),1)) return;
+
+	test_caseSucceded();
+}
+
+static void test_strnlen(void) {
+	test_caseStart("Testing strnlen()");
+
+	if(!test_assertInt(strnlen((string)"abc",10),3)) return;
+	if(!test_assertInt(strnlen((string)"",10),0)) return;
+	if(!test_assertInt(strnlen((string)"abcdef",10),6)) return;
+	if(!test_assertInt(strnlen((string)"1",10),1)) return;
+	if(!test_assertInt(strnlen((string)"abc",3),3)) return;
+	if(!test_assertInt(strnlen((string)"",0),0)) return;
+	if(!test_assertInt(strnlen((string)"abcdef",6),6)) return;
+	if(!test_assertInt(strnlen((string)"1",1),1)) return;
+	if(!test_assertInt(strnlen((string)"abc",2),-1)) return;
+	if(!test_assertInt(strnlen((string)"abcdef",5),-1)) return;
+	if(!test_assertInt(strnlen((string)"1",0),-1)) return;
 
 	test_caseSucceded();
 }

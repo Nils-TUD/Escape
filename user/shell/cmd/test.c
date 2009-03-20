@@ -22,7 +22,7 @@ static void kbHandler(tSig sig) {
 s32 shell_cmdTest(u32 argc,s8 **argv) {
 	s32 fd;
 	u32 count;
-	s8 buffer[129];
+	s8 buffer[513];
 	/*u32 target = 10;
 	if(argc == 2) {
 		target = atoi(argv[1]);
@@ -48,9 +48,10 @@ s32 shell_cmdTest(u32 argc,s8 **argv) {
 		printf("Got fd=%d\n",fd);
 
 		printf("Reading...\n");
-		while((count = read(fd,buffer,128)) > 0) {
-			*(buffer + count) = '\0';
-			printf("%s",buffer);
+		while((count = read(fd,buffer,512)) > 0) {
+			/**(buffer + count) = '\0';
+			printf("%s",buffer);*/
+			dumpBytes(buffer,count);
 		}
 		printf("\nFinished\n");
 		close(fd);

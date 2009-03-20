@@ -36,6 +36,8 @@ bool ext2_readSectors(sExt2 *e,u8 *buffer,u64 lba,u16 secCount) {
 	};
 	sMsgDefHeader res;
 
+	/*debugf("Reading sectors %d .. %d\n",(u32)lba,(u32)lba + secCount - 1);*/
+
 	/* send read-request */
 	if(write(e->ataFd,&req,sizeof(sMsgATAReq)) < 0) {
 		printLastError();

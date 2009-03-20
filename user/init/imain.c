@@ -17,6 +17,16 @@ s32 main(void) {
 	/* later init might load the services to load from a file, load the services (fork & exec)
 	 * and perhaps more. */
 
+	u32 i;
+	for(i = 0; i < 1000; i++)
+		yield();
+
+	if(fork() == 0) {
+		exec("file:/task2.bin");
+		printf("We should not reach this...\n");
+		exit(0);
+	}
+
 	/* loop forever, and don't waste too much cpu-time */
 	/* TODO we should improve this some day ;) */
 	while(1) {

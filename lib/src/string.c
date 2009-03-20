@@ -357,6 +357,20 @@ u32 strlen(cstring str) {
 	return len;
 }
 
+s32 strnlen(cstring str,s32 max) {
+	s32 len = 0;
+	ASSERT(str != NULL,"str == NULL");
+	ASSERT(max >= 0,"max < 0");
+
+	while(*str && len <= max) {
+		str++;
+		len++;
+	}
+	if(len > max)
+		return -1;
+	return len;
+}
+
 s32 tolower(s32 ch) {
 	if(ch >= 'A' && ch <= 'Z')
 		return ch - ('A' - 'a');

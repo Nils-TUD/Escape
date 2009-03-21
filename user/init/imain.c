@@ -14,10 +14,30 @@
 
 #define MAX_SERVICE_PATH_LEN	255
 
+/**
+ * Loads the service-dependency-file
+ * @return the file-content
+ */
 static s8 *getServices(void);
+
+/**
+ * Loads all services with given dependency-file
+ *
+ * @param services the dependencies
+ * @return true if successfull
+ */
 static bool loadServices(s8 *services);
+
+/**
+ * Loads the service with given name and takes care of dependencies
+ *
+ * @param services the dependencies
+ * @param name the service to load
+ * @return true if successfull
+ */
 static bool loadService(s8 *services,s8 *name);
 
+/* the already loaded services; we don't want to load a service twice */
 static sSLList *loadedServices;
 
 s32 main(void) {
@@ -46,9 +66,22 @@ s32 main(void) {
 		return 1;
 	}
 
-	/* create stdin, stdout and stderr */
-	if(!initIO()) {
-		debugf("Unable to init IO\n");
+	/* open stdin */
+	if(open("services:/vterm",IO_READ) < 0) {
+		debugf("Unable to open 'services:/vterm' for STDIN\n");
+		return 1;
+	}
+
+	/* open stdout */
+
+	if((fd = open("services:/vterm",IO_WRITE)) < 0) {
+		debugf("Unable to open 'services:/vterm' for STDOUT\n");
+		return 1;
+	}
+
+	/* dup stdout to stderr */
+	if(dupFd(fd) < 0) {
+		debugf("Unable to duplicate STDOUT to STDERR\n");
 		return 1;
 	}
 

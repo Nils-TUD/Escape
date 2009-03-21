@@ -89,7 +89,7 @@ s32 main(void) {
 							tInodeNo no;
 							read(fd,data,header.length);
 
-							no = ext2_resolvePath(&ext2,(string)(data + 1));
+							no = ext2_resolvePath(&ext2,data->path);
 							if(no != EXT2_BAD_INO) {
 								/*sCachedInode *cnode = ext2_icache_request(&ext2,no);
 								ext2_dbg_printInode(&(cnode->inode));
@@ -131,7 +131,7 @@ s32 main(void) {
 						rhead = (u8*)malloc(sizeof(sMsgDefHeader) + dlen);
 						if(rhead != NULL) {
 							rdata = (sMsgDataFSReadResp*)(rhead + 1);
-							count = ext2_readFile(&ext2,data.inodeNo,(u8*)(rdata + 1),
+							count = ext2_readFile(&ext2,data.inodeNo,rdata->data,
 										data.offset,data.count);
 
 							dlen = sizeof(sMsgDataFSReadResp) + count * sizeof(u8);
@@ -152,7 +152,7 @@ s32 main(void) {
 						if(data != NULL) {
 							read(fd,data,header.length);
 
-							debugf("Got '%s' (%d bytes) for offset %d in inode %d\n",data + 1,
+							debugf("Got '%s' (%d bytes) for offset %d in inode %d\n",data->data,
 									data->count,data->offset,data->inodeNo);
 
 							/* write response */

@@ -10,11 +10,6 @@
 #include "../h/common.h"
 
 /**
- * Inits the kernel-heap
- */
-void kheap_init(void);
-
-/**
  * Note that this function is intended for debugging-purposes only!
  *
  * @return the number of free bytes
@@ -35,6 +30,16 @@ u32 kheap_getAreaSize(void *addr);
  * @return the address of the memory or NULL
  */
 void *kheap_alloc(u32 size);
+
+/**
+ * Allocates space for <num> elements, each <size> big, on the heap and memset's the area to 0.
+ * If there is not enough memory the function returns NULL.
+ *
+ * @param num the number of elements
+ * @param size the size of each element
+ * @return the address of the memory or NULL
+ */
+void *kheap_calloc(u32 num,u32 size);
 
 /**
  * Reallocates the area at given address to the given size. That means either your data will

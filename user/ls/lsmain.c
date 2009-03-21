@@ -13,7 +13,7 @@ s32 main(u32 argc,s8 *argv[]) {
 	sDirEntry *entry;
 
 	if(argc != 2) {
-		printf("Usage: ls <dir>\n");
+		printf("Usage: %s <dir>\n",argv[0]);
 		return 1;
 	}
 

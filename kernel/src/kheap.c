@@ -7,8 +7,8 @@
 #include "../h/common.h"
 #include "../h/kheap.h"
 #include "../h/paging.h"
-#include <string.h>
 #include "../h/video.h"
+#include <string.h>
 
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024
@@ -20,29 +20,6 @@ struct sMemArea {
 	void *address;
 	sMemArea *next;
 };
-
-/* a linked list of free and usable areas. That means the areas have an address and size */
-static sMemArea *usableList = NULL;
-/* a linked list of free but not usable areas. That means the areas have no address and size */
-static sMemArea *freeList = NULL;
-/* a hashmap with occupied-lists, key is (address % OCC_MAP_SIZE) */
-static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
-
-static u32 pages = 0;
-
-/**
- * Allocates a new area. Assumes that there are any
- *
- * @return the area
- */
-static sMemArea *kheap_allocArea(void);
-
-/**
- * Releases the given area
- *
- * @param area the area
- */
-static void kheap_freeArea(sMemArea *area);
 
 /**
  * Allocates a new page for areas
@@ -59,6 +36,15 @@ static bool kheap_loadNewAreas(void);
  */
 static bool kheap_loadNewSpace(u32 size);
 
+/* a linked list of free and usable areas. That means the areas have an address and size */
+static sMemArea *usableList = NULL;
+/* a linked list of free but not usable areas. That means the areas have no address and size */
+static sMemArea *freeList = NULL;
+/* a hashmap with occupied-lists, key is (address % OCC_MAP_SIZE) */
+static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
+
+static u32 pages = 0;
+
 u32 kheap_getFreeMem(void) {
 	u32 c = 0;
 	sMemArea *a = usableList;
@@ -67,10 +53,6 @@ u32 kheap_getFreeMem(void) {
 		a = a->next;
 	}
 	return c;
-}
-
-void kheap_init(void) {
-
 }
 
 u32 kheap_getAreaSize(void *addr) {
@@ -128,10 +110,8 @@ void *kheap_alloc(u32 size) {
 		}
 
 		/* split the area */
-		narea = kheap_allocArea();
-		if(narea == NULL)
-			return NULL;
-
+		narea = freeList;
+		freeList = freeList->next;
 		narea->address = (void*)((u32)area->address + size);
 		narea->size = area->size - size;
 		area->size = size;
@@ -148,9 +128,17 @@ void *kheap_alloc(u32 size) {
 	return area->address;
 }
 
+void *kheap_calloc(u32 num,u32 size) {
+	void *a = kheap_alloc(num * size);
+	if(a == NULL)
+		return NULL;
+
+	memset(a,0,num * size);
+	return a;
+}
+
 void kheap_free(void *addr) {
-	sMemArea *area,*oprev;
-	sMemArea *a,*prev,*next,*nprev,*pprev,*tprev;
+	sMemArea *area,*a,*prev,*next,*oprev,*nprev,*pprev,*tprev;
 
 	/* addr may be null */
 	if(addr == NULL)
@@ -170,13 +158,6 @@ void kheap_free(void *addr) {
 	if(area == NULL)
 		return;
 
-	/* remove area from occupied-map */
-	if(oprev)
-		oprev->next = area->next;
-	else
-		occupiedMap[(u32)addr % OCC_MAP_SIZE] = area->next;
-
-	/* look what we can merge */
 	/* find the previous and next free areas */
 	prev = NULL;
 	next = NULL;
@@ -198,6 +179,13 @@ void kheap_free(void *addr) {
 		a = a->next;
 	}
 
+	/* remove area from occupied-map */
+	if(oprev)
+		oprev->next = area->next;
+	else
+		occupiedMap[(u32)addr % OCC_MAP_SIZE] = area->next;
+
+	/* see what we have to merge */
 	if(prev && next) {
 		/* merge prev & area & next */
 		area->size += prev->size + next->size;
@@ -224,21 +212,24 @@ void kheap_free(void *addr) {
 		area->next = usableList;
 		usableList = area;
 		/* put prev and next on the freelist */
-		kheap_freeArea(prev);
-		kheap_freeArea(next);
+		prev->next = next;
+		next->next = freeList;
+		freeList = prev;
 	}
 	else if(prev) {
 		/* merge preg & area */
 		prev->size += area->size;
 		/* put area on the freelist */
-		kheap_freeArea(area);
+		area->next = freeList;
+		freeList = area;
 	}
 	else if(next) {
 		/* merge area & next */
 		next->address = area->address;
 		next->size += area->size;
 		/* put area on the freelist */
-		kheap_freeArea(area);
+		area->next = freeList;
+		freeList = area;
 	}
 	else {
 		/* insert area in usableList */
@@ -282,7 +273,8 @@ void *kheap_realloc(void *addr,u32 size) {
 					else
 						prev->next = a->next;
 					/* free a */
-					kheap_freeArea(a);
+					a->next = freeList;
+					freeList = a;
 				}
 
 				area->size = size;
@@ -307,26 +299,6 @@ void *kheap_realloc(void *addr,u32 size) {
 	return a;
 }
 
-static sMemArea *kheap_allocArea(void) {
-	sMemArea *area;
-
-	/* no free area anymore? */
-	if(freeList == NULL)
-		return NULL;
-
-	/* remove from freelist */
-	area = freeList;
-	freeList = freeList->next;
-
-	return area;
-}
-
-static void kheap_freeArea(sMemArea *area) {
-	/* insert in freelist */
-	area->next = freeList;
-	freeList = area;
-}
-
 static bool kheap_loadNewSpace(u32 size) {
 	sMemArea *area;
 	s32 count;
@@ -346,10 +318,8 @@ static bool kheap_loadNewSpace(u32 size) {
 	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,PG_WRITABLE | PG_SUPERVISOR,false);
 
 	/* take one area from the freelist and put the memory in it */
-	area = kheap_allocArea();
-	if(area == NULL)
-		return false;
-
+	area = freeList;
+	freeList = freeList->next;
 	area->address = (void*)(KERNEL_HEAP_START + pages * PAGE_SIZE);
 	area->size = PAGE_SIZE * count;
 	/* put area in the usable-list */

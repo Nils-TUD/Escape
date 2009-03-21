@@ -77,7 +77,6 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("Initializing memory-management...");
 	mm_init();
 	paging_mapHigherHalf();
-	kheap_init();
 	paging_initCOWList();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");

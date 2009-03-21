@@ -19,7 +19,7 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	sCachedInode *cnode;
 	u8 *tmpBuffer;
 	u8 *bufWork;
-	u32 i,blockSize,startBlock,blockCount,leftBytes;
+	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
 
 	/* at first we need the inode */
 	cnode = ext2_icache_request(e,inodeNo);
@@ -35,12 +35,12 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 
 	blockSize = BLOCK_SIZE(e);
 	startBlock = offset / blockSize;
-	blockCount = (count + blockSize - 1) / blockSize;
+	offset %= blockSize;
+	blockCount = (offset + count + blockSize - 1) / blockSize;
 
 	/* TODO try to read multiple blocks at once */
 
 	/* use the offset in the first block; after the first one the offset is 0 anyway */
-	offset %= blockSize;
 	leftBytes = count;
 	bufWork = buffer;
 	for(i = 0; i < blockCount; i++) {
@@ -52,14 +52,15 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 			return 0;
 
 		/* copy the requested part */
-		memcpy(bufWork,tmpBuffer + offset,MIN(leftBytes,blockSize - offset));
+		c = MIN(leftBytes,blockSize - offset);
+		memcpy(bufWork,tmpBuffer + offset,c);
 
-		bufWork += blockSize;
-		/* offset is always 0 for additional blocks */
-		offset = 0;
+		bufWork += c;
 		/* we substract to much, but it matters only if we read an additional block. In this
 		 * case it is correct */
 		leftBytes -= blockSize - offset;
+		/* offset is always 0 for additional blocks */
+		offset = 0;
 	}
 
 	return count;

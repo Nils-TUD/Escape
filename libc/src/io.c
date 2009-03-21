@@ -14,10 +14,13 @@
 
 #define BUFFER_SIZE 256
 
-typedef struct {
-	sMsgDefHeader header;
-	s8 chars[BUFFER_SIZE];
-} __attribute__((packed)) sSendMsg;
+/**
+ * Determines the width of the given string
+ *
+ * @param str the string
+ * @return the width
+ */
+static u8 getswidth(cstring str);
 
 /**
  * Determines the width of the given unsigned 32-bit integer in the given base
@@ -27,14 +30,6 @@ typedef struct {
  * @return the width
  */
 static u8 getuwidth(u32 n,u8 base);
-
-/**
- * Determines the width of the given string
- *
- * @param str the string
- * @return the width
- */
-static u8 getswidth(cstring str);
 
 /**
  * Determines the width of the given signed 32-bit integer in base 10
@@ -53,15 +48,10 @@ static u8 getnwidth(s32 n);
 static void printuSmall(u32 n,u8 base);
 
 static u16 bufferPos = 0;
+static s8 buffer[BUFFER_SIZE];
+
 static s8 hexCharsBig[] = "0123456789ABCDEF";
 static s8 hexCharsSmall[] = "0123456789abcdef";
-static sSendMsg msg = {
-	.header = {
-		.id = MSG_VIDEO_SET,
-		.length = 0
-	},
-	.chars = {0}
-};
 
 s32 requestIOPort(u16 port) {
 	return requestIOPorts(port,1);
@@ -69,24 +59,6 @@ s32 requestIOPort(u16 port) {
 
 s32 releaseIOPort(u16 port) {
 	return releaseIOPorts(port,1);
-}
-
-bool initIO(void) {
-	s32 in,out;
-
-	/* open stdin */
-	in = open("services:/vterm",IO_READ);
-	if(in < 0)
-		return false;
-
-	/* open stdout */
-	out = open("services:/vterm",IO_WRITE);
-	if(out < 0)
-		return false;
-
-	/* dup stdout to stderr */
-	dupFd(out);
-	return true;
 }
 
 s8 readChar(void) {
@@ -326,14 +298,12 @@ void vprintf(cstring fmt,va_list ap) {
 void putchar(s8 c) {
 	if(bufferPos >= BUFFER_SIZE - 1)
 		flush();
-	msg.chars[bufferPos++] = c;
+	buffer[bufferPos++] = c;
 }
 
 void flush(void) {
 	if(bufferPos > 0) {
-		msg.header.length = bufferPos + 1;
-		msg.chars[bufferPos] = '\0';
-		write(STDOUT_FILENO,&msg,sizeof(sMsgDefHeader) + (bufferPos + 1) * sizeof(s8));
+		write(STDOUT_FILENO,buffer,bufferPos * sizeof(s8));
 		bufferPos = 0;
 		/* a process switch improves the performance by far :) */
 		yield();
@@ -347,29 +317,12 @@ void printu(u32 n,u8 base) {
 	putchar(hexCharsBig[(n % base)]);
 }
 
-static u8 getuwidth(u32 n,u8 base) {
-	u8 width = 1;
-	while(n >= base) {
-		n /= base;
-		width++;
-	}
-	return width;
-}
-
 void puts(cstring str) {
 	s8 c;
 	while((c = *str)) {
 		putchar(c);
 		str++;
 	}
-}
-
-static u8 getswidth(cstring str) {
-	u8 width = 0;
-	while(*str++) {
-		width++;
-	}
-	return width;
 }
 
 void printn(s32 n) {
@@ -382,6 +335,23 @@ void printn(s32 n) {
 		printn(n / 10);
 	}
 	putchar('0' + n % 10);
+}
+
+static u8 getswidth(cstring str) {
+	u8 width = 0;
+	while(*str++) {
+		width++;
+	}
+	return width;
+}
+
+static u8 getuwidth(u32 n,u8 base) {
+	u8 width = 1;
+	while(n >= base) {
+		n /= base;
+		width++;
+	}
+	return width;
 }
 
 static u8 getnwidth(s32 n) {

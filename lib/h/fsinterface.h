@@ -29,6 +29,7 @@ typedef struct {
 	/* read/write */
 	u8 flags;
 	/* pathname follows */
+	s8 path[];
 } sMsgDataFSOpenReq;
 
 /* the open-response-data */
@@ -50,6 +51,7 @@ typedef struct {
 	tPid pid;
 	u32 count;
 	/* data follows */
+	s8 data[];
 } sMsgDataFSReadResp;
 
 /* the write-request-data */
@@ -59,6 +61,7 @@ typedef struct {
 	u32 offset;
 	u32 count;
 	/* data follows */
+	u8 data[];
 } sMsgDataFSWriteReq;
 
 /* the write-response-data */

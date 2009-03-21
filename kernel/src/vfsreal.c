@@ -156,7 +156,7 @@ void vfsr_checkForMsgs(void) {
 						/* TODO or should we map the other process in our page-dir? */
 						req->tmpBuffer = kheap_alloc(res->count);
 						if(req->tmpBuffer != NULL)
-							memcpy(req->tmpBuffer,res + 1,res->count);
+							memcpy(req->tmpBuffer,res->data,res->count);
 					}
 
 					/* the process can continue now */
@@ -213,7 +213,7 @@ s32 vfsr_openFile(tPid pid,u8 flags,s8 *path) {
 	data = (sMsgDataFSOpenReq*)(msg + 1);
 	data->flags = flags;
 	data->pid = pid;
-	memcpy(data + 1,path,pathLen + 1);
+	memcpy(data->path,path,pathLen + 1);
 
 	/* write message to fs */
 	res = vfs_writeFile(KERNEL_PID,fsServiceFile,(u8*)msg,sizeof(sMsgDefHeader) + msgLen);
@@ -297,7 +297,7 @@ s32 vfsr_writeFile(tPid pid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	data->count = count;
 	data->offset = offset;
 	data->pid = pid;
-	memcpy(data + 1,buffer,count);
+	memcpy(data->data,buffer,count);
 
 	/* write message to fs */
 	res = vfs_writeFile(KERNEL_PID,fsServiceFile,(u8*)msg,msgLen);

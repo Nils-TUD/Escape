@@ -9,10 +9,6 @@
 
 #include "common.h"
 
-#define MSG_VTERM_WRITE				0
-#define MSG_VTERM_READ				1
-#define MSG_VTERM_READ_REPL			2
-
 #define MSG_KEYBOARD_READ			0
 
 #define MSG_VIDEO_SET				0

@@ -12,7 +12,7 @@
 s32 main(u32 argc,s8 **argv) {
 	tPid pid;
 	if(argc != 2) {
-		printf("Usage: kill <pid>\n");
+		printf("Usage: %s <pid>\n",argv[0]);
 		return 1;
 	}
 

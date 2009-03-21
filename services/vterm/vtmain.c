@@ -16,6 +16,10 @@
 
 #include "vterm.h"
 
+/* our read-buffer */
+#define BUFFER_SIZE 64
+static u8 buffer[BUFFER_SIZE + 1];
+
 s32 main(void) {
 	s32 kbFd;
 	s32 id;
@@ -40,8 +44,7 @@ s32 main(void) {
 
 	vterm_init();
 
-	static sMsgKbResponse keycode;
-	static sMsgDefHeader msg;
+	sMsgKbResponse keycode;
 	while(1) {
 		s32 fd = getClient(id);
 		if(fd < 0) {
@@ -52,24 +55,11 @@ s32 main(void) {
 			sleep(EV_CLIENT | EV_RECEIVED_MSG);
 		}
 		else {
-			while(read(fd,&msg,sizeof(sMsgDefHeader)) > 0) {
-				switch(msg.id) {
-					case MSG_VTERM_WRITE: {
-						if(msg.length > 0) {
-							s8 *buffer = malloc(msg.length * sizeof(s8));
-							if(read(fd,buffer,msg.length) < 0)
-								printLastError();
-							else {
-								*(buffer + msg.length - 1) = '\0';
-								vterm_puts(buffer);
-							}
-							free(buffer);
-						}
-					}
-					break;
-				}
+			u32 c;
+			while((c = read(fd,buffer,BUFFER_SIZE)) > 0) {
+				*(buffer + c) = '\0';
+				vterm_puts(buffer);
 			}
-
 			close(fd);
 		}
 	}

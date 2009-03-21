@@ -8,6 +8,7 @@
 #include "../h/heap.h"
 #include "../h/mem.h"
 #include "../h/debug.h"
+#include <string.h>
 
 #define PAGE_SIZE		4096
 
@@ -40,18 +41,6 @@ static bool loadNewAreas(void);
  * @return true on success
  */
 static bool loadNewSpace(u32 size);
-
-sPubArea *getUsableList(void) {
-	return (sPubArea*)usableList;
-}
-
-sPubArea **getOccupiedMap(void) {
-	return (sPubArea**)occupiedMap;
-}
-
-sPubArea *getFreeList(void) {
-	return (sPubArea*)freeList;
-}
 
 void *malloc(u32 size) {
 	sMemArea *area,*prev,*narea;
@@ -113,6 +102,15 @@ void *malloc(u32 size) {
 	*list = area;
 
 	return area->address;
+}
+
+void *calloc(u32 num,u32 size) {
+	void *a = malloc(num * size);
+	if(a == NULL)
+		return NULL;
+
+	memset(a,0,num * size);
+	return a;
 }
 
 void free(void *addr) {
@@ -277,37 +275,6 @@ void *realloc(void *addr,u32 size) {
 	return a;
 }
 
-void printHeap(void) {
-	sMemArea *area;
-	u32 i;
-
-	debugf("UsableList:\n");
-	area = usableList;
-	while(area != NULL) {
-		debugf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
-		area = area->next;
-	}
-
-	/*debugf("FreeList:\n");
-	area = freeList;
-	while(area != NULL) {
-		debugf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
-		area = area->next;
-	}*/
-
-	debugf("OccupiedMap:\n");
-	for(i = 0; i < OCC_MAP_SIZE; i++) {
-		area = occupiedMap[i];
-		if(area != NULL) {
-			debugf("\t%d:\n",i);
-			while(area != NULL) {
-				debugf("\t\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
-				area = area->next;
-			}
-		}
-	}
-}
-
 static bool loadNewSpace(u32 size) {
 	s32 res;
 	sMemArea *area;
@@ -362,3 +329,52 @@ static bool loadNewAreas(void) {
 
 	return true;
 }
+
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+sPubArea *getUsableList(void) {
+	return (sPubArea*)usableList;
+}
+
+sPubArea **getOccupiedMap(void) {
+	return (sPubArea**)occupiedMap;
+}
+
+sPubArea *getFreeList(void) {
+	return (sPubArea*)freeList;
+}
+
+void printHeap(void) {
+	sMemArea *area;
+	u32 i;
+
+	debugf("UsableList:\n");
+	area = usableList;
+	while(area != NULL) {
+		debugf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
+		area = area->next;
+	}
+
+	/*debugf("FreeList:\n");
+	area = freeList;
+	while(area != NULL) {
+		debugf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
+		area = area->next;
+	}*/
+
+	debugf("OccupiedMap:\n");
+	for(i = 0; i < OCC_MAP_SIZE; i++) {
+		area = occupiedMap[i];
+		if(area != NULL) {
+			debugf("\t%d:\n",i);
+			while(area != NULL) {
+				debugf("\t\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
+				area = area->next;
+			}
+		}
+	}
+}
+
+#endif

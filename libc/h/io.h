@@ -20,11 +20,6 @@
 #define STDERR_FILENO	2
 
 /**
- * Inits IO. That means stdin, stdout and stderr will be created and some other stuff
- */
-bool initIO(void);
-
-/**
  * Reads one character from the vterm
  *
  * @return the character

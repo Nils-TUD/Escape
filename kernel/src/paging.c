@@ -332,6 +332,7 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 					pt->frameNumber = *frames++;
 			}
 			pt->present = true;
+			pt->dirty = false;
 			pt->writable = (flags & PG_WRITABLE) ? true : false;
 			pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
 			pt->copyOnWrite = (flags & PG_COPYONWRITE) ? true : false;
@@ -672,6 +673,7 @@ static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
 
 			ownPt->copyOnWrite = true;
 			ownPt->writable = false;
+			ownPt->dirty = false;
 			paging_flushAddr(virtual);
 		}
 
@@ -692,6 +694,11 @@ void paging_dbg_printCOW(void) {
 		cow = (sCOW*)n->data;
 		vid_printf("\tframe=0x%x, proc=0x%x\n",cow->frameNumber,cow->proc);
 	}
+}
+
+sPTEntry *paging_dbg_getPTEntry(u32 virtual) {
+	paging_mapPageDir();
+	return (sPTEntry*)ADDR_TO_MAPPED(virtual);
 }
 
 u32 paging_dbg_getPageCount(void) {

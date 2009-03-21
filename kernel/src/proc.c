@@ -80,6 +80,17 @@ bool proc_exists(tPid pid) {
 	return pid < PROC_COUNT && procs[pid].state != ST_UNUSED;
 }
 
+bool proc_hasChild(tPid pid) {
+	tPid i;
+	sProc *p = procs;
+	for(i = 0; i < PROC_COUNT; i++) {
+		if(p->state != ST_UNUSED && p->parentPid == pid)
+			return true;
+		p++;
+	}
+	return false;
+}
+
 void proc_switch(void) {
 	proc_switchTo(sched_perform()->pid);
 }
@@ -116,8 +127,8 @@ void proc_switchTo(tPid pid) {
 	}
 }
 
-void proc_sleep(u8 events) {
-	sProc *p = procs + pi;
+void proc_sleep(tPid pid,u8 events) {
+	sProc *p = procs + pid;
 	p->events = events;
 	sched_setBlocked(p);
 }
@@ -129,7 +140,8 @@ void proc_wakeupAll(u8 event) {
 void proc_wakeup(tPid pid,u8 event) {
 	sProc *p = procs + pid;
 	if(p->events & event) {
-		sched_setReady(p);
+		/* ensure that the process is the next one that will be chosen */
+		sched_setReadyQuick(p);
 		p->events = EV_NOEVENT;
 	}
 }
@@ -427,8 +439,6 @@ void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args,u32 argsSi
 		/* ensure that we don't overwrites the characters */
 		esp = ((u32)str & ~(sizeof(u32) - 1)) - sizeof(u32);
 	}
-
-	/*paging_dbg_printUserPageDir();*/
 
 	/* store argc and argv */
 	*esp-- = (u32)argv;

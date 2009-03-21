@@ -140,24 +140,6 @@ static void sysc_unregService(sSysCallStack *stack);
  */
 static void sysc_getClient(sSysCallStack *stack);
 /**
- * Adds an interrupt-listener (for services)
- *
- * @param s32 the node-id
- * @param u16 the irq-number
- * @param void* the message
- * @param u32 the message-length
- * @return s32 0 on success or a negative error-code
- */
-static void sysc_addIntrptListener(sSysCallStack *stack);
-/**
- * Removes an interrupt-listener (for services)
- *
- * @param s32 the node-id
- * @param u16 the irq-number
- * @return s32 0 on success or a negative error-code
- */
-static void sysc_remIntrptListener(sSysCallStack *stack);
-/**
  * Changes the process-size
  *
  * @param u32 number of pages
@@ -262,14 +244,12 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 16 */	{sysc_releaseIOPorts,		2},
 	/* 17 */	{sysc_dupFd,				1},
 	/* 18 */	{sysc_redirFd,				2},
-	/* 19 */	{sysc_addIntrptListener,	4},
-	/* 20 */	{sysc_remIntrptListener,	2},
-	/* 21 */	{sysc_sleep,				0},
-	/* 22 */	{sysc_setSigHandler,		2},
-	/* 23 */	{sysc_unsetSigHandler,		1},
-	/* 24 */	{sysc_ackSignal,			1},
-	/* 25 */	{sysc_sendSignal,			2},
-	/* 26 */	{sysc_exec,					1},
+	/* 19 */	{sysc_sleep,				0},
+	/* 20 */	{sysc_setSigHandler,		2},
+	/* 21 */	{sysc_unsetSigHandler,		1},
+	/* 22 */	{sysc_ackSignal,			1},
+	/* 23 */	{sysc_sendSignal,			2},
+	/* 24 */	{sysc_exec,					1},
 };
 
 void sysc_handle(sIntrptStackFrame *intrptStack) {
@@ -278,6 +258,10 @@ void sysc_handle(sIntrptStackFrame *intrptStack) {
 
 	u32 sysCallNo = (u32)stack->number;
 	if(sysCallNo < SYSCALL_COUNT) {
+		/* handle copy-on-write */
+		/* TODO maybe we need more stack-pages */
+		paging_isRangeUserWritable((u32)stack,sizeof(sSysCallStack));
+
 		/* no error by default */
 		SYSC_ERROR(stack,0);
 		syscalls[sysCallNo].handler(stack);
@@ -301,6 +285,11 @@ static void sysc_debugc(sSysCallStack *stack) {
 static void sysc_fork(sSysCallStack *stack) {
 	tPid newPid = proc_getFreePid();
 	s32 res = proc_clone(newPid);
+
+	/* FIXME: somehow it causes trouble when we don't handle copy-on-write here */
+	/* probably the kernel overwrites the user-stack anywhere. but where? :/ */
+	paging_handlePageFault(KERNEL_AREA_V_ADDR - 1);
+	paging_handlePageFault(KERNEL_AREA_V_ADDR - PAGE_SIZE - 1);
 
 	/* error? */
 	if(res == -1) {
@@ -586,66 +575,6 @@ static void sysc_getClient(sSysCallStack *stack) {
 	SYSC_RET1(stack,fd);
 }
 
-static void sysc_addIntrptListener(sSysCallStack *stack) {
-	s32 id = (s32)stack->arg1;
-	u16 irq = (u16)stack->arg2;
-	void *msg = (void*)stack->arg3;
-	u32 msgLen = stack->arg4;
-	s32 err;
-
-	/* check id */
-	if(!vfsn_isValidNodeNo(id)) {
-		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
-
-	if(!vfsn_isOwnServiceNode((tVFSNodeNo)id)) {
-		SYSC_ERROR(stack,ERR_NOT_OWN_SERVICE);
-		return;
-	}
-
-	/* check msg */
-	if(msgLen == 0 || !paging_isRangeUserReadable((u32)msg,msgLen)) {
-		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
-
-	/* now add the listener */
-	err = intrpt_addListener(irq,(tVFSNodeNo)id,msg,msgLen);
-	if(err < 0) {
-		SYSC_ERROR(stack,err);
-		return;
-	}
-
-	SYSC_RET1(stack,err);
-}
-
-static void sysc_remIntrptListener(sSysCallStack *stack) {
-	s32 id = (s32)stack->arg1;
-	u16 irq = (u16)stack->arg2;
-	s32 err;
-
-	/* check id */
-	if(!vfsn_isValidNodeNo(id)) {
-		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
-
-	if(!vfsn_isOwnServiceNode((tVFSNodeNo)id)) {
-		SYSC_ERROR(stack,ERR_NOT_OWN_SERVICE);
-		return;
-	}
-
-	/* now remove the listener */
-	err = intrpt_removeListener(irq,(tVFSNodeNo)id);
-	if(err < 0) {
-		SYSC_ERROR(stack,err);
-		return;
-	}
-
-	SYSC_RET1(stack,err);
-}
-
 static void sysc_changeSize(sSysCallStack *stack) {
 	s32 count = stack->arg1;
 	sProc *p = proc_getRunning();
@@ -736,7 +665,7 @@ static void sysc_yield(sSysCallStack *stack) {
 static void sysc_sleep(sSysCallStack *stack) {
 	u8 events = (u8)stack->arg1;
 	sProc *p;
-	bool msgAv;
+	bool canSleep;
 
 	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_CHILD_DIED)) != 0) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
@@ -747,9 +676,14 @@ static void sysc_sleep(sSysCallStack *stack) {
 
 	/* TODO we need a result for EV_CHILD_DIED (and maybe for others, too) */
 
-	msgAv = vfs_msgAvailableFor(p->pid,events);
-	if(!msgAv) {
-		proc_sleep(events);
+	/* check wether there is a chance that we'll wake up again */
+	canSleep = !vfs_msgAvailableFor(p->pid,events);
+	if(canSleep && (events & EV_CHILD_DIED))
+		canSleep = proc_hasChild(p->pid);
+
+	/* if we can sleep, do it */
+	if(canSleep) {
+		proc_sleep(p->pid,events);
 		proc_switch();
 	}
 }

@@ -133,7 +133,7 @@ void vfsr_checkForMsgs(void) {
 					req->finished = true;
 					req->inodeNo = data.inodeNo;
 					/* the process can continue now */
-					sched_setReady(proc_getByPid(data.pid));
+					proc_wakeup(data.pid,EV_RECEIVED_MSG);
 				}
 			}
 			break;
@@ -160,7 +160,7 @@ void vfsr_checkForMsgs(void) {
 					}
 
 					/* the process can continue now */
-					sched_setReady(proc_getByPid(res->pid));
+					proc_wakeup(res->pid,EV_RECEIVED_MSG);
 				}
 
 				kheap_free(res);
@@ -180,7 +180,7 @@ void vfsr_checkForMsgs(void) {
 					req->finished = true;
 					req->count = data.count;
 					/* the process can continue now */
-					sched_setReady(proc_getByPid(data.pid));
+					proc_wakeup(data.pid,EV_RECEIVED_MSG);
 				}
 			}
 			break;
@@ -326,9 +326,10 @@ void vfsr_closeFile(tInodeNo inodeNo) {
 }
 
 static void vfsr_waitForReply(tPid pid,sRequest *req) {
-	sched_setBlocked(proc_getByPid(pid));
-	while(!req->finished)
+	while(!req->finished) {
+		proc_sleep(pid,EV_RECEIVED_MSG);
 		proc_switch();
+	}
 }
 
 static sRequest *vfsr_addRequest(tPid pid) {

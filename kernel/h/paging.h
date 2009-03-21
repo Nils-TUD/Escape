@@ -348,6 +348,12 @@ void paging_gdtFinished(void);
 void paging_dbg_printCOW(void);
 
 /**
+ * @param virtual the virtual address
+ * @return the page-table-entry for the given address
+ */
+sPTEntry *paging_dbg_getPTEntry(u32 virtual);
+
+/**
  * Counts the number of pages that are currently present in the given page-directory
  *
  * @param pdir the page-directory

@@ -88,15 +88,6 @@ typedef struct {
 	u32 address;
 } __attribute__((packed)) sIDTPtr;
 
-/* the stuff we need to know about interrupt-listeners */
-typedef struct {
-	tVFSNodeNo nodeNo;
-	tFile file;
-	u8 pending;
-	u8 msgLen;
-	u8 message[MSG_MAX_LEN];
-} sIntrptListener;
-
 /* storage for "delayed" signal handling */
 typedef struct {
 	u8 active;
@@ -189,13 +180,6 @@ static void intrpt_setIDT(u16 number,fISR handler,u8 dpl);
 static void intrpt_eoi(u32 intrptNo);
 
 /**
- * Notifies the listeners in the given list
- *
- * @param list the interrupt-listener-list
- */
-static void intrpt_handleListener(sSLList *list);
-
-/**
  * Checks for signals and notifies the corresponding process, if necessary
  */
 static void intrpt_handleSignal(void);
@@ -267,12 +251,6 @@ static u32 lastEx = 0xFFFFFFFF;
 /* pointer to the current interrupt-stack */
 static sIntrptStackFrame *curIntrptStack = NULL;
 
-/**
- * A linked list for each hardware-interrupt with vfs-nodes that should be "notified" as soon
- * as an interrupt occurres. The linked list will be NULL if it was not used yet.
- */
-static sSLList *intrptListener[IRQ_NUM];
-
 /* the signal for a irq. SIG_COUNT = invalid */
 static tSig irq2Signal[] = {
 	SIG_INTRPT_TIMER,
@@ -295,9 +273,6 @@ static tSig irq2Signal[] = {
 
 /* temporary storage for signal-handling */
 static sSignalData signalData;
-
-/* wether we have to handle prior interrupts */
-static bool intrptsPending = false;
 
 /**
  * An assembler routine to load an IDT
@@ -396,102 +371,6 @@ sIntrptStackFrame *intrpt_getCurStack(void) {
 	return curIntrptStack;
 }
 
-s32 intrpt_addListener(u16 irq,tVFSNodeNo nodeNo,void *message,u32 msgLen) {
-	sIntrptListener *l;
-	sSLList *list;
-	tFile err;
-	if(msgLen > MSG_MAX_LEN)
-		return ERR_INTRPT_LISTENER_MSGLEN;
-
-	/* check irq */
-	if(irq < IRQ_MASTER_BASE || irq >= IRQ_MASTER_BASE + IRQ_NUM)
-		return ERR_INVALID_IRQ_NUMBER;
-
-	/* TODO: check wether the node has already announced a listener for this IRQ */
-
-	/* reserve space for the list-element */
-	l = kheap_alloc(sizeof(sIntrptListener));
-	if(l == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-
-	/* init list-element */
-	memcpy(l->message,message,msgLen);
-	l->msgLen = msgLen;
-	l->nodeNo = nodeNo;
-	/* create a node for it and open it */
-	err = vfs_openFileForKernel(KERNEL_PID,nodeNo);
-	if(err < 0) {
-		kheap_free(l);
-		return err;
-	}
-	l->file = err;
-	l->pending = 0;
-
-	list = intrptListener[irq - IRQ_MASTER_BASE];
-	/* no list present yet? */
-	if(list == NULL) {
-		list = sll_create();
-		if(list == NULL) {
-			/* close file and free element */
-			vfs_closeFile(l->file);
-			kheap_free(l);
-			return ERR_NOT_ENOUGH_MEM;
-		}
-		/* store */
-		intrptListener[irq - IRQ_MASTER_BASE] = list;
-	}
-
-	sll_append(list,l);
-	return 0;
-}
-
-s32 intrpt_removeListener(u16 irq,tVFSNodeNo nodeNo) {
-	sSLList *list;
-	sSLNode *ln,*lnp;
-	/* check irq */
-	if(irq < IRQ_MASTER_BASE || irq >= IRQ_MASTER_BASE + IRQ_NUM)
-		return ERR_INVALID_IRQ_NUMBER;
-
-	/* get list */
-	list = intrptListener[irq - IRQ_MASTER_BASE];
-	if(list == NULL)
-		return ERR_IRQ_LISTENER_MISSING;
-
-	/* search for the node */
-	lnp = NULL;
-	for(ln = sll_begin(list); ln != NULL; ln = ln->next) {
-		if(((sIntrptListener*)ln->data)->nodeNo == nodeNo) {
-			sll_removeNode(list,ln,lnp);
-			vfs_closeFile(((sIntrptListener*)ln->data)->file);
-			/* free the data */
-			kheap_free(ln->data);
-			return 0;
-		}
-		lnp = ln;
-	}
-
-	return ERR_IRQ_LISTENER_MISSING;
-}
-
-static void intrpt_handleListener(sSLList *list) {
-	sSLNode *node;
-	sIntrptListener *l;
-	/* first increase the number of pending interrupts (there may be some already) */
-	for(node = sll_begin(list); node != NULL; node = node->next) {
-		l = (sIntrptListener*)node->data;
-		l->pending++;
-	}
-	/* now handle them */
-	for(node = sll_begin(list); node != NULL; node = node->next) {
-		l = (sIntrptListener*)node->data;
-		while(l->pending > 0) {
-			/* send message */
-			vfs_writeFile(KERNEL_PID,l->file,l->message,l->msgLen);
-			l->pending--;
-		}
-	}
-}
-
 static void intrpt_handleSignal(void) {
 	tPid pid;
 	tSig sig;
@@ -528,7 +407,7 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	u32 *esp = (u32*)stack->uesp;
 	/* will handle copy-on-write */
 	/* TODO we might have to add stack-pages... */
-	paging_isRangeUserWritable((u32)(esp - 10),9);
+	paging_isRangeUserWritable((u32)(esp - 10),9 * sizeof(u32));
 
 	/* save regs */
 	*--esp = stack->eip;
@@ -571,26 +450,6 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 	kmodeStart = cpu_rdtsc();
 	umodeTime += kmodeStart - kmodeEnd;
-
-	/* check if we have listeners for this interrupt */
-	if(stack.intrptNo >= IRQ_MASTER_BASE && stack.intrptNo < IRQ_MASTER_BASE + IRQ_NUM) {
-		sSLList *list = intrptListener[stack.intrptNo - IRQ_MASTER_BASE];
-		if(list != NULL)
-			intrpt_handleListener(list);
-	}
-	/* are there undelivered interrupts? */
-	else if(intrptsPending) {
-		intrptsPending = false;
-		sSLList *list;
-		u32 i;
-		/* walk through all lists to find pending interrupts */
-		/* TODO should we speed that up? */
-		for(i = 0; i < IRQ_NUM; i++) {
-			list = intrptListener[i];
-			if(list != NULL)
-				intrpt_handleListener(list);
-		}
-	}
 
 	/* add signal */
 	switch(stack.intrptNo) {

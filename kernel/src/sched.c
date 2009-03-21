@@ -19,11 +19,18 @@ struct sQueueNode {
 };
 
 /**
- * Enqueues the given process in the ready-queue
+ * Appends the given process to the ready-queue
  *
  * @param p the process
  */
-static void sched_enqueueReadyProc(sProc *p);
+static void sched_appendReady(sProc *p);
+
+/**
+ * Puts the given process to the beginning of the ready-queue
+ *
+ * @param p the process
+ */
+static void sched_prependReady(sProc *p);
 
 /* ready-queue stuff */
 static sQueueNode readyQueue[PROC_COUNT];
@@ -62,6 +69,8 @@ sProc *sched_perform(void) {
 
 	/* get new process */
 	p = sched_dequeueReady();
+	if(p == NULL)
+		panic("No runnable process");
 	/* TODO idle if there is no runnable process */
 	p->state = ST_RUNNING;
 	return p;
@@ -95,7 +104,21 @@ void sched_setReady(sProc *p) {
 		sll_removeFirst(blockedQueue,p);
 	p->state = ST_READY;
 
-	sched_enqueueReadyProc(p);
+	sched_appendReady(p);
+}
+
+void sched_setReadyQuick(sProc *p) {
+	ASSERT(p != NULL,"p == NULL");
+
+	/* nothing to do? */
+	if(p->state == ST_READY)
+		return;
+	/* remove from blocked-list? */
+	if(p->state == ST_BLOCKED)
+		sll_removeFirst(blockedQueue,p);
+	p->state = ST_READY;
+
+	sched_prependReady(p);
 }
 
 void sched_setBlocked(sProc *p) {
@@ -121,7 +144,7 @@ void sched_unblockAll(u8 event) {
 		if(p->events & event) {
 			p->state = ST_READY;
 			p->events = EV_NOEVENT;
-			sched_enqueueReadyProc(p);
+			sched_appendReady(p);
 			m = n->next;
 			sll_removeNode(blockedQueue,n,prev);
 			n = m;
@@ -160,7 +183,7 @@ void sched_removeProc(sProc *p) {
 	}
 }
 
-static void sched_enqueueReadyProc(sProc *p) {
+static void sched_appendReady(sProc *p) {
 	sQueueNode *nn,*n;
 	ASSERT(rqFree != NULL,"No free slots in the ready-queue!?");
 
@@ -180,6 +203,21 @@ static void sched_enqueueReadyProc(sProc *p) {
 		rqFirst = nn;
 		rqLast = nn;
 	}
+}
+
+static void sched_prependReady(sProc *p) {
+	sQueueNode *nn;
+	ASSERT(p != NULL,"p == NULL");
+
+	/* use first free node */
+	nn = rqFree;
+	rqFree = rqFree->next;
+	nn->p = p;
+	/* put at the beginning of the ready-queue */
+	nn->next = rqFirst;
+	rqFirst = nn;
+	if(rqLast == NULL)
+		rqLast = nn;
 }
 
 bool sched_dequeueReadyProc(sProc *p) {

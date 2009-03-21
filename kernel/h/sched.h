@@ -37,6 +37,13 @@ void sched_setRunning(sProc *p);
 void sched_setReady(sProc *p);
 
 /**
+ * Puts the given process to the beginning of the ready-queue and sets the state to ST_READY
+ *
+ * @param p the process
+ */
+void sched_setReadyQuick(sProc *p);
+
+/**
  * Sets the process in the blocked-state
  *
  * @param p the process

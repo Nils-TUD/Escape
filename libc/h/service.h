@@ -38,26 +38,6 @@ s32 regService(cstring name,u8 type);
 s32 unregService(s32 service);
 
 /**
- * Adds an interrupt-listener
- *
- * @param service the node-id
- * @param irq the irq-number
- * @param msg the message
- * @param msgLen the message-length
- * @return 0 on success or a negative error-code
- */
-s32 addIntrptListener(s32 service,u16 irq,void *msg,u32 msgLen);
-
-/**
- * Removes an interrupt-listener
- *
- * @param service the node-id
- * @param irq the irq-number
- * @return 0 on success or a negative error-code
- */
-s32 remIntrptListener(s32 service,u16 irq);
-
-/**
  * Looks wether a client wants to be served and returns a file-descriptor for it.
  *
  * @param service the service-id

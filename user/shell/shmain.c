@@ -87,6 +87,14 @@ s32 main(u32 argc,s8 **argv) {
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");
 
+	/*u32 i;
+	for(i = 0; i < 20; i++) {
+		printf("# echo test\n");
+		shell_executeCmd("echo test");
+	}
+	shell_executeCmd("ps");
+	return 0;*/
+
 	while(1) {
 		/* create buffer (history will free it) */
 		buffer = malloc((MAX_CMD_LEN + 1) * sizeof(s8));
@@ -113,6 +121,9 @@ static u16 shell_readLine(s8 *buffer,u16 max) {
 	u8 modifier;
 	u16 cursorPos = 0;
 	u16 i = 0;
+
+	/* ensure that the line is empty */
+	*buffer = '\0';
 	while(i < max) {
 		c = readChar();
 
@@ -225,6 +236,10 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 		sDirEntry *entry;
 		s8 *first = NULL;
 		while((entry = readdir(dd)) != NULL) {
+			/* skip . and .. */
+			if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
+				continue;
+
 			cmdlen = strlen(entry->name);
 			/* beginning matches? */
 			if(ilength < cmdlen && strncmp(line,entry->name,ilength) == 0) {
@@ -268,6 +283,10 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 				tabCount = 0;
 				printf("\n");
 				while((entry = readdir(dd)) != NULL) {
+					/* skip . and .. */
+					if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
+						continue;
+
 					cmdlen = strlen(entry->name);
 					/* beginning matches? */
 					if(ilength < cmdlen && strncmp(line,entry->name,ilength) == 0)
@@ -294,6 +313,10 @@ static s8 *shell_getCmd(s8 *line) {
 		return NULL;
 
 	while((entry = readdir(dd)) != NULL) {
+		/* skip . and .. */
+		if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
+			continue;
+
 		len = strlen(entry->name);
 		/* beginning matches? */
 		if(pos == len && strncmp(line,entry->name,len) == 0) {

@@ -12,14 +12,15 @@ Available memory:
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x000000000179a021
+Clock cycles: 0x00000000031295a6
 Initializing VFS...DONE
-Clock cycles: 0x000000000012eec8
+Clock cycles: 0x0000000000134b98
 Initializing process-management...DONE
-Clock cycles: 0x00000000000d2ea6
+Clock cycles: 0x00000000000dab59
 Initializing IDT...DONE
-Clock cycles: 0x00000000000a62b1
+Clock cycles: 0x00000000000acc0e
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
+Got interrupt 39 (<unknown>) @ 0x0
 Drives:
 	  Primary Master (present=1,sectors=10080)
 	  	  0: start=0x3F, sectors=10017 size=5128704 byte
@@ -32,100 +33,57 @@ Try 'help' to see the current features :)
 
 # echo test
 test 
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
-00	  	  00	  	  010	 	  	  Ready  	 	  0x0002756042e6161c	  init
-01	  	  00	  	  010	 	  	  Blocked	 	  0x0000000050ac7380	  ata
-02	  	  00	  	  029	 	  	  Blocked	 	  0x000000000c1ee7b1	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000b4fd0e	  file:/services/speaker
-04	  	  00	  	  007	 	  	  Blocked	 	  0x00000000010aed19	  file:/services/keyboard
-05	  	  00	  	  011	 	  	  Ready  	 	  0x00000000030f1a31	  file:/services/video
-06	  	  00	  	  018	 	  	  Blocked	 	  0x0000000003bf90eb	  file:/services/vterm
-07	  	  00	  	  010	 	  	  Blocked	 	  0x0000000001337dd5	  file:/apps/shell
-08	  	  07	  	  007	 	  	  Running	 	  0x0000000001698be5	  file:/apps/ps
-
 # echo test
 test 
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
-00	  	  00	  	  010	 	  	  Ready  	 	  0x0005863993ae8861	  init
-01	  	  00	  	  010	 	  	  Blocked	 	  0x00000000644aca4d	  ata
-02	  	  00	  	  029	 	  	  Blocked	 	  0x000000000fb7d149	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000b4fd0e	  file:/services/speaker
-04	  	  00	  	  007	 	  	  Blocked	 	  0x000000000186494a	  file:/services/keyboard
-05	  	  00	  	  011	 	  	  Ready  	 	  0x0000000006f1e6cc	  file:/services/video
-06	  	  00	  	  018	 	  	  Blocked	 	  0x0000000007577d87	  file:/services/vterm
-07	  	  00	  	  010	 	  	  Blocked	 	  0x0000000001e82254	  file:/apps/shell
-08	  	  07	  	  007	 	  	  Running	 	  0x0000000001477a94	  file:/apps/ps
-
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
-00	  	  00	  	  010	 	  	  Ready  	 	  0x0005e5e650646c43	  init
-01	  	  00	  	  010	 	  	  Blocked	 	  0x00000000651bd25e	  ata
-02	  	  00	  	  029	 	  	  Blocked	 	  0x000000001131ca26	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000b4fd0e	  file:/services/speaker
-04	  	  00	  	  007	 	  	  Blocked	 	  0x00000000019ef066	  file:/services/keyboard
-05	  	  00	  	  011	 	  	  Ready  	 	  0x000000000b14b5a0	  file:/services/video
-06	  	  00	  	  018	 	  	  Blocked	 	  0x000000000a0a89a4	  file:/services/vterm
-07	  	  00	  	  010	 	  	  Blocked	 	  0x00000000023f40b7	  file:/apps/shell
-08	  	  07	  	  007	 	  	  Running	 	  0x00000000015f40dd	  file:/apps/ps
-
-# echote st
-echote: Command not found
 # echo test
 test 
-# help
-Currently you can use the following commands:
-	  ls <dir>
-	  echo <string>
-	  ps
-	  kill <pid>
-	  mem
-	  cat <file>
-
-You can scroll the screen with pageUp, pageDown, shift+arrowUp, shift+arrowDown
-
-# nla bunla bnnla bdnla b nla bdnla banla bsnla b nla bwnla bonla blnla blnla btnla benla b nla binla bcnla bhnla b
-und: Command not found
-# ls /
-   2 .
-   2 ..
-  11 lost+found
-  12 apps
-  13 etc
-  14 services
-  16 test
-  17 file.txt
-  19 bigfile
-# shell
-Welcome to Escape v0.1!
-
-Try 'help' to see the current features :)
-
-# killps
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
+# echo test
+test 
 PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
-00	  	  00	  	  010	 	  	  Ready  	 	  0x003eb081ba466b6e	  init
-01	  	  00	  	  010	 	  	  Blocked	 	  0x00000000a2991413	  ata
-02	  	  00	  	  029	 	  	  Blocked	 	  0x000000001f4b59de	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000b4fd0e	  file:/services/speaker
-04	  	  00	  	  007	 	  	  Blocked	 	  0x0000000004de30dd	  file:/services/keyboard
-05	  	  00	  	  011	 	  	  Ready  	 	  0x0000000017a0729c	  file:/services/video
-06	  	  00	  	  018	 	  	  Blocked	 	  0x00000000174d433d	  file:/services/vterm
-07	  	  00	  	  016	 	  	  Blocked	 	  0x00000000055008f0	  file:/apps/shell
-08	  	  07	  	  010	 	  	  Blocked	 	  0x00000000013f692f	  file:/apps/shell
-09	  	  08	  	  007	 	  	  Running	 	  0x0000000001db1d7b	  file:/apps/ps
+00	  	  00	  	  010	 	  	  Ready  	 	  0x0000000001d34de6	  init
+01	  	  00	  	  010	 	  	  Blocked	 	  0x000000005ca820aa	  ata
+02	  	  00	  	  029	 	  	  Blocked	 	  0x000000002d63c8b5	  fs
+03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000bc3f7c	  file:/services/speaker
+04	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000851811	  file:/services/keyboard
 
-# kill 8
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
-00	  	  00	  	  010	 	  	  Ready  	 	  0x004be077b5146f7a	  init
-01	  	  00	  	  010	 	  	  Blocked	 	  0x00000000bb221e5e	  ata
-02	  	  00	  	  029	 	  	  Blocked	 	  0x0000000024d81e18	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000b4fd0e	  file:/services/speaker
-04	  	  00	  	  007	 	  	  Blocked	 	  0x000000000573dda0	  file:/services/keyboard
-05	  	  00	  	  011	 	  	  Ready  	 	  0x000000001e432300	  file:/services/video
-06	  	  00	  	  018	 	  	  Blocked	 	  0x000000001c4ba352	  file:/services/vterm
-07	  	  00	  	  016	 	  	  Blocked	 	  0x0000000005bea6ce	  file:/apps/shell
-09	  	  07	  	  007	 	  	  Running	 	  0x00000000019ff296	  file:/apps/ps
+05	  	  00	  	  011	 	  	  Blocked	 	  0x000000000b234f82	  file:/services/video
+06	  	  00	  	  018	 	  	  Blocked	 	  0x0000000007de9eff	  file:/services/vterm
 
-# 
+05	  	  00	  	  012	 	  	  Blocked	 	  0x000000000611f016	  file:/services/video
+06	  	  00	  	  018	 	  	  Blocked	 	  0x00000000068ca066	  file:/services/vterm
+
+07	  	  00	  	  010	 	  	  Blocked	 	  0x0000000006fb1cd5	  file:/apps/shell
+08	  	  07	  	  007	 	  	  Running	 	  0x0000000001c3594e	  file:/apps/ps
+

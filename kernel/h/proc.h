@@ -118,6 +118,14 @@ sProc *proc_getByPid(tPid pid);
 bool proc_exists(tPid pid);
 
 /**
+ * Determines wether the given process has a child
+ *
+ * @param pid the process-id
+ * @return true if it has a child
+ */
+bool proc_hasChild(tPid pid);
+
+/**
  * Switches to another process
  */
 void proc_switch(void);
@@ -130,11 +138,12 @@ void proc_switch(void);
 void proc_switchTo(tPid pid);
 
 /**
- * Puts the process to sleep with given wake-up-events
+ * Puts the given process to sleep with given wake-up-events
  *
+ * @param pid the process to put to sleep
  * @param events the events on which the process should wakeup
  */
-void proc_sleep(u8 events);
+void proc_sleep(tPid pid,u8 events);
 
 /**
  * Wakes up all blocked processes that wait for the given event

@@ -30,9 +30,9 @@
 #define STATE_ALT			2
 
 #define TITLE_BAR_COLOR		0x90
-#define OS_TITLE			"E\x96" \
-							"s\x96" \
-							"c\x96" \
+#define OS_TITLE			"E\x97" \
+							"s\x97" \
+							"c\x97" \
 							"a\x97" \
 							"p\x97" \
 							"e\x97" \
@@ -101,6 +101,13 @@ typedef struct {
 typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
 
 /**
+ * Sends the given character to the video-driver
+ *
+ * @param c the character
+ */
+static void vterm_sendChar(s8 c);
+
+/**
  * Sets the cursor
  */
 static void vterm_setCursor(void);
@@ -111,14 +118,6 @@ static void vterm_setCursor(void);
  * @param c the character
  */
 static void vterm_putchar(s8 c);
-
-/**
- * Writes the given character to the video-driver (at the current position).
- * Will not move forward.
- *
- * @param c the character
- */
-static void vterm_writeChar(u8 c);
 
 /**
  * Inserts a new line
@@ -339,6 +338,12 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 
 void vterm_puts(s8 *str) {
 	s8 c;
+	u32 newPos,oldPos = vterm.row * COLS + vterm.col;
+
+	/* just one char to print? */
+	if(*(str + 1) == '\0')
+		vterm_sendChar(*str);
+
 	while((c = *str)) {
 		if(c == '\033') {
 			str++;
@@ -348,7 +353,30 @@ void vterm_puts(s8 *str) {
 		vterm_putchar(c);
 		str++;
 	}
-	vterm_setCursor();
+
+	/* more than one char added? */
+	newPos = vterm.row * COLS + vterm.col;
+	if(newPos - oldPos > 1) {
+		/* so refresh all lines that need to be refreshed. thats faster than sending all
+		 * chars individually */
+		vterm_refreshLines(oldPos / COLS,((newPos - oldPos) + COLS - 1) / COLS);
+		vterm_setCursor();
+	}
+}
+
+static void vterm_sendChar(s8 c) {
+	u8 color = (vterm.background << 4) | vterm.foreground;
+
+	/* scroll to current line, if necessary */
+	if(vterm.firstVisLine != vterm.currLine)
+		vterm_scroll(vterm.firstVisLine - vterm.currLine);
+
+	/* write to video-driver */
+	msgVidSet.data.character = c;
+	msgVidSet.data.color = color;
+	msgVidSet.data.row = vterm.row;
+	msgVidSet.data.col = vterm.col;
+	write(vterm.video,&msgVidSet,sizeof(sMsgVidSet));
 }
 
 static void vterm_setCursor(void) {
@@ -416,14 +444,19 @@ static void vterm_putchar(s8 c) {
 			}
 			break;
 
-		default:
-			vterm_writeChar(c);
+		default: {
+			i = (vterm.currLine * COLS * 2) + (vterm.row * COLS * 2) + (vterm.col * 2);
+
+			/* write to buffer */
+			vterm.buffer.data[i] = c;
+			vterm.buffer.data[i + 1] = (vterm.background << 4) | vterm.foreground;
 
 			vterm.col++;
 			/* do an explicit newline if necessary */
 			if(vterm.col >= COLS)
 				vterm_putchar('\n');
-			break;
+		}
+		break;
 	}
 }
 
@@ -480,26 +513,6 @@ static void vterm_refreshLines(u16 start,u16 count) {
 
 	/* restore screen-data */
 	memcpy(ptr - sizeof(sMsgVidSetScr),back,sizeof(sMsgVidSetScr));
-}
-
-static void vterm_writeChar(u8 c) {
-	u8 color = (vterm.background << 4) | vterm.foreground;
-	u32 i = (vterm.currLine * COLS * 2) + (vterm.row * COLS * 2) + (vterm.col * 2);
-
-	/* scroll to current line, if necessary */
-	if(vterm.firstVisLine != vterm.currLine)
-		vterm_scroll(vterm.firstVisLine - vterm.currLine);
-
-	/* write to buffer */
-	vterm.buffer.data[i] = c;
-	vterm.buffer.data[i + 1] = color;
-
-	/* write to video-driver */
-	msgVidSet.data.character = c;
-	msgVidSet.data.color = color;
-	msgVidSet.data.row = vterm.row;
-	msgVidSet.data.col = vterm.col;
-	write(vterm.video,&msgVidSet,sizeof(sMsgVidSet));
 }
 
 static void vterm_handleEscape(s8 **str) {

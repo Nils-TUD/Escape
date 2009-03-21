@@ -250,4 +250,15 @@ s32 intrpt_removeListener(u16 irq,tVFSNodeNo nodeNo);
  */
 void intrpt_handler(sIntrptStackFrame stack);
 
+#if DEBUGGING
+
+/**
+ * Prints the given interrupt-stack
+ *
+ * @param stack the interrupt-stack
+ */
+void intrpt_printStackFrame(sIntrptStackFrame *stack);
+
+#endif
+
 #endif /*INTRPT_H_*/

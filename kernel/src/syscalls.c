@@ -866,6 +866,7 @@ static void sysc_exec(sSysCallStack *stack) {
 	s8 *argBuffer;
 	u8 *buffer;
 	u32 argc;
+	s32 remaining = EXEC_MAX_ARGSIZE;
 	u32 fileSize,bufSize;
 	s32 pathLen,readBytes;
 	s32 res;
@@ -877,7 +878,6 @@ static void sysc_exec(sSysCallStack *stack) {
 	argBuffer = NULL;
 	if(args != NULL) {
 		s8 *bufPos;
-		s32 remaining = EXEC_MAX_ARGSIZE;
 		s32 len;
 
 		/* alloc space for the arguments */
@@ -994,7 +994,7 @@ static void sysc_exec(sSysCallStack *stack) {
 	}
 	else {
 		/*vid_printf("%d is finished with '%s'\n",p->pid,pathSave);*/
-		proc_setupIntrptStack(intrpt_getCurStack(),argc,argBuffer);
+		proc_setupIntrptStack(intrpt_getCurStack(),argc,argBuffer,EXEC_MAX_ARGSIZE - remaining);
 
 		/* finally free the buffer */
 		if(argBuffer != NULL)

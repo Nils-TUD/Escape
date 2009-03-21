@@ -32,7 +32,7 @@ static sKeymapEntry keymap[] = {
 	/* VK_E */			{'e',		'E',		NPRINT	}, /* € */
 	/* VK_R */			{'r',		'R',		NPRINT	},
 	/* VK_T */			{'t',		'T',		NPRINT	},
-	/* VK_Y */			{'y',		'Y',		NPRINT	},
+	/* VK_Y */			{'z',		'Z',		NPRINT	},
 	/* VK_U */			{'u',		'U',		NPRINT	},
 	/* VK_I */			{'i',		'I',		NPRINT	},
 	/* VK_O */			{'o',		'O',		NPRINT	},
@@ -56,7 +56,7 @@ static sKeymapEntry keymap[] = {
 	/* VK_ENTER */		{'\n',		'\n',		NPRINT	},
 	/* VK_LSHIFT */		{NPRINT,	NPRINT,		NPRINT	},
 	/* --- */			{NPRINT,	NPRINT,		NPRINT	},
-	/* VK_Z */			{'z',		'Z',		NPRINT	},
+	/* VK_Z */			{'y',		'Y',		NPRINT	},
 	/* VK_X */			{'x',		'X',		NPRINT	},
 	/* VK_C */			{'c',		'C',		NPRINT	},
 	/* VK_V */			{'v',		'V',		NPRINT	},

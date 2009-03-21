@@ -30,17 +30,17 @@
 #define STATE_ALT			2
 
 #define TITLE_BAR_COLOR		0x90
-#define OS_TITLE			"E\x90" \
-							"s\x90" \
-							"c\x90" \
-							"a\x90" \
-							"p\x90" \
-							"e\x90" \
-							" \x90" \
-							"v\x90" \
-							"0\x90" \
-							".\x90" \
-							"1\x90"
+#define OS_TITLE			"E\x96" \
+							"s\x96" \
+							"c\x96" \
+							"a\x97" \
+							"p\x97" \
+							"e\x97" \
+							" \x97" \
+							"v\x97" \
+							"0\x97" \
+							".\x97" \
+							"1\x97"
 
 typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 

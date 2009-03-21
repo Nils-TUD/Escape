@@ -384,9 +384,24 @@ void proc_destroy(sProc *p) {
 	proc_wakeup(p->parentPid,EV_CHILD_DIED);
 }
 
-void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args) {
+void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args,u32 argsSize) {
 	u32 *esp,*argv;
+	u32 totalSize;
 	ASSERT(frame != NULL,"frame == NULL");
+
+	/* we need to know the total number of bytes we'll store on the stack */
+	totalSize = 0;
+	if(argc > 0) {
+		/* first round the size of the arguments up. then we need argc+1 pointer */
+		totalSize += (argsSize + sizeof(u32) - 1) & ~(sizeof(u32) - 1);
+		totalSize += sizeof(u32) * (argc + 1);
+	}
+	/* finally we need argc and argv itself */
+	totalSize += sizeof(u32) * 2;
+
+	/* will handle copy-on-write */
+	/* TODO we might have to add stack-pages... */
+	paging_isRangeUserWritable(KERNEL_AREA_V_ADDR - totalSize,totalSize);
 
 	/* copy arguments on the user-stack */
 	esp = (u32*)KERNEL_AREA_V_ADDR - 1;
@@ -412,6 +427,8 @@ void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args) {
 		/* ensure that we don't overwrites the characters */
 		esp = ((u32)str & ~(sizeof(u32) - 1)) - sizeof(u32);
 	}
+
+	/*paging_dbg_printUserPageDir();*/
 
 	/* store argc and argv */
 	*esp-- = (u32)argv;

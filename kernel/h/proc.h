@@ -243,8 +243,9 @@ void proc_destroy(sProc *p);
  * @param frame the interrupt-stack-frame
  * @param argc the argument-count
  * @param args the arguments on after another, allocated on the heap; may be NULL
+ * @param argsSize the total number of bytes for the arguments (just the data)
  */
-void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args);
+void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args,u32 argsSize);
 
 /**
  * Checks wether the given segment-sizes are valid

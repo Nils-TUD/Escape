@@ -120,10 +120,31 @@ u16 readLine(s8 *buffer,u16 max) {
 		if(c == '\n')
 			break;
 
-		/* put in buffer */
-		buffer[cursorPos++] = c;
-		if(cursorPos > i)
+		/* not at the end */
+		if(cursorPos < i) {
+			u32 x;
+			/* at first move all one char forward */
+			memmove(buffer + cursorPos + 1,buffer + cursorPos,i - cursorPos);
+			buffer[cursorPos] = c;
+			/* now write the chars to vterm */
+			for(x = cursorPos + 1; x <= i; x++)
+				putchar(buffer[x]);
+			/* and walk backwards */
+			putchar('\033');
+			putchar(VK_HOME);
+			putchar(i - cursorPos);
+			/* we want to do that immediatly */
+			flush();
+			/* we've added a char */
+			cursorPos++;
 			i++;
+		}
+		/* we are at the end of the input */
+		else {
+			/* put in buffer */
+			buffer[cursorPos++] = c;
+			i++;
+		}
 	}
 
 	buffer[i] = '\0';

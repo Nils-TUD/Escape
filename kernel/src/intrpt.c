@@ -526,6 +526,10 @@ static void intrpt_handleSignal(void) {
 
 static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	u32 *esp = (u32*)stack->uesp;
+	/* will handle copy-on-write */
+	/* TODO we might have to add stack-pages... */
+	paging_isRangeUserWritable((u32)(esp - 10),9);
+
 	/* save regs */
 	*--esp = stack->eip;
 	*--esp = stack->eax;
@@ -633,7 +637,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 						/* TODO just temporary */
 						memcpy(p->command,services[i].name,strlen(services[i].name) + 1);
 						elf_loadprog(services[i].data);
-						proc_setupIntrptStack(&stack,0,NULL);
+						proc_setupIntrptStack(&stack,0,NULL,0);
 						/* we don't want to continue the loop ;) */
 						break;
 					}
@@ -756,3 +760,28 @@ static void intrpt_eoi(u32 intrptNo) {
 	    outb(PIC_MASTER_CMD,PIC_EOI);
     }
 }
+
+#if DEBUGGING
+
+void intrpt_printStackFrame(sIntrptStackFrame *stack) {
+	vid_printf("stack-frame @ 0x%x\n",stack);
+	vid_printf("\tcs=%02x\n",stack->cs);
+	vid_printf("\tds=%02x\n",stack->ds);
+	vid_printf("\tes=%02x\n",stack->es);
+	vid_printf("\tfs=%02x\n",stack->fs);
+	vid_printf("\tgs=%02x\n",stack->gs);
+	vid_printf("\teax=0x%08x\n",stack->eax);
+	vid_printf("\tebx=0x%08x\n",stack->ebx);
+	vid_printf("\tecx=0x%08x\n",stack->ecx);
+	vid_printf("\tedx=0x%08x\n",stack->edx);
+	vid_printf("\tesi=0x%08x\n",stack->esi);
+	vid_printf("\tedi=0x%08x\n",stack->edi);
+	vid_printf("\tebp=0x%08x\n",stack->ebp);
+	vid_printf("\tuesp=0x%08x\n",stack->uesp);
+	vid_printf("\teip=0x%08x\n",stack->eip);
+	vid_printf("\teflags=0x%08x\n",stack->eflags);
+	vid_printf("\terrorCode=%d\n",stack->errorCode);
+	vid_printf("\tintrptNo=%d\n",stack->intrptNo);
+}
+
+#endif

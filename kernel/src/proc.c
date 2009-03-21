@@ -36,7 +36,7 @@ void proc_init(void) {
 	if(!vfs_createProcess(0,&vfsinfo_procReadHandler))
 		panic("Not enough mem for init process");
 	procs[pi].state = ST_RUNNING;
-	procs[pi].waitFor = EV_NOEVENT;
+	procs[pi].events = EV_NOEVENT;
 	procs[pi].pid = 0;
 	procs[pi].parentPid = 0;
 	/* the first process has no text, data and stack */
@@ -50,7 +50,7 @@ void proc_init(void) {
 	for(i = 0; i < MAX_FD_COUNT; i++)
 		procs[pi].fileDescs[i] = -1;
 	/* TODO just temporary */
-	memcpy(procs[pi].name,"init",5);
+	memcpy(procs[pi].command,"init",5);
 
 	paging_exchangePDir(procs[pi].physPDirAddr);
 	/* setup kernel-stack for us */
@@ -118,7 +118,7 @@ void proc_switchTo(tPid pid) {
 
 void proc_sleep(u8 events) {
 	sProc *p = procs + pi;
-	p->waitFor = events;
+	p->events = events;
 	sched_setBlocked(p);
 }
 
@@ -128,8 +128,10 @@ void proc_wakeupAll(u8 event) {
 
 void proc_wakeup(tPid pid,u8 event) {
 	sProc *p = procs + pid;
-	if(p->waitFor & event)
+	if(p->events & event) {
 		sched_setReady(p);
+		p->events = EV_NOEVENT;
+	}
 }
 
 s32 proc_requestIOPorts(u16 start,u16 count) {
@@ -287,7 +289,7 @@ s32 proc_clone(tPid newPid) {
 
 	/* set page-dir and pages for segments */
 	p = procs + newPid;
-	p->waitFor = EV_NOEVENT;
+	p->events = EV_NOEVENT;
 	p->pid = newPid;
 	p->parentPid = pi;
 	p->textPages = procs[pi].textPages;
@@ -377,6 +379,9 @@ void proc_destroy(sProc *p) {
 	p->state = ST_UNUSED;
 	p->pid = 0;
 	p->physPDirAddr = 0;
+
+	/* notify parent, if waiting */
+	proc_wakeup(p->parentPid,EV_CHILD_DIED);
 }
 
 void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args) {
@@ -538,7 +543,7 @@ void proc_dbg_print(sProc *p) {
 	vid_printf("process @ 0x%08x:\n",p);
 	vid_printf("\tpid = %d\n",p->pid);
 	vid_printf("\tparentPid = %d\n",p->parentPid);
-	vid_printf("\tname = %s\n",p->name);
+	vid_printf("\tcommand = %s\n",p->command);
 	vid_printf("\tphysPDirAddr = 0x%08x\n",p->physPDirAddr);
 	vid_printf("\ttextPages = %d\n",p->textPages);
 	vid_printf("\tdataPages = %d\n",p->dataPages);

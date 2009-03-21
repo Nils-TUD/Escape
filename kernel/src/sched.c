@@ -118,8 +118,9 @@ void sched_unblockAll(u8 event) {
 	prev = NULL;
 	for(n = sll_begin(blockedQueue); n != NULL; ) {
 		p = (sProc*)n->data;
-		if(p->waitFor & event) {
+		if(p->events & event) {
 			p->state = ST_READY;
+			p->events = EV_NOEVENT;
 			sched_enqueueReadyProc(p);
 			m = n->next;
 			sll_removeNode(blockedQueue,n,prev);

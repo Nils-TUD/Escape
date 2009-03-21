@@ -63,6 +63,11 @@ s32 main(void) {
 		return 1;
 	}
 
+    /* reset keyboard */
+    outByte(IOPORT_KB_CTRL,0xff);
+    while(inByte(IOPORT_KB_CTRL) != 0xaa)
+    	yield();
+
 	/* we don't want to be waked up. we'll get signals anyway */
 	while(1)
 		sleep(EV_NOEVENT);

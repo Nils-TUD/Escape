@@ -8,9 +8,8 @@
 #include <string.h>
 #include <io.h>
 #include <signals.h>
-#include "kill.h"
 
-s32 shell_cmdKill(u32 argc,s8 **argv) {
+s32 main(u32 argc,s8 **argv) {
 	tPid pid;
 	if(argc != 2) {
 		printf("Usage: kill <pid>\n");

@@ -41,7 +41,7 @@ void panic(cstring fmt,...) {
 
 	vid_printf("\n");
 	vid_restoreColor();
-	vid_printf("Caused by process %d (%s)\n\n",p->pid,p->name);
+	vid_printf("Caused by process %d (%s)\n\n",p->pid,p->command);
 	printStackTrace(getKernelStackTrace());
 	printStackTrace(getUserStackTrace(p,intrpt_getCurStack()));
 	intrpt_setEnabled(false);

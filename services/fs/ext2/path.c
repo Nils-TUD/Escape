@@ -41,7 +41,11 @@ tInodeNo ext2_resolvePath(sExt2 *e,string path) {
 
 		/* TODO a directory may have more blocks */
 		eBak = entry;
-		ext2_readBlocks(e,(u8*)entry,cnode->inode.dBlocks[0],1);
+		if(!ext2_readBlocks(e,(u8*)entry,cnode->inode.dBlocks[0],1)) {
+			ext2_icache_release(e,cnode);
+			return EXT2_BAD_INO;
+		}
+
 		while(entry->inode != 0) {
 			if(strncmp((cstring)(entry + 1),p,pos) == 0) {
 				p += pos;

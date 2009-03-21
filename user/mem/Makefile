@@ -1,4 +1,4 @@
-NAME=shell
+NAME=mem
 BUILD=../../build
 DISK=$(BUILD)/disk.img
 DISKMOUNT=../../disk

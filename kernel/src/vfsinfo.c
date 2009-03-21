@@ -22,7 +22,7 @@ typedef struct {
 	u32 dataPages;
 	u32 stackPages;
 	u64 cycleCount;
-	s8 name[MAX_PROC_NAME_LEN + 1];
+	s8 command[MAX_PROC_NAME_LEN + 1];
 } sProcPub;
 
 /* public memusage-data */
@@ -69,7 +69,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer) {
 	proc->dataPages = p->dataPages;
 	proc->stackPages = p->stackPages;
 	proc->cycleCount = p->cycleCount;
-	memcpy(proc->name,p->name,strlen(p->name) + 1);
+	memcpy(proc->command,p->command,strlen(p->command) + 1);
 }
 
 static s32 vfsinfo_memUsageReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {

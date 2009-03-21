@@ -16,24 +16,13 @@
 #include <keycodes.h>
 
 #include "history.h"
-#include "cmd/echo.h"
-#include "cmd/ps.h"
-#include "cmd/memusage.h"
-#include "cmd/test.h"
-#include "cmd/kill.h"
-#include "cmd/ls.h"
+
+#define APPS_DIR			"file:/apps/"
 
 #define MAX_CMD_LEN			40
 #define MAX_ARG_COUNT		10
 
 #define ERR_CMD_NOT_FOUND	-100
-
-/* for shell commands */
-typedef s32 (*fCommand)(u32 argc,s8 **argv);
-typedef struct {
-	cstring name;
-	fCommand func;
-} sShellCmd;
 
 /**
  * Reads a line
@@ -71,7 +60,7 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length);
  * @param line the entered line
  * @return the command or NULL
  */
-static sShellCmd *shell_getCmd(s8 *line);
+static s8 *shell_getCmd(s8 *line);
 
 /**
  * Executes the given line
@@ -85,17 +74,6 @@ static s32 shell_executeCmd(s8 *line);
  * The "help" command
  */
 static s32 shell_cmdHelp(u32 argc,s8 **argv);
-
-/* our commands */
-static sShellCmd commands[] = {
-	{"echo"		, shell_cmdEcho		},
-	{"ps"		, shell_cmdPs		},
-	{"help"		, shell_cmdHelp		},
-	{"memusage"	, shell_cmdMemUsage	},
-	{"test"		, shell_cmdTest		},
-	{"kill"		, shell_cmdKill		},
-	{"ls"		, shell_cmdLs		},
-};
 
 /* buffer for arguments */
 static u32 tabCount = 0;
@@ -212,30 +190,40 @@ static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,u8 
 }
 
 static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
-	s32 i;
 	u16 icursorPos = *cursorPos;
 	u32 cmdlen,ilength = *length;
 
 	/* ignore tabs when the cursor is not at the end of the input */
 	if(icursorPos == ilength) {
-		/* search in commands */
-		s32 index = -1;
+		s32 dd;
+		/* search in file:/apps/ */
 		u32 count = 0;
-		for(i = 0; (u32)i < ARRAY_SIZE(commands); i++) {
-			cmdlen = strlen(commands[i].name);
+		if((dd = opendir(APPS_DIR)) < 0)
+			return;
+
+		sDirEntry *entry;
+		s8 *first = NULL;
+		while((entry = readdir(dd)) != NULL) {
+			cmdlen = strlen(entry->name);
 			/* beginning matches? */
-			if(ilength < cmdlen && strncmp(line,commands[i].name,ilength) == 0) {
+			if(ilength < cmdlen && strncmp(line,entry->name,ilength) == 0) {
 				count++;
-				index = i;
+				first = (s8*)malloc(cmdlen + 1);
+				if(first == NULL) {
+					closedir(dd);
+					return;
+				}
+				memcpy(first,entry->name,cmdlen + 1);
 			}
 		}
+		closedir(dd);
 
 		/* found one match? */
 		if(count == 1) {
 			/* add chars */
-			cmdlen = strlen(commands[index].name);
+			cmdlen = strlen(first);
 			for(; ilength < cmdlen; ilength++) {
-				s8 c = commands[index].name[ilength];
+				s8 c = first[ilength];
 				line[ilength] = c;
 				putchar(c);
 			}
@@ -253,15 +241,19 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 				flush();
 			}
 			else {
+				if((dd = opendir(APPS_DIR)) < 0)
+					return;
+
 				tabCount = 0;
 				printf("\n");
-				for(i = 0; (u32)i < ARRAY_SIZE(commands); i++) {
-					cmdlen = strlen(commands[i].name);
+				while((entry = readdir(dd)) != NULL) {
+					cmdlen = strlen(entry->name);
 					/* beginning matches? */
-					if(ilength < cmdlen && strncmp(line,commands[i].name,ilength) == 0) {
-						printf("%s ",commands[i].name);
-					}
+					if(ilength < cmdlen && strncmp(line,entry->name,ilength) == 0)
+						printf("%s ",entry->name);
 				}
+				closedir(dd);
+
 				/* print the prompt + entered chars again */
 				printf("\n# %s",line);
 			}
@@ -269,16 +261,34 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 	}
 }
 
-static sShellCmd *shell_getCmd(s8 *line) {
-	u32 i,pos,len;
+static s8 *shell_getCmd(s8 *line) {
+	u32 pos,len;
+	sDirEntry *entry;
+	s8 *path;
+	s32 dd;
 	s8 c;
 	pos = strchri(line,' ');
 
-	for(i = 0; i < ARRAY_SIZE(commands); i++) {
-		len = strlen(commands[i].name);
-		if(pos == len && strncmp(line,commands[i].name,len) == 0)
-			return commands + i;
+	if((dd = opendir(APPS_DIR)) < 0)
+		return NULL;
+
+	while((entry = readdir(dd)) != NULL) {
+		len = strlen(entry->name);
+		/* beginning matches? */
+		if(pos == len && strncmp(line,entry->name,len) == 0) {
+			closedir(dd);
+			pos = strlen(APPS_DIR);
+			if(pos + len >= MAX_CMD_LEN)
+				return NULL;
+			path = (s8*)malloc(pos + len + 1);
+			if(path == NULL)
+				return NULL;
+			strcpy(path,APPS_DIR);
+			strncat(path,line,len);
+			return path;
+		}
 	}
+	closedir(dd);
 
 	c = line[pos];
 	line[pos] = '\0';
@@ -288,7 +298,7 @@ static sShellCmd *shell_getCmd(s8 *line) {
 }
 
 static s32 shell_executeCmd(s8 *line) {
-	sShellCmd *command = shell_getCmd(line);
+	s8 *command = shell_getCmd(line);
 	if(command == NULL)
 		return -1;
 
@@ -306,8 +316,14 @@ static s32 shell_executeCmd(s8 *line) {
 		pos += npos + 1;
 	}
 
-	/* execute command */
-	s32 res = command->func(i,args);
+	/* fork & exec */
+	if(fork() == 0) {
+		exec(command,args);
+		exit(0);
+	}
+
+	/* wait for child */
+	sleep(EV_CHILD_DIED);
 
 	/* free args */
 	do {
@@ -316,22 +332,7 @@ static s32 shell_executeCmd(s8 *line) {
 		i--;
 	}
 	while(i > 0);
+	free(command);
 
-	return res;
-}
-
-static s32 shell_cmdHelp(u32 argc,s8 **argv) {
-	u32 i;
-
-	UNUSED(argc);
-	UNUSED(argv);
-
-	printf("Currently you can use the following commands:\n");
-	for(i = 0; i < ARRAY_SIZE(commands); i++) {
-		printf("\t%s\n",commands[i].name);
-	}
-	printf("\n");
-	printf("You can scroll the screen with pageUp, pageDown, shift+arrowUp, shift+arrowDown\n");
-	printf("\n");
 	return 0;
 }

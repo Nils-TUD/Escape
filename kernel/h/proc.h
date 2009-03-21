@@ -13,7 +13,7 @@
 /* max number of processes */
 #define PROC_COUNT			1024
 #define MAX_FD_COUNT		16
-#define MAX_PROC_NAME_LEN	15
+#define MAX_PROC_NAME_LEN	30
 
 /* use an invalid pid to identify the kernel */
 #define KERNEL_PID			(PROC_COUNT + 1)
@@ -24,6 +24,7 @@
 #define EV_NOEVENT			0
 #define EV_CLIENT			1
 #define EV_RECEIVED_MSG		2
+#define EV_CHILD_DIED		4
 
 /* the process-state which will be saved for context-switching */
 typedef struct {
@@ -43,7 +44,7 @@ typedef struct {
 	/* process state. see eProcState */
 	u8 state;
 	/* the events the process waits for (if sleeping) */
-	u8 waitFor;
+	u8 events;
 	/* process id (2^16 processes should be enough :)) */
 	tPid pid;
 	/* parent process id */
@@ -61,8 +62,8 @@ typedef struct {
 	u8 *ioMap;
 	/* number of cpu-cycles the process has got so far; TODO: should be cpu-time later */
 	u64 cycleCount;
-	/* process-name (TODO temporary, should be the start-command later) */
-	s8 name[MAX_PROC_NAME_LEN + 1];
+	/* start-command */
+	s8 command[MAX_PROC_NAME_LEN + 1];
 } sProc;
 
 /* the area for proc_changeSize() */

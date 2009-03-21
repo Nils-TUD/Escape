@@ -7,9 +7,8 @@
 #include <common.h>
 #include <io.h>
 #include <mem.h>
-#include "memusage.h"
 
-s32 shell_cmdMemUsage(u32 argc,s8 **argv) {
+s32 main(u32 argc,s8 **argv) {
 	sMemUsage mem;
 	s32 fd;
 

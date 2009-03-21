@@ -318,7 +318,7 @@ static void sysc_fork(sSysCallStack *stack) {
 
 static void sysc_exit(sSysCallStack *stack) {
 	sProc *p = proc_getRunning();
-	vid_printf("Process %d exited with exit-code %d\n",p->pid,stack->arg1);
+	/*vid_printf("Process %d exited with exit-code %d\n",p->pid,stack->arg1);*/
 	proc_destroy(p);
 	proc_switch();
 }
@@ -355,8 +355,11 @@ static void sysc_open(sSysCallStack *stack) {
 	err = vfsn_resolvePath(path,&nodeNo);
 	if(err == ERR_REAL_PATH) {
 		/* send msg to fs and wait for reply */
-		/* TODO file:/ is not necessarily at the beginning */
-		file = vfsr_openFile(p->pid,flags,path + strlen("file:"));
+
+		/* skip file: */
+		if(strncmp(path,"file:",5) == 0)
+			path += 5;
+		file = vfsr_openFile(p->pid,flags,path);
 
 		/* get free fd */
 		fd = proc_getFreeFd();
@@ -735,12 +738,15 @@ static void sysc_sleep(sSysCallStack *stack) {
 	sProc *p;
 	bool msgAv;
 
-	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG)) != 0) {
+	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_CHILD_DIED)) != 0) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
 
 	p = proc_getRunning();
+
+	/* TODO we need a result for EV_CHILD_DIED (and maybe for others, too) */
+
 	msgAv = vfs_msgAvailableFor(p->pid,events);
 	if(!msgAv) {
 		proc_sleep(events);
@@ -928,8 +934,10 @@ static void sysc_exec(sSysCallStack *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
-	/* TODO file:/ is not necessarily at the beginning */
-	file = vfsr_openFile(p->pid,VFS_READ,path + strlen("file:"));
+	/* skip file: */
+	if(strncmp(path,"file:",5) == 0)
+		path += 5;
+	file = vfsr_openFile(p->pid,VFS_READ,path);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;
@@ -972,7 +980,7 @@ static void sysc_exec(sSysCallStack *stack) {
 	/* now remove the process-data */
 	proc_changeSize(-p->dataPages,CHG_DATA);
 	/* copy path so that we can identify the process */
-	memcpy(p->name,pathSave + (pathLen > MAX_PROC_NAME_LEN ? (pathLen - MAX_PROC_NAME_LEN) : 0),
+	memcpy(p->command,pathSave + (pathLen > MAX_PROC_NAME_LEN ? (pathLen - MAX_PROC_NAME_LEN) : 0),
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
 	/* load program and prepare interrupt-stack */

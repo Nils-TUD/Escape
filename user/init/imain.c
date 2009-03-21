@@ -54,10 +54,7 @@ s32 main(void) {
 
 	/* now load the shell */
 	if(fork() == 0) {
-		s8 *args[] = {"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-				"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-				"ccccccccccccccccccccccccccccccccccccc","abc","def","ghi","a","b","","c",NULL};
-		exec("file:/apps/shell",args);
+		exec("file:/apps/shell",NULL);
 		exit(0);
 	}
 
@@ -228,7 +225,7 @@ static bool loadService(s8 *services,s8 *name) {
 }
 
 static s8 *getServices(void) {
-	const u32 stepSize = 127 * sizeof(u8);
+	const u32 stepSize = 128 * sizeof(u8);
 	s32 fd;
 	u32 c,pos = 0,bufSize = stepSize;
 	s8 *buffer;

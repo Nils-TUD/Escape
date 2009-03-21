@@ -7,12 +7,13 @@
 #ifndef PROC_H_
 #define PROC_H_
 
-#define MAX_PROC_NAME_LEN	15
+#define MAX_PROC_NAME_LEN	30
 
 /* the events we can wait for */
 #define EV_NOEVENT			0
 #define EV_CLIENT			1
 #define EV_RECEIVED_MSG		2
+#define EV_CHILD_DIED		4
 
 /* process-data */
 typedef struct {
@@ -23,7 +24,7 @@ typedef struct {
 	u32 dataPages;
 	u32 stackPages;
 	u64 cycleCount;
-	s8 name[MAX_PROC_NAME_LEN + 1];
+	s8 command[MAX_PROC_NAME_LEN + 1];
 } sProc;
 
 /* the process states */

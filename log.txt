@@ -5,40 +5,321 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x210000, shndx=0x10
+ELF: num=19, size=40, addr=0x214000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x00000000018091f2
+Clock cycles: 0x000000000184651e
 Initializing VFS...DONE
-Clock cycles: 0x000000000012e079
+Clock cycles: 0x000000000012b6b5
 Initializing process-management...DONE
-Clock cycles: 0x00000000000df06e
+Clock cycles: 0x00000000000d49c1
 Initializing IDT...DONE
-Clock cycles: 0x00000000000aab89
+Clock cycles: 0x0000000000146520
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
-Got interrupt 39 (<unknown>) @ 0x0
 Drives:
 	  Primary Master (present=1,sectors=10080)
 	  	  0: start=0x3F, sectors=10017 size=5128704 byte
 	  Primary Slave (present=0,sectors=0)
 	  Secondary Master (present=0,sectors=0)
 	  Secondary Slave (present=0,sectors=0)
-argc=8, argv=0xbfffffdc
-	  arg0: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbb
-bbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccc
-	  arg1: abc
-	  arg2: def
-	  arg3: ghi
-	  arg4: a
-	  arg5: b
-	  arg6: 
-	  arg7: c
 Welcome to Escape v0.1!
 
 Try 'help' to see the current features :)
 
-# 
+# ps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
+00	  	  00	  	  010	 	  	  Ready  	 	  0x0000218834a8bec6	  init
+01	  	  00	  	  010	 	  	  Blocked	 	  0x0000000046d59ddf	  ata
+02	  	  00	  	  029	 	  	  Blocked	 	  0x000000000ad1b6ee	  fs
+03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000b6c631	  file:/services/speaker
+04	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000a8f51f	  file:/services/keyboard
+05	  	  00	  	  011	 	  	  Ready  	 	  0x0000000002a1c0d1	  file:/services/video
+06	  	  00	  	  018	 	  	  Blocked	 	  0x0000000002ffc7d8	  file:/services/vterm
+07	  	  00	  	  010	 	  	  Blocked	 	  0x000000000125edfa	  file:/apps/shell
+08	  	  07	  	  007	 	  	  Running	 	  0x000000000146d97e	  file:/apps/ps
+
+# echo hier und da
+hier und da 
+# test
+test: Command not found
+# help
+Currently you can use the following commands:
+	  ls <dir>
+	  echo <string>
+	  ps
+	  kill <pid>
+	  mem
+	  cat <file>
+
+You can scroll the screen with pageUp, pageDown, shift+arrowUp, shift+arrowDown
+
+# cat file:/bigtestfifile
+Das ist der 0 Test
+Das ist der 1 Test
+Das ist der 2 Test
+Das ist der 3 Test
+Das ist der 4 Test
+Das ist der 5 Test
+Das ist der 6 Test
+Das ist der 7 Test
+Das ist der 8 Test
+Das ist der 9 Test
+Das ist der 10 Test
+Das ist der 11 Test
+Das ist der 12 Test
+Das ist der 13 Test
+Das ist der 14 Test
+Das ist der 15 Test
+Das ist der 16 Test
+Das ist der 17 Test
+Das ist der 18 Test
+Das ist der 19 Test
+Das ist der 20 Test
+Das ist der 21 Test
+Das ist der 22 Test
+Das ist der 23 Test
+Das ist der 24 Test
+Das ist der 25 Test
+Das ist der 26 Test
+Das ist der 27 Test
+Das ist der 28 Test
+Das ist der 29 Test
+Das ist der 30 Test
+Das ist der 31 Test
+Das ist der 32 Test
+Das ist der 33 Test
+Das ist der 34 Test
+Das ist der 35 Test
+Das ist der 36 Test
+Das ist der 37 Test
+Das ist der 38 Test
+Das ist der 39 Test
+Das ist der 40 Test
+Das ist der 41 Test
+Das ist der 42 Test
+Das ist der 43 Test
+Das ist der 44 Test
+Das ist der 45 Test
+Das ist der 46 Test
+Das ist der 47 Test
+Das ist der 48 Test
+Das ist der 49 Test
+Das ist der 50 Test
+Das ist der 51 ist der 26 Test
+Das ist der 27 Test
+Das ist der 28 Test
+Das ist der 29 Test
+Das ist der 30 Test
+Das ist der 31 Test
+Das ist der 32 Test
+Das ist der 33 Test
+Das ist der 34 Test
+Das ist der 35 Test
+Das ist der 36 Test
+Das ist der 37 Test
+Das ist der 38 Test
+Das ist der 39 Test
+Das ist der 40 Test
+Das ist der 41 Test
+Das ist der 42 Test
+Das ist der 43 Test
+Das ist der 44 Test
+Das ist der 45 Test
+Das ist der 46 Test
+Das ist der 47 Test
+Das ist der 48 Test
+Das ist der 49 Test
+Das ist der 50 Test
+Das ist der  ist der 77 Test
+Das ist der 78 Test
+Das ist der 79 Test
+Das ist der 80 Test
+Das ist der 81 Test
+Das ist der 82 Test
+Das ist der 83 Test
+Das ist der 84 Test
+Das ist der 85 Test
+Das ist der 86 Test
+Das ist der 87 Test
+Das ist der 88 Test
+Das ist der 89 Test
+Das ist der 90 Test
+Das ist der 91 Test
+Das ist der 92 Test
+Das ist der 93 Test
+Das ist der 94 Test
+Das ist der 95 Test
+Das ist der 96 Test
+Das ist der 97 Test
+Das ist der 98 Test
+Das ist der 99 Test
+Das ist der 100 Test
+Das ist der 101 Test
+Das ist der 102  der 77 Test
+Das ist der 78 Test
+Das ist der 79 Test
+Das ist der 80 Test
+Das ist der 81 Test
+Das ist der 82 Test
+Das ist der 83 Test
+Das ist der 84 Test
+Das ist der 85 Test
+Das ist der 86 Test
+Das ist der 87 Test
+Das ist der 88 Test
+Das ist der 89 Test
+Das ist der 90 Test
+Das ist der 91 Test
+Das ist der 92 Test
+Das ist der 93 Test
+Das ist der 94 Test
+Das ist der 95 Test
+Das ist der 96 Test
+Das ist der 97 Test
+Das ist der 98 Test
+Das ist der 99 Test
+Das ist der 100 Test
+Das ist der 101 Test
+Das ist der t
+Das ist der 127 Test
+Das ist der 128 Test
+Das ist der 129 Test
+Das ist der 130 Test
+Das ist der 131 Test
+Das ist der 132 Test
+Das ist der 133 Test
+Das ist der 134 Test
+Das ist der 135 Test
+Das ist der 136 Test
+Das ist der 137 Test
+Das ist der 138 Test
+Das ist der 139 Test
+Das ist der 140 Test
+Das ist der 141 Test
+Das ist der 142 Test
+Das ist der 143 Test
+Das ist der 144 Test
+Das ist der 145 Test
+Das ist der 146 Test
+Das ist der 147 Test
+Das ist der 148 Test
+Das ist der 149 Test
+Das ist der 150 Test
+Das ist derist der 127 Test
+Das ist der 128 Test
+Das ist der 129 Test
+Das ist der 130 Test
+Das ist der 131 Test
+Das ist der 132 Test
+Das ist der 133 Test
+Das ist der 134 Test
+Das ist der 135 Test
+Das ist der 136 Test
+Das ist der 137 Test
+Das ist der 138 Test
+Das ist der 139 Test
+Das ist der 140 Test
+Das ist der 141 Test
+Das ist der 142 Test
+Das ist der 143 Test
+Das ist der 144 Test
+Das ist der 145 Test
+Das ist der 146 Test
+Das ist der 147 Test
+Das ist der 148 Test
+Das ist der 149 Test
+Das ist der 150 Test
+Das i175 Test
+Das ist der 176 Test
+Das ist der 177 Test
+Das ist der 178 Test
+Das ist der 179 Test
+Das ist der 180 Test
+Das ist der 181 Test
+Das ist der 182 Test
+Das ist der 183 Test
+Das ist der 184 Test
+Das ist der 185 Test
+Das ist der 186 Test
+Das ist der 187 Test
+Das ist der 188 Test
+Das ist der 189 Test
+Das ist der 190 Test
+Das ist der 191 Test
+Das ist der 192 Test
+Das ist der 193 Test
+Das ist der 194 Test
+Das ist der 195 Test
+Das ist der 196 Test
+Das ist der 197 Test
+Das ist der 198 Test
+Das ist der 199 Test
+# cat file:/bigfilehelpcat file:/bigfilepscat file:/bigfileps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
+00	  	  00	  	  010	 	  	  Ready  	 	  0x002d94c88b80e0d3	  init
+01	  	  00	  	  010	 	  	  Blocked	 	  0x000000007070597d	  ata
+02	  	  00	  	  029	 	  	  Blocked	 	  0x000000001301d97b	  fs
+03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000b6c631	  file:/services/speaker
+04	  	  00	  	  007	 	  	  Blocked	 	  0x0000000010af659b	  file:/services/keyboard
+05	  	  00	  	  011	 	  	  Ready  	 	  0x00000000393acfd4	  file:/services/video
+06	  	  00	  	  018	 	  	  Blocked	 	  0x000000003724b933	  file:/services/vterm
+07	  	  00	  	  012	 	  	  Blocked	 	  0x00000000052cdf49	  file:/apps/shell
+08	  	  07	  	  007	 	  	  Running	 	  0x0000000001507e18	  file:/apps/ps
+
+# help
+Currently you can use the following commands:
+	  ls <dir>
+	  echo <string>
+	  ps
+	  kill <pid>
+	  mem
+	  cat <file>
+
+You can scroll the screen with pageUp, pageDown, shift+arrowUp, shift+arrowDown
+
+# pls fil:(/
+   2 .
+   2 ..
+  11 lost+found
+  12 apps
+  13 etc
+  14 services
+  16 test
+  17 file.txt
+  19 bigfile
+# ls /
+   2 .
+   2 ..
+  11 lost+found
+  12 apps
+  13 etc
+  14 services
+  16 test
+  17 file.txt
+  19 bigfile
+# ls /
+   2 .
+   2 ..
+  11 lost+found
+  12 apps
+  13 etc
+  14 services
+  16 test
+  17 file.txt
+  19 bigfile
+# help
+Currently you can use the following commands:
+	  ls <dir>
+	  echo <string>
+	  ps
+	  kill <pid>
+	  mem
+	  cat <file>
+
+You can scroll the screen with pageUp, pageDown, shift+arrowUp, shift+arrowDown
+
+# helppsecho hier und datesthelpcat file:/bigfilepshelpls /helppsecho hier und datesthelpcat file:/bigfilepshelpls /helppsecho hier und datesthelp

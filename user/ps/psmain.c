@@ -9,7 +9,6 @@
 #include <dir.h>
 #include <proc.h>
 #include <string.h>
-#include "ps.h"
 
 /**
  * Prints the given process
@@ -26,7 +25,7 @@ static cstring states[] = {
 	"Zombie "
 };
 
-s32 shell_cmdPs(u32 argc,s8 **argv) {
+s32 main(u32 argc,s8 **argv) {
 	s32 dd,dfd;
 	sProc proc;
 	sDirEntry *entry;
@@ -36,7 +35,7 @@ s32 shell_cmdPs(u32 argc,s8 **argv) {
 	UNUSED(argc);
 	UNUSED(argv);
 
-	printf("PID\t\tPPID\tPAGES\t\tSTATE\t\t\tCYCLES\t\t\t\t\t\t\tNAME\n");
+	printf("PID\t\tPPID\tPAGES\t\tSTATE\t\t\tCYCLES\t\t\t\t\t\t\tCOMMAND\n");
 
 	if((dd = opendir(path)) >= 0) {
 		while((entry = readdir(dd)) != NULL) {
@@ -71,5 +70,5 @@ static void ps_printProcess(sProc *p) {
 	u32 *ptr = (u32*)&p->cycleCount;
 	printf("%02d\t\t%02d\t\t%03d\t\t\t%s\t\t0x%08x%08x\t%s\n",
 			p->pid,p->parentPid,p->textPages + p->dataPages + p->stackPages,
-			states[p->state],*(ptr + 1),*ptr,p->name);
+			states[p->state],*(ptr + 1),*ptr,p->command);
 }

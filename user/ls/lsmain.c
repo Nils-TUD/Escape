@@ -10,21 +10,31 @@
 
 s32 main(u32 argc,s8 *argv[]) {
 	s32 dd;
+	s8 *path;
 	sDirEntry *entry;
 
-	if(argc != 2) {
-		printf("Usage: %s <dir>\n",argv[0]);
+	if(argc == 1) {
+		path = getEnv("CWD");
+		if(path == NULL) {
+			printf("Unable to get CWD\n");
+			return 1;
+		}
+	}
+	else if(argc == 2)
+		path = argv[1];
+	else {
+		printf("Usage: %s [<dir>]\n",argv[0]);
 		return 1;
 	}
 
-	if((dd = opendir(argv[1])) >= 0) {
+	if((dd = opendir(path)) >= 0) {
 		while((entry = readdir(dd)) != NULL) {
 			printf("% 4d %s\n",entry->nodeNo,entry->name);
 		}
 		closedir(dd);
 	}
 	else {
-		printf("Unable to open '%s'\n",argv[1]);
+		printf("Unable to open '%s'\n",path);
 		return 1;
 	}
 

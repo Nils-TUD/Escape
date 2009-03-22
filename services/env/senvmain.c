@@ -109,10 +109,10 @@ s32 main(void) {
 		return 1;
 	}
 
-	if(setSigHandler(SIG_PROC_DIED,procDiedHandler) < 0) {
+	/*if(setSigHandler(SIG_PROC_DIED,procDiedHandler) < 0) {
 		printLastError();
 		return 1;
-	}
+	}*/
 
 	/* set initial vars for proc 0 */
 	env_set(0,(s8*)"CWD",(s8*)"file:/");
@@ -158,6 +158,24 @@ s32 main(void) {
 					}
 					break;
 
+					case MSG_ENV_SET: {
+						u8 *data = (u8*)malloc(msg.length + 1);
+						if(data != NULL) {
+							if(read(fd,data,msg.length) > 0) {
+								tPid pid;
+								u32 envVarLen;
+								s8 *envVar;
+								envVarLen = disasmBinDataMsg(msg.length,data,&envVar,"2",&pid);
+
+								/* terminate */
+								*(envVar + envVarLen) = '\0';
+								env_put(pid,envVar);
+							}
+						}
+						free(data);
+					}
+					break;
+
 					case MSG_ENV_GETI: {
 						u8 *data = (u8*)malloc(msg.length + 1);
 						if(data != NULL) {
@@ -181,24 +199,6 @@ s32 main(void) {
 							}
 							free(data);
 						}
-					}
-					break;
-
-					case MSG_ENV_SET: {
-						u8 *data = (u8*)malloc(msg.length + 1);
-						if(data != NULL) {
-							if(read(fd,data,msg.length) > 0) {
-								tPid pid;
-								u32 envVarLen;
-								s8 *envVar;
-								envVarLen = disasmBinDataMsg(msg.length,data,&envVar,"2",&pid);
-
-								/* terminate */
-								*(envVar + envVarLen) = '\0';
-								env_put(pid,envVar);
-							}
-						}
-						free(data);
 					}
 					break;
 				}
@@ -290,11 +290,11 @@ static bool env_set(tPid pid,s8 *name,s8 *value) {
 		/* we don't need the previous value anymore */
 		free(var->value);
 		/* set value */
+		len = strlen(value);
 		var->value = (s8*)malloc(len + 1);
 		if(var->value == NULL)
 			return false;
 		memcpy(var->value,value,len + 1);
-		var->value = value;
 		return true;
 	}
 

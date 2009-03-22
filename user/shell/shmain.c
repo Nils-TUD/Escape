@@ -19,6 +19,8 @@
 #include "cmd/echo.h"
 #include "cmd/env.h"
 #include "cmd/help.h"
+#include "cmd/pwd.h"
+#include "cmd/cd.h"
 
 #define APPS_DIR			"file:/apps/"
 
@@ -90,6 +92,8 @@ static sShellCmd commands[] = {
 	{1,	{"echo"	}, shell_cmdEcho	},
 	{1,	{"env"	}, shell_cmdEnv		},
 	{1,	{"help"	}, shell_cmdHelp	},
+	{1, {"pwd"	}, shell_cmdPwd		},
+	{1, {"cd"	}, shell_cmdCd		},
 };
 
 /* buffer for arguments */
@@ -98,20 +102,12 @@ static s8 *args[MAX_ARG_COUNT];
 
 s32 main(u32 argc,s8 **argv) {
 	s8 *buffer;
+	s8 *path;
 
 	printf("\033f\011Welcome to Escape v0.1!\033r\011\n");
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");
-
-	/*u32 i;
-	for(i = 0; i < 100; i++) {
-		printf("# echo test\n");
-		shell_executeCmd("echo test");
-	}
-	shell_executeCmd("ps");
-	printHeap();
-	return 0;*/
 
 	while(1) {
 		/* create buffer (history will free it) */
@@ -122,7 +118,12 @@ s32 main(u32 argc,s8 **argv) {
 		}
 
 		/* read command */
-		printf("# ");
+		path = getEnv("CWD");
+		if(path == NULL) {
+			printf("ERROR: unable to get CWD\n");
+			return 1;
+		}
+		printf("%s # ",path);
 		shell_readLine(buffer,MAX_CMD_LEN);
 
 		/* execute it */

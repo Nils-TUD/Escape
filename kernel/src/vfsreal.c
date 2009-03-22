@@ -232,6 +232,9 @@ s32 vfsr_openFile(tPid pid,u8 flags,s8 *path) {
 	/* process is now running again, and we've received the reply */
 	/* that's magic, isn't it? ;D */
 
+	/* error? */
+	if(req->inodeNo < 0)
+		return req->inodeNo;
 	/* now open the file */
 	res = vfs_openFile(pid,flags,req->inodeNo);
 	kheap_free(req);

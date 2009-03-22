@@ -113,6 +113,22 @@ void printLastError(void) {
 			debugf("Invalid process-id\n");
 			break;
 
+		case ERR_NO_DIRECTORY:
+			debugf("A part of the path is no directory\n");
+			break;
+
+		case ERR_PATH_NOT_FOUND:
+			debugf("Path not found\n");
+			break;
+
+		case ERR_FS_READ_FAILED:
+			debugf("Read from fs failed\n");
+			break;
+
+		case ERR_INVALID_PATH:
+			debugf("Invalid path\n");
+			break;
+
 		default:
 			debugf("No error\n");
 			break;

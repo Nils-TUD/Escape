@@ -311,7 +311,8 @@ s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count) {
 	else {
 		/* query the fs-service to read from the inode */
 		readBytes = vfsr_readFile(pid,e->nodeNo,buffer,e->position,count);
-		e->position += readBytes;
+		if(readBytes > 0)
+			e->position += readBytes;
 	}
 
 	return readBytes;
@@ -346,7 +347,8 @@ s32 vfs_writeFile(tPid pid,tFile file,u8 *buffer,u32 count) {
 	else {
 		/* query the fs-service to write to the inode */
 		writtenBytes = vfsr_writeFile(pid,e->nodeNo,buffer,e->position,count);
-		e->position += writtenBytes;
+		if(writtenBytes > 0)
+			e->position += writtenBytes;
 	}
 
 	return writtenBytes;

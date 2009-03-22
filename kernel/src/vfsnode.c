@@ -119,30 +119,31 @@ s32 vfsn_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 	/* search for xyz:// */
 	pos = strchri(path,':');
 
-	/* no "protocol" given, so assume file: */
+	/* we require a complete path here */
 	if(*(path + pos) == '\0')
-		return ERR_REAL_PATH;
-	else {
-		/* search our root node */
-		n = NODE_FIRST_CHILD(nodes);
-		while(n != NULL) {
-			if(strncmp(n->name,path,pos) == 0) {
-				path += pos + 1;
-				if(*path != '/' && *path != '\0')
-					panic("TODO what to do here?");
-				break;
-			}
-			n = n->next;
+		return ERR_INVALID_PATH;
+
+	/* search our root node */
+	n = NODE_FIRST_CHILD(nodes);
+	while(n != NULL) {
+		if(strncmp(n->name,path,pos) == 0) {
+			path += pos + 1;
+			break;
 		}
-
-		/* no matching root found? */
-		if(n == NULL)
-			return ERR_VFS_NODE_NOT_FOUND;
-
-		/* found file: ? */
-		if(n == FILE_ROOT())
-			return ERR_REAL_PATH;
+		n = n->next;
 	}
+
+	/* no matching root found? */
+	if(n == NULL)
+		return ERR_VFS_NODE_NOT_FOUND;
+
+	/* no absolute path? */
+	if(*path != '/' && *path != '\0')
+		return ERR_INVALID_PATH;
+
+	/* found file: ? */
+	if(n == FILE_ROOT())
+		return ERR_REAL_PATH;
 
 	/* skip slashes */
 	while(*path == '/')
@@ -171,7 +172,6 @@ s32 vfsn_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 			if(!*path)
 				break;
 
-			/* TODO ?? */
 			if(n->type == T_SERVICE)
 				break;
 

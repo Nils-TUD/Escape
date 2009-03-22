@@ -90,11 +90,6 @@ s32 main(void) {
 							read(fd,data,header.length);
 
 							no = ext2_resolvePath(&ext2,data->path);
-							if(no != EXT2_BAD_INO) {
-								/*sCachedInode *cnode = ext2_icache_request(&ext2,no);
-								ext2_dbg_printInode(&(cnode->inode));
-								ext2_icache_release(&ext2,cnode);*/
-							}
 
 							/*debugf("Received an open from %d of '%s' for ",data->pid,data + 1);
 							if(data->flags & IO_READ)

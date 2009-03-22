@@ -10,7 +10,8 @@
 #include "common.h"
 #include "io.h"
 
-#define MAX_NAME_LEN 255
+#define MAX_NAME_LEN	50
+#define MAX_PATH_LEN	255
 
 /* a directory-entry */
 typedef struct {
@@ -20,6 +21,15 @@ typedef struct {
 	u8 fileType;
 	s8 name[];
 } __attribute__((packed)) sDirEntry;
+
+/**
+ * Builds an absolute path from the given one. If it starts with no namespace ("file:" e.g.)
+ * and is not absolute (starts with "/") CWD will be taken to build the absolute path.
+ *
+ * @param path your relative path
+ * @return the absolute path (statically stored!)
+ */
+s8 *abspath(const s8 *path);
 
 /**
  * Opens the given directory

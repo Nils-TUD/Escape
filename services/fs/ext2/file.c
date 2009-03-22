@@ -24,7 +24,7 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	/* at first we need the inode */
 	cnode = ext2_icache_request(e,inodeNo);
 	if(cnode == NULL)
-		return 0;
+		return ERR_FS_READ_FAILED;
 
 	/* nothing left to read? */
 	if((s32)offset < 0 || (s32)offset >= cnode->inode.size)
@@ -49,7 +49,7 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 		/* request block */
 		tmpBuffer = ext2_bcache_request(e,block);
 		if(tmpBuffer == NULL)
-			return 0;
+			return ERR_FS_READ_FAILED;
 
 		/* copy the requested part */
 		c = MIN(leftBytes,blockSize - offset);

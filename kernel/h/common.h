@@ -29,7 +29,7 @@ typedef s32 tFile;
 /* file-descriptor */
 typedef u16 tFD;
 /* inode-number */
-typedef u32 tInodeNo;
+typedef s32 tInodeNo;
 /* signal-number */
 typedef u8 tSig;
 
@@ -88,6 +88,10 @@ typedef enum {false = 0, true = 1} bool;
 #define ERR_FS_NOT_FOUND			-23
 #define ERR_INVALID_SIGNAL			-24
 #define ERR_INVALID_PID				-25
+#define ERR_NO_DIRECTORY			-26
+#define ERR_PATH_NOT_FOUND			-27
+#define ERR_FS_READ_FAILED			-28
+#define ERR_INVALID_PATH			-29
 #define ERR_REAL_PATH				-200
 
 /* debugging */

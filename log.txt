@@ -12,14 +12,15 @@ Available memory:
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x00000000019d4294
+Clock cycles: 0x0000000001d0cb6b
 Initializing VFS...DONE
-Clock cycles: 0x00000000001db63b
+Clock cycles: 0x000000000019f947
 Initializing process-management...DONE
-Clock cycles: 0x00000000000c6987
+Clock cycles: 0x00000000000d978e
 Initializing IDT...DONE
-Clock cycles: 0x00000000000a2843
+Clock cycles: 0x00000000000adf91
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
+Got interrupt 39 (<unknown>) @ 0x0
 Drives:
 	  Primary Master (present=1,sectors=10080)
 	  	  0: start=0x3F, sectors=10017 size=5128704 byte
@@ -30,20 +31,22 @@ Welcome to Escape v0.1!
 
 Try 'help' to see the current features :)
 
-file:/ # cd apps
-file:/apps/ # ls
-  12 .
-   2 ..
-  25 cat
-  26 kill
-  27 ls
-  28 mem
-  29 ps
-  30 shell
-  31 task2
-file:/apps/ # pwd
-file:/apps/
-file:/apps/ # cd ..
-file:/ # pwd
-file:/
+file:/ # cdsy sytestem:
+Unable to change to 'system:/'
+file:/ # cd system/:/processes/0
+Unable to change to 'system:/processes/0/'
+file:/ # cd bla
+Directory 'file:/bla/' does not exist
+file:/ # cd muh
+Directory 'file:/muh/' does not exist
+file:/ # cd ..
+file:/ # cd system
+Directory 'file:/system/' does not exist
+file:/ # cd yssystem:
+Unable to change to 'system:/'
+file:/ # syscd /
+file:/ # cd /bla
+Directory 'file:/bla/' does not exist
+file:/ # cd /test
+file:/test/ # cd /
 file:/ # 

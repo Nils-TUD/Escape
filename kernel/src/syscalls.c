@@ -357,6 +357,10 @@ static void sysc_open(sSysCallStack *stack) {
 		if(strncmp(path,"file:",5) == 0)
 			path += 5;
 		file = vfsr_openFile(p->pid,flags,path);
+		if(file < 0) {
+			SYSC_ERROR(stack,file);
+			return;
+		}
 
 		/* get free fd */
 		fd = proc_getFreeFd();

@@ -31,9 +31,6 @@ static void test_vfsn(void) {
 static void test_vfsn_resolvePath(void) {
 	test_caseStart("Testing vfsn_resolvePath()");
 
-	if(!test_vfsn_resolveRealPath("/")) return;
-	if(!test_vfsn_resolveRealPath("//")) return;
-	if(!test_vfsn_resolveRealPath("///")) return;
 	if(!test_vfsn_resolvePathCpy("system:/..","system")) return;
 	if(!test_vfsn_resolvePathCpy("system://../..","system")) return;
 	if(!test_vfsn_resolvePathCpy("system://./.","system")) return;
@@ -47,11 +44,6 @@ static void test_vfsn_resolvePath(void) {
 	if(!test_vfsn_resolvePathCpy("system://///processes/./././.","processes")) return;
 	if(!test_vfsn_resolvePathCpy("system:/../processes/../processes/./","processes")) return;
 	if(!test_vfsn_resolvePathCpy("system://..//..//..","system")) return;
-	/* TODO test as soon as relative paths are possible
-	if(!test_vfsn_resolvePathCpy("system/.","system")) return;
-	if(!test_vfsn_resolvePathCpy("system/./","system")) return;
-	if(!test_vfsn_resolvePathCpy("system/./.","system")) return;
-	if(!test_vfsn_resolvePathCpy("../system/../system/./","system")) return; */
 
 	test_caseSucceded();
 }

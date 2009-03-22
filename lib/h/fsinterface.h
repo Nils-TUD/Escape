@@ -35,6 +35,7 @@ typedef struct {
 /* the open-response-data */
 typedef struct {
 	tPid pid;
+	/* may be an error-code */
 	tInodeNo inodeNo;
 } sMsgDataFSOpenResp;
 
@@ -49,7 +50,8 @@ typedef struct {
 /* the read-response-data */
 typedef struct {
 	tPid pid;
-	u32 count;
+	/* may be an error-code */
+	s32 count;
 	/* data follows */
 	u8 data[];
 } sMsgDataFSReadResp;
@@ -67,7 +69,8 @@ typedef struct {
 /* the write-response-data */
 typedef struct {
 	tPid pid;
-	u32 count;
+	/* may be an error-code */
+	s32 count;
 } sMsgDataFSWriteResp;
 
 /* the close-request-data */

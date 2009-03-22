@@ -19,14 +19,13 @@ tInodeNo ext2_resolvePath(sExt2 *e,string path) {
 	s8 *p = path;
 	u32 pos;
 
-	if(*p != '/') {
-		/* TODO */
-		return EXT2_BAD_INO;
-	}
+	if(*p != '/')
+		return ERR_INVALID_PATH;
 
 	cnode = ext2_icache_request(e,EXT2_ROOT_INO);
 	if(cnode == NULL)
-		return EXT2_BAD_INO;
+		return ERR_FS_READ_FAILED;
+
 	/* skip '/' */
 	p++;
 
@@ -36,14 +35,14 @@ tInodeNo ext2_resolvePath(sExt2 *e,string path) {
 		sDirEntry *entry = (sDirEntry*)malloc(sizeof(u8) * BLOCK_SIZE(e));
 		if(entry == NULL) {
 			ext2_icache_release(e,cnode);
-			return EXT2_BAD_INO;
+			return ERR_NOT_ENOUGH_MEM;
 		}
 
 		/* TODO a directory may have more blocks */
 		eBak = entry;
 		if(!ext2_readBlocks(e,(u8*)entry,cnode->inode.dBlocks[0],1)) {
 			ext2_icache_release(e,cnode);
-			return EXT2_BAD_INO;
+			return ERR_FS_READ_FAILED;
 		}
 
 		while(entry->inode != 0) {
@@ -53,7 +52,7 @@ tInodeNo ext2_resolvePath(sExt2 *e,string path) {
 				cnode = ext2_icache_request(e,entry->inode);
 				if(cnode == NULL) {
 					free(eBak);
-					return EXT2_BAD_INO;
+					return ERR_FS_READ_FAILED;
 				}
 
 				/* skip slashes */
@@ -68,7 +67,7 @@ tInodeNo ext2_resolvePath(sExt2 *e,string path) {
 				if((cnode->inode.mode & EXT2_S_IFDIR) == 0) {
 					ext2_icache_release(e,cnode);
 					free(eBak);
-					return EXT2_BAD_INO;
+					return ERR_NO_DIRECTORY;
 				}
 				break;
 			}
@@ -81,7 +80,7 @@ tInodeNo ext2_resolvePath(sExt2 *e,string path) {
 		if(entry->inode == 0) {
 			free(eBak);
 			ext2_icache_release(e,cnode);
-			return EXT2_BAD_INO;
+			return ERR_PATH_NOT_FOUND;
 		}
 
 		free(eBak);

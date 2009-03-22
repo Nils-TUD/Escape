@@ -5,20 +5,20 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x213000, shndx=0x10
+ELF: num=19, size=40, addr=0x214000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000001e6f789
+Clock cycles: 0x00000000023abf19
 Initializing VFS...DONE
-Clock cycles: 0x0000000000123b07
+Clock cycles: 0x00000000001b617d
 Initializing process-management...DONE
-Clock cycles: 0x00000000000ea900
+Clock cycles: 0x0000000000125b7a
 Initializing IDT...DONE
-Clock cycles: 0x00000000000a32a2
+Clock cycles: 0x00000000006f0ad1
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
 Got interrupt 39 (<unknown>) @ 0x0
 Drives:
@@ -27,19 +27,145 @@ Drives:
 	  Primary Slave (present=0,sectors=0)
 	  Secondary Master (present=0,sectors=0)
 	  Secondary Slave (present=0,sectors=0)
+proc 1: count=1, pageCount=1
+proc 1: pageCount=2
+proc 2: count=1, pageCount=1
+proc 2: pageCount=2
+proc 0: count=1, pageCount=1
+proc 0: pageCount=2
+proc 2: count=1, pageCount=2
+proc 2: pageCount=3
+proc 2: count=1, pageCount=3
+proc 2: pageCount=4
+proc 2: count=1, pageCount=4
+proc 2: pageCount=5
+proc 2: count=1, pageCount=5
+proc 2: pageCount=6
+proc 2: count=1, pageCount=6
+proc 2: pageCount=7
+proc 2: count=1, pageCount=7
+proc 2: pageCount=8
+proc 2: count=1, pageCount=8
+proc 2: pageCount=9
+proc 2: count=1, pageCount=9
+proc 2: pageCount=10
+proc 2: count=1, pageCount=10
+proc 2: pageCount=11
+proc 2: count=1, pageCount=11
+proc 2: pageCount=12
+proc 2: count=1, pageCount=12
+proc 2: pageCount=13
+proc 2: count=1, pageCount=13
+proc 2: pageCount=14
+proc 2: count=1, pageCount=14
+proc 2: pageCount=15
+proc 2: count=1, pageCount=15
+proc 2: pageCount=16
+proc 2: count=1, pageCount=16
+proc 2: pageCount=17
+proc 2: count=1, pageCount=17
+proc 2: pageCount=18
+proc 2: count=1, pageCount=18
+proc 2: pageCount=19
+proc 5: count=1, pageCount=1
+proc 5: pageCount=2
+proc 7: count=1, pageCount=1
+proc 7: pageCount=2
 Welcome to Escape v0.1!
 
 Try 'help' to see the current features :)
 
-# env
-Got msg 0 with length 6
+proc 8: count=1, pageCount=1
+proc 8: pageCount=2
+# ls
+Usage: ls <dir>
+# ls/ /
+proc 9: count=1, pageCount=1
+proc 9: pageCount=2
+   2 .
+   2 ..
+  11 lost+found
+  12 apps
+  13 etc
+  14 services
+  16 test
+  17 file.txt
+  19 bigfile
+# ps
+PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
+00	  	  00	  	  010	 	  	  Ready  	 	  0x00083f563ac55f09	  init
+01	  	  00	  	  010	 	  	  Blocked	 	  0x00000000654e5b0f	  ata
+02	  	  00	  	  029	 	  	  Blocked	 	  0x00000000182c2bbd	  fs
+03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000ef40c3	  file:/services/speaker
+04	  	  00	  	  007	 	  	  Blocked	 	  0x0000000001397061	  file:/services/keyboard
+05	  	  00	  	  011	 	  	  Blocked	 	  0x0000000002cad0f5	  file:/services/video
+06	  	  00	  	  015	 	  	  Blocked	 	  0x0000000003a24926	  file:/services/vterm
+07	  	  00	  	  011	 	  	  Blocked	 	  0x0000000000eb0428	  file:/services/env
+08	  	  00	  	  011	 	  	  Blocked	 	  0x0000000002de2c20	  file:/apps/shell
+09	  	  08	  	  007	 	  	  Running	 	  0x00000000016f2204	  file:/apps/ps
+
+# ls /
+proc 9: count=1, pageCount=1
+proc 9: pageCount=2
+   2 .
+   2 ..
+  11 lost+found
+  12 apps
+  13 etc
+  14 services
+  16 test
+  17 file.txt
+  19 bigfile
+# ehchols
+Usage: ls <dir>
+# ls /
+proc 9: count=1, pageCount=1
+proc 9: pageCount=2
+   2 .
+   2 ..
+  11 lost+found
+  12 apps
+  13 etc
+  14 services
+  16 test
+  17 file.txt
+  19 bigfile
+# echo bla
+bla 
+# ls fi/apps
+proc 9: count=1, pageCount=1
+proc 9: pageCount=2
+  12 .
+   2 ..
+  25 cat
+  26 kill
+  27 ls
+  28 mem
+  29 ps
+  30 shell
+  31 task2
+# ls /services
+proc 9: count=1, pageCount=1
+proc 9: pageCount=2
+  14 .
+   2 ..
+  20 env
+  21 keyboard
+  22 speaker
+  23 video
+  24 vterm
+# echonv
 CWD=file:/
-Got msg 0 with length 7
 PATH=file:/apps/
-Got msg 1 with length 24
-Got msg 0 with length 6
-ABC=das ist mein wert
-Got msg 1 with length 22
-Got msg 0 with length 7
-PATH=file:/services
-# 
+# help
+Currently you can use the following commands:
+	  ls <dir>
+	  echo <string>
+	  ps
+	  kill <pid>
+	  mem
+	  cat <file>
+
+You can scroll the screen with pageUp, pageDown, shift+arrowUp, shift+arrowDown
+
+# echoaaaaaaaaa

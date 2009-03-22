@@ -22,37 +22,87 @@ static bool init(void);
 static s32 envFd = -1;
 static s8 *tmpValue = NULL;
 
-s8 *getenv(s8 *name) {
+/**
+ * Sends the given get-message to the env-service and returns the reply-data
+ *
+ * @param msg the message
+ * @return the received data
+ */
+static s8 *doGetEnv(sMsgHeader *msg);
+
+s8 *getEnvByIndex(u32 index) {
+	sMsgHeader *msg;
+
+	if(!init())
+		return NULL;
+
+	msg = asmBinMsg(MSG_ENV_GETI,"22",getpid(),index);
+	if(msg == NULL)
+		return NULL;
+
+	return doGetEnv(msg);
+}
+
+s8 *getEnv(const s8 *name) {
+	sMsgHeader *msg;
 	u32 nameLen = strlen(name);
-	u32 len = sizeof(sMsgDataEnvGetReq) + nameLen + 1;
-	sMsgDefHeader resp;
-	sMsgDefHeader *msg;
-	sMsgDataEnvGetReq *data;
 
 	if(!init())
 		return NULL;
 
 	/* build message */
-	msg = createDefMsg(MSG_ENV_GET,0,NULL);
+	msg = asmBinDataMsg(MSG_ENV_GET,name,nameLen + 1,"2",getpid());
 	if(msg == NULL)
 		return NULL;
-	msg->length = len;
-	data = (sMsgDataEnvGetReq*)(msg + 1);
-	data->pid = getpid();
-	memcpy(data->name,name,nameLen + 1);
+	return doGetEnv(msg);
+}
+
+void setEnv(const s8 *name,const s8* value) {
+	u32 nameLen,valLen;
+	s8 *envVar;
+	sMsgHeader *msg;
+
+	if(!init())
+		return;
+
+	nameLen = strlen(name);
+	valLen = strlen(value);
+	envVar = malloc(nameLen + valLen + 2);
+	if(envVar == NULL)
+		return;
+	strcpy(envVar,name);
+	*(envVar + nameLen) = '=';
+	strcpy(envVar + nameLen + 1,value);
+
+	/* build message */
+	msg = asmBinDataMsg(MSG_ENV_SET,envVar,nameLen + valLen + 2,"2",getpid());
+	free(envVar);
+	if(msg == NULL)
+		return;
 
 	/* send message */
-	if(write(envFd,msg,sizeof(sMsgDefHeader) + msg->length) < 0) {
-		freeDefMsg(msg);
+	if(write(envFd,msg,sizeof(sMsgHeader) + msg->length) < 0) {
+		freeMsg(msg);
+		return;
+	}
+	freeMsg(msg);
+}
+
+static s8 *doGetEnv(sMsgHeader *msg) {
+	sMsgHeader resp;
+
+	/* send message */
+	if(write(envFd,msg,sizeof(sMsgHeader) + msg->length) < 0) {
+		freeMsg(msg);
 		return NULL;
 	}
-	freeDefMsg(msg);
+	freeMsg(msg);
 
 	/* wait for reply */
 	do {
 		sleep(EV_RECEIVED_MSG);
 	}
-	while(read(envFd,&resp,sizeof(sMsgDefHeader)) < 0);
+	while(read(envFd,&resp,sizeof(sMsgHeader)) < 0);
 
 	/* free previously used value */
 	if(tmpValue != NULL)
@@ -64,36 +114,6 @@ s8 *getenv(s8 *name) {
 		return NULL;
 	read(envFd,tmpValue,resp.length);
 	return tmpValue;
-}
-
-void setenv(s8 *name,s8* value) {
-	u32 nameLen,valLen;
-	sMsgDefHeader *msg;
-	sMsgDataEnvSetReq *data;
-
-	if(!init())
-		return NULL;
-
-	/* build message */
-	msg = createDefMsg(MSG_ENV_SET,0,NULL);
-	if(msg == NULL)
-		return NULL;
-
-	nameLen = strlen(name);
-	valLen = strlen(value);
-	msg->length = sizeof(sMsgDataEnvSetReq) + nameLen + valLen + 2;
-	data = (sMsgDataEnvSetReq*)(msg + 1);
-	data->pid = getpid();
-	strcpy(data->envVar,name);
-	*(data->envVar + nameLen) = '=';
-	strcpy(data->envVar + nameLen + 1,value);
-
-	/* send message */
-	if(write(envFd,msg,sizeof(sMsgDefHeader) + msg->length) < 0) {
-		freeDefMsg(msg);
-		return NULL;
-	}
-	freeDefMsg(msg);
 }
 
 static bool init(void) {

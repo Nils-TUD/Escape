@@ -7,7 +7,9 @@
 #include <common.h>
 #include <io.h>
 #include <heap.h>
+#include <proc.h>
 #include "ext2.h"
+#include "blockcache.h"
 #include "inodecache.h"
 #include "request.h"
 

@@ -6,8 +6,10 @@
 
 #include <common.h>
 #include <io.h>
+#include <debug.h>
 #include "ext2.h"
 #include "inode.h"
+#include "blockcache.h"
 
 u32 ext2_getBlockOfInode(sExt2 *e,sInode *inode,u32 block) {
 	u32 i,blockSize,blocksPerBlock;
@@ -23,7 +25,7 @@ u32 ext2_getBlockOfInode(sExt2 *e,sInode *inode,u32 block) {
 	blockSize = BLOCK_SIZE(e);
 	blocksPerBlock = blockSize / sizeof(u32);
 	if(block < blocksPerBlock) {
-		buffer = ext2_bcache_request(e,inode->singlyIBlock);
+		buffer = (u32*)ext2_bcache_request(e,inode->singlyIBlock);
 		if(buffer == NULL)
 			return 0;
 		i = *(buffer + block);
@@ -37,13 +39,13 @@ u32 ext2_getBlockOfInode(sExt2 *e,sInode *inode,u32 block) {
 	blperBlSq = blocksPerBlock * blocksPerBlock;
 	if(block < blperBlSq) {
 		/* read the first block with block-numbers of the indirect blocks */
-		buffer = ext2_bcache_request(e,inode->doublyIBlock);
+		buffer = (u32*)ext2_bcache_request(e,inode->doublyIBlock);
 		if(buffer == NULL)
 			return 0;
 		i = *(buffer + block / blocksPerBlock);
 
 		/* read the indirect block */
-		buffer = ext2_bcache_request(e,i);
+		buffer = (u32*)ext2_bcache_request(e,i);
 		if(buffer == NULL)
 			return 0;
 		i = *(buffer + block % blocksPerBlock);
@@ -55,20 +57,20 @@ u32 ext2_getBlockOfInode(sExt2 *e,sInode *inode,u32 block) {
 	block -= blperBlSq;
 
 	/* read the first block with block-numbers of the indirect blocks of indirect-blocks */
-	buffer = ext2_bcache_request(e,inode->triplyIBlock);
+	buffer = (u32*)ext2_bcache_request(e,inode->triplyIBlock);
 	if(buffer == NULL)
 		return 0;
 	i = *(buffer + block / blperBlSq);
 
 	/* read the indirect block of indirect blocks */
 	block %= blperBlSq;
-	buffer = ext2_bcache_request(e,i);
+	buffer = (u32*)ext2_bcache_request(e,i);
 	if(buffer == NULL)
 		return 0;
 	i = *(buffer + block / blocksPerBlock);
 
 	/* read the indirect block */
-	buffer = ext2_bcache_request(e,i);
+	buffer = (u32*)ext2_bcache_request(e,i);
 	if(buffer == NULL)
 		return 0;
 	i = *(buffer + block % blocksPerBlock);

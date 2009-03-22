@@ -15,8 +15,6 @@
 #include "tvfs.h"
 #include <test.h>
 
-#define MAX_NAME_LEN 255
-
 /* forward declarations */
 static void test_vfs(void);
 static void test_vfs_readFileSystem(void);

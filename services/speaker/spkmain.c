@@ -61,8 +61,8 @@ s32 main(void) {
 		if(fd < 0)
 			sleep(EV_CLIENT);
 		else {
-			sMsgDefHeader header;
-			while(read(fd,&header,sizeof(sMsgDefHeader)) > 0) {
+			sMsgHeader header;
+			while(read(fd,&header,sizeof(sMsgHeader)) > 0) {
 				switch(header.id) {
 					case MSG_SPEAKER_BEEP: {
 						sMsgDataSpeakerBeep data;

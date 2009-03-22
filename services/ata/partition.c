@@ -31,7 +31,7 @@ typedef struct {
 
 void part_fillPartitions(sPartition *table,void *mbr) {
 	u32 i;
-	sDiskPart *src = (u8*)mbr + PART_TABLE_OFFSET;
+	sDiskPart *src = (sDiskPart*)((u8*)mbr + PART_TABLE_OFFSET);
 	for(i = 0; i < PARTITION_COUNT; i++) {
 		table->present = src->systemId != 0;
 		table->start = src->start;

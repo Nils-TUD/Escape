@@ -13,7 +13,7 @@
 
 /* the ATA-request-message */
 typedef struct {
-	sMsgDefHeader header;
+	sMsgHeader header;
 	sMsgDataATAReq data;
 } __attribute__((packed)) sMsgATAReq;
 
@@ -35,7 +35,7 @@ bool ext2_readBlocks(sExt2 *e,u8 *buffer,u32 start,u16 blockCount) {
 }
 
 bool ext2_readSectors(sExt2 *e,u8 *buffer,u64 lba,u16 secCount) {
-	sMsgDefHeader res;
+	sMsgHeader res;
 
 	/* send read-request */
 	req.data.drive = e->drive;
@@ -51,7 +51,7 @@ bool ext2_readSectors(sExt2 *e,u8 *buffer,u64 lba,u16 secCount) {
 	do {
 		sleep(EV_RECEIVED_MSG);
 	}
-	while(read(e->ataFd,&res,sizeof(sMsgDefHeader)) <= 0);
+	while(read(e->ataFd,&res,sizeof(sMsgHeader)) <= 0);
 
 	/* read response */
 	if(read(e->ataFd,buffer,res.length) < 0) {

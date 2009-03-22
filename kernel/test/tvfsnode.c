@@ -71,7 +71,7 @@ static bool test_vfsn_resolvePathCpy(cstring a,cstring b) {
 	}
 
 	node = vfsn_getNode(no);
-	return test_assertStr(node->name,b);
+	return test_assertStr(node->name,(string)b);
 }
 
 static void test_vfsn_getPath(void) {

@@ -7,19 +7,20 @@
 #include <common.h>
 #include <io.h>
 
-s32 main(u32 argc,s8 **argv) {
-	u32 i;
-
+s32 shell_cmdHelp(u32 argc,s8 **argv) {
 	UNUSED(argc);
 	UNUSED(argv);
 
 	printf("Currently you can use the following commands:\n");
-	printf("\tls <dir>\n");
-	printf("\techo <string>\n");
-	printf("\tps\n");
-	printf("\tkill <pid>\n");
-	printf("\tmem\n");
 	printf("\tcat <file>\n");
+	printf("\tkill <pid>\n");
+	printf("\tls <dir>\n");
+	printf("\tmem\n");
+	printf("\tps\n");
+	printf("\techo <string1> <string2>, ...\n");
+	printf("\tenv [<name>|<name>=<value>]\n");
+	printf("\thelp\n");
+
 	printf("\n");
 	printf("You can scroll the screen with pageUp, pageDown, shift+arrowUp, shift+arrowDown\n");
 	printf("\n");

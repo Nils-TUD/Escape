@@ -10,13 +10,21 @@
 #include "common.h"
 
 /**
+ * Returns the env-variable-name with given index
+ *
+ * @param index the index
+ * @return the name of it or NULL if the index does not exist (or it failed for another reason)
+ */
+s8 *getEnvByIndex(u32 index);
+
+/**
  * Returns the value of the given environment-variable. Note that you have to copy the value
  * if you want to keep it!
  *
  * @param name the environment-variable-name
  * @return the value
  */
-s8 *getenv(s8 *name);
+s8 *getEnv(const s8 *name);
 
 /**
  * Sets the environment-variable <name> to <value>.
@@ -24,6 +32,6 @@ s8 *getenv(s8 *name);
  * @param name the name
  * @param value the value
  */
-void setenv(s8 *name,s8* value);
+void setEnv(const s8 *name,const s8* value);
 
 #endif /* ENV_H_ */

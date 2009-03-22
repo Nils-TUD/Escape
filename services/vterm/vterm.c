@@ -46,7 +46,7 @@ typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 
 /* the header for the set-screen message */
 typedef struct {
-	sMsgDefHeader header;
+	sMsgHeader header;
 	u16 startPos;
 } __attribute__((packed)) sMsgVidSetScr;
 
@@ -85,15 +85,15 @@ typedef struct {
 
 /* the messages we'll send */
 typedef struct {
-	sMsgDefHeader header;
+	sMsgHeader header;
 	sMsgDataVidSet data;
 } __attribute__((packed)) sMsgVidSet;
 typedef struct {
-	sMsgDefHeader header;
+	sMsgHeader header;
 	sMsgDataVidSetCursor data;
 } __attribute__((packed)) sMsgVidSetCursor;
 typedef struct {
-	sMsgDefHeader header;
+	sMsgHeader header;
 	sMsgDataSpeakerBeep data;
 } __attribute__((packed)) sMsgSpeaker;
 
@@ -101,11 +101,12 @@ typedef struct {
 typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
 
 /**
- * Sends the given character to the video-driver
+ * Sends the character at given position to the video-driver
  *
- * @param c the character
+ * @param row the row
+ * @param col the col
  */
-static void vterm_sendChar(s8 c);
+static void vterm_sendChar(u8 row,u8 col);
 
 /**
  * Sets the cursor
@@ -338,11 +339,9 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 
 void vterm_puts(s8 *str) {
 	s8 c;
-	u32 newPos,oldPos = vterm.row * COLS + vterm.col;
-
-	/* just one char to print? */
-	if(*(str + 1) == '\0')
-		vterm_sendChar(*str);
+	u8 oldRow = vterm.row,oldCol = vterm.col;
+	u32 oldFirstLine = vterm.firstLine;
+	u32 newPos,oldPos = oldRow * COLS + oldCol;
 
 	while((c = *str)) {
 		if(c == '\033') {
@@ -359,23 +358,29 @@ void vterm_puts(s8 *str) {
 	if(newPos - oldPos > 1) {
 		/* so refresh all lines that need to be refreshed. thats faster than sending all
 		 * chars individually */
-		vterm_refreshLines(oldPos / COLS,((newPos - oldPos) + COLS - 1) / COLS);
+		u32 start = oldPos / COLS;
+		u32 count = ((newPos - oldPos) + COLS - 1) / COLS;
+		count += oldFirstLine - vterm.firstLine;
+		vterm_refreshLines(start,count);
 		vterm_setCursor();
 	}
+	else if(newPos - oldPos > 0)
+		vterm_sendChar(oldRow,oldCol);
 }
 
-static void vterm_sendChar(s8 c) {
-	u8 color = (vterm.background << 4) | vterm.foreground;
+static void vterm_sendChar(u8 row,u8 col) {
+	s8 *ptr = vterm.buffer.data + (vterm.currLine * COLS * 2) + (row * COLS * 2) + (col * 2);
+	u8 color = *(ptr + 1);
 
 	/* scroll to current line, if necessary */
 	if(vterm.firstVisLine != vterm.currLine)
 		vterm_scroll(vterm.firstVisLine - vterm.currLine);
 
-	/* write to video-driver */
-	msgVidSet.data.character = c;
+	/* write last character to video-driver */
+	msgVidSet.data.character = *ptr;
 	msgVidSet.data.color = color;
-	msgVidSet.data.row = vterm.row;
-	msgVidSet.data.col = vterm.col;
+	msgVidSet.data.row = row;
+	msgVidSet.data.col = col;
 	write(vterm.video,&msgVidSet,sizeof(sMsgVidSet));
 }
 
@@ -396,7 +401,7 @@ static void vterm_putchar(s8 c) {
 	}
 
 	/* write to bochs/qemu console (\r not necessary here) */
-	if(c != '\r') {
+	if(c != '\r' && c != '\a' && c != '\b') {
 		outByte(0xe9,c);
 		outByte(0x3f8,c);
 		while((inByte(0x3fd) & 0x20) == 0);
@@ -507,7 +512,7 @@ static void vterm_refreshLines(u16 start,u16 count) {
 	/* send message */
 	sMsgVidSetScr *header = (sMsgVidSetScr*)(ptr - sizeof(sMsgVidSetScr));
 	header->header.id = MSG_VIDEO_SETSCREEN;
-	header->header.length = (sizeof(sMsgVidSetScr) - sizeof(sMsgDefHeader)) + count * COLS * 2;
+	header->header.length = (sizeof(sMsgVidSetScr) - sizeof(sMsgHeader)) + count * COLS * 2;
 	header->startPos = start * COLS;
 	write(vterm.video,ptr - sizeof(sMsgVidSetScr),sizeof(sMsgVidSetScr) + count * COLS * 2);
 

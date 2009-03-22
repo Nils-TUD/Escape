@@ -26,6 +26,8 @@ static sMemArea *usableList = NULL;
 static sMemArea *freeList = NULL;
 /* a hashmap with occupied-lists, key is (address % OCC_MAP_SIZE) */
 static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
+/* total number of pages we're using */
+static u32 pageCount = 0;
 
 /**
  * Allocates a new page for areas
@@ -294,6 +296,7 @@ static bool loadNewSpace(u32 size) {
 		return false;
 	}
 
+	pageCount += count;
 	/* take one area from the freelist and put the memory in it */
 	area = freeList;
 	freeList = freeList->next;
@@ -315,6 +318,7 @@ static bool loadNewAreas(void) {
 		return false;
 
 	/* determine start- and end-address */
+	pageCount++;
 	area = (sMemArea*)(res * PAGE_SIZE);
 	end = area + (PAGE_SIZE / sizeof(sMemArea));
 
@@ -350,6 +354,7 @@ void printHeap(void) {
 	sMemArea *area;
 	u32 i;
 
+	debugf("PageCount=%d\n",pageCount);
 	debugf("UsableList:\n");
 	area = usableList;
 	while(area != NULL) {

@@ -6,6 +6,7 @@
 
 #include "../h/common.h"
 #include "../h/debug.h"
+#include "../h/proc.h"
 
 s32 lastError = 0;
 

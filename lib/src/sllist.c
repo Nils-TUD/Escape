@@ -235,7 +235,6 @@ void sll_removeFirst(sSLList *list,void *data) {
 void sll_removeIndex(sSLList *list,u32 index) {
 	sList *l = (sList*)list;
 	sNode *n = l->first,*ln = NULL;
-	u32 i = index;
 
 	ASSERT(list != NULL,"list == NULL");
 

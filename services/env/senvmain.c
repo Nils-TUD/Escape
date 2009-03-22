@@ -12,6 +12,7 @@
 #include <sllist.h>
 #include <proc.h>
 #include <signals.h>
+#include <debug.h>
 #include <io.h>
 
 #define MAP_SIZE 64
@@ -38,6 +39,16 @@ static void procDiedHandler(tSig sig,u32 data);
 static sEnvVar *env_get(tPid pid,s8 *name);
 
 /**
+ * Fetches the environment-variable with given index for the given process. If it does not exist
+ * it walks through the parents.
+ *
+ * @param pid the process-id
+ * @param index the index
+ * @return the env-var or NULL
+ */
+static sEnvVar *env_geti(tPid pid,u32 index);
+
+/**
  * Fetches the environment-variable for given process.
  *
  * @param pid the process-id
@@ -45,6 +56,15 @@ static sEnvVar *env_get(tPid pid,s8 *name);
  * @return the env-var or NULL
  */
 static sEnvVar *env_getOf(tPid pid,s8 *name);
+
+/**
+ * Fetches the environment-variable with given index for the given process
+ *
+ * @param pid the process-id
+ * @param index the index
+ * @return the env-var or NULL
+ */
+static sEnvVar *env_getiOf(tPid pid,u32 *index);
 
 /**
  * Puts the env-var of the form <name>=<value> in the storage for the given process
@@ -80,11 +100,8 @@ static void env_printAll(void);
 /* hashmap of linkedlists with env-vars; key=(pid % MAP_SIZE) */
 static sSLList *envVars[MAP_SIZE];
 
-s32 main(u32 argc,s8 **argv) {
+s32 main(void) {
 	s32 id;
-
-	UNUSED(argc);
-	UNUSED(argv);
 
 	id = regService("env",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
@@ -102,36 +119,64 @@ s32 main(u32 argc,s8 **argv) {
 	env_set(0,(s8*)"PATH",(s8*)"file:/apps/");
 
 	/* wait for messages */
-	static sMsgDefHeader msg;
+	static sMsgHeader msg;
 	while(1) {
 		s32 fd = getClient(id);
 		if(fd < 0)
 			sleep(EV_CLIENT);
 		else {
 			/* read all available messages */
-			while(read(fd,&msg,sizeof(sMsgDefHeader)) > 0) {
-				debugf("Got msg %d with length %d\n",msg.id,msg.length);
+			while(read(fd,&msg,sizeof(sMsgHeader)) > 0) {
 				/* see what we have to do */
 				switch(msg.id) {
-					/* set character */
 					case MSG_ENV_GET: {
-						sEnvVar *var;
-						sMsgDataEnvGetReq *data = (sMsgDataEnvGetReq*)malloc(msg.length + 1);
+						u8 *data = (u8*)malloc(msg.length + 1);
 						if(data != NULL) {
 							if(read(fd,data,msg.length) > 0) {
-								u32 len;
-								sMsgDefHeader *resp;
+								tPid pid;
+								u32 nameLen;
+								s8 *name;
+								nameLen = disasmBinDataMsg(msg.length,data,&name,"2",&pid);
+								if(nameLen) {
+									u32 len;
+									sMsgHeader *resp;
+									sEnvVar *var;
+									*(name + nameLen) = '\0';
+									var = env_get(pid,name);
 
-								/* get env-var */
-								*(data->name + msg.length - sizeof(sMsgDataEnvGetReq)) = '\0';
-								var = env_get(data->pid,data->name);
+									/* send reply */
+									len = var != NULL ? strlen(var->value) + 1 : 0;
+									resp = asmDataMsg(MSG_ENV_GET_RESP,len,var != NULL ? var->value : NULL);
+									if(resp != NULL) {
+										write(fd,resp,sizeof(sMsgHeader) + resp->length);
+										freeMsg(resp);
+									}
+								}
+							}
+							free(data);
+						}
+					}
+					break;
 
-								/* send reply */
-								len = var != NULL ? strlen(var->value) + 1 : 0;
-								resp = createDefMsg(MSG_ENV_GET_RESP,len,var != NULL ? var->value : NULL);
-								if(resp != NULL) {
-									write(fd,resp,sizeof(sMsgDefHeader) + resp->length);
-									freeDefMsg(resp);
+					case MSG_ENV_GETI: {
+						u8 *data = (u8*)malloc(msg.length + 1);
+						if(data != NULL) {
+							if(read(fd,data,msg.length) > 0) {
+								tPid pid;
+								u16 index;
+								if(disasmBinMsg(data,"22",&pid,&index)) {
+									u32 len;
+									sMsgHeader *resp;
+									sEnvVar *var;
+									var = env_geti(pid,index);
+
+									/* send reply */
+									len = var != NULL ? strlen(var->name) + 1 : 0;
+									resp = asmDataMsg(MSG_ENV_GET_RESP,len,var != NULL ? var->name : NULL);
+									if(resp != NULL) {
+										write(fd,resp,sizeof(sMsgHeader) + resp->length);
+										freeMsg(resp);
+									}
 								}
 							}
 							free(data);
@@ -140,13 +185,20 @@ s32 main(u32 argc,s8 **argv) {
 					break;
 
 					case MSG_ENV_SET: {
-						sMsgDataEnvSetReq *data = (sMsgDataEnvSetReq*)malloc(msg.length + 1);
+						u8 *data = (u8*)malloc(msg.length + 1);
 						if(data != NULL) {
 							if(read(fd,data,msg.length) > 0) {
-								*(data->envVar + msg.length - sizeof(sMsgDataEnvSetReq)) = '\0';
-								env_put(data->pid,data->envVar);
+								tPid pid;
+								u32 envVarLen;
+								s8 *envVar;
+								envVarLen = disasmBinDataMsg(msg.length,data,&envVar,"2",&pid);
+
+								/* terminate */
+								*(envVar + envVarLen) = '\0';
+								env_put(pid,envVar);
 							}
 						}
+						free(data);
 					}
 					break;
 				}
@@ -161,7 +213,19 @@ s32 main(u32 argc,s8 **argv) {
 }
 
 static void procDiedHandler(tSig sig,u32 data) {
-	env_remProc((tPid)data);
+	/* TODO we need a locking-mechanism here */
+	/*env_remProc((tPid)data);*/
+}
+
+static sEnvVar *env_geti(tPid pid,u32 index) {
+	sEnvVar *var;
+	while(1) {
+		var = env_getiOf(pid,&index);
+		if(pid == 0 || var != NULL)
+			break;
+		pid = getppidof(pid);
+	}
+	return var;
 }
 
 static sEnvVar *env_get(tPid pid,s8 *name) {
@@ -173,6 +237,25 @@ static sEnvVar *env_get(tPid pid,s8 *name) {
 		pid = getppidof(pid);
 	}
 	return var;
+}
+
+static sEnvVar *env_getiOf(tPid pid,u32 *index) {
+	sSLNode *n;
+	sSLList *list = envVars[pid % MAP_SIZE];
+	if(list != NULL) {
+		sEnvVar *e = NULL;
+		for(n = sll_begin(list); n != NULL; n = n->next) {
+			e = (sEnvVar*)n->data;
+			if(e->pid == pid) {
+				if((*index)-- == 0)
+					break;
+			}
+		}
+		if(n == NULL)
+			return NULL;
+		return e;
+	}
+	return NULL;
 }
 
 static sEnvVar *env_getOf(tPid pid,s8 *name) {
@@ -204,8 +287,6 @@ static bool env_set(tPid pid,s8 *name,s8 *value) {
 	/* at first we have to look wether the var already exists for the given process */
 	var = env_getOf(pid,name);
 	if(var != NULL) {
-		/* we keep the current name */
-		free(name);
 		/* we don't need the previous value anymore */
 		free(var->value);
 		/* set value */

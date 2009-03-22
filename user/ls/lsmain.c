@@ -9,7 +9,7 @@
 #include <io.h>
 
 s32 main(u32 argc,s8 *argv[]) {
-	tFD dd;
+	s32 dd;
 	sDirEntry *entry;
 
 	if(argc != 2) {

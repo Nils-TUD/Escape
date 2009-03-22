@@ -70,14 +70,14 @@ s32 main(void) {
 	memset(videoData,0,COLS * ROWS * 2);
 
 	/* wait for messages */
-	static sMsgDefHeader msg;
+	static sMsgHeader msg;
 	while(1) {
 		s32 fd = getClient(id);
 		if(fd < 0)
 			sleep(EV_CLIENT);
 		else {
 			/* read all available messages */
-			while(read(fd,&msg,sizeof(sMsgDefHeader)) > 0) {
+			while(read(fd,&msg,sizeof(sMsgHeader)) > 0) {
 				/* see what we have to do */
 				switch(msg.id) {
 					/* set character */

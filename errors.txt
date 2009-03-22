@@ -1,27 +1,86 @@
-src/heap.c:216: warning: unused parameter ‘addr’
-src/heap.c:216: warning: unused parameter ‘size’
-atamain.c:102: warning: return type of ‘main’ is not ‘int’
-fsmain.c:51: warning: return type of ‘main’ is not ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+atamain.c:108: warning: unused parameter ‘sig’
+atamain.c:108: warning: unused parameter ‘data’
+atamain.c:112: warning: return type of ‘main’ is not ‘int’
+senvmain.c:84: warning: return type of ‘main’ is not ‘int’
+senvmain.c:84: warning: first argument of ‘main’ should be ‘int’
+senvmain.c:163: warning: unused parameter ‘sig’
+senvmain.c:273: warning: ‘env_printAll’ defined but not used
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+fsmain.c:58: warning: return type of ‘main’ is not ‘int’
 kbmain.c:34: warning: return type of ‘main’ is not ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
 spkmain.c:39: warning: return type of ‘main’ is not ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
 vidmain.c:49: warning: return type of ‘main’ is not ‘int’
-vtmain.c:19: warning: return type of ‘main’ is not ‘int’
-imain.c:11: warning: return type of ‘main’ is not ‘int’
-shmain.c:102: warning: return type of ‘main’ is not ‘int’
-t2main.c:44: warning: return type of ‘main’ is not ‘int’
-t2main.c:26: warning: ‘printProcess’ defined but not used
-t2main.c:38: warning: ‘logChar’ defined but not used
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+vtmain.c:23: warning: return type of ‘main’ is not ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+catmain.c:12: warning: return type of ‘main’ is not ‘int’
+catmain.c:12: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+ecmain.c:10: warning: return type of ‘main’ is not ‘int’
+ecmain.c:10: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+envmain.c:11: warning: return type of ‘main’ is not ‘int’
+envmain.c:11: warning: first argument of ‘main’ should be ‘int’
+envmain.c: In function ‘main’:
+envmain.c:20: warning: passing argument 1 of ‘setenv’ discards qualifiers from pointer target type
+envmain.c:20: warning: passing argument 2 of ‘setenv’ discards qualifiers from pointer target type
+envmain.c: At top level:
+envmain.c:11: warning: unused parameter ‘argc’
+envmain.c:11: warning: unused parameter ‘argv’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+hmain.c:10: warning: return type of ‘main’ is not ‘int’
+hmain.c:10: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+imain.c:43: warning: return type of ‘main’ is not ‘int’
+kimain.c:12: warning: return type of ‘main’ is not ‘int’
+kimain.c:12: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+lsmain.c:11: warning: return type of ‘main’ is not ‘int’
+lsmain.c:11: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+memmain.c:11: warning: return type of ‘main’ is not ‘int’
+memmain.c:11: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+psmain.c:28: warning: return type of ‘main’ is not ‘int’
+psmain.c:28: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+shmain.c:77: warning: return type of ‘main’ is not ‘int’
+shmain.c:77: warning: first argument of ‘main’ should be ‘int’
+shmain.c:77: warning: unused parameter ‘argc’
+shmain.c:77: warning: unused parameter ‘argv’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+t2main.c:46: warning: return type of ‘main’ is not ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
 src/ksymbols.c: In function ‘ksym_print’:
 src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
 src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
+src/syscalls.c:316: warning: unused parameter ‘stack’
 src/vfsnode.c:216: warning: unused parameter ‘parent’
 ../src/ksymbols.c: In function ‘ksym_print’:
 ../src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
 ../src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
+../src/syscalls.c:316: warning: unused parameter ‘stack’
 ../src/vfsnode.c:216: warning: unused parameter ‘parent’
 tstring.c: In function ‘test_atoi’:
-tstring.c:82: warning: this decimal constant is unsigned only in ISO C90
+tstring.c:84: warning: this decimal constant is unsigned only in ISO C90
 tstring.c: In function ‘test_itoa’:
-tstring.c:110: warning: this decimal constant is unsigned only in ISO C90
-tvfsnode.c: In function ‘test_vfsn_resolvePathCpy’:
-tvfsnode.c:74: warning: passing argument 2 of ‘test_assertStr’ discards qualifiers from pointer target type
+tstring.c:112: warning: this decimal constant is unsigned only in ISO C90

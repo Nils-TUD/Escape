@@ -22,12 +22,12 @@
 
 /* open-response */
 typedef struct {
-	sMsgDefHeader header;
+	sMsgHeader header;
 	sMsgDataFSOpenResp data;
 } __attribute__((packed)) sMsgOpenResp;
 /* write-response */
 typedef struct {
-	sMsgDefHeader header;
+	sMsgHeader header;
 	sMsgDataFSWriteResp data;
 } __attribute__((packed)) sMsgWriteResp;
 
@@ -78,8 +78,8 @@ s32 main(void) {
 		if(fd < 0)
 			sleep(EV_CLIENT);
 		else {
-			sMsgDefHeader header;
-			while(read(fd,&header,sizeof(sMsgDefHeader)) > 0) {
+			sMsgHeader header;
+			while(read(fd,&header,sizeof(sMsgHeader)) > 0) {
 				switch(header.id) {
 					case MSG_FS_OPEN: {
 						/* read data */
@@ -117,7 +117,7 @@ s32 main(void) {
 					break;
 
 					case MSG_FS_READ: {
-						sMsgDefHeader *rhead;
+						sMsgHeader *rhead;
 						sMsgDataFSReadResp *rdata;
 						u32 dlen;
 						u32 count;
@@ -128,7 +128,7 @@ s32 main(void) {
 
 						/* write response  */
 						dlen = sizeof(sMsgDataFSReadResp) + data.count * sizeof(u8);
-						rhead = (u8*)malloc(sizeof(sMsgDefHeader) + dlen);
+						rhead = (sMsgHeader*)malloc(sizeof(sMsgHeader) + dlen);
 						if(rhead != NULL) {
 							rdata = (sMsgDataFSReadResp*)(rhead + 1);
 							count = ext2_readFile(&ext2,data.inodeNo,rdata->data,
@@ -140,7 +140,7 @@ s32 main(void) {
 							rdata->count = count;
 							rdata->pid = data.pid;
 
-							write(fd,rhead,sizeof(sMsgDefHeader) + dlen);
+							write(fd,rhead,sizeof(sMsgHeader) + dlen);
 							free(rhead);
 						}
 					}

@@ -56,7 +56,7 @@ s32 main(void) {
 	if(fork() == 0) {
 		s32 id = regService("test",SERVICE_TYPE_MULTIPIPE);
 
-		static sMsgDefHeader header;
+		static sMsgHeader header;
 		while(1) {
 			s32 cfd = getClient(id);
 			if(cfd < 0)
@@ -65,10 +65,10 @@ s32 main(void) {
 				u32 x = 0;
 				s32 c = 0;
 				do {
-					if((c = read(cfd,&header,sizeof(sMsgDefHeader))) < 0)
+					if((c = read(cfd,&header,sizeof(sMsgHeader))) < 0)
 						printLastError();
 					else if(c > 0) {
-						sMsgDefHeader *msg;
+						sMsgHeader *msg;
 						u8 *data = NULL;
 						/* read data */
 						if(header.length > 0) {
@@ -78,8 +78,8 @@ s32 main(void) {
 						}
 
 						/* build msg and send */
-						msg = createDefMsg(header.id,header.length,data);
-						if(write(fd,msg,sizeof(sMsgDefHeader) + header.length) < 0)
+						msg = asmDataMsg(header.id,header.length,data);
+						if(write(fd,msg,sizeof(sMsgHeader) + header.length) < 0)
 							printLastError();
 
 						if(header.length > 0)
@@ -112,11 +112,11 @@ s32 main(void) {
 			", \e[33morange\e[0m, \e[34mblue\e[0m, \e[35mmargenta\e[0m, \e[36mcyan\e[0m"
 			", \e[37mgray\e[0m\n"
 			"\e[30;44mwithbg\e[0m, \e[34;43mwithbg\e[0m\n";
-	sMsgDefHeader *msg = createDefMsg(MSG_VTERM_WRITE,strlen(str) + 1,str);
+	sMsgHeader *msg = asmDataMsg(MSG_VTERM_WRITE,strlen(str) + 1,str);
 	/*u32 i;
 	s32 err;
 	for(i = 0; i < 3 ;i++) {
-		if((err = write(fd,msg,sizeof(sMsgDefHeader) + msg->length)) < 0) {
+		if((err = write(fd,msg,sizeof(sMsgHeader) + msg->length)) < 0) {
 			if(err == ERR_NOT_ENOUGH_MEM)
 				yield();
 			else
@@ -193,19 +193,19 @@ s32 main(void) {
 	sMsgDataVidGoto vidgoto;
 	vidgoto.col = 0;
 	vidgoto.row = 10;
-	msg = createDefMsg(MSG_VIDEO_GOTO,sizeof(sMsgDataVidGoto),&vidgoto);
-	write(fd,msg,sizeof(sMsgDefHeader) + msg->length);
+	msg = asmDataMsg(MSG_VIDEO_GOTO,sizeof(sMsgDataVidGoto),&vidgoto);
+	write(fd,msg,sizeof(sMsgHeader) + msg->length);
 
-	msg = createDefMsg(MSG_VIDEO_PUTS,5,"Test");
-	write(fd,msg,sizeof(sMsgDefHeader) + msg->length);
+	msg = asmDataMsg(MSG_VIDEO_PUTS,5,"Test");
+	write(fd,msg,sizeof(sMsgHeader) + msg->length);
 
 	vidgoto.col = 0;
 	vidgoto.row = 13;
-	msg = createDefMsg(MSG_VIDEO_GOTO,sizeof(sMsgDataVidGoto),&vidgoto);
-	write(fd,msg,sizeof(sMsgDefHeader) + msg->length);
+	msg = asmDataMsg(MSG_VIDEO_GOTO,sizeof(sMsgDataVidGoto),&vidgoto);
+	write(fd,msg,sizeof(sMsgHeader) + msg->length);
 
-	msg = createDefMsg(MSG_VIDEO_PUTS,5,"Test");
-	write(fd,msg,sizeof(sMsgDefHeader) + msg->length);*/
+	msg = asmDataMsg(MSG_VIDEO_PUTS,5,"Test");
+	write(fd,msg,sizeof(sMsgHeader) + msg->length);*/
 
 	freeDefMsg(msg);
 
@@ -246,9 +246,9 @@ s32 main(void) {
 				printLastError();
 			else {
 				s8 str[] = "Test";
-				sMsgDefHeader *msg = createMsg(ID_OUT,5,str);
+				sMsgHeader *msg = createMsg(ID_OUT,5,str);
 				do {
-					if(write(sfd,msg,sizeof(sMsgDefHeader) + msg->length) < 0)
+					if(write(sfd,msg,sizeof(sMsgHeader) + msg->length) < 0)
 						printLastError();
 					yield();
 				}
@@ -264,9 +264,9 @@ s32 main(void) {
 			if(sfd < 0)
 				printLastError();
 			else {
-				sMsgDefHeader *msg = createMsg(ID_CLEAR,0,NULL);
+				sMsgHeader *msg = createMsg(ID_CLEAR,0,NULL);
 				do {
-					if(write(sfd,msg,sizeof(sMsgDefHeader)) < 0)
+					if(write(sfd,msg,sizeof(sMsgHeader)) < 0)
 						printLastError();
 					yield();
 				}
@@ -283,13 +283,13 @@ s32 main(void) {
 		vid_setFGColor(WHITE);
 		vid_setBGColor(BLACK);
 
-		static sMsgDefHeader msg;
+		static sMsgHeader msg;
 		do {
 			s32 fd = getClient(id);
 			if(fd < 0)
 				printLastError();
 			else {
-				read(fd,&msg,sizeof(sMsgDefHeader));
+				read(fd,&msg,sizeof(sMsgHeader));
 				if(msg.id == ID_OUT) {
 					s8 *readBuf = malloc(msg.length * sizeof(s8));
 					read(fd,readBuf,msg.length);

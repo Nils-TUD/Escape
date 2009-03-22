@@ -51,7 +51,7 @@ typedef struct {
 	tPid pid;
 	u32 count;
 	/* data follows */
-	s8 data[];
+	u8 data[];
 } sMsgDataFSReadResp;
 
 /* the write-request-data */

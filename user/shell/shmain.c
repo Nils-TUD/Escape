@@ -16,13 +16,25 @@
 #include <keycodes.h>
 
 #include "history.h"
+#include "cmd/echo.h"
+#include "cmd/env.h"
+#include "cmd/help.h"
 
 #define APPS_DIR			"file:/apps/"
 
+#define MAX_CMDNAME_LEN		30
 #define MAX_CMD_LEN			40
 #define MAX_ARG_COUNT		10
 
 #define ERR_CMD_NOT_FOUND	-100
+
+/* the builtin shell-commands */
+typedef s32 (*fCommand)(u32 argc,s8 **argv);
+typedef struct {
+	u8 builtin;
+	s8 name[MAX_CMDNAME_LEN + 1];
+	fCommand func;
+} sShellCmd;
 
 /**
  * Reads a line
@@ -55,12 +67,14 @@ static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,u8 
 static void shell_complete(s8 *line,u16 *cursorPos,u16 *length);
 
 /**
- * Determines the command for the given line
+ * Determines the command <index> for the given line
  *
  * @param line the entered line
+ * @param length the number of entered characters yet
+ * @param index the command-index
  * @return the command or NULL
  */
-static s8 *shell_getCmd(s8 *line);
+static sShellCmd *shell_getCmdi(s8 *line,u32 length,u32 index);
 
 /**
  * Executes the given line
@@ -70,10 +84,13 @@ static s8 *shell_getCmd(s8 *line);
  */
 static s32 shell_executeCmd(s8 *line);
 
-/**
- * The "help" command
- */
-static s32 shell_cmdHelp(u32 argc,s8 **argv);
+/* our commands */
+static sShellCmd externCmd;
+static sShellCmd commands[] = {
+	{1,	{"echo"	}, shell_cmdEcho	},
+	{1,	{"env"	}, shell_cmdEnv		},
+	{1,	{"help"	}, shell_cmdHelp	},
+};
 
 /* buffer for arguments */
 static u32 tabCount = 0;
@@ -88,11 +105,12 @@ s32 main(u32 argc,s8 **argv) {
 	printf("\n");
 
 	/*u32 i;
-	for(i = 0; i < 20; i++) {
+	for(i = 0; i < 100; i++) {
 		printf("# echo test\n");
 		shell_executeCmd("echo test");
 	}
 	shell_executeCmd("ps");
+	printHeap();
 	return 0;*/
 
 	while(1) {
@@ -224,43 +242,37 @@ static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,u8 
 static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 	u16 icursorPos = *cursorPos;
 	u32 cmdlen,ilength = *length;
+	s8 *orgLine = line;
 
 	/* ignore tabs when the cursor is not at the end of the input */
 	if(icursorPos == ilength) {
-		s32 dd;
-		/* search in file:/apps/ */
+		u32 i;
 		u32 count = 0;
-		if((dd = opendir(APPS_DIR)) < 0)
-			return;
+		sShellCmd *first;
+		sShellCmd *cmd;
 
-		sDirEntry *entry;
-		s8 *first = NULL;
-		while((entry = readdir(dd)) != NULL) {
-			/* skip . and .. */
-			if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
-				continue;
-
-			cmdlen = strlen(entry->name);
-			/* beginning matches? */
-			if(ilength < cmdlen && strncmp(line,entry->name,ilength) == 0) {
-				count++;
-				first = (s8*)malloc(cmdlen + 1);
-				if(first == NULL) {
-					closedir(dd);
-					return;
-				}
-				memcpy(first,entry->name,cmdlen + 1);
-			}
+		/* start at last space */
+		s8 *lineSpace;
+		do {
+			lineSpace = strchr(line,' ');
+			if(lineSpace)
+				line = lineSpace + 1;
 		}
-		closedir(dd);
+		while(lineSpace);
+
+		/* walk through all matching commands */
+		for(i = 0; (cmd = shell_getCmdi(line,ilength,i)) != NULL; i++) {
+			first = cmd;
+			count++;
+		}
 
 		/* found one match? */
 		if(count == 1) {
 			/* add chars */
-			cmdlen = strlen(first);
+			cmdlen = strlen(first->name);
 			for(; ilength < cmdlen; ilength++) {
-				s8 c = first[ilength];
-				line[ilength] = c;
+				s8 c = first->name[ilength];
+				orgLine[ilength] = c;
 				putchar(c);
 			}
 			/* set length and cursor */
@@ -277,22 +289,12 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 				flush();
 			}
 			else {
-				if((dd = opendir(APPS_DIR)) < 0)
-					return;
-
 				tabCount = 0;
-				printf("\n");
-				while((entry = readdir(dd)) != NULL) {
-					/* skip . and .. */
-					if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
-						continue;
 
-					cmdlen = strlen(entry->name);
-					/* beginning matches? */
-					if(ilength < cmdlen && strncmp(line,entry->name,ilength) == 0)
-						printf("%s ",entry->name);
-				}
-				closedir(dd);
+				/* print all matching commands */
+				printf("\n");
+				for(i = 0; (cmd = shell_getCmdi(line,ilength,i)) != NULL; i++)
+					printf("%s ",cmd->name);
 
 				/* print the prompt + entered chars again */
 				printf("\n# %s",line);
@@ -301,14 +303,24 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 	}
 }
 
-static s8 *shell_getCmd(s8 *line) {
-	u32 pos,len;
-	sDirEntry *entry;
-	s8 *path;
+static sShellCmd *shell_getCmdi(s8 *line,u32 length,u32 index) {
 	s32 dd;
-	s8 c;
-	pos = strchri(line,' ');
+	u32 i;
+	u32 cmdlen;
+	sDirEntry *entry;
 
+	/* look in builtin commands */
+	for(i = 0; i < ARRAY_SIZE(commands); i++) {
+		cmdlen = strlen(commands[i].name);
+		/* beginning matches? */
+		if(length <= cmdlen && strncmp(line,commands[i].name,length) == 0) {
+			if(index-- == 0)
+				return commands + i;
+		}
+	}
+
+	/* TODO we should improve this someday */
+	/* search in file:/apps/ */
 	if((dd = opendir(APPS_DIR)) < 0)
 		return NULL;
 
@@ -317,37 +329,45 @@ static s8 *shell_getCmd(s8 *line) {
 		if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
 			continue;
 
-		len = strlen(entry->name);
-		/* beginning matches? */
-		if(pos == len && strncmp(line,entry->name,len) == 0) {
-			closedir(dd);
-			pos = strlen(APPS_DIR);
-			if(pos + len >= MAX_CMD_LEN)
-				return NULL;
-			path = (s8*)malloc(pos + len + 1);
-			if(path == NULL)
-				return NULL;
-			strcpy(path,APPS_DIR);
-			strncat(path,line,len);
-			return path;
+		cmdlen = strlen(entry->name);
+		if(cmdlen < MAX_CMDNAME_LEN && length <= cmdlen && strncmp(line,entry->name,length) == 0) {
+			if(index-- == 0) {
+				externCmd.builtin = 0;
+				externCmd.func = NULL;
+				memcpy(externCmd.name,entry->name,cmdlen + 1);
+				closedir(dd);
+				return &externCmd;
+			}
 		}
 	}
-	closedir(dd);
 
-	c = line[pos];
-	line[pos] = '\0';
-	printf("%s: Command not found\n",line);
-	line[pos] = c;
+	closedir(dd);
 	return NULL;
 }
 
 static s32 shell_executeCmd(s8 *line) {
-	s8 *command = shell_getCmd(line);
-	if(command == NULL)
+	sShellCmd *cmd;
+	s8 path[MAX_CMD_LEN] = APPS_DIR;
+	s8 c;
+	s32 res;
+	u32 i,len = strlen(line),npos = 0,pos = 0;
+
+	/* match command to first space */
+	pos = strchri(line,' ');
+	c = line[pos];
+	line[pos] = '\0';
+
+	cmd = shell_getCmdi(line,pos,0);
+	/* check if there is another matching command */
+	if(cmd == NULL || shell_getCmdi(line,pos,1) != NULL) {
+		printf("%s: Command not found\n",line);
+		line[pos] = c;
 		return -1;
+	}
 
 	/* parse line for arguments */
-	u32 i,len = strlen(line),npos = 0,pos = 0;
+	line[pos] = c;
+	pos = 0;
 	for(i = 0; i < MAX_ARG_COUNT; ) {
 		npos = strchri(line + pos,' ');
 		s8 *buffer = (s8*)malloc((npos + 1) * sizeof(s8));
@@ -360,23 +380,27 @@ static s32 shell_executeCmd(s8 *line) {
 		pos += npos + 1;
 	}
 
-	/* fork & exec */
-	if(fork() == 0) {
-		exec(command,args);
-		exit(0);
+	/* execute command */
+	if(cmd->builtin) {
+		res = cmd->func(i,args);
 	}
+	else {
+		if(fork() == 0) {
+			strcat(path,cmd->name);
+			exec(path,args);
+			exit(0);
+		}
 
-	/* wait for child */
-	sleep(EV_CHILD_DIED);
+		/* wait for child */
+		sleep(EV_CHILD_DIED);
+	}
 
 	/* free args */
-	do {
+	while(i > 0) {
+		i--;
 		free(args[i]);
 		args[i] = NULL;
-		i--;
 	}
-	while(i > 0);
-	free(command);
 
-	return 0;
+	return res;
 }

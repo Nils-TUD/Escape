@@ -87,7 +87,7 @@ s32 main(void) {
 
 	/* now load the shell */
 	if(fork() == 0) {
-		exec("file:/apps/shell",NULL);
+		exec((s8*)"file:/apps/shell",NULL);
 		exit(0);
 	}
 

@@ -399,7 +399,8 @@ void proc_destroy(sProc *p) {
 }
 
 void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args,u32 argsSize) {
-	u32 *esp,*argv;
+	u32 *esp;
+	s8 **argv;
 	u32 totalSize;
 	ASSERT(frame != NULL,"frame == NULL");
 
@@ -423,11 +424,11 @@ void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args,u32 argsSi
 	if(argc > 0) {
 		s8 *str;
 		u32 i,len;
-		argv = esp - argc;
+		argv = (s8**)(esp - argc);
 		/* space for the argument-pointer */
 		esp -= argc;
 		/* start for the arguments */
-		str = esp;
+		str = (s8*)esp;
 		for(i = 0; i < argc; i++) {
 			/* start <len> bytes backwards */
 			len = strlen(args) + 1;
@@ -439,7 +440,7 @@ void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args,u32 argsSi
 			args += len;
 		}
 		/* ensure that we don't overwrites the characters */
-		esp = ((u32)str & ~(sizeof(u32) - 1)) - sizeof(u32);
+		esp = (u32*)(((u32)str & ~(sizeof(u32) - 1)) - sizeof(u32));
 	}
 
 	/* store argc and argv */

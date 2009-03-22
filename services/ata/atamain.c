@@ -105,7 +105,7 @@ static sATADrive drives[DRIVE_COUNT] = {
 };
 
 static bool gotInterrupt = false;
-static void diskIntrptHandler(tSig sig) {
+static void diskIntrptHandler(tSig sig,u32 data) {
 	gotInterrupt = true;
 }
 
@@ -134,23 +134,23 @@ s32 main(void) {
 		return 1;
 	}
 
-	sMsgDefHeader header;
+	sMsgHeader header;
 	while(1) {
 		s32 fd = getClient(id);
 		if(fd < 0) {
 			sleep(EV_CLIENT);
 		}
 		else {
-			while(read(fd,&header,sizeof(sMsgDefHeader)) > 0) {
+			while(read(fd,&header,sizeof(sMsgHeader)) > 0) {
 				sMsgDataATAReq req;
 				/* TODO: better error-handling */
 				switch(header.id) {
 					case MSG_ATA_READ_REQ: {
 						read(fd,&req,sizeof(sMsgDataATAReq));
 						if(ata_isDrivePresent(req.drive)) {
-							sMsgDefHeader *res;
-							u32 msgLen = sizeof(sMsgDefHeader) + BYTES_PER_SECTOR * req.secCount;
-							res = (sMsgDefHeader*)malloc(msgLen);
+							sMsgHeader *res;
+							u32 msgLen = sizeof(sMsgHeader) + BYTES_PER_SECTOR * req.secCount;
+							res = (sMsgHeader*)malloc(msgLen);
 							if(res != NULL) {
 								/* TODO the client has to select the partition... */
 								u32 partOffset = drives[req.drive].partTable[0].start;
@@ -159,7 +159,7 @@ s32 main(void) {
 										req.lba + partOffset,req.secCount)) {
 									/* write empty response */
 									res->length = 0;
-									write(fd,res,sizeof(sMsgDefHeader));
+									write(fd,res,sizeof(sMsgHeader));
 								}
 								else {
 									/* write response */
@@ -199,7 +199,6 @@ s32 main(void) {
 static void ata_printDrives(void) {
 	static cstring names[] = {"Primary Master","Primary Slave","Secondary Master","Secondary Slave"};
 	u32 d,p;
-	sATADrive *drive = drives;
 	sPartition *part;
 	debugf("Drives:\n");
 	for(d = 0; d < DRIVE_COUNT; d++) {

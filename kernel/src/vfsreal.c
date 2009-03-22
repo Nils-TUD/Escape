@@ -21,7 +21,7 @@ typedef struct {
 	u8 id;
 	/* the length of the data behind this struct */
 	u32 length;
-} sMsgDefHeader;
+} sMsgHeader;
 
 /* an entry in the request-list */
 typedef struct {
@@ -35,12 +35,12 @@ typedef struct {
 
 /* read-msg */
 typedef struct {
-	sMsgDefHeader header;
+	sMsgHeader header;
 	sMsgDataFSReadReq data;
 } __attribute__((packed)) sMsgReadReq;
 /* close-msg */
 typedef struct {
-	sMsgDefHeader header;
+	sMsgHeader header;
 	sMsgDataFSCloseReq data;
 } __attribute__((packed)) sMsgCloseReq;
 
@@ -112,13 +112,13 @@ void vfsr_setGotMsg(void) {
 }
 
 void vfsr_checkForMsgs(void) {
-	sMsgDefHeader header;
+	sMsgHeader header;
 	sRequest *req;
 	if(requests == NULL || !gotMsg || sll_length(requests) == 0)
 		return;
 
 	/* ok, let's see what we've got.. */
-	while(vfs_readFile(KERNEL_PID,fsServiceFile,(u8*)&header,sizeof(sMsgDefHeader)) > 0) {
+	while(vfs_readFile(KERNEL_PID,fsServiceFile,(u8*)&header,sizeof(sMsgHeader)) > 0) {
 		switch(header.id) {
 			case MSG_FS_OPEN_RESP: {
 				/* read data */
@@ -192,7 +192,7 @@ void vfsr_checkForMsgs(void) {
 
 s32 vfsr_openFile(tPid pid,u8 flags,s8 *path) {
 	sMsgDataFSOpenReq *data;
-	sMsgDefHeader *msg;
+	sMsgHeader *msg;
 	s32 res;
 	u32 pathLen = strlen(path);
 	u32 msgLen;
@@ -203,7 +203,7 @@ s32 vfsr_openFile(tPid pid,u8 flags,s8 *path) {
 
 	/* allocate mem */
 	msgLen = sizeof(sMsgDataFSOpenReq) + (pathLen + 1) * sizeof(s8);
-	msg = kheap_alloc(sizeof(sMsgDefHeader) + msgLen);
+	msg = kheap_alloc(sizeof(sMsgHeader) + msgLen);
 	if(msg == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -216,7 +216,7 @@ s32 vfsr_openFile(tPid pid,u8 flags,s8 *path) {
 	memcpy(data->path,path,pathLen + 1);
 
 	/* write message to fs */
-	res = vfs_writeFile(KERNEL_PID,fsServiceFile,(u8*)msg,sizeof(sMsgDefHeader) + msgLen);
+	res = vfs_writeFile(KERNEL_PID,fsServiceFile,(u8*)msg,sizeof(sMsgHeader) + msgLen);
 	if(res < 0) {
 		kheap_free(msg);
 		return res;
@@ -278,14 +278,14 @@ s32 vfsr_writeFile(tPid pid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	sRequest *req;
 	s32 res;
 	u32 msgLen;
-	sMsgDefHeader *msg;
+	sMsgHeader *msg;
 	sMsgDataFSWriteReq *data;
 
 	if(fsServiceFile < 0)
 		return ERR_FS_NOT_FOUND;
 
 	/* build msg */
-	msgLen = sizeof(sMsgDefHeader) + sizeof(sMsgDataFSWriteReq) + count;
+	msgLen = sizeof(sMsgHeader) + sizeof(sMsgDataFSWriteReq) + count;
 	msg = kheap_alloc(msgLen);
 	if(msg == NULL)
 		return ERR_NOT_ENOUGH_MEM;

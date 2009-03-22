@@ -47,8 +47,9 @@ typedef struct {
  */
 static void sysc_getpid(sSysCallStack *stack);
 /**
- * Returns the parent-pid of the current process
+ * Returns the parent-pid of the given process
  *
+ * @param pid the process-id
  * @return tPid the parent-pid
  */
 static void sysc_getppid(sSysCallStack *stack);
@@ -226,7 +227,7 @@ static bool sysc_isStringReadable(s8 *string);
 /* our syscalls */
 static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 0 */		{sysc_getpid,				0},
-	/* 1 */		{sysc_getppid,				0},
+	/* 1 */		{sysc_getppid,				1},
 	/* 2 */ 	{sysc_debugc,				1},
 	/* 3 */		{sysc_fork,					0},
 	/* 4 */ 	{sysc_exit,					1},
@@ -274,7 +275,14 @@ static void sysc_getpid(sSysCallStack *stack) {
 }
 
 static void sysc_getppid(sSysCallStack *stack) {
-	sProc *p = proc_getRunning();
+	tPid pid = (tPid)stack->arg1;
+	sProc *p = proc_getByPid(pid);
+
+	if(p->state == ST_UNUSED) {
+		SYSC_ERROR(stack,ERR_INVALID_PID);
+		return;
+	}
+
 	SYSC_RET1(stack,p->parentPid);
 }
 

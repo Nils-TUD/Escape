@@ -23,7 +23,6 @@
 
 #define MSG_ENV_GET					0
 #define MSG_ENV_SET					1
-#define MSG_ENV_REMPROC				2
 #define MSG_ENV_GET_RESP			3
 
 /* the header for all default-messages */
@@ -84,11 +83,6 @@ typedef struct {
 	/* "<name>=<value>" */
 	s8 envVar[];
 } sMsgDataEnvSetReq;
-
-/* the message-data for the rem-proc-message */
-typedef struct {
-	tPid pid;
-} sMsgDataEnvRemProcReq;
 
 /**
  * Creates a default-message with the given data

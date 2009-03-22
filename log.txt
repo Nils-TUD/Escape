@@ -12,14 +12,15 @@ Available memory:
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x00000000021a912e
+Clock cycles: 0x0000000001e6f789
 Initializing VFS...DONE
-Clock cycles: 0x0000000000630a29
+Clock cycles: 0x0000000000123b07
 Initializing process-management...DONE
-Clock cycles: 0x00000000000db1b6
+Clock cycles: 0x00000000000ea900
 Initializing IDT...DONE
-Clock cycles: 0x00000000000abe19
+Clock cycles: 0x00000000000a32a2
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
+Got interrupt 39 (<unknown>) @ 0x0
 Drives:
 	  Primary Master (present=1,sectors=10080)
 	  	  0: start=0x3F, sectors=10017 size=5128704 byte
@@ -41,79 +42,4 @@ ABC=das ist mein wert
 Got msg 1 with length 22
 Got msg 0 with length 7
 PATH=file:/services
-Env-Vars:
-	  [pid=0] CWD=file:/
-	  [pid=0] PATH=file:/apps/
-# env
-Got msg 0 with length 6
-CWD=file:/
-Got msg 0 with length 7
-PATH=file:/apps/
-Got msg 1 with length 24
-Got msg 0 with length 6
-ABC=das ist mein wert
-Got msg 1 with length 22
-Got msg 0 with length 7
-PATH=file:/services
-Env-Vars:
-	  [pid=0] CWD=file:/
-	  [pid=0] PATH=file:/apps/
-# env
-Got msg 0 with length 6
-CWD=file:/
-Got msg 0 with length 7
-PATH=file:/apps/
-Got msg 1 with length 24
-Got msg 0 with length 6
-ABC=das ist mein wert
-Got msg 1 with length 22
-Got msg 0 with length 7
-PATH=file:/services
-Env-Vars:
-	  [pid=0] CWD=file:/
-	  [pid=0] PATH=file:/apps/
-# env
-Got msg 0 with length 6
-CWD=file:/
-Got msg 0 with length 7
-PATH=file:/apps/
-Got msg 1 with length 24
-Got msg 0 with length 6
-ABC=das ist mein wert
-Got msg 1 with length 22
-Got msg 0 with length 7
-PATH=file:/services
-Env-Vars:
-	  [pid=0] CWD=file:/
-	  [pid=0] PATH=file:/apps/
-# ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
-00	  	  00	  	  010	 	  	  Ready  	 	  0x00132939894a8735	  init
-01	  	  00	  	  010	 	  	  Blocked	 	  0x0000000061ec0579	  ata
-02	  	  00	  	  029	 	  	  Blocked	 	  0x0000000017fa3edc	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000b874e4	  file:/services/speaker
-04	  	  00	  	  007	 	  	  Blocked	 	  0x00000000015a508a	  file:/services/keyboard
-05	  	  00	  	  011	 	  	  Blocked	 	  0x00000000039bb881	  file:/services/video
-06	  	  00	  	  015	 	  	  Blocked	 	  0x0000000004dbc518	  file:/services/vterm
-07	  	  00	  	  010	 	  	  Blocked	 	  0x0000000005473c95	  file:/services/env
-08	  	  00	  	  026	 	  	  Blocked	 	  0x0000000003b5db71	  file:/apps/shell
-09	  	  08	  	  007	 	  	  Running	 	  0x00000000019c770f	  file:/apps/ps
-
-Env-Vars:
-	  [pid=0] CWD=file:/
-	  [pid=0] PATH=file:/apps/
-# env
-Got msg 0 with length 6
-CWD=file:/
-Got msg 0 with length 7
-PATH=file:/apps/
-Got msg 1 with length 24
-Got msg 0 with length 6
-ABC=das ist mein wert
-Got msg 1 with length 22
-Got msg 0 with length 7
-PATH=file:/services
-Env-Vars:
-	  [pid=0] CWD=file:/
-	  [pid=0] PATH=file:/apps/
 # 

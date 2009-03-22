@@ -29,7 +29,7 @@ static void procDiedHandler(tSig sig,u32 data);
 
 /**
  * Fetches the environment-variable with given name for the given process. If it does not exist
- * it will be searched with pid=0.
+ * it walks through the parents.
  *
  * @param pid the process-id
  * @param name the envvar-name
@@ -149,13 +149,6 @@ s32 main(u32 argc,s8 **argv) {
 						}
 					}
 					break;
-
-					case MSG_ENV_REMPROC: {
-						sMsgDataEnvRemProcReq data;
-						if(read(fd,&data,sizeof(sMsgDataEnvRemProcReq)) > 0)
-							env_remProc(data.pid);
-					}
-					break;
 				}
 			}
 			close(fd);
@@ -172,10 +165,14 @@ static void procDiedHandler(tSig sig,u32 data) {
 }
 
 static sEnvVar *env_get(tPid pid,s8 *name) {
-	sEnvVar *var = env_getOf(pid,name);
-	if(var != NULL)
-		return var;
-	return env_getOf(0,name);
+	sEnvVar *var;
+	while(1) {
+		var = env_getOf(pid,name);
+		if(pid == 0 || var != NULL)
+			break;
+		pid = getppidof(pid);
+	}
+	return var;
 }
 
 static sEnvVar *env_getOf(tPid pid,s8 *name) {

@@ -36,9 +36,17 @@ typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE
 tPid getpid(void);
 
 /**
- * @return the parent-pid
+ * @return the parent-pid of the current process
  */
 tPid getppid(void);
+
+/**
+ * Returns the parent-id of the given process
+ *
+ * @param pid the process-id
+ * @return the parent-pid
+ */
+tPid getppidof(tPid pid);
 
 /**
  * Clones the current process. Will return the pid for the old process and 0 for the new one.

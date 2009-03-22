@@ -70,7 +70,7 @@ s8 readChar(void) {
 	return c;
 }
 
-u16 readLine(s8 *buffer,u16 max) {
+u16 readLine(s8 *line,u16 max) {
 	s8 c;
 	u8 keycode;
 	u8 modifier;
@@ -79,7 +79,7 @@ u16 readLine(s8 *buffer,u16 max) {
 	while(i < max) {
 		c = readChar();
 
-		if(handleDefaultEscapeCodes(buffer,&cursorPos,&i,c,&keycode,&modifier))
+		if(handleDefaultEscapeCodes(line,&cursorPos,&i,c,&keycode,&modifier))
 			continue;
 		/* the above function does not handle all escape-codes */
 		if(c == '\033')
@@ -96,11 +96,11 @@ u16 readLine(s8 *buffer,u16 max) {
 		if(cursorPos < i) {
 			u32 x;
 			/* at first move all one char forward */
-			memmove(buffer + cursorPos + 1,buffer + cursorPos,i - cursorPos);
-			buffer[cursorPos] = c;
+			memmove(line + cursorPos + 1,line + cursorPos,i - cursorPos);
+			line[cursorPos] = c;
 			/* now write the chars to vterm */
 			for(x = cursorPos + 1; x <= i; x++)
-				putchar(buffer[x]);
+				putchar(line[x]);
 			/* and walk backwards */
 			putchar('\033');
 			putchar(VK_HOME);
@@ -114,16 +114,16 @@ u16 readLine(s8 *buffer,u16 max) {
 		/* we are at the end of the input */
 		else {
 			/* put in buffer */
-			buffer[cursorPos++] = c;
+			line[cursorPos++] = c;
 			i++;
 		}
 	}
 
-	buffer[i] = '\0';
+	line[i] = '\0';
 	return i;
 }
 
-bool handleDefaultEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,s8 c,u8 *keycode,u8 *modifier) {
+bool handleDefaultEscapeCodes(s8 *line,u16 *cursorPos,u16 *charcount,s8 c,u8 *keycode,u8 *modifier) {
 	bool res = false;
 	u16 icursorPos = *cursorPos;
 	u16 icharcount = *charcount;
@@ -132,10 +132,10 @@ bool handleDefaultEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,s8 c,u8 *
 			if(icursorPos > 0) {
 				/* remove last char */
 				if(icursorPos < icharcount)
-					memmove(buffer + icursorPos - 1,buffer + icursorPos,icharcount - icursorPos);
+					memmove(line + icursorPos - 1,line + icursorPos,icharcount - icursorPos);
 				icharcount--;
 				icursorPos--;
-				buffer[icharcount] = '\0';
+				line[icharcount] = '\0';
 				/* send backspace */
 				putchar(c);
 				flush();

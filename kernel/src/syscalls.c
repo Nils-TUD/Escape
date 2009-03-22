@@ -776,8 +776,9 @@ static void sysc_ackSignal(sSysCallStack *stack) {
 static void sysc_sendSignal(sSysCallStack *stack) {
 	tPid pid = (tPid)stack->arg1;
 	tSig signal = (tSig)stack->arg2;
+	u32 data = stack->arg3;
 
-	if(sig_isInterrupt(signal) || signal >= SIG_COUNT) {
+	if(!sig_canSend(signal)) {
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
 		return;
 	}
@@ -787,7 +788,7 @@ static void sysc_sendSignal(sSysCallStack *stack) {
 		return;
 	}
 
-	sig_addSignalFor(pid,signal);
+	sig_addSignalFor(pid,signal,data);
 	SYSC_RET1(stack,0);
 }
 
@@ -937,13 +938,13 @@ static void sysc_exec(sSysCallStack *stack) {
 	}
 }
 
-static bool sysc_isStringReadable(s8 *string) {
-	u32 addr = (u32)string & ~(PAGE_SIZE - 1);
-	u32 rem = (addr + PAGE_SIZE) - (u32)string;
+static bool sysc_isStringReadable(s8 *str) {
+	u32 addr = (u32)str & ~(PAGE_SIZE - 1);
+	u32 rem = (addr + PAGE_SIZE) - (u32)str;
 	while(paging_isRangeUserReadable(addr,PAGE_SIZE)) {
-		while(rem-- > 0 && *string)
-			string++;
-		if(!*string)
+		while(rem-- > 0 && *str)
+			str++;
+		if(!*str)
 			return true;
 		addr += PAGE_SIZE;
 		rem = PAGE_SIZE;

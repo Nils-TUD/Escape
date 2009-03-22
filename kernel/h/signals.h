@@ -9,24 +9,25 @@
 
 #include "common.h"
 
-#define SIG_COUNT			12
+#define SIG_COUNT			13
 
 /* the signals */
 #define SIG_KILL			0
 #define SIG_TERM			1
 #define SIG_ILL_INSTR		2
 #define SIG_SEGFAULT		3
-#define SIG_INTRPT_TIMER	4
-#define SIG_INTRPT_KB		5
-#define SIG_INTRPT_COM1		6
-#define SIG_INTRPT_COM2		7
-#define SIG_INTRPT_FLOPPY	8
-#define SIG_INTRPT_CMOS		9
-#define SIG_INTRPT_ATA1		10
-#define SIG_INTRPT_ATA2		11
+#define SIG_PROC_DIED		4
+#define SIG_INTRPT_TIMER	5
+#define SIG_INTRPT_KB		6
+#define SIG_INTRPT_COM1		7
+#define SIG_INTRPT_COM2		8
+#define SIG_INTRPT_FLOPPY	9
+#define SIG_INTRPT_CMOS		10
+#define SIG_INTRPT_ATA1		11
+#define SIG_INTRPT_ATA2		12
 
 /* signal-handler-signature */
-typedef void (*fSigHandler)(tSig sigNo);
+typedef void (*fSigHandler)(tSig sigNo,u32 data);
 
 /**
  * Checks wether we can handle the given signal
@@ -37,12 +38,12 @@ typedef void (*fSigHandler)(tSig sigNo);
 bool sig_canHandle(tSig signal);
 
 /**
- * Checks wether the given signal is an interrupt
+ * Checks wether the given signal can be send by user-programs
  *
  * @param signal the signal
  * @return true if so
  */
-bool sig_isInterrupt(tSig signal);
+bool sig_canSend(tSig signal);
 
 /**
  * Sets the given signal-handler for <signal>
@@ -70,32 +71,35 @@ void sig_unsetHandler(tPid pid,tSig signal);
 void sig_removeHandlerFor(tPid pid);
 
 /**
- * Checks wether there is any signal to handle. If so <sig> and <pid> will be set
+ * Checks wether there is any signal to handle. If so <sig>,<pid> and <data> will be set
  * to the signal to handle.
  *
  * @param sig the signal (will be set on success)
  * @param pid the process-id (will be set on success)
+ * @param data the data to send (will be set on success)
  * @return true if there is a signal
  */
-bool sig_hasSignal(tSig *sig,tPid *pid);
+bool sig_hasSignal(tSig *sig,tPid *pid,u32 *data);
 
 /**
  * Adds the given signal for the given process
  *
  * @param pid the process-id
  * @param signal the signal
+ * @param data the data to send
  * @return true if we should directly switch to the process (handle the signal) or false
  * 	if the process is active and we should do this later
  */
-bool sig_addSignalFor(tPid pid,tSig signal);
+bool sig_addSignalFor(tPid pid,tSig signal,u32 data);
 
 /**
  * Adds the given signal to all processes that have announced a handler for it
  *
  * @param signal the signal
+ * @param data the data to send
  * @return the process-id to which we should switch now or INVALID_PID if we should do this later
  */
-tPid sig_addSignal(tSig signal);
+tPid sig_addSignal(tSig signal,u32 data);
 
 /**
  * Starts handling the given signal. That means the signal will be marked as "active" until

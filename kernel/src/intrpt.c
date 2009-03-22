@@ -93,6 +93,7 @@ typedef struct {
 	u8 active;
 	tSig sig;
 	fSigHandler handler;
+	u32 data;
 } sSignalData;
 
 /* isr prototype */
@@ -374,16 +375,18 @@ sIntrptStackFrame *intrpt_getCurStack(void) {
 static void intrpt_handleSignal(void) {
 	tPid pid;
 	tSig sig;
+	u32 data;
 	/* already handling a signal? */
 	if(signalData.active == 1)
 		return;
 
-	if(sig_hasSignal(&sig,&pid)) {
+	if(sig_hasSignal(&sig,&pid,&data)) {
 		fSigHandler handler = sig_startHandling(pid,sig);
 		if(handler != NULL) {
 			signalData.active = 1;
 			signalData.sig = sig;
 			signalData.handler = handler;
+			signalData.data = data;
 			/* a little trick: we store the signal to handle and manipulate the user-stack
 			 * and so on later. if the process is currently running everything is fine. we return
 			 * from here and intrpt_handleSignalFinish() will be called.
@@ -407,7 +410,7 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	u32 *esp = (u32*)stack->uesp;
 	/* will handle copy-on-write */
 	/* TODO we might have to add stack-pages... */
-	paging_isRangeUserWritable((u32)(esp - 10),9 * sizeof(u32));
+	paging_isRangeUserWritable((u32)(esp - 11),10 * sizeof(u32));
 
 	/* save regs */
 	*--esp = stack->eip;
@@ -417,7 +420,8 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	*--esp = stack->edx;
 	*--esp = stack->edi;
 	*--esp = stack->esi;
-	/* signal-number as argument */
+	/* signal-number and data as arguments */
+	*--esp = signalData.data;
 	*--esp = signalData.sig;
 	/* sigRet will remove the argument, restore the register,
 	 * acknoledge the signal and return to eip */
@@ -463,7 +467,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		case IRQ_COM2: {
 			tSig sig = irq2Signal[stack.intrptNo - IRQ_MASTER_BASE];
 			if(sig != SIG_COUNT)
-				sig_addSignal(sig);
+				sig_addSignal(sig,0);
 		}
 		break;
 	}

@@ -18,7 +18,7 @@ s32 main(u32 argc,s8 **argv) {
 
 	pid = atoi(argv[1]);
 	if(pid > 0) {
-		if(sendSignal(pid,SIG_KILL) < 0) {
+		if(sendSignal(pid,SIG_KILL,0) < 0) {
 			printLastError();
 			return 1;
 		}

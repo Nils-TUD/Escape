@@ -119,7 +119,7 @@ debug: all prepareRun
 debugu: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
-		gdb --command=gdb.start --symbols $(BUILD)/user_init.bin
+		gdb --command=gdb.start --symbols $(BUILD)/service_env.bin
 
 debugc: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &

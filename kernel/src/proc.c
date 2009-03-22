@@ -379,6 +379,8 @@ void proc_destroy(sProc *p) {
 	vfs_removeProcess(p->pid);
 	/* remove signals */
 	sig_removeHandlerFor(p->pid);
+	/* notify processes that wait for dying procs */
+	sig_addSignal(SIG_PROC_DIED,p->pid);
 
 	/* TODO we have to unregister services, if p is on */
 

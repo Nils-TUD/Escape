@@ -87,7 +87,8 @@ sSLNode *sll_nodeAt(sSLList *list,u32 index) {
 
 u32 sll_length(sSLList *list) {
 	sList *l = (sList*)list;
-	ASSERT(list != NULL,"list == NULL");
+	if(l == NULL)
+		return 0;
 	return l->length;
 }
 
@@ -120,7 +121,6 @@ void *sll_get(sSLList *list,u32 index) {
 
 void sll_set(sSLList *list,void *data,u32 index) {
 	sNode *n;
-	ASSERT(data != NULL,"data == NULL");
 	n = sll_getNode(list,index);
 	n->data = data;
 }
@@ -135,7 +135,6 @@ bool sll_insert(sSLList *list,void *data,u32 index) {
 	sNode *nn,*n = l->first,*ln = NULL;
 
 	ASSERT(list != NULL,"list == NULL");
-	ASSERT(data != NULL,"data == NULL");
 
 	/* walk to the desired position */
 	if(index == l->length) {

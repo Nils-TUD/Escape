@@ -17,7 +17,7 @@ typedef struct {
 	tPid pid;
 	fSigHandler handler;
 	u8 active;
-	u8 sigCount;
+	sSLList *pending;
 } sHandler;
 
 /**
@@ -27,8 +27,9 @@ typedef struct {
  * @param h the handler (may be NULL)
  * @param pid the pid (may be INVALID_PID)
  * @param signal the signal
+ * @param data the data to send
  */
-static void sig_addSig(sHandler *h,tPid pid,tSig signal);
+static void sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data);
 
 /**
  * Finds the handler for the given process and signal
@@ -49,8 +50,8 @@ bool sig_canHandle(tSig signal) {
 	return signal >= 1 && signal < SIG_COUNT;
 }
 
-bool sig_isInterrupt(tSig signal) {
-	return signal >= SIG_INTRPT_TIMER && signal < SIG_INTRPT_ATA2;
+bool sig_canSend(tSig signal) {
+	return signal < SIG_INTRPT_TIMER;
 }
 
 s32 sig_setHandler(tPid pid,tSig signal,fSigHandler func) {
@@ -76,7 +77,7 @@ s32 sig_setHandler(tPid pid,tSig signal,fSigHandler func) {
 	/* note that we discard not yet delivered signals here.. */
 	h->pid = pid;
 	h->handler = func;
-	h->sigCount = 0;
+	h->pending = NULL;
 	h->active = 0;
 
 	if(!sll_append(handler[signal - 1],h)) {
@@ -93,7 +94,10 @@ void sig_unsetHandler(tPid pid,tSig signal) {
 
 	h = sig_get(pid,signal);
 	if(h != NULL) {
-		totalSigs -= h->sigCount;
+		if(h->pending != NULL) {
+			totalSigs -= sll_length(h->pending);
+			sll_destroy(h->pending,false);
+		}
 		sll_removeFirst(handler[signal - 1],h);
 		kheap_free(h);
 	}
@@ -112,7 +116,10 @@ void sig_removeHandlerFor(tPid pid) {
 			for(n = sll_begin(*list); n != NULL; ) {
 				h = (sHandler*)n->data;
 				if(h->pid == pid) {
-					totalSigs -= h->sigCount;
+					if(h->pending != NULL) {
+						totalSigs -= sll_length(h->pending);
+						sll_destroy(h->pending,false);
+					}
 					m = n->next;
 					/* remove node */
 					sll_removeNode(*list,n,p);
@@ -129,7 +136,7 @@ void sig_removeHandlerFor(tPid pid) {
 	}
 }
 
-bool sig_hasSignal(tSig *sig,tPid *pid) {
+bool sig_hasSignal(tSig *sig,tPid *pid,u32 *data) {
 	u32 i;
 	sSLNode *n;
 	sHandler *h;
@@ -145,7 +152,8 @@ bool sig_hasSignal(tSig *sig,tPid *pid) {
 		if(*list != NULL) {
 			for(n = sll_begin(*list); n != NULL; n = n->next) {
 				h = (sHandler*)n->data;
-				if(h->active == 0 && h->sigCount > 0) {
+				if(h->active == 0 && sll_length(h->pending) > 0) {
+					*data = (u32)sll_get(h->pending,0);
 					*pid = h->pid;
 					*sig = i + 1;
 					return true;
@@ -157,18 +165,18 @@ bool sig_hasSignal(tSig *sig,tPid *pid) {
 	return false;
 }
 
-bool sig_addSignalFor(tPid pid,tSig signal) {
+bool sig_addSignalFor(tPid pid,tSig signal,u32 data) {
 	sHandler *h;
 	ASSERT(signal < SIG_COUNT,"Unable to handle signal %d");
 
 	h = sig_get(pid,signal);
-	sig_addSig(h,pid,signal);
+	sig_addSig(h,pid,signal,data);
 	if(h != NULL)
 		return !h->active;
 	return false;
 }
 
-tPid sig_addSignal(tSig signal) {
+tPid sig_addSignal(tSig signal,u32 data) {
 	sSLList *list;
 	sHandler *h;
 	sSLNode *n;
@@ -180,7 +188,7 @@ tPid sig_addSignal(tSig signal) {
 	if(list != NULL) {
 		for(n = sll_begin(list); n != NULL; n = n->next) {
 			h = (sHandler*)n->data;
-			sig_addSig(h,INVALID_PID,signal);
+			sig_addSig(h,INVALID_PID,signal,data);
 			/* remember first proc for direct notification */
 			if(!h->active && res == INVALID_PID)
 				res = h->pid;
@@ -197,8 +205,8 @@ fSigHandler sig_startHandling(tPid pid,tSig signal) {
 	h = sig_get(pid,signal);
 	if(h != NULL) {
 		ASSERT(totalSigs > 0,"We don't have any signals");
-		ASSERT(h->sigCount > 0,"Process %d hasn't got signal %d",pid,signal);
-		h->sigCount--;
+		ASSERT(sll_length(h->pending) > 0,"Process %d hasn't got signal %d",pid,signal);
+		sll_removeIndex(h->pending,0);
 		h->active = 1;
 		totalSigs--;
 		return h->handler;
@@ -215,9 +223,14 @@ void sig_ackHandling(tPid pid,tSig signal) {
 		h->active = 0;
 }
 
-static void sig_addSig(sHandler *h,tPid pid,tSig signal) {
+static void sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data) {
 	if(h != NULL) {
-		h->sigCount++;
+		if(h->pending == NULL) {
+			h->pending = sll_create();
+			if(h->pending == NULL)
+				return;
+		}
+		sll_append(h->pending,(void*)data);
 		totalSigs++;
 	}
 
@@ -303,8 +316,8 @@ void sig_dbg_print(void) {
 		if(*list != NULL) {
 			for(n = sll_begin(*list); n != NULL; n = n->next) {
 				h = (sHandler*)n->data;
-				vid_printf("\t\t(0x%08x): Pid=%d, handler=0x%x, active=%d, sigCount=%d\n",h,
-						h->pid,h->handler,h->active,h->sigCount);
+				vid_printf("\t\t(0x%08x): Pid=%d, handler=0x%x, active=%d, pending=%d\n",h,
+						h->pid,h->handler,h->active,sll_length(h->pending));
 			}
 		}
 		list++;

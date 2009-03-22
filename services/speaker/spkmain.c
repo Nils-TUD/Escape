@@ -31,7 +31,7 @@ static void stopSound(void);
 /**
  * The timer-interrupt-handler
  */
-static void timerIntrptHandler(tSig sig);
+static void timerIntrptHandler(tSig sig,u32 data);
 
 static u16 intrptCount = 0;
 static u16 intrptTarget = 0;
@@ -90,8 +90,9 @@ s32 main(void) {
 	return 0;
 }
 
-static void timerIntrptHandler(tSig sig) {
+static void timerIntrptHandler(tSig sig,u32 data) {
 	UNUSED(sig);
+	UNUSED(data);
 	if(intrptTarget > 0) {
 		intrptCount++;
 		if(intrptCount == intrptTarget) {

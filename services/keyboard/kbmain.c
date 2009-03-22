@@ -26,7 +26,7 @@
 /**
  * The keyboard-interrupt handler
  */
-static void kbIntrptHandler(tSig sig);
+static void kbIntrptHandler(tSig sig,u32 data);
 
 /* file-descriptor for ourself */
 static s32 selfFd;
@@ -82,8 +82,9 @@ s32 main(void) {
 	return 0;
 }
 
-static void kbIntrptHandler(tSig sig) {
+static void kbIntrptHandler(tSig sig,u32 data) {
 	UNUSED(sig);
+	UNUSED(data);
 	static sMsgKbResponse resp;
 	u8 scanCode = inByte(IOPORT_KB_CTRL);
 	if(kb_set1_getKeycode(&resp,scanCode)) {

@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <io.h>
+#include <bufio.h>
 
 #define BUF_SIZE 512
 

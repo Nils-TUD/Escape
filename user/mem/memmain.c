@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <io.h>
+#include <bufio.h>
 #include <mem.h>
 
 s32 main(u32 argc,s8 **argv) {

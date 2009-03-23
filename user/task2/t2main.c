@@ -8,6 +8,8 @@
 #include <debug.h>
 #include <proc.h>
 #include <io.h>
+#include <bufio.h>
+#include <ports.h>
 #include <dir.h>
 #include <string.h>
 #include <service.h>
@@ -44,7 +46,20 @@ static void logChar(char c) {
 #endif
 
 s32 main(void) {
-	s8 buffer[32];
+	debugf("ret=%d\n",printc('a'));
+	debugf("ret=%d\n",printc('b'));
+	debugf("ret=%d\n",printc('c'));
+	debugf("ret=%d\n",prints("Das ist mein Name\n"));
+	debugf("ret=%d\n",printn(1234));
+	debugf("ret=%d\n",printn(-1234));
+	debugf("ret=%d\n",printn(0));
+	debugf("ret=%d\n",printn(100));
+	debugf("ret=%d\n",printu(1234,10));
+	debugf("ret=%d\n",printu(0,10));
+	debugf("ret=%d\n",printu(0xABCDEF,16));
+	flush();
+
+	/*s8 buffer[32];
 	s8 *str = "Das ist mein String\n";
 	s32 stdout,fd = open("system:/pipe",IO_READ | IO_WRITE);
 	if(fd < 0) {
@@ -66,8 +81,8 @@ s32 main(void) {
 		redirFd(STDIN_FILENO,fd);
 		s32 c;
 		printf("Child reads:\n");
-		while((c = readChar()) > 0) {
-			putchar(c);
+		while((c = scanc()) > 0) {
+			printc(c);
 		}
 		flush();
 		printf("Ready\n");
@@ -76,7 +91,7 @@ s32 main(void) {
 
 	sleep(EV_CHILD_DIED);
 	printf("Ok, closing file\n");
-	close(fd);
+	close(fd);*/
 
 	/*printf("I am task2....yeah!! pid=%d\n",getpid());
 	printf("Ok, that's enough for now...\n");

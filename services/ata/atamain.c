@@ -8,6 +8,7 @@
 #include <service.h>
 #include <messages.h>
 #include <io.h>
+#include <ports.h>
 #include <heap.h>
 #include <proc.h>
 #include <debug.h>

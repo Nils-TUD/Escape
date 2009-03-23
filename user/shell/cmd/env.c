@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <io.h>
+#include <bufio.h>
 #include <env.h>
 #include <messages.h>
 #include <heap.h>

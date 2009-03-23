@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <io.h>
+#include <bufio.h>
 #include "help.h"
 
 s32 shell_cmdHelp(u32 argc,s8 **argv) {

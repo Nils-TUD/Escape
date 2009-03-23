@@ -1,77 +1,11 @@
-src/env.c: In function ‘getEnv’:
-src/env.c:54: warning: passing argument 2 of ‘asmBinDataMsg’ discards qualifiers from pointer target type
 umount: disk: not mounted
 ioctl: LOOP_CLR_FD: No such device or address
-atamain.c:108: warning: unused parameter ‘sig’
-atamain.c:108: warning: unused parameter ‘data’
-atamain.c:112: warning: return type of ‘main’ is not ‘int’
-senvmain.c:106: warning: return type of ‘main’ is not ‘int’
-senvmain.c: In function ‘main’:
-senvmain.c:135: warning: cast from pointer to integer of different size
-senvmain.c: At top level:
-senvmain.c:369: warning: ‘env_printAll’ defined but not used
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-fsmain.c:58: warning: return type of ‘main’ is not ‘int’
-kbmain.c:34: warning: return type of ‘main’ is not ‘int’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-spkmain.c:39: warning: return type of ‘main’ is not ‘int’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-vidmain.c:49: warning: return type of ‘main’ is not ‘int’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-vtmain.c:23: warning: return type of ‘main’ is not ‘int’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-catmain.c:12: warning: return type of ‘main’ is not ‘int’
-catmain.c:12: warning: first argument of ‘main’ should be ‘int’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-imain.c:43: warning: return type of ‘main’ is not ‘int’
-kimain.c:12: warning: return type of ‘main’ is not ‘int’
-kimain.c:12: warning: first argument of ‘main’ should be ‘int’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-lsmain.c:11: warning: return type of ‘main’ is not ‘int’
-lsmain.c:11: warning: first argument of ‘main’ should be ‘int’
-lsmain.c: In function ‘main’:
-lsmain.c:17: warning: implicit declaration of function ‘getEnv’
-lsmain.c:17: warning: nested extern declaration of ‘getEnv’
-lsmain.c:17: warning: assignment makes pointer from integer without a cast
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-memmain.c:11: warning: return type of ‘main’ is not ‘int’
-memmain.c:11: warning: first argument of ‘main’ should be ‘int’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-psmain.c:28: warning: return type of ‘main’ is not ‘int’
-psmain.c:28: warning: first argument of ‘main’ should be ‘int’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-completion.c:32: warning: ‘externCmd’ defined but not used
-shmain.c:77: warning: return type of ‘main’ is not ‘int’
-shmain.c:77: warning: first argument of ‘main’ should be ‘int’
-shmain.c:77: warning: unused parameter ‘argc’
-shmain.c:77: warning: unused parameter ‘argv’
-shmain.c: In function ‘shell_executeCmd’:
-shmain.c:306: warning: unused variable ‘c’
-shmain.c: At top level:
-shmain.c:75: warning: ‘args’ defined but not used
-cmd/cd.c:12: warning: no previous prototype for ‘shell_cmdCd’
-cmd/cd.c: In function ‘shell_cmdCd’:
-cmd/cd.c:24: warning: implicit declaration of function ‘strncmp’
-cmd/cd.c:24: warning: nested extern declaration of ‘strncmp’
-cmd/echo.c:10: warning: no previous prototype for ‘shell_cmdEcho’
-cmd/env.c:14: warning: no previous prototype for ‘shell_cmdEnv’
-cmd/help.c:10: warning: no previous prototype for ‘shell_cmdHelp’
-cmd/pwd.c:11: warning: no previous prototype for ‘shell_cmdPwd’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-wcmain.c:12: warning: return type of ‘main’ is not ‘int’
-wcmain.c:12: warning: first argument of ‘main’ should be ‘int’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
+atamain.c:109: warning: unused parameter ‘sig’
+atamain.c:109: warning: unused parameter ‘data’
+atamain.c:113: warning: return type of ‘main’ is not ‘int’
+../../build/libc.a(libc_bufio.o): In function `doFscanl':
+/home/hrniels/qemu/firsttest/libc/src/bufio.c:306: undefined reference to `dofscanc'
+collect2: ld returned 1 exit status
+make[2]: *** [../../build/service_ata.bin] Error 1
+make[1]: *** [all] Error 1
+make: *** [all] Error 1

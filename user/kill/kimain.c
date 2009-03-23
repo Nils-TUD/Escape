@@ -7,6 +7,7 @@
 #include <common.h>
 #include <string.h>
 #include <io.h>
+#include <bufio.h>
 #include <signals.h>
 
 s32 main(u32 argc,s8 **argv) {

@@ -7,6 +7,7 @@
 #include <common.h>
 #include <heap.h>
 #include <io.h>
+#include <bufio.h>
 #include <string.h>
 
 s32 main(u32 argc,s8 **argv) {
@@ -29,7 +30,7 @@ s32 main(u32 argc,s8 **argv) {
 		}
 	}
 
-	while((ch = readChar()) > 0) {
+	while((ch = scanc()) > 0) {
 		if(isspace(ch)) {
 			if(bufPos > 0) {
 				if(print) {

@@ -8,6 +8,7 @@
 #include <debug.h>
 #include <proc.h>
 #include <io.h>
+#include <bufio.h>
 #include <dir.h>
 #include <string.h>
 #include <service.h>
@@ -40,6 +41,19 @@ static bool shell_prompt(void);
  * @return the number of read chars
  */
 static u16 shell_readLine(s8 *buffer,u16 max);
+
+/**
+ * Handles the default-escape-codes
+
+ * @param line the buffer with read characters
+ * @param cursorPos the current cursor-position in the buffer (may be changed)
+ * @param charcount the number of read characters so far (may be changed)
+ * @param c the character
+ * @param keycode the keycode of the escape-code
+ * @param modifier the modifier of the escape-code
+ * @return true if the escape-code was handled
+ */
+static bool handleDefEscapes(s8 *line,u32 *cursorPos,u32 *charcount,s8 c,u8 *keycode,u8 *modifier);
 
 /**
  * Handles the escape-codes for the shell
@@ -124,9 +138,9 @@ static u16 shell_readLine(s8 *buffer,u16 max) {
 	/* ensure that the line is empty */
 	*buffer = '\0';
 	while(i < max) {
-		c = readChar();
+		c = scanc();
 
-		if(handleDefaultEscapeCodes(buffer,&cursorPos,&i,c,&keycode,&modifier))
+		if(handleDefEscapes(buffer,&cursorPos,&i,c,&keycode,&modifier))
 			continue;
 		if(c == '\033') {
 			shell_handleEscapeCodes(buffer,&cursorPos,&i,keycode,modifier);
@@ -138,7 +152,7 @@ static u16 shell_readLine(s8 *buffer,u16 max) {
 		}
 
 		/* echo */
-		putchar(c);
+		printc(c);
 		flush();
 
 		if(c == '\n')
@@ -152,11 +166,11 @@ static u16 shell_readLine(s8 *buffer,u16 max) {
 			buffer[cursorPos] = c;
 			/* now write the chars to vterm */
 			for(x = cursorPos + 1; x <= i; x++)
-				putchar(buffer[x]);
+				printc(buffer[x]);
 			/* and walk backwards */
-			putchar('\033');
-			putchar(VK_HOME);
-			putchar(i - cursorPos);
+			printc('\033');
+			printc(VK_HOME);
+			printc(i - cursorPos);
 			/* we want to do that immediatly */
 			flush();
 			/* we've added a char */
@@ -197,17 +211,17 @@ static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,u8 
 		u32 i,len = strlen(line);
 
 		/* go to line end */
-		putchar('\033');
-		putchar(VK_END);
-		putchar(*charcount - *cursorPos);
+		printc('\033');
+		printc(VK_END);
+		printc(*charcount - *cursorPos);
 		/* delete chars */
 		while(pos-- > 0)
-			putchar('\b');
+			printc('\b');
 
 		/* replace in buffer and write string to vterm */
 		memcpy(buffer,line,len + 1);
 		for(i = 0; i < len; i++)
-			putchar(buffer[i]);
+			printc(buffer[i]);
 
 		/* now send the commands */
 		flush();
@@ -261,7 +275,7 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 			for(; i < cmdlen; i++) {
 				s8 c = matches[0]->name[i];
 				orgLine[ilength++] = c;
-				putchar(c);
+				printc(c);
 			}
 			/* set length and cursor */
 			*length = ilength;
@@ -273,7 +287,7 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 			if(tabCount == 0) {
 				tabCount++;
 				/* beep */
-				putchar('\a');
+				printc('\a');
 				flush();
 			}
 			else {
@@ -416,5 +430,82 @@ static s32 shell_executeCmd(s8 *line) {
 	free(pipes);
 	tok_free(tokens,tokCount);
 	cmd_free(cmds,cmdCount);
+	return res;
+}
+
+static bool handleDefEscapes(s8 *line,u32 *cursorPos,u32 *charcount,s8 c,u8 *keycode,u8 *modifier) {
+	bool res = false;
+	u32 icursorPos = *cursorPos;
+	u32 icharcount = *charcount;
+	switch(c) {
+		case '\b':
+			if(icursorPos > 0) {
+				/* remove last char */
+				if(icursorPos < icharcount)
+					memmove(line + icursorPos - 1,line + icursorPos,icharcount - icursorPos);
+				icharcount--;
+				icursorPos--;
+				line[icharcount] = '\0';
+				/* send backspace */
+				printc(c);
+				flush();
+			}
+			res = true;
+			break;
+
+		case '\033': {
+			bool writeBack = false;
+			*keycode = scanc();
+			*modifier = scanc();
+			switch(*keycode) {
+				/* write escape-code back */
+				case VK_RIGHT:
+					if(icursorPos < icharcount) {
+						writeBack = true;
+						icursorPos++;
+					}
+					res = true;
+					break;
+				case VK_HOME:
+					if(icursorPos > 0) {
+						writeBack = true;
+						/* send the number of chars to move */
+						*modifier = icursorPos;
+						icursorPos = 0;
+					}
+					res = true;
+					break;
+				case VK_END:
+					if(icursorPos < icharcount) {
+						writeBack = true;
+						/* send the number of chars to move */
+						*modifier = icharcount - icursorPos;
+						icursorPos = icharcount;
+					}
+					res = true;
+					break;
+				case VK_LEFT:
+					if(icursorPos > 0) {
+						writeBack = true;
+						icursorPos--;
+					}
+					res = true;
+					break;
+			}
+
+			/* write escape-code back */
+			if(writeBack) {
+				printc(c);
+				printc(*keycode);
+				printc(*modifier);
+				flush();
+			}
+		}
+		break;
+	}
+
+	*cursorPos = icursorPos;
+	*charcount = icharcount;
+
 	return res;
 }

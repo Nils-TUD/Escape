@@ -7,6 +7,7 @@
 #include <common.h>
 #include <service.h>
 #include <io.h>
+#include <ports.h>
 #include <messages.h>
 #include <heap.h>
 #include <mem.h>

@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <io.h>
+#include <ports.h>
 #include <service.h>
 #include <proc.h>
 #include <messages.h>

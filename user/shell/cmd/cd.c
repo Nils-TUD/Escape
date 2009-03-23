@@ -8,6 +8,7 @@
 #include <env.h>
 #include <dir.h>
 #include <io.h>
+#include <bufio.h>
 #include <string.h>
 #include "cd.h"
 

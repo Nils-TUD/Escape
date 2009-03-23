@@ -7,6 +7,7 @@
 #include "../h/common.h"
 #include "../h/debug.h"
 #include "../h/io.h"
+#include "../h/bufio.h"
 #include <stdarg.h>
 
 /**

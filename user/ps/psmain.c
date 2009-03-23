@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <io.h>
+#include <bufio.h>
 #include <dir.h>
 #include <proc.h>
 #include <string.h>

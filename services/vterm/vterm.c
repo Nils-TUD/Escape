@@ -7,6 +7,7 @@
 #include <common.h>
 #include <messages.h>
 #include <io.h>
+#include <ports.h>
 #include <proc.h>
 #include <keycodes.h>
 #include <heap.h>

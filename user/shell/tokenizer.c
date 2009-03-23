@@ -7,6 +7,7 @@
 #include <common.h>
 #include <string.h>
 #include <io.h>
+#include <bufio.h>
 #include <heap.h>
 #include "tokenizer.h"
 

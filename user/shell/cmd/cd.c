@@ -8,6 +8,8 @@
 #include <env.h>
 #include <dir.h>
 #include <io.h>
+#include <string.h>
+#include "cd.h"
 
 s32 shell_cmdCd(u32 argc,s8 **argv) {
 	s8 *path;

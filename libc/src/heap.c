@@ -230,6 +230,10 @@ void *realloc(void *addr,u32 size) {
 	if(area == NULL)
 		return NULL;
 
+	/* ignore size-shrinks */
+	if(size < area->size)
+		return addr;
+
 	a = usableList;
 	prev = NULL;
 	while(a != NULL) {

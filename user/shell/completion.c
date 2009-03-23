@@ -126,16 +126,14 @@ sShellCmd **compl_get(s8 *str,u32 length,u32 max,bool searchCmd,bool searchPath)
 			if(cmdlen < MAX_CMDNAME_LEN && length <= cmdlen && strncmp(str,entry->name,matchLen) == 0) {
 				matches = compl_incrArray(matches,arrayPos,&arraySize);
 				if(matches == NULL) {
-					if(paths[1] != NULL)
-						free(paths[1]);
+					free(paths[1]);
 					closedir(dd);
 					return NULL;
 				}
 
 				cmd = malloc(sizeof(sShellCmd));
 				if(cmd == NULL) {
-					if(paths[1] != NULL)
-						free(paths[1]);
+					free(paths[1]);
 					matches[arrayPos] = NULL;
 					compl_free(matches);
 					closedir(dd);
@@ -162,13 +160,12 @@ sShellCmd **compl_get(s8 *str,u32 length,u32 max,bool searchCmd,bool searchPath)
 		closedir(dd);
 	}
 
+	free(paths[1]);
+
 	/* terminate */
 	matches = compl_incrArray(matches,arrayPos,&arraySize);
-	if(matches == NULL) {
-		if(paths[1] != NULL)
-			free(paths[1]);
+	if(matches == NULL)
 		return NULL;
-	}
 	matches[arrayPos] = NULL;
 
 	return matches;

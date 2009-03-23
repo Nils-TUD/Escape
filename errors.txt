@@ -1,12 +1,15 @@
+src/env.c: In function ‘getEnv’:
+src/env.c:54: warning: passing argument 2 of ‘asmBinDataMsg’ discards qualifiers from pointer target type
 umount: disk: not mounted
 ioctl: LOOP_CLR_FD: No such device or address
 atamain.c:108: warning: unused parameter ‘sig’
 atamain.c:108: warning: unused parameter ‘data’
 atamain.c:112: warning: return type of ‘main’ is not ‘int’
-senvmain.c:84: warning: return type of ‘main’ is not ‘int’
-senvmain.c:84: warning: first argument of ‘main’ should be ‘int’
-senvmain.c:163: warning: unused parameter ‘sig’
-senvmain.c:273: warning: ‘env_printAll’ defined but not used
+senvmain.c:106: warning: return type of ‘main’ is not ‘int’
+senvmain.c: In function ‘main’:
+senvmain.c:135: warning: cast from pointer to integer of different size
+senvmain.c: At top level:
+senvmain.c:369: warning: ‘env_printAll’ defined but not used
 umount: disk: not mounted
 ioctl: LOOP_CLR_FD: No such device or address
 fsmain.c:58: warning: return type of ‘main’ is not ‘int’
@@ -26,24 +29,6 @@ catmain.c:12: warning: return type of ‘main’ is not ‘int’
 catmain.c:12: warning: first argument of ‘main’ should be ‘int’
 umount: disk: not mounted
 ioctl: LOOP_CLR_FD: No such device or address
-ecmain.c:10: warning: return type of ‘main’ is not ‘int’
-ecmain.c:10: warning: first argument of ‘main’ should be ‘int’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-envmain.c:11: warning: return type of ‘main’ is not ‘int’
-envmain.c:11: warning: first argument of ‘main’ should be ‘int’
-envmain.c: In function ‘main’:
-envmain.c:20: warning: passing argument 1 of ‘setenv’ discards qualifiers from pointer target type
-envmain.c:20: warning: passing argument 2 of ‘setenv’ discards qualifiers from pointer target type
-envmain.c: At top level:
-envmain.c:11: warning: unused parameter ‘argc’
-envmain.c:11: warning: unused parameter ‘argv’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
-hmain.c:10: warning: return type of ‘main’ is not ‘int’
-hmain.c:10: warning: first argument of ‘main’ should be ‘int’
-umount: disk: not mounted
-ioctl: LOOP_CLR_FD: No such device or address
 imain.c:43: warning: return type of ‘main’ is not ‘int’
 kimain.c:12: warning: return type of ‘main’ is not ‘int’
 kimain.c:12: warning: first argument of ‘main’ should be ‘int’
@@ -51,6 +36,10 @@ umount: disk: not mounted
 ioctl: LOOP_CLR_FD: No such device or address
 lsmain.c:11: warning: return type of ‘main’ is not ‘int’
 lsmain.c:11: warning: first argument of ‘main’ should be ‘int’
+lsmain.c: In function ‘main’:
+lsmain.c:17: warning: implicit declaration of function ‘getEnv’
+lsmain.c:17: warning: nested extern declaration of ‘getEnv’
+lsmain.c:17: warning: assignment makes pointer from integer without a cast
 umount: disk: not mounted
 ioctl: LOOP_CLR_FD: No such device or address
 memmain.c:11: warning: return type of ‘main’ is not ‘int’
@@ -61,26 +50,28 @@ psmain.c:28: warning: return type of ‘main’ is not ‘int’
 psmain.c:28: warning: first argument of ‘main’ should be ‘int’
 umount: disk: not mounted
 ioctl: LOOP_CLR_FD: No such device or address
+completion.c:32: warning: ‘externCmd’ defined but not used
 shmain.c:77: warning: return type of ‘main’ is not ‘int’
 shmain.c:77: warning: first argument of ‘main’ should be ‘int’
 shmain.c:77: warning: unused parameter ‘argc’
 shmain.c:77: warning: unused parameter ‘argv’
+shmain.c: In function ‘shell_executeCmd’:
+shmain.c:306: warning: unused variable ‘c’
+shmain.c: At top level:
+shmain.c:75: warning: ‘args’ defined but not used
+cmd/cd.c:12: warning: no previous prototype for ‘shell_cmdCd’
+cmd/cd.c: In function ‘shell_cmdCd’:
+cmd/cd.c:24: warning: implicit declaration of function ‘strncmp’
+cmd/cd.c:24: warning: nested extern declaration of ‘strncmp’
+cmd/echo.c:10: warning: no previous prototype for ‘shell_cmdEcho’
+cmd/env.c:14: warning: no previous prototype for ‘shell_cmdEnv’
+cmd/help.c:10: warning: no previous prototype for ‘shell_cmdHelp’
+cmd/pwd.c:11: warning: no previous prototype for ‘shell_cmdPwd’
 umount: disk: not mounted
 ioctl: LOOP_CLR_FD: No such device or address
-t2main.c:46: warning: return type of ‘main’ is not ‘int’
 umount: disk: not mounted
 ioctl: LOOP_CLR_FD: No such device or address
-src/ksymbols.c: In function ‘ksym_print’:
-src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
-src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
-src/syscalls.c:316: warning: unused parameter ‘stack’
-src/vfsnode.c:216: warning: unused parameter ‘parent’
-../src/ksymbols.c: In function ‘ksym_print’:
-../src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
-../src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
-../src/syscalls.c:316: warning: unused parameter ‘stack’
-../src/vfsnode.c:216: warning: unused parameter ‘parent’
-tstring.c: In function ‘test_atoi’:
-tstring.c:84: warning: this decimal constant is unsigned only in ISO C90
-tstring.c: In function ‘test_itoa’:
-tstring.c:112: warning: this decimal constant is unsigned only in ISO C90
+wcmain.c:12: warning: return type of ‘main’ is not ‘int’
+wcmain.c:12: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address

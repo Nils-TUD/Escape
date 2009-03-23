@@ -10,6 +10,7 @@
 #include <messages.h>
 #include <heap.h>
 #include <string.h>
+#include "env.h"
 
 s32 shell_cmdEnv(u32 argc,s8 **argv) {
 	if(argc < 2) {

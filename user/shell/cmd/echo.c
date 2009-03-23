@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <io.h>
+#include "echo.h"
 
 s32 shell_cmdEcho(u32 argc,s8 *argv[]) {
 	u32 i;

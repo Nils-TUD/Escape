@@ -97,6 +97,17 @@ typedef enum {false = 0, true = 1} bool;
 #define ERR_FS_READ_FAILED			-28
 #define ERR_INVALID_PATH			-29
 
+/**
+ * Calculates the stacktrace
+ *
+ * @return the trace (null-terminated)
+ */
+u32 *getStackTrace(void);
+
+/**
+ * Prints the stack-trace
+ */
+void printStackTrace(void);
 
 /**
  * Prints the last error-message

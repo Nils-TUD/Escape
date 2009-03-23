@@ -303,7 +303,7 @@ static s32 shell_executeCmd(s8 *line) {
 	sCommand *cmds,*cmd;
 	sShellCmd **scmds;
 	u32 i,cmdCount,tokCount;
-	s8 c,path[MAX_CMD_LEN] = APPS_DIR;
+	s8 path[MAX_CMD_LEN] = APPS_DIR;
 	s32 res;
 	s32 *pipes = NULL,*pipe;
 
@@ -320,7 +320,7 @@ static s32 shell_executeCmd(s8 *line) {
 	}
 
 	/* create pipe-fds */
-	if(cmdCount > 0) {
+	if(cmdCount > 1) {
 		pipes = (s32*)malloc((cmdCount - 1) * sizeof(s32));
 		if(pipes == NULL) {
 			printLastError();
@@ -351,6 +351,7 @@ static s32 shell_executeCmd(s8 *line) {
 			*pipe = open("system:/pipe",IO_READ | IO_WRITE);
 			if(*pipe < 0) {
 				free(pipes);
+				compl_free(scmds);
 				tok_free(tokens,tokCount);
 				cmd_free(cmds,cmdCount);
 				printLastError();
@@ -375,10 +376,15 @@ static s32 shell_executeCmd(s8 *line) {
 			res = scmds[0]->func(cmd->argCount,cmd->arguments);
 
 			/* restore stdin & stdout */
-			if(cmd->dup & DUP_STDOUT)
+			if(cmd->dup & DUP_STDOUT) {
 				redirFd(STDOUT_FILENO,fdout);
-			if(cmd->dup & DUP_STDIN)
+				/* we have to close fdout here because redirFd() will not do it for us */
+				close(fdout);
+			}
+			if(cmd->dup & DUP_STDIN) {
 				redirFd(STDIN_FILENO,fdin);
+				close(fdin);
+			}
 		}
 		else {
 			if(fork() == 0) {

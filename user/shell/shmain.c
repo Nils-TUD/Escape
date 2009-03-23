@@ -17,7 +17,9 @@
 #include <env.h>
 
 #include "history.h"
-#include "commands.h"
+#include "completion.h"
+#include "tokenizer.h"
+#include "cmdbuilder.h"
 
 #define MAX_ARG_COUNT		10
 
@@ -227,16 +229,29 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 	if(icursorPos == ilength) {
 		sShellCmd **matches;
 		sShellCmd **cmd;
+		sCmdToken *tokens;
+		s8 *token;
+		u32 tokLen,tokCount;
 
-		/* ensure that the line is terminated */
+		/* get tokens */
 		line[ilength] = '\0';
+		tokens = tok_get(line,&tokCount);
+		if(tokens == NULL)
+			return;
 
-		matches = shell_getMatches(line,ilength,0);
+		/* get matches for last token */
+		if(tokCount > 0)
+			token = tokens[tokCount - 1].str;
+		else
+			token = (s8*)"";
+		tokLen = strlen(token);
+		matches = compl_get(token,tokLen,0,tokCount <= 1);
 		if(matches == NULL || matches[0] == NULL)
 			return;
 
 		/* found one match? */
 		if(matches[1] == NULL) {
+			tabCount = 0;
 			/* add chars */
 			cmdlen = strlen(matches[0]->name);
 			if(matches[0]->complStart == -1)
@@ -279,68 +294,62 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 			}
 		}
 
-		shell_freeMatches(matches);
+		compl_free(matches);
 	}
 }
 
 static s32 shell_executeCmd(s8 *line) {
-	sShellCmd **cmds;
-	sShellCmd *cmd;
-	s8 path[MAX_CMD_LEN] = APPS_DIR;
-	s8 c;
+	sCmdToken *tokens;
+	sCommand *cmds,*cmd;
+	sShellCmd **scmds;
+	u32 i,cmdCount,tokCount;
+	s8 c,path[MAX_CMD_LEN] = APPS_DIR;
 	s32 res;
-	u32 i,len = strlen(line),npos = 0,pos = 0;
 
-	/* match command to first space */
-	pos = strchri(line,' ');
-	c = line[pos];
-	line[pos] = '\0';
+	/* tokenize the line */
+	tokens = tok_get(line,&tokCount);
+	if(tokens == NULL)
+		return -1;
 
-	cmds = shell_getMatches(line,pos,2);
-	/* check if there is another matching command */
-	if(cmds == NULL || cmds[0] == NULL || cmds[1] != NULL || cmds[0]->type == TYPE_PATH) {
-		printf("%s: Command not found\n",line);
-		line[pos] = c;
+	/* parse commands from the tokens */
+	cmds = cmd_get(tokens,tokCount,&cmdCount);
+	if(cmds == NULL) {
+		tok_free(tokens,tokCount);
 		return -1;
 	}
 
-	/* parse line for arguments */
-	line[pos] = c;
-	pos = 0;
-	for(i = 0; i < MAX_ARG_COUNT; ) {
-		npos = strchri(line + pos,' ');
-		s8 *buffer = (s8*)malloc((npos + 1) * sizeof(s8));
-		if(buffer == NULL)
-			break;
-		strncpy(buffer,line + pos,npos);
-		args[i++] = buffer;
-		if(pos + npos == len)
-			break;
-		pos += npos + 1;
-	}
+	cmd = cmds;
+	for(i = 0; i < cmdCount; i++) {
+		scmds = compl_get(cmd->arguments[0],strlen(cmd->arguments[0]),2,true);
 
-	/* execute command */
-	cmd = *cmds;
-	if(cmd->type == TYPE_BUILTIN) {
-		res = cmd->func(i,args);
-	}
-	else {
-		if(fork() == 0) {
-			strcat(path,cmd->name);
-			exec(path,args);
-			exit(0);
+		/* we need exactly one match and it has to be TYPE_EXTERN or TYPE_BUILTIN */
+		if(scmds == NULL || scmds[0] == NULL || scmds[1] != NULL || scmds[0]->type == TYPE_PATH) {
+			tok_free(tokens,tokCount);
+			cmd_free(cmds,cmdCount);
+			return -1;
 		}
 
-		/* wait for child */
-		sleep(EV_CHILD_DIED);
+		/* execute command */
+		if(scmds[0]->type == TYPE_BUILTIN) {
+			res = scmds[0]->func(cmd->argCount,cmd->arguments);
+		}
+		else {
+			if(fork() == 0) {
+				strcat(path,scmds[0]->name);
+				exec(path,cmd->arguments);
+				exit(0);
+			}
+
+			/* wait for child */
+			sleep(EV_CHILD_DIED);
+		}
+
+		compl_free(scmds);
+		cmd++;
 	}
 
-	/* free args */
-	while(i > 0) {
-		i--;
-		free(args[i]);
-		args[i] = NULL;
-	}
-
+	/* clean up */
+	tok_free(tokens,tokCount);
+	cmd_free(cmds,cmdCount);
 	return res;
 }

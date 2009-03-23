@@ -789,6 +789,7 @@ static void sysc_sendSignal(sSysCallStack *stack) {
 	tPid pid = (tPid)stack->arg1;
 	tSig signal = (tSig)stack->arg2;
 	u32 data = stack->arg3;
+	sProc *p = proc_getRunning();
 
 	if(!sig_canSend(signal)) {
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
@@ -801,6 +802,9 @@ static void sysc_sendSignal(sSysCallStack *stack) {
 	}
 
 	sig_addSignalFor(pid,signal,data);
+	/* choose another process if we've killed ourself */
+	if(pid == p->pid)
+		proc_switch();
 	SYSC_RET1(stack,0);
 }
 

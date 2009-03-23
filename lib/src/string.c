@@ -336,6 +336,24 @@ u32 strcspn(cstring str1,cstring str2) {
 	return count;
 }
 
+s8 *strpbrk(const s8 *str1,const s8 *str2) {
+	s8 *s2;
+
+	ASSERT(str1 != NULL,"str1 == NULL");
+	ASSERT(str2 != NULL,"str2 == NULL");
+
+	while(*str1) {
+		s2 = (s8*)str2;
+		while(*s2) {
+			if(*s2 == *str1)
+				return (s8*)str1;
+			s2++;
+		}
+		str1++;
+	}
+	return NULL;
+}
+
 string strcut(string str,u32 count) {
 	string res = str;
 

@@ -35,13 +35,13 @@ typedef struct {
  * @param max the maximum number of matches to collect
  * @return the matches or NULL if failed
  */
-sShellCmd **shell_getMatches(s8 *line,u32 length,u32 max);
+sShellCmd **compl_get(s8 *str,u32 length,u32 max,bool searchPath);
 
 /**
  * Free's the given matches
  *
  * @param matches the matches
  */
-void shell_freeMatches(sShellCmd **matches);
+void compl_free(sShellCmd **matches);
 
 #endif /* COMMANDS_H_ */

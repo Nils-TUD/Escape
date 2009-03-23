@@ -195,6 +195,16 @@ string strstr(cstring str1,cstring str2);
 u32 strcspn(cstring str1,cstring str2);
 
 /**
+ * The function returns a pointer to the first occurrence in str1 of any character in
+ * str2, or NULL if no such characters are present.
+ *
+ * @param str1 the string to search
+ * @param str2 the characters to find
+ * @return the first occurrence or NULL
+ */
+s8 *strpbrk(const s8 *str1,const s8 *str2);
+
+/**
  * Cuts out the first count characters in the given string. That means all characters behind
  * will be moved count chars back.
  *

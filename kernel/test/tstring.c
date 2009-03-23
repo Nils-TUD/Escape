@@ -30,6 +30,7 @@ static void test_strchri(void);
 static void test_strrchr(void);
 static void test_strstr(void);
 static void test_strcspn(void);
+static void test_strpbrk(void);
 static void test_strcut(void);
 static void test_strlen(void);
 static void test_strnlen(void);
@@ -61,6 +62,7 @@ static void test_string(void) {
 	test_strrchr();
 	test_strstr();
 	test_strcspn();
+	test_strpbrk();
 	test_strcut();
 	test_strlen();
 	test_strnlen();
@@ -335,6 +337,30 @@ static void test_strcspn(void) {
 	if(!test_assertUInt(strcspn("abc","cdef"),2)) return;
 	if(!test_assertUInt(strcspn("","123"),0)) return;
 	if(!test_assertUInt(strcspn("",""),0)) return;
+
+	test_caseSucceded();
+}
+
+static void test_strpbrk(void) {
+	s8 str1[] = "test";
+	s8 str2[] = "abc_def";
+	s8 str3[] = "";
+	test_caseStart("Testing strpbrk()");
+
+	if(!test_assertStr(strpbrk(str1,"test"),str1)) return;
+	if(!test_assertStr(strpbrk(str1,"t"),str1)) return;
+	if(!test_assertStr(strpbrk(str1,"e"),str1 + 1)) return;
+	if(!test_assertStr(strpbrk(str1,"s"),str1 + 2)) return;
+	if(!test_assertStr(strpbrk(str2,"fde"),str2 + 4)) return;
+	if(!test_assertStr(strpbrk(str2,"def"),str2 + 4)) return;
+	if(!test_assertStr(strpbrk(str2,"fed"),str2 + 4)) return;
+	if(!test_assertStr(strpbrk(str2,"__"),str2 + 3)) return;
+	if(!test_assertTrue(strpbrk(str2,"ghxyz") == NULL)) return;
+	if(!test_assertTrue(strpbrk(str3,"a") == NULL)) return;
+	if(!test_assertTrue(strpbrk(str3,"xyz") == NULL)) return;
+	if(!test_assertTrue(strpbrk(str3,"") == NULL)) return;
+	if(!test_assertTrue(strpbrk(str2,"") == NULL)) return;
+	if(!test_assertTrue(strpbrk(str1,"") == NULL)) return;
 
 	test_caseSucceded();
 }

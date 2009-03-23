@@ -40,7 +40,7 @@ static bool shell_prompt(void);
  * @param max the maximum number of chars
  * @return the number of read chars
  */
-static u16 shell_readLine(s8 *buffer,u16 max);
+static u32 shell_readLine(s8 *buffer,u32 max);
 
 /**
  * Handles the default-escape-codes
@@ -65,7 +65,7 @@ static bool handleDefEscapes(s8 *line,u32 *cursorPos,u32 *charcount,s8 c,u8 *key
  * @param modifier the modifier of the escape-code
  * @return true if the escape-code was handled
  */
-static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,u8 keycode,u8 modifier);
+static bool shell_handleEscapeCodes(s8 *buffer,u32 *cursorPos,u32 *charcount,u8 keycode,u8 modifier);
 
 /**
  * Completes the current input, if possible
@@ -74,7 +74,7 @@ static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,u8 
  * @param cursorPos the cursor-position (may be changed)
  * @param length the number of entered characters yet (may be changed)
  */
-static void shell_complete(s8 *line,u16 *cursorPos,u16 *length);
+static void shell_complete(s8 *line,u32 *cursorPos,u32 *length);
 
 /**
  * Executes the given line
@@ -128,12 +128,12 @@ static bool shell_prompt(void) {
 	return true;
 }
 
-static u16 shell_readLine(s8 *buffer,u16 max) {
+static u32 shell_readLine(s8 *buffer,u32 max) {
 	s8 c;
 	u8 keycode;
 	u8 modifier;
-	u16 cursorPos = 0;
-	u16 i = 0;
+	u32 cursorPos = 0;
+	u32 i = 0;
 
 	/* ensure that the line is empty */
 	*buffer = '\0';
@@ -189,7 +189,7 @@ static u16 shell_readLine(s8 *buffer,u16 max) {
 	return i;
 }
 
-static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,u8 keycode,u8 modifier) {
+static bool shell_handleEscapeCodes(s8 *buffer,u32 *cursorPos,u32 *charcount,u8 keycode,u8 modifier) {
 	bool res = false;
 	s8 *line = NULL;
 
@@ -234,8 +234,8 @@ static bool shell_handleEscapeCodes(s8 *buffer,u16 *cursorPos,u16 *charcount,u8 
 	return res;
 }
 
-static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
-	u16 icursorPos = *cursorPos;
+static void shell_complete(s8 *line,u32 *cursorPos,u32 *length) {
+	u32 icursorPos = *cursorPos;
 	u32 i,cmdlen,ilength = *length;
 	s8 *orgLine = line;
 

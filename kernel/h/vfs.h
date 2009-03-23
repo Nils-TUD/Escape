@@ -16,7 +16,7 @@
 #define SERVICE_CLIENT_ALL			"a"
 
 /* the possible node-types */
-typedef enum {T_DIR,T_LINK,T_INFO,T_SERVICE,T_SERVUSE} eNodeType;
+typedef enum {T_DIR,T_LINK,T_INFO,T_SERVICE,T_SERVUSE,T_PIPECON,T_PIPE} eNodeType;
 
 /* vfs-node and GFT flags */
 enum {
@@ -78,14 +78,6 @@ struct sVFSNode {
 void vfs_init(void);
 
 /**
- * Determines the node-number for the given file
- *
- * @param file the file
- * @return the node-number or an error (both may be negative :/, check with vfsn_isValidNodeNo())
- */
-tVFSNodeNo vfs_getNodeNo(tFile file);
-
-/**
  * Inherits the given file for the current process
  *
  * @param pid the process-id
@@ -93,6 +85,22 @@ tVFSNodeNo vfs_getNodeNo(tFile file);
  * @return file the file to use (may be the same)
  */
 tFile vfs_inheritFile(tPid pid,tFile file);
+
+/**
+ * Increases the references of the given file
+ *
+ * @param file the file
+ * @return 0 on success
+ */
+s32 vfs_incRefs(tFile file);
+
+/**
+ * Determines the node-number for the given file
+ *
+ * @param file the file
+ * @return the node-number or an error (both may be negative :/, check with vfsn_isValidNodeNo())
+ */
+tVFSNodeNo vfs_getNodeNo(tFile file);
 
 /**
  * Opens the file with given number and given flags. That means it walks through the global
@@ -114,6 +122,15 @@ tFile vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo);
  * @return the file-number or a negative error-code
  */
 tFile vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo);
+
+/**
+ * Checks wether we are at EOF in the given file
+ *
+ * @param pid the process-id
+ * @param file the file
+ * @return true if at EOF
+ */
+bool vfs_eof(tPid pid,tFile file);
 
 /**
  * Reads max. count bytes from the given file into the given buffer and returns the number
@@ -210,7 +227,12 @@ bool vfs_createProcess(tPid pid,fRead handler);
 void vfs_removeProcess(tPid pid);
 
 /**
- * The default read-handler. Creates space, calls the callback which should fill the space
+ * The default-read-handler
+ */
+s32 vfs_defReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+
+/**
+ * Creates space, calls the callback which should fill the space
  * with data and writes the corresponding part to the buffer of the user
  *
  * @param pid the process-id
@@ -221,7 +243,7 @@ void vfs_removeProcess(tPid pid);
  * @param dataSize the total size of the data
  * @param callback the callback-function
  */
-s32 vfs_defReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
+s32 vfs_readHelper(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
 		fReadCallBack callback);
 
 /**

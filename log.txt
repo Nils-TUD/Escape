@@ -5,20 +5,20 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x214000, shndx=0x10
+ELF: num=19, size=40, addr=0x215000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000001a34d08
+Clock cycles: 0x0000000001c95dfe
 Initializing VFS...DONE
-Clock cycles: 0x0000000000135d62
+Clock cycles: 0x000000000012f537
 Initializing process-management...DONE
-Clock cycles: 0x00000000000c865b
+Clock cycles: 0x00000000000c9006
 Initializing IDT...DONE
-Clock cycles: 0x00000000000a2708
+Clock cycles: 0x00000000000a4853
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
 Drives:
 	  Primary Master (present=1,sectors=10080)
@@ -30,47 +30,23 @@ Welcome to Escape v0.1!
 
 Try 'help' to see the current features :)
 
-file:/ # kill 09
-file:/ # ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
-00	  	  00	  	  010	 	  	  Ready  	 	  0x0005e11dc69ef372	  init
-01	  	  00	  	  010	 	  	  Blocked	 	  0x0000000065f0b6e3	  ata
-02	  	  00	  	  029	 	  	  Blocked	 	  0x000000001260a33e	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000a5e57d	  file:/services/speaker
-04	  	  00	  	  007	 	  	  Blocked	 	  0x00000000010b7f35	  file:/services/keyboard
-05	  	  00	  	  012	 	  	  Blocked	 	  0x0000000001d4d3ec	  file:/services/video
-06	  	  00	  	  015	 	  	  Blocked	 	  0x000000000279a578	  file:/services/vterm
-07	  	  00	  	  011	 	  	  Blocked	 	  0x0000000000d011de	  file:/services/env
-08	  	  00	  	  012	 	  	  Blocked	 	  0x000000000257207d	  file:/apps/shell
-09	  	  08	  	  008	 	  	  Running	 	  0x0000000001a5b6f9	  file:/apps/ps
+file:/ # echo "test und mehr"| wc
+Total: 3
+file:/ # help | wc
+Total: 35
+file:/ # helpecho "puh"|help
+Currently you can use the following commands:
+	  cat <file>
+	  kill <pid>
+	  ls <dir>
+	  mem
+	  ps
+	  echo <string1> <string2>, ...
+	  env [<name>|<name>=<value>]
+	  help
+	  cd <dir>
+	  pwd
 
-file:/ # kill 9
-file:/ # ps ; echo hier
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
-00	  	  00	  	  010	 	  	  Ready  	 	  0x00148ade996f8dc4	  init
-01	  	  00	  	  010	 	  	  Blocked	 	  0x000000007c0aab28	  ata
-02	  	  00	  	  029	 	  	  Blocked	 	  0x0000000018cf7bba	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000a5e57d	  file:/services/speaker
-04	  	  00	  	  007	 	  	  Blocked	 	  0x000000000204ea69	  file:/services/keyboard
-05	  	  00	  	  012	 	  	  Blocked	 	  0x00000000036387c3	  file:/services/video
-06	  	  00	  	  015	 	  	  Blocked	 	  0x0000000004ffd262	  file:/services/vterm
-07	  	  00	  	  011	 	  	  Blocked	 	  0x0000000000e5663b	  file:/services/env
-08	  	  00	  	  012	 	  	  Blocked	 	  0x0000000003f8bbf0	  file:/apps/shell
-09	  	  08	  	  008	 	  	  Running	 	  0x000000000192ba06	  file:/apps/ps
-
-hier 
-file:/ # ps | echo
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
-00	  	  00	  	  010	 	  	  Ready  	 	  0x001af1fc47e7a360	  init
-01	  	  00	  	  010	 	  	  Blocked	 	  0x000000007d5405b0	  ata
-02	  	  00	  	  029	 	  	  Blocked	 	  0x000000001d4c6879	  fs
-03	  	  00	  	  007	 	  	  Blocked	 	  0x0000000000a5e57d	  file:/services/speaker
-04	  	  00	  	  007	 	  	  Blocked	 	  0x000000000287362b	  file:/services/keyboard
-05	  	  00	  	  012	 	  	  Blocked	 	  0x0000000004ac45fd	  file:/services/video
-06	  	  00	  	  015	 	  	  Blocked	 	  0x000000000732442e	  file:/services/vterm
-07	  	  00	  	  011	 	  	  Blocked	 	  0x0000000000f463bf	  file:/services/env
-08	  	  00	  	  012	 	  	  Blocked	 	  0x00000000054cb61f	  file:/apps/shell
-09	  	  08	  	  008	 	  	  Running	 	  0x0000000001caea85	  file:/apps/ps
-
+You can scroll the screen with pageUp, pageDown, shift+arrowUp, shift+arrowDown
 
 file:/ # 

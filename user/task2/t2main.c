@@ -44,11 +44,45 @@ static void logChar(char c) {
 #endif
 
 s32 main(void) {
-	printf("I am task2....yeah!! pid=%d\n",getpid());
+	s8 buffer[32];
+	s8 *str = "Das ist mein String\n";
+	s32 stdout,fd = open("system:/pipe",IO_READ | IO_WRITE);
+	if(fd < 0) {
+		printLastError();
+		return 1;
+	}
+
+	stdout = dupFd(STDOUT_FILENO);
+	redirFd(STDOUT_FILENO,fd);
+
+	u32 i;
+	for(i = 0; i < 10; i++) {
+		printf("Das ist mein String!!\n");
+	}
+
+	redirFd(STDOUT_FILENO,stdout);
+
+	if(fork() == 0) {
+		redirFd(STDIN_FILENO,fd);
+		s32 c;
+		printf("Child reads:\n");
+		while((c = readChar()) > 0) {
+			putchar(c);
+		}
+		flush();
+		printf("Ready\n");
+		exit(0);
+	}
+
+	sleep(EV_CHILD_DIED);
+	printf("Ok, closing file\n");
+	close(fd);
+
+	/*printf("I am task2....yeah!! pid=%d\n",getpid());
 	printf("Ok, that's enough for now...\n");
 	while(1) {
 		yield();
-	}
+	}*/
 	return 0;
 
 

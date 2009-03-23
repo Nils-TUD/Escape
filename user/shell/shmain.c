@@ -305,6 +305,7 @@ static s32 shell_executeCmd(s8 *line) {
 	u32 i,cmdCount,tokCount;
 	s8 c,path[MAX_CMD_LEN] = APPS_DIR;
 	s32 res;
+	s32 *pipes = NULL,*pipe;
 
 	/* tokenize the line */
 	tokens = tok_get(line,&tokCount);
@@ -318,6 +319,18 @@ static s32 shell_executeCmd(s8 *line) {
 		return -1;
 	}
 
+	/* create pipe-fds */
+	if(cmdCount > 0) {
+		pipes = (s32*)malloc((cmdCount - 1) * sizeof(s32));
+		if(pipes == NULL) {
+			printLastError();
+			tok_free(tokens,tokCount);
+			cmd_free(cmds,cmdCount);
+			return -1;
+		}
+	}
+
+	pipe = pipes;
 	cmd = cmds;
 	for(i = 0; i < cmdCount; i++) {
 		scmds = compl_get(cmd->arguments[0],strlen(cmd->arguments[0]),2,true,true);
@@ -325,17 +338,57 @@ static s32 shell_executeCmd(s8 *line) {
 		/* we need exactly one match and it has to be TYPE_EXTERN or TYPE_BUILTIN */
 		if(scmds == NULL || scmds[0] == NULL || scmds[1] != NULL || scmds[0]->type == TYPE_PATH) {
 			printf("%s: Command not found\n",cmd->arguments[0]);
+			free(pipes);
 			tok_free(tokens,tokCount);
 			cmd_free(cmds,cmdCount);
 			return -1;
 		}
 
+		/* open pipe or move it forward */
+		if(cmd->dup & DUP_STDIN)
+			pipe++;
+		if(cmd->dup & DUP_STDOUT) {
+			*pipe = open("system:/pipe",IO_READ | IO_WRITE);
+			if(*pipe < 0) {
+				free(pipes);
+				tok_free(tokens,tokCount);
+				cmd_free(cmds,cmdCount);
+				printLastError();
+				return -1;
+			}
+		}
+
 		/* execute command */
 		if(scmds[0]->type == TYPE_BUILTIN) {
+			/* redirect fds and make a copy of stdin and stdout because we want to keep them :) */
+			/* (no fork here) */
+			s32 fdout,fdin;
+			if(cmd->dup & DUP_STDOUT) {
+				fdout = dupFd(STDOUT_FILENO);
+				redirFd(STDOUT_FILENO,*pipe);
+			}
+			if(cmd->dup & DUP_STDIN) {
+				fdin = dupFd(STDIN_FILENO);
+				redirFd(STDIN_FILENO,*(pipe - 1));
+			}
+
 			res = scmds[0]->func(cmd->argCount,cmd->arguments);
+
+			/* restore stdin & stdout */
+			if(cmd->dup & DUP_STDOUT)
+				redirFd(STDOUT_FILENO,fdout);
+			if(cmd->dup & DUP_STDIN)
+				redirFd(STDIN_FILENO,fdin);
 		}
 		else {
 			if(fork() == 0) {
+				/* redirect fds */
+				if(cmd->dup & DUP_STDOUT)
+					redirFd(STDOUT_FILENO,*pipe);
+				if(cmd->dup & DUP_STDIN)
+					redirFd(STDIN_FILENO,*(pipe - 1));
+
+				/* exec */
 				strcat(path,scmds[0]->name);
 				exec(path,cmd->arguments);
 				exit(0);
@@ -345,11 +398,16 @@ static s32 shell_executeCmd(s8 *line) {
 			sleep(EV_CHILD_DIED);
 		}
 
+		/* if the process has read from the pipe, close it and walk to next */
+		if(cmd->dup & DUP_STDIN)
+			close(*(pipe - 1));
+
 		compl_free(scmds);
 		cmd++;
 	}
 
 	/* clean up */
+	free(pipes);
 	tok_free(tokens,tokCount);
 	cmd_free(cmds,cmdCount);
 	return res;

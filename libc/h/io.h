@@ -194,6 +194,14 @@ s32 open(cstring path,u8 mode);
 s32 read(tFD fd,void *buffer,u32 count);
 
 /**
+ * Checks wether we are at EOF
+ *
+ * @param fd the file-descriptor
+ * @return 1 if at EOF
+ */
+s32 eof(tFD fd);
+
+/**
  * Writes count bytes from the given buffer into the given fd and returns the number of written
  * bytes.
  *

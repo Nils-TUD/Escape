@@ -63,10 +63,8 @@ s32 releaseIOPort(u16 port) {
 
 s8 readChar(void) {
 	s8 c;
-	/* go to sleep until the reply is available */
-	while(read(STDIN_FILENO,&c,sizeof(s8)) <= 0) {
-		sleep(EV_RECEIVED_MSG);
-	}
+	if(read(STDIN_FILENO,&c,sizeof(s8)) <= 0)
+		return 0;
 	return c;
 }
 

@@ -99,10 +99,8 @@ static s8 *doGetEnv(sMsgHeader *msg) {
 	freeMsg(msg);
 
 	/* wait for reply */
-	do {
-		sleep(EV_RECEIVED_MSG);
-	}
-	while(read(envFd,&resp,sizeof(sMsgHeader)) < 0);
+	if(read(envFd,&resp,sizeof(sMsgHeader)) < 0)
+		return NULL;
 
 	/* free previously used value */
 	if(tmpValue != NULL)

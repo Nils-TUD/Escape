@@ -24,7 +24,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define SYSCALL_COUNT					27
+#define SYSCALL_COUNT					26
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode)		((stack)->number = (errorCode))
@@ -78,6 +78,13 @@ static void sysc_exit(sSysCallStack *stack);
  * @return tFD the file-descriptor
  */
 static void sysc_open(sSysCallStack *stack);
+/**
+ * Tests wether we are at the end of the file (or if there is a message for service-usages)
+ *
+ * @param tFD file-descriptor
+ * @return bool true if we are at EOF
+ */
+static void sysc_eof(sSysCallStack *stack);
 /**
  * Read-syscall. Reads a given number of bytes in a given file at the current position
  *
@@ -251,6 +258,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 22 */	{sysc_ackSignal,			1},
 	/* 23 */	{sysc_sendSignal,			2},
 	/* 24 */	{sysc_exec,					1},
+	/* 25 */	{sysc_eof,					1},
 };
 
 void sysc_handle(sIntrptStackFrame *intrptStack) {
@@ -401,6 +409,23 @@ static void sysc_open(sSysCallStack *stack) {
 
 	/* return fd */
 	SYSC_RET1(stack,fd);
+}
+
+static void sysc_eof(sSysCallStack *stack) {
+	tFD fd = (tFD)stack->arg1;
+	sProc *p = proc_getRunning();
+	tFile file;
+	bool eof;
+
+	/* get file */
+	file = proc_fdToFile(fd);
+	if(file < 0) {
+		SYSC_ERROR(stack,file);
+		return;
+	}
+
+	eof = vfs_eof(p->pid,file);
+	SYSC_RET1(stack,eof);
 }
 
 static void sysc_read(sSysCallStack *stack) {

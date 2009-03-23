@@ -56,7 +56,7 @@ s32 vfsinfo_procReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 co
 	/* don't use the cache here to prevent that one process occupies it for all others */
 	/* (if the process doesn't call close() the cache will not be invalidated and therefore
 	 * other processes might miss changes) */
-	return vfs_defReadHandler(pid,node,buffer,offset,count,sizeof(sProcPub),vfsinfo_procReadCallback);
+	return vfs_readHelper(pid,node,buffer,offset,count,sizeof(sProcPub),vfsinfo_procReadCallback);
 }
 
 static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer) {
@@ -73,7 +73,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer) {
 }
 
 static s32 vfsinfo_memUsageReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
-	return vfs_defReadHandler(pid,node,buffer,offset,count,sizeof(sMemUsage),vfsinfo_memUsageReadCallback);
+	return vfs_readHelper(pid,node,buffer,offset,count,sizeof(sMemUsage),vfsinfo_memUsageReadCallback);
 }
 
 static void vfsinfo_memUsageReadCallback(sVFSNode *node,void *buffer) {

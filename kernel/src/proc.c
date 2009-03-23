@@ -18,6 +18,7 @@
 #include "../h/cpu.h"
 #include "../h/video.h"
 #include "../h/signals.h"
+#include "../h/vfsnode.h"
 #include <string.h>
 #include <sllist.h>
 
@@ -233,7 +234,7 @@ s32 proc_assocFd(tFD fd,tFile fileNo) {
 
 s32 proc_dupFd(tFD fd) {
 	tFile f;
-	s32 nfd;
+	s32 err,nfd;
 	/* check fd */
 	if(fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
@@ -246,12 +247,18 @@ s32 proc_dupFd(tFD fd) {
 	if(nfd < 0)
 		return nfd;
 
+	/* increase references */
+	if((err = vfs_incRefs(f)) < 0)
+		return err;
+
 	procs[pi].fileDescs[nfd] = f;
-	return 0;
+	return nfd;
 }
 
 s32 proc_redirFd(tFD src,tFD dst) {
 	tFile fSrc,fDst;
+	s32 err;
+
 	/* check fds */
 	if(src >= MAX_FD_COUNT || dst >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
@@ -260,6 +267,9 @@ s32 proc_redirFd(tFD src,tFD dst) {
 	fDst = procs[pi].fileDescs[dst];
 	if(fSrc == -1 || fDst == -1)
 		return ERR_INVALID_FD;
+
+	if((err = vfs_incRefs(fDst)) < 0)
+		return err;
 
 	/* we have to close the source because no one else will do it anymore... */
 	vfs_closeFile(fSrc);
@@ -582,8 +592,16 @@ void proc_dbg_print(sProc *p) {
 	vid_printf("\tcycleCount = 0x%08x%08x\n",*(ptr + 1),*ptr);
 	vid_printf("\tfileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(p->fileDescs[i] != -1)
-			vid_printf("\t\t%d : %d\n",i,p->fileDescs[i]);
+		if(p->fileDescs[i] != -1) {
+			tVFSNodeNo no = vfs_getNodeNo(p->fileDescs[i]);
+			vid_printf("\t\t%d : %d",i,p->fileDescs[i]);
+			if(vfsn_isValidNodeNo(no)) {
+				sVFSNode *n = vfsn_getNode(no);
+				if(n && n->parent)
+					vid_printf(" (%s->%s)",n->parent->name,n->name);
+			}
+			vid_printf("\n");
+		}
 	}
 	proc_dbg_printState(&p->save);
 	vid_printf("\n");

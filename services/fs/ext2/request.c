@@ -47,11 +47,11 @@ bool ext2_readSectors(sExt2 *e,u8 *buffer,u64 lba,u16 secCount) {
 		return false;
 	}
 
-	/* wait for response */
-	do {
-		sleep(EV_RECEIVED_MSG);
+	/* read header */
+	if(read(e->ataFd,&res,sizeof(sMsgHeader)) < 0) {
+		printLastError();
+		return false;
 	}
-	while(read(e->ataFd,&res,sizeof(sMsgHeader)) <= 0);
 
 	/* read response */
 	if(read(e->ataFd,buffer,res.length) < 0) {

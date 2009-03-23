@@ -10935,14 +10935,14 @@ c0108e23:	c7 40 28 00 00 00 00 	movl   $0x0,0x28(%eax)
 c0108e2a:	c9                   	leave  
 c0108e2b:	c3                   	ret    
 
-c0108e2c <vfs_defReadHandler>:
+c0108e2c <vfs_readHelper>:
 c0108e2c:	55                   	push   %ebp
 c0108e2d:	89 e5                	mov    %esp,%ebp
 c0108e2f:	83 ec 38             	sub    $0x38,%esp
 c0108e32:	8b 45 08             	mov    0x8(%ebp),%eax
 c0108e35:	66 89 45 ec          	mov    %ax,-0x14(%ebp)
 c0108e39:	83 7d 0c 00          	cmpl   $0x0,0xc(%ebp)
-c0108e3d:	75 24                	jne    c0108e63 <vfs_defReadHandler+0x37>
+c0108e3d:	75 24                	jne    c0108e63 <vfs_readHelper+0x37>
 c0108e3f:	c7 44 24 0c 76 02 00 	movl   $0x276,0xc(%esp)
 c0108e46:	00 
 c0108e47:	c7 44 24 08 2a d9 16 	movl   $0xc016d92a,0x8(%esp)
@@ -10952,7 +10952,7 @@ c0108e56:	c0
 c0108e57:	c7 04 24 40 d9 16 c0 	movl   $0xc016d940,(%esp)
 c0108e5e:	e8 7d eb ff ff       	call   c01079e0 <panic>
 c0108e63:	83 7d 10 00          	cmpl   $0x0,0x10(%ebp)
-c0108e67:	75 24                	jne    c0108e8d <vfs_defReadHandler+0x61>
+c0108e67:	75 24                	jne    c0108e8d <vfs_readHelper+0x61>
 c0108e69:	c7 44 24 0c 77 02 00 	movl   $0x277,0xc(%esp)
 c0108e70:	00 
 c0108e71:	c7 44 24 08 2a d9 16 	movl   $0xc016d92a,0x8(%esp)
@@ -10962,26 +10962,26 @@ c0108e80:	c0
 c0108e81:	c7 04 24 70 d9 16 c0 	movl   $0xc016d970,(%esp)
 c0108e88:	e8 53 eb ff ff       	call   c01079e0 <panic>
 c0108e8d:	83 7d 14 00          	cmpl   $0x0,0x14(%ebp)
-c0108e91:	75 10                	jne    c0108ea3 <vfs_defReadHandler+0x77>
+c0108e91:	75 10                	jne    c0108ea3 <vfs_readHelper+0x77>
 c0108e93:	8b 45 18             	mov    0x18(%ebp),%eax
 c0108e96:	3b 45 1c             	cmp    0x1c(%ebp),%eax
-c0108e99:	75 08                	jne    c0108ea3 <vfs_defReadHandler+0x77>
+c0108e99:	75 08                	jne    c0108ea3 <vfs_readHelper+0x77>
 c0108e9b:	8b 45 10             	mov    0x10(%ebp),%eax
 c0108e9e:	89 45 fc             	mov    %eax,-0x4(%ebp)
-c0108ea1:	eb 34                	jmp    c0108ed7 <vfs_defReadHandler+0xab>
+c0108ea1:	eb 34                	jmp    c0108ed7 <vfs_readHelper+0xab>
 c0108ea3:	8b 45 14             	mov    0x14(%ebp),%eax
 c0108ea6:	3b 45 1c             	cmp    0x1c(%ebp),%eax
-c0108ea9:	72 0c                	jb     c0108eb7 <vfs_defReadHandler+0x8b>
+c0108ea9:	72 0c                	jb     c0108eb7 <vfs_readHelper+0x8b>
 c0108eab:	c7 45 e8 00 00 00 00 	movl   $0x0,-0x18(%ebp)
-c0108eb2:	e9 a9 00 00 00       	jmp    c0108f60 <vfs_defReadHandler+0x134>
+c0108eb2:	e9 a9 00 00 00       	jmp    c0108f60 <vfs_readHelper+0x134>
 c0108eb7:	8b 45 1c             	mov    0x1c(%ebp),%eax
 c0108eba:	89 04 24             	mov    %eax,(%esp)
 c0108ebd:	e8 b2 8d ff ff       	call   c0101c74 <kheap_alloc>
 c0108ec2:	89 45 fc             	mov    %eax,-0x4(%ebp)
 c0108ec5:	83 7d fc 00          	cmpl   $0x0,-0x4(%ebp)
-c0108ec9:	75 0c                	jne    c0108ed7 <vfs_defReadHandler+0xab>
+c0108ec9:	75 0c                	jne    c0108ed7 <vfs_readHelper+0xab>
 c0108ecb:	c7 45 e8 00 00 00 00 	movl   $0x0,-0x18(%ebp)
-c0108ed2:	e9 89 00 00 00       	jmp    c0108f60 <vfs_defReadHandler+0x134>
+c0108ed2:	e9 89 00 00 00       	jmp    c0108f60 <vfs_readHelper+0x134>
 c0108ed7:	8b 45 fc             	mov    -0x4(%ebp),%eax
 c0108eda:	89 44 24 04          	mov    %eax,0x4(%esp)
 c0108ede:	8b 45 0c             	mov    0xc(%ebp),%eax
@@ -10991,10 +10991,10 @@ c0108ee7:	ff d0                	call   *%eax
 c0108ee9:	8b 55 fc             	mov    -0x4(%ebp),%edx
 c0108eec:	8b 45 10             	mov    0x10(%ebp),%eax
 c0108eef:	39 c2                	cmp    %eax,%edx
-c0108ef1:	74 67                	je     c0108f5a <vfs_defReadHandler+0x12e>
+c0108ef1:	74 67                	je     c0108f5a <vfs_readHelper+0x12e>
 c0108ef3:	8b 45 14             	mov    0x14(%ebp),%eax
 c0108ef6:	3b 45 1c             	cmp    0x1c(%ebp),%eax
-c0108ef9:	76 06                	jbe    c0108f01 <vfs_defReadHandler+0xd5>
+c0108ef9:	76 06                	jbe    c0108f01 <vfs_readHelper+0xd5>
 c0108efb:	8b 45 1c             	mov    0x1c(%ebp),%eax
 c0108efe:	89 45 14             	mov    %eax,0x14(%ebp)
 c0108f01:	8b 45 14             	mov    0x14(%ebp),%eax
@@ -11007,13 +11007,13 @@ c0108f10:	89 55 e0             	mov    %edx,-0x20(%ebp)
 c0108f13:	89 45 e4             	mov    %eax,-0x1c(%ebp)
 c0108f16:	8b 4d e0             	mov    -0x20(%ebp),%ecx
 c0108f19:	39 4d e4             	cmp    %ecx,-0x1c(%ebp)
-c0108f1c:	76 06                	jbe    c0108f24 <vfs_defReadHandler+0xf8>
+c0108f1c:	76 06                	jbe    c0108f24 <vfs_readHelper+0xf8>
 c0108f1e:	8b 45 e0             	mov    -0x20(%ebp),%eax
 c0108f21:	89 45 e4             	mov    %eax,-0x1c(%ebp)
 c0108f24:	8b 55 e4             	mov    -0x1c(%ebp),%edx
 c0108f27:	89 55 18             	mov    %edx,0x18(%ebp)
 c0108f2a:	83 7d 18 00          	cmpl   $0x0,0x18(%ebp)
-c0108f2e:	74 1f                	je     c0108f4f <vfs_defReadHandler+0x123>
+c0108f2e:	74 1f                	je     c0108f4f <vfs_readHelper+0x123>
 c0108f30:	8b 55 14             	mov    0x14(%ebp),%edx
 c0108f33:	8b 45 fc             	mov    -0x4(%ebp),%eax
 c0108f36:	8d 14 10             	lea    (%eax,%edx,1),%edx
@@ -11682,7 +11682,7 @@ c01097be:	89 44 24 08          	mov    %eax,0x8(%esp)
 c01097c2:	8b 45 0c             	mov    0xc(%ebp),%eax
 c01097c5:	89 44 24 04          	mov    %eax,0x4(%esp)
 c01097c9:	89 14 24             	mov    %edx,(%esp)
-c01097cc:	e8 5b f6 ff ff       	call   c0108e2c <vfs_defReadHandler>
+c01097cc:	e8 5b f6 ff ff       	call   c0108e2c <vfs_readHelper>
 c01097d1:	c9                   	leave  
 c01097d2:	c3                   	ret    
 
@@ -11766,7 +11766,7 @@ c01098b8:	89 44 24 08          	mov    %eax,0x8(%esp)
 c01098bc:	8b 45 0c             	mov    0xc(%ebp),%eax
 c01098bf:	89 44 24 04          	mov    %eax,0x4(%esp)
 c01098c3:	89 14 24             	mov    %edx,(%esp)
-c01098c6:	e8 61 f5 ff ff       	call   c0108e2c <vfs_defReadHandler>
+c01098c6:	e8 61 f5 ff ff       	call   c0108e2c <vfs_readHelper>
 c01098cb:	c9                   	leave  
 c01098cc:	c3                   	ret    
 

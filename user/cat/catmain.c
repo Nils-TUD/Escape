@@ -14,22 +14,27 @@ s32 main(u32 argc,s8 *argv[]) {
 	s32 count;
 	s8 buffer[BUF_SIZE];
 
-	if(argc != 2) {
-		printf("Usage: %s <file>\n",argv[0]);
+	if(argc != 1 && argc != 2) {
+		printf("Usage: %s [<file>]\n",argv[0]);
 		return 1;
 	}
 
-	fd = open(argv[1],IO_READ | IO_WRITE);
-	if(fd < 0) {
-		printLastError();
-		return 1;
+	fd = STDIN_FILENO;
+	if(argc == 2) {
+		fd = open(argv[1],IO_READ | IO_WRITE);
+		if(fd < 0) {
+			printLastError();
+			return 1;
+		}
 	}
 
 	while((count = read(fd,buffer,BUF_SIZE - 1)) > 0) {
 		*(buffer + count) = '\0';
 		printf("%s",buffer);
 	}
-	close(fd);
+
+	if(argc == 2)
+		close(fd);
 
 	return 0;
 }

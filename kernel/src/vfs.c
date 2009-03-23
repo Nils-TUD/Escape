@@ -19,9 +19,9 @@
 /* max number of open files */
 #define FILE_COUNT					(PROC_COUNT * 16)
 /* the processes node */
-#define PROCESSES()					(nodes + 7)
+#define PROCESSES()					(nodes + 8)
 /* the services node */
-#define SERVICES()					(nodes + 10)
+#define SERVICES()					(nodes + 11)
 
 /* the initial size of the write-cache for service-usage-nodes */
 #define VFS_INITIAL_WRITECACHE		128
@@ -98,6 +98,7 @@ void vfs_init(void) {
 	/* TODO */
 	vfsn_createServiceNode(KERNEL_PID,root,(string)"file",0);
 	sys = vfsn_createDir(root,(string)"system",vfs_dirReadHandler);
+	vfsn_createPipeCon(sys,(string)"pipe");
 	vfsn_createDir(sys,(string)"processes",vfs_dirReadHandler);
 	vfsn_createDir(root,(string)"services",vfs_dirReadHandler);
 }
@@ -120,11 +121,34 @@ tFile vfs_inheritFile(tPid pid,tFile file) {
 			return -1;
 		return newFile;
 	}
+	/* if a pipe is inherited we need a new file for it (position should be different )*/
+	else if(n->type == T_PIPE) {
+		tFile newFile;
+		/* we'll get a new file since the pid is different */
+		newFile = vfs_openFile(pid,e->flags,e->nodeNo);
+		if(newFile < 0)
+			return -1;
+		return newFile;
+	}
 	else {
 		/* just increase references */
 		e->refCount++;
 		return file;
 	}
+}
+
+s32 vfs_incRefs(tFile file) {
+	sGFTEntry *e;
+	/* invalid file-number? */
+	if(file < 0 || file >= FILE_COUNT)
+		return ERR_INVALID_FILE;
+
+	e = globalFileTable + file;
+	if(e->flags == 0)
+		return ERR_INVALID_FILE;
+
+	e->refCount++;
+	return 0;
 }
 
 tVFSNodeNo vfs_getNodeNo(tFile file) {
@@ -185,7 +209,8 @@ static tFile vfs_getFreeFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
 
 	if(IS_VIRT(nodeNo)) {
 		sVFSNode *n = vfsn_getNode(nodeNo);
-		isServUse = n->type == T_SERVUSE;
+		/* we can add pipes here, too, since every open() to a pipe will get a new node anyway */
+		isServUse = n->type == T_SERVUSE || n->type == T_PIPE;
 	}
 
 	for(i = 0; i < FILE_COUNT; i++) {
@@ -256,6 +281,30 @@ tFile vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo) {
 	/* open the file and return it */
 	/* we don't need the file-descriptor here */
 	return vfs_openFile(pid,VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n));
+}
+
+bool vfs_eof(tPid pid,tFile file) {
+	sGFTEntry *e = globalFileTable + file;
+	bool eof = true;
+
+	if(IS_VIRT(e->nodeNo)) {
+		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
+		sVFSNode *n = nodes + i;
+
+		if(n->type == T_SERVUSE) {
+			if(n->parent->owner == pid)
+				eof = sll_length(n->data.servuse.sendList) == 0;
+			else
+				eof = sll_length(n->data.servuse.recvList) == 0;
+		}
+		else
+			eof = e->position >= n->data.def.pos;
+	}
+	else {
+		/* TODO */
+	}
+
+	return eof;
 }
 
 s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count) {
@@ -394,6 +443,12 @@ void vfs_closeFile(tFile file) {
 				else if(n->type != T_SERVICE && n->data.def.cache != NULL) {
 					kheap_free(n->data.def.cache);
 					n->data.def.cache = NULL;
+				}
+
+				/* remove pipe */
+				if(n->type == T_PIPE) {
+					kheap_free(n->name);
+					vfsn_removeChild(n->parent,n);
 				}
 			}
 		}
@@ -641,7 +696,23 @@ void vfs_removeProcess(tPid pid) {
 	}
 }
 
-s32 vfs_defReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
+s32 vfs_defReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	s32 byteCount;
+	/* no data available? */
+	if(node->data.def.cache == NULL)
+		return 0;
+
+	if(offset > node->data.def.pos)
+		offset = node->data.def.pos;
+	byteCount = MIN(node->data.def.pos - offset,count);
+	if(byteCount > 0) {
+		/* simply copy the data to the buffer */
+		memcpy(buffer,(u8*)node->data.def.cache + offset,byteCount);
+	}
+	return byteCount;
+}
+
+s32 vfs_readHelper(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
 		fReadCallBack callback) {
 	void *mem;
 
@@ -686,15 +757,28 @@ s32 vfs_serviceUseReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 	sMessage *msg;
 
 	/* services reads from the send-list */
-	if(node->parent->owner == pid)
+	if(node->parent->owner == pid) {
 		list = node->data.servuse.sendList;
+		/* don't block service-reads */
+		if(sll_length(list) == 0)
+			return 0;
+	}
 	/* other processes read from the receive-list */
-	else
-		list = node->data.servuse.recvList;
+	else {
+		/* don't block the kernel ;) */
+		if(pid != KERNEL_PID) {
+			/* wait until a message arrives */
+			/* don't cache the list here, because the pointer changes if the list ist NULL */
+			while(sll_length(node->data.servuse.recvList) == 0) {
+				proc_sleep(pid,EV_RECEIVED_MSG);
+				proc_switch();
+			}
+		}
+		else if(sll_length(node->data.servuse.recvList) == 0)
+			return 0;
 
-	/* list not present or empty? */
-	if(list == NULL || sll_length(list) == 0)
-		return 0;
+		list = node->data.servuse.recvList;
+	}
 
 	/* get first element and copy data to buffer */
 	msg = sll_get(list,0);
@@ -724,7 +808,7 @@ s32 vfs_serviceUseReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count) {
 	void *cache;
 	void *oldCache;
-	u32 newSize;
+	u32 newSize = 0;
 
 	/* determine the cache to use */
 	if(n->type == T_SERVUSE) {
@@ -815,7 +899,8 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 		/* copy the data into the cache */
 		memcpy((u8*)cache + offset,buffer,count);
 		/* set total size and number of used bytes */
-		n->data.def.size = newSize;
+		if(newSize)
+			n->data.def.size = newSize;
 		/* we have checked size for overflow. so it is ok here */
 		n->data.def.pos = MAX(n->data.def.pos,offset + count);
 
@@ -824,10 +909,6 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 
 	/* restore cache */
 	n->data.def.cache = oldCache;
-
-	/* make the service ready and hope that we choose them :)
-	sched_setReady(n->parent->owner);
-	proc_switch();*/
 	return ERR_NOT_ENOUGH_MEM;
 }
 

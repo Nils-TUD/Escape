@@ -15,6 +15,25 @@
 #define FILE_ROOT()	(nodes + 3)
 
 /**
+ * Creates a pipe
+ *
+ * @param n the parent-node
+ * @param child will be set to the created child
+ * @return 0 on success
+ */
+static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child);
+
+/**
+ * Creates a pipe-node for given process
+ *
+ * @param pid the process-id
+ * @param parent the parent-node
+ * @param name the node-name
+ * @return the node or NULL
+ */
+static sVFSNode *vfsn_createPipeNode(tPid pid,sVFSNode *parent,string name);
+
+/**
  * The recursive function to print the VFS-tree
  *
  * @param level the current recursion level
@@ -41,6 +60,7 @@ static void vfsn_releaseNode(sVFSNode *node);
 sVFSNode nodes[NODE_COUNT];
 /* a pointer to the first free node (which points to the next and so on) */
 static sVFSNode *freeList;
+static u32 nextPipeId = 0;
 
 void vfsn_init(void) {
 	tVFSNodeNo i;
@@ -66,7 +86,7 @@ bool vfsn_isOwnServiceNode(tVFSNodeNo nodeNo) {
 }
 
 sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo) {
-	return nodes + nodeNo;
+	return nodes + VIRT_INDEX(nodeNo);
 }
 
 string vfsn_getPath(tVFSNodeNo nodeNo) {
@@ -187,20 +207,33 @@ s32 vfsn_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 		return ERR_VFS_NODE_NOT_FOUND;
 
 	/* handle service */
-	if(n->type == T_SERVICE) {
-		sVFSNode *child;
-		s32 err = vfsn_createServiceUse(n,&child);
-		if(err < 0)
-			return err;
+	switch(n->type) {
+		case T_SERVICE: {
+			sVFSNode *child;
+			s32 err = vfsn_createServiceUse(n,&child);
+			if(err < 0)
+				return err;
 
-		/* set new node as resolved one */
-		*nodeNo = NADDR_TO_VNNO(child);
-		return 0;
+			/* set new node as resolved one */
+			*nodeNo = NADDR_TO_VNNO(child);
+			return 0;
+		}
+
+		case T_PIPECON: {
+			sVFSNode *child;
+			s32 err = vfsn_createPipe(n,&child);
+			if(err < 0)
+				return err;
+
+			*nodeNo = NADDR_TO_VNNO(child);
+			return 0;
+		}
+
+		case T_LINK:
+			/* resolve link */
+			n = (sVFSNode*)n->data.def.cache;
+			break;
 	}
-
-	/* resolve link */
-	if(n->type == T_LINK)
-		n = (sVFSNode*)n->data.def.cache;
 
 	/* virtual node */
 	*nodeNo = NADDR_TO_VNNO(n);
@@ -259,6 +292,17 @@ sVFSNode *vfsn_createDir(sVFSNode *parent,string name,fRead handler) {
 	dotdot->type = T_LINK;
 	/* the root-node and all "protocol-roots" have no parent */
 	dotdot->data.def.cache = parent == NULL || parent->parent == NULL ? node : parent;
+	return node;
+}
+
+sVFSNode *vfsn_createPipeCon(sVFSNode *parent,string name) {
+	sVFSNode *node = vfsn_createNodeAppend(parent,name);
+	if(node == NULL)
+		return NULL;
+
+	node->type = T_PIPECON;
+	node->flags = VFS_NOACCESS;
+	node->readHandler = NULL;
 	return node;
 }
 
@@ -378,6 +422,47 @@ s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
 
 	*child = m;
 	return 0;
+}
+
+static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child) {
+	string name;
+	sVFSNode *m;
+	u32 len;
+	sProc *p = proc_getRunning();
+
+	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
+	/* we want to have to form <pid>.<x>, therefore two ints and a '.' */
+	name = kheap_alloc((11 * 2 + 2) * sizeof(s8));
+	if(name == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+
+	/* create usage-node */
+	itoa(name,p->pid);
+	len = strlen(name);
+	*(name + len) = '.';
+	itoa(name + len + 1,nextPipeId++);
+
+	/* ok, create a pipe-node */
+	m = vfsn_createPipeNode(p->pid,n,name);
+	if(m == NULL) {
+		kheap_free(name);
+		return ERR_NOT_ENOUGH_MEM;
+	}
+
+	*child = m;
+	return 0;
+}
+
+static sVFSNode *vfsn_createPipeNode(tPid pid,sVFSNode *parent,string name) {
+	sVFSNode *node = vfsn_createNodeAppend(parent,name);
+	if(node == NULL)
+		return NULL;
+
+	node->owner = pid;
+	node->type = T_PIPE;
+	node->flags = VFS_READ | VFS_WRITE;
+	node->readHandler = vfs_defReadHandler;
+	return node;
 }
 
 static sVFSNode *vfsn_requestNode(void) {

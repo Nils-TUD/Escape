@@ -26,6 +26,7 @@ SYSCALL_UNSETSIGH		equ	21
 SYSCALL_ACKSIG			equ	22
 SYSCALL_SENDSIG			equ 23
 SYSCALL_EXEC				equ 24
+SYSCALL_EOF					equ 25
 
 ; the IRQ for syscalls
 SYSCALL_IRQ					equ	0x30

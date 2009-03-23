@@ -49,7 +49,8 @@ s32 main(void) {
 		s32 fd = getClient(id);
 		if(fd < 0) {
 			/* read from keyboard */
-			while(read(kbFd,&keycode,sizeof(sMsgKbResponse)) > 0) {
+			while(!eof(kbFd)) {
+				read(kbFd,&keycode,sizeof(sMsgKbResponse));
 				vterm_handleKeycode(&keycode);
 			}
 			sleep(EV_CLIENT | EV_RECEIVED_MSG);

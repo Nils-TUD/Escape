@@ -4,49 +4,1045 @@ MultiBoot-Structure:
 flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
-cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x214000, shndx=0x10
+cmdLine=/kernel_test.bin
+ELF: num=19, size=40, addr=0x23e000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000001d0cb6b
+Clock cycles: 0x0000000001c824ff
 Initializing VFS...DONE
-Clock cycles: 0x000000000019f947
+Clock cycles: 0x0000000000131574
 Initializing process-management...DONE
-Clock cycles: 0x00000000000d978e
+Clock cycles: 0x00000000000cf747
 Initializing IDT...DONE
-Clock cycles: 0x00000000000adf91
+Clock cycles: 0x00000000000a57c2
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
-Got interrupt 39 (<unknown>) @ 0x0
-Drives:
-	  Primary Master (present=1,sectors=10080)
-	  	  0: start=0x3F, sectors=10017 size=5128704 byte
-	  Primary Slave (present=0,sectors=0)
-	  Secondary Master (present=0,sectors=0)
-	  Secondary Slave (present=0,sectors=0)
-Welcome to Escape v0.1!
 
-Try 'help' to see the current features :)
+====== Starting test-procedure ======
+---- Starting with module 0 : "Physical memory-management" ----
 
-file:/ # cdsy sytestem:
-Unable to change to 'system:/'
-file:/ # cd system/:/processes/0
-Unable to change to 'system:/processes/0/'
-file:/ # cd bla
-Directory 'file:/bla/' does not exist
-file:/ # cd muh
-Directory 'file:/muh/' does not exist
-file:/ # cd ..
-file:/ # cd system
-Directory 'file:/system/' does not exist
-file:/ # cd yssystem:
-Unable to change to 'system:/'
-file:/ # syscd /
-file:/ # cd /bla
-Directory 'file:/bla/' does not exist
-file:/ # cd /test
-file:/test/ # cd /
-file:/ # 
+== Testcase 1 : Requesting and freeing 50 frames < 16MB...
+ ==
+== >> SUCCESS ==
+
+== Testcase 2 : Requesting and freeing 50 frames > 16MB...
+ ==
+== >> SUCCESS ==
+
+---- Module "Physical memory-management" finished. Summary: ----
+-- 2 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 1 : "Paging" ----
+
+== Testcase 1 : Mapping 0 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 2 : Mapping 1 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 3 : Mapping 50 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 4 : Mapping 1024 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 5 : Mapping 1025 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 6 : Mapping 2048 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 7 : Mapping 2051 pages to 0x00000000 ==
+== >> SUCCESS ==
+
+== Testcase 8 : Mapping 0 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 9 : Mapping 1 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 10 : Mapping 50 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 11 : Mapping 1024 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 12 : Mapping 1025 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 13 : Mapping 2048 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 14 : Mapping 2051 pages to 0xb0000000 ==
+== >> SUCCESS ==
+
+== Testcase 15 : Mapping 0 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 16 : Mapping 1 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 17 : Mapping 50 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 18 : Mapping 1024 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 19 : Mapping 1025 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 20 : Mapping 2048 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 21 : Mapping 2051 pages to 0xa0000000 ==
+== >> SUCCESS ==
+
+== Testcase 22 : Mapping 0 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 23 : Mapping 1 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 24 : Mapping 50 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 25 : Mapping 1024 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 26 : Mapping 1025 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 27 : Mapping 2048 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 28 : Mapping 2051 pages to 0x00004000 ==
+== >> SUCCESS ==
+
+== Testcase 29 : Mapping 0 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+== Testcase 30 : Mapping 1 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+== Testcase 31 : Mapping 50 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+== Testcase 32 : Mapping 1024 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+== Testcase 33 : Mapping 1025 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+== Testcase 34 : Mapping 2048 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+== Testcase 35 : Mapping 2051 pages to 0x00001234 ==
+== >> SUCCESS ==
+
+---- Module "Paging" finished. Summary: ----
+-- 35 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 2 : "Process-Management" ----
+
+== Testcase 1 : Cloning and destroying processes ==
+Cloning process to pid=1
+Destroying process
+Cloning process to pid=1
+Destroying process
+Cloning process to pid=1
+Destroying process
+Cloning process to pid=1
+Destroying process
+Cloning process to pid=1
+Destroying process
+== >> SUCCESS ==
+
+== Testcase 2 : Change area 0 by 0 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 3 : Change area 0 by 1 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 4 : Change area 0 by 10 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 5 : Change area 0 by 1024 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 6 : Change area 0 by 1025 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 7 : Change area 0 by 2048 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 8 : Change area 0 by 2047 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 9 : Change area 0 by 2049 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 10 : Change area 0 by 28656 (allocate, free) ==
+Not enough mem or invalid segment sizes!
+== >> SUCCESS ==
+
+== Testcase 11 : Change area 1 by 0 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 12 : Change area 1 by 1 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 13 : Change area 1 by 10 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 14 : Change area 1 by 1024 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 15 : Change area 1 by 1025 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 16 : Change area 1 by 2048 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 17 : Change area 1 by 2047 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 18 : Change area 1 by 2049 (allocate, free) ==
+== >> SUCCESS ==
+
+== Testcase 19 : Change area 1 by 28656 (allocate, free) ==
+Not enough mem or invalid segment sizes!
+== >> SUCCESS ==
+
+== Testcase 20 : Change area 0 by 0 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 21 : Change area 0 by 1 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 22 : Change area 0 by 10 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 23 : Change area 0 by 1024 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 24 : Change area 0 by 1025 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 25 : Change area 0 by 2048 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 26 : Change area 0 by 2047 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 27 : Change area 0 by 2049 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 28 : Change area 1 by 0 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 29 : Change area 1 by 1 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 30 : Change area 1 by 10 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 31 : Change area 1 by 1024 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 32 : Change area 1 by 1025 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 33 : Change area 1 by 2048 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 34 : Change area 1 by 2047 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 35 : Change area 1 by 2049 (allocate, allocate, free, free) ==
+Changing by 0 and rewinding
+Changing by 1 and rewinding
+Changing by 10 and rewinding
+Changing by 1024 and rewinding
+Changing by 1025 and rewinding
+Changing by 2048 and rewinding
+Changing by 2047 and rewinding
+Changing by 2049 and rewinding
+== >> SUCCESS ==
+
+== Testcase 36 : Change area 0 (allocate all, free all) ==
+Allocating 0 pages
+Allocating 1 pages
+Allocating 10 pages
+Allocating 1024 pages
+Allocating 1025 pages
+Allocating 2048 pages
+Allocating 2047 pages
+Allocating 2049 pages
+Freeing 0 pages
+Freeing 1 pages
+Freeing 10 pages
+Freeing 1024 pages
+Freeing 1025 pages
+Freeing 2048 pages
+Freeing 2047 pages
+Freeing 2049 pages
+== >> SUCCESS ==
+
+== Testcase 37 : Change area 1 (allocate all, free all) ==
+Allocating 0 pages
+Allocating 1 pages
+Allocating 10 pages
+Allocating 1024 pages
+Allocating 1025 pages
+Allocating 2048 pages
+Allocating 2047 pages
+Allocating 2049 pages
+Freeing 0 pages
+Freeing 1 pages
+Freeing 10 pages
+Freeing 1024 pages
+Freeing 1025 pages
+Freeing 2048 pages
+Freeing 2047 pages
+Freeing 2049 pages
+== >> SUCCESS ==
+
+---- Module "Process-Management" finished. Summary: ----
+-- 37 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 3 : "Kernel-Heap" ----
+
+== Testcase 1 : Allocate, then free in same direction ==
+Allocating...(28655 free frames)
+4 bytes
+Write test for 0xc0401024...done
+16 bytes
+Write test for 0xc0401028...done
+40 bytes
+Write test for 0xc0401038...done
+4092 bytes
+Write test for 0xc0402000...done
+4096 bytes
+Write test for 0xc0403000...done
+4100 bytes
+Write test for 0xc0404000...done
+8192 bytes
+Write test for 0xc0406000...done
+16388 bytes
+Write test for 0xc0408000...done
+Freeing...
+FREE1: address=0xc0401024, i=0
+FREE1: address=0xc0401028, i=1
+FREE1: address=0xc0401038, i=2
+FREE1: address=0xc0402000, i=3
+FREE1: address=0xc0403000, i=4
+FREE1: address=0xc0404000, i=5
+FREE1: address=0xc0406000, i=6
+FREE1: address=0xc0408000, i=7
+== >> FAILED : old-page-count=1281, new-page-count=1292, old-frame-count=28655, 
+new-frame-count=28644, old-heap-count=4060, new-heap-count=49116 ==
+
+== Testcase 2 : Allocate, then free in opposite direction ==
+Allocating...(28644 free frames)
+4 bytes
+Write test for 0xc0401024...done
+16 bytes
+Write test for 0xc0401028...done
+40 bytes
+Write test for 0xc0401038...done
+4092 bytes
+Write test for 0xc0401060...done
+4096 bytes
+Write test for 0xc040205c...done
+4100 bytes
+Write test for 0xc040305c...done
+8192 bytes
+Write test for 0xc0404060...done
+16388 bytes
+Write test for 0xc0406060...done
+Freeing...
+FREE2: address=0xc0406060, i=7
+FREE2: address=0xc0404060, i=6
+FREE2: address=0xc040305c, i=5
+FREE2: address=0xc040205c, i=4
+FREE2: address=0xc0401060, i=3
+FREE2: address=0xc0401038, i=2
+FREE2: address=0xc0401028, i=1
+FREE2: address=0xc0401024, i=0
+== >> SUCCESS ==
+
+== Testcase 3 : Allocate, then free in "random" direction 1 ==
+Allocating...(28644 free frames)
+4 bytes
+Write test for 0xc0401024...done
+16 bytes
+Write test for 0xc0401028...done
+40 bytes
+Write test for 0xc0401038...done
+4092 bytes
+Write test for 0xc0401060...done
+4096 bytes
+Write test for 0xc040205c...done
+4100 bytes
+Write test for 0xc040305c...done
+8192 bytes
+Write test for 0xc0404060...done
+16388 bytes
+Write test for 0xc0406060...done
+Freeing...
+FREE3: address=0xc0406060, i=0
+FREE3: address=0xc040305c, i=1
+FREE3: address=0xc0401038, i=2
+FREE3: address=0xc0401024, i=3
+FREE3: address=0xc0404060, i=4
+FREE3: address=0xc0401060, i=5
+FREE3: address=0xc040205c, i=6
+FREE3: address=0xc0401028, i=7
+== >> SUCCESS ==
+
+== Testcase 4 : Allocate, then free in "random" direction 2 ==
+Allocating...(28644 free frames)
+4 bytes
+Write test for 0xc0401024...done
+16 bytes
+Write test for 0xc0401028...done
+40 bytes
+Write test for 0xc0401038...done
+4092 bytes
+Write test for 0xc0401060...done
+4096 bytes
+Write test for 0xc040205c...done
+4100 bytes
+Write test for 0xc040305c...done
+8192 bytes
+Write test for 0xc0404060...done
+16388 bytes
+Write test for 0xc0406060...done
+Freeing...
+FREE4: address=0xc0401060, i=0
+FREE4: address=0xc040205c, i=1
+FREE4: address=0xc0401028, i=2
+FREE4: address=0xc040305c, i=3
+FREE4: address=0xc0404060, i=4
+FREE4: address=0xc0401024, i=5
+FREE4: address=0xc0406060, i=6
+FREE4: address=0xc0401038, i=7
+== >> SUCCESS ==
+
+== Testcase 5 : Allocate and free 4 bytes ==
+Write test for 0xc0401024...done
+Freeing mem @ 0xc0401024
+== >> SUCCESS ==
+
+== Testcase 6 : Allocate and free 16 bytes ==
+Write test for 0xc0401024...done
+Freeing mem @ 0xc0401024
+== >> SUCCESS ==
+
+== Testcase 7 : Allocate and free 40 bytes ==
+Write test for 0xc0401024...done
+Freeing mem @ 0xc0401024
+== >> SUCCESS ==
+
+== Testcase 8 : Allocate and free 4092 bytes ==
+Write test for 0xc0401024...done
+Freeing mem @ 0xc0401024
+== >> SUCCESS ==
+
+== Testcase 9 : Allocate and free 4096 bytes ==
+Write test for 0xc0401024...done
+Freeing mem @ 0xc0401024
+== >> SUCCESS ==
+
+== Testcase 10 : Allocate and free 4100 bytes ==
+Write test for 0xc0401024...done
+Freeing mem @ 0xc0401024
+== >> SUCCESS ==
+
+== Testcase 11 : Allocate and free 8192 bytes ==
+Write test for 0xc0401024...done
+Freeing mem @ 0xc0401024
+== >> SUCCESS ==
+
+== Testcase 12 : Allocate and free 16388 bytes ==
+Write test for 0xc0401024...done
+Freeing mem @ 0xc0401024
+== >> SUCCESS ==
+
+== Testcase 13 : Allocate 50000 times 1 byte ==
+== >> FAILED : old-page-count=1292, new-page-count=1439, old-frame-count=28644, 
+new-frame-count=28497, old-heap-count=49116, new-heap-count=53212 ==
+
+== Testcase 14 : Allocate all and free it ==
+== >> FAILED : old-page-count=1439, new-page-count=1452, old-frame-count=28497, 
+new-frame-count=28484, old-heap-count=53212, new-heap-count=106460 ==
+
+== Testcase 15 : Allocating 3 regions ==
+Freeing region 2...
+Reusing region 2...
+Testing contents...
+== >> SUCCESS ==
+
+== Testcase 16 : Testing realloc() ==
+== >> SUCCESS ==
+
+---- Module "Kernel-Heap" finished. Summary: ----
+-- 13 testcases successfull --
+-- 3 testcases failed --
+----------------------------------
+
+---- Starting with module 4 : "Scheduling" ----
+
+== Testcase 1 : Enqueuing - dequeuing ==
+== >> SUCCESS ==
+
+== Testcase 2 : Dequeue specific processes (opposite order) ==
+== >> SUCCESS ==
+
+== Testcase 3 : Dequeue specific processes (random order) ==
+== >> SUCCESS ==
+
+---- Module "Scheduling" finished. Summary: ----
+-- 3 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 5 : "Single linked list" ----
+
+== Testcase 1 : Append & check & remove index 0 ==
+== >> SUCCESS ==
+
+== Testcase 2 : Append & remove first (NULL) ==
+== >> SUCCESS ==
+
+== Testcase 3 : Append & remove first (x) ==
+== >> SUCCESS ==
+
+== Testcase 4 : Create & append & destroy ==
+== >> SUCCESS ==
+
+== Testcase 5 : Create & append & insert somewhere & destroy ==
+== >> SUCCESS ==
+
+== Testcase 6 : Create & append & set somewhere & destroy ==
+== >> SUCCESS ==
+
+== Testcase 7 : Append until no mem left & destroy ==
+Appended 209401 elements
+Freeing...done
+== >> FAILED : Memory not freed (before=106460, after=1675228) ==
+
+== Testcase 8 : Walking through the list ==
+Starting at index 0
+element @ 0xc07fd00c : 0x123
+element @ 0xc07fd014 : 0x456
+element @ 0xc07fd01c : 0x789
+Starting at index 2
+element @ 0xc07fd01c : 0x789
+== >> SUCCESS ==
+
+== Testcase 9 : Testing sll_indexOf and sll_nodeWith ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+== >> SUCCESS ==
+
+---- Module "Single linked list" finished. Summary: ----
+-- 8 testcases successfull --
+-- 1 testcases failed --
+----------------------------------
+
+---- Starting with module 6 : "String" ----
+
+== Testcase 1 : Testing atoi() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+ASSERT 12 succeded
+ASSERT 13 succeded
+ASSERT 14 succeded
+== >> SUCCESS ==
+
+== Testcase 2 : Testing itoa() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+== >> SUCCESS ==
+
+== Testcase 3 : Testing memchr() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 4 : Testing memcpy() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+== >> SUCCESS ==
+
+== Testcase 5 : Testing memcmp() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 6 : Testing memmove() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+== >> SUCCESS ==
+
+== Testcase 7 : Testing strcpy() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+== >> SUCCESS ==
+
+== Testcase 8 : Testing strncpy() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+== >> SUCCESS ==
+
+== Testcase 9 : Testing strcat() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+== >> SUCCESS ==
+
+== Testcase 10 : Testing strnat() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 11 : Testing strcmp() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+== >> SUCCESS ==
+
+== Testcase 12 : Testing strncmp() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+ASSERT 12 succeded
+== >> SUCCESS ==
+
+== Testcase 13 : Testing strchr() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+== >> SUCCESS ==
+
+== Testcase 14 : Testing strchri() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+== >> SUCCESS ==
+
+== Testcase 15 : Testing strrchr() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+== >> SUCCESS ==
+
+== Testcase 16 : Testing strstr() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+== >> SUCCESS ==
+
+== Testcase 17 : Testing strcspn() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 18 : Testing strcut() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+== >> SUCCESS ==
+
+== Testcase 19 : Testing strlen() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+== >> SUCCESS ==
+
+== Testcase 20 : Testing strnlen() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+== >> SUCCESS ==
+
+== Testcase 21 : Testing tolower() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 22 : Testing toupper() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 23 : Testing isalnumstr() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+== >> SUCCESS ==
+
+---- Module "String" finished. Summary: ----
+-- 23 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 7 : "VFS" ----
+
+== Testcase 1 : Testing vfs_readFile() for system: ==
+== >> SUCCESS ==
+
+== Testcase 2 : Testing vfs_readFile() for system:/processes/0 ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+== Testcase 3 : Testing vfs_createProcess() ==
+== >> SUCCESS ==
+
+== Testcase 4 : Testing vfs_createService() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+== >> SUCCESS ==
+
+---- Module "VFS" finished. Summary: ----
+-- 4 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 8 : "VFSNode" ----
+
+== Testcase 1 : Testing vfsn_resolvePath() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+ASSERT 12 succeded
+ASSERT 13 succeded
+== >> SUCCESS ==
+
+== Testcase 2 : Testing vfsn_getPath() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+== >> SUCCESS ==
+
+---- Module "VFSNode" finished. Summary: ----
+-- 2 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+---- Starting with module 9 : "Signals" ----
+
+== Testcase 1 : Testing sig_canHandle() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+ASSERT 8 succeded
+ASSERT 9 succeded
+ASSERT 10 succeded
+ASSERT 11 succeded
+ASSERT 12 succeded
+ASSERT 13 succeded
+== >> SUCCESS ==
+
+== Testcase 2 : Testing sig_setHandler() ==
+ASSERT 1 succeded
+== >> SUCCESS ==
+
+== Testcase 3 : Adding and handling a signal ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+== >> SUCCESS ==
+
+== Testcase 4 : Adding nested signals ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+ASSERT 6 succeded
+ASSERT 7 succeded
+== >> SUCCESS ==
+
+== Testcase 5 : Adding signal for process ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+ASSERT 3 succeded
+ASSERT 4 succeded
+ASSERT 5 succeded
+== >> SUCCESS ==
+
+== Testcase 6 : Testing sig_unsetHandler() ==
+ASSERT 1 succeded
+ASSERT 2 succeded
+== >> SUCCESS ==
+
+== Testcase 7 : Testing sig_removeHandlerFor() ==
+ASSERT 1 succeded
+== >> SUCCESS ==
+
+---- Module "Signals" finished. Summary: ----
+-- 7 testcases successfull --
+-- 0 testcases failed --
+----------------------------------
+
+====== All modules done ======
+== 8 modules successfull ==
+== 2 modules failed ==
+== 134 testcases successfull ==
+== 4 testcases failed ==
+============================

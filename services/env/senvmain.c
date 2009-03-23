@@ -97,6 +97,9 @@ static void env_remProc(tPid pid);
  */
 static void env_printAll(void);
 
+/* a list of dead processes whose entries should be removed */
+static sSLList *deadProcs = NULL;
+
 /* hashmap of linkedlists with env-vars; key=(pid % MAP_SIZE) */
 static sSLList *envVars[MAP_SIZE];
 
@@ -109,10 +112,10 @@ s32 main(void) {
 		return 1;
 	}
 
-	/*if(setSigHandler(SIG_PROC_DIED,procDiedHandler) < 0) {
+	if(setSigHandler(SIG_PROC_DIED,procDiedHandler) < 0) {
 		printLastError();
 		return 1;
-	}*/
+	}
 
 	/* set initial vars for proc 0 */
 	env_set(0,(s8*)"CWD",(s8*)"file:/");
@@ -125,6 +128,14 @@ s32 main(void) {
 		if(fd < 0)
 			sleep(EV_CLIENT);
 		else {
+			/* first, delete dead processes if there are any */
+			if(sll_length(deadProcs) > 0) {
+				sSLNode *n;
+				for(n = sll_begin(deadProcs); n != NULL; n = n->next)
+					env_remProc((tPid)(n->data));
+				sll_removeAll(deadProcs);
+			}
+
 			/* read all available messages */
 			while(read(fd,&msg,sizeof(sMsgHeader)) > 0) {
 				/* see what we have to do */
@@ -136,7 +147,7 @@ s32 main(void) {
 								tPid pid;
 								u32 nameLen;
 								s8 *name;
-								nameLen = disasmBinDataMsg(msg.length,data,&name,"2",&pid);
+								nameLen = disasmBinDataMsg(msg.length,data,(u8**)&name,"2",&pid);
 								if(nameLen) {
 									u32 len;
 									sMsgHeader *resp;
@@ -165,7 +176,7 @@ s32 main(void) {
 								tPid pid;
 								u32 envVarLen;
 								s8 *envVar;
-								envVarLen = disasmBinDataMsg(msg.length,data,&envVar,"2",&pid);
+								envVarLen = disasmBinDataMsg(msg.length,data,(u8**)&envVar,"2",&pid);
 
 								/* terminate */
 								*(envVar + envVarLen) = '\0';
@@ -213,8 +224,12 @@ s32 main(void) {
 }
 
 static void procDiedHandler(tSig sig,u32 data) {
-	/* TODO we need a locking-mechanism here */
-	/*env_remProc((tPid)data);*/
+	UNUSED(sig);
+	/* remember for deletion */
+	if(deadProcs == NULL)
+		deadProcs = sll_create();
+	if(deadProcs != NULL)
+		sll_append(deadProcs,(void*)data);
 }
 
 static sEnvVar *env_geti(tPid pid,u32 index) {

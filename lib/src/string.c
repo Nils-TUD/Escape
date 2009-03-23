@@ -245,14 +245,19 @@ s32 strcmp(cstring str1,cstring str2) {
 }
 
 s32 strncmp(cstring str1,cstring str2,u32 count) {
+	s32 rem = count;
 	ASSERT(str1 != NULL,"str1 == NULL");
 	ASSERT(str2 != NULL,"str2 == NULL");
 
-	while(count-- > 0) {
+	while(*str1 && *str2 && rem-- > 0) {
 		if(*str1++ != *str2++)
 			return str1[-1] < str2[-1] ? -1 : 1;
 	}
-	return 0;
+	if(rem <= 0)
+		return 0;
+	if(*str1 && !*str2)
+		return 1;
+	return -1;
 }
 
 string strchr(cstring str,s32 ch) {

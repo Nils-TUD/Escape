@@ -20,6 +20,8 @@ s32 shell_cmdHelp(u32 argc,s8 **argv) {
 	printf("\techo <string1> <string2>, ...\n");
 	printf("\tenv [<name>|<name>=<value>]\n");
 	printf("\thelp\n");
+	printf("\tcd <dir>\n");
+	printf("\tpwd\n");
 
 	printf("\n");
 	printf("You can scroll the screen with pageUp, pageDown, shift+arrowUp, shift+arrowDown\n");

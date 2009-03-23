@@ -46,7 +46,7 @@ tInodeNo ext2_resolvePath(sExt2 *e,string path) {
 		}
 
 		while(entry->inode != 0) {
-			if(strncmp((cstring)(entry + 1),p,pos) == 0) {
+			if(pos == entry->nameLen && strncmp((cstring)(entry + 1),p,pos) == 0) {
 				p += pos;
 				ext2_icache_release(e,cnode);
 				cnode = ext2_icache_request(e,entry->inode);
@@ -88,5 +88,7 @@ tInodeNo ext2_resolvePath(sExt2 *e,string path) {
 
 	res = cnode->inodeNo;
 	ext2_icache_release(e,cnode);
-	return res;
+	if(res != EXT2_BAD_INO)
+		return res;
+	return ERR_PATH_NOT_FOUND;
 }

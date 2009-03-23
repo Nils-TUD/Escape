@@ -102,6 +102,29 @@ s8 *abspath(const s8 *path) {
 	return apath;
 }
 
+void dirname(s8 *path) {
+	s8 *p;
+	u32 len = strlen(path);
+
+	p = path + len - 1;
+	/* remove last '/' */
+	if(*p == '/') {
+		p--;
+		len--;
+	}
+
+	/* nothing to remove? */
+	if(*p == ':' || len == 0)
+		return;
+
+	/* remove last path component */
+	while(*p != '/')
+		p--;
+
+	/* set new end */
+	*(p + 1) = '\0';
+}
+
 s32 opendir(cstring path) {
 	return open(path,IO_READ);
 }

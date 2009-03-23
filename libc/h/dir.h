@@ -10,15 +10,14 @@
 #include "common.h"
 #include "io.h"
 
-#define MAX_NAME_LEN	50
-#define MAX_PATH_LEN	255
+#define MAX_NAME_LEN			50
+#define MAX_PATH_LEN			255
 
 /* a directory-entry */
 typedef struct {
 	tVFSNodeNo nodeNo;
 	u16 recLen;
-	u8 nameLen;
-	u8 fileType;
+	u16 nameLen;
 	s8 name[];
 } __attribute__((packed)) sDirEntry;
 
@@ -30,6 +29,13 @@ typedef struct {
  * @return the absolute path (statically stored!)
  */
 s8 *abspath(const s8 *path);
+
+/**
+ * Removes the last path-component, if possible
+ *
+ * @param path the path
+ */
+void dirname(s8 *path);
 
 /**
  * Opens the given directory

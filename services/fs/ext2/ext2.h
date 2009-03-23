@@ -135,6 +135,7 @@
 #define EXT3_JOURNAL_DATA_FL				0x00040000	/* journal file data */
 #define EXT2_RESERVED_FL					0x80000000	/* reserved for ext2 library */
 
+
 typedef struct {
 	/* the total number of inodes, both used and free, in the file system. */
 	u32 inodeCount;
@@ -293,8 +294,7 @@ typedef struct {
 typedef struct {
 	tInodeNo inode;
 	u16 recLen;
-	u8 nameLen;
-	u8 fileType;
+	u16 nameLen;
 	/* name follows (up to 255 bytes) */
 } __attribute__((packed)) sDirEntry;
 

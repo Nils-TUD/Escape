@@ -38,9 +38,9 @@ static sShellCmd commands[] = {
 	{TYPE_BUILTIN,	{"cd"	}, shell_cmdCd		,-1},
 };
 
-sShellCmd **compl_get(s8 *str,u32 length,u32 max,bool searchPath) {
+sShellCmd **compl_get(s8 *str,u32 length,u32 max,bool searchCmd,bool searchPath) {
 	u32 arraySize,arrayPos;
-	u32 i,len,cmdlen,start;
+	u32 i,len,cmdlen,start,matchLen;
 	s32 dd;
 	sDirEntry *entry;
 	sShellCmd *cmd;
@@ -58,8 +58,9 @@ sShellCmd **compl_get(s8 *str,u32 length,u32 max,bool searchPath) {
 	if(searchPath) {
 		for(i = 0; (max == 0 || arrayPos < max) && i < ARRAY_SIZE(commands); i++) {
 			cmdlen = strlen(commands[i].name);
+			matchLen = searchCmd ? cmdlen : length;
 			/* beginning matches? */
-			if(length <= cmdlen && strncmp(str,commands[i].name,length) == 0) {
+			if(length <= cmdlen && strncmp(str,commands[i].name,matchLen) == 0) {
 				matches = compl_incrArray(matches,arrayPos,&arraySize);
 				if(matches == NULL)
 					return NULL;
@@ -121,7 +122,8 @@ sShellCmd **compl_get(s8 *str,u32 length,u32 max,bool searchPath) {
 				continue;
 
 			cmdlen = strlen(entry->name);
-			if(cmdlen < MAX_CMDNAME_LEN && length <= cmdlen && strncmp(str,entry->name,length) == 0) {
+			matchLen = searchCmd ? cmdlen : length;
+			if(cmdlen < MAX_CMDNAME_LEN && length <= cmdlen && strncmp(str,entry->name,matchLen) == 0) {
 				matches = compl_incrArray(matches,arrayPos,&arraySize);
 				if(matches == NULL) {
 					if(paths[1] != NULL)

@@ -245,7 +245,7 @@ static void shell_complete(s8 *line,u16 *cursorPos,u16 *length) {
 		else
 			token = (s8*)"";
 		tokLen = strlen(token);
-		matches = compl_get(token,tokLen,0,tokCount <= 1);
+		matches = compl_get(token,tokLen,0,false,tokCount <= 1);
 		if(matches == NULL || matches[0] == NULL)
 			return;
 
@@ -320,10 +320,11 @@ static s32 shell_executeCmd(s8 *line) {
 
 	cmd = cmds;
 	for(i = 0; i < cmdCount; i++) {
-		scmds = compl_get(cmd->arguments[0],strlen(cmd->arguments[0]),2,true);
+		scmds = compl_get(cmd->arguments[0],strlen(cmd->arguments[0]),2,true,true);
 
 		/* we need exactly one match and it has to be TYPE_EXTERN or TYPE_BUILTIN */
 		if(scmds == NULL || scmds[0] == NULL || scmds[1] != NULL || scmds[0]->type == TYPE_PATH) {
+			printf("%s: Command not found\n",cmd->arguments[0]);
 			tok_free(tokens,tokCount);
 			cmd_free(cmds,cmdCount);
 			return -1;

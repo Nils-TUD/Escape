@@ -52,9 +52,9 @@ $(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		@echo "===== LINKING AGAIN =====";
 		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(AOBJEND);
 		@echo "===== COPYING BINARY =====";
-		sudo mount -o loop $(DISK) $(DISKMOUNT) || true;
-		cp $(BIN) $(DISKMOUNT);
-		sudo umount $(DISKMOUNT);
+		@make -C ../../ mounthdd
+		sudo cp $(BIN) $(DISKMOUNT)
+		@make -C ../../ umounthdd
 
 $(BUILD)/testk_%.o:	../src/%.c
 		@echo "===== COMPILING $< =====";

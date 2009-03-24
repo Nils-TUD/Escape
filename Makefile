@@ -1,7 +1,6 @@
 # general
 BUILD=build
-FLOPPYDISK=$(BUILD)/disk.img
-FLOPPYDISKMOUNT=disk
+DISKMOUNT=disk
 HDD=$(BUILD)/hd.img
 HDDBAK=$(BUILD)/hd.img.bak
 # 5 MB disk (10 * 16 * 63 * 512 = 5,160,960 byte)
@@ -14,7 +13,7 @@ BIN=$(BUILD)/$(BINNAME)
 SYMBOLS=$(BUILD)/kernel.symbols
 OSTITLE=hrniels-OS
 
-QEMUARGS=-serial stdio -no-kqemu -fda $(FLOPPYDISK) -hda $(HDD) -boot a
+QEMUARGS=-serial stdio -no-kqemu -hda $(HDD) -boot c
 
 DIRS = tools libc services user kernel kernel/test
 
@@ -24,10 +23,9 @@ export CWFLAGS=-Wall -ansi \
 				 -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wno-long-long \
 				 -Wstrict-prototypes -fno-builtin
 
-.PHONY: all floppy mounthdd debughdd umounthdd createhdd dis qemu bochs debug debugu debugm debugt test clean
+.PHONY: all mounthdd debughdd umounthdd createhdd dis qemu bochs debug debugu debugm debugt test clean
 
 all: $(BUILD)
-		@[ -f $(FLOPPYDISK) ] || make floppy;
 		@[ -f $(HDD) ] || make createhdd;
 		@for i in $(DIRS); do \
 			make -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
@@ -36,26 +34,9 @@ all: $(BUILD)
 $(BUILD):
 		[ -d $(BUILD) ] || mkdir -p $(BUILD);
 
-floppy: clean
-		sudo umount $(FLOPPYDISKMOUNT) || true;
-		dd if=/dev/zero of=$(FLOPPYDISK) bs=1024 count=1440;
-		/sbin/mke2fs -F $(FLOPPYDISK);
-		sudo mount -o loop $(FLOPPYDISK) $(FLOPPYDISKMOUNT);
-		mkdir $(FLOPPYDISKMOUNT)/grub;
-		cp boot/stage1 $(FLOPPYDISKMOUNT)/grub;
-		cp boot/stage2 $(FLOPPYDISKMOUNT)/grub;
-		echo 'default 0' > $(FLOPPYDISKMOUNT)/grub/menu.lst;
-		echo 'timeout 0' >> $(FLOPPYDISKMOUNT)/grub/menu.lst;
-		echo '' >> $(FLOPPYDISKMOUNT)/grub/menu.lst;
-		echo "title $(OSTITLE)" >> $(FLOPPYDISKMOUNT)/grub/menu.lst;
-		echo "kernel /$(BINNAME)" >> $(FLOPPYDISKMOUNT)/grub/menu.lst;
-		echo 'root (fd0)' >> $(FLOPPYDISKMOUNT)/grub/menu.lst;
-		echo -n "device (fd0) $(FLOPPYDISK)\nroot (fd0)\nsetup (fd0)\nquit\n" | grub --batch;
-		sudo umount $(FLOPPYDISKMOUNT);
-
 mounthdd:
-		sudo umount $(FLOPPYDISKMOUNT) > /dev/null 2>&1 || true;
-		sudo mount -text2 -oloop=/dev/loop0,offset=`expr $(HDDTRACKSECS) \* 512` $(HDD) $(FLOPPYDISKMOUNT);
+		sudo umount $(DISKMOUNT) > /dev/null 2>&1 || true;
+		sudo mount -text2 -oloop=/dev/loop0,offset=`expr $(HDDTRACKSECS) \* 512` $(HDD) $(DISKMOUNT);
 
 debughdd:
 		make mounthdd;
@@ -83,20 +64,33 @@ createhdd: clean
 		sudo mke2fs -r0 -Onone -b1024 /dev/loop0 5008
 		sudo umount /dev/loop0 || true
 		sudo losetup -d /dev/loop0 || true
-		@# store some test-data on the disk
+		@# add boot stuff
 		make mounthdd
-		sudo mkdir $(FLOPPYDISKMOUNT)/apps
-		sudo mkdir $(FLOPPYDISKMOUNT)/etc
-		sudo mkdir $(FLOPPYDISKMOUNT)/services
-		sudo cp services/services.txt $(FLOPPYDISKMOUNT)/etc/services
-		sudo mkdir $(FLOPPYDISKMOUNT)/test
-		sudo touch $(FLOPPYDISKMOUNT)/file.txt
-		sudo chmod 0666 $(FLOPPYDISKMOUNT)/file.txt
-		echo "Das ist ein Test-String!!" > $(FLOPPYDISKMOUNT)/file.txt
-		sudo cp $(FLOPPYDISKMOUNT)/file.txt $(FLOPPYDISKMOUNT)/test/file.txt
-		sudo touch $(FLOPPYDISKMOUNT)/bigfile
-		sudo chmod 0666 $(FLOPPYDISKMOUNT)/bigfile
-		./tools/createStr.sh 'Das ist der %d Test\n' 200 > $(FLOPPYDISKMOUNT)/bigfile;
+		sudo mkdir $(DISKMOUNT)/grub;
+		sudo cp boot/stage1 $(DISKMOUNT)/grub;
+		sudo cp boot/stage2 $(DISKMOUNT)/grub;
+		sudo touch $(DISKMOUNT)/grub/menu.lst;
+		sudo chmod 0666 $(DISKMOUNT)/grub/menu.lst;
+		echo 'default 0' > $(DISKMOUNT)/grub/menu.lst;
+		echo 'timeout 0' >> $(DISKMOUNT)/grub/menu.lst;
+		echo '' >> $(DISKMOUNT)/grub/menu.lst;
+		echo "title $(OSTITLE)" >> $(DISKMOUNT)/grub/menu.lst;
+		echo "kernel /$(BINNAME)" >> $(DISKMOUNT)/grub/menu.lst;
+		echo "boot" >> $(DISKMOUNT)/grub/menu.lst;
+		echo -n "device (hd0) $(HDD)\nroot (hd0,0)\nsetup (hd0)\nquit\n" | grub --no-floppy --batch;
+		@# store some test-data on the disk
+		sudo mkdir $(DISKMOUNT)/apps
+		sudo mkdir $(DISKMOUNT)/etc
+		sudo mkdir $(DISKMOUNT)/services
+		sudo cp services/services.txt $(DISKMOUNT)/etc/services
+		sudo mkdir $(DISKMOUNT)/test
+		sudo touch $(DISKMOUNT)/file.txt
+		sudo chmod 0666 $(DISKMOUNT)/file.txt
+		echo "Das ist ein Test-String!!" > $(DISKMOUNT)/file.txt
+		sudo cp $(DISKMOUNT)/file.txt $(DISKMOUNT)/test/file.txt
+		sudo touch $(DISKMOUNT)/bigfile
+		sudo chmod 0666 $(DISKMOUNT)/bigfile
+		./tools/createStr.sh 'Das ist der %d Test\n' 200 > $(DISKMOUNT)/bigfile;
 		make umounthdd
 		rm -f $(TMPFILE)
 		cp $(HDD) $(HDDBAK)
@@ -138,14 +132,14 @@ test: all prepareTest
 		qemu $(QEMUARGS) > log.txt 2>&1
 
 prepareTest:
-		sudo mount -o loop $(FLOPPYDISK) $(FLOPPYDISKMOUNT) || true;
-		sed --in-place -e "s/^kernel.*/kernel \/kernel_test.bin/g" $(FLOPPYDISKMOUNT)/grub/menu.lst;
-		sudo umount $(FLOPPYDISKMOUNT);
+		make mounthdd
+		sudo sed --in-place -e "s/^kernel.*/kernel \/kernel_test.bin/g" $(DISKMOUNT)/grub/menu.lst;
+		make umounthdd
 
 prepareRun:
-		sudo mount -o loop $(FLOPPYDISK) $(FLOPPYDISKMOUNT) || true;
-		sed --in-place -e "s/^kernel.*/kernel \/kernel.bin/g" $(FLOPPYDISKMOUNT)/grub/menu.lst;
-		sudo umount $(FLOPPYDISKMOUNT);
+		make mounthdd
+		sudo sed --in-place -e "s/^kernel.*/kernel \/kernel.bin/g" $(DISKMOUNT)/grub/menu.lst;
+		make umounthdd
 
 clean:
 		@for i in $(DIRS); do \

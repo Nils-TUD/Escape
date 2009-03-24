@@ -58,9 +58,9 @@ $(BIN):	$(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@echo "===== LINKING AGAIN =====";
 		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(AOBJEND);
 		@echo "===== COPYING BINARY =====";
-		sudo mount -o loop $(DISK) $(DISKMOUNT) || true;
-		cp $(BIN) $(DISKMOUNT);
-		sudo umount $(DISKMOUNT);
+		@make -C ../ mounthdd
+		sudo cp $(BIN) $(DISKMOUNT)
+		@make -C ../ umounthdd
 
 $(SERVICES): $(SERVBINS)
 		@echo "" > $(SERVICES)

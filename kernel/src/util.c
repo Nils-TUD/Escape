@@ -26,7 +26,7 @@ extern u32 getStackFrameStart(void);
  */
 extern u32 kernelStack;
 
-void panic(cstring fmt,...) {
+void panic(const char *fmt,...) {
 	sProc *p = proc_getRunning();
 	va_list ap;
 	vid_printf("\n");

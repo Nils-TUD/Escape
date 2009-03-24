@@ -36,7 +36,7 @@ typedef s32 (*fRead)(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 typedef void (*fReadCallBack)(sVFSNode *node,void *buffer);
 
 struct sVFSNode {
-	string name;
+	char *name;
 	u8 type;
 	u8 flags;
 	/* number of open files for this node */
@@ -172,7 +172,7 @@ void vfs_closeFile(tFile file);
  * @param type single-pipe or multi-pipe
  * @return 0 if ok, negative if an error occurred
  */
-s32 vfs_createService(tPid pid,cstring name,u8 type);
+s32 vfs_createService(tPid pid,const char *name,u8 type);
 
 /**
  * Checks wether there is a message for the given process. That if the process is a service

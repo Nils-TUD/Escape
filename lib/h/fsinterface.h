@@ -29,7 +29,7 @@ typedef struct {
 	/* read/write */
 	u8 flags;
 	/* pathname follows */
-	s8 path[];
+	char path[];
 } sMsgDataFSOpenReq;
 
 /* the open-response-data */

@@ -21,7 +21,7 @@
  * @param str the string
  * @return the integer
  */
-s32 atoi(cstring str);
+s32 atoi(const char *str);
 
 /**
  * Converts the given signed integer to a string
@@ -29,7 +29,7 @@ s32 atoi(cstring str);
  * @param target the target-string (needs max. 12 elements)
  * @param n the integer
  */
-void itoa(string target,s32 n);
+void itoa(char *target,s32 n);
 
 /**
  * The memchr() function looks for the first occurrence of c within count characters in
@@ -93,7 +93,7 @@ void *memmove(void *dest,const void *src,u32 count);
  * @param from the source
  * @return to
  */
-string strcpy(string to,cstring from);
+char *strcpy(char *to,const char *from);
 
 /**
  * The strncpy() function copies at most count characters of from to the string to.
@@ -104,7 +104,7 @@ string strcpy(string to,cstring from);
  * @param count the number of chars to copy
  * @return the target string
  */
-string strncpy(string to,cstring from,u32 count);
+char *strncpy(char *to,const char *from,u32 count);
 
 /**
  * The strcat() function concatenates str2 onto the end of str1, and returns str1.
@@ -113,7 +113,7 @@ string strncpy(string to,cstring from,u32 count);
  * @param str2 the string to append
  * @return pointer to str1
  */
-string strcat(string str1,cstring str2);
+char *strcat(char *str1,const char *str2);
 
 /**
  * The function strncat() concatenates at most count characters of str2 onto str1,
@@ -124,7 +124,7 @@ string strcat(string str1,cstring str2);
  * @param count the number of elements to concatenate to str1
  * @return resulting string
  */
-string strncat(string str1,cstring str2,u32 count);
+char *strncat(char *str1,const char *str2,u32 count);
 
 /**
  * The function strcmp() compares str1 and str2, then returns:
@@ -136,7 +136,7 @@ string strncat(string str1,cstring str2,u32 count);
  * @param str2 the second string
  * @return the result
  */
-s32 strcmp(cstring str1,cstring str2);
+s32 strcmp(const char *str1,const char *str2);
 
 /**
  * Compares at most count characters of str1 and str2. The return value is as follows:
@@ -149,7 +149,7 @@ s32 strcmp(cstring str1,cstring str2);
  * @param count the number of chars to compare
  * @return the result
  */
-s32 strncmp(cstring str1,cstring str2,u32 count);
+s32 strncmp(const char *str1,const char *str2,u32 count);
 
 /**
  * The function strchr() returns a pointer to the first occurence of ch in str, or NULL
@@ -159,7 +159,7 @@ s32 strncmp(cstring str1,cstring str2,u32 count);
  * @param ch the character
  * @return NULL if not found or the pointer to the found character
  */
-string strchr(cstring str,s32 ch);
+char *strchr(const char *str,s32 ch);
 
 /**
  * Returns the index of the first occurrences of ch in str or strlen(str) if ch is not found.
@@ -168,14 +168,14 @@ string strchr(cstring str,s32 ch);
  * @param ch the character
  * @return the index of the character or strlen(str) if not found
  */
-s32 strchri(cstring str,s32 ch);
+s32 strchri(const char *str,s32 ch);
 
 /**
  * @param str the string to search
  * @param ch the character to search for
  * @return a pointer to the last occurrence of ch in str, or NULL if no match is found
  */
-string strrchr(cstring str,s32 ch);
+char *strrchr(const char *str,s32 ch);
 
 /**
  * The function strstr() returns a pointer to the first occurrence of str2 in str1, or NULL
@@ -185,14 +185,14 @@ string strrchr(cstring str,s32 ch);
  * @param str2 the substring to search for
  * @return the pointer to the match or NULL
  */
-string strstr(cstring str1,cstring str2);
+char *strstr(const char *str1,const char *str2);
 
 /**
  * @param str1 the string to search in
  * @param str2 the character list
  * @return the index of the first character in str1 that matches any of the characters in str2.
  */
-u32 strcspn(cstring str1,cstring str2);
+u32 strcspn(const char *str1,const char *str2);
 
 /**
  * The function returns a pointer to the first occurrence in str1 of any character in
@@ -202,7 +202,7 @@ u32 strcspn(cstring str1,cstring str2);
  * @param str2 the characters to find
  * @return the first occurrence or NULL
  */
-s8 *strpbrk(const s8 *str1,const s8 *str2);
+char *strpbrk(const char *str1,const char *str2);
 
 /**
  * Cuts out the first count characters in the given string. That means all characters behind
@@ -212,13 +212,13 @@ s8 *strpbrk(const s8 *str1,const s8 *str2);
  * @param count the number of chars to remove
  * @return the string
  */
-string strcut(string str,u32 count);
+char *strcut(char *str,u32 count);
 
 /**
  * @param str the string
  * @return the length of str (determined by the number of characters before null termination).
  */
-u32 strlen(cstring str);
+u32 strlen(const char *str);
 
 /**
  * Determines the length of the string to the given maximum length. That means the function
@@ -228,7 +228,7 @@ u32 strlen(cstring str);
  * @param max the maximum number of characters
  * @return the length of the string or -1 if the string is too long
  */
-s32 strnlen(cstring str,s32 max);
+s32 strnlen(const char *str,s32 max);
 
 /**
  * @param ch the char
@@ -248,7 +248,7 @@ s32 toupper(s32 ch);
  * @param str the string
  * @return true if so
  */
-bool isalnumstr(cstring str);
+bool isalnumstr(const char *str);
 
 /**
  * @param c the character

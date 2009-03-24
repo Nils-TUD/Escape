@@ -27,7 +27,7 @@
  * @param type the service-type: SERVICE_TYPE_MULTIPIPE or SERVICE_TYPE_SINGLEPIPE
  * @return the service-id if successfull, < 0 if an error occurred
  */
-s32 regService(cstring name,u8 type);
+s32 regService(const char *name,u8 type);
 
 /**
  * Unregisters your service

@@ -15,7 +15,7 @@
  * @param c the character
  * @return the character or the error-code if failed
  */
-s32 printc(s8 c);
+s32 printc(char c);
 
 /**
  * Prints the given character to <fd>
@@ -24,7 +24,7 @@ s32 printc(s8 c);
  * @param c the character
  * @return the character or the error-code if failed
  */
-s32 fprintc(tFD fd,s8 c);
+s32 fprintc(tFD fd,char c);
 
 /**
  * Prints the given string to STDOUT
@@ -32,7 +32,7 @@ s32 fprintc(tFD fd,s8 c);
  * @param str the string
  * @return the number of written chars
  */
-s32 prints(s8 *str);
+s32 prints(char *str);
 
 /**
  * Prints the given string to <fd>
@@ -41,7 +41,7 @@ s32 prints(s8 *str);
  * @param str the string
  * @return the number of written chars
  */
-s32 fprints(tFD fd,s8 *str);
+s32 fprints(tFD fd,char *str);
 
 /**
  * Prints the given signed integer to STDOUT
@@ -95,7 +95,7 @@ s32 fprintu(tFD fd,s32 u,u8 base);
  * @param fmt the format
  * @return the number of written chars
  */
-s32 printf(cstring fmt,...);
+s32 printf(const char *fmt,...);
 
 /**
  * Like printf(), but prints to <fd>
@@ -104,7 +104,7 @@ s32 printf(cstring fmt,...);
  * @param fmt the format
  * @return the number of written chars
  */
-s32 fprintf(tFD fd,cstring fmt,...);
+s32 fprintf(tFD fd,const char *fmt,...);
 
 /**
  * Like printf(), but lets you specify the argument-list
@@ -113,7 +113,7 @@ s32 fprintf(tFD fd,cstring fmt,...);
  * @param ap the argument-list
  * @return the number of written chars
  */
-s32 vprintf(cstring fmt,va_list ap);
+s32 vprintf(const char *fmt,va_list ap);
 
 /**
  * Like vprintf(), but prints to <fd>
@@ -123,7 +123,7 @@ s32 vprintf(cstring fmt,va_list ap);
  * @param ap the argument-list
  * @return the number of written chars
  */
-s32 vfprintf(tFD fd,cstring fmt,va_list ap);
+s32 vfprintf(tFD fd,const char *fmt,va_list ap);
 
 /**
  * Flushes STDOUT
@@ -142,7 +142,7 @@ void fflush(tFD fd);
  *
  * @return the character or 0
  */
-s8 scanc(void);
+char scanc(void);
 
 /**
  * Reads one char from <fd>
@@ -150,7 +150,7 @@ s8 scanc(void);
  * @param fd the file-descriptor
  * @return the character or 0
  */
-s8 fscanc(tFD fd);
+char fscanc(tFD fd);
 
 /**
  * Reads one line (or <max> chars) from STDIN into the given line-buffer
@@ -159,7 +159,7 @@ s8 fscanc(tFD fd);
  * @param max the maximum number of chars to read
  * @return the number of read chars
  */
-u32 scanl(s8 *line,u32 max);
+u32 scanl(char *line,u32 max);
 
 /**
  * Reads one line (or <max> chars) from <fd> into the given line-buffer
@@ -169,6 +169,6 @@ u32 scanl(s8 *line,u32 max);
  * @param max the maximum number of chars to read
  * @return the number of read chars
  */
-u32 fscanl(tFD fd,s8 *line,u32 max);
+u32 fscanl(tFD fd,char *line,u32 max);
 
 #endif /* BUFIO_H_ */

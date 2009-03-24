@@ -19,10 +19,10 @@
 #define APPS_DIR			"file:/apps/"
 
 /* the builtin shell-commands */
-typedef s32 (*fCommand)(u32 argc,s8 **argv);
+typedef s32 (*fCommand)(u32 argc,char **argv);
 typedef struct {
 	u8 type;
-	s8 name[MAX_CMDNAME_LEN + 1];
+	char name[MAX_CMDNAME_LEN + 1];
 	fCommand func;
 	s32 complStart;
 } sShellCmd;
@@ -36,7 +36,7 @@ typedef struct {
  * @param searchCmd wether you're looking for a command to execute
  * @return the matches or NULL if failed
  */
-sShellCmd **compl_get(s8 *str,u32 length,u32 max,bool searchCmd,bool searchPath);
+sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPath);
 
 /**
  * Free's the given matches

@@ -18,7 +18,7 @@
  */
 static void ps_printProcess(sProc *p);
 
-static cstring states[] = {
+static const char *states[] = {
 	"Unused ",
 	"Running",
 	"Ready  ",
@@ -26,12 +26,12 @@ static cstring states[] = {
 	"Zombie "
 };
 
-s32 main(u32 argc,s8 **argv) {
+s32 main(u32 argc,char **argv) {
 	s32 dd,dfd;
 	sProc proc;
 	sDirEntry *entry;
-	s8 path[] = "system:/processes/";
-	s8 ppath[255];
+	char path[] = "system:/processes/";
+	char ppath[255];
 
 	UNUSED(argc);
 	UNUSED(argv);

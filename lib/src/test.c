@@ -34,24 +34,24 @@ static u32 failCount = 0;
 
 static u32 assertCount = 0;
 
-void test_noPrint(cstring fmt,...) {
+void test_noPrint(const char *fmt,...) {
 	/* do nothing */
 	UNUSED(fmt);
 }
-void test_vnoPrint(cstring fmt,va_list ap) {
+void test_vnoPrint(const char *fmt,va_list ap) {
 	/* do nothing */
 	UNUSED(fmt);
 	UNUSED(ap);
 }
 
-void test_caseStart(cstring fmt,...) {
+void test_caseStart(const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
 	test_caseStartv(fmt,ap);
 	va_end(ap);
 }
 
-void test_caseStartv(cstring fmt,va_list ap) {
+void test_caseStartv(const char *fmt,va_list ap) {
 	testPrintf("== Testcase %d : ",testCase++);
 	testvPrintf(fmt,ap);
 	testPrintf(" ==\n");
@@ -117,9 +117,9 @@ bool test_assertUInt(u32 received,u32 expected) {
 	return true;
 }
 
-bool test_assertStr(string received,string expected) {
-	string s1 = expected;
-	string s2 = received;
+bool test_assertStr(char *received,char *expected) {
+	char *s1 = expected;
+	char *s2 = received;
 	assertCount++;
 	while(*s1 && *s2) {
 		if(*s1 != *s2) {
@@ -139,7 +139,7 @@ bool test_assertStr(string received,string expected) {
 	return true;
 }
 
-void test_caseFailed(cstring fmt,...) {
+void test_caseFailed(const char *fmt,...) {
 	va_list ap;
 	testPrintf("== >> \033f\x4%s\033r\x0 : ","FAILED");
 	va_start(ap,fmt);

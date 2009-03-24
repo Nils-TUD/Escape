@@ -9,7 +9,7 @@
 #include <bufio.h>
 #include <mem.h>
 
-s32 main(u32 argc,s8 **argv) {
+s32 main(u32 argc,char **argv) {
 	sMemUsage mem;
 	s32 fd;
 

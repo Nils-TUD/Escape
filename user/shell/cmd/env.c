@@ -13,15 +13,15 @@
 #include <string.h>
 #include "env.h"
 
-s32 shell_cmdEnv(u32 argc,s8 **argv) {
+s32 shell_cmdEnv(u32 argc,char **argv) {
 	if(argc < 2) {
 		u32 i,len;
-		s8 *backup;
-		s8 *val,*name;
+		char *backup;
+		char *val,*name;
 		for(i = 0; (name = getEnvByIndex(i)) != NULL; i++) {
 			/* save name (getEnv will overwrite it) */
 			len = strlen(name);
-			backup = (s8*)malloc(len + 1);
+			backup = (char*)malloc(len + 1);
 			memcpy(backup,name,len + 1);
 
 			val = getEnv(name);
@@ -30,7 +30,7 @@ s32 shell_cmdEnv(u32 argc,s8 **argv) {
 		}
 	}
 	else if(argc == 2) {
-		s8 *val;
+		char *val;
 		u32 pos = strchri(argv[1],'=');
 		if(argv[1][pos] == '\0') {
 			val = getEnv(argv[1]);

@@ -26,7 +26,7 @@
  * @param mode the mode
  * @return the file-descriptor; negative if error
  */
-s32 open(cstring path,u8 mode);
+s32 open(const char *path,u8 mode);
 
 /**
  * Reads count bytes from the given file-descriptor into the given buffer and returns the

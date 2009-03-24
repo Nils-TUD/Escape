@@ -1,11 +1,92 @@
+src/env.c: In function ‘getEnv’:
+src/env.c:54: warning: passing argument 2 of ‘asmBinDataMsg’ discards qualifiers from pointer target type
 umount: disk: not mounted
 ioctl: LOOP_CLR_FD: No such device or address
 atamain.c:109: warning: unused parameter ‘sig’
 atamain.c:109: warning: unused parameter ‘data’
 atamain.c:113: warning: return type of ‘main’ is not ‘int’
-../../build/libc.a(libc_bufio.o): In function `doFscanl':
-/home/hrniels/qemu/firsttest/libc/src/bufio.c:306: undefined reference to `dofscanc'
-collect2: ld returned 1 exit status
-make[2]: *** [../../build/service_ata.bin] Error 1
-make[1]: *** [all] Error 1
-make: *** [all] Error 1
+senvmain.c:106: warning: return type of ‘main’ is not ‘int’
+senvmain.c: In function ‘main’:
+senvmain.c:135: warning: cast from pointer to integer of different size
+senvmain.c: At top level:
+senvmain.c:369: warning: ‘env_printAll’ defined but not used
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+fsmain.c:58: warning: return type of ‘main’ is not ‘int’
+kbmain.c:35: warning: return type of ‘main’ is not ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+spkmain.c:40: warning: return type of ‘main’ is not ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+vidmain.c:50: warning: return type of ‘main’ is not ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+vtmain.c:23: warning: return type of ‘main’ is not ‘int’
+vtmain.c: In function ‘main’:
+vtmain.c:41: warning: implicit declaration of function ‘requestIOPort’
+vtmain.c:41: warning: nested extern declaration of ‘requestIOPort’
+vtmain.c:69: warning: implicit declaration of function ‘releaseIOPort’
+vtmain.c:69: warning: nested extern declaration of ‘releaseIOPort’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+catmain.c:13: warning: return type of ‘main’ is not ‘int’
+catmain.c:13: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+imain.c:43: warning: return type of ‘main’ is not ‘int’
+kimain.c:13: warning: return type of ‘main’ is not ‘int’
+kimain.c:13: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+lsmain.c:12: warning: return type of ‘main’ is not ‘int’
+lsmain.c:12: warning: first argument of ‘main’ should be ‘int’
+lsmain.c: In function ‘main’:
+lsmain.c:18: warning: implicit declaration of function ‘getEnv’
+lsmain.c:18: warning: nested extern declaration of ‘getEnv’
+lsmain.c:18: warning: assignment makes pointer from integer without a cast
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+memmain.c:12: warning: return type of ‘main’ is not ‘int’
+memmain.c:12: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+psmain.c:29: warning: return type of ‘main’ is not ‘int’
+psmain.c:29: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+completion.c:32: warning: ‘externCmd’ defined but not used
+shmain.c:91: warning: return type of ‘main’ is not ‘int’
+shmain.c:91: warning: first argument of ‘main’ should be ‘int’
+shmain.c:91: warning: unused parameter ‘argc’
+shmain.c:91: warning: unused parameter ‘argv’
+shmain.c:89: warning: ‘args’ defined but not used
+cmd/env.c:16: warning: no previous prototype for ‘shell_cmdEnv’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+t2main.c:48: warning: return type of ‘main’ is not ‘int’
+t2main.c: In function ‘main’:
+t2main.c:52: warning: passing argument 1 of ‘prints’ discards qualifiers from pointer target type
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+wcmain.c:13: warning: return type of ‘main’ is not ‘int’
+wcmain.c:13: warning: first argument of ‘main’ should be ‘int’
+umount: disk: not mounted
+ioctl: LOOP_CLR_FD: No such device or address
+src/ksymbols.c: In function ‘ksym_print’:
+src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
+src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
+src/syscalls.c:324: warning: unused parameter ‘stack’
+src/vfs.c:699: warning: unused parameter ‘pid’
+src/vfsnode.c:249: warning: unused parameter ‘parent’
+../src/ksymbols.c: In function ‘ksym_print’:
+../src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
+../src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
+../src/syscalls.c:324: warning: unused parameter ‘stack’
+../src/vfs.c:699: warning: unused parameter ‘pid’
+../src/vfsnode.c:249: warning: unused parameter ‘parent’
+tstring.c: In function ‘test_atoi’:
+tstring.c:86: warning: this decimal constant is unsigned only in ISO C90
+tstring.c: In function ‘test_itoa’:
+tstring.c:114: warning: this decimal constant is unsigned only in ISO C90
+tvfsnode.c:51: warning: ‘test_vfsn_resolveRealPath’ defined but not used

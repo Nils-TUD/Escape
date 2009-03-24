@@ -14,7 +14,7 @@
 typedef struct {
 	u32 modStart;
 	u32 modEnd;
-	s8 *name;					/* may be 0 */
+	char *name;					/* may be 0 */
 	u32 reserved;				/* should be ignored */
 } sModule;
 
@@ -50,7 +50,7 @@ typedef struct {
 								   INT 0x13 low-level disk interface: e.g. 0x00 for the first
 								   floppy disk or 0x80 for the first hard disk */
 	} bootDevice;				/* present if flags[1] is set */
-	s8 *cmdLine;				/* present if flags[2] is set */
+	char *cmdLine;				/* present if flags[2] is set */
 	u32 modsCount;				/* present if flags[3] is set */
 	sModule *modsAddr;			/* present if flags[3] is set */
 	union {
@@ -73,7 +73,7 @@ typedef struct {
 	u32 drivesLength;			/* present if flags[7] is set */
 	tDrive *drivesAddr;			/* present if flags[7] is set */
 	u32 configTable;			/* present if flags[8] is set */
-	s8 *bootLoaderName;			/* present if flags[9] is set */
+	char *bootLoaderName;			/* present if flags[9] is set */
 	sAPMTable *apmTable;		/* present if flags[10] is set */
 #endif
 } sMultiBoot;

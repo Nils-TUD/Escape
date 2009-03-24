@@ -198,7 +198,7 @@ s32 main(void) {
 }
 
 static void ata_printDrives(void) {
-	static cstring names[] = {"Primary Master","Primary Slave","Secondary Master","Secondary Slave"};
+	static const char *names[] = {"Primary Master","Primary Slave","Secondary Master","Secondary Slave"};
 	u32 d,p;
 	sPartition *part;
 	debugf("Drives:\n");

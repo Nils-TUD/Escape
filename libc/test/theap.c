@@ -60,7 +60,7 @@ static void test_heap(void) {
 
 /* helper */
 
-static void test_init(cstring fmt,...) {
+static void test_init(const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
 	test_caseStartv(fmt,ap);

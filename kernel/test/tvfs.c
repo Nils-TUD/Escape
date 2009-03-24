@@ -31,7 +31,7 @@ typedef struct {
 } __attribute__((packed)) sVFSDirEntry;
 typedef struct {
 	sVFSDirEntry header;
-	s8 name[MAX_NAME_LEN + 1];
+	char name[MAX_NAME_LEN + 1];
 } __attribute__((packed)) sVFSDirEntryRead;
 
 /* public process-data for test-purposes */
@@ -116,7 +116,7 @@ static void test_vfs_readFileSystem(void) {
 
 	/* check data */
 	vfsn_resolvePath("system:/processes",&procNode);
-	if(strcmp((cstring)node.name,"processes") != 0) {
+	if(strcmp((const char*)node.name,"processes") != 0) {
 		proc_unassocFD(fd);
 		vfs_closeFile(file);
 		test_caseFailed("Node-name='%s', expected 'processes'",node.name);

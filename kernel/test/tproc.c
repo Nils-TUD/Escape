@@ -26,7 +26,7 @@ s32 oldFF, newFF, oldPC, newPC;
 /**
  * Stores the current page-count and free frames and starts a test-case
  */
-static void test_init(cstring fmt,...) {
+static void test_init(const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
 	test_caseStartv(fmt,ap);

@@ -17,9 +17,9 @@
 static s16 histWritePos = 0;
 static s16 histReadPos = -1;
 static u16 histSize = 0;
-static s8 *history[HISTORY_SIZE] = {NULL};
+static char *history[HISTORY_SIZE] = {NULL};
 
-void shell_addToHistory(s8 *line) {
+void shell_addToHistory(char *line) {
 	u16 lastPos = histWritePos == 0 ? HISTORY_SIZE - 1 : histWritePos - 1;
 	/* don't add an entry twice in a row */
 	if(lastPos < histSize && strcmp(history[lastPos],line) == 0) {
@@ -40,7 +40,7 @@ void shell_addToHistory(s8 *line) {
 		histSize++;
 }
 
-s8 *shell_histUp(void) {
+char *shell_histUp(void) {
 	if(histSize == 0)
 		return NULL;
 
@@ -52,7 +52,7 @@ s8 *shell_histUp(void) {
 	return history[histReadPos];
 }
 
-s8 *shell_histDown(void) {
+char *shell_histDown(void) {
 	if(histSize == 0)
 		return NULL;
 

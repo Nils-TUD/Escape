@@ -283,8 +283,8 @@ u32 sig_dbg_getHandlerCount(void) {
 	return c;
 }
 
-cstring sig_dbg_getName(tSig signal) {
-	static cstring names[] = {
+const char *sig_dbg_getName(tSig signal) {
+	static const char *names[] = {
 		"SIG_KILL",
 		"SIG_TERM",
 		"SIG_ILL_INSTR",

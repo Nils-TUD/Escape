@@ -73,7 +73,7 @@ static void sysc_exit(sSysCallStack *stack);
  * Open-syscall. Opens a given path with given mode and returns the file-descriptor to use
  * to the user.
  *
- * @param cstring the vfs-filename
+ * @param const char* the vfs-filename
  * @param u32 flags (read / write)
  * @return tFD the file-descriptor
  */
@@ -127,7 +127,7 @@ static void sysc_close(sSysCallStack *stack);
 /**
  * Registers a service
  *
- * @param cstring name of the service
+ * @param const char* name of the service
  * @param u8 type: SINGLE-PIPE OR MULTI-PIPE
  * @return s32 0 if successfull
  */
@@ -219,17 +219,17 @@ static void sysc_sendSignal(sSysCallStack *stack);
 /**
  * Exchanges the process-data with another program
  *
- * @param string the program-path
+ * @param char* the program-path
  */
 static void sysc_exec(sSysCallStack *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
  *
- * @param string the string
+ * @param char* the string
  * @return true if so
  */
-static bool sysc_isStringReadable(s8 *string);
+static bool sysc_isStringReadable(char *string);
 
 /* our syscalls */
 static sSyscall syscalls[SYSCALL_COUNT] = {
@@ -295,7 +295,7 @@ static void sysc_getppid(sSysCallStack *stack) {
 }
 
 static void sysc_debugc(sSysCallStack *stack) {
-	vid_putchar((s8)stack->arg1);
+	vid_putchar((char)stack->arg1);
 }
 
 static void sysc_fork(sSysCallStack *stack) {
@@ -329,7 +329,7 @@ static void sysc_exit(sSysCallStack *stack) {
 }
 
 static void sysc_open(sSysCallStack *stack) {
-	s8 *path = (s8*)stack->arg1;
+	char *path = (char*)stack->arg1;
 	s32 pathLen;
 	u8 flags;
 	tVFSNodeNo nodeNo;
@@ -538,7 +538,7 @@ static void sysc_close(sSysCallStack *stack) {
 }
 
 static void sysc_regService(sSysCallStack *stack) {
-	cstring name = (cstring)stack->arg1;
+	const char *name = (const char*)stack->arg1;
 	u8 type = (u8)stack->arg2;
 	sProc *p = proc_getRunning();
 	s32 res;
@@ -835,11 +835,11 @@ static void sysc_sendSignal(sSysCallStack *stack) {
 
 static void sysc_exec(sSysCallStack *stack) {
 	const u32 bytesPerReq = 1 * K;
-	s8 pathSave[MAX_PATH_LEN + 1];
-	s8 *path = (s8*)stack->arg1;
-	s8 **args = (s8**)stack->arg2;
-	s8 **arg;
-	s8 *argBuffer;
+	char pathSave[MAX_PATH_LEN + 1];
+	char *path = (char*)stack->arg1;
+	char **args = (char**)stack->arg2;
+	char **arg;
+	char *argBuffer;
 	u8 *buffer;
 	u32 argc;
 	s32 remaining = EXEC_MAX_ARGSIZE;
@@ -853,7 +853,7 @@ static void sysc_exec(sSysCallStack *stack) {
 	argc = 0;
 	argBuffer = NULL;
 	if(args != NULL) {
-		s8 *bufPos;
+		char *bufPos;
 		s32 len;
 
 		/* alloc space for the arguments */
@@ -979,7 +979,7 @@ static void sysc_exec(sSysCallStack *stack) {
 	}
 }
 
-static bool sysc_isStringReadable(s8 *str) {
+static bool sysc_isStringReadable(char *str) {
 	u32 addr = (u32)str & ~(PAGE_SIZE - 1);
 	u32 rem = (addr + PAGE_SIZE) - (u32)str;
 	while(paging_isRangeUserReadable(addr,PAGE_SIZE)) {

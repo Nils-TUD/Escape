@@ -17,6 +17,6 @@
  * @param path the path
  * @return the inode-Number or EXT2_BAD_INO
  */
-tInodeNo ext2_resolvePath(sExt2 *e,string path);
+tInodeNo ext2_resolvePath(sExt2 *e,char *path);
 
 #endif /* PATH_H_ */

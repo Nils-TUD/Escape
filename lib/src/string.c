@@ -17,10 +17,10 @@
 
 #include "../h/string.h"
 
-s32 atoi(cstring str) {
+s32 atoi(const char *str) {
 	s32 i = 0;
 	bool neg = false;
-	s8 c;
+	char c;
 
 	ASSERT(str != NULL,"str == NULL");
 
@@ -43,8 +43,8 @@ s32 atoi(cstring str) {
 	return i;
 }
 
-void itoa(string target,s32 n) {
-	s8 *s = target,*a = target,*b;
+void itoa(char *target,s32 n) {
+	char *s = target,*a = target,*b;
 
 	ASSERT(target != NULL,"target == NULL");
 
@@ -71,14 +71,14 @@ void itoa(string target,s32 n) {
 	/* reverse string */
 	b = s - 1;
 	while(a < b) {
-		s8 t = *a;
+		char t = *a;
 		*a++ = *b;
 		*b-- = t;
 	}
 }
 
 void *memchr(const void *buffer,s32 c,u32 count) {
-	cstring str = buffer;
+	const char *str = buffer;
 	while(*str && count-- > 0) {
 		if(*str == c)
 			return (void*)str;
@@ -156,8 +156,8 @@ void *memmove(void *dest,const void *src,u32 count) {
 	return dest;
 }
 
-string strcpy(string to,cstring from) {
-	string res = to;
+char *strcpy(char *to,const char *from) {
+	char *res = to;
 
 	ASSERT(from != NULL,"from == NULL");
 	ASSERT(to != NULL,"to == NULL");
@@ -169,8 +169,8 @@ string strcpy(string to,cstring from) {
 	return res;
 }
 
-string strncpy(string to,cstring from,u32 count) {
-	string res = to;
+char *strncpy(char *to,const char *from,u32 count) {
+	char *res = to;
 
 	ASSERT(from != NULL,"from == NULL");
 	ASSERT(to != NULL,"to == NULL");
@@ -188,8 +188,8 @@ string strncpy(string to,cstring from,u32 count) {
 	return res;
 }
 
-string strcat(string str1,cstring str2) {
-	string res = str1;
+char *strcat(char *str1,const char *str2) {
+	char *res = str1;
 
 	ASSERT(str1 != NULL,"str1 == NULL");
 	ASSERT(str2 != NULL,"str2 == NULL");
@@ -203,8 +203,8 @@ string strcat(string str1,cstring str2) {
 	return res;
 }
 
-string strncat(string str1,cstring str2,u32 count) {
-	string res = str1;
+char *strncat(char *str1,const char *str2,u32 count) {
+	char *res = str1;
 
 	ASSERT(str1 != NULL,"str1 == NULL");
 	ASSERT(str2 != NULL,"str2 == NULL");
@@ -220,8 +220,8 @@ string strncat(string str1,cstring str2,u32 count) {
 	return res;
 }
 
-s32 strcmp(cstring str1,cstring str2) {
-	s8 c1 = *str1,c2 = *str2;
+s32 strcmp(const char *str1,const char *str2) {
+	char c1 = *str1,c2 = *str2;
 
 	ASSERT(str1 != NULL,"str1 == NULL");
 	ASSERT(str2 != NULL,"str2 == NULL");
@@ -244,7 +244,7 @@ s32 strcmp(cstring str1,cstring str2) {
 	return 1;
 }
 
-s32 strncmp(cstring str1,cstring str2,u32 count) {
+s32 strncmp(const char *str1,const char *str2,u32 count) {
 	s32 rem = count;
 	ASSERT(str1 != NULL,"str1 == NULL");
 	ASSERT(str2 != NULL,"str2 == NULL");
@@ -260,7 +260,7 @@ s32 strncmp(cstring str1,cstring str2,u32 count) {
 	return -1;
 }
 
-string strchr(cstring str,s32 ch) {
+char *strchr(const char *str,s32 ch) {
 	ASSERT(str != NULL,"str == NULL");
 
 	while(*str) {
@@ -270,8 +270,8 @@ string strchr(cstring str,s32 ch) {
 	return NULL;
 }
 
-s32 strchri(cstring str,s32 ch) {
-	cstring save = str;
+s32 strchri(const char *str,s32 ch) {
+	const char *save = str;
 
 	ASSERT(str != NULL,"str == NULL");
 
@@ -282,21 +282,21 @@ s32 strchri(cstring str,s32 ch) {
 	return str - save;
 }
 
-string strrchr(cstring str,s32 ch) {
-	string pos = NULL;
+char *strrchr(const char *str,s32 ch) {
+	char *pos = NULL;
 
 	ASSERT(str != NULL,"str == NULL");
 
 	while(*str) {
 		if(*str++ == ch)
-			pos = (string)(str - 1);
+			pos = (char*)(str - 1);
 	}
 	return pos;
 }
 
-string strstr(cstring str1,cstring str2) {
-	string res = NULL;
-	string sub;
+char *strstr(const char *str1,const char *str2) {
+	char *res = NULL;
+	char *sub;
 
 	ASSERT(str1 != NULL,"str1 == NULL");
 	ASSERT(str2 != NULL,"str2 == NULL");
@@ -307,8 +307,8 @@ string strstr(cstring str1,cstring str2) {
 	while(*str1) {
 		/* matching char? */
 		if(*str1++ == *str2) {
-			res = (string)--str1;
-			sub = (string)str2;
+			res = (char*)--str1;
+			sub = (char*)str2;
 			/* continue until the strings don't match anymore */
 			while(*sub && *str1 == *sub) {
 				str1++;
@@ -322,7 +322,7 @@ string strstr(cstring str1,cstring str2) {
 	return NULL;
 }
 
-u32 strcspn(cstring str1,cstring str2) {
+u32 strcspn(const char *str1,const char *str2) {
 	u32 count = 0;
 
 	ASSERT(str1 != NULL,"str1 == NULL");
@@ -336,17 +336,17 @@ u32 strcspn(cstring str1,cstring str2) {
 	return count;
 }
 
-s8 *strpbrk(const s8 *str1,const s8 *str2) {
-	s8 *s2;
+char *strpbrk(const char *str1,const char *str2) {
+	char *s2;
 
 	ASSERT(str1 != NULL,"str1 == NULL");
 	ASSERT(str2 != NULL,"str2 == NULL");
 
 	while(*str1) {
-		s2 = (s8*)str2;
+		s2 = (char*)str2;
 		while(*s2) {
 			if(*s2 == *str1)
-				return (s8*)str1;
+				return (char*)str1;
 			s2++;
 		}
 		str1++;
@@ -354,8 +354,8 @@ s8 *strpbrk(const s8 *str1,const s8 *str2) {
 	return NULL;
 }
 
-string strcut(string str,u32 count) {
-	string res = str;
+char *strcut(char *str,u32 count) {
+	char *res = str;
 
 	ASSERT(str != NULL,"str == NULL");
 
@@ -370,7 +370,7 @@ string strcut(string str,u32 count) {
 	return res;
 }
 
-u32 strlen(cstring str) {
+u32 strlen(const char *str) {
 	u32 len = 0;
 
 	ASSERT(str != NULL,"str == NULL");
@@ -380,7 +380,7 @@ u32 strlen(cstring str) {
 	return len;
 }
 
-s32 strnlen(cstring str,s32 max) {
+s32 strnlen(const char *str,s32 max) {
 	s32 len = 0;
 	ASSERT(str != NULL,"str == NULL");
 	ASSERT(max >= 0,"max < 0");
@@ -406,7 +406,7 @@ s32 toupper(s32 ch) {
 	return ch;
 }
 
-bool isalnumstr(cstring str) {
+bool isalnumstr(const char *str) {
 	while(*str) {
 		if(!isalnum(*str++))
 			return false;

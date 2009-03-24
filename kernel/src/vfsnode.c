@@ -31,7 +31,7 @@ static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child);
  * @param name the node-name
  * @return the node or NULL
  */
-static sVFSNode *vfsn_createPipeNode(tPid pid,sVFSNode *parent,string name);
+static sVFSNode *vfsn_createPipeNode(tPid pid,sVFSNode *parent,char *name);
 
 /**
  * The recursive function to print the VFS-tree
@@ -89,8 +89,8 @@ sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo) {
 	return nodes + VIRT_INDEX(nodeNo);
 }
 
-string vfsn_getPath(tVFSNodeNo nodeNo) {
-	static s8 path[MAX_PATH_LEN];
+char *vfsn_getPath(tVFSNodeNo nodeNo) {
+	static char path[MAX_PATH_LEN];
 	u32 nlen,len = 0;
 	sVFSNode *node = nodes + nodeNo;
 	sVFSNode *n = node;
@@ -129,10 +129,10 @@ string vfsn_getPath(tVFSNodeNo nodeNo) {
 	/* terminate */
 	*(path + len) = '\0';
 
-	return (string)path;
+	return (char*)path;
 }
 
-s32 vfsn_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
+s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo) {
 	sVFSNode *n;
 	s32 pos;
 
@@ -240,13 +240,13 @@ s32 vfsn_resolvePath(cstring path,tVFSNodeNo *nodeNo) {
 	return 0;
 }
 
-sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,string name) {
+sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,char *name) {
 	sVFSNode *node = vfsn_createNode(parent,name);
 	vfsn_appendChild(parent,node);
 	return node;
 }
 
-sVFSNode *vfsn_createNode(sVFSNode *parent,string name) {
+sVFSNode *vfsn_createNode(sVFSNode *parent,char *name) {
 	sVFSNode *node;
 
 	ASSERT(name != NULL,"name == NULL");
@@ -272,15 +272,15 @@ sVFSNode *vfsn_createNode(sVFSNode *parent,string name) {
 	return node;
 }
 
-sVFSNode *vfsn_createDir(sVFSNode *parent,string name,fRead handler) {
+sVFSNode *vfsn_createDir(sVFSNode *parent,char *name,fRead handler) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
-	sVFSNode *dot = vfsn_createNodeAppend(node,(string)".");
+	sVFSNode *dot = vfsn_createNodeAppend(node,(char*)".");
 	if(dot == NULL)
 		return NULL;
-	sVFSNode *dotdot = vfsn_createNodeAppend(node,(string)"..");
+	sVFSNode *dotdot = vfsn_createNodeAppend(node,(char*)"..");
 	if(dotdot == NULL)
 		return NULL;
 
@@ -295,7 +295,7 @@ sVFSNode *vfsn_createDir(sVFSNode *parent,string name,fRead handler) {
 	return node;
 }
 
-sVFSNode *vfsn_createPipeCon(sVFSNode *parent,string name) {
+sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
@@ -306,7 +306,7 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,string name) {
 	return node;
 }
 
-sVFSNode *vfsn_createInfo(sVFSNode *parent,string name,fRead handler) {
+sVFSNode *vfsn_createInfo(sVFSNode *parent,char *name,fRead handler) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
@@ -317,7 +317,7 @@ sVFSNode *vfsn_createInfo(sVFSNode *parent,string name,fRead handler) {
 	return node;
 }
 
-sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,string name,u8 type) {
+sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,char *name,u8 type) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
@@ -330,7 +330,7 @@ sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,string name,u8 type) 
 	return node;
 }
 
-sVFSNode *vfsn_createServiceUseNode(sVFSNode *parent,string name,fRead handler) {
+sVFSNode *vfsn_createServiceUseNode(sVFSNode *parent,char *name,fRead handler) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
@@ -374,7 +374,7 @@ void vfsn_removeChild(sVFSNode *parent,sVFSNode *node) {
 }
 
 s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
-	string name;
+	char *name;
 	sVFSNode *m;
 	sProc *p = proc_getRunning();
 
@@ -389,11 +389,11 @@ s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
 			m = m->next;
 		}
 
-		name = (string)SERVICE_CLIENT_ALL;
+		name = (char*)SERVICE_CLIENT_ALL;
 	}
 	else {
 		/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
-		name = kheap_alloc(12 * sizeof(s8));
+		name = kheap_alloc(12 * sizeof(char));
 		if(name == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 
@@ -425,14 +425,14 @@ s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
 }
 
 static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child) {
-	string name;
+	char *name;
 	sVFSNode *m;
 	u32 len;
 	sProc *p = proc_getRunning();
 
 	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
 	/* we want to have to form <pid>.<x>, therefore two ints and a '.' */
-	name = kheap_alloc((11 * 2 + 2) * sizeof(s8));
+	name = kheap_alloc((11 * 2 + 2) * sizeof(char));
 	if(name == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -453,7 +453,7 @@ static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child) {
 	return 0;
 }
 
-static sVFSNode *vfsn_createPipeNode(tPid pid,sVFSNode *parent,string name) {
+static sVFSNode *vfsn_createPipeNode(tPid pid,sVFSNode *parent,char *name) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;

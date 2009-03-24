@@ -9,6 +9,6 @@
 
 #include <common.h>
 
-s32 shell_cmdEnv(u32 argc,s8 **argv);
+s32 shell_cmdEnv(u32 argc,char **argv);
 
 #endif /* ENV_H_ */

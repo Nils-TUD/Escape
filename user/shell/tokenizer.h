@@ -26,7 +26,7 @@ typedef enum {
  * Represents a token
  */
 typedef struct {
-	s8 *str;
+	char *str;
 	eTokenType type;
 } sCmdToken;
 
@@ -54,7 +54,7 @@ void tok_print(sCmdToken *token);
  * @param tokenCount a pointer on the number of found tokens (will be set by the function)
  * @return the found tokens or NULL if an error occurred
  */
-sCmdToken *tok_get(s8 *str,u32 *tokenCount);
+sCmdToken *tok_get(char *str,u32 *tokenCount);
 
 /**
  * Frees the tokens read from getTokens()

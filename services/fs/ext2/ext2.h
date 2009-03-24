@@ -197,9 +197,9 @@ typedef struct {
 	u8 volumeUid[16];
 	/* 16 bytes volume name, mostly unusued. A valid volume name would consist of only ISO-Latin-1
 	 * characters and be 0 terminated. */
-	s8 volumeName[16];
+	char volumeName[16];
 	/* 64 bytes directory path where the file system was last mounted. */
-	s8 lastMountPath[64];
+	char lastMountPath[64];
 	/* 32bit value used by compression algorithms to determine the compression method(s) used. */
 	u32 algoBitmap;
 	/* 8-bit value representing the number of blocks the implementation should attempt to

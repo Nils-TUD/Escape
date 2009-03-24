@@ -63,7 +63,7 @@ typedef struct {
 	/* number of cpu-cycles the process has got so far; TODO: should be cpu-time later */
 	u64 cycleCount;
 	/* start-command */
-	s8 command[MAX_PROC_NAME_LEN + 1];
+	char command[MAX_PROC_NAME_LEN + 1];
 } sProc;
 
 /* the area for proc_changeSize() */
@@ -254,7 +254,7 @@ void proc_destroy(sProc *p);
  * @param args the arguments on after another, allocated on the heap; may be NULL
  * @param argsSize the total number of bytes for the arguments (just the data)
  */
-void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args,u32 argsSize);
+void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize);
 
 /**
  * Checks wether the given segment-sizes are valid

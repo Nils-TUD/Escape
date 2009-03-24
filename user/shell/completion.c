@@ -38,14 +38,14 @@ static sShellCmd commands[] = {
 	{TYPE_BUILTIN,	{"cd"	}, shell_cmdCd		,-1},
 };
 
-sShellCmd **compl_get(s8 *str,u32 length,u32 max,bool searchCmd,bool searchPath) {
+sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPath) {
 	u32 arraySize,arrayPos;
 	u32 i,len,cmdlen,start,matchLen;
 	s32 dd;
 	sDirEntry *entry;
 	sShellCmd *cmd;
 	sShellCmd **matches;
-	s8 *paths[3] = {(s8*)APPS_DIR,NULL,NULL};
+	char *paths[3] = {(char*)APPS_DIR,NULL,NULL};
 
 	/* create matches-array */
 	arrayPos = 0;
@@ -75,7 +75,7 @@ sShellCmd **compl_get(s8 *str,u32 length,u32 max,bool searchCmd,bool searchPath)
 	if(length > 0 && *(str + length - 1) != '/') {
 		/* and try the upper directory, too */
 		len = strlen(paths[2]);
-		paths[1] = (s8*)malloc(len + 1);
+		paths[1] = (char*)malloc(len + 1);
 		if(paths[1] == NULL) {
 			matches[arrayPos] = NULL;
 			compl_free(matches);
@@ -88,7 +88,7 @@ sShellCmd **compl_get(s8 *str,u32 length,u32 max,bool searchCmd,bool searchPath)
 	}
 
 	/* we have to adjust line and length since we want to start at the last '/' */
-	s8 *slash;
+	char *slash;
 	slash = strrchr(str,'/');
 	if(slash != NULL) {
 		start = length - (slash - str) - 1;

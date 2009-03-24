@@ -11,10 +11,10 @@
 #include <heap.h>
 #include "tokenizer.h"
 
-static bool tok_addCommand(sCmdToken **tokens,u32 *argIndex,u32 *argCount,s8 **last,s8 *current,
+static bool tok_addCommand(sCmdToken **tokens,u32 *argIndex,u32 *argCount,char **last,char *current,
 		eTokenType type);
 
-sCmdToken *tok_get(s8 *str,u32 *tokenCount) {
+sCmdToken *tok_get(char *str,u32 *tokenCount) {
 	/* allocate memory for the result-array */
 	u32 currentArgPos = 0;
 	u32 currentArgLen = ARG_BUFFER_SIZE;
@@ -23,10 +23,10 @@ sCmdToken *tok_get(s8 *str,u32 *tokenCount) {
 		return NULL;
 
 	/* init some vars */
-	s8 *c = str;
+	char *c = str;
 	u32 foundQuotes = 0;
-	s8 *lastPos = c;
-	const s8 *delims = "\";&| \t\r\n";
+	char *lastPos = c;
+	const char *delims = "\";&| \t\r\n";
 	bool finished = 0;
 
 	while(!finished) {
@@ -137,10 +137,10 @@ void tok_print(sCmdToken *token) {
 }
 
 /* little helper to add a command */
-static bool tok_addCommand(sCmdToken **tokens,u32 *argIndex,u32 *argCount,s8 **last,s8 *current,
+static bool tok_addCommand(sCmdToken **tokens,u32 *argIndex,u32 *argCount,char **last,char *current,
 		eTokenType type) {
 	u32 pos = *argIndex;
-	s8 *lastPos = *last;
+	char *lastPos = *last;
 
 	if(current - lastPos > 0) {
 		/* no more space? */
@@ -152,7 +152,7 @@ static bool tok_addCommand(sCmdToken **tokens,u32 *argIndex,u32 *argCount,s8 **l
 		}
 
 		/* copy substring to res */
-		(*tokens)[pos].str = (s8*)malloc(((current - lastPos) + 1) * sizeof(s8));
+		(*tokens)[pos].str = (char*)malloc(((current - lastPos) + 1) * sizeof(char));
 		if((*tokens)[pos].str == NULL) {
 			free(*tokens);
 			return false;

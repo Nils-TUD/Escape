@@ -19,7 +19,7 @@
  * @param ap the argument-list
  * @return the msg or NULL
  */
-static sMsgHeader *doAsmBinMsg(u8 id,u32 dataLen,const s8 *fmt,va_list ap);
+static sMsgHeader *doAsmBinMsg(u8 id,u32 dataLen,const char *fmt,va_list ap);
 
 /**
  * Internal function to disassemble a bin-message
@@ -29,7 +29,7 @@ static sMsgHeader *doAsmBinMsg(u8 id,u32 dataLen,const s8 *fmt,va_list ap);
  * @param ap the argument-list
  * @return the number of read bytes
  */
-static u32 doDisasmBinMsg(void *data,const s8 *fmt,va_list ap);
+static u32 doDisasmBinMsg(void *data,const char *fmt,va_list ap);
 
 sMsgHeader *asmDataMsg(u8 id,u32 length,void *data) {
 	sMsgHeader *msg = (sMsgHeader*)malloc(sizeof(sMsgHeader) + length * sizeof(u8));
@@ -43,7 +43,7 @@ sMsgHeader *asmDataMsg(u8 id,u32 length,void *data) {
 	return msg;
 }
 
-sMsgHeader *asmBinMsg(u8 id,const s8 *fmt,...) {
+sMsgHeader *asmBinMsg(u8 id,const char *fmt,...) {
 	sMsgHeader *msg;
 	va_list ap;
 	va_start(ap,fmt);
@@ -52,7 +52,7 @@ sMsgHeader *asmBinMsg(u8 id,const s8 *fmt,...) {
 	return msg;
 }
 
-sMsgHeader *asmBinDataMsg(u8 id,void *data,u32 dataLen,const s8 *fmt,...) {
+sMsgHeader *asmBinDataMsg(u8 id,void *data,u32 dataLen,const char *fmt,...) {
 	sMsgHeader *msg;
 	u8 *dPtr;
 	va_list ap;
@@ -70,16 +70,16 @@ sMsgHeader *asmBinDataMsg(u8 id,void *data,u32 dataLen,const s8 *fmt,...) {
 	return msg;
 }
 
-static sMsgHeader *doAsmBinMsg(u8 id,u32 dataLen,const s8 *fmt,va_list ap) {
-	s8 c;
-	s8 *str;
+static sMsgHeader *doAsmBinMsg(u8 id,u32 dataLen,const char *fmt,va_list ap) {
+	char c;
+	char *str;
 	u8 *data;
 	u32 msgSize;
 	sMsgHeader *msg;
 
 	/* determine message-size */
 	msgSize = dataLen;
-	str = (s8*)fmt;
+	str = (char*)fmt;
 	while((c = *str)) {
 		switch(c) {
 			case '1':
@@ -123,7 +123,7 @@ static sMsgHeader *doAsmBinMsg(u8 id,u32 dataLen,const s8 *fmt,va_list ap) {
 	return msg;
 }
 
-bool disasmBinMsg(void *data,const s8 *fmt,...) {
+bool disasmBinMsg(void *data,const char *fmt,...) {
 	va_list ap;
 	bool res;
 	va_start(ap,fmt);
@@ -132,7 +132,7 @@ bool disasmBinMsg(void *data,const s8 *fmt,...) {
 	return res;
 }
 
-u32 disasmBinDataMsg(u32 msgLen,void *data,u8 **buffer,const s8 *fmt,...) {
+u32 disasmBinDataMsg(u32 msgLen,void *data,u8 **buffer,const char *fmt,...) {
 	u32 res;
 	va_list ap;
 
@@ -149,8 +149,8 @@ u32 disasmBinDataMsg(u32 msgLen,void *data,u8 **buffer,const s8 *fmt,...) {
 	return 0;
 }
 
-static u32 doDisasmBinMsg(void *data,const s8 *fmt,va_list ap) {
-	s8 c;
+static u32 doDisasmBinMsg(void *data,const char *fmt,va_list ap) {
+	char c;
 	u8 *ptr8;
 	u16 *ptr16;
 	u32 *ptr32;

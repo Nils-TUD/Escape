@@ -68,7 +68,7 @@ sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo);
  * @param nodeNo the node-number
  * @return the path
  */
-string vfsn_getPath(tVFSNodeNo nodeNo);
+char *vfsn_getPath(tVFSNodeNo nodeNo);
 
 /**
  * Resolves the given path to a VFS-node
@@ -77,7 +77,7 @@ string vfsn_getPath(tVFSNodeNo nodeNo);
  * @param nodeNo the node-number for that path (will be set)
  * @return 0 if successfull or the error-code
  */
-s32 vfsn_resolvePath(cstring path,tVFSNodeNo *nodeNo);
+s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo);
 
 /**
  * Creates and appends a (incomplete) node
@@ -87,7 +87,7 @@ s32 vfsn_resolvePath(cstring path,tVFSNodeNo *nodeNo);
  * @param name the node-name
  * @return the node
  */
-sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,string name);
+sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,char *name);
 
 /**
  * Creates a (incomplete) node
@@ -97,7 +97,7 @@ sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,string name);
  * @param name the node-name
  * @return the node
  */
-sVFSNode *vfsn_createNode(sVFSNode *parent,string name);
+sVFSNode *vfsn_createNode(sVFSNode *parent,char *name);
 
 /**
  * Creates a directory-node
@@ -108,7 +108,7 @@ sVFSNode *vfsn_createNode(sVFSNode *parent,string name);
  * @param handler the read-handler
  * @return the node
  */
-sVFSNode *vfsn_createDir(sVFSNode *parent,string name,fRead handler);
+sVFSNode *vfsn_createDir(sVFSNode *parent,char *name,fRead handler);
 
 /**
  * Creates a pipe-container
@@ -117,7 +117,7 @@ sVFSNode *vfsn_createDir(sVFSNode *parent,string name,fRead handler);
  * @param name the name
  * @return the node
  */
-sVFSNode *vfsn_createPipeCon(sVFSNode *parent,string name);
+sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name);
 
 /**
  * Creates an info-node
@@ -128,7 +128,7 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,string name);
  * @param handler the read-handler
  * @return the node
  */
-sVFSNode *vfsn_createInfo(sVFSNode *parent,string name,fRead handler);
+sVFSNode *vfsn_createInfo(sVFSNode *parent,char *name,fRead handler);
 
 /**
  * Creates a service-node
@@ -140,7 +140,7 @@ sVFSNode *vfsn_createInfo(sVFSNode *parent,string name,fRead handler);
  * @param type single-pipe or multi-pipe
  * @return the node
  */
-sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,string name,u8 type);
+sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,char *name,u8 type);
 
 /**
  * Creates a service-use-node
@@ -150,7 +150,7 @@ sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,string name,u8 type);
  * @param handler the read-handler
  * @return the node or NULL
  */
-sVFSNode *vfsn_createServiceUseNode(sVFSNode *parent,string name,fRead handler);
+sVFSNode *vfsn_createServiceUseNode(sVFSNode *parent,char *name,fRead handler);
 
 /**
  * Appends the given node as last child to the parent

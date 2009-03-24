@@ -45,7 +45,7 @@ static u8 *videoData;
  * @param buffer the buffer
  * @param length the buffer-size
  */
-static void vid_setScreen(u16 startPos,s8 *buffer,u32 length);
+static void vid_setScreen(u16 startPos,char *buffer,u32 length);
 
 s32 main(void) {
 	s32 id;
@@ -99,7 +99,7 @@ s32 main(void) {
 					case MSG_VIDEO_SETSCREEN: {
 						if(msg.length > sizeof(u16) && msg.length <= COLS * ROWS * 2 + sizeof(u16)) {
 							u16 *startPos;
-							s8 *buf = (s8*)malloc(msg.length * sizeof(s8));
+							char *buf = (char*)malloc(msg.length * sizeof(char));
 							read(fd,buf,msg.length);
 							startPos = (u16*)buf;
 							if(*startPos < COLS * ROWS - 1) {
@@ -145,8 +145,8 @@ static void vid_setCursor(u8 row,u8 col) {
    outByte(CURSOR_PORT_DATA,(u8)((position >> 8) & 0xFF));
 }
 
-static void vid_setScreen(u16 startPos,s8 *buffer,u32 length) {
-	s8 *ptr = (s8*)videoData + startPos * 2;
+static void vid_setScreen(u16 startPos,char *buffer,u32 length) {
+	char *ptr = (char*)videoData + startPos * 2;
 	while(length-- > 0)
 		*ptr++ = *buffer++;
 }

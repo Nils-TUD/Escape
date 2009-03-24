@@ -13,10 +13,10 @@
 #include "inodecache.h"
 #include "request.h"
 
-tInodeNo ext2_resolvePath(sExt2 *e,string path) {
+tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
 	sCachedInode *cnode = NULL;
 	tInodeNo res;
-	s8 *p = path;
+	char *p = path;
 	u32 pos;
 
 	if(*p != '/')
@@ -46,7 +46,7 @@ tInodeNo ext2_resolvePath(sExt2 *e,string path) {
 		}
 
 		while(entry->inode != 0) {
-			if(pos == entry->nameLen && strncmp((cstring)(entry + 1),p,pos) == 0) {
+			if(pos == entry->nameLen && strncmp((const char*)(entry + 1),p,pos) == 0) {
 				p += pos;
 				ext2_icache_release(e,cnode);
 				cnode = ext2_icache_request(e,entry->inode);

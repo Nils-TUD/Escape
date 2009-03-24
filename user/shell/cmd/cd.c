@@ -12,8 +12,8 @@
 #include <string.h>
 #include "cd.h"
 
-s32 shell_cmdCd(u32 argc,s8 **argv) {
-	s8 *path;
+s32 shell_cmdCd(u32 argc,char **argv) {
+	char *path;
 	s32 fd;
 
 	if(argc != 2) {

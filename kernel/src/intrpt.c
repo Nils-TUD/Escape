@@ -193,7 +193,7 @@ static void intrpt_handleSignal(void);
 static void intrpt_handleSignalFinish(sIntrptStackFrame *stack);
 
 /* interrupt -> name */
-static cstring intrptNo2Name[] = {
+static const char *intrptNo2Name[] = {
 	/* 0x00 */	"Divide by zero",
 	/* 0x01 */	"Single step",
 	/* 0x02 */	"Non maskable",
@@ -285,7 +285,7 @@ static sSignalData signalData;
 /* the IDT */
 static sIDTEntry idt[IDT_COUNT];
 
-cstring intrpt_no2Name(u32 intrptNo) {
+const char *intrpt_no2Name(u32 intrptNo) {
 	if(intrptNo < ARRAY_SIZE(intrptNo2Name)) {
 		return intrptNo2Name[intrptNo];
 	}
@@ -435,7 +435,7 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 
 /* TODO temporary */
 typedef struct {
-	s8 name[MAX_PROC_NAME_LEN + 1];
+	char name[MAX_PROC_NAME_LEN + 1];
 	u8 *data;
 } sProcData;
 #include "../../build/services.txt"

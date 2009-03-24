@@ -10,7 +10,7 @@
 #include <bufio.h>
 #include <signals.h>
 
-s32 main(u32 argc,s8 **argv) {
+s32 main(u32 argc,char **argv) {
 	tPid pid;
 	if(argc != 2) {
 		printf("Usage: %s <pid>\n",argv[0]);

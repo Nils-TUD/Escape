@@ -40,7 +40,7 @@ static bool shell_prompt(void);
  * @param max the maximum number of chars
  * @return the number of read chars
  */
-static u32 shell_readLine(s8 *buffer,u32 max);
+static u32 shell_readLine(char *buffer,u32 max);
 
 /**
  * Handles the default-escape-codes
@@ -53,7 +53,7 @@ static u32 shell_readLine(s8 *buffer,u32 max);
  * @param modifier the modifier of the escape-code
  * @return true if the escape-code was handled
  */
-static bool handleDefEscapes(s8 *line,u32 *cursorPos,u32 *charcount,s8 c,u8 *keycode,u8 *modifier);
+static bool handleDefEscapes(char *line,u32 *cursorPos,u32 *charcount,char c,u8 *keycode,u8 *modifier);
 
 /**
  * Handles the escape-codes for the shell
@@ -65,7 +65,7 @@ static bool handleDefEscapes(s8 *line,u32 *cursorPos,u32 *charcount,s8 c,u8 *key
  * @param modifier the modifier of the escape-code
  * @return true if the escape-code was handled
  */
-static bool shell_handleEscapeCodes(s8 *buffer,u32 *cursorPos,u32 *charcount,u8 keycode,u8 modifier);
+static bool shell_handleEscapeCodes(char *buffer,u32 *cursorPos,u32 *charcount,u8 keycode,u8 modifier);
 
 /**
  * Completes the current input, if possible
@@ -74,7 +74,7 @@ static bool shell_handleEscapeCodes(s8 *buffer,u32 *cursorPos,u32 *charcount,u8 
  * @param cursorPos the cursor-position (may be changed)
  * @param length the number of entered characters yet (may be changed)
  */
-static void shell_complete(s8 *line,u32 *cursorPos,u32 *length);
+static void shell_complete(char *line,u32 *cursorPos,u32 *length);
 
 /**
  * Executes the given line
@@ -82,14 +82,14 @@ static void shell_complete(s8 *line,u32 *cursorPos,u32 *length);
  * @param line the entered line
  * @return the result
  */
-static s32 shell_executeCmd(s8 *line);
+static s32 shell_executeCmd(char *line);
 
 /* buffer for arguments */
 static u32 tabCount = 0;
-static s8 *args[MAX_ARG_COUNT];
+static char *args[MAX_ARG_COUNT];
 
-s32 main(u32 argc,s8 **argv) {
-	s8 *buffer;
+s32 main(u32 argc,char **argv) {
+	char *buffer;
 
 	printf("\033f\011Welcome to Escape v0.1!\033r\011\n");
 	printf("\n");
@@ -98,7 +98,7 @@ s32 main(u32 argc,s8 **argv) {
 
 	while(1) {
 		/* create buffer (history will free it) */
-		buffer = malloc((MAX_CMD_LEN + 1) * sizeof(s8));
+		buffer = malloc((MAX_CMD_LEN + 1) * sizeof(char));
 		if(buffer == NULL) {
 			printf("Not enough memory\n");
 			return 1;
@@ -119,7 +119,7 @@ s32 main(u32 argc,s8 **argv) {
 }
 
 static bool shell_prompt(void) {
-	s8 *path = getEnv("CWD");
+	char *path = getEnv("CWD");
 	if(path == NULL) {
 		printf("ERROR: unable to get CWD\n");
 		return false;
@@ -128,8 +128,8 @@ static bool shell_prompt(void) {
 	return true;
 }
 
-static u32 shell_readLine(s8 *buffer,u32 max) {
-	s8 c;
+static u32 shell_readLine(char *buffer,u32 max) {
+	char c;
 	u8 keycode;
 	u8 modifier;
 	u32 cursorPos = 0;
@@ -189,9 +189,9 @@ static u32 shell_readLine(s8 *buffer,u32 max) {
 	return i;
 }
 
-static bool shell_handleEscapeCodes(s8 *buffer,u32 *cursorPos,u32 *charcount,u8 keycode,u8 modifier) {
+static bool shell_handleEscapeCodes(char *buffer,u32 *cursorPos,u32 *charcount,u8 keycode,u8 modifier) {
 	bool res = false;
-	s8 *line = NULL;
+	char *line = NULL;
 
 	UNUSED(modifier);
 
@@ -234,17 +234,17 @@ static bool shell_handleEscapeCodes(s8 *buffer,u32 *cursorPos,u32 *charcount,u8 
 	return res;
 }
 
-static void shell_complete(s8 *line,u32 *cursorPos,u32 *length) {
+static void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 	u32 icursorPos = *cursorPos;
 	u32 i,cmdlen,ilength = *length;
-	s8 *orgLine = line;
+	char *orgLine = line;
 
 	/* ignore tabs when the cursor is not at the end of the input */
 	if(icursorPos == ilength) {
 		sShellCmd **matches;
 		sShellCmd **cmd;
 		sCmdToken *tokens;
-		s8 *token;
+		char *token;
 		u32 tokLen,tokCount;
 
 		/* get tokens */
@@ -257,7 +257,7 @@ static void shell_complete(s8 *line,u32 *cursorPos,u32 *length) {
 		if(tokCount > 0)
 			token = tokens[tokCount - 1].str;
 		else
-			token = (s8*)"";
+			token = (char*)"";
 		tokLen = strlen(token);
 		matches = compl_get(token,tokLen,0,false,tokCount <= 1);
 		if(matches == NULL || matches[0] == NULL)
@@ -273,7 +273,7 @@ static void shell_complete(s8 *line,u32 *cursorPos,u32 *length) {
 			else
 				i = matches[0]->complStart;
 			for(; i < cmdlen; i++) {
-				s8 c = matches[0]->name[i];
+				char c = matches[0]->name[i];
 				orgLine[ilength++] = c;
 				printc(c);
 			}
@@ -312,12 +312,12 @@ static void shell_complete(s8 *line,u32 *cursorPos,u32 *length) {
 	}
 }
 
-static s32 shell_executeCmd(s8 *line) {
+static s32 shell_executeCmd(char *line) {
 	sCmdToken *tokens;
 	sCommand *cmds,*cmd;
 	sShellCmd **scmds;
 	u32 i,cmdCount,tokCount;
-	s8 path[MAX_CMD_LEN] = APPS_DIR;
+	char path[MAX_CMD_LEN] = APPS_DIR;
 	s32 res;
 	s32 *pipes = NULL,*pipe;
 
@@ -433,7 +433,7 @@ static s32 shell_executeCmd(s8 *line) {
 	return res;
 }
 
-static bool handleDefEscapes(s8 *line,u32 *cursorPos,u32 *charcount,s8 c,u8 *keycode,u8 *modifier) {
+static bool handleDefEscapes(char *line,u32 *cursorPos,u32 *charcount,char c,u8 *keycode,u8 *modifier) {
 	bool res = false;
 	u32 icursorPos = *cursorPos;
 	u32 icharcount = *charcount;

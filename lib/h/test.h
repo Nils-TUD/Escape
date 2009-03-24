@@ -22,7 +22,7 @@ typedef void (*fStart)(void);
 
 /* one test-module */
 typedef struct {
-	cstring name;
+	const char *name;
 	fStart start;
 } sTestModule;
 
@@ -42,11 +42,11 @@ typedef struct {
 /**
  * The "do-nothing" printf-function
  */
-void test_noPrint(cstring fmt,...);
+void test_noPrint(const char *fmt,...);
 /**
  * The "do-nothing" vprintf-function
  */
-void test_vnoPrint(cstring fmt,va_list ap);
+void test_vnoPrint(const char *fmt,va_list ap);
 
 /**
  * Starts a test-case with given name. This ends with a call of test_caseSucceded() or
@@ -54,7 +54,7 @@ void test_vnoPrint(cstring fmt,va_list ap);
  *
  * @param fmt the format of the string to print (see vid_printf)
  */
-void test_caseStart(cstring fmt,...);
+void test_caseStart(const char *fmt,...);
 
 /**
  * Starts a test-case with given name. This ends with a call of test_caseSucceded() or
@@ -63,7 +63,7 @@ void test_caseStart(cstring fmt,...);
  * @param fmt the format of the string to print (see vid_printf)
  * @param ap the argument-list
  */
-void test_caseStartv(cstring fmt,va_list ap);
+void test_caseStartv(const char *fmt,va_list ap);
 
 /**
  * Reports that a test-case was successfull.
@@ -75,7 +75,7 @@ void test_caseSucceded(void);
  *
  * @param fmt the format of the string
  */
-void test_caseFailed(cstring fmt,...);
+void test_caseFailed(const char *fmt,...);
 
 /**
  * Checks wether the given argument is true. If not it calls test_caseFailed() and returns
@@ -133,7 +133,7 @@ bool test_assertUInt(u32 received,u32 expected);
  * @param expected your expected result
  * @return true if the strings are equal
  */
-bool test_assertStr(string received,string expected);
+bool test_assertStr(char *received,char *expected);
 
 /**
  * Registers the given test-module to the test-framework

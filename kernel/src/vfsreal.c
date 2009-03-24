@@ -190,7 +190,7 @@ void vfsr_checkForMsgs(void) {
 	gotMsg = false;
 }
 
-s32 vfsr_openFile(tPid pid,u8 flags,s8 *path) {
+s32 vfsr_openFile(tPid pid,u8 flags,char *path) {
 	sMsgDataFSOpenReq *data;
 	sMsgHeader *msg;
 	s32 res;
@@ -202,7 +202,7 @@ s32 vfsr_openFile(tPid pid,u8 flags,s8 *path) {
 		return ERR_FS_NOT_FOUND;
 
 	/* allocate mem */
-	msgLen = sizeof(sMsgDataFSOpenReq) + (pathLen + 1) * sizeof(s8);
+	msgLen = sizeof(sMsgDataFSOpenReq) + (pathLen + 1) * sizeof(char);
 	msg = kheap_alloc(sizeof(sMsgHeader) + msgLen);
 	if(msg == NULL)
 		return ERR_NOT_ENOUGH_MEM;

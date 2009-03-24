@@ -14,9 +14,9 @@
 
 /* an entry in the keymap */
 typedef struct {
-	s8 def;
-	s8 shift;
-	s8 alt;
+	char def;
+	char shift;
+	char alt;
 } sKeymapEntry;
 
 #endif /* KEYMAP_H_ */

@@ -12,14 +12,15 @@ Available memory:
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x000000000255fc7b
+Clock cycles: 0x000000000200f7a2
 Initializing VFS...DONE
-Clock cycles: 0x0000000000131a18
+Clock cycles: 0x00000000001389c9
 Initializing process-management...DONE
-Clock cycles: 0x00000000000cd347
+Clock cycles: 0x00000000000d4b4d
 Initializing IDT...DONE
-Clock cycles: 0x00000000000a27bc
+Clock cycles: 0x00000000000ac911
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
+Got interrupt 39 (<unknown>) @ 0x0
 Drives:
 	  Primary Master (present=1,sectors=10080)
 	  	  0: start=0x3F, sectors=10017 size=5128704 byte
@@ -30,36 +31,8 @@ Welcome to Escape v0.1!
 
 Try 'help' to see the current features :)
 
-file:/ # ls
-   2 .
-   2 ..
-  11 lost+found
-  12 apps
-  13 etc
-  14 services
-  16 test
-  17 file.txt
-  19 bigfile
-file:/ # ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
-00	  	  00	  	  011	 	  	  Ready  	 	  0x0000376058282697	  init
-01	  	  00	  	  011	 	  	  Blocked	 	  0x000000007E37A71b	  ata
-02	  	  00	  	  030	 	  	  Blocked	 	  0x000000001822C5C9	  fs
-03	  	  00	  	  008	 	  	  Blocked	 	  0x0000000000D9FEB7	  file:/services/speaker
-04	  	  00	  	  008	 	  	  Blocked	 	  0x0000000000EE749c	  file:/services/keyboard
-05	  	  00	  	  012	 	  	  Blocked	 	  0x000000000294757b	  file:/services/video
-06	  	  00	  	  017	 	  	  Blocked	 	  0x0000000003228741	  file:/services/vterm
-07	  	  00	  	  011	 	  	  Blocked	 	  0x0000000000DAD68a	  file:/services/env
-08	  	  00	  	  013	 	  	  Blocked	 	  0x000000000248986e	  file:/apps/shell
-09	  	  08	  	  011	 	  	  Running	 	  0x0000000001ACBDC7	  file:/apps/ps
-
-file:/ # echo "hier" | cat
-hier 
-file:/ # echo hier
-hier 
 file:/ # echo bla | wc
 Total: 1
-file:/ # echo bla | wc -p
-Word 1: 'bla'
-Total: 1
+file:/ # echo hier | cat
+hier 
 file:/ # 

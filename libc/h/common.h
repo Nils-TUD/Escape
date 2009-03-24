@@ -17,9 +17,6 @@ typedef unsigned long u32;
 typedef long long s64;
 typedef unsigned long long u64;
 
-typedef s8* string;
-typedef const s8* cstring;
-
 /* process id */
 typedef u16 tPid;
 /* VFS node number */

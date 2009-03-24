@@ -10,10 +10,10 @@
 
 #define BUF_SIZE 512
 
-s32 main(u32 argc,s8 *argv[]) {
+s32 main(u32 argc,char *argv[]) {
 	s32 fd;
 	s32 count;
-	s8 buffer[BUF_SIZE];
+	char buffer[BUF_SIZE];
 
 	if(argc != 1 && argc != 2) {
 		printf("Usage: %s [<file>]\n",argv[0]);

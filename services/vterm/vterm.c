@@ -76,11 +76,11 @@ typedef struct {
 	/* in message form for performance-issues */
 	struct {
 		sMsgVidSetScr header;
-		s8 data[BUFFER_SIZE];
+		char data[BUFFER_SIZE];
 	} __attribute__((packed)) buffer;
 	struct {
 		sMsgVidSetScr header;
-		s8 data[COLS * 2];
+		char data[COLS * 2];
 	} __attribute__((packed)) titleBar;
 } sVTerm;
 
@@ -119,7 +119,7 @@ static void vterm_setCursor(void);
  *
  * @param c the character
  */
-static void vterm_putchar(s8 c);
+static void vterm_putchar(char c);
 
 /**
  * Inserts a new line
@@ -151,7 +151,7 @@ static void vterm_refreshLines(u16 start,u16 count);
  *
  * @param str the current position (will be changed)
  */
-static void vterm_handleEscape(s8 **str);
+static void vterm_handleEscape(char **str);
 
 /* the video-set message */
 static sMsgVidSet msgVidSet = {
@@ -201,7 +201,7 @@ static sVTerm vterm;
 void vterm_init(void) {
 	s32 vidFd,selfFd,speakerFd;
 	u32 i,len;
-	s8 *ptr;
+	char *ptr;
 
 	/* open video */
 	vidFd = open("services:/video",IO_WRITE);
@@ -270,7 +270,7 @@ void vterm_destroy(void) {
 
 void vterm_handleKeycode(sMsgKbResponse *msg) {
 	sKeymapEntry *e;
-	s8 c;
+	char c;
 
 	/* handle shift, alt and ctrl */
 	switch(msg->keycode) {
@@ -327,19 +327,19 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 
 		if(sendMsg) {
 			if(c == NPRINT) {
-				s8 escape[3] = {'\033',msg->keycode,(vterm.altDown << STATE_ALT) |
+				char escape[3] = {'\033',msg->keycode,(vterm.altDown << STATE_ALT) |
 						(vterm.ctrlDown << STATE_CTRL) |
 						(vterm.shiftDown << STATE_SHIFT)};
-				write(vterm.self,&escape,sizeof(s8) * 3);
+				write(vterm.self,&escape,sizeof(char) * 3);
 			}
 			else
-				write(vterm.self,&c,sizeof(s8));
+				write(vterm.self,&c,sizeof(char));
 		}
 	}
 }
 
-void vterm_puts(s8 *str) {
-	s8 c;
+void vterm_puts(char *str) {
+	char c;
 	u8 oldRow = vterm.row,oldCol = vterm.col;
 	u32 oldFirstLine = vterm.firstLine;
 	u32 newPos,oldPos = oldRow * COLS + oldCol;
@@ -370,7 +370,7 @@ void vterm_puts(s8 *str) {
 }
 
 static void vterm_sendChar(u8 row,u8 col) {
-	s8 *ptr = vterm.buffer.data + (vterm.currLine * COLS * 2) + (row * COLS * 2) + (col * 2);
+	char *ptr = vterm.buffer.data + (vterm.currLine * COLS * 2) + (row * COLS * 2) + (col * 2);
 	u8 color = *(ptr + 1);
 
 	/* scroll to current line, if necessary */
@@ -391,7 +391,7 @@ static void vterm_setCursor(void) {
 	write(vterm.video,&msgVidSetCursor,sizeof(sMsgVidSetCursor));
 }
 
-static void vterm_putchar(s8 c) {
+static void vterm_putchar(char c) {
 	u32 i;
 
 	/* move all one line up, if necessary */
@@ -506,7 +506,7 @@ static void vterm_refreshScreen(void) {
 
 static void vterm_refreshLines(u16 start,u16 count) {
 	u8 back[sizeof(sMsgVidSetScr)];
-	s8 *ptr = vterm.buffer.data + (vterm.firstVisLine + start) * COLS * 2;
+	char *ptr = vterm.buffer.data + (vterm.firstVisLine + start) * COLS * 2;
 	/* backup screen-data */
 	memcpy(back,ptr - sizeof(sMsgVidSetScr),sizeof(sMsgVidSetScr));
 
@@ -521,7 +521,7 @@ static void vterm_refreshLines(u16 start,u16 count) {
 	memcpy(ptr - sizeof(sMsgVidSetScr),back,sizeof(sMsgVidSetScr));
 }
 
-static void vterm_handleEscape(s8 **str) {
+static void vterm_handleEscape(char **str) {
 	u8 *fmt = (u8*)*str;
 	u8 keycode = *fmt;
 	u8 value = *(fmt + 1);

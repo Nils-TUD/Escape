@@ -22,7 +22,7 @@ typedef struct {
 	u32 dataPages;
 	u32 stackPages;
 	u64 cycleCount;
-	s8 command[MAX_PROC_NAME_LEN + 1];
+	char command[MAX_PROC_NAME_LEN + 1];
 } sProcPub;
 
 /* public memusage-data */
@@ -49,7 +49,7 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,void *buffer);
 void vfsinfo_init(void) {
 	tVFSNodeNo nodeNo;
 	vfsn_resolvePath("system:/",&nodeNo);
-	vfsn_createInfo(vfsn_getNode(nodeNo),(string)"memusage",vfsinfo_memUsageReadHandler);
+	vfsn_createInfo(vfsn_getNode(nodeNo),(char*)"memusage",vfsinfo_memUsageReadHandler);
 }
 
 s32 vfsinfo_procReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {

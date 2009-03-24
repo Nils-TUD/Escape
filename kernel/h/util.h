@@ -18,7 +18,7 @@
 typedef struct {
 	u32 addr;
 	u32 funcAddr;
-	cstring funcName;
+	const char *funcName;
 } sFuncCall;
 
 /* The max. stack-depth getStackTrace() supports */
@@ -50,7 +50,7 @@ extern u8 inb(u16 port);
  *
  * @param fmt the format of the message to display
  */
-void panic(cstring fmt,...);
+void panic(const char *fmt,...);
 
 /**
  * Builds the stack-trace for a user-app

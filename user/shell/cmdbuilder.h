@@ -19,7 +19,7 @@
  */
 typedef struct {
 	u32 argCount;
-	s8 **arguments;		/* terminated by (char*)0 */
+	char **arguments;	/* terminated by (char*)0 */
 	bool runInBG;		/* 0 if dup != DUP_NONE */
 	u8 dup;				/* may be DUP_NONE, DUP_STDIN, DUP_STDOUT or both */
 } sCommand;

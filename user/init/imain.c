@@ -18,7 +18,7 @@
  * Loads the service-dependency-file
  * @return the file-content
  */
-static s8 *getServices(void);
+static char *getServices(void);
 
 /**
  * Loads all services with given dependency-file
@@ -26,7 +26,7 @@ static s8 *getServices(void);
  * @param services the dependencies
  * @return true if successfull
  */
-static bool loadServices(s8 *services);
+static bool loadServices(char *services);
 
 /**
  * Loads the service with given name and takes care of dependencies
@@ -35,14 +35,14 @@ static bool loadServices(s8 *services);
  * @param name the service to load
  * @return true if successfull
  */
-static bool loadService(s8 *services,s8 *name);
+static bool loadService(char *services,char *name);
 
 /* the already loaded services; we don't want to load a service twice */
 static sSLList *loadedServices;
 
 s32 main(void) {
 	s32 fd;
-	s8 *services;
+	char *services;
 
 	/* wait for fs; we need it for exec */
 	do {
@@ -87,7 +87,7 @@ s32 main(void) {
 
 	/* now load the shell */
 	if(fork() == 0) {
-		exec((s8*)"file:/apps/shell",NULL);
+		exec((char*)"file:/apps/shell",NULL);
 		exit(0);
 	}
 
@@ -99,10 +99,10 @@ s32 main(void) {
 	return 0;
 }
 
-static bool loadServices(s8 *services) {
-	s8 *str;
+static bool loadServices(char *services) {
+	char *str;
 	u32 pos;
-	s8 *tmpName;
+	char *tmpName;
 
 	loadedServices = sll_create();
 	if(loadedServices == NULL)
@@ -118,7 +118,7 @@ static bool loadServices(s8 *services) {
 			break;
 
 		/* we don't want to manipulate <services>... */
-		tmpName = (s8*)malloc((str - (services + pos)) * sizeof(s8));
+		tmpName = (char*)malloc((str - (services + pos)) * sizeof(char));
 		if(tmpName == NULL)
 			return false;
 		memcpy(tmpName,services + pos,str - (services + pos));
@@ -140,17 +140,17 @@ static bool loadServices(s8 *services) {
 	return true;
 }
 
-static bool loadService(s8 *services,s8 *name) {
-	s8 *str;
+static bool loadService(char *services,char *name) {
+	char *str;
 	s32 fd;
-	s8 servPath[MAX_SERVICE_PATH_LEN] = "services:/";
-	s8 path[MAX_SERVICE_PATH_LEN] = "file:/services/";
+	char servPath[MAX_SERVICE_PATH_LEN] = "services:/";
+	char path[MAX_SERVICE_PATH_LEN] = "file:/services/";
 	u32 p,pos,nameLen;
 	sSLNode *n;
 
 	/* at first check if we've already loaded the service */
 	for(n = sll_begin(loadedServices); n != NULL; n = n->next) {
-		if(strcmp((s8*)n->data,name) == 0)
+		if(strcmp((char*)n->data,name) == 0)
 			return true;
 	}
 
@@ -179,9 +179,9 @@ static bool loadService(s8 *services,s8 *name) {
 
 	/* have we found it? */
 	if(*str) {
-		s8 *servName = services + pos;
-		s8 *tmpName;
-		s8 *start;
+		char *servName = services + pos;
+		char *tmpName;
+		char *start;
 
 		/* skip ':' */
 		str++;
@@ -202,7 +202,7 @@ static bool loadService(s8 *services,s8 *name) {
 				break;
 
 			/* load dependency */
-			tmpName = (s8*)malloc((str - start) * sizeof(s8));
+			tmpName = (char*)malloc((str - start) * sizeof(char));
 			if(tmpName == NULL)
 				return false;
 			memcpy(tmpName,start,str - start);
@@ -242,7 +242,7 @@ static bool loadService(s8 *services,s8 *name) {
 		close(fd);
 
 		/* insert in loaded-list, so that we don't load a service twice */
-		start = malloc((p + 1) * sizeof(s8));
+		start = malloc((p + 1) * sizeof(char));
 		if(start == NULL)
 			return false;
 		memcpy(start,servName,p);
@@ -257,11 +257,11 @@ static bool loadService(s8 *services,s8 *name) {
 	return true;
 }
 
-static s8 *getServices(void) {
+static char *getServices(void) {
 	const u32 stepSize = 128 * sizeof(u8);
 	s32 fd;
 	u32 c,pos = 0,bufSize = stepSize;
-	s8 *buffer;
+	char *buffer;
 
 	/* open file */
 	fd = open("file:/etc/services",IO_READ);
@@ -269,14 +269,14 @@ static s8 *getServices(void) {
 		return NULL;
 
 	/* create buffer */
-	buffer = (s8*)malloc(stepSize);
+	buffer = (char*)malloc(stepSize);
 	if(buffer == NULL)
 		return NULL;
 
 	/* read file */
 	while((c = read(fd,buffer + pos,stepSize - 1)) > 0) {
 		bufSize += stepSize;
-		buffer = (s8*)realloc(buffer,bufSize);
+		buffer = (char*)realloc(buffer,bufSize);
 		if(buffer == NULL)
 			return NULL;
 

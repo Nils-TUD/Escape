@@ -131,7 +131,7 @@ u32 sig_dbg_getHandlerCount(void);
  * @param signal the signal-number
  * @return the name of the given signal
  */
-cstring sig_dbg_getName(tSig signal);
+const char *sig_dbg_getName(tSig signal);
 
 /**
  * Prints all announced signal-handlers

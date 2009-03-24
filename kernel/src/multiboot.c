@@ -19,7 +19,7 @@ void mboot_init(sMultiBoot *mbp) {
 	mb = (sMultiBoot*)((u32)mbp | KERNEL_AREA_V_ADDR);
 
 	/* change the address of the pointers in the structure, too */
-	mb->cmdLine = (s8*)((u32)mb->cmdLine | KERNEL_AREA_V_ADDR);
+	mb->cmdLine = (char*)((u32)mb->cmdLine | KERNEL_AREA_V_ADDR);
 	mb->modsAddr = (sModule*)((u32)mb->modsAddr | KERNEL_AREA_V_ADDR);
 	mb->mmapAddr = (sMemMap*)((u32)mb->mmapAddr | KERNEL_AREA_V_ADDR);
 }

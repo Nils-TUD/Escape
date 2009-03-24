@@ -18,7 +18,7 @@ typedef struct {
 	tVFSNodeNo nodeNo;
 	u16 recLen;
 	u16 nameLen;
-	s8 name[];
+	char name[];
 } __attribute__((packed)) sDirEntry;
 
 /**
@@ -28,14 +28,14 @@ typedef struct {
  * @param path your relative path
  * @return the absolute path (statically stored!)
  */
-s8 *abspath(const s8 *path);
+char *abspath(const char *path);
 
 /**
  * Removes the last path-component, if possible
  *
  * @param path the path
  */
-void dirname(s8 *path);
+void dirname(char *path);
 
 /**
  * Opens the given directory
@@ -43,7 +43,7 @@ void dirname(s8 *path);
  * @param path the path to the directory
  * @return the file-descriptor for the directory or a negative error-code
  */
-s32 opendir(cstring path);
+s32 opendir(const char *path);
 
 /**
  * Reads the next directory-entry from the given file-descriptor.

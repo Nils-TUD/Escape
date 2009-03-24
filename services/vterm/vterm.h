@@ -31,6 +31,6 @@ void vterm_handleKeycode(sMsgKbResponse *msg);
  *
  * @param str the string
  */
-void vterm_puts(s8 *str);
+void vterm_puts(char *str);
 
 #endif /* VTERM_H_ */

@@ -76,7 +76,7 @@ sCommand *cmd_get(sCmdToken *tokens,u32 tokenCount,u32 *cmdCount) {
 
 			/* set arguments */
 			cmds[cmdPos].argCount = argCount;
-			cmds[cmdPos].arguments = (s8**)malloc((argCount + 1) * sizeof(s8*));
+			cmds[cmdPos].arguments = (char**)malloc((argCount + 1) * sizeof(char*));
 			if(cmds[cmdPos].arguments == NULL) {
 				cmd_free(cmds,cmdPos);
 				return NULL;
@@ -84,7 +84,7 @@ sCommand *cmd_get(sCmdToken *tokens,u32 tokenCount,u32 *cmdCount) {
 			u32 x;
 			for(x = 0;x < argCount;x++)
 				cmds[cmdPos].arguments[x] = tokens[x + cmdStart].str;
-			cmds[cmdPos].arguments[x] = (s8*)0;
+			cmds[cmdPos].arguments[x] = (char*)0;
 
 			/* run in background if we've found RUN_IN_BG and no output-pipe is requested */
 			cmds[cmdPos].runInBG = runInBG && token.type != TOK_PIPE;
@@ -145,7 +145,7 @@ void cmd_print(sCommand *cmd) {
 		printf("cmd=NULL\n");
 	else {
 		printf("Arguments (%d): ",cmd->argCount);
-		s8 **args = cmd->arguments;
+		char **args = cmd->arguments;
 		u32 i = 0;
 		while(args[i] != NULL)
 			printf("'%s' ",args[i++]);

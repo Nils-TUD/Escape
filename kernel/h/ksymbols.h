@@ -12,7 +12,7 @@
 /* Represents one symbol (address -> name) */
 typedef struct {
 	u32 address;
-	cstring funcName;
+	const char *funcName;
 } sSymbol;
 
 /**

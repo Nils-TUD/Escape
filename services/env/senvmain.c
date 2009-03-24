@@ -19,8 +19,8 @@
 
 typedef struct {
 	tPid pid;
-	s8 *name;
-	s8 *value;
+	char *name;
+	char *value;
 } sEnvVar;
 
 /**
@@ -36,7 +36,7 @@ static void procDiedHandler(tSig sig,u32 data);
  * @param name the envvar-name
  * @return the env-var or NULL
  */
-static sEnvVar *env_get(tPid pid,s8 *name);
+static sEnvVar *env_get(tPid pid,char *name);
 
 /**
  * Fetches the environment-variable with given index for the given process. If it does not exist
@@ -55,7 +55,7 @@ static sEnvVar *env_geti(tPid pid,u32 index);
  * @param name the envvar-name
  * @return the env-var or NULL
  */
-static sEnvVar *env_getOf(tPid pid,s8 *name);
+static sEnvVar *env_getOf(tPid pid,char *name);
 
 /**
  * Fetches the environment-variable with given index for the given process
@@ -73,7 +73,7 @@ static sEnvVar *env_getiOf(tPid pid,u32 *index);
  * @param env the env-var
  * @return true if successfull
  */
-static bool env_put(tPid pid,s8 *env);
+static bool env_put(tPid pid,char *env);
 
 /**
  * Sets <name> to <value> for the given process
@@ -83,7 +83,7 @@ static bool env_put(tPid pid,s8 *env);
  * @param value the value
  * @return true if successfull
  */
-static bool env_set(tPid pid,s8 *name,s8 *value);
+static bool env_set(tPid pid,char *name,char *value);
 
 /**
  * Removes all envvars for the given process
@@ -118,8 +118,8 @@ s32 main(void) {
 	}
 
 	/* set initial vars for proc 0 */
-	env_set(0,(s8*)"CWD",(s8*)"file:/");
-	env_set(0,(s8*)"PATH",(s8*)"file:/apps/");
+	env_set(0,(char*)"CWD",(char*)"file:/");
+	env_set(0,(char*)"PATH",(char*)"file:/apps/");
 
 	/* wait for messages */
 	static sMsgHeader msg;
@@ -146,7 +146,7 @@ s32 main(void) {
 							if(read(fd,data,msg.length) > 0) {
 								tPid pid;
 								u32 nameLen;
-								s8 *name;
+								char *name;
 								nameLen = disasmBinDataMsg(msg.length,data,(u8**)&name,"2",&pid);
 								if(nameLen) {
 									u32 len;
@@ -175,7 +175,7 @@ s32 main(void) {
 							if(read(fd,data,msg.length) > 0) {
 								tPid pid;
 								u32 envVarLen;
-								s8 *envVar;
+								char *envVar;
 								envVarLen = disasmBinDataMsg(msg.length,data,(u8**)&envVar,"2",&pid);
 
 								/* terminate */
@@ -243,7 +243,7 @@ static sEnvVar *env_geti(tPid pid,u32 index) {
 	return var;
 }
 
-static sEnvVar *env_get(tPid pid,s8 *name) {
+static sEnvVar *env_get(tPid pid,char *name) {
 	sEnvVar *var;
 	while(1) {
 		var = env_getOf(pid,name);
@@ -273,7 +273,7 @@ static sEnvVar *env_getiOf(tPid pid,u32 *index) {
 	return NULL;
 }
 
-static sEnvVar *env_getOf(tPid pid,s8 *name) {
+static sEnvVar *env_getOf(tPid pid,char *name) {
 	sSLNode *n;
 	sSLList *list = envVars[pid % MAP_SIZE];
 	if(list != NULL) {
@@ -286,15 +286,15 @@ static sEnvVar *env_getOf(tPid pid,s8 *name) {
 	return NULL;
 }
 
-static bool env_put(tPid pid,s8 *env) {
-	s8 *val = strchr(env,'=');
+static bool env_put(tPid pid,char *env) {
+	char *val = strchr(env,'=');
 	if(val == NULL)
 		return false;
 	*val = '\0';
 	return env_set(pid,env,val + 1);
 }
 
-static bool env_set(tPid pid,s8 *name,s8 *value) {
+static bool env_set(tPid pid,char *name,char *value) {
 	sSLList *list;
 	sEnvVar *var;
 	u32 len;
@@ -306,7 +306,7 @@ static bool env_set(tPid pid,s8 *name,s8 *value) {
 		free(var->value);
 		/* set value */
 		len = strlen(value);
-		var->value = (s8*)malloc(len + 1);
+		var->value = (char*)malloc(len + 1);
 		if(var->value == NULL)
 			return false;
 		memcpy(var->value,value,len + 1);
@@ -327,13 +327,13 @@ static bool env_set(tPid pid,s8 *name,s8 *value) {
 	/* copy name */
 	len = strlen(name);
 	var->pid = pid;
-	var->name = (s8*)malloc(len + 1);
+	var->name = (char*)malloc(len + 1);
 	if(var->name == NULL)
 		return false;
 	memcpy(var->name,name,len + 1);
 	/* copy value */
 	len = strlen(value);
-	var->value = (s8*)malloc(len + 1);
+	var->value = (char*)malloc(len + 1);
 	if(var->value == NULL)
 		return false;
 	memcpy(var->value,value,len + 1);

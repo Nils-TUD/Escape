@@ -18,7 +18,7 @@
 
 /* our read-buffer */
 #define BUFFER_SIZE 64
-static s8 buffer[BUFFER_SIZE + 1];
+static char buffer[BUFFER_SIZE + 1];
 
 s32 main(void) {
 	s32 kbFd;

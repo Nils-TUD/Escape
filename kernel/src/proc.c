@@ -408,9 +408,9 @@ void proc_destroy(sProc *p) {
 	proc_wakeup(p->parentPid,EV_CHILD_DIED);
 }
 
-void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args,u32 argsSize) {
+void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize) {
 	u32 *esp;
-	s8 **argv;
+	char **argv;
 	u32 totalSize;
 	ASSERT(frame != NULL,"frame == NULL");
 
@@ -432,13 +432,13 @@ void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,s8 *args,u32 argsSi
 	esp = (u32*)KERNEL_AREA_V_ADDR - 1;
 	argv = NULL;
 	if(argc > 0) {
-		s8 *str;
+		char *str;
 		u32 i,len;
-		argv = (s8**)(esp - argc);
+		argv = (char**)(esp - argc);
 		/* space for the argument-pointer */
 		esp -= argc;
 		/* start for the arguments */
-		str = (s8*)esp;
+		str = (char*)esp;
 		for(i = 0; i < argc; i++) {
 			/* start <len> bytes backwards */
 			len = strlen(args) + 1;

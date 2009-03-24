@@ -9,6 +9,6 @@
 
 #include <common.h>
 
-s32 shell_cmdCd(u32 argc,s8 **argv);
+s32 shell_cmdCd(u32 argc,char **argv);
 
 #endif /* CD_H_ */

@@ -24,7 +24,7 @@ typedef struct {
 	u32 dataPages;
 	u32 stackPages;
 	u64 cycleCount;
-	s8 command[MAX_PROC_NAME_LEN + 1];
+	char command[MAX_PROC_NAME_LEN + 1];
 } sProc;
 
 /* the process states */
@@ -62,7 +62,7 @@ s32 fork(void);
  * @param args a NULL-terminated array of arguments
  * @return a negative error-code if failed
  */
-s32 exec(string path,s8 **args);
+s32 exec(char *path,char **args);
 
 /**
  * Releases the CPU (reschedule)

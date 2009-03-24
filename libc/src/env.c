@@ -20,7 +20,7 @@ static bool init(void);
 
 /* the fd for the env-service */
 static s32 envFd = -1;
-static s8 *tmpValue = NULL;
+static char *tmpValue = NULL;
 
 /**
  * Sends the given get-message to the env-service and returns the reply-data
@@ -28,9 +28,9 @@ static s8 *tmpValue = NULL;
  * @param msg the message
  * @return the received data
  */
-static s8 *doGetEnv(sMsgHeader *msg);
+static char *doGetEnv(sMsgHeader *msg);
 
-s8 *getEnvByIndex(u32 index) {
+char *getEnvByIndex(u32 index) {
 	sMsgHeader *msg;
 
 	if(!init())
@@ -43,7 +43,7 @@ s8 *getEnvByIndex(u32 index) {
 	return doGetEnv(msg);
 }
 
-s8 *getEnv(const s8 *name) {
+char *getEnv(const char *name) {
 	sMsgHeader *msg;
 	u32 nameLen = strlen(name);
 
@@ -57,9 +57,9 @@ s8 *getEnv(const s8 *name) {
 	return doGetEnv(msg);
 }
 
-void setEnv(const s8 *name,const s8* value) {
+void setEnv(const char *name,const char* value) {
 	u32 nameLen,valLen;
-	s8 *envVar;
+	char *envVar;
 	sMsgHeader *msg;
 
 	if(!init())
@@ -88,7 +88,7 @@ void setEnv(const s8 *name,const s8* value) {
 	freeMsg(msg);
 }
 
-static s8 *doGetEnv(sMsgHeader *msg) {
+static char *doGetEnv(sMsgHeader *msg) {
 	sMsgHeader resp;
 
 	/* send message */
@@ -107,7 +107,7 @@ static s8 *doGetEnv(sMsgHeader *msg) {
 		free(tmpValue);
 
 	/* read value */
-	tmpValue = (s8*)malloc(resp.length);
+	tmpValue = (char*)malloc(resp.length);
 	if(tmpValue == NULL)
 		return NULL;
 	read(envFd,tmpValue,resp.length);

@@ -59,8 +59,8 @@ s32 main(void) {
 	debugf("ret=%d\n",printu(0xABCDEF,16));
 	flush();
 
-	/*s8 buffer[32];
-	s8 *str = "Das ist mein String\n";
+	/*char buffer[32];
+	char *str = "Das ist mein String\n";
 	s32 stdout,fd = open("system:/pipe",IO_READ | IO_WRITE);
 	if(fd < 0) {
 		printLastError();
@@ -157,7 +157,7 @@ s32 main(void) {
 	else
 		debugf("Redirected %d to %d\n",fd,fd2);
 
-	s8 str[] = "Test: \e[30mblack\e[0m, \e[31mred\e[0m, \e[32mgreen\e[0m"
+	char str[] = "Test: \e[30mblack\e[0m, \e[31mred\e[0m, \e[32mgreen\e[0m"
 			", \e[33morange\e[0m, \e[34mblue\e[0m, \e[35mmargenta\e[0m, \e[36mcyan\e[0m"
 			", \e[37mgray\e[0m\n"
 			"\e[30;44mwithbg\e[0m, \e[34;43mwithbg\e[0m\n";
@@ -208,7 +208,7 @@ s32 main(void) {
 
 	while(1) {
 		printf("Type something: ");
-		s8 *buffer = malloc(20 * sizeof(s8));
+		char *buffer = malloc(20 * sizeof(char));
 		readLine(buffer,20);
 		printf("You typed: %s\n",buffer);
 	}
@@ -216,8 +216,8 @@ s32 main(void) {
 	/*tFD dd,dfd;
 	sProc proc;
 	sDir *entry;
-	s8 path[] = "system:/processes/";
-	s8 ppath[255];
+	char path[] = "system:/processes/";
+	char ppath[255];
 	while(1) {
 		printf("\r");
 		if((dd = opendir(path)) >= 0) {
@@ -294,7 +294,7 @@ s32 main(void) {
 			if(sfd < 0)
 				printLastError();
 			else {
-				s8 str[] = "Test";
+				char str[] = "Test";
 				sMsgHeader *msg = createMsg(ID_OUT,5,str);
 				do {
 					if(write(sfd,msg,sizeof(sMsgHeader) + msg->length) < 0)
@@ -340,7 +340,7 @@ s32 main(void) {
 			else {
 				read(fd,&msg,sizeof(sMsgHeader));
 				if(msg.id == ID_OUT) {
-					s8 *readBuf = malloc(msg.length * sizeof(s8));
+					char *readBuf = malloc(msg.length * sizeof(char));
 					read(fd,readBuf,msg.length);
 					debugf("Read: __%s__\n",readBuf);
 					free(readBuf);
@@ -364,13 +364,13 @@ s32 main(void) {
 	if(id < 0)
 		printLastError();
 	else {
-		s8 buf[] = "Das ist ein Teststring\n";
+		char buf[] = "Das ist ein Teststring\n";
 		s32 fd = open("services:/console",IO_READ | IO_WRITE);
 		if(fd < 0)
 			printLastError();
 		else {
 			if(fork() == 0) {
-				s8 *readBuf = malloc(strlen(buf) * sizeof(s8));
+				char *readBuf = malloc(strlen(buf) * sizeof(char));
 				while(1) {
 					if(readBuf == NULL)
 						printLastError();
@@ -411,7 +411,7 @@ s32 main(void) {
 
 		if(fork() == 0) {
 			debugf("mypid=%d, ppid=%d\n",getpid(),getppid());
-			s8 buf[100];
+			char buf[100];
 			s32 sfd = open("services:/console",IO_READ | IO_WRITE);
 			debugf("Opened service with fd %d\n",sfd);
 			yield();
@@ -556,8 +556,8 @@ s32 main(void) {
 	if(fork() == 0) {
 		tFD fd;
 		sProc proc;
-		s8 path[] = "system:/processes/";
-		s8 ppath[255];
+		char path[] = "system:/processes/";
+		char ppath[255];
 		debugf("(%d) Listing all processes:\n",getpid());
 		if((dd = opendir(path)) >= 0) {
 			while((entry = readdir(dd)) != NULL) {

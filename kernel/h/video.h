@@ -86,7 +86,7 @@ void vid_toLineEnd(u8 pad);
  *
  * @param c the character
  */
-void vid_putchar(s8 c);
+void vid_putchar(char c);
 
 /**
  * Prints the given unsigned 32-bit integer in the given base
@@ -110,7 +110,7 @@ u8 vid_getuwidth(u32 n,u8 base);
  *
  * @param str the string
  */
-void vid_puts(cstring str);
+void vid_puts(const char *str);
 
 /**
  * Determines the width of the given string
@@ -118,7 +118,7 @@ void vid_puts(cstring str);
  * @param str the string
  * @return the width
  */
-u8 vid_getswidth(cstring str);
+u8 vid_getswidth(const char *str);
 
 /**
  * Prints the given signed 32-bit integer in base 10
@@ -148,7 +148,7 @@ u8 vid_getnwidth(s32 n);
  *
  * @param fmt the format
  */
-void vid_printf(cstring fmt,...);
+void vid_printf(const char *fmt,...);
 
 /**
  * Same as vid_printf, but with the va_list as argument
@@ -156,6 +156,6 @@ void vid_printf(cstring fmt,...);
  * @param fmt the format
  * @param ap the argument-list
  */
-void vid_vprintf(cstring fmt,va_list ap);
+void vid_vprintf(const char *fmt,va_list ap);
 
 #endif

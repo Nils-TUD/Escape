@@ -25,7 +25,7 @@
  *
  * @param str a pointer to the current string-position (will be changed)
  */
-static void vid_handleColorCode(cstring *str);
+static void vid_handleColorCode(const char **str);
 
 /**
  * Removes the BIOS-cursor
@@ -42,8 +42,8 @@ static void vid_printuSmall(u32 n,u8 base);
 
 static u16 col = 0;
 static u16 row = 0;
-static s8 hexCharsBig[] = "0123456789ABCDEF";
-static s8 hexCharsSmall[] = "0123456789abcdef";
+static char hexCharsBig[] = "0123456789ABCDEF";
+static char hexCharsSmall[] = "0123456789abcdef";
 static u8 color = 0;
 static u8 oldBG = 0, oldFG = 0;
 
@@ -100,7 +100,7 @@ void vid_setLineBG(u8 line,eColor bg) {
 }
 
 u8 vid_getLine(void) {
-	s8 *video = (s8*)(VIDEO_BASE + row * COLS * 2 + col * 2);
+	char *video = (char*)(VIDEO_BASE + row * COLS * 2 + col * 2);
 	return ((u32)video - VIDEO_BASE) / (COLS * 2);
 }
 
@@ -113,12 +113,12 @@ void vid_toLineEnd(u8 pad) {
  */
 static void vid_move(void) {
 	u32 i;
-	s8 *src,*dst;
+	char *src,*dst;
 	/* last line? */
 	if(row >= ROWS) {
 		/* copy all chars one line back */
-		src = (s8*)(VIDEO_BASE + COLS * 2);
-		dst = (s8*)VIDEO_BASE;
+		src = (char*)(VIDEO_BASE + COLS * 2);
+		dst = (char*)VIDEO_BASE;
 		for(i = 0; i < ROWS * COLS * 2; i++) {
 			*dst++ = *src++;
 		}
@@ -127,10 +127,10 @@ static void vid_move(void) {
 	}
 }
 
-void vid_putchar(s8 c) {
+void vid_putchar(char c) {
 	u32 i;
 	vid_move();
-	s8 *video = (s8*)(VIDEO_BASE + row * COLS * 2 + col * 2);
+	char *video = (char*)(VIDEO_BASE + row * COLS * 2 + col * 2);
 
 	/* write to bochs/qemu console (\r not necessary here) */
 	if(c != '\r') {
@@ -183,8 +183,8 @@ u8 vid_getuwidth(u32 n,u8 base) {
 	return width;
 }
 
-void vid_puts(cstring str) {
-	s8 c;
+void vid_puts(const char *str) {
+	char c;
 	while((c = *str)) {
 		/* color-code? */
 		if(c == '\033' || c == '\e') {
@@ -198,7 +198,7 @@ void vid_puts(cstring str) {
 	}
 }
 
-u8 vid_getswidth(cstring str) {
+u8 vid_getswidth(const char *str) {
 	u8 width = 0;
 	while(*str++) {
 		width++;
@@ -232,16 +232,17 @@ u8 vid_getnwidth(s32 n) {
 	return width;
 }
 
-void vid_printf(cstring fmt,...) {
+void vid_printf(const char *fmt,...) {
 	va_list ap;
 	va_start(ap, fmt);
 	vid_vprintf(fmt,ap);
 	va_end(ap);
 }
 
-void vid_vprintf(cstring fmt,va_list ap) {
-	s8 c,b,pad,padchar;
-	string s;
+void vid_vprintf(const char *fmt,va_list ap) {
+	char c,b,padchar;
+	char *s;
+	u8 pad;
 	s32 n;
 	u32 u;
 	u8 width,base;
@@ -310,7 +311,7 @@ void vid_vprintf(cstring fmt,va_list ap) {
 				break;
 			/* string */
 			case 's':
-				s = va_arg(ap, string);
+				s = va_arg(ap, char*);
 				if(pad > 0) {
 					width = vid_getswidth(s);
 					while(width++ < pad) {
@@ -321,7 +322,7 @@ void vid_vprintf(cstring fmt,va_list ap) {
 				break;
 			/* character */
 			case 'c':
-				b = (s8)va_arg(ap, u32);
+				b = (char)va_arg(ap, u32);
 				vid_putchar(b);
 				break;
 			/* all other */
@@ -332,7 +333,7 @@ void vid_vprintf(cstring fmt,va_list ap) {
 	}
 }
 
-static void vid_handleColorCode(cstring *str) {
+static void vid_handleColorCode(const char **str) {
 	u8 *fmt = (u8*)*str;
 	u8 keycode = *fmt;
 	u8 value = *(fmt + 1);

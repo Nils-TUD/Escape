@@ -14,21 +14,21 @@
  *
  * @param line the line
  */
-void shell_addToHistory(s8 *line);
+void shell_addToHistory(char *line);
 
 /**
  * Moves one step up in the history
  *
  * @return the current history-entry (NULL if no available)
  */
-s8 *shell_histUp(void);
+char *shell_histUp(void);
 
 /**
  * Moves one step down in the history
  *
  * @return the current history-entry (NULL if no available)
  */
-s8 *shell_histDown(void);
+char *shell_histDown(void);
 
 /**
  * Prints the history

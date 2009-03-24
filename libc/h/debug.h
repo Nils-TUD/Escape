@@ -81,7 +81,7 @@ void dbg_startTimer(void);
  *
  * @param prefix the prefix for the output
  */
-void dbg_stopTimer(string prefix);
+void dbg_stopTimer(char *prefix);
 
 /**
  * Prints <byteCount> bytes at <addr>
@@ -121,7 +121,7 @@ void debugDwords(void *addr,u32 dwordCount);
  * @param fmt the format
  * @param ap the argument-list
  */
-void vdebugf(cstring fmt,va_list ap);
+void vdebugf(const char *fmt,va_list ap);
 
 /**
  * Debugging version of printf. Supports the following formatting:
@@ -136,7 +136,7 @@ void vdebugf(cstring fmt,va_list ap);
  *
  * @param fmt the format
  */
-void debugf(cstring fmt, ...);
+void debugf(const char *fmt, ...);
 
 /**
  * Prints the given unsigned integer in the given base
@@ -158,6 +158,6 @@ void debugInt(s32 n);
  *
  * @param s the string
  */
-void debugString(string s);
+void debugString(char *s);
 
 #endif /* DEBUG_H_ */

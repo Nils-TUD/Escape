@@ -34,7 +34,7 @@ void vfsr_checkForMsgs(void);
  * @param path the path
  * @return 0 on success or the error-code
  */
-s32 vfsr_openFile(tPid pid,u8 flags,s8 *path);
+s32 vfsr_openFile(tPid pid,u8 flags,char *path);
 
 /**
  * Reads from the given inode at <offset> <count> bytes into the given buffer

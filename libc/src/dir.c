@@ -14,16 +14,16 @@
 /* the dir-entry in which we'll write */
 typedef struct {
 	sDirEntry header;
-	s8 name[MAX_NAME_LEN + 1];
+	char name[MAX_NAME_LEN + 1];
 } __attribute__((packed)) sDirEntryRead;
 
-s8 *abspath(const s8 *path) {
-	static s8 apath[MAX_PATH_LEN + 1];
-	s8 *current,*curtemp,*pathtemp,*p;
+char *abspath(const char *path) {
+	static char apath[MAX_PATH_LEN + 1];
+	char *current,*curtemp,*pathtemp,*p;
 	u32 layer,pos;
 
 	/* skip namespace */
-	p = (s8*)path;
+	p = (char*)path;
 	pos = strchri(p,':');
 	if(*(p + pos) != '\0') {
 		strncpy(apath,p,pos + 1);
@@ -102,8 +102,8 @@ s8 *abspath(const s8 *path) {
 	return apath;
 }
 
-void dirname(s8 *path) {
-	s8 *p;
+void dirname(char *path) {
+	char *p;
 	u32 len = strlen(path);
 
 	p = path + len - 1;
@@ -125,7 +125,7 @@ void dirname(s8 *path) {
 	*(p + 1) = '\0';
 }
 
-s32 opendir(cstring path) {
+s32 opendir(const char *path) {
 	return open(path,IO_READ);
 }
 

@@ -202,7 +202,7 @@ typedef struct {
  * @param intrptNo the interrupt-number
  * @return the name
  */
-cstring intrpt_no2Name(u32 intrptNo);
+const char *intrpt_no2Name(u32 intrptNo);
 
 /**
  * Enables / disables the interrupts

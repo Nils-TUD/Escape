@@ -94,13 +94,13 @@ void vfs_init(void) {
 	 *     |-processes
 	 *   services:
 	 */
-	root = vfsn_createDir(NULL,(string)"",vfs_dirReadHandler);
+	root = vfsn_createDir(NULL,(char*)"",vfs_dirReadHandler);
 	/* TODO */
-	vfsn_createServiceNode(KERNEL_PID,root,(string)"file",0);
-	sys = vfsn_createDir(root,(string)"system",vfs_dirReadHandler);
-	vfsn_createPipeCon(sys,(string)"pipe");
-	vfsn_createDir(sys,(string)"processes",vfs_dirReadHandler);
-	vfsn_createDir(root,(string)"services",vfs_dirReadHandler);
+	vfsn_createServiceNode(KERNEL_PID,root,(char*)"file",0);
+	sys = vfsn_createDir(root,(char*)"system",vfs_dirReadHandler);
+	vfsn_createPipeCon(sys,(char*)"pipe");
+	vfsn_createDir(sys,(char*)"processes",vfs_dirReadHandler);
+	vfsn_createDir(root,(char*)"services",vfs_dirReadHandler);
 }
 
 tFile vfs_inheritFile(tPid pid,tFile file) {
@@ -258,7 +258,7 @@ tFile vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo) {
 
 	/* not not already present? */
 	if(n == NULL || n->owner != KERNEL_PID) {
-		n = vfsn_createNode(node,(string)SERVICE_CLIENT_KERNEL);
+		n = vfsn_createNode(node,(char*)SERVICE_CLIENT_KERNEL);
 		if(n == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 
@@ -460,11 +460,11 @@ void vfs_closeFile(tFile file) {
 	}
 }
 
-s32 vfs_createService(tPid pid,cstring name,u8 type) {
+s32 vfs_createService(tPid pid,const char *name,u8 type) {
 	sVFSNode *serv = SERVICES();
 	sVFSNode *n = serv->firstChild;
 	u32 len;
-	string hname;
+	char *hname;
 
 	ASSERT(name != NULL,"name == NULL");
 
@@ -482,7 +482,7 @@ s32 vfs_createService(tPid pid,cstring name,u8 type) {
 	}
 
 	/* copy name to kernel-heap */
-	hname = (string)kheap_alloc(len + 1);
+	hname = (char*)kheap_alloc(len + 1);
 	if(hname == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	strncpy(hname,name,len);
@@ -624,12 +624,12 @@ s32 vfs_removeService(tPid pid,tVFSNodeNo nodeNo) {
 }
 
 bool vfs_createProcess(tPid pid,fRead handler) {
-	string name;
+	char *name;
 	sVFSNode *proc = PROCESSES();
 	sVFSNode *n = proc->firstChild;
 
 	/* build name */
-	name = (string)kheap_alloc(sizeof(s8) * 12);
+	name = (char*)kheap_alloc(sizeof(char) * 12);
 	if(name == NULL)
 		return false;
 
@@ -662,7 +662,7 @@ bool vfs_createProcess(tPid pid,fRead handler) {
 void vfs_removeProcess(tPid pid) {
 	sVFSNode *proc = PROCESSES();
 	sVFSNode *serv = SERVICES();
-	s8 name[12];
+	char name[12];
 	sVFSNode *n;
 	itoa(name,pid);
 

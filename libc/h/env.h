@@ -15,7 +15,7 @@
  * @param index the index
  * @return the name of it or NULL if the index does not exist (or it failed for another reason)
  */
-s8 *getEnvByIndex(u32 index);
+char *getEnvByIndex(u32 index);
 
 /**
  * Returns the value of the given environment-variable. Note that you have to copy the value
@@ -24,7 +24,7 @@ s8 *getEnvByIndex(u32 index);
  * @param name the environment-variable-name
  * @return the value
  */
-s8 *getEnv(const s8 *name);
+char *getEnv(const char *name);
 
 /**
  * Sets the environment-variable <name> to <value>.
@@ -32,6 +32,6 @@ s8 *getEnv(const s8 *name);
  * @param name the name
  * @param value the value
  */
-void setEnv(const s8 *name,const s8* value);
+void setEnv(const char *name,const char *value);
 
 #endif /* ENV_H_ */

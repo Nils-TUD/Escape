@@ -9,9 +9,9 @@
 #include <io.h>
 #include <bufio.h>
 
-s32 main(u32 argc,s8 *argv[]) {
+s32 main(u32 argc,char *argv[]) {
 	s32 dd;
-	s8 *path;
+	char *path;
 	sDirEntry *entry;
 
 	if(argc == 1) {

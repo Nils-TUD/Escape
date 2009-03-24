@@ -15,7 +15,7 @@
  *
  * @param c the character
  */
-extern void debugChar(s8 c);
+extern void debugChar(char c);
 
 static u64 start = 0;
 
@@ -23,7 +23,7 @@ void dbg_startTimer(void) {
 	start = cpu_rdtsc();
 }
 
-void dbg_stopTimer(string prefix) {
+void dbg_stopTimer(char *prefix) {
 	u64 diff = cpu_rdtsc() - start;
 	u32 *ptr = (u32*)&diff;
 	debugf("%s: 0x%08x%08x\n",prefix,*(ptr + 1),*ptr);
@@ -73,18 +73,18 @@ void debugDwords(void *addr,u32 dwordCount) {
 	}
 }
 
-void debugf(cstring fmt,...) {
+void debugf(const char *fmt,...) {
 	va_list ap;
 	va_start(ap, fmt);
 	vdebugf(fmt,ap);
 	va_end(ap);
 }
 
-void vdebugf(cstring fmt,va_list ap) {
-	s8 c,ch;
+void vdebugf(const char *fmt,va_list ap) {
+	char c,ch;
 	s32 n;
 	u32 u;
-	string s;
+	char *s;
 	u64 l;
 
 	while(1) {
@@ -112,7 +112,7 @@ void vdebugf(cstring fmt,va_list ap) {
 			u = va_arg(ap, s32);
 			debugUint(u, c == 'o' ? 8 : (c == 'x' ? 16 : 10));
 		} else if(c == 's') {
-			s = va_arg(ap, string);
+			s = va_arg(ap, char*);
 			debugString(s);
 		} else if(c == 'c') {
 			ch = (int) va_arg(ap, s32);
@@ -141,7 +141,7 @@ void debugUint(u32 n,u8 base) {
 	debugChar("0123456789ABCDEF"[(int)(n % base)]);
 }
 
-void debugString(string s) {
+void debugString(char *s) {
 	while(*s) {
 		debugChar(*s++);
 	}

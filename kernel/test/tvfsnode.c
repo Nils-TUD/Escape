@@ -13,8 +13,8 @@
 
 static void test_vfsn(void);
 static void test_vfsn_resolvePath(void);
-static bool test_vfsn_resolveRealPath(cstring a);
-static bool test_vfsn_resolvePathCpy(cstring a,cstring b);
+static bool test_vfsn_resolveRealPath(const char *a);
+static bool test_vfsn_resolvePathCpy(const char *a,const char *b);
 static void test_vfsn_getPath(void);
 
 /* our test-module */
@@ -48,12 +48,12 @@ static void test_vfsn_resolvePath(void) {
 	test_caseSucceded();
 }
 
-static bool test_vfsn_resolveRealPath(cstring a) {
+static bool test_vfsn_resolveRealPath(const char *a) {
 	tVFSNodeNo no;
 	return test_assertInt(vfsn_resolvePath(a,&no),ERR_REAL_PATH);
 }
 
-static bool test_vfsn_resolvePathCpy(cstring a,cstring b) {
+static bool test_vfsn_resolvePathCpy(const char *a,const char *b) {
 	s32 err;
 	tVFSNodeNo no;
 	sVFSNode *node;
@@ -63,7 +63,7 @@ static bool test_vfsn_resolvePathCpy(cstring a,cstring b) {
 	}
 
 	node = vfsn_getNode(no);
-	return test_assertStr(node->name,(string)b);
+	return test_assertStr(node->name,(char*)b);
 }
 
 static void test_vfsn_getPath(void) {
@@ -72,13 +72,13 @@ static void test_vfsn_getPath(void) {
 	test_caseStart("Testing vfsn_getPath()");
 
 	vfsn_resolvePath("system:",&no);
-	test_assertStr(vfsn_getPath(no),(string)"system:");
+	test_assertStr(vfsn_getPath(no),(char*)"system:");
 
 	vfsn_resolvePath("system:/processes",&no);
-	test_assertStr(vfsn_getPath(no),(string)"system:/processes");
+	test_assertStr(vfsn_getPath(no),(char*)"system:/processes");
 
 	vfsn_resolvePath("system:/processes/0",&no);
-	test_assertStr(vfsn_getPath(no),(string)"system:/processes/0");
+	test_assertStr(vfsn_getPath(no),(char*)"system:/processes/0");
 
 	test_caseSucceded();
 }

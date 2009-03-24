@@ -36,7 +36,7 @@
 /* the number of entries in the hash-map */
 #define BUF_MAP_SIZE	8
 /* the size of the buffers */
-#define BUFFER_SIZE 256
+#define BUFFER_SIZE		256
 
 /* an io-buffer for a file-descriptor */
 typedef struct {

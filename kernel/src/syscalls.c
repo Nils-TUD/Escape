@@ -215,7 +215,7 @@ static void sysc_ackSignal(sSysCallStack *stack);
  * @param tSig signal
  * @return s32 0 if no error
  */
-static void sysc_sendSignal(sSysCallStack *stack);
+static void sysc_sendSignalTo(sSysCallStack *stack);
 /**
  * Exchanges the process-data with another program
  *
@@ -256,7 +256,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 20 */	{sysc_setSigHandler,		2},
 	/* 21 */	{sysc_unsetSigHandler,		1},
 	/* 22 */	{sysc_ackSignal,			1},
-	/* 23 */	{sysc_sendSignal,			2},
+	/* 23 */	{sysc_sendSignalTo,			2},
 	/* 24 */	{sysc_exec,					1},
 	/* 25 */	{sysc_eof,					1},
 };
@@ -812,7 +812,7 @@ static void sysc_ackSignal(sSysCallStack *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static void sysc_sendSignal(sSysCallStack *stack) {
+static void sysc_sendSignalTo(sSysCallStack *stack) {
 	tPid pid = (tPid)stack->arg1;
 	tSig signal = (tSig)stack->arg2;
 	u32 data = stack->arg3;
@@ -823,15 +823,20 @@ static void sysc_sendSignal(sSysCallStack *stack) {
 		return;
 	}
 
-	if(!proc_exists(pid)) {
+	if(pid != INVALID_PID && !proc_exists(pid)) {
 		SYSC_ERROR(stack,ERR_INVALID_PID);
 		return;
 	}
 
-	sig_addSignalFor(pid,signal,data);
+	if(pid != INVALID_PID)
+		sig_addSignalFor(pid,signal,data);
+	else
+		sig_addSignal(signal,data);
+
 	/* choose another process if we've killed ourself */
-	if(pid == p->pid)
+	if(p->state != ST_RUNNING)
 		proc_switch();
+
 	SYSC_RET1(stack,0);
 }
 

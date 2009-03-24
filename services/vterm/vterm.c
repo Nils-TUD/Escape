@@ -12,6 +12,7 @@
 #include <keycodes.h>
 #include <heap.h>
 #include <string.h>
+#include <signals.h>
 #include "vterm.h"
 #include "keymap.h"
 #include "keymap.us.h"
@@ -642,10 +643,25 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 
 		if(sendMsg) {
 			if(c == NPRINT || vterm.ctrlDown) {
+				/* handle ^C, ^D and so on */
+				if(vterm.ctrlDown) {
+					switch(msg->keycode) {
+						case VK_C:
+							sendSignal(SIG_INTRPT,0);
+							break;
+						case VK_D:
+							if(vterm.readLine)
+								vterm_rlPutchar('\n');
+							break;
+					}
+				}
+
+				/* in reading mode? */
 				if(vterm.readLine) {
 					if(vterm.echo)
 						vterm_rlHandleKeycode(msg->keycode);
 				}
+				/* send escape-code */
 				else {
 					char escape[3] = {'\033',msg->keycode,(vterm.altDown << STATE_ALT) |
 							(vterm.ctrlDown << STATE_CTRL) |

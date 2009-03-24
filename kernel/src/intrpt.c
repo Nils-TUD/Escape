@@ -91,8 +91,8 @@ typedef struct {
 /* storage for "delayed" signal handling */
 typedef struct {
 	u8 active;
+	tPid pid;
 	tSig sig;
-	fSigHandler handler;
 	u32 data;
 } sSignalData;
 
@@ -381,53 +381,64 @@ static void intrpt_handleSignal(void) {
 		return;
 
 	if(sig_hasSignal(&sig,&pid,&data)) {
-		fSigHandler handler = sig_startHandling(pid,sig);
-		if(handler != NULL) {
-			signalData.active = 1;
-			signalData.sig = sig;
-			signalData.handler = handler;
-			signalData.data = data;
-			/* a little trick: we store the signal to handle and manipulate the user-stack
-			 * and so on later. if the process is currently running everything is fine. we return
-			 * from here and intrpt_handleSignalFinish() will be called.
-			 * if the target-process is not running we switch to him now. the process is somewhere
-			 * in the kernel but he will leave the kernel IN EVERY CASE at the end of the interrupt-
-			 * handler. So if we do the signal-stuff at the end we'll get there and will
-			 * manipulate the user-stack.
-			 * This is simpler than mapping the user-stack and kernel-stack of the other process
-			 * in the current page-dir and so on :)
-			 */
-			if(proc_getRunning()->pid != pid) {
-				/* ensure that the process is ready */
-				sched_setReady(proc_getByPid(pid));
-				proc_switchTo(pid);
-			}
+		signalData.active = 1;
+		signalData.sig = sig;
+		signalData.data = data;
+		signalData.pid = pid;
+
+		/* a little trick: we store the signal to handle and manipulate the user-stack
+		 * and so on later. if the process is currently running everything is fine. we return
+		 * from here and intrpt_handleSignalFinish() will be called.
+		 * if the target-process is not running we switch to him now. the process is somewhere
+		 * in the kernel but he will leave the kernel IN EVERY CASE at the end of the interrupt-
+		 * handler. So if we do the signal-stuff at the end we'll get there and will
+		 * manipulate the user-stack.
+		 * This is simpler than mapping the user-stack and kernel-stack of the other process
+		 * in the current page-dir and so on :)
+		 */
+		if(proc_getRunning()->pid != pid) {
+			/* ensure that the process is ready */
+			sched_setReady(proc_getByPid(pid));
+			proc_switchTo(pid);
 		}
 	}
 }
 
 static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
-	u32 *esp = (u32*)stack->uesp;
-	/* will handle copy-on-write */
-	/* TODO we might have to add stack-pages... */
-	paging_isRangeUserWritable((u32)(esp - 11),10 * sizeof(u32));
+	sProc *p = proc_getRunning();
+	/* if the proc_switchTo() wasn't successfull (we're not the process that should receive the
+	 * signal), release the signalData and we try it again later. */
+	/* TODO this is not really good because we will try it in every interrupt
+	 * (and do proc_switch()!)until we can deliver the signal (or the process dies) */
+	if(p->pid != signalData.pid) {
+		signalData.active = 0;
+		return;
+	}
 
-	/* save regs */
-	*--esp = stack->eip;
-	*--esp = stack->eax;
-	*--esp = stack->ebx;
-	*--esp = stack->ecx;
-	*--esp = stack->edx;
-	*--esp = stack->edi;
-	*--esp = stack->esi;
-	/* signal-number and data as arguments */
-	*--esp = signalData.data;
-	*--esp = signalData.sig;
-	/* sigRet will remove the argument, restore the register,
-	 * acknoledge the signal and return to eip */
-	*--esp = SIGRETFUNC_ADDR;
-	stack->eip = (u32)signalData.handler;
-	stack->uesp = (u32)esp;
+	fSigHandler handler = sig_startHandling(signalData.pid,signalData.sig);
+	if(handler != NULL) {
+		u32 *esp = (u32*)stack->uesp;
+		/* will handle copy-on-write */
+		/* TODO we might have to add stack-pages... */
+		paging_isRangeUserWritable((u32)(esp - 11),10 * sizeof(u32));
+
+		/* save regs */
+		*--esp = stack->eip;
+		*--esp = stack->eax;
+		*--esp = stack->ebx;
+		*--esp = stack->ecx;
+		*--esp = stack->edx;
+		*--esp = stack->edi;
+		*--esp = stack->esi;
+		/* signal-number and data as arguments */
+		*--esp = signalData.data;
+		*--esp = signalData.sig;
+		/* sigRet will remove the argument, restore the register,
+		 * acknoledge the signal and return to eip */
+		*--esp = SIGRETFUNC_ADDR;
+		stack->eip = (u32)handler;
+		stack->uesp = (u32)esp;
+	}
 
 	/* we don't want to do this again */
 	signalData.active = 0;

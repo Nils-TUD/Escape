@@ -8,6 +8,7 @@
 #define PROC_H_
 
 #define MAX_PROC_NAME_LEN	30
+#define INVALID_PID			1026
 
 /* the events we can wait for */
 #define EV_NOEVENT			0

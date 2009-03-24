@@ -12,13 +12,13 @@ Available memory:
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000002962602
+Clock cycles: 0x0000000002853aa7
 Initializing VFS...DONE
-Clock cycles: 0x00000000001c2d53
+Clock cycles: 0x000000000013381e
 Initializing process-management...DONE
-Clock cycles: 0x000000000012cd8f
+Clock cycles: 0x00000000000d9bcf
 Initializing IDT...DONE
-Clock cycles: 0x00000000000f2cdf
+Clock cycles: 0x00000000000a69dd
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
 Got interrupt 39 (<unknown>) @ 0x0
 Drives:
@@ -31,21 +31,14 @@ Welcome to Escape v0.1!
 
 Try 'help' to see the current features :)
 
-file:/ # task2
-Please enter your name: asdasdasdasdasdasdasd
-Hello asdasdasdas!
-file:/ # dasdasdasd
-dasdasdasd: Command not found
+file:/ # asd
+asd: Command not found
 file:/ # task2
 Please enter your name: nils
 Hello nils!
 file:/ # asd
 asd: Command not found
-file:/ # bla
-bla: Command not found
-file:/ # echo "muh"
-muh 
 file:/ # task2
-Please enter your name: awswas?
-Hello was?!
+Please enter your name: file:/ # bla
+bla: Command not found
 file:/ # 

@@ -16,6 +16,7 @@
 #include <heap.h>
 #include <keycodes.h>
 #include <env.h>
+#include <signals.h>
 
 #include "history.h"
 #include "completion.h"
@@ -40,6 +41,11 @@ static bool shell_prompt(void);
  * @return the result
  */
 static s32 shell_executeCmd(char *line);
+
+/**
+ * Handles SIG_INTRPT
+ */
+static void shell_sigIntrpt(tSig sig,u32 data);
 
 /**
  * Reads a line
@@ -72,9 +78,15 @@ static void shell_complete(char *line,u32 *cursorPos,u32 *length);
 
 /* buffer for arguments */
 static u32 tabCount = 0;
+static tPid waitingPid = INVALID_PID;
 
 int main(void) {
 	char *buffer;
+
+	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0) {
+		printLastError();
+		return 1;
+	}
 
 	printf("\033f\011Welcome to Escape v0.1!\033r\011\n");
 	printf("\n");
@@ -202,7 +214,8 @@ static s32 shell_executeCmd(char *line) {
 			}
 		}
 		else {
-			if(fork() == 0) {
+			tPid pid;
+			if((pid = fork()) == 0) {
 				/* redirect fds */
 				if(cmd->dup & DUP_STDOUT)
 					redirFd(STDOUT_FILENO,*pipe);
@@ -216,7 +229,9 @@ static s32 shell_executeCmd(char *line) {
 			}
 
 			/* wait for child */
+			waitingPid = pid;
 			sleep(EV_CHILD_DIED);
+			waitingPid = INVALID_PID;
 		}
 
 		/* if the process has read from the pipe, close it and walk to next */
@@ -232,6 +247,15 @@ static s32 shell_executeCmd(char *line) {
 	tok_free(tokens,tokCount);
 	cmd_free(cmds,cmdCount);
 	return res;
+}
+
+static void shell_sigIntrpt(tSig sig,u32 data) {
+	if(waitingPid != INVALID_PID)
+		sendSignalTo(waitingPid,SIG_KILL,0);
+	else {
+		printf("\n");
+		shell_prompt();
+	}
 }
 
 static u32 shell_readLine(char *buffer,u32 max) {

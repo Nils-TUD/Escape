@@ -46,7 +46,7 @@ static void logChar(char c) {
 #endif
 
 int main(void) {
-	debugf("ret=%d\n",printc('a'));
+	/*debugf("ret=%d\n",printc('a'));
 	debugf("ret=%d\n",printc('b'));
 	debugf("ret=%d\n",printc('c'));
 	debugf("ret=%d\n",prints("Das ist mein Name\n"));
@@ -57,7 +57,12 @@ int main(void) {
 	debugf("ret=%d\n",printu(1234,10));
 	debugf("ret=%d\n",printu(0,10));
 	debugf("ret=%d\n",printu(0xABCDEF,16));
-	flush();
+	flush();*/
+
+	char buffer[12];
+	printf("Please enter your name: ");
+	scans(buffer,12);
+	printf("Hello %s!\n",buffer);
 
 	/*char buffer[32];
 	char *str = "Das ist mein String\n";

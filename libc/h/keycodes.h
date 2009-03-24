@@ -118,5 +118,7 @@
 #define VK_ESC_FG		'f'
 #define VK_ESC_BG		'b'
 #define VK_ESC_RESET	'r'
+#define VK_ESC_SET_RL	'l'
+#define VK_ESC_SET_ECHO	'e'
 
 #endif /* KEYCODES_H_ */

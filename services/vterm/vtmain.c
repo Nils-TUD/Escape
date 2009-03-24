@@ -43,13 +43,15 @@ int main(void) {
 	requestIOPort(0x3f8);
 	requestIOPort(0x3fd);
 
-	vterm_init();
+	if(!vterm_init())
+		return 1;
 
 	sMsgKbResponse keycode;
 	while(1) {
 		tFD fd = getClient(id);
 		if(fd < 0) {
 			/* read from keyboard */
+			/* don't block here since there may be waiting clients.. */
 			while(!eof(kbFd)) {
 				read(kbFd,&keycode,sizeof(sMsgKbResponse));
 				vterm_handleKeycode(&keycode);
@@ -60,7 +62,7 @@ int main(void) {
 			u32 c;
 			while((c = read(fd,buffer,BUFFER_SIZE)) > 0) {
 				*(buffer + c) = '\0';
-				vterm_puts(buffer);
+				vterm_puts(buffer,true);
 			}
 			close(fd);
 		}

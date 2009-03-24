@@ -5,20 +5,20 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=0, part1=-1, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x21d000, shndx=0x10
+ELF: num=19, size=40, addr=0x21c000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x00000000023cc7b1
+Clock cycles: 0x0000000002962602
 Initializing VFS...DONE
-Clock cycles: 0x0000000000139c74
+Clock cycles: 0x00000000001c2d53
 Initializing process-management...DONE
-Clock cycles: 0x00000000000d2cc0
+Clock cycles: 0x000000000012cd8f
 Initializing IDT...DONE
-Clock cycles: 0x00000000000aa48a
+Clock cycles: 0x00000000000f2cdf
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
 Got interrupt 39 (<unknown>) @ 0x0
 Drives:
@@ -31,27 +31,21 @@ Welcome to Escape v0.1!
 
 Try 'help' to see the current features :)
 
-file:/ # ls
-   2 .
-   2 ..
-  11 lost+found
-  12 apps
-  13 etc
-  14 services
-  16 test
-  17 file.txt
-  19 bigfile
-file:/ # ps
-PID	 	  PPID	  PAGES	 	  STATE	 	  	  CYCLES	  	  	  	  	  	  	  COMMAND
-00	  	  00	  	  011	 	  	  Ready  	 	  0x00008AEb2C605AA8	  init
-01	  	  00	  	  011	 	  	  Blocked	 	  0x000000007F961CA9	  ata
-02	  	  00	  	  030	 	  	  Blocked	 	  0x000000001831A8E6	  fs
-03	  	  00	  	  008	 	  	  Blocked	 	  0x0000000000D98738	  file:/services/speaker
-04	  	  00	  	  008	 	  	  Blocked	 	  0x0000000000EDEBEc	  file:/services/keyboard
-05	  	  00	  	  012	 	  	  Blocked	 	  0x0000000002556ED6	  file:/services/video
-06	  	  00	  	  017	 	  	  Blocked	 	  0x00000000030D4550	  file:/services/vterm
-07	  	  00	  	  011	 	  	  Blocked	 	  0x0000000000D9C167	  file:/services/env
-08	  	  00	  	  013	 	  	  Blocked	 	  0x000000000268362c	  file:/apps/shell
-09	  	  08	  	  011	 	  	  Running	 	  0x0000000001ADEAA5	  file:/apps/ps
-
+file:/ # task2
+Please enter your name: asdasdasdasdasdasdasd
+Hello asdasdasdas!
+file:/ # dasdasdasd
+dasdasdasd: Command not found
+file:/ # task2
+Please enter your name: nils
+Hello nils!
+file:/ # asd
+asd: Command not found
+file:/ # bla
+bla: Command not found
+file:/ # echo "muh"
+muh 
+file:/ # task2
+Please enter your name: awswas?
+Hello was?!
 file:/ # 

@@ -11,8 +11,10 @@
 
 /**
  * Inits the vterm
+ *
+ * @return true if successfull
  */
-void vterm_init(void);
+bool vterm_init(void);
 
 /**
  * Releases resources
@@ -30,7 +32,8 @@ void vterm_handleKeycode(sMsgKbResponse *msg);
  * Prints the given string
  *
  * @param str the string
+ * @param resetRead wether readline-stuff should be reset
  */
-void vterm_puts(char *str);
+void vterm_puts(char *str,bool resetRead);
 
 #endif /* VTERM_H_ */

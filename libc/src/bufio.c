@@ -61,22 +61,7 @@ static char doFscanc(sIOBuffer *buf);
  * @param max the max chars to read
  * @return the number of read chars
  */
-static u32 doFscanl(sIOBuffer *buf,char *line,u32 max);
-
-/**
- * Handles escape-codes
- *
- * @param buf the buffer
- * @param line the line
- * @param cursorPos the current cursorPos (changes)
- * @param charcount the total number of chars in the line (changes)
- * @param c the just read char
- * @param keycode will be set to the keycode
- * @param modifier will be set to the modifier
- * @return true if the escape-code has been handled
- */
-static bool handleEscape(sIOBuffer *buf,char *line,u32 *cursorPos,u32 *charcount,char c,u8 *keycode,
-		u8 *modifier);
+static u32 doFscans(sIOBuffer *buf,char *line,u32 max);
 
 /**
  * Prints the given character to the buffer. If necessary the buffer is flushed
@@ -278,15 +263,15 @@ char fscanc(tFD fd) {
 	return doFscanc(buf);
 }
 
-u32 scanl(char *line,u32 max) {
-	return fscanl(STDIN_FILENO,line,max);
+u32 scans(char *line,u32 max) {
+	return fscans(STDIN_FILENO,line,max);
 }
 
-u32 fscanl(tFD fd,char *line,u32 max) {
+u32 fscans(tFD fd,char *line,u32 max) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return 0;
-	return doFscanl(buf,line,max);
+	return doFscans(buf,line,max);
 }
 
 static char doFscanc(sIOBuffer *buf) {
@@ -296,136 +281,15 @@ static char doFscanc(sIOBuffer *buf) {
 	return c;
 }
 
-static u32 doFscanl(sIOBuffer *buf,char *line,u32 max) {
+static u32 doFscans(sIOBuffer *buf,char *line,u32 max) {
 	char c;
-	u8 keycode;
-	u8 modifier;
-	u32 cursorPos = 0;
-	u32 i = 0;
-	while(i < max) {
-		c = doFscanc(buf);
-
-		if(handleEscape(buf,line,&cursorPos,&i,c,&keycode,&modifier))
-			continue;
-		/* the above function does not handle all escape-codes */
-		if(c == '\033')
-			continue;
-
-		/* echo */
-		printc(c);
-		printc(c);
-		flush();
-
-		if(c == '\n')
-			break;
-
-		/* not at the end */
-		if(cursorPos < i) {
-			u32 x;
-			/* at first move all one char forward */
-			memmove(line + cursorPos + 1,line + cursorPos,i - cursorPos);
-			line[cursorPos] = c;
-			/* now write the chars to vterm */
-			for(x = cursorPos + 1; x <= i; x++)
-				printc(line[x]);
-			/* and walk backwards */
-			printc('\033');
-			printc(VK_HOME);
-			printc(i - cursorPos);
-			/* we want to do that immediatly */
-			flush();
-			/* we've added a char */
-			cursorPos++;
-			i++;
-		}
-		/* we are at the end of the input */
-		else {
-			/* put in buffer */
-			line[cursorPos++] = c;
-			i++;
-		}
-	}
-
-	line[i] = '\0';
-	return i;
-}
-
-static bool handleEscape(sIOBuffer *buf,char *line,u32 *cursorPos,u32 *charcount,char c,u8 *keycode,
-		u8 *modifier) {
-	bool res = false;
-	u32 icursorPos = *cursorPos;
-	u32 icharcount = *charcount;
-	switch(c) {
-		case '\b':
-			if(icursorPos > 0) {
-				/* remove last char */
-				if(icursorPos < icharcount)
-					memmove(line + icursorPos - 1,line + icursorPos,icharcount - icursorPos);
-				icharcount--;
-				icursorPos--;
-				line[icharcount] = '\0';
-				/* send backspace */
-				printc(c);
-				flush();
-			}
-			res = true;
-			break;
-
-		case '\033': {
-			bool writeBack = false;
-			*keycode = doFscanc(buf);
-			*modifier = doFscanc(buf);
-			switch(*keycode) {
-				/* write escape-code back */
-				case VK_RIGHT:
-					if(icursorPos < icharcount) {
-						writeBack = true;
-						icursorPos++;
-					}
-					res = true;
-					break;
-				case VK_HOME:
-					if(icursorPos > 0) {
-						writeBack = true;
-						/* send the number of chars to move */
-						*modifier = icursorPos;
-						icursorPos = 0;
-					}
-					res = true;
-					break;
-				case VK_END:
-					if(icursorPos < icharcount) {
-						writeBack = true;
-						/* send the number of chars to move */
-						*modifier = icharcount - icursorPos;
-						icursorPos = icharcount;
-					}
-					res = true;
-					break;
-				case VK_LEFT:
-					if(icursorPos > 0) {
-						writeBack = true;
-						icursorPos--;
-					}
-					res = true;
-					break;
-			}
-
-			/* write escape-code back */
-			if(writeBack) {
-				printc(c);
-				printc(*keycode);
-				printc(*modifier);
-				flush();
-			}
-		}
-		break;
-	}
-
-	*cursorPos = icursorPos;
-	*charcount = icharcount;
-
-	return res;
+	char *start = line;
+	/* wait for one char left (\0) or a newline */
+	while(max-- > 1 && (c = doFscanc(buf)) && c != '\n')
+		*line++ = c;
+	/* terminate */
+	*line = '\0';
+	return line - start;
 }
 
 static s32 doFprintc(sIOBuffer *buf,char c) {
@@ -439,7 +303,14 @@ static s32 doFprints(sIOBuffer *buf,const char *str) {
 	char c;
 	char *start = (char*)str;
 	while((c = *str)) {
-		doFprintc(buf,c);
+		/* handle escape */
+		if(c == '\033') {
+			doFprintc(buf,c);
+			doFprintc(buf,*++str);
+			doFprintc(buf,*++str);
+		}
+		else
+			doFprintc(buf,c);
 		str++;
 	}
 	return str - start;
@@ -518,6 +389,15 @@ static s32 doVfprintf(sIOBuffer *buf,const char *fmt,va_list ap) {
 	while(1) {
 		/* wait for a '%' */
 		while((c = *fmt++) != '%') {
+			/* handle escape */
+			if(c == '\033') {
+				doFprintc(buf,c);
+				doFprintc(buf,*fmt++);
+				doFprintc(buf,*fmt++);
+				count += 3;
+				continue;
+			}
+
 			/* finished? */
 			if(c == '\0') {
 				doFlush(buf);

@@ -153,22 +153,22 @@ char scanc(void);
 char fscanc(tFD fd);
 
 /**
- * Reads one line (or <max> chars) from STDIN into the given line-buffer
+ * Reads max. <max> from STDIN (or till EOF or newline) into the given line-buffer
  *
  * @param line the buffer
  * @param max the maximum number of chars to read
  * @return the number of read chars
  */
-u32 scanl(char *line,u32 max);
+u32 scans(char *line,u32 max);
 
 /**
- * Reads one line (or <max> chars) from <fd> into the given line-buffer
+ * Reads max. <max> from <fd> (or till EOF or newline) into the given line-buffer
  *
  * @param fd the file-descriptor
  * @param line the buffer
  * @param max the maximum number of chars to read
  * @return the number of read chars
  */
-u32 fscanl(tFD fd,char *line,u32 max);
+u32 fscans(tFD fd,char *line,u32 max);
 
 #endif /* BUFIO_H_ */

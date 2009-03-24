@@ -55,7 +55,7 @@ struct sVFSNode {
 		/* for service-usages */
 		struct {
 			/* we have to lock reads */
-			tPid locked;
+			tFile locked;
 			/* a list for sending messages to the service */
 			sSLList *sendList;
 			/* a list for reading messages from the service */

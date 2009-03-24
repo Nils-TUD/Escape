@@ -266,7 +266,7 @@ tFile vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo) {
 		n->type = T_SERVUSE;
 		n->flags = VFS_READ | VFS_WRITE;
 		n->readHandler = &vfs_serviceUseReadHandler;
-		n->data.servuse.locked = INVALID_PID;
+		n->data.servuse.locked = -1;
 		n->owner = KERNEL_PID;
 
 		/* insert as first child */
@@ -328,12 +328,12 @@ s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count) {
 		 * message (-> message deleted). So P1 missed the data of the message. */
 
 		/* wait until the node is unlocked, if necessary */
-		if(n->type == T_SERVUSE && n->data.servuse.locked != pid) {
+		if(n->type == T_SERVUSE && n->data.servuse.locked != file) {
 			/* don't let the kernel wait here (-> deadlock) */
-			if(n->data.servuse.locked != INVALID_PID && pid == KERNEL_PID)
+			if(n->data.servuse.locked != -1 && pid == KERNEL_PID)
 				return 0;
 
-			while(n->data.servuse.locked != INVALID_PID)
+			while(n->data.servuse.locked != -1)
 				proc_switch();
 		}
 
@@ -346,12 +346,12 @@ s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count) {
 				readBytes = -readBytes;
 				e->position = 0;
 				/* unlock node */
-				n->data.servuse.locked = INVALID_PID;
+				n->data.servuse.locked = -1;
 			}
 			else {
 				e->position += readBytes;
 				/* lock node */
-				n->data.servuse.locked = pid;
+				n->data.servuse.locked = file;
 			}
 		}
 		else
@@ -412,43 +412,49 @@ void vfs_closeFile(tFile file) {
 		sVFSNode *n = nodes + i;
 
 		if(IS_VIRT(e->nodeNo)) {
-			/* last usage? */
-			if(n->name != NULL && --(n->refCount) == 0) {
-				/* we have to remove the service-usage-node, if it is one */
-				if(n->type == T_SERVUSE) {
-					/* if there are message for the service we don't want to throw them away */
-					/* if there are any in the receivelist (and no references of the node) we
-					 * can throw them away because no one will read them anymore
-					 * (it means that the client has already closed the file) */
-					/* note also that we can assume that the service is still running since we
-					 * would have deleted the whole service-node otherwise */
-					if(n->data.servuse.sendList == NULL || sll_length(n->data.servuse.sendList) == 0) {
-						/* free send and receive list */
-						if(n->data.servuse.recvList != NULL) {
-							sll_destroy(n->data.servuse.recvList,true);
-							n->data.servuse.recvList = NULL;
-						}
-						if(n->data.servuse.sendList != NULL) {
-							sll_destroy(n->data.servuse.sendList,true);
-							n->data.servuse.sendList = NULL;
-						}
+			if(n->name != NULL) {
+				/* we HAVE TO unlock the node if the file has locked it (read a msg incompletely) */
+				if(n->data.servuse.locked == file)
+					n->data.servuse.locked = -1;
 
-						/* free node */
-						if((n->parent->flags & VFS_SINGLEPIPE) == 0)
-							kheap_free(n->name);
+				/* last usage? */
+				if(--(n->refCount) == 0) {
+					/* we have to remove the service-usage-node, if it is one */
+					if(n->type == T_SERVUSE) {
+						/* if there are message for the service we don't want to throw them away */
+						/* if there are any in the receivelist (and no references of the node) we
+						 * can throw them away because no one will read them anymore
+						 * (it means that the client has already closed the file) */
+						/* note also that we can assume that the service is still running since we
+						 * would have deleted the whole service-node otherwise */
+						if(n->data.servuse.sendList == NULL || sll_length(n->data.servuse.sendList) == 0) {
+							/* free send and receive list */
+							if(n->data.servuse.recvList != NULL) {
+								sll_destroy(n->data.servuse.recvList,true);
+								n->data.servuse.recvList = NULL;
+							}
+							if(n->data.servuse.sendList != NULL) {
+								sll_destroy(n->data.servuse.sendList,true);
+								n->data.servuse.sendList = NULL;
+							}
+
+							/* free node */
+							if((n->parent->flags & VFS_SINGLEPIPE) == 0)
+								kheap_free(n->name);
+							vfsn_removeChild(n->parent,n);
+						}
+					}
+					/* free cache, if present */
+					else if(n->type != T_SERVICE && n->data.def.cache != NULL) {
+						kheap_free(n->data.def.cache);
+						n->data.def.cache = NULL;
+					}
+
+					/* remove pipe */
+					if(n->type == T_PIPE) {
+						kheap_free(n->name);
 						vfsn_removeChild(n->parent,n);
 					}
-				}
-				/* free cache, if present */
-				else if(n->type != T_SERVICE && n->data.def.cache != NULL) {
-					kheap_free(n->data.def.cache);
-					n->data.def.cache = NULL;
-				}
-
-				/* remove pipe */
-				if(n->type == T_PIPE) {
-					kheap_free(n->name);
-					vfsn_removeChild(n->parent,n);
 				}
 			}
 		}

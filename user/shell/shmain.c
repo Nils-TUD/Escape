@@ -34,6 +34,14 @@
 static bool shell_prompt(void);
 
 /**
+ * Executes the given line
+ *
+ * @param line the entered line
+ * @return the result
+ */
+static s32 shell_executeCmd(char *line);
+
+/**
  * Reads a line
  *
  * @param buffer the buffer in which the characters should be put
@@ -43,29 +51,15 @@ static bool shell_prompt(void);
 static u32 shell_readLine(char *buffer,u32 max);
 
 /**
- * Handles the default-escape-codes
-
- * @param line the buffer with read characters
- * @param cursorPos the current cursor-position in the buffer (may be changed)
- * @param charcount the number of read characters so far (may be changed)
- * @param c the character
- * @param keycode the keycode of the escape-code
- * @param modifier the modifier of the escape-code
- * @return true if the escape-code was handled
- */
-static bool handleDefEscapes(char *line,u32 *cursorPos,u32 *charcount,char c,u8 *keycode,u8 *modifier);
-
-/**
  * Handles the escape-codes for the shell
  *
  * @param buffer the buffer with read characters
+ * @param c the read character
  * @param cursorPos the current cursor-position in the buffer (may be changed)
  * @param charcount the number of read characters so far (may be changed)
- * @param keycode the keycode of the escape-code
- * @param modifier the modifier of the escape-code
  * @return true if the escape-code was handled
  */
-static bool shell_handleEscapeCodes(char *buffer,u32 *cursorPos,u32 *charcount,u8 keycode,u8 modifier);
+static bool shell_handleEscapeCodes(char *buffer,char c,u32 *cursorPos,u32 *charcount);
 
 /**
  * Completes the current input, if possible
@@ -75,14 +69,6 @@ static bool shell_handleEscapeCodes(char *buffer,u32 *cursorPos,u32 *charcount,u
  * @param length the number of entered characters yet (may be changed)
  */
 static void shell_complete(char *line,u32 *cursorPos,u32 *length);
-
-/**
- * Executes the given line
- *
- * @param line the entered line
- * @return the result
- */
-static s32 shell_executeCmd(char *line);
 
 /* buffer for arguments */
 static u32 tabCount = 0;
@@ -125,190 +111,6 @@ static bool shell_prompt(void) {
 	}
 	printf("%s # ",path);
 	return true;
-}
-
-static u32 shell_readLine(char *buffer,u32 max) {
-	char c;
-	u8 keycode;
-	u8 modifier;
-	u32 cursorPos = 0;
-	u32 i = 0;
-
-	/* ensure that the line is empty */
-	*buffer = '\0';
-	while(i < max) {
-		c = scanc();
-
-		if(handleDefEscapes(buffer,&cursorPos,&i,c,&keycode,&modifier))
-			continue;
-		if(c == '\033') {
-			shell_handleEscapeCodes(buffer,&cursorPos,&i,keycode,modifier);
-			continue;
-		}
-		if(c == '\t') {
-			shell_complete(buffer,&cursorPos,&i);
-			continue;
-		}
-
-		/* echo */
-		printc(c);
-		flush();
-
-		if(c == '\n')
-			break;
-
-		/* not at the end */
-		if(cursorPos < i) {
-			u32 x;
-			/* at first move all one char forward */
-			memmove(buffer + cursorPos + 1,buffer + cursorPos,i - cursorPos);
-			buffer[cursorPos] = c;
-			/* now write the chars to vterm */
-			for(x = cursorPos + 1; x <= i; x++)
-				printc(buffer[x]);
-			/* and walk backwards */
-			printc('\033');
-			printc(VK_HOME);
-			printc(i - cursorPos);
-			/* we want to do that immediatly */
-			flush();
-			/* we've added a char */
-			cursorPos++;
-			i++;
-		}
-		/* we are at the end of the input */
-		else {
-			/* put in buffer */
-			buffer[cursorPos++] = c;
-			i++;
-		}
-	}
-
-	buffer[i] = '\0';
-	return i;
-}
-
-static bool shell_handleEscapeCodes(char *buffer,u32 *cursorPos,u32 *charcount,u8 keycode,u8 modifier) {
-	bool res = false;
-	char *line = NULL;
-
-	UNUSED(modifier);
-
-	switch(keycode) {
-		case VK_UP:
-			line = shell_histUp();
-			res = true;
-			break;
-		case VK_DOWN:
-			line = shell_histDown();
-			res = true;
-			break;
-	}
-
-	if(line != NULL) {
-		u32 pos = *charcount;
-		u32 i,len = strlen(line);
-
-		/* go to line end */
-		printc('\033');
-		printc(VK_END);
-		printc(*charcount - *cursorPos);
-		/* delete chars */
-		while(pos-- > 0)
-			printc('\b');
-
-		/* replace in buffer and write string to vterm */
-		memcpy(buffer,line,len + 1);
-		for(i = 0; i < len; i++)
-			printc(buffer[i]);
-
-		/* now send the commands */
-		flush();
-
-		/* set the cursor to the end */
-		*cursorPos = len;
-		*charcount = len;
-	}
-
-	return res;
-}
-
-static void shell_complete(char *line,u32 *cursorPos,u32 *length) {
-	u32 icursorPos = *cursorPos;
-	u32 i,cmdlen,ilength = *length;
-	char *orgLine = line;
-
-	/* ignore tabs when the cursor is not at the end of the input */
-	if(icursorPos == ilength) {
-		sShellCmd **matches;
-		sShellCmd **cmd;
-		sCmdToken *tokens;
-		char *token;
-		u32 tokLen,tokCount;
-
-		/* get tokens */
-		line[ilength] = '\0';
-		tokens = tok_get(line,&tokCount);
-		if(tokens == NULL)
-			return;
-
-		/* get matches for last token */
-		if(tokCount > 0)
-			token = tokens[tokCount - 1].str;
-		else
-			token = (char*)"";
-		tokLen = strlen(token);
-		matches = compl_get(token,tokLen,0,false,tokCount <= 1);
-		if(matches == NULL || matches[0] == NULL)
-			return;
-
-		/* found one match? */
-		if(matches[1] == NULL) {
-			tabCount = 0;
-			/* add chars */
-			cmdlen = strlen(matches[0]->name);
-			if(matches[0]->complStart == -1)
-				i = ilength;
-			else
-				i = matches[0]->complStart;
-			for(; i < cmdlen; i++) {
-				char c = matches[0]->name[i];
-				orgLine[ilength++] = c;
-				printc(c);
-			}
-			/* set length and cursor */
-			*length = ilength;
-			*cursorPos = ilength;
-			flush();
-		}
-		else {
-			/* show all on second tab */
-			if(tabCount == 0) {
-				tabCount++;
-				/* beep */
-				printc('\a');
-				flush();
-			}
-			else {
-				tabCount = 0;
-
-				/* print all matching commands */
-				printf("\n");
-				cmd = matches;
-				while(*cmd != NULL) {
-					printf("%s ",(*cmd)->name);
-					cmd++;
-				}
-
-				/* print the prompt + entered chars again */
-				printf("\n");
-				shell_prompt();
-				printf("%s",line);
-			}
-		}
-
-		compl_free(matches);
-	}
 }
 
 static s32 shell_executeCmd(char *line) {
@@ -432,8 +234,71 @@ static s32 shell_executeCmd(char *line) {
 	return res;
 }
 
-static bool handleDefEscapes(char *line,u32 *cursorPos,u32 *charcount,char c,u8 *keycode,u8 *modifier) {
+static u32 shell_readLine(char *buffer,u32 max) {
+	char c;
+	u8 keycode;
+	u8 modifier;
+	u32 cursorPos = 0;
+	u32 i = 0;
+
+	/* disable "readline" */
+	printf("\033l\x0");
+
+	/* ensure that the line is empty */
+	*buffer = '\0';
+	while(i < max) {
+		c = scanc();
+
+		if(shell_handleEscapeCodes(buffer,c,&cursorPos,&i))
+			continue;
+		if(c == '\t') {
+			shell_complete(buffer,&cursorPos,&i);
+			continue;
+		}
+
+		/* echo */
+		printc(c);
+		flush();
+
+		if(c == '\n')
+			break;
+
+		/* not at the end */
+		if(cursorPos < i) {
+			u32 x;
+			/* at first move all one char forward */
+			memmove(buffer + cursorPos + 1,buffer + cursorPos,i - cursorPos);
+			buffer[cursorPos] = c;
+			/* now write the chars to vterm */
+			for(x = cursorPos + 1; x <= i; x++)
+				printc(buffer[x]);
+			/* and walk backwards */
+			printc('\033');
+			printc(VK_HOME);
+			printc(i - cursorPos);
+			/* we want to do that immediatly */
+			flush();
+		}
+		/* we are at the end of the input */
+		else {
+			/* put in buffer */
+			buffer[cursorPos] = c;
+		}
+
+		cursorPos++;
+		i++;
+	}
+
+	/* enable "readline" */
+	printf("\033l\x1");
+
+	buffer[i] = '\0';
+	return i;
+}
+
+static bool shell_handleEscapeCodes(char *buffer,char c,u32 *cursorPos,u32 *charcount) {
 	bool res = false;
+	char *line = NULL;
 	u32 icursorPos = *cursorPos;
 	u32 icharcount = *charcount;
 	switch(c) {
@@ -441,10 +306,10 @@ static bool handleDefEscapes(char *line,u32 *cursorPos,u32 *charcount,char c,u8 
 			if(icursorPos > 0) {
 				/* remove last char */
 				if(icursorPos < icharcount)
-					memmove(line + icursorPos - 1,line + icursorPos,icharcount - icursorPos);
+					memmove(buffer + icursorPos - 1,buffer + icursorPos,icharcount - icursorPos);
 				icharcount--;
 				icursorPos--;
-				line[icharcount] = '\0';
+				buffer[icharcount] = '\0';
 				/* send backspace */
 				printc(c);
 				flush();
@@ -454,57 +319,164 @@ static bool handleDefEscapes(char *line,u32 *cursorPos,u32 *charcount,char c,u8 
 
 		case '\033': {
 			bool writeBack = false;
-			*keycode = scanc();
-			*modifier = scanc();
-			switch(*keycode) {
+			u8 keycode = scanc();
+			u8 modifier = scanc();
+			switch(keycode) {
 				/* write escape-code back */
 				case VK_RIGHT:
 					if(icursorPos < icharcount) {
 						writeBack = true;
 						icursorPos++;
 					}
-					res = true;
 					break;
 				case VK_HOME:
 					if(icursorPos > 0) {
 						writeBack = true;
 						/* send the number of chars to move */
-						*modifier = icursorPos;
+						modifier = icursorPos;
 						icursorPos = 0;
 					}
-					res = true;
 					break;
 				case VK_END:
 					if(icursorPos < icharcount) {
 						writeBack = true;
 						/* send the number of chars to move */
-						*modifier = icharcount - icursorPos;
+						modifier = icharcount - icursorPos;
 						icursorPos = icharcount;
 					}
-					res = true;
 					break;
 				case VK_LEFT:
 					if(icursorPos > 0) {
 						writeBack = true;
 						icursorPos--;
 					}
-					res = true;
+					break;
+				case VK_UP:
+					line = shell_histUp();
+					break;
+				case VK_DOWN:
+					line = shell_histDown();
 					break;
 			}
 
 			/* write escape-code back */
 			if(writeBack) {
 				printc(c);
-				printc(*keycode);
-				printc(*modifier);
+				printc(keycode);
+				printc(modifier);
 				flush();
 			}
+			res = true;
 		}
 		break;
 	}
 
-	*cursorPos = icursorPos;
-	*charcount = icharcount;
+	if(line != NULL) {
+		u32 pos = *charcount;
+		u32 i,len = strlen(line);
+
+		/* go to line end */
+		printc('\033');
+		printc(VK_END);
+		printc(*charcount - *cursorPos);
+		/* delete chars */
+		while(pos-- > 0)
+			printc('\b');
+
+		/* replace in buffer and write string to vterm */
+		memcpy(buffer,line,len + 1);
+		for(i = 0; i < len; i++)
+			printc(buffer[i]);
+
+		/* now send the commands */
+		flush();
+
+		/* set the cursor to the end */
+		*cursorPos = len;
+		*charcount = len;
+	}
+	else {
+		*cursorPos = icursorPos;
+		*charcount = icharcount;
+	}
 
 	return res;
+}
+
+static void shell_complete(char *line,u32 *cursorPos,u32 *length) {
+	u32 icursorPos = *cursorPos;
+	u32 i,cmdlen,ilength = *length;
+	char *orgLine = line;
+
+	/* ignore tabs when the cursor is not at the end of the input */
+	if(icursorPos == ilength) {
+		sShellCmd **matches;
+		sShellCmd **cmd;
+		sCmdToken *tokens;
+		char *token;
+		u32 tokLen,tokCount;
+
+		/* get tokens */
+		line[ilength] = '\0';
+		tokens = tok_get(line,&tokCount);
+		if(tokens == NULL)
+			return;
+
+		/* get matches for last token */
+		if(tokCount > 0)
+			token = tokens[tokCount - 1].str;
+		else
+			token = (char*)"";
+		tokLen = strlen(token);
+		matches = compl_get(token,tokLen,0,false,tokCount <= 1);
+		if(matches == NULL || matches[0] == NULL)
+			return;
+
+		/* found one match? */
+		if(matches[1] == NULL) {
+			tabCount = 0;
+			/* add chars */
+			cmdlen = strlen(matches[0]->name);
+			if(matches[0]->complStart == -1)
+				i = ilength;
+			else
+				i = matches[0]->complStart;
+			for(; i < cmdlen; i++) {
+				char c = matches[0]->name[i];
+				orgLine[ilength++] = c;
+				printc(c);
+			}
+			/* set length and cursor */
+			*length = ilength;
+			*cursorPos = ilength;
+			flush();
+		}
+		else {
+			/* show all on second tab */
+			if(tabCount == 0) {
+				tabCount++;
+				/* beep */
+				printc('\a');
+				flush();
+			}
+			else {
+				tabCount = 0;
+
+				/* print all matching commands */
+				printf("\n");
+				cmd = matches;
+				while(*cmd != NULL) {
+					printf("%s ",(*cmd)->name);
+					cmd++;
+				}
+
+				/* print the prompt + entered chars again */
+				printf("\n");
+				shell_prompt();
+				printf("%s",line);
+			}
+		}
+
+		compl_free(matches);
+	}
 }

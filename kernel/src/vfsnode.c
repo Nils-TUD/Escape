@@ -339,7 +339,7 @@ sVFSNode *vfsn_createServiceUseNode(sVFSNode *parent,char *name,fRead handler) {
 	node->type = T_SERVUSE;
 	node->flags = VFS_READ | VFS_WRITE;
 	node->readHandler = handler;
-	node->data.servuse.locked = INVALID_PID;
+	node->data.servuse.locked = -1;
 	return node;
 }
 

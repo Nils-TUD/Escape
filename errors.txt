@@ -1,22 +1,9 @@
-src/env.c: In function ‘getEnv’:
-src/env.c:54: warning: passing argument 2 of ‘asmBinDataMsg’ discards qualifiers from pointer target type
 atamain.c:109: warning: unused parameter ‘sig’
 atamain.c:109: warning: unused parameter ‘data’
 senvmain.c: In function ‘main’:
 senvmain.c:135: warning: cast from pointer to integer of different size
 senvmain.c: At top level:
 senvmain.c:369: warning: ‘env_printAll’ defined but not used
-lsmain.c: In function ‘main’:
-lsmain.c:18: warning: implicit declaration of function ‘getEnv’
-lsmain.c:18: warning: nested extern declaration of ‘getEnv’
-lsmain.c:18: warning: assignment makes pointer from integer without a cast
-completion.c:32: warning: ‘externCmd’ defined but not used
-shmain.c:91: warning: unused parameter ‘argc’
-shmain.c:91: warning: unused parameter ‘argv’
-shmain.c:89: warning: ‘args’ defined but not used
-cmd/env.c:16: warning: no previous prototype for ‘shell_cmdEnv’
-t2main.c: In function ‘main’:
-t2main.c:52: warning: passing argument 1 of ‘prints’ discards qualifiers from pointer target type
 src/ksymbols.c: In function ‘ksym_print’:
 src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
 src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used

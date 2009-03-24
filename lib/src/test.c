@@ -84,7 +84,7 @@ bool test_assertFalse(bool received) {
 	return true;
 }
 
-bool test_assertPtr(void *received,void *expected) {
+bool test_assertPtr(const void *received,const void *expected) {
 	assertCount++;
 	if(expected != received) {
 		test_caseFailed("Assert %d: Pointers are not equal: 0x%x != 0x%x",assertCount,
@@ -117,9 +117,9 @@ bool test_assertUInt(u32 received,u32 expected) {
 	return true;
 }
 
-bool test_assertStr(char *received,char *expected) {
-	char *s1 = expected;
-	char *s2 = received;
+bool test_assertStr(const char *received,const char *expected) {
+	char *s1 = (char*)expected;
+	char *s2 = (char*)received;
 	assertCount++;
 	while(*s1 && *s2) {
 		if(*s1 != *s2) {

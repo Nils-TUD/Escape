@@ -29,7 +29,7 @@
 typedef struct sNode sNode;
 struct sNode {
 	sNode *next;
-	void *data;
+	const void *data;
 };
 
 /* represents a list */
@@ -69,7 +69,7 @@ void sll_destroy(sSLList *list,bool freeData) {
 	while(n != NULL) {
 		nn = n->next;
 		if(freeData)
-			free(n->data);
+			free((void*)n->data);
 		free(n);
 		n = nn;
 	}
@@ -92,7 +92,7 @@ u32 sll_length(sSLList *list) {
 	return l->length;
 }
 
-s32 sll_indexOf(sSLList *list,void *data) {
+s32 sll_indexOf(sSLList *list,const void *data) {
 	sList *l = (sList*)list;
 	sNode *n = l->first;
 	s32 i;
@@ -104,7 +104,7 @@ s32 sll_indexOf(sSLList *list,void *data) {
 	return -1;
 }
 
-sSLNode *sll_nodeWith(sSLList *list,void *data) {
+sSLNode *sll_nodeWith(sSLList *list,const void *data) {
 	sList *l = (sList*)list;
 	sNode *n = l->first;
 	while(n != NULL) {
@@ -116,21 +116,21 @@ sSLNode *sll_nodeWith(sSLList *list,void *data) {
 }
 
 void *sll_get(sSLList *list,u32 index) {
-	return sll_getNode(list,index)->data;
+	return (void*)sll_getNode(list,index)->data;
 }
 
-void sll_set(sSLList *list,void *data,u32 index) {
+void sll_set(sSLList *list,const void *data,u32 index) {
 	sNode *n;
 	n = sll_getNode(list,index);
 	n->data = data;
 }
 
-bool sll_append(sSLList *list,void *data) {
+bool sll_append(sSLList *list,const void *data) {
 	sList *l = (sList*)list;
 	return sll_insert(list,data,l->length);
 }
 
-bool sll_insert(sSLList *list,void *data,u32 index) {
+bool sll_insert(sSLList *list,const void *data,u32 index) {
 	sList *l = (sList*)list;
 	sNode *nn,*n = l->first,*ln = NULL;
 
@@ -210,7 +210,7 @@ void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev) {
 	free(n);
 }
 
-void sll_removeFirst(sSLList *list,void *data) {
+void sll_removeFirst(sSLList *list,const void *data) {
 	sList *l = (sList*)list;
 	sNode *n = l->first,*ln = NULL;
 

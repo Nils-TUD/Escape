@@ -62,7 +62,7 @@ s32 fork(void);
  * @param args a NULL-terminated array of arguments
  * @return a negative error-code if failed
  */
-s32 exec(char *path,char **args);
+s32 exec(const char *path,const char **args);
 
 /**
  * Releases the CPU (reschedule)

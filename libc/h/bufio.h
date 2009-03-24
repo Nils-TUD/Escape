@@ -32,7 +32,7 @@ s32 fprintc(tFD fd,char c);
  * @param str the string
  * @return the number of written chars
  */
-s32 prints(char *str);
+s32 prints(const char *str);
 
 /**
  * Prints the given string to <fd>
@@ -41,7 +41,7 @@ s32 prints(char *str);
  * @param str the string
  * @return the number of written chars
  */
-s32 fprints(tFD fd,char *str);
+s32 fprints(tFD fd,const char *str);
 
 /**
  * Prints the given signed integer to STDOUT

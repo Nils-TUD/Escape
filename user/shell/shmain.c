@@ -86,7 +86,6 @@ static s32 shell_executeCmd(char *line);
 
 /* buffer for arguments */
 static u32 tabCount = 0;
-static char *args[MAX_ARG_COUNT];
 
 int main(void) {
 	char *buffer;
@@ -410,7 +409,7 @@ static s32 shell_executeCmd(char *line) {
 
 				/* exec */
 				strcat(path,scmds[0]->name);
-				exec(path,cmd->arguments);
+				exec(path,(const char**)cmd->arguments);
 				exit(0);
 			}
 

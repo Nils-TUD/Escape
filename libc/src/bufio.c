@@ -94,7 +94,7 @@ static s32 doFprintc(sIOBuffer *buf,char c);
  * @param str the string
  * @return the number of printed chars
  */
-static s32 doFprints(sIOBuffer *buf,char *str);
+static s32 doFprints(sIOBuffer *buf,const char *str);
 
 /**
  * Determines the width of the given string
@@ -223,11 +223,11 @@ s32 fprintc(tFD fd,char c) {
 	return doFprintc(buf,c);
 }
 
-s32 prints(char *str) {
+s32 prints(const char *str) {
 	return fprints(STDOUT_FILENO,str);
 }
 
-s32 fprints(tFD fd,char *str) {
+s32 fprints(tFD fd,const char *str) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
@@ -435,9 +435,9 @@ static s32 doFprintc(sIOBuffer *buf,char c) {
 	return c;
 }
 
-static s32 doFprints(sIOBuffer *buf,char *str) {
+static s32 doFprints(sIOBuffer *buf,const char *str) {
 	char c;
-	char *start = str;
+	char *start = (char*)str;
 	while((c = *str)) {
 		doFprintc(buf,c);
 		str++;

@@ -77,7 +77,7 @@ sSLNode *sll_nodeAt(sSLList *list,u32 index);
  * @param data the data to search for
  * @return the index of the first matching node or -1 if not found
  */
-s32 sll_indexOf(sSLList *list,void *data);
+s32 sll_indexOf(sSLList *list,const void *data);
 
 /**
  * Determines the node with given data
@@ -86,7 +86,7 @@ s32 sll_indexOf(sSLList *list,void *data);
  * @param data the data to search for
  * @return the first matching node or NULL if not found
  */
-sSLNode *sll_nodeWith(sSLList *list,void *data);
+sSLNode *sll_nodeWith(sSLList *list,const void *data);
 
 /**
  * Searches for the element at given index. First and last one can be found in O(1).
@@ -105,7 +105,7 @@ void *sll_get(sSLList *list,u32 index);
  * @param data the new data (NULL is not allowed!)
  * @param index the index
  */
-void sll_set(sSLList *list,void *data,u32 index);
+void sll_set(sSLList *list,const void *data,u32 index);
 
 /**
  * Appends the given data to the list. This can be done in O(1).
@@ -114,7 +114,7 @@ void sll_set(sSLList *list,void *data,u32 index);
  * @param data the data (NULL is not allowed!)
  * @return true if successfull (otherwise not enough mem)
  */
-bool sll_append(sSLList *list,void *data);
+bool sll_append(sSLList *list,const void *data);
 
 /**
  * Inserts the given data at the given index to the list. This can be done in O(1) for the first
@@ -125,7 +125,7 @@ bool sll_append(sSLList *list,void *data);
  * @param index the index
  * @return true if successfull (otherwise not enough mem)
  */
-bool sll_insert(sSLList *list,void *data,u32 index);
+bool sll_insert(sSLList *list,const void *data,u32 index);
 
 /**
  * Removes all elements from the list
@@ -151,7 +151,7 @@ void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev);
  * @param list the list
  * @param data the data to search for
  */
-void sll_removeFirst(sSLList *list,void *data);
+void sll_removeFirst(sSLList *list,const void *data);
 
 /**
  * Removes the given index from the list

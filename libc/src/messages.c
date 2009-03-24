@@ -29,9 +29,9 @@ static sMsgHeader *doAsmBinMsg(u8 id,u32 dataLen,const char *fmt,va_list ap);
  * @param ap the argument-list
  * @return the number of read bytes
  */
-static u32 doDisasmBinMsg(void *data,const char *fmt,va_list ap);
+static u32 doDisasmBinMsg(const void *data,const char *fmt,va_list ap);
 
-sMsgHeader *asmDataMsg(u8 id,u32 length,void *data) {
+sMsgHeader *asmDataMsg(u8 id,u32 length,const void *data) {
 	sMsgHeader *msg = (sMsgHeader*)malloc(sizeof(sMsgHeader) + length * sizeof(u8));
 	if(msg == NULL)
 		return NULL;
@@ -52,7 +52,7 @@ sMsgHeader *asmBinMsg(u8 id,const char *fmt,...) {
 	return msg;
 }
 
-sMsgHeader *asmBinDataMsg(u8 id,void *data,u32 dataLen,const char *fmt,...) {
+sMsgHeader *asmBinDataMsg(u8 id,const void *data,u32 dataLen,const char *fmt,...) {
 	sMsgHeader *msg;
 	u8 *dPtr;
 	va_list ap;
@@ -123,7 +123,7 @@ static sMsgHeader *doAsmBinMsg(u8 id,u32 dataLen,const char *fmt,va_list ap) {
 	return msg;
 }
 
-bool disasmBinMsg(void *data,const char *fmt,...) {
+bool disasmBinMsg(const void *data,const char *fmt,...) {
 	va_list ap;
 	bool res;
 	va_start(ap,fmt);
@@ -132,7 +132,7 @@ bool disasmBinMsg(void *data,const char *fmt,...) {
 	return res;
 }
 
-u32 disasmBinDataMsg(u32 msgLen,void *data,u8 **buffer,const char *fmt,...) {
+u32 disasmBinDataMsg(u32 msgLen,const void *data,u8 **buffer,const char *fmt,...) {
 	u32 res;
 	va_list ap;
 
@@ -149,14 +149,14 @@ u32 disasmBinDataMsg(u32 msgLen,void *data,u8 **buffer,const char *fmt,...) {
 	return 0;
 }
 
-static u32 doDisasmBinMsg(void *data,const char *fmt,va_list ap) {
+static u32 doDisasmBinMsg(const void *data,const char *fmt,va_list ap) {
 	char c;
 	u8 *ptr8;
 	u16 *ptr16;
 	u32 *ptr32;
 	u8 *d,*dataBak;
 
-	dataBak = d = data;
+	dataBak = d = (u8*)data;
 	while((c = *fmt)) {
 		switch(c) {
 			case '1':

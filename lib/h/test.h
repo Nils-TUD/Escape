@@ -103,7 +103,7 @@ bool test_assertFalse(bool received);
  * @param expected your expected result
  * @return true if the pointers are equal
  */
-bool test_assertPtr(void *received,void *expected);
+bool test_assertPtr(const void *received,const void *expected);
 
 /**
  * Checks wether the given integers are equal. If not it calls test_caseFailed() and returns
@@ -133,7 +133,7 @@ bool test_assertUInt(u32 received,u32 expected);
  * @param expected your expected result
  * @return true if the strings are equal
  */
-bool test_assertStr(char *received,char *expected);
+bool test_assertStr(const char *received,const char *expected);
 
 /**
  * Registers the given test-module to the test-framework

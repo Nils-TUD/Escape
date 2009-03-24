@@ -82,7 +82,7 @@ typedef struct {
  * @param buf the data to send
  * @return the message or NULL if failed
  */
-sMsgHeader *asmDataMsg(u8 id,u32 length,void *data);
+sMsgHeader *asmDataMsg(u8 id,u32 length,const void *data);
 
 /**
  * Assembles a binary message with the given arguments. <fmt> specifies the size of the arguments
@@ -108,7 +108,7 @@ sMsgHeader *asmBinMsg(u8 id,const char *fmt,...);
  * @param fmt the format of the arguments
  * @return the message or NULL if failed
  */
-sMsgHeader *asmBinDataMsg(u8 id,void *data,u32 dataLen,const char *fmt,...);
+sMsgHeader *asmBinDataMsg(u8 id,const void *data,u32 dataLen,const char *fmt,...);
 
 /**
  * Disassembles the given binary-message. <fmt> specifies the size of the arguments
@@ -119,7 +119,7 @@ sMsgHeader *asmBinDataMsg(u8 id,void *data,u32 dataLen,const char *fmt,...);
  * @param fmt the format of the arguments
  * @return true if successfull
  */
-bool disasmBinMsg(void *data,const char *fmt,...);
+bool disasmBinMsg(const void *data,const char *fmt,...);
 
 /**
  * Disassembles the given binary-message with data appended. <fmt> specifies the size of the arguments
@@ -132,7 +132,7 @@ bool disasmBinMsg(void *data,const char *fmt,...);
  * @param fmt the format of the arguments
  * @return the number of bytes of the appended data or 0 if failed
  */
-u32 disasmBinDataMsg(u32 msgLen,void *data,u8 **buffer,const char *fmt,...);
+u32 disasmBinDataMsg(u32 msgLen,const void *data,u8 **buffer,const char *fmt,...);
 
 /**
  * Free's the given message

@@ -29,7 +29,6 @@
 static sShellCmd **compl_incrArray(sShellCmd **array,u32 pos,u32 *size);
 
 /* our commands */
-static sShellCmd externCmd;
 static sShellCmd commands[] = {
 	{TYPE_BUILTIN,	{"echo"	}, shell_cmdEcho	,-1},
 	{TYPE_BUILTIN,	{"env"	}, shell_cmdEnv		,-1},

@@ -8,6 +8,7 @@
 #include <dir.h>
 #include <io.h>
 #include <bufio.h>
+#include <env.h>
 
 int main(int argc,char *argv[]) {
 	tFD dd;

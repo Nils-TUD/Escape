@@ -121,7 +121,7 @@ static bool shell_prompt(void) {
 		printf("ERROR: unable to get CWD\n");
 		return false;
 	}
-	printf("%s # ",path);
+	printf("\033f\x8%s\033r\x0 # ",path);
 	return true;
 }
 

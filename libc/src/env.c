@@ -19,7 +19,7 @@
 static bool init(void);
 
 /* the fd for the env-service */
-static s32 envFd = -1;
+static tFD envFd = -1;
 static char *tmpValue = NULL;
 
 /**

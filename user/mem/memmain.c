@@ -11,7 +11,7 @@
 
 s32 main(u32 argc,char **argv) {
 	sMemUsage mem;
-	s32 fd;
+	tFD fd;
 
 	UNUSED(argc);
 	UNUSED(argv);

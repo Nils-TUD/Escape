@@ -10,7 +10,7 @@
 #include <bufio.h>
 
 s32 main(u32 argc,char *argv[]) {
-	s32 dd;
+	tFD dd;
 	char *path;
 	sDirEntry *entry;
 

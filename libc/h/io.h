@@ -26,7 +26,7 @@
  * @param mode the mode
  * @return the file-descriptor; negative if error
  */
-s32 open(const char *path,u8 mode);
+tFD open(const char *path,u8 mode);
 
 /**
  * Reads count bytes from the given file-descriptor into the given buffer and returns the
@@ -64,7 +64,7 @@ s32 write(tFD fd,void *buffer,u32 count);
  * @param fd the file-descriptor
  * @return the error-code or the new file-descriptor
  */
-s32 dupFd(tFD fd);
+tFD dupFd(tFD fd);
 
 /**
  * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!

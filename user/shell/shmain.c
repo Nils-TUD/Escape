@@ -377,7 +377,7 @@ static s32 shell_executeCmd(char *line) {
 		if(scmds[0]->type == TYPE_BUILTIN) {
 			/* redirect fds and make a copy of stdin and stdout because we want to keep them :) */
 			/* (no fork here) */
-			s32 fdout,fdin;
+			tFD fdout,fdin;
 			if(cmd->dup & DUP_STDOUT) {
 				fdout = dupFd(STDOUT_FILENO);
 				redirFd(STDOUT_FILENO,*pipe);

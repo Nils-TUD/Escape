@@ -210,7 +210,7 @@ tFile proc_fdToFile(tFD fd) {
 	return fileNo;
 }
 
-s32 proc_getFreeFd(void) {
+tFD proc_getFreeFd(void) {
 	tFD i;
 	tFile *fds = procs[pi].fileDescs;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
@@ -232,7 +232,7 @@ s32 proc_assocFd(tFD fd,tFile fileNo) {
 	return 0;
 }
 
-s32 proc_dupFd(tFD fd) {
+tFD proc_dupFd(tFD fd) {
 	tFile f;
 	s32 err,nfd;
 	/* check fd */

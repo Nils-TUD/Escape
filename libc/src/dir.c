@@ -125,7 +125,7 @@ void dirname(char *path) {
 	*(p + 1) = '\0';
 }
 
-s32 opendir(const char *path) {
+tFD opendir(const char *path) {
 	return open(path,IO_READ);
 }
 

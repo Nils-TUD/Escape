@@ -24,11 +24,13 @@ typedef u32 tVFSNodeNo;
 /* file-number (in global file table) */
 typedef s32 tFile;
 /* file-descriptor */
-typedef u16 tFD;
+typedef s16 tFD;
 /* inode-number */
 typedef s32 tInodeNo;
 /* signal-number */
 typedef u8 tSig;
+/* service-id */
+typedef s32 tServ;
 
 /* TODO use <stddef.h>? */
 #define NULL (void*)0

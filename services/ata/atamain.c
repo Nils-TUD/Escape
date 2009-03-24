@@ -111,7 +111,7 @@ static void diskIntrptHandler(tSig sig,u32 data) {
 }
 
 s32 main(void) {
-	s32 id;
+	tServ id;
 
 	/* request ports */
 	if(requestIOPorts(REG_BASE_PRIMARY,8) < 0 || requestIOPorts(REG_BASE_SECONDARY,8) < 0) {
@@ -137,7 +137,7 @@ s32 main(void) {
 
 	sMsgHeader header;
 	while(1) {
-		s32 fd = getClient(id);
+		tFD fd = getClient(id);
 		if(fd < 0) {
 			sleep(EV_CLIENT);
 		}

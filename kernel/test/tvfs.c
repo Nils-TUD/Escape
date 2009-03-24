@@ -59,7 +59,7 @@ static void test_vfs(void) {
 
 static void test_vfs_readFileSystem(void) {
 	tVFSNodeNo nodeNo,procNode;
-	s32 fd;
+	tFD fd;
 	s32 res;
 	tFile file;
 	sVFSDirEntryRead node;
@@ -152,7 +152,7 @@ static void test_vfs_readFileSystem(void) {
 
 static void test_vfs_readFileProcess0(void) {
 	tVFSNodeNo nodeNo;
-	s32 fd;
+	tFD fd;
 	s32 res;
 	tFile file;
 	sProcPub proc;

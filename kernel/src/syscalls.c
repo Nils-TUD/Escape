@@ -107,7 +107,7 @@ static void sysc_write(sSysCallStack *stack);
  * Duplicates the given file-descriptor
  *
  * @param tFD the file-descriptor
- * @return s32 the error-code or the new file-descriptor
+ * @return tFD the error-code or the new file-descriptor
  */
 static void sysc_dupFd(sSysCallStack *stack);
 /**
@@ -129,13 +129,13 @@ static void sysc_close(sSysCallStack *stack);
  *
  * @param const char* name of the service
  * @param u8 type: SINGLE-PIPE OR MULTI-PIPE
- * @return s32 0 if successfull
+ * @return tServ the service-id if successfull
  */
 static void sysc_regService(sSysCallStack *stack);
 /**
  * Unregisters a service
  *
- * @param s32 the node-id
+ * @param tServ the service-id
  * @return s32 0 on success or a negative error-code
  */
 static void sysc_unregService(sSysCallStack *stack);
@@ -143,7 +143,7 @@ static void sysc_unregService(sSysCallStack *stack);
  * For services: Looks wether a client wants to be served and returns a file-descriptor
  * for it.
  *
- * @param sVFSNode* node the service-node
+ * @param tServ the service-id
  * @return tFD the file-descriptor to use
  */
 static void sysc_getClient(sSysCallStack *stack);
@@ -334,7 +334,8 @@ static void sysc_open(sSysCallStack *stack) {
 	u8 flags;
 	tVFSNodeNo nodeNo;
 	tFile file;
-	s32 err,fd;
+	tFD fd;
+	s32 err;
 	sProc *p = proc_getRunning();
 
 	/* at first make sure that we'll cause no page-fault */
@@ -500,15 +501,15 @@ static void sysc_write(sSysCallStack *stack) {
 
 static void sysc_dupFd(sSysCallStack *stack) {
 	tFD fd = (tFD)stack->arg1;
-	s32 err;
+	tFD res;
 
-	err = proc_dupFd(fd);
-	if(err < 0) {
-		SYSC_ERROR(stack,err);
+	res = proc_dupFd(fd);
+	if(res < 0) {
+		SYSC_ERROR(stack,res);
 		return;
 	}
 
-	SYSC_RET1(stack,err);
+	SYSC_RET1(stack,res);
 }
 
 static void sysc_redirFd(sSysCallStack *stack) {
@@ -541,7 +542,7 @@ static void sysc_regService(sSysCallStack *stack) {
 	const char *name = (const char*)stack->arg1;
 	u8 type = (u8)stack->arg2;
 	sProc *p = proc_getRunning();
-	s32 res;
+	tServ res;
 
 	res = vfs_createService(p->pid,name,type);
 	if(res < 0) {
@@ -555,17 +556,17 @@ static void sysc_regService(sSysCallStack *stack) {
 }
 
 static void sysc_unregService(sSysCallStack *stack) {
-	tVFSNodeNo no = stack->arg1;
+	tServ id = stack->arg1;
 	s32 err;
 
 	/* check node-number */
-	if(!vfsn_isValidNodeNo(no)) {
+	if(!vfsn_isValidNodeNo(id)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
 
 	/* remove the service */
-	err = vfs_removeService(proc_getRunning()->pid,no);
+	err = vfs_removeService(proc_getRunning()->pid,id);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
@@ -575,13 +576,14 @@ static void sysc_unregService(sSysCallStack *stack) {
 }
 
 static void sysc_getClient(sSysCallStack *stack) {
-	tVFSNodeNo no = stack->arg1;
+	tServ id = stack->arg1;
 	sProc *p = proc_getRunning();
-	s32 fd,res;
+	tFD fd;
+	s32 res;
 	tFile file;
 
 	/* check argument */
-	if(!vfsn_isValidNodeNo(no)) {
+	if(!vfsn_isValidNodeNo(id)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
@@ -594,7 +596,7 @@ static void sysc_getClient(sSysCallStack *stack) {
 	}
 
 	/* open a client */
-	file = vfs_openClient(p->pid,no);
+	file = vfs_openClient(p->pid,id);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;

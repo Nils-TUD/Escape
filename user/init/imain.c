@@ -41,7 +41,7 @@ static bool loadService(char *services,char *name);
 static sSLList *loadedServices;
 
 s32 main(void) {
-	s32 fd;
+	tFD fd;
 	char *services;
 
 	/* wait for fs; we need it for exec */
@@ -142,7 +142,7 @@ static bool loadServices(char *services) {
 
 static bool loadService(char *services,char *name) {
 	char *str;
-	s32 fd;
+	tFD fd;
 	char servPath[MAX_SERVICE_PATH_LEN] = "services:/";
 	char path[MAX_SERVICE_PATH_LEN] = "file:/services/";
 	u32 p,pos,nameLen;
@@ -259,7 +259,7 @@ static bool loadService(char *services,char *name) {
 
 static char *getServices(void) {
 	const u32 stepSize = 128 * sizeof(u8);
-	s32 fd;
+	tFD fd;
 	u32 c,pos = 0,bufSize = stepSize;
 	char *buffer;
 

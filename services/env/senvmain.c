@@ -104,7 +104,7 @@ static sSLList *deadProcs = NULL;
 static sSLList *envVars[MAP_SIZE];
 
 s32 main(void) {
-	s32 id;
+	tServ id;
 
 	id = regService("env",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
@@ -124,7 +124,7 @@ s32 main(void) {
 	/* wait for messages */
 	static sMsgHeader msg;
 	while(1) {
-		s32 fd = getClient(id);
+		tFD fd = getClient(id);
 		if(fd < 0)
 			sleep(EV_CLIENT);
 		else {

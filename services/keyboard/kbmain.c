@@ -30,10 +30,10 @@
 static void kbIntrptHandler(tSig sig,u32 data);
 
 /* file-descriptor for ourself */
-static s32 selfFd;
+static tFD selfFd;
 
 s32 main(void) {
-	s32 id;
+	tServ id;
 
 	id = regService("keyboard",SERVICE_TYPE_SINGLEPIPE);
 	if(id < 0) {

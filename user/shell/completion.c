@@ -41,7 +41,7 @@ static sShellCmd commands[] = {
 sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPath) {
 	u32 arraySize,arrayPos;
 	u32 i,len,cmdlen,start,matchLen;
-	s32 dd;
+	tFD dd;
 	sDirEntry *entry;
 	sShellCmd *cmd;
 	sShellCmd **matches;

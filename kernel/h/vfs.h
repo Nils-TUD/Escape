@@ -198,9 +198,9 @@ s32 vfs_getClient(tPid pid,tVFSNodeNo no);
  *
  * @param pid the process to use
  * @param no the service-node-number
- * @return the error-code (negative) or the file-descriptor to use
+ * @return the error-code (negative) or the file to use
  */
-s32 vfs_openClient(tPid pid,tVFSNodeNo no);
+tFile vfs_openClient(tPid pid,tVFSNodeNo no);
 
 /**
  * Removes the service with given node-number

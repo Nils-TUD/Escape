@@ -43,7 +43,7 @@ void dirname(char *path);
  * @param path the path to the directory
  * @return the file-descriptor for the directory or a negative error-code
  */
-s32 opendir(const char *path);
+tFD opendir(const char *path);
 
 /**
  * Reads the next directory-entry from the given file-descriptor.

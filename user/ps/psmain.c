@@ -27,7 +27,7 @@ static const char *states[] = {
 };
 
 s32 main(u32 argc,char **argv) {
-	s32 dd,dfd;
+	tFD dd,dfd;
 	sProc proc;
 	sDirEntry *entry;
 	char path[] = "system:/processes/";

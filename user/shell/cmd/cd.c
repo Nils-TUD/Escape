@@ -14,7 +14,7 @@
 
 s32 shell_cmdCd(u32 argc,char **argv) {
 	char *path;
-	s32 fd;
+	tFD fd;
 
 	if(argc != 2) {
 		printf("Usage: cd <directory>\n");

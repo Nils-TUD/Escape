@@ -21,8 +21,8 @@
 static char buffer[BUFFER_SIZE + 1];
 
 s32 main(void) {
-	s32 kbFd;
-	s32 id;
+	tFD kbFd;
+	tServ id;
 
 	id = regService("vterm",SERVICE_TYPE_SINGLEPIPE);
 	if(id < 0) {
@@ -46,7 +46,7 @@ s32 main(void) {
 
 	sMsgKbResponse keycode;
 	while(1) {
-		s32 fd = getClient(id);
+		tFD fd = getClient(id);
 		if(fd < 0) {
 			/* read from keyboard */
 			while(!eof(kbFd)) {

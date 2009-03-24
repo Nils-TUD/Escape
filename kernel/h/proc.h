@@ -192,7 +192,7 @@ tFile proc_fdToFile(tFD fd);
  *
  * @return the file-descriptor or the error-code (< 0)
  */
-s32 proc_getFreeFd(void);
+tFD proc_getFreeFd(void);
 
 /**
  * Associates the given file-descriptor with the given file-number
@@ -209,7 +209,7 @@ s32 proc_assocFd(tFD fd,tFile fileNo);
  * @param fd the file-descriptor
  * @return the error-code or the new file-descriptor
  */
-s32 proc_dupFd(tFD fd);
+tFD proc_dupFd(tFD fd);
 
 /**
  * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!

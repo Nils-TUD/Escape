@@ -14,7 +14,7 @@
 #include "request.h"
 
 bool ext2_init(sExt2 *e) {
-	s32 fd;
+	tFD fd;
 	/* we have to try it multiple times in this case since the kernel loads ata and fs
 	 * directly after another and we don't know who's ready first */
 	do {

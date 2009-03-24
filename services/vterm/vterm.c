@@ -199,7 +199,7 @@ static fKeymapGet keymaps[] = {
 static sVTerm vterm;
 
 void vterm_init(void) {
-	s32 vidFd,selfFd,speakerFd;
+	tFD vidFd,selfFd,speakerFd;
 	u32 i,len;
 	char *ptr;
 

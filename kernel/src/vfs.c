@@ -460,7 +460,7 @@ void vfs_closeFile(tFile file) {
 	}
 }
 
-s32 vfs_createService(tPid pid,const char *name,u8 type) {
+tServ vfs_createService(tPid pid,const char *name,u8 type) {
 	sVFSNode *serv = SERVICES();
 	sVFSNode *n = serv->firstChild;
 	u32 len;
@@ -573,7 +573,7 @@ s32 vfs_getClient(tPid pid,tVFSNodeNo no) {
 	return NADDR_TO_VNNO(n);
 }
 
-s32 vfs_openClient(tPid pid,tVFSNodeNo no) {
+tFile vfs_openClient(tPid pid,tVFSNodeNo no) {
 	tVFSNodeNo client = vfs_getClient(pid,no);
 	/* error? */
 	if(!vfsn_isValidNodeNo(client))

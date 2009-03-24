@@ -38,7 +38,8 @@ static u16 intrptCount = 0;
 static u16 intrptTarget = 0;
 
 s32 main(void) {
-	s32 fd,id;
+	tFD fd;
+	tServ id;
 
 	/* register service */
 	id = regService("speaker",SERVICE_TYPE_SINGLEPIPE);

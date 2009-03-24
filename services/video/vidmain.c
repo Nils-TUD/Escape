@@ -48,7 +48,7 @@ static u8 *videoData;
 static void vid_setScreen(u16 startPos,char *buffer,u32 length);
 
 s32 main(void) {
-	s32 id;
+	tServ id;
 
 	id = regService("video",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
@@ -73,7 +73,7 @@ s32 main(void) {
 	/* wait for messages */
 	static sMsgHeader msg;
 	while(1) {
-		s32 fd = getClient(id);
+		tFD fd = getClient(id);
 		if(fd < 0)
 			sleep(EV_CLIENT);
 		else {

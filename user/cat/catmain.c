@@ -11,7 +11,7 @@
 #define BUF_SIZE 512
 
 s32 main(u32 argc,char *argv[]) {
-	s32 fd;
+	tFD fd;
 	s32 count;
 	char buffer[BUF_SIZE];
 

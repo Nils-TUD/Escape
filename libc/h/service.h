@@ -27,7 +27,7 @@
  * @param type the service-type: SERVICE_TYPE_MULTIPIPE or SERVICE_TYPE_SINGLEPIPE
  * @return the service-id if successfull, < 0 if an error occurred
  */
-s32 regService(const char *name,u8 type);
+tServ regService(const char *name,u8 type);
 
 /**
  * Unregisters your service
@@ -35,7 +35,7 @@ s32 regService(const char *name,u8 type);
  * @param service the service-id
  * @return 0 on success or a negative error-code
  */
-s32 unregService(s32 service);
+s32 unregService(tServ service);
 
 /**
  * Looks wether a client wants to be served and returns a file-descriptor for it.
@@ -43,6 +43,6 @@ s32 unregService(s32 service);
  * @param service the service-id
  * @return the file-descriptor if successfull or the error-code
  */
-s32 getClient(s32 service);
+s32 getClient(tServ service);
 
 #endif /* SERVICE_H_ */

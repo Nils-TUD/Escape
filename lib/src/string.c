@@ -265,7 +265,7 @@ char *strchr(const char *str,s32 ch) {
 
 	while(*str) {
 		if(*str++ == ch)
-			return (string)(str - 1);
+			return (char*)(str - 1);
 	}
 	return NULL;
 }

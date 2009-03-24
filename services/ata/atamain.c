@@ -110,7 +110,7 @@ static void diskIntrptHandler(tSig sig,u32 data) {
 	gotInterrupt = true;
 }
 
-s32 main(void) {
+int main(void) {
 	tServ id;
 
 	/* request ports */

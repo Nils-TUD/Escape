@@ -45,7 +45,7 @@ static void logChar(char c) {
 }
 #endif
 
-s32 main(void) {
+int main(void) {
 	debugf("ret=%d\n",printc('a'));
 	debugf("ret=%d\n",printc('b'));
 	debugf("ret=%d\n",printc('c'));

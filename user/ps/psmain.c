@@ -26,15 +26,12 @@ static const char *states[] = {
 	"Zombie "
 };
 
-s32 main(u32 argc,char **argv) {
+int main(void) {
 	tFD dd,dfd;
 	sProc proc;
 	sDirEntry *entry;
 	char path[] = "system:/processes/";
 	char ppath[255];
-
-	UNUSED(argc);
-	UNUSED(argv);
 
 	printf("PID\t\tPPID\tPAGES\t\tSTATE\t\t\tCYCLES\t\t\t\t\t\t\tCOMMAND\n");
 

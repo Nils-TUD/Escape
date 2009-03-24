@@ -55,7 +55,7 @@ static sMsgWriteResp writeResp = {
 
 static sExt2 ext2;
 
-s32 main(void) {
+int main(void) {
 	tFD fd;
 	tServ id;
 

@@ -9,12 +9,9 @@
 #include <bufio.h>
 #include <mem.h>
 
-s32 main(u32 argc,char **argv) {
+int main(void) {
 	sMemUsage mem;
 	tFD fd;
-
-	UNUSED(argc);
-	UNUSED(argv);
 
 	fd = open("system:/memusage",IO_READ);
 	if(fd < 0) {

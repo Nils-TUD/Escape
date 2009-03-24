@@ -40,7 +40,7 @@ static bool loadService(char *services,char *name);
 /* the already loaded services; we don't want to load a service twice */
 static sSLList *loadedServices;
 
-s32 main(void) {
+int main(void) {
 	tFD fd;
 	char *services;
 

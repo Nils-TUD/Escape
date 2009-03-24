@@ -10,7 +10,7 @@
 #include <bufio.h>
 #include <string.h>
 
-s32 main(u32 argc,char **argv) {
+int main(int argc,char **argv) {
 	s32 ch;
 	u32 count,bufSize,bufPos;
 	char *buffer;

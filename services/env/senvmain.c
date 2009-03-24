@@ -103,7 +103,7 @@ static sSLList *deadProcs = NULL;
 /* hashmap of linkedlists with env-vars; key=(pid % MAP_SIZE) */
 static sSLList *envVars[MAP_SIZE];
 
-s32 main(void) {
+int main(void) {
 	tServ id;
 
 	id = regService("env",SERVICE_TYPE_MULTIPIPE);

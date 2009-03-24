@@ -54,7 +54,7 @@ floppy: clean
 		sudo umount $(FLOPPYDISKMOUNT);
 
 mounthdd:
-		sudo umount $(FLOPPYDISKMOUNT) || true;
+		sudo umount $(FLOPPYDISKMOUNT) > /dev/null 2>&1 || true;
 		sudo mount -text2 -oloop=/dev/loop0,offset=`expr $(HDDTRACKSECS) \* 512` $(HDD) $(FLOPPYDISKMOUNT);
 
 debughdd:
@@ -63,7 +63,7 @@ debughdd:
 		make umounthdd;
 
 umounthdd:
-		sudo umount /dev/loop0
+		sudo umount /dev/loop0 > /dev/null 2>&1
 
 createhdd: clean
 		sudo umount /dev/loop0 || true

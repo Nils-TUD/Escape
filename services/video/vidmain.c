@@ -47,7 +47,7 @@ static u8 *videoData;
  */
 static void vid_setScreen(u16 startPos,char *buffer,u32 length);
 
-s32 main(void) {
+int main(void) {
 	tServ id;
 
 	id = regService("video",SERVICE_TYPE_MULTIPIPE);

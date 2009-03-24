@@ -8,6 +8,7 @@
 #include <messages.h>
 #include <service.h>
 #include <io.h>
+#include <ports.h>
 #include <heap.h>
 #include <string.h>
 #include <debug.h>
@@ -20,7 +21,7 @@
 #define BUFFER_SIZE 64
 static char buffer[BUFFER_SIZE + 1];
 
-s32 main(void) {
+int main(void) {
 	tFD kbFd;
 	tServ id;
 

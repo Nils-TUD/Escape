@@ -9,7 +9,7 @@
 #include <io.h>
 #include <bufio.h>
 
-s32 main(u32 argc,char *argv[]) {
+int main(int argc,char *argv[]) {
 	tFD dd;
 	char *path;
 	sDirEntry *entry;

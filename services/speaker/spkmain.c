@@ -37,7 +37,7 @@ static void timerIntrptHandler(tSig sig,u32 data);
 static u16 intrptCount = 0;
 static u16 intrptTarget = 0;
 
-s32 main(void) {
+int main(void) {
 	tFD fd;
 	tServ id;
 

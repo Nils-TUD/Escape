@@ -88,7 +88,7 @@ static s32 shell_executeCmd(char *line);
 static u32 tabCount = 0;
 static char *args[MAX_ARG_COUNT];
 
-s32 main(u32 argc,char **argv) {
+int main(void) {
 	char *buffer;
 
 	printf("\033f\011Welcome to Escape v0.1!\033r\011\n");

@@ -20,7 +20,7 @@
 
 #define COLS				80
 #define ROWS				25
-#define TAB_WIDTH			2
+#define TAB_WIDTH			4
 
 /* the number of lines to keep in history */
 #define HISTORY_SIZE		(ROWS * 8)
@@ -336,6 +336,10 @@ void vterm_puts(char *str,bool resetRead) {
 		vterm_putchar(c);
 		str++;
 	}
+
+	/* scroll to current line, if necessary */
+	if(vterm.firstVisLine != vterm.currLine)
+		vterm_scroll(vterm.firstVisLine - vterm.currLine);
 
 	/* so refresh all lines that need to be refreshed. thats faster than sending all
 	 * chars individually */

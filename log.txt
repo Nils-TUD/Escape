@@ -12,13 +12,13 @@ Available memory:
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000002853aa7
+Clock cycles: 0x000000000240949b
 Initializing VFS...DONE
-Clock cycles: 0x000000000013381e
+Clock cycles: 0x00000000001330e0
 Initializing process-management...DONE
-Clock cycles: 0x00000000000d9bcf
+Clock cycles: 0x00000000000dccfe
 Initializing IDT...DONE
-Clock cycles: 0x00000000000a69dd
+Clock cycles: 0x00000000000a28af
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
 Got interrupt 39 (<unknown>) @ 0x0
 Drives:
@@ -31,14 +31,35 @@ Welcome to Escape v0.1!
 
 Try 'help' to see the current features :)
 
-file:/ # asd
-asd: Command not found
-file:/ # task2
-Please enter your name: nils
-Hello nils!
-file:/ # asd
-asd: Command not found
-file:/ # task2
-Please enter your name: file:/ # bla
-bla: Command not found
-file:/ # 
+file:/ # help
+Currently you can use the following commands:
+	    cat [<file>]	    	    	    	    	    Read file or from STDIN and print
+	    kill <pid>	  	    	    	    	    	    Kill process
+	    login	   	    	    	    	    	    	    Just for fun ;)
+	    ls [<dir>]	  	    	    	    	    	    List current or specified directory
+	    mem	 	    	    	    	    	    	    	    Print memory-usage
+	    ps	  	    	    	    	    	    	    	    Print processes
+	    echo <string>,...	   	    	    	    Print given arguments
+	    env [<name>|<name>=<value>]	 	    Print or set env-variable(s)
+	    help	    	    	    	    	    	    	    Print this message
+	    cd <dir>	    	    	    	    	    	    Change to given directory
+	    pwd	 	    	    	    	    	    	    	    Print current directory
+	    wc	  	    	    	    	    	    	    	    Count and/or print words
+
+Additionally there is a basic shell-'language', that supports '|', '"' and ';'
+So for example you can do:
+	    ls; ps; echo "test";
+	    ls | cat; ps
+	    echo "word1" word2 "word3 and 4" | wc
+	    ps | wc | wc -p
+
+Other:
+	    Tab-Completion works for programs in /apps and files/directories
+	    You can send EOF by CTRL+D and kill the current process with CTRL+C
+	    You can scroll the screen with pageUp/-Down, shift + arrowUp/-Down
+
+file:/ # wpwd
+file:/
+file:/ # cd apps/&
+cat kill ls mem ps shell task2 wc login 
+file:/ # cd apps/wc

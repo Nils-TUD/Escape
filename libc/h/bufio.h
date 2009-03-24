@@ -8,6 +8,7 @@
 #define BUFIO_H_
 
 #include "common.h"
+#include <stdarg.h>
 
 /**
  * Prints the given character to STDOUT

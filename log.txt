@@ -5,22 +5,21 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=-128, part1=0, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x21c000, shndx=0x10
+ELF: num=19, size=40, addr=0x21f000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x00000000024be0aa
+Clock cycles: 0x00000000024bd25b
 Initializing VFS...DONE
-Clock cycles: 0x0000000000136bde
+Clock cycles: 0x00000000001373ac
 Initializing process-management...DONE
-Clock cycles: 0x00000000000e1b7f
+Clock cycles: 0x00000000000df362
 Initializing IDT...DONE
-Clock cycles: 0x00000000000abc60
+Clock cycles: 0x00000000000a69ef
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
-Got interrupt 39 (<unknown>) @ 0x0
 Drives:
 	  Primary Master (present=1,sectors=10080)
 	  	  0: start=0x3F, sectors=10017 size=5128704 byte
@@ -31,60 +30,20 @@ Welcome to Escape v0.1!
 
 Try 'help' to see the current features :)
 
-file:/ # ls
-   2 .
-   2 ..
-  11 lost+found
-  12 grub
-  16 apps
-  17 etc
-  18 services
-  20 test
-  21 file.txt
-  23 bigfile
-  38 kernel.bin
-  39 kernel_test.bin
-file:/ # sps
-PID	 PPID	    PAGES	   STATE	   	    CYCLES	  	    	    	    COMMAND
-00	  00	  	    010	 	    Ready  	 	    0x002BEB4c561949B6	  init
-01	  00	  	    011	 	    Blocked	 	    0x0000000085A32308	  ata
-02	  00	  	    030	 	    Blocked	 	    0x000000001879D2E0	  fs
-03	  00	  	    008	 	    Blocked	 	    0x0000000000DFF074	  file:/services/speaker
-04	  00	  	    008	 	    Blocked	 	    0x0000000001130A7b	  file:/services/keyboard
-05	  00	  	    012	 	    Blocked	 	    0x00000000035A52Bf	  file:/services/video
-06	  00	  	    019	 	    Blocked	 	    0x0000000003B32293	  file:/services/vterm
-07	  00	  	    011	 	    Blocked	 	    0x0000000000E104Da	  file:/services/env
-08	  00	  	    014	 	    Blocked	 	    0x0000000002ABE0B6	  file:/apps/shell
-09	  08	  	    011	 	    Running	 	    0x0000000001D26B6c	  file:/apps/ps
-
-file:/ # ls
-   2 .
-   2 ..
-  11 lost+found
-  12 grub
-  16 apps
-  17 etc
-  18 services
-  20 test
-  21 file.txt
-  23 bigfile
-  38 kernel.bin
-  39 kernel_test.bin
-file:/ # ps
-PID	 PPID	    PAGES	   STATE	   	    CYCLES	  	    	    	    COMMAND
-00	  00	  	    010	 	    Ready  	 	    0x002C68295A332BF5	  init
-01	  00	  	    011	 	    Blocked	 	    0x00000000A4676AE6	  ata
-02	  00	  	    030	 	    Blocked	 	    0x0000000021AE5E26	  fs
-03	  00	  	    008	 	    Blocked	 	    0x0000000000DFF074	  file:/services/speaker
-04	  00	  	    008	 	    Blocked	 	    0x000000000150C94b	  file:/services/keyboard
-05	  00	  	    012	 	    Blocked	 	    0x0000000006003168	  file:/services/video
-06	  00	  	    019	 	    Blocked	 	    0x0000000006EA7CE3	  file:/services/vterm
-07	  00	  	    011	 	    Blocked	 	    0x0000000000FC255f	  file:/services/env
-08	  00	  	    014	 	    Blocked	 	    0x0000000004373A87	  file:/apps/shell
-09	  08	  	    011	 	    Running	 	    0x0000000001CDBF8c	  file:/apps/ps
-
-file:/ # ecd apps
-file:/apps/ # cd ..
-file:/ # login
-login lost+found 
-file:/ # lost+found
+file:/ # task2
+Enter '%2d/%3d': aaaaaaa
+res=0, d=0, e=40
+Enter '%b': res=0, u=0
+Enter '%x': res=1, u=876889153
+Enter '%o': j
+res=0, u=876889153
+Enter '%c:%10s': res=1, ch=106, str=ÿÿ¿d
+file:/ # task2
+Enter '%2d/%3d': a
+res=0, d=0, e=40
+Enter '%b': res=0, u=0
+Enter '%x': res=1, u=49
+Enter '%o': a
+res=0, u=49
+Enter '%c:%10s': res=1, ch=97, str=ÿÿ¿d
+file:/ # 

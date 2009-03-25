@@ -10,6 +10,10 @@
 #include "common.h"
 #include <stdarg.h>
 
+/* TODO add constant EOF? */
+/* TODO think about the return-values of print* */
+/* TODO add sprintf and so on */
+
 /**
  * Prints the given character to STDOUT
  *
@@ -127,12 +131,12 @@ s32 vprintf(const char *fmt,va_list ap);
 s32 vfprintf(tFD fd,const char *fmt,va_list ap);
 
 /**
- * Flushes STDOUT
+ * Flushes the output-channel of STDOUT
  */
 void flush(void);
 
 /**
- * Flushes <fd>
+ * Flushes the output-channel <fd>
  *
  * @param fd the file-descriptor
  */
@@ -154,6 +158,23 @@ char scanc(void);
 char fscanc(tFD fd);
 
 /**
+ * Puts the given character back to the buffer for STDIN. If the buffer is full, the character
+ * will be ignored.
+ *
+ * @param c the character
+ */
+void scanback(char c);
+
+/**
+ * Puts the given character back to the buffer for <fd>. If the buffer is full, the character
+ * will be ignored.
+ *
+ * @param fd the file-descriptor
+ * @param c the character
+ */
+void fscanback(tFD fd,char c);
+
+/**
  * Reads max. <max> from STDIN (or till EOF or newline) into the given line-buffer
  *
  * @param line the buffer
@@ -171,5 +192,53 @@ u32 scans(char *line,u32 max);
  * @return the number of read chars
  */
 u32 fscans(tFD fd,char *line,u32 max);
+
+/**
+ * Reads data in the specified format from STDIN. Supports:
+ * 	%d: signed integer
+ * 	%u: unsigned integer, base 10
+ * 	%o: unsigned integer, base 8
+ * 	%x: unsigned integer, base 16
+ * 	%b: unsigned integer, base 2
+ * 	%s: string
+ * 	%c: character
+ *
+ * Additionally you can specify the max. length:
+ * 	%2d
+ * 	%10s
+ *  ...
+ *
+ * @param fmt the format
+ * @return the number of matched variables
+ */
+u32 scanf(const char *fmt,...);
+
+/**
+ * Reads data in the specified format from <fd>. See scanf().
+ *
+ * @param fd the file-descriptor
+ * @param fmt the format
+ * @return the number of matched variables
+ */
+u32 fscanf(tFD fd,const char *fmt,...);
+
+/**
+ * Reads data in the specified format from STDIN with the given argument-list
+ *
+ * @param fmt the format
+ * @param ap the argument-list
+ * @return the number of matched variables
+ */
+u32 vscanf(const char *fmt,va_list ap);
+
+/**
+ * Reads data in the specified format from <fd> with the given argument-list
+ *
+ * @param fd the file-descriptor
+ * @param fmt the format
+ * @param ap the argument-list
+ * @return the number of matched variables
+ */
+u32 vfscanf(tFD fd,const char *fmt,va_list ap);
 
 #endif /* BUFIO_H_ */

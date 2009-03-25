@@ -59,10 +59,39 @@ int main(void) {
 	debugf("ret=%d\n",printu(0xABCDEF,16));
 	flush();*/
 
-	char buffer[12];
+	u32 res;
+	s32 u,d,e;
+	char str[11],ch;
+
+	prints("Enter '%2d/%3d': ");
+	flush();
+	res = scanf("%2d/%3d",&d,&e);
+	printf("res=%d, d=%d, e=%d\n",res,d,e);
+
+	prints("Enter '%b': ");
+	flush();
+	res = scanf("%b",&u);
+	printf("res=%d, u=%d\n",res,u);
+
+	prints("Enter '%x': ");
+	flush();
+	res = scanf("%x",&u);
+	printf("res=%d, u=%d\n",res,u);
+
+	prints("Enter '%o': ");
+	flush();
+	res = scanf("%o",&u);
+	printf("res=%d, u=%d\n",res,u);
+
+	prints("Enter '%c:%10s': ");
+	flush();
+	res = scanf("%c:%10s",&ch,str);
+	printf("res=%d, ch=%d, str=%s\n",res,ch,str);
+
+	/*char buffer[12];
 	printf("Please enter your name: ");
 	scans(buffer,12);
-	printf("Hello %s!\n",buffer);
+	printf("Hello %s!\n",buffer);*/
 
 	/*char buffer[32];
 	char *str = "Das ist mein String\n";

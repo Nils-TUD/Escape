@@ -4,17 +4,26 @@ senvmain.c: In function ‘main’:
 senvmain.c:135: warning: cast from pointer to integer of different size
 senvmain.c: At top level:
 senvmain.c:369: warning: ‘env_printAll’ defined but not used
+lgmain.c:14: warning: unused parameter ‘argc’
+lgmain.c:14: warning: unused parameter ‘argv’
+shmain.c:252: warning: unused parameter ‘sig’
+shmain.c:252: warning: unused parameter ‘data’
+shmain.c: In function ‘shell_readLine’:
+shmain.c:264: warning: unused variable ‘modifier’
+shmain.c:263: warning: unused variable ‘keycode’
+t2main.c: In function ‘main’:
+t2main.c:63: warning: unused variable ‘res’
 src/ksymbols.c: In function ‘ksym_print’:
 src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
 src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
 src/syscalls.c:324: warning: unused parameter ‘stack’
-src/vfs.c:699: warning: unused parameter ‘pid’
+src/vfs.c:705: warning: unused parameter ‘pid’
 src/vfsnode.c:249: warning: unused parameter ‘parent’
 ../src/ksymbols.c: In function ‘ksym_print’:
 ../src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
 ../src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used
 ../src/syscalls.c:324: warning: unused parameter ‘stack’
-../src/vfs.c:699: warning: unused parameter ‘pid’
+../src/vfs.c:705: warning: unused parameter ‘pid’
 ../src/vfsnode.c:249: warning: unused parameter ‘parent’
 tstring.c: In function ‘test_atoi’:
 tstring.c:86: warning: this decimal constant is unsigned only in ISO C90

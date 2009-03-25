@@ -59,7 +59,13 @@ int main(void) {
 	debugf("ret=%d\n",printu(0xABCDEF,16));
 	flush();*/
 
-	u32 res;
+	char str[200] = "TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST";
+	s32 res;
+
+	sprintf(str,"Huhu, p=%d, s=%x, bla=%s\n",12,0xABC,"string");
+	printf("str=%s\n",str);
+
+	/*u32 res;
 	s32 u,d,e;
 	char str[11],ch;
 
@@ -86,7 +92,7 @@ int main(void) {
 	prints("Enter '%c:%10s': ");
 	flush();
 	res = scanf("%c:%10s",&ch,str);
-	printf("res=%d, ch=%d, str=%s\n",res,ch,str);
+	printf("res=%d, ch=%d, str=%s\n",res,ch,str);*/
 
 	/*char buffer[12];
 	printf("Please enter your name: ");

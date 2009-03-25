@@ -112,6 +112,16 @@ s32 printf(const char *fmt,...);
 s32 fprintf(tFD fd,const char *fmt,...);
 
 /**
+ * Like printf(), but prints to the given string
+ *
+ * @param str the string to print to
+ * @param fmt the format
+ * @param ap the argument-list
+ * @return the number of written chars
+ */
+s32 sprintf(char *str,const char *fmt,...);
+
+/**
  * Like printf(), but lets you specify the argument-list
  *
  * @param fmt the format
@@ -129,6 +139,16 @@ s32 vprintf(const char *fmt,va_list ap);
  * @return the number of written chars
  */
 s32 vfprintf(tFD fd,const char *fmt,va_list ap);
+
+/**
+ * Like vprintf(), but prints to <str>
+ *
+ * @param str the string to print to
+ * @param fmt the format
+ * @param ap the argument-list
+ * @return the number of written chars
+ */
+s32 vsprintf(char *str,const char *fmt,va_list ap);
 
 /**
  * Flushes the output-channel of STDOUT

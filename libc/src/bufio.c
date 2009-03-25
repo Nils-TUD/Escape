@@ -15,24 +15,6 @@
 #include <stdarg.h>
 #include <sllist.h>
 
-/*
- * putchar		printc - fprintc
- * puts			prints - fprints
- * printn		printn - fprintn
- * printu		printu - fprintu
- * printf		printf - fprintf - sprintf
- * vprintf		vprintf - vfprintf - vsprintf
- *
- * sprintf
- *
- * readChar		scanc - fscanc
- * readLine		scanl - fscanl
- * scanf		scanf - fscanf - sscanf
- * 				vscanf - vfscanf - vsscanf
- *
- * flush
- */
-
 /* the number of entries in the hash-map */
 #define BUF_MAP_SIZE		8
 /* the size of the buffers */
@@ -48,23 +30,36 @@ typedef struct {
 	char out[OUT_BUFFER_SIZE];
 } sIOBuffer;
 
+/* function that prints a char to somewhere */
+typedef s32 (*fPrintChar)(void *ptr,char c);
+
 /**
- * Prints the given character to the buffer. If necessary the buffer is flushed
+ * Prints the given character into a buffer. If necessary the buffer is flushed
  *
- * @param buf the io-buffer
+ * @param ptr the io-buffer
  * @param c the character
  * @return the character or the error-code if failed
  */
-static s32 doFprintc(sIOBuffer *buf,char c);
+static s32 doFprintc(void *ptr,char c);
 
 /**
- * Prints the given string to the buffer
+ * Prints the given character into a string
  *
- * @param buf the io-buffer
+ * @param ptr the string
+ * @param c the character
+ * @return the character or the error-code if failed
+ */
+static s32 doSprintc(void *ptr,char c);
+
+/**
+ * Prints the given string
+ *
+ * @param ptr the io-buffer or the string to write to
+ * @param printFunc the function that prints a character
  * @param str the string
  * @return the number of printed chars
  */
-static s32 doFprints(sIOBuffer *buf,const char *str);
+static s32 doFprints(void *ptr,fPrintChar printFunc,const char *str);
 
 /**
  * Determines the width of the given string
@@ -75,13 +70,14 @@ static s32 doFprints(sIOBuffer *buf,const char *str);
 static u8 getswidth(const char *str);
 
 /**
- * Prints the given signed integer to the buffer
+ * Prints the given signed integer
  *
- * @param buf the io-buffer
+ * @param ptr the io-buffer or the string to write to
+ * @param printFunc the function that prints a character
  * @param n the number
  * @return the number of printed chars
  */
-static s32 doFprintn(sIOBuffer *buf,s32 n);
+static s32 doFprintn(void *ptr,fPrintChar printFunc,s32 n);
 
 /**
  * Determines the width of the given signed 32-bit integer in base 10
@@ -92,24 +88,26 @@ static s32 doFprintn(sIOBuffer *buf,s32 n);
 static u8 getnwidth(s32 n);
 
 /**
- * Prints the given unsigned integer to the given base to the buffer
+ * Prints the given unsigned integer to the given base
  *
- * @param buf the io-buffer
+ * @param ptr the io-buffer or the string to write to
+ * @param printFunc the function that prints a character
  * @param u the number
  * @param base the base (2 .. 16)
  * @return the number of printed chars
  */
-static s32 doFprintu(sIOBuffer *buf,s32 u,u8 base);
+static s32 doFprintu(void *ptr,fPrintChar printFunc,s32 u,u8 base);
 
 /**
  * Same as doFprintu(), but with small letters
  *
- * @param buf the io-buffer
+ * @param ptr the io-buffer or the string to write to
+ * @param printFunc the function that prints a character
  * @param u the number
  * @param base the base (2 .. 16)
  * @return the number of printed chars
  */
-static s32 doFprintuSmall(sIOBuffer *buf,u32 u,u8 base);
+static s32 doFprintuSmall(void *ptr,fPrintChar printFunc,u32 u,u8 base);
 
 /**
  * Determines the width of the given unsigned 32-bit integer in the given base
@@ -121,14 +119,15 @@ static s32 doFprintuSmall(sIOBuffer *buf,u32 u,u8 base);
 static u8 getuwidth(u32 n,u8 base);
 
 /**
- * printf() for the given buffer
+ * printf-implementation
  *
- * @param buf the io-buffer
+ * @param ptr the io-buffer or the string to write to
+ * @param printFunc the function that prints a character
  * @param fmt the format
  * @param ap the argument-list
  * @return the number of printed chars
  */
-static s32 doVfprintf(sIOBuffer *buf,const char *fmt,va_list ap);
+static s32 doVfprintf(void *ptr,fPrintChar printFunc,const char *fmt,va_list ap);
 
 /**
  * Reads one char from <buf>
@@ -206,16 +205,31 @@ s32 fprintf(tFD fd,const char *fmt,...) {
 	return count;
 }
 
+s32 sprintf(char *str,const char *fmt,...) {
+	s32 count;
+	va_list ap;
+	va_start(ap,fmt);
+	count = vsprintf(str,fmt,ap);
+	va_end(ap);
+	return count;
+}
+
 s32 vprintf(const char *fmt,va_list ap) {
 	return vfprintf(STDOUT_FILENO,fmt,ap);
 }
 
 s32 vfprintf(tFD fd,const char *fmt,va_list ap) {
-	sIOBuffer *buf;
-	buf = getBuffer(fd);
+	s32 res;
+	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	return doVfprintf(buf,fmt,ap);
+	res = doVfprintf(buf,doFprintc,fmt,ap);
+	doFlush(buf);
+	return res;
+}
+
+s32 vsprintf(char *str,const char *fmt,va_list ap) {
+	return doVfprintf(&str,doSprintc,fmt,ap);
 }
 
 s32 printc(char c) {
@@ -237,7 +251,7 @@ s32 fprints(tFD fd,const char *str) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	return doFprints(buf,str);
+	return doFprints(buf,doFprintc,str);
 }
 
 s32 printn(s32 n) {
@@ -248,7 +262,7 @@ s32 fprintn(tFD fd,s32 n) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	return doFprintn(buf,n);
+	return doFprintn(buf,doFprintc,n);
 }
 
 s32 printu(s32 u,u8 base) {
@@ -259,7 +273,7 @@ s32 fprintu(tFD fd,s32 u,u8 base) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	return doFprintu(buf,u,base);
+	return doFprintu(buf,doFprintc,u,base);
 }
 
 void flush(void) {
@@ -335,25 +349,34 @@ u32 vfscanf(tFD fd,const char *fmt,va_list ap) {
 	return doVfscanf(buf,fmt,ap);
 }
 
-static s32 doFprintc(sIOBuffer *buf,char c) {
+static s32 doFprintc(void *ptr,char c) {
+	sIOBuffer *buf = (sIOBuffer*)ptr;
 	if(buf->outPos >= OUT_BUFFER_SIZE)
 		doFlush(buf);
 	buf->out[buf->outPos++] = c;
 	return c;
 }
 
-static s32 doFprints(sIOBuffer *buf,const char *str) {
+static s32 doSprintc(void *ptr,char c) {
+	char **strPtr = (char**)ptr;
+	char *str = (char*)*strPtr;
+	*str = c;
+	(*strPtr)++;
+	return c;
+}
+
+static s32 doFprints(void *ptr,fPrintChar printFunc,const char *str) {
 	char c;
 	char *start = (char*)str;
 	while((c = *str)) {
 		/* handle escape */
 		if(c == '\033') {
-			doFprintc(buf,c);
-			doFprintc(buf,*++str);
-			doFprintc(buf,*++str);
+			printFunc(ptr,c);
+			printFunc(ptr,*++str);
+			printFunc(ptr,*++str);
 		}
 		else
-			doFprintc(buf,c);
+			printFunc(ptr,c);
 		str++;
 	}
 	return str - start;
@@ -367,18 +390,18 @@ static u8 getswidth(const char *str) {
 	return width;
 }
 
-static s32 doFprintn(sIOBuffer *buf,s32 n) {
+static s32 doFprintn(void *ptr,fPrintChar printFunc,s32 n) {
 	s32 c = 0;
 	if(n < 0) {
-		doFprintc(buf,'-');
+		printFunc(ptr,'-');
 		n = -n;
 		c++;
 	}
 
 	if(n >= 10) {
-		c += doFprintn(buf,n / 10);
+		c += doFprintn(ptr,printFunc,n / 10);
 	}
-	doFprintc(buf,'0' + n % 10);
+	printFunc(ptr,'0' + n % 10);
 	return c + 1;
 }
 
@@ -405,23 +428,23 @@ static u8 getuwidth(u32 n,u8 base) {
 	return width;
 }
 
-static s32 doFprintuSmall(sIOBuffer *buf,u32 u,u8 base) {
+static s32 doFprintuSmall(void *ptr,fPrintChar printFunc,u32 u,u8 base) {
 	s32 c = 0;
 	if(u >= base)
-		c += doFprintu(buf,u / base,base);
-	doFprintc(buf,hexCharsSmall[(u % base)]);
+		c += doFprintuSmall(ptr,printFunc,u / base,base);
+	printFunc(ptr,hexCharsSmall[(u % base)]);
 	return c + 1;
 }
 
-static s32 doFprintu(sIOBuffer *buf,s32 u,u8 base) {
+static s32 doFprintu(void *ptr,fPrintChar printFunc,s32 u,u8 base) {
 	s32 c = 0;
 	if(u >= base)
-		c += doFprintu(buf,u / base,base);
-	doFprintc(buf,hexCharsBig[(u % base)]);
+		c += doFprintu(ptr,printFunc,u / base,base);
+	printFunc(ptr,hexCharsBig[(u % base)]);
 	return c + 1;
 }
 
-static s32 doVfprintf(sIOBuffer *buf,const char *fmt,va_list ap) {
+static s32 doVfprintf(void *ptr,fPrintChar printFunc,const char *fmt,va_list ap) {
 	char c,b,pad,padchar;
 	char *s;
 	s32 n;
@@ -434,19 +457,20 @@ static s32 doVfprintf(sIOBuffer *buf,const char *fmt,va_list ap) {
 		while((c = *fmt++) != '%') {
 			/* handle escape */
 			if(c == '\033') {
-				doFprintc(buf,c);
-				doFprintc(buf,*fmt++);
-				doFprintc(buf,*fmt++);
+				printFunc(ptr,c);
+				printFunc(ptr,*fmt++);
+				printFunc(ptr,*fmt++);
 				count += 3;
 				continue;
 			}
 
 			/* finished? */
 			if(c == '\0') {
-				doFlush(buf);
+				/* strings have to be terminated */
+				printFunc(ptr,c);
 				return count;
 			}
-			doFprintc(buf,c);
+			printFunc(ptr,c);
 			count++;
 		}
 
@@ -472,11 +496,11 @@ static s32 doVfprintf(sIOBuffer *buf,const char *fmt,va_list ap) {
 				if(pad > 0) {
 					width = getnwidth(n);
 					while(width++ < pad) {
-						doFprintc(buf,padchar);
+						printFunc(ptr,padchar);
 						count++;
 					}
 				}
-				count += doFprintn(buf,n);
+				count += doFprintn(ptr,printFunc,n);
 				break;
 			/* unsigned integer */
 			case 'b':
@@ -489,14 +513,14 @@ static s32 doVfprintf(sIOBuffer *buf,const char *fmt,va_list ap) {
 				if(pad > 0) {
 					width = getuwidth(u,base);
 					while(width++ < pad) {
-						doFprintc(buf,padchar);
+						printFunc(ptr,padchar);
 						count++;
 					}
 				}
 				if(c == 'x')
-					count += doFprintuSmall(buf,u,base);
+					count += doFprintuSmall(ptr,printFunc,u,base);
 				else
-					count += doFprintu(buf,u,base);
+					count += doFprintu(ptr,printFunc,u,base);
 				break;
 			/* string */
 			case 's':
@@ -504,21 +528,21 @@ static s32 doVfprintf(sIOBuffer *buf,const char *fmt,va_list ap) {
 				if(pad > 0) {
 					width = getswidth(s);
 					while(width++ < pad) {
-						doFprintc(buf,padchar);
+						printFunc(ptr,padchar);
 						count++;
 					}
 				}
-				count += doFprints(buf,s);
+				count += doFprints(ptr,printFunc,s);
 				break;
 			/* character */
 			case 'c':
 				b = (char)va_arg(ap, u32);
-				doFprintc(buf,b);
+				printFunc(ptr,b);
 				count++;
 				break;
 			/* all other */
 			default:
-				doFprintc(buf,c);
+				printFunc(ptr,c);
 				count++;
 				break;
 		}

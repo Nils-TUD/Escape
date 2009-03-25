@@ -12,13 +12,13 @@ Available memory:
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x00000000024bd25b
+Clock cycles: 0x0000000002632917
 Initializing VFS...DONE
-Clock cycles: 0x00000000001373ac
+Clock cycles: 0x0000000000134cd3
 Initializing process-management...DONE
-Clock cycles: 0x00000000000df362
+Clock cycles: 0x00000000000ddb83
 Initializing IDT...DONE
-Clock cycles: 0x00000000000a69ef
+Clock cycles: 0x00000000000a9119
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
 Drives:
 	  Primary Master (present=1,sectors=10080)
@@ -30,20 +30,18 @@ Welcome to Escape v0.1!
 
 Try 'help' to see the current features :)
 
-file:/ # task2
-Enter '%2d/%3d': aaaaaaa
-res=0, d=0, e=40
-Enter '%b': res=0, u=0
-Enter '%x': res=1, u=876889153
-Enter '%o': j
-res=0, u=876889153
-Enter '%c:%10s': res=1, ch=106, str=ÿÿ¿d
-file:/ # task2
-Enter '%2d/%3d': a
-res=0, d=0, e=40
-Enter '%b': res=0, u=0
-Enter '%x': res=1, u=49
-Enter '%o': a
-res=0, u=49
-Enter '%c:%10s': res=1, ch=97, str=ÿÿ¿d
-file:/ # 
+file:/ # :
+
+PANIC: Assert 'stack != NULL' failed at src/syscalls.c, sysc_handle() line 266: 
+stack == NULL
+Caused by process 8 (file:/apps/shell)
+
+Kernel-Stacktrace:
+	  0xc0106ef0 -> 0xc0108038 (panic)
+	  0xc010131f -> 0xc0106ebc (sysc_handle)
+	  0xc01004ac -> 0xc0101111 (intrpt_handler)
+	  0x00003976 -> 0xc010049e (isrCommon)
+	  0x00000e8a -> 0xc0100050 (higherhalf)
+	  0x00000e34 -> 0xc0100050 (higherhalf)
+	  0x00000000 -> 0xc0100050 (higherhalf)
+User-Stacktrace:

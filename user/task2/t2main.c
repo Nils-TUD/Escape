@@ -17,8 +17,6 @@
 #include <heap.h>
 #include <messages.h>
 
-#include <test.h>
-#include <theap.h>
 #include <sllist.h>
 
 #if 0
@@ -45,7 +43,7 @@ static void logChar(char c) {
 }
 #endif
 
-int main(void) {
+int main(int argc,char **argv) {
 	/*debugf("ret=%d\n",printc('a'));
 	debugf("ret=%d\n",printc('b'));
 	debugf("ret=%d\n",printc('c'));
@@ -61,9 +59,19 @@ int main(void) {
 
 	char str[200] = "TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST";
 	s32 res;
+	u32 max;
 
-	sprintf(str,"Huhu, p=%d, s=%x, bla=%s\n",12,0xABC,"string");
-	printf("str=%s\n",str);
+	/*sprintf(str,"Huhu, p=%d, s=%x, bla=%s\n",12,0xABC,"string");
+	printf("str=%s\n",str);*/
+
+	for(max = 1; max < 31; max++) {
+		res = snprintf(str,max,"%s_%d_%x_%o_%b_%u_%c\n","hier",12,0x123,071,0xFF,841,'a');
+		printf("[max=%d] res=%d,str='%s'\n",max,res,str);
+	}
+
+	u32 m,d,y;
+	res = sscanf("12/4/89","%2d/%2d/%2d",&m,&d,&y);
+	printf("res=%d, Date: %02d/%02d/%02d\n",res,m,d,y);
 
 	/*u32 res;
 	s32 u,d,e;

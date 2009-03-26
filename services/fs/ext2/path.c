@@ -12,12 +12,13 @@
 #include "inode.h"
 #include "inodecache.h"
 #include "request.h"
+#include "file.h"
 
 tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
 	sCachedInode *cnode = NULL;
 	tInodeNo res;
 	char *p = path;
-	u32 pos;
+	u32 pos,blocks;
 
 	if(*p != '/')
 		return ERR_INVALID_PATH;
@@ -32,15 +33,17 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
 	pos = strchri(p,'/');
 	while(*p) {
 		sDirEntry *eBak;
-		sDirEntry *entry = (sDirEntry*)malloc(sizeof(u8) * BLOCK_SIZE(e));
+		sDirEntry *entry;
+		blocks = SECS_TO_BLOCKS(e,cnode->inode.blocks);
+		entry = (sDirEntry*)malloc(sizeof(u8) * BLOCK_SIZE(e) * blocks);
 		if(entry == NULL) {
 			ext2_icache_release(e,cnode);
 			return ERR_NOT_ENOUGH_MEM;
 		}
 
-		/* TODO a directory may have more blocks */
 		eBak = entry;
-		if(!ext2_readBlocks(e,(u8*)entry,cnode->inode.dBlocks[0],1)) {
+		if(ext2_readFile(e,cnode->inodeNo,(u8*)entry,0,cnode->inode.size) < 0) {
+			free(eBak);
 			ext2_icache_release(e,cnode);
 			return ERR_FS_READ_FAILED;
 		}
@@ -73,6 +76,8 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
 			}
 
 			/* to next dir-entry */
+			/* TODO the next entry might be in another block; so we should read a directory
+			 * block by block. atm we cause a page-fault in this case :/ */
 			entry = (sDirEntry*)((u8*)entry + entry->recLen);
 		}
 

@@ -10,6 +10,10 @@
 #include "request.h"
 #include "blockcache.h"
 
+/* for statistics */
+static u32 cacheHits = 0;
+static u32 cacheMisses = 0;
+
 void ext2_bcache_init(sExt2 *e) {
 	u32 i;
 	sBCacheEntry *bentry = e->blockCache;
@@ -25,13 +29,15 @@ void ext2_bcache_init(sExt2 *e) {
 u8 *ext2_bcache_request(sExt2 *e,u32 blockNo) {
 	sBCacheEntry *block;
 
-	/* search for the inode. perhaps it's already in cache */
+	/* search for the block. perhaps it's already in cache */
 	u32 i;
 	sBCacheEntry *bfree = NULL;
 	sBCacheEntry *bentry = e->blockCache;
 	for(i = 0; i < BLOCK_CACHE_SIZE; i++) {
-		if(bentry->blockNo == blockNo)
+		if(bentry->blockNo == blockNo) {
+			cacheHits++;
 			return bentry->buffer;
+		}
 		if(bfree == NULL && bentry->buffer == NULL)
 			bfree = bentry;
 		bentry++;
@@ -55,8 +61,16 @@ u8 *ext2_bcache_request(sExt2 *e,u32 blockNo) {
 	block->blockNo = blockNo;
 
 	/* now read from disk */
-	/* TODO error-handling */
-	ext2_readBlocks(e,block->buffer,blockNo,1);
+	if(!ext2_readBlocks(e,block->buffer,blockNo,1)) {
+		block->blockNo = 0;
+		return NULL;
+	}
 
+	cacheMisses++;
 	return block->buffer;
+}
+
+void ext2_bcache_printStats(void) {
+	debugf("[BlockCache] Hits: %d, Misses: %d; %d %%\n",cacheHits,cacheMisses,
+			(u32)(100 / ((float)(cacheMisses + cacheHits) / cacheHits)));
 }

@@ -14,8 +14,8 @@
 #	include "../../libc/h/common.h"
 #	include "../../libc/h/debug.h"
 
-#	define testPrintf	debugf
-#	define testvPrintf	vdebugf
+#	define testPrintf	printf
+#	define testvPrintf	vprintf
 #endif
 
 #include "../h/test.h"
@@ -87,7 +87,7 @@ bool test_assertFalse(bool received) {
 bool test_assertPtr(const void *received,const void *expected) {
 	assertCount++;
 	if(expected != received) {
-		test_caseFailed("Assert %d: Pointers are not equal: 0x%x != 0x%x",assertCount,
+		test_caseFailed("Assert %d: Pointers are not equal: Expected 0x%x, got 0x%x",assertCount,
 				expected,received);
 		return false;
 	}
@@ -98,7 +98,7 @@ bool test_assertPtr(const void *received,const void *expected) {
 bool test_assertInt(s32 received,s32 expected) {
 	assertCount++;
 	if(expected != received) {
-		test_caseFailed("Assert %d: Integers are not equal: %d != %d",assertCount,
+		test_caseFailed("Assert %d: Integers are not equal: Expected %d, got %d",assertCount,
 				expected,received);
 		return false;
 	}
@@ -109,7 +109,7 @@ bool test_assertInt(s32 received,s32 expected) {
 bool test_assertUInt(u32 received,u32 expected) {
 	assertCount++;
 	if(expected != received) {
-		test_caseFailed("Assert %d: Integers are not equal: 0x%x != 0x%x",assertCount,
+		test_caseFailed("Assert %d: Integers are not equal: Expected 0x%x, got 0x%x",assertCount,
 				expected,received);
 		return false;
 	}
@@ -123,7 +123,7 @@ bool test_assertStr(const char *received,const char *expected) {
 	assertCount++;
 	while(*s1 && *s2) {
 		if(*s1 != *s2) {
-			test_caseFailed("Assert %d: Strings are not equal: '%s' != '%s'",assertCount,
+			test_caseFailed("Assert %d: Strings are not equal: Expected '%s', got '%s'",assertCount,
 					expected,received);
 			return false;
 		}
@@ -131,7 +131,7 @@ bool test_assertStr(const char *received,const char *expected) {
 		s2++;
 	}
 	if(*s1 != *s2) {
-		test_caseFailed("Assert %d: Strings are not equal: '%s' != '%s'",assertCount,
+		test_caseFailed("Assert %d: Strings are not equal: Expected '%s', got '%s'",assertCount,
 				expected,received);
 		return false;
 	}

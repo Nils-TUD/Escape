@@ -23,7 +23,7 @@ int main(int argc,char *argv[]) {
 		}
 	}
 	else if(argc == 2)
-		path = argv[1];
+		path = abspath(argv[1]);
 	else {
 		printf("Usage: %s [<dir>]\n",argv[0]);
 		return 1;

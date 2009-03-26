@@ -21,7 +21,7 @@
 #define EXT2_DIRBLOCK_COUNT					12
 
 #define INODE_CACHE_SIZE					64
-#define BLOCK_CACHE_SIZE					64
+#define BLOCK_CACHE_SIZE					256
 
 /* magic number */
 #define EXT2_SUPER_MAGIC					0xEF53

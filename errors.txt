@@ -11,8 +11,8 @@ shmain.c:252: warning: unused parameter ‘data’
 shmain.c: In function ‘shell_readLine’:
 shmain.c:264: warning: unused variable ‘modifier’
 shmain.c:263: warning: unused variable ‘keycode’
-t2main.c: In function ‘main’:
-t2main.c:63: warning: unused variable ‘res’
+t2main.c:48: warning: unused parameter ‘argc’
+t2main.c:48: warning: unused parameter ‘argv’
 src/ksymbols.c: In function ‘ksym_print’:
 src/ksymbols.c:22: warning: comparison of unsigned expression < 0 is always false
 src/mm.c:191: warning: ‘mm_isFrameFree’ defined but not used

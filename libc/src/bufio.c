@@ -21,45 +21,41 @@
 #define IN_BUFFER_SIZE		10
 #define OUT_BUFFER_SIZE		256
 
-/* an io-buffer for a file-descriptor */
+#define BUF_TYPE_STRING		0
+#define BUF_TYPE_FILE		1
+
+/* buffer that is used by printf, sprintf and so on */
 typedef struct {
 	tFD fd;
-	u16 inPos;
-	u16 outPos;
-	char in[IN_BUFFER_SIZE];
-	char out[OUT_BUFFER_SIZE];
+	u8 type;
+	s32 pos;
+	s32 max;
+	char *str;
+} sBuffer;
+
+/* an io-buffer for a file-descriptor */
+typedef struct {
+	sBuffer in;
+	sBuffer out;
 } sIOBuffer;
 
-/* function that prints a char to somewhere */
-typedef s32 (*fPrintChar)(void *ptr,char c);
-
 /**
- * Prints the given character into a buffer. If necessary the buffer is flushed
+ * Prints the given character into a buffer
  *
- * @param ptr the io-buffer
+ * @param buf the buffer to write to
  * @param c the character
- * @return the character or the error-code if failed
+ * @return the character or IO_ERROR if failed
  */
-static s32 doFprintc(void *ptr,char c);
-
-/**
- * Prints the given character into a string
- *
- * @param ptr the string
- * @param c the character
- * @return the character or the error-code if failed
- */
-static s32 doSprintc(void *ptr,char c);
+static char doFprintc(sBuffer *buf,char c);
 
 /**
  * Prints the given string
  *
- * @param ptr the io-buffer or the string to write to
- * @param printFunc the function that prints a character
+ * @param buf the buffer to write to
  * @param str the string
  * @return the number of printed chars
  */
-static s32 doFprints(void *ptr,fPrintChar printFunc,const char *str);
+static u32 doFprints(sBuffer *buf,const char *str);
 
 /**
  * Determines the width of the given string
@@ -72,12 +68,11 @@ static u8 getswidth(const char *str);
 /**
  * Prints the given signed integer
  *
- * @param ptr the io-buffer or the string to write to
- * @param printFunc the function that prints a character
+ * @param buf the buffer to write to
  * @param n the number
  * @return the number of printed chars
  */
-static s32 doFprintn(void *ptr,fPrintChar printFunc,s32 n);
+static u32 doFprintn(sBuffer *buf,s32 n);
 
 /**
  * Determines the width of the given signed 32-bit integer in base 10
@@ -90,24 +85,22 @@ static u8 getnwidth(s32 n);
 /**
  * Prints the given unsigned integer to the given base
  *
- * @param ptr the io-buffer or the string to write to
- * @param printFunc the function that prints a character
+ * @param buf the buffer to write to
  * @param u the number
  * @param base the base (2 .. 16)
  * @return the number of printed chars
  */
-static s32 doFprintu(void *ptr,fPrintChar printFunc,s32 u,u8 base);
+static u32 doFprintu(sBuffer *buf,s32 u,u8 base);
 
 /**
  * Same as doFprintu(), but with small letters
  *
- * @param ptr the io-buffer or the string to write to
- * @param printFunc the function that prints a character
+ * @param buf the buffer to write to
  * @param u the number
  * @param base the base (2 .. 16)
  * @return the number of printed chars
  */
-static s32 doFprintuSmall(void *ptr,fPrintChar printFunc,u32 u,u8 base);
+static u32 doFprintuSmall(sBuffer *buf,u32 u,u8 base);
 
 /**
  * Determines the width of the given unsigned 32-bit integer in the given base
@@ -121,29 +114,29 @@ static u8 getuwidth(u32 n,u8 base);
 /**
  * printf-implementation
  *
- * @param ptr the io-buffer or the string to write to
- * @param printFunc the function that prints a character
+ * @param buf the buffer to write to
  * @param fmt the format
  * @param ap the argument-list
  * @return the number of printed chars
  */
-static s32 doVfprintf(void *ptr,fPrintChar printFunc,const char *fmt,va_list ap);
+static u32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap);
 
 /**
  * Reads one char from <buf>
  *
  * @param buf the buffer
- * @return the character or 0
+ * @return the character or IO_ERROR
  */
-static char doFscanc(sIOBuffer *buf);
+static char doFscanc(sBuffer *buf);
 
 /**
  * Puts the given character back to the scan-buffer
  *
  * @param buf the buffer
  * @param c the character
+ * @param 0 on success, IO_ERROR on error
  */
-static void doFscanback(sIOBuffer *buf,char c);
+static s32 doFscanback(sBuffer *buf,char c);
 
 /**
  * Reads one line from <buf> into <line>.
@@ -153,7 +146,7 @@ static void doFscanback(sIOBuffer *buf,char c);
  * @param max the max chars to read
  * @return the number of read chars
  */
-static u32 doFscans(sIOBuffer *buf,char *line,u32 max);
+static u32 doFscans(sBuffer *buf,char *line,u32 max);
 
 /**
  * scanf() for the given buffer
@@ -163,7 +156,7 @@ static u32 doFscans(sIOBuffer *buf,char *line,u32 max);
  * @param ap the argument-list
  * @return the number of filled vars
  */
-static s32 doVfscanf(sIOBuffer *buf,const char *fmt,va_list ap);
+static u32 doVfscanf(sBuffer *buf,const char *fmt,va_list ap);
 
 /**
  * Returns the io-buffer for the given file-desc. If it does not exist it will be created.
@@ -178,7 +171,7 @@ static sIOBuffer *getBuffer(tFD fd);
  *
  * @param buf the buffer
  */
-static void doFlush(sIOBuffer *buf);
+static void doFlush(sBuffer *buf);
 
 /* for printu() */
 static char hexCharsBig[] = "0123456789ABCDEF";
@@ -187,8 +180,8 @@ static char hexCharsSmall[] = "0123456789abcdef";
 /* buffer for the different file-descriptors */
 static sSLList *buffers[BUF_MAP_SIZE] = {NULL};
 
-s32 printf(const char *fmt,...) {
-	s32 count;
+u32 printf(const char *fmt,...) {
+	u32 count;
 	va_list ap;
 	va_start(ap,fmt);
 	count = vfprintf(STDOUT_FILENO,fmt,ap);
@@ -196,8 +189,8 @@ s32 printf(const char *fmt,...) {
 	return count;
 }
 
-s32 fprintf(tFD fd,const char *fmt,...) {
-	s32 count;
+u32 fprintf(tFD fd,const char *fmt,...) {
+	u32 count;
 	va_list ap;
 	va_start(ap,fmt);
 	count = vfprintf(fd,fmt,ap);
@@ -205,75 +198,97 @@ s32 fprintf(tFD fd,const char *fmt,...) {
 	return count;
 }
 
-s32 sprintf(char *str,const char *fmt,...) {
-	s32 count;
+u32 sprintf(char *str,const char *fmt,...) {
+	u32 count;
 	va_list ap;
 	va_start(ap,fmt);
-	count = vsprintf(str,fmt,ap);
+	count = vsnprintf(str,-1,fmt,ap);
 	va_end(ap);
 	return count;
 }
 
-s32 vprintf(const char *fmt,va_list ap) {
+u32 snprintf(char *str,u32 max,const char *fmt,...) {
+	u32 count;
+	va_list ap;
+	va_start(ap,fmt);
+	count = vsnprintf(str,max,fmt,ap);
+	va_end(ap);
+	return count;
+}
+
+u32 vprintf(const char *fmt,va_list ap) {
 	return vfprintf(STDOUT_FILENO,fmt,ap);
 }
 
-s32 vfprintf(tFD fd,const char *fmt,va_list ap) {
-	s32 res;
+u32 vfprintf(tFD fd,const char *fmt,va_list ap) {
+	u32 res;
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	res = doVfprintf(buf,doFprintc,fmt,ap);
-	doFlush(buf);
+	res = doVfprintf(&(buf->out),fmt,ap);
+	doFlush(&(buf->out));
 	return res;
 }
 
-s32 vsprintf(char *str,const char *fmt,va_list ap) {
-	return doVfprintf(&str,doSprintc,fmt,ap);
+u32 vsprintf(char *str,const char *fmt,va_list ap) {
+	return vsnprintf(str,-1,fmt,ap);
 }
 
-s32 printc(char c) {
+u32 vsnprintf(char *str,u32 max,const char *fmt,va_list ap) {
+	sBuffer buf = {
+		.type = BUF_TYPE_STRING,
+		.str = str,
+		.pos = 0,
+		.max = max
+	};
+	u32 res = doVfprintf(&buf,fmt,ap);
+	/* terminate */
+	buf.str[buf.pos] = '\0';
+	return res;
+}
+
+char printc(char c) {
 	return fprintc(STDOUT_FILENO,c);
 }
 
-s32 fprintc(tFD fd,char c) {
+char fprintc(tFD fd,char c) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	return doFprintc(buf,c);
+	return doFprintc(&(buf->out),c);
 }
 
-s32 prints(const char *str) {
+u32 prints(const char *str) {
 	return fprints(STDOUT_FILENO,str);
 }
 
-s32 fprints(tFD fd,const char *str) {
+u32 fprints(tFD fd,const char *str) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	return doFprints(buf,doFprintc,str);
+	return doFprints(&(buf->out),str);
 }
 
-s32 printn(s32 n) {
+u32 printn(s32 n) {
 	return fprintn(STDOUT_FILENO,n);
 }
 
-s32 fprintn(tFD fd,s32 n) {
+u32 fprintn(tFD fd,s32 n) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	return doFprintn(buf,doFprintc,n);
+	return doFprintn(&(buf->out),n);
 }
 
-s32 printu(s32 u,u8 base) {
+u32 printu(s32 u,u8 base) {
 	return fprintu(STDOUT_FILENO,u,base);
 }
 
-s32 fprintu(tFD fd,s32 u,u8 base) {
+u32 fprintu(tFD fd,s32 u,u8 base) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	return doFprintu(buf,doFprintc,u,base);
+	return doFprintu(&(buf->out),u,base);
 }
 
 void flush(void) {
@@ -284,7 +299,7 @@ void fflush(tFD fd) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return;
-	doFlush(buf);
+	doFlush(&(buf->out));
 }
 
 char scanc(void) {
@@ -295,18 +310,18 @@ char fscanc(tFD fd) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return 0;
-	return doFscanc(buf);
+	return doFscanc(&(buf->in));
 }
 
-void scanback(char c) {
-	fscanback(STDIN_FILENO,c);
+s32 scanback(char c) {
+	return fscanback(STDIN_FILENO,c);
 }
 
-void fscanback(tFD fd,char c) {
+s32 fscanback(tFD fd,char c) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return;
-	doFscanback(buf,c);
+	return doFscanback(&(buf->in),c);
 }
 
 u32 scans(char *line,u32 max) {
@@ -317,7 +332,7 @@ u32 fscans(tFD fd,char *line,u32 max) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return 0;
-	return doFscans(buf,line,max);
+	return doFscans(&(buf->in),line,max);
 }
 
 u32 scanf(const char *fmt,...) {
@@ -338,6 +353,15 @@ u32 fscanf(tFD fd,const char *fmt,...) {
 	return res;
 }
 
+u32 sscanf(const char *str,const char *fmt,...) {
+	u32 res;
+	va_list ap;
+	va_start(ap,fmt);
+	res = vsscanf(str,fmt,ap);
+	va_end(ap);
+	return res;
+}
+
 u32 vscanf(const char *fmt,va_list ap) {
 	return vfscanf(STDIN_FILENO,fmt,ap);
 }
@@ -346,37 +370,47 @@ u32 vfscanf(tFD fd,const char *fmt,va_list ap) {
 	sIOBuffer *buf = getBuffer(fd);
 	if(buf == NULL)
 		return 0;
-	return doVfscanf(buf,fmt,ap);
+	return doVfscanf(&(buf->in),fmt,ap);
 }
 
-static s32 doFprintc(void *ptr,char c) {
-	sIOBuffer *buf = (sIOBuffer*)ptr;
-	if(buf->outPos >= OUT_BUFFER_SIZE)
-		doFlush(buf);
-	buf->out[buf->outPos++] = c;
+u32 vsscanf(const char *str,const char *fmt,va_list ap) {
+	sBuffer buf = {
+		.type = BUF_TYPE_STRING,
+		.pos = 0,
+		.max = -1,
+		.str = (char*)str
+	};
+	return doVfscanf(&buf,fmt,ap);
+}
+
+static char doFprintc(sBuffer *buf,char c) {
+	if(buf->max != -1 && buf->pos >= buf->max) {
+		if(buf->type == BUF_TYPE_FILE)
+			doFlush(buf);
+		else
+			return IO_ERROR;
+	}
+	buf->str[buf->pos++] = c;
 	return c;
 }
 
-static s32 doSprintc(void *ptr,char c) {
-	char **strPtr = (char**)ptr;
-	char *str = (char*)*strPtr;
-	*str = c;
-	(*strPtr)++;
-	return c;
-}
-
-static s32 doFprints(void *ptr,fPrintChar printFunc,const char *str) {
+static u32 doFprints(sBuffer *buf,const char *str) {
 	char c;
 	char *start = (char*)str;
 	while((c = *str)) {
 		/* handle escape */
 		if(c == '\033') {
-			printFunc(ptr,c);
-			printFunc(ptr,*++str);
-			printFunc(ptr,*++str);
+			if(doFprintc(buf,c) == IO_ERROR)
+				break;
+			if(doFprintc(buf,*++str) == IO_ERROR)
+				break;
+			if(doFprintc(buf,*++str) == IO_ERROR)
+				break;
 		}
-		else
-			printFunc(ptr,c);
+		else {
+			if(doFprintc(buf,c) == IO_ERROR)
+				break;
+		}
 		str++;
 	}
 	return str - start;
@@ -390,18 +424,20 @@ static u8 getswidth(const char *str) {
 	return width;
 }
 
-static s32 doFprintn(void *ptr,fPrintChar printFunc,s32 n) {
-	s32 c = 0;
+static u32 doFprintn(sBuffer *buf,s32 n) {
+	u32 c = 0;
 	if(n < 0) {
-		printFunc(ptr,'-');
+		if(doFprintc(buf,'-') == IO_ERROR)
+			return c;
 		n = -n;
 		c++;
 	}
 
 	if(n >= 10) {
-		c += doFprintn(ptr,printFunc,n / 10);
+		c += doFprintn(buf,n / 10);
 	}
-	printFunc(ptr,'0' + n % 10);
+	if(doFprintc(buf,'0' + n % 10) == IO_ERROR)
+		return c;
 	return c + 1;
 }
 
@@ -428,49 +464,54 @@ static u8 getuwidth(u32 n,u8 base) {
 	return width;
 }
 
-static s32 doFprintuSmall(void *ptr,fPrintChar printFunc,u32 u,u8 base) {
-	s32 c = 0;
+static u32 doFprintuSmall(sBuffer *buf,u32 u,u8 base) {
+	u32 c = 0;
 	if(u >= base)
-		c += doFprintuSmall(ptr,printFunc,u / base,base);
-	printFunc(ptr,hexCharsSmall[(u % base)]);
+		c += doFprintuSmall(buf,u / base,base);
+	if(doFprintc(buf,hexCharsSmall[(u % base)]) == IO_ERROR)
+		return c;
 	return c + 1;
 }
 
-static s32 doFprintu(void *ptr,fPrintChar printFunc,s32 u,u8 base) {
-	s32 c = 0;
+static u32 doFprintu(sBuffer *buf,s32 u,u8 base) {
+	u32 c = 0;
 	if(u >= base)
-		c += doFprintu(ptr,printFunc,u / base,base);
-	printFunc(ptr,hexCharsBig[(u % base)]);
+		c += doFprintu(buf,u / base,base);
+	if(doFprintc(buf,hexCharsBig[(u % base)]) == IO_ERROR)
+		return c;
 	return c + 1;
 }
 
-static s32 doVfprintf(void *ptr,fPrintChar printFunc,const char *fmt,va_list ap) {
+static u32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
 	char c,b,pad,padchar;
 	char *s;
 	s32 n;
 	u32 u;
 	u8 width,base;
-	s32 count = 0;
+	u32 count = 0;
 
 	while(1) {
 		/* wait for a '%' */
 		while((c = *fmt++) != '%') {
 			/* handle escape */
 			if(c == '\033') {
-				printFunc(ptr,c);
-				printFunc(ptr,*fmt++);
-				printFunc(ptr,*fmt++);
-				count += 3;
+				if(doFprintc(buf,c) == IO_ERROR)
+					return count;
+				count++;
+				if(doFprintc(buf,*fmt++) == IO_ERROR)
+					return count;
+				count++;
+				if(doFprintc(buf,*fmt++) == IO_ERROR)
+					return count;
+				count++;
 				continue;
 			}
 
 			/* finished? */
-			if(c == '\0') {
-				/* strings have to be terminated */
-				printFunc(ptr,c);
+			if(c == '\0')
 				return count;
-			}
-			printFunc(ptr,c);
+			if(doFprintc(buf,c) == IO_ERROR)
+				return count;
 			count++;
 		}
 
@@ -496,11 +537,12 @@ static s32 doVfprintf(void *ptr,fPrintChar printFunc,const char *fmt,va_list ap)
 				if(pad > 0) {
 					width = getnwidth(n);
 					while(width++ < pad) {
-						printFunc(ptr,padchar);
+						if(doFprintc(buf,padchar) == IO_ERROR)
+							return count;
 						count++;
 					}
 				}
-				count += doFprintn(ptr,printFunc,n);
+				count += doFprintn(buf,n);
 				break;
 			/* unsigned integer */
 			case 'b':
@@ -509,18 +551,19 @@ static s32 doVfprintf(void *ptr,fPrintChar printFunc,const char *fmt,va_list ap)
 			case 'x':
 			case 'X':
 				u = va_arg(ap, u32);
-				base = c == 'o' ? 8 : (c == 'x' ? 16 : (c == 'b' ? 2 : 10));
+				base = c == 'o' ? 8 : ((c == 'x' || c == 'X') ? 16 : (c == 'b' ? 2 : 10));
 				if(pad > 0) {
 					width = getuwidth(u,base);
 					while(width++ < pad) {
-						printFunc(ptr,padchar);
+						if(doFprintc(buf,padchar) == IO_ERROR)
+							return count;
 						count++;
 					}
 				}
 				if(c == 'x')
-					count += doFprintuSmall(ptr,printFunc,u,base);
+					count += doFprintuSmall(buf,u,base);
 				else
-					count += doFprintu(ptr,printFunc,u,base);
+					count += doFprintu(buf,u,base);
 				break;
 			/* string */
 			case 's':
@@ -528,67 +571,84 @@ static s32 doVfprintf(void *ptr,fPrintChar printFunc,const char *fmt,va_list ap)
 				if(pad > 0) {
 					width = getswidth(s);
 					while(width++ < pad) {
-						printFunc(ptr,padchar);
+						if(doFprintc(buf,padchar) == IO_ERROR)
+							return count;
 						count++;
 					}
 				}
-				count += doFprints(ptr,printFunc,s);
+				count += doFprints(buf,s);
 				break;
 			/* character */
 			case 'c':
 				b = (char)va_arg(ap, u32);
-				printFunc(ptr,b);
+				if(doFprintc(buf,b) == IO_ERROR)
+					return count;
 				count++;
 				break;
 			/* all other */
 			default:
-				printFunc(ptr,c);
+				if(doFprintc(buf,c) == IO_ERROR)
+					return count;
 				count++;
 				break;
 		}
 	}
 }
 
-static char doFscanc(sIOBuffer *buf) {
-	if(buf->inPos > 0)
-		return buf->in[--(buf->inPos)];
+static char doFscanc(sBuffer *buf) {
+	/* file */
+	if(buf->type == BUF_TYPE_FILE) {
+		char c;
+		if(buf->pos > 0)
+			return buf->str[--(buf->pos)];
 
-	char c;
-	if(read(buf->fd,&c,sizeof(char)) <= 0)
+		if(read(buf->fd,&c,sizeof(char)) <= 0)
+			return IO_ERROR;
+		return c;
+	}
+
+	/* string */
+	if(buf->str[buf->pos] == '\0')
+		return IO_ERROR;
+	return buf->str[(buf->pos)++];
+}
+
+static s32 doFscanback(sBuffer *buf,char c) {
+	if(buf->type == BUF_TYPE_FILE) {
+		if(buf->pos >= IN_BUFFER_SIZE)
+			return IO_ERROR;
+		buf->str[(buf->pos)++] = c;
 		return 0;
-	return c;
+	}
+	else if(buf->pos > 0) {
+		buf->str[--(buf->pos)] = c;
+		return 0;
+	}
+	return IO_ERROR;
 }
 
-static void doFscanback(sIOBuffer *buf,char c) {
-	/* ignore scanBacks if the buffer is full */
-	/* TODO better way? */
-	if(buf->inPos >= IN_BUFFER_SIZE)
-		return;
-	buf->in[(buf->inPos)++] = c;
-}
-
-static u32 doFscans(sIOBuffer *buf,char *line,u32 max) {
+static u32 doFscans(sBuffer *buf,char *line,u32 max) {
 	char c;
 	char *start = line;
 	/* wait for one char left (\0) or a newline */
-	while(max-- > 1 && (c = doFscanc(buf)) && c != '\n')
+	while(max-- > 1 && (c = doFscanc(buf)) != IO_ERROR && c != '\n')
 		*line++ = c;
 	/* terminate */
 	*line = '\0';
 	return line - start;
 }
 
-static s32 doVfscanf(sIOBuffer *buf,const char *fmt,va_list ap) {
-	char *s,c,rc = 0,length;
+static u32 doVfscanf(sBuffer *buf,const char *fmt,va_list ap) {
+	char *s,c,tc,rc = 0,length;
 	const char *numTable = "0123456789abcdef";
-	s32 *n,count = 0;
-	u32 *u,x;
+	s32 *n;
+	u32 *u,x,count = 0;
 	u8 base;
 
 	while(1) {
 		/* wait for a '%' */
 		while((c = *fmt++) != '%') {
-			if(c != doFscanc(buf))
+			if(c != (rc = doFscanc(buf)) || rc == IO_ERROR)
 				return count;
 			/* finished? */
 			if(c == '\0')
@@ -598,9 +658,12 @@ static s32 doVfscanf(sIOBuffer *buf,const char *fmt,va_list ap) {
 		/* skip whitespace */
 		do {
 			rc = doFscanc(buf);
+			if(rc == IO_ERROR)
+				return count;
 		}
 		while(rc == ' ' || rc == '\t');
-		doFscanback(buf,rc);
+		if(doFscanback(buf,rc) == IO_ERROR)
+			return count;
 
 		/* read length */
 		length = 0;
@@ -643,26 +706,38 @@ static s32 doVfscanf(sIOBuffer *buf,const char *fmt,va_list ap) {
 				/* handle '-' */
 				if(c == 'd') {
 					rc = doFscanc(buf);
+					if(rc == IO_ERROR)
+						return count;
 					if(rc == '-') {
 						neg = true;
 						length--;
 					}
-					else
-						doFscanback(buf,rc);
+					else {
+						if(doFscanback(buf,rc) == IO_ERROR)
+							return count;
+					}
 				}
 
 				/* read until an invalid char is found or the max length is reached */
 				x = 0;
 				while(length != 0) {
 					rc = doFscanc(buf);
-					if(rc >= numTable[0] && rc <= numTable[base - 1]) {
-						val = val * base + (rc - numTable[0]);
+					/* IO_ERROR is ok if the stream ends and we've already got a valid number */
+					if(rc == IO_ERROR)
+						break;
+					tc = tolower(rc);
+					if(tc >= '0' && tc <= numTable[base - 1]) {
+						if(base > 10 && tc >= 'a')
+							val = val * base + (10 + tc - 'a');
+						else
+							val = val * base + (tc - '0');
 						if(length > 0)
 							length--;
 						x++;
 					}
 					else {
-						doFscanback(buf,rc);
+						if(doFscanback(buf,rc) == IO_ERROR)
+							return count;
 						break;
 					}
 				}
@@ -689,13 +764,16 @@ static s32 doVfscanf(sIOBuffer *buf,const char *fmt,va_list ap) {
 				s = va_arg(ap, char*);
 				while(length != 0) {
 					rc = doFscanc(buf);
+					if(rc == IO_ERROR)
+						break;
 					if(!isspace(rc)) {
 						*s++ = rc;
 						if(length > 0)
 							length--;
 					}
 					else {
-						doFscanback(buf,rc);
+						if(doFscanback(buf,rc) == IO_ERROR)
+							return count;
 						break;
 					}
 				}
@@ -706,7 +784,10 @@ static s32 doVfscanf(sIOBuffer *buf,const char *fmt,va_list ap) {
 			/* character */
 			case 'c':
 				s = va_arg(ap, char*);
-				*s = doFscanc(buf);
+				rc = doFscanc(buf);
+				if(rc == IO_ERROR)
+					return count;
+				*s = rc;
 				count++;
 				break;
 
@@ -727,7 +808,8 @@ static sIOBuffer *getBuffer(tFD fd) {
 	if(list != NULL) {
 		for(n = sll_begin(list); n != NULL; n = n->next) {
 			buf = (sIOBuffer*)n->data;
-			if(buf->fd == fd)
+			/* we can use in.fd here because in.fd and out.fd is always the same */
+			if(buf->in.fd == fd)
 				return buf;
 		}
 	}
@@ -742,17 +824,37 @@ static sIOBuffer *getBuffer(tFD fd) {
 	if(buf == NULL)
 		return NULL;
 
-	buf->fd = fd;
-	buf->inPos = 0;
-	buf->outPos = 0;
+	/* init in-buffer */
+	buf->in.fd = fd;
+	buf->in.type = BUF_TYPE_FILE;
+	buf->in.pos = 0;
+	buf->in.max = IN_BUFFER_SIZE;
+	buf->in.str = (char*)malloc(IN_BUFFER_SIZE + 1);
+	if(buf->in.str == NULL) {
+		free(buf);
+		return NULL;
+	}
+
+	/* init out-buffer */
+	buf->out.fd = fd;
+	buf->out.type = BUF_TYPE_FILE;
+	buf->out.pos = 0;
+	buf->out.max = OUT_BUFFER_SIZE;
+	buf->out.str = (char*)malloc(OUT_BUFFER_SIZE + 1);
+	if(buf->out.str == NULL) {
+		free(buf->in.str);
+		free(buf);
+		return NULL;
+	}
+
 	sll_append(list,buf);
 	return buf;
 }
 
-static void doFlush(sIOBuffer *buf) {
-	if(buf->outPos > 0) {
-		write(buf->fd,buf->out,buf->outPos * sizeof(char));
-		buf->outPos = 0;
+static void doFlush(sBuffer *buf) {
+	if(buf->type == BUF_TYPE_FILE && buf->pos > 0) {
+		write(buf->fd,buf->str,buf->pos * sizeof(char));
+		buf->pos = 0;
 		/* a process switch improves the performance by far :) */
 		yield();
 	}

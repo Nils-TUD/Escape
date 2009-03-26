@@ -13,6 +13,10 @@
 #include "request.h"
 #include "inodecache.h"
 
+/* for statistics */
+static u32 cacheHits = 0;
+static u32 cacheMisses = 0;
+
 void ext2_icache_init(sExt2 *e) {
 	u32 i;
 	sCachedInode *inode = e->inodeCache;
@@ -39,6 +43,7 @@ sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 	for(i = 0; i < INODE_CACHE_SIZE; i++) {
 		if(inode->inodeNo == no) {
 			inode->refs++;
+			cacheHits++;
 			return inode;
 		}
 		else if(ifree == NULL && inode->inodeNo == EXT2_BAD_INO)
@@ -72,6 +77,7 @@ sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 	memcpy(&(inode->inode),buffer + (noInGroup % inodesPerBlock),sizeof(sInode));
 	free(buffer);
 
+	cacheMisses++;
 	return inode;
 }
 
@@ -79,4 +85,9 @@ void ext2_icache_release(sExt2 *e,sCachedInode *inode) {
 	UNUSED(e);
 	if(inode->refs > 0)
 		inode->refs--;
+}
+
+void ext2_icache_printStats(void) {
+	debugf("[InodeCache] Hits: %d, Misses: %d; %d %%\n",cacheHits,cacheMisses,
+			(u32)(100 / ((float)(cacheMisses + cacheHits) / cacheHits)));
 }

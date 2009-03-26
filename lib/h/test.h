@@ -34,8 +34,8 @@ typedef struct {
 #		define tprintf vid_printf
 #		define tvprintf vid_vprintf
 #	else
-#		define tprintf debugf
-#		define tvprintf vdebugf
+#		define tprintf printf
+#		define tvprintf vprintf
 #	endif
 #endif
 

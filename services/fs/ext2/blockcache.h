@@ -26,4 +26,9 @@ void ext2_bcache_init(sExt2 *e);
  */
 u8 *ext2_bcache_request(sExt2 *e,u32 blockNo);
 
+/**
+ * Prints block-cache statistics
+ */
+void ext2_bcache_printStats(void);
+
 #endif /* BLOCKCACHE_H_ */

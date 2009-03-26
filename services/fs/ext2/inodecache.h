@@ -37,4 +37,9 @@ sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no);
  */
 void ext2_icache_release(sExt2 *e,sCachedInode *inode);
 
+/**
+ * Prints inode-cache statistics
+ */
+void ext2_icache_printStats(void);
+
 #endif /* INODECACHE_H_ */

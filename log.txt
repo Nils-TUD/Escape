@@ -1,3 +1,4 @@
+Warning: No DNS servers found
 GDT exchanged, paging enabled, video initializedDONE
 MultiBoot-Structure:
 ---------------------
@@ -5,21 +6,22 @@ flags=0x7e7
 memLower=639 KB, memUpper=129984 KB
 biosDriveNumber=-128, part1=0, part2=-1, part3=-1
 cmdLine=/kernel.bin
-ELF: num=19, size=40, addr=0x21f000, shndx=0x10
+ELF: num=19, size=40, addr=0x220000, shndx=0x10
 mmapLength=144, mmapAddr=0xc0053b04
 Available memory:
 	  0: addr=0x00000000, size=0x0009fc00, type=0x00000001
 	  1: addr=0x00100000, size=0x07ef0000, type=0x00000001
 ---------------------
 Initializing memory-management...DONE
-Clock cycles: 0x0000000002632917
+Clock cycles: 0x00000000024da69a
 Initializing VFS...DONE
-Clock cycles: 0x0000000000134cd3
+Clock cycles: 0x000000000013293f
 Initializing process-management...DONE
-Clock cycles: 0x00000000000ddb83
+Clock cycles: 0x00000000005703d8
 Initializing IDT...DONE
-Clock cycles: 0x00000000000a9119
+Clock cycles: 0x00000000000aa5e0
 Free frames=32495, pages mapped=1281, free mem=129980 KiB
+Got interrupt 39 (<unknown>) @ 0x0
 Drives:
 	  Primary Master (present=1,sectors=10080)
 	  	  0: start=0x3F, sectors=10017 size=5128704 byte
@@ -30,18 +32,32 @@ Welcome to Escape v0.1!
 
 Try 'help' to see the current features :)
 
-file:/ # :
+file:/ # help
+Currently you can use the following commands/programs:
+	    cat [<file>]	    	    	    	    	    Read file or from STDIN and print
+	    kill <pid>	  	    	    	    	    	    Kill process
+	    libctest	    	    	    	    	    	    Run libc-tests
+	    login	   	    	    	    	    	    	    Just for fun ;)
+	    ls [<dir>]	  	    	    	    	    	    List current or specified directory
+	    mem	 	    	    	    	    	    	    	    Print memory-usage
+	    ps	  	    	    	    	    	    	    	    Print processes
+	    echo <string>,...	   	    	    	    Print given arguments
+	    env [<name>|<name>=<value>]	 	    Print or set env-variable(s)
+	    help	    	    	    	    	    	    	    Print this message
+	    cd <dir>	    	    	    	    	    	    Change to given directory
+	    pwd	 	    	    	    	    	    	    	    Print current directory
+	    wc	  	    	    	    	    	    	    	    Count and/or print words
 
-PANIC: Assert 'stack != NULL' failed at src/syscalls.c, sysc_handle() line 266: 
-stack == NULL
-Caused by process 8 (file:/apps/shell)
+Additionally there is a basic shell-'language', that supports '|', '"' and ';'
+So for example you can do:
+	    ls; ps; echo "test";
+	    ls | cat; ps
+	    echo "word1" word2 "word3 and 4" | wc
+	    ps | wc | wc -p
 
-Kernel-Stacktrace:
-	  0xc0106ef0 -> 0xc0108038 (panic)
-	  0xc010131f -> 0xc0106ebc (sysc_handle)
-	  0xc01004ac -> 0xc0101111 (intrpt_handler)
-	  0x00003976 -> 0xc010049e (isrCommon)
-	  0x00000e8a -> 0xc0100050 (higherhalf)
-	  0x00000e34 -> 0xc0100050 (higherhalf)
-	  0x00000000 -> 0xc0100050 (higherhalf)
-User-Stacktrace:
+Other:
+	    Tab-Completion works for programs in /apps and files/directories
+	    You can send EOF by CTRL+D and kill the current process with CTRL+C
+	    You can scroll the screen with pageUp/-Down, shift + arrowUp/-Down
+
+file:/ # help

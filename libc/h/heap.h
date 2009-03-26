@@ -47,33 +47,18 @@ void free(void *addr);
 
 #if DEBUGGING
 
-/* an area in memory */
-typedef struct sPubArea sPubArea;
-struct sPubArea {
-	const u32 size;
-	void *const address;
-	sPubArea *const next;
-};
-
 /**
- * @return the usable-list
+ * Note that the heap does increase the data-pages of the process as soon as it's required and
+ * does not decrease them. So the free-space may increase during runtime!
+ *
+ * @return the free space on the heap
  */
-sPubArea *getUsableList(void);
-
-/**
- * @return the occupied-list
- */
-sPubArea **getOccupiedMap(void);
-
-/**
- * @return the free-list
- */
-sPubArea *getFreeList(void);
+u32 heap_getFreeSpace(void);
 
 /**
  * Prints the heap
  */
-void printHeap(void);
+void heap_print(void);
 
 #endif
 

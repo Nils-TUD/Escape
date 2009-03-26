@@ -4,18 +4,14 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/heap.h"
-#include "../h/debug.h"
-#include "theap.h"
+#include <common.h>
+#include <heap.h>
 #include <test.h>
 #include <stdarg.h>
+#include "theap.h"
 
 /* forward declarations */
 static void test_heap(void);
-static u32 test_getUsableListLen(void);
-static u32 test_getOccupiedListLen(void);
-static u32 test_getListLen(sPubArea *list);
 static void test_t1alloc(void);
 
 static void test_heap_t1v1(void);
@@ -39,8 +35,7 @@ u32 *ptrs[ARRAY_SIZE(sizes)];
 u32 randFree1[] = {7,5,2,0,6,3,4,1};
 u32 randFree2[] = {3,4,1,5,6,0,7,2};
 
-u32 oldOcc, newOcc;
-u32 oldUse, newUse;
+u32 oldFree, newFree;
 
 static void test_heap(void) {
 	void (*tests[])(void) = {
@@ -66,47 +61,17 @@ static void test_init(const char *fmt,...) {
 	test_caseStartv(fmt,ap);
 	va_end(ap);
 
-	oldOcc = test_getOccupiedListLen();
-	oldUse = test_getUsableListLen();
+	oldFree = heap_getFreeSpace();
 }
 
 static void test_check(void) {
-	newOcc = test_getOccupiedListLen();
-	newUse = test_getUsableListLen();
-	if(newOcc != oldOcc || newUse != 1) {
-		test_caseFailed("oldOcc=%d, newOcc=%d, oldUse=%d, newUse=%d",
-				oldOcc,newOcc,oldUse,newUse);
+	newFree = heap_getFreeSpace();
+	if(newFree < oldFree) {
+		test_caseFailed("Mem not free'd: oldFree=%u, newFree=%u",oldFree,newFree);
 	}
 	else {
 		test_caseSucceded();
 	}
-}
-
-static u32 test_getUsableListLen(void) {
-	return test_getListLen(getUsableList());
-}
-
-static u32 test_getOccupiedListLen(void) {
-	u32 i,c = 0;
-	sPubArea **map = getOccupiedMap();
-	sPubArea *area;
-	for(i = 0;i < OCC_MAP_SIZE;i++) {
-		area = map[i];
-		while(area != NULL) {
-			c++;
-			area = area->next;
-		}
-	}
-	return c;
-}
-
-static u32 test_getListLen(sPubArea *list) {
-	u32 c = 0;
-	while(list != NULL) {
-		c++;
-		list = list->next;
-	}
-	return c;
 }
 
 static void test_t1alloc(void) {

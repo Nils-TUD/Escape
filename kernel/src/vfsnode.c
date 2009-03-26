@@ -140,7 +140,7 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo) {
 	pos = strchri(path,':');
 
 	/* we require a complete path here */
-	if(*(path + pos) == '\0')
+	if(pos == 0 || *(path + pos) == '\0')
 		return ERR_INVALID_PATH;
 
 	/* search our root node */

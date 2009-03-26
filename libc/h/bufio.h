@@ -10,26 +10,24 @@
 #include "common.h"
 #include <stdarg.h>
 
-/* TODO add constant EOF? */
-/* TODO think about the return-values of print* */
-/* TODO add sprintf and so on */
+#define IO_ERROR	-1
 
 /**
  * Prints the given character to STDOUT
  *
  * @param c the character
- * @return the character or the error-code if failed
+ * @return the character or IO_ERROR if failed
  */
-s32 printc(char c);
+char printc(char c);
 
 /**
  * Prints the given character to <fd>
  *
  * @param fd the file-descriptor
  * @param c the character
- * @return the character or the error-code if failed
+ * @return the character or IO_ERROR if failed
  */
-s32 fprintc(tFD fd,char c);
+char fprintc(tFD fd,char c);
 
 /**
  * Prints the given string to STDOUT
@@ -37,7 +35,7 @@ s32 fprintc(tFD fd,char c);
  * @param str the string
  * @return the number of written chars
  */
-s32 prints(const char *str);
+u32 prints(const char *str);
 
 /**
  * Prints the given string to <fd>
@@ -46,7 +44,7 @@ s32 prints(const char *str);
  * @param str the string
  * @return the number of written chars
  */
-s32 fprints(tFD fd,const char *str);
+u32 fprints(tFD fd,const char *str);
 
 /**
  * Prints the given signed integer to STDOUT
@@ -54,7 +52,7 @@ s32 fprints(tFD fd,const char *str);
  * @param n the number
  * @return the number of written chars
  */
-s32 printn(s32 n);
+u32 printn(s32 n);
 
 /**
  * Prints the given signed integer to <fd>
@@ -62,7 +60,7 @@ s32 printn(s32 n);
  * @param n the number
  * @return the number of written chars
  */
-s32 fprintn(tFD fd,s32 n);
+u32 fprintn(tFD fd,s32 n);
 
 /**
  * Prints the given unsigned integer to the given base to STDOUT
@@ -71,7 +69,7 @@ s32 fprintn(tFD fd,s32 n);
  * @param base the base (2 .. 16)
  * @return the number of written chars
  */
-s32 printu(s32 n,u8 base);
+u32 printu(s32 n,u8 base);
 
 /**
  * Prints the given unsigned integer to the given base to <fd>
@@ -80,7 +78,7 @@ s32 printu(s32 n,u8 base);
  * @param base the base (2 .. 16)
  * @return the number of written chars
  */
-s32 fprintu(tFD fd,s32 u,u8 base);
+u32 fprintu(tFD fd,s32 u,u8 base);
 
 /**
  * Formated output to STDOUT. Supports:
@@ -100,7 +98,7 @@ s32 fprintu(tFD fd,s32 u,u8 base);
  * @param fmt the format
  * @return the number of written chars
  */
-s32 printf(const char *fmt,...);
+u32 printf(const char *fmt,...);
 
 /**
  * Like printf(), but prints to <fd>
@@ -109,7 +107,7 @@ s32 printf(const char *fmt,...);
  * @param fmt the format
  * @return the number of written chars
  */
-s32 fprintf(tFD fd,const char *fmt,...);
+u32 fprintf(tFD fd,const char *fmt,...);
 
 /**
  * Like printf(), but prints to the given string
@@ -119,7 +117,17 @@ s32 fprintf(tFD fd,const char *fmt,...);
  * @param ap the argument-list
  * @return the number of written chars
  */
-s32 sprintf(char *str,const char *fmt,...);
+u32 sprintf(char *str,const char *fmt,...);
+
+/**
+ * Like sprintf(), but prints max <max> chars into the buffer
+ *
+ * @param str the string to print to
+ * @param max the maximum number of chars to print into the buffer (-1 = unlimited)
+ * @param fmt the format
+ * @return the number of written chars
+ */
+u32 snprintf(char *str,u32 max,const char *fmt,...);
 
 /**
  * Like printf(), but lets you specify the argument-list
@@ -128,7 +136,7 @@ s32 sprintf(char *str,const char *fmt,...);
  * @param ap the argument-list
  * @return the number of written chars
  */
-s32 vprintf(const char *fmt,va_list ap);
+u32 vprintf(const char *fmt,va_list ap);
 
 /**
  * Like vprintf(), but prints to <fd>
@@ -138,7 +146,7 @@ s32 vprintf(const char *fmt,va_list ap);
  * @param ap the argument-list
  * @return the number of written chars
  */
-s32 vfprintf(tFD fd,const char *fmt,va_list ap);
+u32 vfprintf(tFD fd,const char *fmt,va_list ap);
 
 /**
  * Like vprintf(), but prints to <str>
@@ -148,7 +156,18 @@ s32 vfprintf(tFD fd,const char *fmt,va_list ap);
  * @param ap the argument-list
  * @return the number of written chars
  */
-s32 vsprintf(char *str,const char *fmt,va_list ap);
+u32 vsprintf(char *str,const char *fmt,va_list ap);
+
+/**
+ * Like vsprintf(), but prints max <max> chars into the buffer
+ *
+ * @param str the string to print to
+ * @param max the maximum number of chars to print into the buffer (-1 = unlimited)
+ * @param fmt the format
+ * @param ap the argument-list
+ * @return the number of written chars
+ */
+u32 vsnprintf(char *str,u32 max,const char *fmt,va_list ap);
 
 /**
  * Flushes the output-channel of STDOUT
@@ -165,7 +184,7 @@ void fflush(tFD fd);
 /**
  * Reads one char from STDIN
  *
- * @return the character or 0
+ * @return the character or IO_ERROR
  */
 char scanc(void);
 
@@ -173,7 +192,7 @@ char scanc(void);
  * Reads one char from <fd>
  *
  * @param fd the file-descriptor
- * @return the character or 0
+ * @return the character or IO_ERROR
  */
 char fscanc(tFD fd);
 
@@ -182,8 +201,9 @@ char fscanc(tFD fd);
  * will be ignored.
  *
  * @param c the character
+ * @return 0 on success or IO_ERROR
  */
-void scanback(char c);
+s32 scanback(char c);
 
 /**
  * Puts the given character back to the buffer for <fd>. If the buffer is full, the character
@@ -191,8 +211,9 @@ void scanback(char c);
  *
  * @param fd the file-descriptor
  * @param c the character
+ * @return 0 on success or IO_ERROR
  */
-void fscanback(tFD fd,char c);
+s32 fscanback(tFD fd,char c);
 
 /**
  * Reads max. <max> from STDIN (or till EOF or newline) into the given line-buffer
@@ -243,6 +264,15 @@ u32 scanf(const char *fmt,...);
 u32 fscanf(tFD fd,const char *fmt,...);
 
 /**
+ * Reads data in the specified format from <str>. See scanf().
+ *
+ * @param str the string
+ * @param fmt the format
+ * @return the number of matched variables
+ */
+u32 sscanf(const char *str,const char *fmt,...);
+
+/**
  * Reads data in the specified format from STDIN with the given argument-list
  *
  * @param fmt the format
@@ -260,5 +290,15 @@ u32 vscanf(const char *fmt,va_list ap);
  * @return the number of matched variables
  */
 u32 vfscanf(tFD fd,const char *fmt,va_list ap);
+
+/**
+ * Reads data in the specified format from <str> with the given argument-list.
+ *
+ * @param str the string
+ * @param fmt the format
+ * @param ap the argument-list
+ * @return the number of matched variables
+ */
+u32 vsscanf(const char *str,const char *fmt,va_list ap);
 
 #endif /* BUFIO_H_ */

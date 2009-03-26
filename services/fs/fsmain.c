@@ -103,6 +103,9 @@ int main(void) {
 							debugf("\n");
 							debugf("Path is associated with inode %d\n",no);*/
 
+							/*ext2_icache_printStats();
+							ext2_bcache_printStats();*/
+
 							/* write response */
 							openResp.data.pid = data->pid;
 							openResp.data.inodeNo = no;
@@ -135,6 +138,9 @@ int main(void) {
 							rhead->id = MSG_FS_READ_RESP;
 							rdata->count = count;
 							rdata->pid = data.pid;
+
+							/*ext2_icache_printStats();
+							ext2_bcache_printStats();*/
 
 							write(fd,rhead,sizeof(sMsgHeader) + dlen);
 							free(rhead);

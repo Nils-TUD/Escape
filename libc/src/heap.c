@@ -342,19 +342,18 @@ static bool loadNewAreas(void) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-sPubArea *getUsableList(void) {
-	return (sPubArea*)usableList;
+u32 heap_getFreeSpace(void) {
+	sMemArea *area;
+	u32 c = 0;
+	area = usableList;
+	while(area != NULL) {
+		c += area->size;
+		area = area->next;
+	}
+	return c;
 }
 
-sPubArea **getOccupiedMap(void) {
-	return (sPubArea**)occupiedMap;
-}
-
-sPubArea *getFreeList(void) {
-	return (sPubArea*)freeList;
-}
-
-void printHeap(void) {
+void heap_print(void) {
 	sMemArea *area;
 	u32 i;
 

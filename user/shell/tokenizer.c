@@ -57,6 +57,9 @@ sCmdToken *tok_get(char *str,u32 *tokenCount) {
 						case '&':
 							type = TOK_RUN_IN_BG;
 							break;
+						default:
+							free(res);
+							return NULL;
 					}
 					/* lastPos points behind *c, so decrement it by 1 */
 					lastPos--;

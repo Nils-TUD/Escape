@@ -47,4 +47,12 @@ s32 unregService(tServ service);
  */
 tFD getClient(tServ *services,u32 count,tServ *serv);
 
+/**
+ * Creates a new node in the VFS with given path.
+ *
+ * @param path the path (including name)
+ * @return 0 on success
+ */
+s32 createNode(const char *path);
+
 #endif /* SERVICE_H_ */

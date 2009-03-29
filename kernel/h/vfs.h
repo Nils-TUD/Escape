@@ -133,6 +133,16 @@ tFile vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo);
 bool vfs_eof(tPid pid,tFile file);
 
 /**
+ * Sets the position for the given file
+ *
+ * @param pid the process-id
+ * @param file the file
+ * @param position the new position
+ * @return 0 on success
+ */
+s32 vfs_seek(tPid pid,tFile file,u32 position);
+
+/**
  * Reads max. count bytes from the given file into the given buffer and returns the number
  * of read bytes.
  *

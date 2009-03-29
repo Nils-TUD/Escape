@@ -43,7 +43,7 @@ typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE
 typedef struct {
 	/* process state. see eProcState */
 	u8 state;
-	/* the events the process waits for (if sleeping) */
+	/* the events the process waits for (if waiting) */
 	u8 events;
 	/* the signal that the process is currently handling (if > 0) */
 	tSig signal;
@@ -145,7 +145,7 @@ void proc_switchTo(tPid pid);
  * @param pid the process to put to sleep
  * @param events the events on which the process should wakeup
  */
-void proc_sleep(tPid pid,u8 events);
+void proc_wait(tPid pid,u8 events);
 
 /**
  * Wakes up all blocked processes that wait for the given event

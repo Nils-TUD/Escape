@@ -11,6 +11,7 @@
 #include "../h/vfs.h"
 #include "../h/vfsnode.h"
 #include "../h/vfsreal.h"
+#include "../h/util.h"
 #include <string.h>
 
 #include <fsinterface.h>
@@ -330,7 +331,7 @@ void vfsr_closeFile(tInodeNo inodeNo) {
 
 static void vfsr_waitForReply(tPid pid,sRequest *req) {
 	while(!req->finished) {
-		proc_sleep(pid,EV_RECEIVED_MSG);
+		proc_wait(pid,EV_RECEIVED_MSG);
 		proc_switch();
 	}
 }

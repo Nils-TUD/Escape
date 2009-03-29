@@ -51,11 +51,13 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 		if(tmpBuffer == NULL)
 			return ERR_FS_READ_FAILED;
 
-		/* copy the requested part */
-		c = MIN(leftBytes,blockSize - offset);
-		memcpy(bufWork,tmpBuffer + offset,c);
+		if(buffer != NULL) {
+			/* copy the requested part */
+			c = MIN(leftBytes,blockSize - offset);
+			memcpy(bufWork,tmpBuffer + offset,c);
+			bufWork += c;
+		}
 
-		bufWork += c;
 		/* we substract to much, but it matters only if we read an additional block. In this
 		 * case it is correct */
 		leftBytes -= blockSize - offset;

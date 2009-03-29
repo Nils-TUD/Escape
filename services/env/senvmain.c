@@ -126,7 +126,7 @@ int main(void) {
 	while(1) {
 		tFD fd = getClient(&id,1,&client);
 		if(fd < 0)
-			sleep(EV_CLIENT);
+			wait(EV_CLIENT);
 		else {
 			/* first, delete dead processes if there are any */
 			if(sll_length(deadProcs) > 0) {

@@ -20,12 +20,13 @@
 #include "../h/signals.h"
 #include "../h/elf.h"
 #include "../h/multiboot.h"
+#include "../h/timer.h"
 #include <string.h>
 
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define SYSCALL_COUNT					27
+#define SYSCALL_COUNT					30
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode)		((stack)->number = (errorCode))
@@ -90,6 +91,14 @@ static void sysc_open(sSysCallStack *stack);
  * @return bool true if we are at EOF
  */
 static void sysc_eof(sSysCallStack *stack);
+/**
+ * Sets the position for the given file
+ *
+ * @param tFD the file-descriptor
+ * @param u32 the position to set
+ * @return 0 on success
+ */
+static void sysc_seek(sSysCallStack *stack);
 /**
  * Read-syscall. Reads a given number of bytes in a given file at the current position
  *
@@ -172,6 +181,13 @@ static void sysc_mapPhysical(sSysCallStack *stack);
 /**
  * Blocks the process until a message arrives
  */
+static void sysc_wait(sSysCallStack *stack);
+/**
+ * Blocks the process for a given number of milliseconds
+ *
+ * @param u32 the number of msecs
+ * @return s32 0 on success or a negative error-code
+ */
 static void sysc_sleep(sSysCallStack *stack);
 /**
  * Releases the CPU (reschedule)
@@ -228,6 +244,12 @@ static void sysc_sendSignalTo(sSysCallStack *stack);
  * @param char* the program-path
  */
 static void sysc_exec(sSysCallStack *stack);
+/**
+ * Creates an info-node in the VFS that can be read by other processes
+ *
+ * @param char* the path
+ */
+static void sysc_createNode(sSysCallStack *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -258,7 +280,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 16 */	{sysc_releaseIOPorts,		2},
 	/* 17 */	{sysc_dupFd,				1},
 	/* 18 */	{sysc_redirFd,				2},
-	/* 19 */	{sysc_sleep,				0},
+	/* 19 */	{sysc_wait,				0},
 	/* 20 */	{sysc_setSigHandler,		2},
 	/* 21 */	{sysc_unsetSigHandler,		1},
 	/* 22 */	{sysc_ackSignal,			1},
@@ -266,6 +288,9 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 24 */	{sysc_exec,					1},
 	/* 25 */	{sysc_eof,					1},
 	/* 26 */	{sysc_loadMods,				0},
+	/* 27 */	{sysc_sleep,				1},
+	/* 28 */	{sysc_createNode,			1},
+	/* 29 */	{sysc_seek,					2},
 };
 
 void sysc_handle(sIntrptStackFrame *intrptStack) {
@@ -285,6 +310,7 @@ void sysc_handle(sIntrptStackFrame *intrptStack) {
 }
 
 static void sysc_loadMods(sSysCallStack *stack) {
+	UNUSED(stack);
 	mboot_loadModules(intrpt_getCurStack());
 }
 
@@ -333,6 +359,7 @@ static void sysc_fork(sSysCallStack *stack) {
 }
 
 static void sysc_exit(sSysCallStack *stack) {
+	UNUSED(stack);
 	sProc *p = proc_getRunning();
 	/*vid_printf("Process %d exited with exit-code %d\n",p->pid,stack->arg1);*/
 	proc_destroy(p);
@@ -438,6 +465,24 @@ static void sysc_eof(sSysCallStack *stack) {
 
 	eof = vfs_eof(p->pid,file);
 	SYSC_RET1(stack,eof);
+}
+
+static void sysc_seek(sSysCallStack *stack) {
+	tFD fd = (tFD)stack->arg1;
+	u32 position = stack->arg2;
+	sProc *p = proc_getRunning();
+	tFile file;
+	s32 res;
+
+	/* get file */
+	file = proc_fdToFile(fd);
+	if(file < 0) {
+		SYSC_ERROR(stack,file);
+		return;
+	}
+
+	res = vfs_seek(p->pid,file,position);
+	SYSC_RET1(stack,res);
 }
 
 static void sysc_read(sSysCallStack *stack) {
@@ -594,11 +639,11 @@ static void sysc_getClient(sSysCallStack *stack) {
 	tFile file;
 
 	/* check arguments */
-	if(count <= 0 || !paging_isRangeUserReadable(ids,count * sizeof(tServ))) {
+	if(count <= 0 || !paging_isRangeUserReadable((u32)ids,count * sizeof(tServ))) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
-	if(!paging_isRangeUserWritable(client,sizeof(tServ))) {
+	if(!paging_isRangeUserWritable((u32)client,sizeof(tServ))) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
@@ -611,7 +656,7 @@ static void sysc_getClient(sSysCallStack *stack) {
 	}
 
 	/* open a client */
-	file = vfs_openClient(p->pid,ids,count,client);
+	file = vfs_openClient(p->pid,(tVFSNodeNo*)ids,count,(tVFSNodeNo*)client);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;
@@ -710,13 +755,7 @@ static void sysc_mapPhysical(sSysCallStack *stack) {
 	SYSC_RET1(stack,addr);
 }
 
-static void sysc_yield(sSysCallStack *stack) {
-	UNUSED(stack);
-
-	proc_switch();
-}
-
-static void sysc_sleep(sSysCallStack *stack) {
+static void sysc_wait(sSysCallStack *stack) {
 	u8 events = (u8)stack->arg1;
 	sProc *p;
 	bool canSleep;
@@ -737,9 +776,21 @@ static void sysc_sleep(sSysCallStack *stack) {
 
 	/* if we can sleep, do it */
 	if(canSleep) {
-		proc_sleep(p->pid,events);
+		proc_wait(p->pid,events);
 		proc_switch();
 	}
+}
+
+static void sysc_sleep(sSysCallStack *stack) {
+	u32 msecs = stack->arg1;
+	timer_sleepFor(proc_getRunning()->pid,msecs);
+	proc_switch();
+}
+
+static void sysc_yield(sSysCallStack *stack) {
+	UNUSED(stack);
+
+	proc_switch();
 }
 
 static void sysc_requestIOPorts(sSysCallStack *stack) {
@@ -910,13 +961,14 @@ static void sysc_exec(sSysCallStack *stack) {
 		}
 	}
 
-	pathLen = strnlen(path,MAX_PATH_LEN);
-	if(pathLen == -1 || !paging_isRangeUserReadable((u32)path,pathLen)) {
+	/* at first make sure that we'll cause no page-fault */
+	if(!sysc_isStringReadable(path)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
 
 	/* save path (we'll overwrite the process-data) */
+	pathLen = strlen(path);
 	memcpy(pathSave,path,pathLen + 1);
 
 	/* open file */
@@ -993,6 +1045,66 @@ static void sysc_exec(sSysCallStack *stack) {
 		kheap_free(argBuffer);
 		kheap_free(buffer);
 	}
+}
+
+static void sysc_createNode(sSysCallStack *stack) {
+	const char *path = (char*)stack->arg1;
+	sProc *p = proc_getRunning();
+	u32 nameLen,pathLen;
+	s32 res;
+	tVFSNodeNo nodeNo;
+	sVFSNode *node;
+	char *name,*pathCpy,*nameCpy;
+
+	/* at first make sure that we'll cause no page-fault */
+	if(!sysc_isStringReadable(path)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	pathLen = strlen(path);
+	/* determine last slash */
+	name = strrchr(path,'/');
+	if(*(name + 1) == '\0')
+		name = strrchr(name - 1,'/');
+	/* skip '/' */
+	name++;
+	/* create a copy of the path */
+	nameLen = strlen(name);
+	pathLen -= nameLen;
+	pathCpy = (char*)kheap_alloc(pathLen + 1);
+	if(pathCpy == NULL) {
+		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+		return;
+	}
+	strncpy(pathCpy,path,pathLen);
+
+	/* make a copy of the name */
+	nameCpy = (char*)kheap_alloc(nameLen + 1);
+	if(nameCpy == NULL) {
+		kheap_free(pathCpy);
+		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+		return;
+	}
+	strcpy(nameCpy,name);
+
+	/* resolve path */
+	res = vfsn_resolvePath(pathCpy,&nodeNo);
+	if(res < 0) {
+		kheap_free(pathCpy);
+		SYSC_ERROR(stack,res);
+		return;
+	}
+
+	/* create node */
+	kheap_free(pathCpy);
+	node = vfsn_getNode(nodeNo);
+	if(vfsn_createInfo(p->pid,node,nameCpy,vfs_defReadHandler) == NULL) {
+		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+		return;
+	}
+
+	SYSC_RET1(stack,0);
 }
 
 static bool sysc_isStringReadable(char *str) {

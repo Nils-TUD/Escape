@@ -56,7 +56,7 @@ void sched_init(void) {
 	rqFirst = NULL;
 	rqLast = NULL;
 
-	/* init sleep-queue */
+	/* init blockedwait-queue */
 	blockedQueue = sll_create();
 }
 
@@ -69,10 +69,18 @@ sProc *sched_perform(void) {
 
 	/* get new process */
 	p = sched_dequeueReady();
-	if(p == NULL)
-		panic("No runnable process");
-	/* TODO idle if there is no runnable process */
-	p->state = ST_RUNNING;
+
+	if(p == NULL) {
+		/* if there is no runnable process, choose init */
+		/* init will go to wait as soon as it is resumed. so if there are other processes
+		 * that want to run, they will be chosen and init will never be chosen. If there is no
+		 * runnable process anymore, we will choose init until there is one again. */
+		p = proc_getByPid(0);
+		sched_setRunning(p);
+	}
+	else
+		p->state = ST_RUNNING;
+
 	return p;
 }
 

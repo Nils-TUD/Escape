@@ -175,6 +175,10 @@ void printLastError(void) {
 			debugf("Invalid Node-Number\n");
 			break;
 
+		case ERR_SERVUSE_SEEK:
+			debugf("seek() is not possible for service-usages!\n");
+			break;
+
 		default:
 			debugf("No error\n");
 			break;

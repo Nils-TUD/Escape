@@ -178,7 +178,7 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo) {
 	pos = strchri(path,'/');
 	n = NODE_FIRST_CHILD(n);
 	while(n != NULL) {
-		if(strlen(n->name) == pos && strncmp(n->name,path,pos) == 0) {
+		if((s32)strlen(n->name) == pos && strncmp(n->name,path,pos) == 0) {
 			path += pos;
 			/* finished? */
 			if(!*path)
@@ -306,11 +306,12 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name) {
 	return node;
 }
 
-sVFSNode *vfsn_createInfo(sVFSNode *parent,char *name,fRead handler) {
+sVFSNode *vfsn_createInfo(tPid pid,sVFSNode *parent,char *name,fRead handler) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
+	node->owner = pid;
 	node->type = T_INFO;
 	node->flags = VFS_READ;
 	node->readHandler = handler;

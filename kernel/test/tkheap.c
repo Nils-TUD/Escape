@@ -39,8 +39,6 @@ u32 *ptrs[ARRAY_SIZE(sizes)];
 u32 randFree1[] = {7,5,2,0,6,3,4,1};
 u32 randFree2[] = {3,4,1,5,6,0,7,2};
 
-u32 oldPC, newPC;
-u32 oldFC, newFC;
 u32 oldFH, newFH;
 
 /* helper */
@@ -51,19 +49,13 @@ static void test_init(const char *fmt,...) {
 	test_caseStartv(fmt,ap);
 	va_end(ap);
 
-	oldPC = paging_dbg_getPageCount();
-	oldFC = mm_getFreeFrmCount(MM_DEF);
 	oldFH = kheap_getFreeMem();
 }
 
 static void test_check(void) {
-	newPC = paging_dbg_getPageCount();
-	newFC = mm_getFreeFrmCount(MM_DEF);
 	newFH = kheap_getFreeMem();
-	if(newPC != oldPC || newFC != oldFC || newFH != oldFH) {
-		test_caseFailed("old-page-count=%d, new-page-count=%d,"
-				" old-frame-count=%d, new-frame-count=%d, old-heap-count=%d, new-heap-count=%d",
-				oldPC,newPC,oldFC,newFC,oldFH,newFH);
+	if(newFH < oldFH) {
+		test_caseFailed("old-heap-count=%d, new-heap-count=%d",oldFH,newFH);
 	}
 	else {
 		test_caseSucceded();

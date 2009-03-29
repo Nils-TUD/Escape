@@ -158,7 +158,7 @@ bool sig_hasSignal(tSig *sig,tPid *pid,u32 *data) {
 					/* don't deliver signals to blocked processes that wait for a msg */
 					/* TODO this means that we check ALL handler-lists in EVERY interrupt
 					 * until this process is able to receive the signal... */
-					if(p->signal == 0 && p->state != ST_BLOCKED || !(p->events & EV_RECEIVED_MSG)) {
+					if(p->signal == 0 && (p->state != ST_BLOCKED || !(p->events & EV_RECEIVED_MSG))) {
 						*data = (u32)sll_get(h->pending,0);
 						*pid = h->pid;
 						*sig = i + 1;

@@ -140,6 +140,8 @@ void free(void *addr) {
 	prev = NULL;
 	next = NULL;
 	tprev = NULL;
+	pprev = NULL;
+	nprev = NULL;
 	a = usableList;
 	while(a != NULL) {
 		if((u32)a->address + a->size == (u32)addr) {

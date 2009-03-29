@@ -603,9 +603,9 @@ static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFr
 			/* we don't want to free copy-on-write pages and not frames in front of the kernel
 			 * because they may be mapped more than once and will never be free'd */
 			if(freeFrames && pt->frameNumber * PAGE_SIZE >= KERNEL_P_ADDR) {
-				if(pt->copyOnWrite)
+				if(pt->copyOnWrite && remCOW)
 					paging_remFromCow(pt->frameNumber);
-				else
+				else if(!pt->copyOnWrite)
 					mm_freeFrame(pt->frameNumber,MM_DEF);
 			}
 			pt->present = false;

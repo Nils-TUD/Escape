@@ -51,41 +51,44 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 	mboot_dbg_print();
 
-	/* mm && kheap */
-	dbg_startTimer();
-	vid_printf("Initializing memory-management...");
+	/* mm */
+	vid_printf("Initializing physical memory-management...");
 	mm_init();
+	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_printf("\033f\x2%s\033r\x0","DONE");
+
+	/* paging */
+	vid_printf("Initializing paging...");
 	paging_mapHigherHalf();
 	paging_initCOWList();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
-	dbg_stopTimer();
 
 	/* vfs */
-	dbg_startTimer();
 	vid_printf("Initializing VFS...");
 	vfs_init();
 	vfsinfo_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
-	dbg_stopTimer();
 
 	/* processes */
-	dbg_startTimer();
 	vid_printf("Initializing process-management...");
 	proc_init();
 	sched_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
-	dbg_stopTimer();
 
 	/* idt */
-	dbg_startTimer();
 	vid_printf("Initializing IDT...");
 	intrpt_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
-	dbg_stopTimer();
+
+	/* timer */
+	vid_printf("Initializing Timer...");
+	timer_init();
+	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	vid_printf("Free frames=%d, pages mapped=%d, free mem=%d KiB\n",
 			mm_getFreeFrmCount(MM_DMA | MM_DEF),paging_dbg_getPageCount(),

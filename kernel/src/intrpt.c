@@ -7,7 +7,6 @@
 #include "../h/common.h"
 #include "../h/intrpt.h"
 #include "../h/util.h"
-#include "../h/keyboard.h"
 #include "../h/cpu.h"
 #include "../h/paging.h"
 #include "../h/proc.h"
@@ -20,51 +19,52 @@
 #include "../h/video.h"
 #include "../h/sched.h"
 #include "../h/signals.h"
+#include "../h/timer.h"
 #include <string.h>
 #include <sllist.h>
 
-#define IDT_COUNT		256
+#define IDT_COUNT				256
 /* the privilege level */
-#define IDT_DPL_KERNEL	0
-#define IDT_DPL_USER	3
+#define IDT_DPL_KERNEL			0
+#define IDT_DPL_USER			3
 /* reserved by intel */
-#define IDT_INTEL_RES1	2
-#define IDT_INTEL_RES2	15
+#define IDT_INTEL_RES1			2
+#define IDT_INTEL_RES2			15
 /* the code-selector */
-#define IDT_CODE_SEL	0x8
+#define IDT_CODE_SEL			0x8
 
 /* I/O ports for PICs */
-#define PIC_MASTER		0x20				/* base-port for master PIC */
-#define PIC_SLAVE		0xA0				/* base-port for slave PIC */
-#define PIC_MASTER_CMD	PIC_MASTER			/* command-port for master PIC */
-#define PIC_MASTER_DATA	(PIC_MASTER + 1)	/* data-port for master PIC */
-#define PIC_SLAVE_CMD	PIC_SLAVE			/* command-port for slave PIC */
-#define PIC_SLAVE_DATA	(PIC_SLAVE + 1)		/* data-port for slave PIC */
+#define PIC_MASTER				0x20				/* base-port for master PIC */
+#define PIC_SLAVE				0xA0				/* base-port for slave PIC */
+#define PIC_MASTER_CMD			PIC_MASTER			/* command-port for master PIC */
+#define PIC_MASTER_DATA			(PIC_MASTER + 1)	/* data-port for master PIC */
+#define PIC_SLAVE_CMD			PIC_SLAVE			/* command-port for slave PIC */
+#define PIC_SLAVE_DATA			(PIC_SLAVE + 1)		/* data-port for slave PIC */
 
-#define PIC_EOI			0x20				/* end of interrupt */
+#define PIC_EOI					0x20				/* end of interrupt */
 
 /* flags in Initialization Command Word 1 (ICW1) */
-#define ICW1_NEED_ICW4	0x01				/* ICW4 needed */
-#define ICW1_SINGLE		0x02				/* Single (not cascade) mode */
-#define ICW1_INTERVAL4	0x04				/* Call address interval 4 (instead of 8) */
-#define ICW1_LEVEL		0x08				/* Level triggered (not edge) mode */
-#define ICW1_INIT		0x10				/* Initialization - required! */
+#define ICW1_NEED_ICW4			0x01				/* ICW4 needed */
+#define ICW1_SINGLE				0x02				/* Single (not cascade) mode */
+#define ICW1_INTERVAL4			0x04				/* Call address interval 4 (instead of 8) */
+#define ICW1_LEVEL				0x08				/* Level triggered (not edge) mode */
+#define ICW1_INIT				0x10				/* Initialization - required! */
 
 /* flags in Initialization Command Word 4 (ICW4) */
-#define ICW4_8086		0x01				/* 8086/88 (instead of MCS-80/85) mode */
-#define ICW4_AUTO		0x02				/* Auto (instead of normal) EOI */
-#define ICW4_BUF_SLAVE	0x08				/* Buffered mode/slave */
-#define ICW4_BUF_MASTER	0x0C				/* Buffered mode/master */
-#define ICW4_SFNM		0x10				/* Special fully nested */
+#define ICW4_8086				0x01				/* 8086/88 (instead of MCS-80/85) mode */
+#define ICW4_AUTO				0x02				/* Auto (instead of normal) EOI */
+#define ICW4_BUF_SLAVE			0x08				/* Buffered mode/slave */
+#define ICW4_BUF_MASTER			0x0C				/* Buffered mode/master */
+#define ICW4_SFNM				0x10				/* Special fully nested */
 
 /* maximum number of a exception in a row */
-#define MAX_EX_COUNT	3
+#define MAX_EX_COUNT			3
 
 /* the maximum length of messages (for interrupt-listeners) */
-#define MSG_MAX_LEN		8
+#define MSG_MAX_LEN				8
 
 /* the address of the return-from-signal "function" in the startup.s */
-#define SIGRETFUNC_ADDR	0xd
+#define SIGRETFUNC_ADDR			0xd
 
 /* represents an IDT-entry */
 typedef struct {
@@ -490,7 +490,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 			ASSERT(stack.ds == 0x23,"Timer interrupt from kernel-mode!");
 
 			intrpt_eoi(stack.intrptNo);
-			proc_switch();
+			timer_intrpt();
 			break;
 
 		/* syscall */
@@ -553,7 +553,8 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		intrpt_handleSignalFinish(&stack);
 
 	/* send EOI to PIC */
-	intrpt_eoi(stack.intrptNo);
+	if(stack.intrptNo != IRQ_TIMER)
+		intrpt_eoi(stack.intrptNo);
 
 	kmodeEnd = cpu_rdtsc();
 	kmodeTime += kmodeEnd - kmodeStart;

@@ -15,7 +15,8 @@
  *
  * @param e the ext2-handle
  * @param inodeNo the inode-number
- * @param buffer the buffer
+ * @param buffer the buffer; if NULL the data will be fetched from disk (if not in cache) but
+ * 	not copied anywhere
  * @param offset the offset
  * @param count the number of bytes to read
  * @return the number of read bytes

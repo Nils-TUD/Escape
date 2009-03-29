@@ -27,9 +27,8 @@ int main(void) {
 			printc(' ');
 		printc(']');
 
-		/* wait */
-		for(i = 0; i < 10000; i++)
-			yield();
+		/* wait a little bit */
+		sleep(100);
 	}
 	printf("Ready!\n");
 	return 0;

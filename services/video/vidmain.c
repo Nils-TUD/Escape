@@ -75,7 +75,7 @@ int main(void) {
 	while(1) {
 		tFD fd = getClient(&id,1,&client);
 		if(fd < 0)
-			sleep(EV_CLIENT);
+			wait(EV_CLIENT);
 		else {
 			/* read all available messages */
 			while(read(fd,&msg,sizeof(sMsgHeader)) > 0) {

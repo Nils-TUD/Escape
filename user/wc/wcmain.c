@@ -13,7 +13,7 @@
 int main(int argc,char **argv) {
 	s32 ch;
 	u32 count,bufSize,bufPos;
-	char *buffer;
+	char *buffer = NULL;
 	bool print = false;
 
 	if(argc > 1 && strcmp(argv[1],"-p") == 0)

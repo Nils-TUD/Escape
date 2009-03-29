@@ -77,7 +77,7 @@ int main(void) {
 	while(1) {
 		fd = getClient(&id,1,&client);
 		if(fd < 0)
-			sleep(EV_CLIENT);
+			wait(EV_CLIENT);
 		else {
 			sMsgHeader header;
 			while(read(fd,&header,sizeof(sMsgHeader)) > 0) {
@@ -144,6 +144,10 @@ int main(void) {
 
 							write(fd,rhead,sizeof(sMsgHeader) + dlen);
 							free(rhead);
+
+							/* read ahead
+							if(count > 0)
+								ext2_readFile(&ext2,data.inodeNo,NULL,data.offset + count,data.count);*/
 						}
 					}
 					break;

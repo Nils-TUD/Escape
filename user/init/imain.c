@@ -68,22 +68,20 @@ int main(void) {
 
 	/* now load the shell */
 	if(fork() == 0) {
-		char *args[] = {"file:/apps/shell","vterm0",NULL};
+		const char *args[] = {"file:/apps/shell","vterm0",NULL};
 		exec((char*)"file:/apps/shell",args);
 		exit(0);
 	}
 	/* TODO temporary ;) */
 	if(fork() == 0) {
-		char *args[] = {"file:/apps/shell","vterm1",NULL};
+		const char *args[] = {"file:/apps/shell","vterm1",NULL};
 		exec((char*)"file:/apps/shell",args);
 		exit(0);
 	}
 
-	/* loop forever, and don't waste too much cpu-time */
-	/* TODO we should improve this some day ;) */
-	while(1) {
-		yield();
-	}
+	/* loop and wait forever */
+	while(1)
+		wait(EV_NOEVENT);
 	return 0;
 }
 
@@ -130,7 +128,6 @@ static bool loadServices(char *services) {
 
 static bool loadService(char *services,char *name) {
 	char *str;
-	tFD fd;
 	char servPath[MAX_SERVICE_PATH_LEN] = "services:/";
 	char path[MAX_SERVICE_PATH_LEN] = "file:/services/";
 	u32 p,pos,nameLen;
@@ -142,7 +139,9 @@ static bool loadService(char *services,char *name) {
 			return true;
 	}
 
+	p = 0;
 	pos = 0;
+	str = services + pos;
 	nameLen = strlen(name);
 	while(*(services + pos)) {
 		/* walk to the name-end */

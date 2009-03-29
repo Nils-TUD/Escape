@@ -97,7 +97,9 @@ static void test_vfs_readFileSystem(void) {
 		return;
 	}
 
-	/* skip "." and ".." */
+	/* skip ".", ".." and pipe */
+	vfs_readFile(KERNEL_PID,file,(u8*)&node,sizeof(sVFSDirEntry));
+	vfs_readFile(KERNEL_PID,file,(u8*)node.name,node.header.nameLen);
 	vfs_readFile(KERNEL_PID,file,(u8*)&node,sizeof(sVFSDirEntry));
 	vfs_readFile(KERNEL_PID,file,(u8*)node.name,node.header.nameLen);
 	vfs_readFile(KERNEL_PID,file,(u8*)&node,sizeof(sVFSDirEntry));
@@ -142,7 +144,7 @@ static void test_vfs_readFileSystem(void) {
 
 	newHeap = kheap_getFreeMem();
 	newGFT = vfs_dbg_getGFTEntryCount();
-	if(oldHeap != newHeap || oldGFT != newGFT) {
+	if(oldHeap > newHeap || oldGFT != newGFT) {
 		test_caseFailed("oldHeap=%d, newHeap=%d, oldGFT=%d, newGFT=%d",oldHeap,newHeap,oldGFT,newGFT);
 		return;
 	}
@@ -221,7 +223,7 @@ static void test_vfs_readFileProcess0(void) {
 
 	newHeap = kheap_getFreeMem();
 	newGFT = vfs_dbg_getGFTEntryCount();
-	if(oldHeap != newHeap || oldGFT != newGFT) {
+	if(oldHeap > newHeap || oldGFT != newGFT) {
 		test_caseFailed("oldHeap=%d, newHeap=%d, oldGFT=%d, newGFT=%d",oldHeap,newHeap,oldGFT,newGFT);
 		return;
 	}
@@ -260,7 +262,7 @@ static void test_vfs_createProcess(void) {
 
 	/* check mem-usage */
 	newHeap = kheap_getFreeMem();
-	if(oldHeap != newHeap) {
+	if(oldHeap > newHeap) {
 		test_caseFailed("oldHeap=%d, newHeap=%d",oldHeap,newHeap);
 		return;
 	}
@@ -270,7 +272,7 @@ static void test_vfs_createProcess(void) {
 
 static void test_vfs_createService(void) {
 	u32 oldHeap,newHeap;
-	s32 id,id2;
+	s32 id,id2,id3;
 
 	test_caseStart("Testing vfs_createService()");
 
@@ -278,19 +280,21 @@ static void test_vfs_createService(void) {
 
 	id = vfs_createService(0,"test",0);
 	if(!test_assertTrue(vfsn_isValidNodeNo(id))) return;
-	if(!test_assertInt(vfs_createService(0,"test2",0),ERR_PROC_DUP_SERVICE)) return;
+	id2 = vfs_createService(0,"test2",0);
+	if(!test_assertTrue(vfsn_isValidNodeNo(id2))) return;
 	if(!test_assertInt(vfs_createService(1,"test",0),ERR_SERVICE_EXISTS)) return;
 	if(!test_assertInt(vfs_createService(1,"",0),ERR_INV_SERVICE_NAME)) return;
 	if(!test_assertInt(vfs_createService(1,"abc.def",0),ERR_INV_SERVICE_NAME)) return;
-	id2 = vfs_createService(1,"test2",0);
-	if(!test_assertTrue(vfsn_isValidNodeNo(id2))) return;
+	id3 = vfs_createService(1,"test3",0);
+	if(!test_assertTrue(vfsn_isValidNodeNo(id3))) return;
 
 	vfs_removeService(0,id);
-	vfs_removeService(1,id2);
+	vfs_removeService(0,id2);
+	vfs_removeService(1,id3);
 
 	/* check mem-usage */
 	newHeap = kheap_getFreeMem();
-	if(oldHeap != newHeap) {
+	if(oldHeap > newHeap) {
 		test_caseFailed("oldHeap=%d, newHeap=%d",oldHeap,newHeap);
 		return;
 	}

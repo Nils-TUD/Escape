@@ -89,7 +89,7 @@ static void test_2(void) {
 
 	len = sll_length(list);
 	sll_destroy(list,false);
-	if(kheap_getFreeMem() != free || len != 0)
+	if(kheap_getFreeMem() < free || len != 0)
 		test_caseFailed("Elements not removed or memory not freed");
 	else
 		test_caseSucceded();
@@ -112,7 +112,7 @@ static void test_3(void) {
 
 	len = sll_length(list);
 	sll_destroy(list,false);
-	if(kheap_getFreeMem() != free || len != 0)
+	if(kheap_getFreeMem() < free || len != 0)
 		test_caseFailed("Elements not removed or memory not freed");
 	else
 		test_caseSucceded();
@@ -130,7 +130,7 @@ static void test_4(void) {
 	}
 	sll_destroy(list,false);
 
-	if(kheap_getFreeMem() != free)
+	if(kheap_getFreeMem() < free)
 		test_caseFailed("Memory not freed");
 	else
 		test_caseSucceded();
@@ -166,7 +166,7 @@ static void test_5(void) {
 		res = false;
 	sll_destroy(list,false);
 
-	if(!res || kheap_getFreeMem() != free)
+	if(!res || kheap_getFreeMem() < free)
 		test_caseFailed("Insert wrong or memory not freed");
 	else
 		test_caseSucceded();
@@ -202,7 +202,7 @@ static void test_6(void) {
 		res = false;
 	sll_destroy(list,false);
 
-	if(!res || kheap_getFreeMem() != free)
+	if(!res || kheap_getFreeMem() < free)
 		test_caseFailed("Set wrong or Memory not freed");
 	else
 		test_caseSucceded();
@@ -225,7 +225,7 @@ static void test_7(void) {
 	sll_destroy(list,false);
 	tprintf("done\n");
 
-	if(kheap_getFreeMem() != free)
+	if(kheap_getFreeMem() < free)
 		test_caseFailed("Memory not freed (before=%d, after=%d)",free,kheap_getFreeMem());
 	else
 		test_caseSucceded();

@@ -49,7 +49,7 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,void *buffer);
 void vfsinfo_init(void) {
 	tVFSNodeNo nodeNo;
 	vfsn_resolvePath("system:/",&nodeNo);
-	vfsn_createInfo(vfsn_getNode(nodeNo),(char*)"memusage",vfsinfo_memUsageReadHandler);
+	vfsn_createInfo(KERNEL_PID,vfsn_getNode(nodeNo),(char*)"memusage",vfsinfo_memUsageReadHandler);
 }
 
 s32 vfsinfo_procReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {

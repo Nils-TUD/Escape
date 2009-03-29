@@ -48,6 +48,16 @@ s32 read(tFD fd,void *buffer,u32 count);
 s32 eof(tFD fd);
 
 /**
+ * Sets the position for the given file-descriptor. Note that this is not possible
+ * for service-usages!
+ *
+ * @param fd the file-descriptor
+ * @param position the new position in the file.
+ * @return 0 on success
+ */
+s32 seek(tFD fd,u32 position);
+
+/**
  * Writes count bytes from the given buffer into the given fd and returns the number of written
  * bytes.
  *

@@ -57,6 +57,9 @@ int main(int argc,char **argv) {
 	debugf("ret=%d\n",printu(0xABCDEF,16));
 	flush();*/
 
+	exec(0x12345678,NULL);
+
+#if 0
 	char str[200] = "TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST";
 	s32 res;
 	u32 max;
@@ -72,6 +75,7 @@ int main(int argc,char **argv) {
 	u32 m,d,y;
 	res = sscanf("12/4/89","%2d/%2d/%2d",&m,&d,&y);
 	printf("res=%d, Date: %02d/%02d/%02d\n",res,m,d,y);
+#endif
 
 	/*u32 res;
 	s32 u,d,e;
@@ -137,7 +141,7 @@ int main(int argc,char **argv) {
 		exit(0);
 	}
 
-	sleep(EV_CHILD_DIED);
+	wait(EV_CHILD_DIED);
 	printf("Ok, closing file\n");
 	close(fd);*/
 

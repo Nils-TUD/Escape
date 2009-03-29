@@ -81,7 +81,7 @@ int main(void) {
 				read(kbFd,&keycode,sizeof(sMsgKbResponse));
 				vterm_handleKeycode(&keycode);
 			}
-			sleep(EV_CLIENT | EV_RECEIVED_MSG);
+			wait(EV_CLIENT | EV_RECEIVED_MSG);
 		}
 		else {
 			sVTerm *vt = getVTerm(client);

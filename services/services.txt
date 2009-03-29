@@ -3,3 +3,4 @@ keyboard:
 vterm: keyboard,speaker,video
 video:
 env:
+cmos:

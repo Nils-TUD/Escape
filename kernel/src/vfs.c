@@ -177,6 +177,9 @@ tFile vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
 	/* count references of virtual nodes */
 	if(IS_VIRT(nodeNo)) {
 		sVFSNode *n = nodes + VIRT_INDEX(nodeNo);
+		/* it is not allowed to write into nodes of other processes */
+		if(n->type != T_SERVUSE && (flags & VFS_WRITE) && n->owner != pid)
+			return ERR_NO_WRITE_PERM;
 		n->refCount++;
 	}
 
@@ -305,6 +308,26 @@ bool vfs_eof(tPid pid,tFile file) {
 	}
 
 	return eof;
+}
+
+s32 vfs_seek(tPid pid,tFile file,u32 position) {
+	sGFTEntry *e = globalFileTable + file;
+
+	if(IS_VIRT(e->nodeNo)) {
+		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
+		sVFSNode *n = nodes + i;
+
+		if(n->type == T_SERVUSE)
+			return ERR_SERVUSE_SEEK;
+
+		/* set position */
+		e->position = MIN(n->data.def.pos - 1,position);
+	}
+	else {
+		/* TODO */
+	}
+
+	return 0;
 }
 
 s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count) {
@@ -654,7 +677,7 @@ bool vfs_createProcess(tPid pid,fRead handler) {
 		n = n->next;
 	}
 
-	n = vfsn_createInfo(proc,name,handler);
+	n = vfsn_createInfo(KERNEL_PID,proc,name,handler);
 	if(n != NULL) {
 		/* invalidate cache */
 		if(proc->data.def.cache != NULL) {
@@ -779,7 +802,7 @@ s32 vfs_serviceUseReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 			/* wait until a message arrives */
 			/* don't cache the list here, because the pointer changes if the list ist NULL */
 			while(sll_length(node->data.servuse.recvList) == 0) {
-				proc_sleep(pid,EV_RECEIVED_MSG);
+				proc_wait(pid,EV_RECEIVED_MSG);
 				proc_switch();
 			}
 		}

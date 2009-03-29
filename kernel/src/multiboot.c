@@ -10,6 +10,7 @@
 #include "../h/proc.h"
 #include "../h/elf.h"
 #include "../h/video.h"
+#include "../h/vfsnode.h"
 #include <string.h>
 
 #define CHECK_FLAG(flags,bit) (flags & (1 << bit))

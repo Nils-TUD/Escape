@@ -71,7 +71,7 @@ int main(void) {
 
 	/* we don't want to be waked up. we'll get signals anyway */
 	while(1)
-		sleep(EV_NOEVENT);
+		wait(EV_NOEVENT);
 
 	/* clean up */
 	unsetSigHandler(SIG_INTRPT_KB);

@@ -21,6 +21,7 @@
 #include "../h/vfs.h"
 #include "../h/vfsinfo.h"
 #include "../h/video.h"
+#include "../h/timer.h"
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table
@@ -72,9 +73,14 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	mboot_dbg_print();
 #endif
 
-	/* mm && kheap */
-	vid_printf("Initializing memory-management...");
+	/* mm */
+	vid_printf("Initializing physical memory-management...");
 	mm_init();
+	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_printf("\033f\x2%s\033r\x0","DONE");
+
+	/* paging */
+	vid_printf("Initializing paging...");
 	paging_mapHigherHalf();
 	paging_initCOWList();
 	vid_toLineEnd(vid_getswidth("DONE"));
@@ -97,6 +103,12 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	/* idt */
 	vid_printf("Initializing IDT...");
 	intrpt_init();
+	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_printf("\033f\x2%s\033r\x0","DONE");
+
+	/* timer */
+	vid_printf("Initializing Timer...");
+	timer_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 

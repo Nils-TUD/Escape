@@ -128,7 +128,7 @@ void proc_switchTo(tPid pid) {
 	}
 }
 
-void proc_sleep(tPid pid,u8 events) {
+void proc_wait(tPid pid,u8 events) {
 	sProc *p = procs + pid;
 	p->events = events;
 	sched_setBlocked(p);

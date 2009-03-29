@@ -71,13 +71,21 @@ s32 exec(const char *path,const char **args);
 void yield(void);
 
 /**
+ * Puts the process to sleep for <msecs> milliseconds.
+ *
+ * @param msecs the number of milliseconds to wait
+ * @return 0 on success
+ */
+s32 sleep(u32 msecs);
+
+/**
  * Puts the process to sleep until one of the given events occurrs. Note that you will
  * always be waked up for signals!
  *
  * @param events the events on which you want to wake up
  * @return a negative error-code if failed
  */
-s32 sleep(u8 events);
+s32 wait(u8 events);
 
 /**
  * Destroys the process and provides the parent the given error-code

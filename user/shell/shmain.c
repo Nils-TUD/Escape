@@ -266,7 +266,7 @@ static s32 shell_executeCmd(char *line) {
 
 			/* wait for child */
 			waitingPid = pid;
-			sleep(EV_CHILD_DIED);
+			wait(EV_CHILD_DIED);
 			waitingPid = INVALID_PID;
 		}
 

@@ -61,7 +61,7 @@ int main(void) {
 	while(1) {
 		fd = getClient(&id,1,&client);
 		if(fd < 0)
-			sleep(EV_CLIENT);
+			wait(EV_CLIENT);
 		else {
 			sMsgHeader header;
 			while(read(fd,&header,sizeof(sMsgHeader)) > 0) {

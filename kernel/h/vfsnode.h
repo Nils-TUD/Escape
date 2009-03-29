@@ -122,13 +122,14 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name);
 /**
  * Creates an info-node
  *
+ * @param pid the owner
  * @param parent the parent-node
  * @param prev the previous node
  * @param name the node-name
  * @param handler the read-handler
  * @return the node
  */
-sVFSNode *vfsn_createInfo(sVFSNode *parent,char *name,fRead handler);
+sVFSNode *vfsn_createInfo(tPid pid,sVFSNode *parent,char *name,fRead handler);
 
 /**
  * Creates a service-node

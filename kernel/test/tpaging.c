@@ -82,7 +82,7 @@ static void test_paging_access(u32 addr,u32 count) {
 }
 
 static void test_paging_free(u32 addr,u32 count) {
-	paging_unmap(addr,count,false);
+	paging_unmap(addr,count,false,false);
 	if(count > 0) {
 		/* unmap & remove affected page-tables */
 		paging_unmapPageTables(ADDR_TO_PDINDEX(addr),

@@ -2,7 +2,7 @@ BUILD = ../build
 LIBDIR=../lib
 
 CC = gcc
-CFLAGS = -g -nostdlib -nostartfiles -nodefaultlibs $(CWFLAGS) -I$(LIBDIR)/h
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -I$(LIBDIR)/h
 
 CSRCS = $(wildcard src/*.c)
 ASRCS = $(wildcard src/*.s)
@@ -29,7 +29,7 @@ $(BUILD)/libc_%.o: src/%.c
 
 $(BUILD)/libc_a%.o: src/%.s
 		@echo "===== ASSEMBLING $< =====";
-		nasm -g -f elf -o $@ $<
+		nasm $(ASMFLAGS) -o $@ $<
 
 $(BUILD)/libc_lib_%.o:	$(LIBDIR)/src/%.c
 		@echo "===== COMPILING $< =====";
@@ -37,7 +37,7 @@ $(BUILD)/libc_lib_%.o:	$(LIBDIR)/src/%.c
 
 $(STARTO): $(START)
 		@echo "===== ASSEMBLING $(START) =====";
-		nasm -g -f elf -o $(STARTO) $(START)
+		nasm $(ASMFLAGS) -o $(STARTO) $(START)
 
 $(DEP):	$(CSRCS)
 		@echo "===== GENERATING DEPENDENCIES =====";

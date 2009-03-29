@@ -19,12 +19,13 @@
 #include "../h/video.h"
 #include "../h/signals.h"
 #include "../h/elf.h"
+#include "../h/multiboot.h"
 #include <string.h>
 
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define SYSCALL_COUNT					26
+#define SYSCALL_COUNT					27
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode)		((stack)->number = (errorCode))
@@ -40,6 +41,10 @@ typedef struct {
 	u8 argCount;
 } sSyscall;
 
+/**
+ * Loads the multiboot-modules. This is intended for initloader only!
+ */
+static void sysc_loadMods(sSysCallStack *stack);
 /**
  * Returns the pid of the current process
  *
@@ -143,7 +148,9 @@ static void sysc_unregService(sSysCallStack *stack);
  * For services: Looks wether a client wants to be served and returns a file-descriptor
  * for it.
  *
- * @param tServ the service-id
+ * @param tServ* services an array with service-ids to check
+ * @param u32 count the size of <services>
+ * @param tServ* serv will be set to the service from which the client has been taken
  * @return tFD the file-descriptor to use
  */
 static void sysc_getClient(sSysCallStack *stack);
@@ -204,7 +211,6 @@ static void sysc_unsetSigHandler(sSysCallStack *stack);
 /**
  * Acknoledges that the processing of a signal is finished
  *
- * @param tSig signal
  * @return s32 0 if no error
  */
 static void sysc_ackSignal(sSysCallStack *stack);
@@ -247,7 +253,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 11 */	{sysc_mapPhysical,			2},
 	/* 12 */	{sysc_write,				3},
 	/* 13 */	{sysc_yield,				0},
-	/* 14 */	{sysc_getClient,			1},
+	/* 14 */	{sysc_getClient,			3},
 	/* 15 */	{sysc_requestIOPorts,		2},
 	/* 16 */	{sysc_releaseIOPorts,		2},
 	/* 17 */	{sysc_dupFd,				1},
@@ -259,6 +265,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 23 */	{sysc_sendSignalTo,			2},
 	/* 24 */	{sysc_exec,					1},
 	/* 25 */	{sysc_eof,					1},
+	/* 26 */	{sysc_loadMods,				0},
 };
 
 void sysc_handle(sIntrptStackFrame *intrptStack) {
@@ -275,6 +282,10 @@ void sysc_handle(sIntrptStackFrame *intrptStack) {
 		SYSC_ERROR(stack,0);
 		syscalls[sysCallNo].handler(stack);
 	}
+}
+
+static void sysc_loadMods(sSysCallStack *stack) {
+	mboot_loadModules(intrpt_getCurStack());
 }
 
 static void sysc_getpid(sSysCallStack *stack) {
@@ -374,7 +385,7 @@ static void sysc_open(sSysCallStack *stack) {
 		/* get free fd */
 		fd = proc_getFreeFd();
 		if(fd < 0) {
-			/* TODO clean up */
+			vfs_closeFile(file);
 			SYSC_ERROR(stack,fd);
 			return;
 		}
@@ -550,8 +561,6 @@ static void sysc_regService(sSysCallStack *stack) {
 		return;
 	}
 
-	/*vfs_dbg_printTree();*/
-
 	SYSC_RET1(stack,res);
 }
 
@@ -576,14 +585,20 @@ static void sysc_unregService(sSysCallStack *stack) {
 }
 
 static void sysc_getClient(sSysCallStack *stack) {
-	tServ id = stack->arg1;
+	tServ *ids = (tServ*)stack->arg1;
+	u32 count = stack->arg2;
+	tServ *client = (tServ*)stack->arg3;
 	sProc *p = proc_getRunning();
 	tFD fd;
 	s32 res;
 	tFile file;
 
-	/* check argument */
-	if(!vfsn_isValidNodeNo(id)) {
+	/* check arguments */
+	if(count <= 0 || !paging_isRangeUserReadable(ids,count * sizeof(tServ))) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+	if(!paging_isRangeUserWritable(client,sizeof(tServ))) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
@@ -596,7 +611,7 @@ static void sysc_getClient(sSysCallStack *stack) {
 	}
 
 	/* open a client */
-	file = vfs_openClient(p->pid,id);
+	file = vfs_openClient(p->pid,ids,count,client);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;
@@ -800,15 +815,8 @@ static void sysc_unsetSigHandler(sSysCallStack *stack) {
 }
 
 static void sysc_ackSignal(sSysCallStack *stack) {
-	tSig signal = (tSig)stack->arg1;
 	sProc *p = proc_getRunning();
-
-	if(!sig_canHandle(signal)) {
-		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
-		return;
-	}
-
-	sig_ackHandling(p->pid,signal);
+	sig_ackHandling(p->pid);
 	SYSC_RET1(stack,0);
 }
 
@@ -956,11 +964,14 @@ static void sysc_exec(sSysCallStack *stack) {
 
 	/* error? */
 	if(readBytes < 0) {
+		kheap_free(argBuffer);
+		kheap_free(buffer);
 		SYSC_ERROR(stack,readBytes);
 		return;
 	}
 
 	/* now remove the process-data */
+	/* TODO text... */
 	proc_changeSize(-p->dataPages,CHG_DATA);
 	/* copy path so that we can identify the process */
 	memcpy(p->command,pathSave + (pathLen > MAX_PROC_NAME_LEN ? (pathLen - MAX_PROC_NAME_LEN) : 0),
@@ -969,10 +980,9 @@ static void sysc_exec(sSysCallStack *stack) {
 	/* load program and prepare interrupt-stack */
 	if(elf_loadprog(buffer) == ELF_INVALID_ENTRYPOINT) {
 		/* there is no undo for proc_changeSize() :/ */
-		proc_destroy(p);
-		if(argBuffer != NULL)
-			kheap_free(argBuffer);
+		kheap_free(argBuffer);
 		kheap_free(buffer);
+		proc_destroy(p);
 		proc_switch();
 	}
 	else {
@@ -980,8 +990,7 @@ static void sysc_exec(sSysCallStack *stack) {
 		proc_setupIntrptStack(intrpt_getCurStack(),argc,argBuffer,EXEC_MAX_ARGSIZE - remaining);
 
 		/* finally free the buffer */
-		if(argBuffer != NULL)
-			kheap_free(argBuffer);
+		kheap_free(argBuffer);
 		kheap_free(buffer);
 	}
 }

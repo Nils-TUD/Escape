@@ -13,18 +13,13 @@
 #include <heap.h>
 #include <string.h>
 #include <signals.h>
+#include <bufio.h>
 #include "vterm.h"
 #include "keymap.h"
 #include "keymap.us.h"
 #include "keymap.ger.h"
 
-#define COLS				80
-#define ROWS				25
-#define TAB_WIDTH			4
-
 /* the number of lines to keep in history */
-#define HISTORY_SIZE		(ROWS * 8)
-#define BUFFER_SIZE			(COLS * 2 * HISTORY_SIZE)
 #define INITIAL_RLBUF_SIZE	50
 #define RLBUF_INCR			20
 
@@ -34,69 +29,19 @@
 #define STATE_ALT			2
 
 #define TITLE_BAR_COLOR		0x90
-#define OS_TITLE			"E\x97" \
-							"s\x97" \
-							"c\x97" \
-							"a\x97" \
-							"p\x97" \
-							"e\x97" \
-							" \x97" \
-							"v\x97" \
-							"0\x97" \
-							".\x97" \
-							"1\x97"
+#define OS_TITLE			"E\x90" \
+							"s\x90" \
+							"c\x90" \
+							"a\x90" \
+							"p\x90" \
+							"e\x90" \
+							" \x90" \
+							"v\x90" \
+							"0\x90" \
+							".\x90" \
+							"1\x90"
 
 typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
-
-/* the header for the set-screen message */
-typedef struct {
-	sMsgHeader header;
-	u16 startPos;
-} __attribute__((packed)) sMsgVidSetScr;
-
-/* our vterm-state */
-typedef struct {
-	/* position (on the current page) */
-	u8 col;
-	u8 row;
-	/* colors */
-	u8 foreground;
-	u8 background;
-	/* key states */
-	bool shiftDown;
-	bool altDown;
-	bool ctrlDown;
-	/* file-descriptors */
-	tFD video;
-	tFD speaker;
-	tFD self;
-	/* the first line with content */
-	u16 firstLine;
-	/* the line where row+col starts */
-	u16 currLine;
-	/* the first visible line */
-	u16 firstVisLine;
-	/* the used keymap */
-	u16 keymap;
-	/* wether entered characters should be echo'd to screen */
-	bool echo;
-	/* wether the vterm should read until a newline occurrs */
-	bool readLine;
-	/* readline-buffer */
-	u8 rlStartCol;
-	u32 rlBufSize;
-	u32 rlBufPos;
-	char *rlBuffer;
-	/* in message form for performance-issues */
-	struct {
-		sMsgVidSetScr header;
-		char data[BUFFER_SIZE];
-	} __attribute__((packed)) buffer;
-	struct {
-		sMsgVidSetScr header;
-		char data[COLS * 2];
-	} __attribute__((packed)) titleBar;
-} sVTerm;
 
 /* the messages we'll send */
 typedef struct {
@@ -116,82 +61,106 @@ typedef struct {
 typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
 
 /**
+ * Inits the vterm
+ *
+ * @param vt the vterm
+ * @return true if successfull
+ */
+static bool vterm_init(sVTerm *vt);
+
+/**
  * Sends the character at given position to the video-driver
  *
+ * @param vt the vterm
  * @param row the row
  * @param col the col
  */
-static void vterm_sendChar(u8 row,u8 col);
+static void vterm_sendChar(sVTerm *vt,u8 row,u8 col);
 
 /**
  * Sets the cursor
+ *
+ * @param vt the vterm
  */
-static void vterm_setCursor(void);
+static void vterm_setCursor(sVTerm *vt);
 
 /**
  * Prints the given character to screen
  *
+ * @param vt the vterm
  * @param c the character
  */
-static void vterm_putchar(char c);
+static void vterm_putchar(sVTerm *vt,char c);
 
 /**
  * Inserts a new line
+ *
+ * @param vt the vterm
  */
-static void vterm_newLine(void);
+static void vterm_newLine(sVTerm *vt);
 
 /**
  * Scrolls the screen by <lines> up (positive) or down (negative)
  *
+ * @param vt the vterm
  * @param lines the number of lines to move
  */
-static void vterm_scroll(s16 lines);
+static void vterm_scroll(sVTerm *vt,s16 lines);
 
 /**
  * Refreshes the screen
+ *
+ * @param vt the vterm
  */
-static void vterm_refreshScreen(void);
+static void vterm_refreshScreen(sVTerm *vt);
 
 /**
  * Refreshes <count> lines beginning with <start>
  *
+ * @param vt the vterm
  * @param start the start-line
  * @param count the number of lines
  */
-static void vterm_refreshLines(u16 start,u16 count);
+static void vterm_refreshLines(sVTerm *vt,u16 start,u16 count);
 
 /**
  * Handles the escape-code
  *
+ * @param vt the vterm
  * @param str the current position
  * @return true if something has been done
  */
-static bool vterm_handleEscape(char *str);
+static bool vterm_handleEscape(sVTerm *vt,char *str);
 
 /**
  * Flushes the readline-buffer
+ *
+ * @param vt the vterm
  */
-static void vterm_rlFlushBuf(void);
+static void vterm_rlFlushBuf(sVTerm *vt);
 
 /**
  * Puts the given charactern into the readline-buffer and handles everything necessary
  *
+ * @param vt the vterm
  * @param c the character
  */
-static void vterm_rlPutchar(char c);
+static void vterm_rlPutchar(sVTerm *vt,char c);
 
 /**
+ * @param vt the vterm
  * @return the current position in the readline-buffer
  */
-static u32 vterm_rlGetBufPos(void);
+static u32 vterm_rlGetBufPos(sVTerm *vt);
 
 /**
  * Handles the given keycode for readline
  *
+ * @param vt the vterm
  * @param keycode the keycode
  * @return true if handled
  */
-static bool vterm_rlHandleKeycode(u8 keycode);
+static bool vterm_rlHandleKeycode(sVTerm *vt,u8 keycode);
 
 /* the video-set message */
 static sMsgVidSet msgVidSet = {
@@ -234,13 +203,42 @@ static fKeymapGet keymaps[] = {
 	keymap_us_get,
 	keymap_ger_get
 };
+/* vterms */
+static sVTerm vterms[VTERM_COUNT];
+static sVTerm *activeVT = NULL;
 
-static sVTerm vterm;
+/* key states */
+static bool shiftDown;
+static bool altDown;
+static bool ctrlDown;
 
-bool vterm_init(void) {
+bool vterm_initAll(void) {
+	char name[MAX_NAME_LEN + 1];
+	u32 i;
+
+	for(i = 0; i < VTERM_COUNT; i++) {
+		vterms[i].index = i;
+		sprintf(name,"vterm%d",i);
+		memcpy(vterms[i].name,name,MAX_NAME_LEN + 1);
+		if(!vterm_init(vterms + i))
+			return false;
+	}
+
+	shiftDown = false;
+	altDown = false;
+	ctrlDown = false;
+	return true;
+}
+
+sVTerm *vterm_get(u32 index) {
+	return vterms + index;
+}
+
+static bool vterm_init(sVTerm *vt) {
 	tFD vidFd,selfFd,speakerFd;
 	u32 i,len;
-	char *ptr;
+	char path[strlen("services:/") + MAX_NAME_LEN + 1];
+	char *ptr,*s;
 
 	/* open video */
 	vidFd = open("services:/video",IO_WRITE);
@@ -257,142 +255,162 @@ bool vterm_init(void) {
 	}
 
 	/* open ourself to write into the receive-pipe (which can be read by other processes) */
-	selfFd = open("services:/vterm",IO_WRITE);
+	sprintf(path,"services:/%s",vt->name);
+	selfFd = open(path,IO_WRITE);
 	if(selfFd < 0) {
 		printLastError();
 		return false;
 	}
 
 	/* init state */
-	vterm.col = 0;
-	vterm.row = ROWS - 1;
-	vterm.foreground = WHITE;
-	vterm.background = BLACK;
-	vterm.shiftDown = false;
-	vterm.altDown = false;
-	vterm.ctrlDown = false;
-	vterm.video = vidFd;
-	vterm.speaker = speakerFd;
-	vterm.self = selfFd;
+	vt->col = 0;
+	vt->row = ROWS - 1;
+	vt->foreground = WHITE;
+	vt->background = BLACK;
+	vt->active = false;
+	vt->video = vidFd;
+	vt->speaker = speakerFd;
+	vt->self = selfFd;
 	/* start on first line of the last page */
-	vterm.firstLine = HISTORY_SIZE - ROWS;
-	vterm.currLine = HISTORY_SIZE - ROWS;
-	vterm.firstVisLine = HISTORY_SIZE - ROWS;
+	vt->firstLine = HISTORY_SIZE - ROWS;
+	vt->currLine = HISTORY_SIZE - ROWS;
+	vt->firstVisLine = HISTORY_SIZE - ROWS;
 	/* default behaviour */
-	vterm.echo = true;
-	vterm.readLine = true;
-	vterm.keymap = 1;
-	vterm.rlStartCol = 0;
-	vterm.rlBufSize = INITIAL_RLBUF_SIZE;
-	vterm.rlBufPos = 0;
-	vterm.rlBuffer = (char*)malloc(vterm.rlBufSize * sizeof(char));
-	if(vterm.rlBuffer == NULL) {
+	vt->echo = true;
+	vt->readLine = true;
+	vt->keymap = 1;
+	vt->rlStartCol = 0;
+	vt->rlBufSize = INITIAL_RLBUF_SIZE;
+	vt->rlBufPos = 0;
+	vt->rlBuffer = (char*)malloc(vt->rlBufSize * sizeof(char));
+	if(vt->rlBuffer == NULL) {
 		printLastError();
 		return false;
 	}
 
 	/* fill buffer with spaces to ensure that the cursor is visible (spaces, white on black) */
-	memset(vterm.buffer.data,0x07200720,BUFFER_SIZE);
+	memset(vt->buffer.data,0x07200720,BUFFER_SIZE);
 
 	/* build title bar */
-	vterm.titleBar.header.header.id = MSG_VIDEO_SETSCREEN;
-	vterm.titleBar.header.header.length = sizeof(u16) + COLS * 2;
-	vterm.titleBar.header.startPos = 0;
-	ptr = vterm.titleBar.data;
-	for(i = 0; i < COLS; i++) {
+	vt->titleBar.header.header.id = MSG_VIDEO_SETSCREEN;
+	vt->titleBar.header.header.length = sizeof(u16) + COLS * 2;
+	vt->titleBar.header.startPos = 0;
+	ptr = vt->titleBar.data;
+	s = vt->name;
+	for(i = 0; *s; i++) {
+		*ptr++ = *s++;
+		*ptr++ = TITLE_BAR_COLOR;
+	}
+	for(; i < COLS; i++) {
 		*ptr++ = ' ';
 		*ptr++ = TITLE_BAR_COLOR;
 	}
 	len = strlen(OS_TITLE);
 	i = (((COLS * 2) / 2) - (len / 2)) & ~0x1;
-	ptr = vterm.titleBar.data;
+	ptr = vt->titleBar.data;
 	memcpy(ptr + i,OS_TITLE,len);
-
-	/* refresh screen and write titlebar (once) */
-	vterm_refreshScreen();
-	write(vterm.video,&vterm.titleBar,sizeof(vterm.titleBar));
 	return true;
 }
 
-void vterm_destroy(void) {
-	close(vterm.video);
-	close(vterm.speaker);
-	close(vterm.self);
+void vterm_selectVTerm(u32 index) {
+	sVTerm *vt = vterms + index;
+	if(activeVT != NULL)
+		activeVT->active = false;
+	vt->active = true;
+	activeVT = vt;
+
+	/* refresh screen and write titlebar */
+	write(vt->video,&vt->titleBar,sizeof(vt->titleBar));
+	vterm_refreshScreen(vt);
+	vterm_setCursor(vt);
 }
 
-void vterm_puts(char *str,bool resetRead) {
+void vterm_destroy(sVTerm *vt) {
+	free(vt->rlBuffer);
+	close(vt->video);
+	close(vt->speaker);
+	close(vt->self);
+}
+
+void vterm_puts(sVTerm *vt,char *str,bool resetRead) {
 	char c;
-	u32 oldFirstLine = vterm.firstLine;
-	u32 newPos,oldPos = vterm.row * COLS + vterm.col;
+	u32 oldFirstLine = vt->firstLine;
+	u32 newPos,oldPos = vt->row * COLS + vt->col;
 	u32 start,count;
 
 	while((c = *str)) {
 		if(c == '\033') {
 			str++;
-			vterm_handleEscape(str);
+			vterm_handleEscape(vt,str);
 			str += 2;
 			continue;
 		}
-		vterm_putchar(c);
+		vterm_putchar(vt,c);
 		str++;
 	}
 
 	/* scroll to current line, if necessary */
-	if(vterm.firstVisLine != vterm.currLine)
-		vterm_scroll(vterm.firstVisLine - vterm.currLine);
+	if(vt->firstVisLine != vt->currLine)
+		vterm_scroll(vt,vt->firstVisLine - vt->currLine);
 
-	/* so refresh all lines that need to be refreshed. thats faster than sending all
-	 * chars individually */
-	newPos = vterm.row * COLS + vterm.col;
-	start = oldPos / COLS;
-	count = ((newPos - oldPos) + COLS - 1) / COLS;
-	count += oldFirstLine - vterm.firstLine;
-	if(count <= 0)
-		count = 1;
-	vterm_refreshLines(start,count);
-	vterm_setCursor();
+	if(vt->active) {
+		/* so refresh all lines that need to be refreshed. thats faster than sending all
+		 * chars individually */
+		newPos = vt->row * COLS + vt->col;
+		start = oldPos / COLS;
+		count = ((newPos - oldPos) + COLS - 1) / COLS;
+		count += oldFirstLine - vt->firstLine;
+		if(count <= 0)
+			count = 1;
+		vterm_refreshLines(vt,start,count);
+		vterm_setCursor(vt);
+	}
 
 	/* reset reading */
 	if(resetRead) {
-		vterm.rlBufPos = 0;
-		vterm.rlStartCol = vterm.col;
+		vt->rlBufPos = 0;
+		vt->rlStartCol = vt->col;
 	}
 }
 
-static void vterm_sendChar(u8 row,u8 col) {
-	char *ptr = vterm.buffer.data + (vterm.currLine * COLS * 2) + (row * COLS * 2) + (col * 2);
+static void vterm_sendChar(sVTerm *vt,u8 row,u8 col) {
+	char *ptr = vt->buffer.data + (vt->currLine * COLS * 2) + (row * COLS * 2) + (col * 2);
 	u8 color = *(ptr + 1);
 
 	/* scroll to current line, if necessary */
-	if(vterm.firstVisLine != vterm.currLine)
-		vterm_scroll(vterm.firstVisLine - vterm.currLine);
+	if(vt->firstVisLine != vt->currLine)
+		vterm_scroll(vt,vt->firstVisLine - vt->currLine);
 
 	/* write last character to video-driver */
-	msgVidSet.data.character = *ptr;
-	msgVidSet.data.color = color;
-	msgVidSet.data.row = row;
-	msgVidSet.data.col = col;
-	write(vterm.video,&msgVidSet,sizeof(sMsgVidSet));
+	if(vt->active) {
+		msgVidSet.data.character = *ptr;
+		msgVidSet.data.color = color;
+		msgVidSet.data.row = row;
+		msgVidSet.data.col = col;
+		write(vt->video,&msgVidSet,sizeof(sMsgVidSet));
+	}
 }
 
-static void vterm_setCursor(void) {
-	msgVidSetCursor.data.col = vterm.col;
-	msgVidSetCursor.data.row = vterm.row;
-	write(vterm.video,&msgVidSetCursor,sizeof(sMsgVidSetCursor));
+static void vterm_setCursor(sVTerm *vt) {
+	if(vt->active) {
+		msgVidSetCursor.data.col = vt->col;
+		msgVidSetCursor.data.row = vt->row;
+		write(vt->video,&msgVidSetCursor,sizeof(sMsgVidSetCursor));
+	}
 }
 
-static void vterm_putchar(char c) {
+static void vterm_putchar(sVTerm *vt,char c) {
 	u32 i;
 
 	/* move all one line up, if necessary */
-	if(vterm.row >= ROWS) {
-		vterm_newLine();
-		vterm_refreshScreen();
-		vterm.row--;
+	if(vt->row >= ROWS) {
+		vterm_newLine(vt);
+		vterm_refreshScreen(vt);
+		vt->row--;
 	}
 
 	/* write to bochs/qemu console (\r not necessary here) */
-	if(c != '\r' && c != '\a' && c != '\b') {
+	if(c != '\r' && c != '\a' && c != '\b' && c != '\t') {
 		outByte(0xe9,c);
 		outByte(0x3f8,c);
 		while((inByte(0x3fd) & 0x20) == 0);
@@ -401,110 +419,116 @@ static void vterm_putchar(char c) {
 	switch(c) {
 		case '\n':
 			/* to next line */
-			vterm.row++;
+			vt->row++;
 			/* move cursor to line start */
-			vterm_putchar('\r');
+			vterm_putchar(vt,'\r');
 			break;
 
 		case '\r':
 			/* to line-start */
-			vterm.col = 0;
+			vt->col = 0;
 			break;
 
 		case '\a':
 			/* beep */
-			write(vterm.speaker,&msgSpeaker,sizeof(sMsgSpeaker));
+			write(vt->speaker,&msgSpeaker,sizeof(sMsgSpeaker));
 			break;
 
 		case '\b':
-			if((!vterm.readLine && vterm.col > 0) || (vterm.readLine && vterm.rlBufPos > 0)) {
-				if(!vterm.readLine || vterm.echo) {
-					i = (vterm.currLine * COLS * 2) + (vterm.row * COLS * 2) + (vterm.col * 2);
+			if((!vt->readLine && vt->col > 0) || (vt->readLine && vt->rlBufPos > 0)) {
+				if(!vt->readLine || vt->echo) {
+					i = (vt->currLine * COLS * 2) + (vt->row * COLS * 2) + (vt->col * 2);
 					/* move the characters back in the buffer */
-					memmove(vterm.buffer.data + i - 2,vterm.buffer.data + i,(COLS - vterm.col) * 2);
-					vterm.col--;
+					memmove(vt->buffer.data + i - 2,vt->buffer.data + i,(COLS - vt->col) * 2);
+					vt->col--;
 				}
 
-				if(vterm.readLine) {
-					vterm.rlBuffer[vterm.rlBufPos] = '\0';
-					vterm.rlBufPos--;
+				if(vt->readLine) {
+					vt->rlBuffer[vt->rlBufPos] = '\0';
+					vt->rlBufPos--;
 				}
 
 				/* overwrite line */
-				vterm_refreshLines(vterm.row,1);
-				vterm_setCursor();
+				vterm_refreshLines(vt,vt->row,1);
+				vterm_setCursor(vt);
 			}
 			else {
 				/* beep */
-				write(vterm.speaker,&msgSpeaker,sizeof(sMsgSpeaker));
+				write(vt->speaker,&msgSpeaker,sizeof(sMsgSpeaker));
 			}
 			break;
 
 		case '\t':
-			i = TAB_WIDTH - vterm.col % TAB_WIDTH;
+			i = TAB_WIDTH - vt->col % TAB_WIDTH;
 			while(i-- > 0) {
-				vterm_putchar(' ');
+				vterm_putchar(vt,' ');
 			}
 			break;
 
 		default: {
-			i = (vterm.currLine * COLS * 2) + (vterm.row * COLS * 2) + (vterm.col * 2);
+			/* do an explicit newline if necessary */
+			if(vt->col >= COLS)
+				vterm_putchar(vt,'\n');
+
+			i = (vt->currLine * COLS * 2) + (vt->row * COLS * 2) + (vt->col * 2);
 
 			/* write to buffer */
-			vterm.buffer.data[i] = c;
-			vterm.buffer.data[i + 1] = (vterm.background << 4) | vterm.foreground;
+			vt->buffer.data[i] = c;
+			vt->buffer.data[i + 1] = (vt->background << 4) | vt->foreground;
 
-			vterm.col++;
-			/* do an explicit newline if necessary */
-			if(vterm.col >= COLS)
-				vterm_putchar('\n');
+			vt->col++;
 		}
 		break;
 	}
 }
 
-static void vterm_newLine(void) {
-	if(vterm.firstLine > 0) {
+static void vterm_newLine(sVTerm *vt) {
+	if(vt->firstLine > 0) {
 		/* move one line back */
-		memmove(vterm.buffer.data + ((vterm.firstLine - 1) * COLS * 2),
-				vterm.buffer.data + (vterm.firstLine * COLS * 2),
-				(HISTORY_SIZE - vterm.firstLine) * COLS * 2);
-		vterm.firstLine--;
+		memmove(vt->buffer.data + ((vt->firstLine - 1) * COLS * 2),
+				vt->buffer.data + (vt->firstLine * COLS * 2),
+				(HISTORY_SIZE - vt->firstLine) * COLS * 2);
+		vt->firstLine--;
 	}
 	else {
 		/* overwrite first line */
-		memmove(vterm.buffer.data + (vterm.firstLine * COLS * 2),
-				vterm.buffer.data + ((vterm.firstLine + 1) * COLS * 2),
-				(HISTORY_SIZE - vterm.firstLine) * COLS * 2);
+		memmove(vt->buffer.data + (vt->firstLine * COLS * 2),
+				vt->buffer.data + ((vt->firstLine + 1) * COLS * 2),
+				(HISTORY_SIZE - vt->firstLine) * COLS * 2);
 	}
 
 	/* clear last line */
-	memset(vterm.buffer.data + (vterm.currLine + vterm.row - 1) * COLS * 2,0x07200720,COLS * 2);
+	memset(vt->buffer.data + (vt->currLine + vt->row - 1) * COLS * 2,0x07200720,COLS * 2);
 }
 
-static void vterm_scroll(s16 lines) {
-	u16 old = vterm.firstVisLine;
+static void vterm_scroll(sVTerm *vt,s16 lines) {
+	u16 old = vt->firstVisLine;
 	if(lines > 0) {
 		/* ensure that we don't scroll above the first line with content */
-		vterm.firstVisLine = MAX(vterm.firstLine,(s16)vterm.firstVisLine - lines);
+		vt->firstVisLine = MAX(vt->firstLine,(s16)vt->firstVisLine - lines);
 	}
 	else {
 		/* ensure that we don't scroll behind the last line */
-		vterm.firstVisLine = MIN(HISTORY_SIZE - ROWS,vterm.firstVisLine - lines);
+		vt->firstVisLine = MIN(HISTORY_SIZE - ROWS,vt->firstVisLine - lines);
 	}
 
-	if(old != vterm.firstVisLine)
-		vterm_refreshScreen();
+	if(vt->active && old != vt->firstVisLine)
+		vterm_refreshScreen(vt);
 }
 
-static void vterm_refreshScreen(void) {
-	vterm_refreshLines(1,ROWS - 1);
+static void vterm_refreshScreen(sVTerm *vt) {
+	vterm_refreshLines(vt,1,ROWS - 1);
 }
 
-static void vterm_refreshLines(u16 start,u16 count) {
+static void vterm_refreshLines(sVTerm *vt,u16 start,u16 count) {
 	u8 back[sizeof(sMsgVidSetScr)];
-	char *ptr = vterm.buffer.data + (vterm.firstVisLine + start) * COLS * 2;
+	char *ptr;
+
+	if(!vt->active)
+		return;
+
 	/* backup screen-data */
+	ptr = vt->buffer.data + (vt->firstVisLine + start) * COLS * 2;
 	memcpy(back,ptr - sizeof(sMsgVidSetScr),sizeof(sMsgVidSetScr));
 
 	/* send message */
@@ -512,74 +536,74 @@ static void vterm_refreshLines(u16 start,u16 count) {
 	header->header.id = MSG_VIDEO_SETSCREEN;
 	header->header.length = (sizeof(sMsgVidSetScr) - sizeof(sMsgHeader)) + count * COLS * 2;
 	header->startPos = start * COLS;
-	write(vterm.video,ptr - sizeof(sMsgVidSetScr),sizeof(sMsgVidSetScr) + count * COLS * 2);
+	write(vt->video,ptr - sizeof(sMsgVidSetScr),sizeof(sMsgVidSetScr) + count * COLS * 2);
 
 	/* restore screen-data */
 	memcpy(ptr - sizeof(sMsgVidSetScr),back,sizeof(sMsgVidSetScr));
 }
 
-static bool vterm_handleEscape(char *str) {
+static bool vterm_handleEscape(sVTerm *vt,char *str) {
 	u8 keycode = *str;
 	u8 value = *(str + 1);
 	bool res = false;
 	switch(keycode) {
 		case VK_LEFT:
-			if(vterm.col > 0) {
-				vterm.col--;
-				vterm_setCursor();
+			if(vt->col > 0) {
+				vt->col--;
+				vterm_setCursor(vt);
 			}
 			res = true;
 			break;
 		case VK_RIGHT:
-			if(vterm.col < COLS - 1) {
-				vterm.col++;
-				vterm_setCursor();
+			if(vt->col < COLS - 1) {
+				vt->col++;
+				vterm_setCursor(vt);
 			}
 			res = true;
 			break;
 		case VK_HOME:
 			if(value > 0) {
-				if(value > vterm.col)
-					vterm.col = 0;
+				if(value > vt->col)
+					vt->col = 0;
 				else
-					vterm.col -= value;
-				vterm_setCursor();
+					vt->col -= value;
+				vterm_setCursor(vt);
 			}
 			res = true;
 			break;
 		case VK_END:
 			if(value > 0) {
-				if(vterm.col + value > COLS - 1)
-					vterm.col = COLS - 1;
+				if(vt->col + value > COLS - 1)
+					vt->col = COLS - 1;
 				else
-					vterm.col += value;
-				vterm_setCursor();
+					vt->col += value;
+				vterm_setCursor(vt);
 			}
 			res = true;
 			break;
 		case VK_ESC_RESET:
-			vterm.foreground = WHITE;
-			vterm.background = BLACK;
+			vt->foreground = WHITE;
+			vt->background = BLACK;
 			res = true;
 			break;
 		case VK_ESC_FG:
-			vterm.foreground = MIN(9,value);
+			vt->foreground = MIN(9,value);
 			res = true;
 			break;
 		case VK_ESC_BG:
-			vterm.background = MIN(9,value);
+			vt->background = MIN(9,value);
 			res = true;
 			break;
 		case VK_ESC_SET_ECHO:
-			vterm.echo = value ? true : false;
+			vt->echo = value ? true : false;
 			res = true;
 			break;
 		case VK_ESC_SET_RL:
-			vterm.readLine = value ? true : false;
-			if(vterm.readLine) {
+			vt->readLine = value ? true : false;
+			if(vt->readLine) {
 				/* reset reading */
-				vterm.rlBufPos = 0;
-				vterm.rlStartCol = vterm.col;
+				vt->rlBufPos = 0;
+				vt->rlStartCol = vt->col;
 			}
 			res = true;
 			break;
@@ -590,21 +614,25 @@ static bool vterm_handleEscape(char *str) {
 
 void vterm_handleKeycode(sMsgKbResponse *msg) {
 	sKeymapEntry *e;
+	sVTerm *vt = activeVT;
 	char c;
+
+	if(vt == NULL)
+		return;
 
 	/* handle shift, alt and ctrl */
 	switch(msg->keycode) {
 		case VK_LSHIFT:
 		case VK_RSHIFT:
-			vterm.shiftDown = !msg->isBreak;
+			shiftDown = !msg->isBreak;
 			break;
 		case VK_LALT:
 		case VK_RALT:
-			vterm.altDown = !msg->isBreak;
+			altDown = !msg->isBreak;
 			break;
 		case VK_LCTRL:
 		case VK_RCTRL:
-			vterm.ctrlDown = !msg->isBreak;
+			ctrlDown = !msg->isBreak;
 			break;
 	}
 
@@ -612,109 +640,119 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 	if(msg->isBreak)
 		return;
 
-	e = keymaps[vterm.keymap](msg->keycode);
+	e = keymaps[vt->keymap](msg->keycode);
 	if(e != NULL) {
 		bool sendMsg = true;
-		if(vterm.shiftDown)
+		if(shiftDown)
 			c = e->shift;
-		else if(vterm.altDown)
+		else if(altDown)
 			c = e->alt;
 		else
 			c = e->def;
 
 		switch(msg->keycode) {
 			case VK_PGUP:
-				vterm_scroll(ROWS);
+				vterm_scroll(vt,ROWS);
 				sendMsg = false;
 				break;
 			case VK_PGDOWN:
-				vterm_scroll(-ROWS);
+				vterm_scroll(vt,-ROWS);
 				sendMsg = false;
 				break;
 			case VK_UP:
-				if(vterm.shiftDown) {
-					vterm_scroll(1);
+				if(shiftDown) {
+					vterm_scroll(vt,1);
 					sendMsg = false;
 				}
 				break;
 			case VK_DOWN:
-				if(vterm.shiftDown) {
-					vterm_scroll(-1);
+				if(shiftDown) {
+					vterm_scroll(vt,-1);
 					sendMsg = false;
 				}
 				break;
 		}
 
 		if(sendMsg) {
-			if(c == NPRINT || vterm.ctrlDown) {
+			if(c == NPRINT || ctrlDown) {
 				/* handle ^C, ^D and so on */
-				if(vterm.ctrlDown) {
+				if(ctrlDown) {
 					switch(msg->keycode) {
 						case VK_C:
-							sendSignal(SIG_INTRPT,0);
+							sendSignal(SIG_INTRPT,activeVT->index);
 							break;
 						case VK_D:
-							if(vterm.readLine)
-								vterm_rlPutchar('\n');
+							if(vt->readLine) {
+								vterm_rlPutchar(vt,IO_EOF);
+								vterm_rlFlushBuf(vt);
+							}
 							break;
+						case VK_1:
+							if(activeVT->index != 0)
+								vterm_selectVTerm(0);
+							return;
+						case VK_2:
+							if(activeVT->index != 1)
+								vterm_selectVTerm(1);
+							return;
 					}
 				}
 
 				/* in reading mode? */
-				if(vterm.readLine) {
-					if(vterm.echo)
-						vterm_rlHandleKeycode(msg->keycode);
+				if(vt->readLine) {
+					if(vt->echo)
+						vterm_rlHandleKeycode(vt,msg->keycode);
 				}
 				/* send escape-code */
 				else {
-					char escape[3] = {'\033',msg->keycode,(vterm.altDown << STATE_ALT) |
-							(vterm.ctrlDown << STATE_CTRL) |
-							(vterm.shiftDown << STATE_SHIFT)};
-					write(vterm.self,&escape,sizeof(char) * 3);
+					char escape[3] = {'\033',msg->keycode,(altDown << STATE_ALT) |
+							(ctrlDown << STATE_CTRL) |
+							(shiftDown << STATE_SHIFT)};
+					write(vt->self,&escape,sizeof(char) * 3);
 				}
 			}
 			else {
-				if(vterm.readLine)
-					vterm_rlPutchar(c);
+				if(vt->readLine)
+					vterm_rlPutchar(vt,c);
 				else
-					write(vterm.self,&c,sizeof(char));
+					write(vt->self,&c,sizeof(char));
 			}
 		}
 	}
 }
 
-static void vterm_rlFlushBuf(void) {
-	u32 bufPos = vterm_rlGetBufPos();
-	if(vterm.echo)
+static void vterm_rlFlushBuf(sVTerm *vt) {
+	u32 bufPos = vterm_rlGetBufPos(vt);
+	if(vt->echo)
 		bufPos++;
 
 	if(bufPos > 0) {
-		write(vterm.self,vterm.rlBuffer,bufPos * sizeof(char));
-		vterm.rlBufPos = 0;
+		write(vt->self,vt->rlBuffer,bufPos * sizeof(char));
+		vt->rlBufPos = 0;
 	}
 }
 
-static void vterm_rlPutchar(char c) {
+static void vterm_rlPutchar(sVTerm *vt,char c) {
 	switch(c) {
 		case '\b': {
-			u32 bufPos = vterm_rlGetBufPos();
+			u32 bufPos = vterm_rlGetBufPos(vt);
 			if(bufPos > 0) {
-				if(vterm.echo) {
-					u32 i = (vterm.currLine * COLS * 2) + (vterm.row * COLS * 2) + (vterm.col * 2);
+				if(vt->echo) {
+					u32 i = (vt->currLine * COLS * 2) + (vt->row * COLS * 2) + (vt->col * 2);
 					/* move the characters back in the buffer */
-					memmove(vterm.buffer.data + i - 2,vterm.buffer.data + i,(COLS - vterm.col) * 2);
-					vterm.col--;
+					memmove(vt->buffer.data + i - 2,vt->buffer.data + i,(COLS - vt->col) * 2);
+					vt->col--;
 				}
 
 				/* move chars back */
-				memmove(vterm.rlBuffer + bufPos - 1,vterm.rlBuffer + bufPos,vterm.rlBufPos - bufPos);
+				memmove(vt->rlBuffer + bufPos - 1,vt->rlBuffer + bufPos,vt->rlBufPos - bufPos);
 				/* remove last */
-				vterm.rlBuffer[vterm.rlBufPos - 1] = '\0';
-				vterm.rlBufPos--;
+				vt->rlBuffer[vt->rlBufPos - 1] = '\0';
+				vt->rlBufPos--;
 
 				/* overwrite line */
-				vterm_refreshLines(vterm.row,1);
-				vterm_setCursor();
+				vterm_refreshLines(vt,vt->row,1);
+				vterm_setCursor(vt);
 			}
 		}
 		break;
@@ -728,98 +766,99 @@ static void vterm_rlPutchar(char c) {
 		default: {
 			bool flushed = false;
 			bool moved = false;
-			u32 bufPos = vterm_rlGetBufPos();
+			u32 bufPos = vterm_rlGetBufPos(vt);
 
 			/* increase buffer size? */
-			if(vterm.rlBuffer && bufPos >= vterm.rlBufSize) {
-				vterm.rlBufSize += RLBUF_INCR;
-				vterm.rlBuffer = (char*)realloc(vterm.rlBuffer,vterm.rlBufSize);
+			if(vt->rlBuffer && bufPos >= vt->rlBufSize) {
+				vt->rlBufSize += RLBUF_INCR;
+				vt->rlBuffer = (char*)realloc(vt->rlBuffer,vt->rlBufSize);
 			}
-			if(vterm.rlBuffer == NULL)
+			if(vt->rlBuffer == NULL)
 				return;
 
 			/* move chars forward */
-			if(bufPos < vterm.rlBufPos) {
-				memmove(vterm.rlBuffer + bufPos + 1,vterm.rlBuffer + bufPos,vterm.rlBufPos - bufPos);
+			if(bufPos < vt->rlBufPos) {
+				memmove(vt->rlBuffer + bufPos + 1,vt->rlBuffer + bufPos,vt->rlBufPos - bufPos);
 				moved = true;
 			}
 
 			/** add char */
-			vterm.rlBuffer[bufPos] = c;
-			vterm.rlBufPos++;
+			vt->rlBuffer[bufPos] = c;
+			vt->rlBufPos++;
 
 			/* TODO later we should allow "multiline-editing" */
-			if(c == '\n' || vterm.rlStartCol + vterm.rlBufPos >= COLS) {
+			if(c == '\n' || vt->rlStartCol + vt->rlBufPos >= COLS) {
 				flushed = true;
-				vterm_rlFlushBuf();
+				vterm_rlFlushBuf(vt);
 			}
 
 			/* echo character, if required */
-			if(vterm.echo) {
+			if(vt->echo) {
 				if(moved && !flushed) {
-					u32 count = vterm.rlBufPos - bufPos + 1;
+					u32 count = vt->rlBufPos - bufPos + 1;
 					char *copy = (char*)malloc(count * sizeof(char));
 					if(copy != NULL) {
 						/* print the end of the buffer again */
-						strncpy(copy,vterm.rlBuffer + bufPos,count - 1);
+						strncpy(copy,vt->rlBuffer + bufPos,count - 1);
 						copy[count - 1] = '\0';
-						vterm_puts(copy,false);
+						vterm_puts(vt,copy,false);
 						free(copy);
 
 						/* reset cursor */
-						vterm.col = vterm.rlStartCol + bufPos + 1;
-						vterm_setCursor();
+						vt->col = vt->rlStartCol + bufPos + 1;
+						vterm_setCursor(vt);
 					}
 				}
-				else {
-					u8 oldRow = vterm.row,oldCol = vterm.col;
-					vterm_putchar(c);
-					if(vterm.row != oldRow || vterm.col != oldCol)
-						vterm_sendChar(oldRow,oldCol);
+				else if(c != IO_EOF) {
+					u8 oldRow = vt->row,oldCol = vt->col;
+					vterm_putchar(vt,c);
+					if(vt->row != oldRow || vt->col != oldCol)
+						vterm_sendChar(vt,oldRow,oldCol);
+					vterm_setCursor(vt);
 				}
 			}
 			if(flushed)
-				vterm.rlStartCol = vterm.col;
+				vt->rlStartCol = vt->col;
 		}
 		break;
 	}
 }
 
-static u32 vterm_rlGetBufPos(void) {
-	if(vterm.echo)
-		return vterm.col - vterm.rlStartCol;
+static u32 vterm_rlGetBufPos(sVTerm *vt) {
+	if(vt->echo)
+		return vt->col - vt->rlStartCol;
 	else
-		return vterm.rlBufPos;
+		return vt->rlBufPos;
 }
 
-static bool vterm_rlHandleKeycode(u8 keycode) {
+static bool vterm_rlHandleKeycode(sVTerm *vt,u8 keycode) {
 	bool res = false;
 	switch(keycode) {
 		case VK_LEFT:
-			if(vterm.col > vterm.rlStartCol) {
-				vterm.col--;
-				vterm_setCursor();
+			if(vt->col > vt->rlStartCol) {
+				vt->col--;
+				vterm_setCursor(vt);
 			}
 			res = true;
 			break;
 		case VK_RIGHT:
-			if(vterm.col < vterm.rlStartCol + vterm.rlBufPos) {
-				vterm.col++;
-				vterm_setCursor();
+			if(vt->col < vt->rlStartCol + vt->rlBufPos) {
+				vt->col++;
+				vterm_setCursor(vt);
 			}
 			res = true;
 			break;
 		case VK_HOME:
-			if(vterm.col != vterm.rlStartCol) {
-				vterm.col = vterm.rlStartCol;
-				vterm_setCursor();
+			if(vt->col != vt->rlStartCol) {
+				vt->col = vt->rlStartCol;
+				vterm_setCursor(vt);
 			}
 			res = true;
 			break;
 		case VK_END:
-			if(vterm.col != vterm.rlStartCol + vterm.rlBufPos) {
-				vterm.col = vterm.rlStartCol + vterm.rlBufPos;
-				vterm_setCursor();
+			if(vt->col != vt->rlStartCol + vt->rlBufPos) {
+				vt->col = vt->rlStartCol + vt->rlBufPos;
+				vterm_setCursor(vt);
 			}
 			res = true;
 			break;

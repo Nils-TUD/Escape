@@ -200,7 +200,7 @@ s32 proc_releaseIOPorts(u16 start,u16 count) {
 
 tFile proc_fdToFile(tFD fd) {
 	tFile fileNo;
-	if(fd >= MAX_FD_COUNT)
+	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
 	fileNo = (procs + pi)->fileDescs[fd];
@@ -222,7 +222,7 @@ tFD proc_getFreeFd(void) {
 }
 
 s32 proc_assocFd(tFD fd,tFile fileNo) {
-	if(fd >= MAX_FD_COUNT)
+	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
 	if(procs[pi].fileDescs[fd] != -1)
@@ -236,7 +236,7 @@ tFD proc_dupFd(tFD fd) {
 	tFile f;
 	s32 err,nfd;
 	/* check fd */
-	if(fd >= MAX_FD_COUNT)
+	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
 	f = procs[pi].fileDescs[fd];
@@ -260,7 +260,7 @@ s32 proc_redirFd(tFD src,tFD dst) {
 	s32 err;
 
 	/* check fds */
-	if(src >= MAX_FD_COUNT || dst >= MAX_FD_COUNT)
+	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
 	fSrc = procs[pi].fileDescs[src];
@@ -281,7 +281,7 @@ s32 proc_redirFd(tFD src,tFD dst) {
 
 tFile proc_unassocFD(tFD fd) {
 	tFile fileNo;
-	if(fd >= MAX_FD_COUNT)
+	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
 	fileNo = procs[pi].fileDescs[fd];
@@ -346,7 +346,7 @@ s32 proc_clone(tPid newPid) {
 	for(i = 0; i < PT_ENTRY_COUNT; i++)
 		*dst++ = *src++;
 	/* unmap it */
-	paging_unmap(KERNEL_STACK_TMP,1,false);
+	paging_unmap(KERNEL_STACK_TMP,1,false,false);
 
 	/* parent */
 	return 0;
@@ -384,6 +384,10 @@ void proc_destroy(sProc *p) {
 			p->fileDescs[i] = -1;
 		}
 	}
+
+	/* free io-map, if present */
+	if(p->ioMap != NULL)
+		kheap_free(p->ioMap);
 
 	/* remove from VFS */
 	vfs_removeProcess(p->pid);
@@ -526,7 +530,7 @@ bool proc_changeSize(s32 change,eChgArea area) {
 		addr += change * PAGE_SIZE;
 
 		/* free and unmap memory */
-		paging_unmap(addr,-change,true);
+		paging_unmap(addr,-change,true,true);
 
 		/* can we remove all page-tables? */
 		if(origPages + change == 0) {

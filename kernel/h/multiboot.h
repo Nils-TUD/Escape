@@ -8,6 +8,7 @@
 #define MULTIBOOT_H_
 
 #include "../h/common.h"
+#include "../h/intrpt.h"
 
 #define MMAP_TYPE_AVAILABLE 0x1
 
@@ -87,6 +88,13 @@ extern sMultiBoot *mb;
  * @param mbp the pointer to the multi-boot-structure
  */
 void mboot_init(sMultiBoot *mbp);
+
+/**
+ * Loads all multiboot-modules
+ *
+ * @param stack the interrupt-stack-frame
+ */
+void mboot_loadModules(sIntrptStackFrame *stack);
 
 /**
  * @return the usable memory in bytes

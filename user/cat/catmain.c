@@ -29,9 +29,9 @@ int main(int argc,char *argv[]) {
 		}
 	}
 
-	while((count = read(fd,buffer,BUF_SIZE - 1)) > 0) {
+	while((count = fscanl(fd,buffer,BUF_SIZE - 1)) > 0) {
 		*(buffer + count) = '\0';
-		printf("%s",buffer);
+		printf("%s\n",buffer);
 	}
 
 	if(argc == 2)

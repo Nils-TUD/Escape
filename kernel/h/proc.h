@@ -45,6 +45,8 @@ typedef struct {
 	u8 state;
 	/* the events the process waits for (if sleeping) */
 	u8 events;
+	/* the signal that the process is currently handling (if > 0) */
+	tSig signal;
 	/* process id (2^16 processes should be enough :)) */
 	tPid pid;
 	/* parent process id */

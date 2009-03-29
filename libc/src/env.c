@@ -14,9 +14,9 @@
 
 /**
  * Opens the env-service
- * @return true if successfull
+ * @return >= 0 if successfull
  */
-static bool init(void);
+static s32 init(void);
 
 /* the fd for the env-service */
 static tFD envFd = -1;
@@ -33,7 +33,7 @@ static char *doGetEnv(sMsgHeader *msg);
 char *getEnvByIndex(u32 index) {
 	sMsgHeader *msg;
 
-	if(!init())
+	if(init() < 0)
 		return NULL;
 
 	msg = asmBinMsg(MSG_ENV_GETI,"22",getpid(),index);
@@ -47,7 +47,7 @@ char *getEnv(const char *name) {
 	sMsgHeader *msg;
 	u32 nameLen = strlen(name);
 
-	if(!init())
+	if(init() < 0)
 		return NULL;
 
 	/* build message */
@@ -57,19 +57,20 @@ char *getEnv(const char *name) {
 	return doGetEnv(msg);
 }
 
-void setEnv(const char *name,const char* value) {
+s32 setEnv(const char *name,const char* value) {
 	u32 nameLen,valLen;
+	s32 res;
 	char *envVar;
 	sMsgHeader *msg;
 
-	if(!init())
-		return;
+	if((res = init()) < 0)
+		return res;
 
 	nameLen = strlen(name);
 	valLen = strlen(value);
 	envVar = malloc(nameLen + valLen + 2);
 	if(envVar == NULL)
-		return;
+		return ERR_NOT_ENOUGH_MEM;
 	strcpy(envVar,name);
 	*(envVar + nameLen) = '=';
 	strcpy(envVar + nameLen + 1,value);
@@ -78,14 +79,15 @@ void setEnv(const char *name,const char* value) {
 	msg = asmBinDataMsg(MSG_ENV_SET,envVar,nameLen + valLen + 2,"2",getpid());
 	free(envVar);
 	if(msg == NULL)
-		return;
+		return ERR_NOT_ENOUGH_MEM;
 
 	/* send message */
-	if(write(envFd,msg,sizeof(sMsgHeader) + msg->length) < 0) {
+	if((res = write(envFd,msg,sizeof(sMsgHeader) + msg->length)) < 0) {
 		freeMsg(msg);
-		return;
+		return res;
 	}
 	freeMsg(msg);
+	return 0;
 }
 
 static char *doGetEnv(sMsgHeader *msg) {
@@ -114,9 +116,9 @@ static char *doGetEnv(sMsgHeader *msg) {
 	return tmpValue;
 }
 
-static bool init(void) {
+static s32 init(void) {
 	if(envFd >= 0)
-		return true;
+		return 0;
 	envFd = open("services:/env",IO_READ | IO_WRITE);
-	return envFd >= 0;
+	return envFd;
 }

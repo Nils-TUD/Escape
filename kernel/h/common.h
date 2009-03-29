@@ -91,6 +91,7 @@ typedef enum {false = 0, true = 1} bool;
 #define ERR_PATH_NOT_FOUND			-27
 #define ERR_FS_READ_FAILED			-28
 #define ERR_INVALID_PATH			-29
+#define ERR_INVALID_NODENO			-30
 #define ERR_REAL_PATH				-200
 
 /* debugging */

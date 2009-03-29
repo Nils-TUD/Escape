@@ -12,7 +12,7 @@
 #	define testvPrintf	vid_vprintf
 #else
 #	include "../../libc/h/common.h"
-#	include "../../libc/h/debug.h"
+#	include "../../libc/h/bufio.h"
 
 #	define testPrintf	printf
 #	define testvPrintf	vprintf

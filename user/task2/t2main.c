@@ -104,7 +104,7 @@ int main(int argc,char **argv) {
 
 	/*char buffer[12];
 	printf("Please enter your name: ");
-	scans(buffer,12);
+	scanl(buffer,12);
 	printf("Hello %s!\n",buffer);*/
 
 	/*char buffer[32];

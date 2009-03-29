@@ -8,10 +8,16 @@
 #include <test.h>
 #include "tests/theap.h"
 #include "tests/tbufio.h"
+#include "tests/tdir.h"
+#include "tests/tenv.h"
+#include "tests/tmsgs.h"
 
-int main(int argc,char **argv) {
+int main(void) {
 	test_register(&tModHeap);
 	test_register(&tModBufio);
+	test_register(&tModDir);
+	test_register(&tModEnv);
+	test_register(&tModMsgs);
 	test_start();
 	return 0;
 }

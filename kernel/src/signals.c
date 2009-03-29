@@ -141,6 +141,7 @@ bool sig_hasSignal(tSig *sig,tPid *pid,u32 *data) {
 	sSLNode *n;
 	sHandler *h;
 	sSLList **list;
+	sProc *p;
 
 	/* no signals at all? */
 	if(totalSigs == 0)
@@ -153,10 +154,16 @@ bool sig_hasSignal(tSig *sig,tPid *pid,u32 *data) {
 			for(n = sll_begin(*list); n != NULL; n = n->next) {
 				h = (sHandler*)n->data;
 				if(h->active == 0 && sll_length(h->pending) > 0) {
-					*data = (u32)sll_get(h->pending,0);
-					*pid = h->pid;
-					*sig = i + 1;
-					return true;
+					p = proc_getByPid(h->pid);
+					/* don't deliver signals to blocked processes that wait for a msg */
+					/* TODO this means that we check ALL handler-lists in EVERY interrupt
+					 * until this process is able to receive the signal... */
+					if(p->signal == 0 && p->state != ST_BLOCKED || !(p->events & EV_RECEIVED_MSG)) {
+						*data = (u32)sll_get(h->pending,0);
+						*pid = h->pid;
+						*sig = i + 1;
+						return true;
+					}
 				}
 			}
 		}
@@ -172,7 +179,7 @@ bool sig_addSignalFor(tPid pid,tSig signal,u32 data) {
 	h = sig_get(pid,signal);
 	sig_addSig(h,pid,signal,data);
 	if(h != NULL)
-		return !h->active;
+		return !h->active && proc_getByPid(pid)->signal == 0;
 	return false;
 }
 
@@ -190,7 +197,7 @@ tPid sig_addSignal(tSig signal,u32 data) {
 			h = (sHandler*)n->data;
 			sig_addSig(h,INVALID_PID,signal,data);
 			/* remember first proc for direct notification */
-			if(!h->active && res == INVALID_PID)
+			if(res == INVALID_PID && !h->active && proc_getByPid(h->pid)->signal == 0)
 				res = h->pid;
 		}
 	}
@@ -200,6 +207,7 @@ tPid sig_addSignal(tSig signal,u32 data) {
 
 fSigHandler sig_startHandling(tPid pid,tSig signal) {
 	sHandler *h;
+	sProc *p = proc_getByPid(pid);
 	ASSERT(sig_canHandle(signal),"Unable to handle signal %d");
 
 	h = sig_get(pid,signal);
@@ -209,18 +217,24 @@ fSigHandler sig_startHandling(tPid pid,tSig signal) {
 		sll_removeIndex(h->pending,0);
 		h->active = 1;
 		totalSigs--;
+		/* remember the signal */
+		p->signal = signal;
 		return h->handler;
 	}
 	return NULL;
 }
 
-void sig_ackHandling(tPid pid,tSig signal) {
+void sig_ackHandling(tPid pid) {
 	sHandler *h;
-	ASSERT(sig_canHandle(signal),"Unable to handle signal %d");
+	sProc *p = proc_getByPid(pid);
+	ASSERT(p->signal != 0,"No signal handling");
+	ASSERT(sig_canHandle(p->signal),"Unable to handle signal %d");
 
-	h = sig_get(pid,signal);
-	if(h != NULL)
+	h = sig_get(pid,p->signal);
+	if(h != NULL) {
+		p->signal = 0;
 		h->active = 0;
+	}
 }
 
 static void sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data) {

@@ -8,8 +8,8 @@ LIBC=../../libc
 LDCONF=$(LIBC)/ld.conf
 
 CC = gcc
-CFLAGS = -g -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/h -I../../lib/h -I$(LIBC)/test \
-	-Wl,-T,$(LDCONF) $(CWFLAGS) 
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/h -I../../lib/h \
+	-Wl,-T,$(LDCONF) $(CDEFFLAGS) 
 CSRC=$(wildcard *.c)
 
 LIBCA=$(BUILD)/libc.a

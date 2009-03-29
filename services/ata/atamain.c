@@ -107,11 +107,13 @@ static sATADrive drives[DRIVE_COUNT] = {
 
 static bool gotInterrupt = false;
 static void diskIntrptHandler(tSig sig,u32 data) {
+	UNUSED(sig);
+	UNUSED(data);
 	gotInterrupt = true;
 }
 
 int main(void) {
-	tServ id;
+	tServ id,client;
 
 	/* request ports */
 	if(requestIOPorts(REG_BASE_PRIMARY,8) < 0 || requestIOPorts(REG_BASE_SECONDARY,8) < 0) {
@@ -126,7 +128,7 @@ int main(void) {
 	}
 
 	ata_detectDrives();
-	ata_printDrives();
+	/*ata_printDrives();*/
 
 	/* reg service */
 	id = regService("ata",SERVICE_TYPE_MULTIPIPE);
@@ -137,7 +139,7 @@ int main(void) {
 
 	sMsgHeader header;
 	while(1) {
-		tFD fd = getClient(id);
+		tFD fd = getClient(&id,1,&client);
 		if(fd < 0) {
 			sleep(EV_CLIENT);
 		}

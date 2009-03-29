@@ -39,7 +39,7 @@ static u16 intrptTarget = 0;
 
 int main(void) {
 	tFD fd;
-	tServ id;
+	tServ id,client;
 
 	/* register service */
 	id = regService("speaker",SERVICE_TYPE_SINGLEPIPE);
@@ -59,7 +59,7 @@ int main(void) {
 	}
 
 	while(1) {
-		fd = getClient(id);
+		fd = getClient(&id,1,&client);
 		if(fd < 0)
 			sleep(EV_CLIENT);
 		else {

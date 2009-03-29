@@ -188,19 +188,22 @@ bool vfs_msgAvailableFor(tPid pid,u8 events);
  * For services: Looks wether a client wants to be served and return the node-number
  *
  * @param pid the service-process-id
- * @param no the node-number
+ * @param vfsNodes an array of VFS-nodes to check for clients
+ * @param count the size of <vfsNodes>
  * @return the error-code or the node-number of the client
  */
-s32 vfs_getClient(tPid pid,tVFSNodeNo no);
+s32 vfs_getClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count);
 
 /**
  * Opens a file for a client of the given service-node
  *
  * @param pid the process to use
- * @param no the service-node-number
+ * @param vfsNodes an array of VFS-nodes to check for clients
+ * @param count the size of <vfsNodes>
+ * @param node will be set to the node-number from which the client has been taken
  * @return the error-code (negative) or the file to use
  */
-tFile vfs_openClient(tPid pid,tVFSNodeNo no);
+tFile vfs_openClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servNode);
 
 /**
  * Removes the service with given node-number

@@ -3,14 +3,12 @@ BUILD=../../build
 DISK=$(BUILD)/disk.img
 DISKMOUNT=../../disk
 BIN=$(BUILD)/service_$(NAME).bin
-DUMP=$(BUILD)/service_$(NAME).dump
 DEP=$(BUILD)/service_$(NAME).dep
 LIBC=../../libc
 LDCONF=$(LIBC)/ld.conf
 
 CC = gcc
-CFLAGS = -g -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/h -I../../lib/h \
-	-Wl,-T,$(LDCONF) $(CWFLAGS) 
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/h -I../../lib/h -Wl,-T,$(LDCONF) $(CDEFFLAGS) 
 CSRC=$(wildcard *.c)
 CEXT2SRC=$(wildcard ext2/*.c)
 
@@ -21,11 +19,15 @@ CEXT2OBJ=$(patsubst ext2/%.c,$(BUILD)/service_$(NAME)_ext2_%.o,$(CEXT2SRC))
 
 .PHONY: all clean
 
-all:	$(BIN) $(DUMP)
+all:	$(BIN)
 
 $(BIN):	$(LDCONF) $(COBJ) $(CEXT2OBJ) $(START) $(LIBCA)
 		@echo "===== COMPILING & LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(CEXT2OBJ) $(LIBCA);
+		@echo "===== COPYING ON DISK =====";
+		@make -C ../../ mounthdd
+		sudo cp $(BIN) $(DISKMOUNT)/services/$(NAME)
+		@make -C ../../ umounthdd
 
 $(BUILD)/service_$(NAME)_%.o:		%.c
 		@echo "===== COMPILING $< =====";
@@ -34,10 +36,6 @@ $(BUILD)/service_$(NAME)_%.o:		%.c
 $(BUILD)/service_$(NAME)_ext2_%.o:		ext2/%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
-
-$(DUMP):	$(BIN)
-		@echo "===== GENERATING DUMP =====";
-		$(BUILD)/dump $(BIN) $(DUMP)
 
 $(DEP):	$(CEXT2SRC) $(CSRC)
 		@echo "===== GENERATING DEPENDENCIES =====";
@@ -51,4 +49,4 @@ $(DEP):	$(CEXT2SRC) $(CSRC)
 -include $(DEP)
 
 clean:
-		rm -f $(BIN) $(DUMP) $(COBJ) $(CEXT2OBJ) $(DEP)
+		rm -f $(BIN) $(COBJ) $(CEXT2OBJ) $(DEP)

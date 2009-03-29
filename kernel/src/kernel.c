@@ -46,8 +46,8 @@
  * 	- idt-descriptors:		see intel manual, vol3a, page 202
  */
 
-static u8 init[] = {
-	#include "../../build/user_init.dump"
+static u8 initloader[] = {
+	#include "../../build/user_initloader.dump"
 };
 
 s32 main(sMultiBoot *mbp,u32 magic) {
@@ -73,58 +73,42 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 #endif
 
 	/* mm && kheap */
-	dbg_startTimer();
 	vid_printf("Initializing memory-management...");
 	mm_init();
 	paging_mapHigherHalf();
 	paging_initCOWList();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
-	dbg_stopTimer();
 
 	/* vfs */
-	dbg_startTimer();
 	vid_printf("Initializing VFS...");
 	vfs_init();
 	vfsinfo_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
-	dbg_stopTimer();
 
 	/* processes */
-	dbg_startTimer();
 	vid_printf("Initializing process-management...");
 	proc_init();
 	sched_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
-	dbg_stopTimer();
 
 	/* idt */
-	dbg_startTimer();
 	vid_printf("Initializing IDT...");
 	intrpt_init();
 	vid_toLineEnd(vid_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
-	dbg_stopTimer();
 
 #if DEBUGGING
 	vid_printf("Free frames=%d, pages mapped=%d, free mem=%d KiB\n",
 			mm_getFreeFrmCount(MM_DMA | MM_DEF),paging_dbg_getPageCount(),
 			mm_getFreeFrmCount(MM_DMA | MM_DEF) * PAGE_SIZE / K);
-
-	/*vfs_dbg_printTree();*/
 #endif
 
-#if 1
-	/* TODO the following is just temporary! */
-	/* load task1 */
-	entryPoint = elf_loadprog(init);
+	/* load initloader */
+	entryPoint = elf_loadprog(initloader);
 	/* give the process 2 stack pages */
 	proc_changeSize(2,CHG_STACK);
 	return entryPoint;
-#else
-	while(1);
-	return 0;
-#endif
 }

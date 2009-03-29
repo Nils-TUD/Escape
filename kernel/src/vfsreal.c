@@ -28,7 +28,7 @@ typedef struct {
 	tPid pid;
 	bool finished;
 	tInodeNo inodeNo;
-	u8 *tmpBuffer;
+	sMsgDataFSReadResp *readResp;
 	u8 *buffer;
 	u32 count;
 } sRequest;
@@ -141,6 +141,10 @@ void vfsr_checkForMsgs(void) {
 			case MSG_FS_READ_RESP: {
 				/* read data */
 				sMsgDataFSReadResp *res = kheap_alloc(header.length);
+				/* TODO better way? */
+				if(res == NULL)
+					panic("Out of kernel-heapspace");
+
 				vfs_readFile(KERNEL_PID,fsServiceFile,(u8*)res,header.length);
 
 				/* find the request for the pid */
@@ -150,20 +154,10 @@ void vfsr_checkForMsgs(void) {
 					sll_removeFirst(requests,req);
 					req->finished = true;
 					req->count = res->count;
-					if(res->count > 0) {
-						/* unfortunatly we need a temp-buffer because we might do this here with
-						 * another process :/ */
-						/* TODO or should we map the other process in our page-dir? */
-						req->tmpBuffer = kheap_alloc(res->count);
-						if(req->tmpBuffer != NULL)
-							memcpy(req->tmpBuffer,res->data,res->count);
-					}
-
+					req->readResp = res;
 					/* the process can continue now */
 					proc_wakeup(res->pid,EV_RECEIVED_MSG);
 				}
-
-				kheap_free(res);
 			}
 			break;
 
@@ -233,8 +227,11 @@ s32 vfsr_openFile(tPid pid,u8 flags,char *path) {
 	/* that's magic, isn't it? ;D */
 
 	/* error? */
-	if(req->inodeNo < 0)
-		return req->inodeNo;
+	if(req->inodeNo < 0) {
+		tInodeNo no = req->inodeNo;
+		kheap_free(req);
+		return no;
+	}
 	/* now open the file */
 	res = vfs_openFile(pid,flags,req->inodeNo);
 	kheap_free(req);
@@ -266,10 +263,10 @@ s32 vfsr_readFile(tPid pid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	req->buffer = buffer;
 	vfsr_waitForReply(pid,req);
 
-	if(req->tmpBuffer != NULL) {
+	if(req->readResp != NULL) {
 		/* copy from temp-buffer to process */
-		memcpy(req->buffer,req->tmpBuffer,req->count);
-		kheap_free(req->tmpBuffer);
+		memcpy(req->buffer,req->readResp->data,req->count);
+		kheap_free(req->readResp);
 	}
 
 	res = req->count;
@@ -304,10 +301,13 @@ s32 vfsr_writeFile(tPid pid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 
 	/* write message to fs */
 	res = vfs_writeFile(KERNEL_PID,fsServiceFile,(u8*)msg,msgLen);
-	if(res < 0)
+	if(res < 0) {
+		kheap_free(msg);
 		return res;
+	}
 
 	/* enqueue request and wait for a reply of the fs */
+	kheap_free(msg);
 	req = vfsr_addRequest(pid);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
@@ -345,7 +345,7 @@ static sRequest *vfsr_addRequest(tPid pid) {
 	req->inodeNo = 0;
 	req->count = 0;
 	req->buffer = NULL;
-	req->tmpBuffer = NULL;
+	req->readResp = NULL;
 	sll_append(requests,req);
 	return req;
 }

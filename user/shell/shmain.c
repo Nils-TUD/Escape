@@ -24,6 +24,7 @@
 #include "cmdbuilder.h"
 
 #define MAX_ARG_COUNT		10
+#define MAX_VTERM_NAME_LEN	10
 
 #define ERR_CMD_NOT_FOUND	-100
 
@@ -76,12 +77,41 @@ static bool shell_handleEscapeCodes(char *buffer,char c,u32 *cursorPos,u32 *char
  */
 static void shell_complete(char *line,u32 *cursorPos,u32 *length);
 
-/* buffer for arguments */
+static u32 vterm;
 static u32 tabCount = 0;
 static tPid waitingPid = INVALID_PID;
 
-int main(void) {
+int main(int argc,char **argv) {
+	tFD fd;
 	char *buffer;
+	char servPath[10 + MAX_VTERM_NAME_LEN + 1] = "services:/";
+
+	/* we need the vterm as argument */
+	if(argc < 2) {
+		debugf("Unable to run a shell with no arguments\n");
+		return 1;
+	}
+
+	/* open stdin */
+	strcat(servPath,argv[1]);
+	/* parse vterm-number from "vtermX" */
+	vterm = atoi(argv[1] + 5);
+	if(open(servPath,IO_READ) < 0) {
+		debugf("Unable to open '%s' for STDIN\n",servPath);
+		return 1;
+	}
+
+	/* open stdout */
+	if((fd = open(servPath,IO_WRITE)) < 0) {
+		debugf("Unable to open '%s' for STDOUT\n",servPath);
+		return 1;
+	}
+
+	/* dup stdout to stderr */
+	if(dupFd(fd) < 0) {
+		debugf("Unable to duplicate STDOUT to STDERR\n");
+		return 1;
+	}
 
 	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0) {
 		printLastError();
@@ -165,6 +195,9 @@ static s32 shell_executeCmd(char *line) {
 		/* we need exactly one match and it has to be TYPE_EXTERN or TYPE_BUILTIN */
 		if(scmds == NULL || scmds[0] == NULL || scmds[1] != NULL || scmds[0]->type == TYPE_PATH) {
 			printf("%s: Command not found\n",cmd->arguments[0]);
+			/* close open pipe */
+			if(cmd->dup & DUP_STDIN)
+				close(*pipe);
 			free(pipes);
 			tok_free(tokens,tokCount);
 			cmd_free(cmds,cmdCount);
@@ -177,6 +210,9 @@ static s32 shell_executeCmd(char *line) {
 		if(cmd->dup & DUP_STDOUT) {
 			*pipe = open("system:/pipe",IO_READ | IO_WRITE);
 			if(*pipe < 0) {
+				/* close open pipe */
+				if(cmd->dup & DUP_STDIN)
+					close(*--pipe);
 				free(pipes);
 				compl_free(scmds);
 				tok_free(tokens,tokCount);
@@ -250,18 +286,20 @@ static s32 shell_executeCmd(char *line) {
 }
 
 static void shell_sigIntrpt(tSig sig,u32 data) {
-	if(waitingPid != INVALID_PID)
-		sendSignalTo(waitingPid,SIG_KILL,0);
-	else {
-		printf("\n");
-		shell_prompt();
+	UNUSED(sig);
+	/* was this interrupt intended for our vterm? */
+	if(vterm == data) {
+		if(waitingPid != INVALID_PID)
+			sendSignalTo(waitingPid,SIG_KILL,0);
+		else {
+			printf("\n");
+			shell_prompt();
+		}
 	}
 }
 
 static u32 shell_readLine(char *buffer,u32 max) {
 	char c;
-	u8 keycode;
-	u8 modifier;
 	u32 cursorPos = 0;
 	u32 i = 0;
 

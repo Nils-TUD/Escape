@@ -11,16 +11,16 @@
 #define USERNAME "hrniels"
 #define PASSWORD "test"
 
-int main(int argc,char **argv) {
+int main(void) {
 	char un[10];
 	char pw[10];
 
 	while(1) {
 		printf("Username: ");
-		scans(un,10);
+		scanl(un,10);
 		printf("\033e\x0");
 		printf("Password: ");
-		scans(pw,10);
+		scanl(pw,10);
 		printf("\n\033e\x1");
 
 		if(strcmp(un,USERNAME) != 0)

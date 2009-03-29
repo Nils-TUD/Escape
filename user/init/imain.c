@@ -66,28 +66,16 @@ int main(void) {
 		return 1;
 	}
 
-	/* open stdin */
-	if(open("services:/vterm",IO_READ) < 0) {
-		debugf("Unable to open 'services:/vterm' for STDIN\n");
-		return 1;
-	}
-
-	/* open stdout */
-
-	if((fd = open("services:/vterm",IO_WRITE)) < 0) {
-		debugf("Unable to open 'services:/vterm' for STDOUT\n");
-		return 1;
-	}
-
-	/* dup stdout to stderr */
-	if(dupFd(fd) < 0) {
-		debugf("Unable to duplicate STDOUT to STDERR\n");
-		return 1;
-	}
-
 	/* now load the shell */
 	if(fork() == 0) {
-		exec((char*)"file:/apps/shell",NULL);
+		char *args[] = {"file:/apps/shell","vterm0",NULL};
+		exec((char*)"file:/apps/shell",args);
+		exit(0);
+	}
+	/* TODO temporary ;) */
+	if(fork() == 0) {
+		char *args[] = {"file:/apps/shell","vterm1",NULL};
+		exec((char*)"file:/apps/shell",args);
 		exit(0);
 	}
 
@@ -231,7 +219,10 @@ static bool loadService(char *services,char *name) {
 			exit(0);
 		}
 
-		/* wait until the service is available */
+		/* TODO */
+		volatile u32 i;
+		for(i = 0;i < 10000000; i++);
+		/* wait until the service is available
 		strncat(servPath,servName,p);
 		do {
 			fd = open(servPath,IO_READ);
@@ -239,7 +230,7 @@ static bool loadService(char *services,char *name) {
 				yield();
 		}
 		while(fd < 0);
-		close(fd);
+		close(fd);*/
 
 		/* insert in loaded-list, so that we don't load a service twice */
 		start = malloc((p + 1) * sizeof(char));

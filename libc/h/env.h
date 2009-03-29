@@ -22,7 +22,7 @@ char *getEnvByIndex(u32 index);
  * if you want to keep it!
  *
  * @param name the environment-variable-name
- * @return the value
+ * @return the value or NULL if failed
  */
 char *getEnv(const char *name);
 
@@ -31,7 +31,8 @@ char *getEnv(const char *name);
  *
  * @param name the name
  * @param value the value
+ * @return 0 on success
  */
-void setEnv(const char *name,const char *value);
+s32 setEnv(const char *name,const char *value);
 
 #endif /* ENV_H_ */

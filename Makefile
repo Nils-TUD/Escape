@@ -17,11 +17,14 @@ QEMUARGS=-serial stdio -no-kqemu -hda $(HDD) -boot c
 
 DIRS = tools libc services user kernel kernel/test
 
-# warning flags for gcc
+# flags for gcc
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wno-long-long \
 				 -Wstrict-prototypes -fno-builtin
+export CDEFFLAGS=$(CWFLAGS) -g -O2 -D DEBUGGING=1
+# flags for nasm
+export ASMFLAGS=-g -f elf
 
 .PHONY: all mounthdd debughdd umounthdd createhdd dis qemu bochs debug debugu debugm debugt test clean
 
@@ -76,6 +79,8 @@ createhdd: clean
 		echo '' >> $(DISKMOUNT)/grub/menu.lst;
 		echo "title $(OSTITLE)" >> $(DISKMOUNT)/grub/menu.lst;
 		echo "kernel /$(BINNAME)" >> $(DISKMOUNT)/grub/menu.lst;
+		echo "module /services/ata services:/ata" >> $(DISKMOUNT)/grub/menu.lst;
+		echo "module /services/fs" services:/fs>> $(DISKMOUNT)/grub/menu.lst;
 		echo "boot" >> $(DISKMOUNT)/grub/menu.lst;
 		echo -n "device (hd0) $(HDD)\nroot (hd0,0)\nsetup (hd0)\nquit\n" | grub --no-floppy --batch;
 		@# store some test-data on the disk
@@ -108,7 +113,7 @@ bochs: all prepareRun
 debug: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
-		gdb --command=gdb.start --symbols $(BUILD)/user_shell.bin
+		gdb --command=gdb.start --symbols $(BUILD)/service_keyboard.bin
 
 debugu: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &

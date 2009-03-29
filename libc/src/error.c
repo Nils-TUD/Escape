@@ -48,6 +48,10 @@ void printStackTrace(void) {
 	}
 }
 
+s32 getLastError(void) {
+	return lastError;
+}
+
 void printLastError(void) {
 	debugf("[proc %d] Error %d: ",getpid(),lastError);
 	switch(lastError) {
@@ -165,6 +169,10 @@ void printLastError(void) {
 
 		case ERR_INVALID_PATH:
 			debugf("Invalid path\n");
+			break;
+
+		case ERR_INVALID_NODENO:
+			debugf("Invalid Node-Number\n");
 			break;
 
 		default:

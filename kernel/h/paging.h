@@ -103,6 +103,13 @@
 /* converts pages to page-tables (how many page-tables are required for the pages?) */
 #define PAGES_TO_PTS(pageCount) (((pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
 
+/* for printing the page-directory */
+#define PD_PART_ALL		0
+#define PD_PART_USER 	1
+#define PD_PART_KERNEL	2
+#define PD_PART_KHEAP	4
+#define PD_PART_PTBLS	8
+
 /* represents a page-directory-entry */
 typedef struct {
 	/* 1 if the page is present in memory */
@@ -307,8 +314,9 @@ void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags,bool force);
  * @param virtual the virtual start-address
  * @param count the number of pages to unmap
  * @param freeFrames wether the frames should be free'd and not just unmapped
+ * @param remCOW wether the frames should be removed from the COW-list
  */
-void paging_unmap(u32 virtual,u32 count,bool freeFrames);
+void paging_unmap(u32 virtual,u32 count,bool freeFrames,bool remCOW);
 
 /**
  * Unmaps and free's page-tables from the index <start> to <start> + <count>.
@@ -339,6 +347,7 @@ void paging_destroyPageDir(sProc *p);
  * soon as the GDT is setup for a flat memory layout!
  */
 void paging_gdtFinished(void);
+
 
 #if DEBUGGING
 
@@ -378,36 +387,18 @@ bool paging_dbg_isPTEmpty(sPTEntry *pt);
 u32 paging_dbg_getPTEntryCount(sPTEntry *pt);
 
 /**
- * Prints the page-directory part that is occupied by the heap
- */
-void paging_dbg_printHeap(void);
-
-/**
- * Prints the current page-directory
+ * Prints the given parts from the own page-directory
  *
- * @param includeKernel wether the kernel-page-table should be printed
+ * @param parts the parts to print
  */
-void paging_dbg_printPageDir(bool includeKernel);
+void paging_dbg_printOwnPageDir(u8 parts);
 
 /**
- * Prints the user-space page-directory
- */
-void paging_dbg_printUserPageDir(void);
-
-/**
- * Prints the given page-table
+ * Prints the given parts from the page-directory of the given process
  *
- * @param no the number of the page-table
- * @param pde the page-dir-entry
+ * @param parts the parts to print
  */
-void paging_dbg_printPageTable(u32 no,sPDEntry *pde);
-
-/**
- * Prints the given page
- *
- * @param page a pointer to a page-table-entry
- */
-void paging_dbg_printPage(sPTEntry *page);
+void paging_dbg_printPageDirOf(sProc *p,u8 parts);
 
 #endif
 

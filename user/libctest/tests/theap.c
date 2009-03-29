@@ -8,6 +8,7 @@
 #include <heap.h>
 #include <test.h>
 #include <stdarg.h>
+#include <bufio.h>
 #include "theap.h"
 
 /* forward declarations */

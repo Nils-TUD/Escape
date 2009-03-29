@@ -42,7 +42,7 @@ static sMemArea *usableList = NULL;
 static sMemArea *freeList = NULL;
 /* a hashmap with occupied-lists, key is (address % OCC_MAP_SIZE) */
 static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
-
+/* number of currently occupied pages */
 static u32 pages = 0;
 
 u32 kheap_getFreeMem(void) {

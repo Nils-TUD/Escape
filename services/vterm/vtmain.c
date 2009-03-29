@@ -14,20 +14,46 @@
 #include <debug.h>
 #include <proc.h>
 #include <sllist.h>
+#include <bufio.h>
 
 #include "vterm.h"
 
-/* our read-buffer */
-#define BUFFER_SIZE 64
-static char buffer[BUFFER_SIZE + 1];
+/* read buffer size */
+#define READ_BUF_SIZE 64
+
+/**
+ * Determines the vterm for the given service-id
+ *
+ * @param sid the service-id
+ * @return the vterm or NULL
+ */
+static sVTerm *getVTerm(tServ sid);
+
+/* vterms */
+static tServ servIds[VTERM_COUNT] = {-1};
+/* read-buffer */
+static char buffer[READ_BUF_SIZE + 1];
 
 int main(void) {
+	u32 i;
 	tFD kbFd;
-	tServ id;
+	tServ client;
+	char name[MAX_NAME_LEN + 1];
+	sMsgKbResponse keycode;
 
-	id = regService("vterm",SERVICE_TYPE_SINGLEPIPE);
-	if(id < 0) {
-		printLastError();
+	/* reg services */
+	for(i = 0; i < VTERM_COUNT; i++) {
+		sprintf(name,"vterm%d",i);
+		servIds[i] = regService(name,SERVICE_TYPE_SINGLEPIPE);
+		if(servIds[i] < 0) {
+			printLastError();
+			return 1;
+		}
+	}
+
+	/* init vterms */
+	if(!vterm_initAll()) {
+		debugf("Unable to init vterms\n");
 		return 1;
 	}
 
@@ -43,12 +69,11 @@ int main(void) {
 	requestIOPort(0x3f8);
 	requestIOPort(0x3fd);
 
-	if(!vterm_init())
-		return 1;
+	/* select first vterm */
+	vterm_selectVTerm(0);
 
-	sMsgKbResponse keycode;
 	while(1) {
-		tFD fd = getClient(id);
+		tFD fd = getClient(servIds,VTERM_COUNT,&client);
 		if(fd < 0) {
 			/* read from keyboard */
 			/* don't block here since there may be waiting clients.. */
@@ -59,10 +84,13 @@ int main(void) {
 			sleep(EV_CLIENT | EV_RECEIVED_MSG);
 		}
 		else {
-			u32 c;
-			while((c = read(fd,buffer,BUFFER_SIZE)) > 0) {
-				*(buffer + c) = '\0';
-				vterm_puts(buffer,true);
+			sVTerm *vt = getVTerm(client);
+			if(vt != NULL) {
+				u32 c;
+				while((c = read(fd,buffer,READ_BUF_SIZE)) > 0) {
+					*(buffer + c) = '\0';
+					vterm_puts(vt,buffer,true);
+				}
 			}
 			close(fd);
 		}
@@ -72,8 +100,19 @@ int main(void) {
 	releaseIOPort(0xe9);
 	releaseIOPort(0x3f8);
 	releaseIOPort(0x3fd);
-	vterm_destroy();
 	close(kbFd);
-	unregService(id);
+	for(i = 0; i < VTERM_COUNT; i++) {
+		unregService(servIds[i]);
+		vterm_destroy(vterm_get(i));
+	}
 	return 0;
+}
+
+static sVTerm *getVTerm(tServ sid) {
+	u32 i;
+	for(i = 0; i < VTERM_COUNT; i++) {
+		if(servIds[i] == sid)
+			return vterm_get(i);
+	}
+	return NULL;
 }

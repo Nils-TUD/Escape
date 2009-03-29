@@ -9,7 +9,7 @@ DEP=$(BUILD)/kernel.dep
 LIB=../lib
 
 CC = gcc
-CFLAGS = -g -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CWFLAGS) \
+CFLAGS = -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
 	-D IN_KERNEL=1 -I$(LIB)/h
 
 # sources
@@ -78,8 +78,8 @@ $(SERVICES): $(SERVBINS)
 
 $(AOBJ):	$(ASRC) $(ASRCEND)
 		@echo "===== ASSEMBLING =====";
-		nasm -g -f elf -o $(AOBJ) $(ASRC);
-		nasm -g -f elf -o $(AOBJEND) $(ASRCEND);
+		nasm $(ASMFLAGS) -o $(AOBJ) $(ASRC);
+		nasm $(ASMFLAGS) -o $(AOBJEND) $(ASRCEND);
 
 $(BUILD)/%.o:		src/%.c
 		@echo "===== COMPILING $< =====";

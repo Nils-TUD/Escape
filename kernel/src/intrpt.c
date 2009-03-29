@@ -407,7 +407,9 @@ static void intrpt_handleSignal(void) {
 static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
 	/* if the proc_switchTo() wasn't successfull (we're not the process that should receive the
-	 * signal), release the signalData and we try it again later. */
+	 * signal), release the signalData and we try it again later. This may happen if the process
+	 * is waiting somewhere in the kernel so that another process will be chosen which arrives
+	 * here. */
 	/* TODO this is not really good because we will try it in every interrupt
 	 * (and do proc_switch()!)until we can deliver the signal (or the process dies) */
 	if(p->pid != signalData.pid) {
@@ -444,14 +446,6 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	signalData.active = 0;
 }
 
-/* TODO temporary */
-typedef struct {
-	char name[MAX_PROC_NAME_LEN + 1];
-	u8 *data;
-} sProcData;
-#include "../../build/services.txt"
-static bool servicesLoaded = false;
-
 static u64 umodeTime = 0;
 static u64 kmodeTime = 0;
 static u64 kmodeStart = 0;
@@ -483,8 +477,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		break;
 	}
 
-	if(servicesLoaded)
-		vfsr_checkForMsgs();
+	vfsr_checkForMsgs();
 
 	/*vid_printf("umodeTime=%d%%\n",(s32)(100. / (cpu_rdtsc() / (double)umodeTime)));*/
 	switch(stack.intrptNo) {
@@ -495,29 +488,6 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		case IRQ_TIMER:
 			/* TODO don't resched if we come from kernel-mode! */
 			ASSERT(stack.ds == 0x23,"Timer interrupt from kernel-mode!");
-
-			if(!servicesLoaded) {
-				u32 i;
-				servicesLoaded = true;
-				for(i = 0; i < ARRAY_SIZE(services); i++) {
-					/* clone proc */
-					tPid pid = proc_getFreePid();
-					if(proc_clone(pid)) {
-						/* we'll reach this as soon as the scheduler has chosen the created process */
-						p = proc_getRunning();
-						/* remove data-pages */
-						proc_changeSize(-p->dataPages,CHG_DATA);
-						/* now load service */
-						/* TODO just temporary */
-						memcpy(p->command,services[i].name,strlen(services[i].name) + 1);
-						elf_loadprog(services[i].data);
-						proc_setupIntrptStack(&stack,0,NULL,0);
-						/* we don't want to continue the loop ;) */
-						break;
-					}
-				}
-				break;
-			}
 
 			intrpt_eoi(stack.intrptNo);
 			proc_switch();

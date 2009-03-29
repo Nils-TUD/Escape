@@ -113,12 +113,11 @@ tPid sig_addSignal(tSig signal,u32 data);
 fSigHandler sig_startHandling(tPid pid,tSig signal);
 
 /**
- * Acknoledges the given signal (marks handling as finished)
+ * Acknoledges the current signal with given process (marks handling as finished)
  *
  * @param pid the process-id
- * @param signal the signal
  */
-void sig_ackHandling(tPid pid,tSig signal);
+void sig_ackHandling(tPid pid);
 
 
 #if DEBUGGING

@@ -40,9 +40,11 @@ s32 unregService(tServ service);
 /**
  * Looks wether a client wants to be served and returns a file-descriptor for it.
  *
- * @param service the service-id
+ * @param services an array with service-ids to check
+ * @param count the size of <services>
+ * @param serv will be set to the service from which the client has been taken
  * @return the file-descriptor if successfull or the error-code
  */
-s32 getClient(tServ service);
+tFD getClient(tServ *services,u32 count,tServ *serv);
 
 #endif /* SERVICE_H_ */

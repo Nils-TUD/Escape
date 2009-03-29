@@ -91,11 +91,11 @@ void vfs_init(void) {
 	 *  /
 	 *   file:
 	 *   system:
+	 *     |-pipe
 	 *     |-processes
 	 *   services:
 	 */
 	root = vfsn_createDir(NULL,(char*)"",vfs_dirReadHandler);
-	/* TODO */
 	vfsn_createServiceNode(KERNEL_PID,root,(char*)"file",0);
 	sys = vfsn_createDir(root,(char*)"system",vfs_dirReadHandler);
 	vfsn_createPipeCon(sys,(char*)"pipe");
@@ -482,8 +482,6 @@ tServ vfs_createService(tPid pid,const char *name,u8 type) {
 		/* entry already existing? */
 		if(strcmp(n->name,name) == 0)
 			return ERR_SERVICE_EXISTS;
-		if(n->type == T_SERVICE && n->owner == pid)
-			return ERR_PROC_DUP_SERVICE;
 		n = n->next;
 	}
 
@@ -519,17 +517,13 @@ bool vfs_msgAvailableFor(tPid pid,u8 events) {
 		n = NODE_FIRST_CHILD(n);
 		while(n != NULL) {
 			if(n->owner == pid) {
+				tVFSNodeNo nodeNo = NADDR_TO_VNNO(n);
+				tVFSNodeNo client = vfs_getClient(pid,&nodeNo,1);
 				isService = true;
-				break;
+				if(vfsn_isValidNodeNo(client))
+					return true;
 			}
 			n = n->next;
-		}
-
-		/* p is a service */
-		if(n != NULL) {
-			tVFSNodeNo client = vfs_getClient(pid,NADDR_TO_VNNO(n));
-			if(vfsn_isValidNodeNo(client))
-				return true;
 		}
 	}
 
@@ -559,33 +553,42 @@ bool vfs_msgAvailableFor(tPid pid,u8 events) {
 	/*return true;*/
 }
 
-s32 vfs_getClient(tPid pid,tVFSNodeNo no) {
-	sVFSNode *n,*node = nodes + no;
-	if(node->owner != pid || node->type != T_SERVICE)
-		return ERR_NOT_OWN_SERVICE;
+s32 vfs_getClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count) {
+	sVFSNode *n,*node;
+	u32 i;
+	for(i = 0; i < count; i++) {
+		if(!vfsn_isValidNodeNo(vfsNodes[i]))
+			return ERR_INVALID_NODENO;
 
-	/* search for a slot that needs work */
-	n = NODE_FIRST_CHILD(node);
-	while(n != NULL) {
-		/* data available? */
-		if(n->data.servuse.sendList != NULL && sll_length(n->data.servuse.sendList) > 0)
-			break;
-		n = n->next;
+		node = nodes + vfsNodes[i];
+		if(node->owner != pid || node->type != T_SERVICE)
+			return ERR_NOT_OWN_SERVICE;
+
+		/* search for a slot that needs work */
+		n = NODE_FIRST_CHILD(node);
+		while(n != NULL) {
+			/* data available? */
+			if(n->data.servuse.sendList != NULL && sll_length(n->data.servuse.sendList) > 0)
+				break;
+			n = n->next;
+		}
+
+		if(n != NULL)
+			return NADDR_TO_VNNO(n);
 	}
-
-	if(n == NULL)
-		return ERR_NO_CLIENT_WAITING;
-
-	return NADDR_TO_VNNO(n);
+	return ERR_NO_CLIENT_WAITING;;
 }
 
-tFile vfs_openClient(tPid pid,tVFSNodeNo no) {
-	tVFSNodeNo client = vfs_getClient(pid,no);
+tFile vfs_openClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servNode) {
+	sVFSNode *n;
+	tVFSNodeNo client = vfs_getClient(pid,vfsNodes,count);
 	/* error? */
 	if(!vfsn_isValidNodeNo(client))
 		return client;
 
 	/* open a file for it so that the service can read and write with it */
+	n = vfsn_getNode(client);
+	*servNode = NADDR_TO_VNNO(n->parent);
 	return vfs_openFile(pid,VFS_READ | VFS_WRITE,client);
 }
 

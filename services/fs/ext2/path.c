@@ -49,7 +49,7 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
 		}
 
 		while(entry->inode != 0) {
-			if(pos == entry->nameLen && strncmp((const char*)(entry + 1),p,pos) == 0) {
+			if(pos == entry->nameLen && strncmp(entry->name,p,pos) == 0) {
 				p += pos;
 				ext2_icache_release(e,cnode);
 				cnode = ext2_icache_request(e,entry->inode);

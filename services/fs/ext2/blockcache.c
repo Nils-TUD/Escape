@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <heap.h>
+#include <debug.h>
 #include "ext2.h"
 #include "request.h"
 #include "blockcache.h"

@@ -116,7 +116,7 @@ void printStackTrace(sFuncCall *trace) {
 void dumpMem(void *addr,u32 dwordCount) {
 	u32 *ptr = (u32*)addr;
 	while(dwordCount-- > 0) {
-		vid_printf("0x%x: 0x%x\n",ptr,*ptr);
+		vid_printf("0x%x: 0x%08x\n",ptr,*ptr);
 		ptr++;
 	}
 }

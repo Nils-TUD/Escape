@@ -66,7 +66,7 @@ static void test_setHandler(void) {
 	test_assertTrue(sig_hasSignal(&sig,&pid,&data));
 	test_assertTrue(pid == p->pid && sig == SIG_INTRPT_ATA1);
 	sig_startHandling(pid,sig);
-	sig_ackHandling(pid,sig);
+	sig_ackHandling(pid);
 	test_assertFalse(sig_hasSignal(&sig,&pid,&data));
 	test_caseSucceded();
 
@@ -76,11 +76,11 @@ static void test_setHandler(void) {
 	test_assertTrue(pid == p->pid && sig == SIG_INTRPT_ATA1);
 	sig_startHandling(pid,sig);
 	test_assertUInt(sig_addSignal(SIG_INTRPT_ATA1,0),INVALID_PID);
-	sig_ackHandling(pid,sig);
+	sig_ackHandling(pid);
 	test_assertTrue(sig_hasSignal(&sig,&pid,&data));
 	test_assertTrue(pid == p->pid && sig == SIG_INTRPT_ATA1);
 	sig_startHandling(pid,sig);
-	sig_ackHandling(pid,sig);
+	sig_ackHandling(pid);
 	test_assertFalse(sig_hasSignal(&sig,&pid,&data));
 	test_caseSucceded();
 
@@ -90,7 +90,7 @@ static void test_setHandler(void) {
 	test_assertTrue(sig_hasSignal(&sig,&pid,&data));
 	test_assertTrue(pid == 0x123 && sig == SIG_TERM);
 	sig_startHandling(pid,sig);
-	sig_ackHandling(pid,sig);
+	sig_ackHandling(pid);
 	test_assertFalse(sig_hasSignal(&sig,&pid,&data));
 	test_caseSucceded();
 

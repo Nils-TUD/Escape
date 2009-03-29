@@ -178,7 +178,7 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo) {
 	pos = strchri(path,'/');
 	n = NODE_FIRST_CHILD(n);
 	while(n != NULL) {
-		if(strncmp(n->name,path,pos) == 0) {
+		if(strlen(n->name) == pos && strncmp(n->name,path,pos) == 0) {
 			path += pos;
 			/* finished? */
 			if(!*path)

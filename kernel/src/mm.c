@@ -63,7 +63,9 @@ void mm_init(void) {
 	u16mStackFrameCount = (U16M_PAGE_COUNT + (PAGE_SIZE - 1) / sizeof(u32)) / (PAGE_SIZE / sizeof(u32));
 	/*vid_printf("MEMSIZE=%d bytes, PAGE_COUNT=%d, stackFrameCount=%d\n",
 			MEMSIZE,U16M_PAGE_COUNT,u16mStackFrameCount);*/
-	u16mStack = (u32*)&KernelEnd;
+
+	/* put the MM-stack behind the last multiboot-module */
+	u16mStack = (u32*)mb->modsAddr[mb->modsCount - 1].modEnd;
 
 	/* at first we mark all frames as used in the bitmap for 0..16M */
 	memset(l16mBitmap,0xFFFFFFFF,L16M_PAGE_COUNT / 8);

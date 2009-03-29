@@ -10,13 +10,13 @@
 #include "common.h"
 #include <stdarg.h>
 
-#define IO_ERROR	-1
+#define IO_EOF	-1
 
 /**
  * Prints the given character to STDOUT
  *
  * @param c the character
- * @return the character or IO_ERROR if failed
+ * @return the character or IO_EOF if failed
  */
 char printc(char c);
 
@@ -25,7 +25,7 @@ char printc(char c);
  *
  * @param fd the file-descriptor
  * @param c the character
- * @return the character or IO_ERROR if failed
+ * @return the character or IO_EOF if failed
  */
 char fprintc(tFD fd,char c);
 
@@ -184,7 +184,7 @@ void fflush(tFD fd);
 /**
  * Reads one char from STDIN
  *
- * @return the character or IO_ERROR
+ * @return the character or IO_EOF
  */
 char scanc(void);
 
@@ -192,7 +192,7 @@ char scanc(void);
  * Reads one char from <fd>
  *
  * @param fd the file-descriptor
- * @return the character or IO_ERROR
+ * @return the character or IO_EOF
  */
 char fscanc(tFD fd);
 
@@ -201,7 +201,7 @@ char fscanc(tFD fd);
  * will be ignored.
  *
  * @param c the character
- * @return 0 on success or IO_ERROR
+ * @return 0 on success or IO_EOF
  */
 s32 scanback(char c);
 
@@ -211,9 +211,28 @@ s32 scanback(char c);
  *
  * @param fd the file-descriptor
  * @param c the character
- * @return 0 on success or IO_ERROR
+ * @return 0 on success or IO_EOF
  */
 s32 fscanback(tFD fd,char c);
+
+/**
+ * Reads max. <max> from STDIN (or till EOF) into the given buffer
+ *
+ * @param buffer the buffer
+ * @param max the maximum number of chars to read
+ * @return the number of read chars
+ */
+u32 scans(char *buffer,u32 max);
+
+/**
+ * Reads max. <max> from <fd> (or till EOF) into the given buffer
+ *
+ * @param fd the file-descriptor
+ * @param buffer the buffer
+ * @param max the maximum number of chars to read
+ * @return the number of read chars
+ */
+u32 fscans(tFD fd,char *buffer,u32 max);
 
 /**
  * Reads max. <max> from STDIN (or till EOF or newline) into the given line-buffer
@@ -222,7 +241,7 @@ s32 fscanback(tFD fd,char c);
  * @param max the maximum number of chars to read
  * @return the number of read chars
  */
-u32 scans(char *line,u32 max);
+u32 scanl(char *line,u32 max);
 
 /**
  * Reads max. <max> from <fd> (or till EOF or newline) into the given line-buffer
@@ -232,7 +251,7 @@ u32 scans(char *line,u32 max);
  * @param max the maximum number of chars to read
  * @return the number of read chars
  */
-u32 fscans(tFD fd,char *line,u32 max);
+u32 fscanl(tFD fd,char *line,u32 max);
 
 /**
  * Reads data in the specified format from STDIN. Supports:

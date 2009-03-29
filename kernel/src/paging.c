@@ -48,7 +48,7 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
  *
  * @param mappingArea the address of the mapping area to use
  */
-static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFrames);
+static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFrames,bool remCOW);
 
 /**
  * paging_unmapPageTables() for internal usages
@@ -70,6 +70,13 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count);
  * @param newProc the new process
  */
 static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc);
+
+/**
+ * Removes the given frame-number for the current process from COW
+ *
+ * @param frameNumber the frame-number
+ */
+static void paging_remFromCow(u32 frameNumber);
 
 /* the page-directory for process 0 */
 sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] __attribute__ ((aligned (PAGE_SIZE)));
@@ -347,8 +354,8 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 	}
 }
 
-void paging_unmap(u32 virtual,u32 count,bool freeFrames) {
-	paging_unmapIntern(MAPPED_PTS_START,virtual,count,freeFrames);
+void paging_unmap(u32 virtual,u32 count,bool freeFrames,bool remCOW) {
+	paging_unmapIntern(MAPPED_PTS_START,virtual,count,freeFrames,remCOW);
 }
 
 void paging_unmapPageTables(u32 start,u32 count) {
@@ -459,7 +466,7 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 
 	/* unmap stuff */
 	DBG_PGCLONEPD(vid_printf("Removing temp mappings\n"));
-	paging_unmap(PAGE_DIR_TMP_AREA,1,false);
+	paging_unmap(PAGE_DIR_TMP_AREA,1,false,false);
 	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)].present = false;
 
 	/* one final flush to ensure everything is correct */
@@ -511,6 +518,7 @@ bool paging_handlePageFault(u32 address) {
 		panic("No COW entry for process %d and address 0x%x",cp->pid,address);
 
 	/* remove our from list and adjust pte */
+	kheap_free(ourCOW);
 	sll_removeNode(cowFrames,ourCOW,ourPrevCOW);
 	pt->copyOnWrite = false;
 	pt->writable = true;
@@ -529,7 +537,7 @@ bool paging_handlePageFault(u32 address) {
 		memcpy((void*)(address & ~(PAGE_SIZE - 1)),(void*)KERNEL_STACK_TMP,PAGE_SIZE);
 
 		/* unmap */
-		paging_unmap(KERNEL_STACK_TMP,1,false);
+		paging_unmap(KERNEL_STACK_TMP,1,false,false);
 	}
 
 	return true;
@@ -554,38 +562,23 @@ void paging_destroyPageDir(sProc *p) {
 	/* TODO text should be shared, right? */
 
 	/* free data-pages and page-tables */
-	paging_unmapIntern(TMPMAP_PTS_START,p->textPages * PAGE_SIZE,p->dataPages,true);
+	paging_unmapIntern(TMPMAP_PTS_START,p->textPages * PAGE_SIZE,p->dataPages,true,true);
 	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,PAGES_TO_PTS(p->textPages),
 			PAGES_TO_PTS(p->textPages + p->dataPages) - PAGES_TO_PTS(p->textPages));
 
 	/* free stack-pages */
 	paging_unmapIntern(TMPMAP_PTS_START,KERNEL_AREA_V_ADDR - p->stackPages * PAGE_SIZE,
-			p->stackPages,true);
+			p->stackPages,true,true);
 	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,
 			ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) - PAGES_TO_PTS(p->stackPages),
 			PAGES_TO_PTS(p->stackPages));
 
-	/* remove process from COW-list */
-	sSLNode *n,*ln;
-	sCOW *cow;
-	ln = NULL;
-	for(n = sll_begin(cowFrames); n != NULL; ln = n, n = n->next) {
-		cow = (sCOW*)n->data;
-		if(cow->proc == p) {
-			sll_removeNode(cowFrames,n,ln);
-			n = n->next;
-			/* necessary because otherwise n->next would cause a trouble */
-			if(n == NULL)
-				break;
-		}
-	}
-
 	/* free kernel-stack */
-	paging_unmapIntern(TMPMAP_PTS_START,KERNEL_STACK,1,true);
+	paging_unmapIntern(TMPMAP_PTS_START,KERNEL_STACK,1,true,true);
 	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,ADDR_TO_PDINDEX(KERNEL_STACK),1);
 
 	/* unmap stuff & free page-dir */
-	paging_unmap(PAGE_DIR_TMP_AREA,1,true);
+	paging_unmap(PAGE_DIR_TMP_AREA,1,true,false);
 	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)].present = false;
 
 	paging_flushTLB();
@@ -598,7 +591,7 @@ void paging_gdtFinished(void) {
 	paging_flushTLB();
 }
 
-static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFrames) {
+static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFrames,bool remCOW) {
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
 
 	ASSERT(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
@@ -609,8 +602,12 @@ static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFr
 		if(pt->present) {
 			/* we don't want to free copy-on-write pages and not frames in front of the kernel
 			 * because they may be mapped more than once and will never be free'd */
-			if(freeFrames && !pt->copyOnWrite && pt->frameNumber * PAGE_SIZE >= KERNEL_P_ADDR)
-				mm_freeFrame(pt->frameNumber,MM_DEF);
+			if(freeFrames && pt->frameNumber * PAGE_SIZE >= KERNEL_P_ADDR) {
+				if(pt->copyOnWrite)
+					paging_remFromCow(pt->frameNumber);
+				else
+					mm_freeFrame(pt->frameNumber,MM_DEF);
+			}
 			pt->present = false;
 
 			/* invalidate TLB-entry */
@@ -642,7 +639,9 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
 		mm_freeFrame(pde->ptFrameNo,MM_DEF);
 		pde++;
 	}
-	paging_flushTLB();
+
+	if(pageDir == PAGE_DIR_AREA)
+		paging_flushTLB();
 }
 
 static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
@@ -682,9 +681,48 @@ static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
 	}
 }
 
+static void paging_remFromCow(u32 frameNumber) {
+	sProc *p = proc_getRunning();
+	sSLNode *n,*tn,*ln;
+	sCOW *cow;
+	bool foundOwn = false,foundOther = false;
+
+	/* search for the frame in the COW-list */
+	ln = NULL;
+	for(n = sll_begin(cowFrames); n != NULL; ) {
+		cow = (sCOW*)n->data;
+		if(cow->proc == p && cow->frameNumber == frameNumber) {
+			/* remove from COW-list */
+			tn = n->next;
+			kheap_free(cow);
+			sll_removeNode(cowFrames,n,ln);
+			n = tn;
+			foundOwn = true;
+			continue;
+		}
+
+		/* usage of other process? */
+		if(cow->frameNumber == frameNumber)
+			foundOther = true;
+		/* we can stop if we have both */
+		if(foundOther && foundOwn)
+			break;
+		ln = n;
+		n = n->next;
+	}
+
+	/* if no other process uses this frame, we have to free it */
+	if(!foundOther)
+		mm_freeFrame(frameNumber,MM_DEF);
+}
+
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
+
+static void paging_dbg_printPageDir(u32 mappingArea,u32 pageDirArea,u8 parts);
+static void paging_dbg_printPageTable(u32 mappingArea,u32 no,sPDEntry *pde);
+static void paging_dbg_printPage(sPTEntry *page);
 
 void paging_dbg_printCOW(void) {
 	sSLNode *n;
@@ -692,7 +730,8 @@ void paging_dbg_printCOW(void) {
 	vid_printf("COW-Frames:\n");
 	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
 		cow = (sCOW*)n->data;
-		vid_printf("\tframe=0x%x, proc=0x%x\n",cow->frameNumber,cow->proc);
+		vid_printf("\tframe=0x%x, pid=0x%x, pcmd=%s\n",cow->frameNumber,cow->proc->pid,
+				cow->proc->command);
 	}
 }
 
@@ -741,52 +780,56 @@ u32 paging_dbg_getPTEntryCount(sPTEntry *pt) {
 	return count;
 }
 
-void paging_dbg_printHeap(void) {
-	u32 i;
-	sPDEntry *pagedir;
-	paging_mapPageDir();
-	pagedir = (sPDEntry*)PAGE_DIR_AREA;
-	vid_printf("page-dir @ 0x%08x:\n",pagedir);
-	for(i = ADDR_TO_PDINDEX(KERNEL_HEAP_START); i < ADDR_TO_PDINDEX(KERNEL_HEAP_START + KERNEL_HEAP_SIZE); i++) {
-		if(pagedir[i].present) {
-			paging_dbg_printPageTable(i,pagedir + i);
-		}
-	}
-	vid_printf("\n");
+void paging_dbg_printOwnPageDir(u8 parts) {
+	paging_dbg_printPageDir(MAPPED_PTS_START,PAGE_DIR_AREA,parts);
 }
 
-void paging_dbg_printPageDir(bool includeKernel) {
+void paging_dbg_printPageDirOf(sProc *p,u8 parts) {
+	sPDEntry *pd,*ppd;
+
+	/* map page-dir */
+	paging_map(PAGE_DIR_TMP_AREA,&(p->physPDirAddr),1,
+			PG_SUPERVISOR | PG_WRITABLE | PG_ADDR_TO_FRAME,true);
+	/* map page-tables */
+	pd = (sPDEntry*)PAGE_DIR_AREA;
+	ppd = (sPDEntry*)PAGE_DIR_TMP_AREA;
+	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = ppd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
+	paging_flushTLB();
+
+	paging_dbg_printPageDir(TMPMAP_PTS_START,PAGE_DIR_TMP_AREA,parts);
+
+	/* unmap */
+	paging_unmap(PAGE_DIR_TMP_AREA,1,false,false);
+	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)].present = false;
+	paging_flushTLB();
+}
+
+static void paging_dbg_printPageDir(u32 mappingArea,u32 pageDirArea,u8 parts) {
 	u32 i;
 	sPDEntry *pagedir;
 	paging_mapPageDir();
-	pagedir = (sPDEntry*)PAGE_DIR_AREA;
+	pagedir = (sPDEntry*)pageDirArea;
 	vid_printf("page-dir @ 0x%08x:\n",pagedir);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
-		if(pagedir[i].present && (includeKernel || i != ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR))) {
-			paging_dbg_printPageTable(i,pagedir + i);
-		}
-	}
-	vid_printf("\n");
-}
-
-void paging_dbg_printUserPageDir(void) {
-	u32 i;
-	sPDEntry *pagedir;
-	paging_mapPageDir();
-	pagedir = (sPDEntry*)PAGE_DIR_AREA;
-	vid_printf("page-dir @ 0x%08x:\n",pagedir);
-	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR); i++) {
 		if(pagedir[i].present) {
-			paging_dbg_printPageTable(i,pagedir + i);
+			if(parts == PD_PART_ALL ||
+				(i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) && (parts & PD_PART_USER)) ||
+				(i >= ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) && i < ADDR_TO_PDINDEX(KERNEL_HEAP_START)
+						&& (parts & PD_PART_KERNEL)) ||
+				(i >= ADDR_TO_PDINDEX(KERNEL_HEAP_START) && i < ADDR_TO_PDINDEX(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
+						&& (parts & PD_PART_KHEAP)) ||
+				(i >= ADDR_TO_PDINDEX(MAPPED_PTS_START) && (parts & PD_PART_PTBLS))) {
+				paging_dbg_printPageTable(mappingArea,i,pagedir + i);
+			}
 		}
 	}
 	vid_printf("\n");
 }
 
-void paging_dbg_printPageTable(u32 no,sPDEntry *pde) {
+static void paging_dbg_printPageTable(u32 mappingArea,u32 no,sPDEntry *pde) {
 	u32 i;
 	u32 addr = PAGE_SIZE * PT_ENTRY_COUNT * no;
-	sPTEntry *pte = (sPTEntry*)(MAPPED_PTS_START + no * PAGE_SIZE);
+	sPTEntry *pte = (sPTEntry*)(mappingArea + no * PAGE_SIZE);
 	vid_printf("\tpt 0x%x [frame 0x%x, %c%c] @ 0x%08x: (VM: 0x%08x - 0x%08x)\n",no,
 			pde->ptFrameNo,pde->notSuperVisor ? 'u' : 'k',pde->writable ? 'w' : 'r',pte,addr,
 			addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
@@ -802,7 +845,7 @@ void paging_dbg_printPageTable(u32 no,sPDEntry *pde) {
 	}
 }
 
-void paging_dbg_printPage(sPTEntry *page) {
+static void paging_dbg_printPage(sPTEntry *page) {
 	if(page->present) {
 		vid_printf("raw=0x%08x, frame=0x%x [%c%c%c%c]",*(u32*)page,
 				page->frameNumber,page->notSuperVisor ? 'u' : 'k',page->writable ? 'w' : 'r',

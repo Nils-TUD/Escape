@@ -57,7 +57,7 @@ static sExt2 ext2;
 
 int main(void) {
 	tFD fd;
-	tServ id;
+	tServ id,client;
 
 	/* TODO */
 	ext2.drive = 0;
@@ -75,7 +75,7 @@ int main(void) {
 	}
 
 	while(1) {
-		fd = getClient(id);
+		fd = getClient(&id,1,&client);
 		if(fd < 0)
 			sleep(EV_CLIENT);
 		else {

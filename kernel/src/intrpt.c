@@ -20,6 +20,7 @@
 #include "../h/sched.h"
 #include "../h/signals.h"
 #include "../h/timer.h"
+#include <assert.h>
 #include <string.h>
 #include <sllist.h>
 
@@ -487,7 +488,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 		case IRQ_TIMER:
 			/* TODO don't resched if we come from kernel-mode! */
-			ASSERT(stack.ds == 0x23,"Timer interrupt from kernel-mode!");
+			vassert(stack.ds == 0x23,"Timer interrupt from kernel-mode!");
 
 			intrpt_eoi(stack.intrptNo);
 			timer_intrpt();
@@ -502,8 +503,8 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
 			/* #PF */
 			if(stack.intrptNo == EX_PAGE_FAULT) {
-				/*vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
-						stack.eip,proc_getRunning()->pid);*/
+				vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
+						stack.eip,proc_getRunning()->pid);
 				if(!paging_handlePageFault(cpu_getCR2())) {
 					panic("Page fault for address=0x%08x @ 0x%x",cpu_getCR2(),stack.eip);
 				}

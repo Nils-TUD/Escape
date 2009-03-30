@@ -9,20 +9,24 @@
 #	include "../../kernel/h/util.h"
 #	include "../../kernel/h/paging.h"
 #else
-#	include "../../libc/h/common.h"
-/* for exit and debugf (ASSERT) */
-#	include "../../libc/h/proc.h"
-#	include "../../libc/h/debug.h"
+#	include "../../libc/esc/h/common.h"
+/* for exit and debugf (vassert) */
+#	include "../../libc/esc/h/proc.h"
+#	include "../../libc/esc/h/debug.h"
 #endif
 
+#include "../h/assert.h"
 #include "../h/string.h"
+#include "../h/ctype.h"
+
+#define MAX_ERR_LEN		255
 
 s32 atoi(const char *str) {
 	s32 i = 0;
 	bool neg = false;
 	char c;
 
-	ASSERT(str != NULL,"str == NULL");
+	vassert(str != NULL,"str == NULL");
 
 	/* skip leading whitespace */
 	while(isspace(*str))
@@ -46,7 +50,7 @@ s32 atoi(const char *str) {
 void itoa(char *target,s32 n) {
 	char *s = target,*a = target,*b;
 
-	ASSERT(target != NULL,"target == NULL");
+	vassert(target != NULL,"target == NULL");
 
 	/* handle sign */
 	if(n < 0) {
@@ -159,8 +163,8 @@ void *memmove(void *dest,const void *src,u32 count) {
 char *strcpy(char *to,const char *from) {
 	char *res = to;
 
-	ASSERT(from != NULL,"from == NULL");
-	ASSERT(to != NULL,"to == NULL");
+	vassert(from != NULL,"from == NULL");
+	vassert(to != NULL,"to == NULL");
 
 	while(*from) {
 		*to++ = *from++;
@@ -172,8 +176,8 @@ char *strcpy(char *to,const char *from) {
 char *strncpy(char *to,const char *from,u32 count) {
 	char *res = to;
 
-	ASSERT(from != NULL,"from == NULL");
-	ASSERT(to != NULL,"to == NULL");
+	vassert(from != NULL,"from == NULL");
+	vassert(to != NULL,"to == NULL");
 
 	/* copy source string */
 	while(*from && count > 0) {
@@ -181,18 +185,16 @@ char *strncpy(char *to,const char *from,u32 count) {
 		count--;
 	}
 	/* terminate & fill with \0 if needed */
-	do {
+	while(count-- > 0)
 		*to++ = '\0';
-	}
-	while(count-- > 0);
 	return res;
 }
 
 char *strcat(char *str1,const char *str2) {
 	char *res = str1;
 
-	ASSERT(str1 != NULL,"str1 == NULL");
-	ASSERT(str2 != NULL,"str2 == NULL");
+	vassert(str1 != NULL,"str1 == NULL");
+	vassert(str2 != NULL,"str2 == NULL");
 
 	/* walk to end */
 	while(*str1)
@@ -200,14 +202,16 @@ char *strcat(char *str1,const char *str2) {
 	/* append */
 	while(*str2)
 		*str1++ = *str2++;
+	/* terminate */
+	*str1 = '\0';
 	return res;
 }
 
 char *strncat(char *str1,const char *str2,u32 count) {
 	char *res = str1;
 
-	ASSERT(str1 != NULL,"str1 == NULL");
-	ASSERT(str2 != NULL,"str2 == NULL");
+	vassert(str1 != NULL,"str1 == NULL");
+	vassert(str2 != NULL,"str2 == NULL");
 
 	/* walk to end */
 	while(*str1)
@@ -223,8 +227,8 @@ char *strncat(char *str1,const char *str2,u32 count) {
 s32 strcmp(const char *str1,const char *str2) {
 	char c1 = *str1,c2 = *str2;
 
-	ASSERT(str1 != NULL,"str1 == NULL");
-	ASSERT(str2 != NULL,"str2 == NULL");
+	vassert(str1 != NULL,"str1 == NULL");
+	vassert(str2 != NULL,"str2 == NULL");
 
 	while(c1 && c2) {
 		/* different? */
@@ -246,8 +250,8 @@ s32 strcmp(const char *str1,const char *str2) {
 
 s32 strncmp(const char *str1,const char *str2,u32 count) {
 	s32 rem = count;
-	ASSERT(str1 != NULL,"str1 == NULL");
-	ASSERT(str2 != NULL,"str2 == NULL");
+	vassert(str1 != NULL,"str1 == NULL");
+	vassert(str2 != NULL,"str2 == NULL");
 
 	while(*str1 && *str2 && rem-- > 0) {
 		if(*str1++ != *str2++)
@@ -261,7 +265,7 @@ s32 strncmp(const char *str1,const char *str2,u32 count) {
 }
 
 char *strchr(const char *str,s32 ch) {
-	ASSERT(str != NULL,"str == NULL");
+	vassert(str != NULL,"str == NULL");
 
 	while(*str) {
 		if(*str++ == ch)
@@ -273,7 +277,7 @@ char *strchr(const char *str,s32 ch) {
 s32 strchri(const char *str,s32 ch) {
 	const char *save = str;
 
-	ASSERT(str != NULL,"str == NULL");
+	vassert(str != NULL,"str == NULL");
 
 	while(*str) {
 		if(*str++ == ch)
@@ -285,7 +289,7 @@ s32 strchri(const char *str,s32 ch) {
 char *strrchr(const char *str,s32 ch) {
 	char *pos = NULL;
 
-	ASSERT(str != NULL,"str == NULL");
+	vassert(str != NULL,"str == NULL");
 
 	while(*str) {
 		if(*str++ == ch)
@@ -298,8 +302,8 @@ char *strstr(const char *str1,const char *str2) {
 	char *res = NULL;
 	char *sub;
 
-	ASSERT(str1 != NULL,"str1 == NULL");
-	ASSERT(str2 != NULL,"str2 == NULL");
+	vassert(str1 != NULL,"str1 == NULL");
+	vassert(str2 != NULL,"str2 == NULL");
 
 	/* handle special case to prevent looping the string */
 	if(!*str2)
@@ -322,11 +326,25 @@ char *strstr(const char *str1,const char *str2) {
 	return NULL;
 }
 
+u32 strspn(const char *str1,const char *str2) {
+	u32 count = 0;
+
+	vassert(str1 != NULL,"str1 == NULL");
+	vassert(str2 != NULL,"str2 == NULL");
+
+	while(*str1) {
+		if(strchr(str2,*str1++) == NULL)
+			return count;
+		count++;
+	}
+	return count;
+}
+
 u32 strcspn(const char *str1,const char *str2) {
 	u32 count = 0;
 
-	ASSERT(str1 != NULL,"str1 == NULL");
-	ASSERT(str2 != NULL,"str2 == NULL");
+	vassert(str1 != NULL,"str1 == NULL");
+	vassert(str2 != NULL,"str2 == NULL");
 
 	while(*str1) {
 		if(strchr(str2,*str1++) != NULL)
@@ -339,8 +357,8 @@ u32 strcspn(const char *str1,const char *str2) {
 char *strpbrk(const char *str1,const char *str2) {
 	char *s2;
 
-	ASSERT(str1 != NULL,"str1 == NULL");
-	ASSERT(str2 != NULL,"str2 == NULL");
+	vassert(str1 != NULL,"str1 == NULL");
+	vassert(str2 != NULL,"str2 == NULL");
 
 	while(*str1) {
 		s2 = (char*)str2;
@@ -354,10 +372,44 @@ char *strpbrk(const char *str1,const char *str2) {
 	return NULL;
 }
 
+char *strtok(char *str,const char *delimiters) {
+	static char *last = NULL;
+	char *res;
+	u32 start,end;
+	if(str)
+		last = str;
+	if(last == NULL)
+		return NULL;
+
+	/* find first char of the token */
+	start = strspn(last,delimiters);
+	last += start;
+	/* reached end? */
+	if(*last == '\0') {
+		last = NULL;
+		return NULL;
+	}
+	/* store beginning */
+	res = last;
+
+	/* find end of the token */
+	end = strcspn(last,delimiters);
+	/* have we reached the end? */
+	if(last[end] == '\0')
+		last = NULL;
+	else {
+		last[end] = '\0';
+		/* we want to continue at that place next time */
+		last += end + 1;
+	}
+
+	return res;
+}
+
 char *strcut(char *str,u32 count) {
 	char *res = str;
 
-	ASSERT(str != NULL,"str == NULL");
+	vassert(str != NULL,"str == NULL");
 
 	if(count > 0) {
 		str += count;
@@ -373,7 +425,7 @@ char *strcut(char *str,u32 count) {
 u32 strlen(const char *str) {
 	u32 len = 0;
 
-	ASSERT(str != NULL,"str == NULL");
+	vassert(str != NULL,"str == NULL");
 
 	while(*str++)
 		len++;
@@ -382,8 +434,8 @@ u32 strlen(const char *str) {
 
 s32 strnlen(const char *str,s32 max) {
 	s32 len = 0;
-	ASSERT(str != NULL,"str == NULL");
-	ASSERT(max >= 0,"max < 0");
+	vassert(str != NULL,"str == NULL");
+	vassert(max >= 0,"max < 0");
 
 	while(*str && len <= max) {
 		str++;
@@ -394,18 +446,6 @@ s32 strnlen(const char *str,s32 max) {
 	return len;
 }
 
-s32 tolower(s32 ch) {
-	if(ch >= 'A' && ch <= 'Z')
-		return ch - ('A' - 'a');
-	return ch;
-}
-
-s32 toupper(s32 ch) {
-	if(ch >= 'a' && ch <= 'z')
-		return ch + ('A' - 'a');
-	return ch;
-}
-
 bool isalnumstr(const char *str) {
 	while(*str) {
 		if(!isalnum(*str++))
@@ -414,26 +454,138 @@ bool isalnumstr(const char *str) {
 	return true;
 }
 
-bool isalnum(s32 c) {
-	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
-}
+#ifndef IN_KERNEL
+char *strerror(s32 errnum) {
+	static char msg[MAX_ERR_LEN + 1];
+	switch(errnum) {
+		case ERR_FILE_IN_USE:
+			strcpy(msg,"The file is already in use");
+			break;
 
-bool isalpha(s32 c) {
-	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
+		case ERR_INVALID_SYSC_ARGS:
+			strcpy(msg,"Invalid syscall-arguments");
+			break;
 
-bool isdigit(s32 c) {
-	return (c >= '0' && c <= '9');
-}
+		case ERR_MAX_PROC_FDS:
+			strcpy(msg,"You have reached the max. possible file-descriptors");
+			break;
 
-bool islower(s32 c) {
-	return (c >= 'a' && c <= 'z');
-}
+		case ERR_NO_FREE_FD:
+			strcpy(msg,"The max. global, open files have been reached");
+			break;
 
-bool isspace(s32 c) {
-	return (c == ' ' || c == '\r' || c == '\n' || c == '\t' || c == '\f' || c == '\v');
-}
+		case ERR_VFS_NODE_NOT_FOUND:
+			strcpy(msg,"Unable to resolve the path");
+			break;
 
-bool isupper(s32 c) {
-	return (c >= 'A' && c <= 'Z');
+		case ERR_INVALID_FD:
+			strcpy(msg,"Invalid file-descriptor");
+			break;
+
+		case ERR_INVALID_FILE:
+			strcpy(msg,"Invalid file");
+			break;
+
+		case ERR_NO_READ_PERM:
+			strcpy(msg,"No read-permission");
+			break;
+
+		case ERR_NO_WRITE_PERM:
+			strcpy(msg,"No write-permission");
+			break;
+
+		case ERR_INV_SERVICE_NAME:
+			strcpy(msg,"Invalid service name. Alphanumeric, not empty name expected!");
+			break;
+
+		case ERR_NOT_ENOUGH_MEM:
+			strcpy(msg,"Not enough memory!");
+			break;
+
+		case ERR_SERVICE_EXISTS:
+			strcpy(msg,"The service with desired name does already exist!");
+			break;
+
+		case ERR_PROC_DUP_SERVICE:
+			strcpy(msg,"You are already a service!");
+			break;
+
+		case ERR_PROC_DUP_SERVICE_USE:
+			strcpy(msg,"You are already using the requested service!");
+			break;
+
+		case ERR_SERVICE_NOT_IN_USE:
+			strcpy(msg,"You are not using the service at the moment!");
+			break;
+
+		case ERR_NOT_OWN_SERVICE:
+			strcpy(msg,"The service-node is not your own!");
+			break;
+
+		case ERR_IO_MAP_RANGE_RESERVED:
+			strcpy(msg,"The given io-port range is reserved!");
+			break;
+
+		case ERR_IOMAP_NOT_PRESENT:
+			strcpy(msg,"The io-port-map is not present (have you reserved ports?)");
+			break;
+
+		case ERR_INTRPT_LISTENER_MSGLEN:
+			strcpy(msg,"The length of the interrupt-notify-message is too long!");
+			break;
+
+		case ERR_INVALID_IRQ_NUMBER:
+			strcpy(msg,"The given IRQ-number is invalid!");
+			break;
+
+		case ERR_IRQ_LISTENER_MISSING:
+			strcpy(msg,"The IRQ-listener is not present!");
+			break;
+
+		case ERR_NO_CLIENT_WAITING:
+			strcpy(msg,"No client is currently waiting");
+			break;
+
+		case ERR_FS_NOT_FOUND:
+			strcpy(msg,"Filesystem-service not found");
+			break;
+
+		case ERR_INVALID_SIGNAL:
+			strcpy(msg,"Invalid signal");
+			break;
+
+		case ERR_INVALID_PID:
+			strcpy(msg,"Invalid process-id");
+			break;
+
+		case ERR_NO_DIRECTORY:
+			strcpy(msg,"A part of the path is no directory");
+			break;
+
+		case ERR_PATH_NOT_FOUND:
+			strcpy(msg,"Path not found");
+			break;
+
+		case ERR_FS_READ_FAILED:
+			strcpy(msg,"Read from fs failed");
+			break;
+
+		case ERR_INVALID_PATH:
+			strcpy(msg,"Invalid path");
+			break;
+
+		case ERR_INVALID_NODENO:
+			strcpy(msg,"Invalid Node-Number");
+			break;
+
+		case ERR_SERVUSE_SEEK:
+			strcpy(msg,"seek() is not possible for service-usages!");
+			break;
+
+		default:
+			strcpy(msg,"No error");
+			break;
+	}
+	return msg;
 }
+#endif

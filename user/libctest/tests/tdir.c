@@ -24,9 +24,9 @@ static void test_dir(void) {
 	sDirEntry *e;
 	test_caseStart("Testing opendir, readdir and closedir");
 
-	fd = opendir("file:/apps");
+	fd = opendir("file:/bin");
 	if(fd < 0) {
-		test_caseFailed("Unable to open 'file:/apps'");
+		test_caseFailed("Unable to open 'file:/bin'");
 		return;
 	}
 

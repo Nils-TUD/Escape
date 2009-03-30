@@ -12,6 +12,7 @@
 #include "../h/keycodes.h"
 #include "../h/heap.h"
 #include <string.h>
+#include <ctype.h>
 #include <stdarg.h>
 #include <sllist.h>
 

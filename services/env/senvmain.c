@@ -119,7 +119,7 @@ int main(void) {
 
 	/* set initial vars for proc 0 */
 	env_set(0,(char*)"CWD",(char*)"file:/");
-	env_set(0,(char*)"PATH",(char*)"file:/apps/");
+	env_set(0,(char*)"PATH",(char*)"file:/bin/");
 
 	/* wait for messages */
 	static sMsgHeader msg;

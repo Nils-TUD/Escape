@@ -17,6 +17,7 @@
 #include <heap.h>
 #include <messages.h>
 
+#include <assert.h>
 #include <sllist.h>
 
 #if 0

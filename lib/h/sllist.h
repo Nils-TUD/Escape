@@ -10,7 +10,7 @@
 #ifdef IN_KERNEL
 #	include "../../kernel/h/common.h"
 #else
-#	include "../../libc/h/common.h"
+#	include "../../libc/esc/h/common.h"
 #endif
 
 /* our list (the user should not know about the internal structure) */

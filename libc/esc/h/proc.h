@@ -92,6 +92,6 @@ s32 wait(u8 events);
  *
  * @param errorCode the error-code for the parent
  */
-void exit(u32 errorCode);
+void exit(s32 errorCode);
 
 #endif /* PROC_H_ */

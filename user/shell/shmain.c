@@ -289,12 +289,11 @@ static void shell_sigIntrpt(tSig sig,u32 data) {
 	UNUSED(sig);
 	/* was this interrupt intended for our vterm? */
 	if(vterm == data) {
+		printf("\n");
 		if(waitingPid != INVALID_PID)
 			sendSignalTo(waitingPid,SIG_KILL,0);
-		else {
-			printf("\n");
+		else
 			shell_prompt();
-		}
 	}
 }
 
@@ -303,8 +302,8 @@ static u32 shell_readLine(char *buffer,u32 max) {
 	u32 cursorPos = 0;
 	u32 i = 0;
 
-	/* disable "readline" */
-	printf("\033l\x0");
+	/* disable "readline", enable "echo" */
+	printf("\033e\x1\033l\x0");
 
 	/* ensure that the line is empty */
 	*buffer = '\0';

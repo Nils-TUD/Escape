@@ -15,11 +15,13 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 
 	printf("Currently you can use the following commands/programs:\n");
 	printf("\tcat [<file>]					Read file or from STDIN and print\n");
+	printf("\tdate							Print current date and timestamp\n");
 	printf("\tkill <pid>						Kill process\n");
 	printf("\tlibctest						Run libc-tests\n");
 	printf("\tlogin							Just for fun ;)\n");
 	printf("\tls [<dir>]						List current or specified directory\n");
 	printf("\tmem								Print memory-usage\n");
+	printf("\tprogress						Shows a progress-bar\n");
 	printf("\tps								Print processes\n");
 	printf("\techo <string>,...				Print given arguments\n");
 	printf("\tenv [<name>|<name>=<value>]		Print or set env-variable(s)\n");
@@ -38,9 +40,10 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 
 	printf("\n");
 	printf("Other:\n");
-	printf("\tTab-Completion works for programs in /apps and files/directories\n");
+	printf("\tTab-Completion works for programs in /bin and files/directories\n");
 	printf("\tYou can send EOF by CTRL+D and kill the current process with CTRL+C\n");
 	printf("\tYou can scroll the screen with pageUp/-Down, shift + arrowUp/-Down\n");
+	printf("\tYou can switch between vterm0 and vterm1 via CTRL+1/2\n");
 	printf("\n");
 
 	return 0;

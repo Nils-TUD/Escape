@@ -40,7 +40,7 @@ int main(void) {
 			if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
 				continue;
 
-			strncpy(ppath,path,strlen(path));
+			strcpy(ppath,path);
 			strncat(ppath,entry->name,strlen(entry->name));
 			if((dfd = open(ppath,IO_READ)) >= 0) {
 				read(dfd,&proc,sizeof(sProc));

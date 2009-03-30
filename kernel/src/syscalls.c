@@ -22,6 +22,7 @@
 #include "../h/multiboot.h"
 #include "../h/timer.h"
 #include <string.h>
+#include <assert.h>
 
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
@@ -295,7 +296,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 
 void sysc_handle(sIntrptStackFrame *intrptStack) {
 	sSysCallStack *stack = (sSysCallStack*)intrptStack->uesp;
-	ASSERT(stack != NULL,"stack == NULL");
+	vassert(stack != NULL,"stack == NULL");
 
 	u32 sysCallNo = (u32)stack->number;
 	if(sysCallNo < SYSCALL_COUNT) {
@@ -1078,6 +1079,7 @@ static void sysc_createNode(sSysCallStack *stack) {
 		return;
 	}
 	strncpy(pathCpy,path,pathLen);
+	pathCpy[pathLen] = '\0';
 
 	/* make a copy of the name */
 	nameCpy = (char*)kheap_alloc(nameLen + 1);

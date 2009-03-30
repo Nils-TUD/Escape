@@ -9,8 +9,9 @@
 #include "../h/vfsnode.h"
 #include "../h/util.h"
 #include "../h/kheap.h"
-#include <string.h>
 #include "../h/video.h"
+#include <string.h>
+#include <assert.h>
 
 #define FILE_ROOT()	(nodes + 3)
 
@@ -95,9 +96,9 @@ char *vfsn_getPath(tVFSNodeNo nodeNo) {
 	sVFSNode *node = nodes + nodeNo;
 	sVFSNode *n = node;
 
-	ASSERT(node != NULL,"node = NULL");
+	vassert(node != NULL,"node = NULL");
 	/* the root-node of the whole vfs has no path */
-	ASSERT(n->parent != NULL,"node->parent == NULL");
+	vassert(n->parent != NULL,"node->parent == NULL");
 
 	u32 total = 0;
 	while(n->parent != NULL) {
@@ -249,7 +250,7 @@ sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,char *name) {
 sVFSNode *vfsn_createNode(sVFSNode *parent,char *name) {
 	sVFSNode *node;
 
-	ASSERT(name != NULL,"name == NULL");
+	vassert(name != NULL,"name == NULL");
 
 	if(strlen(name) > MAX_NAME_LEN)
 		return NULL;
@@ -345,7 +346,7 @@ sVFSNode *vfsn_createServiceUseNode(sVFSNode *parent,char *name,fRead handler) {
 }
 
 void vfsn_appendChild(sVFSNode *parent,sVFSNode *node) {
-	ASSERT(node != NULL,"node == NULL");
+	vassert(node != NULL,"node == NULL");
 
 	if(parent != NULL) {
 		if(parent->firstChild == NULL)
@@ -359,8 +360,8 @@ void vfsn_appendChild(sVFSNode *parent,sVFSNode *node) {
 }
 
 void vfsn_removeChild(sVFSNode *parent,sVFSNode *node) {
-	ASSERT(parent != NULL,"parent == NULL");
-	ASSERT(node != NULL,"node == NULL");
+	vassert(parent != NULL,"parent == NULL");
+	vassert(node != NULL,"node == NULL");
 
 	if(node->prev != NULL)
 		node->prev->next = node->next;
@@ -477,7 +478,7 @@ static sVFSNode *vfsn_requestNode(void) {
 }
 
 static void vfsn_releaseNode(sVFSNode *node) {
-	ASSERT(node != NULL,"node == NULL");
+	vassert(node != NULL,"node == NULL");
 	/* mark unused */
 	node->name = NULL;
 	node->next = freeList;

@@ -12,6 +12,7 @@
 #include "../h/video.h"
 #include <sllist.h>
 #include <string.h>
+#include <assert.h>
 
 /* builds the address of the page in the mapped page-tables to which the given addr belongs */
 #define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + (((u32)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
@@ -291,12 +292,12 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 	sPDEntry *pd;
 	sPTEntry *pt;
 
-	ASSERT(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
-	ASSERT(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
-	ASSERT(flags & (PG_WRITABLE | PG_SUPERVISOR | PG_COPYONWRITE | PG_ADDR_TO_FRAME),"flags empty");
-	ASSERT(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_COPYONWRITE | PG_ADDR_TO_FRAME)),
+	vassert(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
+	vassert(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
+	vassert(flags & (PG_WRITABLE | PG_SUPERVISOR | PG_COPYONWRITE | PG_ADDR_TO_FRAME),"flags empty");
+	vassert(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_COPYONWRITE | PG_ADDR_TO_FRAME)),
 			"flags contain invalid bits");
-	ASSERT(force == true || force == false,"force invalid");
+	vassert(force == true || force == false,"force invalid");
 
 	/* just if we use the default one */
 	if(pageDir == PAGE_DIR_AREA)
@@ -370,8 +371,8 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	sPTEntry *pt;
 	sProc *p;
 
-	ASSERT(stackFrame != NULL,"stackFrame == NULL");
-	ASSERT(newProc != NULL,"newProc == NULL");
+	vassert(stackFrame != NULL,"stackFrame == NULL");
+	vassert(newProc != NULL,"newProc == NULL");
 
 	DBG_PGCLONEPD(vid_printf(">>===== paging_clonePageDir(newPid=%d) =====\n",newPid));
 
@@ -546,7 +547,7 @@ bool paging_handlePageFault(u32 address) {
 void paging_destroyPageDir(sProc *p) {
 	sPDEntry *pd,*ppd;
 
-	ASSERT(p != NULL,"p == NULL");
+	vassert(p != NULL,"p == NULL");
 
 	/* map page-dir of process */
 	paging_map(PAGE_DIR_TMP_AREA,&(p->physPDirAddr),1,
@@ -594,8 +595,8 @@ void paging_gdtFinished(void) {
 static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFrames,bool remCOW) {
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
 
-	ASSERT(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
-	ASSERT(freeFrames == true || freeFrames == false,"freeFrames invalid");
+	vassert(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
+	vassert(freeFrames == true || freeFrames == false,"freeFrames invalid");
 
 	while(count-- > 0) {
 		/* remove and free, if desired */
@@ -630,9 +631,9 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
 
 	pde = (sPDEntry*)pageDir + start;
 
-	ASSERT(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
-	ASSERT(start < PT_ENTRY_COUNT,"start >= PT_ENTRY_COUNT");
-	ASSERT(count < PT_ENTRY_COUNT,"count >= PT_ENTRY_COUNT");
+	vassert(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
+	vassert(start < PT_ENTRY_COUNT,"start >= PT_ENTRY_COUNT");
+	vassert(count < PT_ENTRY_COUNT,"count >= PT_ENTRY_COUNT");
 
 	while(count-- > 0) {
 		pde->present = 0;

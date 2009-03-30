@@ -27,11 +27,13 @@ char *abspath(const char *path) {
 	pos = strchri(p,':');
 	if(*(p + pos) != '\0') {
 		strncpy(apath,p,pos + 1);
+		apath[pos + 1] = '\0';
 		pathtemp = apath + pos + 1;
 		p += pos + 1;
 	}
 	else {
 		strncpy(apath,"file:",5);
+		apath[5] = '\0';
 		pathtemp = apath + 5;
 	}
 
@@ -82,6 +84,7 @@ char *abspath(const char *path) {
 			/* append to path */
 			*pathtemp++ = '/';
 			strncpy(pathtemp,p,pos);
+			pathtemp[pos] = '\0';
 			pathtemp += pos;
 			p += pos + 1;
 			layer++;

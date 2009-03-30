@@ -9,20 +9,21 @@
 #	include "../../kernel/h/common.h"
 #	include "../../kernel/h/kheap.h"
 #	include "../../kernel/h/video.h"
-/* for panic (ASSERT) */
+/* for panic (vassert) */
 #	include "../../kernel/h/util.h"
 #	define sllprintf	vid_printf
 #	define free(x)		kheap_free(x)
 #	define malloc(x)	kheap_alloc(x)
 #else
-#	include "../../libc/h/common.h"
-#	include "../../libc/h/heap.h"
-#	include "../../libc/h/debug.h"
-/* for exit (ASSERT) */
-#	include "../../libc/h/proc.h"
+#	include "../../libc/esc/h/common.h"
+#	include "../../libc/esc/h/heap.h"
+#	include "../../libc/esc/h/debug.h"
+/* for exit (vassert) */
+#	include "../../libc/esc/h/proc.h"
 #	define sllprintf debugf
 #endif
 
+#include "../h/assert.h"
 #include "../h/sllist.h"
 
 /* a node in a list */
@@ -64,7 +65,7 @@ void sll_destroy(sSLList *list,bool freeData) {
 	sList *l = (sList*)list;
 	sNode *nn,*n = l->first;
 
-	ASSERT(list != NULL,"list == NULL");
+	vassert(list != NULL,"list == NULL");
 
 	while(n != NULL) {
 		nn = n->next;
@@ -134,7 +135,7 @@ bool sll_insert(sSLList *list,const void *data,u32 index) {
 	sList *l = (sList*)list;
 	sNode *nn,*n = l->first,*ln = NULL;
 
-	ASSERT(list != NULL,"list == NULL");
+	vassert(list != NULL,"list == NULL");
 
 	/* walk to the desired position */
 	if(index == l->length) {
@@ -174,7 +175,7 @@ void sll_removeAll(sSLList *list) {
 	sList *l = (sList*)list;
 	sNode *m,*n = (sNode*)l->first;
 
-	ASSERT(list != NULL,"list == NULL");
+	vassert(list != NULL,"list == NULL");
 
 	/* free all nodes */
 	while(n != NULL) {
@@ -193,9 +194,9 @@ void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev) {
 	sList *l = (sList*)list;
 	sNode *n = (sNode*)node,*ln = (sNode*)prev;
 
-	ASSERT(list != NULL,"list == NULL");
-	ASSERT(node != NULL,"node == NULL");
-	ASSERT(ln == NULL || ln->next == n,"<prev> is not the previous node of <node>!");
+	vassert(list != NULL,"list == NULL");
+	vassert(node != NULL,"node == NULL");
+	vassert(ln == NULL || ln->next == n,"<prev> is not the previous node of <node>!");
 
 	/* remove */
 	if(ln != NULL)
@@ -214,7 +215,7 @@ void sll_removeFirst(sSLList *list,const void *data) {
 	sList *l = (sList*)list;
 	sNode *n = l->first,*ln = NULL;
 
-	ASSERT(list != NULL,"list == NULL");
+	vassert(list != NULL,"list == NULL");
 
 	if(data != NULL) {
 		while(n != NULL) {
@@ -236,7 +237,7 @@ void sll_removeIndex(sSLList *list,u32 index) {
 	sList *l = (sList*)list;
 	sNode *n = l->first,*ln = NULL;
 
-	ASSERT(list != NULL,"list == NULL");
+	vassert(list != NULL,"list == NULL");
 
 	/* walk to the desired position */
 	while(index-- > 0) {
@@ -255,8 +256,8 @@ static sNode *sll_getNode(sSLList *list,u32 index) {
 	sList *l = (sList*)list;
 	sNode *n;
 
-	ASSERT(list != NULL,"list == NULL");
-	ASSERT(index <= l->length,"The index %d does not exist",index);
+	vassert(list != NULL,"list == NULL");
+	vassert(index <= l->length,"The index %d does not exist",index);
 
 	/* is it the last one? */
 	if(index == l->length - 1)
@@ -277,7 +278,7 @@ void sll_dbg_print(sSLList *list) {
 	sList *l = (sList*)list;
 	sNode *n = l->first;
 
-	ASSERT(list != NULL,"list == NULL");
+	vassert(list != NULL,"list == NULL");
 
 	sllprintf("Linked list @ 0x%x\n",list);
 	while(n != NULL) {

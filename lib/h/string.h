@@ -10,8 +10,9 @@
 #ifdef IN_KERNEL
 #	include "../../kernel/h/common.h"
 #else
-#	include "../../libc/h/common.h"
+#	include "../../libc/esc/h/common.h"
 #endif
+#include <stddef.h>
 
 /**
  * The atoi() function converts str into an integer, and returns that integer. str should start
@@ -40,7 +41,7 @@ void itoa(char *target,s32 n);
  * @param count the number of characters to loop through
  * @return NULL if not found or the pointer to the found element
  */
-void *memchr(const void *buffer,s32 c,u32 count);
+void *memchr(const void *buffer,int c,u32 count);
 
 /**
  * Copies <len> words from <src> to <dest>
@@ -84,7 +85,7 @@ void memset(void *addr,u32 value,u32 count);
 void *memmove(void *dest,const void *src,u32 count);
 
 /**
- * The strcpy() function copies characters in the string from to the string to, including the
+ * The strcpy() function copies characters in the string <from> to the string <to>, including the
  * null termination.
  * Note that strcpy() does not perform bounds checking, and thus risks overrunning from or to.
  * For a similar (and safer) function that includes bounds checking, see strncpy().
@@ -96,8 +97,9 @@ void *memmove(void *dest,const void *src,u32 count);
 char *strcpy(char *to,const char *from);
 
 /**
- * The strncpy() function copies at most count characters of from to the string to.
- * If from has less than count characters, the remainder is padded with '\0' characters.
+ * The strncpy() function copies at most <count> characters of <from> to the string <to>.
+ * If <from> has less than <count> characters, the remainder is padded with '\0' characters.
+ * Note that it will NOT null-terminate the string if <from> has >= <count> chars!
  *
  * @param to the target
  * @param from the source
@@ -188,9 +190,25 @@ char *strrchr(const char *str,s32 ch);
 char *strstr(const char *str1,const char *str2);
 
 /**
+ * Returns the length of the initial portion of str1 which consists only of characters that are
+ * part of str2.
+ *
  * @param str1 the string to search in
  * @param str2 the character list
- * @return the index of the first character in str1 that matches any of the characters in str2.
+ * @return the length of the initial portion of str1 containing only characters that appear in str2.
+ */
+u32 strspn(const char *str1,const char *str2);
+
+/**
+ * Scans str1 for the first occurrence of any of the characters that are part of str2, returning
+ * the number of characters of str1 read before this first occurrence.
+ * The search includes the terminating null-characters, so the function will return the length
+ * of str1 if none of the characters of str2 are found in str1.
+ *
+ * @param str1 the string to search in
+ * @param str2 the character list
+ * @return the length of the initial part of str1 not containing any of the characters that are
+ * 	part of str2.
  */
 u32 strcspn(const char *str1,const char *str2);
 
@@ -203,6 +221,28 @@ u32 strcspn(const char *str1,const char *str2);
  * @return the first occurrence or NULL
  */
 char *strpbrk(const char *str1,const char *str2);
+
+/**
+ * A sequence of calls to this function split str into tokens, which are sequences of contiguous
+ * characters separated by any of the characters that are part of delimiters.
+ * On a first call, the function expects a C string as argument for str, whose first character
+ * is used as the starting location to scan for tokens. In subsequent calls, the function expects
+ * a null pointer and uses the position right after the end of last token as the new starting
+ * location for scanning.
+ * To determine the beginning and the end of a token, the function first scans from the starting
+ * location for the first character not contained in delimiters (which becomes the beginning of
+ * the token). And then scans starting from this beginning of the token for the first character
+ * contained in delimiters, which becomes the end of the token.
+ * This end of the token is automatically replaced by a null-character by the function, and the
+ * beginning of the token is returned by the function.
+ * Once the terminating null character of str has been found in a call to strtok, all subsequent
+ * calls to this function with a null pointer as the first argument return a null pointer.
+ *
+ * @param str the string to tokenize (not NULL for first call; NULL for all other)
+ * @param delimiters a list of delimiter-chars
+ * @return the beginning of the token or NULL if the end is reached
+ */
+char *strtok(char *str,const char *delimiters);
 
 /**
  * Cuts out the first count characters in the given string. That means all characters behind
@@ -231,18 +271,6 @@ u32 strlen(const char *str);
 s32 strnlen(const char *str,s32 max);
 
 /**
- * @param ch the char
- * @return the lowercase version of the character ch.
- */
-s32 tolower(s32 ch);
-
-/**
- * @param ch the char
- * @return the uppercase version of the character ch.
- */
-s32 toupper(s32 ch);
-
-/**
  * Checks wether the given string contains just alphanumeric characters
  *
  * @param str the string
@@ -250,43 +278,18 @@ s32 toupper(s32 ch);
  */
 bool isalnumstr(const char *str);
 
+#ifndef IN_KERNEL
 /**
- * @param c the character
- * @return non-zero if its argument is a numeric digit or a letter of the alphabet.
- * 	Otherwise, zero is returned.
+ * Interprets the value of errnum generating a string describing the error that usually
+ * generates that error number value in calls to functions of the C library.
+ * The returned pointer points to a statically allocated string, which shall not be modified by
+ * the program. Further calls to this function will overwrite its content.
+ *
+ * @param errnum the error-code
+ * @return the error-message
  */
-bool isalnum(s32 c);
-
-/**
- * @param c the character
- * @return non-zero if its argument is a letter of the alphabet. Otherwise, zero is returned.
- */
-bool isalpha(s32 c);
-
-/**
- * @param c the character
- * @return non-zero if its argument is a digit between 0 and 9. Otherwise, zero is returned.
- */
-bool isdigit(s32 c);
-
-/**
- * @param c the character
- * @return non-zero if its argument is a lowercase letter. Otherwise, zero is returned.
- */
-bool islower(s32 c);
-
-/**
- * @param c the character
- * @return non-zero if its argument is some sort of space (i.e. single space, tab,
- * 	vertical tab, form feed, carriage return, or newline). Otherwise, zero is returned.
- */
-bool isspace(s32 c);
-
-/**
- * @param c the character
- * @return non-zero if its argument is an uppercase letter. Otherwise, zero is returned.
- */
-bool isupper(s32 c);
+char *strerror(s32 errnum);
+#endif
 
 /*
 atol	converts a string to a long

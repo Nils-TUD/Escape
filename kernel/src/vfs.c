@@ -15,6 +15,7 @@
 #include "../h/video.h"
 #include <string.h>
 #include <sllist.h>
+#include <assert.h>
 
 /* max number of open files */
 #define FILE_COUNT					(PROC_COUNT * 16)
@@ -178,7 +179,7 @@ tFile vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
 	if(IS_VIRT(nodeNo)) {
 		sVFSNode *n = nodes + VIRT_INDEX(nodeNo);
 		/* it is not allowed to write into nodes of other processes */
-		if(n->type != T_SERVUSE && (flags & VFS_WRITE) && n->owner != pid)
+		if(n->type != T_SERVUSE && n->type != T_PIPE && (flags & VFS_WRITE) && n->owner != pid)
 			return ERR_NO_WRITE_PERM;
 		n->refCount++;
 	}
@@ -204,11 +205,11 @@ static tFile vfs_getFreeFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
 	bool isServUse = false;
 	sGFTEntry *e = &globalFileTable[0];
 
-	ASSERT(flags & (VFS_READ | VFS_WRITE),"flags empty");
-	ASSERT(!(flags & ~(VFS_READ | VFS_WRITE)),"flags contains invalid bits");
-	ASSERT(VIRT_INDEX(nodeNo) < NODE_COUNT,"nodeNo invalid");
+	vassert(flags & (VFS_READ | VFS_WRITE),"flags empty");
+	vassert(!(flags & ~(VFS_READ | VFS_WRITE)),"flags contains invalid bits");
+	vassert(VIRT_INDEX(nodeNo) < NODE_COUNT,"nodeNo invalid");
 	/* ensure that we don't increment usages of an unused slot */
-	ASSERT(flags != 0,"No flags given");
+	vassert(flags != 0,"No flags given");
 
 	if(IS_VIRT(nodeNo)) {
 		sVFSNode *n = vfsn_getNode(nodeNo);
@@ -495,7 +496,7 @@ tServ vfs_createService(tPid pid,const char *name,u8 type) {
 	u32 len;
 	char *hname;
 
-	ASSERT(name != NULL,"name == NULL");
+	vassert(name != NULL,"name == NULL");
 
 	/* we don't want to have exotic service-names */
 	if((len = strlen(name)) == 0 || !isalnumstr(name))
@@ -513,6 +514,7 @@ tServ vfs_createService(tPid pid,const char *name,u8 type) {
 	if(hname == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	strncpy(hname,name,len);
+	hname[len] = '\0';
 
 	/* create node */
 	n = vfsn_createServiceNode(pid,serv,hname,type);
@@ -619,7 +621,7 @@ s32 vfs_removeService(tPid pid,tVFSNodeNo nodeNo) {
 	sVFSNode *serv = SERVICES();
 	sVFSNode *m,*t,*n = nodes + nodeNo;
 
-	ASSERT(vfsn_isValidNodeNo(nodeNo),"Invalid node number %d",nodeNo);
+	vassert(vfsn_isValidNodeNo(nodeNo),"Invalid node number %d",nodeNo);
 
 	if(n->owner != pid || n->type != T_SERVICE)
 		return ERR_NOT_OWN_SERVICE;
@@ -750,8 +752,8 @@ s32 vfs_readHelper(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 d
 	void *mem;
 
 	UNUSED(pid);
-	ASSERT(node != NULL,"node == NULL");
-	ASSERT(buffer != NULL,"buffer == NULL");
+	vassert(node != NULL,"node == NULL");
+	vassert(buffer != NULL,"buffer == NULL");
 
 	/* can we copy it directly? */
 	if(offset == 0 && count == dataSize)
@@ -949,8 +951,8 @@ static s32 vfs_dirReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 	s32 byteCount;
 
 	UNUSED(pid);
-	ASSERT(node != NULL,"node == NULL");
-	ASSERT(buffer != NULL,"buffer == NULL");
+	vassert(node != NULL,"node == NULL");
+	vassert(buffer != NULL,"buffer == NULL");
 
 	/* not cached yet? */
 	if(node->data.def.cache == NULL) {
@@ -962,7 +964,7 @@ static s32 vfs_dirReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 			n = n->next;
 		}
 
-		ASSERT((u32)byteCount < (u32)0xFFFF,"Overflow of size and pos detected");
+		vassert((u32)byteCount < (u32)0xFFFF,"Overflow of size and pos detected");
 
 		node->data.def.size = byteCount;
 		node->data.def.pos = byteCount;

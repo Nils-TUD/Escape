@@ -7,15 +7,8 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
-/* basic type-defs */
-typedef char s8;
-typedef unsigned char u8;
-typedef short s16;
-typedef unsigned short u16;
-typedef long s32;
-typedef unsigned long u32;
-typedef long long s64;
-typedef unsigned long long u64;
+#include <types.h>
+#include <stddef.h>
 
 /* process id */
 typedef u16 tPid;
@@ -30,10 +23,6 @@ typedef u8 tSig;
 /* service-id */
 typedef s32 tServ;
 
-/* TODO use <stddef.h>? */
-#define NULL (void*)0
-typedef enum {false = 0, true = 1} bool;
-
 #define K 1024
 #define M 1024 * K
 #define G 1024 * M
@@ -45,16 +34,6 @@ typedef enum {false = 0, true = 1} bool;
 
 #ifndef DEBUGGING
 #define DEBUGGING 1
-#endif
-
-#if DEBUGGING
-#define ASSERT(cond,errorMsg,...) do { if(!(cond)) { \
-		debugf("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
-				__LINE__,## __VA_ARGS__); \
-		exit(1); \
-	} } while(0);
-#else
-#define ASSERT(cond,errorMsg,...)
 #endif
 
 #define ARRAY_SIZE(array) (sizeof((array)) / sizeof((array)[0]))
@@ -109,11 +88,6 @@ u32 *getStackTrace(void);
  * Prints the stack-trace
  */
 void printStackTrace(void);
-
-/**
- * @return the last error-code
- */
-s32 getLastError(void);
 
 /**
  * Prints the last error-message

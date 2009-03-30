@@ -8,6 +8,7 @@
 #include "../h/util.h"
 #include "../h/paging.h"
 #include "../h/video.h"
+#include <assert.h>
 #include <string.h>
 
 /**
@@ -90,8 +91,8 @@ void mm_init(void) {
 u32 mm_getFreeFrmCount(u32 types) {
 	u32 i,bmIndex,count = 0;
 
-	ASSERT(types & (MM_DMA | MM_DEF),"types is empty");
-	ASSERT(!(types & ~(MM_DMA | MM_DEF)),"types contains invalid bits");
+	vassert(types & (MM_DMA | MM_DEF),"types is empty");
+	vassert(!(types & ~(MM_DMA | MM_DEF)),"types contains invalid bits");
 
 	if(types & MM_DMA) {
 		/* count < 16MB frames */
@@ -110,8 +111,8 @@ u32 mm_getFreeFrmCount(u32 types) {
 }
 
 void mm_allocateFrames(eMemType type,u32 *frames,u32 count) {
-	ASSERT(type == MM_DEF || type == MM_DMA,"Invalid type");
-	ASSERT(frames != NULL,"frames == NULL");
+	vassert(type == MM_DEF || type == MM_DMA,"Invalid type");
+	vassert(frames != NULL,"frames == NULL");
 
 	while(count-- > 0) {
 		*(frames++) = mm_allocateFrame(type);
@@ -121,7 +122,7 @@ void mm_allocateFrames(eMemType type,u32 *frames,u32 count) {
 u32 mm_allocateFrame(eMemType type) {
 	u32 bmIndex;
 
-	ASSERT(type == MM_DEF || type == MM_DMA,"Invalid type");
+	vassert(type == MM_DEF || type == MM_DMA,"Invalid type");
 
 	/* TODO what do we need for DMA? */
 	if(type == MM_DMA) {
@@ -163,8 +164,8 @@ u32 mm_allocateFrame(eMemType type) {
 }
 
 void mm_freeFrames(eMemType type,u32 *frames,u32 count) {
-	ASSERT(type == MM_DEF || type == MM_DMA,"Invalid type");
-	ASSERT(frames != NULL,"frames == NULL");
+	vassert(type == MM_DEF || type == MM_DMA,"Invalid type");
+	vassert(frames != NULL,"frames == NULL");
 
 	while(count-- > 0) {
 		mm_freeFrame(*(frames++),type);
@@ -174,7 +175,7 @@ void mm_freeFrames(eMemType type,u32 *frames,u32 count) {
 void mm_freeFrame(u32 frame,eMemType type) {
 	u32 *bitmapEntry;
 
-	/*ASSERT(!mm_isFrameFree(type,frame),"Frame 0x%x (type %d) is already free",frame,type);*/
+	/*vassert(!mm_isFrameFree(type,frame),"Frame 0x%x (type %d) is already free",frame,type);*/
 
 	/* TODO what do we need for DMA? */
 	if(type == MM_DMA) {

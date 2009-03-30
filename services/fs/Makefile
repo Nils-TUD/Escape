@@ -8,7 +8,7 @@ LIBC=../../libc
 LDCONF=$(LIBC)/ld.conf
 
 CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/h -I../../lib/h -Wl,-T,$(LDCONF) $(CDEFFLAGS) 
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/esc/h -I$(LIBC)/std/h -I../../lib/h -Wl,-T,$(LDCONF) $(CDEFFLAGS) 
 CSRC=$(wildcard *.c)
 CEXT2SRC=$(wildcard ext2/*.c)
 

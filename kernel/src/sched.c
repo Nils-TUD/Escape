@@ -10,6 +10,7 @@
 #include "../h/util.h"
 #include "../h/video.h"
 #include <sllist.h>
+#include <assert.h>
 
 /* the queue for all runnable (but not currently running) processes */
 typedef struct sQueueNode sQueueNode;
@@ -85,7 +86,7 @@ sProc *sched_perform(void) {
 }
 
 void sched_setRunning(sProc *p) {
-	ASSERT(p != NULL,"p == NULL");
+	vassert(p != NULL,"p == NULL");
 
 	switch(p->state) {
 		case ST_RUNNING:
@@ -102,7 +103,7 @@ void sched_setRunning(sProc *p) {
 }
 
 void sched_setReady(sProc *p) {
-	ASSERT(p != NULL,"p == NULL");
+	vassert(p != NULL,"p == NULL");
 
 	/* nothing to do? */
 	if(p->state == ST_READY)
@@ -116,7 +117,7 @@ void sched_setReady(sProc *p) {
 }
 
 void sched_setReadyQuick(sProc *p) {
-	ASSERT(p != NULL,"p == NULL");
+	vassert(p != NULL,"p == NULL");
 
 	/* nothing to do? */
 	if(p->state == ST_READY)
@@ -130,7 +131,7 @@ void sched_setReadyQuick(sProc *p) {
 }
 
 void sched_setBlocked(sProc *p) {
-	ASSERT(p != NULL,"p == NULL");
+	vassert(p != NULL,"p == NULL");
 
 	/* nothing to do? */
 	if(p->state == ST_BLOCKED)
@@ -193,7 +194,7 @@ void sched_removeProc(sProc *p) {
 
 static void sched_appendReady(sProc *p) {
 	sQueueNode *nn,*n;
-	ASSERT(rqFree != NULL,"No free slots in the ready-queue!?");
+	vassert(rqFree != NULL,"No free slots in the ready-queue!?");
 
 	/* use first free node */
 	nn = rqFree;
@@ -215,7 +216,7 @@ static void sched_appendReady(sProc *p) {
 
 static void sched_prependReady(sProc *p) {
 	sQueueNode *nn;
-	ASSERT(p != NULL,"p == NULL");
+	vassert(p != NULL,"p == NULL");
 
 	/* use first free node */
 	nn = rqFree;
@@ -231,7 +232,7 @@ static void sched_prependReady(sProc *p) {
 bool sched_dequeueReadyProc(sProc *p) {
 	sQueueNode *n = rqFirst,*l = NULL;
 
-	ASSERT(p != NULL,"p == NULL");
+	vassert(p != NULL,"p == NULL");
 
 	while(n != NULL) {
 		/* found it? */

@@ -2,7 +2,7 @@
 
 %include "syscalls.s"
 
-[extern lastError]
+[extern errno]
 
 SYSC_RET_0ARGS getpid,SYSCALL_PID
 SYSC_RET_1ARGS_ERR getppidof,SYSCALL_PPID

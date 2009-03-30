@@ -10,7 +10,7 @@
 #if IN_KERNEL
 #	include "../../kernel/h/common.h"
 #else
-#	include <common.h>
+#	include "../../libc/esc/h/common.h"
 #endif
 
 #define MSG_FS_OPEN			0

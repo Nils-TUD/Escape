@@ -11,8 +11,8 @@
 #	define testPrintf	vid_printf
 #	define testvPrintf	vid_vprintf
 #else
-#	include "../../libc/h/common.h"
-#	include "../../libc/h/bufio.h"
+#	include "../../libc/esc/h/common.h"
+#	include "../../libc/esc/h/bufio.h"
 
 #	define testPrintf	printf
 #	define testvPrintf	vprintf
@@ -70,7 +70,7 @@ bool test_assertTrue(bool received) {
 		test_caseFailed("Assert %d: Received false, expected true",assertCount);
 		return false;
 	}
-	testPrintf("ASSERT %d succeded\n",assertCount);
+	testPrintf("vassert %d succeded\n",assertCount);
 	return true;
 }
 
@@ -80,7 +80,7 @@ bool test_assertFalse(bool received) {
 		test_caseFailed("Assert %d: Received true, expected false",assertCount);
 		return false;
 	}
-	testPrintf("ASSERT %d succeded\n",assertCount);
+	testPrintf("vassert %d succeded\n",assertCount);
 	return true;
 }
 
@@ -91,7 +91,7 @@ bool test_assertPtr(const void *received,const void *expected) {
 				expected,received);
 		return false;
 	}
-	testPrintf("ASSERT %d succeded\n",assertCount);
+	testPrintf("vassert %d succeded\n",assertCount);
 	return true;
 }
 
@@ -102,7 +102,7 @@ bool test_assertInt(s32 received,s32 expected) {
 				expected,received);
 		return false;
 	}
-	testPrintf("ASSERT %d succeded\n",assertCount);
+	testPrintf("vassert %d succeded\n",assertCount);
 	return true;
 }
 
@@ -113,7 +113,7 @@ bool test_assertUInt(u32 received,u32 expected) {
 				expected,received);
 		return false;
 	}
-	testPrintf("ASSERT %d succeded\n",assertCount);
+	testPrintf("vassert %d succeded\n",assertCount);
 	return true;
 }
 
@@ -121,6 +121,10 @@ bool test_assertStr(const char *received,const char *expected) {
 	char *s1 = (char*)expected;
 	char *s2 = (char*)received;
 	assertCount++;
+	if(s1 == NULL && s2 == NULL)
+		return true;
+	if(s1 == NULL || s2 == NULL)
+		return false;
 	while(*s1 && *s2) {
 		if(*s1 != *s2) {
 			test_caseFailed("Assert %d: Strings are not equal: Expected '%s', got '%s'",assertCount,
@@ -135,7 +139,7 @@ bool test_assertStr(const char *received,const char *expected) {
 				expected,received);
 		return false;
 	}
-	testPrintf("ASSERT %d succeded\n",assertCount);
+	testPrintf("vassert %d succeded\n",assertCount);
 	return true;
 }
 

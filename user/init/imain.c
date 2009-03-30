@@ -122,14 +122,14 @@ int main(void) {
 
 	/* now load the shell */
 	if(fork() == 0) {
-		const char *args[] = {"file:/apps/shell","vterm0",NULL};
-		exec((char*)"file:/apps/shell",args);
+		const char *args[] = {"file:/bin/shell","vterm0",NULL};
+		exec((char*)"file:/bin/shell",args);
 		exit(0);
 	}
 	/* TODO temporary ;) */
 	if(fork() == 0) {
-		const char *args[] = {"file:/apps/shell","vterm1",NULL};
-		exec((char*)"file:/apps/shell",args);
+		const char *args[] = {"file:/bin/shell","vterm1",NULL};
+		exec((char*)"file:/bin/shell",args);
 		exit(0);
 	}
 
@@ -228,6 +228,7 @@ static char *parseService(char *line,sServiceLoad *serv) {
 	if(serv->name == NULL)
 		return false;
 	strncpy(serv->name,line,s - line);
+	serv->name[s - line] = '\0';
 
 	/* create wait-array */
 	serv->waitCount = 0;
@@ -292,6 +293,7 @@ static char *parseService(char *line,sServiceLoad *serv) {
 				if((*array)[*count] == NULL)
 					goto failed;
 				strncpy((*array)[*count],line,len);
+				(*array)[*count][len] = '\0';
 				(*count)++;
 			}
 

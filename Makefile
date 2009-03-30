@@ -20,7 +20,7 @@ DIRS = tools libc services user kernel kernel/test
 # flags for gcc
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
-				 -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wno-long-long \
+				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
 				 -Wstrict-prototypes -fno-builtin
 export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING=1
 # flags for nasm
@@ -69,30 +69,31 @@ createhdd: clean
 		sudo losetup -d /dev/loop0 || true
 		@# add boot stuff
 		make mounthdd
-		sudo mkdir $(DISKMOUNT)/grub;
-		sudo cp boot/stage1 $(DISKMOUNT)/grub;
-		sudo cp boot/stage2 $(DISKMOUNT)/grub;
-		sudo touch $(DISKMOUNT)/grub/menu.lst;
-		sudo chmod 0666 $(DISKMOUNT)/grub/menu.lst;
-		echo 'default 0' > $(DISKMOUNT)/grub/menu.lst;
-		echo 'timeout 0' >> $(DISKMOUNT)/grub/menu.lst;
-		echo '' >> $(DISKMOUNT)/grub/menu.lst;
-		echo "title $(OSTITLE)" >> $(DISKMOUNT)/grub/menu.lst;
-		echo "kernel /$(BINNAME)" >> $(DISKMOUNT)/grub/menu.lst;
-		echo "module /services/ata services:/ata" >> $(DISKMOUNT)/grub/menu.lst;
-		echo "module /services/fs" services:/fs>> $(DISKMOUNT)/grub/menu.lst;
-		echo "boot" >> $(DISKMOUNT)/grub/menu.lst;
+		sudo mkdir $(DISKMOUNT)/boot
+		sudo mkdir $(DISKMOUNT)/boot/grub
+		sudo cp boot/stage1 $(DISKMOUNT)/boot/grub;
+		sudo cp boot/stage2 $(DISKMOUNT)/boot/grub;
+		sudo touch $(DISKMOUNT)/boot/grub/menu.lst;
+		sudo chmod 0666 $(DISKMOUNT)/boot/grub/menu.lst;
+		echo 'default 0' > $(DISKMOUNT)/boot/grub/menu.lst;
+		echo 'timeout 0' >> $(DISKMOUNT)/boot/grub/menu.lst;
+		echo '' >> $(DISKMOUNT)/boot/grub/menu.lst;
+		echo "title $(OSTITLE)" >> $(DISKMOUNT)/boot/grub/menu.lst;
+		echo "kernel /boot/$(BINNAME)" >> $(DISKMOUNT)/boot/grub/menu.lst;
+		echo "module /services/ata services:/ata" >> $(DISKMOUNT)/boot/grub/menu.lst;
+		echo "module /services/fs" services:/fs>> $(DISKMOUNT)/boot/grub/menu.lst;
+		echo "boot" >> $(DISKMOUNT)/boot/grub/menu.lst;
 		echo -n "device (hd0) $(HDD)\nroot (hd0,0)\nsetup (hd0)\nquit\n" | grub --no-floppy --batch;
 		@# store some test-data on the disk
-		sudo mkdir $(DISKMOUNT)/apps
+		sudo mkdir $(DISKMOUNT)/bin
 		sudo mkdir $(DISKMOUNT)/etc
 		sudo mkdir $(DISKMOUNT)/services
 		sudo cp services/services.txt $(DISKMOUNT)/etc/services
-		sudo mkdir $(DISKMOUNT)/test
+		sudo mkdir $(DISKMOUNT)/testdir
 		sudo touch $(DISKMOUNT)/file.txt
 		sudo chmod 0666 $(DISKMOUNT)/file.txt
 		echo "Das ist ein Test-String!!" > $(DISKMOUNT)/file.txt
-		sudo cp $(DISKMOUNT)/file.txt $(DISKMOUNT)/test/file.txt
+		sudo cp $(DISKMOUNT)/file.txt $(DISKMOUNT)/testdir/file.txt
 		sudo touch $(DISKMOUNT)/bigfile
 		sudo chmod 0666 $(DISKMOUNT)/bigfile
 		./tools/createStr.sh 'Das ist der %d Test\n' 200 > $(DISKMOUNT)/bigfile;
@@ -138,12 +139,12 @@ test: all prepareTest
 
 prepareTest:
 		make mounthdd
-		sudo sed --in-place -e "s/^kernel.*/kernel \/kernel_test.bin/g" $(DISKMOUNT)/grub/menu.lst;
+		sudo sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel_test.bin/g" $(DISKMOUNT)/boot/grub/menu.lst;
 		make umounthdd
 
 prepareRun:
 		make mounthdd
-		sudo sed --in-place -e "s/^kernel.*/kernel \/kernel.bin/g" $(DISKMOUNT)/grub/menu.lst;
+		sudo sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel.bin/g" $(DISKMOUNT)/boot/grub/menu.lst;
 		make umounthdd
 
 clean:

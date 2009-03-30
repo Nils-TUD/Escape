@@ -8,7 +8,7 @@ LIBC=../../libc
 LDCONF=$(LIBC)/ld.conf
 
 CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/h -I../../lib/h \
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/esc/h -I$(LIBC)/std/h -I../../lib/h \
 	-Wl,-T,$(LDCONF) $(CDEFFLAGS) 
 CSRC=$(wildcard *.c)
 CCMDSRC=$(wildcard tests/*.c)
@@ -27,7 +27,7 @@ $(BIN):	$(LDCONF) $(COBJ) $(CCMDOBJ) $(START) $(LIBCA)
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(CCMDOBJ) $(LIBCA);
 		@echo "===== COPYING ON DISK =====";
 		@make -C ../../ mounthdd
-		sudo cp $(BIN) $(DISKMOUNT)/apps/$(NAME)
+		sudo cp $(BIN) $(DISKMOUNT)/bin/$(NAME)
 		@make -C ../../ umounthdd
 
 $(BUILD)/user_$(NAME)_%.o:		%.c

@@ -2,7 +2,7 @@
 
 %include "syscalls.s"
 
-[extern lastError]
+[extern errno]
 
 SYSC_RET_2ARGS_ERR regService,SYSCALL_REG
 SYSC_RET_1ARGS_ERR unregService,SYSCALL_UNREG

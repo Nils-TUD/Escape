@@ -10,7 +10,7 @@
 #ifdef IN_KERNEL
 #	include "../../kernel/h/common.h"
 #else
-#	include "../../libc/h/common.h"
+#	include "../../libc/esc/h/common.h"
 #endif
 
 #include <stdarg.h>

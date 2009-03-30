@@ -21,6 +21,7 @@
 #include "../h/vfsnode.h"
 #include <string.h>
 #include <sllist.h>
+#include <assert.h>
 
 /* our processes */
 static sProc procs[PROC_COUNT];
@@ -73,7 +74,7 @@ sProc *proc_getRunning(void) {
 }
 
 sProc *proc_getByPid(tPid pid) {
-	ASSERT(pid < PROC_COUNT,"pid >= PROC_COUNT");
+	vassert(pid < PROC_COUNT,"pid >= PROC_COUNT");
 	return &procs[pid];
 }
 
@@ -297,8 +298,8 @@ s32 proc_clone(tPid newPid) {
 	u32 *src,*dst;
 	sProc *p;
 
-	ASSERT(newPid < PROC_COUNT,"newPid >= PROC_COUNT");
-	ASSERT((procs + newPid)->state == ST_UNUSED,"The process slot 0x%x is already in use!",
+	vassert(newPid < PROC_COUNT,"newPid >= PROC_COUNT");
+	vassert((procs + newPid)->state == ST_UNUSED,"The process slot 0x%x is already in use!",
 			procs + newPid);
 
 	/* first create the VFS node (we may not have enough mem) */
@@ -355,7 +356,7 @@ s32 proc_clone(tPid newPid) {
 void proc_destroy(sProc *p) {
 	tFD i;
 	/* don't delete initial or unused processes */
-	ASSERT(p->pid != 0 && p->state != ST_UNUSED,
+	vassert(p->pid != 0 && p->state != ST_UNUSED,
 			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
 
 	/* we can't destroy ourself so we mark us as dead and do this later */
@@ -416,7 +417,7 @@ void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 args
 	u32 *esp;
 	char **argv;
 	u32 totalSize;
-	ASSERT(frame != NULL,"frame == NULL");
+	vassert(frame != NULL,"frame == NULL");
 
 	/* we need to know the total number of bytes we'll store on the stack */
 	totalSize = 0;
@@ -490,7 +491,7 @@ bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages) {
 bool proc_changeSize(s32 change,eChgArea area) {
 	u32 addr,chg = change,origPages;
 
-	ASSERT(area == CHG_DATA || area== CHG_STACK,"area invalid");
+	vassert(area == CHG_DATA || area== CHG_STACK,"area invalid");
 
 	/* determine start-address */
 	if(area == CHG_DATA) {

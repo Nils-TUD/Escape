@@ -97,9 +97,9 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 
 	/* we don't want to look in a directory twice */
 	if(paths[1] && strcmp(paths[0],paths[1]) == 0)
-		paths[0] = NULL;
+		paths[1] = NULL;
 	else if(paths[2] && strcmp(paths[0],paths[2]) == 0)
-		paths[0] = NULL;
+		paths[2] = NULL;
 	if(paths[1] && paths[2] && strcmp(paths[1],paths[2]) == 0)
 		paths[2] = NULL;
 	/* don't match stuff in PATH? */

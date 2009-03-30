@@ -2,7 +2,7 @@
 
 %include "syscalls.s"
 
-[extern lastError]
+[extern errno]
 
 SYSC_RET_2ARGS_ERR open,SYSCALL_OPEN
 SYSC_RET_3ARGS_ERR read,SYSCALL_READ

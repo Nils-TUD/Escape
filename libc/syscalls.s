@@ -89,7 +89,7 @@ SYSCALL_IRQ					equ	0x30
 	pop		eax										; pop error-code
 	test	eax,eax
 	jz		%1NoError							; no-error?
-	mov		[lastError],eax				; store error-code
+	mov		[errno],eax				; store error-code
 	add		esp,4
 	jmp		%1Ret
 %1NoError:
@@ -113,7 +113,7 @@ SYSCALL_IRQ					equ	0x30
 	pop		eax										; pop error-code
 	test	eax,eax
 	jz		%1NoError							; no-error?
-	mov		[lastError],eax				; store error-code
+	mov		[errno],eax				; store error-code
 	add		esp,8
 	jmp		%1Ret
 %1NoError:
@@ -140,7 +140,7 @@ SYSCALL_IRQ					equ	0x30
 	pop		eax										; pop error-code
 	test	eax,eax
 	jz		%1NoError							; no-error?
-	mov		[lastError],eax				; store error-code
+	mov		[errno],eax				; store error-code
 	add		esp,12
 	jmp		%1Ret
 %1NoError:
@@ -169,7 +169,7 @@ SYSCALL_IRQ					equ	0x30
 	pop		eax										; pop error-code
 	test	eax,eax
 	jz		%1NoError							; no-error?
-	mov		[lastError],eax				; store error-code
+	mov		[errno],eax				; store error-code
 	add		esp,16
 	jmp		%1Ret
 %1NoError:

@@ -16,7 +16,7 @@
 #define TYPE_EXTERN			1
 #define TYPE_PATH			2
 
-#define APPS_DIR			"file:/apps/"
+#define APPS_DIR			"file:/bin/"
 
 /* the builtin shell-commands */
 typedef s32 (*fCommand)(u32 argc,char **argv);

@@ -11,6 +11,7 @@
 #include "../h/util.h"
 #include "../h/video.h"
 #include <sllist.h>
+#include <assert.h>
 
 /* the information we need about every announced handler */
 typedef struct {
@@ -56,7 +57,7 @@ bool sig_canSend(tSig signal) {
 
 s32 sig_setHandler(tPid pid,tSig signal,fSigHandler func) {
 	sHandler *h;
-	ASSERT(sig_canHandle(signal),"Unable to handle signal %d");
+	vassert(sig_canHandle(signal),"Unable to handle signal %d");
 
 	h = sig_get(pid,signal);
 	if(h == NULL) {
@@ -90,7 +91,7 @@ s32 sig_setHandler(tPid pid,tSig signal,fSigHandler func) {
 
 void sig_unsetHandler(tPid pid,tSig signal) {
 	sHandler *h;
-	ASSERT(sig_canHandle(signal),"Unable to handle signal %d");
+	vassert(sig_canHandle(signal),"Unable to handle signal %d");
 
 	h = sig_get(pid,signal);
 	if(h != NULL) {
@@ -174,7 +175,7 @@ bool sig_hasSignal(tSig *sig,tPid *pid,u32 *data) {
 
 bool sig_addSignalFor(tPid pid,tSig signal,u32 data) {
 	sHandler *h;
-	ASSERT(signal < SIG_COUNT,"Unable to handle signal %d");
+	vassert(signal < SIG_COUNT,"Unable to handle signal %d");
 
 	h = sig_get(pid,signal);
 	sig_addSig(h,pid,signal,data);
@@ -189,7 +190,7 @@ tPid sig_addSignal(tSig signal,u32 data) {
 	sSLNode *n;
 	tPid res = INVALID_PID;
 
-	ASSERT(signal < SIG_COUNT,"Unable to handle signal %d");
+	vassert(signal < SIG_COUNT,"Unable to handle signal %d");
 
 	list = handler[signal - 1];
 	if(list != NULL) {
@@ -208,12 +209,12 @@ tPid sig_addSignal(tSig signal,u32 data) {
 fSigHandler sig_startHandling(tPid pid,tSig signal) {
 	sHandler *h;
 	sProc *p = proc_getByPid(pid);
-	ASSERT(sig_canHandle(signal),"Unable to handle signal %d");
+	vassert(sig_canHandle(signal),"Unable to handle signal %d");
 
 	h = sig_get(pid,signal);
 	if(h != NULL) {
-		ASSERT(totalSigs > 0,"We don't have any signals");
-		ASSERT(sll_length(h->pending) > 0,"Process %d hasn't got signal %d",pid,signal);
+		vassert(totalSigs > 0,"We don't have any signals");
+		vassert(sll_length(h->pending) > 0,"Process %d hasn't got signal %d",pid,signal);
 		sll_removeIndex(h->pending,0);
 		h->active = 1;
 		totalSigs--;
@@ -227,8 +228,8 @@ fSigHandler sig_startHandling(tPid pid,tSig signal) {
 void sig_ackHandling(tPid pid) {
 	sHandler *h;
 	sProc *p = proc_getByPid(pid);
-	ASSERT(p->signal != 0,"No signal handling");
-	ASSERT(sig_canHandle(p->signal),"Unable to handle signal %d");
+	vassert(p->signal != 0,"No signal handling");
+	vassert(sig_canHandle(p->signal),"Unable to handle signal %d");
 
 	h = sig_get(pid,p->signal);
 	if(h != NULL) {

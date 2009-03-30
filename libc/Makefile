@@ -4,11 +4,15 @@ LIBDIR=../lib
 CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -I$(LIBDIR)/h
 
-CSRCS = $(wildcard src/*.c)
-ASRCS = $(wildcard src/*.s)
-LSRC=$(filter-out $(LIBDIR)/src/video.c,$(wildcard $(LIBDIR)/src/*.c))
-OBJS = $(patsubst src/%.c,$(BUILD)/libc_%.o,$(CSRCS))
-OBJS += $(patsubst src/%.s,$(BUILD)/libc_a%.o,$(ASRCS))
+CESCSRCS = $(wildcard esc/src/*.c)
+CSTDSRCS = $(wildcard std/src/*.c)
+AESCSRCS = $(wildcard esc/src/*.s)
+ASTDSRCS = $(wildcard std/src/*.s)
+LSRC=$(wildcard $(LIBDIR)/src/*.c)
+OBJS = $(patsubst esc/src/%.c,$(BUILD)/libc_esc_%.o,$(CESCSRCS))
+OBJS += $(patsubst esc/src/%.s,$(BUILD)/libc_esc_a%.o,$(AESCSRCS))
+OBJS += $(patsubst std/src/%.c,$(BUILD)/libc_std_%.o,$(CSTDSRCS))
+OBJS += $(patsubst std/src/%.s,$(BUILD)/libc_std_a%.o,$(ASTDSRCS))
 LOBJ=$(patsubst $(LIBDIR)/src/%.c,$(BUILD)/libc_lib_%.o,$(LSRC))
 LIB = $(BUILD)/libc.a
 DEP = $(BUILD)/libc.dep
@@ -23,11 +27,19 @@ $(LIB): $(OBJS) $(LOBJ) $(STARTO)
 		@echo "===== BUILDING ARCHIVE =====";
 		ar rcs $(LIB) $(OBJS) $(LOBJ)
 
-$(BUILD)/libc_%.o: src/%.c
+$(BUILD)/libc_esc_%.o: esc/src/%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
-$(BUILD)/libc_a%.o: src/%.s
+$(BUILD)/libc_esc_a%.o: esc/src/%.s
+		@echo "===== ASSEMBLING $< =====";
+		nasm $(ASMFLAGS) -o $@ $<
+
+$(BUILD)/libc_std_%.o: std/src/%.c
+		@echo "===== COMPILING $< =====";
+		$(CC) $(CFLAGS) -o $@ -c $<
+
+$(BUILD)/libc_std_a%.o: std/src/%.s
 		@echo "===== ASSEMBLING $< =====";
 		nasm $(ASMFLAGS) -o $@ $<
 
@@ -39,11 +51,16 @@ $(STARTO): $(START)
 		@echo "===== ASSEMBLING $(START) =====";
 		nasm $(ASMFLAGS) -o $(STARTO) $(START)
 
-$(DEP):	$(CSRCS)
+$(DEP):	$(CESCSRCS) $(CSTDSRCS)
 		@echo "===== GENERATING DEPENDENCIES =====";
-		$(CC) $(CFLAGS) -MM $(CSRCS) > $(DEP)
+		$(CC) $(CFLAGS) -MM $(CESCSRCS) $(CSTDSRCS) > $(DEP)
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/libc_\1.o:/g" $(DEP);
+		@for i in $(patsubst esc/src/%.c,%,$(wildcard esc/src/*.c)) ; do \
+			sed --in-place -e "s/$$i.o:/$(subst /,\/,$(BUILD)/libc_esc_)$$i.o:/g" $(DEP); \
+		done;
+		@for i in $(patsubst std/src/%.c,%,$(wildcard std/src/*.c)) ; do \
+			sed --in-place -e "s/$$i.o:/$(subst /,\/,$(BUILD)/libc_std_)$$i.o:/g" $(DEP); \
+		done;
 
 -include $(DEP)
 

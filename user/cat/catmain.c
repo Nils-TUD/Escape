@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <io.h>
+#include <dir.h>
 #include <bufio.h>
 
 #define BUF_SIZE 512
@@ -13,6 +14,7 @@
 int main(int argc,char *argv[]) {
 	tFD fd;
 	s32 count;
+	char *path;
 	char buffer[BUF_SIZE];
 
 	if(argc != 1 && argc != 2) {
@@ -22,7 +24,8 @@ int main(int argc,char *argv[]) {
 
 	fd = STDIN_FILENO;
 	if(argc == 2) {
-		fd = open(argv[1],IO_READ | IO_WRITE);
+		path = abspath(argv[1]);
+		fd = open(path,IO_READ | IO_WRITE);
 		if(fd < 0) {
 			printLastError();
 			return 1;

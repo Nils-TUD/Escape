@@ -2,7 +2,7 @@
 
 %include "syscalls.s"
 
-[extern lastError]
+[extern errno]
 [global outByte]
 [global outWord]
 [global inByte]

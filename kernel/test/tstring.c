@@ -7,6 +7,7 @@
 #include "../h/common.h"
 #include "../h/video.h"
 #include <string.h>
+#include <ctype.h>
 
 #include "tstring.h"
 #include <test.h>
@@ -21,6 +22,7 @@ static void test_memcmp(void);
 static void test_memmove(void);
 static void test_strcpy(void);
 static void test_strncpy(void);
+static void test_strtok(void);
 static void test_strcat(void);
 static void test_strncat(void);
 static void test_strcmp(void);
@@ -29,6 +31,7 @@ static void test_strchr(void);
 static void test_strchri(void);
 static void test_strrchr(void);
 static void test_strstr(void);
+static void test_strspn(void);
 static void test_strcspn(void);
 static void test_strpbrk(void);
 static void test_strcut(void);
@@ -53,6 +56,7 @@ static void test_string(void) {
 	test_memmove();
 	test_strcpy();
 	test_strncpy();
+	test_strtok();
 	test_strcat();
 	test_strncat();
 	test_strcmp();
@@ -61,6 +65,7 @@ static void test_string(void) {
 	test_strchri();
 	test_strrchr();
 	test_strstr();
+	test_strspn();
 	test_strcspn();
 	test_strpbrk();
 	test_strcut();
@@ -194,15 +199,91 @@ static void test_strncpy(void) {
 	char target[20];
 	char cmp1[] = {'a',0,0};
 	char cmp2[] = {'d','e','f',0,0,0};
+	char *str;
 	test_caseStart("Testing strncpy()");
 
-	if(!test_assertStr(strncpy(target,"abc",3),(char*)"abc")) return;
-	if(!test_assertStr(strncpy(target,"",0),(char*)"")) return;
-	if(!test_assertStr(strncpy(target,"0123456789012345678",19),(char*)"0123456789012345678")) return;
-	if(!test_assertStr(strncpy(target,"123",3),(char*)"123")) return;
-	if(!test_assertStr(strncpy(target,"abc",1),(char*)"a")) return;
-	if(!test_assertStr(strncpy(target,"abc",1),cmp1)) return;
-	if(!test_assertStr(strncpy(target,"defghi",3),cmp2)) return;
+	str = strncpy(target,"abc",3);
+	str[3] = '\0';
+	if(!test_assertStr(str,(char*)"abc")) return;
+
+	str = strncpy(target,"",0);
+	str[0] = '\0';
+	if(!test_assertStr(str,(char*)"")) return;
+
+	str = strncpy(target,"0123456789012345678",19);
+	str[19] = '\0';
+	if(!test_assertStr(str,(char*)"0123456789012345678")) return;
+
+	str = strncpy(target,"123",3);
+	str[3] = '\0';
+	if(!test_assertStr(str,(char*)"123")) return;
+
+	str = strncpy(target,"abc",1);
+	str[1] = '\0';
+	if(!test_assertStr(str,(char*)"a")) return;
+
+	str = strncpy(target,"abc",1);
+	str[1] = '\0';
+	if(!test_assertStr(str,cmp1)) return;
+
+	str = strncpy(target,"defghi",3);
+	str[3] = '\0';
+	if(!test_assertStr(str,cmp2)) return;
+
+	test_caseSucceded();
+}
+
+static void test_strtok(void) {
+	char str1[] = "- This, a sample string.";
+	char str2[] = "";
+	char str3[] = ".,.";
+	char str4[] = "abcdef";
+	char str5[] = ",abc,def,";
+	char str6[] = "abc,def";
+	char *p;
+	test_caseStart("Testing strtok()");
+
+	/* str1 */
+	p = strtok(str1," -,.");
+	if(!test_assertStr(p,"This")) return;
+	p = strtok(NULL," -,.");
+	if(!test_assertStr(p,"a")) return;
+	p = strtok(NULL," -,.");
+	if(!test_assertStr(p,"sample")) return;
+	p = strtok(NULL," -,.");
+	if(!test_assertStr(p,"string")) return;
+	p = strtok(NULL," -,.");
+	if(!test_assertTrue(p == NULL)) return;
+
+	/* str2 */
+	p = strtok(str2," -,.");
+	if(!test_assertTrue(p == NULL)) return;
+
+	/* str3 */
+	p = strtok(str3,".,");
+	if(!test_assertTrue(p == NULL)) return;
+
+	/* str4 */
+	p = strtok(str4,"X");
+	if(!test_assertStr(p,"abcdef")) return;
+	p = strtok(NULL," -,.");
+	if(!test_assertTrue(p == NULL)) return;
+
+	/* str5 */
+	p = strtok(str5,",");
+	if(!test_assertStr(p,"abc")) return;
+	p = strtok(NULL," -,.");
+	if(!test_assertStr(p,"def")) return;
+	p = strtok(NULL," -,.");
+	if(!test_assertTrue(p == NULL)) return;
+
+	/* str6 */
+	p = strtok(str6,",");
+	if(!test_assertStr(p,"abc")) return;
+	p = strtok(NULL," -,.");
+	if(!test_assertStr(p,"def")) return;
+	p = strtok(NULL," -,.");
+	if(!test_assertTrue(p == NULL)) return;
 
 	test_caseSucceded();
 }
@@ -324,6 +405,25 @@ static void test_strstr(void) {
 	if(!test_assertTrue(strstr(str1,"g") == str1 + 8)) return;
 	if(!test_assertTrue(strstr("","abc") == NULL)) return;
 	if(!test_assertTrue(strstr("","") == NULL)) return;
+
+	test_caseSucceded();
+}
+
+static void test_strspn(void) {
+	test_caseStart("Testing strspn()");
+
+	if(!test_assertUInt(strspn("abc","def"),0)) return;
+	if(!test_assertUInt(strspn("abc","a"),1)) return;
+	if(!test_assertUInt(strspn("abc","ab"),2)) return;
+	if(!test_assertUInt(strspn("abc","abc"),3)) return;
+	if(!test_assertUInt(strspn("abc","bca"),3)) return;
+	if(!test_assertUInt(strspn("abc","cab"),3)) return;
+	if(!test_assertUInt(strspn("abc","cba"),3)) return;
+	if(!test_assertUInt(strspn("abc","bac"),3)) return;
+	if(!test_assertUInt(strspn("abc","b"),0)) return;
+	if(!test_assertUInt(strspn("abc","cdef"),0)) return;
+	if(!test_assertUInt(strspn("","123"),0)) return;
+	if(!test_assertUInt(strspn("",""),0)) return;
 
 	test_caseSucceded();
 }

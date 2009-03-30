@@ -2,7 +2,7 @@
 
 %include "syscalls.s"
 
-[extern lastError]
+[extern errno]
 
 SYSC_RET_2ARGS_ERR setSigHandler,SYSCALL_SETSIGH
 SYSC_RET_1ARGS_ERR unsetSigHandler,SYSCALL_UNSETSIGH

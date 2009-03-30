@@ -20,6 +20,7 @@
 #include "../h/vfs.h"
 #include "../h/vfsinfo.h"
 #include "../h/video.h"
+#include "../h/timer.h"
 #include <test.h>
 
 #include "tkheap.h"

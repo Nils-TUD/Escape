@@ -1,6 +1,7 @@
-speaker:
-keyboard:
-vterm: keyboard,speaker,video
-video:
-env:
-cmos:
+; Format: "<serviceName> ':' [<waitFor>,...] ':' [<dependency>,...]"
+speaker: speaker:
+keyboard: keyboard:
+vterm: vterm0,vterm1: keyboard,speaker,video
+video: video:
+env: env:
+cmos: :

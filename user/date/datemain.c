@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <time.h>
+#include <bufio.h>
 
 static const char *weekDays[] = {
 	"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"

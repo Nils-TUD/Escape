@@ -257,7 +257,7 @@ static void sysc_createNode(sSysCallStack *stack);
  * @param char* the string
  * @return true if so
  */
-static bool sysc_isStringReadable(char *string);
+static bool sysc_isStringReadable(const char *string);
 
 /* our syscalls */
 static sSyscall syscalls[SYSCALL_COUNT] = {
@@ -1107,7 +1107,7 @@ static void sysc_createNode(sSysCallStack *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static bool sysc_isStringReadable(char *str) {
+static bool sysc_isStringReadable(const char *str) {
 	u32 addr = (u32)str & ~(PAGE_SIZE - 1);
 	u32 rem = (addr + PAGE_SIZE) - (u32)str;
 	while(paging_isRangeUserReadable(addr,PAGE_SIZE)) {

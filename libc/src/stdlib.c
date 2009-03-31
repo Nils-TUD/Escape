@@ -5,6 +5,7 @@
  */
 #include <esc/common.h>
 #include <esc/proc.h>
+#include <esc/io.h>
 #include <esc/env.h>
 #include <stdlib.h>
 
@@ -40,7 +41,23 @@ char *getenv(const char *name) {
 }
 
 int system(const char *cmd) {
-	/* TODO */
+	/* check wether we have a shell */
+	if(cmd == NULL) {
+		tFD fd = open("file:/bin/shell",IO_READ);
+		if(fd >= 0) {
+			close(fd);
+			return 0;
+		}
+		return 1;
+	}
+
+	if(fork() == 0) {
+		const char *args[] = {"file:/bin/shell","-e",cmd,NULL};
+		exec(args[0],args);
+		exit(EXIT_FAILURE);
+	}
+	/* TODO we need the return-value of the child.. */
+	wait(EV_CHILD_DIED);
 	return 0;
 }
 

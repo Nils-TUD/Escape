@@ -66,7 +66,7 @@ int main(void) {
 
 static void ps_printProcess(sProc *p) {
 	u32 *ptr = (u32*)&p->cycleCount;
-	printf("%02d\t%02d\t\t%03d\t\t%s\t\t0x%08x%08x\t%s\n",
+	printf("%2d\t%2d\t\t%3d\t\t%s\t\t%#08x%08x\t%s\n",
 			p->pid,p->parentPid,p->textPages + p->dataPages + p->stackPages,
 			states[p->state],*(ptr + 1),*ptr,p->command);
 }

@@ -14,11 +14,11 @@
 #include "tests/tmsgs.h"
 
 int main(void) {
-	/*test_register(&tModHeap);*/
+	test_register(&tModHeap);
 	test_register(&tModFileio);
-	/*test_register(&tModDir);
+	test_register(&tModDir);
 	test_register(&tModEnv);
-	test_register(&tModMsgs);*/
+	test_register(&tModMsgs);
 	test_start();
 	return 0;
 }

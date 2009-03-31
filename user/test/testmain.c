@@ -11,8 +11,11 @@
 
 int main(void) {
 	int c1,c2,c3;
+	char line[50];
 	char str[] = "- This, a sample string.";
 	char *pch;
+	s32 res;
+
 	printf("Splitting string \"%s\" into tokens:\n",str);
 	pch = strtok(str," ,.-");
 	while(pch != NULL) {
@@ -31,5 +34,13 @@ int main(void) {
 	printf("num1: '%#4x', num2: '%#4X', num3 = '%#4o'\n",0x123,0x456,0377);
 	printf("Var padding: %*d\n",8,-123);
 	printf("short: %4hx\n",0x1234);
+
+	while(1) {
+		printf("Now lets execute something...\n");
+		scanl(line,50);
+		res = system(line);
+		printf("Result: %d\n",res);
+	}
+
 	return 0;
 }

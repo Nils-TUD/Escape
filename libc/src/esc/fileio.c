@@ -131,7 +131,7 @@ static s32 doFprintuPad(sBuffer *buf,u32 u,u8 base,u8 pad,u16 flags);
  * @param hexchars pointer to the string with hex-digits that should be used
  * @return the number of printed chars
  */
-static s32 doFprintu(sBuffer *buf,s32 u,u8 base,char *hexchars);
+static s32 doFprintu(sBuffer *buf,u32 u,u8 base,char *hexchars);
 
 /**
  * Adds padding at the current position
@@ -670,12 +670,6 @@ static u8 getnwidth(s32 n,u16 flags) {
 
 static u8 getuwidth(u32 n,u8 base,u16 flags) {
 	u8 width = 1;
-	if(flags & FFL_PRINTBASE) {
-		if(base == 16)
-			width += 2;
-		else if(base == 8)
-			width++;
-	}
 	while(n >= base) {
 		n /= base;
 		width++;
@@ -691,7 +685,7 @@ static s32 doFprintuPad(sBuffer *buf,u32 u,u8 base,u8 pad,u16 flags) {
 		count += doPad(buf,pad - width,flags);
 	}
 	/* print base-prefix */
-	if(u > 0 && (flags & FFL_PRINTBASE)) {
+	if((flags & FFL_PRINTBASE)) {
 		if(base == 16 || base == 8) {
 			if(doFprintc(buf,'0') == IO_EOF)
 				return count;
@@ -720,7 +714,7 @@ static s32 doFprintuPad(sBuffer *buf,u32 u,u8 base,u8 pad,u16 flags) {
 	return count;
 }
 
-static s32 doFprintu(sBuffer *buf,s32 u,u8 base,char *hexchars) {
+static s32 doFprintu(sBuffer *buf,u32 u,u8 base,char *hexchars) {
 	s32 c = 0;
 	if(u >= base)
 		c += doFprintu(buf,u / base,base,hexchars);

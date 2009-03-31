@@ -122,6 +122,13 @@ char *getenv(const char *name);
 /**
  * The system function is used to issue a command. Execution of your program will not
  * continue until the command has completed.
+ *
+ * @param cmd string containing the system command to be executed.
+ * @return The value returned when the argument passed is not NULL, depends on the running
+ * 	environment specifications. In many systems, 0 is used to indicate that the command was
+ * 	successfully executed and other values to indicate some sort of error.
+ * 	When the argument passed is NULL, the function returns a nonzero value if the command
+ * 	processor is available, and zero otherwise.
  */
 int system(const char *cmd);
 

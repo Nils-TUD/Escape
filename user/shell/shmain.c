@@ -86,11 +86,24 @@ int main(int argc,char **argv) {
 	char *buffer;
 	char servPath[10 + MAX_VTERM_NAME_LEN + 1] = "services:/";
 
-	/* we need the vterm as argument */
+	/* we need either the vterm as argument or "-e <cmd>" */
 	if(argc < 2) {
 		debugf("Unable to run a shell with no arguments\n");
 		return 1;
 	}
+
+	/* none-interactive-mode */
+	if(argc == 3) {
+		/* in this case we already have stdin, stdout and stderr */
+		if(strcmp(argv[1],"-e") != 0) {
+			fprintf(stderr,"Invalid shell-usage\n");
+			return 1;
+		}
+
+		return shell_executeCmd(argv[2]);
+	}
+
+	/* interactive mode */
 
 	/* open stdin */
 	strcat(servPath,argv[1]);

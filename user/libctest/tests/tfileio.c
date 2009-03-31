@@ -137,7 +137,7 @@ static void test_fileio_print(void) {
 	for(i = 0; i <= strlen(tmp); i++) {
 		c = tmp[i];
 		tmp[i] = '\0';
-		res = snprintf(str,i,"%02d, %4x, %-3X, %#4x, %#05X, %+5d, % 3d, %0*x, %08b",9,0xff,0xab,0x12,
+		res = snprintf(str,i,"%02d, %4x, %-3X, %#2x, %#03X, %+5d, % 3d, %0*x, %08b",9,0xff,0xab,0x12,
 				0xAB,12,13,8,0x123,0xf);
 		if(!test_fileio_checkPrint(res,str,tmp))
 			return;

@@ -4,9 +4,9 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <date.h>
-#include <bufio.h>
+#include <esc/common.h>
+#include <esc/date.h>
+#include <esc/bufio.h>
 
 static const char *weekDays[] = {
 	"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"

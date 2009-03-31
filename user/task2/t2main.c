@@ -4,19 +4,18 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <debug.h>
-#include <proc.h>
-#include <io.h>
-#include <bufio.h>
-#include <ports.h>
-#include <dir.h>
+#include <esc/common.h>
+#include <esc/debug.h>
+#include <esc/proc.h>
+#include <esc/io.h>
+#include <esc/bufio.h>
+#include <esc/ports.h>
+#include <esc/dir.h>
+#include <esc/service.h>
+#include <esc/mem.h>
+#include <esc/heap.h>
+#include <esc/messages.h>
 #include <string.h>
-#include <service.h>
-#include <mem.h>
-#include <heap.h>
-#include <messages.h>
-
 #include <assert.h>
 #include <sllist.h>
 

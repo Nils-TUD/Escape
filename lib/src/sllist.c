@@ -5,26 +5,25 @@
  */
 
 
+#include <types.h>
+#include <assert.h>
+#include <sllist.h>
+
 #ifdef IN_KERNEL
-#	include "../../kernel/h/common.h"
-#	include "../../kernel/h/kheap.h"
-#	include "../../kernel/h/video.h"
+#	include <kheap.h>
+#	include <video.h>
 /* for panic (vassert) */
-#	include "../../kernel/h/util.h"
+#	include <util.h>
 #	define sllprintf	vid_printf
 #	define free(x)		kheap_free(x)
 #	define malloc(x)	kheap_alloc(x)
 #else
-#	include "../../libc/esc/h/common.h"
-#	include "../../libc/esc/h/heap.h"
-#	include "../../libc/esc/h/debug.h"
+#	include <esc/heap.h>
+#	include <esc/debug.h>
 /* for exit (vassert) */
-#	include "../../libc/esc/h/proc.h"
+#	include <esc/proc.h>
 #	define sllprintf debugf
 #endif
-
-#include "../h/assert.h"
-#include "../h/sllist.h"
 
 /* a node in a list */
 typedef struct sNode sNode;

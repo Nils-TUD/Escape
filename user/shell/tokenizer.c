@@ -4,11 +4,11 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
+#include <esc/common.h>
+#include <esc/io.h>
+#include <esc/bufio.h>
+#include <esc/heap.h>
 #include <string.h>
-#include <io.h>
-#include <bufio.h>
-#include <heap.h>
 #include "tokenizer.h"
 
 static bool tok_addCommand(sCmdToken **tokens,u32 *argIndex,u32 *argCount,char **last,char *current,

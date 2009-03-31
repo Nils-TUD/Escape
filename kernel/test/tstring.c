@@ -4,8 +4,8 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/video.h"
+#include <common.h>
+#include <video.h>
 #include <string.h>
 #include <ctype.h>
 

@@ -4,17 +4,17 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <messages.h>
-#include <service.h>
-#include <io.h>
-#include <ports.h>
-#include <heap.h>
-#include <string.h>
-#include <debug.h>
-#include <proc.h>
+#include <esc/common.h>
+#include <esc/messages.h>
+#include <esc/service.h>
+#include <esc/io.h>
+#include <esc/ports.h>
+#include <esc/heap.h>
+#include <esc/debug.h>
+#include <esc/proc.h>
+#include <esc/bufio.h>
 #include <sllist.h>
-#include <bufio.h>
+#include <string.h>
 
 #include "vterm.h"
 

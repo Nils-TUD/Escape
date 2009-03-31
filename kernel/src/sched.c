@@ -4,11 +4,11 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/sched.h"
-#include "../h/proc.h"
-#include "../h/util.h"
-#include "../h/video.h"
+#include <common.h>
+#include <sched.h>
+#include <proc.h>
+#include <util.h>
+#include <video.h>
 #include <sllist.h>
 #include <assert.h>
 

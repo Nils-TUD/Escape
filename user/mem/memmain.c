@@ -4,10 +4,10 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <io.h>
-#include <bufio.h>
-#include <mem.h>
+#include <esc/common.h>
+#include <esc/io.h>
+#include <esc/bufio.h>
+#include <esc/mem.h>
 
 int main(void) {
 	sMemUsage mem;

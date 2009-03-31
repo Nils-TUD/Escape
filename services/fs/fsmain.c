@@ -4,21 +4,21 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <io.h>
-#include <service.h>
-#include <proc.h>
-#include <heap.h>
-#include <debug.h>
-#include <messages.h>
+#include <esc/common.h>
+#include <esc/io.h>
+#include <esc/service.h>
+#include <esc/proc.h>
+#include <esc/heap.h>
+#include <esc/debug.h>
+#include <esc/messages.h>
 #include <string.h>
+#include <fsinterface.h>
 
 #include "ext2/ext2.h"
 #include "ext2/path.h"
 #include "ext2/inode.h"
 #include "ext2/inodecache.h"
 #include "ext2/file.h"
-#include <fsinterface.h>
 
 /* open-response */
 typedef struct {

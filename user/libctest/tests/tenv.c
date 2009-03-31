@@ -4,8 +4,8 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <env.h>
+#include <esc/common.h>
+#include <esc/env.h>
 #include <test.h>
 #include <stdarg.h>
 #include "tenv.h"

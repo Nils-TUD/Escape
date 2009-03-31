@@ -7,7 +7,7 @@
 #ifndef TOKENIZER_H_
 #define TOKENIZER_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 #define ARG_BUFFER_SIZE 10
 #define STR_BUFFER_SIZE 30

@@ -7,7 +7,7 @@
 #ifndef TENV_H_
 #define TENV_H_
 
-#include <common.h>
+#include <esc/common.h>
 #include <test.h>
 
 extern sTestModule tModEnv;

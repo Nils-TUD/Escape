@@ -7,8 +7,8 @@
 #ifndef SCHED_H_
 #define SCHED_H_
 
-#include "../h/common.h"
-#include "../h/proc.h"
+#include "common.h"
+#include "proc.h"
 
 /**
  * Inits the scheduler

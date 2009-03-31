@@ -4,16 +4,16 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <service.h>
-#include <heap.h>
-#include <messages.h>
+#include <esc/common.h>
+#include <esc/service.h>
+#include <esc/heap.h>
+#include <esc/messages.h>
+#include <esc/proc.h>
+#include <esc/signals.h>
+#include <esc/debug.h>
+#include <esc/io.h>
 #include <string.h>
 #include <sllist.h>
-#include <proc.h>
-#include <signals.h>
-#include <debug.h>
-#include <io.h>
 
 #define MAP_SIZE 64
 

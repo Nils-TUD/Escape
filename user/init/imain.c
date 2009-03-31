@@ -4,13 +4,13 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <io.h>
-#include <proc.h>
-#include <string.h>
-#include <heap.h>
+#include <esc/common.h>
+#include <esc/io.h>
+#include <esc/proc.h>
+#include <esc/heap.h>
+#include <esc/debug.h>
 #include <sllist.h>
-#include <debug.h>
+#include <string.h>
 
 #define MAX_SNAME_LEN			50
 #define MAX_SERVICE_PATH_LEN	255

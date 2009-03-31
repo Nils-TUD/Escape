@@ -7,7 +7,7 @@
 #ifndef CD_H_
 #define CD_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 s32 shell_cmdCd(u32 argc,char **argv);
 

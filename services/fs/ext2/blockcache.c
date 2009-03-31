@@ -4,9 +4,9 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <heap.h>
-#include <debug.h>
+#include <esc/common.h>
+#include <esc/heap.h>
+#include <esc/debug.h>
 #include "ext2.h"
 #include "request.h"
 #include "blockcache.h"

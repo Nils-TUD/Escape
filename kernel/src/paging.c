@@ -4,12 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/paging.h"
-#include "../h/util.h"
-#include "../h/proc.h"
-#include "../h/intrpt.h"
-#include "../h/kheap.h"
-#include "../h/video.h"
+#include <paging.h>
+#include <util.h>
+#include <proc.h>
+#include <intrpt.h>
+#include <kheap.h>
+#include <video.h>
 #include <sllist.h>
 #include <string.h>
 #include <assert.h>

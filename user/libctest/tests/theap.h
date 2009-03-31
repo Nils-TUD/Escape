@@ -7,7 +7,7 @@
 #ifndef THEAP_H_
 #define THEAP_H_
 
-#include "../h/common.h"
+#include <esc/common.h>
 #include <test.h>
 
 extern sTestModule tModHeap;

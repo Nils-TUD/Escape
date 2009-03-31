@@ -4,22 +4,21 @@
  * @copyright	2008 Nils Asmussen
  */
 
+#include <types.h>
+#include <test.h>
+#include <stdarg.h>
+
 #ifdef IN_KERNEL
-#	include "../../kernel/h/common.h"
-#	include "../../kernel/h/video.h"
+#	include <video.h>
 
 #	define testPrintf	vid_printf
 #	define testvPrintf	vid_vprintf
 #else
-#	include "../../libc/esc/h/common.h"
-#	include "../../libc/esc/h/bufio.h"
+#	include <esc/bufio.h>
 
 #	define testPrintf	printf
 #	define testvPrintf	vprintf
 #endif
-
-#include "../h/test.h"
-#include <stdarg.h>
 
 static sTestModule *modules[MAX_TESTS];
 static u32 moduleCount = 0;

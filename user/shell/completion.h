@@ -7,7 +7,7 @@
 #ifndef COMMANDS_H_
 #define COMMANDS_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 #define MAX_CMDNAME_LEN		30
 #define MAX_CMD_LEN			40

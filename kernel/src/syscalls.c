@@ -4,25 +4,26 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/syscalls.h"
-#include "../h/intrpt.h"
-#include "../h/proc.h"
-#include "../h/vfs.h"
-#include "../h/vfsnode.h"
-#include "../h/vfsreal.h"
-#include "../h/paging.h"
-#include "../h/util.h"
-#include "../h/debug.h"
-#include "../h/kheap.h"
-#include "../h/sched.h"
-#include "../h/video.h"
-#include "../h/signals.h"
-#include "../h/elf.h"
-#include "../h/multiboot.h"
-#include "../h/timer.h"
+#include <common.h>
+#include <syscalls.h>
+#include <intrpt.h>
+#include <proc.h>
+#include <vfs.h>
+#include <vfsnode.h>
+#include <vfsreal.h>
+#include <paging.h>
+#include <util.h>
+#include <debug.h>
+#include <kheap.h>
+#include <sched.h>
+#include <video.h>
+#include <signals.h>
+#include <elf.h>
+#include <multiboot.h>
+#include <timer.h>
 #include <string.h>
 #include <assert.h>
+#include <errors.h>
 
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)

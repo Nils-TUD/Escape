@@ -4,10 +4,10 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <io.h>
-#include <dir.h>
-#include <bufio.h>
+#include <esc/common.h>
+#include <esc/io.h>
+#include <esc/dir.h>
+#include <esc/bufio.h>
 
 #define BUF_SIZE 512
 

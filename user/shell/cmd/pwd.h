@@ -7,7 +7,7 @@
 #ifndef PWD_H_
 #define PWD_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 s32 shell_cmdPwd(u32 argc,char **argv);
 

@@ -4,12 +4,13 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/vfs.h"
-#include "../h/vfsnode.h"
+#include <common.h>
+#include <vfs.h>
+#include <vfsnode.h>
 #include "tvfsnode.h"
 #include <test.h>
 #include <string.h>
+#include <errors.h>
 
 static void test_vfsn(void);
 static void test_vfsn_resolvePath(void);

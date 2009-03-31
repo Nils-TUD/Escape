@@ -4,11 +4,11 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <heap.h>
+#include <esc/common.h>
+#include <esc/heap.h>
+#include <esc/io.h>
+#include <esc/bufio.h>
 #include <string.h>
-#include <io.h>
-#include <bufio.h>
 #include "history.h"
 
 #define HISTORY_SIZE		30

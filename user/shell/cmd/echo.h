@@ -7,7 +7,7 @@
 #ifndef ECHO_H_
 #define ECHO_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 s32 shell_cmdEcho(u32 argc,char *argv[]);
 

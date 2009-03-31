@@ -7,7 +7,7 @@
 #ifndef EXT2_H_
 #define EXT2_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 /* TODO temporary */
 #define printf	debugf

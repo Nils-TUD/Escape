@@ -7,10 +7,10 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
-#include "../h/common.h"
-#include "../h/ksymbols.h"
-#include "../h/intrpt.h"
-#include "../h/proc.h"
+#include "common.h"
+#include "ksymbols.h"
+#include "intrpt.h"
+#include "proc.h"
 
 /**
  * Represents one function-call

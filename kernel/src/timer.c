@@ -4,12 +4,13 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/timer.h"
-#include "../h/util.h"
-#include "../h/sched.h"
-#include "../h/kheap.h"
+#include <common.h>
+#include <timer.h>
+#include <util.h>
+#include <sched.h>
+#include <kheap.h>
 #include <sllist.h>
+#include <errors.h>
 
 #define TIMER_BASE_FREQUENCY	1193182
 #define IOPORT_TIMER_CTRL		0x43

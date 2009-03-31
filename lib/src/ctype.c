@@ -4,12 +4,8 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#if IN_KERNEL
-#	include "../../kernel/h/common.h"
-#else
-#	include "../../libc/esc/h/common.h"
-#endif
-#include "../h/ctype.h"
+#include <types.h>
+#include <ctype.h>
 
 bool isalnum(s32 c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');

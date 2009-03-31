@@ -4,13 +4,13 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/mm.h"
-#include "../h/multiboot.h"
-#include "../h/proc.h"
-#include "../h/vfs.h"
-#include "../h/vfsnode.h"
-#include "../h/vfsinfo.h"
+#include <common.h>
+#include <mm.h>
+#include <multiboot.h>
+#include <proc.h>
+#include <vfs.h>
+#include <vfsnode.h>
+#include <vfsinfo.h>
 #include <string.h>
 
 /* public process-data */

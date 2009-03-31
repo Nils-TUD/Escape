@@ -4,8 +4,8 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <keycodes.h>
+#include <esc/common.h>
+#include <esc/keycodes.h>
 #include "keymap.h"
 #include "keymap.ger.h"
 

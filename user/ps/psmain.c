@@ -4,11 +4,11 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <io.h>
-#include <bufio.h>
-#include <dir.h>
-#include <proc.h>
+#include <esc/common.h>
+#include <esc/io.h>
+#include <esc/bufio.h>
+#include <esc/dir.h>
+#include <esc/proc.h>
 #include <string.h>
 
 /**

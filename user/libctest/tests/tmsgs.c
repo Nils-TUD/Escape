@@ -4,8 +4,8 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <messages.h>
+#include <esc/common.h>
+#include <esc/messages.h>
 #include <test.h>
 #include <string.h>
 #include <stdarg.h>

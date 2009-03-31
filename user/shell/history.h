@@ -7,7 +7,7 @@
 #ifndef HISTORY_H_
 #define HISTORY_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 /**
  * Adds the given line to history. It will be assumed that line has been allocated on the heap!

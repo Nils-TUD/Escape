@@ -7,7 +7,7 @@
 #ifndef TESTPROC_H_
 #define TESTPROC_H_
 
-#include "../h/common.h"
+#include <common.h>
 #include <test.h>
 
 extern sTestModule tModProc;

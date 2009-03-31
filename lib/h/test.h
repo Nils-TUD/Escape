@@ -7,12 +7,7 @@
 #ifndef TEST_H_
 #define TEST_H_
 
-#ifdef IN_KERNEL
-#	include "../../kernel/h/common.h"
-#else
-#	include "../../libc/esc/h/common.h"
-#endif
-
+#include <types.h>
 #include <stdarg.h>
 
 #define MAX_TESTS 100

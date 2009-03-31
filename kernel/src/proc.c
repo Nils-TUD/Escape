@@ -4,24 +4,25 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/proc.h"
-#include "../h/paging.h"
-#include "../h/mm.h"
-#include "../h/util.h"
-#include "../h/intrpt.h"
-#include "../h/sched.h"
-#include "../h/vfs.h"
-#include "../h/vfsinfo.h"
-#include "../h/kheap.h"
-#include "../h/gdt.h"
-#include "../h/cpu.h"
-#include "../h/video.h"
-#include "../h/signals.h"
-#include "../h/vfsnode.h"
+#include <common.h>
+#include <proc.h>
+#include <paging.h>
+#include <mm.h>
+#include <util.h>
+#include <intrpt.h>
+#include <sched.h>
+#include <vfs.h>
+#include <vfsinfo.h>
+#include <kheap.h>
+#include <gdt.h>
+#include <cpu.h>
+#include <video.h>
+#include <signals.h>
+#include <vfsnode.h>
 #include <string.h>
 #include <sllist.h>
 #include <assert.h>
+#include <errors.h>
 
 /* our processes */
 static sProc procs[PROC_COUNT];

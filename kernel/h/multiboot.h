@@ -7,8 +7,8 @@
 #ifndef MULTIBOOT_H_
 #define MULTIBOOT_H_
 
-#include "../h/common.h"
-#include "../h/intrpt.h"
+#include "common.h"
+#include "intrpt.h"
 
 #define MMAP_TYPE_AVAILABLE 0x1
 

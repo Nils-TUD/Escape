@@ -7,7 +7,7 @@
 #ifndef SET1_H_
 #define SET1_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 /**
  * Converts the given scancode to a keycode

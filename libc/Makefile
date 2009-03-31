@@ -2,17 +2,17 @@ BUILD = ../build
 LIBDIR=../lib
 
 CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -I$(LIBDIR)/h
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -Iinclude -I$(LIBDIR)/h
 
-CESCSRCS = $(wildcard esc/src/*.c)
-CSTDSRCS = $(wildcard std/src/*.c)
-AESCSRCS = $(wildcard esc/src/*.s)
-ASTDSRCS = $(wildcard std/src/*.s)
+CESCSRCS = $(wildcard src/esc/*.c)
+CSTDSRCS = $(wildcard src/*.c)
+AESCSRCS = $(wildcard src/esc/*.s)
+ASTDSRCS = $(wildcard src/*.s)
 LSRC=$(wildcard $(LIBDIR)/src/*.c)
-OBJS = $(patsubst esc/src/%.c,$(BUILD)/libc_esc_%.o,$(CESCSRCS))
-OBJS += $(patsubst esc/src/%.s,$(BUILD)/libc_esc_a%.o,$(AESCSRCS))
-OBJS += $(patsubst std/src/%.c,$(BUILD)/libc_std_%.o,$(CSTDSRCS))
-OBJS += $(patsubst std/src/%.s,$(BUILD)/libc_std_a%.o,$(ASTDSRCS))
+OBJS = $(patsubst src/esc/%.c,$(BUILD)/libc_esc_%.o,$(CESCSRCS))
+OBJS += $(patsubst src/esc/%.s,$(BUILD)/libc_esc_a%.o,$(AESCSRCS))
+OBJS += $(patsubst src/%.c,$(BUILD)/libc_std_%.o,$(CSTDSRCS))
+OBJS += $(patsubst src/%.s,$(BUILD)/libc_std_a%.o,$(ASTDSRCS))
 LOBJ=$(patsubst $(LIBDIR)/src/%.c,$(BUILD)/libc_lib_%.o,$(LSRC))
 LIB = $(BUILD)/libc.a
 DEP = $(BUILD)/libc.dep
@@ -27,19 +27,19 @@ $(LIB): $(OBJS) $(LOBJ) $(STARTO)
 		@echo "===== BUILDING ARCHIVE =====";
 		ar rcs $(LIB) $(OBJS) $(LOBJ)
 
-$(BUILD)/libc_esc_%.o: esc/src/%.c
+$(BUILD)/libc_esc_%.o: src/esc/%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
-$(BUILD)/libc_esc_a%.o: esc/src/%.s
+$(BUILD)/libc_esc_a%.o: src/esc/%.s
 		@echo "===== ASSEMBLING $< =====";
 		nasm $(ASMFLAGS) -o $@ $<
 
-$(BUILD)/libc_std_%.o: std/src/%.c
+$(BUILD)/libc_std_%.o: src/%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
-$(BUILD)/libc_std_a%.o: std/src/%.s
+$(BUILD)/libc_std_a%.o: src/%.s
 		@echo "===== ASSEMBLING $< =====";
 		nasm $(ASMFLAGS) -o $@ $<
 
@@ -55,10 +55,10 @@ $(DEP):	$(CESCSRCS) $(CSTDSRCS)
 		@echo "===== GENERATING DEPENDENCIES =====";
 		$(CC) $(CFLAGS) -MM $(CESCSRCS) $(CSTDSRCS) > $(DEP)
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		@for i in $(patsubst esc/src/%.c,%,$(wildcard esc/src/*.c)) ; do \
+		@for i in $(patsubst src/esc/%.c,%,$(wildcard src/esc/*.c)) ; do \
 			sed --in-place -e "s/$$i.o:/$(subst /,\/,$(BUILD)/libc_esc_)$$i.o:/g" $(DEP); \
 		done;
-		@for i in $(patsubst std/src/%.c,%,$(wildcard std/src/*.c)) ; do \
+		@for i in $(patsubst src/%.c,%,$(wildcard src/*.c)) ; do \
 			sed --in-place -e "s/$$i.o:/$(subst /,\/,$(BUILD)/libc_std_)$$i.o:/g" $(DEP); \
 		done;
 

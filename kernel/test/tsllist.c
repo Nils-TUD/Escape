@@ -4,9 +4,9 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/kheap.h"
-#include "../h/video.h"
+#include <common.h>
+#include <kheap.h>
+#include <video.h>
 #include <sllist.h>
 #include <test.h>
 #include "tsllist.h"

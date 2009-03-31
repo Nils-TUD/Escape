@@ -7,7 +7,7 @@
 #ifndef INODECACHE_H_
 #define INODECACHE_H_
 
-#include <common.h>
+#include <esc/common.h>
 #include "ext2.h"
 
 /**

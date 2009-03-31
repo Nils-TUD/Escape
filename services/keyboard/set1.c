@@ -4,9 +4,9 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <messages.h>
-#include <keycodes.h>
+#include <esc/common.h>
+#include <esc/messages.h>
+#include <esc/keycodes.h>
 #include "set1.h"
 
 /* an entry in the set1-map */

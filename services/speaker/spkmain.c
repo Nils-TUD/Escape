@@ -4,13 +4,13 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <io.h>
-#include <ports.h>
-#include <service.h>
-#include <proc.h>
-#include <messages.h>
-#include <signals.h>
+#include <esc/common.h>
+#include <esc/io.h>
+#include <esc/ports.h>
+#include <esc/service.h>
+#include <esc/proc.h>
+#include <esc/messages.h>
+#include <esc/signals.h>
 
 #define PIC_FREQUENCY				1193180
 #define IOPORT_PIT_SPEAKER			0x42

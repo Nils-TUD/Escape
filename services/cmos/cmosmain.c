@@ -4,13 +4,13 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <proc.h>
-#include <service.h>
-#include <messages.h>
-#include <io.h>
-#include <ports.h>
-#include <date.h>
+#include <esc/common.h>
+#include <esc/proc.h>
+#include <esc/service.h>
+#include <esc/messages.h>
+#include <esc/io.h>
+#include <esc/ports.h>
+#include <esc/date.h>
 
 #define IOPORT_CMOS_INDEX	0x70
 #define IOPORT_CMOS_DATA	0x71

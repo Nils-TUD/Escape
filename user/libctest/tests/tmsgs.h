@@ -7,7 +7,7 @@
 #ifndef TMSGS_H_
 #define TMSGS_H_
 
-#include "../h/common.h"
+#include <esc/common.h>
 #include <test.h>
 
 extern sTestModule tModMsgs;

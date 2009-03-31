@@ -4,10 +4,10 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <env.h>
-#include <io.h>
-#include <bufio.h>
+#include <esc/common.h>
+#include <esc/env.h>
+#include <esc/io.h>
+#include <esc/bufio.h>
 #include "pwd.h"
 
 s32 shell_cmdPwd(u32 argc,char **argv) {

@@ -7,7 +7,7 @@
 #ifndef TESTKHEAP_H_
 #define TESTKHEAP_H_
 
-#include "../h/common.h"
+#include <common.h>
 #include <test.h>
 
 extern sTestModule tModKHeap;

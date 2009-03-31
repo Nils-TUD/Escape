@@ -7,12 +7,7 @@
 #ifndef STRING_H_
 #define STRING_H_
 
-#ifdef IN_KERNEL
-#	include "../../kernel/h/common.h"
-#else
-#	include "../../libc/esc/h/common.h"
-#endif
-#include <stddef.h>
+#include <types.h>
 
 /**
  * The atoi() function converts str into an integer, and returns that integer. str should start
@@ -290,13 +285,5 @@ bool isalnumstr(const char *str);
  */
 char *strerror(s32 errnum);
 #endif
-
-/*
-atol	converts a string to a long
-memmove	moves one buffer to another
-strtod	converts a string to a double
-strtol	converts a string to a long
-strtoul	converts a string to an unsigned long
-*/
 
 #endif /* STRING_H_ */

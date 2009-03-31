@@ -4,16 +4,17 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <messages.h>
-#include <io.h>
-#include <ports.h>
-#include <proc.h>
-#include <keycodes.h>
-#include <heap.h>
+#include <esc/common.h>
+#include <esc/messages.h>
+#include <esc/io.h>
+#include <esc/ports.h>
+#include <esc/proc.h>
+#include <esc/keycodes.h>
+#include <esc/heap.h>
+#include <esc/signals.h>
+#include <esc/bufio.h>
 #include <string.h>
-#include <signals.h>
-#include <bufio.h>
+
 #include "vterm.h"
 #include "keymap.h"
 #include "keymap.us.h"

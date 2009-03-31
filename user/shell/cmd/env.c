@@ -4,12 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <io.h>
-#include <bufio.h>
-#include <env.h>
-#include <messages.h>
-#include <heap.h>
+#include <esc/common.h>
+#include <esc/io.h>
+#include <esc/bufio.h>
+#include <esc/env.h>
+#include <esc/messages.h>
+#include <esc/heap.h>
 #include <string.h>
 #include "env.h"
 

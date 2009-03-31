@@ -4,11 +4,11 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <dir.h>
-#include <io.h>
-#include <bufio.h>
-#include <env.h>
+#include <esc/common.h>
+#include <esc/dir.h>
+#include <esc/io.h>
+#include <esc/bufio.h>
+#include <esc/env.h>
 
 int main(int argc,char *argv[]) {
 	tFD dd;

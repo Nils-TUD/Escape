@@ -4,14 +4,15 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/vfs.h"
-#include "../h/vfsnode.h"
-#include "../h/util.h"
-#include "../h/kheap.h"
-#include "../h/video.h"
+#include <common.h>
+#include <vfs.h>
+#include <vfsnode.h>
+#include <util.h>
+#include <kheap.h>
+#include <video.h>
 #include <string.h>
 #include <assert.h>
+#include <errors.h>
 
 #define FILE_ROOT()	(nodes + 3)
 

@@ -7,7 +7,7 @@
 #ifndef GDT_H_
 #define GDT_H_
 
-#include "../h/common.h"
+#include "common.h"
 
 /* the size of the io-map (in bits) */
 #define IO_MAP_SIZE				0xFFFF

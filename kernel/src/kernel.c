@@ -4,24 +4,24 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/multiboot.h"
-#include "../h/gdt.h"
-#include "../h/mm.h"
-#include "../h/util.h"
-#include "../h/paging.h"
-#include "../h/proc.h"
-#include "../h/intrpt.h"
-#include "../h/debug.h"
-#include "../h/cpu.h"
-#include "../h/elf.h"
-#include "../h/kheap.h"
-#include "../h/elf.h"
-#include "../h/sched.h"
-#include "../h/vfs.h"
-#include "../h/vfsinfo.h"
-#include "../h/video.h"
-#include "../h/timer.h"
+#include <common.h>
+#include <multiboot.h>
+#include <gdt.h>
+#include <mm.h>
+#include <util.h>
+#include <paging.h>
+#include <proc.h>
+#include <intrpt.h>
+#include <debug.h>
+#include <cpu.h>
+#include <elf.h>
+#include <kheap.h>
+#include <elf.h>
+#include <sched.h>
+#include <vfs.h>
+#include <vfsinfo.h>
+#include <video.h>
+#include <timer.h>
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table

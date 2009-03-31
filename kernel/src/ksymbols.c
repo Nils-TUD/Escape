@@ -4,9 +4,9 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/ksymbols.h"
-#include "../h/video.h"
+#include <common.h>
+#include <ksymbols.h>
+#include <video.h>
 
 static sSymbol ksymbols[] = {
 #if TESTING

@@ -4,12 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/util.h"
-#include "../h/intrpt.h"
-#include "../h/proc.h"
-#include "../h/ksymbols.h"
-#include "../h/paging.h"
-#include "../h/video.h"
+#include <util.h>
+#include <intrpt.h>
+#include <proc.h>
+#include <ksymbols.h>
+#include <paging.h>
+#include <video.h>
 #include <stdarg.h>
 #include <string.h>
 

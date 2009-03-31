@@ -7,11 +7,7 @@
 #ifndef CTYPE_H_
 #define CTYPE_H_
 
-#if IN_KERNEL
-#	include "../../kernel/h/common.h"
-#else
-#	include "../../libc/esc/h/common.h"
-#endif
+#include <types.h>
 
 /**
  * @param c the character

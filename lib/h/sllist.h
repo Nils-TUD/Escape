@@ -7,11 +7,7 @@
 #ifndef SLLIST_H_
 #define SLLIST_H_
 
-#ifdef IN_KERNEL
-#	include "../../kernel/h/common.h"
-#else
-#	include "../../libc/esc/h/common.h"
-#endif
+#include <types.h>
 
 /* our list (the user should not know about the internal structure) */
 typedef void* sSLList;

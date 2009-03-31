@@ -4,8 +4,8 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <bufio.h>
+#include <esc/common.h>
+#include <esc/bufio.h>
 #include <test.h>
 #include <stdarg.h>
 #include <string.h>

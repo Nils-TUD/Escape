@@ -7,8 +7,8 @@
 #ifndef VFS_H_
 #define VFS_H_
 
-#include "../h/common.h"
-#include "../h/proc.h"
+#include "common.h"
+#include "proc.h"
 #include <sllist.h>
 
 /* special service-client names */

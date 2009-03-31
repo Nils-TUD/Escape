@@ -4,9 +4,9 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <io.h>
-#include <debug.h>
+#include <esc/common.h>
+#include <esc/io.h>
+#include <esc/debug.h>
 #include "ext2.h"
 #include "inode.h"
 #include "blockcache.h"

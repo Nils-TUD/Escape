@@ -7,11 +7,7 @@
 #ifndef FSINTERFACE_H_
 #define FSINTERFACE_H_
 
-#if IN_KERNEL
-#	include "../../kernel/h/common.h"
-#else
-#	include "../../libc/esc/h/common.h"
-#endif
+#include <types.h>
 
 #define MSG_FS_OPEN			0
 #define MSG_FS_READ			1

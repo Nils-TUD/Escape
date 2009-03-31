@@ -7,7 +7,7 @@
 #ifndef HELP_H_
 #define HELP_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 s32 shell_cmdHelp(u32 argc,char **argv);
 

@@ -4,9 +4,9 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/signals.h"
-#include "../h/proc.h"
+#include <common.h>
+#include <signals.h>
+#include <proc.h>
 #include "test.h"
 #include "tsignals.h"
 

@@ -4,15 +4,16 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/proc.h"
-#include "../h/kheap.h"
-#include "../h/sched.h"
-#include "../h/vfs.h"
-#include "../h/vfsnode.h"
-#include "../h/vfsreal.h"
-#include "../h/util.h"
+#include <common.h>
+#include <proc.h>
+#include <kheap.h>
+#include <sched.h>
+#include <vfs.h>
+#include <vfsnode.h>
+#include <vfsreal.h>
+#include <util.h>
 #include <string.h>
+#include <errors.h>
 
 #include <fsinterface.h>
 

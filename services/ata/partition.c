@@ -4,7 +4,7 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
+#include <esc/common.h>
 #include "partition.h"
 
 /* offset of partition-table in MBR */

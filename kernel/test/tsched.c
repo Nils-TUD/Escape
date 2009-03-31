@@ -4,8 +4,8 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/sched.h"
+#include <common.h>
+#include <sched.h>
 
 #include <test.h>
 #include "tsched.h"

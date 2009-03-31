@@ -4,20 +4,20 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#ifdef IN_KERNEL
-#	include "../../kernel/h/common.h"
-#	include "../../kernel/h/util.h"
-#	include "../../kernel/h/paging.h"
-#else
-#	include "../../libc/esc/h/common.h"
-/* for exit and debugf (vassert) */
-#	include "../../libc/esc/h/proc.h"
-#	include "../../libc/esc/h/debug.h"
-#endif
+#include <types.h>
+#include <errors.h>
+#include <assert.h>
+#include <string.h>
+#include <ctype.h>
 
-#include "../h/assert.h"
-#include "../h/string.h"
-#include "../h/ctype.h"
+#ifdef IN_KERNEL
+#	include <util.h>
+#	include <paging.h>
+#else
+/* for exit and debugf (vassert) */
+#	include <esc/proc.h>
+#	include <esc/debug.h>
+#endif
 
 #define MAX_ERR_LEN		255
 

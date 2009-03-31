@@ -4,13 +4,13 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/multiboot.h"
-#include "../h/paging.h"
-#include "../h/proc.h"
-#include "../h/elf.h"
-#include "../h/video.h"
-#include "../h/vfsnode.h"
+#include <common.h>
+#include <multiboot.h>
+#include <paging.h>
+#include <proc.h>
+#include <elf.h>
+#include <video.h>
+#include <vfsnode.h>
 #include <string.h>
 
 #define CHECK_FLAG(flags,bit) (flags & (1 << bit))

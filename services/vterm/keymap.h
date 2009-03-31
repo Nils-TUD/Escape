@@ -7,7 +7,7 @@
 #ifndef KEYMAP_H_
 #define KEYMAP_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 /* represents a not-printable character */
 #define NPRINT			'\0'

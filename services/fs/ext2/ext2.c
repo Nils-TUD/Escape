@@ -4,10 +4,10 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <io.h>
-#include <heap.h>
-#include <proc.h>
+#include <esc/common.h>
+#include <esc/io.h>
+#include <esc/heap.h>
+#include <esc/proc.h>
 #include "ext2.h"
 #include "blockcache.h"
 #include "inodecache.h"

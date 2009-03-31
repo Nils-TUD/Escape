@@ -4,8 +4,9 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
+#include <esc/common.h>
 #include <test.h>
+
 #include "tests/theap.h"
 #include "tests/tbufio.h"
 #include "tests/tdir.h"

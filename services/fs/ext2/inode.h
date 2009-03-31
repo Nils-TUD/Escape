@@ -7,7 +7,7 @@
 #ifndef INODE_H_
 #define INODE_H_
 
-#include <common.h>
+#include <esc/common.h>
 #include "ext2.h"
 
 /**

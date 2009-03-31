@@ -4,9 +4,9 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/video.h"
-#include "../h/common.h"
-#include "../h/util.h"
+#include <video.h>
+#include <common.h>
+#include <util.h>
 #include <stdarg.h>
 
 #define VIDEO_BASE	0xC00B8000

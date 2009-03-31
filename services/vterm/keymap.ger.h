@@ -7,7 +7,7 @@
 #ifndef KEYMAP_GER_H_
 #define KEYMAP_GER_H_
 
-#include <common.h>
+#include <esc/common.h>
 #include "keymap.h"
 
 /**

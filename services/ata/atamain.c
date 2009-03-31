@@ -4,15 +4,15 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <service.h>
-#include <messages.h>
-#include <io.h>
-#include <ports.h>
-#include <heap.h>
-#include <proc.h>
-#include <debug.h>
-#include <signals.h>
+#include <esc/common.h>
+#include <esc/service.h>
+#include <esc/messages.h>
+#include <esc/io.h>
+#include <esc/ports.h>
+#include <esc/heap.h>
+#include <esc/proc.h>
+#include <esc/debug.h>
+#include <esc/signals.h>
 #include "partition.h"
 
 /* port-bases */

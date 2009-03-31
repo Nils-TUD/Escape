@@ -7,7 +7,7 @@
 #ifndef TDIR_H_
 #define TDIR_H_
 
-#include "../h/common.h"
+#include <esc/common.h>
 #include <test.h>
 
 extern sTestModule tModDir;

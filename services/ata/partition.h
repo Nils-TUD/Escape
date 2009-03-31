@@ -7,7 +7,7 @@
 #ifndef PARTITION_H_
 #define PARTITION_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 /* the number of partitions per disk */
 #define PARTITION_COUNT		4

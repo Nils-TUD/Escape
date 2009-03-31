@@ -7,7 +7,7 @@
 #ifndef VTERM_H_
 #define VTERM_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 #define COLS				80
 #define ROWS				25

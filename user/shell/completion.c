@@ -4,12 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
+#include <esc/common.h>
+#include <esc/heap.h>
+#include <esc/dir.h>
 #include <string.h>
-#include <heap.h>
-#include <dir.h>
-#include "completion.h"
 
+#include "completion.h"
 #include "cmd/echo.h"
 #include "cmd/env.h"
 #include "cmd/help.h"

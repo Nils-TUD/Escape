@@ -7,7 +7,7 @@
 #ifndef TSLLIST_H_
 #define TSLLIST_H_
 
-#include "../h/common.h"
+#include <common.h>
 #include <test.h>
 
 extern sTestModule tModSLList;

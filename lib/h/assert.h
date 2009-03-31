@@ -8,11 +8,9 @@
 #define ASSERT_H_
 
 #if IN_KERNEL
-#	include "../../kernel/h/common.h"
-#	include "../../kernel/h/util.h"
+#	include <util.h>
 #else
-#	include "../../libc/esc/h/common.h"
-#	include "../../libc/esc/h/debug.h"
+#	include <esc/debug.h>
 #endif
 
 #ifndef NDEBUG

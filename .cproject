@@ -35,8 +35,8 @@
 <option id="gnu.c.compiler.option.include.paths.1389048965" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 <listOptionValue builtIn="false" value="&quot;${workspace_loc:/OSFirstTest/lib/h}&quot;"/>
 <listOptionValue builtIn="false" value="&quot;${workspace_loc:/OSFirstTest/libc/test}&quot;"/>
-<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OSFirstTest/libc/esc/h}&quot;"/>
-<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OSFirstTest/libc/std/h}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OSFirstTest/kernel/h}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OSFirstTest/libc/include}&quot;"/>
 </option>
 <option id="gnu.c.compiler.option.optimization.flags.379513439" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags"/>
 <option id="gnu.c.compiler.option.debugging.other.1282269511" name="Other debugging flags" superClass="gnu.c.compiler.option.debugging.other"/>

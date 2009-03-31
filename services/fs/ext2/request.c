@@ -4,10 +4,10 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <messages.h>
-#include <io.h>
-#include <proc.h>
+#include <esc/common.h>
+#include <esc/messages.h>
+#include <esc/io.h>
+#include <esc/proc.h>
 #include "request.h"
 #include "ext2.h"
 

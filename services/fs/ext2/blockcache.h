@@ -7,7 +7,7 @@
 #ifndef BLOCKCACHE_H_
 #define BLOCKCACHE_H_
 
-#include <common.h>
+#include <esc/common.h>
 #include "ext2.h"
 
 /**

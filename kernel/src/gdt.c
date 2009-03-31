@@ -4,10 +4,10 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/gdt.h"
-#include "../h/mm.h"
-#include "../h/paging.h"
-#include "../h/video.h"
+#include <gdt.h>
+#include <mm.h>
+#include <paging.h>
+#include <video.h>
 #include <string.h>
 /* for offsetof() */
 #include <stddef.h>

@@ -4,12 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#ifndef BUFIO_H_
-#define BUFIO_H_
+#ifndef TBUFIO_H_
+#define TBUFIO_H_
 
-#include "../h/common.h"
+#include <esc/common.h>
 #include <test.h>
 
 extern sTestModule tModBufio;
 
-#endif /* BUFIO_H_ */
+#endif /* TBUFIO_H_ */

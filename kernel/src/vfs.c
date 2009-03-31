@@ -4,18 +4,19 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/vfs.h"
-#include "../h/vfsnode.h"
-#include "../h/vfsreal.h"
-#include "../h/proc.h"
-#include "../h/util.h"
-#include "../h/kheap.h"
-#include "../h/sched.h"
-#include "../h/video.h"
+#include <common.h>
+#include <vfs.h>
+#include <vfsnode.h>
+#include <vfsreal.h>
+#include <proc.h>
+#include <util.h>
+#include <kheap.h>
+#include <sched.h>
+#include <video.h>
 #include <string.h>
 #include <sllist.h>
 #include <assert.h>
+#include <errors.h>
 
 /* max number of open files */
 #define FILE_COUNT					(PROC_COUNT * 16)

@@ -4,10 +4,10 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/mm.h"
-#include "../h/util.h"
-#include "../h/paging.h"
-#include "../h/video.h"
+#include <mm.h>
+#include <util.h>
+#include <paging.h>
+#include <video.h>
 #include <assert.h>
 #include <string.h>
 

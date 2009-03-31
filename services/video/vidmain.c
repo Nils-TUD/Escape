@@ -4,16 +4,16 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <service.h>
-#include <io.h>
-#include <ports.h>
-#include <messages.h>
-#include <heap.h>
-#include <mem.h>
+#include <esc/common.h>
+#include <esc/service.h>
+#include <esc/io.h>
+#include <esc/ports.h>
+#include <esc/messages.h>
+#include <esc/heap.h>
+#include <esc/mem.h>
+#include <esc/debug.h>
+#include <esc/proc.h>
 #include <string.h>
-#include <debug.h>
-#include <proc.h>
 
 /* the physical memory of the 80x25 device */
 #define VIDEO_MEM			0xB8000

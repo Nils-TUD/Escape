@@ -10,7 +10,7 @@ LIB=../lib
 
 CC = gcc
 CFLAGS = -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
-	-D IN_KERNEL=1 -I$(LIB)/h
+	-D IN_KERNEL=1 -Ih -I$(LIB)/h
 
 # sources
 ASRC=kernel.asm

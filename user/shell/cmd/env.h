@@ -7,7 +7,7 @@
 #ifndef SHELL_ENV_H_
 #define SHELL_ENV_H_
 
-#include <common.h>
+#include <esc/common.h>
 
 s32 shell_cmdEnv(u32 argc,char **argv);
 

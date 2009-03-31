@@ -4,9 +4,11 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
+#include <esc/common.h>
+#include <esc/heap.h>
 #include <string.h>
-#include <heap.h>
+#include <errors.h>
+
 #include "ext2.h"
 #include "path.h"
 #include "inode.h"

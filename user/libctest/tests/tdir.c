@@ -4,8 +4,8 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
-#include <dir.h>
+#include <esc/common.h>
+#include <esc/dir.h>
 #include <test.h>
 #include <stdarg.h>
 #include "tdir.h"

@@ -4,11 +4,11 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include <common.h>
+#include <esc/common.h>
+#include <esc/io.h>
+#include <esc/bufio.h>
+#include <esc/signals.h>
 #include <string.h>
-#include <io.h>
-#include <bufio.h>
-#include <signals.h>
 
 int main(int argc,char **argv) {
 	tPid pid;

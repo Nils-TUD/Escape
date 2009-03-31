@@ -4,13 +4,14 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/vfs.h"
-#include "../h/vfsnode.h"
-#include "../h/proc.h"
-#include "../h/kheap.h"
-#include "../h/video.h"
+#include <common.h>
+#include <vfs.h>
+#include <vfsnode.h>
+#include <proc.h>
+#include <kheap.h>
+#include <video.h>
 #include <string.h>
+#include <errors.h>
 
 #include "tvfs.h"
 #include <test.h>

@@ -4,10 +4,10 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/kheap.h"
-#include "../h/paging.h"
-#include "../h/video.h"
+#include <common.h>
+#include <kheap.h>
+#include <paging.h>
+#include <video.h>
 #include <string.h>
 
 /* the number of entries in the occupied map */

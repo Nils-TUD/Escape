@@ -4,22 +4,22 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/intrpt.h"
-#include "../h/util.h"
-#include "../h/cpu.h"
-#include "../h/paging.h"
-#include "../h/proc.h"
-#include "../h/elf.h"
-#include "../h/syscalls.h"
-#include "../h/vfs.h"
-#include "../h/vfsreal.h"
-#include "../h/gdt.h"
-#include "../h/kheap.h"
-#include "../h/video.h"
-#include "../h/sched.h"
-#include "../h/signals.h"
-#include "../h/timer.h"
+#include <common.h>
+#include <intrpt.h>
+#include <util.h>
+#include <cpu.h>
+#include <paging.h>
+#include <proc.h>
+#include <elf.h>
+#include <syscalls.h>
+#include <vfs.h>
+#include <vfsreal.h>
+#include <gdt.h>
+#include <kheap.h>
+#include <video.h>
+#include <sched.h>
+#include <signals.h>
+#include <timer.h>
 #include <assert.h>
 #include <string.h>
 #include <sllist.h>

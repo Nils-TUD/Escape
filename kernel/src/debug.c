@@ -4,10 +4,10 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/debug.h"
-#include "../h/cpu.h"
-#include "../h/video.h"
+#include <common.h>
+#include <debug.h>
+#include <cpu.h>
+#include <video.h>
 
 static u64 start = 0;
 

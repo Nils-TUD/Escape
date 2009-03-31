@@ -7,7 +7,7 @@
 #ifndef KHEAP_H_
 #define KHEAP_H_
 
-#include "../h/common.h"
+#include "common.h"
 
 /**
  * Note that this function is intended for debugging-purposes only!

@@ -4,13 +4,14 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#include "../h/common.h"
-#include "../h/proc.h"
-#include "../h/kheap.h"
-#include "../h/signals.h"
-#include "../h/util.h"
-#include "../h/video.h"
+#include <common.h>
+#include <proc.h>
+#include <kheap.h>
+#include <signals.h>
+#include <util.h>
+#include <video.h>
 #include <sllist.h>
+#include <errors.h>
 #include <assert.h>
 
 /* the information we need about every announced handler */

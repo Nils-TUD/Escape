@@ -9,6 +9,7 @@
 #include <esc/fileio.h>
 #include <esc/dir.h>
 #include <esc/proc.h>
+#include <stdlib.h>
 #include <string.h>
 
 /**
@@ -43,25 +44,28 @@ int main(void) {
 			strcpy(ppath,path);
 			strncat(ppath,entry->name,strlen(entry->name));
 			if((dfd = open(ppath,IO_READ)) >= 0) {
-				read(dfd,&proc,sizeof(sProc));
+				if(read(dfd,&proc,sizeof(sProc)) < 0) {
+					printe("Unable to read process-data");
+					return EXIT_FAILURE;
+				}
 				ps_printProcess(&proc);
 				close(dfd);
 			}
 			else {
 				printe("Unable to open '%s'\n",ppath);
-				return 1;
+				return EXIT_FAILURE;
 			}
 		}
 		closedir(dd);
 	}
 	else {
 		printe("Unable to open '%s'\n",path);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	printf("\n");
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 static void ps_printProcess(sProc *p) {

@@ -94,6 +94,7 @@ createhdd: clean
 		sudo chmod 0666 $(DISKMOUNT)/file.txt
 		echo "Das ist ein Test-String!!" > $(DISKMOUNT)/file.txt
 		sudo cp $(DISKMOUNT)/file.txt $(DISKMOUNT)/testdir/file.txt
+		sudo dd if=/dev/zero of=$(DISKMOUNT)/zeros bs=1024 count=1024
 		sudo touch $(DISKMOUNT)/bigfile
 		sudo chmod 0666 $(DISKMOUNT)/bigfile
 		./tools/createStr.sh 'Das ist der %d Test\n' 200 > $(DISKMOUNT)/bigfile;

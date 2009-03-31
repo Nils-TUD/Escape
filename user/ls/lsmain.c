@@ -9,6 +9,7 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/env.h>
+#include <stdlib.h>
 
 int main(int argc,char *argv[]) {
 	tFD dd;
@@ -19,14 +20,14 @@ int main(int argc,char *argv[]) {
 		path = getEnv("CWD");
 		if(path == NULL) {
 			printe("Unable to get CWD\n");
-			return 1;
+			return EXIT_FAILURE;
 		}
 	}
 	else if(argc == 2)
 		path = abspath(argv[1]);
 	else {
 		fprintf(stderr,"Usage: %s [<dir>]\n",argv[0]);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	if((dd = opendir(path)) >= 0) {
@@ -37,8 +38,8 @@ int main(int argc,char *argv[]) {
 	}
 	else {
 		printe("Unable to open '%s'\n",path);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }

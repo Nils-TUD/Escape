@@ -12,6 +12,7 @@
 #include <esc/heap.h>
 #include <esc/debug.h>
 #include <esc/messages.h>
+#include <stdlib.h>
 #include <string.h>
 #include <fsinterface.h>
 
@@ -65,14 +66,14 @@ int main(void) {
 	ext2.partition = 0;
 	if(!ext2_init(&ext2)) {
 		unregService(id);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* register service */
 	id = regService("fs",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
 		printe("Unable to register service 'fs'");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	while(1) {
@@ -148,7 +149,7 @@ int main(void) {
 
 							/* read ahead
 							if(count > 0)
-								ext2_readFile(&ext2,data.inodeNo,NULL,data.offset + count,data.count);*/
+								ext2_readFile(&ext2,data.inodeNo,NULL,data.offset + count,data.count); */
 						}
 					}
 					break;
@@ -188,5 +189,5 @@ int main(void) {
 	/* clean up */
 	unregService(id);
 
-	return 0;
+	return EXIT_SUCCESS;
 }

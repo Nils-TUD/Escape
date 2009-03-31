@@ -14,6 +14,7 @@
 #include <esc/debug.h>
 #include <esc/proc.h>
 #include <esc/signals.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "set1.h"
@@ -39,30 +40,30 @@ int main(void) {
 	id = regService("keyboard",SERVICE_TYPE_SINGLEPIPE);
 	if(id < 0) {
 		printe("Unable to register service 'keyboard'");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* request io-ports */
 	if(requestIOPort(IOPORT_PIC) < 0) {
 		printe("Unable to request io-port %d",IOPORT_PIC);
-		return 1;
+		return EXIT_FAILURE;
 	}
 	if(requestIOPort(IOPORT_KB_CTRL) < 0) {
 		printe("Unable to request io-port",IOPORT_KB_CTRL);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* open ourself to write keycodes into the receive-pipe (which can be read by other processes) */
 	selfFd = open("services:/keyboard",IO_WRITE);
 	if(selfFd < 0) {
 		printe("Unable to open services:/keyboard");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* we want to get notified about keyboard interrupts */
 	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0) {
 		printe("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
     /* reset keyboard */
@@ -81,7 +82,7 @@ int main(void) {
 	releaseIOPort(IOPORT_KB_CTRL);
 	unregService(id);
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 static void kbIntrptHandler(tSig sig,u32 data) {

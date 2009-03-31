@@ -6,19 +6,34 @@
 
 #include <esc/common.h>
 #include <esc/fileio.h>
+#include <esc/debug.h>
+#include <esc/io.h>
 #include <stdlib.h>
 #include <string.h>
 
 int main(void) {
-	int c1,c2,c3;
+	tFD fd;
+	u8 buffer[1024];
+
+	fd = open("file:/zeros",IO_READ);
+	if(fd < 0) {
+		printe("Unable to open file:/zeros");
+		return EXIT_FAILURE;
+	}
+
+	dbg_startTimer();
+	while(read(fd,buffer,1024) > 0);
+	dbg_stopTimer("Reading took ");
+
+	close(fd);
+
+	/*int c1,c2,c3;
 	char line[50];
 	char str[] = "- This, a sample string.";
 	char *pch;
 	s32 res;
 
-	printe("Ich bin doof %d, %x",10,0x20);
-
-	/*printf("Splitting string \"%s\" into tokens:\n",str);
+	printf("Splitting string \"%s\" into tokens:\n",str);
 	pch = strtok(str," ,.-");
 	while(pch != NULL) {
 		printf("'%s'\n",pch);
@@ -44,5 +59,5 @@ int main(void) {
 		printf("Result: %d\n",res);
 	}*/
 
-	return 0;
+	return EXIT_SUCCESS;
 }

@@ -7,6 +7,7 @@
 #include <esc/common.h>
 #include <esc/fileio.h>
 #include <esc/proc.h>
+#include <stdlib.h>
 
 #define CONS_WIDTH (80 - 3)
 
@@ -31,5 +32,5 @@ int main(void) {
 		sleep(100);
 	}
 	printf("Ready!\n");
-	return 0;
+	return EXIT_SUCCESS;
 }

@@ -10,6 +10,7 @@
 #include <esc/proc.h>
 #include <esc/heap.h>
 #include <esc/debug.h>
+#include <stdlib.h>
 #include <sllist.h>
 #include <string.h>
 
@@ -105,20 +106,20 @@ int main(void) {
 	servDefs = getServices();
 	if(servDefs == NULL) {
 		printe("Unable to read service-file");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* parse them */
 	services = parseServices(servDefs);
 	if(services == NULL) {
 		printe("Unable to parse service-file\n");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* finally load them */
 	if(!loadServices(services)) {
 		printe("Unable to load services\n");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* now load the shell */
@@ -137,7 +138,7 @@ int main(void) {
 	/* loop and wait forever */
 	while(1)
 		wait(EV_NOEVENT);
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 static sServiceLoad **parseServices(char *servFile) {

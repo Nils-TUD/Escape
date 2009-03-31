@@ -5,6 +5,7 @@
  */
 
 #include <esc/common.h>
+#include <stdlib.h>
 #include <test.h>
 
 #include "tests/theap.h"
@@ -20,5 +21,5 @@ int main(void) {
 	test_register(&tModEnv);
 	test_register(&tModMsgs);
 	test_start();
-	return 0;
+	return EXIT_SUCCESS;
 }

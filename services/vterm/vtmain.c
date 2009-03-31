@@ -13,6 +13,7 @@
 #include <esc/debug.h>
 #include <esc/proc.h>
 #include <esc/fileio.h>
+#include <stdlib.h>
 #include <sllist.h>
 #include <string.h>
 
@@ -47,21 +48,21 @@ int main(void) {
 		servIds[i] = regService(name,SERVICE_TYPE_SINGLEPIPE);
 		if(servIds[i] < 0) {
 			printe("Unable to register service '%s'",name);
-			return 1;
+			return EXIT_FAILURE;
 		}
 	}
 
 	/* init vterms */
 	if(!vterm_initAll()) {
 		printe("Unable to init vterms\n");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* open keyboard */
 	kbFd = open("services:/keyboard",IO_READ);
 	if(kbFd < 0) {
 		printe("Unable to open 'services:/keyboard'");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* request io-ports for qemu and bochs */
@@ -105,7 +106,7 @@ int main(void) {
 		unregService(servIds[i]);
 		vterm_destroy(vterm_get(i));
 	}
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 static sVTerm *getVTerm(tServ sid) {

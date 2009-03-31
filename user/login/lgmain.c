@@ -6,6 +6,7 @@
 
 #include <esc/common.h>
 #include <esc/fileio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define USERNAME "hrniels"
@@ -33,5 +34,5 @@ int main(void) {
 		}
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }

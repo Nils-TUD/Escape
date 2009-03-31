@@ -8,6 +8,7 @@
 #include <esc/heap.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -27,7 +28,7 @@ int main(int argc,char **argv) {
 		buffer = (char*)malloc(bufSize + sizeof(char));
 		if(buffer == NULL) {
 			printe("Unable to allocate memory");
-			return 1;
+			return EXIT_FAILURE;
 		}
 	}
 
@@ -49,7 +50,7 @@ int main(int argc,char **argv) {
 					buffer = (char*)realloc(buffer,bufSize * sizeof(char));
 					if(buffer == NULL) {
 						printe("Unable to allocate memory");
-						return 1;
+						return EXIT_FAILURE;
 					}
 				}
 				buffer[bufPos] = ch;
@@ -61,5 +62,5 @@ int main(int argc,char **argv) {
 	if(print)
 		free(buffer);
 	printf("Total: %d\n",count);
-	return 0;
+	return EXIT_SUCCESS;
 }

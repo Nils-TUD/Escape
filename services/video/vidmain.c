@@ -14,6 +14,7 @@
 #include <esc/mem.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* the physical memory of the 80x25 device */
@@ -54,14 +55,14 @@ int main(void) {
 	id = regService("video",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
 		printe("Unable to register service 'video'");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* map video-memory for our process */
 	videoData = (u8*)mapPhysical(VIDEO_MEM,COLS * (ROWS + 1) * 2);
 	if(videoData == NULL) {
 		printe("Unable to aquire video-memory (%p)",VIDEO_MEM);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* reserve ports for cursor */
@@ -132,7 +133,7 @@ int main(void) {
 	releaseIOPort(CURSOR_PORT_INDEX);
 	releaseIOPort(CURSOR_PORT_DATA);
 	unregService(id);
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 static void vid_setCursor(u8 row,u8 col) {

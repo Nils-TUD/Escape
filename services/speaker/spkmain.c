@@ -12,6 +12,7 @@
 #include <esc/proc.h>
 #include <esc/messages.h>
 #include <esc/signals.h>
+#include <stdlib.h>
 
 #define PIC_FREQUENCY				1193180
 #define IOPORT_PIT_SPEAKER			0x42
@@ -46,18 +47,18 @@ int main(void) {
 	id = regService("speaker",SERVICE_TYPE_SINGLEPIPE);
 	if(id < 0) {
 		printe("Unable to register service 'speaker'");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* request io-ports */
 	if(requestIOPort(IOPORT_PIT_CTRL_WORD_REG) < 0 || requestIOPort(IOPORT_PIT_SPEAKER) < 0) {
 		printe("Unable to request io-port %d or %d",IOPORT_PIT_CTRL_WORD_REG,
 				IOPORT_PIT_CTRL_WORD_REG);
-		return 1;
+		return EXIT_FAILURE;
 	}
 	if(requestIOPort(IOPORT_KB_CTRL_B) < 0) {
 		printe("Unable to request io-port %d",IOPORT_KB_CTRL_B);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	while(1) {
@@ -91,7 +92,7 @@ int main(void) {
 	releaseIOPort(IOPORT_PIT_CTRL_WORD_REG);
 	unregService(id);
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 static void timerIntrptHandler(tSig sig,u32 data) {

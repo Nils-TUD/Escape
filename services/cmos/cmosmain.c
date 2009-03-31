@@ -12,6 +12,7 @@
 #include <esc/fileio.h>
 #include <esc/ports.h>
 #include <esc/date.h>
+#include <stdlib.h>
 
 #define IOPORT_CMOS_INDEX	0x70
 #define IOPORT_CMOS_DATA	0x71
@@ -35,19 +36,19 @@ int main(void) {
 	/* request io-ports */
 	if(requestIOPorts(IOPORT_CMOS_INDEX,2)) {
 		printe("Unable to request io-ports %d .. %d",IOPORT_CMOS_INDEX,IOPORT_CMOS_INDEX + 1);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* create a date-node */
 	if(createNode("system:/date") < 0) {
 		printe("Unable to create node system:/date");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	dateFD = open("system:/date",IO_READ | IO_WRITE);
 	if(dateFD < 0) {
 		printe("Unable to open system:/date");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* refresh once per second */
@@ -59,7 +60,7 @@ int main(void) {
 	/* clean up */
 	close(dateFD);
 	releaseIOPorts(IOPORT_CMOS_INDEX,2);
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 static void cmos_refresh(void) {

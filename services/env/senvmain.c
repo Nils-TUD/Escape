@@ -13,6 +13,7 @@
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sllist.h>
 
@@ -110,12 +111,12 @@ int main(void) {
 	id = regService("env",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
 		printe("Unable to register service 'env'");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	if(setSigHandler(SIG_PROC_DIED,procDiedHandler) < 0) {
 		printe("Unable to set sig-handler for %d",SIG_PROC_DIED);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* set initial vars for proc 0 */
@@ -221,7 +222,7 @@ int main(void) {
 
 	/* clean up */
 	unregService(id);
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 static void procDiedHandler(tSig sig,u32 data) {

@@ -14,6 +14,7 @@
 #include <esc/proc.h>
 #include <esc/debug.h>
 #include <esc/signals.h>
+#include <stdlib.h>
 #include "partition.h"
 
 /* port-bases */
@@ -120,13 +121,13 @@ int main(void) {
 	if(requestIOPorts(REG_BASE_PRIMARY,8) < 0 || requestIOPorts(REG_BASE_SECONDARY,8) < 0) {
 		printe("Unable to request ATA-port %d .. %d or %d .. %d",REG_BASE_PRIMARY,
 				REG_BASE_PRIMARY + 7,REG_BASE_SECONDARY,REG_BASE_SECONDARY + 7);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	if(setSigHandler(SIG_INTRPT_ATA1,diskIntrptHandler) < 0 ||
 			setSigHandler(SIG_INTRPT_ATA2,diskIntrptHandler) < 0) {
 		printe("Unable to announce sig-handler for %d or %d",SIG_INTRPT_ATA1,SIG_INTRPT_ATA2);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	ata_detectDrives();
@@ -136,7 +137,7 @@ int main(void) {
 	id = regService("ata",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
 		printe("Unable to reg service 'ata'");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	sMsgHeader header;
@@ -198,7 +199,7 @@ int main(void) {
 	releaseIOPorts(REG_BASE_PRIMARY,8);
 	releaseIOPorts(REG_BASE_SECONDARY,8);
 	unregService(id);
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 static void ata_printDrives(void) {
@@ -222,11 +223,8 @@ static void ata_printDrives(void) {
 }
 
 static void ata_wait(void) {
-	/*gotInterrupt = false;
-	while(!gotInterrupt)
-		;*/
-	volatile u32 i;
-	for(i = 0; i < 100000; i++);
+	/*volatile u32 i;
+	for(i = 0; i < 100; i++);*/
 }
 
 static bool ata_isDrivePresent(u8 drive) {
@@ -251,8 +249,15 @@ static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 
 	u16 *buf = buffer;
 	u16 basePort = drive->basePort;
 
+	/*dbg_startTimer();*/
 	outByte(basePort + REG_DRIVE_SELECT,0x40 | (drive->slaveBit << 4));
 	ata_wait();
+	/*dbg_stopTimer("select drive");*/
+
+	/*dbg_startTimer();*/
+	/* reset control-register */
+	gotInterrupt = false;
+	outByte(basePort + REG_CONTROL,0);
 
 	/* LBA: | LBA6 | LBA5 | LBA4 | LBA3 | LBA2 | LBA1 | */
 	/*     48             32            16            0 */
@@ -274,10 +279,14 @@ static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 
 		outByte(basePort + REG_COMMAND,COMMAND_WRITE_SEC_EXT);
 	else
 		outByte(basePort + REG_COMMAND,COMMAND_READ_SEC_EXT);
+	/*dbg_stopTimer("send command");*/
 
 	for(i = 0; i < secCount; i++) {
-		/* wait until drive is ready */
+		/*dbg_startTimer();*/
 		do {
+			/* wait until drive is ready */
+			while(!gotInterrupt);
+
 			status = inByte(basePort + REG_STATUS);
 			if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == CMD_ST_DRQ)
 				break;
@@ -287,7 +296,9 @@ static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 
 			}
 		}
 		while(true);
+		/*dbg_stopTimer("waiting");*/
 
+		/*dbg_startTimer();*/
 		/* now read / write the data */
 		if(opWrite) {
 			for(x = 0; x < 256; x++)
@@ -297,6 +308,7 @@ static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 
 			for(x = 0; x < 256; x++)
 				*buf++ = inWord(basePort + REG_DATA);
 		}
+		/*dbg_stopTimer("reading");*/
 	}
 
 	return true;

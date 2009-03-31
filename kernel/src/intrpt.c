@@ -483,6 +483,8 @@ void intrpt_handler(sIntrptStackFrame stack) {
 	/*vid_printf("umodeTime=%d%%\n",(s32)(100. / (cpu_rdtsc() / (double)umodeTime)));*/
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
+		case IRQ_ATA1:
+		case IRQ_ATA2:
 			/* don't print info about intrpt */
 			break;
 

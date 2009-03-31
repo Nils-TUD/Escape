@@ -7,6 +7,7 @@
 #include <esc/common.h>
 #include <esc/date.h>
 #include <esc/fileio.h>
+#include <stdlib.h>
 
 #define MAX_DATE_LEN 100
 
@@ -20,9 +21,16 @@ int main(int argc,char **argv) {
 	if(argc == 2)
 		fmt = argv[1];
 
-	getDate(&date);
-	dateToString(str,MAX_DATE_LEN,fmt,&date);
-	printf("%s\n",str);
+	if(getDate(&date) < 0) {
+		printe("Unable to get date");
+		return EXIT_FAILURE;
+	}
 
-	return 0;
+	if(dateToString(str,MAX_DATE_LEN,fmt,&date) == 0) {
+		fprintf(stderr,"Unable to format date\n");
+		return EXIT_FAILURE;
+	}
+
+	printf("%s\n",str);
+	return EXIT_SUCCESS;
 }

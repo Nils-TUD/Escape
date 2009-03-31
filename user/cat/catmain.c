@@ -8,6 +8,7 @@
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <esc/fileio.h>
+#include <stdlib.h>
 
 #define BUF_SIZE 512
 
@@ -19,7 +20,7 @@ int main(int argc,char *argv[]) {
 
 	if(argc != 1 && argc != 2) {
 		fprintf(stderr,"Usage: %s [<file>]\n",argv[0]);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	file = stdin;
@@ -28,7 +29,7 @@ int main(int argc,char *argv[]) {
 		file = fopen(path,"r");
 		if(file == NULL) {
 			printe("Unable to open '%s'",path);
-			return 1;
+			return EXIT_FAILURE;
 		}
 	}
 
@@ -40,5 +41,5 @@ int main(int argc,char *argv[]) {
 	if(argc == 2)
 		fclose(file);
 
-	return 0;
+	return EXIT_SUCCESS;
 }

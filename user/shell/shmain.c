@@ -16,6 +16,7 @@
 #include <esc/keycodes.h>
 #include <esc/env.h>
 #include <esc/signals.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "history.h"
@@ -89,7 +90,7 @@ int main(int argc,char **argv) {
 	/* we need either the vterm as argument or "-e <cmd>" */
 	if(argc < 2) {
 		fprintf(stderr,"Unable to run a shell with no arguments\n");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* none-interactive-mode */
@@ -97,7 +98,7 @@ int main(int argc,char **argv) {
 		/* in this case we already have stdin, stdout and stderr */
 		if(strcmp(argv[1],"-e") != 0) {
 			fprintf(stderr,"Invalid shell-usage\n");
-			return 1;
+			return EXIT_FAILURE;
 		}
 
 		return shell_executeCmd(argv[2]);
@@ -111,24 +112,24 @@ int main(int argc,char **argv) {
 	vterm = atoi(argv[1] + 5);
 	if(open(servPath,IO_READ) < 0) {
 		printe("Unable to open '%s' for STDIN\n",servPath);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* open stdout */
 	if((fd = open(servPath,IO_WRITE)) < 0) {
 		printe("Unable to open '%s' for STDOUT\n",servPath);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	/* dup stdout to stderr */
 	if(dupFd(fd) < 0) {
 		printe("Unable to duplicate STDOUT to STDERR\n");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0) {
 		printe("Unable to announce sig-handler for %d",SIG_INTRPT);
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	printf("\033f\011Welcome to Escape v0.1!\033r\011\n");
@@ -141,11 +142,11 @@ int main(int argc,char **argv) {
 		buffer = malloc((MAX_CMD_LEN + 1) * sizeof(char));
 		if(buffer == NULL) {
 			printf("Not enough memory\n");
-			return 1;
+			return EXIT_FAILURE;
 		}
 
 		if(!shell_prompt())
-			return 1;
+			return EXIT_FAILURE;
 
 		/* read command */
 		shell_readLine(buffer,MAX_CMD_LEN);
@@ -155,7 +156,7 @@ int main(int argc,char **argv) {
 		shell_addToHistory(buffer);
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 static bool shell_prompt(void) {

@@ -200,8 +200,8 @@ s32 proc_releaseIOPorts(u16 start,u16 count) {
 	return 0;
 }
 
-tFile proc_fdToFile(tFD fd) {
-	tFile fileNo;
+tFileNo proc_fdToFile(tFD fd) {
+	tFileNo fileNo;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
@@ -214,7 +214,7 @@ tFile proc_fdToFile(tFD fd) {
 
 tFD proc_getFreeFd(void) {
 	tFD i;
-	tFile *fds = procs[pi].fileDescs;
+	tFileNo *fds = procs[pi].fileDescs;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(fds[i] == -1)
 			return i;
@@ -223,7 +223,7 @@ tFD proc_getFreeFd(void) {
 	return ERR_MAX_PROC_FDS;
 }
 
-s32 proc_assocFd(tFD fd,tFile fileNo) {
+s32 proc_assocFd(tFD fd,tFileNo fileNo) {
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
@@ -235,7 +235,7 @@ s32 proc_assocFd(tFD fd,tFile fileNo) {
 }
 
 tFD proc_dupFd(tFD fd) {
-	tFile f;
+	tFileNo f;
 	s32 err,nfd;
 	/* check fd */
 	if(fd < 0 || fd >= MAX_FD_COUNT)
@@ -258,7 +258,7 @@ tFD proc_dupFd(tFD fd) {
 }
 
 s32 proc_redirFd(tFD src,tFD dst) {
-	tFile fSrc,fDst;
+	tFileNo fSrc,fDst;
 	s32 err;
 
 	/* check fds */
@@ -281,8 +281,8 @@ s32 proc_redirFd(tFD src,tFD dst) {
 	return 0;
 }
 
-tFile proc_unassocFD(tFD fd) {
-	tFile fileNo;
+tFileNo proc_unassocFD(tFD fd) {
+	tFileNo fileNo;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
@@ -326,7 +326,7 @@ s32 proc_clone(tPid newPid) {
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		p->fileDescs[i] = procs[pi].fileDescs[i];
 		if(p->fileDescs[i] != -1)
-			p->fileDescs[i] = vfs_inheritFile(newPid,p->fileDescs[i]);
+			p->fileDescs[i] = vfs_inheritFileNo(newPid,p->fileDescs[i]);
 	}
 
 	/* make ready */

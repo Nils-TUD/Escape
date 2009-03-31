@@ -7,7 +7,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/date.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 #include <string.h>
 
 /* timestamp stuff */

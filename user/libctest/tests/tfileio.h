@@ -4,12 +4,12 @@
  * @copyright	2008 Nils Asmussen
  */
 
-#ifndef TBUFIO_H_
-#define TBUFIO_H_
+#ifndef TFILEIO_H_
+#define TFILEIO_H_
 
 #include <esc/common.h>
 #include <test.h>
 
-extern sTestModule tModBufio;
+extern sTestModule tModFileio;
 
-#endif /* TBUFIO_H_ */
+#endif /* TFILEIO_H_ */

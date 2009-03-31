@@ -14,7 +14,7 @@
 #	define testPrintf	vid_printf
 #	define testvPrintf	vid_vprintf
 #else
-#	include <esc/bufio.h>
+#	include <esc/fileio.h>
 
 #	define testPrintf	printf
 #	define testvPrintf	vprintf

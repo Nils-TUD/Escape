@@ -59,7 +59,7 @@ typedef struct {
 	u32 stackPages;
 	sProcSave save;
 	/* file descriptors: indices of the global file table */
-	tFile fileDescs[MAX_FD_COUNT];
+	tFileNo fileDescs[MAX_FD_COUNT];
 	/* the io-map (NULL by default) */
 	u8 *ioMap;
 	/* number of cpu-cycles the process has got so far; TODO: should be cpu-time later */
@@ -187,7 +187,7 @@ s32 proc_releaseIOPorts(u16 start,u16 count);
  * @param fd the file-descriptor
  * @return the file-number or < 0 if the fd is invalid
  */
-tFile proc_fdToFile(tFD fd);
+tFileNo proc_fdToFile(tFD fd);
 
 /**
  * Searches for a free file-descriptor
@@ -203,7 +203,7 @@ tFD proc_getFreeFd(void);
  * @param fileNo the file-number
  * @return 0 on success
  */
-s32 proc_assocFd(tFD fd,tFile fileNo);
+s32 proc_assocFd(tFD fd,tFileNo fileNo);
 
 /**
  * Duplicates the given file-descriptor
@@ -228,7 +228,7 @@ s32 proc_redirFd(tFD src,tFD dst);
  * @param fd the file-descriptor
  * @return the file-number that was associated with the fd (or ERR_INVALID_FD)
  */
-tFile proc_unassocFD(tFD fd);
+tFileNo proc_unassocFD(tFD fd);
 
 /**
  * Clones the current process into the given one, saves the new process in proc_clone() so that

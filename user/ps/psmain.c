@@ -6,7 +6,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 #include <esc/dir.h>
 #include <esc/proc.h>
 #include <string.h>

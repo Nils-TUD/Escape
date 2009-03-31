@@ -8,7 +8,7 @@
 #include <esc/env.h>
 #include <esc/dir.h>
 #include <esc/io.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 #include <string.h>
 #include "cd.h"
 

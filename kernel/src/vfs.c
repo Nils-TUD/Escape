@@ -63,7 +63,7 @@ typedef struct {
  * @param nodeNo the node-number to open
  * @return the file-number on success or the negative error-code
  */
-static tFile vfs_getFreeFile(tPid pid,u8 flags,tVFSNodeNo nodeNo);
+static tFileNo vfs_getFreeFile(tPid pid,u8 flags,tVFSNodeNo nodeNo);
 
 /**
  * The write-handler for the VFS
@@ -105,14 +105,14 @@ void vfs_init(void) {
 	vfsn_createDir(root,(char*)"services",vfs_dirReadHandler);
 }
 
-tFile vfs_inheritFile(tPid pid,tFile file) {
+tFileNo vfs_inheritFileNo(tPid pid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n = vfsn_getNode(e->nodeNo);
 	/* we can't share multipipe-service-usages since each process has his own node */
 	if(n->type == T_SERVUSE && !(n->parent->flags & VFS_SINGLEPIPE)) {
 		sVFSNode *child;
 		tVFSNodeNo nodeNo;
-		tFile newFile;
+		tFileNo newFile;
 		s32 err = vfsn_createServiceUse(n->parent,&child);
 		if(err < 0)
 			return -1;
@@ -125,7 +125,7 @@ tFile vfs_inheritFile(tPid pid,tFile file) {
 	}
 	/* if a pipe is inherited we need a new file for it (position should be different )*/
 	else if(n->type == T_PIPE) {
-		tFile newFile;
+		tFileNo newFile;
 		/* we'll get a new file since the pid is different */
 		newFile = vfs_openFile(pid,e->flags,e->nodeNo);
 		if(newFile < 0)
@@ -139,7 +139,7 @@ tFile vfs_inheritFile(tPid pid,tFile file) {
 	}
 }
 
-s32 vfs_incRefs(tFile file) {
+s32 vfs_incRefs(tFileNo file) {
 	sGFTEntry *e;
 	/* invalid file-number? */
 	if(file < 0 || file >= FILE_COUNT)
@@ -153,7 +153,7 @@ s32 vfs_incRefs(tFile file) {
 	return 0;
 }
 
-tVFSNodeNo vfs_getNodeNo(tFile file) {
+tVFSNodeNo vfs_getNodeNo(tFileNo file) {
 	sGFTEntry *e;
 
 	/* invalid file-number? */
@@ -168,11 +168,11 @@ tVFSNodeNo vfs_getNodeNo(tFile file) {
 	return e->nodeNo;
 }
 
-tFile vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
+tFileNo vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
 	sGFTEntry *e;
 
 	/* determine free file */
-	tFile f = vfs_getFreeFile(pid,flags,nodeNo);
+	tFileNo f = vfs_getFreeFile(pid,flags,nodeNo);
 	if(f < 0)
 		return f;
 
@@ -200,9 +200,9 @@ tFile vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
 	return f;
 }
 
-static tFile vfs_getFreeFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
-	tFile i;
-	tFile freeSlot = ERR_NO_FREE_FD;
+static tFileNo vfs_getFreeFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
+	tFileNo i;
+	tFileNo freeSlot = ERR_NO_FREE_FD;
 	bool isServUse = false;
 	sGFTEntry *e = &globalFileTable[0];
 
@@ -257,7 +257,7 @@ static tFile vfs_getFreeFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
 	return freeSlot;
 }
 
-tFile vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo) {
+tFileNo vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo) {
 	sVFSNode *node = vfsn_getNode(nodeNo);
 	sVFSNode *n = NODE_FIRST_CHILD(node);
 
@@ -288,7 +288,7 @@ tFile vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo) {
 	return vfs_openFile(pid,VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n));
 }
 
-bool vfs_eof(tPid pid,tFile file) {
+bool vfs_eof(tPid pid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	bool eof = true;
 
@@ -312,7 +312,7 @@ bool vfs_eof(tPid pid,tFile file) {
 	return eof;
 }
 
-s32 vfs_seek(tPid pid,tFile file,u32 position) {
+s32 vfs_seek(tPid pid,tFileNo file,u32 position) {
 	sGFTEntry *e = globalFileTable + file;
 
 	if(IS_VIRT(e->nodeNo)) {
@@ -332,7 +332,7 @@ s32 vfs_seek(tPid pid,tFile file,u32 position) {
 	return 0;
 }
 
-s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count) {
+s32 vfs_readFile(tPid pid,tFileNo file,u8 *buffer,u32 count) {
 	s32 readBytes;
 	sGFTEntry *e = globalFileTable + file;
 
@@ -392,7 +392,7 @@ s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count) {
 	return readBytes;
 }
 
-s32 vfs_writeFile(tPid pid,tFile file,u8 *buffer,u32 count) {
+s32 vfs_writeFile(tPid pid,tFileNo file,u8 *buffer,u32 count) {
 	s32 writtenBytes;
 	sVFSNode *n;
 	sGFTEntry *e = globalFileTable + file;
@@ -428,7 +428,7 @@ s32 vfs_writeFile(tPid pid,tFile file,u8 *buffer,u32 count) {
 	return writtenBytes;
 }
 
-void vfs_closeFile(tFile file) {
+void vfs_closeFile(tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 
 	/* decrement references */
@@ -605,7 +605,7 @@ s32 vfs_getClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count) {
 	return ERR_NO_CLIENT_WAITING;;
 }
 
-tFile vfs_openClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servNode) {
+tFileNo vfs_openClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servNode) {
 	sVFSNode *n;
 	tVFSNodeNo client = vfs_getClient(pid,vfsNodes,count);
 	/* error? */
@@ -1019,7 +1019,7 @@ u32 vfs_dbg_getGFTEntryCount(void) {
 }
 
 void vfs_dbg_printGFT(void) {
-	tFile i;
+	tFileNo i;
 	sGFTEntry *e = globalFileTable;
 	vid_printf("Global File Table:\n");
 	for(i = 0; i < FILE_COUNT; i++) {

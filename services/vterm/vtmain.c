@@ -12,7 +12,7 @@
 #include <esc/heap.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 #include <sllist.h>
 #include <string.h>
 

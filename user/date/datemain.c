@@ -6,7 +6,7 @@
 
 #include <esc/common.h>
 #include <esc/date.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 
 static const char *weekDays[] = {
 	"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"

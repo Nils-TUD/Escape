@@ -8,7 +8,7 @@
 #include <esc/debug.h>
 #include <esc/proc.h>
 #include <esc/io.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 #include <esc/dir.h>
 #include <esc/service.h>
 #include <esc/mem.h>

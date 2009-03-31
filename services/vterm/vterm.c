@@ -12,7 +12,7 @@
 #include <esc/keycodes.h>
 #include <esc/heap.h>
 #include <esc/signals.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 #include <string.h>
 
 #include "vterm.h"

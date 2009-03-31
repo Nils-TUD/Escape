@@ -7,12 +7,12 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/dir.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 
 #define BUF_SIZE 512
 
 int main(int argc,char *argv[]) {
-	tFD fd;
+	tFile *file;
 	s32 count;
 	char *path;
 	char buffer[BUF_SIZE];
@@ -22,23 +22,23 @@ int main(int argc,char *argv[]) {
 		return 1;
 	}
 
-	fd = STDIN_FILENO;
+	file = stdin;
 	if(argc == 2) {
 		path = abspath(argv[1]);
-		fd = open(path,IO_READ | IO_WRITE);
-		if(fd < 0) {
+		file = fopen(path,"r");
+		if(file == NULL) {
 			printLastError();
 			return 1;
 		}
 	}
 
-	while((count = fscanl(fd,buffer,BUF_SIZE - 1)) > 0) {
+	while((count = fread(buffer,sizeof(char),BUF_SIZE - 1,file)) > 0) {
 		*(buffer + count) = '\0';
-		printf("%s\n",buffer);
+		printf("%s",buffer);
 	}
 
 	if(argc == 2)
-		close(fd);
+		fclose(file);
 
 	return 0;
 }

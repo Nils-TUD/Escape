@@ -6,7 +6,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 #include "help.h"
 
 s32 shell_cmdHelp(u32 argc,char **argv) {

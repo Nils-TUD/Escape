@@ -94,7 +94,7 @@ static sMsgCloseReq msgClose = {
 
 /* the vfs-service-file */
 static sSLList *requests = NULL;
-static tFile fsServiceFile = -1;
+static tFileNo fsServiceFile = -1;
 static bool gotMsg = false;
 
 void vfsr_setFSService(tVFSNodeNo nodeNo) {

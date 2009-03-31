@@ -7,7 +7,7 @@
 #include <esc/common.h>
 #include <esc/dir.h>
 #include <esc/io.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 #include <esc/env.h>
 
 int main(int argc,char *argv[]) {

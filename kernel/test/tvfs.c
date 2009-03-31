@@ -62,7 +62,7 @@ static void test_vfs_readFileSystem(void) {
 	tVFSNodeNo nodeNo,procNode;
 	tFD fd;
 	s32 res;
-	tFile file;
+	tFileNo file;
 	sVFSDirEntryRead node;
 	u32 oldHeap,oldGFT,newHeap,newGFT;
 
@@ -133,7 +133,7 @@ static void test_vfs_readFileSystem(void) {
 	}
 
 	/* unassoc fd */
-	tFile fileNo = proc_unassocFD(fd);
+	tFileNo fileNo = proc_unassocFD(fd);
 	if(fileNo < 0) {
 		vfs_closeFile(file);
 		test_caseFailed("Unable to unassoc the fd!");
@@ -157,7 +157,7 @@ static void test_vfs_readFileProcess0(void) {
 	tVFSNodeNo nodeNo;
 	tFD fd;
 	s32 res;
-	tFile file;
+	tFileNo file;
 	sProcPub proc;
 	sProc *p0 = proc_getByPid(0);
 	u32 oldHeap,oldGFT,newHeap,newGFT;
@@ -212,7 +212,7 @@ static void test_vfs_readFileProcess0(void) {
 	if(!test_assertInt(proc.state,p0->state)) {proc_unassocFD(fd); vfs_closeFile(file); return;}
 
 	/* unassoc fd */
-	tFile fileNo = proc_unassocFD(fd);
+	tFileNo fileNo = proc_unassocFD(fd);
 	if(fileNo < 0) {
 		vfs_closeFile(file);
 		test_caseFailed("Unable to unassoc the fd!");

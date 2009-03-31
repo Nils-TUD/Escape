@@ -7,7 +7,7 @@
 #include <esc/common.h>
 #include <esc/env.h>
 #include <esc/io.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 #include "pwd.h"
 
 s32 shell_cmdPwd(u32 argc,char **argv) {

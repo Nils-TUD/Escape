@@ -55,7 +55,7 @@ struct sVFSNode {
 		/* for service-usages */
 		struct {
 			/* we have to lock reads */
-			tFile locked;
+			tFileNo locked;
 			/* a list for sending messages to the service */
 			sSLList *sendList;
 			/* a list for reading messages from the service */
@@ -84,7 +84,7 @@ void vfs_init(void);
  * @param file the file
  * @return file the file to use (may be the same)
  */
-tFile vfs_inheritFile(tPid pid,tFile file);
+tFileNo vfs_inheritFileNo(tPid pid,tFileNo file);
 
 /**
  * Increases the references of the given file
@@ -92,7 +92,7 @@ tFile vfs_inheritFile(tPid pid,tFile file);
  * @param file the file
  * @return 0 on success
  */
-s32 vfs_incRefs(tFile file);
+s32 vfs_incRefs(tFileNo file);
 
 /**
  * Determines the node-number for the given file
@@ -100,7 +100,7 @@ s32 vfs_incRefs(tFile file);
  * @param file the file
  * @return the node-number or an error (both may be negative :/, check with vfsn_isValidNodeNo())
  */
-tVFSNodeNo vfs_getNodeNo(tFile file);
+tVFSNodeNo vfs_getNodeNo(tFileNo file);
 
 /**
  * Opens the file with given number and given flags. That means it walks through the global
@@ -112,7 +112,7 @@ tVFSNodeNo vfs_getNodeNo(tFile file);
  * @param nodeNo the node-number (in the virtual or real environment)
  * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FD)
  */
-tFile vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo);
+tFileNo vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo);
 
 /**
  * Opens a file for the kernel. Creates a node for it, if not already done
@@ -121,7 +121,7 @@ tFile vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo);
  * @param nodeNo the service-node-number
  * @return the file-number or a negative error-code
  */
-tFile vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo);
+tFileNo vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo);
 
 /**
  * Checks wether we are at EOF in the given file
@@ -130,7 +130,7 @@ tFile vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo);
  * @param file the file
  * @return true if at EOF
  */
-bool vfs_eof(tPid pid,tFile file);
+bool vfs_eof(tPid pid,tFileNo file);
 
 /**
  * Sets the position for the given file
@@ -140,7 +140,7 @@ bool vfs_eof(tPid pid,tFile file);
  * @param position the new position
  * @return 0 on success
  */
-s32 vfs_seek(tPid pid,tFile file,u32 position);
+s32 vfs_seek(tPid pid,tFileNo file,u32 position);
 
 /**
  * Reads max. count bytes from the given file into the given buffer and returns the number
@@ -152,7 +152,7 @@ s32 vfs_seek(tPid pid,tFile file,u32 position);
  * @param count the max. number of bytes to read
  * @return the number of bytes read
  */
-s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count);
+s32 vfs_readFile(tPid pid,tFileNo file,u8 *buffer,u32 count);
 
 /**
  * Writes count bytes from the given buffer into the given file and returns the number of written
@@ -164,7 +164,7 @@ s32 vfs_readFile(tPid pid,tFile file,u8 *buffer,u32 count);
  * @param count the number of bytes to write
  * @return the number of bytes written
  */
-s32 vfs_writeFile(tPid pid,tFile file,u8 *buffer,u32 count);
+s32 vfs_writeFile(tPid pid,tFileNo file,u8 *buffer,u32 count);
 
 /**
  * Closes the given file. That means it calls proc_closeFile() and decrements the reference-count
@@ -172,7 +172,7 @@ s32 vfs_writeFile(tPid pid,tFile file,u8 *buffer,u32 count);
  *
  * @param file the file
  */
-void vfs_closeFile(tFile file);
+void vfs_closeFile(tFileNo file);
 
 /**
  * Creates a service-node for the given process and given name
@@ -213,7 +213,7 @@ s32 vfs_getClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count);
  * @param node will be set to the node-number from which the client has been taken
  * @return the error-code (negative) or the file to use
  */
-tFile vfs_openClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servNode);
+tFileNo vfs_openClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servNode);
 
 /**
  * Removes the service with given node-number

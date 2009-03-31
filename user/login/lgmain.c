@@ -5,7 +5,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 #include <string.h>
 
 #define USERNAME "hrniels"

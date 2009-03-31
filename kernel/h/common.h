@@ -11,7 +11,7 @@
 #include <stddef.h>
 
 /* file-number (in global file table) */
-typedef s32 tFile;
+typedef s32 tFileNo;
 
 #ifndef DEBUGGING
 #define DEBUGGING 1

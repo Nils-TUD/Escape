@@ -373,7 +373,7 @@ static void sysc_open(sSysCallStack *stack) {
 	s32 pathLen;
 	u8 flags;
 	tVFSNodeNo nodeNo;
-	tFile file;
+	tFileNo file;
 	tFD fd;
 	s32 err;
 	sProc *p = proc_getRunning();
@@ -455,7 +455,7 @@ static void sysc_open(sSysCallStack *stack) {
 static void sysc_eof(sSysCallStack *stack) {
 	tFD fd = (tFD)stack->arg1;
 	sProc *p = proc_getRunning();
-	tFile file;
+	tFileNo file;
 	bool eof;
 
 	/* get file */
@@ -473,7 +473,7 @@ static void sysc_seek(sSysCallStack *stack) {
 	tFD fd = (tFD)stack->arg1;
 	u32 position = stack->arg2;
 	sProc *p = proc_getRunning();
-	tFile file;
+	tFileNo file;
 	s32 res;
 
 	/* get file */
@@ -493,7 +493,7 @@ static void sysc_read(sSysCallStack *stack) {
 	u32 count = stack->arg3;
 	sProc *p = proc_getRunning();
 	s32 readBytes;
-	tFile file;
+	tFileNo file;
 
 	/* validate count and buffer */
 	if(count <= 0) {
@@ -528,7 +528,7 @@ static void sysc_write(sSysCallStack *stack) {
 	u32 count = stack->arg3;
 	sProc *p = proc_getRunning();
 	s32 writtenBytes;
-	tFile file;
+	tFileNo file;
 
 	/* validate count and buffer */
 	if(count <= 0) {
@@ -588,7 +588,7 @@ static void sysc_close(sSysCallStack *stack) {
 	tFD fd = (tFD)stack->arg1;
 
 	/* unassoc fd */
-	tFile fileNo = proc_unassocFD(fd);
+	tFileNo fileNo = proc_unassocFD(fd);
 	if(fileNo < 0)
 		return;
 
@@ -638,7 +638,7 @@ static void sysc_getClient(sSysCallStack *stack) {
 	sProc *p = proc_getRunning();
 	tFD fd;
 	s32 res;
-	tFile file;
+	tFileNo file;
 
 	/* check arguments */
 	if(count <= 0 || !paging_isRangeUserReadable((u32)ids,count * sizeof(tServ))) {
@@ -915,7 +915,7 @@ static void sysc_exec(sSysCallStack *stack) {
 	s32 pathLen,readBytes;
 	s32 res;
 	tVFSNodeNo nodeNo;
-	tFile file;
+	tFileNo file;
 	sProc *p = proc_getRunning();
 
 	argc = 0;

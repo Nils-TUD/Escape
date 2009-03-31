@@ -7,7 +7,7 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <esc/io.h>
-#include <esc/bufio.h>
+#include <esc/fileio.h>
 #include <stdarg.h>
 
 /**

@@ -7,6 +7,7 @@
 #include <esc/common.h>
 #include <esc/messages.h>
 #include <esc/io.h>
+#include <esc/fileio.h>
 #include <esc/proc.h>
 #include "request.h"
 #include "ext2.h"
@@ -43,19 +44,21 @@ bool ext2_readSectors(sExt2 *e,u8 *buffer,u64 lba,u16 secCount) {
 	req.data.lba = lba;
 	req.data.secCount = secCount;
 	if(write(e->ataFd,&req,sizeof(sMsgATAReq)) < 0) {
-		printLastError();
+		printe("Unable to send request to ATA");
 		return false;
 	}
 
 	/* read header */
 	if(read(e->ataFd,&res,sizeof(sMsgHeader)) < 0) {
-		printLastError();
+		printe("Reading response-header from ATA failed (drive=%d, part=%d, lba=%x, secCount=%d)",
+				req.data.drive,req.data.partition,(u32)req.data.lba,req.data.secCount);
 		return false;
 	}
 
 	/* read response */
 	if(read(e->ataFd,buffer,res.length) < 0) {
-		printLastError();
+		printe("Reading response from ATA failed (drive=%d, part=%d, lba=%x, secCount=%d)",
+				req.data.drive,req.data.partition,(u32)req.data.lba,req.data.secCount);
 		return false;
 	}
 

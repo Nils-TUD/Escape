@@ -51,5 +51,5 @@ char *fgets(char *str,int max,FILE *file) {
 }
 
 void perror(const char *msg) {
-	fprintf(stderr,"%s: %s\n",msg,strerror(errno));
+	printe(msg);
 }

@@ -8,6 +8,7 @@
 #include <esc/messages.h>
 #include <esc/service.h>
 #include <esc/io.h>
+#include <esc/fileio.h>
 #include <esc/ports.h>
 #include <esc/heap.h>
 #include <esc/debug.h>
@@ -37,30 +38,30 @@ int main(void) {
 
 	id = regService("keyboard",SERVICE_TYPE_SINGLEPIPE);
 	if(id < 0) {
-		printLastError();
+		printe("Unable to register service 'keyboard'");
 		return 1;
 	}
 
 	/* request io-ports */
 	if(requestIOPort(IOPORT_PIC) < 0) {
-		printLastError();
+		printe("Unable to request io-port %d",IOPORT_PIC);
 		return 1;
 	}
 	if(requestIOPort(IOPORT_KB_CTRL) < 0) {
-		printLastError();
+		printe("Unable to request io-port",IOPORT_KB_CTRL);
 		return 1;
 	}
 
 	/* open ourself to write keycodes into the receive-pipe (which can be read by other processes) */
 	selfFd = open("services:/keyboard",IO_WRITE);
 	if(selfFd < 0) {
-		printLastError();
+		printe("Unable to open services:/keyboard");
 		return 1;
 	}
 
 	/* we want to get notified about keyboard interrupts */
 	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0) {
-		printLastError();
+		printe("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
 		return 1;
 	}
 

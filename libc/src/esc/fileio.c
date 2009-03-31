@@ -6,6 +6,7 @@
 
 #include <esc/common.h>
 #include <esc/messages.h>
+#include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/proc.h>
@@ -13,6 +14,7 @@
 #include <esc/heap.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <sllist.h>
 
@@ -148,10 +150,9 @@ static s32 doPad(sBuffer *buf,s32 count,u16 flags);
  *
  * @param n the integer
  * @param base the base (2..16)
- * @param flags the format-flags
  * @return the width
  */
-static u8 getuwidth(u32 n,u8 base,u16 flags);
+static u8 getuwidth(u32 n,u8 base);
 
 /**
  * printf-implementation
@@ -232,8 +233,9 @@ static sIOBuffer *createBuffer(tFD fd,u8 flags);
  * Flushes the given buffer
  *
  * @param buf the buffer
+ * @return 0 on success
  */
-static void doFlush(sBuffer *buf);
+static s32 doFlush(sBuffer *buf);
 
 /* std-streams */
 tFile *stdin = (tFile*)STDIN_NOTINIT;
@@ -333,8 +335,7 @@ s32 fflush(tFile *file) {
 	sIOBuffer *buf = getBuf(file);
 	if(buf == NULL)
 		return IO_EOF;
-	doFlush(&(buf->out));
-	return 0;
+	return doFlush(&(buf->out));
 }
 
 s32 fclose(tFile *file) {
@@ -357,6 +358,34 @@ s32 fclose(tFile *file) {
 	free(buf->out.str);
 	free(buf);
 	return 0;
+}
+
+s32 printe(const char *prefix,...) {
+	s32 res = 0;
+	char *msg;
+	va_list ap;
+
+	msg = strerror(errno);
+	/* write char for testing */
+	fprintc(stderr,' ');
+	res = fflush(stderr);
+	/* if this failed, maybe we have no stderr (just the shell and childs have it) */
+	/* so try debugf */
+	if(res != 0) {
+		va_start(ap,prefix);
+		vdebugf(prefix,ap);
+		va_end(ap);
+		debugf(": %s\n",msg);
+		res = 0;
+	}
+	else {
+		fprintc(stderr,'\r');
+		va_start(ap,prefix);
+		vfprintf(stderr,prefix,ap);
+		va_end(ap);
+		fprintf(stderr,": %s\n",msg);
+	}
+	return res;
 }
 
 s32 printf(const char *fmt,...) {
@@ -568,8 +597,10 @@ s32 vsscanf(const char *str,const char *fmt,va_list ap) {
 
 static char doFprintc(sBuffer *buf,char c) {
 	if(buf->max != -1 && buf->pos >= buf->max) {
-		if(buf->type == BUF_TYPE_FILE)
-			doFlush(buf);
+		if(buf->type == BUF_TYPE_FILE) {
+			if(doFlush(buf) != 0)
+				return IO_EOF;
+		}
 		else
 			return IO_EOF;
 	}
@@ -668,7 +699,7 @@ static u8 getnwidth(s32 n,u16 flags) {
 	return width;
 }
 
-static u8 getuwidth(u32 n,u8 base,u16 flags) {
+static u8 getuwidth(u32 n,u8 base) {
 	u8 width = 1;
 	while(n >= base) {
 		n /= base;
@@ -681,7 +712,7 @@ static s32 doFprintuPad(sBuffer *buf,u32 u,u8 base,u8 pad,u16 flags) {
 	s32 count = 0;
 	/* pad left - spaces */
 	if(!(flags & FFL_PADRIGHT) && !(flags & FFL_PADZEROS) && pad > 0) {
-		u32 width = getuwidth(u,base,flags);
+		u32 width = getuwidth(u,base);
 		count += doPad(buf,pad - width,flags);
 	}
 	/* print base-prefix */
@@ -700,7 +731,7 @@ static s32 doFprintuPad(sBuffer *buf,u32 u,u8 base,u8 pad,u16 flags) {
 	}
 	/* pad left - zeros */
 	if(!(flags & FFL_PADRIGHT) && (flags & FFL_PADZEROS) && pad > 0) {
-		u32 width = getuwidth(u,base,flags);
+		u32 width = getuwidth(u,base);
 		count += doPad(buf,pad - width,flags);
 	}
 	/* print number */
@@ -735,7 +766,7 @@ static s32 doPad(sBuffer *buf,s32 count,u16 flags) {
 }
 
 static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
-	char c,b,pad,padchar;
+	char c,b,pad;
 	char *s;
 	s32 *ptr;
 	s32 n;
@@ -1215,11 +1246,15 @@ static sIOBuffer *createBuffer(tFD fd,u8 flags) {
 	return buf;
 }
 
-static void doFlush(sBuffer *buf) {
+static s32 doFlush(sBuffer *buf) {
+	s32 res = 0;
 	if(buf->type == BUF_TYPE_FILE && buf->pos > 0) {
-		write(buf->fd,buf->str,buf->pos * sizeof(char));
+		if(write(buf->fd,buf->str,buf->pos * sizeof(char)) < 0)
+			res = IO_EOF;
 		buf->pos = 0;
 		/* a process switch improves the performance by far :) */
-		yield();
+		if(res >= 0)
+			yield();
 	}
+	return res;
 }

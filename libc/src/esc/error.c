@@ -48,8 +48,3 @@ void printStackTrace(void) {
 		trace++;
 	}
 }
-
-void printLastError(void) {
-	debugf("[proc %d] Error %d: %s\n",getpid(),errno,strerror(errno));
-	printStackTrace();
-}

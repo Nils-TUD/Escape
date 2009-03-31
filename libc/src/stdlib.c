@@ -33,7 +33,7 @@ void srand(unsigned int seed) {
 }
 
 void abort(void) {
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 char *getenv(const char *name) {

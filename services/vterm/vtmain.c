@@ -46,21 +46,21 @@ int main(void) {
 		sprintf(name,"vterm%d",i);
 		servIds[i] = regService(name,SERVICE_TYPE_SINGLEPIPE);
 		if(servIds[i] < 0) {
-			printLastError();
+			printe("Unable to register service '%s'",name);
 			return 1;
 		}
 	}
 
 	/* init vterms */
 	if(!vterm_initAll()) {
-		debugf("Unable to init vterms\n");
+		printe("Unable to init vterms\n");
 		return 1;
 	}
 
 	/* open keyboard */
 	kbFd = open("services:/keyboard",IO_READ);
 	if(kbFd < 0) {
-		printLastError();
+		printe("Unable to open 'services:/keyboard'");
 		return 1;
 	}
 

@@ -26,9 +26,4 @@ u32 *getStackTrace(void);
  */
 void printStackTrace(void);
 
-/**
- * Prints the last error-message
- */
-void printLastError(void);
-
 #endif /*COMMON_H_*/

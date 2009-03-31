@@ -16,7 +16,9 @@ int main(void) {
 	char *pch;
 	s32 res;
 
-	printf("Splitting string \"%s\" into tokens:\n",str);
+	printe("Ich bin doof %d, %x",10,0x20);
+
+	/*printf("Splitting string \"%s\" into tokens:\n",str);
 	pch = strtok(str," ,.-");
 	while(pch != NULL) {
 		printf("'%s'\n",pch);
@@ -40,7 +42,7 @@ int main(void) {
 		scanl(line,50);
 		res = system(line);
 		printf("Result: %d\n",res);
-	}
+	}*/
 
 	return 0;
 }

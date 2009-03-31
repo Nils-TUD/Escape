@@ -18,14 +18,14 @@ int main(int argc,char *argv[]) {
 	if(argc == 1) {
 		path = getEnv("CWD");
 		if(path == NULL) {
-			printf("Unable to get CWD\n");
+			printe("Unable to get CWD\n");
 			return 1;
 		}
 	}
 	else if(argc == 2)
 		path = abspath(argv[1]);
 	else {
-		printf("Usage: %s [<dir>]\n",argv[0]);
+		fprintf(stderr,"Usage: %s [<dir>]\n",argv[0]);
 		return 1;
 	}
 
@@ -36,7 +36,7 @@ int main(int argc,char *argv[]) {
 		closedir(dd);
 	}
 	else {
-		printf("Unable to open '%s'\n",path);
+		printe("Unable to open '%s'\n",path);
 		return 1;
 	}
 

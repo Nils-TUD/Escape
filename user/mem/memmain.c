@@ -15,12 +15,12 @@ int main(void) {
 
 	fd = open("system:/memusage",IO_READ);
 	if(fd < 0) {
-		printf("Unable to open 'system:/memusage'\n");
+		printe("Unable to open 'system:/memusage'\n");
 		return 1;
 	}
 
 	if(read(fd,&mem,sizeof(sMemUsage)) < 0) {
-		printLastError();
+		printe("Unable to read mem-usage");
 		return 1;
 	}
 

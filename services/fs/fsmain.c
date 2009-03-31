@@ -6,6 +6,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/fileio.h>
 #include <esc/service.h>
 #include <esc/proc.h>
 #include <esc/heap.h>
@@ -70,7 +71,7 @@ int main(void) {
 	/* register service */
 	id = regService("fs",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
-		printLastError();
+		printe("Unable to register service 'fs'");
 		return 1;
 	}
 

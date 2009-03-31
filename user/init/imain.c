@@ -6,6 +6,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/fileio.h>
 #include <esc/proc.h>
 #include <esc/heap.h>
 #include <esc/debug.h>
@@ -103,20 +104,20 @@ int main(void) {
 	/* now read the services we should load */
 	servDefs = getServices();
 	if(servDefs == NULL) {
-		printLastError();
+		printe("Unable to read service-file");
 		return 1;
 	}
 
 	/* parse them */
 	services = parseServices(servDefs);
 	if(services == NULL) {
-		debugf("Unable to parse service-file\n");
+		printe("Unable to parse service-file\n");
 		return 1;
 	}
 
 	/* finally load them */
 	if(!loadServices(services)) {
-		debugf("Unable to load services\n");
+		printe("Unable to load services\n");
 		return 1;
 	}
 

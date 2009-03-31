@@ -9,6 +9,7 @@
 #include <esc/service.h>
 #include <esc/messages.h>
 #include <esc/io.h>
+#include <esc/fileio.h>
 #include <esc/ports.h>
 #include <esc/date.h>
 
@@ -33,19 +34,19 @@ static tFD dateFD;
 int main(void) {
 	/* request io-ports */
 	if(requestIOPorts(IOPORT_CMOS_INDEX,2)) {
-		printLastError();
+		printe("Unable to request io-ports %d .. %d",IOPORT_CMOS_INDEX,IOPORT_CMOS_INDEX + 1);
 		return 1;
 	}
 
 	/* create a date-node */
 	if(createNode("system:/date") < 0) {
-		printLastError();
+		printe("Unable to create node system:/date");
 		return 1;
 	}
 
 	dateFD = open("system:/date",IO_READ | IO_WRITE);
 	if(dateFD < 0) {
-		printLastError();
+		printe("Unable to open system:/date");
 		return 1;
 	}
 

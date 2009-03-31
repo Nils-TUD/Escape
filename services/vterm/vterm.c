@@ -244,14 +244,14 @@ static bool vterm_init(sVTerm *vt) {
 	/* open video */
 	vidFd = open("services:/video",IO_WRITE);
 	if(vidFd < 0) {
-		printLastError();
+		printe("Unable to open 'services:/video'");
 		return false;
 	}
 
 	/* open speaker */
 	speakerFd = open("services:/speaker",IO_WRITE);
 	if(speakerFd < 0) {
-		printLastError();
+		printe("Unable to open 'services:/speaker'");
 		return false;
 	}
 
@@ -259,7 +259,7 @@ static bool vterm_init(sVTerm *vt) {
 	sprintf(path,"services:/%s",vt->name);
 	selfFd = open(path,IO_WRITE);
 	if(selfFd < 0) {
-		printLastError();
+		printe("Unable to open '%s'",path);
 		return false;
 	}
 
@@ -285,7 +285,7 @@ static bool vterm_init(sVTerm *vt) {
 	vt->rlBufPos = 0;
 	vt->rlBuffer = (char*)malloc(vt->rlBufSize * sizeof(char));
 	if(vt->rlBuffer == NULL) {
-		printLastError();
+		printe("Unable to allocate memory for vterm-buffer");
 		return false;
 	}
 

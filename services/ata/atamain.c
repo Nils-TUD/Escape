@@ -8,6 +8,7 @@
 #include <esc/service.h>
 #include <esc/messages.h>
 #include <esc/io.h>
+#include <esc/fileio.h>
 #include <esc/ports.h>
 #include <esc/heap.h>
 #include <esc/proc.h>
@@ -117,13 +118,14 @@ int main(void) {
 
 	/* request ports */
 	if(requestIOPorts(REG_BASE_PRIMARY,8) < 0 || requestIOPorts(REG_BASE_SECONDARY,8) < 0) {
-		printLastError();
+		printe("Unable to request ATA-port %d .. %d or %d .. %d",REG_BASE_PRIMARY,
+				REG_BASE_PRIMARY + 7,REG_BASE_SECONDARY,REG_BASE_SECONDARY + 7);
 		return 1;
 	}
 
 	if(setSigHandler(SIG_INTRPT_ATA1,diskIntrptHandler) < 0 ||
 			setSigHandler(SIG_INTRPT_ATA2,diskIntrptHandler) < 0) {
-		printLastError();
+		printe("Unable to announce sig-handler for %d or %d",SIG_INTRPT_ATA1,SIG_INTRPT_ATA2);
 		return 1;
 	}
 
@@ -133,7 +135,7 @@ int main(void) {
 	/* reg service */
 	id = regService("ata",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
-		printLastError();
+		printe("Unable to reg service 'ata'");
 		return 1;
 	}
 
@@ -172,7 +174,7 @@ int main(void) {
 								free(res);
 							}
 							else
-								printLastError();
+								printe("Unable to allocate mem");
 						}
 					}
 					break;
@@ -181,7 +183,7 @@ int main(void) {
 						read(fd,&req,header.length);
 						if(ata_isDrivePresent(req.drive)) {
 							if(!ata_readWrite(drives + req.drive,true,(u16*)(&req + 1),req.lba,req.secCount))
-								debugf("Write failed\n");
+								printe("Write failed");
 							/* TODO we should respond something, right? */
 						}
 						break;

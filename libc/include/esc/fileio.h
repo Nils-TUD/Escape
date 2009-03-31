@@ -163,6 +163,14 @@ s32 printu(s32 n,u8 base);
 s32 fprintu(tFile *file,s32 u,u8 base);
 
 /**
+ * Prints "<prefix>: <lastError>" to stderr
+ *
+ * @param msg the prefix of the message
+ * @return the number of written chars
+ */
+s32 printe(const char *prefix,...);
+
+/**
  * Formated output to STDOUT. Supports:
  * 	%d: signed integer
  * 	%u: unsigned integer, base 10

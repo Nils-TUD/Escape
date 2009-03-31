@@ -12,6 +12,7 @@
 #include <esc/signals.h>
 #include <esc/debug.h>
 #include <esc/io.h>
+#include <esc/fileio.h>
 #include <string.h>
 #include <sllist.h>
 
@@ -108,12 +109,12 @@ int main(void) {
 
 	id = regService("env",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
-		printLastError();
+		printe("Unable to register service 'env'");
 		return 1;
 	}
 
 	if(setSigHandler(SIG_PROC_DIED,procDiedHandler) < 0) {
-		printLastError();
+		printe("Unable to set sig-handler for %d",SIG_PROC_DIED);
 		return 1;
 	}
 

@@ -18,7 +18,7 @@ int main(int argc,char *argv[]) {
 	char buffer[BUF_SIZE];
 
 	if(argc != 1 && argc != 2) {
-		printf("Usage: %s [<file>]\n",argv[0]);
+		fprintf(stderr,"Usage: %s [<file>]\n",argv[0]);
 		return 1;
 	}
 
@@ -27,7 +27,7 @@ int main(int argc,char *argv[]) {
 		path = abspath(argv[1]);
 		file = fopen(path,"r");
 		if(file == NULL) {
-			printLastError();
+			printe("Unable to open '%s'",path);
 			return 1;
 		}
 	}

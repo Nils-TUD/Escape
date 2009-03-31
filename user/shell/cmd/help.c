@@ -15,7 +15,7 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 
 	printf("Currently you can use the following commands/programs:\n");
 	printf("\tcat [<file>]					Read file or from STDIN and print\n");
-	printf("\tdate							Print current date and timestamp\n");
+	printf("\tdate [<format>]					Print date (with specified format or %%c)\n");
 	printf("\tkill <pid>						Kill process\n");
 	printf("\tlibctest						Run libc-tests\n");
 	printf("\tlogin							Just for fun ;)\n");

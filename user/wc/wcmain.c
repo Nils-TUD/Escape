@@ -26,7 +26,7 @@ int main(int argc,char **argv) {
 		bufSize = 20;
 		buffer = (char*)malloc(bufSize + sizeof(char));
 		if(buffer == NULL) {
-			printLastError();
+			printe("Unable to allocate memory");
 			return 1;
 		}
 	}
@@ -48,7 +48,7 @@ int main(int argc,char **argv) {
 					bufSize *= 2;
 					buffer = (char*)realloc(buffer,bufSize * sizeof(char));
 					if(buffer == NULL) {
-						printLastError();
+						printe("Unable to allocate memory");
 						return 1;
 					}
 				}

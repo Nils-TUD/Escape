@@ -6,6 +6,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/fileio.h>
 #include <esc/heap.h>
 #include <esc/proc.h>
 #include "ext2.h"
@@ -27,7 +28,7 @@ bool ext2_init(sExt2 *e) {
 	e->ataFd = fd;
 	if(!ext2_readSectors(e,(u8*)&(e->superBlock),2,1)) {
 		close(e->ataFd);
-		printLastError();
+		printe("Unable to read super-block");
 		return false;
 	}
 
@@ -35,7 +36,7 @@ bool ext2_init(sExt2 *e) {
 	/* TODO determine block-number of group-table */
 	if(!ext2_readBlocks(e,(u8*)e->groups,2,1)) {
 		close(e->ataFd);
-		printLastError();
+		printe("Unable to read group-table");
 		return false;
 	}
 

@@ -48,14 +48,14 @@ int main(void) {
 				close(dfd);
 			}
 			else {
-				printf("Unable to open '%s'\n",ppath);
+				printe("Unable to open '%s'\n",ppath);
 				return 1;
 			}
 		}
 		closedir(dd);
 	}
 	else {
-		printf("Unable to open '%s'\n",path);
+		printe("Unable to open '%s'\n",path);
 		return 1;
 	}
 

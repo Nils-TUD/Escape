@@ -6,6 +6,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/fileio.h>
 #include <esc/ports.h>
 #include <esc/service.h>
 #include <esc/proc.h>
@@ -44,17 +45,18 @@ int main(void) {
 	/* register service */
 	id = regService("speaker",SERVICE_TYPE_SINGLEPIPE);
 	if(id < 0) {
-		printLastError();
+		printe("Unable to register service 'speaker'");
 		return 1;
 	}
 
 	/* request io-ports */
 	if(requestIOPort(IOPORT_PIT_CTRL_WORD_REG) < 0 || requestIOPort(IOPORT_PIT_SPEAKER) < 0) {
-		printLastError();
+		printe("Unable to request io-port %d or %d",IOPORT_PIT_CTRL_WORD_REG,
+				IOPORT_PIT_CTRL_WORD_REG);
 		return 1;
 	}
 	if(requestIOPort(IOPORT_KB_CTRL_B) < 0) {
-		printLastError();
+		printe("Unable to request io-port %d",IOPORT_KB_CTRL_B);
 		return 1;
 	}
 

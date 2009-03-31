@@ -7,6 +7,7 @@
 #include <esc/common.h>
 #include <esc/service.h>
 #include <esc/io.h>
+#include <esc/fileio.h>
 #include <esc/ports.h>
 #include <esc/messages.h>
 #include <esc/heap.h>
@@ -52,14 +53,14 @@ int main(void) {
 
 	id = regService("video",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
-		printLastError();
+		printe("Unable to register service 'video'");
 		return 1;
 	}
 
 	/* map video-memory for our process */
 	videoData = (u8*)mapPhysical(VIDEO_MEM,COLS * (ROWS + 1) * 2);
 	if(videoData == NULL) {
-		printLastError();
+		printe("Unable to aquire video-memory (%p)",VIDEO_MEM);
 		return 1;
 	}
 

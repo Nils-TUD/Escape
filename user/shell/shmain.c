@@ -88,7 +88,7 @@ int main(int argc,char **argv) {
 
 	/* we need either the vterm as argument or "-e <cmd>" */
 	if(argc < 2) {
-		debugf("Unable to run a shell with no arguments\n");
+		fprintf(stderr,"Unable to run a shell with no arguments\n");
 		return 1;
 	}
 
@@ -110,24 +110,24 @@ int main(int argc,char **argv) {
 	/* parse vterm-number from "vtermX" */
 	vterm = atoi(argv[1] + 5);
 	if(open(servPath,IO_READ) < 0) {
-		debugf("Unable to open '%s' for STDIN\n",servPath);
+		printe("Unable to open '%s' for STDIN\n",servPath);
 		return 1;
 	}
 
 	/* open stdout */
 	if((fd = open(servPath,IO_WRITE)) < 0) {
-		debugf("Unable to open '%s' for STDOUT\n",servPath);
+		printe("Unable to open '%s' for STDOUT\n",servPath);
 		return 1;
 	}
 
 	/* dup stdout to stderr */
 	if(dupFd(fd) < 0) {
-		debugf("Unable to duplicate STDOUT to STDERR\n");
+		printe("Unable to duplicate STDOUT to STDERR\n");
 		return 1;
 	}
 
 	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0) {
-		printLastError();
+		printe("Unable to announce sig-handler for %d",SIG_INTRPT);
 		return 1;
 	}
 
@@ -193,7 +193,7 @@ static s32 shell_executeCmd(char *line) {
 	if(cmdCount > 1) {
 		pipes = (s32*)malloc((cmdCount - 1) * sizeof(s32));
 		if(pipes == NULL) {
-			printLastError();
+			printe("Unable to allocate memory for pipes");
 			tok_free(tokens,tokCount);
 			cmd_free(cmds,cmdCount);
 			return -1;
@@ -230,7 +230,7 @@ static s32 shell_executeCmd(char *line) {
 				compl_free(scmds);
 				tok_free(tokens,tokCount);
 				cmd_free(cmds,cmdCount);
-				printLastError();
+				printe("Unable to open system:/pipe");
 				return -1;
 			}
 		}

@@ -9,6 +9,7 @@
 
 #include "common.h"
 #include "vfs.h"
+#include <fsinterface.h>
 
 /*
  * dirs: /, /fs, /system, /system/processes, /system/services
@@ -69,6 +70,15 @@ sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo);
  * @return the path
  */
 char *vfsn_getPath(tVFSNodeNo nodeNo);
+
+/**
+ * Retrieves information about the given node
+ *
+ * @param nodeNo the node-number
+ * @param info will be filled
+ * @return 0 on success
+ */
+s32 vfsn_getNodeInfo(tVFSNodeNo nodeNo,sFileInfo *info);
 
 /**
  * Resolves the given path to a VFS-node

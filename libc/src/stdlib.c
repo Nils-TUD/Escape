@@ -41,24 +41,34 @@ char *getenv(const char *name) {
 }
 
 int system(const char *cmd) {
+	tPid child;
 	/* check wether we have a shell */
 	if(cmd == NULL) {
 		tFD fd = open("file:/bin/shell",IO_READ);
 		if(fd >= 0) {
 			close(fd);
-			return 0;
+			return EXIT_SUCCESS;
 		}
-		return 1;
+		return EXIT_FAILURE;
 	}
 
-	if(fork() == 0) {
+	child = fork();
+	if(child == 0) {
 		const char *args[] = {"file:/bin/shell","-e",cmd,NULL};
 		exec(args[0],args);
+
+		/* if we're here there is something wrong */
+		printe("Exec of '%s' failed",args[0]);
 		exit(EXIT_FAILURE);
 	}
+	else if(child < 0) {
+		printe("Fork failed");
+		return EXIT_FAILURE;
+	}
+
 	/* TODO we need the return-value of the child.. */
 	wait(EV_CHILD_DIED);
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 void *bsearch(const void *key,const void *base,size_t num,size_t size,fCompare cmp) {

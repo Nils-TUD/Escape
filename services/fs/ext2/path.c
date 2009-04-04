@@ -20,7 +20,7 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
 	sCachedInode *cnode = NULL;
 	tInodeNo res;
 	char *p = path;
-	u32 pos,blocks;
+	u32 pos;
 
 	if(*p != '/')
 		return ERR_INVALID_PATH;
@@ -34,10 +34,10 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
 
 	pos = strchri(p,'/');
 	while(*p) {
+		s32 rem = cnode->inode.size;
 		sDirEntry *eBak;
 		sDirEntry *entry;
-		blocks = SECS_TO_BLOCKS(e,cnode->inode.blocks);
-		entry = (sDirEntry*)malloc(sizeof(u8) * BLOCK_SIZE(e) * blocks);
+		entry = (sDirEntry*)malloc(sizeof(u8) * cnode->inode.size);
 		if(entry == NULL) {
 			ext2_icache_release(e,cnode);
 			return ERR_NOT_ENOUGH_MEM;
@@ -50,7 +50,7 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
 			return ERR_FS_READ_FAILED;
 		}
 
-		while(entry->inode != 0) {
+		while(rem > 0 && entry->inode != 0) {
 			if(pos == entry->nameLen && strncmp(entry->name,p,pos) == 0) {
 				p += pos;
 				ext2_icache_release(e,cnode);
@@ -78,13 +78,12 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
 			}
 
 			/* to next dir-entry */
-			/* TODO the next entry might be in another block; so we should read a directory
-			 * block by block. atm we cause a page-fault in this case :/ */
+			rem -= entry->recLen;
 			entry = (sDirEntry*)((u8*)entry + entry->recLen);
 		}
 
 		/* no match? */
-		if(entry->inode == 0) {
+		if(rem <= 0 || entry->inode == 0) {
 			free(eBak);
 			ext2_icache_release(e,cnode);
 			return ERR_PATH_NOT_FOUND;

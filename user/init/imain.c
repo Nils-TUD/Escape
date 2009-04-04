@@ -91,6 +91,7 @@ static sServiceLoad **services = NULL;
 
 int main(void) {
 	tFD fd;
+	tPid child;
 	char *servDefs;
 
 	/* wait for fs; we need it for exec */
@@ -122,18 +123,28 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	/* now load the shell */
-	if(fork() == 0) {
-		const char *args[] = {"file:/bin/shell","vterm0",NULL};
-		exec((char*)"file:/bin/shell",args);
-		exit(0);
-	}
+	/* now load the shells */
 	/* TODO temporary ;) */
-	if(fork() == 0) {
-		const char *args[] = {"file:/bin/shell","vterm1",NULL};
-		exec((char*)"file:/bin/shell",args);
-		exit(0);
+
+	child = fork();
+	if(child == 0) {
+		const char *args[] = {"file:/bin/shell","vterm0",NULL};
+		exec(args[0],args);
+		printe("Exec of '%s' failed",args[0]);
+		exit(EXIT_FAILURE);
 	}
+	else if(child < 0)
+		printe("Fork failed");
+
+	child = fork();
+	if(child == 0) {
+		const char *args[] = {"file:/bin/shell","vterm1",NULL};
+		exec(args[0],args);
+		printe("Exec of '%s' failed",args[0]);
+		exit(EXIT_FAILURE);
+	}
+	else if(child < 0)
+		printe("Fork failed");
 
 	/* loop and wait forever */
 	while(1)
@@ -337,6 +348,7 @@ static bool loadServices(sServiceLoad **loads) {
 static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
 	u32 i;
 	tFD fd;
+	tPid child;
 	char path[MAX_SERVICE_PATH_LEN + 1] = "file:/services/";
 	char servName[MAX_SERVICE_PATH_LEN + 1] = "services:/";
 	char *sname;
@@ -359,10 +371,15 @@ static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
 
 	/* now load the service */
 	strcat(path,load->name);
-	if(fork() == 0) {
+	child = fork();
+	if(child == 0) {
 		exec(path,NULL);
-		/* just to be sure... */
-		exit(0);
+		printe("Exec of '%s' failed",path);
+		exit(EXIT_FAILURE);
+	}
+	else if(child < 0) {
+		printe("Fork failed");
+		return false;
 	}
 
 	/* wait for all specified waits */

@@ -91,6 +91,48 @@ sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo) {
 	return nodes + VIRT_INDEX(nodeNo);
 }
 
+s32 vfsn_getNodeInfo(tVFSNodeNo nodeNo,sFileInfo *info) {
+	sVFSNode *n = nodes + nodeNo;
+
+	if(n->flags == 0)
+		return ERR_INVALID_NODENO;
+
+	/* some infos are not available here */
+	/* TODO a lot of is missing here */
+	info->device = 0;
+	info->rdevice = 0;
+	info->accesstime = 0;
+	info->modifytime = 0;
+	info->createtime = 0;
+	info->blockCount = 0;
+	info->blockSize = 512;
+	info->inodeNo = nodeNo;
+	info->linkCount = 0;
+	info->uid = 0;
+	info->gid = 0;
+	info->mode = 0;
+	if(n->type == T_DIR)
+		info->mode |= MODE_TYPE_DIR;
+	else if(n->type == T_LINK)
+		info->mode |= MODE_TYPE_LINK;
+	else
+		info->mode |= MODE_TYPE_FILE;
+	/* TODO we should use mode natively  in VFS */
+	if(n->flags & VFS_READ)
+		info->mode |= MODE_OWNER_READ | MODE_GROUP_READ | MODE_OTHER_READ;
+	if(n->flags & VFS_WRITE) {
+		if(n->type == T_PIPE || n->type == T_SERVUSE)
+			info->mode |= MODE_OWNER_WRITE | MODE_GROUP_WRITE | MODE_OTHER_WRITE;
+		else
+			info->mode |= MODE_OWNER_WRITE;
+	}
+	if(n->type == T_SERVUSE)
+		info->size = 0;
+	else
+		info->size = n->data.def.pos;
+	return 0;
+}
+
 char *vfsn_getPath(tVFSNodeNo nodeNo) {
 	static char path[MAX_PATH_LEN];
 	u32 nlen,len = 0;

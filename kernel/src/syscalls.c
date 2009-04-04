@@ -28,7 +28,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define SYSCALL_COUNT					30
+#define SYSCALL_COUNT					31
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode)		((stack)->number = (errorCode))
@@ -252,6 +252,14 @@ static void sysc_exec(sSysCallStack *stack);
  * @param char* the path
  */
 static void sysc_createNode(sSysCallStack *stack);
+/**
+ * Retrieves information about the given file
+ *
+ * @param const char* path the path of the file
+ * @param tFileInfo* info will be filled
+ * @return s32 0 on success
+ */
+static void sysc_getFileInfo(sSysCallStack *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -293,6 +301,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 27 */	{sysc_sleep,				1},
 	/* 28 */	{sysc_createNode,			1},
 	/* 29 */	{sysc_seek,					2},
+	/* 30 */	{sysc_getFileInfo,			2},
 };
 
 void sysc_handle(sIntrptStackFrame *intrptStack) {
@@ -347,8 +356,8 @@ static void sysc_fork(sSysCallStack *stack) {
 	paging_handlePageFault(KERNEL_AREA_V_ADDR - PAGE_SIZE - 1);
 
 	/* error? */
-	if(res == -1) {
-		SYSC_RET1(stack,-1);
+	if(res < 0) {
+		SYSC_ERROR(stack,res);
 	}
 	/* child? */
 	else if(res == 1) {
@@ -1107,6 +1116,35 @@ static void sysc_createNode(sSysCallStack *stack) {
 		return;
 	}
 
+	SYSC_RET1(stack,0);
+}
+
+static void sysc_getFileInfo(sSysCallStack *stack) {
+	char *path = (char*)stack->arg1;
+	sFileInfo *info = (sFileInfo*)stack->arg2;
+	tVFSNodeNo nodeNo;
+	s32 res;
+
+	if(!sysc_isStringReadable(path) || !paging_isRangeUserWritable((u32)info,sizeof(sFileInfo))) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	res = vfsn_resolvePath(path,&nodeNo);
+	if(res == ERR_REAL_PATH) {
+		sProc *p = proc_getRunning();
+		/* skip file: */
+		if(strncmp(path,"file:",5) == 0)
+			path += 5;
+		res = vfsr_getFileInfo(p->pid,path,info);
+	}
+	else if(res == 0)
+		res = vfsn_getNodeInfo(nodeNo,info);
+
+	if(res < 0) {
+		SYSC_ERROR(stack,res);
+		return;
+	}
 	SYSC_RET1(stack,0);
 }
 

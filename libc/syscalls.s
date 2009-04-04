@@ -31,6 +31,7 @@ SYSCALL_LOADMODS		equ	26
 SYSCALL_SLEEP				equ 27
 SYSCALL_CREATENODE	equ	28
 SYSCALL_SEEK				equ 29
+SYSCALL_STAT				equ 30
 
 ; the IRQ for syscalls
 SYSCALL_IRQ					equ	0x30
@@ -77,6 +78,27 @@ SYSCALL_IRQ					equ	0x30
 	ret
 %endmacro
 
+%macro SYSC_RET_0ARGS_ERR 2
+[global %1]
+%1:
+	push	ebp
+	mov		ebp,esp
+	push	DWORD 0								; needed for ret-value
+	push	DWORD %2							; push syscall-number
+	int		SYSCALL_IRQ
+	pop		eax										; pop error-code
+	test	eax,eax
+	jz		%1NoError							; no-error?
+	mov		[errno],eax						; store error-code
+	add		esp,4
+	jmp		%1Ret
+%1NoError:
+	pop		eax
+%1Ret:
+	leave
+	ret
+%endmacro
+
 %macro SYSC_RET_1ARGS_ERR 2
 [global %1]
 %1:
@@ -89,7 +111,7 @@ SYSCALL_IRQ					equ	0x30
 	pop		eax										; pop error-code
 	test	eax,eax
 	jz		%1NoError							; no-error?
-	mov		[errno],eax				; store error-code
+	mov		[errno],eax						; store error-code
 	add		esp,4
 	jmp		%1Ret
 %1NoError:
@@ -113,7 +135,7 @@ SYSCALL_IRQ					equ	0x30
 	pop		eax										; pop error-code
 	test	eax,eax
 	jz		%1NoError							; no-error?
-	mov		[errno],eax				; store error-code
+	mov		[errno],eax						; store error-code
 	add		esp,8
 	jmp		%1Ret
 %1NoError:
@@ -140,7 +162,7 @@ SYSCALL_IRQ					equ	0x30
 	pop		eax										; pop error-code
 	test	eax,eax
 	jz		%1NoError							; no-error?
-	mov		[errno],eax				; store error-code
+	mov		[errno],eax						; store error-code
 	add		esp,12
 	jmp		%1Ret
 %1NoError:
@@ -169,7 +191,7 @@ SYSCALL_IRQ					equ	0x30
 	pop		eax										; pop error-code
 	test	eax,eax
 	jz		%1NoError							; no-error?
-	mov		[errno],eax				; store error-code
+	mov		[errno],eax						; store error-code
 	add		esp,16
 	jmp		%1Ret
 %1NoError:

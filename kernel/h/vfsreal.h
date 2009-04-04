@@ -8,6 +8,7 @@
 #define VFSREAL_H_
 
 #include "common.h"
+#include <fsinterface.h>
 
 /**
  * Sets the node-number of the FS-service
@@ -34,7 +35,17 @@ void vfsr_checkForMsgs(void);
  * @param path the path
  * @return 0 on success or the error-code
  */
-s32 vfsr_openFile(tPid pid,u8 flags,char *path);
+s32 vfsr_openFile(tPid pid,u8 flags,const char *path);
+
+/**
+ * Retrieves information about the given (real!) path
+ *
+ * @param pid the process-id
+ * @param path the path in the real filesystem
+ * @param info should be filled
+ * @return 0 on success
+ */
+s32 vfsr_getFileInfo(tPid pid,const char *path,sFileInfo *info);
 
 /**
  * Reads from the given inode at <offset> <count> bytes into the given buffer

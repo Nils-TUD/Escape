@@ -10,15 +10,17 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "cd.h"
 
 s32 shell_cmdCd(u32 argc,char **argv) {
 	char *path;
 	tFD fd;
+	sFileInfo info;
 
 	if(argc != 2) {
 		printf("Usage: cd <directory>\n");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	path = abspath(argv[1]);
@@ -29,15 +31,19 @@ s32 shell_cmdCd(u32 argc,char **argv) {
 		return 1;
 	}
 
-	/* check if the path exists */
-	if((fd = open(path,IO_READ)) >= 0) {
-		close(fd);
-		setEnv("CWD",path);
-	}
-	else {
-		printf("Directory '%s' does not exist\n",path);
-		return 1;
+	/* retrieve file-info */
+	if(getFileInfo(path,&info) < 0) {
+		printe("Unable to get file-info for '%s'",path);
+		return EXIT_FAILURE;
 	}
 
-	return 0;
+	/* check if it is a directory */
+	if(!(info.mode & MODE_TYPE_DIR)) {
+		fprintf(stderr,"%s is no directory\n",path);
+		return EXIT_FAILURE;
+	}
+
+	/* finally change dir */
+	setEnv("CWD",path);
+	return EXIT_SUCCESS;
 }

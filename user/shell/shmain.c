@@ -206,8 +206,9 @@ static s32 shell_executeCmd(char *line) {
 	for(i = 0; i < cmdCount; i++) {
 		scmds = compl_get(cmd->arguments[0],strlen(cmd->arguments[0]),2,true,true);
 
-		/* we need exactly one match and it has to be TYPE_EXTERN or TYPE_BUILTIN */
-		if(scmds == NULL || scmds[0] == NULL || scmds[1] != NULL || scmds[0]->type == TYPE_PATH) {
+		/* we need exactly one match and it has to be executable */
+		if(scmds == NULL || scmds[0] == NULL || scmds[1] != NULL ||
+				(scmds[0]->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC)) == 0) {
 			printf("%s: Command not found\n",cmd->arguments[0]);
 			/* close open pipe */
 			if(cmd->dup & DUP_STDIN)
@@ -275,13 +276,19 @@ static s32 shell_executeCmd(char *line) {
 				/* exec */
 				strcat(path,scmds[0]->name);
 				exec(path,(const char**)cmd->arguments);
-				exit(0);
-			}
 
-			/* wait for child */
-			waitingPid = pid;
-			wait(EV_CHILD_DIED);
-			waitingPid = INVALID_PID;
+				/* if we're here, there is something wrong */
+				printe("Exec of '%s' failed",path);
+				exit(EXIT_FAILURE);
+			}
+			else if(pid < 0)
+				printe("Fork failed");
+			else {
+				/* wait for child */
+				waitingPid = pid;
+				wait(EV_CHILD_DIED);
+				waitingPid = INVALID_PID;
+			}
 		}
 
 		/* if the process has read from the pipe, close it and walk to next */
@@ -490,6 +497,7 @@ static void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 		sCmdToken *tokens;
 		char *token;
 		u32 tokLen,tokCount;
+		bool searchPath;
 
 		/* get tokens */
 		line[ilength] = '\0';
@@ -503,13 +511,16 @@ static void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 		else
 			token = (char*)"";
 		tokLen = strlen(token);
-		matches = compl_get(token,tokLen,0,false,tokCount <= 1);
+		searchPath = tokCount <= 1 && (tokCount == 0 || strchr(tokens[0].str,'/') == NULL);
+		matches = compl_get(token,tokLen,0,false,searchPath);
 		if(matches == NULL || matches[0] == NULL)
 			return;
 
 		/* found one match? */
 		if(matches[1] == NULL) {
+			char last;
 			tabCount = 0;
+
 			/* add chars */
 			cmdlen = strlen(matches[0]->name);
 			if(matches[0]->complStart == -1)
@@ -521,6 +532,14 @@ static void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 				orgLine[ilength++] = c;
 				printc(c);
 			}
+
+			/* append '/' or ' ' depending on wether its a dir or not */
+			last = (matches[0]->mode & MODE_TYPE_DIR) ? '/' : ' ';
+			if(orgLine[ilength - 1] != last) {
+				orgLine[ilength++] = last;
+				printc(last);
+			}
+
 			/* set length and cursor */
 			*length = ilength;
 			*cursorPos = ilength;

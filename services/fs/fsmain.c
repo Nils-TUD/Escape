@@ -12,6 +12,7 @@
 #include <esc/heap.h>
 #include <esc/debug.h>
 #include <esc/messages.h>
+#include <errors.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fsinterface.h>
@@ -27,6 +28,11 @@ typedef struct {
 	sMsgHeader header;
 	sMsgDataFSOpenResp data;
 } __attribute__((packed)) sMsgOpenResp;
+/* stat-response */
+typedef struct {
+	sMsgHeader header;
+	sMsgDataFSStatResp data;
+} __attribute__((packed)) sMsgStatResp;
 /* write-response */
 typedef struct {
 	sMsgHeader header;
@@ -42,6 +48,16 @@ static sMsgOpenResp openResp = {
 	.data = {
 		.pid = 0,
 		.inodeNo = 0
+	}
+};
+static sMsgStatResp statResp = {
+	.header = {
+		.id = MSG_FS_STAT_RESP,
+		.length = sizeof(sMsgDataFSStatResp)
+	},
+	.data = {
+		.pid = 0,
+		.error = 0
 	}
 };
 static sMsgWriteResp writeResp = {
@@ -112,6 +128,48 @@ int main(void) {
 							openResp.data.pid = data->pid;
 							openResp.data.inodeNo = no;
 							write(fd,&openResp,sizeof(sMsgOpenResp));
+							free(data);
+						}
+					}
+					break;
+
+					case MSG_FS_STAT: {
+						/* read data */
+						sMsgDataFSStatReq *data = (sMsgDataFSStatReq*)malloc(sizeof(u8) * header.length);
+						if(data != NULL) {
+							tInodeNo no;
+							sCachedInode *cnode;
+							read(fd,data,header.length);
+
+							no = ext2_resolvePath(&ext2,data->path);
+							if(no >= 0) {
+								cnode = ext2_icache_request(&ext2,no);
+								if(cnode != NULL) {
+									sFileInfo *info = &(statResp.data.info);
+									info->accesstime = cnode->inode.accesstime;
+									info->modifytime = cnode->inode.modifytime;
+									info->createtime = cnode->inode.createtime;
+									info->blockCount = cnode->inode.blocks;
+									info->blockSize = BLOCK_SIZE(&ext2);
+									info->device = 0;
+									info->rdevice = 0;
+									info->uid = cnode->inode.uid;
+									info->gid = cnode->inode.gid;
+									info->inodeNo = cnode->inodeNo;
+									info->linkCount = cnode->inode.linkCount;
+									info->mode = cnode->inode.mode;
+									info->size = cnode->inode.size;
+									statResp.data.error = 0;
+								}
+								else
+									statResp.data.error = ERR_NOT_ENOUGH_MEM;
+							}
+							else
+								statResp.data.error = no;
+
+							/* write response */
+							statResp.data.pid = data->pid;
+							write(fd,&statResp,sizeof(sMsgStatResp));
 							free(data);
 						}
 					}

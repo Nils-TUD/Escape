@@ -305,11 +305,11 @@ s32 proc_clone(tPid newPid) {
 
 	/* first create the VFS node (we may not have enough mem) */
 	if(!vfs_createProcess(newPid,&vfsinfo_procReadHandler))
-		return -1;
+		return ERR_NOT_ENOUGH_MEM;
 
 	/* clone page-dir */
 	if((pdirFrame = paging_clonePageDir(&stackFrame,procs + newPid)) == 0)
-		return -1;
+		return ERR_NOT_ENOUGH_MEM;
 
 	/* set page-dir and pages for segments */
 	p = procs + newPid;

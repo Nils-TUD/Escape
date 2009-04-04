@@ -52,9 +52,9 @@ tPid getppid(void);
 tPid getppidof(tPid pid);
 
 /**
- * Clones the current process. Will return the pid for the old process and 0 for the new one.
+ * Clones the current process
  *
- * @return new pid or 0 or -1 if failed
+ * @return new pid for parent, 0 for child, < 0 if failed
  */
 s32 fork(void);
 

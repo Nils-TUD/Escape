@@ -903,11 +903,14 @@ static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
 			/* string */
 			case 's':
 				s = va_arg(ap, char*);
-				if(pad > 0) {
+				if(pad > 0 && !(flags & FFL_PADRIGHT)) {
 					width = getswidth(s);
 					count += doPad(buf,pad - width,flags);
 				}
-				count += doFprints(buf,s);
+				n = doFprints(buf,s);
+				if(pad > 0 && (flags & FFL_PADRIGHT))
+					count += doPad(buf,pad - n,flags);
+				count += n;
 				break;
 			/* character */
 			case 'c':

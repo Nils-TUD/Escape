@@ -22,6 +22,7 @@
 typedef s32 (*fCommand)(u32 argc,char **argv);
 typedef struct {
 	u8 type;
+	u16 mode;
 	char name[MAX_CMDNAME_LEN + 1];
 	fCommand func;
 	s32 complStart;

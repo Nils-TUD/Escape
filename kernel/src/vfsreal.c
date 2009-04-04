@@ -140,6 +140,29 @@ void vfsr_checkForMsgs(void) {
 			}
 			break;
 
+			case MSG_FS_STAT_RESP: {
+				/* read data */
+				sMsgDataFSStatResp *res = kheap_alloc(sizeof(sMsgDataFSStatResp));
+				/* TODO better way? */
+				if(res == NULL)
+					panic("Out of kernel-heapspace");
+
+				vfs_readFile(KERNEL_PID,fsServiceFile,(u8*)res,sizeof(sMsgDataFSStatResp));
+
+				/* find the request for the pid */
+				req = vfsr_getRequestByPid(res->pid);
+				if(req != NULL) {
+					/* remove request and give him the inode-number */
+					sll_removeFirst(requests,req);
+					req->finished = true;
+					req->inodeNo = res->error;
+					req->buffer = (u8*)res;
+					/* the process can continue now */
+					proc_wakeup(res->pid,EV_RECEIVED_MSG);
+				}
+			}
+			break;
+
 			case MSG_FS_READ_RESP: {
 				/* read data */
 				sMsgDataFSReadResp *res = kheap_alloc(header.length);
@@ -186,7 +209,7 @@ void vfsr_checkForMsgs(void) {
 	gotMsg = false;
 }
 
-s32 vfsr_openFile(tPid pid,u8 flags,char *path) {
+s32 vfsr_openFile(tPid pid,u8 flags,const char *path) {
 	sMsgDataFSOpenReq *data;
 	sMsgHeader *msg;
 	s32 res;
@@ -238,6 +261,60 @@ s32 vfsr_openFile(tPid pid,u8 flags,char *path) {
 	res = vfs_openFile(pid,flags,req->inodeNo);
 	kheap_free(req);
 	return res;
+}
+
+s32 vfsr_getFileInfo(tPid pid,const char *path,sFileInfo *info) {
+	sMsgDataFSStatReq *data;
+	sMsgHeader *msg;
+	s32 res;
+	u32 pathLen = strlen(path);
+	u32 msgLen;
+	sRequest *req;
+	sMsgDataFSStatResp *resp;
+
+	if(fsServiceFile < 0)
+		return ERR_FS_NOT_FOUND;
+
+	/* allocate mem */
+	msgLen = sizeof(sMsgDataFSStatReq) + (pathLen + 1) * sizeof(char);
+	msg = kheap_alloc(sizeof(sMsgHeader) + msgLen);
+	if(msg == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+
+	/* copy data */
+	msg->id = MSG_FS_STAT;
+	msg->length = msgLen;
+	data = (sMsgDataFSStatReq*)(msg + 1);
+	data->pid = pid;
+	memcpy(data->path,path,pathLen + 1);
+
+	/* write message to fs */
+	res = vfs_writeFile(KERNEL_PID,fsServiceFile,(u8*)msg,sizeof(sMsgHeader) + msgLen);
+	if(res < 0) {
+		kheap_free(msg);
+		return res;
+	}
+
+	/* enqueue request and wait for a reply of the fs */
+	kheap_free(msg);
+	req = vfsr_addRequest(pid);
+	if(req == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+	vfsr_waitForReply(pid,req);
+
+	/* error? */
+	if(req->inodeNo < 0) {
+		tInodeNo no = req->inodeNo;
+		kheap_free(req);
+		return no;
+	}
+
+	/* copy to info-struct */
+	resp = (sMsgDataFSStatResp*)req->buffer;
+	memcpy((void*)info,(void*)&(resp->info),sizeof(sFileInfo));
+	kheap_free(resp);
+	kheap_free(req);
+	return 0;
 }
 
 s32 vfsr_readFile(tPid pid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {

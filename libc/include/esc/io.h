@@ -9,6 +9,7 @@
 
 #include <esc/common.h>
 #include <stdarg.h>
+#include <fsinterface.h>
 
 /* IO flags */
 #define IO_READ			1
@@ -38,6 +39,15 @@ tFD open(const char *path,u8 mode);
  * @return the actual read number of bytes; negative if an error occurred
  */
 s32 read(tFD fd,void *buffer,u32 count);
+
+/**
+ * Retrieves information about the given file
+ *
+ * @param path the path of the file
+ * @param info will be filled
+ * @return 0 on success
+ */
+s32 getFileInfo(const char *path,sFileInfo *info);
 
 /**
  * Checks wether we are at EOF

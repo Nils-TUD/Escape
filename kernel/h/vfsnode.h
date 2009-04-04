@@ -25,7 +25,7 @@
 #define NADDR_TO_VNNO(naddr)		((((u32)(naddr) - (u32)&nodes[0]) / sizeof(sVFSNode)) | (1 << 30))
 
 /* fetches the first-child from the given node, taking care of links */
-#define NODE_FIRST_CHILD(node)		(((node)->type != T_LINK) ? \
+#define NODE_FIRST_CHILD(node)		(!MODE_IS_LINK((node)->mode) ? \
 	((node)->firstChild) : (((sVFSNode*)((node)->data.def.cache))->firstChild))
 
 /* checks wether the given node-number is a virtual one */
@@ -151,7 +151,7 @@ sVFSNode *vfsn_createInfo(tPid pid,sVFSNode *parent,char *name,fRead handler);
  * @param type single-pipe or multi-pipe
  * @return the node
  */
-sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,char *name,u8 type);
+sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,char *name,u32 type);
 
 /**
  * Creates a service-use-node

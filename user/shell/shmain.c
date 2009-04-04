@@ -534,7 +534,7 @@ static void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 			}
 
 			/* append '/' or ' ' depending on wether its a dir or not */
-			last = (matches[0]->mode & MODE_TYPE_DIR) ? '/' : ' ';
+			last = MODE_IS_DIR(matches[0]->mode) ? '/' : ' ';
 			if(orgLine[ilength - 1] != last) {
 				orgLine[ilength++] = last;
 				printc(last);

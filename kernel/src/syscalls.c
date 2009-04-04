@@ -607,9 +607,15 @@ static void sysc_close(sSysCallStack *stack) {
 
 static void sysc_regService(sSysCallStack *stack) {
 	const char *name = (const char*)stack->arg1;
-	u8 type = (u8)stack->arg2;
+	u32 type = (u32)stack->arg2;
 	sProc *p = proc_getRunning();
 	tServ res;
+
+	/* convert type */
+	if(type & 0x4)
+		type = MODE_SERVICE_SINGLEPIPE;
+	else
+		type = 0;
 
 	res = vfs_createService(p->pid,name,type);
 	if(res < 0) {

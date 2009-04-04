@@ -15,17 +15,19 @@
 #define SERVICE_CLIENT_KERNEL		"k"
 #define SERVICE_CLIENT_ALL			"a"
 
-/* the possible node-types */
-typedef enum {T_DIR,T_LINK,T_INFO,T_SERVICE,T_SERVUSE,T_PIPECON,T_PIPE} eNodeType;
+/* some additional types for the kernel */
+#define MODE_TYPE_SERVUSE			00200000
+#define MODE_TYPE_SERVICE			00400000
+#define MODE_TYPE_PIPECON			01000000
+#define MODE_TYPE_PIPE				02000000
+#define MODE_SERVICE_SINGLEPIPE		04000000
 
-/* vfs-node and GFT flags */
+/* GFT flags */
 enum {
 	/* no read and write */
 	VFS_NOACCESS = 0,
 	VFS_READ = 1,
-	VFS_WRITE = 2,
-	/* for services: not a node for each client-process but one for all */
-	VFS_SINGLEPIPE = 4
+	VFS_WRITE = 2
 };
 
 /* a node in our virtual file system */
@@ -37,10 +39,10 @@ typedef void (*fReadCallBack)(sVFSNode *node,void *buffer);
 
 struct sVFSNode {
 	char *name;
-	u8 type;
-	u8 flags;
 	/* number of open files for this node */
 	u8 refCount;
+	/* 0 means unused; stores permissions and the type of node */
+	u32 mode;
 	/* for the vfs-structure */
 	sVFSNode *parent;
 	sVFSNode *prev;
@@ -76,6 +78,16 @@ struct sVFSNode {
  * Initializes the virtual file system
  */
 void vfs_init(void);
+
+/**
+ * Checks wether the process with given pid has the permission to do the given stuff with <nodeNo>.
+ *
+ * @param pid the process-id
+ * @param nodeNo the node-number
+ * @param flags specifies what you want to do (VFS_READ | VFS_WRITE)
+ * @return 0 if the process has permission or the error-code
+ */
+s32 vfs_hasAccess(tPid pid,tVFSNodeNo nodeNo,u8 flags);
 
 /**
  * Inherits the given file for the current process
@@ -182,7 +194,7 @@ void vfs_closeFile(tFileNo file);
  * @param type single-pipe or multi-pipe
  * @return 0 if ok, negative if an error occurred
  */
-s32 vfs_createService(tPid pid,const char *name,u8 type);
+s32 vfs_createService(tPid pid,const char *name,u32 type);
 
 /**
  * Checks wether there is a message for the given process. That if the process is a service

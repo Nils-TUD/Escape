@@ -105,7 +105,7 @@ int main(int argc,char *argv[]) {
 			getDateOf(&date,entry->modifytime);
 			dateToString(dateStr,20,"%Y-%m-%d %H:%M",&date);
 			printf("%s ",dateStr);
-			if(entry->mode & MODE_TYPE_DIR)
+			if(MODE_IS_DIR(entry->mode))
 				printf("\033f\x09%s\033r\x0",entry->name);
 			else if(entry->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
 				printf("\033f\x02%s\033r\x0",entry->name);
@@ -119,7 +119,7 @@ int main(int argc,char *argv[]) {
 				printf("\n");
 				pos = 0;
 			}
-			if(entry->mode & MODE_TYPE_DIR)
+			if(MODE_IS_DIR(entry->mode))
 				printf("\033f\x09%-*s\033r\x0",maxWidth,entry->name);
 			else if(entry->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
 				printf("\033f\x02%-*s\033r\x0",maxWidth,entry->name);
@@ -139,9 +139,9 @@ int main(int argc,char *argv[]) {
 static s32 compareEntries(const void *a,const void *b) {
 	sFullDirEntry *ea = *(sFullDirEntry**)a;
 	sFullDirEntry *eb = *(sFullDirEntry**)b;
-	if((ea->mode & MODE_TYPE_DIR) == (eb->mode & MODE_TYPE_DIR))
+	if(MODE_IS_DIR(ea->mode) == MODE_IS_DIR(eb->mode))
 		return strcmp(ea->name,eb->name);
-	if(ea->mode & MODE_TYPE_DIR)
+	if(MODE_IS_DIR(ea->mode))
 		return -1;
 	return 1;
 }
@@ -241,7 +241,7 @@ static void freeEntries(sFullDirEntry **entries,u32 count) {
 }
 
 static void printMode(u16 mode) {
-	printPerm(mode & MODE_TYPE_DIR,MODE_TYPE_DIR,'d');
+	printPerm(MODE_IS_DIR(mode),1,'d');
 	printPerm(mode,MODE_OWNER_READ,'r');
 	printPerm(mode,MODE_OWNER_WRITE,'w');
 	printPerm(mode,MODE_OWNER_EXEC,'x');

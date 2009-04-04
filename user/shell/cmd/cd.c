@@ -38,7 +38,7 @@ s32 shell_cmdCd(u32 argc,char **argv) {
 	}
 
 	/* check if it is a directory */
-	if(!(info.mode & MODE_TYPE_DIR)) {
+	if(!MODE_IS_DIR(info.mode)) {
 		fprintf(stderr,"%s is no directory\n",path);
 		return EXIT_FAILURE;
 	}

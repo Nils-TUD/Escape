@@ -84,7 +84,7 @@ bool vfsn_isValidNodeNo(tVFSNodeNo nodeNo) {
 bool vfsn_isOwnServiceNode(tVFSNodeNo nodeNo) {
 	sProc *p = proc_getRunning();
 	sVFSNode *node = nodes + nodeNo;
-	return node->owner == p->pid && node->type == T_SERVICE;
+	return node->owner == p->pid && (node->mode & MODE_TYPE_SERVICE);
 }
 
 sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo) {
@@ -94,7 +94,7 @@ sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo) {
 s32 vfsn_getNodeInfo(tVFSNodeNo nodeNo,sFileInfo *info) {
 	sVFSNode *n = nodes + nodeNo;
 
-	if(n->flags == 0)
+	if(n->mode == 0)
 		return ERR_INVALID_NODENO;
 
 	/* some infos are not available here */
@@ -110,23 +110,8 @@ s32 vfsn_getNodeInfo(tVFSNodeNo nodeNo,sFileInfo *info) {
 	info->linkCount = 0;
 	info->uid = 0;
 	info->gid = 0;
-	info->mode = 0;
-	if(n->type == T_DIR)
-		info->mode |= MODE_TYPE_DIR;
-	else if(n->type == T_LINK)
-		info->mode |= MODE_TYPE_LINK;
-	else
-		info->mode |= MODE_TYPE_FILE;
-	/* TODO we should use mode natively  in VFS */
-	if(n->flags & VFS_READ)
-		info->mode |= MODE_OWNER_READ | MODE_GROUP_READ | MODE_OTHER_READ;
-	if(n->flags & VFS_WRITE) {
-		if(n->type == T_PIPE || n->type == T_SERVUSE)
-			info->mode |= MODE_OWNER_WRITE | MODE_GROUP_WRITE | MODE_OTHER_WRITE;
-		else
-			info->mode |= MODE_OWNER_WRITE;
-	}
-	if(n->type == T_SERVUSE)
+	info->mode = n->mode;
+	if((n->mode & MODE_TYPE_SERVUSE))
 		info->size = 0;
 	else
 		info->size = n->data.def.pos;
@@ -236,7 +221,7 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo) {
 			if(!*path)
 				break;
 
-			if(n->type == T_SERVICE)
+			if(n->mode & MODE_TYPE_SERVICE)
 				break;
 
 			/* move to childs of this node */
@@ -250,33 +235,29 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo) {
 	if(n == NULL)
 		return ERR_VFS_NODE_NOT_FOUND;
 
-	/* handle service */
-	switch(n->type) {
-		case T_SERVICE: {
-			sVFSNode *child;
-			s32 err = vfsn_createServiceUse(n,&child);
-			if(err < 0)
-				return err;
+	/* handle special node-types */
+	if((n->mode & MODE_TYPE_SERVICE)) {
+		sVFSNode *child;
+		s32 err = vfsn_createServiceUse(n,&child);
+		if(err < 0)
+			return err;
 
-			/* set new node as resolved one */
-			*nodeNo = NADDR_TO_VNNO(child);
-			return 0;
-		}
+		/* set new node as resolved one */
+		*nodeNo = NADDR_TO_VNNO(child);
+		return 0;
+	}
+	if((n->mode & MODE_TYPE_PIPECON)) {
+		sVFSNode *child;
+		s32 err = vfsn_createPipe(n,&child);
+		if(err < 0)
+			return err;
 
-		case T_PIPECON: {
-			sVFSNode *child;
-			s32 err = vfsn_createPipe(n,&child);
-			if(err < 0)
-				return err;
-
-			*nodeNo = NADDR_TO_VNNO(child);
-			return 0;
-		}
-
-		case T_LINK:
-			/* resolve link */
-			n = (sVFSNode*)n->data.def.cache;
-			break;
+		*nodeNo = NADDR_TO_VNNO(child);
+		return 0;
+	}
+	if(MODE_IS_LINK(n->mode)) {
+		/* resolve link */
+		n = (sVFSNode*)n->data.def.cache;
 	}
 
 	/* virtual node */
@@ -304,6 +285,7 @@ sVFSNode *vfsn_createNode(sVFSNode *parent,char *name) {
 
 	/* ensure that all values are initialized properly */
 	node->name = name;
+	node->mode = 0;
 	node->owner = INVALID_PID;
 	node->refCount = 0;
 	node->next = NULL;
@@ -328,12 +310,12 @@ sVFSNode *vfsn_createDir(sVFSNode *parent,char *name,fRead handler) {
 	if(dotdot == NULL)
 		return NULL;
 
-	node->type = T_DIR;
-	node->flags = VFS_READ;
+	node->mode = MODE_TYPE_DIR | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OWNER_EXEC |
+		MODE_OTHER_READ | MODE_OTHER_EXEC;
 	node->readHandler = handler;
-	dot->type = T_LINK;
+	dot->mode = MODE_TYPE_LINK | MODE_OWNER_READ | MODE_OTHER_READ;
 	dot->data.def.cache = node;
-	dotdot->type = T_LINK;
+	dotdot->mode = MODE_TYPE_LINK | MODE_OWNER_READ | MODE_OTHER_READ;
 	/* the root-node and all "protocol-roots" have no parent */
 	dotdot->data.def.cache = parent == NULL || parent->parent == NULL ? node : parent;
 	return node;
@@ -344,8 +326,7 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name) {
 	if(node == NULL)
 		return NULL;
 
-	node->type = T_PIPECON;
-	node->flags = VFS_NOACCESS;
+	node->mode = MODE_TYPE_PIPECON | MODE_OWNER_READ | MODE_OWNER_WRITE;
 	node->readHandler = NULL;
 	return node;
 }
@@ -356,21 +337,18 @@ sVFSNode *vfsn_createInfo(tPid pid,sVFSNode *parent,char *name,fRead handler) {
 		return NULL;
 
 	node->owner = pid;
-	node->type = T_INFO;
-	node->flags = VFS_READ;
+	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ;
 	node->readHandler = handler;
 	return node;
 }
 
-sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,char *name,u8 type) {
+sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,char *name,u32 type) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
-	/* TODO */
 	node->owner = pid;
-	node->type = T_SERVICE;
-	node->flags = VFS_NOACCESS | type;
+	node->mode = MODE_TYPE_SERVICE | MODE_OWNER_READ | MODE_OTHER_READ | type;
 	node->readHandler = NULL;
 	return node;
 }
@@ -381,8 +359,8 @@ sVFSNode *vfsn_createServiceUseNode(sVFSNode *parent,char *name,fRead handler) {
 		return NULL;
 
 	node->owner = proc_getRunning()->pid;
-	node->type = T_SERVUSE;
-	node->flags = VFS_READ | VFS_WRITE;
+	node->mode = MODE_TYPE_SERVUSE | MODE_OWNER_READ | MODE_OWNER_WRITE |
+		MODE_OTHER_READ | MODE_OTHER_WRITE;
 	node->readHandler = handler;
 	node->data.servuse.locked = -1;
 	return node;
@@ -423,7 +401,7 @@ s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
 	sVFSNode *m;
 	sProc *p = proc_getRunning();
 
-	if(n->flags & VFS_SINGLEPIPE) {
+	if(n->mode & MODE_SERVICE_SINGLEPIPE) {
 		/* check if the node does already exist */
 		m = NODE_FIRST_CHILD(n);
 		while(m != NULL) {
@@ -460,7 +438,7 @@ s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
 	/* ok, create a service-usage-node */
 	m = vfsn_createServiceUseNode(n,name,vfs_serviceUseReadHandler);
 	if(m == NULL) {
-		if((n->flags & VFS_SINGLEPIPE) == 0)
+		if((n->mode & MODE_SERVICE_SINGLEPIPE) == 0)
 			kheap_free(name);
 		return ERR_NOT_ENOUGH_MEM;
 	}
@@ -504,8 +482,8 @@ static sVFSNode *vfsn_createPipeNode(tPid pid,sVFSNode *parent,char *name) {
 		return NULL;
 
 	node->owner = pid;
-	node->type = T_PIPE;
-	node->flags = VFS_READ | VFS_WRITE;
+	node->mode = MODE_TYPE_PIPE | MODE_OWNER_READ | MODE_OWNER_WRITE |
+		MODE_OTHER_READ | MODE_OTHER_WRITE;
 	node->readHandler = vfs_defReadHandler;
 	return node;
 }
@@ -556,13 +534,12 @@ void vfsn_dbg_printNode(sVFSNode *node) {
 	vid_printf("VFSNode @ 0x%x:\n",node);
 	if(node) {
 		vid_printf("\tname: %s\n",node->name);
-		vid_printf("\ttype: %s\n",node->type == T_DIR ? "DIR" : node->type == T_INFO ? "INFO" : "SERVICE");
 		vid_printf("\tfirstChild: 0x%x\n",node->firstChild);
 		vid_printf("\tlastChild: 0x%x\n",node->lastChild);
 		vid_printf("\tnext: 0x%x\n",node->next);
 		vid_printf("\tprev: 0x%x\n",node->prev);
 		vid_printf("\towner: %d\n",node->owner);
-		if(node->type == T_SERVUSE) {
+		if(node->mode & MODE_TYPE_SERVUSE) {
 			vid_printf("\tSendList: 0x%x\n",node->data.servuse.sendList);
 			vid_printf("\tRecvList: 0x%x\n",node->data.servuse.recvList);
 		}

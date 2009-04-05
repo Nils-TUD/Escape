@@ -425,8 +425,9 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 		/* TODO we might have to add stack-pages... */
 		paging_isRangeUserWritable((u32)(esp - 11),10 * sizeof(u32));
 
-		/* save regs */
+		/* the ret-instruction of sigRet() should go to the old eip */
 		*--esp = stack->eip;
+		/* save regs */
 		*--esp = stack->eax;
 		*--esp = stack->ebx;
 		*--esp = stack->ecx;
@@ -485,9 +486,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 			break;
 
 		case IRQ_TIMER:
-			/* TODO don't resched if we come from kernel-mode! */
-			vassert(stack.ds == 0x23,"Timer interrupt from kernel-mode!");
-
+			/* acknoledge the interrupt here because timer_intrpt() may cause a process-switch()! */
 			intrpt_eoi(stack.intrptNo);
 			timer_intrpt();
 			break;
@@ -501,16 +500,23 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
 			/* #PF */
 			if(stack.intrptNo == EX_PAGE_FAULT) {
+				u32 addr = cpu_getCR2();
 				/*vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
 						stack.eip,proc_getRunning()->pid);*/
-				if(!paging_handlePageFault(cpu_getCR2())) {
-					panic("Page fault for address=0x%08x @ 0x%x",cpu_getCR2(),stack.eip);
+
+				/* first check if the process wants to write to COW-page */
+				if(!paging_handlePageFault(addr)) {
+					/* ok, now lets check if the process wants more stack-pages */
+					if(proc_extendStack(addr) < 0) {
+						/* hm...there is something wrong :) */
+						/* TODO later the process should be killed here */
+						panic("Page fault for address=0x%08x @ 0x%x",addr,stack.eip);
+					}
 				}
 				break;
 			}
 
 			/* count consecutive occurrences */
-			/* TODO we should consider irqs, too! */
 			if(lastEx == stack.intrptNo) {
 				exCount++;
 
@@ -533,8 +539,8 @@ void intrpt_handler(sIntrptStackFrame stack) {
 					break;
 				}
 
-				vid_printf("GPF @ 0x%x\n",stack.eip);
-				printStackTrace(getUserStackTrace(p,&stack));
+				/* TODO later the process should be killed here */
+				panic("GPF @ 0x%x",stack.eip);
 				break;
 			}
 			/* fall through */

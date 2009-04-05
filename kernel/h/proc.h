@@ -235,6 +235,14 @@ s32 proc_redirFd(tFD src,tFD dst);
 tFileNo proc_unassocFD(tFD fd);
 
 /**
+ * Extends the stack of the current process so that the given address is usable
+ *
+ * @param address the address to make valid
+ * @return 0 on success
+ */
+s32 proc_extendStack(u32 address);
+
+/**
  * Clones the current process into the given one, saves the new process in proc_clone() so that
  * it will start there on proc_resume(). The function returns -1 if there is
  * not enough memory.

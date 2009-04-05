@@ -70,7 +70,7 @@ tPid proc_getFreePid(void) {
 		if(procs[pid].state == ST_UNUSED)
 			return pid;
 	}
-	return 0;
+	return INVALID_PID;
 }
 
 sProc *proc_getRunning(void) {
@@ -297,6 +297,20 @@ tFileNo proc_unassocFD(tFD fd) {
 
 	procs[pi].fileDescs[fd] = -1;
 	return fileNo;
+}
+
+s32 proc_extendStack(u32 address) {
+	sProc *p = procs + pi;
+	s32 newPages;
+	address &= ~(PAGE_SIZE - 1);
+	newPages = ((KERNEL_AREA_V_ADDR - address) >> PAGE_SIZE_SHIFT) - p->stackPages;
+	if(newPages > 0) {
+		if(!proc_segSizesValid(p->textPages,p->dataPages,p->stackPages + newPages))
+			return ERR_NOT_ENOUGH_MEM;
+		if(!proc_changeSize(newPages,CHG_STACK))
+			return ERR_NOT_ENOUGH_MEM;
+	}
+	return 0;
 }
 
 s32 proc_clone(tPid newPid) {

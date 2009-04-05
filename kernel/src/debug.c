@@ -15,8 +15,8 @@ void dbg_startTimer(void) {
 	start = cpu_rdtsc();
 }
 
-void dbg_stopTimer(void) {
+void dbg_stopTimer(const char *prefix) {
 	u64 diff = cpu_rdtsc() - start;
 	u32 *ptr = (u32*)&diff;
-	vid_printf("Clock cycles: 0x%08x%08x\n",*(ptr + 1),*ptr);
+	vid_printf("%s: 0x%08x%08x\n",prefix,*(ptr + 1),*ptr);
 }

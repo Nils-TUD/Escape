@@ -12,53 +12,51 @@
 #include <sllist.h>
 #include <assert.h>
 
-/* the queue for all runnable (but not currently running) processes */
+/**
+ * The scheduling-algorithm is very simple atm. Basically it is round-robin.
+ * That means a process-switch puts the current process at the end of the ready-queue and makes
+ * the first in the ready-queue the new running process.
+ * Additionally we can block processes so that they lie on the blocked-queue until they
+ * are unblocked by the kernel.
+ * There is one special thing: Processes that have been waked up because of an event or because
+ * the timer noticed that the process no longer wants to sleep, will be put at the beginning
+ * of the ready-queue so that they will be chosen on the next resched.
+ *
+ * Note that we're using our own linked-list-implementation here instead of the SLL because we
+ * don't want to waste time with allocating and freeing stuff on the heap.
+ * Since we're storing the beginning and end of the list we can schedule in O(1). But changing
+ * the process-state (ready <-> blocked) takes a bit more because we have to search
+ * in the queue.
+ */
+
+/* a queue-node */
 typedef struct sQueueNode sQueueNode;
 struct sQueueNode {
 	sQueueNode *next;
 	sProc *p;
 };
 
-/**
- * Appends the given process to the ready-queue
- *
- * @param p the process
- */
-static void sched_appendReady(sProc *p);
+/* all stuff we need for a queue */
+typedef struct {
+	sQueueNode nodes[PROC_COUNT];
+	sQueueNode *free;
+	sQueueNode *first;
+	sQueueNode *last;
+} sQueue;
 
-/**
- * Puts the given process to the beginning of the ready-queue
- *
- * @param p the process
- */
-static void sched_prependReady(sProc *p);
+static void sched_qInit(sQueue *q);
+static sProc *sched_qDequeue(sQueue *q);
+static void sched_qDequeueProc(sQueue *q,sProc *p);
+static void sched_qAppend(sQueue *q,sProc *p);
+static void sched_qPrepend(sQueue *q,sProc *p);
 
-/* ready-queue stuff */
-static sQueueNode readyQueue[PROC_COUNT];
-static sQueueNode *rqFree;
-static sQueueNode *rqFirst;
-static sQueueNode *rqLast;
-
-static sSLList *blockedQueue;
+/* the queues */
+static sQueue readyQueue;
+static sQueue blockedQueue;
 
 void sched_init(void) {
-	s32 i;
-	sQueueNode *node;
-	/* put all on the free-queue */
-	node = &readyQueue[PROC_COUNT - 1];
-	node->next = NULL;
-	node--;
-	for(i = PROC_COUNT - 2; i >= 0; i--) {
-		node->next = node + 1;
-		node--;
-	}
-	/* all free atm */
-	rqFree = &readyQueue[0];
-	rqFirst = NULL;
-	rqLast = NULL;
-
-	/* init blockedwait-queue */
-	blockedQueue = sll_create();
+	sched_qInit(&readyQueue);
+	sched_qInit(&blockedQueue);
 }
 
 sProc *sched_perform(void) {
@@ -69,7 +67,7 @@ sProc *sched_perform(void) {
 	}
 
 	/* get new process */
-	p = sched_dequeueReady();
+	p = sched_qDequeue(&readyQueue);
 
 	if(p == NULL) {
 		/* if there is no runnable process, choose init */
@@ -92,10 +90,10 @@ void sched_setRunning(sProc *p) {
 		case ST_RUNNING:
 			return;
 		case ST_READY:
-			sched_dequeueReadyProc(p);
+			sched_qDequeueProc(&readyQueue,p);
 			break;
 		case ST_BLOCKED:
-			sll_removeFirst(blockedQueue,p);
+			sched_qDequeueProc(&blockedQueue,p);
 			break;
 	}
 
@@ -110,10 +108,10 @@ void sched_setReady(sProc *p) {
 		return;
 	/* remove from blocked-list? */
 	if(p->state == ST_BLOCKED)
-		sll_removeFirst(blockedQueue,p);
+		sched_qDequeueProc(&blockedQueue,p);
 	p->state = ST_READY;
 
-	sched_appendReady(p);
+	sched_qAppend(&readyQueue,p);
 }
 
 void sched_setReadyQuick(sProc *p) {
@@ -124,10 +122,10 @@ void sched_setReadyQuick(sProc *p) {
 		return;
 	/* remove from blocked-list? */
 	if(p->state == ST_BLOCKED)
-		sll_removeFirst(blockedQueue,p);
+		sched_qDequeueProc(&blockedQueue,p);
 	p->state = ST_READY;
 
-	sched_prependReady(p);
+	sched_qPrepend(&readyQueue,p);
 }
 
 void sched_setBlocked(sProc *p) {
@@ -137,26 +135,41 @@ void sched_setBlocked(sProc *p) {
 	if(p->state == ST_BLOCKED)
 		return;
 	if(p->state == ST_READY)
-		sched_dequeueReadyProc(p);
+		sched_qDequeueProc(&readyQueue,p);
 	p->state = ST_BLOCKED;
 
 	/* insert in blocked-list */
-	sll_append(blockedQueue,p);
+	sched_qAppend(&blockedQueue,p);
 }
 
 void sched_unblockAll(u8 event) {
-	sSLNode *n,*m,*prev;
+	sQueueNode *n,*prev,*t;
 	sProc *p;
+
 	prev = NULL;
-	for(n = sll_begin(blockedQueue); n != NULL; ) {
-		p = (sProc*)n->data;
+	n = blockedQueue.first;
+	while(n != NULL) {
+		p = (sProc*)n->p;
 		if(p->events & event) {
 			p->state = ST_READY;
 			p->events = EV_NOEVENT;
-			sched_appendReady(p);
-			m = n->next;
-			sll_removeNode(blockedQueue,n,prev);
-			n = m;
+			sched_qAppend(&readyQueue,p);
+
+			/* dequeue */
+			if(prev == NULL)
+				t = blockedQueue.first = n->next;
+			else {
+				t = prev;
+				prev->next = n->next;
+			}
+			if(n->next == NULL)
+				blockedQueue.last = t;
+
+			/* put n on the free-list and continue */
+			t = n->next;
+			n->next = blockedQueue.free;
+			blockedQueue.free = n;
+			n = t;
 		}
 		else {
 			prev = n;
@@ -165,73 +178,52 @@ void sched_unblockAll(u8 event) {
 	}
 }
 
-sProc *sched_dequeueReady(void) {
+void sched_removeProc(sProc *p) {
+	switch(p->state) {
+		case ST_READY:
+			sched_qDequeueProc(&readyQueue,p);
+			break;
+		case ST_BLOCKED:
+			sched_qDequeueProc(&blockedQueue,p);
+			break;
+	}
+}
+
+static void sched_qInit(sQueue *q) {
+	s32 i;
 	sQueueNode *node;
-	if(rqFirst == NULL)
+	/* put all on the free-queue */
+	node = &q->nodes[PROC_COUNT - 1];
+	node->next = NULL;
+	node--;
+	for(i = PROC_COUNT - 2; i >= 0; i--) {
+		node->next = node + 1;
+		node--;
+	}
+	/* all free atm */
+	q->free = &q->nodes[0];
+	q->first = NULL;
+	q->last = NULL;
+}
+
+static sProc *sched_qDequeue(sQueue *q) {
+	sQueueNode *node;
+	if(q->first == NULL)
 		return NULL;
 
-	/* put in free-queue & remove from ready-queue */
-	node = rqFirst;
-	rqFirst = rqFirst->next;
-	if(rqFirst == NULL)
-		rqLast = NULL;
-	node->next = rqFree;
-	rqFree = node;
+	/* put in free-queue & remove from queue */
+	node = q->first;
+	q->first = q->first->next;
+	if(q->first == NULL)
+		q->last = NULL;
+	node->next = q->free;
+	q->free = node;
 
 	return node->p;
 }
 
-void sched_removeProc(sProc *p) {
-	switch(p->state) {
-		case ST_READY:
-			sched_dequeueReadyProc(p);
-			break;
-		case ST_BLOCKED:
-			sll_removeFirst(blockedQueue,p);
-			break;
-	}
-}
-
-static void sched_appendReady(sProc *p) {
-	sQueueNode *nn,*n;
-	vassert(rqFree != NULL,"No free slots in the ready-queue!?");
-
-	/* use first free node */
-	nn = rqFree;
-	rqFree = rqFree->next;
-	nn->p = p;
-	nn->next = NULL;
-
-	/* put at the end of the ready-queue */
-	n = rqFirst;
-	if(n != NULL) {
-		rqLast->next = nn;
-		rqLast = nn;
-	}
-	else {
-		rqFirst = nn;
-		rqLast = nn;
-	}
-}
-
-static void sched_prependReady(sProc *p) {
-	sQueueNode *nn;
-	vassert(p != NULL,"p == NULL");
-
-	/* use first free node */
-	nn = rqFree;
-	rqFree = rqFree->next;
-	nn->p = p;
-	/* put at the beginning of the ready-queue */
-	nn->next = rqFirst;
-	rqFirst = nn;
-	if(rqLast == NULL)
-		rqLast = nn;
-}
-
-bool sched_dequeueReadyProc(sProc *p) {
-	sQueueNode *n = rqFirst,*l = NULL;
-
+static void sched_qDequeueProc(sQueue *q,sProc *p) {
+	sQueueNode *n = q->first,*l = NULL;
 	vassert(p != NULL,"p == NULL");
 
 	while(n != NULL) {
@@ -239,40 +231,77 @@ bool sched_dequeueReadyProc(sProc *p) {
 		if(n->p == p) {
 			/* dequeue */
 			if(l == NULL)
-				l = rqFirst = n->next;
+				l = q->first = n->next;
 			else
 				l->next = n->next;
 			if(n->next == NULL)
-				rqLast = l;
-			n->next = rqFree;
-			rqFree = n;
-			return true;
+				q->last = l;
+			n->next = q->free;
+			q->free = n;
+			return;
 		}
 		/* to next */
 		l = n;
 		n = n->next;
 	}
-	return false;
+}
+
+static void sched_qAppend(sQueue *q,sProc *p) {
+	sQueueNode *nn,*n;
+	vassert(p != NULL,"p == NULL");
+	vassert(q->free != NULL,"No free slots in the queue!?");
+
+	/* use first free node */
+	nn = q->free;
+	q->free = q->free->next;
+	nn->p = p;
+	nn->next = NULL;
+
+	/* put at the end of the queue */
+	n = q->first;
+	if(n != NULL) {
+		q->last->next = nn;
+		q->last = nn;
+	}
+	else {
+		q->first = nn;
+		q->last = nn;
+	}
+}
+
+static void sched_qPrepend(sQueue *q,sProc *p) {
+	sQueueNode *nn;
+	vassert(p != NULL,"p == NULL");
+
+	/* use first free node */
+	nn = q->free;
+	q->free = q->free->next;
+	nn->p = p;
+	/* put at the beginning of the queue */
+	nn->next = q->first;
+	q->first = nn;
+	if(q->last == NULL)
+		q->last = nn;
 }
 
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-void sched_dbg_print(void) {
-	sSLNode *node;
-	sProc *p;
-	sQueueNode *n = rqFirst;
-	vid_printf("Ready-Queue: rqFirst=0x%x, rqLast=0x%x, rqFree=0x%x\n",rqFirst,rqLast,rqFree);
+static void sched_qPrint(sQueue *q) {
+	sQueueNode *n = q->first;
+	vid_printf("Queue: first=0x%x, last=0x%x, free=0x%x\n",q->first,q->last,q->free);
 	while(n != NULL) {
 		vid_printf("\t[0x%x]: p=0x%x, pid=%d, next=0x%x\n",n,n->p,n->p->pid,n->next);
 		n = n->next;
 	}
-	vid_printf("Blocked-queue:\n");
-	for(node = sll_begin(blockedQueue); node != NULL; node = node->next) {
-		p = (sProc*)node->data;
-		vid_printf("\t[0x%x]: p=0x%x, pid=%d\n",node,p,p->pid);
-	}
+}
+
+void sched_dbg_print(void) {
+	vid_printf("Ready-");
+	sched_qPrint(&readyQueue);
+	vid_printf("Blocked-");
+	sched_qPrint(&blockedQueue);
 	vid_printf("\n");
 }
 

@@ -56,26 +56,11 @@ void sched_setBlocked(sProc *p);
 void sched_unblockAll(u8 event);
 
 /**
- * Removes the first process from the ready-queue and returns it
- *
- * @return the process or NULL if there is no process
- */
-sProc *sched_dequeueReady(void);
-
-/**
  * Removes the given process from the scheduler (depending on the state)
  *
  * @param p the process
  */
 void sched_removeProc(sProc *p);
-
-/**
- * Removes the given process from the ready-queue
- *
- * @param p the process
- * @return true if the process has been removed
- */
-bool sched_dequeueReadyProc(sProc *p);
 
 #if DEBUGGING
 

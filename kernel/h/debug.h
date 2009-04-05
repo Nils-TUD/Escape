@@ -17,6 +17,6 @@ void dbg_startTimer(void);
 /**
  * Stops the timer and prints the number of clock-cycles done until startTimer()
  */
-void dbg_stopTimer(void);
+void dbg_stopTimer(const char *prefix);
 
 #endif /*DEBUG_H_*/

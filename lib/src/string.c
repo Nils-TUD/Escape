@@ -582,6 +582,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"seek() is not possible for service-usages!");
 			break;
 
+		case ERR_MAX_PROCS_REACHED:
+			strcpy(msg,"No free process-slots!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

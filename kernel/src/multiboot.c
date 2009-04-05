@@ -59,6 +59,9 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 
 		/* clone proc */
 		tPid pid = proc_getFreePid();
+		if(pid == INVALID_PID)
+			panic("No free process-slots");
+
 		if(proc_clone(pid)) {
 			/* we'll reach this as soon as the scheduler has chosen the created process */
 			p = proc_getRunning();

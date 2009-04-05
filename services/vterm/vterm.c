@@ -451,7 +451,6 @@ static void vterm_putchar(sVTerm *vt,char c) {
 
 				/* overwrite line */
 				vterm_refreshLines(vt,vt->row,1);
-				vterm_setCursor(vt);
 			}
 			else {
 				/* beep */
@@ -484,19 +483,18 @@ static void vterm_putchar(sVTerm *vt,char c) {
 }
 
 static void vterm_newLine(sVTerm *vt) {
+	char *src,*dst;
+	u32 count = (HISTORY_SIZE - vt->firstLine) * COLS * 2;
+	/* move one line back */
 	if(vt->firstLine > 0) {
-		/* move one line back */
-		memmove(vt->buffer.data + ((vt->firstLine - 1) * COLS * 2),
-				vt->buffer.data + (vt->firstLine * COLS * 2),
-				(HISTORY_SIZE - vt->firstLine) * COLS * 2);
+		dst = vt->buffer.data + ((vt->firstLine - 1) * COLS * 2);
 		vt->firstLine--;
 	}
-	else {
-		/* overwrite first line */
-		memmove(vt->buffer.data + (vt->firstLine * COLS * 2),
-				vt->buffer.data + ((vt->firstLine + 1) * COLS * 2),
-				(HISTORY_SIZE - vt->firstLine) * COLS * 2);
-	}
+	/* overwrite first line */
+	else
+		dst = vt->buffer.data + (vt->firstLine * COLS * 2);
+	src = dst + COLS * 2;
+	memmove(dst,src,count);
 
 	/* clear last line */
 	memset(vt->buffer.data + (vt->currLine + vt->row - 1) * COLS * 2,0x07200720,COLS * 2);
@@ -549,17 +547,13 @@ static bool vterm_handleEscape(sVTerm *vt,char *str) {
 	bool res = false;
 	switch(keycode) {
 		case VK_LEFT:
-			if(vt->col > 0) {
+			if(vt->col > 0)
 				vt->col--;
-				vterm_setCursor(vt);
-			}
 			res = true;
 			break;
 		case VK_RIGHT:
-			if(vt->col < COLS - 1) {
+			if(vt->col < COLS - 1)
 				vt->col++;
-				vterm_setCursor(vt);
-			}
 			res = true;
 			break;
 		case VK_HOME:
@@ -568,7 +562,6 @@ static bool vterm_handleEscape(sVTerm *vt,char *str) {
 					vt->col = 0;
 				else
 					vt->col -= value;
-				vterm_setCursor(vt);
 			}
 			res = true;
 			break;
@@ -578,7 +571,6 @@ static bool vterm_handleEscape(sVTerm *vt,char *str) {
 					vt->col = COLS - 1;
 				else
 					vt->col += value;
-				vterm_setCursor(vt);
 			}
 			res = true;
 			break;
@@ -643,7 +635,6 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 
 	e = keymaps[vt->keymap](msg->keycode);
 	if(e != NULL) {
-		bool sendMsg = true;
 		if(shiftDown)
 			c = e->shift;
 		else if(altDown)
@@ -654,71 +645,70 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 		switch(msg->keycode) {
 			case VK_PGUP:
 				vterm_scroll(vt,ROWS);
-				sendMsg = false;
-				break;
+				return;
 			case VK_PGDOWN:
 				vterm_scroll(vt,-ROWS);
-				sendMsg = false;
-				break;
+				return;
 			case VK_UP:
 				if(shiftDown) {
 					vterm_scroll(vt,1);
-					sendMsg = false;
+					return;
 				}
 				break;
 			case VK_DOWN:
 				if(shiftDown) {
 					vterm_scroll(vt,-1);
-					sendMsg = false;
+					return;
 				}
 				break;
 		}
 
-		if(sendMsg) {
-			if(c == NPRINT || ctrlDown) {
-				/* handle ^C, ^D and so on */
-				if(ctrlDown) {
-					switch(msg->keycode) {
-						case VK_C:
-							sendSignal(SIG_INTRPT,activeVT->index);
-							break;
-						case VK_D:
-							if(vt->readLine) {
-								vterm_rlPutchar(vt,IO_EOF);
-								vterm_rlFlushBuf(vt);
-							}
-							break;
-						case VK_1:
-							if(activeVT->index != 0)
-								vterm_selectVTerm(0);
-							return;
-						case VK_2:
-							if(activeVT->index != 1)
-								vterm_selectVTerm(1);
-							return;
-					}
-				}
-
-				/* in reading mode? */
-				if(vt->readLine) {
-					if(vt->echo)
-						vterm_rlHandleKeycode(vt,msg->keycode);
-				}
-				/* send escape-code */
-				else {
-					char escape[3] = {'\033',msg->keycode,(altDown << STATE_ALT) |
-							(ctrlDown << STATE_CTRL) |
-							(shiftDown << STATE_SHIFT)};
-					write(vt->self,&escape,sizeof(char) * 3);
+		if(c == NPRINT || ctrlDown) {
+			/* handle ^C, ^D and so on */
+			if(ctrlDown) {
+				switch(msg->keycode) {
+					case VK_C:
+						sendSignal(SIG_INTRPT,activeVT->index);
+						break;
+					case VK_D:
+						if(vt->readLine) {
+							vterm_rlPutchar(vt,IO_EOF);
+							vterm_rlFlushBuf(vt);
+						}
+						break;
+					case VK_1:
+						if(activeVT->index != 0)
+							vterm_selectVTerm(0);
+						return;
+					case VK_2:
+						if(activeVT->index != 1)
+							vterm_selectVTerm(1);
+						return;
 				}
 			}
+
+			/* in reading mode? */
+			if(vt->readLine) {
+				if(vt->echo)
+					vterm_rlHandleKeycode(vt,msg->keycode);
+			}
+			/* send escape-code */
 			else {
-				if(vt->readLine)
-					vterm_rlPutchar(vt,c);
-				else
-					write(vt->self,&c,sizeof(char));
+				char escape[3] = {'\033',msg->keycode,(altDown << STATE_ALT) |
+						(ctrlDown << STATE_CTRL) |
+						(shiftDown << STATE_SHIFT)};
+				write(vt->self,&escape,sizeof(char) * 3);
 			}
 		}
+		else {
+			if(vt->readLine)
+				vterm_rlPutchar(vt,c);
+			else
+				write(vt->self,&c,sizeof(char));
+		}
+
+		if(vt->echo)
+			vterm_setCursor(vt);
 	}
 }
 
@@ -753,7 +743,6 @@ static void vterm_rlPutchar(sVTerm *vt,char c) {
 
 				/* overwrite line */
 				vterm_refreshLines(vt,vt->row,1);
-				vterm_setCursor(vt);
 			}
 		}
 		break;
@@ -807,7 +796,6 @@ static void vterm_rlPutchar(sVTerm *vt,char c) {
 
 						/* reset cursor */
 						vt->col = vt->rlStartCol + bufPos + 1;
-						vterm_setCursor(vt);
 					}
 				}
 				else if(c != IO_EOF) {
@@ -815,7 +803,6 @@ static void vterm_rlPutchar(sVTerm *vt,char c) {
 					vterm_putchar(vt,c);
 					if(vt->row != oldRow || vt->col != oldCol)
 						vterm_sendChar(vt,oldRow,oldCol);
-					vterm_setCursor(vt);
 				}
 			}
 			if(flushed)
@@ -836,31 +823,23 @@ static bool vterm_rlHandleKeycode(sVTerm *vt,u8 keycode) {
 	bool res = false;
 	switch(keycode) {
 		case VK_LEFT:
-			if(vt->col > vt->rlStartCol) {
+			if(vt->col > vt->rlStartCol)
 				vt->col--;
-				vterm_setCursor(vt);
-			}
 			res = true;
 			break;
 		case VK_RIGHT:
-			if(vt->col < vt->rlStartCol + vt->rlBufPos) {
+			if(vt->col < vt->rlStartCol + vt->rlBufPos)
 				vt->col++;
-				vterm_setCursor(vt);
-			}
 			res = true;
 			break;
 		case VK_HOME:
-			if(vt->col != vt->rlStartCol) {
+			if(vt->col != vt->rlStartCol)
 				vt->col = vt->rlStartCol;
-				vterm_setCursor(vt);
-			}
 			res = true;
 			break;
 		case VK_END:
-			if(vt->col != vt->rlStartCol + vt->rlBufPos) {
+			if(vt->col != vt->rlStartCol + vt->rlBufPos)
 				vt->col = vt->rlStartCol + vt->rlBufPos;
-				vterm_setCursor(vt);
-			}
 			res = true;
 			break;
 	}

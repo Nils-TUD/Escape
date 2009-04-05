@@ -484,19 +484,25 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 bool paging_handlePageFault(u32 address) {
 	sSLNode *n,*ln;
 	sCOW *cow;
-	sSLNode *ourCOW = NULL,*ourPrevCOW = NULL;
-	bool foundOther = false;
+	sSLNode *ourCOW,*ourPrevCOW;
+	bool foundOther;
 	u32 frameNumber;
-	sProc *cp = proc_getRunning();
-	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(address);
-	if(!pt->copyOnWrite || !pt->present) {
-		vid_printf("Could not handle page-fault\n");
-		/* TODO what to do here? */
+	sProc *cp;
+	sPDEntry *pd;
+	sPTEntry *pt;
+
+	/* check if the page exists */
+	pd = (sPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(address);
+	pt = (sPTEntry*)ADDR_TO_MAPPED(address);
+	if(!pd->present || !pt->copyOnWrite || !pt->present)
 		return false;
-	}
 
 	/* search through the copy-on-write-list wether there is another one who wants to get
 	 * the frame */
+	cp = proc_getRunning();
+	ourCOW = NULL;
+	ourPrevCOW = NULL;
+	foundOther = false;
 	frameNumber = pt->frameNumber;
 	ln = NULL;
 	for(n = sll_begin(cowFrames); n != NULL; ln = n, n = n->next) {
@@ -519,7 +525,7 @@ bool paging_handlePageFault(u32 address) {
 		panic("No COW entry for process %d and address 0x%x",cp->pid,address);
 
 	/* remove our from list and adjust pte */
-	kheap_free(ourCOW);
+	kheap_free(ourCOW->data);
 	sll_removeNode(cowFrames,ourCOW,ourPrevCOW);
 	pt->copyOnWrite = false;
 	pt->writable = true;

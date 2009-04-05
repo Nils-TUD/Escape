@@ -357,12 +357,21 @@ static void sysc_debugc(sIntrptStackFrame *stack) {
 
 static void sysc_fork(sIntrptStackFrame *stack) {
 	tPid newPid = proc_getFreePid();
-	s32 res = proc_clone(newPid);
+	s32 res;
 
-	/* FIXME: somehow it causes trouble when we don't handle copy-on-write here */
-	/* probably the kernel overwrites the user-stack anywhere. but where? :/ */
-	paging_handlePageFault(KERNEL_AREA_V_ADDR - 1);
-	paging_handlePageFault(KERNEL_AREA_V_ADDR - PAGE_SIZE - 1);
+	/* no free slot? */
+	if(newPid == INVALID_PID) {
+		SYSC_ERROR(stack,ERR_MAX_PROCS_REACHED);
+		return;
+	}
+
+	res = proc_clone(newPid);
+	if(res >= 0) {
+		/* FIXME: somehow it causes trouble when we don't handle copy-on-write here */
+		/* probably the kernel overwrites the user-stack anywhere. but where? :/ */
+		paging_handlePageFault(KERNEL_AREA_V_ADDR - 1);
+		paging_handlePageFault(KERNEL_AREA_V_ADDR - PAGE_SIZE - 1);
+	}
 
 	/* error? */
 	if(res < 0) {
@@ -716,7 +725,7 @@ static void sysc_changeSize(sIntrptStackFrame *stack) {
 		SYSC_RET1(stack,oldEnd);
 		return;
 	}
-	else if((unsigned)-count > p->dataPages) {
+	else if((u32)-count > p->dataPages) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}

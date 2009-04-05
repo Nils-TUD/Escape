@@ -37,9 +37,8 @@ static void mm_markFrameUsed(u32 frame,bool used);
  */
 static bool mm_isFrameFree(eMemType type,u32 frame);
 
-/* start- and end-address of the kernel */
+/* start-address of the kernel */
 extern u32 KernelStart;
-extern u32 KernelEnd;
 
 /* the bitmap for the frames of the lower 16MB
  * 0 = free, 1 = used
@@ -55,6 +54,7 @@ static u32 l16mSearchPos = 0;
 
 /* the number of frames we need for our stack */
 static u32 u16mStackFrameCount = 0;
+static u32 u16mStackStart = 0;
 static u32 *u16mStack = NULL;
 
 void mm_init(void) {
@@ -67,6 +67,7 @@ void mm_init(void) {
 
 	/* put the MM-stack behind the last multiboot-module */
 	u16mStack = (u32*)mb->modsAddr[mb->modsCount - 1].modEnd;
+	u16mStackStart = (u32)u16mStack;
 
 	/* at first we mark all frames as used in the bitmap for 0..16M */
 	memset(l16mBitmap,0xFFFFFFFF,L16M_PAGE_COUNT / 8);
@@ -84,7 +85,7 @@ void mm_init(void) {
 	/* Note that we have to remove the 0xC0000000 since we want to work with physical addresses */
 	/* TODO we can use a little bit more because the kernel does not use the last few frames */
 	mm_markAddrRangeUsed((u32)&KernelStart & ~KERNEL_AREA_V_ADDR,
-			(u32)(((u32)&KernelEnd & ~KERNEL_AREA_V_ADDR) + u16mStackFrameCount * PAGE_SIZE),true);
+			(u32)(((u32)u16mStack & ~KERNEL_AREA_V_ADDR) + u16mStackFrameCount * PAGE_SIZE),true);
 }
 
 /* TODO may be we should store and manipulate the current number of free frames? */
@@ -105,7 +106,7 @@ u32 mm_getFreeFrmCount(u32 types) {
 	}
 	if(types & MM_DEF) {
 		/* count > 16MB frames */
-		count += ((u32)u16mStack - (u32)&KernelEnd) / sizeof(u32*);
+		count += ((u32)u16mStack - u16mStackStart) / sizeof(u32*);
 	}
 	return count;
 }
@@ -153,7 +154,7 @@ u32 mm_allocateFrame(eMemType type) {
 	}
 	else {
 		/* no more frames free? */
-		if((u32)u16mStack == (u32)&KernelEnd) {
+		if((u32)u16mStack == u16mStackStart) {
 			panic("Not enough memory :(");
 		}
 
@@ -195,7 +196,7 @@ static bool mm_isFrameFree(eMemType type,u32 frame) {
 	u32 *ptr;
 	if(type == MM_DEF) {
 		ptr = u16mStack - 1;
-		while((u32)ptr > (u32)&KernelEnd) {
+		while((u32)ptr > u16mStackStart) {
 			if(*ptr == frame)
 				return true;
 			ptr--;
@@ -264,7 +265,7 @@ void mm_dbg_printFreeFrames(void) {
 	}
 
 	vid_printf("Free frames > 16MB:\n");
-	for(i = 0,ptr = u16mStack - 1;ptr >= &KernelEnd; i++,ptr--) {
+	for(i = 0,ptr = u16mStack - 1;ptr >= u16mStackStart; i++,ptr--) {
 		vid_printf("0x%08x, ",*ptr);
 		if(i % 4 == 3)
 			vid_printf("\n");

@@ -39,6 +39,7 @@
 #define ERR_INVALID_PATH			-29
 #define ERR_INVALID_NODENO			-30
 #define ERR_SERVUSE_SEEK			-31
+#define ERR_MAX_PROCS_REACHED		-32
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

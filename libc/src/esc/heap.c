@@ -296,11 +296,8 @@ static bool loadNewSpace(u32 size) {
 	/* allocate the required pages */
 	s32 count = (size + PAGE_SIZE - 1) / PAGE_SIZE;
 	res = changeSize(count);
-	if(res < 0) {
-		/* free the above reserved page */
-		changeSize(-1);
+	if(res < 0)
 		return false;
-	}
 
 	pageCount += count;
 	/* take one area from the freelist and put the memory in it */

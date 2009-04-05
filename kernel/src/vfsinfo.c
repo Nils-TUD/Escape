@@ -13,7 +13,16 @@
 #include <vfsinfo.h>
 #include <util.h>
 #include <kheap.h>
+#include <assert.h>
 #include <string.h>
+
+/* VFS-directory-entry (equal to the direntry of ext2) */
+typedef struct {
+	tVFSNodeNo nodeNo;
+	u16 recLen;
+	u16 nameLen;
+	/* name follows (up to 255 bytes) */
+} __attribute__((packed)) sVFSDirEntry;
 
 /**
  * The read-callback for the proc-read-handler
@@ -32,7 +41,10 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,void *buffer);
 
 void vfsinfo_init(void) {
 	tVFSNodeNo nodeNo;
+	sVFSNode *sysNode;
 	vfsn_resolvePath("system:/",&nodeNo);
+	sysNode = vfsn_getNode(nodeNo);
+
 	vfsn_createInfo(KERNEL_PID,vfsn_getNode(nodeNo),(char*)"memusage",vfsinfo_memUsageReadHandler);
 }
 
@@ -100,4 +112,61 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,void *buffer) {
 		"Free:",free,
 		"KHeap:",kheap_getFreeMem()
 	);
+}
+
+s32 vfsinfo_dirReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	s32 byteCount;
+
+	UNUSED(pid);
+	vassert(node != NULL,"node == NULL");
+	vassert(buffer != NULL,"buffer == NULL");
+
+	/* not cached yet? */
+	if(node->data.def.cache == NULL) {
+		/* we need the number of bytes first */
+		byteCount = 0;
+		sVFSNode *n = NODE_FIRST_CHILD(node);
+		while(n != NULL) {
+			byteCount += sizeof(sVFSDirEntry) + strlen(n->name);
+			n = n->next;
+		}
+
+		vassert((u32)byteCount < (u32)0xFFFF,"Overflow of size and pos detected");
+
+		node->data.def.size = byteCount;
+		node->data.def.pos = byteCount;
+		if(byteCount > 0) {
+			/* now allocate mem on the heap and copy all data into it */
+			u8 *childs = (u8*)kheap_alloc(byteCount);
+			if(childs == NULL) {
+				node->data.def.size = 0;
+				node->data.def.pos = 0;
+			}
+			else {
+				u16 len;
+				sVFSDirEntry *dirEntry = (sVFSDirEntry*)childs;
+				node->data.def.cache = childs;
+				n = NODE_FIRST_CHILD(node);
+				while(n != NULL) {
+					len = strlen(n->name);
+					dirEntry->nodeNo = NADDR_TO_VNNO(n);
+					dirEntry->nameLen = len;
+					dirEntry->recLen = sizeof(sVFSDirEntry) + len;
+					memcpy(dirEntry + 1,n->name,len);
+					dirEntry = (sVFSDirEntry*)((u8*)dirEntry + dirEntry->recLen);
+					n = n->next;
+				}
+			}
+		}
+	}
+
+	if(offset > node->data.def.size)
+		offset = node->data.def.size;
+	byteCount = MIN(node->data.def.size - offset,count);
+	if(byteCount > 0) {
+		/* simply copy the data to the buffer */
+		memcpy(buffer,(u8*)node->data.def.cache + offset,byteCount);
+	}
+
+	return byteCount;
 }

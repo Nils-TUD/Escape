@@ -19,4 +19,9 @@ void vfsinfo_init(void);
  */
 s32 vfsinfo_procReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
+/**
+ * The read-handler for directories
+ */
+s32 vfsinfo_dirReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+
 #endif /* VFSINFO_H_ */

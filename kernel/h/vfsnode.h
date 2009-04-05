@@ -115,10 +115,9 @@ sVFSNode *vfsn_createNode(sVFSNode *parent,char *name);
  * @param parent the parent-node
  * @param prev the previous node
  * @param name the node-name
- * @param handler the read-handler
  * @return the node
  */
-sVFSNode *vfsn_createDir(sVFSNode *parent,char *name,fRead handler);
+sVFSNode *vfsn_createDir(sVFSNode *parent,char *name);
 
 /**
  * Creates a pipe-container

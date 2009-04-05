@@ -34,20 +34,20 @@ static tFD dateFD;
 
 int main(void) {
 	/* request io-ports */
-	if(requestIOPorts(IOPORT_CMOS_INDEX,2)) {
+	if(requestIOPorts(IOPORT_CMOS_INDEX,2) < 0) {
 		printe("Unable to request io-ports %d .. %d",IOPORT_CMOS_INDEX,IOPORT_CMOS_INDEX + 1);
 		return EXIT_FAILURE;
 	}
 
 	/* create a date-node */
-	if(createNode("system:/date") < 0) {
-		printe("Unable to create node system:/date");
+	if(createNode("system:/bin/date") < 0) {
+		printe("Unable to create node system:/bin/date");
 		return EXIT_FAILURE;
 	}
 
-	dateFD = open("system:/date",IO_READ | IO_WRITE);
+	dateFD = open("system:/bin/date",IO_READ | IO_WRITE);
 	if(dateFD < 0) {
-		printe("Unable to open system:/date");
+		printe("Unable to open system:/bin/date");
 		return EXIT_FAILURE;
 	}
 

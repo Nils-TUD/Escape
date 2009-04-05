@@ -42,14 +42,6 @@ typedef struct {
 	tVFSNodeNo nodeNo;
 } sGFTEntry;
 
-/* VFS-directory-entry (equal to the direntry of ext2) */
-typedef struct {
-	tVFSNodeNo nodeNo;
-	u16 recLen;
-	u16 nameLen;
-	/* name follows (up to 255 bytes) */
-} __attribute__((packed)) sVFSDirEntry;
-
 /* a message (for communicating with services) */
 typedef struct {
 	u32 length;
@@ -77,11 +69,6 @@ static tFileNo vfs_getFreeFile(tPid pid,u8 flags,tVFSNodeNo nodeNo);
  */
 static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count);
 
-/**
- * The read-handler for directories
- */
-static s32 vfs_dirReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
-
 /* global file table */
 static sGFTEntry globalFileTable[FILE_COUNT];
 
@@ -97,12 +84,14 @@ void vfs_init(void) {
 	 *     |-processes
 	 *   services:
 	 */
-	root = vfsn_createDir(NULL,(char*)"",vfs_dirReadHandler);
+	root = vfsn_createDir(NULL,(char*)"");
 	vfsn_createServiceNode(KERNEL_PID,root,(char*)"file",0);
-	sys = vfsn_createDir(root,(char*)"system",vfs_dirReadHandler);
+	sys = vfsn_createDir(root,(char*)"system");
 	vfsn_createPipeCon(sys,(char*)"pipe");
-	vfsn_createDir(sys,(char*)"processes",vfs_dirReadHandler);
-	vfsn_createDir(root,(char*)"services",vfs_dirReadHandler);
+	vfsn_createDir(sys,(char*)"processes");
+	vfsn_createDir(root,(char*)"services");
+	vfsn_createDir(sys,(char*)"devices");
+	vfsn_createDir(sys,(char*)"bin");
 }
 
 s32 vfs_hasAccess(tPid pid,tVFSNodeNo nodeNo,u8 flags) {
@@ -489,11 +478,6 @@ void vfs_closeFile(tFileNo file) {
 								kheap_free(n->name);
 							vfsn_removeChild(n->parent,n);
 						}
-					}
-					/* free cache, if present */
-					else if(!(n->mode & MODE_TYPE_SERVICE) && n->data.def.cache != NULL) {
-						kheap_free(n->data.def.cache);
-						n->data.def.cache = NULL;
 					}
 
 					/* remove pipe */
@@ -967,63 +951,6 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 	/* restore cache */
 	n->data.def.cache = oldCache;
 	return ERR_NOT_ENOUGH_MEM;
-}
-
-static s32 vfs_dirReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
-	s32 byteCount;
-
-	UNUSED(pid);
-	vassert(node != NULL,"node == NULL");
-	vassert(buffer != NULL,"buffer == NULL");
-
-	/* not cached yet? */
-	if(node->data.def.cache == NULL) {
-		/* we need the number of bytes first */
-		byteCount = 0;
-		sVFSNode *n = NODE_FIRST_CHILD(node);
-		while(n != NULL) {
-			byteCount += sizeof(sVFSDirEntry) + strlen(n->name);
-			n = n->next;
-		}
-
-		vassert((u32)byteCount < (u32)0xFFFF,"Overflow of size and pos detected");
-
-		node->data.def.size = byteCount;
-		node->data.def.pos = byteCount;
-		if(byteCount > 0) {
-			/* now allocate mem on the heap and copy all data into it */
-			u8 *childs = (u8*)kheap_alloc(byteCount);
-			if(childs == NULL) {
-				node->data.def.size = 0;
-				node->data.def.pos = 0;
-			}
-			else {
-				u16 len;
-				sVFSDirEntry *dirEntry = (sVFSDirEntry*)childs;
-				node->data.def.cache = childs;
-				n = NODE_FIRST_CHILD(node);
-				while(n != NULL) {
-					len = strlen(n->name);
-					dirEntry->nodeNo = NADDR_TO_VNNO(n);
-					dirEntry->nameLen = len;
-					dirEntry->recLen = sizeof(sVFSDirEntry) + len;
-					memcpy(dirEntry + 1,n->name,len);
-					dirEntry = (sVFSDirEntry*)((u8*)dirEntry + dirEntry->recLen);
-					n = n->next;
-				}
-			}
-		}
-	}
-
-	if(offset > node->data.def.size)
-		offset = node->data.def.size;
-	byteCount = MIN(node->data.def.size - offset,count);
-	if(byteCount > 0) {
-		/* simply copy the data to the buffer */
-		memcpy(buffer,(u8*)node->data.def.cache + offset,byteCount);
-	}
-
-	return byteCount;
 }
 
 

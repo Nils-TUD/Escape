@@ -7,6 +7,7 @@
 #include <common.h>
 #include <vfs.h>
 #include <vfsnode.h>
+#include <vfsinfo.h>
 #include <util.h>
 #include <kheap.h>
 #include <video.h>
@@ -298,7 +299,7 @@ sVFSNode *vfsn_createNode(sVFSNode *parent,char *name) {
 	return node;
 }
 
-sVFSNode *vfsn_createDir(sVFSNode *parent,char *name,fRead handler) {
+sVFSNode *vfsn_createDir(sVFSNode *parent,char *name) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
@@ -312,7 +313,7 @@ sVFSNode *vfsn_createDir(sVFSNode *parent,char *name,fRead handler) {
 
 	node->mode = MODE_TYPE_DIR | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OWNER_EXEC |
 		MODE_OTHER_READ | MODE_OTHER_EXEC;
-	node->readHandler = handler;
+	node->readHandler = vfsinfo_dirReadHandler;
 	dot->mode = MODE_TYPE_LINK | MODE_OWNER_READ | MODE_OTHER_READ;
 	dot->data.def.cache = node;
 	dotdot->mode = MODE_TYPE_LINK | MODE_OWNER_READ | MODE_OTHER_READ;

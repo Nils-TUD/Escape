@@ -252,7 +252,7 @@ s32 getDate(sDate *date) {
 	s32 m;
 
 	/* read date provided by CMOS */
-	tFD fd = open("system:/date",IO_READ);
+	tFD fd = open("system:/bin/date",IO_READ);
 	if(fd < 0)
 		return fd;
 	if((err = read(fd,date,sizeof(sDate))) < 0)

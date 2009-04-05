@@ -87,10 +87,10 @@ typedef struct {
 	sPartition partTable[PARTITION_COUNT];
 } sATADrive;
 
-static void ata_printDrives(void);
 static void ata_wait(void);
 static bool ata_isDrivePresent(u8 drive);
 static void ata_detectDrives(void);
+static void ata_createVFSEntry(sATADrive *drive);
 static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
 static void ata_selectDrive(sATADrive *drive);
 static bool ata_identifyDrive(sATADrive *drive);
@@ -131,7 +131,6 @@ int main(void) {
 	}
 
 	ata_detectDrives();
-	/*ata_printDrives();*/
 
 	/* reg service */
 	id = regService("ata",SERVICE_TYPE_MULTIPIPE);
@@ -202,26 +201,6 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void ata_printDrives(void) {
-	static const char *names[] = {"Primary Master","Primary Slave","Secondary Master","Secondary Slave"};
-	u32 d,p;
-	sPartition *part;
-	debugf("Drives:\n");
-	for(d = 0; d < DRIVE_COUNT; d++) {
-		debugf("\t%s (present=%d,sectors=%d)\n",names[d],drives[d].present,drives[d].sectorCount);
-		if(drives[d].present) {
-			part = drives[d].partTable;
-			for(p = 0; p < PARTITION_COUNT; p++) {
-				if(part->present) {
-					debugf("\t\t%d: start=0x%x, sectors=%d size=%d byte\n",p,part->start,
-							part->size,part->size * 512);
-				}
-				part++;
-			}
-		}
-	}
-}
-
 static void ata_wait(void) {
 	/*volatile u32 i;
 	for(i = 0; i < 100; i++);*/
@@ -239,8 +218,51 @@ static void ata_detectDrives(void) {
 			drives[i].present = 1;
 			ata_readWrite(drives + i,false,buffer,0,1);
 			part_fillPartitions(drives[i].partTable,buffer);
+			ata_createVFSEntry(drives + i);
 		}
 	}
+}
+
+static void ata_createVFSEntry(sATADrive *drive) {
+	tFile *f;
+	u32 p;
+	sPartition *part;
+	char path[21] = "system:/devices/";
+	if(drive->basePort == REG_BASE_PRIMARY) {
+		if(!drive->slaveBit)
+			strcat(path,"diskpm");
+		else
+			strcat(path,"diskps");
+	}
+	else {
+		if(!drive->slaveBit)
+			strcat(path,"disksm");
+		else
+			strcat(path,"diskss");
+	}
+
+	if(createNode(path) < 0) {
+		printe("Unable to create '%s'",path);
+		return;
+	}
+
+	f = fopen(path,"w");
+	if(f == NULL) {
+		printe("Unable to open '%s'",path);
+		return;
+	}
+
+	fprintf(f,"%-10s%d\n","Sectors:",drive->sectorCount);
+	fprintf(f,"%-10s%d\n","LBA48:",drive->lba48);
+	fprintf(f,"Partitions:\n");
+	part = drive->partTable;
+	for(p = 0; p < PARTITION_COUNT; p++) {
+		if(part->present)
+			fprintf(f,"\t%2d: FirstSector=%d, Size=%d bytes\n",p,part->start,part->size * 512);
+		part++;
+	}
+
+	fclose(f);
 }
 
 static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount) {

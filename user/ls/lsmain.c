@@ -67,7 +67,7 @@ int main(int argc,char *argv[]) {
 	if(path == NULL) {
 		path = getEnv("CWD");
 		if(path == NULL) {
-			printe("Unable to get CWD\n");
+			printe("Unable to get CWD");
 			return EXIT_FAILURE;
 		}
 	}
@@ -223,7 +223,7 @@ static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count) {
 		closedir(dd);
 	}
 	else {
-		printe("Unable to open '%s'\n",path);
+		printe("Unable to open '%s'",path);
 		freeEntries(entries,pos);
 		free(fpath);
 		return NULL;

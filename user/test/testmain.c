@@ -11,7 +11,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define BUF_SIZE 4
+#define COUNT 1000000
+
+static u8 buffer[BUF_SIZE];
+
 int main(void) {
+	/*
+
 	tFD fd;
 	u8 buffer[1024];
 
@@ -24,6 +31,43 @@ int main(void) {
 	dbg_startTimer();
 	while(read(fd,buffer,1024) > 0);
 	dbg_stopTimer("Reading took ");
+
+	close(fd);*/
+
+	tFD fd;
+	u32 i;
+	u64 start;
+	u64 total;
+	u32 *ptr;
+	u32 t;
+
+	createNode("system:/test");
+
+	fd = open("system:/test",IO_READ | IO_WRITE);
+
+	t = getTime();
+	start = cpu_rdtsc();
+	for(i = 0; i < COUNT; i++) {
+		write(fd,buffer,sizeof(buffer));
+		seek(fd,0);
+	}
+
+	total = cpu_rdtsc() - start;
+	ptr = (u32*)&total;
+	printf("Write of %d bytes took %08x%08x\n",COUNT * sizeof(buffer),*(ptr + 1),*ptr);
+	printf("%d bytes per second\n",(COUNT * sizeof(buffer)) / (getTime() - t));
+
+	t = getTime();
+	start = cpu_rdtsc();
+	for(i = 0; i < COUNT; i++) {
+		read(fd,buffer,sizeof(buffer));
+		seek(fd,0);
+	}
+
+	total = cpu_rdtsc() - start;
+	ptr = (u32*)&total;
+	printf("Read of %d bytes took %08x%08x\n",COUNT * sizeof(buffer),*(ptr + 1),*ptr);
+	printf("%d bytes per second\n",(COUNT * sizeof(buffer)) / (getTime() - t));
 
 	close(fd);
 

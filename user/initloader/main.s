@@ -8,16 +8,13 @@ ALIGN 4
 
 init:
 	; load modules first
-	push	DWORD SYSCALL_LOADMODS
+	mov		eax,SYSCALL_LOADMODS
 	int		SYSCALL_IRQ
-	add		esp,4
 
 	; now replace with init
-	mov		eax,argp								; push arguments
-	push	eax
-	mov		eax,progName						; push path
-	push	eax
-	push	DWORD SYSCALL_EXEC			; push syscall-number
+	mov		ecx,progName						; set path
+	mov		edx,argp								; set arguments
+	mov		eax,SYSCALL_EXEC				; set syscall-number
 	int		SYSCALL_IRQ
 
 	; we should not reach this

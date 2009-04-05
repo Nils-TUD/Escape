@@ -46,7 +46,10 @@ void proc_init(void) {
 	procs[pi].textPages = 0;
 	procs[pi].dataPages = 0;
 	procs[pi].stackPages = 0;
-	procs[pi].cycleCount = 0;
+	procs[pi].ucycleCount = 0;
+	procs[pi].ucycleStart = 0;
+	procs[pi].kcycleCount = 0;
+	procs[pi].kcycleStart = 0;
 	/* note that this assumes that the page-dir is initialized */
 	procs[pi].physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 	/* init fds */
@@ -99,11 +102,11 @@ void proc_switch(void) {
 }
 
 void proc_switchTo(tPid pid) {
-	static u64 startTime = 0;
 	sProc *p = procs + pi;
 
-	if(startTime > 0)
-		p->cycleCount += cpu_rdtsc() - startTime;
+	/* finish kernel-time here since we're switching the process */
+	if(p->kcycleStart > 0)
+		p->kcycleCount += cpu_rdtsc() - p->kcycleStart;
 
 	if(pid != pi && !proc_save(&p->save)) {
 		/* mark old process ready, if it should not be blocked, killed or something */
@@ -116,9 +119,11 @@ void proc_switchTo(tPid pid) {
 		/* remove the io-map. it will be set as soon as the process accesses an io-port
 		 * (we'll get an exception) */
 		tss_removeIOMap();
-		startTime = cpu_rdtsc();
 		proc_resume(p->physPDirAddr,&p->save);
 	}
+
+	/* now start kernel-time again */
+	proc_getRunning()->kcycleStart = cpu_rdtsc();
 
 	/* destroy process, if there is any */
 	if(deadProcs != NULL) {
@@ -320,7 +325,10 @@ s32 proc_clone(tPid newPid) {
 	p->dataPages = procs[pi].dataPages;
 	p->stackPages = procs[pi].stackPages;
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
-	p->cycleCount = 0;
+	p->ucycleCount = 0;
+	p->ucycleStart = 0;
+	p->kcycleCount = 0;
+	p->kcycleStart = 0;
 
 	/* inherit file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
@@ -594,8 +602,10 @@ void proc_dbg_print(sProc *p) {
 	vid_printf("\ttextPages = %d\n",p->textPages);
 	vid_printf("\tdataPages = %d\n",p->dataPages);
 	vid_printf("\tstackPages = %d\n",p->stackPages);
-	ptr = (u32*)&p->cycleCount;
-	vid_printf("\tcycleCount = 0x%08x%08x\n",*(ptr + 1),*ptr);
+	ptr = (u32*)&p->ucycleCount;
+	vid_printf("\tucycleCount = 0x%08x%08x\n",*(ptr + 1),*ptr);
+	ptr = (u32*)&p->kcycleCount;
+	vid_printf("\tkcycleCount = 0x%08x%08x\n",*(ptr + 1),*ptr);
 	vid_printf("\tfileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(p->fileDescs[i] != -1) {

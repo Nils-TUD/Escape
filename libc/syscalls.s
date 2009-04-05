@@ -41,108 +41,67 @@ SYSCALL_IRQ					equ	0x30
 %macro SYSC_VOID_0ARGS 2
 [global %1]
 %1:
-	push	ebp
-	mov		ebp,esp
-	push	DWORD %2							; push syscall-number
+	mov		eax,%2								; set syscall-number
 	int		SYSCALL_IRQ
-	add		esp,4									; remove from stack
-	leave
 	ret
 %endmacro
 
 %macro SYSC_VOID_1ARGS 2
 [global %1]
 %1:
-	push	ebp
-	mov		ebp,esp
-	mov		eax,[ebp + 8]
-	push	DWORD eax							; push arg1
-	push	DWORD %2							; push syscall-number
+	mov		eax,%2								; set syscall-number
+	mov		ecx,[esp + 4]					; set arg1
 	int		SYSCALL_IRQ
-	add		esp,8									; remove from stack
-	leave
 	ret
 %endmacro
 
 %macro SYSC_RET_0ARGS 2
 [global %1]
 %1:
-	push	ebp
-	mov		ebp,esp
-	push	DWORD 0								; needed for ret-value
-	push	DWORD %2							; push syscall-number
+	mov		eax,%2								; set syscall-number
 	int		SYSCALL_IRQ
-	add		esp,4									; remove from stack
-	pop		eax										; return value
-	leave
-	ret
+	ret													; return-value is in eax
 %endmacro
 
 %macro SYSC_RET_0ARGS_ERR 2
 [global %1]
 %1:
-	push	ebp
-	mov		ebp,esp
-	push	DWORD 0								; needed for ret-value
-	push	DWORD %2							; push syscall-number
+	mov		eax,%2								; set syscall-number
 	int		SYSCALL_IRQ
-	pop		eax										; pop error-code
-	test	eax,eax
-	jz		%1NoError							; no-error?
-	mov		[errno],eax						; store error-code
-	add		esp,4
-	jmp		%1Ret
-%1NoError:
-	pop		eax
+	test	ecx,ecx
+	jz		%1Ret									; no-error?
+	mov		[errno],ecx						; store error-code
+	mov		eax,ecx								; return error-code
 %1Ret:
-	leave
 	ret
 %endmacro
 
 %macro SYSC_RET_1ARGS_ERR 2
 [global %1]
 %1:
-	push	ebp
-	mov		ebp,esp
-	mov		eax,[ebp + 8]					; push arg1
-	push	eax
-	push	DWORD %2							; push syscall-number
+	mov		eax,%2								; set syscall-number
+	mov		ecx,[esp + 4]					; set arg1
 	int		SYSCALL_IRQ
-	pop		eax										; pop error-code
-	test	eax,eax
-	jz		%1NoError							; no-error?
-	mov		[errno],eax						; store error-code
-	add		esp,4
-	jmp		%1Ret
-%1NoError:
-	pop		eax
+	test	ecx,ecx
+	jz		%1Ret									; no-error?
+	mov		[errno],ecx						; store error-code
+	mov		eax,ecx								; return error-code
 %1Ret:
-	leave
 	ret
 %endmacro
 
 %macro SYSC_RET_2ARGS_ERR 2
 [global %1]
 %1:
-	push	ebp
-	mov		ebp,esp
-	mov		eax,[ebp + 12]				; push arg2
-	push	eax
-	mov		eax,[ebp + 8]					; push arg1
-	push	eax
-	push	DWORD %2							; push syscall-number
+	mov		eax,%2								; set syscall-number
+	mov		ecx,[esp + 4]					; set arg1
+	mov		edx,[esp + 8]					; set arg2
 	int		SYSCALL_IRQ
-	pop		eax										; pop error-code
-	test	eax,eax
-	jz		%1NoError							; no-error?
-	mov		[errno],eax						; store error-code
-	add		esp,8
-	jmp		%1Ret
-%1NoError:
-	pop		eax
-	add		esp,4
+	test	ecx,ecx
+	jz		%1Ret									; no-error?
+	mov		[errno],ecx						; store error-code
+	mov		eax,ecx								; return error-code
 %1Ret:
-	leave
 	ret
 %endmacro
 
@@ -151,52 +110,17 @@ SYSCALL_IRQ					equ	0x30
 %1:
 	push	ebp
 	mov		ebp,esp
+	mov		ecx,[ebp + 8]					; set arg1
+	mov		edx,[ebp + 12]				; set arg2
 	mov		eax,[ebp + 16]				; push arg3
 	push	eax
-	mov		eax,[ebp + 12]				; push arg2
-	push	eax
-	mov		eax,[ebp + 8]					; push arg1
-	push	eax
-	push	DWORD %2							; push syscall-number
+	mov		eax,%2								; set syscall-number
 	int		SYSCALL_IRQ
-	pop		eax										; pop error-code
-	test	eax,eax
-	jz		%1NoError							; no-error?
-	mov		[errno],eax						; store error-code
-	add		esp,12
-	jmp		%1Ret
-%1NoError:
-	pop		eax
-	add		esp,8
-%1Ret:
-	leave
-	ret
-%endmacro
-
-%macro SYSC_RET_4ARGS_ERR 2
-[global %1]
-%1:
-	push	ebp
-	mov		ebp,esp
-	mov		eax,[ebp + 20]				; push arg4
-	push	eax
-	mov		eax,[ebp + 16]				; push arg3
-	push	eax
-	mov		eax,[ebp + 12]				; push arg2
-	push	eax
-	mov		eax,[ebp + 8]					; push arg1
-	push	eax
-	push	DWORD %2							; push syscall-number
-	int		SYSCALL_IRQ
-	pop		eax										; pop error-code
-	test	eax,eax
-	jz		%1NoError							; no-error?
-	mov		[errno],eax						; store error-code
-	add		esp,16
-	jmp		%1Ret
-%1NoError:
-	pop		eax
-	add		esp,12
+	add		esp,4									; remove arg3
+	test	ecx,ecx
+	jz		%1Ret									; no-error?
+	mov		[errno],ecx						; store error-code
+	mov		eax,ecx								; return error-code
 %1Ret:
 	leave
 	ret

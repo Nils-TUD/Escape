@@ -31,12 +31,17 @@
 #define SYSCALL_COUNT					31
 
 /* some convenience-macros */
-#define SYSC_ERROR(stack,errorCode)		((stack)->number = (errorCode))
-#define SYSC_RET1(stack,val)			((stack)->arg1 = (val))
-#define SYSC_RET2(stack,val)			((stack)->arg2 = (val))
+#define SYSC_ERROR(stack,errorCode)		((stack)->ebx = (errorCode))
+#define SYSC_RET1(stack,val)			((stack)->eax = (val))
+#define SYSC_RET2(stack,val)			((stack)->edx = (val))
+#define SYSC_NUMBER(stack)				((stack)->eax)
+#define SYSC_ARG1(stack)				((stack)->ecx)
+#define SYSC_ARG2(stack)				((stack)->edx)
+#define SYSC_ARG3(stack)				(*((u32*)(stack)->uesp))
+#define SYSC_ARG4(stack)				(*((u32*)(stack)->uesp + 1))
 
 /* syscall-handlers */
-typedef void (*fSyscall)(sSysCallStack *stack);
+typedef void (*fSyscall)(sIntrptStackFrame *stack);
 
 /* for syscall-definitions */
 typedef struct {
@@ -47,36 +52,36 @@ typedef struct {
 /**
  * Loads the multiboot-modules. This is intended for initloader only!
  */
-static void sysc_loadMods(sSysCallStack *stack);
+static void sysc_loadMods(sIntrptStackFrame *stack);
 /**
  * Returns the pid of the current process
  *
  * @return tPid the pid
  */
-static void sysc_getpid(sSysCallStack *stack);
+static void sysc_getpid(sIntrptStackFrame *stack);
 /**
  * Returns the parent-pid of the given process
  *
  * @param pid the process-id
  * @return tPid the parent-pid
  */
-static void sysc_getppid(sSysCallStack *stack);
+static void sysc_getppid(sIntrptStackFrame *stack);
 /**
  * Temporary syscall to print out a character
  */
-static void sysc_debugc(sSysCallStack *stack);
+static void sysc_debugc(sIntrptStackFrame *stack);
 /**
  * Clones the current process
  *
  * @return tPid 0 for the child, the child-pid for the parent-process
  */
-static void sysc_fork(sSysCallStack *stack);
+static void sysc_fork(sIntrptStackFrame *stack);
 /**
  * Destroys the process and issues a context-switch
  *
  * @param u32 the exit-code
  */
-static void sysc_exit(sSysCallStack *stack);
+static void sysc_exit(sIntrptStackFrame *stack);
 /**
  * Open-syscall. Opens a given path with given mode and returns the file-descriptor to use
  * to the user.
@@ -85,14 +90,14 @@ static void sysc_exit(sSysCallStack *stack);
  * @param u32 flags (read / write)
  * @return tFD the file-descriptor
  */
-static void sysc_open(sSysCallStack *stack);
+static void sysc_open(sIntrptStackFrame *stack);
 /**
  * Tests wether we are at the end of the file (or if there is a message for service-usages)
  *
  * @param tFD file-descriptor
  * @return bool true if we are at EOF
  */
-static void sysc_eof(sSysCallStack *stack);
+static void sysc_eof(sIntrptStackFrame *stack);
 /**
  * Sets the position for the given file
  *
@@ -100,7 +105,7 @@ static void sysc_eof(sSysCallStack *stack);
  * @param u32 the position to set
  * @return 0 on success
  */
-static void sysc_seek(sSysCallStack *stack);
+static void sysc_seek(sIntrptStackFrame *stack);
 /**
  * Read-syscall. Reads a given number of bytes in a given file at the current position
  *
@@ -109,7 +114,7 @@ static void sysc_seek(sSysCallStack *stack);
  * @param u32 number of bytes
  * @return u32 the number of read bytes
  */
-static void sysc_read(sSysCallStack *stack);
+static void sysc_read(sIntrptStackFrame *stack);
 /**
  * Write-syscall. Writes a given number of bytes to a given file at the current position
  *
@@ -118,14 +123,14 @@ static void sysc_read(sSysCallStack *stack);
  * @param u32 number of bytes
  * @return u32 the number of written bytes
  */
-static void sysc_write(sSysCallStack *stack);
+static void sysc_write(sIntrptStackFrame *stack);
 /**
  * Duplicates the given file-descriptor
  *
  * @param tFD the file-descriptor
  * @return tFD the error-code or the new file-descriptor
  */
-static void sysc_dupFd(sSysCallStack *stack);
+static void sysc_dupFd(sIntrptStackFrame *stack);
 /**
  * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
  *
@@ -133,13 +138,13 @@ static void sysc_dupFd(sSysCallStack *stack);
  * @param tFD dst the destination-file-descriptor
  * @return s32 the error-code or 0 if successfull
  */
-static void sysc_redirFd(sSysCallStack *stack);
+static void sysc_redirFd(sIntrptStackFrame *stack);
 /**
  * Closes the given file-descriptor
  *
  * @param tFD the file-descriptor
  */
-static void sysc_close(sSysCallStack *stack);
+static void sysc_close(sIntrptStackFrame *stack);
 /**
  * Registers a service
  *
@@ -147,14 +152,14 @@ static void sysc_close(sSysCallStack *stack);
  * @param u8 type: SINGLE-PIPE OR MULTI-PIPE
  * @return tServ the service-id if successfull
  */
-static void sysc_regService(sSysCallStack *stack);
+static void sysc_regService(sIntrptStackFrame *stack);
 /**
  * Unregisters a service
  *
  * @param tServ the service-id
  * @return s32 0 on success or a negative error-code
  */
-static void sysc_unregService(sSysCallStack *stack);
+static void sysc_unregService(sIntrptStackFrame *stack);
 /**
  * For services: Looks wether a client wants to be served and returns a file-descriptor
  * for it.
@@ -164,14 +169,14 @@ static void sysc_unregService(sSysCallStack *stack);
  * @param tServ* serv will be set to the service from which the client has been taken
  * @return tFD the file-descriptor to use
  */
-static void sysc_getClient(sSysCallStack *stack);
+static void sysc_getClient(sIntrptStackFrame *stack);
 /**
  * Changes the process-size
  *
  * @param u32 number of pages
  * @return u32 the previous number of text+data pages
  */
-static void sysc_changeSize(sSysCallStack *stack);
+static void sysc_changeSize(sIntrptStackFrame *stack);
 /**
  * Maps physical memory in the virtual user-space
  *
@@ -179,22 +184,22 @@ static void sysc_changeSize(sSysCallStack *stack);
  * @param u32 number of bytes
  * @return void* the start-address
  */
-static void sysc_mapPhysical(sSysCallStack *stack);
+static void sysc_mapPhysical(sIntrptStackFrame *stack);
 /**
  * Blocks the process until a message arrives
  */
-static void sysc_wait(sSysCallStack *stack);
+static void sysc_wait(sIntrptStackFrame *stack);
 /**
  * Blocks the process for a given number of milliseconds
  *
  * @param u32 the number of msecs
  * @return s32 0 on success or a negative error-code
  */
-static void sysc_sleep(sSysCallStack *stack);
+static void sysc_sleep(sIntrptStackFrame *stack);
 /**
  * Releases the CPU (reschedule)
  */
-static void sysc_yield(sSysCallStack *stack);
+static void sysc_yield(sIntrptStackFrame *stack);
 /**
  * Requests some IO-ports
  *
@@ -202,7 +207,7 @@ static void sysc_yield(sSysCallStack *stack);
  * @param u16 number of ports
  * @return s32 0 if successfull or a negative error-code
  */
-static void sysc_requestIOPorts(sSysCallStack *stack);
+static void sysc_requestIOPorts(sIntrptStackFrame *stack);
 /**
  * Releases some IO-ports
  *
@@ -210,7 +215,7 @@ static void sysc_requestIOPorts(sSysCallStack *stack);
  * @param u16 number of ports
  * @return s32 0 if successfull or a negative error-code
  */
-static void sysc_releaseIOPorts(sSysCallStack *stack);
+static void sysc_releaseIOPorts(sIntrptStackFrame *stack);
 /**
  * Sets a handler-function for a specific signal
  *
@@ -218,20 +223,20 @@ static void sysc_releaseIOPorts(sSysCallStack *stack);
  * @param fSigHandler handler
  * @return s32 0 if no error
  */
-static void sysc_setSigHandler(sSysCallStack *stack);
+static void sysc_setSigHandler(sIntrptStackFrame *stack);
 /**
  * Unsets the handler-function for a specific signal
  *
  * @param tSig signal
  * @return s32 0 if no error
  */
-static void sysc_unsetSigHandler(sSysCallStack *stack);
+static void sysc_unsetSigHandler(sIntrptStackFrame *stack);
 /**
  * Acknoledges that the processing of a signal is finished
  *
  * @return s32 0 if no error
  */
-static void sysc_ackSignal(sSysCallStack *stack);
+static void sysc_ackSignal(sIntrptStackFrame *stack);
 /**
  * Sends a signal to a process
  *
@@ -239,19 +244,19 @@ static void sysc_ackSignal(sSysCallStack *stack);
  * @param tSig signal
  * @return s32 0 if no error
  */
-static void sysc_sendSignalTo(sSysCallStack *stack);
+static void sysc_sendSignalTo(sIntrptStackFrame *stack);
 /**
  * Exchanges the process-data with another program
  *
  * @param char* the program-path
  */
-static void sysc_exec(sSysCallStack *stack);
+static void sysc_exec(sIntrptStackFrame *stack);
 /**
  * Creates an info-node in the VFS that can be read by other processes
  *
  * @param char* the path
  */
-static void sysc_createNode(sSysCallStack *stack);
+static void sysc_createNode(sIntrptStackFrame *stack);
 /**
  * Retrieves information about the given file
  *
@@ -259,7 +264,7 @@ static void sysc_createNode(sSysCallStack *stack);
  * @param tFileInfo* info will be filled
  * @return s32 0 on success
  */
-static void sysc_getFileInfo(sSysCallStack *stack);
+static void sysc_getFileInfo(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -280,7 +285,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 6 */ 	{sysc_close,				1},
 	/* 7 */ 	{sysc_read,					3},
 	/* 8 */		{sysc_regService,			2},
-	/* 9 */ 	{sysc_unregService,			0},
+	/* 9 */ 	{sysc_unregService,			1},
 	/* 10 */	{sysc_changeSize,			1},
 	/* 11 */	{sysc_mapPhysical,			2},
 	/* 12 */	{sysc_write,				3},
@@ -290,12 +295,12 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 16 */	{sysc_releaseIOPorts,		2},
 	/* 17 */	{sysc_dupFd,				1},
 	/* 18 */	{sysc_redirFd,				2},
-	/* 19 */	{sysc_wait,				0},
+	/* 19 */	{sysc_wait,					1},
 	/* 20 */	{sysc_setSigHandler,		2},
 	/* 21 */	{sysc_unsetSigHandler,		1},
-	/* 22 */	{sysc_ackSignal,			1},
-	/* 23 */	{sysc_sendSignalTo,			2},
-	/* 24 */	{sysc_exec,					1},
+	/* 22 */	{sysc_ackSignal,			0},
+	/* 23 */	{sysc_sendSignalTo,			3},
+	/* 24 */	{sysc_exec,					2},
 	/* 25 */	{sysc_eof,					1},
 	/* 26 */	{sysc_loadMods,				0},
 	/* 27 */	{sysc_sleep,				1},
@@ -304,34 +309,38 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 30 */	{sysc_getFileInfo,			2},
 };
 
-void sysc_handle(sIntrptStackFrame *intrptStack) {
-	sSysCallStack *stack = (sSysCallStack*)intrptStack->uesp;
-	vassert(stack != NULL,"stack == NULL");
-
-	u32 sysCallNo = (u32)stack->number;
+void sysc_handle(sIntrptStackFrame *stack) {
+	u32 sysCallNo = SYSC_NUMBER(stack);
 	if(sysCallNo < SYSCALL_COUNT) {
+		u32 argCount = syscalls[sysCallNo].argCount;
+		u32 ebxSave = stack->ebx;
 		/* handle copy-on-write */
 		/* TODO maybe we need more stack-pages */
-		paging_isRangeUserWritable((u32)stack,sizeof(sSysCallStack));
+		if(argCount > 2)
+			paging_isRangeUserWritable((u32)stack->uesp,sizeof(u32) * (argCount - 2));
 
 		/* no error by default */
 		SYSC_ERROR(stack,0);
 		syscalls[sysCallNo].handler(stack);
+
+		/* set error-code */
+		stack->ecx = stack->ebx;
+		stack->ebx = ebxSave;
 	}
 }
 
-static void sysc_loadMods(sSysCallStack *stack) {
+static void sysc_loadMods(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	mboot_loadModules(intrpt_getCurStack());
 }
 
-static void sysc_getpid(sSysCallStack *stack) {
+static void sysc_getpid(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
 	SYSC_RET1(stack,p->pid);
 }
 
-static void sysc_getppid(sSysCallStack *stack) {
-	tPid pid = (tPid)stack->arg1;
+static void sysc_getppid(sIntrptStackFrame *stack) {
+	tPid pid = (tPid)SYSC_ARG1(stack);
 	sProc *p = proc_getByPid(pid);
 
 	if(p->state == ST_UNUSED) {
@@ -342,11 +351,11 @@ static void sysc_getppid(sSysCallStack *stack) {
 	SYSC_RET1(stack,p->parentPid);
 }
 
-static void sysc_debugc(sSysCallStack *stack) {
-	vid_putchar((char)stack->arg1);
+static void sysc_debugc(sIntrptStackFrame *stack) {
+	vid_putchar((char)SYSC_ARG1(stack));
 }
 
-static void sysc_fork(sSysCallStack *stack) {
+static void sysc_fork(sIntrptStackFrame *stack) {
 	tPid newPid = proc_getFreePid();
 	s32 res = proc_clone(newPid);
 
@@ -369,16 +378,16 @@ static void sysc_fork(sSysCallStack *stack) {
 	}
 }
 
-static void sysc_exit(sSysCallStack *stack) {
+static void sysc_exit(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	sProc *p = proc_getRunning();
-	/*vid_printf("Process %d exited with exit-code %d\n",p->pid,stack->arg1);*/
+	/*vid_printf("Process %d exited with exit-code %d\n",p->pid,SYSC_ARG1(stack));*/
 	proc_destroy(p);
 	proc_switch();
 }
 
-static void sysc_open(sSysCallStack *stack) {
-	char *path = (char*)stack->arg1;
+static void sysc_open(sIntrptStackFrame *stack) {
+	char *path = (char*)SYSC_ARG1(stack);
 	s32 pathLen;
 	u8 flags;
 	tVFSNodeNo nodeNo;
@@ -400,7 +409,7 @@ static void sysc_open(sSysCallStack *stack) {
 	}
 
 	/* check flags */
-	flags = ((u8)stack->arg2) & (VFS_WRITE | VFS_READ);
+	flags = ((u8)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ);
 	if((flags & (VFS_READ | VFS_WRITE)) == 0) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
@@ -461,8 +470,8 @@ static void sysc_open(sSysCallStack *stack) {
 	SYSC_RET1(stack,fd);
 }
 
-static void sysc_eof(sSysCallStack *stack) {
-	tFD fd = (tFD)stack->arg1;
+static void sysc_eof(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;
 	bool eof;
@@ -478,9 +487,9 @@ static void sysc_eof(sSysCallStack *stack) {
 	SYSC_RET1(stack,eof);
 }
 
-static void sysc_seek(sSysCallStack *stack) {
-	tFD fd = (tFD)stack->arg1;
-	u32 position = stack->arg2;
+static void sysc_seek(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
+	u32 position = SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
 	tFileNo file;
 	s32 res;
@@ -496,10 +505,10 @@ static void sysc_seek(sSysCallStack *stack) {
 	SYSC_RET1(stack,res);
 }
 
-static void sysc_read(sSysCallStack *stack) {
-	tFD fd = (tFD)stack->arg1;
-	void *buffer = (void*)stack->arg2;
-	u32 count = stack->arg3;
+static void sysc_read(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
+	void *buffer = (void*)SYSC_ARG2(stack);
+	u32 count = SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
 	s32 readBytes;
 	tFileNo file;
@@ -531,10 +540,10 @@ static void sysc_read(sSysCallStack *stack) {
 	SYSC_RET1(stack,readBytes);
 }
 
-static void sysc_write(sSysCallStack *stack) {
-	tFD fd = (tFD)stack->arg1;
-	void *buffer = (void*)stack->arg2;
-	u32 count = stack->arg3;
+static void sysc_write(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
+	void *buffer = (void*)SYSC_ARG2(stack);
+	u32 count = SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
 	s32 writtenBytes;
 	tFileNo file;
@@ -566,8 +575,8 @@ static void sysc_write(sSysCallStack *stack) {
 	SYSC_RET1(stack,writtenBytes);
 }
 
-static void sysc_dupFd(sSysCallStack *stack) {
-	tFD fd = (tFD)stack->arg1;
+static void sysc_dupFd(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
 	tFD res;
 
 	res = proc_dupFd(fd);
@@ -579,9 +588,9 @@ static void sysc_dupFd(sSysCallStack *stack) {
 	SYSC_RET1(stack,res);
 }
 
-static void sysc_redirFd(sSysCallStack *stack) {
-	tFD src = (tFD)stack->arg1;
-	tFD dst = (tFD)stack->arg2;
+static void sysc_redirFd(sIntrptStackFrame *stack) {
+	tFD src = (tFD)SYSC_ARG1(stack);
+	tFD dst = (tFD)SYSC_ARG2(stack);
 	s32 err;
 
 	err = proc_redirFd(src,dst);
@@ -593,8 +602,8 @@ static void sysc_redirFd(sSysCallStack *stack) {
 	SYSC_RET1(stack,err);
 }
 
-static void sysc_close(sSysCallStack *stack) {
-	tFD fd = (tFD)stack->arg1;
+static void sysc_close(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
 
 	/* unassoc fd */
 	tFileNo fileNo = proc_unassocFD(fd);
@@ -605,9 +614,9 @@ static void sysc_close(sSysCallStack *stack) {
 	vfs_closeFile(fileNo);
 }
 
-static void sysc_regService(sSysCallStack *stack) {
-	const char *name = (const char*)stack->arg1;
-	u32 type = (u32)stack->arg2;
+static void sysc_regService(sIntrptStackFrame *stack) {
+	const char *name = (const char*)SYSC_ARG1(stack);
+	u32 type = (u32)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
 	tServ res;
 
@@ -626,8 +635,8 @@ static void sysc_regService(sSysCallStack *stack) {
 	SYSC_RET1(stack,res);
 }
 
-static void sysc_unregService(sSysCallStack *stack) {
-	tServ id = stack->arg1;
+static void sysc_unregService(sIntrptStackFrame *stack) {
+	tServ id = SYSC_ARG1(stack);
 	s32 err;
 
 	/* check node-number */
@@ -646,10 +655,10 @@ static void sysc_unregService(sSysCallStack *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static void sysc_getClient(sSysCallStack *stack) {
-	tServ *ids = (tServ*)stack->arg1;
-	u32 count = stack->arg2;
-	tServ *client = (tServ*)stack->arg3;
+static void sysc_getClient(sIntrptStackFrame *stack) {
+	tServ *ids = (tServ*)SYSC_ARG1(stack);
+	u32 count = SYSC_ARG2(stack);
+	tServ *client = (tServ*)SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
 	tFD fd;
 	s32 res;
@@ -691,8 +700,8 @@ static void sysc_getClient(sSysCallStack *stack) {
 	SYSC_RET1(stack,fd);
 }
 
-static void sysc_changeSize(sSysCallStack *stack) {
-	s32 count = stack->arg1;
+static void sysc_changeSize(sIntrptStackFrame *stack) {
+	s32 count = SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 	u32 oldEnd = p->textPages + p->dataPages;
 
@@ -721,10 +730,10 @@ static void sysc_changeSize(sSysCallStack *stack) {
 	SYSC_RET1(stack,oldEnd);
 }
 
-static void sysc_mapPhysical(sSysCallStack *stack) {
+static void sysc_mapPhysical(sIntrptStackFrame *stack) {
 	u32 addr,origPages;
-	u32 phys = stack->arg1;
-	u32 pages = BYTES_2_PAGES(stack->arg2);
+	u32 phys = SYSC_ARG1(stack);
+	u32 pages = BYTES_2_PAGES(SYSC_ARG2(stack));
 	sProc *p = proc_getRunning();
 	u32 i,*frames;
 
@@ -772,8 +781,8 @@ static void sysc_mapPhysical(sSysCallStack *stack) {
 	SYSC_RET1(stack,addr);
 }
 
-static void sysc_wait(sSysCallStack *stack) {
-	u8 events = (u8)stack->arg1;
+static void sysc_wait(sIntrptStackFrame *stack) {
+	u8 events = (u8)SYSC_ARG1(stack);
 	sProc *p;
 	bool canSleep;
 
@@ -798,21 +807,21 @@ static void sysc_wait(sSysCallStack *stack) {
 	}
 }
 
-static void sysc_sleep(sSysCallStack *stack) {
-	u32 msecs = stack->arg1;
+static void sysc_sleep(sIntrptStackFrame *stack) {
+	u32 msecs = SYSC_ARG1(stack);
 	timer_sleepFor(proc_getRunning()->pid,msecs);
 	proc_switch();
 }
 
-static void sysc_yield(sSysCallStack *stack) {
+static void sysc_yield(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 
 	proc_switch();
 }
 
-static void sysc_requestIOPorts(sSysCallStack *stack) {
-	u16 start = stack->arg1;
-	u16 count = stack->arg2;
+static void sysc_requestIOPorts(sIntrptStackFrame *stack) {
+	u16 start = SYSC_ARG1(stack);
+	u16 count = SYSC_ARG2(stack);
 
 	/* check range */
 	if(count == 0 || (u32)start + (u32)count > 0xFFFF) {
@@ -829,9 +838,9 @@ static void sysc_requestIOPorts(sSysCallStack *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static void sysc_releaseIOPorts(sSysCallStack *stack) {
-	u16 start = stack->arg1;
-	u16 count = stack->arg2;
+static void sysc_releaseIOPorts(sIntrptStackFrame *stack) {
+	u16 start = SYSC_ARG1(stack);
+	u16 count = SYSC_ARG2(stack);
 
 	/* check range */
 	if(count == 0 || (u32)start + (u32)count > 0xFFFF) {
@@ -848,9 +857,9 @@ static void sysc_releaseIOPorts(sSysCallStack *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static void sysc_setSigHandler(sSysCallStack *stack) {
-	tSig signal = (tSig)stack->arg1;
-	fSigHandler handler = (fSigHandler)stack->arg2;
+static void sysc_setSigHandler(sIntrptStackFrame *stack) {
+	tSig signal = (tSig)SYSC_ARG1(stack);
+	fSigHandler handler = (fSigHandler)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
 	s32 err;
 
@@ -868,8 +877,8 @@ static void sysc_setSigHandler(sSysCallStack *stack) {
 	SYSC_RET1(stack,err);
 }
 
-static void sysc_unsetSigHandler(sSysCallStack *stack) {
-	tSig signal = (tSig)stack->arg1;
+static void sysc_unsetSigHandler(sIntrptStackFrame *stack) {
+	tSig signal = (tSig)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 
 	if(!sig_canHandle(signal)) {
@@ -882,16 +891,16 @@ static void sysc_unsetSigHandler(sSysCallStack *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static void sysc_ackSignal(sSysCallStack *stack) {
+static void sysc_ackSignal(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
 	sig_ackHandling(p->pid);
 	SYSC_RET1(stack,0);
 }
 
-static void sysc_sendSignalTo(sSysCallStack *stack) {
-	tPid pid = (tPid)stack->arg1;
-	tSig signal = (tSig)stack->arg2;
-	u32 data = stack->arg3;
+static void sysc_sendSignalTo(sIntrptStackFrame *stack) {
+	tPid pid = (tPid)SYSC_ARG1(stack);
+	tSig signal = (tSig)SYSC_ARG2(stack);
+	u32 data = SYSC_ARG3(stack);
 	sProc *p = proc_getRunning();
 
 	if(!sig_canSend(signal)) {
@@ -916,11 +925,11 @@ static void sysc_sendSignalTo(sSysCallStack *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static void sysc_exec(sSysCallStack *stack) {
+static void sysc_exec(sIntrptStackFrame *stack) {
 	const u32 bytesPerReq = 1 * K;
 	char pathSave[MAX_PATH_LEN + 1];
-	char *path = (char*)stack->arg1;
-	char **args = (char**)stack->arg2;
+	char *path = (char*)SYSC_ARG1(stack);
+	char **args = (char**)SYSC_ARG2(stack);
 	char **arg;
 	char *argBuffer;
 	u8 *buffer;
@@ -1064,8 +1073,8 @@ static void sysc_exec(sSysCallStack *stack) {
 	}
 }
 
-static void sysc_createNode(sSysCallStack *stack) {
-	const char *path = (char*)stack->arg1;
+static void sysc_createNode(sIntrptStackFrame *stack) {
+	const char *path = (char*)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
 	u32 nameLen,pathLen;
 	s32 res;
@@ -1125,9 +1134,9 @@ static void sysc_createNode(sSysCallStack *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static void sysc_getFileInfo(sSysCallStack *stack) {
-	char *path = (char*)stack->arg1;
-	sFileInfo *info = (sFileInfo*)stack->arg2;
+static void sysc_getFileInfo(sIntrptStackFrame *stack) {
+	char *path = (char*)SYSC_ARG1(stack);
+	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	tVFSNodeNo nodeNo;
 	s32 res;
 

@@ -447,19 +447,16 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	signalData.active = 0;
 }
 
-static u64 umodeTime = 0;
-static u64 kmodeTime = 0;
-static u64 kmodeStart = 0;
-static u64 kmodeEnd = 0;
-
 void intrpt_handler(sIntrptStackFrame stack) {
-	sProc *p;
+	u64 cycles = cpu_rdtsc();
+	sProc *p = proc_getRunning();
 	curIntrptStack = &stack;
 
-	/*u32 syscallNo = stack.intrptNo == IRQ_SYSCALL ? ((sSysCallStack*)stack.uesp)->number : 0;*/
-
-	kmodeStart = cpu_rdtsc();
-	umodeTime += kmodeStart - kmodeEnd;
+	/* increase user-space cycles */
+	if(p->ucycleStart > 0)
+		p->ucycleCount += cycles - p->ucycleStart;
+	/* kernel-mode starts here */
+	p->kcycleStart = cycles;
 
 	/* add signal */
 	switch(stack.intrptNo) {
@@ -480,7 +477,6 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 	vfsr_checkForMsgs();
 
-	/*vid_printf("umodeTime=%d%%\n",(s32)(100. / (cpu_rdtsc() / (double)umodeTime)));*/
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
 		case IRQ_ATA1:
@@ -529,7 +525,6 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 			/* #GPF */
 			if(stack.intrptNo == EX_GEN_PROT_FAULT) {
-				p = proc_getRunning();
 				/* io-map not loaded yet? */
 				if(p->ioMap != NULL && !tss_ioMapPresent()) {
 					/* load it and give the process another try */
@@ -559,12 +554,13 @@ void intrpt_handler(sIntrptStackFrame stack) {
 	if(stack.intrptNo != IRQ_TIMER)
 		intrpt_eoi(stack.intrptNo);
 
-	kmodeEnd = cpu_rdtsc();
-	kmodeTime += kmodeEnd - kmodeStart;
-	/*if((u32)(kmodeEnd - kmodeStart) > 2000000)
-		vid_printf("SLOW(%d) %d %d\n",(u32)(kmodeEnd - kmodeStart),stack.intrptNo,syscallNo);
-	else
-		vid_printf("FAST(%d) %d %d\n",(u32)(kmodeEnd - kmodeStart),stack.intrptNo,syscallNo);*/
+	/* kernel-mode ends */
+	p = proc_getRunning();
+	cycles = cpu_rdtsc();
+	if(p->kcycleStart > 0)
+		p->kcycleCount += cycles - p->kcycleStart;
+	/* user-mode starts here */
+	p->ucycleStart = cycles;
 }
 
 static void intrpt_initPic(void) {

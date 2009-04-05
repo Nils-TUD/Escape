@@ -825,7 +825,7 @@ s32 vfs_serviceUseReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 		/* don't block the kernel ;) */
 		if(pid != KERNEL_PID) {
 			/* wait until a message arrives */
-			/* don't cache the list here, because the pointer changes if the list ist NULL */
+			/* don't cache the list here, because the pointer changes if the list is NULL */
 			while(sll_length(node->data.servuse.recvList) == 0) {
 				proc_wait(pid,EV_RECEIVED_MSG);
 				proc_switch();

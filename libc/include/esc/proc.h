@@ -26,7 +26,8 @@ typedef struct {
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
-	u64 cycleCount;
+	u64 ucycleCount;
+	u64 kcycleCount;
 	char command[MAX_PROC_NAME_LEN + 1];
 } sProc;
 

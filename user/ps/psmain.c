@@ -12,12 +12,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-/**
- * Prints the given process
- *
- * @param p the process
- */
-static void ps_printProcess(sProc *p);
+#define ARRAY_INC_SIZE		10
+
+static sProc *ps_getProcs(u32 *count);
 
 static const char *states[] = {
 	"Unused ",
@@ -28,13 +25,50 @@ static const char *states[] = {
 };
 
 int main(void) {
+	sProc *procs;
+	u32 i,count;
+	u64 totalCycles;
+
+	procs = ps_getProcs(&count);
+	if(procs == NULL)
+		return EXIT_FAILURE;
+
+	/* sum total cycles */
+	totalCycles = 0;
+	for(i = 0; i < count; i++)
+		totalCycles += procs[i].ucycleCount + procs[i].kcycleCount;
+
+	/* now print processes */
+	printf("PID\tPPID MEM\t\tSTATE\t%%CPU (USER,KERNEL)\tCOMMAND\n");
+
+	for(i = 0; i < count; i++) {
+		u64 procCycles = procs[i].ucycleCount + procs[i].kcycleCount;
+		u32 cyclePercent = (u32)(100. / (totalCycles / (double)procCycles));
+		u32 userPercent = (u32)(100. / (procCycles / (double)procs[i].ucycleCount));
+		u32 kernelPercent = (u32)(100. / (procCycles / (double)procs[i].kcycleCount));
+		printf("%2d\t%2d\t%4d KiB\t%s\t%3d%% (%3d%%,%3d%%)\t%s\n",
+				procs[i].pid,procs[i].parentPid,(procs[i].textPages + procs[i].dataPages + procs[i].stackPages) * 4,
+				states[procs[i].state],cyclePercent,userPercent,kernelPercent,procs[i].command);
+	}
+
+	printf("\n");
+
+	free(procs);
+	return EXIT_SUCCESS;
+}
+
+static sProc *ps_getProcs(u32 *count) {
 	tFD dd,dfd;
-	sProc proc;
 	sDirEntry *entry;
 	char path[] = "system:/processes/";
 	char ppath[255];
-
-	printf("PID\tPPID\tPAGES\tSTATE\t\tCYCLES\t\t\t\tCOMMAND\n");
+	u32 pos = 0;
+	u32 size = ARRAY_INC_SIZE;
+	sProc *procs = (sProc*)malloc(size * sizeof(sProc));
+	if(procs == NULL) {
+		printe("Unable to allocate mem for processes");
+		return NULL;
+	}
 
 	if((dd = opendir(path)) >= 0) {
 		while((entry = readdir(dd)) != NULL) {
@@ -44,33 +78,38 @@ int main(void) {
 			strcpy(ppath,path);
 			strncat(ppath,entry->name,strlen(entry->name));
 			if((dfd = open(ppath,IO_READ)) >= 0) {
-				if(read(dfd,&proc,sizeof(sProc)) < 0) {
-					printe("Unable to read process-data");
-					return EXIT_FAILURE;
+				if(pos >= size) {
+					size += ARRAY_INC_SIZE;
+					procs = (sProc*)realloc(procs,size * sizeof(sProc));
+					if(procs == NULL) {
+						printe("Unable to allocate mem for processes");
+						return NULL;
+					}
 				}
-				ps_printProcess(&proc);
+
+				if(read(dfd,procs + pos,sizeof(sProc)) < 0) {
+					free(procs);
+					printe("Unable to read process-data");
+					return NULL;
+				}
+
+				pos++;
 				close(dfd);
 			}
 			else {
+				free(procs);
 				printe("Unable to open '%s'\n",ppath);
-				return EXIT_FAILURE;
+				return NULL;
 			}
 		}
 		closedir(dd);
 	}
 	else {
+		free(procs);
 		printe("Unable to open '%s'\n",path);
-		return EXIT_FAILURE;
+		return NULL;
 	}
 
-	printf("\n");
-
-	return EXIT_SUCCESS;
-}
-
-static void ps_printProcess(sProc *p) {
-	u32 *ptr = (u32*)&p->cycleCount;
-	printf("%2d\t%2d\t\t%3d\t\t%s\t\t%#08x%08x\t%s\n",
-			p->pid,p->parentPid,p->textPages + p->dataPages + p->stackPages,
-			states[p->state],*(ptr + 1),*ptr,p->command);
+	*count = pos;
+	return procs;
 }

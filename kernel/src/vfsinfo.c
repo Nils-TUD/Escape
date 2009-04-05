@@ -21,7 +21,8 @@ typedef struct {
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
-	u64 cycleCount;
+	u64 ucycleCount;
+	u64 kcycleCount;
 	char command[MAX_PROC_NAME_LEN + 1];
 } sProcPub;
 
@@ -68,7 +69,8 @@ static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer) {
 	proc->textPages = p->textPages;
 	proc->dataPages = p->dataPages;
 	proc->stackPages = p->stackPages;
-	proc->cycleCount = p->cycleCount;
+	proc->ucycleCount = p->ucycleCount;
+	proc->kcycleCount = p->kcycleCount;
 	memcpy(proc->command,p->command,strlen(p->command) + 1);
 }
 

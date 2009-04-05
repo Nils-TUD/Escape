@@ -63,6 +63,10 @@ typedef struct {
 	/* the io-map (NULL by default) */
 	u8 *ioMap;
 	/* number of cpu-cycles the process has got so far; TODO: should be cpu-time later */
+	u64 ucycleStart;
+	u64 ucycleCount;
+	u64 kcycleStart;
+	u64 kcycleCount;
 	u64 cycleCount;
 	/* start-command */
 	char command[MAX_PROC_NAME_LEN + 1];

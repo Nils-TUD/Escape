@@ -163,7 +163,7 @@ void paging_mapHigherHalf(void) {
 void paging_initCOWList(void) {
 	cowFrames = sll_create();
 	if(cowFrames == NULL)
-		panic("Not enough mem for copy-on-write-list!");
+		util_panic("Not enough mem for copy-on-write-list!");
 }
 
 sPDEntry *paging_getProc0PD(void) {
@@ -311,7 +311,7 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 			/* get new frame for page-table */
 			frame = mm_allocateFrame(MM_DEF);
 			if(frame == 0) {
-				panic("Not enough memory");
+				util_panic("Not enough memory");
 			}
 
 			pd->ptFrameNo = frame;
@@ -522,7 +522,7 @@ bool paging_handlePageFault(u32 address) {
 
 	/* should never happen */
 	if(ourCOW == NULL)
-		panic("No COW entry for process %d and address 0x%x",cp->pid,address);
+		util_panic("No COW entry for process %d and address 0x%x",cp->pid,address);
 
 	/* remove our from list and adjust pte */
 	kheap_free(ourCOW->data);
@@ -660,22 +660,22 @@ static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
 		/* build cow-entry for child */
 		cow = (sCOW*)kheap_alloc(sizeof(sCOW));
 		if(cow == NULL)
-			panic("Not enough mem for copy-on-write!");
+			util_panic("Not enough mem for copy-on-write!");
 		cow->frameNumber = *frames >> PAGE_SIZE_SHIFT;
 		cow->proc = newProc;
 		if(!sll_append(cowFrames,cow))
-			panic("Not enough mem for copy-on-write!");
+			util_panic("Not enough mem for copy-on-write!");
 
 		/* build cow-entry for parent if not already done */
 		ownPt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
 		if(!ownPt->copyOnWrite) {
 			cow = (sCOW*)kheap_alloc(sizeof(sCOW));
 			if(cow == NULL)
-				panic("Not enough mem for copy-on-write!");
+				util_panic("Not enough mem for copy-on-write!");
 			cow->frameNumber = *frames >> PAGE_SIZE_SHIFT;
 			cow->proc = proc_getRunning();
 			if(!sll_append(cowFrames,cow))
-				panic("Not enough mem for copy-on-write!");
+				util_panic("Not enough mem for copy-on-write!");
 
 			ownPt->copyOnWrite = true;
 			ownPt->writable = false;

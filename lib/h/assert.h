@@ -19,7 +19,7 @@
 
 #	if IN_KERNEL
 #		define vassert(cond,errorMsg,...) do { if(!(cond)) { \
-			panic("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
+			util_panic("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
 				__LINE__,## __VA_ARGS__); \
 		} } while(0);
 #	else

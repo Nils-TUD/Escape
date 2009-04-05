@@ -12,9 +12,8 @@
 #define MAX_DATE_LEN 100
 
 int main(int argc,char **argv) {
-	u32 ts;
 	sDate date;
-	char *fmt = "%c";
+	char *fmt = (char*)"%c";
 	char str[MAX_DATE_LEN];
 
 	/* use format from argument? */

@@ -91,7 +91,7 @@ static sServiceLoad **services = NULL;
 
 int main(void) {
 	tFD fd;
-	tPid child;
+	s32 child;
 	char *servDefs;
 
 	/* wait for fs; we need it for exec */
@@ -348,7 +348,7 @@ static bool loadServices(sServiceLoad **loads) {
 static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
 	u32 i;
 	tFD fd;
-	tPid child;
+	s32 child;
 	char path[MAX_SERVICE_PATH_LEN + 1] = "file:/services/";
 	char servName[MAX_SERVICE_PATH_LEN + 1] = "services:/";
 	char *sname;

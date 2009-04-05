@@ -510,7 +510,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 					if(proc_extendStack(addr) < 0) {
 						/* hm...there is something wrong :) */
 						/* TODO later the process should be killed here */
-						panic("Page fault for address=0x%08x @ 0x%x",addr,stack.eip);
+						util_panic("Page fault for address=0x%08x @ 0x%x",addr,stack.eip);
 					}
 				}
 				break;
@@ -522,7 +522,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 				/* stop here? */
 				if(exCount >= MAX_EX_COUNT)
-					panic("Got this exception %d times. Stopping here\n",exCount);
+					util_panic("Got this exception %d times. Stopping here\n",exCount);
 			}
 			else {
 				exCount = 0;
@@ -540,7 +540,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 				}
 
 				/* TODO later the process should be killed here */
-				panic("GPF @ 0x%x",stack.eip);
+				util_panic("GPF @ 0x%x",stack.eip);
 				break;
 			}
 			/* fall through */
@@ -571,22 +571,22 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 static void intrpt_initPic(void) {
 	/* starts the initialization. we want to send a ICW4 */
-	outb(PIC_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
-	outb(PIC_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
+	util_outByte(PIC_MASTER_CMD,ICW1_INIT | ICW1_NEED_ICW4);
+	util_outByte(PIC_SLAVE_CMD,ICW1_INIT | ICW1_NEED_ICW4);
 	/* remap the irqs to 0x20 and 0x28 */
-	outb(PIC_MASTER_DATA,IRQ_MASTER_BASE);
-	outb(PIC_SLAVE_DATA,IRQ_SLAVE_BASE);
+	util_outByte(PIC_MASTER_DATA,IRQ_MASTER_BASE);
+	util_outByte(PIC_SLAVE_DATA,IRQ_SLAVE_BASE);
 	/* continue */
-	outb(PIC_MASTER_DATA,4);
-	outb(PIC_SLAVE_DATA,2);
+	util_outByte(PIC_MASTER_DATA,4);
+	util_outByte(PIC_SLAVE_DATA,2);
 
 	/* we want to use 8086 mode */
-	outb(PIC_MASTER_DATA,ICW4_8086);
-	outb(PIC_SLAVE_DATA,ICW4_8086);
+	util_outByte(PIC_MASTER_DATA,ICW4_8086);
+	util_outByte(PIC_SLAVE_DATA,ICW4_8086);
 
 	/* enable all interrupts (set masks to 0) */
-	outb(PIC_MASTER_DATA,0x00);
-	outb(PIC_SLAVE_DATA,0x00);
+	util_outByte(PIC_MASTER_DATA,0x00);
+	util_outByte(PIC_SLAVE_DATA,0x00);
 }
 
 static void intrpt_setIDT(u16 number,fISR handler,u8 dpl) {
@@ -603,11 +603,11 @@ static void intrpt_eoi(u32 intrptNo) {
 	if(intrptNo >= IRQ_MASTER_BASE && intrptNo <= IRQ_MASTER_BASE + IRQ_NUM) {
 	    if(intrptNo >= IRQ_SLAVE_BASE) {
 	    	/* notify the slave */
-	        outb(PIC_SLAVE_CMD,PIC_EOI);
+	        util_outByte(PIC_SLAVE_CMD,PIC_EOI);
 	    }
 
 	    /* notify the master */
-	    outb(PIC_MASTER_CMD,PIC_EOI);
+	    util_outByte(PIC_MASTER_CMD,PIC_EOI);
     }
 }
 

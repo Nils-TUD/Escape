@@ -12,7 +12,7 @@
 #ifdef IN_KERNEL
 #	include <kheap.h>
 #	include <video.h>
-/* for panic (vassert) */
+/* for util_panic (vassert) */
 #	include <util.h>
 #	define sllprintf	vid_printf
 #	define free(x)		kheap_free(x)

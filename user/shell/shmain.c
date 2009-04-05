@@ -265,7 +265,7 @@ static s32 shell_executeCmd(char *line) {
 			}
 		}
 		else {
-			tPid pid;
+			s32 pid;
 			if((pid = fork()) == 0) {
 				/* redirect fds */
 				if(cmd->dup & DUP_STDOUT)

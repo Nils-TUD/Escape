@@ -10,10 +10,10 @@
 [global loader]
 [global gdt_flush]
 [global tss_load]
-[global outb]
-[global inb]
+[global util_outByte]
+[global util_inByte]
 [global KernelStart]
-[global halt]
+[global util_halt]
 [global intrpt_setEnabled]
 [global intrpt_loadidt]
 [global paging_enable]
@@ -157,19 +157,19 @@ tss_load:
 	ltr		[esp+4]												; load tss
 	ret
 
-; void halt(void);
-halt:
+; void util_halt(void);
+util_halt:
 	hlt
 
-; void outb(u16 port,u8 val);
-outb:
+; void util_outByte(u16 port,u8 val);
+util_outByte:
 	mov		dx,[esp+4]										; load port
 	mov		al,[esp+8]										; load value
 	out		dx,al													; write to port
 	ret
 
-; u8 inb(u16 port);
-inb:
+; u8 util_inByte(u16 port);
+util_inByte:
 	mov		dx,[esp+4]										; load port
 	in		al,dx													; read from port
 	ret

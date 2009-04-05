@@ -37,7 +37,7 @@ void proc_init(void) {
 	/* init the first process */
 	pi = 0;
 	if(!vfs_createProcess(0,&vfsinfo_procReadHandler))
-		panic("Not enough mem for init process");
+		util_panic("Not enough mem for init process");
 	procs[pi].state = ST_RUNNING;
 	procs[pi].events = EV_NOEVENT;
 	procs[pi].pid = 0;
@@ -388,7 +388,7 @@ void proc_destroy(sProc *p) {
 		if(deadProcs == NULL) {
 			deadProcs = sll_create();
 			if(deadProcs == NULL)
-				panic("Not enough mem for deadProcs");
+				util_panic("Not enough mem for deadProcs");
 		}
 
 		/* mark ourself as destroyable */

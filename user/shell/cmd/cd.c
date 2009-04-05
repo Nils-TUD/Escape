@@ -15,7 +15,6 @@
 
 s32 shell_cmdCd(u32 argc,char **argv) {
 	char *path;
-	tFD fd;
 	sFileInfo info;
 
 	if(argc != 2) {

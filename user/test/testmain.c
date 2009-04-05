@@ -8,6 +8,8 @@
 #include <esc/fileio.h>
 #include <esc/debug.h>
 #include <esc/io.h>
+#include <esc/service.h>
+#include <esc/date.h>
 #include <stdlib.h>
 #include <string.h>
 

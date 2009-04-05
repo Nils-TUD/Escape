@@ -49,15 +49,15 @@ static u64 lastResched = 0;
 void timer_init(void) {
 	/* change timer divisor */
 	u16 freq = TIMER_BASE_FREQUENCY / TIMER_FREQUENCY;
-	outb(IOPORT_TIMER_CTRL,TIMER_CTRL_CNT0 | TIMER_CTRL_RWLOHI |
+	util_outByte(IOPORT_TIMER_CTRL,TIMER_CTRL_CNT0 | TIMER_CTRL_RWLOHI |
 			TIMER_CTRL_MODE2 | TIMER_CTRL_CNTBIN16);
-	outb(IOPORT_TIMER_CNTDIV,freq & 0xFF);
-	outb(IOPORT_TIMER_CNTDIV,freq >> 8);
+	util_outByte(IOPORT_TIMER_CNTDIV,freq & 0xFF);
+	util_outByte(IOPORT_TIMER_CNTDIV,freq >> 8);
 
 	/* init list */
 	listener = sll_create();
 	if(listener == NULL)
-		panic("Not enough mem for timer-listener");
+		util_panic("Not enough mem for timer-listener");
 }
 
 s32 timer_sleepFor(tPid pid,u32 msecs) {

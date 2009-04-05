@@ -97,15 +97,6 @@ void vid_putchar(char c);
 void vid_printu(u32 n,u8 base);
 
 /**
- * Determines the width of the given unsigned 32-bit integer in the given base
- *
- * @param n the integer
- * @param base the base (2..16)
- * @return the width
- */
-u8 vid_getuwidth(u32 n,u8 base);
-
-/**
  * Prints the given string on the screen
  *
  * @param str the string
@@ -113,27 +104,11 @@ u8 vid_getuwidth(u32 n,u8 base);
 void vid_puts(const char *str);
 
 /**
- * Determines the width of the given string
- *
- * @param str the string
- * @return the width
- */
-u8 vid_getswidth(const char *str);
-
-/**
  * Prints the given signed 32-bit integer in base 10
  *
  * @param n the integer
  */
 void vid_printn(s32 n);
-
-/**
- * Determines the width of the given signed 32-bit integer in base 10
- *
- * @param n the integer
- * @return the width
- */
-u8 vid_getnwidth(s32 n);
 
 /**
  * The kernel-version of printf. Currently it supports:

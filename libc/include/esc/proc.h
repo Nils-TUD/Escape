@@ -18,22 +18,6 @@
 #define EV_RECEIVED_MSG		2
 #define EV_CHILD_DIED		4
 
-/* process-data */
-typedef struct {
-	u8 state;
-	tPid pid;
-	tPid parentPid;
-	u32 textPages;
-	u32 dataPages;
-	u32 stackPages;
-	u64 ucycleCount;
-	u64 kcycleCount;
-	char command[MAX_PROC_NAME_LEN + 1];
-} sProc;
-
-/* the process states */
-typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE = 4} eProcState;
-
 /**
  * @return the process-id
  */

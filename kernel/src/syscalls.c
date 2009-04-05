@@ -366,13 +366,6 @@ static void sysc_fork(sIntrptStackFrame *stack) {
 	}
 
 	res = proc_clone(newPid);
-	if(res >= 0) {
-		/* FIXME: somehow it causes trouble when we don't handle copy-on-write here */
-		/* probably the kernel overwrites the user-stack anywhere. but where? :/ */
-		paging_handlePageFault(KERNEL_AREA_V_ADDR - 1);
-		paging_handlePageFault(KERNEL_AREA_V_ADDR - PAGE_SIZE - 1);
-	}
-
 	/* error? */
 	if(res < 0) {
 		SYSC_ERROR(stack,res);

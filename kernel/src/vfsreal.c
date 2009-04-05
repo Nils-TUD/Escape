@@ -145,7 +145,7 @@ void vfsr_checkForMsgs(void) {
 				sMsgDataFSStatResp *res = kheap_alloc(sizeof(sMsgDataFSStatResp));
 				/* TODO better way? */
 				if(res == NULL)
-					panic("Out of kernel-heapspace");
+					util_panic("Out of kernel-heapspace");
 
 				vfs_readFile(KERNEL_PID,fsServiceFile,(u8*)res,sizeof(sMsgDataFSStatResp));
 
@@ -168,7 +168,7 @@ void vfsr_checkForMsgs(void) {
 				sMsgDataFSReadResp *res = kheap_alloc(header.length);
 				/* TODO better way? */
 				if(res == NULL)
-					panic("Out of kernel-heapspace");
+					util_panic("Out of kernel-heapspace");
 
 				vfs_readFile(KERNEL_PID,fsServiceFile,(u8*)res,header.length);
 

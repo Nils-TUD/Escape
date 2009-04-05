@@ -146,7 +146,7 @@ u32 mm_allocateFrame(eMemType type) {
 
 		/* no frame found? */
 		if(l16mCachePos == 0) {
-			panic("Not enough memory :(");
+			util_panic("Not enough memory :(");
 		}
 
 		mm_markFrameUsed(l16mCache[l16mCachePos - 1],true);
@@ -155,7 +155,7 @@ u32 mm_allocateFrame(eMemType type) {
 	else {
 		/* no more frames free? */
 		if((u32)u16mStack == u16mStackStart) {
-			panic("Not enough memory :(");
+			util_panic("Not enough memory :(");
 		}
 
 		return *(--u16mStack);
@@ -265,7 +265,7 @@ void mm_dbg_printFreeFrames(void) {
 	}
 
 	vid_printf("Free frames > 16MB:\n");
-	for(i = 0,ptr = u16mStack - 1;ptr >= u16mStackStart; i++,ptr--) {
+	for(i = 0,ptr = u16mStack - 1;(u32)ptr >= u16mStackStart; i++,ptr--) {
 		vid_printf("0x%08x, ",*ptr);
 		if(i % 4 == 3)
 			vid_printf("\n");

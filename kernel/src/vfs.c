@@ -848,7 +848,7 @@ s32 vfs_serviceUseReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 					proc_getByPid(pid)->name,node->parent->name,(u8*)(msg + 1) + offset,count);*/
 
 	/*vid_printf("\n%s read msg from %s:\n---\n",proc_getByPid(pid)->name,node->parent->name);
-	dumpBytes(buffer,count);
+	util_dumpBytes(buffer,count);
 	vid_printf("\n---\n");*/
 
 	/* free data and remove element from list if the complete message has been read */
@@ -892,7 +892,7 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 
 		/*vid_printf("\n%s Wrote msg to %s; dest=0x%x,length=%d\n",
 				proc_getByPid(pid)->name,n->parent->name,msg + 1,count);*/
-		/*dumpBytes(buffer,count);
+		/*util_dumpBytes(buffer,count);
 		vid_printf("\n---\n");*/
 
 		/* append to list */

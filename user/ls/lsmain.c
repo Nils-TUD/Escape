@@ -44,7 +44,7 @@ int main(int argc,char *argv[]) {
 	sDate date;
 
 	/* parse args */
-	for(i = 1; i < argc; i++) {
+	for(i = 1; (s32)i < argc; i++) {
 		if(*argv[i] == '-') {
 			str = argv[i] + 1;
 			while(*str) {

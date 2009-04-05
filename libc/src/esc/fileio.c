@@ -286,7 +286,7 @@ tFile *fopen(const char *filename,const char *mode) {
 
 u32 fread(void *ptr,u32 size,u32 count,tFile *file) {
 	u32 total;
-	char c;
+	s32 res;
 	u8 *bPtr = (u8*)ptr;
 	sBuffer *in;
 	sIOBuffer *buf = getBuf(file);
@@ -296,17 +296,25 @@ u32 fread(void *ptr,u32 size,u32 count,tFile *file) {
 	if(buf->in.fd == -1)
 		return IO_EOF;
 
-	/* read from buffer or file */
+	/* first read from buffer */
 	in = &(buf->in);
 	total = size * count;
-	while(total > 0) {
-		c = doFscanc(in);
-		if(c == IO_EOF)
-			return count - ((total + size - 1) / size);
-		*bPtr++ = c;
+	while(in->pos > 0) {
+		*bPtr++ = in->str[--(in->pos)];
 		total--;
 	}
-	return count;
+
+	/* TODO maybe we should use in smaller steps, if usefull? */
+	/* read from file */
+	res = read(in->fd,bPtr,total);
+	if(res < 0)
+		return count - ((total + size - 1) / size);
+	/* handle EOF from vterm */
+	/* TODO this is not really nice, right? */
+	if(res > 0 && bPtr[0] == (u8)IO_EOF)
+		return 0;
+	total -= res;
+	return count - ((total + size - 1) / size);
 }
 
 u32 fwrite(const void *ptr,u32 size,u32 count,tFile *file) {
@@ -320,6 +328,7 @@ u32 fwrite(const void *ptr,u32 size,u32 count,tFile *file) {
 	if(buf->out.fd == -1)
 		return IO_EOF;
 
+	/* TODO don't write it byte for byte */
 	/* write to buffer */
 	out = &(buf->out);
 	total = size * count;
@@ -801,7 +810,7 @@ static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
 			count++;
 		}
 
-		/* read pad-character */
+		/* read flags */
 		flags = 0;
 		pad = 0;
 		readFlags = true;
@@ -989,6 +998,9 @@ static s32 doVfscanf(sBuffer *buf,const char *fmt,va_list ap) {
 	s32 *n,count = 0;
 	u32 *u,x;
 	u8 base;
+	bool readFlags;
+	bool shortPtr;
+	bool discard;
 
 	while(1) {
 		/* wait for a '%' */
@@ -1006,9 +1018,29 @@ static s32 doVfscanf(sBuffer *buf,const char *fmt,va_list ap) {
 			if(rc == IO_EOF)
 				return count;
 		}
-		while(rc == ' ' || rc == '\t');
+		while(isspace(rc));
 		if(doFscanback(buf,rc) == IO_EOF)
 			return count;
+
+		/* read flags */
+		shortPtr = false;
+		discard = false;
+		readFlags = true;
+		while(readFlags) {
+			switch(*fmt) {
+				case '*':
+					discard = true;
+					fmt++;
+					break;
+				case 'h':
+					shortPtr = true;
+					fmt++;
+					break;
+				default:
+					readFlags = false;
+					break;
+			}
+		}
 
 		/* read length */
 		length = 0;
@@ -1092,27 +1124,38 @@ static s32 doVfscanf(sBuffer *buf,const char *fmt,va_list ap) {
 					return count;
 
 				/* store value */
-				if(c == 'd') {
-					n = va_arg(ap, s32*);
-					*n = neg ? -val : val;
+				if(!discard) {
+					if(c == 'd') {
+						n = va_arg(ap, s32*);
+						if(shortPtr)
+							*(s16*)n = neg ? -val : val;
+						else
+							*n = neg ? -val : val;
+					}
+					else {
+						u = va_arg(ap, u32*);
+						if(shortPtr)
+							*(u16*)u = val;
+						else
+							*u = val;
+					}
+					count++;
 				}
-				else {
-					u = va_arg(ap, u32*);
-					*u = val;
-				}
-				count++;
 			}
 			break;
 
 			/* string */
 			case 's':
-				s = va_arg(ap, char*);
+				if(!discard)
+					s = va_arg(ap, char*);
+
 				while(length != 0) {
 					rc = doFscanc(buf);
 					if(rc == IO_EOF)
 						break;
 					if(!isspace(rc)) {
-						*s++ = rc;
+						if(!discard)
+							*s++ = rc;
 						if(length > 0)
 							length--;
 					}
@@ -1122,18 +1165,26 @@ static s32 doVfscanf(sBuffer *buf,const char *fmt,va_list ap) {
 						break;
 					}
 				}
-				*s = '\0';
-				count++;
+
+				if(!discard) {
+					*s = '\0';
+					count++;
+				}
 				break;
 
 			/* character */
 			case 'c':
-				s = va_arg(ap, char*);
+				if(!discard)
+					s = va_arg(ap, char*);
+
 				rc = doFscanc(buf);
 				if(rc == IO_EOF)
 					return count;
-				*s = rc;
-				count++;
+
+				if(!discard) {
+					*s = rc;
+					count++;
+				}
 				break;
 
 			/* error */

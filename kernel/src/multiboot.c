@@ -11,6 +11,7 @@
 #include <elf.h>
 #include <video.h>
 #include <vfsnode.h>
+#include <util.h>
 #include <string.h>
 
 #define CHECK_FLAG(flags,bit) (flags & (1 << bit))
@@ -60,7 +61,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		/* clone proc */
 		tPid pid = proc_getFreePid();
 		if(pid == INVALID_PID)
-			panic("No free process-slots");
+			util_panic("No free process-slots");
 
 		if(proc_clone(pid)) {
 			/* we'll reach this as soon as the scheduler has chosen the created process */

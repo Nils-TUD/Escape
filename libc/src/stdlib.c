@@ -7,6 +7,7 @@
 #include <esc/proc.h>
 #include <esc/io.h>
 #include <esc/env.h>
+#include <esc/fileio.h>
 #include <stdlib.h>
 
 /* macro to get a pointer to element <i> from <array> with a size of <elSize> per element */
@@ -41,7 +42,7 @@ char *getenv(const char *name) {
 }
 
 int system(const char *cmd) {
-	tPid child;
+	s32 child;
 	/* check wether we have a shell */
 	if(cmd == NULL) {
 		tFD fd = open("file:/bin/shell",IO_READ);

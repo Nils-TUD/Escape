@@ -491,7 +491,7 @@ static sVFSNode *vfsn_createPipeNode(tPid pid,sVFSNode *parent,char *name) {
 static sVFSNode *vfsn_requestNode(void) {
 	sVFSNode *node;
 	if(freeList == NULL)
-		panic("No free vfs-nodes!");
+		util_panic("No free vfs-nodes!");
 
 	node = freeList;
 	freeList = freeList->next;

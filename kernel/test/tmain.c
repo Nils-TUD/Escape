@@ -47,7 +47,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_init();
 
 	vid_printf("GDT exchanged, paging enabled, video initialized");
-	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_toLineEnd(util_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	mboot_dbg_print();
@@ -55,40 +55,40 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	/* mm */
 	vid_printf("Initializing physical memory-management...");
 	mm_init();
-	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_toLineEnd(util_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	/* paging */
 	vid_printf("Initializing paging...");
 	paging_mapHigherHalf();
 	paging_initCOWList();
-	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_toLineEnd(util_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	/* vfs */
 	vid_printf("Initializing VFS...");
 	vfs_init();
 	vfsinfo_init();
-	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_toLineEnd(util_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	/* processes */
 	vid_printf("Initializing process-management...");
 	proc_init();
 	sched_init();
-	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_toLineEnd(util_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	/* idt */
 	vid_printf("Initializing IDT...");
 	intrpt_init();
-	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_toLineEnd(util_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	/* timer */
 	vid_printf("Initializing Timer...");
 	timer_init();
-	vid_toLineEnd(vid_getswidth("DONE"));
+	vid_toLineEnd(util_getswidth("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	vid_printf("Free frames=%d, pages mapped=%d, free mem=%d KiB\n",
@@ -97,16 +97,16 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 
 	/* start tests */
-	/*test_register(&tModMM);
+	test_register(&tModMM);
 	test_register(&tModPaging);
 	test_register(&tModProc);
 	test_register(&tModKHeap);
 	test_register(&tModSched);
-	test_register(&tModSLList);*/
-	test_register(&tModString);/*
+	test_register(&tModSLList);
+	test_register(&tModString);
 	test_register(&tModVFS);
 	test_register(&tModVFSn);
-	test_register(&tModSignals);*/
+	test_register(&tModSignals);
 	test_start();
 
 

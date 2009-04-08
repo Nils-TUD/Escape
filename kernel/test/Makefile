@@ -19,7 +19,6 @@ LSRC=$(wildcard $(LIB)/src/*.c)
 
 # objects
 AOBJ=$(BUILD)/kernel_asm.o
-AOBJEND=$(BUILD)/end.o
 KOBJ=$(patsubst ../src/%.c,$(BUILD)/testk_%.o,$(KSRC))
 TOBJ=$(patsubst %.c,$(BUILD)/test_%.o,$(TSRC))
 LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILD)/test_lib_%.o,$(LSRC))
@@ -35,7 +34,7 @@ all: $(BIN)
 
 $(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		@echo "===== LINKING =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(AOBJEND);
+		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 		@# since it's size is 0 at the first time. In the second part the size is correct
 		@# and therefore the symbol-table will be generated correctly :)
@@ -44,13 +43,13 @@ $(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		@echo "===== COMPILING SYMBOL-C-FILE =====";
 		$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "===== LINKING AGAIN =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(AOBJEND);
+		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
 		@echo "===== BUILDING SYMBOL-FILE =====";
 		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "===== COMPILING SYMBOL-C-FILE =====";
 		$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "===== LINKING AGAIN =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(AOBJEND);
+		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
 		@echo "===== COPYING BINARY =====";
 		@make -C ../../ mounthdd
 		sudo cp $(BIN) $(DISKMOUNT)/boot

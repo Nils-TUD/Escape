@@ -15,9 +15,21 @@
 #define ARRAY_INC_SIZE		8
 #define CONSOLE_WIDTH		80
 
+/* flags */
 #define LS_FL_ALL			1
 #define LS_FL_LONG			2
+#define LS_FL_INODE			4
 
+/* for calculating the widths of the fields */
+#define WIDTHS_COUNT		6
+#define W_INODE				0
+#define W_LINKCOUNT			1
+#define W_UID				2
+#define W_GID				3
+#define W_SIZE				4
+#define W_NAME				5
+
+/* internal data-structure for storing all attributes we want to display about a file/folder */
 typedef struct {
 	tInodeNo inodeNo;
 	u16 uid;
@@ -39,7 +51,8 @@ int main(int argc,char *argv[]) {
 	char *path = NULL;
 	char *str;
 	char dateStr[20];
-	u32 i,pos,x,maxWidth,count,flags = 0;
+	u32 widths[WIDTHS_COUNT] = {0};
+	u32 i,pos,x,count,flags = 0;
 	sFullDirEntry **entries,*entry;
 	sDate date;
 
@@ -54,6 +67,9 @@ int main(int argc,char *argv[]) {
 						break;
 					case 'l':
 						flags |= LS_FL_LONG;
+						break;
+					case 'i':
+						flags |= LS_FL_INODE;
 						break;
 				}
 				str++;
@@ -80,16 +96,27 @@ int main(int argc,char *argv[]) {
 	/* sort */
 	qsort(entries,count,sizeof(sFullDirEntry*),compareEntries);
 
-	/* init short-mode */
-	if(!(flags & LS_FL_LONG)) {
-		pos = 0;
-		maxWidth = 0;
-		for(i = 0; i < count; i++) {
-			if((x = strlen(entries[i]->name)) > maxWidth)
-				maxWidth = x;
+	/* calc widths */
+	pos = 0;
+	for(i = 0; i < count; i++) {
+		if(!(flags & LS_FL_LONG)) {
+			if((x = strlen(entries[i]->name)) > widths[W_NAME])
+				widths[W_NAME] = x;
 		}
-		/* one space between the dir-entries is good :) */
-		maxWidth++;
+		if(flags & LS_FL_INODE) {
+			if((x = getnwidth(entries[i]->inodeNo)) > widths[W_INODE])
+				widths[W_INODE] = x;
+		}
+		if(flags & LS_FL_LONG) {
+			if((x = getuwidth(entries[i]->linkCount,10)) > widths[W_LINKCOUNT])
+				widths[W_LINKCOUNT] = x;
+			if((x = getuwidth(entries[i]->uid,10)) > widths[W_UID])
+				widths[W_UID] = x;
+			if((x = getuwidth(entries[i]->gid,10)) > widths[W_GID])
+				widths[W_GID] = x;
+			if((x = getnwidth(entries[i]->size)) > widths[W_SIZE])
+				widths[W_SIZE] = x;
+		}
 	}
 
 	/* display */
@@ -97,11 +124,13 @@ int main(int argc,char *argv[]) {
 		entry = entries[i];
 
 		if(flags & LS_FL_LONG) {
+			if(flags & LS_FL_INODE)
+				printf("%*d ",widths[W_INODE],entry->inodeNo);
 			printMode(entry->mode);
-			printf("%3d ",entry->linkCount);
-			printf("%2d ",entry->uid);
-			printf("%2d ",entry->gid);
-			printf("%10d ",entry->size);
+			printf("%*u ",widths[W_LINKCOUNT],entry->linkCount);
+			printf("%*u ",widths[W_UID],entry->uid);
+			printf("%*u ",widths[W_GID],entry->gid);
+			printf("%*d ",widths[W_SIZE],entry->size);
 			getDateOf(&date,entry->modifytime);
 			dateToString(dateStr,20,"%Y-%m-%d %H:%M",&date);
 			printf("%s ",dateStr);
@@ -115,17 +144,19 @@ int main(int argc,char *argv[]) {
 		}
 		else {
 			/* if the entry does not fit on the line, use next */
-			if(pos + maxWidth >= CONSOLE_WIDTH) {
+			if(pos + widths[W_NAME] + widths[W_INODE] + 2 >= CONSOLE_WIDTH) {
 				printf("\n");
 				pos = 0;
 			}
+			if(flags & LS_FL_INODE)
+				printf("%*d ",widths[W_INODE],entry->inodeNo);
 			if(MODE_IS_DIR(entry->mode))
-				printf("\033f\x09%-*s\033r\x0",maxWidth,entry->name);
+				printf("\033f\x09%-*s\033r\x0",widths[W_NAME] + 1,entry->name);
 			else if(entry->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
-				printf("\033f\x02%-*s\033r\x0",maxWidth,entry->name);
+				printf("\033f\x02%-*s\033r\x0",widths[W_NAME] + 1,entry->name);
 			else
-				printf("%-*s",maxWidth,entry->name);
-			pos += maxWidth;
+				printf("%-*s",widths[W_NAME] + 1,entry->name);
+			pos += widths[W_NAME] + widths[W_INODE] + 2;
 		}
 	}
 

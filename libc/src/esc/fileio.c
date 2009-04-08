@@ -76,14 +76,6 @@ static char doFprintc(sBuffer *buf,char c);
 static s32 doFprints(sBuffer *buf,const char *str);
 
 /**
- * Determines the width of the given string
- *
- * @param str the string
- * @return the width
- */
-static u8 getswidth(const char *str);
-
-/**
  * Prints the given signed integer with padding
  *
  * @param buf the buffer to write to
@@ -102,15 +94,6 @@ static s32 doFprintnPad(sBuffer *buf,s32 n,u8 pad,u16 flags);
  * @return the number of printed chars
  */
 static s32 doFprintn(sBuffer *buf,s32 n);
-
-/**
- * Determines the width of the given signed 32-bit integer in base 10
- *
- * @param n the integer
- * @param flags the format-flags
- * @return the width
- */
-static u8 getnwidth(s32 n,u16 flags);
 
 /**
  * Prints the given unsigned integer to the given base with padding
@@ -144,15 +127,6 @@ static s32 doFprintu(sBuffer *buf,u32 u,u8 base,char *hexchars);
  * @return the number of written chars
  */
 static s32 doPad(sBuffer *buf,s32 count,u16 flags);
-
-/**
- * Determines the width of the given unsigned 32-bit integer in the given base
- *
- * @param n the integer
- * @param base the base (2..16)
- * @return the width
- */
-static u8 getuwidth(u32 n,u8 base);
 
 /**
  * printf-implementation
@@ -604,6 +578,29 @@ s32 vsscanf(const char *str,const char *fmt,va_list ap) {
 	return doVfscanf(&buf,fmt,ap);
 }
 
+u8 getnwidth(s32 n) {
+	/* we have at least one char */
+	u8 width = 1;
+	if(n < 0) {
+		width++;
+		n = -n;
+	}
+	while(n >= 10) {
+		n /= 10;
+		width++;
+	}
+	return width;
+}
+
+u8 getuwidth(u32 n,u8 base) {
+	u8 width = 1;
+	while(n >= base) {
+		n /= base;
+		width++;
+	}
+	return width;
+}
+
 static char doFprintc(sBuffer *buf,char c) {
 	if(buf->max != -1 && buf->pos >= buf->max) {
 		if(buf->type == BUF_TYPE_FILE) {
@@ -639,19 +636,13 @@ static s32 doFprints(sBuffer *buf,const char *str) {
 	return str - start;
 }
 
-static u8 getswidth(const char *str) {
-	u8 width = 0;
-	while(*str++) {
-		width++;
-	}
-	return width;
-}
-
 static s32 doFprintnPad(sBuffer *buf,s32 n,u8 pad,u16 flags) {
 	s32 count = 0;
 	/* pad left */
 	if(!(flags & FFL_PADRIGHT) && pad > 0) {
-		u32 width = getnwidth(n,flags);
+		u32 width = getnwidth(n);
+		if(n > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
+			width++;
 		count += doPad(buf,pad - width,flags);
 	}
 	/* print '+' or ' ' instead of '-' */
@@ -690,31 +681,6 @@ static s32 doFprintn(sBuffer *buf,s32 n) {
 	if(doFprintc(buf,'0' + n % 10) == IO_EOF)
 		return c;
 	return c + 1;
-}
-
-static u8 getnwidth(s32 n,u16 flags) {
-	/* we have at least one char */
-	u8 width = 1;
-	if(n > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
-		width++;
-	if(n < 0) {
-		width++;
-		n = -n;
-	}
-	while(n >= 10) {
-		n /= 10;
-		width++;
-	}
-	return width;
-}
-
-static u8 getuwidth(u32 n,u8 base) {
-	u8 width = 1;
-	while(n >= base) {
-		n /= base;
-		width++;
-	}
-	return width;
 }
 
 static s32 doFprintuPad(sBuffer *buf,u32 u,u8 base,u8 pad,u16 flags) {
@@ -913,7 +879,7 @@ static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
 			case 's':
 				s = va_arg(ap, char*);
 				if(pad > 0 && !(flags & FFL_PADRIGHT)) {
-					width = getswidth(s);
+					width = strlen(s);
 					count += doPad(buf,pad - width,flags);
 				}
 				n = doFprints(buf,s);

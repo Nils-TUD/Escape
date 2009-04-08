@@ -14,13 +14,11 @@ CFLAGS = -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDE
 
 # sources
 ASRC=kernel.asm
-ASRCEND=end.asm
 CSRC=$(wildcard src/*.c)
 LSRC=$(wildcard $(LIB)/src/*.c)
 
 # objects
 AOBJ=$(BUILD)/kernel_asm.o
-AOBJEND=$(BUILD)/end.o
 COBJ=$(patsubst src/%.c,$(BUILD)/%.o,$(CSRC))
 LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILD)/kernel_lib_%.o,$(LSRC))
 
@@ -41,7 +39,7 @@ all:	$(BIN)
 
 $(BIN):	$(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@echo "===== LINKING =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(AOBJEND);
+		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 		@# since it's size is 0 at the first time. In the second part the size is correct
 		@# and therefore the symbol-table will be generated correctly :)
@@ -50,13 +48,13 @@ $(BIN):	$(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@echo "===== COMPILING SYMBOL-C-FILE =====";
 		$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "===== LINKING AGAIN =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(AOBJEND);
+		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
 		@echo "===== BUILDING SYMBOL-FILE =====";
 		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "===== COMPILING SYMBOL-C-FILE =====";
 		$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "===== LINKING AGAIN =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(AOBJEND);
+		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
 		@echo "===== COPYING BINARY =====";
 		@make -C ../ mounthdd
 		sudo cp $(BIN) $(DISKMOUNT)/boot
@@ -76,10 +74,9 @@ $(SERVICES): $(SERVBINS)
 		done;
 		@echo "};" >> $(SERVICES)
 
-$(AOBJ):	$(ASRC) $(ASRCEND)
+$(AOBJ):	$(ASRC)
 		@echo "===== ASSEMBLING =====";
 		nasm $(ASMFLAGS) -o $(AOBJ) $(ASRC);
-		nasm $(ASMFLAGS) -o $(AOBJEND) $(ASRCEND);
 
 $(BUILD)/%.o:		src/%.c
 		@echo "===== COMPILING $< =====";
@@ -100,5 +97,5 @@ $(DEP):	$(SERVICES) $(CSRC) $(LSRC)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(DEP) $(BIN) $(COBJ) $(AOBJ) $(AOBJEND) $(LOBJ) $(SYMBOLS) $(SYMBOLOBJ) \
+		rm -f $(DEP) $(BIN) $(COBJ) $(AOBJ) $(LOBJ) $(SYMBOLS) $(SYMBOLOBJ) \
 			$(BUILD)/tools_gensymbols.c $(BUILD)/tools_gensymbols.o $(SERVICES);

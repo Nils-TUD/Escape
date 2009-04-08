@@ -29,6 +29,10 @@
 
 #define ERR_CMD_NOT_FOUND	-100
 
+#define STATE_SHIFT			(1 << 0)
+#define STATE_CTRL			(1 << 1)
+#define STATE_ALT			(1 << 2)
+
 /**
  * Prints the shell-prompt
  *
@@ -400,15 +404,19 @@ static bool shell_handleEscapeCodes(char *buffer,char c,u32 *cursorPos,u32 *char
 			break;
 
 		case '\033': {
+			bool delete = false;
 			bool writeBack = false;
 			u8 keycode = scanc();
 			u8 modifier = scanc();
 			switch(keycode) {
 				/* write escape-code back */
-				case VK_RIGHT:
+				case VK_DELETE:
+					/* delete is the same as moving cursor one step write and pressing backspace */
 					if(icursorPos < icharcount) {
+						keycode = VK_RIGHT;
 						writeBack = true;
 						icursorPos++;
+						delete = true;
 					}
 					break;
 				case VK_HOME:
@@ -427,10 +435,48 @@ static bool shell_handleEscapeCodes(char *buffer,char c,u32 *cursorPos,u32 *char
 						icursorPos = icharcount;
 					}
 					break;
+				case VK_RIGHT:
+					if(icursorPos < icharcount) {
+						/* to next word */
+						if(modifier & STATE_CTRL) {
+							keycode = VK_END;
+							modifier = 0;
+							/* skip first whitespace */
+							while(icursorPos < icharcount && isspace(buffer[icursorPos])) {
+								modifier++;
+								icursorPos++;
+							}
+							/* walk to last whitespace */
+							while(icursorPos < icharcount && !isspace(buffer[icursorPos])) {
+								modifier++;
+								icursorPos++;
+							}
+						}
+						else
+							icursorPos++;
+						writeBack = true;
+					}
+					break;
 				case VK_LEFT:
 					if(icursorPos > 0) {
+						/* to prev word */
+						if(modifier & STATE_CTRL) {
+							keycode = VK_HOME;
+							modifier = 0;
+							/* skip first whitespace */
+							while(icursorPos > 0 && isspace(buffer[icursorPos - 1])) {
+								modifier++;
+								icursorPos--;
+							}
+							/* walk to last whitespace */
+							while(icursorPos > 0 && !isspace(buffer[icursorPos - 1])) {
+								modifier++;
+								icursorPos--;
+							}
+						}
+						else
+							icursorPos--;
 						writeBack = true;
-						icursorPos--;
 					}
 					break;
 				case VK_UP:
@@ -448,6 +494,8 @@ static bool shell_handleEscapeCodes(char *buffer,char c,u32 *cursorPos,u32 *char
 				printc(modifier);
 				flush();
 			}
+			if(delete)
+				shell_handleEscapeCodes(buffer,'\b',&icursorPos,&icharcount);
 			res = true;
 		}
 		break;

@@ -13,7 +13,7 @@ BIN=$(BUILD)/$(BINNAME)
 SYMBOLS=$(BUILD)/kernel.symbols
 OSTITLE=hrniels-OS
 
-QEMUARGS=-serial stdio -no-kqemu -hda $(HDD) -boot c
+QEMUARGS=-serial stdio -no-kqemu -hda $(HDD) -cdrom cdrom.iso -boot c
 
 DIRS = tools libc services user kernel kernel/test
 

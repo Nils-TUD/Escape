@@ -120,14 +120,6 @@ void util_sprintf(char *str,const char *fmt,...);
 void util_vsprintf(char *str,const char *fmt,va_list ap);
 
 /**
- * Determines the width of the given string
- *
- * @param str the string
- * @return the width
- */
-u8 util_getswidth(const char *str);
-
-/**
  * Determines the width of the given signed 32-bit integer in base 10
  *
  * @param n the integer

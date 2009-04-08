@@ -13,63 +13,61 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BUF_SIZE 4
-#define COUNT 1000000
+#define BUF_SIZE 4096
+#define COUNT 100000
 
 static u8 buffer[BUF_SIZE];
 
 int main(void) {
-	/*
-
 	tFD fd;
-	u8 buffer[1024];
-
-	fd = open("file:/zeros",IO_READ);
-	if(fd < 0) {
-		printe("Unable to open file:/zeros");
-		return EXIT_FAILURE;
-	}
-
-	dbg_startTimer();
-	while(read(fd,buffer,1024) > 0);
-	dbg_stopTimer("Reading took ");
-
-	close(fd);*/
-
-	tFD fd;
-	u32 i;
-	u64 start;
-	u64 total;
+	u64 start,total;
 	u32 *ptr;
-	u32 t;
+	u32 i,diff,t;
 
 	createNode("system:/test");
 
 	fd = open("system:/test",IO_READ | IO_WRITE);
+
+	printf("Testing speed of read/write to VFS-node\n");
+	printf("Transferring %d MiB in chunks of %d bytes\n",(COUNT * BUF_SIZE) / M,BUF_SIZE);
+	printf("\n");
 
 	t = getTime();
 	start = cpu_rdtsc();
 	for(i = 0; i < COUNT; i++) {
 		write(fd,buffer,sizeof(buffer));
 		seek(fd,0);
+		if(i % (COUNT / 100) == 0) {
+			diff = getTime() - t;
+			printf("\rWriting with	%03d MiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / M));
+		}
 	}
 
 	total = cpu_rdtsc() - start;
+	diff = getTime() - t;
 	ptr = (u32*)&total;
-	printf("Write of %d bytes took %08x%08x\n",COUNT * sizeof(buffer),*(ptr + 1),*ptr);
-	printf("%d bytes per second\n",(COUNT * sizeof(buffer)) / (getTime() - t));
+	printf("\n");
+	printf("Instructions:	%08x%08x\n",*(ptr + 1),*ptr);
+	printf("Speed:			%03d MiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / M));
+	printf("\n");
 
 	t = getTime();
 	start = cpu_rdtsc();
 	for(i = 0; i < COUNT; i++) {
 		read(fd,buffer,sizeof(buffer));
 		seek(fd,0);
+		if(i % (COUNT / 100) == 0) {
+			diff = getTime() - t;
+			printf("\rReading with	%03d MiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / M));
+		}
 	}
 
 	total = cpu_rdtsc() - start;
+	diff = getTime() - t;
 	ptr = (u32*)&total;
-	printf("Read of %d bytes took %08x%08x\n",COUNT * sizeof(buffer),*(ptr + 1),*ptr);
-	printf("%d bytes per second\n",(COUNT * sizeof(buffer)) / (getTime() - t));
+	printf("\n");
+	printf("Instructions:	%08x%08x\n",*(ptr + 1),*ptr);
+	printf("Speed:			%03d MiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / M));
 
 	close(fd);
 

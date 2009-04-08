@@ -7,6 +7,7 @@
 #include <types.h>
 #include <test.h>
 #include <stdarg.h>
+#include <assert.h>
 
 #ifdef IN_KERNEL
 #	include <video.h>
@@ -154,6 +155,7 @@ void test_caseFailed(const char *fmt,...) {
 }
 
 void test_register(sTestModule *mod) {
+	vassert(moduleCount < MAX_TESTS,"Max. tests reached");
 	modules[moduleCount++] = mod;
 }
 

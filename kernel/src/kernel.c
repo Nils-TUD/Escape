@@ -66,7 +66,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_init();
 
 	vid_printf("GDT exchanged, paging enabled, video initialized");
-	vid_toLineEnd(util_getswidth("DONE"));
+	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 #if DEBUGGING
@@ -76,40 +76,40 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	/* mm */
 	vid_printf("Initializing physical memory-management...");
 	mm_init();
-	vid_toLineEnd(util_getswidth("DONE"));
+	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	/* paging */
 	vid_printf("Initializing paging...");
 	paging_mapHigherHalf();
 	paging_initCOWList();
-	vid_toLineEnd(util_getswidth("DONE"));
+	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	/* vfs */
 	vid_printf("Initializing VFS...");
 	vfs_init();
 	vfsinfo_init();
-	vid_toLineEnd(util_getswidth("DONE"));
+	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	/* processes */
 	vid_printf("Initializing process-management...");
 	proc_init();
 	sched_init();
-	vid_toLineEnd(util_getswidth("DONE"));
+	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	/* idt */
 	vid_printf("Initializing IDT...");
 	intrpt_init();
-	vid_toLineEnd(util_getswidth("DONE"));
+	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 	/* timer */
 	vid_printf("Initializing Timer...");
 	timer_init();
-	vid_toLineEnd(util_getswidth("DONE"));
+	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
 #if DEBUGGING

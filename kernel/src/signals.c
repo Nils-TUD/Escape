@@ -305,6 +305,8 @@ const char *sig_dbg_getName(tSig signal) {
 		"SIG_TERM",
 		"SIG_ILL_INSTR",
 		"SIG_SEGFAULT",
+		"SIG_PROC_DIED",
+		"SIG_INTRPT",
 		"SIG_INTRPT_TIMER",
 		"SIG_INTRPT_KB",
 		"SIG_INTRPT_COM1",

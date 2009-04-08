@@ -36,6 +36,11 @@ typedef struct {
 extern void paging_enable(void);
 
 /**
+ * Ensures that the current page-dir is mapped and can be accessed at PAGE_DIR_AREA
+ */
+static void paging_mapPageDir(void);
+
+/**
  * paging_map() for internal usages
  *
  * @param pageDir the address of the page-directory to use
@@ -170,7 +175,7 @@ sPDEntry *paging_getProc0PD(void) {
 	return proc0PD;
 }
 
-void paging_mapPageDir(void) {
+static void paging_mapPageDir(void) {
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(PAGE_DIR_AREA);
 	sProc *p = proc_getRunning();
 	u32 pdirFrame = (p->physPDirAddr >> PAGE_SIZE_SHIFT);

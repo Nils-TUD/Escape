@@ -152,7 +152,7 @@ void util_vsprintf(char *str,const char *fmt,va_list ap) {
 	s32 n;
 	u32 u,x;
 	bool readFlags,padRight;
-	u8 width,base;
+	u8 base;
 
 	while(1) {
 		/* wait for a '%' */
@@ -201,10 +201,8 @@ void util_vsprintf(char *str,const char *fmt,va_list ap) {
 					*str++ = '-';
 					n = -n;
 				}
-				if(!padRight && pad > 0) {
-					width = util_getnwidth(n);
-					str += util_sprintfPad(str,padchar,pad - width);
-				}
+				if(!padRight && pad > 0)
+					str += util_sprintfPad(str,padchar,pad - util_getnwidth(n));
 				x = util_sprintn(str,n);
 				str += x;
 				if(padRight && pad > 0)
@@ -217,10 +215,8 @@ void util_vsprintf(char *str,const char *fmt,va_list ap) {
 			case 'x':
 				u = va_arg(ap, u32);
 				base = c == 'o' ? 8 : (c == 'x' ? 16 : (c == 'b' ? 2 : 10));
-				if(!padRight && pad > 0) {
-					width = util_getuwidth(u,base);
-					str += util_sprintfPad(str,padchar,pad - width);
-				}
+				if(!padRight && pad > 0)
+					str += util_sprintfPad(str,padchar,pad - util_getuwidth(u,base));
 				x = util_sprintu(str,u,base);
 				str += x;
 				if(padRight && pad > 0)
@@ -229,10 +225,8 @@ void util_vsprintf(char *str,const char *fmt,va_list ap) {
 			/* string */
 			case 's':
 				s = va_arg(ap, char*);
-				if(!padRight && pad > 0) {
-					width = util_getswidth(s);
-					str += util_sprintfPad(str,padchar,pad - width);
-				}
+				if(!padRight && pad > 0)
+					str += util_sprintfPad(str,padchar,pad - strlen(s));
 				x = 0;
 				while(*s) {
 					*str++ = *s++;
@@ -252,14 +246,6 @@ void util_vsprintf(char *str,const char *fmt,va_list ap) {
 				break;
 		}
 	}
-}
-
-u8 util_getswidth(const char *str) {
-	u8 width = 0;
-	while(*str++) {
-		width++;
-	}
-	return width;
 }
 
 u8 util_getuwidth(u32 n,u8 base) {

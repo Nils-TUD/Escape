@@ -272,7 +272,7 @@ void vid_vprintf(const char *fmt,va_list ap) {
 			case 's':
 				s = va_arg(ap, char*);
 				if(pad > 0) {
-					width = util_getswidth(s);
+					width = strlen(s);
 					while(width++ < pad) {
 						vid_putchar(padchar);
 					}

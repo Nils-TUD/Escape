@@ -199,11 +199,6 @@ sPDEntry *paging_getProc0PD(void);
 bool paging_handlePageFault(u32 address);
 
 /**
- * Ensures that the current page-dir is mapped and can be accessed at PAGE_DIR_AREA
- */
-void paging_mapPageDir(void);
-
-/**
  * Assembler routine to flush the TLB
  */
 extern void paging_flushTLB(void);

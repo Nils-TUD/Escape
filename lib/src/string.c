@@ -454,7 +454,6 @@ bool isalnumstr(const char *str) {
 	return true;
 }
 
-#ifndef IN_KERNEL
 char *strerror(s32 errnum) {
 	static char msg[MAX_ERR_LEN + 1];
 	switch(errnum) {
@@ -592,4 +591,3 @@ char *strerror(s32 errnum) {
 	}
 	return msg;
 }
-#endif

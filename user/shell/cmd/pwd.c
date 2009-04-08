@@ -17,7 +17,7 @@ s32 shell_cmdPwd(u32 argc,char **argv) {
 
 	path = getEnv("CWD");
 	if(path == NULL) {
-		printf("Unable to get CWD\n");
+		printe("Unable to get CWD\n");
 		return 1;
 	}
 

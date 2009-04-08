@@ -209,13 +209,6 @@ proc_save:
 	push	ebp
 	mov		ebp,esp
 	sub		esp,4
-	; ensure interrupts are disabled
-	pushfd
-	mov		eax,[esp]
-	and		eax,1 << 9
-	mov		[ebp - 4],eax
-	cli
-	add		esp,4
 
 	; save register
 	mov		eax,[ebp + 8]									; get saveArea
@@ -226,12 +219,6 @@ proc_save:
 	pushfd															; load eflags
 	pop		DWORD [eax + STATE_EFLAGS]		; store
 
-	; restore interrupt-state
-	mov		eax,[ebp - 4]
-	cmp		eax,eax
-	jz		proc_saveIFD
-	sti
-proc_saveIFD:
 	mov		eax,0													; return 0
 	leave
 	ret
@@ -240,12 +227,6 @@ proc_saveIFD:
 proc_resume:
 	push	ebp
 	mov		ebp,esp
-	; ensure interrupts are disabled
-	pushfd
-	mov		eax,[esp]
-	and		eax,1 << 9
-	cli
-	add		esp,4
 
 	; restore register
 	mov		eax,[ebp + 12]								; get saveArea
@@ -262,12 +243,6 @@ proc_resume:
 	; now load esp
 	mov		esp,[eax + STATE_ESP]
 
-	; restore interrupt-state
-	mov		ecx,[eax + STATE_EFLAGS]
-	cmp		ecx,ecx
-	jz		proc_resumeIFRes
-	sti
-proc_resumeIFRes:
 	mov		eax,1													; return 1
 	leave
 	ret

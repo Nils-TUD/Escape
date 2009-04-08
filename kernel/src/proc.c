@@ -343,6 +343,8 @@ s32 proc_clone(tPid newPid) {
 	p->ucycleStart = 0;
 	p->kcycleCount = 0;
 	p->kcycleStart = 0;
+	/* give the process the same name (maybe changed by exec) */
+	strcpy(p->command,procs[pi].command);
 
 	/* inherit file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {

@@ -10,9 +10,17 @@
 #include <stdlib.h>
 
 int main(void) {
-	if(exec((const char*)0x12345678,NULL) < 0) {
+	/*if(exec((const char*)0x12345678,NULL) < 0) {
 		printe("Exec failed");
 		return EXIT_FAILURE;
+	}*/
+
+	u32 i;
+	for(i = 0; i < 250; i++) {
+		if(fork() == 0) {
+			while(1)
+				wait(EV_NOEVENT);
+		}
 	}
 
 	return EXIT_SUCCESS;

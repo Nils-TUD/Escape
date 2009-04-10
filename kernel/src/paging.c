@@ -52,9 +52,11 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 /**
  * paging_unmap() for internal usages
  *
+ * @param p the process (needed for remCOW)
  * @param mappingArea the address of the mapping area to use
  */
-static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFrames,bool remCOW);
+static void paging_unmapIntern(sProc *p,u32 mappingArea,u32 virtual,u32 count,bool freeFrames,
+		bool remCOW);
 
 /**
  * paging_unmapPageTables() for internal usages
@@ -78,11 +80,12 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count);
 static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc);
 
 /**
- * Removes the given frame-number for the current process from COW
+ * Removes the given frame-number for the given process from COW
  *
+ * @param p the process
  * @param frameNumber the frame-number
  */
-static void paging_remFromCow(u32 frameNumber);
+static void paging_remFromCow(sProc *p,u32 frameNumber);
 
 /* the page-directory for process 0 */
 sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] __attribute__ ((aligned (PAGE_SIZE)));
@@ -361,7 +364,7 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 }
 
 void paging_unmap(u32 virtual,u32 count,bool freeFrames,bool remCOW) {
-	paging_unmapIntern(MAPPED_PTS_START,virtual,count,freeFrames,remCOW);
+	paging_unmapIntern(proc_getRunning(),MAPPED_PTS_START,virtual,count,freeFrames,remCOW);
 }
 
 void paging_unmapPageTables(u32 start,u32 count) {
@@ -574,19 +577,19 @@ void paging_destroyPageDir(sProc *p) {
 	/* TODO text should be shared, right? */
 
 	/* free data-pages and page-tables */
-	paging_unmapIntern(TMPMAP_PTS_START,p->textPages * PAGE_SIZE,p->dataPages,true,true);
+	paging_unmapIntern(p,TMPMAP_PTS_START,p->textPages * PAGE_SIZE,p->dataPages,true,true);
 	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,PAGES_TO_PTS(p->textPages),
 			PAGES_TO_PTS(p->textPages + p->dataPages) - PAGES_TO_PTS(p->textPages));
 
 	/* free stack-pages */
-	paging_unmapIntern(TMPMAP_PTS_START,KERNEL_AREA_V_ADDR - p->stackPages * PAGE_SIZE,
+	paging_unmapIntern(p,TMPMAP_PTS_START,KERNEL_AREA_V_ADDR - p->stackPages * PAGE_SIZE,
 			p->stackPages,true,true);
 	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,
 			ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) - PAGES_TO_PTS(p->stackPages),
 			PAGES_TO_PTS(p->stackPages));
 
 	/* free kernel-stack */
-	paging_unmapIntern(TMPMAP_PTS_START,KERNEL_STACK,1,true,true);
+	paging_unmapIntern(p,TMPMAP_PTS_START,KERNEL_STACK,1,true,true);
 	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,ADDR_TO_PDINDEX(KERNEL_STACK),1);
 
 	/* unmap stuff & free page-dir */
@@ -603,7 +606,8 @@ void paging_gdtFinished(void) {
 	paging_flushTLB();
 }
 
-static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFrames,bool remCOW) {
+static void paging_unmapIntern(sProc *p,u32 mappingArea,u32 virtual,u32 count,bool freeFrames,
+		bool remCOW) {
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
 
 	vassert(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
@@ -616,7 +620,7 @@ static void paging_unmapIntern(u32 mappingArea,u32 virtual,u32 count,bool freeFr
 			 * because they may be mapped more than once and will never be free'd */
 			if(freeFrames && pt->frameNumber * PAGE_SIZE >= KERNEL_P_ADDR) {
 				if(pt->copyOnWrite && remCOW)
-					paging_remFromCow(pt->frameNumber);
+					paging_remFromCow(p,pt->frameNumber);
 				else if(!pt->copyOnWrite)
 					mm_freeFrame(pt->frameNumber,MM_DEF);
 			}
@@ -693,8 +697,7 @@ static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
 	}
 }
 
-static void paging_remFromCow(u32 frameNumber) {
-	sProc *p = proc_getRunning();
+static void paging_remFromCow(sProc *p,u32 frameNumber) {
 	sSLNode *n,*tn,*ln;
 	sCOW *cow;
 	bool foundOwn = false,foundOther = false;

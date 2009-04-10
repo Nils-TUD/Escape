@@ -12,6 +12,11 @@
 
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024
+#define DEBUG_ALLOC_N_FREE		0
+
+#if DEBUG_ALLOC_N_FREE
+#include <util.h>
+#endif
 
 /* an area in memory */
 typedef struct sMemArea sMemArea;
@@ -36,14 +41,35 @@ static bool kheap_loadNewAreas(void);
  */
 static bool kheap_loadNewSpace(u32 size);
 
+/**
+ * Calculates the hash for the given address that should be used as key in occupiedMap
+ *
+ * @param addr the address
+ * @return the key
+ */
+static u32 kheap_getHash(void *addr);
+
 /* a linked list of free and usable areas. That means the areas have an address and size */
 static sMemArea *usableList = NULL;
 /* a linked list of free but not usable areas. That means the areas have no address and size */
 static sMemArea *freeList = NULL;
-/* a hashmap with occupied-lists, key is (address % OCC_MAP_SIZE) */
+/* a hashmap with occupied-lists, key is getHash(address) */
 static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
 /* number of currently occupied pages */
 static u32 pages = 0;
+
+u32 kheap_getUsedMem(void) {
+	u32 i,c = 0;
+	sMemArea *a;
+	for(i = 0; i < OCC_MAP_SIZE; i++) {
+		a = occupiedMap[i];
+		while(a != NULL) {
+			c += a->size;
+			a = a->next;
+		}
+	}
+	return c;
+}
 
 u32 kheap_getFreeMem(void) {
 	u32 c = 0;
@@ -57,7 +83,7 @@ u32 kheap_getFreeMem(void) {
 
 u32 kheap_getAreaSize(void *addr) {
 	sMemArea *area;
-	area = occupiedMap[(u32)addr % OCC_MAP_SIZE];
+	area = occupiedMap[kheap_getHash(addr)];
 	while(area != NULL) {
 		if(area->address == addr)
 			return area->size;
@@ -120,8 +146,16 @@ void *kheap_alloc(u32 size) {
 		usableList = narea;
 	}
 
+#if DEBUG_ALLOC_N_FREE
+	u32* ebp = (u32*)getStackFrameStart();
+	u32 symaddr = *(ebp + 1) - 5;
+	sSymbol *sym = ksym_getSymbolAt(symaddr);
+	vid_printf("[A] p=%s a=%08x s=%d c=%s (%08x)\n",proc_getRunning()->command,area->address,area->size,
+			sym->funcName,symaddr);
+#endif
+
 	/* insert in occupied-map */
-	list = occupiedMap + ((u32)area->address % OCC_MAP_SIZE);
+	list = occupiedMap + kheap_getHash(area->address);
 	area->next = *list;
 	*list = area;
 
@@ -146,7 +180,7 @@ void kheap_free(void *addr) {
 
 	/* find the area with given address */
 	oprev = NULL;
-	area = occupiedMap[(u32)addr % OCC_MAP_SIZE];
+	area = occupiedMap[kheap_getHash(addr)];
 	while(area != NULL) {
 		if(area->address == addr)
 			break;
@@ -185,7 +219,15 @@ void kheap_free(void *addr) {
 	if(oprev)
 		oprev->next = area->next;
 	else
-		occupiedMap[(u32)addr % OCC_MAP_SIZE] = area->next;
+		occupiedMap[kheap_getHash(addr)] = area->next;
+
+#if DEBUG_ALLOC_N_FREE
+	u32* ebp = (u32*)getStackFrameStart();
+	u32 symaddr = *(ebp + 1) - 5;
+	sSymbol *sym = ksym_getSymbolAt(symaddr);
+	vid_printf("[F] p=%s a=%08x s=%d c=%s (%08x)\n",
+			proc_getRunning()->command,addr,area->size,sym->funcName,symaddr);
+#endif
 
 	/* see what we have to merge */
 	if(prev && next) {
@@ -243,7 +285,7 @@ void kheap_free(void *addr) {
 void *kheap_realloc(void *addr,u32 size) {
 	sMemArea *area,*a,*prev;
 	/* find the area with given address */
-	area = occupiedMap[(u32)addr % OCC_MAP_SIZE];
+	area = occupiedMap[kheap_getHash(addr)];
 	while(area != NULL) {
 		if(area->address == addr)
 			break;
@@ -311,6 +353,10 @@ static bool kheap_loadNewSpace(u32 size) {
 			return false;
 	}
 
+	/* check for overflow */
+	if(size + PAGE_SIZE < PAGE_SIZE)
+		return false;
+
 	/* note that we assume here that we won't check the same pages than loadNewAreas() did... */
 
 	/* allocate the required pages */
@@ -358,6 +404,15 @@ static bool kheap_loadNewAreas(void) {
 	pages++;
 
 	return true;
+}
+
+static u32 kheap_getHash(void *addr) {
+	/* the algorithm distributes the entries more equally in the occupied-map. */
+	/* borrowed from java.util.HashMap :) */
+	u32 h = (u32)addr;
+	h ^= (h >> 20) ^ (h >> 12);
+	/* note that we can use & (a-1) since OCC_MAP_SIZE = 2^x */
+	return (h ^ (h >> 7) ^ (h >> 4)) & (OCC_MAP_SIZE - 1);
 }
 
 

@@ -93,7 +93,9 @@ int main(int argc,char **argv) {
 
 	/* we need either the vterm as argument or "-e <cmd>" */
 	if(argc < 2) {
-		fprintf(stderr,"Unable to run a shell with no arguments\n");
+		fprintf(stderr,
+			"Usage: \n\tInteractive:\t\t%s <vterm>\n\tNon-Interactive:\t%s -e <yourCmd>\n",
+			argv[0],argv[0]);
 		return EXIT_FAILURE;
 	}
 
@@ -115,19 +117,19 @@ int main(int argc,char **argv) {
 	/* parse vterm-number from "vtermX" */
 	vterm = atoi(argv[1] + 5);
 	if(open(servPath,IO_READ) < 0) {
-		printe("Unable to open '%s' for STDIN\n",servPath);
+		printe("Unable to open '%s' for STDIN",servPath);
 		return EXIT_FAILURE;
 	}
 
 	/* open stdout */
 	if((fd = open(servPath,IO_WRITE)) < 0) {
-		printe("Unable to open '%s' for STDOUT\n",servPath);
+		printe("Unable to open '%s' for STDOUT",servPath);
 		return EXIT_FAILURE;
 	}
 
 	/* dup stdout to stderr */
 	if(dupFd(fd) < 0) {
-		printe("Unable to duplicate STDOUT to STDERR\n");
+		printe("Unable to duplicate STDOUT to STDERR");
 		return EXIT_FAILURE;
 	}
 
@@ -135,6 +137,9 @@ int main(int argc,char **argv) {
 		printe("Unable to announce sig-handler for %d",SIG_INTRPT);
 		return EXIT_FAILURE;
 	}
+
+	/* set vterm as env-variable */
+	setEnv("TERM",argv[1]);
 
 	printf("\033f\011Welcome to Escape v0.1!\033r\011\n");
 	printf("\n");

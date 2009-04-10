@@ -14,6 +14,8 @@
 #define DEBUGGING 1
 #endif
 
+#define VTERM_COUNT		6
+
 /**
  * Calculates the stacktrace
  *

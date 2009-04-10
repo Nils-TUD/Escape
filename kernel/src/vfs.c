@@ -123,7 +123,7 @@ tFileNo vfs_inheritFileNo(tPid pid,tFileNo file) {
 		sVFSNode *child;
 		tVFSNodeNo nodeNo;
 		tFileNo newFile;
-		s32 err = vfsn_createServiceUse(n->parent,&child);
+		s32 err = vfsn_createServiceUse(pid,n->parent,&child);
 		if(err < 0)
 			return -1;
 
@@ -703,7 +703,7 @@ void vfs_removeProcess(tPid pid) {
 	sVFSNode *proc = PROCESSES();
 	sVFSNode *serv = SERVICES();
 	char name[12];
-	sVFSNode *n;
+	sVFSNode *n,*t;
 	itoa(name,pid);
 
 	/* remove from system:/processes */
@@ -723,10 +723,12 @@ void vfs_removeProcess(tPid pid) {
 	n = NODE_FIRST_CHILD(serv->firstChild);
 	while(n != NULL) {
 		if((n->mode & MODE_TYPE_SERVICE) && n->owner == pid) {
+			t = n->next;
 			vfs_removeService(pid,NADDR_TO_VNNO(n));
-			break;
+			n = t;
 		}
-		n = n->next;
+		else
+			n = n->next;
 	}
 
 	/* invalidate cache */

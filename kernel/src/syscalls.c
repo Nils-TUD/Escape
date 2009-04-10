@@ -28,7 +28,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define SYSCALL_COUNT					31
+#define SYSCALL_COUNT					32
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode)		((stack)->ebx = (errorCode))
@@ -265,6 +265,12 @@ static void sysc_createNode(sIntrptStackFrame *stack);
  * @return s32 0 on success
  */
 static void sysc_getFileInfo(sIntrptStackFrame *stack);
+/**
+ * Just intended for debugging. May be used for anything :)
+ * It's just a system-call thats used by nothing else, so we can use it e.g. for printing
+ * debugging infos in the kernel to points of time controlled by user-apps.
+ */
+static void sysc_debug(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -307,6 +313,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 28 */	{sysc_createNode,			1},
 	/* 29 */	{sysc_seek,					2},
 	/* 30 */	{sysc_getFileInfo,			2},
+	/* 31 */	{sysc_debug,				0},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -314,7 +321,7 @@ void sysc_handle(sIntrptStackFrame *stack) {
 	if(sysCallNo < SYSCALL_COUNT) {
 		u32 argCount = syscalls[sysCallNo].argCount;
 		u32 ebxSave = stack->ebx;
-		/* handle copy-on-write */
+		/* handle copy-on-write (the first 2 args are passed in registers) */
 		/* TODO maybe we need more stack-pages */
 		if(argCount > 2)
 			paging_isRangeUserWritable((u32)stack->uesp,sizeof(u32) * (argCount - 2));
@@ -341,13 +348,14 @@ static void sysc_getpid(sIntrptStackFrame *stack) {
 
 static void sysc_getppid(sIntrptStackFrame *stack) {
 	tPid pid = (tPid)SYSC_ARG1(stack);
-	sProc *p = proc_getByPid(pid);
+	sProc *p;
 
-	if(p->state == ST_UNUSED) {
+	if(!proc_exists(pid)) {
 		SYSC_ERROR(stack,ERR_INVALID_PID);
 		return;
 	}
 
+	p = proc_getByPid(pid);
 	SYSC_RET1(stack,p->parentPid);
 }
 
@@ -1080,7 +1088,7 @@ static void sysc_createNode(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
 	u32 nameLen,pathLen;
 	s32 res;
-	tVFSNodeNo nodeNo;
+	tVFSNodeNo nodeNo,dummyNodeNo;
 	sVFSNode *node;
 	char *name,*pathCpy,*nameCpy;
 
@@ -1124,6 +1132,12 @@ static void sysc_createNode(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 		return;
 	}
+	/* check wether the node does already exist */
+	res = vfsn_resolvePath(path,&dummyNodeNo);
+	if(res >= 0 || res == ERR_REAL_PATH) {
+		SYSC_ERROR(stack,ERR_NODE_EXISTS);
+		return;
+	}
 
 	/* create node */
 	kheap_free(pathCpy);
@@ -1163,6 +1177,11 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 		return;
 	}
 	SYSC_RET1(stack,0);
+}
+
+static void sysc_debug(sIntrptStackFrame *stack) {
+	UNUSED(stack);
+	proc_dbg_print(proc_getRunning());
 }
 
 static bool sysc_isStringReadable(const char *str) {

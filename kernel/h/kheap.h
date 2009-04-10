@@ -10,6 +10,11 @@
 #include "common.h"
 
 /**
+ * @return the number of used bytes
+ */
+u32 kheap_getUsedMem(void);
+
+/**
  * Note that this function is intended for debugging-purposes only!
  *
  * @return the number of free bytes

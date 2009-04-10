@@ -84,6 +84,13 @@ void dbg_startTimer(void);
 void dbg_stopTimer(char *prefix);
 
 /**
+ * Just intended for debugging. May be used for anything :)
+ * It's just a system-call thats used by nothing else, so we can use it e.g. for printing
+ * debugging infos in the kernel to points of time controlled by user-apps.
+ */
+void debug(void);
+
+/**
  * Prints <byteCount> bytes at <addr>
  *
  * @param addr the start-address

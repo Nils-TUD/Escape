@@ -235,23 +235,25 @@ static void procDiedHandler(tSig sig,u32 data) {
 }
 
 static sEnvVar *env_geti(tPid pid,u32 index) {
+	s32 spid = pid;
 	sEnvVar *var;
 	while(1) {
-		var = env_getiOf(pid,&index);
-		if(pid == 0 || var != NULL)
+		var = env_getiOf(spid,&index);
+		if(spid <= 0 || var != NULL)
 			break;
-		pid = getppidof(pid);
+		spid = getppidof(spid);
 	}
 	return var;
 }
 
 static sEnvVar *env_get(tPid pid,char *name) {
+	s32 spid = pid;
 	sEnvVar *var;
 	while(1) {
-		var = env_getOf(pid,name);
-		if(pid == 0 || var != NULL)
+		var = env_getOf(spid,name);
+		if(spid <= 0 || var != NULL)
 			break;
-		pid = getppidof(pid);
+		spid = getppidof(spid);
 	}
 	return var;
 }

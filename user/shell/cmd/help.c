@@ -15,6 +15,7 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 
 	printf("Currently you can use the following commands/programs:\n");
 	printf("\tcat [<file>]					Read file or from STDIN and print\n");
+	printf("\tcolortbl						Print a table with all fg- and bg-colors\n");
 	printf("\tdate [<format>]					Print date (with specified format or %%c)\n");
 	printf("\tkill <pid>						Kill process\n");
 	printf("\tlibctest						Run libc-tests\n");
@@ -43,7 +44,7 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 	printf("\tTab-Completion works for programs in /bin and files/directories\n");
 	printf("\tYou can send EOF by CTRL+D and kill the current process with CTRL+C\n");
 	printf("\tYou can scroll the screen with pageUp/-Down, shift + arrowUp/-Down\n");
-	printf("\tYou can switch between vterm0 and vterm1 via CTRL+1/2\n");
+	printf("\tYou can switch between different vterms via CTRL+1/2/...\n");
 	printf("\n");
 
 	return 0;

@@ -34,7 +34,7 @@ tPid getppid(void);
  * @param pid the process-id
  * @return the parent-pid
  */
-tPid getppidof(tPid pid);
+s32 getppidof(tPid pid);
 
 /**
  * Clones the current process

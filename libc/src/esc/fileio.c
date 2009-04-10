@@ -13,6 +13,7 @@
 #include <esc/keycodes.h>
 #include <esc/heap.h>
 #include <string.h>
+#include <errors.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -349,12 +350,8 @@ s32 printe(const char *prefix,...) {
 	va_list ap;
 
 	msg = strerror(errno);
-	/* write char for testing */
-	fprintc(stderr,' ');
-	res = fflush(stderr);
-	/* if this failed, maybe we have no stderr (just the shell and childs have it) */
-	/* so try debugf */
-	if(res != 0) {
+	/* if we have no terminal we write it via debugf */
+	if(getEnv("TERM") == NULL) {
 		va_start(ap,prefix);
 		vdebugf(prefix,ap);
 		va_end(ap);
@@ -362,7 +359,6 @@ s32 printe(const char *prefix,...) {
 		res = 0;
 	}
 	else {
-		fprintc(stderr,'\r');
 		va_start(ap,prefix);
 		vfprintf(stderr,prefix,ap);
 		va_end(ap);

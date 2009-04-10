@@ -54,6 +54,7 @@ STATE_EDI								equ 4
 STATE_ESI								equ 8
 STATE_EBP								equ 12
 STATE_EFLAGS						equ 16
+STATE_EIP								equ 20
 
 ; TODO consider callee-save-registers!!
 

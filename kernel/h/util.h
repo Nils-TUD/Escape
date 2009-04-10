@@ -47,6 +47,11 @@ extern void util_outByte(u16 port,u8 val);
 extern u8 util_inByte(u16 port);
 
 /**
+ * @return the address of the stack-frame-start
+ */
+extern u32 getStackFrameStart(void);
+
+/**
  * PANIC: Displays the given message and halts
  *
  * @param fmt the format of the message to display

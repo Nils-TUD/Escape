@@ -14,6 +14,7 @@
 #include <sllist.h>
 #include <string.h>
 
+#define SHELL_COUNT				2
 #define MAX_SNAME_LEN			50
 #define MAX_SERVICE_PATH_LEN	255
 
@@ -92,7 +93,14 @@ static sServiceLoad **services = NULL;
 int main(void) {
 	tFD fd;
 	s32 child;
+	u32 i;
+	char *vtermName;
 	char *servDefs;
+
+	if(getpid() != 0) {
+		fprintf(stderr,"It's not good to start init twice ;)\n");
+		return EXIT_FAILURE;
+	}
 
 	/* wait for fs; we need it for exec */
 	do {
@@ -113,38 +121,36 @@ int main(void) {
 	/* parse them */
 	services = parseServices(servDefs);
 	if(services == NULL) {
-		printe("Unable to parse service-file\n");
+		printe("Unable to parse service-file");
 		return EXIT_FAILURE;
 	}
 
 	/* finally load them */
 	if(!loadServices(services)) {
-		printe("Unable to load services\n");
+		printe("Unable to load services");
 		return EXIT_FAILURE;
 	}
 
 	/* now load the shells */
-	/* TODO temporary ;) */
-
-	child = fork();
-	if(child == 0) {
-		const char *args[] = {"file:/bin/shell","vterm0",NULL};
-		exec(args[0],args);
-		printe("Exec of '%s' failed",args[0]);
-		exit(EXIT_FAILURE);
+	vtermName = (char*)malloc(strlen("vterm") + getnwidth(VTERM_COUNT) + 1);
+	if(vtermName == NULL) {
+		printe("Unable to allocate mem for vterm-name");
+		return EXIT_FAILURE;
 	}
-	else if(child < 0)
-		printe("Fork failed");
 
-	child = fork();
-	if(child == 0) {
-		const char *args[] = {"file:/bin/shell","vterm1",NULL};
-		exec(args[0],args);
-		printe("Exec of '%s' failed",args[0]);
-		exit(EXIT_FAILURE);
+	for(i = 0; i < VTERM_COUNT; i++) {
+		sprintf(vtermName,"vterm%d",i);
+		child = fork();
+		if(child == 0) {
+			const char *args[] = {"file:/bin/shell",vtermName,NULL};
+			exec(args[0],args);
+			printe("Exec of '%s' failed",args[0]);
+			exit(EXIT_FAILURE);
+		}
+		else if(child < 0)
+			printe("Fork failed");
 	}
-	else if(child < 0)
-		printe("Fork failed");
+	free(vtermName);
 
 	/* loop and wait forever */
 	while(1)

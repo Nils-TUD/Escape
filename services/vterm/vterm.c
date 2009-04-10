@@ -580,11 +580,11 @@ static bool vterm_handleEscape(sVTerm *vt,char *str) {
 			res = true;
 			break;
 		case VK_ESC_FG:
-			vt->foreground = MIN(9,value);
+			vt->foreground = MIN(15,value);
 			res = true;
 			break;
 		case VK_ESC_BG:
-			vt->background = MIN(9,value);
+			vt->background = MIN(15,value);
 			res = true;
 			break;
 		case VK_ESC_SET_ECHO:
@@ -676,14 +676,12 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 							vterm_rlFlushBuf(vt);
 						}
 						break;
-					case VK_1:
-						if(activeVT->index != 0)
-							vterm_selectVTerm(0);
-						return;
-					case VK_2:
-						if(activeVT->index != 1)
-							vterm_selectVTerm(1);
-						return;
+					case VK_1 ... VK_9: {
+						u32 index = msg->keycode - VK_1;
+						if(index < VTERM_COUNT && activeVT->index != index)
+							vterm_selectVTerm(index);
+					}
+					return;
 				}
 			}
 

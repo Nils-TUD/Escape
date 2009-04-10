@@ -10,7 +10,7 @@
 #include <esc/common.h>
 
 /* the number of entries in the occupied map */
-#define OCC_MAP_SIZE	64
+#define OCC_MAP_SIZE	512
 
 /**
  * Allocates <size> bytes on the heap and returns the pointer to the beginning of

@@ -22,6 +22,7 @@
 #include <video.h>
 #include <timer.h>
 #include <test.h>
+#include <string.h>
 
 #include "tkheap.h"
 #include "tpaging.h"

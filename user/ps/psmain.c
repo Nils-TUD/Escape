@@ -119,7 +119,7 @@ static sProcess *ps_getProcs(u32 *count) {
 			}
 			else {
 				free(procs);
-				printe("Unable to open '%s'\n",ppath);
+				printe("Unable to open '%s'",ppath);
 				return NULL;
 			}
 		}
@@ -127,7 +127,7 @@ static sProcess *ps_getProcs(u32 *count) {
 	}
 	else {
 		free(procs);
-		printe("Unable to open '%s'\n",path);
+		printe("Unable to open '%s'",path);
 		return NULL;
 	}
 

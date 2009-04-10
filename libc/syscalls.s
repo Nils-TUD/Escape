@@ -32,6 +32,7 @@ SYSCALL_SLEEP				equ 27
 SYSCALL_CREATENODE	equ	28
 SYSCALL_SEEK				equ 29
 SYSCALL_STAT				equ 30
+SYSCALL_DEBUG				equ 31
 
 ; the IRQ for syscalls
 SYSCALL_IRQ					equ	0x30
@@ -69,10 +70,10 @@ SYSCALL_IRQ					equ	0x30
 	mov		eax,%2								; set syscall-number
 	int		SYSCALL_IRQ
 	test	ecx,ecx
-	jz		%1Ret									; no-error?
+	jz		.return								; no-error?
 	mov		[errno],ecx						; store error-code
 	mov		eax,ecx								; return error-code
-%1Ret:
+.return:
 	ret
 %endmacro
 
@@ -83,10 +84,10 @@ SYSCALL_IRQ					equ	0x30
 	mov		ecx,[esp + 4]					; set arg1
 	int		SYSCALL_IRQ
 	test	ecx,ecx
-	jz		%1Ret									; no-error?
+	jz		.return								; no-error?
 	mov		[errno],ecx						; store error-code
 	mov		eax,ecx								; return error-code
-%1Ret:
+.return:
 	ret
 %endmacro
 
@@ -98,10 +99,10 @@ SYSCALL_IRQ					equ	0x30
 	mov		edx,[esp + 8]					; set arg2
 	int		SYSCALL_IRQ
 	test	ecx,ecx
-	jz		%1Ret									; no-error?
+	jz		.return								; no-error?
 	mov		[errno],ecx						; store error-code
 	mov		eax,ecx								; return error-code
-%1Ret:
+.return:
 	ret
 %endmacro
 
@@ -118,10 +119,10 @@ SYSCALL_IRQ					equ	0x30
 	int		SYSCALL_IRQ
 	add		esp,4									; remove arg3
 	test	ecx,ecx
-	jz		%1Ret									; no-error?
+	jz		.return								; no-error?
 	mov		[errno],ecx						; store error-code
 	mov		eax,ecx								; return error-code
-%1Ret:
+.return:
 	leave
 	ret
 %endmacro

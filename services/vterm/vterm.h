@@ -18,8 +18,6 @@
 
 #define MAX_NAME_LEN		6
 
-#define VTERM_COUNT 		2
-
 /* the header for the set-screen message */
 typedef struct {
 	sMsgHeader header;

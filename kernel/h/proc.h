@@ -12,7 +12,7 @@
 
 /* max number of processes */
 #define PROC_COUNT			1024
-#define MAX_FD_COUNT		16
+#define MAX_FD_COUNT		32
 #define MAX_PROC_NAME_LEN	30
 
 /* use an invalid pid to identify the kernel */
@@ -57,6 +57,8 @@ typedef struct {
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
+	/* TODO just for debugging atm */
+	u32 ueip;
 	sProcSave save;
 	/* file descriptors: indices of the global file table */
 	tFileNo fileDescs[MAX_FD_COUNT];

@@ -54,7 +54,7 @@ int main(void) {
 
 	/* init vterms */
 	if(!vterm_initAll()) {
-		printe("Unable to init vterms\n");
+		fprintf(stderr,"Unable to init vterms");
 		return EXIT_FAILURE;
 	}
 
@@ -87,6 +87,8 @@ int main(void) {
 		else {
 			sVTerm *vt = getVTerm(client);
 			if(vt != NULL) {
+				/* TODO this may cause trouble with escape-codes. maybe we should store the
+				 * "escape-state" somehow... */
 				u32 c;
 				while((c = read(fd,buffer,READ_BUF_SIZE)) > 0) {
 					*(buffer + c) = '\0';

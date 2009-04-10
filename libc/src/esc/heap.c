@@ -9,8 +9,9 @@
 #include <esc/mem.h>
 #include <esc/debug.h>
 #include <string.h>
+#include <assert.h>
 
-#define PAGE_SIZE		4096
+#define PAGE_SIZE			4096
 
 /* an area in memory */
 typedef struct sMemArea sMemArea;
@@ -24,7 +25,7 @@ struct sMemArea {
 static sMemArea *usableList = NULL;
 /* a linked list of free but not usable areas. That means the areas have no address and size */
 static sMemArea *freeList = NULL;
-/* a hashmap with occupied-lists, key is (address % OCC_MAP_SIZE) */
+/* a hashmap with occupied-lists, key is getHash(address) */
 static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
 /* total number of pages we're using */
 static u32 pageCount = 0;
@@ -43,6 +44,14 @@ static bool loadNewAreas(void);
  * @return true on success
  */
 static bool loadNewSpace(u32 size);
+
+/**
+ * Calculates the hash for the given address that should be used as key in occupiedMap
+ *
+ * @param addr the address
+ * @return the key
+ */
+static u32 getHash(void *addr);
 
 void *malloc(u32 size) {
 	sMemArea *area,*prev,*narea;
@@ -99,7 +108,7 @@ void *malloc(u32 size) {
 	}
 
 	/* insert in occupied-map */
-	list = occupiedMap + ((u32)area->address % OCC_MAP_SIZE);
+	list = occupiedMap + getHash(area->address);
 	area->next = *list;
 	*list = area;
 
@@ -124,7 +133,7 @@ void free(void *addr) {
 
 	/* find the area with given address */
 	oprev = NULL;
-	area = occupiedMap[(u32)addr % OCC_MAP_SIZE];
+	area = occupiedMap[getHash(addr)];
 	while(area != NULL) {
 		if(area->address == addr)
 			break;
@@ -163,7 +172,7 @@ void free(void *addr) {
 	if(oprev)
 		oprev->next = area->next;
 	else
-		occupiedMap[(u32)addr % OCC_MAP_SIZE] = area->next;
+		occupiedMap[getHash(addr)] = area->next;
 
 	/* see what we have to merge */
 	if(prev && next) {
@@ -221,7 +230,7 @@ void free(void *addr) {
 void *realloc(void *addr,u32 size) {
 	sMemArea *area,*a,*prev;
 	/* find the area with given address */
-	area = occupiedMap[(u32)addr % OCC_MAP_SIZE];
+	area = occupiedMap[getHash(addr)];
 	while(area != NULL) {
 		if(area->address == addr)
 			break;
@@ -293,6 +302,10 @@ static bool loadNewSpace(u32 size) {
 			return false;
 	}
 
+	/* check for overflow */
+	if(size + PAGE_SIZE < PAGE_SIZE)
+		return false;
+
 	/* allocate the required pages */
 	s32 count = (size + PAGE_SIZE - 1) / PAGE_SIZE;
 	res = changeSize(count);
@@ -335,6 +348,15 @@ static bool loadNewAreas(void) {
 	}
 
 	return true;
+}
+
+static u32 getHash(void *addr) {
+	/* the algorithm distributes the entries more equally in the occupied-map. */
+	/* borrowed from java.util.HashMap :) */
+	u32 h = (u32)addr;
+	h ^= (h >> 20) ^ (h >> 12);
+	/* note that we can use & (a-1) since OCC_MAP_SIZE = 2^x */
+	return (h ^ (h >> 7) ^ (h >> 4)) & (OCC_MAP_SIZE - 1);
 }
 
 

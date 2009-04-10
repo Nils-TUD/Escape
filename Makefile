@@ -2,6 +2,8 @@
 BUILD=build
 DISKMOUNT=disk
 HDD=$(BUILD)/hd.img
+VBHDDTMP=$(BUILD)/vbhd.bin
+VBHDD=$(BUILD)/vbhd.vdi
 HDDBAK=$(BUILD)/hd.img.bak
 # 5 MB disk (10 * 16 * 63 * 512 = 5,160,960 byte)
 HDDCYL=10
@@ -48,6 +50,12 @@ debughdd:
 
 umounthdd:
 		sudo umount /dev/loop0 > /dev/null 2>&1
+
+# virtual box disk
+createvbhdd:
+		qemu-img convert $(HDD) $(VBHDDTMP)
+		rm -f $(VBHDD)
+		VBoxManage convertdd $(VBHDDTMP) $(VBHDD)
 
 createhdd: clean
 		sudo umount /dev/loop0 || true

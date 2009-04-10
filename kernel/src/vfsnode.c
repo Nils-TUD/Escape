@@ -238,8 +238,9 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo) {
 
 	/* handle special node-types */
 	if((n->mode & MODE_TYPE_SERVICE)) {
+		sProc *p = proc_getRunning();
 		sVFSNode *child;
-		s32 err = vfsn_createServiceUse(n,&child);
+		s32 err = vfsn_createServiceUse(p->pid,n,&child);
 		if(err < 0)
 			return err;
 
@@ -354,12 +355,12 @@ sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,char *name,u32 type) 
 	return node;
 }
 
-sVFSNode *vfsn_createServiceUseNode(sVFSNode *parent,char *name,fRead handler) {
+sVFSNode *vfsn_createServiceUseNode(tPid pid,sVFSNode *parent,char *name,fRead handler) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
-	node->owner = proc_getRunning()->pid;
+	node->owner = pid;
 	node->mode = MODE_TYPE_SERVUSE | MODE_OWNER_READ | MODE_OWNER_WRITE |
 		MODE_OTHER_READ | MODE_OTHER_WRITE;
 	node->readHandler = handler;
@@ -397,10 +398,9 @@ void vfsn_removeChild(sVFSNode *parent,sVFSNode *node) {
 	vfsn_releaseNode(node);
 }
 
-s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
+s32 vfsn_createServiceUse(tPid pid,sVFSNode *n,sVFSNode **child) {
 	char *name;
 	sVFSNode *m;
-	sProc *p = proc_getRunning();
 
 	if(n->mode & MODE_SERVICE_SINGLEPIPE) {
 		/* check if the node does already exist */
@@ -422,7 +422,7 @@ s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
 			return ERR_NOT_ENOUGH_MEM;
 
 		/* create usage-node */
-		itoa(name,p->pid);
+		itoa(name,pid);
 
 		/* check duplicate usage */
 		m = NODE_FIRST_CHILD(n);
@@ -437,7 +437,7 @@ s32 vfsn_createServiceUse(sVFSNode *n,sVFSNode **child) {
 	}
 
 	/* ok, create a service-usage-node */
-	m = vfsn_createServiceUseNode(n,name,vfs_serviceUseReadHandler);
+	m = vfsn_createServiceUseNode(pid,n,name,vfs_serviceUseReadHandler);
 	if(m == NULL) {
 		if((n->mode & MODE_SERVICE_SINGLEPIPE) == 0)
 			kheap_free(name);

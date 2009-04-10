@@ -24,7 +24,7 @@
 		} } while(0);
 #	else
 #		define vassert(cond,errorMsg,...) do { if(!(cond)) { \
-			debugf("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
+			printe("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
 				__LINE__,## __VA_ARGS__); \
 				exit(1); \
 		} } while(0);

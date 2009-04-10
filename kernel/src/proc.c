@@ -380,6 +380,7 @@ s32 proc_clone(tPid newPid) {
 
 void proc_destroy(sProc *p) {
 	tFD i;
+	sProc *cp;
 	/* don't delete initial or unused processes */
 	vassert(p->pid != 0 && p->state != ST_UNUSED,
 			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
@@ -396,7 +397,7 @@ void proc_destroy(sProc *p) {
 		/* mark ourself as destroyable */
 		sll_append(deadProcs,procs + pi);
 		/* ensure that we will not be selected on the next resched */
-		(procs + pi)->state = ST_ZOMBIE;
+		procs[pi].state = ST_ZOMBIE;
 		return;
 	}
 
@@ -411,6 +412,14 @@ void proc_destroy(sProc *p) {
 		}
 	}
 
+	/* give childs the ppid 0 */
+	cp = procs;
+	for(i = 0; i < PROC_COUNT; i++) {
+		if(cp->state != ST_UNUSED && cp->parentPid == p->pid)
+			cp->parentPid = 0;
+		cp++;
+	}
+
 	/* free io-map, if present */
 	if(p->ioMap != NULL)
 		kheap_free(p->ioMap);
@@ -421,8 +430,6 @@ void proc_destroy(sProc *p) {
 	sig_removeHandlerFor(p->pid);
 	/* notify processes that wait for dying procs */
 	sig_addSignal(SIG_PROC_DIED,p->pid);
-
-	/* TODO we have to unregister services, if p is on */
 
 	/* mark as unused */
 	p->textPages = 0;
@@ -531,9 +538,9 @@ bool proc_changeSize(s32 change,eChgArea area) {
 	if(change > 0) {
 		u32 ts,ds,ss;
 		/* not enough mem? */
-		if(mm_getFreeFrmCount(MM_DEF) < paging_countFramesForMap(addr,change)) {
+		if(mm_getFreeFrmCount(MM_DEF) < paging_countFramesForMap(addr,change))
 			return false;
-		}
+
 		/* invalid segment sizes? */
 		ts = procs[pi].textPages;
 		ds = procs[pi].dataPages;
@@ -544,12 +551,8 @@ bool proc_changeSize(s32 change,eChgArea area) {
 		}
 
 		paging_map(addr,NULL,change,PG_WRITABLE,false);
-
 		/* now clear the memory */
-		while(change-- > 0) {
-			memset((void*)addr,0,PAGE_SIZE);
-			addr += PAGE_SIZE;
-		}
+		memset((void*)addr,0,PAGE_SIZE * change);
 	}
 	else {
 		/* we have to correct the address */
@@ -559,9 +562,8 @@ bool proc_changeSize(s32 change,eChgArea area) {
 		paging_unmap(addr,-change,true,true);
 
 		/* can we remove all page-tables? */
-		if(origPages + change == 0) {
+		if(origPages + change == 0)
 			paging_unmapPageTables(ADDR_TO_PDINDEX(addr),PAGES_TO_PTS(-change));
-		}
 		/* ok, remove just the free ones */
 		else {
 			/* at first calculate the max. pts we may free (based on the pages we removed) */
@@ -585,12 +587,10 @@ bool proc_changeSize(s32 change,eChgArea area) {
 	}
 
 	/* adjust sizes */
-	if(area == CHG_DATA) {
+	if(area == CHG_DATA)
 		procs[pi].dataPages += chg;
-	}
-	else {
+	else
 		procs[pi].stackPages += chg;
-	}
 
 	return true;
 }
@@ -608,12 +608,14 @@ void proc_dbg_printAll(void) {
 }
 
 void proc_dbg_print(sProc *p) {
+	const char *states[] = {"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE"};
 	u32 i;
 	u32 *ptr;
 	vid_printf("process @ 0x%08x:\n",p);
 	vid_printf("\tpid = %d\n",p->pid);
 	vid_printf("\tparentPid = %d\n",p->parentPid);
 	vid_printf("\tcommand = %s\n",p->command);
+	vid_printf("\tstate = %s\n",states[p->state]);
 	vid_printf("\tphysPDirAddr = 0x%08x\n",p->physPDirAddr);
 	vid_printf("\ttextPages = %d\n",p->textPages);
 	vid_printf("\tdataPages = %d\n",p->dataPages);

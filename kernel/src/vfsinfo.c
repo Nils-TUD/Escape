@@ -90,7 +90,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer) {
 }
 
 static s32 vfsinfo_memUsageReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
-	return vfs_readHelper(pid,node,buffer,offset,count,(8 + 1 + 10 + 1) * 4 + 1,
+	return vfs_readHelper(pid,node,buffer,offset,count,(11 + 10 + 1) * 4 + 1,
 			vfsinfo_memUsageReadCallback);
 }
 
@@ -102,15 +102,15 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,void *buffer) {
 	u32 total = mboot_getUsableMemCount();
 	util_sprintf(
 		str,
-		"%-9s%10u\n"
-		"%-9s%10u\n"
-		"%-9s%10u\n"
-		"%-9s%10u\n"
+		"%-11s%10u\n"
+		"%-11s%10u\n"
+		"%-11s%10u\n"
+		"%-11s%10u\n"
 		,
 		"Total:",total,
 		"Used:",total - free,
 		"Free:",free,
-		"KHeap:",kheap_getFreeMem()
+		"KHeapSize:",kheap_getUsedMem()
 	);
 }
 

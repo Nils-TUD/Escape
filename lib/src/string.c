@@ -585,6 +585,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"No free process-slots!");
 			break;
 
+		case ERR_NODE_EXISTS:
+			strcpy(msg,"Node does already exist!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

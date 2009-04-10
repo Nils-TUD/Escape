@@ -16,11 +16,6 @@
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE 5
 
-/**
- * @return the address of the stack-frame-start
- */
-extern u32 getStackFrameStart(void);
-
 /* helper-functions */
 static u32 util_sprintu(char *str,u32 n,u8 base);
 static u32 util_sprintn(char *str,s32 n);

@@ -22,6 +22,7 @@
 #include <vfsinfo.h>
 #include <video.h>
 #include <timer.h>
+#include <string.h>
 
 /*
 	0x00000000 - 0x000003FF : Real mode interrupt vector table

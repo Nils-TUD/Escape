@@ -27,7 +27,7 @@ $(BUILD)/user_$(NAME)_%.o: %.s
 
 $(DUMP):	$(BIN)
 		@echo "===== GENERATING DUMP =====";
-		$(BUILD)/dump $(BIN) $(DUMP)
+		$(BUILD)/dump $(BIN) > $(DUMP)
 
 clean:
 		rm -f $(BIN) $(DUMP) $(AOBJ)

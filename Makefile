@@ -24,6 +24,7 @@ export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
 				 -Wstrict-prototypes -fno-builtin
+export CPPDEFFLAGS=-Wall -Wextra -ansi -g
 export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING=1
 # flags for nasm
 export ASMFLAGS=-g -f elf

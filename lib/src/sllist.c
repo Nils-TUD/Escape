@@ -22,6 +22,7 @@
 #	include <esc/debug.h>
 /* for exit (vassert) */
 #	include <esc/proc.h>
+#	include <esc/fileio.h>
 #	define sllprintf debugf
 #endif
 

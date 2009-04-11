@@ -16,6 +16,7 @@
 #	define testvPrintf	vid_vprintf
 #else
 #	include <esc/fileio.h>
+#	include <esc/proc.h>
 
 #	define testPrintf	printf
 #	define testvPrintf	vprintf

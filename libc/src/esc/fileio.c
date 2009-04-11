@@ -11,6 +11,7 @@
 #include <esc/fileio.h>
 #include <esc/proc.h>
 #include <esc/keycodes.h>
+#include <esc/env.h>
 #include <esc/heap.h>
 #include <string.h>
 #include <errors.h>

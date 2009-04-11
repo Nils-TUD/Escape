@@ -13,6 +13,7 @@
 #include "tests/tdir.h"
 #include "tests/tenv.h"
 #include "tests/tmsgs.h"
+#include "tests/tsyscalls.h"
 
 int main(void) {
 	test_register(&tModHeap);
@@ -20,6 +21,7 @@ int main(void) {
 	test_register(&tModDir);
 	test_register(&tModEnv);
 	test_register(&tModMsgs);
+	test_register(&tModSyscalls);
 	test_start();
 	return EXIT_SUCCESS;
 }

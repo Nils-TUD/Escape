@@ -18,6 +18,7 @@
 #include <esc/signals.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "history.h"
 #include "completion.h"

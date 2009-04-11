@@ -19,8 +19,8 @@
 #define IRQ_ATA1					0x2E
 #define IRQ_ATA2					0x2F
 
-#define SERVICE_TYPE_MULTIPIPE		0
-#define SERVICE_TYPE_SINGLEPIPE		4
+#define SERVICE_TYPE_MULTIPIPE		1
+#define SERVICE_TYPE_SINGLEPIPE		2
 
 /**
  * Registers a service with given name.

@@ -29,9 +29,10 @@
  * Loads the given code into the user-space
  *
  * @param code the address of the binary
+ * @param length the length of the binary
  * @return entry-point on success, ELF_INVALID_ENTRYPOINT on failure
  */
-u32 elf_loadprog(u8 *code);
+u32 elf_loadprog(u8 *code,u32 length);
 
 /* Standard ELF types.  */
 

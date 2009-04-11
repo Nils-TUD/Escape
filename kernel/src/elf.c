@@ -11,7 +11,7 @@
 #include <video.h>
 #include <string.h>
 
-u32 elf_loadprog(u8 *code) {
+u32 elf_loadprog(u8 *code,u32 length) {
 	u32 seenLoadSegments = 0;
 	sProc *p = proc_getRunning();
 
@@ -20,6 +20,7 @@ u32 elf_loadprog(u8 *code) {
 	Elf32_Ehdr *eheader = (Elf32_Ehdr*)code;
 	Elf32_Phdr *pheader = NULL;
 
+	/* check magic */
 	if(*(u32*)eheader->e_ident != *(u32*)ELFMAG) {
 		vid_printf("Error: Invalid magic-number\n");
 		return ELF_INVALID_ENTRYPOINT;
@@ -29,9 +30,13 @@ u32 elf_loadprog(u8 *code) {
 	p->dataPages = 0;
 
 	/* load the LOAD segments. */
-	for(datPtr = (u8 const*)(code + eheader->e_phoff), j = 0; j < eheader->e_phnum;
-		datPtr += eheader->e_phentsize, j++) {
+	datPtr = (u8 const*)(code + eheader->e_phoff);
+	for(j = 0; j < eheader->e_phnum; datPtr += eheader->e_phentsize, j++) {
 		pheader = (Elf32_Phdr*)datPtr;
+		/* check if all stuff is in the binary */
+		if((u8*)pheader + sizeof(Elf32_Phdr) >= code + length)
+			return ELF_INVALID_ENTRYPOINT;
+
 		if(pheader->p_type == PT_LOAD) {
 			u32 pages;
 			u8 const* segmentSrc;
@@ -51,16 +56,24 @@ u32 elf_loadprog(u8 *code) {
 				return ELF_INVALID_ENTRYPOINT;
 			}
 
-			/* Note that we put everything in the data-segment here because otherwise we would
-			* steal the text from the parent-process after fork, exec & exit */
+			/* check if the sizes are valid */
+			if(pheader->p_filesz > pheader->p_memsz)
+				return ELF_INVALID_ENTRYPOINT;
+			if(pheader->p_vaddr + pheader->p_filesz >= (u32)(code + length))
+				return ELF_INVALID_ENTRYPOINT;
+
+			/* Note that we put everything in the data-segment here atm */
 			pages = BYTES_2_PAGES(pheader->p_memsz);
 			if(seenLoadSegments != 0) {
 				if(pheader->p_vaddr & (PAGE_SIZE - 1))
 					pages++;
 			}
 
-			/* get more space for the data area. */
-			proc_changeSize(pages,CHG_DATA);
+			/* get more space for the data area and make sure that the segment-sizes are valid */
+			if(!proc_segSizesValid(p->textPages,p->dataPages + pages,p->stackPages))
+				return ELF_INVALID_ENTRYPOINT;
+			if(!proc_changeSize(pages,CHG_DATA))
+				return ELF_INVALID_ENTRYPOINT;
 
 			/* copy the data, and zero remaining bytes */
 			memcpy((void*)pheader->p_vaddr, (void*)segmentSrc, pheader->p_filesz);

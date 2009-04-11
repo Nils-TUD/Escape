@@ -16,7 +16,7 @@
 #else
 /* for exit and debugf (vassert) */
 #	include <esc/proc.h>
-#	include <esc/debug.h>
+#	include <esc/fileio.h>
 #endif
 
 #define MAX_ERR_LEN		255

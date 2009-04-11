@@ -21,7 +21,6 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 	printf("\tlibctest						Run libc-tests\n");
 	printf("\tlogin							Just for fun ;)\n");
 	printf("\tls [-ali] [<dir>]				List current or specified directory\n");
-	printf("\tmem								Print memory-usage\n");
 	printf("\tprogress						Shows a progress-bar\n");
 	printf("\tps								Print processes\n");
 	printf("\techo <string>,...				Print given arguments\n");

@@ -273,7 +273,6 @@ s32 strnlen(const char *str,s32 max);
  */
 bool isalnumstr(const char *str);
 
-#ifndef IN_KERNEL
 /**
  * Interprets the value of errnum generating a string describing the error that usually
  * generates that error number value in calls to functions of the C library.
@@ -284,6 +283,5 @@ bool isalnumstr(const char *str);
  * @return the error-message
  */
 char *strerror(s32 errnum);
-#endif
 
 #endif /* STRING_H_ */

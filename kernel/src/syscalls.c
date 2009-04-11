@@ -630,8 +630,14 @@ static void sysc_regService(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
 	tServ res;
 
+	/* check type */
+	if((type & (0x1 | 0x2)) == 0 || (type & ~(0x1 | 0x2)) != 0) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
 	/* convert type */
-	if(type & 0x4)
+	if(type & 0x2)
 		type = MODE_SERVICE_SINGLEPIPE;
 	else
 		type = 0;
@@ -650,7 +656,7 @@ static void sysc_unregService(sIntrptStackFrame *stack) {
 	s32 err;
 
 	/* check node-number */
-	if(!vfsn_isValidNodeNo(id)) {
+	if(!IS_VIRT(id) || !vfsn_isValidNodeNo(id)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
@@ -674,12 +680,13 @@ static void sysc_getClient(sIntrptStackFrame *stack) {
 	s32 res;
 	tFileNo file;
 
-	/* check arguments */
-	if(count <= 0 || !paging_isRangeUserReadable((u32)ids,count * sizeof(tServ))) {
+	/* check arguments. limit count a little bit to prevent overflow */
+	if(count <= 0 || count > 32 || ids == NULL ||
+			!paging_isRangeUserReadable((u32)ids,count * sizeof(tServ))) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
-	if(!paging_isRangeUserWritable((u32)client,sizeof(tServ))) {
+	if(client == NULL || !paging_isRangeUserWritable((u32)client,sizeof(tServ))) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
@@ -749,7 +756,7 @@ static void sysc_mapPhysical(sIntrptStackFrame *stack) {
 
 	/* trying to map memory in kernel area? */
 	/* TODO is this ok? */
-	if(phys + pages * PAGE_SIZE > KERNEL_P_ADDR) {
+	if(phys > KERNEL_P_ADDR || phys + pages * PAGE_SIZE > KERNEL_P_ADDR) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
@@ -873,6 +880,14 @@ static void sysc_setSigHandler(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
 	s32 err;
 
+	/* address should be valid */
+	/* TODO later we might check wether it is executable! */
+	if(!paging_isRangeUserReadable((u32)handler,1)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	/* check signal */
 	if(!sig_canHandle(signal)) {
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
 		return;
@@ -971,8 +986,18 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 		 * new process... */
 		bufPos = argBuffer;
 		arg = args;
-		while(*arg != NULL) {
-			/* at first we have to check wether the string is readable */
+		while(1) {
+			/* check if it is a valid pointer */
+			if(!paging_isRangeUserReadable((u32)arg,sizeof(char*))) {
+				kheap_free(argBuffer);
+				SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+				return;
+			}
+			/* end of list? */
+			if(*arg == NULL)
+				break;
+
+			/* check wether the string is readable */
 			if(!sysc_isStringReadable(*arg)) {
 				kheap_free(argBuffer);
 				SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
@@ -999,17 +1024,24 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 
 	/* at first make sure that we'll cause no page-fault */
 	if(!sysc_isStringReadable(path)) {
+		kheap_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
 
 	/* save path (we'll overwrite the process-data) */
 	pathLen = strlen(path);
+	if(pathLen >= MAX_PATH_LEN) {
+		kheap_free(argBuffer);
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
 	memcpy(pathSave,path,pathLen + 1);
 
 	/* open file */
 	res = vfsn_resolvePath(path,&nodeNo);
 	if(res != ERR_REAL_PATH) {
+		kheap_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
@@ -1018,6 +1050,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 		path += 5;
 	file = vfsr_openFile(p->pid,VFS_READ,path);
 	if(file < 0) {
+		kheap_free(argBuffer);
 		SYSC_ERROR(stack,file);
 		return;
 	}
@@ -1026,6 +1059,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	bufSize = bytesPerReq * sizeof(u8);
 	buffer = (u8*)kheap_alloc(bufSize);
 	if(buffer == NULL) {
+		kheap_free(argBuffer);
 		vfs_closeFile(file);
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 		return;
@@ -1038,6 +1072,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 			bufSize += bytesPerReq * sizeof(u8);
 			buffer = (u8*)kheap_realloc(buffer,bufSize);
 			if(buffer == NULL) {
+				kheap_free(argBuffer);
 				vfs_closeFile(file);
 				SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 				return;
@@ -1066,7 +1101,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
 	/* load program and prepare interrupt-stack */
-	if(elf_loadprog(buffer) == ELF_INVALID_ENTRYPOINT) {
+	if(elf_loadprog(buffer,fileSize) == ELF_INVALID_ENTRYPOINT) {
 		/* there is no undo for proc_changeSize() :/ */
 		kheap_free(argBuffer);
 		kheap_free(buffer);
@@ -1099,6 +1134,11 @@ static void sysc_createNode(sIntrptStackFrame *stack) {
 	}
 
 	pathLen = strlen(path);
+	if(pathLen == 0 || pathLen >= MAX_PATH_LEN) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
 	/* determine last slash */
 	name = strrchr(path,'/');
 	if(*(name + 1) == '\0')
@@ -1154,9 +1194,16 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	tVFSNodeNo nodeNo;
+	u32 len;
 	s32 res;
 
-	if(!sysc_isStringReadable(path) || !paging_isRangeUserWritable((u32)info,sizeof(sFileInfo))) {
+	if(!sysc_isStringReadable(path) || info == NULL ||
+			!paging_isRangeUserWritable((u32)info,sizeof(sFileInfo))) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+	len = strlen(path);
+	if(len == 0 || len >= MAX_PATH_LEN) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
@@ -1185,8 +1232,14 @@ static void sysc_debug(sIntrptStackFrame *stack) {
 }
 
 static bool sysc_isStringReadable(const char *str) {
-	u32 addr = (u32)str & ~(PAGE_SIZE - 1);
-	u32 rem = (addr + PAGE_SIZE) - (u32)str;
+	u32 addr,rem;
+	/* null is a special case */
+	if(str == NULL)
+		return false;
+
+	/* check if it is readable */
+	addr = (u32)str & ~(PAGE_SIZE - 1);
+	rem = (addr + PAGE_SIZE) - (u32)str;
 	while(paging_isRangeUserReadable(addr,PAGE_SIZE)) {
 		while(rem-- > 0 && *str)
 			str++;

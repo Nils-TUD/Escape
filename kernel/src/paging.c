@@ -195,8 +195,8 @@ bool paging_isMapped(u32 virtual) {
 }
 
 bool paging_isRangeUserReadable(u32 virtual,u32 count) {
-	/* kernel area? */
-	if(virtual + count > KERNEL_AREA_V_ADDR)
+	/* kernel area? (be carefull with overflows!) */
+	if(virtual > KERNEL_AREA_V_ADDR || virtual + count > KERNEL_AREA_V_ADDR)
 		return false;
 
 	return paging_isRangeReadable(virtual,count);
@@ -225,8 +225,8 @@ bool paging_isRangeReadable(u32 virtual,u32 count) {
 }
 
 bool paging_isRangeUserWritable(u32 virtual,u32 count) {
-	/* kernel area? */
-	if(virtual + count > KERNEL_AREA_V_ADDR)
+	/* kernel area? (be carefull with overflows!) */
+	if(virtual > KERNEL_AREA_V_ADDR || virtual + count > KERNEL_AREA_V_ADDR)
 		return false;
 
 	return paging_isRangeWritable(virtual,count);

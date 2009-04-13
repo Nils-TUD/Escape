@@ -18,6 +18,12 @@ LIB = $(BUILD)/libc.a
 DEP = $(BUILD)/libc.dep
 START = startup.s
 STARTO = $(BUILD)/libc_startup.o
+# for long long arithmetic
+GCCLIBDIR = ../libgcc
+GCCLIB = $(GCCLIBDIR)/_divdi3.object \
+	$(GCCLIBDIR)/_moddi3.object \
+	$(GCCLIBDIR)/_udivdi3.object \
+	$(GCCLIBDIR)/_umoddi3.object
 
 .PHONY:		all clean
 
@@ -25,7 +31,7 @@ all: $(LIB)
 
 $(LIB): $(OBJS) $(LOBJ) $(STARTO)
 		@echo "===== BUILDING ARCHIVE =====";
-		ar rcs $(LIB) $(OBJS) $(LOBJ)
+		ar rcs $(LIB) $(OBJS) $(LOBJ) $(GCCLIB)
 
 $(BUILD)/libc_esc_%.o: src/esc/%.c
 		@echo "===== COMPILING $< =====";

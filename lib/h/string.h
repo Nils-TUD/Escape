@@ -33,6 +33,16 @@
 s32 atoi(const char *str);
 
 /**
+ * The atol() function converts str into a long integer, and returns that long integer. str should
+ * start with whitespace or some sort of number, and atoi() will stop reading from str as soon as
+ * a non-numerical character has been read.
+ *
+ * @param str the string
+ * @return the long integer
+ */
+s64 atol(const char *str);
+
+/**
  * Converts the given signed integer to a string
  *
  * @param target the target-string (needs max. 12 elements)

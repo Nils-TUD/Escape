@@ -35,9 +35,14 @@
 [global paging_exchangePDir]
 [global cpu_rdtsc]
 [global cpu_getCR0]
+[global cpu_setCR0]
 [global cpu_getCR2]
 [global cpu_getCR3]
 [global cpu_getCR4]
+[global cpu_setCR4]
+[global fpu_finit]
+[global fpu_saveState]
+[global fpu_restoreState]
 [global proc_save]
 [global proc_resume]
 [global getStackFrameStart]
@@ -203,6 +208,12 @@ cpu_getCR0:
 	mov		eax,cr0
 	ret
 
+; void cpu_setCR0(u32 cr0);
+cpu_setCR0:
+	mov		eax,[esp + 4]
+	mov		cr0,eax
+	ret
+
 ; u32 cpu_getCR2(void);
 cpu_getCR2:
 	mov		eax,cr2
@@ -217,6 +228,29 @@ cpu_getCR3:
 cpu_getCR4:
 	mov		eax,cr4
 	ret
+
+; void cpu_setCR4(u32 cr4);
+cpu_setCR4:
+	mov		eax,[esp + 4]
+	mov		cr4,eax
+	ret
+
+; void fpu_finit(void);
+fpu_finit:
+	finit
+	ret
+
+; void fpu_saveState(sFPUState *state);
+fpu_saveState:
+	mov			eax,[esp + 4]
+	fsave		[eax]
+	ret
+
+; void fpu_restoreState(sFPUState *state);
+fpu_restoreState:
+	mov			eax,[esp + 4]
+	frstor	[eax]
+	ret;
 
 ; bool proc_save(sProcSave *saveArea);
 proc_save:

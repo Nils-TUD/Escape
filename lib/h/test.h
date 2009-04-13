@@ -134,6 +134,26 @@ bool test_assertInt(s32 received,s32 expected);
 bool test_assertUInt(u32 received,u32 expected);
 
 /**
+ * Checks wether the given long integers are equal. If not it calls test_caseFailed() and returns
+ * false.
+ *
+ * @param received the result you received
+ * @param expected your expected result
+ * @return true if the integers are equal
+ */
+bool test_assertLInt(s64 received,s64 expected);
+
+/**
+ * Checks wether the given unsigned long integers are equal. If not it calls test_caseFailed()
+ * and returns false.
+ *
+ * @param received the result you received
+ * @param expected your expected result
+ * @return true if the integers are equal
+ */
+bool test_assertULInt(u64 received,u64 expected);
+
+/**
  * Checks wether the given strings are equal. If not it calls test_caseFailed() and returns
  * false.
  *

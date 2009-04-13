@@ -15,7 +15,7 @@ BIN=$(BUILD)/$(BINNAME)
 SYMBOLS=$(BUILD)/kernel.symbols
 OSTITLE=hrniels-OS
 
-QEMUARGS=-serial stdio -no-kqemu -hda $(HDD) -cdrom cdrom.iso -boot c
+QEMUARGS=-serial stdio -hda $(HDD) -boot c
 
 DIRS = tools libc services user kernel kernel/test
 
@@ -31,16 +31,21 @@ export ASMFLAGS=-g -f elf
 
 .PHONY: all mounthdd debughdd umounthdd createhdd dis qemu bochs debug debugu debugm debugt test clean
 
-all: $(BUILD)
+all: $(BUILD) $(DISKMOUNT)
 		@[ -f $(HDD) ] || make createhdd;
 		@for i in $(DIRS); do \
 			make -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
+		@# just temporary
+		qemu-img convert -f raw $(HDD) -O vmdk vmware/vmwarehddimg.vmdk
 
 $(BUILD):
 		[ -d $(BUILD) ] || mkdir -p $(BUILD);
 
-mounthdd:
+$(DISKMOUNT):
+		[ -d $(DISKMOUNT) ] || mkdir -p $(DISKMOUNT);
+
+mounthdd: $(DISKMOUNT)
 		sudo umount $(DISKMOUNT) > /dev/null 2>&1 || true;
 		sudo mount -text2 -oloop=/dev/loop0,offset=`expr $(HDDTRACKSECS) \* 512` $(HDD) $(DISKMOUNT);
 
@@ -58,7 +63,7 @@ createvbhdd:
 		rm -f $(VBHDD)
 		VBoxManage convertdd $(VBHDDTMP) $(VBHDD)
 
-createhdd: clean
+createhdd: $(DISKMOUNT) clean
 		sudo umount /dev/loop0 || true
 		sudo losetup -d /dev/loop0 || true
 		dd if=/dev/zero of=$(HDD) bs=`expr $(HDDTRACKSECS) \* $(HDDHEADS) \* 512`c count=$(HDDCYL)
@@ -147,12 +152,12 @@ test: all prepareTest
 		@#bochs -f bochs.cfg -q > log.txt 2>&1 &
 		qemu $(QEMUARGS) > log.txt 2>&1
 
-prepareTest:
+prepareTest: $(DISKMOUNT)
 		make mounthdd
 		sudo sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel_test.bin/g" $(DISKMOUNT)/boot/grub/menu.lst;
 		make umounthdd
 
-prepareRun:
+prepareRun: $(DISKMOUNT)
 		make mounthdd
 		sudo sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel.bin/g" $(DISKMOUNT)/boot/grub/menu.lst;
 		make umounthdd

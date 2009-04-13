@@ -103,16 +103,20 @@ s32 dateToString(char *str,u32 max,const char *fmt,sDate *date) {
 		switch(c) {
 			/* TODO all 4 should be locale-dependend */
 			case 'a':
-				cpy = abrWeekDays[date->weekDay - 1];
+				if(date->weekDay > 0 && date->weekDay <= ARRAY_SIZE(abrWeekDays))
+					cpy = abrWeekDays[date->weekDay - 1];
 				break;
 			case 'A':
-				cpy = weekDays[date->weekDay - 1];
+				if(date->weekDay > 0 && date->weekDay <= ARRAY_SIZE(weekDays))
+					cpy = weekDays[date->weekDay - 1];
 				break;
 			case 'b':
-				cpy = abrMonthNames[date->month - 1];
+				if(date->month > 0 && date->month <= ARRAY_SIZE(abrMonthNames))
+					cpy = abrMonthNames[date->month - 1];
 				break;
 			case 'B':
-				cpy = monthNames[date->month - 1];
+				if(date->month > 0 && date->month <= ARRAY_SIZE(monthNames))
+					cpy = monthNames[date->month - 1];
 				break;
 		}
 		if(cpy != NULL) {
@@ -323,5 +327,5 @@ void getDateOf(sDate *date,u32 timestamp) {
 	/* TODO */
 	date->isDst = 0;
 	/* 1.1.1970 was thursday */
-	date->weekDay = (4 + days) % 7;
+	date->weekDay = ((4 + days) % 7) + 1;
 }

@@ -48,14 +48,46 @@
 #define STDERR_NOTINIT		0xFFFF0003
 
 /* format flags */
-#define FFL_PADRIGHT	1
-#define FFL_FORCESIGN	2
-#define FFL_SPACESIGN	4
-#define FFL_PRINTBASE	8
-#define FFL_PADZEROS	16
-#define FFL_CAPHEX		32
-#define FFL_SHORT		64
-#define FFL_LONG		128
+#define FFL_PADRIGHT		1
+#define FFL_FORCESIGN		2
+#define FFL_SPACESIGN		4
+#define FFL_PRINTBASE		8
+#define FFL_PADZEROS		16
+#define FFL_CAPHEX			32
+#define FFL_SHORT			64
+#define FFL_LONG			128
+#define FFL_LONGLONG		256
+
+/* prints ' ' or '+' in front of n if positive and depending on the flags */
+#define PRINT_SIGNED_PREFIX(count,buf,n,flags) \
+	if((n) > 0) { \
+		if(((flags) & FFL_FORCESIGN)) { \
+			if(doFprintc((buf),'+') == IO_EOF) \
+				return (count); \
+			(count)++; \
+		} \
+		else if(((flags) & FFL_SPACESIGN)) { \
+			if(doFprintc((buf),' ') == IO_EOF) \
+				return (count); \
+			(count)++; \
+		} \
+	}
+
+/* prints '0', 'X' or 'x' as prefix depending on the flags and base */
+#define PRINT_UNSIGNED_PREFIX(count,buf,base,flags) \
+	if(((flags) & FFL_PRINTBASE)) { \
+		if((base) == 16 || (base) == 8) { \
+			if(doFprintc((buf),'0') == IO_EOF) \
+				return (count); \
+			(count)++; \
+		} \
+		if((base) == 16) { \
+			char c = ((flags) & FFL_CAPHEX) ? 'X' : 'x'; \
+			if(doFprintc((buf),c) == IO_EOF) \
+				return (count); \
+			(count)++; \
+		} \
+	}
 
 /* buffer that is used by printf, sprintf and so on */
 typedef struct {
@@ -72,158 +104,27 @@ typedef struct {
 	sBuffer out;
 } sIOBuffer;
 
-/**
- * Prints the given character into a buffer
- *
- * @param buf the buffer to write to
- * @param c the character
- * @return the character or IO_EOF if failed
- */
 static char doFprintc(sBuffer *buf,char c);
-
-/**
- * Prints the given string
- *
- * @param buf the buffer to write to
- * @param str the string
- * @return the number of printed chars
- */
 static s32 doFprints(sBuffer *buf,const char *str);
-
-/**
- * Prints the given signed integer with padding
- *
- * @param buf the buffer to write to
- * @param n the number
- * @param pad the total width of the number
- * @param flags the format-flags
- * @return the number of printed chars
- */
 static s32 doFprintnPad(sBuffer *buf,s32 n,u8 pad,u16 flags);
-
-/**
- * Prints the given signed integer
- *
- * @param buf the buffer to write to
- * @param n the number
- * @return the number of printed chars
- */
 static s32 doFprintn(sBuffer *buf,s32 n);
-
-/**
- * Prints the given unsigned integer to the given base with padding
- *
- * @param buf the buffer to write to
- * @param u the number
- * @param base the base (2 .. 16)
- * @param pad the total width of the number
- * @param flags the format-flags
- * @return the number of printed chars
- */
 static s32 doFprintuPad(sBuffer *buf,u32 u,u8 base,u8 pad,u16 flags);
-
-/**
- * Prints the given unsigned integer to the given base
- *
- * @param buf the buffer to write to
- * @param u the number
- * @param base the base (2 .. 16)
- * @param hexchars pointer to the string with hex-digits that should be used
- * @return the number of printed chars
- */
 static s32 doFprintu(sBuffer *buf,u32 u,u8 base,char *hexchars);
-
-/**
- * Adds padding at the current position
- *
- * @param buf the buffer to write to
- * @param count the number of pad-chars to write
- * @param flags the format-flags
- * @return the number of written chars
- */
+static s32 doFprintulPad(sBuffer *buf,u64 u,u8 base,u8 pad,u16 flags);
+static s32 doFprintul(sBuffer *buf,u64 u,u8 base,char *hexchars);
 static s32 doPad(sBuffer *buf,s32 count,u16 flags);
-
-/**
- * printf-implementation
- *
- * @param buf the buffer to write to
- * @param fmt the format
- * @param ap the argument-list
- * @return the number of printed chars
- */
+static s32 doFprintlPad(sBuffer *buf,s64 n,u8 pad,u16 flags);
+static s32 doFprintl(sBuffer *buf,s64 l);
+static s32 doFprintIEEE754Pad(sBuffer *buf,double d,u8 pad,u16 flags,u32 precision);
+static s32 doFprintIEEE754(sBuffer *buf,double d,u32 precision);
 static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap);
-
-/**
- * Reads one char from <buf>
- *
- * @param buf the buffer
- * @return the character or IO_EOF
- */
 static char doFscanc(sBuffer *buf);
-
-/**
- * Puts the given character back to the scan-buffer
- *
- * @param buf the buffer
- * @param c the character
- * @param 0 on success, IO_EOF on error
- */
 static s32 doFscanback(sBuffer *buf,char c);
-
-/**
- * Reads one line from <buf> into <line>.
- *
- * @param buf the buffer
- * @param line the line-buffer
- * @param max the max chars to read
- * @return the number of read chars
- */
 static s32 doFscanl(sBuffer *buf,char *line,u32 max);
-
-/**
- * Reads <max> chars from <buf> into <buffer>.
- *
- * @param buf the buffer
- * @param buffer the buffer
- * @param max the max chars to read
- * @return the number of read chars
- */
 static s32 doFscans(sBuffer *buf,char *buffer,u32 max);
-
-/**
- * scanf() for the given buffer
- *
- * @param buf the io-buffer
- * @param fmt the format
- * @param ap the argument-list
- * @return the number of filled vars
- */
 static s32 doVfscanf(sBuffer *buf,const char *fmt,va_list ap);
-
-/**
- * If <stream> is an stdin, stdout or stderr and is not initialized, it will be done.
- * Otherwise nothing is done
- *
- * @param stream the stream
- * @return the stream or NULL
- */
 static sIOBuffer *getBuf(tFile *stream);
-
-/**
- * Creates an io-buffer for the given file-desc
- *
- * @param fd the file-descriptor
- * @param flags the flags with which the file was opened
- * @return the buffer or NULL if failed
- */
 static sIOBuffer *createBuffer(tFD fd,u8 flags);
-
-/**
- * Flushes the given buffer
- *
- * @param buf the buffer
- * @return 0 on success
- */
 static s32 doFlush(sBuffer *buf);
 
 /* std-streams */
@@ -602,7 +503,29 @@ u8 getnwidth(s32 n) {
 	return width;
 }
 
+u8 getlwidth(s64 l) {
+	u8 c = 0;
+	if(l < 0) {
+		l = -l;
+		c++;
+	}
+	while(l >= 10) {
+		c++;
+		l /= 10;
+	}
+	return c + 1;
+}
+
 u8 getuwidth(u32 n,u8 base) {
+	u8 width = 1;
+	while(n >= base) {
+		n /= base;
+		width++;
+	}
+	return width;
+}
+
+u8 getulwidth(u64 n,u8 base) {
 	u8 width = 1;
 	while(n >= base) {
 		n /= base;
@@ -656,18 +579,7 @@ static s32 doFprintnPad(sBuffer *buf,s32 n,u8 pad,u16 flags) {
 		count += doPad(buf,pad - width,flags);
 	}
 	/* print '+' or ' ' instead of '-' */
-	if(n > 0) {
-		if((flags & FFL_FORCESIGN)) {
-			if(doFprintc(buf,'+') == IO_EOF)
-				return count;
-			count++;
-		}
-		else if((flags & FFL_SPACESIGN)) {
-			if(doFprintc(buf,' ') == IO_EOF)
-				return count;
-			count++;
-		}
-	}
+	PRINT_SIGNED_PREFIX(count,buf,n,flags);
 	/* print number */
 	count += doFprintn(buf,n);
 	/* pad right */
@@ -701,19 +613,7 @@ static s32 doFprintuPad(sBuffer *buf,u32 u,u8 base,u8 pad,u16 flags) {
 		count += doPad(buf,pad - width,flags);
 	}
 	/* print base-prefix */
-	if((flags & FFL_PRINTBASE)) {
-		if(base == 16 || base == 8) {
-			if(doFprintc(buf,'0') == IO_EOF)
-				return count;
-			count++;
-		}
-		if(base == 16) {
-			char c = (flags & FFL_CAPHEX) ? 'X' : 'x';
-			if(doFprintc(buf,c) == IO_EOF)
-				return count;
-			count++;
-		}
-	}
+	PRINT_UNSIGNED_PREFIX(count,buf,base,flags);
 	/* pad left - zeros */
 	if(!(flags & FFL_PADRIGHT) && (flags & FFL_PADZEROS) && pad > 0) {
 		u32 width = getuwidth(u,base);
@@ -739,6 +639,120 @@ static s32 doFprintu(sBuffer *buf,u32 u,u8 base,char *hexchars) {
 	return c + 1;
 }
 
+static s32 doFprintulPad(sBuffer *buf,u64 u,u8 base,u8 pad,u16 flags) {
+	s32 count = 0;
+	/* pad left - spaces */
+	if(!(flags & FFL_PADRIGHT) && !(flags & FFL_PADZEROS) && pad > 0) {
+		u32 width = getulwidth(u,base);
+		count += doPad(buf,pad - width,flags);
+	}
+	/* print base-prefix */
+	PRINT_UNSIGNED_PREFIX(count,buf,base,flags);
+	/* pad left - zeros */
+	if(!(flags & FFL_PADRIGHT) && (flags & FFL_PADZEROS) && pad > 0) {
+		u32 width = getulwidth(u,base);
+		count += doPad(buf,pad - width,flags);
+	}
+	/* print number */
+	if(flags & FFL_CAPHEX)
+		count += doFprintul(buf,u,base,hexCharsBig);
+	else
+		count += doFprintul(buf,u,base,hexCharsSmall);
+	/* pad right */
+	if((flags & FFL_PADRIGHT) && pad > 0)
+		count += doPad(buf,pad - count,flags);
+	return count;
+}
+
+static s32 doFprintul(sBuffer *buf,u64 u,u8 base,char *hexchars) {
+	s32 c = 0;
+	if(u >= base)
+		c += doFprintul(buf,u / base,base,hexchars);
+	if(doFprintc(buf,hexchars[(u % base)]) == IO_EOF)
+		return c;
+	return c + 1;
+}
+
+static s32 doFprintlPad(sBuffer *buf,s64 n,u8 pad,u16 flags) {
+	s32 count = 0;
+	/* pad left */
+	if(!(flags & FFL_PADRIGHT) && pad > 0) {
+		u32 width = getlwidth(n);
+		if(n > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
+			width++;
+		count += doPad(buf,pad - width,flags);
+	}
+	/* print '+' or ' ' instead of '-' */
+	PRINT_SIGNED_PREFIX(count,buf,n,flags);
+	/* print number */
+	count += doFprintl(buf,n);
+	/* pad right */
+	if((flags & FFL_PADRIGHT) && pad > 0)
+		count += doPad(buf,pad - count,flags);
+	return count;
+}
+
+static s32 doFprintl(sBuffer *buf,s64 l) {
+	s32 c = 0;
+	if(l < 0) {
+		if(doFprintc(buf,'-') == IO_EOF)
+			return c;
+		l = -l;
+		c++;
+	}
+	if(l >= 10)
+		c += doFprintl(buf,l / 10);
+	if(doFprintc(buf,(l % 10) + '0') == IO_EOF)
+		return c;
+	return c + 1;
+}
+
+static s32 doFprintIEEE754Pad(sBuffer *buf,double d,u8 pad,u16 flags,u32 precision) {
+	s32 count = 0;
+	s64 pre = (s64)d;
+	/* pad left */
+	if(!(flags & FFL_PADRIGHT) && pad > 0) {
+		u32 width = getlwidth(pre) + precision + 1;
+		if(pre > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
+			width++;
+		count += doPad(buf,pad - width,flags);
+	}
+	/* print '+' or ' ' instead of '-' */
+	PRINT_SIGNED_PREFIX(count,buf,pre,flags);
+	/* print number */
+	count += doFprintIEEE754(buf,d,precision);
+	/* pad right */
+	if((flags & FFL_PADRIGHT) && pad > 0)
+		count += doPad(buf,pad - count,flags);
+	return count;
+}
+
+static s32 doFprintIEEE754(sBuffer *buf,double d,u32 precision) {
+	s32 c = 0;
+	s64 val = 0;
+
+	/* Note: this is probably not a really good way of converting IEEE754-floating point numbers
+	 * to string. But its simple and should be enough for my purposes :) */
+
+	val = (s64)d;
+	c += doFprintl(buf,val);
+	d -= val;
+	if(d < 0)
+		d = -d;
+	if(doFprintc(buf,'.') == IO_EOF)
+		return c;
+	c++;
+	while(precision-- > 0) {
+		d *= 10;
+		val = (s64)d;
+		if(doFprintc(buf,(val % 10) + '0') == IO_EOF)
+			return c;
+		d -= val;
+		c++;
+	}
+	return c;
+}
+
 static s32 doPad(sBuffer *buf,s32 count,u16 flags) {
 	s32 x = 0;
 	char c = flags & FFL_PADZEROS ? '0' : ' ';
@@ -756,8 +770,13 @@ static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
 	s32 *ptr;
 	s32 n;
 	u32 u;
+	s64 l;
+	u64 ul;
+	double d;
+	float f;
 	bool readFlags;
 	u16 flags;
+	u16 precision;
 	u8 width,base;
 	s32 count = 0;
 
@@ -830,10 +849,25 @@ static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
 			}
 		}
 
+		/* read precision */
+		precision = 6;
+		if(*fmt == '.') {
+			fmt++;
+			precision = 0;
+			while(*fmt >= '0' && *fmt <= '9') {
+				precision = precision * 10 + (*fmt - '0');
+				fmt++;
+			}
+		}
+
 		/* read length */
 		switch(*fmt) {
 			case 'l':
 				flags |= FFL_LONG;
+				fmt++;
+				break;
+			case 'L':
+				flags |= FFL_LONGLONG;
 				fmt++;
 				break;
 			case 'h':
@@ -847,10 +881,17 @@ static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
 			/* signed integer */
 			case 'd':
 			case 'i':
-				n = va_arg(ap, s32);
-				if(flags & FFL_SHORT)
-					n &= 0xFFFF;
-				count += doFprintnPad(buf,n,pad,flags);
+				if(flags & FFL_LONGLONG) {
+					l = va_arg(ap, u32);
+					l |= ((s64)va_arg(ap, s32)) << 32;
+					count += doFprintlPad(buf,l,pad,flags);
+				}
+				else {
+					n = va_arg(ap, s32);
+					if(flags & FFL_SHORT)
+						n &= 0xFFFF;
+					count += doFprintnPad(buf,n,pad,flags);
+				}
 				break;
 
 			/* pointer */
@@ -871,19 +912,39 @@ static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
 				*ptr = count;
 				break;
 
+			/* floating points */
+			case 'f':
+				if(flags & FFL_LONG) {
+					d = va_arg(ap, double);
+					count += doFprintIEEE754Pad(buf,d,pad,flags,precision);
+				}
+				else {
+					/* 'float' is promoted to 'double' when passed through '...' */
+					f = va_arg(ap, double);
+					count += doFprintIEEE754Pad(buf,f,pad,flags,precision);
+				}
+				break;
+
 			/* unsigned integer */
 			case 'b':
 			case 'u':
 			case 'o':
 			case 'x':
 			case 'X':
-				u = va_arg(ap, u32);
-				if(flags & FFL_SHORT)
-					u &= 0xFFFF;
 				base = c == 'o' ? 8 : ((c == 'x' || c == 'X') ? 16 : (c == 'b' ? 2 : 10));
 				if(c == 'X')
 					flags |= FFL_CAPHEX;
-				count += doFprintuPad(buf,u,base,pad,flags);
+				if(flags & FFL_LONGLONG) {
+					ul = va_arg(ap, u32);
+					ul |= ((u64)va_arg(ap, u32)) << 32;
+					count += doFprintulPad(buf,ul,base,pad,flags);
+				}
+				else {
+					u = va_arg(ap, u32);
+					if(flags & FFL_SHORT)
+						u &= 0xFFFF;
+					count += doFprintuPad(buf,u,base,pad,flags);
+				}
 				break;
 			/* string */
 			case 's':
@@ -969,7 +1030,7 @@ static s32 doFscans(sBuffer *buf,char *buffer,u32 max) {
 }
 
 static s32 doVfscanf(sBuffer *buf,const char *fmt,va_list ap) {
-	char *s,c,tc,rc = 0,length;
+	char *s = NULL,c,tc,rc = 0,length;
 	const char *numTable = "0123456789abcdef";
 	s32 *n,count = 0;
 	u32 *u,x;

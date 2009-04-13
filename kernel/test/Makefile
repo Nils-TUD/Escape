@@ -5,7 +5,7 @@ DISKMOUNT=../../disk
 BINNAME=kernel_test.bin
 BIN=$(BUILD)/$(BINNAME)
 LDCONF=../ld.conf
-DEP=$(BUILD)/test.dep
+DEP=$(BUILD)/kernelt.dep
 LIB=../../lib
 
 CC = gcc
@@ -19,14 +19,14 @@ LSRC=$(wildcard $(LIB)/src/*.c)
 
 # objects
 AOBJ=$(BUILD)/kernel_asm.o
-KOBJ=$(patsubst ../src/%.c,$(BUILD)/testk_%.o,$(KSRC))
-TOBJ=$(patsubst %.c,$(BUILD)/test_%.o,$(TSRC))
-LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILD)/test_lib_%.o,$(LSRC))
+KOBJ=$(patsubst ../src/%.c,$(BUILD)/kerneltk_%.o,$(KSRC))
+TOBJ=$(patsubst %.c,$(BUILD)/kernelt_%.o,$(TSRC))
+LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILD)/kernelt_lib_%.o,$(LSRC))
 
-SYMBOLS=$(BUILD)/tsymbols.txt
+SYMBOLS=$(BUILD)/kernelt_symbols.txt
 SYMBOLSCRIPT=../../tools/gensymbols.sh
 SYMBOLSRC=../src/ksymbols.c
-SYMBOLOBJ=$(patsubst ../src/%.c,$(BUILD)/t%.o,$(SYMBOLSRC))
+SYMBOLOBJ=$(patsubst ../src/%.c,$(BUILD)/kernelt_%.o,$(SYMBOLSRC))
 
 .PHONY: all pre clean
 
@@ -55,15 +55,15 @@ $(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		sudo cp $(BIN) $(DISKMOUNT)/boot
 		@make -C ../../ umounthdd
 
-$(BUILD)/testk_%.o:	../src/%.c
+$(BUILD)/kerneltk_%.o:	../src/%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
-$(BUILD)/test_%.o:		%.c
+$(BUILD)/kernelt_%.o:		%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
-$(BUILD)/test_lib_%.o:	$(LIB)/src/%.c
+$(BUILD)/kernelt_lib_%.o:	$(LIB)/src/%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 

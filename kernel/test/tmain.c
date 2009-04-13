@@ -36,6 +36,7 @@
 #include <timer.h>
 #include <test.h>
 #include <string.h>
+#include <fpu.h>
 
 #include "tkheap.h"
 #include "tpaging.h"
@@ -76,6 +77,12 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("Initializing paging...");
 	paging_mapHigherHalf();
 	paging_initCOWList();
+	vid_toLineEnd(strlen("DONE"));
+	vid_printf("\033f\x2%s\033r\x0","DONE");
+
+	/* fpu */
+	vid_printf("Initializing FPU...");
+	fpu_init();
 	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 

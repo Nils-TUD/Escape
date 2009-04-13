@@ -23,6 +23,7 @@
 #include <cpu.h>
 #include <paging.h>
 #include <proc.h>
+#include <fpu.h>
 #include <elf.h>
 #include <syscalls.h>
 #include <vfs.h>
@@ -527,6 +528,12 @@ void intrpt_handler(sIntrptStackFrame stack) {
 						util_panic("Page fault for address=0x%08x @ 0x%x",addr,stack.eip);
 					}
 				}
+				break;
+			}
+
+			/* #NM */
+			if(stack.intrptNo == EX_CO_PROC_NA) {
+				fpu_handleCoProcNA(&p->fpuState);
 				break;
 			}
 

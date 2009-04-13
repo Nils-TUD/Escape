@@ -19,13 +19,13 @@ LSRC=$(wildcard $(LIB)/src/*.c)
 
 # objects
 AOBJ=$(BUILD)/kernel_asm.o
-COBJ=$(patsubst src/%.c,$(BUILD)/%.o,$(CSRC))
+COBJ=$(patsubst src/%.c,$(BUILD)/kernel_%.o,$(CSRC))
 LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILD)/kernel_lib_%.o,$(LSRC))
 
-SYMBOLS=$(BUILD)/ksymbols.txt
+SYMBOLS=$(BUILD)/kernel_symbols.txt
 SYMBOLSCRIPT=../tools/gensymbols.sh
 SYMBOLSRC=src/ksymbols.c
-SYMBOLOBJ=$(patsubst src/%.c,$(BUILD)/%.o,$(SYMBOLSRC))
+SYMBOLOBJ=$(patsubst src/%.c,$(BUILD)/kernel_%.o,$(SYMBOLSRC))
 
 # we have to put ata and fs into the kernel
 # TODO we can put them as modules in grub, too, right?
@@ -78,7 +78,7 @@ $(AOBJ):	$(ASRC)
 		@echo "===== ASSEMBLING =====";
 		nasm $(ASMFLAGS) -o $(AOBJ) $(ASRC);
 
-$(BUILD)/%.o:		src/%.c
+$(BUILD)/kernel_%.o:		src/%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 

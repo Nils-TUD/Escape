@@ -38,7 +38,9 @@
 #define DRIVE_SLAVE					0xB0
 
 #define COMMAND_IDENTIFY			0xEC
+#define COMMAND_READ_SEC			0x20
 #define COMMAND_READ_SEC_EXT		0x24
+#define COMMAND_WRITE_SEC			0x30
 #define COMMAND_WRITE_SEC_EXT		0x34
 
 /* io-ports, offsets from base */
@@ -100,7 +102,7 @@ typedef struct {
 	sPartition partTable[PARTITION_COUNT];
 } sATADrive;
 
-static void ata_wait(void);
+static void ata_wait(sATADrive *drive);
 static bool ata_isDrivePresent(u8 drive);
 static void ata_detectDrives(void);
 static void ata_createVFSEntry(sATADrive *drive);
@@ -214,9 +216,15 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void ata_wait(void) {
-	/*volatile u32 i;
-	for(i = 0; i < 100; i++);*/
+static void ata_wait(sATADrive *drive) {
+	/* FIXME: vmware seems to need a very long wait-time:
+	volatile u32 i;
+	for(i = 0; i < 1000000; i++);
+	*/
+	inByte(drive->basePort + REG_STATUS);
+	inByte(drive->basePort + REG_STATUS);
+	inByte(drive->basePort + REG_STATUS);
+	inByte(drive->basePort + REG_STATUS);
 }
 
 static bool ata_isDrivePresent(u8 drive) {
@@ -229,9 +237,14 @@ static void ata_detectDrives(void) {
 	for(i = 0; i < DRIVE_COUNT; i++) {
 		if(ata_identifyDrive(drives + i)) {
 			drives[i].present = 1;
-			ata_readWrite(drives + i,false,buffer,0,1);
-			part_fillPartitions(drives[i].partTable,buffer);
-			ata_createVFSEntry(drives + i);
+			if(!ata_readWrite(drives + i,false,buffer,0,1)) {
+				drives[i].present = 0;
+				debugf("Drive %d: Unable to read partition-table!\n",i);
+			}
+			else {
+				part_fillPartitions(drives[i].partTable,buffer);
+				ata_createVFSEntry(drives + i);
+			}
 		}
 	}
 }
@@ -284,56 +297,79 @@ static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 
 	u16 *buf = buffer;
 	u16 basePort = drive->basePort;
 
-	/*dbg_startTimer();*/
-	outByte(basePort + REG_DRIVE_SELECT,0x40 | (drive->slaveBit << 4));
-	ata_wait();
-	/*dbg_stopTimer("select drive");*/
+	if(!drive->lba48) {
+		if(lba & 0xFFFFFFFFF0000000LL) {
+			debugf("[ata] Trying to read from sector > 2^28-1\n");
+			return false;
+		}
+		if(secCount & 0xFF00) {
+			debugf("[ata] Trying to read %u sectors with LBA28\n",secCount);
+			return false;
+		}
 
-	/*dbg_startTimer();*/
+		outByte(basePort + REG_DRIVE_SELECT,0xE0 | (drive->slaveBit << 4) | ((lba >> 24) & 0x0F));
+	}
+	else
+		outByte(basePort + REG_DRIVE_SELECT,0x40 | (drive->slaveBit << 4));
+
+	ata_wait(drive);
+
 	/* reset control-register */
 	gotInterrupt = false;
 	outByte(basePort + REG_CONTROL,0);
 
-	/* LBA: | LBA6 | LBA5 | LBA4 | LBA3 | LBA2 | LBA1 | */
-	/*     48             32            16            0 */
-
-	/* sector-count high-byte */
-	outByte(basePort + REG_SECTOR_COUNT,(u8)(secCount >> 8));
-	/* LBA4, LBA5 and LBA6 */
-	outByte(basePort + REG_PART_DISK_SECADDR1,(u8)(lba >> 24));
-	outByte(basePort + REG_PART_DISK_SECADDR2,(u8)(lba >> 32));
-	outByte(basePort + REG_PART_DISK_SECADDR3,(u8)(lba >> 40));
-	/* sector-count low-byte */
-	outByte(basePort + REG_SECTOR_COUNT,(u8)(secCount & 0xFF));
-	/* LBA1, LBA2 and LBA3 */
-	outByte(basePort + REG_PART_DISK_SECADDR1,(u8)(lba & 0xFF));
-	outByte(basePort + REG_PART_DISK_SECADDR2,(u8)(lba >> 8));
-	outByte(basePort + REG_PART_DISK_SECADDR3,(u8)(lba >> 16));
-	/* send command */
-	if(opWrite)
-		outByte(basePort + REG_COMMAND,COMMAND_WRITE_SEC_EXT);
-	else
-		outByte(basePort + REG_COMMAND,COMMAND_READ_SEC_EXT);
-	/*dbg_stopTimer("send command");*/
+	if(drive->lba48) {
+		/* LBA: | LBA6 | LBA5 | LBA4 | LBA3 | LBA2 | LBA1 | */
+		/*     48             32            16            0 */
+		/* sector-count high-byte */
+		outByte(basePort + REG_SECTOR_COUNT,(u8)(secCount >> 8));
+		/* LBA4, LBA5 and LBA6 */
+		outByte(basePort + REG_PART_DISK_SECADDR1,(u8)(lba >> 24));
+		outByte(basePort + REG_PART_DISK_SECADDR2,(u8)(lba >> 32));
+		outByte(basePort + REG_PART_DISK_SECADDR3,(u8)(lba >> 40));
+		/* sector-count low-byte */
+		outByte(basePort + REG_SECTOR_COUNT,(u8)(secCount & 0xFF));
+		/* LBA1, LBA2 and LBA3 */
+		outByte(basePort + REG_PART_DISK_SECADDR1,(u8)(lba & 0xFF));
+		outByte(basePort + REG_PART_DISK_SECADDR2,(u8)(lba >> 8));
+		outByte(basePort + REG_PART_DISK_SECADDR3,(u8)(lba >> 16));
+		/* send command */
+		if(opWrite)
+			outByte(basePort + REG_COMMAND,COMMAND_WRITE_SEC_EXT);
+		else
+			outByte(basePort + REG_COMMAND,COMMAND_READ_SEC_EXT);
+	}
+	else {
+		/* send sector-count */
+		outByte(basePort + REG_SECTOR_COUNT,(u8)secCount);
+		/* LBA1, LBA2 and LBA3 */
+		outByte(basePort + REG_PART_DISK_SECADDR1,(u8)lba);
+		outByte(basePort + REG_PART_DISK_SECADDR2,(u8)(lba >> 8));
+		outByte(basePort + REG_PART_DISK_SECADDR3,(u8)(lba >> 16));
+		/* send command */
+		if(opWrite)
+			outByte(basePort + REG_COMMAND,COMMAND_WRITE_SEC);
+		else
+			outByte(basePort + REG_COMMAND,COMMAND_READ_SEC);
+	}
 
 	for(i = 0; i < secCount; i++) {
-		/*dbg_startTimer();*/
 		do {
+			/* FIXME: vmware seems to need a ata_wait() here */
 			/* wait until drive is ready */
-			while(!gotInterrupt);
+			while(!gotInterrupt)
+				wait(EV_NOEVENT);
 
 			status = inByte(basePort + REG_STATUS);
 			if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == CMD_ST_DRQ)
 				break;
 			if((status & CMD_ST_ERROR) != 0) {
-				debugf("[ata] error\n");
+				debugf("[ata] error: %x\n",inByte(basePort + REG_ERROR));
 				return false;
 			}
 		}
 		while(true);
-		/*dbg_stopTimer("waiting");*/
 
-		/*dbg_startTimer();*/
 		/* now read / write the data */
 		if(opWrite) {
 			for(x = 0; x < 256; x++)
@@ -343,7 +379,6 @@ static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 
 			for(x = 0; x < 256; x++)
 				*buf++ = inWord(basePort + REG_DATA);
 		}
-		/*dbg_stopTimer("reading");*/
 	}
 
 	return true;
@@ -351,28 +386,28 @@ static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 
 
 static void ata_selectDrive(sATADrive *drive) {
 	outByte(drive->basePort + REG_DRIVE_SELECT,0xA0 | (drive->slaveBit << 4));
-	ata_wait();
+	ata_wait(drive);
 }
 
 static bool ata_identifyDrive(sATADrive *drive) {
 	u8 status;
 	u16 data[256];
 	u32 i;
-	u16 portBase = drive->basePort;
+	u16 basePort = drive->basePort;
 
 	ata_selectDrive(drive);
 
 	/* disable interrupts */
-	outByte(portBase + REG_CONTROL,CTRL_INTRPTS_ENABLED);
+	outByte(basePort + REG_CONTROL,CTRL_INTRPTS_ENABLED);
 
 	/* check wether the drive exists */
-	outByte(portBase + REG_COMMAND,COMMAND_IDENTIFY);
-	status = inByte(portBase + REG_STATUS);
+	outByte(basePort + REG_COMMAND,COMMAND_IDENTIFY);
+	status = inByte(basePort + REG_STATUS);
 	if(status == 0)
 		return false;
 	else {
 		do {
-			status = inByte(portBase + REG_STATUS);
+			status = inByte(basePort + REG_STATUS);
 			if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == CMD_ST_DRQ)
 				break;
 			if((status & CMD_ST_ERROR) != 0)
@@ -382,7 +417,7 @@ static bool ata_identifyDrive(sATADrive *drive) {
 
 		/* drive ready */
 		for(i = 0; i < 256; i++)
-			data[i] = inWord(portBase + REG_DATA);
+			data[i] = inWord(basePort + REG_DATA);
 
 		/* check for LBA48 */
 		if((data[83] & (1 << 10)) != 0) {

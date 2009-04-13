@@ -84,7 +84,7 @@ static void cmos_refresh(void) {
 	date.hour = cmos_decodeBCD(cmos_read(CMOS_REG_HOUR));
 	date.min = cmos_decodeBCD(cmos_read(CMOS_REG_MIN));
 	date.sec = cmos_decodeBCD(cmos_read(CMOS_REG_SEC));
-	date.weekDay = cmos_decodeBCD(cmos_read(CMOS_REG_WEEKDAY));
+	date.weekDay = cmos_decodeBCD(cmos_read(CMOS_REG_WEEKDAY)) + 1;
 
 	seek(dateFD,0);
 	write(dateFD,&date,sizeof(sDate));

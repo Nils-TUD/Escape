@@ -161,6 +161,39 @@ static void test_fileio_print(void) {
 	if(!test_fileio_checkPrint(res,str,"dead:beef, 5678") || !test_assertUInt(i,9))
 		return;
 
+	res = sprintf(str,"%Ld, %017Ld, %-*Ld",1LL,8167127123123123LL,12,-81273123LL);
+	if(!test_fileio_checkPrint(res,str,"1, 08167127123123123, -81273123   "))
+		return;
+
+	res = sprintf(str,"%Lu, %017Lx, %#-*LX",1ULL,0x7179bafed2122ULL,12,0x1234ABULL);
+	if(!test_fileio_checkPrint(res,str,"1, 00007179bafed2122, 0X1234AB    "))
+		return;
+
+	res = sprintf(str,"%f, %f, %f, %f, %f, %f",0.f,1.f,-1.f,0.f,0.4f,18.4f);
+	if(!test_fileio_checkPrint(res,str,"0.000000, 1.000000, -1.000000, 0.000000, 0.400000, 18.399999"))
+		return;
+
+	res = sprintf(str,"%f, %f, %f, %f",-1.231f,999.999f,1234.5678f,1189378123.78167213123f);
+	if(!test_fileio_checkPrint(res,str,"-1.230999, 999.999023, 1234.567749, 1189378176.000000"))
+		return;
+
+	res = sprintf(str,"%lf, %lf, %lf, %lf, %lf, %lf",0.,1.,-1.,0.,0.4,18.4);
+	if(!test_fileio_checkPrint(res,str,"0.000000, 1.000000, -1.000000, 0.000000, 0.400000, 18.399999"))
+		return;
+
+	res = sprintf(str,"%lf, %lf, %lf, %lf",-1.231,999.999,1234.5678,1189378123.78167213123);
+	if(!test_fileio_checkPrint(res,str,"-1.231000, 999.999000, 1234.567800, 1189378123.781672"))
+		return;
+
+	res = sprintf(str,"%8.4lf, %8.1lf, %8.10lf",1.,-1.,0.);
+	if(!test_fileio_checkPrint(res,str,"  1.0000,     -1.0, 0.0000000000"))
+		return;
+
+	res = sprintf(str,"%3.0lf, %-06.1lf, %2.4lf, %10.10lf",-1.231,999.999,1234.5678,
+			1189378123.78167213123);
+	if(!test_fileio_checkPrint(res,str,"-1., 999.90, 1234.5678, 1189378123.7816722393"))
+		return;
+
 	test_caseSucceded();
 }
 

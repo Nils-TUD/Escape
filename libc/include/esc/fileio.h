@@ -185,18 +185,49 @@ s32 printe(const char *prefix,...);
 
 /**
  * Formated output to STDOUT. Supports:
- * 	%d: signed integer
- * 	%u: unsigned integer, base 10
- * 	%o: unsigned integer, base 8
- * 	%x: unsigned integer, base 16 (small letters)
- * 	%X: unsigned integer, base 16 (big letters)
- * 	%b: unsigned integer, base 2
- * 	%s: string
- * 	%c: character
- * Additionally you can specify padding:
- * 	%02d
- * 	% 4x
- *  ...
+ * You can format values with: %[flags][width][.precision][length]specifier
+ *
+ * Flags:
+ *  "-"		: Left-justify within the given field width; Right justification is the default
+ *  "+"		: Forces to precede the result with a plus or minus sign (+ or -) even for
+ *  		  positive numbers
+ *  " "		: If no sign is going to be written, a blank space is inserted before the value.
+ *  "#"		: Used with o, x or X specifiers the value is preceeded with 0, 0x or 0X respectively
+ *  "0"		: Left-pads the number with zeroes (0) instead of spaces, where padding is specified
+ *
+ * Width:
+ *  [0-9]+	: Minimum number of characters to be printed. If the value to be printed is shorter
+ *  		  than this number, the result is padded with blank spaces.
+ *  "*"		: The width is not specified in the format string, but as an additional integer value
+ *  		  argument preceding the argument that has to be formatted.
+ *
+ * Precision:
+ * 	[0-9]+	: For integer specifiers (d, i, o, u, x, X): precision specifies the minimum number of
+ * 			  digits to be written. If the value to be written is shorter than this number, the
+ * 			  result is padded with leading zeros.
+ * 	"*"		: The precision is not specified in the format string, but as an additional integer
+ * 			  value argument preceding the argument that has to be formatted.
+ *
+ * Length:
+ * 	"h"		: The argument is interpreted as a short int or unsigned short int (only applies to
+ * 			  integer specifiers: i, d, o, u, x and X).
+ * 	"l"		: The argument is interpreted as a long int, unsigned long int or double
+ * 	"L"		: The argument is interpreted as a long long int or unsigned long long int
+ *
+ * Specifier:
+ * 	"c"		: a character
+ * 	"d"		: signed decimal integer
+ * 	"i"		: alias of "d"
+ * 	"f"		: decimal floating point
+ * 	"o"		: unsigned octal integer
+ * 	"u"		: unsigned decimal integer
+ * 	"x"		: unsigned hexadecimal integer
+ * 	"X"		: unsigned hexadecimal integer (capical letters)
+ * 	"b"		: unsigned binary integer
+ * 	"p"		: pointer address
+ * 	"s"		: string of characters
+ * 	"n"		: prints nothing. The argument must be a pointer to a signed int, where the number of
+ * 			  characters written so far is stored.
  *
  * @param fmt the format
  * @return the number of written chars
@@ -420,10 +451,17 @@ s32 vsscanf(const char *str,const char *fmt,va_list ap);
  * Determines the width of the given signed 32-bit integer in base 10
  *
  * @param n the integer
- * @param flags the format-flags
  * @return the width
  */
 u8 getnwidth(s32 n);
+
+/**
+ * Determines the width of the given signed 64-bit integer in base 10
+ *
+ * @param n the integer
+ * @return the width
+ */
+u8 getlwidth(s64 n);
 
 /**
  * Determines the width of the given unsigned 32-bit integer in the given base
@@ -433,5 +471,14 @@ u8 getnwidth(s32 n);
  * @return the width
  */
 u8 getuwidth(u32 n,u8 base);
+
+/**
+ * Determines the width of the given unsigned 64-bit integer in the given base
+ *
+ * @param n the integer
+ * @param base the base (2..16)
+ * @return the width
+ */
+u8 getulwidth(u64 n,u8 base);
 
 #endif /* FILEIO_H_ */

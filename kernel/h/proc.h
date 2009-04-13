@@ -22,6 +22,7 @@
 
 #include "common.h"
 #include "intrpt.h"
+#include "fpu.h"
 
 /* max number of processes */
 #define PROC_COUNT			1024
@@ -73,6 +74,8 @@ typedef struct {
 	/* TODO just for debugging atm */
 	u32 ueip;
 	sProcSave save;
+	/* FPU-state; initially NULL */
+	sFPUState *fpuState;
 	/* file descriptors: indices of the global file table */
 	tFileNo fileDescs[MAX_FD_COUNT];
 	/* the io-map (NULL by default) */

@@ -23,6 +23,7 @@
 #include <mm.h>
 #include <util.h>
 #include <intrpt.h>
+#include <fpu.h>
 #include <sched.h>
 #include <vfs.h>
 #include <vfsinfo.h>
@@ -63,6 +64,7 @@ void proc_init(void) {
 	procs[pi].ucycleStart = 0;
 	procs[pi].kcycleCount = 0;
 	procs[pi].kcycleStart = 0;
+	procs[pi].fpuState = NULL;
 	/* note that this assumes that the page-dir is initialized */
 	procs[pi].physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 	/* init fds */
@@ -132,6 +134,9 @@ void proc_switchTo(tPid pid) {
 		/* remove the io-map. it will be set as soon as the process accesses an io-port
 		 * (we'll get an exception) */
 		tss_removeIOMap();
+		/* lock the FPU so that we can save the FPU-state for the previous process as soon
+		 * as this one wants to use the FPU */
+		fpu_lockFPU();
 		proc_resume(p->physPDirAddr,&p->save);
 	}
 
@@ -356,6 +361,7 @@ s32 proc_clone(tPid newPid) {
 	p->ucycleStart = 0;
 	p->kcycleCount = 0;
 	p->kcycleStart = 0;
+	p->fpuState = NULL;
 	/* give the process the same name (maybe changed by exec) */
 	strcpy(p->command,procs[pi].command);
 
@@ -443,6 +449,8 @@ void proc_destroy(sProc *p) {
 	sig_removeHandlerFor(p->pid);
 	/* notify processes that wait for dying procs */
 	sig_addSignal(SIG_PROC_DIED,p->pid);
+	/* free FPU-state-memory */
+	fpu_freeState(&p->fpuState);
 
 	/* mark as unused */
 	p->textPages = 0;

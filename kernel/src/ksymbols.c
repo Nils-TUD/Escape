@@ -23,9 +23,9 @@
 
 static sSymbol ksymbols[] = {
 #if TESTING
-#	include "../../build/tsymbols.txt"
+#	include "../../build/kernelt_symbols.txt"
 #else
-#	include "../../build/ksymbols.txt"
+#	include "../../build/kernel_symbols.txt"
 #endif
 };
 

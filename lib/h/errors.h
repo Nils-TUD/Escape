@@ -54,6 +54,7 @@
 #define ERR_SERVUSE_SEEK			-31
 #define ERR_MAX_PROCS_REACHED		-32
 #define ERR_NODE_EXISTS				-33
+#define ERR_INVALID_ELF_BINARY		-34
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

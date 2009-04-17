@@ -83,7 +83,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			proc_changeSize(-p->dataPages,CHG_DATA);
 			/* now load service */
 			memcpy(p->command,name,strlen(name) + 1);
-			elf_loadprog((u8*)mod->modStart,mod->modEnd - mod->modStart);
+			elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart);
 			proc_setupIntrptStack(stack,0,NULL,0);
 			/* we don't want to continue the loop ;) */
 			break;

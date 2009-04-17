@@ -23,6 +23,8 @@
 #include "common.h"
 #include "multiboot.h"
 
+#define DEBUG_FRAME_USAGE		0
+
 /* the physical start-address of the kernel-area */
 #define KERNEL_AREA_P_ADDR		0x0
 /* the physical start-address of the kernel itself */
@@ -96,6 +98,10 @@ void mm_freeFrames(eMemType type,u32 *frames,u32 count);
 void mm_freeFrame(u32 frame,eMemType type);
 
 #if DEBUGGING
+
+#if DEBUG_FRAME_USAGE
+void mm_dbg_printFrameUsage(void);
+#endif
 
 /**
  * Prints all free frames

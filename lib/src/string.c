@@ -628,6 +628,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Node does already exist!");
 			break;
 
+		case ERR_INVALID_ELF_BINARY:
+			strcpy(msg,"The ELF-binary is invalid!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

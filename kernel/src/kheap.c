@@ -436,12 +436,13 @@ void kheap_dbg_print(void) {
 	sMemArea *area;
 	u32 i;
 
-	vid_printf("UsableList:\n");
+	vid_printf("Used=%d, free=%d, pages=%d\n",kheap_getUsedMem(),kheap_getFreeMem(),pages);
+	/*vid_printf("UsableList:\n");
 	area = usableList;
 	while(area != NULL) {
 		vid_printf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
 		area = area->next;
-	}
+	}*/
 
 	/*vid_printf("FreeList:\n");
 	area = freeList;
@@ -450,7 +451,7 @@ void kheap_dbg_print(void) {
 		area = area->next;
 	}*/
 
-	vid_printf("OccupiedMap:\n");
+	/*vid_printf("OccupiedMap:\n");
 	for(i = 0; i < OCC_MAP_SIZE; i++) {
 		area = occupiedMap[i];
 		if(area != NULL) {
@@ -460,7 +461,7 @@ void kheap_dbg_print(void) {
 				area = area->next;
 			}
 		}
-	}
+	}*/
 }
 
 #endif

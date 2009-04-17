@@ -298,6 +298,13 @@ u32 paging_getFrameOf(u32 virtual);
 u32 paging_countFramesForMap(u32 virtual,u32 count);
 
 /**
+ * Maps the text-pages of the given process for the current one
+ *
+ * @param p the process
+ */
+void paging_useForeignText(sProc *p);
+
+/**
  * Maps <count> virtual addresses starting at <virtual> to the given frames (in the CURRENT
  * page-dir!). You can decide (via <force>) wether the mapping should be done in every
  * case or just if the page is not already mapped.

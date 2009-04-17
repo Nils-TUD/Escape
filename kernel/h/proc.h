@@ -23,6 +23,7 @@
 #include "common.h"
 #include "intrpt.h"
 #include "fpu.h"
+#include "text.h"
 
 /* max number of processes */
 #define PROC_COUNT			1024
@@ -67,6 +68,8 @@ typedef struct {
 	tPid parentPid;
 	/* the physical address for the page-directory of this process */
 	u32 physPDirAddr;
+	/* the text of this process. NULL if it has no text */
+	sTextUsage *text;
 	/* the number of pages per segment */
 	u32 textPages;
 	u32 dataPages;

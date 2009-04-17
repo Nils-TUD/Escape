@@ -65,6 +65,7 @@ void proc_init(void) {
 	procs[pi].kcycleCount = 0;
 	procs[pi].kcycleStart = 0;
 	procs[pi].fpuState = NULL;
+	procs[pi].text = NULL;
 	/* note that this assumes that the page-dir is initialized */
 	procs[pi].physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 	/* init fds */
@@ -365,6 +366,10 @@ s32 proc_clone(tPid newPid) {
 	/* give the process the same name (maybe changed by exec) */
 	strcpy(p->command,procs[pi].command);
 
+	/* clone text */
+	p->text = procs[pi].text;
+	text_clone(p->text,p->pid);
+
 	/* inherit file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		p->fileDescs[i] = procs[pi].fileDescs[i];
@@ -434,6 +439,7 @@ void proc_destroy(sProc *p) {
 	/* give childs the ppid 0 */
 	cp = procs;
 	for(i = 0; i < PROC_COUNT; i++) {
+		/* TODO use give parent id of parent? */
 		if(cp->state != ST_UNUSED && cp->parentPid == p->pid)
 			cp->parentPid = 0;
 		cp++;

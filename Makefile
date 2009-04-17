@@ -27,7 +27,7 @@ export CWFLAGS=-Wall -ansi \
 export CPPDEFFLAGS=-Wall -Wextra -ansi -g
 export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING=1
 # flags for nasm
-export ASMFLAGS=-g -f elf
+export ASMFLAGS=-f elf
 
 .PHONY: all mounthdd debughdd umounthdd createhdd dis qemu bochs debug debugu debugm debugt test clean
 

@@ -23,16 +23,22 @@
 
 #include "common.h"
 
-#define ELF_INVALID_ENTRYPOINT 0xFFFFFFFF
+/**
+ * Loads the program at given path from fs into the user-space
+ *
+ * @param path the path to the program
+ * @return entry-point on success, ERR_INVALID_ELF_BINARY on failure
+ */
+s32 elf_loadFromFile(const char *path);
 
 /**
- * Loads the given code into the user-space
+ * Loads the given code into the user-space. This is just intended for loading initloader
  *
  * @param code the address of the binary
  * @param length the length of the binary
- * @return entry-point on success, ELF_INVALID_ENTRYPOINT on failure
+ * @return entry-point on success, ERR_INVALID_ELF_BINARY on failure
  */
-u32 elf_loadprog(u8 *code,u32 length);
+s32 elf_loadFromMem(u8 *code,u32 length);
 
 /* Standard ELF types.  */
 

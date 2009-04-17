@@ -70,6 +70,19 @@ static u32 u16mStackFrameCount = 0;
 static u32 u16mStackStart = 0;
 static u32 *u16mStack = NULL;
 
+#if DEBUG_FRAME_USAGE
+typedef struct {
+	bool free;
+	sProc *p;
+	u32 frame;
+} sFrameUsage;
+
+#define FRAME_USAGE_COUNT 2048
+
+static u32 frameUsagePos = 0;
+static sFrameUsage frameUsages[FRAME_USAGE_COUNT];
+#endif
+
 void mm_init(void) {
 	sMemMap *mmap;
 
@@ -171,6 +184,14 @@ u32 mm_allocateFrame(eMemType type) {
 			util_panic("Not enough memory :(");
 		}
 
+#if DEBUG_FRAME_USAGE
+		frameUsages[frameUsagePos].frame = *(u16mStack - 1);
+		frameUsages[frameUsagePos].p = proc_getRunning();
+		frameUsages[frameUsagePos].free = false;
+		frameUsagePos++;
+		vid_printf("a: %x of %d\n",*(u16mStack - 1),proc_getRunning()->pid);
+		util_printStackTrace(util_getKernelStackTrace());
+#endif
 		return *(--u16mStack);
 	}
 
@@ -201,6 +222,16 @@ void mm_freeFrame(u32 frame,eMemType type) {
 		}
 	}
 	else {
+#if DEBUG_FRAME_USAGE
+		u32 i;
+		for(i = 0;i < FRAME_USAGE_COUNT;i++) {
+			if(frameUsages[i].frame == frame && !frameUsages[i].free) {
+				frameUsages[i].free = true;
+				break;
+			}
+		}
+		vid_printf("f: %x\n",frame);
+#endif
 		*(u16mStack++) = frame;
 	}
 }
@@ -260,6 +291,17 @@ static void mm_markFrameUsed(u32 frame,bool used) {
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
+
+#if DEBUG_FRAME_USAGE
+void mm_dbg_printFrameUsage(void) {
+	u32 i;
+	vid_printf("Currently used frames:\n");
+	for(i = 0; i < FRAME_USAGE_COUNT; i++) {
+		if(frameUsages[i].free == false && frameUsages[i].p)
+			vid_printf("\tframe %x used by %d\n",frameUsages[i].frame,frameUsages[i].p->pid);
+	}
+}
+#endif
 
 void mm_dbg_printFreeFrames(void) {
 	u32 i,pos = 0;

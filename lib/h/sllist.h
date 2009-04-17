@@ -159,16 +159,18 @@ void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev);
  *
  * @param list the list
  * @param data the data to search for
+ * @return true if something has been removed
  */
-void sll_removeFirst(sSLList *list,const void *data);
+bool sll_removeFirst(sSLList *list,const void *data);
 
 /**
  * Removes the given index from the list
  *
  * @param list the list
  * @param index the index
+ * @return true if the index has been removed
  */
-void sll_removeIndex(sSLList *list,u32 index);
+bool sll_removeIndex(sSLList *list,u32 index);
 
 #if DEBUGGING
 

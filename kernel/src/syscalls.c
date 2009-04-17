@@ -34,6 +34,7 @@
 #include <elf.h>
 #include <multiboot.h>
 #include <timer.h>
+#include <text.h>
 #include <string.h>
 #include <assert.h>
 #include <errors.h>
@@ -964,20 +965,15 @@ static void sysc_sendSignalTo(sIntrptStackFrame *stack) {
 }
 
 static void sysc_exec(sIntrptStackFrame *stack) {
-	const u32 bytesPerReq = 1 * K;
 	char pathSave[MAX_PATH_LEN + 1];
 	char *path = (char*)SYSC_ARG1(stack);
 	char **args = (char**)SYSC_ARG2(stack);
 	char **arg;
 	char *argBuffer;
-	u8 *buffer;
 	u32 argc;
 	s32 remaining = EXEC_MAX_ARGSIZE;
-	u32 fileSize,bufSize;
-	s32 pathLen,readBytes;
-	s32 res;
+	s32 pathLen,res;
 	tVFSNodeNo nodeNo;
-	tFileNo file;
 	sProc *p = proc_getRunning();
 
 	argc = 0;
@@ -1050,85 +1046,44 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 		return;
 	}
 	memcpy(pathSave,path,pathLen + 1);
+	path = pathSave;
 
-	/* open file */
+	/* resolve path */
 	res = vfsn_resolvePath(path,&nodeNo);
 	if(res != ERR_REAL_PATH) {
 		kheap_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
 	}
-	/* skip file: */
+
+	/* free the current text; free frames if text_free() returns true */
+	paging_unmap(0,p->textPages,text_free(p->text,p->pid),false);
+	/* remove process-data */
+	proc_changeSize(-p->dataPages,CHG_DATA);
+	/* Note that we HAVE TO do it behind the proc_changeSize() call since the data-pages are
+	 * still behind the text-pages, no matter if we've already unmapped the text-pages or not,
+	 * and proc_changeSize() trusts p->textPages */
+	p->textPages = 0;
+
+	/* load program */
 	if(strncmp(path,"file:",5) == 0)
 		path += 5;
-	file = vfsr_openFile(p->pid,VFS_READ,path);
-	if(file < 0) {
+	res = elf_loadFromFile(path);
+	if(res < 0) {
+		/* there is no undo for proc_changeSize() :/ */
 		kheap_free(argBuffer);
-		SYSC_ERROR(stack,file);
+		proc_destroy(p);
+		proc_switch();
 		return;
 	}
 
-	fileSize = 0;
-	bufSize = bytesPerReq * sizeof(u8);
-	buffer = (u8*)kheap_alloc(bufSize);
-	if(buffer == NULL) {
-		kheap_free(argBuffer);
-		vfs_closeFile(file);
-		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-		return;
-	}
-
-	/* read the file */
-	do {
-		readBytes = vfs_readFile(p->pid,file,buffer + fileSize,bytesPerReq);
-		if(readBytes > 0) {
-			bufSize += bytesPerReq * sizeof(u8);
-			buffer = (u8*)kheap_realloc(buffer,bufSize);
-			if(buffer == NULL) {
-				kheap_free(argBuffer);
-				vfs_closeFile(file);
-				SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-				return;
-			}
-			fileSize += readBytes;
-		}
-	}
-	while(readBytes > 0);
-
-	/* we don't need the file anymore */
-	vfs_closeFile(file);
-
-	/* error? */
-	if(readBytes < 0) {
-		kheap_free(argBuffer);
-		kheap_free(buffer);
-		SYSC_ERROR(stack,readBytes);
-		return;
-	}
-
-	/* now remove the process-data */
-	/* TODO text... */
-	proc_changeSize(-p->dataPages,CHG_DATA);
 	/* copy path so that we can identify the process */
 	memcpy(p->command,pathSave + (pathLen > MAX_PROC_NAME_LEN ? (pathLen - MAX_PROC_NAME_LEN) : 0),
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
-	/* load program and prepare interrupt-stack */
-	if(elf_loadprog(buffer,fileSize) == ELF_INVALID_ENTRYPOINT) {
-		/* there is no undo for proc_changeSize() :/ */
-		kheap_free(argBuffer);
-		kheap_free(buffer);
-		proc_destroy(p);
-		proc_switch();
-	}
-	else {
-		/*vid_printf("%d is finished with '%s'\n",p->pid,pathSave);*/
-		proc_setupIntrptStack(intrpt_getCurStack(),argc,argBuffer,EXEC_MAX_ARGSIZE - remaining);
-
-		/* finally free the buffer */
-		kheap_free(argBuffer);
-		kheap_free(buffer);
-	}
+	/* make process ready */
+	proc_setupIntrptStack(intrpt_getCurStack(),argc,argBuffer,EXEC_MAX_ARGSIZE - remaining);
+	kheap_free(argBuffer);
 }
 
 static void sysc_createNode(sIntrptStackFrame *stack) {

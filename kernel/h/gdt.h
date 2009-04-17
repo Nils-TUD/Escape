@@ -51,4 +51,14 @@ bool tss_ioMapPresent(void);
  */
 void tss_setIOMap(u8 *ioMap);
 
+
+#if DEBUGGING
+
+/**
+ * Prints the GDT
+ */
+void gdt_dbg_print(void);
+
+#endif
+
 #endif /*GDT_H_*/

@@ -142,10 +142,12 @@ bool text_free(sTextUsage *u,tPid pid) {
 }
 
 static s32 text_load(sProc *p,tFileNo file,u32 position,u32 textSize) {
-	/* at first we have to create the pages for the process */
 	u8 *target;
 	s32 rem,res;
-	u32 pages = BYTES_2_PAGES(textSize);
+	u32 pages;
+
+	/* at first we have to create the pages for the process */
+	pages = BYTES_2_PAGES(textSize);
 	if(mm_getFreeFrmCount(MM_DEF) < pages)
 		return ERR_NOT_ENOUGH_MEM;
 	paging_map(0,NULL,pages,0,true);

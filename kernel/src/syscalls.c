@@ -895,7 +895,6 @@ static void sysc_setSigHandler(sIntrptStackFrame *stack) {
 	s32 err;
 
 	/* address should be valid */
-	/* TODO later we might check wether it is executable! */
 	if(!paging_isRangeUserReadable((u32)handler,1)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;

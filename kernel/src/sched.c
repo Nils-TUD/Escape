@@ -84,7 +84,7 @@ sProc *sched_perform(void) {
 
 	if(p == NULL) {
 		/* if there is no runnable process, choose init */
-		/* init will go to wait as soon as it is resumed. so if there are other processes
+		/* init will call wait(EV_NOEVENT) as soon as it is resumed. so if there are other processes
 		 * that want to run, they will be chosen and init will never be chosen. If there is no
 		 * runnable process anymore, we will choose init until there is one again. */
 		p = proc_getByPid(0);

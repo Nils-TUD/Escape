@@ -112,7 +112,7 @@ s32 vfsn_getNodeInfo(tVFSNodeNo nodeNo,sFileInfo *info) {
 		return ERR_INVALID_NODENO;
 
 	/* some infos are not available here */
-	/* TODO a lot of is missing here */
+	/* TODO needs to be completed */
 	info->device = 0;
 	info->rdevice = 0;
 	info->accesstime = 0;

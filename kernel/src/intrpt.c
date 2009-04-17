@@ -290,14 +290,7 @@ static tSig irq2Signal[] = {
 /* temporary storage for signal-handling */
 static sSignalData signalData;
 
-/**
- * An assembler routine to load an IDT
- *
- * @param idt the IDT to load
- */
-/*extern void idt_flush(sIDTPtr *idt);*/
-
-/* the IDT */
+/* the interrupt descriptor table */
 static sIDTEntry idt[IDT_COUNT];
 
 const char *intrpt_no2Name(u32 intrptNo) {

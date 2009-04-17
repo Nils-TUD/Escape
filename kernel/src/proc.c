@@ -71,8 +71,7 @@ void proc_init(void) {
 	/* init fds */
 	for(i = 0; i < MAX_FD_COUNT; i++)
 		procs[pi].fileDescs[i] = -1;
-	/* TODO just temporary */
-	memcpy(procs[pi].command,"init",5);
+	memcpy(procs[pi].command,"initloader",5);
 
 	paging_exchangePDir(procs[pi].physPDirAddr);
 	/* setup kernel-stack for us */
@@ -439,7 +438,7 @@ void proc_destroy(sProc *p) {
 	/* give childs the ppid 0 */
 	cp = procs;
 	for(i = 0; i < PROC_COUNT; i++) {
-		/* TODO use give parent id of parent? */
+		/* TODO use parent id of parent? */
 		if(cp->state != ST_UNUSED && cp->parentPid == p->pid)
 			cp->parentPid = 0;
 		cp++;

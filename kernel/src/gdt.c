@@ -254,14 +254,6 @@ void gdt_init(void) {
 	tss.ioMapEnd = 0xFF;
 	gdt_set_tss_desc(5,(u32)&tss,sizeof(sTSS) - 1);
 
-	/*int i;
-	for(i = 0;i < GDT_ENTRY_COUNT; i++) {
-		vid_printf("%d: addrLow=0x%x, addrMiddle=0x%x, addrHigh=0x%x",
-				i,gdt[i].addrLow,gdt[i].addrMiddle,gdt[i].addrHigh);
-		vid_printf(", sizeLow=0x%x, sizeHigh=0x%x, access=0x%x\n",
-				gdt[i].sizeLow,gdt[i].sizeHigh,gdt[i].access);
-	}*/
-
 	/* now load the GDT */
 	gdt_flush(&gdtTable);
 
@@ -308,3 +300,19 @@ static void gdt_set_desc(u16 index,u32 address,u32 size,u8 access,u8 ringLevel) 
 	gdt[index].sizeHigh = ((size >> 16) & 0xF) | GDT_PAGE_GRANULARITY | GDT_32BIT_PMODE;
 	gdt[index].access = access | ((ringLevel & 3) << 5);
 }
+
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
+
+void gdt_dbg_print(void) {
+	u32 i;
+	vid_printf("GDT:\n");
+	for(i = 0;i < GDT_ENTRY_COUNT; i++) {
+		vid_printf("\t%d: address=%02x%02x%04x, size=%02x%04x, access=%02x\n",
+				i,gdt[i].addrHigh,gdt[i].addrMiddle,gdt[i].addrLow,
+				gdt[i].sizeHigh,gdt[i].sizeLow,gdt[i].access);
+	}
+}
+
+#endif

@@ -33,6 +33,10 @@
 #define STDOUT_FILENO	1
 #define STDERR_FILENO	2
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Opens the given path with given mode and returns the associated file-descriptor
  *
@@ -114,5 +118,9 @@ s32 redirFd(tFD src,tFD dst);
  * @param fd the file-descriptor
  */
 void close(tFD fd);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* IO_H_ */

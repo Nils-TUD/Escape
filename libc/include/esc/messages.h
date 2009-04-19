@@ -86,6 +86,10 @@ typedef struct {
 	u16 secCount;
 } sMsgDataATAReq;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates a default-message with the given data.
  * After you've sent the message, please use freeMsg() to free the space on the heap.
@@ -153,5 +157,9 @@ u32 disasmBinDataMsg(u32 msgLen,const void *data,u8 **buffer,const char *fmt,...
  * @param msg the message
  */
 void freeMsg(sMsgHeader *msg);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MESSAGES_H_ */

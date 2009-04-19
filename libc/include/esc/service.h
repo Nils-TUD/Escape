@@ -35,6 +35,10 @@
 #define SERVICE_TYPE_MULTIPIPE		1
 #define SERVICE_TYPE_SINGLEPIPE		2
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Registers a service with given name.
  *
@@ -69,5 +73,9 @@ tFD getClient(tServ *services,u32 count,tServ *serv);
  * @return 0 on success
  */
 s32 createNode(const char *path);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SERVICE_H_ */

@@ -31,6 +31,10 @@
 #define EV_RECEIVED_MSG		2
 #define EV_CHILD_DIED		4
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @return the process-id
  */
@@ -93,5 +97,9 @@ s32 wait(u8 events);
  * @param errorCode the error-code for the parent
  */
 void exit(s32 errorCode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* PROC_H_ */

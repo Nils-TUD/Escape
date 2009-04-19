@@ -22,6 +22,10 @@
 
 #include <types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @param c the character
  * @return non-zero if its argument is a numeric digit or a letter of the alphabet.
@@ -96,5 +100,9 @@ s32 tolower(s32 ch);
  * @return the uppercase version of the character ch.
  */
 s32 toupper(s32 ch);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CTYPE_H_ */

@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: ctmain.c 202 2009-04-11 16:07:24Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,43 +17,41 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ENV_H_
-#define ENV_H_
-
 #include <esc/common.h>
+#include <esc/fileio.h>
+#include <stdlib.h>
+#include <esc/vector.hpp>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class my {
+public:
+	my() {
+		printf("Constructor for %p...\n",this);
+	};
+	~my() {
+		printf("Destructor for %p...\n",this);
+	};
 
-/**
- * Returns the env-variable-name with given index
- *
- * @param index the index
- * @return the name of it or NULL if the index does not exist (or it failed for another reason)
- */
-char *getEnvByIndex(u32 index);
+	void doIt();
+};
 
-/**
- * Returns the value of the given environment-variable. Note that you have to copy the value
- * if you want to keep it!
- *
- * @param name the environment-variable-name
- * @return the value or NULL if failed
- */
-char *getEnv(const char *name);
+my x;
+my *y = new my();
 
-/**
- * Sets the environment-variable <name> to <value>.
- *
- * @param name the name
- * @param value the value
- * @return 0 on success
- */
-s32 setEnv(const char *name,const char *value);
-
-#ifdef __cplusplus
+void my::doIt() {
+	printf("Ich bins\n");
 }
-#endif
 
-#endif /* ENV_H_ */
+int main(int argc, char* argv[]) {
+	unsigned int a = 0;
+	a++;
+	printf("a=%d\n",a);
+
+	x.doIt();
+	y->doIt();
+
+	my *m = new my();
+	m->doIt();
+	delete m;
+	delete y;
+	return EXIT_SUCCESS;
+}

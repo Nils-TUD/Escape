@@ -22,9 +22,17 @@
 
 #include <esc/common.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * The last error-code
  */
 extern int errno;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ERRNO_H_ */

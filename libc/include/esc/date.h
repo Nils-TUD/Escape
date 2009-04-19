@@ -41,6 +41,10 @@ typedef struct {
 	u8 isDst;
 } sDate;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Copies into str the content of format, expanding its format tags into the corresponding
  * values as specified by date, with a limit of max characters.
@@ -102,5 +106,9 @@ s32 getDate(sDate *date);
  * @param timestamp the timestamp to use
  */
 void getDateOf(sDate *date,u32 timestamp);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* DATE_H_ */

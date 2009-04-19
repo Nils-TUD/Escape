@@ -82,6 +82,10 @@
 		: "=a" (c) \
 	);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern u64 cpu_rdtsc(void);
 
 /**
@@ -179,5 +183,9 @@ void debugInt(s32 n);
  * @param s the string
  */
 void debugString(char *s);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* DEBUG_H_ */

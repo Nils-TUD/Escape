@@ -22,6 +22,10 @@
 
 #include <esc/common.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Request the given IO-port
  *
@@ -87,5 +91,9 @@ extern u8 inByte(u16 port);
  * @return the value
  */
 extern u16 inWord(u16 port);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* PORTS_H_ */

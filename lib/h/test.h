@@ -47,6 +47,10 @@ typedef struct {
 #	endif
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * The "do-nothing" printf-function
  */
@@ -174,5 +178,9 @@ void test_register(sTestModule *mod);
  * Runs all registered tests
  */
 void test_start(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TEST_H_ */

@@ -34,6 +34,10 @@ typedef struct {
 	char name[];
 } __attribute__((packed)) sDirEntry;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Builds an absolute path from the given one. If it starts with no namespace ("file:" e.g.)
  * and is not absolute (starts with "/") CWD will be taken to build the absolute path.
@@ -74,5 +78,8 @@ sDirEntry *readdir(tFD dir);
  */
 void closedir(tFD dir);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* DIR_H_ */

@@ -17,21 +17,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TYPES_H_
-#define TYPES_H_
+#ifndef VECTOR_
+#define VECTOR_
 
-/* basic type-defs */
-typedef char s8;
-typedef unsigned char u8;
-typedef short s16;
-typedef unsigned short u16;
-typedef int s32;
-typedef unsigned int u32;
-typedef long long s64;
-typedef unsigned long long u64;
+#include <types.hpp>
 
-#ifndef __cplusplus
-typedef enum {false = 0, true = 1} bool;
-#endif
+namespace esc {
+	template<class T,int initialSize,int increment>
+	class vector {
+	private:
+		u32 x;
+		size_type size;
+		T* elements[initialSize];
 
-#endif /* TYPES_H_ */
+	public:
+		vector() : size(0) {
+
+		};
+		~vector() {
+
+		};
+
+		inline size_type size() const {
+			return size;
+		};
+	};
+}
+
+#endif /* VECTOR_ */

@@ -34,6 +34,10 @@
 #define SIG_IGN		-1
 #define SIG_DFL		-1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * The  signal  system call installs a new signal handler for#
  * signal signum.  The signal handler is set to handler which
@@ -55,5 +59,9 @@ void (*signal(int sig,void (*handler)(int)))(int);
  * @return zero on success
  */
 int raise(int sig);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SIGNAL_H_ */

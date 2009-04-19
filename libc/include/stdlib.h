@@ -55,6 +55,10 @@ typedef struct {
  */
 typedef int (*fCompare)(const void *a,const void *b);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * The atoi() function converts str into an integer, and returns that integer. str should start
  * with whitespace or some sort of number, and atoi() will stop reading from str as soon as
@@ -211,5 +215,9 @@ div_t div(int numerator,int denominator);
  * @return quotient and remainder
  */
 ldiv_t ldiv(long numerator,long denominator);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* STDLIB_H_ */

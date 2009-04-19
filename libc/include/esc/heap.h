@@ -25,6 +25,10 @@
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE	512
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Allocates <size> bytes on the heap and returns the pointer to the beginning of
  * the allocated memory. If there is not enough memory the function returns NULL.
@@ -75,6 +79,10 @@ u32 heap_getFreeSpace(void);
  */
 void heap_print(void);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* HEAP_H_ */

@@ -33,6 +33,10 @@ struct sSLNode {
 	void *const data;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates a new list
  *
@@ -181,6 +185,10 @@ bool sll_removeIndex(sSLList *list,u32 index);
  */
 void sll_dbg_print(sSLList *list);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* SLLIST_H_ */

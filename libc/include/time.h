@@ -38,6 +38,10 @@ struct tm {
 	int tm_isdst;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Calculates the difference in seconds between time1 and time2.
  *
@@ -137,5 +141,9 @@ struct tm *localtime(const time_t *timer);
  * @return the number of written chars, if it fits, zero otherwise
  */
 size_t strftime(char *ptr,size_t maxsize,const char *format,const struct tm *timeptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TIME_H_ */

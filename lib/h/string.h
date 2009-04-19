@@ -22,6 +22,10 @@
 
 #include <types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * The atoi() function converts str into an integer, and returns that integer. str should start
  * with whitespace or some sort of number, and atoi() will stop reading from str as soon as
@@ -306,5 +310,9 @@ bool isalnumstr(const char *str);
  * @return the error-message
  */
 char *strerror(s32 errnum);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* STRING_H_ */

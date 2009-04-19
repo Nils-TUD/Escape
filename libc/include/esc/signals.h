@@ -43,6 +43,10 @@
 /* signal-handler-signature */
 typedef void (*fSigHandler)(tSig sigNo,u32 data);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Sets a handler-function for a specific signal
  *
@@ -85,5 +89,9 @@ s32 sendSignal(tSig signal,u32 data);
  * @return 0 on success
  */
 s32 sendSignalTo(tPid pid,tSig signal,u32 data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SIGNALS_H_ */

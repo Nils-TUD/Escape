@@ -29,6 +29,10 @@
 
 #define VTERM_COUNT		6
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Calculates the stacktrace
  *
@@ -40,5 +44,9 @@ u32 *getStackTrace(void);
  * Prints the stack-trace
  */
 void printStackTrace(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*COMMON_H_*/

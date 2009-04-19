@@ -28,6 +28,10 @@
 /* the user doesn't need to not know the real type of tFile... */
 typedef void tFile;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* std-streams */
 extern tFile *stdin;
 extern tFile *stdout;
@@ -480,5 +484,9 @@ u8 getuwidth(u32 n,u8 base);
  * @return the width
  */
 u8 getulwidth(u64 n,u8 base);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FILEIO_H_ */

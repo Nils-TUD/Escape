@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TYPES_H_
-#define TYPES_H_
+#ifndef TYPES_HPP_
+#define TYPES_HPP_
 
 /* basic type-defs */
 typedef char s8;
@@ -30,8 +30,4 @@ typedef unsigned int u32;
 typedef long long s64;
 typedef unsigned long long u64;
 
-#ifndef __cplusplus
-typedef enum {false = 0, true = 1} bool;
-#endif
-
-#endif /* TYPES_H_ */
+#endif /* TYPES_HPP_ */

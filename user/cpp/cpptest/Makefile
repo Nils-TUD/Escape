@@ -1,16 +1,18 @@
 NAME=cpptest
-BUILD=../../build
+ROOT=../../..
+BUILD=$(ROOT)/build
 DISK=$(BUILD)/disk.img
-DISKMOUNT=../../disk
+DISKMOUNT=$(ROOT)/disk
 BIN=$(BUILD)/user_$(NAME).bin
 DEP=$(BUILD)/user_$(NAME).dep
-LIBC=../../libc
-LIBCPP=../../libcpp
+LIB=$(ROOT)/lib
+LIBC=$(ROOT)/libc
+LIBCPP=$(ROOT)/libcpp
 LDCONF=$(LIBCPP)/ld.conf
 
 CC = g++
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBCPP)/include -I$(LIBC)/include \
-	-I../../lib/h -Wl,-T,$(LDCONF) $(CPPDEFFLAGS) -fno-exceptions -fno-rtti
+	-I$(LIB)/h -Wl,-T,$(LDCONF) $(CPPDEFFLAGS) -fno-exceptions -fno-rtti
 CSRC=$(wildcard *.cpp)
 
 LIBCPPA=$(BUILD)/libcpp.a
@@ -25,9 +27,9 @@ $(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCPPA)
 		@echo "===== COMPILING & LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCPPA);
 		@echo "===== COPYING ON DISK =====";
-		@make -C ../../ mounthdd
+		@make -C $(ROOT) mounthdd
 		sudo cp $(BIN) $(DISKMOUNT)/bin/$(NAME)
-		@make -C ../../ umounthdd
+		@make -C $(ROOT) umounthdd
 
 $(BUILD)/user_$(NAME)_%.o:		%.cpp
 		@echo "===== COMPILING $< =====";

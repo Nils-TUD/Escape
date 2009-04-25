@@ -1,14 +1,16 @@
 NAME=cat
-BUILD=../../build
+ROOT=../../..
+BUILD=$(ROOT)/build
 DISK=$(BUILD)/disk.img
-DISKMOUNT=../../disk
+DISKMOUNT=$(ROOT)/disk
 BIN=$(BUILD)/user_$(NAME).bin
 DEP=$(BUILD)/user_$(NAME).dep
-LIBC=../../libc
+LIB=$(ROOT)/lib
+LIBC=$(ROOT)/libc
 LDCONF=$(LIBC)/ld.conf
 
 CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I../../lib/h \
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
 	-Wl,-T,$(LDCONF) $(CDEFFLAGS) 
 CSRC=$(wildcard *.c)
 
@@ -24,9 +26,9 @@ $(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCA)
 		@echo "===== COMPILING & LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA);
 		@echo "===== COPYING ON DISK =====";
-		@make -C ../../ mounthdd
+		@make -C $(ROOT) mounthdd
 		sudo cp $(BIN) $(DISKMOUNT)/bin/$(NAME)
-		@make -C ../../ umounthdd
+		@make -C $(ROOT) umounthdd
 
 $(BUILD)/user_$(NAME)_%.o:		%.c
 		@echo "===== COMPILING $< =====";

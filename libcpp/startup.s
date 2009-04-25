@@ -1,5 +1,5 @@
 ;
-; $Id$
+; $Id: startup.s 202 2009-04-11 16:07:24Z nasmussen $
 ; Copyright (C) 2008 - 2009 Nils Asmussen
 ;
 ; This program is free software; you can redistribute it and/or
@@ -18,31 +18,44 @@
 ;
 
 [BITS 32]
-
 [global init]
+[extern main]
+[extern exit]
+[extern ackSignal]
+[extern __libcpp_start]
+[extern __cxa_finalize]
 
 ALIGN 4
 
-%include "../../../libc/syscalls.s"
-
 init:
-	; load modules first
-	mov		eax,SYSCALL_LOADMODS
-	int		SYSCALL_IRQ
+	; call constructors
+	call	__libcpp_start
 
-	; now replace with init
-	mov		ecx,progName						; set path
-	mov		edx,argp								; set arguments
-	mov		eax,SYSCALL_EXEC				; set syscall-number
-	int		SYSCALL_IRQ
+	call	main
 
-	; we should not reach this
+	; first, save return-value of main
+	push	eax
+	; now call destructors
+	call	__cxa_finalize
+	; call exit with return-value of main
+	call	exit
+
+	; just to be sure
 	jmp		$
 
-argp:
-	dd		progName
-	dd		0
 
-progName:
-	db		"file:/bin/init"
-	db		0
+; all signal-handler return to this "function" (address 0xd)
+sigRetFunc:
+	; ack signal so that the kernel knows that we accept another signal
+	call	ackSignal
+	; remove args
+	add		esp,8
+	; restore register
+	pop		esi
+	pop		edi
+	pop		edx
+	pop		ecx
+	pop		ebx
+	pop		eax
+	; return to the instruction before the signal
+	ret

@@ -1,10 +1,11 @@
 NAME=initloader
-BUILD=../../build
+ROOT=../../..
+BUILD=$(ROOT)/build
 DISK=$(BUILD)/disk.img
-DISKMOUNT=../../disk
+DISKMOUNT=$(ROOT)/disk
 BIN=$(BUILD)/user_$(NAME).bin
 DUMP=$(BUILD)/user_$(NAME).dump
-LIBC=../../libc
+LIBC=$(ROOT)/libc
 LDCONF=$(LIBC)/ld.conf
 
 CC = gcc

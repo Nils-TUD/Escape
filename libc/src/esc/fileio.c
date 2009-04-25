@@ -117,7 +117,6 @@ static s32 doFprintlPad(sBuffer *buf,s64 n,u8 pad,u16 flags);
 static s32 doFprintl(sBuffer *buf,s64 l);
 static s32 doFprintIEEE754Pad(sBuffer *buf,double d,u8 pad,u16 flags,u32 precision);
 static s32 doFprintIEEE754(sBuffer *buf,double d,u32 precision);
-static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap);
 static char doFscanc(sBuffer *buf);
 static s32 doFscanback(sBuffer *buf,char c);
 static s32 doFscanl(sBuffer *buf,char *line,u32 max);
@@ -764,7 +763,8 @@ static s32 doPad(sBuffer *buf,s32 count,u16 flags) {
 	return x;
 }
 
-static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
+s32 doVfprintf(void *vbuf,const char *fmt,va_list ap) {
+	sBuffer *buf = (sBuffer*)vbuf;
 	char c,b,pad;
 	char *s;
 	s32 *ptr;
@@ -946,6 +946,7 @@ static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
 					count += doFprintuPad(buf,u,base,pad,flags);
 				}
 				break;
+
 			/* string */
 			case 's':
 				s = va_arg(ap, char*);
@@ -958,6 +959,7 @@ static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
 					count += doPad(buf,pad - n,flags);
 				count += n;
 				break;
+
 			/* character */
 			case 'c':
 				b = (char)va_arg(ap, u32);
@@ -965,7 +967,7 @@ static s32 doVfprintf(sBuffer *buf,const char *fmt,va_list ap) {
 					return count;
 				count++;
 				break;
-			/* all other */
+
 			default:
 				if(doFprintc(buf,c) == IO_EOF)
 					return count;

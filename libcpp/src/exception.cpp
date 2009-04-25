@@ -17,38 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ASSERT_H_
-#define ASSERT_H_
+extern "C" {
+	void _Unwind_Resume();
+    void __gxx_personality_v0();
+}
 
-#if IN_KERNEL
-#	include <util.h>
-#else
-#	include <esc/debug.h>
-#	include <esc/proc.h>
-#endif
+void _Unwind_Resume() {
+	// do nothing
+}
 
-#ifndef NDEBUG
-
-#	define assert(cond) vassert(cond,"")
-
-#	if IN_KERNEL
-#		define vassert(cond,errorMsg,...) do { if(!(cond)) { \
-			util_panic("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
-				__LINE__,## __VA_ARGS__); \
-		} } while(0);
-#	else
-#		define vassert(cond,errorMsg,...) do { if(!(cond)) { \
-			printe("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
-				__LINE__,## __VA_ARGS__); \
-				exit(1); \
-		} } while(0);
-#	endif
-
-#else
-
-#	define assert(cond)
-#	define vassert(cond,errorMsg,...)
-
-#endif
-
-#endif /* ASSERT_H_ */
+void __gxx_personality_v0() {
+    // do nothing
+}

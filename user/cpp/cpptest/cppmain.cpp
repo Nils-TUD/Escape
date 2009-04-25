@@ -20,7 +20,10 @@
 #include <esc/common.h>
 #include <esc/fileio.h>
 #include <stdlib.h>
-#include <esc/vector.hpp>
+#include <esc/vector.h>
+#include <esc/stream.h>
+
+using namespace esc;
 
 class my {
 public:
@@ -35,14 +38,45 @@ public:
 };
 
 my x;
-my *y = new my();
 
 void my::doIt() {
 	printf("Ich bins\n");
 }
 
 int main(int argc, char* argv[]) {
-	unsigned int a = 0;
+	char str[10];
+	char buffer[1024];
+	char *test = "ein test";
+	StringStream s(str,sizeof(str));
+	FileStream f("file:/file.txt",FileStream::READ);
+	s << 'a' << 'b';
+	s.write(test,strlen(test));
+	printf("%s\n",str);
+	/*char c;
+	esc::in >> c;
+	esc::out << c;*/
+	f.read(buffer,sizeof(buffer));
+	out << buffer << endl;
+
+	out << "test" << endl;
+	out << -1234 << endl;
+	out << 'a' << 'b' << 'c' << endl;
+	out.format("das=%d, bin=%x, ich=%s\n",-193,0xABC,"test");
+	out.format("out.pos=%d\n",out.getPos());
+
+	/*esc::vector<s32> v;
+	for(s32 i = 0; i < 20; i++)
+		v.add(i);
+	v.insert(4,1024);
+	v.insert(0,123);
+	v.insert(v.size(),0);
+	v.insert(v.size() - 1,456);
+
+	for(u32 i = 0; i < v.size(); i++) {
+		printf("%d: %d\n",i,v[i]);
+	}*/
+
+	/*unsigned int a = 0;
 	a++;
 	printf("a=%d\n",a);
 
@@ -52,6 +86,6 @@ int main(int argc, char* argv[]) {
 	my *m = new my();
 	m->doIt();
 	delete m;
-	delete y;
+	delete y;*/
 	return EXIT_SUCCESS;
 }

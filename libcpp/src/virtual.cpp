@@ -17,38 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ASSERT_H_
-#define ASSERT_H_
-
-#if IN_KERNEL
-#	include <util.h>
-#else
-#	include <esc/debug.h>
-#	include <esc/proc.h>
-#endif
-
-#ifndef NDEBUG
-
-#	define assert(cond) vassert(cond,"")
-
-#	if IN_KERNEL
-#		define vassert(cond,errorMsg,...) do { if(!(cond)) { \
-			util_panic("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
-				__LINE__,## __VA_ARGS__); \
-		} } while(0);
-#	else
-#		define vassert(cond,errorMsg,...) do { if(!(cond)) { \
-			printe("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
-				__LINE__,## __VA_ARGS__); \
-				exit(1); \
-		} } while(0);
-#	endif
-
-#else
-
-#	define assert(cond)
-#	define vassert(cond,errorMsg,...)
-
-#endif
-
-#endif /* ASSERT_H_ */
+/**
+ * This is needed in case a virtual function can't be called
+ */
+extern "C" void __cxa_pure_virtual()
+{
+	// do nothing
+}

@@ -485,6 +485,12 @@ u8 getuwidth(u32 n,u8 base);
  */
 u8 getulwidth(u64 n,u8 base);
 
+/**
+ * The internal printf-routine. Should NOT BE USED by user-programs. This is just intended
+ * for libcpp to prevent a duplicate implementation there.
+ */
+s32 doVfprintf(void *buf,const char *fmt,va_list ap);
+
 #ifdef __cplusplus
 }
 #endif

@@ -24,7 +24,11 @@
 
 #define offsetof(type,field)	((size_t)(&((type *)0)->field))
 
-#define NULL					(void*)0
+#ifdef __cplusplus
+#	define NULL					0
+#else
+#	define NULL					(void*)0
+#endif
 
 #define K						1024
 #define M						(1024 * K)

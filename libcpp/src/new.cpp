@@ -17,38 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ASSERT_H_
-#define ASSERT_H_
+#include <esc/common.h>
+#include <esc/heap.h>
 
-#if IN_KERNEL
-#	include <util.h>
-#else
-#	include <esc/debug.h>
-#	include <esc/proc.h>
-#endif
+void *operator new(u32 size) {
+    return malloc(size);
+}
 
-#ifndef NDEBUG
+void *operator new[](u32 size) {
+    return malloc(size);
+}
 
-#	define assert(cond) vassert(cond,"")
+void operator delete(void *p) {
+    free(p);
+}
 
-#	if IN_KERNEL
-#		define vassert(cond,errorMsg,...) do { if(!(cond)) { \
-			util_panic("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
-				__LINE__,## __VA_ARGS__); \
-		} } while(0);
-#	else
-#		define vassert(cond,errorMsg,...) do { if(!(cond)) { \
-			printe("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
-				__LINE__,## __VA_ARGS__); \
-				exit(1); \
-		} } while(0);
-#	endif
-
-#else
-
-#	define assert(cond)
-#	define vassert(cond,errorMsg,...)
-
-#endif
-
-#endif /* ASSERT_H_ */
+void operator delete[](void *p) {
+    free(p);
+}

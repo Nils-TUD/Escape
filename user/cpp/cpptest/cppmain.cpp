@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <esc/vector.h>
 #include <esc/stream.h>
+#include <esc/string.h>
 
 using namespace esc;
 
@@ -64,17 +65,32 @@ int main(int argc, char* argv[]) {
 	out.format("das=%d, bin=%x, ich=%s\n",-193,0xABC,"test");
 	out.format("out.pos=%d\n",out.getPos());
 
-	/*esc::vector<s32> v;
+	String mystr = "ich";
+	mystr += "test";
+	mystr += 'a';
+	mystr += String("abc");
+	String abc("test");
+	out << "str=" << mystr << ", length=" << mystr.length() << endl;
+	out << abc << endl;
+
+	out << "offset of a=" << mystr.find('a') << endl;
+	out << "offset of test=" << mystr.find("test") << endl;
+
+	Vector<s32> v;
 	for(s32 i = 0; i < 20; i++)
 		v.add(i);
+	Vector<s32> v2 = v;
 	v.insert(4,1024);
 	v.insert(0,123);
 	v.insert(v.size(),0);
 	v.insert(v.size() - 1,456);
 
 	for(u32 i = 0; i < v.size(); i++) {
-		printf("%d: %d\n",i,v[i]);
-	}*/
+		out << i << ": " << v[i] << endl;
+	}
+	for(u32 i = 0; i < v2.size(); i++) {
+		out << i << ": " << v2[i] << endl;
+	}
 
 	/*unsigned int a = 0;
 	a++;

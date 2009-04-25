@@ -383,6 +383,10 @@ namespace esc {
 	 */
 	Stream &operator<<(Stream &s,s32 n);
 	/**
+	 * Writes the given number to the stream
+	 */
+	Stream &operator<<(Stream &s,u32 u);
+	/**
 	 * Reads one character into <c> from the stream
 	 */
 	Stream &operator>>(Stream &s,char &c);

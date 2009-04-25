@@ -30,22 +30,26 @@ namespace esc {
 	 * elements. As soon as there is no free slot in the array anymore, more space is allocated.
 	 */
 	template<class T>
-	class vector {
+	class Vector {
 	private:
 		static const u32 initialSize = 8;
-		u32 elCount;
-		u32 elSize;
-		T *elements;
+		u32 _elCount;
+		u32 _elSize;
+		T *_elements;
 
 	public:
 		/**
 		 * Creates a new vector with space for 8 elements
 		 */
-		vector();
+		Vector();
+		/**
+		 * Copy-constructor
+		 */
+		Vector(const Vector &v);
 		/**
 		 * Frees the space
 		 */
-		~vector();
+		~Vector();
 
 		/**
 		 * Adds the given value to the end of the vector
@@ -102,59 +106,67 @@ namespace esc {
 	};
 
 	template<class T>
-	vector<T>::vector() : elCount(0), elSize(initialSize) {
-		elements = new T[initialSize];
+	Vector<T>::Vector() : _elCount(0), _elSize(initialSize) {
+		_elements = new T[initialSize];
 	}
 
 	template<class T>
-	vector<T>::~vector() {
-		delete[] elements;
+	Vector<T>::Vector(const Vector<T> &v) {
+		_elements = new T[v._elSize];
+		memcpy(_elements,v._elements,v._elCount * sizeof(T));
+		_elCount = v._elCount;
+		_elSize = v._elSize;
 	}
 
 	template<class T>
-	inline void vector<T>::add(const T &value) {
+	Vector<T>::~Vector() {
+		delete[] _elements;
+	}
+
+	template<class T>
+	inline void Vector<T>::add(const T &value) {
 		ensureCapacity();
-		elements[elCount++] = value;
+		_elements[_elCount++] = value;
 	}
 
 	template<class T>
-	void vector<T>::insert(u32 i,const T &value) {
-		vassert(i <= elCount,"Index %d out of bounds (0..%d)",i,elCount + 1);
-		if(i == elCount)
+	void Vector<T>::insert(u32 i,const T &value) {
+		vassert(i <= _elCount,"Index %d out of bounds (0..%d)",i,_elCount + 1);
+		if(i == _elCount)
 			add(value);
 		else {
 			ensureCapacity();
-			for(u32 x = elCount; x > i; x--)
-				elements[x] = elements[x - 1];
-			elements[i] = value;
-			elCount++;
+			for(u32 x = _elCount; x > i; x--)
+				_elements[x] = _elements[x - 1];
+			_elements[i] = value;
+			_elCount++;
 		}
 	}
 
 	template<class T>
-	bool vector<T>::remove(u32 i) {
-		if(i >= elCount)
+	bool Vector<T>::remove(u32 i) {
+		if(i >= _elCount)
 			return false;
-		for(u32 x = i + 1; x < elCount; x++)
-			elements[x - 1] = elements[x];
-		elCount--;
+		for(u32 x = i + 1; x < _elCount; x++)
+			_elements[x - 1] = _elements[x];
+		_elCount--;
 		return true;
 	}
 
 	template<class T>
-	bool vector<T>::removeFirst(const T &value) {
-		for(u32 i = 0; i < elCount; i++) {
-			if(elements[i] == value)
+	bool Vector<T>::removeFirst(const T &value) {
+		for(u32 i = 0; i < _elCount; i++) {
+			if(_elements[i] == value)
 				return remove(i);
 		}
 		return false;
 	}
 
 	template<class T>
-	u32 vector<T>::removeAll(const T &value) {
+	u32 Vector<T>::removeAll(const T &value) {
 		u32 c = 0;
-		for(u32 i = 0; i < elCount; ) {
-			if(elements[i] == value) {
+		for(u32 i = 0; i < _elCount; ) {
+			if(_elements[i] == value) {
 				remove(i);
 				c++;
 				continue;
@@ -165,25 +177,25 @@ namespace esc {
 	}
 
 	template<class T>
-	inline T &vector<T>::operator[](u32 i) const {
-		vassert(i < elCount,"Index %d out of bounds (0..%d)",i,elCount);
-		return elements[i];
+	inline T &Vector<T>::operator[](u32 i) const {
+		vassert(i < _elCount,"Index %d out of bounds (0..%d)",i,_elCount);
+		return _elements[i];
 	}
 
 	template<class T>
-	inline u32 vector<T>::size() const {
-		return elCount;
+	inline u32 Vector<T>::size() const {
+		return _elCount;
 	}
 
 	template<class T>
-	void vector<T>::ensureCapacity() {
-		if(elCount >= elSize) {
-			elSize *= 2;
-			T *copy = new T[elSize];
-			for(u32 i = 0; i < elCount; i++)
-				copy[i] = elements[i];
-			delete[] elements;
-			elements = copy;
+	void Vector<T>::ensureCapacity() {
+		if(_elCount >= _elSize) {
+			_elSize *= 2;
+			T *copy = new T[_elSize];
+			for(u32 i = 0; i < _elCount; i++)
+				copy[i] = _elements[i];
+			delete[] _elements;
+			_elements = copy;
 		}
 	}
 };

@@ -320,13 +320,21 @@ u32 paging_countFramesForMap(u32 virtual,u32 count) {
 	return res;
 }
 
-void paging_useForeignText(sProc *p) {
+void paging_mapForeignPages(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags) {
 	vassert(p != NULL && p->state != ST_UNUSED,"Invalid process %x\n",p);
 
 	paging_mapForeignPageDir(p);
 	/* now copy pages */
-	paging_mapIntern(PAGE_DIR_AREA,MAPPED_PTS_START,0,
-			(u32*)ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,0),p->textPages,PG_ADDR_TO_FRAME,true);
+	paging_mapIntern(PAGE_DIR_AREA,MAPPED_PTS_START,dstAddr,
+			(u32*)ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,srcAddr),count,flags | PG_ADDR_TO_FRAME,true);
+	paging_unmapForeignPageDir(false);
+}
+
+void paging_unmapForeignPages(sProc *p,u32 addr,u32 count) {
+	vassert(p != NULL && p->state != ST_UNUSED,"Invalid process %x\n",p);
+
+	paging_mapForeignPageDir(p);
+	paging_unmapIntern(p,TMPMAP_PTS_START,addr,count,true,true);
 	paging_unmapForeignPageDir(false);
 }
 
@@ -342,7 +350,7 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 
 	vassert(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
 	vassert(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
-	vassert(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_COPYONWRITE | PG_ADDR_TO_FRAME)),
+	vassert(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_COPYONWRITE | PG_ADDR_TO_FRAME | PG_NOFREE)),
 			"flags contain invalid bits");
 	vassert(force == true || force == false,"force invalid");
 
@@ -391,6 +399,7 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 			pt->writable = (flags & PG_WRITABLE) ? true : false;
 			pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
 			pt->copyOnWrite = (flags & PG_COPYONWRITE) ? true : false;
+			pt->noFree = (flags & PG_NOFREE) ? true : false;
 
 			/* invalidate TLB-entry */
 			if(pageDir == PAGE_DIR_AREA)
@@ -592,7 +601,7 @@ static void paging_unmapIntern(sProc *p,u32 mappingArea,u32 virtual,u32 count,bo
 		if(pt->present) {
 			/* we don't want to free copy-on-write pages and not frames in front of the kernel
 			 * because they may be mapped more than once and will never be free'd */
-			if(freeFrames && pt->frameNumber * PAGE_SIZE >= KERNEL_P_ADDR) {
+			if(freeFrames && !pt->noFree/*pt->frameNumber * PAGE_SIZE >= KERNEL_P_ADDR*/) {
 				if(pt->copyOnWrite && remCOW)
 					paging_remFromCow(p,pt->frameNumber);
 				else if(!pt->copyOnWrite)
@@ -899,9 +908,10 @@ static void paging_dbg_printPageTable(u32 mappingArea,u32 no,sPDEntry *pde) {
 
 static void paging_dbg_printPage(sPTEntry *page) {
 	if(page->present) {
-		vid_printf("raw=0x%08x, frame=0x%x [%c%c%c%c]",*(u32*)page,
+		vid_printf("raw=0x%08x, frame=0x%x [%c%c%c%c%c]",*(u32*)page,
 				page->frameNumber,page->notSuperVisor ? 'u' : 'k',page->writable ? 'w' : 'r',
-				page->global ? 'g' : '-',page->copyOnWrite ? 'c' : '-');
+				page->global ? 'g' : '-',page->copyOnWrite ? 'c' : '-',
+				page->noFree ? 'n' : '-');
 	}
 	else {
 		vid_printf("-");

@@ -174,18 +174,14 @@ void proc_wakeup(tPid pid,u8 event) {
 
 s32 proc_requestIOPorts(u16 start,u16 count) {
 	sProc *p = procs + pi;
-	u16 end;
 	if(p->ioMap == NULL) {
 		p->ioMap = (u8*)kheap_alloc(IO_MAP_SIZE / 8);
 		if(p->ioMap == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 	}
 
-	end = start + count;
 	/* 0xF8 .. 0xFF is reserved */
-	if((start >= 0xF8 && start <= 0xFF) ||	/* start in range */
-		(end > 0xF8 && end <= 0x100) ||		/* end in range */
-		(start < 0xF8 && end > 0x100))		/* range between start and end */
+	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
 		return ERR_IO_MAP_RANGE_RESERVED;
 
 	while(count-- > 0) {
@@ -201,15 +197,11 @@ s32 proc_requestIOPorts(u16 start,u16 count) {
 
 s32 proc_releaseIOPorts(u16 start,u16 count) {
 	sProc *p = procs + pi;
-	u16 end;
 	if(p->ioMap == NULL)
 		return ERR_IOMAP_NOT_PRESENT;
 
-	end = start + count;
 	/* 0xF8 .. 0xFF is reserved */
-	if((start >= 0xF8 && start <= 0xFF) ||	/* start in range */
-		(end > 0xF8 && end <= 0x100) ||		/* end in range */
-		(start < 0xF8 && end > 0x100))		/* range between start and end */
+	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
 		return ERR_IO_MAP_RANGE_RESERVED;
 
 	while(count-- > 0) {

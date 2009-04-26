@@ -22,11 +22,27 @@
 
 /* the assembler-routine */
 extern s32 _mapPhysical(u32 phys,u32 count);
+extern s32 _createSharedMem(const char *name,u32 byteCount);
+extern s32 _joinSharedMem(const char *name);
 
 /* just a convenience for the user because the return-value is negative if an error occurred */
 /* since it will be mapped in the user-space (< 0x80000000) the MSB is never set */
 void *mapPhysical(u32 phys,u32 count) {
 	s32 err = _mapPhysical(phys,count);
+	if(err < 0)
+		return NULL;
+	return (void*)err;
+}
+
+void *createSharedMem(const char *name,u32 byteCount) {
+	s32 err = _createSharedMem(name,byteCount);
+	if(err < 0)
+		return NULL;
+	return (void*)err;
+}
+
+void *joinSharedMem(const char *name) {
+	s32 err = _joinSharedMem(name);
 	if(err < 0)
 		return NULL;
 	return (void*)err;

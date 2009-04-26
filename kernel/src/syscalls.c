@@ -35,6 +35,7 @@
 #include <multiboot.h>
 #include <timer.h>
 #include <text.h>
+#include <sharedmem.h>
 #include <string.h>
 #include <assert.h>
 #include <errors.h>
@@ -42,7 +43,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define SYSCALL_COUNT					32
+#define SYSCALL_COUNT					36
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode)		((stack)->ebx = (errorCode))
@@ -285,6 +286,35 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack);
  * debugging infos in the kernel to points of time controlled by user-apps.
  */
 static void sysc_debug(sIntrptStackFrame *stack);
+/**
+ * Creates a shared-memory region
+ *
+ * @param char* the name
+ * @param u32 number of bytes
+ * @return s32 the address on success, negative error-code otherwise
+ */
+static void sysc_createSharedMem(sIntrptStackFrame *stack);
+/**
+ * Joines a shared-memory region
+ *
+ * @param char* the name
+ * @return s32 the address on success, negative error-code otherwise
+ */
+static void sysc_joinSharedMem(sIntrptStackFrame *stack);
+/**
+ * Leaves a shared-memory region
+ *
+ * @param char* the name
+ * @return s32 the address on success, negative error-code otherwise
+ */
+static void sysc_leaveSharedMem(sIntrptStackFrame *stack);
+/**
+ * Destroys a shared-memory region
+ *
+ * @param char* the name
+ * @return s32 the address on success, negative error-code otherwise
+ */
+static void sysc_destroySharedMem(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -328,6 +358,10 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 29 */	{sysc_seek,					2},
 	/* 30 */	{sysc_getFileInfo,			2},
 	/* 31 */	{sysc_debug,				0},
+	/* 32 */	{sysc_createSharedMem,		2},
+	/* 33 */	{sysc_joinSharedMem,		1},
+	/* 34 */	{sysc_leaveSharedMem,		1},
+	/* 35 */	{sysc_destroySharedMem,		1},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -770,10 +804,10 @@ static void sysc_mapPhysical(sIntrptStackFrame *stack) {
 
 	/* trying to map memory in kernel area? */
 	/* TODO is this ok? */
-	if(phys > KERNEL_P_ADDR || phys + pages * PAGE_SIZE > KERNEL_P_ADDR) {
+	/*if(phys > KERNEL_P_ADDR || phys + pages * PAGE_SIZE > KERNEL_P_ADDR) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
-	}
+	}*/
 
 	/* determine start-address */
 	addr = (p->textPages + p->dataPages) * PAGE_SIZE;
@@ -803,7 +837,7 @@ static void sysc_mapPhysical(sIntrptStackFrame *stack) {
 		phys += PAGE_SIZE;
 	}
 	/* map the physical memory and free the temporary memory */
-	paging_map(addr,frames,pages,PG_WRITABLE,false);
+	paging_map(addr,frames,pages,PG_WRITABLE | PG_NOFREE,false);
 	kheap_free(frames);
 
 	/* increase datapages */
@@ -1196,6 +1230,83 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 static void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	proc_dbg_print(proc_getRunning());
+}
+
+static void sysc_createSharedMem(sIntrptStackFrame *stack) {
+	char *name = (char*)SYSC_ARG1(stack);
+	u32 byteCount = SYSC_ARG2(stack);
+	s32 res;
+
+	if(!sysc_isStringReadable(name) || byteCount == 0) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	res = shm_create(name,BYTES_2_PAGES(byteCount));
+	if(res < 0) {
+		SYSC_ERROR(stack,res);
+		return;
+	}
+
+	shm_dbg_print();
+	SYSC_RET1(stack,res * PAGE_SIZE);
+}
+
+static void sysc_joinSharedMem(sIntrptStackFrame *stack) {
+	char *name = (char*)SYSC_ARG1(stack);
+	s32 res;
+
+	if(!sysc_isStringReadable(name)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	res = shm_join(name);
+	if(res < 0) {
+		SYSC_ERROR(stack,res);
+		return;
+	}
+
+	shm_dbg_print();
+	SYSC_RET1(stack,res * PAGE_SIZE);
+}
+
+static void sysc_leaveSharedMem(sIntrptStackFrame *stack) {
+	char *name = (char*)SYSC_ARG1(stack);
+	s32 res;
+
+	if(!sysc_isStringReadable(name)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	res = shm_leave(name);
+	if(res < 0) {
+		SYSC_ERROR(stack,res);
+		return;
+	}
+
+	shm_dbg_print();
+	SYSC_RET1(stack,res);
+}
+
+static void sysc_destroySharedMem(sIntrptStackFrame *stack) {
+	char *name = (char*)SYSC_ARG1(stack);
+	s32 res;
+
+	if(!sysc_isStringReadable(name)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	res = shm_destroy(name);
+	if(res < 0) {
+		SYSC_ERROR(stack,res);
+		return;
+	}
+
+	shm_dbg_print();
+	SYSC_RET1(stack,res);
 }
 
 static bool sysc_isStringReadable(const char *str) {

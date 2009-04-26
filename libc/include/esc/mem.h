@@ -45,6 +45,39 @@ s32 changeSize(s32 count);
  */
 void *mapPhysical(u32 phys,u32 count);
 
+/**
+ * Creates a shared-memory region
+ *
+ * @param name the name
+ * @param byteCount the number of bytes
+ * @return the address on success or NULL
+ */
+void *createSharedMem(const char *name,u32 byteCount);
+
+/**
+ * Joines a shared-memory region
+ *
+ * @param name the name
+ * @return the address on success or NULL
+ */
+void *joinSharedMem(const char *name);
+
+/**
+ * Leaves a shared-memory region
+ *
+ * @param name the name
+ * @return 0 on success
+ */
+s32 leaveSharedMem(const char *name);
+
+/**
+ * Destroys a shared-memory region
+ *
+ * @param name the name
+ * @return 0 on success
+ */
+s32 destroySharedMem(const char *name);
+
 #ifdef __cplusplus
 }
 #endif

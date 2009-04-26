@@ -5,3 +5,4 @@ vterm: vterm0,vterm1,vterm2,vterm3,vterm4,vterm5: keyboard,speaker,video
 video: video:
 env: env:
 cmos: :
+vesa: :

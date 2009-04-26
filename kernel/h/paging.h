@@ -106,6 +106,7 @@
 #define PG_COPYONWRITE		4
 /* tells paging_map() that it gets the frame-address and should convert it to a frame-number first */
 #define PG_ADDR_TO_FRAME	8
+#define PG_NOFREE			16
 
 /* converts a virtual address to the page-directory-index for that address */
 #define ADDR_TO_PDINDEX(addr) ((u32)(addr) / PAGE_SIZE / PT_ENTRY_COUNT)
@@ -175,7 +176,9 @@ typedef struct {
 	/* Indicates wether this page is currently readonly, shared with another process and should
 	 * be copied as soon as the user writes to it */
 	copyOnWrite			: 1,
-						: 2,
+	/* Indicates that the frame should not be free'd when this page is removed */
+	noFree				: 1,
+						: 1,
 	/* the physical address of the page */
 	frameNumber			: 20;
 } sPTEntry;
@@ -298,11 +301,24 @@ u32 paging_getFrameOf(u32 virtual);
 u32 paging_countFramesForMap(u32 virtual,u32 count);
 
 /**
- * Maps the text-pages of the given process for the current one
+ * Maps <count> pages from <vaddr> of the given process for the current one
  *
  * @param p the process
+ * @param srcAddr the virtual address to copy from
+ * @param dstAddr the virtual address to copy to
+ * @param count the number of pages
+ * @param flags flags for the pages (PG_*)
  */
-void paging_useForeignText(sProc *p);
+void paging_mapForeignPages(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags);
+
+/**
+ * Unmaps <count> pages at <addr> from the address-space of the given process
+ *
+ * @param p the process
+ * @param addr the start-address
+ * @param count the number of pages
+ */
+void paging_unmapForeignPages(sProc *p,u32 addr,u32 count);
 
 /**
  * Maps <count> virtual addresses starting at <virtual> to the given frames (in the CURRENT

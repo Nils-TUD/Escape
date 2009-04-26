@@ -15,7 +15,7 @@ BIN=$(BUILD)/$(BINNAME)
 SYMBOLS=$(BUILD)/kernel.symbols
 OSTITLE=hrniels-OS
 
-QEMUARGS=-serial stdio -hda $(HDD) -boot c
+QEMUARGS=-serial stdio -hda $(HDD) -boot c -std-vga
 
 DIRS = tools libc libcpp services user kernel kernel/test
 

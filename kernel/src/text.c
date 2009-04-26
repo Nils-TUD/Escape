@@ -102,7 +102,7 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 		vassert(fp->state != ST_UNUSED,"text-usage of unused process!?");
 
 		/* copy pages */
-		paging_useForeignText(fp);
+		paging_mapForeignPages(fp,0,0,fp->textPages,0);
 		p->textPages = fp->textPages;
 	}
 

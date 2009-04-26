@@ -632,6 +632,18 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"The ELF-binary is invalid!");
 			break;
 
+		case ERR_SHARED_MEM_EXISTS:
+			strcpy(msg,"The shared memory with specified name or address-range does already exist!");
+			break;
+
+		case ERR_SHARED_MEM_NAME:
+			strcpy(msg,"The shared memory name is invalid!");
+			break;
+
+		case ERR_SHARED_MEM_INVALID:
+			strcpy(msg,"The shared memory is invalid!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

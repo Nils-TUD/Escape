@@ -17,30 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef COMMON_H_
-#define COMMON_H_
+#include <esc/common.h>
+#include <esc/mem.h>
+#include <stdlib.h>
 
-#include <types.h>
-#include <stddef.h>
-
-/* file-number (in global file table) */
-typedef s32 tFileNo;
-
-#ifndef DEBUGGING
-#define DEBUGGING 1
-#endif
-
-/**
- * Assuming that <startx> < <endx> and <endx> is not included (that means with start=0 and end=10
- * 0 .. 9 is used), the macro determines wether the two ranges overlap anywhere.
- */
-#define OVERLAPS(start1,end1,start2,end2) \
-	(((start1) >= (start2) && (start1) < ((end2))) ||	/* start in range */	\
-	((end1) > (start2) && (end1) <= (end2)) ||			/* end in range */		\
-	((start1) < (start2) && (end1) > (end2)))			/* complete overlapped */
-
-/* debugging */
-#define DBG_PGCLONEPD(s)
-#define DBG_KMALLOC(s)
-
-#endif /*COMMON_H_*/
+int main(int argc,char *argv[]) {
+	u32 *addr = (u32*)joinSharedMem("vesa");
+	printf("addr=%p\n",addr);
+	/*while(1) {
+		*addr = 1;
+	}*/
+	leaveSharedMem("vesa");
+	return EXIT_SUCCESS;
+}

@@ -48,6 +48,16 @@ namespace esc {
 			Application();
 			virtual ~Application();
 
+			inline tSize getScreenWidth() const {
+				return _screenWidth;
+			};
+			inline tSize getScreenHeight() const {
+				return _screenHeight;
+			};
+			inline u8 getColorDepth() const {
+				return _colorDepth;
+			};
+
 			int run();
 
 		private:
@@ -63,11 +73,17 @@ namespace esc {
 			inline void *getVesaMem() const {
 				return _vesaMem;
 			};
+			void passToWindow(sMsgDataWinMouse *e);
+			Window *getWindowById(tWinId id);
 
 		private:
+			u8 _mouseBtns;
 			tFD _winFd;
 			tFD _vesaFd;
 			void *_vesaMem;
+			tSize _screenWidth;
+			tSize _screenHeight;
+			tColDepth _colorDepth;
 			Vector<Window*> _windows;
 		};
 	}

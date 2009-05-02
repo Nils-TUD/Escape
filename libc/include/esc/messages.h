@@ -43,6 +43,8 @@
 
 #define MSG_VESA_UPDATE				0
 #define MSG_VESA_CURSOR				1
+#define MSG_VESA_GETMODE_REQ		2
+#define MSG_VESA_GETMODE_RESP		3
 
 #define MSG_MOUSE					0
 
@@ -157,6 +159,13 @@ typedef struct {
 	u16 x;
 	u16 y;
 } sMsgDataVesaCursor;
+
+/* the response of vesa to the get-mode-message */
+typedef struct {
+	u16 width;
+	u16 height;
+	u8 colorDepth;
+} sMsgDataVesaGetModeResp;
 
 #ifdef __cplusplus
 extern "C" {

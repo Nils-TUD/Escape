@@ -30,10 +30,7 @@
 #define WINDOW_COUNT					32
 #define WINID_UNSED						WINDOW_COUNT
 
-#define RESOLUTION_X					1024
-#define RESOLUTION_Y					768
-#define BITS_PER_PIXEL					24
-#define PIXEL_SIZE						(BITS_PER_PIXEL / 8)
+#define PIXEL_SIZE						(colorDepth / 8)
 
 typedef u16 tSize;
 typedef u16 tCoord;
@@ -79,7 +76,6 @@ typedef struct {
 static void setActive(tWinId id);
 static tWinId getWindowAt(tCoord x,tCoord y);
 static void moveWindow(tCoord x,tCoord y,tWinId window);
-static void drawRect(sRectangle *r);
 static void repaintWindow(sRectangle *r,sWindow *win,s16 z);
 static void getRepaintRegions(sSLList *list,tWinId id,sWindow *win,s16 z,sRectangle *r);
 static void clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height);
@@ -124,10 +120,14 @@ static u16 activeWindow = WINDOW_COUNT;
 static tCoord curX = 0;
 static tCoord curY = 0;
 
+static tSize screenWidth;
+static tSize screenHeight;
+static u8 colorDepth;
+
 static tServ servId;
 static sWindow windows[WINDOW_COUNT];
 
-int main(int argc,char *argv[]) {
+int main(void) {
 	sMsgHeader header;
 	sMsgDataMouse mouseData;
 	tFD mouse;
@@ -148,6 +148,27 @@ int main(int argc,char *argv[]) {
 		printe("Unable to open services:/vesa");
 		return EXIT_FAILURE;
 	}
+
+	/* request screen infos from vesa */
+	header.id = MSG_VESA_GETMODE_REQ;
+	header.length = 0;
+	if(write(vesa,&header,sizeof(header)) != sizeof(header)) {
+		printe("Unable to send get-mode-request to vesa");
+		return EXIT_FAILURE;
+	}
+
+	/* read response */
+	sMsgDataVesaGetModeResp resp;
+	if(read(vesa,&header,sizeof(header)) != sizeof(header) ||
+			read(vesa,&resp,sizeof(resp)) != sizeof(resp)) {
+		printe("Unable to read the get-mode-response from vesa");
+		return EXIT_FAILURE;
+	}
+
+	/* store */
+	screenWidth = resp.width;
+	screenHeight = resp.height;
+	colorDepth = resp.colorDepth;
 
 	mouse = open("services:/mouse",IO_READ);
 	if(mouse < 0) {
@@ -179,7 +200,7 @@ int main(int argc,char *argv[]) {
 						sMsgDataWinMoveReq data;
 						if(read(fd,&data,sizeof(data)) == sizeof(data)) {
 							if(windows[data.window].id != WINID_UNSED &&
-									data.x < RESOLUTION_X && data.y < RESOLUTION_Y) {
+									data.x < screenWidth && data.y < screenHeight) {
 								moveWindow(data.x,data.y,data.window);
 							}
 						}
@@ -194,13 +215,16 @@ int main(int argc,char *argv[]) {
 			if(read(mouse,&header,sizeof(sMsgHeader)) > 0) {
 				/* skip invalid data's */
 				if(read(mouse,&mouseData,sizeof(sMsgDataMouse)) == sizeof(sMsgDataMouse)) {
-					curX = MAX(0,MIN(RESOLUTION_X - 1,curX + mouseData.x));
-					curY = MAX(0,MIN(RESOLUTION_Y - 1,curY - mouseData.y));
+					tCoord oldx = curX,oldy = curY;
+					curX = MAX(0,MIN(screenWidth - 1,curX + mouseData.x));
+					curY = MAX(0,MIN(screenHeight - 1,curY - mouseData.y));
 
 					/* let vesa draw the cursor */
-					cursorMsg.data.x = curX;
-					cursorMsg.data.y = curY;
-					write(vesa,&cursorMsg,sizeof(cursorMsg));
+					if(curX != oldx || curY != oldy) {
+						cursorMsg.data.x = curX;
+						cursorMsg.data.y = curY;
+						write(vesa,&cursorMsg,sizeof(cursorMsg));
+					}
 
 					/* set active window */
 					if(mouseData.buttons != buttons) {
@@ -210,8 +234,6 @@ int main(int argc,char *argv[]) {
 							if(activeWindow != WINDOW_COUNT)
 								setActive(activeWindow);
 						}
-						else
-							activeWindow = WINDOW_COUNT;
 					}
 
 					/* send to window */
@@ -295,7 +317,6 @@ static void moveWindow(tCoord x,tCoord y,tWinId window) {
 	debugf("new=%d,%d:%d,%d\n",new->x,new->y,new->width,new->height);*/
 
 	u32 i,count;
-	sRectangle *rect;
 
 	/* clear old position */
 	sRectangle *rects = rectSplit(old,new,&count);
@@ -321,16 +342,6 @@ static void moveWindow(tCoord x,tCoord y,tWinId window) {
 	repaintWindow(new,windows + window,windows[window].z);
 }
 
-static void drawRect(sRectangle *r) {
-	tCoord x,y;
-	tColor color = 0xFF00;
-	for(y = r->y; y < r->y + r->height; y++) {
-		for(x = r->x; x < r->x + r->width; x++) {
-			memcpy(shmem + (y * RESOLUTION_X + x) * PIXEL_SIZE,&color,sizeof(color));
-		}
-	}
-}
-
 static void repaintWindow(sRectangle *r,sWindow *win,s16 z) {
 	sRectangle *rect;
 	tFD aWin;
@@ -349,8 +360,8 @@ static void repaintWindow(sRectangle *r,sWindow *win,s16 z) {
 
 		/* ignore invalid values */
 		/* FIXME where do they come from? */
-		if(rect->x + rect->width > RESOLUTION_X || rect->y + rect->height > RESOLUTION_Y ||
-				rect->width > RESOLUTION_X || rect->height > RESOLUTION_Y)
+		if(rect->x + rect->width > screenWidth || rect->y + rect->height > screenHeight ||
+				rect->width > screenWidth || rect->height > screenHeight)
 			continue;
 
 		/* if it doesn't belong to a window, we have to clear it */
@@ -435,10 +446,10 @@ static void clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height) {
 	tCoord ysave = y;
 	tCoord maxy = y + height;
 	u32 count = width * PIXEL_SIZE;
-	mem += (y * RESOLUTION_X + x) * PIXEL_SIZE;
+	mem += (y * screenWidth + x) * PIXEL_SIZE;
 	while(y <= maxy) {
 		memset(mem,0,count);
-		mem += RESOLUTION_X * PIXEL_SIZE;
+		mem += screenWidth * PIXEL_SIZE;
 		y++;
 	}
 
@@ -457,6 +468,7 @@ static tWinId winCreate(sMsgDataWinCreateReq msg) {
 			windows[i].height = msg.height;
 			windows[i].owner = msg.owner;
 			windows[i].buffer = NULL;
+			setActive(i);
 			return i;
 		}
 	}

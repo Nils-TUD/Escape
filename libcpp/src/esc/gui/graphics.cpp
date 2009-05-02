@@ -42,7 +42,6 @@ namespace esc {
 		}
 
 		void Graphics::drawString(tCoord x,tCoord y,String str) {
-			char c;
 			for(u32 i = 0; i < str.length(); i++) {
 				drawChar(x,y,str[i]);
 				x += _font.getWidth();
@@ -148,8 +147,11 @@ namespace esc {
 
 		void Graphics::update() {
 			// only the owner notifies vesa
-			if(!_ownMem)
+			if(_owner != NULL) {
+				_owner->update(_offx + _minx,_offy + _miny,
+						_maxx - _minx + 1,_maxy - _miny + 1);
 				return;
+			}
 
 			update(_minx,_miny,_maxx - _minx + 1,_maxy - _miny + 1);
 
@@ -162,8 +164,10 @@ namespace esc {
 
 		void Graphics::update(tCoord x,tCoord y,tSize width,tSize height) {
 			// only the owner notifies vesa
-			if(!_ownMem)
+			if(_owner != NULL) {
+				_owner->update(_owner->_x + x,_owner->_y + y,width,height);
 				return;
+			}
 
 			validateParams(x,y,width,height);
 			// is there anything to update?
@@ -171,16 +175,17 @@ namespace esc {
 				width = MIN(_width - x,width);
 				height = MIN(_height - y,height);
 				void *vesaMem = Application::getInstance()->getVesaMem();
+				tSize screenWidth = Application::getInstance()->getScreenWidth();
 				u8 *src,*dst;
 				tCoord endy = y + height;
 				u32 psize = _pixel->getPixelSize();
 				u32 count = width * psize;
 				src = _pixels + (y * _width + x) * psize;
-				dst = (u8*)vesaMem + ((_y + y) * RESOLUTION_X + (_x + x)) * psize;
+				dst = (u8*)vesaMem + ((_y + y) * screenWidth + (_x + x)) * psize;
 				while(y < endy) {
 					memcpy(dst,src,count);
 					src += _width * psize;
-					dst += RESOLUTION_X * psize;
+					dst += screenWidth * psize;
 					y++;
 				}
 
@@ -199,14 +204,16 @@ namespace esc {
 		}
 
 		void Graphics::move(tCoord x,tCoord y) {
-			_x = MIN(x,RESOLUTION_X - _width - 1);
-			_y = MIN(y,RESOLUTION_Y - _height - 1);
+			tSize screenWidth = Application::getInstance()->getScreenWidth();
+			tSize screenHeight = Application::getInstance()->getScreenHeight();
+			_x = MIN(x,screenWidth - _width - 1);
+			_y = MIN(y,screenHeight - _height - 1);
 		}
 
 		void Graphics::debug() const {
 			for(tCoord y = 0; y < _height; y++) {
 				for(tCoord x = 0; x < _width; x++)
-					out << (getPixel(x,y) == 0 ? ' ' : 'x');
+					out << (getPixel(x,y).getColor() == 0 ? ' ' : 'x');
 				out << endl;
 			}
 		}

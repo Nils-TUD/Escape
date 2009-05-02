@@ -24,23 +24,50 @@
 
 namespace esc {
 	namespace gui {
+		Color Button::FGCOLOR = Color(0xFF,0xFF,0xFF);
+		Color Button::BGCOLOR = Color(0x80,0x80,0x80);
+		Color Button::LIGHT_BORDER_COLOR = Color(0x60,0x60,0x60);
+		Color Button::DARK_BORDER_COLOR = Color(0x20,0x20,0x20);
+
+		void Button::onMousePressed(const MouseEvent &e) {
+			UNUSED(e);
+			if(!_pressed) {
+				_pressed = true;
+				paint();
+			}
+		}
+
+		void Button::onMouseReleased(const MouseEvent &e) {
+			UNUSED(e);
+			if(_pressed) {
+				_pressed = false;
+				paint();
+			}
+		}
+
 		void Button::paint() {
 			Control::paint();
 
-			_g->setColor(bgColor);
+			_g->setColor(BGCOLOR);
 			_g->fillRect(1,1,getWidth() - 2,getHeight() - 2);
 
-			_g->setColor(lightBorderColor);
+			_g->setColor(LIGHT_BORDER_COLOR);
 			_g->drawLine(0,0,getWidth() - 1,0);
 			_g->drawLine(0,0,0,getHeight() - 1);
 
-			_g->setColor(darkBorderColor);
+			_g->setColor(DARK_BORDER_COLOR);
 			_g->drawLine(getWidth() - 1,0,getWidth() - 1,getHeight() - 1);
 			_g->drawLine(0,getHeight() - 1,getWidth() - 1,getHeight() - 1);
 
-			_g->setColor(fgColor);
-			_g->drawString((getWidth() - _g->getFont().getStringWidth(_text)) / 2,
-					(getHeight() - _g->getFont().getHeight()) / 2,_text);
+			_g->setColor(FGCOLOR);
+			if(_pressed) {
+				_g->drawString((getWidth() - _g->getFont().getStringWidth(_text)) / 2 + 1,
+						(getHeight() - _g->getFont().getHeight()) / 2 + 1,_text);
+			}
+			else {
+				_g->drawString((getWidth() - _g->getFont().getStringWidth(_text)) / 2,
+						(getHeight() - _g->getFont().getHeight()) / 2,_text);
+			}
 
 			_g->update();
 		}

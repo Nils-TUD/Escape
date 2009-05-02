@@ -28,16 +28,21 @@
 #include <esc/gui/uielement.h>
 #include <esc/gui/application.h>
 #include <esc/gui/control.h>
+#include <esc/gui/color.h>
 #include <esc/string.h>
 
 namespace esc {
 	namespace gui {
 		class Window : public UIElement {
 		private:
-			static const tColor bgColor = 0x808080;
-			static const tColor titleBgColor = 0x0000FF;
-			static const tColor titleFgColor = 0xFFFFFF;
-			static const tColor borderColor = 0x707070;
+			static Color BGCOLOR;
+			static Color TITLE_BGCOLOR;
+			static Color TITLE_FGCOLOR;
+			static Color BORDER_COLOR;
+
+			static const u8 MOUSE_MOVED = 0;
+			static const u8 MOUSE_RELEASED = 1;
+			static const u8 MOUSE_PRESSED = 2;
 
 			typedef struct {
 				u16 x;
@@ -74,6 +79,10 @@ namespace esc {
 				paint();
 			};
 
+			virtual void onMouseMoved(const MouseEvent &e);
+			virtual void onMouseReleased(const MouseEvent &e);
+			virtual void onMousePressed(const MouseEvent &e);
+
 			virtual void paint();
 			void move(s16 x,s16 y);
 			void moveTo(tCoord x,tCoord y);
@@ -81,9 +90,13 @@ namespace esc {
 			void add(Control &c);
 
 		private:
+			void passToCtrl(const MouseEvent &e,u8 event);
+
+		private:
 			tWinId _id;
 			String _title;
 			tSize _titleBarHeight;
+			bool _inTitle;
 			Vector<Control*> _controls;
 		};
 	}

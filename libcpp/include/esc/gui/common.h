@@ -24,7 +24,6 @@ namespace esc {
 	namespace gui {
 		typedef u16 tSize;
 		typedef u16 tCoord;
-		typedef u32 tColor;
 		typedef u8 tColDepth;
 		typedef u16 tWinId;
 	}

@@ -40,6 +40,10 @@ namespace esc {
 
 			};
 
+			virtual void onMouseMoved(const MouseEvent &e);
+			virtual void onMouseReleased(const MouseEvent &e);
+			virtual void onMousePressed(const MouseEvent &e);
+
 			virtual void paint();
 
 		private:

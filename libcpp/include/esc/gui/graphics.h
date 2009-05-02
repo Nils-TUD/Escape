@@ -24,16 +24,15 @@
 #include <esc/heap.h>
 #include <esc/stream.h>
 #include <esc/io.h>
+#include <esc/proc.h>
 #include <esc/messages.h>
 #include <esc/mem.h>
 #include <esc/gui/common.h>
 #include <esc/gui/application.h>
 #include <esc/gui/font.h>
+#include <esc/gui/color.h>
 #include <esc/string.h>
-
-// TODO ask vesa
-#define RESOLUTION_X		1024
-#define RESOLUTION_Y		768
+#include <stdlib.h>
 
 namespace esc {
 	namespace gui {
@@ -50,8 +49,27 @@ namespace esc {
 			Pixel() {};
 			~Pixel() {};
 			virtual u32 getPixelSize() const = 0;
-			virtual tColor get(u32 offset) const = 0;
-			virtual void set(u32 offset,tColor col) = 0;
+			virtual u32 get(u32 offset) const = 0;
+			virtual void set(u32 offset,u32 col) = 0;
+		};
+
+		struct Pixel8Bit : public Pixel {
+		public:
+			Pixel8Bit(u8 *pixels) : _pixels(pixels) {};
+			~Pixel8Bit() {};
+
+			inline u32 getPixelSize() const {
+				return sizeof(u8);
+			}
+			inline u32 get(u32 offset) const {
+				return *(u8*)(_pixels + offset * sizeof(u8));
+			}
+			inline void set(u32 offset,u32 col) {
+				*(u8*)(_pixels + offset * sizeof(u8)) = col & 0xFF;
+			};
+
+		private:
+			u8 *_pixels;
 		};
 
 		struct Pixel16Bit : public Pixel {
@@ -62,10 +80,10 @@ namespace esc {
 			inline u32 getPixelSize() const {
 				return sizeof(u16);
 			}
-			inline tColor get(u32 offset) const {
+			inline u32 get(u32 offset) const {
 				return *(u16*)(_pixels + offset * sizeof(u16));
 			}
-			inline void set(u32 offset,tColor col) {
+			inline void set(u32 offset,u32 col) {
 				*(u16*)(_pixels + offset * sizeof(u16)) = col & 0xFFFF;
 			};
 
@@ -81,12 +99,12 @@ namespace esc {
 			inline u32 getPixelSize() const {
 				return 3;
 			}
-			inline tColor get(u32 offset) const {
-				tColor col;
+			inline u32 get(u32 offset) const {
+				u32 col;
 				memcpy((u8*)&col + 1,_pixels + offset * 3,3);
 				return col;
 			}
-			inline void set(u32 offset,tColor col) {
+			inline void set(u32 offset,u32 col) {
 				memcpy(_pixels + offset * 3,&col,3);
 			};
 
@@ -100,13 +118,13 @@ namespace esc {
 			~Pixel32Bit() {};
 
 			inline u32 getPixelSize() const {
-				return sizeof(tColor);
+				return sizeof(u32);
 			}
-			inline tColor get(u32 offset) const {
-				return *(tColor*)(_pixels + offset * sizeof(tColor));
+			inline u32 get(u32 offset) const {
+				return *(u32*)(_pixels + offset * sizeof(u32));
 			}
-			inline void set(u32 offset,tColor col) {
-				*(tColor*)(_pixels + offset * sizeof(tColor)) = col;
+			inline void set(u32 offset,u32 col) {
+				*(u32*)(_pixels + offset * sizeof(u32)) = col;
 			};
 
 		private:
@@ -124,11 +142,10 @@ namespace esc {
 			} __attribute__((packed)) sMsgVesaUpdate;
 
 		public:
-			Graphics(const Graphics &g,tCoord x,tCoord y)
+			Graphics(Graphics &g,tCoord x,tCoord y)
 				: _offx(x), _offy(y), _x(0), _y(0), _width(g._width), _height(g._height),
 					_bpp(g._bpp), _col(0), _minx(0),_miny(0), _maxx(_width - 1),
-					_maxy(_height - 1),_font(Font()) {
-				_ownMem = false;
+					_maxy(_height - 1), _font(Font()), _owner(&g) {
 				_pixels = g._pixels;
 				_pixel = g._pixel;
 				// set some constant msg-attributes
@@ -137,8 +154,9 @@ namespace esc {
 			};
 
 			Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp) :
-					_offx(0), _offy(0), _x(x), _y(y), _width(width), _height(height), _bpp(bpp), _col(0),
-					_minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),_font(Font()) {
+					_offx(0), _offy(0), _x(x), _y(y), _width(width), _height(height), _bpp(bpp),
+					_col(0), _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),_font(Font()),
+					_owner(NULL) {
 				// allocate mem
 				switch(_bpp) {
 					case 32:
@@ -153,11 +171,15 @@ namespace esc {
 						_pixels = (u8*)calloc(_width * _height,sizeof(u16));
 						_pixel = new Pixel16Bit(_pixels);
 						break;
+					case 8:
+						_pixels = (u8*)calloc(_width * _height,sizeof(u8));
+						_pixel = new Pixel8Bit(_pixels);
+						break;
 					default:
 						err << "Unsupported color-depth: " << (u32)bpp << endl;
+						exit(EXIT_FAILURE);
 						break;
 				}
-				_ownMem = true;
 
 				// set some constant msg-attributes
 				_vesaMsg.header.id = MSG_VESA_UPDATE;
@@ -165,7 +187,7 @@ namespace esc {
 			};
 
 			~Graphics() {
-				if(_ownMem) {
+				if(_owner == NULL) {
 					delete _pixel;
 					delete _pixels;
 				}
@@ -174,14 +196,14 @@ namespace esc {
 			inline Font getFont() const {
 				return _font;
 			}
-			inline tColor getColor() const {
-				return _col;
+			inline Color getColor() const {
+				return Color::fromBits(_col,_bpp);
 			};
-			inline void setColor(tColor col) {
-				_col = col;
+			inline void setColor(const Color &col) {
+				_col = col.toBits(_bpp);
 			};
-			inline tColor getPixel(tCoord x,tCoord y) const {
-				return _pixel->get(y * _width + x);
+			inline Color getPixel(tCoord x,tCoord y) const {
+				return Color::fromBits(_pixel->get(y * _width + x),_bpp);
 			};
 			inline void setPixel(tCoord x,tCoord y) {
 				x %= _width;
@@ -225,13 +247,13 @@ namespace esc {
 			tSize _width;
 			tSize _height;
 			tColDepth _bpp;
-			tColor _col;
+			u32 _col;
 			tCoord _minx,_miny,_maxx,_maxy;
 			Pixel *_pixel;
 			u8 *_pixels;
 			Font _font;
 			sMsgVesaUpdate _vesaMsg;
-			bool _ownMem;
+			Graphics *_owner;
 		};
 	}
 }

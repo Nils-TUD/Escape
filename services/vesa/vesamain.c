@@ -63,6 +63,11 @@ typedef u16 tSize;
 typedef u16 tCoord;
 typedef u32 tColor;
 
+typedef struct {
+	sMsgHeader header;
+	sMsgDataVesaGetModeResp data;
+} __attribute__((packed)) sMsgGetModeResp;
+
 static void vbe_update(tCoord x,tCoord y,tSize width,tSize height);
 static void vbe_write(u16 index,u16 value);
 static void vbe_setMode(tSize xres,tSize yres,u16 bpp);
@@ -70,6 +75,13 @@ static void vbe_setCursor(tCoord x,tCoord y);
 static void vbe_drawCross(tCoord x,tCoord y);
 static void vbe_copyRegion(u8 *src,u8 *dst,tSize width,tSize height,tCoord x1,tCoord y1,
 		tCoord x2,tCoord y2,tSize w1,tSize w2);
+
+static sMsgGetModeResp getModeResp = {
+	.header = {
+		.id = MSG_VESA_GETMODE_RESP,
+		.length = sizeof(sMsgDataVesaGetModeResp)
+	}
+};
 
 static void *video;
 static void *shmem;
@@ -118,7 +130,7 @@ int main(void) {
 	while(1) {
 		tFD fd = getClient(&id,1,&client);
 		if(fd < 0)
-			wait(EV_RECEIVED_MSG);
+			wait(EV_CLIENT);
 		else {
 			sMsgHeader header;
 			while(read(fd,&header,sizeof(sMsgHeader)) > 0) {
@@ -141,6 +153,14 @@ int main(void) {
 						sMsgDataVesaCursor data;
 						read(fd,&data,sizeof(sMsgDataVesaUpdate));
 						vbe_setCursor(data.x,data.y);
+					}
+					break;
+
+					case MSG_VESA_GETMODE_REQ: {
+						getModeResp.data.width = RESOLUTION_X;
+						getModeResp.data.height = RESOLUTION_Y;
+						getModeResp.data.colorDepth = BITS_PER_PIXEL;
+						write(fd,&getModeResp,sizeof(getModeResp));
 					}
 					break;
 				}

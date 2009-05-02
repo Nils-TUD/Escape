@@ -31,7 +31,8 @@ namespace esc {
 	namespace gui {
 		Application *Application::_inst = NULL;
 
-		Application::Application() {
+		Application::Application()
+				: _mouseBtns(0) {
 			_winFd = open("services:/winmanager",IO_READ | IO_WRITE);
 			if(_winFd < 0) {
 				printe("Unable to open window-manager");
@@ -49,6 +50,28 @@ namespace esc {
 				printe("Unable to open shared memory");
 				exit(EXIT_FAILURE);
 			}
+
+			// request screen infos from vesa
+			sMsgHeader header;
+			header.id = MSG_VESA_GETMODE_REQ;
+			header.length = 0;
+			if(write(_vesaFd,&header,sizeof(header)) != sizeof(header)) {
+				printe("Unable to send get-mode-request to vesa");
+				exit(EXIT_FAILURE);
+			}
+
+			// read response
+			sMsgDataVesaGetModeResp resp;
+			if(read(_vesaFd,&header,sizeof(header)) != sizeof(header) ||
+					read(_vesaFd,&resp,sizeof(resp)) != sizeof(resp)) {
+				printe("Unable to read the get-mode-response from vesa");
+				exit(EXIT_FAILURE);
+			}
+
+			// store it
+			_screenWidth = resp.width;
+			_screenHeight = resp.height;
+			_colorDepth = resp.colorDepth;
 		}
 
 		Application::~Application() {
@@ -72,30 +95,17 @@ namespace esc {
 				switch(header.id) {
 					case MSG_WIN_MOUSE: {
 						sMsgDataWinMouse data;
-						if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {
-							if(data.buttons) {
-								for(u32 i = 0; i < _windows.size(); i++) {
-									if(_windows[i]->getId() == data.window) {
-										_windows[i]->move(data.movedX,data.movedY);
-										break;
-									}
-								}
-							}
-						}
+						if(read(_winFd,&data,sizeof(data)) == sizeof(data))
+							passToWindow(&data);
 					}
 					break;
 
 					case MSG_WIN_REPAINT: {
 						sMsgDataWinRepaint data;
 						if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {
-							/*out.format("REPAINT @ %d,%d : %d,%d\n",
-									data.x,data.y,data.width,data.height);*/
-							for(u32 i = 0; i < _windows.size(); i++) {
-								if(_windows[i]->getId() == data.window) {
-									_windows[i]->update(data.x,data.y,data.width,data.height);
-									break;
-								}
-							}
+							Window *w = getWindowById(data.window);
+							if(w)
+								w->update(data.x,data.y,data.width,data.height);
 						}
 					}
 					break;
@@ -103,6 +113,39 @@ namespace esc {
 			}
 
 			return EXIT_SUCCESS;
+		}
+
+		void Application::passToWindow(sMsgDataWinMouse *e) {
+			bool moved,released,pressed;
+
+			moved = e->movedX || e->movedY;
+			// TODO this is not correct
+			released = _mouseBtns && !e->buttons;
+			pressed = !_mouseBtns && e->buttons;
+			_mouseBtns = e->buttons;
+
+			Window *w = getWindowById(e->window);
+			if(w) {
+				tCoord x = MAX(0,MIN(_screenWidth - 1,e->x - w->getX()));
+				tCoord y = MAX(0,MIN(_screenHeight - 1,e->y - w->getY()));
+				MouseEvent event(e->movedX,e->movedY,x,y,_mouseBtns);
+				if(released)
+					w->onMouseReleased(event);
+				else if(pressed)
+					w->onMousePressed(event);
+				else if(moved)
+					w->onMouseMoved(event);
+			}
+		}
+
+		Window *Application::getWindowById(tWinId id) {
+			Window *w;
+			for(u32 i = 0; i < _windows.size(); i++) {
+				w = _windows[i];
+				if(w->getId() == id)
+					return w;
+			}
+			return NULL;
 		}
 	}
 }

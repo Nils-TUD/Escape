@@ -23,25 +23,29 @@
 #include <esc/common.h>
 #include <esc/gui/common.h>
 #include <esc/gui/control.h>
+#include <esc/gui/color.h>
 
 namespace esc {
 	namespace gui {
 		class Button : public Control {
 		private:
-			static const tColor bgColor = 0x808080;
-			static const tColor fgColor = 0xFFFFFF;
-			static const tColor lightBorderColor = 0x606060;
-			static const tColor darkBorderColor = 0x202020;
+			static Color BGCOLOR;
+			static Color FGCOLOR;
+			static Color LIGHT_BORDER_COLOR;
+			static Color DARK_BORDER_COLOR;
 
 		public:
 			Button(const String &text,tCoord x,tCoord y,tSize width,tSize height)
-				: Control(x,y,width,height), _text(text) {
+				: Control(x,y,width,height), _pressed(false), _text(text) {
 
 			};
 			virtual ~Button() {
 
 			};
 
+			inline bool isPressed() const {
+				return _pressed;
+			};
 			inline String getText() const {
 				return _text;
 			};
@@ -50,9 +54,12 @@ namespace esc {
 				paint();
 			};
 
+			virtual void onMousePressed(const MouseEvent &e);
+			virtual void onMouseReleased(const MouseEvent &e);
 			virtual void paint();
 
 		private:
+			bool _pressed;
 			String _text;
 		};
 	}

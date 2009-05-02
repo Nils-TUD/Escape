@@ -31,6 +31,19 @@ namespace esc {
 			_g = new Graphics(*_w->getGraphics(),getX(),getY() + _w->getTitleBarHeight());
 		}
 
+		void Control::onMouseMoved(const MouseEvent &e) {
+			// do nothing by default
+			UNUSED(e);
+		}
+		void Control::onMouseReleased(const MouseEvent &e) {
+			// do nothing by default
+			UNUSED(e);
+		}
+		void Control::onMousePressed(const MouseEvent &e) {
+			// do nothing by default
+			UNUSED(e);
+		}
+
 		void Control::paint() {
 			// no window?
 			// TODO throw exception!

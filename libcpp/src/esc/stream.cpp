@@ -236,6 +236,21 @@ namespace esc {
 		return s;
 	}
 
+	Stream &operator<<(Stream &s,u8 n) {
+		s.write((s32)n);
+		return s;
+	}
+
+	Stream &operator<<(Stream &s,s16 n) {
+		s.write((s32)n);
+		return s;
+	}
+
+	Stream &operator<<(Stream &s,u16 n) {
+		s.write((s32)n);
+		return s;
+	}
+
 	Stream &operator<<(Stream &s,s32 n) {
 		s.write(n);
 		return s;

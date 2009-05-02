@@ -381,6 +381,18 @@ namespace esc {
 	/**
 	 * Writes the given number to the stream
 	 */
+	Stream &operator<<(Stream &s,u8 n);
+	/**
+	 * Writes the given number to the stream
+	 */
+	Stream &operator<<(Stream &s,s16 n);
+	/**
+	 * Writes the given number to the stream
+	 */
+	Stream &operator<<(Stream &s,u16 n);
+	/**
+	 * Writes the given number to the stream
+	 */
 	Stream &operator<<(Stream &s,s32 n);
 	/**
 	 * Writes the given number to the stream

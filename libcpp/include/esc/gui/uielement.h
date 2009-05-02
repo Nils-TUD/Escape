@@ -26,6 +26,55 @@
 
 namespace esc {
 	namespace gui {
+		class MouseEvent {
+		public:
+			static const u8 BUTTON1_MASK = 0x1;
+			static const u8 BUTTON2_MASK = 0x2;
+			static const u8 BUTTON3_MASK = 0x4;
+
+		public:
+			MouseEvent(s16 movedx,s16 movedy,tCoord x,tCoord y,u8 buttons)
+				: _movedx(movedx), _movedy(movedy), _x(x), _y(y), _buttons(buttons) {
+
+			};
+			MouseEvent(const MouseEvent &e)
+				: _movedx(e._movedx), _movedy(e._movedy), _x(e._x), _y(e._y), _buttons(e._buttons) {
+
+			};
+			virtual ~MouseEvent() {
+
+			};
+
+			inline tCoord getX() const {
+				return _x;
+			};
+			inline tCoord getY() const {
+				return _y;
+			};
+			inline s16 getXMovement() const {
+				return _movedx;
+			};
+			inline s16 getYMovement() const {
+				return _movedy;
+			};
+			inline bool isButton1Down() const {
+				return _buttons & BUTTON1_MASK;
+			};
+			inline bool isButton2Down() const {
+				return _buttons & BUTTON2_MASK;
+			};
+			inline bool isButton3Down() const {
+				return _buttons & BUTTON3_MASK;
+			};
+
+		private:
+			s16 _movedx;
+			s16 _movedy;
+			tCoord _x;
+			tCoord _y;
+			u8 _buttons;
+		};
+
 		class UIElement {
 		public:
 			UIElement(tCoord x,tCoord y,tSize width,tSize height)
@@ -33,7 +82,7 @@ namespace esc {
 
 			};
 			virtual ~UIElement() {
-
+				delete _g;
 			};
 
 			inline tCoord getX() const {
@@ -49,9 +98,13 @@ namespace esc {
 				return _height;
 			};
 
-			inline const Graphics *getGraphics() const {
+			inline Graphics *getGraphics() const {
 				return _g;
 			};
+
+			virtual void onMouseMoved(const MouseEvent &e) = 0;
+			virtual void onMouseReleased(const MouseEvent &e) = 0;
+			virtual void onMousePressed(const MouseEvent &e) = 0;
 
 			virtual void paint() = 0;
 			void update(tCoord x,tCoord y,tSize width,tSize height);

@@ -23,18 +23,21 @@
 #include <esc/proc.h>
 #include <esc/gui/window.h>
 #include <esc/gui/uielement.h>
+#include <esc/gui/color.h>
 #include <esc/string.h>
 #include <stdlib.h>
 
-// TODO ask vesa
-#define BIT_PER_PIXEL		24
-
 namespace esc {
 	namespace gui {
+		Color Window::BGCOLOR = Color(0x88,0x88,0x88);
+		Color Window::TITLE_BGCOLOR = Color(0,0,0xFF);
+		Color Window::TITLE_FGCOLOR = Color(0xFF,0xFF,0xFF);
+		Color Window::BORDER_COLOR = Color(0x77,0x77,0x77);
+
 		Window::Window(const String &title,tCoord x,tCoord y,tSize width,tSize height)
-			: UIElement(x,y,width,height), _title(title), _titleBarHeight(20),
+			: UIElement(x,y,width,height), _title(title), _titleBarHeight(20), _inTitle(false),
 				_controls(Vector<Control*>()) {
-			_g = new Graphics(x,y,width,height,BIT_PER_PIXEL);
+			_g = new Graphics(x,y,width,height,Application::getInstance()->getColorDepth());
 
 			// create window
 			tFD winmgn = Application::getInstance()->getWinManagerFd();
@@ -69,17 +72,68 @@ namespace esc {
 
 		}
 
+		void Window::onMouseMoved(const MouseEvent &e) {
+			// we store on release/pressed wether we are in the header because
+			// the delay between window-movement and cursor-movement may be too
+			// big so that we "loose" the window
+			if(_inTitle) {
+				if(e.isButton1Down())
+					move(e.getXMovement(),e.getYMovement());
+				return;
+			}
+			passToCtrl(e,MOUSE_MOVED);
+		}
+		void Window::onMouseReleased(const MouseEvent &e) {
+			if(e.getY() < _titleBarHeight)
+				_inTitle = false;
+			else
+				passToCtrl(e,MOUSE_RELEASED);
+		}
+		void Window::onMousePressed(const MouseEvent &e) {
+			if(e.getY() < _titleBarHeight)
+				_inTitle = true;
+			else
+				passToCtrl(e,MOUSE_PRESSED);
+		}
+
+		void Window::passToCtrl(const MouseEvent &e,u8 event) {
+			Control *c;
+			tCoord x = e.getX();
+			tCoord y = e.getY();
+			y -= _titleBarHeight;
+			for(u32 i = 0; i < _controls.size(); i++) {
+				c = _controls[i];
+				if(x >= c->getX() && x < c->getX() + c->getWidth() &&
+					y >= c->getY() && y < c->getY() + c->getHeight()) {
+					switch(event) {
+						case MOUSE_MOVED:
+							c->onMouseMoved(e);
+							break;
+						case MOUSE_RELEASED:
+							c->onMouseReleased(e);
+							break;
+						case MOUSE_PRESSED:
+							c->onMousePressed(e);
+							break;
+					}
+					break;
+				}
+			}
+		}
+
 		void Window::move(s16 x,s16 y) {
+			tSize screenWidth = Application::getInstance()->getScreenWidth();
+			tSize screenHeight = Application::getInstance()->getScreenHeight();
 			if(getX() + x < 0)
 				x = 0;
-			else if(getX() + x + getWidth() >= RESOLUTION_X)
-				x = RESOLUTION_X - getWidth();
+			else if(getX() + x + getWidth() >= screenWidth)
+				x = screenWidth - getWidth();
 			else
 				x += getX();
 			if(getY() + y < 0)
 				y = 0;
-			else if(getY() + y + getHeight() >= RESOLUTION_Y)
-				y = RESOLUTION_Y - getHeight();
+			else if(getY() + y + getHeight() >= screenHeight)
+				y = screenHeight - getHeight();
 			else
 				y += getY();
 			moveTo(x,y);
@@ -98,18 +152,17 @@ namespace esc {
 				move.data.x = getX();
 				move.data.y = getY();
 				write(Application::getInstance()->getWinManagerFd(),&move,sizeof(move));
-				yield();
 			}
 		}
 
 		void Window::paint() {
-			_g->setColor(bgColor);
+			_g->setColor(BGCOLOR);
 			_g->fillRect(0,_titleBarHeight,getWidth(),getHeight());
-			_g->setColor(titleBgColor);
+			_g->setColor(TITLE_BGCOLOR);
 			_g->fillRect(0,0,getWidth(),_titleBarHeight);
-			_g->setColor(titleFgColor);
+			_g->setColor(TITLE_FGCOLOR);
 			_g->drawString(5,(_titleBarHeight - _g->getFont().getHeight()) / 2,_title);
-			_g->setColor(borderColor);
+			_g->setColor(BORDER_COLOR);
 			_g->drawLine(0,_titleBarHeight,getWidth(),_titleBarHeight);
 			_g->drawRect(0,0,getWidth(),getHeight());
 			for(u32 i = 0; i < _controls.size(); i++)

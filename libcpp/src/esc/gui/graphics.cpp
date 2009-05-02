@@ -21,10 +21,34 @@
 #include <esc/io.h>
 #include <esc/proc.h>
 #include <esc/gui/graphics.h>
+#include <esc/string.h>
 #include <string.h>
 
 namespace esc {
 	namespace gui {
+		void Graphics::drawChar(tCoord x,tCoord y,char c) {
+			char *font = _font.getChar(c);
+			if(font) {
+				u32 width = _font.getWidth();
+				u32 height = _font.getHeight();
+				tCoord cx,cy;
+				for(cy = 0; cy < height; cy++) {
+					for(cx = 0; cx < width; cx++) {
+						if(font[cy * width + cx])
+							setPixel(x + cx,y + cy);
+					}
+				}
+			}
+		}
+
+		void Graphics::drawString(tCoord x,tCoord y,String str) {
+			char c;
+			for(u32 i = 0; i < str.length(); i++) {
+				drawChar(x,y,str[i]);
+				x += _font.getWidth();
+			}
+		}
+
 		void Graphics::drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn) {
 			s32	dx,	dy,	d;
 			s32 incrE, incrNE;	/*Increments for move to E	& NE*/
@@ -123,6 +147,10 @@ namespace esc {
 		}
 
 		void Graphics::update() {
+			// only the owner notifies vesa
+			if(!_ownMem)
+				return;
+
 			update(_minx,_miny,_maxx - _minx + 1,_maxy - _miny + 1);
 
 			// reset region
@@ -133,6 +161,10 @@ namespace esc {
 		}
 
 		void Graphics::update(tCoord x,tCoord y,tSize width,tSize height) {
+			// only the owner notifies vesa
+			if(!_ownMem)
+				return;
+
 			validateParams(x,y,width,height);
 			// is there anything to update?
 			if(width > 0 || height > 0) {
@@ -155,21 +187,6 @@ namespace esc {
 				notifyVesa(_x + x,_y + endy - height,width,height);
 				yield();
 			}
-		}
-
-		void Graphics::clear() {
-			u16 psize = _pixel->getPixelSize();
-			tCoord y = _y;
-			tCoord maxy = y + _height;
-			tCoord count = (1 + _width) * psize;
-			u8 *vesaMem = (u8*)Application::getInstance()->getVesaMem();
-			vesaMem += (y * RESOLUTION_X + _x) * psize;
-			while(y <= maxy) {
-				memset(vesaMem,0,count);
-				vesaMem += RESOLUTION_X * psize;
-				y++;
-			}
-			notifyVesa(_x,_y,_width,_height);
 		}
 
 		void Graphics::notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {

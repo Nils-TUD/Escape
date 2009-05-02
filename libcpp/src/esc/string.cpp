@@ -69,6 +69,10 @@ namespace esc {
 		return _length != s._length || strcmp(_str,s._str) != 0;
 	}
 
+	char String::operator[](u32 index) const {
+		return _str[index];
+	}
+
 	void String::increaseSize(u32 min) {
 		char *cpy;
 		// we need a null-termination

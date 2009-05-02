@@ -28,6 +28,8 @@
 #include <esc/mem.h>
 #include <esc/gui/common.h>
 #include <esc/gui/application.h>
+#include <esc/gui/font.h>
+#include <esc/string.h>
 
 // TODO ask vesa
 #define RESOLUTION_X		1024
@@ -35,13 +37,6 @@
 
 namespace esc {
 	namespace gui {
-
-		// TODO make private
-		typedef struct {
-			sMsgHeader header;
-			sMsgDataVesaUpdate data;
-		} __attribute__((packed)) sMsgVesaUpdate;
-
 		// TODO wrong place
 		template<class T>
 		void swap(T *a,T *b) {
@@ -78,6 +73,27 @@ namespace esc {
 			u8 *_pixels;
 		};
 
+		struct Pixel24Bit : public Pixel {
+		public:
+			Pixel24Bit(u8 *pixels) : _pixels(pixels) {};
+			~Pixel24Bit() {};
+
+			inline u32 getPixelSize() const {
+				return 3;
+			}
+			inline tColor get(u32 offset) const {
+				tColor col;
+				memcpy((u8*)&col + 1,_pixels + offset * 3,3);
+				return col;
+			}
+			inline void set(u32 offset,tColor col) {
+				memcpy(_pixels + offset * 3,&col,3);
+			};
+
+		private:
+			u8 *_pixels;
+		};
+
 		struct Pixel32Bit : public Pixel {
 		public:
 			Pixel32Bit(u8 *pixels) : _pixels(pixels) {};
@@ -99,16 +115,39 @@ namespace esc {
 
 		class Graphics {
 			friend class Window;
+			friend class Control;
+
+		private:
+			typedef struct {
+				sMsgHeader header;
+				sMsgDataVesaUpdate data;
+			} __attribute__((packed)) sMsgVesaUpdate;
 
 		public:
+			Graphics(const Graphics &g,tCoord x,tCoord y)
+				: _offx(x), _offy(y), _x(0), _y(0), _width(g._width), _height(g._height),
+					_bpp(g._bpp), _col(0), _minx(0),_miny(0), _maxx(_width - 1),
+					_maxy(_height - 1),_font(Font()) {
+				_ownMem = false;
+				_pixels = g._pixels;
+				_pixel = g._pixel;
+				// set some constant msg-attributes
+				_vesaMsg.header.id = MSG_VESA_UPDATE;
+				_vesaMsg.header.length = sizeof(sMsgDataVesaUpdate);
+			};
+
 			Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp) :
-					_x(x), _y(y), _width(width), _height(height), _bpp(bpp), _col(0),
-					_minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1) {
+					_offx(0), _offy(0), _x(x), _y(y), _width(width), _height(height), _bpp(bpp), _col(0),
+					_minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),_font(Font()) {
 				// allocate mem
 				switch(_bpp) {
 					case 32:
 						_pixels = (u8*)calloc(_width * _height,sizeof(u32));
 						_pixel = new Pixel32Bit(_pixels);
+						break;
+					case 24:
+						_pixels = (u8*)calloc(_width * _height,3);
+						_pixel = new Pixel24Bit(_pixels);
 						break;
 					case 16:
 						_pixels = (u8*)calloc(_width * _height,sizeof(u16));
@@ -118,16 +157,23 @@ namespace esc {
 						err << "Unsupported color-depth: " << (u32)bpp << endl;
 						break;
 				}
+				_ownMem = true;
 
 				// set some constant msg-attributes
 				_vesaMsg.header.id = MSG_VESA_UPDATE;
 				_vesaMsg.header.length = sizeof(sMsgDataVesaUpdate);
 			};
+
 			~Graphics() {
-				delete _pixel;
-				delete _pixels;
+				if(_ownMem) {
+					delete _pixel;
+					delete _pixels;
+				}
 			};
 
+			inline Font getFont() const {
+				return _font;
+			}
 			inline tColor getColor() const {
 				return _col;
 			};
@@ -143,6 +189,11 @@ namespace esc {
 				updateMinMax(x,y);
 				doSetPixel(x,y);
 			};
+			inline tColDepth getColorDepth() const {
+				return _bpp;
+			};
+			void drawChar(tCoord x,tCoord y,char c);
+			void drawString(tCoord x,tCoord y,String str);
 			void drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn);
 			void drawRect(tCoord x,tCoord y,tSize width,tSize height);
 			void fillRect(tCoord x,tCoord y,tSize width,tSize height);
@@ -152,7 +203,7 @@ namespace esc {
 
 		private:
 			inline void doSetPixel(tCoord x,tCoord y) {
-				_pixel->set(y * _width + x,_col);
+				_pixel->set((_offy + y) * _width + (_offx + x),_col);
 			};
 			inline void updateMinMax(tCoord x,tCoord y) {
 				if(x > _maxx)
@@ -165,11 +216,11 @@ namespace esc {
 					_miny = y;
 			};
 			void move(tCoord x,tCoord y);
-			void clear();
 			void notifyVesa(tCoord x,tCoord y,tSize width,tSize height);
 			void validateParams(tCoord &x,tCoord &y,tSize &width,tSize &height);
 
 		private:
+			tCoord _offx,_offy;
 			tCoord _x,_y;
 			tSize _width;
 			tSize _height;
@@ -178,7 +229,9 @@ namespace esc {
 			tCoord _minx,_miny,_maxx,_maxy;
 			Pixel *_pixel;
 			u8 *_pixels;
+			Font _font;
 			sMsgVesaUpdate _vesaMsg;
+			bool _ownMem;
 		};
 	}
 }

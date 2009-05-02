@@ -32,7 +32,7 @@
 
 #define RESOLUTION_X					1024
 #define RESOLUTION_Y					768
-#define BITS_PER_PIXEL					16
+#define BITS_PER_PIXEL					24
 #define PIXEL_SIZE						(BITS_PER_PIXEL / 8)
 
 typedef u16 tSize;
@@ -207,7 +207,8 @@ int main(int argc,char *argv[]) {
 						buttons = mouseData.buttons;
 						if(buttons) {
 							activeWindow = getWindowAt(curX,curY);
-							setActive(activeWindow);
+							if(activeWindow != WINDOW_COUNT)
+								setActive(activeWindow);
 						}
 						else
 							activeWindow = WINDOW_COUNT;
@@ -253,7 +254,8 @@ static void setActive(tWinId id) {
 		}
 		w++;
 	}
-	windows[id].z = maxz;
+	if(maxz > 0)
+		windows[id].z = maxz;
 }
 
 static tWinId getWindowAt(tCoord x,tCoord y) {

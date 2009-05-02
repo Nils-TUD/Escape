@@ -51,12 +51,12 @@
 #define VESA_MEMORY						0xE0000000
 #define RESOLUTION_X					1024
 #define RESOLUTION_Y					768
-#define BITS_PER_PIXEL					16
+#define BITS_PER_PIXEL					24
 #define PIXEL_SIZE						(BITS_PER_PIXEL / 8)
 #define VESA_MEM_SIZE					(RESOLUTION_X * RESOLUTION_Y * PIXEL_SIZE)
 
 #define CURSOR_LEN						2
-#define CURSOR_COLOR					0xFFFF
+#define CURSOR_COLOR					0xFFFFFF
 #define CURSOR_SIZE						(CURSOR_LEN * 2 + 1)
 
 typedef u16 tSize;

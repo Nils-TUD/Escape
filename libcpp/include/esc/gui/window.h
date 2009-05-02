@@ -25,12 +25,20 @@
 #include <esc/messages.h>
 #include <esc/gui/common.h>
 #include <esc/gui/graphics.h>
+#include <esc/gui/uielement.h>
 #include <esc/gui/application.h>
+#include <esc/gui/control.h>
+#include <esc/string.h>
 
 namespace esc {
 	namespace gui {
-		class Window {
+		class Window : public UIElement {
 		private:
+			static const tColor bgColor = 0x808080;
+			static const tColor titleBgColor = 0x0000FF;
+			static const tColor titleFgColor = 0xFFFFFF;
+			static const tColor borderColor = 0x707070;
+
 			typedef struct {
 				u16 x;
 				u16 y;
@@ -49,35 +57,34 @@ namespace esc {
 			} __attribute__((packed)) sMsgWinCreateReq;
 
 		public:
-			Window(tCoord x,tCoord y,tSize width,tSize height);
-			~Window();
+			Window(const String &title,tCoord x,tCoord y,tSize width,tSize height);
+			virtual ~Window();
 
 			inline tWinId getId() const {
 				return _id;
 			};
-			inline tCoord getX() const {
-				return _x;
+			inline tSize getTitleBarHeight() const {
+				return _titleBarHeight;
 			};
-			inline tCoord getY() const {
-				return _y;
+			inline String getTitle() const {
+				return _title;
 			};
-			inline tSize getWidth() const {
-				return _w;
-			};
-			inline tSize getHeight() const {
-				return _h;
+			inline void setTitle(const String &title) {
+				_title = title;
+				paint();
 			};
 
 			virtual void paint();
-			void update(tCoord x,tCoord y,tSize width,tSize height);
 			void move(s16 x,s16 y);
 			void moveTo(tCoord x,tCoord y);
 
+			void add(Control &c);
+
 		private:
 			tWinId _id;
-			tCoord _x,_y;
-			tSize _w,_h;
-			Graphics *_g;
+			String _title;
+			tSize _titleBarHeight;
+			Vector<Control*> _controls;
 		};
 	}
 }

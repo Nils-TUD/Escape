@@ -18,26 +18,31 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/messages.h>
-#include <esc/io.h>
-#include <esc/gui/application.h>
-#include <esc/gui/window.h>
+#include <esc/gui/common.h>
 #include <esc/gui/button.h>
-#include <stdlib.h>
+#include <esc/gui/control.h>
 
-using namespace esc::gui;
+namespace esc {
+	namespace gui {
+		void Button::paint() {
+			Control::paint();
 
-int main(int argc,char *argv[]) {
-	// disable readline
-	printf("\033l\x0");
+			_g->setColor(bgColor);
+			_g->fillRect(1,1,getWidth() - 2,getHeight() - 2);
 
-	Application *app = Application::getInstance();
-	Window w1("Fenster 1",100,100,400,300);
-	Window w2("Fenster 2",250,250,150,200);
-	Window w3("Fenster 3",50,50,100,40);
-	Window w4("Fenster 4",180,90,200,100);
-	Button b("Click me!!",10,10,80,20);
-	w1.add(b);
-	return app->run();
+			_g->setColor(lightBorderColor);
+			_g->drawLine(0,0,getWidth() - 1,0);
+			_g->drawLine(0,0,0,getHeight() - 1);
+
+			_g->setColor(darkBorderColor);
+			_g->drawLine(getWidth() - 1,0,getWidth() - 1,getHeight() - 1);
+			_g->drawLine(0,getHeight() - 1,getWidth() - 1,getHeight() - 1);
+
+			_g->setColor(fgColor);
+			_g->drawString((getWidth() - _g->getFont().getStringWidth(_text)) / 2,
+					(getHeight() - _g->getFont().getHeight()) / 2,_text);
+
+			_g->update();
+		}
+	}
 }

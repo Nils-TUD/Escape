@@ -22,15 +22,20 @@
 #include <esc/messages.h>
 #include <esc/proc.h>
 #include <esc/gui/window.h>
+#include <esc/gui/uielement.h>
+#include <esc/string.h>
 #include <stdlib.h>
 
 // TODO ask vesa
-#define BIT_PER_PIXEL		16
+#define BIT_PER_PIXEL		24
 
 namespace esc {
 	namespace gui {
-		Window::Window(tCoord x,tCoord y,tSize width,tSize height)
-			: _x(x), _y(y), _w(width), _h(height), _g(new Graphics(x,y,width,height,BIT_PER_PIXEL)) {
+		Window::Window(const String &title,tCoord x,tCoord y,tSize width,tSize height)
+			: UIElement(x,y,width,height), _title(title), _titleBarHeight(20),
+				_controls(Vector<Control*>()) {
+			_g = new Graphics(x,y,width,height,BIT_PER_PIXEL);
+
 			// create window
 			tFD winmgn = Application::getInstance()->getWinManagerFd();
 			sMsgWinCreateReq msg;
@@ -61,51 +66,60 @@ namespace esc {
 		}
 
 		Window::~Window() {
-			delete _g;
+
 		}
 
 		void Window::move(s16 x,s16 y) {
-			if((s32)_x + x < 0)
+			if(getX() + x < 0)
 				x = 0;
-			else if(_x + x + _w >= RESOLUTION_X)
-				x = RESOLUTION_X - _w;
+			else if(getX() + x + getWidth() >= RESOLUTION_X)
+				x = RESOLUTION_X - getWidth();
 			else
-				x += _x;
-			if((s32)_y + y < 0)
+				x += getX();
+			if(getY() + y < 0)
 				y = 0;
-			else if(_y + y + _h >= RESOLUTION_Y)
-				y = RESOLUTION_Y - _h;
+			else if(getY() + y + getHeight() >= RESOLUTION_Y)
+				y = RESOLUTION_Y - getHeight();
 			else
-				y += _y;
+				y += getY();
 			moveTo(x,y);
 		}
 
 		void Window::moveTo(tCoord x,tCoord y) {
-			if(_x != x || _y != y) {
+			if(getX() != x || getY() != y) {
 				_g->move(x,y);
-				_x = _g->_x;
-				_y = _g->_y;
+				setX(_g->_x);
+				setY(_g->_y);
 
 				sMsgWinMoveReq move;
 				move.header.id = MSG_WIN_MOVE_REQ;
 				move.header.length = sizeof(sMsgDataWinMoveReq);
 				move.data.window = _id;
-				move.data.x = _x;
-				move.data.y = _y;
+				move.data.x = getX();
+				move.data.y = getY();
 				write(Application::getInstance()->getWinManagerFd(),&move,sizeof(move));
 				yield();
 			}
 		}
 
 		void Window::paint() {
-			tColor colors[] = {0xF00F,0x00FF,0x0F0F,0xF0FF};
-			_g->setColor(colors[_id % 4]);
-			_g->fillRect(0,0,_w,_h);
+			_g->setColor(bgColor);
+			_g->fillRect(0,_titleBarHeight,getWidth(),getHeight());
+			_g->setColor(titleBgColor);
+			_g->fillRect(0,0,getWidth(),_titleBarHeight);
+			_g->setColor(titleFgColor);
+			_g->drawString(5,(_titleBarHeight - _g->getFont().getHeight()) / 2,_title);
+			_g->setColor(borderColor);
+			_g->drawLine(0,_titleBarHeight,getWidth(),_titleBarHeight);
+			_g->drawRect(0,0,getWidth(),getHeight());
+			for(u32 i = 0; i < _controls.size(); i++)
+				_controls[i]->paint();
 			_g->update();
 		}
 
-		void Window::update(tCoord x,tCoord y,tSize width,tSize height) {
-			_g->update(x,y,width,height);
+		void Window::add(Control &c) {
+			_controls.add(&c);
+			c.setWindow(this);
 		}
 	}
 }

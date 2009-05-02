@@ -18,26 +18,15 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/messages.h>
-#include <esc/io.h>
-#include <esc/gui/application.h>
-#include <esc/gui/window.h>
-#include <esc/gui/button.h>
-#include <stdlib.h>
+#include <esc/gui/common.h>
+#include <esc/gui/uielement.h>
+#include <esc/gui/graphics.h>
 
-using namespace esc::gui;
-
-int main(int argc,char *argv[]) {
-	// disable readline
-	printf("\033l\x0");
-
-	Application *app = Application::getInstance();
-	Window w1("Fenster 1",100,100,400,300);
-	Window w2("Fenster 2",250,250,150,200);
-	Window w3("Fenster 3",50,50,100,40);
-	Window w4("Fenster 4",180,90,200,100);
-	Button b("Click me!!",10,10,80,20);
-	w1.add(b);
-	return app->run();
+namespace esc {
+	namespace gui {
+		void UIElement::update(tCoord x,tCoord y,tSize width,tSize height) {
+			if(_g)
+				_g->update(x,y,width,height);
+		}
+	}
 }

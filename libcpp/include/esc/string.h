@@ -65,6 +65,7 @@ namespace esc {
 		String &operator+=(const String &s);
 		bool operator==(const String &s) const;
 		bool operator!=(const String &s) const;
+		char operator[](u32 index) const;
 
 	private:
 		void increaseSize(u32 min);

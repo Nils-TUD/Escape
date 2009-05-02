@@ -41,6 +41,17 @@
 #define MSG_ENV_GET_RESP			2
 #define MSG_ENV_GETI				3
 
+#define MSG_VESA_UPDATE				0
+#define MSG_VESA_CURSOR				1
+
+#define MSG_MOUSE					0
+
+#define MSG_WIN_CREATE_REQ			0
+#define MSG_WIN_CREATE_RESP			1
+#define MSG_WIN_MOUSE				2
+#define MSG_WIN_MOVE_REQ			3
+#define MSG_WIN_REPAINT				4
+
 /* the header for all default-messages */
 typedef struct {
 	/* the message-id */
@@ -85,6 +96,67 @@ typedef struct {
 	u64 lba;
 	u16 secCount;
 } sMsgDataATAReq;
+
+/* the message-data for a VESA-update request */
+typedef struct {
+	u16 x;
+	u16 y;
+	u16 width;
+	u16 height;
+} sMsgDataVesaUpdate;
+
+/* the message-data for mouse-events */
+typedef struct {
+	s8 x;
+	s8 y;
+	u8 buttons;
+} sMsgDataMouse;
+
+/* the message-data to create a window */
+typedef struct {
+	u16 x;
+	u16 y;
+	u16 width;
+	u16 height;
+	tPid owner;
+} sMsgDataWinCreateReq;
+
+/* response-data of creating a window */
+typedef struct {
+	u16 id;
+} sMsgDataWinCreateResp;
+
+/* mouse-event that the window-manager sends */
+typedef struct {
+	u16 window;
+	u16 x;
+	u16 y;
+	s16 movedX;
+	s16 movedY;
+	u8 buttons;
+} sMsgDataWinMouse;
+
+/* move-window-request */
+typedef struct {
+	u16 window;
+	u16 x;
+	u16 y;
+} sMsgDataWinMoveReq;
+
+/* repaint event */
+typedef struct {
+	u16 x;
+	u16 y;
+	u16 width;
+	u16 height;
+	u16 window;
+} sMsgDataWinRepaint;
+
+/* sets the cursor */
+typedef struct {
+	u16 x;
+	u16 y;
+} sMsgDataVesaCursor;
 
 #ifdef __cplusplus
 extern "C" {

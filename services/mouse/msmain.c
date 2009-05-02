@@ -1,0 +1,218 @@
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#include <esc/common.h>
+#include <esc/ports.h>
+#include <esc/io.h>
+#include <esc/signals.h>
+#include <esc/service.h>
+#include <esc/fileio.h>
+#include <esc/messages.h>
+#include <stdlib.h>
+
+/* FIXME: THIS MAY CAUSE TROUBLE SINCE WE'RE USING AN IO-PORT THAT IS USED BY THE
+ * KEYBOARD-SERVICE, TOO */
+/* we need some kind of locking-mechanism here to fix it.. */
+
+/* io ports */
+#define IOPORT_KB_CTRL				0x64
+#define IOPORT_KB_DATA				0x60
+#define IOPORT_KB_INOUTBUF			0x60
+
+#define KBC_CMD_READ_STATUS			0x20
+#define KBC_CMD_SET_STATUS			0x60
+#define KBC_CMD_ENABLE_MOUSE		0xA8
+#define KBC_CMD_NEXT2MOUSE			0xD4
+
+/* bits of the status-byte */
+#define KBC_STATUS_DATA_AVAIL		(1 << 0)
+#define KBC_STATUS_BUSY				(1 << 1)
+#define KBC_STATUS_SELFTEST_OK		(1 << 2)
+#define KBC_STATUS_LAST_WAS_CMD		(1 << 3)
+#define KBC_STATUS_KB_LOCKED		(1 << 4)
+#define KBC_STATUS_MOUSE_DATA_AVAIL	(1 << 5)
+#define KBC_STATUS_TIMEOUT			(1 << 6)
+#define KBC_STATUS_PARITY_ERROR		(1 << 7)
+
+/* some bits in the command-byte */
+#define KBC_CMDBYTE_DISABLE_KB		(1 << 4)
+#define KBC_CMDBYTE_ENABLE_IRQ12	(1 << 1)
+#define KBC_CMDBYTE_ENABLE_IRQ1		(1 << 0)
+
+static void irqHandler(tSig sig,u32 data);
+static void kb_init(void);
+static void kb_checkCmd(void);
+static u16 kb_read(void);
+static u16 kb_readMouse(void);
+static u16 kb_writeMouse(u8 cmd);
+
+/* a mouse-packet */
+typedef struct {
+	union {
+		u8	yOverflow : 1,
+			xOverflow : 1,
+			ySign : 1,
+			xSign : 1,
+			: 1,
+			middleBtn : 1,
+			rightBtn : 1,
+			leftBtn : 1;
+		u8 all;
+	} status;
+	s8 xcoord;
+	s8 ycoord;
+} sMousePacket;
+
+/* the message we'll send */
+typedef struct {
+	sMsgHeader header;
+	sMsgDataMouse data;
+} __attribute__((packed)) sMsgMouse;
+
+static u8 byteNo = 0;
+static sMsgMouse msg = {
+	.header = {
+		.id = MSG_MOUSE,
+		.length = sizeof(sMsgDataMouse)
+	},
+	.data = {
+		.x = 0,
+		.y = 0,
+		.buttons = 0
+	}
+};
+static sMousePacket packet;
+static tFD selfFd;
+
+int main(int argc,char *argv[]) {
+	tServ id;
+
+	/* request io-ports */
+	if(requestIOPort(IOPORT_KB_CTRL) < 0 || requestIOPort(IOPORT_KB_DATA) < 0) {
+		printe("Unable to request io-ports");
+		return EXIT_FAILURE;
+	}
+
+	kb_init();
+
+	/* reg intrpt-handler */
+	if(setSigHandler(SIG_INTRPT_MOUSE,irqHandler) < 0) {
+		printe("Unable to announce interrupt-handler");
+		return EXIT_FAILURE;
+	}
+
+	/* reg service and open ourself */
+	id = regService("mouse",SERVICE_TYPE_SINGLEPIPE);
+	if(id < 0) {
+		printe("Unable to register service '%s'","mouse");
+		return EXIT_FAILURE;
+	}
+
+	selfFd = open("services:/mouse",IO_WRITE);
+	if(selfFd < 0) {
+		printe("Unable to open '%s'","services:/mouse");
+		return EXIT_FAILURE;
+	}
+
+	/* wait */
+	while(1)
+		wait(EV_NOEVENT);
+
+	/* cleanup */
+	close(selfFd);
+	releaseIOPort(IOPORT_KB_CTRL);
+	releaseIOPort(IOPORT_KB_DATA);
+	unsetSigHandler(SIG_INTRPT_MOUSE);
+	unregService(id);
+	return EXIT_SUCCESS;
+}
+
+static void irqHandler(tSig sig,u32 data) {
+	switch(byteNo) {
+		case 0:
+			packet.status.all = kb_readMouse();
+			byteNo++;
+			break;
+		case 1:
+			packet.xcoord = kb_readMouse();
+			byteNo++;
+			break;
+		case 2:
+			packet.ycoord = kb_readMouse();
+			byteNo = 0;
+			/* write the message in our send-queue */
+			msg.data.x = packet.xcoord;
+			msg.data.y = packet.ycoord;
+			msg.data.buttons = (packet.status.leftBtn << 2) |
+				(packet.status.rightBtn << 1) |
+				(packet.status.middleBtn << 0);
+			write(selfFd,&msg,sizeof(sMsgMouse));
+			break;
+	}
+}
+
+static void kb_init(void) {
+	/* activate mouse */
+	outByte(IOPORT_KB_CTRL,KBC_CMD_ENABLE_MOUSE);
+	kb_checkCmd();
+
+	/* put mouse in streaming mode */
+	kb_writeMouse(0xf4);
+
+	/* read cmd byte */
+	outByte(IOPORT_KB_CTRL,KBC_CMD_READ_STATUS);
+	kb_checkCmd();
+	u8 cmdByte = kb_read();
+	outByte(IOPORT_KB_CTRL,KBC_CMD_SET_STATUS);
+	kb_checkCmd();
+	cmdByte |= KBC_CMDBYTE_ENABLE_IRQ12 | KBC_CMDBYTE_ENABLE_IRQ1;
+	cmdByte &= ~KBC_CMDBYTE_DISABLE_KB;
+	outByte(IOPORT_KB_DATA,cmdByte);
+	kb_checkCmd();
+}
+
+static void kb_checkCmd(void) {
+	while(inByte(IOPORT_KB_CTRL) & KBC_STATUS_BUSY);
+}
+
+static u16 kb_read(void) {
+	u16 c = 0;
+	u8 status;
+	while(c++ < 0xFFFF && !((status = inByte(IOPORT_KB_CTRL)) & KBC_STATUS_DATA_AVAIL));
+	if(!(status & KBC_STATUS_DATA_AVAIL))
+		return 0xFF00;
+	return inByte(IOPORT_KB_DATA);
+}
+
+static u16 kb_readMouse(void) {
+	u16 c = 0;
+	u8 status;
+	while(c++ < 0xFFFF && !((status = inByte(IOPORT_KB_CTRL)) & KBC_STATUS_MOUSE_DATA_AVAIL));
+	if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
+		return 0xFF00;
+	return inByte(IOPORT_KB_DATA);
+}
+
+static u16 kb_writeMouse(u8 cmd) {
+	outByte(IOPORT_KB_CTRL,KBC_CMD_NEXT2MOUSE);
+	kb_checkCmd();
+	outByte(IOPORT_KB_DATA,cmd);
+	kb_checkCmd();
+	return kb_read();
+}

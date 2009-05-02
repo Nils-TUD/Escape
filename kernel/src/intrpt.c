@@ -253,7 +253,7 @@ static const char *intrptNo2Name[] = {
 	/* 0x29 */	"<unknown>",
 	/* 0x2A */	"<unknown>",
 	/* 0x2B */	"<unknown>",
-	/* 0x2C */	"<unknown>",
+	/* 0x2C */	"Mouse",
 	/* 0x2D */	"<unknown>",
 	/* 0x2E */	"ATA1",
 	/* 0x2F */	"ATA2",
@@ -281,7 +281,7 @@ static tSig irq2Signal[] = {
 	SIG_COUNT,
 	SIG_COUNT,
 	SIG_COUNT,
-	SIG_COUNT,
+	SIG_INTRPT_MOUSE,
 	SIG_COUNT,
 	SIG_INTRPT_ATA1,
 	SIG_INTRPT_ATA2
@@ -470,6 +470,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 	/* add signal */
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
+		case IRQ_MOUSE:
 		case IRQ_TIMER:
 		case IRQ_ATA1:
 		case IRQ_ATA2:
@@ -490,6 +491,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		case IRQ_KEYBOARD:
 		case IRQ_ATA1:
 		case IRQ_ATA2:
+		case IRQ_MOUSE:
 			/* don't print info about intrpt */
 			break;
 

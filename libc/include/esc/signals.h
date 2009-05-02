@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 
-#define SIG_COUNT			14
+#define SIG_COUNT			15
 
 /* the signals */
 #define SIG_KILL			0
@@ -39,6 +39,7 @@
 #define SIG_INTRPT_CMOS		11
 #define SIG_INTRPT_ATA1		12
 #define SIG_INTRPT_ATA2		13
+#define SIG_INTRPT_MOUSE	14
 
 /* signal-handler-signature */
 typedef void (*fSigHandler)(tSig sigNo,u32 data);

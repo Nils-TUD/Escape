@@ -18,15 +18,24 @@
  */
 
 #include <esc/common.h>
-#include <esc/mem.h>
+#include <esc/proc.h>
+#include <esc/messages.h>
+#include <esc/io.h>
+#include <esc/gui/application.h>
+#include <esc/gui/graphics.h>
+#include <esc/gui/window.h>
 #include <stdlib.h>
 
+using namespace esc::gui;
+
 int main(int argc,char *argv[]) {
-	u32 *addr = (u32*)joinSharedMem("vesa");
-	printf("addr=%p\n",addr);
-	/*while(1) {
-		*addr = 1;
-	}*/
-	leaveSharedMem("vesa");
-	return EXIT_SUCCESS;
+	// disable readline
+	printf("\033l\x0");
+
+	Application *app = Application::getInstance();
+	Window w1(100,100,400,300);
+	Window w2(250,250,150,200);
+	Window w3(50,50,40,40);
+	Window w4(110,90,200,100);
+	return app->run();
 }

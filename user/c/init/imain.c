@@ -124,6 +124,8 @@ int main(void) {
 	while(fd < 0);
 	close(fd);
 
+	/* TODO a blank behind a service-name in file:/etc/services causes a panic */
+
 	/* now read the services we should load */
 	servDefs = getServices();
 	if(servDefs == NULL) {

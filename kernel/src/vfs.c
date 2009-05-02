@@ -193,24 +193,26 @@ tVFSNodeNo vfs_getNodeNo(tFileNo file) {
 
 tFileNo vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo) {
 	sGFTEntry *e;
+	sVFSNode *n;
 
 	/* determine free file */
 	tFileNo f = vfs_getFreeFile(pid,flags,nodeNo);
 	if(f < 0)
 		return f;
 
-	/* count references of virtual nodes */
 	if(IS_VIRT(nodeNo)) {
 		s32 err;
-		sVFSNode *n = nodes + VIRT_INDEX(nodeNo);
+		n = nodes + VIRT_INDEX(nodeNo);
 		if((err = vfs_hasAccess(pid,nodeNo,flags)) < 0)
 			return err;
-		n->refCount++;
 	}
 
 	/* unused file? */
 	e = globalFileTable + f;
 	if(e->flags == 0) {
+		/* count references of virtual nodes */
+		if(IS_VIRT(nodeNo))
+			n->refCount++;
 		e->owner = pid;
 		e->flags = flags;
 		e->refCount = 1;
@@ -622,6 +624,31 @@ s32 vfs_getClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count) {
 			return NADDR_TO_VNNO(n);
 	}
 	return ERR_NO_CLIENT_WAITING;;
+}
+
+tFileNo vfs_openClientProc(tPid pid,tVFSNodeNo nodeNo,tPid clientId) {
+	sVFSNode *n,*node;
+	/* check if the node is valid */
+	if(!vfsn_isValidNodeNo(nodeNo))
+		return ERR_INVALID_NODENO;
+	node = nodes + nodeNo;
+	if(node->owner != pid || !(node->mode & MODE_TYPE_SERVICE) || node->mode & MODE_SERVICE_SINGLEPIPE)
+		return ERR_NOT_OWN_SERVICE;
+
+	/* search for a slot that needs work */
+	n = NODE_FIRST_CHILD(node);
+	while(n != NULL) {
+		if(n->owner == clientId)
+			break;
+		n = n->next;
+	}
+
+	/* not found? */
+	if(n == NULL)
+		return ERR_VFS_NODE_NOT_FOUND;
+
+	/* open file */
+	return vfs_openFile(pid,VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n));
 }
 
 tFileNo vfs_openClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servNode) {

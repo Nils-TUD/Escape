@@ -43,7 +43,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define SYSCALL_COUNT					36
+#define SYSCALL_COUNT					37
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode)		((stack)->ebx = (errorCode))
@@ -185,6 +185,14 @@ static void sysc_unregService(sIntrptStackFrame *stack);
  * @return tFD the file-descriptor to use
  */
 static void sysc_getClient(sIntrptStackFrame *stack);
+/**
+ * For services: Returns the file-descriptor for a specific client
+ *
+ * @param tServ the service-id
+ * @param tPid the process-id
+ * @return tFD the file-descriptor
+ */
+static void sysc_getClientProc(sIntrptStackFrame *stack);
 /**
  * Changes the process-size
  *
@@ -362,6 +370,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 33 */	{sysc_joinSharedMem,		1},
 	/* 34 */	{sysc_leaveSharedMem,		1},
 	/* 35 */	{sysc_destroySharedMem,		1},
+	/* 36 */	{sysc_getClientProc,		2},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -748,6 +757,45 @@ static void sysc_getClient(sIntrptStackFrame *stack) {
 
 	/* open a client */
 	file = vfs_openClient(p->pid,(tVFSNodeNo*)ids,count,(tVFSNodeNo*)client);
+	if(file < 0) {
+		SYSC_ERROR(stack,file);
+		return;
+	}
+
+	/* associate fd with file */
+	res = proc_assocFd(fd,file);
+	if(res < 0) {
+		/* we have already opened the file */
+		vfs_closeFile(file);
+		SYSC_ERROR(stack,res);
+		return;
+	}
+
+	SYSC_RET1(stack,fd);
+}
+
+static void sysc_getClientProc(sIntrptStackFrame *stack) {
+	tServ id = (tServ)SYSC_ARG1(stack);
+	tPid pid = (tPid)SYSC_ARG2(stack);
+	sProc *p = proc_getRunning();
+	tFD fd;
+	tFileNo file;
+	s32 res;
+
+	if(!proc_exists(pid)) {
+		SYSC_ERROR(stack,ERR_INVALID_PID);
+		return;
+	}
+
+	/* we need a file-desc */
+	fd = proc_getFreeFd();
+	if(fd < 0) {
+		SYSC_ERROR(stack,fd);
+		return;
+	}
+
+	/* open client */
+	file = vfs_openClientProc(p->pid,id,pid);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;
@@ -1248,7 +1296,6 @@ static void sysc_createSharedMem(sIntrptStackFrame *stack) {
 		return;
 	}
 
-	shm_dbg_print();
 	SYSC_RET1(stack,res * PAGE_SIZE);
 }
 
@@ -1267,7 +1314,6 @@ static void sysc_joinSharedMem(sIntrptStackFrame *stack) {
 		return;
 	}
 
-	shm_dbg_print();
 	SYSC_RET1(stack,res * PAGE_SIZE);
 }
 
@@ -1286,7 +1332,6 @@ static void sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 		return;
 	}
 
-	shm_dbg_print();
 	SYSC_RET1(stack,res);
 }
 
@@ -1305,7 +1350,6 @@ static void sysc_destroySharedMem(sIntrptStackFrame *stack) {
 		return;
 	}
 
-	shm_dbg_print();
 	SYSC_RET1(stack,res);
 }
 

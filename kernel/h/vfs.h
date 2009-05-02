@@ -230,6 +230,16 @@ bool vfs_msgAvailableFor(tPid pid,u8 events);
 s32 vfs_getClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count);
 
 /**
+ * Opens a file for the client with given process-id. This works just for multipipe-services!
+ *
+ * @param pid the own process-id
+ * @param nodeNo the service-node-number
+ * @param clientId the process-id of the desired client
+ * @return the file or a negative error-code
+ */
+tFileNo vfs_openClientProc(tPid pid,tVFSNodeNo nodeNo,tPid clientId);
+
+/**
  * Opens a file for a client of the given service-node
  *
  * @param pid the process to use

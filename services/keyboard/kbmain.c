@@ -34,7 +34,7 @@
 
 /* io-ports */
 #define IOPORT_PIC			0x20
-#define IOPORT_KB_CTRL		0x60
+#define IOPORT_KB_DATA		0x60
 
 /* ICW = initialisation command word */
 #define PIC_ICW1			0x20
@@ -61,8 +61,8 @@ int main(void) {
 		printe("Unable to request io-port %d",IOPORT_PIC);
 		return EXIT_FAILURE;
 	}
-	if(requestIOPort(IOPORT_KB_CTRL) < 0) {
-		printe("Unable to request io-port",IOPORT_KB_CTRL);
+	if(requestIOPort(IOPORT_KB_DATA) < 0) {
+		printe("Unable to request io-port",IOPORT_KB_DATA);
 		return EXIT_FAILURE;
 	}
 
@@ -80,8 +80,8 @@ int main(void) {
 	}
 
     /* reset keyboard */
-    outByte(IOPORT_KB_CTRL,0xff);
-    while(inByte(IOPORT_KB_CTRL) != 0xaa)
+    outByte(IOPORT_KB_DATA,0xff);
+    while(inByte(IOPORT_KB_DATA) != 0xaa)
     	yield();
 
 	/* we don't want to be waked up. we'll get signals anyway */
@@ -92,7 +92,7 @@ int main(void) {
 	unsetSigHandler(SIG_INTRPT_KB);
 	close(selfFd);
 	releaseIOPort(IOPORT_PIC);
-	releaseIOPort(IOPORT_KB_CTRL);
+	releaseIOPort(IOPORT_KB_DATA);
 	unregService(id);
 
 	return EXIT_SUCCESS;
@@ -102,7 +102,7 @@ static void kbIntrptHandler(tSig sig,u32 data) {
 	UNUSED(sig);
 	UNUSED(data);
 	static sMsgKbResponse resp;
-	u8 scanCode = inByte(IOPORT_KB_CTRL);
+	u8 scanCode = inByte(IOPORT_KB_DATA);
 	if(kb_set1_getKeycode(&resp,scanCode)) {
 		/* write in receive-pipe */
 		write(selfFd,&resp,sizeof(sMsgKbResponse));

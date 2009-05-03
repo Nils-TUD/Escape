@@ -465,6 +465,8 @@ static void sysc_fork(sIntrptStackFrame *stack) {
 static void sysc_exit(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	sProc *p = proc_getRunning();
+	if(SYSC_ARG1(stack) != 0)
+		util_printStackTrace(util_getUserStackTrace(p,stack));
 	/*vid_printf("Process %d exited with exit-code %d\n",p->pid,SYSC_ARG1(stack));*/
 	proc_destroy(p);
 	proc_switch();

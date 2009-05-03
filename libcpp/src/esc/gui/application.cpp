@@ -105,7 +105,7 @@ namespace esc {
 						if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {
 							Window *w = getWindowById(data.window);
 							if(w) {
-								KeyEvent e(data.keycode);
+								KeyEvent e(data.keycode,data.character,data.modifier);
 								if(data.isBreak)
 									w->onKeyReleased(e);
 								else

@@ -36,7 +36,7 @@ namespace esc {
 
 		public:
 			Button(const String &text,tCoord x,tCoord y,tSize width,tSize height)
-				: Control(x,y,width,height), _pressed(false), _text(text) {
+				: Control(x,y,width,height), _focused(false), _pressed(false), _text(text) {
 
 			};
 			virtual ~Button() {
@@ -54,11 +54,14 @@ namespace esc {
 				paint();
 			};
 
+			virtual void onFocusGained();
+			virtual void onFocusLost();
 			virtual void onMousePressed(const MouseEvent &e);
 			virtual void onMouseReleased(const MouseEvent &e);
 			virtual void paint();
 
 		private:
+			bool _focused;
 			bool _pressed;
 			String _text;
 		};

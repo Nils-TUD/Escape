@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: keymap.ger.h 202 2009-04-11 16:07:24Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,38 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ASSERT_H_
-#define ASSERT_H_
+#ifndef KEYMAP_GER_H_
+#define KEYMAP_GER_H_
 
-#if IN_KERNEL
-#	include <util.h>
-#else
-#	include <esc/debug.h>
-#	include <esc/proc.h>
-#endif
+#include <esc/common.h>
+#include "keymap.h"
 
-#ifndef NDEBUG
+/**
+ * Returns the keymap-entry for the given keycode or NULL if the keycode is invalid
+ *
+ * @param keycode the keycode
+ * @return the keymap-entry
+ */
+sKeymapEntry *keymap_ger_get(u8 keyCode);
 
-#	define assert(cond) vassert(cond,"")
-
-#	if IN_KERNEL
-#		define vassert(cond,errorMsg,...) do { if(!(cond)) { \
-			util_panic("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
-				__LINE__,## __VA_ARGS__); \
-		} } while(0);
-#	else
-#		define vassert(cond,errorMsg,...) do { if(!(cond)) { \
-			printe("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
-				__LINE__,## __VA_ARGS__); \
-			exit(1); \
-		} } while(0);
-#	endif
-
-#else
-
-#	define assert(cond)
-#	define vassert(cond,errorMsg,...)
-
-#endif
-
-#endif /* ASSERT_H_ */
+#endif /* KEYMAP_GER_H_ */

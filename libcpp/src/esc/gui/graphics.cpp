@@ -41,7 +41,7 @@ namespace esc {
 			}
 		}
 
-		void Graphics::drawString(tCoord x,tCoord y,String str) {
+		void Graphics::drawString(tCoord x,tCoord y,const String &str) {
 			for(u32 i = 0; i < str.length(); i++) {
 				drawChar(x,y,str[i]);
 				x += _font.getWidth();
@@ -125,23 +125,11 @@ namespace esc {
 			tCoord yend = y + height;
 			updateMinMax(x,y);
 			updateMinMax(x + width - 1,yend - 1);
-			if(_col == 0) {
-				u8 *mem = _pixels + y * _width + x;
-				u32 psize = _pixel->getPixelSize();
-				u32 inc = _width * psize;
-				u32 count = width * psize;
-				for(; y < yend; y++) {
-					memset(mem,_col,count);
-					mem += inc;
-				}
-			}
-			else {
-				tCoord xcur;
-				tCoord xend = x + width;
-				for(; y < yend; y++) {
-					for(xcur = x; xcur < xend; xcur++)
-						doSetPixel(xcur,y);
-				}
+			tCoord xcur;
+			tCoord xend = x + width;
+			for(; y < yend; y++) {
+				for(xcur = x; xcur < xend; xcur++)
+					doSetPixel(xcur,y);
 			}
 		}
 

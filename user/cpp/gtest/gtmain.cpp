@@ -24,6 +24,7 @@
 #include <esc/gui/application.h>
 #include <esc/gui/window.h>
 #include <esc/gui/button.h>
+#include <esc/gui/editable.h>
 #include <stdlib.h>
 
 using namespace esc::gui;
@@ -35,6 +36,8 @@ int main(void) {
 	Window w3("Fenster 3",50,50,100,40);
 	Window w4("Fenster 4",180,90,200,100);
 	Button b("Click me!!",10,10,80,20);
+	Editable e(10,40,200,20);
 	w1.add(b);
+	w1.add(e);
 	return app->run();
 }

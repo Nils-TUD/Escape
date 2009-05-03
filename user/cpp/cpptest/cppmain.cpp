@@ -45,6 +45,7 @@ void my::doIt() {
 }
 
 int main(void) {
+#if 0
 	char str[10];
 	char buffer[1024];
 	char *test = "ein test";
@@ -91,6 +92,25 @@ int main(void) {
 	for(u32 i = 0; i < v2.size(); i++) {
 		out << i << ": " << v2[i] << endl;
 	}
+#endif
+	String s1 = "abc";
+	String s2 = "def";
+	String s3 = "ghi";
+	String s4("testtest");
+	s1.erase(1);
+	s2.erase(0);
+	s3.erase(1,1);
+	s4.erase(4,3);
+	/*s1.insert(0,s2);
+	s1.insert(1,'a');
+	s1.insert(4,"blub");
+	s2.insert(3,"vier");
+	s3.insert(5,'b');
+	s3.insert(2,"hier");*/
+	out << s1 << endl;
+	out << s2 << endl;
+	out << s3 << endl;
+	out << s4 << endl;
 
 	/*unsigned int a = 0;
 	a++;

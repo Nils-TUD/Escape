@@ -17,46 +17,49 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CONTROL_H_
-#define CONTROL_H_
+#ifndef EDITABLE_H_
+#define EDITABLE_H_
 
 #include <esc/common.h>
 #include <esc/gui/common.h>
-#include <esc/gui/uielement.h>
+#include <esc/gui/control.h>
 
 namespace esc {
 	namespace gui {
-		class Window;
-
-		class Control : public UIElement {
-			friend class Window;
+		class Editable : public Control {
+		public:
+			static const u32 PADDING = 3;
+			static const u32 CURSOR_WIDTH = 2;
+			static const u32 CURSOR_OVERLAP = 2;
 
 		public:
-			Control(tCoord x,tCoord y,tSize width,tSize height)
-				: UIElement(x,y,width,height), _w(NULL) {
-
+			Editable(tCoord x,tCoord y,tSize width,tSize height)
+				: Control(x,y,width,height), _cursor(0), _focused(false), _str(String()) {
 			};
-			virtual ~Control() {
-
+			virtual ~Editable() {
 			};
 
+			inline String getText() const {
+				return _str;
+			};
+			inline void setText(const String &text) {
+				_str = text;
+				_cursor = text.length();
+				paint();
+			};
+
+			virtual void paint();
 			virtual void onFocusGained();
 			virtual void onFocusLost();
-			virtual void onMouseMoved(const MouseEvent &e);
-			virtual void onMouseReleased(const MouseEvent &e);
-			virtual void onMousePressed(const MouseEvent &e);
 			virtual void onKeyPressed(const KeyEvent &e);
 			virtual void onKeyReleased(const KeyEvent &e);
 
-			virtual void paint();
-
 		private:
-			void setWindow(Window *w);
-
-		private:
-			Window *_w;
+			u32 _cursor;
+			bool _focused;
+			String _str;
 		};
 	}
 }
 
-#endif /* CONTROL_H_ */
+#endif /* EDITABLE_H_ */

@@ -23,6 +23,8 @@
 #include <esc/common.h>
 #include <esc/gui/common.h>
 #include <esc/gui/graphics.h>
+#include <esc/keycodes.h>
+#include <ctype.h>
 
 namespace esc {
 	namespace gui {
@@ -78,8 +80,8 @@ namespace esc {
 		// TODO we have to translate the keycode to ASCII
 		class KeyEvent {
 		public:
-			KeyEvent(u8 keycode)
-				: _keycode(keycode) {
+			KeyEvent(u8 keycode,char character,u8 modifier)
+				: _keycode(keycode), _character(character), _modifier(modifier) {
 			};
 			~KeyEvent() {
 			};
@@ -87,9 +89,26 @@ namespace esc {
 			inline u8 getKeyCode() const {
 				return _keycode;
 			};
+			inline char getCharacter() const {
+				return _character;
+			};
+			inline bool isPrintable() const {
+				return isprint(_character);
+			};
+			inline bool isShiftDown() const {
+				return _modifier & SHIFT_MASK;
+			};
+			inline bool isCtrlDown() const {
+				return _modifier & CTRL_MASK;
+			};
+			inline bool isAltDown() const {
+				return _modifier & ALT_MASK;
+			};
 
 		private:
 			u8 _keycode;
+			char _character;
+			u8 _modifier;
 		};
 
 		class UIElement {

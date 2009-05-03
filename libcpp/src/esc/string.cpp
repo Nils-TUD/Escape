@@ -23,6 +23,36 @@
 #include <string.h>
 
 namespace esc {
+	String::String()
+		: _str(new char[initSize]), _length(0), _size(initSize) {
+	}
+
+	String::String(const String &s) {
+		_str = new char[s._size];
+		strcpy(_str,s._str);
+		_length = s._length;
+		_size = s._size;
+	}
+
+	String::String(const char *s) {
+		if(s != NULL) {
+			u32 len = strlen(s);
+			_str = new char[len + 1];
+			strcpy(_str,s);
+			_length = len;
+			_size = len + 1;
+		}
+		else {
+			_str = new char[initSize];
+			_length = 0;
+			_size = initSize;
+		}
+	}
+
+	String::~String() {
+		delete _str;
+	}
+
 	u32 String::find(char c,u32 offset) const {
 		char *start = _str + offset;
 		char *res = strchr(start,c);
@@ -32,11 +62,68 @@ namespace esc {
 	}
 
 	u32 String::find(const char *sub,u32 offset) const {
+		if(sub == NULL)
+			return npos;
 		char *start = _str + offset;
 		char *res = strstr(start,sub);
 		if(res)
 			return res - start;
 		return npos;
+	}
+
+	void String::insert(u32 offset,char c) {
+		if(offset == _length)
+			operator +=(c);
+		else if(offset < _length) {
+			increaseSize(_length + 1);
+			memmove(_str + offset + 1,_str + offset,1 + _length - offset);
+			_str[offset] = c;
+			_length++;
+		}
+	}
+
+	void String::insert(u32 offset,const char *s) {
+		if(offset == _length)
+			operator +=(s);
+		else if(offset < _length) {
+			u32 len = ::strlen(s);
+			increaseSize(_length + len);
+			memmove(_str + offset + len,_str + offset,_length - offset);
+			memcpy(_str + offset,s,len);
+			_length += len;
+		}
+	}
+
+	void String::insert(u32 offset,const String &s) {
+		if(offset == _length)
+			operator +=(s);
+		else if(offset < _length) {
+			increaseSize(_length + s._length);
+			memmove(_str + offset + s._length,_str + offset,_length - offset);
+			memcpy(_str + offset,s._str,s._length);
+			_length += s._length;
+		}
+	}
+
+	void String::erase(u32 offset,u32 count) {
+		if(offset < _length) {
+			count = MIN(_length - offset,count);
+			if(count == 0)
+				return;
+			/* something behind? */
+			if(_length - offset - count > 0)
+				memmove(_str + offset,_str + offset + count,_length - offset - count);
+			_length -= count;
+			_str[_length] = '\0';
+		}
+	}
+
+	String &String::operator=(const String &s) {
+		_str = new char[s._size];
+		strcpy(_str,s._str);
+		_length = s._length;
+		_size = s._size;
+		return *this;
 	}
 
 	String &String::operator+=(char c) {
@@ -47,6 +134,8 @@ namespace esc {
 	}
 
 	String &String::operator+=(const char *s) {
+		if(s == NULL)
+			return *this;
 		u32 len = ::strlen(s);
 		increaseSize(_length + len);
 		::strcpy(_str + _length,s);
@@ -61,28 +150,14 @@ namespace esc {
 		return *this;
 	}
 
-	bool String::operator==(const String &s) const {
-		return _length == s._length && strcmp(_str,s._str) == 0;
-	}
-
-	bool String::operator!=(const String &s) const {
-		return _length != s._length || strcmp(_str,s._str) != 0;
-	}
-
-	char String::operator[](u32 index) const {
-		return _str[index];
-	}
-
 	void String::increaseSize(u32 min) {
 		char *cpy;
 		// we need a null-termination
 		if(_size < min + 1) {
-			_size = MAX(min,_size * 2);
+			_size = MAX(min + 1,_size * 2);
 			cpy = new char[_size];
-			if(_str) {
-				::strcpy(cpy,_str);
-				delete _str;
-			}
+			::strcpy(cpy,_str);
+			delete _str;
 			_str = cpy;
 		}
 	}

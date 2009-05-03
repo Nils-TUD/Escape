@@ -215,7 +215,7 @@ namespace esc {
 				return _bpp;
 			};
 			void drawChar(tCoord x,tCoord y,char c);
-			void drawString(tCoord x,tCoord y,String str);
+			void drawString(tCoord x,tCoord y,const String &str);
 			void drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn);
 			void drawRect(tCoord x,tCoord y,tSize width,tSize height);
 			void fillRect(tCoord x,tCoord y,tSize width,tSize height);

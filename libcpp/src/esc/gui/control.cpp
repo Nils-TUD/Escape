@@ -31,6 +31,13 @@ namespace esc {
 			_g = new Graphics(*_w->getGraphics(),getX(),getY() + _w->getTitleBarHeight());
 		}
 
+		void Control::onFocusGained() {
+			// do nothing by default
+		}
+		void Control::onFocusLost() {
+			// do nothing by default
+		}
+
 		void Control::onMouseMoved(const MouseEvent &e) {
 			// do nothing by default
 			UNUSED(e);

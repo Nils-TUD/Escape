@@ -20,6 +20,10 @@
 #ifndef KEYCODES_H_
 #define KEYCODES_H_
 
+#define SHIFT_MASK		1
+#define CTRL_MASK		2
+#define ALT_MASK		4
+
 #define VK_ACCENT		1
 #define VK_0			2
 #define VK_1			3

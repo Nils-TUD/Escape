@@ -102,6 +102,7 @@ namespace esc {
 			String _title;
 			tSize _titleBarHeight;
 			bool _inTitle;
+			s32 _focus;
 			Vector<Control*> _controls;
 		};
 	}

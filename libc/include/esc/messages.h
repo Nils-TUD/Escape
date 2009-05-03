@@ -170,10 +170,12 @@ typedef struct {
 
 /* the window-manager key-message */
 typedef struct {
-	/* the keycode (see keycodes.h) */
-	u8 keycode;
 	/* wether the key was released */
 	u8 isBreak;
+	/* the keycode (see keycodes.h) */
+	u8 keycode;
+	char character;
+	u8 modifier;
 	u16 window;
 } sMsgDataWinKeyboard;
 

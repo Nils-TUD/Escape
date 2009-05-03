@@ -36,7 +36,7 @@ namespace esc {
 
 		Window::Window(const String &title,tCoord x,tCoord y,tSize width,tSize height)
 			: UIElement(x,y,width,height), _title(title), _titleBarHeight(20), _inTitle(false),
-				_controls(Vector<Control*>()) {
+				_focus(-1), _controls(Vector<Control*>()) {
 			_g = new Graphics(x,y,width,height,Application::getInstance()->getColorDepth());
 
 			// create window
@@ -103,14 +103,32 @@ namespace esc {
 		}
 
 		void Window::passToCtrl(const KeyEvent &e,u8 event) {
-			// TODO use focused control
-			if(_controls.size() > 0) {
+			/* handle focus-change */
+			if(event == KEY_RELEASED && e.getKeyCode() == VK_TAB) {
+				s32 old = _focus;
+				if(_focus == -1)
+					_focus = 0;
+				else if(e.isShiftDown())
+					_focus = (_focus - 1) % _controls.size();
+				else
+					_focus = (_focus + 1) % _controls.size();
+
+				if(old != _focus) {
+					if(old >= 0)
+						_controls[old]->onFocusLost();
+					_controls[_focus]->onFocusGained();
+				}
+				return;
+			}
+
+			/* pass event to focused control */
+			if(_focus < _controls.size()) {
 				switch(event) {
 					case KEY_PRESSED:
-						_controls[0]->onKeyPressed(e);
+						_controls[_focus]->onKeyPressed(e);
 						break;
 					case KEY_RELEASED:
-						_controls[0]->onKeyReleased(e);
+						_controls[_focus]->onKeyReleased(e);
 						break;
 				}
 			}
@@ -176,6 +194,7 @@ namespace esc {
 		}
 
 		void Window::paint() {
+			/* paint titlebar */
 			_g->setColor(BGCOLOR);
 			_g->fillRect(0,_titleBarHeight,getWidth(),getHeight());
 			_g->setColor(TITLE_BGCOLOR);
@@ -185,8 +204,18 @@ namespace esc {
 			_g->setColor(BORDER_COLOR);
 			_g->drawLine(0,_titleBarHeight,getWidth(),_titleBarHeight);
 			_g->drawRect(0,0,getWidth(),getHeight());
+
+			/* first, focus a control, if not already done */
+			if(_focus == -1 && _controls.size() > 0) {
+				_focus = 0;
+				_controls[_focus]->onFocusGained();
+			}
+
+			/* now paint controls */
 			for(u32 i = 0; i < _controls.size(); i++)
 				_controls[i]->paint();
+
+			/* write stuff to video-mem */
 			_g->update();
 		}
 

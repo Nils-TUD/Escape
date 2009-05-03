@@ -29,6 +29,15 @@ namespace esc {
 		Color Button::LIGHT_BORDER_COLOR = Color(0x60,0x60,0x60);
 		Color Button::DARK_BORDER_COLOR = Color(0x20,0x20,0x20);
 
+		void Button::onFocusGained() {
+			_focused = true;
+			paint();
+		}
+		void Button::onFocusLost() {
+			_focused = false;
+			paint();
+		}
+
 		void Button::onMousePressed(const MouseEvent &e) {
 			UNUSED(e);
 			if(!_pressed) {
@@ -36,7 +45,6 @@ namespace esc {
 				paint();
 			}
 		}
-
 		void Button::onMouseReleased(const MouseEvent &e) {
 			UNUSED(e);
 			if(_pressed) {
@@ -53,11 +61,19 @@ namespace esc {
 
 			_g->setColor(LIGHT_BORDER_COLOR);
 			_g->drawLine(0,0,getWidth() - 1,0);
+			if(_focused)
+				_g->drawLine(0,1,getWidth() - 1,1);
 			_g->drawLine(0,0,0,getHeight() - 1);
+			if(_focused)
+				_g->drawLine(1,0,1,getHeight() - 1);
 
 			_g->setColor(DARK_BORDER_COLOR);
 			_g->drawLine(getWidth() - 1,0,getWidth() - 1,getHeight() - 1);
+			if(_focused)
+				_g->drawLine(getWidth() - 2,0,getWidth() - 2,getHeight() - 1);
 			_g->drawLine(0,getHeight() - 1,getWidth() - 1,getHeight() - 1);
+			if(_focused)
+				_g->drawLine(0,getHeight() - 2,getWidth() - 1,getHeight() - 2);
 
 			_g->setColor(FGCOLOR);
 			if(_pressed) {

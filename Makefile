@@ -5,8 +5,8 @@ HDD=$(BUILD)/hd.img
 VBHDDTMP=$(BUILD)/vbhd.bin
 VBHDD=$(BUILD)/vbhd.vdi
 HDDBAK=$(BUILD)/hd.img.bak
-# 5 MB disk (10 * 16 * 63 * 512 = 5,160,960 byte)
-HDDCYL=10
+# 10 MB disk (20 * 16 * 63 * 512 = 10,321,920 byte)
+HDDCYL=20
 HDDHEADS=16
 HDDTRACKSECS=63
 TMPFILE=$(BUILD)/disktmp
@@ -81,7 +81,7 @@ createhdd: $(DISKMOUNT) clean
 		sudo losetup -d /dev/loop0
 		sudo losetup -o`expr $(HDDTRACKSECS) \* 512` /dev/loop0 $(HDD)
 		@# WE HAVE TO CHANGE THE BLOCK-COUNT HERE IF THE DISK-GEOMETRY CHANGES!
-		sudo mke2fs -r0 -Onone -b1024 /dev/loop0 5008
+		sudo mke2fs -r0 -Onone -b1024 /dev/loop0 10016
 		sudo umount /dev/loop0 || true
 		sudo losetup -d /dev/loop0 || true
 		@# add boot stuff

@@ -133,5 +133,6 @@
 #define VK_ESC_RESET	'r'
 #define VK_ESC_SET_RL	'l'
 #define VK_ESC_SET_ECHO	'e'
+#define VK_ESC_KEYBOARD	'k'
 
 #endif /* KEYCODES_H_ */

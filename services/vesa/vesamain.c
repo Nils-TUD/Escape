@@ -93,12 +93,10 @@ int main(void) {
 	tServ id;
 	tServ client;
 
-	if(requestIOPort(VBE_DISPI_IOPORT_INDEX) < 0) {
-		printe("Unable to request io-port %d",VBE_DISPI_IOPORT_INDEX);
-		return EXIT_FAILURE;
-	}
-	if(requestIOPort(VBE_DISPI_IOPORT_DATA) < 0) {
-		printe("Unable to request io-port %d",VBE_DISPI_IOPORT_DATA);
+	/* request ports; note that we read/write words to them, so we have to request 3 ports */
+	if(requestIOPorts(VBE_DISPI_IOPORT_INDEX,3) < 0) {
+		printe("Unable to request io-ports %d..%d",VBE_DISPI_IOPORT_INDEX,
+				VBE_DISPI_IOPORT_INDEX + 2);
 		return EXIT_FAILURE;
 	}
 
@@ -172,8 +170,7 @@ int main(void) {
 	unregService(id);
 	free(cursorCopy);
 	destroySharedMem("vesa");
-	releaseIOPort(VBE_DISPI_IOPORT_DATA);
-	releaseIOPort(VBE_DISPI_IOPORT_INDEX);
+	releaseIOPorts(VBE_DISPI_IOPORT_INDEX,3);
 	return EXIT_SUCCESS;
 }
 
@@ -248,7 +245,7 @@ static void vbe_setCursor(tCoord x,tCoord y) {
 
 static void vbe_drawCross(tCoord x,tCoord y) {
 	tColor color = CURSOR_COLOR;
-	u8 *mid = video + (y * RESOLUTION_X + x) * PIXEL_SIZE;
+	u8 *mid = (u8*)video + (y * RESOLUTION_X + x) * PIXEL_SIZE;
 
 	/* draw pixel at cursor */
 	if(x < RESOLUTION_X && y < RESOLUTION_Y)

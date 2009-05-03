@@ -24,6 +24,7 @@
 #include <esc/service.h>
 #include <esc/fileio.h>
 #include <esc/messages.h>
+#include <esc/lock.h>
 #include <stdlib.h>
 
 /* FIXME: THIS MAY CAUSE TROUBLE SINCE WE'RE USING AN IO-PORT THAT IS USED BY THE
@@ -37,8 +38,12 @@
 
 #define KBC_CMD_READ_STATUS			0x20
 #define KBC_CMD_SET_STATUS			0x60
+#define KBC_CMD_DISABLE_MOUSE		0xA7
 #define KBC_CMD_ENABLE_MOUSE		0xA8
+#define KBC_CMD_DISABLE_KEYBOARD	0xAD
+#define KBC_CMD_ENABLE_KEYBOARD		0xAE
 #define KBC_CMD_NEXT2MOUSE			0xD4
+#define MOUSE_CMD_STREAMING			0xF4
 
 /* bits of the status-byte */
 #define KBC_STATUS_DATA_AVAIL		(1 << 0)
@@ -54,6 +59,8 @@
 #define KBC_CMDBYTE_DISABLE_KB		(1 << 4)
 #define KBC_CMDBYTE_ENABLE_IRQ12	(1 << 1)
 #define KBC_CMDBYTE_ENABLE_IRQ1		(1 << 0)
+
+#define KB_MOUSE_LOCK				0x1
 
 static void irqHandler(tSig sig,u32 data);
 static void kb_init(void);
@@ -100,7 +107,7 @@ static sMsgMouse msg = {
 static sMousePacket packet;
 static tFD selfFd;
 
-int main(int argc,char *argv[]) {
+int main(void) {
 	tServ id;
 
 	/* request io-ports */
@@ -144,19 +151,26 @@ int main(int argc,char *argv[]) {
 }
 
 static void irqHandler(tSig sig,u32 data) {
+	UNUSED(sig);
+	UNUSED(data);
+	/* check if there is mouse-data */
+	u8 status = inByte(IOPORT_KB_CTRL);
+	if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
+		return;
+
 	switch(byteNo) {
 		case 0:
-			packet.status.all = kb_readMouse();
+			packet.status.all = inByte(IOPORT_KB_DATA);
 			byteNo++;
 			break;
 		case 1:
-			packet.xcoord = kb_readMouse();
+			packet.xcoord = inByte(IOPORT_KB_DATA);
 			byteNo++;
 			break;
 		case 2:
-			packet.ycoord = kb_readMouse();
+			packet.ycoord = inByte(IOPORT_KB_DATA);
 			byteNo = 0;
-			/* write the message in our send-queue */
+			/* write the message in our receive-pipe*/
 			msg.data.x = packet.xcoord;
 			msg.data.y = packet.ycoord;
 			msg.data.buttons = (packet.status.leftBtn << 2) |
@@ -173,7 +187,7 @@ static void kb_init(void) {
 	kb_checkCmd();
 
 	/* put mouse in streaming mode */
-	kb_writeMouse(0xf4);
+	kb_writeMouse(MOUSE_CMD_STREAMING);
 
 	/* read cmd byte */
 	outByte(IOPORT_KB_CTRL,KBC_CMD_READ_STATUS);

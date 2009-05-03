@@ -17,44 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CONTROL_H_
-#define CONTROL_H_
+#ifndef LOCK_H_
+#define LOCK_H_
 
-#include <esc/common.h>
-#include <esc/gui/common.h>
-#include <esc/gui/uielement.h>
+#include "common.h"
 
-namespace esc {
-	namespace gui {
-		class Window;
+/**
+ * Aquires the lock with ident. If it exists and is locked, the process waits until it's unlocked
+ *
+ * @param ident to identify the lock
+ * @return 0 on success
+ */
+s32 lock(u32 ident);
 
-		class Control : public UIElement {
-			friend class Window;
+/**
+ * Releases the lock with given ident
+ *
+ * @param ident to identify the lock
+ * @return 0 on success
+ */
+s32 unlock(u32 ident);
 
-		public:
-			Control(tCoord x,tCoord y,tSize width,tSize height)
-				: UIElement(x,y,width,height), _w(NULL) {
-
-			};
-			virtual ~Control() {
-
-			};
-
-			virtual void onMouseMoved(const MouseEvent &e);
-			virtual void onMouseReleased(const MouseEvent &e);
-			virtual void onMousePressed(const MouseEvent &e);
-			virtual void onKeyPressed(const KeyEvent &e);
-			virtual void onKeyReleased(const KeyEvent &e);
-
-			virtual void paint();
-
-		private:
-			void setWindow(Window *w);
-
-		private:
-			Window *_w;
-		};
-	}
-}
-
-#endif /* CONTROL_H_ */
+#endif /* LOCK_H_ */

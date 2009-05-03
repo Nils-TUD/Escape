@@ -36,6 +36,7 @@
 #include <timer.h>
 #include <text.h>
 #include <sharedmem.h>
+#include <lock.h>
 #include <string.h>
 #include <assert.h>
 #include <errors.h>
@@ -43,7 +44,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define SYSCALL_COUNT					37
+#define SYSCALL_COUNT					39
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode)		((stack)->ebx = (errorCode))
@@ -323,6 +324,20 @@ static void sysc_leaveSharedMem(sIntrptStackFrame *stack);
  * @return s32 the address on success, negative error-code otherwise
  */
 static void sysc_destroySharedMem(sIntrptStackFrame *stack);
+/**
+ * Aquire a lock; wait until its unlocked, if necessary
+ *
+ * @param ident the lock-ident
+ * @return s32 0 on success
+ */
+static void sysc_lock(sIntrptStackFrame *stack);
+/**
+ * Releases a lock
+ *
+ * @param ident the lock-ident
+ * @return s32 0 on success
+ */
+static void sysc_unlock(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -371,6 +386,8 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 34 */	{sysc_leaveSharedMem,		1},
 	/* 35 */	{sysc_destroySharedMem,		1},
 	/* 36 */	{sysc_getClientProc,		2},
+	/* 37 */	{sysc_lock,					1},
+	/* 38 */	{sysc_unlock,				1},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -1350,6 +1367,31 @@ static void sysc_destroySharedMem(sIntrptStackFrame *stack) {
 		return;
 	}
 
+	SYSC_RET1(stack,res);
+}
+
+static void sysc_lock(sIntrptStackFrame *stack) {
+	u32 ident = SYSC_ARG1(stack);
+	sProc *p = proc_getRunning();
+	s32 res;
+
+	res = lock_aquire(p->pid,ident);
+	if(res < 0) {
+		SYSC_ERROR(stack,res);
+		return;
+	}
+	SYSC_RET1(stack,res);
+}
+
+static void sysc_unlock(sIntrptStackFrame *stack) {
+	u32 ident = SYSC_ARG1(stack);
+	s32 res;
+
+	res = lock_release(ident);
+	if(res < 0) {
+		SYSC_ERROR(stack,res);
+		return;
+	}
 	SYSC_RET1(stack,res);
 }
 

@@ -178,6 +178,7 @@ s32 proc_requestIOPorts(u16 start,u16 count) {
 		p->ioMap = (u8*)kheap_alloc(IO_MAP_SIZE / 8);
 		if(p->ioMap == NULL)
 			return ERR_NOT_ENOUGH_MEM;
+		memset(p->ioMap,0xFFFFFFFF,IO_MAP_SIZE / 8);
 	}
 
 	/* 0xF8 .. 0xFF is reserved */
@@ -657,6 +658,20 @@ void proc_dbg_print(sProc *p) {
 	}
 	proc_dbg_printState(&p->save);
 	vid_printf("\n");
+}
+
+void proc_dbg_printIOMap(u8 *map) {
+	u32 i,j,c = 0;
+	vid_printf("Reserved IO-ports:\n\t");
+	for(i = 0; i < IO_MAP_SIZE / 8; i++) {
+		for(j = 0; j < 8; j++) {
+			if(!(map[i] & (1 << j))) {
+				vid_printf("%x, ",i * 8 + j);
+				if(++c % 10 == 0)
+					vid_printf("\n\t");
+			}
+		}
+	}
 }
 
 void proc_dbg_printState(sProcSave *state) {

@@ -21,6 +21,7 @@
 #include <esc/fileio.h>
 #include <esc/io.h>
 #include <esc/mem.h>
+#include <esc/debug.h>
 #include <esc/service.h>
 #include <esc/messages.h>
 #include <esc/rect.h>
@@ -61,6 +62,11 @@ typedef struct {
 	sMsgHeader header;
 	sMsgDataVesaCursor data;
 } __attribute__((packed)) sMsgVesaCursor;
+
+typedef struct {
+	sMsgHeader header;
+	sMsgDataWinKeyboard data;
+} __attribute__((packed)) sMsgKeyboard;
 
 typedef struct {
 	s16 x;
@@ -112,6 +118,12 @@ static sMsgVesaCursor cursorMsg = {
 		.length = sizeof(sMsgDataVesaCursor)
 	}
 };
+static sMsgKeyboard keyboardMsg = {
+	.header = {
+		.id = MSG_WIN_KEYBOARD,
+		.length = sizeof(sMsgKbResponse)
+	}
+};
 
 static u8 *shmem;
 static tFD vesa;
@@ -130,7 +142,7 @@ static sWindow windows[WINDOW_COUNT];
 int main(void) {
 	sMsgHeader header;
 	sMsgDataMouse mouseData;
-	tFD mouse;
+	tFD mouse,keyboard;
 	tServ client;
 
 	tWinId i;
@@ -176,12 +188,19 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
+	keyboard = open("services:/keyboard",IO_READ);
+	if(keyboard < 0) {
+		printe("Unable to open services:/keyboard");
+		return EXIT_FAILURE;
+	}
+
 	servId = regService("winmanager",SERVICE_TYPE_MULTIPIPE);
 	if(servId < 0) {
 		printe("Unable to create service winmanager");
 		return EXIT_FAILURE;
 	}
 
+	u32 c = 0;
 	while(1) {
 		tFD fd = getClient(&servId,1,&client);
 		if(fd >= 0) {
@@ -253,11 +272,29 @@ int main(void) {
 				}
 			}
 		}
+		/* don't use the blocking read() here */
+		else if(!eof(keyboard)) {
+			sMsgKbResponse keycode;
+			if(read(keyboard,&keycode,sizeof(sMsgKbResponse)) == sizeof(sMsgKbResponse)) {
+				/* send to active window */
+				if(activeWindow != WINDOW_COUNT) {
+					tFD aWin = getClientProc(servId,windows[activeWindow].owner);
+					if(aWin >= 0) {
+						keyboardMsg.data.keycode = keycode.keycode;
+						keyboardMsg.data.isBreak = keycode.isBreak;
+						keyboardMsg.data.window = activeWindow;
+						write(aWin,&keyboardMsg,sizeof(keyboardMsg));
+						close(aWin);
+					}
+				}
+			}
+		}
 		else
 			wait(EV_RECEIVED_MSG | EV_CLIENT);
 	}
 
 	unregService(servId);
+	close(keyboard);
 	close(mouse);
 	close(vesa);
 	return EXIT_SUCCESS;

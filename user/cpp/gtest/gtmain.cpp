@@ -17,44 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CONTROL_H_
-#define CONTROL_H_
-
 #include <esc/common.h>
-#include <esc/gui/common.h>
-#include <esc/gui/uielement.h>
+#include <esc/proc.h>
+#include <esc/messages.h>
+#include <esc/io.h>
+#include <esc/gui/application.h>
+#include <esc/gui/window.h>
+#include <esc/gui/button.h>
+#include <stdlib.h>
 
-namespace esc {
-	namespace gui {
-		class Window;
+using namespace esc::gui;
 
-		class Control : public UIElement {
-			friend class Window;
-
-		public:
-			Control(tCoord x,tCoord y,tSize width,tSize height)
-				: UIElement(x,y,width,height), _w(NULL) {
-
-			};
-			virtual ~Control() {
-
-			};
-
-			virtual void onMouseMoved(const MouseEvent &e);
-			virtual void onMouseReleased(const MouseEvent &e);
-			virtual void onMousePressed(const MouseEvent &e);
-			virtual void onKeyPressed(const KeyEvent &e);
-			virtual void onKeyReleased(const KeyEvent &e);
-
-			virtual void paint();
-
-		private:
-			void setWindow(Window *w);
-
-		private:
-			Window *_w;
-		};
-	}
+int main(void) {
+	Application *app = Application::getInstance();
+	Window w1("Fenster 1",100,100,400,300);
+	Window w2("Fenster 2",250,250,150,200);
+	Window w3("Fenster 3",50,50,100,40);
+	Window w4("Fenster 4",180,90,200,100);
+	Button b("Click me!!",10,10,80,20);
+	w1.add(b);
+	return app->run();
 }
-
-#endif /* CONTROL_H_ */

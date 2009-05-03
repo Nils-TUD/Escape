@@ -122,7 +122,8 @@ void vterm_handleKeycode(sMsgKbResponse *msg);
  * @param vt the vterm
  * @param str the string
  * @param resetRead wether readline-stuff should be reset
+ * @param readKeyboard indicates wether we should start/stop reading from keyboard
  */
-void vterm_puts(sVTerm *vt,char *str,bool resetRead);
+void vterm_puts(sVTerm *vt,char *str,bool resetRead,bool *readKeyboard);
 
 #endif /* VTERM_H_ */

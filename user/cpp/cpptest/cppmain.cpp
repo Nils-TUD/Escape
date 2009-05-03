@@ -44,7 +44,7 @@ void my::doIt() {
 	printf("Ich bins\n");
 }
 
-int main(int argc, char* argv[]) {
+int main(void) {
 	char str[10];
 	char buffer[1024];
 	char *test = "ein test";

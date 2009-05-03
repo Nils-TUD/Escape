@@ -100,6 +100,21 @@ namespace esc {
 					}
 					break;
 
+					case MSG_WIN_KEYBOARD: {
+						sMsgDataWinKeyboard data;
+						if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {
+							Window *w = getWindowById(data.window);
+							if(w) {
+								KeyEvent e(data.keycode);
+								if(data.isBreak)
+									w->onKeyReleased(e);
+								else
+									w->onKeyPressed(e);
+							}
+						}
+					}
+					break;
+
 					case MSG_WIN_REPAINT: {
 						sMsgDataWinRepaint data;
 						if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {

@@ -53,6 +53,7 @@
 #define MSG_WIN_MOUSE				2
 #define MSG_WIN_MOVE_REQ			3
 #define MSG_WIN_REPAINT				4
+#define MSG_WIN_KEYBOARD			5
 
 /* the header for all default-messages */
 typedef struct {
@@ -166,6 +167,15 @@ typedef struct {
 	u16 height;
 	u8 colorDepth;
 } sMsgDataVesaGetModeResp;
+
+/* the window-manager key-message */
+typedef struct {
+	/* the keycode (see keycodes.h) */
+	u8 keycode;
+	/* wether the key was released */
+	u8 isBreak;
+	u16 window;
+} sMsgDataWinKeyboard;
 
 #ifdef __cplusplus
 extern "C" {

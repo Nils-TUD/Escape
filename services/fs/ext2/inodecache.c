@@ -36,6 +36,7 @@ void ext2_icache_init(sExt2 *e) {
 	sCachedInode *inode = e->inodeCache;
 	for(i = 0; i < INODE_CACHE_SIZE; i++) {
 		inode->refs = 0;
+		/* TODO is the -1 really correct? */
 		inode->inodeNo = EXT2_BAD_INO - 1;
 		inode++;
 	}

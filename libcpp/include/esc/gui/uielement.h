@@ -41,7 +41,7 @@ namespace esc {
 				: _movedx(e._movedx), _movedy(e._movedy), _x(e._x), _y(e._y), _buttons(e._buttons) {
 
 			};
-			virtual ~MouseEvent() {
+			~MouseEvent() {
 
 			};
 
@@ -75,6 +75,23 @@ namespace esc {
 			u8 _buttons;
 		};
 
+		// TODO we have to translate the keycode to ASCII
+		class KeyEvent {
+		public:
+			KeyEvent(u8 keycode)
+				: _keycode(keycode) {
+			};
+			~KeyEvent() {
+			};
+
+			inline u8 getKeyCode() const {
+				return _keycode;
+			};
+
+		private:
+			u8 _keycode;
+		};
+
 		class UIElement {
 		public:
 			UIElement(tCoord x,tCoord y,tSize width,tSize height)
@@ -105,6 +122,8 @@ namespace esc {
 			virtual void onMouseMoved(const MouseEvent &e) = 0;
 			virtual void onMouseReleased(const MouseEvent &e) = 0;
 			virtual void onMousePressed(const MouseEvent &e) = 0;
+			virtual void onKeyPressed(const KeyEvent &e) = 0;
+			virtual void onKeyReleased(const KeyEvent &e) = 0;
 
 			virtual void paint() = 0;
 			void update(tCoord x,tCoord y,tSize width,tSize height);

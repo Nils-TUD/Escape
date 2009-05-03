@@ -43,6 +43,9 @@
  */
 static sVTerm *getVTerm(tServ sid);
 
+/* wether we should read from keyboard */
+static bool readKeyboard = true;
+
 /* vterms */
 static tServ servIds[VTERM_COUNT] = {-1};
 /* read-buffer */
@@ -89,13 +92,17 @@ int main(void) {
 	while(1) {
 		tFD fd = getClient(servIds,VTERM_COUNT,&client);
 		if(fd < 0) {
-			/* read from keyboard */
-			/* don't block here since there may be waiting clients.. */
-			while(!eof(kbFd)) {
-				read(kbFd,&keycode,sizeof(sMsgKbResponse));
-				vterm_handleKeycode(&keycode);
+			if(readKeyboard) {
+				/* read from keyboard */
+				/* don't block here since there may be waiting clients.. */
+				while(!eof(kbFd)) {
+					read(kbFd,&keycode,sizeof(sMsgKbResponse));
+					vterm_handleKeycode(&keycode);
+				}
+				wait(EV_CLIENT | EV_RECEIVED_MSG);
 			}
-			wait(EV_CLIENT | EV_RECEIVED_MSG);
+			else
+				wait(EV_CLIENT);
 		}
 		else {
 			sVTerm *vt = getVTerm(client);
@@ -105,7 +112,7 @@ int main(void) {
 				u32 c;
 				while((c = read(fd,buffer,READ_BUF_SIZE)) > 0) {
 					*(buffer + c) = '\0';
-					vterm_puts(vt,buffer,true);
+					vterm_puts(vt,buffer,true,&readKeyboard);
 				}
 			}
 			close(fd);

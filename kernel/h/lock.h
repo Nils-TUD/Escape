@@ -17,27 +17,28 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/messages.h>
-#include <esc/io.h>
-#include <esc/gui/application.h>
-#include <esc/gui/window.h>
-#include <esc/gui/button.h>
-#include <stdlib.h>
+#ifndef LOCK_H_
+#define LOCK_H_
 
-using namespace esc::gui;
+#include "common.h"
+#include "proc.h"
 
-int main(int argc,char *argv[]) {
-	// disable readline
-	printf("\033l\x0");
+/**
+ * Aquires the lock with given process and ident. If it exists and is locked,
+ * the process waits here until it's unlocked
+ *
+ * @param pid the process-id
+ * @param ident to identify the lock
+ * @return 0 on success
+ */
+s32 lock_aquire(tPid pid,u32 ident);
 
-	Application *app = Application::getInstance();
-	Window w1("Fenster 1",100,100,400,300);
-	Window w2("Fenster 2",250,250,150,200);
-	Window w3("Fenster 3",50,50,100,40);
-	Window w4("Fenster 4",180,90,200,100);
-	Button b("Click me!!",10,10,80,20);
-	w1.add(b);
-	return app->run();
-}
+/**
+ * Releases the lock with given ident
+ *
+ * @param ident to identify the lock
+ * @return 0 on success
+ */
+s32 lock_release(u32 ident);
+
+#endif /* LOCK_H_ */

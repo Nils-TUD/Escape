@@ -138,6 +138,12 @@ int main(void) {
 				REG_BASE_PRIMARY + 7,REG_BASE_SECONDARY,REG_BASE_SECONDARY + 7);
 		return EXIT_FAILURE;
 	}
+	if(requestIOPort(REG_BASE_PRIMARY + REG_CONTROL) < 0 ||
+			requestIOPort(REG_BASE_SECONDARY + REG_CONTROL) < 0) {
+		printe("Unable to request ATA-port %d or %d",REG_BASE_PRIMARY + REG_CONTROL,
+				REG_BASE_SECONDARY + REG_CONTROL);
+		return EXIT_FAILURE;
+	}
 
 	if(setSigHandler(SIG_INTRPT_ATA1,diskIntrptHandler) < 0 ||
 			setSigHandler(SIG_INTRPT_ATA2,diskIntrptHandler) < 0) {
@@ -212,6 +218,8 @@ int main(void) {
 	/* clean up */
 	releaseIOPorts(REG_BASE_PRIMARY,8);
 	releaseIOPorts(REG_BASE_SECONDARY,8);
+	releaseIOPort(REG_BASE_PRIMARY + REG_CONTROL);
+	releaseIOPort(REG_BASE_SECONDARY + REG_CONTROL);
 	unregService(id);
 	return EXIT_SUCCESS;
 }

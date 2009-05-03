@@ -95,6 +95,26 @@ namespace esc {
 			else
 				passToCtrl(e,MOUSE_PRESSED);
 		}
+		void Window::onKeyPressed(const KeyEvent &e) {
+			passToCtrl(e,KEY_PRESSED);
+		}
+		void Window::onKeyReleased(const KeyEvent &e) {
+			passToCtrl(e,KEY_RELEASED);
+		}
+
+		void Window::passToCtrl(const KeyEvent &e,u8 event) {
+			// TODO use focused control
+			if(_controls.size() > 0) {
+				switch(event) {
+					case KEY_PRESSED:
+						_controls[0]->onKeyPressed(e);
+						break;
+					case KEY_RELEASED:
+						_controls[0]->onKeyReleased(e);
+						break;
+				}
+			}
+		}
 
 		void Window::passToCtrl(const MouseEvent &e,u8 event) {
 			Control *c;

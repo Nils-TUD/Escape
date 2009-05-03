@@ -43,6 +43,14 @@ namespace esc {
 			// do nothing by default
 			UNUSED(e);
 		}
+		void Control::onKeyPressed(const KeyEvent &e) {
+			// do nothing by default
+			UNUSED(e);
+		}
+		void Control::onKeyReleased(const KeyEvent &e) {
+			// do nothing by default
+			UNUSED(e);
+		}
 
 		void Control::paint() {
 			// no window?

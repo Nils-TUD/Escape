@@ -22,6 +22,7 @@
 #include <proc.h>
 #include <kheap.h>
 #include <paging.h>
+#include <video.h>
 #include <sllist.h>
 #include <string.h>
 #include <errors.h>

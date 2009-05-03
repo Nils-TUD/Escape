@@ -40,6 +40,7 @@
 #define EV_CLIENT			1
 #define EV_RECEIVED_MSG		2
 #define EV_CHILD_DIED		4
+#define EV_UNLOCK			8
 
 /* the process-state which will be saved for context-switching */
 typedef struct {
@@ -327,6 +328,13 @@ void proc_dbg_printAll(void);
  * @param p the pointer to the process
  */
 void proc_dbg_print(sProc *p);
+
+/**
+ * Prints the given IO-map
+ *
+ * @param map the io-map
+ */
+void proc_dbg_printIOMap(u8 *map);
 
 /**
  * Prints the given process-state

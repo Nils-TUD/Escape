@@ -17,44 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CONTROL_H_
-#define CONTROL_H_
-
 #include <esc/common.h>
-#include <esc/gui/common.h>
-#include <esc/gui/uielement.h>
+#include <esc/lock.h>
 
-namespace esc {
-	namespace gui {
-		class Window;
+/**
+ * Assembler-routine
+ */
+extern s32 _lock(u32 ident);
 
-		class Control : public UIElement {
-			friend class Window;
-
-		public:
-			Control(tCoord x,tCoord y,tSize width,tSize height)
-				: UIElement(x,y,width,height), _w(NULL) {
-
-			};
-			virtual ~Control() {
-
-			};
-
-			virtual void onMouseMoved(const MouseEvent &e);
-			virtual void onMouseReleased(const MouseEvent &e);
-			virtual void onMousePressed(const MouseEvent &e);
-			virtual void onKeyPressed(const KeyEvent &e);
-			virtual void onKeyReleased(const KeyEvent &e);
-
-			virtual void paint();
-
-		private:
-			void setWindow(Window *w);
-
-		private:
-			Window *_w;
-		};
-	}
+s32 lock(u32 ident) {
+	/* nasm don't likes "lock" as label... */
+	return _lock(ident);
 }
-
-#endif /* CONTROL_H_ */

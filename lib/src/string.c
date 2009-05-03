@@ -644,6 +644,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"The shared memory is invalid!");
 			break;
 
+		case ERR_LOCK_NOT_FOUND:
+			strcpy(msg,"Lock not found!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

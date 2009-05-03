@@ -48,12 +48,12 @@ namespace esc {
 			/**
 			 * @return the current position
 			 */
-			virtual inline u32 getPos() const = 0;
+			virtual u32 getPos() const = 0;
 
 			/**
 			 * @return wether we are at EOF
 			 */
-			virtual inline bool isEOF() const = 0;
+			virtual bool isEOF() const = 0;
 
 			/**
 			 * Flushes the buffer

@@ -27,22 +27,35 @@
 #include <esc/debug.h>
 #include <esc/proc.h>
 #include <esc/signals.h>
+#include <esc/lock.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "set1.h"
 
 /* io-ports */
-#define IOPORT_PIC			0x20
-#define IOPORT_KB_DATA		0x60
+#define IOPORT_PIC					0x20
+#define IOPORT_KB_DATA				0x60
+#define IOPORT_KB_CTRL				0x64
+
+#define KBC_CMD_DISABLE_MOUSE		0xA7
+#define KBC_CMD_ENABLE_MOUSE		0xA8
+
+#define KBC_STATUS_DATA_AVAIL		(1 << 0)
+#define KBC_STATUS_BUSY				(1 << 1)
+#define KBC_STATUS_MOUSE_DATA_AVAIL	(1 << 5)
 
 /* ICW = initialisation command word */
-#define PIC_ICW1			0x20
+#define PIC_ICW1					0x20
+
+#define KB_MOUSE_LOCK				0x1
 
 /**
  * The keyboard-interrupt handler
  */
 static void kbIntrptHandler(tSig sig,u32 data);
+static u16 kb_read(void);
+static void kb_checkCmd(void);
 
 /* file-descriptor for ourself */
 static tFD selfFd;
@@ -63,6 +76,10 @@ int main(void) {
 	}
 	if(requestIOPort(IOPORT_KB_DATA) < 0) {
 		printe("Unable to request io-port",IOPORT_KB_DATA);
+		return EXIT_FAILURE;
+	}
+	if(requestIOPort(IOPORT_KB_CTRL) < 0) {
+		printe("Unable to request io-port",IOPORT_KB_CTRL);
 		return EXIT_FAILURE;
 	}
 
@@ -93,6 +110,7 @@ int main(void) {
 	close(selfFd);
 	releaseIOPort(IOPORT_PIC);
 	releaseIOPort(IOPORT_KB_DATA);
+	releaseIOPort(IOPORT_KB_CTRL);
 	unregService(id);
 
 	return EXIT_SUCCESS;
@@ -102,11 +120,26 @@ static void kbIntrptHandler(tSig sig,u32 data) {
 	UNUSED(sig);
 	UNUSED(data);
 	static sMsgKbResponse resp;
+	if(!(inByte(IOPORT_KB_CTRL) & KBC_STATUS_DATA_AVAIL))
+		return;
 	u8 scanCode = inByte(IOPORT_KB_DATA);
 	if(kb_set1_getKeycode(&resp,scanCode)) {
 		/* write in receive-pipe */
 		write(selfFd,&resp,sizeof(sMsgKbResponse));
 	}
-	/* ack scancode */
-	outByte(IOPORT_PIC,PIC_ICW1);
+	/* ack scancode
+	outByte(IOPORT_PIC,PIC_ICW1);*/
+}
+
+static u16 kb_read(void) {
+	u16 c = 0;
+	u8 status;
+	while(c++ < 0xFFFF && !((status = inByte(IOPORT_KB_CTRL)) & KBC_STATUS_DATA_AVAIL));
+	if(!(status & KBC_STATUS_DATA_AVAIL))
+		return 0xFF00;
+	return inByte(IOPORT_KB_DATA);
+}
+
+static void kb_checkCmd(void) {
+	while(inByte(IOPORT_KB_CTRL) & KBC_STATUS_BUSY);
 }

@@ -142,9 +142,10 @@ static void vterm_refreshLines(sVTerm *vt,u16 start,u16 count);
  *
  * @param vt the vterm
  * @param str the current position
+ * @param stopRead will be set to read or stop reading from keyboard
  * @return true if something has been done
  */
-static bool vterm_handleEscape(sVTerm *vt,char *str);
+static bool vterm_handleEscape(sVTerm *vt,char *str,bool *readKeyboard);
 
 /**
  * Flushes the readline-buffer
@@ -346,7 +347,7 @@ void vterm_destroy(sVTerm *vt) {
 	close(vt->self);
 }
 
-void vterm_puts(sVTerm *vt,char *str,bool resetRead) {
+void vterm_puts(sVTerm *vt,char *str,bool resetRead,bool *readKeyboard) {
 	char c;
 	u32 oldFirstLine = vt->firstLine;
 	u32 newPos,oldPos = vt->row * COLS + vt->col;
@@ -355,7 +356,7 @@ void vterm_puts(sVTerm *vt,char *str,bool resetRead) {
 	while((c = *str)) {
 		if(c == '\033') {
 			str++;
-			vterm_handleEscape(vt,str);
+			vterm_handleEscape(vt,str,readKeyboard);
 			str += 2;
 			continue;
 		}
@@ -554,7 +555,7 @@ static void vterm_refreshLines(sVTerm *vt,u16 start,u16 count) {
 	memcpy(ptr - sizeof(sMsgVidSetScr),back,sizeof(sMsgVidSetScr));
 }
 
-static bool vterm_handleEscape(sVTerm *vt,char *str) {
+static bool vterm_handleEscape(sVTerm *vt,char *str,bool *readKeyboard) {
 	u8 keycode = *str;
 	u8 value = *(str + 1);
 	bool res = false;
@@ -611,6 +612,10 @@ static bool vterm_handleEscape(sVTerm *vt,char *str) {
 				vt->rlBufPos = 0;
 				vt->rlStartCol = vt->col;
 			}
+			res = true;
+			break;
+		case VK_ESC_KEYBOARD:
+			*readKeyboard = value ? true : false;
 			res = true;
 			break;
 	}
@@ -799,10 +804,11 @@ static void vterm_rlPutchar(sVTerm *vt,char c) {
 					u32 count = vt->rlBufPos - bufPos + 1;
 					char *copy = (char*)malloc(count * sizeof(char));
 					if(copy != NULL) {
+						bool dummy;
 						/* print the end of the buffer again */
 						strncpy(copy,vt->rlBuffer + bufPos,count - 1);
 						copy[count - 1] = '\0';
-						vterm_puts(vt,copy,false);
+						vterm_puts(vt,copy,false,&dummy);
 						free(copy);
 
 						/* reset cursor */

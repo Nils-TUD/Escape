@@ -1,4 +1,4 @@
-NAME=guitest
+NAME=gtest
 ROOT=../../..
 BUILD=$(ROOT)/build
 DISK=$(BUILD)/disk.img

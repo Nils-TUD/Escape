@@ -58,6 +58,7 @@
 #define ERR_SHARED_MEM_EXISTS		-35
 #define ERR_SHARED_MEM_NAME			-36
 #define ERR_SHARED_MEM_INVALID		-37
+#define ERR_LOCK_NOT_FOUND			-38
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

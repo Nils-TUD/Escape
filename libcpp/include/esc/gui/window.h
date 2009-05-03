@@ -43,6 +43,8 @@ namespace esc {
 			static const u8 MOUSE_MOVED = 0;
 			static const u8 MOUSE_RELEASED = 1;
 			static const u8 MOUSE_PRESSED = 2;
+			static const u8 KEY_RELEASED = 3;
+			static const u8 KEY_PRESSED = 4;
 
 			typedef struct {
 				u16 x;
@@ -82,6 +84,8 @@ namespace esc {
 			virtual void onMouseMoved(const MouseEvent &e);
 			virtual void onMouseReleased(const MouseEvent &e);
 			virtual void onMousePressed(const MouseEvent &e);
+			virtual void onKeyPressed(const KeyEvent &e);
+			virtual void onKeyReleased(const KeyEvent &e);
 
 			virtual void paint();
 			void move(s16 x,s16 y);
@@ -90,6 +94,7 @@ namespace esc {
 			void add(Control &c);
 
 		private:
+			void passToCtrl(const KeyEvent &e,u8 event);
 			void passToCtrl(const MouseEvent &e,u8 event);
 
 		private:

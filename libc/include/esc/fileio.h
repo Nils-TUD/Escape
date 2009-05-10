@@ -188,7 +188,7 @@ s32 fprintu(tFile *file,s32 u,u8 base);
 s32 printe(const char *prefix,...);
 
 /**
- * Formated output to STDOUT. Supports:
+ * Formated output to STDOUT.
  * You can format values with: %[flags][width][.precision][length]specifier
  *
  * Flags:

@@ -30,16 +30,24 @@
  */
 extern void debugChar(char c);
 
-static u64 start = 0;
+typedef union {
+	struct {
+		u32 s1;
+		u32 s2;
+	} divided;
+	u64 val;
+} uCycles;
+
+static u64 start;
 
 void dbg_startTimer(void) {
 	start = cpu_rdtsc();
 }
 
 void dbg_stopTimer(char *prefix) {
-	u64 diff = cpu_rdtsc() - start;
-	u32 *ptr = (u32*)&diff;
-	debugf("%s: 0x%08x%08x\n",prefix,*(ptr + 1),*ptr);
+	uCycles diff;
+	diff.val = cpu_rdtsc() - start;
+	debugf("%s: 0x%08x%08x\n",prefix,diff.divided.s2,diff.divided.s1);
 }
 
 void dumpBytes(void *addr,u32 byteCount) {

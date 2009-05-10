@@ -32,6 +32,10 @@ typedef struct {
 	u16 window;
 } sRectangle;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @param r the rectangle
  * @param x the x-coordinate
@@ -76,5 +80,9 @@ sRectangle *rectSplit(sRectangle *r1,sRectangle *r2,u32 *rectCount);
  * @return true if there is an intersection
  */
 bool rectIntersect(sRectangle *r1,sRectangle *r2,sRectangle *intersect);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* RECT_H_ */

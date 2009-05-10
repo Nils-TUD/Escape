@@ -70,27 +70,30 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 			return ERR_NOT_ENOUGH_MEM;
 		usage->inodeNo = info.inodeNo;
 		usage->modifytime = info.modifytime;
-
-		/* load the text from file */
-		res = text_load(p,file,position,textSize);
-		if(res < 0) {
-			kheap_free(usage);
-			return ERR_NOT_ENOUGH_MEM;
-		}
-
-		/* finally create proc-sll */
 		usage->procs = sll_create();
 		if(usage->procs == NULL) {
 			kheap_free(usage);
 			return ERR_NOT_ENOUGH_MEM;
 		}
 
-		/* append to list */
+		/* create list if not already done */
 		if(textUsages == NULL) {
 			textUsages = sll_create();
-			if(textUsages == NULL)
+			if(textUsages == NULL) {
+				sll_destroy(usage->procs,false);
+				kheap_free(usage);
 				return ERR_NOT_ENOUGH_MEM;
+			}
 		}
+
+		/* load the text from file */
+		res = text_load(p,file,position,textSize);
+		if(res < 0) {
+			sll_destroy(usage->procs,false);
+			kheap_free(usage);
+			return ERR_NOT_ENOUGH_MEM;
+		}
+		
 		sll_append(textUsages,usage);
 	}
 	else {

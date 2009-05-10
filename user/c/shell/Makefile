@@ -7,26 +7,26 @@ BIN=$(BUILD)/user_$(NAME).bin
 DEP=$(BUILD)/user_$(NAME).dep
 LIB=$(ROOT)/lib
 LIBC=$(ROOT)/libc
+LIBS=$(ROOT)/user/libs
 LDCONF=$(LIBC)/ld.conf
 
 CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
-	-Wl,-T,$(LDCONF) $(CDEFFLAGS) 
+	-I$(LIBS) -Wl,-T,$(LDCONF) $(CDEFFLAGS) 
 CSRC=$(wildcard *.c)
-CCMDSRC=$(wildcard cmd/*.c)
 
 LIBCA=$(BUILD)/libc.a
 START=$(BUILD)/libc_startup.o
+LIBSHELLA=$(BUILD)/user_libs_shell.a
 COBJ=$(patsubst %.c,$(BUILD)/user_$(NAME)_%.o,$(CSRC))
-CCMDOBJ=$(patsubst cmd/%.c,$(BUILD)/user_$(NAME)_cmd_%.o,$(CCMDSRC))
 
 .PHONY: all clean
 
 all:	$(BIN)
 
-$(BIN):	$(LDCONF) $(COBJ) $(CCMDOBJ) $(START) $(LIBCA)
-		@echo "===== COMPILING & LINKING =====";
-		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(CCMDOBJ) $(LIBCA);
+$(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCA) $(LIBSHELLA)
+		@echo "===== LINKING =====";
+		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA) $(LIBSHELLA);
 		@echo "===== COPYING ON DISK =====";
 		@make -C $(ROOT) mounthdd
 		sudo cp $(BIN) $(DISKMOUNT)/bin/$(NAME)
@@ -36,20 +36,13 @@ $(BUILD)/user_$(NAME)_%.o:		%.c
 		@echo "===== COMPILING $< =====";
 		$(CC) $(CFLAGS) -o $@ -c $<
 
-$(BUILD)/user_$(NAME)_cmd_%.o:		cmd/%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
-
-$(DEP):	$(CSRC) $(CCMDSRC)
+$(DEP):	$(CSRC)
 		@echo "===== GENERATING DEPENDENCIES =====";
-		$(CC) $(CFLAGS) -MM $(CSRC) $(CCMDSRC) > $(DEP);
+		$(CC) $(CFLAGS) -MM $(CSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
 		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/user_$(NAME)_)\1.o:/g" $(DEP);
-		@for i in $(patsubst cmd/%.c,%,$(wildcard cmd/*.c)) ; do \
-			sed --in-place -e "s/$(subst /,\/,$(BUILD)/user_$(NAME)_)$$i.o:/$(subst /,\/,$(BUILD)/user_$(NAME)_cmd_)$$i.o:/g" $(DEP); \
-		done;
 
 -include $(DEP)
 
 clean:
-		rm -f $(BIN) $(DEP) $(COBJ) $(CCMDOBJ)
+		rm -f $(BIN) $(COBJ) $(DEP)

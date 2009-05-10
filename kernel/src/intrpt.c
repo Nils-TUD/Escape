@@ -79,7 +79,7 @@
 #define MSG_MAX_LEN				8
 
 /* the address of the return-from-signal "function" in the startup.s */
-#define SIGRETFUNC_ADDR			0xd
+#define SIGRETFUNC_ADDR			0x17
 
 /* represents an IDT-entry */
 typedef struct {

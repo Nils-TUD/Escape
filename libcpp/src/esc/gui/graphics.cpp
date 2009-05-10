@@ -26,16 +26,80 @@
 
 namespace esc {
 	namespace gui {
+		Graphics::Graphics(Graphics &g,tCoord x,tCoord y)
+			: _offx(x), _offy(y), _x(0), _y(0), _width(g._width), _height(g._height),
+				_bpp(g._bpp), _col(0), _minx(0),_miny(0), _maxx(_width - 1),
+				_maxy(_height - 1), _font(Font()), _owner(&g) {
+			_pixels = g._pixels;
+			_pixel = g._pixel;
+			// set some constant msg-attributes
+			_vesaMsg.header.id = MSG_VESA_UPDATE;
+			_vesaMsg.header.length = sizeof(sMsgDataVesaUpdate);
+		}
+
+		Graphics::Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp)
+			: _offx(0), _offy(0), _x(x), _y(y), _width(width), _height(height), _bpp(bpp),
+				_col(0), _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),_font(Font()),
+				_owner(NULL) {
+			// allocate mem
+			switch(_bpp) {
+				case 32:
+					_pixels = (u8*)calloc(_width * _height,sizeof(u32));
+					_pixel = new Pixel32Bit(_pixels);
+					break;
+				case 24:
+					_pixels = (u8*)calloc(_width * _height,3);
+					_pixel = new Pixel24Bit(_pixels);
+					break;
+				case 16:
+					_pixels = (u8*)calloc(_width * _height,sizeof(u16));
+					_pixel = new Pixel16Bit(_pixels);
+					break;
+				case 8:
+					_pixels = (u8*)calloc(_width * _height,sizeof(u8));
+					_pixel = new Pixel8Bit(_pixels);
+					break;
+				default:
+					err << "Unsupported color-depth: " << (u32)bpp << endl;
+					exit(EXIT_FAILURE);
+					break;
+			}
+
+			// set some constant msg-attributes
+			_vesaMsg.header.id = MSG_VESA_UPDATE;
+			_vesaMsg.header.length = sizeof(sMsgDataVesaUpdate);
+		}
+
+		Graphics::~Graphics() {
+			if(_owner == NULL) {
+				delete _pixel;
+				delete _pixels;
+			}
+		}
+
+		void Graphics::moveLines(tCoord y,tSize height,tSize up) {
+			tCoord starty = _offy + y;
+			u32 psize = _pixel->getPixelSize();
+			memmove(_pixels + ((starty - up) * _width) * psize,
+					_pixels + (starty * _width) * psize,
+					height * _width * psize);
+			updateMinMax(0,y - up);
+			updateMinMax(_width - 1,y + height - up - 1);
+		}
+
 		void Graphics::drawChar(tCoord x,tCoord y,char c) {
 			char *font = _font.getChar(c);
 			if(font) {
-				u32 width = _font.getWidth();
-				u32 height = _font.getHeight();
+				tSize width = _font.getWidth();
+				tSize height = _font.getHeight();
+				validateParams(x,y,width,height);
+				updateMinMax(x,y);
+				updateMinMax(x + width - 1,y + height - 1);
 				tCoord cx,cy;
 				for(cy = 0; cy < height; cy++) {
 					for(cx = 0; cx < width; cx++) {
 						if(font[cy * width + cx])
-							setPixel(x + cx,y + cy);
+							doSetPixel(x + cx,y + cy);
 					}
 				}
 			}
@@ -135,13 +199,10 @@ namespace esc {
 
 		void Graphics::update() {
 			// only the owner notifies vesa
-			if(_owner != NULL) {
-				_owner->update(_offx + _minx,_offy + _miny,
-						_maxx - _minx + 1,_maxy - _miny + 1);
-				return;
-			}
-
-			update(_minx,_miny,_maxx - _minx + 1,_maxy - _miny + 1);
+			if(_owner != NULL)
+				_owner->update(_offx + _minx,_offy + _miny,_maxx - _minx + 1,_maxy - _miny + 1);
+			else
+				update(_minx,_miny,_maxx - _minx + 1,_maxy - _miny + 1);
 
 			// reset region
 			_minx = _width - 1;
@@ -209,10 +270,10 @@ namespace esc {
 		void Graphics::validateParams(tCoord &x,tCoord &y,tSize &width,tSize &height) {
 			x %= _width;
 			y %= _height;
-			if(x + width >= _width)
-				width = _width - x;
-			if(y + height >= _height)
-				height = _height - y;
+			if(_offx + x + width > _width)
+				width = MAX(0,(s32)_width - x - _offx);
+			if(_offy + y + height > _height)
+				height = MAX(0,(s32)_height - y - _offy);
 		}
 	}
 }

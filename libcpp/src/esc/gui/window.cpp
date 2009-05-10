@@ -31,52 +31,45 @@ namespace esc {
 	namespace gui {
 		Color Window::BGCOLOR = Color(0x88,0x88,0x88);
 		Color Window::TITLE_BGCOLOR = Color(0,0,0xFF);
+		Color Window::TITLE_ACTIVE_BGCOLOR = Color(0,0,0x80);
 		Color Window::TITLE_FGCOLOR = Color(0xFF,0xFF,0xFF);
 		Color Window::BORDER_COLOR = Color(0x77,0x77,0x77);
 
-		Window::Window(const String &title,tCoord x,tCoord y,tSize width,tSize height)
-			: UIElement(x,y,width,height), _title(title), _titleBarHeight(20), _inTitle(false),
-				_focus(-1), _controls(Vector<Control*>()) {
-			_g = new Graphics(x,y,width,height,Application::getInstance()->getColorDepth());
+		tWinId Window::NEXT_TMP_ID = 0xFFFF;
 
-			// create window
-			tFD winmgn = Application::getInstance()->getWinManagerFd();
-			sMsgWinCreateReq msg;
-			msg.header.id = MSG_WIN_CREATE_REQ;
-			msg.header.length = sizeof(sMsgDataWinCreateReq);
-			msg.data.x = x;
-			msg.data.y = y;
-			msg.data.width = width;
-			msg.data.height = height;
-			msg.data.owner = getpid();
-			if(write(winmgn,&msg,sizeof(sMsgWinCreateReq)) != sizeof(sMsgWinCreateReq)) {
-				printe("Unable to announce window to window-manager");
-				exit(EXIT_FAILURE);
-			}
+		Window::Window(const String &title,tCoord x,tCoord y,tSize width,tSize height,u8 style)
+			: UIElement(x,y,width,height), _id(NEXT_TMP_ID--), _created(false), _style(style),
+				_title(title), _titleBarHeight(20), _inTitle(false),_isActive(false), _focus(-1),
+				_controls(Vector<Control*>()) {
+			init();
+		}
 
-			// read response
-			sMsgHeader header;
-			sMsgDataWinCreateResp data;
-			if(read(winmgn,&header,sizeof(header)) != sizeof(header) ||
-					read(winmgn,&data,sizeof(data)) != sizeof(data)) {
-				printe("Invalid response to window-announcement");
-				exit(EXIT_FAILURE);
-			}
-
-			// store window-id and add window to app
-			_id = data.id;
-			Application::getInstance()->AddWindow(this);
+		Window::Window(const Window &w)
+			: UIElement(w), _id(NEXT_TMP_ID--), _created(false), _style(w._style), _title(w._title),
+				_titleBarHeight(w._titleBarHeight),_isActive(false), _inTitle(w._inTitle),
+				_focus(w._focus), _controls(w._controls) {
+			init();
 		}
 
 		Window::~Window() {
+			// no delete of _g here, since UIElement does it for us
+			// remove us from app
+			Application::getInstance()->removeWindow(this);
+		}
 
+		void Window::init() {
+			_g = new Graphics(getX(),getY(),getWidth(),getHeight(),
+					Application::getInstance()->getColorDepth());
+			// add us to app; we'll receive a "created"-event as soon as the window
+			// manager knows about us
+			Application::getInstance()->addWindow(this);
 		}
 
 		void Window::onMouseMoved(const MouseEvent &e) {
 			// we store on release/pressed wether we are in the header because
 			// the delay between window-movement and cursor-movement may be too
 			// big so that we "loose" the window
-			if(_inTitle) {
+			if(_inTitle && _style != STYLE_POPUP) {
 				if(e.isButton1Down())
 					move(e.getXMovement(),e.getYMovement());
 				return;
@@ -84,13 +77,13 @@ namespace esc {
 			passToCtrl(e,MOUSE_MOVED);
 		}
 		void Window::onMouseReleased(const MouseEvent &e) {
-			if(e.getY() < _titleBarHeight)
+			if(_style != STYLE_POPUP && e.getY() < _titleBarHeight)
 				_inTitle = false;
 			else
 				passToCtrl(e,MOUSE_RELEASED);
 		}
 		void Window::onMousePressed(const MouseEvent &e) {
-			if(e.getY() < _titleBarHeight)
+			if(_style != STYLE_POPUP && e.getY() < _titleBarHeight)
 				_inTitle = true;
 			else
 				passToCtrl(e,MOUSE_PRESSED);
@@ -103,7 +96,11 @@ namespace esc {
 		}
 
 		void Window::passToCtrl(const KeyEvent &e,u8 event) {
-			/* handle focus-change */
+			// no events until we're created
+			if(!_created)
+				return;
+
+			// handle focus-change
 			if(event == KEY_RELEASED && e.getKeyCode() == VK_TAB) {
 				s32 old = _focus;
 				if(_focus == -1)
@@ -121,8 +118,8 @@ namespace esc {
 				return;
 			}
 
-			/* pass event to focused control */
-			if(_focus < _controls.size()) {
+			// pass event to focused control
+			if(_focus != -1) {
 				switch(event) {
 					case KEY_PRESSED:
 						_controls[_focus]->onKeyPressed(e);
@@ -135,6 +132,10 @@ namespace esc {
 		}
 
 		void Window::passToCtrl(const MouseEvent &e,u8 event) {
+			// no events until we're created
+			if(!_created)
+				return;
+
 			Control *c;
 			tCoord x = e.getX();
 			tCoord y = e.getY();
@@ -148,6 +149,14 @@ namespace esc {
 							c->onMouseMoved(e);
 							break;
 						case MOUSE_RELEASED:
+							/* change focus */
+							if(i != _focus) {
+								if(_focus >= 0)
+									_controls[_focus]->onFocusLost();
+								_controls[i]->onFocusGained();
+								_focus = i;
+							}
+
 							c->onMouseReleased(e);
 							break;
 						case MOUSE_PRESSED:
@@ -178,50 +187,95 @@ namespace esc {
 		}
 
 		void Window::moveTo(tCoord x,tCoord y) {
+			// no move until we're created
+			if(!_created)
+				return;
+
 			if(getX() != x || getY() != y) {
 				_g->move(x,y);
 				setX(_g->_x);
 				setY(_g->_y);
-
-				sMsgWinMoveReq move;
-				move.header.id = MSG_WIN_MOVE_REQ;
-				move.header.length = sizeof(sMsgDataWinMoveReq);
-				move.data.window = _id;
-				move.data.x = getX();
-				move.data.y = getY();
-				write(Application::getInstance()->getWinManagerFd(),&move,sizeof(move));
+				Application::getInstance()->moveWindow(this);
 			}
 		}
 
-		void Window::paint() {
-			/* paint titlebar */
-			_g->setColor(BGCOLOR);
-			_g->fillRect(0,_titleBarHeight,getWidth(),getHeight());
-			_g->setColor(TITLE_BGCOLOR);
-			_g->fillRect(0,0,getWidth(),_titleBarHeight);
-			_g->setColor(TITLE_FGCOLOR);
-			_g->drawString(5,(_titleBarHeight - _g->getFont().getHeight()) / 2,_title);
-			_g->setColor(BORDER_COLOR);
-			_g->drawLine(0,_titleBarHeight,getWidth(),_titleBarHeight);
-			_g->drawRect(0,0,getWidth(),getHeight());
+		void Window::paintTitle(Graphics &g) {
+			// no repaint until we're created and popups have no title-bar
+			if(!_created || _style == STYLE_POPUP)
+				return;
 
-			/* first, focus a control, if not already done */
+			// paint titlebar
+			if(_isActive)
+				g.setColor(TITLE_BGCOLOR);
+			else
+				g.setColor(TITLE_ACTIVE_BGCOLOR);
+			g.fillRect(1,1,getWidth() - 2,_titleBarHeight - 1);
+			g.setColor(TITLE_FGCOLOR);
+			g.drawString(5,(_titleBarHeight - g.getFont().getHeight()) / 2,_title);
+
+			// draw cross
+			g.setColor(BORDER_COLOR);
+			u32 boxPad = 2;
+			u32 crossPad = 2;
+			u32 cboxSize = _titleBarHeight - boxPad * 2;
+			g.drawRect(getWidth() - cboxSize - boxPad,boxPad,cboxSize,cboxSize);
+			g.drawLine(getWidth() - cboxSize - boxPad + crossPad,boxPad + crossPad,
+					getWidth() - boxPad - crossPad,_titleBarHeight - boxPad - crossPad);
+			g.drawLine(getWidth() - boxPad - crossPad,boxPad + crossPad,
+					getWidth() - cboxSize - boxPad + crossPad,_titleBarHeight - boxPad - crossPad);
+		}
+
+		void Window::paint(Graphics &g) {
+			// no repaint until we're created
+			if(!_created)
+				return;
+
+			paintTitle(g);
+			// fill bg
+			g.setColor(BGCOLOR);
+			g.fillRect(0,_titleBarHeight,getWidth(),getHeight());
+
+			// draw border
+			g.setColor(BORDER_COLOR);
+			g.drawLine(0,_titleBarHeight,getWidth(),_titleBarHeight);
+			g.drawRect(0,0,getWidth(),getHeight());
+
+			// first, focus a control, if not already done
 			if(_focus == -1 && _controls.size() > 0) {
 				_focus = 0;
 				_controls[_focus]->onFocusGained();
 			}
 
-			/* now paint controls */
+			// now paint controls
 			for(u32 i = 0; i < _controls.size(); i++)
-				_controls[i]->paint();
-
-			/* write stuff to video-mem */
-			_g->update();
+				_controls[i]->repaint();
 		}
 
 		void Window::add(Control &c) {
 			_controls.add(&c);
 			c.setWindow(this);
+		}
+
+		void Window::setActive(bool active) {
+			if(active != _isActive) {
+				_isActive = active;
+				paintTitle(*_g);
+				update(0,0,getWidth(),_titleBarHeight);
+			}
+		}
+
+		void Window::onCreated(tWinId id) {
+			_id = id;
+			_created = true;
+			repaint();
+		}
+
+		Stream &operator<<(Stream &s,const Window &w) {
+			String title = w.getTitle();
+			s << "Window[id=" << w.getId() << " @" << w.getX() << "," << w.getY();
+			s << " size=" << w.getWidth() << ",";
+			s << w.getHeight() << " title=" << title << "]";
+			return s;
 		}
 	}
 }

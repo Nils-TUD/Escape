@@ -25,7 +25,7 @@ CCMDOBJ=$(patsubst tests/%.c,$(BUILD)/user_$(NAME)_tests_%.o,$(CCMDSRC))
 all:	$(BIN)
 
 $(BIN):	$(LDCONF) $(COBJ) $(CCMDOBJ) $(START) $(LIBCA)
-		@echo "===== COMPILING & LINKING =====";
+		@echo "===== LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(CCMDOBJ) $(LIBCA);
 		@echo "===== COPYING ON DISK =====";
 		@make -C $(ROOT) mounthdd

@@ -43,6 +43,10 @@ typedef struct {
 	eTokenType type;
 } sCmdToken;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Prints the given tokens
  *
@@ -76,5 +80,9 @@ sCmdToken *tok_get(char *str,u32 *tokenCount);
  * @param argc the number of tokens
  */
 void tok_free(sCmdToken *argv,u32 argc);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TOKENIZER_H_ */

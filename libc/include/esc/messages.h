@@ -54,6 +54,8 @@
 #define MSG_WIN_MOVE_REQ			3
 #define MSG_WIN_REPAINT				4
 #define MSG_WIN_KEYBOARD			5
+#define MSG_WIN_SET_ACTIVE			6
+#define MSG_WIN_DESTROY_REQ			7
 
 /* the header for all default-messages */
 typedef struct {
@@ -121,11 +123,19 @@ typedef struct {
 	u16 y;
 	u16 width;
 	u16 height;
+	u16 tmpWinId;
 	tPid owner;
+	u8 style;
 } sMsgDataWinCreateReq;
+
+/* the message-data to destroy a window */
+typedef struct {
+	u16 window;
+} sMsgDataWinDestroyReq;
 
 /* response-data of creating a window */
 typedef struct {
+	u16 tmpId;
 	u16 id;
 } sMsgDataWinCreateResp;
 
@@ -178,6 +188,14 @@ typedef struct {
 	u8 modifier;
 	u16 window;
 } sMsgDataWinKeyboard;
+
+/* the window-manager set-active-event */
+typedef struct {
+	u16 window;
+	u8 isActive;
+	u16 mouseX;
+	u16 mouseY;
+} sMsgDataWinActive;
 
 #ifdef __cplusplus
 extern "C" {

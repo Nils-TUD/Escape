@@ -17,35 +17,36 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef HISTORY_H_
-#define HISTORY_H_
+#ifndef SHELLAPP_H_
+#define SHELLAPP_H_
 
 #include <esc/common.h>
+#include <esc/gui/common.h>
+#include <esc/gui/application.h>
+#include "shellcontrol.h"
 
-/**
- * Adds the given line to history. It will be assumed that line has been allocated on the heap!
- *
- * @param line the line
- */
-void shell_addToHistory(char *line);
+using namespace esc::gui;
 
-/**
- * Moves one step up in the history
- *
- * @return the current history-entry (NULL if no available)
- */
-char *shell_histUp(void);
+class ShellApplication : public Application {
+public:
+	ShellApplication(tServ sid,ShellControl *sh) : Application(), _sid(sid), _sh(sh) {
+		_selfFd = open("services:/guiterm",IO_WRITE);
+		if(_selfFd < 0) {
+			printe("Unable to open own service guiterm");
+			exit(EXIT_FAILURE);
+		}
+		_inst = this;
+	};
+	virtual ~ShellApplication() {
+	};
 
-/**
- * Moves one step down in the history
- *
- * @return the current history-entry (NULL if no available)
- */
-char *shell_histDown(void);
+protected:
+	void doEvents();
 
-/**
- * Prints the history
- */
-void shell_histPrint(void);
+private:
+	tServ _sid;
+	tFD _selfFd;
+	ShellControl *_sh;
+};
 
-#endif /* HISTORY_H_ */
+#endif /* SHELLAPP_H_ */

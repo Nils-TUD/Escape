@@ -31,8 +31,18 @@ namespace esc {
 			static const u32 charHeight = 8;
 
 		public:
-			Font() {};
-			~Font() {};
+			Font() {
+			};
+			Font(const Font &f) {
+				UNUSED(f);
+			};
+			~Font() {
+			};
+
+			Font &operator=(const Font &f) {
+				UNUSED(f);
+				return *this;
+			};
 
 			inline u32 getWidth() {
 				return charWidth;

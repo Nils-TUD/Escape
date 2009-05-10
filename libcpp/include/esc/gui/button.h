@@ -35,12 +35,28 @@ namespace esc {
 			static Color DARK_BORDER_COLOR;
 
 		public:
+			Button(tCoord x,tCoord y,tSize width,tSize height)
+				: Control(x,y,width,height), _focused(false), _pressed(false), _text(String()) {
+			};
 			Button(const String &text,tCoord x,tCoord y,tSize width,tSize height)
 				: Control(x,y,width,height), _focused(false), _pressed(false), _text(text) {
-
+			};
+			Button(const Button &b)
+				: Control(b), _focused(false), _pressed(b._pressed), _text(b._text) {
 			};
 			virtual ~Button() {
 
+			};
+
+			Button &operator=(const Button &b) {
+				// ignore self-assignments
+				if(this == &b)
+					return *this;
+				Control::operator=(b);
+				_focused = false;
+				_pressed = b._pressed;
+				_text = b._text;
+				return *this;
 			};
 
 			inline bool isPressed() const {
@@ -51,14 +67,14 @@ namespace esc {
 			};
 			inline void setText(const String &text) {
 				_text = text;
-				paint();
+				repaint();
 			};
 
 			virtual void onFocusGained();
 			virtual void onFocusLost();
 			virtual void onMousePressed(const MouseEvent &e);
 			virtual void onMouseReleased(const MouseEvent &e);
-			virtual void paint();
+			virtual void paint(Graphics &g);
 
 		private:
 			bool _focused;

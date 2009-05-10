@@ -24,38 +24,43 @@
 
 namespace esc {
 	namespace gui {
-		void Editable::paint() {
-			u32 cwidth = _g->getFont().getWidth();
-			u32 cheight = _g->getFont().getHeight();
-			_g->setColor(Color(255,255,255));
-			_g->fillRect(1,1,getWidth() - 3,getHeight() - 3);
-			_g->setColor(Color(0,0,0));
-			_g->drawRect(0,0,getWidth() - 1,getHeight() - 1);
+		const Color Editable::BGCOLOR = Color(0xFF,0xFF,0xFF);
+		const Color Editable::FGCOLOR = Color(0,0,0);
+		const Color Editable::BORDER_COLOR = Color(0,0,0);
+		const Color Editable::CURSOR_COLOR = Color(0,0,0);
+
+		void Editable::paint(Graphics &g) {
+			u32 cwidth = g.getFont().getWidth();
+			u32 cheight = g.getFont().getHeight();
+			g.setColor(BGCOLOR);
+			g.fillRect(1,1,getWidth() - 2,getHeight() - 2);
+			g.setColor(BORDER_COLOR);
+			g.drawRect(0,0,getWidth(),getHeight());
 
 			tCoord ystart = (getHeight() - cheight) / 2;
-			_g->drawString(PADDING,ystart,_str);
+			g.setColor(FGCOLOR);
+			g.drawString(PADDING,ystart,_str);
 			if(_focused) {
-				_g->fillRect(PADDING + cwidth * _cursor,ystart - CURSOR_OVERLAP,CURSOR_WIDTH,
+				g.setColor(CURSOR_COLOR);
+				g.fillRect(PADDING + cwidth * _cursor,ystart - CURSOR_OVERLAP,CURSOR_WIDTH,
 						cheight + CURSOR_OVERLAP * 2);
 			}
-
-			_g->update();
 		}
 
 		void Editable::onFocusGained() {
 			_focused = true;
-			paint();
+			repaint();
 		}
 		void Editable::onFocusLost() {
 			_focused = false;
-			paint();
+			repaint();
 		}
 
 		void Editable::onKeyPressed(const KeyEvent &e) {
 			if(e.isPrintable()) {
 				_str.insert(_cursor,e.getCharacter());
 				_cursor++;
-				paint();
+				repaint();
 			}
 			else {
 				bool changed = false;
@@ -100,7 +105,7 @@ namespace esc {
 				}
 
 				if(changed)
-					paint();
+					repaint();
 			}
 		}
 

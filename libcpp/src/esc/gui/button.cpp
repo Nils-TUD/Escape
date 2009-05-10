@@ -31,61 +31,57 @@ namespace esc {
 
 		void Button::onFocusGained() {
 			_focused = true;
-			paint();
+			repaint();
 		}
 		void Button::onFocusLost() {
 			_focused = false;
-			paint();
+			repaint();
 		}
 
 		void Button::onMousePressed(const MouseEvent &e) {
 			UNUSED(e);
 			if(!_pressed) {
 				_pressed = true;
-				paint();
+				repaint();
 			}
 		}
 		void Button::onMouseReleased(const MouseEvent &e) {
 			UNUSED(e);
 			if(_pressed) {
 				_pressed = false;
-				paint();
+				repaint();
 			}
 		}
 
-		void Button::paint() {
-			Control::paint();
+		void Button::paint(Graphics &g) {
+			g.setColor(BGCOLOR);
+			g.fillRect(1,1,getWidth() - 2,getHeight() - 2);
 
-			_g->setColor(BGCOLOR);
-			_g->fillRect(1,1,getWidth() - 2,getHeight() - 2);
+			g.setColor(LIGHT_BORDER_COLOR);
+			g.drawLine(0,0,getWidth() - 1,0);
+			if(_focused)
+				g.drawLine(0,1,getWidth() - 1,1);
+			g.drawLine(0,0,0,getHeight() - 1);
+			if(_focused)
+				g.drawLine(1,0,1,getHeight() - 1);
 
-			_g->setColor(LIGHT_BORDER_COLOR);
-			_g->drawLine(0,0,getWidth() - 1,0);
+			g.setColor(DARK_BORDER_COLOR);
+			g.drawLine(getWidth() - 1,0,getWidth() - 1,getHeight() - 1);
 			if(_focused)
-				_g->drawLine(0,1,getWidth() - 1,1);
-			_g->drawLine(0,0,0,getHeight() - 1);
+				g.drawLine(getWidth() - 2,0,getWidth() - 2,getHeight() - 1);
+			g.drawLine(0,getHeight() - 1,getWidth() - 1,getHeight() - 1);
 			if(_focused)
-				_g->drawLine(1,0,1,getHeight() - 1);
+				g.drawLine(0,getHeight() - 2,getWidth() - 1,getHeight() - 2);
 
-			_g->setColor(DARK_BORDER_COLOR);
-			_g->drawLine(getWidth() - 1,0,getWidth() - 1,getHeight() - 1);
-			if(_focused)
-				_g->drawLine(getWidth() - 2,0,getWidth() - 2,getHeight() - 1);
-			_g->drawLine(0,getHeight() - 1,getWidth() - 1,getHeight() - 1);
-			if(_focused)
-				_g->drawLine(0,getHeight() - 2,getWidth() - 1,getHeight() - 2);
-
-			_g->setColor(FGCOLOR);
+			g.setColor(FGCOLOR);
 			if(_pressed) {
-				_g->drawString((getWidth() - _g->getFont().getStringWidth(_text)) / 2 + 1,
-						(getHeight() - _g->getFont().getHeight()) / 2 + 1,_text);
+				g.drawString((getWidth() - g.getFont().getStringWidth(_text)) / 2 + 1,
+						(getHeight() - g.getFont().getHeight()) / 2 + 1,_text);
 			}
 			else {
-				_g->drawString((getWidth() - _g->getFont().getStringWidth(_text)) / 2,
-						(getHeight() - _g->getFont().getHeight()) / 2,_text);
+				g.drawString((getWidth() - g.getFont().getStringWidth(_text)) / 2,
+						(getHeight() - g.getFont().getHeight()) / 2,_text);
 			}
-
-			_g->update();
 		}
 	}
 }

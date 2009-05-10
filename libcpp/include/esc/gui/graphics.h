@@ -142,56 +142,9 @@ namespace esc {
 			} __attribute__((packed)) sMsgVesaUpdate;
 
 		public:
-			Graphics(Graphics &g,tCoord x,tCoord y)
-				: _offx(x), _offy(y), _x(0), _y(0), _width(g._width), _height(g._height),
-					_bpp(g._bpp), _col(0), _minx(0),_miny(0), _maxx(_width - 1),
-					_maxy(_height - 1), _font(Font()), _owner(&g) {
-				_pixels = g._pixels;
-				_pixel = g._pixel;
-				// set some constant msg-attributes
-				_vesaMsg.header.id = MSG_VESA_UPDATE;
-				_vesaMsg.header.length = sizeof(sMsgDataVesaUpdate);
-			};
-
-			Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp) :
-					_offx(0), _offy(0), _x(x), _y(y), _width(width), _height(height), _bpp(bpp),
-					_col(0), _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),_font(Font()),
-					_owner(NULL) {
-				// allocate mem
-				switch(_bpp) {
-					case 32:
-						_pixels = (u8*)calloc(_width * _height,sizeof(u32));
-						_pixel = new Pixel32Bit(_pixels);
-						break;
-					case 24:
-						_pixels = (u8*)calloc(_width * _height,3);
-						_pixel = new Pixel24Bit(_pixels);
-						break;
-					case 16:
-						_pixels = (u8*)calloc(_width * _height,sizeof(u16));
-						_pixel = new Pixel16Bit(_pixels);
-						break;
-					case 8:
-						_pixels = (u8*)calloc(_width * _height,sizeof(u8));
-						_pixel = new Pixel8Bit(_pixels);
-						break;
-					default:
-						err << "Unsupported color-depth: " << (u32)bpp << endl;
-						exit(EXIT_FAILURE);
-						break;
-				}
-
-				// set some constant msg-attributes
-				_vesaMsg.header.id = MSG_VESA_UPDATE;
-				_vesaMsg.header.length = sizeof(sMsgDataVesaUpdate);
-			};
-
-			~Graphics() {
-				if(_owner == NULL) {
-					delete _pixel;
-					delete _pixels;
-				}
-			};
+			Graphics(Graphics &g,tCoord x,tCoord y);
+			Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp);
+			~Graphics();
 
 			inline Font getFont() const {
 				return _font;
@@ -214,6 +167,7 @@ namespace esc {
 			inline tColDepth getColorDepth() const {
 				return _bpp;
 			};
+			void moveLines(tCoord y,tSize height,tSize up);
 			void drawChar(tCoord x,tCoord y,char c);
 			void drawString(tCoord x,tCoord y,const String &str);
 			void drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn);
@@ -224,6 +178,11 @@ namespace esc {
 			void debug() const;
 
 		private:
+			// prevent the compiler from generating copy-constructor and assignment-operator
+			// by declaring them with out definition
+			Graphics(const Graphics &g);
+			Graphics &operator=(const Graphics &g);
+
 			inline void doSetPixel(tCoord x,tCoord y) {
 				_pixel->set((_offy + y) * _width + (_offx + x),_col);
 			};

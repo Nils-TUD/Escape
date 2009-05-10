@@ -22,9 +22,11 @@
 
 #include <esc/common.h>
 #include <esc/gui/common.h>
+#include <esc/stream.h>
 
 namespace esc {
 	namespace gui {
+		// TODO not finished yet!
 		class Color {
 		public:
 			static inline Color from8Bit(u8 col) {
@@ -127,6 +129,8 @@ namespace esc {
 		private:
 			u32 _color;
 		};
+
+		Stream &operator<<(Stream &s,const Color &c);
 	}
 }
 

@@ -31,12 +31,30 @@ namespace esc {
 			static const u32 PADDING = 3;
 			static const u32 CURSOR_WIDTH = 2;
 			static const u32 CURSOR_OVERLAP = 2;
+			static const Color BGCOLOR;
+			static const Color FGCOLOR;
+			static const Color BORDER_COLOR;
+			static const Color CURSOR_COLOR;
 
 		public:
 			Editable(tCoord x,tCoord y,tSize width,tSize height)
 				: Control(x,y,width,height), _cursor(0), _focused(false), _str(String()) {
 			};
+			Editable(const Editable &e)
+				: Control(e), _cursor(e._cursor), _focused(false), _str(e._str) {
+			};
 			virtual ~Editable() {
+			};
+
+			Editable &operator=(const Editable &e) {
+				// ignore self-assigments
+				if(this == &e)
+					return *this;
+				Control::operator=(e);
+				_cursor = e._cursor;
+				_focused = false;
+				_str = e._str;
+				return *this;
 			};
 
 			inline String getText() const {
@@ -45,10 +63,10 @@ namespace esc {
 			inline void setText(const String &text) {
 				_str = text;
 				_cursor = text.length();
-				paint();
+				repaint();
 			};
 
-			virtual void paint();
+			virtual void paint(Graphics &g);
 			virtual void onFocusGained();
 			virtual void onFocusLost();
 			virtual void onKeyPressed(const KeyEvent &e);

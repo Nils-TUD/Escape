@@ -22,7 +22,7 @@ CEXT2OBJ=$(patsubst ext2/%.c,$(BUILD)/service_$(NAME)_ext2_%.o,$(CEXT2SRC))
 all:	$(BIN)
 
 $(BIN):	$(LDCONF) $(COBJ) $(CEXT2OBJ) $(START) $(LIBCA)
-		@echo "===== COMPILING & LINKING =====";
+		@echo "===== LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(CEXT2OBJ) $(LIBCA);
 		@echo "===== COPYING ON DISK =====";
 		@make -C ../../ mounthdd

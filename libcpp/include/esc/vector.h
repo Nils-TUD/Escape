@@ -39,9 +39,11 @@ namespace esc {
 
 	public:
 		/**
-		 * Creates a new vector with space for 8 elements
+		 * Creates a new vector with space for <size> elements
+		 *
+		 * @param vsize the initial size (8 by default)
 		 */
-		Vector();
+		Vector(u32 vsize = initialSize);
 		/**
 		 * Copy-constructor
 		 */
@@ -50,6 +52,11 @@ namespace esc {
 		 * Frees the space
 		 */
 		~Vector();
+
+		/**
+		 * Assignment-operator
+		 */
+		Vector<T> &operator=(const Vector<T> &v);
 
 		/**
 		 * Adds the given value to the end of the vector
@@ -67,12 +74,13 @@ namespace esc {
 		void insert(u32 i,const T &value);
 
 		/**
-		 * Removes the element at given index
+		 * Removes elements beginning at given index
 		 *
 		 * @param i the index
-		 * @return true if removed
+		 * @param count the number of elements to remove
+		 * @return the number of removed elements
 		 */
-		bool remove(u32 i);
+		u32 remove(u32 i,u32 count = 1);
 
 		/**
 		 * Removes the first element that equals <value>
@@ -106,8 +114,8 @@ namespace esc {
 	};
 
 	template<class T>
-	Vector<T>::Vector() : _elCount(0), _elSize(initialSize) {
-		_elements = new T[initialSize];
+	Vector<T>::Vector(u32 vsize) : _elCount(0), _elSize(vsize) {
+		_elements = new T[vsize];
 	}
 
 	template<class T>
@@ -124,6 +132,18 @@ namespace esc {
 	}
 
 	template<class T>
+	Vector<T> &Vector<T>::operator=(const Vector<T> &v) {
+		// ignore self-assignments
+		if(this == &v)
+			return *this;
+		_elements = new T[v._elSize];
+		memcpy(_elements,v._elements,v._elCount * sizeof(T));
+		_elCount = v._elCount;
+		_elSize = v._elSize;
+		return *this;
+	}
+
+	template<class T>
 	inline void Vector<T>::add(const T &value) {
 		ensureCapacity();
 		_elements[_elCount++] = value;
@@ -131,7 +151,7 @@ namespace esc {
 
 	template<class T>
 	void Vector<T>::insert(u32 i,const T &value) {
-		vassert(i <= _elCount,"Index %d out of bounds (0..%d)",i,_elCount + 1);
+		vassert(i <= _elCount,"Index %d out of bounds (0..%d)",i,_elCount);
 		if(i == _elCount)
 			add(value);
 		else {
@@ -144,13 +164,12 @@ namespace esc {
 	}
 
 	template<class T>
-	bool Vector<T>::remove(u32 i) {
-		if(i >= _elCount)
-			return false;
-		for(u32 x = i + 1; x < _elCount; x++)
-			_elements[x - 1] = _elements[x];
-		_elCount--;
-		return true;
+	u32 Vector<T>::remove(u32 i,u32 count) {
+		vassert(i + count <= _elCount,"Range %d..%d out of bounds (0..%d)",i,i + count,_elCount);
+		for(u32 x = i + count; x < _elCount; x++)
+			_elements[x - count] = _elements[x];
+		_elCount -= count;
+		return count;
 	}
 
 	template<class T>

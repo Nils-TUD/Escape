@@ -44,7 +44,7 @@ init:
 	jmp		$
 
 
-; all signal-handler return to this "function" (address 0xd)
+; all signal-handler return to this "function" (address 0x17)
 sigRetFunc:
 	; ack signal so that the kernel knows that we accept another signal
 	call	ackSignal

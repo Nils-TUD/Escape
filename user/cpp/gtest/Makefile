@@ -24,7 +24,7 @@ COBJ=$(patsubst %.cpp,$(BUILD)/user_$(NAME)_%.o,$(CSRC))
 all:	$(BIN)
 
 $(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCPPA)
-		@echo "===== COMPILING & LINKING =====";
+		@echo "===== LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCPPA);
 		@echo "===== COPYING ON DISK =====";
 		@make -C $(ROOT) mounthdd

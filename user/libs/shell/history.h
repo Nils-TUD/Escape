@@ -17,46 +17,43 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef COMMANDS_H_
-#define COMMANDS_H_
+#ifndef HISTORY_H_
+#define HISTORY_H_
 
 #include <esc/common.h>
 
-#define MAX_CMDNAME_LEN		30
-#define MAX_CMD_LEN			40
-
-#define TYPE_BUILTIN		0
-#define TYPE_EXTERN			1
-#define TYPE_PATH			2
-
-#define APPS_DIR			"file:/bin/"
-
-/* the builtin shell-commands */
-typedef s32 (*fCommand)(u32 argc,char **argv);
-typedef struct {
-	u8 type;
-	u16 mode;
-	char name[MAX_CMDNAME_LEN + 1];
-	fCommand func;
-	s32 complStart;
-} sShellCmd;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
- * Determines all matches for the given line
+ * Adds the given line to history. It will be assumed that line has been allocated on the heap!
  *
  * @param line the line
- * @param length the current cursorpos
- * @param max the maximum number of matches to collect
- * @param searchCmd wether you're looking for a command to execute
- * @return the matches or NULL if failed
  */
-sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPath);
+void shell_addToHistory(char *line);
 
 /**
- * Free's the given matches
+ * Moves one step up in the history
  *
- * @param matches the matches
+ * @return the current history-entry (NULL if no available)
  */
-void compl_free(sShellCmd **matches);
+char *shell_histUp(void);
 
-#endif /* COMMANDS_H_ */
+/**
+ * Moves one step down in the history
+ *
+ * @return the current history-entry (NULL if no available)
+ */
+char *shell_histDown(void);
+
+/**
+ * Prints the history
+ */
+void shell_histPrint(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* HISTORY_H_ */

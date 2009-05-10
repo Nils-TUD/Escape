@@ -13,7 +13,7 @@ COBJ=$(patsubst %.cpp,$(BUILD)/tools_$(NAME)_%.o,$(CSRC))
 all:	$(BIN)
 
 $(BIN):	$(COBJ)
-		@echo "===== COMPILING & LINKING =====";
+		@echo "===== LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(COBJ);
 
 $(BUILD)/tools_$(NAME)_%.o:		%.cpp

@@ -71,6 +71,8 @@ struct sVFSNode {
 		struct {
 			/* we have to lock reads */
 			tFileNo locked;
+			/* a list of clients for single-pipe-services */
+			sSLList *singlePipeClients;
 			/* a list for sending messages to the service */
 			sSLList *sendList;
 			/* a list for reading messages from the service */

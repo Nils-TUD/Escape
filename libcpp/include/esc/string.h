@@ -34,7 +34,7 @@ namespace esc {
 		static const u32 npos = -1;
 
 	public:
-		String();
+		String(u32 length = initSize);
 		String(const String &s);
 		String(const char *s);
 		~String();
@@ -42,6 +42,7 @@ namespace esc {
 		inline u32 length() const {
 			return _length;
 		};
+		void reserve(u32 length);
 
 		u32 find(char c,u32 offset = 0) const;
 		u32 find(const char *sub,u32 offset = 0) const;

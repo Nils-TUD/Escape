@@ -34,10 +34,27 @@ namespace esc {
 		public:
 			Control(tCoord x,tCoord y,tSize width,tSize height)
 				: UIElement(x,y,width,height), _w(NULL) {
-
+			};
+			Control(const Control &c)
+				: UIElement(c), _w(NULL) {
+				// don't assign the window; the user has to do it manually
 			};
 			virtual ~Control() {
 
+			};
+
+			Control &operator=(const Control &c) {
+				// ignore self-assignments
+				if(this == &c)
+					return *this;
+				UIElement::operator=(c);
+				// don't assign the window; the user has to do it manually
+				_w = NULL;
+				return *this;
+			};
+
+			inline Window &getWindow() const {
+				return *_w;
 			};
 
 			virtual void onFocusGained();
@@ -47,8 +64,6 @@ namespace esc {
 			virtual void onMousePressed(const MouseEvent &e);
 			virtual void onKeyPressed(const KeyEvent &e);
 			virtual void onKeyReleased(const KeyEvent &e);
-
-			virtual void paint();
 
 		private:
 			void setWindow(Window *w);

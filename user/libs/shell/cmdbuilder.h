@@ -37,6 +37,10 @@ typedef struct {
 	u8 dup;				/* may be DUP_NONE, DUP_STDIN, DUP_STDOUT or both */
 } sCommand;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Prints all given commands
  *
@@ -71,5 +75,9 @@ sCommand *cmd_get(sCmdToken *tokens,u32 tokenCount,u32 *cmdCount);
  * @param cmdCount the command-count
  */
 void cmd_free(sCommand *cmds,u32 cmdCount);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CMDBUILDER_H_ */

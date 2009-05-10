@@ -28,6 +28,9 @@
 
 #define PIXEL_SIZE						(colorDepth / 8)
 
+#define WIN_STYLE_DEFAULT				0
+#define WIN_STYLE_POPUP					1
+
 typedef u16 tSize;
 typedef u16 tCoord;
 typedef u32 tColor;
@@ -42,7 +45,7 @@ typedef struct {
 	tSize height;
 	tWinId id;
 	tPid owner;
-	u8 *buffer;
+	u8 style;
 	u8 keymap;
 } sWindow;
 
@@ -81,6 +84,15 @@ void win_setCursor(tCoord x,tCoord y);
 tWinId win_create(sMsgDataWinCreateReq msg);
 
 /**
+ * Destroys the given window
+ *
+ * @param id the window-id
+ * @param mouseX the current x-coordinate of the mouse
+ * @param mouseY the current y-coordinate of the mouse
+ */
+void win_destroy(tWinId id,tCoord mouseX,tCoord mouseY);
+
+/**
  * @param id the window-id
  * @return wether the window with given id exists
  */
@@ -105,8 +117,11 @@ sWindow *win_getActive(void);
  * are above one step behind (z-coordinate)
  *
  * @param id the window-id
+ * @param repaint wether the window should receive a repaint-event
+ * @param mouseX the current x-coordinate of the mouse
+ * @param mouseY the current y-coordinate of the mouse
  */
-void win_setActive(tWinId id);
+void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY);
 
 /**
  * Moves the given window to given position

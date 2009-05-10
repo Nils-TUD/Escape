@@ -131,20 +131,30 @@ s32 vfs_hasAccess(tPid pid,tVFSNodeNo nodeNo,u8 flags) {
 tFileNo vfs_inheritFileNo(tPid pid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n = vfsn_getNode(e->nodeNo);
-	/* we can't share multipipe-service-usages since each process has his own node */
-	if((n->mode & MODE_TYPE_SERVUSE) && !(n->parent->mode & MODE_SERVICE_SINGLEPIPE)) {
-		sVFSNode *child;
-		tVFSNodeNo nodeNo;
-		tFileNo newFile;
-		s32 err = vfsn_createServiceUse(pid,n->parent,&child);
-		if(err < 0)
-			return -1;
+	if((n->mode & MODE_TYPE_SERVUSE)) {
+		/* we can't share multipipe-service-usages since each process has his own node */
+		if(!(n->parent->mode & MODE_SERVICE_SINGLEPIPE)) {
+			sVFSNode *child;
+			tVFSNodeNo nodeNo;
+			tFileNo newFile;
+			s32 err = vfsn_createServiceUse(pid,n->parent,&child);
+			if(err < 0)
+				return -1;
 
-		nodeNo = NADDR_TO_VNNO(child);
-		newFile = vfs_openFile(pid,e->flags,nodeNo);
-		if(newFile < 0)
-			return -1;
-		return newFile;
+			nodeNo = NADDR_TO_VNNO(child);
+			newFile = vfs_openFile(pid,e->flags,nodeNo);
+			if(newFile < 0)
+				return -1;
+			return newFile;
+		}
+		else {
+			e->refCount++;
+			/* for single-pipe-services, we have to add the child to the clients */
+			sProc *p = proc_getByPid(pid);
+			if(sll_indexOf(n->data.servuse.singlePipeClients,p) == -1)
+				sll_append(n->data.servuse.singlePipeClients,p);
+			return file;
+		}
 	}
 	/* if a pipe is inherited we need a new file for it (position should be different )*/
 	else if(n->mode & MODE_TYPE_PIPE) {
@@ -456,6 +466,7 @@ s32 vfs_writeFile(tPid pid,tFileNo file,u8 *buffer,u32 count) {
 
 void vfs_closeFile(tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
+	sProc *p = proc_getRunning();
 
 	/* decrement references */
 	if(--(e->refCount) == 0) {
@@ -468,6 +479,10 @@ void vfs_closeFile(tFileNo file) {
 				if(n->data.servuse.locked == file)
 					n->data.servuse.locked = -1;
 
+				/* remove us as single-pipe-client */
+				if(n->parent->mode & MODE_SERVICE_SINGLEPIPE)
+					sll_removeFirst(n->data.servuse.singlePipeClients,p);
+
 				/* last usage? */
 				if(--(n->refCount) == 0) {
 					/* we have to remove the service-usage-node, if it is one */
@@ -478,7 +493,7 @@ void vfs_closeFile(tFileNo file) {
 						 * (it means that the client has already closed the file) */
 						/* note also that we can assume that the service is still running since we
 						 * would have deleted the whole service-node otherwise */
-						if(n->data.servuse.sendList == NULL || sll_length(n->data.servuse.sendList) == 0) {
+						if(sll_length(n->data.servuse.sendList) == 0) {
 							/* free send and receive list */
 							if(n->data.servuse.recvList != NULL) {
 								sll_destroy(n->data.servuse.recvList,true);
@@ -492,6 +507,11 @@ void vfs_closeFile(tFileNo file) {
 							/* free node */
 							if((n->parent->mode & MODE_SERVICE_SINGLEPIPE) == 0)
 								kheap_free(n->name);
+							else if(n->data.servuse.singlePipeClients != NULL) {
+								sll_destroy(n->data.servuse.singlePipeClients,false);
+								n->data.servuse.singlePipeClients = NULL;
+							}
+
 							vfsn_removeChild(n->parent,n);
 						}
 					}
@@ -690,6 +710,13 @@ s32 vfs_removeService(tPid pid,tVFSNodeNo nodeNo) {
 			sll_destroy(m->data.servuse.sendList,true);
 			m->data.servuse.sendList = NULL;
 		}
+		/* free single-pipe clients */
+		if(n->mode & MODE_SERVICE_SINGLEPIPE) {
+			if(m->data.servuse.singlePipeClients != NULL) {
+				sll_destroy(m->data.servuse.singlePipeClients,false);
+				m->data.servuse.singlePipeClients = NULL;
+			}
+		}
 
 		/* remove node */
 		vfsn_removeChild(n,m);
@@ -871,6 +898,9 @@ s32 vfs_serviceUseReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 	/* the data is behind the message */
 	memcpy(buffer,(u8*)(msg + 1) + offset,count);
 
+	/*if(pid != KERNEL_PID)
+		vid_printf("[read] %s@%s: %d, q=%d\n",proc_getByPid(pid)->command,node->parent->name,
+				count,sll_length(list));*/
 	/*vid_printf("\n%s read msg from %s; src=0x%x,length=%d\n",
 					proc_getByPid(pid)->name,node->parent->name,(u8*)(msg + 1) + offset,count);*/
 
@@ -917,6 +947,9 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 		msg->length = count;
 		memcpy(msg + 1,buffer,count);
 
+		/*if(pid != KERNEL_PID)
+			vid_printf("[write] %s->%s: %d, q=%d\n",proc_getByPid(pid)->command,n->parent->name,count,
+					sll_length(*list));*/
 		/*vid_printf("\n%s Wrote msg to %s; dest=0x%x,length=%d\n",
 				proc_getByPid(pid)->name,n->parent->name,msg + 1,count);*/
 		/*util_dumpBytes(buffer,count);
@@ -932,9 +965,15 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 		}
 		else {
 			if(n->parent->mode & MODE_SERVICE_SINGLEPIPE) {
-				/* we don't know who uses the service. Therefore we have to unblock all :/ */
-				/* TODO is there a better way? */
-				proc_wakeupAll(EV_RECEIVED_MSG);
+				/* should never happen since fs is a multipipe-service, but just to be sure */
+				if(n->owner == KERNEL_PID)
+					vfsr_setGotMsg();
+				/* notify the clients of this single-pipe-service */
+				else if(sll_length(n->data.servuse.singlePipeClients) > 0) {
+					sSLNode *node = sll_begin(n->data.servuse.singlePipeClients);
+					for(; node != NULL; node = node->next)
+						proc_wakeup(((sProc*)node->data)->pid,EV_RECEIVED_MSG);
+				}
 			}
 			else {
 				/* notify the process that there is a message */

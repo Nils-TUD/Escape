@@ -25,19 +25,45 @@
 #include <esc/gui/window.h>
 #include <esc/gui/button.h>
 #include <esc/gui/editable.h>
+#include <esc/gui/combobox.h>
 #include <stdlib.h>
 
 using namespace esc::gui;
 
 int main(void) {
+	if(fork() == 0) {
+		Application *app = Application::getInstance();
+		Window w1("Fenster 1",100,100,400,300);
+		Button b("Click me!!",10,10,80,20);
+		Editable e(10,40,200,20);
+		w1.add(b);
+		w1.add(e);
+		ComboBox cb(10,80,100,20);
+		cb.addItem("Huhu");
+		cb.addItem("Wer ist da?");
+		cb.addItem("ich nicht :P");
+		w1.add(cb);
+		return app->run();
+	}
+
+	if(fork() == 0) {
+		Application *app = Application::getInstance();
+		Window w2("Fenster 2",250,250,150,200);
+		return app->run();
+	}
+
+	if(fork() == 0) {
+		Application *app = Application::getInstance();
+		Window w3("Fenster 3",50,50,100,40);
+		return app->run();
+	}
+
+	if(fork() == 0) {
+		exec("file:/bin/guishell",NULL);
+		exit(EXIT_FAILURE);
+	}
+
 	Application *app = Application::getInstance();
-	Window w1("Fenster 1",100,100,400,300);
-	Window w2("Fenster 2",250,250,150,200);
-	Window w3("Fenster 3",50,50,100,40);
 	Window w4("Fenster 4",180,90,200,100);
-	Button b("Click me!!",10,10,80,20);
-	Editable e(10,40,200,20);
-	w1.add(b);
-	w1.add(e);
 	return app->run();
 }

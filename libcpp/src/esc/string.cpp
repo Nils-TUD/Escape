@@ -23,8 +23,8 @@
 #include <string.h>
 
 namespace esc {
-	String::String()
-		: _str(new char[initSize]), _length(0), _size(initSize) {
+	String::String(u32 length)
+		: _str(new char[length]), _length(0), _size(length) {
 	}
 
 	String::String(const String &s) {
@@ -50,7 +50,11 @@ namespace esc {
 	}
 
 	String::~String() {
-		delete _str;
+		delete[] _str;
+	}
+
+	void String::reserve(u32 length) {
+		increaseSize(length);
 	}
 
 	u32 String::find(char c,u32 offset) const {
@@ -86,7 +90,7 @@ namespace esc {
 		if(offset == _length)
 			operator +=(s);
 		else if(offset < _length) {
-			u32 len = ::strlen(s);
+			u32 len = strlen(s);
 			increaseSize(_length + len);
 			memmove(_str + offset + len,_str + offset,_length - offset);
 			memcpy(_str + offset,s,len);
@@ -136,16 +140,16 @@ namespace esc {
 	String &String::operator+=(const char *s) {
 		if(s == NULL)
 			return *this;
-		u32 len = ::strlen(s);
+		u32 len = strlen(s);
 		increaseSize(_length + len);
-		::strcpy(_str + _length,s);
+		strcpy(_str + _length,s);
 		_length += len;
 		return *this;
 	}
 
 	String &String::operator+=(const String &s) {
 		increaseSize(_length + s._length);
-		::strcpy(_str + _length,s._str);
+		strcpy(_str + _length,s._str);
 		_length += s._length;
 		return *this;
 	}
@@ -156,8 +160,8 @@ namespace esc {
 		if(_size < min + 1) {
 			_size = MAX(min + 1,_size * 2);
 			cpy = new char[_size];
-			::strcpy(cpy,_str);
-			delete _str;
+			strcpy(cpy,_str);
+			delete[] _str;
 			_str = cpy;
 		}
 	}

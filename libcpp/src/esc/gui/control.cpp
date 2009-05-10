@@ -58,12 +58,5 @@ namespace esc {
 			// do nothing by default
 			UNUSED(e);
 		}
-
-		void Control::paint() {
-			// no window?
-			// TODO throw exception!
-			if(_w == NULL)
-				return;
-		}
 	}
 }

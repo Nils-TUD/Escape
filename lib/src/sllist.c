@@ -291,14 +291,12 @@ static sNode *sll_getNode(sSLList *list,u32 index) {
 
 void sll_dbg_print(sSLList *list) {
 	sList *l = (sList*)list;
-	sNode *n = l->first;
-
-	vassert(list != NULL,"list == NULL");
-
-	sllprintf("Linked list @ 0x%x\n",list);
-	while(n != NULL) {
-		sllprintf("\t[0x%x] data=0x%x, next=0x%x\n",n,n->data,n->next);
-		n = n->next;
+	if(l != NULL) {
+		sNode *n = l->first;
+		while(n != NULL) {
+			sllprintf("\t[0x%x] data=0x%x, next=0x%x\n",n,n->data,n->next);
+			n = n->next;
+		}
 	}
 }
 

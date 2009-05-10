@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/vector.h>
+#include <esc/messages.h>
 #include <esc/gui/common.h>
 
 namespace esc {
@@ -41,13 +42,26 @@ namespace esc {
 				return _inst;
 			};
 
-		private:
+		protected:
 			static Application *_inst;
 
-		public:
-			Application();
-			virtual ~Application();
+		private:
+			typedef struct {
+				sMsgHeader header;
+				sMsgDataWinCreateReq data;
+			} __attribute__((packed)) sMsgWinCreateReq;
 
+			typedef struct {
+				sMsgHeader header;
+				sMsgDataWinDestroyReq data;
+			} __attribute__((packed)) sMsgWinDestroyReq;
+
+			typedef struct {
+				sMsgHeader header;
+				sMsgDataWinMoveReq data;
+			} __attribute__((packed)) sMsgWinMoveReq;
+
+		public:
 			inline tSize getScreenWidth() const {
 				return _screenWidth;
 			};
@@ -60,13 +74,18 @@ namespace esc {
 
 			int run();
 
+		protected:
+			Application();
+			virtual ~Application();
+
+			virtual void doEvents();
+			virtual void handleMessage(sMsgHeader *msg);
+
 		private:
-			inline void AddWindow(Window *win) {
-				_windows.add(win);
-			};
-			inline tFD getWinManagerFd() const {
-				return _winFd;
-			};
+			// prevent copying
+			Application(const Application &a);
+			Application &operator=(const Application &a);
+
 			inline tFD getVesaFd() const {
 				return _vesaFd;
 			};
@@ -74,11 +93,16 @@ namespace esc {
 				return _vesaMem;
 			};
 			void passToWindow(sMsgDataWinMouse *e);
+			void closePopups(tWinId id,tCoord x,tCoord y);
+			void addWindow(Window *win);
+			void removeWindow(Window *win);
 			Window *getWindowById(tWinId id);
+			void moveWindow(Window *win);
 
+		protected:
+			tFD _winFd;
 		private:
 			u8 _mouseBtns;
-			tFD _winFd;
 			tFD _vesaFd;
 			void *_vesaMem;
 			tSize _screenWidth;
@@ -88,6 +112,5 @@ namespace esc {
 		};
 	}
 }
-
 
 #endif /* APPLICATION_H_ */

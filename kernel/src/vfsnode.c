@@ -50,14 +50,6 @@ static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child);
 static sVFSNode *vfsn_createPipeNode(tPid pid,sVFSNode *parent,char *name);
 
 /**
- * The recursive function to print the VFS-tree
- *
- * @param level the current recursion level
- * @param parent the parent node
- */
-static void vfsn_doPrintTree(u32 level,sVFSNode *parent);
-
-/**
  * Requests a new node and returns the pointer to it. Panics if there are no free nodes anymore.
  *
  * @return the pointer to the node
@@ -70,6 +62,16 @@ static sVFSNode *vfsn_requestNode(void);
  * @param node the node
  */
 static void vfsn_releaseNode(sVFSNode *node);
+
+#if DEBUGGING
+/**
+ * The recursive function to print the VFS-tree
+ *
+ * @param level the current recursion level
+ * @param parent the parent node
+ */
+static void vfsn_dbg_doPrintTree(u32 level,sVFSNode *parent);
+#endif
 
 
 /* all nodes */
@@ -307,6 +309,10 @@ sVFSNode *vfsn_createNode(sVFSNode *parent,char *name) {
 	node->prev = NULL;
 	node->firstChild = NULL;
 	node->lastChild = NULL;
+	node->data.servuse.locked = -1;
+	node->data.servuse.recvList = NULL;
+	node->data.servuse.sendList = NULL;
+	node->data.servuse.singlePipeClients = NULL;
 	node->data.def.cache = NULL;
 	node->data.def.size = 0;
 	node->data.def.pos = 0;
@@ -421,6 +427,11 @@ s32 vfsn_createServiceUse(tPid pid,sVFSNode *n,sVFSNode **child) {
 		while(m != NULL) {
 			if(strcmp(m->name,SERVICE_CLIENT_ALL) == 0) {
 				*child = m;
+				sProc *p = proc_getByPid(pid);
+				/* just in case we're already using this service... */
+				sll_removeFirst(m->data.servuse.singlePipeClients,p);
+				/* append us */
+				sll_append(m->data.servuse.singlePipeClients,p);
 				return 0;
 			}
 			m = m->next;
@@ -455,6 +466,14 @@ s32 vfsn_createServiceUse(tPid pid,sVFSNode *n,sVFSNode **child) {
 		if((n->mode & MODE_SERVICE_SINGLEPIPE) == 0)
 			kheap_free(name);
 		return ERR_NOT_ENOUGH_MEM;
+	}
+
+	/* save us as client */
+	if(n->mode & MODE_SERVICE_SINGLEPIPE) {
+		m->data.servuse.singlePipeClients = sll_create();
+		if(m->data.servuse.singlePipeClients == NULL)
+			return ERR_NOT_ENOUGH_MEM;
+		sll_append(m->data.servuse.singlePipeClients,proc_getByPid(pid));
 	}
 
 	*child = m;
@@ -520,20 +539,6 @@ static void vfsn_releaseNode(sVFSNode *node) {
 	freeList = node;
 }
 
-static void vfsn_doPrintTree(u32 level,sVFSNode *parent) {
-	u32 i;
-	sVFSNode *n = NODE_FIRST_CHILD(parent);
-	while(n != NULL) {
-		for(i = 0;i < level;i++)
-			vid_printf(" |");
-		vid_printf("- %s\n",n->name);
-		/* don't recurse for "." and ".." */
-		if(strncmp(n->name,".",1) != 0 && strncmp(n->name,"..",2) != 0)
-			vfsn_doPrintTree(level + 1,n);
-		n = n->next;
-	}
-}
-
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
@@ -541,7 +546,28 @@ static void vfsn_doPrintTree(u32 level,sVFSNode *parent) {
 void vfsn_dbg_printTree(void) {
 	vid_printf("VFS:\n");
 	vid_printf("/\n");
-	vfsn_doPrintTree(1,&nodes[0]);
+	vfsn_dbg_doPrintTree(1,&nodes[0]);
+}
+
+static void vfsn_dbg_doPrintTree(u32 level,sVFSNode *parent) {
+	u32 i;
+	sVFSNode *n = NODE_FIRST_CHILD(parent);
+	while(n != NULL) {
+		for(i = 0;i < level;i++)
+			vid_printf(" |");
+		vid_printf("- %s\n",n->name);
+		if((n->mode & MODE_TYPE_SERVUSE) && (n->parent->mode & MODE_SERVICE_SINGLEPIPE)) {
+			vid_printf("SinglePipeClients:\n");
+			sSLNode *node = sll_begin(n->data.servuse.singlePipeClients);
+			for(; node != NULL; node = node->next) {
+				vid_printf("\t pid=%d, cmd=%s\n",((sProc*)node->data)->pid,((sProc*)node->data)->command);
+			}
+		}
+		/* don't recurse for "." and ".." */
+		if(strncmp(n->name,".",1) != 0 && strncmp(n->name,"..",2) != 0)
+			vfsn_dbg_doPrintTree(level + 1,n);
+		n = n->next;
+	}
 }
 
 void vfsn_dbg_printNode(sVFSNode *node) {
@@ -554,8 +580,14 @@ void vfsn_dbg_printNode(sVFSNode *node) {
 		vid_printf("\tprev: 0x%x\n",node->prev);
 		vid_printf("\towner: %d\n",node->owner);
 		if(node->mode & MODE_TYPE_SERVUSE) {
-			vid_printf("\tSendList: 0x%x\n",node->data.servuse.sendList);
-			vid_printf("\tRecvList: 0x%x\n",node->data.servuse.recvList);
+			vid_printf("\tSendList:\n");
+			sll_dbg_print(node->data.servuse.sendList);
+			vid_printf("\tRecvList:\n");
+			sll_dbg_print(node->data.servuse.recvList);
+			if(node->parent->mode & MODE_SERVICE_SINGLEPIPE) {
+				vid_printf("\tSinglePipeClients:\n");
+				sll_dbg_print(node->data.servuse.singlePipeClients);
+			}
 		}
 		else {
 			vid_printf("\treadHandler: 0x%x\n",node->readHandler);

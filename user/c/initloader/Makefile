@@ -19,7 +19,7 @@ AOBJ=$(patsubst %.s,$(BUILD)/user_$(NAME)_%.o,$(ASRC))
 all:	$(BIN) $(DUMP)
 
 $(BIN):	$(LDCONF) $(AOBJ)
-		@echo "===== COMPILING & LINKING =====";
+		@echo "===== LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(AOBJ);
 
 $(BUILD)/user_$(NAME)_%.o: %.s

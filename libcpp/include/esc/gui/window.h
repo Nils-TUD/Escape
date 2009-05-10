@@ -34,11 +34,16 @@
 namespace esc {
 	namespace gui {
 		class Window : public UIElement {
+			friend class Application;
+
 		private:
 			static Color BGCOLOR;
 			static Color TITLE_BGCOLOR;
+			static Color TITLE_ACTIVE_BGCOLOR;
 			static Color TITLE_FGCOLOR;
 			static Color BORDER_COLOR;
+
+			static u16 NEXT_TMP_ID;
 
 			static const u8 MOUSE_MOVED = 0;
 			static const u8 MOUSE_RELEASED = 1;
@@ -46,29 +51,39 @@ namespace esc {
 			static const u8 KEY_RELEASED = 3;
 			static const u8 KEY_PRESSED = 4;
 
-			typedef struct {
-				u16 x;
-				u16 y;
-				u16 width;
-				u16 height;
-			} sRectangle;
-
-			typedef struct {
-				sMsgHeader header;
-				sMsgDataWinMoveReq data;
-			} __attribute__((packed)) sMsgWinMoveReq;
-
-			typedef struct {
-				sMsgHeader header;
-				sMsgDataWinCreateReq data;
-			} __attribute__((packed)) sMsgWinCreateReq;
+		public:
+			static const u8 STYLE_DEFAULT = 0;
+			static const u8 STYLE_POPUP = 1;
 
 		public:
-			Window(const String &title,tCoord x,tCoord y,tSize width,tSize height);
+			Window(const String &title,tCoord x,tCoord y,tSize width,tSize height,
+					u8 style = STYLE_DEFAULT);
+			Window(const Window &w);
 			virtual ~Window();
+
+			Window &operator=(const Window &w) {
+				UIElement::operator=(w);
+				_title = w._title;
+				_style = w._style;
+				_titleBarHeight = w._titleBarHeight;
+				_inTitle = w._inTitle;
+				_isActive = false;
+				_focus = w._focus;
+				_controls = w._controls;
+				_id = NEXT_TMP_ID--;
+				_created = false;
+				init();
+				return *this;
+			};
 
 			inline tWinId getId() const {
 				return _id;
+			};
+			inline u8 getStyle() const {
+				return _style;
+			};
+			inline bool isActive() const {
+				return _isActive;
 			};
 			inline tSize getTitleBarHeight() const {
 				return _titleBarHeight;
@@ -78,7 +93,7 @@ namespace esc {
 			};
 			inline void setTitle(const String &title) {
 				_title = title;
-				paint();
+				repaint();
 			};
 
 			virtual void onMouseMoved(const MouseEvent &e);
@@ -87,24 +102,35 @@ namespace esc {
 			virtual void onKeyPressed(const KeyEvent &e);
 			virtual void onKeyReleased(const KeyEvent &e);
 
-			virtual void paint();
+			virtual void paint(Graphics &g);
 			void move(s16 x,s16 y);
 			void moveTo(tCoord x,tCoord y);
-
 			void add(Control &c);
 
+		protected:
+			void paintTitle(Graphics &g);
+
 		private:
+			void init();
 			void passToCtrl(const KeyEvent &e,u8 event);
 			void passToCtrl(const MouseEvent &e,u8 event);
+			void setActive(bool active);
+			void onCreated(tWinId id);
 
 		private:
 			tWinId _id;
+			bool _created;
+			u8 _style;
 			String _title;
 			tSize _titleBarHeight;
 			bool _inTitle;
+			bool _isActive;
+		protected:
 			s32 _focus;
 			Vector<Control*> _controls;
 		};
+
+		Stream &operator<<(Stream &s,const Window &w);
 	}
 }
 

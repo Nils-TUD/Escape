@@ -1296,7 +1296,8 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 
 static void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
-	proc_dbg_print(proc_getRunning());
+	vfsn_dbg_printTree();
+	proc_dbg_printAll();
 }
 
 static void sysc_createSharedMem(sIntrptStackFrame *stack) {

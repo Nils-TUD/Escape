@@ -87,6 +87,8 @@ static bool shiftDown;
 static bool altDown;
 static bool ctrlDown;
 
+static sWindow *mouseWin = NULL;
+
 int main(void) {
 	sMsgHeader header;
 	sMsgDataMouse mouseData;
@@ -126,8 +128,23 @@ int main(void) {
 					case MSG_WIN_CREATE_REQ: {
 						sMsgDataWinCreateReq data;
 						if(read(fd,&data,sizeof(data)) == sizeof(data)) {
+							winCreateResp.data.tmpId = data.tmpWinId;
 							winCreateResp.data.id = win_create(data);
 							write(fd,&winCreateResp,sizeof(sMsgWinCreateResp));
+							debugf("Created window %d @ %d,%d with %d,%d\n",winCreateResp.data.id,
+									data.x,data.y,data.width,data.height);
+							if(data.style == WIN_STYLE_POPUP)
+								win_setActive(winCreateResp.data.id,false,curX,curY);
+						}
+					}
+					break;
+
+					case MSG_WIN_DESTROY_REQ: {
+						sMsgDataWinDestroyReq data;
+						if(read(fd,&data,sizeof(data)) == sizeof(data)) {
+							debugf("Destroyed window %d\n",data.window);
+							if(win_exists(data.window))
+								win_destroy(data.window,curX,curY);
 						}
 					}
 					break;
@@ -152,6 +169,7 @@ int main(void) {
 				/* skip invalid data's */
 				if(read(mouse,&mouseData,sizeof(sMsgDataMouse)) == sizeof(sMsgDataMouse)) {
 					tCoord oldx = curX,oldy = curY;
+					bool btnChanged = false;
 					curX = MAX(0,MIN(screenWidth - 1,curX + mouseData.x));
 					curY = MAX(0,MIN(screenHeight - 1,curY - mouseData.y));
 
@@ -161,16 +179,20 @@ int main(void) {
 
 					/* set active window */
 					if(mouseData.buttons != buttons) {
+						btnChanged = true;
 						buttons = mouseData.buttons;
 						if(buttons) {
 							sWindow *w = win_getAt(curX,curY);
 							if(w)
-								win_setActive(w->id);
+								win_setActive(w->id,true,curX,curY);
+							else
+								win_setActive(WINDOW_COUNT,false,curX,curY);
+							mouseWin = w;
 						}
 					}
 
 					/* send to window */
-					sWindow *w = win_getActive();
+					sWindow *w = mouseWin ? mouseWin : win_getActive();
 					if(w) {
 						tFD aWin = getClientProc(servId,w->owner);
 						if(aWin >= 0) {
@@ -184,6 +206,9 @@ int main(void) {
 							close(aWin);
 						}
 					}
+
+					if(btnChanged && !buttons)
+						mouseWin = NULL;
 				}
 			}
 		}

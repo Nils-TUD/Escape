@@ -28,5 +28,13 @@ namespace esc {
 			if(_g)
 				_g->update(x,y,width,height);
 		}
+
+		void UIElement::repaint() {
+			if(_g) {
+				paint(*_g);
+				/* write stuff to video-mem */
+				_g->update();
+			}
+		}
 	}
 }

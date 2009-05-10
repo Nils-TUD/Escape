@@ -166,8 +166,10 @@ void proc_wakeupAll(u8 event) {
 void proc_wakeup(tPid pid,u8 event) {
 	sProc *p = procs + pid;
 	if(p->events & event) {
-		/* ensure that the process is the next one that will be chosen */
-		sched_setReadyQuick(p);
+		/* TODO somehow it is by far slower to use setReadyQuick() here. I can't really
+		 * explain this behaviour :/ */
+		/*sched_setReadyQuick(p);*/
+		sched_setReady(p);
 		p->events = EV_NOEVENT;
 	}
 }

@@ -86,18 +86,6 @@ namespace esc {
 		}
 	}
 
-	void String::insert(u32 offset,const char *s) {
-		if(offset == _length)
-			operator +=(s);
-		else if(offset < _length) {
-			u32 len = strlen(s);
-			increaseSize(_length + len);
-			memmove(_str + offset + len,_str + offset,_length - offset);
-			memcpy(_str + offset,s,len);
-			_length += len;
-		}
-	}
-
 	void String::insert(u32 offset,const String &s) {
 		if(offset == _length)
 			operator +=(s);
@@ -114,7 +102,7 @@ namespace esc {
 			count = MIN(_length - offset,count);
 			if(count == 0)
 				return;
-			/* something behind? */
+			// something behind?
 			if(_length - offset - count > 0)
 				memmove(_str + offset,_str + offset + count,_length - offset - count);
 			_length -= count;
@@ -134,16 +122,6 @@ namespace esc {
 		increaseSize(_length + 1);
 		_str[_length++] = c;
 		_str[_length] = '\0';
-		return *this;
-	}
-
-	String &String::operator+=(const char *s) {
-		if(s == NULL)
-			return *this;
-		u32 len = strlen(s);
-		increaseSize(_length + len);
-		strcpy(_str + _length,s);
-		_length += len;
 		return *this;
 	}
 

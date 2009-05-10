@@ -98,7 +98,7 @@ namespace esc {
 			if(::write(_fd,_buffer,_pos * sizeof(char)) < 0)
 				res = IO_EOF;
 			_pos = 0;
-			/* a process switch improves the performance by far :) */
+			// a process switch improves the performance by far :)
 			if(res >= 0)
 				yield();
 		}
@@ -178,7 +178,7 @@ namespace esc {
 		char c;
 		char *start = (char*)str;
 		while((c = *str)) {
-			/* handle escape */
+			// handle escape
 			if(c == '\033') {
 				if(_out->write(c) == IO_EOF)
 					break;

@@ -98,17 +98,19 @@ namespace esc {
 				tCoord cx,cy;
 				for(cy = 0; cy < height; cy++) {
 					for(cx = 0; cx < width; cx++) {
-						if(font[cy * width + cx])
+						if(*font)
 							doSetPixel(x + cx,y + cy);
+						font++;
 					}
 				}
 			}
 		}
 
 		void Graphics::drawString(tCoord x,tCoord y,const String &str) {
+			u32 charWidth = _font.getWidth();
 			for(u32 i = 0; i < str.length(); i++) {
 				drawChar(x,y,str[i]);
-				x += _font.getWidth();
+				x += charWidth;
 			}
 		}
 
@@ -191,9 +193,33 @@ namespace esc {
 			updateMinMax(x + width - 1,yend - 1);
 			tCoord xcur;
 			tCoord xend = x + width;
-			for(; y < yend; y++) {
-				for(xcur = x; xcur < xend; xcur++)
-					doSetPixel(xcur,y);
+			if(_pixel->getPixelSize() == 3) {
+				// optimized version for 24bit
+				// This is necessary if we want to have reasonable speed because the simple version
+				// performs too many function-calls (one to a virtual-function and one to memcpy
+				// that the compiler doesn't inline). Additionally the offset into the
+				// memory-region will be calculated many times.
+				// This version is much quicker :)
+				u8 *col = (u8*)&_col;
+				u32 widthadd = _width * 3;
+				u8 *addr;
+				u8 *orgaddr = _pixels + (((_offy + y) * _width + (_offx + x)) * 3);
+				for(; y < yend; y++) {
+					addr = orgaddr;
+					for(xcur = x; xcur < xend; xcur++) {
+						*addr++ = *col;
+						*addr++ = *(col + 1);
+						*addr++ = *(col + 2);
+					}
+					orgaddr += widthadd;
+				}
+			}
+			else {
+				// TODO write optimized version for 8,16 and 32 bit
+				for(; y < yend; y++) {
+					for(xcur = x; xcur < xend; xcur++)
+						doSetPixel(xcur,y);
+				}
 			}
 		}
 
@@ -229,12 +255,14 @@ namespace esc {
 				tCoord endy = y + height;
 				u32 psize = _pixel->getPixelSize();
 				u32 count = width * psize;
+				u32 srcAdd = _width * psize;
+				u32 dstAdd = screenWidth * psize;
 				src = _pixels + (y * _width + x) * psize;
 				dst = (u8*)vesaMem + ((_y + y) * screenWidth + (_x + x)) * psize;
 				while(y < endy) {
 					memcpy(dst,src,count);
-					src += _width * psize;
-					dst += screenWidth * psize;
+					src += srcAdd;
+					dst += dstAdd;
 					y++;
 				}
 

@@ -39,14 +39,14 @@ namespace esc {
 
 		Window::Window(const String &title,tCoord x,tCoord y,tSize width,tSize height,u8 style)
 			: UIElement(x,y,width,height), _id(NEXT_TMP_ID--), _created(false), _style(style),
-				_title(title), _titleBarHeight(20), _inTitle(false),_isActive(false), _focus(-1),
+				_title(title), _titleBarHeight(20), _inTitle(false), _isActive(false), _focus(-1),
 				_controls(Vector<Control*>()) {
 			init();
 		}
 
 		Window::Window(const Window &w)
 			: UIElement(w), _id(NEXT_TMP_ID--), _created(false), _style(w._style), _title(w._title),
-				_titleBarHeight(w._titleBarHeight),_isActive(false), _inTitle(w._inTitle),
+				_titleBarHeight(w._titleBarHeight), _inTitle(w._inTitle), _isActive(false),
 				_focus(w._focus), _controls(w._controls) {
 			init();
 		}
@@ -150,7 +150,7 @@ namespace esc {
 							break;
 						case MOUSE_RELEASED:
 							/* change focus */
-							if(i != _focus) {
+							if((s32)i != _focus) {
 								if(_focus >= 0)
 									_controls[_focus]->onFocusLost();
 								_controls[i]->onFocusGained();

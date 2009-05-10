@@ -17,10 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+extern "C" void __cxa_pure_virtual();
+
 /**
  * This is needed in case a virtual function can't be called
  */
-extern "C" void __cxa_pure_virtual()
+void __cxa_pure_virtual()
 {
 	// do nothing
 }

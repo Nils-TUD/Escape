@@ -358,7 +358,10 @@ s32 vfs_seek(tPid pid,tFileNo file,u32 position) {
 			return ERR_SERVUSE_SEEK;
 
 		/* set position */
-		e->position = MIN(n->data.def.pos - 1,position);
+		if(n->data.def.pos == 0)
+			e->position = 0;
+		else
+			e->position = MIN((u32)(n->data.def.pos) - 1,position);
 	}
 	else {
 		/* since the fs-service validates the position anyway we can simply set it */

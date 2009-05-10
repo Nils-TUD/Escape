@@ -23,8 +23,8 @@
 #include <string.h>
 
 namespace esc {
-	String::String(u32 length)
-		: _str(new char[length]), _length(0), _size(length) {
+	String::String(u32 size)
+		: _str(new char[size]), _length(0), _size(size) {
 	}
 
 	String::String(const String &s) {
@@ -53,8 +53,8 @@ namespace esc {
 		delete[] _str;
 	}
 
-	void String::reserve(u32 length) {
-		increaseSize(length);
+	void String::reserve(u32 size) {
+		increaseSize(size);
 	}
 
 	u32 String::find(char c,u32 offset) const {

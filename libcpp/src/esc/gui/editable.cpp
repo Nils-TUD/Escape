@@ -110,7 +110,7 @@ namespace esc {
 		}
 
 		void Editable::onKeyReleased(const KeyEvent &e) {
-
+			UNUSED(e);
 		}
 	}
 }

@@ -109,7 +109,7 @@ void ShellControl::scrollPage(s32 up) {
 
 void ShellControl::scrollLine(s32 up) {
 	if(up > 0) {
-		if(_firstRow > up)
+		if((s32)_firstRow > up)
 			_firstRow -= up;
 		else
 			_firstRow = 0;
@@ -167,7 +167,8 @@ void ShellControl::append(char c) {
 	if(c != '\r' && c != '\a' && c != '\b' && c != '\t') {
 		outByte(0xe9,c);
 		outByte(0x3f8,c);
-		while((inByte(0x3fd) & 0x20) == 0);
+		while((inByte(0x3fd) & 0x20) == 0)
+			;
 	}
 
 	switch(c) {

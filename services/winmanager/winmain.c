@@ -131,8 +131,6 @@ int main(void) {
 							winCreateResp.data.tmpId = data.tmpWinId;
 							winCreateResp.data.id = win_create(data);
 							write(fd,&winCreateResp,sizeof(sMsgWinCreateResp));
-							debugf("Created window %d @ %d,%d with %d,%d\n",winCreateResp.data.id,
-									data.x,data.y,data.width,data.height);
 							if(data.style == WIN_STYLE_POPUP)
 								win_setActive(winCreateResp.data.id,false,curX,curY);
 						}
@@ -142,7 +140,6 @@ int main(void) {
 					case MSG_WIN_DESTROY_REQ: {
 						sMsgDataWinDestroyReq data;
 						if(read(fd,&data,sizeof(data)) == sizeof(data)) {
-							debugf("Destroyed window %d\n",data.window);
 							if(win_exists(data.window))
 								win_destroy(data.window,curX,curY);
 						}

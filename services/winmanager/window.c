@@ -24,6 +24,7 @@
 #include <esc/heap.h>
 #include <esc/proc.h>
 #include <esc/service.h>
+#include <esc/debug.h>
 #include <esc/io.h>
 #include <stdlib.h>
 #include <sllist.h>

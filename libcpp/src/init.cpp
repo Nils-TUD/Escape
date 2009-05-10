@@ -75,6 +75,7 @@ s32 __cxa_atexit(void (*f)(void *),void *p,void *d) {
 }
 
 void __cxa_finalize(void *d) {
+	UNUSED(d);
 	s32 i;
 	for(i = objPos - 1; i >= 0; i--)
 		objs[i].f(objs[i].p);

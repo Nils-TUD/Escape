@@ -47,10 +47,8 @@ static sSLList *locks = NULL;
 s32 lock_aquire(tPid pid,u32 ident) {
 	sLock *l = lock_get(ident);
 
-	vid_printf("[%d] aquire %d\n",pid,ident);
 	/* if it exists and is locked, wait */
 	if(l && l->locked) {
-		vid_printf("[%d] waiting\n",pid);
 		l->waitCount++;
 		do {
 			proc_wait(pid,EV_UNLOCK);
@@ -78,8 +76,6 @@ s32 lock_aquire(tPid pid,u32 ident) {
 		sll_append(locks,l);
 	}
 
-	vid_printf("[%d] using %d\n",pid,ident);
-
 	/* lock it */
 	l->locked = true;
 	return 0;
@@ -89,8 +85,6 @@ s32 lock_release(u32 ident) {
 	sLock *l = lock_get(ident);
 	if(!l)
 		return ERR_LOCK_NOT_FOUND;
-
-	vid_printf("unlocking %d\n",ident);
 
 	/* unlock it */
 	l->locked = false;

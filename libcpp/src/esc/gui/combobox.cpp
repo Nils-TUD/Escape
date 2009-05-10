@@ -80,11 +80,13 @@ namespace esc {
 		}
 
 		void ComboBox::ItemWindow::onMouseReleased(const MouseEvent &e) {
+			UNUSED(e);
 			_cb->_selected = _highlighted;
 			closeImpl();
 		}
 
 		s32 ComboBox::ItemWindow::getItemAt(tCoord x,tCoord y) {
+			UNUSED(x);
 			return y / (getGraphics()->getFont().getHeight() + PADDING * 2);
 		}
 

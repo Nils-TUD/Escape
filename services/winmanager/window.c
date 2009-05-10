@@ -175,6 +175,14 @@ tWinId win_create(sMsgDataWinCreateReq msg) {
 	return WINID_UNSED;
 }
 
+void win_destroyWinsOf(tPid pid,tCoord mouseX,tCoord mouseY) {
+	tWinId id;
+	for(id = 0; id < WINDOW_COUNT; id++) {
+		if(windows[id].id != WINID_UNSED && windows[id].owner == pid)
+			win_destroy(id,mouseX,mouseY);
+	}
+}
+
 void win_destroy(tWinId id,tCoord mouseX,tCoord mouseY) {
 	/* mark unused */
 	windows[id].id = WINID_UNSED;

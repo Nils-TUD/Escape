@@ -24,6 +24,7 @@
 #include <esc/service.h>
 #include <esc/messages.h>
 #include <esc/keycodes.h>
+#include <esc/signals.h>
 #include <stdlib.h>
 #include "window.h"
 #include "keymap.h"
@@ -47,6 +48,10 @@ typedef struct {
 
 typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 
+/**
+ * Destroys the windows of a died process
+ */
+static void procDiedHandler(tSig sig,u32 data);
 /**
  * Handles a message from keyboard
  */
@@ -105,6 +110,11 @@ int main(void) {
 	keyboard = open("services:/keyboard",IO_READ);
 	if(keyboard < 0) {
 		printe("Unable to open services:/keyboard");
+		return EXIT_FAILURE;
+	}
+
+	if(setSigHandler(SIG_PROC_DIED,procDiedHandler) < 0) {
+		printe("Unable to set sig-handler for %d",SIG_PROC_DIED);
 		return EXIT_FAILURE;
 	}
 
@@ -227,6 +237,11 @@ int main(void) {
 	close(keyboard);
 	close(mouse);
 	return EXIT_SUCCESS;
+}
+
+static void procDiedHandler(tSig sig,u32 data) {
+	UNUSED(sig);
+	win_destroyWinsOf(data,curX,curY);
 }
 
 static void handleKbMessage(tServ servId,sWindow *active,sMsgKbResponse *msg) {

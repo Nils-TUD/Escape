@@ -73,6 +73,7 @@ static void vbe_write(u16 index,u16 value);
 static void vbe_setMode(tSize xres,tSize yres,u16 bpp);
 static void vbe_setCursor(tCoord x,tCoord y);
 static void vbe_drawCross(tCoord x,tCoord y);
+static tColor vbe_getVisibleFGColor(tColor bg);
 static void vbe_copyRegion(u8 *src,u8 *dst,tSize width,tSize height,tCoord x1,tCoord y1,
 		tCoord x2,tCoord y2,tSize w1,tSize w2);
 
@@ -246,34 +247,66 @@ static void vbe_setCursor(tCoord x,tCoord y) {
 static void vbe_drawCross(tCoord x,tCoord y) {
 	tColor color = CURSOR_COLOR;
 	u8 *mid = (u8*)video + (y * RESOLUTION_X + x) * PIXEL_SIZE;
+	u8 *ccopyMid = cursorCopy + (CURSOR_LEN * CURSOR_SIZE + CURSOR_LEN) * PIXEL_SIZE;
 
 	/* draw pixel at cursor */
-	if(x < RESOLUTION_X && y < RESOLUTION_Y)
+	if(x < RESOLUTION_X && y < RESOLUTION_Y) {
+		memcpy(&color,ccopyMid,PIXEL_SIZE);
+		color = vbe_getVisibleFGColor(color);
 		memcpy(mid,&color,PIXEL_SIZE);
+	}
 	/* draw left */
-	if(x >= CURSOR_LEN)
+	if(x >= CURSOR_LEN) {
+		memcpy(&color,ccopyMid - CURSOR_LEN * PIXEL_SIZE,PIXEL_SIZE);
+		color = vbe_getVisibleFGColor(color);
 		memcpy(mid - CURSOR_LEN * PIXEL_SIZE,&color,PIXEL_SIZE);
+	}
 	/* draw top */
-	if(y >= CURSOR_LEN)
+	if(y >= CURSOR_LEN) {
+		memcpy(&color,ccopyMid - CURSOR_LEN * CURSOR_SIZE * PIXEL_SIZE,PIXEL_SIZE);
+		color = vbe_getVisibleFGColor(color);
 		memcpy(mid - CURSOR_LEN * RESOLUTION_X * PIXEL_SIZE,&color,PIXEL_SIZE);
+	}
 	/* draw right */
-	if(x < RESOLUTION_X - CURSOR_LEN)
+	if(x < RESOLUTION_X - CURSOR_LEN) {
+		memcpy(&color,ccopyMid + CURSOR_LEN * PIXEL_SIZE,PIXEL_SIZE);
+		color = vbe_getVisibleFGColor(color);
 		memcpy(mid + CURSOR_LEN * PIXEL_SIZE,&color,PIXEL_SIZE);
+	}
 	/* draw bottom */
-	if(y < RESOLUTION_Y - CURSOR_LEN)
+	if(y < RESOLUTION_Y - CURSOR_LEN) {
+		memcpy(&color,ccopyMid + CURSOR_LEN * CURSOR_SIZE * PIXEL_SIZE,PIXEL_SIZE);
+		color = vbe_getVisibleFGColor(color);
 		memcpy(mid + CURSOR_LEN * RESOLUTION_X * PIXEL_SIZE,&color,PIXEL_SIZE);
+	}
+}
+
+static tColor vbe_getVisibleFGColor(tColor bg) {
+	/* NOTE: THIS ASSUMES 24BIT MODE! */
+	u32 red = (u8)(bg >> 16);
+	u32 green = (u8)(bg >> 8);
+	u32 blue = (u8)(bg & 0xFF);
+	/*
+	 * formular of W3C for the brightness of a color:
+	 * 	((Red value X 299) + (Green value X 587) + (Blue value X 114)) / 1000
+	 */
+	if((red * 299 + green * 587 + blue * 114) > 128000)
+		return 0;
+	return 0xFFFFFFFF;
 }
 
 static void vbe_copyRegion(u8 *src,u8 *dst,tSize width,tSize height,tCoord x1,tCoord y1,
 		tCoord x2,tCoord y2,tSize w1,tSize w2) {
 	tCoord maxy = y1 + height;
 	u32 count = width * PIXEL_SIZE;
+	u32 srcInc = w1 * PIXEL_SIZE;
+	u32 dstInc = w2 * PIXEL_SIZE;
 	src += (y1 * w1 + x1) * PIXEL_SIZE;
 	dst += (y2 * w2 + x2) * PIXEL_SIZE;
 	while(y1 < maxy) {
 		memcpy(dst,src,count);
-		src += w1 * PIXEL_SIZE;
-		dst += w2 * PIXEL_SIZE;
+		src += srcInc;
+		dst += dstInc;
 		y1++;
 	}
 }

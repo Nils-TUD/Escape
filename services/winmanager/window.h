@@ -84,6 +84,15 @@ void win_setCursor(tCoord x,tCoord y);
 tWinId win_create(sMsgDataWinCreateReq msg);
 
 /**
+ * Destroys all windows of the given process
+ *
+ * @param pid the process-id
+ * @param mouseX the current x-coordinate of the mouse
+ * @param mouseY the current y-coordinate of the mouse
+ */
+void win_destroyWinsOf(tPid pid,tCoord mouseX,tCoord mouseY);
+
+/**
  * Destroys the given window
  *
  * @param id the window-id

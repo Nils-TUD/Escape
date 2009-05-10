@@ -465,9 +465,10 @@ static void sysc_fork(sIntrptStackFrame *stack) {
 static void sysc_exit(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	sProc *p = proc_getRunning();
-	if(SYSC_ARG1(stack) != 0)
+	if(SYSC_ARG1(stack) != 0) {
+		vid_printf("Process %d (%s) exited with %d\n",p->pid,p->command,SYSC_ARG1(stack));
 		util_printStackTrace(util_getUserStackTrace(p,stack));
-	/*vid_printf("Process %d exited with exit-code %d\n",p->pid,SYSC_ARG1(stack));*/
+	}
 	proc_destroy(p);
 	proc_switch();
 }
@@ -871,10 +872,10 @@ static void sysc_mapPhysical(sIntrptStackFrame *stack) {
 
 	/* trying to map memory in kernel area? */
 	/* TODO is this ok? */
-	/*if(phys > KERNEL_P_ADDR || phys + pages * PAGE_SIZE > KERNEL_P_ADDR) {
+	if(OVERLAPS(phys,phys + pages,KERNEL_P_ADDR,KERNEL_P_ADDR + PAGE_SIZE * PT_ENTRY_COUNT)) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 		return;
-	}*/
+	}
 
 	/* determine start-address */
 	addr = (p->textPages + p->dataPages) * PAGE_SIZE;

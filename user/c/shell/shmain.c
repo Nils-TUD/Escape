@@ -53,7 +53,7 @@ int main(int argc,char **argv) {
 	if(argc == 3) {
 		/* in this case we already have stdin, stdout and stderr */
 		if(strcmp(argv[1],"-e") != 0) {
-			fprintf(stderr,"Invalid shell-usage\n");
+			fprintf(stderr,"Invalid shell-usage; Please use %s -e <cmd>\n",argv[1]);
 			return EXIT_FAILURE;
 		}
 

@@ -167,7 +167,7 @@ s32 shell_executeCmd(char *line) {
 			}
 			else if(pid < 0)
 				printe("Fork failed");
-			else {
+			else if(!cmd->runInBG) {
 				/* wait for child */
 				waitingPid = pid;
 				wait(EV_CHILD_DIED);

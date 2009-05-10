@@ -28,6 +28,12 @@
 static void startService(const char *name);
 
 int main(void) {
+	// check for duplicate gui-start
+	if(open("services:/vesa",IO_READ) >= 0) {
+		printe("GUI seems to be running. Stopping here");
+		return EXIT_FAILURE;
+	}
+
 	// disable readline and stop reading from keyboard
 	printf("\033l\x0\033k\x0");
 

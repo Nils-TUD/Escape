@@ -25,6 +25,7 @@
 #include <esc/proc.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
+#include <esc/signals.h>
 #include <esc/ports.h>
 #include <errors.h>
 #include <test.h>
@@ -287,11 +288,6 @@ static void test_mapPhysical(void) {
 	test_assertInt(__mapPhysical(0x100123,1231231231),ERR_INVALID_SYSC_ARGS);
 	test_assertInt(__mapPhysical(0x100123,-1),ERR_INVALID_SYSC_ARGS);
 	test_assertInt(__mapPhysical(0x100123,-5),ERR_INVALID_SYSC_ARGS);
-	/* try to cause overflow */
-	test_assertInt(__mapPhysical(0x7FFFFFF,1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(__mapPhysical(0x7FFFFFF,4),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(__mapPhysical(0xFFFFFFF,1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(__mapPhysical(0xFFFFFFF,4),ERR_INVALID_SYSC_ARGS);
 	test_caseSucceded();
 }
 
@@ -424,7 +420,7 @@ static void test_wait(void) {
 static void test_setSigHandler(void) {
 	test_caseStart("Testing setSigHandler()");
 	test_assertInt(_setSigHandler(-1,0),ERR_INVALID_SIGNAL);
-	test_assertInt(_setSigHandler(14,0),ERR_INVALID_SIGNAL);
+	test_assertInt(_setSigHandler(SIG_COUNT,0),ERR_INVALID_SIGNAL);
 	test_assertInt(_setSigHandler(0,0),ERR_INVALID_SIGNAL);
 	test_assertInt(_setSigHandler(1,0xC0000000),ERR_INVALID_SYSC_ARGS);
 	test_assertInt(_setSigHandler(1,0xFFFFFFFF),ERR_INVALID_SYSC_ARGS);
@@ -435,7 +431,7 @@ static void test_setSigHandler(void) {
 static void test_unsetSigHandler(void) {
 	test_caseStart("Testing unsetSigHandler()");
 	test_assertInt(_unsetSigHandler(-1),ERR_INVALID_SIGNAL);
-	test_assertInt(_unsetSigHandler(14),ERR_INVALID_SIGNAL);
+	test_assertInt(_unsetSigHandler(SIG_COUNT),ERR_INVALID_SIGNAL);
 	test_assertInt(_unsetSigHandler(0),ERR_INVALID_SIGNAL);
 	test_caseSucceded();
 }
@@ -443,10 +439,10 @@ static void test_unsetSigHandler(void) {
 static void test_sendSignalTo(void) {
 	test_caseStart("Testing sendSignalTo()");
 	test_assertInt(_sendSignalTo(0,-1,0),ERR_INVALID_SIGNAL);
-	test_assertInt(_sendSignalTo(0,14,0),ERR_INVALID_SIGNAL);
-	test_assertInt(_sendSignalTo(0,6,0),ERR_INVALID_SIGNAL);
-	test_assertInt(_sendSignalTo(0,12,0),ERR_INVALID_SIGNAL);
-	test_assertInt(_sendSignalTo(0,13,0),ERR_INVALID_SIGNAL);
+	test_assertInt(_sendSignalTo(0,SIG_COUNT,0),ERR_INVALID_SIGNAL);
+	test_assertInt(_sendSignalTo(0,SIG_INTRPT_ATA1,0),ERR_INVALID_SIGNAL);
+	test_assertInt(_sendSignalTo(0,SIG_INTRPT_MOUSE,0),ERR_INVALID_SIGNAL);
+	test_assertInt(_sendSignalTo(0,SIG_INTRPT_COM2,0),ERR_INVALID_SIGNAL);
 	test_assertInt(_sendSignalTo(-1,0,0),ERR_INVALID_PID);
 	test_assertInt(_sendSignalTo(1024,0,0),ERR_INVALID_PID);
 	test_assertInt(_sendSignalTo(1025,0,0),ERR_INVALID_PID);

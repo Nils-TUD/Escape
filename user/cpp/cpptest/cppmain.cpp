@@ -1,5 +1,5 @@
 /**
- * $Id: ctmain.c 202 2009-04-11 16:07:24Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -45,7 +45,7 @@ void my::doIt() {
 }
 
 int main(void) {
-#if 0
+#if 1
 	char str[10];
 	char buffer[1024];
 	char *test = "ein test";
@@ -92,7 +92,7 @@ int main(void) {
 	for(u32 i = 0; i < v2.size(); i++) {
 		out << i << ": " << v2[i] << endl;
 	}
-#endif
+#else
 	String s1 = "abc";
 	String s2 = "def";
 	String s3 = "ghi";
@@ -111,7 +111,7 @@ int main(void) {
 	out << s2 << endl;
 	out << s3 << endl;
 	out << s4 << endl;
-
+#endif
 	/*unsigned int a = 0;
 	a++;
 	printf("a=%d\n",a);

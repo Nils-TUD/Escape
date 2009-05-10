@@ -21,6 +21,7 @@
 #define SHELLAPP_H_
 
 #include <esc/common.h>
+#include <esc/dir.h>
 #include <esc/gui/common.h>
 #include <esc/gui/application.h>
 #include "shellcontrol.h"
@@ -29,12 +30,15 @@ using namespace esc::gui;
 
 class ShellApplication : public Application {
 public:
-	ShellApplication(tServ sid,ShellControl *sh) : Application(), _sid(sid), _sh(sh) {
-		_selfFd = open("services:/guiterm",IO_WRITE);
+	ShellApplication(tServ sid,u32 no,ShellControl *sh) : Application(), _sid(sid), _sh(sh) {
+		char *path = new char[MAX_PATH_LEN + 1];
+		sprintf(path,"services:/guiterm%d",no);
+		_selfFd = open(path,IO_WRITE);
 		if(_selfFd < 0) {
 			printe("Unable to open own service guiterm");
 			exit(EXIT_FAILURE);
 		}
+		delete path;
 		_inst = this;
 	};
 	virtual ~ShellApplication() {

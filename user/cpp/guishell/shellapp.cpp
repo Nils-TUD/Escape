@@ -52,16 +52,33 @@ void ShellApplication::doEvents() {
 							case VK_PGDOWN:
 								_sh->scrollPage(-1);
 								break;
+
+							case VK_UP:
+							case VK_DOWN:
 							case VK_D:
 							case VK_C:
-								if(data.modifier & CTRL_MASK) {
-									if(data.keycode == VK_C) {
-										// don't send it to the vterms
-										sendSignal(SIG_INTRPT,0xFFFFFFFF);
+								if(data.modifier & SHIFT_MASK) {
+									switch(data.keycode) {
+										case VK_UP:
+											_sh->scrollLine(1);
+											break;
+										case VK_DOWN:
+											_sh->scrollLine(-1);
+											break;
 									}
-									else {
-										char eof = IO_EOF;
-										write(_selfFd,&eof,sizeof(eof));
+									break;
+								}
+								if(data.modifier & CTRL_MASK) {
+									switch(data.keycode) {
+										case VK_C:
+											// don't send it to the vterms
+											sendSignal(SIG_INTRPT,0xFFFFFFFF);
+											break;
+										case VK_D: {
+											char eof = IO_EOF;
+											write(_selfFd,&eof,sizeof(eof));
+										}
+										break;
 									}
 									break;
 								}

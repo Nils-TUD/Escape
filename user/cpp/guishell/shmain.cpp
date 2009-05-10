@@ -1,5 +1,5 @@
 /**
- * $Id: shmain.c 207 2009-04-19 16:02:28Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -24,6 +24,7 @@
 #include <esc/env.h>
 #include <esc/signals.h>
 #include <esc/service.h>
+#include <esc/dir.h>
 #include <stdlib.h>
 
 #include <esc/gui/application.h>
@@ -44,48 +45,49 @@ using namespace esc::gui;
  */
 static void shell_sigIntrpt(tSig sig,u32 data);
 
-static u32 vterm;
-
 int main(int argc,char **argv) {
 	// none-interactive-mode
 	if(argc == 3) {
 		// in this case we already have stdin, stdout and stderr
 		if(strcmp(argv[1],"-e") != 0) {
-			fprintf(stderr,"Invalid shell-usage\n");
+			fprintf(stderr,"Invalid shell-usage; Please use %s -e <cmd>\n",argv[1]);
 			return EXIT_FAILURE;
 		}
 
 		return shell_executeCmd(argv[2]);
 	}
 
-	// announce service
-	tServ sid = regService("guiterm",SERVICE_TYPE_SINGLEPIPE);
-	if(sid < 0) {
-		printe("Unable to register service guiterm");
-		exit(EXIT_FAILURE);
-	}
-
-	// wait for service
-	tFD fin;
+	// announce service; try to find an unused service-name because maybe a user wants
+	// to start us multiple times
+	u32 no = 0;
+	tServ sid;
+	char *servName = new char[MAX_PATH_LEN + 1];
 	do {
-		fin = open("services:/guiterm",IO_READ);
-		if(fin < 0) {
-			printe("Unable to open guiterm");
-			yield();
-		}
+		sprintf(servName,"guiterm%d",no);
+		sid = regService(servName,SERVICE_TYPE_SINGLEPIPE);
+		if(sid >= 0)
+			break;
+		no++;
 	}
-	while(fin < 0);
+	while(sid < 0);
 
 	// redirect fds so that stdin, stdout and stderr refer to our service
+	char *servPath = new char[MAX_PATH_LEN + 1];
+	sprintf(servPath,"services:/guiterm%d",no);
+	tFD fin = open(servPath,IO_READ);
 	redirFd(STDIN_FILENO,fin);
-	tFD fout = open("services:/guiterm",IO_WRITE);
+	tFD fout = open(servPath,IO_WRITE);
 	redirFd(STDOUT_FILENO,fout);
 	redirFd(STDERR_FILENO,fout);
+	delete servPath;
 
 	if(fork() > 0) {
+		// we don't need the name here anymore
+		delete servName;
+
 		// let the parent stay here and handle the UI
 		ShellControl sh(0,0,500,280);
-		ShellApplication *app = new ShellApplication(sid,&sh);
+		ShellApplication *app = new ShellApplication(sid,no,&sh);
 		Window w("Shell",100,100,500,300);
 		w.add(sh);
 		return app->run();
@@ -100,7 +102,8 @@ int main(int argc,char **argv) {
 	}
 
 	// set term as env-variable
-	setEnv("TERM","guiterm");
+	setEnv("TERM",servName);
+	delete servName;
 
 	printf("\033f\011Welcome to Escape v0.1!\033r\011\n");
 	printf("\n");

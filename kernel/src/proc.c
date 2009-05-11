@@ -174,50 +174,6 @@ void proc_wakeup(tPid pid,u8 event) {
 	}
 }
 
-s32 proc_requestIOPorts(u16 start,u16 count) {
-	sProc *p = procs + pi;
-	if(p->ioMap == NULL) {
-		p->ioMap = (u8*)kheap_alloc(IO_MAP_SIZE / 8);
-		if(p->ioMap == NULL)
-			return ERR_NOT_ENOUGH_MEM;
-		memset(p->ioMap,0xFFFFFFFF,IO_MAP_SIZE / 8);
-	}
-
-	/* 0xF8 .. 0xFF is reserved */
-	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
-		return ERR_IO_MAP_RANGE_RESERVED;
-
-	while(count-- > 0) {
-		p->ioMap[start / 8] &= ~(1 << (start % 8));
-		start++;
-	}
-
-	/* refresh io-map */
-	tss_setIOMap(p->ioMap);
-
-	return 0;
-}
-
-s32 proc_releaseIOPorts(u16 start,u16 count) {
-	sProc *p = procs + pi;
-	if(p->ioMap == NULL)
-		return ERR_IOMAP_NOT_PRESENT;
-
-	/* 0xF8 .. 0xFF is reserved */
-	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
-		return ERR_IO_MAP_RANGE_RESERVED;
-
-	while(count-- > 0) {
-		p->ioMap[start / 8] |= 1 << (start % 8);
-		start++;
-	}
-
-	/* refresh io-map */
-	tss_setIOMap(p->ioMap);
-
-	return 0;
-}
-
 tFileNo proc_fdToFile(tFD fd) {
 	tFileNo fileNo;
 	if(fd < 0 || fd >= MAX_FD_COUNT)
@@ -660,20 +616,6 @@ void proc_dbg_print(sProc *p) {
 	}
 	proc_dbg_printState(&p->save);
 	vid_printf("\n");
-}
-
-void proc_dbg_printIOMap(u8 *map) {
-	u32 i,j,c = 0;
-	vid_printf("Reserved IO-ports:\n\t");
-	for(i = 0; i < IO_MAP_SIZE / 8; i++) {
-		for(j = 0; j < 8; j++) {
-			if(!(map[i] & (1 << j))) {
-				vid_printf("%x, ",i * 8 + j);
-				if(++c % 10 == 0)
-					vid_printf("\n\t");
-			}
-		}
-	}
 }
 
 void proc_dbg_printState(sProcSave *state) {

@@ -25,17 +25,23 @@
 using namespace esc;
 using namespace esc::gui;
 
-Color ShellControl::COLORS[10] = {
+Color ShellControl::COLORS[16] = {
 	Color(0,0,0),
-	Color(0,0,0xFF),
-	Color(0,0xFF,0),
-	Color(0,0xFF,0xFF),
-	Color(0xFF,0,0),
-	Color(0xFF,0,0xFF),
-	Color(0xFF,0x80,0),
-	Color(0xFF,0xFF,0xFF),
-	Color(0x80,0x80,0x80),
-	Color(0x50,0x50,0xFF)
+	Color(0,0,168),
+	Color(0,168,0),
+	Color(0,168,168),
+	Color(168,0,0),
+	Color(168,0,168),
+	Color(168,87,0),
+	Color(168,168,168),
+	Color(87,87,87),
+	Color(87,87,255),
+	Color(87,255,87),
+	Color(87,255,255),
+	Color(255,87,87),
+	Color(255,87,255),
+	Color(255,255,87),
+	Color(255,255,255)
 };
 
 const Color ShellControl::BGCOLOR = Color(0xFF,0xFF,0xFF);
@@ -67,9 +73,9 @@ void ShellControl::paintRows(Graphics &g,u32 start,u32 count) {
 	u32 cwidth = g.getFont().getWidth();
 	u32 cheight = g.getFont().getHeight();
 	tCoord x;
-	tCoord y = start * (cheight + PADDING);
+	tCoord y = 1 + start * (cheight + PADDING);
 	Vector<char> &first = *_rows[start + _firstRow];
-	u8 lastCol = first.size() > 1 ? first[1] : 0;
+	u8 lastCol = first.size() > 1 ? first[1] : (WHITE << 4 | BLACK);
 	count = MIN(getLineCount() - start,count);
 
 	g.setColor(COLORS[lastCol & 0xF]);
@@ -271,11 +277,11 @@ bool ShellControl::handleEscape(const char *s) {
 			res = true;
 			break;
 		case VK_ESC_FG:
-			_color = (_color & 0xF0) | MIN(9,value);
+			_color = (_color & 0xF0) | MIN(15,value);
 			res = true;
 			break;
 		case VK_ESC_BG:
-			_color = (_color & 0x0F) | (MIN(9,value) << 4);
+			_color = (_color & 0x0F) | (MIN(15,value) << 4);
 			res = true;
 			break;
 	}

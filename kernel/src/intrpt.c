@@ -555,7 +555,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 					break;
 				}
 				/* TODO later the process should be killed here */
-				proc_dbg_printIOMap(p->ioMap);
+				ioports_dbg_print(p->ioMap);
 				util_panic("GPF @ 0x%x",stack.eip);
 				break;
 			}

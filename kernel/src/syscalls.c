@@ -36,6 +36,8 @@
 #include <timer.h>
 #include <text.h>
 #include <sharedmem.h>
+#include <ioports.h>
+#include <gdt.h>
 #include <lock.h>
 #include <string.h>
 #include <assert.h>
@@ -962,12 +964,14 @@ static void sysc_requestIOPorts(sIntrptStackFrame *stack) {
 		return;
 	}
 
-	s32 err = proc_requestIOPorts(start,count);
+	sProc *p = proc_getRunning();
+	s32 err = ioports_request(p,start,count);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
 	}
 
+	tss_setIOMap(p->ioMap);
 	SYSC_RET1(stack,0);
 }
 
@@ -981,12 +985,14 @@ static void sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 		return;
 	}
 
-	s32 err = proc_releaseIOPorts(start,count);
+	sProc *p = proc_getRunning();
+	s32 err = ioports_release(p,start,count);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
 	}
 
+	tss_setIOMap(p->ioMap);
 	SYSC_RET1(stack,0);
 }
 

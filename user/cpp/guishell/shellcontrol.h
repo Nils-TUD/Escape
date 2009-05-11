@@ -32,7 +32,7 @@ using namespace esc::gui;
 class ShellControl : public Control {
 private:
 	typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
-	static Color COLORS[10];
+	static Color COLORS[16];
 
 	static const u32 TAB_WIDTH = 4;
 	static const u32 COLUMNS = 80;

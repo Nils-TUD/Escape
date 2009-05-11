@@ -26,14 +26,32 @@
 #include <esc/gui/button.h>
 #include <esc/gui/editable.h>
 #include <esc/gui/combobox.h>
+#include <esc/gui/progressbar.h>
 #include <stdlib.h>
 
 using namespace esc::gui;
 
+ProgressBar *pb;
+
+class MyWindow : public Window {
+public:
+	MyWindow() : Window("Window 1",100,100,400,300) {
+	};
+	~MyWindow() {
+	};
+
+	void onKeyPressed(const KeyEvent &e) {
+		if(e.getKeyCode() == VK_ENTER)
+			pb->setPosition(pb->getPosition() + 1);
+		else
+			Window::onKeyPressed(e);
+	}
+};
+
 int main(void) {
 	if(fork() == 0) {
 		Application *app = Application::getInstance();
-		Window w1("Window 1",100,100,400,300);
+		MyWindow w1;
 		Button b("Click me!!",10,10,80,20);
 		Editable e(10,40,200,20);
 		w1.add(b);
@@ -43,6 +61,8 @@ int main(void) {
 		cb.addItem("Foo bar");
 		cb.addItem("abc 123");
 		w1.add(cb);
+		pb = new ProgressBar("Progress...",10,120,200,20);
+		w1.add(*pb);
 		return app->run();
 	}
 

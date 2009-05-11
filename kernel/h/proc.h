@@ -40,7 +40,7 @@
 #define EV_CLIENT			1
 #define EV_RECEIVED_MSG		2
 #define EV_CHILD_DIED		4
-#define EV_UNLOCK			8
+#define EV_UNLOCK			8	/* kernel-intern */
 
 /* the process-state which will be saved for context-switching */
 typedef struct {
@@ -190,24 +190,6 @@ void proc_wakeupAll(u8 event);
 void proc_wakeup(tPid pid,u8 event);
 
 /**
- * Requests some IO-ports for the current process
- *
- * @param start the start-port
- * @param count the number of ports
- * @return the error-code or 0
- */
-s32 proc_requestIOPorts(u16 start,u16 count);
-
-/**
- * Releases some IO-ports for the current process
- *
- * @param start the start-port
- * @param count the number of ports
- * @return the error-code or 0
- */
-s32 proc_releaseIOPorts(u16 start,u16 count);
-
-/**
  * Returns the file-number for the given file-descriptor
  *
  * @param fd the file-descriptor
@@ -328,13 +310,6 @@ void proc_dbg_printAll(void);
  * @param p the pointer to the process
  */
 void proc_dbg_print(sProc *p);
-
-/**
- * Prints the given IO-map
- *
- * @param map the io-map
- */
-void proc_dbg_printIOMap(u8 *map);
 
 /**
  * Prints the given process-state

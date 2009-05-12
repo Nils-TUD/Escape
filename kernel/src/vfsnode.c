@@ -426,12 +426,13 @@ s32 vfsn_createServiceUse(tPid pid,sVFSNode *n,sVFSNode **child) {
 		m = NODE_FIRST_CHILD(n);
 		while(m != NULL) {
 			if(strcmp(m->name,SERVICE_CLIENT_ALL) == 0) {
-				*child = m;
 				sProc *p = proc_getByPid(pid);
 				/* just in case we're already using this service... */
 				sll_removeFirst(m->data.servuse.singlePipeClients,p);
 				/* append us */
-				sll_append(m->data.servuse.singlePipeClients,p);
+				if(!sll_append(m->data.servuse.singlePipeClients,p))
+					return ERR_NOT_ENOUGH_MEM;
+				*child = m;
 				return 0;
 			}
 			m = m->next;
@@ -471,9 +472,15 @@ s32 vfsn_createServiceUse(tPid pid,sVFSNode *n,sVFSNode **child) {
 	/* save us as client */
 	if(n->mode & MODE_SERVICE_SINGLEPIPE) {
 		m->data.servuse.singlePipeClients = sll_create();
-		if(m->data.servuse.singlePipeClients == NULL)
+		if(m->data.servuse.singlePipeClients == NULL) {
+			vfsn_removeChild(m->parent,m);
 			return ERR_NOT_ENOUGH_MEM;
-		sll_append(m->data.servuse.singlePipeClients,proc_getByPid(pid));
+		}
+		if(!sll_append(m->data.servuse.singlePipeClients,proc_getByPid(pid))) {
+			sll_destroy(m->data.servuse.singlePipeClients,false);
+			vfsn_removeChild(m->parent,m);
+			return ERR_NOT_ENOUGH_MEM;
+		}
 	}
 
 	*child = m;

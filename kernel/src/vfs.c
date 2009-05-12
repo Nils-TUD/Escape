@@ -148,11 +148,13 @@ tFileNo vfs_inheritFileNo(tPid pid,tFileNo file) {
 			return newFile;
 		}
 		else {
-			e->refCount++;
 			/* for single-pipe-services, we have to add the child to the clients */
 			sProc *p = proc_getByPid(pid);
-			if(sll_indexOf(n->data.servuse.singlePipeClients,p) == -1)
-				sll_append(n->data.servuse.singlePipeClients,p);
+			if(sll_indexOf(n->data.servuse.singlePipeClients,p) == -1) {
+				if(!sll_append(n->data.servuse.singlePipeClients,p))
+					return ERR_NOT_ENOUGH_MEM;
+			}
+			e->refCount++;
 			return file;
 		}
 	}
@@ -959,7 +961,10 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 		vid_printf("\n---\n");*/
 
 		/* append to list */
-		sll_append(*list,msg);
+		if(!sll_append(*list,msg)) {
+			kheap_free(msg);
+			return ERR_NOT_ENOUGH_MEM;
+		}
 
 		/* notify the service */
 		if(list == &(n->data.servuse.sendList)) {

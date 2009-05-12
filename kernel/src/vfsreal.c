@@ -438,7 +438,10 @@ static sRequest *vfsr_addRequest(tPid pid) {
 	req->count = 0;
 	req->buffer = NULL;
 	req->readResp = NULL;
-	sll_append(requests,req);
+	if(!sll_append(requests,req)) {
+		kheap_free(req);
+		return NULL;
+	}
 	return req;
 }
 

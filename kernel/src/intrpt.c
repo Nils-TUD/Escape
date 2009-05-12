@@ -34,6 +34,7 @@
 #include <sched.h>
 #include <signals.h>
 #include <timer.h>
+#include <ioports.h>
 #include <assert.h>
 #include <string.h>
 #include <sllist.h>

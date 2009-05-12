@@ -73,7 +73,10 @@ s32 lock_aquire(tPid pid,u32 ident) {
 		/* init and append */
 		l->ident = ident;
 		l->waitCount = 0;
-		sll_append(locks,l);
+		if(!sll_append(locks,l)) {
+			kheap_free(l);
+			return ERR_NOT_ENOUGH_MEM;
+		}
 	}
 
 	/* lock it */

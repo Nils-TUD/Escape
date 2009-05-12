@@ -57,8 +57,9 @@ bool text_free(sTextUsage *u,tPid pid);
  *
  * @param u the text-usage
  * @param pid the process-id
+ * @return true on success
  */
-void text_clone(sTextUsage *u,tPid pid);
+bool text_clone(sTextUsage *u,tPid pid);
 
 #if DEBUGGING
 

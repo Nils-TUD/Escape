@@ -86,15 +86,30 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 			}
 		}
 
-		/* load the text from file */
-		res = text_load(p,file,position,textSize);
-		if(res < 0) {
+		/* append process */
+		if(!sll_append(usage->procs,(void*)p)) {
+			sll_removeFirst(textUsages,usage);
 			sll_destroy(usage->procs,false);
 			kheap_free(usage);
 			return ERR_NOT_ENOUGH_MEM;
 		}
-		
-		sll_append(textUsages,usage);
+
+		/* load the text from file */
+		res = text_load(p,file,position,textSize);
+		if(res < 0) {
+			sll_removeFirst(textUsages,usage);
+			sll_destroy(usage->procs,false);
+			kheap_free(usage);
+			return res;
+		}
+
+		/* append to usages */
+		if(!sll_append(textUsages,usage)) {
+			/* TODO we have to undo text_load().. */
+			sll_destroy(usage->procs,false);
+			kheap_free(usage);
+			return ERR_NOT_ENOUGH_MEM;
+		}
 	}
 	else {
 		/* ok, there is another process that uses the requested program */
@@ -104,23 +119,27 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 		fp = (sProc*)sll_get(usage->procs,0);
 		vassert(fp->state != ST_UNUSED,"text-usage of unused process!?");
 
+		/* append process */
+		if(!sll_append(usage->procs,(void*)p))
+			return ERR_NOT_ENOUGH_MEM;
+
 		/* copy pages */
 		paging_mapForeignPages(fp,0,0,fp->textPages,0);
 		p->textPages = fp->textPages;
 	}
 
-	sll_append(usage->procs,(void*)p);
 	*text = usage;
 	return 0;
 }
 
-void text_clone(sTextUsage *u,tPid pid) {
+bool text_clone(sTextUsage *u,tPid pid) {
 	sProc *p;
+	/* ignore it when there is no text-usage */
 	if(u == NULL)
-		return;
+		return true;
 
 	p = proc_getByPid(pid);
-	sll_append(u->procs,(void*)p);
+	return sll_append(u->procs,(void*)p);
 }
 
 bool text_free(sTextUsage *u,tPid pid) {
@@ -139,6 +158,7 @@ bool text_free(sTextUsage *u,tPid pid) {
 		sll_destroy(u->procs,false);
 		sll_removeFirst(textUsages,u);
 		kheap_free(u);
+		/* let the caller free the frames */
 		return true;
 	}
 	return false;

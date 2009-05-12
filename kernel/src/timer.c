@@ -81,8 +81,12 @@ s32 timer_sleepFor(tPid pid,u32 msecs) {
 	/* build entry and put process to sleep */
 	l->pid = pid;
 	l->time = elapsedMsecs + msecs;
+	if(!sll_append(listener,l)) {
+		kheap_free(l);
+		return ERR_NOT_ENOUGH_MEM;
+	}
+
 	sched_setBlocked(proc_getByPid(pid));
-	sll_append(listener,l);
 	return 0;
 }
 

@@ -54,6 +54,7 @@ void proc_init(void) {
 		util_panic("Not enough mem for init process");
 	procs[pi].state = ST_RUNNING;
 	procs[pi].events = EV_NOEVENT;
+	procs[pi].signal = 0;
 	procs[pi].pid = 0;
 	procs[pi].parentPid = 0;
 	/* the first process has no text, data and stack */
@@ -71,7 +72,7 @@ void proc_init(void) {
 	/* init fds */
 	for(i = 0; i < MAX_FD_COUNT; i++)
 		procs[pi].fileDescs[i] = -1;
-	memcpy(procs[pi].command,"initloader",5);
+	memcpy(procs[pi].command,"initloader",11);
 
 	paging_exchangePDir(procs[pi].physPDirAddr);
 	/* setup kernel-stack for us */
@@ -313,12 +314,14 @@ s32 proc_clone(tPid newPid) {
 	p->kcycleCount = 0;
 	p->kcycleStart = 0;
 	p->fpuState = NULL;
+	p->signal = 0;
 	/* give the process the same name (maybe changed by exec) */
 	strcpy(p->command,procs[pi].command);
 
 	/* clone text */
 	p->text = procs[pi].text;
-	text_clone(p->text,p->pid);
+	if(!text_clone(p->text,p->pid))
+		return ERR_NOT_ENOUGH_MEM;
 
 	/* inherit file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
@@ -369,7 +372,8 @@ void proc_destroy(sProc *p) {
 		}
 
 		/* mark ourself as destroyable */
-		sll_append(deadProcs,procs + pi);
+		if(!sll_append(deadProcs,procs + pi))
+			util_panic("Not enough mem to append dead process");
 		/* ensure that we will not be selected on the next resched */
 		procs[pi].state = ST_ZOMBIE;
 		return;

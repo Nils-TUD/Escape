@@ -259,7 +259,8 @@ static void sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data) {
 			if(h->pending == NULL)
 				return;
 		}
-		sll_append(h->pending,(void*)data);
+		if(!sll_append(h->pending,(void*)data))
+			return;
 		totalSigs++;
 	}
 

@@ -88,7 +88,11 @@ s32 shm_create(char *name,u32 pageCount) {
 	strcpy(mem->name,name);
 	mem->startPage = startPage;
 	mem->pageCount = pageCount;
-	sll_append(shareList,mem);
+	if(!sll_append(shareList,mem)) {
+		sll_destroy(mem->member,false);
+		kheap_free(mem);
+		return ERR_NOT_ENOUGH_MEM;
+	}
 	return startPage;
 }
 
@@ -98,12 +102,14 @@ s32 shm_join(char *name) {
 	if(mem == NULL || mem->owner == p || sll_indexOf(mem->member,p) >= 0)
 		return ERR_SHARED_MEM_INVALID;
 
+	if(!sll_append(mem->member,p))
+		return ERR_NOT_ENOUGH_MEM;
+
 	/* copy the pages from the owner */
 	paging_mapForeignPages(mem->owner,mem->startPage * PAGE_SIZE,
 			(p->textPages + p->dataPages) * PAGE_SIZE,mem->pageCount,PG_WRITABLE | PG_NOFREE);
 	p->dataPages += mem->pageCount;
 
-	sll_append(mem->member,p);
 	return (p->textPages + p->dataPages) - mem->pageCount;
 }
 

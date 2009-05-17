@@ -44,15 +44,15 @@ static sSLList *locks = NULL;
 
 /* fortunatly interrupts are disabled in kernel, so the whole stuff here is easy :) */
 
-s32 lock_aquire(tPid pid,u32 ident) {
+s32 lock_aquire(tTid tid,u32 ident) {
 	sLock *l = lock_get(ident);
 
 	/* if it exists and is locked, wait */
 	if(l && l->locked) {
 		l->waitCount++;
 		do {
-			proc_wait(pid,EV_UNLOCK);
-			proc_switch();
+			thread_wait(tid,EV_UNLOCK);
+			thread_switch();
 		}
 		while(l->locked);
 		/* it is unlocked now, so we can stop waiting and use it */
@@ -91,7 +91,7 @@ s32 lock_release(u32 ident) {
 
 	/* unlock it */
 	l->locked = false;
-	proc_wakeupAll(EV_UNLOCK);
+	thread_wakeupAll(EV_UNLOCK);
 
 	/* if nobody is waiting, we can free the lock-entry */
 	if(l->waitCount == 0) {

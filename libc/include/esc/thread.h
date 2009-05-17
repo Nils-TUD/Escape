@@ -17,33 +17,33 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TIMER_H_
-#define TIMER_H_
+#ifndef THREAD_H_
+#define THREAD_H_
 
-#include "common.h"
+#include <esc/common.h>
 
-#define TIMER_FREQUENCY			50
+/* the thread-entry-point-function */
+typedef int (*fThreadEntry)(void);
 
-/* the time that we give one process */
-#define PROC_TIMESLICE			((1000 / TIMER_FREQUENCY) * 3)
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
- * Initializes the timer
+ * @return the id of the current thread
  */
-void timer_init(void);
+tTid gettid(void);
 
 /**
- * Puts the given thread to sleep for the given number of milliseconds
+ * Starts a new thread
  *
- * @param tid the thread-id
- * @param msecs the number of milliseconds to wait
- * @return 0 on success
+ * @param entryPoint the entry-point of the thread
+ * @return new tid for current thread, 0 for new thread, < 0 if failed
  */
-s32 timer_sleepFor(tTid tid,u32 msecs);
+s32 startThread(fThreadEntry entryPoint);
 
-/**
- * Handles a timer-interrupt
- */
-void timer_intrpt(void);
+#ifdef __cplusplus
+}
+#endif
 
-#endif /* TIMER_H_ */
+#endif /* THREAD_H_ */

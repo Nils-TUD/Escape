@@ -20,6 +20,7 @@
 #include <paging.h>
 #include <util.h>
 #include <proc.h>
+#include <thread.h>
 #include <intrpt.h>
 #include <kheap.h>
 #include <video.h>
@@ -181,7 +182,8 @@ void paging_mapHigherHalf(void) {
 	sPDEntry *pde;
 	/* insert all page-tables for 0xC0400000 .. 0xFF3FFFFF into the page dir */
 	addr = KERNEL_AREA_V_ADDR + (PAGE_SIZE * PT_ENTRY_COUNT);
-	end = TMPMAP_PTS_START;
+	/*end = TMPMAP_PTS_START;*/
+	end = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;
 	pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(addr));
 	while(addr < end) {
 		/* get frame and insert into page-dir */
@@ -420,7 +422,6 @@ void paging_unmapPageTables(u32 start,u32 count) {
 }
 
 u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
-	bool oldIntrptState;
 	u32 x,pdirFrame,frameCount,kheapCount;
 	u32 tPages,dPages,sPages;
 	sPDEntry *pd,*npd,*tpd;
@@ -431,10 +432,6 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	vassert(newProc != NULL,"newProc == NULL");
 
 	DBG_PGCLONEPD(vid_printf(">>===== paging_clonePageDir(newPid=%d) =====\n",newPid));
-
-	/* note that interrupts have to be disabled, because no other process is allowed to
-	 * run during this function since we are calculating the memory we need at the beginning! */
-	oldIntrptState = intrpt_setEnabled(false);
 
 	/* frames needed:
 	 * 	- page directory
@@ -454,7 +451,6 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	/* TODO finish! */
 	if(mm_getFreeFrmCount(MM_DEF) < frameCount/* || kheap_getFreeMem() < kheapCount*/) {
 		DBG_PGCLONEPD(vid_printf("Not enough free frames!\n"));
-		intrpt_setEnabled(oldIntrptState);
 		return 0;
 	}
 
@@ -483,23 +479,6 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	/* map the page-tables of the new process so that we can access them */
 	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
 
-	/* get new page-table for the kernel-stack-area and the stack itself */
-	DBG_PGCLONEPD(vid_printf("Create kernel-stack and copy old one into it\n"));
-	tpd = npd + ADDR_TO_PDINDEX(KERNEL_STACK);
-	tpd->ptFrameNo = mm_allocateFrame(MM_DEF);
-	tpd->present = true;
-	tpd->writable = true;
-	/* clear the page-table */
-	memset((void*)ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,
-			KERNEL_STACK & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),0,PAGE_SIZE);
-
-	/* now setup the new stack */
-	pt = (sPTEntry*)(TMPMAP_PTS_START + (KERNEL_STACK / PT_ENTRY_COUNT));
-	pt->frameNumber = mm_allocateFrame(MM_DEF);
-	*stackFrame = pt->frameNumber;
-	pt->present = true;
-	pt->writable = true;
-
 	/* map pages for text to the frames of the old process */
 	DBG_PGCLONEPD(vid_printf("Mapping %d text-pages (shared)\n",tPages));
 	paging_mapIntern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,
@@ -513,13 +492,32 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	/* mark as copy-on-write for the current and new process */
 	paging_setCOW(x,(u32*)ADDR_TO_MAPPED(x),dPages,newProc);
 
-	/* map pages for stack. we will copy the data with copyonwrite. */
-	DBG_PGCLONEPD(vid_printf("Mapping %d stack-pages (copy-on-write)\n",sPages));
-	x = KERNEL_AREA_V_ADDR - sPages * PAGE_SIZE;
+	/* we're cloning just the current thread */
+	sThread *curThread = thread_getRunning();
+
+	/* get new page-table for the kernel-stack-area and the stack itself */
+	DBG_PGCLONEPD(vid_printf("Create kernel-stack and copy old one into it\n"));
+	tpd = npd + ADDR_TO_PDINDEX(KERNEL_STACK);
+	tpd->ptFrameNo = mm_allocateFrame(MM_DEF);
+	tpd->present = true;
+	tpd->writable = true;
+	/* clear the page-table */
+	memset((void*)ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,
+			KERNEL_STACK & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),0,PAGE_SIZE);
+
+	/* create stack-page */
+	pt = (sPTEntry*)(TMPMAP_PTS_START + (KERNEL_STACK / PT_ENTRY_COUNT));
+	pt->frameNumber = mm_allocateFrame(MM_DEF);
+	*stackFrame = pt->frameNumber;
+	pt->present = true;
+	pt->writable = true;
+
+	/* create user-stack */
+	u32 tsPages = curThread->ustackPages;
+	x = curThread->ustackBegin - tsPages * PAGE_SIZE;
 	paging_mapIntern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,
-			(u32*)ADDR_TO_MAPPED(x),sPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);
-	/* mark as copy-on-write for the current and new process */
-	paging_setCOW(x,(u32*)ADDR_TO_MAPPED(x),sPages,newProc);
+				(u32*)ADDR_TO_MAPPED(x),tsPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);
+	paging_setCOW(x,(u32*)ADDR_TO_MAPPED(x),tsPages,newProc);
 
 	/* unmap stuff */
 	DBG_PGCLONEPD(vid_printf("Removing temp mappings\n"));
@@ -529,12 +527,21 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	/* one final flush to ensure everything is correct */
 	paging_flushTLB();
 
-	/* we're done */
-	intrpt_setEnabled(oldIntrptState);
-
 	DBG_PGCLONEPD(vid_printf("<<===== paging_clonePageDir() =====\n"));
 
 	return pdirFrame;
+}
+
+void paging_destroyStacks(sThread *t) {
+	paging_mapForeignPageDir(t->proc);
+
+	/* free user-stack */
+	u32 tsPages = t->ustackPages;
+	paging_unmapIntern(t->proc,TMPMAP_PTS_START,t->ustackBegin - tsPages * PAGE_SIZE,tsPages,true,true);
+	/* free kernel-stack */
+	mm_freeFrame(t->kstackFrame,MM_DEF);
+
+	paging_unmapForeignPageDir(false);
 }
 
 void paging_destroyPageDir(sProc *p) {
@@ -552,15 +559,31 @@ void paging_destroyPageDir(sProc *p) {
 	/* free text- and data page-tables */
 	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,0,PAGES_TO_PTS(p->textPages + p->dataPages));
 
-	/* free stack-pages and page-tables */
-	paging_unmapIntern(p,TMPMAP_PTS_START,KERNEL_AREA_V_ADDR - p->stackPages * PAGE_SIZE,
-			p->stackPages,true,true);
-	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,
-			ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) - PAGES_TO_PTS(p->stackPages),
-			PAGES_TO_PTS(p->stackPages));
+	/* we don't know which stacks are used and which not. therefore we have to search for the
+	 * first and last stack. */
+	u32 ustackBegin = KERNEL_AREA_V_ADDR;
+	u32 ustackEnd = 0;
+	sSLNode *tn;
+	for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
+		sThread *t = (sThread*)tn->data;
+		/* free user-stack */
+		u32 tsPages = t->ustackPages;
+		u32 tsEnd = t->ustackBegin - tsPages * PAGE_SIZE;
+		paging_unmapIntern(p,TMPMAP_PTS_START,tsEnd,tsPages,true,true);
 
-	/* free kernel-stack */
-	paging_unmapIntern(p,TMPMAP_PTS_START,KERNEL_STACK,1,true,true);
+		/* free kernel-stack */
+		mm_freeFrame(t->kstackFrame,MM_DEF);
+
+		/* determine start- and end of the stack for freeing page-tables */
+		if(t->ustackBegin < ustackBegin)
+			ustackBegin = t->ustackBegin;
+		if(tsEnd > ustackEnd)
+			ustackEnd = tsEnd;
+	}
+
+	/* free page-tables for user- and kernel-stack */
+	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,
+			ADDR_TO_PDINDEX(ustackEnd),PAGES_TO_PTS(ustackBegin - ustackEnd));
 	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,ADDR_TO_PDINDEX(KERNEL_STACK),1);
 
 	/* unmap stuff & free page-dir */
@@ -591,23 +614,23 @@ static void paging_unmapForeignPageDir(bool freePageDir) {
 
 static void paging_unmapIntern(sProc *p,u32 mappingArea,u32 virtual,u32 count,bool freeFrames,
 		bool remCOW) {
-	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
+	sPTEntry *pte = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
 
 	vassert(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
 	vassert(freeFrames == true || freeFrames == false,"freeFrames invalid");
 
 	while(count-- > 0) {
 		/* remove and free, if desired */
-		if(pt->present) {
+		if(pte->present) {
 			/* we don't want to free copy-on-write pages and not frames in front of the kernel
 			 * because they may be mapped more than once and will never be free'd */
-			if(freeFrames && !pt->noFree/*pt->frameNumber * PAGE_SIZE >= KERNEL_P_ADDR*/) {
-				if(pt->copyOnWrite && remCOW)
-					paging_remFromCow(p,pt->frameNumber);
-				else if(!pt->copyOnWrite)
-					mm_freeFrame(pt->frameNumber,MM_DEF);
+			if(freeFrames && !pte->noFree) {
+				if(pte->copyOnWrite && remCOW)
+					paging_remFromCow(p,pte->frameNumber);
+				else if(!pte->copyOnWrite)
+					mm_freeFrame(pte->frameNumber,MM_DEF);
 			}
-			pt->present = false;
+			pte->present = false;
 
 			/* invalidate TLB-entry */
 			if(mappingArea == MAPPED_PTS_START)
@@ -615,7 +638,7 @@ static void paging_unmapIntern(sProc *p,u32 mappingArea,u32 virtual,u32 count,bo
 		}
 
 		/* to next page */
-		pt++;
+		pte++;
 		virtual += PAGE_SIZE;
 	}
 }
@@ -634,8 +657,10 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
 	vassert(count < PT_ENTRY_COUNT,"count >= PT_ENTRY_COUNT");
 
 	while(count-- > 0) {
-		pde->present = 0;
-		mm_freeFrame(pde->ptFrameNo,MM_DEF);
+		if(pde->present) {
+			pde->present = 0;
+			mm_freeFrame(pde->ptFrameNo,MM_DEF);
+		}
 		pde++;
 	}
 

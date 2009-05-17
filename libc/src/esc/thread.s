@@ -1,5 +1,5 @@
 ;
-; $Id$
+; $Id: proc.s 202 2009-04-11 16:07:24Z nasmussen $
 ; Copyright (C) 2008 - 2009 Nils Asmussen
 ;
 ; This program is free software; you can redistribute it and/or
@@ -19,40 +19,9 @@
 
 [BITS 32]
 
-[global init]
-[extern exit]
+%include "syscalls.s"
 
-ALIGN 4
+[extern errno]
 
-%include "../../../libc/syscalls.s"
-
-init:
-	[extern main]
-	call	main
-
-	; call exit with return-value of main
-	push	eax
-	call	exit
-
-	jmp		$
-
-	; load modules first
-	mov		eax,SYSCALL_LOADMODS
-	int		SYSCALL_IRQ
-
-	; now replace with init
-	mov		ecx,progName						; set path
-	mov		edx,argp								; set arguments
-	mov		eax,SYSCALL_EXEC				; set syscall-number
-	int		SYSCALL_IRQ
-
-	; we should not reach this
-	jmp		$
-
-argp:
-	dd		progName
-	dd		0
-
-progName:
-	db		"file:/bin/init"
-	db		0
+SYSC_RET_0ARGS gettid,SYSCALL_GETTID
+SYSC_RET_1ARGS_ERR startThread,SYSCALL_STARTTHREAD

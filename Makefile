@@ -132,7 +132,7 @@ bochs: all prepareRun
 debug: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
-		gdb --command=gdb.start --symbols $(BUILD)/service_keyboard.bin
+		gdb --command=gdb.start --symbols $(BUILD)/kernel.bin
 
 debugu: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &

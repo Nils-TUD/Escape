@@ -107,7 +107,7 @@ typedef struct {
 /* storage for "delayed" signal handling */
 typedef struct {
 	u8 active;
-	tPid pid;
+	tTid tid;
 	tSig sig;
 	u32 data;
 } sSignalData;
@@ -382,51 +382,51 @@ sIntrptStackFrame *intrpt_getCurStack(void) {
 }
 
 static void intrpt_handleSignal(void) {
-	tPid pid;
+	tTid tid;
 	tSig sig;
 	u32 data;
 	/* already handling a signal? */
 	if(signalData.active == 1)
 		return;
 
-	if(sig_hasSignal(&sig,&pid,&data)) {
+	if(sig_hasSignal(&sig,&tid,&data)) {
 		signalData.active = 1;
 		signalData.sig = sig;
 		signalData.data = data;
-		signalData.pid = pid;
+		signalData.tid = tid;
 
 		/* a little trick: we store the signal to handle and manipulate the user-stack
-		 * and so on later. if the process is currently running everything is fine. we return
+		 * and so on later. if the thread is currently running everything is fine. we return
 		 * from here and intrpt_handleSignalFinish() will be called.
-		 * if the target-process is not running we switch to him now. the process is somewhere
+		 * if the target-thread is not running we switch to him now. the thread is somewhere
 		 * in the kernel but he will leave the kernel IN EVERY CASE at the end of the interrupt-
 		 * handler. So if we do the signal-stuff at the end we'll get there and will
 		 * manipulate the user-stack.
-		 * This is simpler than mapping the user-stack and kernel-stack of the other process
+		 * This is simpler than mapping the user-stack and kernel-stack of the other thread
 		 * in the current page-dir and so on :)
 		 */
-		if(proc_getRunning()->pid != pid) {
-			/* ensure that the process is ready */
-			sched_setReady(proc_getByPid(pid));
-			proc_switchTo(pid);
+		if(thread_getRunning()->tid != tid) {
+			/* ensure that the thread is ready */
+			sched_setReady(thread_getById(tid));
+			thread_switchTo(tid);
 		}
 	}
 }
 
 static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
-	sProc *p = proc_getRunning();
-	/* if the proc_switchTo() wasn't successfull (we're not the process that should receive the
-	 * signal), release the signalData and we try it again later. This may happen if the process
-	 * is waiting somewhere in the kernel so that another process will be chosen which arrives
+	sThread *t = thread_getRunning();
+	/* if the thread_switchTo() wasn't successfull (we're not the thread that should receive the
+	 * signal), release the signalData and we try it again later. This may happen if the thread
+	 * is waiting somewhere in the kernel so that another thread will be chosen which arrives
 	 * here. */
 	/* TODO this is not really good because we will try it in every interrupt
-	 * (and do proc_switch()!)until we can deliver the signal (or the process dies) */
-	if(p->pid != signalData.pid) {
+	 * (and do thread_switch()!)until we can deliver the signal (or the thread dies) */
+	if(t->tid != signalData.tid) {
 		signalData.active = 0;
 		return;
 	}
 
-	fSigHandler handler = sig_startHandling(signalData.pid,signalData.sig);
+	fSigHandler handler = sig_startHandling(signalData.tid,signalData.sig);
 	if(handler != NULL) {
 		u32 *esp = (u32*)stack->uesp;
 		/* will handle copy-on-write */
@@ -512,13 +512,13 @@ void intrpt_handler(sIntrptStackFrame stack) {
 			/* #PF */
 			if(stack.intrptNo == EX_PAGE_FAULT) {
 				u32 addr = cpu_getCR2();
-				/*vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
-						stack.eip,proc_getRunning()->pid);*/
+				vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
+						stack.eip,proc_getRunning()->pid);
 
-				/* first check if the process wants to write to COW-page */
+				/* first check if the thread wants to write to COW-page */
 				if(!paging_handlePageFault(addr)) {
-					/* ok, now lets check if the process wants more stack-pages */
-					if(proc_extendStack(addr) < 0) {
+					/* ok, now lets check if the thread wants more stack-pages */
+					if(thread_extendStack(addr) < 0) {
 						/* hm...there is something wrong :) */
 						/* TODO later the process should be killed here */
 						util_panic("Page fault for address=0x%08x @ 0x%x",addr,stack.eip);
@@ -556,7 +556,6 @@ void intrpt_handler(sIntrptStackFrame stack) {
 					break;
 				}
 				/* TODO later the process should be killed here */
-				ioports_dbg_print(p->ioMap);
 				util_panic("GPF @ 0x%x",stack.eip);
 				break;
 			}

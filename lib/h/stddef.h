@@ -44,6 +44,8 @@
 
 /* process id */
 typedef u16 tPid;
+/* thread id */
+typedef u16 tTid;
 /* VFS node number */
 typedef u32 tVFSNodeNo;
 /* file-descriptor */

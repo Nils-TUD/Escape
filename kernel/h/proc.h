@@ -92,27 +92,12 @@ typedef struct {
 	u64 cycleCount;
 	/* start-command */
 	char command[MAX_PROC_NAME_LEN + 1];
+
+	sSLList *threads;
 } sProc;
 
 /* the area for proc_changeSize() */
 typedef enum {CHG_DATA,CHG_STACK} eChgArea;
-
-/**
- * Saves the state of the current process in the given area
- *
- * @param saveArea the area where to save the state
- * @return false for the caller-process, true for the resumed process
- */
-extern bool proc_save(sProcSave *saveArea);
-
-/**
- * Resumes the given state
- *
- * @param pageDir the physical address of the page-dir
- * @param saveArea the area to load the state from
- * @return always true
- */
-extern bool proc_resume(u32 pageDir,sProcSave *saveArea);
 
 /**
  * Initializes the process-management
@@ -152,6 +137,11 @@ bool proc_exists(tPid pid);
  * @return true if it has a child
  */
 bool proc_hasChild(tPid pid);
+
+/**
+ * Destroys zombies
+ */
+void proc_cleanup(void);
 
 /**
  * Switches to another process
@@ -239,22 +229,27 @@ s32 proc_redirFd(tFD src,tFD dst);
 tFileNo proc_unassocFD(tFD fd);
 
 /**
- * Extends the stack of the current process so that the given address is usable
- *
- * @param address the address to make valid
- * @return 0 on success
- */
-s32 proc_extendStack(u32 address);
-
-/**
- * Clones the current process into the given one, saves the new process in proc_clone() so that
- * it will start there on proc_resume(). The function returns -1 if there is
+ * Clones the current process into the given one, saves all new threads in proc_clone() so that
+ * they will start there on thread_resume(). The function returns -1 if there is
  * not enough memory.
  *
  * @param newPid the target-pid
  * @return -1 if an error occurred, 0 for parent, 1 for child
  */
 s32 proc_clone(tPid newPid);
+
+/**
+ * Starts a new thread at given entry-point. Will clone the kernel-stack from the current thread
+ *
+ * @return < 0 if an error occurred, new tid for current thread, 0 for new thread
+ */
+s32 proc_startThread(u32 entryPoint);
+
+/**
+ * Destroys the current thread. If it's the only thread in the process, the complete process will
+ * destroyed.
+ */
+void proc_destroyThread(void);
 
 /**
  * Destroyes the given process. That means the process-slot will be marked as "unused" and the
@@ -265,14 +260,21 @@ s32 proc_clone(tPid newPid);
 void proc_destroy(sProc *p);
 
 /**
- * Setups the given interrupt-stack for the current process
+ * Setups the user-stack for given interrupt-stack of the current process
  *
  * @param frame the interrupt-stack-frame
  * @param argc the argument-count
  * @param args the arguments on after another, allocated on the heap; may be NULL
  * @param argsSize the total number of bytes for the arguments (just the data)
  */
-void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize);
+void proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize);
+
+/**
+ * Setups the start of execution in user-mode for given interrupt-stack
+ *
+ * @param frame the interrupt-stack-frame
+ */
+void proc_setupStart(sIntrptStackFrame *frame);
 
 /**
  * Checks wether the given segment-sizes are valid

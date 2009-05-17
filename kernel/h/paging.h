@@ -23,22 +23,29 @@
 #include "common.h"
 #include "mm.h"
 #include "proc.h"
+#include "thread.h"
 
 /**
  * Virtual memory layout:
  * 0x00000000: +-----------------------------------+   -----
  *             |                                   |     |
  *             |             user-code             |     |
+ *             |                                   |     |
+ *             +-----------------------------------+     |
  *             |                                   |
- *             +-----------------------------------+     u
- *             |                                   |     s
- *      |      |             user-data             |     e
- *      v      |                                   |     r
- *             +-----------------------------------+     a
- *             |                ...                |     r
+ *      |      |             user-data             |     u
+ *      v      |                                   |     s
  *             +-----------------------------------+     e
- *      ^      |                                   |     a
- *      |      |            user-stack             |
+ *             |                ...                |     r
+ *     ---     +-----------------------------------+     a
+ *      ^      |                                   |     r
+ *      |      |        user-stack thread n        |     e
+ *             |                                   |     a
+ *             +-----------------------------------+
+ *             |                ...                |     |
+ *     ---     +-----------------------------------+     |
+ *      ^      |                                   |     |
+ *      |      |        user-stack thread 0        |     |
  *             |                                   |     |
  * 0xC0000000: +-----------------------------------+   -----
  *             |                ...                |     |
@@ -53,19 +60,17 @@
  * 0xC03FF000: +-----------------------------------+     l
  *             |          mapped page-dir          |     a
  * 0xC0400000: +-----------------------------------+     r
- *      ^      |                                   |     e
+ *             |                                   |     e
  *      |      |            kernel-heap            |     a
- *             |                                   |
+ *      v      |                                   |
  * 0xC1800000: +-----------------------------------+     |
  *             |                ...                |     |
- * 0xFF400000: +-----------------------------------+     |      -----
- *             |     temp mapped page-tables       |     |        |
- * 0xFF800000: +-----------------------------------+     |        |
- *             |                ...                |     |        |
- * 0xFFBFE000: +-----------------------------------+     |
- *             |         temp kernel-stack         |     |     not shared page-tables (3)
- * 0xFFBFF000: +-----------------------------------+     |
+ * 0xFF7FE000: +-----------------------------------+     |      -----
  *             |            kernel-stack           |     |        |
+ * 0xFF7FF000: +-----------------------------------+     |        |
+ *             |         temp kernel-stack         |     |
+ * 0xFF800000: +-----------------------------------+     |     not shared page-tables (3)
+ *             |     temp mapped page-tables       |     |
  * 0xFFC00000: +-----------------------------------+     |        |
  *             |        mapped page-tables         |     |        |
  * 0xFFFFFFFF: +-----------------------------------+   -----    -----
@@ -82,7 +87,7 @@
 /* the start of the mapped page-tables area */
 #define MAPPED_PTS_START	(0xFFFFFFFF - (PT_ENTRY_COUNT * PAGE_SIZE) + 1)
 /* the start of the temporary mapped page-tables area */
-#define TMPMAP_PTS_START	(MAPPED_PTS_START - (PT_ENTRY_COUNT * PAGE_SIZE * 2))
+#define TMPMAP_PTS_START	(MAPPED_PTS_START - (PT_ENTRY_COUNT * PAGE_SIZE))
 /* the start of the kernel-heap */
 #define KERNEL_HEAP_START	(KERNEL_AREA_V_ADDR + (PT_ENTRY_COUNT * PAGE_SIZE))
 /* the size of the kernel-heap (16 MiB) */
@@ -93,9 +98,9 @@
 /* needed for building a new page-dir */
 #define PAGE_DIR_TMP_AREA	(PAGE_DIR_AREA - PAGE_SIZE)
 /* our kernel-stack */
-#define KERNEL_STACK		(MAPPED_PTS_START - PAGE_SIZE)
+#define KERNEL_STACK		(KERNEL_STACK_TMP - PAGE_SIZE)
 /* temporary stack for cloning the stack */
-#define KERNEL_STACK_TMP	(KERNEL_STACK - PAGE_SIZE)
+#define KERNEL_STACK_TMP	(TMPMAP_PTS_START - PAGE_SIZE)
 
 /* the size of the temporary stack we use at the beginning */
 #define TMP_STACK_SIZE		PAGE_SIZE
@@ -360,14 +365,23 @@ void paging_unmapPageTables(u32 start,u32 count);
 /**
  * Clones the current page-directory.
  *
- * @param stackFrame will contain the stack-frame after the call
+ * @param stackFrame will contain the stack-frame for each thread after the call
  * @param newProc the process for which to create the page-dir
  * @return the frame-number of the new page-directory or 0 if there is not enough mem
  */
-u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc);
+u32 paging_clonePageDir(u32 *stackFrames,sProc *newProc);
+
+/**
+ * Destroys the stack of the given thread. The function assumes that t is not the current
+ * thread!
+ *
+ * @param t the thread to destroy
+ */
+void paging_destroyStacks(sThread *t);
 
 /**
  * Destroyes the page-dir of the given process. That means all frames will be freed.
+ * The function assumes that it is not the current process!
  *
  * @param p the process
  */

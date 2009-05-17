@@ -63,38 +63,38 @@ bool sig_canSend(tSig signal);
 /**
  * Sets the given signal-handler for <signal>
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param signal the signal
  * @param func the handler-function
  * @return 0 if successfull
  */
-s32 sig_setHandler(tPid pid,tSig signal,fSigHandler func);
+s32 sig_setHandler(tTid tid,tSig signal,fSigHandler func);
 
 /**
  * Removes the signal-handler for <signal>
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param signal the signal
  */
-void sig_unsetHandler(tPid pid,tSig signal);
+void sig_unsetHandler(tTid tid,tSig signal);
 
 /**
- * Removes all handler for the given process
+ * Removes all handler for the given thread
  *
- * @param pid the process-id
+ * @param tid the thread-id
  */
-void sig_removeHandlerFor(tPid pid);
+void sig_removeHandlerFor(tTid tid);
 
 /**
- * Checks wether there is any signal to handle. If so <sig>,<pid> and <data> will be set
+ * Checks wether there is any signal to handle. If so <sig>,<tid> and <data> will be set
  * to the signal to handle.
  *
  * @param sig the signal (will be set on success)
- * @param pid the process-id (will be set on success)
+ * @param tid the thread-id (will be set on success)
  * @param data the data to send (will be set on success)
  * @return true if there is a signal
  */
-bool sig_hasSignal(tSig *sig,tPid *pid,u32 *data);
+bool sig_hasSignal(tSig *sig,tPid *tid,u32 *data);
 
 /**
  * Adds the given signal for the given process
@@ -108,30 +108,30 @@ bool sig_hasSignal(tSig *sig,tPid *pid,u32 *data);
 bool sig_addSignalFor(tPid pid,tSig signal,u32 data);
 
 /**
- * Adds the given signal to all processes that have announced a handler for it
+ * Adds the given signal to all threads that have announced a handler for it
  *
  * @param signal the signal
  * @param data the data to send
- * @return the process-id to which we should switch now or INVALID_PID if we should do this later
+ * @return the thread-id to which we should switch now or INVALID_TID if we should do this later
  */
-tPid sig_addSignal(tSig signal,u32 data);
+tTid sig_addSignal(tSig signal,u32 data);
 
 /**
  * Starts handling the given signal. That means the signal will be marked as "active" until
  * sig_ackHandling() will be called.
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param signal the signal
  * @return the handler-function or NULL
  */
-fSigHandler sig_startHandling(tPid pid,tSig signal);
+fSigHandler sig_startHandling(tTid tid,tSig signal);
 
 /**
- * Acknoledges the current signal with given process (marks handling as finished)
+ * Acknoledges the current signal with given thread (marks handling as finished)
  *
- * @param pid the process-id
+ * @param tid the thread-id
  */
-void sig_ackHandling(tPid pid);
+void sig_ackHandling(tTid tid);
 
 
 #if DEBUGGING

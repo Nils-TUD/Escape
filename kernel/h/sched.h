@@ -21,7 +21,7 @@
 #define SCHED_H_
 
 #include "common.h"
-#include "proc.h"
+#include "thread.h"
 
 /**
  * Inits the scheduler
@@ -29,51 +29,51 @@
 void sched_init(void);
 
 /**
- * Performs the scheduling. That means it picks the next process to run and returns it
+ * Performs the scheduling. That means it picks the next thread to run and returns it
  *
- * @return the process to run
+ * @return the thread to run
  */
-sProc *sched_perform(void);
+sThread *sched_perform(void);
 
 /**
- * Choses the given process for running
+ * Choses the given thread for running
  *
- * @param p the process
+ * @param t the thread
  */
-void sched_setRunning(sProc *p);
+void sched_setRunning(sThread *t);
 
 /**
- * Enqueues the given process on the ready-queue and sets the state to ST_READY
+ * Enqueues the given thread on the ready-queue and sets the state to ST_READY
  *
- * @param p the process
+ * @param t the thread
  */
-void sched_setReady(sProc *p);
+void sched_setReady(sThread *t);
 
 /**
- * Puts the given process to the beginning of the ready-queue and sets the state to ST_READY
+ * Puts the given thread to the beginning of the ready-queue and sets the state to ST_READY
  *
- * @param p the process
+ * @param t the thread
  */
-void sched_setReadyQuick(sProc *p);
+void sched_setReadyQuick(sThread *t);
 
 /**
- * Sets the process in the blocked-state
+ * Sets the thread in the blocked-state
  *
- * @param p the process
+ * @param t the thread
  */
-void sched_setBlocked(sProc *p);
+void sched_setBlocked(sThread *t);
 
 /**
- * Unblocks all blocked processes that are waiting for the given event
+ * Unblocks all blocked threads that are waiting for the given event
  */
 void sched_unblockAll(u8 event);
 
 /**
- * Removes the given process from the scheduler (depending on the state)
+ * Removes the given thread from the scheduler (depending on the state)
  *
- * @param p the process
+ * @param t the thread
  */
-void sched_removeProc(sProc *p);
+void sched_removeThread(sThread *t);
 
 #if DEBUGGING
 

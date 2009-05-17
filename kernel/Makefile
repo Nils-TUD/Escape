@@ -91,7 +91,7 @@ $(DEP):	$(SERVICES) $(CSRC) $(LSRC)
 		if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
 		$(CC) $(CFLAGS) -MM $(CSRC) $(LSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/\1.o:/g" $(DEP);
+		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/kernel_\1.o:/g" $(DEP);
 
 -include $(DEP)
 

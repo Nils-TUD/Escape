@@ -43,8 +43,8 @@
 [global fpu_finit]
 [global fpu_saveState]
 [global fpu_restoreState]
-[global proc_save]
-[global proc_resume]
+[global thread_save]
+[global thread_resume]
 [global getStackFrameStart]
 [global kernelStack]
 
@@ -63,6 +63,8 @@ MULTIBOOT_CHECKSUM			equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 ; general constants
 ; TODO better way which uses the defines from paging.h?
 PAGE_SIZE								equ 4096
+KERNEL_STACK						equ 0xFF7FE000
+KERNEL_STACK_PTE				equ 0xFFFFDFF8
 TMP_STACK_SIZE					equ PAGE_SIZE
 USER_STACK							equ 0xC0000000
 
@@ -252,8 +254,8 @@ fpu_restoreState:
 	frstor	[eax]
 	ret;
 
-; bool proc_save(sProcSave *saveArea);
-proc_save:
+; bool thread_save(sThreadRegs *saveArea);
+thread_save:
 	push	ebp
 	mov		ebp,esp
 	sub		esp,4
@@ -271,24 +273,38 @@ proc_save:
 	leave
 	ret
 
-; bool proc_resume(u32 pageDir,sProcSave *saveArea);
-proc_resume:
+; bool thread_resume(u32 pageDir,sThreadRegs *saveArea,u32 kstackFrame));
+thread_resume:
 	push	ebp
 	mov		ebp,esp
 
 	; restore register
 	mov		eax,[ebp + 12]								; get saveArea
+	mov		edi,[ebp + 8]									; get page-dir
+	mov		esi,[ebp + 16]								; get stack-frame
+
+	; load new page-dir
+	mov		ecx,edi												; load page-dir-address
+	mov		cr3,ecx												; set page-dir
+
+	; exchange kernel-stack-frame
+	mov		ecx,[KERNEL_STACK_PTE]
+	and		ecx,0x00000FFF								; clear frame-number
+	mov		edx,esi
+	shl		edx,12
+	or		ecx,edx												; set new frame-number
+	mov		[KERNEL_STACK_PTE],ecx				; store
+
+	; load page-dir again
+	mov		ecx,edi												; load page-dir-address
+	mov		cr3,ecx												; set page-dir
+
+	; now restore registers
 	mov		edi,[eax + STATE_EDI]
 	mov		esi,[eax + STATE_ESI]
 	mov		ebp,[eax + STATE_EBP]
 	push	DWORD [eax + STATE_EFLAGS]
 	popfd																; load eflags
-
-	; load new page-dir
-	mov		ecx,[esp + 8]									; load page-dir-address
-	mov		cr3,ecx												; set page-dir
-
-	; now load esp
 	mov		esp,[eax + STATE_ESP]
 
 	mov		eax,1													; return 1

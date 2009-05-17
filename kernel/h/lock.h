@@ -24,14 +24,14 @@
 #include "proc.h"
 
 /**
- * Aquires the lock with given process and ident. If it exists and is locked,
- * the process waits here until it's unlocked
+ * Aquires the lock with given thread and ident. If it exists and is locked,
+ * the thread waits here until it's unlocked
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param ident to identify the lock
  * @return 0 on success
  */
-s32 lock_aquire(tPid pid,u32 ident);
+s32 lock_aquire(tTid tid,u32 ident);
 
 /**
  * Releases the lock with given ident

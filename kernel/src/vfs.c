@@ -886,6 +886,7 @@ s32 vfs_serviceUseReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 			/* wait until a message arrives */
 			/* don't cache the list here, because the pointer changes if the list is NULL */
 			while(sll_length(node->data.servuse.recvList) == 0) {
+				/* TODO */
 				proc_wait(pid,EV_RECEIVED_MSG);
 				proc_switch();
 			}
@@ -968,6 +969,7 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 
 		/* notify the service */
 		if(list == &(n->data.servuse.sendList)) {
+			/* TODO */
 			if(n->parent->owner != KERNEL_PID)
 				proc_wakeup(n->parent->owner,EV_CLIENT);
 		}
@@ -978,12 +980,14 @@ static s32 vfs_writeHandler(tPid pid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 					vfsr_setGotMsg();
 				/* notify the clients of this single-pipe-service */
 				else if(sll_length(n->data.servuse.singlePipeClients) > 0) {
+					/* TODO */
 					sSLNode *node = sll_begin(n->data.servuse.singlePipeClients);
 					for(; node != NULL; node = node->next)
 						proc_wakeup(((sProc*)node->data)->pid,EV_RECEIVED_MSG);
 				}
 			}
 			else {
+				/* TODO */
 				/* notify the process that there is a message */
 				if(n->owner != KERNEL_PID)
 					proc_wakeup(n->owner,EV_RECEIVED_MSG);

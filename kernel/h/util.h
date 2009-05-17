@@ -23,7 +23,7 @@
 #include "common.h"
 #include "ksymbols.h"
 #include "intrpt.h"
-#include "proc.h"
+#include "thread.h"
 #include <stdarg.h>
 
 /**
@@ -74,11 +74,11 @@ void util_panic(const char *fmt,...);
 /**
  * Builds the stack-trace for a user-app
  *
- * @param p the process
+ * @param t the thread
  * @param stack the interrupt-stack
  * @return the first function-call (for util_printStackTrace())
  */
-sFuncCall *util_getUserStackTrace(sProc *p,sIntrptStackFrame *stack);
+sFuncCall *util_getUserStackTrace(sThread *t,sIntrptStackFrame *stack);
 
 /**
  * Builds the stack-trace for the kernel

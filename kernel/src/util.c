@@ -41,7 +41,7 @@ extern u32 kernelStack;
 static char hexCharsBig[] = "0123456789ABCDEF";
 
 void util_panic(const char *fmt,...) {
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	va_list ap;
 	vid_printf("\n");
 	vid_setLineBG(vid_getLine(),RED);
@@ -55,16 +55,16 @@ void util_panic(const char *fmt,...) {
 
 	vid_printf("\n");
 	vid_restoreColor();
-	vid_printf("Caused by process %d (%s)\n\n",p->pid,p->command);
+	vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 	util_printStackTrace(util_getKernelStackTrace());
-	util_printStackTrace(util_getUserStackTrace(p,intrpt_getCurStack()));
+	util_printStackTrace(util_getUserStackTrace(t,intrpt_getCurStack()));
 	intrpt_setEnabled(false);
 	util_halt();
 }
 
-sFuncCall *util_getUserStackTrace(sProc *p,sIntrptStackFrame *stack) {
+sFuncCall *util_getUserStackTrace(sThread *t,sIntrptStackFrame *stack) {
 	return util_getStackTrace((u32*)stack->ebp,
-			KERNEL_AREA_V_ADDR - p->stackPages * PAGE_SIZE,KERNEL_AREA_V_ADDR);
+			t->ustackBegin - t->ustackPages * PAGE_SIZE,t->ustackBegin);
 }
 
 sFuncCall *util_getKernelStackTrace(void) {

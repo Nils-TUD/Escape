@@ -46,7 +46,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define SYSCALL_COUNT					39
+#define SYSCALL_COUNT					41
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode)		((stack)->ebx = (errorCode))
@@ -78,6 +78,12 @@ static void sysc_loadMods(sIntrptStackFrame *stack);
  */
 static void sysc_getpid(sIntrptStackFrame *stack);
 /**
+ * Returns the tid of the current thread
+ *
+ * @return tTid the thread-id
+ */
+static void sysc_gettid(sIntrptStackFrame *stack);
+/**
  * Returns the parent-pid of the given process
  *
  * @param pid the process-id
@@ -94,6 +100,13 @@ static void sysc_debugc(sIntrptStackFrame *stack);
  * @return tPid 0 for the child, the child-pid for the parent-process
  */
 static void sysc_fork(sIntrptStackFrame *stack);
+/**
+ * Starts a new thread
+ *
+ * @param entryPoint the entry-point
+ * @return tTid 0 for the new thread, the new thread-id for the current thread
+ */
+static void sysc_startThread(sIntrptStackFrame *stack);
 /**
  * Destroys the process and issues a context-switch
  *
@@ -390,6 +403,8 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 36 */	{sysc_getClientProc,		2},
 	/* 37 */	{sysc_lock,					1},
 	/* 38 */	{sysc_unlock,				1},
+	/* 39 */	{sysc_startThread,			0},
+	/* 40 */	{sysc_gettid,				0},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -422,6 +437,11 @@ static void sysc_getpid(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,p->pid);
 }
 
+static void sysc_gettid(sIntrptStackFrame *stack) {
+	sThread *t = thread_getRunning();
+	SYSC_RET1(stack,t->tid);
+}
+
 static void sysc_getppid(sIntrptStackFrame *stack) {
 	tPid pid = (tPid)SYSC_ARG1(stack);
 	sProc *p;
@@ -450,29 +470,37 @@ static void sysc_fork(sIntrptStackFrame *stack) {
 	}
 
 	res = proc_clone(newPid);
+
 	/* error? */
-	if(res < 0) {
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-	}
 	/* child? */
-	else if(res == 1) {
+	else if(res == 1)
 		SYSC_RET1(stack,0);
-	}
 	/* parent */
-	else {
+	else
 		SYSC_RET1(stack,newPid);
-	}
+}
+
+static void sysc_startThread(sIntrptStackFrame *stack) {
+	u32 entryPoint = SYSC_ARG1(stack);
+	s32 res = proc_startThread(entryPoint);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	else
+		SYSC_RET1(stack,res);
 }
 
 static void sysc_exit(sIntrptStackFrame *stack) {
 	UNUSED(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	if(SYSC_ARG1(stack) != 0) {
-		vid_printf("Process %d (%s) exited with %d\n",p->pid,p->command,SYSC_ARG1(stack));
-		util_printStackTrace(util_getUserStackTrace(p,stack));
+		vid_printf("Thread %d (%s) exited with %d\n",t->tid,t->proc->command,SYSC_ARG1(stack));
+		/* TODO
+		util_printStackTrace(util_getUserStackTrace(t->proc,stack));*/
 	}
-	proc_destroy(p);
-	proc_switch();
+	proc_destroyThread();
+	thread_switch();
 }
 
 static void sysc_open(sIntrptStackFrame *stack) {
@@ -929,6 +957,7 @@ static void sysc_wait(sIntrptStackFrame *stack) {
 	p = proc_getRunning();
 
 	/* TODO we need a result for EV_CHILD_DIED (and maybe for others, too) */
+	util_panic("NOT FINISHED");
 
 	/* check wether there is a chance that we'll wake up again */
 	canSleep = !vfs_msgAvailableFor(p->pid,events);
@@ -937,21 +966,22 @@ static void sysc_wait(sIntrptStackFrame *stack) {
 
 	/* if we can sleep, do it */
 	if(canSleep) {
+		/* TODO */
 		proc_wait(p->pid,events);
-		proc_switch();
+		thread_switch();
 	}
 }
 
 static void sysc_sleep(sIntrptStackFrame *stack) {
 	u32 msecs = SYSC_ARG1(stack);
-	timer_sleepFor(proc_getRunning()->pid,msecs);
-	proc_switch();
+	timer_sleepFor(thread_getRunning()->tid,msecs);
+	thread_switch();
 }
 
 static void sysc_yield(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 
-	proc_switch();
+	thread_switch();
 }
 
 static void sysc_requestIOPorts(sIntrptStackFrame *stack) {
@@ -999,7 +1029,7 @@ static void sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 static void sysc_setSigHandler(sIntrptStackFrame *stack) {
 	tSig signal = (tSig)SYSC_ARG1(stack);
 	fSigHandler handler = (fSigHandler)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	s32 err;
 
 	/* address should be valid */
@@ -1014,7 +1044,7 @@ static void sysc_setSigHandler(sIntrptStackFrame *stack) {
 		return;
 	}
 
-	err = sig_setHandler(p->pid,signal,handler);
+	err = sig_setHandler(t->tid,signal,handler);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
@@ -1025,21 +1055,21 @@ static void sysc_setSigHandler(sIntrptStackFrame *stack) {
 
 static void sysc_unsetSigHandler(sIntrptStackFrame *stack) {
 	tSig signal = (tSig)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 
 	if(!sig_canHandle(signal)) {
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
 		return;
 	}
 
-	sig_unsetHandler(p->pid,signal);
+	sig_unsetHandler(t->tid,signal);
 
 	SYSC_RET1(stack,0);
 }
 
 static void sysc_ackSignal(sIntrptStackFrame *stack) {
-	sProc *p = proc_getRunning();
-	sig_ackHandling(p->pid);
+	sThread *t = thread_getRunning();
+	sig_ackHandling(t->tid);
 	SYSC_RET1(stack,0);
 }
 
@@ -1047,7 +1077,7 @@ static void sysc_sendSignalTo(sIntrptStackFrame *stack) {
 	tPid pid = (tPid)SYSC_ARG1(stack);
 	tSig signal = (tSig)SYSC_ARG2(stack);
 	u32 data = SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 
 	if(!sig_canSend(signal)) {
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
@@ -1064,9 +1094,9 @@ static void sysc_sendSignalTo(sIntrptStackFrame *stack) {
 	else
 		sig_addSignal(signal,data);
 
-	/* choose another process if we've killed ourself */
-	if(p->state != ST_RUNNING)
-		proc_switch();
+	/* choose another thread if we've killed ourself */
+	if(t->state != ST_RUNNING)
+		thread_switch();
 
 	SYSC_RET1(stack,0);
 }
@@ -1180,7 +1210,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 		/* there is no undo for proc_changeSize() :/ */
 		kheap_free(argBuffer);
 		proc_destroy(p);
-		proc_switch();
+		thread_switch();
 		return;
 	}
 
@@ -1189,7 +1219,9 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
 	/* make process ready */
-	proc_setupIntrptStack(intrpt_getCurStack(),argc,argBuffer,EXEC_MAX_ARGSIZE - remaining);
+	proc_setupUserStack(stack,argc,argBuffer,EXEC_MAX_ARGSIZE - remaining);
+	proc_setupStart(stack);
+
 	kheap_free(argBuffer);
 }
 
@@ -1303,7 +1335,6 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 
 static void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
-	vfsn_dbg_printTree();
 	proc_dbg_printAll();
 }
 
@@ -1382,10 +1413,10 @@ static void sysc_destroySharedMem(sIntrptStackFrame *stack) {
 
 static void sysc_lock(sIntrptStackFrame *stack) {
 	u32 ident = SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	s32 res;
 
-	res = lock_aquire(p->pid,ident);
+	res = lock_aquire(t->tid,ident);
 	if(res < 0) {
 		SYSC_ERROR(stack,res);
 		return;

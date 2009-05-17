@@ -21,6 +21,7 @@
 #include <multiboot.h>
 #include <paging.h>
 #include <proc.h>
+#include <thread.h>
 #include <elf.h>
 #include <video.h>
 #include <vfsnode.h>
@@ -84,7 +85,8 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			/* now load service */
 			memcpy(p->command,name,strlen(name) + 1);
 			elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart);
-			proc_setupIntrptStack(stack,0,NULL,0);
+			proc_setupUserStack(stack,0,NULL,0);
+			proc_setupStart(stack);
 			/* we don't want to continue the loop ;) */
 			break;
 		}
@@ -93,7 +95,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		vid_printf("Waiting for '%s'",service);
 		while(vfsn_resolvePath(service,&nodeNo) < 0) {
 			vid_printf(".");
-			proc_switch();
+			thread_switch();
 		}
 		vid_toLineEnd(strlen("DONE"));
 		vid_printf("\033f\x02""DONE\033r\x0");

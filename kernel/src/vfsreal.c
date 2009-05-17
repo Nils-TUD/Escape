@@ -148,6 +148,7 @@ void vfsr_checkForMsgs(void) {
 					req->finished = true;
 					req->inodeNo = data.inodeNo;
 					/* the process can continue now */
+					/* TODO */
 					proc_wakeup(data.pid,EV_RECEIVED_MSG);
 				}
 			}
@@ -171,6 +172,7 @@ void vfsr_checkForMsgs(void) {
 					req->inodeNo = res->error;
 					req->buffer = (u8*)res;
 					/* the process can continue now */
+					/* TODO */
 					proc_wakeup(res->pid,EV_RECEIVED_MSG);
 				}
 			}
@@ -194,6 +196,7 @@ void vfsr_checkForMsgs(void) {
 					req->count = res->count;
 					req->readResp = res;
 					/* the process can continue now */
+					/* TODO */
 					proc_wakeup(res->pid,EV_RECEIVED_MSG);
 				}
 			}
@@ -212,6 +215,7 @@ void vfsr_checkForMsgs(void) {
 					req->finished = true;
 					req->count = data.count;
 					/* the process can continue now */
+					/* TODO */
 					proc_wakeup(data.pid,EV_RECEIVED_MSG);
 				}
 			}
@@ -422,6 +426,7 @@ void vfsr_closeFile(tInodeNo inodeNo) {
 
 static void vfsr_waitForReply(tPid pid,sRequest *req) {
 	while(!req->finished) {
+		/* TODO */
 		proc_wait(pid,EV_RECEIVED_MSG);
 		proc_switch();
 	}

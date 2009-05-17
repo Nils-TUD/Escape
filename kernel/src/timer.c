@@ -49,7 +49,7 @@
 
 /* an entry in the listener-list */
 typedef struct {
-	tPid pid;
+	tTid tid;
 	u64 time;
 } sTimerListener;
 
@@ -73,40 +73,40 @@ void timer_init(void) {
 		util_panic("Not enough mem for timer-listener");
 }
 
-s32 timer_sleepFor(tPid pid,u32 msecs) {
+s32 timer_sleepFor(tTid tid,u32 msecs) {
 	sTimerListener *l = (sTimerListener*)kheap_alloc(sizeof(sTimerListener));
 	if(l == 0)
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* build entry and put process to sleep */
-	l->pid = pid;
+	l->tid = tid;
 	l->time = elapsedMsecs + msecs;
 	if(!sll_append(listener,l)) {
 		kheap_free(l);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
-	sched_setBlocked(proc_getByPid(pid));
+	sched_setBlocked(thread_getById(tid));
 	return 0;
 }
 
 void timer_intrpt(void) {
-	bool foundProc = false;
+	bool foundThread = false;
 	sSLNode *n,*p,*tn;
 	sTimerListener *l;
 
 	elapsedMsecs += 1000 / TIMER_FREQUENCY;
 
-	/* TODO we should switch to the process for which (elapsedMsecs - l->time) is max */
-	/* look if there is a process that should be waked up */
+	/* TODO we should switch to the thread for which (elapsedMsecs - l->time) is max */
+	/* look if there is a thread that should be waked up */
 	p = NULL;
 	for(n = sll_begin(listener); n != NULL; ) {
 		l = (sTimerListener*)n->data;
 		if(l->time <= elapsedMsecs) {
 			tn = n->next;
-			foundProc = true;
+			foundThread = true;
 			/* wake up process */
-			sched_setReadyQuick(proc_getByPid(l->pid));
+			sched_setReadyQuick(thread_getById(l->tid));
 			kheap_free(l);
 			sll_removeNode(listener,n,p);
 			n = tn;
@@ -118,8 +118,8 @@ void timer_intrpt(void) {
 	}
 
 	/* if a process has been waked up or the time-slice is over, reschedule */
-	if(foundProc || (elapsedMsecs - lastResched) >= PROC_TIMESLICE) {
+	if(foundThread || (elapsedMsecs - lastResched) >= PROC_TIMESLICE) {
 		lastResched = elapsedMsecs;
-		proc_switch();
+		thread_switch();
 	}
 }

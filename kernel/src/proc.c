@@ -19,6 +19,7 @@
 
 #include <common.h>
 #include <proc.h>
+#include <thread.h>
 #include <paging.h>
 #include <mm.h>
 #include <util.h>
@@ -38,10 +39,12 @@
 #include <assert.h>
 #include <errors.h>
 
+#define EXIT_CALL_ADDR	0x5
+
+static s32 proc_finishClone(sThread *nt,u32 stackFrame);
+
 /* our processes */
 static sProc procs[PROC_COUNT];
-/* the process-index */
-static tPid pi;
 
 /* list of dead processes that should be destroyed */
 static sSLList* deadProcs = NULL;
@@ -49,34 +52,46 @@ static sSLList* deadProcs = NULL;
 void proc_init(void) {
 	tFD i;
 	/* init the first process */
-	pi = 0;
 	if(!vfs_createProcess(0,&vfsinfo_procReadHandler))
 		util_panic("Not enough mem for init process");
-	procs[pi].state = ST_RUNNING;
-	procs[pi].events = EV_NOEVENT;
-	procs[pi].signal = 0;
-	procs[pi].pid = 0;
-	procs[pi].parentPid = 0;
+	sProc *p = procs + 0;
+	p->state = ST_RUNNING;
+	p->events = EV_NOEVENT;
+	p->signal = 0;
+	p->pid = 0;
+	p->parentPid = 0;
 	/* the first process has no text, data and stack */
-	procs[pi].textPages = 0;
-	procs[pi].dataPages = 0;
-	procs[pi].stackPages = 0;
-	procs[pi].ucycleCount = 0;
-	procs[pi].ucycleStart = 0;
-	procs[pi].kcycleCount = 0;
-	procs[pi].kcycleStart = 0;
-	procs[pi].fpuState = NULL;
-	procs[pi].text = NULL;
+	p->textPages = 0;
+	p->dataPages = 0;
+	p->stackPages = 0;
+	p->ucycleCount = 0;
+	p->ucycleStart = 0;
+	p->kcycleCount = 0;
+	p->kcycleStart = 0;
+	p->fpuState = NULL;
+	p->text = NULL;
 	/* note that this assumes that the page-dir is initialized */
-	procs[pi].physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
+	p->physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 	/* init fds */
 	for(i = 0; i < MAX_FD_COUNT; i++)
-		procs[pi].fileDescs[i] = -1;
-	memcpy(procs[pi].command,"initloader",11);
+		p->fileDescs[i] = -1;
+	memcpy(p->command,"initloader",11);
 
-	paging_exchangePDir(procs[pi].physPDirAddr);
+	/* create first thread */
+	p->threads = sll_create();
+	if(p->threads == NULL)
+		util_panic("Unable to create initial thread-list");
+	if(!sll_append(p->threads,thread_init(p)))
+		util_panic("Unable to append the initial thread");
+
+	paging_exchangePDir(p->physPDirAddr);
 	/* setup kernel-stack for us */
-	paging_map(KERNEL_STACK,NULL,1,PG_WRITABLE | PG_SUPERVISOR,false);
+	u32 stackFrame = mm_allocateFrame(MM_DEF);
+	paging_map(KERNEL_STACK,&stackFrame,1,PG_WRITABLE | PG_SUPERVISOR,false);
+
+	/* set kernel-stack for first thread */
+	sThread *t = (sThread*)sll_get(p->threads,0);
+	t->kstackFrame = stackFrame;
 }
 
 tPid proc_getFreePid(void) {
@@ -90,7 +105,11 @@ tPid proc_getFreePid(void) {
 }
 
 sProc *proc_getRunning(void) {
-	return &procs[pi];
+	/* TODO maybe we should store the current process during context-switch, too? */
+	sThread *t = thread_getRunning();
+	if(t)
+		return t->proc;
+	return &procs[0];
 }
 
 sProc *proc_getByPid(tPid pid) {
@@ -114,17 +133,18 @@ bool proc_hasChild(tPid pid) {
 }
 
 void proc_switch(void) {
-	proc_switchTo(sched_perform()->pid);
+	/*proc_switchTo(sched_perform()->pid);*/
 }
 
 void proc_switchTo(tPid pid) {
+#if 0
 	sProc *p = procs + pi;
 
 	/* finish kernel-time here since we're switching the process */
 	if(p->kcycleStart > 0)
 		p->kcycleCount += cpu_rdtsc() - p->kcycleStart;
 
-	if(pid != pi && !proc_save(&p->save)) {
+	if(pid != pi && !thread_save(&p->save)) {
 		/* mark old process ready, if it should not be blocked, killed or something */
 		if(p->state == ST_RUNNING)
 			sched_setReady(p);
@@ -138,12 +158,15 @@ void proc_switchTo(tPid pid) {
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */
 		fpu_lockFPU();
-		proc_resume(p->physPDirAddr,&p->save);
+		thread_resume(p->physPDirAddr,&p->save);
 	}
 
 	/* now start kernel-time again */
 	proc_getRunning()->kcycleStart = cpu_rdtsc();
+#endif
+}
 
+void proc_cleanup(void) {
 	/* destroy process, if there is any */
 	if(deadProcs != NULL) {
 		sSLNode *n;
@@ -180,7 +203,8 @@ tFileNo proc_fdToFile(tFD fd) {
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
-	fileNo = (procs + pi)->fileDescs[fd];
+	sProc *cur = proc_getRunning();
+	fileNo = cur->fileDescs[fd];
 	if(fileNo == -1)
 		return ERR_INVALID_FD;
 
@@ -189,7 +213,8 @@ tFileNo proc_fdToFile(tFD fd) {
 
 tFD proc_getFreeFd(void) {
 	tFD i;
-	tFileNo *fds = procs[pi].fileDescs;
+	sProc *cur = proc_getRunning();
+	tFileNo *fds = cur->fileDescs;
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(fds[i] == -1)
 			return i;
@@ -199,24 +224,26 @@ tFD proc_getFreeFd(void) {
 }
 
 s32 proc_assocFd(tFD fd,tFileNo fileNo) {
+	sProc *cur = proc_getRunning();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
-	if(procs[pi].fileDescs[fd] != -1)
+	if(cur->fileDescs[fd] != -1)
 		return ERR_INVALID_FD;
 
-	procs[pi].fileDescs[fd] = fileNo;
+	cur->fileDescs[fd] = fileNo;
 	return 0;
 }
 
 tFD proc_dupFd(tFD fd) {
 	tFileNo f;
 	s32 err,nfd;
+	sProc *cur = proc_getRunning();
 	/* check fd */
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
-	f = procs[pi].fileDescs[fd];
+	f = cur->fileDescs[fd];
 	if(f == -1)
 		return ERR_INVALID_FD;
 
@@ -228,20 +255,21 @@ tFD proc_dupFd(tFD fd) {
 	if((err = vfs_incRefs(f)) < 0)
 		return err;
 
-	procs[pi].fileDescs[nfd] = f;
+	cur->fileDescs[nfd] = f;
 	return nfd;
 }
 
 s32 proc_redirFd(tFD src,tFD dst) {
 	tFileNo fSrc,fDst;
 	s32 err;
+	sProc *cur = proc_getRunning();
 
 	/* check fds */
 	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
-	fSrc = procs[pi].fileDescs[src];
-	fDst = procs[pi].fileDescs[dst];
+	fSrc = cur->fileDescs[src];
+	fDst = cur->fileDescs[dst];
 	if(fSrc == -1 || fDst == -1)
 		return ERR_INVALID_FD;
 
@@ -252,41 +280,29 @@ s32 proc_redirFd(tFD src,tFD dst) {
 	vfs_closeFile(fSrc);
 
 	/* now redirect src to dst */
-	procs[pi].fileDescs[src] = fDst;
+	cur->fileDescs[src] = fDst;
 	return 0;
 }
 
 tFileNo proc_unassocFD(tFD fd) {
 	tFileNo fileNo;
+	sProc *cur = proc_getRunning();
 	if(fd < 0 || fd >= MAX_FD_COUNT)
 		return ERR_INVALID_FD;
 
-	fileNo = procs[pi].fileDescs[fd];
+	fileNo = cur->fileDescs[fd];
 	if(fileNo == -1)
 		return ERR_INVALID_FD;
 
-	procs[pi].fileDescs[fd] = -1;
+	cur->fileDescs[fd] = -1;
 	return fileNo;
 }
 
-s32 proc_extendStack(u32 address) {
-	sProc *p = procs + pi;
-	s32 newPages;
-	address &= ~(PAGE_SIZE - 1);
-	newPages = ((KERNEL_AREA_V_ADDR - address) >> PAGE_SIZE_SHIFT) - p->stackPages;
-	if(newPages > 0) {
-		if(!proc_segSizesValid(p->textPages,p->dataPages,p->stackPages + newPages))
-			return ERR_NOT_ENOUGH_MEM;
-		if(!proc_changeSize(newPages,CHG_STACK))
-			return ERR_NOT_ENOUGH_MEM;
-	}
-	return 0;
-}
-
 s32 proc_clone(tPid newPid) {
-	u32 i,pdirFrame,stackFrame;
-	u32 *src,*dst;
+	u32 i,pdirFrame,dummy,stackFrame;
 	sProc *p;
+	sProc *cur = proc_getRunning();
+	sThread *curThread = thread_getRunning();
 
 	vassert(newPid < PROC_COUNT,"newPid >= PROC_COUNT");
 	vassert((procs + newPid)->state == ST_UNUSED,"The process slot 0x%x is already in use!",
@@ -297,17 +313,21 @@ s32 proc_clone(tPid newPid) {
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* clone page-dir */
-	if((pdirFrame = paging_clonePageDir(&stackFrame,procs + newPid)) == 0)
+	if((pdirFrame = paging_clonePageDir(&stackFrame,procs + newPid)) == 0) {
+		vfs_removeProcess(newPid);
 		return ERR_NOT_ENOUGH_MEM;
+	}
 
 	/* set page-dir and pages for segments */
 	p = procs + newPid;
+	/* TODO remove me! */
+	p->state = ST_READY;
 	p->events = EV_NOEVENT;
 	p->pid = newPid;
-	p->parentPid = pi;
-	p->textPages = procs[pi].textPages;
-	p->dataPages = procs[pi].dataPages;
-	p->stackPages = procs[pi].stackPages;
+	p->parentPid = cur->pid;
+	p->textPages = cur->textPages;
+	p->dataPages = cur->dataPages;
+	p->stackPages = curThread->ustackPages;
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
 	p->ucycleCount = 0;
 	p->ucycleStart = 0;
@@ -316,38 +336,121 @@ s32 proc_clone(tPid newPid) {
 	p->fpuState = NULL;
 	p->signal = 0;
 	/* give the process the same name (maybe changed by exec) */
-	strcpy(p->command,procs[pi].command);
+	strcpy(p->command,cur->command);
+
+	/* create thread-list */
+	p->threads = sll_create();
+	if(p->threads == NULL) {
+		/* TODO we have to destroy the page-directory */
+		vfs_removeProcess(newPid);
+		return ERR_NOT_ENOUGH_MEM;
+	}
+
+	/* clone current thread */
+	s32 res;
+	sThread *nt;
+	if((res = thread_clone(curThread,&nt,&dummy,true)) < 0) {
+		/* TODO we have to destroy the page-directory */
+		kheap_free(p->threads);
+		vfs_removeProcess(newPid);
+		return res;
+	}
+	if(!sll_append(p->threads,nt)) {
+		/* TODO we have to destroy the page-directory */
+		thread_destroy(nt,true);
+		kheap_free(p->threads);
+		vfs_removeProcess(newPid);
+		return ERR_NOT_ENOUGH_MEM;
+	}
+	/* set kernel-stack-frame; thread_clone() doesn't do it for us */
+	nt->kstackFrame = stackFrame;
+	/* change process; thread_clone() uses the process of the org thread */
+	nt->proc = p;
+	/* make thread ready */
+	sched_setReady(nt);
 
 	/* clone text */
-	p->text = procs[pi].text;
-	if(!text_clone(p->text,p->pid))
+	p->text = cur->text;
+	if(!text_clone(p->text,p->pid)) {
+		/* TODO we have to destroy the page-directory */
+		thread_destroy(nt,true);
+		kheap_free(p->threads);
+		vfs_removeProcess(newPid);
 		return ERR_NOT_ENOUGH_MEM;
+	}
 
 	/* inherit file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
-		p->fileDescs[i] = procs[pi].fileDescs[i];
+		p->fileDescs[i] = cur->fileDescs[i];
 		if(p->fileDescs[i] != -1)
 			p->fileDescs[i] = vfs_inheritFileNo(newPid,p->fileDescs[i]);
 	}
 
-	/* make ready */
-	sched_setReady(p);
+	res = proc_finishClone(nt,stackFrame);
+	if(res == 0)
+		return 1;
+	/* parent */
+	return 0;
+}
 
+s32 proc_startThread(u32 entryPoint) {
+	u32 stackFrame;
+	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
+	sThread *nt;
+	s32 res;
+	if((res = thread_clone(t,&nt,&stackFrame,false)) < 0)
+		return res;
+
+	/* append thread */
+	if(!sll_append(p->threads,nt)) {
+		thread_destroy(nt,true);
+		return ERR_NOT_ENOUGH_MEM;
+	}
+
+	p->stackPages += nt->ustackPages;
+
+	/* mark ready */
+	sched_setReady(nt);
+
+	res = proc_finishClone(nt,stackFrame);
+	if(res == 1) {
+		sIntrptStackFrame *istack = intrpt_getCurStack();
+		proc_setupStart(istack);
+		/* set entry-point */
+		istack->eip = entryPoint;
+
+		/* we want to call exit when the thread-function returns */
+		u32 *esp = (u32*)nt->ustackBegin - 1;
+		*--esp = EXIT_CALL_ADDR;
+		istack->uesp = (u32)esp;
+		istack->ebp = (u32)esp;
+
+		/* child */
+		return 0;
+	}
+
+	return nt->tid;
+}
+
+static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
+	u32 i,*src,*dst;
+	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
 	paging_map(KERNEL_STACK_TMP,&stackFrame,1,PG_SUPERVISOR | PG_WRITABLE,true);
+	src = (u32*)KERNEL_STACK;
+	dst = (u32*)KERNEL_STACK_TMP;
 
-	/* save us first */
-	if(proc_save(&p->save)) {
+	if(thread_save(&nt->save)) {
 		/* child */
 		return 1;
 	}
 
 	/* now copy the stack */
-	/* copy manually to prevent function-call (otherwise we would change the stack) */
-	src = (u32*)KERNEL_STACK;
-	dst = (u32*)KERNEL_STACK_TMP;
+	/* copy manually to prevent a function-call (otherwise we would change the stack) */
 	for(i = 0; i < PT_ENTRY_COUNT; i++)
 		*dst++ = *src++;
+
 	/* unmap it */
 	paging_unmap(KERNEL_STACK_TMP,1,false,false);
 
@@ -355,15 +458,28 @@ s32 proc_clone(tPid newPid) {
 	return 0;
 }
 
+void proc_destroyThread(void) {
+	sProc *cur = proc_getRunning();
+	/* last thread? */
+	if(sll_length(cur->threads) == 1)
+		proc_destroy(cur);
+	else {
+		/* just destroy the thread */
+		sThread *t = thread_getRunning();
+		thread_destroy(t,true);
+	}
+}
+
 void proc_destroy(sProc *p) {
 	tFD i;
 	sProc *cp;
+	sProc *cur = proc_getRunning();
 	/* don't delete initial or unused processes */
 	vassert(p->pid != 0 && p->state != ST_UNUSED,
 			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
 
 	/* we can't destroy ourself so we mark us as dead and do this later */
-	if(p->pid == pi) {
+	if(p->pid == cur->pid) {
 		/* create list if not already done */
 		if(deadProcs == NULL) {
 			deadProcs = sll_create();
@@ -372,15 +488,29 @@ void proc_destroy(sProc *p) {
 		}
 
 		/* mark ourself as destroyable */
-		if(!sll_append(deadProcs,procs + pi))
+		if(!sll_append(deadProcs,procs + p->pid))
 			util_panic("Not enough mem to append dead process");
-		/* ensure that we will not be selected on the next resched */
-		procs[pi].state = ST_ZOMBIE;
+
+		/* ensure that no thread of our process will be selected on the next resched */
+		sSLNode *tn;
+		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
+			sThread *t = (sThread*)tn->data;
+			sched_removeThread(t);
+			t->state = ST_ZOMBIE;
+		}
 		return;
 	}
 
 	/* destroy paging-structure */
 	paging_destroyPageDir(p);
+
+	/* destroy threads */
+	sSLNode *tn;
+	for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
+		sThread *t = (sThread*)tn->data;
+		thread_destroy(t,false);
+	}
+	sll_destroy(p->threads,false);
 
 	/* release file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
@@ -405,31 +535,27 @@ void proc_destroy(sProc *p) {
 
 	/* remove from VFS */
 	vfs_removeProcess(p->pid);
-	/* remove signals */
-	sig_removeHandlerFor(p->pid);
 	/* notify processes that wait for dying procs */
 	sig_addSignal(SIG_PROC_DIED,p->pid);
-	/* free FPU-state-memory */
-	fpu_freeState(&p->fpuState);
 
 	/* mark as unused */
 	p->textPages = 0;
 	p->dataPages = 0;
 	p->stackPages = 0;
-	/* remove from scheduler */
-	sched_removeProc(p);
 	p->state = ST_UNUSED;
 	p->pid = 0;
 	p->physPDirAddr = 0;
 
 	/* notify parent, if waiting */
-	proc_wakeup(p->parentPid,EV_CHILD_DIED);
+	/* TODO which thread to notify?
+	proc_wakeup(p->parentPid,EV_CHILD_DIED);*/
 }
 
-void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize) {
+void proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize) {
 	u32 *esp;
 	char **argv;
 	u32 totalSize;
+	sThread *thread = thread_getRunning();
 	vassert(frame != NULL,"frame == NULL");
 
 	/* we need to know the total number of bytes we'll store on the stack */
@@ -444,10 +570,10 @@ void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 args
 
 	/* will handle copy-on-write */
 	/* TODO we might have to add stack-pages... */
-	paging_isRangeUserWritable(KERNEL_AREA_V_ADDR - totalSize,totalSize);
+	paging_isRangeUserWritable(thread->ustackBegin - totalSize,totalSize);
 
 	/* copy arguments on the user-stack */
-	esp = (u32*)KERNEL_AREA_V_ADDR - 1;
+	esp = (u32*)thread->ustackBegin - 1;
 	argv = NULL;
 	if(argc > 0) {
 		char *str;
@@ -477,6 +603,11 @@ void proc_setupIntrptStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 args
 
 	frame->uesp = (u32)esp;
 	frame->ebp = frame->uesp;
+}
+
+void proc_setupStart(sIntrptStackFrame *frame) {
+	vassert(frame != NULL,"frame == NULL");
+
 	/* user-mode segments */
 	/* TODO remove the hard-coded stuff here! */
 	frame->cs = 0x1b;
@@ -503,17 +634,19 @@ bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages) {
 
 bool proc_changeSize(s32 change,eChgArea area) {
 	u32 addr,chg = change,origPages;
+	sProc *cur = proc_getRunning();
+	sThread *thread = thread_getRunning();
 
 	vassert(area == CHG_DATA || area== CHG_STACK,"area invalid");
 
 	/* determine start-address */
 	if(area == CHG_DATA) {
-		addr = (procs[pi].textPages + procs[pi].dataPages) * PAGE_SIZE;
-		origPages = procs[pi].textPages + procs[pi].dataPages;
+		addr = (cur->textPages + cur->dataPages) * PAGE_SIZE;
+		origPages = cur->textPages + cur->dataPages;
 	}
 	else {
-		addr = KERNEL_AREA_V_ADDR - (procs[pi].stackPages + change) * PAGE_SIZE;
-		origPages = procs[pi].stackPages;
+		addr = thread->ustackBegin - (thread->ustackPages + change) * PAGE_SIZE;
+		origPages = thread->ustackPages;
 	}
 
 	if(change > 0) {
@@ -523,9 +656,9 @@ bool proc_changeSize(s32 change,eChgArea area) {
 			return false;
 
 		/* invalid segment sizes? */
-		ts = procs[pi].textPages;
-		ds = procs[pi].dataPages;
-		ss = procs[pi].stackPages;
+		ts = cur->textPages;
+		ds = cur->dataPages;
+		ss = cur->stackPages;
 		if((area == CHG_DATA && !proc_segSizesValid(ts,ds + change,ss))
 				|| (area == CHG_STACK && !proc_segSizesValid(ts,ds,ss + change))) {
 			return false;
@@ -569,9 +702,11 @@ bool proc_changeSize(s32 change,eChgArea area) {
 
 	/* adjust sizes */
 	if(area == CHG_DATA)
-		procs[pi].dataPages += chg;
-	else
-		procs[pi].stackPages += chg;
+		cur->dataPages += chg;
+	else {
+		thread->ustackPages += chg;
+		cur->stackPages += chg;
+	}
 
 	return true;
 }
@@ -619,6 +754,10 @@ void proc_dbg_print(sProc *p) {
 		}
 	}
 	proc_dbg_printState(&p->save);
+	vid_printf("\tThreads:\n");
+	sSLNode *n;
+	for(n = sll_begin(p->threads); n != NULL; n = n->next)
+		thread_dbg_printShort((sThread*)n->data);
 	vid_printf("\n");
 }
 

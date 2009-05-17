@@ -17,33 +17,42 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TIMER_H_
-#define TIMER_H_
+#include <esc/common.h>
+#include <esc/proc.h>
+#include <esc/thread.h>
+#include <esc/debug.h>
+#include <esc/signals.h>
 
-#include "common.h"
+static int myThread(void);
 
-#define TIMER_FREQUENCY			50
+void main(void) {
+	/*if(fork() == 0) {
+		debugf("pid=%d\n",getpid());
+		exit(1);
+	}*/
+	/*forkThread();
+	fork();
+	if(gettid() == 0)
+		exit(2);*/
+	/*if(fork() == 0 && gettid() == 3)
+		exit(1);*/
 
-/* the time that we give one process */
-#define PROC_TIMESLICE			((1000 / TIMER_FREQUENCY) * 3)
+	startThread(myThread);
+	startThread(myThread);
+	while(1) {
+		/*debugf("tid=%d,pid=%d\n",gettid(),getpid());*/
+	}
+}
 
-/**
- * Initializes the timer
- */
-void timer_init(void);
-
-/**
- * Puts the given thread to sleep for the given number of milliseconds
- *
- * @param tid the thread-id
- * @param msecs the number of milliseconds to wait
- * @return 0 on success
- */
-s32 timer_sleepFor(tTid tid,u32 msecs);
-
-/**
- * Handles a timer-interrupt
- */
-void timer_intrpt(void);
-
-#endif /* TIMER_H_ */
+static int myThread(void) {
+	u32 i;
+	for(i = 0; i < 10; i++) {
+		debugf("tid=%d,pid=%d\n",gettid(),getpid());
+		sleep(1000);
+	}
+	return 0;
+	/*u32 i,end = gettid() * 100;
+	for(i = 0; i < end; i++)
+		debugf("tid=%d,pid=%d\n",gettid(),getpid());
+	return gettid();*/
+}

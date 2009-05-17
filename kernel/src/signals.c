@@ -19,6 +19,7 @@
 
 #include <common.h>
 #include <proc.h>
+#include <thread.h>
 #include <kheap.h>
 #include <signals.h>
 #include <util.h>
@@ -29,7 +30,7 @@
 
 /* the information we need about every announced handler */
 typedef struct {
-	tPid pid;
+	tTid tid;
 	fSigHandler handler;
 	u8 active;
 	sSLList *pending;
@@ -47,13 +48,13 @@ typedef struct {
 static void sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data);
 
 /**
- * Finds the handler for the given process and signal
+ * Finds the handler for the given thread and signal
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param signal the signal
  * @return the handler or NULL
  */
-static sHandler *sig_get(tPid pid,tSig signal);
+static sHandler *sig_get(tTid tid,tSig signal);
 
 /* to increase the speed of sig_hasSignal() store the total number of waiting signals */
 u32 totalSigs = 0;
@@ -69,11 +70,11 @@ bool sig_canSend(tSig signal) {
 	return signal < SIG_INTRPT_TIMER;
 }
 
-s32 sig_setHandler(tPid pid,tSig signal,fSigHandler func) {
+s32 sig_setHandler(tTid tid,tSig signal,fSigHandler func) {
 	sHandler *h;
 	vassert(sig_canHandle(signal),"Unable to handle signal %d");
 
-	h = sig_get(pid,signal);
+	h = sig_get(tid,signal);
 	if(h == NULL) {
 		/* list not existing yet? */
 		if(handler[signal - 1] == NULL) {
@@ -90,7 +91,7 @@ s32 sig_setHandler(tPid pid,tSig signal,fSigHandler func) {
 
 	/* set / replace handler */
 	/* note that we discard not yet delivered signals here.. */
-	h->pid = pid;
+	h->tid = tid;
 	h->handler = func;
 	h->pending = NULL;
 	h->active = 0;
@@ -103,11 +104,11 @@ s32 sig_setHandler(tPid pid,tSig signal,fSigHandler func) {
 	return 0;
 }
 
-void sig_unsetHandler(tPid pid,tSig signal) {
+void sig_unsetHandler(tTid tid,tSig signal) {
 	sHandler *h;
 	vassert(sig_canHandle(signal),"Unable to handle signal %d");
 
-	h = sig_get(pid,signal);
+	h = sig_get(tid,signal);
 	if(h != NULL) {
 		if(h->pending != NULL) {
 			totalSigs -= sll_length(h->pending);
@@ -118,7 +119,7 @@ void sig_unsetHandler(tPid pid,tSig signal) {
 	}
 }
 
-void sig_removeHandlerFor(tPid pid) {
+void sig_removeHandlerFor(tTid tid) {
 	u32 i;
 	sSLNode *p,*n,*m;
 	sHandler *h;
@@ -130,7 +131,7 @@ void sig_removeHandlerFor(tPid pid) {
 			p = NULL;
 			for(n = sll_begin(*list); n != NULL; ) {
 				h = (sHandler*)n->data;
-				if(h->pid == pid) {
+				if(h->tid == tid) {
 					if(h->pending != NULL) {
 						totalSigs -= sll_length(h->pending);
 						sll_destroy(h->pending,false);
@@ -151,12 +152,12 @@ void sig_removeHandlerFor(tPid pid) {
 	}
 }
 
-bool sig_hasSignal(tSig *sig,tPid *pid,u32 *data) {
+bool sig_hasSignal(tSig *sig,tTid *tid,u32 *data) {
 	u32 i;
 	sSLNode *n;
 	sHandler *h;
 	sSLList **list;
-	sProc *p;
+	sThread *t;
 
 	/* no signals at all? */
 	if(totalSigs == 0)
@@ -169,13 +170,13 @@ bool sig_hasSignal(tSig *sig,tPid *pid,u32 *data) {
 			for(n = sll_begin(*list); n != NULL; n = n->next) {
 				h = (sHandler*)n->data;
 				if(h->active == 0 && sll_length(h->pending) > 0) {
-					p = proc_getByPid(h->pid);
-					/* don't deliver signals to blocked processes that wait for a msg */
+					t = thread_getById(h->tid);
+					/* don't deliver signals to blocked threads that wait for a msg */
 					/* TODO this means that we check ALL handler-lists in EVERY interrupt
-					 * until this process is able to receive the signal... */
-					if(p->signal == 0 && (p->state != ST_BLOCKED || !(p->events & EV_RECEIVED_MSG))) {
+					 * until this thread is able to receive the signal... */
+					if(t->signal == 0 && (t->state != ST_BLOCKED || !(t->events & EV_RECEIVED_MSG))) {
 						*data = (u32)sll_get(h->pending,0);
-						*pid = h->pid;
+						*tid = h->tid;
 						*sig = i + 1;
 						return true;
 					}
@@ -188,21 +189,32 @@ bool sig_hasSignal(tSig *sig,tPid *pid,u32 *data) {
 }
 
 bool sig_addSignalFor(tPid pid,tSig signal,u32 data) {
+	bool res = false;
+	sSLList *list = handler[signal - 1];
 	sHandler *h;
+	sThread *t;
+	sSLNode *n;
 	vassert(signal < SIG_COUNT,"Unable to handle signal %d");
 
-	h = sig_get(pid,signal);
-	sig_addSig(h,pid,signal,data);
-	if(h != NULL)
-		return !h->active && proc_getByPid(pid)->signal == 0;
-	return false;
+	if(list == NULL)
+		return false;
+	for(n = sll_begin(list); n != NULL; n = n->next) {
+		h = (sHandler*)n->data;
+		t = thread_getById(h->tid);
+		if(t->proc->pid == pid) {
+			sig_addSig(h,h->tid,signal,data);
+			if(!h->active && t->signal == 0)
+				res = true;
+		}
+	}
+	return res;
 }
 
-tPid sig_addSignal(tSig signal,u32 data) {
+tTid sig_addSignal(tSig signal,u32 data) {
 	sSLList *list;
 	sHandler *h;
 	sSLNode *n;
-	tPid res = INVALID_PID;
+	tTid res = INVALID_TID;
 
 	vassert(signal < SIG_COUNT,"Unable to handle signal %d");
 
@@ -210,44 +222,44 @@ tPid sig_addSignal(tSig signal,u32 data) {
 	if(list != NULL) {
 		for(n = sll_begin(list); n != NULL; n = n->next) {
 			h = (sHandler*)n->data;
-			sig_addSig(h,INVALID_PID,signal,data);
-			/* remember first proc for direct notification */
-			if(res == INVALID_PID && !h->active && proc_getByPid(h->pid)->signal == 0)
-				res = h->pid;
+			sig_addSig(h,INVALID_TID,signal,data);
+			/* remember first thread for direct notification */
+			if(res == INVALID_TID && !h->active && thread_getById(h->tid)->signal == 0)
+				res = h->tid;
 		}
 	}
 
 	return res;
 }
 
-fSigHandler sig_startHandling(tPid pid,tSig signal) {
+fSigHandler sig_startHandling(tTid tid,tSig signal) {
 	sHandler *h;
-	sProc *p = proc_getByPid(pid);
+	sThread *t = thread_getById(tid);
 	vassert(sig_canHandle(signal),"Unable to handle signal %d");
 
-	h = sig_get(pid,signal);
+	h = sig_get(tid,signal);
 	if(h != NULL) {
 		vassert(totalSigs > 0,"We don't have any signals");
-		vassert(sll_length(h->pending) > 0,"Process %d hasn't got signal %d",pid,signal);
+		vassert(sll_length(h->pending) > 0,"Thread %d hasn't got signal %d",tid,signal);
 		sll_removeIndex(h->pending,0);
 		h->active = 1;
 		totalSigs--;
 		/* remember the signal */
-		p->signal = signal;
+		t->signal = signal;
 		return h->handler;
 	}
 	return NULL;
 }
 
-void sig_ackHandling(tPid pid) {
+void sig_ackHandling(tTid tid) {
 	sHandler *h;
-	sProc *p = proc_getByPid(pid);
-	vassert(p->signal != 0,"No signal handling");
-	vassert(sig_canHandle(p->signal),"Unable to handle signal %d");
+	sThread *t = thread_getById(tid);
+	vassert(t->signal != 0,"No signal handling");
+	vassert(sig_canHandle(t->signal),"Unable to handle signal %d");
 
-	h = sig_get(pid,p->signal);
+	h = sig_get(tid,t->signal);
 	if(h != NULL) {
-		p->signal = 0;
+		t->signal = 0;
 		h->active = 0;
 	}
 }
@@ -279,7 +291,7 @@ static void sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data) {
 	}
 }
 
-static sHandler *sig_get(tPid pid,tSig signal) {
+static sHandler *sig_get(tTid tid,tSig signal) {
 	sSLList *list = handler[signal - 1];
 	sHandler *h;
 	sSLNode *n;
@@ -287,7 +299,7 @@ static sHandler *sig_get(tPid pid,tSig signal) {
 		return NULL;
 	for(n = sll_begin(list); n != NULL; n = n->next) {
 		h = (sHandler*)n->data;
-		if(h->pid == pid)
+		if(h->tid == tid)
 			return h;
 	}
 	return NULL;
@@ -348,8 +360,8 @@ void sig_dbg_print(void) {
 		if(*list != NULL) {
 			for(n = sll_begin(*list); n != NULL; n = n->next) {
 				h = (sHandler*)n->data;
-				vid_printf("\t\t(0x%08x): Pid=%d, handler=0x%x, active=%d, pending=%d\n",h,
-						h->pid,h->handler,h->active,sll_length(h->pending));
+				vid_printf("\t\t(0x%08x): Tid=%d, handler=0x%x, active=%d, pending=%d\n",h,
+						h->tid,h->handler,h->active,sll_length(h->pending));
 			}
 		}
 		list++;

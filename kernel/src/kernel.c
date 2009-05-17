@@ -139,9 +139,15 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 			mm_getFreeFrmCount(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 #endif
 
+#if 1
 	/* load initloader */
 	entryPoint = elf_loadFromMem(initloader,sizeof(initloader));
 	/* give the process 2 stack pages */
 	proc_changeSize(2,CHG_STACK);
+	vid_printf("free frames=%d\n",mm_getFreeFrmCount(MM_DEF));
 	return entryPoint;
+#else
+	while(1);
+	return 0;
+#endif
 }

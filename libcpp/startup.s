@@ -24,6 +24,7 @@
 [extern ackSignal]
 [extern __libcpp_start]
 [extern __cxa_finalize]
+[extern getThreadCount]
 
 ALIGN 4
 
@@ -32,17 +33,23 @@ init:
 	call	__libcpp_start
 
 	call	main
+	call	threadExit
 
+; exit for all threads
+threadExit:
 	; first, save return-value of main
 	push	eax
-	; now call destructors
+	; we want to call global destructors just for the last thread
+	call	getThreadCount
+	mov		ebx,1
+	cmp		eax,ebx
+	jne		threadExitFinish
+	; call global destructors
 	call	__cxa_finalize
-	; call exit with return-value of main
+threadExitFinish:
 	call	exit
-
 	; just to be sure
 	jmp		$
-
 
 ; all signal-handler return to this "function" (address 0x17)
 sigRetFunc:

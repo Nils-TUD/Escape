@@ -35,6 +35,11 @@ extern "C" {
 tTid gettid(void);
 
 /**
+ * @return the number of threads in the current process
+ */
+u32 getThreadCount(void);
+
+/**
  * Starts a new thread
  *
  * @param entryPoint the entry-point of the thread

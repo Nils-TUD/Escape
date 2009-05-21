@@ -39,7 +39,7 @@
 #include <assert.h>
 #include <errors.h>
 
-#define EXIT_CALL_ADDR	0x5
+#define EXIT_CALL_ADDR	0xf
 
 static s32 proc_finishClone(sThread *nt,u32 stackFrame);
 

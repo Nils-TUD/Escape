@@ -46,7 +46,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define SYSCALL_COUNT					41
+#define SYSCALL_COUNT					42
 
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode)		((stack)->ebx = (errorCode))
@@ -83,6 +83,10 @@ static void sysc_getpid(sIntrptStackFrame *stack);
  * @return tTid the thread-id
  */
 static void sysc_gettid(sIntrptStackFrame *stack);
+/**
+ * @return u32 the number of threads of the current process
+ */
+static void sysc_getThreadCount(sIntrptStackFrame *stack);
 /**
  * Returns the parent-pid of the given process
  *
@@ -405,6 +409,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 38 */	{sysc_unlock,				1},
 	/* 39 */	{sysc_startThread,			0},
 	/* 40 */	{sysc_gettid,				0},
+	/* 41 */	{sysc_getThreadCount,		0},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -440,6 +445,11 @@ static void sysc_getpid(sIntrptStackFrame *stack) {
 static void sysc_gettid(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	SYSC_RET1(stack,t->tid);
+}
+
+static void sysc_getThreadCount(sIntrptStackFrame *stack) {
+	sThread *t = thread_getRunning();
+	SYSC_RET1(stack,sll_length(t->proc->threads));
 }
 
 static void sysc_getppid(sIntrptStackFrame *stack) {

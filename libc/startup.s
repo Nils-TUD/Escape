@@ -28,15 +28,22 @@ ALIGN 4
 
 init:
 	call	main
+	call	threadExit
 
-	; call exit with return-value of main
+	; c++-programs have address 0xf for _exit. So we need to achieve this here, too
+	nop
+	nop
+	nop
+	nop
+	nop
+
+; exit for additional threads
+threadExit:
 	push	eax
 	call	exit
-
 	; just to be sure
 	jmp		$
-
-	; c++-programs have 0x17 as address of sigRetFunc. So we need to achieve this here, too
+	; c++-programs have address 0x2a for sigRetFunc. So we need to achieve this here, too
 	nop
 	nop
 	nop
@@ -47,7 +54,15 @@ init:
 	nop
 	nop
 	nop
-
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
 
 ; all signal-handler return to this "function" (address 0x17)
 sigRetFunc:

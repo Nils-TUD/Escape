@@ -30,12 +30,15 @@ using namespace esc;
 static int threadFunc(void);
 
 class my {
+private:
+	u32 abc;
 public:
-	my() {
+	my() : abc(4) {
 		printf("Constructor for %p...\n",this);
 	};
 	~my() {
-		printf("Destructor for %p...\n",this);
+		debugf("Destructor for %x...\n",this);
+		abc = 0;
 	};
 
 	void doIt();
@@ -44,12 +47,10 @@ public:
 my x;
 
 void my::doIt() {
-	printf("Ich bins\n");
+	printf("Ich bins: %d\n",abc);
 }
 
 int main(void) {
-	startThread(threadFunc);
-	startThread(threadFunc);
 	startThread(threadFunc);
 
 #if 1
@@ -135,9 +136,10 @@ int main(void) {
 }
 
 static int threadFunc(void) {
-	while(1) {
-		printf("I am thread %d\n",gettid());
-		sleep(1000);
-	}
+	x.doIt();
+	printf("I am thread %d\n",gettid());
+	/*sleep(100);*/
+	if(gettid() < 50)
+		startThread(threadFunc);
 	return 0;
 }

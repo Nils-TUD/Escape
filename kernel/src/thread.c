@@ -29,6 +29,7 @@
 #include <signals.h>
 #include <vfs.h>
 #include <vfsnode.h>
+#include <timer.h>
 #include <video.h>
 #include <sllist.h>
 #include <assert.h>
@@ -326,8 +327,8 @@ s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc) {
 		t->ustackBegin = ustackBegin;
 		*stackFrame = t->kstackFrame = mm_allocateFrame(MM_DEF);
 
-		/* 2 initial user-stack-pages; TODO constant */
-		t->ustackPages = 2;
+		/* initial user-stack-pages */
+		t->ustackPages = INITIAL_STACK_PAGES;
 		paging_map(t->ustackBegin - t->ustackPages * PAGE_SIZE,NULL,t->ustackPages,PG_WRITABLE,true);
 	}
 
@@ -336,7 +337,10 @@ s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc) {
 	if(list == NULL) {
 		list = threadMap[t->tid % THREAD_MAP_SIZE] = sll_create();
 		if(list == NULL) {
-			/* TODO unmap user-stack, free kernel-stack-frame and close files */
+			if(!cloneProc) {
+				mm_freeFrame(t->kstackFrame,MM_DEF);
+				paging_unmap(t->ustackBegin - t->ustackPages * PAGE_SIZE,t->ustackPages,true,true);
+			}
 			kheap_free(t);
 			return ERR_NOT_ENOUGH_MEM;
 		}
@@ -344,7 +348,10 @@ s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc) {
 
 	/* insert */
 	if(!sll_append(list,t)) {
-		/* TODO unmap user-stack, free kernel-stack-frame and close files */
+		if(!cloneProc) {
+			mm_freeFrame(t->kstackFrame,MM_DEF);
+			paging_unmap(t->ustackBegin - t->ustackPages * PAGE_SIZE,t->ustackPages,true,true);
+		}
 		kheap_free(t);
 		return ERR_NOT_ENOUGH_MEM;
 	}
@@ -402,6 +409,10 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 	timer_removeThread(t->tid);
 	fpu_freeState(&t->fpuState);
 	sig_removeHandlerFor(t->tid);
+	vfs_removeThread(t->tid);
+
+	/* notify others that wait for dying threads */
+	sig_addSignal(SIG_THREAD_DIED,t->tid);
 
 	/* finally, destroy thread */
 	sll_removeFirst(list,t);
@@ -412,14 +423,26 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 #if DEBUGGING
 
 void thread_dbg_printAll(void) {
-
+	sSLList *list;
+	sSLNode *n;
+	u32 i;
+	vid_printf("Threads:\n");
+	for(i = 0; i < THREAD_MAP_SIZE; i++) {
+		list = threadMap[i];
+		if(list) {
+			for(n = sll_begin(list); n != NULL; n = n->next) {
+				sThread *t = (sThread*)n->data;
+				thread_dbg_print(t);
+			}
+		}
+	}
 }
 
 void thread_dbg_print(sThread *t) {
 	static const char *states[] = {"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE"};
 	tFD i;
 	u32 *ptr;
-	vid_printf("\tthread %d:\n",t->tid);
+	vid_printf("\tthread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 	vid_printf("\t\tstate=%s\n",states[t->state]);
 	vid_printf("\t\tustack=0x%08x (%d pages)\n",t->ustackBegin,t->ustackPages);
 	vid_printf("\t\tkstackFrame=0x%x\n",t->kstackFrame);

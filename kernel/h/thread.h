@@ -30,6 +30,8 @@
 #define MAX_STACK_PAGES			128
 #define MAX_FD_COUNT			32
 
+#define INITIAL_STACK_PAGES		2
+
 #define INVALID_TID				THREAD_COUNT
 /* use an invalid pid to identify the kernel */
 #define KERNEL_TID				(THREAD_COUNT + 1)

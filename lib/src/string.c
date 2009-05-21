@@ -648,6 +648,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Lock not found!");
 			break;
 
+		case ERR_INVALID_TID:
+			strcpy(msg,"Invalid thread-id");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

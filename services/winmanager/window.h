@@ -44,7 +44,7 @@ typedef struct {
 	tSize width;
 	tSize height;
 	tWinId id;
-	tPid owner;
+	tTid owner;
 	u8 style;
 	u8 keymap;
 } sWindow;
@@ -84,13 +84,13 @@ void win_setCursor(tCoord x,tCoord y);
 tWinId win_create(sMsgDataWinCreateReq msg);
 
 /**
- * Destroys all windows of the given process
+ * Destroys all windows of the given thread
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param mouseX the current x-coordinate of the mouse
  * @param mouseY the current y-coordinate of the mouse
  */
-void win_destroyWinsOf(tPid pid,tCoord mouseX,tCoord mouseY);
+void win_destroyWinsOf(tTid tid,tCoord mouseX,tCoord mouseY);
 
 /**
  * Destroys the given window

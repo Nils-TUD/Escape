@@ -175,10 +175,10 @@ tWinId win_create(sMsgDataWinCreateReq msg) {
 	return WINID_UNSED;
 }
 
-void win_destroyWinsOf(tPid pid,tCoord mouseX,tCoord mouseY) {
+void win_destroyWinsOf(tTid tid,tCoord mouseX,tCoord mouseY) {
 	tWinId id;
 	for(id = 0; id < WINDOW_COUNT; id++) {
-		if(windows[id].id != WINID_UNSED && windows[id].owner == pid)
+		if(windows[id].id != WINID_UNSED && windows[id].owner == tid)
 			win_destroy(id,mouseX,mouseY);
 	}
 }
@@ -355,7 +355,7 @@ static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY) 
 	activeMsg.data.isActive = isActive;
 	activeMsg.data.mouseX = mouseX;
 	activeMsg.data.mouseY = mouseY;
-	tFD aWin = getClientProc(servId,windows[id].owner);
+	tFD aWin = getClientThread(servId,windows[id].owner);
 	if(aWin >= 0) {
 		write(aWin,&activeMsg,sizeof(activeMsg));
 		close(aWin);
@@ -368,7 +368,7 @@ static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id
 	repaintMsg.data.width = width;
 	repaintMsg.data.height = height;
 	repaintMsg.data.window = id;
-	tFD aWin = getClientProc(servId,windows[id].owner);
+	tFD aWin = getClientThread(servId,windows[id].owner);
 	if(aWin >= 0) {
 		write(aWin,&repaintMsg,sizeof(repaintMsg));
 		close(aWin);

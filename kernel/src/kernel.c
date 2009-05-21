@@ -142,8 +142,8 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 #if 1
 	/* load initloader */
 	entryPoint = elf_loadFromMem(initloader,sizeof(initloader));
-	/* give the process 2 stack pages */
-	proc_changeSize(2,CHG_STACK);
+	/* give the process some stack pages */
+	proc_changeSize(INITIAL_STACK_PAGES,CHG_STACK);
 	return entryPoint;
 #else
 	while(1);

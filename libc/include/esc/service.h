@@ -67,13 +67,13 @@ s32 unregService(tServ service);
 tFD getClient(tServ *services,u32 count,tServ *serv);
 
 /**
- * Opens a file for the client with given process-id. Works just for multipipe-services!
+ * Opens a file for the client with given thread-id. Works just for multipipe-services!
  *
  * @param id the service-id
- * @param pid the client-process-id
+ * @param tid the client-thread-id
  * @return the file-descriptor or a negative error-code
  */
-tFD getClientProc(tServ id,tPid pid);
+tFD getClientThread(tServ id,tTid tid);
 
 /**
  * Creates a new node in the VFS with given path.

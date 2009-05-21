@@ -49,9 +49,9 @@ typedef struct {
 typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 
 /**
- * Destroys the windows of a died process
+ * Destroys the windows of a died thread
  */
-static void procDiedHandler(tSig sig,u32 data);
+static void procThreadHandler(tSig sig,u32 data);
 /**
  * Handles a message from keyboard
  */
@@ -113,8 +113,8 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	if(setSigHandler(SIG_PROC_DIED,procDiedHandler) < 0) {
-		printe("Unable to set sig-handler for %d",SIG_PROC_DIED);
+	if(setSigHandler(SIG_THREAD_DIED,procThreadHandler) < 0) {
+		printe("Unable to set sig-handler for %d",SIG_THREAD_DIED);
 		return EXIT_FAILURE;
 	}
 
@@ -202,7 +202,7 @@ int main(void) {
 					/* send to window */
 					sWindow *w = mouseWin ? mouseWin : win_getActive();
 					if(w) {
-						tFD aWin = getClientProc(servId,w->owner);
+						tFD aWin = getClientThread(servId,w->owner);
 						if(aWin >= 0) {
 							mouseMsg.data.x = curX;
 							mouseMsg.data.y = curY;
@@ -240,7 +240,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void procDiedHandler(tSig sig,u32 data) {
+static void procThreadHandler(tSig sig,u32 data) {
 	UNUSED(sig);
 	win_destroyWinsOf(data,curX,curY);
 }
@@ -281,7 +281,7 @@ static void handleKbMessage(tServ servId,sWindow *active,sMsgKbResponse *msg) {
 		if(altDown)
 			keyboardMsg.data.modifier |= ALT_MASK;
 
-		tFD aWin = getClientProc(servId,active->owner);
+		tFD aWin = getClientThread(servId,active->owner);
 		if(aWin >= 0) {
 			write(aWin,&keyboardMsg,sizeof(keyboardMsg));
 			close(aWin);

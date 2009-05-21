@@ -96,9 +96,6 @@ tPid proc_getFreePid(void) {
 }
 
 sProc *proc_getRunning(void) {
-	u32 x = 0;
-	if(&x >= KERNEL_STACK && &x < KERNEL_STACK + 0x800)
-		util_printStackTrace(util_getKernelStackTrace());
 	/* TODO maybe we should store the current process during context-switch, too? */
 	sThread *t = thread_getRunning();
 	if(t)
@@ -138,7 +135,7 @@ void proc_cleanup(void) {
 }
 
 s32 proc_clone(tPid newPid) {
-	u32 i,pdirFrame,dummy,stackFrame;
+	u32 pdirFrame,dummy,stackFrame;
 	sProc *p;
 	sProc *cur = proc_getRunning();
 	sThread *curThread = thread_getRunning();
@@ -152,8 +149,6 @@ s32 proc_clone(tPid newPid) {
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* clone page-dir */
-	/* TODO REMOVE!! */
-	(procs + newPid)->pid = newPid;
 	if((pdirFrame = paging_clonePageDir(&stackFrame,procs + newPid)) == 0) {
 		vfs_removeProcess(newPid);
 		return ERR_NOT_ENOUGH_MEM;
@@ -162,6 +157,8 @@ s32 proc_clone(tPid newPid) {
 	/* set page-dir and pages for segments */
 	p = procs + newPid;
 	p->pid = newPid;
+	/* set text for paging_destroyPageDir() */
+	p->text = NULL;
 	p->parentPid = cur->pid;
 	p->textPages = cur->textPages;
 	p->dataPages = cur->dataPages;
@@ -173,7 +170,7 @@ s32 proc_clone(tPid newPid) {
 	/* create thread-list */
 	p->threads = sll_create();
 	if(p->threads == NULL) {
-		/* TODO we have to destroy the page-directory */
+		paging_destroyPageDir(p);
 		vfs_removeProcess(newPid);
 		return ERR_NOT_ENOUGH_MEM;
 	}
@@ -182,15 +179,15 @@ s32 proc_clone(tPid newPid) {
 	s32 res;
 	sThread *nt;
 	if((res = thread_clone(curThread,&nt,&dummy,true)) < 0) {
-		/* TODO we have to destroy the page-directory */
 		kheap_free(p->threads);
+		paging_destroyPageDir(p);
 		vfs_removeProcess(newPid);
 		return res;
 	}
 	if(!sll_append(p->threads,nt)) {
-		/* TODO we have to destroy the page-directory */
 		thread_destroy(nt,true);
 		kheap_free(p->threads);
+		paging_destroyPageDir(p);
 		vfs_removeProcess(newPid);
 		return ERR_NOT_ENOUGH_MEM;
 	}
@@ -204,9 +201,9 @@ s32 proc_clone(tPid newPid) {
 	/* clone text */
 	p->text = cur->text;
 	if(!text_clone(p->text,p->pid)) {
-		/* TODO we have to destroy the page-directory */
 		thread_destroy(nt,true);
 		kheap_free(p->threads);
+		paging_destroyPageDir(p);
 		vfs_removeProcess(newPid);
 		return ERR_NOT_ENOUGH_MEM;
 	}
@@ -542,11 +539,9 @@ void proc_dbg_printAll(void) {
 }
 
 void proc_dbg_print(sProc *p) {
-	u32 i;
-	u32 *ptr;
+	sSLNode *n;
 	vid_printf("proc %d [ppid=%d, cmd=%s, pdir=%x, text=%d, data=%d, stack=%d]\n",p->pid,
 			p->parentPid,p->command,p->physPDirAddr,p->textPages,p->dataPages,p->stackPages);
-	sSLNode *n;
 	for(n = sll_begin(p->threads); n != NULL; n = n->next)
 		thread_dbg_print((sThread*)n->data);
 	vid_printf("\n");

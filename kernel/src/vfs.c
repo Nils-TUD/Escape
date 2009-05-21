@@ -666,7 +666,7 @@ s32 vfs_getClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count) {
 	return ERR_NO_CLIENT_WAITING;;
 }
 
-tFileNo vfs_openClientProc(tTid tid,tVFSNodeNo nodeNo,tTid clientId) {
+tFileNo vfs_openClientThread(tTid tid,tVFSNodeNo nodeNo,tTid clientId) {
 	sVFSNode *n,*node;
 	/* check if the node is valid */
 	if(!vfsn_isValidNodeNo(nodeNo))
@@ -789,9 +789,8 @@ bool vfs_createProcess(tPid pid,fRead handler) {
 
 void vfs_removeProcess(tPid pid) {
 	sVFSNode *proc = PROCESSES();
-	sVFSNode *serv = SERVICES();
 	char name[12];
-	sVFSNode *n,*t;
+	sVFSNode *n;
 	itoa(name,pid);
 
 	/* remove from system:/processes */
@@ -807,23 +806,26 @@ void vfs_removeProcess(tPid pid) {
 		n = n->next;
 	}
 
-	/* TODO */
-	/* check if the process is a service
-	n = NODE_FIRST_CHILD(serv->firstChild);
-	while(n != NULL) {
-		if((n->mode & MODE_TYPE_SERVICE) && n->owner == pid) {
-			t = n->next;
-			vfs_removeService(pid,NADDR_TO_VNNO(n));
-			n = t;
-		}
-		else
-			n = n->next;
-	}*/
-
 	/* invalidate cache */
 	if(proc->data.def.cache != NULL) {
 		kheap_free(proc->data.def.cache);
 		proc->data.def.cache = NULL;
+	}
+}
+
+void vfs_removeThread(tTid tid) {
+	sVFSNode *serv = SERVICES();
+	sVFSNode *n,*t;
+	/* check if the thread is a service */
+	n = NODE_FIRST_CHILD(serv->firstChild);
+	while(n != NULL) {
+		if((n->mode & MODE_TYPE_SERVICE) && n->owner == tid) {
+			t = n->next;
+			vfs_removeService(tid,NADDR_TO_VNNO(n));
+			n = t;
+		}
+		else
+			n = n->next;
 	}
 }
 

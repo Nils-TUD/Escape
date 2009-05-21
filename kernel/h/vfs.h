@@ -240,7 +240,7 @@ s32 vfs_getClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count);
  * @param clientId the thread-id of the desired client
  * @return the file or a negative error-code
  */
-tFileNo vfs_openClientProc(tTid tid,tVFSNodeNo nodeNo,tTid clientId);
+tFileNo vfs_openClientThread(tTid tid,tVFSNodeNo nodeNo,tTid clientId);
 
 /**
  * Opens a file for a client of the given service-node
@@ -271,11 +271,18 @@ s32 vfs_removeService(tTid tid,tVFSNodeNo nodeNo);
 bool vfs_createProcess(tPid pid,fRead handler);
 
 /**
- * Removes the node for the process with given id from the VFS
+ * Removes all occurrences of the given process from VFS
  *
  * @param pid the process-id
  */
 void vfs_removeProcess(tPid pid);
+
+/**
+ * Removes all occurrences of the given thread from VFS
+ *
+ * @param tid the thread-id
+ */
+void vfs_removeThread(tTid tid);
 
 /**
  * The default-read-handler

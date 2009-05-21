@@ -459,7 +459,6 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 void intrpt_handler(sIntrptStackFrame stack) {
 	u64 cycles = cpu_rdtsc();
 	sThread *t = thread_getRunning();
-	sProc *p = proc_getRunning();
 	curIntrptStack = &stack;
 
 	/* increase user-space cycles */

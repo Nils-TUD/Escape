@@ -205,10 +205,10 @@ static void sysc_getClient(sIntrptStackFrame *stack);
  * For services: Returns the file-descriptor for a specific client
  *
  * @param tServ the service-id
- * @param tPid the process-id
+ * @param tTid the thread-id
  * @return tFD the file-descriptor
  */
-static void sysc_getClientProc(sIntrptStackFrame *stack);
+static void sysc_getClientThread(sIntrptStackFrame *stack);
 /**
  * Changes the process-size
  *
@@ -400,7 +400,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 	/* 33 */	{sysc_joinSharedMem,		1},
 	/* 34 */	{sysc_leaveSharedMem,		1},
 	/* 35 */	{sysc_destroySharedMem,		1},
-	/* 36 */	{sysc_getClientProc,		2},
+	/* 36 */	{sysc_getClientThread,		2},
 	/* 37 */	{sysc_lock,					1},
 	/* 38 */	{sysc_unlock,				1},
 	/* 39 */	{sysc_startThread,			0},
@@ -496,8 +496,7 @@ static void sysc_exit(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	if(SYSC_ARG1(stack) != 0) {
 		vid_printf("Thread %d (%s) exited with %d\n",t->tid,t->proc->command,SYSC_ARG1(stack));
-		/* TODO
-		util_printStackTrace(util_getUserStackTrace(t->proc,stack));*/
+		util_printStackTrace(util_getUserStackTrace(t,stack));
 	}
 	proc_destroyThread();
 	thread_switch();
@@ -826,17 +825,16 @@ static void sysc_getClient(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,fd);
 }
 
-/* TODO */
-static void sysc_getClientProc(sIntrptStackFrame *stack) {
+static void sysc_getClientThread(sIntrptStackFrame *stack) {
 	tServ id = (tServ)SYSC_ARG1(stack);
-	tPid pid = (tPid)SYSC_ARG2(stack);
+	tTid tid = (tPid)SYSC_ARG2(stack);
 	sThread *t = thread_getRunning();
 	tFD fd;
 	tFileNo file;
 	s32 res;
 
-	if(!proc_exists(pid)) {
-		SYSC_ERROR(stack,ERR_INVALID_PID);
+	if(thread_getById(tid) == NULL) {
+		SYSC_ERROR(stack,ERR_INVALID_TID);
 		return;
 	}
 
@@ -848,7 +846,7 @@ static void sysc_getClientProc(sIntrptStackFrame *stack) {
 	}
 
 	/* open client */
-	file = vfs_openClientProc(t->tid,id,pid);
+	file = vfs_openClientThread(t->tid,id,tid);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;
@@ -1341,6 +1339,7 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 
 static void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
+	thread_dbg_printAll();
 }
 
 static void sysc_createSharedMem(sIntrptStackFrame *stack) {

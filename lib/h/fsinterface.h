@@ -97,7 +97,7 @@ typedef struct {
 
 /* the open-request-data */
 typedef struct {
-	tPid pid;
+	tTid tid;
 	/* read/write */
 	u8 flags;
 	/* pathname follows */
@@ -106,28 +106,28 @@ typedef struct {
 
 /* the stat-request-data */
 typedef struct {
-	tPid pid;
+	tTid tid;
 	/* pathname follows */
 	char path[];
 } sMsgDataFSStatReq;
 
 /* the stat-response-data */
 typedef struct {
-	tPid pid;
+	tTid tid;
 	s32 error;
 	sFileInfo info;
 } sMsgDataFSStatResp;
 
 /* the open-response-data */
 typedef struct {
-	tPid pid;
+	tTid tid;
 	/* may be an error-code */
 	tInodeNo inodeNo;
 } sMsgDataFSOpenResp;
 
 /* the read-request-data */
 typedef struct {
-	tPid pid;
+	tTid tid;
 	tInodeNo inodeNo;
 	u32 offset;
 	u32 count;
@@ -135,7 +135,7 @@ typedef struct {
 
 /* the read-response-data */
 typedef struct {
-	tPid pid;
+	tTid tid;
 	/* may be an error-code */
 	s32 count;
 	/* data follows */
@@ -144,7 +144,7 @@ typedef struct {
 
 /* the write-request-data */
 typedef struct {
-	tPid pid;
+	tTid tid;
 	tInodeNo inodeNo;
 	u32 offset;
 	u32 count;
@@ -154,7 +154,7 @@ typedef struct {
 
 /* the write-response-data */
 typedef struct {
-	tPid pid;
+	tTid tid;
 	/* may be an error-code */
 	s32 count;
 } sMsgDataFSWriteResp;

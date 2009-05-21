@@ -19,7 +19,7 @@
 
 #include <common.h>
 #include <lock.h>
-#include <proc.h>
+#include <thread.h>
 #include <kheap.h>
 #include <errors.h>
 #include <sllist.h>

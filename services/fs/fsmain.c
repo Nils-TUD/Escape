@@ -59,7 +59,7 @@ static sMsgOpenResp openResp = {
 		.length = sizeof(sMsgDataFSOpenResp)
 	},
 	.data = {
-		.pid = 0,
+		.tid = 0,
 		.inodeNo = 0
 	}
 };
@@ -69,7 +69,7 @@ static sMsgStatResp statResp = {
 		.length = sizeof(sMsgDataFSStatResp)
 	},
 	.data = {
-		.pid = 0,
+		.tid = 0,
 		.error = 0
 	}
 };
@@ -79,7 +79,7 @@ static sMsgWriteResp writeResp = {
 		.length = sizeof(sMsgDataFSWriteResp)
 	},
 	.data = {
-		.pid = 0,
+		.tid = 0,
 		.count = 0
 	}
 };
@@ -138,7 +138,7 @@ int main(void) {
 							ext2_bcache_printStats();*/
 
 							/* write response */
-							openResp.data.pid = data->pid;
+							openResp.data.tid = data->tid;
 							openResp.data.inodeNo = no;
 							write(fd,&openResp,sizeof(sMsgOpenResp));
 							free(data);
@@ -181,7 +181,7 @@ int main(void) {
 								statResp.data.error = no;
 
 							/* write response */
-							statResp.data.pid = data->pid;
+							statResp.data.tid = data->tid;
 							write(fd,&statResp,sizeof(sMsgStatResp));
 							free(data);
 						}
@@ -210,7 +210,7 @@ int main(void) {
 							rhead->length = dlen;
 							rhead->id = MSG_FS_READ_RESP;
 							rdata->count = count;
-							rdata->pid = data.pid;
+							rdata->tid = data.tid;
 
 							/*ext2_icache_printStats();
 							ext2_bcache_printStats();*/
@@ -235,7 +235,7 @@ int main(void) {
 									data->count,data->offset,data->inodeNo);
 
 							/* write response */
-							writeResp.data.pid = data->pid;
+							writeResp.data.tid = data->tid;
 							writeResp.data.count = data->count;
 							write(fd,&writeResp,sizeof(sMsgWriteResp));
 							free(data);

@@ -27,11 +27,8 @@
 
 /* max number of processes */
 #define PROC_COUNT			1024
-#define MAX_FD_COUNT		32
 #define MAX_PROC_NAME_LEN	30
 
-/* use an invalid pid to identify the kernel */
-#define KERNEL_PID			(PROC_COUNT + 1)
 /* for marking unused */
 #define INVALID_PID			(PROC_COUNT + 2)
 
@@ -42,27 +39,9 @@
 #define EV_CHILD_DIED		4
 #define EV_UNLOCK			8	/* kernel-intern */
 
-/* the process-state which will be saved for context-switching */
-typedef struct {
-	u32 esp;
-	u32 edi;
-	u32 esi;
-	u32 ebp;
-	u32 eflags;
-} sProcSave;
-
-/* the process states */
-typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE = 4} eProcState;
-
 /* represents a process */
 /* TODO move stuff for existing processes to the kernel-stack-page */
 typedef struct {
-	/* process state. see eProcState */
-	u8 state;
-	/* the events the process waits for (if waiting) */
-	u8 events;
-	/* the signal that the process is currently handling (if > 0) */
-	tSig signal;
 	/* process id (2^16 processes should be enough :)) */
 	tPid pid;
 	/* parent process id */
@@ -75,24 +54,11 @@ typedef struct {
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
-	/* TODO just for debugging atm */
-	u32 ueip;
-	sProcSave save;
-	/* FPU-state; initially NULL */
-	sFPUState *fpuState;
-	/* file descriptors: indices of the global file table */
-	tFileNo fileDescs[MAX_FD_COUNT];
 	/* the io-map (NULL by default) */
 	u8 *ioMap;
-	/* number of cpu-cycles the process has got so far; TODO: should be cpu-time later */
-	u64 ucycleStart;
-	u64 ucycleCount;
-	u64 kcycleStart;
-	u64 kcycleCount;
-	u64 cycleCount;
 	/* start-command */
 	char command[MAX_PROC_NAME_LEN + 1];
-
+	/* threads of this process */
 	sSLList *threads;
 } sProc;
 
@@ -142,91 +108,6 @@ bool proc_hasChild(tPid pid);
  * Destroys zombies
  */
 void proc_cleanup(void);
-
-/**
- * Switches to another process
- */
-void proc_switch(void);
-
-/**
- * Switches to the process with given pid
- *
- * @param pid the process-id
- */
-void proc_switchTo(tPid pid);
-
-/**
- * Puts the given process to sleep with given wake-up-events
- *
- * @param pid the process to put to sleep
- * @param events the events on which the process should wakeup
- */
-void proc_wait(tPid pid,u8 events);
-
-/**
- * Wakes up all blocked processes that wait for the given event
- *
- * @param event the event
- */
-void proc_wakeupAll(u8 event);
-
-/**
- * Wakes up the given process with the given event. If the process is not waiting for it
- * the event is ignored
- *
- * @param pid the process to wakeup
- * @param event the event to send
- */
-void proc_wakeup(tPid pid,u8 event);
-
-/**
- * Returns the file-number for the given file-descriptor
- *
- * @param fd the file-descriptor
- * @return the file-number or < 0 if the fd is invalid
- */
-tFileNo proc_fdToFile(tFD fd);
-
-/**
- * Searches for a free file-descriptor
- *
- * @return the file-descriptor or the error-code (< 0)
- */
-tFD proc_getFreeFd(void);
-
-/**
- * Associates the given file-descriptor with the given file-number
- *
- * @param fd the file-descriptor
- * @param fileNo the file-number
- * @return 0 on success
- */
-s32 proc_assocFd(tFD fd,tFileNo fileNo);
-
-/**
- * Duplicates the given file-descriptor
- *
- * @param fd the file-descriptor
- * @return the error-code or the new file-descriptor
- */
-tFD proc_dupFd(tFD fd);
-
-/**
- * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
- *
- * @param src the source-file-descriptor
- * @param dst the destination-file-descriptor
- * @return the error-code or 0 if successfull
- */
-s32 proc_redirFd(tFD src,tFD dst);
-
-/**
- * Releases the given file-descriptor (marks it unused)
- *
- * @param fd the file-descriptor
- * @return the file-number that was associated with the fd (or ERR_INVALID_FD)
- */
-tFileNo proc_unassocFD(tFD fd);
 
 /**
  * Clones the current process into the given one, saves all new threads in proc_clone() so that
@@ -312,13 +193,6 @@ void proc_dbg_printAll(void);
  * @param p the pointer to the process
  */
 void proc_dbg_print(sProc *p);
-
-/**
- * Prints the given process-state
- *
- * @param state the pointer to the state-struct
- */
-void proc_dbg_printState(sProcSave *state);
 
 #endif
 

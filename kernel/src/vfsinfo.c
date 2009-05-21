@@ -45,7 +45,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer);
 /**
  * The read-handler for the mem-usage-node
  */
-static s32 vfsinfo_memUsageReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+static s32 vfsinfo_memUsageReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * The read-callback for the VFS memusage-read-handler
@@ -58,14 +58,14 @@ void vfsinfo_init(void) {
 	vfsn_resolvePath("system:/",&nodeNo);
 	sysNode = vfsn_getNode(nodeNo);
 
-	vfsn_createInfo(KERNEL_PID,vfsn_getNode(nodeNo),(char*)"memusage",vfsinfo_memUsageReadHandler);
+	vfsn_createInfo(KERNEL_TID,vfsn_getNode(nodeNo),(char*)"memusage",vfsinfo_memUsageReadHandler);
 }
 
-s32 vfsinfo_procReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+s32 vfsinfo_procReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	/* don't use the cache here to prevent that one process occupies it for all others */
 	/* (if the process doesn't call close() the cache will not be invalidated and therefore
 	 * other processes might miss changes) */
-	return vfs_readHelper(pid,node,buffer,offset,count,
+	return vfs_readHelper(tid,node,buffer,offset,count,
 			18 * 9 + 6 * 10 + 2 * 16 + MAX_PROC_NAME_LEN + 1,
 			vfsinfo_procReadCallback);
 }
@@ -76,34 +76,35 @@ static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer) {
 	u32 *uptr,*kptr;
 	UNUSED(node);
 
-	uptr = (u32*)&p->ucycleCount;
-	kptr = (u32*)&p->kcycleCount;
+	/* TODO */
+	/*uptr = (u32*)&p->ucycleCount;
+	kptr = (u32*)&p->kcycleCount;*/
 	util_sprintf(
 		str,
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%s\n"
+		/*"%-16s%u\n"*/
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%08x%08x\n"
-		"%-16s%08x%08x\n"
+		/*"%-16s%08x%08x\n"
+		"%-16s%08x%08x\n"*/
 		,
 		"Pid:",p->pid,
 		"ParentPid:",p->parentPid,
 		"Command:",p->command,
-		"State:",p->state,
+		/*"State:",p->state,*/
 		"TextPages:",p->textPages,
 		"DataPages:",p->dataPages,
-		"StackPages:",p->stackPages,
+		"StackPages:",p->stackPages/*,
 		"UCPUCycles:",*(uptr + 1),*uptr,
-		"KCPUCycles:",*(kptr + 1),*kptr
+		"KCPUCycles:",*(kptr + 1),*kptr*/
 	);
 }
 
-static s32 vfsinfo_memUsageReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
-	return vfs_readHelper(pid,node,buffer,offset,count,(11 + 10 + 1) * 4 + 1,
+static s32 vfsinfo_memUsageReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	return vfs_readHelper(tid,node,buffer,offset,count,(11 + 10 + 1) * 4 + 1,
 			vfsinfo_memUsageReadCallback);
 }
 
@@ -127,10 +128,10 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,void *buffer) {
 	);
 }
 
-s32 vfsinfo_dirReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+s32 vfsinfo_dirReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	s32 byteCount;
 
-	UNUSED(pid);
+	UNUSED(tid);
 	vassert(node != NULL,"node == NULL");
 	vassert(buffer != NULL,"buffer == NULL");
 

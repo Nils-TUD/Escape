@@ -511,7 +511,7 @@ static void sysc_open(sIntrptStackFrame *stack) {
 	tFileNo file;
 	tFD fd;
 	s32 err;
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 
 	/* at first make sure that we'll cause no page-fault */
 	if(!sysc_isStringReadable(path)) {
@@ -540,16 +540,16 @@ static void sysc_open(sIntrptStackFrame *stack) {
 		/* skip file: */
 		if(strncmp(path,"file:",5) == 0)
 			path += 5;
-		file = vfsr_openFile(p->pid,flags,path);
+		file = vfsr_openFile(t->tid,flags,path);
 		if(file < 0) {
 			SYSC_ERROR(stack,file);
 			return;
 		}
 
 		/* get free fd */
-		fd = proc_getFreeFd();
+		fd = thread_getFreeFd();
 		if(fd < 0) {
-			vfs_closeFile(file);
+			vfs_closeFile(t->tid,file);
 			SYSC_ERROR(stack,fd);
 			return;
 		}
@@ -562,13 +562,13 @@ static void sysc_open(sIntrptStackFrame *stack) {
 		}
 
 		/* get free fd */
-		fd = proc_getFreeFd();
+		fd = thread_getFreeFd();
 		if(fd < 0) {
 			SYSC_ERROR(stack,fd);
 			return;
 		}
 		/* open file */
-		file = vfs_openFile(p->pid,flags,nodeNo);
+		file = vfs_openFile(t->tid,flags,nodeNo);
 	}
 
 	if(file < 0) {
@@ -577,7 +577,7 @@ static void sysc_open(sIntrptStackFrame *stack) {
 	}
 
 	/* assoc fd with file */
-	err = proc_assocFd(fd,file);
+	err = thread_assocFd(fd,file);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
@@ -589,36 +589,36 @@ static void sysc_open(sIntrptStackFrame *stack) {
 
 static void sysc_eof(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	tFileNo file;
 	bool eof;
 
 	/* get file */
-	file = proc_fdToFile(fd);
+	file = thread_fdToFile(fd);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;
 	}
 
-	eof = vfs_eof(p->pid,file);
+	eof = vfs_eof(t->tid,file);
 	SYSC_RET1(stack,eof);
 }
 
 static void sysc_seek(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	u32 position = SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	tFileNo file;
 	s32 res;
 
 	/* get file */
-	file = proc_fdToFile(fd);
+	file = thread_fdToFile(fd);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;
 	}
 
-	res = vfs_seek(p->pid,file,position);
+	res = vfs_seek(t->tid,file,position);
 	SYSC_RET1(stack,res);
 }
 
@@ -626,7 +626,7 @@ static void sysc_read(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	void *buffer = (void*)SYSC_ARG2(stack);
 	u32 count = SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	s32 readBytes;
 	tFileNo file;
 
@@ -641,14 +641,14 @@ static void sysc_read(sIntrptStackFrame *stack) {
 	}
 
 	/* get file */
-	file = proc_fdToFile(fd);
+	file = thread_fdToFile(fd);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;
 	}
 
 	/* read */
-	readBytes = vfs_readFile(p->pid,file,buffer,count);
+	readBytes = vfs_readFile(t->tid,file,buffer,count);
 	if(readBytes < 0) {
 		SYSC_ERROR(stack,readBytes);
 		return;
@@ -661,7 +661,7 @@ static void sysc_write(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	void *buffer = (void*)SYSC_ARG2(stack);
 	u32 count = SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	s32 writtenBytes;
 	tFileNo file;
 
@@ -676,14 +676,14 @@ static void sysc_write(sIntrptStackFrame *stack) {
 	}
 
 	/* get file */
-	file = proc_fdToFile(fd);
+	file = thread_fdToFile(fd);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;
 	}
 
 	/* read */
-	writtenBytes = vfs_writeFile(p->pid,file,buffer,count);
+	writtenBytes = vfs_writeFile(t->tid,file,buffer,count);
 	if(writtenBytes < 0) {
 		SYSC_ERROR(stack,writtenBytes);
 		return;
@@ -696,7 +696,7 @@ static void sysc_dupFd(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	tFD res;
 
-	res = proc_dupFd(fd);
+	res = thread_dupFd(fd);
 	if(res < 0) {
 		SYSC_ERROR(stack,res);
 		return;
@@ -710,7 +710,7 @@ static void sysc_redirFd(sIntrptStackFrame *stack) {
 	tFD dst = (tFD)SYSC_ARG2(stack);
 	s32 err;
 
-	err = proc_redirFd(src,dst);
+	err = thread_redirFd(src,dst);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
@@ -721,20 +721,21 @@ static void sysc_redirFd(sIntrptStackFrame *stack) {
 
 static void sysc_close(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
+	sThread *t = thread_getRunning();
 
 	/* unassoc fd */
-	tFileNo fileNo = proc_unassocFD(fd);
+	tFileNo fileNo = thread_unassocFd(fd);
 	if(fileNo < 0)
 		return;
 
 	/* close file */
-	vfs_closeFile(fileNo);
+	vfs_closeFile(t->tid,fileNo);
 }
 
 static void sysc_regService(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	u32 type = (u32)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	tServ res;
 
 	/* check type */
@@ -749,7 +750,7 @@ static void sysc_regService(sIntrptStackFrame *stack) {
 	else
 		type = 0;
 
-	res = vfs_createService(p->pid,name,type);
+	res = vfs_createService(t->tid,name,type);
 	if(res < 0) {
 		SYSC_ERROR(stack,res);
 		return;
@@ -760,6 +761,7 @@ static void sysc_regService(sIntrptStackFrame *stack) {
 
 static void sysc_unregService(sIntrptStackFrame *stack) {
 	tServ id = SYSC_ARG1(stack);
+	sThread *t = thread_getRunning();
 	s32 err;
 
 	/* check node-number */
@@ -769,7 +771,7 @@ static void sysc_unregService(sIntrptStackFrame *stack) {
 	}
 
 	/* remove the service */
-	err = vfs_removeService(proc_getRunning()->pid,id);
+	err = vfs_removeService(t->tid,id);
 	if(err < 0) {
 		SYSC_ERROR(stack,err);
 		return;
@@ -782,7 +784,7 @@ static void sysc_getClient(sIntrptStackFrame *stack) {
 	tServ *ids = (tServ*)SYSC_ARG1(stack);
 	u32 count = SYSC_ARG2(stack);
 	tServ *client = (tServ*)SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	tFD fd;
 	s32 res;
 	tFileNo file;
@@ -799,24 +801,24 @@ static void sysc_getClient(sIntrptStackFrame *stack) {
 	}
 
 	/* we need a file-desc */
-	fd = proc_getFreeFd();
+	fd = thread_getFreeFd();
 	if(fd < 0) {
 		SYSC_ERROR(stack,fd);
 		return;
 	}
 
 	/* open a client */
-	file = vfs_openClient(p->pid,(tVFSNodeNo*)ids,count,(tVFSNodeNo*)client);
+	file = vfs_openClient(t->tid,(tVFSNodeNo*)ids,count,(tVFSNodeNo*)client);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;
 	}
 
 	/* associate fd with file */
-	res = proc_assocFd(fd,file);
+	res = thread_assocFd(fd,file);
 	if(res < 0) {
 		/* we have already opened the file */
-		vfs_closeFile(file);
+		vfs_closeFile(t->tid,file);
 		SYSC_ERROR(stack,res);
 		return;
 	}
@@ -824,10 +826,11 @@ static void sysc_getClient(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,fd);
 }
 
+/* TODO */
 static void sysc_getClientProc(sIntrptStackFrame *stack) {
 	tServ id = (tServ)SYSC_ARG1(stack);
 	tPid pid = (tPid)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	tFD fd;
 	tFileNo file;
 	s32 res;
@@ -838,24 +841,24 @@ static void sysc_getClientProc(sIntrptStackFrame *stack) {
 	}
 
 	/* we need a file-desc */
-	fd = proc_getFreeFd();
+	fd = thread_getFreeFd();
 	if(fd < 0) {
 		SYSC_ERROR(stack,fd);
 		return;
 	}
 
 	/* open client */
-	file = vfs_openClientProc(p->pid,id,pid);
+	file = vfs_openClientProc(t->tid,id,pid);
 	if(file < 0) {
 		SYSC_ERROR(stack,file);
 		return;
 	}
 
 	/* associate fd with file */
-	res = proc_assocFd(fd,file);
+	res = thread_assocFd(fd,file);
 	if(res < 0) {
 		/* we have already opened the file */
-		vfs_closeFile(file);
+		vfs_closeFile(t->tid,file);
 		SYSC_ERROR(stack,res);
 		return;
 	}
@@ -946,7 +949,7 @@ static void sysc_mapPhysical(sIntrptStackFrame *stack) {
 
 static void sysc_wait(sIntrptStackFrame *stack) {
 	u8 events = (u8)SYSC_ARG1(stack);
-	sProc *p;
+	sThread *t = thread_getRunning();
 	bool canSleep;
 
 	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_CHILD_DIED)) != 0) {
@@ -954,20 +957,15 @@ static void sysc_wait(sIntrptStackFrame *stack) {
 		return;
 	}
 
-	p = proc_getRunning();
-
-	/* TODO we need a result for EV_CHILD_DIED (and maybe for others, too) */
-	util_panic("NOT FINISHED");
-
 	/* check wether there is a chance that we'll wake up again */
-	canSleep = !vfs_msgAvailableFor(p->pid,events);
-	if(canSleep && (events & EV_CHILD_DIED))
-		canSleep = proc_hasChild(p->pid);
+	canSleep = !vfs_msgAvailableFor(t->tid,events);
+	/* TODO */
+	/*if(canSleep && (events & EV_CHILD_DIED))
+		canSleep = proc_hasChild(p->pid);*/
 
 	/* if we can sleep, do it */
 	if(canSleep) {
-		/* TODO */
-		proc_wait(p->pid,events);
+		thread_wait(t->tid,events);
 		thread_switch();
 	}
 }
@@ -1186,6 +1184,8 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	path = pathSave;
 
 	/* resolve path */
+	/* TODO we have a problem here if the user gives us services:/xyz or similar. we would create
+	 * a service-usage-node */
 	res = vfsn_resolvePath(path,&nodeNo);
 	if(res != ERR_REAL_PATH) {
 		kheap_free(argBuffer);
@@ -1227,7 +1227,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 
 static void sysc_createNode(sIntrptStackFrame *stack) {
 	const char *path = (char*)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	u32 nameLen,pathLen;
 	s32 res;
 	tVFSNodeNo nodeNo,dummyNodeNo;
@@ -1273,6 +1273,8 @@ static void sysc_createNode(sIntrptStackFrame *stack) {
 	strcpy(nameCpy,name);
 
 	/* resolve path */
+	/* TODO we have a problem here if the user gives us services:/xyz or similar. we would create
+	 * a service-usage-node */
 	res = vfsn_resolvePath(pathCpy,&nodeNo);
 	if(res < 0) {
 		kheap_free(pathCpy);
@@ -1280,6 +1282,8 @@ static void sysc_createNode(sIntrptStackFrame *stack) {
 		return;
 	}
 	/* check wether the node does already exist */
+	/* TODO we have a problem here if the user gives us services:/xyz or similar. we would create
+	 * a service-usage-node */
 	res = vfsn_resolvePath(path,&dummyNodeNo);
 	if(res >= 0 || res == ERR_REAL_PATH) {
 		SYSC_ERROR(stack,ERR_NODE_EXISTS);
@@ -1289,7 +1293,7 @@ static void sysc_createNode(sIntrptStackFrame *stack) {
 	/* create node */
 	kheap_free(pathCpy);
 	node = vfsn_getNode(nodeNo);
-	if(vfsn_createInfo(p->pid,node,nameCpy,vfs_defReadHandler) == NULL) {
+	if(vfsn_createInfo(t->tid,node,nameCpy,vfs_defReadHandler) == NULL) {
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 		return;
 	}
@@ -1315,13 +1319,15 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 		return;
 	}
 
+	/* TODO we have a problem here if the user gives us services:/xyz or similar. we would create
+	 * a service-usage-node */
 	res = vfsn_resolvePath(path,&nodeNo);
 	if(res == ERR_REAL_PATH) {
-		sProc *p = proc_getRunning();
+		sThread *t = thread_getRunning();
 		/* skip file: */
 		if(strncmp(path,"file:",5) == 0)
 			path += 5;
-		res = vfsr_getFileInfo(p->pid,path,info);
+		res = vfsr_getFileInfo(t->tid,path,info);
 	}
 	else if(res == 0)
 		res = vfsn_getNodeInfo(nodeNo,info);
@@ -1335,7 +1341,6 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 
 static void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
-	proc_dbg_printAll();
 }
 
 static void sysc_createSharedMem(sIntrptStackFrame *stack) {

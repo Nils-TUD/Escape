@@ -26,6 +26,9 @@
 #include <paging.h>
 #include <sched.h>
 #include <util.h>
+#include <signals.h>
+#include <vfs.h>
+#include <vfsnode.h>
 #include <video.h>
 #include <sllist.h>
 #include <assert.h>
@@ -43,6 +46,7 @@ static tTid nextTid = 0;
 static sSLList* deadThreads = NULL;
 
 sThread *thread_init(sProc *p) {
+	tFD i;
 	sThread *t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
@@ -60,6 +64,9 @@ sThread *thread_init(sProc *p) {
 	t->kcycleStart = 0;
 	t->fpuState = NULL;
 	t->signal = 0;
+	/* init fds */
+	for(i = 0; i < MAX_FD_COUNT; i++)
+		t->fileDescs[i] = -1;
 
 	/* create list */
 	sSLList *list = threadMap[t->tid % THREAD_MAP_SIZE] = sll_create();
@@ -118,7 +125,6 @@ void thread_switchTo(tTid tid) {
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */
 		fpu_lockFPU();
-		vid_printf("Resuming %d:%d\n",cur->proc->pid,cur->tid);
 		thread_resume(cur->proc->physPDirAddr,&cur->save,cur->kstackFrame);
 	}
 
@@ -164,6 +170,100 @@ void thread_wakeup(tTid tid,u8 event) {
 	}
 }
 
+tFileNo thread_fdToFile(tFD fd) {
+	tFileNo fileNo;
+	if(fd < 0 || fd >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	fileNo = cur->fileDescs[fd];
+	if(fileNo == -1)
+		return ERR_INVALID_FD;
+
+	return fileNo;
+}
+
+tFD thread_getFreeFd(void) {
+	tFD i;
+	tFileNo *fds = cur->fileDescs;
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(fds[i] == -1)
+			return i;
+	}
+
+	return ERR_MAX_PROC_FDS;
+}
+
+s32 thread_assocFd(tFD fd,tFileNo fileNo) {
+	if(fd < 0 || fd >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	if(cur->fileDescs[fd] != -1)
+		return ERR_INVALID_FD;
+
+	cur->fileDescs[fd] = fileNo;
+	return 0;
+}
+
+tFD thread_dupFd(tFD fd) {
+	tFileNo f;
+	s32 err,nfd;
+	/* check fd */
+	if(fd < 0 || fd >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	f = cur->fileDescs[fd];
+	if(f == -1)
+		return ERR_INVALID_FD;
+
+	nfd = thread_getFreeFd();
+	if(nfd < 0)
+		return nfd;
+
+	/* increase references */
+	if((err = vfs_incRefs(f)) < 0)
+		return err;
+
+	cur->fileDescs[nfd] = f;
+	return nfd;
+}
+
+s32 thread_redirFd(tFD src,tFD dst) {
+	tFileNo fSrc,fDst;
+	s32 err;
+
+	/* check fds */
+	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	fSrc = cur->fileDescs[src];
+	fDst = cur->fileDescs[dst];
+	if(fSrc == -1 || fDst == -1)
+		return ERR_INVALID_FD;
+
+	if((err = vfs_incRefs(fDst)) < 0)
+		return err;
+
+	/* we have to close the source because no one else will do it anymore... */
+	vfs_closeFile(cur->tid,fSrc);
+
+	/* now redirect src to dst */
+	cur->fileDescs[src] = fDst;
+	return 0;
+}
+
+tFileNo thread_unassocFd(tFD fd) {
+	tFileNo fileNo;
+	if(fd < 0 || fd >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	fileNo = cur->fileDescs[fd];
+	if(fileNo == -1)
+		return ERR_INVALID_FD;
+
+	cur->fileDescs[fd] = -1;
+	return fileNo;
+}
+
 s32 thread_extendStack(u32 address) {
 	s32 newPages;
 	address &= ~(PAGE_SIZE - 1);
@@ -178,6 +278,7 @@ s32 thread_extendStack(u32 address) {
 }
 
 s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc) {
+	tFD i;
 	sThread *t = *dst;
 	t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
@@ -193,7 +294,6 @@ s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc) {
 	t->ucycleCount = 0;
 	t->ucycleStart = 0;
 	t->proc = src->proc;
-	memcpy(&(t->save),&(src->save),sizeof(src->save));
 	t->signal = 0;
 	if(cloneProc) {
 		/* proc_clone() sets t->kstackFrame in this case */
@@ -222,11 +322,11 @@ s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc) {
 		}
 		while(!ubeginOk);
 
-		/* create stacks */
+		/* create kernel-stack */
 		t->ustackBegin = ustackBegin;
 		*stackFrame = t->kstackFrame = mm_allocateFrame(MM_DEF);
 
-		/* 2 initial pages; TODO constant */
+		/* 2 initial user-stack-pages; TODO constant */
 		t->ustackPages = 2;
 		paging_map(t->ustackBegin - t->ustackPages * PAGE_SIZE,NULL,t->ustackPages,PG_WRITABLE,true);
 	}
@@ -236,6 +336,7 @@ s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc) {
 	if(list == NULL) {
 		list = threadMap[t->tid % THREAD_MAP_SIZE] = sll_create();
 		if(list == NULL) {
+			/* TODO unmap user-stack, free kernel-stack-frame and close files */
 			kheap_free(t);
 			return ERR_NOT_ENOUGH_MEM;
 		}
@@ -243,8 +344,16 @@ s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc) {
 
 	/* insert */
 	if(!sll_append(list,t)) {
+		/* TODO unmap user-stack, free kernel-stack-frame and close files */
 		kheap_free(t);
 		return ERR_NOT_ENOUGH_MEM;
+	}
+
+	/* inherit file-descriptors */
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		t->fileDescs[i] = src->fileDescs[i];
+		if(t->fileDescs[i] != -1)
+			t->fileDescs[i] = vfs_inheritFileNo(t->tid,t->fileDescs[i]);
 	}
 
 	*dst = t;
@@ -252,6 +361,7 @@ s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc) {
 }
 
 void thread_destroy(sThread *t,bool destroyStacks) {
+	tFD i;
 	/* we can't destroy the current thread */
 	if(t == cur) {
 		/* put it in the dead-thread-queue to destroy it later */
@@ -275,23 +385,27 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 	if(destroyStacks)
 		paging_destroyStacks(t);
 
+	/* release file-descriptors */
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(t->fileDescs[i] != -1) {
+			vfs_closeFile(t->tid,t->fileDescs[i]);
+			t->fileDescs[i] = -1;
+		}
+	}
+
 	/* remove from process */
-	sProc *p = proc_getRunning();
-	p->stackPages -= t->ustackPages;
-	sll_removeFirst(p->threads,t);
+	t->proc->stackPages -= t->ustackPages;
+	sll_removeFirst(t->proc->threads,t);
 
-	/* remove from scheduler and ensure that he don't picks us again */
+	/* remove from all modules we may be announced */
 	sched_removeThread(t);
-
-	/* free FPU-state-memory */
+	timer_removeThread(t->tid);
 	fpu_freeState(&t->fpuState);
-	/* remove signal-handler */
 	sig_removeHandlerFor(t->tid);
 
+	/* finally, destroy thread */
 	sll_removeFirst(list,t);
 	kheap_free(t);
-
-	vid_printf("free frames=%d\n",mm_getFreeFrmCount(MM_DEF));
 }
 
 /* #### TEST/DEBUG FUNCTIONS #### */
@@ -301,10 +415,40 @@ void thread_dbg_printAll(void) {
 
 }
 
-void thread_dbg_printShort(sThread *t) {
+void thread_dbg_print(sThread *t) {
 	static const char *states[] = {"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE"};
-	vid_printf("\t\t[%d @ %x] state=%s, ustack=0x%08x (%d pages), kstack=%08x\n",
-			t->tid,t,states[t->state],t->ustackBegin,t->ustackPages,t->kstackFrame);
+	tFD i;
+	u32 *ptr;
+	vid_printf("\tthread %d:\n",t->tid);
+	vid_printf("\t\tstate=%s\n",states[t->state]);
+	vid_printf("\t\tustack=0x%08x (%d pages)\n",t->ustackBegin,t->ustackPages);
+	vid_printf("\t\tkstackFrame=0x%x\n",t->kstackFrame);
+	ptr = (u32*)&t->ucycleCount;
+	vid_printf("\t\tucycleCount = 0x%08x%08x\n",*(ptr + 1),*ptr);
+	ptr = (u32*)&t->kcycleCount;
+	vid_printf("\t\tkcycleCount = 0x%08x%08x\n",*(ptr + 1),*ptr);
+	vid_printf("\t\tfileDescs:\n");
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(t->fileDescs[i] != -1) {
+			tVFSNodeNo no = vfs_getNodeNo(t->fileDescs[i]);
+			vid_printf("\t\t\t%d : %d",i,t->fileDescs[i]);
+			if(vfsn_isValidNodeNo(no)) {
+				sVFSNode *n = vfsn_getNode(no);
+				if(n && n->parent)
+					vid_printf(" (%s->%s)",n->parent->name,n->name);
+			}
+			vid_printf("\n");
+		}
+	}
+}
+
+void thread_dbg_printState(sThreadRegs *state) {
+	vid_printf("\tState:\n",state);
+	vid_printf("\t\tesp = 0x%08x\n",state->esp);
+	vid_printf("\t\tedi = 0x%08x\n",state->edi);
+	vid_printf("\t\tesi = 0x%08x\n",state->esi);
+	vid_printf("\t\tebp = 0x%08x\n",state->ebp);
+	vid_printf("\t\teflags = 0x%08x\n",state->eflags);
 }
 
 #endif

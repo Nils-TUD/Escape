@@ -175,6 +175,7 @@ int main(void) {
 			if(read(mouse,&header,sizeof(sMsgHeader)) > 0) {
 				/* skip invalid data's */
 				if(read(mouse,&mouseData,sizeof(sMsgDataMouse)) == sizeof(sMsgDataMouse)) {
+					/* TODO extract function */
 					tCoord oldx = curX,oldy = curY;
 					bool btnChanged = false;
 					curX = MAX(0,MIN(screenWidth - 1,curX + mouseData.x));

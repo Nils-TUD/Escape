@@ -42,6 +42,13 @@ void timer_init(void);
 s32 timer_sleepFor(tTid tid,u32 msecs);
 
 /**
+ * Removes the given thread from the timer
+ *
+ * @param tid the thread-id
+ */
+void timer_removeThread(tTid tid);
+
+/**
  * Handles a timer-interrupt
  */
 void timer_intrpt(void);

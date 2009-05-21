@@ -28,8 +28,11 @@
 #define THREAD_COUNT			1024
 #define MAX_THREAD_NAME_LEN		15
 #define MAX_STACK_PAGES			128
+#define MAX_FD_COUNT			32
 
 #define INVALID_TID				THREAD_COUNT
+/* use an invalid pid to identify the kernel */
+#define KERNEL_TID				(THREAD_COUNT + 1)
 
 /* the thread-state which will be saved for context-switching */
 typedef struct {
@@ -44,7 +47,7 @@ typedef struct {
 } sThreadRegs;
 
 /* the thread states */
-/*typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE = 4} eThreadState;*/
+typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE = 4} eThreadState;
 
 /* represents a thread */
 typedef struct {
@@ -65,6 +68,8 @@ typedef struct {
 	/* TODO just for debugging atm */
 	u32 ueip;
 	sThreadRegs save;
+	/* file descriptors: indices of the global file table */
+	tFileNo fileDescs[MAX_FD_COUNT];
 	/* FPU-state; initially NULL */
 	sFPUState *fpuState;
 	/* number of cpu-cycles the thread has used so far; TODO: should be cpu-time later */
@@ -75,6 +80,12 @@ typedef struct {
 	u64 cycleCount;
 } sThread;
 
+/**
+ * Inits the threading-stuff. Uses <p> as first process
+ *
+ * @param p the first process
+ * @return the first thread
+ */
 sThread *thread_init(sProc *p);
 
 /**
@@ -95,12 +106,30 @@ extern bool thread_save(sThreadRegs *saveArea);
  */
 extern bool thread_resume(u32 pageDir,sThreadRegs *saveArea,u32 kstackFrame);
 
+/**
+ * @return the currently running thread
+ */
 sThread *thread_getRunning(void);
 
+/**
+ * Fetches the thread with given id from the internal thread-map
+ *
+ * @param tid the thread-id
+ * @return the thread or NULL if not found
+ */
 sThread *thread_getById(tTid tid);
 
+/**
+ * Performs a thread-switch. That means the current thread will be saved and the first thread
+ * will be picked from the ready-queue and resumed.
+ */
 void thread_switch(void);
 
+/**
+ * Switches to the given thread
+ *
+ * @param tid the thread-id
+ */
 void thread_switchTo(tTid tid);
 
 /**
@@ -127,19 +156,108 @@ void thread_wakeupAll(u8 event);
  */
 void thread_wakeup(tTid tid,u8 event);
 
+/**
+ * Returns the file-number for the given file-descriptor
+ *
+ * @param fd the file-descriptor
+ * @return the file-number or < 0 if the fd is invalid
+ */
+tFileNo thread_fdToFile(tFD fd);
+
+/**
+ * Searches for a free file-descriptor
+ *
+ * @return the file-descriptor or the error-code (< 0)
+ */
+tFD thread_getFreeFd(void);
+
+/**
+ * Associates the given file-descriptor with the given file-number
+ *
+ * @param fd the file-descriptor
+ * @param fileNo the file-number
+ * @return 0 on success
+ */
+s32 thread_assocFd(tFD fd,tFileNo fileNo);
+
+/**
+ * Duplicates the given file-descriptor
+ *
+ * @param fd the file-descriptor
+ * @return the error-code or the new file-descriptor
+ */
+tFD thread_dupFd(tFD fd);
+
+/**
+ * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
+ *
+ * @param src the source-file-descriptor
+ * @param dst the destination-file-descriptor
+ * @return the error-code or 0 if successfull
+ */
+s32 thread_redirFd(tFD src,tFD dst);
+
+/**
+ * Releases the given file-descriptor (marks it unused)
+ *
+ * @param fd the file-descriptor
+ * @return the file-number that was associated with the fd (or ERR_INVALID_FD)
+ */
+tFileNo thread_unassocFd(tFD fd);
+
+/**
+ * Extends the stack of the current thread so that the given address is accessible. If that
+ * is not possible the function returns a negative error-code
+ *
+ * @param address the address that should be accessible
+ * @return 0 on success
+ */
 s32 thread_extendStack(u32 address);
 
+/**
+ * Clones <src> to <dst>. That means a new thread will be created and <src> will be copied to the
+ * new one.
+ *
+ * @param src the thread to copy
+ * @param dst will contain a pointer to the new thread
+ * @param stackFrame will contain the stack-frame that has been used for the kernel-stack of the
+ * 	new thread
+ * @param cloneProc wether a process is cloned or just a thread
+ * @return 0 on success
+ */
 s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc);
 
+/**
+ * Destroys the given thread. If it is the current one it will be stored for later deletion.
+ *
+ * @param t the thread
+ * @param destroyStacks wether the stacks should be destroyed (should be true if the process
+ *  will not be destroyed)
+ */
 void thread_destroy(sThread *t,bool destroyStacks);
 
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
+/**
+ * Prints all threads
+ */
 void thread_dbg_printAll(void);
 
-void thread_dbg_printShort(sThread *t);
+/**
+ * Prints the given thread
+ *
+ * @param t the thread
+ */
+void thread_dbg_print(sThread *t);
+
+/**
+ * Prints the given thread-state
+ *
+ * @param state the pointer to the state-struct
+ */
+void thread_dbg_printState(sThreadRegs *state);
 
 #endif
 

@@ -124,6 +124,7 @@ static void shell_sigIntrpt(tSig sig,u32 data) {
 	if(vterm == data) {
 		printf("\n");
 		tPid pid = shell_getWaitingPid();
+		printf("pid=%d\n",pid);
 		if(pid != INVALID_PID)
 			sendSignalTo(pid,SIG_KILL,0);
 		else

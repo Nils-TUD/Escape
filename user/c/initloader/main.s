@@ -20,22 +20,12 @@
 [BITS 32]
 
 [global init]
-[extern exit]
 
 ALIGN 4
 
 %include "../../../libc/syscalls.s"
 
 init:
-	[extern main]
-	call	main
-
-	; call exit with return-value of main
-	push	eax
-	call	exit
-
-	jmp		$
-
 	; load modules first
 	mov		eax,SYSCALL_LOADMODS
 	int		SYSCALL_IRQ

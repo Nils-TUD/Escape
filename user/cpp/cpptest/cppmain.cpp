@@ -23,8 +23,11 @@
 #include <esc/vector.h>
 #include <esc/stream.h>
 #include <esc/string.h>
+#include <esc/thread.h>
 
 using namespace esc;
+
+static int threadFunc(void);
 
 class my {
 public:
@@ -45,6 +48,10 @@ void my::doIt() {
 }
 
 int main(void) {
+	startThread(threadFunc);
+	startThread(threadFunc);
+	startThread(threadFunc);
+
 #if 1
 	char str[10];
 	char buffer[1024];
@@ -123,5 +130,14 @@ int main(void) {
 	m->doIt();
 	delete m;
 	delete y;*/
+
 	return EXIT_SUCCESS;
+}
+
+static int threadFunc(void) {
+	while(1) {
+		printf("I am thread %d\n",gettid());
+		sleep(1000);
+	}
+	return 0;
 }

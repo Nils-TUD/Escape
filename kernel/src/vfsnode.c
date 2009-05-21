@@ -40,14 +40,14 @@
 static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child);
 
 /**
- * Creates a pipe-node for given process
+ * Creates a pipe-node for given thread
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param parent the parent-node
  * @param name the node-name
  * @return the node or NULL
  */
-static sVFSNode *vfsn_createPipeNode(tPid pid,sVFSNode *parent,char *name);
+static sVFSNode *vfsn_createPipeNode(tTid tid,sVFSNode *parent,char *name);
 
 /**
  * Requests a new node and returns the pointer to it. Panics if there are no free nodes anymore.
@@ -98,9 +98,9 @@ bool vfsn_isValidNodeNo(tVFSNodeNo nodeNo) {
 }
 
 bool vfsn_isOwnServiceNode(tVFSNodeNo nodeNo) {
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	sVFSNode *node = nodes + nodeNo;
-	return node->owner == p->pid && (node->mode & MODE_TYPE_SERVICE);
+	return node->owner == t->tid && (node->mode & MODE_TYPE_SERVICE);
 }
 
 sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo) {
@@ -253,9 +253,9 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo) {
 
 	/* handle special node-types */
 	if((n->mode & MODE_TYPE_SERVICE)) {
-		sProc *p = proc_getRunning();
+		sThread *t = thread_getRunning();
 		sVFSNode *child;
-		s32 err = vfsn_createServiceUse(p->pid,n,&child);
+		s32 err = vfsn_createServiceUse(t->tid,n,&child);
 		if(err < 0)
 			return err;
 
@@ -303,7 +303,7 @@ sVFSNode *vfsn_createNode(sVFSNode *parent,char *name) {
 	/* ensure that all values are initialized properly */
 	node->name = name;
 	node->mode = 0;
-	node->owner = INVALID_PID;
+	node->owner = INVALID_TID;
 	node->refCount = 0;
 	node->next = NULL;
 	node->prev = NULL;
@@ -325,11 +325,16 @@ sVFSNode *vfsn_createDir(sVFSNode *parent,char *name) {
 		return NULL;
 
 	sVFSNode *dot = vfsn_createNodeAppend(node,(char*)".");
-	if(dot == NULL)
+	if(dot == NULL) {
+		vfsn_removeChild(parent,node);
 		return NULL;
+	}
 	sVFSNode *dotdot = vfsn_createNodeAppend(node,(char*)"..");
-	if(dotdot == NULL)
+	if(dotdot == NULL) {
+		vfsn_removeChild(parent,dot);
+		vfsn_removeChild(parent,node);
 		return NULL;
+	}
 
 	node->mode = MODE_TYPE_DIR | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OWNER_EXEC |
 		MODE_OTHER_READ | MODE_OTHER_EXEC;
@@ -352,34 +357,34 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name) {
 	return node;
 }
 
-sVFSNode *vfsn_createInfo(tPid pid,sVFSNode *parent,char *name,fRead handler) {
+sVFSNode *vfsn_createInfo(tTid tid,sVFSNode *parent,char *name,fRead handler) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
-	node->owner = pid;
+	node->owner = tid;
 	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ;
 	node->readHandler = handler;
 	return node;
 }
 
-sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,char *name,u32 type) {
+sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 type) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
-	node->owner = pid;
+	node->owner = tid;
 	node->mode = MODE_TYPE_SERVICE | MODE_OWNER_READ | MODE_OTHER_READ | type;
 	node->readHandler = NULL;
 	return node;
 }
 
-sVFSNode *vfsn_createServiceUseNode(tPid pid,sVFSNode *parent,char *name,fRead handler) {
+sVFSNode *vfsn_createServiceUseNode(tTid tid,sVFSNode *parent,char *name,fRead handler) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
-	node->owner = pid;
+	node->owner = tid;
 	node->mode = MODE_TYPE_SERVUSE | MODE_OWNER_READ | MODE_OWNER_WRITE |
 		MODE_OTHER_READ | MODE_OTHER_WRITE;
 	node->readHandler = handler;
@@ -417,7 +422,7 @@ void vfsn_removeChild(sVFSNode *parent,sVFSNode *node) {
 	vfsn_releaseNode(node);
 }
 
-s32 vfsn_createServiceUse(tPid pid,sVFSNode *n,sVFSNode **child) {
+s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	char *name;
 	sVFSNode *m;
 
@@ -426,11 +431,9 @@ s32 vfsn_createServiceUse(tPid pid,sVFSNode *n,sVFSNode **child) {
 		m = NODE_FIRST_CHILD(n);
 		while(m != NULL) {
 			if(strcmp(m->name,SERVICE_CLIENT_ALL) == 0) {
-				sProc *p = proc_getByPid(pid);
-				/* just in case we're already using this service... */
-				sll_removeFirst(m->data.servuse.singlePipeClients,p);
+				sThread *t = thread_getById(tid);
 				/* append us */
-				if(!sll_append(m->data.servuse.singlePipeClients,p))
+				if(!sll_append(m->data.servuse.singlePipeClients,t))
 					return ERR_NOT_ENOUGH_MEM;
 				*child = m;
 				return 0;
@@ -447,7 +450,7 @@ s32 vfsn_createServiceUse(tPid pid,sVFSNode *n,sVFSNode **child) {
 			return ERR_NOT_ENOUGH_MEM;
 
 		/* create usage-node */
-		itoa(name,pid);
+		itoa(name,tid);
 
 		/* check duplicate usage */
 		m = NODE_FIRST_CHILD(n);
@@ -462,7 +465,7 @@ s32 vfsn_createServiceUse(tPid pid,sVFSNode *n,sVFSNode **child) {
 	}
 
 	/* ok, create a service-usage-node */
-	m = vfsn_createServiceUseNode(pid,n,name,vfs_serviceUseReadHandler);
+	m = vfsn_createServiceUseNode(tid,n,name,vfs_serviceUseReadHandler);
 	if(m == NULL) {
 		if((n->mode & MODE_SERVICE_SINGLEPIPE) == 0)
 			kheap_free(name);
@@ -476,7 +479,7 @@ s32 vfsn_createServiceUse(tPid pid,sVFSNode *n,sVFSNode **child) {
 			vfsn_removeChild(m->parent,m);
 			return ERR_NOT_ENOUGH_MEM;
 		}
-		if(!sll_append(m->data.servuse.singlePipeClients,proc_getByPid(pid))) {
+		if(!sll_append(m->data.servuse.singlePipeClients,thread_getById(tid))) {
 			sll_destroy(m->data.servuse.singlePipeClients,false);
 			vfsn_removeChild(m->parent,m);
 			return ERR_NOT_ENOUGH_MEM;
@@ -491,7 +494,7 @@ static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child) {
 	char *name;
 	sVFSNode *m;
 	u32 len;
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 
 	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
 	/* we want to have to form <pid>.<x>, therefore two ints and a '.' */
@@ -500,13 +503,13 @@ static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child) {
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* create usage-node */
-	itoa(name,p->pid);
+	itoa(name,t->tid);
 	len = strlen(name);
 	*(name + len) = '.';
 	itoa(name + len + 1,nextPipeId++);
 
 	/* ok, create a pipe-node */
-	m = vfsn_createPipeNode(p->pid,n,name);
+	m = vfsn_createPipeNode(t->tid,n,name);
 	if(m == NULL) {
 		kheap_free(name);
 		return ERR_NOT_ENOUGH_MEM;
@@ -516,12 +519,12 @@ static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child) {
 	return 0;
 }
 
-static sVFSNode *vfsn_createPipeNode(tPid pid,sVFSNode *parent,char *name) {
+static sVFSNode *vfsn_createPipeNode(tTid tid,sVFSNode *parent,char *name) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
-	node->owner = pid;
+	node->owner = tid;
 	node->mode = MODE_TYPE_PIPE | MODE_OWNER_READ | MODE_OWNER_WRITE |
 		MODE_OTHER_READ | MODE_OTHER_WRITE;
 	node->readHandler = vfs_defReadHandler;
@@ -567,7 +570,8 @@ static void vfsn_dbg_doPrintTree(u32 level,sVFSNode *parent) {
 			vid_printf("SinglePipeClients:\n");
 			sSLNode *node = sll_begin(n->data.servuse.singlePipeClients);
 			for(; node != NULL; node = node->next) {
-				vid_printf("\t pid=%d, cmd=%s\n",((sProc*)node->data)->pid,((sProc*)node->data)->command);
+				vid_printf("\t tid=%d, cmd=%s\n",((sThread*)node->data)->tid,
+						((sThread*)node->data)->proc->command);
 			}
 		}
 		/* don't recurse for "." and ".." */

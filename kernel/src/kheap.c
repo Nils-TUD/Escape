@@ -163,8 +163,8 @@ void *kheap_alloc(u32 size) {
 	u32* ebp = (u32*)getStackFrameStart();
 	u32 symaddr = *(ebp + 1) - 5;
 	sSymbol *sym = ksym_getSymbolAt(symaddr);
-	vid_printf("[A] p=%s a=%08x s=%d c=%s (%08x)\n",proc_getRunning()->command,area->address,area->size,
-			sym->funcName,symaddr);
+	vid_printf("[A] p=%s a=%08x s=%d c=%s\n",proc_getRunning()->command,area->address,area->size,
+			sym->funcName);
 #endif
 
 	/* insert in occupied-map */
@@ -238,8 +238,8 @@ void kheap_free(void *addr) {
 	u32* ebp = (u32*)getStackFrameStart();
 	u32 symaddr = *(ebp + 1) - 5;
 	sSymbol *sym = ksym_getSymbolAt(symaddr);
-	vid_printf("[F] p=%s a=%08x s=%d c=%s (%08x)\n",
-			proc_getRunning()->command,addr,area->size,sym->funcName,symaddr);
+	vid_printf("[F] p=%s a=%08x s=%d c=%s\n",
+			proc_getRunning()->command,addr,area->size,sym->funcName);
 #endif
 
 	/* see what we have to merge */
@@ -437,12 +437,12 @@ void kheap_dbg_print(void) {
 	u32 i;
 
 	vid_printf("Used=%d, free=%d, pages=%d\n",kheap_getUsedMem(),kheap_getFreeMem(),pages);
-	/*vid_printf("UsableList:\n");
+	vid_printf("UsableList:\n");
 	area = usableList;
 	while(area != NULL) {
 		vid_printf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
 		area = area->next;
-	}*/
+	}
 
 	/*vid_printf("FreeList:\n");
 	area = freeList;
@@ -451,7 +451,7 @@ void kheap_dbg_print(void) {
 		area = area->next;
 	}*/
 
-	/*vid_printf("OccupiedMap:\n");
+	vid_printf("OccupiedMap:\n");
 	for(i = 0; i < OCC_MAP_SIZE; i++) {
 		area = occupiedMap[i];
 		if(area != NULL) {
@@ -461,7 +461,7 @@ void kheap_dbg_print(void) {
 				area = area->next;
 			}
 		}
-	}*/
+	}
 }
 
 #endif

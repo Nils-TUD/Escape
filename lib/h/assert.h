@@ -46,8 +46,8 @@
 
 #else
 
-#	define assert(cond)
-#	define vassert(cond,errorMsg,...)
+#	define assert(cond) (void)(cond)
+#	define vassert(cond,errorMsg,...) (void)(cond)
 
 #endif
 

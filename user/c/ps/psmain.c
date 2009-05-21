@@ -168,10 +168,10 @@ static char *ps_readProc(tFD fd,sProcess *p) {
 	u16 state;
 	sscanf(
 		buf,
-		"%*s%hu" "%*s%hu" "%*s%s" "%*s%hu" "%*s%u" "%*s%u" "%*s%u" "%*s%8x%x" "%*s%8x%8x",
-		&p->pid,&p->parentPid,&p->command,&state,&p->textPages,&p->dataPages,&p->stackPages,
+		"%*s%hu" "%*s%hu" "%*s%s" /*"%*s%hu"*/ "%*s%u" "%*s%u" "%*s%u" /*"%*s%8x%x" "%*s%8x%8x"*/,
+		&p->pid,&p->parentPid,&p->command,/*&state,*/&p->textPages,&p->dataPages,&p->stackPages/*,
 		(u32*)&p->ucycleCount + 1,(u32*)&p->ucycleCount,
-		(u32*)&p->kcycleCount + 1,(u32*)&p->kcycleCount
+		(u32*)&p->kcycleCount + 1,(u32*)&p->kcycleCount*/
 	);
 	p->state = state;
 

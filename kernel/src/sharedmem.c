@@ -71,17 +71,22 @@ s32 shm_create(char *name,u32 pageCount) {
 	/* create list */
 	if(shareList == NULL) {
 		shareList = sll_create();
-		if(shareList == NULL)
+		if(shareList == NULL) {
+			proc_changeSize(-pageCount,CHG_DATA);
 			return ERR_NOT_ENOUGH_MEM;
+		}
 	}
 
 	/* create entry */
 	mem = (sSharedMem*)kheap_alloc(sizeof(sSharedMem));
-	if(mem == NULL)
+	if(mem == NULL) {
+		proc_changeSize(-pageCount,CHG_DATA);
 		return ERR_NOT_ENOUGH_MEM;
+	}
 	mem->member = sll_create();
 	if(mem->member == NULL) {
 		kheap_free(mem);
+		proc_changeSize(-pageCount,CHG_DATA);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	mem->owner = p;
@@ -91,6 +96,7 @@ s32 shm_create(char *name,u32 pageCount) {
 	if(!sll_append(shareList,mem)) {
 		sll_destroy(mem->member,false);
 		kheap_free(mem);
+		proc_changeSize(-pageCount,CHG_DATA);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	return startPage;

@@ -117,6 +117,12 @@ static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc);
  */
 static void paging_remFromCow(sProc *p,u32 frameNumber);
 
+#if DEBUGGING
+static void paging_dbg_printPageDir(u32 mappingArea,u32 pageDirArea,u8 parts);
+static void paging_dbg_printPageTable(u32 mappingArea,u32 no,sPDEntry *pde);
+static void paging_dbg_printPage(sPTEntry *page);
+#endif
+
 /* the page-directory for process 0 */
 sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] __attribute__ ((aligned (PAGE_SIZE)));
 /* the page-table for process 0 */
@@ -182,8 +188,9 @@ void paging_mapHigherHalf(void) {
 	sPDEntry *pde;
 	/* insert all page-tables for 0xC0400000 .. 0xFF3FFFFF into the page dir */
 	addr = KERNEL_AREA_V_ADDR + (PAGE_SIZE * PT_ENTRY_COUNT);
+	end = KERNEL_STACK;
 	/*end = TMPMAP_PTS_START;*/
-	end = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;
+	/*end = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;*/
 	pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(addr));
 	while(addr < end) {
 		/* get frame and insert into page-dir */
@@ -323,7 +330,7 @@ u32 paging_countFramesForMap(u32 virtual,u32 count) {
 }
 
 void paging_mapForeignPages(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags) {
-	vassert(p != NULL && p->state != ST_UNUSED,"Invalid process %x\n",p);
+	vassert(p != NULL && p->pid != INVALID_PID,"Invalid process %x\n",p);
 
 	paging_mapForeignPageDir(p);
 	/* now copy pages */
@@ -333,7 +340,7 @@ void paging_mapForeignPages(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags)
 }
 
 void paging_unmapForeignPages(sProc *p,u32 addr,u32 count) {
-	vassert(p != NULL && p->state != ST_UNUSED,"Invalid process %x\n",p);
+	vassert(p != NULL && p->pid != INVALID_PID,"Invalid process %x\n",p);
 
 	paging_mapForeignPageDir(p);
 	paging_unmapIntern(p,TMPMAP_PTS_START,addr,count,true,true);
@@ -469,6 +476,7 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	/* clear user-space page-tables */
 	memset(npd,0,ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) * sizeof(sPDEntry));
 	/* copy kernel-space page-tables*/
+	/* TODO we don't need to copy the last few pts */
 	memcpy(npd + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR),
 			pd + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR),
 			(PT_ENTRY_COUNT - ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR)) * sizeof(sPDEntry));
@@ -478,6 +486,23 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 
 	/* map the page-tables of the new process so that we can access them */
 	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
+
+	/* get new page-table for the kernel-stack-area and the stack itself */
+	DBG_PGCLONEPD(vid_printf("Create kernel-stack\n"));
+	tpd = npd + ADDR_TO_PDINDEX(KERNEL_STACK);
+	tpd->ptFrameNo = mm_allocateFrame(MM_DEF);
+	tpd->present = true;
+	tpd->writable = true;
+	/* clear the page-table */
+	memset((void*)ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,
+			KERNEL_STACK & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),0,PAGE_SIZE);
+
+	/* create stack-page */
+	pt = (sPTEntry*)(TMPMAP_PTS_START + (KERNEL_STACK / PT_ENTRY_COUNT));
+	pt->frameNumber = mm_allocateFrame(MM_DEF);
+	*stackFrame = pt->frameNumber;
+	pt->present = true;
+	pt->writable = true;
 
 	/* map pages for text to the frames of the old process */
 	DBG_PGCLONEPD(vid_printf("Mapping %d text-pages (shared)\n",tPages));
@@ -494,23 +519,6 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 
 	/* we're cloning just the current thread */
 	sThread *curThread = thread_getRunning();
-
-	/* get new page-table for the kernel-stack-area and the stack itself */
-	DBG_PGCLONEPD(vid_printf("Create kernel-stack and copy old one into it\n"));
-	tpd = npd + ADDR_TO_PDINDEX(KERNEL_STACK);
-	tpd->ptFrameNo = mm_allocateFrame(MM_DEF);
-	tpd->present = true;
-	tpd->writable = true;
-	/* clear the page-table */
-	memset((void*)ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,
-			KERNEL_STACK & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),0,PAGE_SIZE);
-
-	/* create stack-page */
-	pt = (sPTEntry*)(TMPMAP_PTS_START + (KERNEL_STACK / PT_ENTRY_COUNT));
-	pt->frameNumber = mm_allocateFrame(MM_DEF);
-	*stackFrame = pt->frameNumber;
-	pt->present = true;
-	pt->writable = true;
 
 	/* create user-stack */
 	u32 tsPages = curThread->ustackPages;
@@ -562,7 +570,7 @@ void paging_destroyPageDir(sProc *p) {
 	/* we don't know which stacks are used and which not. therefore we have to search for the
 	 * first and last stack. */
 	u32 ustackBegin = KERNEL_AREA_V_ADDR;
-	u32 ustackEnd = 0;
+	u32 ustackEnd = KERNEL_AREA_V_ADDR;
 	sSLNode *tn;
 	for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
 		sThread *t = (sThread*)tn->data;
@@ -574,16 +582,16 @@ void paging_destroyPageDir(sProc *p) {
 		/* free kernel-stack */
 		mm_freeFrame(t->kstackFrame,MM_DEF);
 
-		/* determine start- and end of the stack for freeing page-tables */
-		if(t->ustackBegin < ustackBegin)
-			ustackBegin = t->ustackBegin;
-		if(tsEnd > ustackEnd)
+		/* determine end of the stack for freeing page-tables */
+		/* the start is always the same because we are destroying the page-tables just if
+		 * the process is destroyed */
+		if(tsEnd < ustackEnd)
 			ustackEnd = tsEnd;
 	}
 
 	/* free page-tables for user- and kernel-stack */
 	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,
-			ADDR_TO_PDINDEX(ustackEnd),PAGES_TO_PTS(ustackBegin - ustackEnd));
+			ADDR_TO_PDINDEX(ustackEnd),PAGES_TO_PTS((ustackBegin - ustackEnd) / PAGE_SIZE));
 	paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,ADDR_TO_PDINDEX(KERNEL_STACK),1);
 
 	/* unmap stuff & free page-dir */
@@ -819,10 +827,6 @@ static void paging_remFromCow(sProc *p,u32 frameNumber) {
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
-
-static void paging_dbg_printPageDir(u32 mappingArea,u32 pageDirArea,u8 parts);
-static void paging_dbg_printPageTable(u32 mappingArea,u32 no,sPDEntry *pde);
-static void paging_dbg_printPage(sPTEntry *page);
 
 void paging_dbg_printCOW(void) {
 	sSLNode *n;

@@ -458,15 +458,16 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 
 void intrpt_handler(sIntrptStackFrame stack) {
 	u64 cycles = cpu_rdtsc();
+	sThread *t = thread_getRunning();
 	sProc *p = proc_getRunning();
 	curIntrptStack = &stack;
 
 	/* increase user-space cycles */
-	if(p->ucycleStart > 0)
-		p->ucycleCount += cycles - p->ucycleStart;
+	if(t->ucycleStart > 0)
+		t->ucycleCount += cycles - t->ucycleStart;
 	/* kernel-mode starts here */
-	p->kcycleStart = cycles;
-	p->ueip = stack.eip;
+	t->kcycleStart = cycles;
+	t->ueip = stack.eip;
 
 	/* add signal */
 	switch(stack.intrptNo) {
@@ -512,8 +513,8 @@ void intrpt_handler(sIntrptStackFrame stack) {
 			/* #PF */
 			if(stack.intrptNo == EX_PAGE_FAULT) {
 				u32 addr = cpu_getCR2();
-				vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
-						stack.eip,proc_getRunning()->pid);
+				/*vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
+						stack.eip,proc_getRunning()->pid);*/
 
 				/* first check if the thread wants to write to COW-page */
 				if(!paging_handlePageFault(addr)) {
@@ -529,7 +530,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 			/* #NM */
 			if(stack.intrptNo == EX_CO_PROC_NA) {
-				fpu_handleCoProcNA(&p->fpuState);
+				fpu_handleCoProcNA(&t->fpuState);
 				break;
 			}
 
@@ -549,9 +550,9 @@ void intrpt_handler(sIntrptStackFrame stack) {
 			/* #GPF */
 			if(stack.intrptNo == EX_GEN_PROT_FAULT) {
 				/* io-map not loaded yet? */
-				if(p->ioMap != NULL && !tss_ioMapPresent()) {
+				if(t->proc->ioMap != NULL && !tss_ioMapPresent()) {
 					/* load it and give the process another try */
-					tss_setIOMap(p->ioMap);
+					tss_setIOMap(t->proc->ioMap);
 					exCount = 0;
 					break;
 				}
@@ -577,12 +578,12 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		intrpt_eoi(stack.intrptNo);
 
 	/* kernel-mode ends */
-	p = proc_getRunning();
+	t = thread_getRunning();
 	cycles = cpu_rdtsc();
-	if(p->kcycleStart > 0)
-		p->kcycleCount += cycles - p->kcycleStart;
+	if(t->kcycleStart > 0)
+		t->kcycleCount += cycles - t->kcycleStart;
 	/* user-mode starts here */
-	p->ucycleStart = cycles;
+	t->ucycleStart = cycles;
 }
 
 static void intrpt_initPic(void) {

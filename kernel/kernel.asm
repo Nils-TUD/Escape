@@ -303,9 +303,9 @@ thread_resume:
 	mov		edi,[eax + STATE_EDI]
 	mov		esi,[eax + STATE_ESI]
 	mov		ebp,[eax + STATE_EBP]
+	mov		esp,[eax + STATE_ESP]
 	push	DWORD [eax + STATE_EFLAGS]
 	popfd																; load eflags
-	mov		esp,[eax + STATE_ESP]
 
 	mov		eax,1													; return 1
 	leave

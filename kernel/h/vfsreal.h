@@ -41,48 +41,48 @@ void vfsr_setGotMsg(void);
 void vfsr_checkForMsgs(void);
 
 /**
- * Opens the given path with given flags for given process
+ * Opens the given path with given flags for given thread
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param flags read / write
  * @param path the path
  * @return 0 on success or the error-code
  */
-s32 vfsr_openFile(tPid pid,u8 flags,const char *path);
+s32 vfsr_openFile(tTid tid,u8 flags,const char *path);
 
 /**
  * Retrieves information about the given (real!) path
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param path the path in the real filesystem
  * @param info should be filled
  * @return 0 on success
  */
-s32 vfsr_getFileInfo(tPid pid,const char *path,sFileInfo *info);
+s32 vfsr_getFileInfo(tTid tid,const char *path,sFileInfo *info);
 
 /**
  * Reads from the given inode at <offset> <count> bytes into the given buffer
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param inodeNo the inode
  * @param buffer the buffer to fill
  * @param offset the offset in the data
  * @param count the number of bytes to copy
  * @return the number of read bytes
  */
-s32 vfsr_readFile(tPid pid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count);
+s32 vfsr_readFile(tTid tid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count);
 
 /**
  * Writes to the given inode at <offset> <count> bytes from the given buffer
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param inodeNo the inode
  * @param buffer the buffer
  * @param offset the offset in the inode
  * @param count the number of bytes to copy
  * @return the number of written bytes
  */
-s32 vfsr_writeFile(tPid pid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count);
+s32 vfsr_writeFile(tTid tid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count);
 
 /**
  * Closes the given inode

@@ -161,6 +161,7 @@ static void vid_setCursor(u8 row,u8 col) {
 }
 
 static void vid_setScreen(u16 startPos,char *buffer,u32 length) {
+	/* TODO why not use memcpy? */
 	char *ptr = (char*)videoData + startPos * 2;
 	while(length-- > 0)
 		*ptr++ = *buffer++;

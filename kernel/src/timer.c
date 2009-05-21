@@ -90,6 +90,21 @@ s32 timer_sleepFor(tTid tid,u32 msecs) {
 	return 0;
 }
 
+void timer_removeThread(tTid tid) {
+	sSLNode *n,*p;
+	sTimerListener *l;
+	p = NULL;
+	for(n = sll_begin(listener); n != NULL; p = n, n = n->next) {
+		l = (sTimerListener*)n->data;
+		if(l->tid == tid) {
+			sll_removeNode(listener,n,p);
+			kheap_free(l);
+			/* it's not possible to be in the list twice */
+			break;
+		}
+	}
+}
+
 void timer_intrpt(void) {
 	bool foundThread = false;
 	sSLNode *n,*p,*tn;

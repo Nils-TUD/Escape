@@ -72,10 +72,12 @@ bool sig_canSend(tSig signal) {
 
 s32 sig_setHandler(tTid tid,tSig signal,fSigHandler func) {
 	sHandler *h;
+	bool handlerExisted = true;
 	vassert(sig_canHandle(signal),"Unable to handle signal %d");
 
 	h = sig_get(tid,signal);
 	if(h == NULL) {
+		handlerExisted = false;
 		/* list not existing yet? */
 		if(handler[signal - 1] == NULL) {
 			handler[signal - 1] = sll_create();
@@ -97,7 +99,8 @@ s32 sig_setHandler(tTid tid,tSig signal,fSigHandler func) {
 	h->active = 0;
 
 	if(!sll_append(handler[signal - 1],h)) {
-		kheap_free(h);
+		if(!handlerExisted)
+			kheap_free(h);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -189,24 +192,27 @@ bool sig_hasSignal(tSig *sig,tTid *tid,u32 *data) {
 }
 
 bool sig_addSignalFor(tPid pid,tSig signal,u32 data) {
-	bool res = false;
+	bool sent = false,res = false;
 	sSLList *list = handler[signal - 1];
 	sHandler *h;
 	sThread *t;
 	sSLNode *n;
 	vassert(signal < SIG_COUNT,"Unable to handle signal %d");
 
-	if(list == NULL)
-		return false;
-	for(n = sll_begin(list); n != NULL; n = n->next) {
-		h = (sHandler*)n->data;
-		t = thread_getById(h->tid);
-		if(t->proc->pid == pid) {
-			sig_addSig(h,h->tid,signal,data);
-			if(!h->active && t->signal == 0)
-				res = true;
+	if(list != NULL) {
+		for(n = sll_begin(list); n != NULL; n = n->next) {
+			h = (sHandler*)n->data;
+			t = thread_getById(h->tid);
+			if(t->proc->pid == pid) {
+				sig_addSig(h,pid,signal,data);
+				sent = true;
+				if(!h->active && t->signal == 0)
+					res = true;
+			}
 		}
 	}
+	if(!sent)
+		sig_addSig(NULL,pid,signal,data);
 	return res;
 }
 
@@ -222,7 +228,7 @@ tTid sig_addSignal(tSig signal,u32 data) {
 	if(list != NULL) {
 		for(n = sll_begin(list); n != NULL; n = n->next) {
 			h = (sHandler*)n->data;
-			sig_addSig(h,INVALID_TID,signal,data);
+			sig_addSig(h,INVALID_PID,signal,data);
 			/* remember first thread for direct notification */
 			if(res == INVALID_TID && !h->active && thread_getById(h->tid)->signal == 0)
 				res = h->tid;

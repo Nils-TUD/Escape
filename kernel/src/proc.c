@@ -50,39 +50,25 @@ static sProc procs[PROC_COUNT];
 static sSLList* deadProcs = NULL;
 
 void proc_init(void) {
-	tFD i;
 	/* init the first process */
-	if(!vfs_createProcess(0,&vfsinfo_procReadHandler))
-		util_panic("Not enough mem for init process");
+	vassert(vfs_createProcess(0,&vfsinfo_procReadHandler),"Not enough mem for init process");
+
 	sProc *p = procs + 0;
-	p->state = ST_RUNNING;
-	p->events = EV_NOEVENT;
-	p->signal = 0;
 	p->pid = 0;
 	p->parentPid = 0;
 	/* the first process has no text, data and stack */
 	p->textPages = 0;
 	p->dataPages = 0;
 	p->stackPages = 0;
-	p->ucycleCount = 0;
-	p->ucycleStart = 0;
-	p->kcycleCount = 0;
-	p->kcycleStart = 0;
-	p->fpuState = NULL;
 	p->text = NULL;
 	/* note that this assumes that the page-dir is initialized */
 	p->physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
-	/* init fds */
-	for(i = 0; i < MAX_FD_COUNT; i++)
-		p->fileDescs[i] = -1;
 	memcpy(p->command,"initloader",11);
 
 	/* create first thread */
 	p->threads = sll_create();
-	if(p->threads == NULL)
-		util_panic("Unable to create initial thread-list");
-	if(!sll_append(p->threads,thread_init(p)))
-		util_panic("Unable to append the initial thread");
+	vassert(p->threads != NULL,"Unable to create initial thread-list");
+	vassert(sll_append(p->threads,thread_init(p)),"Unable to append the initial thread");
 
 	paging_exchangePDir(p->physPDirAddr);
 	/* setup kernel-stack for us */
@@ -92,19 +78,27 @@ void proc_init(void) {
 	/* set kernel-stack for first thread */
 	sThread *t = (sThread*)sll_get(p->threads,0);
 	t->kstackFrame = stackFrame;
+
+	/* mark all other processes unused */
+	tPid pid;
+	for(pid = 1; pid < PROC_COUNT; pid++)
+		procs[pid].pid = INVALID_PID;
 }
 
 tPid proc_getFreePid(void) {
 	tPid pid;
 	/* we can skip our initial process */
 	for(pid = 1; pid < PROC_COUNT; pid++) {
-		if(procs[pid].state == ST_UNUSED)
+		if(procs[pid].pid == INVALID_PID)
 			return pid;
 	}
 	return INVALID_PID;
 }
 
 sProc *proc_getRunning(void) {
+	u32 x = 0;
+	if(&x >= KERNEL_STACK && &x < KERNEL_STACK + 0x800)
+		util_printStackTrace(util_getKernelStackTrace());
 	/* TODO maybe we should store the current process during context-switch, too? */
 	sThread *t = thread_getRunning();
 	if(t)
@@ -118,52 +112,18 @@ sProc *proc_getByPid(tPid pid) {
 }
 
 bool proc_exists(tPid pid) {
-	return pid < PROC_COUNT && procs[pid].state != ST_UNUSED;
+	return pid < PROC_COUNT && procs[pid].pid != INVALID_PID;
 }
 
 bool proc_hasChild(tPid pid) {
 	tPid i;
 	sProc *p = procs;
 	for(i = 0; i < PROC_COUNT; i++) {
-		if(p->state != ST_UNUSED && p->parentPid == pid)
+		if(p->pid != INVALID_PID && p->parentPid == pid)
 			return true;
 		p++;
 	}
 	return false;
-}
-
-void proc_switch(void) {
-	/*proc_switchTo(sched_perform()->pid);*/
-}
-
-void proc_switchTo(tPid pid) {
-#if 0
-	sProc *p = procs + pi;
-
-	/* finish kernel-time here since we're switching the process */
-	if(p->kcycleStart > 0)
-		p->kcycleCount += cpu_rdtsc() - p->kcycleStart;
-
-	if(pid != pi && !thread_save(&p->save)) {
-		/* mark old process ready, if it should not be blocked, killed or something */
-		if(p->state == ST_RUNNING)
-			sched_setReady(p);
-
-		pi = pid;
-		p = procs + pi;
-		sched_setRunning(p);
-		/* remove the io-map. it will be set as soon as the process accesses an io-port
-		 * (we'll get an exception) */
-		tss_removeIOMap();
-		/* lock the FPU so that we can save the FPU-state for the previous process as soon
-		 * as this one wants to use the FPU */
-		fpu_lockFPU();
-		thread_resume(p->physPDirAddr,&p->save);
-	}
-
-	/* now start kernel-time again */
-	proc_getRunning()->kcycleStart = cpu_rdtsc();
-#endif
 }
 
 void proc_cleanup(void) {
@@ -177,127 +137,6 @@ void proc_cleanup(void) {
 	}
 }
 
-void proc_wait(tPid pid,u8 events) {
-	sProc *p = procs + pid;
-	p->events = events;
-	sched_setBlocked(p);
-}
-
-void proc_wakeupAll(u8 event) {
-	sched_unblockAll(event);
-}
-
-void proc_wakeup(tPid pid,u8 event) {
-	sProc *p = procs + pid;
-	if(p->events & event) {
-		/* TODO somehow it is by far slower to use setReadyQuick() here. I can't really
-		 * explain this behaviour :/ */
-		/*sched_setReadyQuick(p);*/
-		sched_setReady(p);
-		p->events = EV_NOEVENT;
-	}
-}
-
-tFileNo proc_fdToFile(tFD fd) {
-	tFileNo fileNo;
-	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
-
-	sProc *cur = proc_getRunning();
-	fileNo = cur->fileDescs[fd];
-	if(fileNo == -1)
-		return ERR_INVALID_FD;
-
-	return fileNo;
-}
-
-tFD proc_getFreeFd(void) {
-	tFD i;
-	sProc *cur = proc_getRunning();
-	tFileNo *fds = cur->fileDescs;
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(fds[i] == -1)
-			return i;
-	}
-
-	return ERR_MAX_PROC_FDS;
-}
-
-s32 proc_assocFd(tFD fd,tFileNo fileNo) {
-	sProc *cur = proc_getRunning();
-	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
-
-	if(cur->fileDescs[fd] != -1)
-		return ERR_INVALID_FD;
-
-	cur->fileDescs[fd] = fileNo;
-	return 0;
-}
-
-tFD proc_dupFd(tFD fd) {
-	tFileNo f;
-	s32 err,nfd;
-	sProc *cur = proc_getRunning();
-	/* check fd */
-	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
-
-	f = cur->fileDescs[fd];
-	if(f == -1)
-		return ERR_INVALID_FD;
-
-	nfd = proc_getFreeFd();
-	if(nfd < 0)
-		return nfd;
-
-	/* increase references */
-	if((err = vfs_incRefs(f)) < 0)
-		return err;
-
-	cur->fileDescs[nfd] = f;
-	return nfd;
-}
-
-s32 proc_redirFd(tFD src,tFD dst) {
-	tFileNo fSrc,fDst;
-	s32 err;
-	sProc *cur = proc_getRunning();
-
-	/* check fds */
-	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
-
-	fSrc = cur->fileDescs[src];
-	fDst = cur->fileDescs[dst];
-	if(fSrc == -1 || fDst == -1)
-		return ERR_INVALID_FD;
-
-	if((err = vfs_incRefs(fDst)) < 0)
-		return err;
-
-	/* we have to close the source because no one else will do it anymore... */
-	vfs_closeFile(fSrc);
-
-	/* now redirect src to dst */
-	cur->fileDescs[src] = fDst;
-	return 0;
-}
-
-tFileNo proc_unassocFD(tFD fd) {
-	tFileNo fileNo;
-	sProc *cur = proc_getRunning();
-	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
-
-	fileNo = cur->fileDescs[fd];
-	if(fileNo == -1)
-		return ERR_INVALID_FD;
-
-	cur->fileDescs[fd] = -1;
-	return fileNo;
-}
-
 s32 proc_clone(tPid newPid) {
 	u32 i,pdirFrame,dummy,stackFrame;
 	sProc *p;
@@ -305,7 +144,7 @@ s32 proc_clone(tPid newPid) {
 	sThread *curThread = thread_getRunning();
 
 	vassert(newPid < PROC_COUNT,"newPid >= PROC_COUNT");
-	vassert((procs + newPid)->state == ST_UNUSED,"The process slot 0x%x is already in use!",
+	vassert((procs + newPid)->pid == INVALID_PID,"The process slot 0x%x is already in use!",
 			procs + newPid);
 
 	/* first create the VFS node (we may not have enough mem) */
@@ -313,6 +152,8 @@ s32 proc_clone(tPid newPid) {
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* clone page-dir */
+	/* TODO REMOVE!! */
+	(procs + newPid)->pid = newPid;
 	if((pdirFrame = paging_clonePageDir(&stackFrame,procs + newPid)) == 0) {
 		vfs_removeProcess(newPid);
 		return ERR_NOT_ENOUGH_MEM;
@@ -320,21 +161,12 @@ s32 proc_clone(tPid newPid) {
 
 	/* set page-dir and pages for segments */
 	p = procs + newPid;
-	/* TODO remove me! */
-	p->state = ST_READY;
-	p->events = EV_NOEVENT;
 	p->pid = newPid;
 	p->parentPid = cur->pid;
 	p->textPages = cur->textPages;
 	p->dataPages = cur->dataPages;
 	p->stackPages = curThread->ustackPages;
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
-	p->ucycleCount = 0;
-	p->ucycleStart = 0;
-	p->kcycleCount = 0;
-	p->kcycleStart = 0;
-	p->fpuState = NULL;
-	p->signal = 0;
 	/* give the process the same name (maybe changed by exec) */
 	strcpy(p->command,cur->command);
 
@@ -379,15 +211,8 @@ s32 proc_clone(tPid newPid) {
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
-	/* inherit file-descriptors */
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		p->fileDescs[i] = cur->fileDescs[i];
-		if(p->fileDescs[i] != -1)
-			p->fileDescs[i] = vfs_inheritFileNo(newPid,p->fileDescs[i]);
-	}
-
 	res = proc_finishClone(nt,stackFrame);
-	if(res == 0)
+	if(res == 1)
 		return 1;
 	/* parent */
 	return 0;
@@ -475,7 +300,7 @@ void proc_destroy(sProc *p) {
 	sProc *cp;
 	sProc *cur = proc_getRunning();
 	/* don't delete initial or unused processes */
-	vassert(p->pid != 0 && p->state != ST_UNUSED,
+	vassert(p->pid != 0 && p->pid != INVALID_PID,
 			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
 
 	/* we can't destroy ourself so we mark us as dead and do this later */
@@ -512,19 +337,11 @@ void proc_destroy(sProc *p) {
 	}
 	sll_destroy(p->threads,false);
 
-	/* release file-descriptors */
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(p->fileDescs[i] != -1) {
-			vfs_closeFile(p->fileDescs[i]);
-			p->fileDescs[i] = -1;
-		}
-	}
-
 	/* give childs the ppid 0 */
 	cp = procs;
 	for(i = 0; i < PROC_COUNT; i++) {
 		/* TODO use parent id of parent? */
-		if(cp->state != ST_UNUSED && cp->parentPid == p->pid)
+		if(cp->pid != INVALID_PID && cp->parentPid == p->pid)
 			cp->parentPid = 0;
 		cp++;
 	}
@@ -542,13 +359,14 @@ void proc_destroy(sProc *p) {
 	p->textPages = 0;
 	p->dataPages = 0;
 	p->stackPages = 0;
-	p->state = ST_UNUSED;
-	p->pid = 0;
+	p->pid = INVALID_PID;
 	p->physPDirAddr = 0;
 
-	/* notify parent, if waiting */
-	/* TODO which thread to notify?
-	proc_wakeup(p->parentPid,EV_CHILD_DIED);*/
+	/* notify all parent-threads; TODO ok? */
+	for(tn = sll_begin(proc_getByPid(p->parentPid)->threads); tn != NULL; tn = tn->next) {
+		sThread *t = (sThread*)tn->data;
+		thread_wakeup(t->tid,EV_CHILD_DIED);
+	}
 }
 
 void proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize) {
@@ -718,56 +536,20 @@ bool proc_changeSize(s32 change,eChgArea area) {
 void proc_dbg_printAll(void) {
 	u32 i;
 	for(i = 0; i < PROC_COUNT; i++) {
-		if(procs[i].state != ST_UNUSED)
+		if(procs[i].pid != INVALID_PID)
 			proc_dbg_print(procs + i);
 	}
 }
 
 void proc_dbg_print(sProc *p) {
-	const char *states[] = {"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE"};
 	u32 i;
 	u32 *ptr;
-	vid_printf("process @ 0x%08x:\n",p);
-	vid_printf("\tpid = %d\n",p->pid);
-	vid_printf("\tparentPid = %d\n",p->parentPid);
-	vid_printf("\tcommand = %s\n",p->command);
-	vid_printf("\tstate = %s\n",states[p->state]);
-	vid_printf("\tphysPDirAddr = 0x%08x\n",p->physPDirAddr);
-	vid_printf("\ttextPages = %d\n",p->textPages);
-	vid_printf("\tdataPages = %d\n",p->dataPages);
-	vid_printf("\tstackPages = %d\n",p->stackPages);
-	ptr = (u32*)&p->ucycleCount;
-	vid_printf("\tucycleCount = 0x%08x%08x\n",*(ptr + 1),*ptr);
-	ptr = (u32*)&p->kcycleCount;
-	vid_printf("\tkcycleCount = 0x%08x%08x\n",*(ptr + 1),*ptr);
-	vid_printf("\tfileDescs:\n");
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(p->fileDescs[i] != -1) {
-			tVFSNodeNo no = vfs_getNodeNo(p->fileDescs[i]);
-			vid_printf("\t\t%d : %d",i,p->fileDescs[i]);
-			if(vfsn_isValidNodeNo(no)) {
-				sVFSNode *n = vfsn_getNode(no);
-				if(n && n->parent)
-					vid_printf(" (%s->%s)",n->parent->name,n->name);
-			}
-			vid_printf("\n");
-		}
-	}
-	proc_dbg_printState(&p->save);
-	vid_printf("\tThreads:\n");
+	vid_printf("proc %d [ppid=%d, cmd=%s, pdir=%x, text=%d, data=%d, stack=%d]\n",p->pid,
+			p->parentPid,p->command,p->physPDirAddr,p->textPages,p->dataPages,p->stackPages);
 	sSLNode *n;
 	for(n = sll_begin(p->threads); n != NULL; n = n->next)
-		thread_dbg_printShort((sThread*)n->data);
+		thread_dbg_print((sThread*)n->data);
 	vid_printf("\n");
-}
-
-void proc_dbg_printState(sProcSave *state) {
-	vid_printf("\tprocessState @ 0x%08x:\n",state);
-	vid_printf("\t\tesp = 0x%08x\n",state->esp);
-	vid_printf("\t\tedi = 0x%08x\n",state->edi);
-	vid_printf("\t\tesi = 0x%08x\n",state->esi);
-	vid_printf("\t\tebp = 0x%08x\n",state->ebp);
-	vid_printf("\t\teflags = 0x%08x\n",state->eflags);
 }
 
 #endif

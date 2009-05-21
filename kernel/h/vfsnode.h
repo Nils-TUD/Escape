@@ -144,37 +144,37 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name);
 /**
  * Creates an info-node
  *
- * @param pid the owner
+ * @param tid the owner
  * @param parent the parent-node
  * @param prev the previous node
  * @param name the node-name
  * @param handler the read-handler
  * @return the node
  */
-sVFSNode *vfsn_createInfo(tPid pid,sVFSNode *parent,char *name,fRead handler);
+sVFSNode *vfsn_createInfo(tTid tid,sVFSNode *parent,char *name,fRead handler);
 
 /**
  * Creates a service-node
  *
- * @param pid the process-id to use
+ * @param tid the thread-id to use
  * @param parent the parent-node
  * @param prev the previous node
  * @param name the node-name
  * @param type single-pipe or multi-pipe
  * @return the node
  */
-sVFSNode *vfsn_createServiceNode(tPid pid,sVFSNode *parent,char *name,u32 type);
+sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 type);
 
 /**
  * Creates a service-use-node
  *
- * @param pid the process-id to use
+ * @param tid the thread-id to use
  * @param parent the parent node
  * @param name the name
  * @param handler the read-handler
  * @return the node or NULL
  */
-sVFSNode *vfsn_createServiceUseNode(tPid pid,sVFSNode *parent,char *name,fRead handler);
+sVFSNode *vfsn_createServiceUseNode(tTid tid,sVFSNode *parent,char *name,fRead handler);
 
 /**
  * Appends the given node as last child to the parent
@@ -196,12 +196,12 @@ void vfsn_removeChild(sVFSNode *parent,sVFSNode *node);
  * Appends a service-usage-node to the given node and stores the pointer to the new node
  * at <child>.
  *
- * @param pid the process for which the usage should be created
+ * @param tid the thread for which the usage should be created
  * @param n the node to which the new node should be appended
  * @param child will contain the pointer to the new node, if successfull
  * @return the error-code if negative or 0 if successfull
  */
-s32 vfsn_createServiceUse(tPid pid,sVFSNode *n,sVFSNode **child);
+s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child);
 
 #if DEBUGGING
 

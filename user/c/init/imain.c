@@ -469,15 +469,19 @@ static char *getServices(void) {
 
 	/* create buffer */
 	buffer = (char*)malloc(stepSize);
-	if(buffer == NULL)
+	if(buffer == NULL) {
+		close(fd);
 		return NULL;
+	}
 
 	/* read file */
 	while((c = read(fd,buffer + pos,stepSize - 1)) > 0) {
 		bufSize += stepSize;
 		buffer = (char*)realloc(buffer,bufSize);
-		if(buffer == NULL)
+		if(buffer == NULL) {
+			close(fd);
 			return NULL;
+		}
 
 		pos += c;
 	}

@@ -46,7 +46,7 @@ enum {
 /* a node in our virtual file system */
 typedef struct sVFSNode sVFSNode;
 /* the function for read-requests on info-nodes */
-typedef s32 (*fRead)(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+typedef s32 (*fRead)(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 /* callback function for the default read-handler */
 typedef void (*fReadCallBack)(sVFSNode *node,void *buffer);
 
@@ -65,7 +65,7 @@ struct sVFSNode {
 	/* the handler that performs a read-operation on this node */
 	fRead readHandler;
 	/* the owner of this node: used for service-usages */
-	tPid owner;
+	tTid owner;
 	union {
 		/* for service-usages */
 		struct {
@@ -95,23 +95,23 @@ struct sVFSNode {
 void vfs_init(void);
 
 /**
- * Checks wether the process with given pid has the permission to do the given stuff with <nodeNo>.
+ * Checks wether the thread with given tid has the permission to do the given stuff with <nodeNo>.
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param nodeNo the node-number
  * @param flags specifies what you want to do (VFS_READ | VFS_WRITE)
- * @return 0 if the process has permission or the error-code
+ * @return 0 if the thread has permission or the error-code
  */
-s32 vfs_hasAccess(tPid pid,tVFSNodeNo nodeNo,u8 flags);
+s32 vfs_hasAccess(tTid tid,tVFSNodeNo nodeNo,u8 flags);
 
 /**
- * Inherits the given file for the current process
+ * Inherits the given file for the current thread
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param file the file
  * @return file the file to use (may be the same)
  */
-tFileNo vfs_inheritFileNo(tPid pid,tFileNo file);
+tFileNo vfs_inheritFileNo(tTid tid,tFileNo file);
 
 /**
  * Increases the references of the given file
@@ -132,133 +132,134 @@ tVFSNodeNo vfs_getNodeNo(tFileNo file);
 /**
  * Opens the file with given number and given flags. That means it walks through the global
  * file table and searches for a free entry or an entry for that file.
- * Note that multiple processes may read from the same file simultaneously but NOT write!
+ * Note that multiple threads may read from the same file simultaneously but NOT write!
  *
- * @param pid the process-id with which the file should be opened
+ * @param tid the thread-id with which the file should be opened
  * @param flags wether it is a virtual or real file and wether you want to read or write
  * @param nodeNo the node-number (in the virtual or real environment)
  * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FD)
  */
-tFileNo vfs_openFile(tPid pid,u8 flags,tVFSNodeNo nodeNo);
+tFileNo vfs_openFile(tTid tid,u8 flags,tVFSNodeNo nodeNo);
 
 /**
  * Opens a file for the kernel. Creates a node for it, if not already done
  *
- * @param pid the process-id with which the file should be opened
+ * @param tid the thread-id with which the file should be opened
  * @param nodeNo the service-node-number
  * @return the file-number or a negative error-code
  */
-tFileNo vfs_openFileForKernel(tPid pid,tVFSNodeNo nodeNo);
+tFileNo vfs_openFileForKernel(tTid tid,tVFSNodeNo nodeNo);
 
 /**
  * Checks wether we are at EOF in the given file
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param file the file
  * @return true if at EOF
  */
-bool vfs_eof(tPid pid,tFileNo file);
+bool vfs_eof(tTid tid,tFileNo file);
 
 /**
  * Sets the position for the given file
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param file the file
  * @param position the new position
  * @return 0 on success
  */
-s32 vfs_seek(tPid pid,tFileNo file,u32 position);
+s32 vfs_seek(tTid tid,tFileNo file,u32 position);
 
 /**
  * Reads max. count bytes from the given file into the given buffer and returns the number
  * of read bytes.
  *
- * @param pid will be used to check wether the service writes or a service-user
+ * @param tid will be used to check wether the service writes or a service-user
  * @param file the file
  * @param buffer the buffer to write to
  * @param count the max. number of bytes to read
  * @return the number of bytes read
  */
-s32 vfs_readFile(tPid pid,tFileNo file,u8 *buffer,u32 count);
+s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count);
 
 /**
  * Writes count bytes from the given buffer into the given file and returns the number of written
  * bytes.
  *
- * @param pid will be used to check wether the service writes or a service-user
+ * @param tid will be used to check wether the service writes or a service-user
  * @param file the file
  * @param buffer the buffer to read from
  * @param count the number of bytes to write
  * @return the number of bytes written
  */
-s32 vfs_writeFile(tPid pid,tFileNo file,u8 *buffer,u32 count);
+s32 vfs_writeFile(tTid tid,tFileNo file,u8 *buffer,u32 count);
 
 /**
  * Closes the given file. That means it calls proc_closeFile() and decrements the reference-count
  * in the global file table. If there are no references anymore it releases the slot.
  *
+ * @param tid the thread-id
  * @param file the file
  */
-void vfs_closeFile(tFileNo file);
+void vfs_closeFile(tTid tid,tFileNo file);
 
 /**
- * Creates a service-node for the given process and given name
+ * Creates a service-node for the given thread and given name
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param name the service-name
  * @param type single-pipe or multi-pipe
  * @return 0 if ok, negative if an error occurred
  */
-s32 vfs_createService(tPid pid,const char *name,u32 type);
+s32 vfs_createService(tTid tid,const char *name,u32 type);
 
 /**
- * Checks wether there is a message for the given process. That if the process is a service
- * and should serve a client or if the process has got a message from a service.
+ * Checks wether there is a message for the given thread. That if the thread is a service
+ * and should serve a client or if the thread has got a message from a service.
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param events the events to wait for
  * @return true if there is a message
  */
-bool vfs_msgAvailableFor(tPid pid,u8 events);
+bool vfs_msgAvailableFor(tTid tid,u8 events);
 
 /**
  * For services: Looks wether a client wants to be served and return the node-number
  *
- * @param pid the service-process-id
+ * @param tid the service-thread-id
  * @param vfsNodes an array of VFS-nodes to check for clients
  * @param count the size of <vfsNodes>
  * @return the error-code or the node-number of the client
  */
-s32 vfs_getClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count);
+s32 vfs_getClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count);
 
 /**
- * Opens a file for the client with given process-id. This works just for multipipe-services!
+ * Opens a file for the client with given thread-id. This works just for multipipe-services!
  *
- * @param pid the own process-id
+ * @param tid the own thread-id
  * @param nodeNo the service-node-number
- * @param clientId the process-id of the desired client
+ * @param clientId the thread-id of the desired client
  * @return the file or a negative error-code
  */
-tFileNo vfs_openClientProc(tPid pid,tVFSNodeNo nodeNo,tPid clientId);
+tFileNo vfs_openClientProc(tTid tid,tVFSNodeNo nodeNo,tTid clientId);
 
 /**
  * Opens a file for a client of the given service-node
  *
- * @param pid the process to use
+ * @param tid the thread-id
  * @param vfsNodes an array of VFS-nodes to check for clients
  * @param count the size of <vfsNodes>
  * @param node will be set to the node-number from which the client has been taken
  * @return the error-code (negative) or the file to use
  */
-tFileNo vfs_openClient(tPid pid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servNode);
+tFileNo vfs_openClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servNode);
 
 /**
  * Removes the service with given node-number
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param nodeNo the node-number of the service
  */
-s32 vfs_removeService(tPid pid,tVFSNodeNo nodeNo);
+s32 vfs_removeService(tTid tid,tVFSNodeNo nodeNo);
 
 /**
  * Creates a process-node with given pid and handler-function
@@ -279,13 +280,13 @@ void vfs_removeProcess(tPid pid);
 /**
  * The default-read-handler
  */
-s32 vfs_defReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfs_defReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * Creates space, calls the callback which should fill the space
  * with data and writes the corresponding part to the buffer of the user
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param node the vfs-node
  * @param buffer the buffer
  * @param offset the offset
@@ -293,20 +294,20 @@ s32 vfs_defReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
  * @param dataSize the total size of the data
  * @param callback the callback-function
  */
-s32 vfs_readHelper(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
+s32 vfs_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
 		fReadCallBack callback);
 
 /**
  * The read-handler for service-usages
  *
- * @param pid the process-id
+ * @param tid the thread-id
  * @param node the VFS node
  * @param buffer the buffer where to copy the info to
  * @param offset the offset where to start
  * @param count the number of bytes
  * @return the number of read bytes
  */
-s32 vfs_serviceUseReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfs_serviceUseReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 #if DEBUGGING
 

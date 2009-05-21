@@ -33,6 +33,7 @@
 
 s32 elf_loadFromFile(const char *path) {
 	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	tFileNo file;
 	s32 res;
 	u32 j,loadSeg = 0;
@@ -42,12 +43,12 @@ s32 elf_loadFromFile(const char *path) {
 
 	vassert(p->textPages == 0 && p->dataPages == 0,"Process is not empty");
 
-	file = vfsr_openFile(p->pid,VFS_READ,path);
+	file = vfsr_openFile(t->tid,VFS_READ,path);
 	if(file < 0)
 		return ERR_INVALID_ELF_BINARY;
 
 	/* first read the header */
-	if((res = vfs_readFile(p->pid,file,(u8*)&eheader,sizeof(Elf32_Ehdr))) < 0)
+	if((res = vfs_readFile(t->tid,file,(u8*)&eheader,sizeof(Elf32_Ehdr))) < 0)
 		goto failed;
 
 	/* check magic */
@@ -58,8 +59,8 @@ s32 elf_loadFromFile(const char *path) {
 	datPtr = (u8 const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* read pheader */
-		vfs_seek(p->pid,file,(u32)datPtr);
-		res = vfs_readFile(p->pid,file,(u8*)&pheader,sizeof(Elf32_Phdr));
+		vfs_seek(t->tid,file,(u32)datPtr);
+		res = vfs_readFile(t->tid,file,(u8*)&pheader,sizeof(Elf32_Phdr));
 		if(res < 0)
 			goto failed;
 		if(res != sizeof(Elf32_Phdr))
@@ -104,11 +105,11 @@ s32 elf_loadFromFile(const char *path) {
 					goto failed;
 
 				/* load data from fs */
-				vfs_seek(p->pid,file,pheader.p_offset);
+				vfs_seek(t->tid,file,pheader.p_offset);
 				target = (u8*)pheader.p_vaddr;
 				rem = pheader.p_filesz;
 				while(rem > 0) {
-					res = vfs_readFile(p->pid,file,target,MIN(BUF_SIZE,rem));
+					res = vfs_readFile(t->tid,file,target,MIN(BUF_SIZE,rem));
 					if(res < 0)
 						goto failed;
 					rem -= res;
@@ -125,11 +126,11 @@ s32 elf_loadFromFile(const char *path) {
 		}
 	}
 
-	vfs_closeFile(file);
+	vfs_closeFile(t->tid,file);
 	return (u32)eheader.e_entry;
 
 failed:
-	vfs_closeFile(file);
+	vfs_closeFile(t->tid,file);
 	return ERR_INVALID_ELF_BINARY;
 }
 

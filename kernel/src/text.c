@@ -58,8 +58,9 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 	sFileInfo info;
 	sTextUsage *usage;
 	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	s32 res;
-	if((res = vfsr_getFileInfo(p->pid,path,&info)) < 0)
+	if((res = vfsr_getFileInfo(t->tid,path,&info)) < 0)
 		return res;
 
 	usage = text_get(&info);
@@ -88,7 +89,6 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 
 		/* append process */
 		if(!sll_append(usage->procs,(void*)p)) {
-			sll_removeFirst(textUsages,usage);
 			sll_destroy(usage->procs,false);
 			kheap_free(usage);
 			return ERR_NOT_ENOUGH_MEM;
@@ -97,7 +97,6 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 		/* load the text from file */
 		res = text_load(p,file,position,textSize);
 		if(res < 0) {
-			sll_removeFirst(textUsages,usage);
 			sll_destroy(usage->procs,false);
 			kheap_free(usage);
 			return res;
@@ -117,7 +116,7 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 		sProc *fp;
 		vassert(sll_length(usage->procs) > 0,"text-usage with no processes!?");
 		fp = (sProc*)sll_get(usage->procs,0);
-		vassert(fp->state != ST_UNUSED,"text-usage of unused process!?");
+		vassert(fp->pid != INVALID_PID,"text-usage of unused process!?");
 
 		/* append process */
 		if(!sll_append(usage->procs,(void*)p))
@@ -168,6 +167,7 @@ static s32 text_load(sProc *p,tFileNo file,u32 position,u32 textSize) {
 	u8 *target;
 	s32 rem,res;
 	u32 pages;
+	sThread *t = thread_getRunning();
 
 	/* at first we have to create the pages for the process */
 	pages = BYTES_2_PAGES(textSize);
@@ -177,11 +177,11 @@ static s32 text_load(sProc *p,tFileNo file,u32 position,u32 textSize) {
 	p->textPages = pages;
 
 	/* load text from disk */
-	vfs_seek(p->pid,file,position);
+	vfs_seek(t->tid,file,position);
 	target = 0;
 	rem = textSize;
 	while(rem > 0) {
-		res = vfs_readFile(p->pid,file,target,MIN(BUF_SIZE,rem));
+		res = vfs_readFile(t->tid,file,target,MIN(BUF_SIZE,rem));
 		if(res < 0)
 			return res;
 		rem -= res;

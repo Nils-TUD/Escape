@@ -26,6 +26,10 @@ ALIGN 4
 %include "../../../libc/syscalls.s"
 
 init:
+	;[extern main]
+	;call	main
+	;jmp		$
+
 	; load modules first
 	mov		eax,SYSCALL_LOADMODS
 	int		SYSCALL_IRQ

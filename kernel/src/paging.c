@@ -199,7 +199,7 @@ void paging_mapHigherHalf(void) {
 		pde->present = true;
 		pde->writable = true;
 		/* clear */
-		memset((void*)ADDR_TO_MAPPED(addr),0,PAGE_SIZE);
+		memclear((void*)ADDR_TO_MAPPED(addr),PAGE_SIZE);
 		/* to next */
 		pde++;
 		addr += PAGE_SIZE * PT_ENTRY_COUNT;
@@ -385,8 +385,8 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 			pd->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
 
 			/* clear frame (ensure that we start at the beginning of the frame) */
-			memset((void*)ADDR_TO_MAPPED_CUSTOM(mappingArea,
-					virtual & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),0,PAGE_SIZE);
+			memclear((void*)ADDR_TO_MAPPED_CUSTOM(mappingArea,
+					virtual & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),PAGE_SIZE);
 
 			paging_flushTLB();
 		}
@@ -474,7 +474,7 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	/* copy old page-dir to new one */
 	DBG_PGCLONEPD(vid_printf("Copying old page-dir to new one (%x)\n",npd));
 	/* clear user-space page-tables */
-	memset(npd,0,ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) * sizeof(sPDEntry));
+	memclear(npd,ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) * sizeof(sPDEntry));
 	/* copy kernel-space page-tables*/
 	/* TODO we don't need to copy the last few pts */
 	memcpy(npd + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR),
@@ -494,8 +494,8 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	tpd->present = true;
 	tpd->writable = true;
 	/* clear the page-table */
-	memset((void*)ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,
-			KERNEL_STACK & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),0,PAGE_SIZE);
+	memclear((void*)ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,
+			KERNEL_STACK & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),PAGE_SIZE);
 
 	/* create stack-page */
 	pt = (sPTEntry*)(TMPMAP_PTS_START + (KERNEL_STACK / PT_ENTRY_COUNT));

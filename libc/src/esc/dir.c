@@ -31,7 +31,7 @@ typedef struct {
 } __attribute__((packed)) sDirEntryRead;
 
 char *abspath(const char *path) {
-	static char apath[MAX_PATH_LEN + 1];
+	char apath[MAX_PATH_LEN + 1];
 	char *current,*curtemp,*pathtemp,*p;
 	u32 layer,pos;
 

@@ -22,6 +22,7 @@
 #include <vfsnode.h>
 #include <vfsinfo.h>
 #include <util.h>
+#include <paging.h>
 #include <kheap.h>
 #include <video.h>
 #include <string.h>
@@ -29,6 +30,9 @@
 #include <errors.h>
 
 #define FILE_ROOT()	(nodes + 3)
+
+#define IS_ON_HEAP(addr) ((u32)(addr) >= KERNEL_HEAP_START && \
+		(u32)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
 
 /**
  * Creates a pipe
@@ -326,13 +330,12 @@ sVFSNode *vfsn_createDir(sVFSNode *parent,char *name) {
 
 	sVFSNode *dot = vfsn_createNodeAppend(node,(char*)".");
 	if(dot == NULL) {
-		vfsn_removeChild(parent,node);
+		vfsn_removeNode(node);
 		return NULL;
 	}
 	sVFSNode *dotdot = vfsn_createNodeAppend(node,(char*)"..");
 	if(dotdot == NULL) {
-		vfsn_removeChild(parent,dot);
-		vfsn_removeChild(parent,node);
+		vfsn_removeNode(node);
 		return NULL;
 	}
 
@@ -406,20 +409,52 @@ void vfsn_appendChild(sVFSNode *parent,sVFSNode *node) {
 	node->parent = parent;
 }
 
-void vfsn_removeChild(sVFSNode *parent,sVFSNode *node) {
-	vassert(parent != NULL,"parent == NULL");
-	vassert(node != NULL,"node == NULL");
+void vfsn_removeNode(sVFSNode *n) {
+	/* remove childs */
+	sVFSNode *tn;
+	sVFSNode *child = n->firstChild;
+	while(child != NULL) {
+		tn = child->next;
+		vfsn_removeNode(child);
+		child = tn;
+	}
 
-	if(node->prev != NULL)
-		node->prev->next = node->next;
-	else
-		parent->firstChild = node->next;
-	if(node->next != NULL)
-		node->next->prev = node->prev;
-	else
-		parent->lastChild = node->prev;
+	if(n->mode & MODE_TYPE_SERVUSE) {
+		/* free send and receive list */
+		if(n->data.servuse.recvList != NULL) {
+			sll_destroy(n->data.servuse.recvList,true);
+			n->data.servuse.recvList = NULL;
+		}
+		if(n->data.servuse.sendList != NULL) {
+			sll_destroy(n->data.servuse.sendList,true);
+			n->data.servuse.sendList = NULL;
+		}
 
-	vfsn_releaseNode(node);
+		/* free single-pipe-clients */
+		if(n->parent->mode & MODE_SERVICE_SINGLEPIPE && n->data.servuse.singlePipeClients != NULL) {
+			sll_destroy(n->data.servuse.singlePipeClients,false);
+			n->data.servuse.singlePipeClients = NULL;
+		}
+	}
+	else if(n->data.def.cache != NULL && IS_ON_HEAP(n->data.def.cache)) {
+		kheap_free(n->data.def.cache);
+		n->data.def.cache = NULL;
+	}
+
+	/* free name */
+	if(IS_ON_HEAP(n->name))
+		kheap_free(n->name);
+
+	/* remove from parent and release */
+	if(n->prev != NULL)
+		n->prev->next = n->next;
+	else
+		n->parent->firstChild = n->next;
+	if(n->next != NULL)
+		n->next->prev = n->prev;
+	else
+		n->parent->lastChild = n->prev;
+	vfsn_releaseNode(n);
 }
 
 s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
@@ -476,12 +511,11 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	if(n->mode & MODE_SERVICE_SINGLEPIPE) {
 		m->data.servuse.singlePipeClients = sll_create();
 		if(m->data.servuse.singlePipeClients == NULL) {
-			vfsn_removeChild(m->parent,m);
+			vfsn_removeNode(m);
 			return ERR_NOT_ENOUGH_MEM;
 		}
 		if(!sll_append(m->data.servuse.singlePipeClients,thread_getById(tid))) {
-			sll_destroy(m->data.servuse.singlePipeClients,false);
-			vfsn_removeChild(m->parent,m);
+			vfsn_removeNode(m);
 			return ERR_NOT_ENOUGH_MEM;
 		}
 	}

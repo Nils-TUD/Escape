@@ -463,7 +463,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 	/* increase user-space cycles */
 	if(t->ucycleStart > 0)
-		t->ucycleCount += cycles - t->ucycleStart;
+		t->ucycleCount.count += cycles - t->ucycleStart;
 	/* kernel-mode starts here */
 	t->kcycleStart = cycles;
 	t->ueip = stack.eip;
@@ -580,7 +580,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 	t = thread_getRunning();
 	cycles = cpu_rdtsc();
 	if(t->kcycleStart > 0)
-		t->kcycleCount += cycles - t->kcycleStart;
+		t->kcycleCount.count += cycles - t->kcycleStart;
 	/* user-mode starts here */
 	t->ucycleStart = cycles;
 }

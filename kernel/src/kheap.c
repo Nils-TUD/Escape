@@ -180,7 +180,7 @@ void *kheap_calloc(u32 num,u32 size) {
 	if(a == NULL)
 		return NULL;
 
-	memset(a,0,num * size);
+	memclear(a,num * size);
 	return a;
 }
 

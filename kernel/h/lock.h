@@ -24,21 +24,23 @@
 #include "proc.h"
 
 /**
- * Aquires the lock with given thread and ident. If it exists and is locked,
+ * Aquires the lock with given thread, pid and ident. If it exists and is locked,
  * the thread waits here until it's unlocked
  *
  * @param tid the thread-id
+ * @param pid the process-id (INVALID_PID to lock it globally)
  * @param ident to identify the lock
  * @return 0 on success
  */
-s32 lock_aquire(tTid tid,u32 ident);
+s32 lock_aquire(tTid tid,tPid pid,u32 ident);
 
 /**
- * Releases the lock with given ident
+ * Releases the lock with given ident and pid
  *
+ * @param pid the process-id (INVALID_PID to lock it globally)
  * @param ident to identify the lock
  * @return 0 on success
  */
-s32 lock_release(u32 ident);
+s32 lock_release(tPid pid,u32 ident);
 
 #endif /* LOCK_H_ */

@@ -196,7 +196,7 @@ static void test_open(void) {
 	test_caseStart("Testing open()");
 
 	longName = (char*)malloc(10000);
-	memset(longName,0x65656565,9999);
+	memset(longName,0x65,9999);
 	longName[9999] = 0;
 	test_assertInt(_open((char*)0,IO_READ),ERR_INVALID_SYSC_ARGS);
 	test_assertInt(_open((char*)0xC0000000,IO_READ),ERR_INVALID_SYSC_ARGS);
@@ -451,7 +451,7 @@ static void test_sendSignalTo(void) {
 
 static void test_exec(void) {
 	char *longPath = (char*)malloc(10000);
-	memset(longPath,0x65656565,9999);
+	memset(longPath,0x65,9999);
 	longPath[9999] = 0;
 	const char *a1[] = {"a",(const char*)0x12345678,NULL};
 	const char *a2[] = {(const char*)0x12345678,NULL};
@@ -485,7 +485,7 @@ static void test_eof(void) {
 
 static void test_createNode(void) {
 	char *longPath = (char*)malloc(10000);
-	memset(longPath,0x65656565,9999);
+	memset(longPath,0x65,9999);
 	longPath[9999] = 0;
 	test_caseStart("Testing createNode()");
 	test_assertInt(_createNode(NULL),ERR_INVALID_SYSC_ARGS);
@@ -511,7 +511,7 @@ static void test_seek(void) {
 static void test_getFileInfo(void) {
 	sFileInfo info;
 	char *longPath = (char*)malloc(10000);
-	memset(longPath,0x65656565,9999);
+	memset(longPath,0x65,9999);
 	longPath[9999] = 0;
 	test_caseStart("Testing getFileInfo()");
 	test_assertInt(_getFileInfo(NULL,&info),ERR_INVALID_SYSC_ARGS);

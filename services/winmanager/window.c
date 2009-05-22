@@ -82,7 +82,6 @@ static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id
 static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,s16 z,sRectangle *r);
 static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height);
 static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height);
-static void win_dbg_print(void);
 
 static tFD vesa;
 static tServ servId;
@@ -436,7 +435,7 @@ static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height) 
 	u32 count = width * PIXEL_SIZE;
 	mem += (y * screenWidth + x) * PIXEL_SIZE;
 	while(y <= maxy) {
-		memset(mem,0,count);
+		memclear(mem,count);
 		mem += screenWidth * PIXEL_SIZE;
 		y++;
 	}
@@ -452,7 +451,10 @@ static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
 	write(vesa,&vesaMsg,sizeof(sMsgVesaUpdate));
 }
 
-static void win_dbg_print(void) {
+
+#if DEBUGGING
+
+void win_dbg_print(void) {
 	tWinId i;
 	sWindow *w = windows;
 	debugf("Windows:\n");
@@ -464,3 +466,5 @@ static void win_dbg_print(void) {
 		w++;
 	}
 }
+
+#endif

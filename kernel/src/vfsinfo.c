@@ -43,6 +43,11 @@ typedef struct {
 static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer);
 
 /**
+ * The read-callback for the thread-read-handler
+ */
+static void vfsinfo_threadReadCallback(sVFSNode *node,void *buffer);
+
+/**
  * The read-handler for the mem-usage-node
  */
 static s32 vfsinfo_memUsageReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
@@ -66,40 +71,59 @@ s32 vfsinfo_procReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 co
 	/* (if the process doesn't call close() the cache will not be invalidated and therefore
 	 * other processes might miss changes) */
 	return vfs_readHelper(tid,node,buffer,offset,count,
-			18 * 9 + 6 * 10 + 2 * 16 + MAX_PROC_NAME_LEN + 1,
+			17 * 6 + 5 * 10 + MAX_PROC_NAME_LEN + 1,
 			vfsinfo_procReadCallback);
 }
 
 static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer) {
 	char *str = (char*)buffer;
-	sProc *p = proc_getByPid(atoi(node->name));
-	u32 *uptr,*kptr;
-	UNUSED(node);
+	sProc *p = proc_getByPid(atoi(node->parent->name));
 
-	/* TODO */
-	/*uptr = (u32*)&p->ucycleCount;
-	kptr = (u32*)&p->kcycleCount;*/
 	util_sprintf(
 		str,
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%s\n"
-		/*"%-16s%u\n"*/
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
-		/*"%-16s%08x%08x\n"
-		"%-16s%08x%08x\n"*/
 		,
 		"Pid:",p->pid,
 		"ParentPid:",p->parentPid,
 		"Command:",p->command,
-		/*"State:",p->state,*/
 		"TextPages:",p->textPages,
 		"DataPages:",p->dataPages,
-		"StackPages:",p->stackPages/*,
+		"StackPages:",p->stackPages
+	);
+}
+
+s32 vfsinfo_threadReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	return vfs_readHelper(tid,node,buffer,offset,count,
+			17 * 6 + 4 * 10 + 2 * 16,vfsinfo_threadReadCallback);
+}
+
+static void vfsinfo_threadReadCallback(sVFSNode *node,void *buffer) {
+	char *str = (char*)buffer;
+	sThread *t = thread_getById(atoi(node->name));
+	u32 *uptr,*kptr;
+
+	uptr = (u32*)&t->ucycleCount;
+	kptr = (u32*)&t->kcycleCount;
+	util_sprintf(
+		str,
+		"%-16s%u\n"
+		"%-16s%u\n"
+		"%-16s%u\n"
+		"%-16s%u\n"
+		"%-16s%08x%08x\n"
+		"%-16s%08x%08x\n"
+		,
+		"Tid:",t->tid,
+		"Pid:",t->proc->pid,
+		"State:",t->state,
+		"StackPages:",t->ustackPages,
 		"UCPUCycles:",*(uptr + 1),*uptr,
-		"KCPUCycles:",*(kptr + 1),*kptr*/
+		"KCPUCycles:",*(kptr + 1),*kptr
 	);
 }
 

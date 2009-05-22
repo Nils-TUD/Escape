@@ -1345,9 +1345,9 @@ static s32 doFlush(sBuffer *buf) {
 		if(write(buf->fd,buf->str,buf->pos * sizeof(char)) < 0)
 			res = IO_EOF;
 		buf->pos = 0;
-		/* a process switch improves the performance by far :) */
+		/* a process switch improves the performance by far :)
 		if(res >= 0)
-			yield();
+			yield();*/
 	}
 	return res;
 }

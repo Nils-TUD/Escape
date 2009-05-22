@@ -120,7 +120,7 @@ s32 elf_loadFromFile(const char *path) {
 					goto failed;
 
 				/* zero remaining bytes */
-				memset((void*)(pheader.p_vaddr + pheader.p_filesz),0,pheader.p_memsz - pheader.p_filesz);
+				memclear((void*)(pheader.p_vaddr + pheader.p_filesz),pheader.p_memsz - pheader.p_filesz);
 			}
 			loadSeg++;
 		}
@@ -193,7 +193,7 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 
 			/* copy the data, and zero remaining bytes */
 			memcpy((void*)pheader->p_vaddr, (void*)segmentSrc, pheader->p_filesz);
-			memset((void*)(pheader->p_vaddr + pheader->p_filesz), 0, pheader->p_memsz - pheader->p_filesz);
+			memclear((void*)(pheader->p_vaddr + pheader->p_filesz),pheader->p_memsz - pheader->p_filesz);
 			++seenLoadSegments;
 		}
 	}

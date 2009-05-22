@@ -304,7 +304,13 @@ static bool vterm_init(sVTerm *vt) {
 	}
 
 	/* fill buffer with spaces to ensure that the cursor is visible (spaces, white on black) */
-	memset(vt->buffer.data,0x07200720,BUFFER_SIZE);
+	ptr = vt->buffer.data;
+	for(i = 0; i < BUFFER_SIZE; i += 4) {
+		*ptr++ = 0x20;
+		*ptr++ = 0x07;
+		*ptr++ = 0x20;
+		*ptr++ = 0x07;
+	}
 
 	/* build title bar */
 	vt->titleBar.header.header.id = MSG_VIDEO_SETSCREEN;
@@ -498,7 +504,7 @@ static void vterm_putchar(sVTerm *vt,char c) {
 
 static void vterm_newLine(sVTerm *vt) {
 	char *src,*dst;
-	u32 count = (HISTORY_SIZE - vt->firstLine) * COLS * 2;
+	u32 i,count = (HISTORY_SIZE - vt->firstLine) * COLS * 2;
 	/* move one line back */
 	if(vt->firstLine > 0) {
 		dst = vt->buffer.data + ((vt->firstLine - 1) * COLS * 2);
@@ -511,7 +517,13 @@ static void vterm_newLine(sVTerm *vt) {
 	memmove(dst,src,count);
 
 	/* clear last line */
-	memset(vt->buffer.data + (vt->currLine + vt->row - 1) * COLS * 2,0x07200720,COLS * 2);
+	dst = vt->buffer.data + (vt->currLine + vt->row - 1) * COLS * 2;
+	for(i = 0; i < COLS * 2; i += 4) {
+		*dst++ = 0x20;
+		*dst++ = 0x07;
+		*dst++ = 0x20;
+		*dst++ = 0x07;
+	}
 }
 
 static void vterm_scroll(sVTerm *vt,s16 lines) {

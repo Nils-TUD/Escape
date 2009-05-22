@@ -76,10 +76,21 @@ typedef struct {
 	sFPUState *fpuState;
 	/* number of cpu-cycles the thread has used so far; TODO: should be cpu-time later */
 	u64 ucycleStart;
-	u64 ucycleCount;
+	union {
+		u64 count;
+		struct {
+			u32 lower;
+			u32 upper;
+		} count32;
+	} ucycleCount;
 	u64 kcycleStart;
-	u64 kcycleCount;
-	u64 cycleCount;
+	union {
+		u64 count;
+		struct {
+			u32 lower;
+			u32 upper;
+		} count32;
+	} kcycleCount;
 } sThread;
 
 /**
@@ -222,12 +233,13 @@ s32 thread_extendStack(u32 address);
  *
  * @param src the thread to copy
  * @param dst will contain a pointer to the new thread
+ * @param p the process the thread should belong to
  * @param stackFrame will contain the stack-frame that has been used for the kernel-stack of the
  * 	new thread
  * @param cloneProc wether a process is cloned or just a thread
  * @return 0 on success
  */
-s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc);
+s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc);
 
 /**
  * Destroys the given thread. If it is the current one it will be stored for later deletion.

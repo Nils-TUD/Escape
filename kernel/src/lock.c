@@ -24,28 +24,32 @@
 #include <errors.h>
 #include <sllist.h>
 
+#define LOCK_MAP_SIZE	128
+
 /* a lock-entry */
 typedef struct {
 	u8 locked;
 	u32 ident;
+	tPid pid;
 	u32 waitCount;
 } sLock;
 
 /**
- * Searches the lock-entry for the given ident
+ * Searches the lock-entry for the given ident and process-id
  *
+ * @param pid the process-id
  * @param ident the ident to search for
  * @return the lock for the given ident or NULL
  */
-static sLock *lock_get(u32 ident);
+static sLock *lock_get(tPid pid,u32 ident);
 
-/* our lock-list */
-static sSLList *locks = NULL;
+/* our lock-map; key = ident % LOCK_MAP_SIZE */
+static sSLList *locks[LOCK_MAP_SIZE] = {NULL};
 
 /* fortunatly interrupts are disabled in kernel, so the whole stuff here is easy :) */
 
-s32 lock_aquire(tTid tid,u32 ident) {
-	sLock *l = lock_get(ident);
+s32 lock_aquire(tTid tid,tPid pid,u32 ident) {
+	sLock *l = lock_get(pid,ident);
 
 	/* if it exists and is locked, wait */
 	if(l && l->locked) {
@@ -59,10 +63,11 @@ s32 lock_aquire(tTid tid,u32 ident) {
 		l->waitCount--;
 	}
 	else if(!l) {
+		sSLList *list = locks[ident % LOCK_MAP_SIZE];
 		/* create list if not already done */
-		if(locks == NULL) {
-			locks = sll_create();
-			if(locks == NULL)
+		if(list == NULL) {
+			list = locks[ident % LOCK_MAP_SIZE] = sll_create();
+			if(list == NULL)
 				return ERR_NOT_ENOUGH_MEM;
 		}
 
@@ -71,9 +76,10 @@ s32 lock_aquire(tTid tid,u32 ident) {
 		if(l == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 		/* init and append */
+		l->pid = pid;
 		l->ident = ident;
 		l->waitCount = 0;
-		if(!sll_append(locks,l)) {
+		if(!sll_append(list,l)) {
 			kheap_free(l);
 			return ERR_NOT_ENOUGH_MEM;
 		}
@@ -84,8 +90,8 @@ s32 lock_aquire(tTid tid,u32 ident) {
 	return 0;
 }
 
-s32 lock_release(u32 ident) {
-	sLock *l = lock_get(ident);
+s32 lock_release(tPid pid,u32 ident) {
+	sLock *l = lock_get(pid,ident);
 	if(!l)
 		return ERR_LOCK_NOT_FOUND;
 
@@ -95,20 +101,22 @@ s32 lock_release(u32 ident) {
 
 	/* if nobody is waiting, we can free the lock-entry */
 	if(l->waitCount == 0) {
-		sll_removeFirst(locks,l);
+		sll_removeFirst(locks[ident % LOCK_MAP_SIZE],l);
 		kheap_free(l);
 	}
 	return 0;
 }
 
-static sLock *lock_get(u32 ident) {
+static sLock *lock_get(tPid pid,u32 ident) {
 	sSLNode *n;
+	sSLList *list;
 	sLock *l;
-	if(locks == NULL)
+	list = locks[ident % LOCK_MAP_SIZE];
+	if(list == NULL)
 		return NULL;
-	for(n = sll_begin(locks); n != NULL; n = n->next) {
+	for(n = sll_begin(list); n != NULL; n = n->next) {
 		l = (sLock*)n->data;
-		if(l->ident == ident)
+		if((l->pid == INVALID_PID || l->pid == pid) && l->ident == ident)
 			return l;
 	}
 	return NULL;

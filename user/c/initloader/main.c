@@ -18,43 +18,30 @@
  */
 
 #include <esc/common.h>
-#include <esc/lock.h>
+#include <esc/proc.h>
+#include <esc/thread.h>
+#include <esc/debug.h>
+#include <esc/signals.h>
 
-/**
- * Assembler-routines
- */
-extern s32 _lock(u32 ident,bool global);
-extern s32 _unlock(u32 ident,bool global);
+static int myThread(void);
 
-s32 lock(u32 ident) {
-	/* nasm doesn't like "lock" as label... */
-	return _lock(ident,false);
+u64 pre;
+u64 post;
+
+int main(void) {
+	startThread(myThread);
+	pre = cpu_rdtsc();
+	yield();
+	yield();
+	yield();
+	yield();
+	u64 diff = post - pre;
+	u32 *ptr = (u32*)&diff;
+	debugf("diff=0x%x%x\n",*(ptr + 1),*ptr);
+	return 0;
 }
 
-void locku(tULock *l) {
-	__asm__ (
-		"mov $1,%%ecx;"				/* ecx=1 to lock it for others */
-		"lockuLoop:"
-		"	xor	%%eax,%%eax;"		/* clear eax */
-		"	lock;"					/* lock next instruction */
-		"	cmpxchg %%ecx,(%0);"	/* compare ecx with eax; if equal exchange ecx with l */
-		"	jnz		lockuLoop;"		/* try again if not equal */
-		: : "D" (l)
-	);
-}
-
-s32 lockg(u32 ident) {
-	return _lock(ident,true);
-}
-
-s32 unlock(u32 ident) {
-	return _unlock(ident,false);
-}
-
-void unlocku(tULock *l) {
-	*l = false;
-}
-
-s32 unlockg(u32 ident) {
-	return _unlock(ident,true);
+static int myThread(void) {
+	post = cpu_rdtsc();
+	return 0;
 }

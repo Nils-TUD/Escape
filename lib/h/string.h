@@ -85,6 +85,14 @@ void *memcpy(void *dest,const void *src,u32 len);
 s32 memcmp(const void *str1,const void *str2,u32 count);
 
 /**
+ * Sets <count> bytes starting at <addr> to 0.
+ *
+ * @param addr the starting address
+ * @param count the number of bytes
+ */
+void memclear(void *addr,u32 count);
+
+/**
  * Sets all bytes in memory beginning at <addr> and ending at <addr> + <count>
  * to <value>.
  *
@@ -92,7 +100,7 @@ s32 memcmp(const void *str1,const void *str2,u32 count);
  * @param value the value to set
  * @param count the number of bytes
  */
-void memset(void *addr,u32 value,u32 count);
+void memset(void *addr,u8 value,u32 count);
 
 /**
  * Copies the values of num bytes from the location pointed by source to the memory block pointed

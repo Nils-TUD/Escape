@@ -1,0 +1,42 @@
+x86mark is a microbenchmark based on "cpubench" by Nathan Laredo.  cpubench
+comes from http://mpeg.openprojects.org/cpubench/
+
+While cpubench tests single instructions, x86mark tests mixes of pairs
+of instructions.  x86mark uses "rdtsc" to get cycle-based instruction
+timings, while cpubench uses alarm(2) to get wall-clock based timings.
+
+When x86mark lists "FOO-BAR" as the name of a benchmark, it is a mix
+alternating between a FOO instruction and a BAR instruction.  When it is
+named just "FOO", there is no mix.
+
+The types of instructions benchmarked in x86mark include:
+	ADD:	register-register add
+	AMADD:	memory-register add
+	DADD:   dependent register-register add
+	MUL:	register-register multiply
+	SHL:	register-register shift
+	FADD:	register-register floating add
+	FDIV:	register-register floating div (fdiv)
+	FSIN:	transendental floating point
+	JMP:	paragraph-aligned unconditional jump
+	UJMP:	unaligned unconditional jump
+	LOAD:	global load
+	STORE:	global store
+	OHEAD:	benchmark loop overhead:
+		the number from this benchmark is different.  It is the
+		cycle count of an empty loop.  Usually, this test will show
+		0 cycles, because loop overhead is subtracted out.
+	PXOR:   Intel/AMD/Cyrix MMX instructions
+	PFADD:  AMD 3DNow! packed floating point instructions
+
+Except when noted, x86mark attempts to prevent read-after-write data conflicts
+in order to show the highest possible speed.
+
+To run the benchmarks:
+	make results
+To review results after "make results":
+	less results-`hostname`
+To submit results to me via e-mail:
+	make submit
+This mails the contents of "results" as well as some lines from
+/proc/cpuinfo to me.

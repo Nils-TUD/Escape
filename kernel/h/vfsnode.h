@@ -185,12 +185,12 @@ sVFSNode *vfsn_createServiceUseNode(tTid tid,sVFSNode *parent,char *name,fRead h
 void vfsn_appendChild(sVFSNode *parent,sVFSNode *node);
 
 /**
- * Removes the given child from the given parent
+ * Removes the given node including all child-nodes from the parent-node and free's all
+ * allocated stuff in it depending on the type.
  *
- * @param parent the parent
- * @param node the child
+ * @param n the node
  */
-void vfsn_removeChild(sVFSNode *parent,sVFSNode *node);
+void vfsn_removeNode(sVFSNode *n);
 
 /**
  * Appends a service-usage-node to the given node and stores the pointer to the new node

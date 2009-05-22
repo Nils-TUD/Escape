@@ -23,25 +23,35 @@
 #include <esc/dir.h>
 #include <esc/proc.h>
 #include <stdlib.h>
+#include <sllist.h>
 #include <string.h>
 
 #define ARRAY_INC_SIZE		10
 
 /* process-data */
 typedef struct {
-	u8 state;
 	tPid pid;
 	tPid parentPid;
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
-	u64 ucycleCount;
-	u64 kcycleCount;
+	sSLList *threads;
 	char command[MAX_PROC_NAME_LEN + 1];
 } sProcess;
 
+typedef struct {
+	tTid tid;
+	tPid pid;
+	u8 state;
+	u32 stackPages;
+	u64 ucycleCount;
+	u64 kcycleCount;
+} sPThread;
+
 static sProcess *ps_getProcs(u32 *count);
-static char *ps_readProc(tFD fd,sProcess *p);
+static bool ps_readProc(tFD fd,tPid pid,sProcess *p);
+static bool ps_readThread(tFD fd,sPThread *t);
+static char *ps_readNode(tFD fd);
 
 static const char *states[] = {
 	"Unused ",
@@ -55,6 +65,7 @@ int main(void) {
 	sProcess *procs;
 	u32 i,count;
 	u64 totalCycles;
+	sSLNode *n;
 
 	procs = ps_getProcs(&count);
 	if(procs == NULL)
@@ -62,25 +73,47 @@ int main(void) {
 
 	/* sum total cycles */
 	totalCycles = 0;
-	for(i = 0; i < count; i++)
-		totalCycles += procs[i].ucycleCount + procs[i].kcycleCount;
+	for(i = 0; i < count; i++) {
+		for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
+			sPThread *t = (sPThread*)n->data;
+			totalCycles += t->ucycleCount + t->kcycleCount;
+		}
+	}
 
 	/* now print processes */
-	printf("PID\tPPID MEM\t\tSTATE\t%%CPU (USER,KERNEL)\tCOMMAND\n");
+	printf("ID\t\tPPID MEM\t\tSTATE\t%%CPU (USER,KERNEL)\tCOMMAND\n");
 
 	for(i = 0; i < count; i++) {
-		u64 procCycles = procs[i].ucycleCount + procs[i].kcycleCount;
+		u64 procUCycles = 0,procKCycles = 0;
+		for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
+			sPThread *t = (sPThread*)n->data;
+			procUCycles += t->ucycleCount;
+			procKCycles += t->kcycleCount;
+		}
+		u64 procCycles = procUCycles + procKCycles;
 		u32 cyclePercent = (u32)(100. / (totalCycles / (double)procCycles));
-		u32 userPercent = (u32)(100. / (procCycles / (double)procs[i].ucycleCount));
-		u32 kernelPercent = (u32)(100. / (procCycles / (double)procs[i].kcycleCount));
-		printf("%2d\t%2d\t%4d KiB\t%s\t%3d%% (%3d%%,%3d%%)\t%s\n",
+		u32 userPercent = (u32)(100. / (procCycles / (double)procUCycles));
+		u32 kernelPercent = (u32)(100. / (procCycles / (double)procKCycles));
+		printf("%2d\t\t%2d\t%4d KiB\t-\t\t%3d%% (%3d%%,%3d%%)\t%s\n",
 				procs[i].pid,procs[i].parentPid,
 				(procs[i].textPages + procs[i].dataPages + procs[i].stackPages) * 4,
-				states[procs[i].state],cyclePercent,userPercent,kernelPercent,procs[i].command);
+				cyclePercent,userPercent,kernelPercent,procs[i].command);
+
+		for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
+			sPThread *t = (sPThread*)n->data;
+			u64 threadCycles = t->ucycleCount + t->kcycleCount;
+			u32 tcyclePercent = (u32)(100. / (totalCycles / (double)threadCycles));
+			u32 tuserPercent = (u32)(100. / (threadCycles / (double)t->ucycleCount));
+			u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount));
+			printf(" |-%2d\t\t\t\t\t%s\t%3d%% (%3d%%,%3d%%)\n",
+					t->tid,states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
+		}
 	}
 
 	printf("\n");
 
+	for(i = 0; i < count; i++)
+		sll_destroy(procs[i].threads,true);
 	free(procs);
 	return EXIT_SUCCESS;
 }
@@ -88,9 +121,7 @@ int main(void) {
 static sProcess *ps_getProcs(u32 *count) {
 	tFD dd,dfd;
 	sDirEntry *entry;
-	char path[] = "system:/processes/";
-	char ppath[255];
-	char *sproc;
+	char ppath[MAX_PATH_LEN + 1];
 	u32 pos = 0;
 	u32 size = ARRAY_INC_SIZE;
 	sProcess *procs = (sProcess*)malloc(size * sizeof(sProcess));
@@ -99,14 +130,13 @@ static sProcess *ps_getProcs(u32 *count) {
 		return NULL;
 	}
 
-	if((dd = opendir(path)) >= 0) {
+	if((dd = opendir("system:/processes")) >= 0) {
 		while((entry = readdir(dd)) != NULL) {
 			if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
 				continue;
 
 			/* build path */
-			strcpy(ppath,path);
-			strncat(ppath,entry->name,strlen(entry->name));
+			sprintf(ppath,"system:/processes/%s/info",entry->name);
 			if((dfd = open(ppath,IO_READ)) >= 0) {
 				/* increase array */
 				if(pos >= size) {
@@ -119,8 +149,7 @@ static sProcess *ps_getProcs(u32 *count) {
 				}
 
 				/* read process */
-				sproc = ps_readProc(dfd,procs + pos);
-				if(sproc == NULL) {
+				if(!ps_readProc(dfd,atoi(entry->name),procs + pos)) {
 					close(dfd);
 					free(procs);
 					printe("Unable to read process-data");
@@ -140,7 +169,7 @@ static sProcess *ps_getProcs(u32 *count) {
 	}
 	else {
 		free(procs);
-		printe("Unable to open '%s'",path);
+		printe("Unable to open '%s'","system:/processes");
 		return NULL;
 	}
 
@@ -148,7 +177,87 @@ static sProcess *ps_getProcs(u32 *count) {
 	return procs;
 }
 
-static char *ps_readProc(tFD fd,sProcess *p) {
+static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
+	sDirEntry *entry;
+	char path[MAX_PATH_LEN + 1];
+	char ppath[MAX_PATH_LEN + 1];
+	tFD threads,dfd;
+	char *buf;
+
+	buf = ps_readNode(fd);
+	if(buf == NULL)
+		return false;
+
+	/* parse string */
+	sscanf(
+		buf,
+		"%*s%hu" "%*s%hu" "%*s%s" "%*s%u" "%*s%u" "%*s%u",
+		&p->pid,&p->parentPid,&p->command,&p->textPages,&p->dataPages,&p->stackPages
+	);
+	p->threads = sll_create();
+
+	/* read threads */
+	sprintf(path,"system:/processes/%d/threads",pid);
+	threads = open(path,IO_READ);
+	if(threads < 0) {
+		free(buf);
+		sll_destroy(p->threads,true);
+		return false;
+	}
+	while((entry = readdir(threads)) != NULL) {
+		if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
+			continue;
+
+		/* build path */
+		sprintf(ppath,"system:/processes/%d/threads/%s",pid,entry->name);
+		if((dfd = open(ppath,IO_READ)) >= 0) {
+			sPThread *t = (sPThread*)malloc(sizeof(sPThread));
+			/* read thread */
+			if(t == NULL || !ps_readThread(dfd,t)) {
+				free(t);
+				close(dfd);
+				free(buf);
+				sll_destroy(p->threads,true);
+				printe("Unable to read thread-data");
+				return false;
+			}
+
+			sll_append(p->threads,t);
+			close(dfd);
+		}
+		else {
+			free(buf);
+			sll_destroy(p->threads,true);
+			printe("Unable to open '%s'",ppath);
+			return false;
+		}
+	}
+	closedir(threads);
+
+	free(buf);
+	return true;
+}
+
+static bool ps_readThread(tFD fd,sPThread *t) {
+	char *buf = ps_readNode(fd);
+	if(buf == NULL)
+		return false;
+
+	/* parse string; use separate u16 storage for state since we can't tell scanf that is a byte */
+	u16 state;
+	sscanf(
+		buf,
+		"%*s%hu" "%*s%hu" "%*s%hu" "%*s%u" "%*s%8x%8x" "%*s%8x%8x",
+		&t->tid,&t->pid,&state,&t->stackPages,(u32*)&t->ucycleCount + 1,(u32*)&t->ucycleCount,
+		(u32*)&t->kcycleCount + 1,(u32*)&t->kcycleCount
+	);
+	t->state = state;
+
+	free(buf);
+	return true;
+}
+
+static char *ps_readNode(tFD fd) {
 	u32 pos = 0;
 	u32 size = 256;
 	s32 res;
@@ -163,17 +272,5 @@ static char *ps_readProc(tFD fd,sProcess *p) {
 		if(buf == NULL)
 			return NULL;
 	}
-
-	/* parse string; use separate u16 storage for state since we can't tell scanf that is a byte */
-	u16 state;
-	sscanf(
-		buf,
-		"%*s%hu" "%*s%hu" "%*s%s" /*"%*s%hu"*/ "%*s%u" "%*s%u" "%*s%u" /*"%*s%8x%x" "%*s%8x%8x"*/,
-		&p->pid,&p->parentPid,&p->command,/*&state,*/&p->textPages,&p->dataPages,&p->stackPages/*,
-		(u32*)&p->ucycleCount + 1,(u32*)&p->ucycleCount,
-		(u32*)&p->kcycleCount + 1,(u32*)&p->kcycleCount*/
-	);
-	p->state = state;
-
 	return buf;
 }

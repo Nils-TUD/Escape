@@ -43,5 +43,5 @@ int main(int argc,char **argv) {
 	else
 		fprintf(stderr,"You can't kill 'init'\n");
 
-	return EXIT_FAILURE;
+	return EXIT_SUCCESS;
 }

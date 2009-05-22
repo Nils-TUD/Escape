@@ -83,7 +83,7 @@ int main(void) {
 	requestIOPort(CURSOR_PORT_DATA);
 
 	/* clear screen */
-	memset(videoData,0,COLS * ROWS * 2);
+	memclear(videoData,COLS * ROWS * 2);
 
 	/* wait for messages */
 	static sMsgHeader msg;

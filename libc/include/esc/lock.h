@@ -22,8 +22,11 @@
 
 #include "common.h"
 
+typedef u32 tULock;
+
 /**
- * Aquires the lock with ident. If it exists and is locked, the process waits until it's unlocked
+ * Aquires the process-local lock with ident. If it exists and is locked, the process waits until
+ * it's unlocked
  *
  * @param ident to identify the lock
  * @return 0 on success
@@ -31,11 +34,43 @@
 s32 lock(u32 ident);
 
 /**
- * Releases the lock with given ident
+ * Aquires a process-local lock in user-space. If the given lock is in use, the process waits
+ * (actively) until the lock is unused.
+ *
+ * @param lock the lock
+ */
+void locku(tULock *lock);
+
+/**
+ * Aquires a global lock with given ident. If it exists and is locked, the process waits until
+ * it's unlocked
+ *
+ * @param ident to identify the lock
+ * @return 0 on success
+ */
+s32 lockg(u32 ident);
+
+/**
+ * Releases the process-local lock with given ident
  *
  * @param ident to identify the lock
  * @return 0 on success
  */
 s32 unlock(u32 ident);
+
+/**
+ * Releases the process-local lock that is locked in user-space
+ *
+ * @param lock the lock
+ */
+void unlocku(tULock *lock);
+
+/**
+ * Releases the global lock with given ident
+ *
+ * @param ident to identify the lock
+ * @return 0 on success
+ */
+s32 unlockg(u32 ident);
 
 #endif /* LOCK_H_ */

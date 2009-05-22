@@ -51,9 +51,12 @@ static sSLList* deadProcs = NULL;
 
 void proc_init(void) {
 	/* init the first process */
-	vassert(vfs_createProcess(0,&vfsinfo_procReadHandler),"Not enough mem for init process");
-
 	sProc *p = procs + 0;
+
+	/* create nodes in vfs */
+	p->threadDir = vfs_createProcess(0,&vfsinfo_procReadHandler);
+	vassert(p->threadDir != NULL,"Not enough mem for init process");
+
 	p->pid = 0;
 	p->parentPid = 0;
 	/* the first process has no text, data and stack */
@@ -144,8 +147,10 @@ s32 proc_clone(tPid newPid) {
 	vassert((procs + newPid)->pid == INVALID_PID,"The process slot 0x%x is already in use!",
 			procs + newPid);
 
+	p = procs + newPid;
 	/* first create the VFS node (we may not have enough mem) */
-	if(!vfs_createProcess(newPid,&vfsinfo_procReadHandler))
+	p->threadDir = vfs_createProcess(newPid,&vfsinfo_procReadHandler);
+	if(p->threadDir == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* clone page-dir */
@@ -155,7 +160,6 @@ s32 proc_clone(tPid newPid) {
 	}
 
 	/* set page-dir and pages for segments */
-	p = procs + newPid;
 	p->pid = newPid;
 	/* set text for paging_destroyPageDir() */
 	p->text = NULL;
@@ -178,7 +182,7 @@ s32 proc_clone(tPid newPid) {
 	/* clone current thread */
 	s32 res;
 	sThread *nt;
-	if((res = thread_clone(curThread,&nt,&dummy,true)) < 0) {
+	if((res = thread_clone(curThread,&nt,p,&dummy,true)) < 0) {
 		kheap_free(p->threads);
 		paging_destroyPageDir(p);
 		vfs_removeProcess(newPid);
@@ -193,8 +197,6 @@ s32 proc_clone(tPid newPid) {
 	}
 	/* set kernel-stack-frame; thread_clone() doesn't do it for us */
 	nt->kstackFrame = stackFrame;
-	/* change process; thread_clone() uses the process of the org thread */
-	nt->proc = p;
 	/* make thread ready */
 	sched_setReady(nt);
 
@@ -221,7 +223,7 @@ s32 proc_startThread(u32 entryPoint) {
 	sThread *t = thread_getRunning();
 	sThread *nt;
 	s32 res;
-	if((res = thread_clone(t,&nt,&stackFrame,false)) < 0)
+	if((res = thread_clone(t,&nt,t->proc,&stackFrame,false)) < 0)
 		return res;
 
 	/* append thread */
@@ -481,7 +483,7 @@ bool proc_changeSize(s32 change,eChgArea area) {
 
 		paging_map(addr,NULL,change,PG_WRITABLE,false);
 		/* now clear the memory */
-		memset((void*)addr,0,PAGE_SIZE * change);
+		memclear((void*)addr,PAGE_SIZE * change);
 	}
 	else {
 		/* we have to correct the address */

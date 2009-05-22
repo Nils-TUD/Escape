@@ -141,4 +141,10 @@ void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY);
  */
 void win_moveTo(tWinId window,tCoord x,tCoord y);
 
+#if DEBUGGING
+
+void win_dbg_print(void);
+
+#endif
+
 #endif /* WINDOW_H_ */

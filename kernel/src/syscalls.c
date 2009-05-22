@@ -1427,10 +1427,11 @@ static void sysc_destroySharedMem(sIntrptStackFrame *stack) {
 
 static void sysc_lock(sIntrptStackFrame *stack) {
 	u32 ident = SYSC_ARG1(stack);
+	bool global = (bool)SYSC_ARG2(stack);
 	sThread *t = thread_getRunning();
 	s32 res;
 
-	res = lock_aquire(t->tid,ident);
+	res = lock_aquire(t->tid,global ? INVALID_PID : t->proc->pid,ident);
 	if(res < 0) {
 		SYSC_ERROR(stack,res);
 		return;
@@ -1440,9 +1441,11 @@ static void sysc_lock(sIntrptStackFrame *stack) {
 
 static void sysc_unlock(sIntrptStackFrame *stack) {
 	u32 ident = SYSC_ARG1(stack);
+	bool global = (bool)SYSC_ARG2(stack);
+	sThread *t = thread_getRunning();
 	s32 res;
 
-	res = lock_release(ident);
+	res = lock_release(global ? INVALID_PID : t->proc->pid,ident);
 	if(res < 0) {
 		SYSC_ERROR(stack,res);
 		return;

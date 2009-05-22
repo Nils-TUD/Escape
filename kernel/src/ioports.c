@@ -32,7 +32,7 @@ s32 ioports_request(sProc *p,u16 start,u16 count) {
 		if(p->ioMap == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 		/* mark all as disallowed */
-		memset(p->ioMap,0xFFFFFFFF,IO_MAP_SIZE / 8);
+		memset(p->ioMap,0xFF,IO_MAP_SIZE / 8);
 	}
 
 	/* 0xF8 .. 0xFF is reserved */

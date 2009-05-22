@@ -22,6 +22,7 @@
 #include <esc/fileio.h>
 #include <esc/messages.h>
 #include <esc/mem.h>
+#include <esc/thread.h>
 #include <esc/stream.h>
 #include <esc/gui/application.h>
 #include <esc/gui/window.h>
@@ -206,7 +207,7 @@ namespace esc {
 			msg.data.y = win->getY();
 			msg.data.width = win->getWidth();
 			msg.data.height = win->getHeight();
-			msg.data.owner = getpid();
+			msg.data.owner = gettid();
 			msg.data.tmpWinId = win->getId();
 			msg.data.style = win->getStyle();
 			if(write(_winFd,&msg,sizeof(sMsgWinCreateReq)) != sizeof(sMsgWinCreateReq)) {

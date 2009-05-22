@@ -25,6 +25,7 @@
 #include <esc/signals.h>
 #include <esc/service.h>
 #include <esc/dir.h>
+#include <esc/thread.h>
 #include <stdlib.h>
 
 #include <esc/gui/application.h>
@@ -39,6 +40,13 @@
 #define MAX_VTERM_NAME_LEN	10
 
 using namespace esc::gui;
+
+static char *servName;
+
+/**
+ * The shell-Thread
+ */
+static int shell_main(void);
 
 /**
  * Handles SIG_INTRPT
@@ -59,9 +67,9 @@ int main(int argc,char **argv) {
 
 	// announce service; try to find an unused service-name because maybe a user wants
 	// to start us multiple times
-	u32 no = 0;
 	tServ sid;
-	char *servName = new char[MAX_PATH_LEN + 1];
+	u32 no = 0;
+	servName = new char[MAX_PATH_LEN + 1];
 	do {
 		sprintf(servName,"guiterm%d",no);
 		sid = regService(servName,SERVICE_TYPE_SINGLEPIPE);
@@ -81,21 +89,20 @@ int main(int argc,char **argv) {
 	redirFd(STDERR_FILENO,fout);
 	delete servPath;
 
-	if(fork() > 0) {
-		// we don't need the name here anymore
-		delete servName;
+	// lets handle the shell-stuff in a separate thread
+	if(fork() == 0)
+		return shell_main();
+	/*startThread(shell_main);*/
 
-		// let the parent stay here and handle the UI
-		ShellControl sh(0,0,500,280);
-		ShellApplication *app = new ShellApplication(sid,no,&sh);
-		Window w("Shell",100,100,500,300);
-		w.add(sh);
-		return app->run();
-	}
+	// the parent handles the GUI
+	ShellControl sh(0,0,500,280);
+	ShellApplication *app = new ShellApplication(sid,no,&sh);
+	Window w("Shell",100,100,500,300);
+	w.add(sh);
+	return app->run();
+}
 
-	// the child handles the shell-stuff
-	char *buffer;
-
+static int shell_main(void) {
 	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0) {
 		printe("Unable to announce sig-handler for %d",SIG_INTRPT);
 		return EXIT_FAILURE;
@@ -110,6 +117,7 @@ int main(int argc,char **argv) {
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");
 
+	char *buffer;
 	while(1) {
 		// create buffer (history will free it)
 		buffer = (char*)malloc((MAX_CMD_LEN + 1) * sizeof(char));

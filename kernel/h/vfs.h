@@ -21,7 +21,6 @@
 #define VFS_H_
 
 #include "common.h"
-#include "proc.h"
 #include <sllist.h>
 
 /* special service-client names */
@@ -266,9 +265,9 @@ s32 vfs_removeService(tTid tid,tVFSNodeNo nodeNo);
  *
  * @param pid the process-id
  * @param handler the read-handler
- * @return true if successfull
+ * @return the thread-directory-node on success
  */
-bool vfs_createProcess(tPid pid,fRead handler);
+sVFSNode *vfs_createProcess(tPid pid,fRead handler);
 
 /**
  * Removes all occurrences of the given process from VFS
@@ -276,6 +275,15 @@ bool vfs_createProcess(tPid pid,fRead handler);
  * @param pid the process-id
  */
 void vfs_removeProcess(tPid pid);
+
+/**
+ * Creates the VFS-node for the given thread
+ *
+ * @param tid the thread-id
+ * @param handler the read-handler for the node
+ * @return true on success
+ */
+bool vfs_createThread(tTid tid,fRead handler);
 
 /**
  * Removes all occurrences of the given thread from VFS

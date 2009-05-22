@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/env.h>
 #include <esc/fileio.h>
+#include <esc/lock.h>
 #include <stdlib.h>
 
 /* macro to get a pointer to element <i> from <array> with a size of <elSize> per element */
@@ -32,13 +33,16 @@
 static void _qsort(void *base,size_t num,size_t size,fCompare cmp,int left,int right);
 
 /* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
+static tULock randLock = 0;
 static unsigned int randm = RAND_MAX;
 static unsigned int randa = 1103515245;
 static unsigned int randc = 12345;
 static unsigned int lastRand = 0;
 
 int rand(void) {
+	locku(&randLock);
 	lastRand = (randa * lastRand + randc) % randm;
+	unlocku(&randLock);
 	return lastRand;
 }
 

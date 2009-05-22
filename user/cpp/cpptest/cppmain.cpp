@@ -52,6 +52,7 @@ void my::doIt() {
 
 int main(void) {
 	startThread(threadFunc);
+	startThread(threadFunc);
 
 #if 1
 	char str[10];
@@ -136,10 +137,9 @@ int main(void) {
 }
 
 static int threadFunc(void) {
-	x.doIt();
-	printf("I am thread %d\n",gettid());
-	/*sleep(100);*/
-	if(gettid() < 50)
-		startThread(threadFunc);
+	while(1) {
+		printf("I am thread %d\n",gettid());
+		sleep(100);
+	}
 	return 0;
 }

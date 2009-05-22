@@ -273,7 +273,7 @@ thread_save:
 	leave
 	ret
 
-; bool thread_resume(u32 pageDir,sThreadRegs *saveArea,u32 kstackFrame));
+; bool thread_resume(u32 pageDir,sThreadRegs *saveArea,u32 kstackFrame);
 thread_resume:
 	push	ebp
 	mov		ebp,esp

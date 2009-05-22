@@ -505,41 +505,15 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 
 				/* last usage? */
 				if(--(n->refCount) == 0) {
-					/* we have to remove the service-usage-node, if it is one */
-					if((n->mode & MODE_TYPE_SERVUSE)) {
-						/* if there are message for the service we don't want to throw them away */
-						/* if there are any in the receivelist (and no references of the node) we
-						 * can throw them away because no one will read them anymore
-						 * (it means that the client has already closed the file) */
-						/* note also that we can assume that the service is still running since we
-						 * would have deleted the whole service-node otherwise */
-						if(sll_length(n->data.servuse.sendList) == 0) {
-							/* free send and receive list */
-							if(n->data.servuse.recvList != NULL) {
-								sll_destroy(n->data.servuse.recvList,true);
-								n->data.servuse.recvList = NULL;
-							}
-							if(n->data.servuse.sendList != NULL) {
-								sll_destroy(n->data.servuse.sendList,true);
-								n->data.servuse.sendList = NULL;
-							}
-
-							/* free node */
-							if((n->parent->mode & MODE_SERVICE_SINGLEPIPE) == 0)
-								kheap_free(n->name);
-							else if(n->data.servuse.singlePipeClients != NULL) {
-								sll_destroy(n->data.servuse.singlePipeClients,false);
-								n->data.servuse.singlePipeClients = NULL;
-							}
-
-							vfsn_removeChild(n->parent,n);
-						}
-					}
-
-					/* remove pipe */
-					if((n->mode & MODE_TYPE_PIPE)) {
-						kheap_free(n->name);
-						vfsn_removeChild(n->parent,n);
+					/* if there are message for the service we don't want to throw them away */
+					/* if there are any in the receivelist (and no references of the node) we
+					 * can throw them away because no one will read them anymore
+					 * (it means that the client has already closed the file) */
+					/* note also that we can assume that the service is still running since we
+					 * would have deleted the whole service-node otherwise */
+					if((n->mode & MODE_TYPE_SERVUSE) || (n->mode & MODE_TYPE_PIPE)) {
+						if(!(n->mode & MODE_TYPE_SERVUSE) || sll_length(n->data.servuse.sendList) == 0)
+							vfsn_removeNode(n);
 					}
 				}
 			}
@@ -705,61 +679,28 @@ tFileNo vfs_openClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servN
 }
 
 s32 vfs_removeService(tTid tid,tVFSNodeNo nodeNo) {
-	sVFSNode *serv = SERVICES();
-	sVFSNode *m,*t,*n = nodes + nodeNo;
+	sVFSNode *n = nodes + nodeNo;
 
 	vassert(vfsn_isValidNodeNo(nodeNo),"Invalid node number %d",nodeNo);
 
 	if(n->owner != tid || !(n->mode & MODE_TYPE_SERVICE))
 		return ERR_NOT_OWN_SERVICE;
 
-	/* remove childs (service-usages) */
-	m = NODE_FIRST_CHILD(n);
-	while(m != NULL) {
-		t = m->next;
-		/* free memory */
-		if((n->mode & MODE_SERVICE_SINGLEPIPE) == 0)
-			kheap_free(m->name);
-
-		/* free send and receive list */
-		if(m->data.servuse.recvList != NULL) {
-			sll_destroy(m->data.servuse.recvList,true);
-			m->data.servuse.recvList = NULL;
-		}
-		if(m->data.servuse.sendList != NULL) {
-			sll_destroy(m->data.servuse.sendList,true);
-			m->data.servuse.sendList = NULL;
-		}
-		/* free single-pipe clients */
-		if(n->mode & MODE_SERVICE_SINGLEPIPE) {
-			if(m->data.servuse.singlePipeClients != NULL) {
-				sll_destroy(m->data.servuse.singlePipeClients,false);
-				m->data.servuse.singlePipeClients = NULL;
-			}
-		}
-
-		/* remove node */
-		vfsn_removeChild(n,m);
-
-		/* to next */
-		m = t;
-	}
-
-	/* free node */
-	kheap_free(n->name);
-	vfsn_removeChild(serv,n);
+	/* remove service-node including all service-usages */
+	vfsn_removeNode(n);
 	return 0;
 }
 
-bool vfs_createProcess(tPid pid,fRead handler) {
+sVFSNode *vfs_createProcess(tPid pid,fRead handler) {
 	char *name;
 	sVFSNode *proc = PROCESSES();
 	sVFSNode *n = proc->firstChild;
+	sVFSNode *dir,*tdir;
 
 	/* build name */
 	name = (char*)kheap_alloc(sizeof(char) * 12);
 	if(name == NULL)
-		return false;
+		return NULL;
 
 	itoa(name,pid);
 
@@ -768,43 +709,51 @@ bool vfs_createProcess(tPid pid,fRead handler) {
 		/* entry already existing? */
 		if(strcmp(n->name,name) == 0) {
 			kheap_free(name);
-			return false;
+			return NULL;
 		}
 		n = n->next;
 	}
 
-	n = vfsn_createInfo(KERNEL_TID,proc,name,handler);
-	if(n != NULL) {
-		/* invalidate cache */
-		if(proc->data.def.cache != NULL) {
-			kheap_free(proc->data.def.cache);
-			proc->data.def.cache = NULL;
-		}
-		return true;
+	/* create dir */
+	dir = vfsn_createDir(proc,name);
+	if(dir == NULL) {
+		kheap_free(name);
+		return NULL;
 	}
 
-	kheap_free(name);
-	return false;
+	/* invalidate cache */
+	if(proc->data.def.cache != NULL) {
+		kheap_free(proc->data.def.cache);
+		proc->data.def.cache = NULL;
+	}
+
+	/* create process-info-node */
+	n = vfsn_createInfo(KERNEL_TID,dir,(char*)"info",handler);
+	if(n == NULL) {
+		vfsn_removeNode(dir);
+		kheap_free(name);
+		return NULL;
+	}
+
+	/* create threads-dir */
+	tdir = vfsn_createDir(dir,(char*)"threads");
+	if(tdir == NULL) {
+		vfsn_removeNode(dir);
+		kheap_free(name);
+		return NULL;
+	}
+
+	return tdir;
 }
 
 void vfs_removeProcess(tPid pid) {
 	sVFSNode *proc = PROCESSES();
+	sProc *p = proc_getByPid(pid);
 	char name[12];
-	sVFSNode *n;
 	itoa(name,pid);
 
 	/* remove from system:/processes */
-	n = NODE_FIRST_CHILD(proc->firstChild);
-	while(n != NULL) {
-		/* found node? */
-		if(strcmp(n->name,name) == 0) {
-			/* free node */
-			kheap_free(n->name);
-			vfsn_removeChild(proc,n);
-			break;
-		}
-		n = n->next;
-	}
+	vfsn_removeNode(p->threadDir->parent);
 
 	/* invalidate cache */
 	if(proc->data.def.cache != NULL) {
@@ -813,20 +762,62 @@ void vfs_removeProcess(tPid pid) {
 	}
 }
 
+bool vfs_createThread(tTid tid,fRead handler) {
+	char *name;
+	sVFSNode *n;
+	sThread *t = thread_getById(tid);
+
+	/* build name */
+	name = (char*)kheap_alloc(sizeof(char) * 12);
+	if(name == NULL)
+		return false;
+	itoa(name,tid);
+
+	/* create thread-node */
+	n = vfsn_createInfo(tid,t->proc->threadDir,name,handler);
+	if(n == NULL) {
+		kheap_free(name);
+		return false;
+	}
+
+	return true;
+}
+
 void vfs_removeThread(tTid tid) {
+	sThread *t = thread_getById(tid);
 	sVFSNode *serv = SERVICES();
-	sVFSNode *n,*t;
+	sVFSNode *n,*tn;
+	char *name;
+
 	/* check if the thread is a service */
 	n = NODE_FIRST_CHILD(serv->firstChild);
 	while(n != NULL) {
 		if((n->mode & MODE_TYPE_SERVICE) && n->owner == tid) {
-			t = n->next;
+			tn = n->next;
 			vfs_removeService(tid,NADDR_TO_VNNO(n));
-			n = t;
+			n = tn;
 		}
 		else
 			n = n->next;
 	}
+
+	/* build name */
+	name = (char*)kheap_alloc(sizeof(char) * 12);
+	if(name == NULL)
+		return false;
+	itoa(name,tid);
+
+	/* search for thread-node and remove it */
+	n = NODE_FIRST_CHILD(t->proc->threadDir);
+	while(n != NULL) {
+		if(strcmp(n->name,name) == 0) {
+			vfsn_removeNode(n);
+			break;
+		}
+		n = n->next;
+	}
+
+	kheap_free(name);
 }
 
 s32 vfs_defReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {

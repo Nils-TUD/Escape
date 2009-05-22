@@ -28,6 +28,7 @@
 #include <util.h>
 #include <signals.h>
 #include <vfs.h>
+#include <vfsinfo.h>
 #include <vfsnode.h>
 #include <timer.h>
 #include <video.h>
@@ -59,9 +60,9 @@ sThread *thread_init(sProc *p) {
 	/* we'll give the thread a stack later */
 	t->ustackBegin = KERNEL_AREA_V_ADDR;
 	t->ustackPages = 0;
-	t->ucycleCount = 0;
+	t->ucycleCount.count = 0;
 	t->ucycleStart = 0;
-	t->kcycleCount = 0;
+	t->kcycleCount.count = 0;
 	t->kcycleStart = 0;
 	t->fpuState = NULL;
 	t->signal = 0;
@@ -77,6 +78,10 @@ sThread *thread_init(sProc *p) {
 	/* append */
 	if(!sll_append(list,t))
 		util_panic("Unable to append initial thread");
+
+	/* insert in VFS; thread needs to be inserted for it */
+	if(!vfs_createThread(t->tid,vfsinfo_threadReadHandler))
+		util_panic("Unable to put first thread in vfs");
 
 	cur = t;
 	return t;
@@ -105,24 +110,32 @@ void thread_switch(void) {
 }
 
 void thread_switchTo(tTid tid) {
-	sThread *t = thread_getById(tid);
-	vassert(t != NULL,"Thread with tid %d not found",tid);
-
+	u32 kcstart = cur->kcycleStart;
 	/* finish kernel-time here since we're switching the process */
-	if(cur->kcycleStart > 0)
-		cur->kcycleCount += cpu_rdtsc() - cur->kcycleStart;
+	if(kcstart > 0) {
+		u64 cycles = cpu_rdtsc();
+		cur->kcycleCount.count += cycles - kcstart;
+	}
 
 	if(tid != cur->tid && !thread_save(&cur->save)) {
+		sThread *t = thread_getById(tid);
+		vassert(t != NULL,"Thread with tid %d not found",tid);
+		sThread *old;
+
 		/* mark old process ready, if it should not be blocked, killed or something */
 		if(cur->state == ST_RUNNING)
 			sched_setReady(cur);
 
+		old = cur;
 		cur = t;
 		sched_setRunning(cur);
-		/* remove the io-map. it will be set as soon as the process accesses an io-port
-		 * (we'll get an exception) */
-		/* TODO this is just necessary if the process changes, not just the thread! */
-		tss_removeIOMap();
+
+		if(old->proc != cur->proc) {
+			/* remove the io-map. it will be set as soon as the process accesses an io-port
+			 * (we'll get an exception) */
+			tss_removeIOMap();
+		}
+
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */
 		fpu_lockFPU();
@@ -278,7 +291,7 @@ s32 thread_extendStack(u32 address) {
 	return 0;
 }
 
-s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc) {
+s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc) {
 	tFD i;
 	sThread *t = *dst;
 	t = (sThread*)kheap_alloc(sizeof(sThread));
@@ -290,11 +303,12 @@ s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc) {
 	t->events = src->events;
 	/* TODO clone fpu-state */
 	t->fpuState = NULL;
-	t->kcycleCount = 0;
+	t->kcycleCount.count32.lower = 0;
+	t->kcycleCount.count32.upper = 0;
 	t->kcycleStart = 0;
-	t->ucycleCount = 0;
+	t->ucycleCount.count = 0;
 	t->ucycleStart = 0;
-	t->proc = src->proc;
+	t->proc = p;
 	t->signal = 0;
 	if(cloneProc) {
 		/* proc_clone() sets t->kstackFrame in this case */
@@ -356,6 +370,16 @@ s32 thread_clone(sThread *src,sThread **dst,u32 *stackFrame,bool cloneProc) {
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
+	/* insert in VFS; thread needs to be inserted for it */
+	if(!vfs_createThread(t->tid,vfsinfo_threadReadHandler)) {
+		if(!cloneProc) {
+			mm_freeFrame(t->kstackFrame,MM_DEF);
+			paging_unmap(t->ustackBegin - t->ustackPages * PAGE_SIZE,t->ustackPages,true,true);
+		}
+		kheap_free(t);
+		return ERR_NOT_ENOUGH_MEM;
+	}
+
 	/* inherit file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		t->fileDescs[i] = src->fileDescs[i];
@@ -374,8 +398,10 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 		/* put it in the dead-thread-queue to destroy it later */
 		if(deadThreads == NULL) {
 			deadThreads = sll_create();
-			if(deadThreads == NULL)
+			if(deadThreads == NULL) {
+				kheap_dbg_print();
 				util_panic("Not enough mem for dead thread-list");
+			}
 		}
 		if(!sll_append(deadThreads,t))
 			util_panic("Not enough mem to append dead thread");
@@ -441,15 +467,14 @@ void thread_dbg_printAll(void) {
 void thread_dbg_print(sThread *t) {
 	static const char *states[] = {"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE"};
 	tFD i;
-	u32 *ptr;
 	vid_printf("\tthread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 	vid_printf("\t\tstate=%s\n",states[t->state]);
 	vid_printf("\t\tustack=0x%08x (%d pages)\n",t->ustackBegin,t->ustackPages);
 	vid_printf("\t\tkstackFrame=0x%x\n",t->kstackFrame);
-	ptr = (u32*)&t->ucycleCount;
-	vid_printf("\t\tucycleCount = 0x%08x%08x\n",*(ptr + 1),*ptr);
-	ptr = (u32*)&t->kcycleCount;
-	vid_printf("\t\tkcycleCount = 0x%08x%08x\n",*(ptr + 1),*ptr);
+	vid_printf("\t\tucycleCount = 0x%08x%08x\n",t->ucycleCount.count32.upper,
+			t->ucycleCount.count32.lower);
+	vid_printf("\t\tkcycleCount = 0x%08x%08x\n",t->kcycleCount.count32.upper,
+			t->kcycleCount.count32.lower);
 	vid_printf("\t\tfileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(t->fileDescs[i] != -1) {

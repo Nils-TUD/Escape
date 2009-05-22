@@ -69,7 +69,7 @@ void vid_init(void) {
 }
 
 void vid_clearScreen(void) {
-	memset((void*)VIDEO_BASE,0,COLS * 2 * ROWS);
+	memclear((void*)VIDEO_BASE,COLS * 2 * ROWS);
 }
 
 void vid_useColor(eColor bg,eColor fg) {

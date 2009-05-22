@@ -24,6 +24,7 @@
 #include "intrpt.h"
 #include "fpu.h"
 #include "text.h"
+#include "vfsnode.h"
 
 /* max number of processes */
 #define PROC_COUNT			1024
@@ -60,6 +61,8 @@ typedef struct {
 	char command[MAX_PROC_NAME_LEN + 1];
 	/* threads of this process */
 	sSLList *threads;
+	/* the directory-node in the VFS of this process */
+	sVFSNode *threadDir;
 } sProc;
 
 /* the area for proc_changeSize() */

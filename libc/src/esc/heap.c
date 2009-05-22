@@ -21,10 +21,14 @@
 #include <esc/heap.h>
 #include <esc/mem.h>
 #include <esc/debug.h>
+#include <esc/lock.h>
 #include <string.h>
 #include <assert.h>
 
 #define PAGE_SIZE			4096
+#define LOCK_MALLOC			0x0001FFFF
+#define LOCK_FREE			0x0002FFFF
+#define LOCK_REALLOC		0x0003FFFF
 
 /* an area in memory */
 typedef struct sMemArea sMemArea;
@@ -66,12 +70,17 @@ static bool loadNewSpace(u32 size);
  */
 static u32 getHash(void *addr);
 
+/* the lock for the heap */
+static tULock mlock = 0;
+
 void *malloc(u32 size) {
 	sMemArea *area,*prev,*narea;
 	sMemArea **list;
 
 	if(size == 0)
 		return NULL;
+
+	locku(&mlock);
 
 	/* find a suitable area */
 	prev = NULL;
@@ -85,8 +94,10 @@ void *malloc(u32 size) {
 
 	/* no area found? */
 	if(area == NULL) {
-		if(!loadNewSpace(size))
+		if(!loadNewSpace(size)) {
+			unlocku(&mlock);
 			return NULL;
+		}
 		/* we can assume that it fits */
 		area = usableList;
 		/* remove from usable-list */
@@ -105,6 +116,7 @@ void *malloc(u32 size) {
 		if(freeList == NULL) {
 			if(!loadNewAreas()) {
 				/* TODO we may have changed something... */
+				unlocku(&mlock);
 				return NULL;
 			}
 		}
@@ -125,6 +137,7 @@ void *malloc(u32 size) {
 	area->next = *list;
 	*list = area;
 
+	unlocku(&mlock);
 	return area->address;
 }
 
@@ -133,7 +146,7 @@ void *calloc(u32 num,u32 size) {
 	if(a == NULL)
 		return NULL;
 
-	memset(a,0,num * size);
+	memclear(a,num * size);
 	return a;
 }
 
@@ -143,6 +156,8 @@ void free(void *addr) {
 	/* addr may be null */
 	if(addr == NULL)
 		return;
+
+	locku(&mlock);
 
 	/* find the area with given address */
 	oprev = NULL;
@@ -155,8 +170,10 @@ void free(void *addr) {
 	}
 
 	/* area not found? */
-	if(area == NULL)
+	if(area == NULL) {
+		unlocku(&mlock);
 		return;
+	}
 
 	/* find the previous and next free areas */
 	prev = NULL;
@@ -238,10 +255,14 @@ void free(void *addr) {
 		area->next = usableList;
 		usableList = area;
 	}
+
+	unlocku(&mlock);
 }
 
 void *realloc(void *addr,u32 size) {
 	sMemArea *area,*a,*prev;
+	locku(&mlock);
+
 	/* find the area with given address */
 	area = occupiedMap[getHash(addr)];
 	while(area != NULL) {
@@ -251,12 +272,16 @@ void *realloc(void *addr,u32 size) {
 	}
 
 	/* area not found? */
-	if(area == NULL)
+	if(area == NULL) {
+		unlocku(&mlock);
 		return NULL;
+	}
 
 	/* ignore size-shrinks */
-	if(size < area->size)
+	if(size < area->size) {
+		unlocku(&mlock);
 		return addr;
+	}
 
 	a = usableList;
 	prev = NULL;
@@ -284,6 +309,7 @@ void *realloc(void *addr,u32 size) {
 				}
 
 				area->size = size;
+				unlocku(&mlock);
 				return addr;
 			}
 
@@ -293,6 +319,8 @@ void *realloc(void *addr,u32 size) {
 		prev = a;
 		a = a->next;
 	}
+
+	unlocku(&mlock);
 
 	/* the areas are not big enough, so allocate a new one */
 	a = malloc(size);

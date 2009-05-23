@@ -33,6 +33,11 @@
 void timer_init(void);
 
 /**
+ * @return the number of timer-interrupts so far
+ */
+u32 timer_getIntrptCount(void);
+
+/**
  * Puts the given thread to sleep for the given number of milliseconds
  *
  * @param tid the thread-id

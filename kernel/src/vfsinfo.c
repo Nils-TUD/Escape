@@ -21,6 +21,8 @@
 #include <mm.h>
 #include <multiboot.h>
 #include <proc.h>
+#include <timer.h>
+#include <cpu.h>
 #include <vfs.h>
 #include <vfsnode.h>
 #include <vfsinfo.h>
@@ -40,12 +42,32 @@ typedef struct {
 /**
  * The read-callback for the proc-read-handler
  */
-static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer);
+static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
 
 /**
  * The read-callback for the thread-read-handler
  */
-static void vfsinfo_threadReadCallback(sVFSNode *node,void *buffer);
+static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
+
+/**
+ * The cpu-read-handler
+ */
+static s32 vfsinfo_cpuReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+
+/**
+ * The read-callback for the cpu-read-handler
+ */
+static void vfsinfo_cpuReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
+
+/**
+ * The stats-read-handler
+ */
+static s32 vfsinfo_statsReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+
+/**
+ * The read-callback for the stats-read-handler
+ */
+static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
 
 /**
  * The read-handler for the mem-usage-node
@@ -55,15 +77,17 @@ static s32 vfsinfo_memUsageReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 of
 /**
  * The read-callback for the VFS memusage-read-handler
  */
-static void vfsinfo_memUsageReadCallback(sVFSNode *node,void *buffer);
+static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
 
 void vfsinfo_init(void) {
 	tVFSNodeNo nodeNo;
 	sVFSNode *sysNode;
-	vfsn_resolvePath("system:/",&nodeNo);
+	vfsn_resolvePath("system:/",&nodeNo,false);
 	sysNode = vfsn_getNode(nodeNo);
 
-	vfsn_createInfo(KERNEL_TID,vfsn_getNode(nodeNo),(char*)"memusage",vfsinfo_memUsageReadHandler);
+	vfsn_createInfo(KERNEL_TID,sysNode,(char*)"memusage",vfsinfo_memUsageReadHandler);
+	vfsn_createInfo(KERNEL_TID,sysNode,(char*)"cpu",vfsinfo_cpuReadHandler);
+	vfsn_createInfo(KERNEL_TID,sysNode,(char*)"stats",vfsinfo_statsReadHandler);
 }
 
 s32 vfsinfo_procReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
@@ -75,12 +99,17 @@ s32 vfsinfo_procReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 co
 			vfsinfo_procReadCallback);
 }
 
-static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer) {
-	char *str = (char*)buffer;
+static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
+	UNUSED(dataSize);
 	sProc *p = proc_getByPid(atoi(node->parent->name));
+	sStringBuffer buf;
+	buf.dynamic = false;
+	buf.str = *(char**)buffer;
+	buf.size = 17 * 6 + 5 * 10 + MAX_PROC_NAME_LEN + 1;
+	buf.len = 0;
 
 	util_sprintf(
-		str,
+		&buf,
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%s\n"
@@ -99,18 +128,23 @@ static void vfsinfo_procReadCallback(sVFSNode *node,void *buffer) {
 
 s32 vfsinfo_threadReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	return vfs_readHelper(tid,node,buffer,offset,count,
-			17 * 6 + 4 * 10 + 2 * 16,vfsinfo_threadReadCallback);
+			17 * 6 + 4 * 10 + 2 * 16 + 1,vfsinfo_threadReadCallback);
 }
 
-static void vfsinfo_threadReadCallback(sVFSNode *node,void *buffer) {
-	char *str = (char*)buffer;
+static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
+	UNUSED(dataSize);
 	sThread *t = thread_getById(atoi(node->name));
 	u32 *uptr,*kptr;
+	sStringBuffer buf;
+	buf.dynamic = false;
+	buf.str = *(char**)buffer;
+	buf.size = 17 * 6 + 4 * 10 + 2 * 16 + 1;
+	buf.len = 0;
 
 	uptr = (u32*)&t->ucycleCount;
 	kptr = (u32*)&t->kcycleCount;
 	util_sprintf(
-		str,
+		&buf,
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
@@ -127,19 +161,73 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,void *buffer) {
 	);
 }
 
+static s32 vfsinfo_cpuReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	return vfs_readHelper(tid,node,buffer,offset,count,0,vfsinfo_cpuReadCallback);
+}
+
+static void vfsinfo_cpuReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
+	UNUSED(node);
+	sStringBuffer buf;
+	buf.dynamic = true;
+	buf.str = NULL;
+	buf.size = 0;
+	buf.len = 0;
+	cpu_sprintf(&buf);
+	*buffer = buf.str;
+	*dataSize = buf.len + 1;
+}
+
+static s32 vfsinfo_statsReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	return vfs_readHelper(tid,node,buffer,offset,count,17 * 5 + 4 * 10 + 1 + 1 * 16 + 1,
+			vfsinfo_statsReadCallback);
+}
+
+static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
+	UNUSED(dataSize);
+	UNUSED(node);
+	u32 *ptr;
+	sStringBuffer buf;
+	buf.dynamic = false;
+	buf.str = *(char**)buffer;
+	buf.size = 17 * 5 + 4 * 10 + 1 + 1 * 16 + 1;
+	buf.len = 0;
+
+	u64 cycles = cpu_rdtsc();
+	ptr = (u32*)&cycles;
+	util_sprintf(
+		&buf,
+		"%-16s%u\n"
+		"%-16s%u\n"
+		"%-16s%u\n"
+		"%-16s%08x%08x\n"
+		"%-16s%us\n"
+		,
+		"Processes:",proc_getCount(),
+		"Threads:",thread_getCount(),
+		"Interrupts:",intrpt_getCount(),
+		"CPUCycles:",*(ptr + 1),*ptr,
+		"UpTime:",timer_getIntrptCount() / TIMER_FREQUENCY
+	);
+}
+
 static s32 vfsinfo_memUsageReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	return vfs_readHelper(tid,node,buffer,offset,count,(11 + 10 + 1) * 4 + 1,
 			vfsinfo_memUsageReadCallback);
 }
 
-static void vfsinfo_memUsageReadCallback(sVFSNode *node,void *buffer) {
-	char *str = (char*)buffer;
+static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
 	UNUSED(node);
+	UNUSED(dataSize);
+	sStringBuffer buf;
+	buf.dynamic = false;
+	buf.str = *(char**)buffer;
+	buf.size = (11 + 10 + 1) * 4 + 1;
+	buf.len = 0;
 
 	u32 free = mm_getFreeFrmCount(MM_DEF | MM_DMA) << PAGE_SIZE_SHIFT;
 	u32 total = mboot_getUsableMemCount();
 	util_sprintf(
-		str,
+		&buf,
 		"%-11s%10u\n"
 		"%-11s%10u\n"
 		"%-11s%10u\n"

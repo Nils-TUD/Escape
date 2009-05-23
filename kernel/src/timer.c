@@ -58,6 +58,7 @@ static sSLList *listener = NULL;
 /* total elapsed milliseconds */
 static u64 elapsedMsecs = 0;
 static u64 lastResched = 0;
+static u32 timerIntrpts = 0;
 
 void timer_init(void) {
 	/* change timer divisor */
@@ -71,6 +72,10 @@ void timer_init(void) {
 	listener = sll_create();
 	if(listener == NULL)
 		util_panic("Not enough mem for timer-listener");
+}
+
+u32 timer_getIntrptCount(void) {
+	return timerIntrpts;
 }
 
 s32 timer_sleepFor(tTid tid,u32 msecs) {
@@ -110,6 +115,7 @@ void timer_intrpt(void) {
 	sSLNode *n,*p,*tn;
 	sTimerListener *l;
 
+	timerIntrpts++;
 	elapsedMsecs += 1000 / TIMER_FREQUENCY;
 
 	/* TODO we should switch to the thread for which (elapsedMsecs - l->time) is max */

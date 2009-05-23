@@ -33,6 +33,7 @@
 [global paging_flushAddr]
 [global paging_flushTLB]
 [global paging_exchangePDir]
+[global cpu_cpuidSupported]
 [global cpu_rdtsc]
 [global cpu_getCR0]
 [global cpu_setCR0]
@@ -198,6 +199,22 @@ util_inByte:
 ; u32 getStackFrameStart(void);
 getStackFrameStart:
 	mov		eax,ebp
+	ret
+
+; bool cpu_cpuidSupported(void);
+cpu_cpuidSupported:
+	pushfd
+	pop		eax														; load eflags into eax
+	mov		ebx,eax												; make copy
+	xor		eax,0x200000									; swap cpuid-bit
+	and		ebx,0x200000									; isolate cpuid-bit
+	push	eax
+	popfd																; store eflags
+	pushfd
+	pop		eax														; load again to eax
+	and		eax,0x200000									; isolate cpuid-bit
+	xor		eax,ebx												; check wether the bit has been set
+	shr		eax,21												; if so, return 1 (cpuid supported)
 	ret
 
 ; u64 cpu_rdtsc(void);

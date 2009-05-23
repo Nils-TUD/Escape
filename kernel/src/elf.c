@@ -58,12 +58,12 @@ s32 elf_loadFromFile(const char *path) {
 	/* load the LOAD segments. */
 	datPtr = (u8 const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
-		/* read pheader */
-		vfs_seek(t->tid,file,(u32)datPtr);
-		res = vfs_readFile(t->tid,file,(u8*)&pheader,sizeof(Elf32_Phdr));
-		if(res < 0)
+		/* go to header */
+		if(vfs_seek(t->tid,file,(u32)datPtr) < 0)
 			goto failed;
-		if(res != sizeof(Elf32_Phdr))
+		/* read pheader */
+		res = vfs_readFile(t->tid,file,(u8*)&pheader,sizeof(Elf32_Phdr));
+		if(res < 0 || res != sizeof(Elf32_Phdr))
 			goto failed;
 
 		if(pheader.p_type == PT_LOAD) {
@@ -105,7 +105,8 @@ s32 elf_loadFromFile(const char *path) {
 					goto failed;
 
 				/* load data from fs */
-				vfs_seek(t->tid,file,pheader.p_offset);
+				if(vfs_seek(t->tid,file,pheader.p_offset) < 0)
+					goto failed;
 				target = (u8*)pheader.p_vaddr;
 				rem = pheader.p_filesz;
 				while(rem > 0) {
@@ -194,7 +195,7 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 			/* copy the data, and zero remaining bytes */
 			memcpy((void*)pheader->p_vaddr, (void*)segmentSrc, pheader->p_filesz);
 			memclear((void*)(pheader->p_vaddr + pheader->p_filesz),pheader->p_memsz - pheader->p_filesz);
-			++seenLoadSegments;
+			seenLoadSegments++;
 		}
 	}
 

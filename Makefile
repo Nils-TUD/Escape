@@ -27,8 +27,8 @@ export CWFLAGS=-Wall -ansi \
 export CPPWFLAGS=-Wall -Wextra -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations -Winline \
 				-Wno-long-long -fno-builtin
-export CPPDEFFLAGS=$(CPPWFLAGS) -g -O2 -D DEBUGGING=1
-export CDEFFLAGS=$(CWFLAGS) -g -O2 -D DEBUGGING=1
+export CPPDEFFLAGS=$(CPPWFLAGS) -g -D DEBUGGING=1
+export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING=1
 # flags for nasm
 export ASMFLAGS=-f elf
 
@@ -58,7 +58,7 @@ debughdd:
 		make umounthdd;
 
 umounthdd:
-		sudo umount /dev/loop0 > /dev/null 2>&1
+		tools/umounthdd.sh
 
 # virtual box disk
 createvbhdd:

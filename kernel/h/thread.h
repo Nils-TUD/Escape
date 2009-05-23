@@ -120,6 +120,11 @@ extern bool thread_save(sThreadRegs *saveArea);
 extern bool thread_resume(u32 pageDir,sThreadRegs *saveArea,u32 kstackFrame);
 
 /**
+ * @return the number of existing threads
+ */
+u32 thread_getCount(void);
+
+/**
  * @return the currently running thread
  */
 sThread *thread_getRunning(void);

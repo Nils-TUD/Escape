@@ -100,6 +100,11 @@ sProc *proc_getByPid(tPid pid);
 bool proc_exists(tPid pid);
 
 /**
+ * @return the number of existing processes
+ */
+u32 proc_getCount(void);
+
+/**
  * Determines wether the given process has a child
  *
  * @param pid the process-id

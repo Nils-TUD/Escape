@@ -115,6 +115,15 @@ bool proc_exists(tPid pid) {
 	return pid < PROC_COUNT && procs[pid].pid != INVALID_PID;
 }
 
+u32 proc_getCount(void) {
+	u32 i,count = 0;
+	for(i = 0; i < PROC_COUNT; i++) {
+		if(procs[i].pid != INVALID_PID)
+			count++;
+	}
+	return count;
+}
+
 bool proc_hasChild(tPid pid) {
 	tPid i;
 	sProc *p = procs;

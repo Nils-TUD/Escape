@@ -87,6 +87,13 @@ sThread *thread_init(sProc *p) {
 	return t;
 }
 
+u32 thread_getCount(void) {
+	u32 i,count = 0;
+	for(i = 0; i < THREAD_MAP_SIZE; i++)
+		count += sll_length(threadMap[i]);
+	return count;
+}
+
 sThread *thread_getRunning(void) {
 	return cur;
 }

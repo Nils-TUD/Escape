@@ -17,48 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef GDT_H_
-#define GDT_H_
+#ifndef TUTIL_H_
+#define TUTIL_H_
 
-#include "common.h"
+#include <test.h>
 
-/* the size of the io-map (in bits) */
-#define IO_MAP_SIZE				0xFFFF
+extern sTestModule tModUtil;
 
-/**
- * Inits the GDT
- */
-void gdt_init(void);
-
-/**
- * Checks wether the io-map is set
- *
- * @return true if so
- */
-bool tss_ioMapPresent(void);
-
-/**
- * Sets the given io-map. That means it copies IO_MAP_SIZE / 8 bytes from the given address
- * into the TSS
- *
- * @param ioMap the io-map to set
- */
-void tss_setIOMap(u8 *ioMap);
-
-/**
- * Removes the io-map from the TSS so that an exception will be raised if a user-process
- * access a port
- */
-void tss_removeIOMap(void);
-
-
-#if DEBUGGING
-
-/**
- * Prints the GDT
- */
-void gdt_dbg_print(void);
-
-#endif
-
-#endif /*GDT_H_*/
+#endif /* TUTIL_H_ */

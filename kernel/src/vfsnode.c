@@ -181,7 +181,7 @@ char *vfsn_getPath(tVFSNodeNo nodeNo) {
 	return (char*)path;
 }
 
-s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo) {
+s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,bool createNode) {
 	sVFSNode *n;
 	s32 pos;
 
@@ -256,7 +256,7 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo) {
 		return ERR_VFS_NODE_NOT_FOUND;
 
 	/* handle special node-types */
-	if((n->mode & MODE_TYPE_SERVICE)) {
+	if(createNode && (n->mode & MODE_TYPE_SERVICE)) {
 		sThread *t = thread_getRunning();
 		sVFSNode *child;
 		s32 err = vfsn_createServiceUse(t->tid,n,&child);
@@ -267,7 +267,8 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo) {
 		*nodeNo = NADDR_TO_VNNO(child);
 		return 0;
 	}
-	if((n->mode & MODE_TYPE_PIPECON)) {
+
+	if(createNode && (n->mode & MODE_TYPE_PIPECON)) {
 		sVFSNode *child;
 		s32 err = vfsn_createPipe(n,&child);
 		if(err < 0)
@@ -276,6 +277,7 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo) {
 		*nodeNo = NADDR_TO_VNNO(child);
 		return 0;
 	}
+
 	if(MODE_IS_LINK(n->mode)) {
 		/* resolve link */
 		n = (sVFSNode*)n->data.def.cache;

@@ -22,12 +22,36 @@
 #include <proc.h>
 #include <ksymbols.h>
 #include <paging.h>
+#include <kheap.h>
 #include <video.h>
 #include <stdarg.h>
 #include <string.h>
 
 /* the x86-call instruction is 5 bytes long */
-#define CALL_INSTR_SIZE 5
+#define CALL_INSTR_SIZE			5
+
+/* the minimum space-increase-size in util_vsprintf() */
+#define SPRINTF_MIN_INC_SIZE	10
+
+/* ensures that <buf> in util_vsprintf() has enough space for MAX(<width>,<pad>).
+ * If necessary more space is allocated. If it fails false will be returned */
+#define SPRINTF_INCREASE(width,pad) \
+	if(buf->dynamic) { \
+		u32 tmpLen = MAX((width),(pad)); \
+		if(buf->len + tmpLen >= buf->size) { \
+			buf->size += MAX(SPRINTF_MIN_INC_SIZE,1 + buf->len + tmpLen - buf->size); \
+			buf->str = kheap_realloc(buf->str,buf->size * sizeof(char)); \
+			if(!buf->str) { \
+				buf->size = 0; \
+				return false; \
+			} \
+		} \
+	}
+
+/* adds one char to <str> in util_vsprintf() and ensures that there is enough space for the char */
+#define SPRINTF_ADD_CHAR(c) \
+	SPRINTF_INCREASE(1,1); \
+	*str++ = (c);
 
 /* helper-functions */
 static u32 util_sprintu(char *str,u32 n,u8 base);
@@ -146,31 +170,129 @@ void util_dumpBytes(void *addr,u32 byteCount) {
 	}
 }
 
-void util_sprintf(char *str,const char *fmt,...) {
+u32 util_sprintfLen(const char *fmt,...) {
+	u32 len;
 	va_list ap;
 	va_start(ap,fmt);
-	util_vsprintf(str,fmt,ap);
+	len = util_vsprintfLen(fmt,ap);
 	va_end(ap);
+	return len;
 }
 
-void util_vsprintf(char *str,const char *fmt,va_list ap) {
-	char c,b,padchar;
+u32 util_vsprintfLen(const char *fmt,va_list ap) {
+	char c,b;
 	char *s;
 	u8 pad;
 	s32 n;
-	u32 u,x;
-	bool readFlags,padRight;
+	u32 u,width;
+	bool readFlags;
 	u8 base;
+	u32 len = 0;
 
 	while(1) {
 		/* wait for a '%' */
 		while((c = *fmt++) != '%') {
 			/* finished? */
 			if(c == '\0') {
-				*str = '\0';
-				return;
+				return len;
 			}
-			*str++ = c;
+			len++;
+		}
+
+		/* read flags */
+		readFlags = true;
+		while(readFlags) {
+			switch(*fmt) {
+				case '-':
+				case '0':
+					fmt++;
+					break;
+				default:
+					readFlags = false;
+					break;
+			}
+		}
+
+		/* read pad-width */
+		pad = 0;
+		while(*fmt >= '0' && *fmt <= '9') {
+			pad = pad * 10 + (*fmt - '0');
+			fmt++;
+		}
+
+		/* determine format */
+		switch(c = *fmt++) {
+			/* signed integer */
+			case 'd':
+				n = va_arg(ap, s32);
+				width = util_getnwidth(n);
+				len += MAX(width,pad);
+				break;
+			/* unsigned integer */
+			case 'b':
+			case 'u':
+			case 'o':
+			case 'x':
+				u = va_arg(ap, u32);
+				base = c == 'o' ? 8 : (c == 'x' ? 16 : (c == 'b' ? 2 : 10));
+				width = util_getuwidth(u,base);
+				len += MAX(width,pad);
+				break;
+			/* string */
+			case 's':
+				s = va_arg(ap, char*);
+				width = strlen(s);
+				len += MAX(width,pad);
+				break;
+			/* character */
+			case 'c':
+				b = (char)va_arg(ap, u32);
+				len++;
+				break;
+			/* all other */
+			default:
+				len++;
+				break;
+		}
+	}
+}
+
+bool util_sprintf(sStringBuffer *buf,const char *fmt,...) {
+	bool res;
+	va_list ap;
+	va_start(ap,fmt);
+	res = util_vsprintf(buf,fmt,ap);
+	va_end(ap);
+	return res;
+}
+
+bool util_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
+	char c,b,padchar;
+	char *s,*str;
+	u8 pad;
+	s32 n;
+	u32 u,x,width;
+	bool readFlags,padRight;
+	u8 base;
+
+	if(buf->dynamic && buf->str == NULL) {
+		buf->size = SPRINTF_MIN_INC_SIZE;
+		buf->str = kheap_alloc(SPRINTF_MIN_INC_SIZE * sizeof(char));
+		if(!buf->str)
+			return false;
+	}
+	str = buf->str + buf->len;
+
+	while(1) {
+		/* wait for a '%' */
+		while((c = *fmt++) != '%') {
+			/* finished? */
+			if(c == '\0') {
+				SPRINTF_ADD_CHAR('\0');
+				return true;
+			}
+			SPRINTF_ADD_CHAR(c);
+			buf->len++;
 		}
 
 		/* read flags */
@@ -205,16 +327,15 @@ void util_vsprintf(char *str,const char *fmt,va_list ap) {
 			/* signed integer */
 			case 'd':
 				n = va_arg(ap, s32);
-				if(n < 0) {
-					*str++ = '-';
-					n = -n;
-				}
+				width = util_getnwidth(n);
+				SPRINTF_INCREASE(width,pad);
 				if(!padRight && pad > 0)
-					str += util_sprintfPad(str,padchar,pad - util_getnwidth(n));
+					str += util_sprintfPad(str,padchar,pad - width);
 				x = util_sprintn(str,n);
 				str += x;
 				if(padRight && pad > 0)
 					str += util_sprintfPad(str,padchar,pad - x);
+				buf->len += MAX(width,pad);
 				break;
 			/* unsigned integer */
 			case 'b':
@@ -223,34 +344,43 @@ void util_vsprintf(char *str,const char *fmt,va_list ap) {
 			case 'x':
 				u = va_arg(ap, u32);
 				base = c == 'o' ? 8 : (c == 'x' ? 16 : (c == 'b' ? 2 : 10));
+				width = util_getuwidth(u,base);
+				SPRINTF_INCREASE(width,pad);
 				if(!padRight && pad > 0)
-					str += util_sprintfPad(str,padchar,pad - util_getuwidth(u,base));
+					str += util_sprintfPad(str,padchar,pad - width);
 				x = util_sprintu(str,u,base);
 				str += x;
 				if(padRight && pad > 0)
 					str += util_sprintfPad(str,padchar,pad - x);
+				buf->len += MAX(width,pad);
 				break;
 			/* string */
 			case 's':
 				s = va_arg(ap, char*);
+				width = strlen(s);
+				SPRINTF_INCREASE(width,pad);
 				if(!padRight && pad > 0)
-					str += util_sprintfPad(str,padchar,pad - strlen(s));
+					str += util_sprintfPad(str,padchar,pad - width);
 				x = 0;
 				while(*s) {
-					*str++ = *s++;
+					SPRINTF_ADD_CHAR(*s);
+					s++;
 					x++;
 				}
 				if(padRight && pad > 0)
 					str += util_sprintfPad(str,padchar,pad - x);
+				buf->len += MAX(width,pad);
 				break;
 			/* character */
 			case 'c':
 				b = (char)va_arg(ap, u32);
-				*str++ = b;
+				SPRINTF_ADD_CHAR(b);
+				buf->len++;
 				break;
 			/* all other */
 			default:
-				*str++ = c;
+				SPRINTF_ADD_CHAR(c);
+				buf->len++;
 				break;
 		}
 	}
@@ -291,10 +421,14 @@ static u32 util_sprintu(char *str,u32 n,u8 base) {
 
 static u32 util_sprintn(char *str,s32 n) {
 	u32 c = 0;
-	if(n >= 10) {
-		c += util_sprintn(str,n / 10);
-		str += c;
+	if(n < 0) {
+		*str = '-';
+		n = -n;
+		c++;
 	}
+	if(n >= 10)
+		c += util_sprintn(str + c,n / 10);
+	str += c;
 	*str = '0' + n % 10;
 	return c + 1;
 }

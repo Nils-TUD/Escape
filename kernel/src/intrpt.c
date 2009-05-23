@@ -261,6 +261,9 @@ static const char *intrptNo2Name[] = {
 	/* 0x30 */	"Syscall"
 };
 
+/* total number of interrupts */
+static u32 intrptCount = 0;
+
 /* stuff to count exceptions */
 static u32 exCount = 0;
 static u32 lastEx = 0xFFFFFFFF;
@@ -377,6 +380,10 @@ void intrpt_init(void) {
 	intrpt_initPic();
 }
 
+u32 intrpt_getCount(void) {
+	return intrptCount;
+}
+
 sIntrptStackFrame *intrpt_getCurStack(void) {
 	return curIntrptStack;
 }
@@ -460,6 +467,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 	u64 cycles = cpu_rdtsc();
 	sThread *t = thread_getRunning();
 	curIntrptStack = &stack;
+	intrptCount++;
 
 	/* increase user-space cycles */
 	if(t->ucycleStart > 0)

@@ -47,7 +47,7 @@ typedef struct sVFSNode sVFSNode;
 /* the function for read-requests on info-nodes */
 typedef s32 (*fRead)(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 /* callback function for the default read-handler */
-typedef void (*fReadCallBack)(sVFSNode *node,void *buffer);
+typedef void (*fReadCallBack)(sVFSNode *node,u32 *dataSize,void **buffer);
 
 struct sVFSNode {
 	char *name;

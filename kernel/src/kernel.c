@@ -133,11 +133,19 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
+	/* cpu */
+	vid_printf("Detecting CPU...");
+	cpu_detect();
+	vid_toLineEnd(strlen("DONE"));
+	vid_printf("\033f\x2%s\033r\x0","DONE");
+
 #if DEBUGGING
 	vid_printf("Free frames=%d, pages mapped=%d, free mem=%d KiB\n",
 			mm_getFreeFrmCount(MM_DMA | MM_DEF),paging_dbg_getPageCount(),
 			mm_getFreeFrmCount(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 #endif
+
+	/* TODO: $ shell vterm0 && kill 15 (=ourself) --> panic */
 
 #if 1
 	/* load initloader */

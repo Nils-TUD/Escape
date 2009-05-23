@@ -145,7 +145,7 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 			nodeNo = NADDR_TO_VNNO(child);
 			newFile = vfs_openFile(tid,e->flags,nodeNo);
 			if(newFile < 0) {
-				/* TODO release node? */
+				vfsn_removeNode(child);
 				return -1;
 			}
 			return newFile;
@@ -839,27 +839,30 @@ s32 vfs_defReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) 
 
 s32 vfs_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
 		fReadCallBack callback) {
-	void *mem;
+	void *mem = NULL;
 
 	UNUSED(tid);
 	vassert(node != NULL,"node == NULL");
 	vassert(buffer != NULL,"buffer == NULL");
 
-	/* can we copy it directly? */
-	if(offset == 0 && count == dataSize)
-		mem = buffer;
-	/* don't waste time in this case */
-	else if(offset >= dataSize)
-		return 0;
-	/* ok, use the heap as temporary storage */
-	else {
-		mem = kheap_alloc(dataSize);
-		if(mem == NULL)
+	/* just if the datasize is known in advance */
+	if(dataSize > 0) {
+		/* can we copy it directly? */
+		if(offset == 0 && count == dataSize)
+			mem = buffer;
+		/* don't waste time in this case */
+		else if(offset >= dataSize)
 			return 0;
+		/* ok, use the heap as temporary storage */
+		else {
+			mem = kheap_alloc(dataSize);
+			if(mem == NULL)
+				return 0;
+		}
 	}
 
 	/* copy values to public struct */
-	callback(node,mem);
+	callback(node,&dataSize,&mem);
 
 	/* stored on kheap? */
 	if((u32)mem != (u32)buffer) {

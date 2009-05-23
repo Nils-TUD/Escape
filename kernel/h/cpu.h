@@ -20,6 +20,9 @@
 #ifndef CPU_H_
 #define CPU_H_
 
+#include <common.h>
+#include <util.h>
+
 /* Enables the native (internal) mechanism for reporting x87 FPU errors when set;
  * enables the PC-style x87 FPU error reporting mechanism when clear. */
 #define CR0_NUMERIC_ERROR			(1 << 5)
@@ -41,10 +44,64 @@
  * setting of the TS flag. */
 #define CR0_MONITOR_COPROC			(1 << 1)
 
+typedef struct {
+	u8 vendor;
+	u16 model;
+	u16 family;
+	u16 type;
+	u16 brand;
+	u16 stepping;
+	u32 signature;
+} sCPU;
+
+enum eCPUIdRequests {
+	CPUID_GETVENDORSTRING,
+	CPUID_GETFEATURES,
+	CPUID_GETTLB,
+	CPUID_GETSERIAL,
+
+	CPUID_INTELEXTENDED=0x80000000,
+	CPUID_INTELFEATURES,
+	CPUID_INTELBRANDSTRING,
+	CPUID_INTELBRANDSTRINGMORE,
+	CPUID_INTELBRANDSTRINGEND,
+};
+
 /**
  * @return the timestamp-counter value
  */
 extern u64 cpu_rdtsc(void);
+
+/**
+ * @return true if the cpuid-instruction is supported
+ */
+extern bool cpu_cpuidSupported(void);
+
+/**
+ * Issue a single request to CPUID
+ *
+ * @param code the request to perform
+ * @param a will contain the value of eax
+ * @param b will contain the value of ebx
+ * @param c will contain the value of ecx
+ * @param d will contain the value of edx
+ */
+void cpu_getInfo(u32 code,u32 *a,u32 *b,u32 *c,u32 *d);
+
+/**
+ * Issues the given request to CPUID and stores the result in <res>
+ *
+ * @param code the request to perform
+ * @param res will contain the result
+ */
+void cpu_getStrInfo(u32 code,char res[12]);
+
+/**
+ * Prints information about the used CPU into the given string-buffer
+ *
+ * @param buf the string-buffer
+ */
+void cpu_sprintf(sStringBuffer *buf);
 
 /**
  * @return the value of the CR0 register
@@ -75,5 +132,11 @@ extern u32 cpu_getCR4(void);
  * @param cr4 the new CR4 value
  */
 extern void cpu_setCR4(u32 cr4);
+
+#if DEBUGGING
+
+void cpu_print(void);
+
+#endif
 
 #endif /*CPU_H_*/

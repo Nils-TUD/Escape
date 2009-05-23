@@ -26,6 +26,7 @@
 #include <video.h>
 #include <vfsnode.h>
 #include <util.h>
+#include <errors.h>
 #include <string.h>
 
 #define CHECK_FLAG(flags,bit) (flags & (1 << bit))
@@ -93,7 +94,8 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 
 		/* wait until the service is registered */
 		vid_printf("Waiting for '%s'",service);
-		while(vfsn_resolvePath(service,&nodeNo) < 0) {
+		/* don't create a pipe- or service-usage-node here */
+		while(vfsn_resolvePath(service,&nodeNo,false) < 0) {
 			vid_printf(".");
 			thread_switch();
 		}

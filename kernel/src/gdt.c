@@ -87,7 +87,6 @@ typedef struct {
 	 * dir:			Direction bit for data selectors: Tells the direction. 0 the segment grows up.
 	 * 				1 the segment grows down, ie. the offset has to be greater than the base.
 	 * 				Conforming bit for code selectors: Privilege-related.
-	 * 				(TODO Please add more information)
 	 * readWrite:	Readable bit for code selectors: Whether read access for this segment
 	 * 				is allowed. Write access is never allowed for code segments.
 	 * 				Writable bit for data selectors: Whether write access for this segment
@@ -270,10 +269,6 @@ void gdt_init(void) {
 	paging_gdtFinished();
 }
 
-void tss_removeIOMap(void) {
-	tss.ioMapOffset = IO_MAP_OFFSET_INVALID;
-}
-
 bool tss_ioMapPresent(void) {
 	return tss.ioMapOffset != IO_MAP_OFFSET_INVALID;
 }
@@ -281,6 +276,10 @@ bool tss_ioMapPresent(void) {
 void tss_setIOMap(u8 *ioMap) {
 	tss.ioMapOffset = IO_MAP_OFFSET;
 	memcpy(tss.ioMap,ioMap,IO_MAP_SIZE / 8);
+}
+
+void tss_removeIOMap(void) {
+	tss.ioMapOffset = IO_MAP_OFFSET_INVALID;
 }
 
 static void gdt_set_tss_desc(u16 index,u32 address,u32 size) {

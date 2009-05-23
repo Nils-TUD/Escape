@@ -542,7 +542,7 @@ static void sysc_open(sIntrptStackFrame *stack) {
 	}
 
 	/* resolve path */
-	err = vfsn_resolvePath(path,&nodeNo);
+	err = vfsn_resolvePath(path,&nodeNo,true);
 	if(err == ERR_REAL_PATH) {
 		/* send msg to fs and wait for reply */
 
@@ -967,9 +967,8 @@ static void sysc_wait(sIntrptStackFrame *stack) {
 
 	/* check wether there is a chance that we'll wake up again */
 	canSleep = !vfs_msgAvailableFor(t->tid,events);
-	/* TODO */
-	/*if(canSleep && (events & EV_CHILD_DIED))
-		canSleep = proc_hasChild(p->pid);*/
+	if(canSleep && (events & EV_CHILD_DIED))
+		canSleep = proc_hasChild(t->proc->pid);
 
 	/* if we can sleep, do it */
 	if(canSleep) {
@@ -1192,9 +1191,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	path = pathSave;
 
 	/* resolve path */
-	/* TODO we have a problem here if the user gives us services:/xyz or similar. we would create
-	 * a service-usage-node */
-	res = vfsn_resolvePath(path,&nodeNo);
+	res = vfsn_resolvePath(path,&nodeNo,false);
 	if(res != ERR_REAL_PATH) {
 		kheap_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
@@ -1281,19 +1278,15 @@ static void sysc_createNode(sIntrptStackFrame *stack) {
 	strcpy(nameCpy,name);
 
 	/* resolve path */
-	/* TODO we have a problem here if the user gives us services:/xyz or similar. we would create
-	 * a service-usage-node */
-	res = vfsn_resolvePath(pathCpy,&nodeNo);
+	res = vfsn_resolvePath(pathCpy,&nodeNo,false);
 	if(res < 0) {
 		kheap_free(pathCpy);
 		SYSC_ERROR(stack,res);
 		return;
 	}
 	/* check wether the node does already exist */
-	/* TODO we have a problem here if the user gives us services:/xyz or similar. we would create
-	 * a service-usage-node */
-	res = vfsn_resolvePath(path,&dummyNodeNo);
-	if(res >= 0 || res == ERR_REAL_PATH) {
+	res = vfsn_resolvePath(path,&dummyNodeNo,false);
+	if(res == ERR_INVALID_PATH || res >= 0 || res == ERR_REAL_PATH) {
 		SYSC_ERROR(stack,ERR_NODE_EXISTS);
 		return;
 	}
@@ -1327,9 +1320,7 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 		return;
 	}
 
-	/* TODO we have a problem here if the user gives us services:/xyz or similar. we would create
-	 * a service-usage-node */
-	res = vfsn_resolvePath(path,&nodeNo);
+	res = vfsn_resolvePath(path,&nodeNo,false);
 	if(res == ERR_REAL_PATH) {
 		sThread *t = thread_getRunning();
 		/* skip file: */

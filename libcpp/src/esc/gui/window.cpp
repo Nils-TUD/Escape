@@ -260,7 +260,7 @@ namespace esc {
 			if(active != _isActive) {
 				_isActive = active;
 				paintTitle(*_g);
-				update(0,0,getWidth(),_titleBarHeight);
+				requestUpdate();
 			}
 		}
 

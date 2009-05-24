@@ -21,6 +21,7 @@
 #include <esc/proc.h>
 #include <esc/messages.h>
 #include <esc/io.h>
+#include <esc/thread.h>
 #include <esc/gui/application.h>
 #include <esc/gui/window.h>
 #include <esc/gui/button.h>
@@ -33,25 +34,12 @@ using namespace esc::gui;
 
 ProgressBar *pb;
 
-class MyWindow : public Window {
-public:
-	MyWindow() : Window("Window 1",100,100,400,300) {
-	};
-	~MyWindow() {
-	};
-
-	void onKeyPressed(const KeyEvent &e) {
-		if(e.getKeyCode() == VK_ENTER)
-			pb->setPosition(pb->getPosition() + 1);
-		else
-			Window::onKeyPressed(e);
-	}
-};
+static int pbThread(void);
 
 int main(void) {
 	if(fork() == 0) {
 		Application *app = Application::getInstance();
-		MyWindow w1;
+		Window w1("Window 1",100,100,400,300);
 		Button b("Click me!!",10,10,80,20);
 		Editable e(10,40,200,20);
 		w1.add(b);
@@ -63,6 +51,7 @@ int main(void) {
 		w1.add(cb);
 		pb = new ProgressBar("Progress...",10,120,200,20);
 		w1.add(*pb);
+		startThread(pbThread);
 		return app->run();
 	}
 
@@ -86,4 +75,25 @@ int main(void) {
 	Application *app = Application::getInstance();
 	Window w4("Window 4",180,90,200,100);
 	return app->run();
+}
+
+static int pbThread(void) {
+	bool forward = true;
+	while(1) {
+		u32 pos = pb->getPosition();
+		if(forward) {
+			if(pos < 100)
+				pb->setPosition(pos + 1);
+			else
+				forward = false;
+		}
+		else {
+			if(pos > 0)
+				pb->setPosition(pos - 1);
+			else
+				forward = true;
+		}
+		sleep(50);
+	}
+	return 0;
 }

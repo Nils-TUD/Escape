@@ -137,8 +137,8 @@ namespace esc {
 				}
 				break;
 
-				case MSG_WIN_REPAINT: {
-					sMsgDataWinRepaint data;
+				case MSG_WIN_UPDATE: {
+					sMsgDataWinUpdate data;
 					if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {
 						Window *w = getWindowById(data.window);
 						if(w)
@@ -150,6 +150,7 @@ namespace esc {
 				case MSG_WIN_SET_ACTIVE: {
 					sMsgDataWinActive data;
 					if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {
+						debugf("window %d setactive=%d\n",data.window,data.isActive);
 						Window *w = getWindowById(data.window);
 						if(w) {
 							w->setActive(data.isActive);
@@ -194,6 +195,18 @@ namespace esc {
 					break;
 				}
 			}
+		}
+
+		void Application::requestWinUpdate(tWinId id,tCoord x,tCoord y,tSize width,tSize height) {
+			sMsgWinUpdate msg;
+			msg.header.id = MSG_WIN_UPDATE_REQ;
+			msg.header.length = sizeof(sMsgDataWinUpdate);
+			msg.data.x = x;
+			msg.data.y = y;
+			msg.data.width = width;
+			msg.data.height = height;
+			msg.data.window = id;
+			write(_winFd,&msg,sizeof(msg));
 		}
 
 		void Application::addWindow(Window *win) {

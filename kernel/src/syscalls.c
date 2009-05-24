@@ -1340,7 +1340,7 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 
 static void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
-	thread_dbg_printAll();
+	paging_dbg_printOwnPageDir(PD_PART_USER);
 }
 
 static void sysc_createSharedMem(sIntrptStackFrame *stack) {

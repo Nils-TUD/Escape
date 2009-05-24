@@ -173,7 +173,7 @@ namespace esc {
 			void drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn);
 			void drawRect(tCoord x,tCoord y,tSize width,tSize height);
 			void fillRect(tCoord x,tCoord y,tSize width,tSize height);
-			void update();
+			void requestUpdate(tWinId winid);
 			void update(tCoord x,tCoord y,tSize width,tSize height);
 			void debug() const;
 
@@ -209,11 +209,11 @@ namespace esc {
 			inline void updateMinMax(tCoord x,tCoord y) {
 				if(x > _maxx)
 					_maxx = x;
-				else if(x < _minx)
+				if(x < _minx)
 					_minx = x;
 				if(y > _maxy)
 					_maxy = y;
-				else if(y < _miny)
+				if(y < _miny)
 					_miny = y;
 			};
 			void move(tCoord x,tCoord y);

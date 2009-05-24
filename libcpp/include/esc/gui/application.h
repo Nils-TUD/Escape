@@ -61,6 +61,11 @@ namespace esc {
 				sMsgDataWinMoveReq data;
 			} __attribute__((packed)) sMsgWinMoveReq;
 
+			typedef struct {
+				sMsgHeader header;
+				sMsgDataWinUpdate data;
+			} __attribute__((packed)) sMsgWinUpdate;
+
 		public:
 			inline tSize getScreenWidth() const {
 				return _screenWidth;
@@ -94,6 +99,7 @@ namespace esc {
 			};
 			void passToWindow(sMsgDataWinMouse *e);
 			void closePopups(tWinId id,tCoord x,tCoord y);
+			void requestWinUpdate(tWinId id,tCoord x,tCoord y,tSize width,tSize height);
 			void addWindow(Window *win);
 			void removeWindow(Window *win);
 			Window *getWindowById(tWinId id);

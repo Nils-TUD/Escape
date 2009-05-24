@@ -227,7 +227,56 @@ void cpu_sprintf(sStringBuffer *buf) {
 			break;
 
 		case CPUID_VENDOR_AMD:
-			/* TODO */
+			util_sprintf(buf,"%-12s%d\n","Family:",cpu.family);
+			util_sprintf(buf,"%-12s","Model:");
+			switch(cpu.family) {
+				case 4:
+					util_sprintf(buf,"%s%d\n","486 Model",cpu.model);
+					break;
+				case 5:
+				switch(cpu.model) {
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 6:
+					case 7:
+						util_sprintf(buf,"%s%d\n","K6 Model",cpu.model);
+						break;
+					case 8:
+						util_sprintf(buf,"%s\n","K6-2 Model 8");
+						break;
+					case 9:
+						util_sprintf(buf,"%s\n","K6-III Model 9");
+						break;
+					default:
+						util_sprintf(buf,"%s%d\n","K5/K6 Model",cpu.model);
+						break;
+				}
+				break;
+				case 6:
+				switch(cpu.model) {
+					case 1:
+					case 2:
+					case 4:
+						util_sprintf(buf,"%s%d\n","Athlon Model ",cpu.model);
+						break;
+					case 3:
+						util_sprintf(buf,"%s\n","Duron Model 3");
+						break;
+					case 6:
+						util_sprintf(buf,"%s\n","Athlon MP/Mobile Athlon Model 6");
+						break;
+					case 7:
+						util_sprintf(buf,"%s\n","Mobile Duron Model 7");
+						break;
+					default:
+						util_sprintf(buf,"%s%d\n","Duron/Athlon Model ",cpu.model);
+						break;
+				}
+				break;
+			}
+			util_sprintf(buf,"%-12s%d\n","Stepping:",cpu.stepping);
 			break;
 
 		default:

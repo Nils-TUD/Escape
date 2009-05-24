@@ -33,7 +33,7 @@
 
 typedef struct {
 	sMsgHeader header;
-	sMsgDataWinRepaint data;
+	sMsgDataWinUpdate data;
 } __attribute__((packed)) sMsgRepaint;
 
 typedef struct {
@@ -59,8 +59,8 @@ static sMsgVesaUpdate vesaMsg = {
 };
 static sMsgRepaint repaintMsg = {
 	.header = {
-		.id = MSG_WIN_REPAINT,
-		.length = sizeof(sMsgDataWinRepaint)
+		.id = MSG_WIN_UPDATE,
+		.length = sizeof(sMsgDataWinUpdate)
 	}
 };
 static sMsgVesaCursor cursorMsg = {
@@ -212,6 +212,12 @@ void win_destroy(tWinId id,tCoord mouseX,tCoord mouseY) {
 	}
 }
 
+sWindow *win_get(tWinId id) {
+	if(id >= WINDOW_COUNT || windows[id].id == WINID_UNSED)
+		return NULL;
+	return windows + id;
+}
+
 bool win_exists(tWinId id) {
 	return id < WINDOW_COUNT && windows[id].id != WINID_UNSED;
 }
@@ -318,6 +324,16 @@ void win_moveTo(tWinId window,tCoord x,tCoord y) {
 	win_repaint(new,windows + window,windows[window].z);
 }
 
+void win_update(tWinId window,tCoord x,tCoord y,tSize width,tSize height) {
+	sWindow *win = windows + window;
+	sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
+	r->x = win->x + x;
+	r->y = win->y + y;
+	r->width = width;
+	r->height = height;
+	win_repaint(r,win,win->z);
+}
+
 static void win_repaint(sRectangle *r,sWindow *win,s16 z) {
 	sRectangle *rect;
 	sSLNode *n;
@@ -356,6 +372,7 @@ static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY) 
 	activeMsg.data.mouseY = mouseY;
 	tFD aWin = getClientThread(servId,windows[id].owner);
 	if(aWin >= 0) {
+		debugf("Sending setactive=%d to %d\n",isActive,id);
 		write(aWin,&activeMsg,sizeof(activeMsg));
 		close(aWin);
 	}

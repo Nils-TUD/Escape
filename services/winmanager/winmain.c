@@ -166,6 +166,22 @@ int main(void) {
 						}
 					}
 					break;
+
+					case MSG_WIN_UPDATE_REQ: {
+						sMsgDataWinUpdate data;
+						if(read(fd,&data,sizeof(data)) == sizeof(data)) {
+							sWindow *win = win_get(data.window);
+							/*debugf("win=%x (%d) @%d,%d s=%d,%d\n",win,data.window,data.x,data.y,
+									data.width,data.height);*/
+							if(win != NULL && data.x < win->width && data.y < win->height &&
+								data.width <= win->width && data.height <= win->height &&
+								data.x + data.width <= win->width &&
+								data.y + data.height <= win->height) {
+								win_update(data.window,data.x,data.y,data.width,data.height);
+							}
+						}
+					}
+					break;
 				}
 			}
 			close(fd);

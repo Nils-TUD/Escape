@@ -165,7 +165,7 @@ void ShellControl::append(const char *s) {
 		clearRows(*g,oldRow - _firstRow,_row - oldRow + 1);
 		paintRows(*g,oldRow - _firstRow,_row - oldRow + 1);
 	}
-	g->update();
+	requestUpdate();
 }
 
 void ShellControl::append(char c) {

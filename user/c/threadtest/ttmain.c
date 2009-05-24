@@ -57,7 +57,11 @@ int main(void) {
 }
 
 static int myThread(void) {
-	u32 i;
+	while(1) {
+		printf("I am thread %d\n",gettid());
+		sleep(40);
+	}
+	/*u32 i;
 	u32 *ptrs[TEST_COUNT];
 	for(i = 0; i < TEST_COUNT; i++) {
 		dbg_startTimer();
@@ -68,7 +72,7 @@ static int myThread(void) {
 		dbg_startTimer();
 		free(ptrs[i]);
 		dbg_stopTimer("free");
-	}
+	}*/
 	/*add(a,(void*)10);
 	add(a,(void*)11);
 	add(a,(void*)12);

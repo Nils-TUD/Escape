@@ -24,6 +24,11 @@
 
 namespace esc {
 	namespace gui {
+		void UIElement::requestUpdate() {
+			if(_g)
+				_g->requestUpdate(getWindowId());
+		}
+
 		void UIElement::update(tCoord x,tCoord y,tSize width,tSize height) {
 			if(_g)
 				_g->update(x,y,width,height);
@@ -32,8 +37,7 @@ namespace esc {
 		void UIElement::repaint() {
 			if(_g) {
 				paint(*_g);
-				/* write stuff to video-mem */
-				_g->update();
+				_g->requestUpdate(getWindowId());
 			}
 		}
 	}

@@ -90,9 +90,9 @@ int main(int argc,char **argv) {
 	delete servPath;
 
 	// lets handle the shell-stuff in a separate thread
-	if(fork() == 0)
-		return shell_main();
-	/*startThread(shell_main);*/
+	/*if(fork() == 0)
+		return shell_main();*/
+	startThread(shell_main);
 
 	// the parent handles the GUI
 	ShellControl sh(0,0,500,280);

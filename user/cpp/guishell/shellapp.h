@@ -26,11 +26,17 @@
 #include <esc/gui/application.h>
 #include "shellcontrol.h"
 
+// the min-size of the buffer before we pass it to the shell-control
+#define UPDATE_BUF_SIZE		256
+// the total size of the buffer
+#define READ_BUF_SIZE		512
+
 using namespace esc::gui;
 
 class ShellApplication : public Application {
 public:
 	ShellApplication(tServ sid,u32 no,ShellControl *sh) : Application(), _sid(sid), _sh(sh) {
+		// open gui-terminal
 		char *path = new char[MAX_PATH_LEN + 1];
 		sprintf(path,"services:/guiterm%d",no);
 		_selfFd = open(path,IO_WRITE);
@@ -40,8 +46,14 @@ public:
 		}
 		delete path;
 		_inst = this;
+
+		// init read-buffer
+		rbuffer = new char[READ_BUF_SIZE];
+		rbufPos = 0;
 	};
 	virtual ~ShellApplication() {
+		close(_selfFd);
+		delete rbuffer;
 	};
 
 protected:
@@ -51,6 +63,8 @@ private:
 	tServ _sid;
 	tFD _selfFd;
 	ShellControl *_sh;
+	char *rbuffer;
+	u32 rbufPos;
 };
 
 #endif /* SHELLAPP_H_ */

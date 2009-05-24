@@ -103,11 +103,11 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count);
  * @panic not enough mem for linked-list nodes and entries
  *
  * @param virtual the virtual address to map
- * @param frames the frames array
+ * @param pte the page-table-entries
  * @param count the number of pages to map
  * @param newProc the new process
  */
-static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc);
+static void paging_setCOW(u32 virtual,sPTEntry *pte,u32 count,sProc *newProc);
 
 /**
  * Removes the given frame-number for the given process from COW
@@ -359,8 +359,8 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 
 	vassert(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
 	vassert(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
-	vassert(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_COPYONWRITE | PG_ADDR_TO_FRAME | PG_NOFREE)),
-			"flags contain invalid bits");
+	vassert(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_COPYONWRITE | PG_ADDR_TO_FRAME |
+			PG_NOFREE | PG_INHERIT)),"flags contain invalid bits");
 	vassert(force == true || force == false,"force invalid");
 
 	/* just if we use the default one */
@@ -395,6 +395,21 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 		pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
 		/* ignore already present entries */
 		if(force || !pt->present) {
+			pt->present = true;
+			pt->dirty = false;
+			if(flags & PG_INHERIT) {
+				pt->noFree = ((sPTEntry*)frames)->noFree;
+				if(!pt->noFree)
+					pt->copyOnWrite = (flags & PG_COPYONWRITE) ? true : false;
+			}
+			else {
+				pt->noFree = (flags & PG_NOFREE) ? true : false;
+				pt->copyOnWrite = (flags & PG_COPYONWRITE) ? true : false;
+			}
+			pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
+			pt->writable = (flags & PG_WRITABLE) ? true : false;
+
+			/* set frame-number */
 			if(frames == NULL)
 				pt->frameNumber = mm_allocateFrame(MM_DEF);
 			else {
@@ -403,12 +418,6 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 				else
 					pt->frameNumber = *frames++;
 			}
-			pt->present = true;
-			pt->dirty = false;
-			pt->writable = (flags & PG_WRITABLE) ? true : false;
-			pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
-			pt->copyOnWrite = (flags & PG_COPYONWRITE) ? true : false;
-			pt->noFree = (flags & PG_NOFREE) ? true : false;
 
 			/* invalidate TLB-entry */
 			if(pageDir == PAGE_DIR_AREA)
@@ -513,9 +522,9 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	DBG_PGCLONEPD(vid_printf("Mapping %d data-pages (copy-on-write)\n",dPages));
 	x = tPages * PAGE_SIZE;
 	paging_mapIntern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,
-			(u32*)ADDR_TO_MAPPED(x),dPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);
+			(u32*)ADDR_TO_MAPPED(x),dPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME | PG_INHERIT,true);
 	/* mark as copy-on-write for the current and new process */
-	paging_setCOW(x,(u32*)ADDR_TO_MAPPED(x),dPages,newProc);
+	paging_setCOW(x,(sPTEntry*)ADDR_TO_MAPPED(x),dPages,newProc);
 
 	/* we're cloning just the current thread */
 	sThread *curThread = thread_getRunning();
@@ -524,8 +533,8 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	u32 tsPages = curThread->ustackPages;
 	x = curThread->ustackBegin - tsPages * PAGE_SIZE;
 	paging_mapIntern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,
-				(u32*)ADDR_TO_MAPPED(x),tsPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME,true);
-	paging_setCOW(x,(u32*)ADDR_TO_MAPPED(x),tsPages,newProc);
+				(u32*)ADDR_TO_MAPPED(x),tsPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME | PG_INHERIT,true);
+	paging_setCOW(x,(sPTEntry*)ADDR_TO_MAPPED(x),tsPages,newProc);
 
 	/* unmap stuff */
 	DBG_PGCLONEPD(vid_printf("Removing temp mappings\n"));
@@ -752,40 +761,42 @@ bool paging_handlePageFault(u32 address) {
 	return true;
 }
 
-static void paging_setCOW(u32 virtual,u32 *frames,u32 count,sProc *newProc) {
+static void paging_setCOW(u32 virtual,sPTEntry *pte,u32 count,sProc *newProc) {
 	sPTEntry *ownPt;
 	sCOW *cow;
 	sProc *p = proc_getRunning();
 
 	virtual &= ~(PAGE_SIZE - 1);
 	while(count-- > 0) {
-		/* build cow-entry for child */
-		cow = (sCOW*)kheap_alloc(sizeof(sCOW));
-		if(cow == NULL)
-			util_panic("Not enough mem for copy-on-write!");
-		cow->frameNumber = *frames >> PAGE_SIZE_SHIFT;
-		cow->proc = newProc;
-		if(!sll_append(cowFrames,cow))
-			util_panic("Not enough mem for copy-on-write!");
-
-		/* build cow-entry for parent if not already done */
-		ownPt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
-		if(!ownPt->copyOnWrite) {
+		if(!pte->noFree) {
+			/* build cow-entry for child */
 			cow = (sCOW*)kheap_alloc(sizeof(sCOW));
 			if(cow == NULL)
 				util_panic("Not enough mem for copy-on-write!");
-			cow->frameNumber = *frames >> PAGE_SIZE_SHIFT;
-			cow->proc = p;
+			cow->frameNumber = pte->frameNumber;
+			cow->proc = newProc;
 			if(!sll_append(cowFrames,cow))
 				util_panic("Not enough mem for copy-on-write!");
 
-			ownPt->copyOnWrite = true;
-			ownPt->writable = false;
-			ownPt->dirty = false;
-			paging_flushAddr(virtual);
+			/* build cow-entry for parent if not already done */
+			ownPt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
+			if(!ownPt->copyOnWrite) {
+				cow = (sCOW*)kheap_alloc(sizeof(sCOW));
+				if(cow == NULL)
+					util_panic("Not enough mem for copy-on-write!");
+				cow->frameNumber = pte->frameNumber;
+				cow->proc = p;
+				if(!sll_append(cowFrames,cow))
+					util_panic("Not enough mem for copy-on-write!");
+
+				ownPt->copyOnWrite = true;
+				ownPt->writable = false;
+				ownPt->dirty = false;
+				paging_flushAddr(virtual);
+			}
 		}
 
-		frames++;
+		pte++;
 		virtual += PAGE_SIZE;
 	}
 }

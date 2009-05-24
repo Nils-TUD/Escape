@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/proc.h>
 #include <esc/gui/graphics.h>
+#include <esc/gui/window.h>
 #include <esc/string.h>
 #include <string.h>
 
@@ -223,12 +224,23 @@ namespace esc {
 			}
 		}
 
-		void Graphics::update() {
-			// only the owner notifies vesa
-			if(_owner != NULL)
-				_owner->update(_offx + _minx,_offy + _miny,_maxx - _minx + 1,_maxy - _miny + 1);
-			else
-				update(_minx,_miny,_maxx - _minx + 1,_maxy - _miny + 1);
+		void Graphics::requestUpdate(tWinId winid) {
+			Window *w = Application::getInstance()->getWindowById(winid);
+			if(w->isCreated()) {
+				// if we are the active (=top) window, we can update directly
+				if(w->isActive()) {
+					if(_owner != NULL)
+						_owner->update(_offx + _minx,_offy + _miny,_maxx - _minx + 1,_maxy - _miny + 1);
+					else
+						update(_offx + _minx,_offy + _miny,_maxx - _minx + 1,_maxy - _miny + 1);
+				}
+				else {
+					// notify winmanager that we want to repaint this area; after a while we'll get multiple
+					// (ok, maybe just one) update-events with specific areas to update
+					Application::getInstance()->requestWinUpdate(winid,_offx + _minx,_offy + _miny,
+							_maxx - _minx + 1,_maxy - _miny + 1);
+				}
+			}
 
 			// reset region
 			_minx = _width - 1;

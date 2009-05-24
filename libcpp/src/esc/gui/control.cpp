@@ -31,6 +31,13 @@ namespace esc {
 			_g = new Graphics(*_w->getGraphics(),getX(),getY() + _w->getTitleBarHeight());
 		}
 
+		tWinId Control::getWindowId() const {
+			// TODO throw exception?
+			if(_w == NULL)
+				return -1;
+			return _w->getId();
+		}
+
 		void Control::onFocusGained() {
 			// do nothing by default
 		}

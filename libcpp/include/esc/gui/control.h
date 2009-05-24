@@ -65,6 +65,9 @@ namespace esc {
 			virtual void onKeyPressed(const KeyEvent &e);
 			virtual void onKeyReleased(const KeyEvent &e);
 
+		protected:
+			inline tWinId getWindowId() const;
+
 		private:
 			void setWindow(Window *w);
 

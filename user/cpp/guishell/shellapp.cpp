@@ -25,11 +25,6 @@
 #include <esc/gui/common.h>
 #include "shellapp.h"
 
-#define READ_BUF_SIZE		64
-
-/* read-buffer */
-static char rbuffer[READ_BUF_SIZE + 1];
-
 void ShellApplication::doEvents() {
 	sMsgHeader header;
 	u32 c;
@@ -106,16 +101,32 @@ void ShellApplication::doEvents() {
 	else {
 		tServ client;
 		tFD fd = getClient(&_sid,1,&client);
-		if(fd < 0)
+		if(fd < 0) {
+			// append the buffer now to reduce delays
+			if(rbufPos > 0) {
+				_sh->append(rbuffer);
+				rbufPos = 0;
+			}
 			wait(EV_CLIENT | EV_RECEIVED_MSG);
+		}
 		else {
+			u32 x = 0;
 			/* TODO this may cause trouble with escape-codes. maybe we should store the
 			 * "escape-state" somehow... */
-			while((c = read(fd,rbuffer,READ_BUF_SIZE)) > 0) {
-				*(rbuffer + c) = '\0';
-				_sh->append(rbuffer);
+			// do this just 3 times to ensure that we look for other events, too
+			while(x < 3 && rbufPos < READ_BUF_SIZE &&
+					(c = read(fd,rbuffer + rbufPos,READ_BUF_SIZE - rbufPos)) > 0) {
+				*(rbuffer + rbufPos + c) = '\0';
+				rbufPos += c;
+				x++;
 			}
 			close(fd);
+
+			// do we have enough data?
+			if(rbufPos >= 256) {
+				_sh->append(rbuffer);
+				rbufPos = 0;
+			}
 		}
 	}
 }

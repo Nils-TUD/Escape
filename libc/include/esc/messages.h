@@ -52,10 +52,11 @@
 #define MSG_WIN_CREATE_RESP			1
 #define MSG_WIN_MOUSE				2
 #define MSG_WIN_MOVE_REQ			3
-#define MSG_WIN_REPAINT				4
+#define MSG_WIN_UPDATE				4
 #define MSG_WIN_KEYBOARD			5
 #define MSG_WIN_SET_ACTIVE			6
 #define MSG_WIN_DESTROY_REQ			7
+#define MSG_WIN_UPDATE_REQ			8
 
 /* the header for all default-messages */
 typedef struct {
@@ -156,14 +157,14 @@ typedef struct {
 	u16 y;
 } sMsgDataWinMoveReq;
 
-/* repaint event */
+/* update event */
 typedef struct {
 	u16 x;
 	u16 y;
 	u16 width;
 	u16 height;
 	u16 window;
-} sMsgDataWinRepaint;
+} sMsgDataWinUpdate;
 
 /* sets the cursor */
 typedef struct {

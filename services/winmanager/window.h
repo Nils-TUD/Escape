@@ -103,6 +103,12 @@ void win_destroy(tWinId id,tCoord mouseX,tCoord mouseY);
 
 /**
  * @param id the window-id
+ * @return the window with given id or NULL
+ */
+sWindow *win_get(tWinId id);
+
+/**
+ * @param id the window-id
  * @return wether the window with given id exists
  */
 bool win_exists(tWinId id);
@@ -140,6 +146,17 @@ void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY);
  * @param y the y-coordinate
  */
 void win_moveTo(tWinId window,tCoord x,tCoord y);
+
+/**
+ * Sends update-events to the given window to update the given area
+ *
+ * @param window the window-id
+ * @param x the x-coordinate in the window
+ * @param y the y-coordinate in the window
+ * @param width the width
+ * @param height the height
+ */
+void win_update(tWinId window,tCoord x,tCoord y,tSize width,tSize height);
 
 #if DEBUGGING
 

@@ -85,6 +85,9 @@ namespace esc {
 			inline bool isActive() const {
 				return _isActive;
 			};
+			inline bool isCreated() const {
+				return _created;
+			};
 			inline tSize getTitleBarHeight() const {
 				return _titleBarHeight;
 			};
@@ -109,6 +112,10 @@ namespace esc {
 
 		protected:
 			void paintTitle(Graphics &g);
+
+			inline tWinId getWindowId() const {
+				return _id;
+			};
 
 		private:
 			void init();

@@ -21,6 +21,7 @@
 #define UIELEMENT_H_
 
 #include <esc/common.h>
+#include <esc/messages.h>
 #include <esc/gui/common.h>
 #include <esc/gui/graphics.h>
 #include <esc/gui/event.h>
@@ -80,6 +81,7 @@ namespace esc {
 
 			virtual void repaint();
 			virtual void paint(Graphics &g) = 0;
+			void requestUpdate();
 			void update(tCoord x,tCoord y,tSize width,tSize height);
 
 		protected:
@@ -89,6 +91,7 @@ namespace esc {
 			inline void setY(tCoord y) {
 				_y = y;
 			};
+			virtual tWinId getWindowId() const = 0;
 
 		private:
 			Graphics *_g;

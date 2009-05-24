@@ -338,10 +338,12 @@ void proc_destroy(sProc *p) {
 	paging_destroyPageDir(p);
 
 	/* destroy threads */
-	sSLNode *tn;
-	for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
+	sSLNode *tn,*tmpn;
+	for(tn = sll_begin(p->threads); tn != NULL; ) {
+		tmpn = tn->next;
 		sThread *t = (sThread*)tn->data;
 		thread_destroy(t,false);
+		tn = tmpn;
 	}
 	sll_destroy(p->threads,false);
 

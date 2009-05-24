@@ -20,6 +20,7 @@
 #include <common.h>
 #include <signals.h>
 #include <proc.h>
+#include <thread.h>
 #include "test.h"
 #include "tsignals.h"
 
@@ -65,52 +66,52 @@ static void test_canHandle(void) {
 }
 
 static void test_setHandler(void) {
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	tSig sig = 0xFF;
-	tPid pid = 0x1337;
+	tPid tid = 0x1337;
 	u32 data = 0;
 
 	test_caseStart("Testing sig_setHandler()");
-	test_assertInt(sig_setHandler(p->pid,SIG_INTRPT_ATA1,(fSigHandler)0x123),0);
+	test_assertInt(sig_setHandler(t->tid,SIG_INTRPT_ATA1,(fSigHandler)0x123),0);
 	test_caseSucceded();
 
 	test_caseStart("Adding and handling a signal");
-	test_assertUInt(sig_addSignal(SIG_INTRPT_ATA1,0),p->pid);
-	test_assertTrue(sig_hasSignal(&sig,&pid,&data));
-	test_assertTrue(pid == p->pid && sig == SIG_INTRPT_ATA1);
-	sig_startHandling(pid,sig);
-	sig_ackHandling(pid);
-	test_assertFalse(sig_hasSignal(&sig,&pid,&data));
+	test_assertUInt(sig_addSignal(SIG_INTRPT_ATA1,0),t->tid);
+	test_assertTrue(sig_hasSignal(&sig,&tid,&data));
+	test_assertTrue(tid == t->tid && sig == SIG_INTRPT_ATA1);
+	sig_startHandling(tid,sig);
+	sig_ackHandling(tid);
+	test_assertFalse(sig_hasSignal(&sig,&tid,&data));
 	test_caseSucceded();
 
 	test_caseStart("Adding nested signals");
-	test_assertUInt(sig_addSignal(SIG_INTRPT_ATA1,0),p->pid);
-	test_assertTrue(sig_hasSignal(&sig,&pid,&data));
-	test_assertTrue(pid == p->pid && sig == SIG_INTRPT_ATA1);
-	sig_startHandling(pid,sig);
-	test_assertUInt(sig_addSignal(SIG_INTRPT_ATA1,0),INVALID_PID);
-	sig_ackHandling(pid);
-	test_assertTrue(sig_hasSignal(&sig,&pid,&data));
-	test_assertTrue(pid == p->pid && sig == SIG_INTRPT_ATA1);
-	sig_startHandling(pid,sig);
-	sig_ackHandling(pid);
-	test_assertFalse(sig_hasSignal(&sig,&pid,&data));
+	test_assertUInt(sig_addSignal(SIG_INTRPT_ATA1,0),t->tid);
+	test_assertTrue(sig_hasSignal(&sig,&tid,&data));
+	test_assertTrue(tid == t->tid && sig == SIG_INTRPT_ATA1);
+	sig_startHandling(tid,sig);
+	test_assertUInt(sig_addSignal(SIG_INTRPT_ATA1,0),INVALID_TID);
+	sig_ackHandling(tid);
+	test_assertTrue(sig_hasSignal(&sig,&tid,&data));
+	test_assertTrue(tid == t->tid && sig == SIG_INTRPT_ATA1);
+	sig_startHandling(tid,sig);
+	sig_ackHandling(tid);
+	test_assertFalse(sig_hasSignal(&sig,&tid,&data));
 	test_caseSucceded();
 
 	test_caseStart("Adding signal for process");
-	test_assertInt(sig_setHandler(0x123,SIG_TERM,(fSigHandler)0x456),0);
-	test_assertTrue(sig_addSignalFor(0x123,SIG_TERM,0));
-	test_assertTrue(sig_hasSignal(&sig,&pid,&data));
-	test_assertTrue(pid == 0x123 && sig == SIG_TERM);
-	sig_startHandling(pid,sig);
-	sig_ackHandling(pid);
-	test_assertFalse(sig_hasSignal(&sig,&pid,&data));
+	test_assertInt(sig_setHandler(t->tid,SIG_TERM,(fSigHandler)0x456),0);
+	test_assertTrue(sig_addSignalFor(t->tid,SIG_TERM,0));
+	test_assertTrue(sig_hasSignal(&sig,&tid,&data));
+	test_assertTrue(tid == t->tid && sig == SIG_TERM);
+	sig_startHandling(tid,sig);
+	sig_ackHandling(tid);
+	test_assertFalse(sig_hasSignal(&sig,&tid,&data));
 	test_caseSucceded();
 
 	test_caseStart("Testing sig_unsetHandler()");
 	test_assertUInt(sig_dbg_getHandlerCount(),2);
-	sig_unsetHandler(p->pid,SIG_INTRPT_ATA1);
-	sig_unsetHandler(0x123,SIG_TERM);
+	sig_unsetHandler(t->tid,SIG_INTRPT_ATA1);
+	sig_unsetHandler(t->tid,SIG_TERM);
 	test_assertUInt(sig_dbg_getHandlerCount(),0);
 	test_caseSucceded();
 

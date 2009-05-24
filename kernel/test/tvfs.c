@@ -31,7 +31,6 @@
 
 /* forward declarations */
 static void test_vfs(void);
-static void test_vfs_createProcess(void);
 static void test_vfs_createService(void);
 
 /* public vfs-node for test-purposes */
@@ -53,7 +52,6 @@ sTestModule tModVFS = {
 };
 
 static void test_vfs(void) {
-	test_vfs_createProcess();
 	test_vfs_createService();
 }
 
@@ -64,36 +62,6 @@ static s32 dummyReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 co
 	UNUSED(offset);
 	UNUSED(count);
 	return 0;
-}
-
-static void test_vfs_createProcess(void) {
-	u32 oldHeap,newHeap;
-
-	test_caseStart("Testing vfs_createProcess()");
-
-	oldHeap = kheap_getFreeMem();
-
-	/* create */
-	if(!vfs_createProcess(123,&dummyReadHandler)) {
-		test_caseFailed("Unable to create node with process id 123");
-		return;
-	}
-	/* try another create with same pid */
-	if(vfs_createProcess(123,&dummyReadHandler)) {
-		test_caseFailed("Created another node with pid 123");
-		return;
-	}
-	/* remove */
-	vfs_removeProcess(123);
-
-	/* check mem-usage */
-	newHeap = kheap_getFreeMem();
-	if(oldHeap > newHeap) {
-		test_caseFailed("oldHeap=%d, newHeap=%d",oldHeap,newHeap);
-		return;
-	}
-
-	test_caseSucceded();
 }
 
 static void test_vfs_createService(void) {

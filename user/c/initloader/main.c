@@ -35,9 +35,9 @@ int main(void) {
 	yield();
 	yield();
 	yield();
-	u64 diff = post - pre;
-	u32 *ptr = (u32*)&diff;
-	debugf("diff=0x%x%x\n",*(ptr + 1),*ptr);
+	uLongLong diff;
+	diff.val64 = post - pre;
+	debugf("diff=0x%x%x\n",diff.val32.upper,diff.val32.lower);
 	return 0;
 }
 

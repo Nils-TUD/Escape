@@ -141,6 +141,7 @@ static int shell_main(void) {
 
 static void shell_sigIntrpt(tSig sig,u32 data) {
 	UNUSED(sig);
+	UNUSED(data);
 	printf("\n");
 	tPid pid = shell_getWaitingPid();
 	if(pid != INVALID_PID)

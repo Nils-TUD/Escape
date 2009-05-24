@@ -78,6 +78,11 @@ extern u64 cpu_rdtsc(void);
 extern bool cpu_cpuidSupported(void);
 
 /**
+ * "Detects" the CPU
+ */
+void cpu_detect(void);
+
+/**
  * Issue a single request to CPUID
  *
  * @param code the request to perform

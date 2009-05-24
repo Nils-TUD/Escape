@@ -32,7 +32,7 @@ sRectangle *rectSplit(sRectangle *r1,sRectangle *r2,u32 *rectCount) {
 	sRectangle *res;
 	bool other = false;
 	bool p1in,p2in,p3in,p4in;
-	bool op1in,op2in,op3in,op4in;
+	bool op1in = false,op2in = false,op3in = false,op4in = false;
 	bool top,right,bottom,left;
 	/* first determine which points of r2 are in r1 */
 	p1in = rectContains(r1,r2->x,r2->y);

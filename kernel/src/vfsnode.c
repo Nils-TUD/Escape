@@ -289,12 +289,12 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,bool createNode) {
 }
 
 sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,char *name) {
-	sVFSNode *node = vfsn_createNode(parent,name);
+	sVFSNode *node = vfsn_createNode(name);
 	vfsn_appendChild(parent,node);
 	return node;
 }
 
-sVFSNode *vfsn_createNode(sVFSNode *parent,char *name) {
+sVFSNode *vfsn_createNode(char *name) {
 	sVFSNode *node;
 
 	vassert(name != NULL,"name == NULL");

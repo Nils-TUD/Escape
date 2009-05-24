@@ -134,15 +134,12 @@ s32 vfsinfo_threadReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
 	UNUSED(dataSize);
 	sThread *t = thread_getById(atoi(node->name));
-	u32 *uptr,*kptr;
 	sStringBuffer buf;
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = 17 * 6 + 4 * 10 + 2 * 16 + 1;
 	buf.len = 0;
 
-	uptr = (u32*)&t->ucycleCount;
-	kptr = (u32*)&t->kcycleCount;
 	util_sprintf(
 		&buf,
 		"%-16s%u\n"
@@ -156,8 +153,8 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffe
 		"Pid:",t->proc->pid,
 		"State:",t->state,
 		"StackPages:",t->ustackPages,
-		"UCPUCycles:",*(uptr + 1),*uptr,
-		"KCPUCycles:",*(kptr + 1),*kptr
+		"UCPUCycles:",t->ucycleCount.val32.upper,t->ucycleCount.val32.lower,
+		"KCPUCycles:",t->kcycleCount.val32.upper,t->kcycleCount.val32.lower
 	);
 }
 
@@ -185,15 +182,14 @@ static s32 vfsinfo_statsReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offse
 static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
 	UNUSED(dataSize);
 	UNUSED(node);
-	u32 *ptr;
 	sStringBuffer buf;
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = 17 * 5 + 4 * 10 + 1 + 1 * 16 + 1;
 	buf.len = 0;
 
-	u64 cycles = cpu_rdtsc();
-	ptr = (u32*)&cycles;
+	uLongLong cycles;
+	cycles.val64 = cpu_rdtsc();
 	util_sprintf(
 		&buf,
 		"%-16s%u\n"
@@ -205,7 +201,7 @@ static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer
 		"Processes:",proc_getCount(),
 		"Threads:",thread_getCount(),
 		"Interrupts:",intrpt_getCount(),
-		"CPUCycles:",*(ptr + 1),*ptr,
+		"CPUCycles:",cycles.val32.upper,cycles.val32.lower,
 		"UpTime:",timer_getIntrptCount() / TIMER_FREQUENCY
 	);
 }

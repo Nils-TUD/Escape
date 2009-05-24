@@ -41,6 +41,8 @@ static void mm_markAddrRangeUsed(u32 from,u32 to,bool used);
  */
 static void mm_markFrameUsed(u32 frame,bool used);
 
+#if DEBUGGING
+
 /**
  * Checks wether the given frame of given type is free
  *
@@ -48,7 +50,9 @@ static void mm_markFrameUsed(u32 frame,bool used);
  * @param frame the frame-number
  * @return true if it is free
  */
-static bool mm_isFrameFree(eMemType type,u32 frame);
+static bool mm_dbg_isFrameFree(eMemType type,u32 frame);
+
+#endif
 
 /* start-address of the kernel */
 extern u32 KernelStart;
@@ -210,7 +214,7 @@ void mm_freeFrames(eMemType type,u32 *frames,u32 count) {
 void mm_freeFrame(u32 frame,eMemType type) {
 	u32 *bitmapEntry;
 
-	/*vassert(!mm_isFrameFree(type,frame),"Frame 0x%x (type %d) is already free",frame,type);*/
+	/*vassert(!mm_dbg_isFrameFree(type,frame),"Frame 0x%x (type %d) is already free",frame,type);*/
 
 	/* TODO what do we need for DMA? */
 	if(type == MM_DMA) {
@@ -234,22 +238,6 @@ void mm_freeFrame(u32 frame,eMemType type) {
 #endif
 		*(u16mStack++) = frame;
 	}
-}
-
-static bool mm_isFrameFree(eMemType type,u32 frame) {
-	u32 *ptr;
-	if(type == MM_DEF) {
-		ptr = u16mStack - 1;
-		while((u32)ptr > u16mStackStart) {
-			if(*ptr == frame)
-				return true;
-			ptr--;
-		}
-		return false;
-	}
-
-	ptr = (u32*)(l16mBitmap + (frame >> 5));
-	return (*ptr & (1 << (frame & 0x1f))) == 0;
 }
 
 static void mm_markAddrRangeUsed(u32 from,u32 to,bool used) {
@@ -302,6 +290,22 @@ void mm_dbg_printFrameUsage(void) {
 	}
 }
 #endif
+
+static bool mm_dbg_isFrameFree(eMemType type,u32 frame) {
+	u32 *ptr;
+	if(type == MM_DEF) {
+		ptr = u16mStack - 1;
+		while((u32)ptr > u16mStackStart) {
+			if(*ptr == frame)
+				return true;
+			ptr--;
+		}
+		return false;
+	}
+
+	ptr = (u32*)(l16mBitmap + (frame >> 5));
+	return (*ptr & (1 << (frame & 0x1f))) == 0;
+}
 
 void mm_dbg_printFreeFrames(void) {
 	u32 i,pos = 0;

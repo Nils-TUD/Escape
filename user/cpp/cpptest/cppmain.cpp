@@ -44,7 +44,7 @@ public:
 	void doIt();
 };
 
-my x;
+my myobj;
 
 void my::doIt() {
 	printf("Ich bins: %d\n",abc);
@@ -57,11 +57,11 @@ int main(void) {
 #if 1
 	char str[10];
 	char buffer[1024];
-	char *test = "ein test";
+	const char *test = "ein test";
 	StringStream s(str,sizeof(str));
 	FileStream f("file:/file.txt",FileStream::READ);
 	s << 'a' << 'b';
-	s.write(test,strlen(test));
+	s.write(test);
 	printf("%s\n",str);
 	/*char c;
 	esc::in >> c;

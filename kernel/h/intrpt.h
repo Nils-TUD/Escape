@@ -232,6 +232,11 @@ extern bool intrpt_setEnabled(bool enabled);
 void intrpt_init(void);
 
 /**
+ * @return the total number of interrupts so far
+ */
+u32 intrpt_getCount(void);
+
+/**
  * @return the current interrupt-stack (may be NULL)
  */
 sIntrptStackFrame *intrpt_getCurStack(void);

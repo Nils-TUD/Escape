@@ -30,14 +30,6 @@
  */
 extern void debugChar(char c);
 
-typedef union {
-	struct {
-		u32 s1;
-		u32 s2;
-	} divided;
-	u64 val;
-} uCycles;
-
 static u64 start;
 
 void dbg_startTimer(void) {
@@ -45,9 +37,9 @@ void dbg_startTimer(void) {
 }
 
 void dbg_stopTimer(char *prefix) {
-	uCycles diff;
-	diff.val = cpu_rdtsc() - start;
-	debugf("%s: 0x%08x%08x\n",prefix,diff.divided.s2,diff.divided.s1);
+	uLongLong diff;
+	diff.val64 = cpu_rdtsc() - start;
+	debugf("%s: 0x%08x%08x\n",prefix,diff.val32.upper,diff.val32.lower);
 }
 
 void dumpBytes(void *addr,u32 byteCount) {

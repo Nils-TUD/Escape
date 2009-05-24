@@ -25,10 +25,10 @@ export CWFLAGS=-Wall -ansi \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
 				 -Wstrict-prototypes -fno-builtin
 export CPPWFLAGS=-Wall -Wextra -ansi \
-				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations -Winline \
+				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long -fno-builtin
-export CPPDEFFLAGS=$(CPPWFLAGS) -g -D DEBUGGING=1
-export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING=1
+export CPPDEFFLAGS=$(CPPWFLAGS) -g -O2 -D DEBUGGING=1
+export CDEFFLAGS=$(CWFLAGS) -g -O2 -D DEBUGGING=1
 # flags for nasm
 export ASMFLAGS=-f elf
 

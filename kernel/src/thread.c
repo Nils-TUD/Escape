@@ -60,9 +60,9 @@ sThread *thread_init(sProc *p) {
 	/* we'll give the thread a stack later */
 	t->ustackBegin = KERNEL_AREA_V_ADDR;
 	t->ustackPages = 0;
-	t->ucycleCount.count = 0;
+	t->ucycleCount.val64 = 0;
 	t->ucycleStart = 0;
-	t->kcycleCount.count = 0;
+	t->kcycleCount.val64 = 0;
 	t->kcycleStart = 0;
 	t->fpuState = NULL;
 	t->signal = 0;
@@ -121,7 +121,7 @@ void thread_switchTo(tTid tid) {
 	/* finish kernel-time here since we're switching the process */
 	if(kcstart > 0) {
 		u64 cycles = cpu_rdtsc();
-		cur->kcycleCount.count += cycles - kcstart;
+		cur->kcycleCount.val64 += cycles - kcstart;
 	}
 
 	if(tid != cur->tid && !thread_save(&cur->save)) {
@@ -310,10 +310,9 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	t->events = src->events;
 	/* TODO clone fpu-state */
 	t->fpuState = NULL;
-	t->kcycleCount.count32.lower = 0;
-	t->kcycleCount.count32.upper = 0;
+	t->kcycleCount.val64 = 0;
 	t->kcycleStart = 0;
-	t->ucycleCount.count = 0;
+	t->ucycleCount.val64 = 0;
 	t->ucycleStart = 0;
 	t->proc = p;
 	t->signal = 0;
@@ -478,10 +477,10 @@ void thread_dbg_print(sThread *t) {
 	vid_printf("\t\tstate=%s\n",states[t->state]);
 	vid_printf("\t\tustack=0x%08x (%d pages)\n",t->ustackBegin,t->ustackPages);
 	vid_printf("\t\tkstackFrame=0x%x\n",t->kstackFrame);
-	vid_printf("\t\tucycleCount = 0x%08x%08x\n",t->ucycleCount.count32.upper,
-			t->ucycleCount.count32.lower);
-	vid_printf("\t\tkcycleCount = 0x%08x%08x\n",t->kcycleCount.count32.upper,
-			t->kcycleCount.count32.lower);
+	vid_printf("\t\tucycleCount = 0x%08x%08x\n",t->ucycleCount.val32.upper,
+			t->ucycleCount.val32.lower);
+	vid_printf("\t\tkcycleCount = 0x%08x%08x\n",t->kcycleCount.val32.upper,
+			t->kcycleCount.val32.lower);
 	vid_printf("\t\tfileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(t->fileDescs[i] != -1) {

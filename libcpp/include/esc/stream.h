@@ -297,28 +297,12 @@ namespace esc {
 		 * @param path the file-path
 		 * @param mode the open-mode (READ|WRITE)
 		 */
-		FileStream(const char *path,u16 mode) {
-			tFD fd = open(path,mode);
-			if(mode & READ)
-				_in = new FileBuffer(fd,INBUF_SIZE);
-			if(mode & WRITE)
-				_out = new FileBuffer(fd,OUTBUF_SIZE);
-		};
+		FileStream(const char *path,u16 mode);
 
 		/**
 		 * Destroys the buffers and closes the file
 		 */
-		virtual ~FileStream() {
-			// close file
-			if(_in)
-				close(((FileBuffer*)_in)->getFileDesc());
-			else if(_out)
-				close(((FileBuffer*)_out)->getFileDesc());
-
-			// delete buffers
-			delete _in;
-			delete _out;
-		};
+		virtual ~FileStream();
 	};
 
 	/**
@@ -329,20 +313,12 @@ namespace esc {
 		/**
 		 * Creates a IO-stream for the given file-descriptor and mode
 		 */
-		IOStream(tFD fd,u16 mode) {
-			if(mode & READ)
-				_in = new FileBuffer(fd,INBUF_SIZE);
-			if(mode & WRITE)
-				_out = new FileBuffer(fd,OUTBUF_SIZE);
-		};
+		IOStream(tFD fd,u16 mode);
 
 		/**
 		 * Destroys the stream
 		 */
-		~IOStream() {
-			delete _in;
-			delete _out;
-		};
+		~IOStream();
 	};
 
 	/**
@@ -356,18 +332,12 @@ namespace esc {
 		 * @param buf the string
 		 * @param max the length of the string
 		 */
-		StringStream(char *buf,s32 max) {
-			StringBuffer *buffer = new StringBuffer(buf,max);
-			_in = buffer;
-			_out = buffer;
-		}
+		StringStream(char *buf,s32 max);
 
 		/**
 		 * Destroys the stream
 		 */
-		~StringStream() {
-			delete _in;
-		};
+		~StringStream();
 	};
 
 	/**

@@ -29,7 +29,7 @@ void dbg_startTimer(void) {
 }
 
 void dbg_stopTimer(const char *prefix) {
-	u64 diff = cpu_rdtsc() - start;
-	u32 *ptr = (u32*)&diff;
-	vid_printf("%s: 0x%08x%08x\n",prefix,*(ptr + 1),*ptr);
+	uLongLong diff;
+	diff.val64 = cpu_rdtsc() - start;
+	vid_printf("%s: 0x%08x%08x\n",prefix,diff.val32.upper,diff.val32.lower);
 }

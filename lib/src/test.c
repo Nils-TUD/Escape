@@ -136,13 +136,13 @@ bool test_assertLInt(s64 received,s64 expected) {
 }
 
 bool test_assertULInt(u64 received,u64 expected) {
-	u32 *rptr,*eptr;
 	assertCount++;
 	if(expected != received) {
-		rptr = (u32*)&received;
-		eptr = (u32*)&expected;
+		uLongLong urecv,uexp;
+		urecv.val64 = received;
+		uexp.val64 = expected;
 		test_caseFailed("Assert %d: Integers are not equal: Expected 0x%08x%08x, got 0x%08x%08x",assertCount,
-				*(eptr + 1),*eptr,*(rptr + 1),*rptr);
+				uexp.val32.upper,uexp.val32.lower,urecv.val32.upper,urecv.val32.lower);
 		return false;
 	}
 	testPrintf("vassert %d succeded\n",assertCount);

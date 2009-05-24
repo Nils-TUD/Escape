@@ -117,12 +117,11 @@ sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,char *name);
 /**
  * Creates a (incomplete) node
  *
- * @param parent the parent-node
  * @param prev the previous node
  * @param name the node-name
  * @return the node
  */
-sVFSNode *vfsn_createNode(sVFSNode *parent,char *name);
+sVFSNode *vfsn_createNode(char *name);
 
 /**
  * Creates a directory-node

@@ -219,7 +219,7 @@ tVFSNodeNo vfs_getNodeNo(tFileNo file) {
 
 tFileNo vfs_openFile(tTid tid,u8 flags,tVFSNodeNo nodeNo) {
 	sGFTEntry *e;
-	sVFSNode *n;
+	sVFSNode *n = NULL;
 
 	/* determine free file */
 	tFileNo f = vfs_getFreeFile(tid,flags,nodeNo);
@@ -314,7 +314,7 @@ tFileNo vfs_openFileForKernel(tTid tid,tVFSNodeNo nodeNo) {
 
 	/* not not already present? */
 	if(n == NULL || n->owner != KERNEL_TID) {
-		n = vfsn_createNode(node,(char*)SERVICE_CLIENT_KERNEL);
+		n = vfsn_createNode((char*)SERVICE_CLIENT_KERNEL);
 		if(n == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 
@@ -804,7 +804,7 @@ void vfs_removeThread(tTid tid) {
 	/* build name */
 	name = (char*)kheap_alloc(sizeof(char) * 12);
 	if(name == NULL)
-		return false;
+		return;
 	itoa(name,tid);
 
 	/* search for thread-node and remove it */

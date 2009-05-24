@@ -33,8 +33,8 @@ static u8 buffer[BUF_SIZE];
 
 int main(void) {
 	tFD fd;
-	u64 start,total;
-	u32 *ptr;
+	u64 start;
+	uLongLong total;
 	u32 i,diff,t;
 
 	createNode("system:/test");
@@ -56,11 +56,10 @@ int main(void) {
 		}
 	}
 
-	total = cpu_rdtsc() - start;
+	total.val64 = cpu_rdtsc() - start;
 	diff = getTime() - t;
-	ptr = (u32*)&total;
 	printf("\n");
-	printf("Instructions:	%08x%08x\n",*(ptr + 1),*ptr);
+	printf("Instructions:	%08x%08x\n",total.val32.upper,total.val32.lower);
 	printf("Speed:			%03d MiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / M));
 	printf("\n");
 
@@ -75,11 +74,10 @@ int main(void) {
 		}
 	}
 
-	total = cpu_rdtsc() - start;
+	total.val64 = cpu_rdtsc() - start;
 	diff = getTime() - t;
-	ptr = (u32*)&total;
 	printf("\n");
-	printf("Instructions:	%08x%08x\n",*(ptr + 1),*ptr);
+	printf("Instructions:	%08x%08x\n",total.val32.upper,total.val32.lower);
 	printf("Speed:			%03d MiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / M));
 
 	close(fd);

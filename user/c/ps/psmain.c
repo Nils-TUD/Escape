@@ -44,8 +44,8 @@ typedef struct {
 	tPid pid;
 	u8 state;
 	u32 stackPages;
-	u64 ucycleCount;
-	u64 kcycleCount;
+	uLongLong ucycleCount;
+	uLongLong kcycleCount;
 } sPThread;
 
 static sProcess *ps_getProcs(u32 *count);
@@ -76,7 +76,7 @@ int main(void) {
 	for(i = 0; i < count; i++) {
 		for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
 			sPThread *t = (sPThread*)n->data;
-			totalCycles += t->ucycleCount + t->kcycleCount;
+			totalCycles += t->ucycleCount.val64 + t->kcycleCount.val64;
 		}
 	}
 
@@ -87,8 +87,8 @@ int main(void) {
 		u64 procUCycles = 0,procKCycles = 0;
 		for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
 			sPThread *t = (sPThread*)n->data;
-			procUCycles += t->ucycleCount;
-			procKCycles += t->kcycleCount;
+			procUCycles += t->ucycleCount.val64;
+			procKCycles += t->kcycleCount.val64;
 		}
 		u64 procCycles = procUCycles + procKCycles;
 		u32 cyclePercent = (u32)(100. / (totalCycles / (double)procCycles));
@@ -101,10 +101,10 @@ int main(void) {
 
 		for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
 			sPThread *t = (sPThread*)n->data;
-			u64 threadCycles = t->ucycleCount + t->kcycleCount;
+			u64 threadCycles = t->ucycleCount.val64 + t->kcycleCount.val64;
 			u32 tcyclePercent = (u32)(100. / (totalCycles / (double)threadCycles));
-			u32 tuserPercent = (u32)(100. / (threadCycles / (double)t->ucycleCount));
-			u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount));
+			u32 tuserPercent = (u32)(100. / (threadCycles / (double)t->ucycleCount.val64));
+			u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
 			printf(" |-%2d\t\t\t\t\t%s\t%3d%% (%3d%%,%3d%%)\n",
 					t->tid,states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
 		}
@@ -248,8 +248,9 @@ static bool ps_readThread(tFD fd,sPThread *t) {
 	sscanf(
 		buf,
 		"%*s%hu" "%*s%hu" "%*s%hu" "%*s%u" "%*s%8x%8x" "%*s%8x%8x",
-		&t->tid,&t->pid,&state,&t->stackPages,(u32*)&t->ucycleCount + 1,(u32*)&t->ucycleCount,
-		(u32*)&t->kcycleCount + 1,(u32*)&t->kcycleCount
+		&t->tid,&t->pid,&state,&t->stackPages,
+		&t->ucycleCount.val32.upper,&t->ucycleCount.val32.lower,
+		&t->kcycleCount.val32.upper,&t->kcycleCount.val32.lower
 	);
 	t->state = state;
 

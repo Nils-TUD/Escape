@@ -76,21 +76,9 @@ typedef struct {
 	sFPUState *fpuState;
 	/* number of cpu-cycles the thread has used so far; TODO: should be cpu-time later */
 	u64 ucycleStart;
-	union {
-		u64 count;
-		struct {
-			u32 lower;
-			u32 upper;
-		} count32;
-	} ucycleCount;
+	uLongLong ucycleCount;
 	u64 kcycleStart;
-	union {
-		u64 count;
-		struct {
-			u32 lower;
-			u32 upper;
-		} count32;
-	} kcycleCount;
+	uLongLong kcycleCount;
 } sThread;
 
 /**

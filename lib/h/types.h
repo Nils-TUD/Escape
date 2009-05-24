@@ -30,6 +30,15 @@ typedef unsigned int u32;
 typedef long long s64;
 typedef unsigned long long u64;
 
+/* union to access qwords as 2 dwords */
+typedef union {
+	struct {
+		u32 lower;
+		u32 upper;
+	} val32;
+	u64 val64;
+} uLongLong;
+
 #ifndef __cplusplus
 typedef enum {false = 0, true = 1} bool;
 #endif

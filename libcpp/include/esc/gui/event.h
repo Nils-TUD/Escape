@@ -54,7 +54,7 @@ namespace esc {
 				_y = e._y;
 				_buttons = e._buttons;
 				return *this;
-			};
+			}
 
 			inline tCoord getX() const {
 				return _x;

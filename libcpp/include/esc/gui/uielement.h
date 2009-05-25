@@ -43,18 +43,7 @@ namespace esc {
 			virtual ~UIElement() {
 				delete _g;
 			};
-
-			UIElement &operator=(const UIElement &e) {
-				// ignore self-assignments
-				if(this == &e)
-					return *this;
-				_g = NULL;
-				_x = e._x;
-				_y = e._y;
-				_width = e._width;
-				_height = e._height;
-				return *this;
-			};
+			UIElement &operator=(const UIElement &e);
 
 			inline tCoord getX() const {
 				return _x;

@@ -134,6 +134,7 @@ namespace esc {
 		class Graphics {
 			friend class Window;
 			friend class Control;
+			friend class UIElement;
 
 		private:
 			typedef struct {
@@ -173,8 +174,6 @@ namespace esc {
 			void drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn);
 			void drawRect(tCoord x,tCoord y,tSize width,tSize height);
 			void fillRect(tCoord x,tCoord y,tSize width,tSize height);
-			void requestUpdate(tWinId winid);
-			void update(tCoord x,tCoord y,tSize width,tSize height);
 			void debug() const;
 
 		private:
@@ -183,29 +182,7 @@ namespace esc {
 			Graphics(const Graphics &g);
 			Graphics &operator=(const Graphics &g);
 
-			void doSetPixel(tCoord x,tCoord y) {
-				u32 offset = (_offy + y) * _width + (_offx + x);
-				switch(_bpp) {
-					case 8:
-						*(u8*)(_pixels + offset * sizeof(u8)) = _col & 0xFF;
-						break;
-					case 16:
-						*(u16*)(_pixels + offset * sizeof(u16)) = _col & 0xFFFF;
-						break;
-					case 24: {
-						u8 *col = (u8*)&_col;
-						u8 *addr = _pixels + offset * 3;
-						*addr++ = *col++;
-						*addr++ = *col++;
-						*addr++ = *col++;
-					}
-					break;
-					case 32:
-						*(u32*)(_pixels + offset * sizeof(u32)) = _col;
-						break;
-				}
-				//_pixel->set((_offy + y) * _width + (_offx + x),_col);
-			};
+			void doSetPixel(tCoord x,tCoord y);
 			inline void updateMinMax(tCoord x,tCoord y) {
 				if(x > _maxx)
 					_maxx = x;
@@ -217,6 +194,8 @@ namespace esc {
 					_miny = y;
 			};
 			void move(tCoord x,tCoord y);
+			void requestUpdate(tWinId winid);
+			void update(tCoord x,tCoord y,tSize width,tSize height);
 			void notifyVesa(tCoord x,tCoord y,tSize width,tSize height);
 			void validateParams(tCoord &x,tCoord &y,tSize &width,tSize &height);
 

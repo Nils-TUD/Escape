@@ -83,17 +83,7 @@ namespace esc {
 			virtual ~ComboBox() {
 				delete _win;
 			};
-
-			ComboBox &operator=(const ComboBox &cb) {
-				// ignore self-assignments
-				if(this == &cb)
-					return *this;
-				Control::operator=(cb);
-				_items = cb._items;
-				_pressed = cb._pressed;
-				_win = cb._win;
-				return *this;
-			};
+			ComboBox &operator=(const ComboBox &cb);
 
 			inline void addItem(const String &s) {
 				_items.add(s);

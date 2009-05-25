@@ -42,16 +42,7 @@ namespace esc {
 			virtual ~Control() {
 
 			};
-
-			Control &operator=(const Control &c) {
-				// ignore self-assignments
-				if(this == &c)
-					return *this;
-				UIElement::operator=(c);
-				// don't assign the window; the user has to do it manually
-				_w = NULL;
-				return *this;
-			};
+			Control &operator=(const Control &c);
 
 			inline Window &getWindow() const {
 				return *_w;

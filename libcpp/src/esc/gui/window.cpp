@@ -57,6 +57,21 @@ namespace esc {
 			Application::getInstance()->removeWindow(this);
 		}
 
+		Window &Window::operator=(const Window &w) {
+			UIElement::operator=(w);
+			_title = w._title;
+			_style = w._style;
+			_titleBarHeight = w._titleBarHeight;
+			_inTitle = w._inTitle;
+			_isActive = false;
+			_focus = w._focus;
+			_controls = w._controls;
+			_id = NEXT_TMP_ID--;
+			_created = false;
+			init();
+			return *this;
+		}
+
 		void Window::init() {
 			_g = new Graphics(getX(),getY(),getWidth(),getHeight(),
 					Application::getInstance()->getColorDepth());

@@ -372,7 +372,6 @@ static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY) 
 	activeMsg.data.mouseY = mouseY;
 	tFD aWin = getClientThread(servId,windows[id].owner);
 	if(aWin >= 0) {
-		debugf("Sending setactive=%d to %d\n",isActive,id);
 		write(aWin,&activeMsg,sizeof(activeMsg));
 		close(aWin);
 	}

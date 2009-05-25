@@ -35,26 +35,8 @@ using namespace esc::gui;
 
 class ShellApplication : public Application {
 public:
-	ShellApplication(tServ sid,u32 no,ShellControl *sh) : Application(), _sid(sid), _sh(sh) {
-		// open gui-terminal
-		char *path = new char[MAX_PATH_LEN + 1];
-		sprintf(path,"services:/guiterm%d",no);
-		_selfFd = open(path,IO_WRITE);
-		if(_selfFd < 0) {
-			printe("Unable to open own service guiterm");
-			exit(EXIT_FAILURE);
-		}
-		delete path;
-		_inst = this;
-
-		// init read-buffer
-		rbuffer = new char[READ_BUF_SIZE];
-		rbufPos = 0;
-	};
-	virtual ~ShellApplication() {
-		close(_selfFd);
-		delete rbuffer;
-	};
+	ShellApplication(tServ sid,u32 no,ShellControl *sh);
+	virtual ~ShellApplication();
 
 protected:
 	void doEvents();

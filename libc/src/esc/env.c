@@ -34,41 +34,42 @@ static s32 init(void);
 
 /* the fd for the env-service */
 static tFD envFd = -1;
-static char *tmpValue = NULL;
 
 /**
  * Sends the given get-message to the env-service and returns the reply-data
  *
+ * @param buf the buffer to write to
+ * @param bufSize the size of the buffer
  * @param msg the message
  * @return the received data
  */
-static char *doGetEnv(sMsgHeader *msg);
+static bool doGetEnv(char *buf,u32 bufSize,sMsgHeader *msg);
 
-char *getEnvByIndex(u32 index) {
+bool getEnvByIndex(char *name,u32 nameSize,u32 index) {
 	sMsgHeader *msg;
 
 	if(init() < 0)
-		return NULL;
+		return false;
 
 	msg = asmBinMsg(MSG_ENV_GETI,"22",getpid(),index);
 	if(msg == NULL)
-		return NULL;
+		return false;
 
-	return doGetEnv(msg);
+	return doGetEnv(name,nameSize,msg);
 }
 
-char *getEnv(const char *name) {
+bool getEnv(char *value,u32 valSize,const char *name) {
 	sMsgHeader *msg;
 	u32 nameLen = strlen(name);
 
 	if(init() < 0)
-		return NULL;
+		return false;
 
 	/* build message */
 	msg = asmBinDataMsg(MSG_ENV_GET,name,nameLen + 1,"2",getpid());
 	if(msg == NULL)
-		return NULL;
-	return doGetEnv(msg);
+		return false;
+	return doGetEnv(value,valSize,msg);
 }
 
 s32 setEnv(const char *name,const char* value) {
@@ -104,30 +105,32 @@ s32 setEnv(const char *name,const char* value) {
 	return 0;
 }
 
-static char *doGetEnv(sMsgHeader *msg) {
+static bool doGetEnv(char *buf,u32 bufSize,sMsgHeader *msg) {
 	sMsgHeader resp;
 
 	/* send message */
 	if(write(envFd,msg,sizeof(sMsgHeader) + msg->length) < 0) {
 		freeMsg(msg);
-		return NULL;
+		return false;
 	}
 	freeMsg(msg);
 
 	/* wait for reply */
 	if(read(envFd,&resp,sizeof(sMsgHeader)) < 0)
-		return NULL;
+		return false;
 
-	/* free previously used value */
-	if(tmpValue != NULL)
-		free(tmpValue);
+	if(resp.length == 0)
+		return false;
 
 	/* read value */
-	tmpValue = (char*)malloc(resp.length);
-	if(tmpValue == NULL)
-		return NULL;
-	read(envFd,tmpValue,resp.length);
-	return tmpValue;
+	read(envFd,buf,MIN(bufSize,resp.length));
+	if(bufSize < resp.length) {
+		/* TODO we need a read to NULL */
+		void *tmp = malloc(resp.length - bufSize);
+		read(envFd,tmp,resp.length - bufSize);
+		free(tmp);
+	}
+	return true;
 }
 
 static s32 init(void) {

@@ -21,6 +21,7 @@
 #include <mm.h>
 #include <multiboot.h>
 #include <proc.h>
+#include <paging.h>
 #include <timer.h>
 #include <cpu.h>
 #include <vfs.h>
@@ -78,6 +79,11 @@ static s32 vfsinfo_memUsageReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 of
  * The read-callback for the VFS memusage-read-handler
  */
 static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
+
+/**
+ * The read-callback for the virtual-memory-read-handler
+ */
+static void vfsinfo_virtMemReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
 
 void vfsinfo_init(void) {
 	tVFSNodeNo nodeNo;
@@ -234,6 +240,22 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buf
 		"Free:",free,
 		"KHeapSize:",kheap_getUsedMem()
 	);
+}
+
+s32 vfsinfo_virtMemReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	return vfs_readHelper(tid,node,buffer,offset,count,0,vfsinfo_virtMemReadCallback);
+}
+
+static void vfsinfo_virtMemReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
+	sStringBuffer buf;
+	buf.dynamic = true;
+	buf.str = NULL;
+	buf.size = 0;
+	buf.len = 0;
+	sProc *p = proc_getByPid(atoi(node->parent->name));
+	paging_sprintfVirtMem(&buf,p);
+	*buffer = buf.str;
+	*dataSize = buf.len + 1;
 }
 
 s32 vfsinfo_dirReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {

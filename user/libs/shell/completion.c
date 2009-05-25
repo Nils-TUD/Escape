@@ -55,7 +55,7 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 	u32 arraySize,arrayPos;
 	u32 i,len,cmdlen,start,matchLen,pathLen;
 	tFD dd;
-	sDirEntry *entry;
+	sDirEntry entry;
 	sShellCmd *cmd;
 	sShellCmd **matches;
 	sFileInfo info;
@@ -86,7 +86,10 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 
 	/* calc the absolute path of the current line and search for matching entries in it */
 	start = length;
-	paths[2] = abspath(str);
+	paths[2] = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
+	if(paths[2] == NULL)
+		goto failed;
+	abspath(paths[2],MAX_PATH_LEN + 1,str);
 	if(length > 0 && *(str + length - 1) != '/') {
 		/* and try the upper directory, too */
 		len = strlen(paths[2]);
@@ -96,6 +99,7 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 		strcpy(paths[1],paths[2]);
 		dirname(paths[1]);
 		/* it makes no sense to look in abspath(line) since line does not end with '/' */
+		free(paths[2]);
 		paths[2] = NULL;
 	}
 
@@ -111,10 +115,14 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 	/* we don't want to look in a directory twice */
 	if(paths[1] && strcmp(paths[0],paths[1]) == 0 && searchPath)
 		paths[1] = NULL;
-	else if(paths[2] && strcmp(paths[0],paths[2]) == 0 && searchPath)
+	else if(paths[2] && strcmp(paths[0],paths[2]) == 0 && searchPath) {
+		free(paths[2]);
 		paths[2] = NULL;
-	if(paths[1] && paths[2] && strcmp(paths[1],paths[2]) == 0)
+	}
+	if(paths[1] && paths[2] && strcmp(paths[1],paths[2]) == 0) {
+		free(paths[2]);
 		paths[2] = NULL;
+	}
 	/* don't match stuff in PATH? */
 	if(!searchPath)
 		paths[0] = NULL;
@@ -137,14 +145,14 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 		strcpy(filePath,paths[i]);
 		pathLen = strlen(paths[i]);
 
-		while((entry = readdir(dd)) != NULL) {
+		while(readdir(&entry,dd)) {
 			/* skip . and .. */
-			if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
+			if(strcmp(entry.name,".") == 0 || strcmp(entry.name,"..") == 0)
 				continue;
 
-			cmdlen = strlen(entry->name);
+			cmdlen = strlen(entry.name);
 			matchLen = searchCmd ? cmdlen : length;
-			if(cmdlen < MAX_CMDNAME_LEN && length <= cmdlen && strncmp(str,entry->name,matchLen) == 0) {
+			if(cmdlen < MAX_CMDNAME_LEN && length <= cmdlen && strncmp(str,entry.name,matchLen) == 0) {
 				matches = compl_incrArray(matches,arrayPos,&arraySize);
 				if(matches == NULL) {
 					closedir(dd);
@@ -152,7 +160,7 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 				}
 
 				/* append filename and get fileinfo */
-				strcpy(filePath + pathLen,entry->name);
+				strcpy(filePath + pathLen,entry.name);
 				if(getFileInfo(filePath,&info) < 0) {
 					closedir(dd);
 					goto failed;
@@ -172,7 +180,7 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 					cmd->type = TYPE_PATH;
 				cmd->mode = info.mode;
 				cmd->func = NULL;
-				memcpy(cmd->name,entry->name,cmdlen + 1);
+				memcpy(cmd->name,entry.name,cmdlen + 1);
 				if(i == 0)
 					cmd->complStart = -1;
 				else
@@ -189,6 +197,7 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 
 	free(filePath);
 	free(paths[1]);
+	free(paths[2]);
 
 	/* terminate */
 	matches = compl_incrArray(matches,arrayPos,&arraySize);
@@ -200,6 +209,7 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 
 failed:
 	free(paths[1]);
+	free(paths[2]);
 	free(filePath);
 	if(matches) {
 		matches[arrayPos] = NULL;

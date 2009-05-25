@@ -29,6 +29,17 @@ namespace esc {
 		const Color Editable::BORDER_COLOR = Color(0,0,0);
 		const Color Editable::CURSOR_COLOR = Color(0,0,0);
 
+		Editable &Editable::operator=(const Editable &e) {
+			// ignore self-assigments
+			if(this == &e)
+				return *this;
+			Control::operator=(e);
+			_cursor = e._cursor;
+			_focused = false;
+			_str = e._str;
+			return *this;
+		}
+
 		void Editable::paint(Graphics &g) {
 			u32 cwidth = g.getFont().getWidth();
 			u32 cheight = g.getFont().getHeight();

@@ -19,6 +19,7 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/io.h>
+#include <esc/dir.h>
 #include <esc/env.h>
 #include <esc/fileio.h>
 #include <esc/lock.h>
@@ -55,7 +56,11 @@ void abort(void) {
 }
 
 char *getenv(const char *name) {
-	return getEnv(name);
+	/* TODO */
+	static char val[MAX_PATH_LEN + 1];
+	if(getEnv(val,MAX_PATH_LEN + 1,name))
+		return val;
+	return NULL;
 }
 
 int system(const char *cmd) {

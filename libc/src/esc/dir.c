@@ -24,45 +24,49 @@
 #include <esc/heap.h>
 #include <string.h>
 
-/* the dir-entry in which we'll write */
-typedef struct {
-	sDirEntry header;
-	char name[MAX_NAME_LEN + 1];
-} __attribute__((packed)) sDirEntryRead;
-
-char *abspath(const char *path) {
-	char apath[MAX_PATH_LEN + 1];
-	char *current,*curtemp,*pathtemp,*p;
+u32 abspath(char *dst,u32 dstSize,const char *src) {
+	char *curtemp,*pathtemp,*p;
 	u32 layer,pos;
+	u32 count = 0;
 
 	/* skip namespace */
-	p = (char*)path;
+	p = (char*)src;
 	pos = strchri(p,':');
 	if(*(p + pos) != '\0') {
-		strncpy(apath,p,pos + 1);
-		apath[pos + 1] = '\0';
-		pathtemp = apath + pos + 1;
+		if(dstSize < pos + 2)
+			return count;
+		strncpy(dst,p,pos + 1);
+		dst[pos + 1] = '\0';
+		pathtemp = dst + pos + 1;
 		p += pos + 1;
+		count += pos + 1;
 	}
 	else {
-		strncpy(apath,"file:",5);
-		apath[5] = '\0';
-		pathtemp = apath + 5;
+		if(dstSize < 6)
+			return count;
+		strncpy(dst,"file:",5);
+		dst[5] = '\0';
+		pathtemp = dst + 5;
+		count += 5;
 	}
 
 	layer = 0;
 	if(*p != '/') {
-		current = getEnv("CWD");
+		char envPath[MAX_PATH_LEN + 1];
+		if(!getEnv(&envPath,MAX_PATH_LEN + 1,"CWD"))
+			return count;
+		/* we'll append strlen(envPath) without "file:/" and trailing slash, but need a
+		 * null-termination */
+		if(dstSize - count < strlen(envPath) - 6)
+			return count;
 		/* copy current to path */
 		/* skip file:/ */
 		*pathtemp++ = '/';
-		curtemp = current + 6;
+		curtemp = envPath + 6;
 		while(*curtemp) {
 			if(*curtemp == '/')
 				layer++;
-			*pathtemp = *curtemp;
-			pathtemp++;
-			curtemp++;
+			*pathtemp++ = *curtemp++;
 		}
 		/* remove '/' at the end */
 		pathtemp--;
@@ -84,21 +88,26 @@ char *abspath(const char *path) {
 		/* one layer back */
 		else if(pos == 2 && strncmp(p,"..",2) == 0) {
 			if(layer > 0) {
+				char *start = pathtemp;
 				do {
 					pathtemp--;
 				}
 				while(*pathtemp != '/');
 				*pathtemp = '\0';
+				count -= start - pathtemp;
 				layer--;
 			}
 			p += 3;
 		}
 		else {
+			if(dstSize - count < pos + 2)
+				return count;
 			/* append to path */
 			*pathtemp++ = '/';
 			strncpy(pathtemp,p,pos);
 			pathtemp[pos] = '\0';
 			pathtemp += pos;
+			count += pos + 1;
 			p += pos + 1;
 			layer++;
 		}
@@ -113,9 +122,12 @@ char *abspath(const char *path) {
 	}
 
 	/* terminate */
+	if(dstSize - count < 2)
+		return count;
 	*pathtemp++ = '/';
 	*pathtemp = '\0';
-	return apath;
+	count++;
+	return count;
 }
 
 void dirname(char *path) {
@@ -145,36 +157,35 @@ tFD opendir(const char *path) {
 	return open(path,IO_READ);
 }
 
-sDirEntry *readdir(tFD dir) {
-	static sDirEntryRead dirEntry;
+bool readdir(sDirEntry *e,tFD dir) {
 	u32 len;
 
 	/* TODO a lot of improvement is needed here ;) */
 
-	if(read(dir,(u8*)&dirEntry,sizeof(sDirEntry)) > 0) {
-		len = dirEntry.header.nameLen;
+	if(read(dir,(u8*)e,sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) > 0) {
+		len = e->nameLen;
 		if(len >= MAX_NAME_LEN)
-			return NULL;
+			return false;
 
-		if(read(dir,(u8*)dirEntry.name,len) > 0) {
+		if(read(dir,(u8*)e->name,len) > 0) {
 			/* if the record is longer, we have to read the remaining stuff to somewhere :( */
 			/* TODO maybe we should introduce a read-to-null? (if buffer = NULL, throw data away?) */
-			if(dirEntry.header.recLen - sizeof(sDirEntry) > len) {
-				len = (dirEntry.header.recLen - sizeof(sDirEntry) - len);
+			if(e->recLen - (sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) > len) {
+				len = (e->recLen - (sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) - len);
 				u8 *tmp = (u8*)malloc(len);
 				if(tmp == NULL)
-					return NULL;
+					return false;
 				read(dir,tmp,len);
 				free(tmp);
 			}
 
 			/* ensure that it is null-terminated */
-			dirEntry.name[dirEntry.header.nameLen] = '\0';
-			return (sDirEntry*)&dirEntry;
+			e->name[e->nameLen] = '\0';
+			return true;
 		}
 	}
 
-	return NULL;
+	return false;
 }
 
 void closedir(tFD dir) {

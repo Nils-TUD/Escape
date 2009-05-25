@@ -29,19 +29,22 @@ extern "C" {
 /**
  * Returns the env-variable-name with given index
  *
+ * @param name the name where to write to
+ * @param nameSize the size of the space name points to
  * @param index the index
- * @return the name of it or NULL if the index does not exist (or it failed for another reason)
+ * @return true on success
  */
-char *getEnvByIndex(u32 index);
+bool getEnvByIndex(char *name,u32 nameSize,u32 index);
 
 /**
- * Returns the value of the given environment-variable. Note that you have to copy the value
- * if you want to keep it!
+ * Returns the value of the given environment-variable
  *
+ * @param value the value where to write to
+ * @param valSize the size of the space value points to
  * @param name the environment-variable-name
- * @return the value or NULL if failed
+ * @return true on success
  */
-char *getEnv(const char *name);
+bool getEnv(char *value,u32 valSize,const char *name);
 
 /**
  * Sets the environment-variable <name> to <value>.

@@ -19,6 +19,7 @@
 
 #include <common.h>
 #include <thread.h>
+#include <debug.h>
 #include <proc.h>
 #include <cpu.h>
 #include <gdt.h>
@@ -117,7 +118,7 @@ void thread_switch(void) {
 }
 
 void thread_switchTo(tTid tid) {
-	u32 kcstart = cur->kcycleStart;
+	u64 kcstart = cur->kcycleStart;
 	/* finish kernel-time here since we're switching the process */
 	if(kcstart > 0) {
 		u64 cycles = cpu_rdtsc();
@@ -290,6 +291,8 @@ s32 thread_extendStack(u32 address) {
 	address &= ~(PAGE_SIZE - 1);
 	newPages = ((cur->ustackBegin - address) >> PAGE_SIZE_SHIFT) - cur->ustackPages;
 	if(newPages > 0) {
+		if(cur->ustackPages + newPages > MAX_STACK_PAGES)
+			return ERR_NOT_ENOUGH_MEM;
 		if(!proc_segSizesValid(cur->proc->textPages,cur->proc->dataPages,cur->proc->stackPages + newPages))
 			return ERR_NOT_ENOUGH_MEM;
 		if(!proc_changeSize(newPages,CHG_STACK))

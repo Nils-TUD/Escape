@@ -120,7 +120,7 @@ int main(void) {
 
 static sProcess *ps_getProcs(u32 *count) {
 	tFD dd,dfd;
-	sDirEntry *entry;
+	sDirEntry entry;
 	char ppath[MAX_PATH_LEN + 1];
 	u32 pos = 0;
 	u32 size = ARRAY_INC_SIZE;
@@ -131,12 +131,12 @@ static sProcess *ps_getProcs(u32 *count) {
 	}
 
 	if((dd = opendir("system:/processes")) >= 0) {
-		while((entry = readdir(dd)) != NULL) {
-			if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
+		while(readdir(&entry,dd)) {
+			if(strcmp(entry.name,".") == 0 || strcmp(entry.name,"..") == 0)
 				continue;
 
 			/* build path */
-			sprintf(ppath,"system:/processes/%s/info",entry->name);
+			sprintf(ppath,"system:/processes/%s/info",entry.name);
 			if((dfd = open(ppath,IO_READ)) >= 0) {
 				/* increase array */
 				if(pos >= size) {
@@ -149,7 +149,7 @@ static sProcess *ps_getProcs(u32 *count) {
 				}
 
 				/* read process */
-				if(!ps_readProc(dfd,atoi(entry->name),procs + pos)) {
+				if(!ps_readProc(dfd,atoi(entry.name),procs + pos)) {
 					close(dfd);
 					free(procs);
 					printe("Unable to read process-data");
@@ -178,7 +178,7 @@ static sProcess *ps_getProcs(u32 *count) {
 }
 
 static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
-	sDirEntry *entry;
+	sDirEntry entry;
 	char path[MAX_PATH_LEN + 1];
 	char ppath[MAX_PATH_LEN + 1];
 	tFD threads,dfd;
@@ -204,12 +204,12 @@ static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
 		sll_destroy(p->threads,true);
 		return false;
 	}
-	while((entry = readdir(threads)) != NULL) {
-		if(strcmp(entry->name,".") == 0 || strcmp(entry->name,"..") == 0)
+	while(readdir(&entry,threads)) {
+		if(strcmp(entry.name,".") == 0 || strcmp(entry.name,"..") == 0)
 			continue;
 
 		/* build path */
-		sprintf(ppath,"system:/processes/%d/threads/%s",pid,entry->name);
+		sprintf(ppath,"system:/processes/%d/threads/%s",pid,entry.name);
 		if((dfd = open(ppath,IO_READ)) >= 0) {
 			sPThread *t = (sPThread*)malloc(sizeof(sPThread));
 			/* read thread */

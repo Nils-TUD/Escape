@@ -98,6 +98,17 @@ namespace esc {
 			_cb->repaint();
 		}
 
+		ComboBox &ComboBox::operator=(const ComboBox &cb) {
+			// ignore self-assignments
+			if(this == &cb)
+				return *this;
+			Control::operator=(cb);
+			_items = cb._items;
+			_pressed = cb._pressed;
+			_win = cb._win;
+			return *this;
+		}
+
 		void ComboBox::paint(Graphics &g) {
 			u32 btnWidth = getHeight();
 			// paint item

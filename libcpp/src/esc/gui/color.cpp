@@ -24,6 +24,36 @@
 
 namespace esc {
 	namespace gui {
+		Color Color::fromBits(u32 col,u8 bits) {
+			switch(bits) {
+				case 32:
+					return from32Bit(col);
+				case 24:
+					return from24Bit(col);
+				case 16:
+					return from16Bit(col);
+				case 8:
+					return from8Bit(col);
+				default:
+					return Color(0);
+			}
+		}
+
+		u32 Color::toBits(u8 bits) const {
+			switch(bits) {
+				case 32:
+					return to32Bit();
+				case 24:
+					return to24Bit();
+				case 16:
+					return to16Bit();
+				case 8:
+					return to8Bit();
+				default:
+					return 0;
+			}
+		}
+
 		Stream &operator<<(Stream &s,const Color &c) {
 			s << "Color[" << c.getRed() << "," << c.getGreen() << "," << c.getBlue();
 			s << "," << c.getAlpha() << "]";

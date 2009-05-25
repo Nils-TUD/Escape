@@ -47,16 +47,7 @@ namespace esc {
 			virtual ~ProgressBar() {
 
 			};
-
-			ProgressBar &operator=(const ProgressBar &b) {
-				// ignore self-assignments
-				if(this == &b)
-					return *this;
-				Control::operator=(b);
-				_position = b._position;
-				_text = b._text;
-				return *this;
-			};
+			ProgressBar &operator=(const ProgressBar &b);
 
 			inline u32 getPosition() const {
 				return _position;

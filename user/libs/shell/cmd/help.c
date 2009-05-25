@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
+#include <stdlib.h>
 #include "help.h"
 
 s32 shell_cmdHelp(u32 argc,char **argv) {
@@ -59,5 +60,5 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 	printf("\tYou can switch between different vterms via CTRL+1/2/...\n");
 	printf("\n");
 
-	return 0;
+	return EXIT_SUCCESS;
 }

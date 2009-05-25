@@ -31,7 +31,7 @@ typedef struct {
 	tVFSNodeNo nodeNo;
 	u16 recLen;
 	u16 nameLen;
-	char name[];
+	char name[MAX_NAME_LEN + 1];
 } __attribute__((packed)) sDirEntry;
 
 #ifdef __cplusplus
@@ -41,11 +41,15 @@ extern "C" {
 /**
  * Builds an absolute path from the given one. If it starts with no namespace ("file:" e.g.)
  * and is not absolute (starts with "/") CWD will be taken to build the absolute path.
+ * The path will end with a slash.
+ * If <dst> is not large enough the function stops and returns the number of yet written chars.
  *
- * @param path your relative path
- * @return the absolute path (statically stored!)
+ * @param dst where to write to
+ * @param dstSize the size of the space <dst> points to
+ * @param src your relative path
+ * @return the number of written chars (without null-termination)
  */
-char *abspath(const char *path);
+u32 abspath(char *dst,u32 dstSize,const char *src);
 
 /**
  * Removes the last path-component, if possible
@@ -64,12 +68,12 @@ tFD opendir(const char *path);
 
 /**
  * Reads the next directory-entry from the given file-descriptor.
- * Note that the data of the entry might be overwritten by the next call of readdir()!
  *
+ * @param e the dir-entry to read into
  * @param dir the file-descriptor
- * @return a pointer to the directory-entry or NULL if the end has been reached
+ * @return false if the end has been reached
  */
-sDirEntry *readdir(tFD dir);
+bool readdir(sDirEntry *e,tFD dir);
 
 /**
  * Closes the given directory

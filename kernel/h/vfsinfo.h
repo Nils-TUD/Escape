@@ -38,6 +38,11 @@ s32 vfsinfo_procReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 co
 s32 vfsinfo_threadReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
+ * The virtual-memory-read-handler
+ */
+s32 vfsinfo_virtMemReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+
+/**
  * The read-handler for directories
  */
 s32 vfsinfo_dirReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);

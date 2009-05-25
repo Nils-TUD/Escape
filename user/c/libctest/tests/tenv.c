@@ -40,25 +40,29 @@ static void test_env(void) {
 }
 
 static void test_setget(void) {
+	char *value = (char*)malloc(255);
 	test_caseStart("Testing setEnv() and getEnv()");
 	test_assertInt(setEnv("TEST","my value"),0);
-	test_assertStr(getEnv("TEST"),"my value");
+	test_assertTrue(getEnv(value,255,"TEST"));
+	test_assertStr(value,"my value");
 	test_assertInt(setEnv("A","123"),0);
-	test_assertStr(getEnv("A"),"123");
+	test_assertTrue(getEnv(value,255,"A"));
+	test_assertStr(value,"123");
 	test_caseSucceded();
+	free(value);
 }
 
 static void test_geti(void) {
 	u32 i;
-	char *name;
+	char *name = (char*)malloc(255);
 	test_caseStart("Testing getEnvByIndex()");
 
 	for(i = 0; ; i++) {
-		name = getEnvByIndex(i);
-		if(name == NULL)
+		if(!getEnvByIndex(name,255,i))
 			break;
-		test_assertTrue(getEnv(name) != NULL);
+		test_assertTrue(getEnv(name,255,name));
 	}
 
 	test_caseSucceded();
+	free(name);
 }

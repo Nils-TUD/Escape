@@ -22,6 +22,7 @@
 #include <esc/lock.h>
 #include <esc/thread.h>
 #include <esc/fileio.h>
+#include <esc/dir.h>
 #include <stdlib.h>
 
 #define LOCK_ARRAY	0x1
@@ -35,6 +36,7 @@ typedef struct {
 } sArray;
 
 static int myThread(void);
+static void treadDir(const char *path);
 static sArray *create(u32 dataSize,u32 num);
 static void add(sArray *a,void *e);
 static void print(sArray *a);
@@ -57,9 +59,12 @@ int main(void) {
 }
 
 static int myThread(void) {
+	const char *folders[] = {
+		"file:/","file:/bin","system:"
+	};
 	while(1) {
-		printf("I am thread %d\n",gettid());
-		sleep(40);
+		treadDir(folders[gettid() % ARRAY_SIZE(folders)]);
+		/*printf("I am thread %d\n",gettid());*/
 	}
 	/*u32 i;
 	u32 *ptrs[TEST_COUNT];
@@ -78,6 +83,27 @@ static int myThread(void) {
 	add(a,(void*)12);
 	print(a);*/
 	return 0;
+}
+
+static void treadDir(const char *path) {
+	tTid tid = gettid();
+	tFD dir = opendir(path);
+	if(dir < 0) {
+		printe("Unable to open '%s'",path);
+		return;
+	}
+
+	printf("[%d] opening '%s'\n",tid,path);
+	u32 i;
+	sDirEntry e;
+	while(readdir(&e,dir)) {
+		if(i++ % 3 == 0)
+			yield();
+		printf("[%d] '%s'\n",tid,e.name);
+	}
+	printf("[%d] done\n",tid);
+
+	closedir(dir);
 }
 
 static sArray *create(u32 dataSize,u32 num) {

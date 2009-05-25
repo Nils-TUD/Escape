@@ -271,7 +271,7 @@ bool util_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 	char *s,*str;
 	u8 pad;
 	s32 n;
-	u32 u,x,width;
+	u32 u,width;
 	bool readFlags,padRight;
 	u8 base;
 
@@ -331,10 +331,9 @@ bool util_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 				SPRINTF_INCREASE(width,pad);
 				if(!padRight && pad > 0)
 					str += util_sprintfPad(str,padchar,pad - width);
-				x = util_sprintn(str,n);
-				str += x;
+				str += util_sprintn(str,n);
 				if(padRight && pad > 0)
-					str += util_sprintfPad(str,padchar,pad - x);
+					str += util_sprintfPad(str,padchar,pad - width);
 				buf->len += MAX(width,pad);
 				break;
 			/* unsigned integer */
@@ -348,10 +347,9 @@ bool util_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 				SPRINTF_INCREASE(width,pad);
 				if(!padRight && pad > 0)
 					str += util_sprintfPad(str,padchar,pad - width);
-				x = util_sprintu(str,u,base);
-				str += x;
+				str += util_sprintu(str,u,base);
 				if(padRight && pad > 0)
-					str += util_sprintfPad(str,padchar,pad - x);
+					str += util_sprintfPad(str,padchar,pad - width);
 				buf->len += MAX(width,pad);
 				break;
 			/* string */
@@ -361,14 +359,12 @@ bool util_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 				SPRINTF_INCREASE(width,pad);
 				if(!padRight && pad > 0)
 					str += util_sprintfPad(str,padchar,pad - width);
-				x = 0;
 				while(*s) {
 					SPRINTF_ADD_CHAR(*s);
 					s++;
-					x++;
 				}
 				if(padRight && pad > 0)
-					str += util_sprintfPad(str,padchar,pad - x);
+					str += util_sprintfPad(str,padchar,pad - width);
 				buf->len += MAX(width,pad);
 				break;
 			/* character */

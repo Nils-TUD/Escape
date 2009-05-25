@@ -60,21 +60,7 @@ namespace esc {
 					u8 style = STYLE_DEFAULT);
 			Window(const Window &w);
 			virtual ~Window();
-
-			Window &operator=(const Window &w) {
-				UIElement::operator=(w);
-				_title = w._title;
-				_style = w._style;
-				_titleBarHeight = w._titleBarHeight;
-				_inTitle = w._inTitle;
-				_isActive = false;
-				_focus = w._focus;
-				_controls = w._controls;
-				_id = NEXT_TMP_ID--;
-				_created = false;
-				init();
-				return *this;
-			};
+			Window &operator=(const Window &w);
 
 			inline tWinId getId() const {
 				return _id;

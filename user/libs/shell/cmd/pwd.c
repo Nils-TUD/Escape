@@ -20,7 +20,9 @@
 #include <esc/common.h>
 #include <esc/env.h>
 #include <esc/io.h>
+#include <esc/dir.h>
 #include <esc/fileio.h>
+#include <stdlib.h>
 #include "pwd.h"
 
 s32 shell_cmdPwd(u32 argc,char **argv) {
@@ -28,12 +30,18 @@ s32 shell_cmdPwd(u32 argc,char **argv) {
 	UNUSED(argc);
 	UNUSED(argv);
 
-	path = getEnv("CWD");
+	path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
 	if(path == NULL) {
+		printe("Unable to allocate mem");
+		return EXIT_FAILURE;
+	}
+
+	if(!getEnv(path,MAX_PATH_LEN + 1,"CWD")) {
 		printe("Unable to get CWD");
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	printf("%s\n",path);
-	return 0;
+	free(path);
+	return EXIT_SUCCESS;
 }

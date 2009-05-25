@@ -61,13 +61,18 @@ static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count);
 static void freeEntries(sFullDirEntry **entries,u32 count);
 
 int main(int argc,char *argv[]) {
-	char *path = NULL;
+	char *path;
 	char *str;
 	char dateStr[20];
 	u32 widths[WIDTHS_COUNT] = {0};
 	u32 i,pos,x,count,flags = 0;
 	sFullDirEntry **entries,*entry;
 	sDate date;
+	path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
+	if(path == NULL) {
+		printe("Not enough mem for path");
+		return EXIT_FAILURE;
+	}
 
 	/* parse args */
 	for(i = 1; (s32)i < argc; i++) {
@@ -89,16 +94,13 @@ int main(int argc,char *argv[]) {
 			}
 		}
 		else
-			path = abspath(argv[argc - 1]);
+			abspath(path,MAX_PATH_LEN + 1,argv[argc - 1]);
 	}
 
 	/* path not provided? so use CWD */
-	if(path == NULL) {
-		path = getEnv("CWD");
-		if(path == NULL) {
-			printe("Unable to get CWD");
-			return EXIT_FAILURE;
-		}
+	if(!getEnv(path,MAX_PATH_LEN + 1,"CWD")) {
+		printe("Unable to get CWD");
+		return EXIT_FAILURE;
 	}
 
 	/* get entries */
@@ -177,6 +179,7 @@ int main(int argc,char *argv[]) {
 		printf("\n");
 
 	freeEntries(entries,count);
+	free(path);
 	return EXIT_SUCCESS;
 }
 
@@ -192,7 +195,7 @@ static s32 compareEntries(const void *a,const void *b) {
 
 static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count) {
 	tFD dd;
-	sDirEntry *de;
+	sDirEntry de;
 	sFullDirEntry *fde;
 	sFileInfo info;
 	char *fpath;
@@ -215,13 +218,13 @@ static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count) {
 	strcpy(fpath,path);
 
 	if((dd = opendir(path)) >= 0) {
-		while((de = readdir(dd)) != NULL) {
+		while(readdir(&de,dd)) {
 			/* skip "." and ".." if -a is not enabled */
-			if(!(flags & LS_FL_ALL) && (strcmp(de->name,".") == 0 || strcmp(de->name,"..") == 0))
+			if(!(flags & LS_FL_ALL) && (strcmp(de.name,".") == 0 || strcmp(de.name,"..") == 0))
 				continue;
 
 			/* retrieve information */
-			strcpy(fpath + pathLen,de->name);
+			strcpy(fpath + pathLen,de.name);
 			if(getFileInfo(fpath,&info) < 0) {
 				printe("Unable to get file-info for '%s'",fpath);
 				freeEntries(entries,pos);
@@ -260,7 +263,7 @@ static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count) {
 			fde->linkCount = info.linkCount;
 			fde->mode = info.mode;
 			fde->modifytime = info.modifytime;
-			strcpy(fde->name,de->name);
+			strcpy(fde->name,de.name);
 
 			entries[pos++] = fde;
 		}

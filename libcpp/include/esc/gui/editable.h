@@ -45,17 +45,7 @@ namespace esc {
 			};
 			virtual ~Editable() {
 			};
-
-			Editable &operator=(const Editable &e) {
-				// ignore self-assigments
-				if(this == &e)
-					return *this;
-				Control::operator=(e);
-				_cursor = e._cursor;
-				_focused = false;
-				_str = e._str;
-				return *this;
-			};
+			Editable &operator=(const Editable &e);
 
 			inline String getText() const {
 				return _str;

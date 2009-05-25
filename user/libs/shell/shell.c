@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/env.h>
+#include <esc/dir.h>
 #include <esc/fileio.h>
 #include <esc/heap.h>
 #include <esc/proc.h>
@@ -40,12 +41,18 @@ static u32 tabCount = 0;
 static tPid waitingPid = INVALID_PID;
 
 bool shell_prompt(void) {
-	char *path = getEnv("CWD");
+	char *path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
 	if(path == NULL) {
 		printf("ERROR: unable to get CWD\n");
 		return false;
 	}
+	if(!getEnv(path,MAX_PATH_LEN + 1,"CWD")) {
+		free(path);
+		printf("ERROR: unable to get CWD\n");
+		return false;
+	}
 	printf("\033f\x8%s\033r\x0 # ",path);
+	free(path);
 	return true;
 }
 

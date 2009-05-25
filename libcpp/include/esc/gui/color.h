@@ -41,20 +41,7 @@ namespace esc {
 			static inline Color from32Bit(u32 col) {
 				return Color(col);
 			};
-			static Color fromBits(u32 col,u8 bits) {
-				switch(bits) {
-					case 32:
-						return from32Bit(col);
-					case 24:
-						return from24Bit(col);
-					case 16:
-						return from16Bit(col);
-					case 8:
-						return from8Bit(col);
-					default:
-						return Color(0);
-				}
-			};
+			static Color fromBits(u32 col,u8 bits);
 
 		public:
 			Color(u32 color = 0)
@@ -111,20 +98,7 @@ namespace esc {
 			inline u32 to32Bit() const {
 				return _color;
 			};
-			u32 toBits(u8 bits) const {
-				switch(bits) {
-					case 32:
-						return to32Bit();
-					case 24:
-						return to24Bit();
-					case 16:
-						return to16Bit();
-					case 8:
-						return to8Bit();
-					default:
-						return 0;
-				}
-			}
+			u32 toBits(u8 bits) const;
 
 		private:
 			u32 _color;

@@ -24,6 +24,18 @@
 
 namespace esc {
 	namespace gui {
+		UIElement &UIElement::operator=(const UIElement &e) {
+			// ignore self-assignments
+			if(this == &e)
+				return *this;
+			_g = NULL;
+			_x = e._x;
+			_y = e._y;
+			_width = e._width;
+			_height = e._height;
+			return *this;
+		}
+
 		void UIElement::requestUpdate() {
 			if(_g)
 				_g->requestUpdate(getWindowId());

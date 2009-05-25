@@ -25,6 +25,8 @@
 
 /* forward declarations */
 static void test_dir(void);
+static void test_opendir(void);
+static void test_abspath(void);
 
 /* our test-module */
 sTestModule tModDir = {
@@ -33,8 +35,13 @@ sTestModule tModDir = {
 };
 
 static void test_dir(void) {
+	test_opendir();
+	test_abspath();
+}
+
+static void test_opendir(void) {
 	tFD fd;
-	sDirEntry *e;
+	sDirEntry e;
 	test_caseStart("Testing opendir, readdir and closedir");
 
 	fd = opendir("file:/bin");
@@ -43,8 +50,60 @@ static void test_dir(void) {
 		return;
 	}
 
-	while((e = readdir(fd)));
+	while(readdir(&e,fd));
 	closedir(fd);
+
+	test_caseSucceded();
+}
+
+static void test_abspath(void) {
+	u32 count;
+
+	test_caseStart("Testing abspath");
+
+	char *path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
+	if(path == NULL) {
+		printe("Not enough mem for path");
+		return;
+	}
+
+	count = abspath(path,MAX_PATH_LEN + 1,"file:/");
+	test_assertUInt(count,6);
+	test_assertStr(path,"file:/");
+
+	count = abspath(path,MAX_PATH_LEN + 1,"file:/bin/bla");
+	test_assertUInt(count,14);
+	test_assertStr(path,"file:/bin/bla/");
+
+	count = abspath(path,MAX_PATH_LEN + 1,"file:/../bin/../.././bla");
+	test_assertUInt(count,10);
+	test_assertStr(path,"file:/bla/");
+
+	count = abspath(path,MAX_PATH_LEN + 1,"bin/..///.././bla");
+	test_assertUInt(count,10);
+	test_assertStr(path,"file:/bla/");
+
+	count = abspath(path,MAX_PATH_LEN + 1,"bin/./bla");
+	test_assertUInt(count,14);
+	test_assertStr(path,"file:/bin/bla/");
+
+	count = abspath(path,3,"file:/");
+	if(count > 3)
+		test_caseFailed("Copied too much");
+
+	count = abspath(path,8,"file:/bin/bla");
+	if(count > 8)
+		test_caseFailed("Copied too much");
+
+	count = abspath(path,8,"file:/bin/../bla");
+	if(count > 8)
+		test_caseFailed("Copied too much");
+
+	count = abspath(path,8,"file:///../bin/bla");
+	if(count > 8)
+		test_caseFailed("Copied too much");
+
+	free(path);
 
 	test_caseSucceded();
 }

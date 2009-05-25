@@ -24,44 +24,51 @@
 #include <esc/messages.h>
 #include <esc/heap.h>
 #include <string.h>
+#include <stdlib.h>
 #include "env.h"
 
-s32 shell_cmdEnv(u32 argc,char **argv) {
-	if(argc < 2) {
-		u32 i,len;
-		char *backup;
-		char *val,*name;
-		for(i = 0; (name = getEnvByIndex(i)) != NULL; i++) {
-			/* save name (getEnv will overwrite it) */
-			len = strlen(name);
-			backup = (char*)malloc(len + 1);
-			memcpy(backup,name,len + 1);
+#define MAX_ENV_LEN		255
 
-			val = getEnv(name);
-			if(val != NULL)
-				printf("%s=%s\n",backup,val);
+s32 shell_cmdEnv(u32 argc,char **argv) {
+	char *valBuf,*nameBuf;
+	if(argc > 2) {
+		printf("Usage: %s [<name>|<name>=<value>]\n");
+		return EXIT_FAILURE;
+	}
+
+	/* allocate mem */
+	valBuf = (char*)malloc((MAX_ENV_LEN + 1) * sizeof(char));
+	nameBuf = (char*)malloc((MAX_ENV_LEN + 1) * sizeof(char));
+	if(valBuf == NULL || nameBuf == NULL) {
+		printe("Unable to allocate mem");
+		return EXIT_FAILURE;
+	}
+
+	/* list all env-vars */
+	if(argc < 2) {
+		u32 i;
+		for(i = 0; getEnvByIndex(nameBuf,MAX_ENV_LEN + 1,i); i++) {
+			if(getEnv(valBuf,MAX_ENV_LEN + 1,nameBuf))
+				printf("%s=%s\n",nameBuf,valBuf);
 		}
 	}
 	else if(argc == 2) {
-		char *val;
+		/* set? */
 		u32 pos = strchri(argv[1],'=');
 		if(argv[1][pos] == '\0') {
-			val = getEnv(argv[1]);
-			if(val != NULL)
-				printf("%s=%s\n",argv[1],val);
+			if(getEnv(valBuf,MAX_ENV_LEN + 1,argv[1]))
+				printf("%s=%s\n",argv[1],valBuf);
 		}
+		/* get */
 		else {
 			argv[1][pos] = '\0';
 			setEnv(argv[1],argv[1] + pos + 1);
-			val = getEnv(argv[1]);
-			if(val != NULL)
-				printf("%s=%s\n",argv[1],val);
+			if(getEnv(valBuf,MAX_ENV_LEN + 1,argv[1]))
+				printf("%s=%s\n",argv[1],valBuf);
 		}
 	}
-	else {
-		printf("Usage: %s [<name>|<name>=<value>]\n");
-		return 1;
-	}
 
-	return 0;
+	free(valBuf);
+	free(nameBuf);
+	return EXIT_SUCCESS;
 }

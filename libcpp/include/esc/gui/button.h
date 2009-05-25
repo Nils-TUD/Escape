@@ -47,17 +47,7 @@ namespace esc {
 			virtual ~Button() {
 
 			};
-
-			Button &operator=(const Button &b) {
-				// ignore self-assignments
-				if(this == &b)
-					return *this;
-				Control::operator=(b);
-				_focused = false;
-				_pressed = b._pressed;
-				_text = b._text;
-				return *this;
-			};
+			Button &operator=(const Button &b);
 
 			inline bool isPressed() const {
 				return _pressed;

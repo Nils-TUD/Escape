@@ -38,12 +38,20 @@ int main(int argc,char *argv[]) {
 
 	file = stdin;
 	if(argc == 2) {
-		path = abspath(argv[1]);
+		path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
+		if(path == NULL) {
+			printe("Unable to allocate mem for path");
+			return EXIT_FAILURE;
+		}
+
+		abspath(path,MAX_PATH_LEN + 1,argv[1]);
 		file = fopen(path,"r");
 		if(file == NULL) {
 			printe("Unable to open '%s'",path);
 			return EXIT_FAILURE;
 		}
+
+		free(path);
 	}
 
 	while((count = fread(buffer,sizeof(char),BUF_SIZE - 1,file)) > 0) {

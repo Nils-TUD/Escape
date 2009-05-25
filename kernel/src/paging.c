@@ -835,6 +835,34 @@ static void paging_remFromCow(sProc *p,u32 frameNumber) {
 		mm_freeFrame(frameNumber,MM_DEF);
 }
 
+void paging_sprintfVirtMem(sStringBuffer *buf,sProc *p) {
+	u32 i,j;
+	sPDEntry *pagedir;
+	paging_mapForeignPageDir(p);
+	pagedir = (sPDEntry*)PAGE_DIR_TMP_AREA;
+	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR); i++) {
+		if(pagedir[i].present) {
+			u32 addr = PAGE_SIZE * PT_ENTRY_COUNT * i;
+			sPTEntry *pte = (sPTEntry*)(TMPMAP_PTS_START + i * PAGE_SIZE);
+			util_sprintf(buf,"PageTable 0x%x (VM: 0x%08x - 0x%08x)\n",i,addr,
+					addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
+			for(j = 0; j < PT_ENTRY_COUNT; j++) {
+				if(pte[j].present) {
+					sPTEntry *page = pte + j;
+					util_sprintf(buf,"\tPage 0x%x: ",j);
+					util_sprintf(buf,"frame=0x%x [%c%c%c%c%c] (VM: 0x%08x - 0x%08x)\n",
+							page->frameNumber,page->notSuperVisor ? 'u' : 'k',
+							page->writable ? 'w' : 'r',page->global ? 'g' : '-',
+							page->copyOnWrite ? 'c' : '-',page->noFree ? 'n' : '-',
+							addr,addr + PAGE_SIZE - 1);
+				}
+				addr += PAGE_SIZE;
+			}
+		}
+	}
+	paging_unmapForeignPageDir(false);
+}
+
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING

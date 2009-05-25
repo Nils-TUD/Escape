@@ -29,6 +29,16 @@ namespace esc {
 		Color ProgressBar::BARCOLOR = Color(0,0,0xFF);
 		Color ProgressBar::BORDER_COLOR = Color(0x20,0x20,0x20);
 
+		ProgressBar &ProgressBar::operator=(const ProgressBar &b) {
+			// ignore self-assignments
+			if(this == &b)
+				return *this;
+			Control::operator=(b);
+			_position = b._position;
+			_text = b._text;
+			return *this;
+		}
+
 		void ProgressBar::paint(Graphics &g) {
 			// draw border
 			g.setColor(BORDER_COLOR);

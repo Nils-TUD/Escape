@@ -260,12 +260,13 @@ s32 fclose(tFile *file) {
 
 s32 printe(const char *prefix,...) {
 	s32 res = 0;
+	char dummyBuf;
 	char *msg;
 	va_list ap;
 
 	msg = strerror(errno);
 	/* if we have no terminal we write it via debugf */
-	if(getEnv("TERM") == NULL) {
+	if(getEnv(&dummyBuf,1,"TERM") == false) {
 		va_start(ap,prefix);
 		vdebugf(prefix,ap);
 		va_end(ap);
@@ -1345,9 +1346,9 @@ static s32 doFlush(sBuffer *buf) {
 		if(write(buf->fd,buf->str,buf->pos * sizeof(char)) < 0)
 			res = IO_EOF;
 		buf->pos = 0;
-		/* a process switch improves the performance by far :)
-		if(res >= 0)
-			yield();*/
+		/* a process switch after we've written some chars seems to be good :) */
+		if(res >= 64)
+			yield();
 	}
 	return res;
 }

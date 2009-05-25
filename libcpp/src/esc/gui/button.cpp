@@ -29,6 +29,17 @@ namespace esc {
 		Color Button::LIGHT_BORDER_COLOR = Color(0x60,0x60,0x60);
 		Color Button::DARK_BORDER_COLOR = Color(0x20,0x20,0x20);
 
+		Button &Button::operator=(const Button &b) {
+			// ignore self-assignments
+			if(this == &b)
+				return *this;
+			Control::operator=(b);
+			_focused = false;
+			_pressed = b._pressed;
+			_text = b._text;
+			return *this;
+		}
+
 		void Button::onFocusGained() {
 			_focused = true;
 			repaint();

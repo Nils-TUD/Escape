@@ -24,6 +24,16 @@
 
 namespace esc {
 	namespace gui {
+		Control &Control::operator=(const Control &c) {
+			// ignore self-assignments
+			if(this == &c)
+				return *this;
+			UIElement::operator=(c);
+			// don't assign the window; the user has to do it manually
+			_w = NULL;
+			return *this;
+		}
+
 		void Control::setWindow(Window *w) {
 			_w = w;
 			// we share the memory with the window, so that a control simply paints to that memory

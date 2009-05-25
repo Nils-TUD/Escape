@@ -22,6 +22,7 @@
 #include <esc/dir.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
+#include <esc/heap.h>
 #include <string.h>
 #include <stdlib.h>
 #include "cd.h"
@@ -35,7 +36,12 @@ s32 shell_cmdCd(u32 argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	path = abspath(argv[1]);
+	path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
+	if(path == NULL) {
+		printe("Unable to allocate mem for path");
+		return EXIT_FAILURE;
+	}
+	abspath(path,MAX_PATH_LEN + 1,argv[1]);
 
 	/* ensure that the user remains in file: */
 	if(strncmp(path,"file:",5) != 0) {
@@ -57,5 +63,6 @@ s32 shell_cmdCd(u32 argc,char **argv) {
 
 	/* finally change dir */
 	setEnv("CWD",path);
+	free(path);
 	return EXIT_SUCCESS;
 }

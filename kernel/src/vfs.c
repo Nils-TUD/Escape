@@ -21,6 +21,7 @@
 #include <vfs.h>
 #include <vfsnode.h>
 #include <vfsreal.h>
+#include <vfsinfo.h>
 #include <proc.h>
 #include <paging.h>
 #include <util.h>
@@ -46,7 +47,8 @@
 typedef struct {
 	/* read OR write; flags = 0 => entry unused */
 	u8 flags;
-	/* the owner of this file; sharing of a file is not possible for different threads */
+	/* the owner of this file; sharing of a file is not possible for different threads
+	 * (an exception is the inheritance to a child-thread) */
 	tTid owner;
 	/* number of references */
 	u16 refCount;
@@ -729,6 +731,14 @@ sVFSNode *vfs_createProcess(tPid pid,fRead handler) {
 
 	/* create process-info-node */
 	n = vfsn_createInfo(KERNEL_TID,dir,(char*)"info",handler);
+	if(n == NULL) {
+		vfsn_removeNode(dir);
+		kheap_free(name);
+		return NULL;
+	}
+
+	/* create virt-mem-info-node */
+	n = vfsn_createInfo(KERNEL_TID,dir,(char*)"virtmem",vfsinfo_virtMemReadHandler);
 	if(n == NULL) {
 		vfsn_removeNode(dir);
 		kheap_free(name);

@@ -78,7 +78,36 @@ namespace esc {
 			}
 		}
 
+		void Graphics::doSetPixel(tCoord x,tCoord y) {
+			u32 offset = (_offy + y) * _width + (_offx + x);
+			switch(_bpp) {
+				case 8:
+					*(u8*)(_pixels + offset * sizeof(u8)) = _col & 0xFF;
+					break;
+				case 16:
+					*(u16*)(_pixels + offset * sizeof(u16)) = _col & 0xFFFF;
+					break;
+				case 24: {
+					u8 *col = (u8*)&_col;
+					u8 *addr = _pixels + offset * 3;
+					*addr++ = *col++;
+					*addr++ = *col++;
+					*addr++ = *col++;
+				}
+				break;
+				case 32:
+					*(u32*)(_pixels + offset * sizeof(u32)) = _col;
+					break;
+			}
+			//_pixel->set((_offy + y) * _width + (_offx + x),_col);
+		}
+
 		void Graphics::moveLines(tCoord y,tSize height,tSize up) {
+			tCoord x = 0;
+			tSize width = _width;
+			validateParams(x,y,width,height);
+			if(y < up)
+				up = y;
 			tCoord starty = _offy + y;
 			u32 psize = _pixel->getPixelSize();
 			memmove(_pixels + ((starty - up) * _width) * psize,

@@ -24,6 +24,7 @@
 #include "mm.h"
 #include "proc.h"
 #include "thread.h"
+#include "util.h"
 
 /**
  * Virtual memory layout:
@@ -394,6 +395,14 @@ void paging_destroyPageDir(sProc *p);
  * soon as the GDT is setup for a flat memory layout!
  */
 void paging_gdtFinished(void);
+
+/**
+ * Prints the user-part of the page-directory of the given process to the given buffer
+ *
+ * @param buffer the buffer
+ * @param p the process
+ */
+void paging_sprintfVirtMem(sStringBuffer *buf,sProc *p);
 
 
 #if DEBUGGING

@@ -150,7 +150,6 @@ namespace esc {
 				case MSG_WIN_SET_ACTIVE: {
 					sMsgDataWinActive data;
 					if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {
-						debugf("window %d setactive=%d\n",data.window,data.isActive);
 						Window *w = getWindowById(data.window);
 						if(w) {
 							w->setActive(data.isActive);

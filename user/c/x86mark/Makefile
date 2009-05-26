@@ -28,7 +28,7 @@ $(BIN):	$(LDCONF) $(COBJ) $(ASM) $(START) $(LIBCA)
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(ASM) $(LIBCA);
 		@echo "===== COPYING ON DISK =====";
 		@make -C $(ROOT) mounthdd
-		sudo cp $(BIN) $(DISKMOUNT)/bin/$(NAME)
+		$(SUDO) cp $(BIN) $(DISKMOUNT)/bin/$(NAME)
 		@make -C $(ROOT) umounthdd
 
 $(BUILD)/user_$(NAME)_%.o:		%.c

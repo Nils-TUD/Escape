@@ -56,18 +56,14 @@
  *      |      |             mm-stack              |     k
  *      v      +-----------------------------------+     e
  *             |                ...                |     r
- * 0xC03FE000: +-----------------------------------+     n
- *             |        mapped temp page-dir       |     e
- * 0xC03FF000: +-----------------------------------+     l
- *             |          mapped page-dir          |     a
- * 0xC0400000: +-----------------------------------+     r
+ * 0xC0400000: +-----------------------------------+     n
  *             |                                   |     e
- *      |      |            kernel-heap            |     a
- *      v      |                                   |
- * 0xC1800000: +-----------------------------------+     |
- *             |                ...                |     |
- * 0xFF7FE000: +-----------------------------------+     |      -----
- *             |            kernel-stack           |     |        |
+ *      |      |            kernel-heap            |     l
+ *      v      |                                   |     a
+ * 0xC1800000: +-----------------------------------+     r
+ *             |                ...                |     e
+ * 0xFF7FE000: +-----------------------------------+     a      -----
+ *             |            kernel-stack           |              |
  * 0xFF7FF000: +-----------------------------------+     |        |
  *             |         temp kernel-stack         |     |
  * 0xFF800000: +-----------------------------------+     |     not shared page-tables (3)
@@ -95,13 +91,13 @@
 #define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE/* * 4*/)
 
 /* page-directories in virtual memory */
-#define PAGE_DIR_AREA		(KERNEL_HEAP_START - PAGE_SIZE)
+#define PAGE_DIR_AREA		(MAPPED_PTS_START + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
 /* needed for building a new page-dir */
-#define PAGE_DIR_TMP_AREA	(PAGE_DIR_AREA - PAGE_SIZE)
+#define PAGE_DIR_TMP_AREA	(TMPMAP_PTS_START + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
 /* our kernel-stack */
-#define KERNEL_STACK		(KERNEL_STACK_TMP - PAGE_SIZE)
-/* temporary stack for cloning the stack */
-#define KERNEL_STACK_TMP	(TMPMAP_PTS_START - PAGE_SIZE)
+#define KERNEL_STACK		(TEMP_MAP_PAGE - PAGE_SIZE)
+/* temporary page for various purposes */
+#define TEMP_MAP_PAGE		(TMPMAP_PTS_START - PAGE_SIZE)
 
 /* the size of the temporary stack we use at the beginning */
 #define TMP_STACK_SIZE		PAGE_SIZE

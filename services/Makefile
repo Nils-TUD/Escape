@@ -12,7 +12,7 @@ all:	serv
 
 serv:	$(SERVICES)
 		make -C .. mounthdd
-		sudo cp $(SERVICES) $(HDDMOUNT)/etc/services
+		$(SUDO) cp $(SERVICES) $(HDDMOUNT)/etc/services
 		make -C .. umounthdd
 
 clean:

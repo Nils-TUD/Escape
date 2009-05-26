@@ -24,7 +24,7 @@ $(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCA)
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA);
 		@echo "===== COPYING ON DISK =====";
 		@make -C ../../ mounthdd
-		sudo cp $(BIN) $(DISKMOUNT)/services/$(NAME)
+		$(SUDO) cp $(BIN) $(DISKMOUNT)/services/$(NAME)
 		@make -C ../../ umounthdd
 
 $(BUILD)/service_$(NAME)_%.o:		%.c

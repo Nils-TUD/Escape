@@ -270,9 +270,9 @@ static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
 	u32 i,*src,*dst;
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	paging_map(KERNEL_STACK_TMP,&stackFrame,1,PG_SUPERVISOR | PG_WRITABLE,true);
+	paging_map(TEMP_MAP_PAGE,&stackFrame,1,PG_SUPERVISOR | PG_WRITABLE,true);
 	src = (u32*)KERNEL_STACK;
-	dst = (u32*)KERNEL_STACK_TMP;
+	dst = (u32*)TEMP_MAP_PAGE;
 
 	if(thread_save(&nt->save)) {
 		/* child */
@@ -285,7 +285,7 @@ static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
 		*dst++ = *src++;
 
 	/* unmap it */
-	paging_unmap(KERNEL_STACK_TMP,1,false,false);
+	paging_unmap(TEMP_MAP_PAGE,1,false,false);
 
 	/* parent */
 	return 0;

@@ -57,7 +57,7 @@ $(BIN):	$(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
 		@echo "===== COPYING BINARY =====";
 		@make -C ../ mounthdd
-		sudo cp $(BIN) $(DISKMOUNT)/boot
+		$(SUDO) cp $(BIN) $(DISKMOUNT)/boot
 		@make -C ../ umounthdd
 
 $(SERVICES): $(SERVBINS)

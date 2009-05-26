@@ -52,7 +52,7 @@ $(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
 		@echo "===== COPYING BINARY =====";
 		@make -C ../../ mounthdd
-		sudo cp $(BIN) $(DISKMOUNT)/boot
+		$(SUDO) cp $(BIN) $(DISKMOUNT)/boot
 		@make -C ../../ umounthdd
 
 $(BUILD)/kerneltk_%.o:	../src/%.c

@@ -120,7 +120,7 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	id = regService("vesa",SERVICE_TYPE_SINGLEPIPE);
+	id = regService("vesa",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
 		printe("Unable to register service 'vesa'");
 		return EXIT_FAILURE;

@@ -66,7 +66,7 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 	usage = text_get(&info);
 	if(usage == NULL) {
 		/* ok, so we've to create a new usage */
-		usage = kheap_alloc(sizeof(sTextUsage));
+		usage = (sTextUsage*)kheap_alloc(sizeof(sTextUsage));
 		if(usage == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 		usage->inodeNo = info.inodeNo;

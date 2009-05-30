@@ -40,7 +40,7 @@
 		u32 tmpLen = MAX((width),(pad)); \
 		if(buf->len + tmpLen >= buf->size) { \
 			buf->size += MAX(SPRINTF_MIN_INC_SIZE,1 + buf->len + tmpLen - buf->size); \
-			buf->str = kheap_realloc(buf->str,buf->size * sizeof(char)); \
+			buf->str = (char*)kheap_realloc(buf->str,buf->size * sizeof(char)); \
 			if(!buf->str) { \
 				buf->size = 0; \
 				return false; \
@@ -277,7 +277,7 @@ bool util_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 
 	if(buf->dynamic && buf->str == NULL) {
 		buf->size = SPRINTF_MIN_INC_SIZE;
-		buf->str = kheap_alloc(SPRINTF_MIN_INC_SIZE * sizeof(char));
+		buf->str = (char*)kheap_alloc(SPRINTF_MIN_INC_SIZE * sizeof(char));
 		if(!buf->str)
 			return false;
 	}

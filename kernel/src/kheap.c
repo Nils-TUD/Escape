@@ -346,7 +346,7 @@ void *kheap_realloc(void *addr,u32 size) {
 	}
 
 	/* the areas are not big enough, so allocate a new one */
-	a = kheap_alloc(size);
+	a = (sMemArea*)kheap_alloc(size);
 	if(a == NULL)
 		return NULL;
 

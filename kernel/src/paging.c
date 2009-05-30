@@ -69,7 +69,7 @@ static void paging_unmapForeignPageDir(void);
  * @param pageDir the address of the page-directory to use
  * @param mappingArea the address of the mapping area to use
  */
-static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames,u32 count,u8 flags,
+static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virt,u32 *frames,u32 count,u8 flags,
 		bool force);
 
 /**
@@ -78,7 +78,7 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
  * @param p the process (needed for remCOW)
  * @param mappingArea the address of the mapping area to use
  */
-static void paging_unmapIntern(sProc *p,u32 mappingArea,u32 virtual,u32 count,bool freeFrames,
+static void paging_unmapIntern(sProc *p,u32 mappingArea,u32 virt,u32 count,bool freeFrames,
 		bool remCOW);
 
 /**
@@ -95,12 +95,12 @@ static void paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count);
  *
  * @panic not enough mem for linked-list nodes and entries
  *
- * @param virtual the virtual address to map
+ * @param virt the virtual address to map
  * @param pte the page-table-entries
  * @param count the number of pages to map
  * @param newProc the new process
  */
-static void paging_setCOW(u32 virtual,sPTEntry *pte,u32 count,sProc *newProc);
+static void paging_setCOW(u32 virt,sPTEntry *pte,u32 count,sProc *newProc);
 
 /**
  * Removes the given frame-number for the given process from COW
@@ -204,59 +204,59 @@ sPDEntry *paging_getProc0PD(void) {
 	return proc0PD;
 }
 
-bool paging_isMapped(u32 virtual) {
-	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
+bool paging_isMapped(u32 virt) {
+	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(virt);
 	return pt->present;
 }
 
-bool paging_isRangeUserReadable(u32 virtual,u32 count) {
+bool paging_isRangeUserReadable(u32 virt,u32 count) {
 	/* kernel area? (be carefull with overflows!) */
-	if(virtual > KERNEL_AREA_V_ADDR || virtual + count > KERNEL_AREA_V_ADDR)
+	if(virt > KERNEL_AREA_V_ADDR || virt + count > KERNEL_AREA_V_ADDR)
 		return false;
 
-	return paging_isRangeReadable(virtual,count);
+	return paging_isRangeReadable(virt,count);
 }
 
-bool paging_isRangeReadable(u32 virtual,u32 count) {
+bool paging_isRangeReadable(u32 virt,u32 count) {
 	sPTEntry *pt;
 	sPDEntry *pd;
 	u32 end;
 	/* calc start and end pt */
-	end = (virtual + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	virtual &= ~(PAGE_SIZE - 1);
-	pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
-	while(virtual < end) {
+	end = (virt + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	virt &= ~(PAGE_SIZE - 1);
+	pt = (sPTEntry*)ADDR_TO_MAPPED(virt);
+	while(virt < end) {
 		/* check page-table first */
-		pd = (sPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual);
+		pd = (sPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(virt);
 		if(!pd->present)
 			return false;
 		if(!pt->present)
 			return false;
-		virtual += PAGE_SIZE;
+		virt += PAGE_SIZE;
 		pt++;
 	}
 	return true;
 }
 
-bool paging_isRangeUserWritable(u32 virtual,u32 count) {
+bool paging_isRangeUserWritable(u32 virt,u32 count) {
 	/* kernel area? (be carefull with overflows!) */
-	if(virtual > KERNEL_AREA_V_ADDR || virtual + count > KERNEL_AREA_V_ADDR)
+	if(virt > KERNEL_AREA_V_ADDR || virt + count > KERNEL_AREA_V_ADDR)
 		return false;
 
-	return paging_isRangeWritable(virtual,count);
+	return paging_isRangeWritable(virt,count);
 }
 
-bool paging_isRangeWritable(u32 virtual,u32 count) {
+bool paging_isRangeWritable(u32 virt,u32 count) {
 	sPTEntry *pt;
 	sPDEntry *pd;
 	u32 end;
 	/* calc start and end pt */
-	end = (virtual + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	virtual &= ~(PAGE_SIZE - 1);
-	pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
-	while(virtual < end) {
+	end = (virt + count + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	virt &= ~(PAGE_SIZE - 1);
+	pt = (sPTEntry*)ADDR_TO_MAPPED(virt);
+	while(virt < end) {
 		/* check page-table first */
-		pd = (sPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual);
+		pd = (sPDEntry*)PAGE_DIR_AREA + ADDR_TO_PDINDEX(virt);
 		if(!pd->present)
 			return false;
 		if(!pt->present)
@@ -265,24 +265,24 @@ bool paging_isRangeWritable(u32 virtual,u32 count) {
 			/* we have to handle copy-on-write here manually because the kernel can write
 			 * to the page anyway */
 			if(pt->copyOnWrite)
-				paging_handlePageFault(virtual);
+				paging_handlePageFault(virt);
 			else
 				return false;
 		}
-		virtual += PAGE_SIZE;
+		virt += PAGE_SIZE;
 		pt++;
 	}
 	return true;
 }
 
-u32 paging_getFrameOf(u32 virtual) {
-	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
+u32 paging_getFrameOf(u32 virt) {
+	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(virt);
 	if(pt->present == 0)
 		return 0;
 	return pt->frameNumber;
 }
 
-u32 paging_countFramesForMap(u32 virtual,u32 count) {
+u32 paging_countFramesForMap(u32 virt,u32 count) {
 	/* we need at least <count> frames */
 	u32 res = count;
 	/* signed is better here :) */
@@ -290,14 +290,14 @@ u32 paging_countFramesForMap(u32 virtual,u32 count) {
 	sPDEntry *pd;
 	while(c > 0) {
 		/* page-table not present yet? */
-		pd = (sPDEntry*)(PAGE_DIR_AREA + ADDR_TO_PDINDEX(virtual) * sizeof(sPDEntry));
+		pd = (sPDEntry*)(PAGE_DIR_AREA + ADDR_TO_PDINDEX(virt) * sizeof(sPDEntry));
 		if(!pd->present) {
 			res++;
 		}
 
 		/* advance to next page-table */
 		c -= PT_ENTRY_COUNT;
-		virtual += PAGE_SIZE * PT_ENTRY_COUNT;
+		virt += PAGE_SIZE * PT_ENTRY_COUNT;
 	}
 	return res;
 }
@@ -320,11 +320,11 @@ void paging_unmapForeignPages(sProc *p,u32 addr,u32 count) {
 	paging_unmapForeignPageDir();
 }
 
-void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags,bool force) {
-	paging_mapIntern(PAGE_DIR_AREA,MAPPED_PTS_START,virtual,frames,count,flags,force);
+void paging_map(u32 virt,u32 *frames,u32 count,u8 flags,bool force) {
+	paging_mapIntern(PAGE_DIR_AREA,MAPPED_PTS_START,virt,frames,count,flags,force);
 }
 
-static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames,u32 count,u8 flags,
+static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virt,u32 *frames,u32 count,u8 flags,
 		bool force) {
 	u32 frame;
 	sPDEntry *pd;
@@ -336,9 +336,9 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 			PG_NOFREE | PG_INHERIT)),"flags contain invalid bits");
 	vassert(force == true || force == false,"force invalid");
 
-	virtual &= ~(PAGE_SIZE - 1);
+	virt &= ~(PAGE_SIZE - 1);
 	while(count-- > 0) {
-		pd = (sPDEntry*)pageDir + ADDR_TO_PDINDEX(virtual);
+		pd = (sPDEntry*)pageDir + ADDR_TO_PDINDEX(virt);
 		/* page table not present? */
 		if(!pd->present) {
 			/* get new frame for page-table */
@@ -355,13 +355,13 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 
 			/* clear frame (ensure that we start at the beginning of the frame) */
 			memclear((void*)ADDR_TO_MAPPED_CUSTOM(mappingArea,
-					virtual & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),PAGE_SIZE);
+					virt & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),PAGE_SIZE);
 
 			paging_flushTLB();
 		}
 
 		/* setup page */
-		pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
+		pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virt);
 		/* ignore already present entries */
 		if(force || !pt->present) {
 			pt->present = true;
@@ -390,16 +390,16 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virtual,u32 *frames
 
 			/* invalidate TLB-entry */
 			if(pageDir == PAGE_DIR_AREA)
-				paging_flushAddr(virtual);
+				paging_flushAddr(virt);
 		}
 
 		/* to next page */
-		virtual += PAGE_SIZE;
+		virt += PAGE_SIZE;
 	}
 }
 
-void paging_unmap(u32 virtual,u32 count,bool freeFrames,bool remCOW) {
-	paging_unmapIntern(proc_getRunning(),MAPPED_PTS_START,virtual,count,freeFrames,remCOW);
+void paging_unmap(u32 virt,u32 count,bool freeFrames,bool remCOW) {
+	paging_unmapIntern(proc_getRunning(),MAPPED_PTS_START,virt,count,freeFrames,remCOW);
 }
 
 void paging_unmapPageTables(u32 start,u32 count) {
@@ -598,9 +598,9 @@ static void paging_unmapForeignPageDir(void) {
 	paging_flushTLB();
 }
 
-static void paging_unmapIntern(sProc *p,u32 mappingArea,u32 virtual,u32 count,bool freeFrames,
+static void paging_unmapIntern(sProc *p,u32 mappingArea,u32 virt,u32 count,bool freeFrames,
 		bool remCOW) {
-	sPTEntry *pte = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtual);
+	sPTEntry *pte = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virt);
 
 	vassert(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
 	vassert(freeFrames == true || freeFrames == false,"freeFrames invalid");
@@ -620,12 +620,12 @@ static void paging_unmapIntern(sProc *p,u32 mappingArea,u32 virtual,u32 count,bo
 
 			/* invalidate TLB-entry */
 			if(mappingArea == MAPPED_PTS_START)
-				paging_flushAddr(virtual);
+				paging_flushAddr(virt);
 		}
 
 		/* to next page */
 		pte++;
-		virtual += PAGE_SIZE;
+		virt += PAGE_SIZE;
 	}
 }
 
@@ -724,12 +724,12 @@ bool paging_handlePageFault(u32 address) {
 	return true;
 }
 
-static void paging_setCOW(u32 virtual,sPTEntry *pte,u32 count,sProc *newProc) {
+static void paging_setCOW(u32 virt,sPTEntry *pte,u32 count,sProc *newProc) {
 	sPTEntry *ownPt;
 	sCOW *cow;
 	sProc *p = proc_getRunning();
 
-	virtual &= ~(PAGE_SIZE - 1);
+	virt &= ~(PAGE_SIZE - 1);
 	while(count-- > 0) {
 		if(!pte->noFree) {
 			/* build cow-entry for child */
@@ -742,7 +742,7 @@ static void paging_setCOW(u32 virtual,sPTEntry *pte,u32 count,sProc *newProc) {
 				util_panic("Not enough mem for copy-on-write!");
 
 			/* build cow-entry for parent if not already done */
-			ownPt = (sPTEntry*)ADDR_TO_MAPPED(virtual);
+			ownPt = (sPTEntry*)ADDR_TO_MAPPED(virt);
 			if(!ownPt->copyOnWrite) {
 				cow = (sCOW*)kheap_alloc(sizeof(sCOW));
 				if(cow == NULL)
@@ -755,12 +755,12 @@ static void paging_setCOW(u32 virtual,sPTEntry *pte,u32 count,sProc *newProc) {
 				ownPt->copyOnWrite = true;
 				ownPt->writable = false;
 				ownPt->dirty = false;
-				paging_flushAddr(virtual);
+				paging_flushAddr(virt);
 			}
 		}
 
 		pte++;
-		virtual += PAGE_SIZE;
+		virt += PAGE_SIZE;
 	}
 }
 
@@ -841,8 +841,8 @@ void paging_dbg_printCOW(void) {
 	}
 }
 
-sPTEntry *paging_dbg_getPTEntry(u32 virtual) {
-	return (sPTEntry*)ADDR_TO_MAPPED(virtual);
+sPTEntry *paging_dbg_getPTEntry(u32 virt) {
+	return (sPTEntry*)ADDR_TO_MAPPED(virt);
 }
 
 u32 paging_dbg_getPageCount(void) {

@@ -121,7 +121,7 @@ void itoa(char *target,s32 n) {
 }
 
 void *memchr(const void *buffer,s32 c,u32 count) {
-	const char *str = buffer;
+	const char *str = (const char*)buffer;
 	while(*str && count-- > 0) {
 		if(*str == c)
 			return (void*)str;
@@ -148,8 +148,8 @@ void *memcpy(void *dest,const void *src,u32 len) {
 }
 
 s32 memcmp(const void *str1,const void *str2,u32 count) {
-	const u8 *s1 = str1;
-	const u8 *s2 = str2;
+	const u8 *s1 = (const u8*)str1;
+	const u8 *s2 = (const u8*)str2;
 	while(count-- > 0) {
 		if(*s1++ != *s2++)
 			return s1[-1] < s2[-1] ? -1 : 1;

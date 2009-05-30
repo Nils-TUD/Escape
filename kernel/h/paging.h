@@ -241,68 +241,68 @@ extern void paging_exchangePDir(u32 physAddr);
  * Checks wether the given virtual-address is currently mapped. This should not be used
  * for user-space addresses!
  *
- * @param virtual the virtual address
+ * @param virt the virt address
  * @return true if so
  */
-bool paging_isMapped(u32 virtual);
+bool paging_isMapped(u32 virt);
 
 /**
  * Checks wether the given address-range is currently readable for the user
  *
- * @param virtual the start-address
+ * @param virt the start-address
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangeUserReadable(u32 virtual,u32 count);
+bool paging_isRangeUserReadable(u32 virt,u32 count);
 
 /**
  * Checks wether the given address-range is currently readable
  *
- * @param virtual the start-address
+ * @param virt the start-address
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangeReadable(u32 virtual,u32 count);
+bool paging_isRangeReadable(u32 virt,u32 count);
 
 /**
  * Checks wether the given address-range is currently writable for the user.
  * Note that the function handles copy-on-write if necessary. So you can be sure that you
  * can write to the page(s) after calling the function.
  *
- * @param virtual the start-address
+ * @param virt the start-address
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangeUserWritable(u32 virtual,u32 count);
+bool paging_isRangeUserWritable(u32 virt,u32 count);
 
 /**
  * Checks wether the given address-range is currently writable.
  * Note that the function handles copy-on-write if necessary. So you can be sure that you
  * can write to the page(s) after calling the function.
  *
- * @param virtual the start-address
+ * @param virt the start-address
  * @param count the number of bytes
  * @return true if so
  */
-bool paging_isRangeWritable(u32 virtual,u32 count);
+bool paging_isRangeWritable(u32 virt,u32 count);
 
 /**
  * Determines the frame-number for the given virtual-address. This should not be used
  * for user-space addresses!
  *
- * @param virtual the virtual address
+ * @param virt the virt address
  * @return the frame-number to which it is currently mapped or 0 if not mapped
  */
-u32 paging_getFrameOf(u32 virtual);
+u32 paging_getFrameOf(u32 virt);
 
 /**
- * Determines how many new frames we need for calling paging_map(<virtual>,...,<count>,...).
+ * Determines how many new frames we need for calling paging_map(<virt>,...,<count>,...).
  *
- * @param virtual the virtual start-address
+ * @param virt the virtual start-address
  * @param count the number of pages to map
  * @return the number of new frames we would need
  */
-u32 paging_countFramesForMap(u32 virtual,u32 count);
+u32 paging_countFramesForMap(u32 virt,u32 count);
 
 /**
  * Maps <count> pages from <vaddr> of the given process for the current one
@@ -325,33 +325,33 @@ void paging_mapForeignPages(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags)
 void paging_unmapForeignPages(sProc *p,u32 addr,u32 count);
 
 /**
- * Maps <count> virtual addresses starting at <virtual> to the given frames (in the CURRENT
+ * Maps <count> virtual addresses starting at <virt> to the given frames (in the CURRENT
  * page-dir!). You can decide (via <force>) wether the mapping should be done in every
  * case or just if the page is not already mapped.
  * Note that the function will NOT flush the TLB!
  *
  * @panic if there is not enough memory to get a frame for a page-table
  *
- * @param virtual the virtual start-address
+ * @param virt the virt start-address
  * @param frames an array with <count> elements which contains the frame-numbers to use.
  * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
  * @param force wether the mapping should be overwritten
  */
-void paging_map(u32 virtual,u32 *frames,u32 count,u8 flags,bool force);
+void paging_map(u32 virt,u32 *frames,u32 count,u8 flags,bool force);
 
 /**
- * Removes <count> pages starting at <virtual> from the page-tables (in the CURRENT page-dir!).
+ * Removes <count> pages starting at <virt> from the page-tables (in the CURRENT page-dir!).
  * If you like the function free's the frames.
  * Note that the function will NOT flush the TLB and will not delete page-tables!
  *
- * @param virtual the virtual start-address
+ * @param virt the virtual start-address
  * @param count the number of pages to unmap
  * @param freeFrames wether the frames should be free'd and not just unmapped
  * @param remCOW wether the frames should be removed from the COW-list
  */
-void paging_unmap(u32 virtual,u32 count,bool freeFrames,bool remCOW);
+void paging_unmap(u32 virt,u32 count,bool freeFrames,bool remCOW);
 
 /**
  * Unmaps and free's page-tables from the index <start> to <start> + <count>.
@@ -409,10 +409,10 @@ void paging_sprintfVirtMem(sStringBuffer *buf,sProc *p);
 void paging_dbg_printCOW(void);
 
 /**
- * @param virtual the virtual address
+ * @param virt the virtual address
  * @return the page-table-entry for the given address
  */
-sPTEntry *paging_dbg_getPTEntry(u32 virtual);
+sPTEntry *paging_dbg_getPTEntry(u32 virt);
 
 /**
  * Counts the number of pages that are currently present in the given page-directory

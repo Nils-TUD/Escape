@@ -36,8 +36,7 @@ void ext2_icache_init(sExt2 *e) {
 	sCachedInode *inode = e->inodeCache;
 	for(i = 0; i < INODE_CACHE_SIZE; i++) {
 		inode->refs = 0;
-		/* TODO is the -1 really correct? */
-		inode->inodeNo = EXT2_BAD_INO - 1;
+		inode->inodeNo = EXT2_BAD_INO;
 		inode++;
 	}
 }
@@ -49,33 +48,45 @@ sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 	sBlockGroup *group;
 
 	/* search for the inode. perhaps it's already in cache */
-	/* otherwise we try to use not yet used slots at first. If there is no one we use a slot
-	 * that is no longer in use. */
-	u32 i;
-	sCachedInode *ifree = NULL;
-	sCachedInode *iusable = NULL;
-	sCachedInode *inode = e->inodeCache;
-	for(i = 0; i < INODE_CACHE_SIZE; i++) {
+	sCachedInode *startNode = e->inodeCache + (no & (INODE_CACHE_SIZE - 1));
+	sCachedInode *iend = e->inodeCache + INODE_CACHE_SIZE;
+	sCachedInode *inode;
+	for(inode = startNode; inode < iend; inode++) {
 		if(inode->inodeNo == no) {
 			inode->refs++;
 			cacheHits++;
 			return inode;
 		}
-		else if(ifree == NULL && inode->inodeNo == EXT2_BAD_INO)
-			ifree = inode;
-		else if(iusable == NULL && inode->refs == 0)
-			iusable = inode;
-		inode++;
+	}
+	/* look in 0 .. startNode; separate it to make the average-case fast */
+	if(inode == iend) {
+		for(inode = e->inodeCache; inode < startNode; inode++) {
+			if(inode->inodeNo == no) {
+				inode->refs++;
+				cacheHits++;
+				return inode;
+			}
+		}
 	}
 
-	/* determine slot to use */
-	if(ifree != NULL)
-		inode = ifree;
-	else if(iusable != NULL)
-		inode = iusable;
-	else {
-		debugf("NO FREE INODE-CACHE-SLOT! What to to??");
-		return NULL;
+	/* ok, not in cache. so we start again at the position to find a usable node */
+	/* if we have to load it from disk anyway I think we can waste a few cycles more
+	 * to reduce the number of cycles in the cache-lookup. therefore
+	 * we don't collect the information in the loops above. */
+	for(inode = startNode; inode < iend; inode++) {
+		if(inode->inodeNo == EXT2_BAD_INO || inode->refs == 0)
+			break;
+	}
+	if(inode == iend) {
+		for(inode = e->inodeCache; inode < startNode; inode++) {
+			if(inode->inodeNo == EXT2_BAD_INO || inode->refs == 0)
+				break;
+		}
+
+		if(inode == startNode) {
+			debugf("NO FREE INODE-CACHE-SLOT! What to to??");
+			return NULL;
+		}
 	}
 
 	/* read block with that inode from disk */

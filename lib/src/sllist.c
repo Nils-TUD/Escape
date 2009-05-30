@@ -63,7 +63,7 @@ typedef struct {
 static sNode *sll_getNode(sSLList *list,u32 index);
 
 sSLList *sll_create(void) {
-	sList *l = malloc(sizeof(sList));
+	sList *l = (sList*)malloc(sizeof(sList));
 	if(l == NULL)
 		return NULL;
 
@@ -92,7 +92,7 @@ void sll_destroy(sSLList *list,bool freeData) {
 }
 
 sSLNode *sll_begin(sSLList *list) {
-	return (sSLNode*)sll_getNode(list,0);
+	return (sSLNode*)((sList*)list)->first;
 }
 
 sSLNode *sll_nodeAt(sSLList *list,u32 index) {
@@ -163,7 +163,7 @@ bool sll_insert(sSLList *list,const void *data,u32 index) {
 	}
 
 	/* allocate node? */
-	nn = malloc(sizeof(sNode));
+	nn = (sNode*)malloc(sizeof(sNode));
 	if(nn == NULL)
 		return false;
 

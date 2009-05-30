@@ -28,6 +28,10 @@
 static u32 cacheHits = 0;
 static u32 cacheMisses = 0;
 
+/* note: it seems like that this approach is faster than using an array of linked-lists as hash-map.
+ * Although we may have to search a bit more and may have "more chaos" in the array :)
+ */
+
 void ext2_bcache_init(sExt2 *e) {
 	u32 i;
 	sBCacheEntry *bentry = e->blockCache;
@@ -36,34 +40,45 @@ void ext2_bcache_init(sExt2 *e) {
 		bentry->buffer = NULL;
 		bentry++;
 	}
-	/* when overwriting entries, start with the first one */
-	e->blockCachePos = 0;
+	e->blockCacheFree = BLOCK_CACHE_SIZE;
 }
 
 u8 *ext2_bcache_request(sExt2 *e,u32 blockNo) {
 	sBCacheEntry *block;
 
 	/* search for the block. perhaps it's already in cache */
-	u32 i;
-	sBCacheEntry *bfree = NULL;
-	sBCacheEntry *bentry = e->blockCache;
-	for(i = 0; i < BLOCK_CACHE_SIZE; i++) {
+	/* note that we assume here that BLOCK_CACHE_SIZE is 2^x */
+	sBCacheEntry *bentry;
+	sBCacheEntry *bstart = e->blockCache + (blockNo & (BLOCK_CACHE_SIZE - 1));
+	sBCacheEntry *bend = e->blockCache + BLOCK_CACHE_SIZE;
+	for(bentry = bstart; bentry < bend; bentry++) {
 		if(bentry->blockNo == blockNo) {
 			cacheHits++;
 			return bentry->buffer;
 		}
-		if(bfree == NULL && bentry->buffer == NULL)
-			bfree = bentry;
-		bentry++;
+	}
+	/* search the entries before start */
+	for(bentry = e->blockCache; bentry < bstart; bentry++) {
+		if(bentry->blockNo == blockNo) {
+			cacheHits++;
+			return bentry->buffer;
+		}
 	}
 
-	/* determine slot to use */
-	if(bfree != NULL)
-		block = bfree;
+	/* if there is a free block, try to find one beginning at the desired index */
+	if(e->blockCacheFree > 0) {
+		u32 no = blockNo;
+		block = e->blockCache + (blockNo & (BLOCK_CACHE_SIZE - 1));
+		/* the block should be free */
+		while(block->buffer != NULL) {
+			no = (no + 1) & (BLOCK_CACHE_SIZE - 1);
+			block = e->blockCache + no;
+		}
+		e->blockCacheFree--;
+	}
 	else {
-		/* don't overwrite the same block all the time. walk through the cache */
-		block = e->blockCache + e->blockCachePos;
-		e->blockCachePos = (e->blockCachePos + 1) % BLOCK_CACHE_SIZE;
+		/* no free blocks anymore so overwrite the one at our desired index */
+		block = e->blockCache + (blockNo & (BLOCK_CACHE_SIZE - 1));
 	}
 
 	/* init cached block */

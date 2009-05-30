@@ -919,7 +919,7 @@ s32 vfs_serviceUseReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 	}
 
 	/* get first element and copy data to buffer */
-	msg = sll_get(list,0);
+	msg = (sMessage*)sll_get(list,0);
 	offset = MIN(msg->length - 1,offset);
 	count = MIN(msg->length - offset,count);
 	/* the data is behind the message */
@@ -967,7 +967,7 @@ static s32 vfs_writeHandler(tTid tid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 			*list = sll_create();
 
 		/* create message and copy data to it */
-		msg = kheap_alloc(sizeof(sMessage) + count * sizeof(u8));
+		msg = (sMessage*)kheap_alloc(sizeof(sMessage) + count * sizeof(u8));
 		if(msg == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 

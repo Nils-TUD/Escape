@@ -86,7 +86,7 @@ s32 sig_setHandler(tTid tid,tSig signal,fSigHandler func) {
 		}
 
 		/* no handler present, so allocate a new one */
-		h = kheap_alloc(sizeof(sHandler));
+		h = (sHandler*)kheap_alloc(sizeof(sHandler));
 		if(h == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 	}

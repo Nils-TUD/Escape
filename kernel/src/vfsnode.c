@@ -482,7 +482,7 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	}
 	else {
 		/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
-		name = kheap_alloc(12 * sizeof(char));
+		name = (char*)kheap_alloc(12 * sizeof(char));
 		if(name == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 
@@ -534,7 +534,7 @@ static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child) {
 
 	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
 	/* we want to have to form <pid>.<x>, therefore two ints and a '.' */
-	name = kheap_alloc((11 * 2 + 2) * sizeof(char));
+	name = (char*)kheap_alloc((11 * 2 + 2) * sizeof(char));
 	if(name == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 

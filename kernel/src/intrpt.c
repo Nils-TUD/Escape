@@ -392,10 +392,6 @@ static void intrpt_handleSignal(void) {
 	tTid tid;
 	tSig sig;
 	u32 data;
-	/* already handling a signal? */
-	if(signalData.active == 1)
-		return;
-
 	if(sig_hasSignal(&sig,&tid,&data)) {
 		signalData.active = 1;
 		signalData.sig = sig;
@@ -575,13 +571,14 @@ void intrpt_handler(sIntrptStackFrame stack) {
 			break;
 	}
 
-	/* handle signals */
-	intrpt_handleSignal();
+	/* handle signal, if not already doing */
+	if(signalData.active == 0)
+		intrpt_handleSignal();
 	if(signalData.active == 1)
 		intrpt_handleSignalFinish(&stack);
 
 	/* send EOI to PIC */
-	if(stack.intrptNo != IRQ_TIMER)
+	if(stack.intrptNo != IRQ_TIMER && stack.intrptNo != IRQ_SYSCALL)
 		intrpt_eoi(stack.intrptNo);
 
 	/* kernel-mode ends */

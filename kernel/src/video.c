@@ -80,16 +80,16 @@ void vid_useColor(eColor bg,eColor fg) {
 }
 
 void vid_restoreColor(void) {
-	vid_setBGColor(oldBG);
-	vid_setFGColor(oldFG);
+	vid_setBGColor((eColor)oldBG);
+	vid_setFGColor((eColor)oldFG);
 }
 
 eColor vid_getFGColor(void) {
-	return color & 0xF;
+	return (eColor)(color & 0xF);
 }
 
 eColor vid_getBGColor(void) {
-	return (color >> 4) & 0xF;
+	return (eColor)((color >> 4) & 0xF);
 }
 
 void vid_setFGColor(eColor ncol) {
@@ -139,7 +139,8 @@ void vid_putchar(char c) {
 	if(c != '\r') {
 		util_outByte(0xe9,c);
 	    util_outByte(0x3f8,c);
-	    while((util_inByte(0x3fd) & 0x20) == 0);
+	    while((util_inByte(0x3fd) & 0x20) == 0)
+	    	;
 	}
 
 	if(c == '\n') {
@@ -315,10 +316,10 @@ static void vid_handleColorCode(const char **str) {
 			vid_setBGColor(BLACK);
 			break;
 		case ESC_FG:
-			vid_setFGColor(MIN(9,value));
+			vid_setFGColor((eColor)MIN(9,value));
 			break;
 		case ESC_BG:
-			vid_setBGColor(MIN(9,value));
+			vid_setBGColor((eColor)MIN(9,value));
 			break;
 	}
 

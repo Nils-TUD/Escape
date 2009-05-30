@@ -21,6 +21,7 @@
 #define EXT2_H_
 
 #include <esc/common.h>
+#include <sllist.h>
 
 /* TODO temporary */
 #define printf	debugf
@@ -338,7 +339,7 @@ typedef struct {
 
 	/* caches */
 	sCachedInode inodeCache[INODE_CACHE_SIZE];
-	u32 blockCachePos;
+	u32 blockCacheFree;
 	sBCacheEntry blockCache[BLOCK_CACHE_SIZE];
 } sExt2;
 

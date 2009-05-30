@@ -633,7 +633,7 @@ static void sysc_seek(sIntrptStackFrame *stack) {
 
 static void sysc_read(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	void *buffer = (void*)SYSC_ARG2(stack);
+	u8 *buffer = (u8*)SYSC_ARG2(stack);
 	u32 count = SYSC_ARG3(stack);
 	sThread *t = thread_getRunning();
 	s32 readBytes;
@@ -668,7 +668,7 @@ static void sysc_read(sIntrptStackFrame *stack) {
 
 static void sysc_write(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	void *buffer = (void*)SYSC_ARG2(stack);
+	u8 *buffer = (u8*)SYSC_ARG2(stack);
 	u32 count = SYSC_ARG3(stack);
 	sThread *t = thread_getRunning();
 	s32 writtenBytes;
@@ -935,7 +935,7 @@ static void sysc_mapPhysical(sIntrptStackFrame *stack) {
 	}
 
 	/* we have to allocate temporary space for the frame-address :( */
-	frames = kheap_alloc(sizeof(u32) * pages);
+	frames = (u32*)kheap_alloc(sizeof(u32) * pages);
 	if(frames == NULL) {
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 		return;
@@ -1125,7 +1125,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 		s32 len;
 
 		/* alloc space for the arguments */
-		argBuffer = kheap_alloc(EXEC_MAX_ARGSIZE);
+		argBuffer = (char*)kheap_alloc(EXEC_MAX_ARGSIZE);
 		if(argBuffer == NULL) {
 			SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 			return;

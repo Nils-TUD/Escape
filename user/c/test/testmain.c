@@ -27,41 +27,55 @@
 #include <string.h>
 
 #define BUF_SIZE 4096
-#define COUNT 100000
+#define COUNT 60000
 
 static u8 buffer[BUF_SIZE];
 
-int main(void) {
+int main(int argc,char *argv[]) {
 	tFD fd;
 	u64 start;
 	uLongLong total;
 	u32 i,diff,t;
+	bool disk;
+	const char *path;
 
-	createNode("system:/test");
+	if(argc > 1 && strcmp(argv[1],"-disk") == 0) {
+		disk = true;
+		path = "file:/bigfile";
+	}
+	else {
+		disk = false;
+		path = "system:/test";
+	}
 
-	fd = open("system:/test",IO_READ | IO_WRITE);
+	if(!disk)
+		createNode(path);
 
-	printf("Testing speed of read/write to VFS-node\n");
+	fd = open(path,IO_READ | IO_WRITE);
+
+	printf("Testing speed of %s to %s\n",disk ? "read" : "read/write",disk ? "disk" : "VFS-node");
 	printf("Transferring %d MiB in chunks of %d bytes\n",(COUNT * BUF_SIZE) / M,BUF_SIZE);
 	printf("\n");
 
-	t = getTime();
-	start = cpu_rdtsc();
-	for(i = 0; i < COUNT; i++) {
-		write(fd,buffer,sizeof(buffer));
-		seek(fd,0);
-		if(i % (COUNT / 100) == 0) {
-			diff = getTime() - t;
-			printf("\rWriting with	%03d MiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / M));
+	if(!disk) {
+		t = getTime();
+		start = cpu_rdtsc();
+		for(i = 0; i < COUNT; i++) {
+			write(fd,buffer,sizeof(buffer));
+			seek(fd,0);
+			if(i % (COUNT / 100) == 0) {
+				diff = getTime() - t;
+				printf("\rWriting with	%03d MiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / M));
+			}
 		}
-	}
 
-	total.val64 = cpu_rdtsc() - start;
-	diff = getTime() - t;
-	printf("\n");
-	printf("Instructions:	%08x%08x\n",total.val32.upper,total.val32.lower);
-	printf("Speed:			%03d MiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / M));
-	printf("\n");
+		total.val64 = cpu_rdtsc() - start;
+		diff = getTime() - t;
+		printf("\n");
+		printf("Instructions:	%08x%08x\n",total.val32.upper,total.val32.lower);
+		printf("Speed:			%03d MiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / M));
+		printf("\n");
+	}
 
 	t = getTime();
 	start = cpu_rdtsc();

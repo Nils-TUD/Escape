@@ -190,7 +190,7 @@ void cpu_getStrInfo(u32 code,char res[12]) {
 void cpu_sprintf(sStringBuffer *buf) {
 	util_sprintf(buf,"%-12s%s\n","Vendor:",vendors[cpu.vendor]);
 	switch(cpu.vendor) {
-		case CPUID_VENDOR_INTEL:
+		case CPUID_VENDOR_INTEL: {
 			if(cpu.type < ARRAY_SIZE(intelTypes))
 				util_sprintf(buf,"%-12s%s\n","Type:",intelTypes[cpu.type]);
 			else
@@ -224,7 +224,8 @@ void cpu_sprintf(sStringBuffer *buf) {
 			util_sprintf(buf,"%-12s%d\n","Brand:",cpu.brand);
 			util_sprintf(buf,"%-12s%d\n","Stepping:",cpu.stepping);
 			util_sprintf(buf,"%-12s%08x\n","Signature:",cpu.signature);
-			break;
+		}
+		break;
 
 		case CPUID_VENDOR_AMD:
 			util_sprintf(buf,"%-12s%d\n","Family:",cpu.family);

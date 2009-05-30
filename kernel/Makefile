@@ -9,7 +9,7 @@ DEP=$(BUILD)/kernel.dep
 LIB=../lib
 
 CC = gcc
-CFLAGS = -fno-inline -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
+CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
 	-D IN_KERNEL=1 -Ih -I$(LIB)/h
 
 # sources

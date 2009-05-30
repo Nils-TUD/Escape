@@ -66,6 +66,7 @@ typedef struct {
 	/* start address of the stack */
 	u32 ustackBegin;
 	u32 ustackPages;
+	/* the frame mapped at KERNEL_STACK */
 	u32 kstackFrame;
 	/* TODO just for debugging atm */
 	u32 ueip;

@@ -43,6 +43,11 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 	printf("\tcd <dir>						Change to given directory\n");
 	printf("\tpwd								Print current directory\n");
 	printf("\twc								Count and/or print words\n");
+	printf("\tstat <file>						Print file-information\n");
+	printf("\n");
+	printf("\tgui								Start GUI\n");
+	printf("									(be carefull: this is a oneway-ticket ;))\n");
+	printf("\tguishell						A shell for the GUI\n");
 
 	printf("\n");
 	printf("Additionally there is a basic shell-'language', that supports '|', '\"' and ';'\n");

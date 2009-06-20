@@ -1,4 +1,4 @@
-; Format: "<serviceName> ':' [<waitFor>,...] ':' [<dependency>,...]"
+; Format: "<serviceName> ':' [<waitFor> ',' ...] ':' [<dependency> ',' ...]"
 speaker: speaker:
 keyboard: keyboard:
 vterm: vterm0,vterm1,vterm2,vterm3,vterm4,vterm5: keyboard,speaker,video

@@ -61,6 +61,7 @@ static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count);
 static void freeEntries(sFullDirEntry **entries,u32 count);
 
 int main(int argc,char *argv[]) {
+	bool pathGiven = false;
 	char *path;
 	char *str;
 	char dateStr[20];
@@ -93,12 +94,14 @@ int main(int argc,char *argv[]) {
 				str++;
 			}
 		}
-		else
+		else {
 			abspath(path,MAX_PATH_LEN + 1,argv[argc - 1]);
+			pathGiven = true;
+		}
 	}
 
 	/* path not provided? so use CWD */
-	if(!getEnv(path,MAX_PATH_LEN + 1,"CWD")) {
+	if(!pathGiven && !getEnv(path,MAX_PATH_LEN + 1,"CWD")) {
 		printe("Unable to get CWD");
 		return EXIT_FAILURE;
 	}

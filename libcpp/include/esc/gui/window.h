@@ -109,6 +109,7 @@ namespace esc {
 			void passToCtrl(const MouseEvent &e,u8 event);
 			void setActive(bool active);
 			void onCreated(tWinId id);
+			void update(tCoord x,tCoord y,tSize width,tSize height);
 
 		private:
 			tWinId _id;

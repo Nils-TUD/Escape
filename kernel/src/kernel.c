@@ -145,7 +145,6 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 			mm_getFreeFrmCount(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 #endif
 
-	/* TODO: $ shell vterm0 && kill 15 (=ourself); keypress --> panic */
 	/* TODO: in guishell: $ cat system:/processes/23/virtmem --> page-fault */
 
 #if 1

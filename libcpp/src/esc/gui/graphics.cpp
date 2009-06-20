@@ -117,6 +117,15 @@ namespace esc {
 			updateMinMax(_width - 1,y + height - up - 1);
 		}
 
+		void Graphics::copyLine(tCoord x,tCoord y,tSize width,void *line) {
+			u32 psize = _pixel->getPixelSize();
+			y %= _height;
+			width = MIN(width,_width);
+			memcpy(_pixels + ((_offy + y) * _width + (_offx + x)) * psize,line,width * psize);
+			updateMinMax(x,y);
+			updateMinMax(x + width,y);
+		}
+
 		void Graphics::drawChar(tCoord x,tCoord y,char c) {
 			char *font = _font.getChar(c);
 			if(font) {

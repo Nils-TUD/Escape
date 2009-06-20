@@ -17,17 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYSCALLS_H_
-#define SYSCALLS_H_
+#ifndef IMAGE_H_
+#define IMAGE_H_
 
-#include "common.h"
-#include "intrpt.h"
+#include <esc/common.h>
+#include <esc/gui/common.h>
+#include <esc/gui/graphics.h>
 
-/**
- * Handles the syscall for the given stack
- *
- * @param intrptStack the pointer to the interrupt-stack
- */
-void sysc_handle(sIntrptStackFrame *intrptStack);
+namespace esc {
+	namespace gui {
+		class Image {
+		public:
+			virtual tSize getWidth() const = 0;
+			virtual tSize getHeight() const = 0;
 
-#endif /* SYSCALLS_H_ */
+			virtual void paint(Graphics &g,tCoord x,tCoord y) = 0;
+		};
+	}
+}
+
+#endif /* IMAGE_H_ */

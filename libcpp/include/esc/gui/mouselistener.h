@@ -17,17 +17,32 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYSCALLS_H_
-#define SYSCALLS_H_
+#ifndef MOUSELISTENER_H_
+#define MOUSELISTENER_H_
 
-#include "common.h"
-#include "intrpt.h"
+#include <esc/common.h>
+#include <esc/gui/common.h>
+#include <esc/gui/event.h>
 
-/**
- * Handles the syscall for the given stack
- *
- * @param intrptStack the pointer to the interrupt-stack
- */
-void sysc_handle(sIntrptStackFrame *intrptStack);
+namespace esc {
+	namespace gui {
+		class MouseListener {
+		public:
+			MouseListener() {
+			};
+			virtual ~MouseListener() {
+			};
 
-#endif /* SYSCALLS_H_ */
+			virtual void mouseMoved(const MouseEvent &e) = 0;
+			virtual void mouseReleased(const MouseEvent &e) = 0;
+			virtual void mousePressed(const MouseEvent &e) = 0;
+
+		private:
+			// no copying
+			MouseListener(const MouseListener &l);
+			MouseListener &operator=(const MouseListener &l);
+		};
+	}
+}
+
+#endif /* MOUSELISTENER_H_ */

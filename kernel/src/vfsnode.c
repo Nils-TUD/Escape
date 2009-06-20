@@ -468,10 +468,6 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 		m = NODE_FIRST_CHILD(n);
 		while(m != NULL) {
 			if(strcmp(m->name,SERVICE_CLIENT_ALL) == 0) {
-				sThread *t = thread_getById(tid);
-				/* append us */
-				if(!sll_append(m->data.servuse.singlePipeClients,t))
-					return ERR_NOT_ENOUGH_MEM;
 				*child = m;
 				return 0;
 			}
@@ -507,19 +503,6 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 		if((n->mode & MODE_SERVICE_SINGLEPIPE) == 0)
 			kheap_free(name);
 		return ERR_NOT_ENOUGH_MEM;
-	}
-
-	/* save us as client */
-	if(n->mode & MODE_SERVICE_SINGLEPIPE) {
-		m->data.servuse.singlePipeClients = sll_create();
-		if(m->data.servuse.singlePipeClients == NULL) {
-			vfsn_removeNode(m);
-			return ERR_NOT_ENOUGH_MEM;
-		}
-		if(!sll_append(m->data.servuse.singlePipeClients,thread_getById(tid))) {
-			vfsn_removeNode(m);
-			return ERR_NOT_ENOUGH_MEM;
-		}
 	}
 
 	*child = m;

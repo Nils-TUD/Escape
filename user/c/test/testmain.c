@@ -26,8 +26,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BUF_SIZE 4096
-#define COUNT 60000
+#define BUF_SIZE 4096 * 64
+#define COUNT 180000
 
 static u8 buffer[BUF_SIZE];
 
@@ -54,7 +54,7 @@ int main(int argc,char *argv[]) {
 	fd = open(path,IO_READ | IO_WRITE);
 
 	printf("Testing speed of %s to %s\n",disk ? "read" : "read/write",disk ? "disk" : "VFS-node");
-	printf("Transferring %d MiB in chunks of %d bytes\n",(COUNT * BUF_SIZE) / M,BUF_SIZE);
+	printf("Transferring %u MiB in chunks of %d bytes\n",(u32)(((u64)COUNT * BUF_SIZE) / M),BUF_SIZE);
 	printf("\n");
 
 	if(!disk) {

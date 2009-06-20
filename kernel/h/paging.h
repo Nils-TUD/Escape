@@ -328,7 +328,6 @@ void paging_unmapForeignPages(sProc *p,u32 addr,u32 count);
  * Maps <count> virtual addresses starting at <virt> to the given frames (in the CURRENT
  * page-dir!). You can decide (via <force>) wether the mapping should be done in every
  * case or just if the page is not already mapped.
- * Note that the function will NOT flush the TLB!
  *
  * @panic if there is not enough memory to get a frame for a page-table
  *
@@ -344,7 +343,7 @@ void paging_map(u32 virt,u32 *frames,u32 count,u8 flags,bool force);
 /**
  * Removes <count> pages starting at <virt> from the page-tables (in the CURRENT page-dir!).
  * If you like the function free's the frames.
- * Note that the function will NOT flush the TLB and will not delete page-tables!
+ * Note that the function will NOT delete page-tables!
  *
  * @param virt the virtual start-address
  * @param count the number of pages to unmap

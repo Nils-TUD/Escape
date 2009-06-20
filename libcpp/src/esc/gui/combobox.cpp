@@ -80,7 +80,6 @@ namespace esc {
 		}
 
 		void ComboBox::ItemWindow::onMouseReleased(const MouseEvent &e) {
-			UNUSED(e);
 			_cb->_selected = _highlighted;
 			closeImpl();
 		}
@@ -140,6 +139,7 @@ namespace esc {
 		}
 
 		void ComboBox::onMousePressed(const MouseEvent &e) {
+			UIElement::onMousePressed(e);
 			if(e.getX() >= getX() + getWidth() - getHeight() && !_pressed) {
 				_pressed = true;
 				repaint();
@@ -156,6 +156,7 @@ namespace esc {
 			}
 		}
 		void ComboBox::onMouseReleased(const MouseEvent &e) {
+			UIElement::onMouseReleased(e);
 			if(e.getX() >= getX() + getWidth() - getHeight() + 2 && _pressed) {
 				_pressed = false;
 				repaint();

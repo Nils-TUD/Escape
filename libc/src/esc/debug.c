@@ -47,7 +47,7 @@ void dumpBytes(void *addr,u32 byteCount) {
 	u8 *ptr = (u8*)addr;
 	for(i = 0; byteCount-- > 0; i++) {
 		if(i % 17 == 0)
-			printf("\n%08x: ",i);
+			printf("\n%08x: ",ptr);
 		printf("%02x ",*ptr);
 		ptr++;
 	}

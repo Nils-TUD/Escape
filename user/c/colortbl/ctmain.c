@@ -32,8 +32,8 @@ int main(void) {
 	for(i = 0; i < 16; i++) {
 		printf("%02x: ",i);
 		for(j = 0; j < 16; j++) {
-			char esc[] = {'\033','f',i,'\033','b',j,'\0'};
-			printf("%s##\033r\x0 ",esc);
+			char esc[] = {'\033','f',i + ' ','\033','b',j + ' ','\0'};
+			printf("%s##\033r\x1 ",esc);
 		}
 		printc('\n');
 	}

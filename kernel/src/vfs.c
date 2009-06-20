@@ -159,18 +159,6 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 			newFile = vfs_openFile(tid,e->flags,e->nodeNo);
 			if(newFile < 0)
 				return -1;
-
-			sGFTEntry *ne = globalFileTable + newFile;
-			if(ne->refCount == 1) {
-				/* if we've got a new file, we have to add the child to the clients */
-				sThread *t = thread_getById(tid);
-				if(!sll_append(n->data.servuse.singlePipeClients,t)) {
-					/* TODO this does not work. if we are already appended in the list we would
-					 * remove us */
-					vfs_closeFile(tid,newFile);
-					return -1;
-				}
-			}
 			return newFile;
 		}
 	}
@@ -238,9 +226,22 @@ tFileNo vfs_openFile(tTid tid,u8 flags,tVFSNodeNo nodeNo) {
 	/* unused file? */
 	e = globalFileTable + f;
 	if(e->flags == 0) {
-		/* count references of virtual nodes */
-		if(IS_VIRT(nodeNo))
+		if(IS_VIRT(nodeNo)) {
+			/* add us as single-pipe-client */
+			if(tid != KERNEL_TID && (n->mode & MODE_TYPE_SERVUSE) &&
+					(n->parent->mode & MODE_SERVICE_SINGLEPIPE)) {
+				if(n->data.servuse.singlePipeClients == NULL) {
+					n->data.servuse.singlePipeClients = sll_create();
+					if(n->data.servuse.singlePipeClients == NULL)
+						return ERR_NOT_ENOUGH_MEM;
+				}
+				if(!sll_append(n->data.servuse.singlePipeClients,thread_getById(tid)))
+					return ERR_NOT_ENOUGH_MEM;
+			}
+
+			/* count references of virtual nodes */
 			n->refCount++;
+		}
 		e->owner = tid;
 		e->flags = flags;
 		e->refCount = 1;

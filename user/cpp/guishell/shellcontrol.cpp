@@ -149,6 +149,10 @@ void ShellControl::append(const char *s) {
 		scrollLine(-_rows.size());
 		return;
 	}
+	if(_row < oldRow) {
+		repaint();
+		return;
+	}
 
 	Graphics *g = getGraphics();
 	if(_scrollRows) {
@@ -244,6 +248,14 @@ bool ShellControl::handleEscape(const char *s) {
 	u8 value = *(u8*)(s + 1);
 	bool res = false;
 	switch(keycode) {
+		case VK_UP:
+			if(_row > _firstRow)
+				_row--;
+			break;
+		case VK_DOWN:
+			if(_row < getLineCount() - 1)
+				_row++;
+			break;
 		case VK_LEFT:
 			if(_cursorCol > 0)
 				_cursorCol--;
@@ -283,6 +295,29 @@ bool ShellControl::handleEscape(const char *s) {
 		case VK_ESC_BG:
 			_color = (_color & 0x0F) | (MIN(15,value) << 4);
 			res = true;
+			break;
+		case VK_ESC_NAVI:
+			_navigation = value ? true : false;
+			break;
+		case VK_ESC_BACKUP: {
+			if(!_screenBackup)
+				_screenBackup = new Vector<Vector<char>*>();
+			u32 start = MAX(0,(s32)_rows.size() - getLineCount());
+			for(u32 i = start; i < _rows.size(); i++)
+				_screenBackup->add(new Vector<char>(*_rows[i]));
+		}
+		break;
+		case VK_ESC_RESTORE:
+			if(_screenBackup) {
+				u32 start = MAX(0,(s32)_rows.size() - getLineCount());
+				for(u32 i = 0; i < _screenBackup->size(); i++) {
+					delete _rows[start + i];
+					_rows[start + i] = new Vector<char>(*((*_screenBackup)[i]));
+				}
+				delete _screenBackup;
+				_screenBackup = NULL;
+				repaint();
+			}
 			break;
 	}
 

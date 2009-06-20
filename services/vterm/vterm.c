@@ -141,11 +141,12 @@ static void vterm_refreshLines(sVTerm *vt,u16 start,u16 count);
  * Handles the escape-code
  *
  * @param vt the vterm
- * @param str the current position
+ * @param keycode the keycode of the escape
+ * @param value the value of the escape
  * @param stopRead will be set to read or stop reading from keyboard
  * @return true if something has been done
  */
-static bool vterm_handleEscape(sVTerm *vt,char *str,bool *readKeyboard);
+static bool vterm_handleEscape(sVTerm *vt,u8 keycode,u8 value,bool *readKeyboard);
 
 /**
  * Flushes the readline-buffer
@@ -293,7 +294,9 @@ static bool vterm_init(sVTerm *vt) {
 	/* default behaviour */
 	vt->echo = true;
 	vt->readLine = true;
+	vt->navigation = true;
 	vt->keymap = 1;
+	vt->escapePos = 0;
 	vt->rlStartCol = 0;
 	vt->rlBufSize = INITIAL_RLBUF_SIZE;
 	vt->rlBufPos = 0;
@@ -344,6 +347,10 @@ void vterm_selectVTerm(u32 index) {
 	write(vt->video,&vt->titleBar,sizeof(vt->titleBar));
 	vterm_refreshScreen(vt);
 	vterm_setCursor(vt);
+
+	/* send a refresh to the clients */
+	char escape[3] = {'\033',VK_ESC_REFRESH,0};
+	write(vt->self,&escape,sizeof(escape));
 }
 
 void vterm_destroy(sVTerm *vt) {
@@ -353,16 +360,51 @@ void vterm_destroy(sVTerm *vt) {
 	close(vt->self);
 }
 
-void vterm_puts(sVTerm *vt,char *str,bool resetRead,bool *readKeyboard) {
+void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead,bool *readKeyboard) {
 	char c;
+	char *strBegin = str;
 	u32 oldFirstLine = vt->firstLine;
 	u32 newPos,oldPos = vt->row * COLS + vt->col;
 	u32 start,count;
 
+	if(vt->escapePos > 0) {
+		u8 keycode,modifier;
+		u32 rem = len - (str - strBegin);
+		if(vt->escapePos == 1 && rem < 2) {
+			vt->escape = *(u8*)str;
+			vt->escapePos = 2;
+			return;
+		}
+
+		if(vt->escapePos == 1) {
+			keycode = *(u8*)str;
+			modifier = *((u8*)str + 1);
+			str += 2;
+		}
+		else {
+			keycode = vt->escape;
+			modifier = *(u8*)str;
+			str++;
+		}
+		vterm_handleEscape(vt,keycode,modifier,readKeyboard);
+		vt->escapePos = 0;
+	}
+
 	while((c = *str)) {
 		if(c == '\033') {
 			str++;
-			vterm_handleEscape(vt,str,readKeyboard);
+			u32 rem = len - (str - strBegin);
+			/* escape not finished? */
+			if(rem < 2) {
+				if(rem == 0)
+					vt->escapePos = 1;
+				else {
+					vt->escapePos = 2;
+					vt->escape = *(u8*)str;
+				}
+				break;
+			}
+			vterm_handleEscape(vt,*(u8*)str,*((u8*)str + 1),readKeyboard);
 			str += 2;
 			continue;
 		}
@@ -430,7 +472,8 @@ static void vterm_putchar(sVTerm *vt,char c) {
 		vt->row--;
 	}
 
-	/* write to bochs/qemu console (\r not necessary here) */
+	/* write to bochs(0xe9) / qemu(0x3f8) console */
+	/* a few characters don't make much sense here */
 	if(c != '\r' && c != '\a' && c != '\b' && c != '\t') {
 		outByte(0xe9,c);
 		outByte(0x3f8,c);
@@ -567,11 +610,17 @@ static void vterm_refreshLines(sVTerm *vt,u16 start,u16 count) {
 	memcpy(ptr - sizeof(sMsgVidSetScr),back,sizeof(sMsgVidSetScr));
 }
 
-static bool vterm_handleEscape(sVTerm *vt,char *str,bool *readKeyboard) {
-	u8 keycode = *str;
-	u8 value = *(str + 1);
+static bool vterm_handleEscape(sVTerm *vt,u8 keycode,u8 value,bool *readKeyboard) {
 	bool res = false;
 	switch(keycode) {
+		case VK_UP:
+			if(vt->row > 1)
+				vt->row--;
+			break;
+		case VK_DOWN:
+			if(vt->row < ROWS - 1)
+				vt->row++;
+			break;
 		case VK_LEFT:
 			if(vt->col > 0)
 				vt->col--;
@@ -606,11 +655,11 @@ static bool vterm_handleEscape(sVTerm *vt,char *str,bool *readKeyboard) {
 			res = true;
 			break;
 		case VK_ESC_FG:
-			vt->foreground = MIN(15,value);
+			vt->foreground = MIN(15,value - ' ');
 			res = true;
 			break;
 		case VK_ESC_BG:
-			vt->background = MIN(15,value);
+			vt->background = MIN(15,value - ' ');
 			res = true;
 			break;
 		case VK_ESC_SET_ECHO:
@@ -629,6 +678,29 @@ static bool vterm_handleEscape(sVTerm *vt,char *str,bool *readKeyboard) {
 		case VK_ESC_KEYBOARD:
 			*readKeyboard = value ? true : false;
 			res = true;
+			break;
+		case VK_ESC_REFRESH:
+			vterm_selectVTerm(vt->index);
+			break;
+		case VK_ESC_NAVI:
+			vt->navigation = value ? true : false;
+			break;
+		case VK_ESC_BACKUP:
+			if(!vt->screenBackup)
+				vt->screenBackup = (char*)malloc(ROWS * COLS * 2);
+			memcpy(vt->screenBackup,
+					vt->buffer.data + vt->firstVisLine * COLS * 2,
+					ROWS * COLS * 2);
+			break;
+		case VK_ESC_RESTORE:
+			if(vt->screenBackup) {
+				memcpy(vt->buffer.data + vt->firstVisLine * COLS * 2,
+						vt->screenBackup,
+						ROWS * COLS * 2);
+				free(vt->screenBackup);
+				vt->screenBackup = NULL;
+				vterm_refreshScreen(vt);
+			}
 			break;
 	}
 
@@ -672,25 +744,21 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 		else
 			c = e->def;
 
-		switch(msg->keycode) {
-			case VK_PGUP:
-				vterm_scroll(vt,ROWS);
-				return;
-			case VK_PGDOWN:
-				vterm_scroll(vt,-ROWS);
-				return;
-			case VK_UP:
-				if(shiftDown) {
+		if(shiftDown && vt->navigation) {
+			switch(msg->keycode) {
+				case VK_PGUP:
+					vterm_scroll(vt,ROWS);
+					return;
+				case VK_PGDOWN:
+					vterm_scroll(vt,-ROWS);
+					return;
+				case VK_UP:
 					vterm_scroll(vt,1);
 					return;
-				}
-				break;
-			case VK_DOWN:
-				if(shiftDown) {
+				case VK_DOWN:
 					vterm_scroll(vt,-1);
 					return;
-				}
-				break;
+			}
 		}
 
 		if(c == NPRINT || ctrlDown) {
@@ -820,7 +888,7 @@ static void vterm_rlPutchar(sVTerm *vt,char c) {
 						/* print the end of the buffer again */
 						strncpy(copy,vt->rlBuffer + bufPos,count - 1);
 						copy[count - 1] = '\0';
-						vterm_puts(vt,copy,false,&dummy);
+						vterm_puts(vt,copy,count - 1,false,&dummy);
 						free(copy);
 
 						/* reset cursor */

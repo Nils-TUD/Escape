@@ -230,8 +230,8 @@ namespace esc {
 
 			// draw cross
 			g.setColor(BORDER_COLOR);
-			u32 boxPad = 2;
-			u32 crossPad = 2;
+			const u32 boxPad = 2;
+			const u32 crossPad = 2;
 			u32 cboxSize = _titleBarHeight - boxPad * 2;
 			g.drawRect(getWidth() - cboxSize - boxPad,boxPad,cboxSize,cboxSize);
 			g.drawLine(getWidth() - cboxSize - boxPad + crossPad,boxPad + crossPad,
@@ -264,6 +264,11 @@ namespace esc {
 			// now paint controls
 			for(u32 i = 0; i < _controls.size(); i++)
 				_controls[i]->repaint();
+		}
+
+		void Window::update(tCoord x,tCoord y,tSize width,tSize height) {
+			if(_g)
+				_g->update(x,y,width,height);
 		}
 
 		void Window::add(Control &c) {

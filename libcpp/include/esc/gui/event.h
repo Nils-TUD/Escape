@@ -32,22 +32,28 @@ namespace esc {
 			friend Stream &operator<<(Stream &s,const MouseEvent &e);
 
 		public:
-			static const u8 BUTTON1_MASK = 0x1;
-			static const u8 BUTTON2_MASK = 0x2;
-			static const u8 BUTTON3_MASK = 0x4;
+			static const u8 MOUSE_MOVED		= 0;
+			static const u8 MOUSE_PRESSED	= 1;
+			static const u8 MOUSE_RELEASED	= 2;
+
+			static const u8 BUTTON1_MASK	= 0x1;
+			static const u8 BUTTON2_MASK	= 0x2;
+			static const u8 BUTTON3_MASK	= 0x4;
 
 		public:
-			MouseEvent(s16 movedx,s16 movedy,tCoord x,tCoord y,u8 buttons)
-				: _movedx(movedx), _movedy(movedy), _x(x), _y(y), _buttons(buttons) {
+			MouseEvent(u8 type,s16 movedx,s16 movedy,tCoord x,tCoord y,u8 buttons)
+				: _type(type), _movedx(movedx), _movedy(movedy), _x(x), _y(y), _buttons(buttons) {
 			};
 			MouseEvent(const MouseEvent &e)
-				: _movedx(e._movedx), _movedy(e._movedy), _x(e._x), _y(e._y), _buttons(e._buttons) {
+				: _type(e._type), _movedx(e._movedx), _movedy(e._movedy), _x(e._x), _y(e._y),
+				_buttons(e._buttons) {
 			};
 			~MouseEvent() {
 
 			};
 
 			MouseEvent &operator=(const MouseEvent &e) {
+				_type = e._type;
 				_movedx = e._movedx;
 				_movedy = e._movedy;
 				_x = e._x;
@@ -56,6 +62,9 @@ namespace esc {
 				return *this;
 			}
 
+			inline u8 getType() const {
+				return _type;
+			};
 			inline tCoord getX() const {
 				return _x;
 			};
@@ -79,6 +88,7 @@ namespace esc {
 			};
 
 		private:
+			u8 _type;
 			s16 _movedx;
 			s16 _movedy;
 			tCoord _x;
@@ -90,22 +100,31 @@ namespace esc {
 			friend Stream &operator<<(Stream &s,const KeyEvent &e);
 
 		public:
-			KeyEvent(u8 keycode,char character,u8 modifier)
-				: _keycode(keycode), _character(character), _modifier(modifier) {
+			static const u8 KEY_PRESSED		= 0;
+			static const u8 KEY_RELEASED	= 1;
+
+		public:
+			KeyEvent(u8 type,u8 keycode,char character,u8 modifier)
+				: _type(type), _keycode(keycode), _character(character), _modifier(modifier) {
 			};
 			KeyEvent(const KeyEvent &e)
-				: _keycode(e._keycode), _character(e._character), _modifier(e._modifier) {
+				: _type(e._type), _keycode(e._keycode), _character(e._character),
+				_modifier(e._modifier) {
 			};
 			~KeyEvent() {
 			};
 
 			KeyEvent &operator=(const KeyEvent &e) {
+				_type = e._type;
 				_keycode = e._keycode;
 				_character = e._character;
 				_modifier = e._modifier;
 				return *this;
 			};
 
+			inline u8 getType() const {
+				return _type;
+			};
 			inline u8 getKeyCode() const {
 				return _keycode;
 			};
@@ -126,6 +145,7 @@ namespace esc {
 			};
 
 		private:
+			u8 _type;
 			u8 _keycode;
 			char _character;
 			u8 _modifier;

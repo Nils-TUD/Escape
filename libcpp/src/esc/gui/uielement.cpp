@@ -28,6 +28,8 @@ namespace esc {
 			// ignore self-assignments
 			if(this == &e)
 				return *this;
+			_keyListener = e._keyListener;
+			_mouseListener = e._mouseListener;
 			_g = NULL;
 			_x = e._x;
 			_y = e._y;
@@ -36,14 +38,83 @@ namespace esc {
 			return *this;
 		}
 
+		void UIElement::addMouseListener(MouseListener *l) {
+			if(_mouseListener == NULL)
+				_mouseListener = new Vector<MouseListener*>();
+			_mouseListener->add(l);
+		}
+		void UIElement::removeMouseListener(MouseListener *l) {
+			if(_mouseListener == NULL)
+				return;
+			_mouseListener->removeFirst(l);
+		}
+
+		void UIElement::addKeyListener(KeyListener *l) {
+			if(_keyListener == NULL)
+				_keyListener = new Vector<KeyListener*>();
+			_keyListener->add(l);
+		}
+		void UIElement::removeKeyListener(KeyListener *l) {
+			if(_keyListener == NULL)
+				return;
+			_keyListener->removeFirst(l);
+		}
+
+		void UIElement::onMouseMoved(const MouseEvent &e) {
+			notifyListener(e);
+		}
+		void UIElement::onMouseReleased(const MouseEvent &e) {
+			notifyListener(e);
+		}
+		void UIElement::onMousePressed(const MouseEvent &e) {
+			notifyListener(e);
+		}
+		void UIElement::onKeyPressed(const KeyEvent &e) {
+			notifyListener(e);
+		}
+		void UIElement::onKeyReleased(const KeyEvent &e) {
+			notifyListener(e);
+		}
+
+		void UIElement::notifyListener(const MouseEvent &e) {
+			if(_mouseListener == NULL)
+				return;
+			u8 type = e.getType();
+			for(u32 i = 0; i < _mouseListener->size(); i++) {
+				MouseListener *l = (*_mouseListener)[i];
+				switch(type) {
+					case MouseEvent::MOUSE_MOVED:
+						l->mouseMoved(e);
+						break;
+					case MouseEvent::MOUSE_PRESSED:
+						l->mousePressed(e);
+						break;
+					case MouseEvent::MOUSE_RELEASED:
+						l->mouseReleased(e);
+						break;
+				}
+			}
+		}
+		void UIElement::notifyListener(const KeyEvent &e) {
+			if(_keyListener == NULL)
+				return;
+			u8 type = e.getType();
+			for(u32 i = 0; i < _keyListener->size(); i++) {
+				KeyListener *l = (*_keyListener)[i];
+				switch(type) {
+					case KeyEvent::KEY_PRESSED:
+						l->keyPressed(e);
+						break;
+					case KeyEvent::KEY_RELEASED:
+						l->keyReleased(e);
+						break;
+				}
+			}
+		}
+
 		void UIElement::requestUpdate() {
 			if(_g)
 				_g->requestUpdate(getWindowId());
-		}
-
-		void UIElement::update(tCoord x,tCoord y,tSize width,tSize height) {
-			if(_g)
-				_g->update(x,y,width,height);
 		}
 
 		void UIElement::repaint() {

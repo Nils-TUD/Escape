@@ -25,6 +25,9 @@
 #include <esc/gui/common.h>
 #include <esc/gui/graphics.h>
 #include <esc/gui/event.h>
+#include <esc/gui/mouselistener.h>
+#include <esc/gui/keylistener.h>
+#include <esc/vector.h>
 
 namespace esc {
 	namespace gui {
@@ -35,10 +38,12 @@ namespace esc {
 
 		public:
 			UIElement(tCoord x,tCoord y,tSize width,tSize height)
-				: _g(NULL), _x(x), _y(y), _width(width), _height(height) {
+				: _g(NULL), _x(x), _y(y), _width(width), _height(height), _mouseListener(NULL),
+				_keyListener(NULL) {
 			};
 			UIElement(const UIElement &e)
-				: _g(NULL), _x(e._x), _y(e._y), _width(e._width), _height(e._height) {
+				: _g(NULL), _x(e._x), _y(e._y), _width(e._width), _height(e._height),
+				_mouseListener(e._mouseListener), _keyListener(e._keyListener) {
 			}
 			virtual ~UIElement() {
 				delete _g;
@@ -62,16 +67,21 @@ namespace esc {
 				return _g;
 			};
 
-			virtual void onMouseMoved(const MouseEvent &e) = 0;
-			virtual void onMouseReleased(const MouseEvent &e) = 0;
-			virtual void onMousePressed(const MouseEvent &e) = 0;
-			virtual void onKeyPressed(const KeyEvent &e) = 0;
-			virtual void onKeyReleased(const KeyEvent &e) = 0;
+			void addMouseListener(MouseListener *l);
+			void removeMouseListener(MouseListener *l);
+
+			void addKeyListener(KeyListener *l);
+			void removeKeyListener(KeyListener *l);
+
+			virtual void onMouseMoved(const MouseEvent &e);
+			virtual void onMouseReleased(const MouseEvent &e);
+			virtual void onMousePressed(const MouseEvent &e);
+			virtual void onKeyPressed(const KeyEvent &e);
+			virtual void onKeyReleased(const KeyEvent &e);
 
 			virtual void repaint();
 			virtual void paint(Graphics &g) = 0;
 			void requestUpdate();
-			void update(tCoord x,tCoord y,tSize width,tSize height);
 
 		protected:
 			inline void setX(tCoord x) {
@@ -83,11 +93,17 @@ namespace esc {
 			virtual tWinId getWindowId() const = 0;
 
 		private:
+			void notifyListener(const MouseEvent &e);
+			void notifyListener(const KeyEvent &e);
+
+		private:
 			Graphics *_g;
 			tCoord _x;
 			tCoord _y;
 			tSize _width;
 			tSize _height;
+			Vector<MouseListener*> *_mouseListener;
+			Vector<KeyListener*> *_keyListener;
 		};
 	}
 }

@@ -185,19 +185,20 @@ void *memmove(void *dest,const void *src,u32 count) {
 
 	/* moving forward */
 	if((u8*)dest > (u8*)src) {
-		s = (u8*)src + count - 1;
-		d = (u8*)dest + count - 1;
+		u32 *dsrc = (u32*)((u8*)src + count - 1);
+		u32 *ddest = (u32*)((u8*)dest + count - 1);
+		while(count >= sizeof(u32)) {
+			*ddest = *dsrc;
+			count -= sizeof(u32);
+		}
+		s = (u8*)dsrc;
+		d = (u8*)ddest;
 		while(count-- > 0)
 			*d-- = *s--;
 	}
 	/* moving backwards */
-	else {
-		s = (u8*)src;
-		d = (u8*)dest;
-		while(count-- > 0) {
-			*d++ = *s++;
-		}
-	}
+	else
+		memcpy(dest,src,count);
 
 	return dest;
 }

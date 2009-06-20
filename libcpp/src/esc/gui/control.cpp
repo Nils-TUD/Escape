@@ -54,26 +54,5 @@ namespace esc {
 		void Control::onFocusLost() {
 			// do nothing by default
 		}
-
-		void Control::onMouseMoved(const MouseEvent &e) {
-			// do nothing by default
-			UNUSED(e);
-		}
-		void Control::onMouseReleased(const MouseEvent &e) {
-			// do nothing by default
-			UNUSED(e);
-		}
-		void Control::onMousePressed(const MouseEvent &e) {
-			// do nothing by default
-			UNUSED(e);
-		}
-		void Control::onKeyPressed(const KeyEvent &e) {
-			// do nothing by default
-			UNUSED(e);
-		}
-		void Control::onKeyReleased(const KeyEvent &e) {
-			// do nothing by default
-			UNUSED(e);
-		}
 	}
 }

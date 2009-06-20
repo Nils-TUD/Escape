@@ -1,3 +1,3 @@
-NAME=colortbl
+NAME=less
 
 -include ../DefMakefile.mk

@@ -33,7 +33,7 @@
 #include "vterm.h"
 
 /* read buffer size */
-#define READ_BUF_SIZE 64
+#define READ_BUF_SIZE 256
 
 /**
  * Determines the vterm for the given service-id
@@ -107,12 +107,12 @@ int main(void) {
 		else {
 			sVTerm *vt = getVTerm(client);
 			if(vt != NULL) {
+				u32 c;
 				/* TODO this may cause trouble with escape-codes. maybe we should store the
 				 * "escape-state" somehow... */
-				u32 c;
 				while((c = read(fd,buffer,READ_BUF_SIZE)) > 0) {
 					*(buffer + c) = '\0';
-					vterm_puts(vt,buffer,true,&readKeyboard);
+					vterm_puts(vt,buffer,c,true,&readKeyboard);
 				}
 			}
 			close(fd);

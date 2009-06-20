@@ -127,11 +127,16 @@ namespace esc {
 					if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {
 						Window *w = getWindowById(data.window);
 						if(w) {
-							KeyEvent e(data.keycode,data.character,data.modifier);
-							if(data.isBreak)
+							if(data.isBreak) {
+								KeyEvent e(KeyEvent::KEY_RELEASED,data.keycode,
+										data.character,data.modifier);
 								w->onKeyReleased(e);
-							else
+							}
+							else {
+								KeyEvent e(KeyEvent::KEY_PRESSED,data.keycode,
+										data.character,data.modifier);
 								w->onKeyPressed(e);
+							}
 						}
 					}
 				}
@@ -175,14 +180,19 @@ namespace esc {
 			if(w) {
 				tCoord x = MAX(0,MIN(_screenWidth - 1,e->x - w->getX()));
 				tCoord y = MAX(0,MIN(_screenHeight - 1,e->y - w->getY()));
-				MouseEvent event(e->movedX,e->movedY,x,y,_mouseBtns);
 
-				if(released)
+				if(released) {
+					MouseEvent event(MouseEvent::MOUSE_RELEASED,e->movedX,e->movedY,x,y,_mouseBtns);
 					w->onMouseReleased(event);
-				else if(pressed)
+				}
+				else if(pressed) {
+					MouseEvent event(MouseEvent::MOUSE_PRESSED,e->movedX,e->movedY,x,y,_mouseBtns);
 					w->onMousePressed(event);
-				else if(moved)
+				}
+				else if(moved) {
+					MouseEvent event(MouseEvent::MOUSE_MOVED,e->movedX,e->movedY,x,y,_mouseBtns);
 					w->onMouseMoved(event);
+				}
 			}
 		}
 

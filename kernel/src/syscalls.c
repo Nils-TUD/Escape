@@ -46,8 +46,6 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define SYSCALL_COUNT					42
-
 /* some convenience-macros */
 #define SYSC_ERROR(stack,errorCode)		((stack)->ebx = (errorCode))
 #define SYSC_RET1(stack,val)			((stack)->eax = (val))
@@ -367,7 +365,7 @@ static void sysc_unlock(sIntrptStackFrame *stack);
 static bool sysc_isStringReadable(const char *string);
 
 /* our syscalls */
-static sSyscall syscalls[SYSCALL_COUNT] = {
+static sSyscall syscalls[] = {
 	/* 0 */		{sysc_getpid,				0},
 	/* 1 */		{sysc_getppid,				1},
 	/* 2 */ 	{sysc_debugc,				1},
@@ -414,7 +412,7 @@ static sSyscall syscalls[SYSCALL_COUNT] = {
 
 void sysc_handle(sIntrptStackFrame *stack) {
 	u32 sysCallNo = SYSC_NUMBER(stack);
-	if(sysCallNo < SYSCALL_COUNT) {
+	if(sysCallNo < ARRAY_SIZE(syscalls)) {
 		u32 argCount = syscalls[sysCallNo].argCount;
 		u32 ebxSave = stack->ebx;
 		/* handle copy-on-write (the first 2 args are passed in registers) */

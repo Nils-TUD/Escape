@@ -228,6 +228,7 @@ namespace esc {
 
 	FileStream::FileStream(const char *path,u16 mode) {
 		tFD fd = open(path,mode);
+		// TODO throw exception, if open failed
 		if(mode & READ)
 			_in = new FileBuffer(fd,INBUF_SIZE);
 		if(mode & WRITE)

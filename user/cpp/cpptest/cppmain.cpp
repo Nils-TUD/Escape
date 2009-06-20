@@ -24,8 +24,10 @@
 #include <esc/stream.h>
 #include <esc/string.h>
 #include <esc/thread.h>
+#include <esc/gui/bitmapimage.h>
 
 using namespace esc;
+using namespace esc::gui;
 
 static int threadFunc(void);
 
@@ -51,10 +53,10 @@ void my::doIt() {
 }
 
 int main(void) {
+#if 0
 	startThread(threadFunc);
 	startThread(threadFunc);
 
-#if 1
 	char str[10];
 	char buffer[1024];
 	const char *test = "ein test";
@@ -102,6 +104,7 @@ int main(void) {
 		out << i << ": " << v2[i] << endl;
 	}
 #else
+	/*
 	String s1 = "abc";
 	String s2 = "def";
 	String s3 = "ghi";
@@ -110,16 +113,16 @@ int main(void) {
 	s2.erase(0);
 	s3.erase(1,1);
 	s4.erase(4,3);
-	/*s1.insert(0,s2);
+	s1.insert(0,s2);
 	s1.insert(1,'a');
 	s1.insert(4,"blub");
 	s2.insert(3,"vier");
 	s3.insert(5,'b');
-	s3.insert(2,"hier");*/
+	s3.insert(2,"hier");
 	out << s1 << endl;
 	out << s2 << endl;
 	out << s3 << endl;
-	out << s4 << endl;
+	out << s4 << endl;*/
 #endif
 	/*unsigned int a = 0;
 	a++;

@@ -17,17 +17,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYSCALLS_H_
-#define SYSCALLS_H_
+#ifndef KEYLISTENER_H_
+#define KEYLISTENER_H_
 
-#include "common.h"
-#include "intrpt.h"
+#include <esc/common.h>
+#include <esc/gui/common.h>
+#include <esc/gui/event.h>
 
-/**
- * Handles the syscall for the given stack
- *
- * @param intrptStack the pointer to the interrupt-stack
- */
-void sysc_handle(sIntrptStackFrame *intrptStack);
+namespace esc {
+	namespace gui {
+		class KeyListener {
+		public:
+			KeyListener() {
+			};
+			virtual ~KeyListener() {
+			};
 
-#endif /* SYSCALLS_H_ */
+			virtual void keyPressed(const KeyEvent &e) = 0;
+			virtual void keyReleased(const KeyEvent &e) = 0;
+
+		private:
+			// no copying
+			KeyListener(const KeyListener &l);
+			KeyListener &operator=(const KeyListener &l);
+		};
+	}
+}
+
+#endif /* KEYLISTENER_H_ */

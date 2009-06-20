@@ -135,6 +135,7 @@ namespace esc {
 			friend class Window;
 			friend class Control;
 			friend class UIElement;
+			friend class BitmapImage;
 
 		private:
 			typedef struct {
@@ -193,6 +194,7 @@ namespace esc {
 				if(y < _miny)
 					_miny = y;
 			};
+			void copyLine(tCoord x,tCoord y,tSize width,void *line);
 			void move(tCoord x,tCoord y);
 			void requestUpdate(tWinId winid);
 			void update(tCoord x,tCoord y,tSize width,tSize height);

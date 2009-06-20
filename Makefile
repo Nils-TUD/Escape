@@ -15,7 +15,7 @@ BIN=$(BUILD)/$(BINNAME)
 SYMBOLS=$(BUILD)/kernel.symbols
 OSTITLE=hrniels-OS
 
-QEMUARGS=-serial stdio -hda $(HDD) -boot c -std-vga
+QEMUARGS=-serial stdio -hda $(HDD) -boot c -vga std
 
 DIRS = tools libc libcpp services user kernel kernel/test
 
@@ -27,8 +27,8 @@ export CWFLAGS=-Wall -ansi \
 export CPPWFLAGS=-Wall -Wextra -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long -fno-builtin
-export CPPDEFFLAGS=$(CPPWFLAGS) -g -O2 -D DEBUGGING=1
-export CDEFFLAGS=$(CWFLAGS) -g -O2 -D DEBUGGING=1
+export CPPDEFFLAGS=$(CPPWFLAGS) -g -D DEBUGGING=1
+export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING=1
 # flags for nasm
 export ASMFLAGS=-f elf
 # other
@@ -112,6 +112,8 @@ createhdd: $(DISKMOUNT) clean
 		$(SUDO) touch $(DISKMOUNT)/file.txt
 		$(SUDO) chmod 0666 $(DISKMOUNT)/file.txt
 		echo "Das ist ein Test-String!!" > $(DISKMOUNT)/file.txt
+		$(SUDO) cp user/test.bmp $(DISKMOUNT)
+		$(SUDO) cp user/bbc.bmp $(DISKMOUNT)
 		$(SUDO) cp $(DISKMOUNT)/file.txt $(DISKMOUNT)/testdir/file.txt
 		$(SUDO) dd if=/dev/zero of=$(DISKMOUNT)/zeros bs=1024 count=1024
 		$(SUDO) touch $(DISKMOUNT)/bigfile

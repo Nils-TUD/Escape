@@ -1343,6 +1343,7 @@ static sIOBuffer *createBuffer(tFD fd,u8 flags) {
 static s32 doFlush(sBuffer *buf) {
 	s32 res = 0;
 	if(buf->type == BUF_TYPE_FILE && buf->pos > 0) {
+		debugBytes(buf->str,buf->pos);
 		if(write(buf->fd,buf->str,buf->pos * sizeof(char)) < 0)
 			res = IO_EOF;
 		buf->pos = 0;

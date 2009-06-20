@@ -207,7 +207,7 @@ void fpu_lockFPU(void);
 void fpu_handleCoProcNA(sFPUState **state);
 
 /**
- * Free's the FPU-state of the given process
+ * Free's the given FPU-state
  *
  * @param state the state
  */

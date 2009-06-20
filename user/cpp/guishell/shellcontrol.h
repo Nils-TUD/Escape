@@ -36,6 +36,7 @@ private:
 
 	static const u32 TAB_WIDTH = 4;
 	static const u32 COLUMNS = 80;
+	static const u32 ROWS = 25;
 	static const u32 HISTORY_SIZE = 200;
 	static const u32 PADDING = 3;
 	static const u32 CURSOR_WIDTH = 2;
@@ -48,7 +49,8 @@ private:
 public:
 	ShellControl(tCoord x,tCoord y,tSize width,tSize height)
 		: Control(x,y,width,height), _color(WHITE << 4 | BLACK), _row(0), _col(0), _cursorCol(0),
-			_scrollRows(0), _firstRow(0), _rows(Vector<Vector<char>*>()) {
+			_scrollRows(0), _firstRow(0), _navigation(true), _screenBackup(NULL),
+			_rows(Vector<Vector<char>*>()) {
 		// insert first row
 		_rows.add(new Vector<char>(COLUMNS * 2));
 
@@ -59,7 +61,10 @@ public:
 	};
 	ShellControl(const ShellControl &e)
 		: Control(e), _color(e._color), _row(e._row), _col(e._col), _cursorCol(e._cursorCol),
-			_scrollRows(0), _firstRow(e._firstRow) {
+			_scrollRows(0), _firstRow(e._firstRow), _navigation(e._navigation) {
+		_screenBackup = new Vector<Vector<char>*>();
+		for(u32 i = 0; i < e._screenBackup->size(); i++)
+			_screenBackup->add(new Vector<char>(*((*e._screenBackup)[i])));
 		_rows = Vector<Vector<char>*>();
 		for(u32 i = 0; i < e._rows.size(); i++)
 			_rows.add(new Vector<char>(*e._rows[i]));
@@ -83,6 +88,10 @@ public:
 		_cursorCol = e._cursorCol;
 		_scrollRows = e._scrollRows;
 		_firstRow = e._firstRow;
+		_navigation = e._navigation;
+		_screenBackup = new Vector<Vector<char>*>();
+		for(u32 i = 0; i < e._screenBackup->size(); i++)
+			_screenBackup->add(new Vector<char>(*((*e._screenBackup)[i])));
 		_rows = Vector<Vector<char>*>();
 		for(u32 i = 0; i < e._rows.size(); i++)
 			_rows.add(new Vector<char>(*e._rows[i]));
@@ -109,6 +118,8 @@ private:
 	u32 _cursorCol;
 	u32 _scrollRows;
 	u32 _firstRow;
+	bool _navigation;
+	Vector<Vector<char>*> *_screenBackup;
 	Vector<Vector<char>*> _rows;
 };
 

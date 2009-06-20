@@ -28,70 +28,109 @@
 #include <esc/gui/editable.h>
 #include <esc/gui/combobox.h>
 #include <esc/gui/progressbar.h>
+#include <esc/gui/bitmapimage.h>
+#include <esc/date.h>
 #include <stdlib.h>
 
 using namespace esc::gui;
 
-ProgressBar *pb;
+ProgressBar *pb = NULL;
+Window *w1 = NULL;
 
 static int pbThread(void);
 
+class MyImgWindow : public Window {
+public:
+	MyImgWindow()
+		: Window("Window 2",250,250,500,400), img1(BitmapImage("file:/test.bmp")),
+		img2(BitmapImage("file:/bbc.bmp")) {
+	}
+	~MyImgWindow() {
+	}
+
+	void paint(Graphics &g) {
+		Window::paint(g);
+		img1.paint(g,30,30);
+		img2.paint(g,100,30);
+	}
+
+private:
+	BitmapImage img1;
+	BitmapImage img2;
+};
+
 int main(void) {
+#if 0
 	if(fork() == 0) {
 		Application *app = Application::getInstance();
-		Window w1("Window 1",100,100,400,300);
+		w1 = new Window("Window 1",100,100,400,300);
 		Button b("Click me!!",10,10,80,20);
 		Editable e(10,40,200,20);
-		w1.add(b);
-		w1.add(e);
+		w1->add(b);
+		w1->add(e);
 		ComboBox cb(10,80,100,20);
 		cb.addItem("Test item");
 		cb.addItem("Foo bar");
 		cb.addItem("abc 123");
-		w1.add(cb);
+		w1->add(cb);
 		pb = new ProgressBar("Progress...",10,120,200,20);
-		w1.add(*pb);
+		w1->add(*pb);
 		startThread(pbThread);
 		return app->run();
 	}
 
 	if(fork() == 0) {
 		Application *app = Application::getInstance();
-		Window w2("Window 2",250,250,150,200);
+		MyImgWindow w2;
 		return app->run();
 	}
 
 	if(fork() == 0) {
 		Application *app = Application::getInstance();
-		Window w3("Window 3",50,50,100,40);
+		w1 = new Window("Window 3",50,50,100,40);
+		startThread(pbThread);
 		return app->run();
 	}
-
+#endif
 	if(fork() == 0) {
 		exec("file:/bin/guishell",NULL);
 		exit(EXIT_FAILURE);
 	}
 
-	Application *app = Application::getInstance();
-	Window w4("Window 4",180,90,200,100);
-	return app->run();
+	/*Application *app = Application::getInstance();
+	w1 = new Window("Window 4",180,90,200,100);
+	startThread(pbThread);
+	return app->run();*/
+	return 0;
 }
 
 static int pbThread(void) {
+	s16 x = 10,y = 10;
 	bool forward = true;
 	while(1) {
-		u32 pos = pb->getPosition();
-		if(forward) {
-			if(pos < 100)
-				pb->setPosition(pos + 1);
-			else
-				forward = false;
-		}
-		else {
-			if(pos > 0)
-				pb->setPosition(pos - 1);
-			else
-				forward = true;
+		if(w1->getX() + w1->getWidth() >= Application::getInstance()->getScreenWidth() - 1)
+			x = -10;
+		else if(w1->getX() == 0)
+			x = 10;
+		if(w1->getY() + w1->getHeight() >= Application::getInstance()->getScreenHeight() - 1)
+			y = -10;
+		else if(w1->getY() == 0)
+			y = 10;
+		w1->move(x,y);
+		if(pb != NULL) {
+			u32 pos = pb->getPosition();
+			if(forward) {
+				if(pos < 100)
+					pb->setPosition(pos + 1);
+				else
+					forward = false;
+			}
+			else {
+				if(pos > 0)
+					pb->setPosition(pos - 1);
+				else
+					forward = true;
+			}
 		}
 		sleep(50);
 	}

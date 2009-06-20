@@ -118,9 +118,9 @@ bool proc_hasChild(tPid pid);
 void proc_cleanup(void);
 
 /**
- * Clones the current process into the given one, saves all new threads in proc_clone() so that
- * they will start there on thread_resume(). The function returns -1 if there is
- * not enough memory.
+ * Clones the current process into the given one, gives the new process a clone of the current
+ * thread and saves this thread in proc_clone() so that it will start there on thread_resume().
+ * The function returns -1 if there is not enough memory.
  *
  * @param newPid the target-pid
  * @return -1 if an error occurred, 0 for parent, 1 for child
@@ -137,12 +137,14 @@ s32 proc_startThread(u32 entryPoint);
 /**
  * Destroys the current thread. If it's the only thread in the process, the complete process will
  * destroyed.
+ * Note that the actual deletion will be done later!
  */
 void proc_destroyThread(void);
 
 /**
  * Destroyes the given process. That means the process-slot will be marked as "unused" and the
  * paging-structure will be freed.
+ * Note that the actual deletion will be done later if p is the current process!
  *
  * @param p the process
  */
@@ -176,7 +178,8 @@ void proc_setupStart(sIntrptStackFrame *frame);
 bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages);
 
 /**
- * Changes the size of either the data-segment of the process or the stack-segment
+ * Changes the size of either the data-segment of the current process or the stack-segment of
+ * the current thread.
  * If <change> is positive pages will be added and otherwise removed. Added pages
  * will always be cleared.
  * If there is not enough memory the function returns false.

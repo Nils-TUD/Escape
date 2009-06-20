@@ -30,6 +30,7 @@ namespace esc {
 	 * and so on.
 	 */
 	class String {
+		typedef char *pChar;
 		friend Stream &operator<<(Stream &s,String &str);
 
 	private:
@@ -150,6 +151,13 @@ namespace esc {
 		 * @param count the number of chars to delete
 		 */
 		void erase(u32 offset,u32 count);
+
+		/**
+		 * @return the internal c-string
+		 */
+		inline const char *c_str() const {
+			return _str;
+		};
 
 		/**
 		 * Assignment operator

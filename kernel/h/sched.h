@@ -36,7 +36,7 @@ void sched_init(void);
 sThread *sched_perform(void);
 
 /**
- * Choses the given thread for running
+ * Chooses the given thread for running (removes it from a list, if necessary, and changes the state)
  *
  * @param t the thread
  */

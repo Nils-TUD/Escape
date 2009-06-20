@@ -42,6 +42,10 @@ s32 shm_join(char *name);
 
 /**
  * Leaves the shared-memory with given name. Will NOT unmap the pages!
+ * The problem is that the shared-memory is in the data-segment of the process. The process may
+ * have added additional data-pages behind the shared-memory. Since the data-segment must be
+ * "one piece" we can't remove pages in the middle. So we do it never. I think that's not
+ * really a problem because the shm-owner has trusted the process anyway.
  *
  * @param name the name
  * @return 0 on success

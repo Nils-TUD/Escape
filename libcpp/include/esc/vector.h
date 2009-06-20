@@ -115,6 +115,7 @@ namespace esc {
 
 	template<class T>
 	Vector<T>::Vector(u32 vsize) : _elCount(0), _elSize(vsize) {
+		vassert(vsize > 0,"Empty vector not supported");
 		_elements = new T[vsize];
 	}
 

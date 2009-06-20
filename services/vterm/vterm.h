@@ -66,6 +66,13 @@ typedef struct {
 	bool echo;
 	/* wether the vterm should read until a newline occurrs */
 	bool readLine;
+	/* wether navigation via up/down/pageup/pagedown is enabled */
+	bool navigation;
+	/* a backup of the screen; initially NULL */
+	char *screenBackup;
+	/* the current escape-state */
+	u8 escapePos;
+	u8 escape;
 	/* readline-buffer */
 	u8 rlStartCol;
 	u32 rlBufSize;
@@ -121,9 +128,10 @@ void vterm_handleKeycode(sMsgKbResponse *msg);
  *
  * @param vt the vterm
  * @param str the string
+ * @param len the string-length
  * @param resetRead wether readline-stuff should be reset
  * @param readKeyboard indicates wether we should start/stop reading from keyboard
  */
-void vterm_puts(sVTerm *vt,char *str,bool resetRead,bool *readKeyboard);
+void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead,bool *readKeyboard);
 
 #endif /* VTERM_H_ */

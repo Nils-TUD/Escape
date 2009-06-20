@@ -34,7 +34,7 @@ typedef struct {
  * Allocates the text for the current process
  *
  * @param path the path to the binary
- * @param file the file that is already open and can be used to load the text. Should NOT be closed!
+ * @param file the file that is already open and can be used to load the text. Will NOT be closed!
  * @param position the position of the text in the file
  * @param textSize the size of the text in bytes
  * @param text will be set to the text-usage
@@ -45,7 +45,7 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 /**
  * Releases the given text from the given process
  *
- * @param u the text-usage (not NULL)
+ * @param u the text-usage (if NULL it will be assumed that the process has no text)
  * @param pid the process-id
  * @return true if the text-frames should be free'd
  */
@@ -55,7 +55,7 @@ bool text_free(sTextUsage *u,tPid pid);
  * Clones the given text for the given-process. That means the process will be added
  * to the text-usage.
  *
- * @param u the text-usage
+ * @param u the text-usage (NULL = do nothing)
  * @param pid the process-id
  * @return true on success
  */

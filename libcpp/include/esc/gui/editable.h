@@ -60,7 +60,6 @@ namespace esc {
 			virtual void onFocusGained();
 			virtual void onFocusLost();
 			virtual void onKeyPressed(const KeyEvent &e);
-			virtual void onKeyReleased(const KeyEvent &e);
 
 		private:
 			u32 _cursor;

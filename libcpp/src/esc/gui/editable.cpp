@@ -68,6 +68,7 @@ namespace esc {
 		}
 
 		void Editable::onKeyPressed(const KeyEvent &e) {
+			UIElement::onKeyPressed(e);
 			if(e.isPrintable()) {
 				_str.insert(_cursor,e.getCharacter());
 				_cursor++;
@@ -118,10 +119,6 @@ namespace esc {
 				if(changed)
 					repaint();
 			}
-		}
-
-		void Editable::onKeyReleased(const KeyEvent &e) {
-			UNUSED(e);
 		}
 	}
 }

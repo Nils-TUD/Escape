@@ -50,14 +50,14 @@ namespace esc {
 		}
 
 		void Button::onMousePressed(const MouseEvent &e) {
-			UNUSED(e);
+			UIElement::onMousePressed(e);
 			if(!_pressed) {
 				_pressed = true;
 				repaint();
 			}
 		}
 		void Button::onMouseReleased(const MouseEvent &e) {
-			UNUSED(e);
+			UIElement::onMouseReleased(e);
 			if(_pressed) {
 				_pressed = false;
 				repaint();

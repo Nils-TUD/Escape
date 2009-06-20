@@ -246,8 +246,9 @@ int main(void) {
 					handleKbMessage(servId,active,&keycode);
 			}
 		}
-		else
+		else {
 			wait(EV_RECEIVED_MSG | EV_CLIENT);
+		}
 	}
 
 	unregService(servId);

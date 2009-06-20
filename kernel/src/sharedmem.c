@@ -137,7 +137,7 @@ s32 shm_destroy(char *name) {
 		return ERR_SHARED_MEM_INVALID;
 
 	/* unmap it from the joined processes. otherwise we might reuse the frames which would
-	 * lead to unpredictable results. so its better to unmap them which may lead to a page-fault
+	 * lead to unpredictable results. so its better to unmap them which may cause a page-fault
 	 * and termination of the process */
 	for(n = sll_begin(mem->member); n != NULL; n = n->next) {
 		p = (sProc*)n->data;

@@ -31,11 +31,6 @@
 void vfsr_setFSService(tVFSNodeNo nodeNo);
 
 /**
- * Notifies the kernel that there is a message he can read
- */
-void vfsr_setGotMsg(void);
-
-/**
  * Checks wether the kernel has received messages from the fs
  */
 void vfsr_checkForMsgs(void);

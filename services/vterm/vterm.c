@@ -347,10 +347,6 @@ void vterm_selectVTerm(u32 index) {
 	write(vt->video,&vt->titleBar,sizeof(vt->titleBar));
 	vterm_refreshScreen(vt);
 	vterm_setCursor(vt);
-
-	/* send a refresh to the clients */
-	char escape[3] = {'\033',VK_ESC_REFRESH,0};
-	write(vt->self,&escape,sizeof(escape));
 }
 
 void vterm_destroy(sVTerm *vt) {
@@ -655,11 +651,11 @@ static bool vterm_handleEscape(sVTerm *vt,u8 keycode,u8 value,bool *readKeyboard
 			res = true;
 			break;
 		case VK_ESC_FG:
-			vt->foreground = MIN(15,value - ' ');
+			vt->foreground = MIN(15,value);
 			res = true;
 			break;
 		case VK_ESC_BG:
-			vt->background = MIN(15,value - ' ');
+			vt->background = MIN(15,value);
 			res = true;
 			break;
 		case VK_ESC_SET_ECHO:
@@ -678,9 +674,6 @@ static bool vterm_handleEscape(sVTerm *vt,u8 keycode,u8 value,bool *readKeyboard
 		case VK_ESC_KEYBOARD:
 			*readKeyboard = value ? true : false;
 			res = true;
-			break;
-		case VK_ESC_REFRESH:
-			vterm_selectVTerm(vt->index);
 			break;
 		case VK_ESC_NAVI:
 			vt->navigation = value ? true : false;

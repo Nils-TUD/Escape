@@ -97,7 +97,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		/* don't create a pipe- or service-usage-node here */
 		while(vfsn_resolvePath(service,&nodeNo,false) < 0) {
 			vid_printf(".");
-			thread_switch();
+			thread_switchInKernel();
 		}
 		vid_toLineEnd(strlen("DONE"));
 		vid_printf("\033f\x02""DONE\033r\x0");

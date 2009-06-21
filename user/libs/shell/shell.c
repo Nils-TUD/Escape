@@ -37,10 +37,13 @@
 #include "tokenizer.h"
 #include "cmdbuilder.h"
 
+static bool resetReadLine = false;
 static u32 tabCount = 0;
 static tPid waitingPid = INVALID_PID;
 
 bool shell_prompt(void) {
+	/* ensure that we start a new readline */
+	resetReadLine = true;
 	char *path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
 	if(path == NULL) {
 		printf("ERROR: unable to get CWD\n");
@@ -201,6 +204,7 @@ u32 shell_readLine(char *buffer,u32 max) {
 	char c;
 	u32 cursorPos = 0;
 	u32 i = 0;
+	resetReadLine = false;
 
 	/* disable "readline", enable "echo" */
 	printf("\033e\x1\033l\x0");
@@ -209,6 +213,13 @@ u32 shell_readLine(char *buffer,u32 max) {
 	*buffer = '\0';
 	while(i < max) {
 		c = scanc();
+
+		/* maybe we've received a ^C. if so do a reset */
+		if(resetReadLine) {
+			i = 0;
+			cursorPos = 0;
+			resetReadLine = false;
+		}
 
 		if(shell_handleEscapeCodes(buffer,c,&cursorPos,&i))
 			continue;

@@ -32,6 +32,7 @@
 #include <sched.h>
 #include <vfs.h>
 #include <vfsinfo.h>
+#include <kevent.h>
 #include <video.h>
 #include <timer.h>
 #include <test.h>
@@ -110,6 +111,24 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	/* timer */
 	vid_printf("Initializing Timer...");
 	timer_init();
+	vid_toLineEnd(strlen("DONE"));
+	vid_printf("\033f\x2%s\033r\x0","DONE");
+
+	/* signals */
+	vid_printf("Initializing Signal-Handling...");
+	sig_init();
+	vid_toLineEnd(strlen("DONE"));
+	vid_printf("\033f\x2%s\033r\x0","DONE");
+
+	/* kevents */
+	vid_printf("Initializing KEvents...");
+	kev_init();
+	vid_toLineEnd(strlen("DONE"));
+	vid_printf("\033f\x2%s\033r\x0","DONE");
+
+	/* cpu */
+	vid_printf("Detecting CPU...");
+	cpu_detect();
 	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 

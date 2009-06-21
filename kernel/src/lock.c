@@ -56,7 +56,7 @@ s32 lock_aquire(tTid tid,tPid pid,u32 ident) {
 		l->waitCount++;
 		do {
 			thread_wait(tid,EV_UNLOCK);
-			thread_switch();
+			thread_switchInKernel();
 		}
 		while(l->locked);
 		/* it is unlocked now, so we can stop waiting and use it */

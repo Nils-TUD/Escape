@@ -32,6 +32,7 @@
 #include <vfsinfo.h>
 #include <vfsnode.h>
 #include <timer.h>
+#include <kevent.h>
 #include <video.h>
 #include <sllist.h>
 #include <assert.h>
@@ -56,6 +57,7 @@ sThread *thread_init(sProc *p) {
 
 	t->state = ST_RUNNING;
 	t->events = EV_NOEVENT;
+	t->waitsInKernel = 0;
 	t->tid = nextTid++;
 	t->proc = p;
 	/* we'll give the thread a stack later */
@@ -167,6 +169,16 @@ void thread_switchTo(tTid tid) {
 		sll_destroy(deadThreads,false);
 		deadThreads = NULL;
 	}
+}
+
+void thread_switchInKernel(void) {
+	/* remember that the current thread waits in the kernel */
+	/* atm this is just used by the signal-module to check wether we can send a signal to a
+	 * thread or not */
+	cur->waitsInKernel = 1;
+	thread_switch();
+	cur->waitsInKernel = 0;
+	kev_notify(KEV_KWAIT_DONE,cur->tid);
 }
 
 void thread_wait(tTid tid,u8 events) {
@@ -311,6 +323,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	t->tid = nextTid++;
 	t->state = ST_RUNNING;
 	t->events = src->events;
+	t->waitsInKernel = 0;
 	/* TODO clone fpu-state */
 	t->fpuState = NULL;
 	t->kcycleCount.val64 = 0;

@@ -137,9 +137,6 @@ int main(int argc,char *argv[]) {
 				case VK_PGDOWN:
 					scrollDown(ROWS);
 					break;
-				case VK_ESC_REFRESH:
-					refreshScreen();
-					break;
 			}
 		}
 	}

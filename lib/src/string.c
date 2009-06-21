@@ -172,7 +172,14 @@ void memclear(void *addr,u32 count) {
 }
 
 void memset(void *addr,u8 value,u32 count) {
-	u8 *baddr = (u8*)addr;
+	u32 dwval = (value << 24) | (value << 16) | (value << 8) | value;
+	u32 *dwaddr = (u32*)addr;
+	while(count >= sizeof(u32)) {
+		*dwaddr++ = dwval;
+		count -= sizeof(u32);
+	}
+
+	u8 *baddr = (u8*)dwaddr;
 	while(count-- > 0)
 		*baddr++ = value;
 }
@@ -185,14 +192,14 @@ void *memmove(void *dest,const void *src,u32 count) {
 
 	/* moving forward */
 	if((u8*)dest > (u8*)src) {
-		u32 *dsrc = (u32*)((u8*)src + count - 1);
-		u32 *ddest = (u32*)((u8*)dest + count - 1);
+		u32 *dsrc = (u32*)((u8*)src + count - sizeof(u32));
+		u32 *ddest = (u32*)((u8*)dest + count - sizeof(u32));
 		while(count >= sizeof(u32)) {
-			*ddest = *dsrc;
+			*ddest-- = *dsrc--;
 			count -= sizeof(u32);
 		}
-		s = (u8*)dsrc;
-		d = (u8*)ddest;
+		s = (u8*)dsrc + (sizeof(u32) - 1);
+		d = (u8*)ddest + (sizeof(u32) - 1);
 		while(count-- > 0)
 			*d-- = *s--;
 	}

@@ -419,15 +419,9 @@ static void intrpt_handleSignal(void) {
 static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	/* if the thread_switchTo() wasn't successfull (we're not the thread that should receive the
-	 * signal), release the signalData and we try it again later. This may happen if the thread
-	 * is waiting somewhere in the kernel so that another thread will be chosen which arrives
-	 * here. */
-	/* TODO this is not really good because we will try it in every interrupt
-	 * (and do thread_switch()!)until we can deliver the signal (or the thread dies) */
-	if(t->tid != signalData.tid) {
-		signalData.active = 0;
-		return;
-	}
+	 * signal), there is something wrong because we queue signals until the thread is able to
+	 * handle them. So this should never happen */
+	vassert(t->tid == signalData.tid,"The thread %d is unable to handle the signal",signalData.tid);
 
 	fSigHandler handler = sig_startHandling(signalData.tid,signalData.sig);
 	if(handler != NULL) {
@@ -492,6 +486,10 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 	vfsr_checkForMsgs();
 
+	/* send EOI to PIC */
+	if(stack.intrptNo != IRQ_SYSCALL)
+		intrpt_eoi(stack.intrptNo);
+
 	switch(stack.intrptNo) {
 		case IRQ_KEYBOARD:
 		case IRQ_ATA1:
@@ -502,7 +500,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 		case IRQ_TIMER:
 			/* acknoledge the interrupt here because timer_intrpt() may cause a process-switch()! */
-			intrpt_eoi(stack.intrptNo);
+			/*intrpt_eoi(stack.intrptNo);*/
 			timer_intrpt();
 			break;
 
@@ -576,10 +574,6 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		intrpt_handleSignal();
 	if(signalData.active == 1)
 		intrpt_handleSignalFinish(&stack);
-
-	/* send EOI to PIC */
-	if(stack.intrptNo != IRQ_TIMER && stack.intrptNo != IRQ_SYSCALL)
-		intrpt_eoi(stack.intrptNo);
 
 	/* kernel-mode ends */
 	t = thread_getRunning();

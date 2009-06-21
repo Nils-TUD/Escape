@@ -46,6 +46,11 @@
 typedef void (*fSigHandler)(tSig sigNo,u32 data);
 
 /**
+ * Inits the signal-handling
+ */
+void sig_init(void);
+
+/**
  * Checks wether we can handle the given signal
  *
  * @param signal the signal

@@ -30,6 +30,7 @@ static void test_string(void);
 static void test_atoi(void);
 static void test_atol(void);
 static void test_itoa(void);
+static void test_memset(void);
 static void test_memchr(void);
 static void test_memcpy(void);
 static void test_memcmp(void);
@@ -65,6 +66,7 @@ static void test_string(void) {
 	test_atoi();
 	test_atol();
 	test_itoa();
+	test_memset();
 	test_memchr();
 	test_memcpy();
 	test_memcmp();
@@ -157,6 +159,33 @@ static void test_itoa(void) {
 	if(!test_itoacpy(-10,"-10")) return;
 	if(!test_itoacpy(-8123,"-8123")) return;
 	if(!test_itoacpy(-2147483648,"-2147483648")) return;
+
+	test_caseSucceded();
+}
+
+static void test_memset(void) {
+	char buf[11] = {0};
+	test_caseStart("Testing memset()");
+
+	memset(buf,' ',10);
+	if(!test_assertStr(buf,"          ")) return;
+	memset(buf,'a',10);
+	if(!test_assertStr(buf,"aaaaaaaaaa")) return;
+	memset(buf,'a',1);
+	memset(buf + 1,'b',2);
+	memset(buf + 3,'c',3);
+	memset(buf + 6,'d',4);
+	if(!test_assertStr(buf,"abbcccdddd")) return;
+	memset(buf,'X',0);
+	if(!test_assertStr(buf,"abbcccdddd")) return;
+	memset(buf,'X',5);
+	if(!test_assertStr(buf,"XXXXXcdddd")) return;
+	memset(buf,'X',6);
+	if(!test_assertStr(buf,"XXXXXXdddd")) return;
+	memset(buf,'X',7);
+	if(!test_assertStr(buf,"XXXXXXXddd")) return;
+	memset(buf,'X',8);
+	if(!test_assertStr(buf,"XXXXXXXXdd")) return;
 
 	test_caseSucceded();
 }

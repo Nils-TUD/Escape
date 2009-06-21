@@ -138,7 +138,6 @@
 #define VK_ESC_SET_RL	'l'
 #define VK_ESC_SET_ECHO	'e'
 #define VK_ESC_KEYBOARD	'k'
-#define VK_ESC_REFRESH	's'
 #define VK_ESC_NAVI		'n'
 #define VK_ESC_BACKUP	'c'
 #define VK_ESC_RESTORE	't'

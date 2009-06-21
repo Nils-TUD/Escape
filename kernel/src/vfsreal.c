@@ -21,6 +21,7 @@
 #include <proc.h>
 #include <kheap.h>
 #include <sched.h>
+#include <kevent.h>
 #include <vfs.h>
 #include <vfsnode.h>
 #include <vfsreal.h>
@@ -78,12 +79,24 @@ static void vfsr_waitForReply(tTid tid,sRequest *req);
 static sRequest *vfsr_addRequest(tTid tid);
 
 /**
+ * Marks the given request as finished
+ *
+ * @param r the request
+ */
+static void vfsr_remRequest(sRequest *r);
+
+/**
  * Searches for the request of the given thread
  *
  * @param tid the thread-id
  * @return the request or NULL
  */
 static sRequest *vfsr_getRequestByPid(tTid tid);
+
+/**
+ * KEvent-callback
+ */
+static void vfsr_gotMsg(u32 param);
 
 /* the messages we'll send */
 static sMsgReadReq msgRead = {
@@ -109,8 +122,10 @@ static sMsgCloseReq msgClose = {
 
 /* the vfs-service-file */
 /*static sSLList *requests = NULL;*/
+static u32 reqCount = 0;
 static sRequest requests[REQUEST_COUNT];
 static tFileNo fsServiceFile = -1;
+static bool kevWait = false;
 static bool gotMsg = false;
 
 void vfsr_setFSService(tVFSNodeNo nodeNo) {
@@ -125,7 +140,8 @@ void vfsr_setFSService(tVFSNodeNo nodeNo) {
 	}
 }
 
-void vfsr_setGotMsg(void) {
+static void vfsr_gotMsg(u32 param) {
+	kevWait = false;
 	gotMsg = true;
 }
 
@@ -266,12 +282,12 @@ s32 vfsr_openFile(tTid tid,u8 flags,const char *path) {
 	/* error? */
 	if(req->inodeNo < 0) {
 		tInodeNo no = req->inodeNo;
-		req->tid = INVALID_TID;
+		vfsr_remRequest(req);
 		return no;
 	}
 	/* now open the file */
 	res = vfs_openFile(tid,flags,req->inodeNo);
-	req->tid = INVALID_TID;
+	vfsr_remRequest(req);
 	return res;
 }
 
@@ -317,7 +333,7 @@ s32 vfsr_getFileInfo(tTid tid,const char *path,sFileInfo *info) {
 	/* error? */
 	if(req->inodeNo < 0) {
 		tInodeNo no = req->inodeNo;
-		req->tid = INVALID_TID;
+		vfsr_remRequest(req);
 		return no;
 	}
 
@@ -325,7 +341,7 @@ s32 vfsr_getFileInfo(tTid tid,const char *path,sFileInfo *info) {
 	resp = (sMsgDataFSStatResp*)req->buffer;
 	memcpy((void*)info,(void*)&(resp->info),sizeof(sFileInfo));
 	kheap_free(resp);
-	req->tid = INVALID_TID;
+	vfsr_remRequest(req);
 	return 0;
 }
 
@@ -360,7 +376,7 @@ s32 vfsr_readFile(tTid tid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	}
 
 	res = req->count;
-	req->tid = INVALID_TID;
+	vfsr_remRequest(req);
 	return res;
 }
 
@@ -403,8 +419,8 @@ s32 vfsr_writeFile(tTid tid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 		return ERR_NOT_ENOUGH_MEM;
 	vfsr_waitForReply(tid,req);
 
-	req->tid = INVALID_TID;
 	res = req->count;
+	vfsr_remRequest(req);
 	return res;
 }
 
@@ -419,9 +435,25 @@ void vfsr_closeFile(tInodeNo inodeNo) {
 }
 
 static void vfsr_waitForReply(tTid tid,sRequest *req) {
+	/* we want to get notified if a message arrives */
+	if(!kevWait) {
+		kev_add(KEV_VFS_REAL,vfsr_gotMsg);
+		kevWait = true;
+	}
+
 	while(!req->finished) {
 		thread_wait(tid,EV_RECEIVED_MSG);
-		thread_switch();
+		thread_switchInKernel();
+	}
+}
+
+static void vfsr_remRequest(sRequest *r) {
+	r->tid = INVALID_TID;
+	reqCount--;
+	/* ensure that we continue waiting if there is something to wait for */
+	if(!kevWait && reqCount > 0) {
+		kev_add(KEV_VFS_REAL,vfsr_gotMsg);
+		kevWait = true;
 	}
 }
 
@@ -442,6 +474,7 @@ static sRequest *vfsr_addRequest(tTid tid) {
 	req->count = 0;
 	req->buffer = NULL;
 	req->readResp = NULL;
+	reqCount++;
 	return req;
 }
 

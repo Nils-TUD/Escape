@@ -45,7 +45,7 @@ typedef struct {
 	u32 eflags;
 	/* note that we don't need to save eip because when we're done in thread_resume() we have
 	 * our kernel-stack back which causes the ret-instruction to return to the point where
-	 * we've called thread_save(). */
+	 * we've called thread_save(). the user-eip is saved on the kernel-stack anyway.. */
 } sThreadRegs;
 
 /* the thread states */
@@ -57,6 +57,8 @@ typedef struct {
 	u8 state;
 	/* the events the thread waits for (if waiting) */
 	u8 events;
+	/* wether this thread waits somewhere in the kernel (not directly triggered by the user) */
+	u8 waitsInKernel;
 	/* the signal that the thread is currently handling (if > 0) */
 	tSig signal;
 	/* the process we belong to */
@@ -138,6 +140,13 @@ void thread_switch(void);
  * @param tid the thread-id
  */
 void thread_switchTo(tTid tid);
+
+/**
+ * Switches the thread and remembers that we are waiting in the kernel. That means if you want
+ * to wait in the kernel for something, use this function so that other modules know that the
+ * current thread waits and should for example not receive signals.
+ */
+void thread_switchInKernel(void);
 
 /**
  * Puts the given thraed to sleep with given wake-up-events

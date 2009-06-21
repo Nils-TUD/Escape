@@ -28,6 +28,7 @@
 #include <kheap.h>
 #include <sched.h>
 #include <video.h>
+#include <kevent.h>
 #include <string.h>
 #include <sllist.h>
 #include <assert.h>
@@ -417,7 +418,7 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 				return 0;
 
 			while(n->data.servuse.locked != -1)
-				thread_switch();
+				thread_switchInKernel();
 		}
 
 		/* use the read-handler */
@@ -910,7 +911,7 @@ s32 vfs_serviceUseReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 
 			/* don't cache the list here, because the pointer changes if the list is NULL */
 			while(sll_length(node->data.servuse.recvList) == 0) {
 				thread_wait(tid,EV_RECEIVED_MSG);
-				thread_switch();
+				thread_switchInKernel();
 			}
 		}
 		else if(sll_length(node->data.servuse.recvList) == 0)
@@ -998,7 +999,7 @@ static s32 vfs_writeHandler(tTid tid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 			if(n->parent->mode & MODE_SERVICE_SINGLEPIPE) {
 				/* should never happen since fs is a multipipe-service, but just to be sure */
 				if(n->owner == KERNEL_TID)
-					vfsr_setGotMsg();
+					kev_notify(KEV_VFS_REAL,0);
 				/* notify the clients of this single-pipe-service */
 				else if(sll_length(n->data.servuse.singlePipeClients) > 0) {
 					sSLNode *node = sll_begin(n->data.servuse.singlePipeClients);
@@ -1011,7 +1012,7 @@ static s32 vfs_writeHandler(tTid tid,sVFSNode *n,u8 *buffer,u32 offset,u32 count
 				if(n->owner != KERNEL_TID)
 					thread_wakeup(n->owner,EV_RECEIVED_MSG);
 				else
-					vfsr_setGotMsg();
+					kev_notify(KEV_VFS_REAL,0);
 			}
 		}
 		return count;

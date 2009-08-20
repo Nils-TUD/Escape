@@ -57,6 +57,7 @@ void mboot_init(sMultiBoot *mbp) {
 
 void mboot_loadModules(sIntrptStackFrame *stack) {
 	u32 i;
+	u32 entryPoint;
 	sProc *p;
 	char *name;
 	char *service;
@@ -85,9 +86,11 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			proc_changeSize(-p->dataPages,CHG_DATA);
 			/* now load service */
 			memcpy(p->command,name,strlen(name) + 1);
-			elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart);
+			entryPoint = elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart);
+			if((s32)entryPoint < 0)
+				util_panic("Loading multiboot-module %s failed",p->command);
 			proc_setupUserStack(stack,0,NULL,0);
-			proc_setupStart(stack);
+			proc_setupStart(stack,entryPoint);
 			/* we don't want to continue the loop ;) */
 			break;
 		}

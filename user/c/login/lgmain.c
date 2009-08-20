@@ -19,15 +19,23 @@
 
 #include <esc/common.h>
 #include <esc/fileio.h>
+#include <esc/signals.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define USERNAME "hrniels"
 #define PASSWORD "test"
 
+static void termHandler(tSig signal,u32 data);
+
 int main(void) {
 	char un[10];
 	char pw[10];
+
+	if(setSigHandler(SIG_TERM,termHandler) < 0) {
+		printe("Unable to announce term-signal-handler");
+		return EXIT_FAILURE;
+	}
 
 	while(1) {
 		printf("Username: ");
@@ -47,5 +55,10 @@ int main(void) {
 		}
 	}
 
+	unsetSigHandler(SIG_TERM);
 	return EXIT_SUCCESS;
+}
+
+static void termHandler(tSig signal,u32 data) {
+	printf("Got TERM-signal but I don't want to die :P\n");
 }

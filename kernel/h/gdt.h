@@ -25,6 +25,20 @@
 /* the size of the io-map (in bits) */
 #define IO_MAP_SIZE				0xFFFF
 
+/* the segment-indices in the gdt */
+#define SEGSEL_GDTI_KCODE		(1 << 3)
+#define SEGSEL_GDTI_KDATA		(2 << 3)
+#define SEGSEL_GDTI_UCODE		(3 << 3)
+#define SEGSEL_GDTI_UDATA		(4 << 3)
+
+/* the table-indicators */
+#define SEGSEL_TI_GDT			0x00
+#define SEGSEL_TI_LDT			0x04
+
+/* the requested privilege levels */
+#define SEGSEL_RPL_USER			0x03
+#define SEGSEL_RPL_KERNEL		0x00
+
 /**
  * Inits the GDT
  */

@@ -259,10 +259,10 @@ bool sig_addSignalFor(tPid pid,tSig signal,u32 data) {
 			if(t->proc->pid == pid) {
 				/* ensure that the thread can handle the signal atm. if not, queue it */
 				sig_addSig(h,pid,signal,data,t->waitsInKernel == 0);
+				sent = true;
 				if(t->waitsInKernel)
 					sig_addToQueue(h,signal,data);
 				else {
-					sent = true;
 					if(!h->active && t->signal == 0)
 						res = true;
 				}
@@ -342,6 +342,7 @@ static void sig_sendQueued(void) {
 	sSignal *sig;
 	sThread *t;
 	sSLNode *n,*p,*tn;
+	p = NULL;
 	for(n = sll_begin(signalQueue); n != NULL; ) {
 		sig = (sSignal*)n->data;
 		t = thread_getById(sig->handler->tid);
@@ -386,6 +387,7 @@ static void sig_addToQueue(sHandler *h,tSig signal,u32 data) {
 static void sig_remFromQueue(sHandler *h) {
 	sSignal *sig;
 	sSLNode *n,*p,*tn;
+	p = NULL;
 	for(n = sll_begin(signalQueue); n != NULL; ) {
 		sig = (sSignal*)n->data;
 		if(sig->handler == h) {
@@ -420,9 +422,6 @@ static void sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data,bool add) {
 			case SIG_SEGFAULT:
 				if(signal == SIG_KILL || h == NULL)
 					proc_destroy(proc_getByPid(pid));
-				else if(h != NULL) {
-					/* TODO */
-				}
 				break;
 		}
 	}

@@ -50,7 +50,8 @@
 /* an entry in the listener-list */
 typedef struct {
 	tTid tid;
-	u64 time;
+	u64 time;	/* TODO it would make more sense to store the differences between the entries
+					and not absolute values */
 } sTimerListener;
 
 /* processes that should be waked up to a specified time */

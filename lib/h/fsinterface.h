@@ -136,6 +136,8 @@ typedef struct {
 /* the read-response-data */
 typedef struct {
 	tTid tid;
+	/* alignment to ensure that we have 2 dwords in front of the data */
+	u16 : 16;
 	/* may be an error-code */
 	s32 count;
 	/* data follows */

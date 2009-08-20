@@ -24,17 +24,56 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SIG_NAME_LEN		7
+
+typedef struct {
+	char name[SIG_NAME_LEN + 1];
+	tSig signal;
+} sSigName;
+
+/* the signal the user can send */
+static sSigName signals[] = {
+	{"SIGKILL",SIG_KILL},
+	{"SIGTERM",SIG_TERM},
+	{"SIGINT",SIG_INTRPT}
+};
+
 int main(int argc,char **argv) {
 	tPid pid;
-	if(argc != 2) {
-		fprintf(stderr,"Usage: %s <pid>\n",argv[0]);
+	tSig signal = SIG_KILL;
+
+	if(argc < 2) {
+		fprintf(stderr,"Usage: %s [-L][-<signal>] <pid>\n",argv[0]);
 		return EXIT_FAILURE;
 	}
 
-	pid = atoi(argv[1]);
+	/* print signals */
+	if(strcmp(argv[1],"-L") == 0) {
+		u32 i;
+		for(i = 0; i < ARRAY_SIZE(signals); i++)
+			printf("%10s - %d\n",signals[i].name,signals[i].signal);
+		return EXIT_SUCCESS;
+	}
+
+	/* the user has specified the signal */
+	if(argv[1][0] == '-') {
+		u32 i;
+		u32 len = strlen(argv[1]);
+		for(i = 0; i < ARRAY_SIZE(signals); i++) {
+			if(strcmp(argv[1] + 1,signals[i].name) == 0 ||
+				strcmp(argv[1] + 1,signals[i].name + 3) == 0) {
+				signal = signals[i].signal;
+				break;
+			}
+		}
+		pid = atoi(argv[2]);
+	}
+	else
+		pid = atoi(argv[1]);
+
 	if(pid > 0) {
-		if(sendSignalTo(pid,SIG_KILL,0) < 0) {
-			printe("Unable to send signal %d to %d",SIG_KILL,pid);
+		if(sendSignalTo(pid,signal,0) < 0) {
+			printe("Unable to send signal %d to %d",signal,pid);
 			return EXIT_FAILURE;
 		}
 	}

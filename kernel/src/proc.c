@@ -99,7 +99,6 @@ tPid proc_getFreePid(void) {
 }
 
 sProc *proc_getRunning(void) {
-	/* TODO maybe we should store the current process during context-switch, too? */
 	sThread *t = thread_getRunning();
 	if(t)
 		return t->proc;
@@ -249,9 +248,7 @@ s32 proc_startThread(u32 entryPoint) {
 	res = proc_finishClone(nt,stackFrame);
 	if(res == 1) {
 		sIntrptStackFrame *istack = intrpt_getCurStack();
-		proc_setupStart(istack);
-		/* set entry-point */
-		istack->eip = entryPoint;
+		proc_setupStart(istack,entryPoint);
 
 		/* we want to call exit when the thread-function returns */
 		u32 *esp = (u32*)nt->ustackBegin - 1;
@@ -433,19 +430,17 @@ void proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 	frame->ebp = frame->uesp;
 }
 
-void proc_setupStart(sIntrptStackFrame *frame) {
+void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint) {
 	vassert(frame != NULL,"frame == NULL");
 
 	/* user-mode segments */
-	/* TODO remove the hard-coded stuff here! */
-	frame->cs = 0x1b;
-	frame->ds = 0x23;
-	frame->es = 0x23;
-	frame->fs = 0x23;
-	frame->gs = 0x23;
-	frame->uss = 0x23;
-	/* TODO entry-point */
-	frame->eip = 0;
+	frame->cs = SEGSEL_GDTI_UCODE | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
+	frame->ds = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
+	frame->es = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
+	frame->fs = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
+	frame->gs = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
+	frame->uss = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
+	frame->eip = entryPoint;
 	/* general purpose register */
 	frame->eax = 0;
 	frame->ebx = 0;

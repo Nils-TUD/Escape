@@ -324,8 +324,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	t->state = ST_RUNNING;
 	t->events = src->events;
 	t->waitsInKernel = 0;
-	/* TODO clone fpu-state */
-	t->fpuState = NULL;
+	fpu_cloneState(&(t->fpuState),src->fpuState);
 	t->kcycleCount.val64 = 0;
 	t->kcycleStart = 0;
 	t->ucycleCount.val64 = 0;

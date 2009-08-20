@@ -20,6 +20,7 @@ QEMUARGS=-serial stdio -hda $(HDD) -boot c -vga std
 DIRS = tools libc libcpp services user kernel kernel/test
 
 # flags for gcc
+export CC = gcc
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
@@ -136,7 +137,7 @@ bochs: all prepareRun
 debug: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
-		gdb --command=gdb.start --symbols $(BUILD)/kernel.bin
+		gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
 
 debugu: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &

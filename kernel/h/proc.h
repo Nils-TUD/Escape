@@ -164,8 +164,9 @@ void proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
  * Setups the start of execution in user-mode for given interrupt-stack
  *
  * @param frame the interrupt-stack-frame
+ * @param entryPoint the entry-point
  */
-void proc_setupStart(sIntrptStackFrame *frame);
+void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint);
 
 /**
  * Checks wether the given segment-sizes are valid

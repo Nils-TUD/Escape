@@ -1,0 +1,13 @@
+==== unoptimized ====
+Testing speed of read to disk
+Transferring 390 MiB in chunks of 4096 bytes
+
+Instructions:   00000017a0fe93d0
+Speed:          009 MiB/s
+
+==== -O2 ====
+Testing speed of read to disk
+Transferring 390 MiB in chunks of 4096 bytes
+
+Instructions:   0000000fef4d8bac
+Speed:          013 MiB/s

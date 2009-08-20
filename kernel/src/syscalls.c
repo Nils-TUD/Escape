@@ -1223,7 +1223,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 
 	/* make process ready */
 	proc_setupUserStack(stack,argc,argBuffer,EXEC_MAX_ARGSIZE - remaining);
-	proc_setupStart(stack);
+	proc_setupStart(stack,(u32)res);
 
 	kheap_free(argBuffer);
 }

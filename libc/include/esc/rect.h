@@ -45,7 +45,7 @@ extern "C" {
 bool rectContains(sRectangle *r,u16 x,u16 y);
 
 /**
- * Splits <r2> by <r1> and creates an array of rectangles that are parts of <r1> and not
+ * Splits <r1> by <r2> and creates an array of rectangles that are parts of <r1> and not
  * part of <r2>. For example:
  * +---------+ <- r1
  * |         |

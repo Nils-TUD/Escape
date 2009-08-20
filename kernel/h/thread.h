@@ -70,14 +70,12 @@ typedef struct {
 	u32 ustackPages;
 	/* the frame mapped at KERNEL_STACK */
 	u32 kstackFrame;
-	/* TODO just for debugging atm */
-	u32 ueip;
 	sThreadRegs save;
 	/* file descriptors: indices of the global file table */
 	tFileNo fileDescs[MAX_FD_COUNT];
 	/* FPU-state; initially NULL */
 	sFPUState *fpuState;
-	/* number of cpu-cycles the thread has used so far; TODO: should be cpu-time later */
+	/* number of cpu-cycles the thread has used so far */
 	u64 ucycleStart;
 	uLongLong ucycleCount;
 	u64 kcycleStart;

@@ -464,7 +464,6 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		t->ucycleCount.val64 += cycles - t->ucycleStart;
 	/* kernel-mode starts here */
 	t->kcycleStart = cycles;
-	t->ueip = stack.eip;
 
 	/* add signal */
 	switch(stack.intrptNo) {

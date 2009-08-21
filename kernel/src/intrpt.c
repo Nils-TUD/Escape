@@ -483,8 +483,6 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		break;
 	}
 
-	vfsr_checkForMsgs();
-
 	/* send EOI to PIC */
 	if(stack.intrptNo != IRQ_SYSCALL)
 		intrpt_eoi(stack.intrptNo);

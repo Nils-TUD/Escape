@@ -24,16 +24,11 @@
 #include <fsinterface.h>
 
 /**
- * Sets the node-number of the FS-service
+ * Inits vfs-real with the given fs-service-node
  *
- * @param nodeNo the service-node
+ * @param fsNode the service-node
  */
-void vfsr_setFSService(tVFSNodeNo nodeNo);
-
-/**
- * Checks wether the kernel has received messages from the fs
- */
-void vfsr_checkForMsgs(void);
+void vfsr_init(tVFSNodeNo fsNode);
 
 /**
  * Opens the given path with given flags for given thread

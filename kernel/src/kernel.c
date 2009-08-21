@@ -33,6 +33,7 @@
 #include <sched.h>
 #include <vfs.h>
 #include <vfsinfo.h>
+#include <vfsreq.h>
 #include <kevent.h>
 #include <video.h>
 #include <timer.h>
@@ -112,6 +113,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("Initializing VFS...");
 	vfs_init();
 	vfsinfo_init();
+	vfsreq_init();
 	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 

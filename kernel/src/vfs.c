@@ -22,6 +22,7 @@
 #include <vfsnode.h>
 #include <vfsreal.h>
 #include <vfsinfo.h>
+#include <vfsreq.h>
 #include <proc.h>
 #include <paging.h>
 #include <util.h>
@@ -589,7 +590,7 @@ tServ vfs_createService(tTid tid,const char *name,u32 type) {
 	if(n != NULL) {
 		/* TODO that's not really nice ;) */
 		if(strcmp(name,"fs") == 0)
-			vfsr_setFSService(NADDR_TO_VNNO(n));
+			vfsr_init(NADDR_TO_VNNO(n));
 		return NADDR_TO_VNNO(n);
 	}
 
@@ -965,10 +966,19 @@ static s32 vfs_serviceUseReadHandler(tTid tid,sVFSNode *node,tMsgId *id,u8 *data
 static s32 vfs_serviceUseWriteHandler(tTid tid,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
 	sSLList **list;
 	sMessage *msg;
+
 	/* services write to the receive-list (which will be read by other processes) */
 	/* special-case: pid == KERNEL_PID: the kernel wants to write to a service */
-	if(tid != KERNEL_TID && n->parent->owner == tid)
+	if(tid != KERNEL_TID && n->parent->owner == tid) {
+		/* if the message is intended for the kernel, don't enqueue it but pass it directly to the
+		 * corresponding handler */
+		if(n->owner == KERNEL_TID) {
+			vfsreq_sendMsg(id,data,size);
+			return 0;
+		}
+
 		list = &(n->data.servuse.recvList);
+	}
 	/* other processes write to the send-list (which will be read by the service) */
 	else
 		list = &(n->data.servuse.sendList);
@@ -1002,11 +1012,8 @@ static s32 vfs_serviceUseWriteHandler(tTid tid,sVFSNode *n,tMsgId id,const u8 *d
 	}
 	else {
 		if(n->parent->mode & MODE_SERVICE_SINGLEPIPE) {
-			/* should never happen since fs is a multipipe-service, but just to be sure */
-			if(n->owner == KERNEL_TID)
-				kev_notify(KEV_VFS_REAL,0);
 			/* notify the clients of this single-pipe-service */
-			else if(sll_length(n->data.servuse.singlePipeClients) > 0) {
+			if(sll_length(n->data.servuse.singlePipeClients) > 0) {
 				sSLNode *node = sll_begin(n->data.servuse.singlePipeClients);
 				for(; node != NULL; node = node->next)
 					thread_wakeup(((sThread*)node->data)->tid,EV_RECEIVED_MSG);
@@ -1014,10 +1021,7 @@ static s32 vfs_serviceUseWriteHandler(tTid tid,sVFSNode *n,tMsgId id,const u8 *d
 		}
 		else {
 			/* notify the process that there is a message */
-			if(n->owner != KERNEL_TID)
-				thread_wakeup(n->owner,EV_RECEIVED_MSG);
-			else
-				kev_notify(KEV_VFS_REAL,0);
+			thread_wakeup(n->owner,EV_RECEIVED_MSG);
 		}
 	}
 	return 0;

@@ -47,17 +47,6 @@ extern "C" {
 tFD open(const char *path,u8 mode);
 
 /**
- * Reads count bytes from the given file-descriptor into the given buffer and returns the
- * actual read number of bytes.
- *
- * @param fd the file-descriptor
- * @param buffer the buffer to fill
- * @param count the number of bytes
- * @return the actual read number of bytes; negative if an error occurred
- */
-s32 read(tFD fd,void *buffer,u32 count);
-
-/**
  * Retrieves information about the given file
  *
  * @param path the path of the file
@@ -85,6 +74,17 @@ s32 eof(tFD fd);
 s32 seek(tFD fd,u32 position);
 
 /**
+ * Reads count bytes from the given file-descriptor into the given buffer and returns the
+ * actual read number of bytes.
+ *
+ * @param fd the file-descriptor
+ * @param buffer the buffer to fill
+ * @param count the number of bytes
+ * @return the actual read number of bytes; negative if an error occurred
+ */
+s32 read(tFD fd,void *buffer,u32 count);
+
+/**
  * Writes count bytes from the given buffer into the given fd and returns the number of written
  * bytes.
  *
@@ -94,6 +94,27 @@ s32 seek(tFD fd,u32 position);
  * @return the number of bytes written; negative if an error occurred
  */
 s32 write(tFD fd,void *buffer,u32 count);
+
+/**
+ * Sends a message to the service identified by <fd>.
+ *
+ * @param fd the file-descriptor
+ * @param id the msg-id
+ * @param msg the message
+ * @param size the size of the message
+ * @return 0 on success or < 0 if an error occurred
+ */
+s32 send(tFD fd,tMsgId id,const void *msg,u32 size);
+
+/**
+ * Receives a message from the service identified by <fd>. Blocks if no message is available.
+ *
+ * @param fd the file-descriptor
+ * @param id will be set to the msg-id
+ * @param msg the message
+ * @return the size of the message
+ */
+s32 receive(tFD fd,tMsgId *id,void *msg);
 
 /**
  * Duplicates the given file-descriptor

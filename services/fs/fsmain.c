@@ -24,7 +24,7 @@
 #include <esc/proc.h>
 #include <esc/heap.h>
 #include <esc/debug.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <errors.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,58 +36,13 @@
 #include "ext2/inodecache.h"
 #include "ext2/file.h"
 
-/* open-response */
-typedef struct {
-	sMsgHeader header;
-	sMsgDataFSOpenResp data;
-} __attribute__((packed)) sMsgOpenResp;
-/* stat-response */
-typedef struct {
-	sMsgHeader header;
-	sMsgDataFSStatResp data;
-} __attribute__((packed)) sMsgStatResp;
-/* write-response */
-typedef struct {
-	sMsgHeader header;
-	sMsgDataFSWriteResp data;
-} __attribute__((packed)) sMsgWriteResp;
-
-/* the message we'll send */
-static sMsgOpenResp openResp = {
-	.header = {
-		.id = MSG_FS_OPEN_RESP,
-		.length = sizeof(sMsgDataFSOpenResp)
-	},
-	.data = {
-		.tid = 0,
-		.inodeNo = 0
-	}
-};
-static sMsgStatResp statResp = {
-	.header = {
-		.id = MSG_FS_STAT_RESP,
-		.length = sizeof(sMsgDataFSStatResp)
-	},
-	.data = {
-		.tid = 0,
-		.error = 0
-	}
-};
-static sMsgWriteResp writeResp = {
-	.header = {
-		.id = MSG_FS_WRITE_RESP,
-		.length = sizeof(sMsgDataFSWriteResp)
-	},
-	.data = {
-		.tid = 0,
-		.count = 0
-	}
-};
-
+static sMsg msg;
 static sExt2 ext2;
 
 int main(void) {
 	tFD fd;
+	tMsgId mid;
+	s32 size;
 	tServ id,client;
 
 	/* TODO */
@@ -110,144 +65,98 @@ int main(void) {
 		if(fd < 0)
 			wait(EV_CLIENT);
 		else {
-			sMsgHeader header;
-			while(read(fd,&header,sizeof(sMsgHeader)) > 0) {
-				switch(header.id) {
+			while((size = receive(fd,&mid,&msg)) > 0) {
+				switch(mid) {
 					case MSG_FS_OPEN: {
-						/* read data */
-						sMsgDataFSOpenReq *data = (sMsgDataFSOpenReq*)malloc(sizeof(u8) * header.length);
-						if(data != NULL) {
-							/* TODO we need a way to skip a message or something.. */
-							tInodeNo no;
-							read(fd,data,header.length);
+						tTid tid = msg.str.arg1;
+						tInodeNo no = ext2_resolvePath(&ext2,msg.str.s1);
 
-							no = ext2_resolvePath(&ext2,data->path);
-
-							/*debugf("Received an open from %d of '%s' for ",data->pid,data + 1);
+						/*debugf("Received an open from %d of '%s' for ",data->pid,data + 1);
+						if(data->flags & IO_READ)
+							debugf("READ");
+						if(data->flags & IO_WRITE) {
 							if(data->flags & IO_READ)
-								debugf("READ");
-							if(data->flags & IO_WRITE) {
-								if(data->flags & IO_READ)
-									debugf(" and ");
-								debugf("WRITE");
-							}
-							debugf("\n");
-							debugf("Path is associated with inode %d\n",no);*/
-
-							/*ext2_icache_printStats();
-							ext2_bcache_printStats();*/
-
-							/* write response */
-							openResp.data.tid = data->tid;
-							openResp.data.inodeNo = no;
-							write(fd,&openResp,sizeof(sMsgOpenResp));
-							free(data);
+								debugf(" and ");
+							debugf("WRITE");
 						}
+						debugf("\n");
+						debugf("Path is associated with inode %d\n",no);*/
+
+						/*ext2_icache_printStats();
+						ext2_bcache_printStats();*/
+
+						/* write response */
+						msg.args.arg1 = tid;
+						msg.args.arg2 = no;
+						send(fd,MSG_FS_OPEN_RESP,&msg,sizeof(msg.args));
 					}
 					break;
 
 					case MSG_FS_STAT: {
-						/* read data */
-						sMsgDataFSStatReq *data = (sMsgDataFSStatReq*)malloc(sizeof(u8) * header.length);
-						if(data != NULL) {
-							tInodeNo no;
-							sCachedInode *cnode;
-							read(fd,data,header.length);
+						tTid tid = msg.str.arg1;
+						sCachedInode *cnode;
+						tInodeNo no;
 
-							no = ext2_resolvePath(&ext2,data->path);
-							if(no >= 0) {
-								cnode = ext2_icache_request(&ext2,no);
-								if(cnode != NULL) {
-									sFileInfo *info = &(statResp.data.info);
-									info->accesstime = cnode->inode.accesstime;
-									info->modifytime = cnode->inode.modifytime;
-									info->createtime = cnode->inode.createtime;
-									info->blockCount = cnode->inode.blocks;
-									info->blockSize = BLOCK_SIZE(&ext2);
-									info->device = 0;
-									info->rdevice = 0;
-									info->uid = cnode->inode.uid;
-									info->gid = cnode->inode.gid;
-									info->inodeNo = cnode->inodeNo;
-									info->linkCount = cnode->inode.linkCount;
-									info->mode = cnode->inode.mode;
-									info->size = cnode->inode.size;
-									statResp.data.error = 0;
-								}
-								else
-									statResp.data.error = ERR_NOT_ENOUGH_MEM;
+						msg.data.arg1 = tid;
+						no = ext2_resolvePath(&ext2,msg.str.s1);
+						if(no >= 0) {
+							cnode = ext2_icache_request(&ext2,no);
+							if(cnode != NULL) {
+								sFileInfo *info = (sFileInfo*)&(msg.data.d);
+								info->accesstime = cnode->inode.accesstime;
+								info->modifytime = cnode->inode.modifytime;
+								info->createtime = cnode->inode.createtime;
+								info->blockCount = cnode->inode.blocks;
+								info->blockSize = BLOCK_SIZE(&ext2);
+								info->device = 0;
+								info->rdevice = 0;
+								info->uid = cnode->inode.uid;
+								info->gid = cnode->inode.gid;
+								info->inodeNo = cnode->inodeNo;
+								info->linkCount = cnode->inode.linkCount;
+								info->mode = cnode->inode.mode;
+								info->size = cnode->inode.size;
+								msg.data.arg2 = 0;
 							}
 							else
-								statResp.data.error = no;
-
-							/* write response */
-							statResp.data.tid = data->tid;
-							write(fd,&statResp,sizeof(sMsgStatResp));
-							free(data);
+								msg.data.arg2 = ERR_NOT_ENOUGH_MEM;
 						}
+						else
+							msg.data.arg2 = no;
+
+						/* write response */
+						send(fd,MSG_FS_STAT_RESP,&msg,sizeof(msg.data));
 					}
 					break;
 
 					case MSG_FS_READ: {
-						sMsgHeader *rhead;
-						sMsgDataFSReadResp *rdata;
-						u32 dlen;
-						u32 count;
+						tInodeNo ino = (tInodeNo)msg.args.arg2;
+						u32 offset = msg.args.arg3;
+						u32 count = msg.args.arg4;
 
-						/* read data */
-						sMsgDataFSReadReq data;
-						read(fd,&data,header.length);
+						/* read and send response */
+						msg.data.arg1 = msg.args.arg1;
+						msg.data.arg2 = ext2_readFile(&ext2,ino,(u8*)msg.data.d,offset,count);
+						send(fd,MSG_FS_READ_RESP,&msg,sizeof(msg.data));
 
-						/* write response  */
-						dlen = sizeof(sMsgDataFSReadResp) + data.count * sizeof(u8);
-						rhead = (sMsgHeader*)malloc(sizeof(sMsgHeader) + dlen);
-						if(rhead != NULL) {
-							rdata = (sMsgDataFSReadResp*)(rhead + 1);
-							count = ext2_readFile(&ext2,data.inodeNo,rdata->data,
-										data.offset,data.count);
-
-							dlen = sizeof(sMsgDataFSReadResp) + count * sizeof(u8);
-							rhead->length = dlen;
-							rhead->id = MSG_FS_READ_RESP;
-							rdata->count = count;
-							rdata->tid = data.tid;
-
-							/*ext2_icache_printStats();
-							ext2_bcache_printStats();*/
-
-							write(fd,rhead,sizeof(sMsgHeader) + dlen);
-							free(rhead);
-
-							/* read ahead
-							if(count > 0)
-								ext2_readFile(&ext2,data.inodeNo,NULL,data.offset + count,data.count); */
-						}
+						/* read ahead
+						if(count > 0)
+							ext2_readFile(&ext2,data.inodeNo,NULL,data.offset + count,data.count);*/
 					}
 					break;
 
 					case MSG_FS_WRITE: {
-						/* read data */
-						sMsgDataFSWriteReq *data = (sMsgDataFSWriteReq*)malloc(header.length);
-						if(data != NULL) {
-							read(fd,data,header.length);
+						debugf("Got '%s' (%d bytes) for offset %d in inode %d\n",msg.data.d,
+								msg.data.arg4,msg.data.arg3,msg.data.arg2);
 
-							debugf("Got '%s' (%d bytes) for offset %d in inode %d\n",data->data,
-									data->count,data->offset,data->inodeNo);
-
-							/* write response */
-							writeResp.data.tid = data->tid;
-							writeResp.data.count = data->count;
-							write(fd,&writeResp,sizeof(sMsgWriteResp));
-							free(data);
-						}
+						/* write response */
+						msg.args.arg1 = msg.data.arg1;
+						msg.args.arg2 = msg.data.arg4;
+						send(fd,MSG_FS_WRITE_RESP,&msg,sizeof(msg.args));
 					}
 					break;
 
 					case MSG_FS_CLOSE: {
-						/* read data */
-						sMsgDataFSCloseReq data;
-						read(fd,&data,sizeof(sMsgDataFSCloseReq));
-
 						/*debugf("Closing inode %d\n",data.inodeNo);*/
 					}
 					break;

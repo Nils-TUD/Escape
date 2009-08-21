@@ -23,20 +23,6 @@
 #include <types.h>
 #include <stddef.h>
 
-/* request-msg-ids */
-#define MSG_FS_OPEN			0
-#define MSG_FS_READ			1
-#define MSG_FS_WRITE		2
-#define MSG_FS_CLOSE		3
-#define MSG_FS_STAT			4
-
-/* response-msg-ids */
-#define MSG_FS_OPEN_RESP	5
-#define MSG_FS_READ_RESP	6
-#define MSG_FS_WRITE_RESP	7
-#define MSG_FS_CLOSE_RESP	8
-#define MSG_FS_STAT_RESP	9
-
 /* mode masks */
 #define MODE_TYPE_MASK		0170000
 #define MODE_TYPE_SOCKET	0140000
@@ -94,76 +80,5 @@ typedef struct {
 	u32 modifytime;
 	u32 createtime;
 } sFileInfo;
-
-/* the open-request-data */
-typedef struct {
-	tTid tid;
-	/* read/write */
-	u8 flags;
-	/* pathname follows */
-	char path[];
-} sMsgDataFSOpenReq;
-
-/* the stat-request-data */
-typedef struct {
-	tTid tid;
-	/* pathname follows */
-	char path[];
-} sMsgDataFSStatReq;
-
-/* the stat-response-data */
-typedef struct {
-	tTid tid;
-	s32 error;
-	sFileInfo info;
-} sMsgDataFSStatResp;
-
-/* the open-response-data */
-typedef struct {
-	tTid tid;
-	/* may be an error-code */
-	tInodeNo inodeNo;
-} sMsgDataFSOpenResp;
-
-/* the read-request-data */
-typedef struct {
-	tTid tid;
-	tInodeNo inodeNo;
-	u32 offset;
-	u32 count;
-} sMsgDataFSReadReq;
-
-/* the read-response-data */
-typedef struct {
-	tTid tid;
-	/* alignment to ensure that we have 2 dwords in front of the data */
-	u16 : 16;
-	/* may be an error-code */
-	s32 count;
-	/* data follows */
-	u8 data[];
-} sMsgDataFSReadResp;
-
-/* the write-request-data */
-typedef struct {
-	tTid tid;
-	tInodeNo inodeNo;
-	u32 offset;
-	u32 count;
-	/* data follows */
-	u8 data[];
-} sMsgDataFSWriteReq;
-
-/* the write-response-data */
-typedef struct {
-	tTid tid;
-	/* may be an error-code */
-	s32 count;
-} sMsgDataFSWriteResp;
-
-/* the close-request-data */
-typedef struct {
-	tInodeNo inodeNo;
-} sMsgDataFSCloseReq;
 
 #endif /* FSINTERFACE_H_ */

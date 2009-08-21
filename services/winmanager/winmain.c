@@ -22,7 +22,7 @@
 #include <esc/io.h>
 #include <esc/debug.h>
 #include <esc/service.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/keycodes.h>
 #include <esc/signals.h>
 #include <stdlib.h>

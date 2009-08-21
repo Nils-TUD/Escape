@@ -22,7 +22,7 @@
 #include <esc/fileio.h>
 #include <esc/io.h>
 #include <esc/service.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/debug.h>
 #include <esc/mem.h>
 #include <esc/rect.h>

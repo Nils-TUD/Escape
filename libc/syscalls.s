@@ -61,7 +61,9 @@ SYSCALL_LOCK					equ 37
 SYSCALL_UNLOCK				equ 38
 SYSCALL_STARTTHREAD		equ 39
 SYSCALL_GETTID				equ 40
-SYSC_GETTHREADCOUNT		equ 41
+SYSCALL_GETTHREADCNT	equ 41
+SYSCALL_SEND					equ	42
+SYSCALL_RECEIVE				equ	43
 
 ; the IRQ for syscalls
 SYSCALL_IRQ						equ	0x30
@@ -147,6 +149,29 @@ SYSCALL_IRQ						equ	0x30
 	mov		eax,%2								; set syscall-number
 	int		SYSCALL_IRQ
 	add		esp,4									; remove arg3
+	test	ecx,ecx
+	jz		.return								; no-error?
+	mov		[errno],ecx						; store error-code
+	mov		eax,ecx								; return error-code
+.return:
+	leave
+	ret
+%endmacro
+
+%macro SYSC_RET_4ARGS_ERR 2
+[global %1]
+%1:
+	push	ebp
+	mov		ebp,esp
+	mov		ecx,[ebp + 8]					; set arg1
+	mov		edx,[ebp + 12]				; set arg2
+	mov		eax,[ebp + 20]				; push arg4
+	push	eax
+	mov		eax,[ebp + 16]				; push arg3
+	push	eax
+	mov		eax,%2								; set syscall-number
+	int		SYSCALL_IRQ
+	add		esp,8									; remove arg3 and arg4
 	test	ecx,ecx
 	jz		.return								; no-error?
 	mov		[errno],ecx						; store error-code

@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/service.h>
 #include <esc/heap.h>
 #include <esc/mem.h>

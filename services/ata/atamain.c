@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/service.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/ports.h>
@@ -122,6 +122,7 @@ static sATADrive drives[DRIVE_COUNT] = {
 	{ .present = 0, .slaveBit = 1, .basePort = REG_BASE_SECONDARY }
 };
 
+static sMsg msg;
 static bool gotInterrupt = false;
 static void diskIntrptHandler(tSig sig,u32 data) {
 	UNUSED(sig);
@@ -131,6 +132,7 @@ static void diskIntrptHandler(tSig sig,u32 data) {
 
 int main(void) {
 	tServ id,client;
+	tMsgId mid;
 
 	/* request ports */
 	if(requestIOPorts(REG_BASE_PRIMARY,8) < 0 || requestIOPorts(REG_BASE_SECONDARY,8) < 0) {
@@ -160,54 +162,46 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	sMsgHeader header;
 	while(1) {
 		tFD fd = getClient(&id,1,&client);
 		if(fd < 0) {
 			wait(EV_CLIENT);
 		}
 		else {
-			while(read(fd,&header,sizeof(sMsgHeader)) > 0) {
-				sMsgDataATAReq req;
+			while(receive(fd,&mid,&msg) > 0) {
 				/* TODO: better error-handling */
-				switch(header.id) {
+				switch(mid) {
 					case MSG_ATA_READ_REQ: {
-						read(fd,&req,sizeof(sMsgDataATAReq));
-						if(ata_isDrivePresent(req.drive)) {
-							sMsgHeader *res;
-							u32 msgLen = sizeof(sMsgHeader) + BYTES_PER_SECTOR * req.secCount;
-							res = (sMsgHeader*)malloc(msgLen);
-							if(res != NULL) {
-								/* TODO the client has to select the partition... */
-								u32 partOffset = drives[req.drive].partTable[0].start;
-								res->id = MSG_ATA_READ_RESP;
-								if(!ata_readWrite(drives + req.drive,false,(u16*)(res + 1),
-										req.lba + partOffset,req.secCount)) {
-									/* write empty response */
-									res->length = 0;
-									write(fd,res,sizeof(sMsgHeader));
-								}
-								else {
-									/* write response */
-									res->length = BYTES_PER_SECTOR * req.secCount;
-									write(fd,res,msgLen);
-								}
-								free(res);
-							}
-							else
-								printe("Unable to allocate mem");
+						u32 drive = msg.args.arg1;
+						u32 part = msg.args.arg2;
+						u64 lba = ((u64)msg.args.arg3 << 32) | msg.args.arg4;
+						u32 secs = msg.args.arg5;
+
+						msg.data.arg1 = 0;
+						if(ata_isDrivePresent(drive)) {
+							/* TODO the client has to select the partition... */
+							u32 partOffset = drives[drive].partTable[0].start;
+							if(ata_readWrite(drives + drive,false,(u16*)msg.data.d,
+									lba + partOffset,secs))
+								msg.data.arg1 = BYTES_PER_SECTOR * secs;
 						}
+
+						send(fd,MSG_ATA_READ_RESP,&msg,sizeof(msg.data));
 					}
 					break;
 
-					case MSG_ATA_WRITE_REQ:
-						read(fd,&req,header.length);
-						if(ata_isDrivePresent(req.drive)) {
-							if(!ata_readWrite(drives + req.drive,true,(u16*)(&req + 1),req.lba,req.secCount))
+					case MSG_ATA_WRITE_REQ: {
+						u32 drive = msg.data.arg1;
+						u32 part = msg.data.arg2;
+						u64 lba = (u32)msg.data.arg3; /* TODO */
+						u32 secs = msg.data.arg4;
+						if(ata_isDrivePresent(drive)) {
+							if(!ata_readWrite(drives + drive,true,(u16*)msg.data.d,lba,secs))
 								printe("Write failed");
 							/* TODO we should respond something, right? */
 						}
-						break;
+					}
+					break;
 				}
 			}
 

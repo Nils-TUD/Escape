@@ -77,7 +77,7 @@ s32 vfsr_readFile(tTid tid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count);
  * @param count the number of bytes to copy
  * @return the number of written bytes
  */
-s32 vfsr_writeFile(tTid tid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count);
+s32 vfsr_writeFile(tTid tid,tInodeNo inodeNo,const u8 *buffer,u32 offset,u32 count);
 
 /**
  * Closes the given inode

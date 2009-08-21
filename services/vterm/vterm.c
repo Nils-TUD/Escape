@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/io.h>
 #include <esc/ports.h>
 #include <esc/proc.h>
@@ -56,20 +56,6 @@
 							"1\x90"
 
 typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
-
-/* the messages we'll send */
-typedef struct {
-	sMsgHeader header;
-	sMsgDataVidSet data;
-} __attribute__((packed)) sMsgVidSet;
-typedef struct {
-	sMsgHeader header;
-	sMsgDataVidSetCursor data;
-} __attribute__((packed)) sMsgVidSetCursor;
-typedef struct {
-	sMsgHeader header;
-	sMsgDataSpeakerBeep data;
-} __attribute__((packed)) sMsgSpeaker;
 
 /* the colors */
 typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
@@ -178,41 +164,7 @@ static u32 vterm_rlGetBufPos(sVTerm *vt);
  */
 static bool vterm_rlHandleKeycode(sVTerm *vt,u8 keycode);
 
-/* the video-set message */
-static sMsgVidSet msgVidSet = {
-	.header = {
-		.id = MSG_VIDEO_SET,
-		.length = sizeof(sMsgDataVidSet)
-	},
-	.data = {
-		.col = 0,
-		.row = 0,
-		.color = 0,
-		.character = 0
-	}
-};
-/* the set-cursor message */
-static sMsgVidSetCursor msgVidSetCursor = {
-	.header = {
-		.id = MSG_VIDEO_SETCURSOR,
-		.length = sizeof(sMsgDataVidSetCursor)
-	},
-	.data = {
-		.col = 0,
-		.row = 0
-	}
-};
-/* the speaker-message */
-static sMsgSpeaker msgSpeaker = {
-	.header = {
-		.id = MSG_SPEAKER_BEEP,
-		.length = sizeof(sMsgDataSpeakerBeep)
-	},
-	.data = {
-		.frequency = 1000,
-		.duration = 1
-	}
-};
+static sMsg msg;
 
 /* our keymaps */
 static fKeymapGet keymaps[] = {
@@ -316,10 +268,7 @@ static bool vterm_init(sVTerm *vt) {
 	}
 
 	/* build title bar */
-	vt->titleBar.header.header.id = MSG_VIDEO_SETSCREEN;
-	vt->titleBar.header.header.length = sizeof(u16) + COLS * 2;
-	vt->titleBar.header.startPos = 0;
-	ptr = vt->titleBar.data;
+	ptr = vt->titleBar;
 	s = vt->name;
 	for(i = 0; *s; i++) {
 		*ptr++ = *s++;
@@ -331,7 +280,7 @@ static bool vterm_init(sVTerm *vt) {
 	}
 	len = strlen(OS_TITLE);
 	i = (((COLS * 2) / 2) - (len / 2)) & ~0x1;
-	ptr = vt->titleBar.data;
+	ptr = vt->titleBar;
 	memcpy(ptr + i,OS_TITLE,len);
 	return true;
 }
@@ -344,7 +293,10 @@ void vterm_selectVTerm(u32 index) {
 	activeVT = vt;
 
 	/* refresh screen and write titlebar */
-	write(vt->video,&vt->titleBar,sizeof(vt->titleBar));
+	msg.data.arg1 = sizeof(u16) * COLS * 2;
+	msg.data.arg2 = 0;
+	memcpy(msg.data.d,vt->titleBar,sizeof(u16) * COLS * 2);
+	send(vt->video,MSG_VIDEO_SETSCREEN,&msg,sizeof(msg.data));
 	vterm_refreshScreen(vt);
 	vterm_setCursor(vt);
 }
@@ -442,19 +394,19 @@ static void vterm_sendChar(sVTerm *vt,u8 row,u8 col) {
 
 	/* write last character to video-driver */
 	if(vt->active) {
-		msgVidSet.data.character = *ptr;
-		msgVidSet.data.color = color;
-		msgVidSet.data.row = row;
-		msgVidSet.data.col = col;
-		write(vt->video,&msgVidSet,sizeof(sMsgVidSet));
+		msg.args.arg1 = *ptr;
+		msg.args.arg2 = color;
+		msg.args.arg3 = row;
+		msg.args.arg4 = col;
+		send(vt->video,MSG_VIDEO_SET,&msg,sizeof(msg.args));
 	}
 }
 
 static void vterm_setCursor(sVTerm *vt) {
 	if(vt->active) {
-		msgVidSetCursor.data.col = vt->col;
-		msgVidSetCursor.data.row = vt->row;
-		write(vt->video,&msgVidSetCursor,sizeof(sMsgVidSetCursor));
+		msg.args.arg1 = vt->col;
+		msg.args.arg2 = vt->row;
+		send(vt->video,MSG_VIDEO_SETCURSOR,&msg,sizeof(msg.args));
 	}
 }
 
@@ -491,7 +443,7 @@ static void vterm_putchar(sVTerm *vt,char c) {
 
 		case '\a':
 			/* beep */
-			write(vt->speaker,&msgSpeaker,sizeof(sMsgSpeaker));
+			send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
 			break;
 
 		case '\b':
@@ -513,7 +465,7 @@ static void vterm_putchar(sVTerm *vt,char c) {
 			}
 			else {
 				/* beep */
-				write(vt->speaker,&msgSpeaker,sizeof(sMsgSpeaker));
+				send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
 			}
 			break;
 
@@ -585,25 +537,21 @@ static void vterm_refreshScreen(sVTerm *vt) {
 }
 
 static void vterm_refreshLines(sVTerm *vt,u16 start,u16 count) {
-	u8 back[sizeof(sMsgVidSetScr)];
-	char *ptr;
-
+	u32 amount,done = 0;
 	if(!vt->active)
 		return;
 
-	/* backup screen-data */
-	ptr = vt->buffer.data + (vt->firstVisLine + start) * COLS * 2;
-	memcpy(back,ptr - sizeof(sMsgVidSetScr),sizeof(sMsgVidSetScr));
+	/* send messages (take care of msg-size) */
+	while(done < count) {
+		amount = MIN(count,sizeof(msg.data.d) / (COLS * 2));
+		msg.data.arg1 = amount * COLS * 2;
+		msg.data.arg2 = start * COLS;
+		memcpy(msg.data.d,vt->buffer.data + (vt->firstVisLine + start) * COLS * 2,amount * COLS * 2);
+		send(vt->video,MSG_VIDEO_SETSCREEN,&msg,sizeof(msg.data));
 
-	/* send message */
-	sMsgVidSetScr *header = (sMsgVidSetScr*)(ptr - sizeof(sMsgVidSetScr));
-	header->header.id = MSG_VIDEO_SETSCREEN;
-	header->header.length = (sizeof(sMsgVidSetScr) - sizeof(sMsgHeader)) + count * COLS * 2;
-	header->startPos = start * COLS;
-	write(vt->video,ptr - sizeof(sMsgVidSetScr),sizeof(sMsgVidSetScr) + count * COLS * 2);
-
-	/* restore screen-data */
-	memcpy(ptr - sizeof(sMsgVidSetScr),back,sizeof(sMsgVidSetScr));
+		done += amount;
+		start += amount;
+	}
 }
 
 static bool vterm_handleEscape(sVTerm *vt,u8 keycode,u8 value,bool *readKeyboard) {
@@ -700,7 +648,7 @@ static bool vterm_handleEscape(sVTerm *vt,u8 keycode,u8 value,bool *readKeyboard
 	return res;
 }
 
-void vterm_handleKeycode(sMsgKbResponse *msg) {
+void vterm_handleKeycode(bool isBreak,u32 keycode) {
 	sKeymapEntry *e;
 	sVTerm *vt = activeVT;
 	char c;
@@ -709,26 +657,26 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 		return;
 
 	/* handle shift, alt and ctrl */
-	switch(msg->keycode) {
+	switch(keycode) {
 		case VK_LSHIFT:
 		case VK_RSHIFT:
-			shiftDown = !msg->isBreak;
+			shiftDown = !isBreak;
 			break;
 		case VK_LALT:
 		case VK_RALT:
-			altDown = !msg->isBreak;
+			altDown = !isBreak;
 			break;
 		case VK_LCTRL:
 		case VK_RCTRL:
-			ctrlDown = !msg->isBreak;
+			ctrlDown = !isBreak;
 			break;
 	}
 
 	/* we don't need breakcodes anymore */
-	if(msg->isBreak)
+	if(isBreak)
 		return;
 
-	e = keymaps[vt->keymap](msg->keycode);
+	e = keymaps[vt->keymap](keycode);
 	if(e != NULL) {
 		if(shiftDown)
 			c = e->shift;
@@ -738,7 +686,7 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 			c = e->def;
 
 		if(shiftDown && vt->navigation) {
-			switch(msg->keycode) {
+			switch(keycode) {
 				case VK_PGUP:
 					vterm_scroll(vt,ROWS);
 					return;
@@ -757,7 +705,7 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 		if(c == NPRINT || ctrlDown) {
 			/* handle ^C, ^D and so on */
 			if(ctrlDown) {
-				switch(msg->keycode) {
+				switch(keycode) {
 					case VK_C:
 						sendSignal(SIG_INTRPT,activeVT->index);
 						break;
@@ -768,7 +716,7 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 						}
 						break;
 					case VK_1 ... VK_9: {
-						u32 index = msg->keycode - VK_1;
+						u32 index = keycode - VK_1;
 						if(index < VTERM_COUNT && activeVT->index != index)
 							vterm_selectVTerm(index);
 					}
@@ -779,21 +727,21 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 			/* in reading mode? */
 			if(vt->readLine) {
 				if(vt->echo)
-					vterm_rlHandleKeycode(vt,msg->keycode);
+					vterm_rlHandleKeycode(vt,keycode);
 			}
 			/* send escape-code */
 			else {
-				char escape[3] = {'\033',msg->keycode,(altDown << STATE_ALT) |
-						(ctrlDown << STATE_CTRL) |
-						(shiftDown << STATE_SHIFT)};
-				write(vt->self,&escape,sizeof(char) * 3);
+				char escape[] = {'\033',keycode,(altDown << STATE_ALT) |
+					(ctrlDown << STATE_CTRL) |
+					(shiftDown << STATE_SHIFT)};
+				send(vt->self,MSG_RECEIVE,&escape,sizeof(escape));
 			}
 		}
 		else {
 			if(vt->readLine)
 				vterm_rlPutchar(vt,c);
 			else
-				write(vt->self,&c,sizeof(char));
+				send(vt->self,MSG_RECEIVE,&c,sizeof(char));
 		}
 
 		if(vt->echo)
@@ -802,14 +750,16 @@ void vterm_handleKeycode(sMsgKbResponse *msg) {
 }
 
 static void vterm_rlFlushBuf(sVTerm *vt) {
-	u32 bufPos = vterm_rlGetBufPos(vt);
+	u32 count,bufPos = vterm_rlGetBufPos(vt);
 	if(vt->echo)
 		bufPos++;
 
-	if(bufPos > 0) {
-		write(vt->self,vt->rlBuffer,bufPos * sizeof(char));
-		vt->rlBufPos = 0;
+	while(bufPos > 0) {
+		count = MIN(sizeof(msg.str.s1),bufPos);
+		send(vt->self,MSG_RECEIVE,vt->rlBuffer,count);
+		bufPos -= count;
 	}
+	vt->rlBufPos = 0;
 }
 
 static void vterm_rlPutchar(sVTerm *vt,char c) {

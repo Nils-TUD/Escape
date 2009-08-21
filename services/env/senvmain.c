@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/service.h>
 #include <esc/heap.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/proc.h>
 #include <esc/signals.h>
 #include <esc/debug.h>
@@ -82,15 +82,6 @@ static sEnvVar *env_getOf(tPid pid,char *name);
 static sEnvVar *env_getiOf(tPid pid,u32 *index);
 
 /**
- * Puts the env-var of the form <name>=<value> in the storage for the given process
- *
- * @param pid the process-id
- * @param env the env-var
- * @return true if successfull
- */
-static bool env_put(tPid pid,char *env);
-
-/**
  * Sets <name> to <value> for the given process
  *
  * @param pid the process-id
@@ -118,8 +109,11 @@ static sSLList *deadProcs = NULL;
 /* hashmap of linkedlists with env-vars; key=(pid % MAP_SIZE) */
 static sSLList *envVars[MAP_SIZE];
 
+static sMsg msg;
+
 int main(void) {
 	tServ id,client;
+	tMsgId mid;
 
 	id = regService("env",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
@@ -137,7 +131,6 @@ int main(void) {
 	env_set(0,(char*)"PATH",(char*)"file:/bin/");
 
 	/* wait for messages */
-	static sMsgHeader msg;
 	while(1) {
 		tFD fd = getClient(&id,1,&client);
 		if(fd < 0)
@@ -152,79 +145,50 @@ int main(void) {
 			}
 
 			/* read all available messages */
-			while(read(fd,&msg,sizeof(sMsgHeader)) > 0) {
+			while(receive(fd,&mid,&msg) > 0) {
 				/* see what we have to do */
-				switch(msg.id) {
+				switch(mid) {
 					case MSG_ENV_GET: {
-						u8 *data = (u8*)malloc(msg.length + 1);
-						if(data != NULL) {
-							if(read(fd,data,msg.length) > 0) {
-								tPid pid;
-								u32 nameLen;
-								char *name;
-								nameLen = disasmBinDataMsg(msg.length,data,(u8**)&name,"2",&pid);
-								if(nameLen) {
-									u32 len;
-									sMsgHeader *resp;
-									sEnvVar *var;
-									*(name + nameLen) = '\0';
-									var = env_get(pid,name);
+						sEnvVar *var;
+						u32 pid = msg.str.arg1;
+						char *name = msg.str.s1;
+						name[sizeof(msg.str.s1) - 1] = '\0';
 
-									/* send reply */
-									len = var != NULL ? strlen(var->value) + 1 : 0;
-									resp = asmDataMsg(MSG_ENV_GET_RESP,len,var != NULL ? var->value : NULL);
-									if(resp != NULL) {
-										write(fd,resp,sizeof(sMsgHeader) + resp->length);
-										freeMsg(resp);
-									}
-								}
-							}
-							free(data);
+						var = env_get(pid,name);
+
+						msg.str.arg1 = 0;
+						if(var != NULL) {
+							msg.str.arg1 = strlen(var->value);
+							memcpy(msg.str.s1,var->value,msg.str.arg1 + 1);
 						}
+						send(fd,MSG_ENV_GET_RESP,&msg,sizeof(msg.str));
 					}
 					break;
 
 					case MSG_ENV_SET: {
-						u8 *data = (u8*)malloc(msg.length + 1);
-						if(data != NULL) {
-							if(read(fd,data,msg.length) > 0) {
-								tPid pid;
-								u32 envVarLen;
-								char *envVar;
-								envVarLen = disasmBinDataMsg(msg.length,data,(u8**)&envVar,"2",&pid);
+						u32 pid = msg.str.arg1;
+						char *name = msg.str.s1;
+						char *value = msg.str.s2;
+						name[sizeof(msg.str.s1) - 1] = '\0';
+						value[sizeof(msg.str.s2) - 1] = '\0';
 
-								/* terminate */
-								*(envVar + envVarLen) = '\0';
-								env_put(pid,envVar);
-							}
-						}
-						free(data);
+						env_set(pid,name,value);
 					}
 					break;
 
 					case MSG_ENV_GETI: {
-						u8 *data = (u8*)malloc(msg.length + 1);
-						if(data != NULL) {
-							if(read(fd,data,msg.length) > 0) {
-								tPid pid;
-								u16 index;
-								if(disasmBinMsg(data,"22",&pid,&index)) {
-									u32 len;
-									sMsgHeader *resp;
-									sEnvVar *var;
-									var = env_geti(pid,index);
+						sEnvVar *var;
+						u32 pid = msg.args.arg1;
+						u32 index = msg.args.arg2;
 
-									/* send reply */
-									len = var != NULL ? strlen(var->name) + 1 : 0;
-									resp = asmDataMsg(MSG_ENV_GET_RESP,len,var != NULL ? var->name : NULL);
-									if(resp != NULL) {
-										write(fd,resp,sizeof(sMsgHeader) + resp->length);
-										freeMsg(resp);
-									}
-								}
-							}
-							free(data);
+						var = env_geti(pid,index);
+
+						msg.str.arg1 = 0;
+						if(var != NULL) {
+							msg.str.arg1 = strlen(var->value);
+							memcpy(msg.str.s1,var->value,msg.str.arg1 + 1);
 						}
+						send(fd,MSG_ENV_GET_RESP,&msg,sizeof(msg.str));
 					}
 					break;
 				}
@@ -301,14 +265,6 @@ static sEnvVar *env_getOf(tPid pid,char *name) {
 		}
 	}
 	return NULL;
-}
-
-static bool env_put(tPid pid,char *env) {
-	char *val = strchr(env,'=');
-	if(val == NULL)
-		return false;
-	*val = '\0';
-	return env_set(pid,env,val + 1);
 }
 
 static bool env_set(tPid pid,char *name,char *value) {

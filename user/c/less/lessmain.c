@@ -23,7 +23,7 @@
 #include <esc/heap.h>
 #include <esc/io.h>
 #include <esc/keycodes.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <stdlib.h>
 
 #define COLS				80

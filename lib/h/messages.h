@@ -20,43 +20,65 @@
 #ifndef MESSAGES_H_
 #define MESSAGES_H_
 
-#include <esc/common.h>
+#include <types.h>
+#include <stddef.h>
+#include <fsinterface.h>
 
+/* general */
 #define MAX_MSG_ARGS				10
+#define MAX_MSG_SIZE				(1024 + 4 * sizeof(u32))
+#define MAX_MSGSTR_LEN				64
 
+/* the message-ids */
 #define MSG_KEYBOARD_READ			0
+#define MSG_KEYBOARD_DATA			1
 
-#define MSG_VIDEO_SET				0
-#define MSG_VIDEO_SETSCREEN			1
-#define MSG_VIDEO_SETCURSOR			2
+#define MSG_VIDEO_SET				20
+#define MSG_VIDEO_SETSCREEN			21
+#define MSG_VIDEO_SETCURSOR			22
 
-#define MSG_SPEAKER_BEEP			0
+#define MSG_SPEAKER_BEEP			40
 
-#define MSG_ATA_READ_REQ			0
-#define MSG_ATA_WRITE_REQ			1
-#define MSG_ATA_READ_RESP			2
+#define MSG_ATA_READ_REQ			60
+#define MSG_ATA_WRITE_REQ			61
+#define MSG_ATA_READ_RESP			62
 
-#define MSG_ENV_GET					0
-#define MSG_ENV_SET					1
-#define MSG_ENV_GET_RESP			2
-#define MSG_ENV_GETI				3
+#define MSG_ENV_GET					80
+#define MSG_ENV_SET					81
+#define MSG_ENV_GET_RESP			82
+#define MSG_ENV_GETI				83
 
-#define MSG_VESA_UPDATE				0
-#define MSG_VESA_CURSOR				1
-#define MSG_VESA_GETMODE_REQ		2
-#define MSG_VESA_GETMODE_RESP		3
+#define MSG_VESA_UPDATE				100
+#define MSG_VESA_CURSOR				101
+#define MSG_VESA_GETMODE_REQ		102
+#define MSG_VESA_GETMODE_RESP		103
 
-#define MSG_MOUSE					0
+#define MSG_MOUSE					120
 
-#define MSG_WIN_CREATE_REQ			0
-#define MSG_WIN_CREATE_RESP			1
-#define MSG_WIN_MOUSE				2
-#define MSG_WIN_MOVE_REQ			3
-#define MSG_WIN_UPDATE				4
-#define MSG_WIN_KEYBOARD			5
-#define MSG_WIN_SET_ACTIVE			6
-#define MSG_WIN_DESTROY_REQ			7
-#define MSG_WIN_UPDATE_REQ			8
+#define MSG_WIN_CREATE_REQ			140
+#define MSG_WIN_CREATE_RESP			141
+#define MSG_WIN_MOUSE				142
+#define MSG_WIN_MOVE_REQ			143
+#define MSG_WIN_UPDATE				144
+#define MSG_WIN_KEYBOARD			145
+#define MSG_WIN_SET_ACTIVE			146
+#define MSG_WIN_DESTROY_REQ			147
+#define MSG_WIN_UPDATE_REQ			148
+
+#define MSG_FS_OPEN					160
+#define MSG_FS_READ					161
+#define MSG_FS_WRITE				162
+#define MSG_FS_CLOSE				163
+#define MSG_FS_STAT					164
+
+#define MSG_FS_OPEN_RESP			180
+#define MSG_FS_READ_RESP			181
+#define MSG_FS_WRITE_RESP			182
+#define MSG_FS_CLOSE_RESP			183
+#define MSG_FS_STAT_RESP			184
+
+#define MSG_RECEIVE					200
+#define MSG_SEND					201
 
 /* the header for all default-messages */
 typedef struct {
@@ -197,6 +219,103 @@ typedef struct {
 	u16 mouseX;
 	u16 mouseY;
 } sMsgDataWinActive;
+
+/* the open-request-data */
+typedef struct {
+	tTid tid;
+	/* read/write */
+	u8 flags;
+	/* pathname follows */
+	char path[];
+} sMsgDataFSOpenReq;
+
+/* the stat-request-data */
+typedef struct {
+	tTid tid;
+	/* pathname follows */
+	char path[];
+} sMsgDataFSStatReq;
+
+/* the stat-response-data */
+typedef struct {
+	tTid tid;
+	s32 error;
+	sFileInfo info;
+} sMsgDataFSStatResp;
+
+/* the open-response-data */
+typedef struct {
+	tTid tid;
+	/* may be an error-code */
+	tInodeNo inodeNo;
+} sMsgDataFSOpenResp;
+
+/* the read-request-data */
+typedef struct {
+	tTid tid;
+	tInodeNo inodeNo;
+	u32 offset;
+	u32 count;
+} sMsgDataFSReadReq;
+
+/* the read-response-data */
+typedef struct {
+	tTid tid;
+	/* alignment to ensure that we have 2 dwords in front of the data */
+	u16 : 16;
+	/* may be an error-code */
+	s32 count;
+	/* data follows */
+	u8 data[];
+} sMsgDataFSReadResp;
+
+/* the write-request-data */
+typedef struct {
+	tTid tid;
+	tInodeNo inodeNo;
+	u32 offset;
+	u32 count;
+	/* data follows */
+	u8 data[];
+} sMsgDataFSWriteReq;
+
+/* the write-response-data */
+typedef struct {
+	tTid tid;
+	/* may be an error-code */
+	s32 count;
+} sMsgDataFSWriteResp;
+
+/* the close-request-data */
+typedef struct {
+	tInodeNo inodeNo;
+} sMsgDataFSCloseReq;
+
+typedef union {
+	struct {
+		u32 arg1;
+		u32 arg2;
+		u32 arg3;
+		u32 arg4;
+		u32 arg5;
+		u32 arg6;
+	} args;
+	struct {
+		u32 arg1;
+		u32 arg2;
+		u32 arg3;
+		u32 arg4;
+		char s1[MAX_MSGSTR_LEN];
+		char s2[MAX_MSGSTR_LEN];
+	} str;
+	struct {
+		u32 arg1;
+		u32 arg2;
+		u32 arg3;
+		u32 arg4;
+		char d[MAX_MSG_SIZE - sizeof(u32) * 4];
+	} data;
+} sMsg;
 
 #ifdef __cplusplus
 extern "C" {

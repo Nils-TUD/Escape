@@ -498,7 +498,7 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	}
 
 	/* ok, create a service-usage-node */
-	m = vfsn_createServiceUseNode(tid,n,name,vfs_serviceUseReadHandler);
+	m = vfsn_createServiceUseNode(tid,n,name,NULL);
 	if(m == NULL) {
 		if((n->mode & MODE_SERVICE_SINGLEPIPE) == 0)
 			kheap_free(name);

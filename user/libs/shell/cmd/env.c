@@ -21,7 +21,7 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/env.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/heap.h>
 #include <string.h>
 #include <stdlib.h>

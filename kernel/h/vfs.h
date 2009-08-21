@@ -190,7 +190,30 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count);
  * @param count the number of bytes to write
  * @return the number of bytes written
  */
-s32 vfs_writeFile(tTid tid,tFileNo file,u8 *buffer,u32 count);
+s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count);
+
+/**
+ * Sends a message to the corresponding service
+ *
+ * @param tid the sender-thread-id
+ * @param file the file to send the message to
+ * @param id the message-id
+ * @param data the message
+ * @param size the message-size
+ * @return 0 on success
+ */
+s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size);
+
+/**
+ * Receives a message from the corresponding service
+ *
+ * @param tid the receiver-thread-id
+ * @param file the file to receive the message from
+ * @param id will be set to the fetched msg-id
+ * @param data the message to write to
+ * @return the number of written bytes (or < 0 if an error occurred)
+ */
+s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size);
 
 /**
  * Closes the given file. That means it calls proc_closeFile() and decrements the reference-count
@@ -311,18 +334,6 @@ s32 vfs_defReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
  */
 s32 vfs_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
 		fReadCallBack callback);
-
-/**
- * The read-handler for service-usages
- *
- * @param tid the thread-id
- * @param node the VFS node
- * @param buffer the buffer where to copy the info to
- * @param offset the offset where to start
- * @param count the number of bytes
- * @return the number of read bytes
- */
-s32 vfs_serviceUseReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 #if DEBUGGING
 

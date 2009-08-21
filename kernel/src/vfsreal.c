@@ -30,37 +30,19 @@
 #include <errors.h>
 
 #include <fsinterface.h>
+#include <messages.h>
 
 #define REQUEST_COUNT 1024
-
-/* the header for all default-messages */
-typedef struct {
-	/* the message-id */
-	u8 id;
-	/* the length of the data behind this struct */
-	u32 length;
-} sMsgHeader;
 
 /* an entry in the request-list */
 typedef struct {
 	tTid tid;
 	bool finished;
-	tInodeNo inodeNo;
-	sMsgDataFSReadResp *readResp;
-	u8 *buffer;
+	u32 val1;
+	u32 val2;
+	void *data;
 	u32 count;
 } sRequest;
-
-/* read-msg */
-typedef struct {
-	sMsgHeader header;
-	sMsgDataFSReadReq data;
-} __attribute__((packed)) sMsgReadReq;
-/* close-msg */
-typedef struct {
-	sMsgHeader header;
-	sMsgDataFSCloseReq data;
-} __attribute__((packed)) sMsgCloseReq;
 
 /**
  * Waits for a reply
@@ -98,35 +80,13 @@ static sRequest *vfsr_getRequestByPid(tTid tid);
  */
 static void vfsr_gotMsg(u32 param);
 
-/* the messages we'll send */
-static sMsgReadReq msgRead = {
-	.header = {
-		.id = MSG_FS_READ,
-		.length = sizeof(sMsgDataFSReadReq)
-	},
-	.data = {
-		.inodeNo = 0,
-		.offset = 0,
-		.count = 0
-	}
-};
-static sMsgCloseReq msgClose = {
-	.header = {
-		.id = MSG_FS_CLOSE,
-		.length = sizeof(sMsgDataFSCloseReq)
-	},
-	.data = {
-		.inodeNo = 0
-	}
-};
-
 /* the vfs-service-file */
-/*static sSLList *requests = NULL;*/
 static u32 reqCount = 0;
 static sRequest requests[REQUEST_COUNT];
 static tFileNo fsServiceFile = -1;
 static bool kevWait = false;
 static bool gotMsg = false;
+static sMsg msg;
 
 void vfsr_setFSService(tVFSNodeNo nodeNo) {
 	fsServiceFile = vfs_openFileForKernel(KERNEL_TID,nodeNo);
@@ -141,93 +101,74 @@ void vfsr_setFSService(tVFSNodeNo nodeNo) {
 }
 
 static void vfsr_gotMsg(u32 param) {
+	UNUSED(param);
 	kevWait = false;
 	gotMsg = true;
 }
 
 void vfsr_checkForMsgs(void) {
-	sMsgHeader header;
 	sRequest *req;
+	tMsgId id;
 	if(!gotMsg)
 		return;
 
 	/* ok, let's see what we've got.. */
-	while(vfs_readFile(KERNEL_TID,fsServiceFile,(u8*)&header,sizeof(sMsgHeader)) > 0) {
-		switch(header.id) {
+	while(vfs_receiveMsg(KERNEL_TID,fsServiceFile,&id,(u8*)&msg,MAX_MSG_SIZE) > 0) {
+		switch(id) {
 			case MSG_FS_OPEN_RESP: {
-				/* read data */
-				sMsgDataFSOpenResp data;
-				vfs_readFile(KERNEL_TID,fsServiceFile,(u8*)&data,sizeof(sMsgDataFSOpenResp));
-
 				/* find the request for the tid */
-				req = vfsr_getRequestByPid(data.tid);
+				req = vfsr_getRequestByPid((tTid)msg.args.arg1);
 				if(req != NULL) {
 					/* remove request and give him the inode-number */
 					req->finished = true;
-					req->inodeNo = data.inodeNo;
+					req->val1 = msg.args.arg2;
 					/* the thread can continue now */
-					thread_wakeup(data.tid,EV_RECEIVED_MSG);
+					thread_wakeup((tTid)msg.args.arg1,EV_RECEIVED_MSG);
 				}
 			}
 			break;
 
 			case MSG_FS_STAT_RESP: {
-				/* read data */
-				sMsgDataFSStatResp *res = (sMsgDataFSStatResp*)kheap_alloc(sizeof(sMsgDataFSStatResp));
-				/* TODO better way? */
-				if(res == NULL)
-					util_panic("Out of kernel-heapspace");
-
-				vfs_readFile(KERNEL_TID,fsServiceFile,(u8*)res,sizeof(sMsgDataFSStatResp));
-
 				/* find the request for the tid */
-				req = vfsr_getRequestByPid(res->tid);
+				req = vfsr_getRequestByPid((tTid)msg.data.arg1);
 				if(req != NULL) {
 					/* remove request and give him the inode-number */
 					req->finished = true;
-					req->inodeNo = res->error;
-					req->buffer = (u8*)res;
+					req->val1 = msg.data.arg2;
+					req->data = (void*)kheap_alloc(sizeof(sFileInfo));
+					if(req->data != NULL)
+						memcpy(req->data,msg.data.d,sizeof(sFileInfo));
 					/* the thread can continue now */
-					thread_wakeup(res->tid,EV_RECEIVED_MSG);
+					thread_wakeup((tTid)msg.data.arg1,EV_RECEIVED_MSG);
 				}
 			}
 			break;
 
 			case MSG_FS_READ_RESP: {
-				/* read data */
-				sMsgDataFSReadResp *res = (sMsgDataFSReadResp*)kheap_alloc(header.length);
-				/* TODO better way? */
-				if(res == NULL)
-					util_panic("Out of kernel-heapspace");
-
-				vfs_readFile(KERNEL_TID,fsServiceFile,(u8*)res,header.length);
-
 				/* find the request for the tid */
-				req = vfsr_getRequestByPid(res->tid);
+				req = vfsr_getRequestByPid((tTid)msg.data.arg1);
 				if(req != NULL) {
 					/* remove request */
 					req->finished = true;
-					req->count = res->count;
-					req->readResp = res;
+					req->count = msg.data.arg2;
+					req->data = (void*)kheap_alloc(req->count);
+					if(req->data != NULL)
+						memcpy(req->data,msg.data.d,req->count);
 					/* the thread can continue now */
-					thread_wakeup(res->tid,EV_RECEIVED_MSG);
+					thread_wakeup((tTid)msg.data.arg1,EV_RECEIVED_MSG);
 				}
 			}
 			break;
 
 			case MSG_FS_WRITE_RESP: {
-				/* read data */
-				sMsgDataFSWriteResp data;
-				vfs_readFile(KERNEL_TID,fsServiceFile,(u8*)&data,sizeof(sMsgDataFSWriteResp));
-
 				/* find the request for the tid */
-				req = vfsr_getRequestByPid(data.tid);
+				req = vfsr_getRequestByPid((tTid)msg.args.arg1);
 				if(req != NULL) {
 					/* remove request and give him the inode-number */
 					req->finished = true;
-					req->count = data.count;
+					req->count = msg.args.arg2;
 					/* the thread can continue now */
-					thread_wakeup(data.tid,EV_RECEIVED_MSG);
+					thread_wakeup((tTid)msg.args.arg1,EV_RECEIVED_MSG);
 				}
 			}
 			break;
@@ -238,39 +179,24 @@ void vfsr_checkForMsgs(void) {
 }
 
 s32 vfsr_openFile(tTid tid,u8 flags,const char *path) {
-	sMsgDataFSOpenReq *data;
-	sMsgHeader *msg;
 	s32 res;
 	u32 pathLen = strlen(path);
-	u32 msgLen;
 	sRequest *req;
 
 	if(fsServiceFile < 0)
 		return ERR_FS_NOT_FOUND;
+	if(pathLen > MAX_MSGSTR_LEN)
+		return ERR_INVALID_SYSC_ARGS;
 
-	/* allocate mem */
-	msgLen = sizeof(sMsgDataFSOpenReq) + (pathLen + 1) * sizeof(char);
-	msg = (sMsgHeader*)kheap_alloc(sizeof(sMsgHeader) + msgLen);
-	if(msg == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-
-	/* copy data */
-	msg->id = MSG_FS_OPEN;
-	msg->length = msgLen;
-	data = (sMsgDataFSOpenReq*)(msg + 1);
-	data->flags = flags;
-	data->tid = tid;
-	memcpy(data->path,path,pathLen + 1);
-
-	/* write message to fs */
-	res = vfs_writeFile(KERNEL_TID,fsServiceFile,(u8*)msg,sizeof(sMsgHeader) + msgLen);
-	if(res < 0) {
-		kheap_free(msg);
+	/* send msg to fs */
+	msg.str.arg1 = tid;
+	msg.str.arg2 = flags;
+	memcpy(msg.str.s1,path,pathLen + 1);
+	res = vfs_sendMsg(KERNEL_TID,fsServiceFile,MSG_FS_OPEN,(u8*)&msg,sizeof(msg.str));
+	if(res < 0)
 		return res;
-	}
 
 	/* enqueue request and wait for a reply of the fs */
-	kheap_free(msg);
 	req = vfsr_addRequest(tid);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
@@ -280,67 +206,52 @@ s32 vfsr_openFile(tTid tid,u8 flags,const char *path) {
 	/* that's magic, isn't it? ;D */
 
 	/* error? */
-	if(req->inodeNo < 0) {
-		tInodeNo no = req->inodeNo;
+	if(req->val1 < 0) {
+		tInodeNo no = req->val1;
 		vfsr_remRequest(req);
 		return no;
 	}
 	/* now open the file */
-	res = vfs_openFile(tid,flags,req->inodeNo);
+	res = vfs_openFile(tid,flags,req->val1);
 	vfsr_remRequest(req);
 	return res;
 }
 
 s32 vfsr_getFileInfo(tTid tid,const char *path,sFileInfo *info) {
-	sMsgDataFSStatReq *data;
-	sMsgHeader *msg;
 	s32 res;
 	u32 pathLen = strlen(path);
-	u32 msgLen;
 	sRequest *req;
-	sMsgDataFSStatResp *resp;
 
 	if(fsServiceFile < 0)
 		return ERR_FS_NOT_FOUND;
+	if(pathLen > MAX_MSGSTR_LEN)
+		return ERR_INVALID_SYSC_ARGS;
 
-	/* allocate mem */
-	msgLen = sizeof(sMsgDataFSStatReq) + (pathLen + 1) * sizeof(char);
-	msg = (sMsgHeader*)kheap_alloc(sizeof(sMsgHeader) + msgLen);
-	if(msg == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-
-	/* copy data */
-	msg->id = MSG_FS_STAT;
-	msg->length = msgLen;
-	data = (sMsgDataFSStatReq*)(msg + 1);
-	data->tid = tid;
-	memcpy(data->path,path,pathLen + 1);
-
-	/* write message to fs */
-	res = vfs_writeFile(KERNEL_TID,fsServiceFile,(u8*)msg,sizeof(sMsgHeader) + msgLen);
-	if(res < 0) {
-		kheap_free(msg);
+	/* send msg to fs */
+	msg.str.arg1 = tid;
+	memcpy(msg.str.s1,path,pathLen + 1);
+	res = vfs_sendMsg(KERNEL_TID,fsServiceFile,MSG_FS_STAT,(u8*)&msg,sizeof(msg.str));
+	if(res < 0)
 		return res;
-	}
 
 	/* enqueue request and wait for a reply of the fs */
-	kheap_free(msg);
 	req = vfsr_addRequest(tid);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	vfsr_waitForReply(tid,req);
 
 	/* error? */
-	if(req->inodeNo < 0) {
-		tInodeNo no = req->inodeNo;
+	if(req->val1 < 0) {
+		tInodeNo no = req->val1;
 		vfsr_remRequest(req);
 		return no;
 	}
 
 	/* copy to info-struct */
-	resp = (sMsgDataFSStatResp*)req->buffer;
-	memcpy((void*)info,(void*)&(resp->info),sizeof(sFileInfo));
-	kheap_free(resp);
+	if(req->data) {
+		memcpy((void*)info,req->data,sizeof(sFileInfo));
+		kheap_free(req->data);
+	}
 	vfsr_remRequest(req);
 	return 0;
 }
@@ -352,27 +263,25 @@ s32 vfsr_readFile(tTid tid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	if(fsServiceFile < 0)
 		return ERR_FS_NOT_FOUND;
 
-	/* build msg */
-	msgRead.data.tid = tid;
-	msgRead.data.inodeNo = inodeNo;
-	msgRead.data.offset = offset;
-	msgRead.data.count = count;
-
-	/* write message to fs */
-	res = vfs_writeFile(KERNEL_TID,fsServiceFile,(u8*)&msgRead,sizeof(sMsgReadReq));
+	/* send msg to fs */
+	msg.args.arg1 = tid;
+	msg.args.arg2 = inodeNo;
+	msg.args.arg3 = offset;
+	msg.args.arg4 = count;
+	res = vfs_sendMsg(KERNEL_TID,fsServiceFile,MSG_FS_READ,(u8*)&msg,sizeof(msg.args));
 	if(res < 0)
 		return res;
+
 	/* enqueue request and wait for a reply of the fs */
 	req = vfsr_addRequest(tid);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	req->buffer = buffer;
 	vfsr_waitForReply(tid,req);
 
-	if(req->readResp != NULL) {
-		/* copy from temp-buffer to process */
-		memcpy(req->buffer,req->readResp->data,req->count);
-		kheap_free(req->readResp);
+	/* copy from temp-buffer to process */
+	if(req->data != NULL) {
+		memcpy(buffer,req->data,req->count);
+		kheap_free(req->data);
 	}
 
 	res = req->count;
@@ -380,40 +289,26 @@ s32 vfsr_readFile(tTid tid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	return res;
 }
 
-s32 vfsr_writeFile(tTid tid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
+s32 vfsr_writeFile(tTid tid,tInodeNo inodeNo,const u8 *buffer,u32 offset,u32 count) {
 	sRequest *req;
 	s32 res;
-	u32 msgLen;
-	sMsgHeader *msg;
-	sMsgDataFSWriteReq *data;
 
 	if(fsServiceFile < 0)
 		return ERR_FS_NOT_FOUND;
+	if(count > sizeof(msg.data.d))
+		return ERR_INVALID_SYSC_ARGS;
 
-	/* build msg */
-	msgLen = sizeof(sMsgHeader) + sizeof(sMsgDataFSWriteReq) + count;
-	msg = (sMsgHeader*)kheap_alloc(msgLen);
-	if(msg == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-
-	msg->id = MSG_FS_WRITE;
-	msg->length = sizeof(sMsgDataFSWriteReq) + count;
-	data = (sMsgDataFSWriteReq*)(msg + 1);
-	data->inodeNo = inodeNo;
-	data->count = count;
-	data->offset = offset;
-	data->tid = tid;
-	memcpy(data->data,buffer,count);
-
-	/* write message to fs */
-	res = vfs_writeFile(KERNEL_TID,fsServiceFile,(u8*)msg,msgLen);
-	if(res < 0) {
-		kheap_free(msg);
+	/* send msg to fs */
+	msg.data.arg1 = tid;
+	msg.data.arg2 = inodeNo;
+	msg.data.arg3 = offset;
+	msg.data.arg4 = count;
+	memcpy(msg.data.d,buffer,count);
+	res = vfs_sendMsg(KERNEL_TID,fsServiceFile,MSG_FS_WRITE,(u8*)&msg,sizeof(msg.data));
+	if(res < 0)
 		return res;
-	}
 
 	/* enqueue request and wait for a reply of the fs */
-	kheap_free(msg);
 	req = vfsr_addRequest(tid);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
@@ -429,8 +324,8 @@ void vfsr_closeFile(tInodeNo inodeNo) {
 		return;
 
 	/* write message to fs */
-	msgClose.data.inodeNo = inodeNo;
-	vfs_writeFile(KERNEL_TID,fsServiceFile,(u8*)&msgClose,sizeof(sMsgCloseReq));
+	msg.args.arg1 = inodeNo;
+	vfs_sendMsg(KERNEL_TID,fsServiceFile,MSG_FS_CLOSE,(u8*)&msg,sizeof(msg.args));
 	/* no response necessary, therefore no wait, too */
 }
 
@@ -470,10 +365,10 @@ static sRequest *vfsr_addRequest(tTid tid) {
 
 	req->tid = tid;
 	req->finished = false;
-	req->inodeNo = 0;
+	req->val1 = 0;
+	req->val2 = 0;
+	req->data = NULL;
 	req->count = 0;
-	req->buffer = NULL;
-	req->readResp = NULL;
 	reqCount++;
 	return req;
 }

@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/keycodes.h>
 #include "set1.h"
 
@@ -161,7 +161,7 @@ static sScanCodeEntry scanCode2KeyCode[] = {
 
 static u8 set = 0;
 
-bool kb_set1_getKeycode(sMsgKbResponse *res,u8 scanCode) {
+bool kb_set1_getKeycode(u32 *isBreak,u32 *keycode,u8 scanCode) {
 	sScanCodeEntry *e;
 	/* extended code-start? */
 	if(scanCode == 0xE0) {
@@ -170,17 +170,17 @@ bool kb_set1_getKeycode(sMsgKbResponse *res,u8 scanCode) {
 	}
 
 	/* break? */
-	res->isBreak = false;
+	*isBreak = false;
 	if(scanCode & 0x80) {
-		res->isBreak = true;
+		*isBreak = true;
 		scanCode &= ~0x80;
 	}
 
 	e = scanCode2KeyCode + (scanCode & 0x7F);
 	if(set)
-		res->keycode = e->ext;
+		*keycode = e->ext;
 	else
-		res->keycode = e->def;
+		*keycode = e->def;
 	set = 0;
 	return true;
 }

@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/service.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/ports.h>

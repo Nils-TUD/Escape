@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/proc.h>
 #include <esc/io.h>
 #include <esc/heap.h>
@@ -32,6 +32,7 @@
  */
 static s32 init(void);
 
+static sMsg msg;
 /* the fd for the env-service */
 static tFD envFd = -1;
 
@@ -40,97 +41,58 @@ static tFD envFd = -1;
  *
  * @param buf the buffer to write to
  * @param bufSize the size of the buffer
- * @param msg the message
+ * @param cmd the command
+ * @param size the size of the msg
  * @return the received data
  */
-static bool doGetEnv(char *buf,u32 bufSize,sMsgHeader *msg);
+static bool doGetEnv(char *buf,u32 bufSize,u32 cmd,u32 size);
 
 bool getEnvByIndex(char *name,u32 nameSize,u32 index) {
-	sMsgHeader *msg;
-
 	if(init() < 0)
 		return false;
 
-	msg = asmBinMsg(MSG_ENV_GETI,"22",getpid(),index);
-	if(msg == NULL)
-		return false;
-
-	return doGetEnv(name,nameSize,msg);
+	msg.args.arg1 = getpid();
+	msg.args.arg2 = index;
+	return doGetEnv(name,nameSize,MSG_ENV_GETI,sizeof(msg.args));
 }
 
 bool getEnv(char *value,u32 valSize,const char *name) {
-	sMsgHeader *msg;
-	u32 nameLen = strlen(name);
-
 	if(init() < 0)
 		return false;
 
-	/* build message */
-	msg = asmBinDataMsg(MSG_ENV_GET,name,nameLen + 1,"2",getpid());
-	if(msg == NULL)
-		return false;
-	return doGetEnv(value,valSize,msg);
+	/* TODO check name-len? */
+	msg.str.arg1 = getpid();
+	strcpy(msg.str.s1,name);
+	return doGetEnv(value,valSize,MSG_ENV_GET,sizeof(msg.str));
 }
 
 s32 setEnv(const char *name,const char* value) {
-	u32 nameLen,valLen;
 	s32 res;
-	char *envVar;
-	sMsgHeader *msg;
-
 	if((res = init()) < 0)
 		return res;
 
-	nameLen = strlen(name);
-	valLen = strlen(value);
-	envVar = malloc(nameLen + valLen + 2);
-	if(envVar == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-	strcpy(envVar,name);
-	*(envVar + nameLen) = '=';
-	strcpy(envVar + nameLen + 1,value);
-
-	/* build message */
-	msg = asmBinDataMsg(MSG_ENV_SET,envVar,nameLen + valLen + 2,"2",getpid());
-	free(envVar);
-	if(msg == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+	/* TODO check lens? */
+	msg.str.arg1 = getpid();
+	strcpy(msg.str.s1,name);
+	strcpy(msg.str.s2,value);
 
 	/* send message */
-	if((res = write(envFd,msg,sizeof(sMsgHeader) + msg->length)) < 0) {
-		freeMsg(msg);
-		return res;
-	}
-	freeMsg(msg);
-	return 0;
+	return send(envFd,MSG_ENV_SET,&msg,sizeof(msg.str));
 }
 
-static bool doGetEnv(char *buf,u32 bufSize,sMsgHeader *msg) {
-	sMsgHeader resp;
+static bool doGetEnv(char *buf,u32 bufSize,u32 cmd,u32 size) {
+	tMsgId mid;
 
 	/* send message */
-	if(write(envFd,msg,sizeof(sMsgHeader) + msg->length) < 0) {
-		freeMsg(msg);
+	if(send(envFd,cmd,&msg,size) < 0)
 		return false;
-	}
-	freeMsg(msg);
 
 	/* wait for reply */
-	if(read(envFd,&resp,sizeof(sMsgHeader)) < 0)
+	if(receive(envFd,&mid,&msg) <= 0)
 		return false;
 
-	if(resp.length == 0)
-		return false;
-
-	/* read value */
-	read(envFd,buf,MIN(bufSize,resp.length));
-	if(bufSize < resp.length) {
-		/* TODO we need a read to NULL */
-		void *tmp = malloc(resp.length - bufSize);
-		read(envFd,tmp,resp.length - bufSize);
-		free(tmp);
-	}
-	return true;
+	memcpy(buf,msg.str.s1,MIN(bufSize,msg.str.arg1));
+	return msg.str.arg1 > 0;
 }
 
 static s32 init(void) {

@@ -83,10 +83,7 @@ typedef struct {
 		sMsgVidSetScr header;
 		char data[BUFFER_SIZE];
 	} __attribute__((packed)) buffer;
-	struct {
-		sMsgVidSetScr header;
-		char data[COLS * 2];
-	} __attribute__((packed)) titleBar;
+	char titleBar[COLS * 2];
 } sVTerm;
 
 /**
@@ -119,9 +116,10 @@ void vterm_destroy(sVTerm *vt);
 /**
  * Handles the given keycode for the active vterm
  *
- * @param msg the message from the keyboard-driver
+ * @param isBreak wether it is a break-keycode
+ * @param keycode the keycode
  */
-void vterm_handleKeycode(sMsgKbResponse *msg);
+void vterm_handleKeycode(bool isBreak,u32 keycode);
 
 /**
  * Prints the given string

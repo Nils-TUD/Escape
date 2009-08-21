@@ -25,7 +25,7 @@
 #include <esc/stream.h>
 #include <esc/io.h>
 #include <esc/proc.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/mem.h>
 #include <esc/gui/common.h>
 #include <esc/gui/application.h>

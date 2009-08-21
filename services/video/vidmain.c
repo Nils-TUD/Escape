@@ -22,7 +22,7 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/ports.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/heap.h>
 #include <esc/mem.h>
 #include <esc/debug.h>
@@ -52,6 +52,7 @@ static void vid_setCursor(u8 row,u8 col);
 
 /* our state */
 static u8 *videoData;
+static sMsg msg;
 
 /**
  * Sets the screen-content
@@ -64,6 +65,7 @@ static void vid_setScreen(u16 startPos,char *buffer,u32 length);
 
 int main(void) {
 	tServ id,client;
+	tMsgId mid;
 
 	id = regService("video",SERVICE_TYPE_MULTIPIPE);
 	if(id < 0) {
@@ -86,54 +88,48 @@ int main(void) {
 	memclear(videoData,COLS * ROWS * 2);
 
 	/* wait for messages */
-	static sMsgHeader msg;
 	while(1) {
 		tFD fd = getClient(&id,1,&client);
 		if(fd < 0)
 			wait(EV_CLIENT);
 		else {
 			/* read all available messages */
-			while(read(fd,&msg,sizeof(sMsgHeader)) > 0) {
+			while(receive(fd,&mid,&msg) > 0) {
 				/* see what we have to do */
-				switch(msg.id) {
+				switch(mid) {
 					/* set character */
 					case MSG_VIDEO_SET: {
-						static sMsgDataVidSet data;
-						if(read(fd,&data,sizeof(sMsgDataVidSet)) > 0) {
-							if(data.row < ROWS && data.col < COLS) {
-								u8 *ptr = videoData + (data.row * COLS * 2) + data.col * 2;
-								*ptr = data.character;
-								*(ptr + 1) = data.color;
-								vid_setCursor(data.row,data.col + 1);
-							}
+						char c = (char)msg.args.arg1;
+						u8 color = (u8)msg.args.arg2;
+						u8 row = (u8)msg.args.arg3;
+						u8 col = (u8)msg.args.arg4;
+						if(row < ROWS && col < COLS) {
+							u8 *ptr = videoData + (row * COLS * 2) + col * 2;
+							*ptr = c;
+							*(ptr + 1) = color;
+							vid_setCursor(row,col + 1);
 						}
 					}
 					break;
 
 					/* set screen */
 					case MSG_VIDEO_SETSCREEN: {
-						if(msg.length > sizeof(u16) && msg.length <= COLS * ROWS * 2 + sizeof(u16)) {
-							u16 *startPos;
-							char *buf = (char*)malloc(msg.length * sizeof(char));
-							read(fd,buf,msg.length);
-							startPos = (u16*)buf;
-							if(*startPos < COLS * ROWS - 1) {
-								if(msg.length - sizeof(u16) <= (u32)*startPos * 2 + COLS * ROWS * 2)
-									vid_setScreen(*startPos,buf + sizeof(u16),msg.length - sizeof(u16));
-							}
-							free(buf);
+						u32 len = msg.data.arg1;
+						u32 start = msg.data.arg2;
+						if(len > sizeof(u16) && len <= COLS * ROWS * 2 + sizeof(u16) &&
+								start < COLS * ROWS - 1 &&
+								len - sizeof(u16) <= (u32)start * 2 + COLS * ROWS * 2) {
+							vid_setScreen(start,msg.data.d,len - sizeof(u16));
 						}
 					}
 					break;
 
 					/* set cursor */
 					case MSG_VIDEO_SETCURSOR: {
-						static sMsgDataVidSetCursor data;
-						if(read(fd,&data,sizeof(sMsgDataVidSetCursor)) > 0) {
-							if(data.row < ROWS && data.col < COLS) {
-								vid_setCursor(data.row,data.col);
-							}
-						}
+						u8 col = (u8)msg.args.arg1;
+						u8 row = (u8)msg.args.arg2;
+						if(row < ROWS && col < COLS)
+							vid_setCursor(row,col);
 					}
 					break;
 				}

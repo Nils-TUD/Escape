@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/service.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
@@ -58,6 +58,7 @@ static u16 kb_read(void);
 static void kb_checkCmd(void);
 
 /* file-descriptor for ourself */
+static sMsg msg;
 static tFD selfFd;
 
 int main(void) {
@@ -119,13 +120,13 @@ int main(void) {
 static void kbIntrptHandler(tSig sig,u32 data) {
 	UNUSED(sig);
 	UNUSED(data);
-	static sMsgKbResponse resp;
+
 	if(!(inByte(IOPORT_KB_CTRL) & KBC_STATUS_DATA_AVAIL))
 		return;
 	u8 scanCode = inByte(IOPORT_KB_DATA);
-	if(kb_set1_getKeycode(&resp,scanCode)) {
+	if(kb_set1_getKeycode(&msg.args.arg1,&msg.args.arg2,scanCode)) {
 		/* write in receive-pipe */
-		write(selfFd,&resp,sizeof(sMsgKbResponse));
+		send(selfFd,MSG_KEYBOARD_DATA,&msg,sizeof(msg.args));
 	}
 	/* ack scancode
 	outByte(IOPORT_PIC,PIC_ICW1);*/

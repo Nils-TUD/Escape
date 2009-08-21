@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/service.h>
 #include <esc/io.h>
 #include <esc/signals.h>

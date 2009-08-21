@@ -56,6 +56,8 @@ typedef s32 tInodeNo;
 typedef u8 tSig;
 /* service-id */
 typedef s32 tServ;
+/* msg-id */
+typedef u32 tMsgId;
 
 typedef u32 ptrdiff_t;
 typedef u32 size_t;

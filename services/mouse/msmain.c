@@ -23,7 +23,7 @@
 #include <esc/signals.h>
 #include <esc/service.h>
 #include <esc/fileio.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/lock.h>
 #include <stdlib.h>
 

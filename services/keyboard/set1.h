@@ -25,10 +25,11 @@
 /**
  * Converts the given scancode to a keycode
  *
- * @param res the location where to store the result
+ * @param isBreak wether it is a break-keycode
+ * @param keycode the keycode
  * @param scanCode the received scancode
  * @return true if it was a keycode
  */
-bool kb_set1_getKeycode(sMsgKbResponse *res,u8 scanCode);
+bool kb_set1_getKeycode(u32 *isBreak,u32 *keycode,u8 scanCode);
 
 #endif /* SET1_H_ */

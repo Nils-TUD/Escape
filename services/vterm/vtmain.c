@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/service.h>
 #include <esc/io.h>
 #include <esc/ports.h>
@@ -46,17 +46,16 @@ static sVTerm *getVTerm(tServ sid);
 /* wether we should read from keyboard */
 static bool readKeyboard = true;
 
+static sMsg msg;
 /* vterms */
 static tServ servIds[VTERM_COUNT] = {-1};
-/* read-buffer */
-static char buffer[READ_BUF_SIZE + 1];
 
 int main(void) {
 	u32 i;
 	tFD kbFd;
 	tServ client;
+	tMsgId mid;
 	char name[MAX_NAME_LEN + 1];
-	sMsgKbResponse keycode;
 
 	/* reg services */
 	for(i = 0; i < VTERM_COUNT; i++) {
@@ -96,8 +95,8 @@ int main(void) {
 				/* read from keyboard */
 				/* don't block here since there may be waiting clients.. */
 				while(!eof(kbFd)) {
-					read(kbFd,&keycode,sizeof(sMsgKbResponse));
-					vterm_handleKeycode(&keycode);
+					receive(kbFd,&mid,&msg);
+					vterm_handleKeycode(msg.args.arg1,msg.args.arg2);
 				}
 				wait(EV_CLIENT | EV_RECEIVED_MSG);
 			}
@@ -110,9 +109,15 @@ int main(void) {
 				u32 c;
 				/* TODO this may cause trouble with escape-codes. maybe we should store the
 				 * "escape-state" somehow... */
-				while((c = read(fd,buffer,READ_BUF_SIZE)) > 0) {
-					*(buffer + c) = '\0';
-					vterm_puts(vt,buffer,c,true,&readKeyboard);
+				while((c = receive(fd,&mid,&msg)) > 0) {
+					switch(mid) {
+						case MSG_SEND: {
+							char *buffer = &msg;
+							buffer[c] = '\0';
+							vterm_puts(vt,buffer,c,true,&readKeyboard);
+						}
+						break;
+					}
 				}
 			}
 			close(fd);

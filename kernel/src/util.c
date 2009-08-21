@@ -82,6 +82,7 @@ void util_panic(const char *fmt,...) {
 	vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 	util_printStackTrace(util_getKernelStackTrace());
 	util_printStackTrace(util_getUserStackTrace(t,intrpt_getCurStack()));
+	proc_dbg_printAll();
 	intrpt_setEnabled(false);
 	util_halt();
 }

@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/gui/common.h>
 #include <esc/gui/graphics.h>
 #include <esc/gui/uielement.h>

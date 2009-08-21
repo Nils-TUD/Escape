@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/mem.h>
 #include <esc/thread.h>
 #include <esc/stream.h>

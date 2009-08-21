@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/proc.h>
 #include <esc/gui/window.h>
 #include <esc/gui/uielement.h>

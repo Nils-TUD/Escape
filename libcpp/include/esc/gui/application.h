@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/vector.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/gui/common.h>
 
 namespace esc {

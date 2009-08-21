@@ -23,7 +23,7 @@
 #include <esc/ports.h>
 #include <esc/service.h>
 #include <esc/proc.h>
-#include <esc/messages.h>
+#include <messages.h>
 #include <esc/signals.h>
 #include <stdlib.h>
 

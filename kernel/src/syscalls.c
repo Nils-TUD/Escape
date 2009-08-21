@@ -42,6 +42,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errors.h>
+#include <messages.h>
 
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
@@ -355,6 +356,25 @@ static void sysc_lock(sIntrptStackFrame *stack);
  * @return s32 0 on success
  */
 static void sysc_unlock(sIntrptStackFrame *stack);
+/**
+ * Sends a message
+ *
+ * @param tFD the file-descriptor
+ * @param tMsgId the msg-id
+ * @param u8 * the data
+ * @param u32 the size of the data
+ * @return s32 0 on success
+ */
+static void sysc_send(sIntrptStackFrame *stack);
+/**
+ * Receives a message
+ *
+ * @param tFD the file-descriptor
+ * @param tMsgId the msg-id
+ * @param u8 * the data
+ * @return s32 the message-size on success
+ */
+static void sysc_receive(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -408,6 +428,8 @@ static sSyscall syscalls[] = {
 	/* 39 */	{sysc_startThread,			0},
 	/* 40 */	{sysc_gettid,				0},
 	/* 41 */	{sysc_getThreadCount,		0},
+	/* 42 */	{sysc_send,					4},
+	/* 43 */	{sysc_receive,				3},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -697,6 +719,74 @@ static void sysc_write(sIntrptStackFrame *stack) {
 	}
 
 	SYSC_RET1(stack,writtenBytes);
+}
+
+static void sysc_send(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
+	tMsgId id = (tMsgId)SYSC_ARG2(stack);
+	u8 *data = (u8*)SYSC_ARG3(stack);
+	u32 size = SYSC_ARG4(stack);
+	sThread *t = thread_getRunning();
+	tFileNo file;
+	s32 res;
+
+	/* validate size and data */
+	if(size <= 0 || size > MAX_MSG_SIZE) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+	if(!paging_isRangeUserReadable((u32)data,size)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	/* get file */
+	file = thread_fdToFile(fd);
+	if(file < 0) {
+		SYSC_ERROR(stack,file);
+		return;
+	}
+
+	/* send msg */
+	res = vfs_sendMsg(t->tid,file,id,data,size);
+	if(res < 0) {
+		SYSC_ERROR(stack,res);
+		return;
+	}
+
+	SYSC_RET1(stack,res);
+}
+
+static void sysc_receive(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
+	tMsgId *id = (tMsgId*)SYSC_ARG2(stack);
+	u8 *data = (u8*)SYSC_ARG3(stack);
+	sThread *t = thread_getRunning();
+	tFileNo file;
+	s32 res;
+
+	/* validate id and data */
+	if(!paging_isRangeUserWritable((u32)id,sizeof(tMsgId)) ||
+			!paging_isRangeUserWritable((u32)data,MAX_MSG_SIZE)) {
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+		return;
+	}
+
+	/* get file */
+	file = thread_fdToFile(fd);
+	if(file < 0) {
+		SYSC_ERROR(stack,file);
+		return;
+	}
+
+	/* send msg */
+	res = vfs_receiveMsg(t->tid,file,id,data,MAX_MSG_SIZE);
+	if(res < 0) {
+		SYSC_ERROR(stack,res);
+		return;
+	}
+
+	SYSC_RET1(stack,res);
 }
 
 static void sysc_dupFd(sIntrptStackFrame *stack) {

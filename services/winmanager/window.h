@@ -21,7 +21,7 @@
 #define WINDOW_H_
 
 #include <esc/common.h>
-#include <esc/messages.h>
+#include <messages.h>
 
 #define WINDOW_COUNT					32
 #define WINID_UNSED						WINDOW_COUNT

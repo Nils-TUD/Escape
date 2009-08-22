@@ -34,6 +34,7 @@
 
 #define SERVICE_TYPE_MULTIPIPE		1
 #define SERVICE_TYPE_SINGLEPIPE		2
+#define SERVICE_TYPE_DRIVER			4
 
 #ifdef __cplusplus
 extern "C" {

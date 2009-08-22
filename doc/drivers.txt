@@ -1,0 +1,19 @@
+open:
+	req : device, flags
+	resp: error
+
+read:
+	req : device, offset, length
+	resp: count/error, data
+
+write:
+	req : device, data, offset, length
+	resp: count/error
+
+ioctl:
+	req : device, cmd, data
+	resp: error, data
+
+close:
+	req : device
+	resp: -

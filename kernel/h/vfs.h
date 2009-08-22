@@ -28,11 +28,12 @@
 #define SERVICE_CLIENT_ALL			"a"
 
 /* some additional types for the kernel */
-#define MODE_TYPE_SERVUSE			00200000
-#define MODE_TYPE_SERVICE			00400000
-#define MODE_TYPE_PIPECON			01000000
-#define MODE_TYPE_PIPE				02000000
-#define MODE_SERVICE_SINGLEPIPE		04000000
+#define MODE_TYPE_SERVUSE			000200000
+#define MODE_TYPE_SERVICE			000400000
+#define MODE_TYPE_PIPECON			001000000
+#define MODE_TYPE_PIPE				002000000
+#define MODE_SERVICE_SINGLEPIPE		004000000
+#define MODE_SERVICE_DRIVER			010000000
 
 /* GFT flags */
 enum {
@@ -191,6 +192,19 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count);
  * @return the number of bytes written
  */
 s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count);
+
+/**
+ * Performs the io-control command on the device identified by <file>. This works with device-
+ * drivers only!
+ *
+ * @param tid the sender-thread-id
+ * @param file the file to send the message to
+ * @param cmd the command
+ * @param data the data
+ * @param size the data-size
+ * @return 0 on success
+ */
+s32 vfs_ioctl(tTid tid,tFileNo file,u32 cmd,u8 *data,u32 size);
 
 /**
  * Sends a message to the corresponding service

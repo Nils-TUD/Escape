@@ -70,11 +70,10 @@ s32 vfsr_openFile(tTid tid,u8 flags,const char *path) {
 	if(res < 0)
 		return res;
 
-	/* enqueue request and wait for a reply of the fs */
-	req = vfsreq_addRequest(tid);
+	/* wait for a reply */
+	req = vfsreq_waitForReply(tid);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	vfsreq_waitForReply(tid,req);
 
 	/* process is now running again, and we've received the reply */
 	/* that's magic, isn't it? ;D */
@@ -108,11 +107,10 @@ s32 vfsr_getFileInfo(tTid tid,const char *path,sFileInfo *info) {
 	if(res < 0)
 		return res;
 
-	/* enqueue request and wait for a reply of the fs */
-	req = vfsreq_addRequest(tid);
+	/* wait for a reply */
+	req = vfsreq_waitForReply(tid);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	vfsreq_waitForReply(tid,req);
 
 	/* error? */
 	if((s32)req->val1 < 0) {
@@ -146,11 +144,10 @@ s32 vfsr_readFile(tTid tid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 	if(res < 0)
 		return res;
 
-	/* enqueue request and wait for a reply of the fs */
-	req = vfsreq_addRequest(tid);
+	/* wait for a reply */
+	req = vfsreq_waitForReply(tid);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	vfsreq_waitForReply(tid,req);
 
 	/* copy from temp-buffer to process */
 	if(req->data != NULL) {
@@ -182,11 +179,10 @@ s32 vfsr_writeFile(tTid tid,tInodeNo inodeNo,const u8 *buffer,u32 offset,u32 cou
 	if(res < 0)
 		return res;
 
-	/* enqueue request and wait for a reply of the fs */
-	req = vfsreq_addRequest(tid);
+	/* wait for a reply */
+	req = vfsreq_waitForReply(tid);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	vfsreq_waitForReply(tid,req);
 
 	res = req->count;
 	vfsreq_remRequest(req);

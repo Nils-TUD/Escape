@@ -23,6 +23,7 @@
 #include <vfsreal.h>
 #include <vfsinfo.h>
 #include <vfsreq.h>
+#include <vfsdrv.h>
 #include <proc.h>
 #include <paging.h>
 #include <util.h>
@@ -42,6 +43,8 @@
 #define PROCESSES()					(nodes + 8)
 /* the services node */
 #define SERVICES()					(nodes + 11)
+/* the drivers-node */
+#define DRIVERS()					(nodes + 20)
 
 /* the initial size of the write-cache for service-usage-nodes */
 #define VFS_INITIAL_WRITECACHE		128
@@ -112,7 +115,10 @@ void vfs_init(void) {
 	 *   system:
 	 *     |-pipe
 	 *     |-processes
+	 *     |-devices
+	 *     |-bin
 	 *   services:
+	 *   devices:
 	 */
 	root = vfsn_createDir(NULL,(char*)"");
 	vfsn_createServiceNode(KERNEL_TID,root,(char*)"file",0);
@@ -122,6 +128,7 @@ void vfs_init(void) {
 	vfsn_createDir(root,(char*)"services");
 	vfsn_createDir(sys,(char*)"devices");
 	vfsn_createDir(sys,(char*)"bin");
+	vfsn_createDir(root,(char*)"drivers");
 }
 
 s32 vfs_hasAccess(tTid tid,tVFSNodeNo nodeNo,u8 flags) {
@@ -412,11 +419,14 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
 		sVFSNode *n = nodes + i;
 
-		if((n->mode & MODE_TYPE_SERVUSE)) {
+		/* TODO remove! */
+		if((n->mode & MODE_TYPE_SERVUSE) && !(n->parent->mode & MODE_SERVICE_DRIVER)) {
 			tMsgId mid;
 			return vfs_receiveMsg(tid,file,&mid,buffer,count);
 		}
 
+		if(!(e->flags & VFS_READ))
+			return ERR_NO_READ_PERM;
 		if((err = vfs_hasAccess(tid,e->nodeNo,VFS_READ)) < 0)
 			return err;
 
@@ -447,9 +457,12 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
 		n = nodes + i;
 
-		if((n->mode & MODE_TYPE_SERVUSE))
+		/* TODO remove! */
+		if((n->mode & MODE_TYPE_SERVUSE) && !(n->parent->mode & MODE_SERVICE_DRIVER))
 			return vfs_sendMsg(tid,file,MSG_SEND,buffer,count);
 
+		if(!(e->flags & VFS_WRITE))
+			return ERR_NO_WRITE_PERM;
 		if((err = vfs_hasAccess(tid,e->nodeNo,VFS_WRITE)) < 0)
 			return err;
 
@@ -458,7 +471,11 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 			return ERR_INVALID_FILE;
 
 		/* write to the node */
-		writtenBytes = vfs_writeHandler(tid,n,buffer,e->position,count);
+		/* TODO we need a function-pointer for write... */
+		if((n->mode & MODE_TYPE_SERVUSE) && (n->parent->mode & MODE_SERVICE_DRIVER))
+			writtenBytes = vfsdrv_write(tid,n,buffer,e->position,count);
+		else
+			writtenBytes = vfs_writeHandler(tid,n,buffer,e->position,count);
 		if(writtenBytes < 0)
 			return writtenBytes;
 
@@ -472,6 +489,27 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 	}
 
 	return writtenBytes;
+}
+
+s32 vfs_ioctl(tTid tid,tFileNo file,u32 cmd,u8 *data,u32 size) {
+	s32 err;
+	sGFTEntry *e = globalFileTable + file;
+
+	if(!IS_VIRT(e->nodeNo))
+		return ERR_INVALID_FILE;
+
+	tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
+	sVFSNode *n = nodes + i;
+
+	/* TODO keep this? */
+	if((err = vfs_hasAccess(tid,e->nodeNo,VFS_WRITE)) < 0)
+		return err;
+
+	/* node not present anymore? */
+	if(n->name == NULL || !(n->mode & MODE_TYPE_SERVUSE) || !(n->parent->mode & MODE_SERVICE_DRIVER))
+		return ERR_INVALID_FILE;
+
+	return vfsdrv_ioctl(tid,n,cmd,data,size);
 }
 
 s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
@@ -538,6 +576,10 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 
 				/* last usage? */
 				if(--(n->refCount) == 0) {
+					/* notify the driver, if it is one */
+					if((n->mode & MODE_TYPE_SERVUSE) && (n->parent->mode & MODE_SERVICE_DRIVER))
+						vfsdrv_close(tid,n);
+
 					/* if there are message for the service we don't want to throw them away */
 					/* if there are any in the receivelist (and no references of the node) we
 					 * can throw them away because no one will read them anymore
@@ -560,10 +602,18 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 }
 
 tServ vfs_createService(tTid tid,const char *name,u32 type) {
-	sVFSNode *serv = SERVICES();
-	sVFSNode *n = serv->firstChild;
+	sVFSNode *serv;
+	sVFSNode *n;
 	u32 len;
+	s32 res;
 	char *hname;
+
+	/* determine position in VFS */
+	if(type & MODE_SERVICE_DRIVER)
+		serv = DRIVERS();
+	else
+		serv = SERVICES();
+	n = serv->firstChild;
 
 	vassert(name != NULL,"name == NULL");
 
@@ -588,10 +638,19 @@ tServ vfs_createService(tTid tid,const char *name,u32 type) {
 	/* create node */
 	n = vfsn_createServiceNode(tid,serv,hname,type);
 	if(n != NULL) {
+		tVFSNodeNo nodeNo = NADDR_TO_VNNO(n);
+		if(type & MODE_SERVICE_DRIVER) {
+			res = vfsdrv_register(n);
+			if(res < 0) {
+				vfsn_removeNode(n);
+				kheap_free(hname);
+				return res;
+			}
+		}
 		/* TODO that's not really nice ;) */
-		if(strcmp(name,"fs") == 0)
-			vfsr_init(NADDR_TO_VNNO(n));
-		return NADDR_TO_VNNO(n);
+		else if(strcmp(name,"fs") == 0)
+			vfsr_init(nodeNo);
+		return nodeNo;
 	}
 
 	/* failed, so cleanup */
@@ -600,7 +659,7 @@ tServ vfs_createService(tTid tid,const char *name,u32 type) {
 }
 
 bool vfs_msgAvailableFor(tTid tid,u8 events) {
-	sVFSNode *n = SERVICES();
+	sVFSNode *n;
 	sThread *t = thread_getById(tid);
 	bool isService = false;
 	bool isClient = false;
@@ -608,16 +667,19 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 
 	/* at first we check wether the process is a service */
 	if(events & EV_CLIENT) {
-		n = NODE_FIRST_CHILD(n);
-		while(n != NULL) {
-			if(n->owner == tid) {
-				tVFSNodeNo nodeNo = NADDR_TO_VNNO(n);
-				tVFSNodeNo client = vfs_getClient(tid,&nodeNo,1);
-				isService = true;
-				if(vfsn_isValidNodeNo(client))
-					return true;
+		sVFSNode *rn[2] = {SERVICES(),DRIVERS()};
+		for(i = 0; i < 2; i++) {
+			n = NODE_FIRST_CHILD(rn[i]);
+			while(n != NULL) {
+				if(n->owner == tid) {
+					tVFSNodeNo nodeNo = NADDR_TO_VNNO(n);
+					tVFSNodeNo client = vfs_getClient(tid,&nodeNo,1);
+					isService = true;
+					if(vfsn_isValidNodeNo(client))
+						return true;
+				}
+				n = n->next;
 			}
-			n = n->next;
 		}
 	}
 
@@ -719,6 +781,10 @@ s32 vfs_removeService(tTid tid,tVFSNodeNo nodeNo) {
 	if(n->owner != tid || !(n->mode & MODE_TYPE_SERVICE))
 		return ERR_NOT_OWN_SERVICE;
 
+	/* unregister driver */
+	if(n->mode & MODE_SERVICE_DRIVER)
+		vfsdrv_unregister(n);
+
 	/* remove service-node including all service-usages */
 	vfsn_removeNode(n);
 	return 0;
@@ -819,20 +885,23 @@ bool vfs_createThread(tTid tid,fRead handler) {
 
 void vfs_removeThread(tTid tid) {
 	sThread *t = thread_getById(tid);
-	sVFSNode *serv = SERVICES();
+	sVFSNode *rn[2] = {SERVICES(),DRIVERS()};
 	sVFSNode *n,*tn;
+	u32 i;
 	char *name;
 
 	/* check if the thread is a service */
-	n = NODE_FIRST_CHILD(serv->firstChild);
-	while(n != NULL) {
-		if((n->mode & MODE_TYPE_SERVICE) && n->owner == tid) {
-			tn = n->next;
-			vfs_removeService(tid,NADDR_TO_VNNO(n));
-			n = tn;
+	for(i = 0; i < 2; i++) {
+		n = NODE_FIRST_CHILD(rn[i]->firstChild);
+		while(n != NULL) {
+			if((n->mode & MODE_TYPE_SERVICE) && n->owner == tid) {
+				tn = n->next;
+				vfs_removeService(tid,NADDR_TO_VNNO(n));
+				n = tn;
+			}
+			else
+				n = n->next;
 		}
-		else
-			n = n->next;
 	}
 
 	/* build name */

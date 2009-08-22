@@ -96,6 +96,18 @@ s32 read(tFD fd,void *buffer,u32 count);
 s32 write(tFD fd,void *buffer,u32 count);
 
 /**
+ * Performs the io-control command on the device identified by <fd>. This works with device-
+ * drivers only!
+ *
+ * @param fd the file-descriptor
+ * @param cmd the command
+ * @param data the data
+ * @param size the data-size
+ * @return 0 on success
+ */
+s32 ioctl(tFD fd,u32 cmd,u8 *data,u32 size);
+
+/**
  * Sends a message to the service identified by <fd>.
  *
  * @param fd the file-descriptor

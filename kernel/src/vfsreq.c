@@ -63,7 +63,7 @@ void vfsreq_sendMsg(tMsgId id,const u8 *data,u32 size) {
 		handler[id](data,size);
 }
 
-sRequest *vfsreq_addRequest(tTid tid) {
+sRequest *vfsreq_waitForReply(tTid tid) {
 	u32 i;
 	sRequest *req = requests;
 	for(i = 0; i < REQUEST_COUNT; i++) {
@@ -80,14 +80,13 @@ sRequest *vfsreq_addRequest(tTid tid) {
 	req->val2 = 0;
 	req->data = NULL;
 	req->count = 0;
-	return req;
-}
 
-void vfsreq_waitForReply(tTid tid,sRequest *req) {
+	/* wait */
 	while(!req->finished) {
 		thread_wait(tid,EV_RECEIVED_MSG);
 		thread_switchInKernel();
 	}
+	return req;
 }
 
 sRequest *vfsreq_getRequestByPid(tTid tid) {

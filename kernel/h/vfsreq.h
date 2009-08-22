@@ -59,20 +59,12 @@ bool vfsreq_setHandler(tMsgId id,fReqHandler f);
 void vfsreq_sendMsg(tMsgId id,const u8 *data,u32 size);
 
 /**
- * Adds a request for the given thread
- *
- * @param tid the thread-id
- * @return the request or NULL if not enough mem
- */
-sRequest *vfsreq_addRequest(tTid tid);
-
-/**
  * Waits for a reply
  *
  * @param tid the thread to block
- * @param req the request
+ * @return the request or NULL if not enough mem
  */
-void vfsreq_waitForReply(tTid tid,sRequest *req);
+sRequest *vfsreq_waitForReply(tTid tid);
 
 /**
  * Searches for the request of the given thread

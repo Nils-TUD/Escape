@@ -21,6 +21,7 @@
 #include <vfs.h>
 #include <vfsnode.h>
 #include <vfsinfo.h>
+#include <vfsdrv.h>
 #include <util.h>
 #include <paging.h>
 #include <kheap.h>
@@ -105,6 +106,10 @@ bool vfsn_isOwnServiceNode(tVFSNodeNo nodeNo) {
 	sThread *t = thread_getRunning();
 	sVFSNode *node = nodes + nodeNo;
 	return node->owner == t->tid && (node->mode & MODE_TYPE_SERVICE);
+}
+
+tVFSNodeNo vfsn_getNodeNo(sVFSNode *node) {
+	return NADDR_TO_VNNO(node);
 }
 
 sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo) {
@@ -498,7 +503,7 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	}
 
 	/* ok, create a service-usage-node */
-	m = vfsn_createServiceUseNode(tid,n,name,NULL);
+	m = vfsn_createServiceUseNode(tid,n,name,(n->mode & MODE_SERVICE_DRIVER) ? vfsdrv_read : NULL);
 	if(m == NULL) {
 		if((n->mode & MODE_SERVICE_SINGLEPIPE) == 0)
 			kheap_free(name);

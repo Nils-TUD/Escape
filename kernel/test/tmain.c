@@ -33,9 +33,11 @@
 #include <vfs.h>
 #include <vfsinfo.h>
 #include <vfsreq.h>
+#include <vfsdrv.h>
 #include <kevent.h>
 #include <video.h>
 #include <timer.h>
+#include <signals.h>
 #include <test.h>
 #include <string.h>
 #include <fpu.h>
@@ -51,6 +53,7 @@
 #include "tvfsnode.h"
 #include "tsignals.h"
 #include "tutil.h"
+#include "tringbuffer.h"
 
 s32 main(sMultiBoot *mbp,u32 magic) {
 	UNUSED(magic);
@@ -94,6 +97,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vfs_init();
 	vfsinfo_init();
 	vfsreq_init();
+	vfsdrv_init();
 	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 
@@ -151,6 +155,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	test_register(&tModVFSn);
 	test_register(&tModSignals);
 	test_register(&tModUtil);
+	test_register(&tModRBuffer);
 	test_start();
 
 

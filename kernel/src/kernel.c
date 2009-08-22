@@ -31,9 +31,11 @@
 #include <kheap.h>
 #include <elf.h>
 #include <sched.h>
+#include <signals.h>
 #include <vfs.h>
 #include <vfsinfo.h>
 #include <vfsreq.h>
+#include <vfsdrv.h>
 #include <kevent.h>
 #include <video.h>
 #include <timer.h>
@@ -114,6 +116,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vfs_init();
 	vfsinfo_init();
 	vfsreq_init();
+	vfsdrv_init();
 	vid_toLineEnd(strlen("DONE"));
 	vid_printf("\033f\x2%s\033r\x0","DONE");
 

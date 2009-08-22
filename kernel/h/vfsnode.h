@@ -70,6 +70,12 @@ bool vfsn_isValidNodeNo(tVFSNodeNo nodeNo);
 bool vfsn_isOwnServiceNode(tVFSNodeNo nodeNo);
 
 /**
+ * @param node the node
+ * @return the node-number of the given node
+ */
+tVFSNodeNo vfsn_getNodeNo(sVFSNode *node);
+
+/**
  * @param nodeNo the node-number
  * @return the node for given index
  */

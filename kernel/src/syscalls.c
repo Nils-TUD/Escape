@@ -24,6 +24,7 @@
 #include <vfs.h>
 #include <vfsnode.h>
 #include <vfsreal.h>
+#include <vfsdrv.h>
 #include <paging.h>
 #include <util.h>
 #include <debug.h>
@@ -48,7 +49,8 @@
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
 /* some convenience-macros */
-#define SYSC_ERROR(stack,errorCode)		((stack)->ebx = (errorCode))
+#define SYSC_SETERROR(stack,errorCode)	((stack)->ebx = (errorCode))
+#define SYSC_ERROR(stack,errorCode)		{ ((stack)->ebx = (errorCode)); return; }
 #define SYSC_RET1(stack,val)			((stack)->eax = (val))
 #define SYSC_RET2(stack,val)			((stack)->edx = (val))
 #define SYSC_NUMBER(stack)				((stack)->eax)
@@ -375,6 +377,16 @@ static void sysc_send(sIntrptStackFrame *stack);
  * @return s32 the message-size on success
  */
 static void sysc_receive(sIntrptStackFrame *stack);
+/**
+ * Performs IO-Control on the device that is identified by the given file-descriptor
+ *
+ * @param tFD the file-descriptor
+ * @param u32 the command
+ * @param u8 * the data (may be NULL)
+ * @param u32 the size of the data
+ * @return s32 0 on success
+ */
+static void sysc_ioctl(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -430,6 +442,7 @@ static sSyscall syscalls[] = {
 	/* 41 */	{sysc_getThreadCount,		0},
 	/* 42 */	{sysc_send,					4},
 	/* 43 */	{sysc_receive,				3},
+	/* 44 */	{sysc_ioctl,				4},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -443,7 +456,7 @@ void sysc_handle(sIntrptStackFrame *stack) {
 			paging_isRangeUserWritable((u32)stack->uesp,sizeof(u32) * (argCount - 2));
 
 		/* no error by default */
-		SYSC_ERROR(stack,0);
+		SYSC_SETERROR(stack,0);
 		syscalls[sysCallNo].handler(stack);
 
 		/* set error-code */
@@ -476,10 +489,8 @@ static void sysc_getppid(sIntrptStackFrame *stack) {
 	tPid pid = (tPid)SYSC_ARG1(stack);
 	sProc *p;
 
-	if(!proc_exists(pid)) {
+	if(!proc_exists(pid))
 		SYSC_ERROR(stack,ERR_INVALID_PID);
-		return;
-	}
 
 	p = proc_getByPid(pid);
 	SYSC_RET1(stack,p->parentPid);
@@ -494,10 +505,8 @@ static void sysc_fork(sIntrptStackFrame *stack) {
 	s32 res;
 
 	/* no free slot? */
-	if(newPid == INVALID_PID) {
+	if(newPid == INVALID_PID)
 		SYSC_ERROR(stack,ERR_MAX_PROCS_REACHED);
-		return;
-	}
 
 	res = proc_clone(newPid);
 
@@ -505,7 +514,7 @@ static void sysc_fork(sIntrptStackFrame *stack) {
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	/* child? */
-	else if(res == 1)
+	if(res == 1)
 		SYSC_RET1(stack,0);
 	/* parent */
 	else
@@ -517,8 +526,7 @@ static void sysc_startThread(sIntrptStackFrame *stack) {
 	s32 res = proc_startThread(entryPoint);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	else
-		SYSC_RET1(stack,res);
+	SYSC_RET1(stack,res);
 }
 
 static void sysc_exit(sIntrptStackFrame *stack) {
@@ -543,23 +551,17 @@ static void sysc_open(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 
 	/* at first make sure that we'll cause no page-fault */
-	if(!sysc_isStringReadable(path)) {
+	if(!sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	pathLen = strnlen(path,MAX_PATH_LEN);
-	if(pathLen == -1) {
+	if(pathLen == -1)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* check flags */
 	flags = ((u8)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ);
-	if((flags & (VFS_READ | VFS_WRITE)) == 0) {
+	if((flags & (VFS_READ | VFS_WRITE)) == 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* resolve path */
 	err = vfsn_resolvePath(path,&nodeNo,true);
@@ -570,46 +572,48 @@ static void sysc_open(sIntrptStackFrame *stack) {
 		if(strncmp(path,"file:",5) == 0)
 			path += 5;
 		file = vfsr_openFile(t->tid,flags,path);
-		if(file < 0) {
+		if(file < 0)
 			SYSC_ERROR(stack,file);
-			return;
-		}
 
 		/* get free fd */
 		fd = thread_getFreeFd();
 		if(fd < 0) {
 			vfs_closeFile(t->tid,file);
 			SYSC_ERROR(stack,fd);
-			return;
 		}
 	}
 	else {
 		/* handle virtual files */
-		if(err < 0) {
+		if(err < 0)
 			SYSC_ERROR(stack,err);
-			return;
-		}
 
 		/* get free fd */
 		fd = thread_getFreeFd();
-		if(fd < 0) {
+		if(fd < 0)
 			SYSC_ERROR(stack,fd);
-			return;
-		}
 		/* open file */
 		file = vfs_openFile(t->tid,flags,nodeNo);
-	}
-
-	if(file < 0) {
-		SYSC_ERROR(stack,file);
-		return;
+		if(file < 0)
+			SYSC_ERROR(stack,file);
 	}
 
 	/* assoc fd with file */
 	err = thread_assocFd(fd,file);
-	if(err < 0) {
+	if(err < 0)
 		SYSC_ERROR(stack,err);
-		return;
+
+	/* if it is a driver, call the driver open-command */
+	if(IS_VIRT(nodeNo)) {
+		sVFSNode *node = vfsn_getNode(nodeNo);
+		if((node->mode & MODE_TYPE_SERVUSE) && (node->parent->mode & MODE_SERVICE_DRIVER)) {
+			err = vfsdrv_open(t->tid,node,flags);
+			/* if this went wrong, undo everything and report an error to the user */
+			if(err < 0) {
+				thread_unassocFd(fd);
+				vfs_closeFile(t->tid,file);
+				SYSC_ERROR(stack,err);
+			}
+		}
 	}
 
 	/* return fd */
@@ -624,10 +628,8 @@ static void sysc_eof(sIntrptStackFrame *stack) {
 
 	/* get file */
 	file = thread_fdToFile(fd);
-	if(file < 0) {
+	if(file < 0)
 		SYSC_ERROR(stack,file);
-		return;
-	}
 
 	eof = vfs_eof(t->tid,file);
 	SYSC_RET1(stack,eof);
@@ -642,10 +644,8 @@ static void sysc_seek(sIntrptStackFrame *stack) {
 
 	/* get file */
 	file = thread_fdToFile(fd);
-	if(file < 0) {
+	if(file < 0)
 		SYSC_ERROR(stack,file);
-		return;
-	}
 
 	res = vfs_seek(t->tid,file,position);
 	SYSC_RET1(stack,res);
@@ -660,28 +660,20 @@ static void sysc_read(sIntrptStackFrame *stack) {
 	tFileNo file;
 
 	/* validate count and buffer */
-	if(count <= 0) {
+	if(count <= 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
-	if(!paging_isRangeUserWritable((u32)buffer,count)) {
+	if(!paging_isRangeUserWritable((u32)buffer,count))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* get file */
 	file = thread_fdToFile(fd);
-	if(file < 0) {
+	if(file < 0)
 		SYSC_ERROR(stack,file);
-		return;
-	}
 
 	/* read */
 	readBytes = vfs_readFile(t->tid,file,buffer,count);
-	if(readBytes < 0) {
+	if(readBytes < 0)
 		SYSC_ERROR(stack,readBytes);
-		return;
-	}
 
 	SYSC_RET1(stack,readBytes);
 }
@@ -695,30 +687,50 @@ static void sysc_write(sIntrptStackFrame *stack) {
 	tFileNo file;
 
 	/* validate count and buffer */
-	if(count <= 0) {
+	if(count <= 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
-	if(!paging_isRangeUserReadable((u32)buffer,count)) {
+	if(!paging_isRangeUserReadable((u32)buffer,count))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* get file */
 	file = thread_fdToFile(fd);
-	if(file < 0) {
+	if(file < 0)
 		SYSC_ERROR(stack,file);
-		return;
-	}
 
 	/* read */
 	writtenBytes = vfs_writeFile(t->tid,file,buffer,count);
-	if(writtenBytes < 0) {
+	if(writtenBytes < 0)
 		SYSC_ERROR(stack,writtenBytes);
-		return;
-	}
 
 	SYSC_RET1(stack,writtenBytes);
+}
+
+static void sysc_ioctl(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
+	u32 cmd = SYSC_ARG2(stack);
+	u8 *data = (u8*)SYSC_ARG3(stack);
+	u32 size = SYSC_ARG4(stack);
+	sThread *t = thread_getRunning();
+	tFileNo file;
+	s32 res;
+
+	if(data != NULL && size == 0)
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+	/* TODO always writable ok? */
+	if(data != NULL && !paging_isRangeUserWritable((u32)data,size))
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+
+	/* get file */
+	file = thread_fdToFile(fd);
+	if(file < 0)
+		SYSC_ERROR(stack,file);
+
+	/* perform io-control */
+	res = vfs_ioctl(t->tid,file,cmd,data,size);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+
+	SYSC_RET1(stack,res);
 }
 
 static void sysc_send(sIntrptStackFrame *stack) {
@@ -731,28 +743,20 @@ static void sysc_send(sIntrptStackFrame *stack) {
 	s32 res;
 
 	/* validate size and data */
-	if(size <= 0 || size > MAX_MSG_SIZE) {
+	if(size <= 0 || size > MAX_MSG_SIZE)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
-	if(!paging_isRangeUserReadable((u32)data,size)) {
+	if(!paging_isRangeUserReadable((u32)data,size))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* get file */
 	file = thread_fdToFile(fd);
-	if(file < 0) {
+	if(file < 0)
 		SYSC_ERROR(stack,file);
-		return;
-	}
 
 	/* send msg */
 	res = vfs_sendMsg(t->tid,file,id,data,size);
-	if(res < 0) {
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-		return;
-	}
 
 	SYSC_RET1(stack,res);
 }
@@ -767,24 +771,18 @@ static void sysc_receive(sIntrptStackFrame *stack) {
 
 	/* validate id and data */
 	if(!paging_isRangeUserWritable((u32)id,sizeof(tMsgId)) ||
-			!paging_isRangeUserWritable((u32)data,MAX_MSG_SIZE)) {
+			!paging_isRangeUserWritable((u32)data,MAX_MSG_SIZE))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* get file */
 	file = thread_fdToFile(fd);
-	if(file < 0) {
+	if(file < 0)
 		SYSC_ERROR(stack,file);
-		return;
-	}
 
 	/* send msg */
 	res = vfs_receiveMsg(t->tid,file,id,data,MAX_MSG_SIZE);
-	if(res < 0) {
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-		return;
-	}
 
 	SYSC_RET1(stack,res);
 }
@@ -794,10 +792,8 @@ static void sysc_dupFd(sIntrptStackFrame *stack) {
 	tFD res;
 
 	res = thread_dupFd(fd);
-	if(res < 0) {
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-		return;
-	}
 
 	SYSC_RET1(stack,res);
 }
@@ -808,10 +804,8 @@ static void sysc_redirFd(sIntrptStackFrame *stack) {
 	s32 err;
 
 	err = thread_redirFd(src,dst);
-	if(err < 0) {
+	if(err < 0)
 		SYSC_ERROR(stack,err);
-		return;
-	}
 
 	SYSC_RET1(stack,err);
 }
@@ -832,27 +826,24 @@ static void sysc_close(sIntrptStackFrame *stack) {
 static void sysc_regService(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	u32 type = (u32)SYSC_ARG2(stack);
+	u32 vtype;
 	sThread *t = thread_getRunning();
 	tServ res;
 
 	/* check type */
-	if((type & (0x1 | 0x2)) == 0 || (type & ~(0x1 | 0x2)) != 0) {
+	if((type & (0x1 | 0x2 | 0x4)) == 0 || (type & ~(0x1 | 0x2 | 0x4)) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* convert type */
+	vtype = 0;
 	if(type & 0x2)
-		type = MODE_SERVICE_SINGLEPIPE;
-	else
-		type = 0;
+		vtype |= MODE_SERVICE_SINGLEPIPE;
+	if(type & 0x4)
+		vtype |= MODE_SERVICE_DRIVER;
 
-	res = vfs_createService(t->tid,name,type);
-	if(res < 0) {
+	res = vfs_createService(t->tid,name,vtype);
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-		return;
-	}
-
 	SYSC_RET1(stack,res);
 }
 
@@ -862,18 +853,13 @@ static void sysc_unregService(sIntrptStackFrame *stack) {
 	s32 err;
 
 	/* check node-number */
-	if(!IS_VIRT(id) || !vfsn_isValidNodeNo(id)) {
+	if(!IS_VIRT(id) || !vfsn_isValidNodeNo(id))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* remove the service */
 	err = vfs_removeService(t->tid,id);
-	if(err < 0) {
+	if(err < 0)
 		SYSC_ERROR(stack,err);
-		return;
-	}
-
 	SYSC_RET1(stack,0);
 }
 
@@ -888,28 +874,20 @@ static void sysc_getClient(sIntrptStackFrame *stack) {
 
 	/* check arguments. limit count a little bit to prevent overflow */
 	if(count <= 0 || count > 32 || ids == NULL ||
-			!paging_isRangeUserReadable((u32)ids,count * sizeof(tServ))) {
+			!paging_isRangeUserReadable((u32)ids,count * sizeof(tServ)))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
-	if(client == NULL || !paging_isRangeUserWritable((u32)client,sizeof(tServ))) {
+	if(client == NULL || !paging_isRangeUserWritable((u32)client,sizeof(tServ)))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* we need a file-desc */
 	fd = thread_getFreeFd();
-	if(fd < 0) {
+	if(fd < 0)
 		SYSC_ERROR(stack,fd);
-		return;
-	}
 
 	/* open a client */
 	file = vfs_openClient(t->tid,(tVFSNodeNo*)ids,count,(tVFSNodeNo*)client);
-	if(file < 0) {
+	if(file < 0)
 		SYSC_ERROR(stack,file);
-		return;
-	}
 
 	/* associate fd with file */
 	res = thread_assocFd(fd,file);
@@ -917,7 +895,6 @@ static void sysc_getClient(sIntrptStackFrame *stack) {
 		/* we have already opened the file */
 		vfs_closeFile(t->tid,file);
 		SYSC_ERROR(stack,res);
-		return;
 	}
 
 	SYSC_RET1(stack,fd);
@@ -931,24 +908,18 @@ static void sysc_getClientThread(sIntrptStackFrame *stack) {
 	tFileNo file;
 	s32 res;
 
-	if(thread_getById(tid) == NULL) {
+	if(thread_getById(tid) == NULL)
 		SYSC_ERROR(stack,ERR_INVALID_TID);
-		return;
-	}
 
 	/* we need a file-desc */
 	fd = thread_getFreeFd();
-	if(fd < 0) {
+	if(fd < 0)
 		SYSC_ERROR(stack,fd);
-		return;
-	}
 
 	/* open client */
 	file = vfs_openClientThread(t->tid,id,tid);
-	if(file < 0) {
+	if(file < 0)
 		SYSC_ERROR(stack,file);
-		return;
-	}
 
 	/* associate fd with file */
 	res = thread_assocFd(fd,file);
@@ -956,7 +927,6 @@ static void sysc_getClientThread(sIntrptStackFrame *stack) {
 		/* we have already opened the file */
 		vfs_closeFile(t->tid,file);
 		SYSC_ERROR(stack,res);
-		return;
 	}
 
 	SYSC_RET1(stack,fd);
@@ -969,25 +939,19 @@ static void sysc_changeSize(sIntrptStackFrame *stack) {
 
 	/* check argument */
 	if(count > 0) {
-		if(!proc_segSizesValid(p->textPages,p->dataPages + count,p->stackPages)) {
+		if(!proc_segSizesValid(p->textPages,p->dataPages + count,p->stackPages))
 			SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-			return;
-		}
 	}
 	else if(count == 0) {
 		SYSC_RET1(stack,oldEnd);
 		return;
 	}
-	else if((u32)-count > p->dataPages) {
+	else if((u32)-count > p->dataPages)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* change size */
-	if(proc_changeSize(count,CHG_DATA) == false) {
+	if(proc_changeSize(count,CHG_DATA) == false)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-		return;
-	}
 
 	SYSC_RET1(stack,oldEnd);
 }
@@ -1001,33 +965,25 @@ static void sysc_mapPhysical(sIntrptStackFrame *stack) {
 
 	/* trying to map memory in kernel area? */
 	/* TODO is this ok? */
-	if(OVERLAPS(phys,phys + pages,KERNEL_P_ADDR,KERNEL_P_ADDR + PAGE_SIZE * PT_ENTRY_COUNT)) {
+	if(OVERLAPS(phys,phys + pages,KERNEL_P_ADDR,KERNEL_P_ADDR + PAGE_SIZE * PT_ENTRY_COUNT))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* determine start-address */
 	addr = (p->textPages + p->dataPages) * PAGE_SIZE;
 	origPages = p->textPages + p->dataPages;
 
 	/* not enough mem? */
-	if(mm_getFreeFrmCount(MM_DEF) < paging_countFramesForMap(addr,pages)) {
+	if(mm_getFreeFrmCount(MM_DEF) < paging_countFramesForMap(addr,pages))
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-		return;
-	}
 
 	/* invalid segment sizes? */
-	if(!proc_segSizesValid(p->textPages,p->dataPages + pages,p->stackPages)) {
+	if(!proc_segSizesValid(p->textPages,p->dataPages + pages,p->stackPages))
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-		return;
-	}
 
 	/* we have to allocate temporary space for the frame-address :( */
 	frames = (u32*)kheap_alloc(sizeof(u32) * pages);
-	if(frames == NULL) {
+	if(frames == NULL)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-		return;
-	}
 
 	for(i = 0; i < pages; i++) {
 		frames[i] = phys / PAGE_SIZE;
@@ -1048,10 +1004,8 @@ static void sysc_wait(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	bool canSleep;
 
-	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_CHILD_DIED)) != 0) {
+	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_CHILD_DIED)) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* check wether there is a chance that we'll wake up again */
 	canSleep = !vfs_msgAvailableFor(t->tid,events);
@@ -1082,17 +1036,13 @@ static void sysc_requestIOPorts(sIntrptStackFrame *stack) {
 	u16 count = SYSC_ARG2(stack);
 
 	/* check range */
-	if(count == 0 || (u32)start + (u32)count > 0xFFFF) {
+	if(count == 0 || (u32)start + (u32)count > 0xFFFF)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	sProc *p = proc_getRunning();
 	s32 err = ioports_request(p,start,count);
-	if(err < 0) {
+	if(err < 0)
 		SYSC_ERROR(stack,err);
-		return;
-	}
 
 	tss_setIOMap(p->ioMap);
 	SYSC_RET1(stack,0);
@@ -1103,17 +1053,13 @@ static void sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 	u16 count = SYSC_ARG2(stack);
 
 	/* check range */
-	if(count == 0 || (u32)start + (u32)count > 0xFFFF) {
+	if(count == 0 || (u32)start + (u32)count > 0xFFFF)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	sProc *p = proc_getRunning();
 	s32 err = ioports_release(p,start,count);
-	if(err < 0) {
+	if(err < 0)
 		SYSC_ERROR(stack,err);
-		return;
-	}
 
 	tss_setIOMap(p->ioMap);
 	SYSC_RET1(stack,0);
@@ -1126,23 +1072,16 @@ static void sysc_setSigHandler(sIntrptStackFrame *stack) {
 	s32 err;
 
 	/* address should be valid */
-	if(!paging_isRangeUserReadable((u32)handler,1)) {
+	if(!paging_isRangeUserReadable((u32)handler,1))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* check signal */
-	if(!sig_canHandle(signal)) {
+	if(!sig_canHandle(signal))
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
-		return;
-	}
 
 	err = sig_setHandler(t->tid,signal,handler);
-	if(err < 0) {
+	if(err < 0)
 		SYSC_ERROR(stack,err);
-		return;
-	}
-
 	SYSC_RET1(stack,err);
 }
 
@@ -1150,10 +1089,8 @@ static void sysc_unsetSigHandler(sIntrptStackFrame *stack) {
 	tSig signal = (tSig)SYSC_ARG1(stack);
 	sThread *t = thread_getRunning();
 
-	if(!sig_canHandle(signal)) {
+	if(!sig_canHandle(signal))
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
-		return;
-	}
 
 	sig_unsetHandler(t->tid,signal);
 
@@ -1172,15 +1109,10 @@ static void sysc_sendSignalTo(sIntrptStackFrame *stack) {
 	u32 data = SYSC_ARG3(stack);
 	sThread *t = thread_getRunning();
 
-	if(!sig_canSend(signal)) {
+	if(!sig_canSend(signal))
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
-		return;
-	}
-
-	if(pid != INVALID_PID && !proc_exists(pid)) {
+	if(pid != INVALID_PID && !proc_exists(pid))
 		SYSC_ERROR(stack,ERR_INVALID_PID);
-		return;
-	}
 
 	if(pid != INVALID_PID)
 		sig_addSignalFor(pid,signal,data);
@@ -1214,10 +1146,8 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 
 		/* alloc space for the arguments */
 		argBuffer = (char*)kheap_alloc(EXEC_MAX_ARGSIZE);
-		if(argBuffer == NULL) {
+		if(argBuffer == NULL)
 			SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-			return;
-		}
 
 		/* count args and copy them on the kernel-heap */
 		/* note that we have to create a copy since we don't know where the args are. Maybe
@@ -1230,7 +1160,6 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 			if(!paging_isRangeUserReadable((u32)arg,sizeof(char*))) {
 				kheap_free(argBuffer);
 				SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-				return;
 			}
 			/* end of list? */
 			if(*arg == NULL)
@@ -1240,7 +1169,6 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 			if(!sysc_isStringReadable(*arg)) {
 				kheap_free(argBuffer);
 				SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-				return;
 			}
 
 			/* ensure that the argument is not longer than the left space */
@@ -1249,7 +1177,6 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 				/* too long */
 				kheap_free(argBuffer);
 				SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-				return;
 			}
 
 			/* copy to heap */
@@ -1265,7 +1192,6 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	if(!sysc_isStringReadable(path)) {
 		kheap_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
 	}
 
 	/* save path (we'll overwrite the process-data) */
@@ -1273,7 +1199,6 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	if(pathLen >= MAX_PATH_LEN) {
 		kheap_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
 	}
 	memcpy(pathSave,path,pathLen + 1);
 	path = pathSave;
@@ -1283,7 +1208,6 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	if(res != ERR_REAL_PATH) {
 		kheap_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
 	}
 
 	/* free the current text; free frames if text_free() returns true */
@@ -1328,16 +1252,12 @@ static void sysc_createNode(sIntrptStackFrame *stack) {
 	char *name,*pathCpy,*nameCpy;
 
 	/* at first make sure that we'll cause no page-fault */
-	if(!sysc_isStringReadable(path)) {
+	if(!sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	pathLen = strlen(path);
-	if(pathLen == 0 || pathLen >= MAX_PATH_LEN) {
+	if(pathLen == 0 || pathLen >= MAX_PATH_LEN)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	/* determine last slash */
 	name = strrchr(path,'/');
@@ -1349,10 +1269,8 @@ static void sysc_createNode(sIntrptStackFrame *stack) {
 	nameLen = strlen(name);
 	pathLen -= nameLen;
 	pathCpy = (char*)kheap_alloc(pathLen + 1);
-	if(pathCpy == NULL) {
+	if(pathCpy == NULL)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-		return;
-	}
 	strncpy(pathCpy,path,pathLen);
 	pathCpy[pathLen] = '\0';
 
@@ -1361,7 +1279,6 @@ static void sysc_createNode(sIntrptStackFrame *stack) {
 	if(nameCpy == NULL) {
 		kheap_free(pathCpy);
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-		return;
 	}
 	strcpy(nameCpy,name);
 
@@ -1370,23 +1287,17 @@ static void sysc_createNode(sIntrptStackFrame *stack) {
 	if(res < 0) {
 		kheap_free(pathCpy);
 		SYSC_ERROR(stack,res);
-		return;
 	}
 	/* check wether the node does already exist */
 	res = vfsn_resolvePath(path,&dummyNodeNo,false);
-	if(res == ERR_INVALID_PATH || res >= 0 || res == ERR_REAL_PATH) {
+	if(res == ERR_INVALID_PATH || res >= 0 || res == ERR_REAL_PATH)
 		SYSC_ERROR(stack,ERR_NODE_EXISTS);
-		return;
-	}
 
 	/* create node */
 	kheap_free(pathCpy);
 	node = vfsn_getNode(nodeNo);
-	if(vfsn_createInfo(t->tid,node,nameCpy,vfs_defReadHandler) == NULL) {
+	if(vfsn_createInfo(t->tid,node,nameCpy,vfs_defReadHandler) == NULL)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-		return;
-	}
-
 	SYSC_RET1(stack,0);
 }
 
@@ -1398,15 +1309,11 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 	s32 res;
 
 	if(!sysc_isStringReadable(path) || info == NULL ||
-			!paging_isRangeUserWritable((u32)info,sizeof(sFileInfo))) {
+			!paging_isRangeUserWritable((u32)info,sizeof(sFileInfo)))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 	len = strlen(path);
-	if(len == 0 || len >= MAX_PATH_LEN) {
+	if(len == 0 || len >= MAX_PATH_LEN)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	res = vfsn_resolvePath(path,&nodeNo,false);
 	if(res == ERR_REAL_PATH) {
@@ -1419,10 +1326,8 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 	else if(res == 0)
 		res = vfsn_getNodeInfo(nodeNo,info);
 
-	if(res < 0) {
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-		return;
-	}
 	SYSC_RET1(stack,0);
 }
 
@@ -1436,17 +1341,12 @@ static void sysc_createSharedMem(sIntrptStackFrame *stack) {
 	u32 byteCount = SYSC_ARG2(stack);
 	s32 res;
 
-	if(!sysc_isStringReadable(name) || byteCount == 0) {
+	if(!sysc_isStringReadable(name) || byteCount == 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	res = shm_create(name,BYTES_2_PAGES(byteCount));
-	if(res < 0) {
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-		return;
-	}
-
 	SYSC_RET1(stack,res * PAGE_SIZE);
 }
 
@@ -1454,17 +1354,12 @@ static void sysc_joinSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
 	s32 res;
 
-	if(!sysc_isStringReadable(name)) {
+	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	res = shm_join(name);
-	if(res < 0) {
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-		return;
-	}
-
 	SYSC_RET1(stack,res * PAGE_SIZE);
 }
 
@@ -1472,17 +1367,12 @@ static void sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
 	s32 res;
 
-	if(!sysc_isStringReadable(name)) {
+	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	res = shm_leave(name);
-	if(res < 0) {
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-		return;
-	}
-
 	SYSC_RET1(stack,res);
 }
 
@@ -1490,17 +1380,12 @@ static void sysc_destroySharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
 	s32 res;
 
-	if(!sysc_isStringReadable(name)) {
+	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-		return;
-	}
 
 	res = shm_destroy(name);
-	if(res < 0) {
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-		return;
-	}
-
 	SYSC_RET1(stack,res);
 }
 
@@ -1511,10 +1396,8 @@ static void sysc_lock(sIntrptStackFrame *stack) {
 	s32 res;
 
 	res = lock_aquire(t->tid,global ? INVALID_PID : t->proc->pid,ident);
-	if(res < 0) {
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-		return;
-	}
 	SYSC_RET1(stack,res);
 }
 
@@ -1525,10 +1408,8 @@ static void sysc_unlock(sIntrptStackFrame *stack) {
 	s32 res;
 
 	res = lock_release(global ? INVALID_PID : t->proc->pid,ident);
-	if(res < 0) {
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-		return;
-	}
 	SYSC_RET1(stack,res);
 }
 

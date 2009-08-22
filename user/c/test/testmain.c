@@ -25,6 +25,7 @@
 #include <esc/date.h>
 #include <stdlib.h>
 #include <string.h>
+#include <messages.h>
 
 #define BUF_SIZE 4096 * 64
 #define COUNT 180000
@@ -32,6 +33,7 @@
 static u8 buffer[BUF_SIZE];
 
 int main(int argc,char *argv[]) {
+#if 0
 	tFD fd;
 	u64 start;
 	uLongLong total;
@@ -127,6 +129,94 @@ int main(int argc,char *argv[]) {
 		res = system(line);
 		printf("Result: %d\n",res);
 	}*/
+#endif
+
+	tServ client;
+	tServ id = regService("bla",SERVICE_TYPE_DRIVER);
+	if(id < 0)
+		printe("regService");
+
+	if(fork() == 0) {
+		char buf[10] = {0};
+		tFD fd = open("drivers:/bla",IO_READ | IO_WRITE);
+		if(fd < 0)
+			printe("open");
+		printf("Reading...\n");
+		read(fd,buf,10);
+		printf("Res: %s\n",buf);
+		printf("Writing %s...\n",buf);
+		write(fd,buf,10);
+		printf("IOCtl read\n");
+		ioctl(fd,1,(u8*)buf,10);
+		printf("Got '%s'\n",buf);
+		printf("IOCtl write\n");
+		ioctl(fd,0,(u8*)buf,10);
+		printf("Closing...\n");
+		close(fd);
+		return EXIT_SUCCESS;
+	}
+
+	bool quit = false;
+	tMsgId mid;
+	static sMsg msg;
+	while(!quit) {
+		tFD cfd = getClient(&id,1,&client);
+		if(cfd < 0)
+			wait(EV_CLIENT | EV_RECEIVED_MSG);
+		else {
+			while(receive(cfd,&mid,&msg) > 0) {
+				switch(mid) {
+					case MSG_DRV_OPEN:
+						printf("Open: tid=%d, flags=%d\n",msg.args.arg1,msg.args.arg2);
+						msg.args.arg2 = 0;
+						send(cfd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
+						break;
+					case MSG_DRV_READ:
+						printf("Read: tid=%d, offset=%d, count=%d\n",msg.args.arg1,
+								msg.args.arg2,msg.args.arg3);
+						msg.data.arg1 = msg.args.arg1;
+						msg.data.arg2 = msg.args.arg3;
+						strcpy(msg.data.d,"test!!");
+						send(cfd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
+						break;
+					case MSG_DRV_WRITE:
+						printf("Write: tid=%d, offset=%d, count=%d\n",msg.data.arg1,
+								msg.data.arg2,msg.data.arg3);
+						printf("Got %s\n",msg.data.d);
+						msg.args.arg1 = msg.data.arg1;
+						msg.args.arg2 = msg.data.arg3;
+						send(cfd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+						break;
+					case MSG_DRV_IOCTL: {
+						u32 cmd = msg.data.arg2;
+						printf("Ioctl: tid=%d, cmd=%d, dsize=%d\n",msg.data.arg1,
+								msg.data.arg2,msg.data.arg3);
+						msg.data.arg2 = 0;
+						if(cmd == 0) {
+							msg.data.arg3 = 0;
+							printf("Got '%s'\n",msg.data.d);
+						}
+						else {
+							msg.data.arg3 = 9;
+							strcpy(msg.data.d,"test1234");
+						}
+						send(cfd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+					}
+					break;
+					case MSG_DRV_CLOSE:
+						printf("Close\n");
+						quit = true;
+						break;
+					default:
+						printf("Unknown command");
+						break;
+				}
+			}
+			close(cfd);
+		}
+	}
+
+	unregService(id);
 
 	return EXIT_SUCCESS;
 }

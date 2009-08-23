@@ -140,7 +140,6 @@ int main(int argc,char *argv[]) {
 			}
 		}
 	}
-	printf("Got %d\n",c);
 
 	fclose(fvterm);
 

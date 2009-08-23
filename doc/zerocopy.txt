@@ -40,7 +40,7 @@ example:
     writeZeroCopy(fd,data,resp.length);
   
   user-app:
-    tFD fd = open("file:/foo",IO_READ);
+    tFD fd = open("/foo",IO_READ);
     void *data = readZeroCopy(fd,1024);
     // do something with data
     freeZeroCopy(data);

@@ -117,7 +117,7 @@ s32 shell_executeCmd(char *line) {
 		if(cmd->dup & DUP_STDIN)
 			pipe++;
 		if(cmd->dup & DUP_STDOUT) {
-			*pipe = open("system:/pipe",IO_READ | IO_WRITE);
+			*pipe = open("/system/pipe",IO_READ | IO_WRITE);
 			if(*pipe < 0) {
 				/* close open pipe */
 				if(cmd->dup & DUP_STDIN)
@@ -126,7 +126,7 @@ s32 shell_executeCmd(char *line) {
 				compl_free(scmds);
 				tok_free(tokens,tokCount);
 				cmd_free(cmds,cmdCount);
-				printe("Unable to open system:/pipe");
+				printe("Unable to open /system/pipe");
 				return -1;
 			}
 		}

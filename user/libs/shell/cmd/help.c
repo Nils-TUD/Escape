@@ -61,7 +61,7 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 	printf("	ls; ps; echo \"test\";\n");
 	printf("	ls | cat; ps\n");
 	printf("	echo \"word1\" word2 \"word3 and 4\" | wc\n");
-	printf("	cat file:/bigfile | less\n");
+	printf("	cat /bigfile | less\n");
 	printf("	ps | wc | wc -p\n");
 
 	printf("\n");

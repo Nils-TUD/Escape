@@ -45,9 +45,9 @@ static void test_opendir(void) {
 	sDirEntry e;
 	test_caseStart("Testing opendir, readdir and closedir");
 
-	fd = opendir("file:/bin");
+	fd = opendir("/bin");
 	if(fd < 0) {
-		test_caseFailed("Unable to open 'file:/bin'");
+		test_caseFailed("Unable to open '/bin'");
 		return;
 	}
 
@@ -68,39 +68,39 @@ static void test_abspath(void) {
 		return;
 	}
 
-	count = abspath(path,MAX_PATH_LEN + 1,"file:/");
-	test_assertUInt(count,6);
-	test_assertStr(path,"file:/");
+	count = abspath(path,MAX_PATH_LEN + 1,"/");
+	test_assertUInt(count,strlen("/"));
+	test_assertStr(path,"/");
 
-	count = abspath(path,MAX_PATH_LEN + 1,"file:/bin/bla");
-	test_assertUInt(count,14);
-	test_assertStr(path,"file:/bin/bla/");
+	count = abspath(path,MAX_PATH_LEN + 1,"/bin/bla");
+	test_assertUInt(count,strlen("/bin/bla/"));
+	test_assertStr(path,"/bin/bla/");
 
-	count = abspath(path,MAX_PATH_LEN + 1,"file:/../bin/../.././bla");
-	test_assertUInt(count,10);
-	test_assertStr(path,"file:/bla/");
+	count = abspath(path,MAX_PATH_LEN + 1,"/../bin/../.././bla");
+	test_assertUInt(count,strlen("/bla/"));
+	test_assertStr(path,"/bla/");
 
 	count = abspath(path,MAX_PATH_LEN + 1,"bin/..///.././bla");
-	test_assertUInt(count,10);
-	test_assertStr(path,"file:/bla/");
+	test_assertUInt(count,strlen("/bla/"));
+	test_assertStr(path,"/bla/");
 
 	count = abspath(path,MAX_PATH_LEN + 1,"bin/./bla");
-	test_assertUInt(count,14);
-	test_assertStr(path,"file:/bin/bla/");
+	test_assertUInt(count,strlen("/bin/bla/"));
+	test_assertStr(path,"/bin/bla/");
 
-	count = abspath(path,3,"file:/");
+	count = abspath(path,3,"/");
 	if(count > 3)
 		test_caseFailed("Copied too much");
 
-	count = abspath(path,8,"file:/bin/bla");
+	count = abspath(path,8,"/bin/bla");
 	if(count > 8)
 		test_caseFailed("Copied too much");
 
-	count = abspath(path,8,"file:/bin/../bla");
+	count = abspath(path,8,"/bin/../bla");
 	if(count > 8)
 		test_caseFailed("Copied too much");
 
-	count = abspath(path,8,"file:///../bin/bla");
+	count = abspath(path,8,"///../bin/bla");
 	if(count > 8)
 		test_caseFailed("Copied too much");
 

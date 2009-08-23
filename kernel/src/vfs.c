@@ -41,11 +41,11 @@
 /* max number of open files */
 #define FILE_COUNT					(PROC_COUNT * 16)
 /* the processes node */
-#define PROCESSES()					(nodes + 8)
+#define PROCESSES()					(nodes + 7)
 /* the services node */
-#define SERVICES()					(nodes + 11)
+#define SERVICES()					(nodes + 10)
 /* the drivers-node */
-#define DRIVERS()					(nodes + 20)
+#define DRIVERS()					(nodes + 19)
 
 /* an entry in the global file table */
 typedef struct {
@@ -81,17 +81,15 @@ void vfs_init(void) {
 
 	/*
 	 *  /
-	 *   file:
-	 *   system:
+	 *   system
 	 *     |-pipe
 	 *     |-processes
 	 *     |-devices
 	 *     |-bin
-	 *   services:
-	 *   devices:
+	 *   services
+	 *   drivers
 	 */
 	root = vfsn_createDir(NULL,(char*)"");
-	vfsn_createServiceNode(KERNEL_TID,root,(char*)"file",0);
 	sys = vfsn_createDir(root,(char*)"system");
 	vfsn_createPipeCon(sys,(char*)"pipe");
 	vfsn_createDir(sys,(char*)"processes");
@@ -796,7 +794,7 @@ void vfs_removeProcess(tPid pid) {
 	char name[12];
 	itoa(name,pid);
 
-	/* remove from system:/processes */
+	/* remove from /system/processes */
 	vfsn_removeNode(p->threadDir->parent);
 
 	/* invalidate cache */

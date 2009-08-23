@@ -43,12 +43,6 @@ s32 shell_cmdCd(u32 argc,char **argv) {
 	}
 	abspath(path,MAX_PATH_LEN + 1,argv[1]);
 
-	/* ensure that the user remains in file: */
-	if(strncmp(path,"file:",5) != 0) {
-		printf("Unable to change to '%s'\n",path);
-		return 1;
-	}
-
 	/* retrieve file-info */
 	if(getFileInfo(path,&info) < 0) {
 		printe("Unable to get file-info for '%s'",path);

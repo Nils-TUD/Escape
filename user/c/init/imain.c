@@ -117,14 +117,14 @@ int main(void) {
 
 	/* wait for fs; we need it for exec */
 	do {
-		fd = open("services:/fs",IO_READ | IO_WRITE);
+		fd = open("/services/fs",IO_READ | IO_WRITE);
 		if(fd < 0)
 			yield();
 	}
 	while(fd < 0);
 	close(fd);
 
-	/* TODO a blank behind a service-name in file:/etc/services causes a panic */
+	/* TODO a blank behind a service-name in /etc/services causes a panic */
 
 	/* now read the services we should load */
 	servDefs = getServices();
@@ -157,7 +157,7 @@ int main(void) {
 		sprintf(vtermName,"vterm%d",i);
 		child = fork();
 		if(child == 0) {
-			const char *args[] = {"file:/bin/shell",vtermName,NULL};
+			const char *args[] = {"/bin/shell",vtermName,NULL};
 			exec(args[0],args);
 			printe("Exec of '%s' failed",args[0]);
 			exit(EXIT_FAILURE);
@@ -370,7 +370,7 @@ static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
 	u32 i;
 	tFD fd;
 	s32 child;
-	char path[MAX_SERVICE_PATH_LEN + 1] = "file:/services/";
+	char path[MAX_SERVICE_PATH_LEN + 1] = "/sbin/";
 	char servName[MAX_SERVICE_PATH_LEN + 1] = "";
 	char *sname;
 	sSLNode *n;
@@ -463,7 +463,7 @@ static char *getServices(void) {
 	char *buffer;
 
 	/* open file */
-	fd = open("file:/etc/services",IO_READ);
+	fd = open("/etc/services",IO_READ);
 	if(fd < 0)
 		return NULL;
 

@@ -211,16 +211,16 @@ static bool vterm_init(sVTerm *vt) {
 	char *ptr,*s;
 
 	/* open video */
-	vidFd = open("drivers:/video",IO_WRITE);
+	vidFd = open("/drivers/video",IO_WRITE);
 	if(vidFd < 0) {
-		printe("Unable to open 'services:/video'");
+		printe("Unable to open '/services/video'");
 		return false;
 	}
 
 	/* open speaker */
-	speakerFd = open("services:/speaker",IO_WRITE);
+	speakerFd = open("/services/speaker",IO_WRITE);
 	if(speakerFd < 0) {
-		printe("Unable to open 'services:/speaker'");
+		printe("Unable to open '/services/speaker'");
 		return false;
 	}
 

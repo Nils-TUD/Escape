@@ -29,40 +29,18 @@ u32 abspath(char *dst,u32 dstSize,const char *src) {
 	u32 layer,pos;
 	u32 count = 0;
 
-	/* skip namespace */
 	p = (char*)src;
-	pos = strchri(p,':');
-	if(*(p + pos) != '\0') {
-		if(dstSize < pos + 2)
-			return count;
-		strncpy(dst,p,pos + 1);
-		dst[pos + 1] = '\0';
-		pathtemp = dst + pos + 1;
-		p += pos + 1;
-		count += pos + 1;
-	}
-	else {
-		if(dstSize < 6)
-			return count;
-		strncpy(dst,"file:",5);
-		dst[5] = '\0';
-		pathtemp = dst + 5;
-		count += 5;
-	}
-
+	pathtemp = dst;
 	layer = 0;
 	if(*p != '/') {
 		char envPath[MAX_PATH_LEN + 1];
 		if(!getEnv(&envPath,MAX_PATH_LEN + 1,"CWD"))
 			return count;
-		/* we'll append strlen(envPath) without "file:/" and trailing slash, but need a
-		 * null-termination */
-		if(dstSize - count < strlen(envPath) - 6)
+		if(dstSize < strlen(envPath))
 			return count;
 		/* copy current to path */
-		/* skip file:/ */
 		*pathtemp++ = '/';
-		curtemp = envPath + 6;
+		curtemp = envPath + 1;
 		while(*curtemp) {
 			if(*curtemp == '/')
 				layer++;
@@ -70,6 +48,7 @@ u32 abspath(char *dst,u32 dstSize,const char *src) {
 		}
 		/* remove '/' at the end */
 		pathtemp--;
+		count = pathtemp - dst;
 	}
 	else {
 		/* skip leading '/' */
@@ -142,7 +121,7 @@ void dirname(char *path) {
 	}
 
 	/* nothing to remove? */
-	if(*p == ':' || len == 0)
+	if(len == 0)
 		return;
 
 	/* remove last path component */

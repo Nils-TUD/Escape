@@ -55,7 +55,7 @@ int main(int argc,char *argv[]) {
 	u32 i;
 	char c;
 	char *path;
-	char vterm[MAX_PATH_LEN] = "drivers:/";
+	char vterm[MAX_PATH_LEN] = "/drivers/";
 
 	if((argc != 1 && argc != 2) || isHelpCmd(argc,argv)) {
 		fprintf(stderr,"Usage: %s [<file>]\n",argv[0]);

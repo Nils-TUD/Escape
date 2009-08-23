@@ -26,7 +26,7 @@ $(BIN):	$(LDCONF) $(COBJ) $(CEXT2OBJ) $(START) $(LIBCA)
 		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(CEXT2OBJ) $(LIBCA);
 		@echo "===== COPYING ON DISK =====";
 		@make -C ../../ mounthdd
-		$(SUDO) cp $(BIN) $(DISKMOUNT)/services/$(NAME)
+		$(SUDO) cp $(BIN) $(DISKMOUNT)/sbin/$(NAME)
 		@make -C ../../ umounthdd
 
 $(BUILD)/service_$(NAME)_%.o:		%.c

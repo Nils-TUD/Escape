@@ -317,7 +317,7 @@ static sDriver *getDriver(tServ sid) {
 static void ata_createVFSEntry(sATADrive *drive,sPartition *part,char *name) {
 	tFile *f;
 	char path[21];
-	sprintf(path,"system:/devices/%s",name);
+	sprintf(path,"/system/devices/%s",name);
 
 	if(createNode(path) < 0) {
 		printe("Unable to create '%s'",path);

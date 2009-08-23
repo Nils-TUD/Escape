@@ -45,19 +45,19 @@ static void test_vfsn(void) {
 static void test_vfsn_resolvePath(void) {
 	test_caseStart("Testing vfsn_resolvePath()");
 
-	if(!test_vfsn_resolvePathCpy("system:/..","system")) return;
-	if(!test_vfsn_resolvePathCpy("system://../..","system")) return;
-	if(!test_vfsn_resolvePathCpy("system://./.","system")) return;
-	if(!test_vfsn_resolvePathCpy("system:/","system")) return;
-	if(!test_vfsn_resolvePathCpy("system://","system")) return;
-	if(!test_vfsn_resolvePathCpy("system:///","system")) return;
-	if(!test_vfsn_resolvePathCpy("system:/processes/..","system")) return;
-	if(!test_vfsn_resolvePathCpy("system:/processes/.","processes")) return;
-	if(!test_vfsn_resolvePathCpy("system:/processes/./","processes")) return;
-	if(!test_vfsn_resolvePathCpy("system:/./.","system")) return;
-	if(!test_vfsn_resolvePathCpy("system://///processes/./././.","processes")) return;
-	if(!test_vfsn_resolvePathCpy("system:/../processes/../processes/./","processes")) return;
-	if(!test_vfsn_resolvePathCpy("system://..//..//..","system")) return;
+	if(!test_vfsn_resolvePathCpy("/system/..","system")) return;
+	if(!test_vfsn_resolvePathCpy("/system//../..","system")) return;
+	if(!test_vfsn_resolvePathCpy("/system//./.","system")) return;
+	if(!test_vfsn_resolvePathCpy("/system/","system")) return;
+	if(!test_vfsn_resolvePathCpy("/system//","system")) return;
+	if(!test_vfsn_resolvePathCpy("/system///","system")) return;
+	if(!test_vfsn_resolvePathCpy("/system/processes/..","system")) return;
+	if(!test_vfsn_resolvePathCpy("/system/processes/.","processes")) return;
+	if(!test_vfsn_resolvePathCpy("/system/processes/./","processes")) return;
+	if(!test_vfsn_resolvePathCpy("/system/./.","system")) return;
+	if(!test_vfsn_resolvePathCpy("/system/////processes/./././.","processes")) return;
+	if(!test_vfsn_resolvePathCpy("/system/../processes/../processes/./","processes")) return;
+	if(!test_vfsn_resolvePathCpy("/system//..//..//..","system")) return;
 
 	test_caseSucceded();
 }
@@ -85,14 +85,14 @@ static void test_vfsn_getPath(void) {
 
 	test_caseStart("Testing vfsn_getPath()");
 
-	vfsn_resolvePath("system:",&no,false);
-	test_assertStr(vfsn_getPath(no),(char*)"system:");
+	vfsn_resolvePath("/system",&no,false);
+	test_assertStr(vfsn_getPath(no),(char*)"/system");
 
-	vfsn_resolvePath("system:/processes",&no,false);
-	test_assertStr(vfsn_getPath(no),(char*)"system:/processes");
+	vfsn_resolvePath("/system/processes",&no,false);
+	test_assertStr(vfsn_getPath(no),(char*)"/system/processes");
 
-	vfsn_resolvePath("system:/processes/0",&no,false);
-	test_assertStr(vfsn_getPath(no),(char*)"system:/processes/0");
+	vfsn_resolvePath("/system/processes/0",&no,false);
+	test_assertStr(vfsn_getPath(no),(char*)"/system/processes/0");
 
 	test_caseSucceded();
 }

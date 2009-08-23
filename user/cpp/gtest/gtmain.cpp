@@ -42,8 +42,8 @@ static int pbThread(void);
 class MyImgWindow : public Window {
 public:
 	MyImgWindow()
-		: Window("Window 2",250,250,500,400), img1(BitmapImage("file:/test.bmp")),
-		img2(BitmapImage("file:/bbc.bmp")) {
+		: Window("Window 2",250,250,500,400), img1(BitmapImage("/test.bmp")),
+		img2(BitmapImage("/bbc.bmp")) {
 	}
 	~MyImgWindow() {
 	}
@@ -91,7 +91,7 @@ int main(void) {
 		return app->run();
 	}
 	if(fork() == 0) {
-		exec("file:/bin/guishell",NULL);
+		exec("/bin/guishell",NULL);
 		exit(EXIT_FAILURE);
 	}
 

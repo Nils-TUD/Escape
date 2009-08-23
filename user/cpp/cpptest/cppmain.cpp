@@ -61,7 +61,7 @@ int main(void) {
 	char buffer[1024];
 	const char *test = "ein test";
 	StringStream s(str,sizeof(str));
-	FileStream f("file:/file.txt",FileStream::READ);
+	FileStream f("/file.txt",FileStream::READ);
 	s << 'a' << 'b';
 	s.write(test);
 	printf("%s\n",str);

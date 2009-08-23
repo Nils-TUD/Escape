@@ -208,7 +208,7 @@ static void test_open(void) {
 	test_assertInt(_open("",IO_READ),ERR_INVALID_PATH);
 	test_assertInt(_open("BLA",IO_READ),ERR_INVALID_PATH);
 	test_assertInt(_open("myfile",IO_READ),ERR_INVALID_PATH);
-	test_assertInt(_open("system:/1234",IO_READ),ERR_VFS_NODE_NOT_FOUND);
+	test_assertInt(_open("/system/1234",IO_READ),ERR_VFS_NODE_NOT_FOUND);
 	free(longName);
 
 	test_caseSucceded();
@@ -520,10 +520,10 @@ static void test_getFileInfo(void) {
 	test_assertInt(_getFileInfo((const char*)0xFFFFFFFF,&info),ERR_INVALID_SYSC_ARGS);
 	test_assertInt(_getFileInfo(longPath,&info),ERR_INVALID_SYSC_ARGS);
 	test_assertInt(_getFileInfo("",&info),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo("file:/bin",NULL),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo("file:/bin",(sFileInfo*)0x12345678),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo("file:/bin",(sFileInfo*)0xC0000000),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo("file:/bin",(sFileInfo*)0xFFFFFFFF),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_getFileInfo("/bin",NULL),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_getFileInfo("/bin",(sFileInfo*)0x12345678),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_getFileInfo("/bin",(sFileInfo*)0xC0000000),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_getFileInfo("/bin",(sFileInfo*)0xFFFFFFFF),ERR_INVALID_SYSC_ARGS);
 	test_caseSucceded();
 	free(longPath);
 }

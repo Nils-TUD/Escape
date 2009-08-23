@@ -1,10 +1,10 @@
 # Format: "<serviceName> ';' [<waitFor> ',' ...] ';' [<dependency> ',' ...]"
-speaker; services:/speaker;
-keyboard; drivers:/keyboard;
-vterm; drivers:/vterm0,drivers:/vterm1,drivers:/vterm2,drivers:/vterm3,drivers:/vterm4,drivers:/vterm5; keyboard,speaker,video
-video; drivers:/video;
-env; services:/env;
+speaker; /services/speaker;
+keyboard; /drivers/keyboard;
+vterm; /drivers/vterm0,/drivers/vterm1,/drivers/vterm2,/drivers/vterm3,/drivers/vterm4,/drivers/vterm5; keyboard,speaker,video
+video; /drivers/video;
+env; /services/env;
 cmos; ;
-zero; drivers:/zero;
-random; drivers:/random;
-null; drivers:/null;
+zero; /drivers/zero;
+random; /drivers/random;
+null; /drivers/null;

@@ -37,7 +37,7 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	/* drivers:/null produces no output, so always available to prevent blocking */
+	/* /drivers/null produces no output, so always available to prevent blocking */
 	setDataReadable(id,true);
 
     /* wait for commands */

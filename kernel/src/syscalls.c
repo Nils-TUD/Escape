@@ -577,10 +577,6 @@ static void sysc_open(sIntrptStackFrame *stack) {
 	err = vfsn_resolvePath(path,&nodeNo,true);
 	if(err == ERR_REAL_PATH) {
 		/* send msg to fs and wait for reply */
-
-		/* skip file: */
-		if(strncmp(path,"file:",5) == 0)
-			path += 5;
 		file = vfsr_openFile(t->tid,flags,path);
 		if(file < 0)
 			SYSC_ERROR(stack,file);
@@ -1227,7 +1223,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	memcpy(pathSave,path,pathLen + 1);
 	path = pathSave;
 
-	/* resolve path */
+	/* resolve path; require a path in real fs */
 	res = vfsn_resolvePath(path,&nodeNo,false);
 	if(res != ERR_REAL_PATH) {
 		kheap_free(argBuffer);
@@ -1244,8 +1240,6 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	p->textPages = 0;
 
 	/* load program */
-	if(strncmp(path,"file:",5) == 0)
-		path += 5;
 	res = elf_loadFromFile(path);
 	if(res < 0) {
 		/* there is no undo for proc_changeSize() :/ */
@@ -1342,9 +1336,6 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 	res = vfsn_resolvePath(path,&nodeNo,false);
 	if(res == ERR_REAL_PATH) {
 		sThread *t = thread_getRunning();
-		/* skip file: */
-		if(strncmp(path,"file:",5) == 0)
-			path += 5;
 		res = vfsr_getFileInfo(t->tid,path,info);
 	}
 	else if(res == 0)

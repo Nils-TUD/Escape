@@ -162,13 +162,13 @@ static sProcess *ps_getProcs(u32 *count) {
 		return NULL;
 	}
 
-	if((dd = opendir("system:/processes")) >= 0) {
+	if((dd = opendir("/system/processes")) >= 0) {
 		while(readdir(&entry,dd)) {
 			if(strcmp(entry.name,".") == 0 || strcmp(entry.name,"..") == 0)
 				continue;
 
 			/* build path */
-			sprintf(ppath,"system:/processes/%s/info",entry.name);
+			sprintf(ppath,"/system/processes/%s/info",entry.name);
 			if((dfd = open(ppath,IO_READ)) >= 0) {
 				/* increase array */
 				if(pos >= size) {
@@ -201,7 +201,7 @@ static sProcess *ps_getProcs(u32 *count) {
 	}
 	else {
 		free(procs);
-		printe("Unable to open '%s'","system:/processes");
+		printe("Unable to open '%s'","/system/processes");
 		return NULL;
 	}
 
@@ -229,7 +229,7 @@ static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
 	p->threads = sll_create();
 
 	/* read threads */
-	sprintf(path,"system:/processes/%d/threads",pid);
+	sprintf(path,"/system/processes/%d/threads",pid);
 	threads = open(path,IO_READ);
 	if(threads < 0) {
 		free(buf);
@@ -241,7 +241,7 @@ static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
 			continue;
 
 		/* build path */
-		sprintf(ppath,"system:/processes/%d/threads/%s",pid,entry.name);
+		sprintf(ppath,"/system/processes/%d/threads/%s",pid,entry.name);
 		if((dfd = open(ppath,IO_READ)) >= 0) {
 			sPThread *t = (sPThread*)malloc(sizeof(sPThread));
 			/* read thread */

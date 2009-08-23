@@ -43,11 +43,11 @@ int main(int argc,char *argv[]) {
 
 	if(argc > 1 && strcmp(argv[1],"-disk") == 0) {
 		disk = true;
-		path = "file:/bigfile";
+		path = "/bigfile";
 	}
 	else {
 		disk = false;
-		path = "system:/test";
+		path = "/system/test";
 	}
 
 	if(!disk)
@@ -138,7 +138,7 @@ int main(int argc,char *argv[]) {
 
 	if(fork() == 0) {
 		char buf[10] = {0};
-		tFD fd = open("drivers:/bla",IO_READ | IO_WRITE);
+		tFD fd = open("/drivers/bla",IO_READ | IO_WRITE);
 		if(fd < 0)
 			printe("open");
 		printf("Reading...\n");

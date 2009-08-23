@@ -60,7 +60,7 @@ int main(void) {
 
 static int myThread(void) {
 	const char *folders[] = {
-		"file:/","file:/bin","system:"
+		"/","/bin","/system"
 	};
 	while(1) {
 		treadDir(folders[gettid() % ARRAY_SIZE(folders)]);

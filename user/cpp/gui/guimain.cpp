@@ -29,7 +29,7 @@ static void startService(const char *name,const char *wait);
 
 int main(void) {
 	// check for duplicate gui-start
-	if(open("services:/vesa",IO_READ) >= 0) {
+	if(open("/services/vesa",IO_READ) >= 0) {
 		printe("GUI seems to be running. Stopping here");
 		return EXIT_FAILURE;
 	}
@@ -38,13 +38,13 @@ int main(void) {
 	printf("\033l\x0\033k\x0");
 
 	// start gui services
-	startService("vesa","services:/vesa");
-	startService("mouse","drivers:/mouse");
-	startService("winmanager","services:/winmanager");
+	startService("vesa","/services/vesa");
+	startService("mouse","/drivers/mouse");
+	startService("winmanager","/services/winmanager");
 
 	// start gui-test-program
 	if(fork() == 0) {
-		exec("file:/bin/gtest",NULL);
+		exec("/bin/gtest",NULL);
 		printe("Unable to start gui-test");
 		exit(EXIT_FAILURE);
 	}
@@ -56,7 +56,7 @@ int main(void) {
 }
 
 static void startService(const char *name,const char *wait) {
-	char path[MAX_PATH_LEN + 1] = "file:/services/";
+	char path[MAX_PATH_LEN + 1] = "/sbin/";
 	strcat(path,name);
 	if(fork() == 0) {
 		exec(path,NULL);

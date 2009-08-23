@@ -99,7 +99,7 @@ int main(int argc,char **argv) {
 
 	// wait until the service is announced
 	char *servPath = new char[MAX_PATH_LEN + 1];
-	sprintf(servPath,"drivers:/guiterm%d",no);
+	sprintf(servPath,"/drivers/guiterm%d",no);
 	tFD fin;
 	do {
 		fin = open(servPath,IO_READ);

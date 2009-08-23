@@ -127,8 +127,8 @@ int main(void) {
 	}
 
 	/* set initial vars for proc 0 */
-	env_set(0,(char*)"CWD",(char*)"file:/");
-	env_set(0,(char*)"PATH",(char*)"file:/bin/");
+	env_set(0,(char*)"CWD",(char*)"/");
+	env_set(0,(char*)"PATH",(char*)"/bin/");
 
 	/* wait for messages */
 	while(1) {

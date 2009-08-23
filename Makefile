@@ -100,14 +100,14 @@ createhdd: $(DISKMOUNT) clean
 		echo '' >> $(DISKMOUNT)/boot/grub/menu.lst;
 		echo "title $(OSTITLE)" >> $(DISKMOUNT)/boot/grub/menu.lst;
 		echo "kernel /boot/$(BINNAME)" >> $(DISKMOUNT)/boot/grub/menu.lst;
-		echo "module /services/ata services:/ata" >> $(DISKMOUNT)/boot/grub/menu.lst;
-		echo "module /services/fs" services:/fs>> $(DISKMOUNT)/boot/grub/menu.lst;
+		echo "module /sbin/ata /services/ata" >> $(DISKMOUNT)/boot/grub/menu.lst;
+		echo "module /sbin/fs" /services/fs>> $(DISKMOUNT)/boot/grub/menu.lst;
 		echo "boot" >> $(DISKMOUNT)/boot/grub/menu.lst;
 		echo -n "device (hd0) $(HDD)\nroot (hd0,0)\nsetup (hd0)\nquit\n" | grub --no-floppy --batch;
 		@# store some test-data on the disk
 		$(SUDO) mkdir $(DISKMOUNT)/bin
+		$(SUDO) mkdir $(DISKMOUNT)/sbin
 		$(SUDO) mkdir $(DISKMOUNT)/etc
-		$(SUDO) mkdir $(DISKMOUNT)/services
 		$(SUDO) cp services/services.txt $(DISKMOUNT)/etc/services
 		$(SUDO) mkdir $(DISKMOUNT)/testdir
 		$(SUDO) touch $(DISKMOUNT)/file.txt

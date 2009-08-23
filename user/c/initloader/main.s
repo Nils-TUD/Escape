@@ -48,5 +48,5 @@ argp:
 	dd		0
 
 progName:
-	db		"file:/bin/init"
+	db		"/bin/init"
 	db		0

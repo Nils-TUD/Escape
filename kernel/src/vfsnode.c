@@ -31,8 +31,6 @@
 #include <assert.h>
 #include <errors.h>
 
-#define FILE_ROOT()	(nodes + 3)
-
 #define IS_ON_HEAP(addr) ((u32)(addr) >= KERNEL_HEAP_START && \
 		(u32)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
 
@@ -167,7 +165,7 @@ char *vfsn_getPath(tVFSNodeNo nodeNo) {
 
 	n = node;
 	len = total;
-	while(n->parent->parent != NULL) {
+	while(n->parent != NULL) {
 		nlen = strlen(n->name) + 1;
 		/* insert the new element */
 		*(path + total - nlen) = '/';
@@ -176,11 +174,6 @@ char *vfsn_getPath(tVFSNodeNo nodeNo) {
 		n = n->parent;
 	}
 
-	/* now handle the protocol */
-	nlen = strlen(n->name) + 1;
-	memcpy(path + total - nlen,n->name,nlen - 1);
-	*(path + total - 1) = ':';
-
 	/* terminate */
 	*(path + len) = '\0';
 
@@ -188,37 +181,12 @@ char *vfsn_getPath(tVFSNodeNo nodeNo) {
 }
 
 s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,bool createNode) {
-	sVFSNode *n;
-	s32 pos;
-
-	/* search for xyz:// */
-	pos = strchri(path,':');
-
-	/* we require a complete path here */
-	if(pos == 0 || *(path + pos) == '\0')
-		return ERR_INVALID_PATH;
-
-	/* search our root node */
-	n = NODE_FIRST_CHILD(nodes);
-	while(n != NULL) {
-		if(strncmp(n->name,path,pos) == 0) {
-			path += pos + 1;
-			break;
-		}
-		n = n->next;
-	}
-
-	/* no matching root found? */
-	if(n == NULL)
-		return ERR_VFS_NODE_NOT_FOUND;
+	sVFSNode *n = nodes;
+	s32 pos,depth = 0;
 
 	/* no absolute path? */
-	if(*path != '/' && *path != '\0')
+	if(*path != '/')
 		return ERR_INVALID_PATH;
-
-	/* found file: ? */
-	if(n == FILE_ROOT())
-		return ERR_REAL_PATH;
 
 	/* skip slashes */
 	while(*path == '/')
@@ -253,13 +221,16 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,bool createNode) {
 			/* move to childs of this node */
 			pos = strchri(path,'/');
 			n = NODE_FIRST_CHILD(n);
+			depth++;
 			continue;
 		}
 		n = n->next;
 	}
 
+	/* Note: this means that no one can create virtual nodes in the root-directory,
+	 * which is intended */
 	if(n == NULL)
-		return ERR_VFS_NODE_NOT_FOUND;
+		return depth == 0 ? ERR_REAL_PATH : ERR_VFS_NODE_NOT_FOUND;
 
 	/* handle special node-types */
 	if(createNode && (n->mode & MODE_TYPE_SERVICE)) {

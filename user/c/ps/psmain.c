@@ -22,6 +22,7 @@
 #include <esc/fileio.h>
 #include <esc/dir.h>
 #include <esc/proc.h>
+#include <esc/cmdargs.h>
 #include <stdlib.h>
 #include <sllist.h>
 #include <string.h>
@@ -61,11 +62,40 @@ static const char *states[] = {
 	"Zombie "
 };
 
-int main(void) {
+static void usage(char *name) {
+	fprintf(stderr,"Usage: %s [-t]\n",name);
+	fprintf(stderr,"	-t : Print threads, too\n");
+	exit(EXIT_FAILURE);
+}
+
+int main(int argc,char *argv[]) {
 	sProcess *procs;
 	u32 i,count;
 	u64 totalCycles;
 	sSLNode *n;
+	bool printThreads = false;
+	char *s;
+
+	if(isHelpCmd(argc,argv))
+		usage(argv[0]);
+
+	for(i = 1; i < argc; i++) {
+		if(argv[i][0] == '-') {
+			s = argv[i] + 1;
+			while(*s) {
+				switch(*s) {
+					case 't':
+						printThreads = true;
+						break;
+					default:
+						usage(argv[0]);
+				}
+				s++;
+			}
+		}
+		else
+			usage(argv[0]);
+	}
 
 	procs = ps_getProcs(&count);
 	if(procs == NULL)
@@ -99,14 +129,16 @@ int main(void) {
 				(procs[i].textPages + procs[i].dataPages + procs[i].stackPages) * 4,
 				cyclePercent,userPercent,kernelPercent,procs[i].command);
 
-		for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
-			sPThread *t = (sPThread*)n->data;
-			u64 threadCycles = t->ucycleCount.val64 + t->kcycleCount.val64;
-			u32 tcyclePercent = (u32)(100. / (totalCycles / (double)threadCycles));
-			u32 tuserPercent = (u32)(100. / (threadCycles / (double)t->ucycleCount.val64));
-			u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
-			printf(" |-%2d\t\t\t\t\t%s\t%3d%% (%3d%%,%3d%%)\n",
-					t->tid,states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
+		if(printThreads) {
+			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
+				sPThread *t = (sPThread*)n->data;
+				u64 threadCycles = t->ucycleCount.val64 + t->kcycleCount.val64;
+				u32 tcyclePercent = (u32)(100. / (totalCycles / (double)threadCycles));
+				u32 tuserPercent = (u32)(100. / (threadCycles / (double)t->ucycleCount.val64));
+				u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
+				printf(" |-%2d\t\t\t\t\t%s\t%3d%% (%3d%%,%3d%%)\n",
+						t->tid,states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
+			}
 		}
 	}
 

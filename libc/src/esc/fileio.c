@@ -251,7 +251,8 @@ s32 fclose(tFile *file) {
 		close(buf->out.fd);
 
 	/* remove and free buffer */
-	sll_removeFirst(bufList,buf);
+	if(bufList != NULL)
+		sll_removeFirst(bufList,buf);
 	free(buf->in.str);
 	free(buf->out.str);
 	free(buf);

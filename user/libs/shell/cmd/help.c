@@ -36,7 +36,7 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 	printf("	login							Just for fun ;)\n");
 	printf("	ls [-ali] [<dir>]				List current or specified directory\n");
 	printf("	progress						Shows a progress-bar\n");
-	printf("	ps								Print processes\n");
+	printf("	ps [-t]							Print processes\n");
 	printf("	echo <string>,...				Print given arguments\n");
 	printf("	env [<name>|<name>=<value>]		Print or set env-variable(s)\n");
 	printf("	help							Print this message\n");
@@ -46,10 +46,14 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 	printf("	stat <file>						Print file-information\n");
 	printf("	less [<file>]					Allows navigation through <file> or STDIN\n");
 	printf("	dump [-n <b>][-f <f>][<file>]	Dumps bytes from <file> or STDIN to STDOUT\n");
+	printf("	grep <pattern> [<file>]			Prints all lines that match <pattern>\n");
 	printf("\n");
 	printf("	gui								Start GUI\n");
 	printf("									(be carefull: this is a oneway-ticket ;))\n");
 	printf("	guishell						A shell for the GUI\n");
+
+	printf("\n");
+	printf("Execute a command with '--help', '-h' or '-?' to get further information\n");
 
 	printf("\n");
 	printf("Additionally there is a basic shell-'language', that supports '|', '\"' and ';'\n");

@@ -194,7 +194,9 @@ void thread_wakeupAll(u8 event) {
 
 void thread_wakeup(tTid tid,u8 event) {
 	sThread *t = thread_getById(tid);
-	vassert(t != NULL,"Thread with id %d not found",tid);
+	/* ignore the wakeup if the thread doesn't exist */
+	if(t == NULL)
+		return;
 	if(t->events & event) {
 		/* TODO somehow it is by far slower to use setReadyQuick() here. I can't really
 		 * explain this behaviour :/ */

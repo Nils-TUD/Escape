@@ -5,3 +5,6 @@ vterm; drivers:/vterm0,drivers:/vterm1,drivers:/vterm2,drivers:/vterm3,drivers:/
 video; drivers:/video;
 env; services:/env;
 cmos; ;
+zero; drivers:/zero;
+random; drivers:/random;
+null; drivers:/null;

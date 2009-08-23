@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <esc/fileio.h>
+#include <esc/cmdargs.h>
 #include <stdlib.h>
 
 #define BUF_SIZE 512
@@ -31,7 +32,7 @@ int main(int argc,char *argv[]) {
 	char *path;
 	char buffer[BUF_SIZE];
 
-	if(argc != 1 && argc != 2) {
+	if((argc != 1 && argc != 2) || isHelpCmd(argc,argv)) {
 		fprintf(stderr,"Usage: %s [<file>]\n",argv[0]);
 		return EXIT_FAILURE;
 	}

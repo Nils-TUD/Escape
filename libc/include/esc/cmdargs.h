@@ -17,39 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef CMDARGS_H_
+#define CMDARGS_H_
+
 #include <esc/common.h>
-#include <esc/date.h>
-#include <esc/fileio.h>
-#include <esc/cmdargs.h>
-#include <stdlib.h>
 
-#define MAX_DATE_LEN 100
+/**
+ * Checks wether the given arguments may be a kind of help-request. That means one of:
+ * <prog> --help
+ * <prog> -h
+ * <prog> -?
+ *
+ * @param argc the number of arguments
+ * @param argv the arguments
+ * @return true if it is a help-request
+ */
+bool isHelpCmd(int argc,char **argv);
 
-int main(int argc,char **argv) {
-	sDate date;
-	char *fmt = (char*)"%c";
-	char str[MAX_DATE_LEN];
-
-	if((argc != 1 && argc != 2) || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s [<format>]\n",argv[0]);
-		fprintf(stderr,"	<format> may be anything that dateToString() accepts\n");
-		return EXIT_FAILURE;
-	}
-
-	/* use format from argument? */
-	if(argc == 2)
-		fmt = argv[1];
-
-	if(getDate(&date) < 0) {
-		printe("Unable to get date");
-		return EXIT_FAILURE;
-	}
-
-	if(dateToString(str,MAX_DATE_LEN,fmt,&date) == 0) {
-		fprintf(stderr,"Unable to format date\n");
-		return EXIT_FAILURE;
-	}
-
-	printf("%s\n",str);
-	return EXIT_SUCCESS;
-}
+#endif /* CMDARGS_H_ */

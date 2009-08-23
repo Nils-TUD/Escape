@@ -541,10 +541,10 @@ static void sysc_startThread(sIntrptStackFrame *stack) {
 static void sysc_exit(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 	sThread *t = thread_getRunning();
-	if(SYSC_ARG1(stack) != 0) {
+	/*if(SYSC_ARG1(stack) != 0) {
 		vid_printf("Thread %d (%s) exited with %d\n",t->tid,t->proc->command,SYSC_ARG1(stack));
 		util_printStackTrace(util_getUserStackTrace(t,stack));
-	}
+	}*/
 	proc_destroyThread();
 	thread_switch();
 }

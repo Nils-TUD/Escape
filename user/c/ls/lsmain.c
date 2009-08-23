@@ -23,6 +23,7 @@
 #include <esc/fileio.h>
 #include <esc/env.h>
 #include <esc/date.h>
+#include <esc/cmdargs.h>
 #include <stdlib.h>
 
 #define ARRAY_INC_SIZE		8
@@ -60,6 +61,14 @@ static void printPerm(u16 mode,u16 flags,char c);
 static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count);
 static void freeEntries(sFullDirEntry **entries,u32 count);
 
+static void usage(char *name) {
+	fprintf(stderr,"Usage: %s [-lia] [<path>]\n",name);
+	fprintf(stderr,"	-l: long listing\n");
+	fprintf(stderr,"	-i: print inode-numbers\n");
+	fprintf(stderr,"	-a: print also '.' and '..'\n");
+	exit(EXIT_FAILURE);
+}
+
 int main(int argc,char *argv[]) {
 	bool pathGiven = false;
 	char *path;
@@ -69,6 +78,10 @@ int main(int argc,char *argv[]) {
 	u32 i,pos,x,count,flags = 0;
 	sFullDirEntry **entries,*entry;
 	sDate date;
+
+	if(isHelpCmd(argc,argv))
+		usage(argv[0]);
+
 	path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
 	if(path == NULL) {
 		printe("Not enough mem for path");
@@ -90,11 +103,16 @@ int main(int argc,char *argv[]) {
 					case 'i':
 						flags |= LS_FL_INODE;
 						break;
+					default:
+						usage(argv[0]);
+						break;
 				}
 				str++;
 			}
 		}
 		else {
+			if(pathGiven)
+				usage(argv[0]);
 			abspath(path,MAX_PATH_LEN + 1,argv[argc - 1]);
 			pathGiven = true;
 		}

@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <esc/fileio.h>
+#include <esc/cmdargs.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -37,6 +38,11 @@ static u8 buffer[BUF_SIZE];
 
 static void usage(char *name) {
 	fprintf(stderr,"Usage: %s [-n <bytes>] [-f o|h|d] [<file>]\n",name);
+	fprintf(stderr,"	-n <bytes>	: Read the first <bytes> bytes\n");
+	fprintf(stderr,"	-f o|h|d	: The base to print the bytes in:\n");
+	fprintf(stderr,"					o = octal\n");
+	fprintf(stderr,"					h = hexadecimal\n");
+	fprintf(stderr,"					d = decimal\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -63,6 +69,9 @@ int main(int argc,char *argv[]) {
 	u8 base = 16;
 	char format = OUT_FORMAT_HEX;
 	s32 i,x,c,count = -1;
+
+	if(isHelpCmd(argc,argv))
+		usage(argv[0]);
 
 	for(i = 1; i < argc; i++) {
 		s = argv[i];

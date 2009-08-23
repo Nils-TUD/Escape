@@ -22,6 +22,7 @@
 #include <esc/fileio.h>
 #include <esc/dir.h>
 #include <esc/date.h>
+#include <esc/cmdargs.h>
 #include <fsinterface.h>
 #include <stdlib.h>
 
@@ -34,7 +35,7 @@ int main(int argc,char *argv[]) {
 	sFileInfo info;
 	char apath[MAX_PATH_LEN];
 
-	if(argc != 2) {
+	if(argc != 2 || isHelpCmd(argc,argv)) {
 		fprintf(stderr,"Usage: %s <file>\n",argv[0]);
 		return EXIT_FAILURE;
 	}

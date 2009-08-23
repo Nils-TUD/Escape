@@ -21,9 +21,16 @@
 #include <esc/heap.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
+#include <esc/cmdargs.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+
+static void usage(char *name) {
+	fprintf(stderr,"Usage: %s [-p]\n",name);
+	fprintf(stderr,"	-p: Print words\n");
+	exit(EXIT_FAILURE);
+}
 
 int main(int argc,char **argv) {
 	s32 ch;
@@ -31,8 +38,14 @@ int main(int argc,char **argv) {
 	char *buffer = NULL;
 	bool print = false;
 
-	if(argc > 1 && strcmp(argv[1],"-p") == 0)
-		print = true;
+	if(isHelpCmd(argc,argv))
+		usage(argv[0]);
+	if(argc > 1) {
+		if(strcmp(argv[1],"-p") == 0)
+			print = true;
+		else
+			usage(argv[0]);
+	}
 
 	count = 0;
 	bufPos = 0;

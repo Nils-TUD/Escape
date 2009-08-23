@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/signals.h>
+#include <esc/cmdargs.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -42,7 +43,7 @@ int main(int argc,char **argv) {
 	tPid pid;
 	tSig signal = SIG_KILL;
 
-	if(argc < 2) {
+	if(argc < 2 || isHelpCmd(argc,argv)) {
 		fprintf(stderr,"Usage: %s [-L][-<signal>] <pid>\n",argv[0]);
 		return EXIT_FAILURE;
 	}

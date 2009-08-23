@@ -44,11 +44,8 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 	printf("	pwd								Print current directory\n");
 	printf("	wc								Count and/or print words\n");
 	printf("	stat <file>						Print file-information\n");
-	printf("	less [<file>]					Reads from <file> or STDIN and allows\n");
-	printf("									navigation through it:\n");
-	printf("										up/down	- one line up/down\n");
-	printf("										pageup/pagedown - one page up/down\n");
-	printf("										q - quit\n");
+	printf("	less [<file>]					Allows navigation through <file> or STDIN\n");
+	printf("	dump [-n <b>][-f <f>][<file>]	Dumps bytes from <file> or STDIN to STDOUT\n");
 	printf("\n");
 	printf("	gui								Start GUI\n");
 	printf("									(be carefull: this is a oneway-ticket ;))\n");

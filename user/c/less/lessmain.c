@@ -23,6 +23,7 @@
 #include <esc/heap.h>
 #include <esc/io.h>
 #include <esc/keycodes.h>
+#include <esc/cmdargs.h>
 #include <messages.h>
 #include <stdlib.h>
 
@@ -55,8 +56,12 @@ int main(int argc,char *argv[]) {
 	char *path;
 	char vterm[MAX_PATH_LEN] = "drivers:/";
 
-	if(argc != 1 && argc != 2) {
+	if((argc != 1 && argc != 2) || isHelpCmd(argc,argv)) {
 		fprintf(stderr,"Usage: %s [<file>]\n",argv[0]);
+		fprintf(stderr,"	navigation:\n");
+		fprintf(stderr,"		up/down	- one line up/down\n");
+		fprintf(stderr,"		pageup/pagedown - one page up/down\n");
+		fprintf(stderr,"		q - quit\n");
 		return EXIT_FAILURE;
 	}
 

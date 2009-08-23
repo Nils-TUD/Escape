@@ -22,6 +22,7 @@
 #include <esc/io.h>
 #include <esc/env.h>
 #include <esc/signals.h>
+#include <esc/cmdargs.h>
 #include <stdlib.h>
 
 #include <shell/shell.h>
@@ -36,26 +37,29 @@ static void shell_sigIntrpt(tSig sig,u32 data);
 
 static u32 vterm;
 
+static void usage(char *name) {
+	fprintf(stderr,"Usage: \n");
+	fprintf(stderr,"	Interactive:		%s <vterm>\n",name);
+	fprintf(stderr,"	Non-Interactive:	%s -e <yourCmd>\n",name);
+	exit(EXIT_FAILURE);
+}
+
 int main(int argc,char **argv) {
 	tFD fd;
 	char *buffer;
 	char servPath[9 + MAX_VTERM_NAME_LEN + 1] = "drivers:/";
 
 	/* we need either the vterm as argument or "-e <cmd>" */
-	if(argc < 2) {
-		fprintf(stderr,
-			"Usage: \n\tInteractive:\t\t%s <vterm>\n\tNon-Interactive:\t%s -e <yourCmd>\n",
-			argv[0],argv[0]);
+	if((argc != 2 && argc != 3) || isHelpCmd(argc,argv)) {
+		usage(argv[0]);
 		return EXIT_FAILURE;
 	}
 
 	/* none-interactive-mode */
 	if(argc == 3) {
 		/* in this case we already have stdin, stdout and stderr */
-		if(strcmp(argv[1],"-e") != 0) {
-			fprintf(stderr,"Invalid shell-usage; Please use %s -e <cmd>\n",argv[1]);
-			return EXIT_FAILURE;
-		}
+		if(strcmp(argv[1],"-e") != 0)
+			usage(argv[0]);
 
 		return shell_executeCmd(argv[2]);
 	}

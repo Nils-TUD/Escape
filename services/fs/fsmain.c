@@ -45,16 +45,13 @@ int main(void) {
 	s32 size;
 	tServ id,client;
 
-	/* TODO */
-	ext2.drive = 0;
-	ext2.partition = 0;
 	if(!ext2_init(&ext2)) {
 		unregService(id);
 		return EXIT_FAILURE;
 	}
 
 	/* register service */
-	id = regService("fs",SERVICE_TYPE_MULTIPIPE);
+	id = regService("fs",SERV_DEFAULT);
 	if(id < 0) {
 		printe("Unable to register service 'fs'");
 		return EXIT_FAILURE;

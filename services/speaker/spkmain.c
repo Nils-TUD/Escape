@@ -49,15 +49,17 @@ static void stopSound(void);
  */
 static void timerIntrptHandler(tSig sig,u32 data);
 
+static sMsg msg;
 static u16 intrptCount = 0;
 static u16 intrptTarget = 0;
 
 int main(void) {
 	tFD fd;
+	tMsgId mid;
 	tServ id,client;
 
 	/* register service */
-	id = regService("speaker",SERVICE_TYPE_SINGLEPIPE);
+	id = regService("speaker",SERV_DEFAULT);
 	if(id < 0) {
 		printe("Unable to register service 'speaker'");
 		return EXIT_FAILURE;
@@ -79,17 +81,16 @@ int main(void) {
 		if(fd < 0)
 			wait(EV_CLIENT);
 		else {
-			sMsgHeader header;
-			while(read(fd,&header,sizeof(sMsgHeader)) > 0) {
-				switch(header.id) {
+			while(receive(fd,&mid,&msg) > 0) {
+				switch(mid) {
 					case MSG_SPEAKER_BEEP: {
-						sMsgDataSpeakerBeep data;
-						read(fd,&data,sizeof(sMsgDataSpeakerBeep));
-						if(data.frequency > 0 && data.duration > 0) {
+						u32 freq = msg.args.arg1;
+						u32 dur = msg.args.arg2;
+						if(freq > 0 && dur > 0) {
 							/* add timer-interrupt listener */
 							if(setSigHandler(SIG_INTRPT_TIMER,timerIntrptHandler) == 0) {
-								playSound(data.frequency);
-								intrptTarget = data.duration;
+								playSound(freq);
+								intrptTarget = dur;
 							}
 						}
 					}

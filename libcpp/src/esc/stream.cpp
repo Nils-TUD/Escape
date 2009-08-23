@@ -114,8 +114,23 @@ namespace esc {
 	}
 
 	s32 Stream::FileBuffer::read(void *buffer,u32 count) {
+		// TODO just temporary
 		// TODO buffering
-		return ::read(_fd,buffer,count);
+		char *cbuf = (char*)buffer;
+		s32 c;
+		u32 total = 0,amount;
+		while(count > 0) {
+			amount = MIN(1024,count);
+			c = ::read(_fd,cbuf,amount);
+			if(c < 0)
+				return c;
+			total += c;
+			if(c < amount)
+				break;
+			cbuf += amount;
+			count -= amount;
+		}
+		return total;
 	}
 
 	char Stream::FileBuffer::write(char c) {
@@ -126,8 +141,23 @@ namespace esc {
 	}
 
 	s32 Stream::FileBuffer::write(void *buffer,u32 count) {
+		// TODO just temporary
 		// TODO buffering
-		return ::write(_fd,buffer,count);
+		char *cbuf = (char*)buffer;
+		s32 c;
+		u32 total = 0,amount;
+		while(count > 0) {
+			amount = MIN(1024,count);
+			c = ::write(_fd,cbuf,amount);
+			if(c < 0)
+				return c;
+			total += c;
+			if(c < amount)
+				break;
+			cbuf += amount;
+			count -= amount;
+		}
+		return total;
 	}
 
 	s32 Stream::FileBuffer::format(const char *fmt,va_list ap) {
@@ -229,6 +259,8 @@ namespace esc {
 	FileStream::FileStream(const char *path,u16 mode) {
 		tFD fd = open(path,mode);
 		// TODO throw exception, if open failed
+		if(fd < 0)
+			err << "Open for '" << path << "' failed" << endl;
 		if(mode & READ)
 			_in = new FileBuffer(fd,INBUF_SIZE);
 		if(mode & WRITE)

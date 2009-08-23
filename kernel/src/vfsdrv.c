@@ -99,6 +99,12 @@ s32 vfsdrv_read(tTid tid,sVFSNode *node,void *buffer,u32 offset,u32 count) {
 	if(res < 0)
 		return res;
 
+	/* wait until data is readable */
+	while(node->parent->data.service.isEmpty) {
+		thread_wait(tid,EV_DATA_READABLE);
+		thread_switchInKernel();
+	}
+
 	/* send msg to fs */
 	msg.args.arg1 = tid;
 	msg.args.arg2 = offset;
@@ -119,6 +125,8 @@ s32 vfsdrv_read(tTid tid,sVFSNode *node,void *buffer,u32 offset,u32 count) {
 	}
 
 	res = req->count;
+	/* store wether there is more data readable */
+	node->parent->data.service.isEmpty = !req->val1;
 	vfsreq_remRequest(req);
 	return res;
 }
@@ -228,6 +236,7 @@ static void vfsdrv_readReqHandler(const u8 *data,u32 size) {
 	if(req != NULL) {
 		/* remove request */
 		req->finished = true;
+		req->val1 = rmsg->data.arg3;
 		req->count = rmsg->data.arg2;
 		req->data = (void*)kheap_alloc(req->count);
 		if(req->data != NULL)

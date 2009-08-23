@@ -29,6 +29,8 @@
 #define HISTORY_SIZE		(ROWS * 8)
 #define BUFFER_SIZE			(COLS * 2 * HISTORY_SIZE)
 
+#define INPUT_BUF_SIZE		128
+
 #define MAX_NAME_LEN		6
 
 /* the header for the set-screen message */
@@ -41,6 +43,7 @@ typedef struct {
 typedef struct {
 	/* identification */
 	u8 index;
+	tServ sid;
 	char name[MAX_NAME_LEN + 1];
 	/* position (on the current page) */
 	u8 col;
@@ -53,7 +56,6 @@ typedef struct {
 	/* file-descriptors */
 	tFD video;
 	tFD speaker;
-	tFD self;
 	/* the first line with content */
 	u16 firstLine;
 	/* the line where row+col starts */
@@ -73,6 +75,8 @@ typedef struct {
 	/* the current escape-state */
 	u8 escapePos;
 	u8 escape;
+	/* the buffer for the input-stream */
+	sRingBuf *inbuf;
 	/* readline-buffer */
 	u8 rlStartCol;
 	u32 rlBufSize;
@@ -89,9 +93,10 @@ typedef struct {
 /**
  * Inits all vterms
  *
+ * @param ids the service-ids
  * @return true if successfull
  */
-bool vterm_initAll(void);
+bool vterm_initAll(tServ *ids);
 
 /**
  * @param index the index

@@ -155,33 +155,22 @@ s32 vfs_hasAccess(tTid tid,tVFSNodeNo nodeNo,u8 flags) {
 tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n = vfsn_getNode(e->nodeNo);
+	/* we can't share service-usages since each thread has his own node */
 	if((n->mode & MODE_TYPE_SERVUSE)) {
-		/* we can't share multipipe-service-usages since each thread has his own node */
-		if(!(n->parent->mode & MODE_SERVICE_SINGLEPIPE)) {
-			sVFSNode *child;
-			tVFSNodeNo nodeNo;
-			tFileNo newFile;
-			s32 err = vfsn_createServiceUse(tid,n->parent,&child);
-			if(err < 0)
-				return -1;
+		sVFSNode *child;
+		tVFSNodeNo nodeNo;
+		tFileNo newFile;
+		s32 err = vfsn_createServiceUse(tid,n->parent,&child);
+		if(err < 0)
+			return -1;
 
-			nodeNo = NADDR_TO_VNNO(child);
-			newFile = vfs_openFile(tid,e->flags,nodeNo);
-			if(newFile < 0) {
-				vfsn_removeNode(child);
-				return -1;
-			}
-			return newFile;
+		nodeNo = NADDR_TO_VNNO(child);
+		newFile = vfs_openFile(tid,e->flags,nodeNo);
+		if(newFile < 0) {
+			vfsn_removeNode(child);
+			return -1;
 		}
-		else {
-			/* use a new file because otherwise we don't know when to remove us from the
-			 * singlePipeClients-list */
-			tFileNo newFile;
-			newFile = vfs_openFile(tid,e->flags,e->nodeNo);
-			if(newFile < 0)
-				return -1;
-			return newFile;
-		}
+		return newFile;
 	}
 	/* if a pipe is inherited we need a new file for it (position should be different )*/
 	else if(n->mode & MODE_TYPE_PIPE) {
@@ -247,22 +236,9 @@ tFileNo vfs_openFile(tTid tid,u8 flags,tVFSNodeNo nodeNo) {
 	/* unused file? */
 	e = globalFileTable + f;
 	if(e->flags == 0) {
-		if(IS_VIRT(nodeNo)) {
-			/* add us as single-pipe-client */
-			if(tid != KERNEL_TID && (n->mode & MODE_TYPE_SERVUSE) &&
-					(n->parent->mode & MODE_SERVICE_SINGLEPIPE)) {
-				if(n->data.servuse.singlePipeClients == NULL) {
-					n->data.servuse.singlePipeClients = sll_create();
-					if(n->data.servuse.singlePipeClients == NULL)
-						return ERR_NOT_ENOUGH_MEM;
-				}
-				if(!sll_append(n->data.servuse.singlePipeClients,thread_getById(tid)))
-					return ERR_NOT_ENOUGH_MEM;
-			}
-
-			/* count references of virtual nodes */
+		/* count references of virtual nodes */
+		if(IS_VIRT(nodeNo))
 			n->refCount++;
-		}
 		e->owner = tid;
 		e->flags = flags;
 		e->refCount = 1;
@@ -346,7 +322,6 @@ tFileNo vfs_openFileForKernel(tTid tid,tVFSNodeNo nodeNo) {
 		/* the service has read/write permission */
 		n->mode = MODE_TYPE_SERVUSE | MODE_OTHER_READ | MODE_OTHER_WRITE;
 		n->readHandler = NULL;
-		n->data.servuse.locked = -1;
 		n->owner = KERNEL_TID;
 
 		/* insert as first child */
@@ -371,7 +346,9 @@ bool vfs_eof(tTid tid,tFileNo file) {
 		sVFSNode *n = nodes + i;
 
 		if(n->mode & MODE_TYPE_SERVUSE) {
-			if(n->parent->owner == tid)
+			if(n->parent->mode & MODE_SERVICE_DRIVER)
+				eof = n->parent->data.service.isEmpty;
+			else if(n->parent->owner == tid)
 				eof = sll_length(n->data.servuse.sendList) == 0;
 			else
 				eof = sll_length(n->data.servuse.recvList) == 0;
@@ -394,14 +371,19 @@ s32 vfs_seek(tTid tid,tFileNo file,u32 position) {
 		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
 		sVFSNode *n = nodes + i;
 
-		if(n->mode & MODE_TYPE_SERVUSE)
-			return ERR_SERVUSE_SEEK;
-
-		/* set position */
-		if(n->data.def.pos == 0)
-			e->position = 0;
-		else
-			e->position = MIN((u32)(n->data.def.pos) - 1,position);
+		if(n->mode & MODE_TYPE_SERVUSE) {
+			if(n->parent->mode & MODE_SERVICE_DRIVER)
+				e->position = position;
+			else
+				return ERR_SERVUSE_SEEK;
+		}
+		else {
+			/* set position */
+			if(n->data.def.pos == 0)
+				e->position = 0;
+			else
+				e->position = MIN((u32)(n->data.def.pos) - 1,position);
+		}
 	}
 	else {
 		/* since the fs-service validates the position anyway we can simply set it */
@@ -418,12 +400,6 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 	if(IS_VIRT(e->nodeNo)) {
 		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
 		sVFSNode *n = nodes + i;
-
-		/* TODO remove! */
-		if((n->mode & MODE_TYPE_SERVUSE) && !(n->parent->mode & MODE_SERVICE_DRIVER)) {
-			tMsgId mid;
-			return vfs_receiveMsg(tid,file,&mid,buffer,count);
-		}
 
 		if(!(e->flags & VFS_READ))
 			return ERR_NO_READ_PERM;
@@ -456,10 +432,6 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 	if(IS_VIRT(e->nodeNo)) {
 		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
 		n = nodes + i;
-
-		/* TODO remove! */
-		if((n->mode & MODE_TYPE_SERVUSE) && !(n->parent->mode & MODE_SERVICE_DRIVER))
-			return vfs_sendMsg(tid,file,MSG_SEND,buffer,count);
 
 		if(!(e->flags & VFS_WRITE))
 			return ERR_NO_WRITE_PERM;
@@ -564,16 +536,6 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 
 		if(IS_VIRT(e->nodeNo)) {
 			if(n->name != NULL) {
-				/* we HAVE TO unlock the node if the file has locked it (read a msg incompletely) */
-				if(n->data.servuse.locked == file)
-					n->data.servuse.locked = -1;
-
-				/* remove us as single-pipe-client */
-				if(n->parent->mode & MODE_SERVICE_SINGLEPIPE) {
-					sThread *t = thread_getById(tid);
-					sll_removeFirst(n->data.servuse.singlePipeClients,t);
-				}
-
 				/* last usage? */
 				if(--(n->refCount) == 0) {
 					/* notify the driver, if it is one */
@@ -656,6 +618,19 @@ tServ vfs_createService(tTid tid,const char *name,u32 type) {
 	/* failed, so cleanup */
 	kheap_free(hname);
 	return ERR_NOT_ENOUGH_MEM;
+}
+
+s32 vfs_setDataReadable(tTid tid,tVFSNodeNo nodeNo,bool readable) {
+	sVFSNode *n = nodes + nodeNo;
+	if(n->name == NULL || !(n->mode & MODE_SERVICE_DRIVER))
+		return ERR_INVALID_NODENO;
+	if(n->owner != tid)
+		return ERR_NOT_OWN_SERVICE;
+
+	n->data.service.isEmpty = !readable;
+	if(readable)
+		thread_wakeupAll(EV_DATA_READABLE | EV_RECEIVED_MSG);
+	return 0;
 }
 
 bool vfs_msgAvailableFor(tTid tid,u8 events) {
@@ -741,7 +716,7 @@ tFileNo vfs_openClientThread(tTid tid,tVFSNodeNo nodeNo,tTid clientId) {
 	if(!vfsn_isValidNodeNo(nodeNo))
 		return ERR_INVALID_NODENO;
 	node = nodes + nodeNo;
-	if(node->owner != tid || !(node->mode & MODE_TYPE_SERVICE) || node->mode & MODE_SERVICE_SINGLEPIPE)
+	if(node->owner != tid || !(node->mode & MODE_TYPE_SERVICE))
 		return ERR_NOT_OWN_SERVICE;
 
 	/* search for a slot that needs work */
@@ -1079,20 +1054,9 @@ static s32 vfs_serviceUseWriteHandler(tTid tid,sVFSNode *n,tMsgId id,const u8 *d
 		if(n->parent->owner != KERNEL_TID)
 			thread_wakeup(n->parent->owner,EV_CLIENT);
 	}
-	else {
-		if(n->parent->mode & MODE_SERVICE_SINGLEPIPE) {
-			/* notify the clients of this single-pipe-service */
-			if(sll_length(n->data.servuse.singlePipeClients) > 0) {
-				sSLNode *node = sll_begin(n->data.servuse.singlePipeClients);
-				for(; node != NULL; node = node->next)
-					thread_wakeup(((sThread*)node->data)->tid,EV_RECEIVED_MSG);
-			}
-		}
-		else {
-			/* notify the process that there is a message */
-			thread_wakeup(n->owner,EV_RECEIVED_MSG);
-		}
-	}
+	/* notify the process that there is a message */
+	else
+		thread_wakeup(n->owner,EV_RECEIVED_MSG);
 	return 0;
 }
 

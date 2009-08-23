@@ -320,10 +320,8 @@ sVFSNode *vfsn_createNode(char *name) {
 	node->prev = NULL;
 	node->firstChild = NULL;
 	node->lastChild = NULL;
-	node->data.servuse.locked = -1;
 	node->data.servuse.recvList = NULL;
 	node->data.servuse.sendList = NULL;
-	node->data.servuse.singlePipeClients = NULL;
 	node->data.def.cache = NULL;
 	node->data.def.size = 0;
 	node->data.def.pos = 0;
@@ -386,6 +384,7 @@ sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 type) 
 	node->owner = tid;
 	node->mode = MODE_TYPE_SERVICE | MODE_OWNER_READ | MODE_OTHER_READ | type;
 	node->readHandler = NULL;
+	node->data.service.isEmpty = true;
 	return node;
 }
 
@@ -398,7 +397,6 @@ sVFSNode *vfsn_createServiceUseNode(tTid tid,sVFSNode *parent,char *name,fRead h
 	node->mode = MODE_TYPE_SERVUSE | MODE_OWNER_READ | MODE_OWNER_WRITE |
 		MODE_OTHER_READ | MODE_OTHER_WRITE;
 	node->readHandler = handler;
-	node->data.servuse.locked = -1;
 	return node;
 }
 
@@ -436,12 +434,6 @@ void vfsn_removeNode(sVFSNode *n) {
 			sll_destroy(n->data.servuse.sendList,true);
 			n->data.servuse.sendList = NULL;
 		}
-
-		/* free single-pipe-clients */
-		if(n->parent->mode & MODE_SERVICE_SINGLEPIPE && n->data.servuse.singlePipeClients != NULL) {
-			sll_destroy(n->data.servuse.singlePipeClients,false);
-			n->data.servuse.singlePipeClients = NULL;
-		}
 	}
 	else if(n->data.def.cache != NULL && IS_ON_HEAP(n->data.def.cache)) {
 		kheap_free(n->data.def.cache);
@@ -468,45 +460,29 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	char *name;
 	sVFSNode *m;
 
-	if(n->mode & MODE_SERVICE_SINGLEPIPE) {
-		/* check if the node does already exist */
-		m = NODE_FIRST_CHILD(n);
-		while(m != NULL) {
-			if(strcmp(m->name,SERVICE_CLIENT_ALL) == 0) {
-				*child = m;
-				return 0;
-			}
-			m = m->next;
+	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
+	name = (char*)kheap_alloc(12 * sizeof(char));
+	if(name == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+
+	/* create usage-node */
+	itoa(name,tid);
+
+	/* check duplicate usage */
+	m = NODE_FIRST_CHILD(n);
+	while(m != NULL) {
+		if(strcmp(m->name,name) == 0) {
+			kheap_free(name);
+			*child = m;
+			return 0;
 		}
-
-		name = (char*)SERVICE_CLIENT_ALL;
-	}
-	else {
-		/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
-		name = (char*)kheap_alloc(12 * sizeof(char));
-		if(name == NULL)
-			return ERR_NOT_ENOUGH_MEM;
-
-		/* create usage-node */
-		itoa(name,tid);
-
-		/* check duplicate usage */
-		m = NODE_FIRST_CHILD(n);
-		while(m != NULL) {
-			if(strcmp(m->name,name) == 0) {
-				kheap_free(name);
-				*child = m;
-				return 0;
-			}
-			m = m->next;
-		}
+		m = m->next;
 	}
 
 	/* ok, create a service-usage-node */
 	m = vfsn_createServiceUseNode(tid,n,name,(n->mode & MODE_SERVICE_DRIVER) ? vfsdrv_read : NULL);
 	if(m == NULL) {
-		if((n->mode & MODE_SERVICE_SINGLEPIPE) == 0)
-			kheap_free(name);
+		kheap_free(name);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -590,14 +566,6 @@ static void vfsn_dbg_doPrintTree(u32 level,sVFSNode *parent) {
 		for(i = 0;i < level;i++)
 			vid_printf(" |");
 		vid_printf("- %s\n",n->name);
-		if((n->mode & MODE_TYPE_SERVUSE) && (n->parent->mode & MODE_SERVICE_SINGLEPIPE)) {
-			vid_printf("SinglePipeClients:\n");
-			sSLNode *node = sll_begin(n->data.servuse.singlePipeClients);
-			for(; node != NULL; node = node->next) {
-				vid_printf("\t tid=%d, cmd=%s\n",((sThread*)node->data)->tid,
-						((sThread*)node->data)->proc->command);
-			}
-		}
 		/* don't recurse for "." and ".." */
 		if(strncmp(n->name,".",1) != 0 && strncmp(n->name,"..",2) != 0)
 			vfsn_dbg_doPrintTree(level + 1,n);
@@ -619,10 +587,6 @@ void vfsn_dbg_printNode(sVFSNode *node) {
 			sll_dbg_print(node->data.servuse.sendList);
 			vid_printf("\tRecvList:\n");
 			sll_dbg_print(node->data.servuse.recvList);
-			if(node->parent->mode & MODE_SERVICE_SINGLEPIPE) {
-				vid_printf("\tSinglePipeClients:\n");
-				sll_dbg_print(node->data.servuse.singlePipeClients);
-			}
 		}
 		else {
 			vid_printf("\treadHandler: 0x%x\n",node->readHandler);

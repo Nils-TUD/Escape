@@ -32,9 +32,8 @@
 #define IRQ_ATA1					0x2E
 #define IRQ_ATA2					0x2F
 
-#define SERVICE_TYPE_MULTIPIPE		1
-#define SERVICE_TYPE_SINGLEPIPE		2
-#define SERVICE_TYPE_DRIVER			4
+#define SERV_DEFAULT				1
+#define SERV_DRIVER					2
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +43,7 @@ extern "C" {
  * Registers a service with given name.
  *
  * @param name the service-name. Should be alphanumeric!
- * @param type the service-type: SERVICE_TYPE_MULTIPIPE or SERVICE_TYPE_SINGLEPIPE
+ * @param type the service-type: SERV_DEFAULT or SERV_DRIVER
  * @return the service-id if successfull, < 0 if an error occurred
  */
 tServ regService(const char *name,u8 type);
@@ -56,6 +55,15 @@ tServ regService(const char *name,u8 type);
  * @return 0 on success or a negative error-code
  */
 s32 unregService(tServ service);
+
+/**
+ * For drivers: Sets wether currently data is readable or not
+ *
+ * @param service the service-id
+ * @param readable wether there is data to read
+ * @return 0 on success
+ */
+s32 setDataReadable(tServ service,bool readable);
 
 /**
  * Looks wether a client wants to be served and returns a file-descriptor for it.

@@ -132,7 +132,7 @@ int main(int argc,char *argv[]) {
 #endif
 
 	tServ client;
-	tServ id = regService("bla",SERVICE_TYPE_DRIVER);
+	tServ id = regService("bla",SERV_DRIVER);
 	if(id < 0)
 		printe("regService");
 
@@ -156,6 +156,7 @@ int main(int argc,char *argv[]) {
 		return EXIT_SUCCESS;
 	}
 
+	setDataReadable(id,true);
 	bool quit = false;
 	tMsgId mid;
 	static sMsg msg;
@@ -176,6 +177,7 @@ int main(int argc,char *argv[]) {
 								msg.args.arg2,msg.args.arg3);
 						msg.data.arg1 = msg.args.arg1;
 						msg.data.arg2 = msg.args.arg3;
+						msg.data.arg3 = true;
 						strcpy(msg.data.d,"test!!");
 						send(cfd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
 						break;

@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void startService(const char *name);
+static void startService(const char *name,const char *wait);
 
 int main(void) {
 	// check for duplicate gui-start
@@ -38,9 +38,9 @@ int main(void) {
 	printf("\033l\x0\033k\x0");
 
 	// start gui services
-	startService("vesa");
-	startService("mouse");
-	startService("winmanager");
+	startService("vesa","services:/vesa");
+	startService("mouse","drivers:/mouse");
+	startService("winmanager","services:/winmanager");
 
 	// start gui-test-program
 	if(fork() == 0) {
@@ -55,20 +55,18 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void startService(const char *name) {
+static void startService(const char *name,const char *wait) {
 	char path[MAX_PATH_LEN + 1] = "file:/services/";
-	char serv[MAX_PATH_LEN + 1] = "services:/";
 	strcat(path,name);
-	strcat(serv,name);
 	if(fork() == 0) {
 		exec(path,NULL);
-		printe("Exec with vesa failed");
+		printe("Exec with '%s' failed",path);
 		exit(EXIT_FAILURE);
 	}
 
 	tFD fd;
 	do {
-		fd = open(serv,IO_READ);
+		fd = open(wait,IO_READ);
 		if(fd < 0)
 			yield();
 	}

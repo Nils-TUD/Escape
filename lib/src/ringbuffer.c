@@ -94,6 +94,17 @@ bool rb_write(sRingBuf *r,const void *e) {
 	return true;
 }
 
+u32 rb_writen(sRingBuf *r,const void *e,u32 n) {
+	sIRingBuf *rb = (sIRingBuf*)r;
+	char *d = (char*)e;
+	while(n-- > 0) {
+		if(!rb_write(r,d))
+			break;
+		d += rb->eSize;
+	}
+	return ((u32)d - (u32)e) / rb->eSize;
+}
+
 bool rb_read(sRingBuf *r,void *e) {
 	sIRingBuf *rb = (sIRingBuf*)r;
 	vassert(r != NULL,"r == NULL");
@@ -105,6 +116,28 @@ bool rb_read(sRingBuf *r,void *e) {
 	rb->readPos = (rb->readPos + 1) % rb->eMax;
 	rb->count--;
 	return true;
+}
+
+u32 rb_readn(sRingBuf *r,void *e,u32 n) {
+	char *d;
+	u32 count;
+	sIRingBuf *rb = (sIRingBuf*)r;
+	vassert(r != NULL,"r == NULL");
+	vassert(e != NULL,"e == NULL");
+	if(n == 0 || rb->count == 0)
+		return 0;
+
+	d = (char*)e;
+	while(n > 0 && rb->count > 0) {
+		count = MIN(rb->eMax - rb->readPos,n);
+		count = MIN(rb->count,count);
+		memcpy(d,rb->data + rb->eSize * rb->readPos,rb->eSize * count);
+		n -= count;
+		d += rb->eSize * count;
+		rb->count -= count;
+		rb->readPos = (rb->readPos + count) % rb->eMax;
+	}
+	return ((u32)d - (u32)e) / rb->eSize;
 }
 
 

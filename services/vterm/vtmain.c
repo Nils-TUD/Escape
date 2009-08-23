@@ -29,11 +29,12 @@
 #include <stdlib.h>
 #include <sllist.h>
 #include <string.h>
+#include <ringbuffer.h>
+#include <errors.h>
 
 #include "vterm.h"
 
-/* read buffer size */
-#define READ_BUF_SIZE 256
+#define KB_DATA_BUF_SIZE	128
 
 /**
  * Determines the vterm for the given service-id
@@ -47,6 +48,7 @@ static sVTerm *getVTerm(tServ sid);
 static bool readKeyboard = true;
 
 static sMsg msg;
+static sKbData kbData[KB_DATA_BUF_SIZE];
 /* vterms */
 static tServ servIds[VTERM_COUNT] = {-1};
 
@@ -60,7 +62,7 @@ int main(void) {
 	/* reg services */
 	for(i = 0; i < VTERM_COUNT; i++) {
 		sprintf(name,"vterm%d",i);
-		servIds[i] = regService(name,SERVICE_TYPE_SINGLEPIPE);
+		servIds[i] = regService(name,SERV_DRIVER);
 		if(servIds[i] < 0) {
 			printe("Unable to register service '%s'",name);
 			return EXIT_FAILURE;
@@ -68,15 +70,15 @@ int main(void) {
 	}
 
 	/* init vterms */
-	if(!vterm_initAll()) {
+	if(!vterm_initAll(servIds)) {
 		fprintf(stderr,"Unable to init vterms");
 		return EXIT_FAILURE;
 	}
 
 	/* open keyboard */
-	kbFd = open("services:/keyboard",IO_READ);
+	kbFd = open("drivers:/keyboard",IO_READ);
 	if(kbFd < 0) {
-		printe("Unable to open 'services:/keyboard'");
+		printe("Unable to open 'drivers:/keyboard'");
 		return EXIT_FAILURE;
 	}
 
@@ -95,10 +97,15 @@ int main(void) {
 				/* read from keyboard */
 				/* don't block here since there may be waiting clients.. */
 				while(!eof(kbFd)) {
-					receive(kbFd,&mid,&msg);
-					vterm_handleKeycode(msg.args.arg1,msg.args.arg2);
+					sKbData *kbd = kbData;
+					u32 count = read(kbFd,kbData,sizeof(kbData));
+					count /= sizeof(sKbData);
+					while(count-- > 0) {
+						vterm_handleKeycode(kbd->isBreak,kbd->keycode);
+						kbd++;
+					}
 				}
-				wait(EV_CLIENT | EV_RECEIVED_MSG);
+				wait(EV_CLIENT | EV_DATA_READABLE);
 			}
 			else
 				wait(EV_CLIENT);
@@ -109,14 +116,40 @@ int main(void) {
 				u32 c;
 				/* TODO this may cause trouble with escape-codes. maybe we should store the
 				 * "escape-state" somehow... */
-				while((c = receive(fd,&mid,&msg)) > 0) {
+				while(receive(fd,&mid,&msg) > 0) {
 					switch(mid) {
-						case MSG_SEND: {
-							char *buffer = &msg;
-							buffer[c] = '\0';
-							vterm_puts(vt,buffer,c,true,&readKeyboard);
+						case MSG_DRV_OPEN:
+							msg.args.arg2 = 0;
+							send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
+							break;
+						case MSG_DRV_READ: {
+							/* offset is ignored here */
+							u32 count = MIN(sizeof(msg.data.d),msg.args.arg3);
+							msg.data.arg1 = msg.args.arg1;
+							msg.data.arg2 = rb_readn(vt->inbuf,msg.data.d,count);
+							msg.data.arg3 = rb_length(vt->inbuf) > 0;
+							send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
 						}
 						break;
+						case MSG_DRV_WRITE:
+							c = msg.data.arg3;
+							if(c >= sizeof(msg.data.d))
+								c = sizeof(msg.data.d) - 1;
+							msg.data.d[c] = '\0';
+							vterm_puts(vt,msg.data.d,c,true,&readKeyboard);
+
+							msg.args.arg1 = msg.data.arg1;
+							msg.args.arg2 = c;
+							send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+							break;
+						case MSG_DRV_IOCTL: {
+							msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
+							msg.data.arg3 = 0;
+							send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+						}
+						break;
+						case MSG_DRV_CLOSE:
+							break;
 					}
 				}
 			}

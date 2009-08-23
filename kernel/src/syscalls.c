@@ -57,7 +57,7 @@
 #define SYSC_ARG1(stack)				((stack)->ecx)
 #define SYSC_ARG2(stack)				((stack)->edx)
 #define SYSC_ARG3(stack)				(*((u32*)(stack)->uesp))
-#define SYSC_ARG4(stack)				(*((u32*)(stack)->uesp + 1))
+#define SYSC_ARG4(stack)				(*(((u32*)(stack)->uesp) + 1))
 
 /* syscall-handlers */
 typedef void (*fSyscall)(sIntrptStackFrame *stack);
@@ -387,6 +387,14 @@ static void sysc_receive(sIntrptStackFrame *stack);
  * @return s32 0 on success
  */
 static void sysc_ioctl(sIntrptStackFrame *stack);
+/**
+ * For drivers: Sets wether read() has currently something to read or not
+ *
+ * @param tServ the service-id
+ * @param bool wether there is data to read
+ * @return 0 on success
+ */
+static void sysc_setDataReadable(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -443,6 +451,7 @@ static sSyscall syscalls[] = {
 	/* 42 */	{sysc_send,					4},
 	/* 43 */	{sysc_receive,				3},
 	/* 44 */	{sysc_ioctl,				4},
+	/* 45 */	{sysc_setDataReadable,		2},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -544,7 +553,7 @@ static void sysc_open(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	s32 pathLen;
 	u8 flags;
-	tVFSNodeNo nodeNo;
+	tVFSNodeNo nodeNo = 0;
 	tFileNo file;
 	tFD fd;
 	s32 err;
@@ -831,14 +840,12 @@ static void sysc_regService(sIntrptStackFrame *stack) {
 	tServ res;
 
 	/* check type */
-	if((type & (0x1 | 0x2 | 0x4)) == 0 || (type & ~(0x1 | 0x2 | 0x4)) != 0)
+	if((type & (0x1 | 0x2)) == 0 || (type & ~(0x1 | 0x2)) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	/* convert type */
 	vtype = 0;
 	if(type & 0x2)
-		vtype |= MODE_SERVICE_SINGLEPIPE;
-	if(type & 0x4)
 		vtype |= MODE_SERVICE_DRIVER;
 
 	res = vfs_createService(t->tid,name,vtype);
@@ -858,6 +865,22 @@ static void sysc_unregService(sIntrptStackFrame *stack) {
 
 	/* remove the service */
 	err = vfs_removeService(t->tid,id);
+	if(err < 0)
+		SYSC_ERROR(stack,err);
+	SYSC_RET1(stack,0);
+}
+
+static void sysc_setDataReadable(sIntrptStackFrame *stack) {
+	tServ id = SYSC_ARG1(stack);
+	bool readable = (bool)SYSC_ARG2(stack);
+	sThread *t = thread_getRunning();
+	s32 err;
+
+	/* check node-number */
+	if(!IS_VIRT(id) || !vfsn_isValidNodeNo(id))
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+
+	err = vfs_setDataReadable(t->tid,id,readable);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,0);
@@ -1004,7 +1027,7 @@ static void sysc_wait(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	bool canSleep;
 
-	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_CHILD_DIED)) != 0)
+	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_CHILD_DIED | EV_DATA_READABLE)) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	/* check wether there is a chance that we'll wake up again */

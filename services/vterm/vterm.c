@@ -27,6 +27,7 @@
 #include <esc/signals.h>
 #include <esc/fileio.h>
 #include <string.h>
+#include <ringbuffer.h>
 
 #include "vterm.h"
 #include "keymap.h"
@@ -180,12 +181,13 @@ static bool shiftDown;
 static bool altDown;
 static bool ctrlDown;
 
-bool vterm_initAll(void) {
+bool vterm_initAll(tServ *ids) {
 	char name[MAX_NAME_LEN + 1];
 	u32 i;
 
 	for(i = 0; i < VTERM_COUNT; i++) {
 		vterms[i].index = i;
+		vterms[i].sid = ids[i];
 		sprintf(name,"vterm%d",i);
 		memcpy(vterms[i].name,name,MAX_NAME_LEN + 1);
 		if(!vterm_init(vterms + i))
@@ -203,13 +205,13 @@ sVTerm *vterm_get(u32 index) {
 }
 
 static bool vterm_init(sVTerm *vt) {
-	tFD vidFd,selfFd,speakerFd;
+	tFD vidFd,speakerFd;
 	u32 i,len;
 	char path[strlen("services:/") + MAX_NAME_LEN + 1];
 	char *ptr,*s;
 
 	/* open video */
-	vidFd = open("services:/video",IO_WRITE);
+	vidFd = open("drivers:/video",IO_WRITE);
 	if(vidFd < 0) {
 		printe("Unable to open 'services:/video'");
 		return false;
@@ -222,14 +224,6 @@ static bool vterm_init(sVTerm *vt) {
 		return false;
 	}
 
-	/* open ourself to write into the receive-pipe (which can be read by other processes) */
-	sprintf(path,"services:/%s",vt->name);
-	selfFd = open(path,IO_WRITE);
-	if(selfFd < 0) {
-		printe("Unable to open '%s'",path);
-		return false;
-	}
-
 	/* init state */
 	vt->col = 0;
 	vt->row = ROWS - 1;
@@ -238,7 +232,6 @@ static bool vterm_init(sVTerm *vt) {
 	vt->active = false;
 	vt->video = vidFd;
 	vt->speaker = speakerFd;
-	vt->self = selfFd;
 	/* start on first line of the last page */
 	vt->firstLine = HISTORY_SIZE - ROWS;
 	vt->currLine = HISTORY_SIZE - ROWS;
@@ -255,6 +248,12 @@ static bool vterm_init(sVTerm *vt) {
 	vt->rlBuffer = (char*)malloc(vt->rlBufSize * sizeof(char));
 	if(vt->rlBuffer == NULL) {
 		printe("Unable to allocate memory for vterm-buffer");
+		return false;
+	}
+
+	vt->inbuf = rb_create(sizeof(char),INPUT_BUF_SIZE,RB_OVERWRITE);
+	if(vt->inbuf == NULL) {
+		printe("Unable to allocate memory for ring-buffer");
 		return false;
 	}
 
@@ -293,10 +292,8 @@ void vterm_selectVTerm(u32 index) {
 	activeVT = vt;
 
 	/* refresh screen and write titlebar */
-	msg.data.arg1 = sizeof(u16) * COLS * 2;
-	msg.data.arg2 = 0;
-	memcpy(msg.data.d,vt->titleBar,sizeof(u16) * COLS * 2);
-	send(vt->video,MSG_VIDEO_SETSCREEN,&msg,sizeof(msg.data));
+	seek(vt->video,0);
+	write(vt->video,vt->titleBar,sizeof(u16) * COLS * 2);
 	vterm_refreshScreen(vt);
 	vterm_setCursor(vt);
 }
@@ -305,7 +302,6 @@ void vterm_destroy(sVTerm *vt) {
 	free(vt->rlBuffer);
 	close(vt->video);
 	close(vt->speaker);
-	close(vt->self);
 }
 
 void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead,bool *readKeyboard) {
@@ -394,19 +390,17 @@ static void vterm_sendChar(sVTerm *vt,u8 row,u8 col) {
 
 	/* write last character to video-driver */
 	if(vt->active) {
-		msg.args.arg1 = *ptr;
-		msg.args.arg2 = color;
-		msg.args.arg3 = row;
-		msg.args.arg4 = col;
-		send(vt->video,MSG_VIDEO_SET,&msg,sizeof(msg.args));
+		seek(vt->video,row * COLS * 2 + col * 2);
+		write(vt->video,ptr,2);
 	}
 }
 
 static void vterm_setCursor(sVTerm *vt) {
 	if(vt->active) {
-		msg.args.arg1 = vt->col;
-		msg.args.arg2 = vt->row;
-		send(vt->video,MSG_VIDEO_SETCURSOR,&msg,sizeof(msg.args));
+		sIoCtlCursorPos pos;
+		pos.col = vt->col;
+		pos.row = vt->row;
+		ioctl(vt->video,IOCTL_VID_SETCURSOR,&pos,sizeof(pos));
 	}
 }
 
@@ -443,6 +437,8 @@ static void vterm_putchar(sVTerm *vt,char c) {
 
 		case '\a':
 			/* beep */
+			msg.args.arg1 = 1000;
+			msg.args.arg2 = 1;
 			send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
 			break;
 
@@ -465,6 +461,8 @@ static void vterm_putchar(sVTerm *vt,char c) {
 			}
 			else {
 				/* beep */
+				msg.args.arg1 = 1000;
+				msg.args.arg2 = 1;
 				send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
 			}
 			break;
@@ -541,13 +539,11 @@ static void vterm_refreshLines(sVTerm *vt,u16 start,u16 count) {
 	if(!vt->active)
 		return;
 
+	seek(vt->video,start * COLS * 2);
 	/* send messages (take care of msg-size) */
 	while(done < count) {
 		amount = MIN(count,sizeof(msg.data.d) / (COLS * 2));
-		msg.data.arg1 = amount * COLS * 2;
-		msg.data.arg2 = start * COLS;
-		memcpy(msg.data.d,vt->buffer.data + (vt->firstVisLine + start) * COLS * 2,amount * COLS * 2);
-		send(vt->video,MSG_VIDEO_SETSCREEN,&msg,sizeof(msg.data));
+		write(vt->video,vt->buffer.data + (vt->firstVisLine + start) * COLS * 2,amount * COLS * 2);
 
 		done += amount;
 		start += amount;
@@ -734,14 +730,19 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 				char escape[] = {'\033',keycode,(altDown << STATE_ALT) |
 					(ctrlDown << STATE_CTRL) |
 					(shiftDown << STATE_SHIFT)};
-				send(vt->self,MSG_RECEIVE,&escape,sizeof(escape));
+				if(rb_length(vt->inbuf) == 0)
+					setDataReadable(vt->sid,true);
+				rb_writen(vt->inbuf,escape,3);
 			}
 		}
 		else {
 			if(vt->readLine)
 				vterm_rlPutchar(vt,c);
-			else
-				send(vt->self,MSG_RECEIVE,&c,sizeof(char));
+			else {
+				if(rb_length(vt->inbuf) == 0)
+					setDataReadable(vt->sid,true);
+				rb_write(vt->inbuf,&c);
+			}
 		}
 
 		if(vt->echo)
@@ -750,14 +751,18 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 }
 
 static void vterm_rlFlushBuf(sVTerm *vt) {
-	u32 count,bufPos = vterm_rlGetBufPos(vt);
+	u32 i,bufPos = vterm_rlGetBufPos(vt);
 	if(vt->echo)
 		bufPos++;
 
+	if(rb_length(vt->inbuf) == 0)
+		setDataReadable(vt->sid,true);
+
+	i = 0;
 	while(bufPos > 0) {
-		count = MIN(sizeof(msg.str.s1),bufPos);
-		send(vt->self,MSG_RECEIVE,vt->rlBuffer,count);
-		bufPos -= count;
+		rb_write(vt->inbuf,vt->rlBuffer + i);
+		bufPos--;
+		i++;
 	}
 	vt->rlBufPos = 0;
 }

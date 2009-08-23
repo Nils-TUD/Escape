@@ -137,12 +137,6 @@ namespace esc {
 			friend class UIElement;
 			friend class BitmapImage;
 
-		private:
-			typedef struct {
-				sMsgHeader header;
-				sMsgDataVesaUpdate data;
-			} __attribute__((packed)) sMsgVesaUpdate;
-
 		public:
 			Graphics(Graphics &g,tCoord x,tCoord y);
 			Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp);
@@ -212,8 +206,9 @@ namespace esc {
 			Pixel *_pixel;
 			u8 *_pixels;
 			Font _font;
-			sMsgVesaUpdate _vesaMsg;
 			Graphics *_owner;
+			/* TODO we have another one in app */
+			sMsg _msg;
 		};
 	}
 }

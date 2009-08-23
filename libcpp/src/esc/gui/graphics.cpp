@@ -33,9 +33,6 @@ namespace esc {
 				_maxy(_height - 1), _font(Font()), _owner(&g) {
 			_pixels = g._pixels;
 			_pixel = g._pixel;
-			// set some constant msg-attributes
-			_vesaMsg.header.id = MSG_VESA_UPDATE;
-			_vesaMsg.header.length = sizeof(sMsgDataVesaUpdate);
 		}
 
 		Graphics::Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp)
@@ -65,10 +62,6 @@ namespace esc {
 					exit(EXIT_FAILURE);
 					break;
 			}
-
-			// set some constant msg-attributes
-			_vesaMsg.header.id = MSG_VESA_UPDATE;
-			_vesaMsg.header.length = sizeof(sMsgDataVesaUpdate);
 		}
 
 		Graphics::~Graphics() {
@@ -323,11 +316,11 @@ namespace esc {
 
 		void Graphics::notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
 			tFD vesaFd = Application::getInstance()->getVesaFd();
-			_vesaMsg.data.x = x;
-			_vesaMsg.data.y = y;
-			_vesaMsg.data.width = width;
-			_vesaMsg.data.height = height;
-			write(vesaFd,&_vesaMsg,sizeof(sMsgVesaUpdate));
+			_msg.args.arg1 = x;
+			_msg.args.arg2 = y;
+			_msg.args.arg3 = width;
+			_msg.args.arg4 = height;
+			send(vesaFd,MSG_VESA_UPDATE,&_msg,sizeof(_msg.args));
 		}
 
 		void Graphics::move(tCoord x,tCoord y) {

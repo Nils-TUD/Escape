@@ -32,8 +32,7 @@
 #define MODE_TYPE_SERVICE			000400000
 #define MODE_TYPE_PIPECON			001000000
 #define MODE_TYPE_PIPE				002000000
-#define MODE_SERVICE_SINGLEPIPE		004000000
-#define MODE_SERVICE_DRIVER			010000000
+#define MODE_SERVICE_DRIVER			004000000
 
 /* GFT flags */
 enum {
@@ -67,12 +66,12 @@ struct sVFSNode {
 	/* the owner of this node: used for service-usages */
 	tTid owner;
 	union {
+		struct {
+			/* wether there is data to read or not */
+			bool isEmpty;
+		} service;
 		/* for service-usages */
 		struct {
-			/* we have to lock reads */
-			tFileNo locked;
-			/* a list of clients for single-pipe-services */
-			sSLList *singlePipeClients;
 			/* a list for sending messages to the service */
 			sSLList *sendList;
 			/* a list for reading messages from the service */
@@ -247,6 +246,16 @@ void vfs_closeFile(tTid tid,tFileNo file);
  * @return 0 if ok, negative if an error occurred
  */
 s32 vfs_createService(tTid tid,const char *name,u32 type);
+
+/**
+ * Sets wether data is currently readable or not
+ *
+ * @param tid the thread-id
+ * @param nodeNo the service-node-number
+ * @param readable wether there is data or not
+ * @return 0 on success
+ */
+s32 vfs_setDataReadable(tTid tid,tVFSNodeNo nodeNo,bool readable);
 
 /**
  * Checks wether there is a message for the given thread. That if the thread is a service

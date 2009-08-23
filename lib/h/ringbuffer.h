@@ -26,6 +26,10 @@
 /* the user doesn't need to know the internal structure */
 typedef void sRingBuf;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates a new ring-buffer with given element-size and -count.
  *
@@ -61,6 +65,16 @@ u32 rb_length(sRingBuf *r);
 bool rb_write(sRingBuf *r,const void *e);
 
 /**
+ * Writes <n> elements from <e> into the ring-buffer.
+ *
+ * @param r the ring-buffer
+ * @param e the address of the elements
+ * @param n the number of elements to write
+ * @return the number of written elements
+ */
+u32 rb_writen(sRingBuf *r,const void *e,u32 n);
+
+/**
  * Reads the next element from the ring-buffer. If there is no element, false is returned.
  *
  * @param r the ring-buffer
@@ -68,6 +82,16 @@ bool rb_write(sRingBuf *r,const void *e);
  * @return true if successfull
  */
 bool rb_read(sRingBuf *r,void *e);
+
+/**
+ * Reads <n> elements to <e> from the ring-buffer.
+ *
+ * @param r the ring-buffer
+ * @param e the address where to copy the elements
+ * @param n the number of elements to read
+ * @return the number of read elements
+ */
+u32 rb_readn(sRingBuf *r,void *e,u32 n);
 
 
 #if DEBUGGING
@@ -79,6 +103,10 @@ bool rb_read(sRingBuf *r,void *e);
  */
 void rb_dbg_print(sRingBuf *r);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* RINGBUFFER_H_ */

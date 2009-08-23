@@ -115,7 +115,7 @@ int main(void) {
 	tServ id,client;
 	tMsgId mid;
 
-	id = regService("env",SERVICE_TYPE_MULTIPIPE);
+	id = regService("env",SERV_DEFAULT);
 	if(id < 0) {
 		printe("Unable to register service 'env'");
 		return EXIT_FAILURE;
@@ -158,8 +158,8 @@ int main(void) {
 
 						msg.str.arg1 = 0;
 						if(var != NULL) {
-							msg.str.arg1 = strlen(var->value);
-							memcpy(msg.str.s1,var->value,msg.str.arg1 + 1);
+							msg.str.arg1 = strlen(var->value) + 1;
+							memcpy(msg.str.s1,var->value,msg.str.arg1);
 						}
 						send(fd,MSG_ENV_GET_RESP,&msg,sizeof(msg.str));
 					}
@@ -185,8 +185,8 @@ int main(void) {
 
 						msg.str.arg1 = 0;
 						if(var != NULL) {
-							msg.str.arg1 = strlen(var->value);
-							memcpy(msg.str.s1,var->value,msg.str.arg1 + 1);
+							msg.str.arg1 = strlen(var->name) + 1;
+							memcpy(msg.str.s1,var->name,msg.str.arg1);
 						}
 						send(fd,MSG_ENV_GET_RESP,&msg,sizeof(msg.str));
 					}

@@ -26,6 +26,8 @@
 #include <messages.h>
 #include <esc/lock.h>
 #include <stdlib.h>
+#include <ringbuffer.h>
+#include <errors.h>
 
 /* FIXME: THIS MAY CAUSE TROUBLE SINCE WE'RE USING AN IO-PORT THAT IS USED BY THE
  * KEYBOARD-SERVICE, TOO */
@@ -62,6 +64,8 @@
 
 #define KB_MOUSE_LOCK				0x1
 
+#define INPUT_BUF_SIZE				128
+
 static void irqHandler(tSig sig,u32 data);
 static void kb_init(void);
 static void kb_checkCmd(void);
@@ -86,29 +90,16 @@ typedef struct {
 	s8 ycoord;
 } sMousePacket;
 
-/* the message we'll send */
-typedef struct {
-	sMsgHeader header;
-	sMsgDataMouse data;
-} __attribute__((packed)) sMsgMouse;
-
 static u8 byteNo = 0;
-static sMsgMouse msg = {
-	.header = {
-		.id = MSG_MOUSE,
-		.length = sizeof(sMsgDataMouse)
-	},
-	.data = {
-		.x = 0,
-		.y = 0,
-		.buttons = 0
-	}
-};
+static tServ sid;
+static sMsg msg;
+static sRingBuf *inbuf;
+static sMouseData mdata;
 static sMousePacket packet;
-static tFD selfFd;
 
 int main(void) {
-	tServ id;
+	tMsgId mid;
+	tServ client;
 
 	/* request io-ports */
 	if(requestIOPort(IOPORT_KB_CTRL) < 0 || requestIOPort(IOPORT_KB_DATA) < 0) {
@@ -125,28 +116,66 @@ int main(void) {
 	}
 
 	/* reg service and open ourself */
-	id = regService("mouse",SERVICE_TYPE_SINGLEPIPE);
-	if(id < 0) {
+	sid = regService("mouse",SERV_DRIVER);
+	if(sid < 0) {
 		printe("Unable to register service '%s'","mouse");
 		return EXIT_FAILURE;
 	}
 
-	selfFd = open("services:/mouse",IO_WRITE);
-	if(selfFd < 0) {
-		printe("Unable to open '%s'","services:/mouse");
+	/* create input-buffer */
+	inbuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
+	if(inbuf == NULL) {
+		printe("Unable to create ring-buffer");
 		return EXIT_FAILURE;
 	}
 
-	/* wait */
-	while(1)
-		wait(EV_NOEVENT);
+    /* wait for commands */
+	while(1) {
+		tFD fd = getClient(&sid,1,&client);
+		if(fd < 0)
+			wait(EV_CLIENT);
+		else {
+			while(receive(fd,&mid,&msg) > 0) {
+				switch(mid) {
+					case MSG_DRV_OPEN:
+						msg.args.arg2 = 0;
+						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
+						break;
+					case MSG_DRV_READ: {
+						/* offset is ignored here */
+						u32 count = MIN(sizeof(msg.data.d),msg.args.arg3 * sizeof(sMouseData));
+						count /= sizeof(sMouseData);
+						msg.data.arg1 = msg.args.arg1;
+						msg.data.arg2 = rb_readn(inbuf,msg.data.d,count) * sizeof(sMouseData);
+						msg.data.arg3 = rb_length(inbuf) > 0;
+						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
+					}
+					break;
+					case MSG_DRV_WRITE:
+						msg.args.arg1 = msg.data.arg1;
+						msg.args.arg2 = ERR_UNSUPPORTED_OPERATION;
+						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+						break;
+					case MSG_DRV_IOCTL: {
+						msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
+						msg.data.arg3 = 0;
+						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+					}
+					break;
+					case MSG_DRV_CLOSE:
+						break;
+				}
+			}
+			close(fd);
+		}
+	}
 
 	/* cleanup */
-	close(selfFd);
+	rb_destroy(inbuf);
 	releaseIOPort(IOPORT_KB_CTRL);
 	releaseIOPort(IOPORT_KB_DATA);
 	unsetSigHandler(SIG_INTRPT_MOUSE);
-	unregService(id);
+	unregService(sid);
 	return EXIT_SUCCESS;
 }
 
@@ -171,12 +200,14 @@ static void irqHandler(tSig sig,u32 data) {
 			packet.ycoord = inByte(IOPORT_KB_DATA);
 			byteNo = 0;
 			/* write the message in our receive-pipe*/
-			msg.data.x = packet.xcoord;
-			msg.data.y = packet.ycoord;
-			msg.data.buttons = (packet.status.leftBtn << 2) |
+			mdata.x = packet.xcoord;
+			mdata.y = packet.ycoord;
+			mdata.buttons = (packet.status.leftBtn << 2) |
 				(packet.status.rightBtn << 1) |
 				(packet.status.middleBtn << 0);
-			write(selfFd,&msg,sizeof(sMsgMouse));
+			if(rb_length(inbuf) == 0)
+				setDataReadable(sid,true);
+			rb_write(inbuf,&mdata);
 			break;
 	}
 }

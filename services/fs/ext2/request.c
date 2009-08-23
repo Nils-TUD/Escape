@@ -32,27 +32,14 @@ bool ext2_readBlocks(sExt2 *e,u8 *buffer,u32 start,u16 blockCount) {
 }
 
 bool ext2_readSectors(sExt2 *e,u8 *buffer,u64 lba,u16 secCount) {
-	tMsgId id;
-
-	/* send read-request */
-
-	msg.args.arg1 = e->drive;
-	msg.args.arg2 = e->partition;
-	msg.args.arg3 = lba >> 32;
-	msg.args.arg4 = lba & 0xFFFFFFFF;
-	msg.args.arg5 = secCount;
-	if(send(e->ataFd,MSG_ATA_READ_REQ,&msg,sizeof(msg.args)) < 0) {
-		printe("Unable to send request to ATA");
+	if(seek(e->ataFd,lba * SECTOR_SIZE) < 0) {
+		printe("Unable to seek to %x\n",lba * SECTOR_SIZE);
+		return false;
+	}
+	if(read(e->ataFd,buffer,secCount * SECTOR_SIZE) != secCount * SECTOR_SIZE) {
+		printe("Unable to read %d sectors @ %x\n",secCount,lba * SECTOR_SIZE);
 		return false;
 	}
 
-	/* read header */
-	if(receive(e->ataFd,&id,&msg) < 0) {
-		printe("Reading response-header from ATA failed (drive=%d, part=%d, lba=%x, secCount=%d)",
-				e->drive,e->partition,(u32)lba,secCount);
-		return false;
-	}
-
-	memcpy(buffer,msg.data.d,msg.data.arg1);
 	return true;
 }

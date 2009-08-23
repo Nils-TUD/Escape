@@ -326,10 +326,6 @@ typedef struct {
 } sBCacheEntry;
 
 typedef struct {
-	/* ATA drive and partition */
-	u8 drive;
-	u8 partition;
-
 	/* the file-desc for ATA */
 	tFD ataFd;
 

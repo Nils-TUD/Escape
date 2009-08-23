@@ -38,7 +38,8 @@
 #define EV_CLIENT			1
 #define EV_RECEIVED_MSG		2
 #define EV_CHILD_DIED		4
-#define EV_UNLOCK			8	/* kernel-intern */
+#define EV_DATA_READABLE	8
+#define EV_UNLOCK			16	/* kernel-intern */
 
 /* represents a process */
 /* TODO move stuff for existing processes to the kernel-stack-page */

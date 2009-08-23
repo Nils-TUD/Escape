@@ -35,6 +35,7 @@ namespace esc {
 
 		Application::Application()
 				: _mouseBtns(0) {
+			tMsgId mid;
 			_winFd = open("services:/winmanager",IO_READ | IO_WRITE);
 			if(_winFd < 0) {
 				printe("Unable to open window-manager");
@@ -54,26 +55,19 @@ namespace esc {
 			}
 
 			// request screen infos from vesa
-			sMsgHeader header;
-			header.id = MSG_VESA_GETMODE_REQ;
-			header.length = 0;
-			if(write(_vesaFd,&header,sizeof(header)) != sizeof(header)) {
+			if(send(_vesaFd,MSG_VESA_GETMODE_REQ,&_msg,sizeof(_msg.args)) < 0) {
 				printe("Unable to send get-mode-request to vesa");
 				exit(EXIT_FAILURE);
 			}
-
-			// read response
-			sMsgDataVesaGetModeResp resp;
-			if(read(_vesaFd,&header,sizeof(header)) != sizeof(header) ||
-					read(_vesaFd,&resp,sizeof(resp)) != sizeof(resp)) {
+			if(receive(_vesaFd,&mid,&_msg) < 0 || mid != MSG_VESA_GETMODE_RESP) {
 				printe("Unable to read the get-mode-response from vesa");
 				exit(EXIT_FAILURE);
 			}
 
 			// store it
-			_screenWidth = resp.width;
-			_screenHeight = resp.height;
-			_colorDepth = resp.colorDepth;
+			_screenWidth = (tSize)_msg.args.arg1;
+			_screenHeight = (tSize)_msg.args.arg2;
+			_colorDepth = (tColDepth)_msg.args.arg3;
 		}
 
 		Application::~Application() {
@@ -88,109 +82,111 @@ namespace esc {
 		}
 
 		void Application::doEvents() {
-			sMsgHeader header;
-			u32 c;
-			if((c = read(_winFd,&header,sizeof(header))) != sizeof(header)) {
-				printe("Read from window-manager failed; Read %d bytes, expected %d",
-						c,sizeof(header));
+			tMsgId mid;
+			if(receive(_winFd,&mid,&_msg) < 0) {
+				printe("Read from window-manager failed");
 				exit(EXIT_FAILURE);
 			}
-
-			handleMessage(&header);
+			handleMessage(mid,&_msg);
 		}
 
-		void Application::handleMessage(sMsgHeader *msg) {
-			switch(msg->id) {
+		void Application::handleMessage(tMsgId mid,const sMsg *msg) {
+			switch(mid) {
 				case MSG_WIN_CREATE_RESP: {
-					sMsgDataWinCreateResp data;
-					if(read(_winFd,&data,sizeof(data)) != sizeof(data)) {
-						printe("Invalid response to window-announcement");
-						exit(EXIT_FAILURE);
-					}
-
+					u16 tmpId = msg->args.arg1;
+					u16 id = msg->args.arg2;
 					// notify the window that it has been created
-					Window *w = getWindowById(data.tmpId);
+					Window *w = getWindowById(tmpId);
 					if(w)
-						w->onCreated(data.id);
+						w->onCreated(id);
 				}
 				break;
 
 				case MSG_WIN_MOUSE: {
-					sMsgDataWinMouse data;
-					if(read(_winFd,&data,sizeof(data)) == sizeof(data))
-						passToWindow(&data);
+					u16 x = (u16)msg->args.arg1;
+					u16 y = (u16)msg->args.arg2;
+					s16 movedX = (s16)msg->args.arg3;
+					s16 movedY = (s16)msg->args.arg4;
+					u8 buttons = (u8)msg->args.arg5;
+					tWinId win = (tWinId)msg->args.arg6;
+					passToWindow(win,x,y,movedX,movedY,buttons);
 				}
 				break;
 
 				case MSG_WIN_KEYBOARD: {
-					sMsgDataWinKeyboard data;
-					if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {
-						Window *w = getWindowById(data.window);
-						if(w) {
-							if(data.isBreak) {
-								KeyEvent e(KeyEvent::KEY_RELEASED,data.keycode,
-										data.character,data.modifier);
-								w->onKeyReleased(e);
-							}
-							else {
-								KeyEvent e(KeyEvent::KEY_PRESSED,data.keycode,
-										data.character,data.modifier);
-								w->onKeyPressed(e);
-							}
+					u8 keycode = (u8)msg->args.arg1;
+					bool isBreak = (bool)msg->args.arg2;
+					tWinId win = (tWinId)msg->args.arg3;
+					char character = (char)msg->args.arg4;
+					u8 modifier = (u8)msg->args.arg5;
+					Window *w = getWindowById(win);
+					/*debugf("kc=%d, brk=%d, win=%d, char='%c' (%d), modifier=%x\n",keycode,isBreak,
+							win,character,character,modifier);*/
+					if(w) {
+						if(isBreak) {
+							KeyEvent e(KeyEvent::KEY_RELEASED,keycode,character,modifier);
+							w->onKeyReleased(e);
+						}
+						else {
+							KeyEvent e(KeyEvent::KEY_PRESSED,keycode,character,modifier);
+							w->onKeyPressed(e);
 						}
 					}
 				}
 				break;
 
 				case MSG_WIN_UPDATE: {
-					sMsgDataWinUpdate data;
-					if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {
-						Window *w = getWindowById(data.window);
-						if(w)
-							w->update(data.x,data.y,data.width,data.height);
-					}
+					tCoord x = (tCoord)msg->args.arg1;
+					tCoord y = (tCoord)msg->args.arg2;
+					tSize width = (tSize)msg->args.arg3;
+					tSize height = (tSize)msg->args.arg4;
+					tWinId win = (tWinId)msg->args.arg5;
+					Window *w = getWindowById(win);
+					if(w)
+						w->update(x,y,width,height);
 				}
 				break;
 
 				case MSG_WIN_SET_ACTIVE: {
-					sMsgDataWinActive data;
-					if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {
-						Window *w = getWindowById(data.window);
-						if(w) {
-							w->setActive(data.isActive);
-							if(data.isActive)
-								closePopups(w->getId(),data.mouseX,data.mouseY);
-						}
+					tWinId win = (tWinId)msg->args.arg1;
+					bool isActive = (bool)msg->args.arg2;
+					tCoord mouseX = (tCoord)msg->args.arg3;
+					tCoord mouseY = (tCoord)msg->args.arg4;
+					Window *w = getWindowById(win);
+					if(w) {
+						w->setActive(isActive);
+						if(isActive)
+							closePopups(w->getId(),mouseX,mouseY);
 					}
 				}
 				break;
 			}
 		}
 
-		void Application::passToWindow(sMsgDataWinMouse *e) {
+		void Application::passToWindow(tWinId win,u16 x,u16 y,s16 movedX,s16 movedY,u8 buttons) {
 			bool moved,released,pressed;
 
-			moved = e->movedX || e->movedY;
+			moved = movedX || movedY;
 			// TODO this is not correct
-			released = _mouseBtns && !e->buttons;
-			pressed = !_mouseBtns && e->buttons;
-			_mouseBtns = e->buttons;
+			released = _mouseBtns && !buttons;
+			pressed = !_mouseBtns && buttons;
+			_mouseBtns = buttons;
 
-			Window *w = getWindowById(e->window);
+			Window *w = getWindowById(win);
 			if(w) {
-				tCoord x = MAX(0,MIN(_screenWidth - 1,e->x - w->getX()));
-				tCoord y = MAX(0,MIN(_screenHeight - 1,e->y - w->getY()));
+				tCoord nx = MAX(0,MIN(_screenWidth - 1,x - w->getX()));
+				tCoord ny = MAX(0,MIN(_screenHeight - 1,y - w->getY()));
 
 				if(released) {
-					MouseEvent event(MouseEvent::MOUSE_RELEASED,e->movedX,e->movedY,x,y,_mouseBtns);
+					MouseEvent event(MouseEvent::MOUSE_RELEASED,movedX,movedY,nx,ny,_mouseBtns);
 					w->onMouseReleased(event);
 				}
 				else if(pressed) {
-					MouseEvent event(MouseEvent::MOUSE_PRESSED,e->movedX,e->movedY,x,y,_mouseBtns);
+					MouseEvent event(MouseEvent::MOUSE_PRESSED,movedX,movedY,nx,ny,_mouseBtns);
 					w->onMousePressed(event);
 				}
 				else if(moved) {
-					MouseEvent event(MouseEvent::MOUSE_MOVED,e->movedX,e->movedY,x,y,_mouseBtns);
+					MouseEvent event(MouseEvent::MOUSE_MOVED,movedX,movedY,nx,ny,_mouseBtns);
 					w->onMouseMoved(event);
 				}
 			}
@@ -207,32 +203,26 @@ namespace esc {
 		}
 
 		void Application::requestWinUpdate(tWinId id,tCoord x,tCoord y,tSize width,tSize height) {
-			sMsgWinUpdate msg;
-			msg.header.id = MSG_WIN_UPDATE_REQ;
-			msg.header.length = sizeof(sMsgDataWinUpdate);
-			msg.data.x = x;
-			msg.data.y = y;
-			msg.data.width = width;
-			msg.data.height = height;
-			msg.data.window = id;
-			write(_winFd,&msg,sizeof(msg));
+			_msg.args.arg1 = id;
+			_msg.args.arg2 = x;
+			_msg.args.arg3 = y;
+			_msg.args.arg4 = width;
+			_msg.args.arg5 = height;
+			if(send(_winFd,MSG_WIN_UPDATE_REQ,&_msg,sizeof(_msg.args)) < 0) {
+				printe("Unable to request win-update");
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		void Application::addWindow(Window *win) {
 			_windows.add(win);
 
-			// create window
-			sMsgWinCreateReq msg;
-			msg.header.id = MSG_WIN_CREATE_REQ;
-			msg.header.length = sizeof(sMsgDataWinCreateReq);
-			msg.data.x = win->getX();
-			msg.data.y = win->getY();
-			msg.data.width = win->getWidth();
-			msg.data.height = win->getHeight();
-			msg.data.owner = gettid();
-			msg.data.tmpWinId = win->getId();
-			msg.data.style = win->getStyle();
-			if(write(_winFd,&msg,sizeof(sMsgWinCreateReq)) != sizeof(sMsgWinCreateReq)) {
+			_msg.args.arg1 = (win->getX() << 16) | win->getY();
+			_msg.args.arg2 = (win->getWidth() << 16) | win->getHeight();
+			_msg.args.arg3 = win->getId();
+			_msg.args.arg4 = gettid();
+			_msg.args.arg5 = win->getStyle();
+			if(send(_winFd,MSG_WIN_CREATE_REQ,&_msg,sizeof(_msg.args)) < 0) {
 				printe("Unable to announce window to window-manager");
 				exit(EXIT_FAILURE);
 			}
@@ -242,24 +232,21 @@ namespace esc {
 			_windows.removeFirst(win);
 
 			// let window-manager destroy our window
-			sMsgWinDestroyReq msg;
-			msg.header.id = MSG_WIN_DESTROY_REQ;
-			msg.header.length = sizeof(sMsgDataWinDestroyReq);
-			msg.data.window = win->getId();
-			if(write(_winFd,&msg,sizeof(msg)) != sizeof(msg)) {
+			_msg.args.arg1 = win->getId();
+			if(send(_winFd,MSG_WIN_DESTROY_REQ,&_msg,sizeof(_msg.args)) < 0) {
 				printe("Unable to destroy window");
 				exit(EXIT_FAILURE);
 			}
 		}
 
 		void Application::moveWindow(Window *win) {
-			sMsgWinMoveReq mmove;
-			mmove.header.id = MSG_WIN_MOVE_REQ;
-			mmove.header.length = sizeof(sMsgDataWinMoveReq);
-			mmove.data.window = win->getId();
-			mmove.data.x = win->getX();
-			mmove.data.y = win->getY();
-			write(_winFd,&mmove,sizeof(mmove));
+			_msg.args.arg1 = win->getId();
+			_msg.args.arg2 = win->getX();
+			_msg.args.arg3 = win->getY();
+			if(send(_winFd,MSG_WIN_MOVE_REQ,&_msg,sizeof(_msg.args)) < 0) {
+				printe("Unable to move window");
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		Window *Application::getWindowById(tWinId id) {

@@ -24,12 +24,15 @@
 #include <esc/dir.h>
 #include <esc/gui/common.h>
 #include <esc/gui/application.h>
+#include <ringbuffer.h>
 #include "shellcontrol.h"
 
 // the min-size of the buffer before we pass it to the shell-control
 #define UPDATE_BUF_SIZE		256
 // the total size of the buffer
 #define READ_BUF_SIZE		512
+// the size of the ring-buffer
+#define GUISH_INBUF_SIZE	128
 
 using namespace esc::gui;
 
@@ -42,9 +45,12 @@ protected:
 	void doEvents();
 
 private:
+	void putIn(char *s,u32 len);
+
+private:
 	tServ _sid;
-	tFD _selfFd;
 	ShellControl *_sh;
+	sRingBuf *_inbuf;
 	char *rbuffer;
 	u32 rbufPos;
 };

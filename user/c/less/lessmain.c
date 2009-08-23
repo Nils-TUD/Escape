@@ -53,7 +53,7 @@ int main(int argc,char *argv[]) {
 	u32 i;
 	char c;
 	char *path;
-	char vterm[MAX_PATH_LEN] = "services:/";
+	char vterm[MAX_PATH_LEN] = "drivers:/";
 
 	if(argc != 1 && argc != 2) {
 		fprintf(stderr,"Usage: %s [<file>]\n",argv[0]);
@@ -92,7 +92,7 @@ int main(int argc,char *argv[]) {
 		fclose(file);
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
-	if(!getEnv(vterm + 10,MAX_PATH_LEN - 10,"TERM")) {
+	if(!getEnv(vterm + 9,MAX_PATH_LEN - 9,"TERM")) {
 		printf("\033l\x1\033t\x0");
 		printe("Unable to get TERM");
 		return EXIT_FAILURE;
@@ -140,6 +140,7 @@ int main(int argc,char *argv[]) {
 			}
 		}
 	}
+	printf("Got %d\n",c);
 
 	fclose(fvterm);
 

@@ -30,6 +30,6 @@
  * @param scanCode the received scancode
  * @return true if it was a keycode
  */
-bool kb_set1_getKeycode(u32 *isBreak,u32 *keycode,u8 scanCode);
+bool kb_set1_getKeycode(u8 *isBreak,u8 *keycode,u8 scanCode);
 
 #endif /* SET1_H_ */

@@ -60,7 +60,6 @@ private:
 };
 
 int main(void) {
-#if 0
 	if(fork() == 0) {
 		Application *app = Application::getInstance();
 		w1 = new Window("Window 1",100,100,400,300);
@@ -75,7 +74,7 @@ int main(void) {
 		w1->add(cb);
 		pb = new ProgressBar("Progress...",10,120,200,20);
 		w1->add(*pb);
-		startThread(pbThread);
+		/*startThread(pbThread);*/
 		return app->run();
 	}
 
@@ -88,20 +87,18 @@ int main(void) {
 	if(fork() == 0) {
 		Application *app = Application::getInstance();
 		w1 = new Window("Window 3",50,50,100,40);
-		startThread(pbThread);
+		/*startThread(pbThread);*/
 		return app->run();
 	}
-#endif
 	if(fork() == 0) {
 		exec("file:/bin/guishell",NULL);
 		exit(EXIT_FAILURE);
 	}
 
-	/*Application *app = Application::getInstance();
+	Application *app = Application::getInstance();
 	w1 = new Window("Window 4",180,90,200,100);
-	startThread(pbThread);
-	return app->run();*/
-	return 0;
+	/*startThread(pbThread);*/
+	return app->run();
 }
 
 static int pbThread(void) {

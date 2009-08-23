@@ -94,6 +94,29 @@
 #define MSG_RECEIVE					220
 #define MSG_SEND					221
 
+#define IOCTL_VID_SETCURSOR			0
+
+/* the data read from the keyboard */
+typedef struct {
+	/* the keycode (see keycodes.h) */
+	u8 keycode;
+	/* wether the key was released */
+	u8 isBreak;
+} sKbData;
+
+/* the data read from the mouse */
+typedef struct {
+	s8 x;
+	s8 y;
+	u8 buttons;
+} sMouseData;
+
+/* ioctl-cursor-pos */
+typedef struct {
+	u8 col;
+	u8 row;
+} sIoCtlCursorPos;
+
 /* the header for all default-messages */
 typedef struct {
 	/* the message-id */
@@ -102,7 +125,7 @@ typedef struct {
 	u32 length;
 } sMsgHeader;
 
-/* a message that will be send from the keyboard-service */
+/* msg from kb */
 typedef struct {
 	/* the keycode (see keycodes.h) */
 	u8 keycode;

@@ -663,6 +663,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Invalid thread-id");
 			break;
 
+		case ERR_UNSUPPORTED_OPERATION:
+			strcpy(msg,"Unsupported operation");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

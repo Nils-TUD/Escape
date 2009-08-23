@@ -191,7 +191,7 @@ static sServiceLoad **parseServices(char *servFile) {
 	str = servFile;
 	while(*str) {
 		/* ";" at the line-start is a comment */
-		if(*str != ';') {
+		if(*str != '#') {
 			/* increase array-size? leave one slot for NULL */
 			if(servPos >= servSize - 1) {
 				servSize += 8;
@@ -249,7 +249,7 @@ static char *parseService(char *line,sServiceLoad *serv) {
 	char ***array;
 
 	/* search for name-end */
-	s = strpbrk(line,":\n");
+	s = strpbrk(line,";\n");
 	if(s == NULL)
 		s = line + strlen(line);
 
@@ -307,7 +307,7 @@ static char *parseService(char *line,sServiceLoad *serv) {
 			/* search for sep */
 			if(!*line || *line == '\n')
 				break;
-			brk = strpbrk(line,",:\t \n");
+			brk = strpbrk(line,",;\t \n");
 			/* if we're at the end, use all until the end */
 			if(brk == NULL)
 				brk = lineStart + strlen(lineStart);
@@ -334,7 +334,7 @@ static char *parseService(char *line,sServiceLoad *serv) {
 			/* continue behind the separator */
 			line = brk + 1;
 			/* if we are finished with this line or type (wait,dep), break */
-			if(!*brk || *brk == '\n' || *brk == ':') {
+			if(!*brk || *brk == '\n' || *brk == ';') {
 				/* line finished? so we one step too far */
 				if(*brk && *brk == '\n')
 					line--;
@@ -367,11 +367,11 @@ static bool loadServices(sServiceLoad **loads) {
 }
 
 static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
-	u32 i;
+	u32 i,j;
 	tFD fd;
 	s32 child;
 	char path[MAX_SERVICE_PATH_LEN + 1] = "file:/services/";
-	char servName[MAX_SERVICE_PATH_LEN + 1] = "services:/";
+	char servName[MAX_SERVICE_PATH_LEN + 1] = "";
 	char *sname;
 	sSLNode *n;
 
@@ -404,7 +404,7 @@ static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
 	}
 
 	/* wait for all specified waits */
-	sname = servName + 10;
+	sname = servName;
 	for(i = 0; i < load->waitCount; i++) {
 		strcpy(sname,load->waits[i]);
 		do {

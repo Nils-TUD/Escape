@@ -28,6 +28,7 @@
 #include <esc/debug.h>
 #include <esc/signals.h>
 #include <stdlib.h>
+#include <errors.h>
 #include "partition.h"
 
 /* port-bases */
@@ -102,13 +103,19 @@ typedef struct {
 	sPartition partTable[PARTITION_COUNT];
 } sATADrive;
 
+typedef struct {
+	u32 drive;
+	u32 partition;
+} sDriver;
+
 static void ata_wait(sATADrive *drive);
 static bool ata_isDrivePresent(u8 drive);
 static void ata_detectDrives(void);
-static void ata_createVFSEntry(sATADrive *drive);
+static void ata_createVFSEntry(sATADrive *drive,sPartition *part,char *name);
 static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
 static void ata_selectDrive(sATADrive *drive);
 static bool ata_identifyDrive(sATADrive *drive);
+static sDriver *getDriver(tServ sid);
 
 /* the drives */
 static sATADrive drives[DRIVE_COUNT] = {
@@ -121,6 +128,9 @@ static sATADrive drives[DRIVE_COUNT] = {
 	/* secondary slave */
 	{ .present = 0, .slaveBit = 1, .basePort = REG_BASE_SECONDARY }
 };
+static u32 servCount = 0;
+static tServ services[DRIVE_COUNT * PARTITION_COUNT];
+static sDriver driver[DRIVE_COUNT * PARTITION_COUNT];
 
 static sMsg msg;
 static bool gotInterrupt = false;
@@ -131,7 +141,8 @@ static void diskIntrptHandler(tSig sig,u32 data) {
 }
 
 int main(void) {
-	tServ id,client;
+	u32 i;
+	tServ client;
 	tMsgId mid;
 
 	/* request ports */
@@ -155,53 +166,68 @@ int main(void) {
 
 	ata_detectDrives();
 
-	/* reg service */
-	id = regService("ata",SERVICE_TYPE_MULTIPIPE);
-	if(id < 0) {
-		printe("Unable to reg service 'ata'");
-		return EXIT_FAILURE;
-	}
-
 	while(1) {
-		tFD fd = getClient(&id,1,&client);
+		tFD fd = getClient(services,servCount,&client);
 		if(fd < 0) {
 			wait(EV_CLIENT);
 		}
 		else {
+			sDriver *drv = getDriver(client);
+			sATADrive *drive = drv == NULL ? NULL : (drives + drv->drive);
+			sPartition *part = (drv == NULL || drive == NULL) ? NULL : (drive->partTable + drv->partition);
+			if(drv == NULL || drive->present == 0 || part->present == 0) {
+				/* should never happen */
+				close(fd);
+				continue;
+			}
+
 			while(receive(fd,&mid,&msg) > 0) {
-				/* TODO: better error-handling */
 				switch(mid) {
-					case MSG_ATA_READ_REQ: {
-						u32 drive = msg.args.arg1;
-						u32 part = msg.args.arg2;
-						u64 lba = ((u64)msg.args.arg3 << 32) | msg.args.arg4;
-						u32 secs = msg.args.arg5;
+					case MSG_DRV_OPEN:
+						msg.args.arg2 = 0;
+						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
+						break;
 
-						msg.data.arg1 = 0;
-						if(ata_isDrivePresent(drive)) {
-							/* TODO the client has to select the partition... */
-							u32 partOffset = drives[drive].partTable[0].start;
-							if(ata_readWrite(drives + drive,false,(u16*)msg.data.d,
-									lba + partOffset,secs))
-								msg.data.arg1 = BYTES_PER_SECTOR * secs;
-						}
-
-						send(fd,MSG_ATA_READ_RESP,&msg,sizeof(msg.data));
+					case MSG_DRV_READ: {
+						u32 offset = msg.args.arg2;
+						u32 count = msg.args.arg3;
+						msg.data.arg1 = msg.args.arg1;
+						if(offset + count > part->size * BYTES_PER_SECTOR || offset + count < offset)
+							msg.data.arg2 = 0;
+						else if(!ata_readWrite(drive,false,(u16*)msg.data.d,
+								offset / BYTES_PER_SECTOR + part->start,count / BYTES_PER_SECTOR))
+							msg.data.arg2 = 0;
+						else
+							msg.data.arg2 = count;
+						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
 					}
 					break;
 
-					case MSG_ATA_WRITE_REQ: {
-						u32 drive = msg.data.arg1;
-						u32 part = msg.data.arg2;
-						u64 lba = (u32)msg.data.arg3; /* TODO */
-						u32 secs = msg.data.arg4;
-						if(ata_isDrivePresent(drive)) {
-							if(!ata_readWrite(drives + drive,true,(u16*)msg.data.d,lba,secs))
-								printe("Write failed");
-							/* TODO we should respond something, right? */
-						}
+					case MSG_DRV_WRITE: {
+						u32 offset = msg.args.arg2;
+						u32 count = msg.args.arg3;
+						msg.args.arg1 = msg.args.arg1;
+						if(offset + count > part->size * BYTES_PER_SECTOR || offset + count < offset)
+							msg.data.arg2 = 0;
+						else if(!ata_readWrite(drive,true,(u16*)msg.data.d,
+								offset / BYTES_PER_SECTOR + part->start,count / BYTES_PER_SECTOR))
+							msg.args.arg2 = 0;
+						else
+							msg.args.arg2 = count;
+						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 					}
 					break;
+
+					case MSG_DRV_IOCTL: {
+						msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
+						msg.data.arg3 = 0;
+						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+					}
+					break;
+
+					case MSG_DRV_CLOSE:
+						/* ignore */
+						break;
 				}
 			}
 
@@ -214,7 +240,8 @@ int main(void) {
 	releaseIOPorts(REG_BASE_SECONDARY,8);
 	releaseIOPort(REG_BASE_PRIMARY + REG_CONTROL);
 	releaseIOPort(REG_BASE_SECONDARY + REG_CONTROL);
-	unregService(id);
+	for(i = 0; i < servCount; i++)
+		unregService(services[i]);
 	return EXIT_SUCCESS;
 }
 
@@ -234,40 +261,63 @@ static bool ata_isDrivePresent(u8 drive) {
 }
 
 static void ata_detectDrives(void) {
-	u32 i;
+	char name[10];
+	u32 i,p,s;
 	u16 buffer[256];
+	s = 0;
 	for(i = 0; i < DRIVE_COUNT; i++) {
-		if(ata_identifyDrive(drives + i)) {
-			drives[i].present = 1;
-			if(!ata_readWrite(drives + i,false,buffer,0,1)) {
-				drives[i].present = 0;
-				debugf("Drive %d: Unable to read partition-table!\n",i);
-			}
-			else {
-				part_fillPartitions(drives[i].partTable,buffer);
-				ata_createVFSEntry(drives + i);
+		/* first, identify the drive */
+		if(!ata_identifyDrive(drives + i))
+			continue;
+
+		/* if it is present, read the partition-table */
+		drives[i].present = 1;
+		if(!ata_readWrite(drives + i,false,buffer,0,1)) {
+			drives[i].present = 0;
+			debugf("Drive %d: Unable to read partition-table!\n",i);
+			continue;
+		}
+
+		/* copy partitions to mem */
+		part_fillPartitions(drives[i].partTable,buffer);
+		sprintf(name,"hd%c",'a' + i);
+		ata_createVFSEntry(drives + i,NULL,name);
+
+		/* register driver for every partition */
+		for(p = 0; p < PARTITION_COUNT; p++) {
+			if(drives[i].partTable[p].present) {
+				sprintf(name,"hd%c%d",'a' + i,p + 1);
+				services[servCount] = regService(name,SERV_DRIVER);
+				if(services[servCount] < 0) {
+					debugf("Drive %d, Partition %d: Unable to register driver '%s'\n",
+							i,p + 1,name);
+				}
+				else {
+					/* we're a block-device, so always data available */
+					setDataReadable(services[servCount],true);
+					ata_createVFSEntry(drives + i,drives[i].partTable + p,name);
+					driver[servCount].drive = i;
+					driver[servCount].partition = p;
+					servCount++;
+				}
 			}
 		}
 	}
 }
 
-static void ata_createVFSEntry(sATADrive *drive) {
+static sDriver *getDriver(tServ sid) {
+	u32 i;
+	for(i = 0; i < servCount; i++) {
+		if(services[i] == sid)
+			return driver + i;
+	}
+	return NULL;
+}
+
+static void ata_createVFSEntry(sATADrive *drive,sPartition *part,char *name) {
 	tFile *f;
-	u32 p;
-	sPartition *part;
-	char path[21] = "system:/devices/";
-	if(drive->basePort == REG_BASE_PRIMARY) {
-		if(!drive->slaveBit)
-			strcat(path,"diskpm");
-		else
-			strcat(path,"diskps");
-	}
-	else {
-		if(!drive->slaveBit)
-			strcat(path,"disksm");
-		else
-			strcat(path,"diskss");
-	}
+	char path[21];
+	sprintf(path,"system:/devices/%s",name);
 
 	if(createNode(path) < 0) {
 		printe("Unable to create '%s'",path);
@@ -280,14 +330,13 @@ static void ata_createVFSEntry(sATADrive *drive) {
 		return;
 	}
 
-	fprintf(f,"%-10s%d\n","Sectors:",drive->sectorCount);
-	fprintf(f,"%-10s%d\n","LBA48:",drive->lba48);
-	fprintf(f,"Partitions:\n");
-	part = drive->partTable;
-	for(p = 0; p < PARTITION_COUNT; p++) {
-		if(part->present)
-			fprintf(f,"\t%2d: FirstSector=%d, Size=%d bytes\n",p,part->start,part->size * 512);
-		part++;
+	if(part == NULL) {
+		fprintf(f,"%-10s%d\n","Sectors:",drive->sectorCount);
+		fprintf(f,"%-10s%d\n","LBA48:",drive->lba48);
+	}
+	else {
+		fprintf(f,"%-10s%d\n","Start:",part->start);
+		fprintf(f,"%-10s%d\n","Sectors:",part->size);
 	}
 
 	fclose(f);

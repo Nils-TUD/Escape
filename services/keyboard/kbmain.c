@@ -30,8 +30,12 @@
 #include <esc/lock.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ringbuffer.h>
+#include <errors.h>
 
 #include "set1.h"
+
+#define BUF_SIZE					128
 
 /* io-ports */
 #define IOPORT_PIC					0x20
@@ -59,14 +63,24 @@ static void kb_checkCmd(void);
 
 /* file-descriptor for ourself */
 static sMsg msg;
-static tFD selfFd;
+static sKbData data;
+static sRingBuf *buf;
+static tServ id;
 
 int main(void) {
-	tServ id;
+	tServ client;
+	tMsgId mid;
 
-	id = regService("keyboard",SERVICE_TYPE_SINGLEPIPE);
+	id = regService("keyboard",SERV_DRIVER);
 	if(id < 0) {
 		printe("Unable to register service 'keyboard'");
+		return EXIT_FAILURE;
+	}
+
+	/* create buffer */
+	buf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
+	if(buf == NULL) {
+		printe("Unable to create ring-buffer");
 		return EXIT_FAILURE;
 	}
 
@@ -84,13 +98,6 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	/* open ourself to write keycodes into the receive-pipe (which can be read by other processes) */
-	selfFd = open("services:/keyboard",IO_WRITE);
-	if(selfFd < 0) {
-		printe("Unable to open services:/keyboard");
-		return EXIT_FAILURE;
-	}
-
 	/* we want to get notified about keyboard interrupts */
 	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0) {
 		printe("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
@@ -102,31 +109,70 @@ int main(void) {
     while(inByte(IOPORT_KB_DATA) != 0xaa)
     	yield();
 
-	/* we don't want to be waked up. we'll get signals anyway */
-	while(1)
-		wait(EV_NOEVENT);
+    /* wait for commands */
+	while(1) {
+		tFD fd = getClient(&id,1,&client);
+		if(fd < 0)
+			wait(EV_CLIENT);
+		else {
+			while(receive(fd,&mid,&msg) > 0) {
+				switch(mid) {
+					case MSG_DRV_OPEN:
+						msg.args.arg2 = 0;
+						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
+						break;
+					case MSG_DRV_READ: {
+						/* offset is ignored here */
+						u32 count = MIN(sizeof(msg.data.d),msg.args.arg3 * sizeof(sKbData));
+						count /= sizeof(sKbData);
+						msg.data.arg1 = msg.args.arg1;
+						msg.data.arg2 = rb_readn(buf,msg.data.d,count) * sizeof(sKbData);
+						msg.data.arg3 = rb_length(buf) > 0;
+						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
+					}
+					break;
+					case MSG_DRV_WRITE:
+						msg.args.arg1 = msg.data.arg1;
+						msg.args.arg2 = ERR_UNSUPPORTED_OPERATION;
+						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+						break;
+					case MSG_DRV_IOCTL: {
+						msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
+						msg.data.arg3 = 0;
+						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+					}
+					break;
+					case MSG_DRV_CLOSE:
+						break;
+				}
+			}
+			close(fd);
+		}
+	}
 
 	/* clean up */
 	unsetSigHandler(SIG_INTRPT_KB);
-	close(selfFd);
 	releaseIOPort(IOPORT_PIC);
 	releaseIOPort(IOPORT_KB_DATA);
 	releaseIOPort(IOPORT_KB_CTRL);
+	rb_destroy(buf);
 	unregService(id);
 
 	return EXIT_SUCCESS;
 }
 
-static void kbIntrptHandler(tSig sig,u32 data) {
+static void kbIntrptHandler(tSig sig,u32 d) {
 	UNUSED(sig);
-	UNUSED(data);
+	UNUSED(d);
 
 	if(!(inByte(IOPORT_KB_CTRL) & KBC_STATUS_DATA_AVAIL))
 		return;
 	u8 scanCode = inByte(IOPORT_KB_DATA);
-	if(kb_set1_getKeycode(&msg.args.arg1,&msg.args.arg2,scanCode)) {
-		/* write in receive-pipe */
-		send(selfFd,MSG_KEYBOARD_DATA,&msg,sizeof(msg.args));
+	if(kb_set1_getKeycode(&data.isBreak,&data.keycode,scanCode)) {
+		/* write in buffer */
+		if(rb_length(buf) == 0)
+			setDataReadable(id,true);
+		rb_write(buf,&data);
 	}
 	/* ack scancode
 	outByte(IOPORT_PIC,PIC_ICW1);*/

@@ -31,51 +31,6 @@
 #include <string.h>
 #include "window.h"
 
-typedef struct {
-	sMsgHeader header;
-	sMsgDataWinUpdate data;
-} __attribute__((packed)) sMsgRepaint;
-
-typedef struct {
-	sMsgHeader header;
-	sMsgDataVesaUpdate data;
-} __attribute__((packed)) sMsgVesaUpdate;
-
-typedef struct {
-	sMsgHeader header;
-	sMsgDataVesaCursor data;
-} __attribute__((packed)) sMsgVesaCursor;
-
-typedef struct {
-	sMsgHeader header;
-	sMsgDataWinActive data;
-} __attribute__((packed)) sMsgWinActive;
-
-static sMsgVesaUpdate vesaMsg = {
-	.header = {
-		.id = MSG_VESA_UPDATE,
-		.length = sizeof(sMsgDataVesaUpdate)
-	}
-};
-static sMsgRepaint repaintMsg = {
-	.header = {
-		.id = MSG_WIN_UPDATE,
-		.length = sizeof(sMsgDataWinUpdate)
-	}
-};
-static sMsgVesaCursor cursorMsg = {
-	.header = {
-		.id = MSG_VESA_CURSOR,
-		.length = sizeof(sMsgDataVesaCursor)
-	}
-};
-static sMsgWinActive activeMsg = {
-	.header = {
-		.id = MSG_WIN_SET_ACTIVE,
-		.length = sizeof(sMsgDataWinActive)
-	}
-};
-
 static void win_repaint(sRectangle *r,sWindow *win,s16 z);
 static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY);
 static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id);
@@ -89,12 +44,14 @@ static tSize screenWidth;
 static tSize screenHeight;
 static u8 colorDepth;
 
+static sMsg msg;	/* TODO we already have a msg in winmain.c */
 static u8 *shmem;
 static u16 activeWindow = WINDOW_COUNT;
 static sWindow windows[WINDOW_COUNT];
 
 bool win_init(tServ sid) {
 	sMsgHeader header;
+	tMsgId mid;
 
 	servId = sid;
 
@@ -110,25 +67,19 @@ bool win_init(tServ sid) {
 	}
 
 	/* request screen infos from vesa */
-	header.id = MSG_VESA_GETMODE_REQ;
-	header.length = 0;
-	if(write(vesa,&header,sizeof(header)) != sizeof(header)) {
+	if(send(vesa,MSG_VESA_GETMODE_REQ,&msg,sizeof(msg.args)) < 0) {
 		printe("Unable to send get-mode-request to vesa");
 		return EXIT_FAILURE;
 	}
-
-	/* read response */
-	sMsgDataVesaGetModeResp resp;
-	if(read(vesa,&header,sizeof(header)) != sizeof(header) ||
-			read(vesa,&resp,sizeof(resp)) != sizeof(resp)) {
+	if(receive(vesa,&mid,&msg) < 0) {
 		printe("Unable to read the get-mode-response from vesa");
 		return EXIT_FAILURE;
 	}
 
 	/* store */
-	screenWidth = resp.width;
-	screenHeight = resp.height;
-	colorDepth = resp.colorDepth;
+	screenWidth = (tSize)msg.args.arg1;
+	screenHeight = (tSize)msg.args.arg2;
+	colorDepth = (u8)msg.args.arg3;
 
 	shmem = (u8*)joinSharedMem("vesa");
 	if(shmem == NULL) {
@@ -148,24 +99,24 @@ tCoord win_getScreenHeight(void) {
 }
 
 void win_setCursor(tCoord x,tCoord y) {
-	cursorMsg.data.x = x;
-	cursorMsg.data.y = y;
-	write(vesa,&cursorMsg,sizeof(cursorMsg));
+	msg.args.arg1 = x;
+	msg.args.arg2 = y;
+	send(vesa,MSG_VESA_CURSOR,&msg,sizeof(msg.args));
 }
 
-tWinId win_create(sMsgDataWinCreateReq msg) {
+tWinId win_create(u16 x,u16 y,u16 width,u16 height,tPid owner,u8 style) {
 	tWinId i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(windows[i].id == WINID_UNSED) {
 			windows[i].id = i;
-			windows[i].x = msg.x;
-			windows[i].y = msg.y;
+			windows[i].x = x;
+			windows[i].y = y;
 			/* TODO determine z */
 			windows[i].z = i;
-			windows[i].width = msg.width;
-			windows[i].height = msg.height;
-			windows[i].owner = msg.owner;
-			windows[i].style = msg.style;
+			windows[i].width = width;
+			windows[i].height = height;
+			windows[i].owner = owner;
+			windows[i].style = style;
 			/* TODO what keymap to set? */
 			windows[i].keymap = 1;
 			return i;
@@ -366,26 +317,26 @@ static void win_repaint(sRectangle *r,sWindow *win,s16 z) {
 }
 
 static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY) {
-	activeMsg.data.window = id;
-	activeMsg.data.isActive = isActive;
-	activeMsg.data.mouseX = mouseX;
-	activeMsg.data.mouseY = mouseY;
+	msg.args.arg1 = id;
+	msg.args.arg2 = isActive;
+	msg.args.arg3 = mouseX;
+	msg.args.arg4 = mouseY;
 	tFD aWin = getClientThread(servId,windows[id].owner);
 	if(aWin >= 0) {
-		write(aWin,&activeMsg,sizeof(activeMsg));
+		send(aWin,MSG_WIN_SET_ACTIVE,&msg,sizeof(msg.args));
 		close(aWin);
 	}
 }
 
 static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id) {
-	repaintMsg.data.x = x - windows[id].x;
-	repaintMsg.data.y = y - windows[id].y;
-	repaintMsg.data.width = width;
-	repaintMsg.data.height = height;
-	repaintMsg.data.window = id;
+	msg.args.arg1 = x - windows[id].x;
+	msg.args.arg2 = y - windows[id].y;
+	msg.args.arg3 = width;
+	msg.args.arg4 = height;
+	msg.args.arg5 = id;
 	tFD aWin = getClientThread(servId,windows[id].owner);
 	if(aWin >= 0) {
-		write(aWin,&repaintMsg,sizeof(repaintMsg));
+		send(aWin,MSG_WIN_UPDATE,&msg,sizeof(msg.args));
 		close(aWin);
 	}
 }
@@ -460,11 +411,11 @@ static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height) 
 }
 
 static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
-	vesaMsg.data.x = x;
-	vesaMsg.data.y = y;
-	vesaMsg.data.width = width;
-	vesaMsg.data.height = height;
-	write(vesa,&vesaMsg,sizeof(sMsgVesaUpdate));
+	msg.args.arg1 = x;
+	msg.args.arg2 = y;
+	msg.args.arg3 = width;
+	msg.args.arg4 = height;
+	send(vesa,MSG_VESA_UPDATE,&msg,sizeof(msg.args));
 }
 
 

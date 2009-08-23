@@ -161,7 +161,7 @@ static sScanCodeEntry scanCode2KeyCode[] = {
 
 static u8 set = 0;
 
-bool kb_set1_getKeycode(u32 *isBreak,u32 *keycode,u8 scanCode) {
+bool kb_set1_getKeycode(u8 *isBreak,u8 *keycode,u8 scanCode) {
 	sScanCodeEntry *e;
 	/* extended code-start? */
 	if(scanCode == 0xE0) {

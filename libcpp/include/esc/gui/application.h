@@ -45,27 +45,6 @@ namespace esc {
 		protected:
 			static Application *_inst;
 
-		private:
-			typedef struct {
-				sMsgHeader header;
-				sMsgDataWinCreateReq data;
-			} __attribute__((packed)) sMsgWinCreateReq;
-
-			typedef struct {
-				sMsgHeader header;
-				sMsgDataWinDestroyReq data;
-			} __attribute__((packed)) sMsgWinDestroyReq;
-
-			typedef struct {
-				sMsgHeader header;
-				sMsgDataWinMoveReq data;
-			} __attribute__((packed)) sMsgWinMoveReq;
-
-			typedef struct {
-				sMsgHeader header;
-				sMsgDataWinUpdate data;
-			} __attribute__((packed)) sMsgWinUpdate;
-
 		public:
 			inline tSize getScreenWidth() const {
 				return _screenWidth;
@@ -84,7 +63,7 @@ namespace esc {
 			virtual ~Application();
 
 			virtual void doEvents();
-			virtual void handleMessage(sMsgHeader *msg);
+			virtual void handleMessage(tMsgId mid,const sMsg *msg);
 
 		private:
 			// prevent copying
@@ -97,7 +76,7 @@ namespace esc {
 			inline void *getVesaMem() const {
 				return _vesaMem;
 			};
-			void passToWindow(sMsgDataWinMouse *e);
+			void passToWindow(tWinId win,u16 x,u16 y,s16 movedX,s16 movedY,u8 buttons);
 			void closePopups(tWinId id,tCoord x,tCoord y);
 			void requestWinUpdate(tWinId id,tCoord x,tCoord y,tSize width,tSize height);
 			void addWindow(Window *win);
@@ -107,6 +86,7 @@ namespace esc {
 
 		protected:
 			tFD _winFd;
+			sMsg _msg;
 		private:
 			u8 _mouseBtns;
 			tFD _vesaFd;

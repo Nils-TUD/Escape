@@ -72,34 +72,63 @@ int main(int argc,char **argv) {
 	servName = new char[MAX_PATH_LEN + 1];
 	do {
 		sprintf(servName,"guiterm%d",no);
-		sid = regService(servName,SERVICE_TYPE_SINGLEPIPE);
+		sid = regService(servName,SERV_DRIVER);
 		if(sid >= 0)
 			break;
 		no++;
 	}
 	while(sid < 0);
+	unregService(sid);
+
+	// the child handles the GUI
+	if(fork() == 0) {
+		// re-register service
+		sid = regService(servName,SERV_DRIVER);
+		if(sid < 0) {
+			printe("Unable to re-register driver %s",servName);
+			return EXIT_FAILURE;
+		}
+
+		// now start GUI
+		ShellControl sh(0,0,500,280);
+		ShellApplication *app = new ShellApplication(sid,no,&sh);
+		Window w("Shell",100,100,500,300);
+		w.add(sh);
+		return app->run();
+	}
+
+	// wait until the service is announced
+	char *servPath = new char[MAX_PATH_LEN + 1];
+	sprintf(servPath,"drivers:/guiterm%d",no);
+	tFD fin;
+	do {
+		fin = open(servPath,IO_READ);
+		if(fin < 0)
+			yield();
+	}
+	while(fin < 0);
 
 	// redirect fds so that stdin, stdout and stderr refer to our service
-	char *servPath = new char[MAX_PATH_LEN + 1];
-	sprintf(servPath,"services:/guiterm%d",no);
-	tFD fin = open(servPath,IO_READ);
-	redirFd(STDIN_FILENO,fin);
+	if(redirFd(STDIN_FILENO,fin) < 0) {
+		printe("Unable to redirect STDIN to %d",fin);
+		return EXIT_FAILURE;
+	}
 	tFD fout = open(servPath,IO_WRITE);
-	redirFd(STDOUT_FILENO,fout);
-	redirFd(STDERR_FILENO,fout);
+	if(fout < 0) {
+		printe("Unable to open '%s' for writing",servPath);
+		return EXIT_FAILURE;
+	}
+	if(redirFd(STDOUT_FILENO,fout) < 0) {
+		printe("Unable to redirect STDOUT to %d",fout);
+		return EXIT_FAILURE;
+	}
+	if(redirFd(STDERR_FILENO,fout) < 0) {
+		printe("Unable to redirect STDERR to %d",fout);
+		return EXIT_FAILURE;
+	}
 	delete servPath;
 
-	// lets handle the shell-stuff in a separate thread
-	/*if(fork() == 0)
-		return shell_main();*/
-	startThread(shell_main);
-
-	// the parent handles the GUI
-	ShellControl sh(0,0,500,280);
-	ShellApplication *app = new ShellApplication(sid,no,&sh);
-	Window w("Shell",100,100,500,300);
-	w.add(sh);
-	return app->run();
+	return shell_main();
 }
 
 static int shell_main(void) {

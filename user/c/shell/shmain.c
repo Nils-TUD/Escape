@@ -39,7 +39,7 @@ static u32 vterm;
 int main(int argc,char **argv) {
 	tFD fd;
 	char *buffer;
-	char servPath[10 + MAX_VTERM_NAME_LEN + 1] = "services:/";
+	char servPath[9 + MAX_VTERM_NAME_LEN + 1] = "drivers:/";
 
 	/* we need either the vterm as argument or "-e <cmd>" */
 	if(argc < 2) {

@@ -63,11 +63,6 @@ typedef u16 tSize;
 typedef u16 tCoord;
 typedef u32 tColor;
 
-typedef struct {
-	sMsgHeader header;
-	sMsgDataVesaGetModeResp data;
-} __attribute__((packed)) sMsgGetModeResp;
-
 static void vbe_update(tCoord x,tCoord y,tSize width,tSize height);
 static void vbe_write(u16 index,u16 value);
 static void vbe_setMode(tSize xres,tSize yres,u16 bpp);
@@ -77,22 +72,16 @@ static tColor vbe_getVisibleFGColor(tColor bg);
 static void vbe_copyRegion(u8 *src,u8 *dst,tSize width,tSize height,tCoord x1,tCoord y1,
 		tCoord x2,tCoord y2,tSize w1,tSize w2);
 
-static sMsgGetModeResp getModeResp = {
-	.header = {
-		.id = MSG_VESA_GETMODE_RESP,
-		.length = sizeof(sMsgDataVesaGetModeResp)
-	}
-};
-
 static void *video;
 static void *shmem;
 static u8 *cursorCopy;
 static tCoord lastX = 0;
 static tCoord lastY = 0;
+static sMsg msg;
 
 int main(void) {
-	tServ id;
-	tServ client;
+	tServ id,client;
+	tMsgId mid;
 
 	/* request ports; note that we read/write words to them, so we have to request 3 ports */
 	if(requestIOPorts(VBE_DISPI_IOPORT_INDEX,3) < 0) {
@@ -120,7 +109,7 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	id = regService("vesa",SERVICE_TYPE_MULTIPIPE);
+	id = regService("vesa",SERV_DEFAULT);
 	if(id < 0) {
 		printe("Unable to register service 'vesa'");
 		return EXIT_FAILURE;
@@ -131,35 +120,34 @@ int main(void) {
 		if(fd < 0)
 			wait(EV_CLIENT);
 		else {
-			sMsgHeader header;
-			while(read(fd,&header,sizeof(sMsgHeader)) > 0) {
-				switch(header.id) {
+			while(receive(fd,&mid,&msg) > 0) {
+				switch(mid) {
 					case MSG_VESA_UPDATE: {
-						sMsgDataVesaUpdate data;
-						read(fd,&data,sizeof(sMsgDataVesaUpdate));
-						if(data.x < RESOLUTION_X && data.y < RESOLUTION_Y &&
-							data.x + data.width <= RESOLUTION_X &&
-							data.y + data.height <= RESOLUTION_Y &&
+						tCoord x = (tCoord)msg.args.arg1;
+						tCoord y = (tCoord)msg.args.arg2;
+						tSize width = (tSize)msg.args.arg3;
+						tSize height = (tSize)msg.args.arg4;
+						if(x < RESOLUTION_X && y < RESOLUTION_Y &&
+							x + width <= RESOLUTION_X && y + height <= RESOLUTION_Y &&
 							/* check for overflow */
-							data.x + data.width > data.x &&
-							data.y + data.height > data.y) {
-							vbe_update(data.x,data.y,data.width,data.height);
+							x + width > x && y + height > y) {
+							vbe_update(x,y,width,height);
 						}
 					}
 					break;
 
 					case MSG_VESA_CURSOR: {
-						sMsgDataVesaCursor data;
-						read(fd,&data,sizeof(sMsgDataVesaUpdate));
-						vbe_setCursor(data.x,data.y);
+						tCoord x = (tCoord)msg.args.arg1;
+						tCoord y = (tCoord)msg.args.arg2;
+						vbe_setCursor(x,y);
 					}
 					break;
 
 					case MSG_VESA_GETMODE_REQ: {
-						getModeResp.data.width = RESOLUTION_X;
-						getModeResp.data.height = RESOLUTION_Y;
-						getModeResp.data.colorDepth = BITS_PER_PIXEL;
-						write(fd,&getModeResp,sizeof(getModeResp));
+						msg.args.arg1 = RESOLUTION_X;
+						msg.args.arg2 = RESOLUTION_Y;
+						msg.args.arg3 = BITS_PER_PIXEL;
+						send(fd,MSG_VESA_GETMODE_RESP,&msg,sizeof(msg.args));
 					}
 					break;
 				}

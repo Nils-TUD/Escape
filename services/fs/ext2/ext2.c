@@ -31,8 +31,9 @@ bool ext2_init(sExt2 *e) {
 	tFD fd;
 	/* we have to try it multiple times in this case since the kernel loads ata and fs
 	 * directly after another and we don't know who's ready first */
+	/* TODO later the device for the root-partition should be chosen in the multiboot-parameters */
 	do {
-		fd = open("services:/ata",IO_WRITE | IO_READ);
+		fd = open("drivers:/hda1",IO_WRITE | IO_READ);
 		if(fd < 0)
 			yield();
 	}

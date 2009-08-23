@@ -29,18 +29,19 @@
 #include <esc/proc.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errors.h>
 
 /* the physical memory of the 80x25 device */
-#define VIDEO_MEM			0xB8000
+#define VIDEO_MEM				0xB8000
 
 /* cursor io-ports and data bit-masks */
-#define CURSOR_PORT_INDEX	0x3D4
-#define CURSOR_PORT_DATA	0x3D5
-#define CURSOR_DATA_LOCLOW	0x0F
-#define CURSOR_DATA_LOCHIGH	0x0E
+#define CURSOR_PORT_INDEX		0x3D4
+#define CURSOR_PORT_DATA		0x3D5
+#define CURSOR_DATA_LOCLOW		0x0F
+#define CURSOR_DATA_LOCHIGH		0x0E
 
-#define COLS		80
-#define ROWS		25
+#define COLS					80
+#define ROWS					25
 
 /**
  * Sets the cursor to given position
@@ -67,7 +68,7 @@ int main(void) {
 	tServ id,client;
 	tMsgId mid;
 
-	id = regService("video",SERVICE_TYPE_MULTIPIPE);
+	id = regService("video",SERV_DRIVER);
 	if(id < 0) {
 		printe("Unable to register service 'video'");
 		return EXIT_FAILURE;
@@ -86,6 +87,8 @@ int main(void) {
 
 	/* clear screen */
 	memclear(videoData,COLS * ROWS * 2);
+	/* make data available, so that we can return an error to the calling processes */
+	setDataReadable(id,true);
 
 	/* wait for messages */
 	while(1) {
@@ -97,41 +100,50 @@ int main(void) {
 			while(receive(fd,&mid,&msg) > 0) {
 				/* see what we have to do */
 				switch(mid) {
-					/* set character */
-					case MSG_VIDEO_SET: {
-						char c = (char)msg.args.arg1;
-						u8 color = (u8)msg.args.arg2;
-						u8 row = (u8)msg.args.arg3;
-						u8 col = (u8)msg.args.arg4;
-						if(row < ROWS && col < COLS) {
-							u8 *ptr = videoData + (row * COLS * 2) + col * 2;
-							*ptr = c;
-							*(ptr + 1) = color;
-							vid_setCursor(row,col + 1);
+					case MSG_DRV_OPEN:
+						msg.args.arg2 = 0;
+						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
+						break;
+
+					case MSG_DRV_READ:
+						msg.data.arg1 = msg.args.arg1;
+						msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
+						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
+						break;
+
+					case MSG_DRV_WRITE: {
+						u32 offset = msg.data.arg2;
+						u32 count = msg.data.arg3;
+						msg.args.arg1 = msg.data.arg1;
+						if(offset + count <= ROWS * COLS * 2 && offset + count > offset) {
+							vid_setScreen(offset,msg.data.d,count);
+							msg.args.arg2 = count;
 						}
+						else
+							msg.args.arg2 = 0;
+						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 					}
 					break;
 
-					/* set screen */
-					case MSG_VIDEO_SETSCREEN: {
-						u32 len = msg.data.arg1;
-						u32 start = msg.data.arg2;
-						if(len > sizeof(u16) && len <= COLS * ROWS * 2 + sizeof(u16) &&
-								start < COLS * ROWS - 1 &&
-								len - sizeof(u16) <= (u32)start * 2 + COLS * ROWS * 2) {
-							vid_setScreen(start,msg.data.d,len - sizeof(u16));
+					case MSG_DRV_IOCTL: {
+						sIoCtlCursorPos *pos;
+						if(msg.data.arg2 == IOCTL_VID_SETCURSOR) {
+							pos = (sIoCtlCursorPos*)msg.data.d;
+							pos->col = MIN(pos->col,COLS);
+							pos->row = MIN(pos->row,ROWS);
+							vid_setCursor(pos->row,pos->col);
+							msg.data.arg2 = 0;
 						}
+						else
+							msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
+						msg.data.arg3 = 0;
+						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 					}
 					break;
 
-					/* set cursor */
-					case MSG_VIDEO_SETCURSOR: {
-						u8 col = (u8)msg.args.arg1;
-						u8 row = (u8)msg.args.arg2;
-						if(row < ROWS && col < COLS)
-							vid_setCursor(row,col);
-					}
-					break;
+					case MSG_DRV_CLOSE:
+						/* ignore */
+						break;
 				}
 			}
 			close(fd);
@@ -157,8 +169,5 @@ static void vid_setCursor(u8 row,u8 col) {
 }
 
 static void vid_setScreen(u16 startPos,char *buffer,u32 length) {
-	/* TODO why not use memcpy? */
-	char *ptr = (char*)videoData + startPos * 2;
-	while(length-- > 0)
-		*ptr++ = *buffer++;
+	memcpy(videoData + startPos,buffer,length);
 }

@@ -23,20 +23,19 @@
 #include <esc/io.h>
 #include <esc/signals.h>
 #include <esc/gui/common.h>
+#include <errors.h>
 #include "shellapp.h"
 
 ShellApplication::ShellApplication(tServ sid,u32 no,ShellControl *sh)
 		: Application(), _sid(sid), _sh(sh) {
-	// open gui-terminal
-	char *path = new char[MAX_PATH_LEN + 1];
-	sprintf(path,"services:/guiterm%d",no);
-	_selfFd = open(path,IO_WRITE);
-	if(_selfFd < 0) {
-		printe("Unable to open own service guiterm");
+	_inst = this;
+
+	// create input-buffer
+	_inbuf = rb_create(sizeof(char),GUISH_INBUF_SIZE,RB_OVERWRITE);
+	if(_inbuf == NULL) {
+		printe("Unable to create ring-buffer");
 		exit(EXIT_FAILURE);
 	}
-	delete path;
-	_inst = this;
 
 	// init read-buffer
 	rbuffer = new char[READ_BUF_SIZE];
@@ -44,80 +43,80 @@ ShellApplication::ShellApplication(tServ sid,u32 no,ShellControl *sh)
 }
 
 ShellApplication::~ShellApplication() {
-	close(_selfFd);
 	delete rbuffer;
 }
 
 void ShellApplication::doEvents() {
-	sMsgHeader header;
 	u32 c;
+	tMsgId mid;
 	if(!eof(_winFd)) {
-		if((c = read(_winFd,&header,sizeof(header))) != sizeof(header)) {
-			printe("Read from window-manager failed; Read %d bytes, expected %d",
-					c,sizeof(header));
+		if(receive(_winFd,&mid,&_msg) < 0) {
+			printe("Read from window-manager failed");
 			exit(EXIT_FAILURE);
 		}
 
-		switch(header.id) {
+		switch(mid) {
 			case MSG_WIN_KEYBOARD: {
-				sMsgDataWinKeyboard data;
-				if(read(_winFd,&data,sizeof(data)) == sizeof(data)) {
-					if(!data.isBreak) {
-						switch(data.keycode) {
-							case VK_PGUP:
-								_sh->scrollPage(1);
-								break;
-							case VK_PGDOWN:
-								_sh->scrollPage(-1);
-								break;
+				u8 keycode = (u8)_msg.args.arg1;
+				bool isBreak = (bool)_msg.args.arg2;
+				char character = (char)_msg.args.arg4;
+				u8 modifier = (u8)_msg.args.arg5;
+				if(isBreak)
+					break;
 
-							case VK_UP:
-							case VK_DOWN:
-							case VK_D:
-							case VK_C:
-								if(data.modifier & SHIFT_MASK) {
-									switch(data.keycode) {
-										case VK_UP:
-											_sh->scrollLine(1);
-											break;
-										case VK_DOWN:
-											_sh->scrollLine(-1);
-											break;
-									}
-									break;
-								}
-								if(data.modifier & CTRL_MASK) {
-									switch(data.keycode) {
-										case VK_C:
-											// don't send it to the vterms
-											sendSignal(SIG_INTRPT,0xFFFFFFFF);
-											break;
-										case VK_D: {
-											char eof = IO_EOF;
-											write(_selfFd,&eof,sizeof(eof));
-										}
-										break;
-									}
-									break;
-								}
-								// fall through
+				switch(keycode) {
+					case VK_PGUP:
+						_sh->scrollPage(1);
+						break;
+					case VK_PGDOWN:
+						_sh->scrollPage(-1);
+						break;
 
-							default:
-								if(data.character)
-									write(_selfFd,&data.character,sizeof(data.character));
-								else {
-									char str[] = {'\033',data.keycode,data.modifier};
-									write(_selfFd,str,sizeof(str));
-								}
-								break;
+					case VK_UP:
+					case VK_DOWN:
+					case VK_D:
+					case VK_C:
+						if(modifier & SHIFT_MASK) {
+							switch(keycode) {
+								case VK_UP:
+									_sh->scrollLine(1);
+									break;
+								case VK_DOWN:
+									_sh->scrollLine(-1);
+									break;
+							}
+							break;
 						}
-					}
+						if(modifier & CTRL_MASK) {
+							switch(keycode) {
+								case VK_C:
+									// don't send it to the vterms
+									sendSignal(SIG_INTRPT,0xFFFFFFFF);
+									break;
+								case VK_D: {
+									char eof = IO_EOF;
+									putIn(&eof,1);
+								}
+								break;
+							}
+							break;
+						}
+						// fall through
+
+					default:
+						if(character)
+							putIn(&character,1);
+						else {
+							char str[] = {'\033',keycode,modifier};
+							putIn(str,3);
+						}
+						break;
 				}
 			}
 			break;
 
 			default:
-				handleMessage(&header);
+				handleMessage(mid,&_msg);
 				break;
 		}
 	}
@@ -134,6 +133,59 @@ void ShellApplication::doEvents() {
 		}
 		else {
 			u32 x = 0;
+			while(receive(fd,&mid,&_msg) > 0) {
+				switch(mid) {
+					case MSG_DRV_OPEN:
+						_msg.args.arg2 = 0;
+						send(fd,MSG_DRV_OPEN_RESP,&_msg,sizeof(_msg.args));
+						break;
+					case MSG_DRV_READ: {
+						/* offset is ignored here */
+						u32 count = MIN(sizeof(_msg.data.d),_msg.args.arg3);
+						_msg.data.arg1 = _msg.args.arg1;
+						_msg.data.arg2 = rb_readn(_inbuf,_msg.data.d,count);
+						_msg.data.arg3 = rb_length(_inbuf) > 0;
+						send(fd,MSG_DRV_READ_RESP,&_msg,sizeof(_msg.data));
+					}
+					break;
+					case MSG_DRV_WRITE: {
+						u32 amount;
+						char *input;
+						c = _msg.data.arg3;
+						if(c >= sizeof(_msg.data.d))
+							c = sizeof(_msg.data.d) - 1;
+						_msg.data.d[c] = '\0';
+						_msg.args.arg1 = _msg.data.arg1;
+						_msg.args.arg2 = c;
+
+						input = _msg.data.d;
+						while(c > 0) {
+							amount = MIN(c,READ_BUF_SIZE);
+							memcpy(rbuffer + rbufPos,input,amount);
+
+							c -= amount;
+							rbufPos += amount;
+							if(rbufPos >= READ_BUF_SIZE) {
+								_sh->append(rbuffer);
+								rbufPos = 0;
+							}
+						}
+
+						send(fd,MSG_DRV_WRITE_RESP,&_msg,sizeof(_msg.args));
+					}
+					break;
+					case MSG_DRV_IOCTL: {
+						_msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
+						_msg.data.arg3 = 0;
+						send(fd,MSG_DRV_IOCTL_RESP,&_msg,sizeof(_msg.data));
+					}
+					break;
+					case MSG_DRV_CLOSE:
+						break;
+				}
+			}
+
+#if 0
 			/* TODO this may cause trouble with escape-codes. maybe we should store the
 			 * "escape-state" somehow... */
 			// do this just 3 times to ensure that we look for other events, too
@@ -150,6 +202,13 @@ void ShellApplication::doEvents() {
 				_sh->append(rbuffer);
 				rbufPos = 0;
 			}
+#endif
 		}
 	}
+}
+
+void ShellApplication::putIn(char *s,u32 len) {
+	if(rb_length(_inbuf) == 0)
+		setDataReadable(_sid,true);
+	rb_writen(_inbuf,s,len);
 }

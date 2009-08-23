@@ -30,6 +30,7 @@
 #define EV_CLIENT			1
 #define EV_RECEIVED_MSG		2
 #define EV_CHILD_DIED		4
+#define EV_DATA_READABLE	8
 
 #ifdef __cplusplus
 extern "C" {

@@ -30,7 +30,7 @@ typedef void (*fReadCallBack)(sVFSNode *node,u32 *dataSize,void **buffer);
 /**
  * The default-read-handler
  */
-s32 vfs_defReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfsrw_readDef(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * Creates space, calls the callback which should fill the space
@@ -44,22 +44,22 @@ s32 vfs_defReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
  * @param dataSize the total size of the data
  * @param callback the callback-function
  */
-s32 vfs_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
+s32 vfsrw_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
 		fReadCallBack callback);
 
 /**
  * Read-handler for service-usages (receive a message)
  */
-s32 vfs_serviceUseReadHandler(tTid tid,sVFSNode *node,tMsgId *id,u8 *data,u32 size);
+s32 vfsrw_readServUse(tTid tid,sVFSNode *node,tMsgId *id,u8 *data,u32 size);
 
 /**
  * The default write-handler for the VFS
  */
-s32 vfs_defWriteHandler(tTid tid,sVFSNode *n,const u8 *buffer,u32 offset,u32 count);
+s32 vfsrw_writeDef(tTid tid,sVFSNode *n,const u8 *buffer,u32 offset,u32 count);
 
 /**
  * Write-handler for service-usages (send a message)
  */
-s32 vfs_serviceUseWriteHandler(tTid tid,sVFSNode *n,tMsgId id,const u8 *data,u32 size);
+s32 vfsrw_writeServUse(tTid tid,sVFSNode *n,tMsgId id,const u8 *data,u32 size);
 
 #endif /* VFSRW_H_ */

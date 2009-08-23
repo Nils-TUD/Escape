@@ -376,7 +376,7 @@ sVFSNode *vfsn_createInfo(tTid tid,sVFSNode *parent,char *name,fRead handler) {
 	node->owner = tid;
 	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ;
 	node->readHandler = handler;
-	node->writeHandler = vfs_defWriteHandler;
+	node->writeHandler = vfsrw_writeDef;
 	return node;
 }
 
@@ -537,8 +537,8 @@ static sVFSNode *vfsn_createPipeNode(tTid tid,sVFSNode *parent,char *name) {
 	node->owner = tid;
 	node->mode = MODE_TYPE_PIPE | MODE_OWNER_READ | MODE_OWNER_WRITE |
 		MODE_OTHER_READ | MODE_OTHER_WRITE;
-	node->readHandler = vfs_defReadHandler;
-	node->writeHandler = vfs_defWriteHandler;
+	node->readHandler = vfsrw_readDef;
+	node->writeHandler = vfsrw_writeDef;
 	return node;
 }
 

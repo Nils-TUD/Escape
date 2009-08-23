@@ -38,7 +38,7 @@ typedef struct {
 	u32 length;
 } sMessage;
 
-s32 vfs_defReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+s32 vfsrw_readDef(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	s32 byteCount;
 	UNUSED(tid);
 	/* no data available? */
@@ -55,7 +55,7 @@ s32 vfs_defReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) 
 	return byteCount;
 }
 
-s32 vfs_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
+s32 vfsrw_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
 		fReadCallBack callback) {
 	void *mem = NULL;
 
@@ -98,7 +98,7 @@ s32 vfs_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 d
 	return count;
 }
 
-s32 vfs_serviceUseReadHandler(tTid tid,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
+s32 vfsrw_readServUse(tTid tid,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
 	sSLList *list;
 	sMessage *msg;
 	s32 res;
@@ -147,7 +147,7 @@ s32 vfs_serviceUseReadHandler(tTid tid,sVFSNode *node,tMsgId *id,u8 *data,u32 si
 	return res;
 }
 
-s32 vfs_defWriteHandler(tTid tid,sVFSNode *n,const u8 *buffer,u32 offset,u32 count) {
+s32 vfsrw_writeDef(tTid tid,sVFSNode *n,const u8 *buffer,u32 offset,u32 count) {
 	void *cache;
 	void *oldCache;
 	u32 newSize = 0;
@@ -203,7 +203,7 @@ s32 vfs_defWriteHandler(tTid tid,sVFSNode *n,const u8 *buffer,u32 offset,u32 cou
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-s32 vfs_serviceUseWriteHandler(tTid tid,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
+s32 vfsrw_writeServUse(tTid tid,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
 	sSLList **list;
 	sMessage *msg;
 

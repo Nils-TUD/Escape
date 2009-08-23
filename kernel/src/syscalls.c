@@ -1320,7 +1320,7 @@ static void sysc_createNode(sIntrptStackFrame *stack) {
 	/* create node */
 	kheap_free(pathCpy);
 	node = vfsn_getNode(nodeNo);
-	if(vfsn_createInfo(t->tid,node,nameCpy,vfs_defReadHandler) == NULL)
+	if(vfsn_createInfo(t->tid,node,nameCpy,vfsrw_readDef) == NULL)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	SYSC_RET1(stack,0);
 }

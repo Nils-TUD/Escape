@@ -377,8 +377,8 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 		if((err = vfs_hasAccess(tid,e->nodeNo,VFS_READ)) < 0)
 			return err;
 
-		/* node not present anymore? */
-		if(n->name == NULL)
+		/* node not present anymore or no read-handler? */
+		if(n->name == NULL || n->readHandler == NULL)
 			return ERR_INVALID_FILE;
 
 		/* use the read-handler */
@@ -409,8 +409,8 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 		if((err = vfs_hasAccess(tid,e->nodeNo,VFS_WRITE)) < 0)
 			return err;
 
-		/* node not present anymore? */
-		if(n->name == NULL)
+		/* node not present anymore or no write-handler? */
+		if(n->name == NULL || n->writeHandler == NULL)
 			return ERR_INVALID_FILE;
 
 		/* write to the node */

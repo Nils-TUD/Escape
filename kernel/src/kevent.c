@@ -21,6 +21,7 @@
 #include <kevent.h>
 #include <kheap.h>
 #include <util.h>
+#include <video.h>
 #include <errors.h>
 #include <sllist.h>
 

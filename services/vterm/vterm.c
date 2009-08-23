@@ -25,6 +25,7 @@
 #include <esc/keycodes.h>
 #include <esc/heap.h>
 #include <esc/signals.h>
+#include <esc/service.h>
 #include <esc/fileio.h>
 #include <string.h>
 #include <ringbuffer.h>
@@ -207,7 +208,6 @@ sVTerm *vterm_get(u32 index) {
 static bool vterm_init(sVTerm *vt) {
 	tFD vidFd,speakerFd;
 	u32 i,len;
-	char path[strlen("services:/") + MAX_NAME_LEN + 1];
 	char *ptr,*s;
 
 	/* open video */
@@ -382,7 +382,6 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead,bool *readKeyboard) 
 
 static void vterm_sendChar(sVTerm *vt,u8 row,u8 col) {
 	char *ptr = vt->buffer.data + (vt->currLine * COLS * 2) + (row * COLS * 2) + (col * 2);
-	u8 color = *(ptr + 1);
 
 	/* scroll to current line, if necessary */
 	if(vt->firstVisLine != vt->currLine)
@@ -400,7 +399,7 @@ static void vterm_setCursor(sVTerm *vt) {
 		sIoCtlCursorPos pos;
 		pos.col = vt->col;
 		pos.row = vt->row;
-		ioctl(vt->video,IOCTL_VID_SETCURSOR,&pos,sizeof(pos));
+		ioctl(vt->video,IOCTL_VID_SETCURSOR,(u8*)&pos,sizeof(pos));
 	}
 }
 

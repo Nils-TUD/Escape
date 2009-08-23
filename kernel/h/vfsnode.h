@@ -178,10 +178,11 @@ sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 type);
  * @param tid the thread-id to use
  * @param parent the parent node
  * @param name the name
- * @param handler the read-handler
+ * @param rhdlr the read-handler
+ * @param whdlr the write-handler
  * @return the node or NULL
  */
-sVFSNode *vfsn_createServiceUseNode(tTid tid,sVFSNode *parent,char *name,fRead handler);
+sVFSNode *vfsn_createServiceUseNode(tTid tid,sVFSNode *parent,char *name,fRead rhdlr,fWrite whdlr);
 
 /**
  * Appends the given node as last child to the parent

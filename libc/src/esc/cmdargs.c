@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/cmdargs.h>
+#include <string.h>
 
 bool isHelpCmd(int argc,char **argv) {
 	if(argc <= 1)

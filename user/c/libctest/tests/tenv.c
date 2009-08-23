@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/env.h>
+#include <esc/heap.h>
 #include <test.h>
 #include <stdarg.h>
 #include "tenv.h"

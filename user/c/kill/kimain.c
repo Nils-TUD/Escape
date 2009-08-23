@@ -59,7 +59,6 @@ int main(int argc,char **argv) {
 	/* the user has specified the signal */
 	if(argv[1][0] == '-') {
 		u32 i;
-		u32 len = strlen(argv[1]);
 		for(i = 0; i < ARRAY_SIZE(signals); i++) {
 			if(strcmp(argv[1] + 1,signals[i].name) == 0 ||
 				strcmp(argv[1] + 1,signals[i].name + 3) == 0) {

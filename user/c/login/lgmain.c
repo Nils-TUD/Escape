@@ -60,5 +60,7 @@ int main(void) {
 }
 
 static void termHandler(tSig signal,u32 data) {
+	UNUSED(signal);
+	UNUSED(data);
 	printf("Got TERM-signal but I don't want to die :P\n");
 }

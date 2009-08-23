@@ -27,6 +27,7 @@
 #include <vfs.h>
 #include <vfsnode.h>
 #include <vfsinfo.h>
+#include <vfsrw.h>
 #include <util.h>
 #include <kheap.h>
 #include <assert.h>

@@ -20,6 +20,7 @@
 #include <types.h>
 #include <assert.h>
 #include <ringbuffer.h>
+#include <string.h>
 
 #ifdef IN_KERNEL
 #	include <kheap.h>

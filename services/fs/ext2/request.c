@@ -25,8 +25,6 @@
 #include "request.h"
 #include "ext2.h"
 
-static sMsg msg;
-
 bool ext2_readBlocks(sExt2 *e,u8 *buffer,u32 start,u16 blockCount) {
 	return ext2_readSectors(e,buffer,BLOCKS_TO_SECS(e,start),BLOCKS_TO_SECS(e,blockCount));
 }

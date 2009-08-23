@@ -24,6 +24,7 @@
 #include <esc/io.h>
 #include <esc/keycodes.h>
 #include <esc/cmdargs.h>
+#include <esc/env.h>
 #include <messages.h>
 #include <stdlib.h>
 
@@ -128,7 +129,7 @@ int main(int argc,char *argv[]) {
 			break;
 		if(c == '\033') {
 			u8 keycode = fscanc(fvterm);
-			u8 modifier = fscanc(fvterm);
+			fscanc(fvterm); /* discard modifier */
 			switch(keycode) {
 				case VK_UP:
 					scrollDown(-1);

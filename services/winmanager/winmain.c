@@ -34,21 +34,6 @@
 #define MOUSE_DATA_BUF_SIZE	128
 #define KB_DATA_BUF_SIZE	128
 
-typedef struct {
-	sMsgHeader header;
-	sMsgDataWinMouse data;
-} __attribute__((packed)) sMsgMouse;
-
-typedef struct {
-	sMsgHeader header;
-	sMsgDataWinCreateResp data;
-} __attribute__((packed)) sMsgWinCreateResp;
-
-typedef struct {
-	sMsgHeader header;
-	sMsgDataWinKeyboard data;
-} __attribute__((packed)) sMsgKeyboard;
-
 typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 
 /**
@@ -63,25 +48,6 @@ static void handleKbMessage(tServ servId,sWindow *active,u8 keycode,u8 isBreak);
  * Handles a message from the mouse
  */
 static void handleMouseMessage(tServ servId,sMouseData *mdata);
-
-static sMsgWinCreateResp winCreateResp = {
-	.header = {
-		.id = MSG_WIN_CREATE_RESP,
-		.length = sizeof(sMsgDataWinCreateResp)
-	}
-};
-static sMsgMouse mouseMsg = {
-	.header = {
-		.id = MSG_WIN_MOUSE,
-		.length = sizeof(sMsgDataWinMouse)
-	}
-};
-static sMsgKeyboard keyboardMsg = {
-	.header = {
-		.id = MSG_WIN_KEYBOARD,
-		.length = sizeof(sMsgKbResponse)
-	}
-};
 
 /* our keymaps */
 static fKeymapGet keymaps[] = {
@@ -107,7 +73,6 @@ static sKbData kbData[KB_DATA_BUF_SIZE];
 static sWindow *mouseWin = NULL;
 
 int main(void) {
-	sMsgHeader header;
 	tFD mouse,keyboard;
 	tServ servId,client;
 	tMsgId mid;

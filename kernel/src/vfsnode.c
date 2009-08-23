@@ -22,6 +22,7 @@
 #include <vfsnode.h>
 #include <vfsinfo.h>
 #include <vfsdrv.h>
+#include <vfsrw.h>
 #include <util.h>
 #include <paging.h>
 #include <kheap.h>
@@ -347,6 +348,7 @@ sVFSNode *vfsn_createDir(sVFSNode *parent,char *name) {
 	node->mode = MODE_TYPE_DIR | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OWNER_EXEC |
 		MODE_OTHER_READ | MODE_OTHER_EXEC;
 	node->readHandler = vfsinfo_dirReadHandler;
+	node->writeHandler = NULL;
 	dot->mode = MODE_TYPE_LINK | MODE_OWNER_READ | MODE_OTHER_READ;
 	dot->data.def.cache = node;
 	dotdot->mode = MODE_TYPE_LINK | MODE_OWNER_READ | MODE_OTHER_READ;
@@ -362,6 +364,7 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name) {
 
 	node->mode = MODE_TYPE_PIPECON | MODE_OWNER_READ | MODE_OWNER_WRITE;
 	node->readHandler = NULL;
+	node->writeHandler = NULL;
 	return node;
 }
 
@@ -373,6 +376,7 @@ sVFSNode *vfsn_createInfo(tTid tid,sVFSNode *parent,char *name,fRead handler) {
 	node->owner = tid;
 	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ;
 	node->readHandler = handler;
+	node->writeHandler = vfs_defWriteHandler;
 	return node;
 }
 
@@ -384,11 +388,12 @@ sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 type) 
 	node->owner = tid;
 	node->mode = MODE_TYPE_SERVICE | MODE_OWNER_READ | MODE_OTHER_READ | type;
 	node->readHandler = NULL;
+	node->writeHandler = NULL;
 	node->data.service.isEmpty = true;
 	return node;
 }
 
-sVFSNode *vfsn_createServiceUseNode(tTid tid,sVFSNode *parent,char *name,fRead handler) {
+sVFSNode *vfsn_createServiceUseNode(tTid tid,sVFSNode *parent,char *name,fRead rhdlr,fWrite whdlr) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
@@ -396,7 +401,8 @@ sVFSNode *vfsn_createServiceUseNode(tTid tid,sVFSNode *parent,char *name,fRead h
 	node->owner = tid;
 	node->mode = MODE_TYPE_SERVUSE | MODE_OWNER_READ | MODE_OWNER_WRITE |
 		MODE_OTHER_READ | MODE_OTHER_WRITE;
-	node->readHandler = handler;
+	node->readHandler = rhdlr;
+	node->writeHandler = whdlr;
 	return node;
 }
 
@@ -459,6 +465,8 @@ void vfsn_removeNode(sVFSNode *n) {
 s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	char *name;
 	sVFSNode *m;
+	fRead rhdlr;
+	fWrite whdlr;
 
 	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
 	name = (char*)kheap_alloc(12 * sizeof(char));
@@ -480,7 +488,9 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	}
 
 	/* ok, create a service-usage-node */
-	m = vfsn_createServiceUseNode(tid,n,name,(n->mode & MODE_SERVICE_DRIVER) ? vfsdrv_read : NULL);
+	rhdlr = (n->mode & MODE_SERVICE_DRIVER) ? vfsdrv_read : NULL;
+	whdlr = (n->mode & MODE_SERVICE_DRIVER) ? vfsdrv_write : NULL;
+	m = vfsn_createServiceUseNode(tid,n,name,rhdlr,whdlr);
 	if(m == NULL) {
 		kheap_free(name);
 		return ERR_NOT_ENOUGH_MEM;
@@ -528,6 +538,7 @@ static sVFSNode *vfsn_createPipeNode(tTid tid,sVFSNode *parent,char *name) {
 	node->mode = MODE_TYPE_PIPE | MODE_OWNER_READ | MODE_OWNER_WRITE |
 		MODE_OTHER_READ | MODE_OTHER_WRITE;
 	node->readHandler = vfs_defReadHandler;
+	node->writeHandler = vfs_defWriteHandler;
 	return node;
 }
 
@@ -590,6 +601,7 @@ void vfsn_dbg_printNode(sVFSNode *node) {
 		}
 		else {
 			vid_printf("\treadHandler: 0x%x\n",node->readHandler);
+			vid_printf("\twriteHandler: 0x%x\n",node->writeHandler);
 			vid_printf("\tcache: 0x%x\n",node->data.def.cache);
 			vid_printf("\tsize: %d\n",node->data.def.size);
 			vid_printf("\tpos: %d\n",node->data.def.pos);

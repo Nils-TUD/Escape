@@ -21,6 +21,7 @@
 #include <esc/service.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
+#include <esc/date.h>
 #include <stdlib.h>
 #include <messages.h>
 #include <errors.h>
@@ -39,7 +40,7 @@ int main(void) {
 
 	/* random numbers are always available ;) */
 	setDataReadable(id,true);
-	srand(time(NULL));
+	srand(getTime());
 
     /* wait for commands */
 	while(1) {

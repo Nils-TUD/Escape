@@ -22,6 +22,7 @@
 #include <cpu.h>
 #include <kheap.h>
 #include <video.h>
+#include <string.h>
 
 /**
  * finit instruction

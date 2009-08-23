@@ -50,7 +50,6 @@ static u16 activeWindow = WINDOW_COUNT;
 static sWindow windows[WINDOW_COUNT];
 
 bool win_init(tServ sid) {
-	sMsgHeader header;
 	tMsgId mid;
 
 	servId = sid;

@@ -367,7 +367,7 @@ static bool loadServices(sServiceLoad **loads) {
 }
 
 static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
-	u32 i,j;
+	u32 i;
 	tFD fd;
 	s32 child;
 	char path[MAX_SERVICE_PATH_LEN + 1] = "file:/services/";

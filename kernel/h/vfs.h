@@ -25,7 +25,6 @@
 
 /* special service-client names */
 #define SERVICE_CLIENT_KERNEL		"k"
-#define SERVICE_CLIENT_ALL			"a"
 
 /* some additional types for the kernel */
 #define MODE_TYPE_SERVUSE			000200000
@@ -46,8 +45,7 @@ enum {
 typedef struct sVFSNode sVFSNode;
 /* the function for read-requests on info-nodes */
 typedef s32 (*fRead)(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
-/* callback function for the default read-handler */
-typedef void (*fReadCallBack)(sVFSNode *node,u32 *dataSize,void **buffer);
+typedef s32 (*fWrite)(tTid tid,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
 
 struct sVFSNode {
 	char *name;
@@ -61,8 +59,9 @@ struct sVFSNode {
 	sVFSNode *next;
 	sVFSNode *firstChild;
 	sVFSNode *lastChild;
-	/* the handler that performs a read-operation on this node */
+	/* the handler that perform a read-/write-operation on this node */
 	fRead readHandler;
+	fWrite writeHandler;
 	/* the owner of this node: used for service-usages */
 	tTid owner;
 	union {
@@ -337,26 +336,6 @@ bool vfs_createThread(tTid tid,fRead handler);
  * @param tid the thread-id
  */
 void vfs_removeThread(tTid tid);
-
-/**
- * The default-read-handler
- */
-s32 vfs_defReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
-
-/**
- * Creates space, calls the callback which should fill the space
- * with data and writes the corresponding part to the buffer of the user
- *
- * @param tid the thread-id
- * @param node the vfs-node
- * @param buffer the buffer
- * @param offset the offset
- * @param count the number of bytes to copy
- * @param dataSize the total size of the data
- * @param callback the callback-function
- */
-s32 vfs_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
-		fReadCallBack callback);
 
 #if DEBUGGING
 

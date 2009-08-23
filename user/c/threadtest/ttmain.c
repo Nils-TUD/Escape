@@ -42,10 +42,10 @@ static void add(sArray *a,void *e);
 static void print(sArray *a);
 
 tULock alock = 0;
-sArray *a;
+sArray *array;
 
 int main(void) {
-	a = create(sizeof(u32),10);
+	array = create(sizeof(u32),10);
 	startThread(myThread);
 	startThread(myThread);
 	startThread(myThread);

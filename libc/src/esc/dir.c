@@ -139,23 +139,17 @@ tFD opendir(const char *path) {
 bool readdir(sDirEntry *e,tFD dir) {
 	u32 len;
 
-	/* TODO a lot of improvement is needed here ;) */
-
 	if(read(dir,(u8*)e,sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) > 0) {
 		len = e->nameLen;
 		if(len >= MAX_NAME_LEN)
 			return false;
 
 		if(read(dir,(u8*)e->name,len) > 0) {
-			/* if the record is longer, we have to read the remaining stuff to somewhere :( */
-			/* TODO maybe we should introduce a read-to-null? (if buffer = NULL, throw data away?) */
+			/* if the record is longer, we have to skip the stuff until the next record */
 			if(e->recLen - (sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) > len) {
 				len = (e->recLen - (sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) - len);
-				u8 *tmp = (u8*)malloc(len);
-				if(tmp == NULL)
+				if(seek(dir,len,SEEK_CUR) < 0)
 					return false;
-				read(dir,tmp,len);
-				free(tmp);
 			}
 
 			/* ensure that it is null-terminated */

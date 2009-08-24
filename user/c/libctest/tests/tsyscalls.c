@@ -143,8 +143,8 @@ static s32 _eof(u32 fd) {
 static s32 _createNode(const char *path) {
 	return test_doSyscall(28,(u32)path,0,0);
 }
-static s32 _seek(u32 fd,u32 pos) {
-	return test_doSyscall(29,fd,pos,0);
+static s32 _seek(u32 fd,s32 pos,u32 whence) {
+	return test_doSyscall(29,fd,pos,whence);
 }
 static s32 _getFileInfo(const char *path,sFileInfo *info) {
 	return test_doSyscall(30,(u32)path,(u32)info,0);
@@ -500,11 +500,12 @@ static void test_createNode(void) {
 
 static void test_seek(void) {
 	test_caseStart("Testing seek()");
-	test_assertInt(_seek(-1,0),ERR_INVALID_FD);
-	test_assertInt(_seek(-2,0),ERR_INVALID_FD);
-	test_assertInt(_seek(0x7FFF,0),ERR_INVALID_FD);
-	test_assertInt(_seek(32,0),ERR_INVALID_FD);
-	test_assertInt(_seek(33,0),ERR_INVALID_FD);
+	test_assertInt(_seek(-1,0,SEEK_SET),ERR_INVALID_FD);
+	test_assertInt(_seek(-2,0,SEEK_SET),ERR_INVALID_FD);
+	test_assertInt(_seek(0x7FFF,0,SEEK_SET),ERR_INVALID_FD);
+	test_assertInt(_seek(32,0,SEEK_SET),ERR_INVALID_FD);
+	test_assertInt(_seek(33,0,SEEK_SET),ERR_INVALID_FD);
+	test_assertInt(_seek(0,-1,SEEK_SET),ERR_INVALID_SYSC_ARGS);
 	test_caseSucceded();
 }
 

@@ -177,7 +177,7 @@ static s32 text_load(sProc *p,tFileNo file,u32 position,u32 textSize) {
 	p->textPages = pages;
 
 	/* load text from disk */
-	vfs_seek(t->tid,file,position);
+	vfs_seek(t->tid,file,position,SEEK_SET);
 	target = 0;
 	rem = textSize;
 	while(rem > 0) {

@@ -64,7 +64,7 @@ int main(int argc,char *argv[]) {
 		start = cpu_rdtsc();
 		for(i = 0; i < COUNT; i++) {
 			write(fd,buffer,sizeof(buffer));
-			seek(fd,0);
+			seek(fd,0,SEEK_SET);
 			if(i % (COUNT / 100) == 0) {
 				diff = getTime() - t;
 				printf("\rWriting with	%03d MiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / M));
@@ -83,7 +83,7 @@ int main(int argc,char *argv[]) {
 	start = cpu_rdtsc();
 	for(i = 0; i < COUNT; i++) {
 		read(fd,buffer,sizeof(buffer));
-		seek(fd,0);
+		seek(fd,0,SEEK_SET);
 		if(i % (COUNT / 100) == 0) {
 			diff = getTime() - t;
 			printf("\rReading with	%03d MiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / M));

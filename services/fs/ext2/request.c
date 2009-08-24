@@ -30,7 +30,7 @@ bool ext2_readBlocks(sExt2 *e,u8 *buffer,u32 start,u16 blockCount) {
 }
 
 bool ext2_readSectors(sExt2 *e,u8 *buffer,u64 lba,u16 secCount) {
-	if(seek(e->ataFd,lba * SECTOR_SIZE) < 0) {
+	if(seek(e->ataFd,lba * SECTOR_SIZE,SEEK_SET) < 0) {
 		printe("Unable to seek to %x\n",lba * SECTOR_SIZE);
 		return false;
 	}

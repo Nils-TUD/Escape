@@ -292,7 +292,7 @@ void vterm_selectVTerm(u32 index) {
 	activeVT = vt;
 
 	/* refresh screen and write titlebar */
-	seek(vt->video,0);
+	seek(vt->video,0,SEEK_SET);
 	write(vt->video,vt->titleBar,sizeof(u16) * COLS * 2);
 	vterm_refreshScreen(vt);
 	vterm_setCursor(vt);
@@ -389,7 +389,7 @@ static void vterm_sendChar(sVTerm *vt,u8 row,u8 col) {
 
 	/* write last character to video-driver */
 	if(vt->active) {
-		seek(vt->video,row * COLS * 2 + col * 2);
+		seek(vt->video,row * COLS * 2 + col * 2,SEEK_SET);
 		write(vt->video,ptr,2);
 	}
 }
@@ -538,7 +538,7 @@ static void vterm_refreshLines(sVTerm *vt,u16 start,u16 count) {
 	if(!vt->active)
 		return;
 
-	seek(vt->video,start * COLS * 2);
+	seek(vt->video,start * COLS * 2,SEEK_SET);
 	/* send messages (take care of msg-size) */
 	while(done < count) {
 		amount = MIN(count,sizeof(msg.data.d) / (COLS * 2));

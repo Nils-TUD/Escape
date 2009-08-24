@@ -41,6 +41,11 @@ enum {
 	VFS_WRITE = 2
 };
 
+/* seek-types */
+#define SEEK_SET					0
+#define SEEK_CUR					1
+#define SEEK_END					2
+
 /* a node in our virtual file system */
 typedef struct sVFSNode sVFSNode;
 /* the function for read-requests on info-nodes */
@@ -162,10 +167,11 @@ bool vfs_eof(tTid tid,tFileNo file);
  *
  * @param tid the thread-id
  * @param file the file
- * @param position the new position
- * @return 0 on success
+ * @param offset the offset
+ * @param whence the seek-type
+ * @return the new position on success
  */
-s32 vfs_seek(tTid tid,tFileNo file,u32 position);
+s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence);
 
 /**
  * Reads max. count bytes from the given file into the given buffer and returns the number

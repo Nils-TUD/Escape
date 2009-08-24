@@ -33,6 +33,11 @@
 #define STDOUT_FILENO	1
 #define STDERR_FILENO	2
 
+/* seek-types */
+#define SEEK_SET		0
+#define SEEK_CUR		1
+#define SEEK_END		2
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -64,14 +69,14 @@ s32 getFileInfo(const char *path,sFileInfo *info);
 s32 eof(tFD fd);
 
 /**
- * Sets the position for the given file-descriptor. Note that this is not possible
- * for service-usages!
+ * Changes the position in the given file. Note that this is not possible for service-usages!
  *
  * @param fd the file-descriptor
- * @param position the new position in the file.
- * @return 0 on success
+ * @param offset the offset
+ * @param whence the seek-type: SEEK_SET, SEEK_CUR or SEEK_END
+ * @return the new position on success, of the negative error-code
  */
-s32 seek(tFD fd,u32 position);
+s32 seek(tFD fd,s32 offset,u32 whence);
 
 /**
  * Reads count bytes from the given file-descriptor into the given buffer and returns the

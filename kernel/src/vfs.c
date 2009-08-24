@@ -332,9 +332,26 @@ bool vfs_eof(tTid tid,tFileNo file) {
 	return eof;
 }
 
-s32 vfs_seek(tTid tid,tFileNo file,u32 position) {
+s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 	sGFTEntry *e = globalFileTable + file;
+	s32 newPos;
 	UNUSED(tid);
+
+	switch(whence) {
+		case SEEK_SET:
+			newPos = offset;
+			break;
+		case SEEK_CUR:
+			newPos = (s32)e->position + offset;
+			break;
+		case SEEK_END:
+		default:
+			/* TODO */
+			return ERR_INVALID_SYSC_ARGS;
+	}
+
+	if(newPos < 0)
+		return ERR_INVALID_SYSC_ARGS;
 
 	if(IS_VIRT(e->nodeNo)) {
 		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
@@ -342,24 +359,22 @@ s32 vfs_seek(tTid tid,tFileNo file,u32 position) {
 
 		if(n->mode & MODE_TYPE_SERVUSE) {
 			if(n->parent->mode & MODE_SERVICE_DRIVER)
-				e->position = position;
+				e->position = newPos;
 			else
 				return ERR_SERVUSE_SEEK;
 		}
 		else {
-			/* set position */
-			if(n->data.def.pos == 0)
-				e->position = 0;
-			else
-				e->position = MIN((u32)(n->data.def.pos) - 1,position);
+			/* we can't validate the position here because the content of virtuel files may be
+			 * generated on demand */
+			e->position = newPos;
 		}
 	}
 	else {
 		/* since the fs-service validates the position anyway we can simply set it */
-		e->position = position;
+		e->position = newPos;
 	}
 
-	return 0;
+	return e->position;
 }
 
 s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {

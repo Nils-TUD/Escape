@@ -136,11 +136,12 @@ static void sysc_open(sIntrptStackFrame *stack);
  */
 static void sysc_eof(sIntrptStackFrame *stack);
 /**
- * Sets the position for the given file
+ * Changes the position in the given file
  *
  * @param tFD the file-descriptor
- * @param u32 the position to set
- * @return 0 on success
+ * @param s32 the offset
+ * @param u32 the seek-type
+ * @return the new position on success
  */
 static void sysc_seek(sIntrptStackFrame *stack);
 /**
@@ -643,17 +644,21 @@ static void sysc_eof(sIntrptStackFrame *stack) {
 
 static void sysc_seek(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	u32 position = SYSC_ARG2(stack);
+	s32 offset = (s32)SYSC_ARG2(stack);
+	u32 whence = SYSC_ARG3(stack);
 	sThread *t = thread_getRunning();
 	tFileNo file;
 	s32 res;
+
+	if(whence != SEEK_SET && whence != SEEK_CUR && whence != SEEK_END)
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	/* get file */
 	file = thread_fdToFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
-	res = vfs_seek(t->tid,file,position);
+	res = vfs_seek(t->tid,file,offset,whence);
 	SYSC_RET1(stack,res);
 }
 

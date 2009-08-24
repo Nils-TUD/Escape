@@ -266,11 +266,12 @@ s32 vfsinfo_dirReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 cou
 	vassert(node != NULL,"node == NULL");
 	vassert(buffer != NULL,"buffer == NULL");
 
-	/* TODO we need a different solution for this! */
+	/* TODO should we cache the fs-accesses for the root-dir, too? */
 
 	/* not cached yet? */
 	if(node->data.def.cache == NULL) {
 		/* we need the number of bytes first */
+		u8 *fsBytes = NULL;
 		byteCount = 0;
 		fsByteCount = 0;
 		sVFSNode *n = NODE_FIRST_CHILD(node);
@@ -281,23 +282,26 @@ s32 vfsinfo_dirReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 cou
 		}
 
 		if(node->parent == NULL) {
-			sVFSDirEntry *dire = (char*)kheap_alloc(sizeof(sVFSDirEntry));
-			if(dire != NULL) {
+			const u32 bufSize = 1024;
+			u32 count,curSize = bufSize;
+			fsBytes = (u8*)kheap_alloc(bufSize);
+			if(fsBytes != NULL) {
 				tFileNo file = vfsr_openFile(tid,VFS_READ,"/");
-				while(vfs_readFile(tid,file,dire,sizeof(sVFSDirEntry)) > 0) {
-					u32 len = dire->nameLen;
-					char *tmp;
-					byteCount += sizeof(sVFSDirEntry) + len;
-					fsByteCount += sizeof(sVFSDirEntry) + len;
-					if(dire->recLen - sizeof(sVFSDirEntry) > len)
-						len = dire->recLen - sizeof(sVFSDirEntry);
-					tmp = (char*)kheap_alloc(len);
-					vfs_readFile(tid,file,tmp,len);
-					kheap_free(tmp);
+				if(file >= 0) {
+					while((count = vfs_readFile(tid,file,fsBytes + fsByteCount,bufSize)) > 0) {
+						fsByteCount += count;
+						if(count < bufSize)
+							break;
+
+						curSize += bufSize;
+						fsBytes = kheap_realloc(fsBytes,curSize);
+						if(fsBytes == NULL)
+							break;
+					}
+					vfs_closeFile(tid,file);
 				}
-				vfs_closeFile(tid,file);
-				kheap_free(dire);
 			}
+			byteCount += fsByteCount;
 		}
 
 		vassert((u32)byteCount < (u32)0xFFFF,"Overflow of size and pos detected");
@@ -305,15 +309,20 @@ s32 vfsinfo_dirReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 cou
 		node->data.def.size = byteCount;
 		node->data.def.pos = byteCount;
 		if(byteCount > 0) {
+			u8 *childs;
 			/* now allocate mem on the heap and copy all data into it */
-			u8 *childs = (u8*)kheap_alloc(byteCount);
+			if(fsBytes)
+				childs = kheap_realloc(fsBytes,byteCount);
+			else
+				childs = (u8*)kheap_alloc(byteCount);
+
 			if(childs == NULL) {
 				node->data.def.size = 0;
 				node->data.def.pos = 0;
 			}
 			else {
 				u16 len;
-				sVFSDirEntry *dirEntry = (sVFSDirEntry*)childs;
+				sVFSDirEntry *dirEntry = (sVFSDirEntry*)(childs + fsByteCount);
 				node->data.def.cache = childs;
 				n = NODE_FIRST_CHILD(node);
 				while(n != NULL) {
@@ -328,20 +337,6 @@ s32 vfsinfo_dirReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 cou
 					memcpy(dirEntry + 1,n->name,len);
 					dirEntry = (sVFSDirEntry*)((u8*)dirEntry + dirEntry->recLen);
 					n = n->next;
-				}
-
-				if(node->parent == NULL) {
-					u32 c,amount,total = 0,backup = fsByteCount;
-					tFileNo file = vfsr_openFile(tid,VFS_READ,"/");
-					while(fsByteCount > 0) {
-						c = vfs_readFile(tid,file,dirEntry,MIN(fsByteCount,1024));
-						if(c > 0) {
-							fsByteCount -= c;
-							total += c;
-							dirEntry = (sVFSDirEntry*)((char*)dirEntry + c);
-						}
-					}
-					vfs_closeFile(tid,file);
 				}
 			}
 		}

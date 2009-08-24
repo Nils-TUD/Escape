@@ -60,7 +60,7 @@ s32 elf_loadFromFile(const char *path) {
 	datPtr = (u8 const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* go to header */
-		if(vfs_seek(t->tid,file,(u32)datPtr) < 0)
+		if(vfs_seek(t->tid,file,(u32)datPtr,SEEK_SET) < 0)
 			goto failed;
 		/* read pheader */
 		res = vfs_readFile(t->tid,file,(u8*)&pheader,sizeof(Elf32_Phdr));
@@ -106,7 +106,7 @@ s32 elf_loadFromFile(const char *path) {
 					goto failed;
 
 				/* load data from fs */
-				if(vfs_seek(t->tid,file,pheader.p_offset) < 0)
+				if(vfs_seek(t->tid,file,pheader.p_offset,SEEK_SET) < 0)
 					goto failed;
 				target = (u8*)pheader.p_vaddr;
 				rem = pheader.p_filesz;

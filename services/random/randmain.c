@@ -51,16 +51,15 @@ int main(void) {
 			while(receive(fd,&mid,&msg) > 0) {
 				switch(mid) {
 					case MSG_DRV_OPEN:
-						msg.args.arg2 = 0;
+						msg.args.arg1 = 0;
 						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 						break;
 					case MSG_DRV_READ: {
 						/* offset is ignored here */
 						u32 *data = (u32*)msg.data.d;
-						u32 count = MIN(sizeof(msg.data.d),msg.args.arg3);
-						msg.data.arg1 = msg.args.arg1;
-						msg.data.arg2 = count;
-						msg.data.arg3 = true;
+						u32 count = MIN(sizeof(msg.data.d),msg.args.arg2);
+						msg.data.arg1 = count;
+						msg.data.arg2 = true;
 						count /= sizeof(u32);
 						while(count-- > 0)
 							*data++ = rand();
@@ -68,13 +67,12 @@ int main(void) {
 					}
 					break;
 					case MSG_DRV_WRITE:
-						msg.args.arg1 = msg.data.arg1;
-						msg.args.arg2 = ERR_UNSUPPORTED_OPERATION;
+						msg.args.arg1 = ERR_UNSUPPORTED_OPERATION;
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 						break;
 					case MSG_DRV_IOCTL: {
-						msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
-						msg.data.arg3 = 0;
+						msg.data.arg1 = ERR_UNSUPPORTED_OPERATION;
+						msg.data.arg2 = 0;
 						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 					}
 					break;

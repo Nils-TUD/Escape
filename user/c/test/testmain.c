@@ -131,6 +131,7 @@ int main(int argc,char *argv[]) {
 	}*/
 #endif
 
+#if 0
 	tServ client;
 	tServ id = regService("bla",SERV_DRIVER);
 	if(id < 0)
@@ -169,7 +170,7 @@ int main(int argc,char *argv[]) {
 				switch(mid) {
 					case MSG_DRV_OPEN:
 						printf("Open: tid=%d, flags=%d\n",msg.args.arg1,msg.args.arg2);
-						msg.args.arg2 = 0;
+						msg.args.arg1 = 0;
 						send(cfd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 						break;
 					case MSG_DRV_READ:
@@ -219,6 +220,9 @@ int main(int argc,char *argv[]) {
 	}
 
 	unregService(id);
+#endif
+
+	debug();
 
 	return EXIT_SUCCESS;
 }

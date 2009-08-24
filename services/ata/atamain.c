@@ -184,43 +184,42 @@ int main(void) {
 			while(receive(fd,&mid,&msg) > 0) {
 				switch(mid) {
 					case MSG_DRV_OPEN:
-						msg.args.arg2 = 0;
+						msg.args.arg1 = 0;
 						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 						break;
 
 					case MSG_DRV_READ: {
-						u32 offset = msg.args.arg2;
-						u32 count = msg.args.arg3;
-						msg.data.arg1 = msg.args.arg1;
+						u32 offset = msg.args.arg1;
+						u32 count = msg.args.arg2;
 						if(offset + count > part->size * BYTES_PER_SECTOR || offset + count < offset)
-							msg.data.arg2 = 0;
+							msg.data.arg1 = 0;
 						else if(!ata_readWrite(drive,false,(u16*)msg.data.d,
 								offset / BYTES_PER_SECTOR + part->start,count / BYTES_PER_SECTOR))
-							msg.data.arg2 = 0;
+							msg.data.arg1 = 0;
 						else
-							msg.data.arg2 = count;
+							msg.data.arg1 = count;
+						msg.data.arg2 = true;
 						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
 					}
 					break;
 
 					case MSG_DRV_WRITE: {
-						u32 offset = msg.args.arg2;
-						u32 count = msg.args.arg3;
-						msg.args.arg1 = msg.args.arg1;
+						u32 offset = msg.args.arg1;
+						u32 count = msg.args.arg2;
 						if(offset + count > part->size * BYTES_PER_SECTOR || offset + count < offset)
-							msg.data.arg2 = 0;
+							msg.data.arg1 = 0;
 						else if(!ata_readWrite(drive,true,(u16*)msg.data.d,
 								offset / BYTES_PER_SECTOR + part->start,count / BYTES_PER_SECTOR))
-							msg.args.arg2 = 0;
+							msg.args.arg1 = 0;
 						else
-							msg.args.arg2 = count;
+							msg.args.arg1 = count;
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 					}
 					break;
 
 					case MSG_DRV_IOCTL: {
-						msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
-						msg.data.arg3 = 0;
+						msg.data.arg1 = ERR_UNSUPPORTED_OPERATION;
+						msg.data.arg2 = 0;
 						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 					}
 					break;

@@ -276,36 +276,6 @@ static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tVFSNodeNo nodeNo) {
 	return freeSlot;
 }
 
-tFileNo vfs_openFileForKernel(tTid tid,tVFSNodeNo nodeNo) {
-	sVFSNode *node = vfsn_getNode(nodeNo);
-	sVFSNode *n = NODE_FIRST_CHILD(node);
-
-	/* not not already present? */
-	if(n == NULL || n->owner != KERNEL_TID) {
-		n = vfsn_createNode((char*)SERVICE_CLIENT_KERNEL);
-		if(n == NULL)
-			return ERR_NOT_ENOUGH_MEM;
-
-		/* init node */
-		/* the service has read/write permission */
-		n->mode = MODE_TYPE_SERVUSE | MODE_OTHER_READ | MODE_OTHER_WRITE;
-		n->readHandler = NULL;
-		n->writeHandler = NULL;
-		n->owner = KERNEL_TID;
-
-		/* insert as first child */
-		n->prev = NULL;
-		n->next = node->firstChild;
-		node->firstChild = n;
-		if(node->lastChild == NULL)
-			node->lastChild = n;
-		n->parent = node;
-	}
-
-	/* open the file and return it */
-	return vfs_openFile(tid,VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n));
-}
-
 bool vfs_eof(tTid tid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	bool eof = true;
@@ -396,12 +366,13 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 			return ERR_INVALID_FILE;
 
 		/* use the read-handler */
-		readBytes = n->readHandler(tid,n,buffer,e->position,count);
-		e->position += readBytes;
+		readBytes = n->readHandler(tid,file,n,buffer,e->position,count);
+		if(readBytes > 0)
+			e->position += readBytes;
 	}
 	else {
 		/* query the fs-service to read from the inode */
-		readBytes = vfsr_readFile(tid,e->nodeNo,buffer,e->position,count);
+		readBytes = vfsr_readFile(tid,file,e->nodeNo,buffer,e->position,count);
 		if(readBytes > 0)
 			e->position += readBytes;
 	}
@@ -429,15 +400,13 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 			return ERR_INVALID_FILE;
 
 		/* write to the node */
-		writtenBytes = n->writeHandler(tid,n,buffer,e->position,count);
-		if(writtenBytes < 0)
-			return writtenBytes;
-
-		e->position += writtenBytes;
+		writtenBytes = n->writeHandler(tid,file,n,buffer,e->position,count);
+		if(writtenBytes > 0)
+			e->position += writtenBytes;
 	}
 	else {
 		/* query the fs-service to write to the inode */
-		writtenBytes = vfsr_writeFile(tid,e->nodeNo,buffer,e->position,count);
+		writtenBytes = vfsr_writeFile(tid,file,e->nodeNo,buffer,e->position,count);
 		if(writtenBytes > 0)
 			e->position += writtenBytes;
 	}
@@ -463,7 +432,7 @@ s32 vfs_ioctl(tTid tid,tFileNo file,u32 cmd,u8 *data,u32 size) {
 	if(n->name == NULL || !(n->mode & MODE_TYPE_SERVUSE) || !(n->parent->mode & MODE_SERVICE_DRIVER))
 		return ERR_INVALID_FILE;
 
-	return vfsdrv_ioctl(tid,n,cmd,data,size);
+	return vfsdrv_ioctl(tid,file,n,cmd,data,size);
 }
 
 s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
@@ -484,7 +453,7 @@ s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
 		return ERR_INVALID_FILE;
 
 	/* send the message */
-	return vfsrw_writeServUse(tid,n,id,data,size);
+	return vfsrw_writeServUse(tid,file,n,id,data,size);
 }
 
 s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
@@ -505,7 +474,7 @@ s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
 		return ERR_INVALID_FILE;
 
 	/* send the message */
-	return vfsrw_readServUse(tid,n,id,data,size);
+	return vfsrw_readServUse(tid,file,n,id,data,size);
 }
 
 void vfs_closeFile(tTid tid,tFileNo file) {
@@ -522,7 +491,7 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 				if(--(n->refCount) == 0) {
 					/* notify the driver, if it is one */
 					if((n->mode & MODE_TYPE_SERVUSE) && (n->parent->mode & MODE_SERVICE_DRIVER))
-						vfsdrv_close(tid,n);
+						vfsdrv_close(tid,file,n);
 
 					/* if there are message for the service we don't want to throw them away */
 					/* if there are any in the receivelist (and no references of the node) we
@@ -538,7 +507,7 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 			}
 		}
 		else
-			vfsr_closeFile(e->nodeNo);
+			vfsr_closeFile(tid,file,e->nodeNo);
 
 		/* mark unused */
 		e->flags = 0;
@@ -549,7 +518,6 @@ tServ vfs_createService(tTid tid,const char *name,u32 type) {
 	sVFSNode *serv;
 	sVFSNode *n;
 	u32 len;
-	s32 res;
 	char *hname;
 
 	/* determine position in VFS */
@@ -581,21 +549,8 @@ tServ vfs_createService(tTid tid,const char *name,u32 type) {
 
 	/* create node */
 	n = vfsn_createServiceNode(tid,serv,hname,type);
-	if(n != NULL) {
-		tVFSNodeNo nodeNo = NADDR_TO_VNNO(n);
-		if(type & MODE_SERVICE_DRIVER) {
-			res = vfsdrv_register(n);
-			if(res < 0) {
-				vfsn_removeNode(n);
-				kheap_free(hname);
-				return res;
-			}
-		}
-		/* TODO that's not really nice ;) */
-		else if(strcmp(name,"fs") == 0)
-			vfsr_init(nodeNo);
-		return nodeNo;
-	}
+	if(n != NULL)
+		return NADDR_TO_VNNO(n);
 
 	/* failed, so cleanup */
 	kheap_free(hname);
@@ -737,10 +692,6 @@ s32 vfs_removeService(tTid tid,tVFSNodeNo nodeNo) {
 
 	if(n->owner != tid || !(n->mode & MODE_TYPE_SERVICE))
 		return ERR_NOT_OWN_SERVICE;
-
-	/* unregister driver */
-	if(n->mode & MODE_SERVICE_DRIVER)
-		vfsdrv_unregister(n);
 
 	/* remove service-node including all service-usages */
 	vfsn_removeNode(n);

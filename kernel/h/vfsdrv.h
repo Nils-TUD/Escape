@@ -25,18 +25,14 @@
 
 void vfsdrv_init(void);
 
-s32 vfsdrv_register(sVFSNode *node);
+s32 vfsdrv_open(tTid tid,tFileNo file,sVFSNode *node,u32 flags);
 
-void vfsdrv_unregister(sVFSNode *node);
+s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count);
 
-s32 vfsdrv_open(tTid tid,sVFSNode *node,u32 flags);
+s32 vfsdrv_write(tTid tid,tFileNo file,sVFSNode *node,const void *buffer,u32 offset,u32 count);
 
-s32 vfsdrv_read(tTid tid,sVFSNode *node,void *buffer,u32 offset,u32 count);
+s32 vfsdrv_ioctl(tTid tid,tFileNo file,sVFSNode *node,u32 cmd,void *data,u32 size);
 
-s32 vfsdrv_write(tTid tid,sVFSNode *node,const void *buffer,u32 offset,u32 count);
-
-s32 vfsdrv_ioctl(tTid tid,sVFSNode *node,u32 cmd,void *data,u32 size);
-
-void vfsdrv_close(tTid tid,sVFSNode *node);
+void vfsdrv_close(tTid tid,tFileNo file,sVFSNode *node);
 
 #endif /* VFSDRV_H_ */

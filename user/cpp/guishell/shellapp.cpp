@@ -136,27 +136,25 @@ void ShellApplication::doEvents() {
 			while(receive(fd,&mid,&_msg) > 0) {
 				switch(mid) {
 					case MSG_DRV_OPEN:
-						_msg.args.arg2 = 0;
+						_msg.args.arg1 = 0;
 						send(fd,MSG_DRV_OPEN_RESP,&_msg,sizeof(_msg.args));
 						break;
 					case MSG_DRV_READ: {
 						/* offset is ignored here */
-						u32 count = MIN(sizeof(_msg.data.d),_msg.args.arg3);
-						_msg.data.arg1 = _msg.args.arg1;
-						_msg.data.arg2 = rb_readn(_inbuf,_msg.data.d,count);
-						_msg.data.arg3 = rb_length(_inbuf) > 0;
+						u32 count = MIN(sizeof(_msg.data.d),_msg.args.arg2);
+						_msg.data.arg1 = rb_readn(_inbuf,_msg.data.d,count);
+						_msg.data.arg2 = rb_length(_inbuf) > 0;
 						send(fd,MSG_DRV_READ_RESP,&_msg,sizeof(_msg.data));
 					}
 					break;
 					case MSG_DRV_WRITE: {
 						u32 amount;
 						char *input;
-						c = _msg.data.arg3;
+						c = _msg.data.arg2;
 						if(c >= sizeof(_msg.data.d))
 							c = sizeof(_msg.data.d) - 1;
 						_msg.data.d[c] = '\0';
-						_msg.args.arg1 = _msg.data.arg1;
-						_msg.args.arg2 = c;
+						_msg.args.arg1 = c;
 
 						input = _msg.data.d;
 						while(c > 0) {
@@ -175,8 +173,8 @@ void ShellApplication::doEvents() {
 					}
 					break;
 					case MSG_DRV_IOCTL: {
-						_msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
-						_msg.data.arg3 = 0;
+						_msg.data.arg1 = ERR_UNSUPPORTED_OPERATION;
+						_msg.data.arg2 = 0;
 						send(fd,MSG_DRV_IOCTL_RESP,&_msg,sizeof(_msg.data));
 					}
 					break;
@@ -184,25 +182,6 @@ void ShellApplication::doEvents() {
 						break;
 				}
 			}
-
-#if 0
-			/* TODO this may cause trouble with escape-codes. maybe we should store the
-			 * "escape-state" somehow... */
-			// do this just 3 times to ensure that we look for other events, too
-			while(x < 3 && rbufPos < READ_BUF_SIZE &&
-					(c = read(fd,rbuffer + rbufPos,READ_BUF_SIZE - rbufPos)) > 0) {
-				*(rbuffer + rbufPos + c) = '\0';
-				rbufPos += c;
-				x++;
-			}
-			close(fd);
-
-			// do we have enough data?
-			if(rbufPos >= 256) {
-				_sh->append(rbuffer);
-				rbufPos = 0;
-			}
-#endif
 		}
 	}
 }

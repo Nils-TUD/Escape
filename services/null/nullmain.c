@@ -49,25 +49,23 @@ int main(void) {
 			while(receive(fd,&mid,&msg) > 0) {
 				switch(mid) {
 					case MSG_DRV_OPEN:
-						msg.args.arg2 = 0;
+						msg.args.arg1 = 0;
 						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 						break;
 					case MSG_DRV_READ: {
-						msg.data.arg1 = msg.args.arg1;
-						msg.data.arg2 = 0;
-						msg.data.arg3 = true;
+						msg.data.arg1 = 0;
+						msg.data.arg2 = true;
 						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
 					}
 					break;
 					case MSG_DRV_WRITE:
 						/* ignore */
-						msg.args.arg1 = msg.data.arg1;
-						msg.args.arg2 = msg.data.arg3;
+						msg.args.arg1 = msg.data.arg2;
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 						break;
 					case MSG_DRV_IOCTL: {
-						msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
-						msg.data.arg3 = 0;
+						msg.data.arg1 = ERR_UNSUPPORTED_OPERATION;
+						msg.data.arg2 = 0;
 						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 					}
 					break;

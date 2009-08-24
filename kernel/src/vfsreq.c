@@ -58,9 +58,9 @@ bool vfsreq_setHandler(tMsgId id,fReqHandler f) {
 	return true;
 }
 
-void vfsreq_sendMsg(tMsgId id,const u8 *data,u32 size) {
+void vfsreq_sendMsg(tMsgId id,tTid tid,const u8 *data,u32 size) {
 	if(id < HANDLER_COUNT && handler[id])
-		handler[id](data,size);
+		handler[id](tid,data,size);
 }
 
 sRequest *vfsreq_waitForReply(tTid tid) {

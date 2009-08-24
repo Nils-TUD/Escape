@@ -23,15 +23,13 @@
 #include "common.h"
 #include <sllist.h>
 
-/* special service-client names */
-#define SERVICE_CLIENT_KERNEL		"k"
-
 /* some additional types for the kernel */
 #define MODE_TYPE_SERVUSE			000200000
 #define MODE_TYPE_SERVICE			000400000
 #define MODE_TYPE_PIPECON			001000000
 #define MODE_TYPE_PIPE				002000000
 #define MODE_SERVICE_DRIVER			004000000
+#define MODE_SERVICE_FS				010000000
 
 /* GFT flags */
 enum {
@@ -49,8 +47,8 @@ enum {
 /* a node in our virtual file system */
 typedef struct sVFSNode sVFSNode;
 /* the function for read-requests on info-nodes */
-typedef s32 (*fRead)(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
-typedef s32 (*fWrite)(tTid tid,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
+typedef s32 (*fRead)(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+typedef s32 (*fWrite)(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
 
 struct sVFSNode {
 	char *name;
@@ -143,15 +141,6 @@ tVFSNodeNo vfs_getNodeNo(tFileNo file);
  * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FD)
  */
 tFileNo vfs_openFile(tTid tid,u8 flags,tVFSNodeNo nodeNo);
-
-/**
- * Opens a file for the kernel. Creates a node for it, if not already done
- *
- * @param tid the thread-id with which the file should be opened
- * @param nodeNo the service-node-number
- * @return the file-number or a negative error-code
- */
-tFileNo vfs_openFileForKernel(tTid tid,tVFSNodeNo nodeNo);
 
 /**
  * Checks wether we are at EOF in the given file

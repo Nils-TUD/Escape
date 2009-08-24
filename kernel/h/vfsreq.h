@@ -33,7 +33,7 @@ typedef struct {
 } sRequest;
 
 /* a request-handler */
-typedef void (*fReqHandler)(const u8 *data,u32 size);
+typedef void (*fReqHandler)(tTid tid,const u8 *data,u32 size);
 
 /**
  * Inits the vfs-requests
@@ -53,10 +53,11 @@ bool vfsreq_setHandler(tMsgId id,fReqHandler f);
  * Sends the given message to the appropriate handler
  *
  * @param id the message-id
+ * @param tid the receiver-tid
  * @param data the message
  * @param size the size of the message
  */
-void vfsreq_sendMsg(tMsgId id,const u8 *data,u32 size);
+void vfsreq_sendMsg(tMsgId id,tTid tid,const u8 *data,u32 size);
 
 /**
  * Waits for a reply

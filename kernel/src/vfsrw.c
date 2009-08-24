@@ -38,9 +38,10 @@ typedef struct {
 	u32 length;
 } sMessage;
 
-s32 vfsrw_readDef(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+s32 vfsrw_readDef(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	s32 byteCount;
 	UNUSED(tid);
+	UNUSED(file);
 	/* no data available? */
 	if(node->data.def.cache == NULL)
 		return 0;
@@ -98,10 +99,12 @@ s32 vfsrw_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32
 	return count;
 }
 
-s32 vfsrw_readServUse(tTid tid,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
+s32 vfsrw_readServUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
 	sSLList *list;
 	sMessage *msg;
 	s32 res;
+
+	UNUSED(file);
 
 	/* services reads from the send-list */
 	if(node->parent->owner == tid) {
@@ -112,17 +115,12 @@ s32 vfsrw_readServUse(tTid tid,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
 	}
 	/* other processes read from the receive-list */
 	else {
-		/* don't block the kernel ;) */
-		if(tid != KERNEL_TID) {
-			/* wait until a message arrives */
-			/* don't cache the list here, because the pointer changes if the list is NULL */
-			while(sll_length(node->data.servuse.recvList) == 0) {
-				thread_wait(tid,EV_RECEIVED_MSG);
-				thread_switchInKernel();
-			}
+		/* wait until a message arrives */
+		/* don't cache the list here, because the pointer changes if the list is NULL */
+		while(sll_length(node->data.servuse.recvList) == 0) {
+			thread_wait(tid,EV_RECEIVED_MSG);
+			thread_switchInKernel();
 		}
-		else if(sll_length(node->data.servuse.recvList) == 0)
-			return 0;
 
 		list = node->data.servuse.recvList;
 	}
@@ -135,8 +133,7 @@ s32 vfsrw_readServUse(tTid tid,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
 	/* the data is behind the message */
 	memcpy(data,(u8*)(msg + 1),msg->length);
 
-	/*vid_printf("%s received msg %d from %s\n",
-			tid != KERNEL_TID ? thread_getById(tid)->proc->command : "KERNEL",
+	/*vid_printf("%s received msg %d from %s\n",thread_getById(tid)->proc->command,
 					msg->id,node->parent->name);*/
 
 	/* set id, return size and free msg */
@@ -147,12 +144,13 @@ s32 vfsrw_readServUse(tTid tid,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
 	return res;
 }
 
-s32 vfsrw_writeDef(tTid tid,sVFSNode *n,const u8 *buffer,u32 offset,u32 count) {
+s32 vfsrw_writeDef(tTid tid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count) {
 	void *cache;
 	void *oldCache;
 	u32 newSize = 0;
 
 	UNUSED(tid);
+	UNUSED(file);
 
 	cache = n->data.def.cache;
 	oldCache = cache;
@@ -203,17 +201,18 @@ s32 vfsrw_writeDef(tTid tid,sVFSNode *n,const u8 *buffer,u32 offset,u32 count) {
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-s32 vfsrw_writeServUse(tTid tid,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
+s32 vfsrw_writeServUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
 	sSLList **list;
 	sMessage *msg;
 
+	UNUSED(file);
+
 	/* services write to the receive-list (which will be read by other processes) */
-	/* special-case: pid == KERNEL_PID: the kernel wants to write to a service */
-	if(tid != KERNEL_TID && n->parent->owner == tid) {
-		/* if the message is intended for the kernel, don't enqueue it but pass it directly to the
-		 * corresponding handler */
-		if(n->owner == KERNEL_TID) {
-			vfsreq_sendMsg(id,data,size);
+	if(n->parent->owner == tid) {
+		/* if it is from a driver or fs, don't enqueue it but pass it directly to
+		 * the corresponding handler */
+		if(n->parent->mode & (MODE_SERVICE_DRIVER | MODE_SERVICE_FS)) {
+			vfsreq_sendMsg(id,n->owner,data,size);
 			return 0;
 		}
 
@@ -235,8 +234,7 @@ s32 vfsrw_writeServUse(tTid tid,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
 	msg->id = id;
 	memcpy(msg + 1,data,size);
 
-	/*vid_printf("%s sent msg %d to %s\n",
-			tid != KERNEL_TID ? thread_getById(tid)->proc->command : "KERNEL",
+	/*vid_printf("%s sent msg %d to %s\n",thread_getById(tid)->proc->command,
 					msg->id,n->parent->name);*/
 
 	/* append to list */
@@ -246,10 +244,8 @@ s32 vfsrw_writeServUse(tTid tid,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
 	}
 
 	/* notify the service */
-	if(list == &(n->data.servuse.sendList)) {
-		if(n->parent->owner != KERNEL_TID)
-			thread_wakeup(n->parent->owner,EV_CLIENT);
-	}
+	if(list == &(n->data.servuse.sendList))
+		thread_wakeup(n->parent->owner,EV_CLIENT);
 	/* notify the process that there is a message */
 	else
 		thread_wakeup(n->owner,EV_RECEIVED_MSG);

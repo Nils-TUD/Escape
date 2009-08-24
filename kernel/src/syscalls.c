@@ -613,7 +613,7 @@ static void sysc_open(sIntrptStackFrame *stack) {
 	if(IS_VIRT(nodeNo)) {
 		sVFSNode *node = vfsn_getNode(nodeNo);
 		if((node->mode & MODE_TYPE_SERVUSE) && (node->parent->mode & MODE_SERVICE_DRIVER)) {
-			err = vfsdrv_open(t->tid,node,flags);
+			err = vfsdrv_open(t->tid,file,node,flags);
 			/* if this went wrong, undo everything and report an error to the user */
 			if(err < 0) {
 				thread_unassocFd(fd);
@@ -842,13 +842,15 @@ static void sysc_regService(sIntrptStackFrame *stack) {
 	tServ res;
 
 	/* check type */
-	if((type & (0x1 | 0x2)) == 0 || (type & ~(0x1 | 0x2)) != 0)
+	if((type & (0x1 | 0x2 | 0x4)) == 0 || (type & ~(0x1 | 0x2 | 0x4)) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	/* convert type */
 	vtype = 0;
 	if(type & 0x2)
 		vtype |= MODE_SERVICE_DRIVER;
+	else if(type & 0x4)
+		vtype |= MODE_SERVICE_FS;
 
 	res = vfs_createService(t->tid,name,vtype);
 	if(res < 0)
@@ -1353,7 +1355,7 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 
 static void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
-	paging_dbg_printOwnPageDir(PD_PART_USER);
+	vfsn_dbg_printTree();
 }
 
 static void sysc_createSharedMem(sIntrptStackFrame *stack) {

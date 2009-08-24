@@ -101,42 +101,41 @@ int main(void) {
 				/* see what we have to do */
 				switch(mid) {
 					case MSG_DRV_OPEN:
-						msg.args.arg2 = 0;
+						msg.args.arg1 = 0;
 						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 						break;
 
 					case MSG_DRV_READ:
-						msg.data.arg1 = msg.args.arg1;
-						msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
+						msg.data.arg1 = ERR_UNSUPPORTED_OPERATION;
+						msg.data.arg2 = true;
 						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
 						break;
 
 					case MSG_DRV_WRITE: {
-						u32 offset = msg.data.arg2;
-						u32 count = msg.data.arg3;
-						msg.args.arg1 = msg.data.arg1;
+						u32 offset = msg.data.arg1;
+						u32 count = msg.data.arg2;
 						if(offset + count <= ROWS * COLS * 2 && offset + count > offset) {
 							vid_setScreen(offset,msg.data.d,count);
-							msg.args.arg2 = count;
+							msg.args.arg1 = count;
 						}
 						else
-							msg.args.arg2 = 0;
+							msg.args.arg1 = 0;
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 					}
 					break;
 
 					case MSG_DRV_IOCTL: {
 						sIoCtlCursorPos *pos;
-						if(msg.data.arg2 == IOCTL_VID_SETCURSOR) {
+						if(msg.data.arg1 == IOCTL_VID_SETCURSOR) {
 							pos = (sIoCtlCursorPos*)msg.data.d;
 							pos->col = MIN(pos->col,COLS);
 							pos->row = MIN(pos->row,ROWS);
 							vid_setCursor(pos->row,pos->col);
-							msg.data.arg2 = 0;
+							msg.data.arg1 = 0;
 						}
 						else
-							msg.data.arg2 = ERR_UNSUPPORTED_OPERATION;
-						msg.data.arg3 = 0;
+							msg.data.arg1 = ERR_UNSUPPORTED_OPERATION;
+						msg.data.arg2 = 0;
 						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 					}
 					break;

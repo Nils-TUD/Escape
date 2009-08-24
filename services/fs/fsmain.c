@@ -51,7 +51,7 @@ int main(void) {
 	}
 
 	/* register service */
-	id = regService("fs",SERV_DEFAULT);
+	id = regService("fs",SERV_FS);
 	if(id < 0) {
 		printe("Unable to register service 'fs'");
 		return EXIT_FAILURE;
@@ -65,7 +65,6 @@ int main(void) {
 			while((size = receive(fd,&mid,&msg)) > 0) {
 				switch(mid) {
 					case MSG_FS_OPEN: {
-						tTid tid = msg.str.arg1;
 						tInodeNo no = ext2_resolvePath(&ext2,msg.str.s1);
 
 						/*debugf("Received an open from %d of '%s' for ",data->pid,data + 1);
@@ -83,18 +82,15 @@ int main(void) {
 						ext2_bcache_printStats();*/
 
 						/* write response */
-						msg.args.arg1 = tid;
-						msg.args.arg2 = no;
+						msg.args.arg1 = no;
 						send(fd,MSG_FS_OPEN_RESP,&msg,sizeof(msg.args));
 					}
 					break;
 
 					case MSG_FS_STAT: {
-						tTid tid = msg.str.arg1;
 						sCachedInode *cnode;
 						tInodeNo no;
 
-						msg.data.arg1 = tid;
 						no = ext2_resolvePath(&ext2,msg.str.s1);
 						if(no >= 0) {
 							cnode = ext2_icache_request(&ext2,no);
@@ -113,13 +109,13 @@ int main(void) {
 								info->linkCount = cnode->inode.linkCount;
 								info->mode = cnode->inode.mode;
 								info->size = cnode->inode.size;
-								msg.data.arg2 = 0;
+								msg.data.arg1 = 0;
 							}
 							else
-								msg.data.arg2 = ERR_NOT_ENOUGH_MEM;
+								msg.data.arg1 = ERR_NOT_ENOUGH_MEM;
 						}
 						else
-							msg.data.arg2 = no;
+							msg.data.arg1 = no;
 
 						/* write response */
 						send(fd,MSG_FS_STAT_RESP,&msg,sizeof(msg.data));
@@ -127,13 +123,12 @@ int main(void) {
 					break;
 
 					case MSG_FS_READ: {
-						tInodeNo ino = (tInodeNo)msg.args.arg2;
-						u32 offset = msg.args.arg3;
-						u32 count = msg.args.arg4;
+						tInodeNo ino = (tInodeNo)msg.args.arg1;
+						u32 offset = msg.args.arg2;
+						u32 count = msg.args.arg3;
 
 						/* read and send response */
-						msg.data.arg1 = msg.args.arg1;
-						msg.data.arg2 = ext2_readFile(&ext2,ino,(u8*)msg.data.d,offset,count);
+						msg.data.arg1 = ext2_readFile(&ext2,ino,(u8*)msg.data.d,offset,count);
 						send(fd,MSG_FS_READ_RESP,&msg,sizeof(msg.data));
 
 						/* read ahead
@@ -144,11 +139,12 @@ int main(void) {
 
 					case MSG_FS_WRITE: {
 						debugf("Got '%s' (%d bytes) for offset %d in inode %d\n",msg.data.d,
-								msg.data.arg4,msg.data.arg3,msg.data.arg2);
+								msg.data.arg3,msg.data.arg2,msg.data.arg1);
+
+						/* TODO */
 
 						/* write response */
-						msg.args.arg1 = msg.data.arg1;
-						msg.args.arg2 = msg.data.arg4;
+						msg.args.arg1 = msg.data.arg3;
 						send(fd,MSG_FS_WRITE_RESP,&msg,sizeof(msg.args));
 					}
 					break;

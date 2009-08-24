@@ -28,6 +28,7 @@
 #include <vfsnode.h>
 #include <vfsinfo.h>
 #include <vfsrw.h>
+#include <vfsreal.h>
 #include <util.h>
 #include <kheap.h>
 #include <assert.h>
@@ -54,7 +55,7 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffe
 /**
  * The cpu-read-handler
  */
-static s32 vfsinfo_cpuReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+static s32 vfsinfo_cpuReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * The read-callback for the cpu-read-handler
@@ -64,7 +65,7 @@ static void vfsinfo_cpuReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
 /**
  * The stats-read-handler
  */
-static s32 vfsinfo_statsReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+static s32 vfsinfo_statsReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * The read-callback for the stats-read-handler
@@ -74,7 +75,7 @@ static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer
 /**
  * The read-handler for the mem-usage-node
  */
-static s32 vfsinfo_memUsageReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+static s32 vfsinfo_memUsageReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * The read-callback for the VFS memusage-read-handler
@@ -97,7 +98,8 @@ void vfsinfo_init(void) {
 	vfsn_createInfo(KERNEL_TID,sysNode,(char*)"stats",vfsinfo_statsReadHandler);
 }
 
-s32 vfsinfo_procReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+s32 vfsinfo_procReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	UNUSED(file);
 	/* don't use the cache here to prevent that one process occupies it for all others */
 	/* (if the process doesn't call close() the cache will not be invalidated and therefore
 	 * other processes might miss changes) */
@@ -133,7 +135,8 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 	);
 }
 
-s32 vfsinfo_threadReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+s32 vfsinfo_threadReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	UNUSED(file);
 	return vfsrw_readHelper(tid,node,buffer,offset,count,
 			17 * 6 + 4 * 10 + 2 * 16 + 1,vfsinfo_threadReadCallback);
 }
@@ -165,7 +168,9 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffe
 	);
 }
 
-static s32 vfsinfo_cpuReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+static s32 vfsinfo_cpuReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,
+		u32 offset,u32 count) {
+	UNUSED(file);
 	return vfsrw_readHelper(tid,node,buffer,offset,count,0,vfsinfo_cpuReadCallback);
 }
 
@@ -181,7 +186,9 @@ static void vfsinfo_cpuReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) 
 	*dataSize = buf.len + 1;
 }
 
-static s32 vfsinfo_statsReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+static s32 vfsinfo_statsReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,
+		u32 offset,u32 count) {
+	UNUSED(file);
 	return vfsrw_readHelper(tid,node,buffer,offset,count,17 * 5 + 4 * 10 + 1 + 1 * 16 + 1,
 			vfsinfo_statsReadCallback);
 }
@@ -213,7 +220,9 @@ static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer
 	);
 }
 
-static s32 vfsinfo_memUsageReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+static s32 vfsinfo_memUsageReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,
+		u32 offset,u32 count) {
+	UNUSED(file);
 	return vfsrw_readHelper(tid,node,buffer,offset,count,(11 + 10 + 1) * 4 + 1,
 			vfsinfo_memUsageReadCallback);
 }
@@ -243,7 +252,8 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buf
 	);
 }
 
-s32 vfsinfo_virtMemReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+s32 vfsinfo_virtMemReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	UNUSED(file);
 	return vfsrw_readHelper(tid,node,buffer,offset,count,0,vfsinfo_virtMemReadCallback);
 }
 
@@ -259,10 +269,11 @@ static void vfsinfo_virtMemReadCallback(sVFSNode *node,u32 *dataSize,void **buff
 	*dataSize = buf.len + 1;
 }
 
-s32 vfsinfo_dirReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+s32 vfsinfo_dirReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	s32 byteCount,fsByteCount;
 
 	UNUSED(tid);
+	UNUSED(file);
 	vassert(node != NULL,"node == NULL");
 	vassert(buffer != NULL,"buffer == NULL");
 
@@ -281,16 +292,18 @@ s32 vfsinfo_dirReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 cou
 			n = n->next;
 		}
 
+		/* the root-directory is distributed on the fs-service and the kernel */
+		/* therefore we have to read it from the fs-service, too */
 		if(node->parent == NULL) {
 			const u32 bufSize = 1024;
-			u32 count,curSize = bufSize;
+			u32 c,curSize = bufSize;
 			fsBytes = (u8*)kheap_alloc(bufSize);
 			if(fsBytes != NULL) {
-				tFileNo file = vfsr_openFile(tid,VFS_READ,"/");
-				if(file >= 0) {
-					while((count = vfs_readFile(tid,file,fsBytes + fsByteCount,bufSize)) > 0) {
-						fsByteCount += count;
-						if(count < bufSize)
+				tFileNo rfile = vfsr_openFile(tid,VFS_READ,"/");
+				if(rfile >= 0) {
+					while((c = vfs_readFile(tid,rfile,fsBytes + fsByteCount,bufSize)) > 0) {
+						fsByteCount += c;
+						if(c < bufSize)
 							break;
 
 						curSize += bufSize;
@@ -298,7 +311,7 @@ s32 vfsinfo_dirReadHandler(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 cou
 						if(fsBytes == NULL)
 							break;
 					}
-					vfs_closeFile(tid,file);
+					vfs_closeFile(tid,rfile);
 				}
 			}
 			byteCount += fsByteCount;

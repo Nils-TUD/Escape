@@ -24,11 +24,9 @@
 #include <fsinterface.h>
 
 /**
- * Inits vfs-real with the given fs-service-node
- *
- * @param fsNode the service-node
+ * Inits vfs-real
  */
-void vfsr_init(tVFSNodeNo fsNode);
+void vfsr_init(void);
 
 /**
  * Opens the given path with given flags for given thread
@@ -54,31 +52,35 @@ s32 vfsr_getFileInfo(tTid tid,const char *path,sFileInfo *info);
  * Reads from the given inode at <offset> <count> bytes into the given buffer
  *
  * @param tid the thread-id
+ * @param file the 'real' file
  * @param inodeNo the inode
  * @param buffer the buffer to fill
  * @param offset the offset in the data
  * @param count the number of bytes to copy
  * @return the number of read bytes
  */
-s32 vfsr_readFile(tTid tid,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count);
+s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count);
 
 /**
  * Writes to the given inode at <offset> <count> bytes from the given buffer
  *
  * @param tid the thread-id
+ * @param file the 'real' file
  * @param inodeNo the inode
  * @param buffer the buffer
  * @param offset the offset in the inode
  * @param count the number of bytes to copy
  * @return the number of written bytes
  */
-s32 vfsr_writeFile(tTid tid,tInodeNo inodeNo,const u8 *buffer,u32 offset,u32 count);
+s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,const u8 *buffer,u32 offset,u32 count);
 
 /**
  * Closes the given inode
  *
+ * @param tid the thread-id
+ * @param file the 'real' file
  * @param inodeNo the inode
  */
-void vfsr_closeFile(tInodeNo inodeNo);
+void vfsr_closeFile(tTid tid,tFileNo file,tInodeNo inodeNo);
 
 #endif /* VFSREAL_H_ */

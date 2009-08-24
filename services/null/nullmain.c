@@ -53,14 +53,16 @@ int main(void) {
 						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 						break;
 					case MSG_DRV_READ: {
-						msg.data.arg1 = 0;
-						msg.data.arg2 = true;
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
+						msg.args.arg1 = 0;
+						msg.args.arg2 = true;
+						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 					}
 					break;
 					case MSG_DRV_WRITE:
-						/* ignore */
-						msg.args.arg1 = msg.data.arg2;
+						/* skip the data-message */
+						seek(fd,1,SEEK_CUR);
+						/* write response and pretend that we've written everything */
+						msg.args.arg1 = msg.args.arg2;
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 						break;
 					case MSG_DRV_IOCTL: {

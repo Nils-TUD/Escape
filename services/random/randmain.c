@@ -56,14 +56,22 @@ int main(void) {
 						break;
 					case MSG_DRV_READ: {
 						/* offset is ignored here */
-						u32 *data = (u32*)msg.data.d;
-						u32 count = MIN(sizeof(msg.data.d),msg.args.arg2);
-						msg.data.arg1 = count;
-						msg.data.arg2 = true;
-						count /= sizeof(u32);
-						while(count-- > 0)
-							*data++ = rand();
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
+						u32 count = msg.args.arg2;
+						u32 *data = (u32*)malloc(count);
+						msg.args.arg1 = 0;
+						if(data) {
+							u32 *d = data;
+							msg.args.arg1 = count;
+							count /= sizeof(u32);
+							while(count-- > 0)
+								*d++ = rand();
+						}
+						msg.args.arg2 = true;
+						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+						if(data) {
+							send(fd,MSG_DRV_READ_RESP,data,msg.args.arg1 / sizeof(u32));
+							free(data);
+						}
 					}
 					break;
 					case MSG_DRV_WRITE:

@@ -127,8 +127,9 @@ s32 vfsrw_readServUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u
 
 	/* get first element and copy data to buffer */
 	msg = (sMessage*)sll_get(list,0);
-	if(msg->length > size)
-		return ERR_INVALID_SYSC_ARGS;
+	/* TODO validate the size */
+	/*if(msg->length > size)
+		return ERR_INVALID_SYSC_ARGS;*/
 
 	/* the data is behind the message */
 	memcpy(data,(u8*)(msg + 1),msg->length);

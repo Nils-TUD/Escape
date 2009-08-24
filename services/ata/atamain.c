@@ -189,30 +189,44 @@ int main(void) {
 						break;
 
 					case MSG_DRV_READ: {
+						u16 *buffer = NULL;
 						u32 offset = msg.args.arg1;
 						u32 count = msg.args.arg2;
-						if(offset + count > part->size * BYTES_PER_SECTOR || offset + count < offset)
-							msg.data.arg1 = 0;
-						else if(!ata_readWrite(drive,false,(u16*)msg.data.d,
-								offset / BYTES_PER_SECTOR + part->start,count / BYTES_PER_SECTOR))
-							msg.data.arg1 = 0;
-						else
-							msg.data.arg1 = count;
-						msg.data.arg2 = true;
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
+						msg.args.arg1 = 0;
+						if(offset + count <= part->size * BYTES_PER_SECTOR && offset + count > offset) {
+							buffer = (u16*)malloc(count);
+							if(buffer) {
+								if(ata_readWrite(drive,false,buffer,
+										offset / BYTES_PER_SECTOR + part->start,count / BYTES_PER_SECTOR)) {
+									msg.data.arg1 = count;
+								}
+							}
+						}
+						msg.args.arg2 = true;
+						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+						if(buffer) {
+							send(fd,MSG_DRV_READ_RESP,buffer,count);
+							free(buffer);
+						}
 					}
 					break;
 
 					case MSG_DRV_WRITE: {
+						u16 *buffer = NULL;
 						u32 offset = msg.args.arg1;
 						u32 count = msg.args.arg2;
-						if(offset + count > part->size * BYTES_PER_SECTOR || offset + count < offset)
-							msg.data.arg1 = 0;
-						else if(!ata_readWrite(drive,true,(u16*)msg.data.d,
-								offset / BYTES_PER_SECTOR + part->start,count / BYTES_PER_SECTOR))
-							msg.args.arg1 = 0;
-						else
-							msg.args.arg1 = count;
+						msg.args.arg1 = 0;
+						if(offset + count <= part->size * BYTES_PER_SECTOR && offset + count > offset) {
+							buffer = (u16*)malloc(count);
+							if(buffer) {
+								receive(fd,&mid,buffer);
+								if(ata_readWrite(drive,true,buffer,
+										offset / BYTES_PER_SECTOR + part->start,count / BYTES_PER_SECTOR)) {
+									msg.args.arg1 = count;
+								}
+								free(buffer);
+							}
+						}
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 					}
 					break;

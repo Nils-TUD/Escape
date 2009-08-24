@@ -121,10 +121,10 @@ int main(int argc,char *argv[]) {
 			procKCycles += t->kcycleCount.val64;
 		}
 		u64 procCycles = procUCycles + procKCycles;
-		u32 cyclePercent = (u32)(100. / (totalCycles / (double)procCycles));
+		float cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
 		u32 userPercent = (u32)(100. / (procCycles / (double)procUCycles));
 		u32 kernelPercent = (u32)(100. / (procCycles / (double)procKCycles));
-		printf("%2d\t\t%2d\t%4d KiB\t-\t\t%3d%% (%3d%%,%3d%%)\t%s\n",
+		printf("%2d\t\t%2d\t%4d KiB\t-\t\t%4.1f%% (%3d%%,%3d%%)\t%s\n",
 				procs[i].pid,procs[i].parentPid,
 				(procs[i].textPages + procs[i].dataPages + procs[i].stackPages) * 4,
 				cyclePercent,userPercent,kernelPercent,procs[i].command);
@@ -133,10 +133,10 @@ int main(int argc,char *argv[]) {
 			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
 				sPThread *t = (sPThread*)n->data;
 				u64 threadCycles = t->ucycleCount.val64 + t->kcycleCount.val64;
-				u32 tcyclePercent = (u32)(100. / (totalCycles / (double)threadCycles));
+				float tcyclePercent = (float)(100. / (totalCycles / (double)threadCycles));
 				u32 tuserPercent = (u32)(100. / (threadCycles / (double)t->ucycleCount.val64));
 				u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
-				printf(" |-%2d\t\t\t\t\t%s\t%3d%% (%3d%%,%3d%%)\n",
+				printf(" |-%2d\t\t\t\t\t%s\t%4.1f%% (%3d%%,%3d%%)\n",
 						t->tid,states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
 			}
 		}

@@ -75,14 +75,14 @@ sRequest *vfsreq_waitForReply(tTid tid) {
 		return NULL;
 
 	req->tid = tid;
-	req->finished = false;
+	req->state = REQ_STATE_WAITING;
 	req->val1 = 0;
 	req->val2 = 0;
 	req->data = NULL;
 	req->count = 0;
 
 	/* wait */
-	while(!req->finished) {
+	while(req->state != REQ_STATE_FINISHED) {
 		thread_wait(tid,EV_RECEIVED_MSG);
 		thread_switchInKernel();
 	}

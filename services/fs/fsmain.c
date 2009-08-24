@@ -127,9 +127,16 @@ int main(void) {
 						u32 offset = msg.args.arg2;
 						u32 count = msg.args.arg3;
 
-						/* read and send response */
-						msg.data.arg1 = ext2_readFile(&ext2,ino,(u8*)msg.data.d,offset,count);
-						send(fd,MSG_FS_READ_RESP,&msg,sizeof(msg.data));
+						u8 *buffer = malloc(count);
+						if(buffer == NULL)
+							msg.args.arg1 = ERR_NOT_ENOUGH_MEM;
+						else
+							msg.args.arg1 = ext2_readFile(&ext2,ino,buffer,offset,count);
+						send(fd,MSG_FS_READ_RESP,&msg,sizeof(msg.args));
+						if(buffer) {
+							send(fd,MSG_FS_READ_RESP,buffer,count);
+							free(buffer);
+						}
 
 						/* read ahead
 						if(count > 0)
@@ -138,8 +145,15 @@ int main(void) {
 					break;
 
 					case MSG_FS_WRITE: {
-						debugf("Got '%s' (%d bytes) for offset %d in inode %d\n",msg.data.d,
+						debugf("Got %d bytes for offset %d in inode %d\n",
 								msg.data.arg3,msg.data.arg2,msg.data.arg1);
+						u8 *buffer = malloc(msg.data.arg3);
+						if(buffer != NULL) {
+							debugf("Fetching data...\n");
+							receive(fd,&mid,buffer);
+							debugf("Got '%s'\n",buffer);
+							free(buffer);
+						}
 
 						/* TODO */
 

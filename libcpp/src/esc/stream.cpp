@@ -114,23 +114,8 @@ namespace esc {
 	}
 
 	s32 Stream::FileBuffer::read(void *buffer,u32 count) {
-		// TODO just temporary
 		// TODO buffering
-		char *cbuf = (char*)buffer;
-		s32 c;
-		u32 total = 0,amount;
-		while(count > 0) {
-			amount = MIN(1024,count);
-			c = ::read(_fd,cbuf,amount);
-			if(c < 0)
-				return c;
-			total += c;
-			if(c < amount)
-				break;
-			cbuf += amount;
-			count -= amount;
-		}
-		return total;
+		return ::read(_fd,buffer,count);
 	}
 
 	char Stream::FileBuffer::write(char c) {
@@ -141,23 +126,8 @@ namespace esc {
 	}
 
 	s32 Stream::FileBuffer::write(void *buffer,u32 count) {
-		// TODO just temporary
 		// TODO buffering
-		char *cbuf = (char*)buffer;
-		s32 c;
-		u32 total = 0,amount;
-		while(count > 0) {
-			amount = MIN(1024,count);
-			c = ::write(_fd,cbuf,amount);
-			if(c < 0)
-				return c;
-			total += c;
-			if(c < amount)
-				break;
-			cbuf += amount;
-			count -= amount;
-		}
-		return total;
+		return ::write(_fd,buffer,count);
 	}
 
 	s32 Stream::FileBuffer::format(const char *fmt,va_list ap) {

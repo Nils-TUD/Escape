@@ -124,22 +124,34 @@ int main(void) {
 							break;
 						case MSG_DRV_READ: {
 							/* offset is ignored here */
-							u32 count = MIN(sizeof(msg.data.d),msg.args.arg2);
-							msg.data.arg1 = rb_readn(vt->inbuf,msg.data.d,count);
-							msg.data.arg2 = rb_length(vt->inbuf) > 0;
-							send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
+							u32 count = msg.args.arg2;
+							char *data = (char*)malloc(count);
+							msg.args.arg1 = 0;
+							if(data)
+								msg.args.arg1 = rb_readn(vt->inbuf,data,count);
+							msg.args.arg2 = rb_length(vt->inbuf) > 0;
+							send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+							if(data) {
+								send(fd,MSG_DRV_READ_RESP,data,count);
+								free(data);
+							}
 						}
 						break;
-						case MSG_DRV_WRITE:
-							c = msg.data.arg2;
-							if(c >= sizeof(msg.data.d))
-								c = sizeof(msg.data.d) - 1;
-							msg.data.d[c] = '\0';
-							vterm_puts(vt,msg.data.d,c,true,&readKeyboard);
-
-							msg.args.arg1 = c;
+						case MSG_DRV_WRITE: {
+							char *data;
+							c = msg.args.arg2;
+							data = (char*)malloc(c + 1);
+							msg.args.arg1 = 0;
+							if(data) {
+								receive(fd,&mid,data);
+								data[c] = '\0';
+								vterm_puts(vt,data,c,true,&readKeyboard);
+								free(data);
+								msg.args.arg1 = c;
+							}
 							send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
-							break;
+						}
+						break;
 						case MSG_DRV_IOCTL: {
 							msg.data.arg1 = ERR_UNSUPPORTED_OPERATION;
 							msg.data.arg2 = 0;

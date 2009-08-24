@@ -112,14 +112,18 @@ int main(void) {
 						break;
 
 					case MSG_DRV_WRITE: {
-						u32 offset = msg.data.arg1;
-						u32 count = msg.data.arg2;
+						u32 offset = msg.args.arg1;
+						u32 count = msg.args.arg2;
+						msg.args.arg1 = 0;
 						if(offset + count <= ROWS * COLS * 2 && offset + count > offset) {
-							vid_setScreen(offset,msg.data.d,count);
+							u8 *data = (u8*)malloc(count);
+							if(data) {
+								receive(fd,&mid,data);
+								vid_setScreen(offset,data,count);
+								free(data);
+							}
 							msg.args.arg1 = count;
 						}
-						else
-							msg.args.arg1 = 0;
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 					}
 					break;

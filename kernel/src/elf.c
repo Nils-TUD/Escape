@@ -29,8 +29,7 @@
 #include <errors.h>
 #include <assert.h>
 
-/*#define BUF_SIZE (16 * K)*/
-#define BUF_SIZE 1024
+#define BUF_SIZE (16 * K)
 
 s32 elf_loadFromFile(const char *path) {
 	sProc *p = proc_getRunning();

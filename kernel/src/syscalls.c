@@ -754,7 +754,7 @@ static void sysc_send(sIntrptStackFrame *stack) {
 	s32 res;
 
 	/* validate size and data */
-	if(size <= 0 || size > MAX_MSG_SIZE)
+	if(size <= 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 	if(!paging_isRangeUserReadable((u32)data,size))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
@@ -780,9 +780,11 @@ static void sysc_receive(sIntrptStackFrame *stack) {
 	tFileNo file;
 	s32 res;
 
+	/* TODO maybe we should provide a size here, too, so that we can check the address-range */
+
 	/* validate id and data */
-	if(!paging_isRangeUserWritable((u32)id,sizeof(tMsgId)) ||
-			!paging_isRangeUserWritable((u32)data,MAX_MSG_SIZE))
+	if(!paging_isRangeUserWritable((u32)id,sizeof(tMsgId))/* ||
+			!paging_isRangeUserWritable((u32)data,MAX_MSG_SIZE)*/)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	/* get file */

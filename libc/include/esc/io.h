@@ -69,7 +69,8 @@ s32 getFileInfo(const char *path,sFileInfo *info);
 s32 eof(tFD fd);
 
 /**
- * Changes the position in the given file. Note that this is not possible for service-usages!
+ * Changes the position in the given file. For service-usages SEEK_CUR can be used to skip
+ * <offset> messages and SEEK_END to skip all messages.
  *
  * @param fd the file-descriptor
  * @param offset the offset

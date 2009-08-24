@@ -330,8 +330,29 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 		if(n->mode & MODE_TYPE_SERVUSE) {
 			if(n->parent->mode & MODE_SERVICE_DRIVER)
 				e->position = newPos;
-			else
-				return ERR_SERVUSE_SEEK;
+			else {
+				sSLList *list;
+				/* just SEEK_CUR and SEEK_END is supported */
+				if(whence != SEEK_CUR && whence != SEEK_END)
+					return ERR_SERVUSE_SEEK;
+
+				/* services read from the send-list */
+				if(n->parent->owner == tid)
+					list = n->data.servuse.sendList;
+				/* other processes read to the receive-list*/
+				else
+					list = n->data.servuse.recvList;
+
+				/* skip the next <offset> messages */
+				if(list) {
+					if(whence == SEEK_END)
+						offset = sll_length(list);
+					while(offset-- > 0) {
+						if(!sll_removeFirst(list,NULL))
+							break;
+					}
+				}
+			}
 		}
 		else {
 			/* we can't validate the position here because the content of virtuel files may be

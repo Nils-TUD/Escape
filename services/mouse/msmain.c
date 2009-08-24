@@ -143,11 +143,17 @@ int main(void) {
 						break;
 					case MSG_DRV_READ: {
 						/* offset is ignored here */
-						u32 count = MIN(sizeof(msg.data.d),msg.args.arg2 * sizeof(sMouseData));
-						count /= sizeof(sMouseData);
-						msg.data.arg1 = rb_readn(inbuf,msg.data.d,count) * sizeof(sMouseData);
-						msg.data.arg2 = rb_length(inbuf) > 0;
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
+						u32 count = msg.args.arg2 / sizeof(sMouseData);
+						sMouseData *buffer = (sMouseData*)malloc(count * sizeof(sMouseData));
+						msg.args.arg1 = 0;
+						if(buffer)
+							msg.args.arg1 = rb_readn(inbuf,buffer,count) * sizeof(sMouseData);
+						msg.args.arg2 = rb_length(inbuf) > 0;
+						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+						if(buffer) {
+							send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sMouseData));
+							free(buffer);
+						}
 					}
 					break;
 					case MSG_DRV_WRITE:

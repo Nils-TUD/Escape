@@ -48,7 +48,9 @@ s32 vfsdrv_open(tTid tid,tFileNo file,sVFSNode *node,u32 flags) {
 	s32 res;
 	sRequest *req;
 
-	/* send msg to fs */
+	UNUSED(node);
+
+	/* send msg to driver */
 	msg.args.arg1 = flags;
 	res = vfs_sendMsg(tid,file,MSG_DRV_OPEN,(u8*)&msg,sizeof(msg.args));
 	if(res < 0)
@@ -74,7 +76,7 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 		thread_switchInKernel();
 	}
 
-	/* send msg to fs */
+	/* send msg to driver */
 	msg.args.arg1 = offset;
 	msg.args.arg2 = count;
 	res = vfs_sendMsg(tid,file,MSG_DRV_READ,(u8*)&msg,sizeof(msg.args));
@@ -88,11 +90,11 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 
 	/* copy from temp-buffer to process */
 	if(req->data != NULL) {
-		memcpy(buffer,req->data,req->count);
+		memcpy(buffer,req->data,MIN(count,req->count));
 		kheap_free(req->data);
 	}
 
-	res = req->count;
+	res = MIN(count,req->count);
 	/* store wether there is more data readable */
 	node->parent->data.service.isEmpty = !req->val1;
 	vfsreq_remRequest(req);
@@ -103,15 +105,16 @@ s32 vfsdrv_write(tTid tid,tFileNo file,sVFSNode *node,const void *buffer,u32 off
 	sRequest *req;
 	s32 res;
 
-	/* TODO */
-	if(count > sizeof(msg.data.d))
-		util_panic("Improve that!!");
+	UNUSED(node);
 
-	/* send msg to fs */
-	msg.data.arg1 = offset;
-	msg.data.arg2 = count;
-	memcpy(msg.data.d,buffer,count);
-	res = vfs_sendMsg(tid,file,MSG_DRV_WRITE,(u8*)&msg,sizeof(msg.data));
+	/* send msg to driver */
+	msg.args.arg1 = offset;
+	msg.args.arg2 = count;
+	res = vfs_sendMsg(tid,file,MSG_DRV_WRITE,(u8*)&msg,sizeof(msg.args));
+	if(res < 0)
+		return res;
+	/* now send data */
+	res = vfs_sendMsg(tid,file,MSG_DRV_WRITE,(u8*)buffer,count);
 	if(res < 0)
 		return res;
 
@@ -129,10 +132,12 @@ s32 vfsdrv_ioctl(tTid tid,tFileNo file,sVFSNode *node,u32 cmd,void *data,u32 siz
 	sRequest *req;
 	s32 res;
 
+	UNUSED(node);
+
 	if(data != NULL && size > sizeof(msg.data.d))
 		return ERR_INVALID_SYSC_ARGS;
 
-	/* send msg to fs */
+	/* send msg to driver */
 	msg.data.arg1 = cmd;
 	msg.data.arg2 = data != NULL ? size : 0;
 	if(data != NULL)
@@ -156,6 +161,7 @@ s32 vfsdrv_ioctl(tTid tid,tFileNo file,sVFSNode *node,u32 cmd,void *data,u32 siz
 }
 
 void vfsdrv_close(tTid tid,tFileNo file,sVFSNode *node) {
+	UNUSED(node);
 	vfs_sendMsg(tid,file,MSG_DRV_CLOSE,(u8*)&msg,sizeof(msg.args));
 }
 
@@ -168,7 +174,7 @@ static void vfsdrv_openReqHandler(tTid tid,const u8 *data,u32 size) {
 	sRequest *req = vfsreq_getRequestByPid(tid);
 	if(req != NULL) {
 		/* remove request and give him the result */
-		req->finished = true;
+		req->state = REQ_STATE_FINISHED;
 		req->count = (u32)rmsg->args.arg1;
 		/* the thread can continue now */
 		thread_wakeup(tid,EV_RECEIVED_MSG);
@@ -176,22 +182,34 @@ static void vfsdrv_openReqHandler(tTid tid,const u8 *data,u32 size) {
 }
 
 static void vfsdrv_readReqHandler(tTid tid,const u8 *data,u32 size) {
-	sMsg *rmsg = (sMsg*)data;
-	if(size < sizeof(rmsg->data))
-		return;
-
 	/* find the request for the tid */
 	sRequest *req = vfsreq_getRequestByPid(tid);
 	if(req != NULL) {
-		/* remove request */
-		req->finished = true;
-		req->val1 = rmsg->data.arg2;
-		req->count = rmsg->data.arg1;
-		req->data = (void*)kheap_alloc(req->count);
-		if(req->data != NULL)
-			memcpy(req->data,rmsg->data.d,req->count);
-		/* the thread can continue now */
-		thread_wakeup(tid,EV_RECEIVED_MSG);
+		/* the first one is the message */
+		if(req->state == REQ_STATE_WAITING) {
+			sMsg *rmsg = (sMsg*)data;
+			/* an error? */
+			if(size < sizeof(rmsg->args) || (s32)rmsg->args.arg1 <= 0) {
+				req->val1 = 1;
+				req->count = 0;
+				req->state = REQ_STATE_FINISHED;
+				thread_wakeup(tid,EV_RECEIVED_MSG);
+				return;
+			}
+			/* otherwise we'll receive the data with the next msg */
+			req->count = rmsg->args.arg1;
+			req->val1 = rmsg->args.arg2;
+			req->state = REQ_STATE_WAIT_DATA;
+		}
+		else {
+			/* ok, it's the data */
+			req->state = REQ_STATE_FINISHED;
+			req->data = (void*)kheap_alloc(req->count);
+			if(req->data != NULL)
+				memcpy(req->data,data,req->count);
+			/* the thread can continue now */
+			thread_wakeup(tid,EV_RECEIVED_MSG);
+		}
 	}
 }
 
@@ -204,7 +222,7 @@ static void vfsdrv_writeReqHandler(tTid tid,const u8 *data,u32 size) {
 	sRequest *req = vfsreq_getRequestByPid(tid);
 	if(req != NULL) {
 		/* remove request and give him the inode-number */
-		req->finished = true;
+		req->state = REQ_STATE_FINISHED;
 		req->count = rmsg->args.arg1;
 		/* the thread can continue now */
 		thread_wakeup(tid,EV_RECEIVED_MSG);
@@ -220,7 +238,7 @@ static void vfsdrv_ioctlReqHandler(tTid tid,const u8 *data,u32 size) {
 	sRequest *req = vfsreq_getRequestByPid(tid);
 	if(req != NULL) {
 		/* remove request and give him the inode-number */
-		req->finished = true;
+		req->state = REQ_STATE_FINISHED;
 		req->count = rmsg->data.arg1;
 		req->data = NULL;
 		if(rmsg->data.arg2 > 0) {

@@ -22,10 +22,14 @@
 
 #include "common.h"
 
+#define REQ_STATE_WAITING		0
+#define REQ_STATE_WAIT_DATA		1
+#define REQ_STATE_FINISHED		2
+
 /* an entry in the request-list */
 typedef struct {
 	tTid tid;
-	bool finished;
+	u8 state;
 	u32 val1;
 	u32 val2;
 	void *data;

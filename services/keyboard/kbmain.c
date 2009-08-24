@@ -123,11 +123,17 @@ int main(void) {
 						break;
 					case MSG_DRV_READ: {
 						/* offset is ignored here */
-						u32 count = MIN(sizeof(msg.data.d),msg.args.arg2 * sizeof(sKbData));
-						count /= sizeof(sKbData);
-						msg.data.arg1 = rb_readn(buf,msg.data.d,count) * sizeof(sKbData);
-						msg.data.arg2 = rb_length(buf) > 0;
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
+						u32 count = msg.args.arg2 / sizeof(sKbData);
+						sKbData *buffer = (sKbData*)malloc(count * sizeof(sKbData));
+						msg.args.arg1 = 0;
+						if(buffer)
+							msg.args.arg1 = rb_readn(buf,buffer,count) * sizeof(sKbData);
+						msg.args.arg2 = rb_length(buf) > 0;
+						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+						if(buffer) {
+							send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sKbData));
+							free(buffer);
+						}
 					}
 					break;
 					case MSG_DRV_WRITE:

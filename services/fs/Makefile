@@ -22,26 +22,26 @@ CEXT2OBJ=$(patsubst ext2/%.c,$(BUILD)/service_$(NAME)_ext2_%.o,$(CEXT2SRC))
 all:	$(BIN)
 
 $(BIN):	$(LDCONF) $(COBJ) $(CEXT2OBJ) $(START) $(LIBCA)
-		@echo "===== LINKING =====";
-		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(CEXT2OBJ) $(LIBCA);
-		@echo "===== COPYING ON DISK =====";
+		@echo "	" LINKING $(BIN)
+		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(CEXT2OBJ) $(LIBCA);
+		@echo "	" COPYING ON DISK
 		@make -C ../../ mounthdd
-		$(SUDO) cp $(BIN) $(DISKMOUNT)/sbin/$(NAME)
+		@$(SUDO) cp $(BIN) $(DISKMOUNT)/sbin/$(NAME)
 		@make -C ../../ umounthdd
 
 $(BUILD)/service_$(NAME)_%.o:		%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(BUILD)/service_$(NAME)_ext2_%.o:		ext2/%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(DEP):	$(CEXT2SRC) $(CSRC)
-		@echo "===== GENERATING DEPENDENCIES =====";
-		$(CC) $(CFLAGS) -MM $(CEXT2SRC) $(CSRC) > $(DEP);
+		@echo "	" GENERATING DEPENDENCIES
+		@$(CC) $(CFLAGS) -MM $(CEXT2SRC) $(CSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/service_$(NAME)_)\1.o:/g" $(DEP);
+		@sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/service_$(NAME)_)\1.o:/g" $(DEP);
 		@for i in $(patsubst ext2/%.c,%,$(wildcard ext2/*.c)) ; do \
 			sed --in-place -e "s/$(subst /,\/,$(BUILD)/service_$(NAME)_)$$i.o:/$(subst /,\/,$(BUILD)/service_$(NAME)_ext2_)$$i.o:/g" $(DEP); \
 		done;

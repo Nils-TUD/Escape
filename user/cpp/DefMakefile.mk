@@ -23,22 +23,22 @@ COBJ=$(patsubst %.cpp,$(BUILD)/user_$(NAME)_%.o,$(CSRC))
 all:	$(BIN)
 
 $(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCPPA)
-		@echo "===== LINKING =====";
-		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCPPA);
-		@echo "===== COPYING ON DISK =====";
+		@echo "	" LINKING $(BIN)
+		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCPPA);
+		@echo "	" COPYING ON DISK
 		@make -C $(ROOT) mounthdd
-		$(SUDO) cp $(BIN) $(DISKMOUNT)/bin/$(NAME)
+		@$(SUDO) cp $(BIN) $(DISKMOUNT)/bin/$(NAME)
 		@make -C $(ROOT) umounthdd
 
 $(BUILD)/user_$(NAME)_%.o:		%.cpp
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(DEP):	$(CSRC)
-		@echo "===== GENERATING DEPENDENCIES =====";
-		$(CC) $(CFLAGS) -MM $(CSRC) > $(DEP);
+		@echo "	" GENERATING DEPENDENCIES
+		@$(CC) $(CFLAGS) -MM $(CSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/user_$(NAME)_)\1.o:/g" $(DEP);
+		@sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/user_$(NAME)_)\1.o:/g" $(DEP);
 
 -include $(DEP)
 

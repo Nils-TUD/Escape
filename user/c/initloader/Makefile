@@ -24,20 +24,20 @@ LIBCA=$(BUILD)/libc.a
 all:	$(BIN) $(DUMP)
 
 $(BIN):	$(LDCONF) $(AOBJ) $(COBJ)
-		@echo "===== LINKING =====";
-		$(CC) $(CFLAGS) -o $(BIN) $(AOBJ) $(COBJ) $(LIBCA);
+		@echo "	" LINKING $(BIN)
+		@$(CC) $(CFLAGS) -o $(BIN) $(AOBJ) $(COBJ) $(LIBCA);
 
 $(BUILD)/user_$(NAME)_%.o: %.s
-		@echo "===== ASSEMBLING $< =====";
-		nasm $(ASMFLAGS) -o $@ $<
+		@echo "	" AS $<
+		@nasm $(ASMFLAGS) -o $@ $<
 
 $(BUILD)/user_$(NAME)_c%.o: %.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(DUMP):	$(BIN)
-		@echo "===== GENERATING DUMP =====";
-		$(BUILD)/dump $(BIN) > $(DUMP)
+		@echo "	" GENERATING DUMP
+		@$(BUILD)/dump $(BIN) > $(DUMP)
 
 clean:
 		rm -f $(BIN) $(DUMP) $(AOBJ) $(COBJ)

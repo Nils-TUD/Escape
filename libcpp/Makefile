@@ -29,28 +29,28 @@ STARTO = $(BUILD)/libcpp_startup.o
 all: $(LIB)
 
 $(LIB): $(OBJS) $(STARTO) $(LIBCOBJS)
-		@echo "===== BUILDING ARCHIVE =====";
-		ar rcs $(LIB) $(LIBCOBJS) $(OBJS)
+		@echo "	" AR $(LIB)
+		@ar rcs $(LIB) $(LIBCOBJS) $(OBJS)
 
 $(BUILD)/libcpp_escgui_%.o: src/esc/gui/%.cpp
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(BUILD)/libcpp_esc_%.o: src/esc/%.cpp
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(BUILD)/libcpp_std_%.o: src/%.cpp
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(STARTO): $(START)
-		@echo "===== ASSEMBLING $(START) =====";
-		nasm $(ASMFLAGS) -o $(STARTO) $(START)
+		@echo "	" AS $(START)
+		@nasm $(ASMFLAGS) -o $(STARTO) $(START)
 
 $(DEP):	$(CSTDSRCS) $(CESCSRCS) $(CGUISRCS)
-		@echo "===== GENERATING DEPENDENCIES =====";
-		$(CC) $(CFLAGS) -MM $(CSTDSRCS) $(CESCSRCS) $(CGUISRCS) > $(DEP)
+		@echo "	" GENERATING DEPENDENCIES
+		@$(CC) $(CFLAGS) -MM $(CSTDSRCS) $(CESCSRCS) $(CGUISRCS) > $(DEP)
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
 		@for i in $(patsubst src/esc/gui/%.cpp,%,$(wildcard src/esc/gui/*.cpp)) ; do \
 			sed --in-place -e "s/$$i.o:/$(subst /,\/,$(BUILD)/libcpp_escgui_)$$i.o:/g" $(DEP); \

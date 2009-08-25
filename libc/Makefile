@@ -30,36 +30,36 @@ GCCLIB = $(GCCLIBDIR)/_divdi3.object \
 all: $(LIB)
 
 $(LIB): $(OBJS) $(LOBJ) $(STARTO)
-		@echo "===== BUILDING ARCHIVE =====";
-		ar rcs $(LIB) $(OBJS) $(LOBJ) $(GCCLIB)
+		@echo "	" AR $(LIB)
+		@ar rcs $(LIB) $(OBJS) $(LOBJ) $(GCCLIB)
 
 $(BUILD)/libc_esc_%.o: src/esc/%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(BUILD)/libc_esc_a%.o: src/esc/%.s
-		@echo "===== ASSEMBLING $< =====";
-		nasm $(ASMFLAGS) -o $@ $<
+		@echo "	" AS $<
+		@nasm $(ASMFLAGS) -o $@ $<
 
 $(BUILD)/libc_std_%.o: src/%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(BUILD)/libc_std_a%.o: src/%.s
-		@echo "===== ASSEMBLING $< =====";
-		nasm $(ASMFLAGS) -o $@ $<
+		@echo "	" AS $<
+		@nasm $(ASMFLAGS) -o $@ $<
 
 $(BUILD)/libc_lib_%.o:	$(LIBDIR)/src/%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(STARTO): $(START)
-		@echo "===== ASSEMBLING $(START) =====";
-		nasm $(ASMFLAGS) -o $(STARTO) $(START)
+		@echo "	" AS $(START)
+		@nasm $(ASMFLAGS) -o $(STARTO) $(START)
 
 $(DEP):	$(CESCSRCS) $(CSTDSRCS)
-		@echo "===== GENERATING DEPENDENCIES =====";
-		$(CC) $(CFLAGS) -MM $(CESCSRCS) $(CSTDSRCS) > $(DEP)
+		@echo "	" GENERATING DEPENDENCIES
+		@$(CC) $(CFLAGS) -MM $(CESCSRCS) $(CSTDSRCS) > $(DEP)
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
 		@for i in $(patsubst src/esc/%.c,%,$(wildcard src/esc/*.c)) ; do \
 			sed --in-place -e "s/$$i.o:/$(subst /,\/,$(BUILD)/libc_esc_)$$i.o:/g" $(DEP); \

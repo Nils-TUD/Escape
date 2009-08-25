@@ -19,22 +19,22 @@ COBJ=$(patsubst %.c,$(BUILD)/service_$(NAME)_%.o,$(CSRC))
 all:	$(BIN)
 
 $(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCA)
-		@echo "===== LINKING =====";
-		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA);
-		@echo "===== COPYING ON DISK =====";
+		@echo "	" LINKING $(BIN)
+		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA);
+		@echo "	" COPYING ON DISK
 		@make -C ../../ mounthdd
-		$(SUDO) cp $(BIN) $(DISKMOUNT)/sbin/$(NAME)
+		@$(SUDO) cp $(BIN) $(DISKMOUNT)/sbin/$(NAME)
 		@make -C ../../ umounthdd
 
 $(BUILD)/service_$(NAME)_%.o:		%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(DEP):	$(CSRC)
-		@echo "===== GENERATING DEPENDENCIES =====";
-		$(CC) $(CFLAGS) -MM $(CSRC) > $(DEP);
+		@echo "	" GENERATING DEPENDENCIES
+		@$(CC) $(CFLAGS) -MM $(CSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/service_$(NAME)_)\1.o:/g" $(DEP);
+		@sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/service_$(NAME)_)\1.o:/g" $(DEP);
 
 -include $(DEP)
 

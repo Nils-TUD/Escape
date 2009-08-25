@@ -27,75 +27,55 @@ SYMBOLSCRIPT=../tools/gensymbols.sh
 SYMBOLSRC=src/ksymbols.c
 SYMBOLOBJ=$(patsubst src/%.c,$(BUILD)/kernel_%.o,$(SYMBOLSRC))
 
-# we have to put ata and fs into the kernel
-# TODO we can put them as modules in grub, too, right?
-SERVDIRNAMES = ata fs
-SERVBINS = $(patsubst %,$(BUILD)/service_%.bin,$(SERVDIRNAMES))
-SERVICES = $(BUILD)/services.txt
-
 .PHONY: all pre clean
 
 all:	$(BIN)
 
 $(BIN):	$(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
-		@echo "===== LINKING =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
+		@echo "	" LINKING $(BIN)
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 		@# since it's size is 0 at the first time. In the second part the size is correct
 		@# and therefore the symbol-table will be generated correctly :)
-		@echo "===== BUILDING SYMBOL-FILE =====";
-		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
-		@echo "===== COMPILING SYMBOL-C-FILE =====";
-		$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
-		@echo "===== LINKING AGAIN =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
-		@echo "===== BUILDING SYMBOL-FILE =====";
-		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
-		@echo "===== COMPILING SYMBOL-C-FILE =====";
-		$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
-		@echo "===== LINKING AGAIN =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
-		@echo "===== COPYING BINARY =====";
+		@echo "	" BUILDING SYMBOL-FILE
+		@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
+		@echo "	" CC $(SYMBOLSRC)
+		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
+		@echo "	" LINKING $(BIN)
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
+		@echo "	" BUILDING SYMBOL-FILE
+		@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
+		@echo "	" CC $(SYMBOLSRC)
+		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
+		@echo "	" LINKING $(BIN)
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
+		@echo "	" COPYING BINARY
 		@make -C ../ mounthdd
-		$(SUDO) cp $(BIN) $(DISKMOUNT)/boot
+		@$(SUDO) cp $(BIN) $(DISKMOUNT)/boot
 		@make -C ../ umounthdd
 
-$(SERVICES): $(SERVBINS)
-		@echo "" > $(SERVICES)
-		@for i in $(SERVDIRNAMES) ; do \
-			echo "static u8 service_"$$i"[] = {" >> $(SERVICES); \
-			echo "		#include \"../../build/service_$$i.dump\"" >> $(SERVICES); \
-			echo "};" >> $(SERVICES); \
-		done;
-		@echo "" >> $(SERVICES)
-		@echo "static sProcData services[] = {" >> $(SERVICES)
-		@for i in $(SERVDIRNAMES) ; do \
-			echo "	{\"$$i\", service_"$$i"}," >> $(SERVICES); \
-		done;
-		@echo "};" >> $(SERVICES)
-
 $(AOBJ):	$(ASRC)
-		@echo "===== ASSEMBLING =====";
-		nasm $(ASMFLAGS) -o $(AOBJ) $(ASRC);
+		@echo "	" AS $(ASRC)
+		@nasm $(ASMFLAGS) -o $(AOBJ) $(ASRC);
 
 $(BUILD)/kernel_%.o:		src/%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(BUILD)/kernel_lib_%.o:	$(LIB)/src/%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
-$(DEP):	$(SERVICES) $(CSRC) $(LSRC)
-		@echo "===== GENERATING DEPENDENCIES =====";
-		if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
-		$(CC) $(CFLAGS) -MM $(CSRC) $(LSRC) > $(DEP);
+$(DEP):	$(CSRC) $(LSRC)
+		@echo "	" GENERATING DEPENDENCIES
+		@if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
+		@$(CC) $(CFLAGS) -MM $(CSRC) $(LSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/kernel_\1.o:/g" $(DEP);
+		@sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/kernel_\1.o:/g" $(DEP);
 
 -include $(DEP)
 
 clean:
 		@echo "===== REMOVING FILES =====";
 		rm -f $(DEP) $(BIN) $(COBJ) $(AOBJ) $(LOBJ) $(SYMBOLS) $(SYMBOLOBJ) \
-			$(BUILD)/tools_gensymbols.c $(BUILD)/tools_gensymbols.o $(SERVICES);
+			$(BUILD)/tools_gensymbols.c $(BUILD)/tools_gensymbols.o;

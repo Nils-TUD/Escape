@@ -24,22 +24,22 @@ CCMDOBJ=$(patsubst cmd/%.c,$(BUILD)/user_libs_$(NAME)_cmd_%.o,$(CCMDSRC))
 all:	$(BIN)
 
 $(BIN): $(COBJ) $(CCMDOBJ) $(LIBCOBJ)
-		@echo "===== BUILDING ARCHIVE =====";
-		ar rcs $(BIN) $(COBJ) $(CCMDOBJ) $(LIBCOBJ)
+		@echo "	" AR $(BIN)
+		@ar rcs $(BIN) $(COBJ) $(CCMDOBJ) $(LIBCOBJ)
 
 $(BUILD)/user_libs_$(NAME)_%.o:		%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(BUILD)/user_libs_$(NAME)_cmd_%.o:		cmd/%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(DEP):	$(CSRC) $(CCMDSRC)
-		@echo "===== GENERATING DEPENDENCIES =====";
-		$(CC) $(CFLAGS) -MM $(CSRC) $(CCMDSRC) > $(DEP);
+		@echo "	" GENERATING DEPENDENCIES
+		@$(CC) $(CFLAGS) -MM $(CSRC) $(CCMDSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/user_libs_$(NAME)_)\1.o:/g" $(DEP);
+		@sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/user_libs_$(NAME)_)\1.o:/g" $(DEP);
 		@for i in $(patsubst cmd/%.c,%,$(wildcard cmd/*.c)) ; do \
 			sed --in-place -e "s/$(subst /,\/,$(BUILD)/user_$(NAME)_)$$i.o:/$(subst /,\/,$(BUILD)/user_libs_$(NAME)_cmd_)$$i.o:/g" $(DEP); \
 		done;

@@ -33,46 +33,46 @@ SYMBOLOBJ=$(patsubst ../src/%.c,$(BUILD)/kernelt_%.o,$(SYMBOLSRC))
 all: $(BIN)
 
 $(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
-		@echo "===== LINKING =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
+		@echo "	" LINKING $(BIN)
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 		@# since it's size is 0 at the first time. In the second part the size is correct
 		@# and therefore the symbol-table will be generated correctly :)
-		@echo "===== BUILDING SYMBOL-FILE =====";
-		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
-		@echo "===== COMPILING SYMBOL-C-FILE =====";
-		$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
-		@echo "===== LINKING AGAIN =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
-		@echo "===== BUILDING SYMBOL-FILE =====";
-		$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
-		@echo "===== COMPILING SYMBOL-C-FILE =====";
-		$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
-		@echo "===== LINKING AGAIN =====";
-		ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
-		@echo "===== COPYING BINARY =====";
+		@echo "	" BUILDING SYMBOL-FILE
+		@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
+		@echo "	" CC $(SYMBOLSRC)
+		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
+		@echo "	" LINKING $(BIN)
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
+		@echo "	" BUILDING SYMBOL-FILE
+		@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
+		@echo "	" CC $(SYMBOLSRC)
+		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
+		@echo "	" LINKING $(BIN)
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
+		@echo "	" COPYING BINARY
 		@make -C ../../ mounthdd
-		$(SUDO) cp $(BIN) $(DISKMOUNT)/boot
+		@$(SUDO) cp $(BIN) $(DISKMOUNT)/boot
 		@make -C ../../ umounthdd
 
 $(BUILD)/kerneltk_%.o:	../src/%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(BUILD)/kernelt_%.o:		%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(BUILD)/kernelt_lib_%.o:	$(LIB)/src/%.c
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $<
 
 $(DEP):	$(TSRC) $(KSRC) $(LSRC)
-		@echo "===== GENERATING DEPENDENCIES =====";
-		if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
-		$(CC) $(CFLAGS) -MM $(TSRC) $(KSRC) $(LSRC) > $(DEP);
+		@echo "	" GENERATING DEPENDENCIES
+		@if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
+		@$(CC) $(CFLAGS) -MM $(TSRC) $(KSRC) $(LSRC) > $(DEP);
 		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/kernelt_\1.o:/g" $(DEP);
+		@sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD))\/kernelt_\1.o:/g" $(DEP);
 
 -include $(DEP)
 

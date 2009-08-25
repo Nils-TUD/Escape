@@ -43,7 +43,7 @@ all: $(BUILD) $(DISKMOUNT)
 			make -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
 		@# just temporary
-		qemu-img convert -f raw $(HDD) -O vmdk vmware/vmwarehddimg.vmdk
+		@qemu-img convert -f raw $(HDD) -O vmdk vmware/vmwarehddimg.vmdk
 
 $(BUILD):
 		[ -d $(BUILD) ] || mkdir -p $(BUILD);
@@ -52,8 +52,8 @@ $(DISKMOUNT):
 		[ -d $(DISKMOUNT) ] || mkdir -p $(DISKMOUNT);
 
 mounthdd: $(DISKMOUNT)
-		$(SUDO) umount $(DISKMOUNT) > /dev/null 2>&1 || true;
-		$(SUDO) mount -text2 -oloop=/dev/loop0,offset=`expr $(HDDTRACKSECS) \* 512` $(HDD) $(DISKMOUNT);
+		@$(SUDO) umount $(DISKMOUNT) > /dev/null 2>&1 || true;
+		@$(SUDO) mount -text2 -oloop=/dev/loop0,offset=`expr $(HDDTRACKSECS) \* 512` $(HDD) $(DISKMOUNT);
 
 debughdd:
 		make mounthdd;
@@ -61,7 +61,7 @@ debughdd:
 		make umounthdd;
 
 umounthdd:
-		tools/umounthdd.sh
+		@tools/umounthdd.sh
 
 # virtual box disk
 createvbhdd:

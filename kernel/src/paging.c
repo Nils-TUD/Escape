@@ -302,7 +302,27 @@ u32 paging_countFramesForMap(u32 virt,u32 count) {
 	return res;
 }
 
-void paging_mapForeignPages(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags) {
+void *paging_mapAreaOf(sProc *p,u32 addr,u32 size) {
+	u32 count;
+	count = BYTES_2_PAGES((addr & (PAGE_SIZE - 1)) + size);
+	vassert(p != NULL && p->pid != INVALID_PID,"Invalid process %x\n",p);
+	vassert(count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE,"Temp-map-area too small for %d pages",count);
+
+	paging_mapForeignPageDir(p);
+	paging_mapIntern(PAGE_DIR_AREA,MAPPED_PTS_START,TEMP_MAP_AREA,
+			(u32*)ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,addr),count,
+			PG_WRITABLE | PG_SUPERVISOR | PG_ADDR_TO_FRAME,true);
+	paging_unmapForeignPageDir();
+	return (void*)(TEMP_MAP_AREA + (addr & (PAGE_SIZE - 1)));
+}
+
+void paging_unmapArea(u32 addr,u32 size) {
+	sProc *p = proc_getRunning();
+	u32 count = BYTES_2_PAGES((addr & (PAGE_SIZE - 1)) + size);
+	paging_unmapIntern(p,MAPPED_PTS_START,TEMP_MAP_AREA,count,false,false);
+}
+
+void paging_getPagesOf(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags) {
 	vassert(p != NULL && p->pid != INVALID_PID,"Invalid process %x\n",p);
 
 	paging_mapForeignPageDir(p);
@@ -312,7 +332,7 @@ void paging_mapForeignPages(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags)
 	paging_unmapForeignPageDir();
 }
 
-void paging_unmapForeignPages(sProc *p,u32 addr,u32 count) {
+void paging_remPagesOf(sProc *p,u32 addr,u32 count) {
 	vassert(p != NULL && p->pid != INVALID_PID,"Invalid process %x\n",p);
 
 	paging_mapForeignPageDir(p);
@@ -905,6 +925,8 @@ static void paging_dbg_printPageDir(u32 mappingArea,u32 pageDirArea,u8 parts) {
 				(i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) && (parts & PD_PART_USER)) ||
 				(i >= ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) && i < ADDR_TO_PDINDEX(KERNEL_HEAP_START)
 						&& (parts & PD_PART_KERNEL)) ||
+				(i >= ADDR_TO_PDINDEX(TEMP_MAP_AREA) && i < ADDR_TO_PDINDEX(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE)
+						&& (parts & PD_PART_TEMPMAP)) ||
 				(i >= ADDR_TO_PDINDEX(KERNEL_HEAP_START) && i < ADDR_TO_PDINDEX(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
 						&& (parts & PD_PART_KHEAP)) ||
 				(i >= ADDR_TO_PDINDEX(MAPPED_PTS_START) && (parts & PD_PART_PTBLS))) {

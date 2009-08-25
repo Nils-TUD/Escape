@@ -27,7 +27,7 @@
 #include <string.h>
 #include <messages.h>
 
-#define BUF_SIZE 4096 * 64
+#define BUF_SIZE 4096 * 32
 /*#define BUF_SIZE 1024*/
 #define COUNT 18000
 

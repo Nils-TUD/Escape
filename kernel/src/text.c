@@ -123,7 +123,7 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 			return ERR_NOT_ENOUGH_MEM;
 
 		/* copy pages */
-		paging_mapForeignPages(fp,0,0,fp->textPages,0);
+		paging_getPagesOf(fp,0,0,fp->textPages,0);
 		p->textPages = fp->textPages;
 	}
 

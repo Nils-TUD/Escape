@@ -22,6 +22,7 @@
 #include <kheap.h>
 #include <sched.h>
 #include <kevent.h>
+#include <paging.h>
 #include <vfs.h>
 #include <vfsnode.h>
 #include <vfsreq.h>
@@ -84,7 +85,7 @@ s32 vfsr_openFile(tTid tid,u8 flags,const char *path) {
 	}
 
 	/* wait for a reply */
-	req = vfsreq_waitForReply(tid);
+	req = vfsreq_waitForReply(tid,NULL,0);
 	if(req == NULL) {
 		vfsr_destroy(tid,virtFile);
 		return ERR_NOT_ENOUGH_MEM;
@@ -132,7 +133,7 @@ s32 vfsr_getFileInfo(tTid tid,const char *path,sFileInfo *info) {
 	}
 
 	/* wait for a reply */
-	req = vfsreq_waitForReply(tid);
+	req = vfsreq_waitForReply(tid,NULL,0);
 	if(req == NULL) {
 		vfsr_destroy(tid,virtFile);
 		return ERR_NOT_ENOUGH_MEM;
@@ -173,17 +174,11 @@ s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,u8 *buffer,u32 offset,u
 		return res;
 
 	/* wait for a reply */
-	req = vfsreq_waitForReply(tid);
+	req = vfsreq_waitForReply(tid,buffer,count);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
-	/* copy from temp-buffer to process */
-	if(req->data != NULL) {
-		memcpy(buffer,req->data,MIN(count,req->count));
-		kheap_free(req->data);
-	}
-
-	res = MIN(count,req->count);
+	res = req->count;
 	vfsreq_remRequest(req);
 	return res;
 }
@@ -210,7 +205,7 @@ s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,const u8 *buffer,u32 o
 		return res;
 
 	/* wait for a reply */
-	req = vfsreq_waitForReply(tid);
+	req = vfsreq_waitForReply(tid,NULL,0);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -271,10 +266,12 @@ static void vfsr_readReqHandler(tTid tid,const u8 *data,u32 size) {
 		}
 		else {
 			/* ok, it's the data */
+			sThread *t = thread_getById(tid);
+			/* map the buffer we have to copy it to */
+			u8 *target = (u8*)paging_mapAreaOf(t->proc,(u32)req->data,req->count);
+			memcpy(target,data,req->count);
+			paging_unmapArea((u32)req->data,req->count);
 			req->state = REQ_STATE_FINISHED;
-			req->data = (void*)kheap_alloc(req->count);
-			if(req->data != NULL)
-				memcpy(req->data,data,req->count);
 			/* the thread can continue now */
 			thread_wakeup(tid,EV_RECEIVED_MSG);
 		}

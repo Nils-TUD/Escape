@@ -33,6 +33,7 @@ typedef struct {
 	u32 val1;
 	u32 val2;
 	void *data;
+	u32 dsize;
 	u32 count;
 } sRequest;
 
@@ -67,9 +68,11 @@ void vfsreq_sendMsg(tMsgId id,tTid tid,const u8 *data,u32 size);
  * Waits for a reply
  *
  * @param tid the thread to block
+ * @param buffer optional, the buffer (stored in data)
+ * @param size optional, the buffer-size (stored in dsize)
  * @return the request or NULL if not enough mem
  */
-sRequest *vfsreq_waitForReply(tTid tid);
+sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size);
 
 /**
  * Searches for the request of the given thread

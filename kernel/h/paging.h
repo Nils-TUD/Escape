@@ -61,9 +61,11 @@
  *      |      |            kernel-heap            |     l
  *      v      |                                   |     a
  * 0xC1800000: +-----------------------------------+     r
- *             |                ...                |     e
- * 0xFF7FE000: +-----------------------------------+     a      -----
- *             |            kernel-stack           |              |
+ *             |           temp map area           |     e
+ * 0xC2800000: +-----------------------------------+     a
+ *             |                ...                |
+ * 0xFF7FE000: +-----------------------------------+     |      -----
+ *             |            kernel-stack           |     |        |
  * 0xFF7FF000: +-----------------------------------+     |        |
  *             |         temp kernel-stack         |     |
  * 0xFF800000: +-----------------------------------+     |     not shared page-tables (3)
@@ -99,6 +101,10 @@
 /* temporary page for various purposes */
 #define TEMP_MAP_PAGE		(TMPMAP_PTS_START - PAGE_SIZE)
 
+/* for mapping some pages of foreign processes */
+#define TEMP_MAP_AREA		(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
+#define TEMP_MAP_AREA_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE * 4)
+
 /* the size of the temporary stack we use at the beginning */
 #define TMP_STACK_SIZE		PAGE_SIZE
 
@@ -127,6 +133,7 @@
 #define PD_PART_KERNEL	2
 #define PD_PART_KHEAP	4
 #define PD_PART_PTBLS	8
+#define PD_PART_TEMPMAP	16
 
 /* represents a page-directory-entry */
 typedef struct {
@@ -305,7 +312,26 @@ u32 paging_getFrameOf(u32 virt);
 u32 paging_countFramesForMap(u32 virt,u32 count);
 
 /**
- * Maps <count> pages from <vaddr> of the given process for the current one
+ * Maps the pages specified by <addr> and <size> from the process <p> into the current address-
+ * space and returns the address of it.
+ *
+ * @param p the process
+ * @param addr the start of the range you want to access
+ * @param size the size of the range you want to access
+ * @return the address you can use
+ */
+void *paging_mapAreaOf(sProc *p,u32 addr,u32 size);
+
+/**
+ * Unmaps the area previously mapped by paging_mapAreaOf().
+ *
+ * @param addr the start of the range you want to access
+ * @param size the size of the range you want to access
+ */
+void paging_unmapArea(u32 addr,u32 size);
+
+/**
+ * Copies <count> pages from <vaddr> of the given process to the current one
  *
  * @param p the process
  * @param srcAddr the virtual address to copy from
@@ -313,16 +339,16 @@ u32 paging_countFramesForMap(u32 virt,u32 count);
  * @param count the number of pages
  * @param flags flags for the pages (PG_*)
  */
-void paging_mapForeignPages(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags);
+void paging_getPagesOf(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags);
 
 /**
- * Unmaps <count> pages at <addr> from the address-space of the given process
+ * Removes <count> pages at <addr> from the address-space of the given process
  *
  * @param p the process
  * @param addr the start-address
  * @param count the number of pages
  */
-void paging_unmapForeignPages(sProc *p,u32 addr,u32 count);
+void paging_remPagesOf(sProc *p,u32 addr,u32 count);
 
 /**
  * Maps <count> virtual addresses starting at <virt> to the given frames (in the CURRENT

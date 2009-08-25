@@ -63,7 +63,7 @@ void vfsreq_sendMsg(tMsgId id,tTid tid,const u8 *data,u32 size) {
 		handler[id](tid,data,size);
 }
 
-sRequest *vfsreq_waitForReply(tTid tid) {
+sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size) {
 	u32 i;
 	sRequest *req = requests;
 	for(i = 0; i < REQUEST_COUNT; i++) {
@@ -78,7 +78,8 @@ sRequest *vfsreq_waitForReply(tTid tid) {
 	req->state = REQ_STATE_WAITING;
 	req->val1 = 0;
 	req->val2 = 0;
-	req->data = NULL;
+	req->data = buffer;
+	req->dsize = size;
 	req->count = 0;
 
 	/* wait */

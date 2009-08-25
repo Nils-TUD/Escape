@@ -112,7 +112,7 @@ s32 shm_join(char *name) {
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* copy the pages from the owner */
-	paging_mapForeignPages(mem->owner,mem->startPage * PAGE_SIZE,
+	paging_getPagesOf(mem->owner,mem->startPage * PAGE_SIZE,
 			(p->textPages + p->dataPages) * PAGE_SIZE,mem->pageCount,PG_WRITABLE | PG_NOFREE);
 	p->dataPages += mem->pageCount;
 
@@ -141,7 +141,7 @@ s32 shm_destroy(char *name) {
 	 * and termination of the process */
 	for(n = sll_begin(mem->member); n != NULL; n = n->next) {
 		p = (sProc*)n->data;
-		paging_unmapForeignPages(p,mem->startPage,mem->pageCount);
+		paging_remPagesOf(p,mem->startPage,mem->pageCount);
 	}
 
 	/* free mem */

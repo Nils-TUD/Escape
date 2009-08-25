@@ -57,7 +57,7 @@ s32 vfsdrv_open(tTid tid,tFileNo file,sVFSNode *node,u32 flags) {
 		return res;
 
 	/* wait for a reply */
-	req = vfsreq_waitForReply(tid);
+	req = vfsreq_waitForReply(tid,NULL,0);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -84,17 +84,11 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 		return res;
 
 	/* wait for a reply */
-	req = vfsreq_waitForReply(tid);
+	req = vfsreq_waitForReply(tid,buffer,count);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
-	/* copy from temp-buffer to process */
-	if(req->data != NULL) {
-		memcpy(buffer,req->data,MIN(count,req->count));
-		kheap_free(req->data);
-	}
-
-	res = MIN(count,req->count);
+	res = req->count;
 	/* store wether there is more data readable */
 	node->parent->data.service.isEmpty = !req->val1;
 	vfsreq_remRequest(req);
@@ -119,7 +113,7 @@ s32 vfsdrv_write(tTid tid,tFileNo file,sVFSNode *node,const void *buffer,u32 off
 		return res;
 
 	/* wait for a reply */
-	req = vfsreq_waitForReply(tid);
+	req = vfsreq_waitForReply(tid,NULL,0);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -147,7 +141,7 @@ s32 vfsdrv_ioctl(tTid tid,tFileNo file,sVFSNode *node,u32 cmd,void *data,u32 siz
 		return res;
 
 	/* wait for a reply */
-	req = vfsreq_waitForReply(tid);
+	req = vfsreq_waitForReply(tid,NULL,0);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -197,16 +191,18 @@ static void vfsdrv_readReqHandler(tTid tid,const u8 *data,u32 size) {
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
-			req->count = rmsg->args.arg1;
+			req->count = MIN(req->dsize,rmsg->args.arg1);
 			req->val1 = rmsg->args.arg2;
 			req->state = REQ_STATE_WAIT_DATA;
 		}
 		else {
 			/* ok, it's the data */
+			sThread *t = thread_getById(tid);
+			/* map the buffer we have to copy it to */
+			u8 *target = (u8*)paging_mapAreaOf(t->proc,(u32)req->data,req->count);
+			memcpy(target,data,req->count);
+			paging_unmapArea((u32)req->data,req->count);
 			req->state = REQ_STATE_FINISHED;
-			req->data = (void*)kheap_alloc(req->count);
-			if(req->data != NULL)
-				memcpy(req->data,data,req->count);
 			/* the thread can continue now */
 			thread_wakeup(tid,EV_RECEIVED_MSG);
 		}

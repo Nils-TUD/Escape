@@ -33,12 +33,6 @@
 
 #define MAX_NAME_LEN		6
 
-/* the header for the set-screen message */
-typedef struct {
-	sMsgHeader header;
-	u16 startPos;
-} __attribute__((packed)) sMsgVidSetScr;
-
 /* our vterm-state */
 typedef struct {
 	/* identification */
@@ -82,11 +76,7 @@ typedef struct {
 	u32 rlBufSize;
 	u32 rlBufPos;
 	char *rlBuffer;
-	/* in message form for performance-issues */
-	struct {
-		sMsgVidSetScr header;
-		char data[BUFFER_SIZE];
-	} __attribute__((packed)) buffer;
+	char buffer[BUFFER_SIZE];
 	char titleBar[COLS * 2];
 } sVTerm;
 

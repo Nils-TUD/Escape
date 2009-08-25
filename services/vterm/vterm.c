@@ -258,7 +258,7 @@ static bool vterm_init(sVTerm *vt) {
 	}
 
 	/* fill buffer with spaces to ensure that the cursor is visible (spaces, white on black) */
-	ptr = vt->buffer.data;
+	ptr = vt->buffer;
 	for(i = 0; i < BUFFER_SIZE; i += 4) {
 		*ptr++ = 0x20;
 		*ptr++ = 0x07;
@@ -381,7 +381,7 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead,bool *readKeyboard) 
 }
 
 static void vterm_sendChar(sVTerm *vt,u8 row,u8 col) {
-	char *ptr = vt->buffer.data + (vt->currLine * COLS * 2) + (row * COLS * 2) + (col * 2);
+	char *ptr = vt->buffer + (vt->currLine * COLS * 2) + (row * COLS * 2) + (col * 2);
 
 	/* scroll to current line, if necessary */
 	if(vt->firstVisLine != vt->currLine)
@@ -446,7 +446,7 @@ static void vterm_putchar(sVTerm *vt,char c) {
 				if(!vt->readLine || vt->echo) {
 					i = (vt->currLine * COLS * 2) + (vt->row * COLS * 2) + (vt->col * 2);
 					/* move the characters back in the buffer */
-					memmove(vt->buffer.data + i - 2,vt->buffer.data + i,(COLS - vt->col) * 2);
+					memmove(vt->buffer + i - 2,vt->buffer + i,(COLS - vt->col) * 2);
 					vt->col--;
 				}
 
@@ -481,8 +481,8 @@ static void vterm_putchar(sVTerm *vt,char c) {
 			i = (vt->currLine * COLS * 2) + (vt->row * COLS * 2) + (vt->col * 2);
 
 			/* write to buffer */
-			vt->buffer.data[i] = c;
-			vt->buffer.data[i + 1] = (vt->background << 4) | vt->foreground;
+			vt->buffer[i] = c;
+			vt->buffer[i + 1] = (vt->background << 4) | vt->foreground;
 
 			vt->col++;
 		}
@@ -495,17 +495,17 @@ static void vterm_newLine(sVTerm *vt) {
 	u32 i,count = (HISTORY_SIZE - vt->firstLine) * COLS * 2;
 	/* move one line back */
 	if(vt->firstLine > 0) {
-		dst = vt->buffer.data + ((vt->firstLine - 1) * COLS * 2);
+		dst = vt->buffer + ((vt->firstLine - 1) * COLS * 2);
 		vt->firstLine--;
 	}
 	/* overwrite first line */
 	else
-		dst = vt->buffer.data + (vt->firstLine * COLS * 2);
+		dst = vt->buffer + (vt->firstLine * COLS * 2);
 	src = dst + COLS * 2;
 	memmove(dst,src,count);
 
 	/* clear last line */
-	dst = vt->buffer.data + (vt->currLine + vt->row - 1) * COLS * 2;
+	dst = vt->buffer + (vt->currLine + vt->row - 1) * COLS * 2;
 	for(i = 0; i < COLS * 2; i += 4) {
 		*dst++ = 0x20;
 		*dst++ = 0x07;
@@ -542,7 +542,7 @@ static void vterm_refreshLines(sVTerm *vt,u16 start,u16 count) {
 	/* send messages (take care of msg-size) */
 	while(done < count) {
 		amount = MIN(count,sizeof(msg.data.d) / (COLS * 2));
-		write(vt->video,vt->buffer.data + (vt->firstVisLine + start) * COLS * 2,amount * COLS * 2);
+		write(vt->video,vt->buffer + (vt->firstVisLine + start) * COLS * 2,amount * COLS * 2);
 
 		done += amount;
 		start += amount;
@@ -625,12 +625,12 @@ static bool vterm_handleEscape(sVTerm *vt,u8 keycode,u8 value,bool *readKeyboard
 			if(!vt->screenBackup)
 				vt->screenBackup = (char*)malloc(ROWS * COLS * 2);
 			memcpy(vt->screenBackup,
-					vt->buffer.data + vt->firstVisLine * COLS * 2,
+					vt->buffer + vt->firstVisLine * COLS * 2,
 					ROWS * COLS * 2);
 			break;
 		case VK_ESC_RESTORE:
 			if(vt->screenBackup) {
-				memcpy(vt->buffer.data + vt->firstVisLine * COLS * 2,
+				memcpy(vt->buffer + vt->firstVisLine * COLS * 2,
 						vt->screenBackup,
 						ROWS * COLS * 2);
 				free(vt->screenBackup);
@@ -774,7 +774,7 @@ static void vterm_rlPutchar(sVTerm *vt,char c) {
 				if(vt->echo) {
 					u32 i = (vt->currLine * COLS * 2) + (vt->row * COLS * 2) + (vt->col * 2);
 					/* move the characters back in the buffer */
-					memmove(vt->buffer.data + i - 2,vt->buffer.data + i,(COLS - vt->col) * 2);
+					memmove(vt->buffer + i - 2,vt->buffer + i,(COLS - vt->col) * 2);
 					vt->col--;
 				}
 

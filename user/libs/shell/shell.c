@@ -494,13 +494,15 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 				printf("\n");
 				cmd = matches;
 				while(*cmd != NULL) {
-					printf("%s ",(*cmd)->name);
+					printf("%s%s",(*cmd)->name,MODE_IS_DIR((*cmd)->mode) ? "/ " : " ");
 					cmd++;
 				}
 
 				/* print the prompt + entered chars again */
 				printf("\n");
 				shell_prompt();
+				/* we don't want to reset the read here */
+				resetReadLine = false;
 				printf("%s",line);
 			}
 		}

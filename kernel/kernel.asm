@@ -445,10 +445,10 @@ isrCommon:
 	push	ebp
 	push	esi
 	push	edi
-	push	gs
-	push	fs
+	;push	gs
+	;push	fs
 	push	ds
-	push	es
+	;push	es
 
 	; call c-routine
 	push	esp														; pointer to the "beginning" of the stack
@@ -459,10 +459,10 @@ isrCommon:
 	;add		esp,4
 
 	; restore registers
-	pop		es
+	;pop		es
 	pop		ds
-	pop		fs
-	pop		gs
+	;pop		fs
+	;pop		gs
 	pop		edi
 	pop		esi
 	pop		ebp

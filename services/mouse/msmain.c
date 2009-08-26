@@ -93,7 +93,8 @@ typedef struct {
 static u8 byteNo = 0;
 static tServ sid;
 static sMsg msg;
-static sRingBuf *inbuf;
+static sRingBuf *ibuf;
+static sRingBuf *rbuf;
 static sMouseData mdata;
 static sMousePacket packet;
 
@@ -123,15 +124,23 @@ int main(void) {
 	}
 
 	/* create input-buffer */
-	inbuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
-	if(inbuf == NULL) {
-		printe("Unable to create ring-buffer");
+	ibuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
+	rbuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
+	if(ibuf == NULL || rbuf == NULL) {
+		printe("Unable to create ring-buffers");
 		return EXIT_FAILURE;
 	}
 
     /* wait for commands */
 	while(1) {
-		tFD fd = getClient(&sid,1,&client);
+		tFD fd;
+
+		/* move mouse-packages */
+		rb_move(rbuf,ibuf,rb_length(ibuf));
+		if(rb_length(rbuf) > 0)
+			setDataReadable(sid,true);
+
+		fd = getClient(&sid,1,&client);
 		if(fd < 0)
 			wait(EV_CLIENT);
 		else {
@@ -147,8 +156,8 @@ int main(void) {
 						sMouseData *buffer = (sMouseData*)malloc(count * sizeof(sMouseData));
 						msg.args.arg1 = 0;
 						if(buffer)
-							msg.args.arg1 = rb_readn(inbuf,buffer,count) * sizeof(sMouseData);
-						msg.args.arg2 = rb_length(inbuf) > 0;
+							msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sMouseData);
+						msg.args.arg2 = rb_length(rbuf) > 0;
 						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 						if(buffer) {
 							send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sMouseData));
@@ -175,7 +184,8 @@ int main(void) {
 	}
 
 	/* cleanup */
-	rb_destroy(inbuf);
+	rb_destroy(ibuf);
+	rb_destroy(rbuf);
 	releaseIOPort(IOPORT_KB_CTRL);
 	releaseIOPort(IOPORT_KB_DATA);
 	unsetSigHandler(SIG_INTRPT_MOUSE);
@@ -209,9 +219,7 @@ static void irqHandler(tSig sig,u32 data) {
 			mdata.buttons = (packet.status.leftBtn << 2) |
 				(packet.status.rightBtn << 1) |
 				(packet.status.middleBtn << 0);
-			if(rb_length(inbuf) == 0)
-				setDataReadable(sid,true);
-			rb_write(inbuf,&mdata);
+			rb_write(ibuf,&mdata);
 			break;
 	}
 }

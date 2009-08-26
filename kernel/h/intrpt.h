@@ -185,10 +185,10 @@ typedef struct {
 	/* stack-pointer before calling isr-handler */
 	u32 esp;
 	/* segment-registers */
-	u32 es;
+	/*u32 es;*/
 	u32 ds;
-	u32 fs;
-	u32 gs;
+	/*u32 fs;
+	u32 gs;*/
 	/* general purpose registers */
 	u32 edi;
 	u32 esi;

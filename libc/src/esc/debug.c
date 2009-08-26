@@ -21,6 +21,7 @@
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
+#include <esc/dir.h>
 #include <stdarg.h>
 
 /**
@@ -31,6 +32,16 @@
 extern void debugChar(char c);
 
 static u64 start;
+
+void dbg_startUTimer(void) {
+	start = getCycles();
+}
+
+void dbg_stopUTimer(char *prefix) {
+	uLongLong diff;
+	diff.val64 = getCycles() - start;
+	debugf("%s: 0x%08x%08x\n",prefix,diff.val32.upper,diff.val32.lower);
+}
 
 void dbg_startTimer(void) {
 	start = cpu_rdtsc();

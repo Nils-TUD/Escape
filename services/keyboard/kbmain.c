@@ -64,7 +64,8 @@ static void kb_checkCmd(void);
 /* file-descriptor for ourself */
 static sMsg msg;
 static sKbData data;
-static sRingBuf *buf;
+static sRingBuf *rbuf;
+static sRingBuf *ibuf;
 static tServ id;
 
 int main(void) {
@@ -77,10 +78,11 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	/* create buffer */
-	buf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
-	if(buf == NULL) {
-		printe("Unable to create ring-buffer");
+	/* create buffers */
+	rbuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
+	ibuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
+	if(rbuf == NULL || ibuf == NULL) {
+		printe("Unable to create the ring-buffers");
 		return EXIT_FAILURE;
 	}
 
@@ -111,7 +113,14 @@ int main(void) {
 
     /* wait for commands */
 	while(1) {
-		tFD fd = getClient(&id,1,&client);
+		tFD fd;
+
+		/* move keycodes */
+		rb_move(rbuf,ibuf,rb_length(ibuf));
+		if(rb_length(rbuf) > 0)
+			setDataReadable(id,true);
+
+		fd = getClient(&id,1,&client);
 		if(fd < 0)
 			wait(EV_CLIENT);
 		else {
@@ -127,8 +136,8 @@ int main(void) {
 						sKbData *buffer = (sKbData*)malloc(count * sizeof(sKbData));
 						msg.args.arg1 = 0;
 						if(buffer)
-							msg.args.arg1 = rb_readn(buf,buffer,count) * sizeof(sKbData);
-						msg.args.arg2 = rb_length(buf) > 0;
+							msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKbData);
+						msg.args.arg2 = rb_length(rbuf) > 0;
 						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 						if(buffer) {
 							send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sKbData));
@@ -159,7 +168,8 @@ int main(void) {
 	releaseIOPort(IOPORT_PIC);
 	releaseIOPort(IOPORT_KB_DATA);
 	releaseIOPort(IOPORT_KB_CTRL);
-	rb_destroy(buf);
+	rb_destroy(ibuf);
+	rb_destroy(rbuf);
 	unregService(id);
 
 	return EXIT_SUCCESS;
@@ -174,9 +184,7 @@ static void kbIntrptHandler(tSig sig,u32 d) {
 	u8 scanCode = inByte(IOPORT_KB_DATA);
 	if(kb_set1_getKeycode(&data.isBreak,&data.keycode,scanCode)) {
 		/* write in buffer */
-		if(rb_length(buf) == 0)
-			setDataReadable(id,true);
-		rb_write(buf,&data);
+		rb_write(ibuf,&data);
 	}
 	/* ack scancode
 	outByte(IOPORT_PIC,PIC_ICW1);*/

@@ -310,7 +310,7 @@ namespace esc {
 				}
 
 				notifyVesa(_x + x,_y + endy - height,width,height);
-				yield();
+				/*yield();*/
 			}
 		}
 

@@ -90,19 +90,26 @@ int main(void) {
 		/*startThread(pbThread);*/
 		return app->run();
 	}
+#if 0
 	if(fork() == 0) {
 		exec("/bin/guishell",NULL);
 		exit(EXIT_FAILURE);
 	}
+#endif
 
 	Application *app = Application::getInstance();
 	w1 = new Window("Window 4",180,90,200,100);
-	/*startThread(pbThread);*/
+	startThread(pbThread);
 	return app->run();
 }
 
 static int pbThread(void) {
-	s16 x = 10,y = 10;
+	while(1) {
+		sleep(1000);
+		if(fork() == 0)
+			exec("/bin/ps",NULL);
+	}
+	/*s16 x = 10,y = 10;
 	bool forward = true;
 	while(1) {
 		if(w1->getX() + w1->getWidth() >= Application::getInstance()->getScreenWidth() - 1)
@@ -130,6 +137,6 @@ static int pbThread(void) {
 			}
 		}
 		sleep(50);
-	}
+	}*/
 	return 0;
 }

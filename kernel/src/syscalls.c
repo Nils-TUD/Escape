@@ -397,6 +397,12 @@ static void sysc_ioctl(sIntrptStackFrame *stack);
  * @return 0 on success
  */
 static void sysc_setDataReadable(sIntrptStackFrame *stack);
+/**
+ * Returns the cpu-cycles for the current thread
+ *
+ * @return the cpu-cycles
+ */
+static void sysc_getCycles(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -454,6 +460,7 @@ static sSyscall syscalls[] = {
 	/* 43 */	{sysc_receive,				3},
 	/* 44 */	{sysc_ioctl,				4},
 	/* 45 */	{sysc_setDataReadable,		2},
+	/* 46 */	{sysc_getCycles,			0},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -1435,6 +1442,14 @@ static void sysc_unlock(sIntrptStackFrame *stack) {
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
+}
+
+static void sysc_getCycles(sIntrptStackFrame *stack) {
+	sThread *t = thread_getRunning();
+	uLongLong cycles;
+	cycles.val64 = t->kcycleCount.val64 + t->ucycleCount.val64;
+	SYSC_RET1(stack,cycles.val32.upper);
+	SYSC_RET2(stack,cycles.val32.lower);
 }
 
 static bool sysc_isStringReadable(const char *str) {

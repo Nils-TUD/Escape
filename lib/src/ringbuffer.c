@@ -141,6 +141,28 @@ u32 rb_readn(sRingBuf *r,void *e,u32 n) {
 	return ((u32)d - (u32)e) / rb->eSize;
 }
 
+u32 rb_move(sRingBuf *dst,sRingBuf *src,u32 n) {
+	u32 count,c = 0;
+	sIRingBuf *rdst = (sIRingBuf*)dst;
+	sIRingBuf *rsrc= (sIRingBuf*)src;
+	vassert(dst != NULL,"dst == NULL");
+	vassert(src != NULL,"src == NULL");
+	vassert(rsrc->eSize == rdst->eSize,"Element-size not equal");
+	if(n == 0 || rsrc->count == 0)
+		return 0;
+
+	while(n > 0 && rsrc->count > 0) {
+		count = MIN(rsrc->eMax - rsrc->readPos,n);
+		count = MIN(rsrc->count,count);
+		count = rb_writen(dst,rsrc->data + rsrc->readPos * rsrc->eSize,count);
+		n -= count;
+		c += count;
+		rsrc->count -= count;
+		rsrc->readPos = (rsrc->readPos + count) % rsrc->eMax;
+	}
+	return c;
+}
+
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING

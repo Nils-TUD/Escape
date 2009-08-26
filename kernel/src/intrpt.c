@@ -629,9 +629,9 @@ void intrpt_printStackFrame(sIntrptStackFrame *stack) {
 	vid_printf("stack-frame @ 0x%x\n",stack);
 	vid_printf("\tcs=%02x\n",stack->cs);
 	vid_printf("\tds=%02x\n",stack->ds);
-	vid_printf("\tes=%02x\n",stack->es);
+	/*vid_printf("\tes=%02x\n",stack->es);
 	vid_printf("\tfs=%02x\n",stack->fs);
-	vid_printf("\tgs=%02x\n",stack->gs);
+	vid_printf("\tgs=%02x\n",stack->gs);*/
 	vid_printf("\teax=0x%08x\n",stack->eax);
 	vid_printf("\tebx=0x%08x\n",stack->ebx);
 	vid_printf("\tecx=0x%08x\n",stack->ecx);

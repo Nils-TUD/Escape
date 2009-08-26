@@ -131,9 +131,23 @@ void *memchr(const void *buffer,s32 c,u32 count) {
 }
 
 void *memcpy(void *dest,const void *src,u32 len) {
-	/* copy dwords first */
+	/* copy dwords first with loop-unrolling */
 	u32 *ddest = (u32*)dest;
 	u32 *dsrc = (u32*)src;
+	while(len >= sizeof(u32) * 8) {
+		*ddest = *dsrc;
+		*(ddest + 1) = *(dsrc + 1);
+		*(ddest + 2) = *(dsrc + 2);
+		*(ddest + 3) = *(dsrc + 3);
+		*(ddest + 4) = *(dsrc + 4);
+		*(ddest + 5) = *(dsrc + 5);
+		*(ddest + 6) = *(dsrc + 6);
+		*(ddest + 7) = *(dsrc + 7);
+		ddest += 8;
+		dsrc += 8;
+		len -= sizeof(u32) * 8;
+	}
+	/* copy remaining dwords */
 	while(len >= sizeof(u32)) {
 		*ddest++ = *dsrc++;
 		len -= sizeof(u32);
@@ -158,8 +172,21 @@ s32 memcmp(const void *str1,const void *str2,u32 count) {
 }
 
 void memclear(void *addr,u32 count) {
-	/* first clear dwords */
+	/* clear dwords first with loop-unrolling */
 	u32 *daddr = (u32*)addr;
+	while(count >= sizeof(u32) * 8) {
+		*daddr = 0;
+		*(daddr + 1) = 0;
+		*(daddr + 2) = 0;
+		*(daddr + 3) = 0;
+		*(daddr + 4) = 0;
+		*(daddr + 5) = 0;
+		*(daddr + 6) = 0;
+		*(daddr + 7) = 0;
+		daddr += 8;
+		count -= sizeof(u32) * 8;
+	}
+	/* copy remaining dwords */
 	while(count >= sizeof(u32)) {
 		*daddr++ = 0;
 		count -= sizeof(u32);

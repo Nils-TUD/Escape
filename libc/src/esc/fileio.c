@@ -1348,8 +1348,8 @@ static s32 doFlush(sBuffer *buf) {
 			res = IO_EOF;
 		buf->pos = 0;
 		/* a process switch after we've written some chars seems to be good :) */
-		if(res >= 64)
-			yield();
+		/*if(res >= 64)
+			yield();*/
 	}
 	return res;
 }

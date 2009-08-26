@@ -93,6 +93,16 @@ bool rb_read(sRingBuf *r,void *e);
  */
 u32 rb_readn(sRingBuf *r,void *e,u32 n);
 
+/**
+ * Moves the next <n> elements from <src> to <dst>. Note that the element-size has to be equal!
+ *
+ * @param dst the destination-ring-buffer
+ * @param src the source-ring-buffer
+ * @param n the number of elements to move
+ * @return the number of moved elements
+ */
+u32 rb_move(sRingBuf *dst,sRingBuf *src,u32 n);
+
 
 #if DEBUGGING
 

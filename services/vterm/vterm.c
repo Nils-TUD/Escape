@@ -44,18 +44,18 @@
 #define STATE_CTRL			1
 #define STATE_ALT			2
 
-#define TITLE_BAR_COLOR		0x90
-#define OS_TITLE			"E\x90" \
-							"s\x90" \
-							"c\x90" \
-							"a\x90" \
-							"p\x90" \
-							"e\x90" \
-							" \x90" \
-							"v\x90" \
-							"0\x90" \
-							".\x90" \
-							"1\x90"
+#define TITLE_BAR_COLOR		0x17
+#define OS_TITLE			"E\x17" \
+							"s\x17" \
+							"c\x17" \
+							"a\x17" \
+							"p\x17" \
+							"e\x17" \
+							" \x17" \
+							"v\x17" \
+							"0\x17" \
+							".\x17" \
+							"1\x17"
 
 typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 
@@ -534,19 +534,11 @@ static void vterm_refreshScreen(sVTerm *vt) {
 }
 
 static void vterm_refreshLines(sVTerm *vt,u16 start,u16 count) {
-	u32 amount,done = 0;
 	if(!vt->active)
 		return;
 
 	seek(vt->video,start * COLS * 2,SEEK_SET);
-	/* send messages (take care of msg-size) */
-	while(done < count) {
-		amount = MIN(count,sizeof(msg.data.d) / (COLS * 2));
-		write(vt->video,vt->buffer + (vt->firstVisLine + start) * COLS * 2,amount * COLS * 2);
-
-		done += amount;
-		start += amount;
-	}
+	write(vt->video,vt->buffer + (vt->firstVisLine + start) * COLS * 2,count * COLS * 2);
 }
 
 static bool vterm_handleEscape(sVTerm *vt,u8 keycode,u8 value,bool *readKeyboard) {
@@ -729,18 +721,18 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 				char escape[] = {'\033',keycode,(altDown << STATE_ALT) |
 					(ctrlDown << STATE_CTRL) |
 					(shiftDown << STATE_SHIFT)};
-				if(rb_length(vt->inbuf) == 0)
-					setDataReadable(vt->sid,true);
 				rb_writen(vt->inbuf,escape,3);
+				if(rb_length(vt->inbuf) == 3)
+					setDataReadable(vt->sid,true);
 			}
 		}
 		else {
 			if(vt->readLine)
 				vterm_rlPutchar(vt,c);
 			else {
-				if(rb_length(vt->inbuf) == 0)
-					setDataReadable(vt->sid,true);
 				rb_write(vt->inbuf,&c);
+				if(rb_length(vt->inbuf) == 1)
+					setDataReadable(vt->sid,true);
 			}
 		}
 
@@ -750,12 +742,11 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 }
 
 static void vterm_rlFlushBuf(sVTerm *vt) {
-	u32 i,bufPos = vterm_rlGetBufPos(vt);
+	u32 i,len,bufPos = vterm_rlGetBufPos(vt);
 	if(vt->echo)
 		bufPos++;
 
-	if(rb_length(vt->inbuf) == 0)
-		setDataReadable(vt->sid,true);
+	len = rb_length(vt->inbuf);
 
 	i = 0;
 	while(bufPos > 0) {
@@ -764,6 +755,9 @@ static void vterm_rlFlushBuf(sVTerm *vt) {
 		i++;
 	}
 	vt->rlBufPos = 0;
+
+	if(len == 0)
+		setDataReadable(vt->sid,true);
 }
 
 static void vterm_rlPutchar(sVTerm *vt,char c) {

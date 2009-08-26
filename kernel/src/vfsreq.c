@@ -94,8 +94,14 @@ sRequest *vfsreq_getRequestByPid(tTid tid) {
 	u32 i;
 	sRequest *req = requests;
 	for(i = 0; i < REQUEST_COUNT; i++) {
-		if(req->tid == tid)
+		if(req->tid == tid) {
+			/* the thread may have been terminated... */
+			if(thread_getById(tid) == NULL) {
+				vfsreq_remRequest(req);
+				return NULL;
+			}
 			return req;
+		}
 		req++;
 	}
 	return NULL;

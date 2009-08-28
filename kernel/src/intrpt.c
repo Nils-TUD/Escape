@@ -518,6 +518,10 @@ void intrpt_handler(sIntrptStackFrame stack) {
 				if(!paging_handlePageFault(addr)) {
 					/* ok, now lets check if the thread wants more stack-pages */
 					if(thread_extendStack(addr) < 0) {
+						vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
+												stack.eip,proc_getRunning()->pid);
+						/*proc_destroy(t->proc);
+						thread_switch();*/
 						/* hm...there is something wrong :) */
 						/* TODO later the process should be killed here */
 						util_panic("Page fault for address=0x%08x @ 0x%x",addr,stack.eip);
@@ -629,9 +633,9 @@ void intrpt_printStackFrame(sIntrptStackFrame *stack) {
 	vid_printf("stack-frame @ 0x%x\n",stack);
 	vid_printf("\tcs=%02x\n",stack->cs);
 	vid_printf("\tds=%02x\n",stack->ds);
-	/*vid_printf("\tes=%02x\n",stack->es);
+	vid_printf("\tes=%02x\n",stack->es);
 	vid_printf("\tfs=%02x\n",stack->fs);
-	vid_printf("\tgs=%02x\n",stack->gs);*/
+	vid_printf("\tgs=%02x\n",stack->gs);
 	vid_printf("\teax=0x%08x\n",stack->eax);
 	vid_printf("\tebx=0x%08x\n",stack->ebx);
 	vid_printf("\tecx=0x%08x\n",stack->ecx);

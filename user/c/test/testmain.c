@@ -34,6 +34,12 @@
 static u8 buffer[BUF_SIZE];
 
 int main(int argc,char *argv[]) {
+	/*printf("I am evil ^^\n");
+	debugChar(0x12345678);
+	open(0x123456578,IO_READ);
+	u32 *ptr = (u32*)0xFFFFFFFF;
+	*ptr = 1;
+	printf("Never printed\n");*/
 #if 1
 	tFD fd;
 	u64 start;
@@ -56,7 +62,7 @@ int main(int argc,char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	printf("Testing speed of %s to '%s'\n",disk ? "read" : "read/write",path);
+	printf("Testing speed of %s '%s'\n",disk ? "read from" : "read/write from/to",path);
 	printf("Transferring %u MiB in chunks of %d bytes\n",(u32)(((u64)COUNT * BUF_SIZE) / M),BUF_SIZE);
 	printf("\n");
 

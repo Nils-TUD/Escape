@@ -74,6 +74,7 @@ void sched_init(void) {
 
 sThread *sched_perform(void) {
 	sThread *t = thread_getRunning();
+	bool isZombie = t->state == ST_ZOMBIE;
 	if(t->state == ST_RUNNING) {
 		/* put current in the ready-queue */
 		sched_setReady(t);
@@ -83,12 +84,18 @@ sThread *sched_perform(void) {
 	t = sched_qDequeue(&readyQueue);
 
 	if(t == NULL) {
-		/* if there is no runnable thread, choose init */
-		/* init will call wait(EV_NOEVENT) as soon as it is resumed. so if there are other threads
-		 * that want to run, they will be chosen and init will never be chosen. If there is no
-		 * runnable thread anymore, we will choose init until there is one again. */
-		t = thread_getById(0);
-		sched_setRunning(t);
+		if(isZombie) {
+			/* If the current thread should be destroyed the process may be destroyed, too. That means
+			 * that the kernel-stack would be free'd. So if we idle with that kernel-stack we have a
+			 * problem...
+			 * Therefore we choose the other thread of init to be sure (this may not be destroyed).
+			 */
+			t = thread_getById(INIT_TID);
+		}
+		else {
+			/* otherwise choose the idle-thread */
+			t = thread_getById(IDLE_TID);
+		}
 	}
 	else
 		t->state = ST_RUNNING;

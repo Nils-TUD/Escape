@@ -41,6 +41,20 @@
 
 #define THREAD_MAP_SIZE		1024
 
+/**
+ * Enables interrupts, halts the cpu and waits until an interrupt arrives
+ */
+extern void thread_idle(void);
+
+/**
+ * For creating the init-thread and idle-thread
+ *
+ * @param p the process
+ * @param state the desired state
+ * @return the created thread
+ */
+static sThread *thread_createInitial(sProc *p,eThreadState state);
+
 /* our map for the threads. key is (tid % THREAD_MAP_SIZE) */
 static sSLList *threadMap[THREAD_MAP_SIZE] = {NULL};
 static sThread *cur = NULL;
@@ -50,12 +64,20 @@ static tTid nextTid = 0;
 static sSLList* deadThreads = NULL;
 
 sThread *thread_init(sProc *p) {
+	/* create idle-thread */
+	thread_createInitial(p,ST_BLOCKED);
+	/* create thread for init */
+	cur = thread_createInitial(p,ST_RUNNING);
+	return cur;
+}
+
+static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	tFD i;
 	sThread *t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
 
-	t->state = ST_RUNNING;
+	t->state = state;
 	t->events = EV_NOEVENT;
 	t->waitsInKernel = 0;
 	t->tid = nextTid++;
@@ -86,7 +108,6 @@ sThread *thread_init(sProc *p) {
 	if(!vfs_createThread(t->tid,vfsinfo_threadReadHandler))
 		util_panic("Unable to put first thread in vfs");
 
-	cur = t;
 	return t;
 }
 
@@ -138,6 +159,18 @@ void thread_switchTo(tTid tid) {
 
 		old = cur;
 		cur = t;
+
+		/* if it is the idle-thread, stay here and wait for an interrupt */
+		if(cur->tid == IDLE_TID) {
+			/* user-mode starts here */
+			cur->ucycleStart = cpu_rdtsc();
+			/* Note that we HAVE TO call a function to prevent destroying the current stack-frame
+			 * when an interrupt arrives. */
+			/* Note also that we don't mark it as runnable because we would set it to ready
+			 * later, which is of course not desired. */
+			thread_idle();
+		}
+
 		sched_setRunning(cur);
 
 		if(old->proc != cur->proc) {

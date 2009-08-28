@@ -28,8 +28,8 @@ export CWFLAGS=-Wall -ansi \
 export CPPWFLAGS=-Wall -Wextra -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long -fno-builtin
-export CPPDEFFLAGS=$(CPPWFLAGS) -O2 -g -D DEBUGGING=1
-export CDEFFLAGS=$(CWFLAGS) -O2 -g -D DEBUGGING=1
+export CPPDEFFLAGS=$(CPPWFLAGS) -g -D DEBUGGING=1
+export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING=1
 # flags for nasm
 export ASMFLAGS=-f elf
 # other
@@ -132,7 +132,10 @@ qemu:	all prepareRun
 		qemu $(QEMUARGS) > log.txt 2>&1
 
 bochs: all prepareRun
-		bochs -f bochs.cfg -q > log.txt 2>&1
+		bochs -f bochs.cfg -q | tee log.txt
+
+debugbochs: all prepareRun
+		bochs -f bochs.cfg
 
 debug: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &

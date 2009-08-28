@@ -46,6 +46,7 @@
 [global fpu_restoreState]
 [global thread_save]
 [global thread_resume]
+[global thread_idle]
 [global getStackFrameStart]
 [global kernelStack]
 
@@ -269,7 +270,7 @@ fpu_saveState:
 fpu_restoreState:
 	mov			eax,[esp + 4]
 	frstor	[eax]
-	ret;
+	ret
 
 ; bool thread_save(sThreadRegs *saveArea);
 thread_save:
@@ -327,6 +328,18 @@ thread_resume:
 	mov		eax,1													; return 1
 	leave
 	ret
+
+; void thread_idle(void);
+thread_idle:
+	; create new stack-frame; THIS IS REALLY NECESSARY, because otherwise we would destroy the stack-
+	; frame of the calling function when an interrupt arrives!
+	push	ebp
+	mov		ebp,esp
+	sti
+thread_idleLoop:
+	hlt
+	jmp		thread_idleLoop
+	; never reached
 
 ; void paging_enable(void);
 paging_enable:
@@ -445,10 +458,10 @@ isrCommon:
 	push	ebp
 	push	esi
 	push	edi
-	;push	gs
-	;push	fs
+	push	gs
+	push	fs
 	push	ds
-	;push	es
+	push	es
 
 	; call c-routine
 	push	esp														; pointer to the "beginning" of the stack
@@ -459,10 +472,10 @@ isrCommon:
 	;add		esp,4
 
 	; restore registers
-	;pop		es
+	pop		es
 	pop		ds
-	;pop		fs
-	;pop		gs
+	pop		fs
+	pop		gs
 	pop		edi
 	pop		esi
 	pop		ebp

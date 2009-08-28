@@ -32,6 +32,9 @@
 
 #define INITIAL_STACK_PAGES		2
 
+#define IDLE_TID				0
+#define INIT_TID				1
+
 #define INVALID_TID				THREAD_COUNT
 /* use an invalid pid to identify the kernel */
 #define KERNEL_TID				(THREAD_COUNT + 1)
@@ -83,14 +86,6 @@ typedef struct {
 } sThread;
 
 /**
- * Inits the threading-stuff. Uses <p> as first process
- *
- * @param p the first process
- * @return the first thread
- */
-sThread *thread_init(sProc *p);
-
-/**
  * Saves the state of the current thread in the given area
  *
  * @param saveArea the area where to save the state
@@ -107,6 +102,14 @@ extern bool thread_save(sThreadRegs *saveArea);
  * @return always true
  */
 extern bool thread_resume(u32 pageDir,sThreadRegs *saveArea,u32 kstackFrame);
+
+/**
+ * Inits the threading-stuff. Uses <p> as first process
+ *
+ * @param p the first process
+ * @return the first thread
+ */
+sThread *thread_init(sProc *p);
 
 /**
  * @return the number of existing threads

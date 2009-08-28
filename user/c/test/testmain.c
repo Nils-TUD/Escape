@@ -185,7 +185,7 @@ int main(int argc,char *argv[]) {
 		if(cfd < 0)
 			wait(EV_CLIENT | EV_RECEIVED_MSG);
 		else {
-			while(receive(cfd,&mid,&msg) > 0) {
+			while(receive(cfd,&mid,&msg,sizeof(msg)) > 0) {
 				switch(mid) {
 					case MSG_DRV_OPEN:
 						printf("Open: tid=%d, flags=%d\n",msg.args.arg1,msg.args.arg2);

@@ -783,15 +783,14 @@ static void sysc_receive(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	tMsgId *id = (tMsgId*)SYSC_ARG2(stack);
 	u8 *data = (u8*)SYSC_ARG3(stack);
+	u32 size = SYSC_ARG4(stack);
 	sThread *t = thread_getRunning();
 	tFileNo file;
 	s32 res;
 
-	/* TODO maybe we should provide a size here, too, so that we can check the address-range */
-
 	/* validate id and data */
-	if(!paging_isRangeUserWritable((u32)id,sizeof(tMsgId))/* ||
-			!paging_isRangeUserWritable((u32)data,MAX_MSG_SIZE)*/)
+	if(!paging_isRangeUserWritable((u32)id,sizeof(tMsgId)) ||
+			!paging_isRangeUserWritable((u32)data,size))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	/* get file */
@@ -800,7 +799,7 @@ static void sysc_receive(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,file);
 
 	/* send msg */
-	res = vfs_receiveMsg(t->tid,file,id,data,MAX_MSG_SIZE);
+	res = vfs_receiveMsg(t->tid,file,id,data,size);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
@@ -1364,7 +1363,8 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 
 static void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
-	vfsn_dbg_printTree();
+	/*vfsn_dbg_printTree();*/
+	paging_dbg_printOwnPageDir(PD_PART_USER);
 }
 
 static void sysc_createSharedMem(sIntrptStackFrame *stack) {

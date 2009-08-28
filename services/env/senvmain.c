@@ -145,7 +145,7 @@ int main(void) {
 			}
 
 			/* read all available messages */
-			while(receive(fd,&mid,&msg) > 0) {
+			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
 				/* see what we have to do */
 				switch(mid) {
 					case MSG_ENV_GET: {

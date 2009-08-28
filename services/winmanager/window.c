@@ -70,7 +70,7 @@ bool win_init(tServ sid) {
 		printe("Unable to send get-mode-request to vesa");
 		return EXIT_FAILURE;
 	}
-	if(receive(vesa,&mid,&msg) < 0) {
+	if(receive(vesa,&mid,&msg,sizeof(msg)) < 0) {
 		printe("Unable to read the get-mode-response from vesa");
 		return EXIT_FAILURE;
 	}

@@ -116,7 +116,7 @@ int main(void) {
 				u32 c;
 				/* TODO this may cause trouble with escape-codes. maybe we should store the
 				 * "escape-state" somehow... */
-				while(receive(fd,&mid,&msg) > 0) {
+				while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
 					switch(mid) {
 						case MSG_DRV_OPEN:
 							msg.args.arg1 = 0;
@@ -143,7 +143,7 @@ int main(void) {
 							data = (char*)malloc(c + 1);
 							msg.args.arg1 = 0;
 							if(data) {
-								receive(fd,&mid,data);
+								receive(fd,&mid,data,c + 1);
 								data[c] = '\0';
 								vterm_puts(vt,data,c,true,&readKeyboard);
 								free(data);

@@ -88,7 +88,7 @@ static bool doGetEnv(char *buf,u32 bufSize,u32 cmd,u32 size) {
 		return false;
 
 	/* wait for reply */
-	if(receive(envFd,&mid,&msg) <= 0)
+	if(receive(envFd,&mid,&msg,sizeof(msg)) <= 0)
 		return false;
 
 	memcpy(buf,msg.str.s1,MIN(bufSize,msg.str.arg1));

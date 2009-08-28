@@ -130,9 +130,10 @@ s32 send(tFD fd,tMsgId id,const void *msg,u32 size);
  * @param fd the file-descriptor
  * @param id will be set to the msg-id
  * @param msg the message
+ * @param size the (max) size of the message
  * @return the size of the message
  */
-s32 receive(tFD fd,tMsgId *id,void *msg);
+s32 receive(tFD fd,tMsgId *id,void *msg,u32 size);
 
 /**
  * Duplicates the given file-descriptor

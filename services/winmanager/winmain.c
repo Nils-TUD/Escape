@@ -109,7 +109,7 @@ int main(void) {
 	while(1) {
 		tFD fd = getClient(&servId,1,&client);
 		if(fd >= 0) {
-			while(receive(fd,&mid,&msg) > 0) {
+			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
 				switch(mid) {
 					case MSG_WIN_CREATE_REQ: {
 						u16 x = (u16)(msg.args.arg1 >> 16);

@@ -144,7 +144,7 @@ int main(void) {
 		if(fd < 0)
 			wait(EV_CLIENT);
 		else {
-			while(receive(fd,&mid,&msg) > 0) {
+			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
 				switch(mid) {
 					case MSG_DRV_OPEN:
 						msg.args.arg1 = 0;

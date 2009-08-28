@@ -534,11 +534,13 @@ static void vterm_refreshScreen(sVTerm *vt) {
 }
 
 static void vterm_refreshLines(sVTerm *vt,u16 start,u16 count) {
+	u32 byteCount;
 	if(!vt->active)
 		return;
 
+	byteCount = MIN((ROWS - start) * COLS * 2,count * COLS * 2);
 	seek(vt->video,start * COLS * 2,SEEK_SET);
-	write(vt->video,vt->buffer + (vt->firstVisLine + start) * COLS * 2,count * COLS * 2);
+	write(vt->video,vt->buffer + (vt->firstVisLine + start) * COLS * 2,byteCount);
 }
 
 static bool vterm_handleEscape(sVTerm *vt,u8 keycode,u8 value,bool *readKeyboard) {

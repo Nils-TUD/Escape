@@ -59,7 +59,7 @@ namespace esc {
 				printe("Unable to send get-mode-request to vesa");
 				exit(EXIT_FAILURE);
 			}
-			if(receive(_vesaFd,&mid,&_msg) < 0 || mid != MSG_VESA_GETMODE_RESP) {
+			if(receive(_vesaFd,&mid,&_msg,sizeof(_msg)) < 0 || mid != MSG_VESA_GETMODE_RESP) {
 				printe("Unable to read the get-mode-response from vesa");
 				exit(EXIT_FAILURE);
 			}
@@ -83,7 +83,7 @@ namespace esc {
 
 		void Application::doEvents() {
 			tMsgId mid;
-			if(receive(_winFd,&mid,&_msg) < 0) {
+			if(receive(_winFd,&mid,&_msg,sizeof(_msg)) < 0) {
 				printe("Read from window-manager failed");
 				exit(EXIT_FAILURE);
 			}

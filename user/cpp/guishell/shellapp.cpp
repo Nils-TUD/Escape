@@ -50,7 +50,7 @@ void ShellApplication::doEvents() {
 	u32 c;
 	tMsgId mid;
 	if(!eof(_winFd)) {
-		if(receive(_winFd,&mid,&_msg) < 0) {
+		if(receive(_winFd,&mid,&_msg,sizeof(_msg)) < 0) {
 			printe("Read from window-manager failed");
 			exit(EXIT_FAILURE);
 		}
@@ -133,7 +133,7 @@ void ShellApplication::doEvents() {
 		}
 		else {
 			u32 x = 0;
-			while(receive(fd,&mid,&_msg) > 0) {
+			while(receive(fd,&mid,&_msg,sizeof(_msg)) > 0) {
 				switch(mid) {
 					case MSG_DRV_OPEN:
 						_msg.args.arg1 = 0;

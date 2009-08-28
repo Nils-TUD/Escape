@@ -536,7 +536,7 @@ void thread_dbg_print(sThread *t) {
 		if(t->fileDescs[i] != -1) {
 			tVFSNodeNo no = vfs_getNodeNo(t->fileDescs[i]);
 			vid_printf("\t\t\t%d : %d",i,t->fileDescs[i]);
-			if(vfsn_isValidNodeNo(no)) {
+			if(IS_VIRT(no) && vfsn_isValidNodeNo(no)) {
 				sVFSNode *n = vfsn_getNode(no);
 				if(n && n->parent)
 					vid_printf(" (%s->%s)",n->parent->name,n->name);

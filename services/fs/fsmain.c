@@ -62,7 +62,7 @@ int main(void) {
 		if(fd < 0)
 			wait(EV_CLIENT);
 		else {
-			while((size = receive(fd,&mid,&msg)) > 0) {
+			while((size = receive(fd,&mid,&msg,sizeof(msg))) > 0) {
 				switch(mid) {
 					case MSG_FS_OPEN: {
 						tInodeNo no = ext2_resolvePath(&ext2,msg.str.s1);
@@ -150,7 +150,7 @@ int main(void) {
 						u8 *buffer = malloc(msg.data.arg3);
 						if(buffer != NULL) {
 							debugf("Fetching data...\n");
-							receive(fd,&mid,buffer);
+							receive(fd,&mid,buffer,msg.data.arg3);
 							debugf("Got '%s'\n",buffer);
 							free(buffer);
 						}

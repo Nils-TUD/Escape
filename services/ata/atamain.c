@@ -181,7 +181,7 @@ int main(void) {
 				continue;
 			}
 
-			while(receive(fd,&mid,&msg) > 0) {
+			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
 				switch(mid) {
 					case MSG_DRV_OPEN:
 						msg.args.arg1 = 0;
@@ -219,7 +219,7 @@ int main(void) {
 						if(offset + count <= part->size * BYTES_PER_SECTOR && offset + count > offset) {
 							buffer = (u16*)malloc(count);
 							if(buffer) {
-								receive(fd,&mid,buffer);
+								receive(fd,&mid,buffer,count);
 								if(ata_readWrite(drive,true,buffer,
 										offset / BYTES_PER_SECTOR + part->start,count / BYTES_PER_SECTOR)) {
 									msg.args.arg1 = count;

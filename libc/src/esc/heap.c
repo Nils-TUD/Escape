@@ -26,9 +26,6 @@
 #include <assert.h>
 
 #define PAGE_SIZE			4096
-#define LOCK_MALLOC			0x0001FFFF
-#define LOCK_FREE			0x0002FFFF
-#define LOCK_REALLOC		0x0003FFFF
 
 /* an area in memory */
 typedef struct sMemArea sMemArea;

@@ -135,7 +135,7 @@ bochs: all prepareRun
 		bochs -f bochs.cfg -q | tee log.txt
 
 debugbochs: all prepareRun
-		bochs -f bochs.cfg
+		bochs -f bochs.cfg | tee log.txt
 
 debug: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &

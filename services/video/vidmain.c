@@ -97,7 +97,7 @@ int main(void) {
 			wait(EV_CLIENT);
 		else {
 			/* read all available messages */
-			while(receive(fd,&mid,&msg) > 0) {
+			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
 				/* see what we have to do */
 				switch(mid) {
 					case MSG_DRV_OPEN:
@@ -116,12 +116,7 @@ int main(void) {
 						u32 count = msg.args.arg2;
 						msg.args.arg1 = 0;
 						if(offset + count <= ROWS * COLS * 2 && offset + count > offset) {
-							u8 *data = (u8*)malloc(count);
-							if(data) {
-								receive(fd,&mid,data);
-								vid_setScreen(offset,data,count);
-								free(data);
-							}
+							receive(fd,&mid,videoData + offset,count);
 							msg.args.arg1 = count;
 						}
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));

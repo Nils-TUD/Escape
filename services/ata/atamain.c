@@ -193,7 +193,10 @@ int main(void) {
 						u32 offset = msg.args.arg1;
 						u32 count = msg.args.arg2;
 						msg.args.arg1 = 0;
-						if(offset + count <= part->size * BYTES_PER_SECTOR && offset + count > offset) {
+						/* we have to check wether it is at least one sector. otherwise ATA can't
+						 * handle the request */
+						if(offset + count <= part->size * BYTES_PER_SECTOR && offset + count > offset &&
+								count / BYTES_PER_SECTOR > 0) {
 							buffer = (u16*)malloc(count);
 							if(buffer) {
 								if(ata_readWrite(drive,false,buffer,

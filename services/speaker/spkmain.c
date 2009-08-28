@@ -97,6 +97,7 @@ int main(void) {
 					break;
 				}
 			}
+			close(fd);
 		}
 	}
 

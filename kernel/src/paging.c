@@ -211,7 +211,7 @@ bool paging_isMapped(u32 virt) {
 
 bool paging_isRangeUserReadable(u32 virt,u32 count) {
 	/* kernel area? (be carefull with overflows!) */
-	if(virt > KERNEL_AREA_V_ADDR || virt + count > KERNEL_AREA_V_ADDR)
+	if(virt + count > KERNEL_AREA_V_ADDR || virt + count < virt)
 		return false;
 
 	return paging_isRangeReadable(virt,count);
@@ -240,7 +240,7 @@ bool paging_isRangeReadable(u32 virt,u32 count) {
 
 bool paging_isRangeUserWritable(u32 virt,u32 count) {
 	/* kernel area? (be carefull with overflows!) */
-	if(virt > KERNEL_AREA_V_ADDR || virt + count > KERNEL_AREA_V_ADDR)
+	if(virt + count > KERNEL_AREA_V_ADDR || virt + count < virt)
 		return false;
 
 	return paging_isRangeWritable(virt,count);

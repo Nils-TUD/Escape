@@ -208,7 +208,7 @@ bool readdir(sDirEntry *e,tFD dir) {
 	}
 
 	/* default way; read the entry without name first */
-	if(read(dir,(u8*)e,sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) > 0) {
+	if(read(dir,(u8*)e,DIRE_SIZE) > 0) {
 		len = e->nameLen;
 		/* ensure that the name is short enough */
 		if(len >= MAX_NAME_LEN)
@@ -217,8 +217,8 @@ bool readdir(sDirEntry *e,tFD dir) {
 		/* now read the name */
 		if(read(dir,(u8*)e->name,len) > 0) {
 			/* if the record is longer, we have to skip the stuff until the next record */
-			if(e->recLen - (sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) > len) {
-				len = (e->recLen - (sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) - len);
+			if(e->recLen - DIRE_SIZE > len) {
+				len = (e->recLen - DIRE_SIZE - len);
 				if(seek(dir,len,SEEK_CUR) < 0)
 					return false;
 			}

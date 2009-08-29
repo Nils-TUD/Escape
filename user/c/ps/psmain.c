@@ -230,7 +230,7 @@ static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
 
 	/* read threads */
 	sprintf(path,"/system/processes/%d/threads",pid);
-	threads = open(path,IO_READ);
+	threads = opendir(path);
 	if(threads < 0) {
 		free(buf);
 		sll_destroy(p->threads,true);

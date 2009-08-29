@@ -47,11 +47,11 @@ s32 escc_get(const char **str,s32 *n1,s32 *n2) {
 				}
 			}
 		}
-		*n1 = n[0];
-		*n2 = n[1];
 		/* too long? */
 		if(j >= MAX_ESCC_LENGTH)
 			return ESCC_INVALID;
+		*n1 = n[0];
+		*n2 = n[1];
 		/* if we're at the end, there is something missing */
 		if(c == '\0')
 			return ESCC_INCOMPLETE;

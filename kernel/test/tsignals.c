@@ -100,7 +100,7 @@ static void test_setHandler(void) {
 
 	test_caseStart("Adding signal for process");
 	test_assertInt(sig_setHandler(t->tid,SIG_TERM,(fSigHandler)0x456),0);
-	test_assertTrue(sig_addSignalFor(t->tid,SIG_TERM,0));
+	test_assertTrue(sig_addSignalFor(t->proc->pid,SIG_TERM,0));
 	test_assertTrue(sig_hasSignal(&sig,&tid,&data));
 	test_assertTrue(tid == t->tid && sig == SIG_TERM);
 	sig_startHandling(tid,sig);

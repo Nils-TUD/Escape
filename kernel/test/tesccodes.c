@@ -65,35 +65,35 @@ static void test_check(const char *str,s32 cmd,s32 n1,s32 n2) {
 
 static void test_1(void) {
 	const char *str[] = {
-		"\033[ml]","\033[ml;12]","\033[ml;12;441]",
-		"\033[mr]","\033[mr;0]","\033[mr;0;0]",
-		"\033[mu]","\033[mu;1]","\033[mu;123;123]",
-		"\033[md]","\033[md;6]","\033[md;123456789;123456789]",
+		"\033[ml]","\033[ml;12]",
+		"\033[mr]","\033[mr;0]",
+		"\033[mu]","\033[mu;1]",
+		"\033[md]","\033[md;6]",
 		"\033[mh]",
 		"\033[ms]",
 		"\033[me]",
-		"\033[kc]",
-		"\033[co]",
+		"\033[kc]","\033[kc;0;0]","\033[kc;12345;12345]",
+		"\033[co]","\033[co;12;441]","\033[co;123;123]",
 	};
 	test_caseStart("Valid codes");
 
-	test_check(str[0],ESCC_MOVE_LEFT,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[0],ESCC_MOVE_LEFT,1,ESCC_ARG_UNUSED);
 	test_check(str[1],ESCC_MOVE_LEFT,12,ESCC_ARG_UNUSED);
-	test_check(str[2],ESCC_MOVE_LEFT,12,441);
-	test_check(str[3],ESCC_MOVE_RIGHT,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
-	test_check(str[4],ESCC_MOVE_RIGHT,0,ESCC_ARG_UNUSED);
-	test_check(str[5],ESCC_MOVE_RIGHT,0,0);
-	test_check(str[6],ESCC_MOVE_UP,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
-	test_check(str[7],ESCC_MOVE_UP,1,ESCC_ARG_UNUSED);
-	test_check(str[8],ESCC_MOVE_UP,123,123);
-	test_check(str[9],ESCC_MOVE_DOWN,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
-	test_check(str[10],ESCC_MOVE_DOWN,6,ESCC_ARG_UNUSED);
-	test_check(str[11],ESCC_MOVE_DOWN,123456789,123456789);
-	test_check(str[12],ESCC_MOVE_HOME,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
-	test_check(str[13],ESCC_MOVE_LINESTART,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
-	test_check(str[14],ESCC_MOVE_LINEEND,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
-	test_check(str[15],ESCC_KEYCODE,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
-	test_check(str[16],ESCC_COLOR,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[2],ESCC_MOVE_RIGHT,1,ESCC_ARG_UNUSED);
+	test_check(str[3],ESCC_MOVE_RIGHT,0,ESCC_ARG_UNUSED);
+	test_check(str[4],ESCC_MOVE_UP,1,ESCC_ARG_UNUSED);
+	test_check(str[5],ESCC_MOVE_UP,1,ESCC_ARG_UNUSED);
+	test_check(str[6],ESCC_MOVE_DOWN,1,ESCC_ARG_UNUSED);
+	test_check(str[7],ESCC_MOVE_DOWN,6,ESCC_ARG_UNUSED);
+	test_check(str[8],ESCC_MOVE_HOME,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[9],ESCC_MOVE_LINESTART,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[10],ESCC_MOVE_LINEEND,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[11],ESCC_KEYCODE,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[12],ESCC_KEYCODE,0,0);
+	test_check(str[13],ESCC_KEYCODE,12345,12345);
+	test_check(str[14],ESCC_COLOR,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[15],ESCC_COLOR,12,441);
+	test_check(str[16],ESCC_COLOR,123,123);
 
 	test_caseSucceded();
 }
@@ -102,7 +102,7 @@ static void test_2(void) {
 	u32 i;
 	const char *str[] = {
 		"\033[]","\033[ab]","\033[ab;]","\033[;]","\033[;;]","\033[;;;]","\033[;bb;a]",
-		"\033]]","\033[colorcodeandmore]","\033[co;+23,-12]",
+		"\033]]","\033[colorcodeandmore]","\033[co;123123123123123123;12312313]","\033[co;+23,-12]",
 	};
 	test_caseStart("Invalid codes");
 

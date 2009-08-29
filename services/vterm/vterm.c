@@ -27,6 +27,10 @@
 #include <esc/signals.h>
 #include <esc/service.h>
 #include <esc/fileio.h>
+#include <esc/lock.h>
+#include <esc/thread.h>
+#include <esc/date.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errors.h>
 #include <ringbuffer.h>
@@ -57,7 +61,13 @@
  */
 static bool vterm_init(sVTerm *vt);
 
+/**
+ * The thread that updates the titlebars every second and puts the date in
+ */
+static int vterm_dateThread(void);
+
 /* vterms */
+static tULock titleBarLock;
 static sVTerm vterms[VTERM_COUNT];
 static sVTerm *activeVT = NULL;
 
@@ -73,6 +83,8 @@ bool vterm_initAll(tServ *ids) {
 		if(!vterm_init(vterms + i))
 			return false;
 	}
+
+	startThread(vterm_dateThread);
 	return true;
 }
 
@@ -286,11 +298,13 @@ void vterm_update(sVTerm *vt) {
 
 	/* update title-bar? */
 	if(vt->upStart < COLS * 2) {
+		locku(&titleBarLock);
 		byteCount = MIN(COLS * 2 - vt->upStart,vt->upLength);
 		seek(vt->video,vt->upStart,SEEK_SET);
 		write(vt->video,vt->titleBar,byteCount);
 		vt->upLength -= byteCount;
 		vt->upStart = COLS * 2;
+		unlocku(&titleBarLock);
 	}
 
 	/* refresh the rest */
@@ -303,4 +317,35 @@ void vterm_update(sVTerm *vt) {
 	/* all synchronized now */
 	vt->upStart = 0;
 	vt->upLength = 0;
+}
+
+static int vterm_dateThread(void) {
+	u32 i,j,len;
+	char dateStr[30];
+	sDate date;
+	while(1) {
+		/* get date and format it */
+		if(getDate(&date) != 0)
+			continue;
+		len = dateToString(dateStr,30,"%a, %d. %b %Y, %H:%M:%S",&date);
+
+		/* update all vterm-title-bars; use a lock to prevent race-conditions */
+		locku(&titleBarLock);
+		for(i = 0; i < VTERM_COUNT; i++) {
+			char *title = vterms[i].titleBar + (COLS - len) * 2;
+			for(j = 0; j < len; j++) {
+				*title++ = dateStr[j];
+				*title++ = WHITE | (BLUE << 4);
+			}
+			if(vterms[i].active) {
+				seek(vterms[i].video,(COLS - len) * 2,SEEK_SET);
+				write(vterms[i].video,vterms[i].titleBar + (COLS - len) * 2,len * 2);
+			}
+		}
+		unlocku(&titleBarLock);
+
+		/* wait a second */
+		sleep(1000);
+	}
+	return EXIT_SUCCESS;
 }

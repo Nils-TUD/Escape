@@ -1,7 +1,7 @@
 # Format: "<serviceName> ';' [<waitFor> ',' ...] ';' [<dependency> ',' ...]"
 speaker; /services/speaker;
 keyboard; /drivers/keyboard;
-vterm; /drivers/vterm0,/drivers/vterm1,/drivers/vterm2,/drivers/vterm3,/drivers/vterm4,/drivers/vterm5; keyboard,speaker,video
+vterm; /drivers/vterm0,/drivers/vterm1,/drivers/vterm2,/drivers/vterm3,/drivers/vterm4,/drivers/vterm5; keyboard,speaker,video,cmos
 video; /drivers/video;
 env; /services/env;
 cmos; ;

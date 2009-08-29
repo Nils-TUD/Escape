@@ -55,7 +55,7 @@ int main(int argc,char *argv[]) {
 			return EXIT_FAILURE;
 		}
 
-		abspath(rpath,MAX_PATH_LEN + 1,argv[1]);
+		abspath(rpath,MAX_PATH_LEN + 1,argv[2]);
 		file = fopen(rpath,"r");
 		if(file == NULL) {
 			printe("Unable to open '%s'",rpath);

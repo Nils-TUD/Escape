@@ -85,6 +85,16 @@ int main(int argc,char **argv) {
 		}
 	}
 
+	/* last word */
+	if(bufPos > 0) {
+		if(print) {
+			buffer[bufPos] = '\0';
+			printf("Word %d: '%s'\n",count + 1,buffer);
+		}
+		bufPos = 0;
+		count++;
+	}
+
 	if(print)
 		free(buffer);
 	printf("Total: %d\n",count);

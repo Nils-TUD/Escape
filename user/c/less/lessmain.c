@@ -86,9 +86,7 @@ int main(int argc,char *argv[]) {
 		free(path);
 	}
 
-	/* stop readline and navigation and backup screen */
-	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
-	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_NAVI,NULL,0);
+	/* backup screen */
 	ioctl(STDOUT_FILENO,IOCTL_VT_BACKUP,NULL,0);
 
 	/* read all */
@@ -96,6 +94,10 @@ int main(int argc,char *argv[]) {
 		resetVterm();
 		return EXIT_FAILURE;
 	}
+
+	/* stop readline and navigation */
+	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
+	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_NAVI,NULL,0);
 
 	if(argc == 2)
 		fclose(file);
@@ -227,6 +229,10 @@ static bool readLines(tFile *file) {
 		*(buffer + count) = '\0';
 		cpy = buffer;
 		while(*cpy) {
+			if(*cpy == IO_EOF) {
+				copy('\n');
+				goto finished;
+			}
 			/* skip escape-codes */
 			if(*cpy == '\033' || waitForEsc) {
 				waitForEsc = true;
@@ -243,6 +249,7 @@ static bool readLines(tFile *file) {
 			cpy++;
 		}
 	}
+finished:
 	free(buffer);
 	return true;
 }

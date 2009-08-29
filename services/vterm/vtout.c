@@ -78,7 +78,6 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 
 	while((c = *str)) {
 		if(c == '\033') {
-			/* skip \033 */
 			str++;
 			/* if the escape-code is incomplete, store what we have so far and wait for
 			 * further input */

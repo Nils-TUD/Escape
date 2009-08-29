@@ -52,7 +52,6 @@ static char emptyLine[COLS];
 int main(int argc,char *argv[]) {
 	tFile *file;
 	tFile *fvterm;
-	u32 i;
 	char c;
 	char *path;
 	char vterm[MAX_PATH_LEN] = "/drivers/";

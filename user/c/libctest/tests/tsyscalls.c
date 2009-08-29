@@ -31,7 +31,7 @@
 #include <test.h>
 #include <string.h>
 #include <stdarg.h>
-#include "tmsgs.h"
+#include "tsyscalls.h"
 
 /* forward declarations */
 static void test_syscalls(void);

@@ -51,6 +51,12 @@
 #define IOCTL_VT_BACKUP			9
 #define IOCTL_VT_RESTORE		10
 
+/* ioctl-cursor-pos */
+typedef struct {
+	u8 col;
+	u8 row;
+} sIoCtlCursorPos;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

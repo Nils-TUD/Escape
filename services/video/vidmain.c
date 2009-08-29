@@ -55,15 +55,6 @@ static void vid_setCursor(u8 row,u8 col);
 static u8 *videoData;
 static sMsg msg;
 
-/**
- * Sets the screen-content
- *
- * @param startPos the position where to start (in chars [character+color], not bytes)
- * @param buffer the buffer
- * @param length the buffer-size
- */
-static void vid_setScreen(u16 startPos,char *buffer,u32 length);
-
 int main(void) {
 	tServ id,client;
 	tMsgId mid;
@@ -163,8 +154,4 @@ static void vid_setCursor(u8 row,u8 col) {
    /* cursor HIGH port to vga INDEX register */
    outByte(CURSOR_PORT_INDEX,CURSOR_DATA_LOCHIGH);
    outByte(CURSOR_PORT_DATA,(u8)((position >> 8) & 0xFF));
-}
-
-static void vid_setScreen(u16 startPos,char *buffer,u32 length) {
-	memcpy(videoData + startPos,buffer,length);
 }

@@ -79,7 +79,7 @@ int main(int argc,char *argv[]) {
 	if(isHelpCmd(argc,argv))
 		usage(argv[0]);
 
-	for(i = 1; i < argc; i++) {
+	for(i = 1; (int)i < argc; i++) {
 		if(argv[i][0] == '-') {
 			s = argv[i] + 1;
 			while(*s) {

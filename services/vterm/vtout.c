@@ -52,8 +52,8 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 	/* are we waiting to finish an escape-code? */
 	if(vt->escapePos >= 0) {
 		u32 oldLen = vt->escapePos;
-		const char *escPtr = (const char*)vt->escapeBuf;
-		u16 length = MIN(len,MAX_ESCC_LENGTH - vt->escapePos - 1);
+		char *escPtr = vt->escapeBuf;
+		u16 length = MIN((s32)len,MAX_ESCC_LENGTH - vt->escapePos - 1);
 		/* append the string */
 		memcpy(vt->escapeBuf + vt->escapePos,str,length);
 		vt->escapePos += length;

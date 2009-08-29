@@ -20,8 +20,10 @@
 #include <esc/common.h>
 #include <esc/dir.h>
 #include <esc/heap.h>
+#include <esc/fileio.h>
 #include <test.h>
 #include <stdarg.h>
+#include <string.h>
 #include "tdir.h"
 
 /* forward declarations */

@@ -21,6 +21,8 @@
 #define VTERM_H_
 
 #include <esc/common.h>
+#include <ringbuffer.h>
+#include <esccodes.h>
 
 #define COLS				80
 #define ROWS				25
@@ -56,6 +58,9 @@ typedef struct {
 	u16 currLine;
 	/* the first visible line */
 	u16 firstVisLine;
+	/* a range that should be updated */
+	u16 upStart;
+	u16 upLength;
 	/* the used keymap */
 	u16 keymap;
 	/* wether entered characters should be echo'd to screen */
@@ -66,11 +71,11 @@ typedef struct {
 	bool navigation;
 	/* a backup of the screen; initially NULL */
 	char *screenBackup;
-	/* the current escape-state */
-	u8 escapePos;
-	u8 escape;
 	/* the buffer for the input-stream */
 	sRingBuf *inbuf;
+	/* the escape-state */
+	s32 escapePos;
+	char escapeBuf[MAX_ESCC_LENGTH];
 	/* readline-buffer */
 	u8 rlStartCol;
 	u32 rlBufSize;
@@ -79,6 +84,20 @@ typedef struct {
 	char buffer[BUFFER_SIZE];
 	char titleBar[COLS * 2];
 } sVTerm;
+
+/* the colors */
+typedef enum {
+	/* 0 */ BLACK,
+	/* 1 */ BLUE,
+	/* 2 */ GREEN,
+	/* 3 */ CYAN,
+	/* 4 */ RED,
+	/* 5 */ MARGENTA,
+	/* 6 */ ORANGE,
+	/* 7 */ WHITE,
+	/* 8 */ GRAY,
+	/* 9 */ LIGHTBLUE
+} eColor;
 
 /**
  * Inits all vterms
@@ -102,29 +121,64 @@ sVTerm *vterm_get(u32 index);
 void vterm_selectVTerm(u32 index);
 
 /**
+ * @return the currently active vterm
+ */
+sVTerm *vterm_getActive(void);
+
+/**
+ * Sets the cursor
+ *
+ * @param vt the vterm
+ */
+void vterm_setCursor(sVTerm *vt);
+
+/**
+ * Handles the ioctl-command
+ *
+ * @param vt the vterm
+ * @param cmd the command
+ * @param data the data
+ * @param readKb may be changed during ioctl
+ * @return the result
+ */
+s32 vterm_ioctl(sVTerm *vt,u32 cmd,void *data,bool *readKb);
+
+/**
+ * Scrolls the screen by <lines> up (positive) or down (negative)
+ *
+ * @param vt the vterm
+ * @param lines the number of lines to move
+ */
+void vterm_scroll(sVTerm *vt,s16 lines);
+
+/**
+ * Marks the whole screen including title-bar dirty
+ *
+ * @param vt the vterm
+ */
+void vterm_markScrDirty(sVTerm *vt);
+
+/**
+ * Marks the given range as dirty
+ *
+ * @param vt the vterm
+ * @param start the start-position
+ * @param length the number of bytes
+ */
+void vterm_markDirty(sVTerm *vt,u16 start,u16 length);
+
+/**
+ * Updates the dirty range
+ *
+ * @param vt the vterm
+ */
+void vterm_update(sVTerm *vt);
+
+/**
  * Releases resources
  *
  * @param vt the vterm
  */
 void vterm_destroy(sVTerm *vt);
-
-/**
- * Handles the given keycode for the active vterm
- *
- * @param isBreak wether it is a break-keycode
- * @param keycode the keycode
- */
-void vterm_handleKeycode(bool isBreak,u32 keycode);
-
-/**
- * Prints the given string
- *
- * @param vt the vterm
- * @param str the string
- * @param len the string-length
- * @param resetRead wether readline-stuff should be reset
- * @param readKeyboard indicates wether we should start/stop reading from keyboard
- */
-void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead,bool *readKeyboard);
 
 #endif /* VTERM_H_ */

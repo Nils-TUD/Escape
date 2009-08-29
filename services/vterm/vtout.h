@@ -17,25 +17,28 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef VTOUT_H_
+#define VTOUT_H_
+
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/fileio.h>
-#include <stdlib.h>
+#include "vterm.h"
 
-int main(void) {
-	u32 i,j;
-	prints("    ");
-	for(i = 0; i < 16; i++)
-		printf("%02x ",i << 4);
-	printc('\n');
+/**
+ * Prints the given string
+ *
+ * @param vt the vterm
+ * @param str the string
+ * @param len the string-length
+ * @param resetRead wether readline-stuff should be reset
+ */
+void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead);
 
-	for(i = 0; i < 16; i++) {
-		printf("%02x: ",i);
-		for(j = 0; j < 16; j++)
-			printf("\033[co;%d;%d]##\033[co] ",i,j);
-		printc('\n');
-	}
-	flush();
+/**
+ * Prints the given character to screen
+ *
+ * @param vt the vterm
+ * @param c the character
+ */
+void vterm_putchar(sVTerm *vt,char c);
 
-	return EXIT_SUCCESS;
-}
+#endif /* VTOUT_H_ */

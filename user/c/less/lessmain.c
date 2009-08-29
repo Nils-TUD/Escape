@@ -26,6 +26,7 @@
 #include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <messages.h>
+#include <esccodes.h>
 #include <stdlib.h>
 
 #define COLS				80
@@ -34,6 +35,7 @@
 #define BUFFER_INC_SIZE		64
 #define TAB_WIDTH			4
 
+static void resetVterm(void);
 static bool readLines(tFile *file);
 static void scrollDown(s32 lines);
 static void refreshScreen(void);
@@ -45,9 +47,7 @@ static u32 lineSize;
 static char **lines;
 static u32 startLine = 0;
 
-/* vterm-command to walk to the top of the screen */
 static char emptyLine[COLS];
-static char walkBack[(3 * ROWS + 1) * sizeof(char)];
 
 int main(int argc,char *argv[]) {
 	tFile *file;
@@ -62,6 +62,7 @@ int main(int argc,char *argv[]) {
 		fprintf(stderr,"	navigation:\n");
 		fprintf(stderr,"		up/down	- one line up/down\n");
 		fprintf(stderr,"		pageup/pagedown - one page up/down\n");
+		fprintf(stderr,"		home/end - to the very beginning or end\n");
 		fprintf(stderr,"		q - quit\n");
 		return EXIT_FAILURE;
 	}
@@ -85,12 +86,14 @@ int main(int argc,char *argv[]) {
 		free(path);
 	}
 
-	/* stop readline and backup screen */
-	printf("\033l\x0\033c\x0");
+	/* stop readline and navigation and backup screen */
+	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
+	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_NAVI,NULL,0);
+	ioctl(STDOUT_FILENO,IOCTL_VT_BACKUP,NULL,0);
 
 	/* read all */
 	if(!readLines(file)) {
-		printf("\033l\x1\033t\x0");
+		resetVterm();
 		return EXIT_FAILURE;
 	}
 
@@ -99,24 +102,17 @@ int main(int argc,char *argv[]) {
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
 	if(!getEnv(vterm + 9,MAX_PATH_LEN - 9,"TERM")) {
-		printf("\033l\x1\033t\x0");
+		resetVterm();
 		printe("Unable to get TERM");
 		return EXIT_FAILURE;
 	}
 	fvterm = fopen(vterm,"r");
 	if(fvterm == NULL) {
-		printf("\033l\x1\033t\x0");
+		resetVterm();
 		printe("Unable to open '%s'",vterm);
 		return EXIT_FAILURE;
 	}
 
-	/* init walkback-string */
-	for(i = 0; i < ROWS * 3; i += 3) {
-		walkBack[i] = '\033';
-		walkBack[i + 1] = VK_UP;
-		walkBack[i + 2] = 0;
-	}
-	walkBack[ROWS * 3] = '\0';
 	/* init empty line */
 	memset(emptyLine,' ',COLS - 1);
 	emptyLine[COLS - 1] = '\0';
@@ -128,9 +124,17 @@ int main(int argc,char *argv[]) {
 		if(c == 'q')
 			break;
 		if(c == '\033') {
-			u8 keycode = fscanc(fvterm);
-			fscanc(fvterm); /* discard modifier */
-			switch(keycode) {
+			s32 n1,n2;
+			s32 cmd = freadesc(fvterm,&n1,&n2);
+			if(cmd != ESCC_KEYCODE)
+				continue;
+			switch(n1) {
+				case VK_HOME:
+					scrollDown(-startLine);
+					break;
+				case VK_END:
+					scrollDown(lineCount - startLine);
+					break;
 				case VK_UP:
 					scrollDown(-1);
 					break;
@@ -148,11 +152,16 @@ int main(int argc,char *argv[]) {
 	}
 
 	fclose(fvterm);
-
-	/* reenable readline and restore the screen */
-	printf("\033l\x1\033t\x0\r");
+	resetVterm();
 
 	return EXIT_SUCCESS;
+}
+
+static void resetVterm(void) {
+	printf("\n");
+	ioctl(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
+	ioctl(STDOUT_FILENO,IOCTL_VT_EN_NAVI,NULL,0);
+	ioctl(STDOUT_FILENO,IOCTL_VT_RESTORE,NULL,0);
 }
 
 static void scrollDown(s32 l) {
@@ -175,9 +184,7 @@ static void scrollDown(s32 l) {
 
 static void refreshScreen(void) {
 	/* walk to the top of the screen */
-	prints(walkBack);
-	printc('\r');
-	flush();
+	printf("\033[mh]");
 	u32 i,end = MIN(lineCount,ROWS);
 	for(i = 0; i < end; i++) {
 		prints(lines[startLine + i]);
@@ -194,6 +201,7 @@ static void refreshScreen(void) {
 
 static bool readLines(tFile *file) {
 	s32 count;
+	bool waitForEsc;
 	char *cpy;
 	char *buffer;
 
@@ -214,13 +222,20 @@ static bool readLines(tFile *file) {
 	}
 
 	/* read and split into lines */
+	waitForEsc = false;
 	while((count = fread(buffer,sizeof(char),BUFFER_SIZE - 1,file)) > 0) {
 		*(buffer + count) = '\0';
 		cpy = buffer;
 		while(*cpy) {
 			/* skip escape-codes */
-			if(*cpy == '\033')
-				cpy += 2;
+			if(*cpy == '\033' || waitForEsc) {
+				waitForEsc = true;
+				while(*cpy != ']' && *cpy)
+					cpy++;
+				if(!*cpy)
+					break;
+				waitForEsc = false;
+			}
 			else if(!copy(*cpy)) {
 				free(buffer);
 				return false;
@@ -234,7 +249,7 @@ static bool readLines(tFile *file) {
 
 static bool copy(char c) {
 	/* implicit newline? */
-	if(linePos >= COLS - 1) {
+	if(c != '\n' && linePos >= COLS - 1) {
 		if(!copy('\n'))
 			return false;
 	}

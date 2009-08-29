@@ -17,25 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/fileio.h>
-#include <stdlib.h>
+#ifndef TESCCODES_H_
+#define TESCCODES_H_
 
-int main(void) {
-	u32 i,j;
-	prints("    ");
-	for(i = 0; i < 16; i++)
-		printf("%02x ",i << 4);
-	printc('\n');
+#include <common.h>
+#include <test.h>
 
-	for(i = 0; i < 16; i++) {
-		printf("%02x: ",i);
-		for(j = 0; j < 16; j++)
-			printf("\033[co;%d;%d]##\033[co] ",i,j);
-		printc('\n');
-	}
-	flush();
+extern sTestModule tModEscCodes;
 
-	return EXIT_SUCCESS;
-}
+#endif /* TESCCODES_H_ */

@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <sllist.h>
+#include <esccodes.h>
 
 /* the number of entries in the hash-map */
 #define BUF_MAP_SIZE		8
@@ -139,6 +140,17 @@ static char hexCharsSmall[] = "0123456789abcdef";
 static sIOBuffer stdBufs[3];
 /* buffer for other file-descriptors */
 static sSLList *bufList = NULL;
+
+s32 freadesc(tFile *f,s32 *n1,s32 *n2) {
+	u32 i;
+	char ec,escape[MAX_ESCC_LENGTH] = {0};
+	const char *escPtr = (const char*)escape;
+	for(i = 0; i < MAX_ESCC_LENGTH - 1 && (ec = fscanc(f)) != ']'; i++)
+		escape[i] = ec;
+	if(i < MAX_ESCC_LENGTH - 1 && ec == ']')
+		escape[i] = ec;
+	return escc_get(&escPtr,n1,n2);
+}
 
 tFile *fopen(const char *filename,const char *mode) {
 	char c;
@@ -552,19 +564,8 @@ static s32 doFprints(sBuffer *buf,const char *str) {
 	char c;
 	char *start = (char*)str;
 	while((c = *str)) {
-		/* handle escape */
-		if(c == '\033') {
-			if(doFprintc(buf,c) == IO_EOF)
-				break;
-			if(doFprintc(buf,*++str) == IO_EOF)
-				break;
-			if(doFprintc(buf,*++str) == IO_EOF)
-				break;
-		}
-		else {
-			if(doFprintc(buf,c) == IO_EOF)
-				break;
-		}
+		if(doFprintc(buf,c) == IO_EOF)
+			break;
 		str++;
 	}
 	return str - start;
@@ -785,20 +786,6 @@ s32 doVfprintf(void *vbuf,const char *fmt,va_list ap) {
 	while(1) {
 		/* wait for a '%' */
 		while((c = *fmt++) != '%') {
-			/* handle escape */
-			if(c == '\033') {
-				if(doFprintc(buf,c) == IO_EOF)
-					return count;
-				count++;
-				if(doFprintc(buf,*fmt++) == IO_EOF)
-					return count;
-				count++;
-				if(doFprintc(buf,*fmt++) == IO_EOF)
-					return count;
-				count++;
-				continue;
-			}
-
 			/* finished? */
 			if(c == '\0')
 				return count;

@@ -22,6 +22,7 @@
 #include <util.h>
 #include <string.h>
 #include <stdarg.h>
+#include <esccodes.h>
 
 #define VIDEO_BASE	0xC00B8000
 #define COL_WOB		0x07				/* white on black */
@@ -307,24 +308,17 @@ void vid_vprintf(const char *fmt,va_list ap) {
 }
 
 static void vid_handleColorCode(const char **str) {
-	u8 *fmt = (u8*)*str;
-	u8 keycode = *fmt;
-	u8 value = *(fmt + 1);
-	switch(keycode) {
-		case ESC_RESET:
-			vid_setFGColor(WHITE);
-			vid_setBGColor(BLACK);
+	s32 n1,n2;
+	s32 cmd = escc_get(str,&n1,&n2);
+	switch(cmd) {
+		case ESCC_COLOR:
+			vid_setFGColor(n1 == ESCC_ARG_UNUSED ? WHITE : MIN(9,n1));
+			vid_setBGColor(n2 == ESCC_ARG_UNUSED ? BLACK : MIN(9,n2));
 			break;
-		case ESC_FG:
-			vid_setFGColor((eColor)MIN(9,value));
-			break;
-		case ESC_BG:
-			vid_setBGColor((eColor)MIN(9,value));
+		default:
+			util_panic("Invalid escape-code ^[%d;%d,%d]",cmd,n1,n2);
 			break;
 	}
-
-	/* skip escape code */
-	*str += 2;
 }
 
 static void vid_removeBIOSCursor(void) {

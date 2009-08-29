@@ -33,6 +33,8 @@
 #include <errors.h>
 
 #include "vterm.h"
+#include "vtout.h"
+#include "vtin.h"
 
 #define KB_DATA_BUF_SIZE	128
 
@@ -102,6 +104,7 @@ int main(void) {
 					count /= sizeof(sKbData);
 					while(count-- > 0) {
 						vterm_handleKeycode(kbd->isBreak,kbd->keycode);
+						vterm_update(vterm_getActive());
 						kbd++;
 					}
 				}
@@ -145,7 +148,8 @@ int main(void) {
 							if(data) {
 								receive(fd,&mid,data,c + 1);
 								data[c] = '\0';
-								vterm_puts(vt,data,c,true,&readKeyboard);
+								vterm_puts(vt,data,c,true);
+								vterm_update(vt);
 								free(data);
 								msg.args.arg1 = c;
 							}
@@ -153,8 +157,7 @@ int main(void) {
 						}
 						break;
 						case MSG_DRV_IOCTL: {
-							msg.data.arg1 = ERR_UNSUPPORTED_OPERATION;
-							msg.data.arg2 = 0;
+							msg.data.arg1 = vterm_ioctl(vt,msg.data.arg1,msg.data.d,&readKeyboard);
 							send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 						}
 						break;

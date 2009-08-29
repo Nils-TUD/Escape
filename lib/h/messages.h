@@ -94,8 +94,6 @@
 #define MSG_RECEIVE					220
 #define MSG_SEND					221
 
-#define IOCTL_VID_SETCURSOR			0
-
 /* the data read from the keyboard */
 typedef struct {
 	/* the keycode (see keycodes.h) */

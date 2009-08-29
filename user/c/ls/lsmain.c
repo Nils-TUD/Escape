@@ -171,9 +171,9 @@ int main(int argc,char *argv[]) {
 			dateToString(dateStr,20,"%Y-%m-%d %H:%M",&date);
 			printf("%s ",dateStr);
 			if(MODE_IS_DIR(entry->mode))
-				printf("\033f\x09%s\033r\x0",entry->name);
+				printf("\033[co;9]%s\033[co]",entry->name);
 			else if(entry->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
-				printf("\033f\x02%s\033r\x0",entry->name);
+				printf("\033[co;2]%s\033[co]",entry->name);
 			else
 				printf("%s",entry->name);
 			printf("\n");
@@ -187,9 +187,9 @@ int main(int argc,char *argv[]) {
 			if(flags & LS_FL_INODE)
 				printf("%*d ",widths[W_INODE],entry->inodeNo);
 			if(MODE_IS_DIR(entry->mode))
-				printf("\033f\x09%-*s\033r\x0",widths[W_NAME] + 1,entry->name);
+				printf("\033[co;9]%-*s\033[co]",widths[W_NAME] + 1,entry->name);
 			else if(entry->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
-				printf("\033f\x02%-*s\033r\x0",widths[W_NAME] + 1,entry->name);
+				printf("\033[co;2]%-*s\033[co]",widths[W_NAME] + 1,entry->name);
 			else
 				printf("%-*s",widths[W_NAME] + 1,entry->name);
 			pos += widths[W_NAME] + widths[W_INODE] + 2;

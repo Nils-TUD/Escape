@@ -73,7 +73,7 @@ void test_caseStartv(const char *fmt,va_list ap) {
 }
 
 void test_caseSucceded(void) {
-	testPrintf("== >> \033f\x2%s\033r\x0 ==\n\n","SUCCESS");
+	testPrintf("== >> \033[co;2]%s\033[co] ==\n\n","SUCCESS");
 	totalSucc++;
 	succCount++;
 }
@@ -177,7 +177,7 @@ bool test_assertStr(const char *received,const char *expected) {
 
 void test_caseFailed(const char *fmt,...) {
 	va_list ap;
-	testPrintf("== >> \033f\x4%s\033r\x0 : ","FAILED");
+	testPrintf("== >> \033[co;4]%s\033[co] : ","FAILED");
 	va_start(ap,fmt);
 	testvPrintf(fmt,ap);
 	va_end(ap);
@@ -209,15 +209,15 @@ void test_start(void) {
 			modsFailed++;
 
 		testPrintf("---- Module \"%s\" finished. Summary: ----\n",modules[i]->name);
-		testPrintf("-- \033f\x2%d\033r\x0 testcases successfull --\n",succCount);
-		testPrintf("-- \033f\x4%d\033r\x0 testcases failed --\n",failCount);
+		testPrintf("-- \033[co;2]%d\033[co] testcases successfull --\n",succCount);
+		testPrintf("-- \033[co;4]%d\033[co] testcases failed --\n",failCount);
 		testPrintf("----------------------------------\n\n");
 	}
 
 	testPrintf("====== All modules done ======\n");
-	testPrintf("== \033f\x2%d\033r\x0 modules successfull ==\n",modsSucc);
-	testPrintf("== \033f\x4%d\033r\x0 modules failed ==\n",modsFailed);
-	testPrintf("== \033f\x2%d\033r\x0 testcases successfull ==\n",totalSucc);
-	testPrintf("== \033f\x4%d\033r\x0 testcases failed ==\n",totalFail);
+	testPrintf("== \033[co;2]%d\033[co] modules successfull ==\n",modsSucc);
+	testPrintf("== \033[co;4]%d\033[co] modules failed ==\n",modsFailed);
+	testPrintf("== \033[co;2]%d\033[co] testcases successfull ==\n",totalSucc);
+	testPrintf("== \033[co;4]%d\033[co] testcases failed ==\n",totalFail);
 	testPrintf("============================\n");
 }

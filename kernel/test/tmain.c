@@ -55,6 +55,7 @@
 #include "tsignals.h"
 #include "tutil.h"
 #include "tringbuffer.h"
+#include "tesccodes.h"
 
 s32 main(sMultiBoot *mbp,u32 magic) {
 	UNUSED(magic);
@@ -70,7 +71,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 	vid_printf("GDT exchanged, paging enabled, video initialized");
 	vid_toLineEnd(strlen("DONE"));
-	vid_printf("\033f\x2%s\033r\x0","DONE");
+	vid_printf("\033[co;2]%s\033[co]","DONE");
 
 	mboot_dbg_print();
 
@@ -78,20 +79,20 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("Initializing physical memory-management...");
 	mm_init();
 	vid_toLineEnd(strlen("DONE"));
-	vid_printf("\033f\x2%s\033r\x0","DONE");
+	vid_printf("\033[co;2]%s\033[co]","DONE");
 
 	/* paging */
 	vid_printf("Initializing paging...");
 	paging_mapHigherHalf();
 	paging_initCOWList();
 	vid_toLineEnd(strlen("DONE"));
-	vid_printf("\033f\x2%s\033r\x0","DONE");
+	vid_printf("\033[co;2]%s\033[co]","DONE");
 
 	/* fpu */
 	vid_printf("Initializing FPU...");
 	fpu_init();
 	vid_toLineEnd(strlen("DONE"));
-	vid_printf("\033f\x2%s\033r\x0","DONE");
+	vid_printf("\033[co;2]%s\033[co]","DONE");
 
 	/* vfs */
 	vid_printf("Initializing VFS...");
@@ -101,44 +102,44 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vfsdrv_init();
 	vfsr_init();
 	vid_toLineEnd(strlen("DONE"));
-	vid_printf("\033f\x2%s\033r\x0","DONE");
+	vid_printf("\033[co;2]%s\033[co]","DONE");
 
 	/* processes */
 	vid_printf("Initializing process-management...");
 	proc_init();
 	sched_init();
 	vid_toLineEnd(strlen("DONE"));
-	vid_printf("\033f\x2%s\033r\x0","DONE");
+	vid_printf("\033[co;2]%s\033[co]","DONE");
 
 	/* idt */
 	vid_printf("Initializing IDT...");
 	intrpt_init();
 	vid_toLineEnd(strlen("DONE"));
-	vid_printf("\033f\x2%s\033r\x0","DONE");
+	vid_printf("\033[co;2]%s\033[co]","DONE");
 
 	/* timer */
 	vid_printf("Initializing Timer...");
 	timer_init();
 	vid_toLineEnd(strlen("DONE"));
-	vid_printf("\033f\x2%s\033r\x0","DONE");
+	vid_printf("\033[co;2]%s\033[co]","DONE");
 
 	/* signals */
 	vid_printf("Initializing Signal-Handling...");
 	sig_init();
 	vid_toLineEnd(strlen("DONE"));
-	vid_printf("\033f\x2%s\033r\x0","DONE");
+	vid_printf("\033[co;2]%s\033[co]","DONE");
 
 	/* kevents */
 	vid_printf("Initializing KEvents...");
 	kev_init();
 	vid_toLineEnd(strlen("DONE"));
-	vid_printf("\033f\x2%s\033r\x0","DONE");
+	vid_printf("\033[co;2]%s\033[co]","DONE");
 
 	/* cpu */
 	vid_printf("Detecting CPU...");
 	cpu_detect();
 	vid_toLineEnd(strlen("DONE"));
-	vid_printf("\033f\x2%s\033r\x0","DONE");
+	vid_printf("\033[co;2]%s\033[co]","DONE");
 
 	vid_printf("Free frames=%d, pages mapped=%d, free mem=%d KiB\n",
 			mm_getFreeFrmCount(MM_DMA | MM_DEF),paging_dbg_getPageCount(),
@@ -146,7 +147,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 
 	/* start tests */
-	test_register(&tModMM);
+	/*test_register(&tModMM);
 	test_register(&tModPaging);
 	test_register(&tModProc);
 	test_register(&tModKHeap);
@@ -157,7 +158,8 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	test_register(&tModVFSn);
 	test_register(&tModSignals);
 	test_register(&tModUtil);
-	test_register(&tModRBuffer);
+	test_register(&tModRBuffer);*/
+	test_register(&tModEscCodes);
 	test_start();
 
 

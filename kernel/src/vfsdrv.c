@@ -237,8 +237,7 @@ static void vfsdrv_ioctlReqHandler(tTid tid,const u8 *data,u32 size) {
 		req->state = REQ_STATE_FINISHED;
 		req->count = rmsg->data.arg1;
 		req->data = NULL;
-		if(rmsg->data.arg2 > 0) {
-			req->count = rmsg->data.arg2;
+		if(req->count > 0) {
 			req->data = (void*)kheap_alloc(req->count);
 			if(req->data != NULL)
 				memcpy(req->data,rmsg->data.d,req->count);

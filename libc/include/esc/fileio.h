@@ -38,6 +38,17 @@ extern tFile *stdout;
 extern tFile *stderr;
 
 /**
+ * The same as escc_get() but reads the escape-code from <f>. Assumes that the last read char
+ * was '\033'.
+ *
+ * @param f the file
+ * @param n1 will be set to the first argument (ESCC_ARG_UNUSED if unused)
+ * @param n2 will be set to the second argument (ESCC_ARG_UNUSED if unused)
+ * @return the scanned escape-code (ESCC_*)
+ */
+s32 freadesc(tFile *f,s32 *n1,s32 *n2);
+
+/**
  * Opens the file whose name is specified in the parameter filename and associates it with a
  * stream that can be identified in future operations by the tFile object whose pointer is returned.
  * The operations that are allowed on the stream and how these are performed are defined by the

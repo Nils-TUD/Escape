@@ -108,7 +108,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			}
 		}
 		vid_toLineEnd(strlen("DONE"));
-		vid_printf("\033f\x02""DONE\033r\x0");
+		vid_printf("\033[co;2]DONE\033[co]");
 
 		mod++;
 	}

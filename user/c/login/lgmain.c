@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/signals.h>
 #include <stdlib.h>
@@ -40,17 +41,18 @@ int main(void) {
 	while(1) {
 		printf("Username: ");
 		scanl(un,10);
-		printf("\033e\x0");
+		ioctl(STDOUT_FILENO,IOCTL_VT_DIS_ECHO,NULL,0);
 		printf("Password: ");
 		scanl(pw,10);
-		printf("\n\033e\x1");
+		ioctl(STDOUT_FILENO,IOCTL_VT_EN_ECHO,NULL,0);
+		printf("\n");
 
 		if(strcmp(un,USERNAME) != 0)
-			printf("\033f\x4Sorry, invalid username. Try again!\033r\x0\n");
+			printf("\033[co;4]Sorry, invalid username. Try again!\033[co]\n");
 		else if(strcmp(pw,PASSWORD) != 0)
-			printf("\033f\x4Sorry, invalid password. Try again!\033r\x0\n");
+			printf("\033[co;4]Sorry, invalid password. Try again!\033[co]\n");
 		else {
-			printf("\033f\x2Login successfull.\033r\x0\n");
+			printf("\033[co;2]Login successfull.\033[co]\n");
 			break;
 		}
 	}

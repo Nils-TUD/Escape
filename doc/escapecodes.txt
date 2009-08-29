@@ -1,0 +1,14 @@
+cursor-movement:
+	left:				^[ml] ^[ml;3]
+	right:			^[mr] ^[mr;4]
+	up:					^[mu] ^[mu;4]
+	down:				^[md] ^[md;4]
+	line-start:	^[ms]
+	line-end:		^[me]
+	home:				^[mh]
+
+keycodes:
+	^[kc;104;3]
+
+colors:
+	^[co;3;2]

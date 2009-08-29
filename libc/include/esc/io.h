@@ -25,18 +25,31 @@
 #include <fsinterface.h>
 
 /* IO flags */
-#define IO_READ			1
-#define IO_WRITE		2
+#define IO_READ					1
+#define IO_WRITE				2
 
 /* file descriptors for stdin, stdout and stderr */
-#define STDIN_FILENO	0
-#define STDOUT_FILENO	1
-#define STDERR_FILENO	2
+#define STDIN_FILENO			0
+#define STDOUT_FILENO			1
+#define STDERR_FILENO			2
 
 /* seek-types */
-#define SEEK_SET		0
-#define SEEK_CUR		1
-#define SEEK_END		2
+#define SEEK_SET				0
+#define SEEK_CUR				1
+#define SEEK_END				2
+
+/* ioctl-commands */
+#define IOCTL_VID_SETCURSOR		0
+#define IOCTL_VT_EN_ECHO		1
+#define IOCTL_VT_DIS_ECHO		2
+#define IOCTL_VT_EN_RDLINE		3
+#define IOCTL_VT_DIS_RDLINE		4
+#define IOCTL_VT_EN_RDKB		5
+#define IOCTL_VT_DIS_RDKB		6
+#define IOCTL_VT_EN_NAVI		7
+#define IOCTL_VT_DIS_NAVI		8
+#define IOCTL_VT_BACKUP			9
+#define IOCTL_VT_RESTORE		10
 
 #ifdef __cplusplus
 extern "C" {

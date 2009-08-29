@@ -17,25 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef VTIN_H_
+#define VTIN_H_
+
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/fileio.h>
-#include <stdlib.h>
 
-int main(void) {
-	u32 i,j;
-	prints("    ");
-	for(i = 0; i < 16; i++)
-		printf("%02x ",i << 4);
-	printc('\n');
+/**
+ * Handles the given keycode for the active vterm
+ *
+ * @param isBreak wether it is a break-keycode
+ * @param keycode the keycode
+ */
+void vterm_handleKeycode(bool isBreak,u32 keycode);
 
-	for(i = 0; i < 16; i++) {
-		printf("%02x: ",i);
-		for(j = 0; j < 16; j++)
-			printf("\033[co;%d;%d]##\033[co] ",i,j);
-		printc('\n');
-	}
-	flush();
-
-	return EXIT_SUCCESS;
-}
+#endif /* VTIN_H_ */

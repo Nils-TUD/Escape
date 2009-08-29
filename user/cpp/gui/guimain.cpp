@@ -35,7 +35,8 @@ int main(void) {
 	}
 
 	// disable readline and stop reading from keyboard
-	printf("\033l\x0\033k\x0");
+	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
+	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDKB,NULL,0);
 
 	// start gui services
 	startService("vesa","/services/vesa");

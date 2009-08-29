@@ -178,19 +178,8 @@ namespace esc {
 		char c;
 		char *start = (char*)str;
 		while((c = *str)) {
-			// handle escape
-			if(c == '\033') {
-				if(_out->write(c) == IO_EOF)
-					break;
-				if(_out->write(*++str) == IO_EOF)
-					break;
-				if(_out->write(*++str) == IO_EOF)
-					break;
-			}
-			else {
-				if(_out->write(c) == IO_EOF)
-					break;
-			}
+			if(_out->write(c) == IO_EOF)
+				break;
 			str++;
 		}
 		return str - start;

@@ -229,6 +229,8 @@ u32 shell_readLine(char *buffer,u32 max) {
 			shell_complete(buffer,&cursorPos,&i);
 			continue;
 		}
+		/* if another key has been pressed, reset tab-counting */
+		tabCount = 0;
 
 		/* echo */
 		printc(c);

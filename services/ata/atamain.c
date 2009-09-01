@@ -146,7 +146,9 @@ int main(void) {
 	tMsgId mid;
 
 	/* request ports */
-	if(requestIOPorts(REG_BASE_PRIMARY,8) < 0 || requestIOPorts(REG_BASE_SECONDARY,8) < 0) {
+	/* for some reason virtualbox requires an additional port (9 instead of 8). Otherwise
+	 * we are not able to access port (REG_BASE_PRIMARY + 7). */
+	if(requestIOPorts(REG_BASE_PRIMARY,9) < 0 || requestIOPorts(REG_BASE_SECONDARY,9) < 0) {
 		printe("Unable to request ATA-port %d .. %d or %d .. %d",REG_BASE_PRIMARY,
 				REG_BASE_PRIMARY + 7,REG_BASE_SECONDARY,REG_BASE_SECONDARY + 7);
 		return EXIT_FAILURE;

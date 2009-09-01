@@ -26,6 +26,7 @@
 #include <video.h>
 #include <stdarg.h>
 #include <string.h>
+#include <register.h>
 
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE			5
@@ -65,6 +66,8 @@ extern u32 kernelStack;
 static char hexCharsBig[] = "0123456789ABCDEF";
 
 void util_panic(const char *fmt,...) {
+	u32 regs[REG_COUNT];
+	sIntrptStackFrame *istack = intrpt_getCurStack();
 	sThread *t = thread_getRunning();
 	va_list ap;
 	vid_printf("\n");
@@ -81,8 +84,27 @@ void util_panic(const char *fmt,...) {
 	vid_restoreColor();
 	vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 	util_printStackTrace(util_getKernelStackTrace());
+
 	util_printStackTrace(util_getUserStackTrace(t,intrpt_getCurStack()));
-	proc_dbg_printAll();
+	vid_printf("User-Register:\n");
+	regs[R_EAX] = istack->eax;
+	regs[R_EBX] = istack->ebx;
+	regs[R_ECX] = istack->ecx;
+	regs[R_EDX] = istack->edx;
+	regs[R_ESI] = istack->esi;
+	regs[R_EDI] = istack->edi;
+	regs[R_ESP] = istack->uesp;
+	regs[R_EBP] = istack->ebp;
+	regs[R_CS] = istack->cs;
+	regs[R_DS] = istack->ds;
+	regs[R_ES] = istack->es;
+	regs[R_FS] = istack->fs;
+	regs[R_GS] = istack->gs;
+	regs[R_SS] = istack->uss;
+	regs[R_EFLAGS] = istack->eflags;
+	PRINT_REGS(regs,"\t");
+
+	/*proc_dbg_printAll();*/
 	intrpt_setEnabled(false);
 	util_halt();
 }

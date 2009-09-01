@@ -134,6 +134,9 @@ qemu:	all prepareRun
 bochs: all prepareRun
 		bochs -f bochs.cfg -q | tee log.txt
 
+vmware: all prepareRun
+		vmplayer vmware/escape.vmx
+
 debugbochs: all prepareRun
 		bochs -f bochs.cfg | tee log.txt
 

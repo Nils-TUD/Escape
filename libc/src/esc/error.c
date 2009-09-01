@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
+#include <register.h>
 #include <string.h>
 
 #define MAX_STACK_DEPTH 20

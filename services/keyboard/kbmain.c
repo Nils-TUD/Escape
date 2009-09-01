@@ -71,6 +71,7 @@ static tServ id;
 int main(void) {
 	tServ client;
 	tMsgId mid;
+	u8 status;
 
 	id = regService("keyboard",SERV_DRIVER);
 	if(id < 0) {
@@ -106,10 +107,42 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-    /* reset keyboard */
+    /* reset keyboard and make a self-test */
     outByte(IOPORT_KB_DATA,0xff);
-    while(inByte(IOPORT_KB_DATA) != 0xaa)
+    while(1) {
+    	status = inByte(IOPORT_KB_DATA);
+    	if(status == 0xaa)
+    		break;
+    	if(status == 0xfc) {
+    		debugf("Keyboard-Selftest failed: Got 0xfc as reply\n");
+    		return EXIT_FAILURE;
+    	}
     	yield();
+    }
+
+    /* TODO this does not seem to work here :/ */
+
+    /* set repeat-rate and delay */
+    outByte(IOPORT_KB_DATA,0xf3);
+    outByte(IOPORT_KB_DATA,/* 0100 0100 */0x44);
+
+    /* set scancode set */
+    outByte(IOPORT_KB_DATA,0xf0);
+    outByte(IOPORT_KB_DATA,2);
+
+    /*outByte(IOPORT_KB_DATA,0xf0);
+    sleep(40);
+	outByte(IOPORT_KB_DATA,0);
+    sleep(40);
+    u8 set = inByte(0x60);
+    debugf("set=%x\n",set);
+    while(1);*/
+
+    /*outByte(0x60,0xf2);
+    sleep(40);
+    u8 id = inByte(0x60);
+    debugf("id=%x\n",id);
+    while(1);*/
 
     /* wait for commands */
 	while(1) {

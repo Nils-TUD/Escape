@@ -326,10 +326,9 @@ void sig_ackHandling(tTid tid) {
 	vassert(sig_canHandle(t->signal),"Unable to handle signal %d",t->signal);
 
 	h = sig_get(tid,t->signal);
-	if(h != NULL) {
-		t->signal = 0;
+	if(h != NULL)
 		h->active = 0;
-	}
+	t->signal = 0;
 }
 
 static void sig_kWaitDone(u32 tid) {
@@ -492,7 +491,7 @@ void sig_dbg_print(void) {
 	list = handler;
 	vid_printf("Announced signal-handlers:\n");
 	for(i = 0; i < SIG_COUNT - 1; i++) {
-		vid_printf("\t%s:\n",sig_dbg_getName(i + 1));
+		vid_printf("\t%s:\n",sig_dbg_getName(i));
 		if(*list != NULL) {
 			for(n = sll_begin(*list); n != NULL; n = n->next) {
 				h = (sHandler*)n->data;

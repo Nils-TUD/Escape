@@ -140,7 +140,7 @@ void vterm_putchar(sVTerm *vt,char c) {
 		case '\a':
 			/* beep */
 			msg.args.arg1 = 1000;
-			msg.args.arg2 = 1;
+			msg.args.arg2 = 60;
 			send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
 			break;
 
@@ -164,7 +164,7 @@ void vterm_putchar(sVTerm *vt,char c) {
 			else {
 				/* beep */
 				msg.args.arg1 = 1000;
-				msg.args.arg2 = 1;
+				msg.args.arg2 = 60;
 				send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
 			}
 			break;

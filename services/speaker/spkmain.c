@@ -27,6 +27,7 @@
 #include <esc/signals.h>
 #include <stdlib.h>
 
+#define TIMER_FREQUENCY				50
 #define PIC_FREQUENCY				1193180
 #define IOPORT_PIT_SPEAKER			0x42
 #define IOPORT_PIT_CTRL_WORD_REG	0x43
@@ -66,12 +67,14 @@ int main(void) {
 	}
 
 	/* request io-ports */
-	if(requestIOPort(IOPORT_PIT_CTRL_WORD_REG) < 0 || requestIOPort(IOPORT_PIT_SPEAKER) < 0) {
+	if(requestIOPort(IOPORT_PIT_SPEAKER) < 0 || requestIOPort(IOPORT_PIT_CTRL_WORD_REG) < 0) {
 		printe("Unable to request io-port %d or %d",IOPORT_PIT_CTRL_WORD_REG,
 				IOPORT_PIT_CTRL_WORD_REG);
 		return EXIT_FAILURE;
 	}
-	if(requestIOPort(IOPORT_KB_CTRL_B) < 0) {
+	/* I have no idea why it is required to reserve 2 ports because we're accessing just 1 byte
+	 * but virtualbox doesn't accept the port-usage otherwise. */
+	if(requestIOPorts(IOPORT_KB_CTRL_B,2) < 0) {
 		printe("Unable to request io-port %d",IOPORT_KB_CTRL_B);
 		return EXIT_FAILURE;
 	}
@@ -90,6 +93,7 @@ int main(void) {
 							/* add timer-interrupt listener */
 							if(setSigHandler(SIG_INTRPT_TIMER,timerIntrptHandler) == 0) {
 								playSound(freq);
+								intrptCount = 0;
 								intrptTarget = dur;
 							}
 						}
@@ -114,8 +118,8 @@ static void timerIntrptHandler(tSig sig,u32 data) {
 	UNUSED(sig);
 	UNUSED(data);
 	if(intrptTarget > 0) {
-		intrptCount++;
-		if(intrptCount == intrptTarget) {
+		intrptCount += 1000 / TIMER_FREQUENCY;
+		if(intrptCount >= intrptTarget) {
 			stopSound();
 			/* reset */
 			intrptTarget = 0;

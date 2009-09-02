@@ -172,6 +172,13 @@ tFD dupFd(tFD fd);
 s32 redirFd(tFD src,tFD dst);
 
 /**
+ * Writes all dirty objects of the filesystem to disk
+ *
+ * @return 0 on success
+ */
+s32 sync(void);
+
+/**
  * Closes the given file-descriptor
  *
  * @param fd the file-descriptor

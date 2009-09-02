@@ -32,6 +32,13 @@
 bool ext2_initSuperBlock(sExt2 *e);
 
 /**
+ * Writes all dirty objects of the filesystem to disk
+ *
+ * @param e the ext2-data
+ */
+void ext2_sync(sExt2 *e);
+
+/**
  * Determines the block of the given inode
  *
  * @param e the ext2-data

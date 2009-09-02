@@ -31,11 +31,27 @@
 void ext2_bcache_init(sExt2 *e);
 
 /**
+ * Writes all dirty blocks to disk
+ *
+ * @param e the ext2-handle
+ */
+void ext2_bcache_flush(sExt2 *e);
+
+/**
+ * Creates a new block-cache-entry for given block-number. Does not read the contents from disk!
+ *
+ * @param e the ext2-handle
+ * @param blockNo the block-number
+ * @return the block or NULL
+ */
+sBCacheEntry *ext2_bcache_create(sExt2 *e,u32 blockNo);
+
+/**
  * Requests the block with given number
  *
  * @param e the ext2-handle
  * @param blockNo the block to fetch from disk or from the cache
- * @return the block
+ * @return the block or NULL
  */
 sBCacheEntry *ext2_bcache_request(sExt2 *e,u32 blockNo);
 

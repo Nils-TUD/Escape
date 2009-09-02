@@ -56,14 +56,26 @@ mounthdd: $(DISKMOUNT)
 		@$(SUDO) mount -text2 -oloop=/dev/loop0,offset=`expr $(HDDTRACKSECS) \* 512` $(HDD) $(DISKMOUNT);
 
 debughdd:
+		$(SUDO) umount /dev/loop0 > /dev/null 2>&1 || true
+		$(SUDO) losetup /dev/loop0 $(HDD) || true
+		$(SUDO) fdisk /dev/loop0
+		$(SUDO) umount /dev/loop0 || true
+		$(SUDO) losetup -d /dev/loop0 || true
+
+debugfs:
 		make mounthdd;
 		$(SUDO) debugfs /dev/loop0
+		make umounthdd;
+
+checkfs:
+		make mounthdd;
+		$(SUDO) fsck /dev/loop0 || true
 		make umounthdd;
 
 umounthdd:
 		@tools/umounthdd.sh
 
-createhdd: $(DISKMOUNT) clean
+createhdd: $(DISKMOUNT)
 		$(SUDO) umount /dev/loop0 || true
 		$(SUDO) losetup -d /dev/loop0 || true
 		dd if=/dev/zero of=$(HDD) bs=`expr $(HDDTRACKSECS) \* $(HDDHEADS) \* 512`c count=$(HDDCYL)
@@ -117,6 +129,10 @@ createhdd: $(DISKMOUNT) clean
 		make umounthdd
 		rm -f $(TMPFILE)
 		cp $(HDD) $(HDDBAK)
+		@# first ensure that we'll copy all stuff to the disk with 'make all'
+		rm -f $(BUILD)/*.bin
+		touch services/services.txt
+		@# now rebuild and copy it
 		make all
 
 $(VMDISK):	$(HDD)

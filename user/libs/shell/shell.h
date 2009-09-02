@@ -26,7 +26,7 @@
 #define ERR_CMD_NOT_FOUND	-100
 
 #define MAX_CMDNAME_LEN		30
-#define MAX_CMD_LEN			40
+#define MAX_CMD_LEN			70
 
 #define STATE_SHIFT			(1 << 0)
 #define STATE_CTRL			(1 << 1)

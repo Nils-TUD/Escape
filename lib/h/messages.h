@@ -48,6 +48,7 @@
 #define MSG_FS_WRITE				22
 #define MSG_FS_CLOSE				23
 #define MSG_FS_STAT					24
+#define MSG_FS_SYNC					25
 /* requests to driver */
 #define MSG_DRV_OPEN				40
 #define MSG_DRV_READ				41

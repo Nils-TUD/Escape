@@ -214,6 +214,17 @@ s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,const u8 *buffer,u32 o
 	return res;
 }
 
+s32 vfsr_sync(tTid tid) {
+	s32 res;
+	tFileNo virtFile = vfsr_create(tid);
+	if(virtFile < 0)
+		return virtFile;
+
+	res = vfs_sendMsg(tid,virtFile,MSG_FS_SYNC,(u8*)&msg,sizeof(msg.args));
+	vfsr_destroy(tid,virtFile);
+	return res;
+}
+
 void vfsr_closeFile(tTid tid,tFileNo file,tInodeNo inodeNo) {
 	s32 res;
 	sReal2Virt *r2v;

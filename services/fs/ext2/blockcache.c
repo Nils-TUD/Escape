@@ -28,6 +28,11 @@
 static u32 cacheHits = 0;
 static u32 cacheMisses = 0;
 
+/**
+ * Fetches a block-cache-entry for the given block-number
+ */
+static sBCacheEntry *ext2_bcache_getBlock(sExt2 *e,u32 blockNo);
+
 /* note: it seems like that this approach is faster than using an array of linked-lists as hash-map.
  * Although we may have to search a bit more and may have "more chaos" in the array :)
  */
@@ -38,9 +43,32 @@ void ext2_bcache_init(sExt2 *e) {
 	for(i = 0; i < BLOCK_CACHE_SIZE; i++) {
 		bentry->blockNo = 0;
 		bentry->buffer = NULL;
+		bentry->dirty = false;
 		bentry++;
 	}
 	e->blockCacheFree = BLOCK_CACHE_SIZE;
+}
+
+void ext2_bcache_flush(sExt2 *e) {
+	sBCacheEntry *bentry,*end = e->blockCache + BLOCK_CACHE_SIZE;
+	for(bentry = e->blockCache; bentry < end; bentry++) {
+		if(bentry->dirty) {
+			ext2_writeBlocks(e,bentry->buffer,bentry->blockNo,1);
+			bentry->dirty = false;
+		}
+	}
+}
+
+sBCacheEntry *ext2_bcache_create(sExt2 *e,u32 blockNo) {
+	sBCacheEntry *block = ext2_bcache_getBlock(e,blockNo);
+	if(block->buffer == NULL) {
+		block->buffer = (u8*)malloc(BLOCK_SIZE(e));
+		if(block->buffer == NULL)
+			return NULL;
+	}
+	block->blockNo = blockNo;
+	block->dirty = false;
+	return block;
 }
 
 sBCacheEntry *ext2_bcache_request(sExt2 *e,u32 blockNo) {
@@ -65,6 +93,28 @@ sBCacheEntry *ext2_bcache_request(sExt2 *e,u32 blockNo) {
 		}
 	}
 
+	/* init cached block */
+	block = ext2_bcache_getBlock(e,blockNo);
+	if(block->buffer == NULL) {
+		block->buffer = (u8*)malloc(BLOCK_SIZE(e));
+		if(block->buffer == NULL)
+			return NULL;
+	}
+	block->blockNo = blockNo;
+	block->dirty = false;
+
+	/* now read from disk */
+	if(!ext2_readBlocks(e,block->buffer,blockNo,1)) {
+		block->blockNo = 0;
+		return NULL;
+	}
+
+	cacheMisses++;
+	return block;
+}
+
+static sBCacheEntry *ext2_bcache_getBlock(sExt2 *e,u32 blockNo) {
+	sBCacheEntry *block;
 	/* if there is a free block, try to find one beginning at the desired index */
 	if(e->blockCacheFree > 0) {
 		u32 no = blockNo;
@@ -83,23 +133,6 @@ sBCacheEntry *ext2_bcache_request(sExt2 *e,u32 blockNo) {
 		if(block->dirty)
 			ext2_writeBlocks(e,block->buffer,block->blockNo,1);
 	}
-
-	/* init cached block */
-	if(block->buffer == NULL) {
-		block->buffer = (u8*)malloc(BLOCK_SIZE(e));
-		if(block->buffer == NULL)
-			return NULL;
-	}
-	block->blockNo = blockNo;
-	block->dirty = false;
-
-	/* now read from disk */
-	if(!ext2_readBlocks(e,block->buffer,blockNo,1)) {
-		block->blockNo = 0;
-		return NULL;
-	}
-
-	cacheMisses++;
 	return block;
 }
 

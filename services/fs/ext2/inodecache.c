@@ -26,6 +26,16 @@
 #include "ext2.h"
 #include "request.h"
 #include "inodecache.h"
+#include "blockcache.h"
+
+/**
+ * Reads the inode from block-cache. Requires inode->inodeNo to be valid!
+ */
+static void ext2_icache_read(sExt2 *e,sCachedInode *inode);
+/**
+ * Writes the inode back to the cached block, which can be written to disk later
+ */
+static void ext2_icache_write(sExt2 *e,sCachedInode *inode);
 
 /* for statistics */
 static u32 cacheHits = 0;
@@ -37,16 +47,20 @@ void ext2_icache_init(sExt2 *e) {
 	for(i = 0; i < INODE_CACHE_SIZE; i++) {
 		inode->refs = 0;
 		inode->inodeNo = EXT2_BAD_INO;
+		inode->dirty = false;
 		inode++;
 	}
 }
 
-sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
-	tInodeNo noInGroup;
-	u32 inodesPerBlock;
-	sInode *buffer;
-	sBlockGroup *group;
+void ext2_icache_flush(sExt2 *e) {
+	sCachedInode *inode,*end = e->inodeCache + INODE_CACHE_SIZE;
+	for(inode = e->inodeCache; inode < end; inode++) {
+		if(inode->dirty)
+			ext2_icache_write(e,inode);
+	}
+}
 
+sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 	/* search for the inode. perhaps it's already in cache */
 	sCachedInode *startNode = e->inodeCache + (no & (INODE_CACHE_SIZE - 1));
 	sCachedInode *iend = e->inodeCache + INODE_CACHE_SIZE;
@@ -89,19 +103,11 @@ sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 		}
 	}
 
-	/* read block with that inode from disk */
-	inodesPerBlock = BLOCK_SIZE(e) / sizeof(sInode);
-	buffer = (sInode*)malloc(BLOCK_SIZE(e));
-	group = e->groups + ((no - 1) / e->superBlock.inodesPerGroup);
-	noInGroup = (no - 1) % e->superBlock.inodesPerGroup;
-	if(!ext2_readBlocks(e,buffer,group->inodeTable + noInGroup / inodesPerBlock,1))
-		return NULL;
-
 	/* build node */
 	inode->inodeNo = no;
 	inode->refs = 1;
-	memcpy(&(inode->inode),buffer + (noInGroup % inodesPerBlock),sizeof(sInode));
-	free(buffer);
+	inode->dirty = false;
+	ext2_icache_read(e,inode);
 
 	cacheMisses++;
 	return inode;
@@ -109,8 +115,31 @@ sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 
 void ext2_icache_release(sExt2 *e,sCachedInode *inode) {
 	UNUSED(e);
-	if(inode->refs > 0)
-		inode->refs--;
+	if(inode->refs > 0) {
+		/* write it back, if we free it */
+		if(--inode->refs == 0)
+			ext2_icache_write(e,inode);
+	}
+}
+
+static void ext2_icache_read(sExt2 *e,sCachedInode *inode) {
+	sBlockGroup *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
+	u32 inodesPerBlock = BLOCK_SIZE(e) / sizeof(sInode);
+	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
+	sBCacheEntry *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
+	memcpy(&(inode->inode),block->buffer + ((inode->inodeNo - 1) % inodesPerBlock) * sizeof(sInode),
+			sizeof(sInode));
+}
+
+static void ext2_icache_write(sExt2 *e,sCachedInode *inode) {
+	sBlockGroup *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
+	u32 inodesPerBlock = BLOCK_SIZE(e) / sizeof(sInode);
+	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
+	sBCacheEntry *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
+	memcpy(block->buffer + ((inode->inodeNo - 1) % inodesPerBlock) * sizeof(sInode),
+			&(inode->inode),sizeof(sInode));
+	block->dirty = true;
+	inode->dirty = false;
 }
 
 void ext2_icache_printStats(void) {

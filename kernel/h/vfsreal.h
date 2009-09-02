@@ -75,6 +75,14 @@ s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,u8 *buffer,u32 offset,u
 s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,const u8 *buffer,u32 offset,u32 count);
 
 /**
+ * Writes all dirty objects of the filesystem to disk
+ *
+ * @param tid the thread-id
+ * @return 0 on success
+ */
+s32 vfsr_sync(tTid tid);
+
+/**
  * Closes the given inode
  *
  * @param tid the thread-id

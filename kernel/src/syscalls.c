@@ -403,6 +403,12 @@ static void sysc_setDataReadable(sIntrptStackFrame *stack);
  * @return the cpu-cycles
  */
 static void sysc_getCycles(sIntrptStackFrame *stack);
+/**
+ * Writes all dirty objects of the filesystem to disk
+ *
+ * @return 0 on success
+ */
+static void sysc_sync(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -461,6 +467,7 @@ static sSyscall syscalls[] = {
 	/* 44 */	{sysc_ioctl,				4},
 	/* 45 */	{sysc_setDataReadable,		2},
 	/* 46 */	{sysc_getCycles,			0},
+	/* 47 */	{sysc_sync,					0},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -1450,6 +1457,15 @@ static void sysc_getCycles(sIntrptStackFrame *stack) {
 	cycles.val64 = t->kcycleCount.val64 + t->ucycleCount.val64;
 	SYSC_RET1(stack,cycles.val32.upper);
 	SYSC_RET2(stack,cycles.val32.lower);
+}
+
+static void sysc_sync(sIntrptStackFrame *stack) {
+	s32 res;
+	sThread *t = thread_getRunning();
+	res = vfsr_sync(t->tid);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
 }
 
 static bool sysc_isStringReadable(const char *str) {

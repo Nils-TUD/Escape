@@ -33,7 +33,7 @@
 static u32 ext2_extend(sExt2 *e,sCachedInode *cnode,sBCacheEntry *cblock,u32 index,bool *added);
 
 u32 ext2_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block) {
-	u32 i,blockSize,blocksPerBlock,blperBlSq,bno;
+	u32 i,blockSize,blocksPerBlock,blperBlSq;
 	bool added = false;
 	sBCacheEntry *cblock;
 

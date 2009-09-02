@@ -145,21 +145,26 @@ int main(void) {
 					break;
 
 					case MSG_FS_WRITE: {
-						debugf("Got %d bytes for offset %d in inode %d\n",
-								msg.data.arg3,msg.data.arg2,msg.data.arg1);
-						u8 *buffer = malloc(msg.data.arg3);
-						if(buffer != NULL) {
-							debugf("Fetching data...\n");
-							receive(fd,&mid,buffer,msg.data.arg3);
-							debugf("Got '%s'\n",buffer);
+						tInodeNo ino = (tInodeNo)msg.args.arg1;
+						u32 offset = msg.args.arg2;
+						u32 count = msg.args.arg3;
+						u8 *buffer;
+
+						/* write to file */
+						msg.args.arg1 = 0;
+						buffer = malloc(count);
+						if(buffer) {
+							receive(fd,&mid,buffer,count);
+							msg.args.arg1 = ext2_writeFile(&ext2,ino,buffer,offset,count);
 							free(buffer);
 						}
-
-						/* TODO */
-
-						/* write response */
-						msg.args.arg1 = msg.data.arg3;
+						/* send response */
 						send(fd,MSG_FS_WRITE_RESP,&msg,sizeof(msg.args));
+					}
+					break;
+
+					case MSG_FS_SYNC: {
+						ext2_sync(&ext2);
 					}
 					break;
 

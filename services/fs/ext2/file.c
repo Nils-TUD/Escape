@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/heap.h>
 #include <esc/debug.h>
+#include <esc/date.h>
 #include <string.h>
 #include <errors.h>
 
@@ -85,8 +86,10 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
 
 s32 ext2_writeFile(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count) {
 	sCachedInode *cnode;
+	sBCacheEntry *tmpBuffer;
 	const u8 *bufWork;
 	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
+	u32 orgOff = offset;
 
 	/* at first we need the inode */
 	cnode = ext2_icache_request(e,inodeNo);
@@ -106,14 +109,32 @@ s32 ext2_writeFile(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 c
 	bufWork = (const u8*)buffer;
 	for(i = 0; i < blockCount; i++) {
 		u32 block = ext2_getDataBlock(e,cnode,startBlock + i);
+		c = MIN(leftBytes,blockSize - offset);
 
+		/* if we're not writing a complete block, we have to read it from disk first */
+		if(offset != 0 || c != blockSize)
+			tmpBuffer = ext2_bcache_request(e,block);
+		else
+			tmpBuffer = ext2_bcache_create(e,block);
+		if(tmpBuffer == NULL)
+			return 0;
+		/* we can write it later to disk :) */
+		memcpy(tmpBuffer->buffer + offset,bufWork,c);
+		tmpBuffer->dirty = true;
 
+		bufWork += c;
 		/* we substract to much, but it matters only if we write an additional block. In this
 		 * case it is correct */
 		leftBytes -= blockSize - offset;
 		/* offset is always 0 for additional blocks */
 		offset = 0;
 	}
+
+	/* finally, update the inode */
+	cnode->inode.modifytime = getTime();
+	cnode->inode.size = (s32)MAX(orgOff + count,cnode->inode.size);
+	cnode->inode.blocks = BLOCKS_TO_SECS(e,(cnode->inode.size + blockSize - 1) / blockSize);
+	cnode->dirty = true;
 
 	return count;
 }

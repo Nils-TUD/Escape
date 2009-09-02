@@ -24,6 +24,7 @@
 #include "ext2.h"
 #include "request.h"
 #include "blockcache.h"
+#include "inodecache.h"
 #include "superblock.h"
 
 /**
@@ -72,6 +73,14 @@ bool ext2_initSuperBlock(sExt2 *e) {
 	return true;
 }
 
+void ext2_sync(sExt2 *e) {
+	ext2_updateSuperBlock(e);
+	ext2_updateBlockGroups(e);
+	/* flush inodes first, because they may create dirty blocks */
+	ext2_icache_flush(e);
+	ext2_bcache_flush(e);
+}
+
 u32 ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo) {
 	return (inodeNo - 1) / e->superBlock.inodesPerGroup;
 }
@@ -81,11 +90,10 @@ u32 ext2_getGroupOfBlock(sExt2 *e,u32 block) {
 }
 
 u32 ext2_allocBlock(sExt2 *e,sCachedInode *inode) {
-	s32 gcount = ext2_getBlockGroupCount(e);
+	u32 gcount = ext2_getBlockGroupCount(e);
 	u32 block = ext2_getBlockOfInode(e,inode->inodeNo);
 	u32 group = ext2_getGroupOfBlock(e,block);
-	s32 i;
-	u32 bno;
+	u32 i,bno;
 
 	if(e->superBlock.freeBlockCount == 0)
 		return 0;
@@ -111,6 +119,7 @@ s32 ext2_freeBlock(sExt2 *e,u32 blockNo) {
 		return -1;
 
 	/* mark free in bitmap */
+	blockNo--;
 	blockNo %= e->superBlock.blocksPerGroup;
 	bitmap->buffer[blockNo / 8] &= ~(1 << (blockNo % 8));
 	bitmap->dirty = true;
@@ -139,11 +148,11 @@ static u32 ext2_allocBlockIn(sExt2 *e,u32 groupStart,sBlockGroup *group) {
 			if(!(bitmap->buffer[i] & j)) {
 				group->freeBlockCount--;
 				e->groupsDirty = true;
-				/*bitmap->buffer[i] |= j;
-				bitmap->dirty = true;*/
+				bitmap->buffer[i] |= j;
+				bitmap->dirty = true;
 				e->superBlock.freeBlockCount--;
 				e->sbDirty = true;
-				return bno + groupStart;
+				return bno + groupStart + 1;
 			}
 		}
 	}

@@ -31,6 +31,13 @@
 void ext2_icache_init(sExt2 *e);
 
 /**
+ * Writes all dirty inodes to disk
+ *
+ * @param e the ext2-handle
+ */
+void ext2_icache_flush(sExt2 *e);
+
+/**
  * Requests the inode with given number. That means if it is in the cache you'll simply get it.
  * Otherwise it is fetched from disk and put into the cache. The references of the cache-inode
  * will be increased.

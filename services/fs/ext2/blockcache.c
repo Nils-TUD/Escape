@@ -43,7 +43,7 @@ void ext2_bcache_init(sExt2 *e) {
 	e->blockCacheFree = BLOCK_CACHE_SIZE;
 }
 
-u8 *ext2_bcache_request(sExt2 *e,u32 blockNo) {
+sBCacheEntry *ext2_bcache_request(sExt2 *e,u32 blockNo) {
 	sBCacheEntry *block;
 
 	/* search for the block. perhaps it's already in cache */
@@ -54,14 +54,14 @@ u8 *ext2_bcache_request(sExt2 *e,u32 blockNo) {
 	for(bentry = bstart; bentry < bend; bentry++) {
 		if(bentry->blockNo == blockNo) {
 			cacheHits++;
-			return bentry->buffer;
+			return bentry;
 		}
 	}
 	/* search the entries before start */
 	for(bentry = e->blockCache; bentry < bstart; bentry++) {
 		if(bentry->blockNo == blockNo) {
 			cacheHits++;
-			return bentry->buffer;
+			return bentry;
 		}
 	}
 
@@ -79,6 +79,9 @@ u8 *ext2_bcache_request(sExt2 *e,u32 blockNo) {
 	else {
 		/* no free blocks anymore so overwrite the one at our desired index */
 		block = e->blockCache + (blockNo & (BLOCK_CACHE_SIZE - 1));
+		/* if it is dirty we have to write it first to disk */
+		if(block->dirty)
+			ext2_writeBlocks(e,block->buffer,block->blockNo,1);
 	}
 
 	/* init cached block */
@@ -88,6 +91,7 @@ u8 *ext2_bcache_request(sExt2 *e,u32 blockNo) {
 			return NULL;
 	}
 	block->blockNo = blockNo;
+	block->dirty = false;
 
 	/* now read from disk */
 	if(!ext2_readBlocks(e,block->buffer,blockNo,1)) {
@@ -96,7 +100,7 @@ u8 *ext2_bcache_request(sExt2 *e,u32 blockNo) {
 	}
 
 	cacheMisses++;
-	return block->buffer;
+	return block;
 }
 
 void ext2_bcache_printStats(void) {

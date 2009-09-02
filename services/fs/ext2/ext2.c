@@ -22,9 +22,12 @@
 #include <esc/fileio.h>
 #include <esc/heap.h>
 #include <esc/proc.h>
+#include <esc/debug.h>
 #include "ext2.h"
 #include "blockcache.h"
 #include "inodecache.h"
+#include "blockgroup.h"
+#include "superblock.h"
 #include "request.h"
 
 bool ext2_init(sExt2 *e) {
@@ -40,24 +43,14 @@ bool ext2_init(sExt2 *e) {
 	while(fd < 0);
 
 	e->ataFd = fd;
-	if(!ext2_readSectors(e,(u8*)&(e->superBlock),2,1)) {
+	if(!ext2_initSuperBlock(e)) {
 		close(e->ataFd);
-		printe("Unable to read super-block");
-		return false;
-	}
-
-	e->groups = (sBlockGroup*)malloc(BLOCK_SIZE(e));
-	/* TODO determine block-number of group-table */
-	if(!ext2_readBlocks(e,(u8*)e->groups,2,1)) {
-		close(e->ataFd);
-		printe("Unable to read group-table");
 		return false;
 	}
 
 	/* init caches */
 	ext2_icache_init(e);
 	ext2_bcache_init(e);
-
 	return true;
 }
 
@@ -65,3 +58,16 @@ void ext2_destroy(sExt2 *e) {
 	free(e->groups);
 	close(e->ataFd);
 }
+
+#if DEBUGGING
+
+void ext2_dbg_printBlockGroups(sExt2 *e) {
+	u32 i,count = ext2_getBlockGroupCount(e);
+	debugf("Blockgroups:\n");
+	for(i = 0; i < count; i++) {
+		debugf(" Block %d\n",i);
+		ext2_dbg_printBlockGroup(e,i,e->groups + i);
+	}
+}
+
+#endif

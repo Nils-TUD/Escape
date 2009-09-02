@@ -34,6 +34,18 @@
  * @param count the number of bytes to read
  * @return the number of read bytes
  */
-s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count);
+s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
+
+/**
+ * Writes <count> bytes at <offset> from <buffer> to the inode with given number
+ *
+ * @param e the ext2-handle
+ * @param inodeNo the inode-number
+ * @param buffer the buffer
+ * @param offset the offset
+ * @param count the number of bytes to write
+ * @return the number of written bytes
+ */
+s32 ext2_writeFile(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count);
 
 #endif /* FILE_H_ */

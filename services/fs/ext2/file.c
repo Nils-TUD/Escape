@@ -30,9 +30,9 @@
 #include "inodecache.h"
 #include "file.h"
 
-s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
+s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
 	sCachedInode *cnode;
-	u8 *tmpBuffer;
+	sBCacheEntry *tmpBuffer;
 	u8 *bufWork;
 	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
 
@@ -57,9 +57,9 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 
 	/* use the offset in the first block; after the first one the offset is 0 anyway */
 	leftBytes = count;
-	bufWork = buffer;
+	bufWork = (u8*)buffer;
 	for(i = 0; i < blockCount; i++) {
-		u32 block = ext2_getBlockOfInode(e,&(cnode->inode),startBlock + i);
+		u32 block = ext2_getDataBlock(e,cnode,startBlock + i);
 
 		/* request block */
 		tmpBuffer = ext2_bcache_request(e,block);
@@ -69,11 +69,46 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
 		if(buffer != NULL) {
 			/* copy the requested part */
 			c = MIN(leftBytes,blockSize - offset);
-			memcpy(bufWork,tmpBuffer + offset,c);
+			memcpy(bufWork,tmpBuffer->buffer + offset,c);
 			bufWork += c;
 		}
 
 		/* we substract to much, but it matters only if we read an additional block. In this
+		 * case it is correct */
+		leftBytes -= blockSize - offset;
+		/* offset is always 0 for additional blocks */
+		offset = 0;
+	}
+
+	return count;
+}
+
+s32 ext2_writeFile(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count) {
+	sCachedInode *cnode;
+	const u8 *bufWork;
+	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
+
+	/* at first we need the inode */
+	cnode = ext2_icache_request(e,inodeNo);
+	if(cnode == NULL)
+		return ERR_FS_READ_FAILED;
+
+	/* gap-filling not supported yet */
+	if((s32)offset > cnode->inode.size)
+		return 0;
+
+	blockSize = BLOCK_SIZE(e);
+	startBlock = offset / blockSize;
+	offset %= blockSize;
+	blockCount = (offset + count + blockSize - 1) / blockSize;
+
+	leftBytes = count;
+	bufWork = (const u8*)buffer;
+	for(i = 0; i < blockCount; i++) {
+		u32 block = ext2_getDataBlock(e,cnode,startBlock + i);
+
+
+		/* we substract to much, but it matters only if we write an additional block. In this
 		 * case it is correct */
 		leftBytes -= blockSize - offset;
 		/* offset is always 0 for additional blocks */

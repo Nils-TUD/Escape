@@ -17,31 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BLOCKCACHE_H_
-#define BLOCKCACHE_H_
+#ifndef BLOCKGROUP_H_
+#define BLOCKGROUP_H_
 
 #include <esc/common.h>
 #include "ext2.h"
 
+
+#if DEBUGGING
+
 /**
- * Inits the block-cache
+ * Prints the given block-group
  *
- * @param e the ext2-handle
+ * @param e the ext2-data
+ * @param no the block-group-number
+ * @param bg the block-group
  */
-void ext2_bcache_init(sExt2 *e);
+void ext2_dbg_printBlockGroup(sExt2 *e,u32 no,sBlockGroup *bg);
 
-/**
- * Requests the block with given number
- *
- * @param e the ext2-handle
- * @param blockNo the block to fetch from disk or from the cache
- * @return the block
- */
-sBCacheEntry *ext2_bcache_request(sExt2 *e,u32 blockNo);
+#endif
 
-/**
- * Prints block-cache statistics
- */
-void ext2_bcache_printStats(void);
-
-#endif /* BLOCKCACHE_H_ */
+#endif /* BLOCKGROUP_H_ */

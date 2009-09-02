@@ -94,7 +94,7 @@ sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 	buffer = (sInode*)malloc(BLOCK_SIZE(e));
 	group = e->groups + ((no - 1) / e->superBlock.inodesPerGroup);
 	noInGroup = (no - 1) % e->superBlock.inodesPerGroup;
-	if(!ext2_readBlocks(e,(u8*)buffer,group->inodeTable + noInGroup / inodesPerBlock,1))
+	if(!ext2_readBlocks(e,buffer,group->inodeTable + noInGroup / inodesPerBlock,1))
 		return NULL;
 
 	/* build node */

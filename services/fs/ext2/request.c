@@ -25,11 +25,11 @@
 #include "request.h"
 #include "ext2.h"
 
-bool ext2_readBlocks(sExt2 *e,u8 *buffer,u32 start,u16 blockCount) {
+bool ext2_readBlocks(sExt2 *e,void *buffer,u32 start,u16 blockCount) {
 	return ext2_readSectors(e,buffer,BLOCKS_TO_SECS(e,start),BLOCKS_TO_SECS(e,blockCount));
 }
 
-bool ext2_readSectors(sExt2 *e,u8 *buffer,u64 lba,u16 secCount) {
+bool ext2_readSectors(sExt2 *e,void *buffer,u64 lba,u16 secCount) {
 	if(seek(e->ataFd,lba * SECTOR_SIZE,SEEK_SET) < 0) {
 		printe("Unable to seek to %x\n",lba * SECTOR_SIZE);
 		return false;
@@ -42,11 +42,11 @@ bool ext2_readSectors(sExt2 *e,u8 *buffer,u64 lba,u16 secCount) {
 	return true;
 }
 
-bool ext2_writeBlocks(sExt2 *e,const u8 *buffer,u32 start,u16 blockCount) {
+bool ext2_writeBlocks(sExt2 *e,const void *buffer,u32 start,u16 blockCount) {
 	return ext2_writeSectors(e,buffer,BLOCKS_TO_SECS(e,start),BLOCKS_TO_SECS(e,blockCount));
 }
 
-bool ext2_writeSectors(sExt2 *e,const u8 *buffer,u64 lba,u16 secCount) {
+bool ext2_writeSectors(sExt2 *e,const void *buffer,u64 lba,u16 secCount) {
 	if(seek(e->ataFd,lba * SECTOR_SIZE,SEEK_SET) < 0) {
 		printe("Unable to seek to %x\n",lba * SECTOR_SIZE);
 		return false;

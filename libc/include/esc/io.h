@@ -118,7 +118,7 @@ s32 read(tFD fd,void *buffer,u32 count);
  * @param count the number of bytes to write
  * @return the number of bytes written; negative if an error occurred
  */
-s32 write(tFD fd,void *buffer,u32 count);
+s32 write(tFD fd,const void *buffer,u32 count);
 
 /**
  * Performs the io-control command on the device identified by <fd>. This works with device-

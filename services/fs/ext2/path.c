@@ -57,7 +57,7 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
 		}
 
 		eBak = entry;
-		if(ext2_readFile(e,cnode->inodeNo,(u8*)entry,0,cnode->inode.size) < 0) {
+		if(ext2_readFile(e,cnode->inodeNo,entry,0,cnode->inode.size) < 0) {
 			free(eBak);
 			ext2_icache_release(e,cnode);
 			return ERR_FS_READ_FAILED;

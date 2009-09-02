@@ -29,11 +29,11 @@
  * it's stored on the disk.
  *
  * @param e the ext2-handle
- * @param inode the inode
+ * @param cnode the cached inode
  * @param block the linear-block-number
  * @return the block to fetch from disk
  */
-u32 ext2_getBlockOfInode(sExt2 *e,sInode *inode,u32 block);
+u32 ext2_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block);
 
 #if DEBUGGING
 

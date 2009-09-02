@@ -23,13 +23,16 @@
 #include <esc/common.h>
 #include <sllist.h>
 
-/* TODO temporary */
-#define printf	debugf
-
 #define SECTOR_SIZE							512
 #define BLOCK_SIZE(e)						(SECTOR_SIZE << ((e)->superBlock.logBlockSize + 1))
 #define BLOCKS_TO_SECS(e,x)					((x) << ((e)->superBlock.logBlockSize + 1))
 #define SECS_TO_BLOCKS(e,x)					((x) >> ((e)->superBlock.logBlockSize + 1))
+#define BYTES_TO_BLOCKS(e,b)				(((b) + (BLOCK_SIZE(e) - 1)) / BLOCK_SIZE(e))
+
+/* first sector of the super-block in the first block-group */
+#define EXT2_SUPERBLOCK_SECNO				2
+/* first block-number of the block-group-descriptor-table in other block-groups than the first */
+#define EXT2_BLOGRPTBL_BNO					2
 
 /* number of direct blocks in the inode */
 #define EXT2_DIRBLOCK_COUNT					12
@@ -315,12 +318,14 @@ typedef struct {
 
 typedef struct {
 	tInodeNo inodeNo;
-	u32 refs;
+	u16 dirty;
+	u16 refs;
 	sInode inode;
 } sCachedInode;
 
 typedef struct {
 	u32 blockNo;
+	u8 dirty;
 	/* NULL indicates an unused entry */
 	u8 *buffer;
 } sBCacheEntry;
@@ -330,7 +335,9 @@ typedef struct {
 	tFD ataFd;
 
 	/* superblock and blockgroups of that ext2-fs */
+	bool sbDirty;
 	sSuperBlock superBlock;
+	bool groupsDirty;
 	sBlockGroup *groups;
 
 	/* caches */
@@ -349,7 +356,21 @@ bool ext2_init(sExt2 *e);
 
 /**
  * Destroys the given ext2-filesystem
+ *
+ * @param e the ext2-data
  */
 void ext2_destroy(sExt2 *e);
+
+
+#if DEBUGGING
+
+/**
+ * Prints all block-groups
+ *
+ * @param e the ext2-data
+ */
+void ext2_dbg_printBlockGroups(sExt2 *e);
+
+#endif
 
 #endif /* EXT2_H_ */

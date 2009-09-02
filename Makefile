@@ -5,6 +5,8 @@ HDD=$(BUILD)/hd.img
 VBHDDTMP=$(BUILD)/vbhd.bin
 VBHDD=$(BUILD)/vbhd.vdi
 HDDBAK=$(BUILD)/hd.img.bak
+VMDISK=$(abspath vmware/vmwarehddimg.vmdk)
+VBOXOSTITLE="Escape v0.1"
 # 10 MB disk (20 * 16 * 63 * 512 = 10,321,920 byte)
 HDDCYL=20
 HDDHEADS=16
@@ -42,8 +44,6 @@ all: $(BUILD) $(DISKMOUNT)
 		@for i in $(DIRS); do \
 			make -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
-		@# just temporary
-		@qemu-img convert -f raw $(HDD) -O vmdk vmware/vmwarehddimg.vmdk
 
 $(BUILD):
 		[ -d $(BUILD) ] || mkdir -p $(BUILD);
@@ -62,12 +62,6 @@ debughdd:
 
 umounthdd:
 		@tools/umounthdd.sh
-
-# virtual box disk
-createvbhdd:
-		qemu-img convert $(HDD) $(VBHDDTMP)
-		rm -f $(VBHDD)
-		VBoxManage convertdd $(VBHDDTMP) $(VBHDD)
 
 createhdd: $(DISKMOUNT) clean
 		$(SUDO) umount /dev/loop0 || true
@@ -125,6 +119,9 @@ createhdd: $(DISKMOUNT) clean
 		cp $(HDD) $(HDDBAK)
 		make all
 
+$(VMDISK):	$(HDD)
+		@qemu-img convert -f raw $(HDD) -O vmdk vmware/vmwarehddimg.vmdk
+
 dis: all
 		objdump -d -S $(BIN) | less
 
@@ -134,46 +131,46 @@ qemu:	all prepareRun
 bochs: all prepareRun
 		bochs -f bochs.cfg -q | tee log.txt
 
-vmware: all prepareRun
+vmware: all prepareRun $(VMDISK)
 		vmplayer vmware/escape.vmx
 
-debugbochs: all prepareRun
-		bochs -f bochs.cfg | tee log.txt
+vbox: all prepareRun $(VMDISK)
+		tools/vboxhddupd.sh $(VBOXOSTITLE) $(VMDISK)
+		VBoxSDL -startvm $(VBOXOSTITLE)
 
 debug: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
 		gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
 
-debugu: all prepareRun
-		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
-		sleep 1;
-		gdb --command=gdb.start --symbols $(BUILD)/service_env.bin
-
-debugc: all prepareRun
-		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
-		sleep 1;
-		gdb --command=gdb.start --symbols $(BUILD)/service_console.bin
-
 debugm: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
-		@#bochs -f bochs.cfg -q > log.txt 2>&1 &
+
+debugbochs: all prepareRun
+		bochs -f bochs.cfg | tee log.txt
 
 debugt: all prepareTest
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
 
 test: all prepareTest
-		@#bochs -f bochs.cfg -q > log.txt 2>&1 &
 		qemu $(QEMUARGS) > log.txt 2>&1
 
 prepareTest: $(DISKMOUNT)
 		make mounthdd
-		$(SUDO) sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel_test.bin/g" $(DISKMOUNT)/boot/grub/menu.lst;
+		@if [ "`cat $(DISKMOUNT)/boot/grub/menu.lst | grep kernel.bin`" != "" ]; then \
+			$(SUDO) sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel_test.bin/g" \
+				$(DISKMOUNT)/boot/grub/menu.lst; \
+				touch $(HDD); \
+		fi;
 		make umounthdd
 
 prepareRun: $(DISKMOUNT)
 		make mounthdd
-		$(SUDO) sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel.bin/g" $(DISKMOUNT)/boot/grub/menu.lst;
+		@if [ "`cat $(DISKMOUNT)/boot/grub/menu.lst | grep kernel_test.bin`" != "" ]; then \
+			$(SUDO) sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel.bin/g" \
+				$(DISKMOUNT)/boot/grub/menu.lst; \
+				touch $(HDD); \
+		fi;
 		make umounthdd
 
 clean:

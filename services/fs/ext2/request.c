@@ -41,3 +41,20 @@ bool ext2_readSectors(sExt2 *e,u8 *buffer,u64 lba,u16 secCount) {
 
 	return true;
 }
+
+bool ext2_writeBlocks(sExt2 *e,const u8 *buffer,u32 start,u16 blockCount) {
+	return ext2_writeSectors(e,buffer,BLOCKS_TO_SECS(e,start),BLOCKS_TO_SECS(e,blockCount));
+}
+
+bool ext2_writeSectors(sExt2 *e,const u8 *buffer,u64 lba,u16 secCount) {
+	if(seek(e->ataFd,lba * SECTOR_SIZE,SEEK_SET) < 0) {
+		printe("Unable to seek to %x\n",lba * SECTOR_SIZE);
+		return false;
+	}
+	if(write(e->ataFd,buffer,secCount * SECTOR_SIZE) != secCount * SECTOR_SIZE) {
+		printe("Unable to write %d sectors @ %x\n",secCount,lba * SECTOR_SIZE);
+		return false;
+	}
+
+	return true;
+}

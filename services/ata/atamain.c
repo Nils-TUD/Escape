@@ -423,12 +423,21 @@ static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 
 
 	for(i = 0; i < secCount; i++) {
 		do {
-			/* FIXME: vmware seems to need a ata_wait() here */
-			/* wait until drive is ready */
-			while(!gotInterrupt)
-				wait(EV_NOEVENT);
+			if(opWrite) {
+				status = inByte(basePort + REG_STATUS);
+				while(status & CMD_ST_BUSY) {
+					sleep(20);
+					status = inByte(basePort + REG_STATUS);
+				}
+			}
+			else {
+				/* FIXME: vmware seems to need a ata_wait() here */
+				/* wait until drive is ready */
+				while(!gotInterrupt)
+					wait(EV_NOEVENT);
+				status = inByte(basePort + REG_STATUS);
+			}
 
-			status = inByte(basePort + REG_STATUS);
 			if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == CMD_ST_DRQ)
 				break;
 			if((status & CMD_ST_ERROR) != 0) {

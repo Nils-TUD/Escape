@@ -50,9 +50,7 @@ $(BIN):	$(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@echo "	" LINKING $(BIN)
 		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
 		@echo "	" COPYING BINARY
-		@make -C ../ mounthdd
-		@$(SUDO) cp $(BIN) $(DISKMOUNT)/boot
-		@make -C ../ umounthdd
+		../tools/cp2disk.sh $(BIN) /boot
 
 $(AOBJ):	$(ASRC)
 		@echo "	" AS $(ASRC)

@@ -29,9 +29,7 @@ $(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCPPA) $(LIBSHELLA)
 		@echo "	" LINKING $(BIN)
 		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCPPA) $(LIBSHELLA);
 		@echo "	" COPYING ON DISK
-		@make -C $(ROOT) mounthdd
-		@$(SUDO) cp $(BIN) $(DISKMOUNT)/bin/$(NAME)
-		@make -C $(ROOT) umounthdd
+		$(ROOT)/tools/cp2disk.sh $(BIN) /bin/$(NAME)
 
 $(BUILD)/user_$(NAME)_%.o:		%.cpp
 		@echo "	" CC $<

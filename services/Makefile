@@ -5,15 +5,13 @@ SERVICES = services.txt
 
 .PHONY:  all serv clean
 
-all:	serv
+all:	$(SERVICES)
 		@for i in $(DIRS) ; do \
 			$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done;
 
-serv:	$(SERVICES)
-		make -C .. mounthdd
-		$(SUDO) cp $(SERVICES) $(HDDMOUNT)/etc/services
-		make -C .. umounthdd
+$(SERVICES):
+		../tools/cp2disk.sh $(SERVICES) /etc/services
 
 clean:
 		@for i in $(DIRS) ; do \

@@ -51,9 +51,7 @@ $(BIN):	$(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		@echo "	" LINKING $(BIN)
 		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
 		@echo "	" COPYING BINARY
-		@make -C ../../ mounthdd
-		@$(SUDO) cp $(BIN) $(DISKMOUNT)/boot
-		@make -C ../../ umounthdd
+		../../tools/cp2disk.sh $(BIN) /boot
 
 $(BUILD)/kerneltk_%.o:	../src/%.c
 		@echo "	" CC $<

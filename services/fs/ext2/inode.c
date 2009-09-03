@@ -43,8 +43,11 @@ u32 ext2_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block) {
 	/* direct block */
 	if(block < EXT2_DIRBLOCK_COUNT) {
 		/* alloc a new block if necessary */
-		if(cnode->inode.dBlocks[block] == 0)
+		if(cnode->inode.dBlocks[block] == 0) {
 			cnode->inode.dBlocks[block] = ext2_allocBlock(e,cnode);
+			if(cnode->inode.dBlocks[block] != 0)
+				cnode->inode.blocks += BLOCKS_TO_SECS(e,1);
+		}
 		return cnode->inode.dBlocks[block];
 	}
 
@@ -58,6 +61,7 @@ u32 ext2_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block) {
 			cnode->inode.singlyIBlock = ext2_allocBlock(e,cnode);
 			if(cnode->inode.singlyIBlock == 0)
 				return 0;
+			cnode->inode.blocks += BLOCKS_TO_SECS(e,1);
 			added = true;
 		}
 
@@ -86,6 +90,7 @@ u32 ext2_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block) {
 			if(cnode->inode.doublyIBlock == 0)
 				return 0;
 			added = true;
+			cnode->inode.blocks += BLOCKS_TO_SECS(e,1);
 		}
 
 		/* read the first block with block-numbers of the indirect blocks */
@@ -124,6 +129,7 @@ u32 ext2_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block) {
 		if(cnode->inode.triplyIBlock == 0)
 			return 0;
 		added = true;
+		cnode->inode.blocks += BLOCKS_TO_SECS(e,1);
 	}
 
 	/* read the first block with block-numbers of the indirect blocks of indirect-blocks */
@@ -173,6 +179,7 @@ static u32 ext2_extend(sExt2 *e,sCachedInode *cnode,sBCacheEntry *cblock,u32 ind
 		if(bno == 0)
 			return 0;
 		blockNos[index] = bno;
+		cnode->inode.blocks += BLOCKS_TO_SECS(e,1);
 		cblock->dirty = true;
 		*added = true;
 	}

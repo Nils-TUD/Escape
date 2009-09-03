@@ -23,6 +23,8 @@
 #include "common.h"
 #include <sllist.h>
 
+#define MAX_VFS_FILE_SIZE			(1 * M)
+
 /* some additional types for the kernel */
 #define MODE_TYPE_SERVUSE			000200000
 #define MODE_TYPE_SERVICE			000400000
@@ -82,9 +84,9 @@ struct sVFSNode {
 		/* for all other nodes-types */
 		struct {
 			/* size of the buffer */
-			u16 size;
+			u32 size;
 			/* currently used size */
-			u16 pos;
+			u32 pos;
 			void *cache;
 		} def;
 	} data;

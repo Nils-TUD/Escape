@@ -133,7 +133,6 @@ s32 ext2_writeFile(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 c
 	/* finally, update the inode */
 	cnode->inode.modifytime = getTime();
 	cnode->inode.size = (s32)MAX(orgOff + count,cnode->inode.size);
-	cnode->inode.blocks = BLOCKS_TO_SECS(e,(cnode->inode.size + blockSize - 1) / blockSize);
 	cnode->dirty = true;
 
 	return count;

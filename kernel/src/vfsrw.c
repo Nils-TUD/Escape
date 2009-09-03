@@ -162,9 +162,7 @@ s32 vfsrw_writeDef(tTid tid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset
 	if(cache == NULL) {
 		newSize = MAX(count,VFS_INITIAL_WRITECACHE);
 		/* check for overflow */
-		if(newSize > 0xFFFF)
-			newSize = 0xFFFF;
-		if(newSize < count)
+		if(newSize > MAX_VFS_FILE_SIZE)
 			return ERR_NOT_ENOUGH_MEM;
 
 		n->data.def.cache = kheap_alloc(newSize);
@@ -176,10 +174,7 @@ s32 vfsrw_writeDef(tTid tid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset
 	else if(n->data.def.size < offset + count) {
 		/* ensure that we allocate enough memory */
 		newSize = MAX(offset + count,(u32)n->data.def.size * 2);
-		/* check for overflow */
-		if(newSize > 0xFFFF)
-			newSize = 0xFFFF;
-		if(newSize < offset + count)
+		if(newSize > MAX_VFS_FILE_SIZE)
 			return ERR_NOT_ENOUGH_MEM;
 
 		n->data.def.cache = kheap_realloc(cache,newSize);

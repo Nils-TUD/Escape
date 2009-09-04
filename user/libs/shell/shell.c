@@ -118,7 +118,7 @@ s32 shell_executeCmd(char *line) {
 		if(cmd->dup & DUP_STDIN)
 			pipe++;
 		if(cmd->dup & DUP_STDOUT) {
-			*pipe = open("/system/pipe",IO_READ | IO_WRITE | IO_CONNECT);
+			*pipe = open("/system/pipe",IO_READ | IO_WRITE);
 			if(*pipe < 0) {
 				/* close open pipe */
 				if(cmd->dup & DUP_STDIN)

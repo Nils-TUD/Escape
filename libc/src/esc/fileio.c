@@ -165,16 +165,13 @@ tFile *fopen(const char *filename,const char *mode) {
 				flags |= IO_READ;
 				break;
 			case 'w':
-				flags |= IO_WRITE | IO_CREATE;
+				flags |= IO_WRITE | IO_CREATE | IO_TRUNCATE;
 				break;
 			case '+':
 				if(flags & IO_READ)
 					flags |= IO_WRITE;
 				else if(flags & IO_WRITE)
 					flags |= IO_READ;
-				break;
-			case 'c':
-				flags |= IO_CONNECT;
 				break;
 			case 'a':
 				/* TODO */
@@ -266,7 +263,7 @@ s32 fclose(tFile *file) {
 	/* close file */
 	if(buf->in.fd >= 0)
 		close(buf->in.fd);
-	else
+	if(buf->out.fd >= 0)
 		close(buf->out.fd);
 
 	/* remove and free buffer */

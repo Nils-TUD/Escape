@@ -40,9 +40,9 @@ s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name);
  *
  * @param e the ext2-data
  * @param dir the directory
- * @param ino the inode-number
+ * @param cnode the cached inode
  * @return 0 on success
  */
-s32 ext2_unlink(sExt2 *e,sCachedInode *dir,tInodeNo ino);
+s32 ext2_unlink(sExt2 *e,sCachedInode *dir,sCachedInode *cnode);
 
 #endif /* LINK_H_ */

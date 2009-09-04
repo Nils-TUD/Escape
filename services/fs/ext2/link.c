@@ -89,7 +89,55 @@ s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 	return 0;
 }
 
-s32 ext2_unlink(sExt2 *e,sCachedInode *dir,tInodeNo ino) {
+s32 ext2_unlink(sExt2 *e,sCachedInode *dir,sCachedInode *cnode) {
+	u8 *buf;
+	sDirEntry *dire,*prev;
+	s32 res,dirSize = dir->inode.size;
+
+	/* read directory-entries */
+	buf = malloc(dirSize);
+	if(buf == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+	if(ext2_readFile(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
+		free(buf);
+		return ERR_FS_READ_FAILED;
+	}
+
+	/* search our entry */
+	prev = NULL;
+	dire = (sDirEntry*)buf;
+	while((u8*)dire < buf + dirSize) {
+		if(dire->inode == cnode->inodeNo) {
+			/* if we have a previous one, simply increase its length */
+			if(prev != NULL)
+				prev->recLen += dire->recLen;
+			/* otherwise make an empty entry */
+			else {
+				dire->inode = 0;
+				dire->nameLen = 0;
+			}
+			break;
+		}
+
+		/* to next */
+		prev = dire;
+		dire = (sDirEntry*)((u8*)dire + dire->recLen);
+	}
+
+	/* write it back */
+	if(ext2_writeFile(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
+		free(buf);
+		return ERR_FS_WRITE_FAILED;
+	}
+	free(buf);
+
+	/* decrease link-count */
+	cnode->dirty = true;
+	if(--cnode->inode.linkCount == 0) {
+		/* delete the file if there are no references anymore */
+		if((res = ext2_deleteFile(e,cnode->inodeNo)) < 0)
+			return res;
+	}
 	return 0;
 }
 

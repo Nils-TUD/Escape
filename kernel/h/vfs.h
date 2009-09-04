@@ -40,7 +40,7 @@ enum {
 	VFS_WRITE = 2,
 	VFS_CREATE = 4,
 	VFS_TRUNCATE = 8,
-	VFS_CONNECT = 16
+	VFS_CONNECT = 16	/* just kernel-intern */
 };
 
 /* seek-types */

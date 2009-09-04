@@ -59,7 +59,7 @@ bool win_init(tServ sid) {
 	for(i = 0; i < WINDOW_COUNT; i++)
 		windows[i].id = WINID_UNSED;
 
-	vesa = open("/services/vesa",IO_WRITE | IO_CONNECT);
+	vesa = open("/services/vesa",IO_WRITE);
 	if(vesa < 0) {
 		printe("Unable to open /services/vesa");
 		return EXIT_FAILURE;

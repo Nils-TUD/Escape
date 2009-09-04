@@ -577,12 +577,12 @@ static void sysc_open(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	/* check flags */
-	flags = ((u8)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ | VFS_CREATE | VFS_CONNECT | VFS_TRUNCATE);
+	flags = ((u8)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ | VFS_CREATE | VFS_TRUNCATE);
 	if((flags & (VFS_READ | VFS_WRITE)) == 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	/* resolve path */
-	err = vfsn_resolvePath(path,&nodeNo,flags);
+	err = vfsn_resolvePath(path,&nodeNo,flags | VFS_CONNECT);
 	if(err == ERR_REAL_PATH) {
 		/* send msg to fs and wait for reply */
 		file = vfsr_openFile(t->tid,flags,path);

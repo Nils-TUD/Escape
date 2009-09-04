@@ -33,6 +33,15 @@
 #include "superblock.h"
 #include "link.h"
 
+/**
+ * Free's the given doubly-indirect-block
+ */
+static s32 ext2_freeDIndirBlock(sExt2 *e,u32 blockNo);
+/**
+ * Free's the given singly-indirect-block
+ */
+static s32 ext2_freeIndirBlock(sExt2 *e,u32 blockNo);
+
 sCachedInode *ext2_createFile(sExt2 *e,sCachedInode *dirNode,const char *name) {
 	u32 i,now;
 	sCachedInode *cnode;
@@ -73,6 +82,74 @@ sCachedInode *ext2_createFile(sExt2 *e,sCachedInode *dirNode,const char *name) {
 
 	cnode->dirty = true;
 	return cnode;
+}
+
+s32 ext2_deleteFile(sExt2 *e,sCachedInode *cnode) {
+	s32 res;
+
+	/* truncate the file */
+	if((res = ext2_truncateFile(e,cnode)) < 0)
+		return res;
+
+	/* free inode, clear it and ensure that it get's written back to disk */
+	if((res = ext2_freeInode(e,cnode->inodeNo)) < 0)
+		return res;
+	memclear(&(cnode->inode),sizeof(sInode));
+	cnode->dirty = true;
+	return 0;
+}
+
+s32 ext2_truncateFile(sExt2 *e,sCachedInode *cnode) {
+	s32 res;
+	u32 i;
+	/* free direct blocks */
+	for(i = 0; i < EXT2_DIRBLOCK_COUNT; i++) {
+		if(cnode->inode.dBlocks[i] == 0)
+			break;
+		if((res = ext2_freeBlock(e,cnode->inode.dBlocks[i])) < 0)
+			return res;
+		cnode->inode.dBlocks[i] = 0;
+	}
+	/* indirect */
+	if(cnode->inode.singlyIBlock) {
+		if((res = ext2_freeIndirBlock(e,cnode->inode.singlyIBlock)) < 0)
+			return res;
+		cnode->inode.singlyIBlock = 0;
+	}
+	/* double indirect */
+	if(cnode->inode.doublyIBlock) {
+		if((res = ext2_freeDIndirBlock(e,cnode->inode.doublyIBlock)) < 0)
+			return res;
+		cnode->inode.doublyIBlock = 0;
+	}
+	/* triple indirect */
+	if(cnode->inode.triplyIBlock) {
+		u32 count;
+		sBCacheEntry *blocks = ext2_bcache_request(e,cnode->inode.triplyIBlock);
+		if(blocks == NULL) {
+			debugf("Block %d set, but unable to load it\n",cnode->inode.triplyIBlock);
+			return ERR_INVALID_NODENO;
+		}
+
+		count = BLOCK_SIZE(e) / sizeof(u32);
+		for(i = 0; i < count; i++) {
+			if(((u32*)blocks->buffer)[i] == 0)
+				break;
+			if((res = ext2_freeDIndirBlock(e,((u32*)blocks->buffer)[i])) < 0)
+				return res;
+			((u32*)blocks->buffer)[i] = 0;
+		}
+		blocks->dirty = true;
+		if((res = ext2_freeBlock(e,cnode->inode.triplyIBlock)) < 0)
+			return res;
+		cnode->inode.triplyIBlock = 0;
+	}
+
+	/* reset size */
+	cnode->inode.size = 0;
+	cnode->inode.blocks = 0;
+	cnode->dirty = true;
+	return 0;
 }
 
 s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
@@ -180,4 +257,44 @@ s32 ext2_writeFile(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 c
 	cnode->dirty = true;
 
 	return count;
+}
+
+static s32 ext2_freeDIndirBlock(sExt2 *e,u32 blockNo) {
+	u32 i,count;
+	sBCacheEntry *blocks = ext2_bcache_request(e,blockNo);
+	if(blocks == NULL) {
+		debugf("Block %d set, but unable to load it\n",blockNo);
+		return ERR_INVALID_NODENO;
+	}
+
+	count = BLOCK_SIZE(e) / sizeof(u32);
+	for(i = 0; i < count; i++) {
+		if(((u32*)blocks->buffer)[i] == 0)
+			break;
+		ext2_freeIndirBlock(e,((u32*)blocks->buffer)[i]);
+		((u32*)blocks->buffer)[i] = 0;
+	}
+	blocks->dirty = true;
+	ext2_freeBlock(e,blockNo);
+	return 0;
+}
+
+static s32 ext2_freeIndirBlock(sExt2 *e,u32 blockNo) {
+	u32 i,count;
+	sBCacheEntry *blocks = ext2_bcache_request(e,blockNo);
+	if(blocks == NULL) {
+		debugf("Block %d set, but unable to load it\n",blockNo);
+		return ERR_INVALID_NODENO;
+	}
+
+	count = BLOCK_SIZE(e) / sizeof(u32);
+	for(i = 0; i < count; i++) {
+		if(((u32*)blocks->buffer)[i] == 0)
+			break;
+		ext2_freeBlock(e,((u32*)blocks->buffer)[i]);
+		((u32*)blocks->buffer)[i] = 0;
+	}
+	blocks->dirty = true;
+	ext2_freeBlock(e,blockNo);
+	return 0;
 }

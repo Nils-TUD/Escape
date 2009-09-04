@@ -70,13 +70,13 @@ int main(int argc,char **argv) {
 	strcat(servPath,argv[1]);
 	/* parse vterm-number from "vtermX" */
 	vterm = atoi(argv[1] + 5);
-	if(open(servPath,IO_READ | IO_CONNECT) < 0) {
+	if(open(servPath,IO_READ) < 0) {
 		printe("Unable to open '%s' for STDIN",servPath);
 		return EXIT_FAILURE;
 	}
 
 	/* open stdout */
-	if((fd = open(servPath,IO_WRITE | IO_CONNECT)) < 0) {
+	if((fd = open(servPath,IO_WRITE)) < 0) {
 		printe("Unable to open '%s' for STDOUT",servPath);
 		return EXIT_FAILURE;
 	}

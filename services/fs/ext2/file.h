@@ -34,6 +34,24 @@
 sCachedInode *ext2_createFile(sExt2 *e,sCachedInode *dirNode,const char *name);
 
 /**
+ * Deletes the given inode. That means all associated blocks will be free'd
+ *
+ * @param e the ext2-handle
+ * @param cnode the cached inode
+ * @return 0 on success
+ */
+s32 ext2_deleteFile(sExt2 *e,sCachedInode *cnode);
+
+/**
+ * Truncates the given file
+ *
+ * @param e the ext2-handle
+ * @param cnode the cached inode
+ * @return 0 on success
+ */
+s32 ext2_truncateFile(sExt2 *e,sCachedInode *cnode);
+
+/**
  * Reads <count> bytes at <offset> into <buffer> from the inode with given number
  *
  * @param e the ext2-handle

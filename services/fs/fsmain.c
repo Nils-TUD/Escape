@@ -69,6 +69,13 @@ int main(void) {
 						u8 flags = (u8)msg.args.arg1;
 						tInodeNo no = ext2_resolvePath(&ext2,msg.str.s1,flags);
 
+						/* truncate? */
+						if(no >= 0 && (flags & IO_TRUNCATE)) {
+							sCachedInode *cnode = ext2_icache_request(&ext2,no);
+							if(cnode != NULL)
+								ext2_truncateFile(&ext2,cnode);
+						}
+
 						/*debugf("Received an open from %d of '%s' for ",data->pid,data + 1);
 						if(data->flags & IO_READ)
 							debugf("READ");

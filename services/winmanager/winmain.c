@@ -77,13 +77,13 @@ int main(void) {
 	tServ servId,client;
 	tMsgId mid;
 
-	mouse = open("/drivers/mouse",IO_READ | IO_CONNECT);
+	mouse = open("/drivers/mouse",IO_READ);
 	if(mouse < 0) {
 		printe("Unable to open /drivers/mouse");
 		return EXIT_FAILURE;
 	}
 
-	keyboard = open("/drivers/keyboard",IO_READ | IO_CONNECT);
+	keyboard = open("/drivers/keyboard",IO_READ);
 	if(keyboard < 0) {
 		printe("Unable to open /drivers/keyboard");
 		return EXIT_FAILURE;

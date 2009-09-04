@@ -69,8 +69,6 @@ s32 freadesc(tFile *f,s32 *n1,s32 *n2);
  * 			reposition (fseek, rewind) the internal pointer to anywhere in the file for
  * 			reading, but writing operations will move it back to the end of file.
  * 			The file is created if it does not exist.
- *  Additionally 'c' can be specified to connect to a pipe or service.
- *
  * @return a tFile object if successfull or NULL if failed
  */
 tFile *fopen(const char *filename,const char *mode);

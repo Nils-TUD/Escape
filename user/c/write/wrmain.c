@@ -38,7 +38,7 @@ int main(int argc,char *argv[]) {
 	}
 
 	abspath(path,MAX_PATH_LEN,argv[1]);
-	fd = open(path,IO_WRITE | IO_CREATE);
+	fd = open(path,IO_WRITE | IO_CREATE | IO_TRUNCATE);
 	if(fd < 0) {
 		printe("Unable to open '%s'",path);
 		return EXIT_FAILURE;

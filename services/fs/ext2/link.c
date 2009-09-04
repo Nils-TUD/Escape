@@ -24,6 +24,7 @@
 #include "ext2.h"
 #include "file.h"
 #include "link.h"
+#include "inodecache.h"
 
 /**
  * Calculates the total size of a dir-entry, including padding
@@ -32,7 +33,7 @@ static u32 ext2_getDirEntrySize(u32 namelen);
 
 s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 	u8 *buf;
-	sDirEntry *dire;
+	sExt2DirEntry *dire;
 	u32 len = strlen(name);
 	u32 tlen = ext2_getDirEntrySize(len);
 	u32 recLen = 0;
@@ -50,7 +51,7 @@ s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 	}
 
 	/* search for a place for our entry */
-	dire = (sDirEntry*)buf;
+	dire = (sExt2DirEntry*)buf;
 	while((u8*)dire < buf + dirSize) {
 		/* does our entry fit? */
 		u32 elen = ext2_getDirEntrySize(dire->nameLen);
@@ -58,14 +59,14 @@ s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 			recLen = dire->recLen - elen;
 			/* adjust old entry */
 			dire->recLen -= recLen;
-			dire = (sDirEntry*)((u8*)dire + elen);
+			dire = (sExt2DirEntry*)((u8*)dire + elen);
 			break;
 		}
-		dire = (sDirEntry*)((u8*)dire + dire->recLen);
+		dire = (sExt2DirEntry*)((u8*)dire + dire->recLen);
 	}
 	/* nothing found yet? so store it on the next block */
 	if(recLen == 0) {
-		dire = (sDirEntry*)(buf + dirSize);
+		dire = (sExt2DirEntry*)(buf + dirSize);
 		recLen = BLOCK_SIZE(e);
 		dirSize += recLen;
 	}
@@ -89,10 +90,13 @@ s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 	return 0;
 }
 
-s32 ext2_unlink(sExt2 *e,sCachedInode *dir,sCachedInode *cnode) {
+s32 ext2_unlink(sExt2 *e,sCachedInode *dir,const char *name) {
 	u8 *buf;
-	sDirEntry *dire,*prev;
+	u32 len,nameLen;
+	tInodeNo ino = -1;
+	sExt2DirEntry *dire,*prev;
 	s32 res,dirSize = dir->inode.size;
+	sCachedInode *cnode;
 
 	/* read directory-entries */
 	buf = malloc(dirSize);
@@ -104,10 +108,13 @@ s32 ext2_unlink(sExt2 *e,sCachedInode *dir,sCachedInode *cnode) {
 	}
 
 	/* search our entry */
+	nameLen = strlen(name);
 	prev = NULL;
-	dire = (sDirEntry*)buf;
+	dire = (sExt2DirEntry*)buf;
 	while((u8*)dire < buf + dirSize) {
-		if(dire->inode == cnode->inodeNo) {
+		len = MIN(dire->nameLen,nameLen);
+		if(strncmp(dire->name,name,len) == 0) {
+			ino = dire->inode;
 			/* if we have a previous one, simply increase its length */
 			if(prev != NULL)
 				prev->recLen += dire->recLen;
@@ -121,7 +128,13 @@ s32 ext2_unlink(sExt2 *e,sCachedInode *dir,sCachedInode *cnode) {
 
 		/* to next */
 		prev = dire;
-		dire = (sDirEntry*)((u8*)dire + dire->recLen);
+		dire = (sExt2DirEntry*)((u8*)dire + dire->recLen);
+	}
+
+	/* no match? */
+	if(ino == -1) {
+		free(buf);
+		return ERR_PATH_NOT_FOUND;
 	}
 
 	/* write it back */
@@ -131,18 +144,25 @@ s32 ext2_unlink(sExt2 *e,sCachedInode *dir,sCachedInode *cnode) {
 	}
 	free(buf);
 
-	/* decrease link-count */
-	cnode->dirty = true;
-	if(--cnode->inode.linkCount == 0) {
-		/* delete the file if there are no references anymore */
-		if((res = ext2_deleteFile(e,cnode->inodeNo)) < 0)
-			return res;
+	/* update inode */
+	cnode = ext2_icache_request(e,ino);
+	if(cnode != NULL) {
+		/* decrease link-count */
+		cnode->dirty = true;
+		if(--cnode->inode.linkCount == 0) {
+			/* delete the file if there are no references anymore */
+			if((res = ext2_deleteFile(e,cnode)) < 0) {
+				ext2_icache_release(e,cnode);
+				return res;
+			}
+		}
+		ext2_icache_release(e,cnode);
 	}
 	return 0;
 }
 
 static u32 ext2_getDirEntrySize(u32 namelen) {
-	u32 tlen = namelen + sizeof(sDirEntry);
+	u32 tlen = namelen + sizeof(sExt2DirEntry);
 	if((tlen % EXT2_DIRENTRY_PAD) != 0)
 		tlen += EXT2_DIRENTRY_PAD - (tlen % EXT2_DIRENTRY_PAD);
 	return tlen;

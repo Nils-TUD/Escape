@@ -75,6 +75,26 @@ s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,u8 *buffer,u32 offset,u
 s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,const u8 *buffer,u32 offset,u32 count);
 
 /**
+ * Creates a hardlink at <newPath> which points to <oldPath>
+ *
+ * @param tid the thread-id
+ * @param oldPath the link-target
+ * @param newPath the link-path
+ * @return 0 on success
+ */
+s32 vfsr_link(tTid tid,const char *oldPath,const char *newPath);
+
+/**
+ * Unlinks the given path. That means, the directory-entry will be removed and if there are no
+ * more references to the inode, it will be removed.
+ *
+ * @param tid the thread-id
+ * @param path the path
+ * @return 0 on success
+ */
+s32 vfsr_unlink(tTid tid,const char *path);
+
+/**
  * Writes all dirty objects of the filesystem to disk
  *
  * @param tid the thread-id

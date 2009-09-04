@@ -115,6 +115,8 @@ sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 
 void ext2_icache_release(sExt2 *e,sCachedInode *inode) {
 	UNUSED(e);
+	if(inode == NULL)
+		return;
 	if(inode->refs > 0) {
 		/* write it back, if we free it */
 		if(--inode->refs == 0)

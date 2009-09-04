@@ -24,6 +24,7 @@
 #include <esc/proc.h>
 #include <esc/heap.h>
 #include <esc/debug.h>
+#include <esc/dir.h>
 #include <messages.h>
 #include <errors.h>
 #include <stdlib.h>
@@ -36,6 +37,7 @@
 #include "ext2/inodecache.h"
 #include "ext2/file.h"
 #include "ext2/superblock.h"
+#include "ext2/link.h"
 
 static sMsg msg;
 static sExt2 ext2;
@@ -169,6 +171,77 @@ int main(void) {
 						}
 						/* send response */
 						send(fd,MSG_FS_WRITE_RESP,&msg,sizeof(msg.args));
+					}
+					break;
+
+					case MSG_FS_LINK: {
+						char *oldPath = msg.str.s1;
+						char *newPath = msg.str.s2;
+						char *name;
+						u32 len;
+						tInodeNo newIno;
+						tInodeNo oldIno = ext2_resolvePath(&ext2,oldPath,IO_READ);
+						msg.args.arg1 = 0;
+						if(oldIno < 0)
+							msg.args.arg1 = oldIno;
+						else {
+							/* split path and name */
+							char backup;
+							len = strlen(newPath);
+							if(newPath[len - 1] == '/')
+								newPath[len - 1] = '\0';
+							name = strrchr(newPath,'/') + 1;
+							backup = *name;
+							dirname(newPath);
+
+							newIno = ext2_resolvePath(&ext2,newPath,IO_READ);
+							if(newIno < 0)
+								msg.args.arg1 = newIno;
+							else {
+								sCachedInode *dir = ext2_icache_request(&ext2,newIno);
+								sCachedInode *ino = ext2_icache_request(&ext2,oldIno);
+								if(dir == NULL || ino == NULL)
+									msg.args.arg1 = ERR_INVALID_NODENO;
+								else {
+									*name = backup;
+									msg.args.arg1 = ext2_link(&ext2,dir,ino,name);
+								}
+								ext2_icache_release(&ext2,dir);
+								ext2_icache_release(&ext2,ino);
+							}
+						}
+						send(fd,MSG_FS_LINK_RESP,&msg,sizeof(msg.args));
+					}
+					break;
+
+					case MSG_FS_UNLINK: {
+						char *path = msg.str.s1;
+						char *name;
+						tInodeNo dirIno;
+						char backup;
+						/* split path and name */
+						u32 len = strlen(path);
+						if(path[len - 1] == '/')
+							path[len - 1] = '\0';
+						name = strrchr(path,'/') + 1;
+						backup = *name;
+						dirname(path);
+
+						/* find directory */
+						dirIno = ext2_resolvePath(&ext2,path,IO_READ);
+						if(dirIno < 0)
+							msg.args.arg1 = dirIno;
+						else {
+							sCachedInode *dir = ext2_icache_request(&ext2,dirIno);
+							if(dir == NULL)
+								msg.args.arg1 = ERR_INVALID_NODENO;
+							else {
+								*name = backup;
+								msg.args.arg1 = ext2_unlink(&ext2,dir,name);
+							}
+							ext2_icache_release(&ext2,dir);
+						}
+						send(fd,MSG_FS_UNLINK_RESP,&msg,sizeof(msg.args));
 					}
 					break;
 

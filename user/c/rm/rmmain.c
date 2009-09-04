@@ -17,32 +17,28 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LINK_H_
-#define LINK_H_
-
 #include <esc/common.h>
-#include "ext2.h"
+#include <esc/fileio.h>
+#include <esc/io.h>
+#include <esc/dir.h>
+#include <esc/cmdargs.h>
+#include <stdlib.h>
 
-/**
- * Creates a entry for cnode->inodeNo+name in the given directory. Increases the link-count
- * for the given inode.
- *
- * @param e the ext2-data
- * @param dir the directory
- * @param cnode the cached inode
- * @param name the name
- * @return 0 on success
- */
-s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name);
+int main(int argc,char *argv[]) {
+	u32 i;
+	char rPath[MAX_PATH_LEN];
+	if(argc < 2 || isHelpCmd(argc,argv)) {
+		fprintf(stderr,"Usage: %s <path> ...\n",argv[0]);
+		return EXIT_FAILURE;
+	}
 
-/**
- * Removes the given name from the given directory
- *
- * @param e the ext2-data
- * @param dir the directory
- * @param name the entry-name
- * @return 0 on success
- */
-s32 ext2_unlink(sExt2 *e,sCachedInode *dir,const char *name);
+	for(i = 1; i < argc; i++) {
+		abspath(rPath,MAX_PATH_LEN,argv[i]);
+		if(unlink(rPath) < 0) {
+			printe("Unable to remove file '%s'",rPath);
+			return EXIT_FAILURE;
+		}
+	}
 
-#endif /* LINK_H_ */
+	return EXIT_SUCCESS;
+}

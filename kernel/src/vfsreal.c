@@ -47,6 +47,8 @@ static void vfsr_openReqHandler(tTid tid,const u8 *data,u32 size);
 static void vfsr_readReqHandler(tTid tid,const u8 *data,u32 size);
 static void vfsr_statReqHandler(tTid tid,const u8 *data,u32 size);
 static void vfsr_writeReqHandler(tTid tid,const u8 *data,u32 size);
+static void vfsr_linkReqHandler(tTid tid,const u8 *data,u32 size);
+static void vfsr_unlinkReqHandler(tTid tid,const u8 *data,u32 size);
 static tFileNo vfsr_create(tTid tid);
 static s32 vfsr_add(tFileNo virtFile,tFileNo realFile);
 static sReal2Virt *vfsr_get(tFileNo real,s32 *err);
@@ -61,6 +63,8 @@ void vfsr_init(void) {
 	vfsreq_setHandler(MSG_FS_READ_RESP,vfsr_readReqHandler);
 	vfsreq_setHandler(MSG_FS_STAT_RESP,vfsr_statReqHandler);
 	vfsreq_setHandler(MSG_FS_WRITE_RESP,vfsr_writeReqHandler);
+	vfsreq_setHandler(MSG_FS_LINK_RESP,vfsr_linkReqHandler);
+	vfsreq_setHandler(MSG_FS_UNLINK_RESP,vfsr_unlinkReqHandler);
 }
 
 s32 vfsr_openFile(tTid tid,u8 flags,const char *path) {
@@ -214,6 +218,61 @@ s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,const u8 *buffer,u32 o
 	return res;
 }
 
+s32 vfsr_link(tTid tid,const char *oldPath,const char *newPath) {
+	s32 res;
+	sRequest *req;
+	tFileNo virtFile;
+
+	if(strlen(oldPath) > MAX_MSGSTR_LEN || strlen(newPath) > MAX_MSGSTR_LEN)
+		return ERR_INVALID_SYSC_ARGS;
+
+	if((virtFile = vfsr_create(tid)) < 0)
+		return virtFile;
+
+	strcpy(msg.str.s1,oldPath);
+	strcpy(msg.str.s2,newPath);
+	res = vfs_sendMsg(tid,virtFile,MSG_FS_LINK,(u8*)&msg,sizeof(msg.str));
+	if(res < 0)
+		return res;
+
+	/* wait for a reply */
+	req = vfsreq_waitForReply(tid,NULL,0);
+	vfsr_destroy(tid,virtFile);
+	if(req == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+
+	res = req->count;
+	vfsreq_remRequest(req);
+	return res;
+}
+
+s32 vfsr_unlink(tTid tid,const char *path) {
+	s32 res;
+	sRequest *req;
+	tFileNo virtFile;
+
+	if(strlen(path) > MAX_MSGSTR_LEN)
+		return ERR_INVALID_SYSC_ARGS;
+
+	if((virtFile = vfsr_create(tid)) < 0)
+		return virtFile;
+
+	strcpy(msg.str.s1,path);
+	res = vfs_sendMsg(tid,virtFile,MSG_FS_UNLINK,(u8*)&msg,sizeof(msg.str));
+	if(res < 0)
+		return res;
+
+	/* wait for a reply */
+	req = vfsreq_waitForReply(tid,NULL,0);
+	vfsr_destroy(tid,virtFile);
+	if(req == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+
+	res = req->count;
+	vfsreq_remRequest(req);
+	return res;
+}
+
 s32 vfsr_sync(tTid tid) {
 	s32 res;
 	tFileNo virtFile = vfsr_create(tid);
@@ -309,6 +368,38 @@ static void vfsr_statReqHandler(tTid tid,const u8 *data,u32 size) {
 }
 
 static void vfsr_writeReqHandler(tTid tid,const u8 *data,u32 size) {
+	sMsg *rmsg = (sMsg*)data;
+	if(size < sizeof(rmsg->args))
+		return;
+
+	/* find the request for the tid */
+	sRequest *req = vfsreq_getRequestByPid(tid);
+	if(req != NULL) {
+		/* remove request and give him the inode-number */
+		req->state = REQ_STATE_FINISHED;
+		req->count = rmsg->args.arg1;
+		/* the thread can continue now */
+		thread_wakeup(tid,EV_RECEIVED_MSG);
+	}
+}
+
+static void vfsr_linkReqHandler(tTid tid,const u8 *data,u32 size) {
+	sMsg *rmsg = (sMsg*)data;
+	if(size < sizeof(rmsg->args))
+		return;
+
+	/* find the request for the tid */
+	sRequest *req = vfsreq_getRequestByPid(tid);
+	if(req != NULL) {
+		/* remove request and give him the inode-number */
+		req->state = REQ_STATE_FINISHED;
+		req->count = rmsg->args.arg1;
+		/* the thread can continue now */
+		thread_wakeup(tid,EV_RECEIVED_MSG);
+	}
+}
+
+static void vfsr_unlinkReqHandler(tTid tid,const u8 *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
 	if(size < sizeof(rmsg->args))
 		return;

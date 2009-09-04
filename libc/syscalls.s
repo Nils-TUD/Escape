@@ -67,6 +67,8 @@ SYSCALL_IOCTL					equ 43
 SYSCALL_SETDATARDA		equ	44
 SYSCALL_GETCYCLES			equ 45
 SYSCALL_SYNC					equ 46
+SYSCALL_LINK					equ 47
+SYSCALL_UNLINK				equ 48
 
 ; the IRQ for syscalls
 SYSCALL_IRQ						equ	0x30

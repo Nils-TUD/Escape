@@ -17,32 +17,27 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LINK_H_
-#define LINK_H_
-
 #include <esc/common.h>
-#include "ext2.h"
+#include <esc/fileio.h>
+#include <esc/io.h>
+#include <esc/dir.h>
+#include <esc/cmdargs.h>
+#include <stdlib.h>
 
-/**
- * Creates a entry for cnode->inodeNo+name in the given directory. Increases the link-count
- * for the given inode.
- *
- * @param e the ext2-data
- * @param dir the directory
- * @param cnode the cached inode
- * @param name the name
- * @return 0 on success
- */
-s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name);
+int main(int argc,char *argv[]) {
+	char oldPath[MAX_PATH_LEN];
+	char newPath[MAX_PATH_LEN];
+	if(argc != 3 || isHelpCmd(argc,argv)) {
+		fprintf(stderr,"Usage: %s <target> <linkName>\n",argv[0]);
+		return EXIT_FAILURE;
+	}
 
-/**
- * Removes the given name from the given directory
- *
- * @param e the ext2-data
- * @param dir the directory
- * @param name the entry-name
- * @return 0 on success
- */
-s32 ext2_unlink(sExt2 *e,sCachedInode *dir,const char *name);
+	abspath(oldPath,MAX_PATH_LEN,argv[1]);
+	abspath(newPath,MAX_PATH_LEN,argv[2]);
+	if(link(oldPath,newPath) < 0) {
+		printe("Unable to create link the link '%s' to '%s'",newPath,oldPath);
+		return EXIT_FAILURE;
+	}
 
-#endif /* LINK_H_ */
+	return EXIT_SUCCESS;
+}

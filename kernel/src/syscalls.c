@@ -403,6 +403,22 @@ static void sysc_getCycles(sIntrptStackFrame *stack);
  * @return 0 on success
  */
 static void sysc_sync(sIntrptStackFrame *stack);
+/**
+ * Creates a hardlink at <newPath> which points to <oldPath>
+ *
+ * @param char* the old path
+ * @param char* the new path
+ * @return 0 on success
+ */
+static void sysc_link(sIntrptStackFrame *stack);
+/**
+ * Unlinks the given path. That means, the directory-entry will be removed and if there are no
+ * more references to the inode, it will be removed.
+ *
+ * @param char* path
+ * @return 0 on success
+ */
+static void sysc_unlink(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -461,6 +477,8 @@ static sSyscall syscalls[] = {
 	/* 44 */	{sysc_setDataReadable,		2},
 	/* 45 */	{sysc_getCycles,			0},
 	/* 46 */	{sysc_sync,					0},
+	/* 47 */	{sysc_link,					2},
+	/* 48 */	{sysc_unlink,				1},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -1397,6 +1415,33 @@ static void sysc_sync(sIntrptStackFrame *stack) {
 	s32 res;
 	sThread *t = thread_getRunning();
 	res = vfsr_sync(t->tid);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+static void sysc_link(sIntrptStackFrame *stack) {
+	s32 res;
+	sThread *t = thread_getRunning();
+	char *oldPath = (char*)SYSC_ARG1(stack);
+	char *newPath = (char*)SYSC_ARG2(stack);
+	if(!sysc_isStringReadable(oldPath) || !sysc_isStringReadable(newPath))
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+
+	res = vfsr_link(t->tid,oldPath,newPath);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+static void sysc_unlink(sIntrptStackFrame *stack) {
+	s32 res;
+	sThread *t = thread_getRunning();
+	char *path = (char*)SYSC_ARG1(stack);
+	if(!sysc_isStringReadable(path))
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+
+	res = vfsr_unlink(t->tid,path);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

@@ -174,6 +174,24 @@ tFD dupFd(tFD fd);
 s32 redirFd(tFD src,tFD dst);
 
 /**
+ * Creates a hardlink at <newPath> which points to <oldPath>
+ *
+ * @param oldPath the link-target
+ * @param newPath the link-path
+ * @return 0 on success
+ */
+s32 link(const char *oldPath,const char *newPath);
+
+/**
+ * Unlinks the given path. That means, the directory-entry will be removed and if there are no
+ * more references to the inode, it will be removed.
+ *
+ * @param path the path
+ * @return 0 on success
+ */
+s32 unlink(const char *path);
+
+/**
  * Writes all dirty objects of the filesystem to disk
  *
  * @return 0 on success

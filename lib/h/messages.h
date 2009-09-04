@@ -36,64 +36,68 @@
 #define MSG_FS_WRITE_RESP			2
 #define MSG_FS_CLOSE_RESP			3
 #define MSG_FS_STAT_RESP			4
+#define MSG_FS_LINK_RESP			5
+#define MSG_FS_UNLINK_RESP			6
 /* driver */
-#define MSG_DRV_OPEN_RESP			5
-#define MSG_DRV_READ_RESP			6
-#define MSG_DRV_WRITE_RESP			7
-#define MSG_DRV_IOCTL_RESP			8
-#define MSG_DRV_CLOSE_RESP			9
+#define MSG_DRV_OPEN_RESP			7
+#define MSG_DRV_READ_RESP			8
+#define MSG_DRV_WRITE_RESP			9
+#define MSG_DRV_IOCTL_RESP			10
+#define MSG_DRV_CLOSE_RESP			11
 /* requests to fs */
-#define MSG_FS_OPEN					20
-#define MSG_FS_READ					21
-#define MSG_FS_WRITE				22
-#define MSG_FS_CLOSE				23
-#define MSG_FS_STAT					24
-#define MSG_FS_SYNC					25
+#define MSG_FS_OPEN					200
+#define MSG_FS_READ					201
+#define MSG_FS_WRITE				202
+#define MSG_FS_CLOSE				203
+#define MSG_FS_STAT					204
+#define MSG_FS_SYNC					205
+#define MSG_FS_LINK					206
+#define MSG_FS_UNLINK				207
 /* requests to driver */
-#define MSG_DRV_OPEN				40
-#define MSG_DRV_READ				41
-#define MSG_DRV_WRITE				42
-#define MSG_DRV_IOCTL				43
-#define MSG_DRV_CLOSE				44
+#define MSG_DRV_OPEN				300
+#define MSG_DRV_READ				301
+#define MSG_DRV_WRITE				302
+#define MSG_DRV_IOCTL				303
+#define MSG_DRV_CLOSE				304
 
 /* == Other messages == */
-#define MSG_KEYBOARD_READ			60
-#define MSG_KEYBOARD_DATA			61
+#define MSG_KEYBOARD_READ			400
+#define MSG_KEYBOARD_DATA			401
 
-#define MSG_VIDEO_SET				80
-#define MSG_VIDEO_SETSCREEN			81
-#define MSG_VIDEO_SETCURSOR			82
+#define MSG_VIDEO_SET				500
+#define MSG_VIDEO_SETSCREEN			501
+#define MSG_VIDEO_SETCURSOR			502
 
-#define MSG_SPEAKER_BEEP			100
+#define MSG_SPEAKER_BEEP			600
 
-#define MSG_ATA_READ_REQ			120
-#define MSG_ATA_WRITE_REQ			121
-#define MSG_ATA_READ_RESP			122
+#define MSG_ATA_READ_REQ			700
+#define MSG_ATA_WRITE_REQ			701
+#define MSG_ATA_READ_RESP			702
 
-#define MSG_ENV_GET					140
-#define MSG_ENV_SET					141
-#define MSG_ENV_GET_RESP			142
-#define MSG_ENV_GETI				143
+#define MSG_ENV_GET					800
+#define MSG_ENV_SET					801
+#define MSG_ENV_GET_RESP			802
+#define MSG_ENV_GETI				803
 
-#define MSG_VESA_UPDATE				160
-#define MSG_VESA_CURSOR				161
-#define MSG_VESA_GETMODE_REQ		162
-#define MSG_VESA_GETMODE_RESP		163
+#define MSG_VESA_UPDATE				900
+#define MSG_VESA_CURSOR				901
+#define MSG_VESA_GETMODE_REQ		902
+#define MSG_VESA_GETMODE_RESP		903
 
-#define MSG_MOUSE					180
+#define MSG_MOUSE					1000
 
-#define MSG_WIN_CREATE_REQ			200
-#define MSG_WIN_CREATE_RESP			201
-#define MSG_WIN_MOUSE				202
-#define MSG_WIN_MOVE_REQ			203
-#define MSG_WIN_UPDATE				204
-#define MSG_WIN_KEYBOARD			205
-#define MSG_WIN_SET_ACTIVE			206
-#define MSG_WIN_DESTROY_REQ			207
-#define MSG_WIN_UPDATE_REQ			208
+#define MSG_WIN_CREATE_REQ			1100
+#define MSG_WIN_CREATE_RESP			1101
+#define MSG_WIN_MOUSE				1102
+#define MSG_WIN_MOVE_REQ			1103
+#define MSG_WIN_UPDATE				1104
+#define MSG_WIN_KEYBOARD			1105
+#define MSG_WIN_SET_ACTIVE			1106
+#define MSG_WIN_DESTROY_REQ			1107
+#define MSG_WIN_UPDATE_REQ			1108
 
-#define MSG_RECEIVE					220
-#define MSG_SEND					221
+#define MSG_RECEIVE					1200
+#define MSG_SEND					1201
 
 /* the data read from the keyboard */
 typedef struct {

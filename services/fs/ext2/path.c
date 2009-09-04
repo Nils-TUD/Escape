@@ -49,9 +49,9 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path,u8 flags) {
 	pos = strchri(p,'/');
 	while(*p) {
 		s32 rem = cnode->inode.size;
-		sDirEntry *eBak;
-		sDirEntry *entry;
-		entry = (sDirEntry*)malloc(sizeof(u8) * cnode->inode.size);
+		sExt2DirEntry *eBak;
+		sExt2DirEntry *entry;
+		entry = (sExt2DirEntry*)malloc(sizeof(u8) * cnode->inode.size);
 		if(entry == NULL) {
 			ext2_icache_release(e,cnode);
 			return ERR_NOT_ENOUGH_MEM;
@@ -94,7 +94,7 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path,u8 flags) {
 
 			/* to next dir-entry */
 			rem -= entry->recLen;
-			entry = (sDirEntry*)((u8*)entry + entry->recLen);
+			entry = (sExt2DirEntry*)((u8*)entry + entry->recLen);
 		}
 
 		/* no match? */

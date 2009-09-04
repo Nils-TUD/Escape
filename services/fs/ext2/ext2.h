@@ -317,7 +317,7 @@ typedef struct {
 	u16 nameLen;
 	/* name follows (up to 255 bytes) */
 	char name[];
-} __attribute__((packed)) sDirEntry;
+} __attribute__((packed)) sExt2DirEntry;
 
 typedef struct {
 	tInodeNo inodeNo;

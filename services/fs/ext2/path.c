@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/heap.h>
+#include <esc/io.h>
 #include <string.h>
 #include <errors.h>
 
@@ -29,8 +30,8 @@
 #include "request.h"
 #include "file.h"
 
-tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
-	sCachedInode *cnode = NULL;
+tInodeNo ext2_resolvePath(sExt2 *e,char *path,u8 flags) {
+	sCachedInode *dirNode,*cnode = NULL;
 	tInodeNo res;
 	char *p = path;
 	u32 pos;
@@ -66,12 +67,13 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
 		while(rem > 0 && entry->inode != 0) {
 			if(pos == entry->nameLen && strncmp(entry->name,p,pos) == 0) {
 				p += pos;
-				ext2_icache_release(e,cnode);
 				cnode = ext2_icache_request(e,entry->inode);
 				if(cnode == NULL) {
+					ext2_icache_release(e,cnode);
 					free(eBak);
 					return ERR_FS_READ_FAILED;
 				}
+				ext2_icache_release(e,cnode);
 
 				/* skip slashes */
 				while(*p == '/')
@@ -97,9 +99,25 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path) {
 
 		/* no match? */
 		if(rem <= 0 || entry->inode == 0) {
-			free(eBak);
-			ext2_icache_release(e,cnode);
-			return ERR_PATH_NOT_FOUND;
+			char *slash = strchr(p,'/');
+			/* should we create a new file? */
+			if((slash == NULL || *(slash + 1) == '\0') && (flags & IO_CREATE)) {
+				/* ensure that there is no '/' in the name */
+				*slash = '\0';
+				dirNode = cnode;
+				cnode = ext2_createFile(e,dirNode,p);
+				ext2_icache_release(e,dirNode);
+				free(eBak);
+				if(cnode == NULL)
+					return ERR_FS_INODE_ALLOC;
+				ext2_icache_release(e,cnode);
+				return cnode->inodeNo;
+			}
+			else {
+				free(eBak);
+				ext2_icache_release(e,cnode);
+				return ERR_PATH_NOT_FOUND;
+			}
 		}
 
 		free(eBak);

@@ -61,6 +61,8 @@
 #define ERR_LOCK_NOT_FOUND			-38
 #define ERR_INVALID_TID				-39
 #define ERR_UNSUPPORTED_OPERATION	-40
+#define ERR_FS_INODE_ALLOC			-41
+#define ERR_FS_WRITE_FAILED			-42
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

@@ -17,20 +17,32 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PATH_H_
-#define PATH_H_
+#ifndef LINK_H_
+#define LINK_H_
 
 #include <esc/common.h>
 #include "ext2.h"
 
 /**
- * Resolves the given path to the inode-number
+ * Creates a entry for cnode->inodeNo+name in the given directory. Increases the link-count
+ * for the given inode.
  *
- * @param e the ext2-handle
- * @param path the path
- * @param flags the flags with which to open the file
- * @return the inode-Number or EXT2_BAD_INO
+ * @param e the ext2-data
+ * @param dir the directory
+ * @param cnode the cached inode
+ * @param name the name
+ * @return 0 on success
  */
-tInodeNo ext2_resolvePath(sExt2 *e,char *path,u8 flags);
+s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name);
 
-#endif /* PATH_H_ */
+/**
+ * Removes a link to given inode in the given directory
+ *
+ * @param e the ext2-data
+ * @param dir the directory
+ * @param ino the inode-number
+ * @return 0 on success
+ */
+s32 ext2_unlink(sExt2 *e,sCachedInode *dir,tInodeNo ino);
+
+#endif /* LINK_H_ */

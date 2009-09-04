@@ -24,6 +24,16 @@
 #include "ext2.h"
 
 /**
+ * Creates an inode and links it in the given directory with given name
+ *
+ * @param e the ext2-handle
+ * @param dirNode the directory
+ * @param name the name
+ * @return the created inode
+ */
+sCachedInode *ext2_createFile(sExt2 *e,sCachedInode *dirNode,const char *name);
+
+/**
  * Reads <count> bytes at <offset> into <buffer> from the inode with given number
  *
  * @param e the ext2-handle

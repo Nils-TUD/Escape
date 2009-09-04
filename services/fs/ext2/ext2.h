@@ -40,6 +40,9 @@
 #define INODE_CACHE_SIZE					64
 #define BLOCK_CACHE_SIZE					256
 
+/* padding for directory-entries */
+#define	EXT2_DIRENTRY_PAD					4
+
 /* magic number */
 #define EXT2_SUPER_MAGIC					0xEF53
 
@@ -282,8 +285,8 @@ typedef struct {
 	/* number of links to this inode (when it reaches 0 the inode and all its associated blocks
 	 * are freed) */
 	u16 linkCount;
-	/* the total number of blocks reserved to contain the data of this inode, regardless
-	 * if these blocks are used or not. */
+	/* The total number of blocks reserved to contain the data of this inode. That means including
+	 * the blocks with block-numbers. It is not measured in ext2-blocks, but in sectors! */
 	u32 blocks;
 	u32 flags;
 	/* OS dependant value. */

@@ -27,6 +27,8 @@
 /* IO flags */
 #define IO_READ					1
 #define IO_WRITE				2
+#define IO_CREATE				4
+#define IO_TRUNCATE				8
 
 /* file descriptors for stdin, stdout and stderr */
 #define STDIN_FILENO			0

@@ -30,6 +30,50 @@
 #include "blockcache.h"
 #include "inodecache.h"
 #include "file.h"
+#include "superblock.h"
+#include "link.h"
+
+sCachedInode *ext2_createFile(sExt2 *e,sCachedInode *dirNode,const char *name) {
+	u32 i,now;
+	sCachedInode *cnode;
+
+	/* request inode */
+	tInodeNo ino = ext2_allocInode(e,dirNode);
+	if(ino == 0)
+		return NULL;
+	cnode = ext2_icache_request(e,ino);
+	if(cnode == NULL) {
+		ext2_freeInode(e,ino);
+		return NULL;
+	}
+
+	/* init inode */
+	cnode->inode.gid = 0;
+	cnode->inode.uid = 0;
+	cnode->inode.mode = EXT2_S_IFREG | EXT2_S_IRUSR | EXT2_S_IWUSR | EXT2_S_IRGRP | EXT2_S_IROTH;
+	cnode->inode.linkCount = 0;
+	cnode->inode.size = 0;
+	cnode->inode.singlyIBlock = 0;
+	cnode->inode.doublyIBlock = 0;
+	cnode->inode.triplyIBlock = 0;
+	for(i = 0; i < EXT2_DIRBLOCK_COUNT; i++)
+		cnode->inode.dBlocks[i] = 0;
+	cnode->inode.blocks = 0;
+	now = getTime();
+	cnode->inode.accesstime = now;
+	cnode->inode.createtime = now;
+	cnode->inode.modifytime = now;
+
+	/* link it to the directory */
+	if(ext2_link(e,dirNode,cnode,name) != 0) {
+		ext2_icache_release(e,cnode);
+		ext2_freeInode(e,ino);
+		return NULL;
+	}
+
+	cnode->dirty = true;
+	return cnode;
+}
 
 s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
 	sCachedInode *cnode;
@@ -132,7 +176,7 @@ s32 ext2_writeFile(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 c
 
 	/* finally, update the inode */
 	cnode->inode.modifytime = getTime();
-	cnode->inode.size = (s32)MAX(orgOff + count,cnode->inode.size);
+	cnode->inode.size = MAX((s32)(orgOff + count),cnode->inode.size);
 	cnode->dirty = true;
 
 	return count;

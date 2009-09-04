@@ -584,7 +584,7 @@ static void sysc_open(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	/* check flags */
-	flags = ((u8)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ);
+	flags = ((u8)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ | VFS_CREATE);
 	if((flags & (VFS_READ | VFS_WRITE)) == 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 

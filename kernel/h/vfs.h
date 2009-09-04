@@ -38,7 +38,8 @@ enum {
 	/* no read and write */
 	VFS_NOACCESS = 0,
 	VFS_READ = 1,
-	VFS_WRITE = 2
+	VFS_WRITE = 2,
+	VFS_CREATE = 4
 };
 
 /* seek-types */

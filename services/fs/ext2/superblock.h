@@ -57,6 +57,34 @@ u32 ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo);
 u32 ext2_getGroupOfBlock(sExt2 *e,u32 block);
 
 /**
+ * Determines the block-group of the given inode
+ *
+ * @param e the ext2-data
+ * @param inodeNo the inode-number
+ * @return the block-group-number
+ */
+u32 ext2_getGroupOfInode(sExt2 *e,tInodeNo inodeNo);
+
+/**
+ * Allocates a new inode for the given directory-inode. It will be tried to allocate an inode in
+ * the same block-group
+ *
+ * @param e the ext2-data
+ * @param dirNode the directory-inode
+ * @return the inode-number or 0 if failed
+ */
+tInodeNo ext2_allocInode(sExt2 *e,sCachedInode *dirInode);
+
+/**
+ * Free's the given inode-number
+ *
+ * @param e the ext2-data
+ * @param ino the inode-number
+ * @return 0 on success
+ */
+s32 ext2_freeInode(sExt2 *e,tInodeNo ino);
+
+/**
  * Allocates a new block for the given inode. It will be tried to allocate a block in the same
  * block-group.
  *

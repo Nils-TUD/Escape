@@ -35,6 +35,7 @@
 #include "ext2/inode.h"
 #include "ext2/inodecache.h"
 #include "ext2/file.h"
+#include "ext2/superblock.h"
 
 static sMsg msg;
 static sExt2 ext2;
@@ -65,7 +66,8 @@ int main(void) {
 			while((size = receive(fd,&mid,&msg,sizeof(msg))) > 0) {
 				switch(mid) {
 					case MSG_FS_OPEN: {
-						tInodeNo no = ext2_resolvePath(&ext2,msg.str.s1);
+						u8 flags = (u8)msg.args.arg1;
+						tInodeNo no = ext2_resolvePath(&ext2,msg.str.s1,flags);
 
 						/*debugf("Received an open from %d of '%s' for ",data->pid,data + 1);
 						if(data->flags & IO_READ)
@@ -91,7 +93,7 @@ int main(void) {
 						sCachedInode *cnode;
 						tInodeNo no;
 
-						no = ext2_resolvePath(&ext2,msg.str.s1);
+						no = ext2_resolvePath(&ext2,msg.str.s1,IO_READ);
 						if(no >= 0) {
 							cnode = ext2_icache_request(&ext2,no);
 							if(cnode != NULL) {

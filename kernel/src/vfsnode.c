@@ -180,8 +180,8 @@ char *vfsn_getPath(tVFSNodeNo nodeNo) {
 	return (char*)path;
 }
 
-s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,bool createNode) {
-	sVFSNode *n = nodes;
+s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,u8 flags) {
+	sVFSNode *dir,*n = nodes;
 	s32 pos,depth = 0;
 
 	/* no absolute path? */
@@ -199,6 +199,7 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,bool createNode) {
 	}
 
 	pos = strchri(path,'/');
+	dir = n;
 	n = NODE_FIRST_CHILD(n);
 	while(n != NULL) {
 		if((s32)strlen(n->name) == pos && strncmp(n->name,path,pos) == 0) {
@@ -220,6 +221,7 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,bool createNode) {
 
 			/* move to childs of this node */
 			pos = strchri(path,'/');
+			dir = n;
 			n = NODE_FIRST_CHILD(n);
 			depth++;
 			continue;
@@ -227,13 +229,42 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,bool createNode) {
 		n = n->next;
 	}
 
-	/* Note: this means that no one can create virtual nodes in the root-directory,
-	 * which is intended */
-	if(n == NULL)
-		return depth == 0 ? ERR_REAL_PATH : ERR_VFS_NODE_NOT_FOUND;
+	/* Note: this means that no one can create (additional) virtual nodes in the root-directory,
+	 * which is intended. The existing virtual nodes in the root-directory, of course, hide
+	 * possibly existing directory-entries in the real filesystem with the same name. */
+	if(n == NULL) {
+		/* not existing file/dir in root-directory means that we should ask fs */
+		if(depth == 0)
+			return ERR_REAL_PATH;
+
+		/* should we create a default-file? */
+		if((flags & VFS_CREATE) && (dir->mode & MODE_TYPE_DIR)) {
+			u32 nameLen;
+			sVFSNode *child;
+			char *nameCpy;
+			sThread *t = thread_getRunning();
+			/* if there is still a slash in the path, we can't create the file */
+			if(strchr(path,'/') != NULL)
+				return ERR_INVALID_PATH;
+			/* copy the name because vfsn_createInfo() will store the pointer */
+			nameLen = strlen(path);
+			nameCpy = kheap_alloc(nameLen + 1);
+			if(nameCpy == NULL)
+				return ERR_NOT_ENOUGH_MEM;
+			memcpy(nameCpy,path,nameLen + 1);
+			/* now create the node and pass the node-number back */
+			if((child = vfsn_createInfo(t->tid,dir,nameCpy,vfsrw_readDef)) == NULL) {
+				kheap_free(nameCpy);
+				return ERR_NOT_ENOUGH_MEM;
+			}
+			*nodeNo = NADDR_TO_VNNO(child);
+			return 0;
+		}
+		return ERR_VFS_NODE_NOT_FOUND;
+	}
 
 	/* handle special node-types */
-	if(createNode && (n->mode & MODE_TYPE_SERVICE)) {
+	if((flags & VFS_CONNECT) && (n->mode & MODE_TYPE_SERVICE)) {
 		sThread *t = thread_getRunning();
 		sVFSNode *child;
 		s32 err = vfsn_createServiceUse(t->tid,n,&child);
@@ -245,7 +276,7 @@ s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,bool createNode) {
 		return 0;
 	}
 
-	if(createNode && (n->mode & MODE_TYPE_PIPECON)) {
+	if((flags & VFS_CONNECT) && (n->mode & MODE_TYPE_PIPECON)) {
 		sVFSNode *child;
 		s32 err = vfsn_createPipe(n,&child);
 		if(err < 0)

@@ -102,7 +102,7 @@ int main(int argc,char **argv) {
 	sprintf(servPath,"/drivers/guiterm%d",no);
 	tFD fin;
 	do {
-		fin = open(servPath,IO_READ);
+		fin = open(servPath,IO_READ | IO_CONNECT);
 		if(fin < 0)
 			yield();
 	}

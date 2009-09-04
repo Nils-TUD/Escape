@@ -90,7 +90,7 @@ static void vfsinfo_virtMemReadCallback(sVFSNode *node,u32 *dataSize,void **buff
 void vfsinfo_init(void) {
 	tVFSNodeNo nodeNo;
 	sVFSNode *sysNode;
-	vfsn_resolvePath("/system",&nodeNo,false);
+	vfsn_resolvePath("/system",&nodeNo,VFS_NOACCESS);
 	sysNode = vfsn_getNode(nodeNo);
 
 	vfsn_createInfo(KERNEL_TID,sysNode,(char*)"memusage",vfsinfo_memUsageReadHandler);

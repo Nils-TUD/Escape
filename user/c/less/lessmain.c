@@ -107,7 +107,7 @@ int main(int argc,char *argv[]) {
 		printe("Unable to get TERM");
 		return EXIT_FAILURE;
 	}
-	fvterm = fopen(vterm,"r");
+	fvterm = fopen(vterm,"rc");
 	if(fvterm == NULL) {
 		resetVterm();
 		printe("Unable to open '%s'",vterm);

@@ -55,7 +55,6 @@ static void test_unsetSigHandler(void);
 static void test_sendSignalTo(void);
 static void test_exec(void);
 static void test_eof(void);
-static void test_createNode(void);
 static void test_seek(void);
 static void test_getFileInfo(void);
 
@@ -140,9 +139,6 @@ static s32 _exec(const char *path,const char **args) {
 static s32 _eof(u32 fd) {
 	return test_doSyscall(25,fd,0,0);
 }
-static s32 _createNode(const char *path) {
-	return test_doSyscall(28,(u32)path,0,0);
-}
 static s32 _seek(u32 fd,s32 pos,u32 whence) {
 	return test_doSyscall(29,fd,pos,whence);
 }
@@ -177,7 +173,6 @@ static void test_syscalls(void) {
 	test_sendSignalTo();
 	test_exec();
 	test_eof();
-	test_createNode();
 	test_seek();
 	test_getFileInfo();
 }
@@ -481,21 +476,6 @@ static void test_eof(void) {
 	test_assertInt(_eof(32),ERR_INVALID_FD);
 	test_assertInt(_eof(33),ERR_INVALID_FD);
 	test_caseSucceded();
-}
-
-static void test_createNode(void) {
-	char *longPath = (char*)malloc(10000);
-	memset(longPath,0x65,9999);
-	longPath[9999] = 0;
-	test_caseStart("Testing createNode()");
-	test_assertInt(_createNode(NULL),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_createNode((const char*)0x12345678),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_createNode((const char*)0xC0000000),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_createNode((const char*)0xFFFFFFFF),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_createNode(longPath),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_createNode(""),ERR_INVALID_SYSC_ARGS);
-	test_caseSucceded();
-	free(longPath);
 }
 
 static void test_seek(void) {

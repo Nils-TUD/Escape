@@ -85,14 +85,6 @@ tFD getClient(tServ *services,u32 count,tServ *serv);
  */
 tFD getClientThread(tServ id,tTid tid);
 
-/**
- * Creates a new node in the VFS with given path.
- *
- * @param path the path (including name)
- * @return 0 on success
- */
-s32 createNode(const char *path);
-
 #ifdef __cplusplus
 }
 #endif

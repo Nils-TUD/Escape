@@ -336,11 +336,7 @@ static void ata_createVFSEntry(sATADrive *drive,sPartition *part,char *name) {
 	char path[21];
 	sprintf(path,"/system/devices/%s",name);
 
-	if(createNode(path) < 0) {
-		printe("Unable to create '%s'",path);
-		return;
-	}
-
+	/* open and create file */
 	f = fopen(path,"w");
 	if(f == NULL) {
 		printe("Unable to open '%s'",path);

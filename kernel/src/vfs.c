@@ -227,7 +227,8 @@ static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tVFSNodeNo nodeNo) {
 
 	/* ensure that we don't increment usages of an unused slot */
 	vassert(flags & (VFS_READ | VFS_WRITE),"flags empty");
-	vassert(!(flags & ~(VFS_READ | VFS_WRITE | VFS_CREATE)),"flags contains invalid bits");
+	vassert(!(flags & ~(VFS_READ | VFS_WRITE | VFS_CREATE | VFS_TRUNCATE | VFS_CONNECT)),
+			"flags contains invalid bits");
 
 	if(IS_VIRT(nodeNo)) {
 		vassert(VIRT_INDEX(nodeNo) < NODE_COUNT,"nodeNo invalid");

@@ -78,7 +78,7 @@ int main(void) {
 	}
 
 	/* open keyboard */
-	kbFd = open("/drivers/keyboard",IO_READ);
+	kbFd = open("/drivers/keyboard",IO_READ | IO_CONNECT);
 	if(kbFd < 0) {
 		printe("Unable to open '/drivers/keyboard'");
 		return EXIT_FAILURE;

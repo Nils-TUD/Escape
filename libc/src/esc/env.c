@@ -98,6 +98,6 @@ static bool doGetEnv(char *buf,u32 bufSize,u32 cmd,u32 size) {
 static s32 init(void) {
 	if(envFd >= 0)
 		return 0;
-	envFd = open("/services/env",IO_READ | IO_WRITE);
+	envFd = open("/services/env",IO_READ | IO_WRITE | IO_CONNECT);
 	return envFd;
 }

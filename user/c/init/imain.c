@@ -117,7 +117,7 @@ int main(void) {
 
 	/* wait for fs; we need it for exec */
 	do {
-		fd = open("/services/fs",IO_READ | IO_WRITE);
+		fd = open("/services/fs",IO_READ | IO_WRITE | IO_CONNECT);
 		if(fd < 0)
 			yield();
 	}

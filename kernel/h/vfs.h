@@ -35,11 +35,12 @@
 
 /* GFT flags */
 enum {
-	/* no read and write */
-	VFS_NOACCESS = 0,
+	VFS_NOACCESS = 0,	/* no read and write */
 	VFS_READ = 1,
 	VFS_WRITE = 2,
-	VFS_CREATE = 4
+	VFS_CREATE = 4,
+	VFS_TRUNCATE = 8,
+	VFS_CONNECT = 16
 };
 
 /* seek-types */

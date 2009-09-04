@@ -52,15 +52,10 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	/* create a date-node */
-	if(createNode("/system/bin/date") < 0) {
-		printe("Unable to create node /system/bin/date");
-		return EXIT_FAILURE;
-	}
-
-	dateFD = open("/system/bin/date",IO_READ | IO_WRITE);
+	/* create a date-file */
+	dateFD = open("/system/date",IO_READ | IO_WRITE | IO_CREATE);
 	if(dateFD < 0) {
-		printe("Unable to open /system/bin/date");
+		printe("Unable to open /system/date");
 		return EXIT_FAILURE;
 	}
 

@@ -102,7 +102,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		/* TODO better solution? */
 		if(strcmp(service,"/services/ata") != 0) {
 			/* don't create a pipe- or service-usage-node here */
-			while(vfsn_resolvePath(service,&nodeNo,false) < 0) {
+			while(vfsn_resolvePath(service,&nodeNo,VFS_NOACCESS) < 0) {
 				vid_printf(".");
 				thread_switchInKernel();
 			}

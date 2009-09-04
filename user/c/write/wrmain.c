@@ -33,7 +33,7 @@ int main(int argc,char *argv[]) {
 	tFD fd;
 	s32 c;
 	if(argc != 2 || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s <file>",argv[0]);
+		fprintf(stderr,"Usage: %s <file>\n",argv[0]);
 		return EXIT_FAILURE;
 	}
 

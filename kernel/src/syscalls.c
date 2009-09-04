@@ -298,12 +298,6 @@ static void sysc_sendSignalTo(sIntrptStackFrame *stack);
  */
 static void sysc_exec(sIntrptStackFrame *stack);
 /**
- * Creates an info-node in the VFS that can be read by other processes
- *
- * @param char* the path
- */
-static void sysc_createNode(sIntrptStackFrame *stack);
-/**
  * Retrieves information about the given file
  *
  * @param const char* path the path of the file
@@ -448,26 +442,25 @@ static sSyscall syscalls[] = {
 	/* 25 */	{sysc_eof,					1},
 	/* 26 */	{sysc_loadMods,				0},
 	/* 27 */	{sysc_sleep,				1},
-	/* 28 */	{sysc_createNode,			1},
-	/* 29 */	{sysc_seek,					2},
-	/* 30 */	{sysc_getFileInfo,			2},
-	/* 31 */	{sysc_debug,				0},
-	/* 32 */	{sysc_createSharedMem,		2},
-	/* 33 */	{sysc_joinSharedMem,		1},
-	/* 34 */	{sysc_leaveSharedMem,		1},
-	/* 35 */	{sysc_destroySharedMem,		1},
-	/* 36 */	{sysc_getClientThread,		2},
-	/* 37 */	{sysc_lock,					1},
-	/* 38 */	{sysc_unlock,				1},
-	/* 39 */	{sysc_startThread,			0},
-	/* 40 */	{sysc_gettid,				0},
-	/* 41 */	{sysc_getThreadCount,		0},
-	/* 42 */	{sysc_send,					4},
-	/* 43 */	{sysc_receive,				3},
-	/* 44 */	{sysc_ioctl,				4},
-	/* 45 */	{sysc_setDataReadable,		2},
-	/* 46 */	{sysc_getCycles,			0},
-	/* 47 */	{sysc_sync,					0},
+	/* 28 */	{sysc_seek,					2},
+	/* 29 */	{sysc_getFileInfo,			2},
+	/* 30 */	{sysc_debug,				0},
+	/* 31 */	{sysc_createSharedMem,		2},
+	/* 32 */	{sysc_joinSharedMem,		1},
+	/* 33 */	{sysc_leaveSharedMem,		1},
+	/* 34 */	{sysc_destroySharedMem,		1},
+	/* 35 */	{sysc_getClientThread,		2},
+	/* 36 */	{sysc_lock,					1},
+	/* 37 */	{sysc_unlock,				1},
+	/* 38 */	{sysc_startThread,			0},
+	/* 39 */	{sysc_gettid,				0},
+	/* 40 */	{sysc_getThreadCount,		0},
+	/* 41 */	{sysc_send,					4},
+	/* 42 */	{sysc_receive,				3},
+	/* 43 */	{sysc_ioctl,				4},
+	/* 44 */	{sysc_setDataReadable,		2},
+	/* 45 */	{sysc_getCycles,			0},
+	/* 46 */	{sysc_sync,					0},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -584,12 +577,12 @@ static void sysc_open(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	/* check flags */
-	flags = ((u8)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ | VFS_CREATE);
+	flags = ((u8)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ | VFS_CREATE | VFS_CONNECT | VFS_TRUNCATE);
 	if((flags & (VFS_READ | VFS_WRITE)) == 0)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	/* resolve path */
-	err = vfsn_resolvePath(path,&nodeNo,true);
+	err = vfsn_resolvePath(path,&nodeNo,flags);
 	if(err == ERR_REAL_PATH) {
 		/* send msg to fs and wait for reply */
 		file = vfsr_openFile(t->tid,flags,path);
@@ -1246,7 +1239,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	path = pathSave;
 
 	/* resolve path; require a path in real fs */
-	res = vfsn_resolvePath(path,&nodeNo,false);
+	res = vfsn_resolvePath(path,&nodeNo,VFS_READ);
 	if(res != ERR_REAL_PATH) {
 		kheap_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
@@ -1282,65 +1275,6 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	kheap_free(argBuffer);
 }
 
-static void sysc_createNode(sIntrptStackFrame *stack) {
-	const char *path = (char*)SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
-	u32 nameLen,pathLen;
-	s32 res;
-	tVFSNodeNo nodeNo,dummyNodeNo;
-	sVFSNode *node;
-	char *name,*pathCpy,*nameCpy;
-
-	/* at first make sure that we'll cause no page-fault */
-	if(!sysc_isStringReadable(path))
-		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-
-	pathLen = strlen(path);
-	if(pathLen == 0 || pathLen >= MAX_PATH_LEN)
-		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
-
-	/* determine last slash */
-	name = strrchr(path,'/');
-	if(*(name + 1) == '\0')
-		name = strrchr(name - 1,'/');
-	/* skip '/' */
-	name++;
-	/* create a copy of the path */
-	nameLen = strlen(name);
-	pathLen -= nameLen;
-	pathCpy = (char*)kheap_alloc(pathLen + 1);
-	if(pathCpy == NULL)
-		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-	strncpy(pathCpy,path,pathLen);
-	pathCpy[pathLen] = '\0';
-
-	/* make a copy of the name */
-	nameCpy = (char*)kheap_alloc(nameLen + 1);
-	if(nameCpy == NULL) {
-		kheap_free(pathCpy);
-		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-	}
-	strcpy(nameCpy,name);
-
-	/* resolve path */
-	res = vfsn_resolvePath(pathCpy,&nodeNo,false);
-	if(res < 0) {
-		kheap_free(pathCpy);
-		SYSC_ERROR(stack,res);
-	}
-	/* check wether the node does already exist */
-	res = vfsn_resolvePath(path,&dummyNodeNo,false);
-	if(res == ERR_INVALID_PATH || res >= 0 || res == ERR_REAL_PATH)
-		SYSC_ERROR(stack,ERR_NODE_EXISTS);
-
-	/* create node */
-	kheap_free(pathCpy);
-	node = vfsn_getNode(nodeNo);
-	if(vfsn_createInfo(t->tid,node,nameCpy,vfsrw_readDef) == NULL)
-		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-	SYSC_RET1(stack,0);
-}
-
 static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
@@ -1355,7 +1289,7 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 	if(len == 0 || len >= MAX_PATH_LEN)
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
-	res = vfsn_resolvePath(path,&nodeNo,false);
+	res = vfsn_resolvePath(path,&nodeNo,VFS_READ);
 	if(res == ERR_REAL_PATH) {
 		sThread *t = thread_getRunning();
 		res = vfsr_getFileInfo(t->tid,path,info);

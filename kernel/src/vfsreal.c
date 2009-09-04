@@ -329,7 +329,7 @@ static tFileNo vfsr_create(tTid tid) {
 	tVFSNodeNo nodeNo;
 
 	/* create a virtual node for communication with fs */
-	if((res = vfsn_resolvePath(FS_PATH,&nodeNo,true)) != 0)
+	if((res = vfsn_resolvePath(FS_PATH,&nodeNo,VFS_CONNECT)) != 0)
 		return res;
 	/* open the file */
 	return vfs_openFile(tid,VFS_READ | VFS_WRITE,nodeNo);

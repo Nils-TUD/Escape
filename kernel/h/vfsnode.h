@@ -104,11 +104,10 @@ s32 vfsn_getNodeInfo(tVFSNodeNo nodeNo,sFileInfo *info);
  *
  * @param path the path to resolve
  * @param nodeNo the node-number for that path (will be set)
- * @param createNode wether pipe- or service-usage-nodes should be created, if necessary.
- * 	If false an access to pipes and services will be an error.
+ * @param flags the flags (VFS_*) with which to resolve the path (create file, connect to pipe etc.)
  * @return 0 if successfull or the error-code
  */
-s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,bool createNode);
+s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,u8 flags);
 
 /**
  * Creates and appends a (incomplete) node

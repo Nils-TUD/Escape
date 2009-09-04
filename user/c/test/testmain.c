@@ -53,10 +53,7 @@ int main(int argc,char *argv[]) {
 		disk = true;
 	}
 
-	if(!disk)
-		createNode(path);
-
-	fd = open(path,IO_READ | IO_WRITE);
+	fd = open(path,IO_READ | IO_WRITE | IO_CREATE);
 	if(fd < 0) {
 		printe("open");
 		return EXIT_FAILURE;
@@ -158,7 +155,7 @@ int main(int argc,char *argv[]) {
 
 	if(fork() == 0) {
 		char buf[10] = {0};
-		tFD fd = open("/drivers/bla",IO_READ | IO_WRITE);
+		tFD fd = open("/drivers/bla",IO_READ | IO_WRITE | IO_CONNECT);
 		if(fd < 0)
 			printe("open");
 		printf("Reading...\n");

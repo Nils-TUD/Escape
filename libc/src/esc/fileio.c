@@ -159,21 +159,28 @@ tFile *fopen(const char *filename,const char *mode) {
 	tFD fd;
 
 	/* parse mode */
-	c = *mode++;
-	switch(c) {
-		case 'r':
-			flags |= IO_READ;
-			break;
-		case 'w':
-			flags |= IO_WRITE;
-			break;
-		case 'a':
-			/* TODO */
-			break;
+	while((c = *mode++)) {
+		switch(c) {
+			case 'r':
+				flags |= IO_READ;
+				break;
+			case 'w':
+				flags |= IO_WRITE | IO_CREATE;
+				break;
+			case '+':
+				if(flags & IO_READ)
+					flags |= IO_WRITE;
+				else if(flags & IO_WRITE)
+					flags |= IO_READ;
+				break;
+			case 'c':
+				flags |= IO_CONNECT;
+				break;
+			case 'a':
+				/* TODO */
+				break;
+		}
 	}
-	/* TODO */
-	if(*mode && *mode == '+')
-		flags |= 0;
 
 	/* open the file */
 	fd = open(filename,flags);

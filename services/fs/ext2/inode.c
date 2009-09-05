@@ -75,6 +75,7 @@ s32 ext2_inode_create(sExt2 *e,sCachedInode *dirNode,sCachedInode **ino,bool isD
 	cnode->inode.accesstime = now;
 	cnode->inode.createtime = now;
 	cnode->inode.modifytime = now;
+	cnode->inode.deletetime = 0;
 	cnode->dirty = true;
 	*ino = cnode;
 	return 0;

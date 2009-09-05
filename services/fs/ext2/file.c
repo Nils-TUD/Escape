@@ -180,6 +180,10 @@ s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) 
 		offset = 0;
 	}
 
+	/* mark accessed */
+	cnode->inode.accesstime = getTime();
+	cnode->dirty = true;
+
 	return count;
 }
 
@@ -187,6 +191,7 @@ s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 
 	sCachedInode *cnode;
 	sCachedBlock *tmpBuffer;
 	const u8 *bufWork;
+	u32 now;
 	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
 	u32 orgOff = offset;
 
@@ -230,7 +235,9 @@ s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 
 	}
 
 	/* finally, update the inode */
-	cnode->inode.modifytime = getTime();
+	now = getTime();
+	cnode->inode.accesstime = now;
+	cnode->inode.modifytime = now;
 	cnode->inode.size = MAX((s32)(orgOff + count),cnode->inode.size);
 	cnode->dirty = true;
 

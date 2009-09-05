@@ -85,7 +85,11 @@ s32 ext2_inode_destroy(sExt2 *e,sCachedInode *cnode) {
 	/* free inode, clear it and ensure that it get's written back to disk */
 	if((res = ext2_bm_freeInode(e,cnode->inodeNo,MODE_IS_DIR(cnode->inode.mode))) < 0)
 		return res;
-	memclear(&(cnode->inode),sizeof(sInode));
+	/* just set the delete-time and reset link-count. the block-numbers in the inode
+	 * are still present, so that it may be possible to restore the file, if the blocks
+	 * have not been overwritten in the meantime. */
+	cnode->inode.deletetime = getTime();
+	cnode->inode.linkCount = 0;
 	cnode->dirty = true;
 	return 0;
 }

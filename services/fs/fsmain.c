@@ -76,7 +76,7 @@ int main(void) {
 						if(no >= 0 && (flags & IO_TRUNCATE)) {
 							sCachedInode *cnode = ext2_icache_request(&ext2,no);
 							if(cnode != NULL)
-								ext2_file_truncate(&ext2,cnode);
+								ext2_file_truncate(&ext2,cnode,false);
 						}
 
 						/*debugf("Received an open from %d of '%s' for ",data->pid,data + 1);

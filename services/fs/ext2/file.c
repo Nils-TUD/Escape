@@ -64,7 +64,7 @@ s32 ext2_file_create(sExt2 *e,sCachedInode *dirNode,const char *name,tInodeNo *i
 s32 ext2_file_delete(sExt2 *e,sCachedInode *cnode) {
 	s32 res;
 	/* truncate the file */
-	if((res = ext2_file_truncate(e,cnode)) < 0)
+	if((res = ext2_file_truncate(e,cnode,true)) < 0)
 		return res;
 	/* free inode */
 	if((res = ext2_inode_destroy(e,cnode)) < 0)
@@ -72,7 +72,7 @@ s32 ext2_file_delete(sExt2 *e,sCachedInode *cnode) {
 	return 0;
 }
 
-s32 ext2_file_truncate(sExt2 *e,sCachedInode *cnode) {
+s32 ext2_file_truncate(sExt2 *e,sCachedInode *cnode,bool delete) {
 	s32 res;
 	u32 i;
 	/* free direct blocks */
@@ -81,19 +81,22 @@ s32 ext2_file_truncate(sExt2 *e,sCachedInode *cnode) {
 			break;
 		if((res = ext2_bm_freeBlock(e,cnode->inode.dBlocks[i])) < 0)
 			return res;
-		cnode->inode.dBlocks[i] = 0;
+		if(!delete)
+			cnode->inode.dBlocks[i] = 0;
 	}
 	/* indirect */
 	if(cnode->inode.singlyIBlock) {
 		if((res = ext2_file_freeIndirBlock(e,cnode->inode.singlyIBlock)) < 0)
 			return res;
-		cnode->inode.singlyIBlock = 0;
+		if(!delete)
+			cnode->inode.singlyIBlock = 0;
 	}
 	/* double indirect */
 	if(cnode->inode.doublyIBlock) {
 		if((res = ext2_file_freeDIndirBlock(e,cnode->inode.doublyIBlock)) < 0)
 			return res;
-		cnode->inode.doublyIBlock = 0;
+		if(!delete)
+			cnode->inode.doublyIBlock = 0;
 	}
 	/* triple indirect */
 	if(cnode->inode.triplyIBlock) {
@@ -110,17 +113,19 @@ s32 ext2_file_truncate(sExt2 *e,sCachedInode *cnode) {
 				break;
 			if((res = ext2_file_freeDIndirBlock(e,((u32*)blocks->buffer)[i])) < 0)
 				return res;
-			((u32*)blocks->buffer)[i] = 0;
 		}
 		blocks->dirty = true;
 		if((res = ext2_bm_freeBlock(e,cnode->inode.triplyIBlock)) < 0)
 			return res;
-		cnode->inode.triplyIBlock = 0;
+		if(!delete)
+			cnode->inode.triplyIBlock = 0;
 	}
 
-	/* reset size */
-	cnode->inode.size = 0;
-	cnode->inode.blocks = 0;
+	if(!delete) {
+		/* reset size */
+		cnode->inode.size = 0;
+		cnode->inode.blocks = 0;
+	}
 	cnode->dirty = true;
 	return 0;
 }
@@ -245,7 +250,6 @@ static s32 ext2_file_freeDIndirBlock(sExt2 *e,u32 blockNo) {
 		if(((u32*)blocks->buffer)[i] == 0)
 			break;
 		ext2_file_freeIndirBlock(e,((u32*)blocks->buffer)[i]);
-		((u32*)blocks->buffer)[i] = 0;
 	}
 	blocks->dirty = true;
 	ext2_bm_freeBlock(e,blockNo);

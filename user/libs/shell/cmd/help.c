@@ -37,7 +37,7 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 	printf("	ls [-ali] [<dir>]				List current or specified directory\n");
 	printf("	progress						Shows a progress-bar\n");
 	printf("	ps [-t]							Print processes\n");
-	printf("	echo <string>,...				Print given arguments\n");
+	printf("	echo <string> ...				Print given arguments\n");
 	printf("	env [<name>|<name>=<value>]		Print or set env-variable(s)\n");
 	printf("	help							Print this message\n");
 	printf("	cd <dir>						Change to given directory\n");
@@ -47,6 +47,12 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 	printf("	less [<file>]					Allows navigation through <file> or STDIN\n");
 	printf("	dump [-n <b>][-f <f>][<file>]	Dumps bytes from <file> or STDIN to STDOUT\n");
 	printf("	grep <pattern> [<file>]			Prints all lines that match <pattern>\n");
+	printf("	ln <target> <name>				Lets <name> point to <target>\n");
+	printf("	mkdir <dir> ...					Creates the given directories\n");
+	printf("	rm <file> ...					Removes the given files\n");
+	printf("	rmdir <dir> ...					Removes the given (empty!) directories\n");
+	printf("	sync							Flushes the filesystem-buffers\n");
+	printf("	write <file>					Reads from STDIN and writes it to <file>\n");
 	printf("\n");
 	printf("	gui								Start GUI\n");
 	printf("									(be carefull: this is a oneway-ticket ;))\n");

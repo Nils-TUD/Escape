@@ -26,13 +26,13 @@
 /**
  * Allocates an inode in the given block-group
  */
-static tInodeNo ext2_bm_allocInodeIn(sExt2 *e,u32 groupStart,sBlockGroup *group);
+static tInodeNo ext2_bm_allocInodeIn(sExt2 *e,u32 groupStart,sBlockGroup *group,bool isDir);
 /**
  * Allocates a block in the given block-group
  */
 static u32 ext2_bm_allocBlockIn(sExt2 *e,u32 groupStart,sBlockGroup *group);
 
-tInodeNo ext2_bm_allocInode(sExt2 *e,sCachedInode *dirInode) {
+tInodeNo ext2_bm_allocInode(sExt2 *e,sCachedInode *dirInode,bool isDir) {
 	u32 gcount = ext2_getBlockGroupCount(e);
 	u32 block = ext2_getBlockOfInode(e,dirInode->inodeNo);
 	u32 group = ext2_getGroupOfBlock(e,block);
@@ -43,20 +43,20 @@ tInodeNo ext2_bm_allocInode(sExt2 *e,sCachedInode *dirInode) {
 		return 0;
 
 	/* first try to find a block in the block-group of the inode */
-	ino = ext2_bm_allocInodeIn(e,group * e->superBlock.inodesPerGroup,e->groups + group);
+	ino = ext2_bm_allocInodeIn(e,group * e->superBlock.inodesPerGroup,e->groups + group,isDir);
 	if(ino != 0)
 		return ino;
 
 	/* now try the other block-groups */
 	for(i = group + 1; i != group; i = (i + 1) % gcount) {
-		ino = ext2_bm_allocInodeIn(e,i * e->superBlock.inodesPerGroup,e->groups + i);
+		ino = ext2_bm_allocInodeIn(e,i * e->superBlock.inodesPerGroup,e->groups + i,isDir);
 		if(ino != 0)
 			return ino;
 	}
 	return 0;
 }
 
-s32 ext2_bm_freeInode(sExt2 *e,tInodeNo ino) {
+s32 ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir) {
 	u32 group = ext2_getGroupOfInode(e,ino);
 	sCachedBlock *bitmap = ext2_bcache_request(e,e->groups[group].inodeBitmap);
 	if(bitmap == NULL)
@@ -68,13 +68,15 @@ s32 ext2_bm_freeInode(sExt2 *e,tInodeNo ino) {
 	bitmap->buffer[ino / 8] &= ~(1 << (ino % 8));
 	bitmap->dirty = true;
 	e->groups[group].freeInodeCount++;
+	if(isDir)
+		e->groups[group].usedDirCount--;
 	e->groupsDirty = true;
 	e->superBlock.freeInodeCount++;
 	e->sbDirty = true;
 	return 0;
 }
 
-static tInodeNo ext2_bm_allocInodeIn(sExt2 *e,u32 groupStart,sBlockGroup *group) {
+static tInodeNo ext2_bm_allocInodeIn(sExt2 *e,u32 groupStart,sBlockGroup *group,bool isDir) {
 	u32 i,j;
 	tInodeNo ino;
 	if(group->freeInodeCount == 0)
@@ -92,6 +94,8 @@ static tInodeNo ext2_bm_allocInodeIn(sExt2 *e,u32 groupStart,sBlockGroup *group)
 				return 0;
 			if(!(bitmap->buffer[i] & j)) {
 				group->freeInodeCount--;
+				if(isDir)
+					group->usedDirCount++;
 				e->groupsDirty = true;
 				bitmap->buffer[i] |= j;
 				bitmap->dirty = true;

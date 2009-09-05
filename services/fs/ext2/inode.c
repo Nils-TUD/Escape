@@ -36,24 +36,33 @@
  */
 static u32 ext2_inode_extend(sExt2 *e,sCachedInode *cnode,sCachedBlock *cblock,u32 index,bool *added);
 
-s32 ext2_inode_create(sExt2 *e,sCachedInode *dirNode,sCachedInode **ino) {
+s32 ext2_inode_create(sExt2 *e,sCachedInode *dirNode,sCachedInode **ino,bool isDir) {
 	u32 i,now;
 	sCachedInode *cnode;
 
 	/* request inode */
-	tInodeNo inodeNo = ext2_bm_allocInode(e,dirNode);
+	tInodeNo inodeNo = ext2_bm_allocInode(e,dirNode,isDir);
 	if(inodeNo == 0)
 		return ERR_FS_INODE_ALLOC;
 	cnode = ext2_icache_request(e,inodeNo);
 	if(cnode == NULL) {
-		ext2_bm_freeInode(e,inodeNo);
+		ext2_bm_freeInode(e,inodeNo,isDir);
 		return ERR_FS_INODE_NOT_FOUND;
 	}
 
 	/* init inode */
 	cnode->inode.gid = 0;
 	cnode->inode.uid = 0;
-	cnode->inode.mode = EXT2_S_IFREG | EXT2_S_IRUSR | EXT2_S_IWUSR | EXT2_S_IRGRP | EXT2_S_IROTH;
+	if(isDir) {
+		cnode->inode.mode = EXT2_S_IFDIR |
+			EXT2_S_IRUSR | EXT2_S_IRGRP | EXT2_S_IROTH |
+			EXT2_S_IXUSR | EXT2_S_IXGRP | EXT2_S_IXOTH |
+			EXT2_S_IWUSR;
+	}
+	else {
+		cnode->inode.mode = EXT2_S_IFREG |
+			EXT2_S_IRUSR | EXT2_S_IWUSR | EXT2_S_IRGRP | EXT2_S_IROTH;
+	}
 	cnode->inode.linkCount = 0;
 	cnode->inode.size = 0;
 	cnode->inode.singlyIBlock = 0;
@@ -74,7 +83,7 @@ s32 ext2_inode_create(sExt2 *e,sCachedInode *dirNode,sCachedInode **ino) {
 s32 ext2_inode_destroy(sExt2 *e,sCachedInode *cnode) {
 	s32 res;
 	/* free inode, clear it and ensure that it get's written back to disk */
-	if((res = ext2_bm_freeInode(e,cnode->inodeNo)) < 0)
+	if((res = ext2_bm_freeInode(e,cnode->inodeNo,MODE_IS_DIR(cnode->inode.mode))) < 0)
 		return res;
 	memclear(&(cnode->inode),sizeof(sInode));
 	cnode->dirty = true;

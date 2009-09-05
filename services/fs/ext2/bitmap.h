@@ -29,18 +29,20 @@
  *
  * @param e the ext2-data
  * @param dirNode the directory-inode
+ * @param isDir wether the inode should be an directory
  * @return the inode-number or 0 if failed
  */
-tInodeNo ext2_bm_allocInode(sExt2 *e,sCachedInode *dirInode);
+tInodeNo ext2_bm_allocInode(sExt2 *e,sCachedInode *dirInode,bool isDir);
 
 /**
  * Free's the given inode-number
  *
  * @param e the ext2-data
  * @param ino the inode-number
+ * @param isDir wether the inode is an directory
  * @return 0 on success
  */
-s32 ext2_bm_freeInode(sExt2 *e,tInodeNo ino);
+s32 ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir);
 
 /**
  * Allocates a new block for the given inode. It will be tried to allocate a block in the same

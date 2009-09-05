@@ -38,6 +38,7 @@
 #include "ext2/file.h"
 #include "ext2/superblock.h"
 #include "ext2/link.h"
+#include "ext2/dir.h"
 
 static sMsg msg;
 static sExt2 ext2;
@@ -201,7 +202,9 @@ int main(void) {
 								sCachedInode *dir = ext2_icache_request(&ext2,newIno);
 								sCachedInode *ino = ext2_icache_request(&ext2,oldIno);
 								if(dir == NULL || ino == NULL)
-									msg.args.arg1 = ERR_INVALID_NODENO;
+									msg.args.arg1 = ERR_FS_INODE_NOT_FOUND;
+								else if(MODE_IS_DIR(ino->inode.mode))
+									msg.args.arg1 = ERR_FS_IS_DIRECTORY;
 								else {
 									*name = backup;
 									msg.args.arg1 = ext2_link(&ext2,dir,ino,name);
@@ -219,6 +222,50 @@ int main(void) {
 						char *name;
 						tInodeNo dirIno;
 						char backup;
+						dirIno = ext2_path_resolve(&ext2,path,IO_READ);
+						if(dirIno < 0)
+							msg.args.arg1 = dirIno;
+						else {
+							sCachedInode *cnode = ext2_icache_request(&ext2,dirIno);
+							if(cnode == NULL)
+								msg.args.arg1 = ERR_FS_INODE_NOT_FOUND;
+							else if(MODE_IS_DIR(cnode->inode.mode))
+								msg.args.arg1 = ERR_FS_IS_DIRECTORY;
+							else {
+								/* split path and name */
+								u32 len = strlen(path);
+								if(path[len - 1] == '/')
+									path[len - 1] = '\0';
+								name = strrchr(path,'/') + 1;
+								backup = *name;
+								dirname(path);
+
+								/* find directory */
+								dirIno = ext2_path_resolve(&ext2,path,IO_READ);
+								if(dirIno < 0)
+									msg.args.arg1 = dirIno;
+								else {
+									sCachedInode *dir = ext2_icache_request(&ext2,dirIno);
+									if(dir == NULL)
+										msg.args.arg1 = ERR_FS_INODE_NOT_FOUND;
+									else {
+										*name = backup;
+										msg.args.arg1 = ext2_unlink(&ext2,dir,name);
+									}
+									ext2_icache_release(&ext2,dir);
+								}
+							}
+						}
+						send(fd,MSG_FS_UNLINK_RESP,&msg,sizeof(msg.args));
+					}
+					break;
+
+					case MSG_FS_MKDIR: {
+						char *path = msg.str.s1;
+						char *name,backup;
+						tInodeNo dirIno;
+						sCachedInode *dir;
+
 						/* split path and name */
 						u32 len = strlen(path);
 						if(path[len - 1] == '/')
@@ -227,21 +274,51 @@ int main(void) {
 						backup = *name;
 						dirname(path);
 
-						/* find directory */
 						dirIno = ext2_path_resolve(&ext2,path,IO_READ);
 						if(dirIno < 0)
 							msg.args.arg1 = dirIno;
 						else {
-							sCachedInode *dir = ext2_icache_request(&ext2,dirIno);
+							dir = ext2_icache_request(&ext2,dirIno);
 							if(dir == NULL)
-								msg.args.arg1 = ERR_INVALID_NODENO;
+								msg.args.arg1 = ERR_FS_INODE_NOT_FOUND;
 							else {
 								*name = backup;
-								msg.args.arg1 = ext2_unlink(&ext2,dir,name);
+								msg.args.arg1 = ext2_dir_create(&ext2,dir,name);
 							}
 							ext2_icache_release(&ext2,dir);
 						}
-						send(fd,MSG_FS_UNLINK_RESP,&msg,sizeof(msg.args));
+						send(fd,MSG_FS_MKDIR_RESP,&msg,sizeof(msg.args));
+					}
+					break;
+
+					case MSG_FS_RMDIR: {
+						char *path = msg.str.s1;
+						char *name,backup;
+						tInodeNo dirIno;
+						sCachedInode *dir;
+
+						/* split path and name */
+						u32 len = strlen(path);
+						if(path[len - 1] == '/')
+							path[len - 1] = '\0';
+						name = strrchr(path,'/') + 1;
+						backup = *name;
+						dirname(path);
+
+						dirIno = ext2_path_resolve(&ext2,path,IO_READ);
+						if(dirIno < 0)
+							msg.args.arg1 = dirIno;
+						else {
+							dir = ext2_icache_request(&ext2,dirIno);
+							if(dir == NULL)
+								msg.args.arg1 = ERR_FS_INODE_NOT_FOUND;
+							else {
+								*name = backup;
+								msg.args.arg1 = ext2_dir_delete(&ext2,dir,name);
+							}
+							ext2_icache_release(&ext2,dir);
+						}
+						send(fd,MSG_FS_RMDIR_RESP,&msg,sizeof(msg.args));
 					}
 					break;
 

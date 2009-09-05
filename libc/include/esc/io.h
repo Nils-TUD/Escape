@@ -192,6 +192,22 @@ s32 link(const char *oldPath,const char *newPath);
 s32 unlink(const char *path);
 
 /**
+ * Creates the given directory. Expects that all except the last path-component exist.
+ *
+ * @param path the path
+ * @return 0 on success
+ */
+s32 mkdir(const char *path);
+
+/**
+ * Removes the given directory. Expects that the directory is empty (except '.' and '..')
+ *
+ * @param path the path
+ * @return 0 on success
+ */
+s32 rmdir(const char *path);
+
+/**
  * Writes all dirty objects of the filesystem to disk
  *
  * @return 0 on success

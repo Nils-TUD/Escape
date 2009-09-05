@@ -121,6 +121,7 @@ createhdd: $(DISKMOUNT)
 		echo "Das ist ein Test-String!!" > $(DISKMOUNT)/file.txt
 		$(SUDO) cp user/test.bmp $(DISKMOUNT)
 		$(SUDO) cp user/bbc.bmp $(DISKMOUNT)
+		$(SUDO) cp user/test.bmp $(DISKMOUNT)/bla.bmp
 		$(SUDO) cp $(DISKMOUNT)/file.txt $(DISKMOUNT)/testdir/file.txt
 		$(SUDO) dd if=/dev/zero of=$(DISKMOUNT)/zeros bs=1024 count=1024
 		$(SUDO) touch $(DISKMOUNT)/bigfile

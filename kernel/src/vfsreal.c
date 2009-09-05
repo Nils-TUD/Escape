@@ -42,13 +42,12 @@ typedef struct {
 	tFileNo realFile;
 } sReal2Virt;
 
-/* The request-handler for the different message-ids */
-static void vfsr_openReqHandler(tTid tid,const u8 *data,u32 size);
-static void vfsr_readReqHandler(tTid tid,const u8 *data,u32 size);
-static void vfsr_statReqHandler(tTid tid,const u8 *data,u32 size);
-static void vfsr_writeReqHandler(tTid tid,const u8 *data,u32 size);
-static void vfsr_linkReqHandler(tTid tid,const u8 *data,u32 size);
-static void vfsr_unlinkReqHandler(tTid tid,const u8 *data,u32 size);
+/* The request-handler for sending a path and receiving a result */
+static s32 vfsr_pathReqHandler(tTid tid,const char *path,u32 cmd);
+/* The response-handler for the different message-ids */
+static void vfsr_readRespHandler(tTid tid,const u8 *data,u32 size);
+static void vfsr_statRespHandler(tTid tid,const u8 *data,u32 size);
+static void vfsr_defRespHandler(tTid tid,const u8 *data,u32 size);
 static tFileNo vfsr_create(tTid tid);
 static s32 vfsr_add(tFileNo virtFile,tFileNo realFile);
 static sReal2Virt *vfsr_get(tFileNo real,s32 *err);
@@ -59,12 +58,14 @@ static sMsg msg;
 static sSLList *real2virt[R2V_MAP_SIZE] = {NULL};
 
 void vfsr_init(void) {
-	vfsreq_setHandler(MSG_FS_OPEN_RESP,vfsr_openReqHandler);
-	vfsreq_setHandler(MSG_FS_READ_RESP,vfsr_readReqHandler);
-	vfsreq_setHandler(MSG_FS_STAT_RESP,vfsr_statReqHandler);
-	vfsreq_setHandler(MSG_FS_WRITE_RESP,vfsr_writeReqHandler);
-	vfsreq_setHandler(MSG_FS_LINK_RESP,vfsr_linkReqHandler);
-	vfsreq_setHandler(MSG_FS_UNLINK_RESP,vfsr_unlinkReqHandler);
+	vfsreq_setHandler(MSG_FS_OPEN_RESP,vfsr_defRespHandler);
+	vfsreq_setHandler(MSG_FS_READ_RESP,vfsr_readRespHandler);
+	vfsreq_setHandler(MSG_FS_STAT_RESP,vfsr_statRespHandler);
+	vfsreq_setHandler(MSG_FS_WRITE_RESP,vfsr_defRespHandler);
+	vfsreq_setHandler(MSG_FS_LINK_RESP,vfsr_defRespHandler);
+	vfsreq_setHandler(MSG_FS_UNLINK_RESP,vfsr_defRespHandler);
+	vfsreq_setHandler(MSG_FS_MKDIR_RESP,vfsr_defRespHandler);
+	vfsreq_setHandler(MSG_FS_RMDIR_RESP,vfsr_defRespHandler);
 }
 
 s32 vfsr_openFile(tTid tid,u8 flags,const char *path) {
@@ -99,15 +100,15 @@ s32 vfsr_openFile(tTid tid,u8 flags,const char *path) {
 	/* that's magic, isn't it? ;D */
 
 	/* error? */
-	if((s32)req->val1 < 0) {
-		tInodeNo no = req->val1;
+	if((s32)req->count < 0) {
+		tInodeNo no = req->count;
 		vfsreq_remRequest(req);
 		vfsr_destroy(tid,virtFile);
 		return no;
 	}
 
 	/* now open the file */
-	realFile = vfs_openFile(tid,flags,req->val1);
+	realFile = vfs_openFile(tid,flags,req->count);
 	vfsreq_remRequest(req);
 	if((res = vfsr_add(virtFile,realFile)) < 0) {
 		vfsr_destroy(tid,virtFile);
@@ -247,30 +248,15 @@ s32 vfsr_link(tTid tid,const char *oldPath,const char *newPath) {
 }
 
 s32 vfsr_unlink(tTid tid,const char *path) {
-	s32 res;
-	sRequest *req;
-	tFileNo virtFile;
+	return vfsr_pathReqHandler(tid,path,MSG_FS_UNLINK);
+}
 
-	if(strlen(path) > MAX_MSGSTR_LEN)
-		return ERR_INVALID_SYSC_ARGS;
+s32 vfsr_mkdir(tTid tid,const char *path) {
+	return vfsr_pathReqHandler(tid,path,MSG_FS_MKDIR);
+}
 
-	if((virtFile = vfsr_create(tid)) < 0)
-		return virtFile;
-
-	strcpy(msg.str.s1,path);
-	res = vfs_sendMsg(tid,virtFile,MSG_FS_UNLINK,(u8*)&msg,sizeof(msg.str));
-	if(res < 0)
-		return res;
-
-	/* wait for a reply */
-	req = vfsreq_waitForReply(tid,NULL,0);
-	vfsr_destroy(tid,virtFile);
-	if(req == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-
-	res = req->count;
-	vfsreq_remRequest(req);
-	return res;
+s32 vfsr_rmdir(tTid tid,const char *path) {
+	return vfsr_pathReqHandler(tid,path,MSG_FS_RMDIR);
 }
 
 s32 vfsr_sync(tTid tid) {
@@ -300,23 +286,34 @@ void vfsr_closeFile(tTid tid,tFileNo file,tInodeNo inodeNo) {
 	vfsr_remove(tid,file);
 }
 
-static void vfsr_openReqHandler(tTid tid,const u8 *data,u32 size) {
-	sMsg *rmsg = (sMsg*)data;
-	if(size < sizeof(rmsg->args))
-		return;
+static s32 vfsr_pathReqHandler(tTid tid,const char *path,u32 cmd) {
+	s32 res;
+	sRequest *req;
+	tFileNo virtFile;
 
-	/* find the request for the tid */
-	sRequest *req = vfsreq_getRequestByPid(tid);
-	if(req != NULL) {
-		/* remove request and give him the inode-number */
-		req->state = REQ_STATE_FINISHED;
-		req->val1 = rmsg->args.arg1;
-		/* the thread can continue now */
-		thread_wakeup(tid,EV_RECEIVED_MSG);
-	}
+	if(strlen(path) > MAX_MSGSTR_LEN)
+		return ERR_INVALID_SYSC_ARGS;
+
+	if((virtFile = vfsr_create(tid)) < 0)
+		return virtFile;
+
+	strcpy(msg.str.s1,path);
+	res = vfs_sendMsg(tid,virtFile,cmd,(u8*)&msg,sizeof(msg.str));
+	if(res < 0)
+		return res;
+
+	/* wait for a reply */
+	req = vfsreq_waitForReply(tid,NULL,0);
+	vfsr_destroy(tid,virtFile);
+	if(req == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+
+	res = req->count;
+	vfsreq_remRequest(req);
+	return res;
 }
 
-static void vfsr_readReqHandler(tTid tid,const u8 *data,u32 size) {
+static void vfsr_readRespHandler(tTid tid,const u8 *data,u32 size) {
 	/* find the request for the tid */
 	sRequest *req = vfsreq_getRequestByPid(tid);
 	if(req != NULL) {
@@ -348,7 +345,7 @@ static void vfsr_readReqHandler(tTid tid,const u8 *data,u32 size) {
 	}
 }
 
-static void vfsr_statReqHandler(tTid tid,const u8 *data,u32 size) {
+static void vfsr_statRespHandler(tTid tid,const u8 *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
 	if(size < sizeof(rmsg->data))
 		return;
@@ -367,7 +364,7 @@ static void vfsr_statReqHandler(tTid tid,const u8 *data,u32 size) {
 	}
 }
 
-static void vfsr_writeReqHandler(tTid tid,const u8 *data,u32 size) {
+static void vfsr_defRespHandler(tTid tid,const u8 *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
 	if(size < sizeof(rmsg->args))
 		return;
@@ -375,39 +372,7 @@ static void vfsr_writeReqHandler(tTid tid,const u8 *data,u32 size) {
 	/* find the request for the tid */
 	sRequest *req = vfsreq_getRequestByPid(tid);
 	if(req != NULL) {
-		/* remove request and give him the inode-number */
-		req->state = REQ_STATE_FINISHED;
-		req->count = rmsg->args.arg1;
-		/* the thread can continue now */
-		thread_wakeup(tid,EV_RECEIVED_MSG);
-	}
-}
-
-static void vfsr_linkReqHandler(tTid tid,const u8 *data,u32 size) {
-	sMsg *rmsg = (sMsg*)data;
-	if(size < sizeof(rmsg->args))
-		return;
-
-	/* find the request for the tid */
-	sRequest *req = vfsreq_getRequestByPid(tid);
-	if(req != NULL) {
-		/* remove request and give him the inode-number */
-		req->state = REQ_STATE_FINISHED;
-		req->count = rmsg->args.arg1;
-		/* the thread can continue now */
-		thread_wakeup(tid,EV_RECEIVED_MSG);
-	}
-}
-
-static void vfsr_unlinkReqHandler(tTid tid,const u8 *data,u32 size) {
-	sMsg *rmsg = (sMsg*)data;
-	if(size < sizeof(rmsg->args))
-		return;
-
-	/* find the request for the tid */
-	sRequest *req = vfsreq_getRequestByPid(tid);
-	if(req != NULL) {
-		/* remove request and give him the inode-number */
+		/* remove request and give him the result */
 		req->state = REQ_STATE_FINISHED;
 		req->count = rmsg->args.arg1;
 		/* the thread can continue now */

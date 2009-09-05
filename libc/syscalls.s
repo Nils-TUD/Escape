@@ -69,6 +69,8 @@ SYSCALL_GETCYCLES			equ 45
 SYSCALL_SYNC					equ 46
 SYSCALL_LINK					equ 47
 SYSCALL_UNLINK				equ 48
+SYSCALL_MKDIR					equ 49
+SYSCALL_RMDIR					equ 50
 
 ; the IRQ for syscalls
 SYSCALL_IRQ						equ	0x30

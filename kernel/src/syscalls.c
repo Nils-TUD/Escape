@@ -419,6 +419,20 @@ static void sysc_link(sIntrptStackFrame *stack);
  * @return 0 on success
  */
 static void sysc_unlink(sIntrptStackFrame *stack);
+/**
+ * Creates the given directory. Expects that all except the last path-component exist.
+ *
+ * @param char* the path
+ * @return 0 on success
+ */
+static void sysc_mkdir(sIntrptStackFrame *stack);
+/**
+ * Removes the given directory. Expects that the directory is empty (except '.' and '..')
+ *
+ * @param char* the path
+ * @return 0 on success
+ */
+static void sysc_rmdir(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -479,6 +493,8 @@ static sSyscall syscalls[] = {
 	/* 46 */	{sysc_sync,					0},
 	/* 47 */	{sysc_link,					2},
 	/* 48 */	{sysc_unlink,				1},
+	/* 49 */	{sysc_mkdir,				1},
+	/* 50 */	{sysc_rmdir,				1},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -1442,6 +1458,32 @@ static void sysc_unlink(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	res = vfsr_unlink(t->tid,path);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+static void sysc_mkdir(sIntrptStackFrame *stack) {
+	s32 res;
+	sThread *t = thread_getRunning();
+	char *path = (char*)SYSC_ARG1(stack);
+	if(!sysc_isStringReadable(path))
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+
+	res = vfsr_mkdir(t->tid,path);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+static void sysc_rmdir(sIntrptStackFrame *stack) {
+	s32 res;
+	sThread *t = thread_getRunning();
+	char *path = (char*)SYSC_ARG1(stack);
+	if(!sysc_isStringReadable(path))
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+
+	res = vfsr_rmdir(t->tid,path);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

@@ -29,9 +29,10 @@
  * @param e the ext2-handle
  * @param dirNode the directory-inode
  * @param ino will be set to the inode on success
+ * @param isDir wether it should be an directory
  * @return 0 on success
  */
-s32 ext2_inode_create(sExt2 *e,sCachedInode *dirNode,sCachedInode **ino);
+s32 ext2_inode_create(sExt2 *e,sCachedInode *dirNode,sCachedInode **ino,bool isDir);
 
 /**
  * Destroys the given inode. That means the inode will be marked as free in the bitmap,

@@ -19,11 +19,13 @@
 
 #include <esc/common.h>
 #include <esc/heap.h>
+#include <fsinterface.h>
 #include <errors.h>
 #include <string.h>
 #include "ext2.h"
 #include "file.h"
 #include "link.h"
+#include "dir.h"
 #include "inodecache.h"
 
 /**
@@ -48,6 +50,12 @@ s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 	if(ext2_file_read(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
 		free(buf);
 		return ERR_FS_READ_FAILED;
+	}
+
+	/* check if the entry exists */
+	if(ext2_dir_findIn((sExt2DirEntry*)buf,dirSize,name,len) >= 0) {
+		free(buf);
+		return ERR_FS_FILE_EXISTS;
 	}
 
 	/* search for a place for our entry */
@@ -92,7 +100,7 @@ s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 
 s32 ext2_unlink(sExt2 *e,sCachedInode *dir,const char *name) {
 	u8 *buf;
-	u32 len,nameLen;
+	u32 nameLen;
 	tInodeNo ino = -1;
 	sExt2DirEntry *dire,*prev;
 	s32 res,dirSize = dir->inode.size;
@@ -112,17 +120,14 @@ s32 ext2_unlink(sExt2 *e,sCachedInode *dir,const char *name) {
 	prev = NULL;
 	dire = (sExt2DirEntry*)buf;
 	while((u8*)dire < buf + dirSize) {
-		len = MIN(dire->nameLen,nameLen);
-		if(strncmp(dire->name,name,len) == 0) {
+		if(nameLen == dire->nameLen && strncmp(dire->name,name,nameLen) == 0) {
 			ino = dire->inode;
 			/* if we have a previous one, simply increase its length */
 			if(prev != NULL)
 				prev->recLen += dire->recLen;
 			/* otherwise make an empty entry */
-			else {
+			else
 				dire->inode = 0;
-				dire->nameLen = 0;
-			}
 			break;
 		}
 

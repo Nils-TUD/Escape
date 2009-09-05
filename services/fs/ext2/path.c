@@ -29,6 +29,7 @@
 #include "inodecache.h"
 #include "rw.h"
 #include "file.h"
+#include "dir.h"
 
 tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags) {
 	sCachedInode *cnode = NULL;
@@ -49,77 +50,46 @@ tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags) {
 
 	pos = strchri(p,'/');
 	while(*p) {
-		s32 rem = cnode->inode.size;
-		sExt2DirEntry *eBak;
-		sExt2DirEntry *entry;
-		entry = (sExt2DirEntry*)malloc(sizeof(u8) * cnode->inode.size);
-		if(entry == NULL) {
+		res = ext2_dir_find(e,cnode,p,pos);
+		if(res >= 0) {
+			p += pos;
 			ext2_icache_release(e,cnode);
-			return ERR_NOT_ENOUGH_MEM;
-		}
+			cnode = ext2_icache_request(e,res);
+			if(cnode == NULL)
+				return ERR_FS_INODE_NOT_FOUND;
 
-		eBak = entry;
-		if(ext2_file_read(e,cnode->inodeNo,entry,0,cnode->inode.size) < 0) {
-			free(eBak);
-			ext2_icache_release(e,cnode);
-			return ERR_FS_READ_FAILED;
-		}
-
-		while(rem > 0 && entry->inode != 0) {
-			if(pos == entry->nameLen && strncmp(entry->name,p,pos) == 0) {
-				p += pos;
-				cnode = ext2_icache_request(e,entry->inode);
-				if(cnode == NULL) {
-					ext2_icache_release(e,cnode);
-					free(eBak);
-					return ERR_FS_READ_FAILED;
-				}
-				ext2_icache_release(e,cnode);
-
-				/* skip slashes */
-				while(*p == '/')
-					p++;
-				/* "/" at the end is optional */
-				if(!*p)
-					break;
-
-				/* move to childs of this node */
-				pos = strchri(p,'/');
-				if((cnode->inode.mode & EXT2_S_IFDIR) == 0) {
-					ext2_icache_release(e,cnode);
-					free(eBak);
-					return ERR_NO_DIRECTORY;
-				}
+			/* skip slashes */
+			while(*p == '/')
+				p++;
+			/* "/" at the end is optional */
+			if(!*p)
 				break;
+
+			/* move to childs of this node */
+			pos = strchri(p,'/');
+			if((cnode->inode.mode & EXT2_S_IFDIR) == 0) {
+				ext2_icache_release(e,cnode);
+				return ERR_NO_DIRECTORY;
 			}
-
-			/* to next dir-entry */
-			rem -= entry->recLen;
-			entry = (sExt2DirEntry*)((u8*)entry + entry->recLen);
 		}
-
 		/* no match? */
-		if(rem <= 0 || entry->inode == 0) {
+		else {
 			char *slash = strchr(p,'/');
 			/* should we create a new file? */
 			if((slash == NULL || *(slash + 1) == '\0') && (flags & IO_CREATE)) {
 				/* ensure that there is no '/' in the name */
 				*slash = '\0';
-				err = ext2_file_create(e,cnode,p,&res);
+				err = ext2_file_create(e,cnode,p,&res,false);
 				ext2_icache_release(e,cnode);
-				free(eBak);
 				if(err < 0)
 					return err;
 				return res;
 			}
 			else {
-				free(eBak);
 				ext2_icache_release(e,cnode);
 				return ERR_PATH_NOT_FOUND;
 			}
 		}
-
-		free(eBak);
 	}
 
 	res = cnode->inodeNo;

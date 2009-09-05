@@ -65,6 +65,8 @@ sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 	sCachedInode *startNode = e->inodeCache + (no & (INODE_CACHE_SIZE - 1));
 	sCachedInode *iend = e->inodeCache + INODE_CACHE_SIZE;
 	sCachedInode *inode;
+	if(no <= EXT2_BAD_INO)
+		return NULL;
 	for(inode = startNode; inode < iend; inode++) {
 		if(inode->inodeNo == no) {
 			inode->refs++;

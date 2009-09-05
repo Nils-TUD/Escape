@@ -694,6 +694,30 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Unsupported operation");
 			break;
 
+		case ERR_FS_INODE_ALLOC:
+			strcpy(msg,"Inode-allocation failed");
+			break;
+
+		case ERR_FS_WRITE_FAILED:
+			strcpy(msg,"Write-operation failed");
+			break;
+
+		case ERR_FS_INODE_NOT_FOUND:
+			strcpy(msg,"Inode not found");
+			break;
+
+		case ERR_FS_IS_DIRECTORY:
+			strcpy(msg,"Its a directory");
+			break;
+
+		case ERR_FS_FILE_EXISTS:
+			strcpy(msg,"The file exists");
+			break;
+
+		case ERR_FS_DIR_NOT_EMPTY:
+			strcpy(msg,"Directory is not empty");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

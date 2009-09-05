@@ -43,9 +43,9 @@ static s32 ext2_file_freeDIndirBlock(sExt2 *e,u32 blockNo);
  */
 static s32 ext2_file_freeIndirBlock(sExt2 *e,u32 blockNo);
 
-s32 ext2_file_create(sExt2 *e,sCachedInode *dirNode,const char *name,tInodeNo *ino) {
+s32 ext2_file_create(sExt2 *e,sCachedInode *dirNode,const char *name,tInodeNo *ino,bool isDir) {
 	sCachedInode *cnode;
-	s32 res = ext2_inode_create(e,dirNode,&cnode);
+	s32 res = ext2_inode_create(e,dirNode,&cnode,isDir);
 	if(res < 0)
 		return res;
 

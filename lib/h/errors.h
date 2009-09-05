@@ -64,6 +64,9 @@
 #define ERR_FS_INODE_ALLOC			-41
 #define ERR_FS_WRITE_FAILED			-42
 #define ERR_FS_INODE_NOT_FOUND		-43
+#define ERR_FS_IS_DIRECTORY			-44
+#define ERR_FS_FILE_EXISTS			-45
+#define ERR_FS_DIR_NOT_EMPTY		-46
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

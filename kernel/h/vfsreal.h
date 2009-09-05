@@ -95,6 +95,24 @@ s32 vfsr_link(tTid tid,const char *oldPath,const char *newPath);
 s32 vfsr_unlink(tTid tid,const char *path);
 
 /**
+ * Creates the given directory. Expects that all except the last path-component exist.
+ *
+ * @param tid the thread-id
+ * @param path the path
+ * @return 0 on success
+ */
+s32 vfsr_mkdir(tTid tid,const char *path);
+
+/**
+ * Removes the given directory. Expects that the directory is empty (except '.' and '..')
+ *
+ * @param tid the thread-id
+ * @param path the path
+ * @return 0 on success
+ */
+s32 vfsr_rmdir(tTid tid,const char *path);
+
+/**
  * Writes all dirty objects of the filesystem to disk
  *
  * @param tid the thread-id

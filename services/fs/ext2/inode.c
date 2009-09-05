@@ -34,7 +34,7 @@
  * Puts a new block in cblock->buffer if cblock->buffer[index] is 0. Marks the cblock dirty,
  * if necessary. Sets <added> to true or false, depending on wether a block was allocated.
  */
-static u32 ext2_inode_extend(sExt2 *e,sCachedInode *cnode,sBCacheEntry *cblock,u32 index,bool *added);
+static u32 ext2_inode_extend(sExt2 *e,sCachedInode *cnode,sCachedBlock *cblock,u32 index,bool *added);
 
 s32 ext2_inode_create(sExt2 *e,sCachedInode *dirNode,sCachedInode **ino) {
 	u32 i,now;
@@ -84,7 +84,7 @@ s32 ext2_inode_destroy(sExt2 *e,sCachedInode *cnode) {
 u32 ext2_inode_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block) {
 	u32 i,blockSize,blocksPerBlock,blperBlSq;
 	bool added = false;
-	sBCacheEntry *cblock;
+	sCachedBlock *cblock;
 
 	/* Note that we don't have to mark the inode dirty here if blocks are added
 	 * because ext2_file_write() does it for us */
@@ -221,7 +221,7 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block) {
 	return i;
 }
 
-static u32 ext2_inode_extend(sExt2 *e,sCachedInode *cnode,sBCacheEntry *cblock,u32 index,bool *added) {
+static u32 ext2_inode_extend(sExt2 *e,sCachedInode *cnode,sCachedBlock *cblock,u32 index,bool *added) {
 	u32 *blockNos = (u32*)(cblock->buffer);
 	if(blockNos[index] == 0) {
 		u32 bno = ext2_bm_allocBlock(e,cnode);

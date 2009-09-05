@@ -128,7 +128,7 @@ static void ext2_icache_read(sExt2 *e,sCachedInode *inode) {
 	sBlockGroup *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
 	u32 inodesPerBlock = BLOCK_SIZE(e) / sizeof(sInode);
 	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
-	sBCacheEntry *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
+	sCachedBlock *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
 	memcpy(&(inode->inode),block->buffer + ((inode->inodeNo - 1) % inodesPerBlock) * sizeof(sInode),
 			sizeof(sInode));
 }
@@ -137,7 +137,7 @@ static void ext2_icache_write(sExt2 *e,sCachedInode *inode) {
 	sBlockGroup *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
 	u32 inodesPerBlock = BLOCK_SIZE(e) / sizeof(sInode);
 	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
-	sBCacheEntry *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
+	sCachedBlock *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
 	memcpy(block->buffer + ((inode->inodeNo - 1) % inodesPerBlock) * sizeof(sInode),
 			&(inode->inode),sizeof(sInode));
 	block->dirty = true;

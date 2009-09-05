@@ -58,7 +58,7 @@ tInodeNo ext2_bm_allocInode(sExt2 *e,sCachedInode *dirInode) {
 
 s32 ext2_bm_freeInode(sExt2 *e,tInodeNo ino) {
 	u32 group = ext2_getGroupOfInode(e,ino);
-	sBCacheEntry *bitmap = ext2_bcache_request(e,e->groups[group].inodeBitmap);
+	sCachedBlock *bitmap = ext2_bcache_request(e,e->groups[group].inodeBitmap);
 	if(bitmap == NULL)
 		return -1;
 
@@ -81,7 +81,7 @@ static tInodeNo ext2_bm_allocInodeIn(sExt2 *e,u32 groupStart,sBlockGroup *group)
 		return 0;
 
 	/* load bitmap */
-	sBCacheEntry *bitmap = ext2_bcache_request(e,group->inodeBitmap);
+	sCachedBlock *bitmap = ext2_bcache_request(e,group->inodeBitmap);
 	if(bitmap == NULL)
 		return 0;
 
@@ -129,7 +129,7 @@ u32 ext2_bm_allocBlock(sExt2 *e,sCachedInode *inode) {
 
 s32 ext2_bm_freeBlock(sExt2 *e,u32 blockNo) {
 	u32 group = ext2_getGroupOfBlock(e,blockNo);
-	sBCacheEntry *bitmap = ext2_bcache_request(e,e->groups[group].blockBitmap);
+	sCachedBlock *bitmap = ext2_bcache_request(e,e->groups[group].blockBitmap);
 	if(bitmap == NULL)
 		return -1;
 
@@ -151,7 +151,7 @@ static u32 ext2_bm_allocBlockIn(sExt2 *e,u32 groupStart,sBlockGroup *group) {
 		return 0;
 
 	/* load bitmap */
-	sBCacheEntry *bitmap = ext2_bcache_request(e,group->blockBitmap);
+	sCachedBlock *bitmap = ext2_bcache_request(e,group->blockBitmap);
 	if(bitmap == NULL)
 		return 0;
 

@@ -98,7 +98,7 @@ s32 ext2_file_truncate(sExt2 *e,sCachedInode *cnode) {
 	/* triple indirect */
 	if(cnode->inode.triplyIBlock) {
 		u32 count;
-		sBCacheEntry *blocks = ext2_bcache_request(e,cnode->inode.triplyIBlock);
+		sCachedBlock *blocks = ext2_bcache_request(e,cnode->inode.triplyIBlock);
 		if(blocks == NULL) {
 			debugf("Block %d set, but unable to load it\n",cnode->inode.triplyIBlock);
 			return ERR_INVALID_NODENO;
@@ -127,7 +127,7 @@ s32 ext2_file_truncate(sExt2 *e,sCachedInode *cnode) {
 
 s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
 	sCachedInode *cnode;
-	sBCacheEntry *tmpBuffer;
+	sCachedBlock *tmpBuffer;
 	u8 *bufWork;
 	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
 
@@ -180,7 +180,7 @@ s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) 
 
 s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count) {
 	sCachedInode *cnode;
-	sBCacheEntry *tmpBuffer;
+	sCachedBlock *tmpBuffer;
 	const u8 *bufWork;
 	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
 	u32 orgOff = offset;
@@ -234,7 +234,7 @@ s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 
 
 static s32 ext2_file_freeDIndirBlock(sExt2 *e,u32 blockNo) {
 	u32 i,count;
-	sBCacheEntry *blocks = ext2_bcache_request(e,blockNo);
+	sCachedBlock *blocks = ext2_bcache_request(e,blockNo);
 	if(blocks == NULL) {
 		debugf("Block %d set, but unable to load it\n",blockNo);
 		return ERR_INVALID_NODENO;
@@ -254,7 +254,7 @@ static s32 ext2_file_freeDIndirBlock(sExt2 *e,u32 blockNo) {
 
 static s32 ext2_file_freeIndirBlock(sExt2 *e,u32 blockNo) {
 	u32 i,count;
-	sBCacheEntry *blocks = ext2_bcache_request(e,blockNo);
+	sCachedBlock *blocks = ext2_bcache_request(e,blockNo);
 	if(blocks == NULL) {
 		debugf("Block %d set, but unable to load it\n",blockNo);
 		return ERR_INVALID_NODENO;

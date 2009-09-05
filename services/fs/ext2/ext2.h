@@ -331,7 +331,7 @@ typedef struct {
 	u8 dirty;
 	/* NULL indicates an unused entry */
 	u8 *buffer;
-} sBCacheEntry;
+} sCachedBlock;
 
 typedef struct {
 	/* the file-desc for ATA */
@@ -346,7 +346,7 @@ typedef struct {
 	/* caches */
 	sCachedInode inodeCache[INODE_CACHE_SIZE];
 	u32 blockCacheFree;
-	sBCacheEntry blockCache[BLOCK_CACHE_SIZE];
+	sCachedBlock blockCache[BLOCK_CACHE_SIZE];
 } sExt2;
 
 /**

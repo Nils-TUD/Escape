@@ -75,8 +75,10 @@ int main(void) {
 						/* truncate? */
 						if(no >= 0 && (flags & IO_TRUNCATE)) {
 							sCachedInode *cnode = ext2_icache_request(&ext2,no);
-							if(cnode != NULL)
+							if(cnode != NULL) {
 								ext2_file_truncate(&ext2,cnode,false);
+								ext2_icache_release(&ext2,cnode);
+							}
 						}
 
 						/*debugf("Received an open from %d of '%s' for ",data->pid,data + 1);
@@ -122,6 +124,7 @@ int main(void) {
 								info->mode = cnode->inode.mode;
 								info->size = cnode->inode.size;
 								msg.data.arg1 = 0;
+								ext2_icache_release(&ext2,cnode);
 							}
 							else
 								msg.data.arg1 = ERR_NOT_ENOUGH_MEM;
@@ -255,6 +258,7 @@ int main(void) {
 									ext2_icache_release(&ext2,dir);
 								}
 							}
+							ext2_icache_release(&ext2,cnode);
 						}
 						send(fd,MSG_FS_UNLINK_RESP,&msg,sizeof(msg.args));
 					}

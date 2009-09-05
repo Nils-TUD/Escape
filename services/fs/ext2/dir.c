@@ -21,6 +21,7 @@
 #include <esc/heap.h>
 #include <errors.h>
 #include <string.h>
+#include <assert.h>
 #include "ext2.h"
 #include "dir.h"
 #include "file.h"
@@ -38,11 +39,7 @@ s32 ext2_dir_create(sExt2 *e,sCachedInode *dir,const char *name) {
 
 	/* get created inode */
 	cnode = ext2_icache_request(e,ino);
-	if(cnode == NULL) {
-		/* actually we should delete the file, but it's not possible without the inode.
-		 * But this should never happen anyway, so it's not really bad */
-		return ERR_FS_INODE_NOT_FOUND;
-	}
+	vassert(cnode != NULL,"Unable to load inode %d\n",ino);
 
 	/* create '.' and '..' */
 	if((res = ext2_link(e,cnode,cnode,".")) < 0) {
@@ -59,6 +56,7 @@ s32 ext2_dir_create(sExt2 *e,sCachedInode *dir,const char *name) {
 
 	/* just to be sure */
 	cnode->dirty = true;
+	ext2_icache_release(e,cnode);
 	return 0;
 }
 

@@ -22,6 +22,7 @@
 #include <esc/proc.h>
 #include <esc/debug.h>
 #include <string.h>
+#include <assert.h>
 
 #include "ext2.h"
 #include "rw.h"
@@ -121,7 +122,7 @@ void ext2_icache_release(sExt2 *e,sCachedInode *inode) {
 		return;
 	if(inode->refs > 0) {
 		/* write it back, if we free it */
-		if(--inode->refs == 0)
+		if(--inode->refs == 0 && inode->dirty)
 			ext2_icache_write(e,inode);
 	}
 }
@@ -131,6 +132,7 @@ static void ext2_icache_read(sExt2 *e,sCachedInode *inode) {
 	u32 inodesPerBlock = BLOCK_SIZE(e) / sizeof(sInode);
 	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
 	sCachedBlock *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
+	vassert(block != NULL,"Fetching block %d failed",group->inodeTable + noInGroup / inodesPerBlock);
 	memcpy(&(inode->inode),block->buffer + ((inode->inodeNo - 1) % inodesPerBlock) * sizeof(sInode),
 			sizeof(sInode));
 }
@@ -140,6 +142,7 @@ static void ext2_icache_write(sExt2 *e,sCachedInode *inode) {
 	u32 inodesPerBlock = BLOCK_SIZE(e) / sizeof(sInode);
 	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
 	sCachedBlock *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
+	vassert(block != NULL,"Fetching block %d failed",group->inodeTable + noInGroup / inodesPerBlock);
 	memcpy(block->buffer + ((inode->inodeNo - 1) % inodesPerBlock) * sizeof(sInode),
 			&(inode->inode),sizeof(sInode));
 	block->dirty = true;

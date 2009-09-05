@@ -317,8 +317,6 @@ s32 vfsinfo_dirReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 o
 			byteCount += fsByteCount;
 		}
 
-		vassert((u32)byteCount < (u32)0xFFFF,"Overflow of size and pos detected");
-
 		node->data.def.size = byteCount;
 		node->data.def.pos = byteCount;
 		if(byteCount > 0) {

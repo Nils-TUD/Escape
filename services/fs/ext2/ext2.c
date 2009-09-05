@@ -28,7 +28,12 @@
 #include "inodecache.h"
 #include "blockgroup.h"
 #include "superblock.h"
-#include "request.h"
+#include "rw.h"
+
+/**
+ * Checks wether x is a power of y
+ */
+static bool ext2_isPowerOf(u32 x,u32 y);
 
 bool ext2_init(sExt2 *e) {
 	tFD fd;
@@ -43,10 +48,14 @@ bool ext2_init(sExt2 *e) {
 	while(fd < 0);
 
 	e->ataFd = fd;
-	if(!ext2_initSuperBlock(e)) {
+	if(!ext2_super_init(e)) {
 		close(e->ataFd);
 		return false;
 	}
+
+	/* init block-groups */
+	if(!ext2_bg_init(e))
+		return false;
 
 	/* init caches */
 	ext2_icache_init(e);
@@ -54,19 +63,64 @@ bool ext2_init(sExt2 *e) {
 	return true;
 }
 
+void ext2_sync(sExt2 *e) {
+	ext2_super_update(e);
+	ext2_bg_update(e);
+	/* flush inodes first, because they may create dirty blocks */
+	ext2_icache_flush(e);
+	ext2_bcache_flush(e);
+}
+
+u32 ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo) {
+	return (inodeNo - 1) / e->superBlock.inodesPerGroup;
+}
+
+u32 ext2_getGroupOfBlock(sExt2 *e,u32 block) {
+	return block / e->superBlock.blocksPerGroup;
+}
+
+u32 ext2_getGroupOfInode(sExt2 *e,tInodeNo inodeNo) {
+	return inodeNo / e->superBlock.inodesPerGroup;
+}
+
+u32 ext2_getBlockGroupCount(sExt2 *e) {
+	u32 bpg = e->superBlock.blocksPerGroup;
+	return (e->superBlock.blockCount + bpg - 1) / bpg;
+}
+
+bool ext2_bgHasBackups(sExt2 *e,u32 i) {
+	/* if the sparse-feature is enabled, just the groups 0, 1 and powers of 3, 5 and 7 contain
+	 * the backup */
+	if(!(e->superBlock.featureRoCompat & EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER))
+		return true;
+	/* block-group 0 is handled manually */
+	if(i == 1)
+		return true;
+	return ext2_isPowerOf(i,3) || ext2_isPowerOf(i,5) || ext2_isPowerOf(i,7);
+}
+
 void ext2_destroy(sExt2 *e) {
 	free(e->groups);
 	close(e->ataFd);
 }
 
+static bool ext2_isPowerOf(u32 x,u32 y) {
+	while(x > 1) {
+		if(x % y != 0)
+			return false;
+		x /= y;
+	}
+	return true;
+}
+
 #if DEBUGGING
 
-void ext2_dbg_printBlockGroups(sExt2 *e) {
+void ext2_bg_prints(sExt2 *e) {
 	u32 i,count = ext2_getBlockGroupCount(e);
 	debugf("Blockgroups:\n");
 	for(i = 0; i < count; i++) {
 		debugf(" Block %d\n",i);
-		ext2_dbg_printBlockGroup(e,i,e->groups + i);
+		ext2_bg_print(e,i,e->groups + i);
 	}
 }
 

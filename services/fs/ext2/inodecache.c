@@ -24,7 +24,7 @@
 #include <string.h>
 
 #include "ext2.h"
-#include "request.h"
+#include "rw.h"
 #include "inodecache.h"
 #include "blockcache.h"
 

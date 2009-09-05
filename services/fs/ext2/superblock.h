@@ -29,98 +29,13 @@
  * @param e the ext2-data
  * @return true if successfull
  */
-bool ext2_initSuperBlock(sExt2 *e);
-
-/**
- * Writes all dirty objects of the filesystem to disk
- *
- * @param e the ext2-data
- */
-void ext2_sync(sExt2 *e);
-
-/**
- * Determines the block of the given inode
- *
- * @param e the ext2-data
- * @param inodeNo the inode-number
- * @return the block-number
- */
-u32 ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo);
-
-/**
- * Determines the block-group of the given block
- *
- * @param e the ext2-data
- * @param block the block-number
- * @return the block-group-number
- */
-u32 ext2_getGroupOfBlock(sExt2 *e,u32 block);
-
-/**
- * Determines the block-group of the given inode
- *
- * @param e the ext2-data
- * @param inodeNo the inode-number
- * @return the block-group-number
- */
-u32 ext2_getGroupOfInode(sExt2 *e,tInodeNo inodeNo);
-
-/**
- * Allocates a new inode for the given directory-inode. It will be tried to allocate an inode in
- * the same block-group
- *
- * @param e the ext2-data
- * @param dirNode the directory-inode
- * @return the inode-number or 0 if failed
- */
-tInodeNo ext2_allocInode(sExt2 *e,sCachedInode *dirInode);
-
-/**
- * Free's the given inode-number
- *
- * @param e the ext2-data
- * @param ino the inode-number
- * @return 0 on success
- */
-s32 ext2_freeInode(sExt2 *e,tInodeNo ino);
-
-/**
- * Allocates a new block for the given inode. It will be tried to allocate a block in the same
- * block-group.
- *
- * @param e the ext2-data
- * @param inode the inode
- * @return the block-number or 0 if failed
- */
-u32 ext2_allocBlock(sExt2 *e,sCachedInode *inode);
-
-/**
- * Free's the given block-number
- *
- * @param e the ext2-data
- * @param blockNo the block-number
- * @return 0 on success
- */
-s32 ext2_freeBlock(sExt2 *e,u32 blockNo);
+bool ext2_super_init(sExt2 *e);
 
 /**
  * Updates the super-block, if it is dirty
  *
  * @param e the ext2-data
  */
-void ext2_updateSuperBlock(sExt2 *e);
-
-/**
- * Updates the block-group-descriptor-table, if it is dirty
- *
- * @param e the ext2-data
- */
-void ext2_updateBlockGroups(sExt2 *e);
-
-/**
- * @param e the ext2-data
- * @return the number of block-groups
- */
-u32 ext2_getBlockGroupCount(sExt2 *e);
+void ext2_super_update(sExt2 *e);
 
 #endif /* SUPERBLOCK_H_ */

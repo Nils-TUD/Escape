@@ -31,6 +31,6 @@
  * @param flags the flags with which to open the file
  * @return the inode-Number or EXT2_BAD_INO
  */
-tInodeNo ext2_resolvePath(sExt2 *e,char *path,u8 flags);
+tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags);
 
 #endif /* PATH_H_ */

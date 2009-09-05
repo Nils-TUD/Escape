@@ -29,13 +29,13 @@
 /**
  * Calculates the total size of a dir-entry, including padding
  */
-static u32 ext2_getDirEntrySize(u32 namelen);
+static u32 ext2_link_getDirESize(u32 namelen);
 
 s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 	u8 *buf;
 	sExt2DirEntry *dire;
 	u32 len = strlen(name);
-	u32 tlen = ext2_getDirEntrySize(len);
+	u32 tlen = ext2_link_getDirESize(len);
 	u32 recLen = 0;
 	s32 dirSize = dir->inode.size;
 
@@ -45,7 +45,7 @@ s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 	buf = malloc(dirSize + tlen);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	if(ext2_readFile(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
+	if(ext2_file_read(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
 		free(buf);
 		return ERR_FS_READ_FAILED;
 	}
@@ -54,7 +54,7 @@ s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 	dire = (sExt2DirEntry*)buf;
 	while((u8*)dire < buf + dirSize) {
 		/* does our entry fit? */
-		u32 elen = ext2_getDirEntrySize(dire->nameLen);
+		u32 elen = ext2_link_getDirESize(dire->nameLen);
 		if(elen < dire->recLen && dire->recLen - elen >= tlen) {
 			recLen = dire->recLen - elen;
 			/* adjust old entry */
@@ -78,7 +78,7 @@ s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 	memcpy(dire->name,name,len);
 
 	/* write it back */
-	if(ext2_writeFile(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
+	if(ext2_file_write(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
 		free(buf);
 		return ERR_FS_WRITE_FAILED;
 	}
@@ -102,7 +102,7 @@ s32 ext2_unlink(sExt2 *e,sCachedInode *dir,const char *name) {
 	buf = malloc(dirSize);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	if(ext2_readFile(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
+	if(ext2_file_read(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
 		free(buf);
 		return ERR_FS_READ_FAILED;
 	}
@@ -138,7 +138,7 @@ s32 ext2_unlink(sExt2 *e,sCachedInode *dir,const char *name) {
 	}
 
 	/* write it back */
-	if(ext2_writeFile(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
+	if(ext2_file_write(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
 		free(buf);
 		return ERR_FS_WRITE_FAILED;
 	}
@@ -151,7 +151,7 @@ s32 ext2_unlink(sExt2 *e,sCachedInode *dir,const char *name) {
 		cnode->dirty = true;
 		if(--cnode->inode.linkCount == 0) {
 			/* delete the file if there are no references anymore */
-			if((res = ext2_deleteFile(e,cnode)) < 0) {
+			if((res = ext2_file_delete(e,cnode)) < 0) {
 				ext2_icache_release(e,cnode);
 				return res;
 			}
@@ -161,7 +161,7 @@ s32 ext2_unlink(sExt2 *e,sCachedInode *dir,const char *name) {
 	return 0;
 }
 
-static u32 ext2_getDirEntrySize(u32 namelen) {
+static u32 ext2_link_getDirESize(u32 namelen) {
 	u32 tlen = namelen + sizeof(sExt2DirEntry);
 	if((tlen % EXT2_DIRENTRY_PAD) != 0)
 		tlen += EXT2_DIRENTRY_PAD - (tlen % EXT2_DIRENTRY_PAD);

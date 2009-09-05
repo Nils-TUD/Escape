@@ -358,6 +358,56 @@ typedef struct {
 bool ext2_init(sExt2 *e);
 
 /**
+ * Writes all dirty objects of the filesystem to disk
+ *
+ * @param e the ext2-data
+ */
+void ext2_sync(sExt2 *e);
+
+/**
+ * Determines the block of the given inode
+ *
+ * @param e the ext2-data
+ * @param inodeNo the inode-number
+ * @return the block-number
+ */
+u32 ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo);
+
+/**
+ * Determines the block-group of the given block
+ *
+ * @param e the ext2-data
+ * @param block the block-number
+ * @return the block-group-number
+ */
+u32 ext2_getGroupOfBlock(sExt2 *e,u32 block);
+
+/**
+ * Determines the block-group of the given inode
+ *
+ * @param e the ext2-data
+ * @param inodeNo the inode-number
+ * @return the block-group-number
+ */
+u32 ext2_getGroupOfInode(sExt2 *e,tInodeNo inodeNo);
+
+/**
+ * @param e the ext2-data
+ * @return the number of block-groups
+ */
+u32 ext2_getBlockGroupCount(sExt2 *e);
+
+/**
+ * Determines if the given block-group should contain a backup of the super-block
+ * and block-group-descriptor-table
+ *
+ * @param e the ext2-data
+ * @param i the block-group-number
+ * @return true if so
+ */
+bool ext2_bgHasBackups(sExt2 *e,u32 i);
+
+/**
  * Destroys the given ext2-filesystem
  *
  * @param e the ext2-data
@@ -372,7 +422,7 @@ void ext2_destroy(sExt2 *e);
  *
  * @param e the ext2-data
  */
-void ext2_dbg_printBlockGroups(sExt2 *e);
+void ext2_bg_prints(sExt2 *e);
 
 #endif
 

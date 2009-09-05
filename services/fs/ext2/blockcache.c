@@ -21,7 +21,7 @@
 #include <esc/heap.h>
 #include <esc/debug.h>
 #include "ext2.h"
-#include "request.h"
+#include "rw.h"
 #include "blockcache.h"
 
 /* for statistics */
@@ -53,7 +53,7 @@ void ext2_bcache_flush(sExt2 *e) {
 	sBCacheEntry *bentry,*end = e->blockCache + BLOCK_CACHE_SIZE;
 	for(bentry = e->blockCache; bentry < end; bentry++) {
 		if(bentry->dirty) {
-			ext2_writeBlocks(e,bentry->buffer,bentry->blockNo,1);
+			ext2_rw_writeBlocks(e,bentry->buffer,bentry->blockNo,1);
 			bentry->dirty = false;
 		}
 	}
@@ -104,7 +104,7 @@ sBCacheEntry *ext2_bcache_request(sExt2 *e,u32 blockNo) {
 	block->dirty = false;
 
 	/* now read from disk */
-	if(!ext2_readBlocks(e,block->buffer,blockNo,1)) {
+	if(!ext2_rw_readBlocks(e,block->buffer,blockNo,1)) {
 		block->blockNo = 0;
 		return NULL;
 	}
@@ -131,7 +131,7 @@ static sBCacheEntry *ext2_bcache_getBlock(sExt2 *e,u32 blockNo) {
 		block = e->blockCache + (blockNo & (BLOCK_CACHE_SIZE - 1));
 		/* if it is dirty we have to write it first to disk */
 		if(block->dirty)
-			ext2_writeBlocks(e,block->buffer,block->blockNo,1);
+			ext2_rw_writeBlocks(e,block->buffer,block->blockNo,1);
 	}
 	return block;
 }

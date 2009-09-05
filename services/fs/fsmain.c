@@ -69,13 +69,13 @@ int main(void) {
 				switch(mid) {
 					case MSG_FS_OPEN: {
 						u8 flags = (u8)msg.args.arg1;
-						tInodeNo no = ext2_resolvePath(&ext2,msg.str.s1,flags);
+						tInodeNo no = ext2_path_resolve(&ext2,msg.str.s1,flags);
 
 						/* truncate? */
 						if(no >= 0 && (flags & IO_TRUNCATE)) {
 							sCachedInode *cnode = ext2_icache_request(&ext2,no);
 							if(cnode != NULL)
-								ext2_truncateFile(&ext2,cnode);
+								ext2_file_truncate(&ext2,cnode);
 						}
 
 						/*debugf("Received an open from %d of '%s' for ",data->pid,data + 1);
@@ -102,7 +102,7 @@ int main(void) {
 						sCachedInode *cnode;
 						tInodeNo no;
 
-						no = ext2_resolvePath(&ext2,msg.str.s1,IO_READ);
+						no = ext2_path_resolve(&ext2,msg.str.s1,IO_READ);
 						if(no >= 0) {
 							cnode = ext2_icache_request(&ext2,no);
 							if(cnode != NULL) {
@@ -142,7 +142,7 @@ int main(void) {
 						if(buffer == NULL)
 							msg.args.arg1 = ERR_NOT_ENOUGH_MEM;
 						else
-							msg.args.arg1 = ext2_readFile(&ext2,ino,buffer,offset,count);
+							msg.args.arg1 = ext2_file_read(&ext2,ino,buffer,offset,count);
 						send(fd,MSG_FS_READ_RESP,&msg,sizeof(msg.args));
 						if(buffer) {
 							send(fd,MSG_FS_READ_RESP,buffer,count);
@@ -151,7 +151,7 @@ int main(void) {
 
 						/* read ahead
 						if(count > 0)
-							ext2_readFile(&ext2,data.inodeNo,NULL,data.offset + count,data.count);*/
+							ext2_file_read(&ext2,data.inodeNo,NULL,data.offset + count,data.count);*/
 					}
 					break;
 
@@ -166,7 +166,7 @@ int main(void) {
 						buffer = malloc(count);
 						if(buffer) {
 							receive(fd,&mid,buffer,count);
-							msg.args.arg1 = ext2_writeFile(&ext2,ino,buffer,offset,count);
+							msg.args.arg1 = ext2_file_write(&ext2,ino,buffer,offset,count);
 							free(buffer);
 						}
 						/* send response */
@@ -180,7 +180,7 @@ int main(void) {
 						char *name;
 						u32 len;
 						tInodeNo newIno;
-						tInodeNo oldIno = ext2_resolvePath(&ext2,oldPath,IO_READ);
+						tInodeNo oldIno = ext2_path_resolve(&ext2,oldPath,IO_READ);
 						msg.args.arg1 = 0;
 						if(oldIno < 0)
 							msg.args.arg1 = oldIno;
@@ -194,7 +194,7 @@ int main(void) {
 							backup = *name;
 							dirname(newPath);
 
-							newIno = ext2_resolvePath(&ext2,newPath,IO_READ);
+							newIno = ext2_path_resolve(&ext2,newPath,IO_READ);
 							if(newIno < 0)
 								msg.args.arg1 = newIno;
 							else {
@@ -228,7 +228,7 @@ int main(void) {
 						dirname(path);
 
 						/* find directory */
-						dirIno = ext2_resolvePath(&ext2,path,IO_READ);
+						dirIno = ext2_path_resolve(&ext2,path,IO_READ);
 						if(dirIno < 0)
 							msg.args.arg1 = dirIno;
 						else {

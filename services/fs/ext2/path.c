@@ -27,13 +27,14 @@
 #include "path.h"
 #include "inode.h"
 #include "inodecache.h"
-#include "request.h"
+#include "rw.h"
 #include "file.h"
 
-tInodeNo ext2_resolvePath(sExt2 *e,char *path,u8 flags) {
-	sCachedInode *dirNode,*cnode = NULL;
+tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags) {
+	sCachedInode *cnode = NULL;
 	tInodeNo res;
 	char *p = path;
+	s32 err;
 	u32 pos;
 
 	if(*p != '/')
@@ -58,7 +59,7 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path,u8 flags) {
 		}
 
 		eBak = entry;
-		if(ext2_readFile(e,cnode->inodeNo,entry,0,cnode->inode.size) < 0) {
+		if(ext2_file_read(e,cnode->inodeNo,entry,0,cnode->inode.size) < 0) {
 			free(eBak);
 			ext2_icache_release(e,cnode);
 			return ERR_FS_READ_FAILED;
@@ -104,14 +105,12 @@ tInodeNo ext2_resolvePath(sExt2 *e,char *path,u8 flags) {
 			if((slash == NULL || *(slash + 1) == '\0') && (flags & IO_CREATE)) {
 				/* ensure that there is no '/' in the name */
 				*slash = '\0';
-				dirNode = cnode;
-				cnode = ext2_createFile(e,dirNode,p);
-				ext2_icache_release(e,dirNode);
-				free(eBak);
-				if(cnode == NULL)
-					return ERR_FS_INODE_ALLOC;
+				err = ext2_file_create(e,cnode,p,&res);
 				ext2_icache_release(e,cnode);
-				return cnode->inodeNo;
+				free(eBak);
+				if(err < 0)
+					return err;
+				return res;
 			}
 			else {
 				free(eBak);

@@ -24,6 +24,26 @@
 #include "ext2.h"
 
 /**
+ * Creates a new inode for the given directory
+ *
+ * @param e the ext2-handle
+ * @param dirNode the directory-inode
+ * @param ino will be set to the inode on success
+ * @return 0 on success
+ */
+s32 ext2_inode_create(sExt2 *e,sCachedInode *dirNode,sCachedInode **ino);
+
+/**
+ * Destroys the given inode. That means the inode will be marked as free in the bitmap,
+ * cleared and marked dirty.
+ *
+ * @param e the ext2-handle
+ * @param cnode the inode
+ * @return 0 on success
+ */
+s32 ext2_inode_destroy(sExt2 *e,sCachedInode *cnode);
+
+/**
  * Determines which block should be read from disk for <block> of the given inode.
  * That means you give a linear block-number and this function figures out in which block
  * it's stored on the disk.
@@ -33,7 +53,7 @@
  * @param block the linear-block-number
  * @return the block to fetch from disk
  */
-u32 ext2_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block);
+u32 ext2_inode_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block);
 
 #if DEBUGGING
 
@@ -42,7 +62,7 @@ u32 ext2_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block);
  *
  * @param inode the inode
  */
-void ext2_dbg_printInode(sInode *inode);
+void ext2_inode_print(sInode *inode);
 
 #endif
 

@@ -17,38 +17,48 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BLOCKGROUP_H_
-#define BLOCKGROUP_H_
+#ifndef BITMAP_H_
+#define BITMAP_H_
 
 #include <esc/common.h>
 #include "ext2.h"
 
 /**
- * Inits the block-groups, i.e. reads them from disk and stores them in the given ext2-handle
- *
- * @param e the ext2-handle
- * @return true on success
- */
-bool ext2_bg_init(sExt2 *e);
-
-/**
- * Updates the block-group-descriptor-table, if it is dirty
+ * Allocates a new inode for the given directory-inode. It will be tried to allocate an inode in
+ * the same block-group
  *
  * @param e the ext2-data
+ * @param dirNode the directory-inode
+ * @return the inode-number or 0 if failed
  */
-void ext2_bg_update(sExt2 *e);
-
-#if DEBUGGING
+tInodeNo ext2_bm_allocInode(sExt2 *e,sCachedInode *dirInode);
 
 /**
- * Prints the given block-group
+ * Free's the given inode-number
  *
  * @param e the ext2-data
- * @param no the block-group-number
- * @param bg the block-group
+ * @param ino the inode-number
+ * @return 0 on success
  */
-void ext2_bg_print(sExt2 *e,u32 no,sBlockGroup *bg);
+s32 ext2_bm_freeInode(sExt2 *e,tInodeNo ino);
 
-#endif
+/**
+ * Allocates a new block for the given inode. It will be tried to allocate a block in the same
+ * block-group.
+ *
+ * @param e the ext2-data
+ * @param inode the inode
+ * @return the block-number or 0 if failed
+ */
+u32 ext2_bm_allocBlock(sExt2 *e,sCachedInode *inode);
 
-#endif /* BLOCKGROUP_H_ */
+/**
+ * Free's the given block-number
+ *
+ * @param e the ext2-data
+ * @param blockNo the block-number
+ * @return 0 on success
+ */
+s32 ext2_bm_freeBlock(sExt2 *e,u32 blockNo);
+
+#endif /* BITMAP_H_ */

@@ -29,9 +29,10 @@
  * @param e the ext2-handle
  * @param dirNode the directory
  * @param name the name
- * @return the created inode
+ * @param ino will be set to the inode-number on success
+ * @return 0 on success
  */
-sCachedInode *ext2_createFile(sExt2 *e,sCachedInode *dirNode,const char *name);
+s32 ext2_file_create(sExt2 *e,sCachedInode *dirNode,const char *name,tInodeNo *ino);
 
 /**
  * Deletes the given inode. That means all associated blocks will be free'd
@@ -40,7 +41,7 @@ sCachedInode *ext2_createFile(sExt2 *e,sCachedInode *dirNode,const char *name);
  * @param cnode the cached inode
  * @return 0 on success
  */
-s32 ext2_deleteFile(sExt2 *e,sCachedInode *cnode);
+s32 ext2_file_delete(sExt2 *e,sCachedInode *cnode);
 
 /**
  * Truncates the given file
@@ -49,7 +50,7 @@ s32 ext2_deleteFile(sExt2 *e,sCachedInode *cnode);
  * @param cnode the cached inode
  * @return 0 on success
  */
-s32 ext2_truncateFile(sExt2 *e,sCachedInode *cnode);
+s32 ext2_file_truncate(sExt2 *e,sCachedInode *cnode);
 
 /**
  * Reads <count> bytes at <offset> into <buffer> from the inode with given number
@@ -62,7 +63,7 @@ s32 ext2_truncateFile(sExt2 *e,sCachedInode *cnode);
  * @param count the number of bytes to read
  * @return the number of read bytes
  */
-s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
+s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
 
 /**
  * Writes <count> bytes at <offset> from <buffer> to the inode with given number
@@ -74,6 +75,6 @@ s32 ext2_readFile(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
  * @param count the number of bytes to write
  * @return the number of written bytes
  */
-s32 ext2_writeFile(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count);
+s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count);
 
 #endif /* FILE_H_ */

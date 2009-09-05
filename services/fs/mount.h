@@ -36,10 +36,10 @@ typedef void (*fFSClose)(void *h,tInodeNo ino);
 typedef s32 (*fFSStat)(void *h,tInodeNo ino,sFileInfo *info);
 typedef s32 (*fFSRead)(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
 typedef s32 (*fFSWrite)(void *h,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count);
-typedef s32 (*fFSLink)(void *h,tInodeNo dstIno,tInodeNo dirIno,char *name);
-typedef s32 (*fFSUnlink)(void *h,tInodeNo dirIno,char *name);
-typedef s32 (*fFSMkDir)(void *h,tInodeNo dirIno,char *name);
-typedef s32 (*fFSRmDir)(void *h,tInodeNo dirIno,char *name);
+typedef s32 (*fFSLink)(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name);
+typedef s32 (*fFSUnlink)(void *h,tInodeNo dirIno,const char *name);
+typedef s32 (*fFSMkDir)(void *h,tInodeNo dirIno,const char *name);
+typedef s32 (*fFSRmDir)(void *h,tInodeNo dirIno,const char *name);
 typedef void (*fFSSync)(void *h);
 
 /* all information about a filesystem */

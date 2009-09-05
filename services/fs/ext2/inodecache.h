@@ -46,7 +46,7 @@ void ext2_icache_flush(sExt2 *e);
  * @param no the inode-number
  * @return the cached node or NULL
  */
-sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no);
+sExt2CInode *ext2_icache_request(sExt2 *e,tInodeNo no);
 
 /**
  * Releases the given inode. That means the references will be decreased and the inode will be
@@ -55,7 +55,7 @@ sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no);
  * @param e the ext2-handle
  * @param inode the inode
  */
-void ext2_icache_release(sExt2 *e,sCachedInode *inode);
+void ext2_icache_release(sExt2 *e,sExt2CInode *inode);
 
 /**
  * Prints inode-cache statistics

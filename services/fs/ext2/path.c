@@ -33,7 +33,7 @@
 #include "../mount.h"
 
 tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags,tDevNo *dev) {
-	sCachedInode *cnode = NULL;
+	sExt2CInode *cnode = NULL;
 	tInodeNo res;
 	tDevNo mntDev;
 	char *p = path;

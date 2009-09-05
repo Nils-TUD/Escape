@@ -33,7 +33,7 @@
  */
 static u32 ext2_link_getDirESize(u32 namelen);
 
-s32 ext2_link_create(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
+s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *name) {
 	u8 *buf;
 	sExt2DirEntry *dire;
 	u32 len = strlen(name);
@@ -98,13 +98,13 @@ s32 ext2_link_create(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *
 	return 0;
 }
 
-s32 ext2_link_delete(sExt2 *e,sCachedInode *dir,const char *name) {
+s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	u8 *buf;
 	u32 nameLen;
 	tInodeNo ino = -1;
 	sExt2DirEntry *dire,*prev;
 	s32 res,dirSize = dir->inode.size;
-	sCachedInode *cnode;
+	sExt2CInode *cnode;
 
 	/* read directory-entries */
 	buf = malloc(dirSize);

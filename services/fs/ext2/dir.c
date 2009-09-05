@@ -28,8 +28,8 @@
 #include "link.h"
 #include "inodecache.h"
 
-s32 ext2_dir_create(sExt2 *e,sCachedInode *dir,const char *name) {
-	sCachedInode *cnode;
+s32 ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name) {
+	sExt2CInode *cnode;
 	tInodeNo ino;
 
 	/* first create an inode and an entry in the directory */
@@ -60,7 +60,7 @@ s32 ext2_dir_create(sExt2 *e,sCachedInode *dir,const char *name) {
 	return 0;
 }
 
-tInodeNo ext2_dir_find(sExt2 *e,sCachedInode *dir,const char *name,u32 nameLen) {
+tInodeNo ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,u32 nameLen) {
 	tInodeNo ino;
 	s32 size = dir->inode.size;
 	sExt2DirEntry *buffer = (sExt2DirEntry*)malloc(sizeof(u8) * size);
@@ -97,10 +97,10 @@ tInodeNo ext2_dir_findIn(sExt2DirEntry *buffer,u32 bufSize,const char *name,u32 
 	return ERR_FS_NOT_FOUND;
 }
 
-s32 ext2_dir_delete(sExt2 *e,sCachedInode *dir,const char *name) {
+s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	tInodeNo ino;
 	s32 res,size = dir->inode.size;
-	sCachedInode *delIno;
+	sExt2CInode *delIno;
 	sExt2DirEntry *entry,*buffer;
 
 	/* find the entry in the given directory */

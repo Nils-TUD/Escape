@@ -89,7 +89,7 @@ s32 ext2_open(void *h,tInodeNo ino,u8 flags) {
 	sExt2 *e = (sExt2*)h;
 	/* truncate? */
 	if(flags & IO_TRUNCATE) {
-		sCachedInode *cnode = ext2_icache_request(e,ino);
+		sExt2CInode *cnode = ext2_icache_request(e,ino);
 		if(cnode != NULL) {
 			ext2_file_truncate(e,cnode,false);
 			ext2_icache_release(e,cnode);
@@ -100,9 +100,14 @@ s32 ext2_open(void *h,tInodeNo ino,u8 flags) {
 	return ino;
 }
 
+void ext2_close(void *h,tInodeNo ino) {
+	UNUSED(h);
+	UNUSED(ino);
+}
+
 s32 ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	sExt2 *e = (sExt2*)h;
-	sCachedInode *cnode = ext2_icache_request(e,ino);
+	sExt2CInode *cnode = ext2_icache_request(e,ino);
 	if(cnode == NULL)
 		return ERR_FS_INODE_NOT_FOUND;
 
@@ -131,10 +136,10 @@ s32 ext2_write(void *h,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count)
 	return ext2_file_write((sExt2*)h,inodeNo,buffer,offset,count);
 }
 
-s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,char *name) {
+s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
 	s32 res;
-	sCachedInode *dir,*ino;
+	sExt2CInode *dir,*ino;
 	dir = ext2_icache_request(e,dirIno);
 	ino = ext2_icache_request(e,dstIno);
 	if(dir == NULL || ino == NULL)
@@ -148,10 +153,10 @@ s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,char *name) {
 	return res;
 }
 
-s32 ext2_unlink(void *h,tInodeNo dirIno,char *name) {
+s32 ext2_unlink(void *h,tInodeNo dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
 	s32 res;
-	sCachedInode *dir = ext2_icache_request(e,dirIno);
+	sExt2CInode *dir = ext2_icache_request(e,dirIno);
 	if(dir == NULL)
 		return ERR_FS_INODE_NOT_FOUND;
 
@@ -161,10 +166,10 @@ s32 ext2_unlink(void *h,tInodeNo dirIno,char *name) {
 	return res;
 }
 
-s32 ext2_mkdir(void *h,tInodeNo dirIno,char *name) {
+s32 ext2_mkdir(void *h,tInodeNo dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
 	s32 res;
-	sCachedInode *dir = ext2_icache_request(e,dirIno);
+	sExt2CInode *dir = ext2_icache_request(e,dirIno);
 	if(dir == NULL)
 		return ERR_FS_INODE_NOT_FOUND;
 	res = ext2_dir_create(e,dir,name);
@@ -172,10 +177,10 @@ s32 ext2_mkdir(void *h,tInodeNo dirIno,char *name) {
 	return res;
 }
 
-s32 ext2_rmdir(void *h,tInodeNo dirIno,char *name) {
+s32 ext2_rmdir(void *h,tInodeNo dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
 	s32 res;
-	sCachedInode *dir = ext2_icache_request(e,dirIno);
+	sExt2CInode *dir = ext2_icache_request(e,dirIno);
 	if(dir == NULL)
 		return ERR_FS_INODE_NOT_FOUND;
 	if(!MODE_IS_DIR(dir->inode.mode))

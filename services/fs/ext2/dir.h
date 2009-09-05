@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DIR_H_
-#define DIR_H_
+#ifndef EXT2_DIR_H_
+#define EXT2_DIR_H_
 
 #include <esc/common.h>
 #include "ext2.h"
@@ -31,7 +31,7 @@
  * @param name the name of the new directory
  * @return 0 on success
  */
-s32 ext2_dir_create(sExt2 *e,sCachedInode *dir,const char *name);
+s32 ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name);
 
 /**
  * Finds the inode-number to the entry <name> in <dir>
@@ -42,7 +42,7 @@ s32 ext2_dir_create(sExt2 *e,sCachedInode *dir,const char *name);
  * @param nameLen the length of the name
  * @return the inode-number or < 0
  */
-tInodeNo ext2_dir_find(sExt2 *e,sCachedInode *dir,const char *name,u32 nameLen);
+tInodeNo ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,u32 nameLen);
 
 /**
  * Finds the inode-number to the entry <name> in the given buffer
@@ -64,6 +64,6 @@ tInodeNo ext2_dir_findIn(sExt2DirEntry *buffer,u32 bufSize,const char *name,u32 
  * @param name the name of the directory to remove
  * @return 0 on success
  */
-s32 ext2_dir_delete(sExt2 *e,sCachedInode *dir,const char *name);
+s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name);
 
-#endif /* DIR_H_ */
+#endif /* EXT2_DIR_H_ */

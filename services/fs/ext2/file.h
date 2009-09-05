@@ -33,7 +33,7 @@
  * @param isDir wether it should be an directory
  * @return 0 on success
  */
-s32 ext2_file_create(sExt2 *e,sCachedInode *dirNode,const char *name,tInodeNo *ino,bool isDir);
+s32 ext2_file_create(sExt2 *e,sExt2CInode *dirNode,const char *name,tInodeNo *ino,bool isDir);
 
 /**
  * Deletes the given inode. That means all associated blocks will be free'd
@@ -42,7 +42,7 @@ s32 ext2_file_create(sExt2 *e,sCachedInode *dirNode,const char *name,tInodeNo *i
  * @param cnode the cached inode
  * @return 0 on success
  */
-s32 ext2_file_delete(sExt2 *e,sCachedInode *cnode);
+s32 ext2_file_delete(sExt2 *e,sExt2CInode *cnode);
 
 /**
  * Truncates the given file
@@ -52,7 +52,7 @@ s32 ext2_file_delete(sExt2 *e,sCachedInode *cnode);
  * @param delete if set the block-numbers in the inode will not be overwritten
  * @return 0 on success
  */
-s32 ext2_file_truncate(sExt2 *e,sCachedInode *cnode,bool delete);
+s32 ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete);
 
 /**
  * Reads <count> bytes at <offset> into <buffer> from the inode with given number

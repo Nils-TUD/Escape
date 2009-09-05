@@ -47,7 +47,7 @@ void ext2_bg_update(sExt2 *e);
  * @param no the block-group-number
  * @param bg the block-group
  */
-void ext2_bg_print(sExt2 *e,u32 no,sBlockGroup *bg);
+void ext2_bg_print(sExt2 *e,u32 no,sExt2BlockGrp *bg);
 
 #endif
 

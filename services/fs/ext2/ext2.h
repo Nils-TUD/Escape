@@ -253,7 +253,7 @@ typedef struct {
 	u32 firstMetaBg;
 	/* UNUSED */
 	u8 unused[760];
-} __attribute__((packed)) sSuperBlock;
+} __attribute__((packed)) sExt2SuperBlock;
 
 typedef struct {
 	/* block id of the first block of the "block bitmap" for the group represented. */
@@ -272,7 +272,7 @@ typedef struct {
 	u32 : 32;
 	u32 : 32;
 	u32 : 32;
-} __attribute__((packed)) sBlockGroup;
+} __attribute__((packed)) sExt2BlockGrp;
 
 typedef struct {
 	u16 mode;
@@ -310,7 +310,7 @@ typedef struct {
 	u32 fragAddr;
 	/* 96bit OS dependant structure. */
 	u16 osd2[6];
-} __attribute__((packed)) sInode;
+} __attribute__((packed)) sExt2Inode;
 
 typedef struct {
 	tInodeNo inode;
@@ -324,15 +324,15 @@ typedef struct {
 	tInodeNo inodeNo;
 	u16 dirty;
 	u16 refs;
-	sInode inode;
-} sCachedInode;
+	sExt2Inode inode;
+} sExt2CInode;
 
 typedef struct {
 	u32 blockNo;
 	u8 dirty;
 	/* NULL indicates an unused entry */
 	u8 *buffer;
-} sCachedBlock;
+} sExt2CBlock;
 
 typedef struct {
 	/* the file-desc for ATA */
@@ -340,14 +340,14 @@ typedef struct {
 
 	/* superblock and blockgroups of that ext2-fs */
 	bool sbDirty;
-	sSuperBlock superBlock;
+	sExt2SuperBlock superBlock;
 	bool groupsDirty;
-	sBlockGroup *groups;
+	sExt2BlockGrp *groups;
 
 	/* caches */
-	sCachedInode inodeCache[INODE_CACHE_SIZE];
+	sExt2CInode inodeCache[INODE_CACHE_SIZE];
 	u32 blockCacheFree;
-	sCachedBlock blockCache[BLOCK_CACHE_SIZE];
+	sExt2CBlock blockCache[BLOCK_CACHE_SIZE];
 } sExt2;
 
 /**
@@ -385,6 +385,14 @@ tInodeNo ext2_resPath(void *h,char *path,u8 flags,tDevNo *dev);
  * @return the inode on success or < 0
  */
 s32 ext2_open(void *h,tInodeNo ino,u8 flags);
+
+/**
+ * Mount-entry for close()
+ *
+ * @param h the ext2-handle
+ * @param ino the inode to close
+ */
+void ext2_close(void *h,tInodeNo ino);
 
 /**
  * Mount-entry for stat()
@@ -429,7 +437,7 @@ s32 ext2_write(void *h,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count)
  * @param name the entry-name to create
  * @return 0 on success
  */
-s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,char *name);
+s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name);
 
 /**
  * Mount-entry for unlink()
@@ -439,7 +447,7 @@ s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,char *name);
  * @param name the entry-name to remove
  * @return 0 on success
  */
-s32 ext2_unlink(void *h,tInodeNo dirIno,char *name);
+s32 ext2_unlink(void *h,tInodeNo dirIno,const char *name);
 
 /**
  * Mount-entry for mkdir()
@@ -449,7 +457,7 @@ s32 ext2_unlink(void *h,tInodeNo dirIno,char *name);
  * @param name the entry-name to create
  * @return 0 on success
  */
-s32 ext2_mkdir(void *h,tInodeNo dirIno,char *name);
+s32 ext2_mkdir(void *h,tInodeNo dirIno,const char *name);
 
 /**
  * Mount-entry for rmdir()
@@ -459,7 +467,7 @@ s32 ext2_mkdir(void *h,tInodeNo dirIno,char *name);
  * @param name the entry-name to remove
  * @return 0 on success
  */
-s32 ext2_rmdir(void *h,tInodeNo dirIno,char *name);
+s32 ext2_rmdir(void *h,tInodeNo dirIno,const char *name);
 
 /**
  * Mount-entry for sync().

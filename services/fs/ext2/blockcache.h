@@ -44,7 +44,7 @@ void ext2_bcache_flush(sExt2 *e);
  * @param blockNo the block-number
  * @return the block or NULL
  */
-sCachedBlock *ext2_bcache_create(sExt2 *e,u32 blockNo);
+sExt2CBlock *ext2_bcache_create(sExt2 *e,u32 blockNo);
 
 /**
  * Requests the block with given number
@@ -53,7 +53,7 @@ sCachedBlock *ext2_bcache_create(sExt2 *e,u32 blockNo);
  * @param blockNo the block to fetch from disk or from the cache
  * @return the block or NULL
  */
-sCachedBlock *ext2_bcache_request(sExt2 *e,u32 blockNo);
+sExt2CBlock *ext2_bcache_request(sExt2 *e,u32 blockNo);
 
 /**
  * Prints block-cache statistics

@@ -32,7 +32,7 @@
  * @param isDir wether the inode should be an directory
  * @return the inode-number or 0 if failed
  */
-tInodeNo ext2_bm_allocInode(sExt2 *e,sCachedInode *dirInode,bool isDir);
+tInodeNo ext2_bm_allocInode(sExt2 *e,sExt2CInode *dirInode,bool isDir);
 
 /**
  * Free's the given inode-number
@@ -52,7 +52,7 @@ s32 ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir);
  * @param inode the inode
  * @return the block-number or 0 if failed
  */
-u32 ext2_bm_allocBlock(sExt2 *e,sCachedInode *inode);
+u32 ext2_bm_allocBlock(sExt2 *e,sExt2CInode *inode);
 
 /**
  * Free's the given block-number

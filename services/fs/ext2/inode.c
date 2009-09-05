@@ -34,11 +34,11 @@
  * Puts a new block in cblock->buffer if cblock->buffer[index] is 0. Marks the cblock dirty,
  * if necessary. Sets <added> to true or false, depending on wether a block was allocated.
  */
-static u32 ext2_inode_extend(sExt2 *e,sCachedInode *cnode,sCachedBlock *cblock,u32 index,bool *added);
+static u32 ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sExt2CBlock *cblock,u32 index,bool *added);
 
-s32 ext2_inode_create(sExt2 *e,sCachedInode *dirNode,sCachedInode **ino,bool isDir) {
+s32 ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir) {
 	u32 i,now;
-	sCachedInode *cnode;
+	sExt2CInode *cnode;
 
 	/* request inode */
 	tInodeNo inodeNo = ext2_bm_allocInode(e,dirNode,isDir);
@@ -81,7 +81,7 @@ s32 ext2_inode_create(sExt2 *e,sCachedInode *dirNode,sCachedInode **ino,bool isD
 	return 0;
 }
 
-s32 ext2_inode_destroy(sExt2 *e,sCachedInode *cnode) {
+s32 ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode) {
 	s32 res;
 	/* free inode, clear it and ensure that it get's written back to disk */
 	if((res = ext2_bm_freeInode(e,cnode->inodeNo,MODE_IS_DIR(cnode->inode.mode))) < 0)
@@ -95,10 +95,10 @@ s32 ext2_inode_destroy(sExt2 *e,sCachedInode *cnode) {
 	return 0;
 }
 
-u32 ext2_inode_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block) {
+u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 	u32 i,blockSize,blocksPerBlock,blperBlSq;
 	bool added = false;
-	sCachedBlock *cblock;
+	sExt2CBlock *cblock;
 
 	/* Note that we don't have to mark the inode dirty here if blocks are added
 	 * because ext2_file_write() does it for us */
@@ -235,7 +235,7 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sCachedInode *cnode,u32 block) {
 	return i;
 }
 
-static u32 ext2_inode_extend(sExt2 *e,sCachedInode *cnode,sCachedBlock *cblock,u32 index,bool *added) {
+static u32 ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sExt2CBlock *cblock,u32 index,bool *added) {
 	u32 *blockNos = (u32*)(cblock->buffer);
 	if(blockNos[index] == 0) {
 		u32 bno = ext2_bm_allocBlock(e,cnode);
@@ -253,7 +253,7 @@ static u32 ext2_inode_extend(sExt2 *e,sCachedInode *cnode,sCachedBlock *cblock,u
 
 #if DEBUGGING
 
-void ext2_inode_print(sInode *inode) {
+void ext2_inode_print(sExt2Inode *inode) {
 	u32 i;
 	debugf("\tmode=0x%08x\n",inode->mode);
 	debugf("\tuid=%d\n",inode->uid);

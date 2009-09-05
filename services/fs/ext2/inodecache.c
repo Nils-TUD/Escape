@@ -32,11 +32,11 @@
 /**
  * Reads the inode from block-cache. Requires inode->inodeNo to be valid!
  */
-static void ext2_icache_read(sExt2 *e,sCachedInode *inode);
+static void ext2_icache_read(sExt2 *e,sExt2CInode *inode);
 /**
  * Writes the inode back to the cached block, which can be written to disk later
  */
-static void ext2_icache_write(sExt2 *e,sCachedInode *inode);
+static void ext2_icache_write(sExt2 *e,sExt2CInode *inode);
 
 /* for statistics */
 static u32 cacheHits = 0;
@@ -44,7 +44,7 @@ static u32 cacheMisses = 0;
 
 void ext2_icache_init(sExt2 *e) {
 	u32 i;
-	sCachedInode *inode = e->inodeCache;
+	sExt2CInode *inode = e->inodeCache;
 	for(i = 0; i < INODE_CACHE_SIZE; i++) {
 		inode->refs = 0;
 		inode->inodeNo = EXT2_BAD_INO;
@@ -54,18 +54,18 @@ void ext2_icache_init(sExt2 *e) {
 }
 
 void ext2_icache_flush(sExt2 *e) {
-	sCachedInode *inode,*end = e->inodeCache + INODE_CACHE_SIZE;
+	sExt2CInode *inode,*end = e->inodeCache + INODE_CACHE_SIZE;
 	for(inode = e->inodeCache; inode < end; inode++) {
 		if(inode->dirty)
 			ext2_icache_write(e,inode);
 	}
 }
 
-sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
+sExt2CInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 	/* search for the inode. perhaps it's already in cache */
-	sCachedInode *startNode = e->inodeCache + (no & (INODE_CACHE_SIZE - 1));
-	sCachedInode *iend = e->inodeCache + INODE_CACHE_SIZE;
-	sCachedInode *inode;
+	sExt2CInode *startNode = e->inodeCache + (no & (INODE_CACHE_SIZE - 1));
+	sExt2CInode *iend = e->inodeCache + INODE_CACHE_SIZE;
+	sExt2CInode *inode;
 	if(no <= EXT2_BAD_INO)
 		return NULL;
 	for(inode = startNode; inode < iend; inode++) {
@@ -122,7 +122,7 @@ sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 	return inode;
 }
 
-void ext2_icache_release(sExt2 *e,sCachedInode *inode) {
+void ext2_icache_release(sExt2 *e,sExt2CInode *inode) {
 	UNUSED(e);
 	if(inode == NULL)
 		return;
@@ -133,24 +133,24 @@ void ext2_icache_release(sExt2 *e,sCachedInode *inode) {
 	}
 }
 
-static void ext2_icache_read(sExt2 *e,sCachedInode *inode) {
-	sBlockGroup *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
-	u32 inodesPerBlock = BLOCK_SIZE(e) / sizeof(sInode);
+static void ext2_icache_read(sExt2 *e,sExt2CInode *inode) {
+	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
+	u32 inodesPerBlock = BLOCK_SIZE(e) / sizeof(sExt2Inode);
 	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
-	sCachedBlock *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
+	sExt2CBlock *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
 	vassert(block != NULL,"Fetching block %d failed",group->inodeTable + noInGroup / inodesPerBlock);
-	memcpy(&(inode->inode),block->buffer + ((inode->inodeNo - 1) % inodesPerBlock) * sizeof(sInode),
-			sizeof(sInode));
+	memcpy(&(inode->inode),block->buffer + ((inode->inodeNo - 1) % inodesPerBlock) * sizeof(sExt2Inode),
+			sizeof(sExt2Inode));
 }
 
-static void ext2_icache_write(sExt2 *e,sCachedInode *inode) {
-	sBlockGroup *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
-	u32 inodesPerBlock = BLOCK_SIZE(e) / sizeof(sInode);
+static void ext2_icache_write(sExt2 *e,sExt2CInode *inode) {
+	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
+	u32 inodesPerBlock = BLOCK_SIZE(e) / sizeof(sExt2Inode);
 	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
-	sCachedBlock *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
+	sExt2CBlock *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
 	vassert(block != NULL,"Fetching block %d failed",group->inodeTable + noInGroup / inodesPerBlock);
-	memcpy(block->buffer + ((inode->inodeNo - 1) % inodesPerBlock) * sizeof(sInode),
-			&(inode->inode),sizeof(sInode));
+	memcpy(block->buffer + ((inode->inodeNo - 1) % inodesPerBlock) * sizeof(sExt2Inode),
+			&(inode->inode),sizeof(sExt2Inode));
 	block->dirty = true;
 	inode->dirty = false;
 }

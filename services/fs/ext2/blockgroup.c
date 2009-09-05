@@ -31,7 +31,7 @@ bool ext2_bg_init(sExt2 *e) {
 	/* read block-group-descriptors */
 	u32 bcount = BYTES_TO_BLOCKS(e,ext2_getBlockGroupCount(e));
 	e->groupsDirty = false;
-	e->groups = (sBlockGroup*)malloc(bcount * BLOCK_SIZE(e));
+	e->groups = (sExt2BlockGrp*)malloc(bcount * BLOCK_SIZE(e));
 	if(e->groups == NULL) {
 		printe("Unable to allocate memory for blockgroups");
 		return false;
@@ -81,7 +81,7 @@ void ext2_bg_update(sExt2 *e) {
  */
 static void ext2_bg_printRanges(sExt2 *e,const char *name,u32 first,u32 max,u8 *bitmap);
 
-void ext2_bg_print(sExt2 *e,u32 no,sBlockGroup *bg) {
+void ext2_bg_print(sExt2 *e,u32 no,sExt2BlockGrp *bg) {
 	debugf("	blockBitmapStart = %d\n",bg->blockBitmap);
 	debugf("	inodeBitmapStart = %d\n",bg->inodeBitmap);
 	debugf("	inodeTableStart = %d\n",bg->inodeTable);

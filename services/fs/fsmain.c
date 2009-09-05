@@ -55,6 +55,7 @@ int main(void) {
 	fs->deinit = ext2_deinit;
 	fs->resPath = ext2_resPath;
 	fs->open = ext2_open;
+	fs->close = ext2_close;
 	fs->stat = ext2_stat;
 	fs->read = ext2_read;
 	fs->write = ext2_write;

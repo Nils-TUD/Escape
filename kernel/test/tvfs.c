@@ -35,7 +35,7 @@ static void test_vfs_createService(void);
 
 /* public vfs-node for test-purposes */
 typedef struct {
-	tVFSNodeNo nodeNo;
+	tInodeNo nodeNo;
 	u16 recLen;
 	u16 nameLen;
 	/* name follows (up to 255 bytes) */

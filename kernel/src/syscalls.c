@@ -596,7 +596,8 @@ static void sysc_open(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	s32 pathLen;
 	u8 flags;
-	tVFSNodeNo nodeNo = 0;
+	tInodeNo nodeNo = 0;
+	bool isVirt = false;
 	tFileNo file;
 	tFD fd;
 	s32 err;
@@ -640,9 +641,10 @@ static void sysc_open(sIntrptStackFrame *stack) {
 		if(fd < 0)
 			SYSC_ERROR(stack,fd);
 		/* open file */
-		file = vfs_openFile(t->tid,flags,nodeNo);
+		file = vfs_openFile(t->tid,flags,nodeNo,VFS_DEV_NO);
 		if(file < 0)
 			SYSC_ERROR(stack,file);
+		isVirt = true;
 	}
 
 	/* assoc fd with file */
@@ -651,7 +653,7 @@ static void sysc_open(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,err);
 
 	/* if it is a driver, call the driver open-command */
-	if(IS_VIRT(nodeNo)) {
+	if(isVirt) {
 		sVFSNode *node = vfsn_getNode(nodeNo);
 		if((node->mode & MODE_TYPE_SERVUSE) && (node->parent->mode & MODE_SERVICE_DRIVER)) {
 			err = vfsdrv_open(t->tid,file,node,flags);
@@ -906,7 +908,7 @@ static void sysc_unregService(sIntrptStackFrame *stack) {
 	s32 err;
 
 	/* check node-number */
-	if(!IS_VIRT(id) || !vfsn_isValidNodeNo(id))
+	if(!vfsn_isValidNodeNo(id))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	/* remove the service */
@@ -923,7 +925,7 @@ static void sysc_setDataReadable(sIntrptStackFrame *stack) {
 	s32 err;
 
 	/* check node-number */
-	if(!IS_VIRT(id) || !vfsn_isValidNodeNo(id))
+	if(!vfsn_isValidNodeNo(id))
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	err = vfs_setDataReadable(t->tid,id,readable);
@@ -954,7 +956,7 @@ static void sysc_getClient(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,fd);
 
 	/* open a client */
-	file = vfs_openClient(t->tid,(tVFSNodeNo*)ids,count,(tVFSNodeNo*)client);
+	file = vfs_openClient(t->tid,(tInodeNo*)ids,count,(tInodeNo*)client);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
@@ -1204,7 +1206,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	u32 argc;
 	s32 remaining = EXEC_MAX_ARGSIZE;
 	s32 pathLen,res;
-	tVFSNodeNo nodeNo;
+	tInodeNo nodeNo;
 	sProc *p = proc_getRunning();
 
 	argc = 0;
@@ -1312,7 +1314,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
-	tVFSNodeNo nodeNo;
+	tInodeNo nodeNo;
 	u32 len;
 	s32 res;
 

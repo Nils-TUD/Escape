@@ -534,14 +534,17 @@ void thread_dbg_print(sThread *t) {
 	vid_printf("\t\tfileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(t->fileDescs[i] != -1) {
-			tVFSNodeNo no = vfs_getNodeNo(t->fileDescs[i]);
-			vid_printf("\t\t\t%d : %d",i,t->fileDescs[i]);
-			if(IS_VIRT(no) && vfsn_isValidNodeNo(no)) {
-				sVFSNode *n = vfsn_getNode(no);
-				if(n && n->parent)
-					vid_printf(" (%s->%s)",n->parent->name,n->name);
+			tInodeNo ino;
+			tDevNo dev;
+			if(vfs_getFileId(t->fileDescs[i],&ino,&dev) == 0) {
+				vid_printf("\t\t\t%d : %d",i,t->fileDescs[i]);
+				if(dev == VFS_DEV_NO && vfsn_isValidNodeNo(ino)) {
+					sVFSNode *n = vfsn_getNode(ino);
+					if(n && n->parent)
+						vid_printf(" (%s->%s)",n->parent->name,n->name);
+				}
+				vid_printf("\n");
 			}
-			vid_printf("\n");
 		}
 	}
 }

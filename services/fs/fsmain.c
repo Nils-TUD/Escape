@@ -97,6 +97,7 @@ int main(void) {
 
 						/* write response */
 						msg.args.arg1 = no;
+						msg.args.arg2 = 0;
 						send(fd,MSG_FS_OPEN_RESP,&msg,sizeof(msg.args));
 					}
 					break;

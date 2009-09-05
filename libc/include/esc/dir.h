@@ -28,7 +28,7 @@
 
 /* a directory-entry */
 typedef struct {
-	tVFSNodeNo nodeNo;
+	tInodeNo nodeNo;
 	u16 recLen;
 	u16 nameLen;
 	char name[MAX_NAME_LEN + 1];

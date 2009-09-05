@@ -242,15 +242,6 @@ u32 intrpt_getCount(void);
 sIntrptStackFrame *intrpt_getCurStack(void);
 
 /**
- * Removes the listener for the given node and IRQ
- *
- * @param irq the irq-number
- * @param nodeNo the vfs-node-number
- * @return 0 on success or the negative error-code
- */
-s32 intrpt_removeListener(u16 irq,tVFSNodeNo nodeNo);
-
-/**
  * Handles an interrupt
  *
  * @param number the interrupt-number

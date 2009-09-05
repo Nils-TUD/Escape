@@ -61,7 +61,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	sProc *p;
 	char *name;
 	char *service;
-	tVFSNodeNo nodeNo;
+	tInodeNo nodeNo;
 	sModule *mod = mb->modsAddr;
 
 	/* it's not good to do this twice.. */

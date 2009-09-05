@@ -46,12 +46,12 @@
 typedef u16 tPid;
 /* thread id */
 typedef u16 tTid;
-/* VFS node number */
-typedef u32 tVFSNodeNo;
 /* file-descriptor */
 typedef s16 tFD;
 /* inode-number */
 typedef s32 tInodeNo;
+/* device-number */
+typedef s32 tDevNo;
 /* signal-number */
 typedef u8 tSig;
 /* service-id */

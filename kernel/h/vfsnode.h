@@ -35,18 +35,11 @@
 #define MAX_PATH_LEN				255
 
 /* determines the node-number (for a virtual node) from the given node-address */
-#define NADDR_TO_VNNO(naddr)		((((u32)(naddr) - (u32)&nodes[0]) / sizeof(sVFSNode)) | (1 << 30))
+#define NADDR_TO_VNNO(naddr)		(((u32)(naddr) - (u32)&nodes[0]) / sizeof(sVFSNode))
 
 /* fetches the first-child from the given node, taking care of links */
 #define NODE_FIRST_CHILD(node)		(!MODE_IS_LINK((node)->mode) ? \
 	((node)->firstChild) : (((sVFSNode*)((node)->data.def.cache))->firstChild))
-
-/* checks wether the given node-number is a virtual one */
-#define IS_VIRT(nodeNo)				(((nodeNo) & (1 << 30)) != 0)
-/* makes a virtual node number */
-#define MAKE_VIRT(nodeNo)			((nodeNo) | (1 << 30))
-/* removes the virtual-flag */
-#define VIRT_INDEX(nodeNo)			((nodeNo) & ~(1 << 30))
 
 /**
  * Initializes the nodes
@@ -59,7 +52,7 @@ void vfsn_init(void);
  * @param nodeNo the number
  * @return true if so
  */
-bool vfsn_isValidNodeNo(tVFSNodeNo nodeNo);
+bool vfsn_isValidNodeNo(tInodeNo nodeNo);
 
 /**
  * Checks wether the given node is a service-node and belongs to the current process
@@ -67,19 +60,19 @@ bool vfsn_isValidNodeNo(tVFSNodeNo nodeNo);
  * @param nodeNo the node-number
  * @return true if so
  */
-bool vfsn_isOwnServiceNode(tVFSNodeNo nodeNo);
+bool vfsn_isOwnServiceNode(tInodeNo nodeNo);
 
 /**
  * @param node the node
  * @return the node-number of the given node
  */
-tVFSNodeNo vfsn_getNodeNo(sVFSNode *node);
+tInodeNo vfsn_getNodeNo(sVFSNode *node);
 
 /**
  * @param nodeNo the node-number
  * @return the node for given index
  */
-sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo);
+sVFSNode *vfsn_getNode(tInodeNo nodeNo);
 
 /**
  * Determines the path for the given node. Note that static memory will be used for that!
@@ -88,7 +81,7 @@ sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo);
  * @param nodeNo the node-number
  * @return the path
  */
-char *vfsn_getPath(tVFSNodeNo nodeNo);
+char *vfsn_getPath(tInodeNo nodeNo);
 
 /**
  * Retrieves information about the given node
@@ -97,7 +90,7 @@ char *vfsn_getPath(tVFSNodeNo nodeNo);
  * @param info will be filled
  * @return 0 on success
  */
-s32 vfsn_getNodeInfo(tVFSNodeNo nodeNo,sFileInfo *info);
+s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info);
 
 /**
  * Resolves the given path to a VFS-node
@@ -107,7 +100,7 @@ s32 vfsn_getNodeInfo(tVFSNodeNo nodeNo,sFileInfo *info);
  * @param flags the flags (VFS_*) with which to resolve the path (create file, connect to pipe etc.)
  * @return 0 if successfull or the error-code
  */
-s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,u8 flags);
+s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,u8 flags);
 
 /**
  * Creates and appends a (incomplete) node

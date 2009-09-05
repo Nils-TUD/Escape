@@ -58,8 +58,10 @@ typedef struct {
 	u16 refCount;
 	/* current position in file */
 	u32 position;
-	/* node-number; if MSB = 1 => virtual, otherwise real inode-number */
-	tVFSNodeNo nodeNo;
+	/* node-number */
+	tInodeNo nodeNo;
+	/* the device-number */
+	tDevNo devNo;
 } sGFTEntry;
 
 /**
@@ -68,9 +70,10 @@ typedef struct {
  * @param tid the thread to use
  * @param flags the flags (read, write)
  * @param nodeNo the node-number to open
+ * @param devNo the device-number
  * @return the file-number on success or the negative error-code
  */
-static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tVFSNodeNo nodeNo);
+static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo);
 
 /* global file table */
 static sGFTEntry globalFileTable[FILE_COUNT];
@@ -99,8 +102,8 @@ void vfs_init(void) {
 	vfsn_createDir(root,(char*)"drivers");
 }
 
-s32 vfs_hasAccess(tTid tid,tVFSNodeNo nodeNo,u8 flags) {
-	sVFSNode *n = nodes + VIRT_INDEX(nodeNo);
+s32 vfs_hasAccess(tTid tid,tInodeNo nodeNo,u8 flags) {
+	sVFSNode *n = nodes + nodeNo;
 	/* kernel is allmighty :P */
 	if(tid == KERNEL_TID)
 		return 0;
@@ -126,14 +129,14 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 	/* we can't share service-usages since each thread has his own node */
 	if((n->mode & MODE_TYPE_SERVUSE)) {
 		sVFSNode *child;
-		tVFSNodeNo nodeNo;
+		tInodeNo nodeNo;
 		tFileNo newFile;
 		s32 err = vfsn_createServiceUse(tid,n->parent,&child);
 		if(err < 0)
 			return -1;
 
 		nodeNo = NADDR_TO_VNNO(child);
-		newFile = vfs_openFile(tid,e->flags,nodeNo);
+		newFile = vfs_openFile(tid,e->flags,nodeNo,VFS_DEV_NO);
 		if(newFile < 0) {
 			vfsn_removeNode(child);
 			return -1;
@@ -144,7 +147,7 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 	else if(n->mode & MODE_TYPE_PIPE) {
 		tFileNo newFile;
 		/* we'll get a new file since the tid is different */
-		newFile = vfs_openFile(tid,e->flags,e->nodeNo);
+		newFile = vfs_openFile(tid,e->flags,e->nodeNo,e->devNo);
 		if(newFile < 0)
 			return -1;
 		return newFile;
@@ -170,7 +173,7 @@ s32 vfs_incRefs(tFileNo file) {
 	return 0;
 }
 
-tVFSNodeNo vfs_getNodeNo(tFileNo file) {
+s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev) {
 	sGFTEntry *e;
 
 	/* invalid file-number? */
@@ -182,21 +185,23 @@ tVFSNodeNo vfs_getNodeNo(tFileNo file) {
 	if(e->flags == 0)
 		return ERR_INVALID_FILE;
 
-	return e->nodeNo;
+	*ino = e->nodeNo;
+	*dev = e->devNo;
+	return 0;
 }
 
-tFileNo vfs_openFile(tTid tid,u8 flags,tVFSNodeNo nodeNo) {
+tFileNo vfs_openFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo) {
 	sGFTEntry *e;
 	sVFSNode *n = NULL;
 
 	/* determine free file */
-	tFileNo f = vfs_getFreeFile(tid,flags,nodeNo);
+	tFileNo f = vfs_getFreeFile(tid,flags,nodeNo,devNo);
 	if(f < 0)
 		return f;
 
-	if(IS_VIRT(nodeNo)) {
+	if(devNo == VFS_DEV_NO) {
 		s32 err;
-		n = nodes + VIRT_INDEX(nodeNo);
+		n = nodes + nodeNo;
 		if((err = vfs_hasAccess(tid,nodeNo,flags)) < 0)
 			return err;
 	}
@@ -205,12 +210,13 @@ tFileNo vfs_openFile(tTid tid,u8 flags,tVFSNodeNo nodeNo) {
 	e = globalFileTable + f;
 	if(e->flags == 0) {
 		/* count references of virtual nodes */
-		if(IS_VIRT(nodeNo))
-			n->refCount++;
+		if(devNo == VFS_DEV_NO)
+			nodes[nodeNo].refCount++;
 		e->owner = tid;
 		e->flags = flags;
 		e->refCount = 1;
 		e->position = 0;
+		e->devNo = devNo;
 		e->nodeNo = nodeNo;
 	}
 	else
@@ -219,7 +225,7 @@ tFileNo vfs_openFile(tTid tid,u8 flags,tVFSNodeNo nodeNo) {
 	return f;
 }
 
-static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tVFSNodeNo nodeNo) {
+static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo) {
 	tFileNo i;
 	tFileNo freeSlot = ERR_NO_FREE_FD;
 	bool isServUse = false;
@@ -230,8 +236,8 @@ static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tVFSNodeNo nodeNo) {
 	vassert(!(flags & ~(VFS_READ | VFS_WRITE | VFS_CREATE | VFS_TRUNCATE)),
 			"flags contains invalid bits");
 
-	if(IS_VIRT(nodeNo)) {
-		vassert(VIRT_INDEX(nodeNo) < NODE_COUNT,"nodeNo invalid");
+	if(devNo == VFS_DEV_NO) {
+		vassert(nodeNo < NODE_COUNT,"nodeNo invalid");
 		sVFSNode *n = vfsn_getNode(nodeNo);
 		/* we can add pipes here, too, since every open() to a pipe will get a new node anyway */
 		isServUse = (n->mode & (MODE_TYPE_SERVUSE | MODE_TYPE_PIPE)) ? true : false;
@@ -243,7 +249,7 @@ static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tVFSNodeNo nodeNo) {
 			/* we don't want to share files with different threads */
 			/* this is allowed only if we create a child-threads. he will inherit the files.
 			 * in this case we trust the threads that they know what they do :) */
-			if(e->nodeNo == nodeNo && e->owner == tid) {
+			if(e->devNo == devNo && e->nodeNo == nodeNo && e->owner == tid) {
 				/* service-usages may use a file twice for reading and writing because we
 				 * will prevent trouble anyway */
 				if(isServUse && e->flags == flags)
@@ -280,9 +286,8 @@ bool vfs_eof(tTid tid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	bool eof = true;
 
-	if(IS_VIRT(e->nodeNo)) {
-		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
-		sVFSNode *n = nodes + i;
+	if(e->devNo == VFS_DEV_NO) {
+		sVFSNode *n = nodes + e->nodeNo;
 
 		if(n->mode & MODE_TYPE_SERVUSE) {
 			if(n->parent->mode & MODE_SERVICE_DRIVER)
@@ -323,9 +328,8 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 	if(newPos < 0)
 		return ERR_INVALID_SYSC_ARGS;
 
-	if(IS_VIRT(e->nodeNo)) {
-		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
-		sVFSNode *n = nodes + i;
+	if(e->devNo == VFS_DEV_NO) {
+		sVFSNode *n = nodes + e->nodeNo;
 
 		if(n->mode & MODE_TYPE_SERVUSE) {
 			if(n->parent->mode & MODE_SERVICE_DRIVER)
@@ -375,9 +379,8 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 	if(!(e->flags & VFS_READ))
 		return ERR_NO_READ_PERM;
 
-	if(IS_VIRT(e->nodeNo)) {
-		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
-		sVFSNode *n = nodes + i;
+	if(e->devNo == VFS_DEV_NO) {
+		sVFSNode *n = nodes + e->nodeNo;
 
 		if((err = vfs_hasAccess(tid,e->nodeNo,VFS_READ)) < 0)
 			return err;
@@ -393,7 +396,7 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 	}
 	else {
 		/* query the fs-service to read from the inode */
-		readBytes = vfsr_readFile(tid,file,e->nodeNo,buffer,e->position,count);
+		readBytes = vfsr_readFile(tid,file,e->nodeNo,e->devNo,buffer,e->position,count);
 		if(readBytes > 0)
 			e->position += readBytes;
 	}
@@ -403,15 +406,13 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 
 s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 	s32 err,writtenBytes;
-	sVFSNode *n;
 	sGFTEntry *e = globalFileTable + file;
 
 	if(!(e->flags & VFS_WRITE))
 		return ERR_NO_WRITE_PERM;
 
-	if(IS_VIRT(e->nodeNo)) {
-		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
-		n = nodes + i;
+	if(e->devNo == VFS_DEV_NO) {
+		sVFSNode *n = nodes + e->nodeNo;
 
 		if((err = vfs_hasAccess(tid,e->nodeNo,VFS_WRITE)) < 0)
 			return err;
@@ -427,7 +428,7 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 	}
 	else {
 		/* query the fs-service to write to the inode */
-		writtenBytes = vfsr_writeFile(tid,file,e->nodeNo,buffer,e->position,count);
+		writtenBytes = vfsr_writeFile(tid,file,e->nodeNo,e->devNo,buffer,e->position,count);
 		if(writtenBytes > 0)
 			e->position += writtenBytes;
 	}
@@ -439,11 +440,10 @@ s32 vfs_ioctl(tTid tid,tFileNo file,u32 cmd,u8 *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
 
-	if(!IS_VIRT(e->nodeNo))
+	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
 
-	tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
-	sVFSNode *n = nodes + i;
+	sVFSNode *n = nodes + e->nodeNo;
 
 	/* TODO keep this? */
 	if((err = vfs_hasAccess(tid,e->nodeNo,VFS_WRITE)) < 0)
@@ -460,11 +460,10 @@ s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
 
-	if(!IS_VIRT(e->nodeNo))
+	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
 
-	tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
-	sVFSNode *n = nodes + i;
+	sVFSNode *n = nodes + e->nodeNo;
 
 	if((err = vfs_hasAccess(tid,e->nodeNo,VFS_WRITE)) < 0)
 		return err;
@@ -481,11 +480,10 @@ s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
 
-	if(!IS_VIRT(e->nodeNo))
+	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
 
-	tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
-	sVFSNode *n = nodes + i;
+	sVFSNode *n = nodes + e->nodeNo;
 
 	if((err = vfs_hasAccess(tid,e->nodeNo,VFS_READ)) < 0)
 		return err;
@@ -503,10 +501,9 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 
 	/* decrement references */
 	if(--(e->refCount) == 0) {
-		tVFSNodeNo i = VIRT_INDEX(e->nodeNo);
-		sVFSNode *n = nodes + i;
+		sVFSNode *n = nodes + e->nodeNo;
 
-		if(IS_VIRT(e->nodeNo)) {
+		if(e->devNo == VFS_DEV_NO) {
 			if(n->name != NULL) {
 				/* last usage? */
 				if(--(n->refCount) == 0) {
@@ -528,7 +525,7 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 			}
 		}
 		else
-			vfsr_closeFile(tid,file,e->nodeNo);
+			vfsr_closeFile(tid,file,e->nodeNo,e->devNo);
 
 		/* mark unused */
 		e->flags = 0;
@@ -578,7 +575,7 @@ tServ vfs_createService(tTid tid,const char *name,u32 type) {
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-s32 vfs_setDataReadable(tTid tid,tVFSNodeNo nodeNo,bool readable) {
+s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable) {
 	sVFSNode *n = nodes + nodeNo;
 	if(n->name == NULL || !(n->mode & MODE_SERVICE_DRIVER))
 		return ERR_INVALID_NODENO;
@@ -605,8 +602,8 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 			n = NODE_FIRST_CHILD(rn[i]);
 			while(n != NULL) {
 				if(n->owner == tid) {
-					tVFSNodeNo nodeNo = NADDR_TO_VNNO(n);
-					tVFSNodeNo client = vfs_getClient(tid,&nodeNo,1);
+					tInodeNo nodeNo = NADDR_TO_VNNO(n);
+					tInodeNo client = vfs_getClient(tid,&nodeNo,1);
 					isService = true;
 					if(vfsn_isValidNodeNo(client))
 						return true;
@@ -621,7 +618,7 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 		for(i = 0; i < MAX_FD_COUNT; i++) {
 			if(t->fileDescs[i] != -1) {
 				sGFTEntry *e = globalFileTable + t->fileDescs[i];
-				if(IS_VIRT(e->nodeNo)) {
+				if(e->devNo == VFS_DEV_NO) {
 					n = vfsn_getNode(e->nodeNo);
 					/* service-usage and a message in the receive-list? */
 					/* we don't want to check that if it is our own service. because it makes no
@@ -642,7 +639,7 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 	/*return true;*/
 }
 
-s32 vfs_getClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count) {
+s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count) {
 	sVFSNode *n,*node;
 	u32 i;
 	for(i = 0; i < count; i++) {
@@ -668,7 +665,7 @@ s32 vfs_getClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count) {
 	return ERR_NO_CLIENT_WAITING;;
 }
 
-tFileNo vfs_openClientThread(tTid tid,tVFSNodeNo nodeNo,tTid clientId) {
+tFileNo vfs_openClientThread(tTid tid,tInodeNo nodeNo,tTid clientId) {
 	sVFSNode *n,*node;
 	/* check if the node is valid */
 	if(!vfsn_isValidNodeNo(nodeNo))
@@ -690,12 +687,12 @@ tFileNo vfs_openClientThread(tTid tid,tVFSNodeNo nodeNo,tTid clientId) {
 		return ERR_VFS_NODE_NOT_FOUND;
 
 	/* open file */
-	return vfs_openFile(tid,VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n));
+	return vfs_openFile(tid,VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n),VFS_DEV_NO);
 }
 
-tFileNo vfs_openClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servNode) {
+tFileNo vfs_openClient(tTid tid,tInodeNo *vfsNodes,u32 count,tInodeNo *servNode) {
 	sVFSNode *n;
-	tVFSNodeNo client = vfs_getClient(tid,vfsNodes,count);
+	tInodeNo client = vfs_getClient(tid,vfsNodes,count);
 	/* error? */
 	if(!vfsn_isValidNodeNo(client))
 		return client;
@@ -703,10 +700,10 @@ tFileNo vfs_openClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servN
 	/* open a file for it so that the service can read and write with it */
 	n = vfsn_getNode(client);
 	*servNode = NADDR_TO_VNNO(n->parent);
-	return vfs_openFile(tid,VFS_READ | VFS_WRITE,client);
+	return vfs_openFile(tid,VFS_READ | VFS_WRITE,client,VFS_DEV_NO);
 }
 
-s32 vfs_removeService(tTid tid,tVFSNodeNo nodeNo) {
+s32 vfs_removeService(tTid tid,tInodeNo nodeNo) {
 	sVFSNode *n = nodes + nodeNo;
 
 	vassert(vfsn_isValidNodeNo(nodeNo),"Invalid node number %d",nodeNo);
@@ -870,17 +867,19 @@ void vfs_dbg_printGFT(void) {
 	vid_printf("Global File Table:\n");
 	for(i = 0; i < FILE_COUNT; i++) {
 		if(e->flags != 0) {
-			sVFSNode *n = vfsn_getNode(e->nodeNo);
 			vid_printf("\tfile @ index %d\n",i);
 			vid_printf("\t\tread: %d\n",(e->flags & VFS_READ) ? true : false);
 			vid_printf("\t\twrite: %d\n",(e->flags & VFS_WRITE) ? true : false);
-			vid_printf("\t\tenv: %s\n",IS_VIRT(e->nodeNo) ? "virtual" : "real");
-			vid_printf("\t\tnodeNo: %d\n",VIRT_INDEX(e->nodeNo));
+			vid_printf("\t\tnodeNo: %d\n",e->nodeNo);
+			vid_printf("\t\tdevNo: %d\n",e->devNo);
 			vid_printf("\t\tpos: %d\n",e->position);
 			vid_printf("\t\trefCount: %d\n",e->refCount);
 			vid_printf("\t\towner: %d\n",e->owner);
-			if((n->mode & MODE_TYPE_SERVUSE))
-				vid_printf("\t\tService-Usage of %s @ %s\n",n->name,n->parent->name);
+			if(e->devNo == VFS_DEV_NO) {
+				sVFSNode *n = vfsn_getNode(e->nodeNo);
+				if(n->mode & MODE_TYPE_SERVUSE)
+					vid_printf("\t\tService-Usage of %s @ %s\n",n->name,n->parent->name);
+			}
 		}
 		e++;
 	}

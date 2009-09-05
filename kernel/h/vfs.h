@@ -33,6 +33,9 @@
 #define MODE_SERVICE_DRIVER			004000000
 #define MODE_SERVICE_FS				010000000
 
+/* the device-number of the VFS */
+#define VFS_DEV_NO					((tDevNo)0xFF)
+
 /* GFT flags */
 enum {
 	VFS_NOACCESS = 0,	/* no read and write */
@@ -107,7 +110,7 @@ void vfs_init(void);
  * @param flags specifies what you want to do (VFS_READ | VFS_WRITE)
  * @return 0 if the thread has permission or the error-code
  */
-s32 vfs_hasAccess(tTid tid,tVFSNodeNo nodeNo,u8 flags);
+s32 vfs_hasAccess(tTid tid,tInodeNo nodeNo,u8 flags);
 
 /**
  * Inherits the given file for the current thread
@@ -127,12 +130,14 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file);
 s32 vfs_incRefs(tFileNo file);
 
 /**
- * Determines the node-number for the given file
+ * Determines the node-number and device-number for the given file
  *
  * @param file the file
- * @return the node-number or an error (both may be negative :/, check with vfsn_isValidNodeNo())
+ * @param ino will be set to the inode-number
+ * @param dev will be set to the devive-number
+ * @return 0 on success
  */
-tVFSNodeNo vfs_getNodeNo(tFileNo file);
+s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev);
 
 /**
  * Opens the file with given number and given flags. That means it walks through the global
@@ -142,9 +147,10 @@ tVFSNodeNo vfs_getNodeNo(tFileNo file);
  * @param tid the thread-id with which the file should be opened
  * @param flags wether it is a virtual or real file and wether you want to read or write
  * @param nodeNo the node-number (in the virtual or real environment)
+ * @param devNo the device-number
  * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FD)
  */
-tFileNo vfs_openFile(tTid tid,u8 flags,tVFSNodeNo nodeNo);
+tFileNo vfs_openFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo);
 
 /**
  * Checks wether we are at EOF in the given file
@@ -253,7 +259,7 @@ s32 vfs_createService(tTid tid,const char *name,u32 type);
  * @param readable wether there is data or not
  * @return 0 on success
  */
-s32 vfs_setDataReadable(tTid tid,tVFSNodeNo nodeNo,bool readable);
+s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable);
 
 /**
  * Checks wether there is a message for the given thread. That if the thread is a service
@@ -273,7 +279,7 @@ bool vfs_msgAvailableFor(tTid tid,u8 events);
  * @param count the size of <vfsNodes>
  * @return the error-code or the node-number of the client
  */
-s32 vfs_getClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count);
+s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count);
 
 /**
  * Opens a file for the client with given thread-id. This works just for multipipe-services!
@@ -283,7 +289,7 @@ s32 vfs_getClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count);
  * @param clientId the thread-id of the desired client
  * @return the file or a negative error-code
  */
-tFileNo vfs_openClientThread(tTid tid,tVFSNodeNo nodeNo,tTid clientId);
+tFileNo vfs_openClientThread(tTid tid,tInodeNo nodeNo,tTid clientId);
 
 /**
  * Opens a file for a client of the given service-node
@@ -294,7 +300,7 @@ tFileNo vfs_openClientThread(tTid tid,tVFSNodeNo nodeNo,tTid clientId);
  * @param node will be set to the node-number from which the client has been taken
  * @return the error-code (negative) or the file to use
  */
-tFileNo vfs_openClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servNode);
+tFileNo vfs_openClient(tTid tid,tInodeNo *vfsNodes,u32 count,tInodeNo *servNode);
 
 /**
  * Removes the service with given node-number
@@ -302,7 +308,7 @@ tFileNo vfs_openClient(tTid tid,tVFSNodeNo *vfsNodes,u32 count,tVFSNodeNo *servN
  * @param tid the thread-id
  * @param nodeNo the node-number of the service
  */
-s32 vfs_removeService(tTid tid,tVFSNodeNo nodeNo);
+s32 vfs_removeService(tTid tid,tInodeNo nodeNo);
 
 /**
  * Creates a process-node with given pid and handler-function

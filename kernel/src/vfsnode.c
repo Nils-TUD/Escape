@@ -85,7 +85,7 @@ static sVFSNode *freeList;
 static u32 nextPipeId = 0;
 
 void vfsn_init(void) {
-	tVFSNodeNo i;
+	tInodeNo i;
 	sVFSNode *node = &nodes[0];
 	freeList = node;
 	for(i = 0; i < NODE_COUNT - 1; i++) {
@@ -95,27 +95,25 @@ void vfsn_init(void) {
 	node->next = NULL;
 }
 
-bool vfsn_isValidNodeNo(tVFSNodeNo nodeNo) {
-	if(IS_VIRT(nodeNo))
-		return VIRT_INDEX(nodeNo) < NODE_COUNT;
-	return nodeNo < NODE_COUNT;
+bool vfsn_isValidNodeNo(tInodeNo nodeNo) {
+	return nodeNo >= 0 && nodeNo < NODE_COUNT;
 }
 
-bool vfsn_isOwnServiceNode(tVFSNodeNo nodeNo) {
+bool vfsn_isOwnServiceNode(tInodeNo nodeNo) {
 	sThread *t = thread_getRunning();
 	sVFSNode *node = nodes + nodeNo;
 	return node->owner == t->tid && (node->mode & MODE_TYPE_SERVICE);
 }
 
-tVFSNodeNo vfsn_getNodeNo(sVFSNode *node) {
+tInodeNo vfsn_getNodeNo(sVFSNode *node) {
 	return NADDR_TO_VNNO(node);
 }
 
-sVFSNode *vfsn_getNode(tVFSNodeNo nodeNo) {
-	return nodes + VIRT_INDEX(nodeNo);
+sVFSNode *vfsn_getNode(tInodeNo nodeNo) {
+	return nodes + nodeNo;
 }
 
-s32 vfsn_getNodeInfo(tVFSNodeNo nodeNo,sFileInfo *info) {
+s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info) {
 	sVFSNode *n = nodes + nodeNo;
 
 	if(n->mode == 0)
@@ -123,7 +121,7 @@ s32 vfsn_getNodeInfo(tVFSNodeNo nodeNo,sFileInfo *info) {
 
 	/* some infos are not available here */
 	/* TODO needs to be completed */
-	info->device = 0;
+	info->device = VFS_DEV_NO;
 	info->rdevice = 0;
 	info->accesstime = 0;
 	info->modifytime = 0;
@@ -142,7 +140,7 @@ s32 vfsn_getNodeInfo(tVFSNodeNo nodeNo,sFileInfo *info) {
 	return 0;
 }
 
-char *vfsn_getPath(tVFSNodeNo nodeNo) {
+char *vfsn_getPath(tInodeNo nodeNo) {
 	static char path[MAX_PATH_LEN];
 	u32 nlen,len = 0;
 	sVFSNode *node = nodes + nodeNo;
@@ -180,7 +178,7 @@ char *vfsn_getPath(tVFSNodeNo nodeNo) {
 	return (char*)path;
 }
 
-s32 vfsn_resolvePath(const char *path,tVFSNodeNo *nodeNo,u8 flags) {
+s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,u8 flags) {
 	sVFSNode *dir,*n = nodes;
 	s32 pos,depth = 0;
 

@@ -63,13 +63,13 @@ static void test_vfsn_resolvePath(void) {
 }
 
 static bool test_vfsn_resolveRealPath(const char *a) {
-	tVFSNodeNo no;
+	tInodeNo no;
 	return test_assertInt(vfsn_resolvePath(a,&no,VFS_READ),ERR_REAL_PATH);
 }
 
 static bool test_vfsn_resolvePathCpy(const char *a,const char *b) {
 	s32 err;
-	tVFSNodeNo no;
+	tInodeNo no;
 	sVFSNode *node;
 	if((err = vfsn_resolvePath(a,&no,VFS_READ)) != 0) {
 		test_caseFailed("Unable to resolve the path %s",a);
@@ -81,7 +81,7 @@ static bool test_vfsn_resolvePathCpy(const char *a,const char *b) {
 }
 
 static void test_vfsn_getPath(void) {
-	tVFSNodeNo no;
+	tInodeNo no;
 
 	test_caseStart("Testing vfsn_getPath()");
 

@@ -45,6 +45,7 @@ typedef struct {
 /* The request-handler for sending a path and receiving a result */
 static s32 vfsr_pathReqHandler(tTid tid,const char *path,u32 cmd);
 /* The response-handler for the different message-ids */
+static void vfsr_openRespHandler(tTid tid,const u8 *data,u32 size);
 static void vfsr_readRespHandler(tTid tid,const u8 *data,u32 size);
 static void vfsr_statRespHandler(tTid tid,const u8 *data,u32 size);
 static void vfsr_defRespHandler(tTid tid,const u8 *data,u32 size);
@@ -58,7 +59,7 @@ static sMsg msg;
 static sSLList *real2virt[R2V_MAP_SIZE] = {NULL};
 
 void vfsr_init(void) {
-	vfsreq_setHandler(MSG_FS_OPEN_RESP,vfsr_defRespHandler);
+	vfsreq_setHandler(MSG_FS_OPEN_RESP,vfsr_openRespHandler);
 	vfsreq_setHandler(MSG_FS_READ_RESP,vfsr_readRespHandler);
 	vfsreq_setHandler(MSG_FS_STAT_RESP,vfsr_statRespHandler);
 	vfsreq_setHandler(MSG_FS_WRITE_RESP,vfsr_defRespHandler);
@@ -108,7 +109,7 @@ s32 vfsr_openFile(tTid tid,u8 flags,const char *path) {
 	}
 
 	/* now open the file */
-	realFile = vfs_openFile(tid,flags,req->count);
+	realFile = vfs_openFile(tid,flags,(tInodeNo)req->count,(tDevNo)req->val1);
 	vfsreq_remRequest(req);
 	if((res = vfsr_add(virtFile,realFile)) < 0) {
 		vfsr_destroy(tid,virtFile);
@@ -161,7 +162,8 @@ s32 vfsr_getFileInfo(tTid tid,const char *path,sFileInfo *info) {
 	return 0;
 }
 
-s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count) {
+s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,
+		u32 count) {
 	sRequest *req;
 	sReal2Virt *r2v;
 	s32 res;
@@ -188,7 +190,8 @@ s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,u8 *buffer,u32 offset,u
 	return res;
 }
 
-s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,const u8 *buffer,u32 offset,u32 count) {
+s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,const u8 *buffer,u32 offset,
+		u32 count) {
 	sRequest *req;
 	sReal2Virt *r2v;
 	s32 res;
@@ -270,7 +273,7 @@ s32 vfsr_sync(tTid tid) {
 	return res;
 }
 
-void vfsr_closeFile(tTid tid,tFileNo file,tInodeNo inodeNo) {
+void vfsr_closeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo) {
 	s32 res;
 	sReal2Virt *r2v;
 	r2v = vfsr_get(file,&res);
@@ -311,6 +314,23 @@ static s32 vfsr_pathReqHandler(tTid tid,const char *path,u32 cmd) {
 	res = req->count;
 	vfsreq_remRequest(req);
 	return res;
+}
+
+static void vfsr_openRespHandler(tTid tid,const u8 *data,u32 size) {
+	sMsg *rmsg = (sMsg*)data;
+	if(size < sizeof(rmsg->args))
+		return;
+
+	/* find the request for the tid */
+	sRequest *req = vfsreq_getRequestByPid(tid);
+	if(req != NULL) {
+		/* remove request and give him the inode-number */
+		req->state = REQ_STATE_FINISHED;
+		req->count = rmsg->args.arg1;
+		req->val1 = rmsg->args.arg2;
+		/* the thread can continue now */
+		thread_wakeup(tid,EV_RECEIVED_MSG);
+	}
 }
 
 static void vfsr_readRespHandler(tTid tid,const u8 *data,u32 size) {
@@ -382,13 +402,13 @@ static void vfsr_defRespHandler(tTid tid,const u8 *data,u32 size) {
 
 static tFileNo vfsr_create(tTid tid) {
 	s32 res;
-	tVFSNodeNo nodeNo;
+	tInodeNo nodeNo;
 
 	/* create a virtual node for communication with fs */
 	if((res = vfsn_resolvePath(FS_PATH,&nodeNo,VFS_CONNECT)) != 0)
 		return res;
 	/* open the file */
-	return vfs_openFile(tid,VFS_READ | VFS_WRITE,nodeNo);
+	return vfs_openFile(tid,VFS_READ | VFS_WRITE,nodeNo,VFS_DEV_NO);
 }
 
 static s32 vfsr_add(tFileNo virtFile,tFileNo realFile) {

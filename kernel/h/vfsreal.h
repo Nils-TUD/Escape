@@ -54,12 +54,14 @@ s32 vfsr_getFileInfo(tTid tid,const char *path,sFileInfo *info);
  * @param tid the thread-id
  * @param file the 'real' file
  * @param inodeNo the inode
+ * @param devNo the device-number
  * @param buffer the buffer to fill
  * @param offset the offset in the data
  * @param count the number of bytes to copy
  * @return the number of read bytes
  */
-s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,u8 *buffer,u32 offset,u32 count);
+s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,
+		u32 count);
 
 /**
  * Writes to the given inode at <offset> <count> bytes from the given buffer
@@ -67,12 +69,14 @@ s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,u8 *buffer,u32 offset,u
  * @param tid the thread-id
  * @param file the 'real' file
  * @param inodeNo the inode
+ * @param devNo the device-number
  * @param buffer the buffer
  * @param offset the offset in the inode
  * @param count the number of bytes to copy
  * @return the number of written bytes
  */
-s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,const u8 *buffer,u32 offset,u32 count);
+s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,const u8 *buffer,u32 offset,
+		u32 count);
 
 /**
  * Creates a hardlink at <newPath> which points to <oldPath>
@@ -126,7 +130,8 @@ s32 vfsr_sync(tTid tid);
  * @param tid the thread-id
  * @param file the 'real' file
  * @param inodeNo the inode
+ * @param devNo the device-number
  */
-void vfsr_closeFile(tTid tid,tFileNo file,tInodeNo inodeNo);
+void vfsr_closeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo);
 
 #endif /* VFSREAL_H_ */

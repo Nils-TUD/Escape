@@ -36,7 +36,7 @@
 
 /* VFS-directory-entry (equal to the direntry of ext2) */
 typedef struct {
-	tVFSNodeNo nodeNo;
+	tInodeNo nodeNo;
 	u16 recLen;
 	u16 nameLen;
 	/* name follows (up to 255 bytes) */
@@ -88,7 +88,7 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buf
 static void vfsinfo_virtMemReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
 
 void vfsinfo_init(void) {
-	tVFSNodeNo nodeNo;
+	tInodeNo nodeNo;
 	sVFSNode *sysNode;
 	vfsn_resolvePath("/system",&nodeNo,VFS_NOACCESS);
 	sysNode = vfsn_getNode(nodeNo);

@@ -174,8 +174,9 @@ s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,u8 *buffer
 
 	/* send msg to fs */
 	msg.args.arg1 = inodeNo;
-	msg.args.arg2 = offset;
-	msg.args.arg3 = count;
+	msg.args.arg2 = devNo;
+	msg.args.arg3 = offset;
+	msg.args.arg4 = count;
 	res = vfs_sendMsg(tid,r2v->virtFile,MSG_FS_READ,(u8*)&msg,sizeof(msg.args));
 	if(res < 0)
 		return res;
@@ -202,8 +203,9 @@ s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,const u8 
 
 	/* send msg first */
 	msg.data.arg1 = inodeNo;
-	msg.data.arg2 = offset;
-	msg.data.arg3 = count;
+	msg.args.arg2 = devNo;
+	msg.args.arg3 = offset;
+	msg.args.arg4 = count;
 	res = vfs_sendMsg(tid,r2v->virtFile,MSG_FS_WRITE,(u8*)&msg,sizeof(msg.data));
 	if(res < 0)
 		return res;
@@ -282,6 +284,7 @@ void vfsr_closeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo) {
 
 	/* write message to fs */
 	msg.args.arg1 = inodeNo;
+	msg.args.arg2 = devNo;
 	vfs_sendMsg(tid,r2v->virtFile,MSG_FS_CLOSE,(u8*)&msg,sizeof(msg.args));
 	/* no response necessary, therefore no wait, too */
 

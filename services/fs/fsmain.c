@@ -140,8 +140,9 @@ int main(void) {
 
 					case MSG_FS_READ: {
 						tInodeNo ino = (tInodeNo)msg.args.arg1;
-						u32 offset = msg.args.arg2;
-						u32 count = msg.args.arg3;
+						tDevNo dev = (tDevNo)msg.args.arg2;
+						u32 offset = msg.args.arg3;
+						u32 count = msg.args.arg4;
 
 						u8 *buffer = malloc(count);
 						if(buffer == NULL)
@@ -162,8 +163,9 @@ int main(void) {
 
 					case MSG_FS_WRITE: {
 						tInodeNo ino = (tInodeNo)msg.args.arg1;
-						u32 offset = msg.args.arg2;
-						u32 count = msg.args.arg3;
+						tDevNo dev = (tDevNo)msg.args.arg2;
+						u32 offset = msg.args.arg3;
+						u32 count = msg.args.arg4;
 						u8 *buffer;
 
 						/* write to file */

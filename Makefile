@@ -7,8 +7,8 @@ VBHDD=$(BUILD)/vbhd.vdi
 HDDBAK=$(BUILD)/hd.img.bak
 VMDISK=$(abspath vmware/vmwarehddimg.vmdk)
 VBOXOSTITLE="Escape v0.1"
-# 10 MB disk (20 * 16 * 63 * 512 = 10,321,920 byte)
-HDDCYL=20
+# 20 MB disk (40 * 16 * 63 * 512 = 20,643,840 byte)
+HDDCYL=40
 HDDHEADS=16
 HDDTRACKSECS=63
 TMPFILE=$(BUILD)/disktmp
@@ -84,12 +84,17 @@ createhdd: $(DISKMOUNT)
 			echo "p" >> $(TMPFILE) && \
 			echo "1" >> $(TMPFILE) && \
 			echo "" >> $(TMPFILE) && \
+			echo "20159" >> $(TMPFILE) && \
+			echo "n" >> $(TMPFILE) && \
+			echo "p" >> $(TMPFILE) && \
+			echo "2" >> $(TMPFILE) && \
+			echo "" >> $(TMPFILE) && \
 			echo "" >> $(TMPFILE) && \
 			echo "w" >> $(TMPFILE);
 		$(SUDO) fdisk -u -C$(HDDCYL) -S$(HDDTRACKSECS) -H$(HDDHEADS) /dev/loop0 < $(TMPFILE) || true
 		$(SUDO) losetup -d /dev/loop0
 		$(SUDO) losetup -o`expr $(HDDTRACKSECS) \* 512` /dev/loop0 $(HDD)
-		@# WE HAVE TO CHANGE THE BLOCK-COUNT HERE IF THE DISK-GEOMETRY CHANGES!
+		@# WE HAVE TO CHANGE THE BLOCK-COUNT HERE IF THE DISK-GEOMETRY OR PARTITION CHANGES!
 		$(SUDO) mke2fs -r0 -Onone -b1024 /dev/loop0 10016
 		$(SUDO) umount /dev/loop0 || true
 		$(SUDO) losetup -d /dev/loop0 || true

@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include <sllist.h>
+#include <fsinterface.h>
 
 #define SECTOR_SIZE							512
 #define BLOCK_SIZE(e)						(SECTOR_SIZE << ((e)->superBlock.logBlockSize + 1))
@@ -350,19 +351,123 @@ typedef struct {
 } sExt2;
 
 /**
- * Inits the given ext2-filesystem
+ * Inits the ext2-filesystem
  *
- * @param e the ext2-data
- * @return true if successfull
+ * @param driver the driver-path
+ * @return the ext2-handle
  */
-bool ext2_init(sExt2 *e);
+void *ext2_init(const char *driver);
 
 /**
- * Writes all dirty objects of the filesystem to disk
+ * Deinits the ext2-filesystem
  *
- * @param e the ext2-data
+ * @param h the handle
  */
-void ext2_sync(sExt2 *e);
+void ext2_deinit(void *h);
+
+/**
+ * Mount-entry for resPath()
+ *
+ * @param h the ext2-handle
+ * @param path the path
+ * @param flags the flags
+ * @param dev should be set to the device-number
+ * @return the inode-number on success
+ */
+tInodeNo ext2_resPath(void *h,char *path,u8 flags,tDevNo *dev);
+
+/**
+ * Mount-entry for open()
+ *
+ * @param h the ext2-handle
+ * @param ino the inode to open
+ * @param flags the open-flags
+ * @return the inode on success or < 0
+ */
+s32 ext2_open(void *h,tInodeNo ino,u8 flags);
+
+/**
+ * Mount-entry for stat()
+ *
+ * @param h the ext2-handle
+ * @param ino the inode to open
+ * @param info the buffer where to write the file-info
+ * @return 0 on success
+ */
+s32 ext2_stat(void *h,tInodeNo ino,sFileInfo *info);
+
+/**
+ * Mount-entry for read()
+ *
+ * @param h the ext2-handle
+ * @param inodeNo the inode
+ * @param buffer the buffer to read from
+ * @param offset the offset to read from
+ * @param count the number of bytes to read
+ * @return number of read bytes on success
+ */
+s32 ext2_read(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
+
+/**
+ * Mount-entry for write()
+ *
+ * @param h the ext2-handle
+ * @param inodeNo the inode
+ * @param buffer the buffer to write to
+ * @param offset the offset to write to
+ * @param count the number of bytes to write
+ * @return number of written bytes on success
+ */
+s32 ext2_write(void *h,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count);
+
+/**
+ * Mount-entry for link()
+ *
+ * @param h the ext2-handle
+ * @param dstIno the inode-number of the link-target
+ * @param dirIno the inode-number of the directory
+ * @param name the entry-name to create
+ * @return 0 on success
+ */
+s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,char *name);
+
+/**
+ * Mount-entry for unlink()
+ *
+ * @param h the ext2-handle
+ * @param dirIno the inode-number of the directory
+ * @param name the entry-name to remove
+ * @return 0 on success
+ */
+s32 ext2_unlink(void *h,tInodeNo dirIno,char *name);
+
+/**
+ * Mount-entry for mkdir()
+ *
+ * @param h the ext2-handle
+ * @param dirIno the inode-number of the directory
+ * @param name the entry-name to create
+ * @return 0 on success
+ */
+s32 ext2_mkdir(void *h,tInodeNo dirIno,char *name);
+
+/**
+ * Mount-entry for rmdir()
+ *
+ * @param h the ext2-handle
+ * @param dirIno the inode-number of the directory
+ * @param name the entry-name to remove
+ * @return 0 on success
+ */
+s32 ext2_rmdir(void *h,tInodeNo dirIno,char *name);
+
+/**
+ * Mount-entry for sync().
+ * Writes all dirty objects of the filesystem to disk.
+ *
+ * @param h the ext2-handle
+ */
+void ext2_sync(void *h);
 
 /**
  * Determines the block of the given inode

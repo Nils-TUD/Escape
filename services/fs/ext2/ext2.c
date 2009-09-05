@@ -23,11 +23,18 @@
 #include <esc/heap.h>
 #include <esc/proc.h>
 #include <esc/debug.h>
+#include <esc/dir.h>
+#include <errors.h>
+#include <string.h>
 #include "ext2.h"
 #include "blockcache.h"
 #include "inodecache.h"
 #include "blockgroup.h"
 #include "superblock.h"
+#include "path.h"
+#include "file.h"
+#include "link.h"
+#include "dir.h"
 #include "rw.h"
 
 /**
@@ -35,13 +42,16 @@
  */
 static bool ext2_isPowerOf(u32 x,u32 y);
 
-bool ext2_init(sExt2 *e) {
+void *ext2_init(const char *driver) {
 	tFD fd;
+	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
+	if(e == NULL)
+		return NULL;
+
 	/* we have to try it multiple times in this case since the kernel loads ata and fs
 	 * directly after another and we don't know who's ready first */
-	/* TODO later the device for the root-partition should be chosen in the multiboot-parameters */
 	do {
-		fd = open("/drivers/hda1",IO_WRITE | IO_READ);
+		fd = open(driver,IO_WRITE | IO_READ);
 		if(fd < 0)
 			yield();
 	}
@@ -50,20 +60,133 @@ bool ext2_init(sExt2 *e) {
 	e->ataFd = fd;
 	if(!ext2_super_init(e)) {
 		close(e->ataFd);
-		return false;
+		free(e);
+		return NULL;
 	}
 
 	/* init block-groups */
-	if(!ext2_bg_init(e))
-		return false;
+	if(!ext2_bg_init(e)) {
+		free(e);
+		return NULL;
+	}
 
 	/* init caches */
 	ext2_icache_init(e);
 	ext2_bcache_init(e);
-	return true;
+	return e;
 }
 
-void ext2_sync(sExt2 *e) {
+void ext2_deinit(void *h) {
+	sExt2 *e = (sExt2*)h;
+	ext2_sync(e);
+}
+
+tInodeNo ext2_resPath(void *h,char *path,u8 flags,tDevNo *dev) {
+	return ext2_path_resolve((sExt2*)h,path,flags,dev);
+}
+
+s32 ext2_open(void *h,tInodeNo ino,u8 flags) {
+	sExt2 *e = (sExt2*)h;
+	/* truncate? */
+	if(flags & IO_TRUNCATE) {
+		sCachedInode *cnode = ext2_icache_request(e,ino);
+		if(cnode != NULL) {
+			ext2_file_truncate(e,cnode,false);
+			ext2_icache_release(e,cnode);
+		}
+	}
+	/*ext2_icache_printStats();
+	ext2_bcache_printStats();*/
+	return ino;
+}
+
+s32 ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
+	sExt2 *e = (sExt2*)h;
+	sCachedInode *cnode = ext2_icache_request(e,ino);
+	if(cnode == NULL)
+		return ERR_FS_INODE_NOT_FOUND;
+
+	info->accesstime = cnode->inode.accesstime;
+	info->modifytime = cnode->inode.modifytime;
+	info->createtime = cnode->inode.createtime;
+	info->blockCount = cnode->inode.blocks;
+	info->blockSize = BLOCK_SIZE(e);
+	info->device = 0;
+	info->rdevice = 0;
+	info->uid = cnode->inode.uid;
+	info->gid = cnode->inode.gid;
+	info->inodeNo = cnode->inodeNo;
+	info->linkCount = cnode->inode.linkCount;
+	info->mode = cnode->inode.mode;
+	info->size = cnode->inode.size;
+	ext2_icache_release(e,cnode);
+	return 0;
+}
+
+s32 ext2_read(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
+	return ext2_file_read((sExt2*)h,inodeNo,buffer,offset,count);
+}
+
+s32 ext2_write(void *h,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count) {
+	return ext2_file_write((sExt2*)h,inodeNo,buffer,offset,count);
+}
+
+s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,char *name) {
+	sExt2 *e = (sExt2*)h;
+	s32 res;
+	sCachedInode *dir,*ino;
+	dir = ext2_icache_request(e,dirIno);
+	ino = ext2_icache_request(e,dstIno);
+	if(dir == NULL || ino == NULL)
+		res = ERR_FS_INODE_NOT_FOUND;
+	else if(MODE_IS_DIR(ino->inode.mode))
+		res = ERR_FS_IS_DIRECTORY;
+	else
+		res = ext2_link_create(e,dir,ino,name);
+	ext2_icache_release(e,dir);
+	ext2_icache_release(e,ino);
+	return res;
+}
+
+s32 ext2_unlink(void *h,tInodeNo dirIno,char *name) {
+	sExt2 *e = (sExt2*)h;
+	s32 res;
+	sCachedInode *dir = ext2_icache_request(e,dirIno);
+	if(dir == NULL)
+		return ERR_FS_INODE_NOT_FOUND;
+
+	/* TODO check wether it is an directory */
+	res = ext2_link_delete(e,dir,name);
+	ext2_icache_release(e,dir);
+	return res;
+}
+
+s32 ext2_mkdir(void *h,tInodeNo dirIno,char *name) {
+	sExt2 *e = (sExt2*)h;
+	s32 res;
+	sCachedInode *dir = ext2_icache_request(e,dirIno);
+	if(dir == NULL)
+		return ERR_FS_INODE_NOT_FOUND;
+	res = ext2_dir_create(e,dir,name);
+	ext2_icache_release(e,dir);
+	return res;
+}
+
+s32 ext2_rmdir(void *h,tInodeNo dirIno,char *name) {
+	sExt2 *e = (sExt2*)h;
+	s32 res;
+	sCachedInode *dir = ext2_icache_request(e,dirIno);
+	if(dir == NULL)
+		return ERR_FS_INODE_NOT_FOUND;
+	if(!MODE_IS_DIR(dir->inode.mode))
+		return ERR_NO_DIRECTORY;
+	res = ext2_dir_delete(e,dir,name);
+	ext2_icache_release(e,dir);
+	return res;
+}
+
+void ext2_sync(void *h) {
+	sExt2 *e = (sExt2*)h;
 	ext2_super_update(e);
 	ext2_bg_update(e);
 	/* flush inodes first, because they may create dirty blocks */

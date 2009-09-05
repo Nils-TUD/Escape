@@ -30,10 +30,12 @@
 #include "rw.h"
 #include "file.h"
 #include "dir.h"
+#include "../mount.h"
 
-tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags) {
+tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags,tDevNo *dev) {
 	sCachedInode *cnode = NULL;
 	tInodeNo res;
+	tDevNo mntDev;
 	char *p = path;
 	s32 err;
 	u32 pos;
@@ -52,13 +54,22 @@ tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags) {
 	while(*p) {
 		res = ext2_dir_find(e,cnode,p,pos);
 		if(res >= 0) {
-			p += pos;
 			ext2_icache_release(e,cnode);
 			cnode = ext2_icache_request(e,res);
 			if(cnode == NULL)
 				return ERR_FS_INODE_NOT_FOUND;
 
+			/* is it a mount-point */
+			mntDev = mount_getByLoc(*dev,res);
+			if(mntDev >= 0) {
+				sFSInst *inst = mount_get(mntDev);
+				*dev = mntDev;
+				ext2_icache_release(e,cnode);
+				return inst->fs->resPath(inst->handle,p,flags,dev);
+			}
+
 			/* skip slashes */
+			p += pos;
 			while(*p == '/')
 				p++;
 			/* "/" at the end is optional */

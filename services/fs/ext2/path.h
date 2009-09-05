@@ -29,8 +29,9 @@
  * @param e the ext2-handle
  * @param path the path
  * @param flags the flags with which to open the file
+ * @param dev should be set to the device-number
  * @return the inode-Number or EXT2_BAD_INO
  */
-tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags);
+tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags,tDevNo *dev);
 
 #endif /* PATH_H_ */

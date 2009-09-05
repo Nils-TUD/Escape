@@ -51,7 +51,7 @@ s32 ext2_file_create(sExt2 *e,sCachedInode *dirNode,const char *name,tInodeNo *i
 		return res;
 
 	/* link it to the directory */
-	if((res = ext2_link(e,dirNode,cnode,name)) < 0) {
+	if((res = ext2_link_create(e,dirNode,cnode,name)) < 0) {
 		ext2_inode_destroy(e,cnode);
 		ext2_icache_release(e,cnode);
 		return res;

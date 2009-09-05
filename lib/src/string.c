@@ -718,6 +718,34 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Directory is not empty");
 			break;
 
+		case ERR_FS_INVALID_DRV_NAME:
+			strcpy(msg,"Invalid driver-name");
+			break;
+
+		case ERR_FS_INVALID_FS_NAME:
+			strcpy(msg,"Invalid filesystem-name");
+			break;
+
+		case ERR_FS_MNT_POINT_EXISTS:
+			strcpy(msg,"Mount-point exists");
+			break;
+
+		case ERR_FS_DEVICE_NOT_FOUND:
+			strcpy(msg,"Device not found");
+			break;
+
+		case ERR_FS_NO_MNT_POINT:
+			strcpy(msg,"No mount-point");
+			break;
+
+		case ERR_FS_INIT_FAILED:
+			strcpy(msg,"Initialisation of filesystem failed");
+			break;
+
+		case ERR_FS_LINK_DEVICE:
+			strcpy(msg,"Hardlink to a different device not possible");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

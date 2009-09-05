@@ -33,7 +33,7 @@
  */
 static u32 ext2_link_getDirESize(u32 namelen);
 
-s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
+s32 ext2_link_create(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 	u8 *buf;
 	sExt2DirEntry *dire;
 	u32 len = strlen(name);
@@ -98,7 +98,7 @@ s32 ext2_link(sExt2 *e,sCachedInode *dir,sCachedInode *cnode,const char *name) {
 	return 0;
 }
 
-s32 ext2_unlink(sExt2 *e,sCachedInode *dir,const char *name) {
+s32 ext2_link_delete(sExt2 *e,sCachedInode *dir,const char *name) {
 	u8 *buf;
 	u32 nameLen;
 	tInodeNo ino = -1;

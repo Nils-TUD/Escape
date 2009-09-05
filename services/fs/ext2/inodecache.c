@@ -91,13 +91,19 @@ sCachedInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 	 * to reduce the number of cycles in the cache-lookup. therefore
 	 * we don't collect the information in the loops above. */
 	for(inode = startNode; inode < iend; inode++) {
-		if(inode->inodeNo == EXT2_BAD_INO || inode->refs == 0)
+		if(inode->inodeNo == EXT2_BAD_INO || inode->refs == 0) {
+			if(inode->dirty && inode->inodeNo != EXT2_BAD_INO)
+				ext2_icache_write(e,inode);
 			break;
+		}
 	}
 	if(inode == iend) {
 		for(inode = e->inodeCache; inode < startNode; inode++) {
-			if(inode->inodeNo == EXT2_BAD_INO || inode->refs == 0)
+			if(inode->inodeNo == EXT2_BAD_INO || inode->refs == 0) {
+				if(inode->dirty && inode->inodeNo != EXT2_BAD_INO)
+					ext2_icache_write(e,inode);
 				break;
+			}
 		}
 
 		if(inode == startNode) {
@@ -121,9 +127,9 @@ void ext2_icache_release(sExt2 *e,sCachedInode *inode) {
 	if(inode == NULL)
 		return;
 	if(inode->refs > 0) {
-		/* write it back, if we free it */
-		if(--inode->refs == 0 && inode->dirty)
-			ext2_icache_write(e,inode);
+		/* don't write dirty blocks back here, because this would lead to too many writes. */
+		/* skipping it until the inode-cache-entry should be reused, is better */
+		inode->refs--;
 	}
 }
 

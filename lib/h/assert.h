@@ -23,7 +23,7 @@
 #if IN_KERNEL
 #	include <util.h>
 #else
-#	include <esc/debug.h>
+#	include <esc/fileio.h>
 #	include <esc/proc.h>
 #endif
 

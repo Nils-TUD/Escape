@@ -19,12 +19,13 @@
 
 #include <esc/common.h>
 #include <esc/fileio.h>
-#include <stdlib.h>
+#include <esc/debug.h>
 #include <esc/vector.h>
 #include <esc/stream.h>
 #include <esc/string.h>
 #include <esc/thread.h>
 #include <esc/gui/bitmapimage.h>
+#include <stdlib.h>
 
 using namespace esc;
 using namespace esc::gui;

@@ -160,8 +160,7 @@ s32 ext2_unlink(void *h,tInodeNo dirIno,const char *name) {
 	if(dir == NULL)
 		return ERR_FS_INODE_NOT_FOUND;
 
-	/* TODO check wether it is an directory */
-	res = ext2_link_delete(e,dir,name);
+	res = ext2_link_delete(e,dir,name,false);
 	ext2_icache_release(e,dir);
 	return res;
 }

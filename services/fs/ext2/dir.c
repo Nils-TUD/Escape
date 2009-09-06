@@ -48,7 +48,7 @@ s32 ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name) {
 		return res;
 	}
 	if((res = ext2_link_create(e,cnode,dir,"..")) < 0) {
-		ext2_link_delete(e,cnode,".");
+		ext2_link_delete(e,cnode,".",true);
 		ext2_file_delete(e,cnode);
 		ext2_icache_release(e,cnode);
 		return res;
@@ -142,10 +142,10 @@ s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	buffer = NULL;
 
 	/* ok, diretory is empty, so remove '.' and '..' */
-	if((res = ext2_link_delete(e,delIno,".")) < 0 || (res = ext2_link_delete(e,delIno,"..")) < 0)
+	if((res = ext2_link_delete(e,delIno,".",true)) < 0 || (res = ext2_link_delete(e,delIno,"..",true)) < 0)
 		goto error;
 	/* now remove directory from parent, which will delete it because of no more references */
-	res = ext2_link_delete(e,dir,name);
+	res = ext2_link_delete(e,dir,name,true);
 
 error:
 	free(buffer);

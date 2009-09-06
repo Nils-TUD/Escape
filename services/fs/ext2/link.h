@@ -41,8 +41,9 @@ s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
  * @param e the ext2-data
  * @param dir the directory
  * @param name the entry-name
+ * @param delDir wether the entry may be an directory
  * @return 0 on success
  */
-s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name);
+s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name,bool delDir);
 
 #endif /* LINK_H_ */

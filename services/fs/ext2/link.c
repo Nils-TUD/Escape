@@ -98,7 +98,7 @@ s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 	return 0;
 }
 
-s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
+s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name,bool delDir) {
 	u8 *buf;
 	u32 nameLen;
 	tInodeNo ino = -1;
@@ -122,6 +122,15 @@ s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	while((u8*)dire < buf + dirSize) {
 		if(nameLen == dire->nameLen && strncmp(dire->name,name,nameLen) == 0) {
 			ino = dire->inode;
+			cnode = ext2_icache_request(e,ino);
+			if(cnode == NULL) {
+				free(buf);
+				return ERR_FS_INODE_NOT_FOUND;
+			}
+			if(!delDir && MODE_IS_DIR(cnode->inode.mode)) {
+				free(buf);
+				return ERR_FS_IS_DIRECTORY;
+			}
 			/* if we have a previous one, simply increase its length */
 			if(prev != NULL)
 				prev->recLen += dire->recLen;
@@ -150,7 +159,6 @@ s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	free(buf);
 
 	/* update inode */
-	cnode = ext2_icache_request(e,ino);
 	if(cnode != NULL) {
 		/* decrease link-count */
 		cnode->dirty = true;

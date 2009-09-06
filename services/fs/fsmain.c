@@ -239,7 +239,7 @@ int main(void) {
 								msg.args.arg1 = ERR_FS_NO_MNT_POINT;
 							else {
 								*name = backup;
-								inst->fs->unlink(inst->handle,dirIno,name);
+								msg.args.arg1 = inst->fs->unlink(inst->handle,dirIno,name);
 							}
 						}
 						send(fd,MSG_FS_UNLINK_RESP,&msg,sizeof(msg.args));
@@ -270,7 +270,7 @@ int main(void) {
 								msg.args.arg1 = ERR_FS_NO_MNT_POINT;
 							else {
 								*name = backup;
-								inst->fs->mkdir(inst->handle,dirIno,name);
+								msg.args.arg1 = inst->fs->mkdir(inst->handle,dirIno,name);
 							}
 						}
 						send(fd,MSG_FS_MKDIR_RESP,&msg,sizeof(msg.args));
@@ -301,7 +301,7 @@ int main(void) {
 								msg.args.arg1 = ERR_FS_NO_MNT_POINT;
 							else {
 								*name = backup;
-								inst->fs->rmdir(inst->handle,dirIno,name);
+								msg.args.arg1 = inst->fs->rmdir(inst->handle,dirIno,name);
 							}
 						}
 						send(fd,MSG_FS_RMDIR_RESP,&msg,sizeof(msg.args));

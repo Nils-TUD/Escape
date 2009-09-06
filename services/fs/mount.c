@@ -151,6 +151,7 @@ s32 mount_remMnt(tDevNo dev,tInodeNo inode) {
 	mounts[i].mnt = NULL;
 	mounts[i].inode = 0;
 	mounts[i].dev = 0;
+	mntPntCount--;
 	return 0;
 }
 

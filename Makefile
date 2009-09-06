@@ -11,6 +11,9 @@ VBOXOSTITLE="Escape v0.1"
 HDDCYL=40
 HDDHEADS=16
 HDDTRACKSECS=63
+PART1BLOCKS=10016
+PART2OFFSET=20160
+PART2BLOCKS=10016
 TMPFILE=$(BUILD)/disktmp
 BINNAME=kernel.bin
 BIN=$(BUILD)/$(BINNAME)
@@ -37,7 +40,8 @@ export ASMFLAGS=-f elf
 # other
 export SUDO=sudo
 
-.PHONY: all mounthdd debughdd umounthdd createhdd dis qemu bochs debug debugu debugm debugt test clean
+.PHONY: all debughdd mountp1 mountp2 umountp debugp1 debugp2 checkp1 checkp2 createhdd \
+	dis qemu bochs debug debugu debugm debugt test clean
 
 all: $(BUILD) $(DISKMOUNT)
 		@[ -f $(HDD) ] || make createhdd;
@@ -51,10 +55,6 @@ $(BUILD):
 $(DISKMOUNT):
 		[ -d $(DISKMOUNT) ] || mkdir -p $(DISKMOUNT);
 
-mounthdd: $(DISKMOUNT)
-		@$(SUDO) umount $(DISKMOUNT) > /dev/null 2>&1 || true;
-		@$(SUDO) mount -text2 -oloop=/dev/loop0,offset=`expr $(HDDTRACKSECS) \* 512` $(HDD) $(DISKMOUNT);
-
 debughdd:
 		$(SUDO) umount /dev/loop0 > /dev/null 2>&1 || true
 		$(SUDO) losetup /dev/loop0 $(HDD) || true
@@ -62,17 +62,35 @@ debughdd:
 		$(SUDO) umount /dev/loop0 || true
 		$(SUDO) losetup -d /dev/loop0 || true
 
-debugfs:
-		make mounthdd;
+mountp1: $(DISKMOUNT)
+		@$(SUDO) umount $(DISKMOUNT) > /dev/null 2>&1 || true;
+		@$(SUDO) mount -text2 -oloop=/dev/loop0,offset=`expr $(HDDTRACKSECS) \* 512` $(HDD) $(DISKMOUNT);
+
+mountp2: $(DISKMOUNT)
+		@$(SUDO) umount $(DISKMOUNT) > /dev/null 2>&1 || true;
+		@$(SUDO) mount -text2 -oloop=/dev/loop0,offset=`expr $(PART2OFFSET) \* 512` $(HDD) $(DISKMOUNT);
+
+debugp1:
+		make mountp1;
 		$(SUDO) debugfs /dev/loop0
-		make umounthdd;
+		make umountp;
 
-checkfs:
-		make mounthdd;
+debugp2:
+		make mountp2;
+		$(SUDO) debugfs /dev/loop0
+		make umountp;
+
+checkp1:
+		make mountp1;
 		$(SUDO) fsck /dev/loop0 || true
-		make umounthdd;
+		make umountp;
 
-umounthdd:
+checkp2:
+		make mountp2;
+		$(SUDO) fsck /dev/loop0 || true
+		make umountp;
+
+umountp:
 		@tools/umounthdd.sh
 
 createhdd: $(DISKMOUNT)
@@ -84,7 +102,7 @@ createhdd: $(DISKMOUNT)
 			echo "p" >> $(TMPFILE) && \
 			echo "1" >> $(TMPFILE) && \
 			echo "" >> $(TMPFILE) && \
-			echo "20159" >> $(TMPFILE) && \
+			echo `expr $(PART2OFFSET) - 1` >> $(TMPFILE) && \
 			echo "n" >> $(TMPFILE) && \
 			echo "p" >> $(TMPFILE) && \
 			echo "2" >> $(TMPFILE) && \
@@ -93,13 +111,18 @@ createhdd: $(DISKMOUNT)
 			echo "w" >> $(TMPFILE);
 		$(SUDO) fdisk -u -C$(HDDCYL) -S$(HDDTRACKSECS) -H$(HDDHEADS) /dev/loop0 < $(TMPFILE) || true
 		$(SUDO) losetup -d /dev/loop0
+		@# setup first partition
 		$(SUDO) losetup -o`expr $(HDDTRACKSECS) \* 512` /dev/loop0 $(HDD)
-		@# WE HAVE TO CHANGE THE BLOCK-COUNT HERE IF THE DISK-GEOMETRY OR PARTITION CHANGES!
-		$(SUDO) mke2fs -r0 -Onone -b1024 /dev/loop0 10016
+		$(SUDO) mke2fs -r0 -Onone -b1024 /dev/loop0 $(PART1BLOCKS)
+		$(SUDO) umount /dev/loop0 || true
+		$(SUDO) losetup -d /dev/loop0 || true
+		@# setup second partition
+		$(SUDO) losetup -o`expr $(PART2OFFSET) \* 512` /dev/loop0 $(HDD)
+		$(SUDO) mke2fs -r0 -Onone -b1024 /dev/loop0 $(PART2BLOCKS)
 		$(SUDO) umount /dev/loop0 || true
 		$(SUDO) losetup -d /dev/loop0 || true
 		@# add boot stuff
-		make mounthdd
+		make mountp1
 		$(SUDO) mkdir $(DISKMOUNT)/boot
 		$(SUDO) mkdir $(DISKMOUNT)/boot/grub
 		$(SUDO) cp boot/stage1 $(DISKMOUNT)/boot/grub;
@@ -132,7 +155,7 @@ createhdd: $(DISKMOUNT)
 		$(SUDO) touch $(DISKMOUNT)/bigfile
 		$(SUDO) chmod 0666 $(DISKMOUNT)/bigfile
 		./tools/createStr.sh 'Das ist der %d Test\n' 200 > $(DISKMOUNT)/bigfile;
-		make umounthdd
+		make umountp
 		rm -f $(TMPFILE)
 		cp $(HDD) $(HDDBAK)
 		@# first ensure that we'll copy all stuff to the disk with 'make all'
@@ -178,22 +201,22 @@ test: all prepareTest
 		qemu $(QEMUARGS) > log.txt 2>&1
 
 prepareTest: $(DISKMOUNT)
-		make mounthdd
+		make mountp1
 		@if [ "`cat $(DISKMOUNT)/boot/grub/menu.lst | grep kernel.bin`" != "" ]; then \
 			$(SUDO) sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel_test.bin/g" \
 				$(DISKMOUNT)/boot/grub/menu.lst; \
 				touch $(HDD); \
 		fi;
-		make umounthdd
+		make umountp
 
 prepareRun: $(DISKMOUNT)
-		make mounthdd
+		make mountp1
 		@if [ "`cat $(DISKMOUNT)/boot/grub/menu.lst | grep kernel_test.bin`" != "" ]; then \
 			$(SUDO) sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel.bin/g" \
 				$(DISKMOUNT)/boot/grub/menu.lst; \
 				touch $(HDD); \
 		fi;
-		make umounthdd
+		make umountp
 
 clean:
 		@for i in $(DIRS); do \

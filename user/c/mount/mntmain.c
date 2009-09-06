@@ -24,19 +24,47 @@
 #include <esc/dir.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fsinterface.h>
+
+#define FS_NAME_LEN	12
+
+typedef struct {
+	u16 type;
+	char name[FS_NAME_LEN];
+} sFSType;
+
+static sFSType types[] = {
+	{FS_TYPE_EXT2,"ext2"}
+};
 
 int main(int argc,char *argv[]) {
+	u32 i;
 	u16 type;
 	char rpath[MAX_PATH_LEN];
 	char rdev[MAX_PATH_LEN];
 	if(argc != 4 || isHelpCmd(argc,argv)) {
 		fprintf(stderr,"Usage: %s <device> <path> <type>\n",argv[0]);
+		fprintf(stderr,"	Types: ");
+		for(i = 0; i < ARRAY_SIZE(types); i++)
+			fprintf(stderr,"%s ",types[i].name);
+		fprintf(stderr,"\n");
 		return EXIT_FAILURE;
 	}
 
 	abspath(rdev,MAX_PATH_LEN,argv[1]);
 	abspath(rpath,MAX_PATH_LEN,argv[2]);
-	type = (u16)atoi(argv[3]);
+
+	for(i = 0; i < ARRAY_SIZE(types); i++) {
+		if(strcmp(types[i].name,argv[3]) == 0) {
+			type = types[i].type;
+			break;
+		}
+	}
+	if(i >= ARRAY_SIZE(types)) {
+		fprintf(stderr,"Unknown type '%s'\n",argv[3]);
+		return EXIT_FAILURE;
+	}
+
 	if(mount(rdev,rpath,type) < 0) {
 		printe("Unable to mount '%s' @ '%s' with type %d",rdev,rpath,type);
 		return EXIT_FAILURE;

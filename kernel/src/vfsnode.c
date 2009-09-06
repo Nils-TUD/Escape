@@ -284,7 +284,7 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,u8 flags) {
 		return 0;
 	}
 
-	if(MODE_IS_LINK(n->mode)) {
+	if(!(flags & VFS_NOLINKRES) && MODE_IS_LINK(n->mode)) {
 		/* resolve link */
 		n = (sVFSNode*)n->data.def.cache;
 	}
@@ -292,6 +292,48 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,u8 flags) {
 	/* virtual node */
 	*nodeNo = NADDR_TO_VNNO(n);
 	return 0;
+}
+
+char *vfsn_basename(char *path,u32 *len) {
+	char *p = path + *len - 1;
+	while(*p == '/') {
+		p--;
+		(*len)--;
+	}
+	*(p + 1) = '\0';
+	if((p = strrchr(path,'/')) == NULL)
+		return path;
+	return p + 1;
+}
+
+void vfsn_dirname(char *path,u32 len) {
+	char *p = path + len - 1;
+	/* remove last '/' */
+	while(*p == '/') {
+		p--;
+		len--;
+	}
+
+	/* nothing to remove? */
+	if(len == 0)
+		return;
+
+	/* remove last path component */
+	while(*p != '/')
+		p--;
+
+	/* set new end */
+	*(p + 1) = '\0';
+}
+
+sVFSNode *vfsn_findInDir(sVFSNode *node,const char *name,u32 nameLen) {
+	sVFSNode *n = NODE_FIRST_CHILD(node);
+	while(n != NULL) {
+		if(strlen(n->name) == nameLen && strncmp(n->name,name,nameLen) == 0)
+			return n;
+		n = n->next;
+	}
+	return NULL;
 }
 
 sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,char *name) {
@@ -330,17 +372,18 @@ sVFSNode *vfsn_createNode(char *name) {
 }
 
 sVFSNode *vfsn_createDir(sVFSNode *parent,char *name) {
+	sVFSNode *target;
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
-	sVFSNode *dot = vfsn_createNodeAppend(node,(char*)".");
-	if(dot == NULL) {
+	if(vfsn_createLink(node,(char*)".",node) == NULL) {
 		vfsn_removeNode(node);
 		return NULL;
 	}
-	sVFSNode *dotdot = vfsn_createNodeAppend(node,(char*)"..");
-	if(dotdot == NULL) {
+	/* the root-node has no parent */
+	target = parent == NULL ? node : parent;
+	if(vfsn_createLink(node,(char*)"..",target) == NULL) {
 		vfsn_removeNode(node);
 		return NULL;
 	}
@@ -349,12 +392,16 @@ sVFSNode *vfsn_createDir(sVFSNode *parent,char *name) {
 		MODE_OTHER_READ | MODE_OTHER_EXEC;
 	node->readHandler = vfsinfo_dirReadHandler;
 	node->writeHandler = NULL;
-	dot->mode = MODE_TYPE_LINK | MODE_OWNER_READ | MODE_OTHER_READ;
-	dot->data.def.cache = node;
-	dotdot->mode = MODE_TYPE_LINK | MODE_OWNER_READ | MODE_OTHER_READ;
-	/* the root-node and all "protocol-roots" have no parent */
-	dotdot->data.def.cache = parent == NULL || parent->parent == NULL ? node : parent;
 	return node;
+}
+
+sVFSNode *vfsn_createLink(sVFSNode *node,char *name,sVFSNode *target) {
+	sVFSNode *child = vfsn_createNodeAppend(node,name);
+	if(child == NULL)
+		return NULL;
+	child->mode = MODE_TYPE_LINK | MODE_OWNER_READ | MODE_OTHER_READ;
+	child->data.def.cache = target;
+	return child;
 }
 
 sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name) {
@@ -410,6 +457,14 @@ void vfsn_appendChild(sVFSNode *parent,sVFSNode *node) {
 	vassert(node != NULL,"node == NULL");
 
 	if(parent != NULL) {
+		/* invalid cache of directories */
+		if(MODE_IS_DIR(parent->mode) && parent->data.def.cache) {
+			kheap_free(parent->data.def.cache);
+			parent->data.def.cache = NULL;
+			parent->data.def.pos = 0;
+			parent->data.def.size = 0;
+		}
+
 		if(parent->firstChild == NULL)
 			parent->firstChild = node;
 		if(parent->lastChild != NULL)
@@ -459,6 +514,14 @@ void vfsn_removeNode(sVFSNode *n) {
 		n->next->prev = n->prev;
 	else
 		n->parent->lastChild = n->prev;
+
+	/* invalidate cache of parent-folder */
+	if(n->parent->data.def.cache) {
+		kheap_free(n->parent->data.def.cache);
+		n->parent->data.def.cache = NULL;
+		n->parent->data.def.size = 0;
+		n->parent->data.def.pos = 0;
+	}
 	vfsn_releaseNode(n);
 }
 

@@ -38,12 +38,13 @@
 
 /* GFT flags */
 enum {
-	VFS_NOACCESS = 0,	/* no read and write */
+	VFS_NOACCESS = 0,		/* no read and write */
 	VFS_READ = 1,
 	VFS_WRITE = 2,
 	VFS_CREATE = 4,
 	VFS_TRUNCATE = 8,
-	VFS_CONNECT = 16	/* just kernel-intern */
+	VFS_CONNECT = 16,		/* just kernel-intern */
+	VFS_NOLINKRES = 32,		/* dito */
 };
 
 /* seek-types */
@@ -240,6 +241,43 @@ s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size);
  * @param file the file
  */
 void vfs_closeFile(tTid tid,tFileNo file);
+
+/**
+ * Creates a link @ <newPath> to <oldPath>
+ *
+ * @param tid the thread-id
+ * @param oldPath the link-target
+ * @param newPath the link-name
+ * @return 0 on success
+ */
+s32 vfs_link(tTid tid,const char *oldPath,const char *newPath);
+
+/**
+ * Removes the given file
+ *
+ * @param tid the thread-id
+ * @param path the path
+ * @return 0 on success
+ */
+s32 vfs_unlink(tTid tid,const char *path);
+
+/**
+ * Creates the directory <path>
+ *
+ * @param tid the thread-id
+ * @param path the path
+ * @return 0 on success
+ */
+s32 vfs_mkdir(tTid tid,const char *path);
+
+/**
+ * Removes the given directory
+ *
+ * @param tid the thread-id
+ * @param path the path
+ * @return 0 on success
+ */
+s32 vfs_rmdir(tTid tid,const char *path);
 
 /**
  * Creates a service-node for the given thread and given name

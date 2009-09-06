@@ -103,6 +103,34 @@ s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info);
 s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,u8 flags);
 
 /**
+ * Removes the last '/' from the path, if necessary, and returns a pointer to the last
+ * component of the path.
+ *
+ * @param path the path
+ * @param len the length of the path (will be updated)
+ * @return pointer to the last component
+ */
+char *vfsn_basename(char *path,u32 *len);
+
+/**
+ * Removes the last component of the path
+ *
+ * @param path the path
+ * @param len the length of the path
+ */
+void vfsn_dirname(char *path,u32 len);
+
+/**
+ * Finds the child-node with name <name>
+ *
+ * @param node the parent-node
+ * @param name the name
+ * @param nameLen the length of the name
+ * @return the node or NULL
+ */
+sVFSNode *vfsn_findInDir(sVFSNode *node,const char *name,u32 nameLen);
+
+/**
  * Creates and appends a (incomplete) node
  *
  * @param parent the parent-node
@@ -130,6 +158,16 @@ sVFSNode *vfsn_createNode(char *name);
  * @return the node
  */
 sVFSNode *vfsn_createDir(sVFSNode *parent,char *name);
+
+/**
+ * Creates a link in directory <node> with name <name> to <target>
+ *
+ * @param node the directory-node
+ * @param name the name
+ * @param target the target-node
+ * @return the created node on success or NULL
+ */
+sVFSNode *vfsn_createLink(sVFSNode *node,char *name,sVFSNode *target);
 
 /**
  * Creates a pipe-container

@@ -532,6 +532,150 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 	}
 }
 
+s32 vfs_link(tTid tid,const char *oldPath,const char *newPath) {
+	char newPathCpy[MAX_PATH_LEN];
+	char *name,*namecpy,backup;
+	u32 len;
+	tInodeNo oldIno,newIno;
+	sVFSNode *dir,*target;
+	s32 oldRes,newRes;
+	/* first check wether it is a realpath */
+	oldRes = vfsn_resolvePath(oldPath,&oldIno,VFS_READ);
+	newRes = vfsn_resolvePath(newPath,&newIno,VFS_READ);
+	if(oldRes == ERR_REAL_PATH) {
+		if(newRes != ERR_REAL_PATH)
+			return ERR_FS_LINK_DEVICE;
+		return vfsr_link(tid,oldPath,newPath);
+	}
+	if(oldRes < 0)
+		return oldRes;
+	if(newRes >= 0)
+		return ERR_FS_FILE_EXISTS;
+
+	/* TODO check access-rights */
+
+	/* copy path because we have to change it */
+	len = strlen(newPath);
+	if(len >= MAX_PATH_LEN)
+		return ERR_INVALID_PATH;
+	strcpy(newPathCpy,newPath);
+	/* check wether the directory exists */
+	name = vfsn_basename((char*)newPathCpy,&len);
+	backup = *name;
+	vfsn_dirname((char*)newPathCpy,len);
+	newRes = vfsn_resolvePath(newPathCpy,&newIno,VFS_READ);
+	if(newRes < 0)
+		return ERR_PATH_NOT_FOUND;
+
+	/* links to directories not allowed */
+	target = vfsn_getNode(oldIno);
+	if(MODE_IS_DIR(target->mode))
+		return ERR_FS_IS_DIRECTORY;
+
+	/* make copy of name */
+	*name = backup;
+	len = strlen(name);
+	namecpy = kheap_alloc(len + 1);
+	if(namecpy == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+	strcpy(namecpy,name);
+	/* now create link */
+	dir = vfsn_getNode(newIno);
+	/* file exists? */
+	if(vfsn_findInDir(dir,namecpy,len) != NULL) {
+		kheap_free(namecpy);
+		return ERR_FS_FILE_EXISTS;
+	}
+	if(vfsn_createLink(dir,namecpy,target) == NULL) {
+		kheap_free(namecpy);
+		return ERR_NOT_ENOUGH_MEM;
+	}
+	return 0;
+}
+
+s32 vfs_unlink(tTid tid,const char *path) {
+	s32 res;
+	tInodeNo ino;
+	sVFSNode *n;
+	res = vfsn_resolvePath(path,&ino,VFS_READ | VFS_NOLINKRES);
+	if(res == ERR_REAL_PATH)
+		return vfsr_unlink(tid,path);
+	if(res < 0)
+		return ERR_PATH_NOT_FOUND;
+	/* TODO check access-rights */
+	n = vfsn_getNode(ino);
+	if(!MODE_IS_FILE(n->mode) && !MODE_IS_LINK(n->mode))
+		return ERR_NO_FILE_OR_LINK;
+	vfsn_removeNode(n);
+	return 0;
+}
+
+s32 vfs_mkdir(tTid tid,const char *path) {
+	char pathCpy[MAX_PATH_LEN];
+	char *name,*namecpy;
+	char backup;
+	s32 res;
+	u32 len = strlen(path);
+	tInodeNo inodeNo;
+	sVFSNode *node,*child;
+
+	/* copy path because we'll change it */
+	if(len >= MAX_PATH_LEN)
+		return ERR_INVALID_PATH;
+	strcpy(pathCpy,path);
+
+	/* extract name and directory */
+	name = vfsn_basename(pathCpy,&len);
+	backup = *name;
+	vfsn_dirname(pathCpy,len);
+
+	/* get the parent-directory */
+	res = vfsn_resolvePath(pathCpy,&inodeNo,VFS_READ);
+	*name = backup;
+	if(res == ERR_REAL_PATH) {
+		/* let fs handle the request */
+		return vfsr_mkdir(tid,path);
+	}
+
+	/* alloc space for name and copy it over */
+	len = strlen(name);
+	namecpy = kheap_alloc(len + 1);
+	if(namecpy == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+	strcpy(namecpy,name);
+	/* create dir */
+	node = vfsn_getNode(inodeNo);
+	if(vfsn_findInDir(node,namecpy,len) != NULL) {
+		kheap_free(namecpy);
+		return ERR_FS_FILE_EXISTS;
+	}
+	/* TODO check access-rights */
+	child = vfsn_createDir(node,namecpy);
+	if(child == NULL) {
+		kheap_free(namecpy);
+		return ERR_NOT_ENOUGH_MEM;
+	}
+	return 0;
+}
+
+s32 vfs_rmdir(tTid tid,const char *path) {
+	s32 res;
+	sVFSNode *node;
+	tInodeNo inodeNo;
+	res = vfsn_resolvePath(path,&inodeNo,VFS_READ);
+	if(res == ERR_REAL_PATH)
+		return vfsr_rmdir(tid,path);
+	if(res < 0)
+		return ERR_PATH_NOT_FOUND;
+
+	/* TODO check access-rights */
+	node = vfsn_getNode(inodeNo);
+	if(!MODE_IS_DIR(node->mode))
+		return ERR_NO_DIRECTORY;
+	vfsn_removeNode(node);
+	return 0;
+}
+
 tServ vfs_createService(tTid tid,const char *name,u32 type) {
 	sVFSNode *serv;
 	sVFSNode *n;

@@ -74,6 +74,8 @@
 #define ERR_FS_NO_MNT_POINT			-51
 #define ERR_FS_INIT_FAILED			-52
 #define ERR_FS_LINK_DEVICE			-53
+#define ERR_MOUNT_VIRT_PATH			-54
+#define ERR_NO_FILE_OR_LINK			-55
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

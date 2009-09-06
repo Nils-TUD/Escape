@@ -136,7 +136,7 @@ void dirname(char *path) {
 
 	p = path + len - 1;
 	/* remove last '/' */
-	if(*p == '/') {
+	while(*p == '/') {
 		p--;
 		len--;
 	}

@@ -746,6 +746,14 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Hardlink to a different device not possible");
 			break;
 
+		case ERR_MOUNT_VIRT_PATH:
+			strcpy(msg,"Mount in virtual directories not supported");
+			break;
+
+		case ERR_NO_FILE_OR_LINK:
+			strcpy(msg,"No file or link");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

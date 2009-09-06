@@ -248,7 +248,6 @@ s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 
 	cnode->inode.size = MAX((s32)(orgOff + count),cnode->inode.size);
 	cnode->dirty = true;
 	ext2_icache_release(e,cnode);
-
 	return count;
 }
 

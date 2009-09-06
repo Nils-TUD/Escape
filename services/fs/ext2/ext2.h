@@ -39,7 +39,7 @@
 #define EXT2_DIRBLOCK_COUNT					12
 
 #define INODE_CACHE_SIZE					64
-#define BLOCK_CACHE_SIZE					256
+#define BLOCK_CACHE_SIZE					512
 
 /* padding for directory-entries */
 #define	EXT2_DIRENTRY_PAD					4
@@ -327,7 +327,9 @@ typedef struct {
 	sExt2Inode inode;
 } sExt2CInode;
 
-typedef struct {
+typedef struct sExt2CBlock {
+	struct sExt2CBlock *prev;
+	struct sExt2CBlock *next;
 	u32 blockNo;
 	u8 dirty;
 	/* NULL indicates an unused entry */
@@ -346,7 +348,9 @@ typedef struct {
 
 	/* caches */
 	sExt2CInode inodeCache[INODE_CACHE_SIZE];
-	u32 blockCacheFree;
+	sExt2CBlock *usedBlocks;
+	sExt2CBlock *oldestBlock;
+	sExt2CBlock *freeBlocks;
 	sExt2CBlock blockCache[BLOCK_CACHE_SIZE];
 } sExt2;
 

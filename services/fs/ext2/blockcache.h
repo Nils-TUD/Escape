@@ -56,6 +56,13 @@ sExt2CBlock *ext2_bcache_create(sExt2 *e,u32 blockNo);
 sExt2CBlock *ext2_bcache_request(sExt2 *e,u32 blockNo);
 
 /**
+ * Prints the used and free blocks
+ *
+ * @param e the ext2-handle
+ */
+void ext2_bcache_print(sExt2 *e);
+
+/**
  * Prints block-cache statistics
  */
 void ext2_bcache_printStats(void);

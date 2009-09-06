@@ -98,6 +98,13 @@ void debugBytes(void *addr,u32 byteCount);
 void debugDwords(void *addr,u32 dwordCount);
 
 /**
+ * Prints the given char
+ *
+ * @param c the character
+ */
+extern void debugChar(char c);
+
+/**
  * Same as debugf, but with the va_list as argument
  *
  * @param fmt the format

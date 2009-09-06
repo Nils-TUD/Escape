@@ -24,13 +24,6 @@
 #include <esc/dir.h>
 #include <stdarg.h>
 
-/**
- * Prints the given char
- *
- * @param c the character
- */
-extern void debugChar(char c);
-
 static u64 start;
 
 void dbg_startUTimer(void) {

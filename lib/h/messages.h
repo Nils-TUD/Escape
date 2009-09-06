@@ -40,12 +40,14 @@
 #define MSG_FS_UNLINK_RESP			6
 #define MSG_FS_MKDIR_RESP			7
 #define MSG_FS_RMDIR_RESP			8
+#define MSG_FS_MOUNT_RESP			9
+#define MSG_FS_UNMOUNT_RESP			10
 /* driver */
-#define MSG_DRV_OPEN_RESP			9
-#define MSG_DRV_READ_RESP			10
-#define MSG_DRV_WRITE_RESP			11
-#define MSG_DRV_IOCTL_RESP			12
-#define MSG_DRV_CLOSE_RESP			13
+#define MSG_DRV_OPEN_RESP			11
+#define MSG_DRV_READ_RESP			12
+#define MSG_DRV_WRITE_RESP			13
+#define MSG_DRV_IOCTL_RESP			14
+#define MSG_DRV_CLOSE_RESP			15
 /* requests to fs */
 #define MSG_FS_OPEN					200
 #define MSG_FS_READ					201
@@ -57,6 +59,8 @@
 #define MSG_FS_UNLINK				207
 #define MSG_FS_MKDIR				208
 #define MSG_FS_RMDIR				209
+#define MSG_FS_MOUNT				210
+#define MSG_FS_UNMOUNT				211
 /* requests to driver */
 #define MSG_DRV_OPEN				300
 #define MSG_DRV_READ				301

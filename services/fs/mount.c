@@ -49,17 +49,15 @@ s32 mount_addFS(sFileSystem *fs) {
 	return 0;
 }
 
-tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,const char *fsName) {
+tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,u16 type) {
 	u32 i;
 	sFSInst *inst;
 	sFileSystem *fs;
 	sSLNode *n;
 
-	/* check names */
+	/* check name */
 	if(strlen(driver) >= MAX_MNTNAME_LEN)
 		return ERR_FS_INVALID_DRV_NAME;
-	if(strlen(fsName) >= MAX_MNTNAME_LEN)
-		return ERR_FS_INVALID_FS_NAME;
 
 	/* check if the mount-point exists */
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
@@ -70,7 +68,7 @@ tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,const char *fsN
 	/* first find the filesystem */
 	for(n = sll_begin(fileSystems); n != NULL; n = n->next) {
 		fs = (sFileSystem*)n->data;
-		if(strcmp(fs->name,fsName) == 0)
+		if(fs->type == type)
 			break;
 	}
 	if(n == NULL)
@@ -87,7 +85,7 @@ tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,const char *fsN
 	/* look if there is an instance we can use */
 	for(n = sll_begin(fsInsts); n != NULL; n = n->next) {
 		inst = (sFSInst*)n->data;
-		if(strcmp(inst->driver,driver) == 0 && strcmp(inst->fs->name,fsName) == 0)
+		if(inst->fs->type == type && strcmp(inst->driver,driver) == 0)
 			break;
 	}
 
@@ -122,7 +120,8 @@ tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,const char *fsN
 
 tDevNo mount_getByLoc(tDevNo dev,tInodeNo inode) {
 	u32 i,x;
-	for(i = 0,x = 0; x < mntPntCount && i < MOUNT_TABLE_SIZE; i++) {
+	/* we have mntPntCount+1 because of the root-fs */
+	for(i = 0,x = 0; x <= mntPntCount && i < MOUNT_TABLE_SIZE; i++) {
 		if(mounts[i].dev == dev && mounts[i].inode == inode)
 			return i;
 		if(mounts[i].mnt)

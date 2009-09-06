@@ -30,7 +30,7 @@
 /* The handler for the functions of the filesystem */
 typedef void *(*fFSInit)(const char *driver);
 typedef void (*fFSDeinit)(void *h);
-typedef tInodeNo (*fFSResPath)(void *h,char *path,u8 flags,tDevNo *dev);
+typedef tInodeNo (*fFSResPath)(void *h,char *path,u8 flags,tDevNo *dev,bool resolveMnts);
 typedef s32 (*fFSOpen)(void *h,tInodeNo ino,u8 flags);
 typedef void (*fFSClose)(void *h,tInodeNo ino);
 typedef s32 (*fFSStat)(void *h,tInodeNo ino,sFileInfo *info);
@@ -44,7 +44,7 @@ typedef void (*fFSSync)(void *h);
 
 /* all information about a filesystem */
 typedef struct {
-	char name[MAX_MNTNAME_LEN];
+	u16 type;
 	fFSInit init;
 	fFSDeinit deinit;
 	fFSResPath resPath;
@@ -96,10 +96,10 @@ s32 mount_addFS(sFileSystem *fs);
  * @param dev the device-number of the mount-point
  * @param inode the inode-number of the mount-point
  * @param driver the driver-path
- * @param fsName the file-system-name
+ * @param type the fs-type
  * @return the device-number (mount-point) on success or < 0
  */
-tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,const char *fsName);
+tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,u16 type);
 
 /**
  * Determines the moint-point-id for the given location

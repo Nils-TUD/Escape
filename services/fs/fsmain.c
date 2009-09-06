@@ -50,7 +50,7 @@ int main(void) {
 
 	/* create root-filesystem */
 	fs = malloc(sizeof(sFileSystem));
-	strcpy(fs->name,"ext2");
+	fs->type = FS_TYPE_EXT2;
 	fs->init = ext2_init;
 	fs->deinit = ext2_deinit;
 	fs->resPath = ext2_resPath;
@@ -68,7 +68,7 @@ int main(void) {
 		printe("Unable to add root-filesystem");
 		return EXIT_FAILURE;
 	}
-	rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,"/drivers/hda1","ext2");
+	rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,"/drivers/hda1",FS_TYPE_EXT2);
 	if(rootDev < 0) {
 		printe("Unable to add root mount-point");
 		return EXIT_FAILURE;
@@ -97,7 +97,7 @@ int main(void) {
 						tDevNo devNo = rootDev;
 						u8 flags = (u8)msg.args.arg1;
 						sFSInst *inst;
-						tInodeNo no = root->fs->resPath(root->handle,msg.str.s1,flags,&devNo);
+						tInodeNo no = root->fs->resPath(root->handle,msg.str.s1,flags,&devNo,true);
 						if(no >= 0) {
 							inst = mount_get(devNo);
 							if(inst == NULL)
@@ -115,12 +115,16 @@ int main(void) {
 						sFSInst *inst;
 						sFileInfo *info = (sFileInfo*)&(msg.data.d);
 						/* TODO maybe we should copy the string to somewhere else before the call? */
-						tInodeNo no = root->fs->resPath(root->handle,msg.str.s1,IO_READ,&devNo);
-						inst = mount_get(devNo);
-						if(inst == NULL)
-							msg.args.arg1 = ERR_FS_NO_MNT_POINT;
-						else
-							msg.args.arg1 = inst->fs->stat(inst->handle,no,info);
+						tInodeNo no = root->fs->resPath(root->handle,msg.str.s1,IO_READ,&devNo,true);
+						if(no < 0)
+							msg.args.arg1 = no;
+						else {
+							inst = mount_get(devNo);
+							if(inst == NULL)
+								msg.args.arg1 = ERR_FS_NO_MNT_POINT;
+							else
+								msg.args.arg1 = inst->fs->stat(inst->handle,no,info);
+						}
 						send(fd,MSG_FS_STAT_RESP,&msg,sizeof(msg.data));
 					}
 					break;
@@ -182,7 +186,7 @@ int main(void) {
 						char *newPath = msg.str.s2;
 						tDevNo oldDev = rootDev,newDev = rootDev;
 						sFSInst *inst;
-						tInodeNo dirIno,dstIno = root->fs->resPath(root->handle,oldPath,IO_READ,&oldDev);
+						tInodeNo dirIno,dstIno = root->fs->resPath(root->handle,oldPath,IO_READ,&oldDev,true);
 						inst = mount_get(oldDev);
 						if(dstIno < 0)
 							msg.args.arg1 = dstIno;
@@ -198,7 +202,7 @@ int main(void) {
 							backup = *name;
 							dirname(newPath);
 
-							dirIno = root->fs->resPath(root->handle,newPath,IO_READ,&newDev);
+							dirIno = root->fs->resPath(root->handle,newPath,IO_READ,&newDev,true);
 							if(dirIno < 0)
 								msg.args.arg1 = dirIno;
 							else if(newDev != oldDev)
@@ -219,7 +223,7 @@ int main(void) {
 						tInodeNo dirIno;
 						sFSInst *inst;
 						char backup;
-						dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo);
+						dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
 						if(dirIno < 0)
 							msg.args.arg1 = dirIno;
 						else {
@@ -232,7 +236,7 @@ int main(void) {
 							dirname(path);
 
 							/* get directory */
-							dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo);
+							dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
 							vassert(dirIno >= 0,"Subdir found, but parent not!?");
 							inst = mount_get(devNo);
 							if(inst == NULL)
@@ -261,7 +265,7 @@ int main(void) {
 						backup = *name;
 						dirname(path);
 
-						dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo);
+						dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
 						if(dirIno < 0)
 							msg.args.arg1 = dirIno;
 						else {
@@ -292,7 +296,7 @@ int main(void) {
 						backup = *name;
 						dirname(path);
 
-						dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo);
+						dirIno = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
 						if(dirIno < 0)
 							msg.args.arg1 = dirIno;
 						else {
@@ -305,6 +309,49 @@ int main(void) {
 							}
 						}
 						send(fd,MSG_FS_RMDIR_RESP,&msg,sizeof(msg.args));
+					}
+					break;
+
+					case MSG_FS_MOUNT: {
+						char *device = msg.str.s1;
+						char *path = msg.str.s2;
+						u16 type = (u16)msg.str.arg1;
+						tDevNo devNo = rootDev;
+						tInodeNo ino;
+						ino = root->fs->resPath(root->handle,path,IO_READ,&devNo,true);
+						if(ino < 0)
+							msg.args.arg1 = ino;
+						else {
+							sFSInst *inst = mount_get(devNo);
+							if(inst == NULL)
+								msg.args.arg1 = ERR_FS_NO_MNT_POINT;
+							else {
+								sFileInfo info;
+								s32 res = inst->fs->stat(inst->handle,ino,&info);
+								if(res < 0)
+									msg.args.arg1 = res;
+								else if(!MODE_IS_DIR(info.mode))
+									msg.args.arg1 = ERR_NO_DIRECTORY;
+								else {
+									s32 pnt = mount_addMnt(devNo,ino,device,type);
+									msg.args.arg1 = pnt < 0 ? pnt : 0;
+								}
+							}
+						}
+						send(fd,MSG_FS_MOUNT_RESP,&msg,sizeof(msg.args));
+					}
+					break;
+
+					case MSG_FS_UNMOUNT: {
+						char *path = msg.str.s1;
+						tDevNo devNo = rootDev;
+						tInodeNo ino;
+						ino = root->fs->resPath(root->handle,path,IO_READ,&devNo,false);
+						if(ino < 0)
+							msg.args.arg1 = ino;
+						else
+							msg.args.arg1 = mount_remMnt(devNo,ino);
+						send(fd,MSG_FS_UNMOUNT_RESP,&msg,sizeof(msg.args));
 					}
 					break;
 

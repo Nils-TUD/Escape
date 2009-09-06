@@ -81,8 +81,8 @@ void ext2_deinit(void *h) {
 	ext2_sync(e);
 }
 
-tInodeNo ext2_resPath(void *h,char *path,u8 flags,tDevNo *dev) {
-	return ext2_path_resolve((sExt2*)h,path,flags,dev);
+tInodeNo ext2_resPath(void *h,char *path,u8 flags,tDevNo *dev,bool resolveMnts) {
+	return ext2_path_resolve((sExt2*)h,path,flags,dev,resolveMnts);
 }
 
 s32 ext2_open(void *h,tInodeNo ino,u8 flags) {

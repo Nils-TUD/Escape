@@ -23,6 +23,9 @@
 #include <types.h>
 #include <stddef.h>
 
+/* file-system-types */
+#define FS_TYPE_EXT2		0
+
 /* mode masks */
 #define MODE_TYPE_MASK		0170000
 #define MODE_TYPE_SOCKET	0140000

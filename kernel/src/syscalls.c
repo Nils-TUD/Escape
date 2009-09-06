@@ -388,19 +388,19 @@ static void sysc_ioctl(sIntrptStackFrame *stack);
  *
  * @param tServ the service-id
  * @param bool wether there is data to read
- * @return 0 on success
+ * @return s32 0 on success
  */
 static void sysc_setDataReadable(sIntrptStackFrame *stack);
 /**
  * Returns the cpu-cycles for the current thread
  *
- * @return the cpu-cycles
+ * @return u64 the cpu-cycles
  */
 static void sysc_getCycles(sIntrptStackFrame *stack);
 /**
  * Writes all dirty objects of the filesystem to disk
  *
- * @return 0 on success
+ * @return s32 0 on success
  */
 static void sysc_sync(sIntrptStackFrame *stack);
 /**
@@ -408,7 +408,7 @@ static void sysc_sync(sIntrptStackFrame *stack);
  *
  * @param char* the old path
  * @param char* the new path
- * @return 0 on success
+ * @return s32 0 on success
  */
 static void sysc_link(sIntrptStackFrame *stack);
 /**
@@ -423,16 +423,33 @@ static void sysc_unlink(sIntrptStackFrame *stack);
  * Creates the given directory. Expects that all except the last path-component exist.
  *
  * @param char* the path
- * @return 0 on success
+ * @return s32 0 on success
  */
 static void sysc_mkdir(sIntrptStackFrame *stack);
 /**
  * Removes the given directory. Expects that the directory is empty (except '.' and '..')
  *
  * @param char* the path
- * @return 0 on success
+ * @return s32 0 on success
  */
 static void sysc_rmdir(sIntrptStackFrame *stack);
+/**
+ * Mounts <device> at <path> with fs <type>
+ *
+ * @param char* the device-path
+ * @param char* the path to mount at
+ * @param u16 the fs-type
+ * @return s32 0 on success
+ */
+static void sysc_mount(sIntrptStackFrame *stack);
+
+/**
+ * Unmounts the device mounted at <path>
+ *
+ * @param char* the path
+ * @return s32 0 on success
+ */
+static void sysc_unmount(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given null-terminated string (in user-space) is readable
@@ -495,6 +512,8 @@ static sSyscall syscalls[] = {
 	/* 48 */	{sysc_unlink,				1},
 	/* 49 */	{sysc_mkdir,				1},
 	/* 50 */	{sysc_rmdir,				1},
+	/* 51 */	{sysc_mount,				3},
+	/* 52 */	{sysc_unmount,				1},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -1486,6 +1505,34 @@ static void sysc_rmdir(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
 
 	res = vfsr_rmdir(t->tid,path);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+static void sysc_mount(sIntrptStackFrame *stack) {
+	s32 res;
+	sThread *t = thread_getRunning();
+	char *device = (char*)SYSC_ARG1(stack);
+	char *path = (char*)SYSC_ARG2(stack);
+	u16 type = (u16)SYSC_ARG3(stack);
+	if(!sysc_isStringReadable(device) || !sysc_isStringReadable(path))
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+
+	res = vfsr_mount(t->tid,device,path,type);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+static void sysc_unmount(sIntrptStackFrame *stack) {
+	s32 res;
+	sThread *t = thread_getRunning();
+	char *path = (char*)SYSC_ARG1(stack);
+	if(!sysc_isStringReadable(path))
+		SYSC_ERROR(stack,ERR_INVALID_SYSC_ARGS);
+
+	res = vfsr_unmount(t->tid,path);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

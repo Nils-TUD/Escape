@@ -208,6 +208,24 @@ s32 mkdir(const char *path);
 s32 rmdir(const char *path);
 
 /**
+ * Mounts <device> at <path> with fs <type>
+ *
+ * @param device the device-path
+ * @param path the path to mount at
+ * @param type the fs-type
+ * @return 0 on success
+ */
+s32 mount(const char *device,const char *path,u16 type);
+
+/**
+ * Unmounts the device mounted at <path>
+ *
+ * @param path the path
+ * @return 0 on success
+ */
+s32 unmount(const char *path);
+
+/**
  * Writes all dirty objects of the filesystem to disk
  *
  * @return 0 on success

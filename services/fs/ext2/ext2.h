@@ -376,9 +376,10 @@ void ext2_deinit(void *h);
  * @param path the path
  * @param flags the flags
  * @param dev should be set to the device-number
+ * @param resolveMnts wether mount-points should be resolved
  * @return the inode-number on success
  */
-tInodeNo ext2_resPath(void *h,char *path,u8 flags,tDevNo *dev);
+tInodeNo ext2_resPath(void *h,char *path,u8 flags,tDevNo *dev,bool resolveMnts);
 
 /**
  * Mount-entry for open()

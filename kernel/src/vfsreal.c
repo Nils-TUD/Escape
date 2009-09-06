@@ -43,7 +43,7 @@ typedef struct {
 } sReal2Virt;
 
 /* The request-handler for sending a path and receiving a result */
-static s32 vfsr_pathReqHandler(tTid tid,const char *path,u32 cmd);
+static s32 vfsr_pathReqHandler(tTid tid,const char *path1,const char *path2,u32 arg1,u32 cmd);
 /* The response-handler for the different message-ids */
 static void vfsr_openRespHandler(tTid tid,const u8 *data,u32 size);
 static void vfsr_readRespHandler(tTid tid,const u8 *data,u32 size);
@@ -67,6 +67,8 @@ void vfsr_init(void) {
 	vfsreq_setHandler(MSG_FS_UNLINK_RESP,vfsr_defRespHandler);
 	vfsreq_setHandler(MSG_FS_MKDIR_RESP,vfsr_defRespHandler);
 	vfsreq_setHandler(MSG_FS_RMDIR_RESP,vfsr_defRespHandler);
+	vfsreq_setHandler(MSG_FS_MOUNT_RESP,vfsr_defRespHandler);
+	vfsreq_setHandler(MSG_FS_UNMOUNT_RESP,vfsr_defRespHandler);
 }
 
 s32 vfsr_openFile(tTid tid,u8 flags,const char *path) {
@@ -225,43 +227,27 @@ s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,const u8 
 }
 
 s32 vfsr_link(tTid tid,const char *oldPath,const char *newPath) {
-	s32 res;
-	sRequest *req;
-	tFileNo virtFile;
-
-	if(strlen(oldPath) > MAX_MSGSTR_LEN || strlen(newPath) > MAX_MSGSTR_LEN)
-		return ERR_INVALID_SYSC_ARGS;
-
-	if((virtFile = vfsr_create(tid)) < 0)
-		return virtFile;
-
-	strcpy(msg.str.s1,oldPath);
-	strcpy(msg.str.s2,newPath);
-	res = vfs_sendMsg(tid,virtFile,MSG_FS_LINK,(u8*)&msg,sizeof(msg.str));
-	if(res < 0)
-		return res;
-
-	/* wait for a reply */
-	req = vfsreq_waitForReply(tid,NULL,0);
-	vfsr_destroy(tid,virtFile);
-	if(req == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-
-	res = req->count;
-	vfsreq_remRequest(req);
-	return res;
+	return vfsr_pathReqHandler(tid,oldPath,newPath,0,MSG_FS_LINK);
 }
 
 s32 vfsr_unlink(tTid tid,const char *path) {
-	return vfsr_pathReqHandler(tid,path,MSG_FS_UNLINK);
+	return vfsr_pathReqHandler(tid,path,NULL,0,MSG_FS_UNLINK);
 }
 
 s32 vfsr_mkdir(tTid tid,const char *path) {
-	return vfsr_pathReqHandler(tid,path,MSG_FS_MKDIR);
+	return vfsr_pathReqHandler(tid,path,NULL,0,MSG_FS_MKDIR);
 }
 
 s32 vfsr_rmdir(tTid tid,const char *path) {
-	return vfsr_pathReqHandler(tid,path,MSG_FS_RMDIR);
+	return vfsr_pathReqHandler(tid,path,NULL,0,MSG_FS_RMDIR);
+}
+
+s32 vfsr_mount(tTid tid,const char *device,const char *path,u16 type) {
+	return vfsr_pathReqHandler(tid,device,path,type,MSG_FS_MOUNT);
+}
+
+s32 vfsr_unmount(tTid tid,const char *path) {
+	return vfsr_pathReqHandler(tid,path,NULL,0,MSG_FS_UNMOUNT);
 }
 
 s32 vfsr_sync(tTid tid) {
@@ -292,18 +278,23 @@ void vfsr_closeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo) {
 	vfsr_remove(tid,file);
 }
 
-static s32 vfsr_pathReqHandler(tTid tid,const char *path,u32 cmd) {
+static s32 vfsr_pathReqHandler(tTid tid,const char *path1,const char *path2,u32 arg1,u32 cmd) {
 	s32 res;
 	sRequest *req;
 	tFileNo virtFile;
 
-	if(strlen(path) > MAX_MSGSTR_LEN)
+	if(strlen(path1) > MAX_MSGSTR_LEN)
+		return ERR_INVALID_SYSC_ARGS;
+	if(path2 && strlen(path2) > MAX_MSGSTR_LEN)
 		return ERR_INVALID_SYSC_ARGS;
 
 	if((virtFile = vfsr_create(tid)) < 0)
 		return virtFile;
 
-	strcpy(msg.str.s1,path);
+	strcpy(msg.str.s1,path1);
+	if(path2)
+		strcpy(msg.str.s2,path2);
+	msg.str.arg1 = arg1;
 	res = vfs_sendMsg(tid,virtFile,cmd,(u8*)&msg,sizeof(msg.str));
 	if(res < 0)
 		return res;

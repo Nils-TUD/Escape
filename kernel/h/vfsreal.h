@@ -117,6 +117,26 @@ s32 vfsr_mkdir(tTid tid,const char *path);
 s32 vfsr_rmdir(tTid tid,const char *path);
 
 /**
+ * Mounts <device> at <path> with fs <type>
+ *
+ * @param tid the thread-id
+ * @param device the device-path
+ * @param path the path to mount at
+ * @param type the fs-type
+ * @return 0 on success
+ */
+s32 vfsr_mount(tTid tid,const char *device,const char *path,u16 type);
+
+/**
+ * Unmounts the device mounted at <path>
+ *
+ * @param tid the thread-id
+ * @param path the path
+ * @return 0 on success
+ */
+s32 vfsr_unmount(tTid tid,const char *path);
+
+/**
  * Writes all dirty objects of the filesystem to disk
  *
  * @param tid the thread-id

@@ -17,22 +17,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PATH_H_
-#define PATH_H_
-
 #include <esc/common.h>
-#include "ext2.h"
+#include <esc/cmdargs.h>
+#include <esc/io.h>
+#include <esc/fileio.h>
+#include <esc/dir.h>
+#include <stdlib.h>
+#include <string.h>
 
-/**
- * Resolves the given path to the inode-number
- *
- * @param e the ext2-handle
- * @param path the path
- * @param flags the flags with which to open the file
- * @param dev should be set to the device-number
- * @param resolveMnts wether mount-points should be resolved
- * @return the inode-Number or EXT2_BAD_INO
- */
-tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags,tDevNo *dev,bool resolveMnts);
+int main(int argc,char *argv[]) {
+	char rpath[MAX_PATH_LEN];
+	if(argc != 2 || isHelpCmd(argc,argv)) {
+		fprintf(stderr,"Usage: %s <path>\n",argv[0]);
+		return EXIT_FAILURE;
+	}
 
-#endif /* PATH_H_ */
+	abspath(rpath,MAX_PATH_LEN,argv[1]);
+	if(unmount(rpath) < 0) {
+		printe("Unable to unmount '%s'",rpath);
+		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
+}

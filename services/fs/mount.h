@@ -30,7 +30,7 @@
 /* The handler for the functions of the filesystem */
 typedef void *(*fFSInit)(const char *driver);
 typedef void (*fFSDeinit)(void *h);
-typedef tInodeNo (*fFSResPath)(void *h,char *path,u8 flags,tDevNo *dev,bool resolveMnts);
+typedef tInodeNo (*fFSResPath)(void *h,char *path,u8 flags,tDevNo *dev,bool resLastMnt);
 typedef s32 (*fFSOpen)(void *h,tInodeNo ino,u8 flags);
 typedef void (*fFSClose)(void *h,tInodeNo ino);
 typedef s32 (*fFSStat)(void *h,tInodeNo ino,sFileInfo *info);

@@ -30,9 +30,9 @@
  * @param path the path
  * @param flags the flags with which to open the file
  * @param dev should be set to the device-number
- * @param resolveMnts wether mount-points should be resolved
+ * @param resLastMnt wether mount-points should be resolved if the path is finished
  * @return the inode-Number or EXT2_BAD_INO
  */
-tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags,tDevNo *dev,bool resolveMnts);
+tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags,tDevNo *dev,bool resLastMnt);
 
 #endif /* PATH_H_ */

@@ -32,7 +32,7 @@
 #include "dir.h"
 #include "../mount.h"
 
-tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags,tDevNo *dev,bool resolveMnts) {
+tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
 	sExt2CInode *cnode = NULL;
 	tInodeNo res;
 	tDevNo mntDev;
@@ -57,21 +57,21 @@ tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags,tDevNo *dev,bool resolve
 			if(cnode == NULL)
 				return ERR_FS_INODE_NOT_FOUND;
 
-			/* is it a mount-point */
-			if(resolveMnts) {
-				mntDev = mount_getByLoc(*dev,res);
-				if(mntDev >= 0) {
-					sFSInst *inst = mount_get(mntDev);
-					*dev = mntDev;
-					ext2_icache_release(e,cnode);
-					return inst->fs->resPath(inst->handle,p,flags,dev,resolveMnts);
-				}
-			}
-
 			/* skip slashes */
 			while(*p == '/')
 				p++;
 			/* "/" at the end is optional */
+			if(!resLastMnt && !*p)
+				break;
+
+			/* is it a mount-point? */
+			mntDev = mount_getByLoc(*dev,res);
+			if(mntDev >= 0) {
+				sFSInst *inst = mount_get(mntDev);
+				*dev = mntDev;
+				ext2_icache_release(e,cnode);
+				return inst->fs->resPath(inst->handle,p,flags,dev,resLastMnt);
+			}
 			if(!*p)
 				break;
 

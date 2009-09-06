@@ -33,6 +33,7 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 	printf("	date [<format>]					Print date (with specified format or %%c)\n");
 	printf("	kill <pid>						Kill process\n");
 	printf("	libctest						Run libc-tests\n");
+	printf("	test <testName> ...				Run test-module <testName>\n");
 	printf("	login							Just for fun ;)\n");
 	printf("	ls [-ali] [<dir>]				List current or specified directory\n");
 	printf("	progress						Shows a progress-bar\n");
@@ -53,6 +54,8 @@ s32 shell_cmdHelp(u32 argc,char **argv) {
 	printf("	rmdir <dir> ...					Removes the given (empty!) directories\n");
 	printf("	sync							Flushes the filesystem-buffers\n");
 	printf("	write <file>					Reads from STDIN and writes it to <file>\n");
+	printf("	mount <device> <path> <type>	Mounts <device> @ <path> with fs <type>\n");
+	printf("	umount <path>					Unmounts the device @ <path>\n");
 	printf("\n");
 	printf("	gui								Start GUI\n");
 	printf("									(be carefull: this is a oneway-ticket ;))\n");

@@ -27,7 +27,6 @@
 
 static void test_vfsn(void);
 static void test_vfsn_resolvePath(void);
-static bool test_vfsn_resolveRealPath(const char *a);
 static bool test_vfsn_resolvePathCpy(const char *a,const char *b);
 static void test_vfsn_getPath(void);
 
@@ -45,8 +44,8 @@ static void test_vfsn(void) {
 static void test_vfsn_resolvePath(void) {
 	test_caseStart("Testing vfsn_resolvePath()");
 
-	if(!test_vfsn_resolvePathCpy("/system/..","system")) return;
-	if(!test_vfsn_resolvePathCpy("/system//../..","system")) return;
+	if(!test_vfsn_resolvePathCpy("/system/..","")) return;
+	if(!test_vfsn_resolvePathCpy("/system//../..","")) return;
 	if(!test_vfsn_resolvePathCpy("/system//./.","system")) return;
 	if(!test_vfsn_resolvePathCpy("/system/","system")) return;
 	if(!test_vfsn_resolvePathCpy("/system//","system")) return;
@@ -56,15 +55,10 @@ static void test_vfsn_resolvePath(void) {
 	if(!test_vfsn_resolvePathCpy("/system/processes/./","processes")) return;
 	if(!test_vfsn_resolvePathCpy("/system/./.","system")) return;
 	if(!test_vfsn_resolvePathCpy("/system/////processes/./././.","processes")) return;
-	if(!test_vfsn_resolvePathCpy("/system/../processes/../processes/./","processes")) return;
-	if(!test_vfsn_resolvePathCpy("/system//..//..//..","system")) return;
+	if(!test_vfsn_resolvePathCpy("/system/./processes/../processes/./","processes")) return;
+	if(!test_vfsn_resolvePathCpy("/system//..//..//..","")) return;
 
 	test_caseSucceded();
-}
-
-static bool test_vfsn_resolveRealPath(const char *a) {
-	tInodeNo no;
-	return test_assertInt(vfsn_resolvePath(a,&no,VFS_READ),ERR_REAL_PATH);
 }
 
 static bool test_vfsn_resolvePathCpy(const char *a,const char *b) {

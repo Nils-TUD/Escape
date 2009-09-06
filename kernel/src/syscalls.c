@@ -721,6 +721,8 @@ static void sysc_seek(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,file);
 
 	res = vfs_seek(t->tid,file,offset,whence);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 

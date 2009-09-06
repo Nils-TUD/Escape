@@ -140,10 +140,10 @@ static s32 _eof(u32 fd) {
 	return test_doSyscall(25,fd,0,0);
 }
 static s32 _seek(u32 fd,s32 pos,u32 whence) {
-	return test_doSyscall(29,fd,pos,whence);
+	return test_doSyscall(28,fd,pos,whence);
 }
 static s32 _getFileInfo(const char *path,sFileInfo *info) {
-	return test_doSyscall(30,(u32)path,(u32)info,0);
+	return test_doSyscall(29,(u32)path,(u32)info,0);
 }
 
 /* our test-module */
@@ -261,7 +261,7 @@ static void test_regService(void) {
 
 static void test_unregService(void) {
 	test_caseStart("Testing unregService()");
-	test_assertInt(_unregService(0),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_unregService(-1),ERR_INVALID_SYSC_ARGS);
 	test_assertInt(_unregService(12345678),ERR_INVALID_SYSC_ARGS);
 	test_assertInt(_unregService(0x7FFFFFFF),ERR_INVALID_SYSC_ARGS);
 	test_caseSucceded();

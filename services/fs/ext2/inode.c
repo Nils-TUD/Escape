@@ -43,11 +43,11 @@ s32 ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir
 	/* request inode */
 	tInodeNo inodeNo = ext2_bm_allocInode(e,dirNode,isDir);
 	if(inodeNo == 0)
-		return ERR_FS_INODE_ALLOC;
+		return ERR_INO_ALLOC;
 	cnode = ext2_icache_request(e,inodeNo);
 	if(cnode == NULL) {
 		ext2_bm_freeInode(e,inodeNo,isDir);
-		return ERR_FS_INODE_NOT_FOUND;
+		return ERR_INO_REQ_FAILED;
 	}
 
 	/* init inode */

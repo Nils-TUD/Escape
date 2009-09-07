@@ -189,7 +189,7 @@ static s32 text_load(sProc *p,tFileNo file,u32 position,u32 textSize) {
 	}
 	/* ensure that the specified size was correct */
 	if(rem != 0)
-		return ERR_INVALID_ELF_BINARY;
+		return ERR_INVALID_ELF_BIN;
 	return 0;
 }
 

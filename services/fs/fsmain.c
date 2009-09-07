@@ -101,7 +101,7 @@ int main(void) {
 						if(no >= 0) {
 							inst = mount_get(devNo);
 							if(inst == NULL)
-								msg.args.arg1 = ERR_FS_NO_MNT_POINT;
+								msg.args.arg1 = ERR_NO_MNTPNT;
 							else
 								msg.args.arg1 = inst->fs->open(inst->handle,no,flags);
 						}
@@ -121,7 +121,7 @@ int main(void) {
 						else {
 							inst = mount_get(devNo);
 							if(inst == NULL)
-								msg.args.arg1 = ERR_FS_NO_MNT_POINT;
+								msg.args.arg1 = ERR_NO_MNTPNT;
 							else
 								msg.args.arg1 = inst->fs->stat(inst->handle,no,info);
 						}
@@ -137,7 +137,7 @@ int main(void) {
 						sFSInst *inst = mount_get(devNo);
 						u8 *buffer = NULL;
 						if(inst == NULL)
-							msg.args.arg1 = ERR_FS_NO_MNT_POINT;
+							msg.args.arg1 = ERR_NO_MNTPNT;
 						else {
 							buffer = malloc(count);
 							if(buffer == NULL)
@@ -165,7 +165,7 @@ int main(void) {
 						sFSInst *inst = mount_get(devNo);
 						u8 *buffer;
 						if(inst == NULL)
-							msg.args.arg1 = ERR_FS_NO_MNT_POINT;
+							msg.args.arg1 = ERR_NO_MNTPNT;
 						else {
 							/* write to file */
 							msg.args.arg1 = 0;
@@ -191,7 +191,7 @@ int main(void) {
 						if(dstIno < 0)
 							msg.args.arg1 = dstIno;
 						else if(inst == NULL)
-							msg.args.arg1 = ERR_FS_NO_MNT_POINT;
+							msg.args.arg1 = ERR_NO_MNTPNT;
 						else {
 							/* split path and name */
 							char *name,backup;
@@ -206,7 +206,7 @@ int main(void) {
 							if(dirIno < 0)
 								msg.args.arg1 = dirIno;
 							else if(newDev != oldDev)
-								msg.args.arg1 = ERR_FS_LINK_DEVICE;
+								msg.args.arg1 = ERR_LINK_DEVICE;
 							else {
 								*name = backup;
 								msg.args.arg1 = inst->fs->link(inst->handle,dstIno,dirIno,name);
@@ -240,7 +240,7 @@ int main(void) {
 							vassert(dirIno >= 0,"Subdir found, but parent not!?");
 							inst = mount_get(devNo);
 							if(inst == NULL)
-								msg.args.arg1 = ERR_FS_NO_MNT_POINT;
+								msg.args.arg1 = ERR_NO_MNTPNT;
 							else {
 								*name = backup;
 								msg.args.arg1 = inst->fs->unlink(inst->handle,dirIno,name);
@@ -271,7 +271,7 @@ int main(void) {
 						else {
 							inst = mount_get(devNo);
 							if(inst == NULL)
-								msg.args.arg1 = ERR_FS_NO_MNT_POINT;
+								msg.args.arg1 = ERR_NO_MNTPNT;
 							else {
 								*name = backup;
 								msg.args.arg1 = inst->fs->mkdir(inst->handle,dirIno,name);
@@ -302,7 +302,7 @@ int main(void) {
 						else {
 							inst = mount_get(devNo);
 							if(inst == NULL)
-								msg.args.arg1 = ERR_FS_NO_MNT_POINT;
+								msg.args.arg1 = ERR_NO_MNTPNT;
 							else {
 								*name = backup;
 								msg.args.arg1 = inst->fs->rmdir(inst->handle,dirIno,name);
@@ -324,7 +324,7 @@ int main(void) {
 						else {
 							sFSInst *inst = mount_get(devNo);
 							if(inst == NULL)
-								msg.args.arg1 = ERR_FS_NO_MNT_POINT;
+								msg.args.arg1 = ERR_NO_MNTPNT;
 							else {
 								sFileInfo info;
 								s32 res = inst->fs->stat(inst->handle,ino,&info);

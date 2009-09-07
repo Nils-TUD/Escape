@@ -37,7 +37,7 @@ s32 ioports_request(sProc *p,u16 start,u16 count) {
 
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
-		return ERR_IO_MAP_RANGE_RESERVED;
+		return ERR_IOMAP_RESERVED;
 
 	/* 0 means allowed */
 	while(count-- > 0) {
@@ -54,7 +54,7 @@ s32 ioports_release(sProc *p,u16 start,u16 count) {
 
 	/* 0xF8 .. 0xFF is reserved */
 	if(OVERLAPS(0xF8,0xFF + 1,start,start + count))
-		return ERR_IO_MAP_RANGE_RESERVED;
+		return ERR_IOMAP_RESERVED;
 
 	/* 1 means disallowed */
 	while(count-- > 0) {

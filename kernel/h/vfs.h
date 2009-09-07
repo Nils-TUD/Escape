@@ -149,7 +149,7 @@ s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev);
  * @param flags wether it is a virtual or real file and wether you want to read or write
  * @param nodeNo the node-number (in the virtual or real environment)
  * @param devNo the device-number
- * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FD)
+ * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FILE)
  */
 tFileNo vfs_openFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo);
 

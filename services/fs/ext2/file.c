@@ -137,7 +137,7 @@ s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) 
 	/* at first we need the inode */
 	cnode = ext2_icache_request(e,inodeNo);
 	if(cnode == NULL)
-		return ERR_FS_READ_FAILED;
+		return ERR_INO_REQ_FAILED;
 
 	/* nothing left to read? */
 	if((s32)offset < 0 || (s32)offset >= cnode->inode.size) {
@@ -165,7 +165,7 @@ s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) 
 		tmpBuffer = ext2_bcache_request(e,block);
 		if(tmpBuffer == NULL) {
 			ext2_icache_release(e,cnode);
-			return ERR_FS_READ_FAILED;
+			return ERR_BLO_REQ_FAILED;
 		}
 
 		if(buffer != NULL) {
@@ -201,7 +201,7 @@ s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 
 	/* at first we need the inode */
 	cnode = ext2_icache_request(e,inodeNo);
 	if(cnode == NULL)
-		return ERR_FS_READ_FAILED;
+		return ERR_INO_REQ_FAILED;
 
 	/* gap-filling not supported yet */
 	if((s32)offset > cnode->inode.size) {

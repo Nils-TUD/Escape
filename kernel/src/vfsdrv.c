@@ -130,7 +130,7 @@ s32 vfsdrv_ioctl(tTid tid,tFileNo file,sVFSNode *node,u32 cmd,void *data,u32 siz
 	UNUSED(node);
 
 	if(data != NULL && size > sizeof(msg.data.d))
-		return ERR_INVALID_SYSC_ARGS;
+		return ERR_INVALID_ARGS;
 
 	/* send msg to driver */
 	msg.data.arg1 = cmd;

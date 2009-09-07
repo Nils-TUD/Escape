@@ -117,7 +117,7 @@ s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info) {
 	sVFSNode *n = nodes + nodeNo;
 
 	if(n->mode == 0)
-		return ERR_INVALID_NODENO;
+		return ERR_INVALID_INODENO;
 
 	/* some infos are not available here */
 	/* TODO needs to be completed */
@@ -258,7 +258,7 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,u8 flags) {
 			*nodeNo = NADDR_TO_VNNO(child);
 			return 0;
 		}
-		return ERR_VFS_NODE_NOT_FOUND;
+		return ERR_PATH_NOT_FOUND;
 	}
 
 	/* handle special node-types */

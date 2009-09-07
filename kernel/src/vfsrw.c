@@ -131,7 +131,7 @@ s32 vfsrw_readServUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u
 	if(msg->length > size) {
 		kheap_free(msg);
 		sll_removeIndex(list,0);
-		return ERR_INVALID_SYSC_ARGS;
+		return ERR_INVALID_ARGS;
 	}
 
 	/* the data is behind the message */

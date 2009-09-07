@@ -173,7 +173,7 @@ void ShellApplication::doEvents() {
 					}
 					break;
 					case MSG_DRV_IOCTL: {
-						_msg.data.arg1 = ERR_UNSUPPORTED_OPERATION;
+						_msg.data.arg1 = ERR_UNSUPPORTED_OP;
 						send(fd,MSG_DRV_IOCTL_RESP,&_msg,sizeof(_msg.data));
 					}
 					break;

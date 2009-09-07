@@ -227,7 +227,7 @@ tFileNo vfs_openFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo) {
 
 static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo) {
 	tFileNo i;
-	tFileNo freeSlot = ERR_NO_FREE_FD;
+	tFileNo freeSlot = ERR_NO_FREE_FILE;
 	bool isServUse = false;
 	sGFTEntry *e = &globalFileTable[0];
 
@@ -266,7 +266,7 @@ static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo) {
 			}
 		}
 		/* remember free slot */
-		else if(freeSlot == ERR_NO_FREE_FD) {
+		else if(freeSlot == ERR_NO_FREE_FILE) {
 			freeSlot = i;
 			/* just for performance: if we've found an unused file and want to use a service,
 			 * use this slot because it doesn't really matter wether we use a new file or an
@@ -322,11 +322,11 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 		case SEEK_END:
 		default:
 			/* TODO */
-			return ERR_INVALID_SYSC_ARGS;
+			return ERR_INVALID_ARGS;
 	}
 
 	if(newPos < 0)
-		return ERR_INVALID_SYSC_ARGS;
+		return ERR_INVALID_ARGS;
 
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = nodes + e->nodeNo;
@@ -544,13 +544,13 @@ s32 vfs_link(tTid tid,const char *oldPath,const char *newPath) {
 	newRes = vfsn_resolvePath(newPath,&newIno,VFS_READ);
 	if(oldRes == ERR_REAL_PATH) {
 		if(newRes != ERR_REAL_PATH)
-			return ERR_FS_LINK_DEVICE;
+			return ERR_LINK_DEVICE;
 		return vfsr_link(tid,oldPath,newPath);
 	}
 	if(oldRes < 0)
 		return oldRes;
 	if(newRes >= 0)
-		return ERR_FS_FILE_EXISTS;
+		return ERR_FILE_EXISTS;
 
 	/* TODO check access-rights */
 
@@ -570,7 +570,7 @@ s32 vfs_link(tTid tid,const char *oldPath,const char *newPath) {
 	/* links to directories not allowed */
 	target = vfsn_getNode(oldIno);
 	if(MODE_IS_DIR(target->mode))
-		return ERR_FS_IS_DIRECTORY;
+		return ERR_IS_DIR;
 
 	/* make copy of name */
 	*name = backup;
@@ -584,7 +584,7 @@ s32 vfs_link(tTid tid,const char *oldPath,const char *newPath) {
 	/* file exists? */
 	if(vfsn_findInDir(dir,namecpy,len) != NULL) {
 		kheap_free(namecpy);
-		return ERR_FS_FILE_EXISTS;
+		return ERR_FILE_EXISTS;
 	}
 	if(vfsn_createLink(dir,namecpy,target) == NULL) {
 		kheap_free(namecpy);
@@ -647,7 +647,7 @@ s32 vfs_mkdir(tTid tid,const char *path) {
 	node = vfsn_getNode(inodeNo);
 	if(vfsn_findInDir(node,namecpy,len) != NULL) {
 		kheap_free(namecpy);
-		return ERR_FS_FILE_EXISTS;
+		return ERR_FILE_EXISTS;
 	}
 	/* TODO check access-rights */
 	child = vfsn_createDir(node,namecpy);
@@ -722,7 +722,7 @@ tServ vfs_createService(tTid tid,const char *name,u32 type) {
 s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable) {
 	sVFSNode *n = nodes + nodeNo;
 	if(n->name == NULL || !(n->mode & MODE_SERVICE_DRIVER))
-		return ERR_INVALID_NODENO;
+		return ERR_INVALID_SERVID;
 	if(n->owner != tid)
 		return ERR_NOT_OWN_SERVICE;
 
@@ -788,7 +788,7 @@ s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count) {
 	u32 i;
 	for(i = 0; i < count; i++) {
 		if(!vfsn_isValidNodeNo(vfsNodes[i]))
-			return ERR_INVALID_NODENO;
+			return ERR_INVALID_SERVID;
 
 		node = nodes + vfsNodes[i];
 		if(node->owner != tid || !(node->mode & MODE_TYPE_SERVICE))
@@ -813,7 +813,7 @@ tFileNo vfs_openClientThread(tTid tid,tInodeNo nodeNo,tTid clientId) {
 	sVFSNode *n,*node;
 	/* check if the node is valid */
 	if(!vfsn_isValidNodeNo(nodeNo))
-		return ERR_INVALID_NODENO;
+		return ERR_INVALID_SERVID;
 	node = nodes + nodeNo;
 	if(node->owner != tid || !(node->mode & MODE_TYPE_SERVICE))
 		return ERR_NOT_OWN_SERVICE;
@@ -828,7 +828,7 @@ tFileNo vfs_openClientThread(tTid tid,tInodeNo nodeNo,tTid clientId) {
 
 	/* not found? */
 	if(n == NULL)
-		return ERR_VFS_NODE_NOT_FOUND;
+		return ERR_PATH_NOT_FOUND;
 
 	/* open file */
 	return vfs_openFile(tid,VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n),VFS_DEV_NO);

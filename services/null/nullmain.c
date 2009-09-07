@@ -66,7 +66,7 @@ int main(void) {
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 						break;
 					case MSG_DRV_IOCTL: {
-						msg.data.arg1 = ERR_UNSUPPORTED_OPERATION;
+						msg.data.arg1 = ERR_UNSUPPORTED_OP;
 						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 					}
 					break;

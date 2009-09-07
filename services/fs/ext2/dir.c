@@ -62,15 +62,15 @@ s32 ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name) {
 
 tInodeNo ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,u32 nameLen) {
 	tInodeNo ino;
-	s32 size = dir->inode.size;
+	s32 res,size = dir->inode.size;
 	sExt2DirEntry *buffer = (sExt2DirEntry*)malloc(sizeof(u8) * size);
 	if(buffer == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* read the directory */
-	if(ext2_file_read(e,dir->inodeNo,buffer,0,size) < 0) {
+	if((res = ext2_file_read(e,dir->inodeNo,buffer,0,size)) < 0) {
 		free(buffer);
-		return ERR_FS_READ_FAILED;
+		return res;
 	}
 
 	ino = ext2_dir_findIn(buffer,size,name,nameLen);
@@ -94,7 +94,7 @@ tInodeNo ext2_dir_findIn(sExt2DirEntry *buffer,u32 bufSize,const char *name,u32 
 		rem -= entry->recLen;
 		entry = (sExt2DirEntry*)((u8*)entry + entry->recLen);
 	}
-	return ERR_FS_NOT_FOUND;
+	return ERR_PATH_NOT_FOUND;
 }
 
 s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
@@ -110,7 +110,7 @@ s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	/* get inode of directory to delete */
 	delIno = ext2_icache_request(e,ino);
 	if(delIno == NULL)
-		return ERR_FS_INODE_NOT_FOUND;
+		return ERR_INO_REQ_FAILED;
 
 	/* read the directory */
 	buffer = (sExt2DirEntry*)malloc(sizeof(u8) * size);
@@ -118,10 +118,8 @@ s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 		res = ERR_NOT_ENOUGH_MEM;
 		goto error;
 	}
-	if(ext2_file_read(e,ino,buffer,0,size) < 0) {
-		res = ERR_FS_READ_FAILED;
+	if((res = ext2_file_read(e,ino,buffer,0,size)) < 0)
 		goto error;
-	}
 
 	/* search for other entries than '.' and '..' */
 	entry = buffer;
@@ -130,7 +128,7 @@ s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 		if(entry->nameLen != 1 && entry->nameLen != 2 &&
 				strncmp(entry->name,".",entry->nameLen) != 0 &&
 				strncmp(entry->name,"..",entry->nameLen) != 0) {
-			res = ERR_FS_DIR_NOT_EMPTY;
+			res = ERR_DIR_NOT_EMPTY;
 			goto error;
 		}
 

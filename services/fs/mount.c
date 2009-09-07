@@ -57,12 +57,12 @@ tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,u16 type) {
 
 	/* check name */
 	if(strlen(driver) >= MAX_MNTNAME_LEN)
-		return ERR_FS_INVALID_DRV_NAME;
+		return ERR_INVALID_PATH;
 
 	/* check if the mount-point exists */
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
 		if(mounts[i].dev == dev && mounts[i].inode == inode)
-			return ERR_FS_MNT_POINT_EXISTS;
+			return ERR_MNTPNT_EXISTS;
 	}
 
 	/* first find the filesystem */
@@ -72,7 +72,7 @@ tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,u16 type) {
 			break;
 	}
 	if(n == NULL)
-		return ERR_FS_DEVICE_NOT_FOUND;
+		return ERR_DEV_NOT_FOUND;
 
 	/* find mount-slot */
 	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
@@ -80,7 +80,7 @@ tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,u16 type) {
 			break;
 	}
 	if(i >= MOUNT_TABLE_SIZE)
-		return ERR_FS_NO_MNT_POINT;
+		return ERR_NO_MNTPNT;
 
 	/* look if there is an instance we can use */
 	for(n = sll_begin(fsInsts); n != NULL; n = n->next) {
@@ -127,7 +127,7 @@ tDevNo mount_getByLoc(tDevNo dev,tInodeNo inode) {
 		if(mounts[i].mnt)
 			x++;
 	}
-	return ERR_FS_NO_MNT_POINT;
+	return ERR_NO_MNTPNT;
 }
 
 s32 mount_remMnt(tDevNo dev,tInodeNo inode) {
@@ -138,7 +138,7 @@ s32 mount_remMnt(tDevNo dev,tInodeNo inode) {
 			break;
 	}
 	if(i >= MOUNT_TABLE_SIZE)
-		return ERR_FS_NO_MNT_POINT;
+		return ERR_NO_MNTPNT;
 
 	if(mounts[i].mnt->refs-- == 0) {
 		/* call deinit to give the fs the chance to write unwritten stuff etc. */

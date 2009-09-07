@@ -78,7 +78,7 @@ s32 vfsr_openFile(tTid tid,u8 flags,const char *path) {
 	sRequest *req;
 
 	if(pathLen > MAX_MSGSTR_LEN)
-		return ERR_INVALID_SYSC_ARGS;
+		return ERR_INVALID_ARGS;
 	virtFile = vfsr_create(tid);
 	if(virtFile < 0)
 		return virtFile;
@@ -127,7 +127,7 @@ s32 vfsr_getFileInfo(tTid tid,const char *path,sFileInfo *info) {
 	sRequest *req;
 
 	if(pathLen > MAX_MSGSTR_LEN)
-		return ERR_INVALID_SYSC_ARGS;
+		return ERR_INVALID_ARGS;
 	virtFile = vfsr_create(tid);
 	if(virtFile < 0)
 		return virtFile;
@@ -284,9 +284,9 @@ static s32 vfsr_pathReqHandler(tTid tid,const char *path1,const char *path2,u32 
 	tFileNo virtFile;
 
 	if(strlen(path1) > MAX_MSGSTR_LEN)
-		return ERR_INVALID_SYSC_ARGS;
+		return ERR_INVALID_ARGS;
 	if(path2 && strlen(path2) > MAX_MSGSTR_LEN)
-		return ERR_INVALID_SYSC_ARGS;
+		return ERR_INVALID_ARGS;
 
 	if((virtFile = vfsr_create(tid)) < 0)
 		return virtFile;
@@ -436,7 +436,7 @@ static s32 vfsr_add(tFileNo virtFile,tFileNo realFile) {
 static sReal2Virt *vfsr_get(tFileNo real,s32 *err) {
 	sSLNode *n;
 	sSLList *list = real2virt[real % R2V_MAP_SIZE];
-	*err = ERR_INVALID_NODENO;
+	*err = ERR_INVALID_INODENO;
 	if(list == NULL)
 		return NULL;
 	for(n = sll_begin(list); n != NULL; n = n->next) {

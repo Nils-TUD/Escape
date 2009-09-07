@@ -45,7 +45,7 @@ s32 elf_loadFromFile(const char *path) {
 
 	file = vfsr_openFile(t->tid,VFS_READ,path);
 	if(file < 0)
-		return ERR_INVALID_ELF_BINARY;
+		return ERR_INVALID_ELF_BIN;
 
 	/* first read the header */
 	if((res = vfs_readFile(t->tid,file,(u8*)&eheader,sizeof(Elf32_Ehdr))) < 0)
@@ -132,7 +132,7 @@ s32 elf_loadFromFile(const char *path) {
 
 failed:
 	vfs_closeFile(t->tid,file);
-	return ERR_INVALID_ELF_BINARY;
+	return ERR_INVALID_ELF_BIN;
 }
 
 s32 elf_loadFromMem(u8 *code,u32 length) {
@@ -147,7 +147,7 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 
 	/* check magic */
 	if(*(u32*)eheader->e_ident != *(u32*)ELFMAG)
-		return ERR_INVALID_ELF_BINARY;
+		return ERR_INVALID_ELF_BIN;
 
 	/* load the LOAD segments. */
 	datPtr = (u8 const*)(code + eheader->e_phoff);
@@ -155,7 +155,7 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 		pheader = (Elf32_Phdr*)datPtr;
 		/* check if all stuff is in the binary */
 		if((u8*)pheader + sizeof(Elf32_Phdr) >= code + length)
-			return ERR_INVALID_ELF_BINARY;
+			return ERR_INVALID_ELF_BIN;
 
 		if(pheader->p_type == PT_LOAD) {
 			u32 pages;
@@ -165,19 +165,19 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 			/* get to know the lowest virtual address. must be 0x0.  */
 			if(seenLoadSegments == 0) {
 				if(pheader->p_vaddr != 0)
-					return ERR_INVALID_ELF_BINARY;
+					return ERR_INVALID_ELF_BIN;
 			}
 			else if(seenLoadSegments == 2) {
 				/* uh oh a third LOAD segment. that's not allowed
 				* indeed */
-				return ERR_INVALID_ELF_BINARY;
+				return ERR_INVALID_ELF_BIN;
 			}
 
 			/* check if the sizes are valid */
 			if(pheader->p_filesz > pheader->p_memsz)
-				return ERR_INVALID_ELF_BINARY;
+				return ERR_INVALID_ELF_BIN;
 			if(pheader->p_vaddr + pheader->p_filesz >= (u32)(code + length))
-				return ERR_INVALID_ELF_BINARY;
+				return ERR_INVALID_ELF_BIN;
 
 			/* Note that we put everything in the data-segment here atm */
 			pages = BYTES_2_PAGES(pheader->p_memsz);
@@ -188,9 +188,9 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 
 			/* get more space for the data area and make sure that the segment-sizes are valid */
 			if(!proc_segSizesValid(p->textPages,p->dataPages + pages,p->stackPages))
-				return ERR_INVALID_ELF_BINARY;
+				return ERR_INVALID_ELF_BIN;
 			if(!proc_changeSize(pages,CHG_DATA))
-				return ERR_INVALID_ELF_BINARY;
+				return ERR_INVALID_ELF_BIN;
 
 			/* copy the data, and zero remaining bytes */
 			memcpy((void*)pheader->p_vaddr, (void*)segmentSrc, pheader->p_filesz);

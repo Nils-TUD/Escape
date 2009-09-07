@@ -193,17 +193,17 @@ static void test_open(void) {
 	longName = (char*)malloc(10000);
 	memset(longName,0x65,9999);
 	longName[9999] = 0;
-	test_assertInt(_open((char*)0,IO_READ),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_open((char*)0xC0000000,IO_READ),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_open((char*)0xFFFFFFFF,IO_READ),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_open((char*)0x12345678,IO_READ),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_open("abc",0),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_open("abc",IO_READ << 4),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_open(longName,IO_READ),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_open((char*)0,IO_READ),ERR_INVALID_ARGS);
+	test_assertInt(_open((char*)0xC0000000,IO_READ),ERR_INVALID_ARGS);
+	test_assertInt(_open((char*)0xFFFFFFFF,IO_READ),ERR_INVALID_ARGS);
+	test_assertInt(_open((char*)0x12345678,IO_READ),ERR_INVALID_ARGS);
+	test_assertInt(_open("abc",0),ERR_INVALID_ARGS);
+	test_assertInt(_open("abc",IO_READ << 4),ERR_INVALID_ARGS);
+	test_assertInt(_open(longName,IO_READ),ERR_INVALID_ARGS);
 	test_assertInt(_open("",IO_READ),ERR_INVALID_PATH);
 	test_assertInt(_open("BLA",IO_READ),ERR_INVALID_PATH);
 	test_assertInt(_open("myfile",IO_READ),ERR_INVALID_PATH);
-	test_assertInt(_open("/system/1234",IO_READ),ERR_VFS_NODE_NOT_FOUND);
+	test_assertInt(_open("/system/1234",IO_READ),ERR_PATH_NOT_FOUND);
 	free(longName);
 
 	test_caseSucceded();
@@ -221,24 +221,24 @@ static void test_close(void) {
 static void test_read(void) {
 	char toosmallbuf[10];
 	test_caseStart("Testing read()");
-	test_assertInt(_read(0,(void*)0x12345678,1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0x12345678,4 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0x12345678,4 * K + 1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0x12345678,8 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0x12345678,8 * K - 1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0xC0000000,1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0xC0000000,4 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0xC0000000,4 * K + 1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0xC0000000,8 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0xC0000000,8 * K - 1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0xFFFFFFFF,1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0xFFFFFFFF,4 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0xFFFFFFFF,4 * K + 1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0xFFFFFFFF,8 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,(void*)0xFFFFFFFF,8 * K - 1),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_read(0,(void*)0x12345678,1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0x12345678,4 * K),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0x12345678,4 * K + 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0x12345678,8 * K),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0x12345678,8 * K - 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xC0000000,1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xC0000000,4 * K),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xC0000000,4 * K + 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xC0000000,8 * K),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xC0000000,8 * K - 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xFFFFFFFF,1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xFFFFFFFF,4 * K),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xFFFFFFFF,4 * K + 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xFFFFFFFF,8 * K),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xFFFFFFFF,8 * K - 1),ERR_INVALID_ARGS);
 	/* this may be successfull if our stack has been resized previously and is now big enough */
-	test_assertInt(_read(0,toosmallbuf,4 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_read(0,toosmallbuf,1024),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_read(0,toosmallbuf,4 * K),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,toosmallbuf,1024),ERR_INVALID_ARGS);
 	test_assertInt(_read(-1,toosmallbuf,10),ERR_INVALID_FD);
 	test_assertInt(_read(32,toosmallbuf,10),ERR_INVALID_FD);
 	test_assertInt(_read(33,toosmallbuf,10),ERR_INVALID_FD);
@@ -247,29 +247,29 @@ static void test_read(void) {
 
 static void test_regService(void) {
 	test_caseStart("Testing regService()");
-	test_assertInt(_regService("MYVERYVERYVERYVERYVERYVERYVERYVERYLONGNAME",0),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_regService("abc+-/",0),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_regService("/",0),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_regService("",0),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_regService((char*)0xC0000000,0),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_regService((char*)0xFFFFFFFF,0),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_regService("serv",SERV_DEFAULT << 4),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_regService("serv",0),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_regService("serv",0x12345678),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_regService("MYVERYVERYVERYVERYVERYVERYVERYVERYLONGNAME",0),ERR_INVALID_ARGS);
+	test_assertInt(_regService("abc+-/",0),ERR_INVALID_ARGS);
+	test_assertInt(_regService("/",0),ERR_INVALID_ARGS);
+	test_assertInt(_regService("",0),ERR_INVALID_ARGS);
+	test_assertInt(_regService((char*)0xC0000000,0),ERR_INVALID_ARGS);
+	test_assertInt(_regService((char*)0xFFFFFFFF,0),ERR_INVALID_ARGS);
+	test_assertInt(_regService("serv",SERV_DEFAULT << 4),ERR_INVALID_ARGS);
+	test_assertInt(_regService("serv",0),ERR_INVALID_ARGS);
+	test_assertInt(_regService("serv",0x12345678),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 
 static void test_unregService(void) {
 	test_caseStart("Testing unregService()");
-	test_assertInt(_unregService(-1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_unregService(12345678),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_unregService(0x7FFFFFFF),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_unregService(-1),ERR_INVALID_ARGS);
+	test_assertInt(_unregService(12345678),ERR_INVALID_ARGS);
+	test_assertInt(_unregService(0x7FFFFFFF),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 
 static void test_changeSize(void) {
 	test_caseStart("Testing changeSize()");
-	test_assertInt(_changeSize(-1000),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_changeSize(-1000),ERR_INVALID_ARGS);
 	test_assertInt(_changeSize(0xC0000000 / (4 * K)),ERR_NOT_ENOUGH_MEM);
 	test_assertInt(_changeSize(0x7FFFFFFF),ERR_NOT_ENOUGH_MEM);
 	test_caseSucceded();
@@ -278,35 +278,35 @@ static void test_changeSize(void) {
 static void test_mapPhysical(void) {
 	test_caseStart("Testing mapPhysical()");
 	/* try to map kernel */
-	test_assertInt(__mapPhysical(0x100000,10),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(__mapPhysical(0x100123,4),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(__mapPhysical(0x100123,1231231231),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(__mapPhysical(0x100123,-1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(__mapPhysical(0x100123,-5),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(__mapPhysical(0x100000,10),ERR_INVALID_ARGS);
+	test_assertInt(__mapPhysical(0x100123,4),ERR_INVALID_ARGS);
+	test_assertInt(__mapPhysical(0x100123,1231231231),ERR_INVALID_ARGS);
+	test_assertInt(__mapPhysical(0x100123,-1),ERR_INVALID_ARGS);
+	test_assertInt(__mapPhysical(0x100123,-5),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 
 static void test_write(void) {
 	char toosmallbuf[10];
 	test_caseStart("Testing write()");
-	test_assertInt(_write(0,(void*)0x12345678,1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0x12345678,4 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0x12345678,4 * K + 1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0x12345678,8 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0x12345678,8 * K - 1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0xC0000000,1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0xC0000000,4 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0xC0000000,4 * K + 1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0xC0000000,8 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0xC0000000,8 * K - 1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0xFFFFFFFF,1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0xFFFFFFFF,4 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0xFFFFFFFF,4 * K + 1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0xFFFFFFFF,8 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,(void*)0xFFFFFFFF,8 * K - 1),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_write(0,(void*)0x12345678,1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0x12345678,4 * K),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0x12345678,4 * K + 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0x12345678,8 * K),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0x12345678,8 * K - 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xC0000000,1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xC0000000,4 * K),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xC0000000,4 * K + 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xC0000000,8 * K),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xC0000000,8 * K - 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xFFFFFFFF,1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xFFFFFFFF,4 * K),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xFFFFFFFF,4 * K + 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xFFFFFFFF,8 * K),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xFFFFFFFF,8 * K - 1),ERR_INVALID_ARGS);
 	/* this may be successfull if our stack has been resized previously and is now big enough */
-	test_assertInt(_write(0,toosmallbuf,4 * K),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_write(0,toosmallbuf,1024),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_write(0,toosmallbuf,4 * K),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,toosmallbuf,1024),ERR_INVALID_ARGS);
 	test_assertInt(_write(-1,toosmallbuf,10),ERR_INVALID_FD);
 	test_assertInt(_write(32,toosmallbuf,10),ERR_INVALID_FD);
 	test_assertInt(_write(33,toosmallbuf,10),ERR_INVALID_FD);
@@ -318,66 +318,66 @@ static void test_getClient(void) {
 	tServ s;
 	test_caseStart("Testing getClient()");
 	/* test serv-array */
-	test_assertInt(_getClient(NULL,1,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0x12345678,1,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0x12345678,4 * K,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0x12345678,4 * K + 1,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0x12345678,8 * K,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0x12345678,8 * K - 1,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0xC0000000,1,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0xBFFFFFFF,1,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0xBFFFFFFF,2,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0xBFFFFFFF,4 * K,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0xBFFFFFFF,4 * K + 1,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0xBFFFFFFF,8 * K,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0xBFFFFFFF,8 * K - 1,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient((void*)0xFFFFFFFF,1,&s),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_getClient(NULL,1,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0x12345678,1,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0x12345678,4 * K,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0x12345678,4 * K + 1,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0x12345678,8 * K,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0x12345678,8 * K - 1,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0xC0000000,1,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0xBFFFFFFF,1,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0xBFFFFFFF,2,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0xBFFFFFFF,4 * K,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0xBFFFFFFF,4 * K + 1,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0xBFFFFFFF,8 * K,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0xBFFFFFFF,8 * K - 1,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient((void*)0xFFFFFFFF,1,&s),ERR_INVALID_ARGS);
 	/* test client-id */
-	test_assertInt(_getClient(servs,1,(tServ*)NULL),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient(servs,1,(tServ*)0x12345678),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient(servs,1,(tServ*)0xC0000000),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient(servs,1,(tServ*)0xBFFFFFFF),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient(servs,1,(tServ*)0xFFFFFFFF),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_getClient(servs,1,(tServ*)NULL),ERR_INVALID_ARGS);
+	test_assertInt(_getClient(servs,1,(tServ*)0x12345678),ERR_INVALID_ARGS);
+	test_assertInt(_getClient(servs,1,(tServ*)0xC0000000),ERR_INVALID_ARGS);
+	test_assertInt(_getClient(servs,1,(tServ*)0xBFFFFFFF),ERR_INVALID_ARGS);
+	test_assertInt(_getClient(servs,1,(tServ*)0xFFFFFFFF),ERR_INVALID_ARGS);
 	/* test serv-array size */
-	test_assertInt(_getClient(servs,-1,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient(servs,4 * K,&s),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getClient(servs,0x7FFFFFFF,&s),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_getClient(servs,-1,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient(servs,4 * K,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getClient(servs,0x7FFFFFFF,&s),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 
 static void test_requestIOPorts(void) {
 	test_caseStart("Testing requestIOPorts()");
-	test_assertInt(_requestIOPorts(-1,-1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_requestIOPorts(-1,1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_requestIOPorts(-1,3),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_requestIOPorts(1,-1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_requestIOPorts(1,0),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_requestIOPorts(-1,-1),ERR_INVALID_ARGS);
+	test_assertInt(_requestIOPorts(-1,1),ERR_INVALID_ARGS);
+	test_assertInt(_requestIOPorts(-1,3),ERR_INVALID_ARGS);
+	test_assertInt(_requestIOPorts(1,-1),ERR_INVALID_ARGS);
+	test_assertInt(_requestIOPorts(1,0),ERR_INVALID_ARGS);
 	/* 0xF8 .. 0xFF is reserved */
-	test_assertInt(_requestIOPorts(0xF8,1),ERR_IO_MAP_RANGE_RESERVED);
-	test_assertInt(_requestIOPorts(0xF8,(0xFF - 0xF8)),ERR_IO_MAP_RANGE_RESERVED);
-	test_assertInt(_requestIOPorts(0xF8,(0xFF - 0xF8) - 1),ERR_IO_MAP_RANGE_RESERVED);
-	test_assertInt(_requestIOPorts(0xF8,(0xFF - 0xF8) + 1),ERR_IO_MAP_RANGE_RESERVED);
-	test_assertInt(_requestIOPorts(0xF8 - 1,2),ERR_IO_MAP_RANGE_RESERVED);
-	test_assertInt(_requestIOPorts(0xF8 - 1,(0xFF - 0xF8)),ERR_IO_MAP_RANGE_RESERVED);
-	test_assertInt(_requestIOPorts(0xF8 - 1,(0xFF - 0xF8) + 1),ERR_IO_MAP_RANGE_RESERVED);
+	test_assertInt(_requestIOPorts(0xF8,1),ERR_IOMAP_RESERVED);
+	test_assertInt(_requestIOPorts(0xF8,(0xFF - 0xF8)),ERR_IOMAP_RESERVED);
+	test_assertInt(_requestIOPorts(0xF8,(0xFF - 0xF8) - 1),ERR_IOMAP_RESERVED);
+	test_assertInt(_requestIOPorts(0xF8,(0xFF - 0xF8) + 1),ERR_IOMAP_RESERVED);
+	test_assertInt(_requestIOPorts(0xF8 - 1,2),ERR_IOMAP_RESERVED);
+	test_assertInt(_requestIOPorts(0xF8 - 1,(0xFF - 0xF8)),ERR_IOMAP_RESERVED);
+	test_assertInt(_requestIOPorts(0xF8 - 1,(0xFF - 0xF8) + 1),ERR_IOMAP_RESERVED);
 	test_caseSucceded();
 }
 
 static void test_releaseIOPorts(void) {
 	test_caseStart("Testing releaseIOPorts()");
-	test_assertInt(_releaseIOPorts(-1,-1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_releaseIOPorts(-1,1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_releaseIOPorts(-1,3),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_releaseIOPorts(1,-1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_releaseIOPorts(1,0),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_releaseIOPorts(-1,-1),ERR_INVALID_ARGS);
+	test_assertInt(_releaseIOPorts(-1,1),ERR_INVALID_ARGS);
+	test_assertInt(_releaseIOPorts(-1,3),ERR_INVALID_ARGS);
+	test_assertInt(_releaseIOPorts(1,-1),ERR_INVALID_ARGS);
+	test_assertInt(_releaseIOPorts(1,0),ERR_INVALID_ARGS);
 	/* 0xF8 .. 0xFF is reserved */
-	test_assertInt(_releaseIOPorts(0xF8,1),ERR_IO_MAP_RANGE_RESERVED);
-	test_assertInt(_releaseIOPorts(0xF8,(0xFF - 0xF8)),ERR_IO_MAP_RANGE_RESERVED);
-	test_assertInt(_releaseIOPorts(0xF8,(0xFF - 0xF8) - 1),ERR_IO_MAP_RANGE_RESERVED);
-	test_assertInt(_releaseIOPorts(0xF8,(0xFF - 0xF8) + 1),ERR_IO_MAP_RANGE_RESERVED);
-	test_assertInt(_releaseIOPorts(0xF8 - 1,2),ERR_IO_MAP_RANGE_RESERVED);
-	test_assertInt(_releaseIOPorts(0xF8 - 1,(0xFF - 0xF8)),ERR_IO_MAP_RANGE_RESERVED);
-	test_assertInt(_releaseIOPorts(0xF8 - 1,(0xFF - 0xF8) + 1),ERR_IO_MAP_RANGE_RESERVED);
+	test_assertInt(_releaseIOPorts(0xF8,1),ERR_IOMAP_RESERVED);
+	test_assertInt(_releaseIOPorts(0xF8,(0xFF - 0xF8)),ERR_IOMAP_RESERVED);
+	test_assertInt(_releaseIOPorts(0xF8,(0xFF - 0xF8) - 1),ERR_IOMAP_RESERVED);
+	test_assertInt(_releaseIOPorts(0xF8,(0xFF - 0xF8) + 1),ERR_IOMAP_RESERVED);
+	test_assertInt(_releaseIOPorts(0xF8 - 1,2),ERR_IOMAP_RESERVED);
+	test_assertInt(_releaseIOPorts(0xF8 - 1,(0xFF - 0xF8)),ERR_IOMAP_RESERVED);
+	test_assertInt(_releaseIOPorts(0xF8 - 1,(0xFF - 0xF8) + 1),ERR_IOMAP_RESERVED);
 	test_caseSucceded();
 }
 
@@ -408,7 +408,7 @@ static void test_redirFd(void) {
 
 static void test_wait(void) {
 	test_caseStart("Testing wait()");
-	test_assertInt(_wait(~(EV_CLIENT | EV_RECEIVED_MSG | EV_CHILD_DIED)),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_wait(~(EV_CLIENT | EV_RECEIVED_MSG | EV_CHILD_DIED)),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 
@@ -417,9 +417,9 @@ static void test_setSigHandler(void) {
 	test_assertInt(_setSigHandler(-1,0),ERR_INVALID_SIGNAL);
 	test_assertInt(_setSigHandler(SIG_COUNT,0),ERR_INVALID_SIGNAL);
 	test_assertInt(_setSigHandler(0,0),ERR_INVALID_SIGNAL);
-	test_assertInt(_setSigHandler(1,0xC0000000),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_setSigHandler(1,0xFFFFFFFF),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_setSigHandler(1,0x12345678),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_setSigHandler(1,0xC0000000),ERR_INVALID_ARGS);
+	test_assertInt(_setSigHandler(1,0xFFFFFFFF),ERR_INVALID_ARGS);
+	test_assertInt(_setSigHandler(1,0x12345678),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 
@@ -454,16 +454,16 @@ static void test_exec(void) {
 	const char *a4[] = {(const char*)0xFFFFFFFF,NULL};
 	const char *a5[] = {longPath,NULL};
 	test_caseStart("Testing exec()");
-	test_assertInt(_exec(NULL,NULL),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_exec((const char*)0x12345678,NULL),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_exec((const char*)0xC0000000,NULL),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_exec((const char*)0xFFFFFFFF,NULL),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_exec(longPath,NULL),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_exec("p",a1),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_exec("p",a2),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_exec("p",a3),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_exec("p",a4),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_exec("p",a5),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_exec(NULL,NULL),ERR_INVALID_ARGS);
+	test_assertInt(_exec((const char*)0x12345678,NULL),ERR_INVALID_ARGS);
+	test_assertInt(_exec((const char*)0xC0000000,NULL),ERR_INVALID_ARGS);
+	test_assertInt(_exec((const char*)0xFFFFFFFF,NULL),ERR_INVALID_ARGS);
+	test_assertInt(_exec(longPath,NULL),ERR_INVALID_ARGS);
+	test_assertInt(_exec("p",a1),ERR_INVALID_ARGS);
+	test_assertInt(_exec("p",a2),ERR_INVALID_ARGS);
+	test_assertInt(_exec("p",a3),ERR_INVALID_ARGS);
+	test_assertInt(_exec("p",a4),ERR_INVALID_ARGS);
+	test_assertInt(_exec("p",a5),ERR_INVALID_ARGS);
 	test_caseSucceded();
 	free(longPath);
 }
@@ -485,7 +485,7 @@ static void test_seek(void) {
 	test_assertInt(_seek(0x7FFF,0,SEEK_SET),ERR_INVALID_FD);
 	test_assertInt(_seek(32,0,SEEK_SET),ERR_INVALID_FD);
 	test_assertInt(_seek(33,0,SEEK_SET),ERR_INVALID_FD);
-	test_assertInt(_seek(0,-1,SEEK_SET),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_seek(0,-1,SEEK_SET),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 
@@ -495,16 +495,16 @@ static void test_getFileInfo(void) {
 	memset(longPath,0x65,9999);
 	longPath[9999] = 0;
 	test_caseStart("Testing getFileInfo()");
-	test_assertInt(_getFileInfo(NULL,&info),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo((const char*)0x12345678,&info),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo((const char*)0xC0000000,&info),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo((const char*)0xFFFFFFFF,&info),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo(longPath,&info),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo("",&info),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo("/bin",NULL),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo("/bin",(sFileInfo*)0x12345678),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo("/bin",(sFileInfo*)0xC0000000),ERR_INVALID_SYSC_ARGS);
-	test_assertInt(_getFileInfo("/bin",(sFileInfo*)0xFFFFFFFF),ERR_INVALID_SYSC_ARGS);
+	test_assertInt(_getFileInfo(NULL,&info),ERR_INVALID_ARGS);
+	test_assertInt(_getFileInfo((const char*)0x12345678,&info),ERR_INVALID_ARGS);
+	test_assertInt(_getFileInfo((const char*)0xC0000000,&info),ERR_INVALID_ARGS);
+	test_assertInt(_getFileInfo((const char*)0xFFFFFFFF,&info),ERR_INVALID_ARGS);
+	test_assertInt(_getFileInfo(longPath,&info),ERR_INVALID_ARGS);
+	test_assertInt(_getFileInfo("",&info),ERR_INVALID_ARGS);
+	test_assertInt(_getFileInfo("/bin",NULL),ERR_INVALID_ARGS);
+	test_assertInt(_getFileInfo("/bin",(sFileInfo*)0x12345678),ERR_INVALID_ARGS);
+	test_assertInt(_getFileInfo("/bin",(sFileInfo*)0xC0000000),ERR_INVALID_ARGS);
+	test_assertInt(_getFileInfo("/bin",(sFileInfo*)0xFFFFFFFF),ERR_INVALID_ARGS);
 	test_caseSucceded();
 	free(longPath);
 }

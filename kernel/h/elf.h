@@ -27,7 +27,7 @@
  * Loads the program at given path from fs into the user-space
  *
  * @param path the path to the program
- * @return entry-point on success, ERR_INVALID_ELF_BINARY on failure
+ * @return entry-point on success, ERR_INVALID_ELF_BIN on failure
  */
 s32 elf_loadFromFile(const char *path);
 
@@ -36,7 +36,7 @@ s32 elf_loadFromFile(const char *path);
  *
  * @param code the address of the binary
  * @param length the length of the binary
- * @return entry-point on success, ERR_INVALID_ELF_BINARY on failure
+ * @return entry-point on success, ERR_INVALID_ELF_BIN on failure
  */
 s32 elf_loadFromMem(u8 *code,u32 length);
 

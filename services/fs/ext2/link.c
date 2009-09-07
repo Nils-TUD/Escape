@@ -39,7 +39,7 @@ s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 	u32 len = strlen(name);
 	u32 tlen = ext2_link_getDirESize(len);
 	u32 recLen = 0;
-	s32 dirSize = dir->inode.size;
+	s32 res,dirSize = dir->inode.size;
 
 	/* TODO we don't have to read the whole directory at once */
 
@@ -47,15 +47,15 @@ s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 	buf = malloc(dirSize + tlen);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	if(ext2_file_read(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
+	if((res = ext2_file_read(e,dir->inodeNo,buf,0,dirSize)) != dirSize) {
 		free(buf);
-		return ERR_FS_READ_FAILED;
+		return res;
 	}
 
 	/* check if the entry exists */
 	if(ext2_dir_findIn((sExt2DirEntry*)buf,dirSize,name,len) >= 0) {
 		free(buf);
-		return ERR_FS_FILE_EXISTS;
+		return ERR_FILE_EXISTS;
 	}
 
 	/* search for a place for our entry */
@@ -86,9 +86,9 @@ s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 	memcpy(dire->name,name,len);
 
 	/* write it back */
-	if(ext2_file_write(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
+	if((res = ext2_file_write(e,dir->inodeNo,buf,0,dirSize)) != dirSize) {
 		free(buf);
-		return ERR_FS_WRITE_FAILED;
+		return res;
 	}
 	free(buf);
 
@@ -110,9 +110,9 @@ s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name,bool delDir) {
 	buf = malloc(dirSize);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	if(ext2_file_read(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
+	if((res = ext2_file_read(e,dir->inodeNo,buf,0,dirSize)) != dirSize) {
 		free(buf);
-		return ERR_FS_READ_FAILED;
+		return res;
 	}
 
 	/* search our entry */
@@ -125,11 +125,11 @@ s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name,bool delDir) {
 			cnode = ext2_icache_request(e,ino);
 			if(cnode == NULL) {
 				free(buf);
-				return ERR_FS_INODE_NOT_FOUND;
+				return ERR_INO_REQ_FAILED;
 			}
 			if(!delDir && MODE_IS_DIR(cnode->inode.mode)) {
 				free(buf);
-				return ERR_FS_IS_DIRECTORY;
+				return ERR_IS_DIR;
 			}
 			/* if we have a previous one, simply increase its length */
 			if(prev != NULL)
@@ -152,9 +152,9 @@ s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name,bool delDir) {
 	}
 
 	/* write it back */
-	if(ext2_file_write(e,dir->inodeNo,buf,0,dirSize) != dirSize) {
+	if((res = ext2_file_write(e,dir->inodeNo,buf,0,dirSize)) != dirSize) {
 		free(buf);
-		return ERR_FS_WRITE_FAILED;
+		return res;
 	}
 	free(buf);
 

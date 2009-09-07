@@ -535,39 +535,35 @@ char *strerror(s32 errnum) {
 	static char msg[MAX_ERR_LEN + 1];
 	switch(errnum) {
 		case ERR_FILE_IN_USE:
-			strcpy(msg,"The file is already in use");
+			strcpy(msg,"The file is already in use!");
 			break;
 
-		case ERR_INVALID_SYSC_ARGS:
-			strcpy(msg,"Invalid syscall-arguments");
+		case ERR_INVALID_ARGS:
+			strcpy(msg,"Invalid arguments!");
 			break;
 
 		case ERR_MAX_PROC_FDS:
-			strcpy(msg,"You have reached the max. possible file-descriptors");
+			strcpy(msg,"You have reached the max. possible file-descriptors!");
 			break;
 
-		case ERR_NO_FREE_FD:
-			strcpy(msg,"The max. global, open files have been reached");
-			break;
-
-		case ERR_VFS_NODE_NOT_FOUND:
-			strcpy(msg,"Unable to resolve the path");
+		case ERR_NO_FREE_FILE:
+			strcpy(msg,"The max. global, open files have been reached!");
 			break;
 
 		case ERR_INVALID_FD:
-			strcpy(msg,"Invalid file-descriptor");
+			strcpy(msg,"Invalid file-descriptor!");
 			break;
 
 		case ERR_INVALID_FILE:
-			strcpy(msg,"Invalid file");
+			strcpy(msg,"Invalid file!");
 			break;
 
 		case ERR_NO_READ_PERM:
-			strcpy(msg,"No read-permission");
+			strcpy(msg,"No read-permission!");
 			break;
 
 		case ERR_NO_WRITE_PERM:
-			strcpy(msg,"No write-permission");
+			strcpy(msg,"No write-permission!");
 			break;
 
 		case ERR_INV_SERVICE_NAME:
@@ -582,91 +578,59 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"The service with desired name does already exist!");
 			break;
 
-		case ERR_PROC_DUP_SERVICE:
-			strcpy(msg,"You are already a service!");
-			break;
-
-		case ERR_PROC_DUP_SERVICE_USE:
-			strcpy(msg,"You are already using the requested service!");
-			break;
-
-		case ERR_SERVICE_NOT_IN_USE:
-			strcpy(msg,"You are not using the service at the moment!");
-			break;
-
 		case ERR_NOT_OWN_SERVICE:
 			strcpy(msg,"The service-node is not your own!");
 			break;
 
-		case ERR_IO_MAP_RANGE_RESERVED:
+		case ERR_IOMAP_RESERVED:
 			strcpy(msg,"The given io-port range is reserved!");
 			break;
 
 		case ERR_IOMAP_NOT_PRESENT:
-			strcpy(msg,"The io-port-map is not present (have you reserved ports?)");
-			break;
-
-		case ERR_INTRPT_LISTENER_MSGLEN:
-			strcpy(msg,"The length of the interrupt-notify-message is too long!");
+			strcpy(msg,"The io-port-map is not present (have you reserved ports?)!");
 			break;
 
 		case ERR_INVALID_IRQ_NUMBER:
 			strcpy(msg,"The given IRQ-number is invalid!");
 			break;
 
-		case ERR_IRQ_LISTENER_MISSING:
-			strcpy(msg,"The IRQ-listener is not present!");
-			break;
-
 		case ERR_NO_CLIENT_WAITING:
-			strcpy(msg,"No client is currently waiting");
-			break;
-
-		case ERR_FS_NOT_FOUND:
-			strcpy(msg,"Filesystem-service not found");
+			strcpy(msg,"No client is currently waiting!");
 			break;
 
 		case ERR_INVALID_SIGNAL:
-			strcpy(msg,"Invalid signal");
+			strcpy(msg,"Invalid signal!");
 			break;
 
 		case ERR_INVALID_PID:
-			strcpy(msg,"Invalid process-id");
+			strcpy(msg,"Invalid process-id!");
 			break;
 
 		case ERR_NO_DIRECTORY:
-			strcpy(msg,"A part of the path is no directory");
+			strcpy(msg,"A part of the path is no directory!");
 			break;
 
 		case ERR_PATH_NOT_FOUND:
-			strcpy(msg,"Path not found");
-			break;
-
-		case ERR_FS_READ_FAILED:
-			strcpy(msg,"Read from fs failed");
+			strcpy(msg,"Path not found!");
 			break;
 
 		case ERR_INVALID_PATH:
-			strcpy(msg,"Invalid path");
+			strcpy(msg,"Invalid path!");
 			break;
 
-		case ERR_INVALID_NODENO:
-			strcpy(msg,"Invalid Node-Number");
+		case ERR_INVALID_INODENO:
+			strcpy(msg,"Invalid inode-number!");
 			break;
 
 		case ERR_SERVUSE_SEEK:
-			strcpy(msg,"seek() is not possible for service-usages!");
+			strcpy(msg,"seek() with SEEK_SET is not supported for service-usages!");
 			break;
 
-		case ERR_MAX_PROCS_REACHED:
+		case ERR_NO_FREE_PROCS:
 			strcpy(msg,"No free process-slots!");
 			break;
 
-		case ERR_NODE_EXISTS:
-			strcpy(msg,"Node does already exist!");
-			break;
-
-		case ERR_INVALID_ELF_BINARY:
+		case ERR_INVALID_ELF_BIN:
 			strcpy(msg,"The ELF-binary is invalid!");
 			break;
 
@@ -687,71 +651,67 @@ char *strerror(s32 errnum) {
 			break;
 
 		case ERR_INVALID_TID:
-			strcpy(msg,"Invalid thread-id");
+			strcpy(msg,"Invalid thread-id!");
 			break;
 
-		case ERR_UNSUPPORTED_OPERATION:
-			strcpy(msg,"Unsupported operation");
+		case ERR_UNSUPPORTED_OP:
+			strcpy(msg,"Unsupported operation!");
 			break;
 
-		case ERR_FS_INODE_ALLOC:
-			strcpy(msg,"Inode-allocation failed");
+		case ERR_INO_ALLOC:
+			strcpy(msg,"Inode-allocation failed!");
 			break;
 
-		case ERR_FS_WRITE_FAILED:
-			strcpy(msg,"Write-operation failed");
+		case ERR_INO_REQ_FAILED:
+			strcpy(msg,"Inode-request failed!");
 			break;
 
-		case ERR_FS_INODE_NOT_FOUND:
-			strcpy(msg,"Inode not found");
+		case ERR_IS_DIR:
+			strcpy(msg,"Its a directory!");
 			break;
 
-		case ERR_FS_IS_DIRECTORY:
-			strcpy(msg,"Its a directory");
+		case ERR_FILE_EXISTS:
+			strcpy(msg,"The file exists!");
 			break;
 
-		case ERR_FS_FILE_EXISTS:
-			strcpy(msg,"The file exists");
+		case ERR_DIR_NOT_EMPTY:
+			strcpy(msg,"Directory is not empty!");
 			break;
 
-		case ERR_FS_DIR_NOT_EMPTY:
-			strcpy(msg,"Directory is not empty");
+		case ERR_MNTPNT_EXISTS:
+			strcpy(msg,"Mount-point exists!");
 			break;
 
-		case ERR_FS_INVALID_DRV_NAME:
-			strcpy(msg,"Invalid driver-name");
+		case ERR_DEV_NOT_FOUND:
+			strcpy(msg,"Device not found!");
 			break;
 
-		case ERR_FS_INVALID_FS_NAME:
-			strcpy(msg,"Invalid filesystem-name");
-			break;
-
-		case ERR_FS_MNT_POINT_EXISTS:
-			strcpy(msg,"Mount-point exists");
-			break;
-
-		case ERR_FS_DEVICE_NOT_FOUND:
-			strcpy(msg,"Device not found");
-			break;
-
-		case ERR_FS_NO_MNT_POINT:
-			strcpy(msg,"No mount-point");
+		case ERR_NO_MNTPNT:
+			strcpy(msg,"No mount-point!");
 			break;
 
 		case ERR_FS_INIT_FAILED:
-			strcpy(msg,"Initialisation of filesystem failed");
+			strcpy(msg,"Initialisation of filesystem failed!");
 			break;
 
-		case ERR_FS_LINK_DEVICE:
-			strcpy(msg,"Hardlink to a different device not possible");
+		case ERR_LINK_DEVICE:
+			strcpy(msg,"Hardlink to a different device not possible!");
 			break;
 
 		case ERR_MOUNT_VIRT_PATH:
-			strcpy(msg,"Mount in virtual directories not supported");
+			strcpy(msg,"Mount in virtual directories not supported!");
 			break;
 
 		case ERR_NO_FILE_OR_LINK:
-			strcpy(msg,"No file or link");
+			strcpy(msg,"No file or link!");
+			break;
+
+		case ERR_BLO_REQ_FAILED:
+			strcpy(msg,"Block-request failed!");
+			break;
+
+		case ERR_INVALID_SERVID:
+			strcpy(msg,"Invalid service-id!");
 			break;
 
 		default:

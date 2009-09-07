@@ -45,7 +45,7 @@ tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags,tDevNo *dev,bool resLast
 
 	cnode = ext2_icache_request(e,EXT2_ROOT_INO);
 	if(cnode == NULL)
-		return ERR_FS_READ_FAILED;
+		return ERR_INO_REQ_FAILED;
 
 	pos = strchri(p,'/');
 	while(*p) {
@@ -55,7 +55,7 @@ tInodeNo ext2_path_resolve(sExt2 *e,char *path,u8 flags,tDevNo *dev,bool resLast
 			ext2_icache_release(e,cnode);
 			cnode = ext2_icache_request(e,res);
 			if(cnode == NULL)
-				return ERR_FS_INODE_NOT_FOUND;
+				return ERR_INO_REQ_FAILED;
 
 			/* skip slashes */
 			while(*p == '/')

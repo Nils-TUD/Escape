@@ -253,7 +253,7 @@ s32 vterm_ioctl(sVTerm *vt,u32 cmd,void *data,bool *readKb) {
 			}
 			break;
 		default:
-			res = ERR_UNSUPPORTED_OPERATION;
+			res = ERR_UNSUPPORTED_OP;
 			break;
 	}
 	return res;

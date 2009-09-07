@@ -109,7 +109,7 @@ s32 ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	sExt2 *e = (sExt2*)h;
 	sExt2CInode *cnode = ext2_icache_request(e,ino);
 	if(cnode == NULL)
-		return ERR_FS_INODE_NOT_FOUND;
+		return ERR_INO_REQ_FAILED;
 
 	info->accesstime = cnode->inode.accesstime;
 	info->modifytime = cnode->inode.modifytime;
@@ -143,9 +143,9 @@ s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name) {
 	dir = ext2_icache_request(e,dirIno);
 	ino = ext2_icache_request(e,dstIno);
 	if(dir == NULL || ino == NULL)
-		res = ERR_FS_INODE_NOT_FOUND;
+		res = ERR_INO_REQ_FAILED;
 	else if(MODE_IS_DIR(ino->inode.mode))
-		res = ERR_FS_IS_DIRECTORY;
+		res = ERR_IS_DIR;
 	else
 		res = ext2_link_create(e,dir,ino,name);
 	ext2_icache_release(e,dir);
@@ -158,7 +158,7 @@ s32 ext2_unlink(void *h,tInodeNo dirIno,const char *name) {
 	s32 res;
 	sExt2CInode *dir = ext2_icache_request(e,dirIno);
 	if(dir == NULL)
-		return ERR_FS_INODE_NOT_FOUND;
+		return ERR_INO_REQ_FAILED;
 
 	res = ext2_link_delete(e,dir,name,false);
 	ext2_icache_release(e,dir);
@@ -170,7 +170,7 @@ s32 ext2_mkdir(void *h,tInodeNo dirIno,const char *name) {
 	s32 res;
 	sExt2CInode *dir = ext2_icache_request(e,dirIno);
 	if(dir == NULL)
-		return ERR_FS_INODE_NOT_FOUND;
+		return ERR_INO_REQ_FAILED;
 	res = ext2_dir_create(e,dir,name);
 	ext2_icache_release(e,dir);
 	return res;
@@ -181,7 +181,7 @@ s32 ext2_rmdir(void *h,tInodeNo dirIno,const char *name) {
 	s32 res;
 	sExt2CInode *dir = ext2_icache_request(e,dirIno);
 	if(dir == NULL)
-		return ERR_FS_INODE_NOT_FOUND;
+		return ERR_INO_REQ_FAILED;
 	if(!MODE_IS_DIR(dir->inode.mode))
 		return ERR_NO_DIRECTORY;
 	res = ext2_dir_delete(e,dir,name);

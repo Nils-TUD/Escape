@@ -81,13 +81,10 @@ int system(const char *cmd) {
 		exec(args[0],args);
 
 		/* if we're here there is something wrong */
-		printe("Exec of '%s' failed",args[0]);
-		exit(EXIT_FAILURE);
+		error("Exec of '%s' failed",args[0]);
 	}
-	else if(child < 0) {
-		printe("Fork failed");
-		return EXIT_FAILURE;
-	}
+	else if(child < 0)
+		error("Fork failed");
 
 	/* TODO we need the return-value of the child.. */
 	wait(EV_CHILD_DIED);

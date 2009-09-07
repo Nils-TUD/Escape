@@ -60,20 +60,14 @@ bool win_init(tServ sid) {
 		windows[i].id = WINID_UNSED;
 
 	vesa = open("/services/vesa",IO_WRITE);
-	if(vesa < 0) {
-		printe("Unable to open /services/vesa");
-		return EXIT_FAILURE;
-	}
+	if(vesa < 0)
+		error("Unable to open /services/vesa");
 
 	/* request screen infos from vesa */
-	if(send(vesa,MSG_VESA_GETMODE_REQ,&msg,sizeof(msg.args)) < 0) {
-		printe("Unable to send get-mode-request to vesa");
-		return EXIT_FAILURE;
-	}
-	if(receive(vesa,&mid,&msg,sizeof(msg)) < 0) {
-		printe("Unable to read the get-mode-response from vesa");
-		return EXIT_FAILURE;
-	}
+	if(send(vesa,MSG_VESA_GETMODE_REQ,&msg,sizeof(msg.args)) < 0)
+		error("Unable to send get-mode-request to vesa");
+	if(receive(vesa,&mid,&msg,sizeof(msg)) < 0)
+		error("Unable to read the get-mode-response from vesa");
 
 	/* store */
 	screenWidth = (tSize)msg.args.arg1;
@@ -81,10 +75,8 @@ bool win_init(tServ sid) {
 	colorDepth = (u8)msg.args.arg3;
 
 	shmem = (u8*)joinSharedMem("vesa");
-	if(shmem == NULL) {
-		printe("Unable to join shared memory 'vesa'");
-		return false;
-	}
+	if(shmem == NULL)
+		error("Unable to join shared memory 'vesa'");
 
 	return true;
 }

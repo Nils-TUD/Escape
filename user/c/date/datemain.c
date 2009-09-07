@@ -40,15 +40,11 @@ int main(int argc,char **argv) {
 	if(argc == 2)
 		fmt = argv[1];
 
-	if(getDate(&date) < 0) {
-		printe("Unable to get date");
-		return EXIT_FAILURE;
-	}
+	if(getDate(&date) < 0)
+		error("Unable to get date");
 
-	if(dateToString(str,MAX_DATE_LEN,fmt,&date) == 0) {
-		fprintf(stderr,"Unable to format date\n");
-		return EXIT_FAILURE;
-	}
+	if(dateToString(str,MAX_DATE_LEN,fmt,&date) == 0)
+		error("Unable to format date\n");
 
 	printf("%s\n",str);
 	return EXIT_SUCCESS;

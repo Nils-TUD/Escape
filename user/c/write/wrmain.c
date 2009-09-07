@@ -39,16 +39,12 @@ int main(int argc,char *argv[]) {
 
 	abspath(path,MAX_PATH_LEN,argv[1]);
 	fd = open(path,IO_WRITE | IO_CREATE | IO_TRUNCATE);
-	if(fd < 0) {
-		printe("Unable to open '%s'",path);
-		return EXIT_FAILURE;
-	}
+	if(fd < 0)
+		error("Unable to open '%s'",path);
 
 	while((c = read(STDIN_FILENO,buffer,BUF_SIZE)) > 0) {
-		if(write(fd,buffer,c) != c) {
-			printe("Unable to write %d bytes\n",c);
-			return EXIT_FAILURE;
-		}
+		if(write(fd,buffer,c) != c)
+			error("Unable to write %d bytes",c);
 	}
 
 	close(fd);

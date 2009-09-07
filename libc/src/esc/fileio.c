@@ -276,25 +276,35 @@ s32 fclose(tFile *file) {
 }
 
 s32 printe(const char *prefix,...) {
+	va_list ap;
+	s32 res;
+	va_start(ap,prefix);
+	res = vprinte(prefix,ap);
+	va_end(ap);
+	return res;
+}
+
+s32 vprinte(const char *prefix,va_list ap) {
 	s32 res = 0;
 	char dummyBuf;
 	char *msg;
-	va_list ap;
-
-	msg = strerror(errno);
 	/* if we have no terminal we write it via debugf */
 	if(getEnv(&dummyBuf,1,"TERM") == false) {
-		va_start(ap,prefix);
 		vdebugf(prefix,ap);
-		va_end(ap);
-		debugf(": %s\n",msg);
-		res = 0;
+		if(errno < 0) {
+			msg = strerror(errno);
+			debugf(": %s",msg);
+		}
+		debugf("\n");
+		res = 0;	/* not available for debugf */
 	}
 	else {
-		va_start(ap,prefix);
 		vfprintf(stderr,prefix,ap);
-		va_end(ap);
-		fprintf(stderr,": %s\n",msg);
+		if(errno < 0) {
+			msg = strerror(errno);
+			fprintf(stderr,": %s",msg);
+		}
+		fprintf(stderr,"\n");
 	}
 	return res;
 }

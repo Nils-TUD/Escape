@@ -33,10 +33,8 @@ int main(int argc,char *argv[]) {
 	}
 
 	abspath(rpath,MAX_PATH_LEN,argv[1]);
-	if(unmount(rpath) < 0) {
-		printe("Unable to unmount '%s'",rpath);
-		return EXIT_FAILURE;
-	}
+	if(unmount(rpath) < 0)
+		error("Unable to unmount '%s'",rpath);
 
 	return EXIT_SUCCESS;
 }

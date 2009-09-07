@@ -110,10 +110,8 @@ int main(void) {
 	char *vtermName;
 	char *servDefs;
 
-	if(getpid() != 0) {
-		fprintf(stderr,"It's not good to start init twice ;)\n");
-		return EXIT_FAILURE;
-	}
+	if(getpid() != 0)
+		error("It's not good to start init twice ;)\n");
 
 	/* wait for fs; we need it for exec */
 	do {
@@ -128,30 +126,22 @@ int main(void) {
 
 	/* now read the services we should load */
 	servDefs = getServices();
-	if(servDefs == NULL) {
-		printe("Unable to read service-file");
-		return EXIT_FAILURE;
-	}
+	if(servDefs == NULL)
+		error("Unable to read service-file");
 
 	/* parse them */
 	services = parseServices(servDefs);
-	if(services == NULL) {
-		printe("Unable to parse service-file");
-		return EXIT_FAILURE;
-	}
+	if(services == NULL)
+		error("Unable to parse service-file");
 
 	/* finally load them */
-	if(!loadServices(services)) {
-		printe("Unable to load services");
-		return EXIT_FAILURE;
-	}
+	if(!loadServices(services))
+		error("Unable to load services");
 
 	/* now load the shells */
 	vtermName = (char*)malloc(strlen("vterm") + getnwidth(VTERM_COUNT) + 1);
-	if(vtermName == NULL) {
-		printe("Unable to allocate mem for vterm-name");
-		return EXIT_FAILURE;
-	}
+	if(vtermName == NULL)
+		error("Unable to allocate mem for vterm-name");
 
 	for(i = 0; i < VTERM_COUNT; i++) {
 		sprintf(vtermName,"vterm%d",i);
@@ -159,11 +149,10 @@ int main(void) {
 		if(child == 0) {
 			const char *args[] = {"/bin/shell",vtermName,NULL};
 			exec(args[0],args);
-			printe("Exec of '%s' failed",args[0]);
-			exit(EXIT_FAILURE);
+			error("Exec of '%s' failed",args[0]);
 		}
 		else if(child < 0)
-			printe("Fork failed");
+			error("Fork failed");
 	}
 	free(vtermName);
 

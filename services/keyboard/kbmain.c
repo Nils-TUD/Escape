@@ -74,38 +74,26 @@ int main(void) {
 	u8 status;
 
 	id = regService("keyboard",SERV_DRIVER);
-	if(id < 0) {
-		printe("Unable to register service 'keyboard'");
-		return EXIT_FAILURE;
-	}
+	if(id < 0)
+		error("Unable to register service 'keyboard'");
 
 	/* create buffers */
 	rbuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
 	ibuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
-	if(rbuf == NULL || ibuf == NULL) {
-		printe("Unable to create the ring-buffers");
-		return EXIT_FAILURE;
-	}
+	if(rbuf == NULL || ibuf == NULL)
+		error("Unable to create the ring-buffers");
 
 	/* request io-ports */
-	if(requestIOPort(IOPORT_PIC) < 0) {
-		printe("Unable to request io-port %d",IOPORT_PIC);
-		return EXIT_FAILURE;
-	}
-	if(requestIOPort(IOPORT_KB_DATA) < 0) {
-		printe("Unable to request io-port",IOPORT_KB_DATA);
-		return EXIT_FAILURE;
-	}
-	if(requestIOPort(IOPORT_KB_CTRL) < 0) {
-		printe("Unable to request io-port",IOPORT_KB_CTRL);
-		return EXIT_FAILURE;
-	}
+	if(requestIOPort(IOPORT_PIC) < 0)
+		error("Unable to request io-port %d",IOPORT_PIC);
+	if(requestIOPort(IOPORT_KB_DATA) < 0)
+		error("Unable to request io-port",IOPORT_KB_DATA);
+	if(requestIOPort(IOPORT_KB_CTRL) < 0)
+		error("Unable to request io-port",IOPORT_KB_CTRL);
 
 	/* we want to get notified about keyboard interrupts */
-	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0) {
-		printe("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
-		return EXIT_FAILURE;
-	}
+	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0)
+		error("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
 
     /* reset keyboard and make a self-test */
     outByte(IOPORT_KB_DATA,0xff);
@@ -113,10 +101,8 @@ int main(void) {
     	status = inByte(IOPORT_KB_DATA);
     	if(status == 0xaa)
     		break;
-    	if(status == 0xfc) {
-    		debugf("Keyboard-Selftest failed: Got 0xfc as reply\n");
-    		return EXIT_FAILURE;
-    	}
+    	if(status == 0xfc)
+    		error("Keyboard-Selftest failed: Got 0xfc as reply");
     	yield();
     }
 

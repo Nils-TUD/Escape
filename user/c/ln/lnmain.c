@@ -34,10 +34,8 @@ int main(int argc,char *argv[]) {
 
 	abspath(oldPath,MAX_PATH_LEN,argv[1]);
 	abspath(newPath,MAX_PATH_LEN,argv[2]);
-	if(link(oldPath,newPath) < 0) {
-		printe("Unable to create the link '%s' to '%s'",newPath,oldPath);
-		return EXIT_FAILURE;
-	}
+	if(link(oldPath,newPath) < 0)
+		error("Unable to create the link '%s' to '%s'",newPath,oldPath);
 
 	return EXIT_SUCCESS;
 }

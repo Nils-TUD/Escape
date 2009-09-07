@@ -34,10 +34,8 @@ int main(int argc,char *argv[]) {
 
 	for(i = 1; i < argc; i++) {
 		abspath(path,MAX_PATH_LEN,argv[i]);
-		if(mkdir(path) < 0) {
-			printe("Unable to create directory '%s'",path);
-			return EXIT_FAILURE;
-		}
+		if(mkdir(path) < 0)
+			error("Unable to create directory '%s'",path);
 	}
 
 	return EXIT_SUCCESS;

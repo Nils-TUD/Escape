@@ -84,10 +84,8 @@ int main(int argc,char **argv) {
 	if(fork() == 0) {
 		// re-register service
 		sid = regService(servName,SERV_DRIVER);
-		if(sid < 0) {
-			printe("Unable to re-register driver %s",servName);
-			return EXIT_FAILURE;
-		}
+		if(sid < 0)
+			error("Unable to re-register driver %s",servName);
 
 		// now start GUI
 		ShellControl sh(0,0,500,280);
@@ -109,33 +107,23 @@ int main(int argc,char **argv) {
 	while(fin < 0);
 
 	// redirect fds so that stdin, stdout and stderr refer to our service
-	if(redirFd(STDIN_FILENO,fin) < 0) {
-		printe("Unable to redirect STDIN to %d",fin);
-		return EXIT_FAILURE;
-	}
+	if(redirFd(STDIN_FILENO,fin) < 0)
+		error("Unable to redirect STDIN to %d",fin);
 	tFD fout = open(servPath,IO_WRITE);
-	if(fout < 0) {
-		printe("Unable to open '%s' for writing",servPath);
-		return EXIT_FAILURE;
-	}
-	if(redirFd(STDOUT_FILENO,fout) < 0) {
-		printe("Unable to redirect STDOUT to %d",fout);
-		return EXIT_FAILURE;
-	}
-	if(redirFd(STDERR_FILENO,fout) < 0) {
-		printe("Unable to redirect STDERR to %d",fout);
-		return EXIT_FAILURE;
-	}
+	if(fout < 0)
+		error("Unable to open '%s' for writing",servPath);
+	if(redirFd(STDOUT_FILENO,fout) < 0)
+		error("Unable to redirect STDOUT to %d",fout);
+	if(redirFd(STDERR_FILENO,fout) < 0)
+		error("Unable to redirect STDERR to %d",fout);
 	delete servPath;
 
 	return shell_main();
 }
 
 static int shell_main(void) {
-	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0) {
-		printe("Unable to announce sig-handler for %d",SIG_INTRPT);
-		return EXIT_FAILURE;
-	}
+	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
+		error("Unable to announce sig-handler for %d",SIG_INTRPT);
 
 	// set term as env-variable
 	setEnv("TERM",servName);
@@ -150,10 +138,8 @@ static int shell_main(void) {
 	while(1) {
 		// create buffer (history will free it)
 		buffer = (char*)malloc((MAX_CMD_LEN + 1) * sizeof(char));
-		if(buffer == NULL) {
-			printf("Not enough memory\n");
-			return EXIT_FAILURE;
-		}
+		if(buffer == NULL)
+			error("Not enough memory");
 
 		if(!shell_prompt())
 			return EXIT_FAILURE;

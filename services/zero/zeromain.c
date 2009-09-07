@@ -32,13 +32,12 @@ int main(void) {
 	tMsgId mid;
 
 	id = regService("zero",SERV_DRIVER);
-	if(id < 0) {
-		printe("Unable to register service 'zero'");
-		return EXIT_FAILURE;
-	}
+	if(id < 0)
+		error("Unable to register service 'zero'");
 
 	/* 0's are always available ;) */
-	setDataReadable(id,true);
+	if(setDataReadable(id,true) < 0)
+		error("setDataReadable");
 
     /* wait for commands */
 	while(1) {

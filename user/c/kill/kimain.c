@@ -72,10 +72,8 @@ int main(int argc,char **argv) {
 		pid = atoi(argv[1]);
 
 	if(pid > 0) {
-		if(sendSignalTo(pid,signal,0) < 0) {
-			printe("Unable to send signal %d to %d",signal,pid);
-			return EXIT_FAILURE;
-		}
+		if(sendSignalTo(pid,signal,0) < 0)
+			error("Unable to send signal %d to %d",signal,pid);
 	}
 	else if(strcmp(argv[1],"0") != 0)
 		fprintf(stderr,"Unable to kill process with pid '%s'\n",argv[1]);

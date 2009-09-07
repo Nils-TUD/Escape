@@ -41,28 +41,20 @@ int main(int argc,char *argv[]) {
 	if(argc == 2) {
 		sFileInfo info;
 		path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-		if(path == NULL) {
-			printe("Unable to allocate mem for path");
-			return EXIT_FAILURE;
-		}
+		if(path == NULL)
+			error("Unable to allocate mem for path");
 
 		abspath(path,MAX_PATH_LEN + 1,argv[1]);
 
 		/* check if it's a directory */
-		if(getFileInfo(path,&info) < 0) {
-			printe("Unable to get info about '%s'",path);
-			return EXIT_FAILURE;
-		}
-		if(MODE_IS_DIR(info.mode)) {
-			fprintf(stderr,"'%s' is a directory!\n",path);
-			return EXIT_FAILURE;
-		}
+		if(getFileInfo(path,&info) < 0)
+			error("Unable to get info about '%s'",path);
+		if(MODE_IS_DIR(info.mode))
+			error("'%s' is a directory!",path);
 
 		file = fopen(path,"r");
-		if(file == NULL) {
-			printe("Unable to open '%s'",path);
-			return EXIT_FAILURE;
-		}
+		if(file == NULL)
+			error("Unable to open '%s'",path);
 
 		free(path);
 	}

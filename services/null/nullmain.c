@@ -32,13 +32,12 @@ int main(void) {
 	tMsgId mid;
 
 	id = regService("null",SERV_DRIVER);
-	if(id < 0) {
-		printe("Unable to register service 'null'");
-		return EXIT_FAILURE;
-	}
+	if(id < 0)
+		error("Unable to register service 'null'");
 
 	/* /drivers/null produces no output, so always available to prevent blocking */
-	setDataReadable(id,true);
+	if(setDataReadable(id,true) < 0)
+		error("setDataReadable");
 
     /* wait for commands */
 	while(1) {

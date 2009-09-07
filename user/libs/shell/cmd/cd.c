@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <esc/dir.h>
 #include <esc/io.h>
@@ -31,8 +32,8 @@ s32 shell_cmdCd(u32 argc,char **argv) {
 	char *path;
 	sFileInfo info;
 
-	if(argc != 2) {
-		printf("Usage: cd <directory>\n");
+	if(argc != 2 || isHelpCmd(argc,argv)) {
+		fprintf(stderr,"Usage: cd <dir>\n");
 		return EXIT_FAILURE;
 	}
 

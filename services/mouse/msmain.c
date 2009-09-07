@@ -103,33 +103,25 @@ int main(void) {
 	tServ client;
 
 	/* request io-ports */
-	if(requestIOPort(IOPORT_KB_CTRL) < 0 || requestIOPort(IOPORT_KB_DATA) < 0) {
-		printe("Unable to request io-ports");
-		return EXIT_FAILURE;
-	}
+	if(requestIOPort(IOPORT_KB_CTRL) < 0 || requestIOPort(IOPORT_KB_DATA) < 0)
+		error("Unable to request io-ports");
 
 	kb_init();
 
 	/* reg intrpt-handler */
-	if(setSigHandler(SIG_INTRPT_MOUSE,irqHandler) < 0) {
-		printe("Unable to announce interrupt-handler");
-		return EXIT_FAILURE;
-	}
+	if(setSigHandler(SIG_INTRPT_MOUSE,irqHandler) < 0)
+		error("Unable to announce interrupt-handler");
 
 	/* reg service and open ourself */
 	sid = regService("mouse",SERV_DRIVER);
-	if(sid < 0) {
-		printe("Unable to register service '%s'","mouse");
-		return EXIT_FAILURE;
-	}
+	if(sid < 0)
+		error("Unable to register service '%s'","mouse");
 
 	/* create input-buffer */
 	ibuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
 	rbuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
-	if(ibuf == NULL || rbuf == NULL) {
-		printe("Unable to create ring-buffers");
-		return EXIT_FAILURE;
-	}
+	if(ibuf == NULL || rbuf == NULL)
+		error("Unable to create ring-buffers");
 
     /* wait for commands */
 	while(1) {

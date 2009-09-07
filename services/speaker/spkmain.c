@@ -61,23 +61,18 @@ int main(void) {
 
 	/* register service */
 	id = regService("speaker",SERV_DEFAULT);
-	if(id < 0) {
-		printe("Unable to register service 'speaker'");
-		return EXIT_FAILURE;
-	}
+	if(id < 0)
+		error("Unable to register service 'speaker'");
 
 	/* request io-ports */
 	if(requestIOPort(IOPORT_PIT_SPEAKER) < 0 || requestIOPort(IOPORT_PIT_CTRL_WORD_REG) < 0) {
-		printe("Unable to request io-port %d or %d",IOPORT_PIT_CTRL_WORD_REG,
+		error("Unable to request io-port %d or %d",IOPORT_PIT_CTRL_WORD_REG,
 				IOPORT_PIT_CTRL_WORD_REG);
-		return EXIT_FAILURE;
 	}
 	/* I have no idea why it is required to reserve 2 ports because we're accessing just 1 byte
 	 * but virtualbox doesn't accept the port-usage otherwise. */
-	if(requestIOPorts(IOPORT_KB_CTRL_B,2) < 0) {
-		printe("Unable to request io-port %d",IOPORT_KB_CTRL_B);
-		return EXIT_FAILURE;
-	}
+	if(requestIOPorts(IOPORT_KB_CTRL_B,2) < 0)
+		error("Unable to request io-port %d",IOPORT_KB_CTRL_B);
 
 	while(1) {
 		fd = getClient(&id,1,&client);

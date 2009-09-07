@@ -108,17 +108,13 @@ int main(int argc,char *argv[]) {
 	file = stdin;
 	if(path != NULL) {
 		char *rpath = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-		if(rpath == NULL) {
-			printe("Unable to allocate mem for path");
-			return EXIT_FAILURE;
-		}
+		if(rpath == NULL)
+			error("Unable to allocate mem for path");
 
 		abspath(rpath,MAX_PATH_LEN + 1,path);
 		file = fopen(rpath,"r");
-		if(file == NULL) {
-			printe("Unable to open '%s'",rpath);
-			return EXIT_FAILURE;
-		}
+		if(file == NULL)
+			error("Unable to open '%s'",rpath);
 
 		free(rpath);
 	}
@@ -139,10 +135,8 @@ int main(int argc,char *argv[]) {
 	while(count == -1 || count > 0) {
 		c = count != -1 ? MIN(count,BUF_SIZE) : BUF_SIZE;
 		c = fread(buffer,sizeof(u8),c,file);
-		if(c < 0) {
-			printe("Unable to read");
-			return EXIT_FAILURE;
-		}
+		if(c < 0)
+			error("Unable to read");
 		if(c == 0)
 			break;
 

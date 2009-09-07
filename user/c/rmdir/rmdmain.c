@@ -34,10 +34,8 @@ int main(int argc,char *argv[]) {
 
 	for(i = 1; i < argc; i++) {
 		abspath(path,MAX_PATH_LEN,argv[i]);
-		if(rmdir(path) < 0) {
-			printe("Unable to remove directory '%s'",path);
-			return EXIT_FAILURE;
-		}
+		if(rmdir(path) < 0)
+			error("Unable to remove directory '%s'",path);
 	}
 
 	return EXIT_SUCCESS;

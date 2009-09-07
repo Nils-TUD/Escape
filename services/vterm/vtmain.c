@@ -65,24 +65,18 @@ int main(void) {
 	for(i = 0; i < VTERM_COUNT; i++) {
 		sprintf(name,"vterm%d",i);
 		servIds[i] = regService(name,SERV_DRIVER);
-		if(servIds[i] < 0) {
-			printe("Unable to register service '%s'",name);
-			return EXIT_FAILURE;
-		}
+		if(servIds[i] < 0)
+			error("Unable to register service '%s'",name);
 	}
 
 	/* init vterms */
-	if(!vterm_initAll(servIds)) {
-		fprintf(stderr,"Unable to init vterms");
-		return EXIT_FAILURE;
-	}
+	if(!vterm_initAll(servIds))
+		error("Unable to init vterms");
 
 	/* open keyboard */
 	kbFd = open("/drivers/keyboard",IO_READ);
-	if(kbFd < 0) {
-		printe("Unable to open '/drivers/keyboard'");
-		return EXIT_FAILURE;
-	}
+	if(kbFd < 0)
+		error("Unable to open '/drivers/keyboard'");
 
 	/* request io-ports for qemu and bochs */
 	requestIOPort(0xe9);

@@ -83,10 +83,8 @@ int main(int argc,char *argv[]) {
 		usage(argv[0]);
 
 	path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-	if(path == NULL) {
-		printe("Not enough mem for path");
-		return EXIT_FAILURE;
-	}
+	if(path == NULL)
+		error("Not enough mem for path");
 
 	/* parse args */
 	for(i = 1; (s32)i < argc; i++) {
@@ -119,10 +117,8 @@ int main(int argc,char *argv[]) {
 	}
 
 	/* path not provided? so use CWD */
-	if(!pathGiven && !getEnv(path,MAX_PATH_LEN + 1,"CWD")) {
-		printe("Unable to get CWD");
-		return EXIT_FAILURE;
-	}
+	if(!pathGiven && !getEnv(path,MAX_PATH_LEN + 1,"CWD"))
+		error("Unable to get CWD");
 
 	/* get entries */
 	entries = getEntries(path,flags,&count);

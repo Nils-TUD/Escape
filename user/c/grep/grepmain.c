@@ -31,36 +31,30 @@ static char buffer[MAX_LINE_LEN + 1];
 
 static bool matches(char *line,char *pattern);
 static void strtolower(char *s);
-static void usage(char *name) {
-	fprintf(stderr,"Usage: %s <pattern> [<file>]\n",name);
-	fprintf(stderr,"	<pattern> will be treated case-insensitive and is NOT a\n");
-	fprintf(stderr,"	regular expression because we have no regexp-library yet ;)\n");
-	exit(EXIT_FAILURE);
-}
 
 int main(int argc,char *argv[]) {
 	tFile *file;
 	char *pattern;
 	u32 count;
 
-	if(argc <= 1 || argc > 3 || isHelpCmd(argc,argv))
-		usage(argv[0]);
+	if(argc <= 1 || argc > 3 || isHelpCmd(argc,argv)) {
+		fprintf(stderr,"Usage: %s <pattern> [<file>]\n",argv[0]);
+		fprintf(stderr,"	<pattern> will be treated case-insensitive and is NOT a\n");
+		fprintf(stderr,"	regular expression because we have no regexp-library yet ;)\n");
+		return EXIT_FAILURE;
+	}
 
 	pattern = argv[1];
 	file = stdin;
 	if(argc > 2) {
 		char *rpath = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-		if(rpath == NULL) {
-			printe("Unable to allocate mem for path");
-			return EXIT_FAILURE;
-		}
+		if(rpath == NULL)
+			error("Unable to allocate mem for path");
 
 		abspath(rpath,MAX_PATH_LEN + 1,argv[2]);
 		file = fopen(rpath,"r");
-		if(file == NULL) {
-			printe("Unable to open '%s'",rpath);
-			return EXIT_FAILURE;
-		}
+		if(file == NULL)
+			error("Unable to open '%s'",rpath);
 
 		free(rpath);
 	}

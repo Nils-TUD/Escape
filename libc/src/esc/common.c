@@ -22,12 +22,28 @@
 #include <esc/proc.h>
 #include <register.h>
 #include <string.h>
+#include <stdarg.h>
+#include <stdlib.h>
 
 #define MAX_STACK_DEPTH 20
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE 5
 
 s32 errno = 0;
+
+/**
+ * Displays an error-message according to given format and arguments and appends ': <errmsg>' if
+ * errno is < 0. After that exit(EXIT_FAILURE) is called.
+ *
+ * @param fmt the error-message-format
+ */
+void error(const char *fmt,...) {
+	va_list ap;
+	va_start(ap,fmt);
+	vprinte(fmt,ap);
+	va_end(ap);
+	exit(EXIT_FAILURE);
+}
 
 u32 *getStackTrace(void) {
 	static u32 frames[MAX_STACK_DEPTH];

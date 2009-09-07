@@ -60,26 +60,25 @@ int main(void) {
 	tMsgId mid;
 
 	id = regService("video",SERV_DRIVER);
-	if(id < 0) {
-		printe("Unable to register service 'video'");
-		return EXIT_FAILURE;
-	}
+	if(id < 0)
+		error("Unable to register service 'video'");
 
 	/* map video-memory for our process */
 	videoData = (u8*)mapPhysical(VIDEO_MEM,COLS * (ROWS + 1) * 2);
-	if(videoData == NULL) {
-		printe("Unable to aquire video-memory (%p)",VIDEO_MEM);
-		return EXIT_FAILURE;
-	}
+	if(videoData == NULL)
+		error("Unable to aquire video-memory (%p)",VIDEO_MEM);
 
 	/* reserve ports for cursor */
-	requestIOPort(CURSOR_PORT_INDEX);
-	requestIOPort(CURSOR_PORT_DATA);
+	if(requestIOPort(CURSOR_PORT_INDEX) < 0)
+		error("Unable to request port %d",CURSOR_PORT_INDEX);
+	if(requestIOPort(CURSOR_PORT_DATA) < 0)
+		error("Unable to request port %d",CURSOR_PORT_DATA);
 
 	/* clear screen */
 	memclear(videoData,COLS * ROWS * 2);
 	/* make data available, so that we can return an error to the calling processes */
-	setDataReadable(id,true);
+	if(setDataReadable(id,true) < 0)
+		error("setDataReadable");
 
 	/* wait for messages */
 	while(1) {

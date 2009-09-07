@@ -22,6 +22,7 @@
 
 #include <types.h>
 #include <stddef.h>
+#include <stdarg.h>
 
 #ifndef DEBUGGING
 #define DEBUGGING 1
@@ -32,6 +33,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * The last error-code
+ */
+extern s32 errno;
+
+/**
+ * Displays an error-message according to given format and arguments and appends ': <errmsg>' if
+ * errno is < 0. After that exit(EXIT_FAILURE) is called.
+ *
+ * @param fmt the error-message-format
+ */
+void error(const char *fmt,...) __attribute__((noreturn));
 
 /**
  * Calculates the stacktrace

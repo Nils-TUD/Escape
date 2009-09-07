@@ -23,9 +23,7 @@
 #include <stdlib.h>
 
 int main(void) {
-	if(sync() < 0) {
-		printe("Sync failed");
-		return EXIT_FAILURE;
-	}
+	if(sync() < 0)
+		error("Sync failed");
 	return EXIT_SUCCESS;
 }

@@ -70,17 +70,13 @@ int main(int argc,char *argv[]) {
 	file = stdin;
 	if(argc == 2) {
 		path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-		if(path == NULL) {
-			printe("Unable to allocate mem for path");
-			return EXIT_FAILURE;
-		}
+		if(path == NULL)
+			error("Unable to allocate mem for path");
 
 		abspath(path,MAX_PATH_LEN + 1,argv[1]);
 		file = fopen(path,"r");
-		if(file == NULL) {
-			printe("Unable to open '%s'",path);
-			return EXIT_FAILURE;
-		}
+		if(file == NULL)
+			error("Unable to open '%s'",path);
 
 		free(path);
 	}
@@ -104,14 +100,12 @@ int main(int argc,char *argv[]) {
 	/* open the "real" stdin, because stdin maybe redirected to something else */
 	if(!getEnv(vterm + 9,MAX_PATH_LEN - 9,"TERM")) {
 		resetVterm();
-		printe("Unable to get TERM");
-		return EXIT_FAILURE;
+		error("Unable to get TERM");
 	}
 	fvterm = fopen(vterm,"rc");
 	if(fvterm == NULL) {
 		resetVterm();
-		printe("Unable to open '%s'",vterm);
-		return EXIT_FAILURE;
+		error("Unable to open '%s'",vterm);
 	}
 
 	/* init empty line */

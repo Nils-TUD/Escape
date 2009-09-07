@@ -149,21 +149,18 @@ int main(void) {
 	/* for some reason virtualbox requires an additional port (9 instead of 8). Otherwise
 	 * we are not able to access port (REG_BASE_PRIMARY + 7). */
 	if(requestIOPorts(REG_BASE_PRIMARY,9) < 0 || requestIOPorts(REG_BASE_SECONDARY,9) < 0) {
-		printe("Unable to request ATA-port %d .. %d or %d .. %d",REG_BASE_PRIMARY,
+		error("Unable to request ATA-port %d .. %d or %d .. %d",REG_BASE_PRIMARY,
 				REG_BASE_PRIMARY + 7,REG_BASE_SECONDARY,REG_BASE_SECONDARY + 7);
-		return EXIT_FAILURE;
 	}
 	if(requestIOPort(REG_BASE_PRIMARY + REG_CONTROL) < 0 ||
 			requestIOPort(REG_BASE_SECONDARY + REG_CONTROL) < 0) {
-		printe("Unable to request ATA-port %d or %d",REG_BASE_PRIMARY + REG_CONTROL,
+		error("Unable to request ATA-port %d or %d",REG_BASE_PRIMARY + REG_CONTROL,
 				REG_BASE_SECONDARY + REG_CONTROL);
-		return EXIT_FAILURE;
 	}
 
 	if(setSigHandler(SIG_INTRPT_ATA1,diskIntrptHandler) < 0 ||
 			setSigHandler(SIG_INTRPT_ATA2,diskIntrptHandler) < 0) {
-		printe("Unable to announce sig-handler for %d or %d",SIG_INTRPT_ATA1,SIG_INTRPT_ATA2);
-		return EXIT_FAILURE;
+		error("Unable to announce sig-handler for %d or %d",SIG_INTRPT_ATA1,SIG_INTRPT_ATA2);
 	}
 
 	ata_detectDrives();

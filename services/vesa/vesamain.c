@@ -85,35 +85,26 @@ int main(void) {
 
 	/* request ports; note that we read/write words to them, so we have to request 3 ports */
 	if(requestIOPorts(VBE_DISPI_IOPORT_INDEX,3) < 0) {
-		printe("Unable to request io-ports %d..%d",VBE_DISPI_IOPORT_INDEX,
+		error("Unable to request io-ports %d..%d",VBE_DISPI_IOPORT_INDEX,
 				VBE_DISPI_IOPORT_INDEX + 2);
-		return EXIT_FAILURE;
 	}
 
 	video = mapPhysical(VESA_MEMORY,VESA_MEM_SIZE);
-	if(video == NULL) {
-		printe("Unable to request physical memory at 0x%x",VESA_MEMORY);
-		return EXIT_FAILURE;
-	}
+	if(video == NULL)
+		error("Unable to request physical memory at 0x%x",VESA_MEMORY);
 
 	vbe_setMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);
 	shmem = createSharedMem("vesa",VESA_MEM_SIZE);
-	if(shmem == NULL) {
-		printe("Unable to create shared memory");
-		return EXIT_FAILURE;
-	}
+	if(shmem == NULL)
+		error("Unable to create shared memory");
 
 	cursorCopy = (u8*)malloc(CURSOR_SIZE * CURSOR_SIZE * PIXEL_SIZE);
-	if(cursorCopy == NULL) {
-		printe("Unable to reserve mem for cursor");
-		return EXIT_FAILURE;
-	}
+	if(cursorCopy == NULL)
+		error("Unable to reserve mem for cursor");
 
 	id = regService("vesa",SERV_DEFAULT);
-	if(id < 0) {
-		printe("Unable to register service 'vesa'");
-		return EXIT_FAILURE;
-	}
+	if(id < 0)
+		error("Unable to register service 'vesa'");
 
 	while(1) {
 		tFD fd = getClient(&id,1,&client);

@@ -33,13 +33,12 @@ int main(void) {
 	tMsgId mid;
 
 	id = regService("random",SERV_DRIVER);
-	if(id < 0) {
-		printe("Unable to register service 'random'");
-		return EXIT_FAILURE;
-	}
+	if(id < 0)
+		error("Unable to register service 'random'");
 
 	/* random numbers are always available ;) */
-	setDataReadable(id,true);
+	if(setDataReadable(id,true) < 0)
+		error("setDataReadable");
 	srand(getTime());
 
     /* wait for commands */

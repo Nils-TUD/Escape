@@ -70,27 +70,19 @@ int main(int argc,char **argv) {
 	strcat(servPath,argv[1]);
 	/* parse vterm-number from "vtermX" */
 	vterm = atoi(argv[1] + 5);
-	if(open(servPath,IO_READ) < 0) {
-		printe("Unable to open '%s' for STDIN",servPath);
-		return EXIT_FAILURE;
-	}
+	if(open(servPath,IO_READ) < 0)
+		error("Unable to open '%s' for STDIN",servPath);
 
 	/* open stdout */
-	if((fd = open(servPath,IO_WRITE)) < 0) {
-		printe("Unable to open '%s' for STDOUT",servPath);
-		return EXIT_FAILURE;
-	}
+	if((fd = open(servPath,IO_WRITE)) < 0)
+		error("Unable to open '%s' for STDOUT",servPath);
 
 	/* dup stdout to stderr */
-	if(dupFd(fd) < 0) {
-		printe("Unable to duplicate STDOUT to STDERR");
-		return EXIT_FAILURE;
-	}
+	if(dupFd(fd) < 0)
+		error("Unable to duplicate STDOUT to STDERR");
 
-	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0) {
-		printe("Unable to announce sig-handler for %d",SIG_INTRPT);
-		return EXIT_FAILURE;
-	}
+	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
+		error("Unable to announce sig-handler for %d",SIG_INTRPT);
 
 	/* set vterm as env-variable */
 	setEnv("TERM",argv[1]);
@@ -103,10 +95,8 @@ int main(int argc,char **argv) {
 	while(1) {
 		/* create buffer (history will free it) */
 		buffer = (char*)malloc((MAX_CMD_LEN + 1) * sizeof(char));
-		if(buffer == NULL) {
-			printf("Not enough memory\n");
-			return EXIT_FAILURE;
-		}
+		if(buffer == NULL)
+			error("Not enough memory");
 
 		if(!shell_prompt())
 			return EXIT_FAILURE;

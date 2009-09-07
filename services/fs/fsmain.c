@@ -64,27 +64,19 @@ int main(void) {
 	fs->mkdir = ext2_mkdir;
 	fs->rmdir = ext2_rmdir;
 	fs->sync = ext2_sync;
-	if(mount_addFS(fs) != 0) {
-		printe("Unable to add root-filesystem");
-		return EXIT_FAILURE;
-	}
+	if(mount_addFS(fs) != 0)
+		error("Unable to add root-filesystem");
 	rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,"/drivers/hda1",FS_TYPE_EXT2);
-	if(rootDev < 0) {
-		printe("Unable to add root mount-point");
-		return EXIT_FAILURE;
-	}
+	if(rootDev < 0)
+		error("Unable to add root mount-point");
 	root = mount_get(rootDev);
-	if(root == NULL) {
-		printe("Unable to get root mount-point");
-		return EXIT_FAILURE;
-	}
+	if(root == NULL)
+		error("Unable to get root mount-point");
 
 	/* register service */
 	id = regService("fs",SERV_FS);
-	if(id < 0) {
-		printe("Unable to register service 'fs'");
-		return EXIT_FAILURE;
-	}
+	if(id < 0)
+		error("Unable to register service 'fs'");
 
 	while(1) {
 		fd = getClient(&id,1,&client);

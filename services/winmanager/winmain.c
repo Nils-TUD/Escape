@@ -78,27 +78,19 @@ int main(void) {
 	tMsgId mid;
 
 	mouse = open("/drivers/mouse",IO_READ);
-	if(mouse < 0) {
-		printe("Unable to open /drivers/mouse");
-		return EXIT_FAILURE;
-	}
+	if(mouse < 0)
+		error("Unable to open /drivers/mouse");
 
 	keyboard = open("/drivers/keyboard",IO_READ);
-	if(keyboard < 0) {
-		printe("Unable to open /drivers/keyboard");
-		return EXIT_FAILURE;
-	}
+	if(keyboard < 0)
+		error("Unable to open /drivers/keyboard");
 
-	if(setSigHandler(SIG_THREAD_DIED,procThreadHandler) < 0) {
-		printe("Unable to set sig-handler for %d",SIG_THREAD_DIED);
-		return EXIT_FAILURE;
-	}
+	if(setSigHandler(SIG_THREAD_DIED,procThreadHandler) < 0)
+		error("Unable to set sig-handler for %d",SIG_THREAD_DIED);
 
 	servId = regService("winmanager",SERV_DEFAULT);
-	if(servId < 0) {
-		printe("Unable to create service winmanager");
-		return EXIT_FAILURE;
-	}
+	if(servId < 0)
+		error("Unable to create service winmanager");
 
 	if(!win_init(servId))
 		return EXIT_FAILURE;

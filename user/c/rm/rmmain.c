@@ -34,10 +34,8 @@ int main(int argc,char *argv[]) {
 
 	for(i = 1; i < argc; i++) {
 		abspath(rPath,MAX_PATH_LEN,argv[i]);
-		if(unlink(rPath) < 0) {
-			printe("Unable to remove '%s'",rPath);
-			return EXIT_FAILURE;
-		}
+		if(unlink(rPath) < 0)
+			error("Unable to remove '%s'",rPath);
 	}
 
 	return EXIT_SUCCESS;

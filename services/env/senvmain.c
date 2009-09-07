@@ -116,15 +116,11 @@ int main(void) {
 	tMsgId mid;
 
 	id = regService("env",SERV_DEFAULT);
-	if(id < 0) {
-		printe("Unable to register service 'env'");
-		return EXIT_FAILURE;
-	}
+	if(id < 0)
+		error("Unable to register service 'env'");
 
-	if(setSigHandler(SIG_PROC_DIED,procDiedHandler) < 0) {
-		printe("Unable to set sig-handler for %d",SIG_PROC_DIED);
-		return EXIT_FAILURE;
-	}
+	if(setSigHandler(SIG_PROC_DIED,procDiedHandler) < 0)
+		error("Unable to set sig-handler for %d",SIG_PROC_DIED);
 
 	/* set initial vars for proc 0 */
 	env_set(0,(char*)"CWD",(char*)"/");

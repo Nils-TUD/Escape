@@ -193,10 +193,19 @@ s32 fprintu(tFile *file,s32 u,u8 base);
 /**
  * Prints "<prefix>: <lastError>" to stderr
  *
- * @param msg the prefix of the message
+ * @param prefix the prefix of the message
  * @return the number of written chars
  */
 s32 printe(const char *prefix,...);
+
+/**
+ * The same as printe(), but with argument-pointer specified
+ *
+ * @param prefix the prefix of the message
+ * @param ap the argument-pointer
+ * @return the number of written chars
+ */
+s32 vprinte(const char *prefix,va_list ap);
 
 /**
  * Formated output to STDOUT.

@@ -60,15 +60,11 @@ int main(int argc,char *argv[]) {
 			break;
 		}
 	}
-	if(i >= ARRAY_SIZE(types)) {
-		fprintf(stderr,"Unknown type '%s'\n",argv[3]);
-		return EXIT_FAILURE;
-	}
+	if(i >= ARRAY_SIZE(types))
+		error("Unknown type '%s'\n",argv[3]);
 
-	if(mount(rdev,rpath,type) < 0) {
-		printe("Unable to mount '%s' @ '%s' with type %d",rdev,rpath,type);
-		return EXIT_FAILURE;
-	}
+	if(mount(rdev,rpath,type) < 0)
+		error("Unable to mount '%s' @ '%s' with type %d",rdev,rpath,type);
 
 	return EXIT_SUCCESS;
 }

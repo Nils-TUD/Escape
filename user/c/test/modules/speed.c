@@ -45,10 +45,8 @@ int mod_speed(int argc,char *argv[]) {
 		abspath(rpath,MAX_PATH_LEN,argv[2]);
 
 	fd = open(rpath,IO_READ | IO_WRITE | IO_CREATE | IO_TRUNCATE);
-	if(fd < 0) {
-		printe("open");
-		return EXIT_FAILURE;
-	}
+	if(fd < 0)
+		error("open");
 
 	printf("Testing speed of read/write from/to '%s'\n",rpath);
 	printf("Transferring %u MiB in chunks of %d bytes\n",(u32)(((u64)COUNT * BUF_SIZE) / M),BUF_SIZE);

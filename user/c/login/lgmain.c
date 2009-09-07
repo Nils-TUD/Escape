@@ -33,10 +33,8 @@ int main(void) {
 	char un[10];
 	char pw[10];
 
-	if(setSigHandler(SIG_TERM,termHandler) < 0) {
-		printe("Unable to announce term-signal-handler");
-		return EXIT_FAILURE;
-	}
+	if(setSigHandler(SIG_TERM,termHandler) < 0)
+		error("Unable to announce term-signal-handler");
 
 	while(1) {
 		printf("Username: ");

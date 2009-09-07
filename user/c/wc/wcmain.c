@@ -52,10 +52,8 @@ int main(int argc,char **argv) {
 	if(print) {
 		bufSize = 20;
 		buffer = (char*)malloc(bufSize + sizeof(char));
-		if(buffer == NULL) {
-			printe("Unable to allocate memory");
-			return EXIT_FAILURE;
-		}
+		if(buffer == NULL)
+			error("Unable to allocate memory");
 	}
 
 	while((ch = scanc()) > 0) {
@@ -74,10 +72,8 @@ int main(int argc,char **argv) {
 				if(bufPos >= bufSize) {
 					bufSize *= 2;
 					buffer = (char*)realloc(buffer,bufSize * sizeof(char));
-					if(buffer == NULL) {
-						printe("Unable to allocate memory");
-						return EXIT_FAILURE;
-					}
+					if(buffer == NULL)
+						error("Unable to allocate memory");
 				}
 				buffer[bufPos] = ch;
 			}

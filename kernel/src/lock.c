@@ -53,14 +53,15 @@ s32 lock_aquire(tTid tid,tPid pid,u32 ident) {
 
 	/* if it exists and is locked, wait */
 	if(l && l->locked) {
-		l->waitCount++;
+		volatile sLock *myl = l;
+		myl->waitCount++;
 		do {
 			thread_wait(tid,EV_UNLOCK);
 			thread_switchInKernel();
 		}
-		while(l->locked);
+		while(myl->locked);
 		/* it is unlocked now, so we can stop waiting and use it */
-		l->waitCount--;
+		myl->waitCount--;
 	}
 	else if(!l) {
 		sSLList *list = locks[ident % LOCK_MAP_SIZE];

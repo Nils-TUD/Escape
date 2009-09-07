@@ -115,9 +115,10 @@ s32 vfsrw_readServUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u
 	}
 	/* other processes read from the receive-list */
 	else {
+		volatile sVFSNode *n = node;
 		/* wait until a message arrives */
 		/* don't cache the list here, because the pointer changes if the list is NULL */
-		while(sll_length(node->data.servuse.recvList) == 0) {
+		while(sll_length(n->data.servuse.recvList) == 0) {
 			thread_wait(tid,EV_RECEIVED_MSG);
 			thread_switchInKernel();
 		}

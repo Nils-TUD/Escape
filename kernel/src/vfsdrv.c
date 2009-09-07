@@ -68,10 +68,11 @@ s32 vfsdrv_open(tTid tid,tFileNo file,sVFSNode *node,u32 flags) {
 
 s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count) {
 	sRequest *req;
+	volatile sVFSNode *n = node;
 	s32 res;
 
 	/* wait until data is readable */
-	while(node->parent->data.service.isEmpty) {
+	while(n->parent->data.service.isEmpty) {
 		thread_wait(tid,EV_DATA_READABLE);
 		thread_switchInKernel();
 	}

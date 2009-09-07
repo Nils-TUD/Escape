@@ -42,11 +42,6 @@
 #define THREAD_MAP_SIZE		1024
 
 /**
- * Enables interrupts, halts the cpu and waits until an interrupt arrives
- */
-extern void thread_idle(void);
-
-/**
  * For creating the init-thread and idle-thread
  *
  * @param p the process
@@ -59,6 +54,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state);
 static sSLList *threadMap[THREAD_MAP_SIZE] = {NULL};
 static sThread *cur = NULL;
 static tTid nextTid = 0;
+static volatile tTid runnableThread = INVALID_TID;
 
 /* list of dead threads that should be destroyed */
 static sSLList* deadThreads = NULL;
@@ -141,17 +137,28 @@ void thread_switch(void) {
 }
 
 void thread_switchTo(tTid tid) {
-	u64 kcstart = cur->kcycleStart;
+	u64 kcstart;
+	/* if we're idling we have to leave this interrupt first and stop idling then */
+	if(cur->tid == IDLE_TID) {
+		/* ignore it if we should continue idling */
+		if(tid == IDLE_TID)
+			return;
+		/* store to which thread we should switch */
+		runnableThread = tid;
+		return;
+	}
+
 	/* finish kernel-time here since we're switching the process */
+	kcstart = cur->kcycleStart;
 	if(kcstart > 0) {
 		u64 cycles = cpu_rdtsc();
 		cur->kcycleCount.val64 += cycles - kcstart;
 	}
 
 	if(tid != cur->tid && !thread_save(&cur->save)) {
+		sThread *old;
 		sThread *t = thread_getById(tid);
 		vassert(t != NULL,"Thread with tid %d not found",tid);
-		sThread *old;
 
 		/* mark old process ready, if it should not be blocked, killed or something */
 		if(cur->state == ST_RUNNING)
@@ -164,11 +171,15 @@ void thread_switchTo(tTid tid) {
 		if(cur->tid == IDLE_TID) {
 			/* user-mode starts here */
 			cur->ucycleStart = cpu_rdtsc();
-			/* Note that we HAVE TO call a function to prevent destroying the current stack-frame
-			 * when an interrupt arrives. */
-			/* Note also that we don't mark it as runnable because we would set it to ready
-			 * later, which is of course not desired. */
-			thread_idle();
+			/* idle until there is another thread to run */
+			__asm__("sti");
+			while(runnableThread == INVALID_TID)
+				__asm__("hlt");
+
+			/* now a thread wants to run */
+			__asm__("cli");
+			cur = thread_getById(runnableThread);
+			runnableThread = INVALID_TID;
 		}
 
 		sched_setRunning(cur);

@@ -496,8 +496,6 @@ void intrpt_handler(sIntrptStackFrame stack) {
 			break;
 
 		case IRQ_TIMER:
-			/* acknoledge the interrupt here because timer_intrpt() may cause a process-switch()! */
-			/*intrpt_eoi(stack.intrptNo);*/
 			timer_intrpt();
 			break;
 
@@ -573,7 +571,8 @@ void intrpt_handler(sIntrptStackFrame stack) {
 	/* handle signal, if not already doing */
 	if(signalData.active == 0)
 		intrpt_handleSignal();
-	if(signalData.active == 1)
+	/* don't try to deliver the signal if we're idling currently */
+	if(t->tid != IDLE_TID && signalData.active == 1)
 		intrpt_handleSignalFinish(&stack);
 
 	/* kernel-mode ends */

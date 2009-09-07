@@ -65,6 +65,7 @@ void vfsreq_sendMsg(tMsgId id,tTid tid,const u8 *data,u32 size) {
 
 sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size) {
 	u32 i;
+	volatile sRequest *vreq;
 	sRequest *req = requests;
 	for(i = 0; i < REQUEST_COUNT; i++) {
 		if(req->tid == INVALID_TID)
@@ -83,7 +84,8 @@ sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size) {
 	req->count = 0;
 
 	/* wait */
-	while(req->state != REQ_STATE_FINISHED) {
+	vreq = req;
+	while(vreq->state != REQ_STATE_FINISHED) {
 		thread_wait(tid,EV_RECEIVED_MSG);
 		thread_switchInKernel();
 	}

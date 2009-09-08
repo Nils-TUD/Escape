@@ -36,8 +36,10 @@
 #define ESCC_MOVE_HOME			4
 #define ESCC_MOVE_LINESTART		5
 #define ESCC_MOVE_LINEEND		6
-#define ESCC_KEYCODE			7
-#define ESCC_COLOR				8
+#define ESCC_DEL_FRONT			7
+#define ESCC_DEL_BACK			8
+#define ESCC_KEYCODE			9
+#define ESCC_COLOR				10
 
 #ifdef __cplusplus
 extern "C" {

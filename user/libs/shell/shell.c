@@ -274,6 +274,7 @@ bool shell_handleEscapeCodes(char *buffer,char c,u32 *cursorPos,u32 *charcount) 
 	u32 icursorPos = *cursorPos;
 	u32 icharcount = *charcount;
 	switch(c) {
+		/* TODO backspace should be NPRINT, right? */
 		case '\b':
 			if(icursorPos > 0) {
 				/* remove last char */

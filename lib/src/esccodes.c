@@ -77,9 +77,15 @@ s32 escc_get(const char **str,s32 *n1,s32 *n2) {
 			cmd = ESCC_MOVE_LINEEND;
 		else if(strncmp(start,"kc",cmdlen) == 0)
 			cmd = ESCC_KEYCODE;
+		else if(strncmp(start,"df",cmdlen) == 0)
+			cmd = ESCC_DEL_FRONT;
+		else if(strncmp(start,"db",cmdlen) == 0)
+			cmd = ESCC_DEL_BACK;
 
 		/* set default-values */
 		switch(cmd) {
+			case ESCC_DEL_FRONT:
+			case ESCC_DEL_BACK:
 			case ESCC_MOVE_LEFT:
 			case ESCC_MOVE_RIGHT:
 			case ESCC_MOVE_UP:

@@ -28,6 +28,7 @@
 #include <esc/proc.h>
 #include <esc/signals.h>
 #include <esc/lock.h>
+#include <esc/keycodes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ringbuffer.h>
@@ -45,9 +46,23 @@
 #define KBC_CMD_DISABLE_MOUSE		0xA7
 #define KBC_CMD_ENABLE_MOUSE		0xA8
 
-#define KBC_STATUS_DATA_AVAIL		(1 << 0)
-#define KBC_STATUS_BUSY				(1 << 1)
-#define KBC_STATUS_MOUSE_DATA_AVAIL	(1 << 5)
+/* indicates that the output-buffer is full */
+#define STATUS_OUTBUF_FULL			(1 << 0)
+/* indicates that the input-buffer is full */
+#define STATUS_INBUF_FULL			(1 << 1)
+/* data for mouse */
+#define STATUS_MOUSE_DATA_AVAIL		(1 << 5)
+
+/* converts the scan-code to the ones IBM PCs expect */
+#define CMD_IBM_COMPAT				(1 << 6)
+/* performs no scan-code-conversion and no partity-check */
+#define CMD_IBM_MODE				(1 << 5)
+#define CMD_DISABLE_KEYBOARD		(1 << 4)
+#define CMD_INHIBIT_OVERWRITE		(1 << 3)
+/* bit-value is written to the system-flag in controller-status-register */
+#define CMD_SYSTEM					(1 << 2)
+/* raises an interrupt when the output-buffer is full */
+#define CMD_EN_OUTBUF_INTRPT		(1 << 0)
 
 /* ICW = initialisation command word */
 #define PIC_ICW1					0x20
@@ -58,20 +73,18 @@
  * The keyboard-interrupt handler
  */
 static void kbIntrptHandler(tSig sig,u32 data);
-static u16 kb_read(void);
-static void kb_checkCmd(void);
+static void kb_waitOutBuf(void);
+static void kb_waitInBuf(void);
 
 /* file-descriptor for ourself */
 static sMsg msg;
-static sKbData data;
 static sRingBuf *rbuf;
 static sRingBuf *ibuf;
-static tServ id;
 
 int main(void) {
-	tServ client;
+	tServ id,client;
 	tMsgId mid;
-	u8 status;
+	u8 kbdata;
 
 	id = regService("keyboard",SERV_DRIVER);
 	if(id < 0)
@@ -91,44 +104,77 @@ int main(void) {
 	if(requestIOPort(IOPORT_KB_CTRL) < 0)
 		error("Unable to request io-port",IOPORT_KB_CTRL);
 
+	/* wait for input buffer empty */
+	kb_waitInBuf();
+
+	/* self test */
+	outByte(IOPORT_KB_CTRL,0xAA);
+	kb_waitOutBuf();
+	kbdata = inByte(IOPORT_KB_DATA);
+	if(kbdata != 0x55)
+		error("Keyboard-selftest failed: Got 0x%x, expected 0x55",kbdata);
+
+	/* test interface */
+	outByte(IOPORT_KB_CTRL,0xAB);
+	kb_waitOutBuf();
+	kbdata = inByte(IOPORT_KB_DATA);
+	if(kbdata != 0x00)
+		error("Interface-test failed: Got 0x%x, expected 0x00",kbdata);
+
+	/* write command byte */
+	outByte(IOPORT_KB_CTRL,0x60);
+	kb_waitInBuf();
+	outByte(IOPORT_KB_DATA,CMD_EN_OUTBUF_INTRPT | CMD_INHIBIT_OVERWRITE | CMD_IBM_COMPAT);
+	kb_waitInBuf();
+
+#if 0
+	/* reset */
+	outByte(IOPORT_KB_DATA,0xFF);
+	sleep(20);
+	kb_waitOutBuf();
+	kbdata = inByte(IOPORT_KB_DATA);
+#endif
+	/* send echo-command */
+	outByte(IOPORT_KB_DATA,0xEE);
+	sleep(20);
+	kb_waitOutBuf();
+	kbdata = inByte(IOPORT_KB_DATA);
+	sleep(20);
+	if(kbdata != 0xEE)
+		error("Keyboard-echo failed: Got 0x%x, expected 0xEE",kbdata);
+
+	/* enable keyboard */
+	outByte(IOPORT_KB_DATA,0xF4);
+	kb_waitOutBuf();
+	/* clear output buffer */
+	kbdata = inByte(IOPORT_KB_DATA);
+
+	/* disable LEDs
+	kb_waitInBuf();
+	outByte(IOPORT_KB_DATA,0xED);
+	kb_waitInBuf();
+	outByte(IOPORT_KB_DATA,0x0);*/
+
+#if 0
+	/* set scancode-set 1 */
+	outByte(IOPORT_KB_DATA,0xF0);
+	outByte(IOPORT_KB_DATA,0x1);
+	sleep(20);
+	kbdata = inByte(IOPORT_KB_DATA);
+	debugf("Set scancode-set: %x\n",kbdata);
+#endif
+
+	/*outByte(IOPORT_KB_DATA,0xF0);
+	sleep(40);
+	outByte(IOPORT_KB_DATA,0x0);
+	sleep(40);
+	kbdata = inByte(IOPORT_KB_DATA);
+	debugf("scancode-set=%x\n",kbdata);
+	while(1);*/
+
 	/* we want to get notified about keyboard interrupts */
 	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
-
-    /* reset keyboard and make a self-test */
-    outByte(IOPORT_KB_DATA,0xff);
-    while(1) {
-    	status = inByte(IOPORT_KB_DATA);
-    	if(status == 0xaa)
-    		break;
-    	if(status == 0xfc)
-    		error("Keyboard-Selftest failed: Got 0xfc as reply");
-    	yield();
-    }
-
-    /* TODO this does not seem to work here :/ */
-
-    /* set repeat-rate and delay */
-    outByte(IOPORT_KB_DATA,0xf3);
-    outByte(IOPORT_KB_DATA,/* 0100 0100 */0x44);
-
-    /* set scancode set */
-    outByte(IOPORT_KB_DATA,0xf0);
-    outByte(IOPORT_KB_DATA,2);
-
-    /*outByte(IOPORT_KB_DATA,0xf0);
-    sleep(40);
-	outByte(IOPORT_KB_DATA,0);
-    sleep(40);
-    u8 set = inByte(0x60);
-    debugf("set=%x\n",set);
-    while(1);*/
-
-    /*outByte(0x60,0xf2);
-    sleep(40);
-    u8 id = inByte(0x60);
-    debugf("id=%x\n",id);
-    while(1);*/
 
     /* wait for commands */
 	while(1) {
@@ -194,12 +240,14 @@ int main(void) {
 }
 
 static void kbIntrptHandler(tSig sig,u32 d) {
+	sKbData data;
 	UNUSED(sig);
 	UNUSED(d);
 
-	if(!(inByte(IOPORT_KB_CTRL) & KBC_STATUS_DATA_AVAIL))
+	if(!(inByte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
 		return;
 	u8 scanCode = inByte(IOPORT_KB_DATA);
+	/*debugf("sc=%x\n",scanCode);*/
 	if(kb_set1_getKeycode(&data.isBreak,&data.keycode,scanCode)) {
 		/* write in buffer */
 		rb_write(ibuf,&data);
@@ -208,15 +256,18 @@ static void kbIntrptHandler(tSig sig,u32 d) {
 	outByte(IOPORT_PIC,PIC_ICW1);*/
 }
 
-static u16 kb_read(void) {
-	u16 c = 0;
+static void kb_waitOutBuf(void) {
 	u8 status;
-	while(c++ < 0xFFFF && !((status = inByte(IOPORT_KB_CTRL)) & KBC_STATUS_DATA_AVAIL));
-	if(!(status & KBC_STATUS_DATA_AVAIL))
-		return 0xFF00;
-	return inByte(IOPORT_KB_DATA);
+	do {
+		status = inByte(IOPORT_KB_CTRL);
+	}
+	while((status & STATUS_OUTBUF_FULL) == 0);
 }
 
-static void kb_checkCmd(void) {
-	while(inByte(IOPORT_KB_CTRL) & KBC_STATUS_BUSY);
+static void kb_waitInBuf(void) {
+	u8 status;
+	do {
+		status = inByte(IOPORT_KB_CTRL);
+	}
+	while((status & STATUS_INBUF_FULL) != 0);
 }

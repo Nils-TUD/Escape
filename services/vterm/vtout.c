@@ -36,6 +36,14 @@
 static void vterm_newLine(sVTerm *vt);
 
 /**
+ * Deletes <count> in front of the current position, if possible
+ *
+ * @param vt the vterm
+ * @param count the number of characters
+ */
+static void vterm_delete(sVTerm *vt,u32 count);
+
+/**
  * Handles an escape-code
  *
  * @param vt the vterm
@@ -145,28 +153,7 @@ void vterm_putchar(sVTerm *vt,char c) {
 			break;
 
 		case '\b':
-			if((!vt->readLine && vt->col > 0) || (vt->readLine && vt->rlBufPos > 0)) {
-				if(!vt->readLine || vt->echo) {
-					i = (vt->currLine * COLS * 2) + (vt->row * COLS * 2) + (vt->col * 2);
-					/* move the characters back in the buffer */
-					memmove(vt->buffer + i - 2,vt->buffer + i,(COLS - vt->col) * 2);
-					vt->col--;
-				}
-
-				if(vt->readLine) {
-					vt->rlBuffer[vt->rlBufPos] = '\0';
-					vt->rlBufPos--;
-				}
-
-				/* overwrite line */
-				vterm_markDirty(vt,vt->row * COLS * 2 + vt->col * 2,COLS * 2);
-			}
-			else {
-				/* beep */
-				msg.args.arg1 = 1000;
-				msg.args.arg2 = 60;
-				send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
-			}
+			vterm_delete(vt,1);
 			break;
 
 		case '\t':
@@ -221,6 +208,31 @@ static void vterm_newLine(sVTerm *vt) {
 	vterm_markDirty(vt,COLS * 2,(COLS - 1) * ROWS * 2);
 }
 
+static void vterm_delete(sVTerm *vt,u32 count) {
+	if((!vt->readLine && vt->col >= count) || (vt->readLine && vt->rlBufPos >= count)) {
+		if(!vt->readLine || vt->echo) {
+			u32 i = (vt->currLine * COLS * 2) + (vt->row * COLS * 2) + (vt->col * 2);
+			/* move the characters back in the buffer */
+			memmove(vt->buffer + i - 2 * count,vt->buffer + i,(COLS - vt->col) * 2);
+			vt->col -= count;
+		}
+
+		if(vt->readLine) {
+			vt->rlBuffer[vt->rlBufPos] = '\0';
+			vt->rlBufPos -= count;
+		}
+
+		/* overwrite line */
+		vterm_markDirty(vt,vt->row * COLS * 2 + vt->col * 2,COLS * 2);
+	}
+	else {
+		/* beep */
+		msg.args.arg1 = 1000;
+		msg.args.arg2 = 60;
+		send(vt->speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
+	}
+}
+
 static bool vterm_handleEscape(sVTerm *vt,char **str) {
 	s32 cmd,n1,n2;
 	cmd = escc_get((const char**)str,&n1,&n2);
@@ -246,6 +258,18 @@ static bool vterm_handleEscape(sVTerm *vt,char **str) {
 			break;
 		case ESCC_MOVE_LINESTART:
 			vt->col = 0;
+			break;
+		case ESCC_DEL_FRONT:
+			vterm_delete(vt,n1);
+			break;
+		case ESCC_DEL_BACK:
+			if(vt->readLine) {
+				vt->rlBufPos = MIN(vt->rlBufSize - 1,vt->rlBufPos + n1);
+				vt->rlBufPos = MIN((u32)COLS - vt->rlStartCol,vt->rlBufPos);
+				vt->col = vt->rlBufPos + vt->rlStartCol;
+			}
+			else
+				vt->col = MIN(COLS - 1,vt->col + n1);
 			break;
 		case ESCC_COLOR:
 			if(n1 != ESCC_ARG_UNUSED)

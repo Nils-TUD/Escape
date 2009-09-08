@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <util.h>
+#include <common.h>
 #include <machine/intrpt.h>
 #include <task/proc.h>
 #include <mem/pmem.h>
@@ -28,6 +28,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <register.h>
+#include <util.h>
 
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE			5

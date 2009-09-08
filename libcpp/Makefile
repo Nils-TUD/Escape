@@ -1,69 +1,54 @@
 BUILD = ../build
+BUILDL = $(BUILD)/libcpp
 LIBDIR = ../lib
 LIBCDIR = ../libc
+SUBDIRS = src src/esc src/esc/gui
+BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
+DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 3 -name "*.d")
+LIB = $(BUILD)/libcpp.a
 
 CC = g++
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CPPDEFFLAGS) -Iinclude -I$(LIBDIR)/h \
 	-I$(LIBCDIR)/include
 
+# sources
+CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 3 -name "*.cpp")
+START = startup.s
+
+# objects
+COBJS = $(patsubst %.cpp,$(BUILDL)/%.o,$(CSRC))
 # for long long arithmetic
 GCCLIBDIR = ../libgcc
 GCCLIB = $(GCCLIBDIR)/_divdi3.object \
 	$(GCCLIBDIR)/_moddi3.object \
 	$(GCCLIBDIR)/_udivdi3.object \
 	$(GCCLIBDIR)/_umoddi3.object
-CSTDSRCS = $(wildcard src/*.cpp)
-CESCSRCS = $(wildcard src/esc/*.cpp)
-CGUISRCS = $(wildcard src/esc/gui/*.cpp)
-OBJS = $(patsubst src/%.cpp,$(BUILD)/libcpp_std_%.o,$(CSTDSRCS))
-OBJS += $(patsubst src/esc/%.cpp,$(BUILD)/libcpp_esc_%.o,$(CESCSRCS))
-OBJS += $(patsubst src/esc/gui/%.cpp,$(BUILD)/libcpp_escgui_%.o,$(CGUISRCS))
-LIBCOBJS = $(wildcard $(BUILD)/libc_*_*.o) $(GCCLIB)
-LIB = $(BUILD)/libcpp.a
-DEP = $(BUILD)/libcpp.dep
-START = startup.s
+LIBCOBJS = $(shell find $(BUILD)/libc -mindepth 0 -maxdepth 3 -name "*.o") $(GCCLIB)
 STARTO = $(BUILD)/libcpp_startup.o
 
 .PHONY:		all clean
 
 all: $(LIB)
 
-$(LIB): $(OBJS) $(STARTO) $(LIBCOBJS)
+$(LIB): $(BUILDDIRS) $(COBJS) $(STARTO) $(LIBCOBJS)
 		@echo "	" AR $(LIB)
-		@ar rcs $(LIB) $(LIBCOBJS) $(OBJS)
+		@ar rcs $(LIB) $(LIBCOBJS) $(COBJS)
+		
+$(BUILDDIRS):
+		@for i in $(BUILDDIRS); do \
+			if [ ! -d $$i ]; then mkdir -p $$i; fi \
+		done;
 
-$(BUILD)/libcpp_escgui_%.o: src/esc/gui/%.cpp
+$(BUILDL)/%.o: %.cpp
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $<
-
-$(BUILD)/libcpp_esc_%.o: src/esc/%.cpp
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $<
-
-$(BUILD)/libcpp_std_%.o: src/%.cpp
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $<
+		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
 
 $(STARTO): $(START)
 		@echo "	" AS $(START)
 		@nasm $(ASMFLAGS) -o $(STARTO) $(START)
 
-$(DEP):	$(CSTDSRCS) $(CESCSRCS) $(CGUISRCS)
-		@echo "	" GENERATING DEPENDENCIES
-		@$(CC) $(CFLAGS) -MM $(CSTDSRCS) $(CESCSRCS) $(CGUISRCS) > $(DEP)
-		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		@for i in $(patsubst src/esc/gui/%.cpp,%,$(wildcard src/esc/gui/*.cpp)) ; do \
-			sed --in-place -e "s/$$i.o:/$(subst /,\/,$(BUILD)/libcpp_escgui_)$$i.o:/g" $(DEP); \
-		done;
-		@for i in $(patsubst src/esc/%.cpp,%,$(wildcard src/esc/*.cpp)) ; do \
-			sed --in-place -e "s/$$i.o:/$(subst /,\/,$(BUILD)/libcpp_esc_)$$i.o:/g" $(DEP); \
-		done;
-		@for i in $(patsubst src/%.cpp,%,$(wildcard src/*.cpp)) ; do \
-			sed --in-place -e "s/$$i.o:/$(subst /,\/,$(BUILD)/libcpp_std_)$$i.o:/g" $(DEP); \
-		done;
-
--include $(DEP)
+-include $(DEPS)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(OBJS) $(LIB) $(DEP) $(STARTO)
+		rm -f $(COBJS) $(LIB) $(DEPS) $(STARTO)

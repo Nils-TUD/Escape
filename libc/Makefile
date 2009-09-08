@@ -1,22 +1,24 @@
 BUILD = ../build
-LIBDIR=../lib
+BUILDL = $(BUILD)/libc
+LIBDIR = ../lib
+SUBDIRS = src $(filter-out $(wildcard src/*.*),$(wildcard src/*))
+BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
+DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
+LIB = $(BUILD)/libc.a
 
 CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -Iinclude -I$(LIBDIR)/h
 
-CESCSRCS = $(wildcard src/esc/*.c)
-CSTDSRCS = $(wildcard src/*.c)
-AESCSRCS = $(wildcard src/esc/*.s)
-ASTDSRCS = $(wildcard src/*.s)
-LSRC=$(wildcard $(LIBDIR)/src/*.c)
-OBJS = $(patsubst src/esc/%.c,$(BUILD)/libc_esc_%.o,$(CESCSRCS))
-OBJS += $(patsubst src/esc/%.s,$(BUILD)/libc_esc_a%.o,$(AESCSRCS))
-OBJS += $(patsubst src/%.c,$(BUILD)/libc_std_%.o,$(CSTDSRCS))
-OBJS += $(patsubst src/%.s,$(BUILD)/libc_std_a%.o,$(ASTDSRCS))
-LOBJ=$(patsubst $(LIBDIR)/src/%.c,$(BUILD)/libc_lib_%.o,$(LSRC))
-LIB = $(BUILD)/libc.a
-DEP = $(BUILD)/libc.dep
+# sources
+CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
+ASRC = $(filter-out startup.s,$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.s"))
+LSRC = $(wildcard $(LIBDIR)/src/*.c)
 START = startup.s
+
+# objects
+COBJS = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
+AOBJS = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
+LOBJ=$(patsubst $(LIBDIR)/src/%.c,$(BUILDL)/lib_%.o,$(LSRC))
 STARTO = $(BUILD)/libc_startup.o
 # for long long arithmetic
 GCCLIBDIR = ../libgcc
@@ -29,47 +31,33 @@ GCCLIB = $(GCCLIBDIR)/_divdi3.object \
 
 all: $(LIB)
 
-$(LIB): $(OBJS) $(LOBJ) $(STARTO)
+$(LIB): $(BUILDDIRS) $(COBJS) $(AOBJS) $(LOBJ) $(STARTO)
 		@echo "	" AR $(LIB)
-		@ar rcs $(LIB) $(OBJS) $(LOBJ) $(GCCLIB)
+		@ar rcs $(LIB) $(COBJS) $(AOBJS) $(LOBJ) $(GCCLIB)
+		
+$(BUILDDIRS):
+		@for i in $(BUILDDIRS); do \
+			if [ ! -d $$i ]; then mkdir -p $$i; fi \
+		done;
 
-$(BUILD)/libc_esc_%.o: src/esc/%.c
+$(BUILDL)/%.o: %.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $<
+		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
 
-$(BUILD)/libc_esc_a%.o: src/esc/%.s
+$(BUILDL)/%.s.o: %.s
 		@echo "	" AS $<
 		@nasm $(ASMFLAGS) -o $@ $<
 
-$(BUILD)/libc_std_%.o: src/%.c
+$(BUILDL)/lib_%.o:	$(LIBDIR)/src/%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $<
-
-$(BUILD)/libc_std_a%.o: src/%.s
-		@echo "	" AS $<
-		@nasm $(ASMFLAGS) -o $@ $<
-
-$(BUILD)/libc_lib_%.o:	$(LIBDIR)/src/%.c
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $<
+		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
 
 $(STARTO): $(START)
 		@echo "	" AS $(START)
 		@nasm $(ASMFLAGS) -o $(STARTO) $(START)
 
-$(DEP):	$(CESCSRCS) $(CSTDSRCS)
-		@echo "	" GENERATING DEPENDENCIES
-		@$(CC) $(CFLAGS) -MM $(CESCSRCS) $(CSTDSRCS) > $(DEP)
-		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		@for i in $(patsubst src/esc/%.c,%,$(wildcard src/esc/*.c)) ; do \
-			sed --in-place -e "s/$$i.o:/$(subst /,\/,$(BUILD)/libc_esc_)$$i.o:/g" $(DEP); \
-		done;
-		@for i in $(patsubst src/%.c,%,$(wildcard src/*.c)) ; do \
-			sed --in-place -e "s/$$i.o:/$(subst /,\/,$(BUILD)/libc_std_)$$i.o:/g" $(DEP); \
-		done;
-
--include $(DEP)
+-include $(DEPS)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(OBJS) $(LOBJ) $(LIB) $(DEP) $(STARTO)
+		rm -f $(COBJS) $(AOBJS) $(LOBJ) $(LIB) $(DEPS) $(STARTO)

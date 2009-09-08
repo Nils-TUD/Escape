@@ -1,45 +1,48 @@
 NAME=x86mark
-ROOT=../../..
-BUILD=$(ROOT)/build
-DISK=$(BUILD)/disk.img
-DISKMOUNT=$(ROOT)/disk
-BIN=$(BUILD)/user_$(NAME).bin
-DEP=$(BUILD)/user_$(NAME).dep
-LIB=$(ROOT)/lib
-LIBC=$(ROOT)/libc
-LDCONF=$(LIBC)/ld.conf
+ROOT = ../../..
+BUILD = $(ROOT)/build
+BUILDL = $(BUILD)/user/c/$(NAME)
+BIN = $(BUILD)/user_$(NAME).bin
+LIB = $(ROOT)/lib
+LIBC = $(ROOT)/libc
+LDCONF = $(LIBC)/ld.conf
+SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
+BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
+DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 CC = gcc
-CFLAGS = -O2 -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
-	-Wl,-T,$(LDCONF) $(CDEFFLAGS) 
-CSRC=$(wildcard *.c)
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
+	-Wl,-T,$(LDCONF) $(CDEFFLAGS) $(ADDFLAGS)
+
+# sources
+CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
 ASM=x86.S x87.S x86mem.S x86mix.S x86dep.S x86odd.S k6-3d.S mmx.S
 
-LIBCA=$(BUILD)/libc.a
-START=$(BUILD)/libc_startup.o
-COBJ=$(patsubst %.c,$(BUILD)/user_$(NAME)_%.o,$(CSRC))
+# objects
+LIBCA = $(BUILD)/libc.a
+START = $(BUILD)/libc_startup.o
+COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 
 .PHONY: all clean
 
 all:	$(BIN)
 
-$(BIN):	$(LDCONF) $(COBJ) $(ASM) $(START) $(LIBCA)
+$(BIN):	$(BUILDDIRS) $(LDCONF) $(COBJ) $(ASM) $(START) $(LIBCA) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(ASM) $(LIBCA);
+		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(ASM) $(LIBCA) $(ADDLIBS);
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/cp2disk.sh $(BIN) /bin/$(NAME)
 
-$(BUILD)/user_$(NAME)_%.o:		%.c
+$(BUILDDIRS):
+		@for i in $(BUILDDIRS); do \
+			if [ ! -d $$i ]; then mkdir -p $$i; fi \
+		done;
+
+$(BUILDL)/%.o:		%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $<
+		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
 
-$(DEP):	$(CSRC)
-		@echo "	" GENERATING DEPENDENCIES
-		@$(CC) $(CFLAGS) -MM $(CSRC) > $(DEP);
-		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		@sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/user_$(NAME)_)\1.o:/g" $(DEP);
-
--include $(DEP)
+-include $(DEPS)
 
 clean:
-		rm -f $(BIN) $(COBJ) $(DEP)
+		rm -f $(BIN) $(COBJ) $(DEPS)

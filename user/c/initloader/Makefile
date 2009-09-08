@@ -1,43 +1,54 @@
-NAME=initloader
-ROOT=../../..
-BUILD=$(ROOT)/build
-DISK=$(BUILD)/disk.img
-DISKMOUNT=$(ROOT)/disk
-BIN=$(BUILD)/user_$(NAME).bin
-DUMP=$(BUILD)/user_$(NAME).dump
-LIBC=$(ROOT)/libc
-LDCONF=$(LIBC)/ld.conf
+NAME = initloader
+ROOT = ../../..
+BUILD = $(ROOT)/build
+BUILDL = $(BUILD)/user/c/$(NAME)
+BIN = $(BUILD)/user_$(NAME).bin
+DUMP = $(BUILD)/user_$(NAME).dump
+LIBC = $(ROOT)/libc
+LDCONF = $(LIBC)/ld.conf
+SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
+BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
+DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,$(LDCONF) $(CDEFFLAGS) \
 	-I$(ROOT)/lib/h -I$(LIBC)/include
 
-ASRC=$(wildcard *.s)
-AOBJ=$(patsubst %.s,$(BUILD)/user_$(NAME)_%.o,$(ASRC))
+# sources
+ASRC = $(wildcard *.s)
+AOBJ = $(patsubst %.s,$(BUILDL)/a%.o,$(ASRC))
 
-CSRC=$(wildcard *.c)
-COBJ=$(patsubst %.c,$(BUILD)/user_$(NAME)_c%.o,$(CSRC))
-LIBCA=$(BUILD)/libc.a
+# objects
+CSRC = $(wildcard *.c)
+COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
+LIBCA = $(BUILD)/libc.a
 
 .PHONY: all clean
 
 all:	$(BIN) $(DUMP)
 
-$(BIN):	$(LDCONF) $(AOBJ) $(COBJ)
+$(BIN):	$(BUILDDIRS) $(LDCONF) $(AOBJ) $(COBJ)
 		@echo "	" LINKING $(BIN)
 		@$(CC) $(CFLAGS) -o $(BIN) $(AOBJ) $(COBJ) $(LIBCA);
 
-$(BUILD)/user_$(NAME)_%.o: %.s
+$(BUILDDIRS):
+		@for i in $(BUILDDIRS); do \
+			if [ ! -d $$i ]; then mkdir -p $$i; fi \
+		done;
+
+$(BUILDL)/a%.o: %.s
 		@echo "	" AS $<
 		@nasm $(ASMFLAGS) -o $@ $<
 
-$(BUILD)/user_$(NAME)_c%.o: %.c
+$(BUILDL)/%.o: %.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $<
+		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
 
 $(DUMP):	$(BIN)
 		@echo "	" GENERATING DUMP
 		@$(BUILD)/dump $(BIN) > $(DUMP)
 
+-include $(DEPS)
+
 clean:
-		rm -f $(BIN) $(DUMP) $(AOBJ) $(COBJ)
+		rm -f $(BIN) $(DEPS) $(DUMP) $(AOBJ) $(COBJ)

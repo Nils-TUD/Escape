@@ -1,47 +1,5 @@
-NAME=guishell
-ROOT=../../..
-BUILD=$(ROOT)/build
-DISK=$(BUILD)/disk.img
-DISKMOUNT=$(ROOT)/disk
-BIN=$(BUILD)/user_$(NAME).bin
-DEP=$(BUILD)/user_$(NAME).dep
-LIB=$(ROOT)/lib
-LIBC=$(ROOT)/libc
-LIBCPP=$(ROOT)/libcpp
-LIBS=$(ROOT)/user/libs
-LDCONF=$(LIBCPP)/ld.conf
+NAME = guishell
+ADDLIBS = ../../../build/user_libs_shell.a
+ADDFLAGS = -I../../libs
 
-CC = g++
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBCPP)/include -I$(LIBC)/include \
-	-I$(LIB)/h -I$(LIBS) -Wl,-T,$(LDCONF) $(CPPDEFFLAGS) -fno-exceptions -fno-rtti
-CSRC=$(wildcard *.cpp)
-
-LIBCPPA=$(BUILD)/libcpp.a
-LIBSHELLA=$(BUILD)/user_libs_shell.a
-START=$(BUILD)/libcpp_startup.o
-COBJ=$(patsubst %.cpp,$(BUILD)/user_$(NAME)_%.o,$(CSRC))
-
-.PHONY: all clean
-
-all:	$(BIN)
-
-$(BIN):	$(LDCONF) $(COBJ) $(START) $(LIBCPPA) $(LIBSHELLA)
-		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCPPA) $(LIBSHELLA);
-		@echo "	" COPYING ON DISK
-		$(ROOT)/tools/cp2disk.sh $(BIN) /bin/$(NAME)
-
-$(BUILD)/user_$(NAME)_%.o:		%.cpp
-		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $<
-
-$(DEP):	$(CSRC)
-		@echo "	" GENERATING DEPENDENCIES
-		@$(CC) $(CFLAGS) -MM $(CSRC) > $(DEP);
-		@# prefix all files with the build-path (otherwise make wouldn't find them)
-		@sed --in-place -e "s/\([a-zA-Z_]*\).o:/$(subst /,\/,$(BUILD)\/user_$(NAME)_)\1.o:/g" $(DEP);
-
--include $(DEP)
-
-clean:
-		rm -f $(BIN) $(COBJ) $(DEP)
+-include ../DefMakefile.mk

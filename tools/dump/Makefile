@@ -1,24 +1,38 @@
-NAME=dump
-BUILD=../../build
-BIN=$(BUILD)/$(NAME)
+NAME = dump
+BUILD = ../../build
+BUILDL = $(BUILD)/tools/$(NAME)
+BIN = $(BUILD)/$(NAME)
+SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
+BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
+DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 CC = g++
-CFLAGS = $(CPPDEFFLAGS) 
-CSRC=$(wildcard *.cpp)
+CFLAGS = $(CPPDEFFLAGS)
 
-COBJ=$(patsubst %.cpp,$(BUILD)/tools_$(NAME)_%.o,$(CSRC))
+# sources
+CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.cpp")
+
+# objects
+COBJ = $(patsubst %.cpp,$(BUILDL)/%.o,$(CSRC))
 
 .PHONY: all clean
 
 all:	$(BIN)
 
-$(BIN):	$(COBJ)
+$(BIN):	$(BUILDDIRS) $(COBJ)
 		@echo "===== LINKING =====";
 		$(CC) $(CFLAGS) -o $(BIN) $(COBJ);
 
-$(BUILD)/tools_$(NAME)_%.o:		%.cpp
-		@echo "===== COMPILING $< =====";
-		$(CC) $(CFLAGS) -o $@ -c $<
+$(BUILDDIRS):
+		@for i in $(BUILDDIRS); do \
+			if [ ! -d $$i ]; then mkdir -p $$i; fi \
+		done;
+
+$(BUILDL)/%.o:		%.cpp
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
+
+-include $(DEPS)
 
 clean:
-		rm -f $(BIN) $(COBJ)
+		rm -f $(BIN) $(COBJ) $(DEPS)

@@ -22,7 +22,7 @@ OSTITLE=hrniels-OS
 
 QEMUARGS=-serial stdio -hda $(HDD) -boot c -vga std
 
-DIRS = tools libc libcpp services user kernel kernel/test
+DIRS = tools libc libcpp services user kernel/src kernel/test
 
 # flags for gcc
 export CC = gcc

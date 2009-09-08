@@ -2,41 +2,39 @@
 ROOT=../..
 BUILD=$(ROOT)/build
 BUILDK=$(BUILD)/kernel/src
-BUILDT=$(BUILD)/kernel/test
-BIN=$(BUILD)/kernel_test.bin
+BIN=$(BUILD)/kernel.bin
 LDCONF=../ld.conf
 LIB=$(ROOT)/lib
-DEPS=$(wildcard $(BUILDT)/*.d)
-SUBDIRS=../src $(filter-out ../src/Makefile $(wildcard ../src/*.*),$(wildcard ../src/*))
-BUILDDIRS=$(BUILDT)
+SUBDIRS=. $(filter-out Makefile $(wildcard *.*),$(wildcard *))
+BUILDDIRS=$(addprefix $(BUILDK)/,$(SUBDIRS))
+DEPS=$(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 CC = gcc
 CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
-	-D TESTING=1 -D IN_KERNEL=1 -I../h -I$(LIB)/h
+	-D IN_KERNEL=1 -I../h -I$(LIB)/h
 
 # sources
-TSRC=$(wildcard *.c)
-KSRC=$(filter-out ../src/kernel.c,$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
+ASRC=../kernel.asm
+CSRC=$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
 LSRC=$(wildcard $(LIB)/src/*.c)
 
 # objects
 AOBJ=$(BUILDK)/kernela.o
-TOBJ=$(patsubst %.c,$(BUILDT)/%.o,$(TSRC))
-KOBJ=$(patsubst %.c,$(BUILDK)/%.o,$(KSRC))
-LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILDT)/lib_%.o,$(LSRC))
+COBJ=$(patsubst %.c,$(BUILDK)/%.o,$(CSRC))
+LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILDK)/lib_%.o,$(LSRC))
 
-SYMBOLS=$(BUILD)/kernelt_symbols.txt
+SYMBOLS=$(BUILD)/kernel_symbols.txt
 SYMBOLSCRIPT=$(ROOT)/tools/gensymbols.sh
-SYMBOLSRC=../src/ksymbols.c
-SYMBOLOBJ=$(patsubst ../src/%.c,$(BUILDT)/%.o,$(SYMBOLSRC))
+SYMBOLSRC=ksymbols.c
+SYMBOLOBJ=$(patsubst %.c,$(BUILDK)/%.o,$(SYMBOLSRC))
 
 .PHONY: all pre clean
 
-all: $(BIN)
+all:	$(BIN)
 
-$(BIN):	$(BUILDDIRS) $(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
+$(BIN):	$(BUILDDIRS) $(SYMBOLS) $(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@echo "	" LINKING $(BIN)
-		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 		@# since it's size is 0 at the first time. In the second pass the size is correct
 		@# and therefore the symbol-table will be generated correctly in the third pass :)
@@ -45,26 +43,33 @@ $(BIN):	$(BUILDDIRS) $(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		@echo "	" CC $(SYMBOLSRC)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
-		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
 		@echo "	" BUILDING SYMBOL-FILE
 		@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "	" CC $(SYMBOLSRC)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
-		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
 		@echo "	" COPYING BINARY
 		$(ROOT)/tools/cp2disk.sh $(BIN) /boot
 
+$(SYMBOLS):
+		@if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi
+		
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
 			if [ ! -d $$i ]; then mkdir -p $$i; fi \
 		done;
 
-$(BUILDT)/%.o:		%.c
+$(AOBJ):	$(ASRC)
+		@echo "	" AS $(ASRC)
+		@nasm $(ASMFLAGS) -o $(AOBJ) $(ASRC);
+
+$(BUILDK)/%.o:		%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
 
-$(BUILDT)/lib_%.o:	$(LIB)/src/%.c
+$(BUILDK)/lib_%.o:	$(LIB)/src/%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
 
@@ -72,4 +77,4 @@ $(BUILDT)/lib_%.o:	$(LIB)/src/%.c
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(DEPS) $(BIN) $(TOBJ) $(LOBJ) $(SYMBOLS) $(SYMBOLOBJ);
+		rm -f $(DEPS) $(BIN) $(COBJ) $(AOBJ) $(LOBJ) $(SYMBOLS) $(SYMBOLOBJ)

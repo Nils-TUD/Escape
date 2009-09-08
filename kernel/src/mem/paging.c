@@ -17,14 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <paging.h>
+#include <common.h>
+#include <machine/intrpt.h>
+#include <mem/paging.h>
+#include <mem/pmem.h>
+#include <mem/kheap.h>
+#include <mem/text.h>
+#include <task/proc.h>
+#include <task/thread.h>
 #include <util.h>
-#include <proc.h>
-#include <thread.h>
-#include <intrpt.h>
-#include <kheap.h>
 #include <video.h>
-#include <text.h>
 #include <sllist.h>
 #include <string.h>
 #include <assert.h>

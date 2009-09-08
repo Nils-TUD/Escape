@@ -18,7 +18,7 @@
  */
 
 #include <common.h>
-#include <kheap.h>
+#include <mem/kheap.h>
 #include <video.h>
 #include <ringbuffer.h>
 #include <test.h>

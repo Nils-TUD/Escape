@@ -20,7 +20,7 @@
 #ifndef KSYMBOLS_H_
 #define KSYMBOLS_H_
 
-#include "common.h"
+#include <common.h>
 
 /* Represents one symbol (address -> name) */
 typedef struct {

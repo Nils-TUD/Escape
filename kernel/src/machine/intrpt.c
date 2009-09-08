@@ -18,23 +18,23 @@
  */
 
 #include <common.h>
-#include <intrpt.h>
+#include <machine/intrpt.h>
+#include <machine/cpu.h>
+#include <machine/fpu.h>
+#include <machine/gdt.h>
+#include <machine/timer.h>
+#include <mem/paging.h>
+#include <mem/kheap.h>
+#include <task/signals.h>
+#include <task/ioports.h>
+#include <task/proc.h>
+#include <task/elf.h>
+#include <task/sched.h>
+#include <vfs/vfs.h>
+#include <vfs/real.h>
 #include <util.h>
-#include <cpu.h>
-#include <paging.h>
-#include <proc.h>
-#include <fpu.h>
-#include <elf.h>
 #include <syscalls.h>
-#include <vfs.h>
-#include <vfsreal.h>
-#include <gdt.h>
-#include <kheap.h>
 #include <video.h>
-#include <sched.h>
-#include <signals.h>
-#include <timer.h>
-#include <ioports.h>
 #include <assert.h>
 #include <string.h>
 #include <sllist.h>

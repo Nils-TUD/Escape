@@ -18,9 +18,9 @@
  */
 
 #include <common.h>
-#include <proc.h>
-#include <paging.h>
-#include <mm.h>
+#include <task/proc.h>
+#include <mem/paging.h>
+#include <mem/pmem.h>
 #include <video.h>
 #include <test.h>
 #include "tproc.h"

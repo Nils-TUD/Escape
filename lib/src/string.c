@@ -24,8 +24,8 @@
 #include <ctype.h>
 
 #ifdef IN_KERNEL
+#	include <mem/paging.h>
 #	include <util.h>
-#	include <paging.h>
 #else
 /* for exit and debugf (vassert) */
 #	include <esc/proc.h>

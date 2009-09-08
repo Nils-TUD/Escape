@@ -20,7 +20,7 @@
 #ifndef KEVENT_H_
 #define KEVENT_H_
 
-#include "common.h"
+#include <common.h>
 
 /* the available kevents */
 #define KEV_VFS_REAL		0		/* message received for the kernel => VFSR */

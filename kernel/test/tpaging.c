@@ -18,7 +18,8 @@
  */
 
 #include <common.h>
-#include <paging.h>
+#include <mem/paging.h>
+#include <mem/pmem.h>
 #include <video.h>
 #include <test.h>
 #include "tpaging.h"

@@ -18,10 +18,10 @@
  */
 
 #include <common.h>
-#include <proc.h>
-#include <thread.h>
-#include <kheap.h>
-#include <signals.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <task/signals.h>
+#include <mem/kheap.h>
 #include <util.h>
 #include <kevent.h>
 #include <video.h>

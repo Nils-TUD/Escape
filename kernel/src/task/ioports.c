@@ -18,10 +18,10 @@
  */
 
 #include <common.h>
-#include <proc.h>
-#include <ioports.h>
-#include <kheap.h>
-#include <gdt.h>
+#include <task/proc.h>
+#include <task/ioports.h>
+#include <mem/kheap.h>
+#include <machine/gdt.h>
 #include <video.h>
 #include <errors.h>
 #include <string.h>

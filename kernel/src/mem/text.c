@@ -18,15 +18,15 @@
  */
 
 #include <common.h>
-#include <text.h>
-#include <vfs.h>
-#include <vfsreal.h>
-#include <mm.h>
-#include <paging.h>
-#include <kheap.h>
+#include <mem/text.h>
+#include <mem/pmem.h>
+#include <mem/paging.h>
+#include <mem/kheap.h>
+#include <vfs/vfs.h>
+#include <vfs/real.h>
+#include <task/elf.h>
 #include <fsinterface.h>
 #include <video.h>
-#include <elf.h>
 #include <assert.h>
 #include <errors.h>
 

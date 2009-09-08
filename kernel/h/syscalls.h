@@ -20,8 +20,8 @@
 #ifndef SYSCALLS_H_
 #define SYSCALLS_H_
 
-#include "common.h"
-#include "intrpt.h"
+#include <common.h>
+#include <machine/intrpt.h>
 
 /**
  * Handles the syscall for the given stack

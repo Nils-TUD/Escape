@@ -18,7 +18,7 @@
  */
 
 #include <common.h>
-#include <sched.h>
+#include <task/sched.h>
 
 #include <test.h>
 #include "tsched.h"

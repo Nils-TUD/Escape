@@ -18,10 +18,10 @@
  */
 
 #include <common.h>
-#include <timer.h>
+#include <machine/timer.h>
+#include <mem/kheap.h>
+#include <task/sched.h>
 #include <util.h>
-#include <sched.h>
-#include <kheap.h>
 #include <sllist.h>
 #include <errors.h>
 

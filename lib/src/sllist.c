@@ -23,7 +23,7 @@
 #include <sllist.h>
 
 #ifdef IN_KERNEL
-#	include <kheap.h>
+#	include <mem/kheap.h>
 #	include <video.h>
 /* for util_panic (vassert) */
 #	include <util.h>

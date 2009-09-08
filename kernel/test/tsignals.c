@@ -18,9 +18,9 @@
  */
 
 #include <common.h>
-#include <signals.h>
-#include <proc.h>
-#include <thread.h>
+#include <task/signals.h>
+#include <task/proc.h>
+#include <task/thread.h>
 #include "test.h"
 #include "tsignals.h"
 

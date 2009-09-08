@@ -18,11 +18,12 @@
  */
 
 #include <util.h>
-#include <intrpt.h>
-#include <proc.h>
+#include <machine/intrpt.h>
+#include <task/proc.h>
+#include <mem/pmem.h>
+#include <mem/paging.h>
+#include <mem/kheap.h>
 #include <ksymbols.h>
-#include <paging.h>
-#include <kheap.h>
 #include <video.h>
 #include <stdarg.h>
 #include <string.h>

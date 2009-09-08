@@ -18,8 +18,8 @@
  */
 
 #include <common.h>
-#include <vfs.h>
-#include <vfsnode.h>
+#include <vfs/vfs.h>
+#include <vfs/node.h>
 #include "tvfsnode.h"
 #include <test.h>
 #include <string.h>

@@ -18,22 +18,22 @@
  */
 
 #include <common.h>
-#include <proc.h>
-#include <thread.h>
-#include <paging.h>
-#include <mm.h>
+#include <task/proc.h>
+#include <task/thread.h>
+#include <task/signals.h>
+#include <task/sched.h>
+#include <mem/paging.h>
+#include <mem/pmem.h>
+#include <mem/kheap.h>
+#include <machine/intrpt.h>
+#include <machine/fpu.h>
+#include <machine/gdt.h>
+#include <machine/cpu.h>
+#include <vfs/vfs.h>
+#include <vfs/info.h>
+#include <vfs/node.h>
 #include <util.h>
-#include <intrpt.h>
-#include <fpu.h>
-#include <sched.h>
-#include <vfs.h>
-#include <vfsinfo.h>
-#include <kheap.h>
-#include <gdt.h>
-#include <cpu.h>
 #include <video.h>
-#include <signals.h>
-#include <vfsnode.h>
 #include <string.h>
 #include <sllist.h>
 #include <assert.h>

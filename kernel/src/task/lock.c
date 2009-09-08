@@ -18,9 +18,9 @@
  */
 
 #include <common.h>
-#include <lock.h>
-#include <thread.h>
-#include <kheap.h>
+#include <task/lock.h>
+#include <task/thread.h>
+#include <mem/kheap.h>
 #include <errors.h>
 #include <sllist.h>
 

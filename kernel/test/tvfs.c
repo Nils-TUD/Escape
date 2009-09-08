@@ -18,10 +18,10 @@
  */
 
 #include <common.h>
-#include <vfs.h>
-#include <vfsnode.h>
-#include <proc.h>
-#include <kheap.h>
+#include <vfs/vfs.h>
+#include <vfs/node.h>
+#include <task/proc.h>
+#include <mem/kheap.h>
 #include <video.h>
 #include <string.h>
 #include <errors.h>

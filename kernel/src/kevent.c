@@ -18,8 +18,8 @@
  */
 
 #include <common.h>
+#include <mem/kheap.h>
 #include <kevent.h>
-#include <kheap.h>
 #include <util.h>
 #include <video.h>
 #include <errors.h>

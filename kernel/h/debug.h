@@ -20,7 +20,7 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
-#include "common.h"
+#include <common.h>
 
 /**
  * Starts the timer

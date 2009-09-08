@@ -18,7 +18,7 @@
  */
 
 #include <common.h>
-#include <kheap.h>
+#include <mem/kheap.h>
 #include <video.h>
 #include <sllist.h>
 #include <test.h>

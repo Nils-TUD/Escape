@@ -18,8 +18,8 @@
  */
 
 #include <common.h>
-#include <sched.h>
-#include <thread.h>
+#include <task/thread.h>
+#include <task/sched.h>
 #include <util.h>
 #include <video.h>
 #include <sllist.h>

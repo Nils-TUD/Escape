@@ -20,10 +20,10 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
-#include "common.h"
-#include "ksymbols.h"
-#include "intrpt.h"
-#include "thread.h"
+#include <common.h>
+#include <machine/intrpt.h>
+#include <task/thread.h>
+#include <ksymbols.h>
 #include <stdarg.h>
 
 /**

@@ -18,9 +18,9 @@
  */
 
 #include <common.h>
-#include <fpu.h>
-#include <cpu.h>
-#include <kheap.h>
+#include <machine/fpu.h>
+#include <machine/cpu.h>
+#include <mem/kheap.h>
 #include <video.h>
 #include <string.h>
 

@@ -18,8 +18,9 @@
  */
 
 #include <common.h>
-#include <kheap.h>
-#include <paging.h>
+#include <mem/kheap.h>
+#include <mem/pmem.h>
+#include <mem/paging.h>
 #include <video.h>
 #include <string.h>
 

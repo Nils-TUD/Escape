@@ -18,7 +18,7 @@
  */
 
 #include <common.h>
-#include <mm.h>
+#include <mem/pmem.h>
 #include <test.h>
 #include "tmm.h"
 

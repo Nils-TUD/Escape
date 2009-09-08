@@ -17,9 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <gdt.h>
-#include <mm.h>
-#include <paging.h>
+#include <common.h>
+#include <machine/gdt.h>
+#include <mem/pmem.h>
+#include <mem/paging.h>
 #include <video.h>
 #include <string.h>
 /* for offsetof() */

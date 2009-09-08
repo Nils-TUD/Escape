@@ -18,12 +18,13 @@
  */
 
 #include <common.h>
-#include <proc.h>
-#include <paging.h>
-#include <elf.h>
-#include <text.h>
-#include <vfs.h>
-#include <vfsreal.h>
+#include <task/proc.h>
+#include <task/elf.h>
+#include <mem/paging.h>
+#include <mem/pmem.h>
+#include <mem/text.h>
+#include <vfs/vfs.h>
+#include <vfs/real.h>
 #include <video.h>
 #include <string.h>
 #include <errors.h>

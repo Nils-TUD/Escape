@@ -18,8 +18,8 @@
  */
 
 #include <common.h>
+#include <machine/cpu.h>
 #include <debug.h>
-#include <cpu.h>
 #include <video.h>
 
 static u64 start = 0;

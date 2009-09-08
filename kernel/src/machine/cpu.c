@@ -18,7 +18,7 @@
  */
 
 #include <common.h>
-#include <cpu.h>
+#include <machine/cpu.h>
 #include <util.h>
 #include <string.h>
 

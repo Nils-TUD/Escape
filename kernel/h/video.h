@@ -20,7 +20,7 @@
 #ifndef VIDEO_H_
 #define VIDEO_H_
 
-#include "common.h"
+#include <common.h>
 #include <stdarg.h>
 
 typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;

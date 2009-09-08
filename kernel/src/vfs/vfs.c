@@ -18,18 +18,18 @@
  */
 
 #include <common.h>
-#include <vfs.h>
-#include <vfsnode.h>
-#include <vfsreal.h>
-#include <vfsinfo.h>
-#include <vfsreq.h>
-#include <vfsdrv.h>
-#include <vfsrw.h>
-#include <proc.h>
-#include <paging.h>
+#include <vfs/vfs.h>
+#include <vfs/node.h>
+#include <vfs/real.h>
+#include <vfs/info.h>
+#include <vfs/request.h>
+#include <vfs/driver.h>
+#include <vfs/rw.h>
+#include <task/proc.h>
+#include <task/sched.h>
+#include <mem/paging.h>
+#include <mem/kheap.h>
 #include <util.h>
-#include <kheap.h>
-#include <sched.h>
 #include <video.h>
 #include <kevent.h>
 #include <string.h>

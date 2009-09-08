@@ -18,10 +18,11 @@
  */
 
 #include <common.h>
-#include <sharedmem.h>
-#include <proc.h>
-#include <kheap.h>
-#include <paging.h>
+#include <mem/sharedmem.h>
+#include <mem/kheap.h>
+#include <mem/paging.h>
+#include <mem/pmem.h>
+#include <task/proc.h>
 #include <video.h>
 #include <sllist.h>
 #include <string.h>

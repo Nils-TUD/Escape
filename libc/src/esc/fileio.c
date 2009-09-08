@@ -1281,7 +1281,6 @@ static sIOBuffer *getBuf(tFile *stream) {
 			buf->out.max = OUT_BUFFER_SIZE;
 			buf->out.str = (char*)malloc(OUT_BUFFER_SIZE + 1);
 			if(buf->out.str == NULL) {
-				free(buf->in.str);
 				free(buf);
 				return NULL;
 			}
@@ -1311,6 +1310,7 @@ static sIOBuffer *createBuffer(tFD fd,u8 flags) {
 
 	/* init in-buffer */
 	buf->in.fd = -1;
+	buf->in.str = NULL;
 	if(flags & IO_READ) {
 		buf->in.fd = fd;
 		buf->in.type = BUF_TYPE_FILE;
@@ -1325,6 +1325,7 @@ static sIOBuffer *createBuffer(tFD fd,u8 flags) {
 
 	/* init out-buffer */
 	buf->out.fd = -1;
+	buf->out.str = NULL;
 	if(flags & IO_WRITE) {
 		buf->out.fd = fd;
 		buf->out.type = BUF_TYPE_FILE;

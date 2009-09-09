@@ -24,24 +24,25 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define USERNAME "hrniels"
-#define PASSWORD "test"
+#define USERNAME	"hrniels"
+#define PASSWORD	"test"
+#define MAX_LEN		10
 
 static void termHandler(tSig signal,u32 data);
 
 int main(void) {
-	char un[10];
-	char pw[10];
+	char un[MAX_LEN];
+	char pw[MAX_LEN];
 
 	if(setSigHandler(SIG_TERM,termHandler) < 0)
 		error("Unable to announce term-signal-handler");
 
 	while(1) {
 		printf("Username: ");
-		scanl(un,10);
+		scanl(un,MAX_LEN);
 		ioctl(STDOUT_FILENO,IOCTL_VT_DIS_ECHO,NULL,0);
 		printf("Password: ");
-		scanl(pw,10);
+		scanl(pw,MAX_LEN);
 		ioctl(STDOUT_FILENO,IOCTL_VT_EN_ECHO,NULL,0);
 		printf("\n");
 

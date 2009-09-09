@@ -275,7 +275,7 @@ static bool ata_isDrivePresent(u8 drive) {
 }
 
 static void ata_detectDrives(void) {
-	char name[10];
+	char name[SSTRLEN("hda1") + 1];
 	u32 i,p,s;
 	u16 buffer[256];
 	s = 0;
@@ -330,7 +330,7 @@ static sDriver *getDriver(tServ sid) {
 
 static void ata_createVFSEntry(sATADrive *drive,sPartition *part,char *name) {
 	tFile *f;
-	char path[21];
+	char path[SSTRLEN("/system/devices/") + SSTRLEN("hda1") + 1];
 	sprintf(path,"/system/devices/%s",name);
 
 	/* open and create file */

@@ -26,6 +26,7 @@
 #include <esc/cmdargs.h>
 #include <stdlib.h>
 
+#define DATE_LEN			(SSTRLEN("2009-09-09 14:12") + 1)
 #define ARRAY_INC_SIZE		8
 #define CONSOLE_WIDTH		80
 
@@ -73,7 +74,7 @@ int main(int argc,char *argv[]) {
 	bool pathGiven = false;
 	char *path;
 	char *str;
-	char dateStr[20];
+	char dateStr[DATE_LEN];
 	u32 widths[WIDTHS_COUNT] = {0};
 	u32 i,pos,x,count,flags = 0;
 	sFullDirEntry **entries,*entry;
@@ -164,7 +165,7 @@ int main(int argc,char *argv[]) {
 			printf("%*u ",widths[W_GID],entry->gid);
 			printf("%*d ",widths[W_SIZE],entry->size);
 			getDateOf(&date,entry->modifytime);
-			dateToString(dateStr,20,"%Y-%m-%d %H:%M",&date);
+			dateToString(dateStr,DATE_LEN,"%Y-%m-%d %H:%M",&date);
 			printf("%s ",dateStr);
 			if(MODE_IS_DIR(entry->mode))
 				printf("\033[co;9]%s\033[co]",entry->name);

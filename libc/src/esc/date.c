@@ -80,7 +80,7 @@ s32 dateToString(char *str,u32 max,const char *fmt,sDate *date) {
 	u32 len,wDay;
 	char c;
 	char *start = str;
-	char *end = str + max - 1;
+	char *end = str + max;
 	const char *cpy;
 	/* we want to terminate the string */
 	max--;

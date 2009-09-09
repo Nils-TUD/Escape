@@ -139,7 +139,7 @@ int main(void) {
 		error("Unable to load services");
 
 	/* now load the shells */
-	vtermName = (char*)malloc(strlen("vterm") + getnwidth(VTERM_COUNT) + 1);
+	vtermName = (char*)malloc(SSTRLEN("vterm") + getnwidth(VTERM_COUNT) + 1);
 	if(vtermName == NULL)
 		error("Unable to allocate mem for vterm-name");
 

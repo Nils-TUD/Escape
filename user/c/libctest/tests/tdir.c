@@ -71,23 +71,23 @@ static void test_abspath(void) {
 	}
 
 	count = abspath(path,MAX_PATH_LEN + 1,"/");
-	test_assertUInt(count,strlen("/"));
+	test_assertUInt(count,SSTRLEN("/"));
 	test_assertStr(path,"/");
 
 	count = abspath(path,MAX_PATH_LEN + 1,"/bin/bla");
-	test_assertUInt(count,strlen("/bin/bla/"));
+	test_assertUInt(count,SSTRLEN("/bin/bla/"));
 	test_assertStr(path,"/bin/bla/");
 
 	count = abspath(path,MAX_PATH_LEN + 1,"/../bin/../.././bla");
-	test_assertUInt(count,strlen("/bla/"));
+	test_assertUInt(count,SSTRLEN("/bla/"));
 	test_assertStr(path,"/bla/");
 
 	count = abspath(path,MAX_PATH_LEN + 1,"bin/..///.././bla");
-	test_assertUInt(count,strlen("/bla/"));
+	test_assertUInt(count,SSTRLEN("/bla/"));
 	test_assertStr(path,"/bla/");
 
 	count = abspath(path,MAX_PATH_LEN + 1,"bin/./bla");
-	test_assertUInt(count,strlen("/bin/bla/"));
+	test_assertUInt(count,SSTRLEN("/bin/bla/"));
 	test_assertStr(path,"/bin/bla/");
 
 	count = abspath(path,3,"/");

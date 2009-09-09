@@ -60,7 +60,7 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 	sShellCmd **matches;
 	sFileInfo info;
 	char *filePath = NULL;
-	char *paths[3] = {(char*)APPS_DIR,NULL,NULL};
+	char *paths[] = {(char*)APPS_DIR,NULL,NULL};
 
 	/* create matches-array */
 	arrayPos = 0;

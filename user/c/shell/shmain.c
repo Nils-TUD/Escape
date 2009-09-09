@@ -47,7 +47,7 @@ static void usage(char *name) {
 int main(int argc,char **argv) {
 	tFD fd;
 	char *buffer;
-	char servPath[9 + MAX_VTERM_NAME_LEN + 1] = "/drivers/";
+	char servPath[SSTRLEN("/drivers/") + MAX_VTERM_NAME_LEN + 1] = "/drivers/";
 
 	/* we need either the vterm as argument or "-e <cmd>" */
 	if((argc != 2 && argc != 3) || isHelpCmd(argc,argv)) {

@@ -321,7 +321,7 @@ void vterm_update(sVTerm *vt) {
 
 static int vterm_dateThread(void) {
 	u32 i,j,len;
-	char dateStr[30];
+	char dateStr[SSTRLEN("Mon, 14. Jan 2009, 12:13:14") + 1];
 	sDate date;
 	while(1) {
 		/* get date and format it */

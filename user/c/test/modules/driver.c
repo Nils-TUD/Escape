@@ -75,7 +75,7 @@ int mod_driver(int argc,char *argv[]) {
 						msg.args.arg1 = msg.args.arg2;
 						msg.args.arg2 = true;
 						send(cfd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
-						send(cfd,MSG_DRV_READ_RESP,"test!!",strlen("test!!"));
+						send(cfd,MSG_DRV_READ_RESP,"test!!",SSTRLEN("test!!"));
 						break;
 					case MSG_DRV_WRITE: {
 						char *buf = (char*)malloc(msg.args.arg2);

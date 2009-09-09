@@ -166,7 +166,7 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 			/* send escape-code */
 			else {
 				bool empty = rb_length(vt->inbuf) == 0;
-				char escape[20];
+				char escape[SSTRLEN("\033[kc;123;7]") + 1];
 				sprintf(escape,"\033[kc;%d;%d]",keycode,(altDown << STATE_ALT) |
 					(ctrlDown << STATE_CTRL) |
 					(shiftDown << STATE_SHIFT));

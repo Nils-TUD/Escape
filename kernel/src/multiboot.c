@@ -107,7 +107,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 				thread_switchInKernel();
 			}
 		}
-		vid_toLineEnd(strlen("DONE"));
+		vid_toLineEnd(SSTRLEN("DONE"));
 		vid_printf("\033[co;2]DONE\033[co]");
 
 		mod++;

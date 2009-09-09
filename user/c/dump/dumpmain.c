@@ -32,8 +32,9 @@
 #define OUT_FORMAT_OCT	'o'
 #define OUT_FORMAT_DEC	'd'
 #define OUT_FORMAT_HEX	'h'
+#define MAX_BASE		16
 
-static char ascii[16];
+static char ascii[MAX_BASE];
 static u8 buffer[BUF_SIZE];
 
 static void usage(char *name) {

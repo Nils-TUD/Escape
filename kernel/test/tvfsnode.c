@@ -65,7 +65,7 @@ static bool test_vfsn_resolvePathCpy(const char *a,const char *b) {
 	s32 err;
 	tInodeNo no;
 	sVFSNode *node;
-	if((err = vfsn_resolvePath(a,&no,VFS_READ)) != 0) {
+	if((err = vfsn_resolvePath(a,&no,NULL,VFS_READ)) != 0) {
 		test_caseFailed("Unable to resolve the path %s",a);
 		return false;
 	}
@@ -79,13 +79,13 @@ static void test_vfsn_getPath(void) {
 
 	test_caseStart("Testing vfsn_getPath()");
 
-	vfsn_resolvePath("/system",&no,VFS_READ);
+	vfsn_resolvePath("/system",&no,NULL,VFS_READ);
 	test_assertStr(vfsn_getPath(no),(char*)"/system");
 
-	vfsn_resolvePath("/system/processes",&no,VFS_READ);
+	vfsn_resolvePath("/system/processes",&no,NULL,VFS_READ);
 	test_assertStr(vfsn_getPath(no),(char*)"/system/processes");
 
-	vfsn_resolvePath("/system/processes/0",&no,VFS_READ);
+	vfsn_resolvePath("/system/processes/0",&no,NULL,VFS_READ);
 	test_assertStr(vfsn_getPath(no),(char*)"/system/processes/0");
 
 	test_caseSucceded();

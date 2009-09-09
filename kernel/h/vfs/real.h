@@ -36,7 +36,7 @@ void vfsr_init(void);
  * @param path the path
  * @return 0 on success or the error-code
  */
-s32 vfsr_openFile(tTid tid,u8 flags,const char *path);
+s32 vfsr_openFile(tTid tid,u16 flags,const char *path);
 
 /**
  * Retrieves information about the given (real!) path

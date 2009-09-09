@@ -50,7 +50,7 @@
 /* an entry in the global file table */
 typedef struct {
 	/* read OR write; flags = 0 => entry unused */
-	u8 flags;
+	u16 flags;
 	/* the owner of this file; sharing of a file is not possible for different threads
 	 * (an exception is the inheritance to a child-thread) */
 	tTid owner;
@@ -73,7 +73,7 @@ typedef struct {
  * @param devNo the device-number
  * @return the file-number on success or the negative error-code
  */
-static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo);
+static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo);
 
 /* global file table */
 static sGFTEntry globalFileTable[FILE_COUNT];
@@ -102,7 +102,7 @@ void vfs_init(void) {
 	vfsn_createDir(root,(char*)"drivers");
 }
 
-s32 vfs_hasAccess(tTid tid,tInodeNo nodeNo,u8 flags) {
+s32 vfs_hasAccess(tTid tid,tInodeNo nodeNo,u16 flags) {
 	sVFSNode *n = nodes + nodeNo;
 	/* kernel is allmighty :P */
 	if(tid == KERNEL_TID)
@@ -136,7 +136,7 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 			return -1;
 
 		nodeNo = NADDR_TO_VNNO(child);
-		newFile = vfs_openFile(tid,e->flags,nodeNo,VFS_DEV_NO);
+		newFile = vfs_openFile(tid,e->flags & (VFS_READ | VFS_WRITE),nodeNo,VFS_DEV_NO);
 		if(newFile < 0) {
 			vfsn_removeNode(child);
 			return -1;
@@ -147,7 +147,7 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 	else if(n->mode & MODE_TYPE_PIPE) {
 		tFileNo newFile;
 		/* we'll get a new file since the tid is different */
-		newFile = vfs_openFile(tid,e->flags,e->nodeNo,e->devNo);
+		newFile = vfs_openFile(tid,e->flags & (VFS_READ | VFS_WRITE),e->nodeNo,e->devNo);
 		if(newFile < 0)
 			return -1;
 		return newFile;
@@ -190,9 +190,12 @@ s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev) {
 	return 0;
 }
 
-tFileNo vfs_openFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo) {
+tFileNo vfs_openFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) {
 	sGFTEntry *e;
 	sVFSNode *n = NULL;
+
+	/* cleanup flags */
+	flags &= VFS_READ | VFS_WRITE | VFS_CREATED;
 
 	/* determine free file */
 	tFileNo f = vfs_getFreeFile(tid,flags,nodeNo,devNo);
@@ -225,16 +228,16 @@ tFileNo vfs_openFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo) {
 	return f;
 }
 
-static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo) {
+static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) {
 	tFileNo i;
 	tFileNo freeSlot = ERR_NO_FREE_FILE;
+	u16 rwFlags = flags & (VFS_READ | VFS_WRITE);
 	bool isServUse = false;
 	sGFTEntry *e = &globalFileTable[0];
 
 	/* ensure that we don't increment usages of an unused slot */
 	vassert(flags & (VFS_READ | VFS_WRITE),"flags empty");
-	vassert(!(flags & ~(VFS_READ | VFS_WRITE | VFS_CREATE | VFS_TRUNCATE)),
-			"flags contains invalid bits");
+	vassert(!(flags & ~(VFS_READ | VFS_WRITE | VFS_CREATED)),"flags contains invalid bits");
 
 	if(devNo == VFS_DEV_NO) {
 		vassert(nodeNo < NODE_COUNT,"nodeNo invalid");
@@ -252,7 +255,7 @@ static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo) {
 			if(e->devNo == devNo && e->nodeNo == nodeNo && e->owner == tid) {
 				/* service-usages may use a file twice for reading and writing because we
 				 * will prevent trouble anyway */
-				if(isServUse && e->flags == flags)
+				if(isServUse && (e->flags & (VFS_READ | VFS_WRITE)) == rwFlags)
 					return i;
 
 				/* someone does already write to this file? so it's not really good
@@ -261,7 +264,7 @@ static tFileNo vfs_getFreeFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo) {
 					return ERR_FILE_IN_USE;
 
 				/* if the flags are different we need a different slot */
-				if(e->flags == flags)
+				if((e->flags & (VFS_READ | VFS_WRITE)) == rwFlags)
 					return i;
 			}
 		}
@@ -423,8 +426,10 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 
 		/* write to the node */
 		writtenBytes = n->writeHandler(tid,file,n,buffer,e->position,count);
-		if(writtenBytes > 0)
+		if(writtenBytes > 0) {
+			e->flags |= VFS_MODIFIED;
 			e->position += writtenBytes;
+		}
 	}
 	else {
 		/* query the fs-service to write to the inode */
@@ -540,8 +545,8 @@ s32 vfs_link(tTid tid,const char *oldPath,const char *newPath) {
 	sVFSNode *dir,*target;
 	s32 oldRes,newRes;
 	/* first check wether it is a realpath */
-	oldRes = vfsn_resolvePath(oldPath,&oldIno,VFS_READ);
-	newRes = vfsn_resolvePath(newPath,&newIno,VFS_READ);
+	oldRes = vfsn_resolvePath(oldPath,&oldIno,NULL,VFS_READ);
+	newRes = vfsn_resolvePath(newPath,&newIno,NULL,VFS_READ);
 	if(oldRes == ERR_REAL_PATH) {
 		if(newRes != ERR_REAL_PATH)
 			return ERR_LINK_DEVICE;
@@ -563,7 +568,7 @@ s32 vfs_link(tTid tid,const char *oldPath,const char *newPath) {
 	name = vfsn_basename((char*)newPathCpy,&len);
 	backup = *name;
 	vfsn_dirname((char*)newPathCpy,len);
-	newRes = vfsn_resolvePath(newPathCpy,&newIno,VFS_READ);
+	newRes = vfsn_resolvePath(newPathCpy,&newIno,NULL,VFS_READ);
 	if(newRes < 0)
 		return ERR_PATH_NOT_FOUND;
 
@@ -597,7 +602,7 @@ s32 vfs_unlink(tTid tid,const char *path) {
 	s32 res;
 	tInodeNo ino;
 	sVFSNode *n;
-	res = vfsn_resolvePath(path,&ino,VFS_READ | VFS_NOLINKRES);
+	res = vfsn_resolvePath(path,&ino,NULL,VFS_READ | VFS_NOLINKRES);
 	if(res == ERR_REAL_PATH)
 		return vfsr_unlink(tid,path);
 	if(res < 0)
@@ -630,7 +635,7 @@ s32 vfs_mkdir(tTid tid,const char *path) {
 	vfsn_dirname(pathCpy,len);
 
 	/* get the parent-directory */
-	res = vfsn_resolvePath(pathCpy,&inodeNo,VFS_READ);
+	res = vfsn_resolvePath(pathCpy,&inodeNo,NULL,VFS_READ);
 	*name = backup;
 	if(res == ERR_REAL_PATH) {
 		/* let fs handle the request */
@@ -662,7 +667,7 @@ s32 vfs_rmdir(tTid tid,const char *path) {
 	s32 res;
 	sVFSNode *node;
 	tInodeNo inodeNo;
-	res = vfsn_resolvePath(path,&inodeNo,VFS_READ);
+	res = vfsn_resolvePath(path,&inodeNo,NULL,VFS_READ);
 	if(res == ERR_REAL_PATH)
 		return vfsr_rmdir(tid,path);
 	if(res < 0)

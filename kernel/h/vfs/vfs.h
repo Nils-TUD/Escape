@@ -43,8 +43,10 @@ enum {
 	VFS_WRITE = 2,
 	VFS_CREATE = 4,
 	VFS_TRUNCATE = 8,
-	VFS_CONNECT = 16,		/* just kernel-intern */
-	VFS_NOLINKRES = 32,		/* dito */
+	VFS_CONNECT = 16,		/* kernel-intern: connect to service/driver */
+	VFS_NOLINKRES = 32,		/* kernel-intern: don't resolve last link in path */
+	VFS_CREATED = 64,		/* kernel-intern: wether a new node has been created */
+	VFS_MODIFIED = 128		/* kernel-intern: wether it has been written to the file */
 };
 
 /* seek-types */
@@ -111,7 +113,7 @@ void vfs_init(void);
  * @param flags specifies what you want to do (VFS_READ | VFS_WRITE)
  * @return 0 if the thread has permission or the error-code
  */
-s32 vfs_hasAccess(tTid tid,tInodeNo nodeNo,u8 flags);
+s32 vfs_hasAccess(tTid tid,tInodeNo nodeNo,u16 flags);
 
 /**
  * Inherits the given file for the current thread
@@ -151,7 +153,7 @@ s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev);
  * @param devNo the device-number
  * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FILE)
  */
-tFileNo vfs_openFile(tTid tid,u8 flags,tInodeNo nodeNo,tDevNo devNo);
+tFileNo vfs_openFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo);
 
 /**
  * Checks wether we are at EOF in the given file

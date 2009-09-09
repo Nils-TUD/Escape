@@ -97,10 +97,12 @@ s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info);
  *
  * @param path the path to resolve
  * @param nodeNo the node-number for that path (will be set)
+ * @param created will be set to true if the (virtual) node didn't exist and has been created (may
+ * 	be NULL if you don't care about it)
  * @param flags the flags (VFS_*) with which to resolve the path (create file, connect to pipe etc.)
  * @return 0 if successfull or the error-code
  */
-s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,u8 flags);
+s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags);
 
 /**
  * Removes the last '/' from the path, if necessary, and returns a pointer to the last

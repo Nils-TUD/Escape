@@ -615,9 +615,9 @@ static void sysc_exit(sIntrptStackFrame *stack) {
 static void sysc_open(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	s32 pathLen;
-	u8 flags;
+	u16 flags;
 	tInodeNo nodeNo = 0;
-	bool isVirt = false;
+	bool created,isVirt = false;
 	tFileNo file;
 	tFD fd;
 	s32 err;
@@ -632,12 +632,12 @@ static void sysc_open(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* check flags */
-	flags = ((u8)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ | VFS_CREATE | VFS_TRUNCATE);
+	flags = ((u16)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ | VFS_CREATE | VFS_TRUNCATE);
 	if((flags & (VFS_READ | VFS_WRITE)) == 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* resolve path */
-	err = vfsn_resolvePath(path,&nodeNo,flags | VFS_CONNECT);
+	err = vfsn_resolvePath(path,&nodeNo,&created,flags | VFS_CONNECT);
 	if(err == ERR_REAL_PATH) {
 		/* send msg to fs and wait for reply */
 		file = vfsr_openFile(t->tid,flags,path);
@@ -660,6 +660,9 @@ static void sysc_open(sIntrptStackFrame *stack) {
 		fd = thread_getFreeFd();
 		if(fd < 0)
 			SYSC_ERROR(stack,fd);
+		/* store wether we have created the node */
+		if(created)
+			flags |= VFS_CREATED;
 		/* open file */
 		file = vfs_openFile(t->tid,flags,nodeNo,VFS_DEV_NO);
 		if(file < 0)
@@ -1297,7 +1300,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	path = pathSave;
 
 	/* resolve path; require a path in real fs */
-	res = vfsn_resolvePath(path,&nodeNo,VFS_READ);
+	res = vfsn_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res != ERR_REAL_PATH) {
 		kheap_free(argBuffer);
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -1347,7 +1350,7 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 	if(len == 0 || len >= MAX_PATH_LEN)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfsn_resolvePath(path,&nodeNo,VFS_READ);
+	res = vfsn_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res == ERR_REAL_PATH) {
 		sThread *t = thread_getRunning();
 		res = vfsr_getFileInfo(t->tid,path,info);
@@ -1522,7 +1525,7 @@ static void sysc_mount(sIntrptStackFrame *stack) {
 	u16 type = (u16)SYSC_ARG3(stack);
 	if(!sysc_isStringReadable(device) || !sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(vfsn_resolvePath(path,&ino,VFS_READ) != ERR_REAL_PATH)
+	if(vfsn_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
 		SYSC_ERROR(stack,ERR_MOUNT_VIRT_PATH);
 
 	res = vfsr_mount(t->tid,device,path,type);
@@ -1538,7 +1541,7 @@ static void sysc_unmount(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(vfsn_resolvePath(path,&ino,VFS_READ) != ERR_REAL_PATH)
+	if(vfsn_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
 		SYSC_ERROR(stack,ERR_MOUNT_VIRT_PATH);
 
 	res = vfsr_unmount(t->tid,path);

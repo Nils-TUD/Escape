@@ -179,9 +179,11 @@ char *vfsn_getPath(tInodeNo nodeNo) {
 	return (char*)path;
 }
 
-s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,u8 flags) {
+s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) {
 	sVFSNode *dir,*n = nodes;
 	s32 pos,depth = 0;
+	if(created)
+		*created = false;
 
 	/* no absolute path? */
 	if(*path != '/')
@@ -256,6 +258,8 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,u8 flags) {
 				kheap_free(nameCpy);
 				return ERR_NOT_ENOUGH_MEM;
 			}
+			if(created)
+				*created = true;
 			*nodeNo = NADDR_TO_VNNO(child);
 			return 0;
 		}

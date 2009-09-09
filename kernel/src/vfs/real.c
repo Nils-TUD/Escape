@@ -71,7 +71,7 @@ void vfsr_init(void) {
 	vfsreq_setHandler(MSG_FS_UNMOUNT_RESP,vfsr_defRespHandler);
 }
 
-s32 vfsr_openFile(tTid tid,u8 flags,const char *path) {
+s32 vfsr_openFile(tTid tid,u16 flags,const char *path) {
 	s32 res;
 	u32 pathLen = strlen(path);
 	tFileNo virtFile,realFile;
@@ -399,7 +399,7 @@ static tFileNo vfsr_create(tTid tid) {
 	tInodeNo nodeNo;
 
 	/* create a virtual node for communication with fs */
-	if((res = vfsn_resolvePath(FS_PATH,&nodeNo,VFS_CONNECT)) != 0)
+	if((res = vfsn_resolvePath(FS_PATH,&nodeNo,NULL,VFS_CONNECT)) != 0)
 		return res;
 	/* open the file */
 	return vfs_openFile(tid,VFS_READ | VFS_WRITE,nodeNo,VFS_DEV_NO);

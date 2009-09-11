@@ -78,70 +78,71 @@ void test_caseSucceded(void) {
 	succCount++;
 }
 
-bool test_assertTrue(bool received) {
+bool test_doAssertTrue(bool received,const char *func,u32 line) {
 	assertCount++;
 	if(!received) {
-		test_caseFailed("Assert %d: Received false, expected true",assertCount);
+		test_caseFailed("Assert %d in %s line %d: Received false, expected true",assertCount,func,line);
 		return false;
 	}
 	testPrintf("vassert %d succeded\n",assertCount);
 	return true;
 }
 
-bool test_assertFalse(bool received) {
+bool test_doAssertFalse(bool received,const char *func,u32 line) {
 	assertCount++;
 	if(received) {
-		test_caseFailed("Assert %d: Received true, expected false",assertCount);
+		test_caseFailed("Assert %d in %s line %d: Received true, expected false",assertCount,func,line);
 		return false;
 	}
 	testPrintf("vassert %d succeded\n",assertCount);
 	return true;
 }
 
-bool test_assertPtr(const void *received,const void *expected) {
+bool test_doAssertPtr(const void *received,const void *expected,const char *func,u32 line) {
 	assertCount++;
 	if(expected != received) {
-		test_caseFailed("Assert %d: Pointers are not equal: Expected 0x%x, got 0x%x",assertCount,
-				expected,received);
+		test_caseFailed("Assert %d in %s line %d: Pointers are not equal: Expected 0x%x, got 0x%x",
+				assertCount,func,line,expected,received);
 		return false;
 	}
 	testPrintf("vassert %d succeded\n",assertCount);
 	return true;
 }
 
-bool test_assertInt(s32 received,s32 expected) {
+bool test_doAssertInt(s32 received,s32 expected,const char *func,u32 line) {
 	assertCount++;
 	if(expected != received) {
-		test_caseFailed("Assert %d: Integers are not equal: Expected %d, got %d",assertCount,
-				expected,received);
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected %d, got %d",
+				assertCount,func,line,expected,received);
 		return false;
 	}
 	testPrintf("vassert %d succeded\n",assertCount);
 	return true;
 }
 
-bool test_assertUInt(u32 received,u32 expected) {
+bool test_doAssertUInt(u32 received,u32 expected,const char *func,u32 line) {
 	assertCount++;
 	if(expected != received) {
-		test_caseFailed("Assert %d: Integers are not equal: Expected 0x%x, got 0x%x",assertCount,
-				expected,received);
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: Expected 0x%x, got 0x%x",
+				assertCount,func,line,expected,received);
 		return false;
 	}
 	testPrintf("vassert %d succeded\n",assertCount);
 	return true;
 }
 
-bool test_assertLInt(s64 received,s64 expected) {
-	return test_assertULInt(received,expected);
+bool test_doAssertLInt(s64 received,s64 expected,const char *func,u32 line) {
+	return test_doAssertULInt(received,expected,func,line);
 }
 
-bool test_assertULInt(u64 received,u64 expected) {
+bool test_doAssertULInt(u64 received,u64 expected,const char *func,u32 line) {
 	assertCount++;
 	if(expected != received) {
 		uLongLong urecv,uexp;
 		urecv.val64 = received;
 		uexp.val64 = expected;
-		test_caseFailed("Assert %d: Integers are not equal: Expected 0x%08x%08x, got 0x%08x%08x",assertCount,
+		test_caseFailed("Assert %d in %s line %d: Integers are not equal: "
+				"Expected 0x%08x%08x, got 0x%08x%08x",assertCount,func,line,
 				uexp.val32.upper,uexp.val32.lower,urecv.val32.upper,urecv.val32.lower);
 		return false;
 	}
@@ -149,7 +150,7 @@ bool test_assertULInt(u64 received,u64 expected) {
 	return true;
 }
 
-bool test_assertStr(const char *received,const char *expected) {
+bool test_doAssertStr(const char *received,const char *expected,const char *func,u32 line) {
 	char *s1 = (char*)expected;
 	char *s2 = (char*)received;
 	assertCount++;
@@ -159,16 +160,16 @@ bool test_assertStr(const char *received,const char *expected) {
 		return false;
 	while(*s1 && *s2) {
 		if(*s1 != *s2) {
-			test_caseFailed("Assert %d: Strings are not equal: Expected '%s', got '%s'",assertCount,
-					expected,received);
+			test_caseFailed("Assert %d in %s line %d: Strings are not equal: Expected '%s', got '%s'",
+					assertCount,func,line,expected,received);
 			return false;
 		}
 		s1++;
 		s2++;
 	}
 	if(*s1 != *s2) {
-		test_caseFailed("Assert %d: Strings are not equal: Expected '%s', got '%s'",assertCount,
-				expected,received);
+		test_caseFailed("Assert %d in %s line %d: Strings are not equal: Expected '%s', got '%s'",
+				assertCount,func,line,expected,received);
 		return false;
 	}
 	testPrintf("vassert %d succeded\n",assertCount);

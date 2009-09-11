@@ -75,7 +75,7 @@ STATE_EDI								equ 4
 STATE_ESI								equ 8
 STATE_EBP								equ 12
 STATE_EFLAGS						equ 16
-STATE_EIP								equ 20
+STATE_EBX								equ 20
 
 ; TODO consider callee-save-registers!!
 
@@ -279,6 +279,7 @@ thread_save:
 
 	; save register
 	mov		eax,[ebp + 8]									; get saveArea
+	mov		[eax + STATE_EBX],ebx
 	mov		[eax + STATE_ESP],esp					; store esp
 	mov		[eax + STATE_EDI],edi
 	mov		[eax + STATE_ESI],esi
@@ -321,6 +322,7 @@ thread_resume:
 	mov		esi,[eax + STATE_ESI]
 	mov		ebp,[eax + STATE_EBP]
 	mov		esp,[eax + STATE_ESP]
+	mov		ebx,[eax + STATE_EBX]
 	push	DWORD [eax + STATE_EFLAGS]
 	popfd																; load eflags
 

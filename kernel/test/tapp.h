@@ -17,14 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef APPS_H_
-#define APPS_H_
+#ifndef TAPP_H_
+#define TAPP_H_
 
 #include <common.h>
+#include <test.h>
 
-/**
- * Initializes the apps-db
- */
-void apps_init(void);
+extern sTestModule tModApp;
 
-#endif /* APPS_H_ */
+#endif /* TAPP_H_ */

@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <sllist.h>
+#include <width.h>
 #include <esccodes.h>
 
 /* the number of entries in the hash-map */
@@ -514,51 +515,6 @@ s32 vsscanf(const char *str,const char *fmt,va_list ap) {
 		.str = (char*)str
 	};
 	return doVfscanf(&buf,fmt,ap);
-}
-
-u8 getnwidth(s32 n) {
-	/* we have at least one char */
-	u8 width = 1;
-	if(n < 0) {
-		width++;
-		n = -n;
-	}
-	while(n >= 10) {
-		n /= 10;
-		width++;
-	}
-	return width;
-}
-
-u8 getlwidth(s64 l) {
-	u8 c = 0;
-	if(l < 0) {
-		l = -l;
-		c++;
-	}
-	while(l >= 10) {
-		c++;
-		l /= 10;
-	}
-	return c + 1;
-}
-
-u8 getuwidth(u32 n,u8 base) {
-	u8 width = 1;
-	while(n >= base) {
-		n /= base;
-		width++;
-	}
-	return width;
-}
-
-u8 getulwidth(u64 n,u8 base) {
-	u8 width = 1;
-	while(n >= base) {
-		n /= base;
-		width++;
-	}
-	return width;
 }
 
 static char doFprintc(sBuffer *buf,char c) {

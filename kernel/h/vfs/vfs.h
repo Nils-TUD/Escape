@@ -77,7 +77,10 @@ struct sVFSNode {
 	fWrite writeHandler;
 	/* the owner of this node: used for service-usages */
 	tTid owner;
+	/* a list of listeners for created, modified or deleted */
+	sSLList *listeners;
 	union {
+		/* for services/drivers */
 		struct {
 			/* wether there is data to read or not */
 			bool isEmpty;
@@ -89,7 +92,7 @@ struct sVFSNode {
 			/* a list for reading messages from the service */
 			sSLList *recvList;
 		} servuse;
-		/* for all other nodes-types */
+		/* for all other node-types */
 		struct {
 			/* size of the buffer */
 			u32 size;

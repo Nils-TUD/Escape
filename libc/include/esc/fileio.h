@@ -472,40 +472,6 @@ s32 vfscanf(tFile *file,const char *fmt,va_list ap);
 s32 vsscanf(const char *str,const char *fmt,va_list ap);
 
 /**
- * Determines the width of the given signed 32-bit integer in base 10
- *
- * @param n the integer
- * @return the width
- */
-u8 getnwidth(s32 n);
-
-/**
- * Determines the width of the given signed 64-bit integer in base 10
- *
- * @param n the integer
- * @return the width
- */
-u8 getlwidth(s64 n);
-
-/**
- * Determines the width of the given unsigned 32-bit integer in the given base
- *
- * @param n the integer
- * @param base the base (2..16)
- * @return the width
- */
-u8 getuwidth(u32 n,u8 base);
-
-/**
- * Determines the width of the given unsigned 64-bit integer in the given base
- *
- * @param n the integer
- * @param base the base (2..16)
- * @return the width
- */
-u8 getulwidth(u64 n,u8 base);
-
-/**
  * The internal printf-routine. Should NOT BE USED by user-programs. This is just intended
  * for libcpp to prevent a duplicate implementation there.
  */

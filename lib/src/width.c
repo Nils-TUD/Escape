@@ -17,14 +17,50 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef APPS_H_
-#define APPS_H_
+#include <types.h>
+#include <width.h>
 
-#include <common.h>
+u8 getnwidth(s32 n) {
+	/* we have at least one char */
+	u8 width = 1;
+	if(n < 0) {
+		width++;
+		n = -n;
+	}
+	while(n >= 10) {
+		n /= 10;
+		width++;
+	}
+	return width;
+}
 
-/**
- * Initializes the apps-db
- */
-void apps_init(void);
+u8 getlwidth(s64 l) {
+	u8 c = 0;
+	if(l < 0) {
+		l = -l;
+		c++;
+	}
+	while(l >= 10) {
+		c++;
+		l /= 10;
+	}
+	return c + 1;
+}
 
-#endif /* APPS_H_ */
+u8 getuwidth(u32 n,u8 base) {
+	u8 width = 1;
+	while(n >= base) {
+		n /= base;
+		width++;
+	}
+	return width;
+}
+
+u8 getulwidth(u64 n,u8 base) {
+	u8 width = 1;
+	while(n >= base) {
+		n /= base;
+		width++;
+	}
+	return width;
+}

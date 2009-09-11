@@ -24,7 +24,7 @@
 #include <mem/paging.h>
 #include <task/proc.h>
 #include <task/thread.h>
-#include <util.h>
+#include <asprintf.h>
 
 /**
  * Virtual memory layout:

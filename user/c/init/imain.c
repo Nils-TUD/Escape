@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <sllist.h>
 #include <string.h>
+#include <width.h>
 
 #define SHELL_COUNT				2
 #define MAX_SNAME_LEN			50
@@ -152,7 +153,7 @@ int main(void) {
 			error("Exec of '%s' failed",args[0]);
 		}
 		else if(child < 0)
-			error("Fork failed");
+			error("Fork of '%s %s' failed","/bin/shell",vtermName);
 	}
 	free(vtermName);
 
@@ -388,7 +389,7 @@ static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
 		exit(EXIT_FAILURE);
 	}
 	else if(child < 0) {
-		printe("Fork failed");
+		printe("Fork of '%s' failed",path);
 		return false;
 	}
 

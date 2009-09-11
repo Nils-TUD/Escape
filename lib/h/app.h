@@ -17,18 +17,28 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <apps/apps.h>
-#include <vfs/vfs.h>
-#include <vfs/listeners.h>
-#include <util.h>
-#include <video.h>
-#include <sllist.h>
+#ifndef APPSPARSER_H_
+#define APPSPARSER_H_
 
-typedef struct {
-	char *source;
-	bool writable;
-} sAppDB;
+#include <types.h>
+#include <sllist.h>
+#include <asprintf.h>
+
+#define DRIV_NAME_LEN		15
+
+#define APP_TYPE_DRIVER		0
+#define APP_TYPE_SERVICE	1
+#define APP_TYPE_FS			2
+#define APP_TYPE_DEFAULT	3
+
+#define DRIVER_PERM_GROUP	0
+#define DRIVER_PERM_NAME	1
+
+#define DRV_GROUP_CUSTOM	0
+#define DRV_GROUP_BINPRIV	1
+#define DRV_GROUP_BINPUB	2
+#define DRV_GROUP_TXTPRIV	3
+#define DRV_GROUP_TXTPUB	4
 
 typedef struct {
 	u32 start;
@@ -36,8 +46,16 @@ typedef struct {
 } sRange;
 
 typedef struct {
+	u8 group;
+	char name[DRIV_NAME_LEN + 1];
+	bool read;
+	bool write;
+	bool ioctrl;
+} sDriverPerm;
+
+typedef struct {
 	u32 id;
-	sAppDB *db;
+	void *db;
 	u16 appType;			/* driver, fs, service or default */
 	sSLList *ioports;		/* list of sRange */
 	sSLList *driver;		/* list of sDriverPerm */
@@ -52,23 +70,25 @@ typedef struct {
 	sSLList *joinShMem;		/* list of names */
 } sApp;
 
-static void apps_listener(sVFSNode *node,u32 event);
+/* format:
+		source:							"name";
+		sourceWritable:					1|0;
+		type:							"driver|fs|service|default";
+		ioports:						X1..Y1,X2..Y2,...,Xn..Yn;
+		driver:
+			"group|name",1|0,1|0,1|0,
+			...,
+			"group|name",1|0,1|0,1|0;
+		fs:								1|0,1|0;
+		services:						"name1","name2",...,"namen";
+		signals:						sig1,sig2,...,sign;
+		physmem:						X1..Y1,X2..Y2,...,Xn..Yn;
+		crtshmem:						"name1","name2",...,"namen";
+		joinshmem:						"name1","name2",...,"namen";
+*/
 
-void apps_init(void) {
-	tInodeNo nodeNo;
-	sVFSNode *node;
-	if(vfsn_resolvePath("/system",&nodeNo,NULL,VFS_READ) < 0)
-		util_panic("hm..thats not good");
-	node = vfsn_getNode(nodeNo);
-	node = vfsn_createDir(node,(char*)"apps");
-	if(vfsl_add(node,VFS_EV_CREATE | VFS_EV_MODIFY | VFS_EV_DELETE,apps_listener) < 0)
-		util_panic("well, that wasn't intended...");
-}
+bool app_toString(sStringBuffer *str,sApp *app,char *src,bool srcWritable);
 
-static void apps_listener(sVFSNode *node,u32 event) {
-	vid_printf("Listener called for node %s and event 0x%x\n",node->name,event);
-}
+bool app_parse(const char *definition,sApp *app,char *src,bool *srcWritable);
 
-static void apps_parse(sApp *app,char *str,u32 len) {
-	;
-}
+#endif /* APPSPARSER_H_ */

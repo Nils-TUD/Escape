@@ -6,6 +6,7 @@ BUILDT=$(BUILD)/kernel/test
 BIN=$(BUILD)/kernel_test.bin
 LDCONF=../ld.conf
 LIB=$(ROOT)/lib
+GCCLIBDIR = $(ROOT)/libgcc
 DEPS=$(wildcard $(BUILDT)/*.d)
 SUBDIRS=../src $(filter-out ../src/Makefile $(wildcard ../src/*.*),$(wildcard ../src/*))
 BUILDDIRS=$(BUILDT)
@@ -24,6 +25,11 @@ AOBJ=$(BUILDK)/kernela.o
 TOBJ=$(patsubst %.c,$(BUILDT)/%.o,$(TSRC))
 KOBJ=$(patsubst %.c,$(BUILDK)/%.o,$(KSRC))
 LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILDT)/lib_%.o,$(LSRC))
+# for long long arithmetic
+GCCLIB = $(GCCLIBDIR)/_divdi3.object \
+	$(GCCLIBDIR)/_moddi3.object \
+	$(GCCLIBDIR)/_udivdi3.object \
+	$(GCCLIBDIR)/_umoddi3.object
 
 SYMBOLS=$(BUILD)/kernelt_symbols.txt
 SYMBOLSCRIPT=$(ROOT)/tools/gensymbols.sh
@@ -34,9 +40,9 @@ SYMBOLOBJ=$(patsubst ../src/%.c,$(BUILDT)/%.o,$(SYMBOLSRC))
 
 all: $(BIN)
 
-$(BIN):	$(BUILDDIRS) $(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
+$(BIN):	$(BUILDDIRS) $(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(GCCLIB)
 		@echo "	" LINKING $(BIN)
-		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(GCCLIB);
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 		@# since it's size is 0 at the first time. In the second pass the size is correct
 		@# and therefore the symbol-table will be generated correctly in the third pass :)
@@ -45,13 +51,13 @@ $(BIN):	$(BUILDDIRS) $(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		@echo "	" CC $(SYMBOLSRC)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
-		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(GCCLIB);
 		@echo "	" BUILDING SYMBOL-FILE
 		@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "	" CC $(SYMBOLSRC)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
-		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ);
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(GCCLIB);
 		@echo "	" COPYING BINARY
 		$(ROOT)/tools/cp2disk.sh $(BIN) /boot
 

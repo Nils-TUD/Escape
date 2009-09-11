@@ -23,12 +23,13 @@
 #include <string.h>
 #include <stdarg.h>
 #include <esccodes.h>
+#include <width.h>
 
 #define VIDEO_BASE	0xC00B8000
 #define COL_WOB		0x07				/* white on black */
 #define COLS		80
 #define ROWS		25
-#define TAB_WIDTH	2
+#define TAB_WIDTH	4
 
 /* special escape-codes */
 #define ESC_FG		'f'
@@ -136,8 +137,8 @@ void vid_putchar(char c) {
 	vid_move();
 	char *video = (char*)(VIDEO_BASE + row * COLS * 2 + col * 2);
 
-	/* write to bochs/qemu console (\r not necessary here) */
-	if(c != '\r') {
+	/* write to bochs/qemu console (some chars make no sense here) */
+	if(c != '\r' && c != '\t' && c != '\b') {
 		util_outByte(0xe9,c);
 	    util_outByte(0x3f8,c);
 	    while((util_inByte(0x3fd) & 0x20) == 0)
@@ -257,7 +258,7 @@ void vid_vprintf(const char *fmt,va_list ap) {
 			case 'd':
 				n = va_arg(ap, s32);
 				if(pad > 0) {
-					width = util_getnwidth(n);
+					width = getnwidth(n);
 					while(width++ < pad) {
 						vid_putchar(padchar);
 					}
@@ -273,7 +274,7 @@ void vid_vprintf(const char *fmt,va_list ap) {
 				u = va_arg(ap, u32);
 				base = c == 'o' ? 8 : (c == 'x' ? 16 : (c == 'b' ? 2 : 10));
 				if(pad > 0) {
-					width = util_getuwidth(u,base);
+					width = getuwidth(u,base);
 					while(width++ < pad) {
 						vid_putchar(padchar);
 					}

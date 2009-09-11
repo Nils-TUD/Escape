@@ -5,6 +5,7 @@ BUILDK=$(BUILD)/kernel/src
 BIN=$(BUILD)/kernel.bin
 LDCONF=../ld.conf
 LIB=$(ROOT)/lib
+GCCLIBDIR = $(ROOT)/libgcc
 SUBDIRS=. $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS=$(addprefix $(BUILDK)/,$(SUBDIRS))
 DEPS=$(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
@@ -22,6 +23,11 @@ LSRC=$(wildcard $(LIB)/src/*.c)
 AOBJ=$(BUILDK)/kernela.o
 COBJ=$(patsubst %.c,$(BUILDK)/%.o,$(CSRC))
 LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILDK)/lib_%.o,$(LSRC))
+# for long long arithmetic
+GCCLIB = $(GCCLIBDIR)/_divdi3.object \
+	$(GCCLIBDIR)/_moddi3.object \
+	$(GCCLIBDIR)/_udivdi3.object \
+	$(GCCLIBDIR)/_umoddi3.object
 
 SYMBOLS=$(BUILD)/kernel_symbols.txt
 SYMBOLSCRIPT=$(ROOT)/tools/gensymbols.sh
@@ -32,9 +38,9 @@ SYMBOLOBJ=$(patsubst %.c,$(BUILDK)/%.o,$(SYMBOLSRC))
 
 all:	$(BIN)
 
-$(BIN):	$(BUILDDIRS) $(SYMBOLS) $(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
+$(BIN):	$(BUILDDIRS) $(SYMBOLS) $(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ) $(GCCLIB)
 		@echo "	" LINKING $(BIN)
-		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(GCCLIB);
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 		@# since it's size is 0 at the first time. In the second pass the size is correct
 		@# and therefore the symbol-table will be generated correctly in the third pass :)
@@ -43,13 +49,13 @@ $(BIN):	$(BUILDDIRS) $(SYMBOLS) $(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@echo "	" CC $(SYMBOLSRC)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
-		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(GCCLIB);
 		@echo "	" BUILDING SYMBOL-FILE
 		@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "	" CC $(SYMBOLSRC)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
-		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ);
+		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(GCCLIB);
 		@echo "	" COPYING BINARY
 		$(ROOT)/tools/cp2disk.sh $(BIN) /boot
 

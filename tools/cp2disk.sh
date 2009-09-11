@@ -2,8 +2,8 @@
 ROOT=$(dirname $(dirname $(readlink -f $0)))
 HDD=$ROOT/build/hd.img
 DISKMOUNT=$ROOT/disk
-# 20 MB disk (40 * 16 * 63 * 512 = 20,643,840 byte)
-HDDCYL=40
+# 50 MB disk (100 * 16 * 63 * 512 = 51,609,600 byte)
+HDDCYL=100
 HDDHEADS=16
 HDDTRACKSECS=63
 SUDO=sudo

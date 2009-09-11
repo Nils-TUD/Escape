@@ -107,14 +107,17 @@ VFS:
 		<idn>
 	
 	format:
-		source:							<name>
-		sourceWritable:			<1|0>
-		type:								<driver|fs|service|default>
-		ioports:						<X1..Y1,X2..Y2,...,Xn..Yn>
-		driver:							{<group|name>,<group>,<name>,<1|0>,<1|0>,<1|0>},{...},...,{...}
-		fs:									<1|0>,<1|0>
-		services:						<name1>,<name2>,...<namen>
-		signals:						<sig1>,<sig2>,...,<sign>
-		physmem:						<X1..Y1,X2..Y2,...,Xn..Yn>
-		crtshmem:						<name1>,<name2>,...<namen>
-		joinshmem:					<name1>,<name2>,...<namen>
+		source:							"name";
+		sourceWritable:			1|0;
+		type:								"driver|fs|service|default";
+		ioports:						X1..Y1,X2..Y2,...,Xn..Yn;
+		driver:
+			"group|name","group","name",1|0,1|0,1|0,
+			...,
+			"group|name","group","name",1|0,1|0,1|0;
+		fs:									1|0,1|0;
+		services:						"name1","name2",...,"namen";
+		signals:						sig1,sig2,...,sign;
+		physmem:						X1..Y1,X2..Y2,...,Xn..Yn;
+		crtshmem:						"name1","name2",...,"namen";
+		joinshmem:					"name1","name2",...,"namen";

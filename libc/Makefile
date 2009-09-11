@@ -1,6 +1,7 @@
 BUILD = ../build
 BUILDL = $(BUILD)/libc
 LIBDIR = ../lib
+GCCLIBDIR = ../libgcc
 SUBDIRS = src $(filter-out $(wildcard src/*.*),$(wildcard src/*))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
@@ -21,7 +22,6 @@ AOBJS = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
 LOBJ=$(patsubst $(LIBDIR)/src/%.c,$(BUILDL)/lib_%.o,$(LSRC))
 STARTO = $(BUILD)/libc_startup.o
 # for long long arithmetic
-GCCLIBDIR = ../libgcc
 GCCLIB = $(GCCLIBDIR)/_divdi3.object \
 	$(GCCLIBDIR)/_moddi3.object \
 	$(GCCLIBDIR)/_udivdi3.object \
@@ -31,7 +31,7 @@ GCCLIB = $(GCCLIBDIR)/_divdi3.object \
 
 all: $(LIB)
 
-$(LIB): $(BUILDDIRS) $(COBJS) $(AOBJS) $(LOBJ) $(STARTO)
+$(LIB): $(BUILDDIRS) $(COBJS) $(AOBJS) $(LOBJ) $(STARTO) $(GCCLIB)
 		@echo "	" AR $(LIB)
 		@ar rcs $(LIB) $(COBJS) $(AOBJS) $(LOBJ) $(GCCLIB)
 		

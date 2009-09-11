@@ -25,6 +25,7 @@
 #include <vfs/request.h>
 #include <vfs/driver.h>
 #include <vfs/rw.h>
+#include <vfs/listeners.h>
 #include <task/proc.h>
 #include <task/sched.h>
 #include <mem/paging.h>
@@ -527,6 +528,15 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 							vfsn_removeNode(n);
 					}
 				}
+
+				/* notify listeners about creation/modification of files */
+				/* TODO what about links ? */
+				if(MODE_IS_FILE(n->mode)) {
+					if(e->flags & VFS_CREATED)
+						vfsl_notify(n,VFS_EV_CREATE);
+					else if(e->flags & VFS_MODIFIED)
+						vfsl_notify(n,VFS_EV_MODIFY);
+				}
 			}
 		}
 		else
@@ -611,6 +621,9 @@ s32 vfs_unlink(tTid tid,const char *path) {
 	n = vfsn_getNode(ino);
 	if(!MODE_IS_FILE(n->mode) && !MODE_IS_LINK(n->mode))
 		return ERR_NO_FILE_OR_LINK;
+	/* notify listeners about deletion */
+	if(MODE_IS_FILE(n->mode))
+		vfsl_notify(n,VFS_EV_DELETE);
 	vfsn_removeNode(n);
 	return 0;
 }

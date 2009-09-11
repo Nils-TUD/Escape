@@ -25,6 +25,7 @@
 #include <esc/date.h>
 #include <esc/cmdargs.h>
 #include <stdlib.h>
+#include <width.h>
 
 #define DATE_LEN			(SSTRLEN("2009-09-09 14:12") + 1)
 #define ARRAY_INC_SIZE		8

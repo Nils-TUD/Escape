@@ -17,14 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef APPS_H_
-#define APPS_H_
+#ifndef TUTIL_H_
+#define TUTIL_H_
 
-#include <common.h>
+#include <test.h>
 
-/**
- * Initializes the apps-db
- */
-void apps_init(void);
+extern sTestModule tModasprintf;
 
-#endif /* APPS_H_ */
+#endif /* TUTIL_H_ */

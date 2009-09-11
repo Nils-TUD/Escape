@@ -35,16 +35,6 @@ typedef struct {
 	const char *funcName;
 } sFuncCall;
 
-/**
- * The buffer for util_(v)sprintf()
- */
-typedef struct {
-	u8 dynamic;
-	char *str;
-	u32 size;
-	u32 len;
-} sStringBuffer;
-
 /* The max. stack-depth util_getStackTrace() supports */
 #define MAX_STACK_DEPTH 100
 
@@ -129,62 +119,5 @@ void util_dumpMem(void *addr,u32 dwordCount);
  * @param byteCount the number of bytes
  */
 void util_dumpBytes(void *addr,u32 byteCount);
-
-/**
- * Determines the required length for the given format and arguments
- *
- * @param fmt the format
- * @return the required length of the string util_sprintf() would write to
- */
-u32 util_sprintfLen(const char *fmt,...);
-
-/**
- * Determines the required length for the given format and arguments
- *
- * @param fmt the format
- * @param ap the argument-list
- * @return the required length of the string util_sprintf() would write to
- */
-u32 util_vsprintfLen(const char *fmt,va_list ap);
-
-/**
- * Kernel-version of sprintf
- *
- * @param buf the buffer to use. if buf->dynamic is true, sprintf() manages the memory-allocation.
- * 	if buf->str is NULL it will be allocated at beginning, otherwise the existing buffer will
- *	be used.
- * @param fmt the format
- * @return true on success (can just fail if buf->dynamic is true)
- */
-bool util_sprintf(sStringBuffer *buf,const char *fmt,...);
-
-/**
- * Kernel-version of vsprintf
- *
- * @param buf the buffer to use. if buf->dynamic is true, sprintf() manages the memory-allocation.
- * 	if buf->str is NULL it will be allocated at beginning, otherwise the existing buffer will
- *	be used.
- * @param fmt the format
- * @param ap the argument-list
- * @return true on success (can just fail if buf->dynamic is true)
- */
-bool util_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap);
-
-/**
- * Determines the width of the given signed 32-bit integer in base 10
- *
- * @param n the integer
- * @return the width
- */
-u8 util_getnwidth(s32 n);
-
-/**
- * Determines the width of the given unsigned 32-bit integer in the given base
- *
- * @param n the integer
- * @param base the base (2..16)
- * @return the width
- */
-u8 util_getuwidth(u32 n,u8 base);
 
 #endif /*UTIL_H_*/

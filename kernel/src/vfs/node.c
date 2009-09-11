@@ -244,11 +244,17 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 			sVFSNode *child;
 			char *nameCpy;
 			sThread *t = thread_getRunning();
-			/* if there is still a slash in the path, we can't create the file */
-			if(strchr(path,'/') != NULL)
-				return ERR_INVALID_PATH;
+			char *nextSlash = strchr(path,'/');
+			if(nextSlash) {
+				/* if there is still a slash in the path, we can't create the file */
+				if(*(nextSlash + 1) != '\0')
+					return ERR_INVALID_PATH;
+				*nextSlash = '\0';
+				nameLen = nextSlash - path;
+			}
+			else
+				nameLen = strlen(path);
 			/* copy the name because vfsn_createInfo() will store the pointer */
-			nameLen = strlen(path);
 			nameCpy = kheap_alloc(nameLen + 1);
 			if(nameCpy == NULL)
 				return ERR_NOT_ENOUGH_MEM;
@@ -426,7 +432,10 @@ sVFSNode *vfsn_createInfo(tTid tid,sVFSNode *parent,char *name,fRead handler) {
 		return NULL;
 
 	node->owner = tid;
-	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ;
+	/* TODO we need write-permissions for other because we have no real used-/group-based
+	 * permission-system */
+	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ
+		| MODE_OTHER_WRITE;
 	node->readHandler = handler;
 	node->writeHandler = vfsrw_writeDef;
 	return node;

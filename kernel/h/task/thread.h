@@ -46,6 +46,7 @@ typedef struct {
 	u32 esi;
 	u32 ebp;
 	u32 eflags;
+	u32 ebx;
 	/* note that we don't need to save eip because when we're done in thread_resume() we have
 	 * our kernel-stack back which causes the ret-instruction to return to the point where
 	 * we've called thread_save(). the user-eip is saved on the kernel-stack anyway.. */

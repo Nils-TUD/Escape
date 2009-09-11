@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef TUTIL_H_
-#define TUTIL_H_
+#ifndef TVFSLIST_H_
+#define TVFSLIST_H_
 
 #include <test.h>
 
-extern sTestModule tModUtil;
+extern sTestModule tModVFSList;
 
-#endif /* TUTIL_H_ */
+#endif /* TVFSLIST_H_ */

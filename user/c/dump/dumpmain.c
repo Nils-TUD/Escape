@@ -25,6 +25,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <width.h>
 
 #define BUF_SIZE 512
 

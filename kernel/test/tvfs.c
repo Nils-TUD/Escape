@@ -55,15 +55,6 @@ static void test_vfs(void) {
 	test_vfs_createService();
 }
 
-static s32 dummyReadHandler(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
-	UNUSED(pid);
-	UNUSED(node);
-	UNUSED(buffer);
-	UNUSED(offset);
-	UNUSED(count);
-	return 0;
-}
-
 static void test_vfs_createService(void) {
 	u32 oldHeap,newHeap;
 	s32 id,id2,id3;

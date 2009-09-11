@@ -153,7 +153,7 @@ static bool app_rangesToStr(sStringBuffer *str,sSLList *list) {
 	return true;
 }
 
-bool app_parse(const char *definition,sApp *app,char *src,bool *srcWritable) {
+bool app_fromString(const char *definition,sApp *app,char *src,bool *srcWritable) {
 	sParseInfo info;
 	info.str = definition;
 	app->db = NULL;

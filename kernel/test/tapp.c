@@ -94,7 +94,7 @@ static void test_app_1(void) {
 	buf.str = NULL;
 	test_caseStart("Parsing, toString(), parsing again");
 
-	res = app_parse(app1,&a,src,&srcWritable);
+	res = app_fromString(app1,&a,src,&srcWritable);
 	test_assertTrue(res);
 	for(i = 0; i < 2; i++) {
 		test_assertStr(src,"mysource");
@@ -109,9 +109,9 @@ static void test_app_1(void) {
 		test_checkStrList(joinshmem,ARRAY_SIZE(joinshmem),a.joinShMem);
 
 		/* create str from it and parse again */
-		if(i == 0) {
+		if(i < 1) {
 			test_assertTrue(app_toString(&buf,&a,src,srcWritable));
-			test_assertTrue(app_parse(buf.str,&a,src,&srcWritable));
+			test_assertTrue(app_fromString(buf.str,&a,src,&srcWritable));
 		}
 	}
 
@@ -137,7 +137,7 @@ static void test_app_2(void) {
 	buf.str = NULL;
 	test_caseStart("Parsing, toString(), parsing again");
 
-	res = app_parse(app2,&a,src,&srcWritable);
+	res = app_fromString(app2,&a,src,&srcWritable);
 	test_assertTrue(res);
 	for(i = 0; i < 2; i++) {
 		test_assertStr(src,"hiho");
@@ -154,7 +154,7 @@ static void test_app_2(void) {
 		/* create str from it and parse again */
 		if(i == 0) {
 			test_assertTrue(app_toString(&buf,&a,src,srcWritable));
-			test_assertTrue(app_parse(buf.str,&a,src,&srcWritable));
+			test_assertTrue(app_fromString(buf.str,&a,src,&srcWritable));
 		}
 	}
 	test_caseSucceded();

@@ -26,25 +26,26 @@
 
 #define DRIV_NAME_LEN		15
 
+/* possible app-types */
 #define APP_TYPE_DRIVER		0
 #define APP_TYPE_SERVICE	1
 #define APP_TYPE_FS			2
 #define APP_TYPE_DEFAULT	3
 
-#define DRIVER_PERM_GROUP	0
-#define DRIVER_PERM_NAME	1
-
+/* possible driver-groups */
 #define DRV_GROUP_CUSTOM	0
 #define DRV_GROUP_BINPRIV	1
 #define DRV_GROUP_BINPUB	2
 #define DRV_GROUP_TXTPRIV	3
 #define DRV_GROUP_TXTPUB	4
 
+/* some kind of range */
 typedef struct {
 	u32 start;
 	u32 end;
 } sRange;
 
+/* permissions for a driver */
 typedef struct {
 	u8 group;
 	char name[DRIV_NAME_LEN + 1];
@@ -53,6 +54,7 @@ typedef struct {
 	bool ioctrl;
 } sDriverPerm;
 
+/* information about an application */
 typedef struct {
 	u32 id;
 	void *db;
@@ -70,25 +72,26 @@ typedef struct {
 	sSLList *joinShMem;		/* list of names */
 } sApp;
 
-/* format:
-		source:							"name";
-		sourceWritable:					1|0;
-		type:							"driver|fs|service|default";
-		ioports:						X1..Y1,X2..Y2,...,Xn..Yn;
-		driver:
-			"group|name",1|0,1|0,1|0,
-			...,
-			"group|name",1|0,1|0,1|0;
-		fs:								1|0,1|0;
-		services:						"name1","name2",...,"namen";
-		signals:						sig1,sig2,...,sign;
-		physmem:						X1..Y1,X2..Y2,...,Xn..Yn;
-		crtshmem:						"name1","name2",...,"namen";
-		joinshmem:						"name1","name2",...,"namen";
-*/
-
+/**
+ * Writes all settings for <app> to the string specified by <str>.
+ *
+ * @param str the string to write to
+ * @param app the application to write
+ * @parma src the source of the application
+ * @param srcWritable wether the source is writable
+ * @return true if successfull
+ */
 bool app_toString(sStringBuffer *str,sApp *app,char *src,bool srcWritable);
 
-bool app_parse(const char *definition,sApp *app,char *src,bool *srcWritable);
+/**
+ * Reads all settings specified by <definition> into <app>, <src> and <srcWritable>.
+ *
+ * @param definition the permissions of the application
+ * @param app the app to write to
+ * @param src the source of the app
+ * @param srcWritable wether the source is writable
+ * @return true if successfull
+ */
+bool app_fromString(const char *definition,sApp *app,char *src,bool *srcWritable);
 
 #endif /* APPSPARSER_H_ */

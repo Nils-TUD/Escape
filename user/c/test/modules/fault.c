@@ -25,11 +25,12 @@
 #include "fault.h"
 
 int mod_fault(int argc,char *argv[]) {
+	u32 *ptr;
 	UNUSED(argc);
 	UNUSED(argv);
 	printf("I am evil ^^\n");
 	open((char*)0x12345678,IO_READ);
-	u32 *ptr = (u32*)0xFFFFFFFF;
+	ptr = (u32*)0xFFFFFFFF;
 	*ptr = 1;
 	printf("Never printed\n");
 	return EXIT_SUCCESS;

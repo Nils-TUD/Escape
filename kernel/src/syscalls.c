@@ -1130,13 +1130,15 @@ static void sysc_yield(sIntrptStackFrame *stack) {
 static void sysc_requestIOPorts(sIntrptStackFrame *stack) {
 	u16 start = SYSC_ARG1(stack);
 	u16 count = SYSC_ARG2(stack);
+	sProc *p;
+	s32 err;
 
 	/* check range */
 	if(count == 0 || (u32)start + (u32)count > 0xFFFF)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	sProc *p = proc_getRunning();
-	s32 err = ioports_request(p,start,count);
+	p = proc_getRunning();
+	err = ioports_request(p,start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 
@@ -1147,13 +1149,15 @@ static void sysc_requestIOPorts(sIntrptStackFrame *stack) {
 static void sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 	u16 start = SYSC_ARG1(stack);
 	u16 count = SYSC_ARG2(stack);
+	sProc *p;
+	s32 err;
 
 	/* check range */
 	if(count == 0 || (u32)start + (u32)count > 0xFFFF)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	sProc *p = proc_getRunning();
-	s32 err = ioports_release(p,start,count);
+	p = proc_getRunning();
+	err = ioports_release(p,start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 

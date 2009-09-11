@@ -98,9 +98,9 @@ bool rb_write(sRingBuf *r,const void *e) {
 
 u32 rb_writen(sRingBuf *r,const void *e,u32 n) {
 	sIRingBuf *rb = (sIRingBuf*)r;
+	char *d = (char*)e;
 	vassert(r != NULL,"r == NULL");
 	vassert(e != NULL,"e == NULL");
-	char *d = (char*)e;
 	while(n-- > 0) {
 		if(!rb_write(r,d))
 			break;

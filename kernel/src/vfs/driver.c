@@ -162,11 +162,12 @@ void vfsdrv_close(tTid tid,tFileNo file,sVFSNode *node) {
 
 static void vfsdrv_openReqHandler(tTid tid,const u8 *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
+	sRequest *req;
 	if(size < sizeof(rmsg->args))
 		return;
 
 	/* find the request for the tid */
-	sRequest *req = vfsreq_getRequestByPid(tid);
+	req = vfsreq_getRequestByPid(tid);
 	if(req != NULL) {
 		/* remove request and give him the result */
 		req->state = REQ_STATE_FINISHED;
@@ -212,11 +213,12 @@ static void vfsdrv_readReqHandler(tTid tid,const u8 *data,u32 size) {
 
 static void vfsdrv_writeReqHandler(tTid tid,const u8 *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
+	sRequest *req;
 	if(size < sizeof(rmsg->args))
 		return;
 
 	/* find the request for the tid */
-	sRequest *req = vfsreq_getRequestByPid(tid);
+	req = vfsreq_getRequestByPid(tid);
 	if(req != NULL) {
 		/* remove request and give him the inode-number */
 		req->state = REQ_STATE_FINISHED;
@@ -228,11 +230,12 @@ static void vfsdrv_writeReqHandler(tTid tid,const u8 *data,u32 size) {
 
 static void vfsdrv_ioctlReqHandler(tTid tid,const u8 *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
+	sRequest *req;
 	if(size < sizeof(rmsg->data))
 		return;
 
 	/* find the request for the tid */
-	sRequest *req = vfsreq_getRequestByPid(tid);
+	req = vfsreq_getRequestByPid(tid);
 	if(req != NULL) {
 		/* remove request and give him the inode-number */
 		req->state = REQ_STATE_FINISHED;

@@ -116,8 +116,8 @@ static void shell_sigIntrpt(tSig sig,u32 data) {
 	UNUSED(sig);
 	/* was this interrupt intended for our vterm? */
 	if(vterm == data) {
-		printf("\n");
 		tPid pid = shell_getWaitingPid();
+		printf("\n");
 		if(pid != INVALID_PID)
 			sendSignalTo(pid,SIG_KILL,0);
 		else

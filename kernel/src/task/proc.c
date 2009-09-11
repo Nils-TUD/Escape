@@ -52,6 +52,9 @@ static sSLList* deadProcs = NULL;
 void proc_init(void) {
 	/* init the first process */
 	sProc *p = procs + 0;
+	tPid pid;
+	sThread *t;
+	u32 stackFrame;
 
 	/* create nodes in vfs */
 	p->threadDir = vfs_createProcess(0,&vfsinfo_procReadHandler);
@@ -75,15 +78,14 @@ void proc_init(void) {
 
 	paging_exchangePDir(p->physPDirAddr);
 	/* setup kernel-stack for us */
-	u32 stackFrame = mm_allocateFrame(MM_DEF);
+	stackFrame = mm_allocateFrame(MM_DEF);
 	paging_map(KERNEL_STACK,&stackFrame,1,PG_WRITABLE | PG_SUPERVISOR,false);
 
 	/* set kernel-stack for first thread */
-	sThread *t = (sThread*)sll_get(p->threads,0);
+	t = (sThread*)sll_get(p->threads,0);
 	t->kstackFrame = stackFrame;
 
 	/* mark all other processes unused */
-	tPid pid;
 	for(pid = 1; pid < PROC_COUNT; pid++)
 		procs[pid].pid = INVALID_PID;
 }
@@ -150,6 +152,8 @@ s32 proc_clone(tPid newPid) {
 	sProc *p;
 	sProc *cur = proc_getRunning();
 	sThread *curThread = thread_getRunning();
+	sThread *nt;
+	s32 res;
 
 	vassert(newPid < PROC_COUNT,"newPid >= PROC_COUNT");
 	vassert((procs + newPid)->pid == INVALID_PID,"The process slot 0x%x is already in use!",
@@ -188,8 +192,6 @@ s32 proc_clone(tPid newPid) {
 	}
 
 	/* clone current thread */
-	s32 res;
-	sThread *nt;
 	if((res = thread_clone(curThread,&nt,p,&dummy,true)) < 0) {
 		kheap_free(p->threads);
 		paging_destroyPageDir(p);
@@ -247,11 +249,12 @@ s32 proc_startThread(u32 entryPoint) {
 
 	res = proc_finishClone(nt,stackFrame);
 	if(res == 1) {
+		u32 *esp;
 		sIntrptStackFrame *istack = intrpt_getCurStack();
 		proc_setupStart(istack,entryPoint);
 
 		/* we want to call exit when the thread-function returns */
-		u32 *esp = (u32*)nt->ustackBegin - 1;
+		esp = (u32*)nt->ustackBegin - 1;
 		*--esp = EXIT_CALL_ADDR;
 		istack->uesp = (u32)esp;
 		istack->ebp = (u32)esp;
@@ -302,6 +305,7 @@ void proc_destroyThread(void) {
 
 void proc_destroy(sProc *p) {
 	tFD i;
+	sSLNode *tn,*tmpn;
 	sProc *cp;
 	sProc *cur = proc_getRunning();
 	/* don't delete initial or unused processes */
@@ -322,7 +326,6 @@ void proc_destroy(sProc *p) {
 			util_panic("Not enough mem to append dead process");
 
 		/* ensure that no thread of our process will be selected on the next resched */
-		sSLNode *tn;
 		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
 			sThread *t = (sThread*)tn->data;
 			sched_removeThread(t);
@@ -335,10 +338,9 @@ void proc_destroy(sProc *p) {
 	paging_destroyPageDir(p);
 
 	/* destroy threads */
-	sSLNode *tn,*tmpn;
 	for(tn = sll_begin(p->threads); tn != NULL; ) {
-		tmpn = tn->next;
 		sThread *t = (sThread*)tn->data;
+		tmpn = tn->next;
 		thread_destroy(t,false);
 		tn = tmpn;
 	}

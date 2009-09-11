@@ -44,8 +44,8 @@ static tPid waitingPid = INVALID_PID;
 
 bool shell_prompt(void) {
 	/* ensure that we start a new readline */
-	resetReadLine = true;
 	char *path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
+	resetReadLine = true;
 	if(path == NULL) {
 		printf("ERROR: unable to get CWD\n");
 		return false;

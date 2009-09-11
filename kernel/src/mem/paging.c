@@ -431,10 +431,11 @@ void paging_unmapPageTables(u32 start,u32 count) {
 
 u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	u32 x,pdirFrame,frameCount,kheapCount;
-	u32 tPages,dPages,sPages;
+	u32 tPages,dPages,sPages,tsPages;
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;
 	sProc *p;
+	sThread *curThread;
 
 	vassert(stackFrame != NULL,"stackFrame == NULL");
 	vassert(newProc != NULL,"newProc == NULL");
@@ -519,10 +520,10 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	paging_setCOW(x,(sPTEntry*)ADDR_TO_MAPPED(x),dPages,newProc);
 
 	/* we're cloning just the current thread */
-	sThread *curThread = thread_getRunning();
+	curThread = thread_getRunning();
 
 	/* create user-stack */
-	u32 tsPages = curThread->ustackPages;
+	tsPages = curThread->ustackPages;
 	x = curThread->ustackBegin - tsPages * PAGE_SIZE;
 	paging_mapIntern(PAGE_DIR_TMP_AREA,TMPMAP_PTS_START,x,
 				(u32*)ADDR_TO_MAPPED(x),tsPages,PG_COPYONWRITE | PG_ADDR_TO_FRAME | PG_INHERIT,true);
@@ -542,10 +543,11 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 }
 
 void paging_destroyStacks(sThread *t) {
+	u32 tsPages;
 	paging_mapForeignPageDir(t->proc);
 
 	/* free user-stack */
-	u32 tsPages = t->ustackPages;
+	tsPages = t->ustackPages;
 	paging_unmapIntern(t->proc,TMPMAP_PTS_START,t->ustackBegin - tsPages * PAGE_SIZE,tsPages,true,true);
 	/* free kernel-stack */
 	mm_freeFrame(t->kstackFrame,MM_DEF);
@@ -554,6 +556,9 @@ void paging_destroyStacks(sThread *t) {
 }
 
 void paging_destroyPageDir(sProc *p) {
+	u32 ustackBegin;
+	u32 ustackEnd;
+	sSLNode *tn;
 	vassert(p != NULL,"p == NULL");
 
 	/* map page-dir and page-tables */
@@ -570,9 +575,8 @@ void paging_destroyPageDir(sProc *p) {
 
 	/* we don't know which stacks are used and which not. therefore we have to search for the
 	 * first and last stack. */
-	u32 ustackBegin = KERNEL_AREA_V_ADDR;
-	u32 ustackEnd = KERNEL_AREA_V_ADDR;
-	sSLNode *tn;
+	ustackBegin = KERNEL_AREA_V_ADDR;
+	ustackEnd = KERNEL_AREA_V_ADDR;
 	for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
 		sThread *t = (sThread*)tn->data;
 		/* free user-stack */

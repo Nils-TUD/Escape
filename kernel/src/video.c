@@ -134,8 +134,9 @@ static void vid_move(void) {
 
 void vid_putchar(char c) {
 	u32 i;
+	char *video;
 	vid_move();
-	char *video = (char*)(VIDEO_BASE + row * COLS * 2 + col * 2);
+	video = (char*)(VIDEO_BASE + row * COLS * 2 + col * 2);
 
 	/* write to bochs/qemu console (some chars make no sense here) */
 	if(c != '\r' && c != '\t' && c != '\b') {
@@ -184,7 +185,7 @@ void vid_puts(const char *str) {
 	char c;
 	while((c = *str)) {
 		/* color-code? */
-		if(c == '\033' || c == '\e') {
+		if(c == '\033') {
 			str++;
 			vid_handleColorCode(&str);
 			continue;
@@ -226,7 +227,7 @@ void vid_vprintf(const char *fmt,va_list ap) {
 		/* wait for a '%' */
 		while((c = *fmt++) != '%') {
 			/* color-code? */
-			if(c == '\033' || c == '\e') {
+			if(c == '\033') {
 				vid_handleColorCode(&fmt);
 				continue;
 			}

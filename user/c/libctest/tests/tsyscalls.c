@@ -446,13 +446,14 @@ static void test_sendSignalTo(void) {
 
 static void test_exec(void) {
 	char *longPath = (char*)malloc(10000);
-	memset(longPath,0x65,9999);
-	longPath[9999] = 0;
 	const char *a1[] = {"a",(const char*)0x12345678,NULL};
 	const char *a2[] = {(const char*)0x12345678,NULL};
 	const char *a3[] = {(const char*)0xC0000000,NULL};
 	const char *a4[] = {(const char*)0xFFFFFFFF,NULL};
-	const char *a5[] = {longPath,NULL};
+	const char *a5[] = {NULL,NULL};
+	a5[0] = longPath;
+	memset(longPath,0x65,9999);
+	longPath[9999] = 0;
 	test_caseStart("Testing exec()");
 	test_assertInt(_exec(NULL,NULL),ERR_INVALID_ARGS);
 	test_assertInt(_exec((const char*)0x12345678,NULL),ERR_INVALID_ARGS);

@@ -110,9 +110,9 @@ s32 vfsinfo_procReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 
 }
 
 static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
-	UNUSED(dataSize);
 	sProc *p = proc_getByPid(atoi(node->parent->name));
 	sStringBuffer buf;
+	UNUSED(dataSize);
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = 17 * 6 + 5 * 10 + MAX_PROC_NAME_LEN + 1;
@@ -143,9 +143,9 @@ s32 vfsinfo_threadReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u3
 }
 
 static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
-	UNUSED(dataSize);
 	sThread *t = thread_getById(atoi(node->name));
 	sStringBuffer buf;
+	UNUSED(dataSize);
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = 17 * 6 + 4 * 10 + 2 * 16 + 1;
@@ -176,8 +176,8 @@ static s32 vfsinfo_cpuReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffe
 }
 
 static void vfsinfo_cpuReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
-	UNUSED(node);
 	sStringBuffer buf;
+	UNUSED(node);
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
@@ -195,15 +195,15 @@ static s32 vfsinfo_statsReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buf
 }
 
 static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
+	sStringBuffer buf;
+	uLongLong cycles;
 	UNUSED(dataSize);
 	UNUSED(node);
-	sStringBuffer buf;
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = 17 * 5 + 4 * 10 + 1 + 1 * 16 + 1;
 	buf.len = 0;
 
-	uLongLong cycles;
 	cycles.val64 = cpu_rdtsc();
 	asprintf(
 		&buf,
@@ -229,16 +229,17 @@ static s32 vfsinfo_memUsageReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *
 }
 
 static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
+	sStringBuffer buf;
+	u32 free,total;
 	UNUSED(node);
 	UNUSED(dataSize);
-	sStringBuffer buf;
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = (11 + 10 + 1) * 4 + 1;
 	buf.len = 0;
 
-	u32 free = mm_getFreeFrmCount(MM_DEF | MM_DMA) << PAGE_SIZE_SHIFT;
-	u32 total = mboot_getUsableMemCount();
+	free = mm_getFreeFrmCount(MM_DEF | MM_DMA) << PAGE_SIZE_SHIFT;
+	total = mboot_getUsableMemCount();
 	asprintf(
 		&buf,
 		"%-11s%10u\n"
@@ -260,11 +261,12 @@ s32 vfsinfo_virtMemReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u
 
 static void vfsinfo_virtMemReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
 	sStringBuffer buf;
+	sProc *p;
 	buf.dynamic = true;
 	buf.str = NULL;
 	buf.size = 0;
 	buf.len = 0;
-	sProc *p = proc_getByPid(atoi(node->parent->name));
+	p = proc_getByPid(atoi(node->parent->name));
 	paging_sprintfVirtMem(&buf,p);
 	*buffer = buf.str;
 	*dataSize = buf.len + 1;
@@ -284,9 +286,9 @@ s32 vfsinfo_dirReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 o
 	if(node->data.def.cache == NULL) {
 		/* we need the number of bytes first */
 		u8 *fsBytes = NULL;
+		sVFSNode *n = NODE_FIRST_CHILD(node);
 		byteCount = 0;
 		fsByteCount = 0;
-		sVFSNode *n = NODE_FIRST_CHILD(node);
 		while(n != NULL) {
 			if(node->parent != NULL || (strcmp(n->name,".") != 0 && strcmp(n->name,"..") != 0))
 				byteCount += sizeof(sVFSDirEntry) + strlen(n->name);

@@ -148,7 +148,8 @@ int main(void) {
 		sprintf(vtermName,"vterm%d",i);
 		child = fork();
 		if(child == 0) {
-			const char *args[] = {"/bin/shell",vtermName,NULL};
+			const char *args[] = {"/bin/shell",NULL,NULL};
+			args[1] = vtermName;
 			exec(args[0],args);
 			error("Exec of '%s' failed",args[0]);
 		}
@@ -343,11 +344,12 @@ failed:
 }
 
 static bool loadServices(sServiceLoad **loads) {
+	sServiceLoad *load;
 	loadedServices = sll_create();
 	if(loadedServices == NULL)
 		return false;
 
-	sServiceLoad *load = *loads;
+	load = *loads;
 	while(load != NULL) {
 		if(!loadService(loads,load))
 			return false;

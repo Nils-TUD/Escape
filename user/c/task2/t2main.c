@@ -303,10 +303,10 @@ int main(int argc,char *argv[]) {
 	printf("812917263123223.81672813231=");
 	printDouble(812917263123223.81672813231);*/
 
+	u32 i;
 	printf("%Ld, %Ld, %Ld\n",1LL,8167127123123123LL,-81273123LL);
 	printf("%Lu, %Lx, %016LX\n",1ULL,0x7179bafed2122ULL,0x1234ULL);
 
-	u32 i;
 	for(i = 0; i < 3; i++) {
 		if(fork() == 0)
 			break;

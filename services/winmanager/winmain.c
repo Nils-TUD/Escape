@@ -195,6 +195,8 @@ static void procThreadHandler(tSig sig,u32 data) {
 }
 
 static void handleKbMessage(tServ servId,sWindow *active,u8 keycode,u8 isBreak) {
+	sKeymapEntry *e;
+	tFD aWin;
 	/* handle shift, alt and ctrl */
 	switch(keycode) {
 		case VK_LSHIFT:
@@ -211,7 +213,7 @@ static void handleKbMessage(tServ servId,sWindow *active,u8 keycode,u8 isBreak) 
 			break;
 	}
 
-	sKeymapEntry *e = keymaps[active->keymap](keycode);
+	e = keymaps[active->keymap](keycode);
 	if(e != NULL) {
 		msg.args.arg1 = keycode;
 		msg.args.arg2 = isBreak;
@@ -230,7 +232,7 @@ static void handleKbMessage(tServ servId,sWindow *active,u8 keycode,u8 isBreak) 
 		if(altDown)
 			msg.args.arg5 |= ALT_MASK;
 
-		tFD aWin = getClientThread(servId,active->owner);
+		aWin = getClientThread(servId,active->owner);
 		if(aWin >= 0) {
 			send(aWin,MSG_WIN_KEYBOARD,&msg,sizeof(msg.args));
 			close(aWin);
@@ -241,6 +243,7 @@ static void handleKbMessage(tServ servId,sWindow *active,u8 keycode,u8 isBreak) 
 static void handleMouseMessage(tServ servId,sMouseData *mdata) {
 	tCoord oldx = curX,oldy = curY;
 	bool btnChanged = false;
+	sWindow *w;
 	curX = MAX(0,MIN(screenWidth - 1,curX + mdata->x));
 	curY = MAX(0,MIN(screenHeight - 1,curY - mdata->y));
 
@@ -253,7 +256,7 @@ static void handleMouseMessage(tServ servId,sMouseData *mdata) {
 		btnChanged = true;
 		buttons = mdata->buttons;
 		if(buttons) {
-			sWindow *w = win_getAt(curX,curY);
+			w = win_getAt(curX,curY);
 			if(w)
 				win_setActive(w->id,true,curX,curY);
 			else
@@ -263,7 +266,7 @@ static void handleMouseMessage(tServ servId,sMouseData *mdata) {
 	}
 
 	/* send to window */
-	sWindow *w = mouseWin ? mouseWin : win_getActive();
+	w = mouseWin ? mouseWin : win_getActive();
 	if(w) {
 		tFD aWin = getClientThread(servId,w->owner);
 		if(aWin >= 0) {

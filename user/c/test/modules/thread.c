@@ -88,6 +88,8 @@ static int myThread(void) {
 }
 
 static void treadDir(const char *path) {
+	u32 i;
+	sDirEntry e;
 	tTid tid = gettid();
 	tFD dir = opendir(path);
 	if(dir < 0) {
@@ -96,8 +98,6 @@ static void treadDir(const char *path) {
 	}
 
 	printf("[%d] opening '%s'\n",tid,path);
-	u32 i;
-	sDirEntry e;
 	while(readdir(&e,dir)) {
 		if(i++ % 3 == 0)
 			yield();
@@ -129,8 +129,8 @@ static void add(sArray *a,void *e) {
 }
 
 static void print(sArray *a) {
-	locku(&alock);
 	u32 i;
+	locku(&alock);
 	printf("Thread %d: Array[size=%d, elements=%d]\n",gettid(),a->num,a->count);
 	for(i = 0; i < a->count; i++)
 		printf("\t%d: %x\n",i,a->ptr[i]);

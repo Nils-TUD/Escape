@@ -144,7 +144,6 @@ namespace esc {
 			}
 
 			// now read the data
-			_dataSize;
 			if(_infoHeader->compression == BI_RGB) {
 				u32 bytesPerLine;
 				if(_infoHeader->bitCount <= 8)

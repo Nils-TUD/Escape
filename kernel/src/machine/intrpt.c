@@ -418,12 +418,13 @@ static void intrpt_handleSignal(void) {
 
 static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
+	fSigHandler handler;
 	/* if the thread_switchTo() wasn't successfull (we're not the thread that should receive the
 	 * signal), there is something wrong because we queue signals until the thread is able to
 	 * handle them. So this should never happen */
 	vassert(t->tid == signalData.tid,"The thread %d is unable to handle the signal",signalData.tid);
 
-	fSigHandler handler = sig_startHandling(signalData.tid,signalData.sig);
+	handler = sig_startHandling(signalData.tid,signalData.sig);
 	if(handler != NULL) {
 		u32 *esp = (u32*)stack->uesp;
 		/* will handle copy-on-write */

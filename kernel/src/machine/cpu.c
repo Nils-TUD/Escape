@@ -124,13 +124,13 @@ static const char *intel6Models[] = {
 static sCPU cpu;
 
 void cpu_detect(void) {
+	u32 i;
 	/* get vendor-string */
 	char vendor[VENDOR_STRLEN + 1];
 	cpu_getStrInfo(CPUID_GETVENDORSTRING,vendor);
 	vendor[VENDOR_STRLEN] = '\0';
 
 	/* check which one it is */
-	u32 i;
 	cpu.vendor = CPUID_VENDOR_UNKNOWN;
 	for(i = 0; i < ARRAY_SIZE(vendors) - 1; i++) {
 		if(strcmp(vendors[i],vendor) == 0) {
@@ -188,9 +188,11 @@ void cpu_getStrInfo(u32 code,char res[12]) {
 }
 
 void cpu_sprintf(sStringBuffer *buf) {
+	u32 size;
 	asprintf(buf,"%-12s%s\n","Vendor:",vendors[cpu.vendor]);
 	switch(cpu.vendor) {
 		case CPUID_VENDOR_INTEL: {
+			const char **models = NULL;
 			if(cpu.type < ARRAY_SIZE(intelTypes))
 				asprintf(buf,"%-12s%s\n","Type:",intelTypes[cpu.type]);
 			else
@@ -201,8 +203,6 @@ void cpu_sprintf(sStringBuffer *buf) {
 			else
 				asprintf(buf,"%-12s%d\n","Family:",cpu.family);
 
-			u32 size;
-			const char **models = NULL;
 			switch(cpu.family) {
 				case 4:
 					models = intel4Models;

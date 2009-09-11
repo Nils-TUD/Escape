@@ -27,25 +27,29 @@
 static bool cmd_isValid(eTokenType last,eTokenType current,bool isLast);
 
 sCommand *cmd_get(sCmdToken *tokens,u32 tokenCount,u32 *cmdCount) {
+	u32 i,cmdPos,cmdLen,cmdStart;
+	bool runInBG,lastDup;
+	sCommand *cmds;
+	eTokenType last;
+
 	if(tokenCount == 0) {
 		*cmdCount = 0;
 		return NULL;
 	}
 
 	/* init command-array */
-	u32 cmdPos = 0;
-	u32 cmdLen = 5;
-	sCommand *cmds = (sCommand*)malloc(cmdLen * sizeof(sCommand));
+	cmdPos = 0;
+	cmdLen = 5;
+	cmds = (sCommand*)malloc(cmdLen * sizeof(sCommand));
 	if(cmds == NULL)
 		return NULL;
 
 	/* init some vars */
-	eTokenType last = TOK_END;
-	u32 cmdStart = 0;
-	bool runInBG = 0;
-	bool lastDup = 0;
+	last = TOK_END;
+	cmdStart = 0;
+	runInBG = 0;
+	lastDup = 0;
 
-	u32 i;
 	for(i = 0;i < tokenCount;i++) {
 		sCmdToken token = tokens[i];
 		bool isLast = i == tokenCount - 1;
@@ -66,6 +70,7 @@ sCommand *cmd_get(sCmdToken *tokens,u32 tokenCount,u32 *cmdCount) {
 
 		/* command finished? */
 		if(isLast || token.type == TOK_PIPE || token.type == TOK_END) {
+			u32 x;
 			u32 argCount = token.type == TOK_ARGUMENT ? i - cmdStart + 1 : i - cmdStart;
 			/* we don't want to add runInBG to the arguments */
 			if(i > 0 && tokens[i - 1].type == TOK_RUN_IN_BG)
@@ -94,7 +99,6 @@ sCommand *cmd_get(sCmdToken *tokens,u32 tokenCount,u32 *cmdCount) {
 				cmd_free(cmds,cmdPos);
 				return NULL;
 			}
-			u32 x;
 			for(x = 0;x < argCount;x++)
 				cmds[cmdPos].arguments[x] = tokens[x + cmdStart].str;
 			cmds[cmdPos].arguments[x] = (char*)0;
@@ -157,9 +161,9 @@ void cmd_print(sCommand *cmd) {
 	if(cmd == NULL)
 		printf("cmd=NULL\n");
 	else {
-		printf("Arguments (%d): ",cmd->argCount);
 		char **args = cmd->arguments;
 		u32 i = 0;
+		printf("Arguments (%d): ",cmd->argCount);
 		while(args[i] != NULL)
 			printf("'%s' ",args[i++]);
 		printf("\n");

@@ -58,6 +58,7 @@ void mboot_init(sMultiBoot *mbp) {
 void mboot_loadModules(sIntrptStackFrame *stack) {
 	u32 i;
 	u32 entryPoint;
+	tPid pid;
 	sProc *p;
 	char *name;
 	char *service;
@@ -75,7 +76,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		service[-1] = '\0';
 
 		/* clone proc */
-		tPid pid = proc_getFreePid();
+		pid = proc_getFreePid();
 		if(pid == INVALID_PID)
 			util_panic("No free process-slots");
 

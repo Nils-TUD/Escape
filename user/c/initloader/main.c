@@ -29,13 +29,13 @@ u64 pre;
 u64 post;
 
 int main(void) {
+	uLongLong diff;
 	startThread(myThread);
 	pre = cpu_rdtsc();
 	yield();
 	yield();
 	yield();
 	yield();
-	uLongLong diff;
 	diff.val64 = post - pre;
 	debugf("diff=0x%x%x\n",diff.val32.upper,diff.val32.lower);
 	return 0;

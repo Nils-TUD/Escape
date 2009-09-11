@@ -78,7 +78,7 @@ static void test_app_1(void) {
 	sRange physmem[] = {{4096,8191},{0,3}};
 	const char *services[] = {"env"};
 	const char *crtshmem[] = {"my","my2"};
-	const char *joinshmem[] = {};
+	const char *joinshmem[0];
 	u32 i,signals[] = {1,2,12};
 	sDriverPerm driver[] = {
 		{DRV_GROUP_CUSTOM,"null",1,0,0},
@@ -121,13 +121,13 @@ static void test_app_1(void) {
 static void test_app_2(void) {
 	char src[31];
 	bool srcWritable;
-	sRange ioports[] = {};
-	sRange physmem[] = {};
+	sRange ioports[0];
+	sRange physmem[0];
 	const char *services[] = {"env","vesa"};
 	const char *crtshmem[] = {"aaaaabb"};
 	const char *joinshmem[] = {"test"};
-	u32 i,signals[] = {};
-	sDriverPerm driver[] = {};
+	u32 i,signals[0];
+	sDriverPerm driver[0];
 	bool res;
 	sApp a;
 	sStringBuffer buf;

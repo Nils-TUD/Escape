@@ -131,6 +131,7 @@ void *memchr(const void *buffer,s32 c,u32 count) {
 }
 
 void *memcpy(void *dest,const void *src,u32 len) {
+	u8 *bdest,*bsrc;
 	/* copy dwords first with loop-unrolling */
 	u32 *ddest = (u32*)dest;
 	u32 *dsrc = (u32*)src;
@@ -154,8 +155,8 @@ void *memcpy(void *dest,const void *src,u32 len) {
 	}
 
 	/* copy remaining bytes */
-	u8 *bdest = (u8*)ddest;
-	u8 *bsrc = (u8*)dsrc;
+	bdest = (u8*)ddest;
+	bsrc = (u8*)dsrc;
 	while(len-- > 0)
 		*bdest++ = *bsrc++;
 	return dest;
@@ -172,6 +173,7 @@ s32 memcmp(const void *str1,const void *str2,u32 count) {
 }
 
 void memclear(void *addr,u32 count) {
+	u8 *baddr;
 	/* clear dwords first with loop-unrolling */
 	u32 *daddr = (u32*)addr;
 	while(count >= sizeof(u32) * 8) {
@@ -193,12 +195,13 @@ void memclear(void *addr,u32 count) {
 	}
 
 	/* clear remaining bytes */
-	u8 *baddr = (u8*)daddr;
+	baddr = (u8*)daddr;
 	while(count-- > 0)
 		*baddr++ = 0;
 }
 
 void memset(void *addr,u8 value,u32 count) {
+	u8 *baddr;
 	u32 dwval = (value << 24) | (value << 16) | (value << 8) | value;
 	u32 *dwaddr = (u32*)addr;
 	while(count >= sizeof(u32)) {
@@ -206,7 +209,7 @@ void memset(void *addr,u8 value,u32 count) {
 		count -= sizeof(u32);
 	}
 
-	u8 *baddr = (u8*)dwaddr;
+	baddr = (u8*)dwaddr;
 	while(count-- > 0)
 		*baddr++ = value;
 }

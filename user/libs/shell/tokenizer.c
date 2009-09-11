@@ -28,12 +28,9 @@ static bool tok_addCommand(sCmdToken **tokens,u32 *argIndex,u32 *argCount,char *
 		eTokenType type);
 
 sCmdToken *tok_get(char *str,u32 *tokenCount) {
-	/* allocate memory for the result-array */
 	u32 currentArgPos = 0;
 	u32 currentArgLen = ARG_BUFFER_SIZE;
-	sCmdToken *res = (sCmdToken*)malloc(currentArgLen * sizeof(sCmdToken));
-	if(res == NULL)
-		return NULL;
+	sCmdToken *res;
 
 	/* init some vars */
 	char *c = str;
@@ -41,6 +38,11 @@ sCmdToken *tok_get(char *str,u32 *tokenCount) {
 	char *lastPos = c;
 	const char *delims = "\";&| \t\r\n";
 	bool finished = 0;
+
+	/* allocate memory for the result-array */
+	res = (sCmdToken*)malloc(currentArgLen * sizeof(sCmdToken));
+	if(res == NULL)
+		return NULL;
 
 	while(!finished) {
 		c = strpbrk(c,delims);
@@ -54,12 +56,12 @@ sCmdToken *tok_get(char *str,u32 *tokenCount) {
 			case '|':
 			case '&':
 				if(!foundQuotes) {
+					eTokenType type;
 					/* at first we add all stuff in front of the current char */
 					if(!tok_addCommand(&res,&currentArgPos,&currentArgLen,&lastPos,c,TOK_ARGUMENT))
 						return NULL;
 
 					/* determine token-type */
-					eTokenType type;
 					switch(*c) {
 						case ';':
 							type = TOK_END;

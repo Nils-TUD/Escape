@@ -24,11 +24,11 @@
 #include "printf.h"
 
 int mod_printf(int argc,char *argv[]) {
-	UNUSED(argc);
-	UNUSED(argv);
 	int c1,c2,c3;
 	char str[] = "- This, a sample string.";
 	char *pch;
+	UNUSED(argc);
+	UNUSED(argv);
 
 	printf("Splitting string \"%s\" into tokens:\n",str);
 	pch = strtok(str," ,.-");

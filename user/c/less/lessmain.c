@@ -178,9 +178,9 @@ static void scrollDown(s32 l) {
 }
 
 static void refreshScreen(void) {
+	u32 i,end = MIN(lineCount,ROWS);
 	/* walk to the top of the screen */
 	printf("\033[mh]");
-	u32 i,end = MIN(lineCount,ROWS);
 	for(i = 0; i < end; i++) {
 		prints(lines[startLine + i]);
 		if(i < ROWS - 1)
@@ -248,6 +248,7 @@ finished:
 }
 
 static bool copy(char c) {
+	char *pos;
 	/* implicit newline? */
 	if(c != '\n' && linePos >= COLS - 1) {
 		if(!copy('\n'))
@@ -267,7 +268,7 @@ static bool copy(char c) {
 		lines[lineCount][COLS - 1] = '\0';
 	}
 
-	char *pos = lines[lineCount] + linePos;
+	pos = lines[lineCount] + linePos;
 	switch(c) {
 		case '\t': {
 			u32 i;

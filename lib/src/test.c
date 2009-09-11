@@ -193,9 +193,9 @@ void test_register(sTestModule *mod) {
 }
 
 void test_start(void) {
+	u32 i;
 	testPrintf("\n====== Starting test-procedure ======\n");
 
-	u32 i;
 	for(i = 0; i < moduleCount; i++) {
 		testPrintf("---- Starting with module %d : \"%s\" ----\n\n",i,modules[i]->name);
 

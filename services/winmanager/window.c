@@ -51,11 +51,11 @@ static sWindow windows[WINDOW_COUNT];
 
 bool win_init(tServ sid) {
 	tMsgId mid;
+	tWinId i;
 
 	servId = sid;
 
 	/* mark windows unused */
-	tWinId i;
 	for(i = 0; i < WINDOW_COUNT; i++)
 		windows[i].id = WINID_UNSED;
 
@@ -125,11 +125,12 @@ void win_destroyWinsOf(tTid tid,tCoord mouseX,tCoord mouseY) {
 }
 
 void win_destroy(tWinId id,tCoord mouseX,tCoord mouseY) {
+	sRectangle *old;
 	/* mark unused */
 	windows[id].id = WINID_UNSED;
 
 	/* repaint window-area */
-	sRectangle *old = (sRectangle*)malloc(sizeof(sRectangle));
+	old = (sRectangle*)malloc(sizeof(sRectangle));
 	old->x = windows[id].x;
 	old->y = windows[id].y;
 	old->width = windows[id].width;
@@ -213,9 +214,10 @@ void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY) {
 
 		activeWindow = id;
 		if(repaint && activeWindow != WINDOW_COUNT) {
+			sRectangle *new;
 			win_sendActive(activeWindow,true,mouseX,mouseY);
 
-			sRectangle *new = (sRectangle*)malloc(sizeof(sRectangle));
+			new = (sRectangle*)malloc(sizeof(sRectangle));
 			new->x = windows[activeWindow].x;
 			new->y = windows[activeWindow].y;
 			new->width = windows[activeWindow].width;
@@ -226,6 +228,8 @@ void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY) {
 }
 
 void win_moveTo(tWinId window,tCoord x,tCoord y) {
+	u32 i,count;
+	sRectangle *rects;
 	sRectangle *old = (sRectangle*)malloc(sizeof(sRectangle));
 	sRectangle *new = (sRectangle*)malloc(sizeof(sRectangle));
 
@@ -242,8 +246,7 @@ void win_moveTo(tWinId window,tCoord x,tCoord y) {
 	new->height = old->height;
 
 	/* clear old position */
-	u32 i,count;
-	sRectangle *rects = rectSplit(old,new,&count);
+	rects = rectSplit(old,new,&count);
 	if(count > 0) {
 		/* if there is an intersection, use the splitted parts */
 		for(i = 0; i < count; i++) {
@@ -308,25 +311,25 @@ static void win_repaint(sRectangle *r,sWindow *win,s16 z) {
 }
 
 static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY) {
-	msg.args.arg1 = id;
-	msg.args.arg2 = isActive;
-	msg.args.arg3 = mouseX;
-	msg.args.arg4 = mouseY;
 	tFD aWin = getClientThread(servId,windows[id].owner);
 	if(aWin >= 0) {
+		msg.args.arg1 = id;
+		msg.args.arg2 = isActive;
+		msg.args.arg3 = mouseX;
+		msg.args.arg4 = mouseY;
 		send(aWin,MSG_WIN_SET_ACTIVE,&msg,sizeof(msg.args));
 		close(aWin);
 	}
 }
 
 static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id) {
-	msg.args.arg1 = x - windows[id].x;
-	msg.args.arg2 = y - windows[id].y;
-	msg.args.arg3 = width;
-	msg.args.arg4 = height;
-	msg.args.arg5 = id;
 	tFD aWin = getClientThread(servId,windows[id].owner);
 	if(aWin >= 0) {
+		msg.args.arg1 = x - windows[id].x;
+		msg.args.arg2 = y - windows[id].y;
+		msg.args.arg3 = width;
+		msg.args.arg4 = height;
+		msg.args.arg5 = id;
 		send(aWin,MSG_WIN_UPDATE,&msg,sizeof(msg.args));
 		close(aWin);
 	}

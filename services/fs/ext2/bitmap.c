@@ -79,11 +79,12 @@ s32 ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir) {
 static tInodeNo ext2_bm_allocInodeIn(sExt2 *e,u32 groupStart,sExt2BlockGrp *group,bool isDir) {
 	u32 i,j;
 	tInodeNo ino;
+	sExt2CBlock *bitmap;
 	if(group->freeInodeCount == 0)
 		return 0;
 
 	/* load bitmap */
-	sExt2CBlock *bitmap = ext2_bcache_request(e,group->inodeBitmap);
+	bitmap = ext2_bcache_request(e,group->inodeBitmap);
 	if(bitmap == NULL)
 		return 0;
 
@@ -151,11 +152,12 @@ s32 ext2_bm_freeBlock(sExt2 *e,u32 blockNo) {
 
 static u32 ext2_bm_allocBlockIn(sExt2 *e,u32 groupStart,sExt2BlockGrp *group) {
 	u32 i,j,bno;
+	sExt2CBlock *bitmap;
 	if(group->freeBlockCount == 0)
 		return 0;
 
 	/* load bitmap */
-	sExt2CBlock *bitmap = ext2_bcache_request(e,group->blockBitmap);
+	bitmap = ext2_bcache_request(e,group->blockBitmap);
 	if(bitmap == NULL)
 		return 0;
 

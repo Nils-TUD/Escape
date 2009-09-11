@@ -365,13 +365,13 @@ s32 vsprintf(char *str,const char *fmt,va_list ap) {
 }
 
 s32 vsnprintf(char *str,u32 max,const char *fmt,va_list ap) {
-	sBuffer buf = {
-		.type = BUF_TYPE_STRING,
-		.str = str,
-		.pos = 0,
-		.max = max
-	};
-	s32 res = doVfprintf(&buf,fmt,ap);
+	s32 res;
+	sBuffer buf;
+	buf.type = BUF_TYPE_STRING;
+	buf.str = str;
+	buf.pos = 0;
+	buf.max = max;
+	res = doVfprintf(&buf,fmt,ap);
 	/* terminate */
 	buf.str[buf.pos] = '\0';
 	return res;
@@ -508,12 +508,11 @@ s32 vfscanf(tFile *file,const char *fmt,va_list ap) {
 }
 
 s32 vsscanf(const char *str,const char *fmt,va_list ap) {
-	sBuffer buf = {
-		.type = BUF_TYPE_STRING,
-		.pos = 0,
-		.max = -1,
-		.str = (char*)str
-	};
+	sBuffer buf;
+	buf.type = BUF_TYPE_STRING,
+	buf.pos = 0;
+	buf.max = -1;
+	buf.str = (char*)str;
 	return doVfscanf(&buf,fmt,ap);
 }
 

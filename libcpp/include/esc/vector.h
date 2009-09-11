@@ -218,6 +218,6 @@ namespace esc {
 			_elements = copy;
 		}
 	}
-};
+}
 
 #endif /* VECTOR_H_ */

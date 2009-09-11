@@ -143,7 +143,7 @@ s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info) {
 
 char *vfsn_getPath(tInodeNo nodeNo) {
 	static char path[MAX_PATH_LEN];
-	u32 nlen,len = 0;
+	u32 nlen,len = 0,total = 0;
 	sVFSNode *node = nodes + nodeNo;
 	sVFSNode *n = node;
 
@@ -151,7 +151,6 @@ char *vfsn_getPath(tInodeNo nodeNo) {
 	/* the root-node of the whole vfs has no path */
 	vassert(n->parent != NULL,"node->parent == NULL");
 
-	u32 total = 0;
 	while(n->parent != NULL) {
 		/* name + slash */
 		total += strlen(n->name) + 1;

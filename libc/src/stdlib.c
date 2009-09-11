@@ -77,7 +77,8 @@ int system(const char *cmd) {
 
 	child = fork();
 	if(child == 0) {
-		const char *args[] = {"/bin/shell","-e",cmd,NULL};
+		const char *args[] = {"/bin/shell","-e",NULL,NULL};
+		args[2] = cmd;
 		exec(args[0],args);
 
 		/* if we're here there is something wrong */

@@ -26,11 +26,17 @@
 #include <stdlib.h>
 #include "driver.h"
 
+static sMsg msg;
+
 int mod_driver(int argc,char *argv[]) {
+	bool quit = false;
+	tMsgId mid;
+	tServ client;
+	tServ id;
 	UNUSED(argc);
 	UNUSED(argv);
-	tServ client;
-	tServ id = regService("bla",SERV_DRIVER);
+
+	id = regService("bla",SERV_DRIVER);
 	if(id < 0)
 		printe("regService");
 
@@ -55,9 +61,6 @@ int mod_driver(int argc,char *argv[]) {
 	}
 
 	setDataReadable(id,true);
-	bool quit = false;
-	tMsgId mid;
-	static sMsg msg;
 	while(!quit) {
 		tFD cfd = getClient(&id,1,&client);
 		if(cfd < 0)

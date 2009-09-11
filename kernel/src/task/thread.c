@@ -70,6 +70,7 @@ sThread *thread_init(sProc *p) {
 
 static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	tFD i;
+	sSLList *list;
 	sThread *t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
@@ -93,7 +94,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 		t->fileDescs[i] = -1;
 
 	/* create list */
-	sSLList *list = threadMap[t->tid % THREAD_MAP_SIZE] = sll_create();
+	list = threadMap[t->tid % THREAD_MAP_SIZE] = sll_create();
 	if(list == NULL)
 		util_panic("Unable to allocate mem for initial thread-list");
 
@@ -362,6 +363,7 @@ s32 thread_extendStack(u32 address) {
 
 s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc) {
 	tFD i;
+	sSLList *list;
 	sThread *t = *dst;
 	t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
@@ -415,7 +417,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	}
 
 	/* create thread-list if necessary */
-	sSLList *list = threadMap[t->tid % THREAD_MAP_SIZE];
+	list = threadMap[t->tid % THREAD_MAP_SIZE];
 	if(list == NULL) {
 		list = threadMap[t->tid % THREAD_MAP_SIZE] = sll_create();
 		if(list == NULL) {
@@ -461,6 +463,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 
 void thread_destroy(sThread *t,bool destroyStacks) {
 	tFD i;
+	sSLList *list;
 	/* we can't destroy the current thread */
 	if(t == cur) {
 		/* put it in the dead-thread-queue to destroy it later */
@@ -479,7 +482,7 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 		return;
 	}
 
-	sSLList *list = threadMap[t->tid % THREAD_MAP_SIZE];
+	list = threadMap[t->tid % THREAD_MAP_SIZE];
 	vassert(list != NULL,"Thread %d not found in thread-map",t->tid);
 
 	/* destroy stacks */

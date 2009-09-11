@@ -78,6 +78,7 @@ static const char *abrMonthNames[] = {
  */
 s32 dateToString(char *str,u32 max,const char *fmt,sDate *date) {
 	u32 len,wDay;
+	s32 number;
 	char c;
 	char *start = str;
 	char *end = str + max;
@@ -129,7 +130,7 @@ s32 dateToString(char *str,u32 max,const char *fmt,sDate *date) {
 		}
 
 		/* 2 digit number */
-		s16 number = -1;
+		number = -1;
 		switch(c) {
 			case 'd':
 				number = date->monthDay;

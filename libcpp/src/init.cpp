@@ -48,7 +48,7 @@ extern "C" {
 	 * We'll call this function before main() to call the constructors for global objects
 	 */
 	void __libcpp_start();
-};
+}
 
 typedef struct {
 	void (*f)(void*);

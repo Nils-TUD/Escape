@@ -114,16 +114,19 @@ int main(int argc,char *argv[]) {
 	printf("ID\t\tPPID MEM\t\tSTATE\t%%CPU (USER,KERNEL)\tCOMMAND\n");
 
 	for(i = 0; i < count; i++) {
+		u64 procCycles;
 		u64 procUCycles = 0,procKCycles = 0;
+		u32 userPercent,kernelPercent;
+		float cyclePercent;
 		for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
 			sPThread *t = (sPThread*)n->data;
 			procUCycles += t->ucycleCount.val64;
 			procKCycles += t->kcycleCount.val64;
 		}
-		u64 procCycles = procUCycles + procKCycles;
-		float cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
-		u32 userPercent = (u32)(100. / (procCycles / (double)procUCycles));
-		u32 kernelPercent = (u32)(100. / (procCycles / (double)procKCycles));
+		procCycles = procUCycles + procKCycles;
+		cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
+		userPercent = (u32)(100. / (procCycles / (double)procUCycles));
+		kernelPercent = (u32)(100. / (procCycles / (double)procKCycles));
 		printf("%2d\t\t%2d\t%4d KiB\t-\t\t%4.1f%% (%3d%%,%3d%%)\t%s\n",
 				procs[i].pid,procs[i].parentPid,
 				(procs[i].textPages + procs[i].dataPages + procs[i].stackPages) * 4,
@@ -271,12 +274,12 @@ static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
 }
 
 static bool ps_readThread(tFD fd,sPThread *t) {
+	u16 state;
 	char *buf = ps_readNode(fd);
 	if(buf == NULL)
 		return false;
 
 	/* parse string; use separate u16 storage for state since we can't tell scanf that is a byte */
-	u16 state;
 	sscanf(
 		buf,
 		"%*s%hu" "%*s%hu" "%*s%hu" "%*s%u" "%*s%8x%8x" "%*s%8x%8x",

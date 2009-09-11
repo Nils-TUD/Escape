@@ -240,13 +240,14 @@ int main(void) {
 }
 
 static void kbIntrptHandler(tSig sig,u32 d) {
+	u8 scanCode;
 	sKbData data;
 	UNUSED(sig);
 	UNUSED(d);
 
 	if(!(inByte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
 		return;
-	u8 scanCode = inByte(IOPORT_KB_DATA);
+	scanCode = inByte(IOPORT_KB_DATA);
 	/*debugf("sc=%x\n",scanCode);*/
 	if(kb_set1_getKeycode(&data.isBreak,&data.keycode,scanCode)) {
 		/* write in buffer */

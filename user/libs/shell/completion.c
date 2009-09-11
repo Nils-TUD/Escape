@@ -59,6 +59,7 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 	sShellCmd *cmd;
 	sShellCmd **matches;
 	sFileInfo info;
+	char *slash;
 	char *filePath = NULL;
 	char *paths[] = {(char*)APPS_DIR,NULL,NULL};
 
@@ -104,7 +105,6 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 	}
 
 	/* we have to adjust line and length since we want to start at the last '/' */
-	char *slash;
 	slash = strrchr(str,'/');
 	if(slash != NULL) {
 		start = length - (slash - str) - 1;

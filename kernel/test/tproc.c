@@ -66,8 +66,9 @@ static void test_check(void) {
 static void test_proc(void) {
 	u32 x,y,z;
 	bool res;
-	s32 changes[] = {0,1,10,1024,1025,2048,2047,2049,mm_getFreeFrmCount(MM_DEF) + 1};
+	s32 changes[] = {0,1,10,1024,1025,2048,2047,2049,0};
 	eChgArea areas[] = {CHG_DATA,CHG_STACK};
+	changes[ARRAY_SIZE(changes) - 1] = mm_getFreeFrmCount(MM_DEF) + 1;
 
 	/* test process clone & destroy */
 	test_init("Cloning and destroying processes");

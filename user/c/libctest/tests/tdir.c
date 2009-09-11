@@ -61,10 +61,11 @@ static void test_opendir(void) {
 
 static void test_abspath(void) {
 	u32 count;
+	char *path;
 
 	test_caseStart("Testing abspath");
 
-	char *path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
+	path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
 	if(path == NULL) {
 		printe("Not enough mem for path");
 		return;

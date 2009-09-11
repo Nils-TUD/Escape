@@ -185,10 +185,11 @@ int main(void) {
 }
 
 static void irqHandler(tSig sig,u32 data) {
+	u8 status;
 	UNUSED(sig);
 	UNUSED(data);
 	/* check if there is mouse-data */
-	u8 status = inByte(IOPORT_KB_CTRL);
+	status = inByte(IOPORT_KB_CTRL);
 	if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
 		return;
 
@@ -216,6 +217,7 @@ static void irqHandler(tSig sig,u32 data) {
 }
 
 static void kb_init(void) {
+	u8 cmdByte;
 	/* activate mouse */
 	outByte(IOPORT_KB_CTRL,KBC_CMD_ENABLE_MOUSE);
 	kb_checkCmd();
@@ -226,7 +228,7 @@ static void kb_init(void) {
 	/* read cmd byte */
 	outByte(IOPORT_KB_CTRL,KBC_CMD_READ_STATUS);
 	kb_checkCmd();
-	u8 cmdByte = kb_read();
+	cmdByte = kb_read();
 	outByte(IOPORT_KB_CTRL,KBC_CMD_SET_STATUS);
 	kb_checkCmd();
 	cmdByte |= KBC_CMDBYTE_ENABLE_IRQ12 | KBC_CMDBYTE_ENABLE_IRQ1;

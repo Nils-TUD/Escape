@@ -331,7 +331,7 @@ void *realloc(void *addr,u32 size) {
 }
 
 static bool loadNewSpace(u32 size) {
-	s32 res;
+	s32 res,count;
 	sMemArea *area;
 
 	/* no free areas? */
@@ -345,7 +345,7 @@ static bool loadNewSpace(u32 size) {
 		return false;
 
 	/* allocate the required pages */
-	s32 count = (size + PAGE_SIZE - 1) / PAGE_SIZE;
+	count = (size + PAGE_SIZE - 1) / PAGE_SIZE;
 	res = changeSize(count);
 	if(res < 0)
 		return false;

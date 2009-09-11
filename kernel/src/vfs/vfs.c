@@ -194,12 +194,13 @@ s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev) {
 tFileNo vfs_openFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) {
 	sGFTEntry *e;
 	sVFSNode *n = NULL;
+	tFileNo f;
 
 	/* cleanup flags */
 	flags &= VFS_READ | VFS_WRITE | VFS_CREATED;
 
 	/* determine free file */
-	tFileNo f = vfs_getFreeFile(tid,flags,nodeNo,devNo);
+	f = vfs_getFreeFile(tid,flags,nodeNo,devNo);
 	if(f < 0)
 		return f;
 
@@ -241,8 +242,8 @@ static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 	vassert(!(flags & ~(VFS_READ | VFS_WRITE | VFS_CREATED)),"flags contains invalid bits");
 
 	if(devNo == VFS_DEV_NO) {
-		vassert(nodeNo < NODE_COUNT,"nodeNo invalid");
 		sVFSNode *n = vfsn_getNode(nodeNo);
+		vassert(nodeNo < NODE_COUNT,"nodeNo invalid");
 		/* we can add pipes here, too, since every open() to a pipe will get a new node anyway */
 		isServUse = (n->mode & (MODE_TYPE_SERVUSE | MODE_TYPE_PIPE)) ? true : false;
 	}
@@ -445,11 +446,12 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 s32 vfs_ioctl(tTid tid,tFileNo file,u32 cmd,u8 *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
+	sVFSNode *n;
 
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
 
-	sVFSNode *n = nodes + e->nodeNo;
+	n = nodes + e->nodeNo;
 
 	/* TODO keep this? */
 	if((err = vfs_hasAccess(tid,e->nodeNo,VFS_WRITE)) < 0)
@@ -465,11 +467,12 @@ s32 vfs_ioctl(tTid tid,tFileNo file,u32 cmd,u8 *data,u32 size) {
 s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
+	sVFSNode *n;
 
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
 
-	sVFSNode *n = nodes + e->nodeNo;
+	n = nodes + e->nodeNo;
 
 	if((err = vfs_hasAccess(tid,e->nodeNo,VFS_WRITE)) < 0)
 		return err;
@@ -485,11 +488,12 @@ s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
 s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
+	sVFSNode *n;
 
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
 
-	sVFSNode *n = nodes + e->nodeNo;
+	n = nodes + e->nodeNo;
 
 	if((err = vfs_hasAccess(tid,e->nodeNo,VFS_READ)) < 0)
 		return err;

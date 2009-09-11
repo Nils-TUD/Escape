@@ -22,6 +22,8 @@
 #include <video.h>
 
 static sSymbol ksymbols[] = {
+	/* add dummy-entry to prevent empty array */
+	{0,""},
 #if TESTING
 #	include "../../build/kernelt_symbols.txt"
 #else

@@ -59,7 +59,7 @@ $(BIN):	$(BUILDDIRS) $(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(GCCLIB)
 		@echo "	" LINKING $(BIN)
 		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(GCCLIB);
 		@echo "	" COPYING BINARY
-		$(ROOT)/tools/cp2disk.sh $(BIN) /boot
+		$(ROOT)/tools/disk.sh copy $(BIN) /boot
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

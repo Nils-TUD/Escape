@@ -57,7 +57,7 @@ $(BIN):	$(BUILDDIRS) $(SYMBOLS) $(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ) $(
 		@echo "	" LINKING $(BIN)
 		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(GCCLIB);
 		@echo "	" COPYING BINARY
-		$(ROOT)/tools/cp2disk.sh $(BIN) /boot
+		$(ROOT)/tools/disk.sh copy $(BIN) /boot
 
 $(SYMBOLS):
 		@if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi

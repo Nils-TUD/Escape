@@ -11,7 +11,7 @@ all:	$(SERVICES)
 		done;
 
 $(SERVICES):
-		../tools/cp2disk.sh $(SERVICES) /etc/services
+		../tools/disk.sh copy $(SERVICES) /etc/services
 
 clean:
 		@for i in $(DIRS) ; do \

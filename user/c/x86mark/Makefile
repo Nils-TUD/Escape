@@ -31,7 +31,7 @@ $(BIN):	$(BUILDDIRS) $(LDCONF) $(COBJ) $(ASM) $(START) $(LIBCA) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
 		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(ASM) $(LIBCA) $(ADDLIBS);
 		@echo "	" COPYING ON DISK
-		$(ROOT)/tools/cp2disk.sh $(BIN) /bin/$(NAME)
+		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

@@ -1,6 +1,4 @@
 name:							"stat";
-inodeNo:					0;
-devNo:						0;
 source:						"/appsdb";
 sourceWritable:		1;
 type:							"default";

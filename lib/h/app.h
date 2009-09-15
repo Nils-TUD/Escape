@@ -66,8 +66,6 @@ typedef struct {
 
 /* information about an application */
 typedef struct {
-	tInodeNo inode;
-	tDevNo dev;
 	void *db;
 	char name[APP_NAME_LEN + 1];
 	u16 appType;			/* driver, fs, service or default */

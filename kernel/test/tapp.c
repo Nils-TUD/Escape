@@ -33,8 +33,6 @@ static void test_checkStrList(const char **strings,u32 count,sSLList *list);
 
 static const char *app1 =
 	"name:					\"muh\";"
-	"inodeNo:				133;"
-	"devNo:					0;"
 	"source:				\"mysource\";"
 	"sourceWritable:		0;"
 	"type:					\"driver\";"
@@ -52,8 +50,6 @@ static const char *app1 =
 
 static const char *app2 =
 	"name:					\"myapppp\";"
-	"inodeNo:				44;"
-	"devNo:					12;"
 	"source:				\"hiho\";"
 	"sourceWritable:		1;"
 	"type:					\"default\";"
@@ -104,8 +100,6 @@ static void test_app_1(void) {
 	test_assertTrue(res != NULL);
 	for(i = 0; i < 2; i++) {
 		test_assertStr(a.name,"muh");
-		test_assertInt(a.inode,133);
-		test_assertInt(a.dev,0);
 		test_assertStr(src,"mysource");
 		test_assertFalse(srcWritable);
 		test_assertUInt(a.appType,APP_TYPE_DRIVER);
@@ -150,8 +144,6 @@ static void test_app_2(void) {
 	test_assertTrue(res != NULL);
 	for(i = 0; i < 2; i++) {
 		test_assertStr(a.name,"myapppp");
-		test_assertInt(a.inode,44);
-		test_assertInt(a.dev,12);
 		test_assertStr(src,"hiho");
 		test_assertTrue(srcWritable);
 		test_assertUInt(a.appType,APP_TYPE_DEFAULT);

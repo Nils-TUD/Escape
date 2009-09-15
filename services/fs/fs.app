@@ -1,6 +1,4 @@
 name:							"fs";
-inodeNo:					3354;
-devNo:						0;
 source:						"multiboot";
 sourceWritable:		0;
 type:							"fs";

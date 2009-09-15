@@ -33,7 +33,7 @@
 
 #define BUF_SIZE (16 * K)
 
-s32 elf_loadFromFile(const char *path) {
+s32 elf_loadFromFile(char *path) {
 	sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
 	tFileNo file;
@@ -42,8 +42,6 @@ s32 elf_loadFromFile(const char *path) {
 	u8 const *datPtr;
 	Elf32_Ehdr eheader;
 	Elf32_Phdr pheader;
-	tInodeNo inodeNo;
-	tDevNo devNo;
 
 	vassert(p->textPages == 0 && p->dataPages == 0,"Process is not empty");
 
@@ -51,16 +49,12 @@ s32 elf_loadFromFile(const char *path) {
 	if(file < 0)
 		return ERR_INVALID_ELF_BIN;
 
-	/* get inode-number and device-number */
-	if((res = vfs_getFileId(file,&inodeNo,&devNo)) < 0) {
-		vfs_closeFile(t->tid,file);
-		return res;
-	}
-
 	p->app = NULL;
 	if(apps_isEnabled()) {
+		u32 len = strlen(path);
+		char *appName = vfsn_basename(path,&len);
 		/* find the application; if not found we can't execute it */
-		p->app = apps_get(inodeNo,devNo);
+		p->app = apps_get(appName);
 		if(p->app == NULL) {
 			vfs_closeFile(t->tid,file);
 			return ERR_APP_NOT_FOUND;

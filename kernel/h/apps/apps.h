@@ -126,21 +126,11 @@ bool apps_canUseFS(sApp *app,u16 ops);
 bool apps_canGetIntrpt(sApp *app,tSig signal);
 
 /**
- * Determines the application with given inode- and device-number
- *
- * @param inode the inode-number
- * @param dev the device-number
- * @return the application or NULL
- */
-sApp *apps_get(tInodeNo inode,tDevNo dev);
-
-/**
- * Searches for an application by name. Note that this is not very fast since we have to search
- * through all applications and can't get directly to the linked lists for (inode % mapSize).
+ * Determines the application with given name
  *
  * @param name the app-name
  * @return the application or NULL
  */
-sApp *apps_getByName(const char *name);
+sApp *apps_get(const char *name);
 
 #endif /* APPS_H_ */

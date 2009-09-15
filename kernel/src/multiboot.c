@@ -94,7 +94,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 				if(apps_isEnabled()) {
 					u32 len = strlen(name);
 					char *appName = vfsn_basename(name,&len);
-					p->app = apps_getByName(appName);
+					p->app = apps_get(appName);
 					if(p->app == NULL)
 						util_panic("No app found for multiboot-module %s",name);
 				}

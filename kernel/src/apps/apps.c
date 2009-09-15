@@ -42,7 +42,6 @@ typedef struct {
 
 static bool apps_isInStrList(sSLList *list,const char *str);
 static bool apps_isInRangeList(sSLList *list,u32 start,u32 count);
-static sApp *apps_getByNodeName(const char *name);
 static s32 apps_add(sApp *app);
 static void apps_rem(sApp *app);
 static s32 apps_readHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
@@ -214,34 +213,16 @@ bool apps_canGetIntrpt(sApp *app,tSig signal) {
 	return false;
 }
 
-sApp *apps_get(tInodeNo inode,tDevNo dev) {
+sApp *apps_get(const char *name) {
 	sApp *a;
 	sSLNode *n;
-	sSLList *list = apps[inode % APP_MAP_SIZE];
+	sSLList *list = apps[*name % APP_MAP_SIZE];
 	if(list == NULL)
 		return NULL;
 	for(n = sll_begin(list); n != NULL; n = n->next) {
 		a = (sApp*)n->data;
-		if(a->inode == inode && a->dev == dev)
+		if(strcmp(a->name,name) == 0)
 			return a;
-	}
-	return NULL;
-}
-
-sApp *apps_getByName(const char *name) {
-	u32 i;
-	sApp *a;
-	sSLNode *n;
-	sSLList *list;
-	for(i = 0; i < APP_MAP_SIZE; i++) {
-		list = apps[i];
-		if(list) {
-			for(n = sll_begin(list); n != NULL; n = n->next) {
-				a = (sApp*)n->data;
-				if(strcmp(a->name,name) == 0)
-					return a;
-			}
-		}
 	}
 	return NULL;
 }
@@ -270,53 +251,25 @@ static bool apps_isInRangeList(sSLList *list,u32 start,u32 count) {
 	return false;
 }
 
-static sApp *apps_getByNodeName(const char *name) {
-	char *sInode,*sDev;
-	tInodeNo inode;
-	tDevNo dev;
-	sApp *a;
-	sSLNode *n;
-	sSLList *list;
-	/* extract inode and dev */
-	sInode = (char*)name;
-	sDev = strchr(name,'.');
-	*sDev++ = '\0';
-
-	inode = atoi(sInode);
-	dev = atoi(sDev);
-	*--sDev = '.';
-	list = apps[inode % APP_MAP_SIZE];
-	if(list == NULL)
-		return NULL;
-	for(n = sll_begin(list); n != NULL; n = n->next) {
-		a = (sApp*)n->data;
-		if(a->inode == inode && a->dev == dev)
-			return a;
-	}
-	return NULL;
-}
-
 static s32 apps_add(sApp *app) {
-	sStringBuffer buf;
 	sSLList *list;
+	char *nodeName;
 	assert(app != NULL);
 
-	list = apps[app->inode % APP_MAP_SIZE];
+	list = apps[*app->name % APP_MAP_SIZE];
 	if(list == NULL) {
-		list = apps[app->inode % APP_MAP_SIZE] = sll_create();
+		list = apps[*app->name % APP_MAP_SIZE] = sll_create();
 		if(list == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 	}
 	if(!sll_append(list,app))
 		return ERR_NOT_ENOUGH_MEM;
 
-	buf.str = NULL;
-	buf.size = 0;
-	buf.len = 0;
-	buf.dynamic = true;
-	if(!asprintf(&buf,"%d.%d.%s",app->inode,app->dev,app->name))
+	nodeName = kheap_alloc(strlen(app->name) + 1);
+	if(nodeName == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	if(vfsn_createInfo(KERNEL_TID,appsNode,buf.str,apps_readHandler) == NULL)
+	strcpy(nodeName,app->name);
+	if(vfsn_createInfo(KERNEL_TID,appsNode,nodeName,apps_readHandler) == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	return 0;
 }
@@ -325,7 +278,7 @@ static void apps_rem(sApp *app) {
 	sSLList *list;
 	assert(app != NULL);
 
-	list = apps[app->inode % APP_MAP_SIZE];
+	list = apps[*app->name % APP_MAP_SIZE];
 	if(list == NULL)
 		return;
 	sll_removeFirst(list,app);
@@ -344,7 +297,7 @@ static void apps_readCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
 	buf.size = 0;
 	buf.len = 0;
 	buf.dynamic = true;
-	app = apps_getByNodeName(node->name);
+	app = apps_get(node->name);
 	if(app == NULL || !app_toString(&buf,app,source,false)) {
 		*buffer = NULL;
 		*dataSize = 0;

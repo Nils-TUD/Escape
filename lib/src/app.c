@@ -87,8 +87,6 @@ static bool app_parseRange(sParseInfo *info,sSLList *list);
 bool app_toString(sStringBuffer *str,sApp *app,char *src,bool srcWritable) {
 	const char *types[] = {"driver","service","fs","default"};
 	ADD_PERM(str,  "name:					\"%s\";\n",app->name);
-	ADD_PERM(str,  "inodeNo:				%d;\n",app->inode);
-	ADD_PERM(str,  "devNo:					%d;\n",app->dev);
 	ADD_PERM(str,  "source:					\"%s\";\n",src);
 	ADD_PERM(str,  "sourceWritable:			%d;\n",srcWritable);
 	ADD_PERM(str,  "type:					\"%s\";\n",types[app->appType]);
@@ -170,8 +168,6 @@ char *app_fromString(const char *definition,sApp *app,char *src,bool *srcWritabl
 	info.str = definition;
 	app->db = NULL;
 	memclear(app->name,APP_NAME_LEN + 1);
-	app->inode = 0;
-	app->dev = 0;
 	app->appType = APP_TYPE_DEFAULT;
 	app->fs.read = false;
 	app->fs.write = false;
@@ -200,20 +196,6 @@ char *app_fromString(const char *definition,sApp *app,char *src,bool *srcWritabl
 			if(info.tokLen > APP_NAME_LEN)
 				goto error;
 			strcpy(app->name,info.token);
-			if(!app_nextToken(&info) || info.tokType != TOK_SEM)
-				goto error;
-		}
-		else if(strcmp(info.token,"inodeNo") == 0) {
-			if(!app_nextToken(&info) || info.tokType != TOK_INT)
-				goto error;
-			app->inode = atoi(info.token);
-			if(!app_nextToken(&info) || info.tokType != TOK_SEM)
-				goto error;
-		}
-		else if(strcmp(info.token,"devNo") == 0) {
-			if(!app_nextToken(&info) || info.tokType != TOK_INT)
-				goto error;
-			app->dev = atoi(info.token);
 			if(!app_nextToken(&info) || info.tokType != TOK_SEM)
 				goto error;
 		}

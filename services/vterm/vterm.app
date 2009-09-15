@@ -1,6 +1,4 @@
 name:							"vterm";
-inodeNo:					3362;
-devNo:						0;
 source:						"/appsdb";
 sourceWritable:		1;
 type:							"driver";

@@ -1,6 +1,4 @@
 name:							"ata";
-inodeNo:					0;
-devNo:						0;
 source:						"multiboot";
 sourceWritable:		0;
 type:							"driver";

@@ -61,6 +61,8 @@ addBootData() {
 	$SUDO mkdir $DISKMOUNT/boot/perms
 	$SUDO cp boot/stage1 $DISKMOUNT/boot/grub;
 	$SUDO cp boot/stage2 $DISKMOUNT/boot/grub;
+	$SUDO cp services/ata/ata.app $DISKMOUNT/boot/perms/ata;
+	$SUDO cp services/fs/fs.app $DISKMOUNT/boot/perms/fs;
 	$SUDO touch $DISKMOUNT/boot/grub/menu.lst;
 	$SUDO chmod 0666 $DISKMOUNT/boot/grub/menu.lst;
 	buildMenuLst;
@@ -121,19 +123,6 @@ unmountDisk() {
 	done
 }
 
-replAppDefs() {
-	SRC=$1
-	DST=$2
-	
-	APP=$(gawk '/name:/ { print gensub(/^\"(.*)\";/, "\\1", 1, $2) }' $SRC);
-	# now search the app in /bin or /sbin and grab the inode-number
-	INO=`ls -li $DISKMOUNT/bin | grep "\\b$APP\\b" | gawk '{ print $1 }'`;
-	if [ "$INO" == "" ]; then
-		INO=`ls -li $DISKMOUNT/sbin | grep "\\b$APP\\b" | gawk '{ print $1 }'`;
-	fi;
-	cat $SRC | sed -e "s/\(inodeNo:[[:space:]]*\)[0-9]*;/\1$INO;/g" > $DST;
-}
-
 # build disk?
 if [ "$1" == "build" ]; then
 	# create disk
@@ -169,6 +158,7 @@ if [ "$1" == "build" ]; then
 	# ensure that we'll copy all stuff to the disk with 'make all'
 	rm -f $BUILD/*.bin
 	touch services/services.txt
+	touch $BUILD/apps/*
 	# now rebuild and copy it
 	make all
 fi
@@ -218,17 +208,5 @@ fi
 
 # unmount
 if [ "$1" == "unmount" ]; then
-	unmountDisk
-fi
-
-# build appsdb
-if [ "$1" == "appsdb" ]; then
-	if [ $# -ne 3 ]; then
-		echo "Usage: $0 appsdb <src> <dst>" 1>&2;
-		exit 1
-	fi
-	
-	mountDisk $PART1OFFSET
-	replAppDefs $2 $3
 	unmountDisk
 fi

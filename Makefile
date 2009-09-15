@@ -11,7 +11,6 @@ BIN = $(BUILD)/$(BINNAME)
 SYMBOLS = $(BUILD)/kernel.symbols
 APPSDB = $(BUILD)/appsdb
 APPS = $(wildcard $(BUILD)/apps/*.app)
-FAPPS = $(patsubst $(BUILD)/apps/%.app,$(BUILD)/apps/%.fapp,$(APPS))
 
 QEMUARGS = -serial stdio -hda $(HDD) -boot c -vga std
 
@@ -34,30 +33,25 @@ export ASMFLAGS=-f elf
 export SUDO=sudo
 
 .PHONY: all debughdd mountp1 mountp2 umountp debugp1 debugp2 checkp1 checkp2 createhdd \
-	dis qemu bochs debug debugu debugm debugt test clean appsdb
+	dis qemu bochs debug debugu debugm debugt test clean
 
-all: $(BUILD)
+all: $(BUILD) $(APPSDB)
 		@[ -f $(HDD) ] || make createhdd;
 		@for i in $(DIRS); do \
 			make -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
-		make appsdb
-
-appsdb:	$(APPSDB)
 
 $(BUILD):
 		[ -d $(BUILD) ] || mkdir -p $(BUILD);
 
-$(APPSDB): $(FAPPS)
+$(APPSDB): $(APPS)
+		@[ -f $(HDD) ] || make createhdd;
 		@echo "" > $(APPSDB)
-		@for i in $(FAPPS); do \
+		@for i in $(APPS); do \
 			cat $$i >> $(APPSDB); \
 			echo '\n;;\n' >> $(APPSDB); \
 		done;
 		tools/disk.sh copy $(APPSDB) /appsdb
-
-$(BUILD)/%.fapp: $(BUILD)/%.app
-		tools/disk.sh appsdb $< $@;
 
 debughdd:
 		tools/disk.sh mkdiskdev
@@ -154,4 +148,4 @@ clean:
 		@for i in $(DIRS); do \
 			make -C $$i clean || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
-		rm -f $(APPSDB) $(FAPPS)
+		rm -f $(APPSDB)

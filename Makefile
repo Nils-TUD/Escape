@@ -1,16 +1,19 @@
 # general
-BUILD=build
-DISKMOUNT=disk
-HDD=$(BUILD)/hd.img
-VBHDDTMP=$(BUILD)/vbhd.bin
-VBHDD=$(BUILD)/vbhd.vdi
-VMDISK=$(abspath vmware/vmwarehddimg.vmdk)
-VBOXOSTITLE="Escape v0.1"
-BINNAME=kernel.bin
-BIN=$(BUILD)/$(BINNAME)
-SYMBOLS=$(BUILD)/kernel.symbols
+BUILD = build
+DISKMOUNT = disk
+HDD = $(BUILD)/hd.img
+VBHDDTMP = $(BUILD)/vbhd.bin
+VBHDD = $(BUILD)/vbhd.vdi
+VMDISK = $(abspath vmware/vmwarehddimg.vmdk)
+VBOXOSTITLE = "Escape v0.1"
+BINNAME = kernel.bin
+BIN = $(BUILD)/$(BINNAME)
+SYMBOLS = $(BUILD)/kernel.symbols
+APPSDB = $(BUILD)/appsdb
+APPS = $(wildcard $(BUILD)/apps/*.app)
+FAPPS = $(patsubst $(BUILD)/apps/%.app,$(BUILD)/apps/%.fapp,$(APPS))
 
-QEMUARGS=-serial stdio -hda $(HDD) -boot c -vga std
+QEMUARGS = -serial stdio -hda $(HDD) -boot c -vga std
 
 DIRS = tools libc libcpp services user kernel/src kernel/test
 
@@ -31,16 +34,30 @@ export ASMFLAGS=-f elf
 export SUDO=sudo
 
 .PHONY: all debughdd mountp1 mountp2 umountp debugp1 debugp2 checkp1 checkp2 createhdd \
-	dis qemu bochs debug debugu debugm debugt test clean
+	dis qemu bochs debug debugu debugm debugt test clean appsdb
 
 all: $(BUILD)
 		@[ -f $(HDD) ] || make createhdd;
 		@for i in $(DIRS); do \
 			make -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
+		make appsdb
+
+appsdb:	$(APPSDB)
 
 $(BUILD):
 		[ -d $(BUILD) ] || mkdir -p $(BUILD);
+
+$(APPSDB): $(FAPPS)
+		@echo "" > $(APPSDB)
+		@for i in $(FAPPS); do \
+			cat $$i >> $(APPSDB); \
+			echo '\n;;\n' >> $(APPSDB); \
+		done;
+		tools/disk.sh copy $(APPSDB) /appsdb
+
+$(BUILD)/%.fapp: $(BUILD)/%.app
+		tools/disk.sh appsdb $< $@;
 
 debughdd:
 		tools/disk.sh mkdiskdev
@@ -55,7 +72,7 @@ mountp2:
 
 debugp1:
 		tools/disk.sh mountp1
-		$(SUDO) debugfs /dev/loop0
+		$(SUDO) debugfs -w /dev/loop0
 		tools/disk.sh unmount
 
 debugp2:
@@ -118,7 +135,7 @@ test: all prepareTest
 prepareTest:
 		tools/disk.sh mountp1
 		@if [ "`cat $(DISKMOUNT)/boot/grub/menu.lst | grep kernel.bin`" != "" ]; then \
-			$(SUDO) sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel_test.bin/g" \
+			$(SUDO) sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel_test.bin \/appsdb/g" \
 				$(DISKMOUNT)/boot/grub/menu.lst; \
 				touch $(HDD); \
 		fi;
@@ -127,7 +144,7 @@ prepareTest:
 prepareRun:
 		tools/disk.sh mountp1
 		@if [ "`cat $(DISKMOUNT)/boot/grub/menu.lst | grep kernel_test.bin`" != "" ]; then \
-			$(SUDO) sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel.bin/g" \
+			$(SUDO) sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel.bin \/appsdb/g" \
 				$(DISKMOUNT)/boot/grub/menu.lst; \
 				touch $(HDD); \
 		fi;
@@ -137,3 +154,4 @@ clean:
 		@for i in $(DIRS); do \
 			make -C $$i clean || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
+		rm -f $(APPSDB) $(FAPPS)

@@ -1,0 +1,14 @@
+name:							"env";
+inodeNo:					3353;
+devNo:						0;
+source:						"/appsdb";
+sourceWritable:		1;
+type:							"service";
+ioports:					;
+driver:						;
+fs:								0,0;
+services:					;
+intrpts:					;
+physmem:					;
+crtshmem:					;
+joinshmem:				;

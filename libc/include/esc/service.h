@@ -33,8 +33,11 @@
 #define IRQ_ATA2					0x2F
 
 #define SERV_DEFAULT				1
-#define SERV_DRIVER					2
-#define SERV_FS						4
+#define SERV_FS						2
+#define SERV_DRV_BINPRIV			4
+#define SERV_DRV_BINPUB				8
+#define SERV_DRV_TXTPRIV			16
+#define SERV_DRV_TXTPUB				32
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +47,7 @@ extern "C" {
  * Registers a service with given name.
  *
  * @param name the service-name. Should be alphanumeric!
- * @param type the service-type: SERV_DEFAULT, SERV_DRIVER or SERV_FS
+ * @param type the service-type: SERV_*
  * @return the service-id if successfull, < 0 if an error occurred
  */
 tServ regService(const char *name,u8 type);

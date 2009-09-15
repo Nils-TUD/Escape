@@ -31,6 +31,7 @@
 #define SHELL_COUNT				2
 #define MAX_SNAME_LEN			50
 #define MAX_SERVICE_PATH_LEN	255
+#define MAX_WAIT_RETRIES		1000
 
 typedef struct {
 	/* the service-name */
@@ -359,7 +360,7 @@ static bool loadServices(sServiceLoad **loads) {
 }
 
 static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
-	u32 i;
+	u32 i,j;
 	tFD fd;
 	s32 child;
 	char path[MAX_SERVICE_PATH_LEN + 1] = "/sbin/";
@@ -399,12 +400,17 @@ static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
 	sname = servName;
 	for(i = 0; i < load->waitCount; i++) {
 		strcpy(sname,load->waits[i]);
+		j = 0;
 		do {
 			fd = open(servName,IO_READ);
 			if(fd < 0)
 				yield();
 		}
-		while(fd < 0);
+		while(j++ < MAX_WAIT_RETRIES && fd < 0);
+		if(fd < 0) {
+			printe("The service '%s' was not found after %d retries",servName,MAX_WAIT_RETRIES);
+			return false;
+		}
 		close(fd);
 	}
 

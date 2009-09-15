@@ -76,10 +76,11 @@ sSLList *sll_create(void) {
 void sll_destroy(sSLList *list,bool freeData) {
 	/* free nodes */
 	sList *l = (sList*)list;
-	sNode *nn,*n = l->first;
+	sNode *nn,*n;
+	if(list == NULL)
+		return;
 
-	vassert(list != NULL,"list == NULL");
-
+	n = l->first;
 	while(n != NULL) {
 		nn = n->next;
 		if(freeData)

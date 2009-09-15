@@ -59,7 +59,7 @@ int main(void) {
 	tServ id,client;
 	tMsgId mid;
 
-	id = regService("video",SERV_DRIVER);
+	id = regService("video",SERV_DRV_BINPRIV);
 	if(id < 0)
 		error("Unable to register service 'video'");
 
@@ -69,10 +69,8 @@ int main(void) {
 		error("Unable to aquire video-memory (%p)",VIDEO_MEM);
 
 	/* reserve ports for cursor */
-	if(requestIOPort(CURSOR_PORT_INDEX) < 0)
-		error("Unable to request port %d",CURSOR_PORT_INDEX);
-	if(requestIOPort(CURSOR_PORT_DATA) < 0)
-		error("Unable to request port %d",CURSOR_PORT_DATA);
+	if(requestIOPorts(CURSOR_PORT_INDEX,2) < 0)
+		error("Unable to request ports %d .. %d",CURSOR_PORT_INDEX,CURSOR_PORT_DATA);
 
 	/* clear screen */
 	memclear(videoData,COLS * ROWS * 2);
@@ -138,8 +136,7 @@ int main(void) {
 	}
 
 	/* clean up */
-	releaseIOPort(CURSOR_PORT_INDEX);
-	releaseIOPort(CURSOR_PORT_DATA);
+	releaseIOPorts(CURSOR_PORT_INDEX,2);
 	unregService(id);
 	return EXIT_SUCCESS;
 }

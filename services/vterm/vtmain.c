@@ -64,7 +64,7 @@ int main(void) {
 	/* reg services */
 	for(i = 0; i < VTERM_COUNT; i++) {
 		sprintf(name,"vterm%d",i);
-		servIds[i] = regService(name,SERV_DRIVER);
+		servIds[i] = regService(name,SERV_DRV_TXTPUB);
 		if(servIds[i] < 0)
 			error("Unable to register service '%s'",name);
 	}
@@ -79,9 +79,8 @@ int main(void) {
 		error("Unable to open '/drivers/keyboard'");
 
 	/* request io-ports for qemu and bochs */
-	requestIOPort(0xe9);
-	requestIOPort(0x3f8);
-	requestIOPort(0x3fd);
+	if(requestIOPort(0xe9) < 0 || requestIOPort(0x3f8) < 0 || requestIOPort(0x3fd) < 0)
+		error("Unable to request ports for qemu/bochs");
 
 	/* select first vterm */
 	vterm_selectVTerm(0);

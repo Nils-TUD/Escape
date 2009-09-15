@@ -31,7 +31,7 @@ int main(void) {
 	tServ id,client;
 	tMsgId mid;
 
-	id = regService("null",SERV_DRIVER);
+	id = regService("null",SERV_DRV_BINPUB);
 	if(id < 0)
 		error("Unable to register service 'null'");
 

@@ -295,7 +295,7 @@ bool vfs_eof(tTid tid,tFileNo file) {
 		sVFSNode *n = nodes + e->nodeNo;
 
 		if(n->mode & MODE_TYPE_SERVUSE) {
-			if(n->parent->mode & MODE_SERVICE_DRIVER)
+			if(IS_DRIVER(n->parent->mode))
 				eof = n->parent->data.service.isEmpty;
 			else if(n->parent->owner == tid)
 				eof = sll_length(n->data.servuse.sendList) == 0;
@@ -337,7 +337,7 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 		sVFSNode *n = nodes + e->nodeNo;
 
 		if(n->mode & MODE_TYPE_SERVUSE) {
-			if(n->parent->mode & MODE_SERVICE_DRIVER)
+			if(IS_DRIVER(n->parent->mode))
 				e->position = newPos;
 			else {
 				sSLList *list;
@@ -458,7 +458,7 @@ s32 vfs_ioctl(tTid tid,tFileNo file,u32 cmd,u8 *data,u32 size) {
 		return err;
 
 	/* node not present anymore? */
-	if(n->name == NULL || !(n->mode & MODE_TYPE_SERVUSE) || !(n->parent->mode & MODE_SERVICE_DRIVER))
+	if(n->name == NULL || !(n->mode & MODE_TYPE_SERVUSE) || !IS_DRIVER(n->parent->mode))
 		return ERR_INVALID_FILE;
 
 	return vfsdrv_ioctl(tid,file,n,cmd,data,size);
@@ -518,7 +518,7 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 				/* last usage? */
 				if(--(n->refCount) == 0) {
 					/* notify the driver, if it is one */
-					if((n->mode & MODE_TYPE_SERVUSE) && (n->parent->mode & MODE_SERVICE_DRIVER))
+					if((n->mode & MODE_TYPE_SERVUSE) && IS_DRIVER(n->parent->mode))
 						vfsdrv_close(tid,file,n);
 
 					/* if there are message for the service we don't want to throw them away */
@@ -705,7 +705,7 @@ tServ vfs_createService(tTid tid,const char *name,u32 type) {
 	char *hname;
 
 	/* determine position in VFS */
-	if(type & MODE_SERVICE_DRIVER)
+	if(IS_DRIVER(type))
 		serv = DRIVERS();
 	else
 		serv = SERVICES();
@@ -743,7 +743,7 @@ tServ vfs_createService(tTid tid,const char *name,u32 type) {
 
 s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable) {
 	sVFSNode *n = nodes + nodeNo;
-	if(n->name == NULL || !(n->mode & MODE_SERVICE_DRIVER))
+	if(n->name == NULL || !IS_DRIVER(n->mode))
 		return ERR_INVALID_SERVID;
 	if(n->owner != tid)
 		return ERR_NOT_OWN_SERVICE;

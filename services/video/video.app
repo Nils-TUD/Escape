@@ -1,0 +1,14 @@
+name:							"video";
+inodeNo:					3361;
+devNo:						0;
+source:						"/appsdb";
+sourceWritable:		1;
+type:							"driver";
+ioports:					980..981;
+driver:						;
+fs:								0,0;
+services:					;
+intrpts:					;
+physmem:					753664..757759;
+crtshmem:					;
+joinshmem:				;

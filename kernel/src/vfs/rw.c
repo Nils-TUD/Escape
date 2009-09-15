@@ -210,7 +210,7 @@ s32 vfsrw_writeServUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *dat
 	if(n->parent->owner == tid) {
 		/* if it is from a driver or fs, don't enqueue it but pass it directly to
 		 * the corresponding handler */
-		if(n->parent->mode & (MODE_SERVICE_DRIVER | MODE_SERVICE_FS)) {
+		if(IS_DRIVER(n->parent->mode) || (n->parent->mode & MODE_SERVICE_FS)) {
 			vfsreq_sendMsg(id,n->owner,data,size);
 			return 0;
 		}

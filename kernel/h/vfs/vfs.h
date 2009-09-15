@@ -26,15 +26,22 @@
 #define MAX_VFS_FILE_SIZE			(1 * M)
 
 /* some additional types for the kernel */
-#define MODE_TYPE_SERVUSE			000200000
-#define MODE_TYPE_SERVICE			000400000
-#define MODE_TYPE_PIPECON			001000000
-#define MODE_TYPE_PIPE				002000000
-#define MODE_SERVICE_DRIVER			004000000
-#define MODE_SERVICE_FS				010000000
+#define MODE_TYPE_SERVUSE			0x0010000
+#define MODE_TYPE_SERVICE			0x0020000
+#define MODE_TYPE_PIPECON			0x0040000
+#define MODE_TYPE_PIPE				0x0080000
+#define MODE_SERVICE_FS				0x0100000
+#define MODE_SERVICE_DRV_BINPRIV	0x0200000
+#define MODE_SERVICE_DRV_BINPUB		0x0400000
+#define MODE_SERVICE_DRV_TXTPRIV	0x0800000
+#define MODE_SERVICE_DRV_TXTPUB		0x1000000
 
 /* the device-number of the VFS */
 #define VFS_DEV_NO					((tDevNo)0xFF)
+
+/* checks wether the service with given mode is a driver */
+#define IS_DRIVER(mode)				(((mode) & (MODE_SERVICE_DRV_BINPRIV | MODE_SERVICE_DRV_BINPUB | \
+			MODE_SERVICE_DRV_TXTPRIV | MODE_SERVICE_DRV_TXTPUB)) != 0)
 
 /* GFT flags */
 enum {

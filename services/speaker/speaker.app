@@ -1,0 +1,14 @@
+name:							"speaker";
+inodeNo:					0;
+devNo:						0;
+source:						"/appsdb";
+sourceWritable:		1;
+type:							"service";
+ioports:					66..67,97..98;
+driver:						;
+fs:								0,0;
+services:					;
+intrpts:					;
+physmem:					;
+crtshmem:					;
+joinshmem:				;

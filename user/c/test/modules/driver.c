@@ -36,7 +36,7 @@ int mod_driver(int argc,char *argv[]) {
 	UNUSED(argc);
 	UNUSED(argv);
 
-	id = regService("bla",SERV_DRIVER);
+	id = regService("bla",SERV_DRV_TXTPUB);
 	if(id < 0)
 		printe("regService");
 

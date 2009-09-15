@@ -44,6 +44,7 @@
 #define TOK_COL			5
 #define TOK_DOTDOT		6
 #define TOK_EOF			7
+#define TOK_EOA			8
 
 typedef struct {
 	const char *str;
@@ -85,6 +86,9 @@ static bool app_parseRange(sParseInfo *info,sSLList *list);
 
 bool app_toString(sStringBuffer *str,sApp *app,char *src,bool srcWritable) {
 	const char *types[] = {"driver","service","fs","default"};
+	ADD_PERM(str,  "name:					\"%s\";\n",app->name);
+	ADD_PERM(str,  "inodeNo:				%d;\n",app->inode);
+	ADD_PERM(str,  "devNo:					%d;\n",app->dev);
 	ADD_PERM(str,  "source:					\"%s\";\n",src);
 	ADD_PERM(str,  "sourceWritable:			%d;\n",srcWritable);
 	ADD_PERM(str,  "type:					\"%s\";\n",types[app->appType]);
@@ -92,7 +96,7 @@ bool app_toString(sStringBuffer *str,sApp *app,char *src,bool srcWritable) {
 	ADD_LPERM(str, "driver:\n",app_drvsToStr,app->driver);
 	ADD_PERM(str,  "fs:						%d,%d;\n",app->fs.read,app->fs.write);
 	ADD_LPERM(str, "services:				",app_strsToStr,app->services);
-	ADD_LPERM(str, "signals:				",app_intsToStr,app->signals);
+	ADD_LPERM(str, "intrpts:				",app_intsToStr,app->intrpts);
 	ADD_LPERM(str, "physmem:				",app_rangesToStr,app->physMem);
 	ADD_LPERM(str, "crtshmem:				",app_strsToStr,app->createShMem);
 	ADD_LPERM(str, "joinshmem:				",app_strsToStr,app->joinShMem);
@@ -103,6 +107,8 @@ static bool app_drvsToStr(sStringBuffer *str,sSLList *list) {
 	const char *name;
 	sSLNode *n;
 	sDriverPerm *drv;
+	if(list == NULL)
+		return true;
 	for(n = sll_begin(list); n != NULL; n = n->next) {
 		drv = (sDriverPerm*)n->data;
 		if(drv->group == DRV_GROUP_BINPRIV)
@@ -123,6 +129,8 @@ static bool app_drvsToStr(sStringBuffer *str,sSLList *list) {
 
 static bool app_intsToStr(sStringBuffer *str,sSLList *list) {
 	sSLNode *n;
+	if(list == NULL)
+		return true;
 	for(n = sll_begin(list); n != NULL; n = n->next) {
 		ADD_PERM(str,"%d",(u32)n->data);
 		if(n->next != NULL)
@@ -133,6 +141,8 @@ static bool app_intsToStr(sStringBuffer *str,sSLList *list) {
 
 static bool app_strsToStr(sStringBuffer *str,sSLList *list) {
 	sSLNode *n;
+	if(list == NULL)
+		return true;
 	for(n = sll_begin(list); n != NULL; n = n->next) {
 		ADD_PERM(str,"\"%s\"",(char*)n->data);
 		if(n->next != NULL)
@@ -144,6 +154,8 @@ static bool app_strsToStr(sStringBuffer *str,sSLList *list) {
 static bool app_rangesToStr(sStringBuffer *str,sSLList *list) {
 	sSLNode *n;
 	sRange *r;
+	if(list == NULL)
+		return true;
 	for(n = sll_begin(list); n != NULL; n = n->next) {
 		r = (sRange*)n->data;
 		ADD_PERM(str,"%d..%d",r->start,r->end);
@@ -153,11 +165,13 @@ static bool app_rangesToStr(sStringBuffer *str,sSLList *list) {
 	return true;
 }
 
-bool app_fromString(const char *definition,sApp *app,char *src,bool *srcWritable) {
+char *app_fromString(const char *definition,sApp *app,char *src,bool *srcWritable) {
 	sParseInfo info;
 	info.str = definition;
 	app->db = NULL;
-	app->id = 0;
+	memclear(app->name,APP_NAME_LEN + 1);
+	app->inode = 0;
+	app->dev = 0;
 	app->appType = APP_TYPE_DEFAULT;
 	app->fs.read = false;
 	app->fs.write = false;
@@ -167,17 +181,43 @@ bool app_fromString(const char *definition,sApp *app,char *src,bool *srcWritable
 	app->ioports = NULL;
 	app->services = NULL;
 	app->physMem = NULL;
-	app->signals = NULL;
+	app->intrpts = NULL;
 	while(1) {
 		if(!app_nextToken(&info)) {
 			if(info.tokType == TOK_EOF)
 				break;
 			goto error;
 		}
+		/* if the app is finished, return the current position */
+		if(info.tokType == TOK_EOA)
+			break;
 		if(info.tokType != TOK_NAME)
 			goto error;
 
-		if(strcmp(info.token,"source") == 0) {
+		if(strcmp(info.token,"name") == 0) {
+			if(!app_nextToken(&info) || info.tokType != TOK_STRING)
+				goto error;
+			if(info.tokLen > APP_NAME_LEN)
+				goto error;
+			strcpy(app->name,info.token);
+			if(!app_nextToken(&info) || info.tokType != TOK_SEM)
+				goto error;
+		}
+		else if(strcmp(info.token,"inodeNo") == 0) {
+			if(!app_nextToken(&info) || info.tokType != TOK_INT)
+				goto error;
+			app->inode = atoi(info.token);
+			if(!app_nextToken(&info) || info.tokType != TOK_SEM)
+				goto error;
+		}
+		else if(strcmp(info.token,"devNo") == 0) {
+			if(!app_nextToken(&info) || info.tokType != TOK_INT)
+				goto error;
+			app->dev = atoi(info.token);
+			if(!app_nextToken(&info) || info.tokType != TOK_SEM)
+				goto error;
+		}
+		else if(strcmp(info.token,"source") == 0) {
 			if(!app_nextToken(&info) || info.tokType != TOK_STRING)
 				goto error;
 			strcpy(src,info.token);
@@ -240,11 +280,11 @@ bool app_fromString(const char *definition,sApp *app,char *src,bool *srcWritable
 			if(!app_parseStrList(&info,app->services))
 				goto error;
 		}
-		else if(strcmp(info.token,"signals") == 0) {
-			app->signals = sll_create();
-			if(!app->signals)
+		else if(strcmp(info.token,"intrpts") == 0) {
+			app->intrpts = sll_create();
+			if(!app->intrpts)
 				goto error;
-			if(!app_parseIntList(&info,app->signals))
+			if(!app_parseIntList(&info,app->intrpts))
 				goto error;
 		}
 		else if(strcmp(info.token,"physmem") == 0) {
@@ -271,7 +311,10 @@ bool app_fromString(const char *definition,sApp *app,char *src,bool *srcWritable
 		else
 			goto error;
 	}
-	return true;
+
+	/* we only have a valid app if at least the name is present */
+	if(strlen(app->name) > 0)
+		return (char*)info.str;
 
 error:
 	sll_destroy(app->createShMem,true);
@@ -286,9 +329,9 @@ error:
 	app->services = NULL;
 	sll_destroy(app->physMem,true);
 	app->physMem = NULL;
-	sll_destroy(app->signals,false);
-	app->signals = NULL;
-	return false;
+	sll_destroy(app->intrpts,false);
+	app->intrpts = NULL;
+	return NULL;
 }
 
 static bool app_nextToken(sParseInfo *info) {
@@ -308,10 +351,18 @@ static bool app_nextToken(sParseInfo *info) {
 
 		/* dotdot: '..' */
 		if(c == '.' && *(info->str + 1) == '.') {
-			info->token[info->tokLen++] = c;
-			info->token[info->tokLen++] = *(info->str + 1);
-			info->token[info->tokLen] = '\0';
+			strcpy(info->token,"..");
+			info->tokLen = 2;
 			info->tokType = TOK_DOTDOT;
+			info->str += 2;
+			break;
+		}
+
+		/* end of app: ';;' */
+		if(c == ';' && *(info->str + 1) == ';') {
+			strcpy(info->token,";;");
+			info->tokLen = 2;
+			info->tokType = TOK_EOA;
 			info->str += 2;
 			break;
 		}

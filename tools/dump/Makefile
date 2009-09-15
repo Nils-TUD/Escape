@@ -20,7 +20,7 @@ COBJ = $(patsubst %.cpp,$(BUILDL)/%.o,$(CSRC))
 all:	$(BIN)
 
 $(BIN):	$(BUILDDIRS) $(COBJ)
-		@echo "===== LINKING =====";
+		@echo "	" LD $(BIN);
 		$(CC) $(CFLAGS) -o $(BIN) $(COBJ);
 
 $(BUILDDIRS):

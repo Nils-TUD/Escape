@@ -717,6 +717,43 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Invalid service-id!");
 			break;
 
+		case ERR_INVALID_APP:
+			strcpy(msg,"Invalid application!");
+			break;
+
+		case ERR_APP_NOT_FOUND:
+			strcpy(msg,"Application not found in AppsDB (maybe not installed?)!");
+			break;
+
+		case ERR_APP_IOPORTS_NO_PERM:
+			strcpy(msg,"Application has no permission for the requested io-ports!");
+			break;
+
+		case ERR_APPS_SIGNAL_NO_PERM:
+			strcpy(msg,"Application has no permission to announce a signal-handler for "
+					"the specified signal!");
+			break;
+
+		case ERR_APP_CRTSHMEM_NO_PERM:
+			strcpy(msg,"Application has no permission to create the shared-memory with specified name!");
+			break;
+
+		case ERR_APP_JOINSHMEM_NO_PERM:
+			strcpy(msg,"Application has no permission to join the shared-memory with specified name!");
+			break;
+
+		case ERR_APPS_CRTSERV_NO_PERM:
+			strcpy(msg,"Application has no permission to create a service!");
+			break;
+
+		case ERR_APPS_CRTFS_NO_PERM:
+			strcpy(msg,"Application has no permission to create a fs!");
+			break;
+
+		case ERR_APPS_CRTDRV_NO_PERM:
+			strcpy(msg,"Application has no permission to create a driver!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

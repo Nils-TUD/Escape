@@ -26,6 +26,7 @@ if [ $# -lt 1 ]; then
 	echo "Usage: $0 mountp2" 1>&2
 	echo "Usage: $0 unmount" 1>&2
 	echo "Usage: $0 copy <src> <dst>" 1>&2
+	echo "Usage: $0 appsdb <src> <dst>" 1>&2
 	exit 1
 fi;
 
@@ -45,8 +46,11 @@ buildMenuLst() {
 	echo "timeout 0" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "title \"$OSTITLE\"" >> $DISKMOUNT/boot/grub/menu.lst;
-	echo "kernel /boot/$BINNAME" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "kernel /boot/$BINNAME /appsdb" >> $DISKMOUNT/boot/grub/menu.lst;
+	# note that the perms have to be in front of the binary!
+	echo "module /boot/perms/ata" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/ata /services/ata" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "module /boot/perms/fs" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/fs /services/fs" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "boot" >> $DISKMOUNT/boot/grub/menu.lst;
 }
@@ -54,6 +58,7 @@ buildMenuLst() {
 addBootData() {
 	$SUDO mkdir $DISKMOUNT/boot
 	$SUDO mkdir $DISKMOUNT/boot/grub
+	$SUDO mkdir $DISKMOUNT/boot/perms
 	$SUDO cp boot/stage1 $DISKMOUNT/boot/grub;
 	$SUDO cp boot/stage2 $DISKMOUNT/boot/grub;
 	$SUDO touch $DISKMOUNT/boot/grub/menu.lst;
@@ -68,6 +73,7 @@ addTestData() {
 	$SUDO mkdir $DISKMOUNT/etc
 	$SUDO cp services/services.txt $DISKMOUNT/etc/services
 	$SUDO mkdir $DISKMOUNT/testdir
+	$SUDO cp appsdb.txt $DISKMOUNT/appsdb
 	$SUDO touch $DISKMOUNT/file.txt
 	$SUDO chmod 0666 $DISKMOUNT/file.txt
 	echo "Das ist ein Test-String!!" > $DISKMOUNT/file.txt
@@ -113,6 +119,19 @@ unmountDisk() {
 		fi
 		$SUDO umount /dev/loop0 > /dev/null 2>&1
 	done
+}
+
+replAppDefs() {
+	SRC=$1
+	DST=$2
+	
+	APP=$(gawk '/name:/ { print gensub(/^\"(.*)\";/, "\\1", 1, $2) }' $SRC);
+	# now search the app in /bin or /sbin and grab the inode-number
+	INO=`ls -li $DISKMOUNT/bin | grep "\\b$APP\\b" | gawk '{ print $1 }'`;
+	if [ "$INO" == "" ]; then
+		INO=`ls -li $DISKMOUNT/sbin | grep "\\b$APP\\b" | gawk '{ print $1 }'`;
+	fi;
+	cat $SRC | sed -e "s/\(inodeNo:[[:space:]]*\)[0-9]*;/\1$INO;/g" > $DST;
 }
 
 # build disk?
@@ -199,5 +218,17 @@ fi
 
 # unmount
 if [ "$1" == "unmount" ]; then
+	unmountDisk
+fi
+
+# build appsdb
+if [ "$1" == "appsdb" ]; then
+	if [ $# -ne 3 ]; then
+		echo "Usage: $0 appsdb <src> <dst>" 1>&2;
+		exit 1
+	fi
+	
+	mountDisk $PART1OFFSET
+	replAppDefs $2 $3
 	unmountDisk
 fi

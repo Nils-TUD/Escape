@@ -32,6 +32,9 @@ static void test_checkDrvList(sDriverPerm *drivers,u32 count,sSLList *list);
 static void test_checkStrList(const char **strings,u32 count,sSLList *list);
 
 static const char *app1 =
+	"name:					\"muh\";"
+	"inodeNo:				133;"
+	"devNo:					0;"
 	"source:				\"mysource\";"
 	"sourceWritable:		0;"
 	"type:					\"driver\";"
@@ -42,12 +45,15 @@ static const char *app1 =
 	"	\"zero\",0,0,0;"
 	"fs:					1,1;"
 	"services:				\"env\";"
-	"signals:				1,2,12;"
+	"intrpts:				1,2,12;"
 	"physmem:				4096..8191,0..3;"
 	"crtshmem:				\"my\",\"my2\";"
 	"joinshmem:				;";
 
 static const char *app2 =
+	"name:					\"myapppp\";"
+	"inodeNo:				44;"
+	"devNo:					12;"
 	"source:				\"hiho\";"
 	"sourceWritable:		1;"
 	"type:					\"default\";"
@@ -55,7 +61,7 @@ static const char *app2 =
 	"driver:;"
 	"fs:					  0,  0  ;"
 	"services:				\"env\",\"vesa\";"
-	"signals:				;"
+	"intrpts:				;"
 	"physmem:				;"
 	"crtshmem:				\"aaaaabb\";"
 	"joinshmem:				\"test\";";
@@ -79,13 +85,13 @@ static void test_app_1(void) {
 	const char *services[] = {"env"};
 	const char *crtshmem[] = {"my","my2"};
 	const char *joinshmem[0];
-	u32 i,signals[] = {1,2,12};
+	u32 i,intrpts[] = {1,2,12};
 	sDriverPerm driver[] = {
 		{DRV_GROUP_CUSTOM,"null",1,0,0},
 		{DRV_GROUP_BINPRIV,"",1,1,1},
 		{DRV_GROUP_CUSTOM,"zero",0,0,0},
 	};
-	bool res;
+	char *res;
 	sApp a;
 	sStringBuffer buf;
 	buf.dynamic = true;
@@ -95,15 +101,18 @@ static void test_app_1(void) {
 	test_caseStart("Parsing, toString(), parsing again");
 
 	res = app_fromString(app1,&a,src,&srcWritable);
-	test_assertTrue(res);
+	test_assertTrue(res != NULL);
 	for(i = 0; i < 2; i++) {
+		test_assertStr(a.name,"muh");
+		test_assertInt(a.inode,133);
+		test_assertInt(a.dev,0);
 		test_assertStr(src,"mysource");
 		test_assertFalse(srcWritable);
 		test_assertUInt(a.appType,APP_TYPE_DRIVER);
 		test_checkRangeList(ioports,ARRAY_SIZE(ioports),a.ioports);
 		test_checkDrvList(driver,ARRAY_SIZE(driver),a.driver);
 		test_checkStrList(services,ARRAY_SIZE(services),a.services);
-		test_checkIntList(signals,ARRAY_SIZE(signals),a.signals);
+		test_checkIntList(intrpts,ARRAY_SIZE(intrpts),a.intrpts);
 		test_checkRangeList(physmem,ARRAY_SIZE(physmem),a.physMem);
 		test_checkStrList(crtshmem,ARRAY_SIZE(crtshmem),a.createShMem);
 		test_checkStrList(joinshmem,ARRAY_SIZE(joinshmem),a.joinShMem);
@@ -111,7 +120,7 @@ static void test_app_1(void) {
 		/* create str from it and parse again */
 		if(i < 1) {
 			test_assertTrue(app_toString(&buf,&a,src,srcWritable));
-			test_assertTrue(app_fromString(buf.str,&a,src,&srcWritable));
+			test_assertTrue(app_fromString(buf.str,&a,src,&srcWritable) != NULL);
 		}
 	}
 
@@ -126,9 +135,9 @@ static void test_app_2(void) {
 	const char *services[] = {"env","vesa"};
 	const char *crtshmem[] = {"aaaaabb"};
 	const char *joinshmem[] = {"test"};
-	u32 i,signals[0];
+	u32 i,intrpts[0];
 	sDriverPerm driver[0];
-	bool res;
+	char *res;
 	sApp a;
 	sStringBuffer buf;
 	buf.dynamic = true;
@@ -138,15 +147,18 @@ static void test_app_2(void) {
 	test_caseStart("Parsing, toString(), parsing again");
 
 	res = app_fromString(app2,&a,src,&srcWritable);
-	test_assertTrue(res);
+	test_assertTrue(res != NULL);
 	for(i = 0; i < 2; i++) {
+		test_assertStr(a.name,"myapppp");
+		test_assertInt(a.inode,44);
+		test_assertInt(a.dev,12);
 		test_assertStr(src,"hiho");
 		test_assertTrue(srcWritable);
 		test_assertUInt(a.appType,APP_TYPE_DEFAULT);
 		test_checkRangeList(ioports,ARRAY_SIZE(ioports),a.ioports);
 		test_checkDrvList(driver,ARRAY_SIZE(driver),a.driver);
 		test_checkStrList(services,ARRAY_SIZE(services),a.services);
-		test_checkIntList(signals,ARRAY_SIZE(signals),a.signals);
+		test_checkIntList(intrpts,ARRAY_SIZE(intrpts),a.intrpts);
 		test_checkRangeList(physmem,ARRAY_SIZE(physmem),a.physMem);
 		test_checkStrList(crtshmem,ARRAY_SIZE(crtshmem),a.createShMem);
 		test_checkStrList(joinshmem,ARRAY_SIZE(joinshmem),a.joinShMem);
@@ -154,7 +166,7 @@ static void test_app_2(void) {
 		/* create str from it and parse again */
 		if(i == 0) {
 			test_assertTrue(app_toString(&buf,&a,src,srcWritable));
-			test_assertTrue(app_fromString(buf.str,&a,src,&srcWritable));
+			test_assertTrue(app_fromString(buf.str,&a,src,&srcWritable) != NULL);
 		}
 	}
 	test_caseSucceded();

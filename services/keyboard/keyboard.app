@@ -1,0 +1,14 @@
+name:							"keyboard";
+inodeNo:					3355;
+devNo:						0;
+source:						"/appsdb";
+sourceWritable:		1;
+type:							"driver";
+ioports:					32..32,96..96,100..100;
+driver:						;
+fs:								0,0;
+services:					;
+intrpts:					8;
+physmem:					;
+crtshmem:					;
+joinshmem:				;

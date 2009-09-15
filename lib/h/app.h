@@ -25,6 +25,16 @@
 #include <asprintf.h>
 
 #define DRIV_NAME_LEN		15
+#define APP_NAME_LEN		30
+
+/* driver-operations */
+#define DRV_OP_READ			1
+#define DRV_OP_WRITE		2
+#define DRV_OP_IOCTL		4
+
+/* fs-operations */
+#define FS_OP_READ			1
+#define FS_OP_WRITE			2
 
 /* possible app-types */
 #define APP_TYPE_DRIVER		0
@@ -56,8 +66,10 @@ typedef struct {
 
 /* information about an application */
 typedef struct {
-	u32 id;
+	tInodeNo inode;
+	tDevNo dev;
 	void *db;
+	char name[APP_NAME_LEN + 1];
 	u16 appType;			/* driver, fs, service or default */
 	sSLList *ioports;		/* list of sRange */
 	sSLList *driver;		/* list of sDriverPerm */
@@ -66,7 +78,7 @@ typedef struct {
 		bool write;
 	} fs;
 	sSLList *services;		/* list of names */
-	sSLList *signals;		/* list of signal-numbers */
+	sSLList *intrpts;		/* list of signal-numbers */
 	sSLList *physMem;		/* list of sRange */
 	sSLList *createShMem;	/* list of names */
 	sSLList *joinShMem;		/* list of names */
@@ -90,8 +102,8 @@ bool app_toString(sStringBuffer *str,sApp *app,char *src,bool srcWritable);
  * @param app the app to write to
  * @param src the source of the app
  * @param srcWritable wether the source is writable
- * @return true if successfull
+ * @return the position after parsing in <definition> or NULL if an error occurred
  */
-bool app_fromString(const char *definition,sApp *app,char *src,bool *srcWritable);
+char *app_fromString(const char *definition,sApp *app,char *src,bool *srcWritable);
 
 #endif /* APPSPARSER_H_ */

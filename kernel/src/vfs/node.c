@@ -564,8 +564,8 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	}
 
 	/* ok, create a service-usage-node */
-	rhdlr = (fRead)((n->mode & MODE_SERVICE_DRIVER) ? vfsdrv_read : NULL);
-	whdlr = (fWrite)((n->mode & MODE_SERVICE_DRIVER) ? vfsdrv_write : NULL);
+	rhdlr = (fRead)(IS_DRIVER(n->mode) ? vfsdrv_read : NULL);
+	whdlr = (fWrite)(IS_DRIVER(n->mode) ? vfsdrv_write : NULL);
 	m = vfsn_createServiceUseNode(tid,n,name,rhdlr,whdlr);
 	if(m == NULL) {
 		kheap_free(name);

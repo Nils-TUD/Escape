@@ -19,6 +19,7 @@
 
 #include <common.h>
 #include <syscalls.h>
+#include <apps/apps.h>
 #include <machine/intrpt.h>
 #include <machine/timer.h>
 #include <machine/gdt.h>
@@ -49,6 +50,16 @@
 
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
+
+/* service-types, as defined in libc/include/esc/service.h */
+#define SERV_DEFAULT				1
+#define SERV_FS						2
+#define SERV_DRV_BINPRIV			4
+#define SERV_DRV_BINPUB				8
+#define SERV_DRV_TXTPRIV			16
+#define SERV_DRV_TXTPUB				32
+#define SERV_ALL					(SERV_DEFAULT | SERV_FS | SERV_DRV_BINPRIV | SERV_DRV_BINPUB | \
+									SERV_DRV_TXTPRIV | SERV_DRV_TXTPUB)
 
 /* some convenience-macros */
 #define SYSC_SETERROR(stack,errorCode)	((stack)->ebx = (errorCode))
@@ -678,7 +689,7 @@ static void sysc_open(sIntrptStackFrame *stack) {
 	/* if it is a driver, call the driver open-command */
 	if(isVirt) {
 		sVFSNode *node = vfsn_getNode(nodeNo);
-		if((node->mode & MODE_TYPE_SERVUSE) && (node->parent->mode & MODE_SERVICE_DRIVER)) {
+		if((node->mode & MODE_TYPE_SERVUSE) && IS_DRIVER(node->parent->mode)) {
 			err = vfsdrv_open(t->tid,file,node,flags);
 			/* if this went wrong, undo everything and report an error to the user */
 			if(err < 0) {
@@ -907,19 +918,36 @@ static void sysc_regService(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	u32 type = (u32)SYSC_ARG2(stack);
 	u32 vtype;
+	u16 appType;
 	sThread *t = thread_getRunning();
 	tServ res;
 
 	/* check type */
-	if((type & (0x1 | 0x2 | 0x4)) == 0 || (type & ~(0x1 | 0x2 | 0x4)) != 0)
+	if((type & SERV_ALL) == 0 || (type & ~SERV_ALL) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	/* convert type */
+	/* convert and check type */
 	vtype = 0;
-	if(type & 0x2)
-		vtype |= MODE_SERVICE_DRIVER;
-	else if(type & 0x4)
+	appType = t->proc->app->appType;
+	if(type & SERV_FS) {
+		if(apps_isEnabled() && appType != APP_TYPE_FS)
+			SYSC_ERROR(stack,ERR_APPS_CRTFS_NO_PERM);
 		vtype |= MODE_SERVICE_FS;
+	}
+	else if(type & (SERV_DRV_BINPRIV | SERV_DRV_BINPUB | SERV_DRV_TXTPRIV | SERV_DRV_TXTPUB)) {
+		if(apps_isEnabled() && appType != APP_TYPE_DRIVER)
+			SYSC_ERROR(stack,ERR_APPS_CRTDRV_NO_PERM);
+		if(type & SERV_DRV_BINPRIV)
+			vtype |= MODE_SERVICE_DRV_BINPRIV;
+		else if(type & SERV_DRV_BINPUB)
+			vtype |= MODE_SERVICE_DRV_BINPUB;
+		else if(type & SERV_DRV_TXTPRIV)
+			vtype |= MODE_SERVICE_DRV_TXTPRIV;
+		else if(type & SERV_DRV_TXTPUB)
+			vtype |= MODE_SERVICE_DRV_TXTPUB;
+	}
+	else if(apps_isEnabled() && appType != APP_TYPE_SERVICE)
+		SYSC_ERROR(stack,ERR_APPS_CRTSERV_NO_PERM);
 
 	res = vfs_createService(t->tid,name,vtype);
 	if(res < 0)
@@ -1130,14 +1158,15 @@ static void sysc_yield(sIntrptStackFrame *stack) {
 static void sysc_requestIOPorts(sIntrptStackFrame *stack) {
 	u16 start = SYSC_ARG1(stack);
 	u16 count = SYSC_ARG2(stack);
-	sProc *p;
+	sProc *p = proc_getRunning();
 	s32 err;
 
 	/* check range */
 	if(count == 0 || (u32)start + (u32)count > 0xFFFF)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(!apps_canUseIOPorts(p->app,start,count))
+		SYSC_ERROR(stack,ERR_APP_IOPORTS_NO_PERM);
 
-	p = proc_getRunning();
 	err = ioports_request(p,start,count);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
@@ -1178,6 +1207,9 @@ static void sysc_setSigHandler(sIntrptStackFrame *stack) {
 	/* check signal */
 	if(!sig_canHandle(signal))
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
+	/* interrupts require permissions */
+	if(signal >= SIG_INTRPT_TIMER && !apps_canGetIntrpt(t->proc->app,signal))
+		SYSC_ERROR(stack,ERR_APPS_SIGNAL_NO_PERM);
 
 	err = sig_setHandler(t->tid,signal,handler);
 	if(err < 0)
@@ -1312,6 +1344,8 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 
 	/* free the current text; free frames if text_free() returns true */
 	paging_unmap(0,p->textPages,text_free(p->text,p->pid),false);
+	/* ensure that we don't have a text-usage anymore */
+	p->text = NULL;
 	/* remove process-data */
 	proc_changeSize(-p->dataPages,CHG_DATA);
 	/* Note that we HAVE TO do it behind the proc_changeSize() call since the data-pages are
@@ -1376,10 +1410,13 @@ static void sysc_debug(sIntrptStackFrame *stack) {
 static void sysc_createSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
 	u32 byteCount = SYSC_ARG2(stack);
+	sProc *p = proc_getRunning();
 	s32 res;
 
 	if(!sysc_isStringReadable(name) || byteCount == 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(!apps_canCreateShMem(p->app,name))
+		SYSC_ERROR(stack,ERR_APP_CRTSHMEM_NO_PERM);
 
 	res = shm_create(name,BYTES_2_PAGES(byteCount));
 	if(res < 0)
@@ -1389,10 +1426,13 @@ static void sysc_createSharedMem(sIntrptStackFrame *stack) {
 
 static void sysc_joinSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
+	sProc *p = proc_getRunning();
 	s32 res;
 
 	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(!apps_canJoinShMem(p->app,name))
+		SYSC_ERROR(stack,ERR_APP_JOINSHMEM_NO_PERM);
 
 	res = shm_join(name);
 	if(res < 0)

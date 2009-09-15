@@ -1,0 +1,14 @@
+name:							"shell";
+inodeNo:					3383;
+devNo:						0;
+source:						"/appsdb";
+sourceWritable:		1;
+type:							"default";
+ioports:					;
+driver:						;
+fs:								1,1;
+services:					;
+intrpts:					;
+physmem:					;
+crtshmem:					;
+joinshmem:				;

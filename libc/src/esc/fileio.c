@@ -287,13 +287,15 @@ s32 printe(const char *prefix,...) {
 
 s32 vprinte(const char *prefix,va_list ap) {
 	s32 res = 0;
+	/* getEnv() may overwrite errno */
+	s32 errnoBak = errno;
 	char dummyBuf;
 	char *msg;
 	/* if we have no terminal we write it via debugf */
 	if(getEnv(&dummyBuf,1,"TERM") == false) {
 		vdebugf(prefix,ap);
-		if(errno < 0) {
-			msg = strerror(errno);
+		if(errnoBak < 0) {
+			msg = strerror(errnoBak);
 			debugf(": %s",msg);
 		}
 		debugf("\n");
@@ -301,8 +303,8 @@ s32 vprinte(const char *prefix,va_list ap) {
 	}
 	else {
 		vfprintf(stderr,prefix,ap);
-		if(errno < 0) {
-			msg = strerror(errno);
+		if(errnoBak < 0) {
+			msg = strerror(errnoBak);
 			fprintf(stderr,": %s",msg);
 		}
 		fprintf(stderr,"\n");

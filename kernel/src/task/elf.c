@@ -25,6 +25,7 @@
 #include <mem/text.h>
 #include <vfs/vfs.h>
 #include <vfs/real.h>
+#include <apps/apps.h>
 #include <video.h>
 #include <string.h>
 #include <errors.h>
@@ -41,12 +42,30 @@ s32 elf_loadFromFile(const char *path) {
 	u8 const *datPtr;
 	Elf32_Ehdr eheader;
 	Elf32_Phdr pheader;
+	tInodeNo inodeNo;
+	tDevNo devNo;
 
 	vassert(p->textPages == 0 && p->dataPages == 0,"Process is not empty");
 
 	file = vfsr_openFile(t->tid,VFS_READ,path);
 	if(file < 0)
 		return ERR_INVALID_ELF_BIN;
+
+	/* get inode-number and device-number */
+	if((res = vfs_getFileId(file,&inodeNo,&devNo)) < 0) {
+		vfs_closeFile(t->tid,file);
+		return res;
+	}
+
+	p->app = NULL;
+	if(apps_isEnabled()) {
+		/* find the application; if not found we can't execute it */
+		p->app = apps_get(inodeNo,devNo);
+		if(p->app == NULL) {
+			vfs_closeFile(t->tid,file);
+			return ERR_APP_NOT_FOUND;
+		}
+	}
 
 	/* first read the header */
 	if((res = vfs_readFile(t->tid,file,(u8*)&eheader,sizeof(Elf32_Ehdr))) < 0)

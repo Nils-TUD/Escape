@@ -301,7 +301,7 @@ static void ata_detectDrives(void) {
 		for(p = 0; p < PARTITION_COUNT; p++) {
 			if(drives[i].partTable[p].present) {
 				sprintf(name,"hd%c%d",'a' + i,p + 1);
-				services[servCount] = regService(name,SERV_DRIVER);
+				services[servCount] = regService(name,SERV_DRV_BINPRIV);
 				if(services[servCount] < 0) {
 					debugf("Drive %d, Partition %d: Unable to register driver '%s'\n",
 							i,p + 1,name);

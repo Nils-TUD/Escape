@@ -97,6 +97,8 @@ int main(void) {
 							else
 								msg.args.arg1 = inst->fs->open(inst->handle,no,flags);
 						}
+						else
+							msg.args.arg1 = ERR_PATH_NOT_FOUND;
 						msg.args.arg2 = devNo;
 						send(fd,MSG_FS_OPEN_RESP,&msg,sizeof(msg.args));
 					}

@@ -4,7 +4,7 @@ LIBDIR = ../lib
 LIBCDIR = ../libc
 SUBDIRS = src src/esc src/esc/gui
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
-DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 3 -name "*.d")
+DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 LIB = $(BUILD)/libcpp.a
 
 CC = g++
@@ -12,7 +12,7 @@ CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CPPDEFFLAGS) -Iinclude -I$(LIB
 	-I$(LIBCDIR)/include
 
 # sources
-CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 3 -name "*.cpp")
+CSRC = $(shell find $(SUBDIRS) -name "*.cpp")
 START = startup.s
 
 # objects
@@ -23,7 +23,7 @@ GCCLIB = $(GCCLIBDIR)/_divdi3.object \
 	$(GCCLIBDIR)/_moddi3.object \
 	$(GCCLIBDIR)/_udivdi3.object \
 	$(GCCLIBDIR)/_umoddi3.object
-LIBCOBJS = $(shell find $(BUILD)/libc -mindepth 0 -maxdepth 3 -name "*.o") $(GCCLIB)
+LIBCOBJS = $(shell find $(BUILD)/libc -name "*.o") $(GCCLIB)
 STARTO = $(BUILD)/libcpp_startup.o
 
 .PHONY:		all clean

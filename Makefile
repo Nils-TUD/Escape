@@ -9,6 +9,7 @@ VBOXOSTITLE = "Escape v0.1"
 BINNAME = kernel.bin
 BIN = $(BUILD)/$(BINNAME)
 SYMBOLS = $(BUILD)/kernel.symbols
+BUILDAPPS = $(BUILD)/apps
 
 QEMUARGS = -serial stdio -hda $(HDD) -boot c -vga std
 
@@ -33,15 +34,17 @@ export SUDO=sudo
 .PHONY: all debughdd mountp1 mountp2 umountp debugp1 debugp2 checkp1 checkp2 createhdd \
 	dis qemu bochs debug debugu debugm debugt test clean
 
-all: $(BUILD)
+all: $(BUILD) $(BUILDAPPS)
 		@[ -f $(HDD) ] || make createhdd;
 		@for i in $(DIRS); do \
 			make -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
 
 $(BUILD):
-		[ -d $(BUILD) ] || mkdir -p $(BUILD);
-		mkdir $(BUILD)/apps;
+		[ -d $(BUILD) ] || mkdir $(BUILD);
+
+$(BUILDAPPS):
+		[ -d $(BUILDAPPS) ] || mkdir $(BUILDAPPS);
 
 debughdd:
 		tools/disk.sh mkdiskdev

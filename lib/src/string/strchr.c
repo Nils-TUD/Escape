@@ -17,50 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <types.h>
-#include <width.h>
+#include <stddef.h>
+#include <assert.h>
+#include <string.h>
 
-u8 getnwidth(s32 n) {
-	/* we have at least one char */
-	u8 width = 1;
-	if(n < 0) {
-		width++;
-		n = -n;
-	}
-	while(n >= 10) {
-		n /= 10;
-		width++;
-	}
-	return width;
-}
+char *strchr(const char *str,s32 ch) {
+	vassert(str != NULL,"str == NULL");
 
-u8 getlwidth(s64 l) {
-	u8 c = 0;
-	if(l < 0) {
-		l = -l;
-		c++;
+	while(*str) {
+		if(*str++ == ch)
+			return (char*)(str - 1);
 	}
-	while(l >= 10) {
-		c++;
-		l /= 10;
-	}
-	return c + 1;
-}
-
-u8 getuwidth(u32 n,u8 base) {
-	u8 width = 1;
-	while(n >= base) {
-		n /= base;
-		width++;
-	}
-	return width;
-}
-
-u8 getulwidth(u64 n,u8 base) {
-	u8 width = 1;
-	while(n >= base) {
-		n /= base;
-		width++;
-	}
-	return width;
+	return NULL;
 }

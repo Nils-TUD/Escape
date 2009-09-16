@@ -3,23 +3,24 @@ BUILDL = $(BUILD)/libc
 LIBDIR = ../lib
 GCCLIBDIR = ../libgcc
 SUBDIRS = src $(filter-out $(wildcard src/*.*),$(wildcard src/*))
-BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
-DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
+LSUBDIRS = $(filter-out $(wildcard $(LIBDIR)/src/*.*),$(wildcard $(LIBDIR)/src/*))
+BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS)) $(patsubst $(LIBDIR)/%,$(BUILDL)/lib/%,$(LSUBDIRS))
+DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 LIB = $(BUILD)/libc.a
 
 CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -Iinclude -I$(LIBDIR)/h
 
 # sources
-CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
-ASRC = $(filter-out startup.s,$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.s"))
-LSRC = $(wildcard $(LIBDIR)/src/*.c)
+CSRC = $(shell find $(SUBDIRS) -name "*.c")
+ASRC = $(filter-out startup.s,$(shell find $(SUBDIRS) -name "*.s"))
+LSRC = $(shell find $(LIBDIR)/src -name "*.c")
 START = startup.s
 
 # objects
 COBJS = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 AOBJS = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
-LOBJ=$(patsubst $(LIBDIR)/src/%.c,$(BUILDL)/lib_%.o,$(LSRC))
+LOBJ = $(patsubst $(LIBDIR)/%.c,$(BUILDL)/lib/%.o,$(LSRC))
 STARTO = $(BUILD)/libc_startup.o
 # for long long arithmetic
 GCCLIB = $(GCCLIBDIR)/_divdi3.object \
@@ -48,7 +49,7 @@ $(BUILDL)/%.s.o: %.s
 		@echo "	" AS $<
 		@nasm $(ASMFLAGS) -o $@ $<
 
-$(BUILDL)/lib_%.o:	$(LIBDIR)/src/%.c
+$(BUILDL)/lib/%.o:	$(LIBDIR)/%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
 

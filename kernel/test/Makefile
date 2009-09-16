@@ -1,40 +1,41 @@
 # general
-ROOT=../..
-BUILD=$(ROOT)/build
-BUILDK=$(BUILD)/kernel/src
-BUILDT=$(BUILD)/kernel/test
-BIN=$(BUILD)/kernel_test.bin
-LDCONF=../ld.conf
-LIB=$(ROOT)/lib
+ROOT = ../..
+BUILD = $(ROOT)/build
+BUILDK = $(BUILD)/kernel/src
+BUILDT = $(BUILD)/kernel/test
+BIN = $(BUILD)/kernel_test.bin
+LDCONF = ../ld.conf
+LIB = $(ROOT)/lib
 GCCLIBDIR = $(ROOT)/libgcc
-DEPS=$(wildcard $(BUILDT)/*.d)
-SUBDIRS=../src $(filter-out ../src/Makefile $(wildcard ../src/*.*),$(wildcard ../src/*))
-BUILDDIRS=$(BUILDT)
+DEPS = $(wildcard $(BUILDT)/*.d)
+SUBDIRS = ../src $(filter-out ../src/Makefile $(wildcard ../src/*.*),$(wildcard ../src/*))
+LSUBDIRS = $(filter-out $(wildcard $(LIB)/src/*.*),$(wildcard $(LIB)/src/*))
+BUILDDIRS = $(BUILDT) $(patsubst $(LIB)/%,$(BUILDT)/lib/%,$(LSUBDIRS))
 
 CC = gcc
 CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
 	-D TESTING=1 -D IN_KERNEL=1 -I../h -I$(LIB)/h
 
 # sources
-TSRC=$(wildcard *.c)
-KSRC=$(filter-out ../src/kernel.c,$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
-LSRC=$(wildcard $(LIB)/src/*.c)
+TSRC = $(wildcard *.c)
+KSRC = $(filter-out ../src/kernel.c,$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
+LSRC = $(shell find $(LIB)/src -name "*.c")
 
 # objects
-AOBJ=$(BUILDK)/kernela.o
-TOBJ=$(patsubst %.c,$(BUILDT)/%.o,$(TSRC))
-KOBJ=$(patsubst %.c,$(BUILDK)/%.o,$(KSRC))
-LOBJ=$(patsubst $(LIB)/src/%.c,$(BUILDT)/lib_%.o,$(LSRC))
+AOBJ = $(BUILDK)/kernela.o
+TOBJ = $(patsubst %.c,$(BUILDT)/%.o,$(TSRC))
+KOBJ = $(patsubst %.c,$(BUILDK)/%.o,$(KSRC))
+LOBJ = $(patsubst $(LIB)/%.c,$(BUILDT)/lib/%.o,$(LSRC))
 # for long long arithmetic
 GCCLIB = $(GCCLIBDIR)/_divdi3.object \
 	$(GCCLIBDIR)/_moddi3.object \
 	$(GCCLIBDIR)/_udivdi3.object \
 	$(GCCLIBDIR)/_umoddi3.object
 
-SYMBOLS=$(BUILD)/kernelt_symbols.txt
-SYMBOLSCRIPT=$(ROOT)/tools/gensymbols.sh
-SYMBOLSRC=../src/ksymbols.c
-SYMBOLOBJ=$(patsubst ../src/%.c,$(BUILDT)/%.o,$(SYMBOLSRC))
+SYMBOLS = $(BUILD)/kernelt_symbols.txt
+SYMBOLSCRIPT = $(ROOT)/tools/gensymbols.sh
+SYMBOLSRC = ../src/ksymbols.c
+SYMBOLOBJ = $(patsubst ../src/%.c,$(BUILDT)/%.o,$(SYMBOLSRC))
 
 .PHONY: all pre clean
 
@@ -70,7 +71,7 @@ $(BUILDT)/%.o:		%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
 
-$(BUILDT)/lib_%.o:	$(LIB)/src/%.c
+$(BUILDT)/lib/%.o:	$(LIB)/%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
 

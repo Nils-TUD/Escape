@@ -17,7 +17,7 @@ CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
 
 # put all libc-object-files into the archive
-LIBCOBJ = $(shell find $(BUILD)/libc -mindepth 0 -maxdepth 3 -name "*.o")
+LIBCOBJ = $(shell find $(BUILD)/libc -mindepth 0 -maxdepth 4 -name "*.o")
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 
 .PHONY: all clean

@@ -1,11 +1,4 @@
-name:							"kill";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"kill"
+start:						"kill [-L] | [-<signal>] <pid>"
+type:							"user"
+desc:							"Send signal <signal> (default=SIGKILL) to process <pid>"

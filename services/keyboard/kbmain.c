@@ -86,7 +86,7 @@ int main(void) {
 	tMsgId mid;
 	u8 kbdata;
 
-	id = regService("keyboard",SERV_DRV_BINPRIV);
+	id = regService("keyboard",SERV_DRIVER);
 	if(id < 0)
 		error("Unable to register service 'keyboard'");
 

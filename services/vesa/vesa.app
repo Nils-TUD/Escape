@@ -1,11 +1,4 @@
-name:							"vesa";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"service";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"vesa"
+start:						"vesa"
+type:							"service"
+desc:							"A service for VESA, that is used for the GUI"

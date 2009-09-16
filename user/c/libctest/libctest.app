@@ -1,11 +1,4 @@
-name:							"libctest";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"service";
-ioports:					248..248,248..254,248..253,248..255,247..248,247..253,247..254;
-driver:						;
-fs:								1,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"libctest"
+start:						"libctest"
+type:							"user"
+desc:							"Tests various functions of the libc"

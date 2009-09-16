@@ -113,7 +113,7 @@ int main(void) {
 		error("Unable to announce interrupt-handler");
 
 	/* reg service and open ourself */
-	sid = regService("mouse",SERV_DRV_BINPRIV);
+	sid = regService("mouse",SERV_DRIVER);
 	if(sid < 0)
 		error("Unable to register service '%s'","mouse");
 

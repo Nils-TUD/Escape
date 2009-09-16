@@ -35,7 +35,6 @@
 #include <vfs/request.h>
 #include <vfs/driver.h>
 #include <vfs/real.h>
-#include <apps/apps.h>
 #include <util.h>
 #include <multiboot.h>
 #include <debug.h>
@@ -150,12 +149,6 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	/* kevents */
 	vid_printf("Initializing KEvents...");
 	kev_init();
-	vid_toLineEnd(SSTRLEN("DONE"));
-	vid_printf("\033[co;2]%s\033[co]","DONE");
-
-	/* apps */
-	vid_printf("Initializing AppsDB...");
-	apps_init();
 	vid_toLineEnd(SSTRLEN("DONE"));
 	vid_printf("\033[co;2]%s\033[co]","DONE");
 

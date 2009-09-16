@@ -72,7 +72,7 @@ int main(int argc,char **argv) {
 	servName = new char[MAX_PATH_LEN + 1];
 	do {
 		sprintf(servName,"guiterm%d",no);
-		sid = regService(servName,SERV_DRV_TXTPUB);
+		sid = regService(servName,SERV_DRIVER);
 		if(sid >= 0)
 			break;
 		no++;
@@ -83,7 +83,7 @@ int main(int argc,char **argv) {
 	// the child handles the GUI
 	if(fork() == 0) {
 		// re-register service
-		sid = regService(servName,SERV_DRV_TXTPUB);
+		sid = regService(servName,SERV_DRIVER);
 		if(sid < 0)
 			error("Unable to re-register driver %s",servName);
 

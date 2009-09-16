@@ -26,7 +26,6 @@
 #include "completion.h"
 #include "cmd/echo.h"
 #include "cmd/env.h"
-#include "cmd/help.h"
 #include "cmd/pwd.h"
 #include "cmd/cd.h"
 
@@ -46,7 +45,6 @@ static sShellCmd **compl_incrArray(sShellCmd **array,u32 pos,u32 *size);
 static sShellCmd commands[] = {
 	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"echo"	}, shell_cmdEcho	,-1},
 	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"env"	}, shell_cmdEnv		,-1},
-	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"help"	}, shell_cmdHelp	,-1},
 	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"pwd"	}, shell_cmdPwd		,-1},
 	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"cd"	}, shell_cmdCd		,-1},
 };

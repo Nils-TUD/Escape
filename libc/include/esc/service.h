@@ -34,10 +34,7 @@
 
 #define SERV_DEFAULT				1
 #define SERV_FS						2
-#define SERV_DRV_BINPRIV			4
-#define SERV_DRV_BINPUB				8
-#define SERV_DRV_TXTPRIV			16
-#define SERV_DRV_TXTPUB				32
+#define SERV_DRIVER					4
 
 #ifdef __cplusplus
 extern "C" {

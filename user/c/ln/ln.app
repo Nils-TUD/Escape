@@ -1,11 +1,4 @@
-name:							"ln";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								1,1;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"ln"
+start:						"ln <target> <name>"
+type:							"user"
+desc:							"Lets <name> point to <target>"

@@ -1,11 +1,4 @@
-name:							"ls";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								1,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"ls"
+start:						"ls [-ali] [<dir>]"
+type:							"user"
+desc:							"List current or specified directory"

@@ -7,6 +7,8 @@ LDCONF = $(LIBC)/ld.conf
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
+APP = $(NAME).app
+APPCPY = $(BUILD)/apps/$(APP)
 
 CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I../../lib/h -Wl,-T,$(LDCONF) $(CDEFFLAGS) 
@@ -21,13 +23,17 @@ COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 
 .PHONY: all clean
 
-all:	$(BIN)
+all:	$(APPCPY) $(BIN)
 
 $(BIN):	$(BUILDDIRS) $(APPDST) $(LDCONF) $(COBJ) $(START) $(LIBCA)
 		@echo "	" LINKING $(BIN)
 		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA);
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /sbin/$(NAME)
+
+$(APPCPY): $(APP)
+		$(ROOT)/tools/disk.sh copy $(APP) /apps/$(NAME)
+		touch $(APPCPY)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
@@ -41,4 +47,4 @@ $(BUILDL)/%.o:		%.c
 -include $(DEPS)
 
 clean:
-		rm -f $(BIN) $(COBJ) $(DEPS)
+		rm -f $(APPCPY) $(BIN) $(COBJ) $(DEPS)

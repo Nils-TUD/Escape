@@ -1,11 +1,4 @@
-name:							"rmdir";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								0,1;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"rmdir"
+start:						"rmdir <dir> ..."
+type:							"user"
+desc:							"Removes the given (empty!) directories"

@@ -1,11 +1,4 @@
-name:							"winmanager";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"service";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"winmanager"
+start:						"winmanager"
+type:							"service"
+desc:							"Manages all windows in the GUI"

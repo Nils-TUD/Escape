@@ -25,7 +25,6 @@
 #include <mem/text.h>
 #include <vfs/vfs.h>
 #include <vfs/real.h>
-#include <apps/apps.h>
 #include <video.h>
 #include <string.h>
 #include <errors.h>
@@ -48,18 +47,6 @@ s32 elf_loadFromFile(char *path) {
 	file = vfsr_openFile(t->tid,VFS_READ,path);
 	if(file < 0)
 		return ERR_INVALID_ELF_BIN;
-
-	p->app = NULL;
-	if(apps_isEnabled()) {
-		u32 len = strlen(path);
-		char *appName = vfsn_basename(path,&len);
-		/* find the application; if not found we can't execute it */
-		p->app = apps_get(appName);
-		if(p->app == NULL) {
-			vfs_closeFile(t->tid,file);
-			return ERR_APP_NOT_FOUND;
-		}
-	}
 
 	/* first read the header */
 	if((res = vfs_readFile(t->tid,file,(u8*)&eheader,sizeof(Elf32_Ehdr))) < 0)

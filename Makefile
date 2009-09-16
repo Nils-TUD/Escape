@@ -9,11 +9,6 @@ VBOXOSTITLE = "Escape v0.1"
 BINNAME = kernel.bin
 BIN = $(BUILD)/$(BINNAME)
 SYMBOLS = $(BUILD)/kernel.symbols
-APPSDB = $(BUILD)/appsdb
-BOOTAPPSDB = $(BUILD)/bootappsdb
-APPDIRS = services user
-BOOTAPPS = services/ata/ata.app services/fs/fs.app user/c/initloader/initloader.app
-APPS = $(filter-out $(BOOTAPPS),$(shell find $(APPDIRS) -mindepth 0 -maxdepth 4 -name "*.app"))
 
 QEMUARGS = -serial stdio -hda $(HDD) -boot c -vga std
 
@@ -38,7 +33,7 @@ export SUDO=sudo
 .PHONY: all debughdd mountp1 mountp2 umountp debugp1 debugp2 checkp1 checkp2 createhdd \
 	dis qemu bochs debug debugu debugm debugt test clean
 
-all: $(BUILD) $(APPSDB) $(BOOTAPPSDB)
+all: $(BUILD)
 		@[ -f $(HDD) ] || make createhdd;
 		@for i in $(DIRS); do \
 			make -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
@@ -46,23 +41,7 @@ all: $(BUILD) $(APPSDB) $(BOOTAPPSDB)
 
 $(BUILD):
 		[ -d $(BUILD) ] || mkdir -p $(BUILD);
-
-$(BOOTAPPSDB): $(BOOTAPPS)
-		@echo "" > $(BOOTAPPSDB)
-		@for i in $(BOOTAPPS); do \
-			cat $$i >> $(BOOTAPPSDB); \
-			echo '\n;;\n' >> $(BOOTAPPSDB); \
-		done;
-		tools/disk.sh copy $(BOOTAPPSDB) /boot/appsdb
-
-$(APPSDB): $(APPS)
-		@[ -f $(HDD) ] || make createhdd;
-		@echo "" > $(APPSDB)
-		@for i in $(APPS); do \
-			cat $$i >> $(APPSDB); \
-			echo '\n;;\n' >> $(APPSDB); \
-		done;
-		tools/disk.sh copy $(APPSDB) /appsdb
+		mkdir $(BUILD)/apps;
 
 debughdd:
 		tools/disk.sh mkdiskdev

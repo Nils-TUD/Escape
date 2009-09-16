@@ -1,16 +1,4 @@
-name:							"init";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:
-	"BINPRIV",1,0,0,
-	"BINPUB",1,0,0,
-	"TXTPRIV",1,0,0,
-	"TXTPUB",1,0,0
-;
-fs:								1,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"init"
+start:						"init"
+type:							"user"
+desc:							"Will be loaded by initloader and loads all services, drivers and a few shells"

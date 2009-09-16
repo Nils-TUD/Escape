@@ -1,11 +1,4 @@
-name:							"ata";
-source:						"multiboot";
-sourceWritable:		0;
-type:							"driver";
-ioports:					496..504,368..376,886..886,1014..1014;
-driver:						;
-fs:								0,0;
-intrpts:					13,14;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"ata"
+start:						"ata"
+type:							"driver"
+desc:							"The driver to access ATA-drives"

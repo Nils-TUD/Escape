@@ -1,11 +1,4 @@
-name:							"video";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"driver";
-ioports:					980..981;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					753664..757759;
-crtshmem:					;
-joinshmem:				;
+name:							"video"
+start:						"video"
+type:							"driver"
+desc:							"A driver to use the VGA-textmode"

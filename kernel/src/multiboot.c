@@ -18,7 +18,6 @@
  */
 
 #include <common.h>
-#include <apps/apps.h>
 #include <mem/paging.h>
 #include <task/proc.h>
 #include <task/thread.h>
@@ -60,7 +59,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	u32 i,entryPoint;
 	tPid pid;
 	sProc *p;
-	char *name,*space,*service,*cmdArg;
+	char *name,*space,*service;
 	tInodeNo nodeNo;
 	sModule *mod = mb->modsAddr;
 
@@ -72,78 +71,46 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	for(i = 0; i < mb->modsCount; i++) {
 		name = mod->name;
 		space = strchr(name,' ');
-		if(space == NULL) {
-			sApp *app;
-			s32 res;
-			char *def = (char*)mod->modStart;
-			*(def + mod->modEnd - mod->modStart) = '\0';
-			if((res = apps_loadDB(def)) < 0)
-				util_panic("Loading Bootapp '%s': %s",name,strerror(res));
+		service = space + 1;
+		service[-1] = '\0';
 
-			/* give initloader its app-instance, as soon as its present */
-			if((app = apps_get("initloader")) != NULL) {
-				p = proc_getRunning();
-				p->app = app;
+		/* clone proc */
+		pid = proc_getFreePid();
+		if(pid == INVALID_PID)
+			util_panic("No free process-slots");
+
+		if(proc_clone(pid)) {
+			/* we'll reach this as soon as the scheduler has chosen the created process */
+			p = proc_getRunning();
+			/* remove data-pages */
+			proc_changeSize(-p->dataPages,CHG_DATA);
+			/* now load service */
+			memcpy(p->command,name,strlen(name) + 1);
+			entryPoint = elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart);
+			if((s32)entryPoint < 0)
+				util_panic("Loading multiboot-module %s failed",p->command);
+			proc_setupUserStack(stack,0,NULL,0);
+			proc_setupStart(stack,entryPoint);
+			/* we don't want to continue the loop ;) */
+			return;
+		}
+
+		/* wait until the service is registered */
+		vid_printf("Waiting for '%s'",service);
+		/* don't wait for ATA, since it doesn't register a service but multiple drivers depending
+		 * on the available drives and partitions */
+		/* TODO better solution? */
+		if(strcmp(service,"/services/ata") != 0) {
+			/* don't create a pipe- or service-usage-node here */
+			while(vfsn_resolvePath(service,&nodeNo,NULL,VFS_NOACCESS) < 0) {
+				vid_printf(".");
+				thread_switchInKernel();
 			}
 		}
-		else {
-			service = space + 1;
-			service[-1] = '\0';
-
-			/* clone proc */
-			pid = proc_getFreePid();
-			if(pid == INVALID_PID)
-				util_panic("No free process-slots");
-
-			if(proc_clone(pid)) {
-				/* we'll reach this as soon as the scheduler has chosen the created process */
-				p = proc_getRunning();
-				if(apps_isEnabled()) {
-					u32 len = strlen(name);
-					char *appName = vfsn_basename(name,&len);
-					p->app = apps_get(appName);
-					if(p->app == NULL)
-						util_panic("No app found for multiboot-module %s",name);
-				}
-				/* remove data-pages */
-				proc_changeSize(-p->dataPages,CHG_DATA);
-				/* now load service */
-				memcpy(p->command,name,strlen(name) + 1);
-				entryPoint = elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart);
-				if((s32)entryPoint < 0)
-					util_panic("Loading multiboot-module %s failed",p->command);
-				proc_setupUserStack(stack,0,NULL,0);
-				proc_setupStart(stack,entryPoint);
-				/* we don't want to continue the loop ;) */
-				return;
-			}
-
-			/* wait until the service is registered */
-			vid_printf("Waiting for '%s'",service);
-			/* don't wait for ATA, since it doesn't register a service but multiple drivers depending
-			 * on the available drives and partitions */
-			/* TODO better solution? */
-			if(strcmp(service,"/services/ata") != 0) {
-				/* don't create a pipe- or service-usage-node here */
-				while(vfsn_resolvePath(service,&nodeNo,NULL,VFS_NOACCESS) < 0) {
-					vid_printf(".");
-					thread_switchInKernel();
-				}
-			}
-			vid_toLineEnd(SSTRLEN("DONE"));
-			vid_printf("\033[co;2]DONE\033[co]");
-		}
+		vid_toLineEnd(SSTRLEN("DONE"));
+		vid_printf("\033[co;2]DONE\033[co]");
 
 		mod++;
-	}
-
-	/* load apps-db, if provided */
-	/* TODO ok, if initloader does that and we don't wait for fs/ata? */
-	cmdArg = strchr(mb->cmdLine,' ');
-	if(cmdArg != NULL) {
-		s32 res;
-		if((res = apps_loadDBFromFile(cmdArg + 1)) < 0)
-			util_panic("Loading initial AppsDB failed: %s",strerror(res));
 	}
 }
 

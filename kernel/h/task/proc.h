@@ -25,7 +25,6 @@
 #include <machine/fpu.h>
 #include <mem/text.h>
 #include <vfs/node.h>
-#include <app.h>
 
 /* max number of processes */
 #define PROC_COUNT			1024
@@ -63,8 +62,6 @@ typedef struct {
 	char command[MAX_PROC_NAME_LEN + 1];
 	/* threads of this process */
 	sSLList *threads;
-	/* the pointer to the application-permissions */
-	sApp *app;
 	/* the directory-node in the VFS of this process */
 	sVFSNode *threadDir;
 } sProc;

@@ -1,11 +1,4 @@
-name:							"task2";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"task2"
+start:						"task2"
+type:							"user"
+desc:							"Garbage ;)"

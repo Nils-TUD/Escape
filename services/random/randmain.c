@@ -32,7 +32,7 @@ int main(void) {
 	tServ id,client;
 	tMsgId mid;
 
-	id = regService("random",SERV_DRV_BINPUB);
+	id = regService("random",SERV_DRIVER);
 	if(id < 0)
 		error("Unable to register service 'random'");
 

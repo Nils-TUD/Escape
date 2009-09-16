@@ -1,11 +1,4 @@
-name:							"random";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"driver";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"random"
+start:						"random"
+type:							"driver"
+desc:							"A driver that produces random bytes on demand"

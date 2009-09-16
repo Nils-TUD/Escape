@@ -1,11 +1,4 @@
-name:							"mkdir";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								0,1;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"mkdir"
+start:						"mkdir <dir> ..."
+type:							"user"
+desc:							"Creates the given directories"

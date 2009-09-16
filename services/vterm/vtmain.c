@@ -64,7 +64,7 @@ int main(void) {
 	/* reg services */
 	for(i = 0; i < VTERM_COUNT; i++) {
 		sprintf(name,"vterm%d",i);
-		servIds[i] = regService(name,SERV_DRV_TXTPUB);
+		servIds[i] = regService(name,SERV_DRIVER);
 		if(servIds[i] < 0)
 			error("Unable to register service '%s'",name);
 	}

@@ -1,11 +1,4 @@
-name:							"progress";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"progress"
+start:						"progress"
+type:							"user"
+desc:							"Shows a progress-bar"

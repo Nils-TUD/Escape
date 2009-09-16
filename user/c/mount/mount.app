@@ -1,11 +1,4 @@
-name:							"mount";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"mount"
+start:						"mount <device> <path> <type>"
+type:							"user"
+desc:							"Mounts <device> @ <path> with fs <type>"

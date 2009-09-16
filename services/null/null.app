@@ -1,11 +1,4 @@
-name:							"null";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"driver";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"null"
+start:						"null"
+type:							"driver"
+desc:							"A driver that discards all data that it gets"

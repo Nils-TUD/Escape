@@ -1,11 +1,4 @@
-name:							"mouse";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"driver";
-ioports:					32..32,96..96;
-driver:						;
-fs:								0,0;
-intrpts:					15;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"mouse"
+start:						"mouse"
+type:							"driver"
+desc:							"The mouse-driver"

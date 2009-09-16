@@ -21,86 +21,37 @@
 #define APPSPARSER_H_
 
 #include <types.h>
-#include <sllist.h>
 #include <asprintf.h>
 
-#define DRIV_NAME_LEN		15
-#define APP_NAME_LEN		30
-
-/* driver-operations */
-#define DRV_OP_READ			1
-#define DRV_OP_WRITE		2
-#define DRV_OP_IOCTL		4
-
-/* fs-operations */
-#define FS_OP_READ			1
-#define FS_OP_WRITE			2
-
-/* possible app-types */
-#define APP_TYPE_DRIVER		0
-#define APP_TYPE_SERVICE	1
-#define APP_TYPE_FS			2
-#define APP_TYPE_DEFAULT	3
-
-/* possible driver-groups; see definitions in vfs.h */
-#define DRV_GROUP_CUSTOM	0x0000000
-#define DRV_GROUP_BINPRIV	0x0200000
-#define DRV_GROUP_BINPUB	0x0400000
-#define DRV_GROUP_TXTPRIV	0x0800000
-#define DRV_GROUP_TXTPUB	0x1000000
-
-/* some kind of range */
-typedef struct {
-	u32 start;
-	u32 end;
-} sRange;
-
-/* permissions for a driver */
-typedef struct {
-	u32 group;
-	char name[DRIV_NAME_LEN + 1];
-	bool read;
-	bool write;
-	bool ioctrl;
-} sDriverPerm;
+#define APP_TYPE_USER		0
+#define APP_TYPE_DRIVER		1
+#define APP_TYPE_SERVICE	2
+#define APP_TYPE_FS			3
 
 /* information about an application */
 typedef struct {
-	void *db;
-	char name[APP_NAME_LEN + 1];
-	u16 appType;			/* driver, fs, service or default */
-	sSLList *ioports;		/* list of sRange */
-	sSLList *driver;		/* list of sDriverPerm */
-	struct {
-		bool read;
-		bool write;
-	} fs;
-	sSLList *intrpts;		/* list of signal-numbers */
-	sSLList *physMem;		/* list of sRange */
-	sSLList *createShMem;	/* list of names */
-	sSLList *joinShMem;		/* list of names */
+	u8 type;
+	char *name;
+	char *start;
+	char *desc;
 } sApp;
 
 /**
- * Writes all settings for <app> to the string specified by <str>.
+ * Writes all info for <app> to the string specified by <str>.
  *
  * @param str the string to write to
  * @param app the application to write
- * @parma src the source of the application
- * @param srcWritable wether the source is writable
  * @return true if successfull
  */
-bool app_toString(sStringBuffer *str,sApp *app,char *src,bool srcWritable);
+bool app_toString(sStringBuffer *str,sApp *app);
 
 /**
- * Reads all settings specified by <definition> into <app>, <src> and <srcWritable>.
+ * Reads all info specified by <definition> into <app>.
  *
  * @param definition the permissions of the application
  * @param app the app to write to
- * @param src the source of the app
- * @param srcWritable wether the source is writable
  * @return the position after parsing in <definition> or NULL if an error occurred
  */
-char *app_fromString(const char *definition,sApp *app,char *src,bool *srcWritable);
+char *app_fromString(const char *definition,sApp *app);
 
 #endif /* APPSPARSER_H_ */

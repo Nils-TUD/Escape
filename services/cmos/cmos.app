@@ -1,11 +1,4 @@
-name:							"cmos";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"driver";
-ioports:					112..113;
-driver:						;
-fs:								0,1;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"cmos"
+start:						"cmos"
+type:							"driver"
+desc:							"Reads from the RTC once per second and writes the date into /system/date"

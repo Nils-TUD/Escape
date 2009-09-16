@@ -1,11 +1,4 @@
-name:							"rm";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								0,1;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"rm"
+start:						"rm <file> ..."
+type:							"user"
+desc:							"Removes the given files"

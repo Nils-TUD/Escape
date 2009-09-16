@@ -1,14 +1,4 @@
-name:							"dump";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:
-	"BINPUB",1,0,0,
-	"TXTPUB",1,0,0
-;
-fs:								1,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"dump"
+start:						"dump [-n <b>][-f <f>][<file>]"
+type:							"user"
+desc:							"Dumps bytes from <file> or STDIN to STDOUT"

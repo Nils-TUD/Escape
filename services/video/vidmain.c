@@ -59,7 +59,7 @@ int main(void) {
 	tServ id,client;
 	tMsgId mid;
 
-	id = regService("video",SERV_DRV_BINPRIV);
+	id = regService("video",SERV_DRIVER);
 	if(id < 0)
 		error("Unable to register service 'video'");
 

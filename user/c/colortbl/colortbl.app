@@ -1,11 +1,4 @@
-name:							"colortbl";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"colortbl"
+start:						"colortbl"
+type:							"user"
+desc:							"Print a table with all fg- and bg-colors"

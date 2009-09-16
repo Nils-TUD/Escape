@@ -1,11 +1,4 @@
-name:							"speaker";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"service";
-ioports:					66..67,97..98;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"speaker"
+start:						"speaker"
+type:							"service"
+desc:							"A service to use the PC-speaker"

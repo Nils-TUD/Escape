@@ -1,11 +1,4 @@
-name:							"zero";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"driver";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"zero"
+start:						"zero"
+type:							"driver"
+desc:							"A driver that produces zeros on demand"

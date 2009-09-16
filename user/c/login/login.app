@@ -1,11 +1,4 @@
-name:							"login";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"login"
+start:						"login"
+type:							"user"
+desc:							"Just for fun ;)"

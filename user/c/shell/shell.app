@@ -1,13 +1,4 @@
-name:							"shell";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:
-	"TXTPUB",1,1,1
-;
-fs:								1,1;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"shell"
+start:						"shell <vterm> | -e <command>"
+type:							"user"
+desc:							"Starts a shell for <vterm> or executes <command>"

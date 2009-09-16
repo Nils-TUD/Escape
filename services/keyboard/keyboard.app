@@ -1,11 +1,4 @@
-name:							"keyboard";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"driver";
-ioports:					32..32,96..96,100..100;
-driver:						;
-fs:								0,0;
-intrpts:					8;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"keyboard"
+start:						"keyboard"
+type:							"driver"
+desc:							"The keyboard-driver"

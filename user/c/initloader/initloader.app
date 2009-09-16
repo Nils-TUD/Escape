@@ -1,11 +1,4 @@
-name:							"initloader";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"initloader"
+start:						"initloader"
+type:							"user"
+desc:							"The first user-app that exchanges itself with init"

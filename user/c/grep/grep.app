@@ -1,11 +1,4 @@
-name:							"grep";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								1,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"grep"
+start:						"grep <pattern> [<file>]"
+type:							"user"
+desc:							"Prints all lines that match <pattern>"

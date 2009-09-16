@@ -1,11 +1,4 @@
-name:							"sync";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								0,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"sync"
+start:						"sync"
+type:							"user"
+desc:							"Flushes the filesystem-buffers"

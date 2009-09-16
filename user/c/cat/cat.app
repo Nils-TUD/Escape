@@ -1,11 +1,4 @@
-name:							"cat";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								1,0;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"cat"
+start:						"cat [<file>]"
+type:							"user"
+desc:							"Read file or from STDIN and print"

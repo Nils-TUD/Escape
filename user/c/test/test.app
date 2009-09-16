@@ -1,11 +1,4 @@
-name:							"test";
-source:						"/appsdb";
-sourceWritable:		1;
-type:							"default";
-ioports:					;
-driver:						;
-fs:								1,1;
-intrpts:					;
-physmem:					;
-crtshmem:					;
-joinshmem:				;
+name:							"test"
+start:						"test <testcase> [...]"
+type:							"user"
+desc:							"Executes the desired testcase"

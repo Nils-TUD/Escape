@@ -160,13 +160,6 @@ bool apps_canUseDriver(sApp *app,const char *name,u32 type,u16 ops) {
 	return false;
 }
 
-bool apps_canUseService(sApp *app,const char *name) {
-	if(!enabled)
-		return true;
-	assert(app != NULL);
-	return apps_isInStrList(app->services,name);
-}
-
 bool apps_canUsePhysMem(sApp *app,u32 start,u32 count) {
 	if(!enabled)
 		return true;

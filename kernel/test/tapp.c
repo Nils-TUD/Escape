@@ -42,7 +42,6 @@ static const char *app1 =
 	"	\"BINPRIV\",1,1,1,"
 	"	\"zero\",0,0,0;"
 	"fs:					1,1;"
-	"services:				\"env\";"
 	"intrpts:				1,2,12;"
 	"physmem:				4096..8191,0..3;"
 	"crtshmem:				\"my\",\"my2\";"
@@ -56,7 +55,6 @@ static const char *app2 =
 	"ioports:				;"
 	"driver:;"
 	"fs:					  0,  0  ;"
-	"services:				\"env\",\"vesa\";"
 	"intrpts:				;"
 	"physmem:				;"
 	"crtshmem:				\"aaaaabb\";"
@@ -78,7 +76,6 @@ static void test_app_1(void) {
 	bool srcWritable;
 	sRange ioports[] = {{123,123},{124,150},{1,4}};
 	sRange physmem[] = {{4096,8191},{0,3}};
-	const char *services[] = {"env"};
 	const char *crtshmem[] = {"my","my2"};
 	const char *joinshmem[0];
 	u32 i,intrpts[] = {1,2,12};
@@ -105,7 +102,6 @@ static void test_app_1(void) {
 		test_assertUInt(a.appType,APP_TYPE_DRIVER);
 		test_checkRangeList(ioports,ARRAY_SIZE(ioports),a.ioports);
 		test_checkDrvList(driver,ARRAY_SIZE(driver),a.driver);
-		test_checkStrList(services,ARRAY_SIZE(services),a.services);
 		test_checkIntList(intrpts,ARRAY_SIZE(intrpts),a.intrpts);
 		test_checkRangeList(physmem,ARRAY_SIZE(physmem),a.physMem);
 		test_checkStrList(crtshmem,ARRAY_SIZE(crtshmem),a.createShMem);
@@ -126,7 +122,6 @@ static void test_app_2(void) {
 	bool srcWritable;
 	sRange ioports[0];
 	sRange physmem[0];
-	const char *services[] = {"env","vesa"};
 	const char *crtshmem[] = {"aaaaabb"};
 	const char *joinshmem[] = {"test"};
 	u32 i,intrpts[0];
@@ -149,7 +144,6 @@ static void test_app_2(void) {
 		test_assertUInt(a.appType,APP_TYPE_DEFAULT);
 		test_checkRangeList(ioports,ARRAY_SIZE(ioports),a.ioports);
 		test_checkDrvList(driver,ARRAY_SIZE(driver),a.driver);
-		test_checkStrList(services,ARRAY_SIZE(services),a.services);
 		test_checkIntList(intrpts,ARRAY_SIZE(intrpts),a.intrpts);
 		test_checkRangeList(physmem,ARRAY_SIZE(physmem),a.physMem);
 		test_checkStrList(crtshmem,ARRAY_SIZE(crtshmem),a.createShMem);

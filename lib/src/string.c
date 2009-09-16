@@ -754,6 +754,18 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Application has no permission to create a driver!");
 			break;
 
+		case ERR_APPS_DRV_NO_PERM:
+			strcpy(msg,"Application has no permission to use the desired driver!");
+			break;
+
+		case ERR_APPS_SERV_NO_PERM:
+			strcpy(msg,"Application has no permission to use the desired service!");
+			break;
+
+		case ERR_APPS_FS_NO_PERM:
+			strcpy(msg,"Application has no permission to use the filesystem for the desired operations!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

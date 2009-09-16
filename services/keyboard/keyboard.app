@@ -5,7 +5,6 @@ type:							"driver";
 ioports:					32..32,96..96,100..100;
 driver:						;
 fs:								0,0;
-services:					;
 intrpts:					8;
 physmem:					;
 crtshmem:					;

@@ -42,12 +42,12 @@
 #define APP_TYPE_FS			2
 #define APP_TYPE_DEFAULT	3
 
-/* possible driver-groups */
-#define DRV_GROUP_CUSTOM	0
-#define DRV_GROUP_BINPRIV	1
-#define DRV_GROUP_BINPUB	2
-#define DRV_GROUP_TXTPRIV	3
-#define DRV_GROUP_TXTPUB	4
+/* possible driver-groups; see definitions in vfs.h */
+#define DRV_GROUP_CUSTOM	0x0000000
+#define DRV_GROUP_BINPRIV	0x0200000
+#define DRV_GROUP_BINPUB	0x0400000
+#define DRV_GROUP_TXTPRIV	0x0800000
+#define DRV_GROUP_TXTPUB	0x1000000
 
 /* some kind of range */
 typedef struct {
@@ -57,7 +57,7 @@ typedef struct {
 
 /* permissions for a driver */
 typedef struct {
-	u8 group;
+	u32 group;
 	char name[DRIV_NAME_LEN + 1];
 	bool read;
 	bool write;
@@ -75,7 +75,6 @@ typedef struct {
 		bool read;
 		bool write;
 	} fs;
-	sSLList *services;		/* list of names */
 	sSLList *intrpts;		/* list of signal-numbers */
 	sSLList *physMem;		/* list of sRange */
 	sSLList *createShMem;	/* list of names */

@@ -1,10 +1,10 @@
-name:							"cmos";
+name:							"initloader";
 source:						"/appsdb";
 sourceWritable:		1;
-type:							"driver";
-ioports:					112..113;
+type:							"default";
+ioports:					;
 driver:						;
-fs:								0,1;
+fs:								0,0;
 intrpts:					;
 physmem:					;
 crtshmem:					;

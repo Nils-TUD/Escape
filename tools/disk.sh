@@ -48,9 +48,8 @@ buildMenuLst() {
 	echo "title \"$OSTITLE\"" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "kernel /boot/$BINNAME /appsdb" >> $DISKMOUNT/boot/grub/menu.lst;
 	# note that the perms have to be in front of the binary!
-	echo "module /boot/perms/ata" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "module /boot/appsdb" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/ata /services/ata" >> $DISKMOUNT/boot/grub/menu.lst;
-	echo "module /boot/perms/fs" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/fs /services/fs" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "boot" >> $DISKMOUNT/boot/grub/menu.lst;
 }
@@ -61,8 +60,6 @@ addBootData() {
 	$SUDO mkdir $DISKMOUNT/boot/perms
 	$SUDO cp boot/stage1 $DISKMOUNT/boot/grub;
 	$SUDO cp boot/stage2 $DISKMOUNT/boot/grub;
-	$SUDO cp services/ata/ata.app $DISKMOUNT/boot/perms/ata;
-	$SUDO cp services/fs/fs.app $DISKMOUNT/boot/perms/fs;
 	$SUDO touch $DISKMOUNT/boot/grub/menu.lst;
 	$SUDO chmod 0666 $DISKMOUNT/boot/grub/menu.lst;
 	buildMenuLst;
@@ -75,7 +72,6 @@ addTestData() {
 	$SUDO mkdir $DISKMOUNT/etc
 	$SUDO cp services/services.txt $DISKMOUNT/etc/services
 	$SUDO mkdir $DISKMOUNT/testdir
-	$SUDO cp appsdb.txt $DISKMOUNT/appsdb
 	$SUDO touch $DISKMOUNT/file.txt
 	$SUDO chmod 0666 $DISKMOUNT/file.txt
 	echo "Das ist ein Test-String!!" > $DISKMOUNT/file.txt
@@ -156,9 +152,8 @@ if [ "$1" == "build" ]; then
 	unmountDisk
 	
 	# ensure that we'll copy all stuff to the disk with 'make all'
-	rm -f $BUILD/*.bin
+	rm -f $BUILD/*.bin $BUILD/appsdb $BUILD/bootappsdb
 	touch services/services.txt
-	touch $BUILD/apps/*
 	# now rebuild and copy it
 	make all
 fi

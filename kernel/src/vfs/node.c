@@ -18,6 +18,7 @@
  */
 
 #include <common.h>
+#include <apps/apps.h>
 #include <vfs/vfs.h>
 #include <vfs/node.h>
 #include <vfs/info.h>
@@ -180,7 +181,9 @@ char *vfsn_getPath(tInodeNo nodeNo) {
 
 s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) {
 	sVFSNode *dir,*n = nodes;
+	sThread *t = thread_getRunning();
 	s32 pos,depth = 0;
+	u16 ops;
 	if(created)
 		*created = false;
 
@@ -193,10 +196,8 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 		path++;
 
 	/* root/current node requested? */
-	if(!*path) {
-		*nodeNo = NADDR_TO_VNNO(n);
-		return 0;
-	}
+	if(!*path)
+		goto permcheck;
 
 	pos = strchri(path,'/');
 	dir = n;
@@ -242,7 +243,6 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 			u32 nameLen;
 			sVFSNode *child;
 			char *nameCpy;
-			sThread *t = thread_getRunning();
 			char *nextSlash = strchr(path,'/');
 			if(nextSlash) {
 				/* if there is still a slash in the path, we can't create the file */
@@ -273,8 +273,17 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 
 	/* handle special node-types */
 	if((flags & VFS_CONNECT) && (n->mode & MODE_TYPE_SERVICE)) {
-		sThread *t = thread_getRunning();
 		sVFSNode *child;
+		/* check permission */
+		ops = 0;
+		if(flags & VFS_READ)
+			ops |= DRV_OP_READ;
+		if(flags & VFS_WRITE)
+			ops |= DRV_OP_WRITE;
+		if(IS_DRIVER(n->mode) && !apps_canUseDriver(t->proc->app,n->name,DRIVER_TYPE(n->mode),ops))
+			return ERR_APPS_DRV_NO_PERM;
+
+		/* create service-use */
 		s32 err = vfsn_createServiceUse(t->tid,n,&child);
 		if(err < 0)
 			return err;
@@ -298,6 +307,17 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 		/* resolve link */
 		n = (sVFSNode*)n->data.def.cache;
 	}
+
+	/* check wether the app has permission to use the fs */
+permcheck:
+	ops = 0;
+	if(flags & VFS_READ)
+		ops |= FS_OP_READ;
+	if(flags & VFS_WRITE)
+		ops |= FS_OP_WRITE;
+	/* during VFS-init the current thread is NULL; during apps-init t->proc->app is NULL */
+	if(t && t->proc->app && !apps_canUseFS(t->proc->app,ops))
+		return ERR_APPS_FS_NO_PERM;
 
 	/* virtual node */
 	*nodeNo = NADDR_TO_VNNO(n);

@@ -93,7 +93,6 @@ bool app_toString(sStringBuffer *str,sApp *app,char *src,bool srcWritable) {
 	ADD_LPERM(str, "ioports:				",app_rangesToStr,app->ioports);
 	ADD_LPERM(str, "driver:\n",app_drvsToStr,app->driver);
 	ADD_PERM(str,  "fs:						%d,%d;\n",app->fs.read,app->fs.write);
-	ADD_LPERM(str, "services:				",app_strsToStr,app->services);
 	ADD_LPERM(str, "intrpts:				",app_intsToStr,app->intrpts);
 	ADD_LPERM(str, "physmem:				",app_rangesToStr,app->physMem);
 	ADD_LPERM(str, "crtshmem:				",app_strsToStr,app->createShMem);
@@ -175,7 +174,6 @@ char *app_fromString(const char *definition,sApp *app,char *src,bool *srcWritabl
 	app->joinShMem = NULL;
 	app->driver = NULL;
 	app->ioports = NULL;
-	app->services = NULL;
 	app->physMem = NULL;
 	app->intrpts = NULL;
 	while(1) {
@@ -255,13 +253,6 @@ char *app_fromString(const char *definition,sApp *app,char *src,bool *srcWritabl
 			if(!app_nextToken(&info) || info.tokType != TOK_SEM)
 				goto error;
 		}
-		else if(strcmp(info.token,"services") == 0) {
-			app->services = sll_create();
-			if(!app->services)
-				goto error;
-			if(!app_parseStrList(&info,app->services))
-				goto error;
-		}
 		else if(strcmp(info.token,"intrpts") == 0) {
 			app->intrpts = sll_create();
 			if(!app->intrpts)
@@ -307,8 +298,6 @@ error:
 	app->driver = NULL;
 	sll_destroy(app->ioports,true);
 	app->ioports = NULL;
-	sll_destroy(app->services,true);
-	app->services = NULL;
 	sll_destroy(app->physMem,true);
 	app->physMem = NULL;
 	sll_destroy(app->intrpts,false);

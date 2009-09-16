@@ -73,11 +73,18 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		name = mod->name;
 		space = strchr(name,' ');
 		if(space == NULL) {
+			sApp *app;
 			s32 res;
 			char *def = (char*)mod->modStart;
 			*(def + mod->modEnd - mod->modStart) = '\0';
 			if((res = apps_loadDB(def)) < 0)
 				util_panic("Loading Bootapp '%s': %s",name,strerror(res));
+
+			/* give initloader its app-instance, as soon as its present */
+			if((app = apps_get("initloader")) != NULL) {
+				p = proc_getRunning();
+				p->app = app;
+			}
 		}
 		else {
 			service = space + 1;

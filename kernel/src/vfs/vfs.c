@@ -560,7 +560,7 @@ s32 vfs_link(tTid tid,const char *oldPath,const char *newPath) {
 	s32 oldRes,newRes;
 	/* first check wether it is a realpath */
 	oldRes = vfsn_resolvePath(oldPath,&oldIno,NULL,VFS_READ);
-	newRes = vfsn_resolvePath(newPath,&newIno,NULL,VFS_READ);
+	newRes = vfsn_resolvePath(newPath,&newIno,NULL,VFS_WRITE);
 	if(oldRes == ERR_REAL_PATH) {
 		if(newRes != ERR_REAL_PATH)
 			return ERR_LINK_DEVICE;
@@ -582,7 +582,7 @@ s32 vfs_link(tTid tid,const char *oldPath,const char *newPath) {
 	name = vfsn_basename((char*)newPathCpy,&len);
 	backup = *name;
 	vfsn_dirname((char*)newPathCpy,len);
-	newRes = vfsn_resolvePath(newPathCpy,&newIno,NULL,VFS_READ);
+	newRes = vfsn_resolvePath(newPathCpy,&newIno,NULL,VFS_WRITE);
 	if(newRes < 0)
 		return ERR_PATH_NOT_FOUND;
 
@@ -616,7 +616,7 @@ s32 vfs_unlink(tTid tid,const char *path) {
 	s32 res;
 	tInodeNo ino;
 	sVFSNode *n;
-	res = vfsn_resolvePath(path,&ino,NULL,VFS_READ | VFS_NOLINKRES);
+	res = vfsn_resolvePath(path,&ino,NULL,VFS_WRITE | VFS_NOLINKRES);
 	if(res == ERR_REAL_PATH)
 		return vfsr_unlink(tid,path);
 	if(res < 0)
@@ -652,12 +652,14 @@ s32 vfs_mkdir(tTid tid,const char *path) {
 	vfsn_dirname(pathCpy,len);
 
 	/* get the parent-directory */
-	res = vfsn_resolvePath(pathCpy,&inodeNo,NULL,VFS_READ);
+	res = vfsn_resolvePath(pathCpy,&inodeNo,NULL,VFS_WRITE);
 	*name = backup;
 	if(res == ERR_REAL_PATH) {
 		/* let fs handle the request */
 		return vfsr_mkdir(tid,path);
 	}
+	if(res < 0)
+		return res;
 
 	/* alloc space for name and copy it over */
 	len = strlen(name);
@@ -684,7 +686,7 @@ s32 vfs_rmdir(tTid tid,const char *path) {
 	s32 res;
 	sVFSNode *node;
 	tInodeNo inodeNo;
-	res = vfsn_resolvePath(path,&inodeNo,NULL,VFS_READ);
+	res = vfsn_resolvePath(path,&inodeNo,NULL,VFS_WRITE);
 	if(res == ERR_REAL_PATH)
 		return vfsr_rmdir(tid,path);
 	if(res < 0)

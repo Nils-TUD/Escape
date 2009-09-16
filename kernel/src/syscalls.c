@@ -627,6 +627,7 @@ static void sysc_open(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	s32 pathLen;
 	u16 flags;
+	u32 ops;
 	tInodeNo nodeNo = 0;
 	bool created,isVirt = false;
 	tFileNo file;

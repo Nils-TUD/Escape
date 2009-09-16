@@ -253,7 +253,7 @@ static void test_regService(void) {
 	test_assertInt(_regService("",0),ERR_INVALID_ARGS);
 	test_assertInt(_regService((char*)0xC0000000,0),ERR_INVALID_ARGS);
 	test_assertInt(_regService((char*)0xFFFFFFFF,0),ERR_INVALID_ARGS);
-	test_assertInt(_regService("serv",SERV_DEFAULT << 4),ERR_INVALID_ARGS);
+	test_assertInt(_regService("serv",SERV_DEFAULT << 8),ERR_INVALID_ARGS);
 	test_assertInt(_regService("serv",0),ERR_INVALID_ARGS);
 	test_assertInt(_regService("serv",0x12345678),ERR_INVALID_ARGS);
 	test_caseSucceded();

@@ -5,7 +5,6 @@ type:							"service";
 ioports:					66..67,97..98;
 driver:						;
 fs:								0,0;
-services:					;
 intrpts:					;
 physmem:					;
 crtshmem:					;

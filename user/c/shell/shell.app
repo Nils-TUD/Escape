@@ -3,9 +3,10 @@ source:						"/appsdb";
 sourceWritable:		1;
 type:							"default";
 ioports:					;
-driver:						;
+driver:
+	"TXTPUB",1,1,1
+;
 fs:								1,1;
-services:					;
 intrpts:					;
 physmem:					;
 crtshmem:					;

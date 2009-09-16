@@ -1,11 +1,10 @@
 name:							"libctest";
 source:						"/appsdb";
 sourceWritable:		1;
-type:							"default";
-ioports:					;
+type:							"service";
+ioports:					248..248,248..254,248..253,248..255,247..248,247..253,247..254;
 driver:						;
-fs:								0,0;
-services:					;
+fs:								1,0;
 intrpts:					;
 physmem:					;
 crtshmem:					;

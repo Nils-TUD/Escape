@@ -43,6 +43,10 @@
 #define IS_DRIVER(mode)				(((mode) & (MODE_SERVICE_DRV_BINPRIV | MODE_SERVICE_DRV_BINPUB | \
 			MODE_SERVICE_DRV_TXTPRIV | MODE_SERVICE_DRV_TXTPUB)) != 0)
 
+/* extracts the driver-type */
+#define DRIVER_TYPE(mode)			((mode) & (MODE_SERVICE_DRV_BINPRIV | MODE_SERVICE_DRV_BINPUB | \
+			MODE_SERVICE_DRV_TXTPRIV | MODE_SERVICE_DRV_TXTPUB))
+
 /* GFT flags */
 enum {
 	VFS_NOACCESS = 0,		/* no read and write */

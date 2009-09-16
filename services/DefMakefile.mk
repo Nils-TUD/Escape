@@ -7,9 +7,6 @@ LDCONF = $(LIBC)/ld.conf
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
-APPSRC = $(NAME).app
-APPDST = $(BUILD)/apps/$(NAME).app
-BUILDDIRS += $(BUILD)/apps
 
 CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I../../lib/h -Wl,-T,$(LDCONF) $(CDEFFLAGS) 
@@ -32,9 +29,6 @@ $(BIN):	$(BUILDDIRS) $(APPDST) $(LDCONF) $(COBJ) $(START) $(LIBCA)
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /sbin/$(NAME)
 
-$(APPDST): $(APPSRC)
-		cp $(APPSRC) $(APPDST)
-
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
 			if [ ! -d $$i ]; then mkdir -p $$i; fi \
@@ -47,4 +41,4 @@ $(BUILDL)/%.o:		%.c
 -include $(DEPS)
 
 clean:
-		rm -f $(APPDST) $(BIN) $(COBJ) $(DEPS)
+		rm -f $(BIN) $(COBJ) $(DEPS)

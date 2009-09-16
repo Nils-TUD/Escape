@@ -7,8 +7,7 @@ driver:
 	"keyboard",1,0,0,
 	"video",0,1,1
 ;
-fs:								0,0;
-services:					;
+fs:								1,0;
 intrpts:					;
 physmem:					;
 crtshmem:					;

@@ -71,15 +71,6 @@ bool apps_canUseIOPorts(sApp *app,u16 start,u16 count);
 bool apps_canUseDriver(sApp *app,const char *name,u32 type,u16 ops);
 
 /**
- * Wether the given application can use the given service
- *
- * @param app the app
- * @param name the service-name
- * @return true if so
- */
-bool apps_canUseService(sApp *app,const char *name);
-
-/**
  * Wether the given application can use the given physical-memory-range
  *
  * @param app the app

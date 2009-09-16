@@ -51,7 +51,7 @@ int main(void) {
 		error("Unable to request io-ports %d .. %d",IOPORT_CMOS_INDEX,IOPORT_CMOS_INDEX + 1);
 
 	/* create a date-file */
-	dateFD = open("/system/date",IO_READ | IO_WRITE | IO_CREATE);
+	dateFD = open("/system/date",IO_WRITE | IO_CREATE);
 	if(dateFD < 0)
 		error("Unable to open /system/date");
 

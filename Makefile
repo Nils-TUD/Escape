@@ -80,8 +80,8 @@ umountp:
 createhdd:
 		tools/disk.sh build
 
-$(VMDISK):
-		qemu-img convert -f raw $(HDD) -O vmdk vmware/vmwarehddimg.vmdk
+$(VMDISK): $(HDD)
+		qemu-img convert -f raw $(HDD) -O vmdk $(VMDISK)
 
 dis: all
 		objdump -d -S $(BIN) | less
@@ -97,7 +97,7 @@ vmware: all prepareRun $(VMDISK)
 
 vbox: all prepareRun $(VMDISK)
 		tools/vboxhddupd.sh $(VBOXOSTITLE) $(VMDISK)
-		VBoxSDL -startvm $(VBOXOSTITLE)
+		VBoxSDL --evdevkeymap -startvm $(VBOXOSTITLE)
 
 debug: all prepareRun
 		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &

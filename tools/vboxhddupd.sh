@@ -7,7 +7,7 @@ if [ $# -ne 2 ]; then
 fi
 
 # check if the UUID has changed
-if [ "`VBoxManage showhdinfo \"$2\" | grep 'Access Error'`" != "" ]; then
+if [ "`VBoxManage showhdinfo \"$2\" | grep -i 'Error'`" != "" ]; then
 	# first detach disk from vm
 	VBoxManage modifyvm "$1" --hda none
 	# remove disk

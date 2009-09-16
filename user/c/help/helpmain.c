@@ -183,10 +183,11 @@ int main(int argc,char **argv) {
 		printf("									(be carefull: this is a oneway-ticket ;))\n");
 		printf("	guishell						A shell for the GUI\n");*/
 
-		printf("Use 'help --user' to get a list of all user-applications\n");
-		printf("Use 'help --system' to get a list of all system-applications\n");
-		printf("Use 'help ... --detail' to see usage-details\n");
-		printf("Use 'help <cmd>' to get help for a specific applicaiton\n");
+		printf("Some words to 'help':\n");
+		printf("	Use 'help --user' to get a list of all user-applications\n");
+		printf("	Use 'help --system' to get a list of all system-applications\n");
+		printf("	Use 'help ... --detail' to see usage-details\n");
+		printf("	Use 'help <cmd>' to get help for a specific applicaiton\n");
 
 		printf("\n");
 		printf("Execute a command with '--help', '-h' or '-?' to get further information\n");

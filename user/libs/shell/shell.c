@@ -104,7 +104,24 @@ s32 shell_executeCmd(char *line) {
 		/* we need exactly one match and it has to be executable */
 		if(scmds == NULL || scmds[0] == NULL || scmds[1] != NULL ||
 				(scmds[0]->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC)) == 0) {
-			printf("%s: Command not found\n",cmd->arguments[0]);
+			static const char *replies[] = {
+				"eeeeek...'%s' doesn't exist, dude!\n",
+				"Well, have you seriously thought that you can execute '%s'?\n",
+				"I don't know from what planet you are, but you can't execute '%s' here!\n",
+				"Try again my friend!\n",
+				"You're playing a dangerous game...\n",
+				"Nope, my friend!\n",
+				"NO WAY!!\n",
+				"Do you know that you're wasting energy?\n",
+				"Perhaps you should try an existing command or application!?\n",
+			};
+			s32 randVal = rand();
+			if(randVal < 0)
+				randVal = -randVal;
+			printf("\033[co;4]");
+			printf(replies[randVal % ARRAY_SIZE(replies)],cmd->arguments[0]);
+			printf("\033[co]");
+			/*printf("%s: Command not found\n",cmd->arguments[0]);*/
 			/* close open pipe */
 			if(cmd->dup & DUP_STDIN)
 				close(*pipe);

@@ -1,4 +1,4 @@
 name:							"wc"
-start:						"wc [-p]"
+start:						"wc [-clw] [<file>]"
 type:							"user"
-desc:							"Count and/or print words"
+desc:							"Count lines, words and bytes"

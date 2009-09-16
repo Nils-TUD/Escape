@@ -26,7 +26,9 @@
 s32 shell_cmdEcho(u32 argc,char *argv[]) {
 	u32 i;
 	for(i = 1; i < argc; i++) {
-		printf("%s ",argv[i]);
+		prints(argv[i]);
+		if(i < argc - 1)
+			printc(' ');
 	}
 	printf("\n");
 	return EXIT_SUCCESS;

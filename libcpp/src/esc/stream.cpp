@@ -87,7 +87,7 @@ namespace esc {
 		streamBuf.pos = _pos;
 		streamBuf.max = _max;
 		streamBuf.str = _buffer;
-		res = doVfprintf(&streamBuf,fmt,ap);
+		res = vbprintf(&streamBuf,fmt,ap);
 		_pos = streamBuf.pos;
 		return res;
 	}
@@ -139,7 +139,7 @@ namespace esc {
 		streamBuf.pos = _pos;
 		streamBuf.max = _max;
 		streamBuf.str = _buffer;
-		res = doVfprintf(&streamBuf,fmt,ap);
+		res = vbprintf(&streamBuf,fmt,ap);
 		_pos = streamBuf.pos;
 		return res;
 	}

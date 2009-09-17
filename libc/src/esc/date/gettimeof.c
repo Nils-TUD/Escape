@@ -1,0 +1,47 @@
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#include <esc/common.h>
+#include <esc/date.h>
+#include "dateintern.h"
+
+u32 getTimeOf(const sDate *date) {
+	s32 m;
+	u32 y,ts;
+	u8 yearType;
+	ts = 0;
+	/* add full years */
+	for(y = 1970; y < date->year; y++) {
+		if(IS_LEAP_YEAR(y))
+			ts += SECS_PER_LEAPYEAR;
+		else
+			ts += SECS_PER_YEAR;
+	}
+	/* add full months */
+	yearType = IS_LEAP_YEAR(date->year) ? LEAP_YEAR : DEF_YEAR;
+	for(m = (s32)date->month - 2; m >= 0; m--)
+		ts += daysPerMonth[yearType][m] * SECS_PER_DAY;
+	/* add full days */
+	ts += (date->monthDay - 1) * SECS_PER_DAY;
+	/* add hours, mins and secs */
+	ts += date->hour * SECS_PER_HOUR;
+	ts += date->min * SECS_PER_MIN;
+	ts += date->sec;
+	return ts;
+}

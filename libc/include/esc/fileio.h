@@ -475,7 +475,7 @@ s32 vsscanf(const char *str,const char *fmt,va_list ap);
  * The internal printf-routine. Should NOT BE USED by user-programs. This is just intended
  * for libcpp to prevent a duplicate implementation there.
  */
-s32 doVfprintf(void *buf,const char *fmt,va_list ap);
+s32 vbprintf(void *buf,const char *fmt,va_list ap);
 
 #ifdef __cplusplus
 }

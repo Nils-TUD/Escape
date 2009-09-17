@@ -653,8 +653,8 @@ s32 vfs_mkdir(tTid tid,const char *path) {
 
 	/* get the parent-directory */
 	res = vfsn_resolvePath(pathCpy,&inodeNo,NULL,VFS_WRITE);
-	*name = backup;
-	if(res == ERR_REAL_PATH) {
+	/* special-case: directories in / should be created in the real fs! */
+	if(res == ERR_REAL_PATH || (res >= 0 && strcmp(pathCpy,"/") == 0)) {
 		/* let fs handle the request */
 		return vfsr_mkdir(tid,path);
 	}
@@ -662,6 +662,7 @@ s32 vfs_mkdir(tTid tid,const char *path) {
 		return res;
 
 	/* alloc space for name and copy it over */
+	*name = backup;
 	len = strlen(name);
 	namecpy = kheap_alloc(len + 1);
 	if(namecpy == NULL)

@@ -87,7 +87,7 @@ int main(int argc,char **argv) {
 	/* set vterm as env-variable */
 	setEnv("TERM",argv[1]);
 
-	printf("\033[co;9]Welcome to Escape v0.1!\033[co]\n");
+	printf("\033[co;9]Welcome to Escape v0.2!\033[co]\n");
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");

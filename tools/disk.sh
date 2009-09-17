@@ -5,7 +5,7 @@ HDD=$BUILD/hd.img
 DISKMOUNT=$ROOT/disk
 TMPFILE=$BUILD/disktmp
 BINNAME=kernel.bin
-OSTITLE="Escape v0.1"
+OSTITLE="Escape v0.2"
 SUDO=sudo
 # 50 MB disk (100 * 16 * 63 * 512 = 51,609,600 byte)
 HDDCYL=100
@@ -150,7 +150,7 @@ if [ "$1" == "build" ]; then
 	unmountDisk
 	
 	# ensure that we'll copy all stuff to the disk with 'make all'
-	rm -f $BUILD/*.bin
+	rm -f $BUILD/*.bin $BUILD/apps/*
 	touch services/services.txt
 	# now rebuild and copy it
 	make all

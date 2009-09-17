@@ -129,7 +129,7 @@ static int shell_main(void) {
 	setEnv("TERM",servName);
 	delete servName;
 
-	printf("\033f\011Welcome to Escape v0.1!\033r\011\n");
+	printf("\033f\011Welcome to Escape v0.2!\033r\011\n");
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");

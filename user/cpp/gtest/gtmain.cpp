@@ -136,9 +136,7 @@ static int pbThread(void) {
 					forward = true;
 			}
 		}
-		printf("Sleep...\n");
 		sleep(50);
-		printf("Wakeup...\n");
 	}
 	return 0;
 }

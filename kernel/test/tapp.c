@@ -27,12 +27,16 @@ static void test_app_1(void);
 static void test_app_2(void);
 
 static const char *app1 =
-	"name:					\"muh\";"
-	"desc:					\"mydesc\";";
+	"name:					\"muh\""
+	"desc:					\"mydesc\""
+	"start:					\"mystart\""
+	"type:					\"user\"";
 
 static const char *app2 =
-	"name:					\"myapppp\";"
-	"source:				\"a b c\";";
+	"name:					\"myapppp\""
+	"desc:					\"a b c\""
+	"start:					\"\""
+	"type:					\"service\"";
 
 /* our test-module */
 sTestModule tModApp = {
@@ -61,6 +65,8 @@ static void test_app_1(void) {
 	for(i = 0; i < 2; i++) {
 		test_assertStr(a.name,"muh");
 		test_assertStr(a.desc,"mydesc");
+		test_assertStr(a.start,"mystart");
+		test_assertUInt(a.type,APP_TYPE_USER);
 
 		/* create str from it and parse again */
 		if(i < 1) {
@@ -88,6 +94,8 @@ static void test_app_2(void) {
 	for(i = 0; i < 2; i++) {
 		test_assertStr(a.name,"myapppp");
 		test_assertStr(a.desc,"a b c");
+		test_assertStr(a.start,"");
+		test_assertUInt(a.type,APP_TYPE_SERVICE);
 
 		/* create str from it and parse again */
 		if(i == 0) {

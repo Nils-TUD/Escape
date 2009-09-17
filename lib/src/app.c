@@ -57,23 +57,12 @@ static bool app_nextToken(sParseInfo *info);
 	}												\
 	while(0);
 
-#define ADD_LPERM(str,fmt,func,list)				\
-	do {											\
-		if(!asprintf((str),(fmt)))					\
-			return false;							\
-		if(!(func)((str),(list)))					\
-			return false;							\
-		if(!asprintf((str),";\n"))					\
-			return false;							\
-	}												\
-	while(0);
-
 bool app_toString(sStringBuffer *str,sApp *app) {
 	const char *types[] = {"user","driver","service","fs"};
-	ADD_PERM(str,  "name:					\"%s\";\n",app->name);
-	ADD_PERM(str,  "type:					\"%s\";\n",types[app->type]);
-	ADD_PERM(str,  "start:					\"%s\";\n",app->start);
-	ADD_PERM(str,  "desc:					\"%s\";\n",app->desc);
+	ADD_PERM(str,  "name:					\"%s\"\n",app->name);
+	ADD_PERM(str,  "type:					\"%s\"\n",types[app->type]);
+	ADD_PERM(str,  "start:					\"%s\"\n",app->start);
+	ADD_PERM(str,  "desc:					\"%s\"\n",app->desc);
 	return true;
 }
 

@@ -149,7 +149,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 
 	/* start tests */
-	/*test_register(&tModMM);
+	test_register(&tModMM);
 	test_register(&tModPaging);
 	test_register(&tModProc);
 	test_register(&tModKHeap);
@@ -162,7 +162,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	test_register(&tModasprintf);
 	test_register(&tModRBuffer);
 	test_register(&tModEscCodes);
-	test_register(&tModVFSList);*/
+	test_register(&tModVFSList);
 	test_register(&tModApp);
 	test_start();
 

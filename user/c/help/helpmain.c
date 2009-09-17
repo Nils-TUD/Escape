@@ -1,5 +1,5 @@
 /**
- * $Id: help.c 307 2009-09-06 15:29:49Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

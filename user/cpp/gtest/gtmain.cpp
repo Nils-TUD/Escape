@@ -74,7 +74,7 @@ int main(void) {
 		w1->add(cb);
 		pb = new ProgressBar("Progress...",10,120,200,20);
 		w1->add(*pb);
-		/*startThread(pbThread);*/
+		startThread(pbThread);
 		return app->run();
 	}
 
@@ -99,20 +99,20 @@ int main(void) {
 
 	Application *app = Application::getInstance();
 	w1 = new Window("Window 4",180,90,200,100);
-	startThread(pbThread);
+	/*startThread(pbThread);*/
 	return app->run();
 }
 
 static int pbThread(void) {
-	while(1) {
+	/*while(1) {
 		sleep(1000);
 		if(fork() == 0)
 			exec("/bin/ps",NULL);
-	}
-	/*s16 x = 10,y = 10;
+	}*/
+	/*s16 x = 10,y = 10;*/
 	bool forward = true;
 	while(1) {
-		if(w1->getX() + w1->getWidth() >= Application::getInstance()->getScreenWidth() - 1)
+		/*if(w1->getX() + w1->getWidth() >= Application::getInstance()->getScreenWidth() - 1)
 			x = -10;
 		else if(w1->getX() == 0)
 			x = 10;
@@ -120,7 +120,7 @@ static int pbThread(void) {
 			y = -10;
 		else if(w1->getY() == 0)
 			y = 10;
-		w1->move(x,y);
+		w1->move(x,y);*/
 		if(pb != NULL) {
 			u32 pos = pb->getPosition();
 			if(forward) {
@@ -136,7 +136,9 @@ static int pbThread(void) {
 					forward = true;
 			}
 		}
+		printf("Sleep...\n");
 		sleep(50);
-	}*/
+		printf("Wakeup...\n");
+	}
 	return 0;
 }

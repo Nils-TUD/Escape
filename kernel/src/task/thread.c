@@ -145,6 +145,14 @@ void thread_switchTo(tTid tid) {
 		/* ignore it if we should continue idling */
 		if(tid == IDLE_TID)
 			return;
+		/* if we've already stored a thread to run, it is no longer in the ready-queue of the
+		 * scheduler. so we have to put it back into it. */
+		if(runnableThread != INVALID_TID) {
+			sThread *last = thread_getById(runnableThread);
+			/* sched_setReady() will do nothing if state is ST_READY */
+			last->state = ST_RUNNING;
+			sched_setReady(last);
+		}
 		/* store to which thread we should switch */
 		runnableThread = tid;
 		return;

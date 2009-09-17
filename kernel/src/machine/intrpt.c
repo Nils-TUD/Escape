@@ -419,10 +419,12 @@ static void intrpt_handleSignal(void) {
 static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	fSigHandler handler;
-	/* if the thread_switchTo() wasn't successfull (we're not the thread that should receive the
-	 * signal), there is something wrong because we queue signals until the thread is able to
-	 * handle them. So this should never happen */
-	vassert(t->tid == signalData.tid,"The thread %d is unable to handle the signal",signalData.tid);
+	/* if the thread_switchTo() wasn't successfull it means that we have tried to switch to
+	 * multiple threads during idle. So we ignore it and try to give the signal later to the thread */
+	if(t->tid != signalData.tid) {
+		signalData.active = 0;
+		return;
+	}
 
 	handler = sig_startHandling(signalData.tid,signalData.sig);
 	if(handler != NULL) {

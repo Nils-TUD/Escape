@@ -11,7 +11,7 @@ BIN = $(BUILD)/$(BINNAME)
 SYMBOLS = $(BUILD)/kernel.symbols
 BUILDAPPS = $(BUILD)/apps
 
-QEMUARGS = -serial stdio -hda $(HDD) -boot c -vga std
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom mos.iso -boot c -vga std
 
 DIRS = tools libc libcpp services user kernel/src kernel/test
 
@@ -24,8 +24,8 @@ export CWFLAGS=-Wall -ansi \
 export CPPWFLAGS=-Wall -Wextra -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long -fno-builtin
-export CPPDEFFLAGS=$(CPPWFLAGS) -g -D DEBUGGING=1
-export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING=1
+export CPPDEFFLAGS=$(CPPWFLAGS) -g -D DEBUGGING
+export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING
 # flags for nasm
 export ASMFLAGS=-f elf
 # other

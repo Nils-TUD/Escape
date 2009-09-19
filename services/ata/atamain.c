@@ -29,93 +29,19 @@
 #include <esc/signals.h>
 #include <stdlib.h>
 #include <errors.h>
+
+#include "ata.h"
+#include "drive.h"
 #include "partition.h"
-
-/* port-bases */
-#define REG_BASE_PRIMARY			0x1F0
-#define REG_BASE_SECONDARY			0x170
-
-#define DRIVE_MASTER				0xA0
-#define DRIVE_SLAVE					0xB0
-
-#define COMMAND_IDENTIFY			0xEC
-#define COMMAND_READ_SEC			0x20
-#define COMMAND_READ_SEC_EXT		0x24
-#define COMMAND_WRITE_SEC			0x30
-#define COMMAND_WRITE_SEC_EXT		0x34
-
-/* io-ports, offsets from base */
-#define REG_DATA					0x0
-#define REG_ERROR					0x1
-#define REG_FEATURES				0x1
-#define REG_SECTOR_COUNT			0x2
-#define REG_PART_DISK_SECADDR1		0x3
-#define REG_PART_DISK_SECADDR2		0x4
-#define REG_PART_DISK_SECADDR3		0x5
-#define REG_DRIVE_SELECT			0x6
-#define REG_COMMAND					0x7
-#define REG_STATUS					0x7
-#define REG_CONTROL					0x206
-
-/* drive-identifier */
-#define DRIVE_COUNT					4
-#define DRIVE_PRIM_MASTER			0
-#define DRIVE_PRIM_SLAVE			1
-#define DRIVE_SEC_MASTER			2
-#define DRIVE_SEC_SLAVE				3
-
-#define BYTES_PER_SECTOR			512
-
-/* Drive is preparing to accept/send data -- wait until this bit clears. If it never
- * clears, do a Software Reset. Technically, when BSY is set, the other bits in the
- * Status byte are meaningless. */
-#define CMD_ST_BUSY					(1 << 7)	/* 0x80 */
-/* Bit is clear when drive is spun down, or after an error. Set otherwise. */
-#define CMD_ST_READY				(1 << 6)	/* 0x40 */
-/* Drive Fault Error (does not set ERR!) */
-#define CMD_ST_DISK_FAULT			(1 << 5)	/* 0x20 */
-/* Overlapped Mode Service Request */
-#define CMD_ST_OVERLAPPED_REQ		(1 << 4)	/* 0x10 */
-/* Set when the drive has PIO data to transfer, or is ready to accept PIO data. */
-#define CMD_ST_DRQ					(1 << 3)	/* 0x08 */
-/* Error flag (when set). Send a new command to clear it (or nuke it with a Software Reset). */
-#define CMD_ST_ERROR				(1 << 0)	/* 0x01 */
-
-/* Set this to read back the High Order Byte of the last LBA48 value sent to an IO port. */
-#define CTRL_HIGH_ORDER_BYTE		(1 << 7)	/* 0x80 */
-/* Software Reset -- set this to reset all ATA drives on a bus, if one is misbehaving. */
-#define CTRL_SOFTWARE_RESET			(1 << 2)	/* 0x04 */
-/* Set this to stop the current device from sending interrupts. */
-#define CTRL_INTRPTS_ENABLED		(1 << 1)	/* 0x02 */
-
-typedef struct {
-	/* wether the drive exists and we can use it */
-	u8 present;
-	/* master / slave */
-	u8 slaveBit;
-	/* primary / secondary */
-	u16 basePort;
-	/* supports LBA48? */
-	u8 lba48;
-	/* number of sectors of the drive */
-	u64 sectorCount;
-	/* the partition-table */
-	sPartition partTable[PARTITION_COUNT];
-} sATADrive;
 
 typedef struct {
 	u32 drive;
 	u32 partition;
 } sDriver;
 
-static void ata_wait(sATADrive *drive);
-static bool ata_isDrivePresent(u8 drive);
-static void ata_detectDrives(void);
-static void ata_createVFSEntry(sATADrive *drive,sPartition *part,char *name);
-static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
-static void ata_selectDrive(sATADrive *drive);
-static bool ata_identifyDrive(sATADrive *drive);
 static sDriver *getDriver(tServ sid);
+static void initDrives(void);
+static void createVFSEntry(sATADrive *drive,sPartition *part,const char *name);
 
 /* the drives */
 static sATADrive drives[DRIVE_COUNT] = {
@@ -133,12 +59,6 @@ static tServ services[DRIVE_COUNT * PARTITION_COUNT];
 static sDriver driver[DRIVE_COUNT * PARTITION_COUNT];
 
 static sMsg msg;
-static bool gotInterrupt = false;
-static void diskIntrptHandler(tSig sig,u32 data) {
-	UNUSED(sig);
-	UNUSED(data);
-	gotInterrupt = true;
-}
 
 int main(void) {
 	u32 i;
@@ -158,12 +78,10 @@ int main(void) {
 				REG_BASE_SECONDARY + REG_CONTROL);
 	}
 
-	if(setSigHandler(SIG_INTRPT_ATA1,diskIntrptHandler) < 0 ||
-			setSigHandler(SIG_INTRPT_ATA2,diskIntrptHandler) < 0) {
-		error("Unable to announce sig-handler for %d or %d",SIG_INTRPT_ATA1,SIG_INTRPT_ATA2);
-	}
-
-	ata_detectDrives();
+	/* detect and init all drives */
+	ata_init();
+	drive_detect(drives,DRIVE_COUNT);
+	initDrives();
 
 	while(1) {
 		tFD fd = getClient(services,servCount,&client);
@@ -194,12 +112,12 @@ int main(void) {
 						msg.args.arg1 = 0;
 						/* we have to check wether it is at least one sector. otherwise ATA can't
 						 * handle the request */
-						if(offset + count <= part->size * BYTES_PER_SECTOR && offset + count > offset &&
-								count / BYTES_PER_SECTOR > 0) {
-							buffer = (u16*)malloc(count);
+						if(offset + count <= part->size * drive->secSize && offset + count > offset) {
+							u32 rcount = (count + drive->secSize - 1) & ~(drive->secSize - 1);
+							buffer = (u16*)malloc(rcount);
 							if(buffer) {
-								if(ata_readWrite(drive,false,buffer,
-										offset / BYTES_PER_SECTOR + part->start,count / BYTES_PER_SECTOR)) {
+								if(drive->rwHandler(drive,false,buffer,
+										offset / drive->secSize + part->start,rcount / drive->secSize)) {
 									msg.data.arg1 = count;
 								}
 							}
@@ -218,12 +136,12 @@ int main(void) {
 						u32 offset = msg.args.arg1;
 						u32 count = msg.args.arg2;
 						msg.args.arg1 = 0;
-						if(offset + count <= part->size * BYTES_PER_SECTOR && offset + count > offset) {
+						if(offset + count <= part->size * drive->secSize && offset + count > offset) {
 							buffer = (u16*)malloc(count);
 							if(buffer) {
 								receive(fd,&mid,buffer,count);
-								if(ata_readWrite(drive,true,buffer,
-										offset / BYTES_PER_SECTOR + part->start,count / BYTES_PER_SECTOR)) {
+								if(drive->rwHandler(drive,true,buffer,
+										offset / drive->secSize + part->start,count / drive->secSize)) {
 									msg.args.arg1 = count;
 								}
 								free(buffer);
@@ -259,48 +177,27 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void ata_wait(sATADrive *drive) {
-	/* FIXME: vmware seems to need a very long wait-time:
-	volatile u32 i;
-	for(i = 0; i < 1000000; i++);
-	*/
-	inByte(drive->basePort + REG_STATUS);
-	inByte(drive->basePort + REG_STATUS);
-	inByte(drive->basePort + REG_STATUS);
-	inByte(drive->basePort + REG_STATUS);
-}
-
-static bool ata_isDrivePresent(u8 drive) {
-	return drive < DRIVE_COUNT && drives[drive].present;
-}
-
-static void ata_detectDrives(void) {
+static void initDrives(void) {
 	char name[SSTRLEN("hda1") + 1];
-	u32 i,p,s;
-	u16 buffer[256];
-	s = 0;
+	u32 i,p;
 	for(i = 0; i < DRIVE_COUNT; i++) {
-		/* first, identify the drive */
-		if(!ata_identifyDrive(drives + i))
+		if(drives[i].present == 0)
 			continue;
 
-		/* if it is present, read the partition-table */
-		drives[i].present = 1;
-		if(!ata_readWrite(drives + i,false,buffer,0,1)) {
-			drives[i].present = 0;
-			debugf("Drive %d: Unable to read partition-table!\n",i);
-			continue;
-		}
-
-		/* copy partitions to mem */
-		part_fillPartitions(drives[i].partTable,buffer);
-		sprintf(name,"hd%c",'a' + i);
-		ata_createVFSEntry(drives + i,NULL,name);
+		/* build VFS-entry */
+		if(drives[i].info.general.isATAPI)
+			sprintf(name,"cd%c",'a' + i);
+		else
+			sprintf(name,"hd%c",'a' + i);
+		createVFSEntry(drives + i,NULL,name);
 
 		/* register driver for every partition */
 		for(p = 0; p < PARTITION_COUNT; p++) {
 			if(drives[i].partTable[p].present) {
-				sprintf(name,"hd%c%d",'a' + i,p + 1);
+				if(!drives[i].info.general.isATAPI)
+					sprintf(name,"hd%c%d",'a' + i,p + 1);
+				else
+					sprintf(name,"cd%c%d",'a' + i,p + 1);
 				services[servCount] = regService(name,SERV_DRIVER);
 				if(services[servCount] < 0) {
 					debugf("Drive %d, Partition %d: Unable to register driver '%s'\n",
@@ -309,7 +206,7 @@ static void ata_detectDrives(void) {
 				else {
 					/* we're a block-device, so always data available */
 					setDataReadable(services[servCount],true);
-					ata_createVFSEntry(drives + i,drives[i].partTable + p,name);
+					createVFSEntry(drives + i,drives[i].partTable + p,name);
 					driver[servCount].drive = i;
 					driver[servCount].partition = p;
 					servCount++;
@@ -319,18 +216,9 @@ static void ata_detectDrives(void) {
 	}
 }
 
-static sDriver *getDriver(tServ sid) {
-	u32 i;
-	for(i = 0; i < servCount; i++) {
-		if(services[i] == sid)
-			return driver + i;
-	}
-	return NULL;
-}
-
-static void ata_createVFSEntry(sATADrive *drive,sPartition *part,char *name) {
+static void createVFSEntry(sATADrive *drive,sPartition *part,const char *name) {
 	tFile *f;
-	char path[SSTRLEN("/system/devices/") + SSTRLEN("hda1") + 1];
+	char path[SSTRLEN("/system/devices/hda1") + 1];
 	sprintf(path,"/system/devices/%s",name);
 
 	/* open and create file */
@@ -341,169 +229,47 @@ static void ata_createVFSEntry(sATADrive *drive,sPartition *part,char *name) {
 	}
 
 	if(part == NULL) {
-		fprintf(f,"%-10s%d\n","Sectors:",drive->sectorCount);
-		fprintf(f,"%-10s%d\n","LBA48:",drive->lba48);
+		u32 i;
+		fprintf(f,"%-15s%s\n","Type:",drive->info.general.isATAPI ? "ATAPI" : "ATA");
+		fprintf(f,"%-15s","ModelNo:");
+		for(i = 0; i < 40; i += 2)
+			fprintf(f,"%c%c",drive->info.modelNo[i + 1],drive->info.modelNo[i]);
+		fprintf(f,"\n");
+		fprintf(f,"%-15s","SerialNo:");
+		for(i = 0; i < 20; i += 2)
+			fprintf(f,"%c%c",drive->info.serialNumber[i + 1],drive->info.serialNumber[i]);
+		fprintf(f,"\n");
+		if(drive->info.firmwareRev[0] && drive->info.firmwareRev[1]) {
+			fprintf(f,"%-15s","FirmwareRev:");
+			for(i = 0; i < 8; i += 2)
+				fprintf(f,"%c%c",drive->info.firmwareRev[i + 1],drive->info.firmwareRev[i]);
+			fprintf(f,"\n");
+		}
+		fprintf(f,"%-15s0x%02x\n","MajorVersion:",drive->info.majorVersion.raw);
+		fprintf(f,"%-15s0x%02x\n","MinorVersion:",drive->info.minorVersion);
+		fprintf(f,"%-15s%d\n","Sectors:",drive->info.userSectorCount);
+		if(drive->info.words5458Valid) {
+			fprintf(f,"%-15s%d\n","Cylinder:",drive->info.oldCylinderCount);
+			fprintf(f,"%-15s%d\n","Heads:",drive->info.oldHeadCount);
+			fprintf(f,"%-15s%d\n","SecsPerTrack:",drive->info.oldSecsPerTrack);
+		}
+		fprintf(f,"%-15s%d\n","LBA:",drive->info.capabilities.LBA);
+		fprintf(f,"%-15s%d\n","LBA48:",drive->info.features.lba48);
+		fprintf(f,"%-15s%d\n","DMA:",drive->info.capabilities.DMA);
 	}
 	else {
-		fprintf(f,"%-10s%d\n","Start:",part->start);
-		fprintf(f,"%-10s%d\n","Sectors:",part->size);
+		fprintf(f,"%-15s%d\n","Start:",part->start);
+		fprintf(f,"%-15s%d\n","Sectors:",part->size);
 	}
 
 	fclose(f);
 }
 
-static bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount) {
-	u8 status;
-	u32 i,x;
-	u16 *buf = buffer;
-	u16 basePort = drive->basePort;
-
-	if(!drive->lba48) {
-		if(lba & 0xFFFFFFFFF0000000LL) {
-			debugf("[ata] Trying to read from sector > 2^28-1\n");
-			return false;
-		}
-		if(secCount & 0xFF00) {
-			debugf("[ata] Trying to read %u sectors with LBA28\n",secCount);
-			return false;
-		}
-
-		outByte(basePort + REG_DRIVE_SELECT,0xE0 | (drive->slaveBit << 4) | ((lba >> 24) & 0x0F));
-	}
-	else
-		outByte(basePort + REG_DRIVE_SELECT,0x40 | (drive->slaveBit << 4));
-
-	ata_wait(drive);
-
-	/* reset control-register */
-	gotInterrupt = false;
-	outByte(basePort + REG_CONTROL,0);
-
-	if(drive->lba48) {
-		/* LBA: | LBA6 | LBA5 | LBA4 | LBA3 | LBA2 | LBA1 | */
-		/*     48             32            16            0 */
-		/* sector-count high-byte */
-		outByte(basePort + REG_SECTOR_COUNT,(u8)(secCount >> 8));
-		/* LBA4, LBA5 and LBA6 */
-		outByte(basePort + REG_PART_DISK_SECADDR1,(u8)(lba >> 24));
-		outByte(basePort + REG_PART_DISK_SECADDR2,(u8)(lba >> 32));
-		outByte(basePort + REG_PART_DISK_SECADDR3,(u8)(lba >> 40));
-		/* sector-count low-byte */
-		outByte(basePort + REG_SECTOR_COUNT,(u8)(secCount & 0xFF));
-		/* LBA1, LBA2 and LBA3 */
-		outByte(basePort + REG_PART_DISK_SECADDR1,(u8)(lba & 0xFF));
-		outByte(basePort + REG_PART_DISK_SECADDR2,(u8)(lba >> 8));
-		outByte(basePort + REG_PART_DISK_SECADDR3,(u8)(lba >> 16));
-		/* send command */
-		if(opWrite)
-			outByte(basePort + REG_COMMAND,COMMAND_WRITE_SEC_EXT);
-		else
-			outByte(basePort + REG_COMMAND,COMMAND_READ_SEC_EXT);
-	}
-	else {
-		/* send sector-count */
-		outByte(basePort + REG_SECTOR_COUNT,(u8)secCount);
-		/* LBA1, LBA2 and LBA3 */
-		outByte(basePort + REG_PART_DISK_SECADDR1,(u8)lba);
-		outByte(basePort + REG_PART_DISK_SECADDR2,(u8)(lba >> 8));
-		outByte(basePort + REG_PART_DISK_SECADDR3,(u8)(lba >> 16));
-		/* send command */
-		if(opWrite)
-			outByte(basePort + REG_COMMAND,COMMAND_WRITE_SEC);
-		else
-			outByte(basePort + REG_COMMAND,COMMAND_READ_SEC);
-	}
-
-	for(i = 0; i < secCount; i++) {
-		do {
-			if(opWrite) {
-				status = inByte(basePort + REG_STATUS);
-				while(status & CMD_ST_BUSY) {
-					sleep(20);
-					status = inByte(basePort + REG_STATUS);
-				}
-			}
-			else {
-				/* FIXME: vmware seems to need a ata_wait() here */
-				/* wait until drive is ready */
-				while(!gotInterrupt)
-					wait(EV_NOEVENT);
-				status = inByte(basePort + REG_STATUS);
-			}
-
-			if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == CMD_ST_DRQ)
-				break;
-			if((status & CMD_ST_ERROR) != 0) {
-				debugf("[ata] error: %x\n",inByte(basePort + REG_ERROR));
-				return false;
-			}
-		}
-		while(true);
-
-		/* now read / write the data */
-		if(opWrite) {
-			for(x = 0; x < 256; x++)
-				outWord(basePort + REG_DATA,*buf++);
-		}
-		else {
-			for(x = 0; x < 256; x++)
-				*buf++ = inWord(basePort + REG_DATA);
-		}
-	}
-
-	return true;
-}
-
-static void ata_selectDrive(sATADrive *drive) {
-	outByte(drive->basePort + REG_DRIVE_SELECT,0xA0 | (drive->slaveBit << 4));
-	ata_wait(drive);
-}
-
-static bool ata_identifyDrive(sATADrive *drive) {
-	u8 status;
-	u16 data[256];
+static sDriver *getDriver(tServ sid) {
 	u32 i;
-	u16 basePort = drive->basePort;
-
-	ata_selectDrive(drive);
-
-	/* disable interrupts */
-	outByte(basePort + REG_CONTROL,CTRL_INTRPTS_ENABLED);
-
-	/* check wether the drive exists */
-	outByte(basePort + REG_COMMAND,COMMAND_IDENTIFY);
-	status = inByte(basePort + REG_STATUS);
-	if(status == 0)
-		return false;
-	else {
-		do {
-			status = inByte(basePort + REG_STATUS);
-			if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == CMD_ST_DRQ)
-				break;
-			if((status & CMD_ST_ERROR) != 0)
-				return false;
-		}
-		while(true);
-
-		/* drive ready */
-		for(i = 0; i < 256; i++)
-			data[i] = inWord(basePort + REG_DATA);
-
-		/* check for LBA48 */
-		if((data[83] & (1 << 10)) != 0) {
-			drive->lba48 = 1;
-			drive->sectorCount = ((u64)data[103] << 48) | ((u64)data[102] << 32) |
-				((u64)data[101] << 16) | (u64)data[100];
-		}
-		/* check for LBA28 */
-		else {
-			drive->lba48 = 0;
-			drive->sectorCount = ((u64)data[61] << 16) | (u64)data[60];
-			/* LBA28 not supported? */
-			if(drive->sectorCount == 0)
-				return false;
-		}
-
-		return true;
+	for(i = 0; i < servCount; i++) {
+		if(services[i] == sid)
+			return driver + i;
 	}
+	return NULL;
 }

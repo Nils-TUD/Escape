@@ -44,6 +44,15 @@ bool atapi_read(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount) 
 	return atapi_request(drive,(u16*)cmd,buffer,secCount * drive->secSize);
 }
 
+u32 atapi_getCapacity(sATADrive *drive) {
+	u8 resp[8];
+	u8 cmd[] = {SCSI_CMD_READ_CAPACITY,0,0,0,0,0,0,0,0,0,0,0};
+	bool res = atapi_request(drive,(u16*)cmd,resp,8);
+	if(!res)
+		return 0;
+	return (resp[0] << 24) | (resp[1] << 16) | (resp[2] << 8) | (resp[3] << 0);
+}
+
 static bool atapi_request(sATADrive *drive,u16 *cmd,u16 *buffer,u32 bufSize) {
 	u8 status;
 	u32 off,count;

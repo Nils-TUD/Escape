@@ -39,6 +39,7 @@
 #define COMMAND_PACKET				0xA0
 
 #define SCSI_CMD_READ_SECTORS		0xA8
+#define SCSI_CMD_READ_CAPACITY		0x25
 
 /* io-ports, offsets from base */
 #define REG_DATA					0x0

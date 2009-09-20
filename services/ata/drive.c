@@ -60,7 +60,7 @@ void drive_detect(sATADrive *drives,u32 count) {
 			/* pretend that the cd has 1 partition */
 			drives[i].partTable[0].present = 1;
 			drives[i].partTable[0].start = 0;
-			drives[i].partTable[0].size = 1234;	/* TODO */
+			drives[i].partTable[0].size = atapi_getCapacity(drives + i);
 		}
 	}
 }

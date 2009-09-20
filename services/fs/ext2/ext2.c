@@ -37,12 +37,15 @@
 #include "dir.h"
 #include "rw.h"
 
+#define MAX_DRIVER_OPEN_RETRIES		1000
+
 /**
  * Checks wether x is a power of y
  */
 static bool ext2_isPowerOf(u32 x,u32 y);
 
 void *ext2_init(const char *driver) {
+	u32 tries = 0;
 	tFD fd;
 	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
 	if(e == NULL)
@@ -54,8 +57,12 @@ void *ext2_init(const char *driver) {
 		fd = open(driver,IO_WRITE | IO_READ);
 		if(fd < 0)
 			yield();
+		tries++;
 	}
-	while(fd < 0);
+	while(fd < 0 && tries < MAX_DRIVER_OPEN_RETRIES);
+
+	if(tries >= MAX_DRIVER_OPEN_RETRIES)
+		error("Unable to find driver '%s' after %d retries",driver,tries);
 
 	e->ataFd = fd;
 	if(!ext2_super_init(e)) {

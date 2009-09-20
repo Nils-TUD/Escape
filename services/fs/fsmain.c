@@ -33,6 +33,7 @@
 #include <fsinterface.h>
 
 #include "ext2/ext2.h"
+#include "iso9660/iso9660.h"
 #include "mount.h"
 
 static sMsg msg;
@@ -48,24 +49,21 @@ int main(void) {
 
 	mount_init();
 
-	/* create root-filesystem */
-	fs = malloc(sizeof(sFileSystem));
-	fs->type = FS_TYPE_EXT2;
-	fs->init = ext2_init;
-	fs->deinit = ext2_deinit;
-	fs->resPath = ext2_resPath;
-	fs->open = ext2_open;
-	fs->close = ext2_close;
-	fs->stat = ext2_stat;
-	fs->read = ext2_read;
-	fs->write = ext2_write;
-	fs->link = ext2_link;
-	fs->unlink = ext2_unlink;
-	fs->mkdir = ext2_mkdir;
-	fs->rmdir = ext2_rmdir;
-	fs->sync = ext2_sync;
+	/* add ext2 */
+	fs = ext2_getFS();
+	if(!fs)
+		error("Unable to get ext2-filesystem");
 	if(mount_addFS(fs) != 0)
-		error("Unable to add root-filesystem");
+		error("Unable to add ext2-filesystem");
+
+	/* add iso9660 */
+	fs = iso_getFS();
+	if(!fs)
+		error("Unable to get iso9660-filesystem");
+	if(mount_addFS(fs) != 0)
+		error("Unable to add iso9660-filesystem");
+
+	/* create root-fs */
 	rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,"/drivers/hda1",FS_TYPE_EXT2);
 	if(rootDev < 0)
 		error("Unable to add root mount-point");
@@ -132,6 +130,8 @@ int main(void) {
 						u8 *buffer = NULL;
 						if(inst == NULL)
 							msg.args.arg1 = ERR_NO_MNTPNT;
+						else if(inst->fs->read == NULL)
+							msg.args.arg1 = ERR_UNSUPPORTED_OP;
 						else {
 							buffer = malloc(count);
 							if(buffer == NULL)
@@ -160,6 +160,8 @@ int main(void) {
 						u8 *buffer;
 						if(inst == NULL)
 							msg.args.arg1 = ERR_NO_MNTPNT;
+						else if(inst->fs->write == NULL)
+							msg.args.arg1 = ERR_UNSUPPORTED_OP;
 						else {
 							/* write to file */
 							msg.args.arg1 = 0;
@@ -201,6 +203,8 @@ int main(void) {
 								msg.args.arg1 = dirIno;
 							else if(newDev != oldDev)
 								msg.args.arg1 = ERR_LINK_DEVICE;
+							else if(inst->fs->link == NULL)
+								msg.args.arg1 = ERR_UNSUPPORTED_OP;
 							else {
 								*name = backup;
 								msg.args.arg1 = inst->fs->link(inst->handle,dstIno,dirIno,name);
@@ -235,6 +239,8 @@ int main(void) {
 							inst = mount_get(devNo);
 							if(inst == NULL)
 								msg.args.arg1 = ERR_NO_MNTPNT;
+							else if(inst->fs->unlink == NULL)
+								msg.args.arg1 = ERR_UNSUPPORTED_OP;
 							else {
 								*name = backup;
 								msg.args.arg1 = inst->fs->unlink(inst->handle,dirIno,name);
@@ -266,6 +272,8 @@ int main(void) {
 							inst = mount_get(devNo);
 							if(inst == NULL)
 								msg.args.arg1 = ERR_NO_MNTPNT;
+							else if(inst->fs->mkdir == NULL)
+								msg.args.arg1 = ERR_UNSUPPORTED_OP;
 							else {
 								*name = backup;
 								msg.args.arg1 = inst->fs->mkdir(inst->handle,dirIno,name);
@@ -297,6 +305,8 @@ int main(void) {
 							inst = mount_get(devNo);
 							if(inst == NULL)
 								msg.args.arg1 = ERR_NO_MNTPNT;
+							else if(inst->fs->rmdir == NULL)
+								msg.args.arg1 = ERR_UNSUPPORTED_OP;
 							else {
 								*name = backup;
 								msg.args.arg1 = inst->fs->rmdir(inst->handle,dirIno,name);
@@ -359,7 +369,7 @@ int main(void) {
 						tInodeNo ino = msg.args.arg1;
 						tDevNo devNo = msg.args.arg2;
 						sFSInst *inst = mount_get(devNo);
-						if(inst != NULL)
+						if(inst != NULL && inst->fs->close != NULL)
 							inst->fs->close(inst->handle,ino);
 					}
 					break;

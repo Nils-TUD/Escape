@@ -72,14 +72,14 @@ static sVTerm vterms[VTERM_COUNT];
 static sVTerm *activeVT = NULL;
 
 bool vterm_initAll(tServ *ids) {
-	char name[MAX_NAME_LEN + 1];
+	char name[MAX_VT_NAME_LEN + 1];
 	u32 i;
 
 	for(i = 0; i < VTERM_COUNT; i++) {
 		vterms[i].index = i;
 		vterms[i].sid = ids[i];
 		sprintf(name,"vterm%d",i);
-		memcpy(vterms[i].name,name,MAX_NAME_LEN + 1);
+		memcpy(vterms[i].name,name,MAX_VT_NAME_LEN + 1);
 		if(!vterm_init(vterms + i))
 			return false;
 	}

@@ -29,9 +29,9 @@
 
 bool ext2_bg_init(sExt2 *e) {
 	/* read block-group-descriptors */
-	u32 bcount = BYTES_TO_BLOCKS(e,ext2_getBlockGroupCount(e));
+	u32 bcount = EXT2_BYTES_TO_BLKS(e,ext2_getBlockGroupCount(e));
 	e->groupsDirty = false;
-	e->groups = (sExt2BlockGrp*)malloc(bcount * BLOCK_SIZE(e));
+	e->groups = (sExt2BlockGrp*)malloc(bcount * EXT2_BLK_SIZE(e));
 	if(e->groups == NULL) {
 		printe("Unable to allocate memory for blockgroups");
 		return false;
@@ -49,7 +49,7 @@ void ext2_bg_update(sExt2 *e) {
 	if(!e->groupsDirty)
 		return;
 
-	bcount = BYTES_TO_BLOCKS(e,ext2_getBlockGroupCount(e));
+	bcount = EXT2_BYTES_TO_BLKS(e,ext2_getBlockGroupCount(e));
 
 	/* update main block-group-descriptor-table */
 	if(!ext2_rw_writeBlocks(e,e->groups,e->superBlock.firstDataBlock + 1,bcount)) {
@@ -104,7 +104,7 @@ static void ext2_bg_printRanges(sExt2 *e,const char *name,u32 first,u32 max,u8 *
 	start = 0;
 	lastFree = (bitmap[0] & 1) == 0;
 	debugf("	Free%s:\n\t\t",name);
-	for(i = 0; i < (u32)BLOCK_SIZE(e); a = 0, i++) {
+	for(i = 0; i < (u32)EXT2_BLK_SIZE(e); a = 0, i++) {
 		for(a = 0, j = 1; j < 256; a++, j <<= 1) {
 			if(i * 8 + a >= max)
 				goto freeDone;
@@ -134,7 +134,7 @@ freeDone:
 	start = 0;
 	lastFree = (bitmap[0] & 1) == 0;
 	debugf("	Used%s:\n\t\t",name);
-	for(i = 0; i < (u32)BLOCK_SIZE(e); a = 0, i++) {
+	for(i = 0; i < (u32)EXT2_BLK_SIZE(e); a = 0, i++) {
 		for(a = 0, j = 1; j < 256; a++, j <<= 1) {
 			if(i * 8 + a >= max)
 				goto usedDone;

@@ -23,8 +23,12 @@
 #include <types.h>
 #include <stddef.h>
 
+#define MAX_NAME_LEN		50
+#define MAX_PATH_LEN		255
+
 /* file-system-types */
 #define FS_TYPE_EXT2		0
+#define FS_TYPE_ISO9660		1
 
 /* mode masks */
 #define MODE_TYPE_MASK		0170000
@@ -83,5 +87,13 @@ typedef struct {
 	u32 modifytime;
 	u32 createtime;
 } sFileInfo;
+
+/* a directory-entry */
+typedef struct {
+	tInodeNo nodeNo;
+	u16 recLen;
+	u16 nameLen;
+	char name[MAX_NAME_LEN + 1];
+} __attribute__((packed)) sDirEntry;
 
 #endif /* FSINTERFACE_H_ */

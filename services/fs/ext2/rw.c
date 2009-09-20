@@ -26,16 +26,16 @@
 #include "ext2.h"
 
 bool ext2_rw_readBlocks(sExt2 *e,void *buffer,u32 start,u16 blockCount) {
-	return ext2_rw_readSectors(e,buffer,BLOCKS_TO_SECS(e,start),BLOCKS_TO_SECS(e,blockCount));
+	return ext2_rw_readSectors(e,buffer,EXT2_BLKS_TO_SECS(e,start),EXT2_BLKS_TO_SECS(e,blockCount));
 }
 
 bool ext2_rw_readSectors(sExt2 *e,void *buffer,u64 lba,u16 secCount) {
-	if(seek(e->ataFd,lba * SECTOR_SIZE,SEEK_SET) < 0) {
-		printe("Unable to seek to %x\n",lba * SECTOR_SIZE);
+	if(seek(e->ataFd,lba * ATA_SECTOR_SIZE,SEEK_SET) < 0) {
+		printe("Unable to seek to %x\n",lba * ATA_SECTOR_SIZE);
 		return false;
 	}
-	if(read(e->ataFd,buffer,secCount * SECTOR_SIZE) != secCount * SECTOR_SIZE) {
-		printe("Unable to read %d sectors @ %x\n",secCount,lba * SECTOR_SIZE);
+	if(read(e->ataFd,buffer,secCount * ATA_SECTOR_SIZE) != secCount * ATA_SECTOR_SIZE) {
+		printe("Unable to read %d sectors @ %x\n",secCount,lba * ATA_SECTOR_SIZE);
 		return false;
 	}
 
@@ -43,16 +43,16 @@ bool ext2_rw_readSectors(sExt2 *e,void *buffer,u64 lba,u16 secCount) {
 }
 
 bool ext2_rw_writeBlocks(sExt2 *e,const void *buffer,u32 start,u16 blockCount) {
-	return ext2_rw_writeSectors(e,buffer,BLOCKS_TO_SECS(e,start),BLOCKS_TO_SECS(e,blockCount));
+	return ext2_rw_writeSectors(e,buffer,EXT2_BLKS_TO_SECS(e,start),EXT2_BLKS_TO_SECS(e,blockCount));
 }
 
 bool ext2_rw_writeSectors(sExt2 *e,const void *buffer,u64 lba,u16 secCount) {
-	if(seek(e->ataFd,lba * SECTOR_SIZE,SEEK_SET) < 0) {
-		printe("Unable to seek to %x\n",lba * SECTOR_SIZE);
+	if(seek(e->ataFd,lba * ATA_SECTOR_SIZE,SEEK_SET) < 0) {
+		printe("Unable to seek to %x\n",lba * ATA_SECTOR_SIZE);
 		return false;
 	}
-	if(write(e->ataFd,buffer,secCount * SECTOR_SIZE) != secCount * SECTOR_SIZE) {
-		printe("Unable to write %d sectors @ %x\n",secCount,lba * SECTOR_SIZE);
+	if(write(e->ataFd,buffer,secCount * ATA_SECTOR_SIZE) != secCount * ATA_SECTOR_SIZE) {
+		printe("Unable to write %d sectors @ %x\n",secCount,lba * ATA_SECTOR_SIZE);
 		return false;
 	}
 

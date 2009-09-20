@@ -109,7 +109,7 @@ static sExt2CBlock *ext2_bcache_doRequest(sExt2 *e,u32 blockNo,bool read) {
 	/* init cached block */
 	block = ext2_bcache_getBlock(e);
 	if(block->buffer == NULL) {
-		block->buffer = (u8*)malloc(BLOCK_SIZE(e));
+		block->buffer = (u8*)malloc(EXT2_BLK_SIZE(e));
 		if(block->buffer == NULL)
 			return NULL;
 	}

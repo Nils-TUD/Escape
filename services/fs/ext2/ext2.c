@@ -88,6 +88,27 @@ void ext2_deinit(void *h) {
 	ext2_sync(e);
 }
 
+sFileSystem *ext2_getFS(void) {
+	sFileSystem *fs = malloc(sizeof(sFileSystem));
+	if(!fs)
+		return NULL;
+	fs->type = FS_TYPE_EXT2;
+	fs->init = ext2_init;
+	fs->deinit = ext2_deinit;
+	fs->resPath = ext2_resPath;
+	fs->open = ext2_open;
+	fs->close = ext2_close;
+	fs->stat = ext2_stat;
+	fs->read = ext2_read;
+	fs->write = ext2_write;
+	fs->link = ext2_link;
+	fs->unlink = ext2_unlink;
+	fs->mkdir = ext2_mkdir;
+	fs->rmdir = ext2_rmdir;
+	fs->sync = ext2_sync;
+	return fs;
+}
+
 tInodeNo ext2_resPath(void *h,char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
 	return ext2_path_resolve((sExt2*)h,path,flags,dev,resLastMnt);
 }
@@ -122,7 +143,8 @@ s32 ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	info->modifytime = cnode->inode.modifytime;
 	info->createtime = cnode->inode.createtime;
 	info->blockCount = cnode->inode.blocks;
-	info->blockSize = BLOCK_SIZE(e);
+	info->blockSize = EXT2_BLK_SIZE(e);
+	/* TODO */
 	info->device = 0;
 	info->rdevice = 0;
 	info->uid = cnode->inode.uid;

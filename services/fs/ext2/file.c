@@ -105,7 +105,7 @@ s32 ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete) {
 		sExt2CBlock *blocks = ext2_bcache_request(e,cnode->inode.triplyIBlock);
 		vassert(blocks != NULL,"Block %d set, but unable to load it\n",cnode->inode.triplyIBlock);
 
-		count = BLOCK_SIZE(e) / sizeof(u32);
+		count = EXT2_BLK_SIZE(e) / sizeof(u32);
 		for(i = 0; i < count; i++) {
 			if(((u32*)blocks->buffer)[i] == 0)
 				break;
@@ -148,7 +148,7 @@ s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) 
 	if((s32)(offset + count) < 0 || (s32)(offset + count) >= cnode->inode.size)
 		count = cnode->inode.size - offset;
 
-	blockSize = BLOCK_SIZE(e);
+	blockSize = EXT2_BLK_SIZE(e);
 	startBlock = offset / blockSize;
 	offset %= blockSize;
 	blockCount = (offset + count + blockSize - 1) / blockSize;
@@ -209,7 +209,7 @@ s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 
 		return 0;
 	}
 
-	blockSize = BLOCK_SIZE(e);
+	blockSize = EXT2_BLK_SIZE(e);
 	startBlock = offset / blockSize;
 	offset %= blockSize;
 	blockCount = (offset + count + blockSize - 1) / blockSize;
@@ -256,7 +256,7 @@ static s32 ext2_file_freeDIndirBlock(sExt2 *e,u32 blockNo) {
 	sExt2CBlock *blocks = ext2_bcache_request(e,blockNo);
 	vassert(blocks != NULL,"Block %d set, but unable to load it\n",blockNo);
 
-	count = BLOCK_SIZE(e) / sizeof(u32);
+	count = EXT2_BLK_SIZE(e) / sizeof(u32);
 	for(i = 0; i < count; i++) {
 		if(((u32*)blocks->buffer)[i] == 0)
 			break;
@@ -272,7 +272,7 @@ static s32 ext2_file_freeIndirBlock(sExt2 *e,u32 blockNo) {
 	sExt2CBlock *blocks = ext2_bcache_request(e,blockNo);
 	vassert(blocks != NULL,"Block %d set, but unable to load it\n",blockNo);
 
-	count = BLOCK_SIZE(e) / sizeof(u32);
+	count = EXT2_BLK_SIZE(e) / sizeof(u32);
 	for(i = 0; i < count; i++) {
 		if(((u32*)blocks->buffer)[i] == 0)
 			break;

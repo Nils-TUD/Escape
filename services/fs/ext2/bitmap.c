@@ -89,7 +89,7 @@ static tInodeNo ext2_bm_allocInodeIn(sExt2 *e,u32 groupStart,sExt2BlockGrp *grou
 		return 0;
 
 	ino = 0;
-	for(i = 0; i < (u32)BLOCK_SIZE(e); i++) {
+	for(i = 0; i < (u32)EXT2_BLK_SIZE(e); i++) {
 		for(j = 1; j < 256; ino++, j <<= 1) {
 			if(ino >= (s32)e->superBlock.inodeCount)
 				return 0;
@@ -162,7 +162,7 @@ static u32 ext2_bm_allocBlockIn(sExt2 *e,u32 groupStart,sExt2BlockGrp *group) {
 		return 0;
 
 	bno = 0;
-	for(i = 0; i < (u32)BLOCK_SIZE(e); i++) {
+	for(i = 0; i < (u32)EXT2_BLK_SIZE(e); i++) {
 		for(j = 1; j < 256; bno++, j <<= 1) {
 			if(bno >= e->superBlock.blockCount)
 				return 0;

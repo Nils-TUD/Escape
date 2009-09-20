@@ -33,14 +33,14 @@
 
 #define INPUT_BUF_SIZE		128
 
-#define MAX_NAME_LEN		6
+#define MAX_VT_NAME_LEN		6
 
 /* our vterm-state */
 typedef struct {
 	/* identification */
 	u8 index;
 	tServ sid;
-	char name[MAX_NAME_LEN + 1];
+	char name[MAX_VT_NAME_LEN + 1];
 	/* position (on the current page) */
 	u8 col;
 	u8 row;

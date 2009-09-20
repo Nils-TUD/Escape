@@ -23,12 +23,13 @@
 #include <esc/common.h>
 #include <sllist.h>
 #include <fsinterface.h>
+#include "../mount.h"
 
-#define SECTOR_SIZE							512
-#define BLOCK_SIZE(e)						(SECTOR_SIZE << ((e)->superBlock.logBlockSize + 1))
-#define BLOCKS_TO_SECS(e,x)					((x) << ((e)->superBlock.logBlockSize + 1))
-#define SECS_TO_BLOCKS(e,x)					((x) >> ((e)->superBlock.logBlockSize + 1))
-#define BYTES_TO_BLOCKS(e,b)				(((b) + (BLOCK_SIZE(e) - 1)) / BLOCK_SIZE(e))
+#define ATA_SECTOR_SIZE						512
+#define EXT2_BLK_SIZE(e)					(ATA_SECTOR_SIZE << ((e)->superBlock.logBlockSize + 1))
+#define EXT2_BLKS_TO_SECS(e,x)				((x) << ((e)->superBlock.logBlockSize + 1))
+#define EXT2_SECS_TO_BLKS(e,x)				((x) >> ((e)->superBlock.logBlockSize + 1))
+#define EXT2_BYTES_TO_BLKS(e,b)				(((b) + (EXT2_BLK_SIZE(e) - 1)) / EXT2_BLK_SIZE(e))
 
 /* first sector of the super-block in the first block-group */
 #define EXT2_SUPERBLOCK_SECNO				2
@@ -368,6 +369,12 @@ void *ext2_init(const char *driver);
  * @param h the handle
  */
 void ext2_deinit(void *h);
+
+/**
+ * Builds an instance of the filesystem and returns it
+ * @return the instance or NULL if failed
+ */
+sFileSystem *ext2_getFS(void);
 
 /**
  * Mount-entry for resPath()

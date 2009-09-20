@@ -135,7 +135,7 @@ void ext2_icache_release(sExt2 *e,sExt2CInode *inode) {
 
 static void ext2_icache_read(sExt2 *e,sExt2CInode *inode) {
 	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
-	u32 inodesPerBlock = BLOCK_SIZE(e) / sizeof(sExt2Inode);
+	u32 inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
 	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
 	sExt2CBlock *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
 	vassert(block != NULL,"Fetching block %d failed",group->inodeTable + noInGroup / inodesPerBlock);
@@ -145,7 +145,7 @@ static void ext2_icache_read(sExt2 *e,sExt2CInode *inode) {
 
 static void ext2_icache_write(sExt2 *e,sExt2CInode *inode) {
 	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
-	u32 inodesPerBlock = BLOCK_SIZE(e) / sizeof(sExt2Inode);
+	u32 inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
 	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
 	sExt2CBlock *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
 	vassert(block != NULL,"Fetching block %d failed",group->inodeTable + noInGroup / inodesPerBlock);

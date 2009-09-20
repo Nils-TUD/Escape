@@ -34,7 +34,8 @@ typedef struct {
 } sFSType;
 
 static sFSType types[] = {
-	{FS_TYPE_EXT2,"ext2"}
+	{FS_TYPE_EXT2,"ext2"},
+	{FS_TYPE_ISO9660,"iso9660"},
 };
 
 int main(int argc,char *argv[]) {

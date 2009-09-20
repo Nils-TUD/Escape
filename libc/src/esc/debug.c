@@ -22,7 +22,14 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/dir.h>
+#include <width.h>
+#include <string.h>
 #include <stdarg.h>
+
+#define FFL_PADZEROS	1
+
+static void debugPad(s32 count,u16 flags);
+static void debugStringn(char *s,u32 precision);
 
 static u64 start;
 
@@ -99,6 +106,9 @@ void debugf(const char *fmt,...) {
 
 void vdebugf(const char *fmt,va_list ap) {
 	char c,ch;
+	u8 pad,flags;
+	u32 precision;
+	bool readFlags;
 	s32 n;
 	u32 u;
 	char *s;
@@ -112,25 +122,68 @@ void vdebugf(const char *fmt,va_list ap) {
 			debugChar(c);
 		}
 
-		/* read pad-character */
-		if(*fmt == '0' || *fmt == ' ')
-			fmt++;
+		/* read flags */
+		flags = 0;
+		pad = 0;
+		readFlags = true;
+		while(readFlags) {
+			switch(*fmt) {
+				case '0':
+					flags |= FFL_PADZEROS;
+					fmt++;
+					break;
+				case '*':
+					pad = (u8)va_arg(ap, u32);
+					fmt++;
+					break;
+				default:
+					readFlags = false;
+					break;
+			}
+		}
 
 		/* read pad-width */
-		while(*fmt >= '0' && *fmt <= '9')
+		if(pad == 0) {
+			while(*fmt >= '0' && *fmt <= '9') {
+				pad = pad * 10 + (*fmt - '0');
+				fmt++;
+			}
+		}
+
+		/* read precision */
+		precision = 0;
+		if(*fmt == '.') {
 			fmt++;
+			while(*fmt >= '0' && *fmt <= '9') {
+				precision = precision * 10 + (*fmt - '0');
+				fmt++;
+			}
+		}
 
 		c = *fmt++;
 		if(c == 'd') {
 			n = va_arg(ap, s32);
+			if(pad > 0) {
+				u32 width = getnwidth(n);
+				debugPad(pad - width,flags);
+			}
 			debugInt(n);
 		}
 		else if(c == 'u' || c == 'o' || c == 'x') {
+			u8 base = c == 'o' ? 8 : (c == 'x' ? 16 : 10);
 			u = va_arg(ap, s32);
-			debugUint(u, c == 'o' ? 8 : (c == 'x' ? 16 : 10));
+			if(pad > 0) {
+				u32 width = getuwidth(n,base);
+				debugPad(pad - width,flags);
+			}
+			debugUint(u,base);
 		} else if(c == 's') {
 			s = va_arg(ap, char*);
-			debugString(s);
+			if(pad > 0) {
+				u32 width = precision > 0 ? MIN(precision,strlen(s)) : strlen(s);
+				debugPad(pad - width,flags);
+			}
+			debugStringn(s,precision);
 		} else if(c == 'c') {
 			ch = (int) va_arg(ap, s32);
 			debugChar(ch);
@@ -141,6 +194,12 @@ void vdebugf(const char *fmt,va_list ap) {
 			debugChar(c);
 		}
 	}
+}
+
+static void debugPad(s32 count,u16 flags) {
+	char c = flags & FFL_PADZEROS ? '0' : ' ';
+	while(count-- > 0)
+		debugChar(c);
 }
 
 void debugInt(s32 n) {
@@ -159,7 +218,13 @@ void debugUint(u32 n,u8 base) {
 }
 
 void debugString(char *s) {
+	debugStringn(s,0);
+}
+
+static void debugStringn(char *s,u32 precision) {
 	while(*s) {
 		debugChar(*s++);
+		if(precision > 0 && --precision == 0)
+			break;
 	}
 }

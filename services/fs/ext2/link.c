@@ -75,7 +75,7 @@ s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 	/* nothing found yet? so store it on the next block */
 	if(recLen == 0) {
 		dire = (sExt2DirEntry*)(buf + dirSize);
-		recLen = BLOCK_SIZE(e);
+		recLen = EXT2_BLK_SIZE(e);
 		dirSize += recLen;
 	}
 

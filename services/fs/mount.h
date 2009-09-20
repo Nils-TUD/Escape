@@ -21,6 +21,7 @@
 #define MOUNT_H_
 
 #include <esc/common.h>
+#include <fsinterface.h>
 
 #define MAX_MNTNAME_LEN			32
 #define MOUNT_TABLE_SIZE		32

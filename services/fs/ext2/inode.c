@@ -109,14 +109,14 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 		if(cnode->inode.dBlocks[block] == 0) {
 			cnode->inode.dBlocks[block] = ext2_bm_allocBlock(e,cnode);
 			if(cnode->inode.dBlocks[block] != 0)
-				cnode->inode.blocks += BLOCKS_TO_SECS(e,1);
+				cnode->inode.blocks += EXT2_BLKS_TO_SECS(e,1);
 		}
 		return cnode->inode.dBlocks[block];
 	}
 
 	/* singly indirect */
 	block -= EXT2_DIRBLOCK_COUNT;
-	blockSize = BLOCK_SIZE(e);
+	blockSize = EXT2_BLK_SIZE(e);
 	blocksPerBlock = blockSize / sizeof(u32);
 	if(block < blocksPerBlock) {
 		/* no singly-indirect-block present yet? */
@@ -124,7 +124,7 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 			cnode->inode.singlyIBlock = ext2_bm_allocBlock(e,cnode);
 			if(cnode->inode.singlyIBlock == 0)
 				return 0;
-			cnode->inode.blocks += BLOCKS_TO_SECS(e,1);
+			cnode->inode.blocks += EXT2_BLKS_TO_SECS(e,1);
 			added = true;
 		}
 
@@ -132,7 +132,7 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 		if(cblock == NULL)
 			return 0;
 		if(added) {
-			memclear(cblock->buffer,BLOCK_SIZE(e));
+			memclear(cblock->buffer,EXT2_BLK_SIZE(e));
 			cblock->dirty = true;
 		}
 		if(ext2_inode_extend(e,cnode,cblock,block,&added) != 1)
@@ -153,7 +153,7 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 			if(cnode->inode.doublyIBlock == 0)
 				return 0;
 			added = true;
-			cnode->inode.blocks += BLOCKS_TO_SECS(e,1);
+			cnode->inode.blocks += EXT2_BLKS_TO_SECS(e,1);
 		}
 
 		/* read the first block with block-numbers of the indirect blocks */
@@ -161,7 +161,7 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 		if(cblock == NULL)
 			return 0;
 		if(added) {
-			memclear(cblock->buffer,BLOCK_SIZE(e));
+			memclear(cblock->buffer,EXT2_BLK_SIZE(e));
 			cblock->dirty = true;
 		}
 		if(ext2_inode_extend(e,cnode,cblock,block / blocksPerBlock,&added) != 1)
@@ -173,7 +173,7 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 		if(cblock == NULL)
 			return 0;
 		if(added) {
-			memclear(cblock->buffer,BLOCK_SIZE(e));
+			memclear(cblock->buffer,EXT2_BLK_SIZE(e));
 			cblock->dirty = true;
 		}
 		if(ext2_inode_extend(e,cnode,cblock,block % blocksPerBlock,&added) != 1)
@@ -192,7 +192,7 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 		if(cnode->inode.triplyIBlock == 0)
 			return 0;
 		added = true;
-		cnode->inode.blocks += BLOCKS_TO_SECS(e,1);
+		cnode->inode.blocks += EXT2_BLKS_TO_SECS(e,1);
 	}
 
 	/* read the first block with block-numbers of the indirect blocks of indirect-blocks */
@@ -200,7 +200,7 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 	if(cblock == NULL)
 		return 0;
 	if(added) {
-		memclear(cblock->buffer,BLOCK_SIZE(e));
+		memclear(cblock->buffer,EXT2_BLK_SIZE(e));
 		cblock->dirty = true;
 	}
 	if(ext2_inode_extend(e,cnode,cblock,block / blperBlSq,&added) != 1)
@@ -213,7 +213,7 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 	if(cblock == NULL)
 		return 0;
 	if(added) {
-		memclear(cblock->buffer,BLOCK_SIZE(e));
+		memclear(cblock->buffer,EXT2_BLK_SIZE(e));
 		cblock->dirty = true;
 	}
 	if(ext2_inode_extend(e,cnode,cblock,block / blocksPerBlock,&added) != 1)
@@ -225,7 +225,7 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 	if(cblock == NULL)
 		return 0;
 	if(added) {
-		memclear(cblock->buffer,BLOCK_SIZE(e));
+		memclear(cblock->buffer,EXT2_BLK_SIZE(e));
 		cblock->dirty = true;
 	}
 	if(ext2_inode_extend(e,cnode,cblock,block % blocksPerBlock,&added) != 1)
@@ -242,7 +242,7 @@ static u32 ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sExt2CBlock *cblock,u32
 		if(bno == 0)
 			return 0;
 		blockNos[index] = bno;
-		cnode->inode.blocks += BLOCKS_TO_SECS(e,1);
+		cnode->inode.blocks += EXT2_BLKS_TO_SECS(e,1);
 		cblock->dirty = true;
 		*added = true;
 	}

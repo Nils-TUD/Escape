@@ -22,17 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-
-#define MAX_NAME_LEN			50
-#define MAX_PATH_LEN			255
-
-/* a directory-entry */
-typedef struct {
-	tInodeNo nodeNo;
-	u16 recLen;
-	u16 nameLen;
-	char name[MAX_NAME_LEN + 1];
-} __attribute__((packed)) sDirEntry;
+#include <fsinterface.h>
 
 #ifdef __cplusplus
 extern "C" {

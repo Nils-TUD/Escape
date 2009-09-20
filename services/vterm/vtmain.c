@@ -59,7 +59,7 @@ int main(void) {
 	tFD kbFd;
 	tServ client;
 	tMsgId mid;
-	char name[MAX_NAME_LEN + 1];
+	char name[MAX_VT_NAME_LEN + 1];
 
 	/* reg services */
 	for(i = 0; i < VTERM_COUNT; i++) {

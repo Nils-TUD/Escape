@@ -11,7 +11,7 @@ BIN = $(BUILD)/$(BINNAME)
 SYMBOLS = $(BUILD)/kernel.symbols
 BUILDAPPS = $(BUILD)/apps
 
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom CDImage.iso -boot c -vga std
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot c -vga std
 
 DIRS = tools libc libcpp services user kernel/src kernel/test
 

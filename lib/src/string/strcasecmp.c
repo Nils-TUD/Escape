@@ -17,25 +17,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SYSCALLS_H_
-#define SYSCALLS_H_
+#include <stddef.h>
+#include <assert.h>
+#include <ctype.h>
+#include <string.h>
 
-#include <common.h>
-#include <machine/intrpt.h>
+s32 strcasecmp(const char *str1,const char *str2) {
+	char c1 = tolower(*str1),c2 = tolower(*str2);
 
-/**
- * Handles the syscall for the given stack
- *
- * @param intrptStack the pointer to the interrupt-stack
- */
-void sysc_handle(sIntrptStackFrame *intrptStack);
+	vassert(str1 != NULL,"str1 == NULL");
+	vassert(str2 != NULL,"str2 == NULL");
 
-/**
- * Checks wether the given null-terminated string (in user-space) is readable
- *
- * @param char* the string
- * @return true if so
- */
-bool sysc_isStringReadable(const char *string);
-
-#endif /* SYSCALLS_H_ */
+	while(c1 && c2) {
+		/* different? */
+		if(c1 != c2) {
+			if(c1 > c2)
+				return 1;
+			return -1;
+		}
+		c1 = tolower(*++str1);
+		c2 = tolower(*++str2);
+	}
+	/* check which strings are finished */
+	if(!c1 && !c2)
+		return 0;
+	if(!c1 && c2)
+		return -1;
+	return 1;
+}

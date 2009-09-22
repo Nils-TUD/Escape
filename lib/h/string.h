@@ -184,6 +184,31 @@ s32 strcmp(const char *str1,const char *str2);
 s32 strncmp(const char *str1,const char *str2,u32 count);
 
 /**
+ * The function strcasecmp() compares str1 and str2 ignoring case, then returns:
+ * 	- less than 0		: str1 is less than str2
+ *  - equal to 0		: str1 is equal to str2
+ *  - greater than 0	: str1 is greater than str2
+ *
+ * @param str1 the first string
+ * @param str2 the second string
+ * @return the result
+ */
+s32 strcasecmp(const char *str1,const char *str2);
+
+/**
+ * Compares at most count characters of str1 and str2 ignoring case. The return value is as follows:
+ * 	- less than 0		: str1 is less than str2
+ *  - equal to 0		: str1 is equal to str2
+ *  - greater than 0	: str1 is greater than str2
+ *
+ * @param str1 the first string
+ * @param str2 the second string
+ * @param count the number of chars to compare
+ * @return the result
+ */
+s32 strncasecmp(const char *str1,const char *str2,u32 count);
+
+/**
  * The function strchr() returns a pointer to the first occurence of ch in str, or NULL
  * if ch is not found.
  *

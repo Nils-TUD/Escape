@@ -152,6 +152,19 @@ void proc_destroyThread(void);
 void proc_destroy(sProc *p);
 
 /**
+ * Copies the arguments (for exec) in <args> to <*argBuffer> and takes care that everything
+ * is ok. <*argBuffer> will be allocated on the heap, so that is has to be free'd when you're done.
+ *
+ * @param args the arguments to copy
+ * @param argBuffer will point to the location where it has been copied (to be used by
+ * 	proc_setupUserStack())
+ * @param size will point to the size the arguments take in <argBuffer>
+ * @param fromUser wether the arguments are from user-space
+ * @return the number of arguments on success or < 0
+ */
+s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser);
+
+/**
  * Setups the user-stack for given interrupt-stack of the current process
  *
  * @param frame the interrupt-stack-frame

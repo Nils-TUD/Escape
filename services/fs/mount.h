@@ -46,19 +46,19 @@ typedef void (*fFSSync)(void *h);
 /* all information about a filesystem */
 typedef struct {
 	u16 type;
-	fFSInit init;
-	fFSDeinit deinit;
-	fFSResPath resPath;
-	fFSOpen open;
-	fFSClose close;
-	fFSStat stat;
-	fFSRead read;
-	fFSWrite write;
-	fFSLink link;
-	fFSUnlink unlink;
-	fFSMkDir mkdir;
-	fFSRmDir rmdir;
-	fFSSync sync;
+	fFSInit init;			/* required */
+	fFSDeinit deinit;		/* required */
+	fFSResPath resPath;		/* required */
+	fFSOpen open;			/* required */
+	fFSClose close;			/* required */
+	fFSStat stat;			/* required */
+	fFSRead read;			/* optional */
+	fFSWrite write;			/* optional */
+	fFSLink link;			/* optional */
+	fFSUnlink unlink;		/* optional */
+	fFSMkDir mkdir;			/* optional */
+	fFSRmDir rmdir;			/* optional */
+	fFSSync sync;			/* optional */
 } sFileSystem;
 
 /* one instance of a filesystem for a specific device */

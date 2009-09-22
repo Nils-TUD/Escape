@@ -42,6 +42,8 @@ static void test_strcat(void);
 static void test_strncat(void);
 static void test_strcmp(void);
 static void test_strncmp(void);
+static void test_strcasecmp(void);
+static void test_strncasecmp(void);
 static void test_strchr(void);
 static void test_strchri(void);
 static void test_strrchr(void);
@@ -78,6 +80,8 @@ static void test_string(void) {
 	test_strncat();
 	test_strcmp();
 	test_strncmp();
+	test_strcasecmp();
+	test_strncasecmp();
 	test_strchr();
 	test_strchri();
 	test_strrchr();
@@ -418,6 +422,40 @@ static void test_strncmp(void) {
 	if(!test_assertTrue(strncmp("abc","abd",2) == 0)) return;
 	if(!test_assertTrue(strncmp("abc","abd",0) == 0)) return;
 	if(!test_assertTrue(strncmp("xyz","abc",3) > 0)) return;
+
+	test_caseSucceded();
+}
+
+static void test_strcasecmp(void) {
+	test_caseStart("Testing strcasecmp()");
+
+	if(!test_assertTrue(strcasecmp("","") == 0)) return;
+	if(!test_assertTrue(strcasecmp("aBc","abd") < 0)) return;
+	if(!test_assertTrue(strcasecmp("abc","ABB") > 0)) return;
+	if(!test_assertTrue(strcasecmp("A","Abc") < 0)) return;
+	if(!test_assertTrue(strcasecmp("b","A") > 0)) return;
+	if(!test_assertTrue(strcasecmp("1234","5678") < 0)) return;
+	if(!test_assertTrue(strcasecmp("abc DEF","ABC def") == 0)) return;
+	if(!test_assertTrue(strcasecmp("123","123") == 0)) return;
+
+	test_caseSucceded();
+}
+
+static void test_strncasecmp(void) {
+	test_caseStart("Testing strncasecmp()");
+
+	if(!test_assertTrue(strncasecmp("","",0) == 0)) return;
+	if(!test_assertTrue(strncasecmp("abc","ABd",3) < 0)) return;
+	if(!test_assertTrue(strncasecmp("aBC","abb",3) > 0)) return;
+	if(!test_assertTrue(strncasecmp("a","ABC",1) == 0)) return;
+	if(!test_assertTrue(strncasecmp("b","a",1) > 0)) return;
+	if(!test_assertTrue(strncasecmp("1234","5678",4) < 0)) return;
+	if(!test_assertTrue(strncasecmp("abc DEF","ABC def",7) == 0)) return;
+	if(!test_assertTrue(strncasecmp("123","123",3) == 0)) return;
+	if(!test_assertTrue(strncasecmp("ab","aB",1) == 0)) return;
+	if(!test_assertTrue(strncasecmp("aBc","Abd",2) == 0)) return;
+	if(!test_assertTrue(strncasecmp("aBC","ABd",0) == 0)) return;
+	if(!test_assertTrue(strncasecmp("xyz","aBc",3) > 0)) return;
 
 	test_caseSucceded();
 }

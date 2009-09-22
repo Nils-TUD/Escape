@@ -97,6 +97,8 @@ void mm_init(void) {
 			MEMSIZE,U16M_PAGE_COUNT,u16mStackFrameCount);*/
 
 	/* put the MM-stack behind the last multiboot-module */
+	if(mb->modsCount == 0)
+		util_panic("No multiboot-modules found");
 	u16mStack = (u32*)mb->modsAddr[mb->modsCount - 1].modEnd;
 	u16mStackStart = (u32)u16mStack;
 

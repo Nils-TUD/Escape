@@ -33,11 +33,15 @@
 #include <vfs/info.h>
 #include <vfs/node.h>
 #include <util.h>
+#include <syscalls.h>
 #include <video.h>
 #include <string.h>
 #include <sllist.h>
 #include <assert.h>
 #include <errors.h>
+
+/* the max. size we'll allow for exec()-arguments */
+#define EXEC_MAX_ARGSIZE				(2 * K)
 
 #define EXIT_CALL_ADDR	0xf
 
@@ -376,6 +380,59 @@ void proc_destroy(sProc *p) {
 		sThread *t = (sThread*)tn->data;
 		thread_wakeup(t->tid,EV_CHILD_DIED);
 	}
+}
+
+s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser) {
+	char **arg,*bufPos;
+	u32 argc = 0;
+	s32 remaining = EXEC_MAX_ARGSIZE;
+	s32 len;
+
+	/* alloc space for the arguments */
+	*argBuffer = (char*)kheap_alloc(EXEC_MAX_ARGSIZE);
+	if(*argBuffer == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+
+	/* count args and copy them on the kernel-heap */
+	/* note that we have to create a copy since we don't know where the args are. Maybe
+	 * they are on the user-stack at the position we want to copy them for the
+	 * new process... */
+	bufPos = *argBuffer;
+	arg = args;
+	while(1) {
+		/* check if it is a valid pointer */
+		if(fromUser && !paging_isRangeUserReadable((u32)arg,sizeof(char*))) {
+			kheap_free(*argBuffer);
+			return ERR_INVALID_ARGS;
+		}
+		/* end of list? */
+		if(*arg == NULL)
+			break;
+
+		/* check wether the string is readable */
+		if(fromUser && !sysc_isStringReadable(*arg)) {
+			kheap_free(*argBuffer);
+			return ERR_INVALID_ARGS;
+		}
+
+		/* ensure that the argument is not longer than the left space */
+		len = strnlen(*arg,remaining - 1);
+		if(len == -1) {
+			/* too long */
+			kheap_free(*argBuffer);
+			return ERR_INVALID_ARGS;
+		}
+
+		/* copy to heap */
+		memcpy(bufPos,*arg,len + 1);
+		bufPos += len + 1;
+		remaining -= len + 1;
+		arg++;
+		argc++;
+	}
+	/* store args-size and return argc */
+	*size = EXEC_MAX_ARGSIZE - remaining;
+	return argc;
 }
 
 void proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize) {

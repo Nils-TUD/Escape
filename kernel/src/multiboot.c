@@ -19,6 +19,7 @@
 
 #include <common.h>
 #include <mem/paging.h>
+#include <mem/kheap.h>
 #include <task/proc.h>
 #include <task/thread.h>
 #include <task/elf.h>
@@ -73,6 +74,9 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		space = strchr(name,' ');
 		service = space + 1;
 		service[-1] = '\0';
+		space = strchr(service,' ');
+		if(space)
+			space[0] = '\0';
 
 		/* clone proc */
 		pid = proc_getFreePid();
@@ -80,6 +84,23 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			util_panic("No free process-slots");
 
 		if(proc_clone(pid)) {
+			/* build args */
+			s32 argc;
+			u32 argSize = 0;
+			char *argBuffer = NULL;
+			char *args[] = {NULL,NULL,NULL,NULL};
+			args[0] = name;
+			/* just two arguments supported here */
+			if(space != NULL) {
+				char *nnspace = strchr(space + 1,' ');
+				if(nnspace) {
+					*nnspace = '\0';
+					if(strchr(nnspace + 1,' ') != NULL)
+						util_panic("Invalid arguments to multiboot-module %s",name);
+					args[2] = nnspace + 1;
+				}
+				args[1] = space + 1;
+			}
 			/* we'll reach this as soon as the scheduler has chosen the created process */
 			p = proc_getRunning();
 			/* remove data-pages */
@@ -89,8 +110,12 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			entryPoint = elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart);
 			if((s32)entryPoint < 0)
 				util_panic("Loading multiboot-module %s failed",p->command);
-			proc_setupUserStack(stack,0,NULL,0);
+			argc = proc_buildArgs(args,&argBuffer,&argSize,false);
+			if(argc < 0)
+				util_panic("Building args for multiboot-module %s failed: %d",p->command,argc);
+			proc_setupUserStack(stack,argc,argBuffer,argSize);
 			proc_setupStart(stack,entryPoint);
+			kheap_free(argBuffer);
 			/* we don't want to continue the loop ;) */
 			return;
 		}

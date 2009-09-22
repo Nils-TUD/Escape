@@ -36,16 +36,34 @@
 #include "iso9660/iso9660.h"
 #include "mount.h"
 
+#define FS_NAME_LEN	12
+
 static sMsg msg;
 static tDevNo rootDev;
 static sFSInst *root;
 
-int main(void) {
+typedef struct {
+	u16 type;
+	char name[FS_NAME_LEN];
+} sFSType;
+
+static sFSType types[] = {
+	{FS_TYPE_EXT2,"ext2"},
+	{FS_TYPE_ISO9660,"iso9660"},
+};
+
+int main(int argc,char *argv[]) {
 	tFD fd;
 	tMsgId mid;
 	s32 size;
+	u32 i,fstype;
 	tServ id,client;
 	sFileSystem *fs;
+
+	if(argc < 3) {
+		printe("Usage: %s <driverPath> <fsType>",argv[0]);
+		return EXIT_FAILURE;
+	}
 
 	mount_init();
 
@@ -64,7 +82,15 @@ int main(void) {
 		error("Unable to add iso9660-filesystem");
 
 	/* create root-fs */
-	rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,"/drivers/hda1",FS_TYPE_EXT2);
+	fstype = 0;
+	for(i = 0; i < ARRAY_SIZE(types); i++) {
+		if(strcmp(types[i].name,argv[2]) == 0) {
+			fstype = types[i].type;
+			break;
+		}
+	}
+
+	rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,argv[1],fstype);
 	if(rootDev < 0)
 		error("Unable to add root mount-point");
 	root = mount_get(rootDev);
@@ -360,8 +386,11 @@ int main(void) {
 					break;
 
 					case MSG_FS_SYNC: {
-						/* TODO sync all mounted fs's */
-						root->fs->sync(root->handle);
+						for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
+							sFSInst *inst = mount_get(i);
+							if(inst && inst->fs->sync != NULL)
+								inst->fs->sync(inst->handle);
+						}
 					}
 					break;
 
@@ -369,7 +398,7 @@ int main(void) {
 						tInodeNo ino = msg.args.arg1;
 						tDevNo devNo = msg.args.arg2;
 						sFSInst *inst = mount_get(devNo);
-						if(inst != NULL && inst->fs->close != NULL)
+						if(inst != NULL)
 							inst->fs->close(inst->handle,ino);
 					}
 					break;

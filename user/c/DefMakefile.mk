@@ -35,7 +35,7 @@ $(BIN):	$(BUILDDIRS) $(APPDST) $(LDCONF) $(COBJ) $(START) $(LIBCA) $(ADDLIBS)
 
 $(APPCPY):	$(APP)
 		$(ROOT)/tools/disk.sh copy $(APP) /apps/$(NAME)
-		touch $(APPCPY)
+		cp $(APP) $(APPCPY)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

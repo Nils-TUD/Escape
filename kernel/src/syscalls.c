@@ -47,9 +47,6 @@
 #include <errors.h>
 #include <messages.h>
 
-/* the max. size we'll allow for exec()-arguments */
-#define EXEC_MAX_ARGSIZE				(2 * K)
-
 /* service-types, as defined in libc/include/esc/service.h */
 #define SERV_DEFAULT				1
 #define SERV_FS						2
@@ -457,14 +454,6 @@ static void sysc_mount(sIntrptStackFrame *stack);
  * @return s32 0 on success
  */
 static void sysc_unmount(sIntrptStackFrame *stack);
-
-/**
- * Checks wether the given null-terminated string (in user-space) is readable
- *
- * @param char* the string
- * @return true if so
- */
-static bool sysc_isStringReadable(const char *string);
 
 /* our syscalls */
 static sSyscall syscalls[] = {
@@ -1235,62 +1224,18 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	char pathSave[MAX_PATH_LEN + 1];
 	char *path = (char*)SYSC_ARG1(stack);
 	char **args = (char**)SYSC_ARG2(stack);
-	char **arg;
 	char *argBuffer;
-	u32 argc;
-	s32 remaining = EXEC_MAX_ARGSIZE;
-	s32 pathLen,res;
+	s32 argc,pathLen,res;
+	u32 argSize;
 	tInodeNo nodeNo;
 	sProc *p = proc_getRunning();
 
 	argc = 0;
 	argBuffer = NULL;
 	if(args != NULL) {
-		char *bufPos;
-		s32 len;
-
-		/* alloc space for the arguments */
-		argBuffer = (char*)kheap_alloc(EXEC_MAX_ARGSIZE);
-		if(argBuffer == NULL)
-			SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-
-		/* count args and copy them on the kernel-heap */
-		/* note that we have to create a copy since we don't know where the args are. Maybe
-		 * they are on the user-stack at the position we want to copy them for the
-		 * new process... */
-		bufPos = argBuffer;
-		arg = args;
-		while(1) {
-			/* check if it is a valid pointer */
-			if(!paging_isRangeUserReadable((u32)arg,sizeof(char*))) {
-				kheap_free(argBuffer);
-				SYSC_ERROR(stack,ERR_INVALID_ARGS);
-			}
-			/* end of list? */
-			if(*arg == NULL)
-				break;
-
-			/* check wether the string is readable */
-			if(!sysc_isStringReadable(*arg)) {
-				kheap_free(argBuffer);
-				SYSC_ERROR(stack,ERR_INVALID_ARGS);
-			}
-
-			/* ensure that the argument is not longer than the left space */
-			len = strnlen(*arg,remaining - 1);
-			if(len == -1) {
-				/* too long */
-				kheap_free(argBuffer);
-				SYSC_ERROR(stack,ERR_INVALID_ARGS);
-			}
-
-			/* copy to heap */
-			memcpy(bufPos,*arg,len + 1);
-			bufPos += len + 1;
-			remaining -= len + 1;
-			arg++;
-			argc++;
-		}
+		argc = proc_buildArgs(args,&argBuffer,&argSize,true);
+		if(argc < 0)
+			SYSC_ERROR(stack,argc);
 	}
 
 	/* at first make sure that we'll cause no page-fault */
@@ -1341,7 +1286,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
 	/* make process ready */
-	proc_setupUserStack(stack,argc,argBuffer,EXEC_MAX_ARGSIZE - remaining);
+	proc_setupUserStack(stack,argc,argBuffer,argSize);
 	proc_setupStart(stack,(u32)res);
 
 	kheap_free(argBuffer);
@@ -1561,7 +1506,7 @@ static void sysc_unmount(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
-static bool sysc_isStringReadable(const char *str) {
+bool sysc_isStringReadable(const char *str) {
 	u32 addr,rem;
 	/* null is a special case */
 	if(str == NULL)

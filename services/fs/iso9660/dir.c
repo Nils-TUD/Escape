@@ -29,7 +29,7 @@
 /**
  * Checks wether <user> matches <disk>
  */
-static bool iso_dir_match(const char *user,const char *disk);
+static bool iso_dir_match(const char *user,const char *disk,u32 userLen,u32 diskLen);
 
 tInodeNo iso_dir_resolve(sISO9660 *h,char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
 	u32 extLoc,extSize;
@@ -58,9 +58,14 @@ tInodeNo iso_dir_resolve(sISO9660 *h,char *path,u8 flags,tDevNo *dev,bool resLas
 
 		e = content;
 		while((u8*)e < (u8*)content + extSize) {
-			if(e->length == 0)
-				break;
-			if(iso_dir_match(p,e->name)) {
+			/* continue with next block? */
+			if(e->length == 0) {
+				u32 offset = ((u8*)e - (u8*)content) & ~(ISO_BLK_SIZE(h) - 1);
+				e = (sISODirEntry*)((u8*)content + offset + ISO_BLK_SIZE(h));
+				continue;
+			}
+
+			if(iso_dir_match(p,e->name,pos,e->nameLen)) {
 				p += pos;
 
 				/* skip slashes */
@@ -71,7 +76,7 @@ tInodeNo iso_dir_resolve(sISO9660 *h,char *path,u8 flags,tDevNo *dev,bool resLas
 					break;
 
 				/* is it a mount-point? */
-				mntDev = mount_getByLoc(*dev,extLoc);
+				mntDev = mount_getByLoc(*dev,(extLoc * ISO_BLK_SIZE(h)) + ((u8*)e - (u8*)content));
 				if(mntDev >= 0) {
 					sFSInst *inst = mount_get(mntDev);
 					*dev = mntDev;
@@ -104,12 +109,14 @@ tInodeNo iso_dir_resolve(sISO9660 *h,char *path,u8 flags,tDevNo *dev,bool resLas
 	return res;
 }
 
-static bool iso_dir_match(const char *user,const char *disk) {
+static bool iso_dir_match(const char *user,const char *disk,u32 userLen,u32 diskLen) {
 	if(*disk == ISO_FILENAME_THIS)
-		return strcmp(user,".") == 0;
+		return userLen == 1 && strcmp(user,".") == 0;
 	if(*disk == ISO_FILENAME_PARENT)
-		return strcmp(user,"..") == 0;
+		return userLen == 2 && strcmp(user,"..") == 0;
 	/* don't compare volume sequence no */
-	u32 rpos = strchri(disk,';');
-	return rpos > 0 && strncmp(disk,user,rpos) == 0;
+	u32 rpos = MIN(diskLen,(u32)strchri(disk,';'));
+	if(disk[rpos] != ';')
+		return userLen == diskLen && strncasecmp(disk,user,userLen) == 0;
+	return userLen == rpos && strncasecmp(disk,user,userLen) == 0;
 }

@@ -53,27 +53,30 @@ void util_panic(const char *fmt,...) {
 
 	vid_printf("\n");
 	vid_restoreColor();
-	vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
+	if(t != NULL)
+		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 	util_printStackTrace(util_getKernelStackTrace());
 
-	util_printStackTrace(util_getUserStackTrace(t,intrpt_getCurStack()));
-	vid_printf("User-Register:\n");
-	regs[R_EAX] = istack->eax;
-	regs[R_EBX] = istack->ebx;
-	regs[R_ECX] = istack->ecx;
-	regs[R_EDX] = istack->edx;
-	regs[R_ESI] = istack->esi;
-	regs[R_EDI] = istack->edi;
-	regs[R_ESP] = istack->uesp;
-	regs[R_EBP] = istack->ebp;
-	regs[R_CS] = istack->cs;
-	regs[R_DS] = istack->ds;
-	regs[R_ES] = istack->es;
-	regs[R_FS] = istack->fs;
-	regs[R_GS] = istack->gs;
-	regs[R_SS] = istack->uss;
-	regs[R_EFLAGS] = istack->eflags;
-	PRINT_REGS(regs,"\t");
+	if(t != NULL) {
+		util_printStackTrace(util_getUserStackTrace(t,intrpt_getCurStack()));
+		vid_printf("User-Register:\n");
+		regs[R_EAX] = istack->eax;
+		regs[R_EBX] = istack->ebx;
+		regs[R_ECX] = istack->ecx;
+		regs[R_EDX] = istack->edx;
+		regs[R_ESI] = istack->esi;
+		regs[R_EDI] = istack->edi;
+		regs[R_ESP] = istack->uesp;
+		regs[R_EBP] = istack->ebp;
+		regs[R_CS] = istack->cs;
+		regs[R_DS] = istack->ds;
+		regs[R_ES] = istack->es;
+		regs[R_FS] = istack->fs;
+		regs[R_GS] = istack->gs;
+		regs[R_SS] = istack->uss;
+		regs[R_EFLAGS] = istack->eflags;
+		PRINT_REGS(regs,"\t");
+	}
 
 	/*proc_dbg_printAll();*/
 	intrpt_setEnabled(false);

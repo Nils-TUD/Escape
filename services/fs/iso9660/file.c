@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/heap.h>
 #include <errors.h>
+#include <ctype.h>
 #include <string.h>
 #include "file.h"
 #include "iso9660.h"
@@ -94,7 +95,7 @@ s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count
 static void iso_file_buildDirEntries(sISO9660 *h,u32 lba,u8 *dst,u8 *src,u32 offset,u32 count) {
 	sISODirEntry *e;
 	sDirEntry *de,*lastDe;
-	u32 blockSize = ISO_BLK_SIZE(h);
+	u32 i,blockSize = ISO_BLK_SIZE(h);
 	u8 *cdst;
 
 	/* TODO the whole stuff here is of course not a good solution. but it works, thats enough
@@ -127,7 +128,8 @@ static void iso_file_buildDirEntries(sISO9660 *h,u32 lba,u8 *dst,u8 *src,u32 off
 		}
 		else {
 			de->nameLen = MIN(e->nameLen,strchri(e->name,';'));
-			memcpy(de->name,e->name,de->nameLen);
+			for(i = 0; i < de->nameLen; i++)
+				de->name[i] = tolower(e->name[i]);
 		}
 		de->recLen = (sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) + de->nameLen;
 		lastDe = de;

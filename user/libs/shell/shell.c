@@ -507,6 +507,8 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 			if(oldLen != ilength) {
 				*length = ilength;
 				*cursorPos = ilength;
+				/* beep */
+				printc('\a');
 				flush();
 			}
 			/* show all on second tab */

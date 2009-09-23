@@ -66,7 +66,7 @@ static void test_check(void) {
 static void test_proc(void) {
 	u32 x,y,z;
 	bool res;
-	s32 changes[] = {0,1,10,1024,1025,2048,2047,2049,0};
+	s32 changes[] = {/*0,1,10,1024,1025,*/2048,2047,2049,0};
 	eChgArea areas[] = {CHG_DATA,CHG_STACK};
 	changes[ARRAY_SIZE(changes) - 1] = mm_getFreeFrmCount(MM_DEF) + 1;
 
@@ -75,7 +75,7 @@ static void test_proc(void) {
 	for(x = 0; x < 5; x++) {
 		tPid newPid = proc_getFreePid();
 		tprintf("Cloning process to pid=%d\n",newPid);
-		proc_clone(newPid);
+		test_assertTrue(proc_clone(newPid) >= 0);
 		tprintf("Destroying process\n",newPid);
 		proc_destroy(proc_getByPid(newPid));
 	}
@@ -105,13 +105,13 @@ static void test_proc(void) {
 		for(x = 0; x < ARRAY_SIZE(changes) - 1; x++) {
 			test_init("Change area %d by %d (allocate, allocate, free, free)",areas[y],changes[x]);
 
-			proc_changeSize(changes[x],areas[y]);
+			test_assertTrue(proc_changeSize(changes[x],areas[y]));
 			for(z = 0; z < ARRAY_SIZE(changes) - 1; z++) {
 				tprintf("Changing by %d and rewinding\n",changes[z]);
-				proc_changeSize(changes[z],areas[y]);
-				proc_changeSize(-changes[z],areas[y]);
+				test_assertTrue(proc_changeSize(changes[z],areas[y]));
+				test_assertTrue(proc_changeSize(-changes[z],areas[y]));
 			}
-			proc_changeSize(-changes[x],areas[y]);
+			test_assertTrue(proc_changeSize(-changes[x],areas[y]));
 
 			test_check();
 		}
@@ -123,11 +123,11 @@ static void test_proc(void) {
 
 		for(x = 0; x < ARRAY_SIZE(changes) - 1; x++) {
 			tprintf("Allocating %d pages\n",changes[x]);
-			proc_changeSize(changes[x],areas[y]);
+			test_assertTrue(proc_changeSize(changes[x],areas[y]));
 		}
 		for(x = 0; x < ARRAY_SIZE(changes) - 1; x++) {
 			tprintf("Freeing %d pages\n",changes[x]);
-			proc_changeSize(-changes[x],areas[y]);
+			test_assertTrue(proc_changeSize(-changes[x],areas[y]));
 		}
 
 		test_check();

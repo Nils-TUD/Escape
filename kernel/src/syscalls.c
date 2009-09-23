@@ -1321,9 +1321,9 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 
 static void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
-	proc_dbg_printAll();
-	/*vfsn_dbg_printTree();
-	paging_dbg_printOwnPageDir(PD_PART_USER);*/
+	/*proc_dbg_printAll();
+	vfsn_dbg_printTree();*/
+	paging_dbg_printOwnPageDir(PD_PART_USER);
 }
 
 static void sysc_createSharedMem(sIntrptStackFrame *stack) {

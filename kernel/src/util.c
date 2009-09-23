@@ -48,12 +48,12 @@ void util_panic(const char *fmt,...) {
 	sIntrptStackFrame *istack = intrpt_getCurStack();
 	sThread *t = thread_getRunning();
 	va_list ap;
+
+	/* print message */
 	vid_printf("\n");
 	vid_setLineBG(vid_getLine(),RED);
 	vid_useColor(RED,WHITE);
 	vid_printf("PANIC: ");
-
-	/* print message */
 	va_start(ap,fmt);
 	vid_vprintf(fmt,ap);
 	va_end(ap);

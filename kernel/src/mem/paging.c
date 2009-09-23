@@ -372,7 +372,8 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virt,u32 *frames,u3
 
 			pd->ptFrameNo = frame;
 			pd->present = true;
-			/* TODO always writable? */
+			/* writable because we want to be able to change PTE's in the PTE-area */
+			/* is there another reason? :) */
 			pd->writable = true;
 			pd->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
 

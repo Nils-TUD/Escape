@@ -104,24 +104,7 @@ s32 shell_executeCmd(char *line) {
 		/* we need exactly one match and it has to be executable */
 		if(scmds == NULL || scmds[0] == NULL || scmds[1] != NULL ||
 				(scmds[0]->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC)) == 0) {
-			static const char *replies[] = {
-				"eeeeek...'%s' doesn't exist, dude!\n",
-				"Well, have you seriously thought that you can execute '%s'?\n",
-				"I don't know from what planet you are, but you can't execute '%s' here!\n",
-				"Try again my friend!\n",
-				"You're playing a dangerous game...\n",
-				"Nope, my friend!\n",
-				"NO WAY!!\n",
-				"Do you know that you're wasting energy?\n",
-				"Perhaps you should try an existing command or application!?\n",
-			};
-			s32 randVal = rand();
-			if(randVal < 0)
-				randVal = -randVal;
-			printf("\033[co;4]");
-			printf(replies[randVal % ARRAY_SIZE(replies)],cmd->arguments[0]);
-			printf("\033[co]");
-			/*printf("%s: Command not found\n",cmd->arguments[0]);*/
+			printf("\033[co;4]%s: Command not found\033[co]\n",cmd->arguments[0]);
 			/* close open pipe */
 			if(cmd->dup & DUP_STDIN)
 				close(*pipe);
@@ -486,8 +469,48 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 			flush();
 		}
 		else {
+			char last;
+			u32 oldLen = ilength;
+			bool allEqual;
+			/* note that we can assume here that its the same for all matches because it just makes
+			 * a difference if we're completing in a subdir. If we are in a subdir all matches
+			 * are in that subdir (otherwise they are no matches ;)). So complStart is the last '/'
+			 * for all commands in this case */
+			if(matches[0]->complStart == -1)
+				i = ilength;
+			else
+				i = matches[0]->complStart;
+			for(; i < MAX_CMDNAME_LEN; i++) {
+				/* check if the char is equal in all commands */
+				allEqual = true;
+				cmd = matches;
+				last = (*cmd)->name[i];
+				cmd++;
+				while(*cmd != NULL) {
+					if((*cmd)->name[i] != last) {
+						allEqual = false;
+						break;
+					}
+					cmd++;
+				}
+
+				/* if so, add it */
+				if(allEqual) {
+					orgLine[ilength++] = last;
+					printc(last);
+				}
+				else
+					break;
+			}
+
+			/* have we added something? */
+			if(oldLen != ilength) {
+				*length = ilength;
+				*cursorPos = ilength;
+				flush();
+			}
 			/* show all on second tab */
-			if(tabCount == 0) {
+			else if(tabCount == 0) {
 				tabCount++;
 				/* beep */
 				printc('\a');

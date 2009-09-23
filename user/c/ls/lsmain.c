@@ -61,6 +61,7 @@ static void printMode(u16 mode);
 static s32 compareEntries(const void *a,const void *b);
 static void printPerm(u16 mode,u16 flags,char c);
 static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count);
+static sFullDirEntry *getEntry(sFileInfo *info,const char *name);
 static void freeEntries(sFullDirEntry **entries,u32 count);
 
 static void usage(char *name) {
@@ -227,76 +228,118 @@ static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count) {
 		return NULL;
 	}
 
+	if(getFileInfo(path,&info) < 0) {
+		printe("Unable to get file-info for '%s'",path);
+		free(entries);
+		return NULL;
+	}
+
 	/* allocate mem for path */
 	pathLen = strlen(path);
 	fpath = (char*)malloc(pathLen + MAX_NAME_LEN + 1);
 	if(fpath == NULL) {
 		printe("Unable to allocate memory for file-path");
+		free(entries);
 		return NULL;
 	}
 	strcpy(fpath,path);
 
-	if((dd = opendir(path)) >= 0) {
-		while(readdir(&de,dd)) {
-			/* skip "." and ".." if -a is not enabled */
-			if(!(flags & LS_FL_ALL) && (strcmp(de.name,".") == 0 || strcmp(de.name,"..") == 0))
-				continue;
+	if(MODE_IS_DIR(info.mode)) {
+		if((dd = opendir(path)) >= 0) {
+			while(readdir(&de,dd)) {
+				/* skip "." and ".." if -a is not enabled */
+				if(!(flags & LS_FL_ALL) && (strcmp(de.name,".") == 0 || strcmp(de.name,"..") == 0))
+					continue;
 
-			/* retrieve information */
-			strcpy(fpath + pathLen,de.name);
-			if(getFileInfo(fpath,&info) < 0) {
-				printe("Unable to get file-info for '%s'",fpath);
-				freeEntries(entries,pos);
-				free(fpath);
-				closedir(dd);
-				return NULL;
-			}
-
-			/* increase array-size? */
-			if(pos >= size) {
-				size += ARRAY_INC_SIZE;
-				entries = (sFullDirEntry**)realloc(entries,size * sizeof(sFullDirEntry*));
-				if(entries == NULL) {
-					printe("Unable to reallocate memory for dir-entries");
+				/* retrieve information */
+				strcpy(fpath + pathLen,de.name);
+				if(getFileInfo(fpath,&info) < 0) {
+					printe("Unable to get file-info for '%s'",fpath);
+					freeEntries(entries,pos);
 					free(fpath);
 					closedir(dd);
 					return NULL;
 				}
+
+				/* increase array-size? */
+				if(pos >= size) {
+					size += ARRAY_INC_SIZE;
+					entries = (sFullDirEntry**)realloc(entries,size * sizeof(sFullDirEntry*));
+					if(entries == NULL) {
+						printe("Unable to reallocate memory for dir-entries");
+						free(fpath);
+						closedir(dd);
+						return NULL;
+					}
+				}
+
+				/* create entry */
+				fde = getEntry(&info,de.name);
+				if(fde == NULL) {
+					freeEntries(entries,pos);
+					free(fpath);
+					closedir(dd);
+					return NULL;
+				}
+				entries[pos++] = fde;
 			}
-
-			/* create entry */
-			fde = (sFullDirEntry*)malloc(sizeof(sFullDirEntry));
-			if(fde == NULL) {
-				printe("Unable to allocate memory for dir-entry");
-				freeEntries(entries,pos);
-				free(fpath);
-				closedir(dd);
-				return NULL;
-			}
-
-			/* set content */
-			fde->gid = info.gid;
-			fde->uid = info.uid;
-			fde->size = info.size;
-			fde->inodeNo = info.inodeNo;
-			fde->linkCount = info.linkCount;
-			fde->mode = info.mode;
-			fde->modifytime = info.modifytime;
-			strcpy(fde->name,de.name);
-
-			entries[pos++] = fde;
+			closedir(dd);
 		}
-		closedir(dd);
+		else {
+			printe("Unable to open '%s'",path);
+			freeEntries(entries,pos);
+			free(fpath);
+			return NULL;
+		}
 	}
 	else {
-		printe("Unable to open '%s'",path);
-		freeEntries(entries,pos);
-		free(fpath);
-		return NULL;
+		/* determine name */
+		char *lastSlash = strrchr(path,'/');
+		if(lastSlash != NULL) {
+			if(*(lastSlash + 1) == '\0') {
+				*lastSlash = '\0';
+				lastSlash = strrchr(path,'/');
+				if(lastSlash == NULL)
+					lastSlash = (char*)path;
+				else
+					lastSlash++;
+			}
+			else
+				lastSlash++;
+		}
+		else
+			lastSlash = (char*)path;
+
+		fde = getEntry(&info,lastSlash);
+		if(fde == NULL) {
+			freeEntries(entries,pos);
+			free(fpath);
+			return NULL;
+		}
+		entries[pos++] = fde;
 	}
 
 	*count = pos;
 	return entries;
+}
+
+static sFullDirEntry *getEntry(sFileInfo *info,const char *name) {
+	sFullDirEntry *fde = (sFullDirEntry*)malloc(sizeof(sFullDirEntry));
+	if(fde == NULL) {
+		printe("Unable to allocate memory for dir-entry");
+		return NULL;
+	}
+
+	/* set content */
+	fde->gid = info->gid;
+	fde->uid = info->uid;
+	fde->size = info->size;
+	fde->inodeNo = info->inodeNo;
+	fde->linkCount = info->linkCount;
+	fde->mode = info->mode;
+	fde->modifytime = info->modifytime;
+	strcpy(fde->name,name);
+	return fde;
 }
 
 static void freeEntries(sFullDirEntry **entries,u32 count) {

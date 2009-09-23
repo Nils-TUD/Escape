@@ -35,4 +35,12 @@
  */
 bool atapi_read(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
 
+/**
+ * Determines the capacity for the given drive
+ *
+ * @param drive the drive
+ * @return the capacity or 0 if failed
+ */
+u32 atapi_getCapacity(sATADrive *drive);
+
 #endif /* ATAPI_H_ */

@@ -11,7 +11,7 @@ BIN = $(BUILD)/$(BINNAME)
 SYMBOLS = $(BUILD)/kernel.symbols
 BUILDAPPS = $(BUILD)/apps
 
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot c -vga std
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot c -vga std -m 512 -localtime
 
 DIRS = tools libc libcpp services user kernel/src kernel/test
 
@@ -118,6 +118,16 @@ debugt: all prepareTest
 
 test: all prepareTest
 		qemu $(QEMUARGS) > log.txt 2>&1
+
+testbochs: all prepareTest
+		bochs -f bochs.cfg -q | tee log.txt
+
+testvbox: all prepareTest $(VMDISK)
+		tools/vboxhddupd.sh $(VBOXOSTITLE) $(VMDISK)
+		VBoxSDL --evdevkeymap -startvm $(VBOXOSTITLE)
+
+testvmware:	all prepareTest $(VMDISK)
+		vmplayer vmware/escape.vmx
 
 prepareTest:
 		tools/disk.sh mountp1

@@ -26,6 +26,8 @@
 #include "ata.h"
 #include "atapi.h"
 
+#define MAX_IDENTIFY_RETRIES	100000
+
 static bool drive_identify(sATADrive *drive,u8 cmd);
 
 void drive_detect(sATADrive *drives,u32 count) {
@@ -33,11 +35,15 @@ void drive_detect(sATADrive *drives,u32 count) {
 	u16 buffer[256];
 	s = 0;
 	for(i = 0; i < count; i++) {
+		ATA_PR1("Sending 'IDENTIFY DEVICE' to device %d",i);
 		/* first, identify the drive */
 		if(!drive_identify(drives + i,COMMAND_IDENTIFY)) {
+			ATA_PR1("Sending 'IDENTIFY PACKET DEVICE' to device %d",i);
 			/* if that failed, try IDENTIFY PACKET DEVICE. Perhaps its an ATAPI-drive */
-			if(!drive_identify(drives + i,COMMAND_IDENTIFY_PACKET))
+			if(!drive_identify(drives + i,COMMAND_IDENTIFY_PACKET)) {
+				ATA_PR1("Device seems not to be present");
 				continue;
+			}
 		}
 
 		/* if it is present, read the partition-table */
@@ -45,13 +51,15 @@ void drive_detect(sATADrive *drives,u32 count) {
 		if(!drives[i].info.general.isATAPI) {
 			drives[i].secSize = ATA_SEC_SIZE;
 			drives[i].rwHandler = ata_readWrite;
+			ATA_PR1("Device %d is an ATA-device; reading partition-table",i);
 			if(!ata_readWrite(drives + i,false,buffer,0,1)) {
 				drives[i].present = 0;
-				debugf("Drive %d: Unable to read partition-table!\n",i);
+				ATA_PR1("Drive %d: Unable to read partition-table!",i);
 				continue;
 			}
 
 			/* copy partitions to mem */
+			ATA_PR2("Parsing partition-table");
 			part_fillPartitions(drives[i].partTable,buffer);
 		}
 		else {
@@ -61,6 +69,7 @@ void drive_detect(sATADrive *drives,u32 count) {
 			drives[i].partTable[0].present = 1;
 			drives[i].partTable[0].start = 0;
 			drives[i].partTable[0].size = atapi_getCapacity(drives + i);
+			ATA_PR1("Device %d is an ATAPI-device; size=%d",i,drives[i].partTable[0].size);
 		}
 	}
 }
@@ -68,9 +77,10 @@ void drive_detect(sATADrive *drives,u32 count) {
 static bool drive_identify(sATADrive *drive,u8 cmd) {
 	u8 status;
 	u16 *data;
-	u32 x;
+	u32 x,retries;
 	u16 basePort = drive->basePort;
 
+	ATA_PR2("Selecting device with port 0x%x",drive->basePort);
 	outByte(drive->basePort + REG_DRIVE_SELECT,drive->slaveBit << 4);
 	ata_wait(drive);
 
@@ -80,26 +90,39 @@ static bool drive_identify(sATADrive *drive,u8 cmd) {
 	/* check wether the drive exists */
 	outByte(basePort + REG_COMMAND,cmd);
 	status = inByte(basePort + REG_STATUS);
-	if(status == 0)
+	if(status == 0) {
+		ATA_PR1("Got 0x00 from status-port");
 		return false;
+	}
 	else {
+		ATA_PR2("Waiting for ATA-device");
+		retries = 0;
 		do {
 			status = inByte(basePort + REG_STATUS);
 			if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == CMD_ST_DRQ)
 				break;
-			if((status & CMD_ST_ERROR) != 0)
+			if((status & CMD_ST_ERROR) != 0) {
+				ATA_PR1("Error-bit in status set");
 				return false;
+			}
+			if(++retries >= MAX_IDENTIFY_RETRIES) {
+				ATA_PR1("DRQ- and ERROR-Bit not set after %d retries, skipping device",retries);
+				return false;
+			}
 		}
 		while(true);
 
+		ATA_PR2("Reading information about device");
 		/* drive ready */
 		data = (u16*)&drive->info;
 		for(x = 0; x < 256; x++)
 			data[x] = inWord(basePort + REG_DATA);
 
 		/* we don't support CHS atm */
-		if(drive->info.capabilities.LBA == 0)
+		if(drive->info.capabilities.LBA == 0) {
+			ATA_PR1("Device doesn't support LBA");
 			return false;
+		}
 
 		return true;
 	}

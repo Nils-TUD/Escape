@@ -37,7 +37,7 @@
 #include "dir.h"
 #include "rw.h"
 
-#define MAX_DRIVER_OPEN_RETRIES		1000
+#define MAX_DRIVER_OPEN_RETRIES		100000
 
 /**
  * Checks wether x is a power of y
@@ -60,8 +60,7 @@ void *ext2_init(const char *driver) {
 		tries++;
 	}
 	while(fd < 0 && tries < MAX_DRIVER_OPEN_RETRIES);
-
-	if(tries >= MAX_DRIVER_OPEN_RETRIES)
+	if(fd < 0)
 		error("Unable to find driver '%s' after %d retries",driver,tries);
 
 	e->ataFd = fd;

@@ -99,6 +99,7 @@ int main(void) {
 			}
 
 			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
+				ATA_PR2("Got message %d",mid);
 				switch(mid) {
 					case MSG_DRV_OPEN:
 						msg.args.arg1 = 0;
@@ -116,6 +117,7 @@ int main(void) {
 							u32 rcount = (count + drive->secSize - 1) & ~(drive->secSize - 1);
 							buffer = (u16*)malloc(rcount);
 							if(buffer) {
+								ATA_PR2("Reading %d bytes @ %x from drive 0x%x",rcount,offset,drive->basePort);
 								if(drive->rwHandler(drive,false,buffer,
 										offset / drive->secSize + part->start,rcount / drive->secSize)) {
 									msg.data.arg1 = count;
@@ -140,6 +142,7 @@ int main(void) {
 							buffer = (u16*)malloc(count);
 							if(buffer) {
 								receive(fd,&mid,buffer,count);
+								ATA_PR2("Writing %d bytes @ %x to drive 0x%x",count,offset,drive->basePort);
 								if(drive->rwHandler(drive,true,buffer,
 										offset / drive->secSize + part->start,count / drive->secSize)) {
 									msg.args.arg1 = count;
@@ -161,6 +164,7 @@ int main(void) {
 						/* ignore */
 						break;
 				}
+				ATA_PR2("Done");
 			}
 
 			close(fd);

@@ -965,7 +965,7 @@ static void paging_dbg_printPageTable(u32 mappingArea,u32 no,sPDEntry *pde) {
 
 static void paging_dbg_printPage(sPTEntry *page) {
 	if(page->present) {
-		vid_printf("raw=0x%08x, frame=0x%x [%c%c%c%c%c]",*(u32*)page,
+		vid_printf("r=0x%08x fr=0x%x [%c%c%c%c%c]",*(u32*)page,
 				page->frameNumber,page->notSuperVisor ? 'u' : 'k',page->writable ? 'w' : 'r',
 				page->global ? 'g' : '-',page->copyOnWrite ? 'c' : '-',
 				page->noFree ? 'n' : '-');

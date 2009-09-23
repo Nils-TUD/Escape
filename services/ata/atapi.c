@@ -47,7 +47,7 @@ bool atapi_read(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount) 
 u32 atapi_getCapacity(sATADrive *drive) {
 	u8 resp[8];
 	u8 cmd[] = {SCSI_CMD_READ_CAPACITY,0,0,0,0,0,0,0,0,0,0,0};
-	bool res = atapi_request(drive,(u16*)cmd,resp,8);
+	bool res = atapi_request(drive,(u16*)cmd,(u16*)resp,8);
 	if(!res)
 		return 0;
 	return (resp[0] << 24) | (resp[1] << 16) | (resp[2] << 8) | (resp[3] << 0);
@@ -58,6 +58,8 @@ static bool atapi_request(sATADrive *drive,u16 *cmd,u16 *buffer,u32 bufSize) {
 	u32 off,count;
 	u16 size;
 	u16 basePort = drive->basePort;
+
+	ATA_PR2("Selecting device with port 0x%x",drive->basePort);
 
 	/* select drive */
 	outByte(drive->basePort + REG_DRIVE_SELECT,drive->slaveBit << 4);
@@ -74,19 +76,27 @@ static bool atapi_request(sATADrive *drive,u16 *cmd,u16 *buffer,u32 bufSize) {
 	/* now tell the drive the command */
 	outByte(drive->basePort + REG_COMMAND,COMMAND_PACKET);
 
+	ATA_PR2("Waiting while busy");
 	/* wait while busy */
 	while(inByte(basePort + REG_STATUS) & CMD_ST_BUSY)
 		;
+	ATA_PR2("Waiting until DRQ or ERROR set");
 	/* wait until DRQ or ERROR set */
 	while((!(status = inByte(basePort + REG_STATUS)) & CMD_ST_DRQ) && !(status & CMD_ST_ERROR))
 		;
-	if(status & CMD_ST_ERROR)
+	if(status & CMD_ST_ERROR) {
+		ATA_PR1("ERROR-bit set");
 		return false;
+	}
+
+	ATA_PR2("Sending PACKET-command %d",((u8*)cmd)[0]);
 
 	/* send words */
 	ata_unsetIntrpt();
 	outWordStr(drive->basePort + REG_DATA,cmd,6);
 	ata_waitIntrpt();
+
+	ATA_PR2("Reading response-size");
 
 	/* read actual size */
 	ata_unsetIntrpt();
@@ -101,6 +111,7 @@ static bool atapi_request(sATADrive *drive,u16 *cmd,u16 *buffer,u32 bufSize) {
 		count += end * sizeof(u16);
 		if(count >= bufSize)
 			break;
+		ATA_PR2("Waiting until DRQ set");
 		/* wait until DRQ set */
 		while((inByte(basePort + REG_STATUS) & (CMD_ST_BUSY | CMD_ST_DRQ)) != CMD_ST_DRQ)
 			;
@@ -111,7 +122,9 @@ static bool atapi_request(sATADrive *drive,u16 *cmd,u16 *buffer,u32 bufSize) {
 	 * have no idea why. However, it seems to work everywhere without waiting... */
 	/*ata_waitIntrpt();*/
 	/* wait while busy or data-available */
+	ATA_PR2("Waiting while busy or DRQ set");
 	while(inByte(basePort + REG_STATUS) & (CMD_ST_BUSY | CMD_ST_DRQ))
 		;
+	ATA_PR2("Done");
 	return true;
 }

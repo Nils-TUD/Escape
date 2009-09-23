@@ -46,7 +46,7 @@ buildMenuLst() {
 	echo "timeout 0" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "title \"$OSTITLE\"" >> $DISKMOUNT/boot/grub/menu.lst;
-	echo "kernel /boot/$BINNAME /appsdb" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "kernel /boot/$BINNAME" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/ata /services/ata" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/fs /services/fs /drivers/hda1 ext2" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "boot" >> $DISKMOUNT/boot/grub/menu.lst;

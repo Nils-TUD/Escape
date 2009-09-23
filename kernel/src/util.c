@@ -30,8 +30,15 @@
 #include <register.h>
 #include <util.h>
 
+/* for reading from kb */
+#define IOPORT_KB_DATA				0x60
+#define IOPORT_KB_CTRL				0x64
+#define STATUS_OUTBUF_FULL			(1 << 0)
+
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE			5
+
+static u8 util_waitForKey(void);
 
 /* the beginning of the kernel-stack */
 extern u32 kernelStack;
@@ -80,7 +87,35 @@ void util_panic(const char *fmt,...) {
 
 	/*proc_dbg_printAll();*/
 	intrpt_setEnabled(false);
-	util_halt();
+	/* TODO vmware seems to shutdown if we disable interrupts and htl?? */
+	while(1);
+	/*util_halt();*/
+}
+
+u8 util_waitForKeyPress(void) {
+	u8 scanCode;
+	while(1) {
+		scanCode = util_waitForKey();
+		if(!(scanCode & 0x80))
+			break;
+	}
+	return scanCode;
+}
+
+u8 util_waitForKeyRelease(void) {
+	u8 scanCode;
+	while(1) {
+		scanCode = util_waitForKey();
+		if(scanCode & 0x80)
+			break;
+	}
+	return scanCode;
+}
+
+static u8 util_waitForKey(void) {
+	while(!(util_inByte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
+		;
+	return util_inByte(IOPORT_KB_DATA);
 }
 
 sFuncCall *util_getUserStackTrace(sThread *t,sIntrptStackFrame *stack) {

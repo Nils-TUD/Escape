@@ -33,7 +33,7 @@
 #include "direcache.h"
 #include "../mount.h"
 
-#define MAX_DRIVER_OPEN_RETRIES		1000
+#define MAX_DRIVER_OPEN_RETRIES		100000
 
 void *iso_init(const char *driver) {
 	u32 i,tries = 0;
@@ -51,7 +51,7 @@ void *iso_init(const char *driver) {
 		tries++;
 	}
 	while(fd < 0 && tries < MAX_DRIVER_OPEN_RETRIES);
-	if(tries >= MAX_DRIVER_OPEN_RETRIES)
+	if(fd < 0)
 		error("Unable to find driver '%s' after %d retries",driver,tries);
 
 	iso->driverFd = fd;

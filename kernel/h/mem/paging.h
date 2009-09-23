@@ -22,6 +22,7 @@
 
 #include <common.h>
 #include <mem/paging.h>
+#include <mem/pmem.h>
 #include <task/proc.h>
 #include <task/thread.h>
 #include <asprintf.h>

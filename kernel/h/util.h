@@ -72,6 +72,20 @@ extern u32 getStackFrameStart(void);
 void util_panic(const char *fmt,...);
 
 /**
+ * Waits until any key is pressed (make-code)
+ *
+ * @return the scancode
+ */
+u8 util_waitForKeyPress(void);
+
+/**
+ * Waits until any key is released (break-code)
+ *
+ * @return the scancode
+ */
+u8 util_waitForKeyRelease(void);
+
+/**
  * Builds the stack-trace for a user-app
  *
  * @param t the thread

@@ -302,8 +302,7 @@ thread_resume:
 	mov		esi,[ebp + 16]								; get stack-frame
 
 	; load new page-dir
-	mov		ecx,edi												; load page-dir-address
-	mov		cr3,ecx												; set page-dir
+	mov		cr3,edi												; set page-dir
 
 	; exchange kernel-stack-frame
 	mov		ecx,[KERNEL_STACK_PTE]
@@ -314,8 +313,7 @@ thread_resume:
 	mov		[KERNEL_STACK_PTE],ecx				; store
 
 	; load page-dir again
-	mov		ecx,edi												; load page-dir-address
-	mov		cr3,ecx												; set page-dir
+	mov		cr3,edi												; set page-dir
 
 	; now restore registers
 	mov		edi,[eax + STATE_EDI]

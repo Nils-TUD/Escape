@@ -108,7 +108,7 @@ static sServiceLoad **services = NULL;
 int main(void) {
 	tFD fd;
 	s32 child;
-	u32 i;
+	u32 i,retries = 0;
 	char *vtermName;
 	char *servDefs;
 
@@ -120,8 +120,11 @@ int main(void) {
 		fd = open("/services/fs",IO_READ | IO_WRITE);
 		if(fd < 0)
 			yield();
+		retries++;
 	}
-	while(fd < 0);
+	while(fd < 0 && retries < MAX_WAIT_RETRIES);
+	if(fd < 0)
+		error("Unable to open /services/fs after %d retries",retries);
 	close(fd);
 
 	/* TODO a blank behind a service-name in /etc/services causes a panic */

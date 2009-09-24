@@ -23,7 +23,7 @@
 #include <esc/fileio.h>
 
 #include "ext2.h"
-#include "blockcache.h"
+#include "../blockcache.h"
 #include "blockgroup.h"
 #include "rw.h"
 
@@ -90,10 +90,10 @@ void ext2_bg_print(sExt2 *e,u32 no,sExt2BlockGrp *bg) {
 	debugf("	usedDirCount = %d\n",bg->usedDirCount);
 	ext2_bg_printRanges(e,"Blocks",no * e->superBlock.blocksPerGroup,
 			MIN(e->superBlock.blocksPerGroup,e->superBlock.blockCount - (no * e->superBlock.blocksPerGroup)),
-			ext2_bcache_request(e,bg->blockBitmap)->buffer);
+			bcache_request(&e->blockCache,bg->blockBitmap)->buffer);
 	ext2_bg_printRanges(e,"Inodes",no * e->superBlock.inodesPerGroup,
 			MIN(e->superBlock.inodesPerGroup,e->superBlock.inodeCount - (no * e->superBlock.inodesPerGroup)),
-			ext2_bcache_request(e,bg->inodeBitmap)->buffer);
+			bcache_request(&e->blockCache,bg->inodeBitmap)->buffer);
 }
 
 static void ext2_bg_printRanges(sExt2 *e,const char *name,u32 first,u32 max,u8 *bitmap) {

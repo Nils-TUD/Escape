@@ -27,7 +27,7 @@
 #include "ext2.h"
 #include "rw.h"
 #include "inodecache.h"
-#include "blockcache.h"
+#include "../blockcache.h"
 
 /**
  * Reads the inode from block-cache. Requires inode->inodeNo to be valid!
@@ -45,7 +45,7 @@ static u32 cacheMisses = 0;
 void ext2_icache_init(sExt2 *e) {
 	u32 i;
 	sExt2CInode *inode = e->inodeCache;
-	for(i = 0; i < INODE_CACHE_SIZE; i++) {
+	for(i = 0; i < EXT2_ICACHE_SIZE; i++) {
 		inode->refs = 0;
 		inode->inodeNo = EXT2_BAD_INO;
 		inode->dirty = false;
@@ -54,7 +54,7 @@ void ext2_icache_init(sExt2 *e) {
 }
 
 void ext2_icache_flush(sExt2 *e) {
-	sExt2CInode *inode,*end = e->inodeCache + INODE_CACHE_SIZE;
+	sExt2CInode *inode,*end = e->inodeCache + EXT2_ICACHE_SIZE;
 	for(inode = e->inodeCache; inode < end; inode++) {
 		if(inode->dirty)
 			ext2_icache_write(e,inode);
@@ -63,8 +63,8 @@ void ext2_icache_flush(sExt2 *e) {
 
 sExt2CInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 	/* search for the inode. perhaps it's already in cache */
-	sExt2CInode *startNode = e->inodeCache + (no & (INODE_CACHE_SIZE - 1));
-	sExt2CInode *iend = e->inodeCache + INODE_CACHE_SIZE;
+	sExt2CInode *startNode = e->inodeCache + (no & (EXT2_ICACHE_SIZE - 1));
+	sExt2CInode *iend = e->inodeCache + EXT2_ICACHE_SIZE;
 	sExt2CInode *inode;
 	if(no <= EXT2_BAD_INO)
 		return NULL;
@@ -137,7 +137,7 @@ static void ext2_icache_read(sExt2 *e,sExt2CInode *inode) {
 	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
 	u32 inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
 	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
-	sExt2CBlock *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
+	sCBlock *block = bcache_request(&e->blockCache,group->inodeTable + noInGroup / inodesPerBlock);
 	vassert(block != NULL,"Fetching block %d failed",group->inodeTable + noInGroup / inodesPerBlock);
 	memcpy(&(inode->inode),block->buffer + ((inode->inodeNo - 1) % inodesPerBlock) * sizeof(sExt2Inode),
 			sizeof(sExt2Inode));
@@ -147,7 +147,7 @@ static void ext2_icache_write(sExt2 *e,sExt2CInode *inode) {
 	sExt2BlockGrp *group = e->groups + ((inode->inodeNo - 1) / e->superBlock.inodesPerGroup);
 	u32 inodesPerBlock = EXT2_BLK_SIZE(e) / sizeof(sExt2Inode);
 	u32 noInGroup = (inode->inodeNo - 1) % e->superBlock.inodesPerGroup;
-	sExt2CBlock *block = ext2_bcache_request(e,group->inodeTable + noInGroup / inodesPerBlock);
+	sCBlock *block = bcache_request(&e->blockCache,group->inodeTable + noInGroup / inodesPerBlock);
 	vassert(block != NULL,"Fetching block %d failed",group->inodeTable + noInGroup / inodesPerBlock);
 	memcpy(block->buffer + ((inode->inodeNo - 1) % inodesPerBlock) * sizeof(sExt2Inode),
 			&(inode->inode),sizeof(sExt2Inode));

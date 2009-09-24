@@ -21,50 +21,80 @@
 #define BLOCKCACHE_H_
 
 #include <esc/common.h>
-#include "ext2.h"
+
+/* reading/writing of blocks */
+typedef bool (*fReadBlocks)(void *h,void *buffer,u32 start,u16 blockCount);
+typedef bool (*fWriteBlocks)(void *h,const void *buffer,u32 start,u16 blockCount);
+
+/* a cached block */
+typedef struct sCBlock {
+	struct sCBlock *prev;
+	struct sCBlock *next;
+	u32 blockNo;
+	u8 dirty;
+	/* NULL indicates an unused entry */
+	u8 *buffer;
+} sCBlock;
+
+/* all information about a block-cache */
+typedef struct {
+	void *handle;
+	u32 blockCacheSize;
+	u32 blockSize;
+	fReadBlocks read;
+	fWriteBlocks write;
+	sCBlock *usedBlocks;
+	sCBlock *oldestBlock;
+	sCBlock *freeBlocks;
+	sCBlock *blockCache;
+} sBlockCache;
 
 /**
  * Inits the block-cache
  *
- * @param e the ext2-handle
+ * @param c the block-cache
  */
-void ext2_bcache_init(sExt2 *e);
+void bcache_init(sBlockCache *c);
 
 /**
  * Writes all dirty blocks to disk
  *
- * @param e the ext2-handle
+ * @param c the block-cache
  */
-void ext2_bcache_flush(sExt2 *e);
+void bcache_flush(sBlockCache *c);
 
 /**
  * Creates a new block-cache-entry for given block-number. Does not read the contents from disk!
  *
- * @param e the ext2-handle
+ * @param c the block-cache
  * @param blockNo the block-number
  * @return the block or NULL
  */
-sExt2CBlock *ext2_bcache_create(sExt2 *e,u32 blockNo);
+sCBlock *bcache_create(sBlockCache *c,u32 blockNo);
 
 /**
  * Requests the block with given number
  *
- * @param e the ext2-handle
+ * @param c the block-cache
  * @param blockNo the block to fetch from disk or from the cache
  * @return the block or NULL
  */
-sExt2CBlock *ext2_bcache_request(sExt2 *e,u32 blockNo);
+sCBlock *bcache_request(sBlockCache *c,u32 blockNo);
+
+#if DEBUGGING
 
 /**
  * Prints the used and free blocks
  *
- * @param e the ext2-handle
+ * @param c the block-cache
  */
-void ext2_bcache_print(sExt2 *e);
+void bcache_print(sBlockCache *c);
 
 /**
  * Prints block-cache statistics
  */
-void ext2_bcache_printStats(void);
+void bcache_printStats(void);
+
+#endif
 
 #endif /* BLOCKCACHE_H_ */

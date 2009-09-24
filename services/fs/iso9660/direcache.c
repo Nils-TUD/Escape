@@ -23,6 +23,7 @@
 #include "iso9660.h"
 #include "direcache.h"
 #include "rw.h"
+#include "../blockcache.h"
 
 void iso_direc_init(sISO9660 *h) {
 	u32 i;
@@ -32,8 +33,8 @@ void iso_direc_init(sISO9660 *h) {
 }
 
 sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id) {
-	u8 *buffer;
 	sISODirEntry *e;
+	sCBlock *blk;
 	u32 i,blockLBA,blockSize,offset;
 	s32 unused = -1;
 
@@ -53,7 +54,7 @@ sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id) {
 
 	if(id == ISO_ROOT_DIR_ID(h)) {
 		e = &h->primary.data.primary.rootDir;
-		memcpy(&(h->direcache[unused].entry),e,e->length);
+		memcpy(&(h->direcache[unused].entry),e,sizeof(sISODirEntry));
 		h->direcache[unused].id = id;
 	}
 	else {
@@ -61,15 +62,13 @@ sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id) {
 		blockSize = ISO_BLK_SIZE(h);
 		offset = id & (blockSize - 1);
 		blockLBA = id / blockSize + offset / blockSize;
-		buffer = (u8*)malloc(blockSize);
-		if(!iso_rw_readBlocks(h,buffer,blockLBA,1)) {
-			free(buffer);
+		blk = bcache_request(&h->blockCache,blockLBA);
+		if(blk == NULL)
 			return NULL;
-		}
-		e = (sISODirEntry*)(buffer + (offset % blockSize));
-		memcpy(&(h->direcache[unused].entry),e,e->length);
+		e = (sISODirEntry*)(blk->buffer + (offset % blockSize));
+		/* don't copy the name! */
+		memcpy(&(h->direcache[unused].entry),e,sizeof(sISODirEntry));
 		h->direcache[unused].id = id;
-		free(buffer);
 	}
 	return h->direcache + unused;
 }

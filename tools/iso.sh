@@ -36,6 +36,21 @@ for i in build/user_*.bin ; do
 	cp $i $TMPDIR/bin/`echo $i | sed "s/build\/user_\(.*\)\.bin/\1/g"`
 done;
 
+# add some test-data
+mkdir $TMPDIR/testdir
+echo "Das ist ein Test-String!!" > $TMPDIR/file.txt
+cp $ROOT/user/test.bmp $TMPDIR
+cp $ROOT/user/bbc.bmp $TMPDIR
+cp $ROOT/user/test.bmp $TMPDIR/bla.bmp
+cp $TMPDIR/file.txt $TMPDIR/testdir/file.txt
+dd if=/dev/zero of=$TMPDIR/zeros bs=1024 count=1024
+echo -n "" > $TMPDIR/bigfile
+i=0
+while [ $i != 200 ]; do
+	printf 'Das ist der %d Test\n' $i >> $TMPDIR/bigfile;
+	i=`expr $i + 1`;
+done;
+
 # finally create image and clean up
 genisoimage -U -iso-level 3 -input-charset ascii -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 \
 	-boot-info-table -o $ISO $TMPDIR

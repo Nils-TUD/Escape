@@ -21,7 +21,7 @@
 #include "ext2.h"
 #include "bitmap.h"
 #include "superblock.h"
-#include "blockcache.h"
+#include "../blockcache.h"
 
 /**
  * Allocates an inode in the given block-group
@@ -58,7 +58,7 @@ tInodeNo ext2_bm_allocInode(sExt2 *e,sExt2CInode *dirInode,bool isDir) {
 
 s32 ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir) {
 	u32 group = ext2_getGroupOfInode(e,ino);
-	sExt2CBlock *bitmap = ext2_bcache_request(e,e->groups[group].inodeBitmap);
+	sCBlock *bitmap = bcache_request(&e->blockCache,e->groups[group].inodeBitmap);
 	if(bitmap == NULL)
 		return -1;
 
@@ -79,12 +79,12 @@ s32 ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir) {
 static tInodeNo ext2_bm_allocInodeIn(sExt2 *e,u32 groupStart,sExt2BlockGrp *group,bool isDir) {
 	u32 i,j;
 	tInodeNo ino;
-	sExt2CBlock *bitmap;
+	sCBlock *bitmap;
 	if(group->freeInodeCount == 0)
 		return 0;
 
 	/* load bitmap */
-	bitmap = ext2_bcache_request(e,group->inodeBitmap);
+	bitmap = bcache_request(&e->blockCache,group->inodeBitmap);
 	if(bitmap == NULL)
 		return 0;
 
@@ -134,7 +134,7 @@ u32 ext2_bm_allocBlock(sExt2 *e,sExt2CInode *inode) {
 
 s32 ext2_bm_freeBlock(sExt2 *e,u32 blockNo) {
 	u32 group = ext2_getGroupOfBlock(e,blockNo);
-	sExt2CBlock *bitmap = ext2_bcache_request(e,e->groups[group].blockBitmap);
+	sCBlock *bitmap = bcache_request(&e->blockCache,e->groups[group].blockBitmap);
 	if(bitmap == NULL)
 		return -1;
 
@@ -152,12 +152,12 @@ s32 ext2_bm_freeBlock(sExt2 *e,u32 blockNo) {
 
 static u32 ext2_bm_allocBlockIn(sExt2 *e,u32 groupStart,sExt2BlockGrp *group) {
 	u32 i,j,bno;
-	sExt2CBlock *bitmap;
+	sCBlock *bitmap;
 	if(group->freeBlockCount == 0)
 		return 0;
 
 	/* load bitmap */
-	bitmap = ext2_bcache_request(e,group->blockBitmap);
+	bitmap = bcache_request(&e->blockCache,group->blockBitmap);
 	if(bitmap == NULL)
 		return 0;
 

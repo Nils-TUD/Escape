@@ -28,7 +28,7 @@
 #include "ext2.h"
 #include "rw.h"
 #include "inode.h"
-#include "blockcache.h"
+#include "../blockcache.h"
 #include "inodecache.h"
 #include "file.h"
 #include "superblock.h"
@@ -102,7 +102,7 @@ s32 ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete) {
 	/* triple indirect */
 	if(cnode->inode.triplyIBlock) {
 		u32 count;
-		sExt2CBlock *blocks = ext2_bcache_request(e,cnode->inode.triplyIBlock);
+		sCBlock *blocks = bcache_request(&e->blockCache,cnode->inode.triplyIBlock);
 		vassert(blocks != NULL,"Block %d set, but unable to load it\n",cnode->inode.triplyIBlock);
 
 		count = EXT2_BLK_SIZE(e) / sizeof(u32);
@@ -130,7 +130,7 @@ s32 ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete) {
 
 s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
 	sExt2CInode *cnode;
-	sExt2CBlock *tmpBuffer;
+	sCBlock *tmpBuffer;
 	u8 *bufWork;
 	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
 
@@ -162,7 +162,7 @@ s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) 
 		u32 block = ext2_inode_getDataBlock(e,cnode,startBlock + i);
 
 		/* request block */
-		tmpBuffer = ext2_bcache_request(e,block);
+		tmpBuffer = bcache_request(&e->blockCache,block);
 		if(tmpBuffer == NULL) {
 			ext2_icache_release(e,cnode);
 			return ERR_BLO_REQ_FAILED;
@@ -192,7 +192,7 @@ s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) 
 
 s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count) {
 	sExt2CInode *cnode;
-	sExt2CBlock *tmpBuffer;
+	sCBlock *tmpBuffer;
 	const u8 *bufWork;
 	u32 now;
 	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
@@ -222,9 +222,9 @@ s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 
 
 		/* if we're not writing a complete block, we have to read it from disk first */
 		if(offset != 0 || c != blockSize)
-			tmpBuffer = ext2_bcache_request(e,block);
+			tmpBuffer = bcache_request(&e->blockCache,block);
 		else
-			tmpBuffer = ext2_bcache_create(e,block);
+			tmpBuffer = bcache_create(&e->blockCache,block);
 		if(tmpBuffer == NULL) {
 			ext2_icache_release(e,cnode);
 			return 0;
@@ -253,7 +253,7 @@ s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 
 
 static s32 ext2_file_freeDIndirBlock(sExt2 *e,u32 blockNo) {
 	u32 i,count;
-	sExt2CBlock *blocks = ext2_bcache_request(e,blockNo);
+	sCBlock *blocks = bcache_request(&e->blockCache,blockNo);
 	vassert(blocks != NULL,"Block %d set, but unable to load it\n",blockNo);
 
 	count = EXT2_BLK_SIZE(e) / sizeof(u32);
@@ -269,7 +269,7 @@ static s32 ext2_file_freeDIndirBlock(sExt2 *e,u32 blockNo) {
 
 static s32 ext2_file_freeIndirBlock(sExt2 *e,u32 blockNo) {
 	u32 i,count;
-	sExt2CBlock *blocks = ext2_bcache_request(e,blockNo);
+	sCBlock *blocks = bcache_request(&e->blockCache,blockNo);
 	vassert(blocks != NULL,"Block %d set, but unable to load it\n",blockNo);
 
 	count = EXT2_BLK_SIZE(e) / sizeof(u32);

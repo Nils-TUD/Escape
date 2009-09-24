@@ -32,6 +32,7 @@ void iso_direc_init(sISO9660 *h);
 
 /**
  * Retrieves the directory-entry with given id (LBA * blockSize + offset in directory)
+ * Note that the entries will NOT contain the name!
  *
  * @param h the iso9660 handle
  * @param id the id

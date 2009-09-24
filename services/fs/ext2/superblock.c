@@ -23,7 +23,7 @@
 #include <esc/heap.h>
 #include "ext2.h"
 #include "rw.h"
-#include "blockcache.h"
+#include "../blockcache.h"
 #include "inodecache.h"
 #include "superblock.h"
 

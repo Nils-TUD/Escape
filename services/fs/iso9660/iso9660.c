@@ -32,6 +32,7 @@
 #include "file.h"
 #include "direcache.h"
 #include "../mount.h"
+#include "../blockcache.h"
 
 #define MAX_DRIVER_OPEN_RETRIES		100000
 
@@ -64,7 +65,21 @@ void *iso_init(const char *driver) {
 			break;
 	}
 
+	iso->blockCache.blockCache = NULL;
+	iso->blockCache.blockCacheSize = ISO_BCACHE_SIZE;
+	iso->blockCache.blockSize = ISO_BLK_SIZE(iso);
+	iso->blockCache.freeBlocks = NULL;
+	iso->blockCache.usedBlocks = NULL;
+	iso->blockCache.oldestBlock = NULL;
+	iso->blockCache.handle = iso;
+	/* case is ok, because the only difference is that iso_rw_* receive a sISO9660* as first argument
+	 * and read/write expect void* */
+	iso->blockCache.read = (fReadBlocks)iso_rw_readBlocks;
+	/* no writing here ;) */
+	iso->blockCache.write = NULL;
+
 	iso_direc_init(iso);
+	bcache_init(&iso->blockCache);
 	return iso;
 }
 

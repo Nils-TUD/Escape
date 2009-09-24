@@ -21,8 +21,6 @@
 #include <esc/heap.h>
 #include <esc/debug.h>
 #include <assert.h>
-#include "ext2.h"
-#include "rw.h"
 #include "blockcache.h"
 
 /* for statistics */
@@ -32,73 +30,73 @@ static u32 cacheMisses = 0;
 /**
  * Requests the given block and reads it from disk if desired
  */
-static sExt2CBlock *ext2_bcache_doRequest(sExt2 *e,u32 blockNo,bool read);
+static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool read);
 /**
  * Fetches a block-cache-entry
  */
-static sExt2CBlock *ext2_bcache_getBlock(sExt2 *e);
+static sCBlock *bcache_getBlock(sBlockCache *c);
 
-/* note: it seems like that this approach is faster than using an array of linked-lists as hash-map.
- * Although we may have to search a bit more and may have "more chaos" in the array :)
- */
-
-void ext2_bcache_init(sExt2 *e) {
+void bcache_init(sBlockCache *c) {
 	u32 i;
-	sExt2CBlock *bentry = e->blockCache;
-	e->usedBlocks = NULL;
-	e->freeBlocks = NULL;
-	e->oldestBlock = NULL;
-	for(i = 0; i < BLOCK_CACHE_SIZE; i++) {
+	sCBlock *bentry;
+	c->usedBlocks = NULL;
+	c->freeBlocks = NULL;
+	c->oldestBlock = NULL;
+	c->blockCache = (sCBlock*)malloc(c->blockCacheSize * sizeof(sCBlock));
+	vassert(c->blockCache != NULL,"Unable to alloc mem for blockcache");
+	bentry = c->blockCache;
+	for(i = 0; i < c->blockCacheSize; i++) {
 		bentry->blockNo = 0;
 		bentry->buffer = NULL;
 		bentry->dirty = false;
-		bentry->prev = i < BLOCK_CACHE_SIZE - 1 ? bentry + 1 : NULL;
-		bentry->next = e->freeBlocks;
-		e->freeBlocks = bentry;
+		bentry->prev = (i < c->blockCacheSize - 1) ? bentry + 1 : NULL;
+		bentry->next = c->freeBlocks;
+		c->freeBlocks = bentry;
 		bentry++;
 	}
 }
 
-void ext2_bcache_flush(sExt2 *e) {
-	sExt2CBlock *bentry = e->usedBlocks;
+void bcache_flush(sBlockCache *c) {
+	sCBlock *bentry = c->usedBlocks;
 	while(bentry != NULL) {
 		if(bentry->dirty) {
-			ext2_rw_writeBlocks(e,bentry->buffer,bentry->blockNo,1);
+			vassert(c->write != NULL,"Block %d dirty, but no write-function",bentry->blockNo);
+			c->write(c->handle,bentry->buffer,bentry->blockNo,1);
 			bentry->dirty = false;
 		}
 		bentry = bentry->next;
 	}
 }
 
-sExt2CBlock *ext2_bcache_create(sExt2 *e,u32 blockNo) {
-	return ext2_bcache_doRequest(e,blockNo,false);
+sCBlock *bcache_create(sBlockCache *c,u32 blockNo) {
+	return bcache_doRequest(c,blockNo,false);
 }
 
-sExt2CBlock *ext2_bcache_request(sExt2 *e,u32 blockNo) {
-	return ext2_bcache_doRequest(e,blockNo,true);
+sCBlock *bcache_request(sBlockCache *c,u32 blockNo) {
+	return bcache_doRequest(c,blockNo,true);
 }
 
-static sExt2CBlock *ext2_bcache_doRequest(sExt2 *e,u32 blockNo,bool read) {
-	sExt2CBlock *block,*bentry;
+static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool read) {
+	sCBlock *block,*bentry;
 
 	/* search for the block. perhaps it's already in cache */
-	bentry = e->usedBlocks;
+	bentry = c->usedBlocks;
 	while(bentry != NULL) {
 		if(bentry->blockNo == blockNo) {
 			/* remove from list and put at the beginning of the usedlist because it was
 			 * used most recently */
 			if(bentry->prev != NULL) {
 				/* update oldest */
-				if(e->oldestBlock == bentry)
-					e->oldestBlock = bentry->prev;
+				if(c->oldestBlock == bentry)
+					c->oldestBlock = bentry->prev;
 				/* remove */
 				bentry->prev->next = bentry->next;
 				bentry->next->prev = bentry->prev;
 				/* put at the beginning */
 				bentry->prev = NULL;
-				bentry->next = e->usedBlocks;
+				bentry->next = c->usedBlocks;
 				bentry->next->prev = bentry;
-				e->usedBlocks = bentry;
+				c->usedBlocks = bentry;
 			}
 			cacheHits++;
 			return bentry;
@@ -107,9 +105,9 @@ static sExt2CBlock *ext2_bcache_doRequest(sExt2 *e,u32 blockNo,bool read) {
 	}
 
 	/* init cached block */
-	block = ext2_bcache_getBlock(e);
+	block = bcache_getBlock(c);
 	if(block->buffer == NULL) {
-		block->buffer = (u8*)malloc(EXT2_BLK_SIZE(e));
+		block->buffer = (u8*)malloc(c->blockSize);
 		if(block->buffer == NULL)
 			return NULL;
 	}
@@ -117,7 +115,7 @@ static sExt2CBlock *ext2_bcache_doRequest(sExt2 *e,u32 blockNo,bool read) {
 	block->dirty = false;
 
 	/* now read from disk */
-	if(read && !ext2_rw_readBlocks(e,block->buffer,blockNo,1)) {
+	if(read && !c->read(c->handle,block->buffer,blockNo,1)) {
 		block->blockNo = 0;
 		return NULL;
 	}
@@ -126,42 +124,46 @@ static sExt2CBlock *ext2_bcache_doRequest(sExt2 *e,u32 blockNo,bool read) {
 	return block;
 }
 
-static sExt2CBlock *ext2_bcache_getBlock(sExt2 *e) {
-	sExt2CBlock *block = e->freeBlocks;
+static sCBlock *bcache_getBlock(sBlockCache *c) {
+	sCBlock *block = c->freeBlocks;
 	if(block != NULL) {
 		/* remove from freelist and put in usedlist */
-		e->freeBlocks = block->next;
+		c->freeBlocks = block->next;
 		block->next->prev = NULL;
 		/* block->prev is already NULL */
-		block->next = e->usedBlocks;
+		block->next = c->usedBlocks;
 		block->next->prev = block;
-		e->usedBlocks = block;
+		c->usedBlocks = block;
 		/* update oldest */
-		if(e->oldestBlock == NULL)
-			e->oldestBlock = block;
+		if(c->oldestBlock == NULL)
+			c->oldestBlock = block;
 		return block;
 	}
 
 	/* take the oldest one */
-	block = e->oldestBlock;
-	e->oldestBlock = block->prev;
-	e->oldestBlock->next = NULL;
+	block = c->oldestBlock;
+	c->oldestBlock = block->prev;
+	c->oldestBlock->next = NULL;
 	/* put at beginning of usedlist */
 	block->prev = NULL;
-	block->next = e->usedBlocks;
+	block->next = c->usedBlocks;
 	block->next->prev = block;
-	e->usedBlocks = block;
+	c->usedBlocks = block;
 	/* if it is dirty we have to write it first to disk */
-	if(block->dirty)
-		ext2_rw_writeBlocks(e,block->buffer,block->blockNo,1);
+	if(block->dirty) {
+		vassert(c->write != NULL,"Block %d dirty, but no write-function",block->blockNo);
+		c->write(c->handle,block->buffer,block->blockNo,1);
+	}
 	return block;
 }
 
-void ext2_bcache_print(sExt2 *e) {
+#if DEBUGGING
+
+void bcache_print(sBlockCache *c) {
 	u32 i = 0;
-	sExt2CBlock *block;
+	sCBlock *block;
 	debugf("Used blocks:\n\t");
-	block = e->usedBlocks;
+	block = c->usedBlocks;
 	while(block != NULL) {
 		if(++i % 8 == 0)
 			debugf("\n\t");
@@ -171,7 +173,9 @@ void ext2_bcache_print(sExt2 *e) {
 	debugf("\n");
 }
 
-void ext2_bcache_printStats(void) {
+void bcache_printStats(void) {
 	debugf("[BlockCache] Hits: %d, Misses: %d; %d %%\n",cacheHits,cacheMisses,
 			(u32)(100 / ((float)(cacheMisses + cacheHits) / cacheHits)));
 }
+
+#endif

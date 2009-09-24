@@ -26,6 +26,7 @@
 #include "iso9660.h"
 #include "direcache.h"
 #include "rw.h"
+#include "../blockcache.h"
 
 /**
  * Builds the required dir-entries for the fs-interface from the ISO9660-dir-entries
@@ -34,7 +35,7 @@ static void iso_file_buildDirEntries(sISO9660 *h,u32 lba,u8 *dst,u8 *src,u32 off
 
 s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
 	sISOCDirEntry *e;
-	u8 *tmpBuffer;
+	sCBlock *blk;
 	u8 *bufWork;
 	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
 
@@ -55,10 +56,6 @@ s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count
 	offset %= blockSize;
 	blockCount = (offset + count + blockSize - 1) / blockSize;
 
-	tmpBuffer = (u8*)malloc(blockSize);
-	if(tmpBuffer == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-
 	/* TODO try to read multiple blocks at once */
 
 	/* use the offset in the first block; after the first one the offset is 0 anyway */
@@ -66,18 +63,17 @@ s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count
 	bufWork = (u8*)buffer;
 	for(i = 0; i < blockCount; i++) {
 		/* read block */
-		if(!iso_rw_readBlocks(h,tmpBuffer,startBlock + i,1)) {
-			free(tmpBuffer);
+		blk = bcache_request(&h->blockCache,startBlock + i);
+		if(blk == NULL)
 			return ERR_BLO_REQ_FAILED;
-		}
 
 		if(buffer != NULL) {
 			/* copy the requested part */
 			c = MIN(leftBytes,blockSize - offset);
 			if(e->entry.flags & ISO_FILEFL_DIR)
-				iso_file_buildDirEntries(h,e->entry.extentLoc.littleEndian,bufWork,tmpBuffer,offset,c);
+				iso_file_buildDirEntries(h,e->entry.extentLoc.littleEndian,bufWork,blk->buffer,offset,c);
 			else
-				memcpy(bufWork,tmpBuffer + offset,c);
+				memcpy(bufWork,blk->buffer + offset,c);
 			bufWork += c;
 		}
 
@@ -88,7 +84,6 @@ s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count
 		offset = 0;
 	}
 
-	free(tmpBuffer);
 	return count;
 }
 

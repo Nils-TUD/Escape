@@ -19,12 +19,17 @@
 
 #include <esc/common.h>
 #include <esc/heap.h>
+#include <esc/io.h>
 #include <string.h>
 #include <errors.h>
 #include "iso9660.h"
 #include "rw.h"
 #include "dir.h"
 #include "../mount.h"
+#include "../blockcache.h"
+
+/* calcuates an imaginary inode-number from block-number and offset in the directory-entries */
+#define GET_INODENO(blockNo,blockSize,offset) (((blockNo) * (blockSize)) + (offset))
 
 /**
  * Checks wether <user> matches <disk>
@@ -37,6 +42,8 @@ tInodeNo iso_dir_resolve(sISO9660 *h,char *path,u8 flags,tDevNo *dev,bool resLas
 	char *p = path;
 	u32 pos;
 	tInodeNo res;
+	sCBlock *blk;
+	u32 i,blockSize = ISO_BLK_SIZE(h);
 
 	while(*p == '/')
 		p++;
@@ -48,20 +55,19 @@ tInodeNo iso_dir_resolve(sISO9660 *h,char *path,u8 flags,tDevNo *dev,bool resLas
 	pos = strchri(p,'/');
 	while(*p) {
 		sISODirEntry *e;
-		sISODirEntry *content = (sISODirEntry*)malloc(extSize);
-		if(content == NULL)
-			return ERR_NOT_ENOUGH_MEM;
-		if(!iso_rw_readBlocks(h,content,extLoc,extSize / ISO_BLK_SIZE(h))) {
-			free(content);
-			return ERR_PATH_NOT_FOUND;
-		}
+		i = 0;
+		blk = bcache_request(&h->blockCache,extLoc);
+		if(blk == NULL)
+			return ERR_BLO_REQ_FAILED;
 
-		e = content;
-		while((u8*)e < (u8*)content + extSize) {
+		e = (sISODirEntry*)blk->buffer;
+		while((u8*)e < blk->buffer + blockSize) {
 			/* continue with next block? */
 			if(e->length == 0) {
-				u32 offset = ((u8*)e - (u8*)content) & ~(ISO_BLK_SIZE(h) - 1);
-				e = (sISODirEntry*)((u8*)content + offset + ISO_BLK_SIZE(h));
+				blk = bcache_request(&h->blockCache,extLoc + ++i);
+				if(blk == NULL)
+					return ERR_BLO_REQ_FAILED;
+				e = (sISODirEntry*)blk->buffer;
 				continue;
 			}
 
@@ -76,11 +82,10 @@ tInodeNo iso_dir_resolve(sISO9660 *h,char *path,u8 flags,tDevNo *dev,bool resLas
 					break;
 
 				/* is it a mount-point? */
-				mntDev = mount_getByLoc(*dev,(extLoc * ISO_BLK_SIZE(h)) + ((u8*)e - (u8*)content));
+				mntDev = mount_getByLoc(*dev,GET_INODENO(extLoc + i,blockSize,(u8*)e - blk->buffer));
 				if(mntDev >= 0) {
 					sFSInst *inst = mount_get(mntDev);
 					*dev = mntDev;
-					free(content);
 					return inst->fs->resPath(inst->handle,p,flags,dev,resLastMnt);
 				}
 				if(!*p)
@@ -88,10 +93,8 @@ tInodeNo iso_dir_resolve(sISO9660 *h,char *path,u8 flags,tDevNo *dev,bool resLas
 
 				/* move to childs of this node */
 				pos = strchri(p,'/');
-				if((e->flags & ISO_FILEFL_DIR) == 0) {
-					free(content);
+				if((e->flags & ISO_FILEFL_DIR) == 0)
 					return ERR_NO_DIRECTORY;
-				}
 				extLoc = e->extentLoc.littleEndian;
 				extSize = e->extentSize.littleEndian;
 				break;
@@ -99,12 +102,12 @@ tInodeNo iso_dir_resolve(sISO9660 *h,char *path,u8 flags,tDevNo *dev,bool resLas
 			e = (sISODirEntry*)((u8*)e + e->length);
 		}
 		/* no match? */
-		if(e->length == 0) {
-			free(content);
+		if((u8*)e >= blk->buffer + blockSize || e->length == 0) {
+			if(flags & IO_CREATE)
+				return ERR_UNSUPPORTED_OP;
 			return ERR_PATH_NOT_FOUND;
 		}
-		res = (extLoc * ISO_BLK_SIZE(h)) + ((u8*)e - (u8*)content);
-		free(content);
+		res = GET_INODENO(extLoc + i,blockSize,(u8*)e - blk->buffer);
 	}
 	return res;
 }

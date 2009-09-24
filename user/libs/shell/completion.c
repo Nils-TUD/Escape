@@ -218,12 +218,14 @@ failed:
 
 void compl_free(sShellCmd **matches) {
 	sShellCmd **cmd = matches;
-	while(*cmd != NULL) {
-		if((*cmd)->type != TYPE_BUILTIN)
-			free(*cmd);
-		cmd++;
+	if(cmd) {
+		while(*cmd != NULL) {
+			if((*cmd)->type != TYPE_BUILTIN)
+				free(*cmd);
+			cmd++;
+		}
+		free(matches);
 	}
-	free(matches);
 }
 
 static sShellCmd **compl_incrArray(sShellCmd **array,u32 pos,u32 *size) {

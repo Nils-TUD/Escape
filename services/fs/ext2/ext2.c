@@ -27,7 +27,7 @@
 #include <errors.h>
 #include <string.h>
 #include "ext2.h"
-#include "blockcache.h"
+#include "../blockcache.h"
 #include "inodecache.h"
 #include "blockgroup.h"
 #include "superblock.h"
@@ -63,12 +63,26 @@ void *ext2_init(const char *driver) {
 	if(fd < 0)
 		error("Unable to find driver '%s' after %d retries",driver,tries);
 
-	e->ataFd = fd;
 	if(!ext2_super_init(e)) {
 		close(e->ataFd);
 		free(e);
 		return NULL;
 	}
+
+	/* Note: we don't need it in ext2_super_init() and we can't use EXT2_BLK_SIZE() without
+	 * super-block! */
+	e->ataFd = fd;
+	e->blockCache.blockCache = NULL;
+	e->blockCache.blockCacheSize = EXT2_BCACHE_SIZE;
+	e->blockCache.blockSize = EXT2_BLK_SIZE(e);
+	e->blockCache.freeBlocks = NULL;
+	e->blockCache.usedBlocks = NULL;
+	e->blockCache.oldestBlock = NULL;
+	e->blockCache.handle = e;
+	/* case is ok, because the only difference is that ext2_rw_* receive a sExt2* as first argument
+	 * and read/write expect void* */
+	e->blockCache.read = (fReadBlocks)ext2_rw_readBlocks;
+	e->blockCache.write = (fWriteBlocks)ext2_rw_writeBlocks;
 
 	/* init block-groups */
 	if(!ext2_bg_init(e)) {
@@ -78,7 +92,7 @@ void *ext2_init(const char *driver) {
 
 	/* init caches */
 	ext2_icache_init(e);
-	ext2_bcache_init(e);
+	bcache_init(&e->blockCache);
 	return e;
 }
 
@@ -123,7 +137,7 @@ s32 ext2_open(void *h,tInodeNo ino,u8 flags) {
 		}
 	}
 	/*ext2_icache_printStats();
-	ext2_bcache_printStats();*/
+	bcache_printStats();*/
 	return ino;
 }
 
@@ -223,7 +237,7 @@ void ext2_sync(void *h) {
 	ext2_bg_update(e);
 	/* flush inodes first, because they may create dirty blocks */
 	ext2_icache_flush(e);
-	ext2_bcache_flush(e);
+	bcache_flush(&e->blockCache);
 }
 
 u32 ext2_getBlockOfInode(sExt2 *e,tInodeNo inodeNo) {

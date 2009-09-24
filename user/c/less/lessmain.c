@@ -47,7 +47,7 @@ static u32 lineSize;
 static char **lines;
 static u32 startLine = 0;
 
-static char emptyLine[COLS];
+static char emptyLine[COLS + 1];
 
 int main(int argc,char *argv[]) {
 	tFile *file;
@@ -109,8 +109,8 @@ int main(int argc,char *argv[]) {
 	}
 
 	/* init empty line */
-	memset(emptyLine,' ',COLS - 1);
-	emptyLine[COLS - 1] = '\0';
+	memset(emptyLine,' ',COLS);
+	emptyLine[COLS] = '\0';
 
 	refreshScreen();
 
@@ -250,22 +250,22 @@ finished:
 static bool copy(char c) {
 	char *pos;
 	/* implicit newline? */
-	if(c != '\n' && linePos >= COLS - 1) {
+	if(c != '\n' && linePos >= COLS) {
 		if(!copy('\n'))
 			return false;
 	}
 
 	/* line not yet present? */
 	if(lines[lineCount] == NULL) {
-		lines[lineCount] = (char*)malloc(COLS * sizeof(char));
+		lines[lineCount] = (char*)malloc((COLS + 1) * sizeof(char));
 		if(lines[lineCount] == NULL) {
 			printe("Unable to allocate mem");
 			return false;
 		}
 		/* fill the line with spaces */
-		memset(lines[lineCount],' ',COLS - 1);
+		memset(lines[lineCount],' ',COLS);
 		/* terminate */
-		lines[lineCount][COLS - 1] = '\0';
+		lines[lineCount][COLS] = '\0';
 	}
 
 	pos = lines[lineCount] + linePos;

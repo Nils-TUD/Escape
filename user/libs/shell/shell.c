@@ -70,7 +70,7 @@ s32 shell_executeCmd(char *line) {
 	sShellCmd **scmds;
 	u32 i,cmdCount,tokCount;
 	char path[MAX_CMD_LEN] = APPS_DIR;
-	s32 res;
+	s32 res = 0;
 	s32 *pipes = NULL,*pipe;
 
 	/* tokenize the line */
@@ -436,8 +436,14 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 		tokLen = strlen(token);
 		searchPath = tokCount <= 1 && (tokCount == 0 || strchr(tokens[0].str,'/') == NULL);
 		matches = compl_get(token,tokLen,0,false,searchPath);
-		if(matches == NULL || matches[0] == NULL)
+		if(matches == NULL || matches[0] == NULL) {
+			/* beep because we have found no match */
+			printc('\a');
+			flush();
+			tok_free(tokens,tokCount);
+			compl_free(matches);
 			return;
+		}
 
 		/* found one match? */
 		if(matches[1] == NULL) {
@@ -538,6 +544,7 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 			}
 		}
 
+		tok_free(tokens,tokCount);
 		compl_free(matches);
 	}
 }

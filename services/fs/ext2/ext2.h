@@ -24,6 +24,7 @@
 #include <sllist.h>
 #include <fsinterface.h>
 #include "../mount.h"
+#include "../blockcache.h"
 
 #define ATA_SECTOR_SIZE						512
 #define EXT2_BLK_SIZE(e)					(ATA_SECTOR_SIZE << ((e)->superBlock.logBlockSize + 1))
@@ -39,8 +40,8 @@
 /* number of direct blocks in the inode */
 #define EXT2_DIRBLOCK_COUNT					12
 
-#define INODE_CACHE_SIZE					64
-#define BLOCK_CACHE_SIZE					512
+#define EXT2_ICACHE_SIZE					64
+#define EXT2_BCACHE_SIZE					512
 
 /* padding for directory-entries */
 #define	EXT2_DIRENTRY_PAD					4
@@ -328,15 +329,6 @@ typedef struct {
 	sExt2Inode inode;
 } sExt2CInode;
 
-typedef struct sExt2CBlock {
-	struct sExt2CBlock *prev;
-	struct sExt2CBlock *next;
-	u32 blockNo;
-	u8 dirty;
-	/* NULL indicates an unused entry */
-	u8 *buffer;
-} sExt2CBlock;
-
 typedef struct {
 	/* the file-desc for ATA */
 	tFD ataFd;
@@ -348,11 +340,8 @@ typedef struct {
 	sExt2BlockGrp *groups;
 
 	/* caches */
-	sExt2CInode inodeCache[INODE_CACHE_SIZE];
-	sExt2CBlock *usedBlocks;
-	sExt2CBlock *oldestBlock;
-	sExt2CBlock *freeBlocks;
-	sExt2CBlock blockCache[BLOCK_CACHE_SIZE];
+	sExt2CInode inodeCache[EXT2_ICACHE_SIZE];
+	sBlockCache blockCache;
 } sExt2;
 
 /**

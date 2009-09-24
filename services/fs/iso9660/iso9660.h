@@ -23,11 +23,13 @@
 #include <esc/common.h>
 #include <fsinterface.h>
 #include "../mount.h"
+#include "../blockcache.h"
 
 #define ATAPI_SECTOR_SIZE			2048
 #define ISO_BLK_SIZE(iso)			((iso)->primary.data.primary.logBlkSize.littleEndian)
 #define ISO_BLKS_TO_SECS(iso,blks)	((blks) * ISO_BLK_SIZE((iso)) / ATAPI_SECTOR_SIZE)
 
+#define ISO_BCACHE_SIZE				1024
 #define ISO_DIRE_CACHE_SIZE			128
 
 #define ISO_VOL_DESC_START			0x10
@@ -143,6 +145,7 @@ typedef struct {
 	/* always 0x01 */
 	u8 version;
 	union {
+		/* just to make the union 2041 bytes big.. */
 		u8 raw[2041];
 		struct {
 			/* ID of the system which can act on and boot the system from the boot record in
@@ -227,6 +230,7 @@ typedef struct {
 	sISOVolDesc primary;
 	u32 direcNextFree;
 	sISOCDirEntry direcache[ISO_DIRE_CACHE_SIZE];
+	sBlockCache blockCache;
 } sISO9660;
 
 /**

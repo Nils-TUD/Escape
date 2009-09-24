@@ -107,6 +107,9 @@
 #define MSG_RECEIVE					1200
 #define MSG_SEND					1201
 
+#define MSG_POWER_REBOOT			1300
+#define MSG_POWER_SHUTDOWN			1301
+
 /* the data read from the keyboard */
 typedef struct {
 	/* the keycode (see keycodes.h) */

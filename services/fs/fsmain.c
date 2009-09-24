@@ -25,6 +25,7 @@
 #include <esc/heap.h>
 #include <esc/debug.h>
 #include <esc/dir.h>
+#include <esc/signals.h>
 #include <messages.h>
 #include <errors.h>
 #include <stdlib.h>
@@ -52,6 +53,18 @@ static sFSType types[] = {
 	{FS_TYPE_ISO9660,"iso9660"},
 };
 
+static void sigTermHndl(tSig sig,u32 data) {
+	u32 i;
+	UNUSED(sig);
+	UNUSED(data);
+	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
+		sFSInst *inst = mount_get(i);
+		if(inst && inst->fs->sync != NULL)
+			inst->fs->sync(inst->handle);
+	}
+	/*exit(0);*/
+}
+
 int main(int argc,char *argv[]) {
 	tFD fd;
 	tMsgId mid;
@@ -64,6 +77,9 @@ int main(int argc,char *argv[]) {
 		printe("Usage: %s <driverPath> <fsType>",argv[0]);
 		return EXIT_FAILURE;
 	}
+
+	if(setSigHandler(SIG_TERM,sigTermHndl) < 0)
+		error("Unable to set signal-handler for SIG_TERM");
 
 	mount_init();
 

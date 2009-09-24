@@ -181,11 +181,11 @@ static void _qsort(void *base,size_t num,size_t size,fCompare cmp,int left,int r
 			/* *iptr XOR *jptr == 0 for *iptr == *jptr ... */
 			if(memcmp(iptr,jptr,size) != 0) {
 				for(x = 0; x < size; x++) {
-					 *iptr ^= *jptr;
-					 *jptr ^= *iptr;
-					 *iptr ^= *jptr;
-					 iptr++;
-					 jptr++;
+					*iptr ^= *jptr;
+					*jptr ^= *iptr;
+					*iptr ^= *jptr;
+					iptr++;
+					jptr++;
 				}
 			}
 			i++;

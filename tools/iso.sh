@@ -21,7 +21,7 @@ echo '' >> $TMPDIR/boot/grub/menu.lst;
 echo "title $OSTITLE" >> $TMPDIR/boot/grub/menu.lst;
 echo "kernel /boot/$BINNAME" >> $TMPDIR/boot/grub/menu.lst;
 echo 'module /sbin/ata /services/ata' >> $TMPDIR/boot/grub/menu.lst;
-echo 'module /sbin/fs /services/fs /drivers/cda1 iso9660' >> $TMPDIR/boot/grub/menu.lst;
+echo 'module /sbin/fs /services/fs /drivers/cdc1 iso9660' >> $TMPDIR/boot/grub/menu.lst;
 
 # copy kernel
 cp $KERNELBIN $TMPDIR/boot

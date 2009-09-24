@@ -225,6 +225,8 @@ static void createVFSEntry(sATADrive *drive,sPartition *part,const char *name) {
 	char path[SSTRLEN("/system/devices/hda1") + 1];
 	sprintf(path,"/system/devices/%s",name);
 
+	/*ATA_PR1("Creating '%s'",path);*/
+
 	/* open and create file */
 	f = fopen(path,"w");
 	if(f == NULL) {

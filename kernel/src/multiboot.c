@@ -32,8 +32,6 @@
 
 #define MB_PR(fmt,...)			/*vid_printf("[MB] " #fmt "\n",## __VA_ARGS__)*/
 
-#define MAX_SERV_RETRIES		100000
-
 #define CHECK_FLAG(flags,bit)	(flags & (1 << bit))
 
 sMultiBoot *mb;
@@ -143,15 +141,9 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		 * on the available drives and partitions */
 		/* TODO better solution? */
 		if(strcmp(service,"/services/ata") != 0) {
-			u32 retries = 0;
 			/* don't create a pipe- or service-usage-node here */
-			while(vfsn_resolvePath(service,&nodeNo,NULL,VFS_NOACCESS) < 0) {
-				if(retries % 100 == 0)
-					vid_printf(".");
-				if(++retries >= MAX_SERV_RETRIES)
-					util_panic("The service '%s' is not available after %d retries",service,retries);
+			while(vfsn_resolvePath(service,&nodeNo,NULL,VFS_NOACCESS) < 0)
 				thread_switchInKernel();
-			}
 		}
 		vid_toLineEnd(SSTRLEN("DONE"));
 		vid_printf("\033[co;2]DONE\033[co]");

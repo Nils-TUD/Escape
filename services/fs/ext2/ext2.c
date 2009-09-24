@@ -59,7 +59,7 @@ void *ext2_init(const char *driver) {
 			yield();
 		tries++;
 	}
-	while(fd < 0 && tries < MAX_DRIVER_OPEN_RETRIES);
+	while(fd < 0/* && tries < MAX_DRIVER_OPEN_RETRIES*/);
 	if(fd < 0)
 		error("Unable to find driver '%s' after %d retries",driver,tries);
 

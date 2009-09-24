@@ -21,13 +21,15 @@
 #include <esc/debug.h>
 #include <esc/fileio.h>
 #include <esc/service.h>
+#include <esc/proc.h>
 #include <esc/ports.h>
 #include "drive.h"
 #include "ata.h"
 #include "atapi.h"
 
-#define MAX_IDENTIFY_RETRIES	100000
+#define ATA_WAIT_TIMEOUT	500	/* ms */
 
+static bool drive_isBusResponding(sATADrive* drive);
 static bool drive_identify(sATADrive *drive,u8 cmd);
 
 void drive_detect(sATADrive *drives,u32 count) {
@@ -35,7 +37,17 @@ void drive_detect(sATADrive *drives,u32 count) {
 	u16 buffer[256];
 	s = 0;
 	for(i = 0; i < count; i++) {
-		ATA_PR1("Sending 'IDENTIFY DEVICE' to device %d",i);
+		/* check for each bus if it's present */
+		if(i % 2 == 0) {
+			ATA_PR1("Checking if bus %d is present",i / 2);
+			if(!drive_isBusResponding(drives + i)) {
+				ATA_PR1("Not present; skipping master & slave");
+				i++;
+				continue;
+			}
+		}
+
+		ATA_PR1("Its present, sending 'IDENTIFY DEVICE' to device %d",i);
 		/* first, identify the drive */
 		if(!drive_identify(drives + i,COMMAND_IDENTIFY)) {
 			ATA_PR1("Sending 'IDENTIFY PACKET DEVICE' to device %d",i);
@@ -74,10 +86,31 @@ void drive_detect(sATADrive *drives,u32 count) {
 	}
 }
 
+static bool drive_isBusResponding(sATADrive* drive) {
+	s32 i;
+	for(i = 1; i >= 0; i--) {
+		/* begin with slave. master should respond if there is no slave */
+		outByte(drive->basePort + REG_DRIVE_SELECT,i << 4);
+		ata_wait(drive);
+
+		/* write some arbitrary values to some registers */
+		outByte(drive->basePort + REG_ADDRESS1,0xF1);
+		outByte(drive->basePort + REG_ADDRESS2,0xF2);
+		outByte(drive->basePort + REG_ADDRESS3,0xF3);
+
+		/* if we can read them back, the bus is present */
+		if(inByte(drive->basePort + REG_ADDRESS1) == 0xF1 &&
+			inByte(drive->basePort + REG_ADDRESS2) == 0xF2 &&
+			inByte(drive->basePort + REG_ADDRESS3) == 0xF3)
+			return true;
+	}
+	return false;
+}
+
 static bool drive_identify(sATADrive *drive,u8 cmd) {
 	u8 status;
 	u16 *data;
-	u32 x,retries;
+	u32 x;
 	u16 basePort = drive->basePort;
 
 	ATA_PR2("Selecting device with port 0x%x",drive->basePort);
@@ -90,27 +123,33 @@ static bool drive_identify(sATADrive *drive,u8 cmd) {
 	/* check wether the drive exists */
 	outByte(basePort + REG_COMMAND,cmd);
 	status = inByte(basePort + REG_STATUS);
-	if(status == 0) {
-		ATA_PR1("Got 0x00 from status-port");
+	ATA_PR1("Got 0x%x from status-port",status);
+	if(status == 0)
 		return false;
-	}
 	else {
+		u32 time = 0;
 		ATA_PR2("Waiting for ATA-device");
-		retries = 0;
-		do {
-			status = inByte(basePort + REG_STATUS);
-			if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == CMD_ST_DRQ)
-				break;
-			if((status & CMD_ST_ERROR) != 0) {
+		/* wait while busy; the other bits aren't valid while busy is set */
+		while((inByte(basePort + REG_STATUS) & CMD_ST_BUSY) && time < ATA_WAIT_TIMEOUT) {
+			time += 20;
+			sleep(20);
+		}
+		/* wait a bit */
+		ata_wait(drive);
+		/* wait until ready (or error) */
+		while(((status = inByte(basePort + REG_STATUS)) & (CMD_ST_BUSY | CMD_ST_DRQ)) != CMD_ST_DRQ &&
+				time < ATA_WAIT_TIMEOUT) {
+			if(status & CMD_ST_ERROR) {
 				ATA_PR1("Error-bit in status set");
 				return false;
 			}
-			if(++retries >= MAX_IDENTIFY_RETRIES) {
-				ATA_PR1("DRQ- and ERROR-Bit not set after %d retries, skipping device",retries);
-				return false;
-			}
+			time += 20;
+			sleep(20);
 		}
-		while(true);
+		if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) != CMD_ST_DRQ) {
+			ATA_PR1("Timeout (%d ms)",ATA_WAIT_TIMEOUT);
+			return false;
+		}
 
 		ATA_PR2("Reading information about device");
 		/* drive ready */

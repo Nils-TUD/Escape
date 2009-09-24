@@ -59,22 +59,23 @@ static bool atapi_request(sATADrive *drive,u16 *cmd,u16 *buffer,u32 bufSize) {
 	u16 size;
 	u16 basePort = drive->basePort;
 
-	ATA_PR2("Selecting device with port 0x%x",drive->basePort);
+	ATA_PR2("Selecting device with port 0x%x",basePort);
 
 	/* select drive */
-	outByte(drive->basePort + REG_DRIVE_SELECT,drive->slaveBit << 4);
+	ata_unsetIntrpt();
+	outByte(basePort + REG_DRIVE_SELECT,drive->slaveBit << 4);
 	ata_wait(drive);
 
 	/* reset control-register */
 	outByte(basePort + REG_CONTROL,0);
 
 	/* PIO mode */
-	outByte(drive->basePort + REG_FEATURES,0x0);
+	outByte(basePort + REG_FEATURES,0x0);
 	/* in PIO-mode the drive has to know the size of the buffer */
-	outByte(drive->basePort + REG_ADDRESS2,bufSize & 0xFF);
-	outByte(drive->basePort + REG_ADDRESS3,bufSize >> 8);
+	outByte(basePort + REG_ADDRESS2,bufSize & 0xFF);
+	outByte(basePort + REG_ADDRESS3,bufSize >> 8);
 	/* now tell the drive the command */
-	outByte(drive->basePort + REG_COMMAND,COMMAND_PACKET);
+	outByte(basePort + REG_COMMAND,COMMAND_PACKET);
 
 	ATA_PR2("Waiting while busy");
 	/* wait while busy */
@@ -92,9 +93,17 @@ static bool atapi_request(sATADrive *drive,u16 *cmd,u16 *buffer,u32 bufSize) {
 	ATA_PR2("Sending PACKET-command %d",((u8*)cmd)[0]);
 
 	/* send words */
-	ata_unsetIntrpt();
-	outWordStr(drive->basePort + REG_DATA,cmd,6);
-	ata_waitIntrpt();
+	outWordStr(basePort + REG_DATA,cmd,6);
+	/*ata_waitIntrpt();*/
+	/* TODO actually we should wait for an interrupt here, but unfortunatly real hardware (my
+	 * notebook) doesn't send us any. I don't know why yet :/ */
+	/* but it works if we're doing busy-waiting here... */
+	ATA_PR2("Waiting while busy");
+	while(inByte(basePort + REG_STATUS) & CMD_ST_BUSY)
+		;
+	ATA_PR2("Waiting until DRQ or ERROR set");
+	while((!(status = inByte(basePort + REG_STATUS)) & CMD_ST_DRQ) && !(status & CMD_ST_ERROR))
+		;
 
 	ATA_PR2("Reading response-size");
 
@@ -103,10 +112,11 @@ static bool atapi_request(sATADrive *drive,u16 *cmd,u16 *buffer,u32 bufSize) {
 	size = ((u16)inByte(basePort + REG_ADDRESS3) << 8) | (u16)inByte(basePort + REG_ADDRESS2);
 	count = 0;
 	off = 0;
+	ATA_PR2("Got %d; starting to read",size);
 	while(count < bufSize) {
 		u32 end = MIN(size,bufSize - off * sizeof(u16)) / sizeof(u16);
 		/* read data */
-		inWordStr(drive->basePort + REG_DATA,buffer + off,end);
+		inWordStr(basePort + REG_DATA,buffer + off,end);
 		off += end;
 		count += end * sizeof(u16);
 		if(count >= bufSize)

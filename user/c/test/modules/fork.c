@@ -19,14 +19,18 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
+#include <esc/fileio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "fork.h"
 
 int mod_fork(int argc,char *argv[]) {
-	u32 i;
-	for(i = 0; i < 100; i++) {
+	u32 i,count = 100;
+	if(argc > 2)
+		count = atoi(argv[2]);
+	for(i = 0; i < count; i++) {
 		printf("I am %d\n",getpid());
-		if(fork() < 0) {
+		if(fork() != 0) {
 			printf("%d quits\n",getpid());
 			break;
 		}

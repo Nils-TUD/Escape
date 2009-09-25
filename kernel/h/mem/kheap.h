@@ -28,6 +28,11 @@
 u32 kheap_getUsedMem(void);
 
 /**
+ * @return the total number of bytes occupied (frames reserved; maybe not all in use atm)
+ */
+u32 kheap_getOccupiedMem(void);
+
+/**
  * Note that this function is intended for debugging-purposes only!
  *
  * @return the number of free bytes

@@ -106,6 +106,15 @@ bool proc_exists(tPid pid);
 u32 proc_getCount(void);
 
 /**
+ * Determines the mem-usage of all processes
+ *
+ * @param paging will point to the number of bytes used for paging-structures
+ * @param data will point to the number of bytes mapped for data (not frames because of COW,
+ *  shmem, ...)
+ */
+void proc_getMemUsage(u32 *paging,u32 *data);
+
+/**
  * Determines wether the given process has a child
  *
  * @param pid the process-id

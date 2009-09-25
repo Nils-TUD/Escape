@@ -52,6 +52,11 @@ typedef enum {MM_DMA = 1,MM_DEF = 2} eMemType;
 void mm_init(void);
 
 /**
+ * @return the number of bytes used for the mm-stack
+ */
+u32 mm_getStackSize(void);
+
+/**
  * Counts the number of free frames. This is primarly intended for debugging!
  *
  * @param types a bit-mask with all types (MM_DMA,MM_DEF) to use for counting

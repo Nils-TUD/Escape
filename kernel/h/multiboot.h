@@ -103,6 +103,16 @@ extern sMultiBoot *mb;
 void mboot_init(sMultiBoot *mbp);
 
 /**
+ * @return size of the kernel (in bytes)
+ */
+u32 mboot_getKernelSize(void);
+
+/**
+ * @return size of the multiboot-modules (in bytes)
+ */
+u32 mboot_getModuleSize(void);
+
+/**
  * Loads all multiboot-modules
  *
  * @param stack the interrupt-stack-frame

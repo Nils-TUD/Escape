@@ -224,24 +224,40 @@ static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer
 static s32 vfsinfo_memUsageReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,
 		u32 offset,u32 count) {
 	UNUSED(file);
-	return vfsrw_readHelper(tid,node,buffer,offset,count,(11 + 10 + 1) * 4 + 1,
+	return vfsrw_readHelper(tid,node,buffer,offset,count,(11 + 10 + 1) * 11 + 1,
 			vfsinfo_memUsageReadCallback);
 }
 
 static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
 	sStringBuffer buf;
 	u32 free,total;
+	u32 paging,userTotal,ksize,msize,kheap,pmem,kptbls;
 	UNUSED(node);
 	UNUSED(dataSize);
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
-	buf.size = (11 + 10 + 1) * 4 + 1;
+	buf.size = (11 + 10 + 1) * 11 + 1;
 	buf.len = 0;
+
+	/* kernel-page-tables are shared */
+	kptbls = (KERNEL_STACK - (KERNEL_AREA_V_ADDR + (PAGE_SIZE * PT_ENTRY_COUNT))) / PT_ENTRY_COUNT;
 
 	free = mm_getFreeFrmCount(MM_DEF | MM_DMA) << PAGE_SIZE_SHIFT;
 	total = mboot_getUsableMemCount();
+	ksize = mboot_getKernelSize();
+	msize = mboot_getModuleSize();
+	kheap = kheap_getOccupiedMem();
+	pmem = mm_getStackSize();
+	proc_getMemUsage(&paging,&userTotal);
 	asprintf(
 		&buf,
+		"%-11s%10u\n"
+		"%-11s%10u\n"
+		"%-11s%10u\n"
+		"%-11s%10u\n"
+		"%-11s%10u\n"
+		"%-11s%10u\n"
+		"%-11s%10u\n"
 		"%-11s%10u\n"
 		"%-11s%10u\n"
 		"%-11s%10u\n"
@@ -250,7 +266,14 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buf
 		"Total:",total,
 		"Used:",total - free,
 		"Free:",free,
-		"KHeapSize:",kheap_getUsedMem()
+		"Kernel:",ksize,
+		"Modules:",msize,
+		"UserTotal:",userTotal,
+		"UserReal:",(total - free) - (ksize + pmem + msize + paging + kheap + kptbls),
+		"Paging:",paging,
+		"PhysMem:",pmem,
+		"KHeapSize:",kheap,
+		"KHeapUsage:",kheap_getUsedMem()
 	);
 }
 

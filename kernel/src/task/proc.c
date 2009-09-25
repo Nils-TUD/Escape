@@ -129,6 +129,27 @@ u32 proc_getCount(void) {
 	return count;
 }
 
+void proc_getMemUsage(u32 *paging,u32 *data) {
+	sSLNode *n;
+	sThread *t;
+	u32 pmem = 0,dmem = 0;
+	u32 i;
+	for(i = 0; i < PROC_COUNT; i++) {
+		if(procs[i].pid != INVALID_PID) {
+			dmem += procs[i].dataPages + procs[i].textPages;
+			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
+				t = (sThread*)n->data;
+				dmem += t->ustackPages;
+				pmem += PAGES_TO_PTS(t->ustackPages);
+			}
+			/* page-directory, pt for kernel-stack and kernel-stack */
+			pmem += 3 + PAGES_TO_PTS(procs[i].textPages + procs[i].dataPages);
+		}
+	}
+	*paging = pmem * PAGE_SIZE;
+	*data = dmem * PAGE_SIZE;
+}
+
 bool proc_hasChild(tPid pid) {
 	tPid i;
 	sProc *p = procs;

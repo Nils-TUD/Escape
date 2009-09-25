@@ -85,6 +85,10 @@ u32 kheap_getUsedMem(void) {
 	return c;
 }
 
+u32 kheap_getOccupiedMem(void) {
+	return pages * PAGE_SIZE;
+}
+
 u32 kheap_getFreeMem(void) {
 	u32 c = 0;
 	sMemArea *a = usableList;

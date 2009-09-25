@@ -93,13 +93,11 @@ void mm_init(void) {
 
 	/* init stack */
 	u16mStackFrameCount = (U16M_PAGE_COUNT + (PAGE_SIZE - 1) / sizeof(u32)) / (PAGE_SIZE / sizeof(u32));
-	/*vid_printf("MEMSIZE=%d bytes, PAGE_COUNT=%d, stackFrameCount=%d\n",
-			MEMSIZE,U16M_PAGE_COUNT,u16mStackFrameCount);*/
 
 	/* put the MM-stack behind the last multiboot-module */
 	if(mb->modsCount == 0)
 		util_panic("No multiboot-modules found");
-	u16mStack = (u32*)mb->modsAddr[mb->modsCount - 1].modEnd;
+	u16mStack = (u32*)(mb->modsAddr[mb->modsCount - 1].modEnd);
 	u16mStackStart = (u32)u16mStack;
 
 	/* at first we mark all frames as used in the bitmap for 0..16M */
@@ -118,23 +116,26 @@ void mm_init(void) {
 	/* Note that we have to remove the 0xC0000000 since we want to work with physical addresses */
 	/* TODO we can use a little bit more because the kernel does not use the last few frames */
 	mm_markAddrRangeUsed((u32)&KernelStart & ~KERNEL_AREA_V_ADDR,
-			(u32)(((u32)u16mStack & ~KERNEL_AREA_V_ADDR) + u16mStackFrameCount * PAGE_SIZE),true);
+			(u32)((u16mStackStart & ~KERNEL_AREA_V_ADDR) + u16mStackFrameCount * PAGE_SIZE),true);
+}
+
+u32 mm_getStackSize(void) {
+	return u16mStackFrameCount * PAGE_SIZE;
 }
 
 /* TODO may be we should store and manipulate the current number of free frames? */
 u32 mm_getFreeFrmCount(u32 types) {
-	u32 i,bmIndex,count = 0;
+	u32 count = 0;
 
 	vassert(types & (MM_DMA | MM_DEF),"types is empty");
 	vassert(!(types & ~(MM_DMA | MM_DEF)),"types contains invalid bits");
 
 	if(types & MM_DMA) {
 		/* count < 16MB frames */
+		u32 i;
 		for(i = 0; i < L16M_PAGE_COUNT; i++) {
-			bmIndex = l16mSearchPos >> 5;
-			if((l16mBitmap[bmIndex] & (1 << (l16mSearchPos & 0x1f))) == 0) {
+			if((l16mBitmap[i >> 5] & (1 << (i & 0x1f))) == 0)
 				count++;
-			}
 		}
 	}
 	if(types & MM_DEF) {
@@ -314,7 +315,7 @@ void mm_dbg_printFreeFrames(void) {
 	u32 i,pos = 0;
 	u32 *ptr;
 	for(i = 0; i < ARRAY_SIZE(l16mBitmap); i++) {
-		if(l16mBitmap[i])
+		if(l16mBitmap[i] != ~0u)
 			vid_printf("%08x..%08x: %032b\n",pos,pos + PAGE_SIZE * 32 - 1,l16mBitmap[i]);
 		pos += PAGE_SIZE * 32;
 	}

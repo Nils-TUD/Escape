@@ -436,7 +436,7 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	sPDEntry *pd,*npd,*tpd;
 	sPTEntry *pt;
 	sProc *p;
-	sThread *curThread;
+	sThread *curThread = thread_getRunning();
 
 	vassert(stackFrame != NULL,"stackFrame == NULL");
 	vassert(newProc != NULL,"newProc == NULL");
@@ -454,7 +454,7 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	p = proc_getRunning();
 	tPages = p->textPages;
 	dPages = p->dataPages;
-	sPages = p->stackPages;
+	sPages = curThread->ustackPages;
 	frameCount = 3 + PAGES_TO_PTS(tPages + dPages) + PAGES_TO_PTS(sPages);
 	/* worstcase heap-usage. NOTE THAT THIS ASSUMES A BIT ABOUT THE INTERNAL STRUCTURE OF SLL! */
 	kheapCount = (dPages + sPages) * (sizeof(sCOW) + sizeof(sSLNode)) * 2;
@@ -521,8 +521,6 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	paging_setCOW(x,(sPTEntry*)ADDR_TO_MAPPED(x),dPages,newProc);
 
 	/* we're cloning just the current thread */
-	curThread = thread_getRunning();
-
 	/* create user-stack */
 	tsPages = curThread->ustackPages;
 	x = curThread->ustackBegin - tsPages * PAGE_SIZE;

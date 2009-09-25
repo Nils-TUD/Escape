@@ -34,6 +34,7 @@
 
 #define CHECK_FLAG(flags,bit)	(flags & (1 << bit))
 
+extern u32 KernelStart;
 sMultiBoot *mb;
 static bool loadedMods = false;
 
@@ -56,6 +57,18 @@ void mboot_init(sMultiBoot *mbp) {
 		mod->name = (char*)((u32)mod->name | KERNEL_AREA_V_ADDR);
 		mod++;
 	}
+}
+
+u32 mboot_getKernelSize(void) {
+	u32 start = (u32)&KernelStart | KERNEL_AREA_V_ADDR;
+	u32 end = mb->modsAddr[0].modStart;
+	return end - start;
+}
+
+u32 mboot_getModuleSize(void) {
+	u32 start = mb->modsAddr[0].modStart;
+	u32 end = mb->modsAddr[mb->modsCount - 1].modEnd;
+	return end - start;
 }
 
 void mboot_loadModules(sIntrptStackFrame *stack) {
@@ -202,14 +215,15 @@ void mboot_dbg_print(void) {
 	}
 	if(CHECK_FLAG(mb->flags,6)) {
 		vid_printf("mmapLength=%d, mmapAddr=0x%x\n",mb->mmapLength,mb->mmapAddr);
-		vid_printf("Available memory:\n");
+		vid_printf("memory-map:\n");
 		x = 0;
 		for(mmap = (sMemMap*)mb->mmapAddr;
 			(u32)mmap < (u32)mb->mmapAddr + mb->mmapLength;
 			mmap = (sMemMap*)((u32)mmap + mmap->size + sizeof(mmap->size))) {
-			if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
-				vid_printf("\t%d: addr=0x%08x, size=0x%08x, type=0x%08x\n",
-						x,(u32)mmap->baseAddr,(u32)mmap->length,mmap->type);
+			if(mmap != NULL) {
+				vid_printf("\t%d: addr=0x%08x, size=0x%08x, type=%s\n",
+						x,(u32)mmap->baseAddr,(u32)mmap->length,
+						mmap->type == MMAP_TYPE_AVAILABLE ? "free" : "used");
 				x++;
 			}
 		}

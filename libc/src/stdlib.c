@@ -25,13 +25,15 @@
 #include <esc/lock.h>
 #include <stdlib.h>
 
-/* macro to get a pointer to element <i> from <array> with a size of <elSize> per element */
-#define QSORT_AGET(array,elSize,i) ((u32)(array) + (elSize) * (i))
+/* macro to get a pointer to element <elNo> from <array> with a size of <elSize> per element */
+#define QSORT_AGET(array,elSize,elNo) (((char*)(array)) + (elSize) * (elNo))
 
 /**
- * Qsort-implementation
+ * Quicksort-implementation
+ * source: http://de.wikipedia.org/wiki/Quicksort
  */
-static void _qsort(void *base,size_t num,size_t size,fCompare cmp,int left,int right);
+static void _qsort(void *base,size_t size,fCompare cmp,int left,int right);
+static int divide(void *base,size_t size,fCompare cmp,int left,int right);
 
 /* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
 static tULock randLock = 0;
@@ -119,8 +121,46 @@ void *bsearch(const void *key,const void *base,size_t num,size_t size,fCompare c
 	return NULL;
 }
 
-void qsort(void *base,size_t num,size_t size,fCompare cmp) {
-	_qsort(base,num,size,cmp,0,num - 1);
+void qsort(void *base,size_t nmemb,size_t size,fCompare cmp) {
+	_qsort(base,size,cmp,0,nmemb - 1);
+}
+
+static void _qsort(void *base,size_t size,fCompare cmp,int left,int right) {
+	/* TODO someday we should provide a better implementation which uses another sort-algo
+	 * for small arrays, don't uses recursion and so on */
+	if(left < right) {
+		int i = divide(base,size,cmp,left,right);
+		_qsort(base,size,cmp,left,i - 1);
+		_qsort(base,size,cmp,i + 1,right);
+	}
+}
+
+static int divide(void *base,size_t size,fCompare cmp,int left,int right) {
+	char *pleft = (char*)base + left * size;
+	char *piv = (char*)base + right * size;
+	char *i = pleft;
+	char *j = piv - size;
+	do {
+		/* right until the element is > piv */
+		while(cmp(i,piv) <= 0 && i < piv)
+			i += size;
+		/* left until the element is < piv */
+		while(cmp(j,piv) >= 0 && j > pleft)
+			j -= size;
+
+		/* swap */
+		if(i < j) {
+			memswp(i,j,size);
+			i += size;
+			j -= size;
+		}
+	}
+	while(i < j);
+
+	/* swap piv with element i */
+	if(cmp(i,piv) > 0)
+		memswp(i,piv,size);
+	return (u32)(i - (char*)base) / size;
 }
 
 int abs(int n) {
@@ -143,56 +183,4 @@ ldiv_t ldiv(long numerator,long denominator) {
 	res.quot = numerator / denominator;
 	res.rem = numerator % denominator;
 	return res;
-}
-
-static void _qsort(void *base,size_t num,size_t size,fCompare cmp,int left,int right) {
-	void *piv;
-	unsigned char *iptr,*jptr;
-	unsigned long int ptr;
-	int i,j;
-	size_t x;
-
-	/* Nur noch max. 1 Element? */
-	if(left >= right)
-		return;
-
-	piv = (void*)QSORT_AGET(base,size,(left + right) / 2);
-	i = left;
-	j = right;
-	while(i <= j) {
-		/* right until the element is >= piv */
-		ptr = QSORT_AGET(base,size,i);
-		while(cmp((void*)ptr,piv) < 0) {
-			ptr += size;
-			i++;
-		}
-
-		/* left until the element is <= piv */
-		ptr = QSORT_AGET(base,size,j);
-		while(cmp((void*)ptr,piv) > 0) {
-			ptr -= size;
-			j--;
-		}
-
-		/* swap if i <= j */
-		if(i <= j) {
-			iptr = (unsigned char*)QSORT_AGET(base,size,i);
-			jptr = (unsigned char*)QSORT_AGET(base,size,j);
-			/* *iptr XOR *jptr == 0 for *iptr == *jptr ... */
-			if(memcmp(iptr,jptr,size) != 0) {
-				for(x = 0; x < size; x++) {
-					*iptr ^= *jptr;
-					*jptr ^= *iptr;
-					*iptr ^= *jptr;
-					iptr++;
-					jptr++;
-				}
-			}
-			i++;
-			j--;
-		}
-	}
-
-	_qsort(base,num,size,cmp,left,j);
-	_qsort(base,num,size,cmp,i,right);
 }

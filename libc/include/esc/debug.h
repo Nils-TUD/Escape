@@ -82,6 +82,15 @@ void dumpBytes(void *addr,u32 byteCount);
 void dumpDwords(void *addr,u32 dwordCount);
 
 /**
+ * Prints <num> elements each <elsize> big of <array>
+ *
+ * @param array the array-address
+ * @param num the number of elements
+ * @param elsize the size of each element
+ */
+void dumpArray(void *array,u32 num,u32 elsize);
+
+/**
  * Prints <byteCount> bytes at <addr> with debugf
  *
  * @param addr the start-address

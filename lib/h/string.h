@@ -85,6 +85,15 @@ void *memcpy(void *dest,const void *src,u32 len);
 s32 memcmp(const void *str1,const void *str2,u32 count);
 
 /**
+ * Swaps the <n>-byte big values <a> and <b>
+ *
+ * @param a pointer to the first value
+ * @param b pointer to the second value
+ * @param n the number of bytes
+ */
+void memswp(void *a,void *b,u32 n);
+
+/**
  * Sets <count> bytes starting at <addr> to 0.
  *
  * @param addr the starting address

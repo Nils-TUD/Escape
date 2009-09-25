@@ -75,6 +75,18 @@ void dumpDwords(void *addr,u32 dwordCount) {
 	}
 }
 
+void dumpArray(void *array,u32 num,u32 elsize) {
+	s32 i,j;
+	char *a = (char*)array;
+	for(i = 0; i < num; i++) {
+		printf("%d: ",i);
+		/* little-endian... */
+		for(j = elsize - 1; j >= 0; j--)
+			printf("%02x",a[i * elsize + j]);
+		printf("\n");
+	}
+}
+
 void debugBytes(void *addr,u32 byteCount) {
 	u32 i = 0;
 	u8 *ptr = (u8*)addr;

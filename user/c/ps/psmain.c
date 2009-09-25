@@ -28,6 +28,20 @@
 #include <string.h>
 
 #define ARRAY_INC_SIZE		10
+#define MAX_SORTNAME_LEN	16
+
+#define SORT_PID			0
+#define SORT_PPID			1
+#define SORT_MEM			2
+#define SORT_CPU			3
+#define SORT_UCPU			4
+#define SORT_KCPU			5
+#define SORT_NAME			6
+
+typedef struct {
+	u8 type;
+	char name[MAX_SORTNAME_LEN + 1];
+} sSort;
 
 /* process-data */
 typedef struct {
@@ -36,6 +50,8 @@ typedef struct {
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
+	uLongLong ucycleCount;
+	uLongLong kcycleCount;
 	sSLList *threads;
 	char command[MAX_PROC_NAME_LEN + 1];
 } sProcess;
@@ -49,10 +65,22 @@ typedef struct {
 	uLongLong kcycleCount;
 } sPThread;
 
+static int cmpulongs(u64 a,u64 b);
+static int compareProcs(const void *a,const void *b);
 static sProcess *ps_getProcs(u32 *count);
 static bool ps_readProc(tFD fd,tPid pid,sProcess *p);
 static bool ps_readThread(tFD fd,sPThread *t);
 static char *ps_readNode(tFD fd);
+
+static sSort sorts[] = {
+	{SORT_PID,"pid"},
+	{SORT_PPID,"ppid"},
+	{SORT_MEM,"mem"},
+	{SORT_CPU,"cpu"},
+	{SORT_UCPU,"ucpu"},
+	{SORT_KCPU,"kcpu"},
+	{SORT_NAME,"name"},
+};
 
 static const char *states[] = {
 	"Unused ",
@@ -61,18 +89,29 @@ static const char *states[] = {
 	"Blocked",
 	"Zombie "
 };
+static u8 sort = SORT_PID;
 
 static void usage(char *name) {
-	fprintf(stderr,"Usage: %s [-t]\n",name);
-	fprintf(stderr,"	-t : Print threads, too\n");
+	u32 i;
+	fprintf(stderr,"Usage: %s [-t][-n <count>][-s <sort>]\n",name);
+	fprintf(stderr,"	-t			: Print threads, too\n");
+	fprintf(stderr,"	-n <count>	: Print first <count> processes\n");
+	fprintf(stderr,"	-s <sort>	: Sort by ");
+	for(i = 0; i < ARRAY_SIZE(sorts); i++) {
+		fprintf(stderr,"'%s'",sorts[i].name);
+		if(i < ARRAY_SIZE(sorts) - 1)
+			fprintf(stderr,", ");
+	}
+	fprintf(stderr,"\n");
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char *argv[]) {
 	sProcess *procs;
-	u32 i,count;
+	u32 i,j,count;
 	u64 totalCycles;
 	sSLNode *n;
+	u32 numProcs = 0;
 	bool printThreads = false;
 	char *s;
 
@@ -80,7 +119,24 @@ int main(int argc,char *argv[]) {
 		usage(argv[0]);
 
 	for(i = 1; (int)i < argc; i++) {
-		if(argv[i][0] == '-') {
+		if(strcmp(argv[i],"-s") == 0) {
+			if((s32)i >= argc - 1)
+				usage(argv[0]);
+			i++;
+			for(j = 0; j < ARRAY_SIZE(sorts); j++) {
+				if(strcmp(argv[i],sorts[j].name) == 0) {
+					sort = sorts[j].type;
+					break;
+				}
+			}
+		}
+		else if(strcmp(argv[i],"-n") == 0) {
+			if((s32)i >= argc - 1)
+				usage(argv[0]);
+			i++;
+			numProcs = atoi(argv[i]);
+		}
+		else if(argv[i][0] == '-') {
 			s = argv[i] + 1;
 			while(*s) {
 				switch(*s) {
@@ -101,32 +157,37 @@ int main(int argc,char *argv[]) {
 	if(procs == NULL)
 		return EXIT_FAILURE;
 
-	/* sum total cycles */
+	/* sum total cycles and assign cycles to processes */
 	totalCycles = 0;
 	for(i = 0; i < count; i++) {
+		u64 procUCycles = 0,procKCycles = 0;
 		for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
 			sPThread *t = (sPThread*)n->data;
 			totalCycles += t->ucycleCount.val64 + t->kcycleCount.val64;
+			procUCycles += t->ucycleCount.val64;
+			procKCycles += t->kcycleCount.val64;
 		}
+		procs[i].ucycleCount.val64 = procUCycles;
+		procs[i].kcycleCount.val64 = procKCycles;
 	}
+
+	/* TODO it would be better to store pointers so that we don't have to swap the whole processes,
+	 * right? */
+	qsort(procs,count,sizeof(sProcess),compareProcs);
 
 	/* now print processes */
 	printf("ID\t\tPPID MEM\t\tSTATE\t%%CPU (USER,KERNEL)\tCOMMAND\n");
 
-	for(i = 0; i < count; i++) {
+	if(numProcs == 0)
+		numProcs = count;
+	for(i = 0; i < numProcs; i++) {
 		u64 procCycles;
-		u64 procUCycles = 0,procKCycles = 0;
 		u32 userPercent,kernelPercent;
 		float cyclePercent;
-		for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
-			sPThread *t = (sPThread*)n->data;
-			procUCycles += t->ucycleCount.val64;
-			procKCycles += t->kcycleCount.val64;
-		}
-		procCycles = procUCycles + procKCycles;
+		procCycles = procs[i].ucycleCount.val64 + procs[i].kcycleCount.val64;
 		cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
-		userPercent = (u32)(100. / (procCycles / (double)procUCycles));
-		kernelPercent = (u32)(100. / (procCycles / (double)procKCycles));
+		userPercent = (u32)(100. / (procCycles / (double)procs[i].ucycleCount.val64));
+		kernelPercent = (u32)(100. / (procCycles / (double)procs[i].kcycleCount.val64));
 		printf("%2d\t\t%2d\t%4d KiB\t-\t\t%4.1f%% (%3d%%,%3d%%)\t%s\n",
 				procs[i].pid,procs[i].parentPid,
 				(procs[i].textPages + procs[i].dataPages + procs[i].stackPages) * 4,
@@ -151,6 +212,46 @@ int main(int argc,char *argv[]) {
 		sll_destroy(procs[i].threads,true);
 	free(procs);
 	return EXIT_SUCCESS;
+}
+
+static int compareProcs(const void *a,const void *b) {
+	sProcess *p1 = (sProcess*)a;
+	sProcess *p2 = (sProcess*)b;
+	switch(sort) {
+		case SORT_PID:
+			/* ascending */
+			return p1->pid - p2->pid;
+		case SORT_PPID:
+			/* ascending */
+			return p1->parentPid - p2->parentPid;
+		case SORT_MEM:
+			/* descending */
+			return (p2->textPages + p2->dataPages + p2->stackPages) -
+				(p1->textPages + p1->dataPages + p1->stackPages);
+		case SORT_CPU:
+			/* descending */
+			return cmpulongs(p2->ucycleCount.val64 + p2->kcycleCount.val64,
+					p1->ucycleCount.val64 + p1->kcycleCount.val64);
+		case SORT_UCPU:
+			/* descending */
+			return cmpulongs(p2->ucycleCount.val64,p1->ucycleCount.val64);
+		case SORT_KCPU:
+			/* descending */
+			return cmpulongs(p2->kcycleCount.val64,p1->kcycleCount.val64);
+		case SORT_NAME:
+			/* ascending */
+			return strcmp(p1->command,p2->command);
+	}
+	/* never reached */
+	return 0;
+}
+
+static int cmpulongs(u64 a,u64 b) {
+	if(a > b)
+		return 1;
+	if(b > a)
+		return -1;
+	return 0;
 }
 
 static sProcess *ps_getProcs(u32 *count) {

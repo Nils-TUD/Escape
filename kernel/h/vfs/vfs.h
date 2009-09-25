@@ -87,6 +87,8 @@ struct sVFSNode {
 		struct {
 			/* wether there is data to read or not */
 			bool isEmpty;
+			/* the last served client */
+			sVFSNode *lastClient;
 		} service;
 		/* for service-usages */
 		struct {

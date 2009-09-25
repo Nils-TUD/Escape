@@ -450,6 +450,7 @@ sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 type) 
 	node->readHandler = NULL;
 	node->writeHandler = NULL;
 	node->data.service.isEmpty = true;
+	node->data.service.lastClient = NULL;
 	return node;
 }
 

@@ -37,6 +37,8 @@
 #include "vtin.h"
 
 #define KB_DATA_BUF_SIZE	128
+/* max number of requests handled in a row; we have to look sometimes for the keyboard.. */
+#define MAX_SEQREQ			20
 
 /**
  * Determines the vterm for the given service-id
@@ -55,7 +57,7 @@ static sKbData kbData[KB_DATA_BUF_SIZE];
 static tServ servIds[VTERM_COUNT] = {-1};
 
 int main(void) {
-	u32 i;
+	u32 i,reqc;
 	tFD kbFd;
 	tServ client;
 	tMsgId mid;
@@ -85,9 +87,13 @@ int main(void) {
 	/* select first vterm */
 	vterm_selectVTerm(0);
 
+	reqc = 0;
 	while(1) {
 		tFD fd = getClient(servIds,VTERM_COUNT,&client);
-		if(fd < 0) {
+		if(reqc >= MAX_SEQREQ || fd < 0) {
+			if(fd >= 0)
+				close(fd);
+			reqc = 0;
 			if(readKeyboard) {
 				/* read from keyboard */
 				/* don't block here since there may be waiting clients.. */
@@ -109,10 +115,10 @@ int main(void) {
 		else {
 			sVTerm *vt = getVTerm(client);
 			if(vt != NULL) {
-				u32 c;
+				u32 c = 0;
 				/* TODO this may cause trouble with escape-codes. maybe we should store the
 				 * "escape-state" somehow... */
-				while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
+				while(reqc++ < MAX_SEQREQ && receive(fd,&mid,&msg,sizeof(msg)) > 0) {
 					switch(mid) {
 						case MSG_DRV_OPEN:
 							msg.args.arg1 = 0;

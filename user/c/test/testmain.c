@@ -30,6 +30,8 @@
 #include "modules/debug.h"
 #include "modules/fault.h"
 #include "modules/thread.h"
+#include "modules/fork.h"
+#include "modules/procswarm.h"
 
 #define NAME_LEN 10
 
@@ -46,6 +48,8 @@ static sTestModule modules[] = {
 	{"debug",mod_debug},
 	{"fault",mod_fault},
 	{"thread",mod_thread},
+	{"fork",mod_fork},
+	{"procswarm",mod_procswarm},
 };
 
 int main(int argc,char *argv[]) {

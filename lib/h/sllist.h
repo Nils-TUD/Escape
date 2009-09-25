@@ -141,6 +141,17 @@ bool sll_append(sSLList *list,const void *data);
 bool sll_insert(sSLList *list,const void *data,u32 index);
 
 /**
+ * Inserts the given data behind <prev>. <prev> may be NULL if you want to insert it at the
+ * beginning. This can be done with O(1) since the prev and next node is known.
+ *
+ * @param list the list
+ * @param prev the prev-node (may be NULL)
+ * @param data the data (NULL is not allowed!)
+ * @return true if successfull (otherwise not enough mem)
+ */
+bool sll_insertAfter(sSLList *list,sSLNode *prev,const void *data);
+
+/**
  * Removes all elements from the list
  *
  * @param list the list

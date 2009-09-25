@@ -147,21 +147,29 @@ bool sll_append(sSLList *list,const void *data) {
 
 bool sll_insert(sSLList *list,const void *data,u32 index) {
 	sList *l = (sList*)list;
-	sNode *nn,*n = l->first,*ln = NULL;
+	sNode *ln = NULL;
 
 	vassert(list != NULL,"list == NULL");
 
 	/* walk to the desired position */
-	if(index == l->length) {
-		n = NULL;
+	if(index == l->length)
 		ln = l->last;
-	}
 	else {
-		while(index-- > 0) {
+		sNode *n = l->first;
+		while(n != NULL && index-- > 0) {
 			ln = n;
 			n = n->next;
 		}
 	}
+
+	return sll_insertAfter(list,(sSLNode*)ln,data);
+}
+
+bool sll_insertAfter(sSLList *list,sSLNode *prev,const void *data) {
+	sList *l = (sList*)list;
+	sNode *nn,*pn = (sNode*)prev;
+
+	vassert(list != NULL,"list == NULL");
 
 	/* allocate node? */
 	nn = (sNode*)malloc(sizeof(sNode));
@@ -170,16 +178,16 @@ bool sll_insert(sSLList *list,const void *data,u32 index) {
 
 	/* insert */
 	nn->data = data;
-	if(ln != NULL)
-		ln->next = nn;
-	else
-		l->first = nn;
-	if(n != NULL)
-		nn->next = n;
-	else {
-		l->last = nn;
-		nn->next = NULL;
+	if(pn != NULL) {
+		nn->next = pn->next;
+		pn->next = nn;
 	}
+	else {
+		nn->next = l->first;
+		l->first = nn;
+	}
+	if(nn->next == NULL)
+		l->last = nn;
 	l->length++;
 
 	return true;

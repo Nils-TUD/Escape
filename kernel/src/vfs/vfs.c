@@ -809,8 +809,14 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 }
 
 s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count) {
-	sVFSNode *n,*node;
+	sVFSNode *n,*node,*last;
 	u32 i;
+	bool skipped;
+	/* this is a bit more complicated because we want to do it in a fair way. that means every
+	 * process that requests something should be served at some time. therefore we store the last
+	 * served client and continue from the next one. */
+retry:
+	skipped = false;
 	for(i = 0; i < count; i++) {
 		if(!vfsn_isValidNodeNo(vfsNodes[i]))
 			return ERR_INVALID_SERVID;
@@ -820,18 +826,36 @@ s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count) {
 			return ERR_NOT_OWN_SERVICE;
 
 		/* search for a slot that needs work */
-		n = NODE_FIRST_CHILD(node);
-		while(n != NULL) {
+		last = node->data.service.lastClient;
+		if(last == NULL)
+			n = NODE_FIRST_CHILD(node);
+		else if(last->next == NULL) {
+			/* if we have checked all clients in this service, give the other services
+			 * a chance (if there are any others) */
+			node->data.service.lastClient = NULL;
+			skipped = true;
+			continue;
+		}
+		else
+			n = last->next;
+searchBegin:
+		while(n != NULL && n != last) {
 			/* data available? */
-			if(n->data.servuse.sendList != NULL && sll_length(n->data.servuse.sendList) > 0)
-				break;
+			if(n->data.servuse.sendList != NULL && sll_length(n->data.servuse.sendList) > 0) {
+				node->data.service.lastClient = n;
+				return NADDR_TO_VNNO(n);
+			}
 			n = n->next;
 		}
-
-		if(n != NULL)
-			return NADDR_TO_VNNO(n);
+		if(node->data.service.lastClient) {
+			n = NODE_FIRST_CHILD(node);
+			node->data.service.lastClient = NULL;
+			goto searchBegin;
+		}
 	}
-	return ERR_NO_CLIENT_WAITING;;
+	if(skipped)
+		goto retry;
+	return ERR_NO_CLIENT_WAITING;
 }
 
 tFileNo vfs_openClientThread(tTid tid,tInodeNo nodeNo,tTid clientId) {

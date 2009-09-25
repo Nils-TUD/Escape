@@ -21,6 +21,7 @@
 #include <machine/timer.h>
 #include <mem/kheap.h>
 #include <task/sched.h>
+#include <video.h>
 #include <util.h>
 #include <sllist.h>
 #include <errors.h>
@@ -50,8 +51,8 @@
 /* an entry in the listener-list */
 typedef struct {
 	tTid tid;
-	u64 time;	/* TODO it would make more sense to store the differences between the entries
-					and not absolute values */
+	/* difference to the previous listener */
+	u32 time;
 } sTimerListener;
 
 /* processes that should be waked up to a specified time */
@@ -80,29 +81,56 @@ u32 timer_getIntrptCount(void) {
 }
 
 s32 timer_sleepFor(tTid tid,u32 msecs) {
-	sTimerListener *l = (sTimerListener*)kheap_alloc(sizeof(sTimerListener));
+	u32 msecDiff;
+	sSLNode *n,*p;
+	sTimerListener *nl,*l = (sTimerListener*)kheap_alloc(sizeof(sTimerListener));
 	if(l == 0)
 		return ERR_NOT_ENOUGH_MEM;
 
-	/* build entry and put process to sleep */
+	/* find place and calculate time */
 	l->tid = tid;
-	l->time = elapsedMsecs + msecs;
-	if(!sll_append(listener,l)) {
+	msecDiff = 0;
+	p = NULL;
+	for(n = sll_begin(listener); n != NULL; p = n, n = n->next) {
+		nl = (sTimerListener*)n->data;
+		if(msecDiff + nl->time > msecs)
+			break;
+		msecDiff += nl->time;
+	}
+
+	l->time = msecs - msecDiff;
+	/* store pointer to next data before inserting */
+	if(n)
+		nl = (sTimerListener*)n->data;
+	else
+		nl = NULL;
+	/* insert entry */
+	if(!sll_insertAfter(listener,p,l)) {
 		kheap_free(l);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
+	/* now change time of next one */
+	if(nl)
+		nl->time -= l->time;
+
+	/* put process to sleep */
 	sched_setBlocked(thread_getById(tid));
 	return 0;
 }
 
 void timer_removeThread(tTid tid) {
 	sSLNode *n,*p;
-	sTimerListener *l;
+	sTimerListener *l,*nl;
 	p = NULL;
 	for(n = sll_begin(listener); n != NULL; p = n, n = n->next) {
 		l = (sTimerListener*)n->data;
 		if(l->tid == tid) {
+			/* increase time of next */
+			if(n->next) {
+				nl = (sTimerListener*)n->next->data;
+				nl->time += l->time;
+			}
 			sll_removeNode(listener,n,p);
 			kheap_free(l);
 			/* it's not possible to be in the list twice */
@@ -113,30 +141,31 @@ void timer_removeThread(tTid tid) {
 
 void timer_intrpt(void) {
 	bool foundThread = false;
-	sSLNode *n,*p,*tn;
+	sSLNode *n,*tn;
 	sTimerListener *l;
+	u32 timeInc = 1000 / TIMER_FREQUENCY;
 
 	timerIntrpts++;
-	elapsedMsecs += 1000 / TIMER_FREQUENCY;
+	elapsedMsecs += timeInc;
 
-	/* TODO we should switch to the thread for which (elapsedMsecs - l->time) is max */
-	/* look if there is a thread that should be waked up */
-	p = NULL;
+	/* look if there are threads to wakeup */
 	for(n = sll_begin(listener); n != NULL; ) {
 		l = (sTimerListener*)n->data;
-		if(l->time <= elapsedMsecs) {
-			tn = n->next;
-			foundThread = true;
-			/* wake up process */
-			sched_setReadyQuick(thread_getById(l->tid));
-			kheap_free(l);
-			sll_removeNode(listener,n,p);
-			n = tn;
+		/* stop if we have to continue waiting for this one */
+		/* note that multiple listeners may have l->time = 0 */
+		if(l->time > timeInc) {
+			l->time -= timeInc;
+			break;
 		}
-		else {
-			p = n;
-			n = n->next;
-		}
+
+		timeInc -= l->time;
+		foundThread = true;
+		tn = n->next;
+		/* wake up process */
+		sched_setReadyQuick(thread_getById(l->tid));
+		kheap_free(l);
+		sll_removeNode(listener,n,NULL);
+		n = tn;
 	}
 
 	/* if a process has been waked up or the time-slice is over, reschedule */
@@ -145,3 +174,21 @@ void timer_intrpt(void) {
 		thread_switch();
 	}
 }
+
+#if DEBUGGING
+
+void timer_dbg_print(void) {
+	u32 time;
+	sSLNode *n;
+	sTimerListener *l;
+	vid_printf("Timer-Listener:\n");
+	time = 0;
+	for(n = sll_begin(listener); n != NULL; n = n->next) {
+		l = (sTimerListener*)n->data;
+		time += l->time;
+		vid_printf("	diff=%d ms, rem=%d ms, tid=%d (%s)\n",l->time,time,l->tid,
+				thread_getById(l->tid)->proc->command);
+	}
+}
+
+#endif

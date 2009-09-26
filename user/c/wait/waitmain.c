@@ -27,12 +27,17 @@
 #include <errors.h>
 #include <stdlib.h>
 
+#define TIMER_FREQUENCY		50
+#define TIMER_INC			(1000 / TIMER_FREQUENCY)
+
+static void sigTimer(tSig sig,u32 data);
 static void sigHdlr(tSig sig,u32 data);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <program> [arguments...]\n",name);
 	exit(EXIT_FAILURE);
 }
 
+static u32 ms = 0;
 static s32 waitingPid = 0;
 
 int main(int argc,char **argv) {
@@ -40,10 +45,12 @@ int main(int argc,char **argv) {
 	if(argc < 2 || isHelpCmd(argc,argv))
 		usage(argv[0]);
 
+	strcat(path,argv[1]);
 	if(setSigHandler(SIG_INTRPT,sigHdlr) < 0)
 		error("Unable to set sig-handler for signal %d",SIG_INTRPT);
+	if(setSigHandler(SIG_INTRPT_TIMER,sigTimer) < 0)
+		error("Unable to set sig-handler for signal %d",SIG_INTRPT_TIMER);
 
-	strcat(path,argv[1]);
 	if((waitingPid = fork()) == 0) {
 		s32 i;
 		argv[0] = path;
@@ -65,16 +72,24 @@ int main(int argc,char **argv) {
 		}
 		if(res < 0)
 			error("Wait failed");
+		unsetSigHandler(SIG_INTRPT_TIMER);
 		printf("\n");
 		printf("Process %d (%s) terminated with exit-code %d\n",state.pid,path,state.exitCode);
 		if(state.signal != SIG_COUNT)
 			printf("It was terminated by signal %d\n",state.signal);
 		printf("User-Cycles:	%08x%08x\n",state.ucycleCount.val32.upper,state.ucycleCount.val32.lower);
 		printf("Kernel-Cycles:	%08x%08x\n",state.kcycleCount.val32.upper,state.kcycleCount.val32.lower);
+		printf("Time:			%u ms\n",ms);
 		printf("Memory:			%u KiB\n",state.memory / K);
 	}
 
 	return EXIT_SUCCESS;
+}
+
+static void sigTimer(tSig sig,u32 data) {
+	UNUSED(sig);
+	UNUSED(data);
+	ms += TIMER_INC;
 }
 
 static void sigHdlr(tSig sig,u32 data) {

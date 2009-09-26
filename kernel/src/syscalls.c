@@ -1114,7 +1114,7 @@ static void sysc_waitChild(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
 
-	if(!paging_isRangeUserWritable((u32)state,sizeof(sExitState)))
+	if(state != NULL && !paging_isRangeUserWritable((u32)state,sizeof(sExitState)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	if(!proc_hasChild(t->proc->pid))
 		SYSC_ERROR(stack,ERR_NO_CHILD);
@@ -1141,11 +1141,11 @@ static void sysc_waitChild(sIntrptStackFrame *stack) {
 		}
 		res = proc_getExitState(p->pid,state);
 		if(res < 0)
-			SYSC_ERROR(stack,res);
+			SYSC_ERROR(stack,0);
 	}
 
 	/* finally kill the process */
-	proc_kill(proc_getByPid(state->pid));
+	proc_kill(proc_getByPid(res));
 	SYSC_RET1(stack,0);
 }
 

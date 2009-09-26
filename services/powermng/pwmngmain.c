@@ -165,11 +165,12 @@ static void getProcName(tPid pid,char *name) {
 	char path[SSTRLEN("/system/processes//info") + 12];
 	sprintf(path,"/system/processes/%d/info",pid);
 	fd = open(path,IO_READ);
+	/* maybe the process has just been terminated */
 	if(fd < 0)
-		error("Unable to open '%s'",path);
+		return;
 	if(read(fd,buffer,ARRAY_SIZE(buffer) - 1) < 0) {
 		close(fd);
-		error("Reading '%s' failed",path);
+		return;
 	}
 	buffer[ARRAY_SIZE(buffer) - 1] = '\0';
 	sscanf(

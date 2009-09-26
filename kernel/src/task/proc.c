@@ -332,19 +332,21 @@ s32 proc_getExitState(tPid ppid,sExitState *state) {
 				}
 			}
 			if(isZombie) {
-				state->pid = procs[i].pid;
-				state->exitCode = procs[i].exitCode;
-				state->signal = procs[i].exitSig;
-				state->memory = (procs[i].textPages + procs[i].dataPages +
-						procs[i].stackPages) * PAGE_SIZE;
-				state->ucycleCount.val64 = 0;
-				state->kcycleCount.val64 = 0;
-				for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
-					t = (sThread*)n->data;
-					state->ucycleCount.val64 += t->ucycleCount.val64;
-					state->kcycleCount.val64 += t->kcycleCount.val64;
+				if(state) {
+					state->pid = procs[i].pid;
+					state->exitCode = procs[i].exitCode;
+					state->signal = procs[i].exitSig;
+					state->memory = (procs[i].textPages + procs[i].dataPages +
+							procs[i].stackPages) * PAGE_SIZE;
+					state->ucycleCount.val64 = 0;
+					state->kcycleCount.val64 = 0;
+					for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
+						t = (sThread*)n->data;
+						state->ucycleCount.val64 += t->ucycleCount.val64;
+						state->kcycleCount.val64 += t->kcycleCount.val64;
+					}
 				}
-				return 0;
+				return procs[i].pid;
 			}
 		}
 	}

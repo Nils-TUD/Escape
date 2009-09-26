@@ -168,8 +168,8 @@ void proc_destroyThread(s32 exitCode);
  * Stores the exit-state of the first terminated child-process of <ppid> into <state>
  *
  * @param ppid the parent-pid
- * @param state the pointer to the state
- * @return 0 on success
+ * @param state the pointer to the state (may be NULL!)
+ * @return the pid on success
  */
 s32 proc_getExitState(tPid ppid,sExitState *state);
 

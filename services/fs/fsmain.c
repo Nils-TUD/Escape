@@ -62,7 +62,7 @@ static void sigTermHndl(tSig sig,u32 data) {
 		if(inst && inst->fs->sync != NULL)
 			inst->fs->sync(inst->handle);
 	}
-	/*exit(0);*/
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc,char *argv[]) {

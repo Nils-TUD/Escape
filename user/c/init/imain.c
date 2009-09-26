@@ -164,7 +164,7 @@ int main(void) {
 
 	/* loop and wait forever */
 	while(1)
-		wait(EV_NOEVENT);
+		waitChild(NULL);
 	return EXIT_SUCCESS;
 }
 

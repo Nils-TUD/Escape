@@ -30,7 +30,7 @@
 #include <stdlib.h>
 
 #define COLS				80
-#define ROWS				24
+#define ROWS				23
 #define BUFFER_SIZE			(64 * K)
 #define BUFFER_INC_SIZE		64
 #define TAB_WIDTH			4
@@ -45,6 +45,7 @@ static u32 linePos;
 static u32 lineCount;
 static u32 lineSize;
 static char **lines;
+static char *filename;
 static u32 startLine = 0;
 
 static char emptyLine[COLS + 1];
@@ -54,7 +55,6 @@ int main(int argc,char *argv[]) {
 	tFile *fvterm;
 	bool run = true;
 	char c;
-	char *path;
 	char vterm[MAX_PATH_LEN] = "/drivers/";
 
 	if((argc != 1 && argc != 2) || isHelpCmd(argc,argv)) {
@@ -69,17 +69,16 @@ int main(int argc,char *argv[]) {
 
 	/* determine source */
 	file = stdin;
+	filename = NULL;
 	if(argc == 2) {
-		path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-		if(path == NULL)
+		filename = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
+		if(filename == NULL)
 			error("Unable to allocate mem for path");
 
-		abspath(path,MAX_PATH_LEN + 1,argv[1]);
-		file = fopen(path,"r");
+		abspath(filename,MAX_PATH_LEN + 1,argv[1]);
+		file = fopen(filename,"r");
 		if(file == NULL)
-			error("Unable to open '%s'",path);
-
-		free(path);
+			error("Unable to open '%s'",filename);
 	}
 
 	/* backup screen */
@@ -180,6 +179,8 @@ static void scrollDown(s32 l) {
 }
 
 static void refreshScreen(void) {
+	char tmp[COLS + 1];
+	const char *file;
 	u32 i,end = MIN(lineCount,ROWS);
 	/* walk to the top of the screen */
 	printf("\033[mh]");
@@ -193,6 +194,13 @@ static void refreshScreen(void) {
 		if(i < ROWS - 1)
 			printc('\n');
 	}
+	/* print last line */
+	sprintf(tmp,"Lines %d-%d / %d",startLine + 1,startLine + end,lineCount);
+	if(filename == NULL)
+		file = "STDIN";
+	else
+		file = filename;
+	printf("\033[co;7;8]%-*s%s\033[co]",COLS - strlen(file),tmp,file);
 	flush();
 }
 

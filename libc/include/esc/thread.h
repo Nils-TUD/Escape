@@ -23,7 +23,7 @@
 #include <esc/common.h>
 
 /* the thread-entry-point-function */
-typedef int (*fThreadEntry)(void);
+typedef int (*fThreadEntry)(int argc,char **argv);
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,9 +43,10 @@ u32 getThreadCount(void);
  * Starts a new thread
  *
  * @param entryPoint the entry-point of the thread
+ * @param args arguments to pass to the thread (analogous to exec)
  * @return new tid for current thread, 0 for new thread, < 0 if failed
  */
-s32 startThread(fThreadEntry entryPoint);
+s32 startThread(fThreadEntry entryPoint,const char **args);
 
 #ifdef __cplusplus
 }

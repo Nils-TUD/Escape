@@ -37,7 +37,7 @@ using namespace esc::gui;
 ProgressBar *pb = NULL;
 Window *w1 = NULL;
 
-static int pbThread(void);
+static int pbThread(int argc,char *argv[]);
 
 class MyImgWindow : public Window {
 public:
@@ -74,7 +74,7 @@ int main(void) {
 		w1->add(cb);
 		pb = new ProgressBar("Progress...",10,120,200,20);
 		w1->add(*pb);
-		startThread(pbThread);
+		startThread(pbThread,NULL);
 		return app->run();
 	}
 
@@ -103,7 +103,9 @@ int main(void) {
 	return app->run();
 }
 
-static int pbThread(void) {
+static int pbThread(int argc,char *argv[]) {
+	UNUSED(argc);
+	UNUSED(argv);
 	/*while(1) {
 		sleep(1000);
 		if(fork() == 0)

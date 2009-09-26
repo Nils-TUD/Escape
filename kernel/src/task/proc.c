@@ -242,7 +242,7 @@ s32 proc_clone(tPid newPid) {
 	return 0;
 }
 
-s32 proc_startThread(u32 entryPoint) {
+s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 	u32 stackFrame;
 	sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
@@ -266,13 +266,13 @@ s32 proc_startThread(u32 entryPoint) {
 	if(res == 1) {
 		u32 *esp;
 		sIntrptStackFrame *istack = intrpt_getCurStack();
+		proc_setupUserStack(istack,argc,args,argSize);
 		proc_setupStart(istack,entryPoint);
 
 		/* we want to call exit when the thread-function returns */
-		esp = (u32*)nt->ustackBegin - 1;
+		esp = (u32*)istack->uesp;
 		*--esp = EXIT_CALL_ADDR;
 		istack->uesp = (u32)esp;
-		istack->ebp = (u32)esp;
 
 		/* child */
 		return 0;

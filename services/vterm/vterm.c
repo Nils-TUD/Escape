@@ -64,7 +64,7 @@ static bool vterm_init(sVTerm *vt);
 /**
  * The thread that updates the titlebars every second and puts the date in
  */
-static int vterm_dateThread(void);
+static int vterm_dateThread(int argc,char *argv[]);
 
 /* vterms */
 static tULock titleBarLock;
@@ -84,7 +84,7 @@ bool vterm_initAll(tServ *ids) {
 			return false;
 	}
 
-	startThread(vterm_dateThread);
+	startThread(vterm_dateThread,NULL);
 	return true;
 }
 
@@ -325,10 +325,12 @@ void vterm_update(sVTerm *vt) {
 	vt->upLength = 0;
 }
 
-static int vterm_dateThread(void) {
+static int vterm_dateThread(int argc,char *argv[]) {
 	u32 i,j,len;
 	char dateStr[SSTRLEN("Mon, 14. Jan 2009, 12:13:14") + 1];
 	sDate date;
+	UNUSED(argc);
+	UNUSED(argv);
 	while(1) {
 		/* get date and format it */
 		if(getDate(&date) != 0)

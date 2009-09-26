@@ -35,7 +35,7 @@ typedef struct {
 	u32 count;
 } sArray;
 
-static int myThread(void);
+static int myThread(int argc,char *argv[]);
 static void treadDir(const char *path);
 static sArray *create(u32 dataSize,u32 num);
 static void add(sArray *a,void *e);
@@ -47,27 +47,34 @@ sArray *array;
 int mod_thread(int argc,char *argv[]) {
 	UNUSED(argc);
 	UNUSED(argv);
+	const char *args[] = {"a","test","mein test",NULL};
 	array = create(sizeof(u32),10);
-	startThread(myThread);
-	startThread(myThread);
-	startThread(myThread);
-	startThread(myThread);
-	startThread(myThread);
-	startThread(myThread);
-	startThread(myThread);
-	startThread(myThread);
-	startThread(myThread);
+	startThread(myThread,args);
+	startThread(myThread,args);
+	startThread(myThread,args);
+	startThread(myThread,args);
+	startThread(myThread,args);
+	startThread(myThread,NULL);
+	startThread(myThread,args);
+	startThread(myThread,args);
+	startThread(myThread,args);
 	return EXIT_SUCCESS;
 }
 
-static int myThread(void) {
+static int myThread(int argc,char *argv[]) {
+	u32 i;
 	const char *folders[] = {
 		"/","/bin","/system"
 	};
+	printf("Got %d args (%d):\n",argc,gettid());
+	for(i = 0; i < argc; i++)
+		printf("	%d: %s\n",i,argv[i]);
+#if 0
 	while(1) {
 		treadDir(folders[gettid() % ARRAY_SIZE(folders)]);
 		/*printf("I am thread %d\n",gettid());*/
 	}
+#endif
 	/*u32 i;
 	u32 *ptrs[TEST_COUNT];
 	for(i = 0; i < TEST_COUNT; i++) {

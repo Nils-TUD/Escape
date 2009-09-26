@@ -200,7 +200,7 @@ void mboot_dbg_print(void) {
 		sModule *mod = mb->modsAddr;
 		vid_printf("modsCount=%d:\n",mb->modsCount);
 		for(i = 0; i < mb->modsCount; i++) {
-			vid_printf("\tname=%s, start=0x%x, end=0x%x\n",mod->name ? mod->name : "<NULL>",
+			vid_printf("\t%s (0x%x .. 0x%x)\n",mod->name ? mod->name : "<NULL>",
 					mod->modStart,mod->modEnd);
 			mod++;
 		}

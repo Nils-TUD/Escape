@@ -22,7 +22,7 @@
 
 #include <types.h>
 
-#define MAX_ESCC_LENGTH			16
+#define MAX_ESCC_LENGTH			19
 
 #define ESCC_ARG_UNUSED			-1
 
@@ -54,9 +54,10 @@ extern "C" {
  * 	the code.
  * @param n1 will be set to the first argument (ESCC_ARG_UNUSED if unused)
  * @param n2 will be set to the second argument (ESCC_ARG_UNUSED if unused)
+ * @param n3 will be set to the third argument (ESCC_ARG_UNUSED if unused)
  * @return the scanned escape-code (ESCC_*)
  */
-s32 escc_get(const char **str,s32 *n1,s32 *n2);
+s32 escc_get(const char **str,s32 *n1,s32 *n2,s32 *n3);
 
 #ifdef __cplusplus
 }

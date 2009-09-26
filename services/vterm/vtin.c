@@ -139,6 +139,7 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 		if(c == NPRINT || ctrlDown) {
 			/* handle ^C, ^D and so on */
 			if(ctrlDown) {
+				u32 index;
 				switch(keycode) {
 					case VK_C:
 						/* send interrupt to shell */
@@ -151,12 +152,11 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 							vterm_rlFlushBuf(vt);
 						}
 						break;
-					case VK_1 ... VK_9: {
-						u32 index = keycode - VK_1;
+					case VK_1 ... VK_9:
+						index = keycode - VK_1;
 						if(index < VTERM_COUNT && vt->index != index)
 							vterm_selectVTerm(index);
-					}
-					return;
+						return;
 				}
 			}
 
@@ -165,28 +165,21 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 				if(vt->echo)
 					vterm_rlHandleKeycode(vt,keycode);
 			}
-			/* send escape-code */
-			else {
-				bool empty = rb_length(vt->inbuf) == 0;
-				char escape[SSTRLEN("\033[kc;123;7]") + 1];
-				sprintf(escape,"\033[kc;%d;%d]",keycode,(altDown << STATE_ALT) |
-					(ctrlDown << STATE_CTRL) |
-					(shiftDown << STATE_SHIFT));
-				rb_writen(vt->inbuf,escape,strlen(escape));
-				if(empty)
-					setDataReadable(vt->sid,true);
-			}
 		}
-		else {
-			if(vt->readLine)
-				vterm_rlPutchar(vt,c);
-			else {
-				rb_write(vt->inbuf,&c);
-				if(rb_length(vt->inbuf) == 1)
-					setDataReadable(vt->sid,true);
-			}
-		}
+		else if(vt->readLine)
+			vterm_rlPutchar(vt,c);
 
+		/* send escape-code when we're not in readline-mode */
+		if(!vt->readLine) {
+			bool empty = rb_length(vt->inbuf) == 0;
+			char escape[SSTRLEN("\033[kc;123;123;7]") + 1];
+			sprintf(escape,"\033[kc;%d;%d;%d]",c,keycode,(altDown << STATE_ALT) |
+				(ctrlDown << STATE_CTRL) |
+				(shiftDown << STATE_SHIFT));
+			rb_writen(vt->inbuf,escape,strlen(escape));
+			if(empty)
+				setDataReadable(vt->sid,true);
+		}
 		if(vt->echo)
 			vterm_setCursor(vt);
 	}

@@ -52,6 +52,7 @@ static char emptyLine[COLS + 1];
 int main(int argc,char *argv[]) {
 	tFile *file;
 	tFile *fvterm;
+	bool run = true;
 	char c;
 	char *path;
 	char vterm[MAX_PATH_LEN] = "/drivers/";
@@ -115,15 +116,16 @@ int main(int argc,char *argv[]) {
 	refreshScreen();
 
 	/* read from vterm */
-	while((c = fscanc(fvterm)) != IO_EOF) {
-		if(c == 'q')
-			break;
+	while(run && (c = fscanc(fvterm)) != IO_EOF) {
 		if(c == '\033') {
-			s32 n1,n2;
-			s32 cmd = freadesc(fvterm,&n1,&n2);
+			s32 n1,n2,n3;
+			s32 cmd = freadesc(fvterm,&n1,&n2,&n3);
 			if(cmd != ESCC_KEYCODE)
 				continue;
-			switch(n1) {
+			switch(n2) {
+				case VK_Q:
+					run = false;
+					break;
 				case VK_HOME:
 					scrollDown(-startLine);
 					break;

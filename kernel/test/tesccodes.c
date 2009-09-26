@@ -24,7 +24,7 @@
 
 /* forward declarations */
 static void test_esccodes(void);
-static void test_check(const char *str,s32 cmd,s32 n1,s32 n2);
+static void test_check(const char *str,s32 cmd,s32 n1,s32 n2,s32 n3);
 static void test_1(void);
 static void test_2(void);
 static void test_3(void);
@@ -41,10 +41,10 @@ static void test_esccodes(void) {
 	test_3();
 }
 
-static void test_check(const char *str,s32 cmd,s32 n1,s32 n2) {
-	s32 rn1,rn2;
+static void test_check(const char *str,s32 cmd,s32 n1,s32 n2,s32 n3) {
+	s32 rn1,rn2,rn3;
 	const char *s = str + 1;
-	u32 rcmd = escc_get(&s,&rn1,&rn2);
+	u32 rcmd = escc_get(&s,&rn1,&rn2,&rn3);
 	test_assertInt(rcmd,cmd);
 	if(cmd == ESCC_INCOMPLETE)
 		test_assertInt(*s,str[1]);
@@ -56,8 +56,10 @@ static void test_check(const char *str,s32 cmd,s32 n1,s32 n2) {
 	if(cmd != ESCC_INCOMPLETE) {
 		test_assertInt(rn1,n1);
 		test_assertInt(rn2,n2);
+		test_assertInt(rn3,n3);
 	}
 	else {
+		test_assertTrue(true);
 		test_assertTrue(true);
 		test_assertTrue(true);
 	}
@@ -73,27 +75,31 @@ static void test_1(void) {
 		"\033[ms]",
 		"\033[me]",
 		"\033[kc]","\033[kc;0;0]","\033[kc;12345;12345]",
+		"\033[kc;1;2;3]","\033[kc;4;5;6]","\033[kc;123;123;123]",
 		"\033[co]","\033[co;12;441]","\033[co;123;123]",
 	};
 	test_caseStart("Valid codes");
 
-	test_check(str[0],ESCC_MOVE_LEFT,1,ESCC_ARG_UNUSED);
-	test_check(str[1],ESCC_MOVE_LEFT,12,ESCC_ARG_UNUSED);
-	test_check(str[2],ESCC_MOVE_RIGHT,1,ESCC_ARG_UNUSED);
-	test_check(str[3],ESCC_MOVE_RIGHT,0,ESCC_ARG_UNUSED);
-	test_check(str[4],ESCC_MOVE_UP,1,ESCC_ARG_UNUSED);
-	test_check(str[5],ESCC_MOVE_UP,1,ESCC_ARG_UNUSED);
-	test_check(str[6],ESCC_MOVE_DOWN,1,ESCC_ARG_UNUSED);
-	test_check(str[7],ESCC_MOVE_DOWN,6,ESCC_ARG_UNUSED);
-	test_check(str[8],ESCC_MOVE_HOME,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
-	test_check(str[9],ESCC_MOVE_LINESTART,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
-	test_check(str[10],ESCC_MOVE_LINEEND,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
-	test_check(str[11],ESCC_KEYCODE,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
-	test_check(str[12],ESCC_KEYCODE,0,0);
-	test_check(str[13],ESCC_KEYCODE,12345,12345);
-	test_check(str[14],ESCC_COLOR,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
-	test_check(str[15],ESCC_COLOR,12,441);
-	test_check(str[16],ESCC_COLOR,123,123);
+	test_check(str[0],ESCC_MOVE_LEFT,1,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[1],ESCC_MOVE_LEFT,12,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[2],ESCC_MOVE_RIGHT,1,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[3],ESCC_MOVE_RIGHT,0,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[4],ESCC_MOVE_UP,1,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[5],ESCC_MOVE_UP,1,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[6],ESCC_MOVE_DOWN,1,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[7],ESCC_MOVE_DOWN,6,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[8],ESCC_MOVE_HOME,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[9],ESCC_MOVE_LINESTART,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[10],ESCC_MOVE_LINEEND,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[11],ESCC_KEYCODE,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[12],ESCC_KEYCODE,0,0,ESCC_ARG_UNUSED);
+	test_check(str[13],ESCC_KEYCODE,12345,12345,ESCC_ARG_UNUSED);
+	test_check(str[14],ESCC_KEYCODE,1,2,3);
+	test_check(str[15],ESCC_KEYCODE,4,5,6);
+	test_check(str[16],ESCC_KEYCODE,123,123,123);
+	test_check(str[17],ESCC_COLOR,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+	test_check(str[18],ESCC_COLOR,12,441,ESCC_ARG_UNUSED);
+	test_check(str[19],ESCC_COLOR,123,123,ESCC_ARG_UNUSED);
 
 	test_caseSucceded();
 }
@@ -107,7 +113,7 @@ static void test_2(void) {
 	test_caseStart("Invalid codes");
 
 	for(i = 0; i < ARRAY_SIZE(str); i++)
-		test_check(str[i],ESCC_INVALID,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+		test_check(str[i],ESCC_INVALID,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
 
 	test_caseSucceded();
 }
@@ -120,7 +126,7 @@ static void test_3(void) {
 	test_caseStart("Incomplete codes");
 
 	for(i = 0; i < ARRAY_SIZE(str); i++)
-		test_check(str[i],ESCC_INCOMPLETE,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
+		test_check(str[i],ESCC_INCOMPLETE,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED,ESCC_ARG_UNUSED);
 
 	test_caseSucceded();
 }

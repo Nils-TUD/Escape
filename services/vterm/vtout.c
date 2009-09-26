@@ -234,8 +234,8 @@ static void vterm_delete(sVTerm *vt,u32 count) {
 }
 
 static bool vterm_handleEscape(sVTerm *vt,char **str) {
-	s32 cmd,n1,n2;
-	cmd = escc_get((const char**)str,&n1,&n2);
+	s32 cmd,n1,n2,n3;
+	cmd = escc_get((const char**)str,&n1,&n2,&n3);
 	if(cmd == ESCC_INCOMPLETE)
 		return false;
 

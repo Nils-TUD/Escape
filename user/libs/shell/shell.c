@@ -217,7 +217,6 @@ s32 shell_executeCmd(char *line) {
 }
 
 u32 shell_readLine(char *buffer,u32 max) {
-	char c;
 	u32 cursorPos = 0;
 	u32 i = 0;
 	resetReadLine = false;
@@ -229,7 +228,15 @@ u32 shell_readLine(char *buffer,u32 max) {
 	/* ensure that the line is empty */
 	*buffer = '\0';
 	while(i < max) {
+		char c;
+		s32 cmd,n1,n2,n3;
 		c = scanc();
+		if(c != '\033')
+			continue;
+		cmd = freadesc(stdin,&n1,&n2,&n3);
+		/* skip other escape-codes */
+		if(cmd != ESCC_KEYCODE)
+			continue;
 
 		/* maybe we've received a ^C. if so do a reset */
 		if(resetReadLine) {
@@ -238,9 +245,11 @@ u32 shell_readLine(char *buffer,u32 max) {
 			resetReadLine = false;
 		}
 
-		if(shell_handleEscapeCodes(buffer,c,&cursorPos,&i))
+		if(n1 != '\t' && n1 != '\n' && !isprint(n1)) {
+			shell_handleSpecialKey(buffer,n2,n3,&cursorPos,&i);
 			continue;
-		if(c == '\t') {
+		}
+		if(n1 == '\t') {
 			shell_complete(buffer,&cursorPos,&i);
 			continue;
 		}
@@ -248,10 +257,10 @@ u32 shell_readLine(char *buffer,u32 max) {
 		tabCount = 0;
 
 		/* echo */
-		printc(c);
+		printc(n1);
 		flush();
 
-		if(c == '\n')
+		if(n1 == '\n')
 			break;
 
 		/* not at the end */
@@ -259,7 +268,7 @@ u32 shell_readLine(char *buffer,u32 max) {
 			u32 x;
 			/* at first move all one char forward */
 			memmove(buffer + cursorPos + 1,buffer + cursorPos,i - cursorPos);
-			buffer[cursorPos] = c;
+			buffer[cursorPos] = n1;
 			/* now write the chars to vterm */
 			for(x = cursorPos + 1; x <= i; x++)
 				printc(buffer[x]);
@@ -269,7 +278,7 @@ u32 shell_readLine(char *buffer,u32 max) {
 		/* we are at the end of the input */
 		else {
 			/* put in buffer */
-			buffer[cursorPos] = c;
+			buffer[cursorPos] = n1;
 		}
 
 		cursorPos++;
@@ -283,14 +292,12 @@ u32 shell_readLine(char *buffer,u32 max) {
 	return i;
 }
 
-bool shell_handleEscapeCodes(char *buffer,char c,u32 *cursorPos,u32 *charcount) {
-	bool res = false;
+void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos,u32 *charcount) {
 	char *line = NULL;
 	u32 icursorPos = *cursorPos;
 	u32 icharcount = *charcount;
-	switch(c) {
-		/* TODO backspace should be NPRINT, right? */
-		case '\b':
+	switch(keycode) {
+		case VK_BACKSP:
 			if(icursorPos > 0) {
 				/* remove last char */
 				if(icursorPos < icharcount)
@@ -299,98 +306,85 @@ bool shell_handleEscapeCodes(char *buffer,char c,u32 *cursorPos,u32 *charcount) 
 				icursorPos--;
 				buffer[icharcount] = '\0';
 				/* send backspace */
-				printc(c);
+				printc('\b');
 				flush();
 			}
-			res = true;
 			break;
-
-		case '\033': {
-			s32 cmd,n1,n2;
-			cmd = freadesc(stdin,&n1,&n2);
-			if(cmd != ESCC_KEYCODE)
-				break;
-			switch(n1) {
-				/* write escape-code back */
-				case VK_DELETE:
-					/* delete is the same as moving cursor one step right and pressing backspace */
-					if(icursorPos < icharcount) {
-						printf("\033[mr]");
-						icursorPos++;
-						shell_handleEscapeCodes(buffer,'\b',&icursorPos,&icharcount);
-					}
-					break;
-				case VK_HOME:
-					if(icursorPos > 0) {
-						printf("\033[ml;%d]",icursorPos);
-						icursorPos = 0;
-					}
-					break;
-				case VK_END:
-					if(icursorPos < icharcount) {
-						printf("\033[mr;%d]",icharcount - icursorPos);
-						icursorPos = icharcount;
-					}
-					break;
-				case VK_RIGHT:
-					if(icursorPos < icharcount) {
-						/* to next word */
-						if(n2 & STATE_CTRL) {
-							u16 count = 0;
-							/* skip first whitespace */
-							while(icursorPos < icharcount && isspace(buffer[icursorPos])) {
-								count++;
-								icursorPos++;
-							}
-							/* walk to last whitespace */
-							while(icursorPos < icharcount && !isspace(buffer[icursorPos])) {
-								count++;
-								icursorPos++;
-							}
-							if(count > 0)
-								printf("\033[mr;%d]",count);
-						}
-						else {
-							icursorPos++;
-							printf("\033[mr]");
-						}
-					}
-					break;
-				case VK_LEFT:
-					if(icursorPos > 0) {
-						/* to prev word */
-						if(n2 & STATE_CTRL) {
-							u16 count = 0;
-							/* skip first whitespace */
-							while(icursorPos > 0 && isspace(buffer[icursorPos - 1])) {
-								count++;
-								icursorPos--;
-							}
-							/* walk to last whitespace */
-							while(icursorPos > 0 && !isspace(buffer[icursorPos - 1])) {
-								count++;
-								icursorPos--;
-							}
-							if(count > 0)
-								printf("\033[ml;%d]",count);
-						}
-						else {
-							icursorPos--;
-							printf("\033[ml]");
-						}
-					}
-					break;
-				case VK_UP:
-					line = shell_histUp();
-					break;
-				case VK_DOWN:
-					line = shell_histDown();
-					break;
+		/* write escape-code back */
+		case VK_DELETE:
+			/* delete is the same as moving cursor one step right and pressing backspace */
+			if(icursorPos < icharcount) {
+				printf("\033[mr]");
+				icursorPos++;
+				shell_handleSpecialKey(buffer,VK_BACKSP,0,&icursorPos,&icharcount);
 			}
-
-			res = true;
-		}
-		break;
+			break;
+		case VK_HOME:
+			if(icursorPos > 0) {
+				printf("\033[ml;%d]",icursorPos);
+				icursorPos = 0;
+			}
+			break;
+		case VK_END:
+			if(icursorPos < icharcount) {
+				printf("\033[mr;%d]",icharcount - icursorPos);
+				icursorPos = icharcount;
+			}
+			break;
+		case VK_RIGHT:
+			if(icursorPos < icharcount) {
+				/* to next word */
+				if(modifier & STATE_CTRL) {
+					u16 count = 0;
+					/* skip first whitespace */
+					while(icursorPos < icharcount && isspace(buffer[icursorPos])) {
+						count++;
+						icursorPos++;
+					}
+					/* walk to last whitespace */
+					while(icursorPos < icharcount && !isspace(buffer[icursorPos])) {
+						count++;
+						icursorPos++;
+					}
+					if(count > 0)
+						printf("\033[mr;%d]",count);
+				}
+				else {
+					icursorPos++;
+					printf("\033[mr]");
+				}
+			}
+			break;
+		case VK_LEFT:
+			if(icursorPos > 0) {
+				/* to prev word */
+				if(modifier & STATE_CTRL) {
+					u16 count = 0;
+					/* skip first whitespace */
+					while(icursorPos > 0 && isspace(buffer[icursorPos - 1])) {
+						count++;
+						icursorPos--;
+					}
+					/* walk to last whitespace */
+					while(icursorPos > 0 && !isspace(buffer[icursorPos - 1])) {
+						count++;
+						icursorPos--;
+					}
+					if(count > 0)
+						printf("\033[ml;%d]",count);
+				}
+				else {
+					icursorPos--;
+					printf("\033[ml]");
+				}
+			}
+			break;
+		case VK_UP:
+			line = shell_histUp();
+			break;
+		case VK_DOWN:
+			line = shell_histDown();
+			break;
 	}
 
 	if(line != NULL) {
@@ -419,8 +413,6 @@ bool shell_handleEscapeCodes(char *buffer,char c,u32 *cursorPos,u32 *charcount) 
 		*cursorPos = icursorPos;
 		*charcount = icharcount;
 	}
-
-	return res;
 }
 
 void shell_complete(char *line,u32 *cursorPos,u32 *length) {

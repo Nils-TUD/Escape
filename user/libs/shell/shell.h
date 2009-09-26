@@ -66,15 +66,15 @@ s32 shell_executeCmd(char *line);
 u32 shell_readLine(char *buffer,u32 max);
 
 /**
- * Handles the escape-codes for the shell
+ * Handles the given keycode for the shell
  *
  * @param buffer the buffer with read characters
- * @param c the read character
+ * @param keycode the keycode
+ * @param modifier the modifier (shift, ctrl, ...)
  * @param cursorPos the current cursor-position in the buffer (may be changed)
  * @param charcount the number of read characters so far (may be changed)
- * @return true if the escape-code was handled
  */
-bool shell_handleEscapeCodes(char *buffer,char c,u32 *cursorPos,u32 *charcount);
+void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos,u32 *charcount);
 
 /**
  * Completes the current input, if possible

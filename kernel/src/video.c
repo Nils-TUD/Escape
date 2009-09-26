@@ -310,15 +310,15 @@ void vid_vprintf(const char *fmt,va_list ap) {
 }
 
 static void vid_handleColorCode(const char **str) {
-	s32 n1,n2;
-	s32 cmd = escc_get(str,&n1,&n2);
+	s32 n1,n2,n3;
+	s32 cmd = escc_get(str,&n1,&n2,&n3);
 	switch(cmd) {
 		case ESCC_COLOR:
 			vid_setFGColor(n1 == ESCC_ARG_UNUSED ? WHITE : MIN(9,n1));
 			vid_setBGColor(n2 == ESCC_ARG_UNUSED ? BLACK : MIN(9,n2));
 			break;
 		default:
-			util_panic("Invalid escape-code ^[%d;%d,%d]",cmd,n1,n2);
+			util_panic("Invalid escape-code ^[%d;%d,%d,%d]",cmd,n1,n2,n3);
 			break;
 	}
 }

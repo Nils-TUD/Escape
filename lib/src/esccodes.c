@@ -21,21 +21,23 @@
 #include <esccodes.h>
 #include <string.h>
 
-s32 escc_get(const char **str,s32 *n1,s32 *n2) {
+#define MAX_ARG_COUNT		3
+
+s32 escc_get(const char **str,s32 *n1,s32 *n2,s32 *n3) {
 	s32 cmd = ESCC_INVALID;
 	const char *s = *str;
 	if(*s == '\0')
 		return ESCC_INCOMPLETE;
 	if(*s == '[') {
 		u32 i,j,cmdlen = 0;
-		s32 n[2];
+		s32 n[MAX_ARG_COUNT];
 		char c,*start = (char*)s + 1;
 		/* read code */
 		for(cmdlen = 0, s++; (c = *s) && cmdlen < 2 && c != ';' && c != ']'; cmdlen++)
 			s++;
 		/* read arguments */
 		j = cmdlen;
-		for(i = 0; i < 2; i++) {
+		for(i = 0; i < MAX_ARG_COUNT; i++) {
 			n[i] = ESCC_ARG_UNUSED;
 			if(c == ';') {
 				s++;
@@ -52,6 +54,7 @@ s32 escc_get(const char **str,s32 *n1,s32 *n2) {
 			return ESCC_INVALID;
 		*n1 = n[0];
 		*n2 = n[1];
+		*n3 = n[2];
 		/* if we're at the end, there is something missing */
 		if(c == '\0')
 			return ESCC_INCOMPLETE;
@@ -93,12 +96,14 @@ s32 escc_get(const char **str,s32 *n1,s32 *n2) {
 				if(*n1 == ESCC_ARG_UNUSED)
 					*n1 = 1;
 				*n2 = ESCC_ARG_UNUSED;
+				*n3 = ESCC_ARG_UNUSED;
 				break;
 			case ESCC_MOVE_LINESTART:
 			case ESCC_MOVE_LINEEND:
 			case ESCC_MOVE_HOME:
 				*n1 = ESCC_ARG_UNUSED;
 				*n2 = ESCC_ARG_UNUSED;
+				*n3 = ESCC_ARG_UNUSED;
 				break;
 		}
 	}

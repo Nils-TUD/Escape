@@ -44,9 +44,10 @@ extern tFile *stderr;
  * @param f the file
  * @param n1 will be set to the first argument (ESCC_ARG_UNUSED if unused)
  * @param n2 will be set to the second argument (ESCC_ARG_UNUSED if unused)
+ * @param n3 will be set to the third argument (ESCC_ARG_UNUSED if unused)
  * @return the scanned escape-code (ESCC_*)
  */
-s32 freadesc(tFile *f,s32 *n1,s32 *n2);
+s32 freadesc(tFile *f,s32 *n1,s32 *n2,s32 *n3);
 
 /**
  * Opens the file whose name is specified in the parameter filename and associates it with a

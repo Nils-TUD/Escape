@@ -21,7 +21,7 @@
 #include <esc/fileio.h>
 #include <esccodes.h>
 
-s32 freadesc(tFile *f,s32 *n1,s32 *n2) {
+s32 freadesc(tFile *f,s32 *n1,s32 *n2,s32 *n3) {
 	u32 i;
 	char ec,escape[MAX_ESCC_LENGTH] = {0};
 	const char *escPtr = (const char*)escape;
@@ -29,5 +29,5 @@ s32 freadesc(tFile *f,s32 *n1,s32 *n2) {
 		escape[i] = ec;
 	if(i < MAX_ESCC_LENGTH - 1 && ec == ']')
 		escape[i] = ec;
-	return escc_get(&escPtr,n1,n2);
+	return escc_get(&escPtr,n1,n2,n3);
 }

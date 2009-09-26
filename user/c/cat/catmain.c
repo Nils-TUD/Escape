@@ -26,46 +26,58 @@
 
 #define BUF_SIZE 512
 
+static void printFile(tFile *file);
+
 int main(int argc,char *argv[]) {
 	tFile *file;
-	s32 count;
 	char *path;
-	char buffer[BUF_SIZE];
 
-	if((argc != 1 && argc != 2) || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s [<file>]\n",argv[0]);
+	if(isHelpCmd(argc,argv)) {
+		fprintf(stderr,"Usage: %s [<file> ...]\n",argv[0]);
 		return EXIT_FAILURE;
 	}
 
-	file = stdin;
-	if(argc == 2) {
+	if(argc < 2)
+		printFile(stdin);
+	else {
+		s32 i;
 		sFileInfo info;
 		path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
 		if(path == NULL)
 			error("Unable to allocate mem for path");
+		for(i = 1; i < argc; i++) {
+			abspath(path,MAX_PATH_LEN + 1,argv[i]);
 
-		abspath(path,MAX_PATH_LEN + 1,argv[1]);
+			/* check if it's a directory */
+			if(getFileInfo(path,&info) < 0) {
+				printe("Unable to get info about '%s'",path);
+				continue;
+			}
+			if(MODE_IS_DIR(info.mode)) {
+				printe("'%s' is a directory!",path);
+				continue;
+			}
 
-		/* check if it's a directory */
-		if(getFileInfo(path,&info) < 0)
-			error("Unable to get info about '%s'",path);
-		if(MODE_IS_DIR(info.mode))
-			error("'%s' is a directory!",path);
+			file = fopen(path,"r");
+			if(file == NULL) {
+				printe("Unable to open '%s'",path);
+				continue;
+			}
 
-		file = fopen(path,"r");
-		if(file == NULL)
-			error("Unable to open '%s'",path);
-
+			printFile(file);
+			fclose(file);
+		}
 		free(path);
 	}
 
+	return EXIT_SUCCESS;
+}
+
+static void printFile(tFile *file) {
+	s32 count;
+	char buffer[BUF_SIZE];
 	while((count = fread(buffer,sizeof(char),BUF_SIZE - 1,file)) > 0) {
 		*(buffer + count) = '\0';
 		printf("%s",buffer);
 	}
-
-	if(argc == 2)
-		fclose(file);
-
-	return EXIT_SUCCESS;
 }

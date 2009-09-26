@@ -1,4 +1,4 @@
 name:							"cat"
-start:						"cat [<file>]"
+start:						"cat [<file> ...]"
 type:							"user"
-desc:							"Read file or from STDIN and print"
+desc:							"Reads all given files or from STDIN and prints it to STDOUT"

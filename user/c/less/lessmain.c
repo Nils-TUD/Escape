@@ -102,7 +102,7 @@ int main(int argc,char *argv[]) {
 		resetVterm();
 		error("Unable to get TERM");
 	}
-	fvterm = fopen(vterm,"rc");
+	fvterm = fopen(vterm,"r");
 	if(fvterm == NULL) {
 		resetVterm();
 		error("Unable to open '%s'",vterm);

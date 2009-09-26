@@ -809,7 +809,7 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 }
 
 s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count) {
-	sVFSNode *n,*node,*last;
+	sVFSNode *n,*node,*last,*match = NULL;
 	u32 i;
 	bool skipped;
 	/* this is a bit more complicated because we want to do it in a fair way. that means every
@@ -841,18 +841,28 @@ retry:
 searchBegin:
 		while(n != NULL && n != last) {
 			/* data available? */
-			if(n->data.servuse.sendList != NULL && sll_length(n->data.servuse.sendList) > 0) {
+			if(sll_length(n->data.servuse.sendList) > 0) {
 				node->data.service.lastClient = n;
 				return NADDR_TO_VNNO(n);
 			}
 			n = n->next;
 		}
-		if(node->data.service.lastClient) {
+		/* if we have looked through all nodes and the last one has a message again, we have to
+		 * store it because we'll not check it again */
+		if(last && n == last && sll_length(n->data.servuse.sendList) > 0)
+			match = n;
+		else if(node->data.service.lastClient) {
 			n = NODE_FIRST_CHILD(node);
 			node->data.service.lastClient = NULL;
 			goto searchBegin;
 		}
 	}
+	/* if we have a match, use this one */
+	if(match) {
+		node->data.service.lastClient = match;
+		return NADDR_TO_VNNO(match);
+	}
+	/* if not and we've skipped a client, try another time */
 	if(skipped)
 		goto retry;
 	return ERR_NO_CLIENT_WAITING;

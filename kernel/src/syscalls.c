@@ -236,9 +236,16 @@ static void sysc_changeSize(sIntrptStackFrame *stack);
  */
 static void sysc_mapPhysical(sIntrptStackFrame *stack);
 /**
- * Blocks the process until a message arrives
+ * Blocks the process until an event occurrs
  */
 static void sysc_wait(sIntrptStackFrame *stack);
+/**
+ * Waits until a child has terminated
+ *
+ * @param sExitState* will be filled with information about the terminated process
+ * @return s32 o on success
+ */
+static void sysc_waitChild(sIntrptStackFrame *stack);
 /**
  * Blocks the process for a given number of milliseconds
  *
@@ -510,6 +517,7 @@ static sSyscall syscalls[] = {
 	/* 50 */	{sysc_rmdir,				1},
 	/* 51 */	{sysc_mount,				3},
 	/* 52 */	{sysc_unmount,				1},
+	/* 53 */	{sysc_waitChild,			1},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -597,13 +605,8 @@ static void sysc_startThread(sIntrptStackFrame *stack) {
 }
 
 static void sysc_exit(sIntrptStackFrame *stack) {
-	UNUSED(stack);
-	/*sThread *t = thread_getRunning();
-	if(SYSC_ARG1(stack) != 0) {
-		vid_printf("Thread %d (%s) exited with %d\n",t->tid,t->proc->command,SYSC_ARG1(stack));
-		util_printStackTrace(util_getUserStackTrace(t,stack));
-	}*/
-	proc_destroyThread();
+	s32 exitCode = (s32)SYSC_ARG1(stack);
+	proc_destroyThread(exitCode);
 	thread_switch();
 }
 
@@ -1093,21 +1096,57 @@ static void sysc_mapPhysical(sIntrptStackFrame *stack) {
 static void sysc_wait(sIntrptStackFrame *stack) {
 	u8 events = (u8)SYSC_ARG1(stack);
 	sThread *t = thread_getRunning();
-	bool canSleep;
 
-	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_CHILD_DIED | EV_DATA_READABLE)) != 0)
+	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* check wether there is a chance that we'll wake up again */
-	canSleep = !vfs_msgAvailableFor(t->tid,events);
-	if(canSleep && (events & EV_CHILD_DIED))
-		canSleep = proc_hasChild(t->proc->pid);
-
-	/* if we can sleep, do it */
-	if(canSleep) {
+	if(!vfs_msgAvailableFor(t->tid,events)) {
 		thread_wait(t->tid,events);
 		thread_switch();
 	}
+}
+
+static void sysc_waitChild(sIntrptStackFrame *stack) {
+	sExitState *state = (sExitState*)SYSC_ARG1(stack);
+	sSLNode *n;
+	s32 res;
+	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
+
+	if(!paging_isRangeUserWritable((u32)state,sizeof(sExitState)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(!proc_hasChild(t->proc->pid))
+		SYSC_ERROR(stack,ERR_NO_CHILD);
+
+	/* check if there is another thread waiting */
+	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
+		if(((sThread*)n->data)->events & EV_CHILD_DIED)
+			SYSC_ERROR(stack,ERR_THREAD_WAITING);
+	}
+
+	/* check if there is already a dead child-proc */
+	res = proc_getExitState(p->pid,state);
+	if(res < 0) {
+		/* wait for child */
+		thread_wait(t->tid,EV_CHILD_DIED);
+		thread_switch();
+
+		/* we're back again :) */
+		/* don't continue here if we were interrupted by a signal */
+		if(sig_hasSignalFor(t->tid)) {
+			/* stop waiting for event */
+			thread_wakeup(t->tid,EV_CHILD_DIED);
+			SYSC_ERROR(stack,ERR_INTERRUPTED);
+		}
+		res = proc_getExitState(p->pid,state);
+		if(res < 0)
+			SYSC_ERROR(stack,res);
+	}
+
+	/* finally kill the process */
+	proc_kill(proc_getByPid(state->pid));
+	SYSC_RET1(stack,0);
 }
 
 static void sysc_sleep(sIntrptStackFrame *stack) {
@@ -1276,7 +1315,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	if(res < 0) {
 		/* there is no undo for proc_changeSize() :/ */
 		kheap_free(argBuffer);
-		proc_destroy(p);
+		proc_terminate(p,res,SIG_COUNT);
 		thread_switch();
 		return;
 	}

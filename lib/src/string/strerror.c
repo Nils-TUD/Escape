@@ -255,6 +255,18 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Application has no permission to use the filesystem for the desired operations!");
 			break;
 
+		case ERR_NO_CHILD:
+			strcpy(msg,"You don't have a child-process!");
+			break;
+
+		case ERR_THREAD_WAITING:
+			strcpy(msg,"Another thread of your process waits for childs!");
+			break;
+
+		case ERR_INTERRUPTED:
+			strcpy(msg,"Interrupted by signal!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

@@ -37,9 +37,22 @@
 #define EV_NOEVENT			0
 #define EV_CLIENT			1
 #define EV_RECEIVED_MSG		2
-#define EV_CHILD_DIED		4
+#define EV_CHILD_DIED		4	/* kernel-intern */
 #define EV_DATA_READABLE	8
 #define EV_UNLOCK			16	/* kernel-intern */
+
+typedef struct {
+	tPid pid;
+	/* the signal that killed the process (SIG_COUNT if none) */
+	tSig signal;
+	/* exit-code the process gave us via exit() */
+	s32 exitCode;
+	/* total amount of memory it has used */
+	u32 memory;
+	/* cycle-count */
+	uLongLong ucycleCount;
+	uLongLong kcycleCount;
+} sExitState;
 
 /* represents a process */
 /* TODO move stuff for existing processes to the kernel-stack-page */
@@ -56,6 +69,9 @@ typedef struct {
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
+	/* for the waiting parent */
+	s32 exitCode;
+	tSig exitSig;
 	/* the io-map (NULL by default) */
 	u8 *ioMap;
 	/* start-command */
@@ -123,11 +139,6 @@ void proc_getMemUsage(u32 *paging,u32 *data);
 bool proc_hasChild(tPid pid);
 
 /**
- * Destroys zombies
- */
-void proc_cleanup(void);
-
-/**
  * Clones the current process into the given one, gives the new process a clone of the current
  * thread and saves this thread in proc_clone() so that it will start there on thread_resume().
  * The function returns -1 if there is not enough memory.
@@ -148,17 +159,37 @@ s32 proc_startThread(u32 entryPoint);
  * Destroys the current thread. If it's the only thread in the process, the complete process will
  * destroyed.
  * Note that the actual deletion will be done later!
+ *
+ * @param exitCode the exit-code
  */
-void proc_destroyThread(void);
+void proc_destroyThread(s32 exitCode);
 
 /**
- * Destroyes the given process. That means the process-slot will be marked as "unused" and the
- * paging-structure will be freed.
- * Note that the actual deletion will be done later if p is the current process!
+ * Stores the exit-state of the first terminated child-process of <ppid> into <state>
+ *
+ * @param ppid the parent-pid
+ * @param state the pointer to the state
+ * @return 0 on success
+ */
+s32 proc_getExitState(tPid ppid,sExitState *state);
+
+/**
+ * Marks the given process as zombie and notifies the waiting parent thread. As soon as the parent
+ * thread fetches the exit-state we'll kill the process
+ *
+ * @param p the process
+ * @param exitCode the exit-code to store
+ * @param signal the signal with which it was killed (SIG_COUNT if none)
+ */
+void proc_terminate(sProc *p,s32 exitCode,tSig signal);
+
+/**
+ * Kills the given process, that means all structures will be destroyed and the memory free'd.
+ * This is not possible with the current process!
  *
  * @param p the process
  */
-void proc_destroy(sProc *p);
+void proc_kill(sProc *p);
 
 /**
  * Copies the arguments (for exec) in <args> to <*argBuffer> and takes care that everything

@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <esccodes.h>
 #include <ctype.h>
+#include <errors.h>
 
 #include "shell.h"
 #include "history.h"
@@ -179,9 +180,23 @@ s32 shell_executeCmd(char *line) {
 			else if(pid < 0)
 				printe("Fork of '%s%s' failed",path,scmds[0]->name);
 			else if(!cmd->runInBG) {
+				sExitState state;
 				/* wait for child */
 				waitingPid = pid;
-				wait(EV_CHILD_DIED);
+				while(1) {
+					res = waitChild(&state);
+					if(res != ERR_INTERRUPTED)
+						break;
+				}
+				if(res < 0)
+					printe("Unable to wait for child");
+				if(res == 0) {
+					res = state.exitCode;
+					if(state.signal != SIG_COUNT) {
+						printf("\nProcess %d (%s%s) was terminated by signal %d\n",state.pid,
+								path,scmds[0]->name,state.signal);
+					}
+				}
 				waitingPid = INVALID_PID;
 			}
 		}

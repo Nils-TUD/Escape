@@ -29,8 +29,20 @@
 #define EV_NOEVENT			0
 #define EV_CLIENT			1
 #define EV_RECEIVED_MSG		2
-#define EV_CHILD_DIED		4
 #define EV_DATA_READABLE	8
+
+typedef struct {
+	tPid pid;
+	/* the signal that killed the process (SIG_COUNT if none) */
+	tSig signal;
+	/* exit-code the process gave us via exit() */
+	s32 exitCode;
+	/* total amount of memory it has used */
+	u32 memory;
+	/* cycle-count */
+	uLongLong ucycleCount;
+	uLongLong kcycleCount;
+} sExitState;
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,6 +103,17 @@ s32 sleep(u32 msecs);
  * @return a negative error-code if failed
  */
 s32 wait(u8 events);
+
+/**
+ * Waits until a child terminates and stores information about it into <state>.
+ * Note that a child-process is required and only one thread can wait for a child-process!
+ * You may get interrupted by a signal (any may want to call waitChild() again in this case). If so
+ * you get ERR_INTERRUPTED as return-value (and errno).
+ *
+ * @param state the exit-state (may be NULL)
+ * @return 0 on success
+ */
+s32 waitChild(sExitState *state);
 
 /**
  * Destroys the process and provides the parent the given error-code

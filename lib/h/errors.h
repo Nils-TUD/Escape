@@ -78,6 +78,9 @@
 #define ERR_APPS_DRV_NO_PERM		-55
 #define ERR_APPS_SERV_NO_PERM		-56
 #define ERR_APPS_FS_NO_PERM			-57
+#define ERR_NO_CHILD				-58
+#define ERR_THREAD_WAITING			-59
+#define ERR_INTERRUPTED				-60
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

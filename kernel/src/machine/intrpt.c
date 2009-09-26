@@ -521,7 +521,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 					if(thread_extendStack(addr) < 0) {
 						vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
 												stack.eip,proc_getRunning()->pid);
-						/*proc_destroy(t->proc);
+						/*proc_terminate(t->proc);
 						thread_switch();*/
 						/* hm...there is something wrong :) */
 						/* TODO later the process should be killed here */

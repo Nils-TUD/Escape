@@ -50,9 +50,6 @@ static s32 proc_finishClone(sThread *nt,u32 stackFrame);
 /* our processes */
 static sProc procs[PROC_COUNT];
 
-/* list of dead processes that should be destroyed */
-static sSLList* deadProcs = NULL;
-
 void proc_init(void) {
 	/* init the first process */
 	sProc *p = procs + 0;
@@ -71,6 +68,8 @@ void proc_init(void) {
 	p->dataPages = 0;
 	p->stackPages = 0;
 	p->text = NULL;
+	p->exitCode = 0;
+	p->exitSig = SIG_COUNT;
 	/* note that this assumes that the page-dir is initialized */
 	p->physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 	memcpy(p->command,"initloader",11);
@@ -161,17 +160,6 @@ bool proc_hasChild(tPid pid) {
 	return false;
 }
 
-void proc_cleanup(void) {
-	/* destroy process, if there is any */
-	if(deadProcs != NULL) {
-		sSLNode *n;
-		for(n = sll_begin(deadProcs); n != NULL; n = n->next)
-			proc_destroy((sProc*)n->data);
-		sll_destroy(deadProcs,false);
-		deadProcs = NULL;
-	}
-}
-
 s32 proc_clone(tPid newPid) {
 	u32 pdirFrame,dummy,stackFrame;
 	sProc *p;
@@ -205,6 +193,8 @@ s32 proc_clone(tPid newPid) {
 	p->dataPages = cur->dataPages;
 	p->stackPages = curThread->ustackPages;
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
+	p->exitCode = 0;
+	p->exitSig = SIG_COUNT;
 	/* give the process the same name (maybe changed by exec) */
 	strcpy(p->command,cur->command);
 
@@ -316,11 +306,11 @@ static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
 	return 0;
 }
 
-void proc_destroyThread(void) {
+void proc_destroyThread(s32 exitCode) {
 	sProc *cur = proc_getRunning();
 	/* last thread? */
 	if(sll_length(cur->threads) == 1)
-		proc_destroy(cur);
+		proc_terminate(cur,exitCode,SIG_COUNT);
 	else {
 		/* just destroy the thread */
 		sThread *t = thread_getRunning();
@@ -328,36 +318,74 @@ void proc_destroyThread(void) {
 	}
 }
 
-void proc_destroy(sProc *p) {
-	tFD i;
-	sSLNode *tn,*tmpn;
-	sProc *cp;
-	sProc *cur = proc_getRunning();
-	/* don't delete initial or unused processes */
+s32 proc_getExitState(tPid ppid,sExitState *state) {
+	u32 i;
+	sThread *t;
+	sSLNode *n;
+	for(i = 0; i < PROC_COUNT; i++) {
+		if(procs[i].pid != INVALID_PID && procs[i].parentPid == ppid) {
+			bool isZombie = true;
+			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
+				if(((sThread*)n->data)->state != ST_ZOMBIE) {
+					isZombie = false;
+					break;
+				}
+			}
+			if(isZombie) {
+				state->pid = procs[i].pid;
+				state->exitCode = procs[i].exitCode;
+				state->signal = procs[i].exitSig;
+				state->memory = (procs[i].textPages + procs[i].dataPages +
+						procs[i].stackPages) * PAGE_SIZE;
+				state->ucycleCount.val64 = 0;
+				state->kcycleCount.val64 = 0;
+				for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
+					t = (sThread*)n->data;
+					state->ucycleCount.val64 += t->ucycleCount.val64;
+					state->kcycleCount.val64 += t->kcycleCount.val64;
+				}
+				return 0;
+			}
+		}
+	}
+	return ERR_NO_CHILD;
+}
+
+void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
+	sSLNode *tn;
 	vassert(p->pid != 0 && p->pid != INVALID_PID,
 			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
 
-	/* we can't destroy ourself so we mark us as dead and do this later */
-	if(p->pid == cur->pid) {
-		/* create list if not already done */
-		if(deadProcs == NULL) {
-			deadProcs = sll_create();
-			if(deadProcs == NULL)
-				util_panic("Not enough mem for deadProcs");
-		}
-
-		/* mark ourself as destroyable */
-		if(!sll_append(deadProcs,procs + p->pid))
-			util_panic("Not enough mem to append dead process");
-
-		/* ensure that no thread of our process will be selected on the next resched */
-		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
-			sThread *t = (sThread*)tn->data;
-			sched_removeThread(t);
-			t->state = ST_ZOMBIE;
-		}
-		return;
+	/* ensure that no thread of our process will be selected on the next resched */
+	for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
+		sThread *t = (sThread*)tn->data;
+		sched_removeThread(t);
+		t->state = ST_ZOMBIE;
 	}
+
+	/* store exit-conditions */
+	p->exitCode = exitCode;
+	p->exitSig = signal;
+
+	/* check wether there is a parent-thread that waits for a child */
+	for(tn = sll_begin(proc_getByPid(p->parentPid)->threads); tn != NULL; tn = tn->next) {
+		sThread *t = (sThread*)tn->data;
+		if(t->events & EV_CHILD_DIED) {
+			/* wake the thread and delay the destruction until this read has got the exit-state */
+			thread_wakeup(t->tid,EV_CHILD_DIED);
+			return;
+		}
+	}
+}
+
+void proc_kill(sProc *p) {
+	u32 i;
+	sSLNode *tn,*tmpn;
+	sProc *cp;
+	sProc *cur = proc_getRunning();
+	vassert(p->pid != 0 && p->pid != INVALID_PID,
+			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
+	vassert(p->pid != cur->pid,"We can't kill the current process!");
 
 	/* destroy paging-structure */
 	paging_destroyPageDir(p);
@@ -395,12 +423,6 @@ void proc_destroy(sProc *p) {
 	p->stackPages = 0;
 	p->pid = INVALID_PID;
 	p->physPDirAddr = 0;
-
-	/* notify all parent-threads; TODO ok? */
-	for(tn = sll_begin(proc_getByPid(p->parentPid)->threads); tn != NULL; tn = tn->next) {
-		sThread *t = (sThread*)tn->data;
-		thread_wakeup(t->tid,EV_CHILD_DIED);
-	}
 }
 
 s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser) {

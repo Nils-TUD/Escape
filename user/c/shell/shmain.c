@@ -46,6 +46,7 @@ static void usage(char *name) {
 
 int main(int argc,char **argv) {
 	tFD fd;
+	tPid pid;
 	char *buffer;
 	char servPath[SSTRLEN("/drivers/") + MAX_VTERM_NAME_LEN + 1] = "/drivers/";
 
@@ -54,6 +55,9 @@ int main(int argc,char **argv) {
 		usage(argv[0]);
 		return EXIT_FAILURE;
 	}
+
+	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
+		error("Unable to announce sig-handler for %d",SIG_INTRPT);
 
 	/* none-interactive-mode */
 	if(argc == 3) {
@@ -81,8 +85,9 @@ int main(int argc,char **argv) {
 	if(dupFd(fd) < 0)
 		error("Unable to duplicate STDOUT to STDERR");
 
-	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
-		error("Unable to announce sig-handler for %d",SIG_INTRPT);
+	/* give vterm our pid */
+	pid = getpid();
+	ioctl(fd,IOCTL_VT_SHELLPID,(u8*)&pid,sizeof(tPid));
 
 	/* set vterm as env-variable */
 	setEnv("TERM",argv[1]);
@@ -114,13 +119,11 @@ int main(int argc,char **argv) {
 
 static void shell_sigIntrpt(tSig sig,u32 data) {
 	UNUSED(sig);
-	/* was this interrupt intended for our vterm? */
-	if(vterm == data) {
-		tPid pid = shell_getWaitingPid();
-		printf("\n");
-		if(pid != INVALID_PID)
-			sendSignalTo(pid,SIG_KILL,0);
-		else
-			shell_prompt();
-	}
+	UNUSED(data);
+	tPid pid = shell_getWaitingPid();
+	printf("\n");
+	if(pid != INVALID_PID)
+		sendSignalTo(pid,SIG_INTRPT,0);
+	else
+		shell_prompt();
 }

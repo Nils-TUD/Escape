@@ -50,6 +50,12 @@ typedef struct {
 static void sig_sendQueued(void);
 
 /**
+ * Sends queued signals, if necessary, and checks if there are signals at all
+ * @return false if there are definitly no signals
+ */
+static bool sig_hasSigPre(void);
+
+/**
  * Adds the given signal to the queue to pass it later to the handler
  *
  * @param h the handler
@@ -210,15 +216,7 @@ bool sig_hasSignal(tSig *sig,tTid *tid,u32 *data) {
 	sHandler *h;
 	sSLList **list;
 	sThread *t;
-
-	/* send queued signals */
-	if(sendQueued) {
-		sig_sendQueued();
-		sendQueued = false;
-	}
-
-	/* no signals at all? */
-	if(totalSigs == 0)
+	if(!sig_hasSigPre())
 		return false;
 
 	/* search through all signal-lists */
@@ -242,6 +240,46 @@ bool sig_hasSignal(tSig *sig,tTid *tid,u32 *data) {
 		list++;
 	}
 	return false;
+}
+
+bool sig_hasSignalFor(tTid tid) {
+	u32 i;
+	sSLNode *n;
+	sHandler *h;
+	sSLList **list;
+	sThread *t;
+	if(!sig_hasSigPre())
+		return false;
+
+	list = handler;
+	for(i = 0; i < SIG_COUNT - 1; i++) {
+		if(*list != NULL) {
+			for(n = sll_begin(*list); n != NULL; n = n->next) {
+				h = (sHandler*)n->data;
+				if(h->tid == tid && h->active == 0 && sll_length(h->pending) > 0) {
+					t = thread_getById(h->tid);
+					/* just handle the signal if the thread doesn't already handle one */
+					if(t->signal == 0)
+						return true;
+				}
+			}
+		}
+		list++;
+	}
+	return false;
+}
+
+static bool sig_hasSigPre(void) {
+	/* send queued signals */
+	if(sendQueued) {
+		sig_sendQueued();
+		sendQueued = false;
+	}
+
+	/* no signals at all? */
+	if(totalSigs == 0)
+		return false;
+	return true;
 }
 
 bool sig_addSignalFor(tPid pid,tSig signal,u32 data) {
@@ -416,11 +454,12 @@ static void sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data,bool add) {
 
 	if(pid != INVALID_PID) {
 		switch(signal) {
+			case SIG_INTRPT:
 			case SIG_TERM:
 			case SIG_KILL:
 			case SIG_SEGFAULT:
 				if(signal == SIG_KILL || h == NULL)
-					proc_destroy(proc_getByPid(pid));
+					proc_terminate(proc_getByPid(pid),1,signal);
 				break;
 		}
 	}

@@ -77,7 +77,7 @@ static void test_proc(void) {
 		tprintf("Cloning process to pid=%d\n",newPid);
 		test_assertTrue(proc_clone(newPid) >= 0);
 		tprintf("Destroying process\n",newPid);
-		proc_destroy(proc_getByPid(newPid));
+		proc_kill(proc_getByPid(newPid));
 	}
 	test_check();
 

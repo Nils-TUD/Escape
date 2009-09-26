@@ -408,7 +408,7 @@ static void test_redirFd(void) {
 
 static void test_wait(void) {
 	test_caseStart("Testing wait()");
-	test_assertInt(_wait(~(EV_CLIENT | EV_RECEIVED_MSG | EV_CHILD_DIED)),ERR_INVALID_ARGS);
+	test_assertInt(_wait(~(EV_CLIENT | EV_RECEIVED_MSG)),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 

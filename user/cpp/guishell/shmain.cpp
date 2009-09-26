@@ -54,6 +54,9 @@ static int shell_main(void);
 static void shell_sigIntrpt(tSig sig,u32 data);
 
 int main(int argc,char **argv) {
+	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
+		error("Unable to announce sig-handler for %d",SIG_INTRPT);
+
 	// none-interactive-mode
 	if(argc == 3) {
 		// in this case we already have stdin, stdout and stderr
@@ -118,13 +121,13 @@ int main(int argc,char **argv) {
 		error("Unable to redirect STDERR to %d",fout);
 	delete servPath;
 
+	/* give vterm our pid */
+	ioctl(fin,IOCTL_VT_SHELLPID,(u8*)getpid(),sizeof(tPid));
+
 	return shell_main();
 }
 
 static int shell_main(void) {
-	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
-		error("Unable to announce sig-handler for %d",SIG_INTRPT);
-
 	// set term as env-variable
 	setEnv("TERM",servName);
 	delete servName;
@@ -160,7 +163,7 @@ static void shell_sigIntrpt(tSig sig,u32 data) {
 	printf("\n");
 	tPid pid = shell_getWaitingPid();
 	if(pid != INVALID_PID)
-		sendSignalTo(pid,SIG_KILL,0);
+		sendSignalTo(pid,SIG_INTRPT,0);
 	else
 		shell_prompt();
 }

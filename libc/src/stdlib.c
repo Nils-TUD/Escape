@@ -67,6 +67,7 @@ char *getenv(const char *name) {
 
 int system(const char *cmd) {
 	s32 child;
+	sExitState state;
 	/* check wether we have a shell */
 	if(cmd == NULL) {
 		tFD fd = open("/bin/shell",IO_READ);
@@ -89,9 +90,10 @@ int system(const char *cmd) {
 	else if(child < 0)
 		error("Fork failed");
 
-	/* TODO we need the return-value of the child.. */
-	wait(EV_CHILD_DIED);
-	return EXIT_SUCCESS;
+	/* wait and return exit-code */
+	if((child = waitChild(&state)) < 0)
+		return child;
+	return state.exitCode;
 }
 
 void *bsearch(const void *key,const void *base,size_t num,size_t size,fCompare cmp) {

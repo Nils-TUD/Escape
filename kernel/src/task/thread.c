@@ -209,8 +209,6 @@ void thread_switchTo(tTid tid) {
 	/* now start kernel-time again */
 	cur->kcycleStart = cpu_rdtsc();
 
-	/* destroy processes, if there is any */
-	proc_cleanup();
 	/* destroy process, if there is any */
 	if(deadThreads != NULL) {
 		sSLNode *n;

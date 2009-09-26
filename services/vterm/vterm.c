@@ -132,6 +132,7 @@ static bool vterm_init(sVTerm *vt) {
 	vt->keymap = 1;
 	vt->escapePos = -1;
 	vt->rlStartCol = 0;
+	vt->shellPid = 0;
 	vt->rlBufSize = INITIAL_RLBUF_SIZE;
 	vt->rlBufPos = 0;
 	vt->rlBuffer = (char*)malloc(vt->rlBufSize * sizeof(char));
@@ -208,6 +209,11 @@ s32 vterm_ioctl(sVTerm *vt,u32 cmd,void *data,bool *readKb) {
 	s32 res = 0;
 	UNUSED(data);
 	switch(cmd) {
+		case IOCTL_VT_SHELLPID:
+			/* do it just once */
+			if(vt->shellPid == 0)
+				vt->shellPid = *(tPid*)data;
+			break;
 		case IOCTL_VT_EN_ECHO:
 			vt->echo = true;
 			break;

@@ -73,6 +73,8 @@ typedef struct {
 	char *screenBackup;
 	/* the buffer for the input-stream */
 	sRingBuf *inbuf;
+	/* the pid of the shell for ctrl+c notifications */
+	tPid shellPid;
 	/* the escape-state */
 	s32 escapePos;
 	char escapeBuf[MAX_ESCC_LENGTH];

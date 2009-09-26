@@ -52,6 +52,7 @@
 #define IOCTL_VT_DIS_NAVI		8
 #define IOCTL_VT_BACKUP			9
 #define IOCTL_VT_RESTORE		10
+#define IOCTL_VT_SHELLPID		11
 
 /* ioctl-cursor-pos */
 typedef struct {

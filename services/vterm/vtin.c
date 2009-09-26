@@ -141,7 +141,9 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 			if(ctrlDown) {
 				switch(keycode) {
 					case VK_C:
-						sendSignal(SIG_INTRPT,vt->index);
+						/* send interrupt to shell */
+						if(vt->shellPid)
+							sendSignalTo(vt->shellPid,SIG_INTRPT,0);
 						break;
 					case VK_D:
 						if(vt->readLine) {

@@ -103,6 +103,14 @@ void sig_removeHandlerFor(tTid tid);
 bool sig_hasSignal(tSig *sig,tPid *tid,u32 *data);
 
 /**
+ * Checks wether <tid> has a signal
+ *
+ * @param tid the thread-id
+ * @return true if so
+ */
+bool sig_hasSignalFor(tTid tid);
+
+/**
  * Adds the given signal for the given process
  *
  * @param pid the process-id

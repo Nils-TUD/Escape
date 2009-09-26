@@ -1,5 +1,5 @@
 /**
- * $Id: randmain.c 328 2009-09-16 13:36:41Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

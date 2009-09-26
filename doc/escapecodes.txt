@@ -1,14 +1,18 @@
 cursor-movement:
-	left:				^[ml] ^[ml;3]
-	right:			^[mr] ^[mr;4]
-	up:					^[mu] ^[mu;4]
-	down:				^[md] ^[md;4]
+	left:				^[ml] ^[ml;3]				; arg=number of steps, 1 by default
+	right:			^[mr] ^[mr;4]				;	arg=number of steps, 1 by default
+	up:					^[mu] ^[mu;4]				;	arg=number of steps, 1 by default
+	down:				^[md] ^[md;4]				;	arg=number of steps, 1 by default
 	line-start:	^[ms]
 	line-end:		^[me]
 	home:				^[mh]
 
 keycodes:
-	^[kc;104;3]
+	^[kc;44;104;3]									;	arg1=char (from keymap)
+																	; arg2=keycode (VK_*)
+																	; arg3=modifier (1 = shift, 2 = ctrl, 4 = alt)
 
 colors:
-	^[co;3;2]
+	^[co;3;2]												; arg1 = foreground (optional; white by default)
+	^[co;3]													; arg2 = background (optional; black by default)
+	^[co]

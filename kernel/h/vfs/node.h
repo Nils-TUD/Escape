@@ -183,10 +183,11 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name);
  * @param parent the parent-node
  * @param prev the previous node
  * @param name the node-name
- * @param handler the read-handler
+ * @param rwHandler the read-handler
+ * @param wrHandler the write-handler
  * @return the node
  */
-sVFSNode *vfsn_createInfo(tTid tid,sVFSNode *parent,char *name,fRead handler);
+sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler);
 
 /**
  * Creates a service-node

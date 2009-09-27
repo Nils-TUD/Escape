@@ -31,6 +31,7 @@
 #include <vfs/real.h>
 #include <multiboot.h>
 #include <util.h>
+#include <log.h>
 #include <assert.h>
 #include <string.h>
 #include <asprintf.h>
@@ -94,9 +95,9 @@ void vfsinfo_init(void) {
 	vfsn_resolvePath("/system",&nodeNo,NULL,VFS_NOACCESS);
 	sysNode = vfsn_getNode(nodeNo);
 
-	vfsn_createInfo(KERNEL_TID,sysNode,(char*)"memusage",vfsinfo_memUsageReadHandler);
-	vfsn_createInfo(KERNEL_TID,sysNode,(char*)"cpu",vfsinfo_cpuReadHandler);
-	vfsn_createInfo(KERNEL_TID,sysNode,(char*)"stats",vfsinfo_statsReadHandler);
+	vfsn_createFile(KERNEL_TID,sysNode,(char*)"memusage",vfsinfo_memUsageReadHandler,NULL);
+	vfsn_createFile(KERNEL_TID,sysNode,(char*)"cpu",vfsinfo_cpuReadHandler,NULL);
+	vfsn_createFile(KERNEL_TID,sysNode,(char*)"stats",vfsinfo_statsReadHandler,NULL);
 }
 
 s32 vfsinfo_procReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {

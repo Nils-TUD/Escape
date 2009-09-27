@@ -253,13 +253,13 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 			}
 			else
 				nameLen = strlen(path);
-			/* copy the name because vfsn_createInfo() will store the pointer */
+			/* copy the name because vfsn_createFile() will store the pointer */
 			nameCpy = kheap_alloc(nameLen + 1);
 			if(nameCpy == NULL)
 				return ERR_NOT_ENOUGH_MEM;
 			memcpy(nameCpy,path,nameLen + 1);
 			/* now create the node and pass the node-number back */
-			if((child = vfsn_createInfo(t->tid,dir,nameCpy,vfsrw_readDef)) == NULL) {
+			if((child = vfsn_createFile(t->tid,dir,nameCpy,vfsrw_readDef,vfsrw_writeDef)) == NULL) {
 				kheap_free(nameCpy);
 				return ERR_NOT_ENOUGH_MEM;
 			}
@@ -425,7 +425,7 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name) {
 	return node;
 }
 
-sVFSNode *vfsn_createInfo(tTid tid,sVFSNode *parent,char *name,fRead handler) {
+sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
@@ -435,8 +435,8 @@ sVFSNode *vfsn_createInfo(tTid tid,sVFSNode *parent,char *name,fRead handler) {
 	 * permission-system */
 	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ
 		| MODE_OTHER_WRITE;
-	node->readHandler = handler;
-	node->writeHandler = vfsrw_writeDef;
+	node->readHandler = rwHandler;
+	node->writeHandler = wrHandler;
 	return node;
 }
 

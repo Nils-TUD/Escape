@@ -391,8 +391,10 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 			return err;
 
 		/* node not present anymore or no read-handler? */
-		if(n->name == NULL || n->readHandler == NULL)
+		if(n->name == NULL)
 			return ERR_INVALID_FILE;
+		if(n->readHandler == NULL)
+			return ERR_NO_READ_PERM;
 
 		/* use the read-handler */
 		readBytes = n->readHandler(tid,file,n,buffer,e->position,count);
@@ -423,8 +425,10 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 			return err;
 
 		/* node not present anymore or no write-handler? */
-		if(n->name == NULL || n->writeHandler == NULL)
+		if(n->name == NULL)
 			return ERR_INVALID_FILE;
+		if(n->writeHandler == NULL)
+			return ERR_NO_WRITE_PERM;
 
 		/* write to the node */
 		writtenBytes = n->writeHandler(tid,file,n,buffer,e->position,count);
@@ -952,12 +956,12 @@ sVFSNode *vfs_createProcess(tPid pid,fRead handler) {
 	}
 
 	/* create process-info-node */
-	n = vfsn_createInfo(KERNEL_TID,dir,(char*)"info",handler);
+	n = vfsn_createFile(KERNEL_TID,dir,(char*)"info",handler,NULL);
 	if(n == NULL)
 		goto errorDir;
 
 	/* create virt-mem-info-node */
-	n = vfsn_createInfo(KERNEL_TID,dir,(char*)"virtmem",vfsinfo_virtMemReadHandler);
+	n = vfsn_createFile(KERNEL_TID,dir,(char*)"virtmem",vfsinfo_virtMemReadHandler,NULL);
 	if(n == NULL)
 		goto errorDir;
 
@@ -1003,7 +1007,7 @@ bool vfs_createThread(tTid tid,fRead handler) {
 	itoa(name,tid);
 
 	/* create thread-node */
-	n = vfsn_createInfo(tid,t->proc->threadDir,name,handler);
+	n = vfsn_createFile(tid,t->proc->threadDir,name,handler,NULL);
 	if(n == NULL) {
 		kheap_free(name);
 		return false;

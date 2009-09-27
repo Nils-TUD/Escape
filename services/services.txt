@@ -9,3 +9,4 @@ zero; /drivers/zero;
 random; /drivers/random;
 null; /drivers/null;
 powermng; /services/powermng;
+pci; ;

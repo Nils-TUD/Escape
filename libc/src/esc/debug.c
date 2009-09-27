@@ -185,7 +185,7 @@ void vdebugf(const char *fmt,va_list ap) {
 			u8 base = c == 'o' ? 8 : (c == 'x' ? 16 : 10);
 			u = va_arg(ap, s32);
 			if(pad > 0) {
-				u32 width = getuwidth(n,base);
+				u32 width = getuwidth(u,base);
 				debugPad(pad - width,flags);
 			}
 			debugUint(u,base);

@@ -77,6 +77,14 @@ void outByte(u16 port,u8 val);
 void outWord(u16 port,u16 val);
 
 /**
+ * Outputs the dword <val> to the I/O-Port <port>
+ *
+ * @param port the port
+ * @param val the value
+ */
+void outDWord(u16 port,u32 val);
+
+/**
  * Outputs <count> words at <addr> to port <port>
  *
  * @param port the port
@@ -100,6 +108,14 @@ u8 inByte(u16 port);
  * @return the value
  */
 u16 inWord(u16 port);
+
+/**
+ * Reads a dword from the I/O-Port <port>
+ *
+ * @param port the port
+ * @return the value
+ */
+u32 inDWord(u16 port);
 
 /**
  * Reads <count> words to <addr> from port <port>

@@ -200,7 +200,7 @@ static void refreshScreen(void) {
 		file = "STDIN";
 	else
 		file = filename;
-	printf("\033[co;7;8]%-*s%s\033[co]",COLS - strlen(file),tmp,file);
+	printf("\033[co;0;7]%-*s%s\033[co]",COLS - strlen(file),tmp,file);
 	flush();
 }
 

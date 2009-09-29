@@ -31,16 +31,20 @@
 
 #define COLS				80
 #define ROWS				23
-#define BUFFER_SIZE			(64 * K)
+#define BUFFER_SIZE			1024
 #define BUFFER_INC_SIZE		64
 #define TAB_WIDTH			4
 
 static void resetVterm(void);
-static bool readLines(tFile *file);
+static bool readLines(u32 end);
 static void scrollDown(s32 lines);
 static void refreshScreen(void);
+static void printStatus(u32 total,const char *totalStr);
 static bool copy(char c);
 
+static tFile *fvterm;
+static tFile *file;
+static bool seenEOF;
 static u32 linePos;
 static u32 lineCount;
 static u32 lineSize;
@@ -51,8 +55,6 @@ static u32 startLine = 0;
 static char emptyLine[COLS + 1];
 
 int main(int argc,char *argv[]) {
-	tFile *file;
-	tFile *fvterm;
 	bool run = true;
 	char c;
 	char vterm[MAX_PATH_LEN] = "/drivers/";
@@ -64,6 +66,7 @@ int main(int argc,char *argv[]) {
 		fprintf(stderr,"		pageup/pagedown - one page up/down\n");
 		fprintf(stderr,"		home/end - to the very beginning or end\n");
 		fprintf(stderr,"		q - quit\n");
+		fprintf(stderr,"		s - stop reading (e.g. when walking to EOF)\n");
 		return EXIT_FAILURE;
 	}
 
@@ -84,8 +87,18 @@ int main(int argc,char *argv[]) {
 	/* backup screen */
 	ioctl(STDOUT_FILENO,IOCTL_VT_BACKUP,NULL,0);
 
+	/* create line-buffer */
+	seenEOF = false;
+	lineCount = 0;
+	lineSize = BUFFER_INC_SIZE;
+	lines = (char**)calloc(lineSize,sizeof(char*));
+	if(lines == NULL) {
+		printe("Unable to create lines");
+		return false;
+	}
+
 	/* read all */
-	if(!readLines(file)) {
+	if(!readLines(ROWS)) {
 		resetVterm();
 		return EXIT_FAILURE;
 	}
@@ -93,9 +106,6 @@ int main(int argc,char *argv[]) {
 	/* stop readline and navigation */
 	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
 	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_NAVI,NULL,0);
-
-	if(argc == 2)
-		fclose(file);
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
 	if(!getEnv(vterm + 9,MAX_PATH_LEN - 9,"TERM")) {
@@ -126,10 +136,12 @@ int main(int argc,char *argv[]) {
 					run = false;
 					break;
 				case VK_HOME:
-					scrollDown(-startLine);
+					/* scrollDown(0) means scroll to end.. */
+					if(startLine > 0)
+						scrollDown(-startLine);
 					break;
 				case VK_END:
-					scrollDown(lineCount - startLine);
+					scrollDown(0);
 					break;
 				case VK_UP:
 					scrollDown(-1);
@@ -147,6 +159,8 @@ int main(int argc,char *argv[]) {
 		}
 	}
 
+	if(argc == 2)
+		fclose(file);
 	fclose(fvterm);
 	resetVterm();
 
@@ -168,19 +182,22 @@ static void scrollDown(s32 l) {
 		else
 			startLine = 0;
 	}
-	else if(lineCount >= ROWS) {
-		if(startLine + l < lineCount - ROWS)
-			startLine += l;
+	else if(lineCount >= ROWS)
+		startLine += l;
+
+	if(l == 0 || startLine > lineCount - ROWS) {
+		readLines(l == 0 ? 0 : startLine + ROWS);
+		if(lineCount < ROWS)
+			startLine = 0;
 		else
 			startLine = lineCount - ROWS;
 	}
+
 	if(oldStart != startLine)
 		refreshScreen();
 }
 
 static void refreshScreen(void) {
-	char tmp[COLS + 1];
-	const char *file;
 	u32 i,end = MIN(lineCount,ROWS);
 	/* walk to the top of the screen */
 	printf("\033[mh]");
@@ -194,30 +211,32 @@ static void refreshScreen(void) {
 		if(i < ROWS - 1)
 			printc('\n');
 	}
-	/* print last line */
-	sprintf(tmp,"Lines %d-%d / %d",startLine + 1,startLine + end,lineCount);
-	if(filename == NULL)
-		file = "STDIN";
-	else
-		file = filename;
-	printf("\033[co;0;7]%-*s%s\033[co]",COLS - strlen(file),tmp,file);
+	printStatus(lineCount,seenEOF ? NULL : "?");
 	flush();
 }
 
-static bool readLines(tFile *file) {
+static void printStatus(u32 total,const char *totalStr) {
+	char tmp[COLS + 1];
+	const char *displayName;
+	u32 end = MIN(lineCount,ROWS);
+	if(!totalStr)
+		sprintf(tmp,"Lines %d-%d / %d",startLine + 1,startLine + end,total);
+	else
+		sprintf(tmp,"Lines %d-%d / %s",startLine + 1,startLine + end,totalStr);
+	if(filename == NULL)
+		displayName = "STDIN";
+	else
+		displayName = filename;
+	printf("\033[co;0;7]%-*s%s\033[co]",COLS - strlen(displayName),tmp,displayName);
+}
+
+static bool readLines(u32 end) {
+	const char *states[] = {"|","/","-","\\","|","/","-"};
 	s32 count;
+	u8 state = 0;
 	bool waitForEsc;
 	char *cpy;
 	char *buffer;
-
-	/* create line-buffer */
-	lineCount = 0;
-	lineSize = BUFFER_INC_SIZE;
-	lines = (char**)calloc(lineSize,sizeof(char*));
-	if(lines == NULL) {
-		printe("Unable to create lines");
-		return false;
-	}
 
 	/* create buffer for reading */
 	buffer = (char*)malloc(BUFFER_SIZE * sizeof(char));
@@ -228,12 +247,14 @@ static bool readLines(tFile *file) {
 
 	/* read and split into lines */
 	waitForEsc = false;
-	while((count = fread(buffer,sizeof(char),BUFFER_SIZE - 1,file)) > 0) {
+	while((end == 0 || lineCount < end) &&
+			(count = fread(buffer,sizeof(char),BUFFER_SIZE - 1,file)) > 0) {
 		*(buffer + count) = '\0';
 		cpy = buffer;
 		while(*cpy) {
 			if(*cpy == IO_EOF) {
 				copy('\n');
+				seenEOF = true;
 				goto finished;
 			}
 			/* skip escape-codes */
@@ -251,7 +272,28 @@ static bool readLines(tFile *file) {
 			}
 			cpy++;
 		}
+
+		/* check wether the user has pressed a key */
+		{
+			char c;
+			while(!feof(fvterm) && (c = fscanc(fvterm)) != IO_EOF) {
+				if(c == '\033') {
+					s32 n1,n2,n3;
+					s32 cmd = freadesc(fvterm,&n1,&n2,&n3);
+					if(cmd != ESCC_KEYCODE)
+						continue;
+					if(n2 == VK_S)
+						goto finished;
+				}
+			}
+		}
+
+		printf("\r");
+		printStatus(lineCount,states[state]);
+		state = (state + 1) % ARRAY_SIZE(states);
 	}
+	if(count <= 0)
+		seenEOF = true;
 finished:
 	free(buffer);
 	return true;

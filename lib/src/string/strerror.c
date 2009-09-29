@@ -267,6 +267,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Interrupted by signal!");
 			break;
 
+		case ERR_PIPE_SEEK:
+			strcpy(msg,"You can't use seek() for pipes!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

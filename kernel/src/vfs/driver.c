@@ -186,15 +186,18 @@ static void vfsdrv_readReqHandler(tTid tid,const u8 *data,u32 size) {
 			sMsg *rmsg = (sMsg*)data;
 			/* an error? */
 			if(size < sizeof(rmsg->args) || (s32)rmsg->args.arg1 <= 0) {
-				req->val1 = 1;
+				if(size >= sizeof(rmsg->args))
+					req->val1 = rmsg->args.arg2;
+				else
+					req->val1 = 1;
 				req->count = 0;
 				req->state = REQ_STATE_FINISHED;
 				thread_wakeup(tid,EV_RECEIVED_MSG);
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
-			req->count = MIN(req->dsize,rmsg->args.arg1);
 			req->val1 = rmsg->args.arg2;
+			req->count = MIN(req->dsize,rmsg->args.arg1);
 			req->state = REQ_STATE_WAIT_DATA;
 		}
 		else {

@@ -81,6 +81,7 @@
 #define ERR_NO_CHILD				-58
 #define ERR_THREAD_WAITING			-59
 #define ERR_INTERRUPTED				-60
+#define ERR_PIPE_SEEK				-61
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

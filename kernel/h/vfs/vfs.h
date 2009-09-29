@@ -23,7 +23,7 @@
 #include <common.h>
 #include <sllist.h>
 
-#define MAX_VFS_FILE_SIZE			(1 * M)
+#define MAX_VFS_FILE_SIZE			(1 * K)
 
 /* some additional types for the kernel */
 #define MODE_TYPE_SERVUSE			0x0010000
@@ -97,6 +97,11 @@ struct sVFSNode {
 			/* a list for reading messages from the service */
 			sSLList *recvList;
 		} servuse;
+		/* for pipes */
+		struct {
+			u32 total;
+			sSLList *list;
+		} pipe;
 		/* for all other node-types */
 		struct {
 			/* size of the buffer */

@@ -113,6 +113,14 @@ u32 fwrite(const void *ptr,u32 size,u32 count,tFile *file);
 s32 fflush(tFile *file);
 
 /**
+ * Checks wether we are at EOF
+ *
+ * @param file the file
+ * @return 1 if at EOF
+ */
+s32 feof(tFile *file);
+
+/**
  * Closes the file associated with the stream and disassociates it.
  * All internal buffers associated with the stream are flushed: the content of any unwritten
  * buffer is written and the content of any unread buffer is discarded.

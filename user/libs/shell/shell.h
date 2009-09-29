@@ -37,6 +37,11 @@ extern "C" {
 #endif
 
 /**
+ * Inits the shell; announces the signal-handler for SIG_INTRPT
+ */
+void shell_init(void);
+
+/**
  * Prints the shell-prompt
  *
  * @return true if successfull

@@ -48,14 +48,8 @@ static char *servName;
  */
 static int shell_main(void);
 
-/**
- * Handles SIG_INTRPT
- */
-static void shell_sigIntrpt(tSig sig,u32 data);
-
 int main(int argc,char **argv) {
-	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
-		error("Unable to announce sig-handler for %d",SIG_INTRPT);
+	shell_init();
 
 	// none-interactive-mode
 	if(argc == 3) {
@@ -155,15 +149,4 @@ static int shell_main(void) {
 		shell_addToHistory(buffer);
 	}
 	return EXIT_SUCCESS;
-}
-
-static void shell_sigIntrpt(tSig sig,u32 data) {
-	UNUSED(sig);
-	UNUSED(data);
-	printf("\n");
-	tPid pid = shell_getWaitingPid();
-	if(pid != INVALID_PID)
-		sendSignalTo(pid,SIG_INTRPT,0);
-	else
-		shell_prompt();
 }

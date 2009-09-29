@@ -93,6 +93,8 @@ sCommand *cmd_get(sCmdToken *tokens,u32 tokenCount,u32 *cmdCount) {
 			}
 
 			/* set arguments */
+			cmds[cmdPos].pipe = -1;
+			cmds[cmdPos].pid = 0;
 			cmds[cmdPos].argCount = argCount;
 			cmds[cmdPos].arguments = (char**)malloc((argCount + 1) * sizeof(char*));
 			if(cmds[cmdPos].arguments == NULL) {

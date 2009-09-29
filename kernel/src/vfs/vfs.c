@@ -335,6 +335,9 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = nodes + e->nodeNo;
+		/* no seek for pipes */
+		if(n->mode & MODE_TYPE_PIPE)
+			return ERR_PIPE_SEEK;
 
 		if(n->mode & MODE_TYPE_SERVUSE) {
 			if(IS_DRIVER(n->parent->mode))
@@ -536,6 +539,9 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 							vfsn_removeNode(n);
 					}
 				}
+				/* if we're not the last one using the pipe, append an "EOF-message" */
+				else if(n->mode & MODE_TYPE_PIPE)
+					vfsrw_writePipe(tid,file,n,NULL,e->position,0);
 
 				/* notify listeners about creation/modification of files */
 				/* TODO what about links ? */

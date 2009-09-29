@@ -30,13 +30,6 @@
 
 #define MAX_VTERM_NAME_LEN	10
 
-/**
- * Handles SIG_INTRPT
- */
-static void shell_sigIntrpt(tSig sig,u32 data);
-
-static u32 vterm;
-
 static void usage(char *name) {
 	fprintf(stderr,"Usage: \n");
 	fprintf(stderr,"	Interactive:		%s <vterm>\n",name);
@@ -47,6 +40,7 @@ static void usage(char *name) {
 int main(int argc,char **argv) {
 	tFD fd;
 	tPid pid;
+	u32 vterm;
 	char *buffer;
 	char servPath[SSTRLEN("/drivers/") + MAX_VTERM_NAME_LEN + 1] = "/drivers/";
 
@@ -56,8 +50,7 @@ int main(int argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
-		error("Unable to announce sig-handler for %d",SIG_INTRPT);
+	shell_init();
 
 	/* none-interactive-mode */
 	if(argc == 3) {
@@ -115,15 +108,4 @@ int main(int argc,char **argv) {
 	}
 
 	return EXIT_SUCCESS;
-}
-
-static void shell_sigIntrpt(tSig sig,u32 data) {
-	UNUSED(sig);
-	UNUSED(data);
-	tPid pid = shell_getWaitingPid();
-	printf("\n");
-	if(pid != INVALID_PID)
-		sendSignalTo(pid,SIG_INTRPT,0);
-	else
-		shell_prompt();
 }

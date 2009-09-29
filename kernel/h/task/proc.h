@@ -40,6 +40,8 @@
 #define EV_CHILD_DIED		4	/* kernel-intern */
 #define EV_DATA_READABLE	8
 #define EV_UNLOCK			16	/* kernel-intern */
+#define EV_PIPE_FULL		32	/* kernel-intern */
+#define EV_PIPE_EMPTY		64	/* kernel-intern */
 
 typedef struct {
 	tPid pid;

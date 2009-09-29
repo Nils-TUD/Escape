@@ -38,6 +38,13 @@ typedef struct {
 	u32 length;
 } sMessage;
 
+/* a data-"message" in a pipe */
+typedef struct {
+	u32 length;
+	u32 offset;
+	u8 data[];
+} sPipeData;
+
 s32 vfsrw_readDef(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	s32 byteCount;
 	UNUSED(tid);
@@ -97,6 +104,60 @@ s32 vfsrw_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32
 	}
 
 	return count;
+}
+
+s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	s32 byteCount,total;
+	sPipeData *data;
+	sSLList *list;
+	UNUSED(file);
+	volatile sVFSNode *n = node;
+	/* wait until data is available */
+	/* don't cache the list here, because the pointer changes if the list is NULL */
+	while(sll_length(n->data.pipe.list) == 0) {
+		thread_wait(tid,EV_PIPE_FULL);
+		thread_switchInKernel();
+	}
+
+	list = node->data.pipe.list;
+	data = sll_get(list,0);
+	/* empty message indicates EOF */
+	if(data->length == 0)
+		return 0;
+
+	total = 0;
+	while(1) {
+		/* copy */
+		byteCount = MIN(data->length - (offset - data->offset),count);
+		vassert(offset >= data->offset,"Illegal offset");
+		memcpy(buffer + total,data->data + (offset - data->offset),byteCount);
+		count -= byteCount;
+		total += byteCount;
+		/* remove if read completely */
+		if(byteCount + (offset - data->offset) == data->length) {
+			kheap_free(data);
+			sll_removeIndex(list,0);
+		}
+		node->data.pipe.total -= byteCount;
+		offset += byteCount;
+		if(count == 0)
+			break;
+		/* wait until data is available */
+		while(sll_length(n->data.pipe.list) == 0) {
+			/* before we go to sleep we have to notify others that we've data written. otherwise
+			 * we may cause a deadlock here */
+			thread_wakeupAll(EV_PIPE_EMPTY);
+			thread_wait(tid,EV_PIPE_FULL);
+			thread_switchInKernel();
+		}
+		data = sll_get(list,0);
+		/* keep the empty one for the next transfer */
+		if(data->length == 0)
+			break;
+	}
+	/* we have to wakeup all here since we don't know our communication-partner :/ */
+	thread_wakeupAll(EV_PIPE_EMPTY);
+	return total;
 }
 
 s32 vfsrw_readServUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
@@ -198,6 +259,44 @@ s32 vfsrw_writeDef(tTid tid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset
 	/* restore cache */
 	n->data.def.cache = oldCache;
 	return ERR_NOT_ENOUGH_MEM;
+}
+
+s32 vfsrw_writePipe(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count) {
+	sPipeData *data;
+	UNUSED(file);
+	volatile sVFSNode *n = node;
+	/* wait while our node is full */
+	while((n->data.pipe.total + count) >= MAX_VFS_FILE_SIZE) {
+		thread_wait(tid,EV_PIPE_EMPTY);
+		thread_switchInKernel();
+	}
+
+	/* build pipe-data */
+	data = (sPipeData*)kheap_alloc(sizeof(sPipeData) + count);
+	if(data == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+	data->offset = offset;
+	data->length = count;
+	if(count)
+		memcpy(data->data,buffer,count);
+
+	/* create list, if necessary */
+	if(node->data.pipe.list == NULL) {
+		node->data.pipe.list = sll_create();
+		if(node->data.pipe.list == NULL) {
+			kheap_free(data);
+			return ERR_NOT_ENOUGH_MEM;
+		}
+	}
+
+	/* append */
+	if(!sll_append(node->data.pipe.list,data)) {
+		kheap_free(data);
+		return ERR_NOT_ENOUGH_MEM;
+	}
+	node->data.pipe.total += count;
+	thread_wakeupAll(EV_PIPE_FULL);
+	return count;
 }
 
 s32 vfsrw_writeServUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {

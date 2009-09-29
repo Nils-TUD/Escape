@@ -39,9 +39,17 @@
 #include "tokenizer.h"
 #include "cmdbuilder.h"
 
+static void shell_sigIntrpt(tSig sig,u32 data);
+
 static bool resetReadLine = false;
 static u32 tabCount = 0;
-static tPid waitingPid = INVALID_PID;
+static sCommand *cmds = NULL;
+static u32 cmdCount = 0;
+
+void shell_init(void) {
+	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
+		error("Unable to announce sig-handler for %d",SIG_INTRPT);
+}
 
 bool shell_prompt(void) {
 	/* ensure that we start a new readline */
@@ -61,18 +69,35 @@ bool shell_prompt(void) {
 	return true;
 }
 
-tPid shell_getWaitingPid(void) {
-	return waitingPid;
+static void shell_sigIntrpt(tSig sig,u32 data) {
+	UNUSED(sig);
+	UNUSED(data);
+	u32 i;
+	printf("\n");
+	if(cmds && cmdCount) {
+		for(i = 0; i < cmdCount; i++) {
+			if(cmds[i].pid != 0) {
+				sendSignalTo(cmds[i].pid,SIG_INTRPT,0);
+				cmds[i].pid = 0;
+			}
+			if(cmds[i].pipe != -1) {
+				close(cmds[i].pipe);
+				cmds[i].pipe = -1;
+			}
+		}
+	}
+	else
+		shell_prompt();
 }
 
 s32 shell_executeCmd(char *line) {
-	sCmdToken *tokens;
-	sCommand *cmds,*cmd;
-	sShellCmd **scmds;
-	u32 i,cmdCount,tokCount;
+	sCmdToken *tokens = NULL;
+	sCommand *cmd = NULL;
+	sShellCmd **scmds = NULL;
+	u32 i,j,tokCount;
 	char path[MAX_CMD_LEN] = APPS_DIR;
 	s32 res = 0;
-	s32 *pipes = NULL,*pipe;
+	u32 waitingCount = 0;
 
 	/* tokenize the line */
 	tokens = tok_get(line,&tokCount);
@@ -80,24 +105,13 @@ s32 shell_executeCmd(char *line) {
 		return -1;
 
 	/* parse commands from the tokens */
+	cmdCount = 0;
 	cmds = cmd_get(tokens,tokCount,&cmdCount);
 	if(cmds == NULL) {
 		tok_free(tokens,tokCount);
 		return -1;
 	}
 
-	/* create pipe-fds */
-	if(cmdCount > 1) {
-		pipes = (s32*)malloc((cmdCount - 1) * sizeof(s32));
-		if(pipes == NULL) {
-			printe("Unable to allocate memory for pipes");
-			tok_free(tokens,tokCount);
-			cmd_free(cmds,cmdCount);
-			return -1;
-		}
-	}
-
-	pipe = pipes;
 	cmd = cmds;
 	for(i = 0; i < cmdCount; i++) {
 		scmds = compl_get(cmd->arguments[0],strlen(cmd->arguments[0]),2,true,true);
@@ -106,69 +120,35 @@ s32 shell_executeCmd(char *line) {
 		if(scmds == NULL || scmds[0] == NULL || scmds[1] != NULL ||
 				(scmds[0]->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC)) == 0) {
 			printf("\033[co;4]%s: Command not found\033[co]\n",cmd->arguments[0]);
-			/* close open pipe */
-			if(cmd->dup & DUP_STDIN)
-				close(*pipe);
-			free(pipes);
-			tok_free(tokens,tokCount);
-			cmd_free(cmds,cmdCount);
-			return -1;
+			res = -1;
+			goto error;
 		}
 
-		/* open pipe or move it forward */
-		if(cmd->dup & DUP_STDIN)
-			pipe++;
+		/* create pipe */
 		if(cmd->dup & DUP_STDOUT) {
-			*pipe = open("/system/pipe",IO_READ | IO_WRITE);
-			if(*pipe < 0) {
-				/* close open pipe */
-				if(cmd->dup & DUP_STDIN)
-					close(*--pipe);
-				free(pipes);
-				compl_free(scmds);
-				tok_free(tokens,tokCount);
-				cmd_free(cmds,cmdCount);
+			cmd->pipe = open("/system/pipe",IO_READ | IO_WRITE);
+			if(cmd->pipe < 0) {
 				printe("Unable to open /system/pipe");
-				return -1;
+				res = -1;
+				goto error;
 			}
 		}
 
 		/* execute command */
-		if(scmds[0]->type == TYPE_BUILTIN) {
-			/* redirect fds and make a copy of stdin and stdout because we want to keep them :) */
-			/* (no fork here) */
-			tFD fdout = -1,fdin = -1;
-			if(cmd->dup & DUP_STDOUT) {
-				fdout = dupFd(STDOUT_FILENO);
-				redirFd(STDOUT_FILENO,*pipe);
-			}
-			if(cmd->dup & DUP_STDIN) {
-				fdin = dupFd(STDIN_FILENO);
-				redirFd(STDIN_FILENO,*(pipe - 1));
-			}
+		if((cmd->pid = fork()) == 0) {
+			/* redirect fds */
+			if(cmd->dup & DUP_STDOUT)
+				redirFd(STDOUT_FILENO,cmd->pipe);
+			if(cmd->dup & DUP_STDIN)
+				redirFd(STDIN_FILENO,(cmd - 1)->pipe);
 
-			res = scmds[0]->func(cmd->argCount,cmd->arguments);
-
-			/* restore stdin & stdout */
-			if(cmd->dup & DUP_STDOUT) {
-				redirFd(STDOUT_FILENO,fdout);
-				/* we have to close fdout here because redirFd() will not do it for us */
-				close(fdout);
+			/* create a child for builtin-commands, too, because otherwise it won't work with pipes
+			 * properly */
+			if(scmds[0]->type == TYPE_BUILTIN) {
+				res = scmds[0]->func(cmd->argCount,cmd->arguments);
+				exit(res);
 			}
-			if(cmd->dup & DUP_STDIN) {
-				redirFd(STDIN_FILENO,fdin);
-				close(fdin);
-			}
-		}
-		else {
-			s32 pid;
-			if((pid = fork()) == 0) {
-				/* redirect fds */
-				if(cmd->dup & DUP_STDOUT)
-					redirFd(STDOUT_FILENO,*pipe);
-				if(cmd->dup & DUP_STDIN)
-					redirFd(STDIN_FILENO,*(pipe - 1));
-
+			else {
 				/* exec */
 				strcat(path,scmds[0]->name);
 				exec(path,(const char**)cmd->arguments);
@@ -177,42 +157,65 @@ s32 shell_executeCmd(char *line) {
 				printe("Exec of '%s' failed",path);
 				exit(EXIT_FAILURE);
 			}
-			else if(pid < 0)
-				printe("Fork of '%s%s' failed",path,scmds[0]->name);
-			else if(!cmd->runInBG) {
+		}
+		else if(cmd->pid < 0)
+			printe("Fork of '%s%s' failed",path,scmds[0]->name);
+		else {
+			waitingCount++;
+			if(!(cmd->dup & DUP_STDOUT)/* && !cmd->runInBG*/) {
 				sExitState state;
 				/* wait for child */
-				waitingPid = pid;
-				while(1) {
-					res = waitChild(&state);
-					if(res != ERR_INTERRUPTED)
+				while(waitingCount > 0) {
+					while(1) {
+						res = waitChild(&state);
+						if(res != ERR_INTERRUPTED)
+							break;
+					}
+					/* if we've terminated a child via signal, we don't get it here anymore */
+					if(res == ERR_NO_CHILD)
 						break;
-				}
-				if(res < 0)
-					printe("Unable to wait for child");
-				if(res == 0) {
-					res = state.exitCode;
-					if(state.signal != SIG_COUNT) {
-						printf("\nProcess %d (%s%s) was terminated by signal %d\n",state.pid,
-								path,scmds[0]->name,state.signal);
+					else if(res < 0)
+						printe("Unable to wait for child");
+					else if(res == 0) {
+						res = state.exitCode;
+						if(state.signal != SIG_COUNT) {
+							printf("\nProcess %d (%s%s) was terminated by signal %d\n",state.pid,
+									path,scmds[0]->name,state.signal);
+						}
+						for(j = 0; j < cmdCount; j++) {
+							if(cmds[j].pid == state.pid) {
+								if(cmds[j].pipe != -1) {
+									close(cmds[j].pipe);
+									cmds[j].pipe = -1;
+								}
+								cmds[j].pid = 0;
+								waitingCount--;
+								break;
+							}
+						}
 					}
 				}
-				waitingPid = INVALID_PID;
 			}
 		}
 
-		/* if the process has read from the pipe, close it and walk to next */
-		if(cmd->dup & DUP_STDIN)
-			close(*(pipe - 1));
-
 		compl_free(scmds);
+		scmds = NULL;
 		cmd++;
 	}
 
 	/* clean up */
-	free(pipes);
+error:
+	for(j = 0; j < cmdCount; j++) {
+		if(cmds[j].pipe != -1) {
+			close(cmds[j].pipe);
+			cmds[j].pipe = -1;
+		}
+	}
+	compl_free(scmds);
 	tok_free(tokens,tokCount);
 	cmd_free(cmds,cmdCount);
+	cmds = NULL;
+	cmdCount = 0;
 	return res;
 }
 

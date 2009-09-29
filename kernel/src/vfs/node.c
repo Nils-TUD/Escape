@@ -510,6 +510,10 @@ void vfsn_removeNode(sVFSNode *n) {
 			n->data.servuse.sendList = NULL;
 		}
 	}
+	else if(n->mode & MODE_TYPE_PIPE) {
+		sll_destroy(n->data.pipe.list,true);
+		n->data.pipe.list = NULL;
+	}
 	else if(n->data.def.cache != NULL && IS_ON_HEAP(n->data.def.cache)) {
 		kheap_free(n->data.def.cache);
 		n->data.def.cache = NULL;
@@ -614,8 +618,10 @@ static sVFSNode *vfsn_createPipeNode(tTid tid,sVFSNode *parent,char *name) {
 	node->owner = tid;
 	node->mode = MODE_TYPE_PIPE | MODE_OWNER_READ | MODE_OWNER_WRITE |
 		MODE_OTHER_READ | MODE_OTHER_WRITE;
-	node->readHandler = vfsrw_readDef;
-	node->writeHandler = vfsrw_writeDef;
+	node->readHandler = vfsrw_readPipe;
+	node->writeHandler = vfsrw_writePipe;
+	node->data.pipe.list = NULL;
+	node->data.pipe.total = 0;
 	return node;
 }
 

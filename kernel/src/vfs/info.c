@@ -31,7 +31,6 @@
 #include <vfs/real.h>
 #include <multiboot.h>
 #include <util.h>
-#include <log.h>
 #include <assert.h>
 #include <string.h>
 #include <asprintf.h>

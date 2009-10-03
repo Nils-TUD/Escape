@@ -159,9 +159,11 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 						return;
 				}
 				/* notify the shell (otherwise it won't get the signal directly) */
-				if((keycode == VK_C || keycode == VK_D) && rb_length(vt->inbuf) == 0)
-					setDataReadable(vt->sid,true);
-				return;
+				if(keycode == VK_C || keycode == VK_D) {
+					if(rb_length(vt->inbuf) == 0)
+						setDataReadable(vt->sid,true);
+					return;
+				}
 			}
 
 			/* in reading mode? */

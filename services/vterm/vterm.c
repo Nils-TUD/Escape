@@ -96,6 +96,7 @@ static bool vterm_init(sVTerm *vt) {
 	tFD vidFd,speakerFd;
 	u32 i,len;
 	char *ptr,*s;
+	sIoCtlSize vidSize;
 
 	/* open video */
 	vidFd = open("/drivers/video",IO_WRITE);
@@ -111,9 +112,17 @@ static bool vterm_init(sVTerm *vt) {
 		return false;
 	}
 
+	/* request screensize from video-driver */
+	if(ioctl(vidFd,IOCTL_VID_GETSIZE,&vidSize,sizeof(sIoCtlSize)) < 0) {
+		printe("Getting screensize failed");
+		return false;
+	}
+	vt->cols = vidSize.width;
+	vt->rows = vidSize.height;
+
 	/* init state */
 	vt->col = 0;
-	vt->row = ROWS - 1;
+	vt->row = vt->rows - 1;
 	vt->upStart = 0;
 	vt->upLength = 0;
 	vt->foreground = WHITE;
@@ -122,9 +131,9 @@ static bool vterm_init(sVTerm *vt) {
 	vt->video = vidFd;
 	vt->speaker = speakerFd;
 	/* start on first line of the last page */
-	vt->firstLine = HISTORY_SIZE - ROWS;
-	vt->currLine = HISTORY_SIZE - ROWS;
-	vt->firstVisLine = HISTORY_SIZE - ROWS;
+	vt->firstLine = HISTORY_SIZE * vt->rows - vt->rows;
+	vt->currLine = HISTORY_SIZE * vt->rows - vt->rows;
+	vt->firstVisLine = HISTORY_SIZE * vt->rows - vt->rows;
 	/* default behaviour */
 	vt->echo = true;
 	vt->readLine = true;
@@ -133,11 +142,21 @@ static bool vterm_init(sVTerm *vt) {
 	vt->escapePos = -1;
 	vt->rlStartCol = 0;
 	vt->shellPid = 0;
+	vt->buffer = (char*)malloc(vt->rows * HISTORY_SIZE * vt->cols * 2);
+	if(vt->buffer == NULL) {
+		printe("Unable to allocate mem for vterm-buffer");
+		return false;
+	}
+	vt->titleBar = (char*)malloc(vt->cols * 2);
+	if(vt->titleBar == NULL) {
+		printe("Unable to allocate mem for vterm-titlebar");
+		return false;
+	}
 	vt->rlBufSize = INITIAL_RLBUF_SIZE;
 	vt->rlBufPos = 0;
 	vt->rlBuffer = (char*)malloc(vt->rlBufSize * sizeof(char));
 	if(vt->rlBuffer == NULL) {
-		printe("Unable to allocate memory for vterm-buffer");
+		printe("Unable to allocate memory for readline-buffer");
 		return false;
 	}
 
@@ -149,10 +168,10 @@ static bool vterm_init(sVTerm *vt) {
 
 	/* fill buffer with spaces to ensure that the cursor is visible (spaces, white on black) */
 	ptr = vt->buffer;
-	for(i = 0; i < BUFFER_SIZE; i += 4) {
-		*ptr++ = 0x20;
+	for(i = 0, len = vt->rows * HISTORY_SIZE * vt->cols * 2; i < len; i += 4) {
+		*ptr++ = ' ';
 		*ptr++ = 0x07;
-		*ptr++ = 0x20;
+		*ptr++ = ' ';
 		*ptr++ = 0x07;
 	}
 
@@ -163,12 +182,12 @@ static bool vterm_init(sVTerm *vt) {
 		*ptr++ = *s++;
 		*ptr++ = TITLE_BAR_COLOR;
 	}
-	for(; i < COLS; i++) {
+	for(; i < vt->cols; i++) {
 		*ptr++ = ' ';
 		*ptr++ = TITLE_BAR_COLOR;
 	}
 	len = strlen(OS_TITLE);
-	i = (((COLS * 2) / 2) - (len / 2)) & ~0x1;
+	i = (((vt->cols * 2) / 2) - (len / 2)) & ~0x1;
 	ptr = vt->titleBar;
 	memcpy(ptr + i,OS_TITLE,len);
 	return true;
@@ -198,7 +217,7 @@ void vterm_destroy(sVTerm *vt) {
 
 void vterm_setCursor(sVTerm *vt) {
 	if(vt->active) {
-		sIoCtlCursorPos pos;
+		sIoCtlPos pos;
 		pos.col = vt->col;
 		pos.row = vt->row;
 		ioctl(vt->video,IOCTL_VID_SETCURSOR,(u8*)&pos,sizeof(pos));
@@ -243,21 +262,29 @@ s32 vterm_ioctl(sVTerm *vt,u32 cmd,void *data,bool *readKb) {
 			break;
 		case IOCTL_VT_BACKUP:
 			if(!vt->screenBackup)
-				vt->screenBackup = (char*)malloc(ROWS * COLS * 2);
+				vt->screenBackup = (char*)malloc(vt->rows * vt->cols * 2);
 			memcpy(vt->screenBackup,
-					vt->buffer + vt->firstVisLine * COLS * 2,
-					ROWS * COLS * 2);
+					vt->buffer + vt->firstVisLine * vt->cols * 2,
+					vt->rows * vt->cols * 2);
 			break;
 		case IOCTL_VT_RESTORE:
 			if(vt->screenBackup) {
-				memcpy(vt->buffer + vt->firstVisLine * COLS * 2,
+				memcpy(vt->buffer + vt->firstVisLine * vt->cols * 2,
 						vt->screenBackup,
-						ROWS * COLS * 2);
+						vt->rows * vt->cols * 2);
 				free(vt->screenBackup);
 				vt->screenBackup = NULL;
 				vterm_markScrDirty(vt);
 			}
 			break;
+		case IOCTL_VT_GETSIZE: {
+			sIoCtlSize *size = (sIoCtlSize*)data;
+			size->width = vt->cols;
+			/* one line for the title */
+			size->height = vt->rows - 1;
+			res = sizeof(sIoCtlSize);
+		}
+		break;
 		default:
 			res = ERR_UNSUPPORTED_OP;
 			break;
@@ -273,15 +300,15 @@ void vterm_scroll(sVTerm *vt,s16 lines) {
 	}
 	else {
 		/* ensure that we don't scroll behind the last line */
-		vt->firstVisLine = MIN(HISTORY_SIZE - ROWS,vt->firstVisLine - lines);
+		vt->firstVisLine = MIN(HISTORY_SIZE * vt->rows - vt->rows,vt->firstVisLine - lines);
 	}
 
 	if(vt->active && old != vt->firstVisLine)
-		vterm_markDirty(vt,COLS * 2,(COLS - 1) * ROWS * 2);
+		vterm_markDirty(vt,vt->cols * 2,(vt->cols - 1) * vt->rows * 2);
 }
 
 void vterm_markScrDirty(sVTerm *vt) {
-	vterm_markDirty(vt,0,COLS * ROWS * 2);
+	vterm_markDirty(vt,0,vt->cols * vt->rows * 2);
 }
 
 void vterm_markDirty(sVTerm *vt,u16 start,u16 length) {
@@ -303,21 +330,21 @@ void vterm_update(sVTerm *vt) {
 		return;
 
 	/* update title-bar? */
-	if(vt->upStart < COLS * 2) {
+	if(vt->upStart < vt->cols * 2) {
 		locku(&titleBarLock);
-		byteCount = MIN(COLS * 2 - vt->upStart,vt->upLength);
+		byteCount = MIN(vt->cols * 2 - vt->upStart,vt->upLength);
 		seek(vt->video,vt->upStart,SEEK_SET);
 		write(vt->video,vt->titleBar,byteCount);
 		vt->upLength -= byteCount;
-		vt->upStart = COLS * 2;
+		vt->upStart = vt->cols * 2;
 		unlocku(&titleBarLock);
 	}
 
 	/* refresh the rest */
-	byteCount = MIN((ROWS * COLS * 2) - vt->upStart,vt->upLength);
+	byteCount = MIN((vt->rows * vt->cols * 2) - vt->upStart,vt->upLength);
 	if(byteCount > 0) {
 		seek(vt->video,vt->upStart,SEEK_SET);
-		write(vt->video,vt->buffer + (vt->firstVisLine * COLS * 2) + vt->upStart,byteCount);
+		write(vt->video,vt->buffer + (vt->firstVisLine * vt->cols * 2) + vt->upStart,byteCount);
 	}
 
 	/* all synchronized now */
@@ -340,14 +367,14 @@ static int vterm_dateThread(int argc,char *argv[]) {
 		/* update all vterm-title-bars; use a lock to prevent race-conditions */
 		locku(&titleBarLock);
 		for(i = 0; i < VTERM_COUNT; i++) {
-			char *title = vterms[i].titleBar + (COLS - len) * 2;
+			char *title = vterms[i].titleBar + (vterms[i].cols - len) * 2;
 			for(j = 0; j < len; j++) {
 				*title++ = dateStr[j];
 				*title++ = WHITE | (BLUE << 4);
 			}
 			if(vterms[i].active) {
-				seek(vterms[i].video,(COLS - len) * 2,SEEK_SET);
-				write(vterms[i].video,vterms[i].titleBar + (COLS - len) * 2,len * 2);
+				seek(vterms[i].video,(vterms[i].cols - len) * 2,SEEK_SET);
+				write(vterms[i].video,vterms[i].titleBar + (vterms[i].cols - len) * 2,len * 2);
 			}
 		}
 		unlocku(&titleBarLock);

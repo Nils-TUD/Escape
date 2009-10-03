@@ -42,24 +42,31 @@
 #define SEEK_END				2
 
 /* ioctl-commands */
-#define IOCTL_VID_SETCURSOR		0
-#define IOCTL_VT_EN_ECHO		1
-#define IOCTL_VT_DIS_ECHO		2
-#define IOCTL_VT_EN_RDLINE		3
-#define IOCTL_VT_DIS_RDLINE		4
-#define IOCTL_VT_EN_RDKB		5
-#define IOCTL_VT_DIS_RDKB		6
-#define IOCTL_VT_EN_NAVI		7
-#define IOCTL_VT_DIS_NAVI		8
-#define IOCTL_VT_BACKUP			9
-#define IOCTL_VT_RESTORE		10
-#define IOCTL_VT_SHELLPID		11
+#define IOCTL_VID_SETCURSOR		0		/* expects sIoCtlPos */
+#define IOCTL_VID_GETSIZE		1		/* writes into sIoCtlSize */
 
-/* ioctl-cursor-pos */
+#define IOCTL_VT_EN_ECHO		20
+#define IOCTL_VT_DIS_ECHO		21
+#define IOCTL_VT_EN_RDLINE		22
+#define IOCTL_VT_DIS_RDLINE		23
+#define IOCTL_VT_EN_RDKB		24
+#define IOCTL_VT_DIS_RDKB		25
+#define IOCTL_VT_EN_NAVI		26
+#define IOCTL_VT_DIS_NAVI		27
+#define IOCTL_VT_BACKUP			28
+#define IOCTL_VT_RESTORE		29
+#define IOCTL_VT_SHELLPID		30
+#define IOCTL_VT_GETSIZE		31		/* writes into sIoCtlSize */
+
 typedef struct {
-	u8 col;
-	u8 row;
-} sIoCtlCursorPos;
+	u32 col;
+	u32 row;
+} sIoCtlPos;
+
+typedef struct {
+	u32 width;
+	u32 height;
+} sIoCtlSize;
 
 #ifdef __cplusplus
 extern "C" {
@@ -143,7 +150,7 @@ s32 write(tFD fd,const void *buffer,u32 count);
  * @param size the data-size
  * @return 0 on success
  */
-s32 ioctl(tFD fd,u32 cmd,u8 *data,u32 size);
+s32 ioctl(tFD fd,u32 cmd,void *data,u32 size);
 
 /**
  * Sends a message to the service identified by <fd>.

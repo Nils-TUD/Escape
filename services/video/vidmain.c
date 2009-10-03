@@ -112,16 +112,28 @@ int main(void) {
 					break;
 
 					case MSG_DRV_IOCTL: {
-						sIoCtlCursorPos *pos;
-						if(msg.data.arg1 == IOCTL_VID_SETCURSOR) {
-							pos = (sIoCtlCursorPos*)msg.data.d;
-							pos->col = MIN(pos->col,COLS);
-							pos->row = MIN(pos->row,ROWS);
-							vid_setCursor(pos->row,pos->col);
-							msg.data.arg1 = 0;
+						switch(msg.data.arg1) {
+							case IOCTL_VID_SETCURSOR: {
+								sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
+								pos->col = MIN(pos->col,COLS);
+								pos->row = MIN(pos->row,ROWS);
+								vid_setCursor(pos->row,pos->col);
+								msg.data.arg1 = 0;
+							}
+							break;
+
+							case IOCTL_VID_GETSIZE: {
+								sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
+								size->width = COLS;
+								size->height = ROWS;
+								msg.data.arg1 = sizeof(sIoCtlSize);
+							}
+							break;
+
+							default:
+								msg.data.arg1 = ERR_UNSUPPORTED_OP;
+								break;
 						}
-						else
-							msg.data.arg1 = ERR_UNSUPPORTED_OP;
 						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 					}
 					break;

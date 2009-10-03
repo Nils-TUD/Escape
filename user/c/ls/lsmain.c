@@ -29,7 +29,6 @@
 
 #define DATE_LEN			(SSTRLEN("2009-09-09 14:12") + 1)
 #define ARRAY_INC_SIZE		8
-#define CONSOLE_WIDTH		80
 
 /* flags */
 #define LS_FL_ALL			1
@@ -80,6 +79,7 @@ int main(int argc,char *argv[]) {
 	u32 widths[WIDTHS_COUNT] = {0};
 	u32 i,pos,x,count,flags = 0;
 	sFullDirEntry **entries,*entry;
+	sIoCtlSize consSize;
 	sDate date;
 
 	if(isHelpCmd(argc,argv))
@@ -122,6 +122,9 @@ int main(int argc,char *argv[]) {
 	/* path not provided? so use CWD */
 	if(!pathGiven && !getEnv(path,MAX_PATH_LEN + 1,"CWD"))
 		error("Unable to get CWD");
+
+	if(ioctl(STDIN_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
+		error("Unable to determine screensize");
 
 	/* get entries */
 	entries = getEntries(path,flags,&count);
@@ -179,7 +182,7 @@ int main(int argc,char *argv[]) {
 		}
 		else {
 			/* if the entry does not fit on the line, use next */
-			if(pos + widths[W_NAME] + widths[W_INODE] + 2 >= CONSOLE_WIDTH) {
+			if(pos + widths[W_NAME] + widths[W_INODE] + 2 >= consSize.width) {
 				printf("\n");
 				pos = 0;
 			}

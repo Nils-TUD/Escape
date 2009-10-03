@@ -24,15 +24,9 @@
 #include <ringbuffer.h>
 #include <esccodes.h>
 
-#define COLS				80
-#define ROWS				25
 #define TAB_WIDTH			4
-
-#define HISTORY_SIZE		(ROWS * 8)
-#define BUFFER_SIZE			(COLS * 2 * HISTORY_SIZE)
-
+#define HISTORY_SIZE		12
 #define INPUT_BUF_SIZE		128
-
 #define MAX_VT_NAME_LEN		6
 
 /* our vterm-state */
@@ -41,6 +35,9 @@ typedef struct {
 	u8 index;
 	tServ sid;
 	char name[MAX_VT_NAME_LEN + 1];
+	/* number of cols/rows on the screen */
+	u8 cols;
+	u8 rows;
 	/* position (on the current page) */
 	u8 col;
 	u8 row;
@@ -83,8 +80,8 @@ typedef struct {
 	u32 rlBufSize;
 	u32 rlBufPos;
 	char *rlBuffer;
-	char buffer[BUFFER_SIZE];
-	char titleBar[COLS * 2];
+	char *buffer;
+	char *titleBar;
 } sVTerm;
 
 /* the colors */

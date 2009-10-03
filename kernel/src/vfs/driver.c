@@ -47,7 +47,6 @@ void vfsdrv_init(void) {
 s32 vfsdrv_open(tTid tid,tFileNo file,sVFSNode *node,u32 flags) {
 	s32 res;
 	sRequest *req;
-
 	UNUSED(node);
 
 	/* send msg to driver */
@@ -99,7 +98,6 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 s32 vfsdrv_write(tTid tid,tFileNo file,sVFSNode *node,const void *buffer,u32 offset,u32 count) {
 	sRequest *req;
 	s32 res;
-
 	UNUSED(node);
 
 	/* send msg to driver */
@@ -126,7 +124,6 @@ s32 vfsdrv_write(tTid tid,tFileNo file,sVFSNode *node,const void *buffer,u32 off
 s32 vfsdrv_ioctl(tTid tid,tFileNo file,sVFSNode *node,u32 cmd,void *data,u32 size) {
 	sRequest *req;
 	s32 res;
-
 	UNUSED(node);
 
 	if(data != NULL && size > sizeof(msg.data.d))

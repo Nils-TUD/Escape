@@ -29,8 +29,6 @@
 #include <esccodes.h>
 #include <stdlib.h>
 
-#define COLS				80
-#define ROWS				23
 #define BUFFER_SIZE			1024
 #define BUFFER_INC_SIZE		64
 #define TAB_WIDTH			4
@@ -52,7 +50,8 @@ static char **lines;
 static char *filename;
 static u32 startLine = 0;
 
-static char emptyLine[COLS + 1];
+static sIoCtlSize consSize;
+static char *emptyLine;
 
 int main(int argc,char *argv[]) {
 	bool run = true;
@@ -84,21 +83,31 @@ int main(int argc,char *argv[]) {
 			error("Unable to open '%s'",filename);
 	}
 
+	if(ioctl(STDOUT_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
+		error("Unable to get screensize");
+	/* one line for the status */
+	consSize.height--;
+
 	/* backup screen */
 	ioctl(STDOUT_FILENO,IOCTL_VT_BACKUP,NULL,0);
+
+	/* create empty line */
+	emptyLine = (char*)malloc(consSize.width + 1);
+	if(emptyLine == NULL)
+		error("Unable to alloc memory for empty line");
+	memset(emptyLine,' ',consSize.width);
+	emptyLine[consSize.width] = '\0';
 
 	/* create line-buffer */
 	seenEOF = false;
 	lineCount = 0;
 	lineSize = BUFFER_INC_SIZE;
 	lines = (char**)calloc(lineSize,sizeof(char*));
-	if(lines == NULL) {
-		printe("Unable to create lines");
-		return false;
-	}
+	if(lines == NULL)
+		error("Unable to create lines");
 
 	/* read all */
-	if(!readLines(ROWS)) {
+	if(!readLines(consSize.height)) {
 		resetVterm();
 		return EXIT_FAILURE;
 	}
@@ -117,10 +126,6 @@ int main(int argc,char *argv[]) {
 		resetVterm();
 		error("Unable to open '%s'",vterm);
 	}
-
-	/* init empty line */
-	memset(emptyLine,' ',COLS);
-	emptyLine[COLS] = '\0';
 
 	refreshScreen();
 
@@ -150,15 +155,16 @@ int main(int argc,char *argv[]) {
 					scrollDown(1);
 					break;
 				case VK_PGUP:
-					scrollDown(-ROWS);
+					scrollDown(-consSize.height);
 					break;
 				case VK_PGDOWN:
-					scrollDown(ROWS);
+					scrollDown(consSize.height);
 					break;
 			}
 		}
 	}
 
+	free(emptyLine);
 	if(argc == 2)
 		fclose(file);
 	fclose(fvterm);
@@ -182,15 +188,15 @@ static void scrollDown(s32 l) {
 		else
 			startLine = 0;
 	}
-	else if(lineCount >= ROWS)
+	else if(lineCount >= consSize.height)
 		startLine += l;
 
-	if(l == 0 || startLine > lineCount - ROWS) {
-		readLines(l == 0 ? 0 : startLine + ROWS);
-		if(lineCount < ROWS)
+	if(l == 0 || startLine > lineCount - consSize.height) {
+		readLines(l == 0 ? 0 : startLine + consSize.height);
+		if(lineCount < consSize.height)
 			startLine = 0;
 		else
-			startLine = lineCount - ROWS;
+			startLine = lineCount - consSize.height;
 	}
 
 	if(oldStart != startLine)
@@ -198,17 +204,17 @@ static void scrollDown(s32 l) {
 }
 
 static void refreshScreen(void) {
-	u32 i,end = MIN(lineCount,ROWS);
+	u32 i,end = MIN(lineCount,consSize.height);
 	/* walk to the top of the screen */
 	printf("\033[mh]");
 	for(i = 0; i < end; i++) {
 		prints(lines[startLine + i]);
-		if(i < ROWS - 1)
+		if(i < consSize.height - 1)
 			printc('\n');
 	}
-	for(; i < ROWS; i++) {
+	for(; i < consSize.height; i++) {
 		prints(emptyLine);
-		if(i < ROWS - 1)
+		if(i < consSize.height - 1)
 			printc('\n');
 	}
 	printStatus(lineCount,seenEOF ? NULL : "?");
@@ -216,9 +222,12 @@ static void refreshScreen(void) {
 }
 
 static void printStatus(u32 total,const char *totalStr) {
-	char tmp[COLS + 1];
+	char *tmp;
 	const char *displayName;
-	u32 end = MIN(lineCount,ROWS);
+	u32 end = MIN(lineCount,consSize.height);
+	tmp = (char*)malloc(consSize.width + 1);
+	if(tmp == NULL)
+		return;
 	if(!totalStr)
 		sprintf(tmp,"Lines %d-%d / %d",startLine + 1,startLine + end,total);
 	else
@@ -227,7 +236,8 @@ static void printStatus(u32 total,const char *totalStr) {
 		displayName = "STDIN";
 	else
 		displayName = filename;
-	printf("\033[co;0;7]%-*s%s\033[co]",COLS - strlen(displayName),tmp,displayName);
+	printf("\033[co;0;7]%-*s%s\033[co]",consSize.width - strlen(displayName),tmp,displayName);
+	free(tmp);
 }
 
 static bool readLines(u32 end) {
@@ -302,22 +312,22 @@ finished:
 static bool copy(char c) {
 	char *pos;
 	/* implicit newline? */
-	if(c != '\n' && linePos >= COLS) {
+	if(c != '\n' && linePos >= consSize.width) {
 		if(!copy('\n'))
 			return false;
 	}
 
 	/* line not yet present? */
 	if(lines[lineCount] == NULL) {
-		lines[lineCount] = (char*)malloc((COLS + 1) * sizeof(char));
+		lines[lineCount] = (char*)malloc((consSize.width + 1) * sizeof(char));
 		if(lines[lineCount] == NULL) {
 			printe("Unable to allocate mem");
 			return false;
 		}
 		/* fill the line with spaces */
-		memset(lines[lineCount],' ',COLS);
+		memset(lines[lineCount],' ',consSize.width);
 		/* terminate */
-		lines[lineCount][COLS] = '\0';
+		lines[lineCount][consSize.width] = '\0';
 	}
 
 	pos = lines[lineCount] + linePos;

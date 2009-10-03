@@ -18,18 +18,22 @@
  */
 
 #include <esc/common.h>
+#include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/proc.h>
 #include <stdlib.h>
 
-#define CONS_WIDTH (80 - 3)
-
 int main(void) {
+	sIoCtlSize consSize;
+	u32 maxWidth;
 	u32 p,i,j;
+	ioctl(STDIN_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize));
+	maxWidth = consSize.width - 3;
+
 	printf("Waiting for fun...\n");
 	for(p = 0; p <= 100; p++) {
 		/* percent to console width */
-		j = p == 0 ? 0 : CONS_WIDTH / (100. / p);
+		j = p == 0 ? 0 : maxWidth / (100. / p);
 
 		printf("\r[");
 		/* completed */
@@ -37,7 +41,7 @@ int main(void) {
 			printc('=');
 		printc('>');
 		/* uncompleted */
-		for(i = j + 1; i <= CONS_WIDTH; i++)
+		for(i = j + 1; i <= maxWidth; i++)
 			printc(' ');
 		printc(']');
 

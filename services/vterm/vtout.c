@@ -119,7 +119,7 @@ void vterm_putchar(sVTerm *vt,char c) {
 	u32 i;
 
 	/* move all one line up, if necessary */
-	if(vt->row >= ROWS) {
+	if(vt->row >= vt->rows) {
 		vterm_newLine(vt);
 		vt->row--;
 	}
@@ -165,16 +165,16 @@ void vterm_putchar(sVTerm *vt,char c) {
 
 		default: {
 			/* do an explicit newline if necessary */
-			if(vt->col >= COLS)
+			if(vt->col >= vt->cols)
 				vterm_putchar(vt,'\n');
 
-			i = (vt->currLine * COLS * 2) + (vt->row * COLS * 2) + (vt->col * 2);
+			i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2) + (vt->col * 2);
 
 			/* write to buffer */
 			vt->buffer[i] = c;
 			vt->buffer[i + 1] = (vt->background << 4) | vt->foreground;
 
-			vterm_markDirty(vt,vt->row * COLS * 2 + vt->col * 2,2);
+			vterm_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,2);
 			vt->col++;
 		}
 		break;
@@ -183,21 +183,21 @@ void vterm_putchar(sVTerm *vt,char c) {
 
 static void vterm_newLine(sVTerm *vt) {
 	char *src,*dst;
-	u32 i,count = (HISTORY_SIZE - vt->firstLine) * COLS * 2;
+	u32 i,count = (HISTORY_SIZE * vt->rows - vt->firstLine) * vt->cols * 2;
 	/* move one line back */
 	if(vt->firstLine > 0) {
-		dst = vt->buffer + ((vt->firstLine - 1) * COLS * 2);
+		dst = vt->buffer + ((vt->firstLine - 1) * vt->cols * 2);
 		vt->firstLine--;
 	}
 	/* overwrite first line */
 	else
-		dst = vt->buffer + (vt->firstLine * COLS * 2);
-	src = dst + COLS * 2;
+		dst = vt->buffer + (vt->firstLine * vt->cols * 2);
+	src = dst + vt->cols * 2;
 	memmove(dst,src,count);
 
 	/* clear last line */
-	dst = vt->buffer + (vt->currLine + vt->row - 1) * COLS * 2;
-	for(i = 0; i < COLS * 2; i += 4) {
+	dst = vt->buffer + (vt->currLine + vt->row - 1) * vt->cols * 2;
+	for(i = 0; i < vt->cols * 2; i += 4) {
 		*dst++ = 0x20;
 		*dst++ = 0x07;
 		*dst++ = 0x20;
@@ -205,15 +205,15 @@ static void vterm_newLine(sVTerm *vt) {
 	}
 
 	/* refresh all */
-	vterm_markDirty(vt,COLS * 2,(COLS - 1) * ROWS * 2);
+	vterm_markDirty(vt,vt->cols * 2,(vt->cols - 1) * vt->rows * 2);
 }
 
 static void vterm_delete(sVTerm *vt,u32 count) {
 	if((!vt->readLine && vt->col >= count) || (vt->readLine && vt->rlBufPos >= count)) {
 		if(!vt->readLine || vt->echo) {
-			u32 i = (vt->currLine * COLS * 2) + (vt->row * COLS * 2) + (vt->col * 2);
+			u32 i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2) + (vt->col * 2);
 			/* move the characters back in the buffer */
-			memmove(vt->buffer + i - 2 * count,vt->buffer + i,(COLS - vt->col) * 2);
+			memmove(vt->buffer + i - 2 * count,vt->buffer + i,(vt->cols - vt->col) * 2);
 			vt->col -= count;
 		}
 
@@ -223,7 +223,7 @@ static void vterm_delete(sVTerm *vt,u32 count) {
 		}
 
 		/* overwrite line */
-		vterm_markDirty(vt,vt->row * COLS * 2 + vt->col * 2,COLS * 2);
+		vterm_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
 	}
 	else {
 		/* beep */
@@ -244,13 +244,13 @@ static bool vterm_handleEscape(sVTerm *vt,char **str) {
 			vt->col = MAX(0,vt->col - n1);
 			break;
 		case ESCC_MOVE_RIGHT:
-			vt->col = MIN(COLS - 1,vt->col + n1);
+			vt->col = MIN(vt->cols - 1,vt->col + n1);
 			break;
 		case ESCC_MOVE_UP:
 			vt->row = MAX(1,vt->row - n1);
 			break;
 		case ESCC_MOVE_DOWN:
-			vt->row = MIN(ROWS - 1,vt->row + n1);
+			vt->row = MIN(vt->rows - 1,vt->row + n1);
 			break;
 		case ESCC_MOVE_HOME:
 			vt->col = 0;
@@ -265,11 +265,11 @@ static bool vterm_handleEscape(sVTerm *vt,char **str) {
 		case ESCC_DEL_BACK:
 			if(vt->readLine) {
 				vt->rlBufPos = MIN(vt->rlBufSize - 1,vt->rlBufPos + n1);
-				vt->rlBufPos = MIN((u32)COLS - vt->rlStartCol,vt->rlBufPos);
+				vt->rlBufPos = MIN((u32)vt->cols - vt->rlStartCol,vt->rlBufPos);
 				vt->col = vt->rlBufPos + vt->rlStartCol;
 			}
 			else
-				vt->col = MIN(COLS - 1,vt->col + n1);
+				vt->col = MIN(vt->cols - 1,vt->col + n1);
 			break;
 		case ESCC_COLOR:
 			if(n1 != ESCC_ARG_UNUSED)

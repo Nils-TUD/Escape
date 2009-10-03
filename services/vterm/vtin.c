@@ -122,10 +122,10 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 		if(shiftDown && vt->navigation) {
 			switch(keycode) {
 				case VK_PGUP:
-					vterm_scroll(vt,ROWS);
+					vterm_scroll(vt,vt->rows);
 					return;
 				case VK_PGDOWN:
-					vterm_scroll(vt,-ROWS);
+					vterm_scroll(vt,-vt->rows);
 					return;
 				case VK_UP:
 					vterm_scroll(vt,1);
@@ -216,9 +216,9 @@ static void vterm_rlPutchar(sVTerm *vt,char c) {
 			u32 bufPos = vterm_rlGetBufPos(vt);
 			if(bufPos > 0) {
 				if(vt->echo) {
-					u32 i = (vt->currLine * COLS * 2) + (vt->row * COLS * 2) + (vt->col * 2);
+					u32 i = (vt->currLine * vt->cols * 2) + (vt->row * vt->cols * 2) + (vt->col * 2);
 					/* move the characters back in the buffer */
-					memmove(vt->buffer + i - 2,vt->buffer + i,(COLS - vt->col) * 2);
+					memmove(vt->buffer + i - 2,vt->buffer + i,(vt->cols - vt->col) * 2);
 					vt->col--;
 				}
 
@@ -229,7 +229,7 @@ static void vterm_rlPutchar(sVTerm *vt,char c) {
 				vt->rlBufPos--;
 
 				/* overwrite line */
-				vterm_markDirty(vt,vt->row * COLS * 2 + vt->col * 2,COLS * 2);
+				vterm_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
 			}
 		}
 		break;
@@ -264,7 +264,7 @@ static void vterm_rlPutchar(sVTerm *vt,char c) {
 			vt->rlBufPos++;
 
 			/* TODO later we should allow "multiline-editing" */
-			if(c == '\n' || vt->rlStartCol + vt->rlBufPos >= COLS) {
+			if(c == '\n' || vt->rlStartCol + vt->rlBufPos >= vt->cols) {
 				flushed = true;
 				vterm_rlFlushBuf(vt);
 			}

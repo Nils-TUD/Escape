@@ -518,9 +518,8 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 
 	/* decrement references */
 	if(--(e->refCount) == 0) {
-		sVFSNode *n = nodes + e->nodeNo;
-
 		if(e->devNo == VFS_DEV_NO) {
+			sVFSNode *n = nodes + e->nodeNo;
 			if(n->name != NULL) {
 				/* last usage? */
 				if(--(n->refCount) == 0) {

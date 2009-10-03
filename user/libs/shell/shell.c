@@ -135,20 +135,40 @@ s32 shell_executeCmd(char *line) {
 		}
 
 		/* execute command */
-		if((cmd->pid = fork()) == 0) {
-			/* redirect fds */
-			if(cmd->dup & DUP_STDOUT)
+		if(scmds[0]->type == TYPE_BUILTIN) {
+			/* redirect fds and make a copy of stdin and stdout because we want to keep them :) */
+			/* (no fork here) */
+			tFD fdout = -1,fdin = -1;
+			if(cmd->dup & DUP_STDOUT) {
+				fdout = dupFd(STDOUT_FILENO);
 				redirFd(STDOUT_FILENO,cmd->pipe);
-			if(cmd->dup & DUP_STDIN)
-				redirFd(STDIN_FILENO,(cmd - 1)->pipe);
-
-			/* create a child for builtin-commands, too, because otherwise it won't work with pipes
-			 * properly */
-			if(scmds[0]->type == TYPE_BUILTIN) {
-				res = scmds[0]->func(cmd->argCount,cmd->arguments);
-				exit(res);
 			}
-			else {
+			if(cmd->dup & DUP_STDIN) {
+				fdin = dupFd(STDIN_FILENO);
+				redirFd(STDIN_FILENO,(cmd - 1)->pipe);
+			}
+
+			res = scmds[0]->func(cmd->argCount,cmd->arguments);
+
+			/* restore stdin & stdout */
+			if(cmd->dup & DUP_STDOUT) {
+				redirFd(STDOUT_FILENO,fdout);
+				/* we have to close fdout here because redirFd() will not do it for us */
+				close(fdout);
+			}
+			if(cmd->dup & DUP_STDIN) {
+				redirFd(STDIN_FILENO,fdin);
+				close(fdin);
+			}
+		}
+		else {
+			if((cmd->pid = fork()) == 0) {
+				/* redirect fds */
+				if(cmd->dup & DUP_STDOUT)
+					redirFd(STDOUT_FILENO,cmd->pipe);
+				if(cmd->dup & DUP_STDIN)
+					redirFd(STDIN_FILENO,(cmd - 1)->pipe);
+
 				/* exec */
 				strcat(path,scmds[0]->name);
 				exec(path,(const char**)cmd->arguments);
@@ -157,40 +177,47 @@ s32 shell_executeCmd(char *line) {
 				printe("Exec of '%s' failed",path);
 				exit(EXIT_FAILURE);
 			}
-		}
-		else if(cmd->pid < 0)
-			printe("Fork of '%s%s' failed",path,scmds[0]->name);
-		else {
-			waitingCount++;
-			if(!(cmd->dup & DUP_STDOUT)/* && !cmd->runInBG*/) {
-				sExitState state;
-				/* wait for child */
-				while(waitingCount > 0) {
-					while(1) {
-						res = waitChild(&state);
-						if(res != ERR_INTERRUPTED)
-							break;
-					}
-					/* if we've terminated a child via signal, we don't get it here anymore */
-					if(res == ERR_NO_CHILD)
-						break;
-					else if(res < 0)
-						printe("Unable to wait for child");
-					else if(res == 0) {
-						res = state.exitCode;
-						if(state.signal != SIG_COUNT) {
-							printf("\nProcess %d (%s%s) was terminated by signal %d\n",state.pid,
-									path,scmds[0]->name,state.signal);
-						}
-						for(j = 0; j < cmdCount; j++) {
-							if(cmds[j].pid == state.pid) {
-								if(cmds[j].pipe != -1) {
-									close(cmds[j].pipe);
-									cmds[j].pipe = -1;
-								}
-								cmds[j].pid = 0;
-								waitingCount--;
+			else if(cmd->pid < 0)
+				printe("Fork of '%s%s' failed",path,scmds[0]->name);
+			else {
+				/* if the last command was a builtin one, we have to close the pipe here. We
+				 * can't do it earlier because we would remove the pipe. Here it is ok because
+				 * fork() has duplicated the file-descriptors and increased the references on
+				 * the node (not just the file!). */
+				/* This way we send EOF to the pipe */
+				if(cmd->dup & DUP_STDIN && (cmd - 1)->pid == 0)
+					close((cmd - 1)->pipe);
+				waitingCount++;
+				if(!(cmd->dup & DUP_STDOUT)/* && !cmd->runInBG*/) {
+					sExitState state;
+					/* wait for child */
+					while(waitingCount > 0) {
+						while(1) {
+							res = waitChild(&state);
+							if(res != ERR_INTERRUPTED)
 								break;
+						}
+						/* if we've terminated a child via signal, we don't get it here anymore */
+						if(res == ERR_NO_CHILD)
+							break;
+						else if(res < 0)
+							printe("Unable to wait for child");
+						else if(res == 0) {
+							res = state.exitCode;
+							if(state.signal != SIG_COUNT) {
+								printf("\nProcess %d (%s%s) was terminated by signal %d\n",state.pid,
+										path,scmds[0]->name,state.signal);
+							}
+							for(j = 0; j < cmdCount; j++) {
+								if(cmds[j].pid == state.pid) {
+									if(cmds[j].pipe != -1) {
+										close(cmds[j].pipe);
+										cmds[j].pipe = -1;
+									}
+									cmds[j].pid = 0;
+									waitingCount--;
+									break;
+								}
 							}
 						}
 					}

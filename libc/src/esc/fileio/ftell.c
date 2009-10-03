@@ -22,39 +22,11 @@
 #include <esc/io.h>
 #include "fileiointern.h"
 
-tFile *fopen(const char *filename,const char *mode) {
-	char c;
-	sIOBuffer *buf;
-	u8 flags = 0;
-	tFD fd;
-
-	/* parse mode */
-	while((c = *mode++)) {
-		switch(c) {
-			case 'r':
-				flags |= IO_READ;
-				break;
-			case 'w':
-				flags |= IO_WRITE | IO_CREATE | IO_TRUNCATE;
-				break;
-			case '+':
-				if(flags & IO_READ)
-					flags |= IO_WRITE;
-				else if(flags & IO_WRITE)
-					flags |= IO_READ;
-				break;
-			case 'a':
-				flags |= IO_APPEND | IO_WRITE;
-				break;
-		}
-	}
-
-	/* open the file */
-	fd = open(filename,flags);
-	if(fd < 0)
-		return NULL;
-
-	/* create buffer for it */
-	buf = bcreate(fd,flags);
-	return (tFile*)buf;
+s32 ftell(tFile *file,u32 *pos) {
+	sIOBuffer *buf = bget(file);
+	if(buf == NULL)
+		return IO_EOF;
+	if(buf->out.fd != -1)
+		return tell(buf->out.fd,pos);
+	return tell(buf->in.fd,pos);
 }

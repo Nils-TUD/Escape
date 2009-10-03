@@ -159,7 +159,7 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 
 				/* append filename and get fileinfo */
 				strcpy(filePath + pathLen,entry.name);
-				if(getFileInfo(filePath,&info) < 0) {
+				if(stat(filePath,&info) < 0) {
 					closedir(dd);
 					goto failed;
 				}

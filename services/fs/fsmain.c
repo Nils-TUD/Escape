@@ -151,14 +151,27 @@ int main(int argc,char *argv[]) {
 						/* TODO maybe we should copy the string to somewhere else before the call? */
 						tInodeNo no = root->fs->resPath(root->handle,msg.str.s1,IO_READ,&devNo,true);
 						if(no < 0)
-							msg.args.arg1 = no;
+							msg.data.arg1 = no;
 						else {
 							inst = mount_get(devNo);
 							if(inst == NULL)
-								msg.args.arg1 = ERR_NO_MNTPNT;
+								msg.data.arg1 = ERR_NO_MNTPNT;
 							else
-								msg.args.arg1 = inst->fs->stat(inst->handle,no,info);
+								msg.data.arg1 = inst->fs->stat(inst->handle,no,info);
 						}
+						send(fd,MSG_FS_STAT_RESP,&msg,sizeof(msg.data));
+					}
+					break;
+
+					case MSG_FS_ISTAT: {
+						tInodeNo ino = (tInodeNo)msg.args.arg1;
+						tDevNo devNo = (tDevNo)msg.args.arg2;
+						sFileInfo *info = (sFileInfo*)&(msg.data.d);
+						sFSInst *inst = mount_get(devNo);
+						if(inst == NULL)
+							msg.data.arg1 = ERR_NO_MNTPNT;
+						else
+							msg.data.arg1 = inst->fs->stat(inst->handle,ino,info);
 						send(fd,MSG_FS_STAT_RESP,&msg,sizeof(msg.data));
 					}
 					break;

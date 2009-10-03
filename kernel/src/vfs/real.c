@@ -42,6 +42,7 @@ typedef struct {
 	tFileNo realFile;
 } sReal2Virt;
 
+static s32 vfsr_doStat(tTid tid,const char *path,tInodeNo ino,tDevNo devNo,sFileInfo *info);
 /* The request-handler for sending a path and receiving a result */
 static s32 vfsr_pathReqHandler(tTid tid,const char *path1,const char *path2,u32 arg1,u32 cmd);
 /* The response-handler for the different message-ids */
@@ -62,6 +63,7 @@ void vfsr_init(void) {
 	vfsreq_setHandler(MSG_FS_OPEN_RESP,vfsr_openRespHandler);
 	vfsreq_setHandler(MSG_FS_READ_RESP,vfsr_readRespHandler);
 	vfsreq_setHandler(MSG_FS_STAT_RESP,vfsr_statRespHandler);
+	vfsreq_setHandler(MSG_FS_ISTAT_RESP,vfsr_statRespHandler);
 	vfsreq_setHandler(MSG_FS_WRITE_RESP,vfsr_defRespHandler);
 	vfsreq_setHandler(MSG_FS_LINK_RESP,vfsr_defRespHandler);
 	vfsreq_setHandler(MSG_FS_UNLINK_RESP,vfsr_defRespHandler);
@@ -120,21 +122,39 @@ s32 vfsr_openFile(tTid tid,u16 flags,const char *path) {
 	return realFile;
 }
 
-s32 vfsr_getFileInfo(tTid tid,const char *path,sFileInfo *info) {
+s32 vfsr_istat(tTid tid,tInodeNo ino,tDevNo devNo,sFileInfo *info) {
+	return vfsr_doStat(tid,NULL,ino,devNo,info);
+}
+
+s32 vfsr_stat(tTid tid,const char *path,sFileInfo *info) {
+	return vfsr_doStat(tid,path,0,0,info);
+}
+
+static s32 vfsr_doStat(tTid tid,const char *path,tInodeNo ino,tDevNo devNo,sFileInfo *info) {
 	s32 res;
-	u32 pathLen = strlen(path);
+	u32 pathLen;
 	tFileNo virtFile;
 	sRequest *req;
 
-	if(pathLen > MAX_MSGSTR_LEN)
-		return ERR_INVALID_ARGS;
+	if(path) {
+		pathLen = strlen(path);
+		if(pathLen > MAX_MSGSTR_LEN)
+			return ERR_INVALID_ARGS;
+	}
 	virtFile = vfsr_create(tid);
 	if(virtFile < 0)
 		return virtFile;
 
 	/* send msg to fs */
-	memcpy(msg.str.s1,path,pathLen + 1);
-	res = vfs_sendMsg(tid,virtFile,MSG_FS_STAT,(u8*)&msg,sizeof(msg.str));
+	if(path) {
+		memcpy(msg.str.s1,path,pathLen + 1);
+		res = vfs_sendMsg(tid,virtFile,MSG_FS_STAT,(u8*)&msg,sizeof(msg.str));
+	}
+	else {
+		msg.args.arg1 = ino;
+		msg.args.arg2 = devNo;
+		res = vfs_sendMsg(tid,virtFile,MSG_FS_ISTAT,(u8*)&msg,sizeof(msg.args));
+	}
 	if(res < 0) {
 		vfsr_destroy(tid,virtFile);
 		return res;

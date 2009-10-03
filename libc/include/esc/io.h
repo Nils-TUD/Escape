@@ -29,6 +29,7 @@
 #define IO_WRITE				2
 #define IO_CREATE				4
 #define IO_TRUNCATE				8
+#define IO_APPEND				16
 
 /* file descriptors for stdin, stdout and stderr */
 #define STDIN_FILENO			0
@@ -80,7 +81,16 @@ tFD open(const char *path,u8 mode);
  * @param info will be filled
  * @return 0 on success
  */
-s32 getFileInfo(const char *path,sFileInfo *info);
+s32 stat(const char *path,sFileInfo *info);
+
+/**
+ * Asks for the current file-position
+ *
+ * @param fd the file-descriptor
+ * @param pos will point to the current file-position on success
+ * @return 0 on success
+ */
+s32 tell(tFD fd,u32 *pos);
 
 /**
  * Checks wether we are at EOF

@@ -56,7 +56,7 @@ static void test_sendSignalTo(void);
 static void test_exec(void);
 static void test_eof(void);
 static void test_seek(void);
-static void test_getFileInfo(void);
+static void test_stat(void);
 
 /* we want to be able to use u32 for all syscalls */
 static s32 test_doSyscall(u32 syscallNo,u32 arg1,u32 arg2,u32 arg3) {
@@ -142,7 +142,7 @@ static s32 _eof(u32 fd) {
 static s32 _seek(u32 fd,s32 pos,u32 whence) {
 	return test_doSyscall(28,fd,pos,whence);
 }
-static s32 _getFileInfo(const char *path,sFileInfo *info) {
+static s32 _stat(const char *path,sFileInfo *info) {
 	return test_doSyscall(29,(u32)path,(u32)info,0);
 }
 
@@ -174,7 +174,7 @@ static void test_syscalls(void) {
 	test_exec();
 	test_eof();
 	test_seek();
-	test_getFileInfo();
+	test_stat();
 }
 
 static void test_getppid(void) {
@@ -490,22 +490,22 @@ static void test_seek(void) {
 	test_caseSucceded();
 }
 
-static void test_getFileInfo(void) {
+static void test_stat(void) {
 	sFileInfo info;
 	char *longPath = (char*)malloc(10000);
 	memset(longPath,0x65,9999);
 	longPath[9999] = 0;
-	test_caseStart("Testing getFileInfo()");
-	test_assertInt(_getFileInfo(NULL,&info),ERR_INVALID_ARGS);
-	test_assertInt(_getFileInfo((const char*)0x12345678,&info),ERR_INVALID_ARGS);
-	test_assertInt(_getFileInfo((const char*)0xC0000000,&info),ERR_INVALID_ARGS);
-	test_assertInt(_getFileInfo((const char*)0xFFFFFFFF,&info),ERR_INVALID_ARGS);
-	test_assertInt(_getFileInfo(longPath,&info),ERR_INVALID_ARGS);
-	test_assertInt(_getFileInfo("",&info),ERR_INVALID_ARGS);
-	test_assertInt(_getFileInfo("/bin",NULL),ERR_INVALID_ARGS);
-	test_assertInt(_getFileInfo("/bin",(sFileInfo*)0x12345678),ERR_INVALID_ARGS);
-	test_assertInt(_getFileInfo("/bin",(sFileInfo*)0xC0000000),ERR_INVALID_ARGS);
-	test_assertInt(_getFileInfo("/bin",(sFileInfo*)0xFFFFFFFF),ERR_INVALID_ARGS);
+	test_caseStart("Testing stat()");
+	test_assertInt(_stat(NULL,&info),ERR_INVALID_ARGS);
+	test_assertInt(_stat((const char*)0x12345678,&info),ERR_INVALID_ARGS);
+	test_assertInt(_stat((const char*)0xC0000000,&info),ERR_INVALID_ARGS);
+	test_assertInt(_stat((const char*)0xFFFFFFFF,&info),ERR_INVALID_ARGS);
+	test_assertInt(_stat(longPath,&info),ERR_INVALID_ARGS);
+	test_assertInt(_stat("",&info),ERR_INVALID_ARGS);
+	test_assertInt(_stat("/bin",NULL),ERR_INVALID_ARGS);
+	test_assertInt(_stat("/bin",(sFileInfo*)0x12345678),ERR_INVALID_ARGS);
+	test_assertInt(_stat("/bin",(sFileInfo*)0xC0000000),ERR_INVALID_ARGS);
+	test_assertInt(_stat("/bin",(sFileInfo*)0xFFFFFFFF),ERR_INVALID_ARGS);
 	test_caseSucceded();
 	free(longPath);
 }

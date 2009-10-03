@@ -228,7 +228,7 @@ static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count) {
 		return NULL;
 	}
 
-	if(getFileInfo(path,&info) < 0) {
+	if(stat(path,&info) < 0) {
 		printe("Unable to get file-info for '%s'",path);
 		free(entries);
 		return NULL;
@@ -253,7 +253,7 @@ static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count) {
 
 				/* retrieve information */
 				strcpy(fpath + pathLen,de.name);
-				if(getFileInfo(fpath,&info) < 0) {
+				if(stat(fpath,&info) < 0) {
 					printe("Unable to get file-info for '%s'",fpath);
 					freeEntries(entries,pos);
 					free(fpath);

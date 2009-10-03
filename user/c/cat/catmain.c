@@ -49,7 +49,7 @@ int main(int argc,char *argv[]) {
 			abspath(path,MAX_PATH_LEN + 1,argv[i]);
 
 			/* check if it's a directory */
-			if(getFileInfo(path,&info) < 0) {
+			if(stat(path,&info) < 0) {
 				printe("Unable to get info about '%s'",path);
 				continue;
 			}

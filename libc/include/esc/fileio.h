@@ -113,6 +113,15 @@ u32 fwrite(const void *ptr,u32 size,u32 count,tFile *file);
 s32 fflush(tFile *file);
 
 /**
+ * Determines the current file-position
+ *
+ * @param file the file
+ * @param pos will point to the current file-position on success
+ * @return 0 on success
+ */
+s32 ftell(tFile *file,u32 *pos);
+
+/**
  * Checks wether we are at EOF
  *
  * @param file the file

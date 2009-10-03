@@ -45,7 +45,7 @@ s32 shell_cmdCd(u32 argc,char **argv) {
 	abspath(path,MAX_PATH_LEN + 1,argv[1]);
 
 	/* retrieve file-info */
-	if(getFileInfo(path,&info) < 0) {
+	if(stat(path,&info) < 0) {
 		printe("Unable to get file-info for '%s'",path);
 		return EXIT_FAILURE;
 	}

@@ -127,6 +127,7 @@ s32 vfs_hasAccess(tTid tid,tInodeNo nodeNo,u16 flags) {
 tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n = vfsn_getNode(e->nodeNo);
+	vassert(e->flags != 0,"Invalid file %d",file);
 	/* we can't share service-usages since each thread has his own node */
 	if((n->mode & MODE_TYPE_SERVUSE)) {
 		sVFSNode *child;
@@ -287,9 +288,16 @@ static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 	return freeSlot;
 }
 
+u32 vfs_tell(tTid tid,tFileNo file) {
+	sGFTEntry *e = globalFileTable + file;
+	vassert(e->flags != 0,"Invalid file %d",file);
+	return e->position;
+}
+
 bool vfs_eof(tTid tid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	bool eof = true;
+	vassert(e->flags != 0,"Invalid file %d",file);
 
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = nodes + e->nodeNo;
@@ -302,6 +310,9 @@ bool vfs_eof(tTid tid,tFileNo file) {
 			else
 				eof = sll_length(n->data.servuse.recvList) == 0;
 		}
+		/* we've read all from a pipe if there is one zero-length-entry left */
+		else if(n->mode & MODE_TYPE_PIPE)
+			eof = sll_length(n->data.pipe.list) == 1 && n->data.pipe.total == 0;
 		else
 			eof = e->position >= n->data.def.pos;
 	}
@@ -316,6 +327,7 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 	sGFTEntry *e = globalFileTable + file;
 	s32 newPos;
 	UNUSED(tid);
+	vassert(e->flags != 0,"Invalid file %d",file);
 
 	switch(whence) {
 		case SEEK_SET:
@@ -325,9 +337,8 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 			newPos = (s32)e->position + offset;
 			break;
 		case SEEK_END:
-		default:
-			/* TODO */
-			return ERR_INVALID_ARGS;
+			newPos = 0;
+			break;
 	}
 
 	if(newPos < 0)
@@ -340,8 +351,12 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 			return ERR_PIPE_SEEK;
 
 		if(n->mode & MODE_TYPE_SERVUSE) {
-			if(IS_DRIVER(n->parent->mode))
+			if(IS_DRIVER(n->parent->mode)) {
+				/* not supported for drivers */
+				if(whence == SEEK_END)
+					return ERR_INVALID_ARGS;
 				e->position = newPos;
+			}
 			else {
 				sSLList *list;
 				/* just SEEK_CUR and SEEK_END is supported */
@@ -367,14 +382,27 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 			}
 		}
 		else {
-			/* we can't validate the position here because the content of virtuel files may be
-			 * generated on demand */
-			e->position = newPos;
+			if(whence == SEEK_END)
+				e->position = n->data.def.pos;
+			else {
+				/* we can't validate the position here because the content of virtuel files may be
+				 * generated on demand */
+				e->position = newPos;
+			}
 		}
 	}
 	else {
-		/* since the fs-service validates the position anyway we can simply set it */
-		e->position = newPos;
+		if(whence == SEEK_END) {
+			sFileInfo info;
+			s32 res = vfsr_istat(tid,e->nodeNo,e->devNo,&info);
+			if(res < 0)
+				return res;
+			e->position = info.size;
+		}
+		else {
+			/* since the fs-service validates the position anyway we can simply set it */
+			e->position = newPos;
+		}
 	}
 
 	return e->position;
@@ -383,6 +411,7 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 	s32 err,readBytes;
 	sGFTEntry *e = globalFileTable + file;
+	vassert(e->flags != 0,"Invalid file %d",file);
 
 	if(!(e->flags & VFS_READ))
 		return ERR_NO_READ_PERM;
@@ -417,6 +446,7 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 	s32 err,writtenBytes;
 	sGFTEntry *e = globalFileTable + file;
+	vassert(e->flags != 0,"Invalid file %d",file);
 
 	if(!(e->flags & VFS_WRITE))
 		return ERR_NO_WRITE_PERM;
@@ -454,6 +484,7 @@ s32 vfs_ioctl(tTid tid,tFileNo file,u32 cmd,u8 *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n;
+	vassert(e->flags != 0,"Invalid file %d",file);
 
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
@@ -475,6 +506,7 @@ s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n;
+	vassert(e->flags != 0,"Invalid file %d",file);
 
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
@@ -496,6 +528,7 @@ s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n;
+	vassert(e->flags != 0,"Invalid file %d",file);
 
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
@@ -515,6 +548,7 @@ s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
 
 void vfs_closeFile(tTid tid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
+	vassert(e->flags != 0,"Invalid file %d",file);
 
 	/* decrement references */
 	if(--(e->refCount) == 0) {

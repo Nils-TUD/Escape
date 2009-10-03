@@ -46,7 +46,18 @@ s32 vfsr_openFile(tTid tid,u16 flags,const char *path);
  * @param info should be filled
  * @return 0 on success
  */
-s32 vfsr_getFileInfo(tTid tid,const char *path,sFileInfo *info);
+s32 vfsr_stat(tTid tid,const char *path,sFileInfo *info);
+
+/**
+ * Retrieves information about the given inode on given device
+ *
+ * @param tid the thread-id
+ * @param ino the inode-number
+ * @param devNo the device-number
+ * @param info should be filled
+ * @return 0 on success
+ */
+s32 vfsr_istat(tTid tid,tInodeNo ino,tDevNo devNo,sFileInfo *info);
 
 /**
  * Reads from the given inode at <offset> <count> bytes into the given buffer

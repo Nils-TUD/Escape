@@ -93,7 +93,7 @@ int main(int argc,char **argv) {
 		abspath(rpath,MAX_PATH_LEN + 1,path);
 
 		/* check if it's a directory */
-		if(getFileInfo(rpath,&info) < 0)
+		if(stat(rpath,&info) < 0)
 			error("Unable to get info about '%s'",rpath);
 		if(MODE_IS_DIR(info.mode))
 			error("'%s' is a directory!",rpath);

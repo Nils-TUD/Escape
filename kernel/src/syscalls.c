@@ -134,6 +134,14 @@ static void sysc_exit(sIntrptStackFrame *stack);
  */
 static void sysc_open(sIntrptStackFrame *stack);
 /**
+ * Determines the current file-position
+ *
+ * @param tFD file-descriptor
+ * @param u32* file-position
+ * @return s32 0 on success
+ */
+static void sysc_tell(sIntrptStackFrame *stack);
+/**
  * Tests wether we are at the end of the file (or if there is a message for service-usages)
  *
  * @param tFD file-descriptor
@@ -316,7 +324,7 @@ static void sysc_exec(sIntrptStackFrame *stack);
  * @param tFileInfo* info will be filled
  * @return s32 0 on success
  */
-static void sysc_getFileInfo(sIntrptStackFrame *stack);
+static void sysc_stat(sIntrptStackFrame *stack);
 /**
  * Just intended for debugging. May be used for anything :)
  * It's just a system-call thats used by nothing else, so we can use it e.g. for printing
@@ -494,7 +502,7 @@ static sSyscall syscalls[] = {
 	/* 26 */	{sysc_loadMods,				0},
 	/* 27 */	{sysc_sleep,				1},
 	/* 28 */	{sysc_seek,					2},
-	/* 29 */	{sysc_getFileInfo,			2},
+	/* 29 */	{sysc_stat,			2},
 	/* 30 */	{sysc_debug,				0},
 	/* 31 */	{sysc_createSharedMem,		2},
 	/* 32 */	{sysc_joinSharedMem,		1},
@@ -519,6 +527,7 @@ static sSyscall syscalls[] = {
 	/* 51 */	{sysc_mount,				3},
 	/* 52 */	{sysc_unmount,				1},
 	/* 53 */	{sysc_waitChild,			1},
+	/* 54 */	{sysc_tell,					2},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
@@ -599,7 +608,7 @@ static void sysc_fork(sIntrptStackFrame *stack) {
 
 static void sysc_startThread(sIntrptStackFrame *stack) {
 	u32 entryPoint = SYSC_ARG1(stack);
-	char **args = SYSC_ARG2(stack);
+	char **args = (char**)SYSC_ARG2(stack);
 	char *argBuffer = NULL;
 	u32 argSize = 0;
 	s32 res,argc = 0;
@@ -646,7 +655,7 @@ static void sysc_open(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* check flags */
-	flags = ((u16)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ | VFS_CREATE | VFS_TRUNCATE);
+	flags = ((u16)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ | VFS_CREATE | VFS_TRUNCATE | VFS_APPEND);
 	if((flags & (VFS_READ | VFS_WRITE)) == 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
@@ -703,8 +712,33 @@ static void sysc_open(sIntrptStackFrame *stack) {
 		}
 	}
 
+	/* append? */
+	if(flags & VFS_APPEND) {
+		err = vfs_seek(t->tid,file,0,SEEK_END);
+		if(err < 0)
+			SYSC_ERROR(stack,err);
+	}
+
 	/* return fd */
 	SYSC_RET1(stack,fd);
+}
+
+static void sysc_tell(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
+	u32 *pos = (u32*)SYSC_ARG2(stack);
+	sThread *t = thread_getRunning();
+	tFileNo file;
+
+	if(!paging_isRangeUserWritable((u32)pos,sizeof(u32)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	/* get file */
+	file = thread_fdToFile(fd);
+	if(file < 0)
+		SYSC_ERROR(stack,file);
+
+	*pos = vfs_tell(t->tid,file);
+	SYSC_RET1(stack,0);
 }
 
 static void sysc_eof(sIntrptStackFrame *stack) {
@@ -1347,7 +1381,7 @@ static void sysc_exec(sIntrptStackFrame *stack) {
 	kheap_free(argBuffer);
 }
 
-static void sysc_getFileInfo(sIntrptStackFrame *stack) {
+static void sysc_stat(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
 	tInodeNo nodeNo;
@@ -1364,7 +1398,7 @@ static void sysc_getFileInfo(sIntrptStackFrame *stack) {
 	res = vfsn_resolvePath(path,&nodeNo,NULL,VFS_READ);
 	if(res == ERR_REAL_PATH) {
 		sThread *t = thread_getRunning();
-		res = vfsr_getFileInfo(t->tid,path,info);
+		res = vfsr_stat(t->tid,path,info);
 	}
 	else if(res == 0)
 		res = vfsn_getNodeInfo(nodeNo,info);

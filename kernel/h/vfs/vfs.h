@@ -46,10 +46,11 @@ enum {
 	VFS_WRITE = 2,
 	VFS_CREATE = 4,
 	VFS_TRUNCATE = 8,
-	VFS_CONNECT = 16,		/* kernel-intern: connect to service/driver */
-	VFS_NOLINKRES = 32,		/* kernel-intern: don't resolve last link in path */
-	VFS_CREATED = 64,		/* kernel-intern: wether a new node has been created */
-	VFS_MODIFIED = 128		/* kernel-intern: wether it has been written to the file */
+	VFS_APPEND = 16,
+	VFS_CONNECT = 32,		/* kernel-intern: connect to service/driver */
+	VFS_NOLINKRES = 64,		/* kernel-intern: don't resolve last link in path */
+	VFS_CREATED = 128,		/* kernel-intern: wether a new node has been created */
+	VFS_MODIFIED = 256		/* kernel-intern: wether it has been written to the file */
 };
 
 /* seek-types */
@@ -167,6 +168,15 @@ s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev);
  * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FILE)
  */
 tFileNo vfs_openFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo);
+
+/**
+ * Returns the current file-position
+ *
+ * @param tid the thread-id
+ * @param file the file
+ * @return the current file-position
+ */
+u32 vfs_tell(tTid tid,tFileNo file);
 
 /**
  * Checks wether we are at EOF in the given file

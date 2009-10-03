@@ -28,17 +28,35 @@
 
 static char buffer[BUF_SIZE];
 
+static void usage(const char *name) {
+	fprintf(stderr,"Usage: %s [-a] <file>\n",name);
+	fprintf(stderr,"	-a: append to file\n");
+	exit(EXIT_FAILURE);
+}
+
 int main(int argc,char *argv[]) {
 	char path[MAX_PATH_LEN];
+	char *filename = NULL;
+	bool append = false;
 	tFD fd;
-	s32 c;
-	if(argc != 2 || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s <file>\n",argv[0]);
-		return EXIT_FAILURE;
-	}
+	s32 i,c;
 
-	abspath(path,MAX_PATH_LEN,argv[1]);
-	fd = open(path,IO_WRITE | IO_CREATE | IO_TRUNCATE);
+	if(argc < 2 || isHelpCmd(argc,argv))
+		usage(argv[0]);
+	for(i = 1; i < argc; i++) {
+		if(strcmp(argv[i],"-a") == 0)
+			append = true;
+		else {
+			if(filename != NULL)
+				usage(argv[0]);
+			filename = argv[i];
+		}
+	}
+	if(filename == NULL)
+		usage(argv[0]);
+
+	abspath(path,MAX_PATH_LEN,filename);
+	fd = open(path,IO_WRITE | (append ? IO_APPEND : (IO_TRUNCATE | IO_CREATE)));
 	if(fd < 0)
 		error("Unable to open '%s'",path);
 

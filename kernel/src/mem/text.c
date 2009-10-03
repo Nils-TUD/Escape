@@ -60,7 +60,7 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 	sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
 	s32 res;
-	if((res = vfsr_getFileInfo(t->tid,path,&info)) < 0)
+	if((res = vfsr_stat(t->tid,path,&info)) < 0)
 		return res;
 
 	usage = text_get(&info);

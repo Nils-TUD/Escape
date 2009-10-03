@@ -41,7 +41,7 @@ int main(int argc,char *argv[]) {
 	}
 
 	abspath(apath,MAX_PATH_LEN,argv[1]);
-	if(getFileInfo(apath,&info) < 0)
+	if(stat(apath,&info) < 0)
 		error("Unable to read file-information for '%s'",apath);
 
 	printf("'%s' points to:\n",apath);

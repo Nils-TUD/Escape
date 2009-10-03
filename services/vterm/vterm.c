@@ -346,6 +346,7 @@ void vterm_update(sVTerm *vt) {
 		seek(vt->video,vt->upStart,SEEK_SET);
 		write(vt->video,vt->buffer + (vt->firstVisLine * vt->cols * 2) + vt->upStart,byteCount);
 	}
+	vterm_setCursor(vt);
 
 	/* all synchronized now */
 	vt->upStart = 0;

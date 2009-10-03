@@ -364,11 +364,11 @@ static bool loadServices(sServiceLoad **loads) {
 
 static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
 	u32 i,j;
-	tFD fd;
-	s32 child;
+	s32 res,child;
 	char path[MAX_SERVICE_PATH_LEN + 1] = "/sbin/";
 	char servName[MAX_SERVICE_PATH_LEN + 1] = "";
 	char *sname;
+	sFileInfo info;
 	sSLNode *n;
 
 	/* at first check if we've already loaded the service */
@@ -405,16 +405,15 @@ static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
 		strcpy(sname,load->waits[i]);
 		j = 0;
 		do {
-			fd = open(servName,IO_READ);
-			if(fd < 0)
+			res = stat(servName,&info);
+			if(res < 0)
 				yield();
 		}
-		while(j++ < MAX_WAIT_RETRIES && fd < 0);
-		if(fd < 0) {
+		while(j++ < MAX_WAIT_RETRIES && res < 0);
+		if(res < 0) {
 			printe("The service '%s' was not found after %d retries",servName,MAX_WAIT_RETRIES);
 			return false;
 		}
-		close(fd);
 	}
 
 	/* insert in loaded-list so that we don't load a service twice */

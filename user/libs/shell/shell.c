@@ -185,8 +185,10 @@ s32 shell_executeCmd(char *line) {
 				 * fork() has duplicated the file-descriptors and increased the references on
 				 * the node (not just the file!). */
 				/* This way we send EOF to the pipe */
-				if(cmd->dup & DUP_STDIN && (cmd - 1)->pid == 0)
+				if(cmd->dup & DUP_STDIN && (cmd - 1)->pid == 0) {
 					close((cmd - 1)->pipe);
+					(cmd - 1)->pipe = -1;
+				}
 				waitingCount++;
 				if(!(cmd->dup & DUP_STDOUT)/* && !cmd->runInBG*/) {
 					sExitState state;

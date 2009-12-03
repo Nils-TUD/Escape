@@ -68,13 +68,6 @@ s32 setSigHandler(tSig signal,fSigHandler handler);
 s32 unsetSigHandler(tSig signal);
 
 /**
- * Acknoledges that the processing of a signal is finished
- *
- * @return 0 on success
- */
-s32 ackSignal(void);
-
-/**
  * Sends the given signal to all process (that have announced a handler)
  *
  * @param signal the signal

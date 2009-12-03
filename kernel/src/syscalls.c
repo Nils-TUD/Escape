@@ -502,7 +502,7 @@ static sSyscall syscalls[] = {
 	/* 26 */	{sysc_loadMods,				0},
 	/* 27 */	{sysc_sleep,				1},
 	/* 28 */	{sysc_seek,					2},
-	/* 29 */	{sysc_stat,			2},
+	/* 29 */	{sysc_stat,					2},
 	/* 30 */	{sysc_debug,				0},
 	/* 31 */	{sysc_createSharedMem,		2},
 	/* 32 */	{sysc_joinSharedMem,		1},

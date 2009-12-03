@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 /**
- * Builds an absolute path from the given one. If it is not absolute (starts with "/") CWD will
+ * Builds an absolute path from the given one. If it is not absolute (starts not with "/") CWD will
  * be taken to build the absolute path. The path will end with a slash.
  * If <dst> is not large enough the function stops and returns the number of yet written chars.
  *

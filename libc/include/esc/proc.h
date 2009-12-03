@@ -107,8 +107,8 @@ s32 wait(u8 events);
 /**
  * Waits until a child terminates and stores information about it into <state>.
  * Note that a child-process is required and only one thread can wait for a child-process!
- * You may get interrupted by a signal (any may want to call waitChild() again in this case). If so
- * you get ERR_INTERRUPTED as return-value (and errno).
+ * You may get interrupted by a signal (and may want to call waitChild() again in this case). If so
+ * you get ERR_INTERRUPTED as return-value (and errno will be set).
  *
  * @param state the exit-state (may be NULL)
  * @return 0 on success

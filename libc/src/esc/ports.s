@@ -22,6 +22,51 @@
 %include "syscalls.s"
 
 [extern errno]
+[global inByte]
+[global inWord]
+[global inDWord]
+[global outByte]
+[global outWord]
+[global outDWord]
+
+; u8 inByte(u16 port)
+inByte:
+	mov		dx,[esp + 4]									; load port
+	in		al,dx													; read from port
+	ret
+
+; u16 inWord(u16 port)
+inWord:
+	mov		dx,[esp + 4]									; load port
+	in		ax,dx													; read from port
+	ret
+
+; u32 inDWord(u16 port)
+inDWord:
+	mov		dx,[esp + 4]									; load port
+	in		eax,dx												; read from port
+	ret
+
+; void outByte(u16 port,u8 val)
+outByte:
+	mov		dx,[esp + 4]									; load port
+	mov		al,[esp + 8]									; load value
+	out		dx,al													; write to port
+	ret
+
+; void outWord(u16 port,u16 val)
+outWord:
+	mov		dx,[esp + 4]									; load port
+	mov		ax,[esp + 8]									; load value
+	out		dx,ax													; write to port
+	ret
+
+; void outDWord(u16 port,u32 val)
+outDWord:
+	mov		dx,[esp + 4]									; load port
+	mov		eax,[esp + 8]									; load value
+	out		dx,eax												; write to port
+	ret
 
 SYSC_RET_2ARGS_ERR requestIOPorts,SYSCALL_REQIOPORTS
 SYSC_RET_2ARGS_ERR releaseIOPorts,SYSCALL_RELIOPORTS

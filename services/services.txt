@@ -3,7 +3,8 @@ speaker; /services/speaker;
 keyboard; /drivers/keyboard;
 video; /drivers/video;
 vterm; /drivers/vterm0,/drivers/vterm1,/drivers/vterm2,/drivers/vterm3,/drivers/vterm4,/drivers/vterm5; keyboard,speaker,video,cmos
-vesatext; /drivers/vesatext;
+#vesatext; /drivers/vesatext;
+#vga; ;
 env; /services/env;
 cmos; ;
 zero; /drivers/zero;

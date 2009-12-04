@@ -11,7 +11,10 @@ APP = $(NAME).app
 APPCPY = $(BUILD)/apps/$(APP)
 
 CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I../../lib/h -Wl,-T,$(LDCONF) $(CDEFFLAGS) 
+# Note: we need -Wl,--build-id=none atm to prevent ld to generate the .note.gnu.build-id
+# This seems to be put at the beginning of the binary and therefore the entry-point changes
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I../../lib/h \
+	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS) 
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")

@@ -66,7 +66,7 @@ s32 releaseIOPorts(u16 start,u16 count);
  * @param port the port
  * @param val the value
  */
-void outByte(u16 port,u8 val);
+extern void outByte(u16 port,u8 val);
 
 /**
  * Outputs the word <val> to the I/O-Port <port>
@@ -74,7 +74,7 @@ void outByte(u16 port,u8 val);
  * @param port the port
  * @param val the value
  */
-void outWord(u16 port,u16 val);
+extern void outWord(u16 port,u16 val);
 
 /**
  * Outputs the dword <val> to the I/O-Port <port>
@@ -82,7 +82,7 @@ void outWord(u16 port,u16 val);
  * @param port the port
  * @param val the value
  */
-void outDWord(u16 port,u32 val);
+extern void outDWord(u16 port,u32 val);
 
 /**
  * Outputs <count> words at <addr> to port <port>
@@ -99,7 +99,7 @@ void outWordStr(u16 port,const void *addr,u32 count);
  * @param port the port
  * @return the value
  */
-u8 inByte(u16 port);
+extern u8 inByte(u16 port);
 
 /**
  * Reads a word from the I/O-Port <port>
@@ -107,7 +107,7 @@ u8 inByte(u16 port);
  * @param port the port
  * @return the value
  */
-u16 inWord(u16 port);
+extern u16 inWord(u16 port);
 
 /**
  * Reads a dword from the I/O-Port <port>
@@ -115,7 +115,7 @@ u16 inWord(u16 port);
  * @param port the port
  * @return the value
  */
-u32 inDWord(u16 port);
+extern u32 inDWord(u16 port);
 
 /**
  * Reads <count> words to <addr> from port <port>

@@ -83,7 +83,7 @@ static bool atapi_request(sATADrive *drive,u16 *cmd,u16 *buffer,u32 bufSize) {
 		;
 	ATA_PR2("Waiting until DRQ or ERROR set");
 	/* wait until DRQ or ERROR set */
-	while((!(status = inByte(basePort + REG_STATUS)) & CMD_ST_DRQ) && !(status & CMD_ST_ERROR))
+	while((!((status = inByte(basePort + REG_STATUS)) & CMD_ST_DRQ)) && !(status & CMD_ST_ERROR))
 		;
 	if(status & CMD_ST_ERROR) {
 		ATA_PR1("ERROR-bit set");
@@ -102,7 +102,7 @@ static bool atapi_request(sATADrive *drive,u16 *cmd,u16 *buffer,u32 bufSize) {
 	while(inByte(basePort + REG_STATUS) & CMD_ST_BUSY)
 		;
 	ATA_PR2("Waiting until DRQ or ERROR set");
-	while((!(status = inByte(basePort + REG_STATUS)) & CMD_ST_DRQ) && !(status & CMD_ST_ERROR))
+	while((!((status = inByte(basePort + REG_STATUS)) & CMD_ST_DRQ)) && !(status & CMD_ST_ERROR))
 		;
 
 	ATA_PR2("Reading response-size");

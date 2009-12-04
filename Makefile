@@ -16,7 +16,7 @@ QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot c -vga std -m 
 DIRS = tools libc libcpp services user kernel/src kernel/test
 
 # flags for gcc
-export CC = gcc
+export CC = gcc-4.3
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \

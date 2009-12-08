@@ -174,16 +174,18 @@ void cpu_detect(void) {
 
 void cpu_getInfo(u32 code,u32 *a,u32 *b,u32 *c,u32 *d) {
 	__asm__ __volatile__ (
+		"mov %0,%%eax;"
 		"cpuid"
 		: "=a" (*a), "=b" (*b), "=c" (*c), "=d" (*d) : "0" (code)
 	);
 }
 
-void cpu_getStrInfo(u32 code,char res[12]) {
+void cpu_getStrInfo(u32 code,char *res) {
 	u32 *words = (u32*)res;
 	__asm__ __volatile__ (
+		"mov %0,%%eax;"
 		"cpuid"
-		: "=b" (*(words)), "=c" (*(words + 2)), "=d"(*(words + 1)) : "0" (code) : "eax"
+		: "=b" (*(words)), "=c" (*(words + 2)), "=d"(*(words + 1)) : "0" (code)
 	);
 }
 

@@ -99,7 +99,7 @@ void cpu_getInfo(u32 code,u32 *a,u32 *b,u32 *c,u32 *d);
  * @param code the request to perform
  * @param res will contain the result
  */
-void cpu_getStrInfo(u32 code,char res[12]);
+void cpu_getStrInfo(u32 code,char *res);
 
 /**
  * Prints information about the used CPU into the given string-buffer

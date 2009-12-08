@@ -41,7 +41,7 @@ void ksym_print(void) {
 sSymbol *ksym_getSymbolAt(u32 address) {
 	sSymbol *sym = &ksymbols[ARRAY_SIZE(ksymbols) - 1];
 	while(sym >= &ksymbols[0]) {
-		if(address > sym->address)
+		if(address >= sym->address)
 			return sym;
 		sym--;
 	}

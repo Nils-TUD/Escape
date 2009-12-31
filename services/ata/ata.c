@@ -76,13 +76,16 @@ bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCoun
 	else
 		outByte(basePort + REG_DRIVE_SELECT,0x40 | (drive->slaveBit << 4));
 
+	ATA_PR2("Selecting device with port 0x%x",basePort);
 	ata_wait(drive);
 
+	ATA_PR2("Resetting control-register");
 	ata_unsetIntrpt();
 	/* reset control-register */
 	outByte(basePort + REG_CONTROL,0);
 
 	if(drive->info.features.lba48) {
+		ATA_PR2("LBA48: setting sector-count (%d) and address (%x)",secCount,(u32)(lba & 0xFFFFFFFF));
 		/* LBA: | LBA6 | LBA5 | LBA4 | LBA3 | LBA2 | LBA1 | */
 		/*     48             32            16            0 */
 		/* sector-count high-byte */
@@ -97,6 +100,7 @@ bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCoun
 		outByte(basePort + REG_ADDRESS1,(u8)(lba & 0xFF));
 		outByte(basePort + REG_ADDRESS2,(u8)(lba >> 8));
 		outByte(basePort + REG_ADDRESS3,(u8)(lba >> 16));
+		ATA_PR2("LBA48: Sending command %d",opWrite ? COMMAND_WRITE_SEC_EXT : COMMAND_READ_SEC_EXT);
 		/* send command */
 		if(opWrite)
 			outByte(basePort + REG_COMMAND,COMMAND_WRITE_SEC_EXT);
@@ -104,12 +108,14 @@ bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCoun
 			outByte(basePort + REG_COMMAND,COMMAND_READ_SEC_EXT);
 	}
 	else {
+		ATA_PR2("LBA28: setting sector-count (%d) and address (%x)",secCount,(u32)(lba & 0xFFFFFFFF));
 		/* send sector-count */
 		outByte(basePort + REG_SECTOR_COUNT,(u8)secCount);
 		/* LBA1, LBA2 and LBA3 */
 		outByte(basePort + REG_ADDRESS1,(u8)lba);
 		outByte(basePort + REG_ADDRESS2,(u8)(lba >> 8));
 		outByte(basePort + REG_ADDRESS3,(u8)(lba >> 16));
+		ATA_PR2("LBA28: Sending command %d",opWrite ? COMMAND_WRITE_SEC : COMMAND_READ_SEC);
 		/* send command */
 		if(opWrite)
 			outByte(basePort + REG_COMMAND,COMMAND_WRITE_SEC);
@@ -120,6 +126,7 @@ bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCoun
 	for(i = 0; i < secCount; i++) {
 		do {
 			if(opWrite) {
+				ATA_PR2("Writing: wait until not busy");
 				status = inByte(basePort + REG_STATUS);
 				while(status & CMD_ST_BUSY) {
 					sleep(20);
@@ -127,9 +134,11 @@ bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCoun
 				}
 			}
 			else {
-				/* FIXME: vmware seems to need a ata_wait() here */
-				/* wait until drive is ready */
-				ata_waitIntrpt();
+				ATA_PR2("Reading: wait for interrupt");
+				/* FIXME: actually we should wait for an interrupt here. but this doesn't work
+				 * in virtualbox. using polling here seems to work with all simulators and with my
+				 * old notebook fine */
+				/*ata_waitIntrpt();*/
 				status = inByte(basePort + REG_STATUS);
 			}
 
@@ -141,6 +150,7 @@ bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCoun
 			}
 		}
 		while(true);
+		ATA_PR2("Ready, starting read/write");
 
 		/* now read / write the data */
 		if(opWrite) {
@@ -151,6 +161,7 @@ bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCoun
 			inWordStr(basePort + REG_DATA,buf,ATA_SEC_SIZE / sizeof(u16));
 			buf += ATA_SEC_SIZE / sizeof(u16);
 		}
+		ATA_PR2("Done");
 	}
 
 	return true;

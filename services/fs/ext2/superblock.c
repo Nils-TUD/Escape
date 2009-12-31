@@ -35,6 +35,12 @@ bool ext2_super_init(sExt2 *e) {
 		return false;
 	}
 
+	/* check magic-number */
+	if(e->superBlock.magic != EXT2_SUPER_MAGIC) {
+		printe("Invalid super-magic: Got %x, expected %x\n",e->superBlock.magic,EXT2_SUPER_MAGIC);
+		return false;
+	}
+
 	/* check features */
 	/* TODO mount readonly if an unsupported feature is present in featureRoCompat */
 	if(e->superBlock.featureInCompat || e->superBlock.featureRoCompat) {

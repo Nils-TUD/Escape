@@ -287,20 +287,33 @@ static void vbe_drawChar(tCoord col,tCoord row,char c,u8 color) {
 	}
 	else {
 		u8 *vidwork = vid;
+		u8 colFront1 = colors[color & 0xf][2];
+		u8 colFront2 = colors[color & 0xf][1];
+		u8 colFront3 = colors[color & 0xf][0];
+		u8 colBack1 = colors[color >> 4][2];
+		u8 colBack2 = colors[color >> 4][1];
+		u8 colBack3 = colors[color >> 4][0];
 		const char *pixel = font6x8[(s32)c - 32];
 		for(y = 0; y < FONT_HEIGHT + 2; y++) {
 			vidwork = vid + y * RESOLUTION_X * PIXEL_SIZE;
 			for(x = 0; x < FONT_WIDTH + 2; x++) {
-				if(y > 0 && y < FONT_HEIGHT + 1 && x > 0 && x < FONT_WIDTH + 1 &&
-						pixel[(y - 1) * FONT_WIDTH + (x - 1)]) {
-					*vidwork++ = colors[color & 0xf][2];
-					*vidwork++ = colors[color & 0xf][1];
-					*vidwork++ = colors[color & 0xf][0];
+				if(y > 0 && x < FONT_WIDTH + 1 && x > 0) {
+					if(y < FONT_HEIGHT + 1 && *pixel) {
+						*vidwork++ = colFront1;
+						*vidwork++ = colFront2;
+						*vidwork++ = colFront3;
+					}
+					else {
+						*vidwork++ = colBack1;
+						*vidwork++ = colBack2;
+						*vidwork++ = colBack3;
+					}
+					pixel++;
 				}
 				else {
-					*vidwork++ = colors[color >> 4][2];
-					*vidwork++ = colors[color >> 4][1];
-					*vidwork++ = colors[color >> 4][0];
+					*vidwork++ = colBack1;
+					*vidwork++ = colBack2;
+					*vidwork++ = colBack3;
 				}
 			}
 		}

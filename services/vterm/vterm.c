@@ -37,6 +37,8 @@
 
 #include "vterm.h"
 
+#define VIDEO_DRIVER		"/drivers/video"
+
 /* the number of chars to keep in history */
 #define INITIAL_RLBUF_SIZE	50
 
@@ -99,9 +101,9 @@ static bool vterm_init(sVTerm *vt) {
 	sIoCtlSize vidSize;
 
 	/* open video */
-	vidFd = open("/drivers/video",IO_WRITE);
+	vidFd = open(VIDEO_DRIVER,IO_WRITE);
 	if(vidFd < 0) {
-		printe("Unable to open '/services/video'");
+		printe("Unable to open '%s'",VIDEO_DRIVER);
 		return false;
 	}
 

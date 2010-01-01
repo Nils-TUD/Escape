@@ -140,7 +140,7 @@ void ShellApplication::doEvents() {
 						send(fd,MSG_DRV_OPEN_RESP,&_msg,sizeof(_msg.args));
 						break;
 					case MSG_DRV_READ: {
-						/* offset is ignored here */
+						// offset is ignored here
 						u32 count = MIN(sizeof(_msg.data.d),_msg.args.arg2);
 						_msg.data.arg1 = rb_readn(_inbuf,_msg.data.d,count);
 						_msg.data.arg2 = rb_length(_inbuf) > 0;
@@ -158,11 +158,12 @@ void ShellApplication::doEvents() {
 
 						input = _msg.data.d;
 						while(c > 0) {
-							amount = MIN(c,READ_BUF_SIZE);
+							amount = MIN(c,READ_BUF_SIZE - rbufPos);
 							memcpy(rbuffer + rbufPos,input,amount);
 
 							c -= amount;
 							rbufPos += amount;
+							input += amount;
 							if(rbufPos >= READ_BUF_SIZE) {
 								_sh->append(rbuffer);
 								rbufPos = 0;

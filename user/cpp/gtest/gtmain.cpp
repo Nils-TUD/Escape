@@ -80,17 +80,16 @@ int main(void) {
 
 	if(fork() == 0) {
 		Application *app = Application::getInstance();
-		MyImgWindow w2;
+		w1 = new MyImgWindow();
 		return app->run();
 	}
 
 	if(fork() == 0) {
 		Application *app = Application::getInstance();
 		w1 = new Window("Window 3",50,50,100,40);
-		/*startThread(pbThread);*/
 		return app->run();
 	}
-#if 0
+#if 1
 	if(fork() == 0) {
 		exec("/bin/guishell",NULL);
 		exit(EXIT_FAILURE);

@@ -40,6 +40,8 @@
 #include "cmdbuilder.h"
 
 static void shell_sigIntrpt(tSig sig,u32 data);
+static u16 shell_toNextWord(char *buffer,u32 icharcount,u32 *icursorPos);
+static u16 shell_toPrevWord(char *buffer,u32 *icursorPos);
 
 static bool resetReadLine = false;
 static u32 tabCount = 0;
@@ -277,7 +279,7 @@ u32 shell_readLine(char *buffer,u32 max) {
 			resetReadLine = false;
 		}
 
-		if(n1 != '\t' && n1 != '\n' && !isprint(n1)) {
+		if(n3 != 0 || (n1 != '\t' && n1 != '\n' && !isprint(n1))) {
 			shell_handleSpecialKey(buffer,n2,n3,&cursorPos,&i);
 			continue;
 		}
@@ -329,6 +331,22 @@ void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 	u32 icursorPos = *cursorPos;
 	u32 icharcount = *charcount;
 	switch(keycode) {
+		case VK_W:
+			if(modifier & STATE_CTRL) {
+				u32 oldPos = icursorPos;
+				u16 count = shell_toPrevWord(buffer,&icursorPos);
+				if(count > 0) {
+					memmove(buffer + icursorPos,buffer + oldPos,icharcount - oldPos);
+					icharcount -= count;
+					buffer[icharcount] = '\0';
+					/* send backspaces */
+					while(count-- > 0)
+						printc('\b');
+					flush();
+				}
+			}
+			break;
+
 		case VK_BACKSP:
 			if(icursorPos > 0) {
 				/* remove last char */
@@ -367,17 +385,7 @@ void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 			if(icursorPos < icharcount) {
 				/* to next word */
 				if(modifier & STATE_CTRL) {
-					u16 count = 0;
-					/* skip first whitespace */
-					while(icursorPos < icharcount && isspace(buffer[icursorPos])) {
-						count++;
-						icursorPos++;
-					}
-					/* walk to last whitespace */
-					while(icursorPos < icharcount && !isspace(buffer[icursorPos])) {
-						count++;
-						icursorPos++;
-					}
+					u16 count = shell_toNextWord(buffer,icharcount,&icursorPos);
 					if(count > 0)
 						printf("\033[mr;%d]",count);
 				}
@@ -391,17 +399,7 @@ void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 			if(icursorPos > 0) {
 				/* to prev word */
 				if(modifier & STATE_CTRL) {
-					u16 count = 0;
-					/* skip first whitespace */
-					while(icursorPos > 0 && isspace(buffer[icursorPos - 1])) {
-						count++;
-						icursorPos--;
-					}
-					/* walk to last whitespace */
-					while(icursorPos > 0 && !isspace(buffer[icursorPos - 1])) {
-						count++;
-						icursorPos--;
-					}
+					u16 count = shell_toPrevWord(buffer,&icursorPos);
 					if(count > 0)
 						printf("\033[ml;%d]",count);
 				}
@@ -445,6 +443,36 @@ void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 		*cursorPos = icursorPos;
 		*charcount = icharcount;
 	}
+}
+
+static u16 shell_toNextWord(char *buffer,u32 icharcount,u32 *icursorPos) {
+	u16 count = 0;
+	/* skip first whitespace */
+	while(*icursorPos < icharcount && isspace(buffer[*icursorPos])) {
+		count++;
+		(*icursorPos)++;
+	}
+	/* walk to last whitespace */
+	while(*icursorPos < icharcount && !isspace(buffer[*icursorPos])) {
+		count++;
+		(*icursorPos)++;
+	}
+	return count;
+}
+
+static u16 shell_toPrevWord(char *buffer,u32 *icursorPos) {
+	u16 count = 0;
+	/* skip first whitespace */
+	while(*icursorPos > 0 && isspace(buffer[*icursorPos - 1])) {
+		count++;
+		(*icursorPos)--;
+	}
+	/* walk to last whitespace */
+	while(*icursorPos > 0 && !isspace(buffer[*icursorPos - 1])) {
+		count++;
+		(*icursorPos)--;
+	}
+	return count;
 }
 
 void shell_complete(char *line,u32 *cursorPos,u32 *length) {

@@ -126,7 +126,7 @@ void ShellApplication::doEvents() {
 		if(fd < 0) {
 			// append the buffer now to reduce delays
 			if(rbufPos > 0) {
-				_sh->append(rbuffer);
+				_sh->append(rbuffer,rbufPos);
 				rbufPos = 0;
 			}
 			wait(EV_CLIENT | EV_RECEIVED_MSG);
@@ -141,35 +141,43 @@ void ShellApplication::doEvents() {
 						break;
 					case MSG_DRV_READ: {
 						// offset is ignored here
-						u32 count = MIN(sizeof(_msg.data.d),_msg.args.arg2);
-						_msg.data.arg1 = rb_readn(_inbuf,_msg.data.d,count);
-						_msg.data.arg2 = rb_length(_inbuf) > 0;
-						send(fd,MSG_DRV_READ_RESP,&_msg,sizeof(_msg.data));
+						u32 count = _msg.args.arg2;
+						char *data = (char*)malloc(count);
+						_msg.args.arg1 = 0;
+						if(data)
+							_msg.args.arg1 = rb_readn(_inbuf,_msg.data.d,count);
+						_msg.args.arg2 = rb_length(_inbuf) > 0;
+						send(fd,MSG_DRV_READ_RESP,&_msg,sizeof(_msg.args));
+						if(data) {
+							send(fd,MSG_DRV_READ_RESP,data,count);
+							free(data);
+						}
 					}
 					break;
 					case MSG_DRV_WRITE: {
 						u32 amount;
-						char *input;
-						c = _msg.data.arg2;
-						if(c >= sizeof(_msg.data.d))
-							c = sizeof(_msg.data.d) - 1;
-						_msg.data.d[c] = '\0';
-						_msg.args.arg1 = c;
+						char *data;
+						c = _msg.args.arg2;
+						data = (char*)malloc(c + 1);
+						_msg.args.arg1 = 0;
+						if(data) {
+							receive(fd,&mid,data,c + 1);
+							data[c] = '\0';
+							while(c > 0) {
+								amount = MIN(c,READ_BUF_SIZE - rbufPos);
+								memcpy(rbuffer + rbufPos,data,amount);
 
-						input = _msg.data.d;
-						while(c > 0) {
-							amount = MIN(c,READ_BUF_SIZE - rbufPos);
-							memcpy(rbuffer + rbufPos,input,amount);
-
-							c -= amount;
-							rbufPos += amount;
-							input += amount;
-							if(rbufPos >= READ_BUF_SIZE) {
-								_sh->append(rbuffer);
-								rbufPos = 0;
+								c -= amount;
+								rbufPos += amount;
+								data += amount;
+								if(rbufPos >= READ_BUF_SIZE) {
+									_sh->append(rbuffer,rbufPos);
+									rbufPos = 0;
+								}
 							}
+							free(data);
+							_msg.args.arg1 = c;
 						}
-
 						send(fd,MSG_DRV_WRITE_RESP,&_msg,sizeof(_msg.args));
 					}
 					break;

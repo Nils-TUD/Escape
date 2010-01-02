@@ -45,9 +45,9 @@ Color ShellControl::COLORS[16] = {
 };
 
 const Color ShellControl::BGCOLOR = Color(0xFF,0xFF,0xFF);
-const Color ShellControl::FGCOLOR = Color(0,0,0);
-const Color ShellControl::BORDER_COLOR = Color(0,0,0);
-const Color ShellControl::CURSOR_COLOR = Color(0,0,0);
+const Color ShellControl::FGCOLOR = Color(0x0,0x0,0x0);
+const Color ShellControl::BORDER_COLOR = Color(0x0,0x0,0x0);
+const Color ShellControl::CURSOR_COLOR = Color(0x0,0x0,0x0);
 
 void ShellControl::paint(Graphics &g) {
 	// fill bg
@@ -130,18 +130,53 @@ void ShellControl::scrollLine(s32 up) {
 	repaint();
 }
 
-void ShellControl::append(const char *s) {
+void ShellControl::append(char *s,u32 len) {
+	char *start = s;
 	u32 oldRow = _row;
 	_scrollRows = 0;
 
+	s[len] = '\0';
+
+	/* are we waiting to finish an escape-code? */
+	if(_escapePos >= 0) {
+		u32 oldLen = _escapePos;
+		char *escPtr = _escapeBuf;
+		u16 length = MIN((s32)len,MAX_ESCC_LENGTH - _escapePos - 1);
+		/* append the string */
+		memcpy(_escapeBuf + _escapePos,s,length);
+		_escapePos += length;
+		_escapeBuf[_escapePos] = '\0';
+
+		/* try it again */
+		if(!handleEscape(&escPtr)) {
+			/* if no space is left, quit and simply print the code */
+			if(_escapePos >= MAX_ESCC_LENGTH - 1) {
+				u32 i;
+				for(i = 0; i < MAX_ESCC_LENGTH; i++)
+					append(_escapeBuf[i]);
+			}
+			/* otherwise try again next time */
+			else
+				return;
+		}
+		/* skip escape-code */
+		s += (escPtr - _escapeBuf) - oldLen;
+		_escapePos = -1;
+	}
+
 	while(*s) {
 		if(*s == '\033') {
-			handleEscape(s + 1);
-			s += 3;
+			s++;
+			// if the escape-code is incomplete, store what we have so far and wait for further input
+			if(!handleEscape((char**)&s)) {
+				u32 count = MIN(MAX_ESCC_LENGTH,len - (s - start));
+				memcpy(_escapeBuf,s,count);
+				_escapePos = count;
+				break;
+			}
 			continue;
 		}
-		append(*s);
-		s++;
+		append(*s++);
 	}
 
 	// scroll down if necessary
@@ -243,39 +278,57 @@ void ShellControl::append(char c) {
 	}
 }
 
-bool ShellControl::handleEscape(const char *s) {
-	u8 keycode = *(u8*)s;
-	u8 value = *(u8*)(s + 1);
-	bool res = false;
-	switch(keycode) {
-		case VK_UP:
-			if(_row > _firstRow)
-				_row--;
+bool ShellControl::handleEscape(char **s) {
+	s32 cmd,n1,n2,n3;
+	cmd = escc_get((const char**)s,&n1,&n2,&n3);
+	if(cmd == ESCC_INCOMPLETE)
+		return false;
+
+	switch(cmd) {
+		case ESCC_MOVE_LEFT:
+			_cursorCol = MAX(0,_cursorCol - n1);
 			break;
-		case VK_DOWN:
-			if(_row < getLineCount() - 1)
-				_row++;
+		case ESCC_MOVE_RIGHT:
+			_cursorCol = MIN(_cursorCol - 1,_cursorCol + n1);
 			break;
-		case VK_LEFT:
-			if(_cursorCol > 0)
-				_cursorCol--;
-			res = true;
+		case ESCC_MOVE_UP:
+			_row = MAX(_firstRow,_row - n1);
 			break;
-		case VK_RIGHT:
-			if(_cursorCol < COLUMNS - 1)
-				_cursorCol++;
-			res = true;
+		case ESCC_MOVE_DOWN:
+			_row = MIN(getLineCount() - 1,_row + n1);
 			break;
-		case VK_HOME:
-			if(value > 0) {
-				if(value > _cursorCol)
-					_cursorCol = 0;
-				else
-					_cursorCol -= value;
+		case ESCC_MOVE_HOME:
+			_cursorCol = 0;
+			_row = _firstRow;
+			break;
+		case ESCC_MOVE_LINESTART:
+			_cursorCol = 0;
+			break;
+		/*case ESCC_DEL_FRONT:
+			vterm_delete(vt,n1);
+			break;
+		case ESCC_DEL_BACK:
+			if(vt->readLine) {
+				vt->rlBufPos = MIN(vt->rlBufSize - 1,vt->rlBufPos + n1);
+				vt->rlBufPos = MIN((u32)vt->cols - vt->rlStartCol,vt->rlBufPos);
+				vt->col = vt->rlBufPos + vt->rlStartCol;
 			}
-			res = true;
+			else
+				vt->col = MIN(vt->cols - 1,vt->col + n1);
+			break;*/
+		case ESCC_COLOR:
+			if(n1 != ESCC_ARG_UNUSED)
+				_color = (_color & 0xF0) | MIN(15,n1);
+			else
+				_color = (_color & 0xF0) | BLACK;
+			if(n2 != ESCC_ARG_UNUSED)
+				_color = (_color & 0x0F) | (MIN(15,n2) << 4);
+			else
+				_color = (_color & 0x0F) | (WHITE << 4);
 			break;
-		case VK_END:
+
+
+		/*case VK_END:
 			if(value > 0) {
 				if(_cursorCol + value > COLUMNS - 1)
 					_cursorCol = COLUMNS - 1;
@@ -318,8 +371,8 @@ bool ShellControl::handleEscape(const char *s) {
 				_screenBackup = NULL;
 				repaint();
 			}
-			break;
+			break;*/
 	}
 
-	return res;
+	return true;
 }

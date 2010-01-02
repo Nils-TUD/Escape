@@ -58,6 +58,7 @@
 #define KBC_STATUS_PARITY_ERROR		(1 << 7)
 
 /* some bits in the command-byte */
+#define KBC_CMDBYTE_TRANSPSAUX		(1 << 6)
 #define KBC_CMDBYTE_DISABLE_KB		(1 << 4)
 #define KBC_CMDBYTE_ENABLE_IRQ12	(1 << 1)
 #define KBC_CMDBYTE_ENABLE_IRQ1		(1 << 0)
@@ -188,6 +189,7 @@ static void irqHandler(tSig sig,u32 data) {
 	u8 status;
 	UNUSED(sig);
 	UNUSED(data);
+#if 1
 	/* check if there is mouse-data */
 	status = inByte(IOPORT_KB_CTRL);
 	if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
@@ -214,6 +216,7 @@ static void irqHandler(tSig sig,u32 data) {
 			rb_write(ibuf,&mdata);
 			break;
 	}
+#endif
 }
 
 static void kb_init(void) {
@@ -231,7 +234,9 @@ static void kb_init(void) {
 	cmdByte = kb_read();
 	outByte(IOPORT_KB_CTRL,KBC_CMD_SET_STATUS);
 	kb_checkCmd();
-	cmdByte |= KBC_CMDBYTE_ENABLE_IRQ12 | KBC_CMDBYTE_ENABLE_IRQ1;
+	/* somehow cmdByte is 0 in vbox and qemu. we have to enable TRANSPSAUX in this case.
+	 * otherwise we get strange scancodes in the keyboard-driver */
+	cmdByte |= KBC_CMDBYTE_TRANSPSAUX | KBC_CMDBYTE_ENABLE_IRQ12 | KBC_CMDBYTE_ENABLE_IRQ1;
 	cmdByte &= ~KBC_CMDBYTE_DISABLE_KB;
 	outByte(IOPORT_KB_DATA,cmdByte);
 	kb_checkCmd();

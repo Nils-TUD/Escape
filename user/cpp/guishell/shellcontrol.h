@@ -25,6 +25,7 @@
 #include <esc/gui/common.h>
 #include <esc/gui/control.h>
 #include <esc/string.h>
+#include <esccodes.h>
 
 using namespace esc;
 using namespace esc::gui;
@@ -49,7 +50,7 @@ private:
 public:
 	ShellControl(tCoord x,tCoord y,tSize width,tSize height)
 		: Control(x,y,width,height), _color(WHITE << 4 | BLACK), _row(0), _col(0), _cursorCol(0),
-			_scrollRows(0), _firstRow(0), _navigation(true), _screenBackup(NULL),
+			_scrollRows(0), _firstRow(0), _navigation(true), _escapePos(-1), _screenBackup(NULL),
 			_rows(Vector<Vector<char>*>()) {
 		// insert first row
 		_rows.add(new Vector<char>(COLUMNS * 2));
@@ -61,7 +62,9 @@ public:
 	};
 	ShellControl(const ShellControl &e)
 		: Control(e), _color(e._color), _row(e._row), _col(e._col), _cursorCol(e._cursorCol),
-			_scrollRows(0), _firstRow(e._firstRow), _navigation(e._navigation) {
+			_scrollRows(0), _firstRow(e._firstRow), _navigation(e._navigation),
+			_escapePos(e._escapePos) {
+		memcpy(_escapeBuf,e._escapeBuf,sizeof(e._escapeBuf));
 		_screenBackup = new Vector<Vector<char>*>();
 		for(u32 i = 0; i < e._screenBackup->size(); i++)
 			_screenBackup->add(new Vector<char>(*((*e._screenBackup)[i])));
@@ -89,6 +92,8 @@ public:
 		_scrollRows = e._scrollRows;
 		_firstRow = e._firstRow;
 		_navigation = e._navigation;
+		_escapePos = e._escapePos;
+		memcpy(_escapeBuf,e._escapeBuf,sizeof(e._escapeBuf));
 		_screenBackup = new Vector<Vector<char>*>();
 		for(u32 i = 0; i < e._screenBackup->size(); i++)
 			_screenBackup->add(new Vector<char>(*((*e._screenBackup)[i])));
@@ -98,7 +103,7 @@ public:
 		return *this;
 	};
 
-	void append(const char *s);
+	void append(char *s,u32 len);
 	void scrollPage(s32 up);
 	void scrollLine(s32 up);
 	virtual void paint(Graphics &g);
@@ -110,7 +115,7 @@ private:
 	inline u32 getLineCount() const {
 		return (getHeight() / (getGraphics()->getFont().getHeight() + PADDING));
 	};
-	bool handleEscape(const char *s);
+	bool handleEscape(char **s);
 
 	u8 _color;
 	u32 _row;
@@ -119,6 +124,9 @@ private:
 	u32 _scrollRows;
 	u32 _firstRow;
 	bool _navigation;
+	/* the escape-state */
+	s32 _escapePos;
+	char _escapeBuf[MAX_ESCC_LENGTH];
 	Vector<Vector<char>*> *_screenBackup;
 	Vector<Vector<char>*> _rows;
 };

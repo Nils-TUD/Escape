@@ -78,11 +78,11 @@ int main(void) {
 		return app->run();
 	}
 
-	if(fork() == 0) {
+	/*if(fork() == 0) {
 		Application *app = Application::getInstance();
 		w1 = new MyImgWindow();
 		return app->run();
-	}
+	}*/
 
 	if(fork() == 0) {
 		Application *app = Application::getInstance();

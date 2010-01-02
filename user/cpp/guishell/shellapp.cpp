@@ -30,13 +30,6 @@ ShellApplication::ShellApplication(tServ sid,u32 no,ShellControl *sh)
 		: Application(), _sid(sid), _sh(sh) {
 	_inst = this;
 
-	// create input-buffer
-	_inbuf = rb_create(sizeof(char),GUISH_INBUF_SIZE,RB_OVERWRITE);
-	if(_inbuf == NULL) {
-		printe("Unable to create ring-buffer");
-		exit(EXIT_FAILURE);
-	}
-
 	// init read-buffer
 	rbuffer = new char[READ_BUF_SIZE];
 	rbufPos = 0;
@@ -47,7 +40,6 @@ ShellApplication::~ShellApplication() {
 }
 
 void ShellApplication::doEvents() {
-	u32 c;
 	tMsgId mid;
 	if(!eof(_winFd)) {
 		if(receive(_winFd,&mid,&_msg,sizeof(_msg)) < 0) {
@@ -56,146 +48,160 @@ void ShellApplication::doEvents() {
 		}
 
 		switch(mid) {
-			case MSG_WIN_KEYBOARD: {
-				u8 keycode = (u8)_msg.args.arg1;
-				bool isBreak = (bool)_msg.args.arg2;
-				char character = (char)_msg.args.arg4;
-				u8 modifier = (u8)_msg.args.arg5;
-				if(isBreak)
-					break;
-
-				switch(keycode) {
-					case VK_PGUP:
-						_sh->scrollPage(1);
-						break;
-					case VK_PGDOWN:
-						_sh->scrollPage(-1);
-						break;
-
-					case VK_UP:
-					case VK_DOWN:
-					case VK_D:
-					case VK_C:
-						if(modifier & SHIFT_MASK) {
-							switch(keycode) {
-								case VK_UP:
-									_sh->scrollLine(1);
-									break;
-								case VK_DOWN:
-									_sh->scrollLine(-1);
-									break;
-							}
-							break;
-						}
-						if(modifier & CTRL_MASK) {
-							switch(keycode) {
-								case VK_C:
-									// don't send it to the vterms
-									sendSignal(SIG_INTRPT,0xFFFFFFFF);
-									break;
-								case VK_D: {
-									char eof = IO_EOF;
-									putIn(&eof,1);
-								}
-								break;
-							}
-							break;
-						}
-						// fall through
-
-					default:
-						if(character)
-							putIn(&character,1);
-						else {
-							char str[] = {'\033',keycode,modifier};
-							putIn(str,3);
-						}
-						break;
-				}
-			}
-			break;
+			case MSG_WIN_KEYBOARD:
+				handleKbMsg();
+				break;
 
 			default:
 				handleMessage(mid,&_msg);
 				break;
 		}
 	}
-	else {
-		tServ client;
-		tFD fd = getClient(&_sid,1,&client);
-		if(fd < 0) {
-			// append the buffer now to reduce delays
-			if(rbufPos > 0) {
-				_sh->append(rbuffer,rbufPos);
-				rbufPos = 0;
-			}
-			wait(EV_CLIENT | EV_RECEIVED_MSG);
-		}
-		else {
-			u32 x = 0;
-			while(receive(fd,&mid,&_msg,sizeof(_msg)) > 0) {
-				switch(mid) {
-					case MSG_DRV_OPEN:
-						_msg.args.arg1 = 0;
-						send(fd,MSG_DRV_OPEN_RESP,&_msg,sizeof(_msg.args));
-						break;
-					case MSG_DRV_READ: {
-						// offset is ignored here
-						u32 count = _msg.args.arg2;
-						char *data = (char*)malloc(count);
-						_msg.args.arg1 = 0;
-						if(data)
-							_msg.args.arg1 = rb_readn(_inbuf,_msg.data.d,count);
-						_msg.args.arg2 = rb_length(_inbuf) > 0;
-						send(fd,MSG_DRV_READ_RESP,&_msg,sizeof(_msg.args));
-						if(data) {
-							send(fd,MSG_DRV_READ_RESP,data,count);
-							free(data);
-						}
-					}
-					break;
-					case MSG_DRV_WRITE: {
-						u32 amount;
-						char *data;
-						c = _msg.args.arg2;
-						data = (char*)malloc(c + 1);
-						_msg.args.arg1 = 0;
-						if(data) {
-							receive(fd,&mid,data,c + 1);
-							data[c] = '\0';
-							while(c > 0) {
-								amount = MIN(c,READ_BUF_SIZE - rbufPos);
-								memcpy(rbuffer + rbufPos,data,amount);
+	else
+		driverMain();
+}
 
-								c -= amount;
-								rbufPos += amount;
-								data += amount;
-								if(rbufPos >= READ_BUF_SIZE) {
-									_sh->append(rbuffer,rbufPos);
-									rbufPos = 0;
-								}
-							}
-							free(data);
-							_msg.args.arg1 = c;
-						}
-						send(fd,MSG_DRV_WRITE_RESP,&_msg,sizeof(_msg.args));
-					}
-					break;
-					case MSG_DRV_IOCTL: {
-						_msg.data.arg1 = ERR_UNSUPPORTED_OP;
-						send(fd,MSG_DRV_IOCTL_RESP,&_msg,sizeof(_msg.data));
-					}
-					break;
-					case MSG_DRV_CLOSE:
+void ShellApplication::handleKbMsg() {
+	u8 keycode = (u8)_msg.args.arg1;
+	bool isBreak = (bool)_msg.args.arg2;
+	char character = (char)_msg.args.arg4;
+	u8 modifier = (u8)_msg.args.arg5;
+	if(isBreak)
+		return;
+
+	switch(keycode) {
+		case VK_PGUP:
+			_sh->scrollPage(1);
+			break;
+		case VK_PGDOWN:
+			_sh->scrollPage(-1);
+			break;
+
+		case VK_END:
+		case VK_HOME:
+		case VK_LEFT:
+		case VK_RIGHT:
+		case VK_UP:
+		case VK_DOWN:
+		case VK_D:
+		case VK_C:
+			if(modifier & SHIFT_MASK) {
+				switch(keycode) {
+					case VK_UP:
+						_sh->scrollLine(1);
+						break;
+					case VK_DOWN:
+						_sh->scrollLine(-1);
 						break;
 				}
+				break;
 			}
-		}
+			if(modifier & CTRL_MASK) {
+				switch(keycode) {
+					case VK_C:
+						// don't send it to the vterms
+						sendSignal(SIG_INTRPT,0xFFFFFFFF);
+						break;
+					case VK_D: {
+						char eof = IO_EOF;
+						_sh->addToInBuf(&eof,1);
+					}
+					break;
+				}
+				break;
+			}
+			// fall through
+
+		default:
+			if(_sh->getReadLine()) {
+				if(modifier & CTRL_MASK) {
+					if(_sh->getEcho())
+						_sh->rlHandleKeycode(keycode);
+				}
+				else if(character)
+					_sh->rlPutchar(character);
+			}
+			else {
+				char escape[SSTRLEN("\033[kc;123;123;7]") + 1];
+				sprintf(escape,"\033[kc;%d;%d;%d]",character,keycode,modifier);
+				_sh->addToInBuf(escape,strlen(escape));
+			}
+			break;
 	}
 }
 
-void ShellApplication::putIn(char *s,u32 len) {
-	if(rb_length(_inbuf) == 0)
-		setDataReadable(_sid,true);
-	rb_writen(_inbuf,s,len);
+void ShellApplication::driverMain() {
+	tMsgId mid;
+	tServ client;
+	tFD fd = getClient(&_sid,1,&client);
+	if(fd < 0) {
+		// append the buffer now to reduce delays
+		if(rbufPos > 0) {
+			_sh->append(rbuffer,rbufPos);
+			rbufPos = 0;
+		}
+		wait(EV_CLIENT | EV_RECEIVED_MSG);
+	}
+	else {
+		while(receive(fd,&mid,&_msg,sizeof(_msg)) > 0) {
+			switch(mid) {
+				case MSG_DRV_OPEN:
+					_msg.args.arg1 = 0;
+					send(fd,MSG_DRV_OPEN_RESP,&_msg,sizeof(_msg.args));
+					break;
+				case MSG_DRV_READ: {
+					sRingBuf *inbuf = _sh->getInBuf();
+					// offset is ignored here
+					u32 count = _msg.args.arg2;
+					char *data = (char*)malloc(count);
+					_msg.args.arg1 = 0;
+					if(data)
+						_msg.args.arg1 = rb_readn(inbuf,data,count);
+					_msg.args.arg2 = rb_length(inbuf) > 0;
+					send(fd,MSG_DRV_READ_RESP,&_msg,sizeof(_msg.args));
+					if(data) {
+						send(fd,MSG_DRV_READ_RESP,data,count);
+						free(data);
+					}
+				}
+				break;
+				case MSG_DRV_WRITE: {
+					u32 amount;
+					char *data;
+					u32 c = _msg.args.arg2;
+					data = (char*)malloc(c + 1);
+					_msg.args.arg1 = 0;
+					if(data) {
+						receive(fd,&mid,data,c + 1);
+						data[c] = '\0';
+						while(c > 0) {
+							amount = MIN(c,READ_BUF_SIZE - rbufPos);
+							memcpy(rbuffer + rbufPos,data,amount);
+
+							c -= amount;
+							rbufPos += amount;
+							data += amount;
+							if(rbufPos >= READ_BUF_SIZE) {
+								_sh->append(rbuffer,rbufPos);
+								rbufPos = 0;
+							}
+						}
+						free(data);
+						_msg.args.arg1 = c;
+					}
+					send(fd,MSG_DRV_WRITE_RESP,&_msg,sizeof(_msg.args));
+				}
+				break;
+				case MSG_DRV_IOCTL: {
+					bool readKeyboard; // TODO
+					_msg.data.arg1 = _sh->ioctl(_msg.data.arg1,_msg.data.d,&readKeyboard);
+					send(fd,MSG_DRV_IOCTL_RESP,&_msg,sizeof(_msg.data));
+				}
+				break;
+				case MSG_DRV_CLOSE:
+					break;
+			}
+		}
+		close(fd);
+	}
 }

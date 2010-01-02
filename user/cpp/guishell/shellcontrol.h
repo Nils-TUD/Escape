@@ -25,12 +25,17 @@
 #include <esc/gui/common.h>
 #include <esc/gui/control.h>
 #include <esc/string.h>
+#include <ringbuffer.h>
 #include <esccodes.h>
 
 using namespace esc;
 using namespace esc::gui;
 
+class ShellApplication;
+
 class ShellControl : public Control {
+	friend class ShellApplication;
+
 private:
 	typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
 	static Color COLORS[16];
@@ -42,35 +47,40 @@ private:
 	static const u32 PADDING = 3;
 	static const u32 CURSOR_WIDTH = 2;
 	static const u32 CURSOR_OVERLAP = 2;
+	static const u32 INITIAL_RLBUF_SIZE = 50;
+	static const u32 RLBUF_INCR = 20;
+	static const u32 GUISH_INBUF_SIZE = 128;
 	static const Color BGCOLOR;
 	static const Color FGCOLOR;
 	static const Color BORDER_COLOR;
 	static const Color CURSOR_COLOR;
 
 public:
-	ShellControl(tCoord x,tCoord y,tSize width,tSize height)
-		: Control(x,y,width,height), _color(WHITE << 4 | BLACK), _row(0), _col(0), _cursorCol(0),
-			_scrollRows(0), _firstRow(0), _navigation(true), _escapePos(-1), _screenBackup(NULL),
-			_rows(Vector<Vector<char>*>()) {
+	ShellControl(tServ sid,tCoord x,tCoord y,tSize width,tSize height)
+		: Control(x,y,width,height), _sid(sid), _color(WHITE << 4 | BLACK),
+			_row(0), _col(0), _cursorCol(0),
+			_scrollRows(0), _firstRow(0), _navigation(true), _rlStartCol(0),
+			_rlBufSize(INITIAL_RLBUF_SIZE), _rlBufPos(0), _readline(true), _echo(true),
+			_escapePos(-1), _screenBackup(NULL), _rows(Vector<Vector<char>*>()) {
 		// insert first row
 		_rows.add(new Vector<char>(COLUMNS * 2));
+
+		_rlBuffer = new char[_rlBufSize];
+
+		// create input-buffer
+		_inbuf = rb_create(sizeof(char),GUISH_INBUF_SIZE,RB_OVERWRITE);
+		if(_inbuf == NULL) {
+			printe("Unable to create ring-buffer");
+			exit(EXIT_FAILURE);
+		}
 
 		// request ports for qemu and bochs
 		requestIOPort(0xe9);
 		requestIOPort(0x3f8);
 		requestIOPort(0x3fd);
 	};
-	ShellControl(const ShellControl &e)
-		: Control(e), _color(e._color), _row(e._row), _col(e._col), _cursorCol(e._cursorCol),
-			_scrollRows(0), _firstRow(e._firstRow), _navigation(e._navigation),
-			_escapePos(e._escapePos) {
-		memcpy(_escapeBuf,e._escapeBuf,sizeof(e._escapeBuf));
-		_screenBackup = new Vector<Vector<char>*>();
-		for(u32 i = 0; i < e._screenBackup->size(); i++)
-			_screenBackup->add(new Vector<char>(*((*e._screenBackup)[i])));
-		_rows = Vector<Vector<char>*>();
-		for(u32 i = 0; i < e._rows.size(); i++)
-			_rows.add(new Vector<char>(*e._rows[i]));
+	ShellControl(const ShellControl &e) : Control(e) {
+		clone(e);
 	};
 	virtual ~ShellControl() {
 		for(u32 i = 0; i < _rows.size(); i++)
@@ -85,6 +95,41 @@ public:
 		if(this == &e)
 			return *this;
 		Control::operator=(e);
+		clone(e);
+		return *this;
+	};
+
+	void append(char *s,u32 len);
+	void scrollPage(s32 up);
+	void scrollLine(s32 up);
+	virtual void paint(Graphics &g);
+	inline bool getReadLine() {
+		return _readline;
+	};
+	inline bool getEcho() {
+		return _echo;
+	};
+
+private:
+	void append(char c);
+	void clearRows(Graphics &g,u32 start,u32 count);
+	void paintRows(Graphics &g,u32 start,u32 count);
+	inline u32 getLineCount() const {
+		return (getHeight() / (getGraphics()->getFont().getHeight() + PADDING));
+	};
+	inline sRingBuf *getInBuf() {
+		return _inbuf;
+	};
+	bool handleEscape(char **s);
+	bool rlHandleKeycode(u8 keycode);
+	void rlPutchar(char c);
+	u32 rlGetBufPos();
+	void rlFlushBuf();
+	void addToInBuf(char *s,u32 len);
+	s32 ioctl(u32 cmd,void *data,bool *readKb);
+
+	void clone(const ShellControl &e) {
+		_sid = e._sid;
 		_color = e._color;
 		_row = e._row;
 		_col = e._col;
@@ -94,29 +139,22 @@ public:
 		_navigation = e._navigation;
 		_escapePos = e._escapePos;
 		memcpy(_escapeBuf,e._escapeBuf,sizeof(e._escapeBuf));
+		_rlStartCol = e._rlStartCol;
+		_rlBufSize = e._rlBufSize;
+		_rlBufPos = e._rlBufPos;
+		_rlBuffer = new char[_rlBufSize];
+		_readline = e._readline;
+		_echo = e._echo;
+		memcpy(_rlBuffer,e._rlBuffer,_rlBufSize);
 		_screenBackup = new Vector<Vector<char>*>();
 		for(u32 i = 0; i < e._screenBackup->size(); i++)
 			_screenBackup->add(new Vector<char>(*((*e._screenBackup)[i])));
 		_rows = Vector<Vector<char>*>();
 		for(u32 i = 0; i < e._rows.size(); i++)
 			_rows.add(new Vector<char>(*e._rows[i]));
-		return *this;
 	};
 
-	void append(char *s,u32 len);
-	void scrollPage(s32 up);
-	void scrollLine(s32 up);
-	virtual void paint(Graphics &g);
-
-private:
-	void append(char c);
-	void clearRows(Graphics &g,u32 start,u32 count);
-	void paintRows(Graphics &g,u32 start,u32 count);
-	inline u32 getLineCount() const {
-		return (getHeight() / (getGraphics()->getFont().getHeight() + PADDING));
-	};
-	bool handleEscape(char **s);
-
+	tServ _sid;
 	u8 _color;
 	u32 _row;
 	u32 _col;
@@ -124,7 +162,14 @@ private:
 	u32 _scrollRows;
 	u32 _firstRow;
 	bool _navigation;
-	/* the escape-state */
+	u8 _rlStartCol;
+	u32 _rlBufSize;
+	u32 _rlBufPos;
+	char *_rlBuffer;
+	bool _readline;
+	bool _echo;
+	sRingBuf *_inbuf;
+	// the escape-state
 	s32 _escapePos;
 	char _escapeBuf[MAX_ESCC_LENGTH];
 	Vector<Vector<char>*> *_screenBackup;

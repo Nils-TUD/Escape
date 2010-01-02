@@ -85,7 +85,7 @@ int main(int argc,char **argv) {
 			error("Unable to re-register driver %s",servName);
 
 		// now start GUI
-		ShellControl sh(0,0,500,280);
+		ShellControl sh(sid,0,0,500,280);
 		ShellApplication *app = new ShellApplication(sid,no,&sh);
 		Window w("Shell",100,100,500,300);
 		w.add(sh);

@@ -20,6 +20,8 @@
 #include <esc/common.h>
 #include <esc/gui/common.h>
 #include <esc/gui/color.h>
+#include <esc/service.h>
+#include <errors.h>
 #include "shellcontrol.h"
 
 using namespace esc;
@@ -278,6 +280,152 @@ void ShellControl::append(char c) {
 	}
 }
 
+bool ShellControl::rlHandleKeycode(u8 keycode) {
+	bool res = false;
+	switch(keycode) {
+		case VK_LEFT:
+			if(_cursorCol > _rlStartCol)
+				_cursorCol--;
+			res = true;
+			break;
+		case VK_RIGHT:
+			if(_cursorCol < _rlStartCol + _rlBufPos)
+				_cursorCol++;
+			res = true;
+			break;
+		case VK_HOME:
+			if(_cursorCol != _rlStartCol)
+				_cursorCol = _rlStartCol;
+			res = true;
+			break;
+		case VK_END:
+			if(_cursorCol != _rlStartCol + _rlBufPos)
+				_cursorCol = _rlStartCol + _rlBufPos;
+			res = true;
+			break;
+	}
+	return res;
+}
+
+void ShellControl::rlPutchar(char c) {
+	switch(c) {
+		case '\b': {
+			u32 bufPos = rlGetBufPos();
+			if(bufPos > 0) {
+				if(_echo)
+					append('\b');
+
+				/* move chars back */
+				memmove(_rlBuffer + bufPos - 1,_rlBuffer + bufPos,_rlBufPos - bufPos);
+				/* remove last */
+				_rlBuffer[_rlBufPos - 1] = '\0';
+				_rlBufPos--;
+
+				/* overwrite line */
+				//vterm_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
+			}
+		}
+		break;
+
+		case '\r':
+		case '\a':
+		case '\t':
+			/* ignore */
+			break;
+
+		default: {
+			bool flushed = false;
+			bool moved = false;
+			u32 bufPos = rlGetBufPos();
+
+			/* increase buffer size? */
+			if(_rlBuffer && bufPos >= _rlBufSize) {
+				_rlBufSize += RLBUF_INCR;
+				_rlBuffer = (char*)realloc(_rlBuffer,_rlBufSize);
+			}
+			if(_rlBuffer == NULL)
+				return;
+
+			/* move chars forward */
+			if(bufPos < _rlBufPos) {
+				memmove(_rlBuffer + bufPos + 1,_rlBuffer + bufPos,_rlBufPos - bufPos);
+				moved = true;
+			}
+
+			/** add char */
+			_rlBuffer[bufPos] = c;
+			_rlBufPos++;
+
+			/* TODO later we should allow "multiline-editing" */
+			if(c == '\n' || _rlStartCol + _rlBufPos >= COLUMNS) {
+				flushed = true;
+				rlFlushBuf();
+			}
+
+			/* echo character, if required */
+			if(_echo) {
+				if(moved && !flushed) {
+					u32 count = _rlBufPos - bufPos + 1;
+					char *copy = (char*)malloc(count * sizeof(char));
+					if(copy != NULL) {
+						/* print the end of the buffer again */
+						strncpy(copy,_rlBuffer + bufPos,count - 1);
+						copy[count - 1] = '\0';
+						append(copy,count - 1);
+						free(copy);
+
+						/* reset cursor */
+						_cursorCol = _rlStartCol + bufPos + 1;
+					}
+				}
+				else if(c != IO_EOF) {
+					append(c);
+					// just repaint the changed rows
+					Graphics *g = getGraphics();
+					clearRows(*g,_row,1);
+					paintRows(*g,_row,1);
+					requestUpdate();
+				}
+			}
+			if(flushed)
+				_rlStartCol = _cursorCol;
+		}
+		break;
+	}
+}
+
+u32 ShellControl::rlGetBufPos() {
+	if(_echo)
+		return _cursorCol - _rlStartCol;
+	else
+		return _rlBufPos;
+}
+
+void ShellControl::rlFlushBuf() {
+	u32 i,len,bufPos = rlGetBufPos();
+	if(_echo)
+		bufPos++;
+
+	len = rb_length(_inbuf);
+
+	i = 0;
+	while(bufPos > 0) {
+		rb_write(_inbuf,_rlBuffer + i);
+		bufPos--;
+		i++;
+	}
+	_rlBufPos = 0;
+
+	if(len == 0)
+		setDataReadable(_sid,true);
+}
+
+void ShellControl::addToInBuf(char *s,u32 len) {
+	if(rb_length(_inbuf) == 0)
+		setDataReadable(_sid,true);
+	rb_writen(_inbuf,s,len);
+}
+
 bool ShellControl::handleEscape(char **s) {
 	s32 cmd,n1,n2,n3;
 	cmd = escc_get((const char**)s,&n1,&n2,&n3);
@@ -286,7 +434,7 @@ bool ShellControl::handleEscape(char **s) {
 
 	switch(cmd) {
 		case ESCC_MOVE_LEFT:
-			_cursorCol = MAX(0,_cursorCol - n1);
+			_cursorCol = (s32)_cursorCol > n1 ? _cursorCol - n1 : 0;
 			break;
 		case ESCC_MOVE_RIGHT:
 			_cursorCol = MIN(_cursorCol - 1,_cursorCol + n1);
@@ -304,18 +452,6 @@ bool ShellControl::handleEscape(char **s) {
 		case ESCC_MOVE_LINESTART:
 			_cursorCol = 0;
 			break;
-		/*case ESCC_DEL_FRONT:
-			vterm_delete(vt,n1);
-			break;
-		case ESCC_DEL_BACK:
-			if(vt->readLine) {
-				vt->rlBufPos = MIN(vt->rlBufSize - 1,vt->rlBufPos + n1);
-				vt->rlBufPos = MIN((u32)vt->cols - vt->rlStartCol,vt->rlBufPos);
-				vt->col = vt->rlBufPos + vt->rlStartCol;
-			}
-			else
-				vt->col = MIN(vt->cols - 1,vt->col + n1);
-			break;*/
 		case ESCC_COLOR:
 			if(n1 != ESCC_ARG_UNUSED)
 				_color = (_color & 0xF0) | MIN(15,n1);
@@ -326,33 +462,48 @@ bool ShellControl::handleEscape(char **s) {
 			else
 				_color = (_color & 0x0F) | (WHITE << 4);
 			break;
+	}
 
+	return true;
+}
 
-		/*case VK_END:
-			if(value > 0) {
-				if(_cursorCol + value > COLUMNS - 1)
-					_cursorCol = COLUMNS - 1;
-				else
-					_cursorCol += value;
-			}
-			res = true;
+s32 ShellControl::ioctl(u32 cmd,void *data,bool *readKb) {
+	s32 res = 0;
+	UNUSED(data);
+	switch(cmd) {
+		/*case IOCTL_VT_SHELLPID:
+			// do it just once
+			if(vt->shellPid == 0)
+				vt->shellPid = *(tPid*)data;
+			break;*/
+		case IOCTL_VT_EN_ECHO:
+			_echo = true;
 			break;
-		case VK_ESC_RESET:
-			_color = (WHITE << 4) | BLACK;
-			res = true;
+		case IOCTL_VT_DIS_ECHO:
+			_echo = false;
 			break;
-		case VK_ESC_FG:
-			_color = (_color & 0xF0) | MIN(15,value);
-			res = true;
+		case IOCTL_VT_EN_RDLINE:
+			_readline = true;
+			/* reset reading */
+			_rlBufPos = 0;
+			_rlStartCol = _cursorCol;
 			break;
-		case VK_ESC_BG:
-			_color = (_color & 0x0F) | (MIN(15,value) << 4);
-			res = true;
+		case IOCTL_VT_DIS_RDLINE:
+			_readline = false;
 			break;
-		case VK_ESC_NAVI:
-			_navigation = value ? true : false;
+		case IOCTL_VT_EN_RDKB:
+			*readKb = true;
 			break;
-		case VK_ESC_BACKUP: {
+		case IOCTL_VT_DIS_RDKB:
+			*readKb = false;
+			break;
+		case IOCTL_VT_EN_NAVI:
+			_navigation = true;
+			break;
+		case IOCTL_VT_DIS_NAVI:
+			_navigation = false;
+			break;
+		case IOCTL_VT_BACKUP: {
 			if(!_screenBackup)
 				_screenBackup = new Vector<Vector<char>*>();
 			u32 start = MAX(0,(s32)_rows.size() - getLineCount());
@@ -360,7 +511,7 @@ bool ShellControl::handleEscape(char **s) {
 				_screenBackup->add(new Vector<char>(*_rows[i]));
 		}
 		break;
-		case VK_ESC_RESTORE:
+		case IOCTL_VT_RESTORE: {
 			if(_screenBackup) {
 				u32 start = MAX(0,(s32)_rows.size() - getLineCount());
 				for(u32 i = 0; i < _screenBackup->size(); i++) {
@@ -371,8 +522,19 @@ bool ShellControl::handleEscape(char **s) {
 				_screenBackup = NULL;
 				repaint();
 			}
-			break;*/
+		}
+		break;
+		case IOCTL_VT_GETSIZE: {
+			sIoCtlSize *size = (sIoCtlSize*)data;
+			size->width = COLUMNS;
+			// one line for the title
+			size->height = ROWS;
+			res = sizeof(sIoCtlSize);
+		}
+		break;
+		default:
+			res = ERR_UNSUPPORTED_OP;
+			break;
 	}
-
-	return true;
+	return res;
 }

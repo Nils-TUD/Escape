@@ -31,8 +31,6 @@
 #define UPDATE_BUF_SIZE		256
 // the total size of the buffer
 #define READ_BUF_SIZE		512
-// the size of the ring-buffer
-#define GUISH_INBUF_SIZE	128
 
 using namespace esc::gui;
 
@@ -46,11 +44,13 @@ protected:
 
 private:
 	void putIn(char *s,u32 len);
+	void handleKbMsg();
+	void handleKeycode();
+	void driverMain();
 
 private:
 	tServ _sid;
 	ShellControl *_sh;
-	sRingBuf *_inbuf;
 	char *rbuffer;
 	u32 rbufPos;
 };

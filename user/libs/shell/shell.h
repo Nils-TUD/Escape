@@ -79,7 +79,7 @@ u32 shell_readLine(char *buffer,u32 max);
  * @param cursorPos the current cursor-position in the buffer (may be changed)
  * @param charcount the number of read characters so far (may be changed)
  */
-void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos,u32 *charcount);
+bool shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos,u32 *charcount);
 
 /**
  * Completes the current input, if possible

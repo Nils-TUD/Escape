@@ -280,8 +280,8 @@ u32 shell_readLine(char *buffer,u32 max) {
 		}
 
 		if(n3 != 0 || (n1 != '\t' && n1 != '\n' && !isprint(n1))) {
-			shell_handleSpecialKey(buffer,n2,n3,&cursorPos,&i);
-			continue;
+			if(shell_handleSpecialKey(buffer,n2,n3,&cursorPos,&i) || !isprint(n1))
+				continue;
 		}
 		if(n1 == '\t') {
 			shell_complete(buffer,&cursorPos,&i);
@@ -326,7 +326,8 @@ u32 shell_readLine(char *buffer,u32 max) {
 	return i;
 }
 
-void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos,u32 *charcount) {
+bool shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos,u32 *charcount) {
+	bool res = false;
 	char *line = NULL;
 	u32 icursorPos = *cursorPos;
 	u32 icharcount = *charcount;
@@ -344,6 +345,7 @@ void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 						printc('\b');
 					flush();
 				}
+				res = true;
 			}
 			break;
 
@@ -359,6 +361,7 @@ void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 				printc('\b');
 				flush();
 			}
+			res = true;
 			break;
 		/* write escape-code back */
 		case VK_DELETE:
@@ -368,18 +371,21 @@ void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 				icursorPos++;
 				shell_handleSpecialKey(buffer,VK_BACKSP,0,&icursorPos,&icharcount);
 			}
+			res = true;
 			break;
 		case VK_HOME:
 			if(icursorPos > 0) {
 				printf("\033[ml;%d]",icursorPos);
 				icursorPos = 0;
 			}
+			res = true;
 			break;
 		case VK_END:
 			if(icursorPos < icharcount) {
 				printf("\033[mr;%d]",icharcount - icursorPos);
 				icursorPos = icharcount;
 			}
+			res = true;
 			break;
 		case VK_RIGHT:
 			if(icursorPos < icharcount) {
@@ -394,6 +400,7 @@ void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 					printf("\033[mr]");
 				}
 			}
+			res = true;
 			break;
 		case VK_LEFT:
 			if(icursorPos > 0) {
@@ -408,12 +415,15 @@ void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 					printf("\033[ml]");
 				}
 			}
+			res = true;
 			break;
 		case VK_UP:
 			line = shell_histUp();
+			res = true;
 			break;
 		case VK_DOWN:
 			line = shell_histDown();
+			res = true;
 			break;
 	}
 
@@ -443,6 +453,8 @@ void shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 		*cursorPos = icursorPos;
 		*charcount = icharcount;
 	}
+
+	return res;
 }
 
 static u16 shell_toNextWord(char *buffer,u32 icharcount,u32 *icursorPos) {

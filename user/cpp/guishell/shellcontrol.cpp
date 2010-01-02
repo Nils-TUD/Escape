@@ -437,7 +437,7 @@ bool ShellControl::handleEscape(char **s) {
 			_cursorCol = (s32)_cursorCol > n1 ? _cursorCol - n1 : 0;
 			break;
 		case ESCC_MOVE_RIGHT:
-			_cursorCol = MIN(_cursorCol - 1,_cursorCol + n1);
+			_cursorCol = MIN(COLUMNS - 1,_cursorCol + n1);
 			break;
 		case ESCC_MOVE_UP:
 			_row = MAX(_firstRow,_row - n1);
@@ -506,17 +506,35 @@ s32 ShellControl::ioctl(u32 cmd,void *data,bool *readKb) {
 		case IOCTL_VT_BACKUP: {
 			if(!_screenBackup)
 				_screenBackup = new Vector<Vector<char>*>();
-			u32 start = MAX(0,(s32)_rows.size() - getLineCount());
+			u32 start,lines = getLineCount();
+			if(_rows.size() > lines)
+				start = _rows.size() - lines;
+			else
+				start = 0;
 			for(u32 i = start; i < _rows.size(); i++)
 				_screenBackup->add(new Vector<char>(*_rows[i]));
 		}
 		break;
 		case IOCTL_VT_RESTORE: {
 			if(_screenBackup) {
-				u32 start = MAX(0,(s32)_rows.size() - getLineCount());
+				u32 start,lines = getLineCount();
+				if(_screenBackup->size() > lines)
+					start = _screenBackup->size() - lines;
+				else {
+					start = 0;
+					for(u32 i = 0; i < _rows.size(); i++)
+						delete _rows[i];
+					_rows.removeAll();
+					_row = MIN(_row,_screenBackup->size() - 1);
+					_firstRow = 0;
+				}
 				for(u32 i = 0; i < _screenBackup->size(); i++) {
-					delete _rows[start + i];
-					_rows[start + i] = new Vector<char>(*((*_screenBackup)[i]));
+					if(start == 0)
+						_rows.add(new Vector<char>(*((*_screenBackup)[i])));
+					else {
+						delete _rows[start + i];
+						_rows[start + i] = new Vector<char>(*((*_screenBackup)[i]));
+					}
 				}
 				delete _screenBackup;
 				_screenBackup = NULL;

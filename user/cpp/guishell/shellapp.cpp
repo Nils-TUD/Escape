@@ -71,12 +71,7 @@ void ShellApplication::handleKbMsg() {
 
 	switch(keycode) {
 		case VK_PGUP:
-			_sh->scrollPage(1);
-			break;
 		case VK_PGDOWN:
-			_sh->scrollPage(-1);
-			break;
-
 		case VK_END:
 		case VK_HOME:
 		case VK_LEFT:
@@ -85,13 +80,19 @@ void ShellApplication::handleKbMsg() {
 		case VK_DOWN:
 		case VK_D:
 		case VK_C:
-			if(modifier & SHIFT_MASK) {
+			if((modifier & SHIFT_MASK) && _sh->getNavigation()) {
 				switch(keycode) {
 					case VK_UP:
 						_sh->scrollLine(1);
 						break;
 					case VK_DOWN:
 						_sh->scrollLine(-1);
+						break;
+					case VK_PGUP:
+						_sh->scrollPage(1);
+						break;
+					case VK_PGDOWN:
+						_sh->scrollPage(-1);
 						break;
 				}
 				break;

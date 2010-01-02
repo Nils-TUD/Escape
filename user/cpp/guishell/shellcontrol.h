@@ -109,6 +109,9 @@ public:
 	inline bool getEcho() {
 		return _echo;
 	};
+	inline bool getNavigation() {
+		return _navigation;
+	};
 
 private:
 	void append(char c);

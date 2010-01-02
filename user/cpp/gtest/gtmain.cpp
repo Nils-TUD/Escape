@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
+#include <esc/debug.h>
 #include <messages.h>
 #include <esc/io.h>
 #include <esc/thread.h>
@@ -78,16 +79,18 @@ int main(void) {
 		return app->run();
 	}
 
-	/*if(fork() == 0) {
-		Application *app = Application::getInstance();
-		w1 = new MyImgWindow();
-		return app->run();
-	}*/
+	if(fork() == 0) {
+		//Application *app = Application::getInstance();
+		//w1 = new MyImgWindow();
+		//return app->run();
+		return 0;
+	}
 
 	if(fork() == 0) {
-		Application *app = Application::getInstance();
-		w1 = new Window("Window 3",50,50,100,40);
-		return app->run();
+		//Application *app = Application::getInstance();
+		//w1 = new Window("Window 3",50,50,100,40);
+		//return app->run();
+		return 0;
 	}
 #if 1
 	if(fork() == 0) {
@@ -95,6 +98,11 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 #endif
+
+	/*while(1) {
+		sleep(1000);
+		debug();
+	}*/
 
 	Application *app = Application::getInstance();
 	w1 = new Window("Window 4",180,90,200,100);

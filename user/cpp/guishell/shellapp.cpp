@@ -136,6 +136,8 @@ void ShellApplication::driverMain() {
 	tServ client;
 	tFD fd = getClient(&_sid,1,&client);
 	if(fd < 0) {
+		if(fd != ERR_NO_CLIENT_WAITING)
+			printe("Unable to get client");
 		// append the buffer now to reduce delays
 		if(rbufPos > 0) {
 			_sh->append(rbuffer,rbufPos);

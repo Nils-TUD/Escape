@@ -210,6 +210,7 @@ void ShellControl::append(char *s,u32 len) {
 }
 
 void ShellControl::append(char c) {
+#ifndef PROFILE
 	// write to bochs/qemu console (\r not necessary here)
 	if(c != '\r' && c != '\a' && c != '\b' && c != '\t') {
 		outByte(0xe9,c);
@@ -217,6 +218,7 @@ void ShellControl::append(char c) {
 		while((inByte(0x3fd) & 0x20) == 0)
 			;
 	}
+#endif
 
 	switch(c) {
 		case '\t': {

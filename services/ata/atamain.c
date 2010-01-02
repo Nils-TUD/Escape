@@ -86,6 +86,8 @@ int main(void) {
 	while(1) {
 		tFD fd = getClient(services,servCount,&client);
 		if(fd < 0) {
+			if(fd != ERR_NO_CLIENT_WAITING)
+				printe("[ata] Unable to get client");
 			wait(EV_CLIENT);
 		}
 		else {
@@ -94,6 +96,7 @@ int main(void) {
 			sPartition *part = (drv == NULL || drive == NULL) ? NULL : (drive->partTable + drv->partition);
 			if(drv == NULL || drive->present == 0 || part->present == 0) {
 				/* should never happen */
+				printe("[ata] Invalid drive");
 				close(fd);
 				continue;
 			}

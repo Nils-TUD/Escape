@@ -189,7 +189,7 @@ static void irqHandler(tSig sig,u32 data) {
 	u8 status;
 	UNUSED(sig);
 	UNUSED(data);
-#if 1
+
 	/* check if there is mouse-data */
 	status = inByte(IOPORT_KB_CTRL);
 	if(!(status & KBC_STATUS_MOUSE_DATA_AVAIL))
@@ -216,7 +216,6 @@ static void irqHandler(tSig sig,u32 data) {
 			rb_write(ibuf,&mdata);
 			break;
 	}
-#endif
 }
 
 static void kb_init(void) {

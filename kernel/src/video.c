@@ -138,6 +138,7 @@ void vid_putchar(char c) {
 	vid_move();
 	video = (char*)(VIDEO_BASE + row * COLS * 2 + col * 2);
 
+#ifndef PROFILE
 	/* write to bochs/qemu console (some chars make no sense here) */
 	if(c != '\r' && c != '\t' && c != '\b') {
 		util_outByte(0xe9,c);
@@ -145,6 +146,7 @@ void vid_putchar(char c) {
 	    while((util_inByte(0x3fd) & 0x20) == 0)
 	    	;
 	}
+#endif
 
 	if(c == '\n') {
 		/* to next line */

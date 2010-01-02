@@ -22,6 +22,10 @@
 
 #include "common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef u32 tULock;
 
 /**
@@ -72,5 +76,9 @@ void unlocku(tULock *lock);
  * @return 0 on success
  */
 s32 unlockg(u32 ident);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LOCK_H_ */

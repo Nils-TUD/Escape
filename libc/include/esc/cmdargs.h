@@ -22,6 +22,10 @@
 
 #include <esc/common.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Checks wether the given arguments may be a kind of help-request. That means one of:
  * <prog> --help
@@ -33,5 +37,9 @@
  * @return true if it is a help-request
  */
 bool isHelpCmd(int argc,char **argv);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CMDARGS_H_ */

@@ -26,6 +26,7 @@
 #include <esc/service.h>
 #include <esc/dir.h>
 #include <esc/thread.h>
+#include <esc/lock.h>
 #include <stdlib.h>
 
 #include <esc/gui/application.h>
@@ -37,6 +38,7 @@
 #include "shellcontrol.h"
 #include "shellapp.h"
 
+#define GUI_SHELL_LOCK		0x4129927
 #define MAX_VTERM_NAME_LEN	10
 
 using namespace esc::gui;
@@ -62,6 +64,9 @@ int main(int argc,char **argv) {
 		return shell_executeCmd(argv[2]);
 	}
 
+	// use a lock here to ensure that no one uses our guiterm-number
+	lockg(GUI_SHELL_LOCK);
+
 	// announce service; try to find an unused service-name because maybe a user wants
 	// to start us multiple times
 	tServ sid;
@@ -81,6 +86,7 @@ int main(int argc,char **argv) {
 	if(fork() == 0) {
 		// re-register service
 		sid = regService(servName,SERV_DRIVER);
+		unlockg(GUI_SHELL_LOCK);
 		if(sid < 0)
 			error("Unable to re-register driver %s",servName);
 

@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #ifdef IN_KERNEL
+#	include <machine/cpu.h>
 #	include <video.h>
 #	include <util.h>
 #	include <ksymbols.h>
@@ -28,6 +29,7 @@
 #else
 #	include <esc/fileio.h>
 #	include <esc/ports.h>
+#	include <esc/debug.h>
 #	define prprintf		debugf
 #	define outb			outByte
 #	define inb			inByte
@@ -35,17 +37,37 @@
 
 #define STACK_SIZE	1024
 
-#if IN_KERNEL
+#ifdef PROFILE
 static void logStr(const char *s);
 static void logUnsigned(u32 n,u8 base);
 static void logChar(char c);
 
+static bool initialized = false;
 static u32 stackPos = 0;
 static u64 callStack[STACK_SIZE];
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void __cyg_profile_func_enter(void *this_fn,void *call_site);
+void __cyg_profile_func_exit(void *this_fn,void *call_site);
+
+#ifdef __cplusplus
+}
+#endif
+
 void __cyg_profile_func_enter(void *this_fn,void *call_site) {
+	UNUSED(call_site);
 #if IN_KERNEL
 	sSymbol *sym;
+#else
+	if(!initialized) {
+		requestIOPort(0xe9);
+		requestIOPort(0x3f8);
+		requestIOPort(0x3fd);
+		initialized = true;
+	}
 #endif
 	logChar('>');
 #if IN_KERNEL
@@ -59,6 +81,8 @@ void __cyg_profile_func_enter(void *this_fn,void *call_site) {
 }
 
 void __cyg_profile_func_exit(void *this_fn,void *call_site) {
+	UNUSED(this_fn);
+	UNUSED(call_site);
 	u64 now;
 	if(stackPos <= 0)
 		return;

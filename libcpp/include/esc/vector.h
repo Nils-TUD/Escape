@@ -91,6 +91,13 @@ namespace esc {
 		bool removeFirst(const T &value);
 
 		/**
+		 * Removes all elements
+		 *
+		 * @return the number of removed elements
+		 */
+		u32 removeAll();
+
+		/**
 		 * Removes all values that equal <value>
 		 *
 		 * @param value the value to remove
@@ -180,6 +187,14 @@ namespace esc {
 				return remove(i);
 		}
 		return false;
+	}
+
+	template<class T>
+	u32 Vector<T>::removeAll() {
+		u32 c = _elCount;
+		while(_elCount > 0)
+			remove(0);
+		return c;
 	}
 
 	template<class T>

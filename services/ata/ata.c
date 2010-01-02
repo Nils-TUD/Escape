@@ -136,8 +136,8 @@ bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCoun
 			else {
 				ATA_PR2("Reading: wait for interrupt");
 				/* FIXME: actually we should wait for an interrupt here. but this doesn't work
-				 * in virtualbox. using polling here seems to work with all simulators and with my
-				 * old notebook fine */
+				 * in virtualbox. using polling here seems to work fine with all simulators and
+				 * with my old notebook */
 				/*ata_waitIntrpt();*/
 				status = inByte(basePort + REG_STATUS);
 			}
@@ -148,6 +148,19 @@ bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCoun
 				debugf("[ata] error: %x\n",inByte(basePort + REG_ERROR));
 				return false;
 			}
+
+#if 0
+			if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == 0) {
+				/* do a software-reset */
+				outByte(basePort + REG_CONTROL,4);
+				outByte(basePort + REG_CONTROL,0);
+				ata_wait(drive);
+				do {
+					status = inByte(basePort + REG_STATUS);
+				}
+				while((status & (CMD_ST_BUSY | CMD_ST_READY)) != CMD_ST_READY);
+			}
+#endif
 		}
 		while(true);
 		ATA_PR2("Ready, starting read/write");

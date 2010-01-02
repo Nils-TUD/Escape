@@ -40,6 +40,7 @@
 #		define vassert(cond,errorMsg,...) do { if(!(cond)) { \
 			printe("Assert '" #cond "' failed at %s, %s() line %d: " errorMsg,__FILE__,__FUNCTION__,\
 				__LINE__,## __VA_ARGS__); \
+			printStackTrace(); \
 			exit(1); \
 		} } while(0);
 #	endif

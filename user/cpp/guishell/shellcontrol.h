@@ -74,6 +74,13 @@ public:
 			exit(EXIT_FAILURE);
 		}
 
+		// open speaker
+		_speaker = open("/services/speaker",IO_WRITE);
+		if(_speaker < 0) {
+			printe("Unable to open '/services/speaker'");
+			exit(EXIT_FAILURE);
+		}
+
 		// request ports for qemu and bochs
 		requestIOPort(0xe9);
 		requestIOPort(0x3f8);
@@ -85,6 +92,9 @@ public:
 	virtual ~ShellControl() {
 		for(u32 i = 0; i < _rows.size(); i++)
 			delete _rows[i];
+		delete _rlBuffer;
+		rb_destroy(_inbuf);
+		close(_speaker);
 		releaseIOPort(0xe9);
 		releaseIOPort(0x3f8);
 		releaseIOPort(0x3fd);
@@ -141,6 +151,7 @@ private:
 		_firstRow = e._firstRow;
 		_navigation = e._navigation;
 		_escapePos = e._escapePos;
+		_speaker = e._speaker;
 		memcpy(_escapeBuf,e._escapeBuf,sizeof(e._escapeBuf));
 		_rlStartCol = e._rlStartCol;
 		_rlBufSize = e._rlBufSize;
@@ -174,6 +185,7 @@ private:
 	sRingBuf *_inbuf;
 	// the escape-state
 	s32 _escapePos;
+	tFD _speaker;
 	char _escapeBuf[MAX_ESCC_LENGTH];
 	Vector<Vector<char>*> *_screenBackup;
 	Vector<Vector<char>*> _rows;

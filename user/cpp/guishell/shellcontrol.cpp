@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/debug.h>
 #include <esc/gui/common.h>
 #include <esc/gui/color.h>
 #include <esc/service.h>
@@ -76,6 +77,9 @@ void ShellControl::paintRows(Graphics &g,u32 start,u32 count) {
 	u32 cheight = g.getFont().getHeight();
 	tCoord x;
 	tCoord y = 1 + start * (cheight + PADDING);
+	// correct invalid start-values
+	start = MIN(start,_rows.size() - _firstRow - 1);
+	count = MIN(count,_rows.size() - _firstRow - start);
 	Vector<char> &first = *_rows[start + _firstRow];
 	u8 lastCol = first.size() > 1 ? first[1] : (WHITE << 4 | BLACK);
 	count = MIN(getLineCount() - start,count);
@@ -236,6 +240,15 @@ void ShellControl::append(char c) {
 				_cursorCol--;
 			}
 			break;
+
+		case '\a': {
+			sMsg msg;
+			/* beep */
+			msg.args.arg1 = 1000;
+			msg.args.arg2 = 60;
+			send(_speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
+		}
+		break;
 
 		case '\n':
 			_row++;

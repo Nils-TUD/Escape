@@ -143,29 +143,29 @@ void ShellControl::append(char *s,u32 len) {
 
 	s[len] = '\0';
 
-	/* are we waiting to finish an escape-code? */
+	// are we waiting to finish an escape-code?
 	if(_escapePos >= 0) {
 		u32 oldLen = _escapePos;
 		char *escPtr = _escapeBuf;
 		u16 length = MIN((s32)len,MAX_ESCC_LENGTH - _escapePos - 1);
-		/* append the string */
+		// append the string
 		memcpy(_escapeBuf + _escapePos,s,length);
 		_escapePos += length;
 		_escapeBuf[_escapePos] = '\0';
 
-		/* try it again */
+		// try it again
 		if(!handleEscape(&escPtr)) {
-			/* if no space is left, quit and simply print the code */
+			// if no space is left, quit and simply print the code
 			if(_escapePos >= MAX_ESCC_LENGTH - 1) {
 				u32 i;
 				for(i = 0; i < MAX_ESCC_LENGTH; i++)
 					append(_escapeBuf[i]);
 			}
-			/* otherwise try again next time */
+			// otherwise try again next time
 			else
 				return;
 		}
-		/* skip escape-code */
+		// skip escape-code
 		s += (escPtr - _escapeBuf) - oldLen;
 		_escapePos = -1;
 	}
@@ -211,6 +211,9 @@ void ShellControl::append(char *s,u32 len) {
 		paintRows(*g,oldRow - _firstRow,_row - oldRow + 1);
 	}
 	requestUpdate();
+
+	_rlBufPos = 0;
+	_rlStartCol = _cursorCol;
 }
 
 void ShellControl::append(char c) {
@@ -243,7 +246,7 @@ void ShellControl::append(char c) {
 
 		case '\a': {
 			sMsg msg;
-			/* beep */
+			// beep
 			msg.args.arg1 = 1000;
 			msg.args.arg2 = 60;
 			send(_speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
@@ -330,14 +333,17 @@ void ShellControl::rlPutchar(char c) {
 				if(_echo)
 					append('\b');
 
-				/* move chars back */
+				// move chars back
 				memmove(_rlBuffer + bufPos - 1,_rlBuffer + bufPos,_rlBufPos - bufPos);
-				/* remove last */
+				// remove last
 				_rlBuffer[_rlBufPos - 1] = '\0';
 				_rlBufPos--;
 
-				/* overwrite line */
-				//vterm_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
+				// just repaint the last row
+				Graphics *g = getGraphics();
+				clearRows(*g,_row,1);
+				paintRows(*g,_row,1);
+				requestUpdate();
 			}
 		}
 		break;
@@ -345,7 +351,7 @@ void ShellControl::rlPutchar(char c) {
 		case '\r':
 		case '\a':
 		case '\t':
-			/* ignore */
+			// ignore
 			break;
 
 		default: {
@@ -353,7 +359,7 @@ void ShellControl::rlPutchar(char c) {
 			bool moved = false;
 			u32 bufPos = rlGetBufPos();
 
-			/* increase buffer size? */
+			// increase buffer size?
 			if(_rlBuffer && bufPos >= _rlBufSize) {
 				_rlBufSize += RLBUF_INCR;
 				_rlBuffer = (char*)realloc(_rlBuffer,_rlBufSize);
@@ -361,44 +367,45 @@ void ShellControl::rlPutchar(char c) {
 			if(_rlBuffer == NULL)
 				return;
 
-			/* move chars forward */
+			// move chars forward
 			if(bufPos < _rlBufPos) {
 				memmove(_rlBuffer + bufPos + 1,_rlBuffer + bufPos,_rlBufPos - bufPos);
 				moved = true;
 			}
 
-			/** add char */
+			// add char
 			_rlBuffer[bufPos] = c;
 			_rlBufPos++;
 
-			/* TODO later we should allow "multiline-editing" */
+			// TODO later we should allow "multiline-editing"
 			if(c == '\n' || _rlStartCol + _rlBufPos >= COLUMNS) {
 				flushed = true;
 				rlFlushBuf();
 			}
 
-			/* echo character, if required */
+			// echo character, if required
 			if(_echo) {
 				if(moved && !flushed) {
 					u32 count = _rlBufPos - bufPos + 1;
 					char *copy = (char*)malloc(count * sizeof(char));
 					if(copy != NULL) {
-						/* print the end of the buffer again */
+						// print the end of the buffer again
 						strncpy(copy,_rlBuffer + bufPos,count - 1);
 						copy[count - 1] = '\0';
 						append(copy,count - 1);
 						free(copy);
 
-						/* reset cursor */
+						// reset cursor
 						_cursorCol = _rlStartCol + bufPos + 1;
 					}
 				}
 				else if(c != IO_EOF) {
+					u32 oldRow = _row;
 					append(c);
 					// just repaint the changed rows
 					Graphics *g = getGraphics();
-					clearRows(*g,_row,1);
-					paintRows(*g,_row,1);
+					clearRows(*g,oldRow,_row - oldRow + 1);
+					paintRows(*g,oldRow,_row - oldRow + 1);
 					requestUpdate();
 				}
 			}
@@ -486,6 +493,7 @@ s32 ShellControl::ioctl(u32 cmd,void *data,bool *readKb) {
 	s32 res = 0;
 	UNUSED(data);
 	switch(cmd) {
+		// TODO
 		/*case IOCTL_VT_SHELLPID:
 			// do it just once
 			if(vt->shellPid == 0)

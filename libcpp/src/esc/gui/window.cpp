@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/debug.h>
 #include <messages.h>
 #include <esc/proc.h>
 #include <esc/gui/window.h>
@@ -186,18 +187,8 @@ namespace esc {
 		void Window::move(s16 x,s16 y) {
 			tSize screenWidth = Application::getInstance()->getScreenWidth();
 			tSize screenHeight = Application::getInstance()->getScreenHeight();
-			if(getX() + x < 0)
-				x = 0;
-			else if(getX() + x + getWidth() >= screenWidth)
-				x = screenWidth - getWidth();
-			else
-				x += getX();
-			if(getY() + y < 0)
-				y = 0;
-			else if(getY() + y + getHeight() >= screenHeight)
-				y = screenHeight - getHeight();
-			else
-				y += getY();
+			x = MAX(0,MIN(screenWidth - 1,getX() + x));
+			y = MAX(0,MIN(screenHeight - 1,getY() + y));
 			moveTo(x,y);
 		}
 

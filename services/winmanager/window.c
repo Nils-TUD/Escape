@@ -292,12 +292,6 @@ static void win_repaint(sRectangle *r,sWindow *win,s16 z) {
 	for(n = sll_begin(list); n != NULL; n = n->next) {
 		rect = (sRectangle*)n->data;
 
-		/* ignore invalid values */
-		/* FIXME where do they come from? */
-		if(rect->x + rect->width > screenWidth || rect->y + rect->height > screenHeight ||
-				rect->width > screenWidth || rect->height > screenHeight)
-			continue;
-
 		/* if it doesn't belong to a window, we have to clear it */
 		if(rect->window == WINDOW_COUNT)
 			win_clearRegion(shmem,rect->x,rect->y,rect->width,rect->height);
@@ -392,7 +386,7 @@ static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,s16 z,sRe
 
 static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height) {
 	tCoord ysave = y;
-	tCoord maxy = y + height;
+	tCoord maxy = MIN(screenHeight - 1,y + height);
 	u32 count = width * PIXEL_SIZE;
 	mem += (y * screenWidth + x) * PIXEL_SIZE;
 	while(y <= maxy) {
@@ -407,8 +401,8 @@ static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height) 
 static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
 	msg.args.arg1 = x;
 	msg.args.arg2 = y;
-	msg.args.arg3 = width;
-	msg.args.arg4 = height;
+	msg.args.arg3 = MIN(screenWidth - x,width);
+	msg.args.arg4 = MIN(screenHeight - y,height);
 	send(vesa,MSG_VESA_UPDATE,&msg,sizeof(msg.args));
 }
 

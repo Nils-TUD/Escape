@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/proc.h>
+#include <esc/debug.h>
 #include <esc/gui/graphics.h>
 #include <esc/gui/window.h>
 #include <esc/string.h>
@@ -290,10 +291,11 @@ namespace esc {
 			validateParams(x,y,width,height);
 			// is there anything to update?
 			if(width > 0 || height > 0) {
-				width = MIN(_width - x,width);
-				height = MIN(_height - y,height);
-				void *vesaMem = Application::getInstance()->getVesaMem();
 				tSize screenWidth = Application::getInstance()->getScreenWidth();
+				tSize screenHeight = Application::getInstance()->getScreenHeight();
+				width = MIN(screenWidth - x - _x,MIN(_width - x,width));
+				height = MIN(screenHeight - y - _y,MIN(_height - y,height));
+				void *vesaMem = Application::getInstance()->getVesaMem();
 				u8 *src,*dst;
 				tCoord endy = y + height;
 				u32 psize = _pixel->getPixelSize();
@@ -326,8 +328,8 @@ namespace esc {
 		void Graphics::move(tCoord x,tCoord y) {
 			tSize screenWidth = Application::getInstance()->getScreenWidth();
 			tSize screenHeight = Application::getInstance()->getScreenHeight();
-			_x = MIN(x,screenWidth - _width - 1);
-			_y = MIN(y,screenHeight - _height - 1);
+			_x = MIN(screenWidth - 1,x);
+			_y = MIN(screenHeight - 1,y);
 		}
 
 		void Graphics::debug() const {

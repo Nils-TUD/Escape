@@ -72,7 +72,7 @@ addTestData() {
 	$SUDO mkdir $DISKMOUNT/testdir
 	$SUDO touch $DISKMOUNT/file.txt
 	$SUDO chmod 0666 $DISKMOUNT/file.txt
-	echo "Das ist ein Test-String!!" > $DISKMOUNT/file.txt
+	echo "This is a test-string!!!" > $DISKMOUNT/file.txt
 	$SUDO cp user/test.bmp $DISKMOUNT
 	$SUDO cp user/bbc.bmp $DISKMOUNT
 	$SUDO cp user/test.bmp $DISKMOUNT/bla.bmp
@@ -83,7 +83,7 @@ addTestData() {
 	echo -n "" > $DISKMOUNT/bigfile
 	i=0
 	while [ $i != 200 ]; do
-		printf 'Das ist der %d Test\n' $i >> $DISKMOUNT/bigfile;
+		printf 'Thats the %d test\n' $i >> $DISKMOUNT/bigfile;
 		i=`expr $i + 1`;
 	done;
 }

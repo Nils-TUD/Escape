@@ -217,7 +217,7 @@ void ShellControl::append(char *s,u32 len) {
 }
 
 void ShellControl::append(char c) {
-#ifndef PROFILE
+#ifdef LOGSERIAL
 	// write to bochs/qemu console (\r not necessary here)
 	if(c != '\r' && c != '\a' && c != '\b' && c != '\t') {
 		outByte(0xe9,c);

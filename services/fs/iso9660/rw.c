@@ -29,11 +29,11 @@ bool iso_rw_readBlocks(sISO9660 *h,void *buffer,u32 start,u16 blockCount) {
 
 bool iso_rw_readSectors(sISO9660 *h,void *buffer,u64 lba,u16 secCount) {
 	if(seek(h->driverFd,lba * ATAPI_SECTOR_SIZE,SEEK_SET) < 0) {
-		printe("Unable to seek to %x\n",lba * ATAPI_SECTOR_SIZE);
+		printe("Unable to seek to %x",lba * ATAPI_SECTOR_SIZE);
 		return false;
 	}
 	if(read(h->driverFd,buffer,secCount * ATAPI_SECTOR_SIZE) != secCount * ATAPI_SECTOR_SIZE) {
-		printe("Unable to read %d sectors @ %x\n",secCount,lba * ATAPI_SECTOR_SIZE);
+		printe("Unable to read %d sectors @ %x",secCount,lba * ATAPI_SECTOR_SIZE);
 		return false;
 	}
 

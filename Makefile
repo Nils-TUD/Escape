@@ -11,7 +11,8 @@ BIN = $(BUILD)/$(BINNAME)
 SYMBOLS = $(BUILD)/kernel.symbols
 BUILDAPPS = $(BUILD)/apps
 
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot c -vga std -m 512 -localtime
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
+	-localtime -enable-kvm
 
 DIRS = tools libc libcpp services user kernel/src kernel/test
 
@@ -24,8 +25,8 @@ export CWFLAGS=-Wall -ansi \
 export CPPWFLAGS=-Wall -Wextra -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long -fno-builtin
-export CPPDEFFLAGS=$(CPPWFLAGS) -g -D DEBUGGING
-export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING
+export CPPDEFFLAGS=$(CPPWFLAGS) -g -D DEBUGGING -D LOGSERIAL
+export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING -D LOGSERIAL
 # flags for nasm
 export ASMFLAGS=-f elf
 # other
@@ -90,6 +91,7 @@ dis: all
 		objdump -d -S $(BIN) | less
 
 qemu:	all prepareRun
+		sudo /etc/init.d/kvm start
 		qemu $(QEMUARGS) > log.txt 2>&1
 
 bochs: all prepareRun
@@ -99,6 +101,7 @@ vmware: all prepareRun $(VMDISK)
 		vmplayer vmware/escape.vmx
 
 vbox: all prepareRun $(VMDISK)
+		sudo /etc/init.d/kvm stop
 		tools/vboxhddupd.sh $(VBOXOSTITLE) $(VMDISK)
 		VBoxSDL --evdevkeymap -startvm $(VBOXOSTITLE)
 

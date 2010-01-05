@@ -164,6 +164,13 @@ int main(void) {
 	debugf("Set scancode-set: %x\n",kbdata);
 #endif
 
+#if 0
+	/* TODO doesn't work in qemu (but on real hardware). why? */
+	/* set repeat-rate and delay */
+	outByte(IOPORT_KB_DATA,0xF3);
+	outByte(IOPORT_KB_DATA,0x24);	/*00100100*/
+#endif
+
 	/*outByte(IOPORT_KB_DATA,0xF0);
 	sleep(40);
 	outByte(IOPORT_KB_DATA,0x0);

@@ -21,6 +21,7 @@
 #include <esc/service.h>
 #include <esc/ports.h>
 #include <esc/debug.h>
+#include <esc/dir.h>
 #include <stdlib.h>
 #include <assert.h>
 #include "pcilist.h"
@@ -65,9 +66,9 @@ int main(void) {
 	u32 bus,dev,func;
 	/* we want to access dwords... */
 	if(requestIOPorts(IOPORT_PCI_CFG_DATA,4) < 0)
-		error("Unable to request io-port %x\n",IOPORT_PCI_CFG_DATA);
+		error("Unable to request io-port %x",IOPORT_PCI_CFG_DATA);
 	if(requestIOPorts(IOPORT_PCI_CFG_ADDR,4) < 0)
-		error("Unable to request io-port %x\n",IOPORT_PCI_CFG_ADDR);
+		error("Unable to request io-port %x",IOPORT_PCI_CFG_ADDR);
 
 	tFile *f = fopen("/system/devices/pci","w");
 	if(f == NULL)
@@ -84,15 +85,15 @@ int main(void) {
 					sPCIDevice *pdev = pci_getDevice(&device);
 					sPCIClassCode *pclass = pci_getClass(&device);
 					fprintf(f,"%d:%d.%d:\n",bus,dev,func);
-					fprintf(f,"	vendor = %04x (%s - %s)\n",device.vendorId,
+					fprintf(f,"  vendor:		%04x (%s - %s)\n",device.vendorId,
 							pven ? pven->vendorShort : "?",pven ? pven->vendorFull : "?");
-					fprintf(f,"	device = %04x (%s - %s)\n",device.deviceId,
+					fprintf(f,"  device:		%04x (%s - %s)\n",device.deviceId,
 							pdev ? pdev->chip : "?",pdev ? pdev->chipDesc : "?");
-					fprintf(f,"	rev = %x\n",device.revId);
-					fprintf(f,"	class = %02x.%02x.%02x (%s - %s - %s)\n",device.baseClass,device.subClass,
+					fprintf(f,"  rev:			%x\n",device.revId);
+					fprintf(f,"  class:		%02x.%02x.%02x (%s - %s - %s)\n",device.baseClass,device.subClass,
 							device.progInterface,pclass ? pclass->baseDesc : "?",
 							pclass ? pclass->subDesc : "?",pclass ? pclass->progDesc : "?");
-					fprintf(f,"	type=%x\n",device.type);
+					fprintf(f,"  type: 		%x\n",device.type);
 				}
 			}
 		}

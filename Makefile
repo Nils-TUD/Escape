@@ -101,7 +101,7 @@ vmware: all prepareRun $(VMDISK)
 		vmplayer vmware/escape.vmx
 
 vbox: all prepareRun $(VMDISK)
-		sudo /etc/init.d/kvm stop
+		sudo /etc/init.d/kvm stop # vbox doesn't like kvm :/
 		tools/vboxhddupd.sh $(VBOXOSTITLE) $(VMDISK)
 		VBoxSDL --evdevkeymap -startvm $(VBOXOSTITLE)
 

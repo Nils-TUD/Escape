@@ -29,6 +29,7 @@
 #include <messages.h>
 #include <errors.h>
 
+#define IOPORT_KB_DATA				0x60
 #define IOPORT_KB_CTRL				0x64
 #define KBC_CMD_RESET				0xFE
 
@@ -48,7 +49,9 @@ int main(void) {
 	tMsgId mid;
 	bool run = true;
 
-	if(requestIOPorts(IOPORT_KB_CTRL,2) < 0)
+	if(requestIOPort(IOPORT_KB_DATA) < 0)
+		error("Unable to request io-port %d",IOPORT_KB_DATA);
+	if(requestIOPort(IOPORT_KB_CTRL) < 0)
 		error("Unable to request io-port %d",IOPORT_KB_CTRL);
 
 	id = regService("powermng",SERV_DEFAULT);
@@ -67,7 +70,14 @@ int main(void) {
 						killProcs();
 						debugf("Using pulse-reset line of 8042 controller to reset...\n");
 						run = false;
-						outByte(IOPORT_KB_CTRL,KBC_CMD_RESET);
+						/* wait until in-buffer empty */
+						while((inByte(IOPORT_KB_CTRL) & 0x2) != 0);
+						/* command 0xD1 to write the outputport */
+						outByte(IOPORT_KB_CTRL,0xD1);
+						/* wait again until in-buffer empty */
+						while((inByte(IOPORT_KB_CTRL) & 0x2) != 0);
+						/* now set the new output-port for reset */
+						outByte(IOPORT_KB_DATA,0xFE);
 						break;
 					case MSG_POWER_SHUTDOWN:
 						killProcs();
@@ -82,7 +92,8 @@ int main(void) {
 	}
 
 	/* clean up */
-	releaseIOPorts(IOPORT_KB_CTRL,2);
+	releaseIOPort(IOPORT_KB_DATA);
+	releaseIOPort(IOPORT_KB_CTRL);
 	unregService(id);
 	return EXIT_SUCCESS;
 }

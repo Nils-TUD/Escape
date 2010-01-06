@@ -207,8 +207,6 @@ namespace esc {
 			u8 *_pixels;
 			Font _font;
 			Graphics *_owner;
-			/* TODO we have another one in app */
-			sMsg _msg;
 		};
 	}
 }

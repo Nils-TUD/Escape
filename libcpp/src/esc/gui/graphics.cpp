@@ -318,11 +318,12 @@ namespace esc {
 
 		void Graphics::notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
 			tFD vesaFd = Application::getInstance()->getVesaFd();
-			_msg.args.arg1 = x;
-			_msg.args.arg2 = y;
-			_msg.args.arg3 = width;
-			_msg.args.arg4 = height;
-			send(vesaFd,MSG_VESA_UPDATE,&_msg,sizeof(_msg.args));
+			sMsg msg;
+			msg.args.arg1 = x;
+			msg.args.arg2 = y;
+			msg.args.arg3 = width;
+			msg.args.arg4 = height;
+			send(vesaFd,MSG_VESA_UPDATE,&msg,sizeof(msg.args));
 		}
 
 		void Graphics::move(tCoord x,tCoord y) {

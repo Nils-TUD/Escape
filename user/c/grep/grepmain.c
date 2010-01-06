@@ -29,7 +29,7 @@
 
 static char buffer[MAX_LINE_LEN + 1];
 
-static bool matches(char *line,char *pattern);
+static bool matches(char *line,u32 len,char *pattern);
 static void strtolower(char *s);
 
 int main(int argc,char *argv[]) {
@@ -62,7 +62,7 @@ int main(int argc,char *argv[]) {
 	strtolower(pattern);
 	while((count = fscanl(file,buffer,MAX_LINE_LEN)) > 0) {
 		*(buffer + count) = '\0';
-		if(matches(buffer,pattern))
+		if(matches(buffer,count,pattern))
 			printf("%s\n",buffer);
 	}
 
@@ -72,9 +72,14 @@ int main(int argc,char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-static bool matches(char *line,char *pattern) {
-	strtolower(line);
-	return strstr(line,pattern) != NULL;
+static bool matches(char *line,u32 len,char *pattern) {
+	bool res;
+	char *cpy = (char*)malloc(len + 1);
+	memcpy(cpy,line,len + 1);
+	strtolower(cpy);
+	res = strstr(cpy,pattern) != NULL;
+	free(cpy);
+	return res;
 }
 
 static void strtolower(char *s) {

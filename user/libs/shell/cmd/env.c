@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/cmdargs.h>
 #include <esc/fileio.h>
 #include <esc/env.h>
 #include <messages.h>
@@ -31,7 +32,7 @@
 
 s32 shell_cmdEnv(u32 argc,char **argv) {
 	char *valBuf,*nameBuf;
-	if(argc > 2) {
+	if(argc > 2 || isHelpCmd(argc,argv)) {
 		printf("Usage: %s [<name>|<name>=<value>]\n");
 		return EXIT_FAILURE;
 	}

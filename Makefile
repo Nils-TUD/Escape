@@ -11,13 +11,14 @@ BIN = $(BUILD)/$(BINNAME)
 SYMBOLS = $(BUILD)/kernel.symbols
 BUILDAPPS = $(BUILD)/apps
 
+QEMU = qemu
 QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
-	-localtime -enable-kvm
+	-localtime -enable-kvm -soundhw pcspk,sb16
 
 DIRS = tools libc libcpp services user kernel/src kernel/test
 
 # flags for gcc
-export CC = gcc-4.3
+export CC = gcc
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
@@ -92,7 +93,7 @@ dis: all
 
 qemu:	all prepareRun
 		sudo /etc/init.d/kvm start
-		qemu $(QEMUARGS) > log.txt 2>&1
+		$(QEMU) $(QEMUARGS) > log.txt 2>&1
 
 bochs: all prepareRun
 		bochs -f bochs.cfg -q | tee log.txt
@@ -106,21 +107,21 @@ vbox: all prepareRun $(VMDISK)
 		VBoxSDL --evdevkeymap -startvm $(VBOXOSTITLE)
 
 debug: all prepareRun
-		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
+		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
-		gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
+		gdbtui --command=gdb.start --symbols $(BUILD)/user_bisoncalc.bin
 
 debugm: all prepareRun
-		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
+		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 
 debugbochs: all prepareRun
 		bochs -f bochs.cfg | tee log.txt
 
 debugt: all prepareTest
-		qemu $(QEMUARGS) -S -s > log.txt 2>&1 &
+		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 
 test: all prepareTest
-		qemu $(QEMUARGS) > log.txt 2>&1
+		$(QEMU) $(QEMUARGS) > log.txt 2>&1
 
 testbochs: all prepareTest
 		bochs -f bochs.cfg -q | tee log.txt

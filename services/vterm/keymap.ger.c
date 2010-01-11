@@ -24,7 +24,7 @@
 
 static sKeymapEntry keymap[] = {
 	/* - none - */		{NPRINT,	NPRINT,		NPRINT	},
-	/* VK_ACCENT */		{'`',		NPRINT,		NPRINT	}, /* ° */
+	/* VK_ACCENT */		{'^',		NPRINT,		NPRINT	}, /* ° */
 	/* VK_0 */			{'0',		'=',		'}'		},
 	/* VK_1 */			{'1',		'!',		NPRINT	},
 	/* VK_2 */			{'2',		'"',		NPRINT	}, /* ² */

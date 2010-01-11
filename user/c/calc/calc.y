@@ -15,12 +15,12 @@
 %%
 
 input:	/* empty */
-				| input line						{ printf("> "); }
-				| error '\n'						{ printf("> "); yyerrok; }
+			| input line							{ printf("> "); }
+			| error '\n'							{ printf("> "); yyerrok; }
 ;
 
 line:		'\n'
-				| exp '\n'							{ printf ("\t%d\n", $1); } 
+			| exp '\n'								{ printf ("\t%d\n", $1); } 
 ;
 
 exp:		T_NUMBER								{ $$ = $1; }

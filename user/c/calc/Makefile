@@ -1,4 +1,4 @@
-NAME=bisoncalc
+NAME=calc
 ROOT = ../../..
 BUILD = $(ROOT)/build
 BUILDL = $(BUILD)/user/c/$(NAME)

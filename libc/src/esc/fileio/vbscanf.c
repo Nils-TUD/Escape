@@ -35,10 +35,10 @@ s32 vbscanf(sBuffer *buf,const char *fmt,va_list ap) {
 	while(1) {
 		/* wait for a '%' */
 		while((c = *fmt++) != '%') {
-			if(c != (rc = bscanc(buf)) || rc == IO_EOF)
-				return count;
 			/* finished? */
 			if(c == '\0')
+				return count;
+			if(c != (rc = bscanc(buf)) || rc == IO_EOF)
 				return count;
 		}
 

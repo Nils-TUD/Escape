@@ -130,6 +130,43 @@ s32 ftell(tFile *file,u32 *pos);
 s32 feof(tFile *file);
 
 /**
+ * The  isatty()  function  tests  whether  fd  is an open file descriptor
+ * referring to a terminal.
+ *
+ * @param fd the file-descriptor
+ * @return true if it referrs to a tty
+ */
+/* TODO signature changed for flex */
+int isatty(int fd);
+
+/**
+ * The function fileno() examines the  argument  stream  and  returns  its
+ * integer descriptor.
+ *
+ * @param stream the stream
+ * @return the file-descriptor
+ */
+tFD fileno(tFile *stream);
+
+/**
+ * The function clearerr() clears the end-of-file and error indicators for
+ * the stream pointed to by stream.
+ *
+ * @param stream the stream
+ */
+void clearerr(tFile *stream);
+
+/**
+ * The function ferror() tests the error indicator for the stream  pointed
+ * to by stream, returning non-zero if it is set.  The error indicator can
+ * only be reset by the clearerr() function.
+ *
+ * @param stream the stream
+ * return 0 if no error
+ */
+s32 ferror(tFile *stream);
+
+/**
  * Closes the file associated with the stream and disassociates it.
  * All internal buffers associated with the stream are flushed: the content of any unwritten
  * buffer is written and the content of any unread buffer is discarded.

@@ -17,26 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ERRNO_H_
-#define ERRNO_H_
-
 #include <esc/common.h>
+#include <esc/fileio.h>
 #include <errors.h>
+#include "fileiointern.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* needed for flex */
-#define EINTR	ERR_INTERRUPTED
-
-/**
- * The last error-code
- */
-extern int errno;
-
-#ifdef __cplusplus
+tFD fileno(tFile *stream) {
+	sIOBuffer *buf = bget(stream);
+	if(buf == NULL)
+		return ERR_INVALID_FD;
+	return buf->in.fd;
 }
-#endif
-
-#endif /* ERRNO_H_ */

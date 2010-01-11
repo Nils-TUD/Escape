@@ -17,28 +17,34 @@ CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
 	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS) $(ADDFLAGS)
 
 # sources
+LEXSRC = calc.l
+LEXGEN = lex.c
 BISONSRC = calc.y
 BISONGEN = parser.c
-CSRC = $(filter-out ./$(BISONGEN) ./parser.c,$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
+CSRC = $(filter-out ./$(BISONGEN) ./$(LEXGEN),\
+	$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
 
 # objects
 LIBCA = $(BUILD)/libc.a
 START = $(BUILD)/libc_startup.o
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
-BISONOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN))
+GENOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN) $(BISONGEN))
 
 .PHONY: all clean
 
-all:	$(APPCPY) $(BISONGEN) $(BIN)
+all:	$(APPCPY) $(BISONGEN) $(LEXGEN) $(BIN)
 
-$(BIN):	$(BUILDDIRS) $(APPDST) $(LDCONF) $(COBJ) $(BISONOBJ) $(START) $(LIBCA) $(ADDLIBS)
+$(BIN):	$(BUILDDIRS) $(APPDST) $(LDCONF) $(COBJ) $(GENOBJ) $(START) $(LIBCA) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(BISONOBJ) $(LIBCA) $(ADDLIBS);
+		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(GENOBJ) $(LIBCA) $(ADDLIBS);
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 
+$(LEXGEN):	$(LEXSRC)
+		flex -o $(LEXGEN) --nounistd < $(LEXSRC)
+
 $(BISONGEN):	$(BISONSRC)
-		bison -o $(BISONGEN) $(BISONSRC)
+		bison -d -o $(BISONGEN) $(BISONSRC)
 
 $(APPCPY):	$(APP)
 		$(ROOT)/tools/disk.sh copy $(APP) /apps/$(NAME)
@@ -56,4 +62,4 @@ $(BUILDL)/%.o:		%.c
 -include $(DEPS)
 
 clean:
-		rm -f $(APPCPY) $(BIN) $(COBJ) $(DEPS) $(BISONGEN)
+		rm -f $(APPCPY) $(BIN) $(COBJ) $(DEPS) $(LEXGEN) $(BISONGEN) $(GENOBJ)

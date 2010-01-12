@@ -353,6 +353,25 @@ bool isalnumstr(const char *str);
  */
 char *strerror(s32 errnum);
 
+/**
+ * The strdup() function returns a pointer to a new string which is a duplicate of the string s.
+ * Memory for the new string is obtained with malloc(3), and can be freed with free(3).
+ *
+ * @param s the string
+ * @return the duplicated string or NULL
+ */
+char *strdup(const char *s);
+
+/**
+ * The strndup() function is similar, but only copies at most n characters.  If s is longer than
+ * n, only n characters are copied, and a terminating null byte ('\0') is added.
+ *
+ * @param s the string
+ * @param n the number of chars
+ * @return the duplicated string or NULL
+ */
+char *strndup(const char *s,u32 n);
+
 #ifdef __cplusplus
 }
 #endif

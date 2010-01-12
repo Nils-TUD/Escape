@@ -1,0 +1,53 @@
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#ifndef INTEXPR_H_
+#define INTEXPR_H_
+
+#include <esc/common.h>
+#include "node.h"
+
+typedef struct {
+	s32 val;
+} sIntExpr;
+
+/**
+ * Creates an integer-value
+ *
+ * @param val the value
+ * @return the created node
+ */
+sASTNode *ast_createIntExpr(tIntType val);
+
+/**
+ * Prints this expression
+ *
+ * @param s the expression
+ * @param layer the layer
+ */
+void ast_printIntExpr(sIntExpr *s,u32 layer);
+
+/**
+ * Destroys the given int-expression (should be called from ast_destroy() only!)
+ *
+ * @param n the expression
+ */
+void ast_destroyIntExpr(sIntExpr *n);
+
+#endif /* INTEXPR_H_ */

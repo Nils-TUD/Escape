@@ -31,6 +31,16 @@ typedef struct {
 	sASTNode *redirOut;
 } sSubCmd;
 
+typedef struct {
+	char **exprs;
+	u32 exprCount;
+	sASTNode *redirFd;
+	sASTNode *redirIn;
+	sASTNode *redirOut;
+	tFD pipe;
+	s32 pid;
+} sExecSubCmd;
+
 /**
  * Creates an if-statement-node with the condition, then- and else-list
  *

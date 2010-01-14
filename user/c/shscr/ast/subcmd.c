@@ -34,8 +34,23 @@ sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redirFd,sASTNode *redirI
 }
 
 sValue *ast_execSubCmd(sEnv *e,sSubCmd *n) {
-	/* TODO */
-	return ast_execute(e,n->exprList);
+	u32 i;
+	sSLNode *node;
+	sSLList *elist = (sSLList*)ast_execute(e,n->exprList);
+	sExecSubCmd *res = emalloc(sizeof(sExecSubCmd));
+	res->exprCount = sll_length(elist);
+	res->exprs = (char**)emalloc((res->exprCount + 1) * sizeof(char*));
+	for(i = 0, node = sll_begin(elist); node != NULL; i++, node = node->next) {
+		sValue *v = (sValue*)node->data;
+		res->exprs[i] = val_getStr(v);
+		val_destroy(v);
+	}
+	res->exprs[i] = NULL;
+	res->redirFd = n->redirFd;
+	res->redirIn = n->redirIn;
+	res->redirOut = n->redirOut;
+	sll_destroy(elist,false);
+	return (sValue*)res;
 }
 
 void ast_printSubCmd(sSubCmd *s,u32 layer) {

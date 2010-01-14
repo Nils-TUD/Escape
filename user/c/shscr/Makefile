@@ -30,6 +30,10 @@ START = $(BUILD)/libc_startup.o
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 GENOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN) $(BISONGEN))
 
+# the shell-lib
+ADDLIBS = ../../../build/user_libs_shell.a
+ADDFLAGS = -I../../libs
+
 .PHONY: all clean
 
 all:	$(APPCPY) $(BISONGEN) $(LEXGEN) $(BIN)

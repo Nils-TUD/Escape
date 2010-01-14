@@ -33,15 +33,14 @@ sASTNode *ast_createCmdExprList(void) {
 
 sValue *ast_execCmdExprList(sEnv *e,sCmdExprList *n) {
 	sSLNode *sub;
-	sValue *v;
-	printf("CmdExprList: ");
+	sSLList *res = sll_create();
+	/* TODO error-handling */
 	for(sub = sll_begin(n->list); sub != NULL; sub = sub->next) {
-		v = ast_execute(e,(sASTNode*)sub->data);
-		printf("%s ",val_getStr(v));
-		val_destroy(v);
+		sValue *v = ast_execute(e,(sASTNode*)sub->data);
+		sll_append(res,v);
+		/* TODO error-handling */
 	}
-	printf("\n");
-	return NULL;
+	return (sValue*)res;
 }
 
 sASTNode *ast_addCmdExpr(sASTNode *l,sASTNode *s) {

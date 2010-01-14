@@ -65,14 +65,14 @@ stmtlist:
 ;
 
 stmt:
-			T_VAR '=' expr			{ $$ = ast_createAssignStmt(ast_createVarExpr($1),$3); }
+			T_VAR '=' expr ';'	{ $$ = ast_createAssignStmt(ast_createVarExpr($1),$3); }
 			| T_IF '(' expr ')' T_THEN stmtlist T_FI {
 				$$ = ast_createIfStmt($3,$6,NULL);
 			}
 			| T_IF '(' expr ')' T_THEN stmtlist T_ELSE stmtlist T_FI {
 				$$ = ast_createIfStmt($3,$6,$8);
 			}
-			| cmd {
+			| cmd ';' {
 				$$ = $1;
 			}
 ;
@@ -125,8 +125,8 @@ subcmd:
 				ast_addSubCmd($$,ast_createSubCmd($1,$2,$3,$4));
 			}
 			| subcmd '|' cmdexprlist cmdredirfd cmdredirin cmdredirout {
-				ast_addSubCmd($1,ast_createSubCmd($3,$4,$5,$6));
 				$$ = $1;
+				ast_addSubCmd($1,ast_createSubCmd($3,$4,$5,$6));
 			}
 ;
 

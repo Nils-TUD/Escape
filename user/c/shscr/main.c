@@ -20,9 +20,35 @@
 #include <stdio.h>
 #include "parser.h"
 
+typedef struct {
+	s32 first_line;
+	s32 last_line;
+	s32 first_column;
+	s32 last_column;
+} sYYLoc;
+
+sYYLoc yylloc;
+static s32 nCol = 1;
+static s32 nRow = 1;
+
 /* Called by yyparse on error.  */
 void yyerror(char const *s) {
-	fprintf(stderr,"%s\n",s);
+	fprintf(stderr,"Line %d: %s\n",yylloc.first_line,s);
+}
+
+void beginToken(char *t) {
+	u32 len = strlen(t);
+	if(*t == '\n') {
+		nRow++;
+		nCol = 1;
+	}
+	else
+		nCol += len;
+
+	yylloc.first_line = nRow;
+	yylloc.first_column = nCol;
+	yylloc.last_line = nRow;
+	yylloc.last_column = nCol + len - 1;
 }
 
 int main(void) {

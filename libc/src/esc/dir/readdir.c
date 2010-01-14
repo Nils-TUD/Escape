@@ -39,6 +39,7 @@ static void incCache(tFD fd);
  * demand and if we're reading from the real filesystem we have to make a request to fs. */
 /* But the cache is just usable for one directory. If the user-process opens another directory
  * in parallel we can't use the cache. */
+/* FIXME this is NOT thread-safe! */
 static tFD cfd = -1;
 static char *cache = NULL;
 static u32 cpos = 0;

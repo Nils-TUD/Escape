@@ -48,11 +48,17 @@
 	#include "ast/stmtlist.h"
 	#include "ast/unaryopexpr.h"
 	#include "ast/varexpr.h"
+	#include "ast/command.h"
+	#include "ast/cmdexprlist.h"
+	#include "ast/subcmd.h"
+	#include "ast/redirfd.h"
+	#include "ast/redirfile.h"
+	#include "exec/env.h"
 
 
 
 /* Line 1676 of yacc.c  */
-#line 56 "parser.h"
+#line 62 "parser.h"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -87,7 +93,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 21 "script.y"
+#line 27 "script.y"
 
 	int intval;
 	char *strval;
@@ -96,7 +102,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 100 "parser.h"
+#line 106 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

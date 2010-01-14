@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include "node.h"
+#include "../exec/env.h"
 
 typedef struct {
 	char operation;
@@ -38,6 +39,15 @@ typedef struct {
  * @return the created node
  */
 sASTNode *ast_createBinOpExpr(sASTNode *operand1,char operation,sASTNode *operand2);
+
+/**
+ * Executes the given node(-tree)
+ *
+ * @param e the environment
+ * @param n the node
+ * @return the value
+ */
+sValue *ast_execBinOpExpr(sEnv *e,sBinaryOpExpr *n);
 
 /**
  * Prints this expression

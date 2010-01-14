@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include "node.h"
+#include "../exec/env.h"
 
 typedef struct {
 	sASTNode *cond;
@@ -38,6 +39,15 @@ typedef struct {
  * @return the created node
  */
 sASTNode *ast_createIfStmt(sASTNode *cond,sASTNode *thenList,sASTNode *elseList);
+
+/**
+ * Executes the given node(-tree)
+ *
+ * @param e the environment
+ * @param n the node
+ * @return the value
+ */
+sValue *ast_execIfStmt(sEnv *e,sIfStmt *n);
 
 /**
  * Prints this statement

@@ -18,45 +18,58 @@
  */
 
 #include <esc/common.h>
-#include "stmtlist.h"
-#include "node.h"
+#include <esc/fileio.h>
 #include "../mem.h"
+#include "node.h"
+#include "command.h"
 
-sASTNode *ast_createStmtList(void) {
+sASTNode *ast_createCommand(void) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
-	sStmtList *expr = node->data = emalloc(sizeof(sStmtList));
-	expr->list = sll_create();
-	/* TODO error-handling */
-	node->type = AST_STMT_LIST;
+	sCommand *expr = node->data = emalloc(sizeof(sCommand));
+	expr->subList = sll_create();
+	/* TODO errorhandling */
+	expr->runInBG = false;
+	node->type = AST_COMMAND;
 	return node;
 }
 
-sValue *ast_execStmtList(sEnv *e,sStmtList *n) {
+sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	sSLNode *sub;
 	sValue *v;
-	for(sub = sll_begin(n->list); sub != NULL; sub = sub->next) {
+	for(sub = sll_begin(n->subList); sub != NULL; sub = sub->next) {
 		v = ast_execute(e,(sASTNode*)sub->data);
 		val_destroy(v);
 	}
 	return NULL;
 }
 
-sASTNode *ast_addStmt(sASTNode *l,sASTNode *s) {
-	sStmtList *list = (sStmtList*)l->data;
-	sll_append(list->list,s);
-	/* TODO error-handling */
-	return l;
+void ast_setRunInBG(sASTNode *c,bool runInBG) {
+	sCommand *cmd = (sCommand*)c->data;
+	cmd->runInBG = runInBG;
 }
 
-void ast_printStmtList(sStmtList *s,u32 layer) {
+void ast_addSubCmd(sASTNode *c,sASTNode *sub) {
+	sCommand *cmd = (sCommand*)c->data;
+	sll_append(cmd->subList,sub);
+	/* TODO errorhandling */
+}
+
+void ast_printCommand(sCommand *s,u32 layer) {
 	sSLNode *n;
-	for(n = sll_begin(s->list); n != NULL; n = n->next)
+	printf("%*s",layer,"");
+	for(n = sll_begin(s->subList); n != NULL; n = n->next) {
 		ast_printTree((sASTNode*)n->data,layer);
+		if(n->next)
+			printf(" | ");
+	}
+	if(s->runInBG)
+		printf(" &");
+	printf("\n");
 }
 
-void ast_destroyStmtList(sStmtList *l) {
+void ast_destroyCommand(sCommand *c) {
 	sSLNode *n;
-	for(n = sll_begin(l->list); n != NULL; n = n->next)
+	for(n = sll_begin(c->subList); n != NULL; n = n->next)
 		ast_destroy((sASTNode*)n->data);
-	sll_destroy(l->list,false);
+	sll_destroy(c->subList,false);
 }

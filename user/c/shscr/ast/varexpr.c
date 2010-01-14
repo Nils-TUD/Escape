@@ -31,6 +31,15 @@ sASTNode *ast_createVarExpr(const char *s) {
 	return node;
 }
 
+sValue *ast_execVarExpr(sEnv *e,sVarExpr *n) {
+	sValue *v = env_get(e,n->name);
+	/* we have to clone it because the user of this method may destroy it if its no longer needed */
+	if(v)
+		return val_clone(v);
+	/* TODO what to do with undefined variables? */
+	return NULL;
+}
+
 void ast_printVarExpr(sVarExpr *s,u32 layer) {
 	UNUSED(layer);
 	printf("$%s",s->name);

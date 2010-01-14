@@ -18,23 +18,14 @@
  */
 
 #include <stdio.h>
-
-int pow(int a,int b) {
-	int i;
-	int res = 1;
-	for(i = 0; i < b; i++)
-		res *= a;
-	return res;
-}
+#include "parser.h"
 
 /* Called by yyparse on error.  */
-void yyerror (char const *s)
-{
-	fprintf (stderr, "%s\n", s);
+void yyerror(char const *s) {
+	fprintf(stderr,"%s\n",s);
 }
 
-int main(void)
-{
+int main(void) {
 	extern int yydebug;
 	yydebug = 0;
 	return yyparse();

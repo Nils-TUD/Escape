@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include "node.h"
+#include "../exec/env.h"
 
 typedef struct {
 	char *str;
@@ -34,6 +35,15 @@ typedef struct {
  * @return the created node
  */
 sASTNode *ast_createConstStrExpr(const char *s);
+
+/**
+ * Executes the given node(-tree)
+ *
+ * @param e the environment
+ * @param n the node
+ * @return the value
+ */
+sValue *ast_execConstStrExpr(sEnv *e,sConstStrExpr *n);
 
 /**
  * Prints this expression

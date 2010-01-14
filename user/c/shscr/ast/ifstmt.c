@@ -33,6 +33,18 @@ sASTNode *ast_createIfStmt(sASTNode *cond,sASTNode *thenList,sASTNode *elseList)
 	return node;
 }
 
+sValue *ast_execIfStmt(sEnv *e,sIfStmt *n) {
+	sValue *cond = ast_execute(e,n->cond);
+	sValue *res;
+	if(val_isTrue(cond))
+		res = ast_execute(e,n->thenList);
+	else
+		res = ast_execute(e,n->elseList);
+	val_destroy(cond);
+	val_destroy(res);
+	return NULL;
+}
+
 void ast_printIfStmt(sIfStmt *s,u32 layer) {
 	printf("%*sif ( ",layer,"");
 	ast_printTree(s->cond,layer);

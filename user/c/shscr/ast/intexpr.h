@@ -22,9 +22,11 @@
 
 #include <esc/common.h>
 #include "node.h"
+#include "../exec/env.h"
+#include "../lang.h"
 
 typedef struct {
-	s32 val;
+	tIntType val;
 } sIntExpr;
 
 /**
@@ -34,6 +36,15 @@ typedef struct {
  * @return the created node
  */
 sASTNode *ast_createIntExpr(tIntType val);
+
+/**
+ * Executes the given node(-tree)
+ *
+ * @param e the environment
+ * @param n the node
+ * @return the value
+ */
+sValue *ast_execIntExpr(sEnv *e,sIntExpr *n);
 
 /**
  * Prints this expression

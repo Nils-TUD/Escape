@@ -17,6 +17,12 @@
 	#include "ast/stmtlist.h"
 	#include "ast/unaryopexpr.h"
 	#include "ast/varexpr.h"
+	#include "ast/command.h"
+	#include "ast/cmdexprlist.h"
+	#include "ast/subcmd.h"
+	#include "ast/redirfd.h"
+	#include "ast/redirfile.h"
+	#include "exec/env.h"
 }
 %union {
 	int intval;
@@ -39,7 +45,7 @@
 %token T_OUT2ERR
 %token T_APPEND
 
-%type <node> stmtlist stmt expr cmdexpr
+%type <node> stmtlist stmt expr cmdexpr cmdexprlist cmd subcmd cmdredirfd cmdredirin cmdredirout
 
 %nonassoc '>' '<' T_LEQ T_GEQ T_EQ T_NEQ
 %left '+' '-'
@@ -50,7 +56,7 @@
 %%
 
 start:
-			stmtlist						{ ast_printTree($1,0); }
+			stmtlist						{ ast_printTree($1,0); sEnv *e = env_create(); ast_execute(e,$1); env_print(e); }
 ;
 
 stmtlist:
@@ -66,7 +72,9 @@ stmt:
 			| T_IF '(' expr ')' T_THEN stmtlist T_ELSE stmtlist T_FI {
 				$$ = ast_createIfStmt($3,$6,$8);
 			}
-			| cmd
+			| cmd {
+				$$ = $1;
+			}
 ;
 
 expr:
@@ -89,7 +97,7 @@ expr:
 			| expr T_EQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_EQ,$3); }
 			| expr T_NEQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_NEQ,$3); }
 			| '(' expr ')'			{ $$ = $2; }
-			| '`' cmd '`'
+			| '`' cmd '`'				{ $$ = $2; }
 ;
 
 cmdexpr:
@@ -102,31 +110,41 @@ cmdexpr:
 ;
 
 cmdexprlist:
-			cmdexpr
-			| cmdexprlist cmdexpr
+			cmdexpr							{ $$ = ast_createCmdExprList(); ast_addCmdExpr($$,$1); }
+			| cmdexprlist cmdexpr { $$ = $1; ast_addCmdExpr($1,$2); }
 ;
 
 cmd:
-			subcmd
-			| subcmd '&'
+			subcmd							{ $$ = $1; }
+			| subcmd '&'				{ $$ = $1; ast_setRunInBG($1,true); }
 ;
 
 subcmd:
-			cmdexprlist cmdredirfd cmdredirfile
-			| subcmd '|' subcmd
-			| subcmd ';' subcmd
+			cmdexprlist cmdredirfd cmdredirin cmdredirout {
+				$$ = ast_createCommand();
+				ast_addSubCmd($$,ast_createSubCmd($1,$2,$3,$4));
+			}
+			| subcmd '|' cmdexprlist cmdredirfd cmdredirin cmdredirout {
+				ast_addSubCmd($1,ast_createSubCmd($3,$4,$5,$6));
+				$$ = $1;
+			}
 ;
 
 cmdredirfd:
-			T_ERR2OUT
-			| T_OUT2ERR
-			| /* empty */
+			T_ERR2OUT						{ $$ = ast_createRedirFd(REDIR_ERR2OUT); }
+			| T_OUT2ERR					{ $$ = ast_createRedirFd(REDIR_OUT2ERR); }
+			| /* empty */				{ $$ = ast_createRedirFd(REDIR_NO); }
 ;
 
-cmdredirfile:
-			'>' cmdexpr
-			| T_APPEND cmdexpr
-			| /* empty */
+cmdredirin:
+			'<' cmdexpr					{ $$ = ast_createRedirFile($2,REDIR_INFILE); }
+			| /* empty */				{ $$ = ast_createRedirFile(NULL,REDIR_OUTCREATE); }
+;
+
+cmdredirout:
+			'>' cmdexpr					{ $$ = ast_createRedirFile($2,REDIR_OUTCREATE); }
+			| T_APPEND cmdexpr	{ $$ = ast_createRedirFile($2,REDIR_OUTAPPEND); }
+			| /* empty */				{ $$ = ast_createRedirFile(NULL,REDIR_OUTCREATE); }
 ;
 
 %%

@@ -17,31 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/fileio.h>
-#include "intexpr.h"
-#include "node.h"
-#include "../mem.h"
+#ifndef LANG_H_
+#define LANG_H_
 
-sASTNode *ast_createIntExpr(tIntType val) {
-	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
-	sIntExpr *expr = node->data = emalloc(sizeof(sIntExpr));
-	expr->val = val;
-	node->type = AST_INT_EXPR;
-	return node;
-}
+typedef s32 tIntType;
 
-sValue *ast_execIntExpr(sEnv *e,sIntExpr *n) {
-	UNUSED(e);
-	return val_createInt(n->val);
-}
-
-void ast_printIntExpr(sIntExpr *s,u32 layer) {
-	UNUSED(layer);
-	printf("%d",s->val);
-}
-
-void ast_destroyIntExpr(sIntExpr *n) {
-	/* nothing to do */
-	UNUSED(n);
-}
+#endif /* LANG_H_ */

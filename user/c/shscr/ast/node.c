@@ -28,6 +28,11 @@
 #include "intexpr.h"
 #include "unaryopexpr.h"
 #include "varexpr.h"
+#include "command.h"
+#include "cmdexprlist.h"
+#include "subcmd.h"
+#include "redirfd.h"
+#include "redirfile.h"
 #include "../mem.h"
 
 void ast_printTree(sASTNode *n,u32 layer) {
@@ -59,7 +64,53 @@ void ast_printTree(sASTNode *n,u32 layer) {
 		case AST_VAR_EXPR:
 			ast_printVarExpr((sVarExpr*)n->data,layer);
 			break;
+		case AST_COMMAND:
+			ast_printCommand((sCommand*)n->data,layer);
+			break;
+		case AST_CMDEXPR_LIST:
+			ast_printCmdExprList((sCmdExprList*)n->data,layer);
+			break;
+		case AST_SUB_CMD:
+			ast_printSubCmd((sSubCmd*)n->data,layer);
+			break;
+		case AST_REDIR_FD:
+			ast_printRedirFd((sRedirFd*)n->data,layer);
+			break;
+		case AST_REDIR_FILE:
+			ast_printRedirFile((sRedirFile*)n->data,layer);
+			break;
 	}
+}
+
+sValue *ast_execute(sEnv *e,sASTNode *n) {
+	switch(n->type) {
+		case AST_ASSIGN_STMT:
+			return ast_execAssignStmt(e,(sAssignStmt*)n->data);
+		case AST_BINARY_OP_EXPR:
+			return ast_execBinOpExpr(e,(sBinaryOpExpr*)n->data);
+		case AST_CMP_OP_EXPR:
+			return ast_execCmpExpr(e,(sCmpExpr*)n->data);
+		case AST_CONST_STR_EXPR:
+			return ast_execConstStrExpr(e,(sConstStrExpr*)n->data);
+		case AST_IF_STMT:
+			return ast_execIfStmt(e,(sIfStmt*)n->data);
+		case AST_STMT_LIST:
+			return ast_execStmtList(e,(sStmtList*)n->data);
+		case AST_INT_EXPR:
+			return ast_execIntExpr(e,(sIntExpr*)n->data);
+		case AST_UNARY_OP_EXPR:
+			return ast_execUnaryOpExpr(e,(sUnaryOpExpr*)n->data);
+		case AST_VAR_EXPR:
+			return ast_execVarExpr(e,(sVarExpr*)n->data);
+		case AST_COMMAND:
+			return ast_execCommand(e,(sCommand*)n->data);
+		case AST_CMDEXPR_LIST:
+			return ast_execCmdExprList(e,(sCmdExprList*)n->data);
+		case AST_SUB_CMD:
+			return ast_execSubCmd(e,(sSubCmd*)n->data);
+	}
+	/* never reached */
+	return NULL;
 }
 
 void ast_destroy(sASTNode *n) {
@@ -90,6 +141,21 @@ void ast_destroy(sASTNode *n) {
 			break;
 		case AST_VAR_EXPR:
 			ast_destroyVarExpr((sVarExpr*)n->data);
+			break;
+		case AST_COMMAND:
+			ast_destroyCommand((sCommand*)n->data);
+			break;
+		case AST_CMDEXPR_LIST:
+			ast_destroyCmdExprList((sCmdExprList*)n->data);
+			break;
+		case AST_SUB_CMD:
+			ast_destroySubCmd((sSubCmd*)n->data);
+			break;
+		case AST_REDIR_FD:
+			ast_destroyRedirFd((sRedirFd*)n->data);
+			break;
+		case AST_REDIR_FILE:
+			ast_destroyRedirFile((sRedirFile*)n->data);
 			break;
 	}
 	efree(n->data);

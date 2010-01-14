@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include "node.h"
+#include "../exec/env.h"
 
 #define UN_OP_NEG		0
 
@@ -38,6 +39,15 @@ typedef struct {
  * @return the created node
  */
 sASTNode *ast_createUnaryOpExpr(sASTNode *expr,u8 op);
+
+/**
+ * Executes the given node(-tree)
+ *
+ * @param e the environment
+ * @param n the node
+ * @return the value
+ */
+sValue *ast_execUnaryOpExpr(sEnv *e,sUnaryOpExpr *n);
 
 /**
  * Prints this expression

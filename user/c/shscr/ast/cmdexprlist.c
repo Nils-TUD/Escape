@@ -18,43 +18,49 @@
  */
 
 #include <esc/common.h>
-#include "stmtlist.h"
+#include "cmdexprlist.h"
 #include "node.h"
 #include "../mem.h"
 
-sASTNode *ast_createStmtList(void) {
+sASTNode *ast_createCmdExprList(void) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
-	sStmtList *expr = node->data = emalloc(sizeof(sStmtList));
+	sCmdExprList *expr = node->data = emalloc(sizeof(sCmdExprList));
 	expr->list = sll_create();
 	/* TODO error-handling */
-	node->type = AST_STMT_LIST;
+	node->type = AST_CMDEXPR_LIST;
 	return node;
 }
 
-sValue *ast_execStmtList(sEnv *e,sStmtList *n) {
+sValue *ast_execCmdExprList(sEnv *e,sCmdExprList *n) {
 	sSLNode *sub;
 	sValue *v;
+	printf("CmdExprList: ");
 	for(sub = sll_begin(n->list); sub != NULL; sub = sub->next) {
 		v = ast_execute(e,(sASTNode*)sub->data);
+		printf("%s ",val_getStr(v));
 		val_destroy(v);
 	}
+	printf("\n");
 	return NULL;
 }
 
-sASTNode *ast_addStmt(sASTNode *l,sASTNode *s) {
-	sStmtList *list = (sStmtList*)l->data;
+sASTNode *ast_addCmdExpr(sASTNode *l,sASTNode *s) {
+	sCmdExprList *list = (sCmdExprList*)l->data;
 	sll_append(list->list,s);
 	/* TODO error-handling */
 	return l;
 }
 
-void ast_printStmtList(sStmtList *s,u32 layer) {
+void ast_printCmdExprList(sCmdExprList *s,u32 layer) {
 	sSLNode *n;
-	for(n = sll_begin(s->list); n != NULL; n = n->next)
+	for(n = sll_begin(s->list); n != NULL; n = n->next) {
 		ast_printTree((sASTNode*)n->data,layer);
+		if(n->next != NULL)
+			printf(" ");
+	}
 }
 
-void ast_destroyStmtList(sStmtList *l) {
+void ast_destroyCmdExprList(sCmdExprList *l) {
 	sSLNode *n;
 	for(n = sll_begin(l->list); n != NULL; n = n->next)
 		ast_destroy((sASTNode*)n->data);

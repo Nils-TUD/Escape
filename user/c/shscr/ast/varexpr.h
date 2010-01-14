@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include "node.h"
+#include "../exec/env.h"
 
 typedef struct {
 	char *name;
@@ -34,6 +35,15 @@ typedef struct {
  * @return the created node
  */
 sASTNode *ast_createVarExpr(const char *s);
+
+/**
+ * Executes the given node(-tree)
+ *
+ * @param e the environment
+ * @param n the node
+ * @return the value
+ */
+sValue *ast_execVarExpr(sEnv *e,sVarExpr *n);
 
 /**
  * Prints this expression

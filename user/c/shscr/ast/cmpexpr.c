@@ -33,6 +33,15 @@ sASTNode *ast_createCmpExpr(sASTNode *operand1,u8 operation,sASTNode *operand2) 
 	return node;
 }
 
+sValue *ast_execCmpExpr(sEnv *e,sCmpExpr *n) {
+	sValue *v1 = ast_execute(e,n->operand1);
+	sValue *v2 = ast_execute(e,n->operand2);
+	sValue *res = val_cmp(v1,v2,n->operation);
+	val_destroy(v1);
+	val_destroy(v2);
+	return res;
+}
+
 void ast_printCmpExpr(sCmpExpr *s,u32 layer) {
 	ast_printTree(s->operand1,layer);
 	switch(s->operation) {

@@ -71,13 +71,13 @@
 "+"|"-"|"*"|"/"|"%"|"^" {
 	return *yytext;
 }
-"("|")" {
+"("|")"|"{"|"}" {
 	return *yytext;
 }
 
 [ \t\n]+			/* eat up whitespace */
 
-[a-zA-Z0-9_\-!?~;,]+ {
+[a-zA-Z0-9_\-!?~;,\.]+ {
 	yylval.strval = strdup(yytext);
 	return T_STRING;
 }

@@ -17,44 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef NODE_H_
-#define NODE_H_
+#ifndef COMMAND_H_
+#define COMMAND_H_
 
 #include <esc/common.h>
+#include <sllist.h>
+#include "node.h"
 #include "../exec/env.h"
-#include "../lang.h"
 
-#define AST_ASSIGN_STMT			0
-#define AST_BINARY_OP_EXPR		1
-#define AST_CMP_OP_EXPR			2
-#define AST_CONST_STR_EXPR		3
-#define AST_DYN_STR_EXPR		4
-#define AST_IF_STMT				5
-#define AST_STMT_LIST			6
-#define AST_UNARY_OP_EXPR		7
-#define AST_VAR_EXPR			8
-#define AST_INT_EXPR			9
-#define AST_COMMAND				10
-#define AST_CMDEXPR_LIST		11
-#define AST_SUB_CMD				12
-#define AST_REDIR_FD			13
-#define AST_REDIR_FILE			14
-
-typedef u8 tASTType;
-
-typedef struct sASTNode sASTNode;
-struct sASTNode {
-	tASTType type;
-	void *data;
-};
+typedef struct {
+	bool runInBG;
+	sSLList *subList;
+} sCommand;
 
 /**
- * Prints the tree
+ * Creates a command
  *
- * @param n the node to start with
- * @param layer the layer to start with (indention)
+ * @return the created node
  */
-void ast_printTree(sASTNode *n,u32 layer);
+sASTNode *ast_createCommand(void);
 
 /**
  * Executes the given node(-tree)
@@ -63,13 +44,37 @@ void ast_printTree(sASTNode *n,u32 layer);
  * @param n the node
  * @return the value
  */
-sValue *ast_execute(sEnv *e,sASTNode *n);
+sValue *ast_execCommand(sEnv *e,sCommand *n);
 
 /**
- * Destroys the node recursively
+ * Sets wether this command should run in bg
  *
- * @param n the node
+ * @param c the command
+ * @param runInBG wether to run in background
  */
-void ast_destroy(sASTNode *n);
+void ast_setRunInBG(sASTNode *c,bool runInBG);
 
-#endif /* NODE_H_ */
+/**
+ * Adds <sub> to the command <c>.
+ *
+ * @param c the command
+ * @param sub the sub-command
+ */
+void ast_addSubCmd(sASTNode *c,sASTNode *sub);
+
+/**
+ * Prints this command
+ *
+ * @param s the command
+ * @param layer the layer
+ */
+void ast_printCommand(sCommand *s,u32 layer);
+
+/**
+ * Destroys the given command (should be called from ast_destroy() only!)
+ *
+ * @param n the command
+ */
+void ast_destroyCommand(sCommand *n);
+
+#endif /* COMMAND_H_ */

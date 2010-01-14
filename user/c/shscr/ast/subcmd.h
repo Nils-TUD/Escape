@@ -17,44 +17,30 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef NODE_H_
-#define NODE_H_
+#ifndef SUBCMD_H_
+#define SUBCMD_H_
 
 #include <esc/common.h>
+#include "node.h"
 #include "../exec/env.h"
-#include "../lang.h"
 
-#define AST_ASSIGN_STMT			0
-#define AST_BINARY_OP_EXPR		1
-#define AST_CMP_OP_EXPR			2
-#define AST_CONST_STR_EXPR		3
-#define AST_DYN_STR_EXPR		4
-#define AST_IF_STMT				5
-#define AST_STMT_LIST			6
-#define AST_UNARY_OP_EXPR		7
-#define AST_VAR_EXPR			8
-#define AST_INT_EXPR			9
-#define AST_COMMAND				10
-#define AST_CMDEXPR_LIST		11
-#define AST_SUB_CMD				12
-#define AST_REDIR_FD			13
-#define AST_REDIR_FILE			14
-
-typedef u8 tASTType;
-
-typedef struct sASTNode sASTNode;
-struct sASTNode {
-	tASTType type;
-	void *data;
-};
+typedef struct {
+	sASTNode *exprList;
+	sASTNode *redirFd;
+	sASTNode *redirIn;
+	sASTNode *redirOut;
+} sSubCmd;
 
 /**
- * Prints the tree
+ * Creates an if-statement-node with the condition, then- and else-list
  *
- * @param n the node to start with
- * @param layer the layer to start with (indention)
+ * @param exprList the list of expressions
+ * @param redirFd the fd-redirections
+ * @param redirIn the input-file
+ * @param redirOut the output-file
+ * @return the created node
  */
-void ast_printTree(sASTNode *n,u32 layer);
+sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redirFd,sASTNode *redirIn,sASTNode *redirOut);
 
 /**
  * Executes the given node(-tree)
@@ -63,13 +49,21 @@ void ast_printTree(sASTNode *n,u32 layer);
  * @param n the node
  * @return the value
  */
-sValue *ast_execute(sEnv *e,sASTNode *n);
+sValue *ast_execSubCmd(sEnv *e,sSubCmd *n);
 
 /**
- * Destroys the node recursively
+ * Prints this command
  *
- * @param n the node
+ * @param s the command
+ * @param layer the layer
  */
-void ast_destroy(sASTNode *n);
+void ast_printSubCmd(sSubCmd *s,u32 layer);
 
-#endif /* NODE_H_ */
+/**
+ * Destroys the given command (should be called from ast_destroy() only!)
+ *
+ * @param n the command
+ */
+void ast_destroySubCmd(sSubCmd *n);
+
+#endif /* SUBCMD_H_ */

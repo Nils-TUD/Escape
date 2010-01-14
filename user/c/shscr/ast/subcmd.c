@@ -19,40 +19,35 @@
 
 #include <esc/common.h>
 #include <esc/fileio.h>
-#include "unaryopexpr.h"
-#include "node.h"
 #include "../mem.h"
+#include "subcmd.h"
 
-sASTNode *ast_createUnaryOpExpr(sASTNode *expr,u8 op) {
+sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redirFd,sASTNode *redirIn,sASTNode *redirOut) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
-	sUnaryOpExpr *res = node->data = emalloc(sizeof(sUnaryOpExpr));
-	res->operand1 = expr;
-	res->operation = op;
-	node->type = AST_UNARY_OP_EXPR;
+	sSubCmd *expr = node->data = emalloc(sizeof(sSubCmd));
+	expr->exprList = exprList;
+	expr->redirFd = redirFd;
+	expr->redirIn = redirIn;
+	expr->redirOut = redirOut;
+	node->type = AST_SUB_CMD;
 	return node;
 }
 
-sValue *ast_execUnaryOpExpr(sEnv *e,sUnaryOpExpr *n) {
-	sValue *v = ast_execute(e,n->operand1);
-	sValue *res = NULL;
-	switch(n->operation) {
-		case UN_OP_NEG:
-			res = val_createInt(-val_getInt(v));
-			break;
-	}
-	val_destroy(v);
-	return res;
+sValue *ast_execSubCmd(sEnv *e,sSubCmd *n) {
+	/* TODO */
+	return ast_execute(e,n->exprList);
 }
 
-void ast_printUnaryOpExpr(sUnaryOpExpr *s,u32 layer) {
-	switch(s->operation) {
-		case UN_OP_NEG:
-			printf("-");
-			break;
-	}
-	ast_printTree(s->operand1,layer);
+void ast_printSubCmd(sSubCmd *s,u32 layer) {
+	ast_printTree(s->exprList,layer);
+	ast_printTree(s->redirFd,layer);
+	ast_printTree(s->redirIn,layer);
+	ast_printTree(s->redirOut,layer);
 }
 
-void ast_destroyUnaryOpExpr(sUnaryOpExpr *l) {
-	ast_destroy(l->operand1);
+void ast_destroySubCmd(sSubCmd *n) {
+	ast_destroy(n->exprList);
+	ast_destroy(n->redirFd);
+	ast_destroy(n->redirIn);
+	ast_destroy(n->redirOut);
 }

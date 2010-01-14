@@ -31,6 +31,11 @@ sASTNode *ast_createConstStrExpr(const char *s) {
 	return node;
 }
 
+sValue *ast_execConstStrExpr(sEnv *e,sConstStrExpr *n) {
+	UNUSED(e);
+	return val_createStr(n->str);
+}
+
 void ast_printConstStrExpr(sConstStrExpr *s,u32 layer) {
 	UNUSED(layer);
 	printf("'%s'",s->str);

@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include "node.h"
+#include "../exec/env.h"
 
 #define CMP_OP_EQ	0
 #define CMP_OP_NEQ	1
@@ -45,6 +46,15 @@ typedef struct {
  * @return the created node
  */
 sASTNode *ast_createCmpExpr(sASTNode *operand1,u8 operation,sASTNode *operand2);
+
+/**
+ * Executes the given node(-tree)
+ *
+ * @param e the environment
+ * @param n the node
+ * @return the value
+ */
+sValue *ast_execCmpExpr(sEnv *e,sCmpExpr *n);
 
 /**
  * Prints this expression

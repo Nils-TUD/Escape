@@ -57,7 +57,7 @@ $(BUILDDIRS):
 
 $(BUILDL)/%.o:		%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -D YYERROR_VERBOSE -o $@ -c $< -MMD
 
 -include $(DEPS)
 

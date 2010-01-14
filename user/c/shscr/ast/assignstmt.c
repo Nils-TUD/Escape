@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/fileio.h>
 #include "assignstmt.h"
+#include "varexpr.h"
 #include "node.h"
 #include "../mem.h"
 
@@ -30,6 +31,14 @@ sASTNode *ast_createAssignStmt(sASTNode *var,sASTNode *expr) {
 	stmt->var = var;
 	node->type = AST_ASSIGN_STMT;
 	return node;
+}
+
+sValue *ast_execAssignStmt(sEnv *e,sAssignStmt *n) {
+	sValue *v = ast_execute(e,n->expr);
+	/* TODO maybe we should remove the var-expression? */
+	const char *name = ((sVarExpr*)n->var->data)->name;
+	env_set(e,name,v);
+	return NULL;
 }
 
 void ast_printAssignStmt(sAssignStmt *s,u32 layer) {

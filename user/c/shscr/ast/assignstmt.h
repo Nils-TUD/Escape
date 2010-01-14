@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include "node.h"
+#include "../exec/env.h"
 
 typedef struct {
 	sASTNode *var;
@@ -36,6 +37,15 @@ typedef struct {
  * @return the created node
  */
 sASTNode *ast_createAssignStmt(sASTNode *var,sASTNode *expr);
+
+/**
+ * Executes the given node(-tree)
+ *
+ * @param e the environment
+ * @param n the node
+ * @return the value
+ */
+sValue *ast_execAssignStmt(sEnv *e,sAssignStmt *n);
 
 /**
  * Prints this statement

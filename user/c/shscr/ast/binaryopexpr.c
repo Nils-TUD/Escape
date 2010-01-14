@@ -23,6 +23,8 @@
 #include "node.h"
 #include "../mem.h"
 
+static tIntType pow(tIntType a,tIntType b);
+
 sASTNode *ast_createBinOpExpr(sASTNode *operand1,char operation,sASTNode *operand2) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sBinaryOpExpr *expr = node->data = emalloc(sizeof(sBinaryOpExpr));
@@ -31,6 +33,37 @@ sASTNode *ast_createBinOpExpr(sASTNode *operand1,char operation,sASTNode *operan
 	expr->operand2 = operand2;
 	node->type = AST_BINARY_OP_EXPR;
 	return node;
+}
+
+sValue *ast_execBinOpExpr(sEnv *e,sBinaryOpExpr *n) {
+	sValue *v1 = ast_execute(e,n->operand1);
+	sValue *v2 = ast_execute(e,n->operand2);
+	sValue *res;
+	switch(n->operation) {
+		case '+':
+			res = val_createInt(val_getInt(v1) + val_getInt(v2));
+			break;
+		case '-':
+			res = val_createInt(val_getInt(v1) - val_getInt(v2));
+			break;
+		case '*':
+			res = val_createInt(val_getInt(v1) * val_getInt(v2));
+			break;
+		case '/':
+			/* TODO division by zero */
+			res = val_createInt(val_getInt(v1) / val_getInt(v2));
+			break;
+		case '%':
+			res = val_createInt(val_getInt(v1) % val_getInt(v2));
+			break;
+		case '^':
+			res = val_createInt(pow(val_getInt(v1),val_getInt(v2)));
+			break;
+	}
+	/* we don't need the values anymore, so delete them */
+	val_destroy(v1);
+	val_destroy(v2);
+	return res;
 }
 
 void ast_printBinOpExpr(sBinaryOpExpr *s,u32 layer) {
@@ -44,4 +77,12 @@ void ast_printBinOpExpr(sBinaryOpExpr *s,u32 layer) {
 void ast_destroyBinOpExpr(sBinaryOpExpr *n) {
 	ast_destroy(n->operand1);
 	ast_destroy(n->operand2);
+}
+
+static tIntType pow(tIntType a,tIntType b) {
+	s32 i;
+	tIntType res = 1;
+	for(i = 0; i < b; i++)
+		res *= a;
+	return res;
 }

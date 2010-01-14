@@ -17,44 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef NODE_H_
-#define NODE_H_
+#ifndef CMDEXPRLIST_H_
+#define CMDEXPRLIST_H_
 
 #include <esc/common.h>
+#include <sllist.h>
+#include "node.h"
 #include "../exec/env.h"
-#include "../lang.h"
 
-#define AST_ASSIGN_STMT			0
-#define AST_BINARY_OP_EXPR		1
-#define AST_CMP_OP_EXPR			2
-#define AST_CONST_STR_EXPR		3
-#define AST_DYN_STR_EXPR		4
-#define AST_IF_STMT				5
-#define AST_STMT_LIST			6
-#define AST_UNARY_OP_EXPR		7
-#define AST_VAR_EXPR			8
-#define AST_INT_EXPR			9
-#define AST_COMMAND				10
-#define AST_CMDEXPR_LIST		11
-#define AST_SUB_CMD				12
-#define AST_REDIR_FD			13
-#define AST_REDIR_FILE			14
-
-typedef u8 tASTType;
-
-typedef struct sASTNode sASTNode;
-struct sASTNode {
-	tASTType type;
-	void *data;
-};
+typedef struct {
+	sSLList *list;
+} sCmdExprList;
 
 /**
- * Prints the tree
+ * Creates a command-expression-list-node
  *
- * @param n the node to start with
- * @param layer the layer to start with (indention)
+ * @return the created node
  */
-void ast_printTree(sASTNode *n,u32 layer);
+sASTNode *ast_createCmdExprList(void);
 
 /**
  * Executes the given node(-tree)
@@ -63,13 +43,29 @@ void ast_printTree(sASTNode *n,u32 layer);
  * @param n the node
  * @return the value
  */
-sValue *ast_execute(sEnv *e,sASTNode *n);
+sValue *ast_execCmdExprList(sEnv *e,sCmdExprList *n);
 
 /**
- * Destroys the node recursively
+ * Adds the given expression to the list
  *
- * @param n the node
+ * @param l the list
+ * @param s the expression
  */
-void ast_destroy(sASTNode *n);
+sASTNode *ast_addCmdExpr(sASTNode *l,sASTNode *s);
 
-#endif /* NODE_H_ */
+/**
+ * Prints this command-expression-list
+ *
+ * @param s the list
+ * @param layer the layer
+ */
+void ast_printCmdExprList(sCmdExprList *s,u32 layer);
+
+/**
+ * Destroys the given command-expression-list (should be called from ast_destroy() only!)
+ *
+ * @param n the list
+ */
+void ast_destroyCmdExprList(sCmdExprList *n);
+
+#endif /* CMDEXPRLIST_H_ */

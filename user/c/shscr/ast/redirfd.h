@@ -17,50 +17,41 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VALUE_H_
-#define VALUE_H_
+#ifndef REDIRFD_H_
+#define REDIRFD_H_
 
 #include <esc/common.h>
-#include <string.h>
-#include <assert.h>
+#include "node.h"
 
-#define TYPE_INT	0
-#define TYPE_STR	1
-#define TYPE_VAR	2
+#define REDIR_NO		0
+#define REDIR_ERR2OUT	1
+#define REDIR_OUT2ERR	2
 
-#define CMP_OP_EQ	0
-#define CMP_OP_NEQ	1
-#define CMP_OP_LT	2
-#define CMP_OP_GT	3
-#define CMP_OP_LEQ	4
-#define CMP_OP_GEQ	5
-
-typedef struct sDynVal sDynVal;
-struct sDynVal {
+typedef struct {
 	u8 type;
-	s32 intval;
-	char *strval;
-	sDynVal *varval;
-};
+} sRedirFd;
 
-sDynVal *val_createInt(s32 i);
+/**
+ * Creates an redirect-fd-node with the condition, then- and else-list
+ *
+ * @param type the redirect-type
+ * @return the created node
+ */
+sASTNode *ast_createRedirFd(u8 type);
 
-sDynVal *val_createStr(const char *s);
+/**
+ * Prints this redirfd
+ *
+ * @param s the redirfd
+ * @param layer the layer
+ */
+void ast_printRedirFd(sRedirFd *s,u32 layer);
 
-sDynVal *val_createVar(const char *s);
+/**
+ * Destroys the given redirfd (should be called from ast_destroy() only!)
+ *
+ * @param n the redirfd
+ */
+void ast_destroyRedirFd(sRedirFd *n);
 
-void val_destroy(sDynVal *v);
-
-u8 val_getType(sDynVal *v);
-
-bool val_isTrue(sDynVal *v);
-
-sDynVal *val_cmp(sDynVal *v1,sDynVal *v2,u8 op);
-
-void val_set(sDynVal *var,sDynVal *val);
-
-s32 val_getInt(sDynVal *v);
-
-char *val_getStr(sDynVal *v);
-
-#endif /* VALUE_H_ */
+#endif /* REDIRFD_H_ */

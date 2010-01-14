@@ -23,6 +23,7 @@
 #include <esc/common.h>
 #include <sllist.h>
 #include "node.h"
+#include "../exec/env.h"
 
 typedef struct {
 	sSLList *list;
@@ -34,6 +35,15 @@ typedef struct {
  * @return the created node
  */
 sASTNode *ast_createStmtList(void);
+
+/**
+ * Executes the given node(-tree)
+ *
+ * @param e the environment
+ * @param n the node
+ * @return the value
+ */
+sValue *ast_execStmtList(sEnv *e,sStmtList *n);
 
 /**
  * Adds the given statement to the list

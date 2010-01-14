@@ -17,42 +17,43 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef REDIRFILE_H_
+#define REDIRFILE_H_
+
 #include <esc/common.h>
-#include <esc/fileio.h>
-#include "unaryopexpr.h"
 #include "node.h"
-#include "../mem.h"
 
-sASTNode *ast_createUnaryOpExpr(sASTNode *expr,u8 op) {
-	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
-	sUnaryOpExpr *res = node->data = emalloc(sizeof(sUnaryOpExpr));
-	res->operand1 = expr;
-	res->operation = op;
-	node->type = AST_UNARY_OP_EXPR;
-	return node;
-}
+#define REDIR_INFILE		0
+#define REDIR_OUTCREATE		1
+#define REDIR_OUTAPPEND		2
 
-sValue *ast_execUnaryOpExpr(sEnv *e,sUnaryOpExpr *n) {
-	sValue *v = ast_execute(e,n->operand1);
-	sValue *res = NULL;
-	switch(n->operation) {
-		case UN_OP_NEG:
-			res = val_createInt(-val_getInt(v));
-			break;
-	}
-	val_destroy(v);
-	return res;
-}
+typedef struct {
+	u8 type;
+	sASTNode *expr;
+} sRedirFile;
 
-void ast_printUnaryOpExpr(sUnaryOpExpr *s,u32 layer) {
-	switch(s->operation) {
-		case UN_OP_NEG:
-			printf("-");
-			break;
-	}
-	ast_printTree(s->operand1,layer);
-}
+/**
+ * Creates an redirect-file-node with the condition, then- and else-list
+ *
+ * @param expr the file to redirect to (NULL = nothing)
+ * @param type the redirect-type
+ * @return the created node
+ */
+sASTNode *ast_createRedirFile(sASTNode *expr,u8 type);
 
-void ast_destroyUnaryOpExpr(sUnaryOpExpr *l) {
-	ast_destroy(l->operand1);
-}
+/**
+ * Prints this redirfile
+ *
+ * @param s the redirfile
+ * @param layer the layer
+ */
+void ast_printRedirFile(sRedirFile *s,u32 layer);
+
+/**
+ * Destroys the given redirfile (should be called from ast_destroy() only!)
+ *
+ * @param n the redirfile
+ */
+void ast_destroyRedirFile(sRedirFile *n);
+
+#endif /* REDIRFILE_H_ */

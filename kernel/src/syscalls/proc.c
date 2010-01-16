@@ -123,7 +123,7 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 		}
 		res = proc_getExitState(p->pid,state);
 		if(res < 0)
-			SYSC_ERROR(stack,0);
+			SYSC_ERROR(stack,res);
 	}
 
 	/* finally kill the process */

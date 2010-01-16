@@ -22,7 +22,7 @@
 
 #include <common.h>
 
-#define SIG_COUNT			17
+#define SIG_COUNT			18
 
 /* the signals */
 #define SIG_KILL			0
@@ -32,16 +32,17 @@
 #define SIG_PROC_DIED		4
 #define SIG_THREAD_DIED		5
 #define SIG_CHILD_DIED		6
-#define SIG_INTRPT			7
-#define SIG_INTRPT_TIMER	8
-#define SIG_INTRPT_KB		9
-#define SIG_INTRPT_COM1		10
-#define SIG_INTRPT_COM2		11
-#define SIG_INTRPT_FLOPPY	12
-#define SIG_INTRPT_CMOS		13
-#define SIG_INTRPT_ATA1		14
-#define SIG_INTRPT_ATA2		15
-#define SIG_INTRPT_MOUSE	16
+#define SIG_CHILD_TERM		7
+#define SIG_INTRPT			8
+#define SIG_INTRPT_TIMER	9
+#define SIG_INTRPT_KB		10
+#define SIG_INTRPT_COM1		11
+#define SIG_INTRPT_COM2		12
+#define SIG_INTRPT_FLOPPY	13
+#define SIG_INTRPT_CMOS		14
+#define SIG_INTRPT_ATA1		15
+#define SIG_INTRPT_ATA2		16
+#define SIG_INTRPT_MOUSE	17
 
 /* signal-handler-signature */
 typedef void (*fSigHandler)(tSig sigNo,u32 data);

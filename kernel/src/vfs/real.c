@@ -52,7 +52,7 @@ static void vfsr_statRespHandler(tTid tid,const u8 *data,u32 size);
 static void vfsr_defRespHandler(tTid tid,const u8 *data,u32 size);
 static tFileNo vfsr_create(tTid tid);
 static s32 vfsr_add(tFileNo virtFile,tFileNo realFile);
-static sReal2Virt *vfsr_get(tFileNo real,s32 *err);
+static sReal2Virt *vfsr_get(tTid tid,tFileNo real,s32 *err);
 static void vfsr_remove(tTid tid,tFileNo real);
 static void vfsr_destroy(tTid tid,tFileNo virt);
 
@@ -190,7 +190,7 @@ s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,u8 *buffer
 	sReal2Virt *r2v;
 	s32 res;
 
-	r2v = vfsr_get(file,&res);
+	r2v = vfsr_get(tid,file,&res);
 	if(r2v == NULL)
 		return res;
 
@@ -219,7 +219,7 @@ s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,const u8 
 	sReal2Virt *r2v;
 	s32 res;
 
-	r2v = vfsr_get(file,&res);
+	r2v = vfsr_get(tid,file,&res);
 	if(r2v == NULL)
 		return res;
 
@@ -284,7 +284,7 @@ s32 vfsr_sync(tTid tid) {
 void vfsr_closeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo) {
 	s32 res;
 	sReal2Virt *r2v;
-	r2v = vfsr_get(file,&res);
+	r2v = vfsr_get(tid,file,&res);
 	if(r2v == NULL)
 		return;
 
@@ -456,16 +456,36 @@ static s32 vfsr_add(tFileNo virtFile,tFileNo realFile) {
 	return 0;
 }
 
-static sReal2Virt *vfsr_get(tFileNo real,s32 *err) {
+static sReal2Virt *vfsr_get(tTid tid,tFileNo real,s32 *err) {
 	sSLNode *n;
+	sReal2Virt *r2v;
+	s32 owner;
 	sSLList *list = real2virt[real % R2V_MAP_SIZE];
+	bool foundReal = false;
 	*err = ERR_INVALID_INODENO;
 	if(list == NULL)
 		return NULL;
 	for(n = sll_begin(list); n != NULL; n = n->next) {
-		if(((sReal2Virt*)n->data)->realFile == real) {
+		r2v = (sReal2Virt*)n->data;
+		if(r2v->realFile == real) {
+			owner = vfs_getOwner(r2v->virtFile);
+			/* if we're not the owner, we can't use the file but remember that the real-file exists */
+			if(owner != tid) {
+				foundReal = true;
+				continue;
+			}
 			*err = 0;
 			return (sReal2Virt*)n->data;
+		}
+	}
+	/* if we're here and have found the real-file, we were not the owner.
+	 * that means that this file has been inherited, so we have to create a new virt-file and
+	 * use that (for accessing the fs-service). */
+	if(foundReal) {
+		tFileNo virt = vfsr_create(tid);
+		if(virt >= 0) {
+			if(vfsr_add(virt,real) == 0)
+				return vfsr_get(tid,real,err);
 		}
 	}
 	return NULL;

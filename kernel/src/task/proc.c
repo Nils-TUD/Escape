@@ -368,6 +368,7 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 	/* store exit-conditions */
 	p->exitCode = exitCode;
 	p->exitSig = signal;
+	sig_addSignalFor(p->parentPid,SIG_CHILD_TERM,p->pid);
 
 	/* check wether there is a parent-thread that waits for a child */
 	for(tn = sll_begin(proc_getByPid(p->parentPid)->threads); tn != NULL; tn = tn->next) {

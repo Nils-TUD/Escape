@@ -175,6 +175,20 @@ s32 vfs_incRefs(tFileNo file) {
 	return 0;
 }
 
+s32 vfs_getOwner(tFileNo file) {
+	sGFTEntry *e;
+
+	/* invalid file-number? */
+	if(file < 0 || file >= FILE_COUNT)
+		return ERR_INVALID_FILE;
+
+	/* not in use? */
+	e = globalFileTable + file;
+	if(e->flags == 0)
+		return ERR_INVALID_FILE;
+	return e->owner;
+}
+
 s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev) {
 	sGFTEntry *e;
 

@@ -147,6 +147,12 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file);
 s32 vfs_incRefs(tFileNo file);
 
 /**
+ * @param file the file-number
+ * @return the owner-tid of the given file
+ */
+s32 vfs_getOwner(tFileNo file);
+
+/**
  * Determines the node-number and device-number for the given file
  *
  * @param file the file

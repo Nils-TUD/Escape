@@ -33,7 +33,7 @@
 s32 shell_cmdEnv(u32 argc,char **argv) {
 	char *valBuf,*nameBuf;
 	if(argc > 2 || isHelpCmd(argc,argv)) {
-		printf("Usage: %s [<name>|<name>=<value>]\n");
+		printf("Usage: %s [<name>|<name>=<value>]\n",argv[0]);
 		return EXIT_FAILURE;
 	}
 

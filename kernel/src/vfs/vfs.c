@@ -303,6 +303,7 @@ static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 }
 
 u32 vfs_tell(tTid tid,tFileNo file) {
+	UNUSED(tid);
 	sGFTEntry *e = globalFileTable + file;
 	vassert(e->flags != 0,"Invalid file %d",file);
 	return e->position;

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef THREAD_H_
-#define THREAD_H_
+#ifndef MOD_THREAD_H_
+#define MOD_THREAD_H_
 
 #include <esc/common.h>
 
@@ -27,4 +27,4 @@
  */
 int mod_thread(int argc,char *argv[]);
 
-#endif /* THREAD_H_ */
+#endif /* MOD_THREAD_H_ */

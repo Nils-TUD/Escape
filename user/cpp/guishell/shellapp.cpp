@@ -26,7 +26,7 @@
 #include <errors.h>
 #include "shellapp.h"
 
-ShellApplication::ShellApplication(tServ sid,u32 no,ShellControl *sh)
+ShellApplication::ShellApplication(tServ sid,ShellControl *sh)
 		: Application(), _sid(sid), _sh(sh) {
 	_inst = this;
 

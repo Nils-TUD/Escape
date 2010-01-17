@@ -24,6 +24,7 @@
 #include <esc/fileio.h>
 #include <esc/dir.h>
 #include <stdlib.h>
+#include "thread.h"
 
 #define LOCK_ARRAY	0x1
 #define TEST_COUNT	100
@@ -62,7 +63,7 @@ int mod_thread(int argc,char *argv[]) {
 }
 
 static int myThread(int argc,char *argv[]) {
-	u32 i;
+	s32 i;
 	const char *folders[] = {
 		"/","/bin","/system"
 	};

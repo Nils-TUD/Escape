@@ -72,7 +72,7 @@ int main(int argc,char **argv) {
 	if(isHelpCmd(argc,argv))
 		usage();
 
-	for(i = 1; i < argc; i++) {
+	for(i = 1; (s32)i < argc; i++) {
 		if(strncmp(argv[i],"--",2) == 0) {
 			if(strcmp(argv[i] + 2,"detail") == 0)
 				detail = true;

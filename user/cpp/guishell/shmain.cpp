@@ -92,7 +92,7 @@ int main(int argc,char **argv) {
 
 		// now start GUI
 		ShellControl sh(sid,0,0,500,280);
-		ShellApplication *app = new ShellApplication(sid,no,&sh);
+		ShellApplication *app = new ShellApplication(sid,&sh);
 		Window w("Shell",100,100,500,300);
 		w.add(sh);
 		return app->run();

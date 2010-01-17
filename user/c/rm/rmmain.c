@@ -25,7 +25,7 @@
 #include <stdlib.h>
 
 int main(int argc,char *argv[]) {
-	u32 i;
+	s32 i;
 	char rPath[MAX_PATH_LEN];
 	if(argc < 2 || isHelpCmd(argc,argv)) {
 		fprintf(stderr,"Usage: %s <path> ...\n",argv[0]);

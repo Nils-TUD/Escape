@@ -36,7 +36,7 @@ using namespace esc::gui;
 
 class ShellApplication : public Application {
 public:
-	ShellApplication(tServ sid,u32 no,ShellControl *sh);
+	ShellApplication(tServ sid,ShellControl *sh);
 	virtual ~ShellApplication();
 
 protected:

@@ -53,7 +53,7 @@ sValue *env_get(sEnv *env,const char *name) {
 	return NULL;
 }
 
-void env_set(sEnv *env,const char *name,sValue *val) {
+sValue *env_set(sEnv *env,const char *name,sValue *val) {
 	sVar *v = env_getByName(env,name);
 	if(v) {
 		efree(v->val);
@@ -64,6 +64,7 @@ void env_set(sEnv *env,const char *name,sValue *val) {
 		sll_append(env->vars,v);
 		/* TODO error-handling */
 	}
+	return v->val;
 }
 
 void env_destroy(sEnv *env) {

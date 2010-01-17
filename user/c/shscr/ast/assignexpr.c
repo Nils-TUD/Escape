@@ -19,37 +19,37 @@
 
 #include <esc/common.h>
 #include <esc/fileio.h>
-#include "assignstmt.h"
+#include "assignexpr.h"
 #include "varexpr.h"
 #include "node.h"
 #include "../mem.h"
 
-sASTNode *ast_createAssignStmt(sASTNode *var,sASTNode *expr) {
+sASTNode *ast_createAssignExpr(sASTNode *var,sASTNode *expr) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
-	sAssignStmt *stmt = node->data = emalloc(sizeof(sAssignStmt));
+	sAssignExpr *stmt = node->data = emalloc(sizeof(sAssignExpr));
 	stmt->expr = expr;
 	stmt->var = var;
 	node->type = AST_ASSIGN_STMT;
 	return node;
 }
 
-sValue *ast_execAssignStmt(sEnv *e,sAssignStmt *n) {
+sValue *ast_execAssignExpr(sEnv *e,sAssignExpr *n) {
 	sValue *v = ast_execute(e,n->expr);
 	/* TODO maybe we should remove the var-expression? */
 	const char *name = ((sVarExpr*)n->var->data)->name;
-	env_set(e,name,v);
-	return NULL;
+	/* don't free v since its kept in the env */
+	v = env_set(e,name,v);
+	/* we have to clone it because the user of this method may destroy it if its no longer needed */
+	return val_clone(v);
 }
 
-void ast_printAssignStmt(sAssignStmt *s,u32 layer) {
-	printf("%*s",layer,"");
+void ast_printAssignExpr(sAssignExpr *s,u32 layer) {
 	ast_printTree(s->var,layer);
 	printf(" = ");
 	ast_printTree(s->expr,layer);
-	printf("\n");
 }
 
-void ast_destroyAssignStmt(sAssignStmt *n) {
+void ast_destroyAssignExpr(sAssignExpr *n) {
 	ast_destroy(n->expr);
 	ast_destroy(n->var);
 }

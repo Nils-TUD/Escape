@@ -29,5 +29,6 @@ extern int yyparse(void);
 int main(void) {
 	yydebug = 0;
 	run_init();
+	debug();
 	return yyparse();
 }

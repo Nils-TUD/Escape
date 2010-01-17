@@ -7,7 +7,7 @@
 
 %code requires {
 	#include "ast/node.h"
-	#include "ast/assignstmt.h"
+	#include "ast/assignexpr.h"
 	#include "ast/binaryopexpr.h"
 	#include "ast/cmpexpr.h"
 	#include "ast/conststrexpr.h"
@@ -22,6 +22,8 @@
 	#include "ast/subcmd.h"
 	#include "ast/redirfd.h"
 	#include "ast/redirfile.h"
+	#include "ast/forstmt.h"
+	#include "ast/exprstmt.h"
 	#include "exec/env.h"
 }
 %union {
@@ -34,6 +36,9 @@
 %token T_THEN
 %token T_ELSE
 %token T_FI
+%token T_FOR
+%token T_DO
+%token T_DONE
 
 %token <intval> T_NUMBER
 %token <strval> T_STRING
@@ -56,7 +61,14 @@
 %%
 
 start:
-			stmtlist						{ ast_printTree($1,0); sEnv *e = env_create(); ast_execute(e,$1); env_print(e); }
+			stmtlist {
+				ast_printTree($1,0);
+				sEnv *e = env_create();
+				ast_execute(e,$1);
+				env_print(e);
+				sleep(1000);
+				debug();
+			}
 ;
 
 stmtlist:
@@ -65,12 +77,17 @@ stmtlist:
 ;
 
 stmt:
-			T_VAR '=' expr ';'	{ $$ = ast_createAssignStmt(ast_createVarExpr($1),$3); }
-			| T_IF '(' expr ')' T_THEN stmtlist T_FI {
+			T_IF '(' expr ')' T_THEN stmtlist T_FI {
 				$$ = ast_createIfStmt($3,$6,NULL);
 			}
 			| T_IF '(' expr ')' T_THEN stmtlist T_ELSE stmtlist T_FI {
 				$$ = ast_createIfStmt($3,$6,$8);
+			}
+			| T_FOR '(' expr ';' expr ';' expr ')' T_DO stmtlist T_DONE {
+				$$ = ast_createForStmt($3,$5,$7,$10);
+			}
+			| expr ';' {
+				$$ = ast_createExprStmt($1);
 			}
 			| cmd ';' {
 				$$ = $1;
@@ -83,6 +100,7 @@ expr:
 			| T_STRING_SCONST		{ $$ = ast_createConstStrExpr($1); }
 			| T_STRING_DCONST		{ $$ = ast_createConstStrExpr($1); }
 			| T_VAR							{ $$ = ast_createVarExpr($1); }
+			| T_VAR '=' expr		{ $$ = ast_createAssignExpr(ast_createVarExpr($1),$3); }
 			| expr '+' expr			{ $$ = ast_createBinOpExpr($1,'+',$3); }
 			| expr '-' expr			{ $$ = ast_createBinOpExpr($1,'-',$3); }
 			| expr '*' expr			{ $$ = ast_createBinOpExpr($1,'*',$3); }

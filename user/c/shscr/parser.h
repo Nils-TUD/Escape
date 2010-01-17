@@ -38,7 +38,7 @@
 #line 8 "script.y"
 
 	#include "ast/node.h"
-	#include "ast/assignstmt.h"
+	#include "ast/assignexpr.h"
 	#include "ast/binaryopexpr.h"
 	#include "ast/cmpexpr.h"
 	#include "ast/conststrexpr.h"
@@ -53,12 +53,14 @@
 	#include "ast/subcmd.h"
 	#include "ast/redirfd.h"
 	#include "ast/redirfile.h"
+	#include "ast/forstmt.h"
+	#include "ast/exprstmt.h"
 	#include "exec/env.h"
 
 
 
 /* Line 1676 of yacc.c  */
-#line 62 "parser.h"
+#line 64 "parser.h"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -70,19 +72,22 @@
      T_THEN = 259,
      T_ELSE = 260,
      T_FI = 261,
-     T_NUMBER = 262,
-     T_STRING = 263,
-     T_STRING_SCONST = 264,
-     T_STRING_DCONST = 265,
-     T_VAR = 266,
-     T_ERR2OUT = 267,
-     T_OUT2ERR = 268,
-     T_APPEND = 269,
-     T_NEQ = 270,
-     T_EQ = 271,
-     T_GEQ = 272,
-     T_LEQ = 273,
-     T_NEG = 274
+     T_FOR = 262,
+     T_DO = 263,
+     T_DONE = 264,
+     T_NUMBER = 265,
+     T_STRING = 266,
+     T_STRING_SCONST = 267,
+     T_STRING_DCONST = 268,
+     T_VAR = 269,
+     T_ERR2OUT = 270,
+     T_OUT2ERR = 271,
+     T_APPEND = 272,
+     T_NEQ = 273,
+     T_EQ = 274,
+     T_GEQ = 275,
+     T_LEQ = 276,
+     T_NEG = 277
    };
 #endif
 
@@ -93,7 +98,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 27 "script.y"
+#line 29 "script.y"
 
 	int intval;
 	char *strval;
@@ -102,7 +107,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 106 "parser.h"
+#line 111 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

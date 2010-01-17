@@ -17,32 +17,47 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXECENV_H_
-#define EXECENV_H_
+#ifndef EXPRSTMT_H_
+#define EXPRSTMT_H_
 
 #include <esc/common.h>
-#include <sllist.h>
-#include "value.h"
-
-typedef struct sEnv sEnv;
-struct sEnv {
-	sSLList *vars;
-	sEnv *parent;
-};
+#include "node.h"
+#include "../exec/env.h"
 
 typedef struct {
-	char *name;
-	sValue *val;
-} sVar;
+	sASTNode *expr;
+} sExprStmt;
 
-sEnv *env_create(void);
+/**
+ * Creates an expression-statement-node
+ *
+ * @param expr the expression
+ * @return the created node
+ */
+sASTNode *ast_createExprStmt(sASTNode *expr);
 
-void env_print(sEnv *env);
+/**
+ * Executes the given node(-tree)
+ *
+ * @param e the environment
+ * @param n the node
+ * @return the value
+ */
+sValue *ast_execExprStmt(sEnv *e,sExprStmt *n);
 
-sValue *env_get(sEnv *env,const char *name);
+/**
+ * Prints this statement
+ *
+ * @param s the statement
+ * @param layer the layer
+ */
+void ast_printExprStmt(sExprStmt *s,u32 layer);
 
-sValue *env_set(sEnv *env,const char *name,sValue *val);
+/**
+ * Destroys the given statement (should be called from ast_destroy() only!)
+ *
+ * @param n the statement
+ */
+void ast_destroyExprStmt(sExprStmt *n);
 
-void env_destroy(sEnv *env);
-
-#endif /* EXECENV_H_ */
+#endif /* EXPRSTMT_H_ */

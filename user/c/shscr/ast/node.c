@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include "node.h"
-#include "assignstmt.h"
+#include "assignexpr.h"
 #include "binaryopexpr.h"
 #include "cmpexpr.h"
 #include "conststrexpr.h"
@@ -33,12 +33,14 @@
 #include "subcmd.h"
 #include "redirfd.h"
 #include "redirfile.h"
+#include "forstmt.h"
+#include "exprstmt.h"
 #include "../mem.h"
 
 void ast_printTree(sASTNode *n,u32 layer) {
 	switch(n->type) {
 		case AST_ASSIGN_STMT:
-			ast_printAssignStmt((sAssignStmt*)n->data,layer);
+			ast_printAssignExpr((sAssignExpr*)n->data,layer);
 			break;
 		case AST_BINARY_OP_EXPR:
 			ast_printBinOpExpr((sBinaryOpExpr*)n->data,layer);
@@ -79,13 +81,19 @@ void ast_printTree(sASTNode *n,u32 layer) {
 		case AST_REDIR_FILE:
 			ast_printRedirFile((sRedirFile*)n->data,layer);
 			break;
+		case AST_FOR_STMT:
+			ast_printForStmt((sForStmt*)n->data,layer);
+			break;
+		case AST_EXPR_STMT:
+			ast_printExprStmt((sExprStmt*)n->data,layer);
+			break;
 	}
 }
 
 sValue *ast_execute(sEnv *e,sASTNode *n) {
 	switch(n->type) {
 		case AST_ASSIGN_STMT:
-			return ast_execAssignStmt(e,(sAssignStmt*)n->data);
+			return ast_execAssignExpr(e,(sAssignExpr*)n->data);
 		case AST_BINARY_OP_EXPR:
 			return ast_execBinOpExpr(e,(sBinaryOpExpr*)n->data);
 		case AST_CMP_OP_EXPR:
@@ -108,6 +116,10 @@ sValue *ast_execute(sEnv *e,sASTNode *n) {
 			return ast_execCmdExprList(e,(sCmdExprList*)n->data);
 		case AST_SUB_CMD:
 			return ast_execSubCmd(e,(sSubCmd*)n->data);
+		case AST_FOR_STMT:
+			return ast_execForStmt(e,(sForStmt*)n->data);
+		case AST_EXPR_STMT:
+			return ast_execExprStmt(e,(sExprStmt*)n->data);
 	}
 	/* never reached */
 	return NULL;
@@ -116,7 +128,7 @@ sValue *ast_execute(sEnv *e,sASTNode *n) {
 void ast_destroy(sASTNode *n) {
 	switch(n->type) {
 		case AST_ASSIGN_STMT:
-			ast_destroyAssignStmt((sAssignStmt*)n->data);
+			ast_destroyAssignExpr((sAssignExpr*)n->data);
 			break;
 		case AST_BINARY_OP_EXPR:
 			ast_destroyBinOpExpr((sBinaryOpExpr*)n->data);
@@ -156,6 +168,12 @@ void ast_destroy(sASTNode *n) {
 			break;
 		case AST_REDIR_FILE:
 			ast_destroyRedirFile((sRedirFile*)n->data);
+			break;
+		case AST_FOR_STMT:
+			ast_destroyForStmt((sForStmt*)n->data);
+			break;
+		case AST_EXPR_STMT:
+			ast_destroyExprStmt((sExprStmt*)n->data);
 			break;
 	}
 	efree(n->data);

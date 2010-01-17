@@ -35,14 +35,14 @@ tCmdId run_requestId(void) {
 	return nextId++;
 }
 
-bool run_addProc(tCmdId cmdId,tPid pid,tFD *pipe) {
+bool run_addProc(tCmdId cmdId,tPid pid,tFD inPipe,tFD outPipe,bool hasNext) {
 	sRunningProc *run = (sRunningProc*)malloc(sizeof(sRunningProc));
 	if(run) {
 		run->cmdId = cmdId;
 		run->pid = pid;
-		run->pipe[0] = pipe[0];
-		run->pipe[1] = pipe[1];
-		run->nextRunning = false;
+		run->pipe[0] = inPipe;
+		run->pipe[1] = outPipe;
+		run->next = hasNext ? CMD_NEXT_AWAIT : CMD_NEXT_NO;
 		run->terminated = false;
 		if(sll_append(running,run))
 			return true;

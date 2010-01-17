@@ -27,7 +27,7 @@
 typedef struct {
 	sASTNode *var;
 	sASTNode *expr;
-} sAssignStmt;
+} sAssignExpr;
 
 /**
  * Creates an assign-node with given variable and the expression to evaluate.
@@ -36,7 +36,7 @@ typedef struct {
  * @param expr the expression
  * @return the created node
  */
-sASTNode *ast_createAssignStmt(sASTNode *var,sASTNode *expr);
+sASTNode *ast_createAssignExpr(sASTNode *var,sASTNode *expr);
 
 /**
  * Executes the given node(-tree)
@@ -45,21 +45,21 @@ sASTNode *ast_createAssignStmt(sASTNode *var,sASTNode *expr);
  * @param n the node
  * @return the value
  */
-sValue *ast_execAssignStmt(sEnv *e,sAssignStmt *n);
+sValue *ast_execAssignExpr(sEnv *e,sAssignExpr *n);
 
 /**
- * Prints this statement
+ * Prints this expression
  *
- * @param s the statement
+ * @param s the expression
  * @param layer the layer
  */
-void ast_printAssignStmt(sAssignStmt *s,u32 layer);
+void ast_printAssignExpr(sAssignExpr *s,u32 layer);
 
 /**
- * Destroys the given assign-statement (should be called from ast_destroy() only!)
+ * Destroys the given assign-expression (should be called from ast_destroy() only!)
  *
- * @param n the statement
+ * @param n the expression
  */
-void ast_destroyAssignStmt(sAssignStmt *n);
+void ast_destroyAssignExpr(sAssignExpr *n);
 
 #endif /* ASSIGNSTMT_H_ */

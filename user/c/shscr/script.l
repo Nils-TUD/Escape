@@ -40,6 +40,18 @@
 	beginToken(yytext);
 	return T_FI;
 }
+<INITIAL>"for" {
+	beginToken(yytext);
+	return T_FOR;
+}
+<INITIAL>"do" {
+	beginToken(yytext);
+	return T_DO;
+}
+<INITIAL>"done" {
+	beginToken(yytext);
+	return T_DONE;
+}
 
 <INITIAL>[0-9]+ {
 	beginToken(yytext);
@@ -106,10 +118,6 @@
 	return *yytext;
 }
 <INITIAL>"("|")"|"{"|"}" {
-	beginToken(yytext);
-	return *yytext;
-}
-<INITIAL>";" {
 	beginToken(yytext);
 	return *yytext;
 }

@@ -74,6 +74,7 @@ sASTNode *ast_createCommand(void) {
 }
 
 sValue *ast_execCommand(sEnv *e,sCommand *n) {
+	s32 res = 0;
 	sSLNode *sub;
 	sExecSubCmd *cmd;
 	sShellCmd **shcmd;
@@ -82,7 +83,6 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	char path[MAX_CMD_LEN] = APPS_DIR;
 	s32 pid,prevPid;
 	tFD pipeFds[2],prevPipe;
-	s32 res = 0;
 	curCmd = run_requestId();
 
 	if(!setSigHdl) {
@@ -179,11 +179,16 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				redirFd(STDOUT_FILENO,fdout);
 				/* we have to close fdout here because redirFd() will not do it for us */
 				close(fdout);
+				/* close write-end */
+				close(pipeFds[1]);
 			}
 			if(fdin >= 0) {
 				redirFd(STDIN_FILENO,fdin);
 				close(fdin);
 			}
+			/* close pipe (to file) if there is no next process */
+			if(pipeFds[1] >= 0 && cmdNo >= cmdCount - 1)
+				close(pipeFds[1]);
 		}
 		else {
 			if((pid = fork()) == 0) {
@@ -205,28 +210,22 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				printe("Fork of '%s%s' failed",path,shcmd[0]->name);
 			else {
 				curWaitCount++;
-				run_addProc(curCmd,pid,pipeFds);
+				run_addProc(curCmd,pid,prevPipe,pipeFds[1],cmdNo < cmdCount - 1);
 				if(prevPid > 0) {
 					/* find the prev process */
 					sRunningProc *prevcmd = run_findProc(curCmd,prevPid);
 					/* if there is any, tell the prev one that we're running now */
 					if(prevcmd) {
-						prevcmd->nextRunning = true;
+						prevcmd->next = CMD_NEXT_RUNNING;
 						/* if the prev-process is already terminated, close the pipe and remove
 						 * the command because we haven't done that yet */
 						if(prevcmd->terminated) {
-							close(prevPipe);
+							if(prevcmd->pipe[1] >= 0)
+								close(prevcmd->pipe[1]);
 							run_remProc(prevcmd->pid);
 						}
 					}
 				}
-				/* if the last command was a builtin one, we have to close the pipe here. We
-				 * can't do it earlier because we would remove the pipe. Here it is ok because
-				 * fork() has duplicated the file-descriptors and increased the references on
-				 * the node (not just the file!). */
-				/* This way we send EOF to the pipe */
-				if(cmdNo > 0 && prevPid == 0)
-					close(prevPipe);
 			}
 		}
 
@@ -288,8 +287,10 @@ static sValue *ast_readCmdOutput(tFD *pipeFds) {
 
 static s32 ast_waitForCmd() {
 	while(curWaitCount > 0) {
-		printf("Waiting for %d cmds...\n",curWaitCount);
-		yield();/*wait(EV_NOEVENT);*/
+		if(wait(EV_NOEVENT) < 0) {
+			printe("Unable to wait");
+			break;
+		}
 	}
 	return curResult;
 }
@@ -312,13 +313,11 @@ static void ast_sigChildHndl(tSig sig,u32 data) {
 		/*else
 			printf("\n[%d] process %d finished with %d\n",p->cmdId,p->pid,state.exitCode);*/
 
-		/* TODO we have to take care for '< file' here. in this case prevPipe exists, but no prevcmd */
-
 		/* if we can close this pipe (not needed for reading output)... */
 		if(p->pipe[1] >= 0 && closePipe[1] != p->pipe[1]) {
-			if(p->nextRunning) {
-				/* if the next command already exists, everything is fine and we can close the
-				 * write-end of the pipe */
+			if(p->next != CMD_NEXT_AWAIT) {
+				/* if the next command already exists (or there is no next),
+				 * everything is fine and we can close the write-end of the pipe */
 				close(p->pipe[1]);
 				run_remProc((tPid)data);
 			}
@@ -329,12 +328,11 @@ static void ast_sigChildHndl(tSig sig,u32 data) {
 			}
 		}
 		/* otherwise simply remove the process */
-		else {
-			/* close read-end if we don't want to read the output ourself */
-			if(p->pipe[0] >= 0 && closePipe[0] != p->pipe[0])
-				close(p->pipe[0]);
+		else
 			run_remProc((tPid)data);
-		}
+		/* close read-end if we don't want to read the output ourself */
+		if(p->pipe[0] >= 0 && closePipe[0] != p->pipe[0])
+			close(p->pipe[0]);
 	}
 }
 

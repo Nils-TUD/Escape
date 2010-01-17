@@ -17,32 +17,29 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXECENV_H_
-#define EXECENV_H_
-
 #include <esc/common.h>
-#include <sllist.h>
-#include "value.h"
+#include "exprstmt.h"
+#include "node.h"
+#include "../mem.h"
 
-typedef struct sEnv sEnv;
-struct sEnv {
-	sSLList *vars;
-	sEnv *parent;
-};
+sASTNode *ast_createExprStmt(sASTNode *expr) {
+	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
+	sExprStmt *stmt = node->data = emalloc(sizeof(sExprStmt));
+	stmt->expr = expr;
+	node->type = AST_EXPR_STMT;
+	return node;
+}
 
-typedef struct {
-	char *name;
-	sValue *val;
-} sVar;
+sValue *ast_execExprStmt(sEnv *e,sExprStmt *n) {
+	return ast_execute(e,n->expr);
+}
 
-sEnv *env_create(void);
+void ast_printExprStmt(sExprStmt *s,u32 layer) {
+	printf("%*s",layer,"");
+	ast_printTree(s->expr,layer);
+	printf(";\n");
+}
 
-void env_print(sEnv *env);
-
-sValue *env_get(sEnv *env,const char *name);
-
-sValue *env_set(sEnv *env,const char *name,sValue *val);
-
-void env_destroy(sEnv *env);
-
-#endif /* EXECENV_H_ */
+void ast_destroyExprStmt(sExprStmt *n) {
+	ast_destroy(n->expr);
+}

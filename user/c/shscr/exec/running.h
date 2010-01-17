@@ -22,14 +22,18 @@
 
 #include <esc/common.h>
 
-#define CMD_ID_ALL		0
+#define CMD_ID_ALL			0
+
+#define CMD_NEXT_NO			0
+#define CMD_NEXT_AWAIT		1
+#define CMD_NEXT_RUNNING	2
 
 typedef u32 tCmdId;
 
 typedef struct sRunningProc sRunningProc;
 struct sRunningProc {
 	bool terminated;
-	bool nextRunning;
+	u8 next;
 	tCmdId cmdId;
 	tFD pipe[2];
 	tPid pid;
@@ -52,10 +56,12 @@ tCmdId run_requestId(void);
  *
  * @param cmdId the command-id
  * @param pid the pid
- * @param pipe the fd for the open pipe (-1 if no)
+ * @param inPipe the pipe for stdin
+ * @param outPipe the pipe for stdout
+ * @param hasNext wether there is a next process in the chain
  * @return the entry on success or NULL on failure
  */
-bool run_addProc(tCmdId cmdId,tPid pid,tFD *pipe);
+bool run_addProc(tCmdId cmdId,tPid pid,tFD inPipe,tFD outPipe,bool hasNext);
 
 /**
  * Searches for the running process with given id

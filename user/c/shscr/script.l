@@ -8,6 +8,8 @@
 %}
 
 %s COMMENT
+%s CMDEXPR
+%s DCONSTSTR
 
 %%
 
@@ -52,88 +54,122 @@
 	beginToken(yytext);
 	return T_DONE;
 }
+<INITIAL>"while" {
+	beginToken(yytext);
+	return T_WHILE;
+}
 
-<INITIAL>[0-9]+ {
+<INITIAL,CMDEXPR>[0-9]+ {
 	beginToken(yytext);
 	yylval.intval = atoi(yytext);
 	return T_NUMBER;
 }
 
-<INITIAL>\$[a-zA-Z_0-9]+ {
+<INITIAL,CMDEXPR>\$[a-zA-Z_0-9]+ {
 	beginToken(yytext);
 	yylval.strval = strdup(yytext + 1);
 	return T_VAR;
 }
 
-<INITIAL>\"[^\"]*\" {
+<INITIAL>\" {
 	beginToken(yytext);
-	yylval.strval = strndup(yytext + 1,strlen(yytext) - 2);
-	return T_STRING_DCONST;
-}
-<INITIAL>'[^']*' {
-	beginToken(yytext);
-	yylval.strval = strndup(yytext + 1,strlen(yytext) - 2);
-	return T_STRING_SCONST;
-}
-
-<INITIAL>"<=" {
-	beginToken(yytext);
-	return T_LEQ;
-}
-<INITIAL>">=" {
-	beginToken(yytext);
-	return T_GEQ;
-}
-<INITIAL>"==" {
-	beginToken(yytext);
-	return T_EQ;
-}
-<INITIAL>"!=" {
-	beginToken(yytext);
-	return T_NEQ;
-}
-<INITIAL>">>" {
-	beginToken(yytext);
-	return T_APPEND;
-}
-<INITIAL>"2>&1" {
-	beginToken(yytext);
-	return T_ERR2OUT;
-}
-<INITIAL>"1>&2" {
-	beginToken(yytext);
-	return T_OUT2ERR;
-}
-
-<INITIAL>"`"|"&"|";"|"|"|"=" {
-	beginToken(yytext);
-	return *yytext;
-}
-<INITIAL>">"|"<" {
-	beginToken(yytext);
-	return *yytext;
-}
-<INITIAL>"+"|"-"|"*"|"/"|"%"|"^" {
-	beginToken(yytext);
-	return *yytext;
-}
-<INITIAL>"("|")"|"{"|"}" {
-	beginToken(yytext);
+	BEGIN(DCONSTSTR);
 	return *yytext;
 }
 
-<INITIAL>[ \t\n]+ {
-	/* eat up whitespace */
+<DCONSTSTR>\" {
 	beginToken(yytext);
+	BEGIN(INITIAL);
+	return *yytext;
 }
 
-<INITIAL>[a-zA-Z0-9_\-!?:~,\.]+ {
+<DCONSTSTR>"{" {
+	beginToken(yytext);
+	BEGIN(CMDEXPR);
+	return *yytext;
+}
+
+<DCONSTSTR>[^\"\{]+ {
 	beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_STRING;
 }
 
-<INITIAL>. {
+<CMDEXPR>"}" {
 	beginToken(yytext);
-	printf("Unrecognized character %c\n",*yytext);
+	BEGIN(DCONSTSTR);
+	return *yytext;
+}
+
+<INITIAL,CMDEXPR>'[^']*' {
+	beginToken(yytext);
+	yylval.strval = strndup(yytext + 1,strlen(yytext) - 2);
+	return T_STRING_SCONST;
+}
+
+<INITIAL,CMDEXPR>"<=" {
+	beginToken(yytext);
+	return T_LEQ;
+}
+<INITIAL,CMDEXPR>">=" {
+	beginToken(yytext);
+	return T_GEQ;
+}
+<INITIAL,CMDEXPR>"==" {
+	beginToken(yytext);
+	return T_EQ;
+}
+<INITIAL,CMDEXPR>"!=" {
+	beginToken(yytext);
+	return T_NEQ;
+}
+<INITIAL,CMDEXPR>">>" {
+	beginToken(yytext);
+	return T_APPEND;
+}
+<INITIAL,CMDEXPR>"2>&1" {
+	beginToken(yytext);
+	return T_ERR2OUT;
+}
+<INITIAL,CMDEXPR>"1>&2" {
+	beginToken(yytext);
+	return T_OUT2ERR;
+}
+
+<INITIAL,CMDEXPR>"`"|"&"|";"|"|"|"=" {
+	beginToken(yytext);
+	return *yytext;
+}
+<INITIAL,CMDEXPR>">"|"<" {
+	beginToken(yytext);
+	return *yytext;
+}
+<INITIAL,CMDEXPR>"+"|"-"|"*"|"/"|"%"|"^" {
+	beginToken(yytext);
+	return *yytext;
+}
+<INITIAL,CMDEXPR>"("|")" {
+	beginToken(yytext);
+	return *yytext;
+}
+<INITIAL>"{"|"}" {
+	beginToken(yytext);
+	return *yytext;
+}
+
+<INITIAL,CMDEXPR>[ \t\n]+ {
+	/* eat up whitespace */
+	beginToken(yytext);
+}
+
+<INITIAL,CMDEXPR>[a-zA-Z0-9_\-!?:~,\.]+ {
+	beginToken(yytext);
+	yylval.strval = strdup(yytext);
+	return T_STRING;
+}
+
+<INITIAL,CMDEXPR>. {
+	beginToken(yytext);
+	yyerror("Unrecognized character %c",*yytext);
+	BEGIN(INITIAL);
 }

@@ -1,7 +1,7 @@
 %code top {
 	#include <stdio.h>
 	int yylex (void);
-	void yyerror (char const *);
+	void yyerror(char const *,...);
 	int bla;
 }
 
@@ -11,7 +11,6 @@
 	#include "ast/binaryopexpr.h"
 	#include "ast/cmpexpr.h"
 	#include "ast/conststrexpr.h"
-	#include "ast/dynstrexpr.h"
 	#include "ast/ifstmt.h"
 	#include "ast/intexpr.h"
 	#include "ast/stmtlist.h"
@@ -24,6 +23,8 @@
 	#include "ast/redirfile.h"
 	#include "ast/forstmt.h"
 	#include "ast/exprstmt.h"
+	#include "ast/dstrexpr.h"
+	#include "ast/whilestmt.h"
 	#include "exec/env.h"
 }
 %union {
@@ -39,18 +40,19 @@
 %token T_FOR
 %token T_DO
 %token T_DONE
+%token T_WHILE
 
 %token <intval> T_NUMBER
 %token <strval> T_STRING
 %token <strval> T_STRING_SCONST
-%token <strval> T_STRING_DCONST
 %token <strval> T_VAR
 
 %token T_ERR2OUT
 %token T_OUT2ERR
 %token T_APPEND
 
-%type <node> stmtlist stmt expr cmdexpr cmdexprlist cmd subcmd cmdredirfd cmdredirin cmdredirout
+%type <node> stmtlist stmt expr exprstmt cmdexpr cmdexprlist cmd subcmd 
+%type <node> cmdredirfd cmdredirin cmdredirout strlist strcomp
 
 %nonassoc '>' '<' T_LEQ T_GEQ T_EQ T_NEQ
 %left '+' '-'
@@ -86,7 +88,10 @@ stmt:
 			| T_FOR '(' expr ';' expr ';' expr ')' T_DO stmtlist T_DONE {
 				$$ = ast_createForStmt($3,$5,$7,$10);
 			}
-			| expr ';' {
+			| T_WHILE '(' expr ')' T_DO stmtlist T_DONE {
+				$$ = ast_createWhileStmt($3,$6);
+			}
+			| exprstmt ';' {
 				$$ = ast_createExprStmt($1);
 			}
 			| cmd ';' {
@@ -94,13 +99,19 @@ stmt:
 			}
 ;
 
+strlist:
+			strlist strcomp			{ $$ = $1; ast_addDStrComp($1,$2); }
+			| strcomp						{ $$ = ast_createDStrExpr(); ast_addDStrComp($$,$1); }
+;
+
+strcomp:
+			T_STRING						{ $$ = ast_createConstStrExpr($1); }
+			| '{' expr '}'			{ $$ = $2; }
+;
+
 expr:
-			T_NUMBER						{ $$ = ast_createIntExpr($1); }
-			| T_STRING					{ $$ = ast_createConstStrExpr($1); }
-			| T_STRING_SCONST		{ $$ = ast_createConstStrExpr($1); }
-			| T_STRING_DCONST		{ $$ = ast_createConstStrExpr($1); }
-			| T_VAR							{ $$ = ast_createVarExpr($1); }
-			| T_VAR '=' expr		{ $$ = ast_createAssignExpr(ast_createVarExpr($1),$3); }
+			cmdexpr							{ $$ = $1; }
+			| exprstmt					{ $$ = $1; }
 			| expr '+' expr			{ $$ = ast_createBinOpExpr($1,'+',$3); }
 			| expr '-' expr			{ $$ = ast_createBinOpExpr($1,'-',$3); }
 			| expr '*' expr			{ $$ = ast_createBinOpExpr($1,'*',$3); }
@@ -115,6 +126,10 @@ expr:
 			| expr T_EQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_EQ,$3); }
 			| expr T_NEQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_NEQ,$3); }
 			| '(' expr ')'			{ $$ = $2; }
+;
+
+exprstmt:
+			T_VAR '=' expr			{ $$ = ast_createAssignExpr(ast_createVarExpr($1),$3); }
 			| '`' subcmd '`'		{ $$ = $2; ast_setRetOutput($2,true); }
 ;
 
@@ -122,8 +137,8 @@ cmdexpr:
 			T_NUMBER						{ $$ = ast_createIntExpr($1); }
 			| T_STRING					{ $$ = ast_createConstStrExpr($1); }
 			| T_STRING_SCONST		{ $$ = ast_createConstStrExpr($1); }
-			| T_STRING_DCONST		{ $$ = ast_createConstStrExpr($1); }
-			| T_VAR							{ $$ = ast_createConstStrExpr($1); }
+			| '"' strlist '"'		{ $$ = $2; }
+			| T_VAR							{ $$ = ast_createVarExpr($1); }
 			| '{' expr '}'			{ $$ = $2; }
 ;
 

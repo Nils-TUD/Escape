@@ -15,10 +15,24 @@ if ('a' == 'a') then
 	#cat file.txt > test.txt;
 	echo {$a + 2} hier 1>&2 > "test.txt";
 	echo hier bin ich; echo ich nicht :P;
+	echo "mein kleiner string
+			bla
+blub";
+	echo 'ein
+multiline
+singlequote
+string :P';
+	echo "huhu, ich bin der penner!!! a + b";
+	echo "abc {$a + `cat 'file.txt' | wc -c`} und mehr";
 fi
 
-for ($x = 0; $x < 10; $x = $x + 1) do
-	cat bigfile | grep {$x} | wc -l;
+for ($x = 0; $x < 3; $x = $x + 1) do
+	cat bigfile | grep " {$x} " | wc -l;
+done
+
+while ($x > 0) do
+	echo {$x};
+	$x = $x - 1;
 done
 
 if (1 < 3) then

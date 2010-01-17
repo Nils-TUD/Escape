@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/fileio.h>
 #include <string.h>
+#include <stdarg.h>
 #include "lang.h"
 
 typedef struct {
@@ -49,6 +50,11 @@ void beginToken(char *t) {
 }
 
 /* Called by yyparse on error.  */
-void yyerror(char const *s) {
-	fprintf(stderr,"Line %d: %s\n",yylloc.first_line,s);
+void yyerror(char const *s,...) {
+	va_list l;
+	fprintf(stderr,"Line %d, Column %d: ",yylloc.first_line,yylloc.first_column);
+	va_start(l,s);
+	vfprintf(stderr,s,l);
+	va_end(l);
+	fprintf(stderr,"\n");
 }

@@ -42,7 +42,6 @@
 	#include "ast/binaryopexpr.h"
 	#include "ast/cmpexpr.h"
 	#include "ast/conststrexpr.h"
-	#include "ast/dynstrexpr.h"
 	#include "ast/ifstmt.h"
 	#include "ast/intexpr.h"
 	#include "ast/stmtlist.h"
@@ -55,12 +54,14 @@
 	#include "ast/redirfile.h"
 	#include "ast/forstmt.h"
 	#include "ast/exprstmt.h"
+	#include "ast/dstrexpr.h"
+	#include "ast/whilestmt.h"
 	#include "exec/env.h"
 
 
 
 /* Line 1676 of yacc.c  */
-#line 64 "parser.h"
+#line 65 "parser.h"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -75,10 +76,10 @@
      T_FOR = 262,
      T_DO = 263,
      T_DONE = 264,
-     T_NUMBER = 265,
-     T_STRING = 266,
-     T_STRING_SCONST = 267,
-     T_STRING_DCONST = 268,
+     T_WHILE = 265,
+     T_NUMBER = 266,
+     T_STRING = 267,
+     T_STRING_SCONST = 268,
      T_VAR = 269,
      T_ERR2OUT = 270,
      T_OUT2ERR = 271,
@@ -98,7 +99,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 29 "script.y"
+#line 30 "script.y"
 
 	int intval;
 	char *strval;
@@ -107,7 +108,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 111 "parser.h"
+#line 112 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

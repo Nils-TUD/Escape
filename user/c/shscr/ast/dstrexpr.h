@@ -17,15 +17,55 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DYNSTREXPR_H_
-#define DYNSTREXPR_H_
+#ifndef DSTREXPR_H_
+#define DSTREXPR_H_
 
 #include <esc/common.h>
 #include <sllist.h>
 #include "node.h"
+#include "../exec/env.h"
 
 typedef struct {
-	sSLList *parts;
-} sDynStrExpr;
+	sSLList *list;
+} sDStrExpr;
 
-#endif /* DYNSTREXPR_H_ */
+/**
+ * Creates an dynamic-string-expression
+ *
+ * @return the created node
+ */
+sASTNode *ast_createDStrExpr(void);
+
+/**
+ * Adds the given component to the dynamic-string
+ *
+ * @param n the dyn-string
+ * @param expr the expression
+ */
+void ast_addDStrComp(sASTNode *n,sASTNode *expr);
+
+/**
+ * Executes the given node(-tree)
+ *
+ * @param e the environment
+ * @param n the node
+ * @return the value
+ */
+sValue *ast_execDStrExpr(sEnv *e,sDStrExpr *n);
+
+/**
+ * Prints this expression
+ *
+ * @param s the expression
+ * @param layer the layer
+ */
+void ast_printDStrExpr(sDStrExpr *s,u32 layer);
+
+/**
+ * Destroys the given expression (should be called from ast_destroy() only!)
+ *
+ * @param n the expression
+ */
+void ast_destroyDStrExpr(sDStrExpr *n);
+
+#endif /* DSTREXPR_H_ */

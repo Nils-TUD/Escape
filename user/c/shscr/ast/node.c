@@ -35,6 +35,8 @@
 #include "redirfile.h"
 #include "forstmt.h"
 #include "exprstmt.h"
+#include "dstrexpr.h"
+#include "whilestmt.h"
 #include "../mem.h"
 
 void ast_printTree(sASTNode *n,u32 layer) {
@@ -87,6 +89,12 @@ void ast_printTree(sASTNode *n,u32 layer) {
 		case AST_EXPR_STMT:
 			ast_printExprStmt((sExprStmt*)n->data,layer);
 			break;
+		case AST_DSTR_EXPR:
+			ast_printDStrExpr((sDStrExpr*)n->data,layer);
+			break;
+		case AST_WHILE_STMT:
+			ast_printWhileStmt((sWhileStmt*)n->data,layer);
+			break;
 	}
 }
 
@@ -120,6 +128,10 @@ sValue *ast_execute(sEnv *e,sASTNode *n) {
 			return ast_execForStmt(e,(sForStmt*)n->data);
 		case AST_EXPR_STMT:
 			return ast_execExprStmt(e,(sExprStmt*)n->data);
+		case AST_DSTR_EXPR:
+			return ast_execDStrExpr(e,(sDStrExpr*)n->data);
+		case AST_WHILE_STMT:
+			return ast_execWhileStmt(e,(sWhileStmt*)n->data);
 	}
 	/* never reached */
 	return NULL;
@@ -174,6 +186,12 @@ void ast_destroy(sASTNode *n) {
 			break;
 		case AST_EXPR_STMT:
 			ast_destroyExprStmt((sExprStmt*)n->data);
+			break;
+		case AST_DSTR_EXPR:
+			ast_destroyDStrExpr((sDStrExpr*)n->data);
+			break;
+		case AST_WHILE_STMT:
+			ast_destroyWhileStmt((sWhileStmt*)n->data);
 			break;
 	}
 	efree(n->data);

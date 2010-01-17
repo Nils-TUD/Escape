@@ -17,48 +17,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef NODE_H_
-#define NODE_H_
+#ifndef WHILESTMT_H_
+#define WHILESTMT_H_
 
 #include <esc/common.h>
+#include "node.h"
 #include "../exec/env.h"
-#include "../lang.h"
 
-#define AST_ASSIGN_STMT			0
-#define AST_BINARY_OP_EXPR		1
-#define AST_CMP_OP_EXPR			2
-#define AST_CONST_STR_EXPR		3
-#define AST_DYN_STR_EXPR		4
-#define AST_IF_STMT				5
-#define AST_STMT_LIST			6
-#define AST_UNARY_OP_EXPR		7
-#define AST_VAR_EXPR			8
-#define AST_INT_EXPR			9
-#define AST_COMMAND				10
-#define AST_CMDEXPR_LIST		11
-#define AST_SUB_CMD				12
-#define AST_REDIR_FD			13
-#define AST_REDIR_FILE			14
-#define AST_FOR_STMT			15
-#define AST_EXPR_STMT			16
-#define AST_DSTR_EXPR			17
-#define AST_WHILE_STMT			18
-
-typedef u8 tASTType;
-
-typedef struct sASTNode sASTNode;
-struct sASTNode {
-	tASTType type;
-	void *data;
-};
+typedef struct {
+	sASTNode *condExpr;
+	sASTNode *stmtList;
+} sWhileStmt;
 
 /**
- * Prints the tree
+ * Creates an while-statement-node
  *
- * @param n the node to start with
- * @param layer the layer to start with (indention)
+ * @param condExpr the condition-expression
+ * @param stmtList the list of statements
+ * @return the created node
  */
-void ast_printTree(sASTNode *n,u32 layer);
+sASTNode *ast_createWhileStmt(sASTNode *condExpr,sASTNode *stmtList);
 
 /**
  * Executes the given node(-tree)
@@ -67,13 +45,21 @@ void ast_printTree(sASTNode *n,u32 layer);
  * @param n the node
  * @return the value
  */
-sValue *ast_execute(sEnv *e,sASTNode *n);
+sValue *ast_execWhileStmt(sEnv *e,sWhileStmt *n);
 
 /**
- * Destroys the node recursively
+ * Prints this statement
  *
- * @param n the node
+ * @param s the statement
+ * @param layer the layer
  */
-void ast_destroy(sASTNode *n);
+void ast_printWhileStmt(sWhileStmt *s,u32 layer);
 
-#endif /* NODE_H_ */
+/**
+ * Destroys the given while-statement (should be called from ast_destroy() only!)
+ *
+ * @param n the statement
+ */
+void ast_destroyWhileStmt(sWhileStmt *n);
+
+#endif /* WHILESTMT_H_ */

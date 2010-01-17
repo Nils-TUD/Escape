@@ -34,6 +34,6 @@ void beginToken(char *t);
  *
  * @param s the error-message
  */
-void yyerror(char const *s);
+void yyerror(char const *s,...);
 
 #endif /* LANG_H_ */

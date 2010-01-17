@@ -3,113 +3,129 @@
 
 %{
 	#include "parser.h"
+	#include "lang.h"
 	#include <string.h>
 %}
 
+%s COMMENT
+
 %%
 
-"if" {
+<INITIAL>"#" {
+	beginToken(yytext);
+	BEGIN(COMMENT);
+}
+<COMMENT>\n {
+	beginToken(yytext);
+	BEGIN(INITIAL);
+}
+<COMMENT>. {
+	beginToken(yytext);
+	/* eat up all chars */
+}
+
+<INITIAL>"if" {
 	beginToken(yytext);
 	return T_IF;
 }
-"then" {
+<INITIAL>"then" {
 	beginToken(yytext);
 	return T_THEN;
 }
-"else" {
+<INITIAL>"else" {
 	beginToken(yytext);
 	return T_ELSE;
 }
-"fi" {
+<INITIAL>"fi" {
 	beginToken(yytext);
 	return T_FI;
 }
 
-[0-9]+ {
+<INITIAL>[0-9]+ {
 	beginToken(yytext);
 	yylval.intval = atoi(yytext);
 	return T_NUMBER;
 }
 
-\$[a-zA-Z_0-9]+ {
+<INITIAL>\$[a-zA-Z_0-9]+ {
 	beginToken(yytext);
 	yylval.strval = strdup(yytext + 1);
 	return T_VAR;
 }
 
-\"[^\"]*\" {
+<INITIAL>\"[^\"]*\" {
 	beginToken(yytext);
 	yylval.strval = strndup(yytext + 1,strlen(yytext) - 2);
 	return T_STRING_DCONST;
 }
-'[^']*' {
+<INITIAL>'[^']*' {
 	beginToken(yytext);
 	yylval.strval = strndup(yytext + 1,strlen(yytext) - 2);
 	return T_STRING_SCONST;
 }
 
-"<=" {
+<INITIAL>"<=" {
 	beginToken(yytext);
 	return T_LEQ;
 }
-">=" {
+<INITIAL>">=" {
 	beginToken(yytext);
 	return T_GEQ;
 }
-"==" {
+<INITIAL>"==" {
 	beginToken(yytext);
 	return T_EQ;
 }
-"!=" {
+<INITIAL>"!=" {
 	beginToken(yytext);
 	return T_NEQ;
 }
-">>" {
+<INITIAL>">>" {
 	beginToken(yytext);
 	return T_APPEND;
 }
-"2>&1" {
+<INITIAL>"2>&1" {
 	beginToken(yytext);
 	return T_ERR2OUT;
 }
-"1>&2" {
+<INITIAL>"1>&2" {
 	beginToken(yytext);
 	return T_OUT2ERR;
 }
 
-"`"|"&"|";"|"|"|"=" {
+<INITIAL>"`"|"&"|";"|"|"|"=" {
 	beginToken(yytext);
 	return *yytext;
 }
-">"|"<" {
+<INITIAL>">"|"<" {
 	beginToken(yytext);
 	return *yytext;
 }
-"+"|"-"|"*"|"/"|"%"|"^" {
+<INITIAL>"+"|"-"|"*"|"/"|"%"|"^" {
 	beginToken(yytext);
 	return *yytext;
 }
-"("|")"|"{"|"}" {
+<INITIAL>"("|")"|"{"|"}" {
 	beginToken(yytext);
 	return *yytext;
 }
-";" {
+<INITIAL>";" {
 	beginToken(yytext);
 	return *yytext;
 }
 
-[ \t\n]+ {
+<INITIAL>[ \t\n]+ {
 	/* eat up whitespace */
 	beginToken(yytext);
 }
 
-[a-zA-Z0-9_\-!?:~,\.]+ {
+<INITIAL>[a-zA-Z0-9_\-!?:~,\.]+ {
 	beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_STRING;
 }
 
-. {
+<INITIAL>. {
 	beginToken(yytext);
 	printf("Unrecognized character %c\n",*yytext);
 }

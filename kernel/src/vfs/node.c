@@ -36,15 +36,6 @@
 		(u32)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
 
 /**
- * Creates a pipe
- *
- * @param n the parent-node
- * @param child will be set to the created child
- * @return 0 on success
- */
-static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child);
-
-/**
  * Creates a pipe-node for given thread
  *
  * @param tid the thread-id
@@ -280,16 +271,6 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 			return err;
 
 		/* set new node as resolved one */
-		*nodeNo = NADDR_TO_VNNO(child);
-		return 0;
-	}
-
-	if((flags & VFS_CONNECT) && (n->mode & MODE_TYPE_PIPECON)) {
-		sVFSNode *child;
-		s32 err = vfsn_createPipe(n,&child);
-		if(err < 0)
-			return err;
-
 		*nodeNo = NADDR_TO_VNNO(child);
 		return 0;
 	}
@@ -581,7 +562,7 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	return 0;
 }
 
-static s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child) {
+s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child) {
 	char *name;
 	sVFSNode *m;
 	u32 len;

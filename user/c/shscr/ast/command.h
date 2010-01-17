@@ -27,6 +27,7 @@
 
 typedef struct {
 	bool runInBG;
+	bool retOutput;
 	sSLList *subList;
 } sCommand;
 
@@ -45,6 +46,14 @@ sASTNode *ast_createCommand(void);
  * @return the value
  */
 sValue *ast_execCommand(sEnv *e,sCommand *n);
+
+/**
+ * Sets wether this command should return the output
+ *
+ * @param c the command
+ * @param retOutput wether to return the output
+ */
+void ast_setRetOutput(sASTNode *c,bool retOutput);
 
 /**
  * Sets wether this command should run in bg

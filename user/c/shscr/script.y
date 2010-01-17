@@ -97,7 +97,7 @@ expr:
 			| expr T_EQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_EQ,$3); }
 			| expr T_NEQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_NEQ,$3); }
 			| '(' expr ')'			{ $$ = $2; }
-			| '`' cmd '`'				{ $$ = $2; }
+			| '`' subcmd '`'		{ $$ = $2; ast_setRetOutput($2,true); }
 ;
 
 cmdexpr:

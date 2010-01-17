@@ -22,4 +22,18 @@
 
 typedef s32 tIntType;
 
+/**
+ * Begins the given token (stores location)
+ *
+ * @param t the token
+ */
+void beginToken(char *t);
+
+/**
+ * Error-reporting-function called by flex
+ *
+ * @param s the error-message
+ */
+void yyerror(char const *s);
+
 #endif /* LANG_H_ */

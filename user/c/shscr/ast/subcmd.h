@@ -37,8 +37,6 @@ typedef struct {
 	sASTNode *redirFd;
 	sASTNode *redirIn;
 	sASTNode *redirOut;
-	tFD pipe;
-	s32 pid;
 } sExecSubCmd;
 
 /**

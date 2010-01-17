@@ -115,6 +115,79 @@ void sysc_open(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,fd);
 }
 
+void sysc_pipe(sIntrptStackFrame *stack) {
+	tFD *readFd = (tFD*)SYSC_ARG1(stack);
+	tFD *writeFd = (tFD*)SYSC_ARG2(stack);
+	sThread *t = thread_getRunning();
+	bool created;
+	sVFSNode *pipeNode;
+	tInodeNo nodeNo,pipeNodeNo;
+	tFileNo readFile,writeFile;
+	s32 err;
+
+	/* check pointers */
+	if(!paging_isRangeUserWritable((u32)readFd,sizeof(tFD)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(!paging_isRangeUserWritable((u32)writeFd,sizeof(tFD)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	/* resolve pipe-path */
+	err = vfsn_resolvePath("/system/pipe",&nodeNo,&created,VFS_READ | VFS_CONNECT);
+	if(err < 0)
+		SYSC_ERROR(stack,err);
+
+	/* create pipe */
+	err = vfsn_createPipe(vfsn_getNode(nodeNo),&pipeNode);
+	if(err < 0)
+		SYSC_ERROR(stack,err);
+
+	pipeNodeNo = NADDR_TO_VNNO(pipeNode);
+	/* get free fd for reading */
+	*readFd = thread_getFreeFd();
+	if(*readFd < 0) {
+		err = *readFd;
+		goto errorRemNode;
+	}
+	/* open file for reading */
+	readFile = vfs_openFile(t->tid,VFS_READ,pipeNodeNo,VFS_DEV_NO);
+	if(readFile < 0) {
+		err = readFile;
+		goto errorRemNode;
+	}
+	/* assoc fd with file */
+	err = thread_assocFd(*readFd,readFile);
+	if(err < 0)
+		goto errorCloseReadFile;
+
+	/* get free fd for writing */
+	*writeFd = thread_getFreeFd();
+	if(*writeFd < 0)
+		goto errorUnAssocReadFd;
+	/* open file for writing */
+	writeFile = vfs_openFile(t->tid,VFS_WRITE,pipeNodeNo,VFS_DEV_NO);
+	if(writeFile < 0)
+		goto errorUnAssocReadFd;
+	/* assoc fd with file */
+	err = thread_assocFd(*writeFd,writeFile);
+	if(err < 0)
+		goto errorCloseWriteFile;
+
+	/* yay, we're done! :) */
+	SYSC_RET1(stack,0);
+	return;
+
+	/* error-handling */
+errorCloseWriteFile:
+	vfs_closeFile(t->tid,writeFile);
+errorUnAssocReadFd:
+	thread_unassocFd(*readFd);
+errorCloseReadFile:
+	vfs_closeFile(t->tid,readFile);
+errorRemNode:
+	vfsn_removeNode(pipeNode);
+	SYSC_ERROR(stack,err);
+}
+
 void sysc_tell(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	u32 *pos = (u32*)SYSC_ARG2(stack);

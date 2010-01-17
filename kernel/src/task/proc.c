@@ -48,6 +48,7 @@
 static s32 proc_finishClone(sThread *nt,u32 stackFrame);
 
 /* our processes */
+static tPid nextPid = 1;
 static sProc procs[PROC_COUNT];
 
 void proc_init(void) {
@@ -95,10 +96,21 @@ void proc_init(void) {
 
 tPid proc_getFreePid(void) {
 	tPid pid;
-	/* we can skip our initial process */
-	for(pid = 1; pid < PROC_COUNT; pid++) {
-		if(procs[pid].pid == INVALID_PID)
+	/* start with the first possibly usable pid */
+	for(pid = nextPid; pid < PROC_COUNT; pid++) {
+		if(procs[pid].pid == INVALID_PID) {
+			/* go to the next one; note that its ok here to use pid 0 since its occupied anyway */
+			nextPid = (pid + 1) % PROC_COUNT;
 			return pid;
+		}
+	}
+	/* if we're here all pids starting from nextPid to PROC_COUNT - 1 are in use. so start at the
+	 * beginning */
+	for(pid = 1; pid < nextPid; pid++) {
+		if(procs[pid].pid == INVALID_PID) {
+			nextPid = (pid + 1) % PROC_COUNT;
+			return pid;
+		}
 	}
 	return INVALID_PID;
 }

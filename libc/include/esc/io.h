@@ -82,6 +82,15 @@ extern "C" {
 tFD open(const char *path,u8 mode);
 
 /**
+ * Creates a pipe with 2 separate files for reading and writing.
+ *
+ * @param readFd will be set to the fd for reading
+ * @param writeFd will be set to the fd for writing
+ * @return 0 on success
+ */
+s32 pipe(tFD *readFd,tFD *writeFd);
+
+/**
  * Retrieves information about the given file
  *
  * @param path the path of the file

@@ -33,6 +33,15 @@
 void sysc_open(sIntrptStackFrame *stack);
 
 /**
+ * Creates a pipe with 2 separate files for reading and writing.
+ *
+ * @param tFD* will be set to the fd for reading
+ * @param tFD* will be set to the fd for writing
+ * @return 0 on success
+ */
+void sysc_pipe(sIntrptStackFrame *stack);
+
+/**
  * Determines the current file-position
  *
  * @param tFD file-descriptor

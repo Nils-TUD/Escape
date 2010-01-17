@@ -17,17 +17,38 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/signals.h>
-#include <esc/io.h>
+#include <esc/common.h>
 #include <esc/fileio.h>
-#include "parser.h"
-#include "exec/running.h"
+#include <string.h>
+#include "lang.h"
 
-extern int yydebug;
-extern int yyparse(void);
+typedef struct {
+	s32 first_line;
+	s32 last_line;
+	s32 first_column;
+	s32 last_column;
+} sYYLoc;
 
-int main(void) {
-	yydebug = 0;
-	run_init();
-	return yyparse();
+static sYYLoc yylloc;
+static s32 nCol = 1;
+static s32 nRow = 1;
+
+void beginToken(char *t) {
+	u32 len = strlen(t);
+	if(*t == '\n') {
+		nRow++;
+		nCol = 1;
+	}
+	else
+		nCol += len;
+
+	yylloc.first_line = nRow;
+	yylloc.first_column = nCol;
+	yylloc.last_line = nRow;
+	yylloc.last_column = nCol + len - 1;
+}
+
+/* Called by yyparse on error.  */
+void yyerror(char const *s) {
+	fprintf(stderr,"Line %d: %s\n",yylloc.first_line,s);
 }

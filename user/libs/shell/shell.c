@@ -82,9 +82,13 @@ static void shell_sigIntrpt(tSig sig,u32 data) {
 				sendSignalTo(cmds[i].pid,SIG_INTRPT,0);
 				cmds[i].pid = 0;
 			}
-			if(cmds[i].pipe != -1) {
-				close(cmds[i].pipe);
-				cmds[i].pipe = -1;
+			if(cmds[i].pipe[0] != -1) {
+				close(cmds[i].pipe[0]);
+				cmds[i].pipe[0] = -1;
+			}
+			if(cmds[i].pipe[1] != -1) {
+				close(cmds[i].pipe[1]);
+				cmds[i].pipe[1] = -1;
 			}
 		}
 	}
@@ -128,10 +132,9 @@ s32 shell_executeCmd(char *line) {
 
 		/* create pipe */
 		if(cmd->dup & DUP_STDOUT) {
-			cmd->pipe = open("/system/pipe",IO_READ | IO_WRITE);
-			if(cmd->pipe < 0) {
-				printe("Unable to open /system/pipe");
-				res = -1;
+			res = pipe(cmd->pipe + 0,cmd->pipe + 1);
+			if(res < 0) {
+				printe("Unable to open pipe");
 				goto error;
 			}
 		}
@@ -143,11 +146,11 @@ s32 shell_executeCmd(char *line) {
 			tFD fdout = -1,fdin = -1;
 			if(cmd->dup & DUP_STDOUT) {
 				fdout = dupFd(STDOUT_FILENO);
-				redirFd(STDOUT_FILENO,cmd->pipe);
+				redirFd(STDOUT_FILENO,cmd->pipe[1]);
 			}
 			if(cmd->dup & DUP_STDIN) {
 				fdin = dupFd(STDIN_FILENO);
-				redirFd(STDIN_FILENO,(cmd - 1)->pipe);
+				redirFd(STDIN_FILENO,(cmd - 1)->pipe[0]);
 			}
 
 			res = scmds[0]->func(cmd->argCount,cmd->arguments);
@@ -167,9 +170,9 @@ s32 shell_executeCmd(char *line) {
 			if((cmd->pid = fork()) == 0) {
 				/* redirect fds */
 				if(cmd->dup & DUP_STDOUT)
-					redirFd(STDOUT_FILENO,cmd->pipe);
+					redirFd(STDOUT_FILENO,cmd->pipe[1]);
 				if(cmd->dup & DUP_STDIN)
-					redirFd(STDIN_FILENO,(cmd - 1)->pipe);
+					redirFd(STDIN_FILENO,(cmd - 1)->pipe[0]);
 
 				/* exec */
 				strcat(path,scmds[0]->name);
@@ -188,8 +191,8 @@ s32 shell_executeCmd(char *line) {
 				 * the node (not just the file!). */
 				/* This way we send EOF to the pipe */
 				if(cmd->dup & DUP_STDIN && (cmd - 1)->pid == 0) {
-					close((cmd - 1)->pipe);
-					(cmd - 1)->pipe = -1;
+					close((cmd - 1)->pipe[1]);
+					(cmd - 1)->pipe[1] = -1;
 				}
 				waitingCount++;
 				if(!(cmd->dup & DUP_STDOUT)/* && !cmd->runInBG*/) {
@@ -214,9 +217,13 @@ s32 shell_executeCmd(char *line) {
 							}
 							for(j = 0; j < cmdCount; j++) {
 								if(cmds[j].pid == state.pid) {
-									if(cmds[j].pipe != -1) {
-										close(cmds[j].pipe);
-										cmds[j].pipe = -1;
+									if(cmds[j].pipe[0] != -1) {
+										close(cmds[j].pipe[0]);
+										cmds[j].pipe[0] = -1;
+									}
+									if(cmds[j].pipe[1] != -1) {
+										close(cmds[j].pipe[1]);
+										cmds[j].pipe[1] = -1;
 									}
 									cmds[j].pid = 0;
 									waitingCount--;
@@ -237,9 +244,13 @@ s32 shell_executeCmd(char *line) {
 	/* clean up */
 error:
 	for(j = 0; j < cmdCount; j++) {
-		if(cmds[j].pipe != -1) {
-			close(cmds[j].pipe);
-			cmds[j].pipe = -1;
+		if(cmds[j].pipe[0] != -1) {
+			close(cmds[j].pipe[0]);
+			cmds[j].pipe[0] = -1;
+		}
+		if(cmds[j].pipe[1] != -1) {
+			close(cmds[j].pipe[1]);
+			cmds[j].pipe[1] = -1;
 		}
 	}
 	compl_free(scmds);

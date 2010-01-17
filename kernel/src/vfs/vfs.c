@@ -587,8 +587,11 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 							vfsn_removeNode(n);
 					}
 				}
-				/* if we're not the last one using the pipe, append an "EOF-message" */
-				else if(n->mode & MODE_TYPE_PIPE)
+				/* if we're the owner of the pipe, append an "EOF-message" */
+				/* otherwise we have a problem when the fd is inherited to multiple processes.
+				 * in this case all these processes would write an EOF (and of course not necessarily
+				 * at the right place) */
+				else if(n->owner == tid && (n->mode & MODE_TYPE_PIPE))
 					vfsrw_writePipe(tid,file,n,NULL,e->position,0);
 
 				/* notify listeners about creation/modification of files */

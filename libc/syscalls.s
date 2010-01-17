@@ -75,6 +75,7 @@ SYSCALL_MOUNT					equ 51
 SYSCALL_UNMOUNT				equ 52
 SYSCALL_WAITCHILD			equ 53
 SYSCALL_TELL					equ 54
+SYSCALL_PIPE					equ 55
 
 ; the IRQ for syscalls
 SYSCALL_IRQ						equ	0x30

@@ -36,7 +36,7 @@ typedef struct {
 	bool runInBG;		/* 0 if dup != DUP_NONE */
 	u8 dup;				/* may be DUP_NONE, DUP_STDIN, DUP_STDOUT or both */
 	/* needed by the shell */
-	tFD pipe;
+	tFD pipe[2];
 	s32 pid;
 } sCommand;
 

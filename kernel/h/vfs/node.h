@@ -168,6 +168,15 @@ sVFSNode *vfsn_createDir(sVFSNode *parent,char *name);
 sVFSNode *vfsn_createLink(sVFSNode *node,char *name,sVFSNode *target);
 
 /**
+ * Creates a pipe
+ *
+ * @param n the parent-node
+ * @param child will be set to the created child
+ * @return 0 on success
+ */
+s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child);
+
+/**
  * Creates a pipe-container
  *
  * @param parent the parent-node

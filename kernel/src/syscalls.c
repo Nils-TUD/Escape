@@ -94,6 +94,7 @@ static sSyscall syscalls[] = {
 	/* 52 */	{sysc_unmount,				1},
 	/* 53 */	{sysc_waitChild,			1},
 	/* 54 */	{sysc_tell,					2},
+	/* 55 */	{sysc_pipe,					2},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {

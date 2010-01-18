@@ -12,8 +12,11 @@ SYMBOLS = $(BUILD)/kernel.symbols
 BUILDAPPS = $(BUILD)/apps
 
 QEMU = qemu
+#QEMU = /home/hrniels/Applications/qemu-0.10.3/build/i386-softmmu/qemu
 QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
 	-localtime -enable-kvm -soundhw pcspk,sb16
+#QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot c -vga std -m 512 \
+#	-localtime
 
 DIRS = tools libc libcpp services user kernel/src kernel/test
 
@@ -92,6 +95,8 @@ dis: all
 		objdump -d -S $(BIN) | less
 
 qemu:	all prepareRun
+		# TODO remove!
+		./tools/disk.sh copy user/c/shscr/test.sh /test.sh
 		sudo /etc/init.d/kvm start
 		$(QEMU) $(QEMUARGS) > log.txt 2>&1
 

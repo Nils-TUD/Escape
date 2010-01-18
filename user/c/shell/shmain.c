@@ -90,12 +90,12 @@ int main(int argc,char **argv) {
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");
 
-#if 0
+#if 1
 	if(vterm == 0) {
 		printf("cat test.sh | shscr\n");
 		return shell_executeCmd("cat test.sh | shscr");
 	}
-#else
+#endif
 	while(1) {
 		/* create buffer (history will free it) */
 		buffer = (char*)malloc((MAX_CMD_LEN + 1) * sizeof(char));
@@ -112,7 +112,6 @@ int main(int argc,char **argv) {
 		shell_executeCmd(buffer);
 		shell_addToHistory(buffer);
 	}
-#endif
 
 	return EXIT_SUCCESS;
 }

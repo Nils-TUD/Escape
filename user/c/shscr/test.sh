@@ -27,7 +27,7 @@ string :P';
 fi
 
 for ($x = 0; $x < 3; $x = $x + 1) do
-	cat bigfile | grep " {$x} " | wc -l;
+	cat bigfile | grep {$x} | wc -l;
 done
 
 while ($x > 0) do

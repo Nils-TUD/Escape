@@ -255,6 +255,16 @@ bool proc_changeSize(s32 change,eChgArea area);
 #if DEBUGGING
 
 /**
+ * Starts profiling all processes
+ */
+void proc_dbg_startProf(void);
+
+/**
+ * Stops profiling all processes and prints the result
+ */
+void proc_dbg_stopProf(void);
+
+/**
  * Prints all existing processes
  */
 void proc_dbg_printAll(void);

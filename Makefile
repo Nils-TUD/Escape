@@ -14,7 +14,7 @@ BUILDAPPS = $(BUILD)/apps
 QEMU = qemu
 #QEMU = /home/hrniels/Applications/qemu-0.10.3/build/i386-softmmu/qemu
 QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
-	-localtime -enable-kvm -soundhw pcspk,sb16
+	-localtime
 #QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot c -vga std -m 512 \
 #	-localtime
 
@@ -97,7 +97,7 @@ dis: all
 qemu:	all prepareRun
 		# TODO remove!
 		./tools/disk.sh copy user/c/shscr/test.sh /test.sh
-		sudo /etc/init.d/kvm start
+		sudo /etc/init.d/kvm start || true
 		$(QEMU) $(QEMUARGS) > log.txt 2>&1
 
 bochs: all prepareRun
@@ -107,7 +107,7 @@ vmware: all prepareRun $(VMDISK)
 		vmplayer vmware/escape.vmx
 
 vbox: all prepareRun $(VMDISK)
-		sudo /etc/init.d/kvm stop # vbox doesn't like kvm :/
+		sudo /etc/init.d/kvm stop || true # vbox doesn't like kvm :/
 		tools/vboxhddupd.sh $(VBOXOSTITLE) $(VMDISK)
 		VBoxSDL --evdevkeymap -startvm $(VBOXOSTITLE)
 

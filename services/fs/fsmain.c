@@ -177,6 +177,7 @@ int main(int argc,char *argv[]) {
 					break;
 
 					case MSG_FS_READ: {
+						u64 start = getCycles();
 						tInodeNo ino = (tInodeNo)msg.args.arg1;
 						tDevNo devNo = (tDevNo)msg.args.arg2;
 						u32 offset = msg.args.arg3;
@@ -199,6 +200,10 @@ int main(int argc,char *argv[]) {
 							send(fd,MSG_FS_READ_RESP,buffer,count);
 							free(buffer);
 						}
+						u64 end = getCycles();
+						uLongLong diff;
+						diff.val64 = end - start;
+						debugf("FS-Read: %08x%08x\n",diff.val32.upper,diff.val32.lower);
 
 						/* read ahead
 						if(count > 0)

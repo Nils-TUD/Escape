@@ -656,6 +656,53 @@ bool proc_changeSize(s32 change,eChgArea area) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
+static u64 ucycles[PROC_COUNT];
+static u64 kcycles[PROC_COUNT];
+
+void proc_dbg_startProf(void) {
+	u32 i;
+	sSLNode *n;
+	sThread *t;
+	for(i = 0; i < PROC_COUNT; i++) {
+		ucycles[i] = 0;
+		kcycles[i] = 0;
+		if(procs[i].pid != INVALID_PID) {
+			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
+				t = (sThread*)n->data;
+				ucycles[i] += t->ucycleCount.val64;
+				kcycles[i] += t->kcycleCount.val64;
+			}
+		}
+	}
+}
+
+void proc_dbg_stopProf(void) {
+	u32 i;
+	sSLNode *n;
+	sThread *t;
+	for(i = 0; i < PROC_COUNT; i++) {
+		if(procs[i].pid != INVALID_PID) {
+			uLongLong curUcycles;
+			uLongLong curKcycles;
+			curUcycles.val64 = 0;
+			curKcycles.val64 = 0;
+			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
+				t = (sThread*)n->data;
+				curUcycles.val64 += t->ucycleCount.val64;
+				curKcycles.val64 += t->kcycleCount.val64;
+			}
+			curUcycles.val64 -= ucycles[i];
+			curKcycles.val64 -= kcycles[i];
+			if(curUcycles.val64 > 0 || curKcycles.val64 > 0) {
+				vid_printf("Process %d (%s): u=%08x%08x k=%08x%08x\n",
+					procs[i].pid,procs[i].command,
+					curUcycles.val32.upper,curUcycles.val32.lower,
+					curKcycles.val32.upper,curKcycles.val32.lower);
+			}
+		}
+	}
+}
+
 void proc_dbg_printAll(void) {
 	u32 i;
 	for(i = 0; i < PROC_COUNT; i++) {

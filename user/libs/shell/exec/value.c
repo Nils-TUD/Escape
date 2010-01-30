@@ -73,7 +73,7 @@ sValue *val_cmp(sValue *v1,sValue *v2,u8 op) {
 	u8 t1 = v1->type;
 	u8 t2 = v2->type;
 	tIntType diff;
-	bool res;
+	bool res = false;
 	/* first compute the difference; compare strings if both are strings
 	 * compare integers otherwise and convert the values to integers if necessary */
 	if(t1 == TYPE_STR && t2 == TYPE_STR) {

@@ -19,6 +19,10 @@
 
 #include <stdio.h>
 
+int pow(int a,int b);
+void yyerror(char const *s);
+extern int yyparse(void);
+
 int pow(int a,int b) {
 	int i;
 	int res = 1;
@@ -28,13 +32,11 @@ int pow(int a,int b) {
 }
 
 /* Called by yyparse on error.  */
-void yyerror (char const *s)
-{
+void yyerror(char const *s) {
 	fprintf (stderr, "%s\n", s);
 }
 
-int main(void)
-{
+int main(void) {
 	printf("> ");
 	return yyparse();
 }

@@ -38,7 +38,7 @@ sASTNode *ast_createBinOpExpr(sASTNode *operand1,char operation,sASTNode *operan
 sValue *ast_execBinOpExpr(sEnv *e,sBinaryOpExpr *n) {
 	sValue *v1 = ast_execute(e,n->operand1);
 	sValue *v2 = ast_execute(e,n->operand2);
-	sValue *res;
+	sValue *res = NULL;
 	switch(n->operation) {
 		case '+':
 			res = val_createInt(val_getInt(v1) + val_getInt(v2));

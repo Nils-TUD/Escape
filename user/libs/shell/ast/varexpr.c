@@ -23,7 +23,7 @@
 #include "node.h"
 #include "../mem.h"
 
-sASTNode *ast_createVarExpr(const char *s) {
+sASTNode *ast_createVarExpr(char *s) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sVarExpr *expr = node->data = emalloc(sizeof(sVarExpr));
 	/* no clone necessary here because we've already cloned it in the scanner */

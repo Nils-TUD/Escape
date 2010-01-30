@@ -31,10 +31,10 @@ typedef struct {
 /**
  * Creates an const-str-node
  *
- * @param s the string (will be cloned)
+ * @param s the string (will NOT be cloned)
  * @return the created node
  */
-sASTNode *ast_createConstStrExpr(const char *s);
+sASTNode *ast_createConstStrExpr(char *s);
 
 /**
  * Executes the given node(-tree)

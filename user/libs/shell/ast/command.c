@@ -85,7 +85,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	u32 cmdNo,cmdCount;
 	sRedirFile *redirOut,*redirIn;
 	char path[MAX_CMD_LEN] = APPS_DIR;
-	s32 pid,prevPid;
+	s32 pid,prevPid = -1;
 	tFD pipeFds[2],prevPipe;
 	curCmd = run_requestId();
 

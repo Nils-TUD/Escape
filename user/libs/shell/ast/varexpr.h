@@ -31,10 +31,10 @@ typedef struct {
 /**
  * Creates an variable-node
  *
- * @param s the name (will be cloned)
+ * @param s the name (will NOT be cloned)
  * @return the created node
  */
-sASTNode *ast_createVarExpr(const char *s);
+sASTNode *ast_createVarExpr(char *s);
 
 /**
  * Executes the given node(-tree)

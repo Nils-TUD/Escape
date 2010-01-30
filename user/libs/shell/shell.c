@@ -57,20 +57,14 @@ void shell_init(void) {
 }
 
 bool shell_prompt(void) {
+	char path[MAX_PATH_LEN + 1];
 	/* ensure that we start a new readline */
-	char *path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
 	resetReadLine = true;
-	if(path == NULL) {
-		printf("ERROR: unable to get CWD\n");
-		return false;
-	}
 	if(!getEnv(path,MAX_PATH_LEN + 1,"CWD")) {
-		free(path);
 		printf("ERROR: unable to get CWD\n");
 		return false;
 	}
 	printf("\033[co;8]%s\033[co] # ",path);
-	free(path);
 	return true;
 }
 
@@ -82,7 +76,6 @@ static void shell_sigIntrpt(tSig sig,u32 data) {
 }
 
 s32 shell_executeCmd(char *line,bool isFile) {
-	u32 after,before = heap_getFreeSpace();
 	s32 res;
 	curIsStream = isFile;
 	if(isFile) {
@@ -98,8 +91,6 @@ s32 shell_executeCmd(char *line,bool isFile) {
 	run_gc();
 	if(isFile)
 		fclose(curStream);
-	after = heap_getFreeSpace();
-	printf("before=%d after=%d\n",before,after);
 	return res;
 }
 

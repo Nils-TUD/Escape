@@ -107,7 +107,7 @@ dis: all
 
 qemu:	all prepareRun
 		# TODO remove!
-		./tools/disk.sh copy user/c/shscr/test.sh /test.sh
+		./tools/disk.sh copy user/libs/shell/test.sh /test.sh
 		sudo /etc/init.d/kvm start || true
 		$(QEMU) $(QEMUARGS) > log.txt 2>&1
 

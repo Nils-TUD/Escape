@@ -191,6 +191,7 @@ int main(void) {
 
 static void procThreadHandler(tSig sig,u32 data) {
 	UNUSED(sig);
+	/* TODO this is dangerous! we can't use the heap in signal-handlers */
 	win_destroyWinsOf(data,curX,curY);
 }
 

@@ -72,6 +72,7 @@ bool shell_prompt(void) {
 }
 
 static void shell_sigIntrpt(tSig sig,u32 data) {
+	/* TODO this is dangerous! we can't use the heap in signal-handlers */
 	UNUSED(sig);
 	UNUSED(data);
 	u32 i;

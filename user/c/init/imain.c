@@ -28,7 +28,6 @@
 #include <string.h>
 #include <width.h>
 
-#define SHELL_COUNT				2
 #define MAX_SNAME_LEN			50
 #define MAX_SERVICE_PATH_LEN	255
 #define MAX_WAIT_RETRIES		1000

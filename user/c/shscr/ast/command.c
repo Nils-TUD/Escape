@@ -292,6 +292,7 @@ static s32 ast_waitForCmd() {
 			break;
 		}
 	}
+	run_gc();
 	return curResult;
 }
 
@@ -319,7 +320,7 @@ static void ast_sigChildHndl(tSig sig,u32 data) {
 				/* if the next command already exists (or there is no next),
 				 * everything is fine and we can close the write-end of the pipe */
 				close(p->pipe[1]);
-				run_remProc((tPid)data);
+				p->removable = true;
 			}
 			else {
 				/* if we have no next proc yet we have to take care that run_findProc doesn't find us
@@ -329,7 +330,7 @@ static void ast_sigChildHndl(tSig sig,u32 data) {
 		}
 		/* otherwise simply remove the process */
 		else
-			run_remProc((tPid)data);
+			p->removable = true;
 		/* close read-end if we don't want to read the output ourself */
 		if(p->pipe[0] >= 0 && closePipe[0] != p->pipe[0])
 			close(p->pipe[0]);

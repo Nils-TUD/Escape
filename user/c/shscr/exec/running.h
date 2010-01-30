@@ -33,6 +33,7 @@ typedef u32 tCmdId;
 typedef struct sRunningProc sRunningProc;
 struct sRunningProc {
 	bool terminated;
+	bool removable;
 	u8 next;
 	tCmdId cmdId;
 	tFD pipe[2];
@@ -71,6 +72,11 @@ bool run_addProc(tCmdId cmdId,tPid pid,tFD inPipe,tFD outPipe,bool hasNext);
  * @return the information about the process or NULL
  */
 sRunningProc *run_findProc(tCmdId cmdId,tPid pid);
+
+/**
+ * Removes and free's all removable processes
+ */
+void run_gc(void);
 
 /**
  * Removes the process with given id from the running ones

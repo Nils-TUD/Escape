@@ -30,5 +30,6 @@ int main(void) {
 	yydebug = 0;
 	run_init();
 	debug();
+	/* TODO call run_gc() after each script-execution */
 	return yyparse();
 }

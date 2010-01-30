@@ -199,6 +199,7 @@ int main(void) {
 }
 
 static void procDiedHandler(tSig sig,u32 data) {
+	/* TODO this is dangerous! we can't use the heap in signal-handlers (=> no sll either) */
 	UNUSED(sig);
 	/* remember for deletion */
 	if(deadProcs == NULL)

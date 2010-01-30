@@ -44,6 +44,7 @@ bool run_addProc(tCmdId cmdId,tPid pid,tFD inPipe,tFD outPipe,bool hasNext) {
 		run->pipe[1] = outPipe;
 		run->next = hasNext ? CMD_NEXT_AWAIT : CMD_NEXT_NO;
 		run->terminated = false;
+		run->removable = false;
 		if(sll_append(running,run))
 			return true;
 		free(run);
@@ -56,10 +57,29 @@ sRunningProc *run_findProc(tCmdId cmdId,tPid pid) {
 	sRunningProc *p;
 	for(n = sll_begin(running); n != NULL; n = n->next) {
 		p = (sRunningProc*)n->data;
-		if(p->pid == pid && (cmdId == CMD_ID_ALL || p->cmdId == cmdId))
+		if(!p->removable && p->pid == pid && (cmdId == CMD_ID_ALL || p->cmdId == cmdId))
 			return p;
 	}
 	return NULL;
+}
+
+void run_gc(void) {
+	sSLNode *n,*p;
+	sRunningProc *r;
+	p = NULL;
+	for(n = sll_begin(running); n != NULL; ) {
+		r = (sRunningProc*)n->data;
+		if(r->removable) {
+			sSLNode *next = n->next;
+			sll_removeNode(running,n,p);
+			free(r);
+			n = next;
+		}
+		else {
+			p = n;
+			n = n->next;
+		}
+	}
 }
 
 void run_remProc(tPid pid) {

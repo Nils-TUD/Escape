@@ -26,8 +26,8 @@ string :P';
 	echo "abc {$a + `cat 'file.txt' | wc -c`} und mehr";
 fi
 
-for ($x = 0; $x < 3; $x = $x + 1) do
-	cat bigfile | grep {$x} | wc -l;
+for ($x = 0; $x < 20; $x = $x + 1) do
+	cat bigfile | cat | cat | cat | grep "test" | wc &;
 done
 
 while ($x > 0) do

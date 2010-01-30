@@ -151,9 +151,9 @@ s32 sig_setHandler(tTid tid,tSig signal,fSigHandler func) {
 	h->pending = NULL;
 	h->active = 0;
 
-	if(!sll_append(handler[signal - 1],h)) {
-		if(!handlerExisted)
-			kheap_free(h);
+	/* don't add it twice */
+	if(!handlerExisted && !sll_append(handler[signal - 1],h)) {
+		kheap_free(h);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -218,6 +218,8 @@ bool sig_hasSignal(tSig *sig,tTid *tid,u32 *data) {
 	sThread *t;
 	if(!sig_hasSigPre())
 		return false;
+
+	/*sig_dbg_print();*/
 
 	/* search through all signal-lists */
 	list = handler;
@@ -506,6 +508,9 @@ const char *sig_dbg_getName(tSig signal) {
 		"SIG_ILL_INSTR",
 		"SIG_SEGFAULT",
 		"SIG_PROC_DIED",
+		"SIG_THREAD_DIED",
+		"SIG_CHILD_DIED",
+		"SIG_CHILD_TERM",
 		"SIG_INTRPT",
 		"SIG_INTRPT_TIMER",
 		"SIG_INTRPT_KB",
@@ -529,7 +534,7 @@ void sig_dbg_print(void) {
 
 	list = handler;
 	vid_printf("Announced signal-handlers:\n");
-	for(i = 0; i < SIG_COUNT - 1; i++) {
+	for(i = 1; i < SIG_COUNT - 1; i++) {
 		vid_printf("\t%s:\n",sig_dbg_getName(i));
 		if(*list != NULL) {
 			for(n = sll_begin(*list); n != NULL; n = n->next) {

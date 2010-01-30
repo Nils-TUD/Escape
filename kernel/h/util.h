@@ -86,6 +86,18 @@ u8 util_waitForKeyPress(void);
 u8 util_waitForKeyRelease(void);
 
 /**
+ * Starts the timer
+ */
+void util_startTimer(void);
+
+/**
+ * Stops the timer and displays "<prefix>: <instructions>"
+ *
+ * @param prefix the prefix to display
+ */
+void util_stopTimer(const char *prefix,...);
+
+/**
  * Builds the stack-trace for a user-app
  *
  * @param t the thread

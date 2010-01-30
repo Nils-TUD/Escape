@@ -115,12 +115,11 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 		thread_switch();
 
 		/* we're back again :) */
+		/* stop waiting for event; maybe we have been waked up for another reason */
+		thread_wakeup(t->tid,EV_CHILD_DIED);
 		/* don't continue here if we were interrupted by a signal */
-		if(sig_hasSignalFor(t->tid)) {
-			/* stop waiting for event */
-			thread_wakeup(t->tid,EV_CHILD_DIED);
+		if(sig_hasSignalFor(t->tid))
 			SYSC_ERROR(stack,ERR_INTERRUPTED);
-		}
 		res = proc_getExitState(p->pid,state);
 		if(res < 0)
 			SYSC_ERROR(stack,res);
@@ -232,11 +231,11 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	p->textPages = 0;
 
 	/* load program */
-	proc_dbg_startProf();
+	/*proc_dbg_startProf();*/
 	res = elf_loadFromFile(path);
-	vid_printf("Profiling exec('%s')\n",pathSave);
+	/*vid_printf("Profiling exec('%s')\n",pathSave);
 	proc_dbg_stopProf();
-	vid_printf("\n\n");
+	vid_printf("\n\n");*/
 	if(res < 0) {
 		/* there is no undo for proc_changeSize() :/ */
 		kheap_free(argBuffer);
@@ -260,6 +259,6 @@ void sysc_getCycles(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	uLongLong cycles;
 	cycles.val64 = t->kcycleCount.val64 + t->ucycleCount.val64;
-	SYSC_RET1(stack,cycles.val32.upper);
-	SYSC_RET2(stack,cycles.val32.lower);
+	SYSC_RET1(stack,cycles.val32.lower);
+	SYSC_RET2(stack,cycles.val32.upper);
 }

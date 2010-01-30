@@ -19,6 +19,7 @@
 
 #include <common.h>
 #include <machine/intrpt.h>
+#include <machine/cpu.h>
 #include <task/proc.h>
 #include <mem/pmem.h>
 #include <mem/paging.h>
@@ -42,6 +43,7 @@ static u8 util_waitForKey(void);
 
 /* the beginning of the kernel-stack */
 extern u32 kernelStack;
+static u64 profStart;
 
 void util_panic(const char *fmt,...) {
 	u32 regs[REG_COUNT];
@@ -118,6 +120,20 @@ static u8 util_waitForKey(void) {
 	return util_inByte(IOPORT_KB_DATA);
 }
 
+void util_startTimer(void) {
+	profStart = cpu_rdtsc();
+}
+
+void util_stopTimer(const char *prefix,...) {
+	va_list l;
+	uLongLong diff;
+	diff.val64 = cpu_rdtsc() - profStart;
+	va_start(l,prefix);
+	vid_vprintf(prefix,l);
+	va_end(l);
+	vid_printf(": 0x%08x%08x\n",diff.val32.upper,diff.val32.lower);
+}
+
 sFuncCall *util_getUserStackTrace(sThread *t,sIntrptStackFrame *stack) {
 	return util_getStackTrace((u32*)stack->ebp,
 			t->ustackBegin - t->ustackPages * PAGE_SIZE,t->ustackBegin);
@@ -178,7 +194,7 @@ void util_printStackTrace(sFuncCall *trace) {
 
 	/* TODO maybe we should skip util_printStackTrace here? */
 	while(trace->addr != 0) {
-		vid_printf("\t0x%08x -> 0x%08x (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
+		vid_printf("\t0x%08x -> 0x%08x \n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
 		trace++;
 	}
 }

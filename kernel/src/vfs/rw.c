@@ -128,8 +128,9 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 	total = 0;
 	while(1) {
 		/* copy */
-		byteCount = MIN(data->length - (offset - data->offset),count);
 		vassert(offset >= data->offset,"Illegal offset");
+		vassert(data->length >= (offset - data->offset),"Illegal offset");
+		byteCount = MIN(data->length - (offset - data->offset),count);
 		memcpy(buffer + total,data->data + (offset - data->offset),byteCount);
 		count -= byteCount;
 		total += byteCount;

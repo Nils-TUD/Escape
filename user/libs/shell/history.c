@@ -33,15 +33,19 @@ static u16 histSize = 0;
 static char *history[HISTORY_SIZE] = {NULL};
 
 void shell_addToHistory(char *line) {
+	u32 len = strlen(line);
 	u16 lastPos = histWritePos == 0 ? HISTORY_SIZE - 1 : histWritePos - 1;
-	/* don't add an entry twice in a row */
-	if(lastPos < histSize && strcmp(history[lastPos],line) == 0) {
+	/* don't add an entry twice in a row and ignore empty lines */
+	if(*line == '\n' || (lastPos < histSize && strcmp(history[lastPos],line) == 0)) {
 		/* ensure that we start at the beginning on next histUp/histDown */
 		histReadPos = histWritePos;
 		/* we don't need the line anymore */
 		free(line);
 		return;
 	}
+
+	/* remove \n at the end */
+	line[len - 1] = '\0';
 
 	/* free occupied places since we overwrite them */
 	if(history[histWritePos])

@@ -55,10 +55,13 @@ int main(int argc,char **argv) {
 	/* none-interactive-mode */
 	if(argc == 3) {
 		/* in this case we already have stdin, stdout and stderr */
-		if(strcmp(argv[1],"-e") != 0)
-			usage(argv[0]);
-
-		return shell_executeCmd(argv[2]);
+		/* execute a script */
+		if(strcmp(argv[1],"-s") == 0)
+			return shell_executeCmd(argv[2],true);
+		/* execute a command */
+		if(strcmp(argv[1],"-e") == 0)
+			return shell_executeCmd(argv[2],false);
+		usage(argv[0]);
 	}
 
 	/* interactive mode */
@@ -90,12 +93,6 @@ int main(int argc,char **argv) {
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");
 
-#if 1
-	if(vterm == 0) {
-		printf("shscr test.sh\n");
-		return shell_executeCmd("shscr test.sh");
-	}
-#endif
 	while(1) {
 		/* create buffer (history will free it) */
 		buffer = (char*)malloc((MAX_CMD_LEN + 1) * sizeof(char));
@@ -109,7 +106,7 @@ int main(int argc,char **argv) {
 		shell_readLine(buffer,MAX_CMD_LEN);
 
 		/* execute it */
-		shell_executeCmd(buffer);
+		shell_executeCmd(buffer,false);
 		shell_addToHistory(buffer);
 	}
 

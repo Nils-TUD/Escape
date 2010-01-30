@@ -56,12 +56,14 @@ int main(int argc,char **argv) {
 	// none-interactive-mode
 	if(argc == 3) {
 		// in this case we already have stdin, stdout and stderr
-		if(strcmp(argv[1],"-e") != 0) {
-			fprintf(stderr,"Invalid shell-usage; Please use %s -e <cmd>\n",argv[1]);
-			return EXIT_FAILURE;
-		}
-
-		return shell_executeCmd(argv[2]);
+		// execute a script
+		if(strcmp(argv[1],"-s") == 0)
+			return shell_executeCmd(argv[2],true);
+		// execute a command
+		if(strcmp(argv[1],"-e") == 0)
+			return shell_executeCmd(argv[2],false);
+		fprintf(stderr,"Invalid shell-usage; Please use %s -e <cmd>\n",argv[1]);
+		return EXIT_FAILURE;
 	}
 
 	// use a lock here to ensure that no one uses our guiterm-number
@@ -151,7 +153,7 @@ static int shell_main(void) {
 		shell_readLine(buffer,MAX_CMD_LEN);
 
 		// execute it
-		shell_executeCmd(buffer);
+		shell_executeCmd(buffer,false);
 		shell_addToHistory(buffer);
 	}
 	return EXIT_SUCCESS;

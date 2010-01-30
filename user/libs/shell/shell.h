@@ -21,6 +21,7 @@
 #define SHELL_H_
 
 #include <esc/common.h>
+#include <esc/fileio.h>
 
 #define MAX_ARG_COUNT		10
 #define ERR_CMD_NOT_FOUND	-100
@@ -35,6 +36,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern tFile *curStream;
+extern bool curIsStream;
+extern char *curLine;
 
 /**
  * Inits the shell; announces the signal-handler for SIG_INTRPT
@@ -54,12 +59,13 @@ bool shell_prompt(void);
 tPid shell_getWaitingPid(void);
 
 /**
- * Executes the given line
+ * Executes the given line or file
  *
  * @param line the entered line
+ * @param isFile wether <line> is a file
  * @return the result
  */
-s32 shell_executeCmd(char *line);
+s32 shell_executeCmd(char *line,bool isFile);
 
 /**
  * Reads a line

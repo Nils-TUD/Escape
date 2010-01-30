@@ -1,5 +1,6 @@
 if ('a' == 'a') then
 	$a = 4;
+	$b = 5;
 	#echo "test1" > f1.txt;
 	#echo "test2" > f2.txt;
 	#echo "test3" > f3.txt;
@@ -24,26 +25,26 @@ singlequote
 string :P';
 	echo "huhu, ich bin der penner!!! a + b";
 	echo "abc {$a + `cat 'file.txt' | wc -c`} und mehr";
-fi
+fi;
 
 for ($x = 0; $x < 20; $x = $x + 1) do
 	cat bigfile | grep "test" | wc &;
-done
+done;
 
 while ($x > 0) do
 	echo {$x};
 	$x = $x - 1;
-done
+done;
 
 if (1 < 3) then
 	if ($a == 4) then
 		$bla = "test";
 	else
 		$muh = "bla";
-	fi
+	fi;
 	$b = `echo test | wc -c` + 10;
 	$e = `echo test`;
 	$c = 123 + (4 * 6) ^ 2 - 12;
 else
 	$c = 'test';
-fi
+fi;

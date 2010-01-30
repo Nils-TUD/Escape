@@ -51,7 +51,7 @@
 %token T_OUT2ERR
 %token T_APPEND
 
-%type <node> stmtlist stmt expr exprstmt cmdexpr cmdexprlist cmd subcmd 
+%type <node> stmtlist stmtlistr stmt expr exprstmt cmdexpr cmdexprlist cmd subcmd 
 %type <node> cmdredirfd cmdredirin cmdredirout strlist strcomp
 
 %nonassoc '>' '<' T_LEQ T_GEQ T_EQ T_NEQ
@@ -64,16 +64,20 @@
 
 start:
 			stmtlist {
-				ast_printTree($1,0);
 				sEnv *e = env_create();
 				ast_execute(e,$1);
-				env_print(e);
 			}
 ;
 
 stmtlist:
-			/* empty */					{ $$ = ast_createStmtList(); }
-			| stmtlist stmt			{ $$ = ast_addStmt($1,$2); }
+			/* empty */							{ $$ = ast_createStmtList(); }
+			| stmtlistr							{ $$ = $1; }
+			| stmtlistr ';'					{ $$ = $1; }
+;
+
+stmtlistr:
+			stmt										{ $$ = ast_createStmtList(); ast_addStmt($$,$1); }
+			| stmtlistr ';' stmt		{ $$ = ast_addStmt($1,$3); }
 ;
 
 stmt:
@@ -89,10 +93,10 @@ stmt:
 			| T_WHILE '(' expr ')' T_DO stmtlist T_DONE {
 				$$ = ast_createWhileStmt($3,$6);
 			}
-			| exprstmt ';' {
+			| exprstmt {
 				$$ = ast_createExprStmt($1);
 			}
-			| cmd ';' {
+			| cmd {
 				$$ = $1;
 			}
 ;

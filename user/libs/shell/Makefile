@@ -13,19 +13,31 @@ CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
 	-Wl,-T,$(LDCONF) $(CDEFFLAGS)
 
 # sources 
-CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
+LEXSRC = script.l
+LEXGEN = lex.c
+BISONSRC = script.y
+BISONGEN = parser.c
+CSRC = $(filter-out ./$(BISONGEN) ./$(LEXGEN),\
+	$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
 
 # put all libc-object-files into the archive
 LIBCOBJ = $(shell find $(BUILD)/libc -mindepth 0 -maxdepth 5 -name "*.o")
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
+GENOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN) $(BISONGEN))
 
 .PHONY: all clean
 
-all:	$(BIN)
+all:	$(BISONGEN) $(LEXGEN) $(BIN)
 
-$(BIN): $(BUILDDIRS) $(COBJ) $(LIBCOBJ)
+$(BIN): $(BUILDDIRS) $(COBJ) $(GENOBJ) $(LIBCOBJ)
 		@echo "	" AR $(BIN)
-		@ar rcs $(BIN) $(COBJ) $(LIBCOBJ)
+		@ar rcs $(BIN) $(COBJ) $(GENOBJ) $(LIBCOBJ)
+
+$(LEXGEN):	$(LEXSRC)
+		flex -o $(LEXGEN) --nounistd < $(LEXSRC)
+
+$(BISONGEN):	$(BISONSRC)
+		bison -t -d -o $(BISONGEN) $(BISONSRC)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
@@ -34,9 +46,9 @@ $(BUILDDIRS):
 
 $(BUILDL)/%.o:		%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -D YYERROR_VERBOSE -o $@ -c $< -MMD
 
 -include $(DEPS)
 
 clean:
-		rm -f $(BIN) $(DEPS) $(COBJ)
+		rm -f $(BIN) $(DEPS) $(COBJ) $(LEXGEN) $(BISONGEN) $(GENOBJ)

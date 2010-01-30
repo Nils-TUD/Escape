@@ -2,9 +2,18 @@
 %option noyywrap
 
 %{
+	#include <string.h>
 	#include "parser.h"
 	#include "lang.h"
-	#include <string.h>
+	#include "shell.h"
+%}
+
+%{
+	#define YY_INPUT(buf,result,max_size) \
+		{ \
+			int c = curIsStream ? fscanc(curStream) : *curLine++; \
+			result = (c == '\0' || c == EOF) ? YY_NULL : (buf[0] = c, 1); \
+		}
 %}
 
 %s COMMENT

@@ -34,8 +34,8 @@
 #include "subcmd.h"
 #include "command.h"
 
-#include <shell/shell.h>
-#include <shell/completion.h>
+#include "../shell.h"
+#include "../completion.h"
 
 #define OUTBUF_SIZE		128
 

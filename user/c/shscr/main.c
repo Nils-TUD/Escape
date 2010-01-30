@@ -20,6 +20,7 @@
 #include <esc/signals.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
+#include <esc/dir.h>
 #include "parser.h"
 #include "exec/running.h"
 
@@ -28,15 +29,17 @@ extern int yydebug;
 extern int yyparse(void);
 
 int main(int argc,char *argv[]) {
+	char abs[MAX_PATH_LEN];
 	yydebug = 0;
 	/* skip over program name */
 	++argv, --argc;
-	if (argc > 0)
-		yyin = fopen(argv[0],"r");
+	if (argc > 0) {
+		abspath(abs,MAX_PATH_LEN,argv[0]);
+		yyin = fopen(abs,"r");
+	}
 	else
 		yyin = stdin;
 	run_init();
-	debug();
 	/* TODO call run_gc() after each script-execution */
 	return yyparse();
 }

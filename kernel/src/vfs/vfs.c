@@ -129,7 +129,7 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 	sVFSNode *n = vfsn_getNode(e->nodeNo);
 	vassert(e->flags != 0,"Invalid file %d",file);
 	/* we can't share service-usages since each thread has his own node */
-	if((n->mode & MODE_TYPE_SERVUSE)) {
+	if(e->devNo == VFS_DEV_NO && (n->mode & MODE_TYPE_SERVUSE)) {
 		sVFSNode *child;
 		tInodeNo nodeNo;
 		tFileNo newFile;
@@ -146,7 +146,7 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 		return newFile;
 	}
 	/* if a pipe is inherited we need a new file for it (position should be different )*/
-	else if(n->mode & MODE_TYPE_PIPE) {
+	else if(e->devNo == VFS_DEV_NO && (n->mode & MODE_TYPE_PIPE)) {
 		tFileNo newFile;
 		/* we'll get a new file since the tid is different */
 		newFile = vfs_openFile(tid,e->flags & (VFS_READ | VFS_WRITE),e->nodeNo,e->devNo);

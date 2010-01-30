@@ -68,8 +68,6 @@ start:
 				sEnv *e = env_create();
 				ast_execute(e,$1);
 				env_print(e);
-				sleep(1000);
-				debug();
 			}
 ;
 

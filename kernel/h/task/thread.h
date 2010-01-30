@@ -28,7 +28,7 @@
 #define THREAD_COUNT			1024
 #define MAX_THREAD_NAME_LEN		15
 #define MAX_STACK_PAGES			128
-#define MAX_FD_COUNT			32
+#define MAX_FD_COUNT			64
 
 #define INITIAL_STACK_PAGES		2
 

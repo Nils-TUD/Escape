@@ -497,12 +497,12 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    66,    66,    77,    78,    82,    85,    88,    91,    94,
-      97,   103,   104,   108,   109,   113,   114,   115,   116,   117,
-     118,   119,   120,   121,   122,   123,   124,   125,   126,   127,
-     128,   132,   133,   137,   138,   139,   140,   141,   142,   146,
-     147,   151,   152,   156,   160,   167,   168,   169,   173,   174,
-     178,   179,   180
+       0,    66,    66,    75,    76,    80,    83,    86,    89,    92,
+      95,   101,   102,   106,   107,   111,   112,   113,   114,   115,
+     116,   117,   118,   119,   120,   121,   122,   123,   124,   125,
+     126,   130,   131,   135,   136,   137,   138,   139,   140,   144,
+     145,   149,   150,   154,   158,   165,   166,   167,   171,   172,
+     176,   177,   178
 };
 #endif
 
@@ -1525,29 +1525,27 @@ yyreduce:
 				sEnv *e = env_create();
 				ast_execute(e,(yyvsp[(1) - (1)].node));
 				env_print(e);
-				sleep(1000);
-				debug();
 			;}
     break;
 
   case 3:
 
 /* Line 1455 of yacc.c  */
-#line 77 "script.y"
+#line 75 "script.y"
     { (yyval.node) = ast_createStmtList(); ;}
     break;
 
   case 4:
 
 /* Line 1455 of yacc.c  */
-#line 78 "script.y"
+#line 76 "script.y"
     { (yyval.node) = ast_addStmt((yyvsp[(1) - (2)].node),(yyvsp[(2) - (2)].node)); ;}
     break;
 
   case 5:
 
 /* Line 1455 of yacc.c  */
-#line 82 "script.y"
+#line 80 "script.y"
     {
 				(yyval.node) = ast_createIfStmt((yyvsp[(3) - (7)].node),(yyvsp[(6) - (7)].node),NULL);
 			;}
@@ -1556,7 +1554,7 @@ yyreduce:
   case 6:
 
 /* Line 1455 of yacc.c  */
-#line 85 "script.y"
+#line 83 "script.y"
     {
 				(yyval.node) = ast_createIfStmt((yyvsp[(3) - (9)].node),(yyvsp[(6) - (9)].node),(yyvsp[(8) - (9)].node));
 			;}
@@ -1565,7 +1563,7 @@ yyreduce:
   case 7:
 
 /* Line 1455 of yacc.c  */
-#line 88 "script.y"
+#line 86 "script.y"
     {
 				(yyval.node) = ast_createForStmt((yyvsp[(3) - (11)].node),(yyvsp[(5) - (11)].node),(yyvsp[(7) - (11)].node),(yyvsp[(10) - (11)].node));
 			;}
@@ -1574,7 +1572,7 @@ yyreduce:
   case 8:
 
 /* Line 1455 of yacc.c  */
-#line 91 "script.y"
+#line 89 "script.y"
     {
 				(yyval.node) = ast_createWhileStmt((yyvsp[(3) - (7)].node),(yyvsp[(6) - (7)].node));
 			;}
@@ -1583,7 +1581,7 @@ yyreduce:
   case 9:
 
 /* Line 1455 of yacc.c  */
-#line 94 "script.y"
+#line 92 "script.y"
     {
 				(yyval.node) = ast_createExprStmt((yyvsp[(1) - (2)].node));
 			;}
@@ -1592,7 +1590,7 @@ yyreduce:
   case 10:
 
 /* Line 1455 of yacc.c  */
-#line 97 "script.y"
+#line 95 "script.y"
     {
 				(yyval.node) = (yyvsp[(1) - (2)].node);
 			;}
@@ -1601,231 +1599,231 @@ yyreduce:
   case 11:
 
 /* Line 1455 of yacc.c  */
-#line 103 "script.y"
+#line 101 "script.y"
     { (yyval.node) = (yyvsp[(1) - (2)].node); ast_addDStrComp((yyvsp[(1) - (2)].node),(yyvsp[(2) - (2)].node)); ;}
     break;
 
   case 12:
 
 /* Line 1455 of yacc.c  */
-#line 104 "script.y"
+#line 102 "script.y"
     { (yyval.node) = ast_createDStrExpr(); ast_addDStrComp((yyval.node),(yyvsp[(1) - (1)].node)); ;}
     break;
 
   case 13:
 
 /* Line 1455 of yacc.c  */
-#line 108 "script.y"
+#line 106 "script.y"
     { (yyval.node) = ast_createConstStrExpr((yyvsp[(1) - (1)].strval)); ;}
     break;
 
   case 14:
 
 /* Line 1455 of yacc.c  */
-#line 109 "script.y"
+#line 107 "script.y"
     { (yyval.node) = (yyvsp[(2) - (3)].node); ;}
     break;
 
   case 15:
 
 /* Line 1455 of yacc.c  */
-#line 113 "script.y"
+#line 111 "script.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); ;}
     break;
 
   case 16:
 
 /* Line 1455 of yacc.c  */
-#line 114 "script.y"
+#line 112 "script.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); ;}
     break;
 
   case 17:
 
 /* Line 1455 of yacc.c  */
-#line 115 "script.y"
+#line 113 "script.y"
     { (yyval.node) = ast_createBinOpExpr((yyvsp[(1) - (3)].node),'+',(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 18:
 
 /* Line 1455 of yacc.c  */
-#line 116 "script.y"
+#line 114 "script.y"
     { (yyval.node) = ast_createBinOpExpr((yyvsp[(1) - (3)].node),'-',(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 19:
 
 /* Line 1455 of yacc.c  */
-#line 117 "script.y"
+#line 115 "script.y"
     { (yyval.node) = ast_createBinOpExpr((yyvsp[(1) - (3)].node),'*',(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 20:
 
 /* Line 1455 of yacc.c  */
-#line 118 "script.y"
+#line 116 "script.y"
     { (yyval.node) = ast_createBinOpExpr((yyvsp[(1) - (3)].node),'/',(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 21:
 
 /* Line 1455 of yacc.c  */
-#line 119 "script.y"
+#line 117 "script.y"
     { (yyval.node) = ast_createBinOpExpr((yyvsp[(1) - (3)].node),'%',(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 22:
 
 /* Line 1455 of yacc.c  */
-#line 120 "script.y"
+#line 118 "script.y"
     { (yyval.node) = ast_createBinOpExpr((yyvsp[(1) - (3)].node),'^',(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 23:
 
 /* Line 1455 of yacc.c  */
-#line 121 "script.y"
+#line 119 "script.y"
     { (yyval.node) = ast_createUnaryOpExpr((yyvsp[(2) - (2)].node),UN_OP_NEG); ;}
     break;
 
   case 24:
 
 /* Line 1455 of yacc.c  */
-#line 122 "script.y"
+#line 120 "script.y"
     { (yyval.node) = ast_createCmpExpr((yyvsp[(1) - (3)].node),CMP_OP_LT,(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 25:
 
 /* Line 1455 of yacc.c  */
-#line 123 "script.y"
+#line 121 "script.y"
     { (yyval.node) = ast_createCmpExpr((yyvsp[(1) - (3)].node),CMP_OP_GT,(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 26:
 
 /* Line 1455 of yacc.c  */
-#line 124 "script.y"
+#line 122 "script.y"
     { (yyval.node) = ast_createCmpExpr((yyvsp[(1) - (3)].node),CMP_OP_LEQ,(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 27:
 
 /* Line 1455 of yacc.c  */
-#line 125 "script.y"
+#line 123 "script.y"
     { (yyval.node) = ast_createCmpExpr((yyvsp[(1) - (3)].node),CMP_OP_GEQ,(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 28:
 
 /* Line 1455 of yacc.c  */
-#line 126 "script.y"
+#line 124 "script.y"
     { (yyval.node) = ast_createCmpExpr((yyvsp[(1) - (3)].node),CMP_OP_EQ,(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 29:
 
 /* Line 1455 of yacc.c  */
-#line 127 "script.y"
+#line 125 "script.y"
     { (yyval.node) = ast_createCmpExpr((yyvsp[(1) - (3)].node),CMP_OP_NEQ,(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 30:
 
 /* Line 1455 of yacc.c  */
-#line 128 "script.y"
+#line 126 "script.y"
     { (yyval.node) = (yyvsp[(2) - (3)].node); ;}
     break;
 
   case 31:
 
 /* Line 1455 of yacc.c  */
-#line 132 "script.y"
+#line 130 "script.y"
     { (yyval.node) = ast_createAssignExpr(ast_createVarExpr((yyvsp[(1) - (3)].strval)),(yyvsp[(3) - (3)].node)); ;}
     break;
 
   case 32:
 
 /* Line 1455 of yacc.c  */
-#line 133 "script.y"
+#line 131 "script.y"
     { (yyval.node) = (yyvsp[(2) - (3)].node); ast_setRetOutput((yyvsp[(2) - (3)].node),true); ;}
     break;
 
   case 33:
 
 /* Line 1455 of yacc.c  */
-#line 137 "script.y"
+#line 135 "script.y"
     { (yyval.node) = ast_createIntExpr((yyvsp[(1) - (1)].intval)); ;}
     break;
 
   case 34:
 
 /* Line 1455 of yacc.c  */
-#line 138 "script.y"
+#line 136 "script.y"
     { (yyval.node) = ast_createConstStrExpr((yyvsp[(1) - (1)].strval)); ;}
     break;
 
   case 35:
 
 /* Line 1455 of yacc.c  */
-#line 139 "script.y"
+#line 137 "script.y"
     { (yyval.node) = ast_createConstStrExpr((yyvsp[(1) - (1)].strval)); ;}
     break;
 
   case 36:
 
 /* Line 1455 of yacc.c  */
-#line 140 "script.y"
+#line 138 "script.y"
     { (yyval.node) = (yyvsp[(2) - (3)].node); ;}
     break;
 
   case 37:
 
 /* Line 1455 of yacc.c  */
-#line 141 "script.y"
+#line 139 "script.y"
     { (yyval.node) = ast_createVarExpr((yyvsp[(1) - (1)].strval)); ;}
     break;
 
   case 38:
 
 /* Line 1455 of yacc.c  */
-#line 142 "script.y"
+#line 140 "script.y"
     { (yyval.node) = (yyvsp[(2) - (3)].node); ;}
     break;
 
   case 39:
 
 /* Line 1455 of yacc.c  */
-#line 146 "script.y"
+#line 144 "script.y"
     { (yyval.node) = ast_createCmdExprList(); ast_addCmdExpr((yyval.node),(yyvsp[(1) - (1)].node)); ;}
     break;
 
   case 40:
 
 /* Line 1455 of yacc.c  */
-#line 147 "script.y"
+#line 145 "script.y"
     { (yyval.node) = (yyvsp[(1) - (2)].node); ast_addCmdExpr((yyvsp[(1) - (2)].node),(yyvsp[(2) - (2)].node)); ;}
     break;
 
   case 41:
 
 /* Line 1455 of yacc.c  */
-#line 151 "script.y"
+#line 149 "script.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); ;}
     break;
 
   case 42:
 
 /* Line 1455 of yacc.c  */
-#line 152 "script.y"
+#line 150 "script.y"
     { (yyval.node) = (yyvsp[(1) - (2)].node); ast_setRunInBG((yyvsp[(1) - (2)].node),true); ;}
     break;
 
   case 43:
 
 /* Line 1455 of yacc.c  */
-#line 156 "script.y"
+#line 154 "script.y"
     {
 				(yyval.node) = ast_createCommand();
 				ast_addSubCmd((yyval.node),ast_createSubCmd((yyvsp[(1) - (4)].node),(yyvsp[(2) - (4)].node),(yyvsp[(3) - (4)].node),(yyvsp[(4) - (4)].node)));
@@ -1835,7 +1833,7 @@ yyreduce:
   case 44:
 
 /* Line 1455 of yacc.c  */
-#line 160 "script.y"
+#line 158 "script.y"
     {
 				(yyval.node) = (yyvsp[(1) - (6)].node);
 				ast_addSubCmd((yyvsp[(1) - (6)].node),ast_createSubCmd((yyvsp[(3) - (6)].node),(yyvsp[(4) - (6)].node),(yyvsp[(5) - (6)].node),(yyvsp[(6) - (6)].node)));
@@ -1845,63 +1843,63 @@ yyreduce:
   case 45:
 
 /* Line 1455 of yacc.c  */
-#line 167 "script.y"
+#line 165 "script.y"
     { (yyval.node) = ast_createRedirFd(REDIR_ERR2OUT); ;}
     break;
 
   case 46:
 
 /* Line 1455 of yacc.c  */
-#line 168 "script.y"
+#line 166 "script.y"
     { (yyval.node) = ast_createRedirFd(REDIR_OUT2ERR); ;}
     break;
 
   case 47:
 
 /* Line 1455 of yacc.c  */
-#line 169 "script.y"
+#line 167 "script.y"
     { (yyval.node) = ast_createRedirFd(REDIR_NO); ;}
     break;
 
   case 48:
 
 /* Line 1455 of yacc.c  */
-#line 173 "script.y"
+#line 171 "script.y"
     { (yyval.node) = ast_createRedirFile((yyvsp[(2) - (2)].node),REDIR_INFILE); ;}
     break;
 
   case 49:
 
 /* Line 1455 of yacc.c  */
-#line 174 "script.y"
+#line 172 "script.y"
     { (yyval.node) = ast_createRedirFile(NULL,REDIR_OUTCREATE); ;}
     break;
 
   case 50:
 
 /* Line 1455 of yacc.c  */
-#line 178 "script.y"
+#line 176 "script.y"
     { (yyval.node) = ast_createRedirFile((yyvsp[(2) - (2)].node),REDIR_OUTCREATE); ;}
     break;
 
   case 51:
 
 /* Line 1455 of yacc.c  */
-#line 179 "script.y"
+#line 177 "script.y"
     { (yyval.node) = ast_createRedirFile((yyvsp[(2) - (2)].node),REDIR_OUTAPPEND); ;}
     break;
 
   case 52:
 
 /* Line 1455 of yacc.c  */
-#line 180 "script.y"
+#line 178 "script.y"
     { (yyval.node) = ast_createRedirFile(NULL,REDIR_OUTCREATE); ;}
     break;
 
 
 
 /* Line 1455 of yacc.c  */
-#line 1905 "parser.c"
+#line 1903 "parser.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2113,6 +2111,6 @@ yyreturn:
 
 
 /* Line 1675 of yacc.c  */
-#line 183 "script.y"
+#line 181 "script.y"
 
 

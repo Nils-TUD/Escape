@@ -27,7 +27,7 @@ string :P';
 fi
 
 for ($x = 0; $x < 20; $x = $x + 1) do
-	cat bigfile | cat | cat | cat | grep "test" | wc &;
+	cat bigfile | grep "test" | wc &;
 done
 
 while ($x > 0) do

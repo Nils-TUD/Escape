@@ -1,6 +1,5 @@
 #!/bin/bash
 ROOT=$(dirname $(dirname $(readlink -f $0)))
-BUILD=$ROOT/build
 HDD=$BUILD/hd.img
 DISKMOUNT=$ROOT/disk
 TMPFILE=$BUILD/disktmp

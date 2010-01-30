@@ -1,6 +1,5 @@
 NAME=shscr
 ROOT = ../../..
-BUILD = $(ROOT)/build
 BUILDL = $(BUILD)/user/c/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
 LIB = $(ROOT)/lib
@@ -31,7 +30,7 @@ COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 GENOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN) $(BISONGEN))
 
 # the shell-lib
-ADDLIBS = ../../../build/user_libs_shell.a
+ADDLIBS = $(BUILD)/user_libs_shell.a
 ADDFLAGS = -I../../libs
 
 .PHONY: all clean

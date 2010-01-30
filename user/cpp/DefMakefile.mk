@@ -1,5 +1,4 @@
 ROOT = ../../..
-BUILD = $(ROOT)/build
 BUILDL = $(BUILD)/user/cpp/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
 LIB = $(ROOT)/lib

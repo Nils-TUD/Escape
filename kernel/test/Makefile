@@ -1,6 +1,5 @@
 # general
 ROOT = ../..
-BUILD = $(ROOT)/build
 BUILDK = $(BUILD)/kernel/src
 BUILDT = $(BUILD)/kernel/test
 BIN = $(BUILD)/kernel_test.bin

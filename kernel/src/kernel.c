@@ -67,7 +67,11 @@
  */
 
 static u8 initloader[] = {
-	#include "../../build/user_initloader.dump"
+#if DEBUGGING
+#	include "../../build/debug/user_initloader.dump"
+#else
+#	include "../../build/release/user_initloader.dump"
+#endif
 };
 
 s32 main(sMultiBoot *mbp,u32 magic) {

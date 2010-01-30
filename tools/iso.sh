@@ -1,6 +1,5 @@
 #!/bin/bash
 ROOT=$(dirname $(dirname $(readlink -f $0)))
-BUILD=$ROOT/build
 ISO=$BUILD/cd.iso
 OSTITLE="Escape v0.2"
 BINNAME=kernel.bin
@@ -29,11 +28,13 @@ cp $KERNELBIN $TMPDIR/boot
 # copy service-deps, apps, services and user-apps
 cp $ROOT/services/services.txt $TMPDIR/etc/services
 cp $BUILD/apps/* $TMPDIR/apps
-for i in build/service_*.bin ; do
-	cp $i $TMPDIR/sbin/`echo $i | sed "s/build\/service_\(.*\)\.bin/\1/g"`
+for i in $BUILD/service_*.bin ; do
+	BASE=`basename $i .bin`
+	cp $i $TMPDIR/sbin/`echo $BASE | sed "s/service_\(.*\)/\1/g"`
 done;
-for i in build/user_*.bin ; do
-	cp $i $TMPDIR/bin/`echo $i | sed "s/build\/user_\(.*\)\.bin/\1/g"`
+for i in $BUILD/user_*.bin ; do
+	BASE=`basename $i .bin`
+	cp $i $TMPDIR/bin/`echo $BASE | sed "s/user_\(.*\)/\1/g"`
 done;
 
 # add some test-data

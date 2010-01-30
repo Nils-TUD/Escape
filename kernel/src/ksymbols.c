@@ -24,10 +24,18 @@
 static sSymbol ksymbols[] = {
 	/* add dummy-entry to prevent empty array */
 	{0,""},
-#if TESTING
-#	include "../../build/kernelt_symbols.txt"
+#if DEBUGGING
+#	if TESTING
+#		include "../../build/debug/kernelt_symbols.txt"
+#	else
+#		include "../../build/debug/kernel_symbols.txt"
+#	endif
 #else
-#	include "../../build/kernel_symbols.txt"
+#	if TESTING
+#		include "../../build/release/kernelt_symbols.txt"
+#	else
+#		include "../../build/release/kernel_symbols.txt"
+#	endif
 #endif
 };
 

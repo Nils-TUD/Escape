@@ -1,4 +1,3 @@
-BUILD = ../build
 BUILDL = $(BUILD)/libc
 LIBDIR = ../lib
 GCCLIBDIR = ../libgcc

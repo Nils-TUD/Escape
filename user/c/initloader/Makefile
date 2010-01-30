@@ -1,6 +1,5 @@
 NAME = initloader
 ROOT = ../../..
-BUILD = $(ROOT)/build
 BUILDL = $(BUILD)/user/c/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
 DUMP = $(BUILD)/user_$(NAME).dump

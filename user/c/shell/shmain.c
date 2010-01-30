@@ -92,8 +92,8 @@ int main(int argc,char **argv) {
 
 #if 1
 	if(vterm == 0) {
-		printf("cat test.sh | shscr\n");
-		return shell_executeCmd("cat test.sh | shscr");
+		printf("shscr test.sh\n");
+		return shell_executeCmd("shscr test.sh");
 	}
 #endif
 	while(1) {

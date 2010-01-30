@@ -1,5 +1,4 @@
 ROOT = ../..
-BUILD = $(ROOT)/build
 BUILDL = $(BUILD)/services/$(NAME)
 BIN = $(BUILD)/service_$(NAME).bin
 LIBC = $(ROOT)/libc

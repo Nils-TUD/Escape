@@ -1,4 +1,3 @@
-BUILD = ../build
 DIRS = $(filter-out $(wildcard *.*) Makefile,$(wildcard *))
 HDDMOUNT = ../disk
 SERVICES = services.txt

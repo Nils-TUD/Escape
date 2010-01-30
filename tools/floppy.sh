@@ -1,6 +1,5 @@
 #!/bin/sh
 ROOT=$(dirname $(dirname $(readlink -f $0)))
-BUILD=$ROOT/build
 DISK=$BUILD/fd.img
 DISKMOUNT=$ROOT/disk
 OSTITLE="Escape v0.2"

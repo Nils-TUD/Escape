@@ -1,6 +1,5 @@
 NAME = shell
 ROOT = ../../..
-BUILD = $(ROOT)/build
 BUILDL = $(BUILD)/user/libs/$(NAME)
 BIN = $(BUILD)/user_libs_$(NAME).a
 LIB = $(ROOT)/lib

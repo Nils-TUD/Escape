@@ -1,4 +1,3 @@
-BUILD = ../build
 BUILDL = $(BUILD)/libcpp
 LIBDIR = ../lib
 LIBCDIR = ../libc

@@ -1,5 +1,4 @@
 NAME = dump
-BUILD = ../../build
 BUILDL = $(BUILD)/tools/$(NAME)
 BIN = $(BUILD)/$(NAME)
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))

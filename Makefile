@@ -1,26 +1,28 @@
 # general
-BUILD = build
+BUILDDIR = $(abspath build/debug)
 DISKMOUNT = disk
-HDD = $(BUILD)/hd.img
-VBHDDTMP = $(BUILD)/vbhd.bin
-VBHDD = $(BUILD)/vbhd.vdi
+HDD = $(BUILDDIR)/hd.img
+ISO = $(BUILDDIR)/cd.iso
+VBHDDTMP = $(BUILDDIR)/vbhd.bin
+VBHDD = $(BUILDDIR)/vbhd.vdi
 VMDISK = $(abspath vmware/vmwarehddimg.vmdk)
 VBOXOSTITLE = "Escape v0.1"
 BINNAME = kernel.bin
-BIN = $(BUILD)/$(BINNAME)
-SYMBOLS = $(BUILD)/kernel.symbols
-BUILDAPPS = $(BUILD)/apps
+BIN = $(BUILDDIR)/$(BINNAME)
+SYMBOLS = $(BUILDDIR)/kernel.symbols
+BUILDAPPS = $(BUILDDIR)/apps
 
-QEMU = qemu
-#QEMU = /home/hrniels/Applications/qemu-0.10.3/build/i386-softmmu/qemu
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
-	-localtime
-#QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot c -vga std -m 512 \
+#QEMU = qemu
+#QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
 #	-localtime
+QEMU = /home/hrniels/Applications/qemu-0.10.3/build/i386-softmmu/qemu
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot c -vga std -m 512 \
+	-localtime
 
 DIRS = tools libc libcpp services user kernel/src kernel/test
 
 # flags for gcc
+export BUILD = $(BUILDDIR)
 export CC = gcc
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
@@ -29,8 +31,13 @@ export CWFLAGS=-Wall -ansi \
 export CPPWFLAGS=-Wall -Wextra -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long -fno-builtin
-export CPPDEFFLAGS=$(CPPWFLAGS) -g -D DEBUGGING -D LOGSERIAL
-export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING -D LOGSERIAL
+ifeq ($(BUILDDIR),$(abspath build/debug))
+	export CPPDEFFLAGS=$(CPPWFLAGS) -g -D DEBUGGING -D LOGSERIAL
+	export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING -D LOGSERIAL
+else
+	export CPPDEFFLAGS=$(CPPWFLAGS) -O3
+	export CDEFFLAGS=$(CWFLAGS) -O3
+endif
 # flags for nasm
 export ASMFLAGS=-f elf
 # other
@@ -41,6 +48,7 @@ export SUDO=sudo
 
 all: $(BUILD) $(BUILDAPPS)
 		@[ -f $(HDD) ] || make createhdd;
+		@[ -f $(ISO) ] || make createcd;
 		@for i in $(DIRS); do \
 			make -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
@@ -87,6 +95,9 @@ umountp:
 
 createhdd:
 		tools/disk.sh build
+
+createcd:
+		tools/iso.sh
 
 $(VMDISK): $(HDD)
 		qemu-img convert -f raw $(HDD) -O vmdk $(VMDISK)

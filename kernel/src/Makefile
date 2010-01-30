@@ -1,6 +1,5 @@
 # general
 ROOT = ../..
-BUILD = $(ROOT)/build
 BUILDK = $(BUILD)/kernel/src
 BIN = $(BUILD)/kernel.bin
 LDCONF = ../ld.conf

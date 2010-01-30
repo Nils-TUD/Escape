@@ -1,5 +1,5 @@
 NAME = shell
-ADDLIBS = ../../../build/user_libs_shell.a
+ADDLIBS = $(BUILD)/user_libs_shell.a
 ADDFLAGS = -I../../libs
 
 -include ../DefMakefile.mk

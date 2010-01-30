@@ -68,7 +68,15 @@ sValue *env_set(sEnv *env,const char *name,sValue *val) {
 }
 
 void env_destroy(sEnv *env) {
-	sll_destroy(env->vars,true);
+	sSLNode *n;
+	sVar *v;
+	for(n = sll_begin(env->vars); n != NULL; n = n->next) {
+		v = (sVar*)n->data;
+		efree(v->name);
+		val_destroy(v->val);
+		efree(v);
+	}
+	sll_destroy(env->vars,false);
 	efree(env);
 }
 

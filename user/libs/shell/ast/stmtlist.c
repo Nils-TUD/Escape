@@ -37,6 +37,8 @@ sValue *ast_execStmtList(sEnv *e,sStmtList *n) {
 	for(sub = sll_begin(n->list); sub != NULL; sub = sub->next) {
 		v = ast_execute(e,(sASTNode*)sub->data);
 		val_destroy(v);
+		if(isInterrupted())
+			break;
 	}
 	return NULL;
 }

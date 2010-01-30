@@ -26,7 +26,8 @@
 sASTNode *ast_createConstStrExpr(const char *s) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sConstStrExpr *expr = node->data = emalloc(sizeof(sConstStrExpr));
-	expr->str = estrdup(s);
+	/* no clone necessary here because we've already cloned it in the scanner */
+	expr->str = s;
 	node->type = AST_CONST_STR_EXPR;
 	return node;
 }

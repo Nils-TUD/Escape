@@ -60,12 +60,17 @@
 %left T_NEG
 %right '^'
 
+%destructor { free($$); } <strval>
+%destructor { ast_destroy($$); } <node>
+
 %%
 
 start:
 			stmtlist {
 				sEnv *e = env_create();
 				ast_execute(e,$1);
+				ast_destroy($1);
+				env_destroy(e);
 			}
 ;
 

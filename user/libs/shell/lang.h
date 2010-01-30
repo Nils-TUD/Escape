@@ -28,6 +28,16 @@ typedef s32 tIntType;
 void resetPos(void);
 
 /**
+ * Marks the shell as "interrupted"
+ */
+void setInterrupted(void);
+
+/**
+ * @return wether the shell has been interrupted
+ */
+bool isInterrupted(void);
+
+/**
  * Begins the given token (stores location)
  *
  * @param t the token

@@ -57,28 +57,42 @@ bool val_isTrue(sValue *v) {
 	switch(v->type) {
 		case TYPE_INT:
 			return val_getInt(v) != 0;
-		case TYPE_STR:
-			return strcmp(val_getStr(v),"") != 0;
+		case TYPE_STR: {
+			char *str = val_getStr(v);
+			bool res = strcmp(str,"") != 0;
+			efree(str);
+			return res;
+		}
 	}
 	/* never reached */
 	return false;
 }
 
 sValue *val_cmp(sValue *v1,sValue *v2,u8 op) {
+	char *s1 = NULL,*s2 = NULL;
 	u8 t1 = v1->type;
 	u8 t2 = v2->type;
 	tIntType diff;
 	bool res;
 	/* first compute the difference; compare strings if both are strings
 	 * compare integers otherwise and convert the values to integers if necessary */
-	if(t1 == TYPE_STR && t2 == TYPE_STR)
-		diff = strcmp(val_getStr(v1),val_getStr(v2));
+	if(t1 == TYPE_STR && t2 == TYPE_STR) {
+		s1 = val_getStr(v1);
+		s2 = val_getStr(v2);
+		diff = strcmp(s1,s2);
+	}
 	else if(t1 == TYPE_INT && t2 == TYPE_INT)
 		diff = val_getInt(v1) - val_getInt(v2);
-	else if(t1 == TYPE_STR)
-		diff = atoi(val_getStr(v1)) - val_getInt(v2);
-	else
-		diff = val_getInt(v1) - atoi(val_getStr(v2));
+	else if(t1 == TYPE_STR) {
+		s1 = val_getStr(v1);
+		diff = atoi(s1) - val_getInt(v2);
+	}
+	else {
+		s2 = val_getStr(v2);
+		diff = val_getInt(v1) - atoi(s2);
+	}
+	efree(s1);
+	efree(s2);
 	/* now return the result depending on the difference and operation */
 	switch(op) {
 		case CMP_OP_EQ:

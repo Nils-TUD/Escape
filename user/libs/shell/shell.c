@@ -75,33 +75,14 @@ bool shell_prompt(void) {
 }
 
 static void shell_sigIntrpt(tSig sig,u32 data) {
-	/* TODO this is dangerous! we can't use the heap in signal-handlers */
 	UNUSED(sig);
 	UNUSED(data);
+	setInterrupted();
 	printf("\n");
-	/*
-	if(cmds && cmdCount) {
-		u32 i;
-		for(i = 0; i < cmdCount; i++) {
-			if(cmds[i].pid != 0) {
-				sendSignalTo(cmds[i].pid,SIG_INTRPT,0);
-				cmds[i].pid = 0;
-			}
-			if(cmds[i].pipe[0] != -1) {
-				close(cmds[i].pipe[0]);
-				cmds[i].pipe[0] = -1;
-			}
-			if(cmds[i].pipe[1] != -1) {
-				close(cmds[i].pipe[1]);
-				cmds[i].pipe[1] = -1;
-			}
-		}
-	}
-	else
-		*/shell_prompt();
 }
 
 s32 shell_executeCmd(char *line,bool isFile) {
+	u32 after,before = heap_getFreeSpace();
 	s32 res;
 	curIsStream = isFile;
 	if(isFile) {
@@ -117,6 +98,8 @@ s32 shell_executeCmd(char *line,bool isFile) {
 	run_gc();
 	if(isFile)
 		fclose(curStream);
+	after = heap_getFreeSpace();
+	printf("before=%d after=%d\n",before,after);
 	return res;
 }
 

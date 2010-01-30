@@ -33,10 +33,20 @@ typedef struct {
 static sYYLoc yylloc;
 static s32 nCol = 1;
 static s32 nRow = 1;
+static bool interrupted = false;
 
 void resetPos(void) {
 	nCol = 1;
 	nRow = 1;
+	interrupted = false;
+}
+
+void setInterrupted(void) {
+	interrupted = true;
+}
+
+bool isInterrupted(void) {
+	return interrupted;
 }
 
 void beginToken(char *t) {

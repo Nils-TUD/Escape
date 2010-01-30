@@ -65,6 +65,15 @@ tCmdId run_requestId(void);
 bool run_addProc(tCmdId cmdId,tPid pid,tFD inPipe,tFD outPipe,bool hasNext);
 
 /**
+ * Returns the <i>'th running process of the given command
+ *
+ * @param cmdId the command-id
+ * @param i the number
+ * @return the process or NULL
+ */
+sRunningProc *run_getXProcOf(tCmdId cmdId,s32 i);
+
+/**
  * Searches for the running process with given id
  *
  * @param cmdId the command-id (CMD_ID_ALL to search in all commands)

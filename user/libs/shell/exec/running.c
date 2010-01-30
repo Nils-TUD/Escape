@@ -52,6 +52,19 @@ bool run_addProc(tCmdId cmdId,tPid pid,tFD inPipe,tFD outPipe,bool hasNext) {
 	return false;
 }
 
+sRunningProc *run_getXProcOf(tCmdId cmdId,s32 i) {
+	sSLNode *n;
+	sRunningProc *p;
+	for(n = sll_begin(running); n != NULL; n = n->next) {
+		p = (sRunningProc*)n->data;
+		if(!p->removable && p->cmdId == cmdId) {
+			if(i-- <= 0)
+				return p;
+		}
+	}
+	return NULL;
+}
+
 sRunningProc *run_findProc(tCmdId cmdId,tPid pid) {
 	sSLNode *n;
 	sRunningProc *p;

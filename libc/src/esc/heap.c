@@ -26,6 +26,7 @@
 #include <assert.h>
 
 #define PAGE_SIZE			4096
+#define DEBUG_ALLOC_N_FREE	0
 
 /* an area in memory */
 typedef struct sMemArea sMemArea;
@@ -129,6 +130,13 @@ void *malloc(u32 size) {
 		usableList = narea;
 	}
 
+#if DEBUG_ALLOC_N_FREE
+	if(getpid() == 14) {
+		u32 *trace = getStackTrace();
+		debugf("[A] a=%08x s=%d c=%08x, %08x\n",area->address,area->size,*(trace + 1),*(trace + 2));
+	}
+#endif
+
 	/* insert in occupied-map */
 	list = occupiedMap + getHash(area->address);
 	area->next = *list;
@@ -200,6 +208,13 @@ void free(void *addr) {
 		oprev->next = area->next;
 	else
 		occupiedMap[getHash(addr)] = area->next;
+
+#if DEBUG_ALLOC_N_FREE
+	if(getpid() == 14) {
+		u32 *trace = getStackTrace();
+		debugf("[F] a=%08x s=%d c=%08x, %08x\n",area->address,area->size,*(trace + 1),*(trace + 2));
+	}
+#endif
 
 	/* see what we have to merge */
 	if(prev && next) {

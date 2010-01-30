@@ -26,7 +26,8 @@
 sASTNode *ast_createVarExpr(const char *s) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sVarExpr *expr = node->data = emalloc(sizeof(sVarExpr));
-	expr->name = estrdup(s);
+	/* no clone necessary here because we've already cloned it in the scanner */
+	expr->name = s;
 	node->type = AST_VAR_EXPR;
 	return node;
 }

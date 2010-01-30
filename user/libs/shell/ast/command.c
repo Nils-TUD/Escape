@@ -52,6 +52,10 @@ static sValue *ast_readCmdOutput(tFD *pipe);
  */
 static s32 ast_waitForCmd(void);
 /**
+ * Terminates all processes of the current command
+ */
+static void ast_termProcsOfCmd(void);
+/**
  * Signal-handler for processes in background
  */
 static void ast_sigChildHndl(tSig sig,u32 data);
@@ -107,6 +111,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			if(errno < 0)
 				printf(": %s",strerror(errno));
 			printf("\n");
+			compl_free(shcmd);
 			res = -1;
 			goto error;
 		}
@@ -131,6 +136,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			val_destroy(fileExpr);
 			if(pipeFds[1] < 0) {
 				printe("Unable to open %s",filename);
+				compl_free(shcmd);
 				res = -1;
 				goto error;
 			}
@@ -147,6 +153,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			val_destroy(fileExpr);
 			if(prevPipe < 0) {
 				printe("Unable to open %s",filename);
+				compl_free(shcmd);
 				res = -1;
 				goto error;
 			}
@@ -156,6 +163,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			res = pipe(pipeFds + 0,pipeFds + 1);
 			if(res < 0) {
 				printe("Unable to open pipe");
+				compl_free(shcmd);
 				goto error;
 			}
 		}
@@ -232,6 +240,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			}
 		}
 
+		compl_free(shcmd);
 		ast_destroyExecCmd(cmd);
 		prevPid = pid;
 		prevPipe = pipeFds[0];
@@ -289,14 +298,43 @@ static sValue *ast_readCmdOutput(tFD *pipeFds) {
 }
 
 static s32 ast_waitForCmd() {
-	while(curWaitCount > 0) {
-		if(wait(EV_NOEVENT) < 0) {
-			printe("Unable to wait");
-			break;
+	s32 res;
+	if(isInterrupted())
+		ast_termProcsOfCmd();
+	else {
+		while(curWaitCount > 0) {
+			res = wait(EV_NOEVENT);
+			if(res == ERR_INTERRUPTED) {
+				ast_termProcsOfCmd();
+				break;
+			}
+			if(res < 0) {
+				printe("Unable to wait");
+				break;
+			}
 		}
 	}
 	run_gc();
 	return curResult;
+}
+
+static void ast_termProcsOfCmd(void) {
+	sRunningProc *p;
+	s32 i = 0;
+	p = run_getXProcOf(curCmd,i);
+	while(p != NULL) {
+		/* send SIG_INTRPT */
+		sendSignalTo(p->pid,SIG_INTRPT,0);
+		/* clean up */
+		if(p->pipe[0] != -1)
+			close(p->pipe[0]);
+		if(p->pipe[1] != -1)
+			close(p->pipe[1]);
+		run_remProc(p->pid);
+		/* to next */
+		i++;
+		p = run_getXProcOf(curCmd,i);
+	}
 }
 
 static void ast_sigChildHndl(tSig sig,u32 data) {
@@ -309,7 +347,7 @@ static void ast_sigChildHndl(tSig sig,u32 data) {
 	p = run_findProc(CMD_ID_ALL,(tPid)data);
 	if(p) {
 		if(state.signal != SIG_COUNT)
-			printe("\nProcess %d was terminated by signal %d\n",state.pid,state.signal);
+			printe("\nProcess %d was terminated by signal %d",state.pid,state.signal);
 		if(p->cmdId == curCmd && curWaitCount > 0) {
 			curResult = res;
 			curWaitCount--;

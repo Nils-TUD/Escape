@@ -651,7 +651,7 @@ static void vfsn_dbg_doPrintTree(u32 level,sVFSNode *parent) {
 void vfsn_dbg_printNode(sVFSNode *node) {
 	vid_printf("VFSNode @ 0x%x:\n",node);
 	if(node) {
-		vid_printf("\tname: %s\n",node->name);
+		vid_printf("\tname: %s\n",node->name ? node->name : "NULL");
 		vid_printf("\tfirstChild: 0x%x\n",node->firstChild);
 		vid_printf("\tlastChild: 0x%x\n",node->lastChild);
 		vid_printf("\tnext: 0x%x\n",node->next);

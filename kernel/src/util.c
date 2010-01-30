@@ -194,7 +194,7 @@ void util_printStackTrace(sFuncCall *trace) {
 
 	/* TODO maybe we should skip util_printStackTrace here? */
 	while(trace->addr != 0) {
-		vid_printf("\t0x%08x -> 0x%08x \n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
+		vid_printf("\t0x%08x -> 0x%08x (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
 		trace++;
 	}
 }

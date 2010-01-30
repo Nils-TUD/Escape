@@ -183,6 +183,8 @@ errorUnAssocReadFd:
 	thread_unassocFd(*readFd);
 errorCloseReadFile:
 	vfs_closeFile(t->tid,readFile);
+	/* vfs_closeFile() will already remove the node, so we can't do this again! */
+	SYSC_ERROR(stack,err);
 errorRemNode:
 	vfsn_removeNode(pipeNode);
 	SYSC_ERROR(stack,err);

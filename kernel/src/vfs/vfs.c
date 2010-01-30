@@ -277,6 +277,8 @@ static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 
 				/* someone does already write to this file? so it's not really good
 				 * to use it atm, right? */
+				/* TODO this means that a different thread could open the same file for reading
+				 * or writing while another one is writing!? */
 				if(!isServUse && e->flags & VFS_WRITE)
 					return ERR_FILE_IN_USE;
 
@@ -400,7 +402,7 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 			if(whence == SEEK_END)
 				e->position = n->data.def.pos;
 			else {
-				/* we can't validate the position here because the content of virtuel files may be
+				/* we can't validate the position here because the content of virtual files may be
 				 * generated on demand */
 				e->position = newPos;
 			}
@@ -570,30 +572,6 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 		if(e->devNo == VFS_DEV_NO) {
 			sVFSNode *n = nodes + e->nodeNo;
 			if(n->name != NULL) {
-				/* last usage? */
-				if(--(n->refCount) == 0) {
-					/* notify the driver, if it is one */
-					if((n->mode & MODE_TYPE_SERVUSE) && IS_DRIVER(n->parent->mode))
-						vfsdrv_close(tid,file,n);
-
-					/* if there are message for the service we don't want to throw them away */
-					/* if there are any in the receivelist (and no references of the node) we
-					 * can throw them away because no one will read them anymore
-					 * (it means that the client has already closed the file) */
-					/* note also that we can assume that the service is still running since we
-					 * would have deleted the whole service-node otherwise */
-					if((n->mode & MODE_TYPE_SERVUSE) || (n->mode & MODE_TYPE_PIPE)) {
-						if(!(n->mode & MODE_TYPE_SERVUSE) || sll_length(n->data.servuse.sendList) == 0)
-							vfsn_removeNode(n);
-					}
-				}
-				/* if we're the owner of the pipe, append an "EOF-message" */
-				/* otherwise we have a problem when the fd is inherited to multiple processes.
-				 * in this case all these processes would write an EOF (and of course not necessarily
-				 * at the right place) */
-				else if(n->owner == tid && (n->mode & MODE_TYPE_PIPE))
-					vfsrw_writePipe(tid,file,n,NULL,e->position,0);
-
 				/* notify listeners about creation/modification of files */
 				/* TODO what about links ? */
 				if(MODE_IS_FILE(n->mode)) {
@@ -602,6 +580,32 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 					else if(e->flags & VFS_MODIFIED)
 						vfsl_notify(n,VFS_EV_MODIFY);
 				}
+
+				/* last usage? */
+				if(--(n->refCount) == 0) {
+					/* notify the driver, if it is one */
+					if((n->mode & MODE_TYPE_SERVUSE) && IS_DRIVER(n->parent->mode))
+						vfsdrv_close(tid,file,n);
+
+					/* remove pipe-nodes if there are no references anymore */
+					if(n->mode & MODE_TYPE_PIPE)
+						vfsn_removeNode(n);
+					/* if there are message for the service we don't want to throw them away */
+					/* if there are any in the receivelist (and no references of the node) we
+					 * can throw them away because no one will read them anymore
+					 * (it means that the client has already closed the file) */
+					/* note also that we can assume that the service is still running since we
+					 * would have deleted the whole service-node otherwise */
+					else if((n->mode & MODE_TYPE_SERVUSE) &&
+							sll_length(n->data.servuse.sendList) == 0)
+						vfsn_removeNode(n);
+				}
+				/* if we're the owner of the pipe, append an "EOF-message" */
+				/* otherwise we have a problem when the fd is inherited to multiple processes.
+				 * in this case all these processes would write an EOF (and of course not necessarily
+				 * at the right place) */
+				else if(n->owner == tid && (n->mode & MODE_TYPE_PIPE))
+					vfsrw_writePipe(tid,file,n,NULL,e->position,0);
 			}
 		}
 		else

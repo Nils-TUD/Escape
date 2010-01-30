@@ -86,7 +86,10 @@ void sysc_wait(sIntrptStackFrame *stack) {
 	if(!vfs_msgAvailableFor(t->tid,events)) {
 		thread_wait(t->tid,events);
 		thread_switch();
+		if(sig_hasSignalFor(t->tid))
+			SYSC_ERROR(stack,ERR_INTERRUPTED);
 	}
+	SYSC_RET1(stack,0);
 }
 
 void sysc_waitChild(sIntrptStackFrame *stack) {

@@ -374,6 +374,8 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 	for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
 		sThread *t = (sThread*)tn->data;
 		sched_removeThread(t);
+		/* ensure that we don't get a signal anymore */
+		sig_removeHandlerFor(t->tid);
 		t->state = ST_ZOMBIE;
 	}
 

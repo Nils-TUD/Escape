@@ -40,7 +40,7 @@ done;
 # add some test-data
 mkdir $TMPDIR/testdir
 echo "Das ist ein Test-String!!" > $TMPDIR/file.txt
-cp $ROOT/user/c/shscr/test.sh $TMPDIR
+cp $ROOT/user/libs/shell/test.sh $TMPDIR
 cp $ROOT/user/test.bmp $TMPDIR
 cp $ROOT/user/bbc.bmp $TMPDIR
 cp $ROOT/user/test.bmp $TMPDIR/bla.bmp

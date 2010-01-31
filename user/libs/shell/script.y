@@ -2,7 +2,6 @@
 	#include <stdio.h>
 	int yylex (void);
 	void yyerror(char const *,...);
-	int bla;
 }
 
 %code requires {
@@ -27,6 +26,7 @@
 	#include "ast/whilestmt.h"
 	#include "exec/env.h"
 	#include "mem.h"
+	#include "shell.h"
 }
 %union {
 	int intval;
@@ -68,10 +68,8 @@
 
 start:
 			stmtlist {
-				sEnv *e = env_create();
-				ast_execute(e,$1);
+				ast_execute(curEnv,$1);
 				ast_destroy($1);
-				env_destroy(e);
 			}
 ;
 
@@ -114,6 +112,7 @@ strlist:
 
 strcomp:
 			T_STRING						{ $$ = ast_createConstStrExpr($1); }
+			| T_VAR							{ $$ = ast_createVarExpr($1); }
 			| '{' expr '}'			{ $$ = $2; }
 ;
 

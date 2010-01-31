@@ -31,7 +31,9 @@ char *strndup(const char *s,u32 n) {
 	u32 len = strlen(s);
 	len = MIN(len,n);
 	char *res = (char*)malloc(len + 1);
-	if(res)
+	if(res) {
 		strncpy(res,s,len);
+		res[len] = '\0';
+	}
 	return res;
 }

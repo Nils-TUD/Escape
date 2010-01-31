@@ -74,10 +74,16 @@
 	return T_NUMBER;
 }
 
-<INITIAL,CMDEXPR>\$[a-zA-Z_0-9]+ {
+<INITIAL,CMDEXPR,DCONSTSTR>\$[a-zA-Z_0-9]+ {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext + 1);
 	return T_VAR;
+}
+
+<INITIAL,CMDEXPR>'[^']*' {
+	lang_beginToken(yytext);
+	yylval.strval = strndup(yytext + 1,strlen(yytext) - 2);
+	return T_STRING_SCONST;
 }
 
 <INITIAL>\" {
@@ -98,7 +104,7 @@
 	return *yytext;
 }
 
-<DCONSTSTR>[^\"\{]+ {
+<DCONSTSTR>[^\"\{\$]+ {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_STRING;
@@ -108,12 +114,6 @@
 	lang_beginToken(yytext);
 	BEGIN(DCONSTSTR);
 	return *yytext;
-}
-
-<INITIAL,CMDEXPR>'[^']*' {
-	lang_beginToken(yytext);
-	yylval.strval = strndup(yytext + 1,strlen(yytext) - 2);
-	return T_STRING_SCONST;
 }
 
 <INITIAL,CMDEXPR>"<=" {

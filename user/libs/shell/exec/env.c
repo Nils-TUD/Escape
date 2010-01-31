@@ -50,7 +50,7 @@ sValue *env_get(sEnv *env,const char *name) {
 		return env_get(env->parent,name);
 	if(v)
 		return v->val;
-	return NULL;
+	return val_createInt(0);
 }
 
 sValue *env_set(sEnv *env,const char *name,sValue *val) {

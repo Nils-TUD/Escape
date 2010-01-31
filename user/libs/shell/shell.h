@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/fileio.h>
+#include "exec/env.h"
 
 #define MAX_ARG_COUNT		10
 #define ERR_CMD_NOT_FOUND	-100
@@ -40,6 +41,7 @@ extern "C" {
 extern tFile *curStream;
 extern bool curIsStream;
 extern char *curLine;
+extern sEnv *curEnv;
 
 /**
  * Inits the shell; announces the signal-handler for SIG_INTRPT

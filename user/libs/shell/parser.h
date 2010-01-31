@@ -35,7 +35,7 @@
 /* "%code requires" blocks.  */
 
 /* Line 1676 of yacc.c  */
-#line 8 "script.y"
+#line 7 "script.y"
 
 	#include "ast/node.h"
 	#include "ast/assignexpr.h"
@@ -58,11 +58,12 @@
 	#include "ast/whilestmt.h"
 	#include "exec/env.h"
 	#include "mem.h"
+	#include "shell.h"
 
 
 
 /* Line 1676 of yacc.c  */
-#line 66 "parser.h"
+#line 67 "parser.h"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -116,7 +117,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 120 "parser.h"
+#line 121 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

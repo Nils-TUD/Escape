@@ -44,15 +44,18 @@ static u16 shell_toNextWord(char *buffer,u32 icharcount,u32 *icursorPos);
 static u16 shell_toPrevWord(char *buffer,u32 *icursorPos);
 static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPath);
 extern int yyparse(void);
+extern int yylex_destroy(void);
 
 static bool resetReadLine = false;
 static u32 tabCount = 0;
 tFile *curStream = NULL;
 char *curLine = NULL;
 bool curIsStream = false;
+sEnv *curEnv = NULL;
 
 void shell_init(void) {
 	run_init();
+	curEnv = env_create();
 	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT);
 }
@@ -89,6 +92,9 @@ s32 shell_executeCmd(char *line,bool isFile) {
 	curLine = line;
 	lang_reset();
 	res = yyparse();
+	/* we need to reset the scanner if an error happened */
+	if(res != 0)
+		yylex_destroy();
 	run_gc();
 	if(isFile)
 		fclose(curStream);

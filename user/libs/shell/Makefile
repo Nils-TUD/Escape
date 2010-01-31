@@ -17,6 +17,7 @@ LEXSRC = script.l
 LEXGEN = lex.c
 BISONSRC = script.y
 BISONGEN = parser.c
+BISONDEBUG = parser.out
 CSRC = $(filter-out ./$(BISONGEN) ./$(LEXGEN),\
 	$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
 
@@ -37,7 +38,7 @@ $(LEXGEN):	$(LEXSRC)
 		flex -o $(LEXGEN) --nounistd < $(LEXSRC)
 
 $(BISONGEN):	$(BISONSRC)
-		bison -t -d -o $(BISONGEN) $(BISONSRC)
+		bison -t -d --report-file=$(BISONDEBUG) -o $(BISONGEN) $(BISONSRC)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

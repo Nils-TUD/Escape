@@ -42,7 +42,7 @@
 static void shell_sigIntrpt(tSig sig,u32 data);
 static u16 shell_toNextWord(char *buffer,u32 icharcount,u32 *icursorPos);
 static u16 shell_toPrevWord(char *buffer,u32 *icursorPos);
-static char *shell_getComplToken(char *line,u32 length,bool *searchPath);
+static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPath);
 extern int yyparse(void);
 
 static bool resetReadLine = false;
@@ -334,35 +334,38 @@ static u16 shell_toPrevWord(char *buffer,u32 *icursorPos) {
 	return count;
 }
 
-static char *shell_getComplToken(char *line,u32 length,bool *searchPath) {
+static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPath) {
 	char c;
 	char *res;
 	bool inSStr = false;
 	bool inDStr = false;
+	bool inWord = false;
 	u32 startPos = 0;
 	u32 i;
 	for(i = 0; i < length; i++) {
 		c = line[i];
 		switch(c) {
-			case 'a'...'z':
-			case 'A'...'Z':
-			case '0'...'9':
-			case '_':
-			case '-':
-				/* do nothing */
+			case ',':
+			case '|':
+			case ';':
+				startPos = i + 1;
+				*searchPath = true;
+				inWord = false;
 				break;
 			case ' ':
 			case '\t':
 				startPos = i + 1;
-				/* fall through */
-			case '/':
-				*searchPath = false;
+				if(inWord) {
+					*searchPath = false;
+					inWord = false;
+				}
 				break;
 			case '\'':
 				if(!inDStr) {
 					inSStr = !inSStr;
 					startPos = i + 1;
 					*searchPath = true;
+					inWord = false;
 				}
 				break;
 			case '"':
@@ -370,11 +373,15 @@ static char *shell_getComplToken(char *line,u32 length,bool *searchPath) {
 					inDStr = !inDStr;
 					startPos = i + 1;
 					*searchPath = true;
+					inWord = false;
 				}
 				break;
+			case '/':
+				*searchPath = false;
+				inWord = true;
+				break;
 			default:
-				startPos = i + 1;
-				*searchPath = true;
+				inWord = true;
 				break;
 		}
 	}
@@ -384,6 +391,7 @@ static char *shell_getComplToken(char *line,u32 length,bool *searchPath) {
 		memcpy(res,line + startPos,length - startPos);
 		res[length - startPos] = '\0';
 	}
+	*start = startPos;
 	return res;
 }
 
@@ -398,10 +406,11 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 		sShellCmd **cmd;
 		bool searchPath;
 		u32 partLen;
+		u32 startPos;
 		char *part;
 		/* extract part to complete */
 		line[ilength] = '\0';
-		part = shell_getComplToken(line,ilength,&searchPath);
+		part = shell_getComplToken(line,ilength,&startPos,&searchPath);
 		if(part == NULL)
 			return;
 
@@ -425,7 +434,7 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 			/* add chars */
 			cmdlen = strlen(matches[0]->name);
 			if(matches[0]->complStart == -1)
-				i = ilength;
+				i = ilength - startPos;
 			else
 				i = matches[0]->complStart;
 			for(; i < cmdlen; i++) {
@@ -473,7 +482,7 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 				}
 
 				/* if so, add it */
-				if(allEqual) {
+				if(allEqual && last != '\0') {
 					orgLine[ilength++] = last;
 					printc(last);
 				}

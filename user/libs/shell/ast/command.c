@@ -100,6 +100,10 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	cmdCount = sll_length(n->subList);
 	for(sub = sll_begin(n->subList); sub != NULL; sub = sub->next, cmdNo++) {
 		cmd = (sExecSubCmd*)ast_execute(e,(sASTNode*)sub->data);
+		if(cmd == NULL || cmd->exprs[0] == NULL) {
+			ast_destroyExecCmd(cmd);
+			break;
+		}
 
 		/* get the command */
 		shcmd = compl_get(cmd->exprs[0],strlen(cmd->exprs[0]),2,true,true);
@@ -107,10 +111,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 		/* we need exactly one match and it has to be executable */
 		if(shcmd == NULL || shcmd[0] == NULL || shcmd[1] != NULL ||
 				(shcmd[0]->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC)) == 0) {
-			printf("\033[co;4]%s: Command not found\033[co]",cmd->exprs[0]);
-			if(errno < 0)
-				printf(": %s",strerror(errno));
-			printf("\n");
+			printf("\033[co;4]%s: Command not found\033[co]\n",cmd->exprs[0]);
 			compl_free(shcmd);
 			res = -1;
 			goto error;
@@ -259,10 +260,12 @@ error:
 
 static void ast_destroyExecCmd(sExecSubCmd *cmd) {
 	u32 i;
-	for(i = 0; i < cmd->exprCount; i++)
-		efree(cmd->exprs[i]);
-	efree(cmd->exprs);
-	efree(cmd);
+	if(cmd) {
+		for(i = 0; i < cmd->exprCount; i++)
+			efree(cmd->exprs[i]);
+		efree(cmd->exprs);
+		efree(cmd);
+	}
 }
 
 static sValue *ast_readCmdOutput(tFD *pipeFds) {

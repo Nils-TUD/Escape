@@ -26,6 +26,7 @@
 	#include "ast/dstrexpr.h"
 	#include "ast/whilestmt.h"
 	#include "exec/env.h"
+	#include "mem.h"
 }
 %union {
 	int intval;
@@ -54,11 +55,11 @@
 %type <node> stmtlist stmtlistr stmt expr exprstmt cmdexpr cmdexprlist cmd subcmd 
 %type <node> cmdredirfd cmdredirin cmdredirout strlist strcomp
 
-%nonassoc '>' '<' T_LEQ T_GEQ T_EQ T_NEQ
-%left '+' '-'
-%left '*' '/' '%'
+%nonassoc '>' '<' T_LEQ T_GEQ T_EQ T_NEQ T_ASSIGN
+%left T_ADD T_SUB
+%left T_MUL T_DIV T_MOD
 %left T_NEG
-%right '^'
+%right T_POW
 
 %destructor { free($$); } <strval>
 %destructor { ast_destroy($$); } <node>
@@ -119,13 +120,13 @@ strcomp:
 expr:
 			cmdexpr							{ $$ = $1; }
 			| exprstmt					{ $$ = $1; }
-			| expr '+' expr			{ $$ = ast_createBinOpExpr($1,'+',$3); }
-			| expr '-' expr			{ $$ = ast_createBinOpExpr($1,'-',$3); }
-			| expr '*' expr			{ $$ = ast_createBinOpExpr($1,'*',$3); }
-			| expr '/' expr			{ $$ = ast_createBinOpExpr($1,'/',$3); }
-			| expr '%' expr			{ $$ = ast_createBinOpExpr($1,'%',$3); }
-			| expr '^' expr			{ $$ = ast_createBinOpExpr($1,'^',$3); }
-			| '-' expr %prec T_NEG { $$ = ast_createUnaryOpExpr($2,UN_OP_NEG); }
+			| expr T_ADD expr		{ $$ = ast_createBinOpExpr($1,'+',$3); }
+			| expr T_SUB expr		{ $$ = ast_createBinOpExpr($1,'-',$3); }
+			| expr T_MUL expr		{ $$ = ast_createBinOpExpr($1,'*',$3); }
+			| expr T_DIV expr		{ $$ = ast_createBinOpExpr($1,'/',$3); }
+			| expr T_MOD expr		{ $$ = ast_createBinOpExpr($1,'%',$3); }
+			| expr T_POW expr		{ $$ = ast_createBinOpExpr($1,'^',$3); }
+			| T_SUB expr %prec T_NEG { $$ = ast_createUnaryOpExpr($2,UN_OP_NEG); }
 			| expr '<' expr			{ $$ = ast_createCmpExpr($1,CMP_OP_LT,$3); }
 			| expr '>' expr			{ $$ = ast_createCmpExpr($1,CMP_OP_GT,$3); }
 			| expr T_LEQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_LEQ,$3); }
@@ -136,7 +137,7 @@ expr:
 ;
 
 exprstmt:
-			T_VAR '=' expr			{ $$ = ast_createAssignExpr(ast_createVarExpr($1),$3); }
+			T_VAR T_ASSIGN expr	{ $$ = ast_createAssignExpr(ast_createVarExpr($1),$3); }
 			| '`' subcmd '`'		{ $$ = $2; ast_setRetOutput($2,true); }
 ;
 

@@ -51,12 +51,15 @@ bool lang_isInterrupted(void) {
 
 void lang_beginToken(char *t) {
 	u32 len = strlen(t);
-	if(*t == '\n') {
-		nRow++;
-		nCol = 1;
+	while(*t) {
+		if(*t == '\n') {
+			nRow++;
+			nCol = 1;
+		}
+		else
+			nCol++;
+		t++;
 	}
-	else
-		nCol += len;
 
 	yylloc.first_line = nRow;
 	yylloc.first_column = nCol;

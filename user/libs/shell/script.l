@@ -145,15 +145,40 @@
 	return T_OUT2ERR;
 }
 
-<INITIAL,CMDEXPR>"`"|"&"|";"|"|"|"=" {
-	lang_beginToken(yytext);
-	return *yytext;
-}
 <INITIAL,CMDEXPR>">"|"<" {
 	lang_beginToken(yytext);
 	return *yytext;
 }
-<INITIAL,CMDEXPR>"+"|"-"|"*"|"/"|"%"|"^" {
+<INITIAL,CMDEXPR>":=" {
+	lang_beginToken(yytext);
+	return T_ASSIGN;
+}
+<INITIAL,CMDEXPR>"\\+" {
+	lang_beginToken(yytext);
+	return T_ADD;
+}
+<INITIAL,CMDEXPR>"\\-" {
+	lang_beginToken(yytext);
+	return T_SUB;
+}
+<INITIAL,CMDEXPR>"\\*" {
+	lang_beginToken(yytext);
+	return T_MUL;
+}
+<INITIAL,CMDEXPR>"\\/" {
+	lang_beginToken(yytext);
+	return T_DIV;
+}
+<INITIAL,CMDEXPR>"\\%" {
+	lang_beginToken(yytext);
+	return T_MOD;
+}
+<INITIAL,CMDEXPR>"\\^" {
+	lang_beginToken(yytext);
+	return T_POW;
+}
+
+<INITIAL,CMDEXPR>"`"|"&"|";"|"|" {
 	lang_beginToken(yytext);
 	return *yytext;
 }
@@ -166,12 +191,16 @@
 	return *yytext;
 }
 
-<INITIAL,CMDEXPR>[ \t\n]+ {
+<INITIAL,CMDEXPR>[ \t]+ {
+	/* eat up whitespace */
+	lang_beginToken(yytext);
+}
+<INITIAL,CMDEXPR>"\n" {
 	/* eat up whitespace */
 	lang_beginToken(yytext);
 }
 
-<INITIAL,CMDEXPR>[a-zA-Z0-9_\-!?:~,\.]+ {
+<INITIAL,CMDEXPR>[a-zA-Z0-9_\-!?:~,\.\+\-\*/%\^=]+ {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_STRING;

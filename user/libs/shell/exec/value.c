@@ -59,7 +59,7 @@ bool val_isTrue(sValue *v) {
 			return val_getInt(v) != 0;
 		case TYPE_STR: {
 			char *str = val_getStr(v);
-			bool res = strcmp(str,"") != 0;
+			bool res = *str != '\0';
 			efree(str);
 			return res;
 		}

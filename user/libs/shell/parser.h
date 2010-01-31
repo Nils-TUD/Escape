@@ -57,11 +57,12 @@
 	#include "ast/dstrexpr.h"
 	#include "ast/whilestmt.h"
 	#include "exec/env.h"
+	#include "mem.h"
 
 
 
 /* Line 1676 of yacc.c  */
-#line 65 "parser.h"
+#line 66 "parser.h"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -84,11 +85,18 @@
      T_ERR2OUT = 270,
      T_OUT2ERR = 271,
      T_APPEND = 272,
-     T_NEQ = 273,
-     T_EQ = 274,
-     T_GEQ = 275,
-     T_LEQ = 276,
-     T_NEG = 277
+     T_ASSIGN = 273,
+     T_NEQ = 274,
+     T_EQ = 275,
+     T_GEQ = 276,
+     T_LEQ = 277,
+     T_SUB = 278,
+     T_ADD = 279,
+     T_MOD = 280,
+     T_DIV = 281,
+     T_MUL = 282,
+     T_NEG = 283,
+     T_POW = 284
    };
 #endif
 
@@ -99,7 +107,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 30 "script.y"
+#line 31 "script.y"
 
 	int intval;
 	char *strval;
@@ -108,7 +116,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 112 "parser.h"
+#line 120 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

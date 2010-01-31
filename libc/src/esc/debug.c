@@ -226,7 +226,7 @@ void debugUint(u32 n,u8 base) {
 	u32 a;
 	if((a = n / base))
 		debugUint(a,base);
-	debugChar("0123456789ABCDEF"[(int)(n % base)]);
+	debugChar("0123456789abcdef"[(int)(n % base)]);
 }
 
 void debugString(char *s) {

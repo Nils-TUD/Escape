@@ -112,8 +112,11 @@ s32 shm_join(char *name) {
 	if(!sll_append(mem->member,p))
 		return ERR_NOT_ENOUGH_MEM;
 
+	/* check process-size */
+	if(!proc_segSizesValid(p->textPages,p->dataPages + mem->pageCount,p->stackPages))
+		return ERR_NOT_ENOUGH_MEM;
+
 	/* copy the pages from the owner */
-	/* TODO shouldn't we check wether the total page-count for this process is still valid? */
 	paging_getPagesOf(mem->owner,mem->startPage * PAGE_SIZE,
 			(p->textPages + p->dataPages) * PAGE_SIZE,mem->pageCount,PG_WRITABLE | PG_NOFREE);
 	p->dataPages += mem->pageCount;

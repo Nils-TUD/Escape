@@ -234,11 +234,7 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	p->textPages = 0;
 
 	/* load program */
-	/*proc_dbg_startProf();*/
 	res = elf_loadFromFile(path);
-	/*vid_printf("Profiling exec('%s')\n",pathSave);
-	proc_dbg_stopProf();
-	vid_printf("\n\n");*/
 	if(res < 0) {
 		/* there is no undo for proc_changeSize() :/ */
 		kheap_free(argBuffer);

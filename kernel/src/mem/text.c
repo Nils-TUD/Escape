@@ -104,7 +104,8 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 
 		/* append to usages */
 		if(!sll_append(textUsages,usage)) {
-			/* TODO we have to undo text_load().. */
+			/* we don't need to undo text_load() here. the only side-effect of it is paging_map().
+			 * the process will be destroyed in this case anyway (and the mem free'd). */
 			sll_destroy(usage->procs,false);
 			kheap_free(usage);
 			return ERR_NOT_ENOUGH_MEM;

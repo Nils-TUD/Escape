@@ -412,7 +412,7 @@ sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,f
 		return NULL;
 
 	node->owner = tid;
-	/* TODO we need write-permissions for other because we have no real used-/group-based
+	/* TODO we need write-permissions for other because we have no real user-/group-based
 	 * permission-system */
 	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ
 		| MODE_OTHER_WRITE;

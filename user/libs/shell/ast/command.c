@@ -305,10 +305,12 @@ static s32 ast_waitForCmd() {
 		while(curWaitCount > 0) {
 			res = wait(EV_NOEVENT);
 			if(res == ERR_INTERRUPTED) {
-				ast_termProcsOfCmd();
-				break;
+				if(isInterrupted()) {
+					ast_termProcsOfCmd();
+					break;
+				}
 			}
-			if(res < 0) {
+			else if(res < 0) {
 				printe("Unable to wait");
 				break;
 			}
@@ -347,7 +349,7 @@ static void ast_sigChildHndl(tSig sig,u32 data) {
 	p = run_findProc(CMD_ID_ALL,(tPid)data);
 	if(p) {
 		if(state.signal != SIG_COUNT)
-			printe("\nProcess %d was terminated by signal %d",state.pid,state.signal);
+			printf("\nProcess %d was terminated by signal %d\n",state.pid,state.signal);
 		if(p->cmdId == curCmd && curWaitCount > 0) {
 			curResult = res;
 			curWaitCount--;

@@ -11,7 +11,7 @@ DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 CC = g++
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBCPP)/include -I$(LIBC)/include \
-	-I$(LIB)/h -Wl,-T,$(LDCONF) $(CPPDEFFLAGS) -fno-exceptions -fno-rtti $(ADDFLAGS)
+	-I$(LIB)/h -Wl,-T,$(LDCONF) -Wl,--build-id=none $(CPPDEFFLAGS) -fno-exceptions -fno-rtti $(ADDFLAGS)
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.cpp")

@@ -43,7 +43,7 @@ threadExit:
 	call	exit
 	; just to be sure
 	jmp		$
-	; c++-programs have address 0x2a for sigRetFunc. So we need to achieve this here, too
+	; c++-programs have address 0x2d for sigRetFunc. So we need to achieve this here, too
 	nop
 	nop
 	nop
@@ -64,7 +64,7 @@ threadExit:
 	nop
 	nop
 
-; all signal-handler return to this "function" (address 0x2a)
+; all signal-handler return to this "function" (address 0x2d)
 sigRetFunc:
 	; ack signal so that the kernel knows that we accept another signal
 	call	ackSignal

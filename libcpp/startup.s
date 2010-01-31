@@ -51,7 +51,7 @@ threadExitFinish:
 	; just to be sure
 	jmp		$
 
-; all signal-handler return to this "function" (address 0x17)
+; all signal-handler return to this "function" (address 0x2d)
 sigRetFunc:
 	; ack signal so that the kernel knows that we accept another signal
 	call	ackSignal

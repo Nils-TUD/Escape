@@ -41,7 +41,7 @@ sValue *ast_execForStmt(sEnv *e,sForStmt *n) {
 	while(val_isTrue(cond)) {
 		/* execute body */
 		val_destroy(ast_execute(e,n->stmtList));
-		if(isInterrupted())
+		if(lang_isInterrupted())
 			break;
 		/* increment */
 		val_destroy(ast_execute(e,n->incExpr));

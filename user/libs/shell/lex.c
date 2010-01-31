@@ -808,7 +808,7 @@ case 1:
 YY_RULE_SETUP
 #line 25 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	BEGIN(COMMENT);
 }
 	YY_BREAK
@@ -817,7 +817,7 @@ case 2:
 YY_RULE_SETUP
 #line 29 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	BEGIN(INITIAL);
 }
 	YY_BREAK
@@ -825,7 +825,7 @@ case 3:
 YY_RULE_SETUP
 #line 33 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	/* eat up all chars */
 }
 	YY_BREAK
@@ -833,7 +833,7 @@ case 4:
 YY_RULE_SETUP
 #line 38 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_IF;
 }
 	YY_BREAK
@@ -841,7 +841,7 @@ case 5:
 YY_RULE_SETUP
 #line 42 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_THEN;
 }
 	YY_BREAK
@@ -849,7 +849,7 @@ case 6:
 YY_RULE_SETUP
 #line 46 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_ELSE;
 }
 	YY_BREAK
@@ -857,7 +857,7 @@ case 7:
 YY_RULE_SETUP
 #line 50 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_FI;
 }
 	YY_BREAK
@@ -865,7 +865,7 @@ case 8:
 YY_RULE_SETUP
 #line 54 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_FOR;
 }
 	YY_BREAK
@@ -873,7 +873,7 @@ case 9:
 YY_RULE_SETUP
 #line 58 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_DO;
 }
 	YY_BREAK
@@ -881,7 +881,7 @@ case 10:
 YY_RULE_SETUP
 #line 62 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_DONE;
 }
 	YY_BREAK
@@ -889,7 +889,7 @@ case 11:
 YY_RULE_SETUP
 #line 66 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_WHILE;
 }
 	YY_BREAK
@@ -897,7 +897,7 @@ case 12:
 YY_RULE_SETUP
 #line 71 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	yylval.intval = atoi(yytext);
 	return T_NUMBER;
 }
@@ -906,7 +906,7 @@ case 13:
 YY_RULE_SETUP
 #line 77 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext + 1);
 	return T_VAR;
 }
@@ -915,7 +915,7 @@ case 14:
 YY_RULE_SETUP
 #line 83 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	BEGIN(DCONSTSTR);
 	return *yytext;
 }
@@ -924,7 +924,7 @@ case 15:
 YY_RULE_SETUP
 #line 89 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	BEGIN(INITIAL);
 	return *yytext;
 }
@@ -933,7 +933,7 @@ case 16:
 YY_RULE_SETUP
 #line 95 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	BEGIN(CMDEXPR);
 	return *yytext;
 }
@@ -943,7 +943,7 @@ case 17:
 YY_RULE_SETUP
 #line 101 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_STRING;
 }
@@ -952,7 +952,7 @@ case 18:
 YY_RULE_SETUP
 #line 107 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	BEGIN(DCONSTSTR);
 	return *yytext;
 }
@@ -962,7 +962,7 @@ case 19:
 YY_RULE_SETUP
 #line 113 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	yylval.strval = strndup(yytext + 1,strlen(yytext) - 2);
 	return T_STRING_SCONST;
 }
@@ -971,7 +971,7 @@ case 20:
 YY_RULE_SETUP
 #line 119 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_LEQ;
 }
 	YY_BREAK
@@ -979,7 +979,7 @@ case 21:
 YY_RULE_SETUP
 #line 123 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_GEQ;
 }
 	YY_BREAK
@@ -987,7 +987,7 @@ case 22:
 YY_RULE_SETUP
 #line 127 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_EQ;
 }
 	YY_BREAK
@@ -995,7 +995,7 @@ case 23:
 YY_RULE_SETUP
 #line 131 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_NEQ;
 }
 	YY_BREAK
@@ -1003,7 +1003,7 @@ case 24:
 YY_RULE_SETUP
 #line 135 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_APPEND;
 }
 	YY_BREAK
@@ -1011,7 +1011,7 @@ case 25:
 YY_RULE_SETUP
 #line 139 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_ERR2OUT;
 }
 	YY_BREAK
@@ -1019,7 +1019,7 @@ case 26:
 YY_RULE_SETUP
 #line 143 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return T_OUT2ERR;
 }
 	YY_BREAK
@@ -1027,7 +1027,7 @@ case 27:
 YY_RULE_SETUP
 #line 148 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return *yytext;
 }
 	YY_BREAK
@@ -1035,7 +1035,7 @@ case 28:
 YY_RULE_SETUP
 #line 152 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return *yytext;
 }
 	YY_BREAK
@@ -1043,7 +1043,7 @@ case 29:
 YY_RULE_SETUP
 #line 156 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return *yytext;
 }
 	YY_BREAK
@@ -1051,7 +1051,7 @@ case 30:
 YY_RULE_SETUP
 #line 160 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return *yytext;
 }
 	YY_BREAK
@@ -1059,7 +1059,7 @@ case 31:
 YY_RULE_SETUP
 #line 164 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	return *yytext;
 }
 	YY_BREAK
@@ -1069,14 +1069,14 @@ YY_RULE_SETUP
 #line 169 "<stdin>"
 {
 	/* eat up whitespace */
-	beginToken(yytext);
+	lang_beginToken(yytext);
 }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
 #line 174 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_STRING;
 }
@@ -1085,7 +1085,7 @@ case 34:
 YY_RULE_SETUP
 #line 180 "<stdin>"
 {
-	beginToken(yytext);
+	lang_beginToken(yytext);
 	yyerror("Unrecognized character %c",*yytext);
 	BEGIN(INITIAL);
 }

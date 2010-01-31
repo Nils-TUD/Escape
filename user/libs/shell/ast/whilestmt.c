@@ -37,7 +37,7 @@ sValue *ast_execWhileStmt(sEnv *e,sWhileStmt *n) {
 	while(val_isTrue(cond)) {
 		/* execute body */
 		val_destroy(ast_execute(e,n->stmtList));
-		if(isInterrupted())
+		if(lang_isInterrupted())
 			break;
 		/* evaluate condition */
 		val_destroy(cond);

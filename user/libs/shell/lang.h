@@ -25,24 +25,24 @@ typedef s32 tIntType;
 /**
  * Resets the position
  */
-void resetPos(void);
+void lang_reset(void);
 
 /**
  * Marks the shell as "interrupted"
  */
-void setInterrupted(void);
+void lang_setInterrupted(void);
 
 /**
  * @return wether the shell has been interrupted
  */
-bool isInterrupted(void);
+bool lang_isInterrupted(void);
 
 /**
  * Begins the given token (stores location)
  *
  * @param t the token
  */
-void beginToken(char *t);
+void lang_beginToken(char *t);
 
 /**
  * Error-reporting-function called by flex

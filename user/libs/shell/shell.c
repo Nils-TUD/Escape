@@ -42,6 +42,7 @@
 static void shell_sigIntrpt(tSig sig,u32 data);
 static u16 shell_toNextWord(char *buffer,u32 icharcount,u32 *icursorPos);
 static u16 shell_toPrevWord(char *buffer,u32 *icursorPos);
+static char *shell_getComplToken(char *line,u32 length,bool *searchPath);
 extern int yyparse(void);
 
 static bool resetReadLine = false;
@@ -58,8 +59,6 @@ void shell_init(void) {
 
 bool shell_prompt(void) {
 	char path[MAX_PATH_LEN + 1];
-	/* ensure that we start a new readline */
-	resetReadLine = true;
 	if(!getEnv(path,MAX_PATH_LEN + 1,"CWD")) {
 		printf("ERROR: unable to get CWD\n");
 		return false;
@@ -71,7 +70,9 @@ bool shell_prompt(void) {
 static void shell_sigIntrpt(tSig sig,u32 data) {
 	UNUSED(sig);
 	UNUSED(data);
-	setInterrupted();
+	lang_setInterrupted();
+	/* ensure that we start a new readline */
+	resetReadLine = true;
 	printf("\n");
 }
 
@@ -86,7 +87,7 @@ s32 shell_executeCmd(char *line,bool isFile) {
 			return errno;
 	}
 	curLine = line;
-	resetPos();
+	lang_reset();
 	res = yyparse();
 	run_gc();
 	if(isFile)
@@ -333,40 +334,85 @@ static u16 shell_toPrevWord(char *buffer,u32 *icursorPos) {
 	return count;
 }
 
+static char *shell_getComplToken(char *line,u32 length,bool *searchPath) {
+	char c;
+	char *res;
+	bool inSStr = false;
+	bool inDStr = false;
+	u32 startPos = 0;
+	u32 i;
+	for(i = 0; i < length; i++) {
+		c = line[i];
+		switch(c) {
+			case 'a'...'z':
+			case 'A'...'Z':
+			case '0'...'9':
+			case '_':
+			case '-':
+				/* do nothing */
+				break;
+			case ' ':
+			case '\t':
+				startPos = i + 1;
+				/* fall through */
+			case '/':
+				*searchPath = false;
+				break;
+			case '\'':
+				if(!inDStr) {
+					inSStr = !inSStr;
+					startPos = i + 1;
+					*searchPath = true;
+				}
+				break;
+			case '"':
+				if(!inSStr) {
+					inDStr = !inDStr;
+					startPos = i + 1;
+					*searchPath = true;
+				}
+				break;
+			default:
+				startPos = i + 1;
+				*searchPath = true;
+				break;
+		}
+	}
+
+	res = (char*)malloc((length - startPos) + 1);
+	if(res) {
+		memcpy(res,line + startPos,length - startPos);
+		res[length - startPos] = '\0';
+	}
+	return res;
+}
+
 void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 	u32 icursorPos = *cursorPos;
 	u32 i,cmdlen,ilength = *length;
 	char *orgLine = line;
 
 	/* ignore tabs when the cursor is not at the end of the input */
-	if(false && icursorPos == ilength) {
-#if 0
+	if(icursorPos == ilength) {
 		sShellCmd **matches;
 		sShellCmd **cmd;
-		sCmdToken *tokens;
-		char *token;
-		u32 tokLen,tokCount;
 		bool searchPath;
-
-		/* get tokens */
+		u32 partLen;
+		char *part;
+		/* extract part to complete */
 		line[ilength] = '\0';
-		tokens = tok_get(line,&tokCount);
-		if(tokens == NULL)
+		part = shell_getComplToken(line,ilength,&searchPath);
+		if(part == NULL)
 			return;
 
 		/* get matches for last token */
-		if(tokCount > 0)
-			token = tokens[tokCount - 1].str;
-		else
-			token = (char*)"";
-		tokLen = strlen(token);
-		searchPath = tokCount <= 1 && (tokCount == 0 || strchr(tokens[0].str,'/') == NULL);
-		matches = compl_get(token,tokLen,0,false,searchPath);
+		partLen = strlen(part);
+		matches = compl_get(part,partLen,0,false,searchPath);
 		if(matches == NULL || matches[0] == NULL) {
 			/* beep because we have found no match */
 			printc('\a');
 			flush();
-			tok_free(tokens,tokCount);
+			free(part);
 			compl_free(matches);
 			return;
 		}
@@ -470,8 +516,7 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 			}
 		}
 
-		tok_free(tokens,tokCount);
+		free(part);
 		compl_free(matches);
-#endif
 	}
 }

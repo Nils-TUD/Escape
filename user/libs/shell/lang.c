@@ -35,21 +35,21 @@ static s32 nCol = 1;
 static s32 nRow = 1;
 static bool interrupted = false;
 
-void resetPos(void) {
+void lang_reset(void) {
 	nCol = 1;
 	nRow = 1;
 	interrupted = false;
 }
 
-void setInterrupted(void) {
+void lang_setInterrupted(void) {
 	interrupted = true;
 }
 
-bool isInterrupted(void) {
+bool lang_isInterrupted(void) {
 	return interrupted;
 }
 
-void beginToken(char *t) {
+void lang_beginToken(char *t) {
 	u32 len = strlen(t);
 	if(*t == '\n') {
 		nRow++;

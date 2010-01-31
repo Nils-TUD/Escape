@@ -299,13 +299,13 @@ static sValue *ast_readCmdOutput(tFD *pipeFds) {
 
 static s32 ast_waitForCmd() {
 	s32 res;
-	if(isInterrupted())
+	if(lang_isInterrupted())
 		ast_termProcsOfCmd();
 	else {
 		while(curWaitCount > 0) {
 			res = wait(EV_NOEVENT);
 			if(res == ERR_INTERRUPTED) {
-				if(isInterrupted()) {
+				if(lang_isInterrupted()) {
 					ast_termProcsOfCmd();
 					break;
 				}

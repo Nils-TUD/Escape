@@ -34,7 +34,7 @@
  *
  * @param lineList the line-list from the buffer-module
  */
-void displ_init(sSLList *lineList);
+void displ_init(sFileBuffer *buf);
 
 /**
  * Finishes the display (restores the screen-content)
@@ -82,5 +82,11 @@ void displ_markDirty(u32 start,u32 count);
  * Updates all dirty regions
  */
 void displ_update(void);
+
+/**
+ * @param c the char
+ * @return the display-length of the given character
+ */
+u32 displ_getCharLen(char c);
 
 #endif /* DISPLAY_H_ */

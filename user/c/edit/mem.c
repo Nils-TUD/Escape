@@ -58,6 +58,11 @@ sSLList *esll_create(void) {
 	return list;
 }
 
+void esll_insert(sSLList *list,const void *data,u32 index) {
+	if(!sll_insert(list,data,index))
+		error("Unable to insert an element to the linked list");
+}
+
 void esll_append(sSLList *list,const void *data) {
 	if(!sll_append(list,data))
 		error("Unable to append an element to the linked list");

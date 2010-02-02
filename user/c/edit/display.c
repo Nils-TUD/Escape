@@ -23,25 +23,32 @@
 #include <assert.h>
 #include <limits.h>
 #include <sllist.h>
+#include <string.h>
 #include "buffer.h"
+#include "mem.h"
 #include "display.h"
 
 static void displ_updateLines(u32 start,u32 count);
+static void displ_printStatus(void);
 
 static sIoCtlSize consSize;
 static u32 firstLine = 0;
 static u32 dirtyStart = 0;
 static u32 dirtyCount;
 static s32 curX = 0;
+static s32 curXDispl = 0;
 static s32 curXVirt = 0;
+static s32 curXVirtDispl = 0;
 static s32 curY = 0;
-static sSLList *lines;
+static sFileBuffer *buffer;
 
-void displ_init(sSLList *lineList) {
+void displ_init(sFileBuffer *buf) {
 	if(ioctl(STDOUT_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
 		error("Unable to get screensize");
 
-	lines = lineList;
+	/* one line for status-information :) */
+	consSize.height--;
+	buffer = buf;
 	dirtyCount = consSize.height;
 
 	/* backup screen */
@@ -67,32 +74,42 @@ void displ_mvCurHor(u8 type) {
 	sLine *line;
 	switch(type) {
 		case HOR_MOVE_HOME:
+			curXDispl = 0;
 			curX = 0;
 			break;
 		case HOR_MOVE_END:
-			line = sll_get(lines,firstLine + curY);
+			line = sll_get(buffer->lines,firstLine + curY);
+			curXDispl = line->displLen;
 			curX = line->length;
 			break;
 		case HOR_MOVE_LEFT:
 			if(curX == 0 && firstLine + curY > 0) {
-				line = sll_get(lines,firstLine + curY - 1);
+				line = sll_get(buffer->lines,firstLine + curY - 1);
 				displ_mvCurVert(-1);
+				curXDispl = line->displLen;
 				curX = line->length;
 			}
-			else if(curX > 0)
+			else if(curX > 0) {
+				line = sll_get(buffer->lines,firstLine + curY);
+				curXDispl -= displ_getCharLen(line->str[curX - 1]);
 				curX--;
+			}
 			break;
 		case HOR_MOVE_RIGHT:
-			line = sll_get(lines,firstLine + curY);
-			if(curX == (s32)line->length && firstLine + curY < sll_length(lines)) {
+			line = sll_get(buffer->lines,firstLine + curY);
+			if(curX == (s32)line->length && firstLine + curY < sll_length(buffer->lines)) {
 				displ_mvCurVert(1);
+				curXDispl = 0;
 				curX = 0;
 			}
-			else if(curX < (s32)line->length)
+			else if(curX < (s32)line->length) {
+				curXDispl += displ_getCharLen(line->str[curX]);
 				curX++;
+			}
 			break;
 	}
 	curXVirt = curX;
+	curXVirtDispl = curXDispl;
 }
 
 void displ_mvCurVertPage(bool up) {
@@ -100,7 +117,7 @@ void displ_mvCurVertPage(bool up) {
 }
 
 void displ_mvCurVert(s32 lineCount) {
-	u32 total = sll_length(lines);
+	u32 total = sll_length(buffer->lines);
 	sLine *line;
 	u32 oldFirst = firstLine;
 	/* determine new y-position */
@@ -123,8 +140,9 @@ void displ_mvCurVert(s32 lineCount) {
 		curY = 0;
 	}
 	/* determine x-position */
-	line = sll_get(lines,firstLine + curY);
+	line = sll_get(buffer->lines,firstLine + curY);
 	curX = MIN((s32)line->length,MAX(curXVirt,curX));
+	curXDispl = MIN((s32)line->displLen,MAX(curXVirtDispl,curXDispl));
 	/* anything to update? */
 	if(oldFirst != firstLine)
 		displ_markDirty(firstLine,consSize.height);
@@ -150,19 +168,39 @@ void displ_update(void) {
 	dirtyCount = 0;
 }
 
+u32 displ_getCharLen(char c) {
+	return c == '\t' ? 2 : 1;
+}
+
 static void displ_updateLines(u32 start,u32 count) {
 	sSLNode *n;
 	sLine *line;
-	u32 i,end;
+	u32 i,j;
 	assert(start >= firstLine);
 	if(dirtyCount > 0) {
 		printf("\033[go;0;%d]",start - firstLine);
-		for(n = sll_nodeAt(lines,start); n != NULL && count > 0; n = n->next, count--) {
+		for(n = sll_nodeAt(buffer->lines,start); n != NULL && count > 0; n = n->next, count--) {
 			line = (sLine*)n->data;
-			end = MIN(consSize.width,line->length);
-			for(i = 0; i < end; i++)
-				printc(line->str[i]);
-			for(; i < consSize.width; i++)
+			for(j = 0, i = 0; i < line->length && j < consSize.width; i++) {
+				char c = line->str[i];
+				switch(c) {
+					case '\t':
+						printc(' ');
+						printc(' ');
+						j += 2;
+						break;
+					case '\a':
+					case '\b':
+					case '\r':
+						/* ignore */
+						break;
+					default:
+						printc(c);
+						j++;
+						break;
+				}
+			}
+			for(; j < consSize.width; j++)
 				printc(' ');
 		}
 		for(; count > 0; count--) {
@@ -171,5 +209,16 @@ static void displ_updateLines(u32 start,u32 count) {
 		}
 		flush();
 	}
-	printf("\033[go;%d;%d]",curX,curY);
+	printf("\033[go;%d;%d]",0,consSize.height + 1);
+	displ_printStatus();
+	printf("\033[go;%d;%d]",curXDispl,curY);
+}
+
+static void displ_printStatus(void) {
+	u32 fileLen = strlen(buffer->filename);
+	char *tmp = (char*)emalloc(consSize.width + 1);
+	sprintf(tmp,"Cursor @ %d : %d",firstLine + curY + 1,curX + 1);
+	printf("\033[co;0;7]%-*s%s%c\033[co]",
+			consSize.width - fileLen - 1,tmp,buffer->filename,buffer->modified ? '*' : ' ');
+	efree(tmp);
 }

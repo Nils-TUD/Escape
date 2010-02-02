@@ -65,6 +65,15 @@ char *estrndup(const char *s,u32 n);
 sSLList *esll_create(void);
 
 /**
+ * Calls sll_insert() and exits if no more mem is available
+ *
+ * @param list the list
+ * @param data the data to append
+ * @param index the position
+ */
+void esll_insert(sSLList *list,const void *data,u32 index);
+
+/**
  * Calls sll_append() and exits if no more mem is available
  *
  * @param list the list

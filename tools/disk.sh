@@ -85,6 +85,7 @@ addTestData() {
 		printf 'Thats the %d test\n' $i >> $DISKMOUNT/bigfile;
 		i=`expr $i + 1`;
 	done;
+	$SUDO cp kernel/src/mem/paging.c $DISKMOUNT/paging.c
 }
 
 mkDiskDev() {

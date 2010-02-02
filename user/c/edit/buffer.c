@@ -25,21 +25,29 @@
 #include <string.h>
 #include "mem.h"
 #include "buffer.h"
+#include "display.h"
 
 #define INITIAL_LINE_SIZE	16
 
 static sLine *buf_createLine(void);
 static sLine *buf_readLine(tFile *f,bool *reachedEOF);
 
-static sSLList *lines = NULL;
+static sFileBuffer buf;
 
 void buf_open(const char *file) {
-	lines = esll_create();
+	buf.lines = esll_create();
+	buf.modified = false;
+	if(file) {
+		buf.filename = emalloc(strlen(file) + 1);
+		strcpy(buf.filename,file);
+	}
+	else
+		buf.filename = NULL;
 
 	if(!file) {
 		/* create at least one line */
 		sLine *line = buf_createLine();
-		esll_append(lines,line);
+		esll_append(buf.lines,line);
 	}
 	else {
 		char absp[MAX_PATH_LEN];
@@ -52,23 +60,23 @@ void buf_open(const char *file) {
 			error("Unable to open '%s'",absp);
 		while(!reachedEOF) {
 			line = buf_readLine(f,&reachedEOF);
-			esll_append(lines,line);
+			esll_append(buf.lines,line);
 		}
 		fclose(f);
 	}
 }
 
 u32 buf_getLineCount(void) {
-	return sll_length(lines);
+	return sll_length(buf.lines);
 }
 
-sSLList *buf_getLines(void) {
-	return lines;
+sFileBuffer *buf_get(void) {
+	return &buf;
 }
 
 void buf_insertAt(s32 col,s32 row,char c) {
-	assert(row >= 0 && row < (s32)sll_length(lines));
-	sLine *line = (sLine*)sll_get(lines,row);
+	assert(row >= 0 && row < (s32)sll_length(buf.lines));
+	sLine *line = (sLine*)sll_get(buf.lines,row);
 	assert(col >= 0 && col <= (s32)line->length);
 	if(line->length >= line->size - 1) {
 		line->size *= 2;
@@ -78,34 +86,35 @@ void buf_insertAt(s32 col,s32 row,char c) {
 		memmove(line->str + col + 1,line->str + col,line->length - col);
 	line->str[col] = c;
 	line->str[++line->length] = '\0';
+	line->displLen += displ_getCharLen(c);
+	buf.modified = true;
 }
 
 void buf_newLine(s32 row) {
-	assert(row < (s32)sll_length(lines));
+	assert(row < (s32)sll_length(buf.lines));
 	sLine *line = buf_createLine();
-	sll_insert(lines,line,row + 1);
-}
-
-void buf_removePrev(s32 col,s32 row) {
-	if(col > 0)
-		buf_removeCur(col - 1,row);
+	esll_insert(buf.lines,line,row + 1);
+	buf.modified = true;
 }
 
 void buf_removeCur(s32 col,s32 row) {
-	assert(row >= 0 && row < (s32)sll_length(lines));
-	sLine *line = (sLine*)sll_get(lines,row);
+	assert(row >= 0 && row < (s32)sll_length(buf.lines));
+	sLine *line = (sLine*)sll_get(buf.lines,row);
 	assert(col >= 0 && col <= (s32)line->length);
 	col++;
 	if(col > (s32)line->length)
 		return;
+	line->displLen -= displ_getCharLen(line->str[col - 1]);
 	if(col < (s32)line->length)
 		memmove(line->str + col - 1,line->str + col,line->length - col);
 	line->str[--line->length] = '\0';
+	buf.modified = true;
 }
 
 static sLine *buf_createLine(void) {
 	sLine *line = (sLine*)emalloc(sizeof(sLine));
 	line->length = 0;
+	line->displLen = 0;
 	line->size = INITIAL_LINE_SIZE;
 	line->str = (char*)emalloc(line->size);
 	return line;
@@ -116,8 +125,10 @@ static sLine *buf_readLine(tFile *f,bool *reachedEOF) {
 	sLine *line = (sLine*)emalloc(sizeof(sLine));
 	line->size = INITIAL_LINE_SIZE;
 	line->length = 0;
+	line->displLen = 0;
 	line->str = (char*)emalloc(INITIAL_LINE_SIZE);
 	while((c = fscanc(f)) != IO_EOF && c != '\n') {
+		line->displLen += displ_getCharLen(c);
 		line->str[line->length++] = c;
 		/* +1 for null-termination */
 		if(line->length >= line->size - 1) {

@@ -43,7 +43,7 @@ int main(int argc,char *argv[]) {
 
 	/* init everything */
 	buf_open(argc > 1 ? argv[1] : NULL);
-	displ_init(buf_getLines());
+	displ_init(buf_get());
 	displ_update();
 
 	while(run && (c = fscanc(stdin)) != IO_EOF) {
@@ -54,7 +54,7 @@ int main(int argc,char *argv[]) {
 				continue;
 
 			/* insert a char? */
-			if(isprint(n1) && !(n3 & (STATE_CTRL | STATE_ALT))) {
+			if(n1 == '\t' || (isprint(n1) && !(n3 & (STATE_CTRL | STATE_ALT)))) {
 				s32 col,row;
 				displ_getCurPos(&col,&row);
 				buf_insertAt(col,row,n1);
@@ -84,8 +84,8 @@ int main(int argc,char *argv[]) {
 						if(n2 == VK_DELETE)
 							buf_removeCur(col,row);
 						else if(col > 0) {
-							buf_removePrev(col,row);
 							displ_mvCurHor(HOR_MOVE_LEFT);
+							buf_removeCur(col - 1,row);
 						}
 						displ_markDirty(row,1);
 					}

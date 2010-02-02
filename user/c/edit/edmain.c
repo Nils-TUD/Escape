@@ -82,8 +82,10 @@ int main(int argc,char *argv[]) {
 					case VK_ENTER: {
 						s32 col,row;
 						displ_getCurPos(&col,&row);
-						buf_newLine(row);
+						buf_newLine(col,row);
+						/* to beginning of next line */
 						displ_mvCurVert(1);
+						displ_mvCurHor(HOR_MOVE_HOME);
 						displ_markDirty(row,buf_getLineCount());
 					}
 					break;
@@ -92,11 +94,25 @@ int main(int argc,char *argv[]) {
 					case VK_BACKSP: {
 						s32 col,row;
 						displ_getCurPos(&col,&row);
-						if(n2 == VK_DELETE)
-							buf_removeCur(col,row);
-						else if(col > 0) {
-							displ_mvCurHor(HOR_MOVE_LEFT);
-							buf_removeCur(col - 1,row);
+						if(n2 == VK_DELETE) {
+							sLine *cur = sll_get(buf_get()->lines,row);
+							if(col == (s32)cur->length) {
+								buf_moveToPrevLine(row + 1);
+								displ_markDirty(row,buf_getLineCount() + 1);
+							}
+							else
+								buf_removeCur(col,row);
+						}
+						else {
+							if(col > 0) {
+								displ_mvCurHor(HOR_MOVE_LEFT);
+								buf_removeCur(col - 1,row);
+							}
+							else if(row > 0) {
+								displ_mvCurHor(HOR_MOVE_LEFT);
+								buf_moveToPrevLine(row);
+								displ_markDirty(row - 1,buf_getLineCount() + 1);
+							}
 						}
 						displ_markDirty(row,1);
 					}

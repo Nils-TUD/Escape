@@ -90,10 +90,48 @@ void buf_insertAt(s32 col,s32 row,char c) {
 	buf.modified = true;
 }
 
-void buf_newLine(s32 row) {
+void buf_newLine(s32 col,s32 row) {
 	assert(row < (s32)sll_length(buf.lines));
+	sLine *cur = sll_get(buf.lines,row);
 	sLine *line = buf_createLine();
+	if(col < (s32)cur->length) {
+		u32 i,moveLen = cur->length - col;
+		/* append to next and remove from current */
+		if(line->size - line->length <= moveLen) {
+			line->size += moveLen;
+			line->str = erealloc(line->str,line->size);
+		}
+		strncpy(line->str + line->length,cur->str + col,moveLen);
+		for(i = col; i < cur->length; i++) {
+			u32 clen = displ_getCharLen(cur->str[i]);
+			line->displLen += clen;
+			cur->displLen -= clen;
+		}
+		line->length += moveLen;
+		cur->length -= moveLen;
+		line->str[line->length] = '\0';
+		cur->str[cur->length] = '\0';
+	}
 	esll_insert(buf.lines,line,row + 1);
+	buf.modified = true;
+}
+
+void buf_moveToPrevLine(s32 row) {
+	assert(row > 0 && row < (s32)sll_length(buf.lines));
+	sLine *cur = sll_get(buf.lines,row);
+	sLine *prev = sll_get(buf.lines,row - 1);
+	/* append to prev */
+	if(prev->size - prev->length <= cur->length) {
+		prev->size += cur->length;
+		prev->str = erealloc(prev->str,prev->size);
+	}
+	strcpy(prev->str + prev->length,cur->str);
+	prev->displLen += cur->displLen;
+	prev->length += cur->length;
+	/* remove current row */
+	sll_removeIndex(buf.lines,row);
+	efree(cur->str);
+	efree(cur);
 	buf.modified = true;
 }
 

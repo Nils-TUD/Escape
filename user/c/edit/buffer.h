@@ -64,11 +64,20 @@ sFileBuffer *buf_get(void);
 void buf_insertAt(s32 col,s32 row,char c);
 
 /**
- * Creates a new line behind the given row
+ * Creates a new line behind the given row and moves all stuff behind <col> from the current
+ * one to the next.
  *
+ * @param col the column
  * @param row the row
  */
-void buf_newLine(s32 row);
+void buf_newLine(s32 col,s32 row);
+
+/**
+ * Moves the line <row> to the end of the previous one
+ *
+ * @param row the current row
+ */
+void buf_moveToPrevLine(s32 row);
 
 /**
  * Removes the current char

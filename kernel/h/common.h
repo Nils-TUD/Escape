@@ -26,7 +26,7 @@
 /* file-number (in global file table) */
 typedef s32 tFileNo;
 
-#ifndef DEBUGGING
+#ifndef NDEBUG
 #define DEBUGGING 1
 #endif
 

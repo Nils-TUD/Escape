@@ -83,6 +83,10 @@ int main(void) {
 	drive_detect(drives,DRIVE_COUNT);
 	initDrives();
 
+	/* we're ready now, so create a dummy-vfs-node that tells fs that all ata-drives are registered */
+	tFile *f = fopen("/system/devices/ata","w");
+	fclose(f);
+
 	while(1) {
 		tFD fd = getClient(services,servCount,&client);
 		if(fd < 0) {

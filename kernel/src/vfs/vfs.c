@@ -354,6 +354,7 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 			newPos = (s32)e->position + offset;
 			break;
 		case SEEK_END:
+		default:
 			newPos = 0;
 			break;
 	}
@@ -874,7 +875,7 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 }
 
 s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count) {
-	sVFSNode *n,*node,*last,*match = NULL;
+	sVFSNode *n,*node = NULL,*last,*match = NULL;
 	u32 i;
 	bool skipped;
 	/* this is a bit more complicated because we want to do it in a fair way. that means every

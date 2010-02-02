@@ -24,7 +24,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 
-#ifndef DEBUGGING
+#ifndef NDEBUG
 #define DEBUGGING 1
 #endif
 

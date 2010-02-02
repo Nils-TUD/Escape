@@ -37,32 +37,37 @@
 #include "dir.h"
 #include "rw.h"
 
-#define MAX_DRIVER_OPEN_RETRIES		100000
-
 /**
  * Checks wether x is a power of y
  */
 static bool ext2_isPowerOf(u32 x,u32 y);
 
 void *ext2_init(const char *driver) {
-	u32 tries = 0;
+	s32 res;
+	sFileInfo info;
 	tFD fd;
 	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
 	if(e == NULL)
 		return NULL;
 
+	/* wait until ata is ready */
 	/* we have to try it multiple times in this case since the kernel loads ata and fs
 	 * directly after another and we don't know who's ready first */
 	do {
-		fd = open(driver,IO_WRITE | IO_READ);
-		if(fd < 0)
+		res = stat("/system/devices/ata",&info);
+		if(res < 0)
 			yield();
-		tries++;
 	}
-	while(fd < 0/* && tries < MAX_DRIVER_OPEN_RETRIES*/);
-	if(fd < 0)
-		error("Unable to find driver '%s' after %d retries",driver,tries);
+	while(res < 0);
 
+	/* now open the driver */
+	fd = open(driver,IO_WRITE | IO_READ);
+	if(fd < 0) {
+		printe("Unable to find driver '%s'",driver);
+		return NULL;
+	}
+
+	e->ataFd = fd;
 	if(!ext2_super_init(e)) {
 		close(e->ataFd);
 		free(e);
@@ -71,7 +76,6 @@ void *ext2_init(const char *driver) {
 
 	/* Note: we don't need it in ext2_super_init() and we can't use EXT2_BLK_SIZE() without
 	 * super-block! */
-	e->ataFd = fd;
 	e->blockCache.blockCache = NULL;
 	e->blockCache.blockCacheSize = EXT2_BCACHE_SIZE;
 	e->blockCache.blockSize = EXT2_BLK_SIZE(e);

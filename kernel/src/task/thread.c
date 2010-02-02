@@ -475,10 +475,8 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 		/* put it in the dead-thread-queue to destroy it later */
 		if(deadThreads == NULL) {
 			deadThreads = sll_create();
-			if(deadThreads == NULL) {
-				kheap_dbg_print();
+			if(deadThreads == NULL)
 				util_panic("Not enough mem for dead thread-list");
-			}
 		}
 		if(!sll_append(deadThreads,t))
 			util_panic("Not enough mem to append dead thread");

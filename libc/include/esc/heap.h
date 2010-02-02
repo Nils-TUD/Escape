@@ -63,9 +63,6 @@ void *realloc(void *addr,u32 size);
  */
 void free(void *addr);
 
-
-#if DEBUGGING
-
 /**
  * Note that the heap does increase the data-pages of the process as soon as it's required and
  * does not decrease them. So the free-space may increase during runtime!
@@ -73,6 +70,9 @@ void free(void *addr);
  * @return the free space on the heap
  */
 u32 heap_getFreeSpace(void);
+
+
+#if DEBUGGING
 
 /**
  * Prints the heap

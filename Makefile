@@ -16,10 +16,14 @@ BUILDAPPS = $(BUILDDIR)/apps
 #QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
 #	-localtime -enable-kvm
 QEMU = /home/hrniels/Applications/qemu-0.10.3/build/i386-softmmu/qemu
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot c -vga std -m 512 \
+QEMUARGS = -serial stdio -hda $(HDD) -hdb float.c -cdrom $(ISO) -boot d -vga std -m 512 \
 	-localtime
 
-DIRS = tools libc libcpp services user kernel/src kernel/test
+ifeq ($(BUILDDIR),$(abspath build/debug))
+	DIRS = tools libc libcpp services user kernel/src kernel/test
+else
+	DIRS = tools libc libcpp services user kernel/src
+endif
 
 # flags for gcc
 export BUILD = $(BUILDDIR)
@@ -32,11 +36,11 @@ export CPPWFLAGS=-Wall -Wextra -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long -fno-builtin
 ifeq ($(BUILDDIR),$(abspath build/debug))
-	export CPPDEFFLAGS=$(CPPWFLAGS) -g -D DEBUGGING -D LOGSERIAL
-	export CDEFFLAGS=$(CWFLAGS) -g -D DEBUGGING -D LOGSERIAL
+	export CPPDEFFLAGS=$(CPPWFLAGS) -g -D LOGSERIAL
+	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 else
-	export CPPDEFFLAGS=$(CPPWFLAGS) -O3
-	export CDEFFLAGS=$(CWFLAGS) -O3
+	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D NDEBUG
+	export CDEFFLAGS=$(CWFLAGS) -O3 -D NDEBUG
 endif
 # flags for nasm
 export ASMFLAGS=-f elf
@@ -54,10 +58,10 @@ all: $(BUILD) $(BUILDAPPS)
 		done
 
 $(BUILD):
-		[ -d $(BUILD) ] || mkdir $(BUILD);
+		[ -d $(BUILD) ] || mkdir -p $(BUILD);
 
 $(BUILDAPPS):
-		[ -d $(BUILDAPPS) ] || mkdir $(BUILDAPPS);
+		[ -d $(BUILDAPPS) ] || mkdir -p $(BUILDAPPS);
 
 debughdd:
 		tools/disk.sh mkdiskdev

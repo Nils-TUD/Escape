@@ -38,9 +38,11 @@ void sysc_debugc(sIntrptStackFrame *stack) {
 
 void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
+#if DEBUGGING
 	proc_dbg_print(proc_getRunning());
 	/*vfsn_dbg_printTree();
 	paging_dbg_printOwnPageDir(PD_PART_USER);*/
+#endif
 }
 
 void sysc_lock(sIntrptStackFrame *stack) {

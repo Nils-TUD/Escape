@@ -34,26 +34,33 @@
 #include "../mount.h"
 #include "../blockcache.h"
 
-#define MAX_DRIVER_OPEN_RETRIES		100000
+#define MAX_DRIVER_OPEN_RETRIES		1000
 
 void *iso_init(const char *driver) {
-	u32 i,tries = 0;
+	s32 res;
+	sFileInfo info;
+	u32 i;
 	tFD fd;
 	sISO9660 *iso = (sISO9660*)malloc(sizeof(sISO9660));
 	if(iso == NULL)
 		return NULL;
 
+	/* wait until ata is ready */
 	/* we have to try it multiple times in this case since the kernel loads ata and fs
 	 * directly after another and we don't know who's ready first */
 	do {
-		fd = open(driver,IO_WRITE | IO_READ);
-		if(fd < 0)
+		res = stat("/system/devices/ata",&info);
+		if(res < 0)
 			yield();
-		tries++;
 	}
-	while(fd < 0/* && tries < MAX_DRIVER_OPEN_RETRIES*/);
-	if(fd < 0)
-		error("Unable to find driver '%s' after %d retries",driver,tries);
+	while(res < 0);
+
+	/* now open the driver */
+	fd = open(driver,IO_WRITE | IO_READ);
+	if(fd < 0) {
+		printe("Unable to find driver '%s'",driver);
+		return NULL;
+	}
 
 	iso->driverFd = fd;
 	/* read volume descriptors */

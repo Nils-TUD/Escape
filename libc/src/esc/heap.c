@@ -412,10 +412,6 @@ static u32 getHash(void *addr) {
 	return (h ^ (h >> 7) ^ (h >> 4)) & (OCC_MAP_SIZE - 1);
 }
 
-
-/* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
-
 u32 heap_getFreeSpace(void) {
 	sMemArea *area;
 	u32 c = 0;
@@ -426,6 +422,9 @@ u32 heap_getFreeSpace(void) {
 	}
 	return c;
 }
+
+/* #### TEST/DEBUG FUNCTIONS #### */
+#if DEBUGGING
 
 void heap_print(void) {
 	sMemArea *area;

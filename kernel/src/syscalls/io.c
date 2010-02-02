@@ -54,6 +54,13 @@ void sysc_open(sIntrptStackFrame *stack) {
 	/* resolve path */
 	err = vfsn_resolvePath(path,&nodeNo,&created,flags | VFS_CONNECT);
 	if(err == ERR_REAL_PATH) {
+		/* unfortunatly we have to check for the thread-ids of ata and fs here. because e.g.
+		 * if the user tries to mount the device "/realfile" the userspace has no opportunity
+		 * to distinguish between virtual and real files. therefore fs will try to open this
+		 * path and shoot itself in the foot... */
+		if(t->tid == ATA_TID || t->tid == FS_TID)
+			SYSC_ERROR(stack,ERR_PATH_NOT_FOUND);
+
 		/* send msg to fs and wait for reply */
 		file = vfsr_openFile(t->tid,flags,path);
 		if(file < 0)

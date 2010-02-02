@@ -14,7 +14,7 @@ BUILDAPPS = $(BUILDDIR)/apps
 
 #QEMU = qemu
 #QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
-#	-localtime
+#	-localtime -enable-kvm
 QEMU = /home/hrniels/Applications/qemu-0.10.3/build/i386-softmmu/qemu
 QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot c -vga std -m 512 \
 	-localtime

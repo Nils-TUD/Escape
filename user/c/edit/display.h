@@ -23,25 +23,64 @@
 #include <esc/common.h>
 #include <sllist.h>
 
+/* the movement-types for mvCurHor */
 #define HOR_MOVE_HOME	0
 #define HOR_MOVE_END	1
 #define HOR_MOVE_LEFT	2
 #define HOR_MOVE_RIGHT	3
 
+/**
+ * Inits the display with the given line-list
+ *
+ * @param lineList the line-list from the buffer-module
+ */
 void displ_init(sSLList *lineList);
 
+/**
+ * Finishes the display (restores the screen-content)
+ */
 void displ_finish(void);
 
+/**
+ * Retrieves the current cursor-position (in the buffer, not on the screen)
+ *
+ * @param col will be set to the column
+ * @param row will be set to the row
+ */
 void displ_getCurPos(s32 *col,s32 *row);
 
+/**
+ * Moves the cursor horizontal. Maybe a vertical movement is done, too
+ *
+ * @param type the movement-type. See HOR_MOVE_*
+ */
 void displ_mvCurHor(u8 type);
 
+/**
+ * Moves the cursor one page up or down
+ *
+ * @param up move up?
+ */
 void displ_mvCurVertPage(bool up);
 
+/**
+ * Moves the cursor down or up by <lineCount>
+ *
+ * @param lineCount if positive, move down, otherwise up
+ */
 void displ_mvCurVert(s32 lineCount);
 
+/**
+ * Marks the given region "dirty"
+ *
+ * @param start the first row
+ * @param count the number of rows
+ */
 void displ_markDirty(u32 start,u32 count);
 
+/**
+ * Updates all dirty regions
+ */
 void displ_update(void);
 
 #endif /* DISPLAY_H_ */

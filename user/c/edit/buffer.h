@@ -23,26 +23,67 @@
 #include <esc/common.h>
 #include <sllist.h>
 
+/* one line in our linked lists of lines */
 typedef struct {
 	char *str;
-	u32 size;
-	u32 length;
+	u32 size;	/* size of <str> */
+	u32 length;	/* length of the line */
 } sLine;
 
+/**
+ * Initializes the buffer with the given file
+ *
+ * @param file the filename (maybe NULL to create a new one)
+ */
 void buf_open(const char *file);
 
+/**
+ * @return the number of lines
+ */
 u32 buf_getLineCount(void);
 
+/**
+ * @return the lines
+ */
 sSLList *buf_getLines(void);
 
+/**
+ * Inserts the given character at the given position
+ *
+ * @param col the column
+ * @param row the row
+ * @param c the character
+ */
 void buf_insertAt(s32 col,s32 row,char c);
 
+/**
+ * Creates a new line behind the given row
+ *
+ * @param row the row
+ */
 void buf_newLine(s32 row);
 
+/**
+ * Removes the previous char (backspace)
+ *
+ * @param col the column
+ * @param row the row
+ */
 void buf_removePrev(s32 col,s32 row);
 
+/**
+ * Removes the current char (delete)
+ *
+ * @param col the column
+ * @param row the row
+ */
 void buf_removeCur(s32 col,s32 row);
 
+/**
+ * Stores the buffer to the given file
+ *
+ * @param file the file
+ */
 void buf_store(const char *file);
 
 #endif /* BUFFER_H_ */

@@ -41,16 +41,19 @@ int main(int argc,char *argv[]) {
 	if(argc > 2 || isHelpCmd(argc,argv))
 		usage(argv[0]);
 
+	/* init everything */
 	buf_open(argc > 1 ? argv[1] : NULL);
 	displ_init(buf_getLines());
 	displ_update();
 
 	while(run && (c = fscanc(stdin)) != IO_EOF) {
 		if(c == '\033') {
+			/* just accept keycode-escapecodes */
 			cmd = freadesc(stdin,&n1,&n2,&n3);
 			if(cmd != ESCC_KEYCODE)
 				continue;
 
+			/* insert a char? */
 			if(isprint(n1) && !(n3 & (STATE_CTRL | STATE_ALT))) {
 				s32 col,row;
 				displ_getCurPos(&col,&row);

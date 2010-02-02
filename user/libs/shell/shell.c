@@ -106,7 +106,8 @@ u32 shell_readLine(char *buffer,u32 max) {
 	u32 i = 0;
 	resetReadLine = false;
 
-	/* disable "readline", enable "echo" */
+	/* disable "readline", enable "echo", enable "navi" (just to be sure) */
+	ioctl(STDOUT_FILENO,IOCTL_VT_EN_NAVI,NULL,0);
 	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
 	ioctl(STDOUT_FILENO,IOCTL_VT_EN_ECHO,NULL,0);
 

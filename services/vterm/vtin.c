@@ -44,14 +44,6 @@ typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 static void vterm_rlFlushBuf(sVTerm *vt);
 
 /**
- * Puts the given charactern into the readline-buffer and handles everything necessary
- *
- * @param vt the vterm
- * @param c the character
- */
-static void vterm_rlPutchar(sVTerm *vt,char c);
-
-/**
  * @param vt the vterm
  * @return the current position in the readline-buffer
  */
@@ -205,7 +197,7 @@ static void vterm_rlFlushBuf(sVTerm *vt) {
 		setDataReadable(vt->sid,true);
 }
 
-static void vterm_rlPutchar(sVTerm *vt,char c) {
+void vterm_rlPutchar(sVTerm *vt,char c) {
 	switch(c) {
 		case '\b': {
 			u32 bufPos = vterm_rlGetBufPos(vt);

@@ -30,4 +30,12 @@
  */
 void vterm_handleKeycode(bool isBreak,u32 keycode);
 
+/**
+ * Puts the given charactern into the readline-buffer and handles everything necessary
+ *
+ * @param vt the vterm
+ * @param c the character
+ */
+void vterm_rlPutchar(sVTerm *vt,char c);
+
 #endif /* VTIN_H_ */

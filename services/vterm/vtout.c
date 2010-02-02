@@ -26,6 +26,7 @@
 #include <esccodes.h>
 #include <string.h>
 #include "vtout.h"
+#include "vtin.h"
 #include "vterm.h"
 
 /**
@@ -56,6 +57,7 @@ static sMsg msg;
 
 void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 	char c,*start = str;
+	u32 printCount = 0;
 
 	/* are we waiting to finish an escape-code? */
 	if(vt->escapePos >= 0) {
@@ -72,8 +74,14 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 			/* if no space is left, quit and simply print the code */
 			if(vt->escapePos >= MAX_ESCC_LENGTH - 1) {
 				u32 i;
-				for(i = 0; i < MAX_ESCC_LENGTH; i++)
-					vterm_putchar(vt,vt->escapeBuf[i]);
+				for(i = 0; i < MAX_ESCC_LENGTH; i++) {
+					if(vt->printToRL)
+						vterm_rlPutchar(vt,vt->escapeBuf[i]);
+					else {
+						vterm_putchar(vt,vt->escapeBuf[i]);
+						printCount++;
+					}
+				}
 			}
 			/* otherwise try again next time */
 			else
@@ -97,7 +105,12 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 			}
 			continue;
 		}
-		vterm_putchar(vt,c);
+		if(vt->printToRL)
+			vterm_rlPutchar(vt,c);
+		else {
+			vterm_putchar(vt,c);
+			printCount++;
+		}
 		str++;
 	}
 
@@ -106,7 +119,7 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 		vterm_scroll(vt,vt->firstVisLine - vt->currLine);
 
 	/* reset reading */
-	if(resetRead) {
+	if(resetRead && printCount > 0) {
 		vt->rlBufPos = 0;
 		vt->rlStartCol = vt->col;
 	}
@@ -257,6 +270,9 @@ static bool vterm_handleEscape(sVTerm *vt,char **str) {
 			break;
 		case ESCC_MOVE_LINESTART:
 			vt->col = 0;
+			break;
+		case ESCC_SIM_INPUT:
+			vt->printToRL = n1 == 1;
 			break;
 		case ESCC_DEL_FRONT:
 			vterm_delete(vt,n1);

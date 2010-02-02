@@ -66,6 +66,8 @@ typedef struct {
 	bool readLine;
 	/* wether navigation via up/down/pageup/pagedown is enabled */
 	bool navigation;
+	/* wether all output should be printed into the readline-buffer */
+	bool printToRL;
 	/* a backup of the screen; initially NULL */
 	char *screenBackup;
 	u16 backupCol;

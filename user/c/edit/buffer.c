@@ -142,5 +142,17 @@ static sLine *buf_readLine(tFile *f,bool *reachedEOF) {
 }
 
 void buf_store(const char *file) {
-	UNUSED(file);
+	tFile *f;
+	sLine *line;
+	sSLNode *n;
+	char absDstFile[MAX_PATH_LEN];
+	abspath(absDstFile,MAX_PATH_LEN,file);
+	f = fopen(absDstFile,"w");
+	for(n = sll_begin(buf.lines); n != NULL; n = n->next) {
+		line = (sLine*)n->data;
+		fwrite(line->str,sizeof(char),line->length,f);
+		if(n->next != NULL)
+			fwrite("\n",sizeof(char),1,f);
+	}
+	fclose(f);
 }

@@ -172,6 +172,24 @@ u32 displ_getCharLen(char c) {
 	return c == '\t' ? 2 : 1;
 }
 
+s32 displ_getSaveFile(char *file,u32 bufSize) {
+	u32 i;
+	s32 res;
+	printf("\033[go;%d;%d]",0,consSize.height - 1);
+	for(i = 0; i < consSize.width; i++)
+		printc(' ');
+	printc('\r');
+	ioctl(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
+	printf("\033[co;0;7]Save to file:\033[co] ");
+	if(buffer->filename)
+		printf("\033[si;1]%s\033[si;0]",buffer->filename);
+	res = scanl(file,bufSize);
+	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
+	displ_markDirty(firstLine + consSize.height - 1,1);
+	displ_update();
+	return res;
+}
+
 static void displ_updateLines(u32 start,u32 count) {
 	sSLNode *n;
 	sLine *line;
@@ -179,29 +197,31 @@ static void displ_updateLines(u32 start,u32 count) {
 	assert(start >= firstLine);
 	if(dirtyCount > 0) {
 		printf("\033[go;0;%d]",start - firstLine);
-		for(n = sll_nodeAt(buffer->lines,start); n != NULL && count > 0; n = n->next, count--) {
-			line = (sLine*)n->data;
-			for(j = 0, i = 0; i < line->length && j < consSize.width; i++) {
-				char c = line->str[i];
-				switch(c) {
-					case '\t':
-						printc(' ');
-						printc(' ');
-						j += 2;
-						break;
-					case '\a':
-					case '\b':
-					case '\r':
-						/* ignore */
-						break;
-					default:
-						printc(c);
-						j++;
-						break;
+		if(start < sll_length(buffer->lines)) {
+			for(n = sll_nodeAt(buffer->lines,start); n != NULL && count > 0; n = n->next, count--) {
+				line = (sLine*)n->data;
+				for(j = 0, i = 0; i < line->length && j < consSize.width; i++) {
+					char c = line->str[i];
+					switch(c) {
+						case '\t':
+							printc(' ');
+							printc(' ');
+							j += 2;
+							break;
+						case '\a':
+						case '\b':
+						case '\r':
+							/* ignore */
+							break;
+						default:
+							printc(c);
+							j++;
+							break;
+					}
 				}
+				for(; j < consSize.width; j++)
+					printc(' ');
 			}
-			for(; j < consSize.width; j++)
-				printc(' ');
 		}
 		for(; count > 0; count--) {
 			for(i = 0; i < consSize.width; i++)
@@ -209,16 +229,17 @@ static void displ_updateLines(u32 start,u32 count) {
 		}
 		flush();
 	}
-	printf("\033[go;%d;%d]",0,consSize.height + 1);
 	displ_printStatus();
 	printf("\033[go;%d;%d]",curXDispl,curY);
 }
 
 static void displ_printStatus(void) {
-	u32 fileLen = strlen(buffer->filename);
+	u32 fileLen = buffer->filename ? strlen(buffer->filename) : 0;
 	char *tmp = (char*)emalloc(consSize.width + 1);
+	printf("\033[go;%d;%d]",0,consSize.height + 1);
 	sprintf(tmp,"Cursor @ %d : %d",firstLine + curY + 1,curX + 1);
 	printf("\033[co;0;7]%-*s%s%c\033[co]",
-			consSize.width - fileLen - 1,tmp,buffer->filename,buffer->modified ? '*' : ' ');
+			consSize.width - fileLen - 1,tmp,
+			buffer->filename ? buffer->filename : "",buffer->modified ? '*' : ' ');
 	efree(tmp);
 }

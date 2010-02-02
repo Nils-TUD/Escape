@@ -86,6 +86,8 @@ s32 escc_get(const char **str,s32 *n1,s32 *n2,s32 *n3) {
 			cmd = ESCC_DEL_BACK;
 		else if(strncmp(start,"go",cmdlen) == 0)
 			cmd = ESCC_GOTO_XY;
+		else if(strncmp(start,"si",cmdlen) == 0)
+			cmd = ESCC_SIM_INPUT;
 
 		/* set default-values */
 		switch(cmd) {
@@ -96,6 +98,7 @@ s32 escc_get(const char **str,s32 *n1,s32 *n2,s32 *n3) {
 					*n2 = 0;
 				*n3 = ESCC_ARG_UNUSED;
 				break;
+			case ESCC_SIM_INPUT:
 			case ESCC_DEL_FRONT:
 			case ESCC_DEL_BACK:
 			case ESCC_MOVE_LEFT:

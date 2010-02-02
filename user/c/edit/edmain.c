@@ -22,6 +22,7 @@
 #include <esc/proc.h>
 #include <esc/fileio.h>
 #include <esc/keycodes.h>
+#include <esc/dir.h>
 #include <esccodes.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -64,8 +65,18 @@ int main(int argc,char *argv[]) {
 			else {
 				switch(n2) {
 					case VK_X:
-						if(n3 & STATE_CTRL)
-							run = false;
+						if(n3 & STATE_CTRL) {
+							if(buf_get()->modified) {
+								char dstFile[MAX_PATH_LEN];
+								s32 res = displ_getSaveFile(dstFile,MAX_PATH_LEN);
+								if(res > 0) {
+									buf_store(dstFile);
+									run = false;
+								}
+							}
+							else
+								run = false;
+						}
 						break;
 
 					case VK_ENTER: {

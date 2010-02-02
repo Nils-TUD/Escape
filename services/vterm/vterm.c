@@ -141,6 +141,7 @@ static bool vterm_init(sVTerm *vt) {
 	vt->echo = true;
 	vt->readLine = true;
 	vt->navigation = true;
+	vt->printToRL = false;
 	vt->keymap = 1;
 	vt->escapePos = -1;
 	vt->rlStartCol = 0;

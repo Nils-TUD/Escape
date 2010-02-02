@@ -84,6 +84,15 @@ void displ_markDirty(u32 start,u32 count);
 void displ_update(void);
 
 /**
+ * Lets the user enter the filename. It will be put to <file>.
+ *
+ * @param file the buffer to write to
+ * @param bufSize the size of <file>
+ * @return the result of scanl()
+ */
+s32 displ_getSaveFile(char *file,u32 bufSize);
+
+/**
  * @param c the char
  * @return the display-length of the given character
  */

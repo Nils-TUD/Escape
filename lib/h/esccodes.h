@@ -41,6 +41,7 @@
 #define ESCC_KEYCODE			9
 #define ESCC_COLOR				10
 #define ESCC_GOTO_XY			11
+#define ESCC_SIM_INPUT			12
 
 #define STATE_SHIFT				(1 << 0)
 #define STATE_CTRL				(1 << 1)

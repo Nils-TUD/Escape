@@ -34,11 +34,6 @@
 
 #define RLBUF_INCR			20
 
-/* the number of left-shifts for each state */
-#define STATE_SHIFT			0
-#define STATE_CTRL			1
-#define STATE_ALT			2
-
 typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 
 /**
@@ -179,9 +174,9 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 		if(!vt->readLine) {
 			bool empty = rb_length(vt->inbuf) == 0;
 			char escape[SSTRLEN("\033[kc;123;123;7]") + 1];
-			sprintf(escape,"\033[kc;%d;%d;%d]",c,keycode,(altDown << STATE_ALT) |
-				(ctrlDown << STATE_CTRL) |
-				(shiftDown << STATE_SHIFT));
+			sprintf(escape,"\033[kc;%d;%d;%d]",c,keycode,(altDown ? STATE_ALT : 0) |
+				(ctrlDown ? STATE_CTRL : 0) |
+				(shiftDown ? STATE_SHIFT : 0));
 			rb_writen(vt->inbuf,escape,strlen(escape));
 			if(empty)
 				setDataReadable(vt->sid,true);

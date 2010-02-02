@@ -475,8 +475,8 @@ bool ShellControl::handleEscape(char **s) {
 			_cursorCol = 0;
 			break;
 		case ESCC_GOTO_XY:
-			_col = MAX(0,MIN((s32)COLUMNS - 1,n1));
-			_row = MAX(1,MIN((s32)getLineCount() - 1,n2));
+			_cursorCol = MAX(0,MIN((s32)COLUMNS - 1,n1));
+			_row = MAX(_firstRow,MIN((s32)getLineCount() - 1,n2));
 			break;
 		case ESCC_COLOR:
 			if(n1 != ESCC_ARG_UNUSED)
@@ -540,6 +540,8 @@ s32 ShellControl::ioctl(u32 cmd,void *data,bool *readKb) {
 				start = 0;
 			for(u32 i = start; i < _rows.size(); i++)
 				_screenBackup->add(new Vector<char>(*_rows[i]));
+			_backupCol = _cursorCol;
+			_backupRow = _row;
 		}
 		break;
 		case IOCTL_VT_RESTORE: {
@@ -565,6 +567,8 @@ s32 ShellControl::ioctl(u32 cmd,void *data,bool *readKb) {
 				}
 				delete _screenBackup;
 				_screenBackup = NULL;
+				_cursorCol = _backupCol;
+				_row = _backupRow;
 				repaint();
 			}
 		}

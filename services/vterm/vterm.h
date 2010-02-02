@@ -68,6 +68,8 @@ typedef struct {
 	bool navigation;
 	/* a backup of the screen; initially NULL */
 	char *screenBackup;
+	u16 backupCol;
+	u16 backupRow;
 	/* the buffer for the input-stream */
 	sRingBuf *inbuf;
 	/* the pid of the shell for ctrl+c notifications */

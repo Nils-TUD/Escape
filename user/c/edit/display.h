@@ -23,10 +23,25 @@
 #include <esc/common.h>
 #include <sllist.h>
 
-void displ_init(void);
+#define HOR_MOVE_HOME	0
+#define HOR_MOVE_END	1
+#define HOR_MOVE_LEFT	2
+#define HOR_MOVE_RIGHT	3
+
+void displ_init(sSLList *lineList);
 
 void displ_finish(void);
 
-void displ_update(sSLList *lines);
+void displ_getCurPos(s32 *col,s32 *row);
+
+void displ_mvCurHor(u8 type);
+
+void displ_mvCurVertPage(bool up);
+
+void displ_mvCurVert(s32 lineCount);
+
+void displ_markDirty(u32 start,u32 count);
+
+void displ_update(void);
 
 #endif /* DISPLAY_H_ */

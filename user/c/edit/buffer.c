@@ -21,11 +21,14 @@
 #include <esc/fileio.h>
 #include <esc/dir.h>
 #include <sllist.h>
+#include <assert.h>
+#include <string.h>
 #include "mem.h"
 #include "buffer.h"
 
 #define INITIAL_LINE_SIZE	16
 
+static sLine *buf_createLine(void);
 static sLine *buf_readLine(tFile *f,bool *reachedEOF);
 
 static sSLList *lines = NULL;
@@ -35,10 +38,7 @@ void buf_open(const char *file) {
 
 	if(!file) {
 		/* create at least one line */
-		sLine *line = (sLine*)emalloc(sizeof(sLine));
-		line->length = 0;
-		line->size = INITIAL_LINE_SIZE;
-		line->str = (char*)emalloc(line->size);
+		sLine *line = buf_createLine();
 		esll_append(lines,line);
 	}
 	else {
@@ -58,8 +58,57 @@ void buf_open(const char *file) {
 	}
 }
 
+u32 buf_getLineCount(void) {
+	return sll_length(lines);
+}
+
 sSLList *buf_getLines(void) {
 	return lines;
+}
+
+void buf_insertAt(s32 col,s32 row,char c) {
+	assert(row >= 0 && row < (s32)sll_length(lines));
+	sLine *line = (sLine*)sll_get(lines,row);
+	assert(col >= 0 && col <= (s32)line->length);
+	if(line->length >= line->size - 1) {
+		line->size *= 2;
+		line->str = erealloc(line->str,line->size);
+	}
+	if(col < (s32)line->length)
+		memmove(line->str + col + 1,line->str + col,line->length - col);
+	line->str[col] = c;
+	line->str[++line->length] = '\0';
+}
+
+void buf_newLine(s32 row) {
+	assert(row < (s32)sll_length(lines));
+	sLine *line = buf_createLine();
+	sll_insert(lines,line,row + 1);
+}
+
+void buf_removePrev(s32 col,s32 row) {
+	if(col > 0)
+		buf_removeCur(col - 1,row);
+}
+
+void buf_removeCur(s32 col,s32 row) {
+	assert(row >= 0 && row < (s32)sll_length(lines));
+	sLine *line = (sLine*)sll_get(lines,row);
+	assert(col >= 0 && col <= (s32)line->length);
+	col++;
+	if(col > (s32)line->length)
+		return;
+	if(col < (s32)line->length)
+		memmove(line->str + col - 1,line->str + col,line->length - col);
+	line->str[--line->length] = '\0';
+}
+
+static sLine *buf_createLine(void) {
+	sLine *line = (sLine*)emalloc(sizeof(sLine));
+	line->length = 0;
+	line->size = INITIAL_LINE_SIZE;
+	line->str = (char*)emalloc(line->size);
+	return line;
 }
 
 static sLine *buf_readLine(tFile *f,bool *reachedEOF) {

@@ -31,7 +31,17 @@ typedef struct {
 
 void buf_open(const char *file);
 
+u32 buf_getLineCount(void);
+
 sSLList *buf_getLines(void);
+
+void buf_insertAt(s32 col,s32 row,char c);
+
+void buf_newLine(s32 row);
+
+void buf_removePrev(s32 col,s32 row);
+
+void buf_removeCur(s32 col,s32 row);
 
 void buf_store(const char *file);
 

@@ -105,9 +105,6 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 	if(vt->firstVisLine != vt->currLine)
 		vterm_scroll(vt,vt->firstVisLine - vt->currLine);
 
-	if(vt->active)
-		vterm_setCursor(vt);
-
 	/* reset reading */
 	if(resetRead) {
 		vt->rlBufPos = 0;
@@ -272,6 +269,10 @@ static bool vterm_handleEscape(sVTerm *vt,char **str) {
 			}
 			else
 				vt->col = MIN(vt->cols - 1,vt->col + n1);
+			break;
+		case ESCC_GOTO_XY:
+			vt->col = MAX(0,MIN(vt->cols - 1,n1));
+			vt->row = MAX(0,MIN(vt->rows - 2,n2)) + 1;
 			break;
 		case ESCC_COLOR:
 			if(n1 != ESCC_ARG_UNUSED)

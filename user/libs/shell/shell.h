@@ -30,10 +30,6 @@
 #define MAX_CMDNAME_LEN		30
 #define MAX_CMD_LEN			70
 
-#define STATE_SHIFT			(1 << 0)
-#define STATE_CTRL			(1 << 1)
-#define STATE_ALT			(1 << 2)
-
 #ifdef __cplusplus
 extern "C" {
 #endif

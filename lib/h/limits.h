@@ -29,11 +29,11 @@
 #define SHRT_MIN		(-32768)
 #define INT_MAX			32767
 #define INT_MIN			(-32768)
-#define LONG_MAX		2147483648
-#define LONG_MIN		(-2147483647)
+#define LONG_MAX		2147483647LL
+#define LONG_MIN		(-2147483648LL)
 #define UCHAR_MAX		255
 #define USHRT_MAX		65535
 #define UINT_MAX		65535
-#define ULONG_MAX		4294967295
+#define ULONG_MAX		4294967295ULL
 
 #endif /* LIMITS_H_ */

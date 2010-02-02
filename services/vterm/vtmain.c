@@ -61,6 +61,7 @@ int main(void) {
 	tFD kbFd;
 	tServ client;
 	tMsgId mid;
+	bool needsUpdate = false;
 	char name[MAX_VT_NAME_LEN + 1];
 
 	/* reg services */
@@ -116,8 +117,6 @@ int main(void) {
 			sVTerm *vt = getVTerm(client);
 			if(vt != NULL) {
 				u32 c = 0;
-				/* TODO this may cause trouble with escape-codes. maybe we should store the
-				 * "escape-state" somehow... */
 				while(reqc++ < MAX_SEQREQ && receive(fd,&mid,&msg,sizeof(msg)) > 0) {
 					switch(mid) {
 						case MSG_DRV_OPEN:
@@ -148,7 +147,6 @@ int main(void) {
 								receive(fd,&mid,data,c + 1);
 								data[c] = '\0';
 								vterm_puts(vt,data,c,true);
-								vterm_update(vt);
 								free(data);
 								msg.args.arg1 = c;
 							}
@@ -164,6 +162,7 @@ int main(void) {
 							break;
 					}
 				}
+				vterm_update(vt);
 			}
 			close(fd);
 		}

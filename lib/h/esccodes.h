@@ -42,6 +42,10 @@
 #define ESCC_COLOR				10
 #define ESCC_GOTO_XY			11
 
+#define STATE_SHIFT				(1 << 0)
+#define STATE_CTRL				(1 << 1)
+#define STATE_ALT				(1 << 2)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

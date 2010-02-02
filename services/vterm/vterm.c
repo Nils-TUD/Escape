@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errors.h>
+#include <assert.h>
 #include <ringbuffer.h>
 
 #include "vterm.h"
@@ -268,6 +269,8 @@ s32 vterm_ioctl(sVTerm *vt,u32 cmd,void *data,bool *readKb) {
 			memcpy(vt->screenBackup,
 					vt->buffer + vt->firstVisLine * vt->cols * 2,
 					vt->rows * vt->cols * 2);
+			vt->backupCol = vt->col;
+			vt->backupRow = vt->row;
 			break;
 		case IOCTL_VT_RESTORE:
 			if(vt->screenBackup) {
@@ -276,6 +279,8 @@ s32 vterm_ioctl(sVTerm *vt,u32 cmd,void *data,bool *readKb) {
 						vt->rows * vt->cols * 2);
 				free(vt->screenBackup);
 				vt->screenBackup = NULL;
+				vt->col = vt->backupCol;
+				vt->row = vt->backupRow;
 				vterm_markScrDirty(vt);
 			}
 			break;
@@ -328,25 +333,27 @@ void vterm_markDirty(sVTerm *vt,u16 start,u16 length) {
 
 void vterm_update(sVTerm *vt) {
 	u32 byteCount;
-	if(!vt->active || vt->upLength == 0)
+	if(!vt->active)
 		return;
 
-	/* update title-bar? */
-	if(vt->upStart < vt->cols * 2) {
-		locku(&titleBarLock);
-		byteCount = MIN(vt->cols * 2 - vt->upStart,vt->upLength);
-		seek(vt->video,vt->upStart,SEEK_SET);
-		write(vt->video,vt->titleBar,byteCount);
-		vt->upLength -= byteCount;
-		vt->upStart = vt->cols * 2;
-		unlocku(&titleBarLock);
-	}
+	if(vt->upLength > 0) {
+		/* update title-bar? */
+		if(vt->upStart < vt->cols * 2) {
+			locku(&titleBarLock);
+			byteCount = MIN(vt->cols * 2 - vt->upStart,vt->upLength);
+			seek(vt->video,vt->upStart,SEEK_SET);
+			write(vt->video,vt->titleBar,byteCount);
+			vt->upLength -= byteCount;
+			vt->upStart = vt->cols * 2;
+			unlocku(&titleBarLock);
+		}
 
-	/* refresh the rest */
-	byteCount = MIN((vt->rows * vt->cols * 2) - vt->upStart,vt->upLength);
-	if(byteCount > 0) {
-		seek(vt->video,vt->upStart,SEEK_SET);
-		write(vt->video,vt->buffer + (vt->firstVisLine * vt->cols * 2) + vt->upStart,byteCount);
+		/* refresh the rest */
+		byteCount = MIN((vt->rows * vt->cols * 2) - vt->upStart,vt->upLength);
+		if(byteCount > 0) {
+			seek(vt->video,vt->upStart,SEEK_SET);
+			write(vt->video,vt->buffer + (vt->firstVisLine * vt->cols * 2) + vt->upStart,byteCount);
+		}
 	}
 	vterm_setCursor(vt);
 

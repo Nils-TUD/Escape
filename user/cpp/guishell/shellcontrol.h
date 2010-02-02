@@ -61,7 +61,8 @@ public:
 			_row(0), _col(0), _cursorCol(0),
 			_scrollRows(0), _firstRow(0), _navigation(true), _rlStartCol(0),
 			_rlBufSize(INITIAL_RLBUF_SIZE), _rlBufPos(0), _readline(true), _echo(true),
-			_escapePos(-1), _screenBackup(NULL), _rows(Vector<Vector<char>*>()) {
+			_escapePos(-1), _backupRow(0), _backupCol(0), _screenBackup(NULL),
+			_rows(Vector<Vector<char>*>()) {
 		// insert first row
 		_rows.add(new Vector<char>(COLUMNS * 2));
 
@@ -161,6 +162,8 @@ private:
 		_echo = e._echo;
 		memcpy(_rlBuffer,e._rlBuffer,_rlBufSize);
 		_screenBackup = new Vector<Vector<char>*>();
+		_backupRow = e._backupRow;
+		_backupCol = e._backupCol;
 		for(u32 i = 0; i < e._screenBackup->size(); i++)
 			_screenBackup->add(new Vector<char>(*((*e._screenBackup)[i])));
 		_rows = Vector<Vector<char>*>();
@@ -186,6 +189,8 @@ private:
 	// the escape-state
 	s32 _escapePos;
 	tFD _speaker;
+	u32 _backupRow;
+	u32 _backupCol;
 	char _escapeBuf[MAX_ESCC_LENGTH];
 	Vector<Vector<char>*> *_screenBackup;
 	Vector<Vector<char>*> _rows;

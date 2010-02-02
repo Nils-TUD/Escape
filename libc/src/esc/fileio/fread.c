@@ -37,8 +37,8 @@ u32 fread(void *ptr,u32 size,u32 count,tFile *file) {
 	/* first read from buffer */
 	in = &(buf->in);
 	total = size * count;
-	while(in->pos > 0) {
-		*bPtr++ = in->str[--(in->pos)];
+	while(in->pos < in->length) {
+		*bPtr++ = in->str[in->pos++];
 		total--;
 	}
 

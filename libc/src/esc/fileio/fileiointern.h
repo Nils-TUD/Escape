@@ -23,19 +23,15 @@
 #include <esc/common.h>
 #include <sllist.h>
 
-#define BUF_TYPE_STRING		0
-#define BUF_TYPE_FILE		1
+#define BUF_TYPE_STRING		1
+#define BUF_TYPE_FILE		2
+#define BUF_TYPE_VTERM		4
 
 /* the number of entries in the hash-map */
 #define BUF_MAP_SIZE		8
 /* the size of the buffers */
-#define IN_BUFFER_SIZE		10
+#define IN_BUFFER_SIZE		256
 #define OUT_BUFFER_SIZE		256
-
-/* initial values for stdin, stdout and stderr, so that we know that they are not initialized */
-#define STDIN_NOTINIT		0xFFFF0001
-#define STDOUT_NOTINIT		0xFFFF0002
-#define STDERR_NOTINIT		0xFFFF0003
 
 /* format flags */
 #define FFL_PADRIGHT		1
@@ -84,6 +80,7 @@ typedef struct {
 	tFD fd;
 	u8 type;
 	s32 pos;
+	s32 length;
 	s32 max;
 	char *str;
 } sBuffer;

@@ -23,39 +23,21 @@
 #include <esc/heap.h>
 #include "fileiointern.h"
 
-/* buffer for STDIN, STDOUT and STDERR */
-static sIOBuffer stdBufs[3];
-
 sIOBuffer *bget(tFile *stream) {
-	tFD fd = -1;
-	tFile **stdStr;
+	sIOBuffer *buf = (sIOBuffer*)stream;
 	if(stream == NULL)
 		return NULL;
 
-	/* check if it is an uninitialized std-stream */
-	switch((u32)stream) {
-		case STDIN_NOTINIT:
-			fd = STDIN_FILENO;
-			stdStr = &stdin;
-			break;
-		case STDOUT_NOTINIT:
-			fd = STDOUT_FILENO;
-			stdStr = &stdout;
-			break;
-		case STDERR_NOTINIT:
-			fd = STDERR_FILENO;
-			stdStr = &stderr;
-			break;
-	}
-
-	/* if so, we have to create it */
-	if(fd != -1) {
-		sIOBuffer *buf = stdBufs + fd;
-		if(fd == STDIN_FILENO) {
+	/* if uninitialized, we have to create it */
+	if(buf->in.type == 0 && buf->out.type == 0) {
+		if(buf == stdin) {
 			buf->out.fd = -1;
-			buf->in.fd = fd;
+			buf->in.fd = STDIN_FILENO;
 			buf->in.type = BUF_TYPE_FILE;
+			if(isatty(buf->in.fd))
+				buf->in.type |= BUF_TYPE_VTERM;
 			buf->in.pos = 0;
+			buf->in.length = 0;
 			buf->in.max = IN_BUFFER_SIZE;
 			buf->in.str = (char*)malloc(IN_BUFFER_SIZE + 1);
 			if(buf->in.str == NULL) {
@@ -65,9 +47,12 @@ sIOBuffer *bget(tFile *stream) {
 		}
 		else {
 			buf->in.fd = -1;
-			buf->out.fd = fd;
+			buf->out.fd = buf == stdout ? STDOUT_FILENO : STDERR_FILENO;
 			buf->out.type = BUF_TYPE_FILE;
+			if(isatty(buf->out.fd))
+				buf->out.type |= BUF_TYPE_VTERM;
 			buf->out.pos = 0;
+			buf->out.length = 0;
 			buf->out.max = OUT_BUFFER_SIZE;
 			buf->out.str = (char*)malloc(OUT_BUFFER_SIZE + 1);
 			if(buf->out.str == NULL) {
@@ -75,10 +60,7 @@ sIOBuffer *bget(tFile *stream) {
 				return NULL;
 			}
 		}
-		/* store std-stream */
-		*stdStr = buf;
-		stream = (tFile*)buf;
 	}
 
-	return (sIOBuffer*)stream;
+	return buf;
 }

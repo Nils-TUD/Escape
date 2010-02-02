@@ -19,13 +19,15 @@
 
 #include <esc/common.h>
 #include <esc/fileio.h>
+#include <string.h>
 #include "fileiointern.h"
 
 s32 bscanback(sBuffer *buf,char c) {
-	if(buf->type == BUF_TYPE_FILE) {
-		if(buf->pos >= IN_BUFFER_SIZE)
+	if(buf->type & BUF_TYPE_FILE) {
+		if(buf->pos == 0)
 			return IO_EOF;
-		buf->str[(buf->pos)++] = c;
+		buf->str[buf->pos - 1] = c;
+		buf->pos--;
 		return 0;
 	}
 	else if(buf->pos > 0) {

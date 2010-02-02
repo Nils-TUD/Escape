@@ -17,19 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/fileio.h>
-#include "fileiointern.h"
+#ifndef DISPLAY_H_
+#define DISPLAY_H_
 
-char bprintc(sBuffer *buf,char c) {
-	if(buf->max != -1 && buf->pos >= buf->max) {
-		if(buf->type & BUF_TYPE_FILE) {
-			if(bflush(buf) != 0)
-				return IO_EOF;
-		}
-		else
-			return IO_EOF;
-	}
-	buf->str[buf->pos++] = c;
-	return c;
-}
+#include <esc/common.h>
+#include <sllist.h>
+
+void displ_init(void);
+
+void displ_finish(void);
+
+void displ_update(sSLList *lines);
+
+#endif /* DISPLAY_H_ */

@@ -19,8 +19,12 @@
 
 #include <esc/common.h>
 #include <esc/fileio.h>
+#include <esc/io.h>
 
 int isatty(int fd) {
-	/* TODO implement! */
-	return false;
+	/* a way to determine wether its a vterm is to try an ioctl-command that every vterm
+	 * should implement (and that doesn't change anything) */
+	/* other drivers should respond with ERR_UNSUPPORTED_OP */
+	sIoCtlSize consSize;
+	return ioctl(fd,IOCTL_VT_GETSIZE,&consSize,sizeof(consSize)) >= 0;
 }

@@ -23,7 +23,7 @@
 void *memmove(void *dest,const void *src,u32 count) {
 	u8 *s,*d;
 	/* nothing to do? */
-	if((u8*)dest == (u8*)src)
+	if((u8*)dest == (u8*)src || count == 0)
 		return dest;
 
 	/* moving forward */

@@ -18,18 +18,36 @@
  */
 
 #include <esc/common.h>
+#include <esc/cmdargs.h>
+#include <esc/proc.h>
 #include <esc/fileio.h>
-#include "fileiointern.h"
+#include <esccodes.h>
+#include <stdlib.h>
+#include "buffer.h"
+#include "display.h"
 
-char bprintc(sBuffer *buf,char c) {
-	if(buf->max != -1 && buf->pos >= buf->max) {
-		if(buf->type & BUF_TYPE_FILE) {
-			if(bflush(buf) != 0)
-				return IO_EOF;
+static void usage(const char *name) {
+	fprintf(stderr,"Usage: %s [<file>]\n",name);
+	exit(EXIT_FAILURE);
+}
+
+int main(int argc,char *argv[]) {
+	char c;
+	s32 cmd,n1,n2,n3;
+	if(argc > 2 || isHelpCmd(argc,argv))
+		usage(argv[0]);
+
+	displ_init();
+	buf_open(argc > 1 ? argv[1] : NULL);
+	displ_update(buf_getLines());
+	while((c = fscanc(stdin)) != IO_EOF) {
+		if(c == '\033') {
+			cmd = freadesc(stdin,&n1,&n2,&n3);
+			if(cmd != ESCC_KEYCODE)
+				continue;
+			break;
 		}
-		else
-			return IO_EOF;
 	}
-	buf->str[buf->pos++] = c;
-	return c;
+	displ_finish();
+	return EXIT_SUCCESS;
 }

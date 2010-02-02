@@ -84,9 +84,18 @@ s32 escc_get(const char **str,s32 *n1,s32 *n2,s32 *n3) {
 			cmd = ESCC_DEL_FRONT;
 		else if(strncmp(start,"db",cmdlen) == 0)
 			cmd = ESCC_DEL_BACK;
+		else if(strncmp(start,"go",cmdlen) == 0)
+			cmd = ESCC_GOTO_XY;
 
 		/* set default-values */
 		switch(cmd) {
+			case ESCC_GOTO_XY:
+				if(*n1 == ESCC_ARG_UNUSED)
+					*n1 = 0;
+				if(*n2 == ESCC_ARG_UNUSED)
+					*n2 = 0;
+				*n3 = ESCC_ARG_UNUSED;
+				break;
 			case ESCC_DEL_FRONT:
 			case ESCC_DEL_BACK:
 			case ESCC_MOVE_LEFT:

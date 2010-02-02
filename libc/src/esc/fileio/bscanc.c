@@ -24,14 +24,20 @@
 
 char bscanc(sBuffer *buf) {
 	/* file */
-	if(buf->type == BUF_TYPE_FILE) {
-		char c;
-		if(buf->pos > 0)
-			return buf->str[--(buf->pos)];
-
-		if(read(buf->fd,&c,sizeof(char)) <= 0)
-			return IO_EOF;
-		return c;
+	if(buf->type & BUF_TYPE_FILE) {
+		if(buf->pos >= buf->length) {
+			s32 count;
+			/* don't read multiple bytes at once from vterms */
+			if(buf->type & BUF_TYPE_VTERM)
+				count = read(buf->fd,buf->str,1);
+			else
+				count = read(buf->fd,buf->str,buf->max);
+			if(count <= 0)
+				return IO_EOF;
+			buf->pos = 0;
+			buf->length = count;
+		}
+		return buf->str[buf->pos++];
 	}
 
 	/* string */

@@ -40,6 +40,7 @@
 #define ESCC_DEL_BACK			8
 #define ESCC_KEYCODE			9
 #define ESCC_COLOR				10
+#define ESCC_GOTO_XY			11
 
 #ifdef __cplusplus
 extern "C" {

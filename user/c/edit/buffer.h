@@ -17,19 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/fileio.h>
-#include "fileiointern.h"
+#ifndef BUFFER_H_
+#define BUFFER_H_
 
-char bprintc(sBuffer *buf,char c) {
-	if(buf->max != -1 && buf->pos >= buf->max) {
-		if(buf->type & BUF_TYPE_FILE) {
-			if(bflush(buf) != 0)
-				return IO_EOF;
-		}
-		else
-			return IO_EOF;
-	}
-	buf->str[buf->pos++] = c;
-	return c;
-}
+#include <esc/common.h>
+#include <sllist.h>
+
+typedef struct {
+	char *str;
+	u32 size;
+	u32 length;
+} sLine;
+
+void buf_open(const char *file);
+
+sSLList *buf_getLines(void);
+
+void buf_store(const char *file);
+
+#endif /* BUFFER_H_ */

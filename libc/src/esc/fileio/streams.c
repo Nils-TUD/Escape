@@ -18,10 +18,12 @@
  */
 
 #include <esc/common.h>
+#include <esc/io.h>
 #include <esc/fileio.h>
 #include "fileiointern.h"
 
 /* std-streams */
-tFile *stdin = (tFile*)STDIN_NOTINIT;
-tFile *stdout = (tFile*)STDOUT_NOTINIT;
-tFile *stderr = (tFile*)STDERR_NOTINIT;
+static sIOBuffer stdBufs[3];
+tFile *stdin = (tFile*)(stdBufs + STDIN_FILENO);
+tFile *stdout = (tFile*)(stdBufs + STDOUT_FILENO);
+tFile *stderr = (tFile*)(stdBufs + STDERR_FILENO);

@@ -474,6 +474,10 @@ bool ShellControl::handleEscape(char **s) {
 		case ESCC_MOVE_LINESTART:
 			_cursorCol = 0;
 			break;
+		case ESCC_GOTO_XY:
+			_col = MAX(0,MIN((s32)COLUMNS - 1,n1));
+			_row = MAX(1,MIN((s32)getLineCount() - 1,n2));
+			break;
 		case ESCC_COLOR:
 			if(n1 != ESCC_ARG_UNUSED)
 				_color = (_color & 0xF0) | MIN(15,n1);

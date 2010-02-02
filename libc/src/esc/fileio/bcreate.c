@@ -48,6 +48,7 @@ sIOBuffer *bcreate(tFD fd,u8 flags) {
 		buf->in.fd = fd;
 		buf->in.type = BUF_TYPE_FILE;
 		buf->in.pos = 0;
+		buf->in.length = 0;
 		buf->in.max = IN_BUFFER_SIZE;
 		buf->in.str = (char*)malloc(IN_BUFFER_SIZE + 1);
 		if(buf->in.str == NULL) {
@@ -63,6 +64,7 @@ sIOBuffer *bcreate(tFD fd,u8 flags) {
 		buf->out.fd = fd;
 		buf->out.type = BUF_TYPE_FILE;
 		buf->out.pos = 0;
+		buf->out.length = 0;
 		buf->out.max = OUT_BUFFER_SIZE;
 		buf->out.str = (char*)malloc(OUT_BUFFER_SIZE + 1);
 		if(buf->out.str == NULL) {
@@ -70,6 +72,14 @@ sIOBuffer *bcreate(tFD fd,u8 flags) {
 			free(buf);
 			return NULL;
 		}
+	}
+
+	/* determine and store wether its a vterm */
+	if(isatty(fd)) {
+		if(flags & IO_READ)
+			buf->in.type |= BUF_TYPE_VTERM;
+		if(flags & IO_WRITE)
+			buf->out.type |= BUF_TYPE_VTERM;
 	}
 
 	sll_append(bufList,buf);

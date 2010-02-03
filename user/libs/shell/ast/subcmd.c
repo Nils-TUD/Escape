@@ -19,8 +19,15 @@
 
 #include <esc/common.h>
 #include <esc/fileio.h>
+#include <fsinterface.h>
 #include "../mem.h"
+#include "../completion.h"
 #include "subcmd.h"
+
+/**
+ * Adds all pathnames that match <str> to <buf> beginning at <i> and increments <i> correspondingly
+ */
+static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,const char *str);
 
 sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redirFd,sASTNode *redirIn,sASTNode *redirOut) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
@@ -35,22 +42,63 @@ sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redirFd,sASTNode *redirI
 
 sValue *ast_execSubCmd(sEnv *e,sSubCmd *n) {
 	u32 i;
+	char *str;
 	sSLNode *node;
+	u32 exprSize;
 	sSLList *elist = (sSLList*)ast_execute(e,n->exprList);
 	sExecSubCmd *res = emalloc(sizeof(sExecSubCmd));
 	res->exprCount = sll_length(elist);
-	res->exprs = (char**)emalloc((res->exprCount + 1) * sizeof(char*));
-	for(i = 0, node = sll_begin(elist); node != NULL; i++, node = node->next) {
+	exprSize = res->exprCount + 1;
+	res->exprs = (char**)emalloc(exprSize * sizeof(char*));
+	for(i = 0, node = sll_begin(elist); node != NULL; node = node->next) {
 		sValue *v = (sValue*)node->data;
-		res->exprs[i] = val_getStr(v);
+		str = val_getStr(v);
+		if(strchr(str,'*') == NULL) {
+			if(i >= exprSize - 1) {
+				exprSize *= 2;
+				res->exprs = erealloc(res->exprs,exprSize);
+			}
+			res->exprs[i++] = str;
+		}
+		else {
+			res->exprs = ast_expandPathname(res->exprs,&exprSize,&i,str);
+			efree(str);
+		}
 		val_destroy(v);
 	}
+	res->exprCount = i;
 	res->exprs[i] = NULL;
 	res->redirFd = n->redirFd;
 	res->redirIn = n->redirIn;
 	res->redirOut = n->redirOut;
 	sll_destroy(elist,false);
 	return (sValue*)res;
+}
+
+static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,const char *str) {
+	sShellCmd **cmds = compl_get((char*)"",0,0,false,false);
+	sShellCmd **cmd;
+	cmd = cmds;
+	while(*cmd != NULL) {
+		if(strmatch(str,(*cmd)->name)) {
+			u32 namelen = strlen((*cmd)->name);
+			char *dup = (char*)emalloc(namelen + 2);
+			strcpy(dup,(*cmd)->name);
+			if(MODE_IS_DIR((*cmd)->mode)) {
+				dup[namelen] = '/';
+				dup[namelen + 1] = '\0';
+			}
+			if(*i >= *bufSize - 1) {
+				*bufSize *= 2;
+				buf = erealloc(buf,*bufSize * sizeof(char*));
+			}
+			buf[*i] = dup;
+			(*i)++;
+		}
+		cmd++;
+	}
+	compl_free(cmds);
+	return buf;
 }
 
 void ast_printSubCmd(sSubCmd *s,u32 layer) {

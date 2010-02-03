@@ -110,8 +110,8 @@ static void test_atoi(void) {
 	if(!test_assertInt(atoi("-546"),-546)) return;
 	if(!test_assertInt(atoi("  45  "),45)) return;
 	if(!test_assertInt(atoi("\t\n\r12.4\n"),12)) return;
-	if(!test_assertInt(atoi("2147483647"),2147483647)) return;
-	if(!test_assertInt(atoi("-2147483648"),-2147483648)) return;
+	if(!test_assertInt(atoi("2147483647"),2147483647LL)) return;
+	if(!test_assertInt(atoi("-2147483648"),-2147483648LL)) return;
 	if(!test_assertInt(atoi(""),0)) return;
 	if(!test_assertInt(atoi("-"),0)) return;
 	if(!test_assertInt(atoi("abc"),0)) return;
@@ -159,12 +159,12 @@ static void test_itoa(void) {
 	if(!test_itoacpy(8,"8")) return;
 	if(!test_itoacpy(12,"12")) return;
 	if(!test_itoacpy(7123,"7123")) return;
-	if(!test_itoacpy(2147483647,"2147483647")) return;
+	if(!test_itoacpy(2147483647LL,"2147483647")) return;
 	if(!test_itoacpy(0,"0")) return;
 	if(!test_itoacpy(-1,"-1")) return;
 	if(!test_itoacpy(-10,"-10")) return;
 	if(!test_itoacpy(-8123,"-8123")) return;
-	if(!test_itoacpy(-2147483648,"-2147483648")) return;
+	if(!test_itoacpy(-2147483648LL,"-2147483648")) return;
 
 	test_caseSucceded();
 }

@@ -101,8 +101,8 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	for(sub = sll_begin(n->subList); sub != NULL; sub = sub->next, cmdNo++) {
 		cmd = (sExecSubCmd*)ast_execute(e,(sASTNode*)sub->data);
 		if(cmd == NULL || cmd->exprs[0] == NULL) {
-			ast_destroyExecCmd(cmd);
-			break;
+			res = -1;
+			goto error;
 		}
 
 		/* get the command */
@@ -112,7 +112,6 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 		if(shcmd == NULL || shcmd[0] == NULL || shcmd[1] != NULL ||
 				(shcmd[0]->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC)) == 0) {
 			printf("\033[co;4]%s: Command not found\033[co]\n",cmd->exprs[0]);
-			compl_free(shcmd);
 			res = -1;
 			goto error;
 		}
@@ -137,7 +136,6 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			val_destroy(fileExpr);
 			if(pipeFds[1] < 0) {
 				printe("Unable to open %s",filename);
-				compl_free(shcmd);
 				res = -1;
 				goto error;
 			}
@@ -154,7 +152,6 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			val_destroy(fileExpr);
 			if(prevPipe < 0) {
 				printe("Unable to open %s",filename);
-				compl_free(shcmd);
 				res = -1;
 				goto error;
 			}
@@ -164,7 +161,6 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			res = pipe(pipeFds + 0,pipeFds + 1);
 			if(res < 0) {
 				printe("Unable to open pipe");
-				compl_free(shcmd);
 				goto error;
 			}
 		}
@@ -253,8 +249,11 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	/* wait for childs if we should not run this in background */
 	if(!n->runInBG)
 		return val_createInt(ast_waitForCmd());
+	return val_createInt(res);
 
 error:
+	compl_free(shcmd);
+	ast_destroyExecCmd(cmd);
 	return val_createInt(res);
 }
 

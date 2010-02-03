@@ -126,7 +126,7 @@ sFileSystem *ext2_getFS(void) {
 	return fs;
 }
 
-tInodeNo ext2_resPath(void *h,char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
+tInodeNo ext2_resPath(void *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
 	return ext2_path_resolve((sExt2*)h,path,flags,dev,resLastMnt);
 }
 

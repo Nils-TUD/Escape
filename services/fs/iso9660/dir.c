@@ -36,10 +36,10 @@
  */
 static bool iso_dir_match(const char *user,const char *disk,u32 userLen,u32 diskLen);
 
-tInodeNo iso_dir_resolve(sISO9660 *h,char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
+tInodeNo iso_dir_resolve(sISO9660 *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
 	u32 extLoc,extSize;
 	tDevNo mntDev;
-	char *p = path;
+	const char *p = path;
 	u32 pos;
 	tInodeNo res;
 	sCBlock *blk;

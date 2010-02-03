@@ -375,7 +375,7 @@ sFileSystem *ext2_getFS(void);
  * @param resLastMnt wether mount-points should be resolved if the path is finished
  * @return the inode-number on success
  */
-tInodeNo ext2_resPath(void *h,char *path,u8 flags,tDevNo *dev,bool resLastMnt);
+tInodeNo ext2_resPath(void *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt);
 
 /**
  * Mount-entry for open()

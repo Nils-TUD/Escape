@@ -115,7 +115,7 @@ sFileSystem *iso_getFS(void) {
 	return fs;
 }
 
-tInodeNo iso_resPath(void *h,char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
+tInodeNo iso_resPath(void *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt) {
 	return iso_dir_resolve((sISO9660*)h,path,flags,dev,resLastMnt);
 }
 

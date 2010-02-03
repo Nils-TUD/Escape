@@ -161,9 +161,7 @@ s32 ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	info->createtime = cnode->inode.createtime;
 	info->blockCount = cnode->inode.blocks;
 	info->blockSize = EXT2_BLK_SIZE(e);
-	/* TODO */
-	info->device = 0;
-	info->rdevice = 0;
+	info->device = mount_getDevByHandle(h);
 	info->uid = cnode->inode.uid;
 	info->gid = cnode->inode.gid;
 	info->inodeNo = cnode->inodeNo;

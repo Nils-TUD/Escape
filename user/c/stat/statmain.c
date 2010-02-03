@@ -46,6 +46,7 @@ int main(int argc,char *argv[]) {
 
 	printf("'%s' points to:\n",apath);
 	printf("%-15s%d\n","Inode:",info.inodeNo);
+	printf("%-15s%d\n","Device:",info.device);
 	printf("%-15s%s\n","Type:",stat_getType(&info));
 	printf("%-15s%d Bytes\n","Size:",info.size);
 	printf("%-15s%d\n","Blocks:",info.blockCount);

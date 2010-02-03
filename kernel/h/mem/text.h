@@ -26,8 +26,8 @@
 /* usage-slot for a binary */
 typedef struct {
 	sSLList *procs;
-	/* TODO we need the device-number here, too, right? */
 	tInodeNo inodeNo;
+	tDevNo devNo;
 	u32 modifytime;
 } sTextUsage;
 

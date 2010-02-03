@@ -69,7 +69,7 @@ typedef struct {
 	u32 refs;
 } sFSInst;
 
-/* mount-points that link (inode+dev) to a specific fs-instance */
+/* mount-point that links (inode+dev) to a specific fs-instance */
 typedef struct {
 	tDevNo dev;
 	tInodeNo inode;
@@ -119,6 +119,15 @@ tDevNo mount_getByLoc(tDevNo dev,tInodeNo inode);
  * @return 0 on success
  */
 s32 mount_remMnt(tDevNo dev,tInodeNo inode);
+
+/**
+ * Determines the device-number of an fs-instance by its handle. This gives fs-instances
+ * the chance to determine their own device-id.
+ *
+ * @param h the handle of the fs-instance
+ * @return the device-number or < 0
+ */
+tDevNo mount_getDevByHandle(void *h);
 
 /**
  * @return the associated filesystem for the given mount-point

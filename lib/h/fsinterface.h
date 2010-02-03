@@ -65,7 +65,7 @@
 
 typedef struct {
 	/* ID of device containing file */
-	u8 device;
+	tDevNo device;
 	tInodeNo inodeNo;
 	/* protection */
 	u16 mode;
@@ -74,8 +74,6 @@ typedef struct {
 	/* owner user- and group-id */
 	u16 uid;
 	u16 gid;
-	/* device ID (if special file) */
-	u8 rdevice;
 	/* total size, in bytes */
 	s32 size;
 	/* blocksize for efficent filesystem I/O */

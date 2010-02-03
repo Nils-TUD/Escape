@@ -143,9 +143,7 @@ s32 iso_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	info->createtime = ts;
 	info->blockCount = e->entry.extentSize.littleEndian / ISO_BLK_SIZE(i);
 	info->blockSize = ISO_BLK_SIZE(i);
-	/* TODO */
-	info->device = 0;
-	info->rdevice = 0;
+	info->device = mount_getDevByHandle(h);
 	info->uid = 0;
 	info->gid = 0;
 	info->inodeNo = e->id;

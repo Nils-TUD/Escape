@@ -114,7 +114,6 @@ s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info) {
 	/* some infos are not available here */
 	/* TODO needs to be completed */
 	info->device = VFS_DEV_NO;
-	info->rdevice = 0;
 	info->accesstime = 0;
 	info->modifytime = 0;
 	info->createtime = 0;

@@ -70,6 +70,7 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 		if(usage == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 		usage->inodeNo = info.inodeNo;
+		usage->devNo = info.device;
 		usage->modifytime = info.modifytime;
 		usage->procs = sll_create();
 		if(usage->procs == NULL) {
@@ -203,7 +204,8 @@ static sTextUsage *text_get(sFileInfo *info) {
 	for(n = sll_begin(textUsages); n != NULL; p = n, n = n->next) {
 		u = (sTextUsage*)n->data;
 		/* if the file has been modified, we don't want to use it again */
-		if(info->inodeNo == u->inodeNo && info->modifytime == u->modifytime)
+		if(info->inodeNo == u->inodeNo && info->device == u->devNo &&
+				info->modifytime == u->modifytime)
 			return u;
 	}
 	return NULL;
@@ -221,7 +223,7 @@ void text_dbg_print(void) {
 		return;
 	for(n = sll_begin(textUsages); n != NULL; n = n->next) {
 		u = (sTextUsage*)n->data;
-		vid_printf("\tinode=%d, modified=%d, procs=",u->inodeNo,u->modifytime);
+		vid_printf("\tinode=%d, devNo=%d, modified=%d, procs=",u->inodeNo,u->devNo,u->modifytime);
 		for(pn = sll_begin(u->procs); pn != NULL; pn = pn->next) {
 			vid_printf("%d",((sProc*)pn->data)->pid);
 			if(pn->next != NULL)

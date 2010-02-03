@@ -154,6 +154,15 @@ s32 mount_remMnt(tDevNo dev,tInodeNo inode) {
 	return 0;
 }
 
+tDevNo mount_getDevByHandle(void *h) {
+	u32 i;
+	for(i = 0; i < MOUNT_TABLE_SIZE; i++) {
+		if(mounts[i].mnt->handle == h)
+			return i;
+	}
+	return ERR_NO_MNTPNT;
+}
+
 sFSInst *mount_get(tDevNo dev) {
 	if(dev >= MOUNT_TABLE_SIZE)
 		return NULL;

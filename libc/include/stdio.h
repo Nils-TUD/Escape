@@ -319,6 +319,15 @@ extern int fscanf(FILE *file,const char *fmt,...);
 extern int sscanf(const char *str,const char *fmt,...);
 
 /**
+ * The  isatty()  function  tests  whether  fd  is an open file descriptor
+ * referring to a terminal.
+ *
+ * @param fd the file-descriptor
+ * @return true if it referrs to a terminal
+ */
+int isatty(int fd);
+
+/**
  * Prints "<msg>: <lastError>"
  *
  * @param msg the prefix of the message

@@ -34,7 +34,7 @@ sIOBuffer *bget(tFile *stream) {
 			buf->out.fd = -1;
 			buf->in.fd = STDIN_FILENO;
 			buf->in.type = BUF_TYPE_FILE;
-			if(isatty(buf->in.fd))
+			if(isavterm(buf->in.fd))
 				buf->in.type |= BUF_TYPE_VTERM;
 			buf->in.pos = 0;
 			buf->in.length = 0;
@@ -49,7 +49,7 @@ sIOBuffer *bget(tFile *stream) {
 			buf->in.fd = -1;
 			buf->out.fd = buf == stdout ? STDOUT_FILENO : STDERR_FILENO;
 			buf->out.type = BUF_TYPE_FILE;
-			if(isatty(buf->out.fd))
+			if(isavterm(buf->out.fd))
 				buf->out.type |= BUF_TYPE_VTERM;
 			buf->out.pos = 0;
 			buf->out.length = 0;

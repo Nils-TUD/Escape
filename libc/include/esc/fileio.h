@@ -130,14 +130,13 @@ s32 ftell(tFile *file,u32 *pos);
 s32 feof(tFile *file);
 
 /**
- * The  isatty()  function  tests  whether  fd  is an open file descriptor
- * referring to a terminal.
+ * The  isavterm()  function  tests  whether  fd  is an open file descriptor
+ * referring to a vterm.
  *
  * @param fd the file-descriptor
- * @return true if it referrs to a tty
+ * @return true if it referrs to a vterm
  */
-/* TODO signature changed for flex */
-int isatty(int fd);
+bool isavterm(tFD fd);
 
 /**
  * The function fileno() examines the  argument  stream  and  returns  its

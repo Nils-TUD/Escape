@@ -21,7 +21,7 @@
 #include <esc/fileio.h>
 #include <esc/io.h>
 
-int isatty(int fd) {
+bool isavterm(tFD fd) {
 	/* a way to determine wether its a vterm is to try an ioctl-command that every vterm
 	 * should implement (and that doesn't change anything) */
 	/* other drivers should respond with ERR_UNSUPPORTED_OP */

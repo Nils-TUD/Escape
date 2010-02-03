@@ -63,6 +63,10 @@ char *fgets(char *str,int max,FILE *file) {
 	return str;
 }
 
+int isatty(int fd) {
+	return isavterm(fd);
+}
+
 void perror(const char *msg) {
 	printe(msg);
 }

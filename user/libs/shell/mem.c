@@ -50,6 +50,18 @@ char *estrndup(const char *s,u32 n) {
 	return dup;
 }
 
+sSLList *esll_create(void) {
+	sSLList *list = sll_create();
+	if(!list)
+		error("Unable to create linked list");
+	return list;
+}
+
+void esll_append(sSLList *list,const void *data) {
+	if(!sll_append(list,data))
+		error("Unable to append an element to the linked list");
+}
+
 void efree(void *p) {
 	free(p);
 }

@@ -28,8 +28,7 @@ static sVar *env_getByName(sEnv *env,const char *name);
 
 sEnv *env_create(void) {
 	sEnv *env = (sEnv*)emalloc(sizeof(sEnv));
-	env->vars = sll_create();
-	/* TODO error-handling */
+	env->vars = esll_create();
 	env->parent = NULL;
 	return env;
 }
@@ -61,8 +60,7 @@ sValue *env_set(sEnv *env,const char *name,sValue *val) {
 	}
 	else {
 		v = env_createVar(name,val);
-		sll_append(env->vars,v);
-		/* TODO error-handling */
+		esll_append(env->vars,v);
 	}
 	return v->val;
 }

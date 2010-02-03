@@ -69,8 +69,7 @@ static tFD closePipe[2] = {-1,-1};
 sASTNode *ast_createCommand(void) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sCommand *expr = node->data = emalloc(sizeof(sCommand));
-	expr->subList = sll_create();
-	/* TODO errorhandling */
+	expr->subList = esll_create();
 	expr->runInBG = false;
 	expr->retOutput = false;
 	node->type = AST_COMMAND;
@@ -394,8 +393,7 @@ void ast_setRunInBG(sASTNode *c,bool runInBG) {
 
 void ast_addSubCmd(sASTNode *c,sASTNode *sub) {
 	sCommand *cmd = (sCommand*)c->data;
-	sll_append(cmd->subList,sub);
-	/* TODO errorhandling */
+	esll_append(cmd->subList,sub);
 }
 
 void ast_printCommand(sCommand *s,u32 layer) {

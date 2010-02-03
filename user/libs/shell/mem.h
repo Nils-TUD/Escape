@@ -57,6 +57,21 @@ char *estrdup(const char *s);
 char *estrndup(const char *s,u32 n);
 
 /**
+ * Calls sll_create() and exits if no more mem is available
+ *
+ * @return the list
+ */
+sSLList *esll_create(void);
+
+/**
+ * Calls sll_append() and exits if no more mem is available
+ *
+ * @param list the list
+ * @param data the data to append
+ */
+void esll_append(sSLList *list,const void *data);
+
+/**
  * Calls free()
  *
  * @param p the pointer to the memory

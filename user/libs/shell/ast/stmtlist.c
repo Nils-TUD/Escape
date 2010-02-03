@@ -25,8 +25,7 @@
 sASTNode *ast_createStmtList(void) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sStmtList *expr = node->data = emalloc(sizeof(sStmtList));
-	expr->list = sll_create();
-	/* TODO error-handling */
+	expr->list = esll_create();
 	node->type = AST_STMT_LIST;
 	return node;
 }
@@ -45,8 +44,7 @@ sValue *ast_execStmtList(sEnv *e,sStmtList *n) {
 
 sASTNode *ast_addStmt(sASTNode *l,sASTNode *s) {
 	sStmtList *list = (sStmtList*)l->data;
-	sll_append(list->list,s);
-	/* TODO error-handling */
+	esll_append(list->list,s);
 	return l;
 }
 

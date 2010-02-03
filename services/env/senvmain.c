@@ -33,7 +33,9 @@
 #define MAP_SIZE 64
 
 typedef struct {
-	tPid pid;
+	tPid pid;		/* the creator */
+	bool dup;		/* wether this is a duplicate of a parent-var */
+	bool dead;		/* wether the process is dead and this entry should be removed */
 	char *name;
 	char *value;
 } sEnvVar;
@@ -92,23 +94,19 @@ static sEnvVar *env_getiOf(tPid pid,u32 *index);
 static bool env_set(tPid pid,char *name,char *value);
 
 /**
- * Removes all envvars for the given process
- *
- * @param pid the process-id
+ * Removes all variables that are marked as dead
  */
-static void env_remProc(tPid pid);
+static void env_gc(void);
 
 /**
  * Prints all env-vars
  */
 static void env_printAll(void);
 
-/* a list of dead processes whose entries should be removed */
-static sSLList *deadProcs = NULL;
-
 /* hashmap of linkedlists with env-vars; key=(pid % MAP_SIZE) */
 static sSLList *envVars[MAP_SIZE];
 
+static bool deadVars = false;
 static sMsg msg;
 
 int main(void) {
@@ -132,12 +130,10 @@ int main(void) {
 		if(fd < 0)
 			wait(EV_CLIENT);
 		else {
-			/* first, delete dead processes if there are any */
-			if(sll_length(deadProcs) > 0) {
-				sSLNode *n;
-				for(n = sll_begin(deadProcs); n != NULL; n = n->next)
-					env_remProc((tPid)(n->data));
-				sll_removeAll(deadProcs);
+			/* first, delete dead vars if there are any */
+			if(deadVars) {
+				env_gc();
+				deadVars = false;
 			}
 
 			/* read all available messages */
@@ -199,13 +195,21 @@ int main(void) {
 }
 
 static void procDiedHandler(tSig sig,u32 data) {
-	/* TODO this is dangerous! we can't use the heap in signal-handlers (=> no sll either) */
 	UNUSED(sig);
-	/* remember for deletion */
-	if(deadProcs == NULL)
-		deadProcs = sll_create();
-	if(deadProcs != NULL)
-		sll_append(deadProcs,(void*)data);
+	/* mark all vars of this process as dead */
+	u32 i;
+	sSLNode *n;
+	sSLList **list = envVars;
+	for(i = 0; i < MAP_SIZE; i++) {
+		if(*list != NULL) {
+			for(n = sll_begin(*list); n != NULL; n = n->next) {
+				sEnvVar *e = (sEnvVar*)n->data;
+				if(e->pid == data)
+					e->dead = true;
+			}
+		}
+	}
+	deadVars = true;
 }
 
 static sEnvVar *env_geti(tPid pid,u32 index) {
@@ -239,7 +243,7 @@ static sEnvVar *env_getiOf(tPid pid,u32 *index) {
 		sEnvVar *e = NULL;
 		for(n = sll_begin(list); n != NULL; n = n->next) {
 			e = (sEnvVar*)n->data;
-			if(e->pid == pid) {
+			if(!e->dead && !e->dup && e->pid == pid) {
 				if((*index)-- == 0)
 					break;
 			}
@@ -257,7 +261,7 @@ static sEnvVar *env_getOf(tPid pid,char *name) {
 	if(list != NULL) {
 		for(n = sll_begin(list); n != NULL; n = n->next) {
 			sEnvVar *e = (sEnvVar*)n->data;
-			if(e->pid == pid && strcmp(e->name,name) == 0)
+			if(!e->dead && e->pid == pid && strcmp(e->name,name) == 0)
 				return e;
 		}
 	}
@@ -296,6 +300,9 @@ static bool env_set(tPid pid,char *name,char *value) {
 
 	/* copy name */
 	len = strlen(name);
+	/* we haven't appended the new var yet. so if we find it now, its a duplicate */
+	var->dead = false;
+	var->dup = env_get(pid,name) != NULL;
 	var->pid = pid;
 	var->name = (char*)malloc(len + 1);
 	if(var->name == NULL)
@@ -313,24 +320,27 @@ static bool env_set(tPid pid,char *name,char *value) {
 	return true;
 }
 
-static void env_remProc(tPid pid) {
-	sSLNode *n,*t,*p;
-	sSLList *list = envVars[pid % MAP_SIZE];
-	if(list != NULL) {
-		p = NULL;
-		for(n = sll_begin(list); n != NULL; ) {
-			sEnvVar *e = (sEnvVar*)n->data;
-			if(e->pid == pid) {
-				t = n->next;
-				free(e->name);
-				free(e->value);
-				free(e);
-				sll_removeNode(list,n,p);
-				n = t;
-			}
-			else {
-				p = n;
-				n = n->next;
+static void env_gc(void) {
+	u32 i;
+	sSLNode *n,*p,*t;
+	sSLList **list = envVars;
+	for(i = 0; i < MAP_SIZE; i++) {
+		if(*list != NULL) {
+			p = NULL;
+			for(n = sll_begin(*list); n != NULL; ) {
+				sEnvVar *e = (sEnvVar*)n->data;
+				if(e->dead) {
+					t = n->next;
+					free(e->name);
+					free(e->value);
+					free(e);
+					sll_removeNode(*list,n,p);
+					n = t;
+				}
+				else {
+					p = n;
+					n = n->next;
+				}
 			}
 		}
 	}
@@ -345,7 +355,8 @@ static void env_printAll(void) {
 		if(*list != NULL) {
 			for(n = sll_begin(*list); n != NULL; n = n->next) {
 				sEnvVar *e = (sEnvVar*)n->data;
-				debugf("\t[pid=%d] %s=%s\n",e->pid,e->name,e->value);
+				debugf("\t[pid=%d %c%c] %s=%s\n",e->pid,
+						e->dup ? '+' : '-',e->dead ? 'd' : ' ',e->name,e->value);
 			}
 		}
 		list++;

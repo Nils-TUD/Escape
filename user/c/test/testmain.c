@@ -33,6 +33,7 @@
 #include "modules/fork.h"
 #include "modules/procswarm.h"
 #include "modules/mem.h"
+#include "modules/stack.h"
 
 #define NAME_LEN 10
 
@@ -52,6 +53,7 @@ static sTestModule modules[] = {
 	{"fork",mod_fork},
 	{"procswarm",mod_procswarm},
 	{"mem",mod_mem},
+	{"stack",mod_stack},
 };
 
 int main(int argc,char *argv[]) {

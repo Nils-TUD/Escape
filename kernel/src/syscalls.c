@@ -27,6 +27,7 @@
 #include <syscalls/other.h>
 #include <syscalls/service.h>
 #include <syscalls/signals.h>
+#include <errors.h>
 
 /* syscall-handlers */
 typedef void (*fSyscall)(sIntrptStackFrame *stack);
@@ -98,23 +99,27 @@ static sSyscall syscalls[] = {
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {
+	u32 argCount,ebxSave;
 	u32 sysCallNo = SYSC_NUMBER(stack);
-	if(sysCallNo < ARRAY_SIZE(syscalls)) {
-		u32 argCount = syscalls[sysCallNo].argCount;
-		u32 ebxSave = stack->ebx;
-		/* handle copy-on-write (the first 2 args are passed in registers) */
-		/* TODO maybe we need more stack-pages */
-		if(argCount > 2)
-			paging_isRangeUserWritable((u32)stack->uesp,sizeof(u32) * (argCount - 2));
+	if(sysCallNo >= ARRAY_SIZE(syscalls))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-		/* no error by default */
-		SYSC_SETERROR(stack,0);
-		syscalls[sysCallNo].handler(stack);
-
-		/* set error-code */
-		stack->ecx = stack->ebx;
-		stack->ebx = ebxSave;
+	argCount = syscalls[sysCallNo].argCount;
+	ebxSave = stack->ebx;
+	/* handle copy-on-write (the first 2 args are passed in registers) */
+	if(argCount > 2) {
+		/* if the arguments are not mapped, return an error */
+		if(!paging_isRangeUserWritable((u32)stack->uesp,sizeof(u32) * (argCount - 2)))
+			SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	}
+
+	/* no error by default */
+	SYSC_SETERROR(stack,0);
+	syscalls[sysCallNo].handler(stack);
+
+	/* set error-code */
+	stack->ecx = stack->ebx;
+	stack->ebx = ebxSave;
 }
 
 bool sysc_isStringReadable(const char *str) {

@@ -29,6 +29,7 @@
 #include <util.h>
 #include <errors.h>
 #include <string.h>
+#include <assert.h>
 
 #define MB_PR(fmt,...)			/*vid_printf("[MB] " #fmt "\n",## __VA_ARGS__)*/
 
@@ -140,7 +141,8 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			if(argc < 0)
 				util_panic("Building args for multiboot-module %s failed: %d",p->command,argc);
 			MB_PR("Setup stack");
-			proc_setupUserStack(stack,argc,argBuffer,argSize);
+			vassert(proc_setupUserStack(stack,argc,argBuffer,argSize),
+					"Unable to setup user-stack for multiboot module %s",p->command);
 			proc_setupStart(stack,entryPoint);
 			kheap_free(argBuffer);
 			MB_PR("We're done :)");

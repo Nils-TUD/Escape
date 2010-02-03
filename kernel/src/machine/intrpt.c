@@ -429,8 +429,13 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	handler = sig_startHandling(signalData.tid,signalData.sig);
 	if(handler != NULL) {
 		u32 *esp = (u32*)stack->uesp;
+		/* extend the stack, if necessary */
+		if(thread_extendStack((u32)(esp - 11)) < 0) {
+			/* TODO later we should kill the process here! */
+			util_panic("Thread %d: stack overflow",t->tid);
+			return;
+		}
 		/* will handle copy-on-write */
-		/* TODO we might have to add stack-pages... */
 		paging_isRangeUserWritable((u32)(esp - 11),10 * sizeof(u32));
 
 		/* the ret-instruction of sigRet() should go to the old eip */

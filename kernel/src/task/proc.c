@@ -263,13 +263,13 @@ s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 	if((res = thread_clone(t,&nt,t->proc,&stackFrame,false)) < 0)
 		return res;
 
+	p->stackPages += nt->ustackPages;
+
 	/* append thread */
 	if(!sll_append(p->threads,nt)) {
 		thread_destroy(nt,true);
 		return ERR_NOT_ENOUGH_MEM;
 	}
-
-	p->stackPages += nt->ustackPages;
 
 	/* mark ready */
 	sched_setReady(nt);
@@ -278,11 +278,14 @@ s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 	if(res == 1) {
 		u32 *esp;
 		sIntrptStackFrame *istack = intrpt_getCurStack();
-		proc_setupUserStack(istack,argc,args,argSize);
+		if(!proc_setupUserStack(istack,argc,args,argSize))
+			goto error;
 		proc_setupStart(istack,entryPoint);
 
 		/* we want to call exit when the thread-function returns */
 		esp = (u32*)istack->uesp;
+		if(!thread_extendStack((u32)esp - sizeof(u32)))
+			goto error;
 		*--esp = EXIT_CALL_ADDR;
 		istack->uesp = (u32)esp;
 
@@ -291,6 +294,13 @@ s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 	}
 
 	return nt->tid;
+
+error:
+	thread_destroy(nt,true);
+	/* do a switch here because we can't continue */
+	thread_switch();
+	/* never reached */
+	return ERR_NOT_ENOUGH_MEM;
 }
 
 static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
@@ -496,7 +506,7 @@ s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser) {
 	return argc;
 }
 
-void proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize) {
+bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize) {
 	u32 *esp;
 	char **argv;
 	u32 totalSize;
@@ -513,8 +523,10 @@ void proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 	/* finally we need argc and argv itself */
 	totalSize += sizeof(u32) * 2;
 
+	/* extend the stack if necessary */
+	if(thread_extendStack(thread->ustackBegin - totalSize) < 0)
+		return false;
 	/* will handle copy-on-write */
-	/* TODO we might have to add stack-pages... */
 	paging_isRangeUserWritable(thread->ustackBegin - totalSize,totalSize);
 
 	/* copy arguments on the user-stack */
@@ -548,6 +560,7 @@ void proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 
 	frame->uesp = (u32)esp;
 	frame->ebp = frame->uesp;
+	return true;
 }
 
 void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint) {

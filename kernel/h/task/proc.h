@@ -217,8 +217,9 @@ s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser);
  * @param argc the argument-count
  * @param args the arguments on after another, allocated on the heap; may be NULL
  * @param argsSize the total number of bytes for the arguments (just the data)
+ * @return true if successfull
  */
-void proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize);
+bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize);
 
 /**
  * Setups the start of execution in user-mode for given interrupt-stack

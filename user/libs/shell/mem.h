@@ -21,6 +21,7 @@
 #define MEM_H_
 
 #include <esc/common.h>
+#include <sllist.h>
 
 /**
  * Calls malloc() and exits if no more memory is available

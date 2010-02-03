@@ -248,7 +248,12 @@ void sysc_exec(sIntrptStackFrame *stack) {
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
 	/* make process ready */
-	proc_setupUserStack(stack,argc,argBuffer,argSize);
+	if(!proc_setupUserStack(stack,argc,argBuffer,argSize)) {
+		kheap_free(argBuffer);
+		proc_terminate(p,res,SIG_COUNT);
+		thread_switch();
+		return;
+	}
 	proc_setupStart(stack,(u32)res);
 
 	kheap_free(argBuffer);

@@ -116,11 +116,12 @@ typedef enum {
  * Inits the vterm
  *
  * @param vt the vterm
+ * @param vidSize the size of the screen
  * @param vidFd the file-descriptor for the video-driver (or whatever you need :))
  * @param speakerFd the file-descriptor for the speaker-driver
  * @return true if successfull
  */
-bool vterm_init(sVTerm *vt,tFD vidFd,tFD speakerFd);
+bool vterm_init(sVTerm *vt,sIoCtlSize *vidSize,tFD vidFd,tFD speakerFd);
 
 /**
  * Handles the ioctl-command

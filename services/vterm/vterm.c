@@ -60,6 +60,7 @@ sVTerm *vterm_get(u32 index) {
 
 bool vterm_initAll(tServ *ids) {
 	tFD vidFd,speakerFd;
+	sIoCtlSize vidSize;
 	char name[MAX_VT_NAME_LEN + 1];
 	u32 i;
 
@@ -67,6 +68,12 @@ bool vterm_initAll(tServ *ids) {
 	vidFd = open(VIDEO_DRIVER,IO_WRITE);
 	if(vidFd < 0) {
 		printe("Unable to open '%s'",VIDEO_DRIVER);
+		return false;
+	}
+
+	/* request screensize from video-driver */
+	if(ioctl(vidFd,IOCTL_VID_GETSIZE,&vidSize,sizeof(sIoCtlSize)) < 0) {
+		printe("Getting screensize failed");
 		return false;
 	}
 
@@ -82,7 +89,7 @@ bool vterm_initAll(tServ *ids) {
 		vterms[i].sid = ids[i];
 		sprintf(name,"vterm%d",i);
 		memcpy(vterms[i].name,name,MAX_VT_NAME_LEN + 1);
-		if(!vterm_init(vterms + i,vidFd,speakerFd))
+		if(!vterm_init(vterms + i,&vidSize,vidFd,speakerFd))
 			return false;
 
 		vterms[i].handlerShortcut = vterm_handleShortcut;

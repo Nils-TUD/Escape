@@ -54,18 +54,11 @@
 							".\x17" \
 							"2\x17"
 
-bool vterm_init(sVTerm *vt,tFD vidFd,tFD speakerFd) {
+bool vterm_init(sVTerm *vt,sIoCtlSize *vidSize,tFD vidFd,tFD speakerFd) {
 	u32 i,len;
 	char *ptr,*s;
-	sIoCtlSize vidSize;
-
-	/* request screensize from video-driver */
-	if(ioctl(vidFd,IOCTL_VID_GETSIZE,&vidSize,sizeof(sIoCtlSize)) < 0) {
-		printe("Getting screensize failed");
-		return false;
-	}
-	vt->cols = vidSize.width;
-	vt->rows = vidSize.height;
+	vt->cols = vidSize->width;
+	vt->rows = vidSize->height;
 
 	/* by default we have no handlers for that */
 	vt->handlerShortcut = NULL;

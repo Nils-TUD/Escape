@@ -334,7 +334,9 @@ bool vfs_eof(tTid tid,tFileNo file) {
 			eof = e->position >= n->data.def.pos;
 	}
 	else {
-		/* TODO */
+		sFileInfo info;
+		vfsr_istat(tid,e->nodeNo,e->devNo,&info);
+		eof = (s32)e->position >= info.size;
 	}
 
 	return eof;

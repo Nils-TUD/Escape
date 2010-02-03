@@ -26,9 +26,16 @@ s32 feof(tFile *file) {
 	sIOBuffer *buf = bget(file);
 	if(buf == NULL)
 		return IO_EOF;
-	/* note that we can take an arbitrary one because the file-position is the same for read and
-	 * write! */
-	if(buf->in.fd != -1)
+
+	/* this is also ok for reading+writing because in this case we're @EOF if we've read the whole
+	 * file */
+	if(buf->in.fd != -1) {
+		/* when using the in-buffer we're not at EOF if there's something buffered */
+		if(buf->in.pos < buf->in.length)
+			return false;
+		/* otherwise ask the kernel */
 		return eof(buf->in.fd);
+	}
+	/* always ask the kernel for writing-only */
 	return eof(buf->out.fd);
 }

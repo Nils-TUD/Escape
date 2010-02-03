@@ -25,28 +25,24 @@
 sASTNode *ast_createCmdExprList(void) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sCmdExprList *expr = node->data = emalloc(sizeof(sCmdExprList));
-	expr->list = sll_create();
-	/* TODO error-handling */
+	expr->list = esll_create();
 	node->type = AST_CMDEXPR_LIST;
 	return node;
 }
 
 sValue *ast_execCmdExprList(sEnv *e,sCmdExprList *n) {
 	sSLNode *sub;
-	sSLList *res = sll_create();
-	/* TODO error-handling */
+	sSLList *res = esll_create();
 	for(sub = sll_begin(n->list); sub != NULL; sub = sub->next) {
 		sValue *v = ast_execute(e,(sASTNode*)sub->data);
-		sll_append(res,v);
-		/* TODO error-handling */
+		esll_append(res,v);
 	}
 	return (sValue*)res;
 }
 
 sASTNode *ast_addCmdExpr(sASTNode *l,sASTNode *s) {
 	sCmdExprList *list = (sCmdExprList*)l->data;
-	sll_append(list->list,s);
-	/* TODO error-handling */
+	esll_append(list->list,s);
 	return l;
 }
 

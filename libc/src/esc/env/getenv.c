@@ -27,8 +27,9 @@
 bool getEnv(char *value,u32 valSize,const char *name) {
 	if(initEnv() < 0)
 		return false;
+	if(strlen(name) >= sizeof(msg.str.s1))
+		return false;
 
-	/* TODO check name-len? */
 	msg.str.arg1 = getpid();
 	strcpy(msg.str.s1,name);
 	return doGetEnv(value,valSize,MSG_ENV_GET,sizeof(msg.str));

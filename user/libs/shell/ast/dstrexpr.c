@@ -27,16 +27,14 @@
 sASTNode *ast_createDStrExpr(void) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sDStrExpr *res = node->data = emalloc(sizeof(sDStrExpr));
-	res->list = sll_create();
-	/* TODO error-handling */
+	res->list = esll_create();
 	node->type = AST_DSTR_EXPR;
 	return node;
 }
 
 void ast_addDStrComp(sASTNode *n,sASTNode *expr) {
 	sDStrExpr *dstr = (sDStrExpr*)n->data;
-	sll_append(dstr->list,expr);
-	/* TODO error-handling */
+	esll_append(dstr->list,expr);
 }
 
 sValue *ast_execDStrExpr(sEnv *e,sDStrExpr *n) {

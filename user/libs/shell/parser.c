@@ -1779,7 +1779,7 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 114 "script.y"
-    { (yyval.node) = ast_createConstStrExpr((yyvsp[(1) - (1)].strval)); ;}
+    { (yyval.node) = ast_createConstStrExpr((yyvsp[(1) - (1)].strval),false); ;}
     break;
 
   case 17:
@@ -1933,14 +1933,14 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 145 "script.y"
-    { (yyval.node) = ast_createConstStrExpr((yyvsp[(1) - (1)].strval)); ;}
+    { (yyval.node) = ast_createConstStrExpr((yyvsp[(1) - (1)].strval),false); ;}
     break;
 
   case 39:
 
 /* Line 1455 of yacc.c  */
 #line 146 "script.y"
-    { (yyval.node) = ast_createConstStrExpr((yyvsp[(1) - (1)].strval)); ;}
+    { (yyval.node) = ast_createConstStrExpr((yyvsp[(1) - (1)].strval),true); ;}
     break;
 
   case 40:

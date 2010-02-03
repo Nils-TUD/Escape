@@ -23,7 +23,13 @@
 #include "../mem.h"
 #include "../completion.h"
 #include "subcmd.h"
+#include "cmdexprlist.h"
+#include "conststrexpr.h"
 
+/**
+ * Wether the given node is expandable
+ */
+static bool ast_expandable(sASTNode *node);
 /**
  * Adds all pathnames that match <str> to <buf> beginning at <i> and increments <i> correspondingly
  */
@@ -43,17 +49,21 @@ sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redirFd,sASTNode *redirI
 sValue *ast_execSubCmd(sEnv *e,sSubCmd *n) {
 	u32 i;
 	char *str;
-	sSLNode *node;
+	sSLNode *node,*exprNode;
 	u32 exprSize;
+	/* TODO the whole stuff here isn't really nice. perhaps we should move the cmdexprlist to
+	 * this node or at least simply pass it to this one when executing? */
 	sSLList *elist = (sSLList*)ast_execute(e,n->exprList);
 	sExecSubCmd *res = emalloc(sizeof(sExecSubCmd));
 	res->exprCount = sll_length(elist);
 	exprSize = res->exprCount + 1;
 	res->exprs = (char**)emalloc(exprSize * sizeof(char*));
-	for(i = 0, node = sll_begin(elist); node != NULL; node = node->next) {
+	exprNode = sll_begin(((sCmdExprList*)n->exprList->data)->list);
+	for(i = 0, node = sll_begin(elist); node != NULL; node = node->next, exprNode = exprNode->next) {
+		sASTNode *valNode = (sASTNode*)exprNode->data;
 		sValue *v = (sValue*)node->data;
 		str = val_getStr(v);
-		if(strchr(str,'*') == NULL) {
+		if(!ast_expandable(valNode) || strchr(str,'*') == NULL) {
 			if(i >= exprSize - 1) {
 				exprSize *= 2;
 				res->exprs = erealloc(res->exprs,exprSize);
@@ -73,6 +83,14 @@ sValue *ast_execSubCmd(sEnv *e,sSubCmd *n) {
 	res->redirOut = n->redirOut;
 	sll_destroy(elist,false);
 	return (sValue*)res;
+}
+
+static bool ast_expandable(sASTNode *node) {
+	if(node->type == AST_CONST_STR_EXPR) {
+		sConstStrExpr *str = (sConstStrExpr*)node->data;
+		return !str->hasQuotes;
+	}
+	return node->type == AST_VAR_EXPR;
 }
 
 static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,const char *str) {

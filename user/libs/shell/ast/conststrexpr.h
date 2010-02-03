@@ -26,15 +26,17 @@
 
 typedef struct {
 	char *str;
+	bool hasQuotes;
 } sConstStrExpr;
 
 /**
  * Creates an const-str-node
  *
  * @param s the string (will NOT be cloned)
+ * @param hasQuotes wether the string has quotes
  * @return the created node
  */
-sASTNode *ast_createConstStrExpr(char *s);
+sASTNode *ast_createConstStrExpr(char *s,bool hasQuotes);
 
 /**
  * Executes the given node(-tree)

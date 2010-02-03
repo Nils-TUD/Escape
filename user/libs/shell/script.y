@@ -111,7 +111,7 @@ strlist:
 ;
 
 strcomp:
-			T_STRING						{ $$ = ast_createConstStrExpr($1); }
+			T_STRING						{ $$ = ast_createConstStrExpr($1,false); }
 			| T_VAR							{ $$ = ast_createVarExpr($1); }
 			| '{' expr '}'			{ $$ = $2; }
 ;
@@ -142,8 +142,8 @@ exprstmt:
 
 cmdexpr:
 			T_NUMBER						{ $$ = ast_createIntExpr($1); }
-			| T_STRING					{ $$ = ast_createConstStrExpr($1); }
-			| T_STRING_SCONST		{ $$ = ast_createConstStrExpr($1); }
+			| T_STRING					{ $$ = ast_createConstStrExpr($1,false); }
+			| T_STRING_SCONST		{ $$ = ast_createConstStrExpr($1,true); }
 			| '"' strlist '"'		{ $$ = $2; }
 			| T_VAR							{ $$ = ast_createVarExpr($1); }
 			| '{' expr '}'			{ $$ = $2; }

@@ -23,11 +23,12 @@
 #include "node.h"
 #include "../mem.h"
 
-sASTNode *ast_createConstStrExpr(char *s) {
+sASTNode *ast_createConstStrExpr(char *s,bool hasQuotes) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sConstStrExpr *expr = node->data = emalloc(sizeof(sConstStrExpr));
 	/* no clone necessary here because we've already cloned it in the scanner */
 	expr->str = s;
+	expr->hasQuotes = hasQuotes;
 	node->type = AST_CONST_STR_EXPR;
 	return node;
 }

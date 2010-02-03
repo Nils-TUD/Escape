@@ -363,6 +363,15 @@ char *strerror(s32 errnum);
 char *strdup(const char *s);
 
 /**
+ * Checks wether <str> matches <pattern>. Pattern may contain '*' which acts as a wildcard.
+ *
+ * @param pattern the pattern
+ * @param str the string to match
+ * @return true if it matches
+ */
+bool strmatch(const char *pattern,const char *str);
+
+/**
  * The strndup() function is similar, but only copies at most n characters.  If s is longer than
  * n, only n characters are copied, and a terminating null byte ('\0') is added.
  *

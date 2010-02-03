@@ -57,6 +57,7 @@ static void test_strnlen(void);
 static void test_tolower(void);
 static void test_toupper(void);
 static void test_isalnumstr(void);
+static void test_strmatch(void);
 
 /* our test-module */
 sTestModule tModString = {
@@ -95,6 +96,7 @@ static void test_string(void) {
 	test_tolower();
 	test_toupper();
 	test_isalnumstr();
+	test_strmatch();
 }
 
 static void test_atoi(void) {
@@ -656,6 +658,53 @@ static void test_isalnumstr(void) {
 	if(!test_assertFalse(isalnumstr("abc123*"))) return;
 	if(!test_assertFalse(isalnumstr("../*/\\"))) return;
 	if(!test_assertFalse(isalnumstr("12.5"))) return;
+
+	test_caseSucceded();
+}
+
+static void test_strmatch(void) {
+	test_caseStart("Testing strmatch()");
+
+	if(!test_assertTrue(strmatch("abc*def","abcdef"))) return;
+	if(!test_assertTrue(strmatch("abc*def","abcxdef"))) return;
+	if(!test_assertTrue(strmatch("abc*def","abcTESTdef"))) return;
+	if(!test_assertFalse(strmatch("abc*def","bcde"))) return;
+	if(!test_assertFalse(strmatch("abc*def",""))) return;
+	if(!test_assertFalse(strmatch("abc*def","abc"))) return;
+	if(!test_assertFalse(strmatch("abc*def","abcde"))) return;
+	if(!test_assertTrue(strmatch("abc*","abc"))) return;
+	if(!test_assertTrue(strmatch("abc*","abcd"))) return;
+	if(!test_assertTrue(strmatch("abc*","abcdef"))) return;
+	if(!test_assertFalse(strmatch("abc*","bcdef"))) return;
+	if(!test_assertFalse(strmatch("abc*","bc"))) return;
+	if(!test_assertFalse(strmatch("abc*",""))) return;
+	if(!test_assertTrue(strmatch("*def","def"))) return;
+	if(!test_assertTrue(strmatch("*def","cdef"))) return;
+	if(!test_assertTrue(strmatch("*def","abcdef"))) return;
+	if(!test_assertFalse(strmatch("*def","abcde"))) return;
+	if(!test_assertFalse(strmatch("*def","de"))) return;
+	if(!test_assertFalse(strmatch("*def",""))) return;
+	if(!test_assertTrue(strmatch("*",""))) return;
+	if(!test_assertTrue(strmatch("*","a"))) return;
+	if(!test_assertTrue(strmatch("*","abc"))) return;
+	if(!test_assertTrue(strmatch("abc*x*def","abcxdef"))) return;
+	if(!test_assertTrue(strmatch("abc*x*def","abcdddxbbbdef"))) return;
+	if(!test_assertTrue(strmatch("abc*x*def","abcabcxdefdef"))) return;
+	if(!test_assertFalse(strmatch("abc*x*def","abcdef"))) return;
+	if(!test_assertFalse(strmatch("abc*x*def","abcdddef"))) return;
+	if(!test_assertFalse(strmatch("abc*x*def",""))) return;
+	if(!test_assertTrue(strmatch("abc*x*DEF*def","abcxDEFdef"))) return;
+	if(!test_assertTrue(strmatch("abc*x*DEF*def","abcbbxccDEFdddef"))) return;
+	if(!test_assertFalse(strmatch("abc*x*DEF*def","abcxDEdef"))) return;
+	if(!test_assertFalse(strmatch("abc*x*DEF*def","abcbxcDEddef"))) return;
+	if(!test_assertFalse(strmatch("abc*x*DEF*def","abcDEFdef"))) return;
+	if(!test_assertFalse(strmatch("abc*x*DEF*def","abcDEFxdef"))) return;
+	if(!test_assertFalse(strmatch("abc*x*DEF*def","abcbDEFcdef"))) return;
+	if(!test_assertFalse(strmatch("abc*x*DEF*def",""))) return;
+	if(!test_assertTrue(strmatch("abc","abc"))) return;
+	if(!test_assertFalse(strmatch("abc","ab"))) return;
+	if(!test_assertFalse(strmatch("abc","test"))) return;
+	if(!test_assertFalse(strmatch("abc",""))) return;
 
 	test_caseSucceded();
 }

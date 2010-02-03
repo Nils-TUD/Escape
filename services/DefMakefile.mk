@@ -13,7 +13,7 @@ CC = gcc
 # Note: we need -Wl,--build-id=none atm to prevent ld to generate the .note.gnu.build-id
 # This seems to be put at the beginning of the binary and therefore the entry-point changes
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I../../lib/h \
-	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS) 
+	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS) $(ADDFLAGS)
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
@@ -27,9 +27,9 @@ COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 
 all:	$(APPCPY) $(BIN)
 
-$(BIN):	$(BUILDDIRS) $(APPDST) $(LDCONF) $(COBJ) $(START) $(LIBCA)
+$(BIN):	$(BUILDDIRS) $(APPDST) $(LDCONF) $(COBJ) $(START) $(LIBCA) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA);
+		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA) $(ADDLIBS);
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /sbin/$(NAME)
 

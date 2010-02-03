@@ -32,9 +32,10 @@
 #include <ringbuffer.h>
 #include <errors.h>
 
+#include <vterm/vtctrl.h>
+#include <vterm/vtin.h>
+#include <vterm/vtout.h>
 #include "vterm.h"
-#include "vtout.h"
-#include "vtin.h"
 
 #define KB_DATA_BUF_SIZE	128
 /* max number of requests handled in a row; we have to look sometimes for the keyboard.. */
@@ -61,7 +62,6 @@ int main(void) {
 	tFD kbFd;
 	tServ client;
 	tMsgId mid;
-	bool needsUpdate = false;
 	char name[MAX_VT_NAME_LEN + 1];
 
 	/* reg services */
@@ -103,8 +103,13 @@ int main(void) {
 					u32 count = read(kbFd,kbData,sizeof(kbData));
 					count /= sizeof(sKbData);
 					while(count-- > 0) {
-						vterm_handleKeycode(kbd->isBreak,kbd->keycode);
-						vterm_update(vterm_getActive());
+						sVTerm *vt = vterm_getActive();
+						u8 modifier;
+						char c;
+						if(vterm_translateKeycode(vt,kbd->isBreak,kbd->keycode,&modifier,&c)) {
+							vterm_handleKey(vt,kbd->keycode,modifier,c);
+							vterm_update(vterm_getActive());
+						}
 						kbd++;
 					}
 				}

@@ -21,7 +21,7 @@
 #define VTOUT_H_
 
 #include <esc/common.h>
-#include "vterm.h"
+#include "vtctrl.h"
 
 /**
  * Prints the given string

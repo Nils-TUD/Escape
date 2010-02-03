@@ -25,7 +25,7 @@
 #include <esc/fileio.h>
 #include <esc/heap.h>
 #include <string.h>
-#include "vterm.h"
+#include "vtctrl.h"
 #include "vtin.h"
 #include "vtout.h"
 #include "keymap.h"
@@ -37,14 +37,6 @@
 typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 
 /**
- * Flushes the readline-buffer
- *
- * @param vt the vterm
- */
-static void vterm_rlFlushBuf(sVTerm *vt);
-
-/**
- * @param vt the vterm
  * @return the current position in the readline-buffer
  */
 static u32 vterm_rlGetBufPos(sVTerm *vt);
@@ -52,8 +44,6 @@ static u32 vterm_rlGetBufPos(sVTerm *vt);
 /**
  * Handles the given keycode for readline
  *
- * @param vt the vterm
- * @param keycode the keycode
  * @return true if handled
  */
 static bool vterm_rlHandleKeycode(sVTerm *vt,u8 keycode);
@@ -69,13 +59,10 @@ static bool shiftDown = false;
 static bool altDown = false;
 static bool ctrlDown = false;
 
-void vterm_handleKeycode(bool isBreak,u32 keycode) {
+bool vterm_translateKeycode(sVTerm *vt,bool isBreak,u32 keycode,u8 *modifier,char *c) {
 	sKeymapEntry *e;
-	sVTerm *vt = vterm_getActive();
-	char c;
-
 	if(vt == NULL)
-		return;
+		return false;
 
 	/* handle shift, alt and ctrl */
 	switch(keycode) {
@@ -95,90 +82,70 @@ void vterm_handleKeycode(bool isBreak,u32 keycode) {
 
 	/* we don't need breakcodes anymore */
 	if(isBreak)
-		return;
+		return false;
 
 	e = keymaps[vt->keymap](keycode);
 	if(e != NULL) {
+		*modifier = (altDown ? STATE_ALT : 0) | (ctrlDown ? STATE_CTRL : 0) |
+				(shiftDown ? STATE_SHIFT : 0);
 		if(shiftDown)
-			c = e->shift;
+			*c = e->shift;
 		else if(altDown)
-			c = e->alt;
+			*c = e->alt;
 		else
-			c = e->def;
-
-		if(shiftDown && vt->navigation) {
-			switch(keycode) {
-				case VK_PGUP:
-					vterm_scroll(vt,vt->rows);
-					return;
-				case VK_PGDOWN:
-					vterm_scroll(vt,-vt->rows);
-					return;
-				case VK_UP:
-					vterm_scroll(vt,1);
-					return;
-				case VK_DOWN:
-					vterm_scroll(vt,-1);
-					return;
-			}
-		}
-
-		if(c == NPRINT || ctrlDown) {
-			/* handle ^C, ^D and so on */
-			if(ctrlDown) {
-				u32 index;
-				switch(keycode) {
-					case VK_C:
-						/* send interrupt to shell */
-						if(vt->shellPid)
-							sendSignalTo(vt->shellPid,SIG_INTRPT,0);
-						break;
-					case VK_D:
-						if(vt->readLine) {
-							vterm_rlPutchar(vt,IO_EOF);
-							vterm_rlFlushBuf(vt);
-						}
-						break;
-					case VK_1 ... VK_9:
-						index = keycode - VK_1;
-						if(index < VTERM_COUNT && vt->index != index)
-							vterm_selectVTerm(index);
-						return;
-				}
-				/* notify the shell (otherwise it won't get the signal directly) */
-				if(keycode == VK_C || keycode == VK_D) {
-					if(rb_length(vt->inbuf) == 0)
-						setDataReadable(vt->sid,true);
-					return;
-				}
-			}
-
-			/* in reading mode? */
-			if(vt->readLine) {
-				if(vt->echo)
-					vterm_rlHandleKeycode(vt,keycode);
-			}
-		}
-		else if(vt->readLine)
-			vterm_rlPutchar(vt,c);
-
-		/* send escape-code when we're not in readline-mode */
-		if(!vt->readLine) {
-			bool empty = rb_length(vt->inbuf) == 0;
-			char escape[SSTRLEN("\033[kc;123;123;7]") + 1];
-			sprintf(escape,"\033[kc;%d;%d;%d]",c,keycode,(altDown ? STATE_ALT : 0) |
-				(ctrlDown ? STATE_CTRL : 0) |
-				(shiftDown ? STATE_SHIFT : 0));
-			rb_writen(vt->inbuf,escape,strlen(escape));
-			if(empty)
-				setDataReadable(vt->sid,true);
-		}
-		if(vt->echo)
-			vterm_setCursor(vt);
+			*c = e->def;
+		return true;
 	}
+	return false;
 }
 
-static void vterm_rlFlushBuf(sVTerm *vt) {
+void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c) {
+	if((modifier & STATE_SHIFT) && vt->navigation) {
+		switch(keycode) {
+			case VK_PGUP:
+				vterm_scroll(vt,vt->rows);
+				return;
+			case VK_PGDOWN:
+				vterm_scroll(vt,-vt->rows);
+				return;
+			case VK_UP:
+				vterm_scroll(vt,1);
+				return;
+			case VK_DOWN:
+				vterm_scroll(vt,-1);
+				return;
+		}
+	}
+
+	if(c == NPRINT || (modifier & (STATE_CTRL | STATE_ALT))) {
+		if(vt->handlerShortcut) {
+			if(!vt->handlerShortcut(vt,keycode,modifier,c))
+				return;
+		}
+
+		/* in reading mode? */
+		if(vt->readLine) {
+			if(vt->echo)
+				vterm_rlHandleKeycode(vt,keycode);
+		}
+	}
+	else if(vt->readLine)
+		vterm_rlPutchar(vt,c);
+
+	/* send escape-code when we're not in readline-mode */
+	if(!vt->readLine) {
+		bool empty = rb_length(vt->inbuf) == 0;
+		char escape[SSTRLEN("\033[kc;123;123;7]") + 1];
+		sprintf(escape,"\033[kc;%d;%d;%d]",c,keycode,modifier);
+		rb_writen(vt->inbuf,escape,strlen(escape));
+		if(empty)
+			setDataReadable(vt->sid,true);
+	}
+	if(vt->echo && vt->setCursor)
+		vt->setCursor(vt);
+}
+
+void vterm_rlFlushBuf(sVTerm *vt) {
 	u32 i,len,bufPos = vterm_rlGetBufPos(vt);
 	if(vt->echo)
 		bufPos++;

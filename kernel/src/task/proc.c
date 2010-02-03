@@ -284,7 +284,7 @@ s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 
 		/* we want to call exit when the thread-function returns */
 		esp = (u32*)istack->uesp;
-		if(!thread_extendStack((u32)esp - sizeof(u32)))
+		if(thread_extendStack((u32)esp - sizeof(u32)) < 0)
 			goto error;
 		*--esp = EXIT_CALL_ADDR;
 		istack->uesp = (u32)esp;

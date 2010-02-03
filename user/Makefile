@@ -1,4 +1,4 @@
-DIRS = libs $(filter-out $(wildcard *.*) libs Makefile,$(wildcard *))
+DIRS = $(filter-out $(wildcard *.*) libs Makefile,$(wildcard *))
 
 .PHONY:  all clean
 

@@ -21,14 +21,34 @@
 #define VTIN_H_
 
 #include <esc/common.h>
+#include "vtctrl.h"
 
 /**
- * Handles the given keycode for the active vterm
+ * Translates the given keycode to modifiers and the character
  *
+ * @param vt the vterm
  * @param isBreak wether it is a break-keycode
  * @param keycode the keycode
+ * @param modifier will be set to the currently active modifiers
+ * @param c will be set to the character
+ * @return true if its not a break-code
  */
-void vterm_handleKeycode(bool isBreak,u32 keycode);
+bool vterm_translateKeycode(sVTerm *vt,bool isBreak,u32 keycode,u8 *modifier,char *c);
+
+/**
+ * Handles the given keycode with modifiers and character
+ *
+ * @param vt the vterm
+ * @param keycode the keycode
+ * @param modifier the modifiers
+ * @param c the character
+ */
+void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c);
+
+/**
+ * Flushes the readline-buffer
+ */
+void vterm_rlFlushBuf(sVTerm *vt);
 
 /**
  * Puts the given charactern into the readline-buffer and handles everything necessary

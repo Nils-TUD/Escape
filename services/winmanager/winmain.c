@@ -39,7 +39,7 @@ typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 /**
  * Destroys the windows of a died thread
  */
-static void procThreadHandler(tSig sig,u32 data);
+static void deadThreadHandler(tSig sig,u32 data);
 /**
  * Handles a message from keyboard
  */
@@ -85,7 +85,7 @@ int main(void) {
 	if(keyboard < 0)
 		error("Unable to open /drivers/keyboard");
 
-	if(setSigHandler(SIG_THREAD_DIED,procThreadHandler) < 0)
+	if(setSigHandler(SIG_THREAD_DIED,deadThreadHandler) < 0)
 		error("Unable to set sig-handler for %d",SIG_THREAD_DIED);
 
 	servId = regService("winmanager",SERV_DEFAULT);
@@ -189,7 +189,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void procThreadHandler(tSig sig,u32 data) {
+static void deadThreadHandler(tSig sig,u32 data) {
 	UNUSED(sig);
 	/* TODO this is dangerous! we can't use the heap in signal-handlers */
 	win_destroyWinsOf(data,curX,curY);

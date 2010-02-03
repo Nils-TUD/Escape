@@ -20,9 +20,9 @@ QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot c -vga std -m 512 \
 	-localtime
 
 ifeq ($(BUILDDIR),$(abspath build/debug))
-	DIRS = tools libc libcpp services user kernel/src kernel/test
+	DIRS = tools libc libcpp user/libs services user kernel/src kernel/test
 else
-	DIRS = tools libc libcpp services user kernel/src
+	DIRS = tools libc libcpp user/libs services user kernel/src
 endif
 
 # flags for gcc

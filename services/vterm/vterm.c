@@ -18,52 +18,32 @@
  */
 
 #include <esc/common.h>
-#include <messages.h>
-#include <esc/io.h>
-#include <esc/ports.h>
-#include <esc/proc.h>
-#include <esc/keycodes.h>
-#include <esc/heap.h>
-#include <esc/signals.h>
-#include <esc/service.h>
-#include <esc/fileio.h>
 #include <esc/lock.h>
 #include <esc/thread.h>
+#include <esc/fileio.h>
+#include <esc/io.h>
 #include <esc/date.h>
+#include <esc/keycodes.h>
+#include <esc/signals.h>
+#include <esc/service.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errors.h>
-#include <assert.h>
-#include <ringbuffer.h>
 
+#include <vterm/vtctrl.h>
+#include <vterm/vtin.h>
+#include <vterm/vtout.h>
 #include "vterm.h"
 
 #define VIDEO_DRIVER		"/drivers/video"
 
-/* the number of chars to keep in history */
-#define INITIAL_RLBUF_SIZE	50
-
-#define TITLE_BAR_COLOR		0x17
-#define OS_TITLE			"E\x17" \
-							"s\x17" \
-							"c\x17" \
-							"a\x17" \
-							"p\x17" \
-							"e\x17" \
-							" \x17" \
-							"v\x17" \
-							"0\x17" \
-							".\x17" \
-							"2\x17"
-
 /**
- * Inits the vterm
- *
- * @param vt the vterm
- * @return true if successfull
+ * Handles shortcuts
  */
-static bool vterm_init(sVTerm *vt);
-
+static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c);
+/**
+ * Updates the cursor
+ */
+static void vterm_setCursor(sVTerm *vt);
 /**
  * The thread that updates the titlebars every second and puts the date in
  */
@@ -74,32 +54,14 @@ static tULock titleBarLock;
 static sVTerm vterms[VTERM_COUNT];
 static sVTerm *activeVT = NULL;
 
-bool vterm_initAll(tServ *ids) {
-	char name[MAX_VT_NAME_LEN + 1];
-	u32 i;
-
-	for(i = 0; i < VTERM_COUNT; i++) {
-		vterms[i].index = i;
-		vterms[i].sid = ids[i];
-		sprintf(name,"vterm%d",i);
-		memcpy(vterms[i].name,name,MAX_VT_NAME_LEN + 1);
-		if(!vterm_init(vterms + i))
-			return false;
-	}
-
-	startThread(vterm_dateThread,NULL);
-	return true;
-}
-
 sVTerm *vterm_get(u32 index) {
 	return vterms + index;
 }
 
-static bool vterm_init(sVTerm *vt) {
+bool vterm_initAll(tServ *ids) {
 	tFD vidFd,speakerFd;
-	u32 i,len;
-	char *ptr,*s;
-	sIoCtlSize vidSize;
+	char name[MAX_VT_NAME_LEN + 1];
+	u32 i;
 
 	/* open video */
 	vidFd = open(VIDEO_DRIVER,IO_WRITE);
@@ -115,85 +77,20 @@ static bool vterm_init(sVTerm *vt) {
 		return false;
 	}
 
-	/* request screensize from video-driver */
-	if(ioctl(vidFd,IOCTL_VID_GETSIZE,&vidSize,sizeof(sIoCtlSize)) < 0) {
-		printe("Getting screensize failed");
-		return false;
-	}
-	vt->cols = vidSize.width;
-	vt->rows = vidSize.height;
+	for(i = 0; i < VTERM_COUNT; i++) {
+		vterms[i].index = i;
+		vterms[i].sid = ids[i];
+		sprintf(name,"vterm%d",i);
+		memcpy(vterms[i].name,name,MAX_VT_NAME_LEN + 1);
+		if(!vterm_init(vterms + i,vidFd,speakerFd))
+			return false;
 
-	/* init state */
-	vt->col = 0;
-	vt->row = vt->rows - 1;
-	vt->upStart = 0;
-	vt->upLength = 0;
-	vt->foreground = WHITE;
-	vt->background = BLACK;
-	vt->active = false;
-	vt->video = vidFd;
-	vt->speaker = speakerFd;
-	/* start on first line of the last page */
-	vt->firstLine = HISTORY_SIZE * vt->rows - vt->rows;
-	vt->currLine = HISTORY_SIZE * vt->rows - vt->rows;
-	vt->firstVisLine = HISTORY_SIZE * vt->rows - vt->rows;
-	/* default behaviour */
-	vt->echo = true;
-	vt->readLine = true;
-	vt->navigation = true;
-	vt->printToRL = false;
-	vt->keymap = 1;
-	vt->escapePos = -1;
-	vt->rlStartCol = 0;
-	vt->shellPid = 0;
-	vt->buffer = (char*)malloc(vt->rows * HISTORY_SIZE * vt->cols * 2);
-	if(vt->buffer == NULL) {
-		printe("Unable to allocate mem for vterm-buffer");
-		return false;
-	}
-	vt->titleBar = (char*)malloc(vt->cols * 2);
-	if(vt->titleBar == NULL) {
-		printe("Unable to allocate mem for vterm-titlebar");
-		return false;
-	}
-	vt->rlBufSize = INITIAL_RLBUF_SIZE;
-	vt->rlBufPos = 0;
-	vt->rlBuffer = (char*)malloc(vt->rlBufSize * sizeof(char));
-	if(vt->rlBuffer == NULL) {
-		printe("Unable to allocate memory for readline-buffer");
-		return false;
+		vterms[i].handlerShortcut = vterm_handleShortcut;
+		vterms[i].setCursor = vterm_setCursor;
 	}
 
-	vt->inbuf = rb_create(sizeof(char),INPUT_BUF_SIZE,RB_OVERWRITE);
-	if(vt->inbuf == NULL) {
-		printe("Unable to allocate memory for ring-buffer");
-		return false;
-	}
-
-	/* fill buffer with spaces to ensure that the cursor is visible (spaces, white on black) */
-	ptr = vt->buffer;
-	for(i = 0, len = vt->rows * HISTORY_SIZE * vt->cols * 2; i < len; i += 4) {
-		*ptr++ = ' ';
-		*ptr++ = 0x07;
-		*ptr++ = ' ';
-		*ptr++ = 0x07;
-	}
-
-	/* build title bar */
-	ptr = vt->titleBar;
-	s = vt->name;
-	for(i = 0; *s; i++) {
-		*ptr++ = *s++;
-		*ptr++ = TITLE_BAR_COLOR;
-	}
-	for(; i < vt->cols; i++) {
-		*ptr++ = ' ';
-		*ptr++ = TITLE_BAR_COLOR;
-	}
-	len = strlen(OS_TITLE);
-	i = (((vt->cols * 2) / 2) - (len / 2)) & ~0x1;
-	ptr = vt->titleBar;
-	memcpy(ptr + i,OS_TITLE,len);
+	if(startThread(vterm_dateThread,NULL) < 0)
+		error("Unable to start date-thread");
 	return true;
 }
 
@@ -211,125 +108,6 @@ void vterm_selectVTerm(u32 index) {
 	/* refresh screen and write titlebar */
 	vterm_markScrDirty(vt);
 	vterm_setCursor(vt);
-}
-
-void vterm_destroy(sVTerm *vt) {
-	free(vt->rlBuffer);
-	close(vt->video);
-	close(vt->speaker);
-}
-
-void vterm_setCursor(sVTerm *vt) {
-	if(vt->active) {
-		sIoCtlPos pos;
-		pos.col = vt->col;
-		pos.row = vt->row;
-		ioctl(vt->video,IOCTL_VID_SETCURSOR,(u8*)&pos,sizeof(pos));
-	}
-}
-
-s32 vterm_ioctl(sVTerm *vt,u32 cmd,void *data,bool *readKb) {
-	s32 res = 0;
-	UNUSED(data);
-	switch(cmd) {
-		case IOCTL_VT_SHELLPID:
-			/* do it just once */
-			if(vt->shellPid == 0)
-				vt->shellPid = *(tPid*)data;
-			break;
-		case IOCTL_VT_EN_ECHO:
-			vt->echo = true;
-			break;
-		case IOCTL_VT_DIS_ECHO:
-			vt->echo = false;
-			break;
-		case IOCTL_VT_EN_RDLINE:
-			vt->readLine = true;
-			/* reset reading */
-			vt->rlBufPos = 0;
-			vt->rlStartCol = vt->col;
-			break;
-		case IOCTL_VT_DIS_RDLINE:
-			vt->readLine = false;
-			break;
-		case IOCTL_VT_EN_RDKB:
-			*readKb = true;
-			break;
-		case IOCTL_VT_DIS_RDKB:
-			*readKb = false;
-			break;
-		case IOCTL_VT_EN_NAVI:
-			vt->navigation = true;
-			break;
-		case IOCTL_VT_DIS_NAVI:
-			vt->navigation = false;
-			break;
-		case IOCTL_VT_BACKUP:
-			if(!vt->screenBackup)
-				vt->screenBackup = (char*)malloc(vt->rows * vt->cols * 2);
-			memcpy(vt->screenBackup,
-					vt->buffer + vt->firstVisLine * vt->cols * 2,
-					vt->rows * vt->cols * 2);
-			vt->backupCol = vt->col;
-			vt->backupRow = vt->row;
-			break;
-		case IOCTL_VT_RESTORE:
-			if(vt->screenBackup) {
-				memcpy(vt->buffer + vt->firstVisLine * vt->cols * 2,
-						vt->screenBackup,
-						vt->rows * vt->cols * 2);
-				free(vt->screenBackup);
-				vt->screenBackup = NULL;
-				vt->col = vt->backupCol;
-				vt->row = vt->backupRow;
-				vterm_markScrDirty(vt);
-			}
-			break;
-		case IOCTL_VT_GETSIZE: {
-			sIoCtlSize *size = (sIoCtlSize*)data;
-			size->width = vt->cols;
-			/* one line for the title */
-			size->height = vt->rows - 1;
-			res = sizeof(sIoCtlSize);
-		}
-		break;
-		default:
-			res = ERR_UNSUPPORTED_OP;
-			break;
-	}
-	return res;
-}
-
-void vterm_scroll(sVTerm *vt,s16 lines) {
-	u16 old = vt->firstVisLine;
-	if(lines > 0) {
-		/* ensure that we don't scroll above the first line with content */
-		vt->firstVisLine = MAX(vt->firstLine,(s16)vt->firstVisLine - lines);
-	}
-	else {
-		/* ensure that we don't scroll behind the last line */
-		vt->firstVisLine = MIN(HISTORY_SIZE * vt->rows - vt->rows,vt->firstVisLine - lines);
-	}
-
-	if(vt->active && old != vt->firstVisLine)
-		vterm_markDirty(vt,vt->cols * 2,(vt->cols - 1) * vt->rows * 2);
-}
-
-void vterm_markScrDirty(sVTerm *vt) {
-	vterm_markDirty(vt,0,vt->cols * vt->rows * 2);
-}
-
-void vterm_markDirty(sVTerm *vt,u16 start,u16 length) {
-	if(vt->upLength == 0) {
-		vt->upStart = start;
-		vt->upLength = length;
-	}
-	else {
-		u16 oldstart = vt->upStart;
-		if(start < oldstart)
-			vt->upStart = start;
-		vt->upLength = MAX(oldstart + vt->upLength,start + length) - vt->upStart;
-	}
 }
 
 void vterm_update(sVTerm *vt) {
@@ -361,6 +139,47 @@ void vterm_update(sVTerm *vt) {
 	/* all synchronized now */
 	vt->upStart = 0;
 	vt->upLength = 0;
+}
+
+static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
+	UNUSED(c);
+	if(modifier & STATE_CTRL) {
+		u32 index;
+		switch(keycode) {
+			case VK_C:
+				/* send interrupt to shell */
+				if(vt->shellPid)
+					sendSignalTo(vt->shellPid,SIG_INTRPT,0);
+				break;
+			case VK_D:
+				if(vt->readLine) {
+					vterm_rlPutchar(vt,IO_EOF);
+					vterm_rlFlushBuf(vt);
+				}
+				break;
+			case VK_1 ... VK_9:
+				index = keycode - VK_1;
+				if(index < VTERM_COUNT && vt->index != index)
+					vterm_selectVTerm(index);
+				return false;
+		}
+		/* notify the shell (otherwise it won't get the signal directly) */
+		if(keycode == VK_C || keycode == VK_D) {
+			if(rb_length(vt->inbuf) == 0)
+				setDataReadable(vt->sid,true);
+			return false;
+		}
+	}
+	return true;
+}
+
+static void vterm_setCursor(sVTerm *vt) {
+	if(vt->active) {
+		sIoCtlPos pos;
+		pos.col = vt->col;
+		pos.row = vt->row;
+		ioctl(vt->video,IOCTL_VID_SETCURSOR,(u8*)&pos,sizeof(pos));
+	}
 }
 
 static int vterm_dateThread(int argc,char *argv[]) {

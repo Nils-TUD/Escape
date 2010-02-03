@@ -27,7 +27,7 @@
 #include <string.h>
 #include "vtout.h"
 #include "vtin.h"
-#include "vterm.h"
+#include "vtctrl.h"
 
 /**
  * Inserts a new line

@@ -125,9 +125,9 @@ void vterm_update(sVTerm *vt) {
 		return;
 
 	/* if we should scroll, mark the whole screen (without title) as dirty */
-	if(vt->upScroll > 0) {
-		vt->upStart = vt->cols * 2;
-		vt->upLength = vt->cols * (vt->rows - 1) * 2;
+	if(vt->upScroll != 0) {
+		vt->upStart = MIN(vt->upStart,vt->cols * 2);
+		vt->upLength = vt->cols * vt->rows * 2 - vt->upStart;
 	}
 
 	if(vt->upLength > 0) {
@@ -154,6 +154,7 @@ void vterm_update(sVTerm *vt) {
 	/* all synchronized now */
 	vt->upStart = 0;
 	vt->upLength = 0;
+	vt->upScroll = 0;
 }
 
 static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {

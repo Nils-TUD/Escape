@@ -57,7 +57,6 @@ static sMsg msg;
 
 void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 	char c,*start = str;
-	u32 printCount = 0;
 
 	/* are we waiting to finish an escape-code? */
 	if(vt->escapePos >= 0) {
@@ -79,7 +78,10 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 						vterm_rlPutchar(vt,vt->escapeBuf[i]);
 					else {
 						vterm_putchar(vt,vt->escapeBuf[i]);
-						printCount++;
+						if(resetRead) {
+							vt->rlBufPos = 0;
+							vt->rlStartCol = vt->col;
+						}
 					}
 				}
 			}
@@ -109,7 +111,10 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 			vterm_rlPutchar(vt,c);
 		else {
 			vterm_putchar(vt,c);
-			printCount++;
+			if(resetRead) {
+				vt->rlBufPos = 0;
+				vt->rlStartCol = vt->col;
+			}
 		}
 		str++;
 	}
@@ -117,12 +122,6 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead) {
 	/* scroll to current line, if necessary */
 	if(vt->firstVisLine != vt->currLine)
 		vterm_scroll(vt,vt->firstVisLine - vt->currLine);
-
-	/* reset reading */
-	if(resetRead && printCount > 0) {
-		vt->rlBufPos = 0;
-		vt->rlStartCol = vt->col;
-	}
 }
 
 void vterm_putchar(sVTerm *vt,char c) {

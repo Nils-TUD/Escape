@@ -24,7 +24,6 @@
 
 tFile *fopen(const char *filename,const char *mode) {
 	char c;
-	sIOBuffer *buf;
 	u8 flags = 0;
 	tFD fd;
 
@@ -55,6 +54,5 @@ tFile *fopen(const char *filename,const char *mode) {
 		return NULL;
 
 	/* create buffer for it */
-	buf = bcreate(fd,flags);
-	return (tFile*)buf;
+	return (tFile*)bcreate(fd,flags);
 }

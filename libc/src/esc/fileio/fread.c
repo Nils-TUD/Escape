@@ -47,10 +47,6 @@ u32 fread(void *ptr,u32 size,u32 count,tFile *file) {
 	res = read(in->fd,bPtr,total);
 	if(res < 0)
 		return count - ((total + size - 1) / size);
-	/* handle EOF from vterm */
-	/* TODO this is not really nice, right? */
-	if(res > 0 && bPtr[0] == (u8)IO_EOF)
-		return 0;
 	total -= res;
 	return count - ((total + size - 1) / size);
 }

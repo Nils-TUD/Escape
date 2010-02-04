@@ -146,19 +146,12 @@ void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 }
 
 void vterm_rlFlushBuf(sVTerm *vt) {
-	u32 i,len,bufPos = vterm_rlGetBufPos(vt);
-	if(vt->echo)
-		bufPos++;
-
-	len = rb_length(vt->inbuf);
-
-	i = 0;
-	while(bufPos > 0) {
+	u32 i = 0,len = rb_length(vt->inbuf);
+	while(vt->rlBufPos > 0) {
 		rb_write(vt->inbuf,vt->rlBuffer + i);
-		bufPos--;
+		vt->rlBufPos--;
 		i++;
 	}
-	vt->rlBufPos = 0;
 
 	if(len == 0)
 		setDataReadable(vt->sid,true);
@@ -213,8 +206,11 @@ void vterm_rlPutchar(sVTerm *vt,char c) {
 				moved = true;
 			}
 
-			/** add char */
-			vt->rlBuffer[bufPos] = c;
+			/* add char (newlines always at the end) */
+			if(c == '\n')
+				vt->rlBuffer[vt->rlBufPos] = c;
+			else
+				vt->rlBuffer[bufPos] = c;
 			vt->rlBufPos++;
 
 			/* TODO later we should allow "multiline-editing" */

@@ -107,6 +107,7 @@ bool vterm_init(sVTerm *vt,sIoCtlSize *vidSize,tFD vidFd,tFD speakerFd) {
 		return false;
 	}
 
+	vt->inbufEOF = false;
 	vt->inbuf = rb_create(sizeof(char),INPUT_BUF_SIZE,RB_OVERWRITE);
 	if(vt->inbuf == NULL) {
 		printe("Unable to allocate memory for ring-buffer");

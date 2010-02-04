@@ -66,7 +66,7 @@ bool handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 				break;
 			case VK_D:
 				if(vt->readLine) {
-					vterm_rlPutchar(vt,IO_EOF);
+					vt->inbufEOF = true;
 					vterm_rlFlushBuf(vt);
 				}
 				break;

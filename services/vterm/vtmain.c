@@ -135,7 +135,9 @@ int main(void) {
 							msg.args.arg1 = 0;
 							if(data)
 								msg.args.arg1 = rb_readn(vt->inbuf,data,count);
-							msg.args.arg2 = rb_length(vt->inbuf) > 0;
+							msg.args.arg2 = vt->inbufEOF || rb_length(vt->inbuf) > 0;
+							if(rb_length(vt->inbuf) == 0)
+								vt->inbufEOF = false;
 							send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 							if(data) {
 								send(fd,MSG_DRV_READ_RESP,data,count);

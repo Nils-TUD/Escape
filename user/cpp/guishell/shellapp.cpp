@@ -103,6 +103,7 @@ void ShellApplication::driverMain() {
 					send(fd,MSG_DRV_OPEN_RESP,&_msg,sizeof(_msg.args));
 					break;
 				case MSG_DRV_READ: {
+					sVTerm *vt = _sh->getVTerm();
 					sRingBuf *inbuf = _sh->getInBuf();
 					// offset is ignored here
 					u32 count = _msg.args.arg2;
@@ -110,7 +111,9 @@ void ShellApplication::driverMain() {
 					_msg.args.arg1 = 0;
 					if(data)
 						_msg.args.arg1 = rb_readn(inbuf,data,count);
-					_msg.args.arg2 = rb_length(inbuf) > 0;
+					_msg.args.arg2 = vt->inbufEOF || rb_length(inbuf) > 0;
+					if(rb_length(inbuf) == 0)
+						vt->inbufEOF = false;
 					send(fd,MSG_DRV_READ_RESP,&_msg,sizeof(_msg.args));
 					if(data) {
 						send(fd,MSG_DRV_READ_RESP,data,count);

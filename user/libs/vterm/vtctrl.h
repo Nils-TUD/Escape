@@ -90,6 +90,7 @@ struct sVTerm {
 	u16 backupCol;
 	u16 backupRow;
 	/* the buffer for the input-stream */
+	u8 inbufEOF;
 	sRingBuf *inbuf;
 	/* the pid of the shell for ctrl+c notifications */
 	tPid shellPid;

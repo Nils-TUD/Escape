@@ -87,6 +87,8 @@ bool vterm_initAll(tServ *ids) {
 	for(i = 0; i < VTERM_COUNT; i++) {
 		vterms[i].index = i;
 		vterms[i].sid = ids[i];
+		vterms[i].defForeground = LIGHTGRAY;
+		vterms[i].defBackground = BLACK;
 		sprintf(name,"vterm%d",i);
 		memcpy(vterms[i].name,name,MAX_VT_NAME_LEN + 1);
 		if(!vterm_init(vterms + i,&vidSize,vidFd,speakerFd))
@@ -121,6 +123,12 @@ void vterm_update(sVTerm *vt) {
 	u32 byteCount;
 	if(!vt->active)
 		return;
+
+	/* if we should scroll, mark the whole screen (without title) as dirty */
+	if(vt->upScroll > 0) {
+		vt->upStart = vt->cols * 2;
+		vt->upLength = vt->cols * (vt->rows - 1) * 2;
+	}
 
 	if(vt->upLength > 0) {
 		/* update title-bar? */
@@ -207,7 +215,7 @@ static int vterm_dateThread(int argc,char *argv[]) {
 			char *title = vterms[i].titleBar + (vterms[i].cols - len) * 2;
 			for(j = 0; j < len; j++) {
 				*title++ = dateStr[j];
-				*title++ = WHITE | (BLUE << 4);
+				*title++ = LIGHTGRAY | (BLUE << 4);
 			}
 			if(vterms[i].active) {
 				seek(vterms[i].video,(vterms[i].cols - len) * 2,SEEK_SET);

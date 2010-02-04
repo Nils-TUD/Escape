@@ -23,6 +23,10 @@
 #include <esc/common.h>
 #include "keymap.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Returns the keymap-entry for the given keycode or NULL if the keycode is invalid
  *
@@ -30,5 +34,9 @@
  * @return the keymap-entry
  */
 sKeymapEntry *keymap_ger_get(u8 keyCode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* KEYMAP_GER_H_ */

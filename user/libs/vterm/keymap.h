@@ -22,6 +22,10 @@
 
 #include <esc/common.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* represents a not-printable character */
 #define NPRINT			'\0'
 
@@ -31,5 +35,9 @@ typedef struct {
 	char shift;
 	char alt;
 } sKeymapEntry;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* KEYMAP_H_ */

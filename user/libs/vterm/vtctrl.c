@@ -56,6 +56,7 @@
 
 bool vterm_init(sVTerm *vt,sIoCtlSize *vidSize,tFD vidFd,tFD speakerFd) {
 	u32 i,len;
+	u8 color;
 	char *ptr,*s;
 	vt->cols = vidSize->width;
 	vt->rows = vidSize->height;
@@ -69,8 +70,9 @@ bool vterm_init(sVTerm *vt,sIoCtlSize *vidSize,tFD vidFd,tFD speakerFd) {
 	vt->row = vt->rows - 1;
 	vt->upStart = 0;
 	vt->upLength = 0;
-	vt->foreground = WHITE;
-	vt->background = BLACK;
+	vt->upScroll = 0;
+	vt->foreground = vt->defForeground;
+	vt->background = vt->defBackground;
 	vt->active = false;
 	vt->video = vidFd;
 	vt->speaker = speakerFd;
@@ -113,11 +115,12 @@ bool vterm_init(sVTerm *vt,sIoCtlSize *vidSize,tFD vidFd,tFD speakerFd) {
 
 	/* fill buffer with spaces to ensure that the cursor is visible (spaces, white on black) */
 	ptr = vt->buffer;
+	color = (vt->background << 4) | vt->foreground;
 	for(i = 0, len = vt->rows * HISTORY_SIZE * vt->cols * 2; i < len; i += 4) {
 		*ptr++ = ' ';
-		*ptr++ = 0x07;
+		*ptr++ = color;
 		*ptr++ = ' ';
-		*ptr++ = 0x07;
+		*ptr++ = color;
 	}
 
 	/* build title bar */
@@ -229,7 +232,7 @@ void vterm_scroll(sVTerm *vt,s16 lines) {
 	}
 
 	if(vt->active && old != vt->firstVisLine)
-		vterm_markDirty(vt,vt->cols * 2,(vt->cols - 1) * vt->rows * 2);
+		vt->upScroll -= lines;
 }
 
 void vterm_markScrDirty(sVTerm *vt) {

@@ -60,530 +60,139 @@ void ShellControl::paint(Graphics &g) {
 	g.setColor(BORDER_COLOR);
 	g.drawRect(0,0,getWidth(),getHeight());
 
-	paintRows(g,0,_rows.size());
+	paintRows(g,0,_vt->rows);
 }
 
 void ShellControl::clearRows(Graphics &g,u32 start,u32 count) {
 	u32 cheight = g.getFont().getHeight();
-	tCoord y = start * (cheight + PADDING);
+	tCoord y = TEXTSTARTY + start * (cheight + PADDING);
 	// overwrite with background
 	g.setColor(BGCOLOR);
 	count = MIN(getLineCount() - start,count);
-	g.fillRect(1,1 + y,getWidth() - 2,count * (cheight + PADDING));
+	g.fillRect(TEXTSTARTX,y,getWidth() - TEXTSTARTX * 2,count * (cheight + PADDING) + 2);
+}
+
+void ShellControl::update() {
+	bool changed = false;
+	Graphics *g = getGraphics();
+
+	if(_vt->upScroll > 0) {
+		// move lines down
+		if(_vt->upScroll < _vt->rows) {
+			u32 lineHeight = g->getFont().getHeight() + PADDING;
+			u32 scrollPixel = _vt->upScroll * lineHeight;
+			g->moveLines(TEXTSTARTY + scrollPixel + lineHeight,
+					getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,scrollPixel);
+		}
+		// (re-)paint rows below
+		if(_vt->upLength > 0) {
+			// if the content has changed, too we have to start the refresh one line before
+			clearRows(*g,_vt->rows - _vt->upScroll - 1,_vt->upScroll + 1);
+			paintRows(*g,_vt->rows - _vt->upScroll - 1,_vt->upScroll + 1);
+		}
+		else {
+			// no content-change, i.e. just scrolling
+			clearRows(*g,_vt->rows - _vt->upScroll,_vt->upScroll + 1);
+			paintRows(*g,_vt->rows - _vt->upScroll,_vt->upScroll + 1);
+		}
+		changed = true;
+	}
+	else if(_vt->upScroll < 0) {
+		// move lines up
+		if(-_vt->upScroll < _vt->rows) {
+			u32 lineHeight = g->getFont().getHeight() + PADDING;
+			u32 scrollPixel = -_vt->upScroll * lineHeight;
+			g->moveLines(TEXTSTARTY + lineHeight,
+					getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,-scrollPixel);
+		}
+		// repaint first lines
+		clearRows(*g,0,-_vt->upScroll);
+		paintRows(*g,0,-_vt->upScroll);
+		changed = true;
+	}
+	else if(_vt->upLength > 0) {
+		u32 startRow = _vt->upStart / (_vt->cols * 2);
+		u32 rowCount = (_vt->upLength + _vt->cols * 2 - 1) / (_vt->cols * 2);
+		clearRows(*g,startRow,rowCount);
+		paintRows(*g,startRow,rowCount);
+		changed = true;
+	}
+	changed |= setCursor();
+	if(changed)
+		requestUpdate();
+
+	// all synchronized now
+	_vt->upStart = 0;
+	_vt->upLength = 0;
+	_vt->upScroll = 0;
+}
+
+bool ShellControl::setCursor() {
+	if(_lastCol != _vt->col || _lastRow != _vt->row) {
+		Graphics *g = getGraphics();
+		u32 cwidth = g->getFont().getWidth();
+		u32 cheight = g->getFont().getHeight();
+		u8 *buf = (u8*)_vt->buffer + ((_vt->firstVisLine + _lastRow) * _vt->cols + _lastCol) * 2;
+		// clear old cursor
+		g->setColor(COLORS[buf[1] >> 4]);
+		g->fillRect(TEXTSTARTX + _lastCol * cwidth,
+				TEXTSTARTY + (_lastRow + 1) * (cheight + PADDING),
+				cwidth,CURSOR_WIDTH);
+
+		// draw new one
+		g->setColor(CURSOR_COLOR);
+		g->fillRect(TEXTSTARTX + _vt->col * cwidth,
+				TEXTSTARTY + (_vt->row + 1) * (cheight + PADDING),
+				cwidth,CURSOR_WIDTH);
+		_lastCol = _vt->col;
+		_lastRow = _vt->row;
+		return true;
+	}
+	return false;
 }
 
 void ShellControl::paintRows(Graphics &g,u32 start,u32 count) {
 	u32 cwidth = g.getFont().getWidth();
 	u32 cheight = g.getFont().getHeight();
-	tCoord x;
-	tCoord y = 1 + start * (cheight + PADDING);
-	// correct invalid start-values
-	start = MIN(start,_rows.size() - _firstRow - 1);
-	count = MIN(count,_rows.size() - _firstRow - start);
-	Vector<char> &first = *_rows[start + _firstRow];
-	u8 lastCol = first.size() > 1 ? first[1] : (WHITE << 4 | BLACK);
-	count = MIN(getLineCount() - start,count);
+	tCoord y = TEXTSTARTY + start * (cheight + PADDING);
+	char *buf = _vt->buffer + (_vt->firstVisLine + start) * _vt->cols * 2;
+	count = MIN(count,_vt->rows - start);
 
-	g.setColor(COLORS[lastCol & 0xF]);
-	for(u32 i = start + _firstRow, end = start + _firstRow + count; i < end; i++) {
-		// paint char by char because the color might change
-		x = PADDING;
-		Vector<char> &str = *_rows[i];
-		for(u32 j = 0; j < str.size(); j += 2) {
-			// color-change?
-			if((u8)(str[j + 1]) != lastCol) {
-				lastCol = (u8)(str[j + 1]);
-				g.setColor(COLORS[lastCol & 0xF]);
-			}
-			// draw background
-			if(lastCol >> 4 != WHITE) {
-				g.setColor(COLORS[lastCol >> 4]);
-				g.fillRect(x,y,cwidth,cheight + PADDING);
-				g.setColor(COLORS[lastCol & 0xF]);
-			}
-			// draw char
-			g.drawChar(x,y + PADDING,str[j]);
-			x += cwidth;
-		}
+	// paint title-bar?
+	if(start == 0) {
+		paintRow(g,cwidth,cheight,_vt->titleBar,y);
+		buf += _vt->cols * 2;
+		y += cheight + PADDING;
+		count--;
+	}
+
+	while(count-- > 0) {
+		paintRow(g,cwidth,cheight,buf,y);
+		buf += _vt->cols * 2;
 		y += cheight + PADDING;
 	}
-
-	// paint cursor
-	if(_row < _firstRow + getLineCount()) {
-		g.fillRect(PADDING + _cursorCol * cwidth,PADDING + (_row - _firstRow) * (cheight + PADDING),
-				CURSOR_WIDTH,cheight);
-	}
 }
 
-void ShellControl::scrollPage(s32 up) {
-	scrollLine(up * getLineCount());
-}
-
-void ShellControl::scrollLine(s32 up) {
-	if(up > 0) {
-		if((s32)_firstRow > up)
-			_firstRow -= up;
-		else
-			_firstRow = 0;
-	}
-	else {
-		u32 lines = -up;
-		if(_firstRow + lines < _rows.size() - getLineCount())
-			_firstRow += lines;
-		else
-			_firstRow = _rows.size() - getLineCount();
-	}
-	repaint();
-}
-
-void ShellControl::append(char *s,u32 len) {
-	char *start = s;
-	u32 oldRow = _row;
-	_scrollRows = 0;
-
-	s[len] = '\0';
-
-	// are we waiting to finish an escape-code?
-	if(_escapePos >= 0) {
-		u32 oldLen = _escapePos;
-		char *escPtr = _escapeBuf;
-		u16 length = MIN((s32)len,MAX_ESCC_LENGTH - _escapePos - 1);
-		// append the string
-		memcpy(_escapeBuf + _escapePos,s,length);
-		_escapePos += length;
-		_escapeBuf[_escapePos] = '\0';
-
-		// try it again
-		if(!handleEscape(&escPtr)) {
-			// if no space is left, quit and simply print the code
-			if(_escapePos >= MAX_ESCC_LENGTH - 1) {
-				u32 i;
-				for(i = 0; i < MAX_ESCC_LENGTH; i++)
-					append(_escapeBuf[i]);
-			}
-			// otherwise try again next time
-			else
-				return;
+void ShellControl::paintRow(Graphics &g,u32 cwidth,u32 cheight,char *buf,tCoord y) {
+	u32 lastCol = 0xFFFF;
+	// paint char by char because the color might change
+	tCoord x = TEXTSTARTX;
+	for(u32 j = 0; j < _vt->cols; j++) {
+		char c = *buf++;
+		u8 col = *buf++;
+		// color-change?
+		if(col != lastCol) {
+			lastCol = col;
+			g.setColor(COLORS[lastCol & 0xF]);
 		}
-		// skip escape-code
-		s += (escPtr - _escapeBuf) - oldLen;
-		_escapePos = -1;
-	}
-
-	while(*s) {
-		if(*s == '\033') {
-			s++;
-			// if the escape-code is incomplete, store what we have so far and wait for further input
-			if(!handleEscape((char**)&s)) {
-				u32 count = MIN(MAX_ESCC_LENGTH,len - (s - start));
-				memcpy(_escapeBuf,s,count);
-				_escapePos = count;
-				break;
-			}
-			continue;
+		// draw background
+		if(lastCol >> 4 != WHITE) {
+			g.setColor(COLORS[lastCol >> 4]);
+			g.fillRect(x,y,cwidth,cheight + PADDING);
+			g.setColor(COLORS[lastCol & 0xF]);
 		}
-		append(*s++);
+		// draw char
+		g.drawChar(x,y + PADDING,c);
+		x += cwidth;
 	}
-
-	// scroll down if necessary
-	if(_row > _firstRow + getLineCount()) {
-		scrollLine(-_rows.size());
-		return;
-	}
-	if(_row < oldRow) {
-		repaint();
-		return;
-	}
-
-	Graphics *g = getGraphics();
-	if(_scrollRows) {
-		// move lines up
-		u32 lineHeight = g->getFont().getHeight() + PADDING;
-		u32 scrollPixel = _scrollRows * lineHeight;
-		g->moveLines(scrollPixel,getHeight() - scrollPixel - 1,scrollPixel);
-		// paint new rows
-		clearRows(*g,_row - _scrollRows - _firstRow,_scrollRows + 1);
-		paintRows(*g,_row - _scrollRows - _firstRow,_scrollRows + 1);
-	}
-	else {
-		// just repaint the changed rows
-		clearRows(*g,oldRow - _firstRow,_row - oldRow + 1);
-		paintRows(*g,oldRow - _firstRow,_row - oldRow + 1);
-	}
-	requestUpdate();
-
-	_rlBufPos = 0;
-	_rlStartCol = _cursorCol;
-}
-
-void ShellControl::append(char c) {
-#ifdef LOGSERIAL
-	// write to bochs/qemu console (\r not necessary here)
-	if(c != '\r' && c != '\a' && c != '\b' && c != '\t') {
-		outByte(0xe9,c);
-		outByte(0x3f8,c);
-		while((inByte(0x3fd) & 0x20) == 0)
-			;
-	}
-#endif
-
-	switch(c) {
-		case '\t': {
-			u32 i = TAB_WIDTH - _col % TAB_WIDTH;
-			while(i-- > 0)
-				append(' ');
-		}
-		break;
-
-		case '\b':
-			if(_col > 0) {
-				// delete last char
-				_rows[_row]->remove((_col - 1) * 2,2);
-				_col--;
-				_cursorCol--;
-			}
-			break;
-
-		case '\a': {
-			sMsg msg;
-			// beep
-			msg.args.arg1 = 1000;
-			msg.args.arg2 = 60;
-			send(_speaker,MSG_SPEAKER_BEEP,&msg,sizeof(msg.args));
-		}
-		break;
-
-		case '\n':
-			_row++;
-			if(_row >= _rows.size()) {
-				// remove first row, if we're reached the end
-				if(_row >= getLineCount()) {
-					if(_row >= HISTORY_SIZE) {
-						delete _rows[0];
-						_rows.remove(0);
-						_row--;
-					}
-					else
-						_firstRow++;
-					_scrollRows++;
-				}
-				_rows.add(new Vector<char>(COLUMNS * 2));
-			}
-			_col = 0;
-			_cursorCol = 0;
-			break;
-
-		case '\r':
-			_col = 0;
-			_cursorCol = 0;
-			break;
-
-		default:
-			// auto newline required?
-			if(_cursorCol >= COLUMNS)
-				append('\n');
-
-			Vector<char> *str = _rows[_row];
-			// replace it, if we're not at the end
-			if(_cursorCol < str->size() / 2)
-				str->remove(_cursorCol * 2,2);
-			else
-				_col++;
-
-			// insert char and color
-			str->insert(_cursorCol * 2,c);
-			str->insert(_cursorCol * 2 + 1,_color);
-			_cursorCol++;
-			break;
-	}
-}
-
-bool ShellControl::rlHandleKeycode(u8 keycode) {
-	bool res = false;
-	switch(keycode) {
-		case VK_LEFT:
-			if(_cursorCol > _rlStartCol)
-				_cursorCol--;
-			res = true;
-			break;
-		case VK_RIGHT:
-			if(_cursorCol < _rlStartCol + _rlBufPos)
-				_cursorCol++;
-			res = true;
-			break;
-		case VK_HOME:
-			if(_cursorCol != _rlStartCol)
-				_cursorCol = _rlStartCol;
-			res = true;
-			break;
-		case VK_END:
-			if(_cursorCol != _rlStartCol + _rlBufPos)
-				_cursorCol = _rlStartCol + _rlBufPos;
-			res = true;
-			break;
-	}
-	return res;
-}
-
-void ShellControl::rlPutchar(char c) {
-	switch(c) {
-		case '\b': {
-			u32 bufPos = rlGetBufPos();
-			if(bufPos > 0) {
-				if(_echo)
-					append('\b');
-
-				// move chars back
-				memmove(_rlBuffer + bufPos - 1,_rlBuffer + bufPos,_rlBufPos - bufPos);
-				// remove last
-				_rlBuffer[_rlBufPos - 1] = '\0';
-				_rlBufPos--;
-
-				// just repaint the last row
-				Graphics *g = getGraphics();
-				clearRows(*g,_row,1);
-				paintRows(*g,_row,1);
-				requestUpdate();
-			}
-		}
-		break;
-
-		case '\r':
-		case '\a':
-		case '\t':
-			// ignore
-			break;
-
-		default: {
-			bool flushed = false;
-			bool moved = false;
-			u32 bufPos = rlGetBufPos();
-
-			// increase buffer size?
-			if(_rlBuffer && bufPos >= _rlBufSize) {
-				_rlBufSize += RLBUF_INCR;
-				_rlBuffer = (char*)realloc(_rlBuffer,_rlBufSize);
-			}
-			if(_rlBuffer == NULL)
-				return;
-
-			// move chars forward
-			if(bufPos < _rlBufPos) {
-				memmove(_rlBuffer + bufPos + 1,_rlBuffer + bufPos,_rlBufPos - bufPos);
-				moved = true;
-			}
-
-			// add char
-			_rlBuffer[bufPos] = c;
-			_rlBufPos++;
-
-			// TODO later we should allow "multiline-editing"
-			if(c == '\n' || _rlStartCol + _rlBufPos >= COLUMNS) {
-				flushed = true;
-				rlFlushBuf();
-			}
-
-			// echo character, if required
-			if(_echo) {
-				if(moved && !flushed) {
-					u32 count = _rlBufPos - bufPos + 1;
-					char *copy = (char*)malloc(count * sizeof(char));
-					if(copy != NULL) {
-						// print the end of the buffer again
-						strncpy(copy,_rlBuffer + bufPos,count - 1);
-						copy[count - 1] = '\0';
-						append(copy,count - 1);
-						free(copy);
-
-						// reset cursor
-						_cursorCol = _rlStartCol + bufPos + 1;
-					}
-				}
-				else if(c != IO_EOF) {
-					u32 oldRow = _row;
-					append(c);
-					// just repaint the changed rows
-					Graphics *g = getGraphics();
-					clearRows(*g,oldRow,_row - oldRow + 1);
-					paintRows(*g,oldRow,_row - oldRow + 1);
-					requestUpdate();
-				}
-			}
-			if(flushed)
-				_rlStartCol = _cursorCol;
-		}
-		break;
-	}
-}
-
-u32 ShellControl::rlGetBufPos() {
-	if(_echo)
-		return _cursorCol - _rlStartCol;
-	else
-		return _rlBufPos;
-}
-
-void ShellControl::rlFlushBuf() {
-	u32 i,len,bufPos = rlGetBufPos();
-	if(_echo)
-		bufPos++;
-
-	len = rb_length(_inbuf);
-
-	i = 0;
-	while(bufPos > 0) {
-		rb_write(_inbuf,_rlBuffer + i);
-		bufPos--;
-		i++;
-	}
-	_rlBufPos = 0;
-
-	if(len == 0)
-		setDataReadable(_sid,true);
-}
-
-void ShellControl::addToInBuf(char *s,u32 len) {
-	if(rb_length(_inbuf) == 0)
-		setDataReadable(_sid,true);
-	rb_writen(_inbuf,s,len);
-}
-
-bool ShellControl::handleEscape(char **s) {
-	s32 cmd,n1,n2,n3;
-	cmd = escc_get((const char**)s,&n1,&n2,&n3);
-	if(cmd == ESCC_INCOMPLETE)
-		return false;
-
-	switch(cmd) {
-		case ESCC_MOVE_LEFT:
-			_cursorCol = (s32)_cursorCol > n1 ? _cursorCol - n1 : 0;
-			break;
-		case ESCC_MOVE_RIGHT:
-			_cursorCol = MIN(COLUMNS - 1,_cursorCol + n1);
-			break;
-		case ESCC_MOVE_UP:
-			_row = MAX(_firstRow,_row - n1);
-			break;
-		case ESCC_MOVE_DOWN:
-			_row = MIN(getLineCount() - 1,_row + n1);
-			break;
-		case ESCC_MOVE_HOME:
-			_cursorCol = 0;
-			_row = _firstRow;
-			break;
-		case ESCC_MOVE_LINESTART:
-			_cursorCol = 0;
-			break;
-		case ESCC_GOTO_XY:
-			_cursorCol = MAX(0,MIN((s32)COLUMNS - 1,n1));
-			_row = MAX(_firstRow,MIN((s32)getLineCount() - 1,n2));
-			break;
-		case ESCC_COLOR:
-			if(n1 != ESCC_ARG_UNUSED)
-				_color = (_color & 0xF0) | MIN(15,n1);
-			else
-				_color = (_color & 0xF0) | BLACK;
-			if(n2 != ESCC_ARG_UNUSED)
-				_color = (_color & 0x0F) | (MIN(15,n2) << 4);
-			else
-				_color = (_color & 0x0F) | (WHITE << 4);
-			break;
-	}
-
-	return true;
-}
-
-s32 ShellControl::ioctl(u32 cmd,void *data,bool *readKb) {
-	s32 res = 0;
-	UNUSED(data);
-	switch(cmd) {
-		// TODO
-		/*case IOCTL_VT_SHELLPID:
-			// do it just once
-			if(vt->shellPid == 0)
-				vt->shellPid = *(tPid*)data;
-			break;*/
-		case IOCTL_VT_EN_ECHO:
-			_echo = true;
-			break;
-		case IOCTL_VT_DIS_ECHO:
-			_echo = false;
-			break;
-		case IOCTL_VT_EN_RDLINE:
-			_readline = true;
-			/* reset reading */
-			_rlBufPos = 0;
-			_rlStartCol = _cursorCol;
-			break;
-		case IOCTL_VT_DIS_RDLINE:
-			_readline = false;
-			break;
-		case IOCTL_VT_EN_RDKB:
-			*readKb = true;
-			break;
-		case IOCTL_VT_DIS_RDKB:
-			*readKb = false;
-			break;
-		case IOCTL_VT_EN_NAVI:
-			_navigation = true;
-			break;
-		case IOCTL_VT_DIS_NAVI:
-			_navigation = false;
-			break;
-		case IOCTL_VT_BACKUP: {
-			if(!_screenBackup)
-				_screenBackup = new Vector<Vector<char>*>();
-			u32 start,lines = getLineCount();
-			if(_rows.size() > lines)
-				start = _rows.size() - lines;
-			else
-				start = 0;
-			for(u32 i = start; i < _rows.size(); i++)
-				_screenBackup->add(new Vector<char>(*_rows[i]));
-			_backupCol = _cursorCol;
-			_backupRow = _row;
-		}
-		break;
-		case IOCTL_VT_RESTORE: {
-			if(_screenBackup) {
-				u32 start,lines = getLineCount();
-				if(_screenBackup->size() > lines)
-					start = _screenBackup->size() - lines;
-				else {
-					start = 0;
-					for(u32 i = 0; i < _rows.size(); i++)
-						delete _rows[i];
-					_rows.removeAll();
-					_row = MIN(_row,_screenBackup->size() - 1);
-					_firstRow = 0;
-				}
-				for(u32 i = 0; i < _screenBackup->size(); i++) {
-					if(start == 0)
-						_rows.add(new Vector<char>(*((*_screenBackup)[i])));
-					else {
-						delete _rows[start + i];
-						_rows[start + i] = new Vector<char>(*((*_screenBackup)[i]));
-					}
-				}
-				delete _screenBackup;
-				_screenBackup = NULL;
-				_cursorCol = _backupCol;
-				_row = _backupRow;
-				repaint();
-			}
-		}
-		break;
-		case IOCTL_VT_GETSIZE: {
-			sIoCtlSize *size = (sIoCtlSize*)data;
-			size->width = COLUMNS;
-			// one line for the title
-			size->height = ROWS;
-			res = sizeof(sIoCtlSize);
-		}
-		break;
-		default:
-			res = ERR_UNSUPPORTED_OP;
-			break;
-	}
-	return res;
 }

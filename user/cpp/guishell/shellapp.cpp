@@ -23,7 +23,11 @@
 #include <esc/io.h>
 #include <esc/signals.h>
 #include <esc/gui/common.h>
+#include <esccodes.h>
 #include <errors.h>
+
+#include <vterm/vtin.h>
+#include <vterm/vtout.h>
 #include "shellapp.h"
 
 ShellApplication::ShellApplication(tServ sid,ShellControl *sh)
@@ -69,66 +73,10 @@ void ShellApplication::handleKbMsg() {
 	if(isBreak)
 		return;
 
-	switch(keycode) {
-		case VK_PGUP:
-		case VK_PGDOWN:
-		case VK_END:
-		case VK_HOME:
-		case VK_LEFT:
-		case VK_RIGHT:
-		case VK_UP:
-		case VK_DOWN:
-		case VK_D:
-		case VK_C:
-			if((modifier & SHIFT_MASK) && _sh->getNavigation()) {
-				switch(keycode) {
-					case VK_UP:
-						_sh->scrollLine(1);
-						break;
-					case VK_DOWN:
-						_sh->scrollLine(-1);
-						break;
-					case VK_PGUP:
-						_sh->scrollPage(1);
-						break;
-					case VK_PGDOWN:
-						_sh->scrollPage(-1);
-						break;
-				}
-				break;
-			}
-			if(modifier & CTRL_MASK) {
-				switch(keycode) {
-					case VK_C:
-						// don't send it to the vterms
-						sendSignal(SIG_INTRPT,0xFFFFFFFF);
-						break;
-					case VK_D: {
-						char eof = IO_EOF;
-						_sh->addToInBuf(&eof,1);
-					}
-					break;
-				}
-				break;
-			}
-			// fall through
-
-		default:
-			if(_sh->getReadLine()) {
-				if(modifier & CTRL_MASK) {
-					if(_sh->getEcho())
-						_sh->rlHandleKeycode(keycode);
-				}
-				else if(character)
-					_sh->rlPutchar(character);
-			}
-			else {
-				char escape[SSTRLEN("\033[kc;123;123;7]") + 1];
-				sprintf(escape,"\033[kc;%d;%d;%d]",character,keycode,modifier);
-				_sh->addToInBuf(escape,strlen(escape));
-			}
-			break;
-	}
+	vterm_handleKey(_sh->getVTerm(),keycode,((modifier & SHIFT_MASK) ? STATE_SHIFT : 0) |
+			((modifier & ALT_MASK) ? STATE_ALT : 0) |
+			((modifier & CTRL_MASK) ? STATE_CTRL : 0),character);
+	_sh->update();
 }
 
 void ShellApplication::driverMain() {
@@ -140,7 +88,9 @@ void ShellApplication::driverMain() {
 			printe("Unable to get client");
 		// append the buffer now to reduce delays
 		if(rbufPos > 0) {
-			_sh->append(rbuffer,rbufPos);
+			rbuffer[rbufPos] = '\0';
+			vterm_puts(_sh->getVTerm(),rbuffer,rbufPos,true);
+			_sh->update();
 			rbufPos = 0;
 		}
 		wait(EV_CLIENT | EV_RECEIVED_MSG);
@@ -185,7 +135,8 @@ void ShellApplication::driverMain() {
 							rbufPos += amount;
 							data += amount;
 							if(rbufPos >= READ_BUF_SIZE) {
-								_sh->append(rbuffer,rbufPos);
+								rbuffer[rbufPos] = '\0';
+								vterm_puts(_sh->getVTerm(),rbuffer,rbufPos,true);
 								rbufPos = 0;
 							}
 						}
@@ -196,8 +147,9 @@ void ShellApplication::driverMain() {
 				}
 				break;
 				case MSG_DRV_IOCTL: {
-					bool readKeyboard; // TODO
-					_msg.data.arg1 = _sh->ioctl(_msg.data.arg1,_msg.data.d,&readKeyboard);
+					bool readKeyboard;
+					_msg.data.arg1 = vterm_ioctl(
+							_sh->getVTerm(),_msg.data.arg1,_msg.data.d,&readKeyboard);
 					send(fd,MSG_DRV_IOCTL_RESP,&_msg,sizeof(_msg.data));
 				}
 				break;
@@ -205,6 +157,7 @@ void ShellApplication::driverMain() {
 					break;
 			}
 		}
+		_sh->update();
 		close(fd);
 	}
 }

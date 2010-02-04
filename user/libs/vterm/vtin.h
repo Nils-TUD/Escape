@@ -23,6 +23,10 @@
 #include <esc/common.h>
 #include "vtctrl.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Translates the given keycode to modifiers and the character
  *
@@ -57,5 +61,9 @@ void vterm_rlFlushBuf(sVTerm *vt);
  * @param c the character
  */
 void vterm_rlPutchar(sVTerm *vt,char c);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* VTIN_H_ */

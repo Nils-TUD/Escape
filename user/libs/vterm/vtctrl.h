@@ -24,6 +24,10 @@
 #include <ringbuffer.h>
 #include <esccodes.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define TAB_WIDTH			4
 #define HISTORY_SIZE		12
 #define INPUT_BUF_SIZE		128
@@ -52,10 +56,12 @@ struct sVTerm {
 	u8 col;
 	u8 row;
 	/* colors */
+	u8 defForeground;
+	u8 defBackground;
 	u8 foreground;
 	u8 background;
 	/* wether this vterm is currently active */
-	bool active;
+	u8 active;
 	/* file-descriptors */
 	tFD video;
 	tFD speaker;
@@ -68,16 +74,17 @@ struct sVTerm {
 	/* a range that should be updated */
 	u16 upStart;
 	u16 upLength;
+	s16 upScroll;
 	/* the used keymap */
 	u16 keymap;
 	/* wether entered characters should be echo'd to screen */
-	bool echo;
+	u8 echo;
 	/* wether the vterm should read until a newline occurrs */
-	bool readLine;
+	u8 readLine;
 	/* wether navigation via up/down/pageup/pagedown is enabled */
-	bool navigation;
+	u8 navigation;
 	/* wether all output should be printed into the readline-buffer */
-	bool printToRL;
+	u8 printToRL;
 	/* a backup of the screen; initially NULL */
 	char *screenBackup;
 	u16 backupCol;
@@ -107,9 +114,15 @@ typedef enum {
 	/* 4 */ RED,
 	/* 5 */ MARGENTA,
 	/* 6 */ ORANGE,
-	/* 7 */ WHITE,
+	/* 7 */ LIGHTGRAY,
 	/* 8 */ GRAY,
-	/* 9 */ LIGHTBLUE
+	/* 9 */ LIGHTBLUE,
+	/* 10 */ LIGHTGREEN,
+	/* 11 */ LIGHTCYAN,
+	/* 12 */ LIGHTRED,
+	/* 13 */ LIGHTMARGENTA,
+	/* 14 */ YELLOW,
+	/* 15 */ WHITE
 } eColor;
 
 /**
@@ -164,5 +177,9 @@ void vterm_markDirty(sVTerm *vt,u16 start,u16 length);
  * @param vt the vterm
  */
 void vterm_destroy(sVTerm *vt);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* VTCTRL_H_ */

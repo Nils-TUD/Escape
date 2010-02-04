@@ -23,6 +23,10 @@
 #include <esc/common.h>
 #include "vtctrl.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Prints the given string
  *
@@ -40,5 +44,9 @@ void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead);
  * @param c the character
  */
 void vterm_putchar(sVTerm *vt,char c);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* VTOUT_H_ */

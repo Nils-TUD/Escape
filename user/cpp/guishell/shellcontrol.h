@@ -24,9 +24,12 @@
 #include <esc/ports.h>
 #include <esc/gui/common.h>
 #include <esc/gui/control.h>
+#include <esc/debug.h>
 #include <esc/string.h>
 #include <ringbuffer.h>
 #include <esccodes.h>
+
+#include <vterm/vtctrl.h>
 
 using namespace esc;
 using namespace esc::gui;
@@ -37,163 +40,96 @@ class ShellControl : public Control {
 	friend class ShellApplication;
 
 private:
-	typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
 	static Color COLORS[16];
 
-	static const u32 TAB_WIDTH = 4;
 	static const u32 COLUMNS = 80;
 	static const u32 ROWS = 25;
-	static const u32 HISTORY_SIZE = 200;
 	static const u32 PADDING = 3;
+	static const u32 TEXTSTARTX = 2;
+	static const u32 TEXTSTARTY = 2;
 	static const u32 CURSOR_WIDTH = 2;
-	static const u32 CURSOR_OVERLAP = 2;
-	static const u32 INITIAL_RLBUF_SIZE = 50;
-	static const u32 RLBUF_INCR = 20;
-	static const u32 GUISH_INBUF_SIZE = 128;
 	static const Color BGCOLOR;
 	static const Color FGCOLOR;
 	static const Color BORDER_COLOR;
 	static const Color CURSOR_COLOR;
 
 public:
-	ShellControl(tServ sid,tCoord x,tCoord y,tSize width,tSize height)
-		: Control(x,y,width,height), _sid(sid), _color(WHITE << 4 | BLACK),
-			_row(0), _col(0), _cursorCol(0),
-			_scrollRows(0), _firstRow(0), _navigation(true), _rlStartCol(0),
-			_rlBufSize(INITIAL_RLBUF_SIZE), _rlBufPos(0), _readline(true), _echo(true),
-			_escapePos(-1), _backupRow(0), _backupCol(0), _screenBackup(NULL),
-			_rows(Vector<Vector<char>*>()) {
-		// insert first row
-		_rows.add(new Vector<char>(COLUMNS * 2));
+	ShellControl(tServ sid,tCoord x,tCoord y,tSize width,tSize height) :
+		Control(x,y,width,height), _lastCol(0), _lastRow(0) {
+		tFD speakerFd;
+		sIoCtlSize size;
+		Font font;
+		size.width = (width - 4) / font.getWidth();
+		size.height = (height - 4) / (font.getHeight() + PADDING);
 
-		_rlBuffer = new char[_rlBufSize];
+		/* open speaker */
+		speakerFd = open("/services/speaker",IO_WRITE);
+		if(speakerFd < 0)
+			error("Unable to open '/services/speaker'");
 
-		// create input-buffer
-		_inbuf = rb_create(sizeof(char),GUISH_INBUF_SIZE,RB_OVERWRITE);
-		if(_inbuf == NULL) {
-			printe("Unable to create ring-buffer");
-			exit(EXIT_FAILURE);
-		}
+		_vt = (sVTerm*)malloc(sizeof(sVTerm));
+		if(!_vt)
+			error("Not enough mem for vterm");
+		_vt->index = 0;
+		_vt->sid = sid;
+		_vt->defForeground = BLACK;
+		_vt->defBackground = WHITE;
+		strcpy(_vt->name,"guish");
+		if(!vterm_init(_vt,&size,-1,speakerFd))
+			error("Unable to init vterm");
+		_vt->active = true;
 
-		// open speaker
-		_speaker = open("/services/speaker",IO_WRITE);
-		if(_speaker < 0) {
-			printe("Unable to open '/services/speaker'");
-			exit(EXIT_FAILURE);
-		}
+		// TODO
+		//vterms[i].handlerShortcut = vterm_handleShortcut;
+		//_vt->setCursor = setCursor;
 
 		// request ports for qemu and bochs
 		requestIOPort(0xe9);
 		requestIOPort(0x3f8);
 		requestIOPort(0x3fd);
 	};
-	ShellControl(const ShellControl &e) : Control(e) {
-		clone(e);
-	};
 	virtual ~ShellControl() {
-		for(u32 i = 0; i < _rows.size(); i++)
-			delete _rows[i];
-		delete _rlBuffer;
-		rb_destroy(_inbuf);
-		close(_speaker);
+		vterm_destroy(_vt);
+		free(_vt);
 		releaseIOPort(0xe9);
 		releaseIOPort(0x3f8);
 		releaseIOPort(0x3fd);
 	};
 
-	ShellControl &operator=(const ShellControl &e) {
-		// ignore self-assigments
-		if(this == &e)
-			return *this;
-		Control::operator=(e);
-		clone(e);
-		return *this;
-	};
+	/* no cloning */
+	ShellControl(const ShellControl &e);
+	ShellControl &operator=(const ShellControl &e);
 
-	void append(char *s,u32 len);
-	void scrollPage(s32 up);
-	void scrollLine(s32 up);
 	virtual void paint(Graphics &g);
-	inline bool getReadLine() {
-		return _readline;
+	inline bool getReadLine() const {
+		return _vt->readLine;
 	};
-	inline bool getEcho() {
-		return _echo;
+	inline bool getEcho() const {
+		return _vt->echo;
 	};
-	inline bool getNavigation() {
-		return _navigation;
+	inline bool getNavigation() const {
+		return _vt->navigation;
 	};
 
 private:
-	void append(char c);
 	void clearRows(Graphics &g,u32 start,u32 count);
 	void paintRows(Graphics &g,u32 start,u32 count);
+	void paintRow(Graphics &g,u32 cwidth,u32 cheight,char *buf,tCoord y);
+	void update();
+	bool setCursor();
 	inline u32 getLineCount() const {
 		return (getHeight() / (getGraphics()->getFont().getHeight() + PADDING));
 	};
 	inline sRingBuf *getInBuf() {
-		return _inbuf;
+		return _vt->inbuf;
 	};
-	bool handleEscape(char **s);
-	bool rlHandleKeycode(u8 keycode);
-	void rlPutchar(char c);
-	u32 rlGetBufPos();
-	void rlFlushBuf();
-	void addToInBuf(char *s,u32 len);
-	s32 ioctl(u32 cmd,void *data,bool *readKb);
-
-	void clone(const ShellControl &e) {
-		_sid = e._sid;
-		_color = e._color;
-		_row = e._row;
-		_col = e._col;
-		_cursorCol = e._cursorCol;
-		_scrollRows = e._scrollRows;
-		_firstRow = e._firstRow;
-		_navigation = e._navigation;
-		_escapePos = e._escapePos;
-		_speaker = e._speaker;
-		memcpy(_escapeBuf,e._escapeBuf,sizeof(e._escapeBuf));
-		_rlStartCol = e._rlStartCol;
-		_rlBufSize = e._rlBufSize;
-		_rlBufPos = e._rlBufPos;
-		_rlBuffer = new char[_rlBufSize];
-		_readline = e._readline;
-		_echo = e._echo;
-		memcpy(_rlBuffer,e._rlBuffer,_rlBufSize);
-		_screenBackup = new Vector<Vector<char>*>();
-		_backupRow = e._backupRow;
-		_backupCol = e._backupCol;
-		for(u32 i = 0; i < e._screenBackup->size(); i++)
-			_screenBackup->add(new Vector<char>(*((*e._screenBackup)[i])));
-		_rows = Vector<Vector<char>*>();
-		for(u32 i = 0; i < e._rows.size(); i++)
-			_rows.add(new Vector<char>(*e._rows[i]));
+	inline sVTerm *getVTerm() {
+		return _vt;
 	};
 
-	tServ _sid;
-	u8 _color;
-	u32 _row;
-	u32 _col;
-	u32 _cursorCol;
-	u32 _scrollRows;
-	u32 _firstRow;
-	bool _navigation;
-	u8 _rlStartCol;
-	u32 _rlBufSize;
-	u32 _rlBufPos;
-	char *_rlBuffer;
-	bool _readline;
-	bool _echo;
-	sRingBuf *_inbuf;
-	// the escape-state
-	s32 _escapePos;
-	tFD _speaker;
-	u32 _backupRow;
-	u32 _backupCol;
-	char _escapeBuf[MAX_ESCC_LENGTH];
-	Vector<Vector<char>*> *_screenBackup;
-	Vector<Vector<char>*> _rows;
+	u16 _lastCol;
+	u16 _lastRow;
+	sVTerm *_vt;
 };
 
 #endif /* SHELLCONTROL_H_ */

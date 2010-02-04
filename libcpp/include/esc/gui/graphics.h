@@ -163,7 +163,7 @@ namespace esc {
 			inline tColDepth getColorDepth() const {
 				return _bpp;
 			};
-			void moveLines(tCoord y,tSize height,tSize up);
+			void moveLines(tCoord y,tSize height,s16 up);
 			void drawChar(tCoord x,tCoord y,char c);
 			void drawString(tCoord x,tCoord y,const String &str);
 			void drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn);

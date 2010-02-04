@@ -96,14 +96,20 @@ namespace esc {
 			//_pixel->set((_offy + y) * _width + (_offx + x),_col);
 		}
 
-		void Graphics::moveLines(tCoord y,tSize height,tSize up) {
+		void Graphics::moveLines(tCoord y,tSize height,s16 up) {
 			tCoord x = 0;
 			tSize width = _width;
 			validateParams(x,y,width,height);
-			if(y < up)
-				up = y;
 			tCoord starty = _offy + y;
 			u32 psize = _pixel->getPixelSize();
+			if(up > 0) {
+				if(y < up)
+					up = y;
+			}
+			else {
+				if(y + height - up > _height)
+					up = -(_height - (height + y));
+			}
 			memmove(_pixels + ((starty - up) * _width) * psize,
 					_pixels + (starty * _width) * psize,
 					height * _width * psize);

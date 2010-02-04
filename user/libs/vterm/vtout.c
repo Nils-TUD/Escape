@@ -211,13 +211,14 @@ static void vterm_newLine(sVTerm *vt) {
 	dst = vt->buffer + (vt->currLine + vt->row - 1) * vt->cols * 2;
 	for(i = 0; i < vt->cols * 2; i += 4) {
 		*dst++ = 0x20;
-		*dst++ = 0x07;
+		*dst++ = (vt->defBackground << 4) | vt->defForeground;
 		*dst++ = 0x20;
-		*dst++ = 0x07;
+		*dst++ = (vt->defBackground << 4) | vt->defForeground;
 	}
 
-	/* refresh all */
-	vterm_markDirty(vt,vt->cols * 2,(vt->cols - 1) * vt->rows * 2);
+	/* we've scrolled one line up */
+	vt->upScroll++;
+	/*vterm_markDirty(vt,vt->cols * 2,(vt->cols - 1) * vt->rows * 2);*/
 }
 
 static void vterm_delete(sVTerm *vt,u32 count) {
@@ -294,11 +295,11 @@ static bool vterm_handleEscape(sVTerm *vt,char **str) {
 			if(n1 != ESCC_ARG_UNUSED)
 				vt->foreground = MIN(15,n1);
 			else
-				vt->foreground = WHITE;
+				vt->foreground = vt->defForeground;
 			if(n2 != ESCC_ARG_UNUSED)
 				vt->background = MIN(15,n2);
 			else
-				vt->background = BLACK;
+				vt->background = vt->defBackground;
 			break;
 	}
 	return true;

@@ -31,7 +31,7 @@ extern "C" {
 #define TAB_WIDTH			4
 #define HISTORY_SIZE		12
 #define INPUT_BUF_SIZE		128
-#define MAX_VT_NAME_LEN		6
+#define MAX_VT_NAME_LEN		15
 
 /**
  * The handler for shortcuts

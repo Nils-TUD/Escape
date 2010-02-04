@@ -84,6 +84,9 @@ int main(int argc,char **argv) {
 	while(sid < 0);
 	unregService(sid);
 
+	// set term as env-variable
+	setEnv("TERM",servName);
+
 	// the child handles the GUI
 	if(fork() == 0) {
 		// re-register service
@@ -91,6 +94,7 @@ int main(int argc,char **argv) {
 		unlockg(GUI_SHELL_LOCK);
 		if(sid < 0)
 			error("Unable to re-register driver %s",servName);
+		delete servName;
 
 		// now start GUI
 		ShellControl *sh = new ShellControl(sid,0,0,700,480);
@@ -101,6 +105,7 @@ int main(int argc,char **argv) {
 	}
 
 	// wait until the service is announced
+	delete servName;
 	char *servPath = new char[MAX_PATH_LEN + 1];
 	sprintf(servPath,"/drivers/guiterm%d",no);
 	tFD fin;
@@ -130,10 +135,6 @@ int main(int argc,char **argv) {
 }
 
 static int shell_main(void) {
-	// set term as env-variable
-	setEnv("TERM",servName);
-	delete servName;
-
 	printf("\033[co;9]Welcome to Escape v0.2!\033[co]\n");
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");

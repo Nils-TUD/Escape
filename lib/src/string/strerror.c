@@ -271,6 +271,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"You can't use seek() for pipes!");
 			break;
 
+		case ERR_MAX_EXIT_FUNCS:
+			strcpy(msg,"You've reached the max. number of exit-functions!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

@@ -60,6 +60,8 @@ void displ_init(sFileBuffer *buf) {
 
 void displ_finish(void) {
 	printf("\n");
+	/* ensure that the output is flushed before the vterm restores the old screen */
+	flush();
 	ioctl(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
 	ioctl(STDOUT_FILENO,IOCTL_VT_EN_NAVI,NULL,0);
 	ioctl(STDOUT_FILENO,IOCTL_VT_RESTORE,NULL,0);

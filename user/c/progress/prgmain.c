@@ -44,6 +44,7 @@ int main(void) {
 		for(i = j + 1; i <= maxWidth; i++)
 			printc(' ');
 		printc(']');
+		flush();
 
 		/* wait a little bit */
 		sleep(100);

@@ -25,6 +25,8 @@
 char bscanc(sBuffer *buf) {
 	/* file */
 	if(buf->type & BUF_TYPE_FILE) {
+		if(buf == &((sIOBuffer*)stdin)->in)
+			fflush(stdout);
 		if(buf->pos >= buf->length) {
 			s32 count;
 			/* don't read multiple bytes at once from vterms */

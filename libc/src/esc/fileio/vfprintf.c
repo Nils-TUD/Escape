@@ -24,11 +24,8 @@
 #include "fileiointern.h"
 
 s32 vfprintf(tFile *file,const char *fmt,va_list ap) {
-	s32 res;
 	sIOBuffer *buf = bget(file);
 	if(buf == NULL)
 		return IO_EOF;
-	res = vbprintf(&(buf->out),fmt,ap);
-	bflush(&(buf->out));
-	return res;
+	return vbprintf(&(buf->out),fmt,ap);
 }

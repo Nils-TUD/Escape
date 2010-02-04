@@ -175,6 +175,7 @@ int main(int argc,char *argv[]) {
 
 static void resetVterm(void) {
 	printf("\n");
+	flush();
 	ioctl(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
 	ioctl(STDOUT_FILENO,IOCTL_VT_EN_NAVI,NULL,0);
 	ioctl(STDOUT_FILENO,IOCTL_VT_RESTORE,NULL,0);

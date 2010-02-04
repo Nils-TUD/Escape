@@ -19,6 +19,27 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
+#include <errors.h>
+
+#define MAX_EXIT_FUNCS	8
+
+static s16 exitFuncCount = 0;
+static fExitFunc exitFuncs[MAX_EXIT_FUNCS];
+
+s32 atexit(fExitFunc func) {
+	if(exitFuncCount >= MAX_EXIT_FUNCS)
+		return ERR_MAX_EXIT_FUNCS;
+
+	exitFuncs[exitFuncCount++] = func;
+	return 0;
+}
+
+void _exit(s32 exitCode) {
+	s16 i;
+	for(i = exitFuncCount - 1; i >= 0; i--)
+		exitFuncs[i]();
+	exit(exitCode);
+}
 
 tPid getppid(void) {
 	return getppidof(getpid());

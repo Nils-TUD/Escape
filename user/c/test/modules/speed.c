@@ -67,6 +67,7 @@ int mod_speed(int argc,char *argv[]) {
 		if(i % (COUNT / 1000) == 0) {
 			diff = getTime() - t;
 			printf("\rWriting with	%07d KiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / K));
+			flush();
 		}
 	}
 
@@ -92,6 +93,7 @@ int mod_speed(int argc,char *argv[]) {
 		if(i % (COUNT / 1000) == 0) {
 			diff = getTime() - t;
 			printf("\rReading with	%07d KiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / K));
+			flush();
 		}
 	}
 

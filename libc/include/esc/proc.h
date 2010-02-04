@@ -31,6 +31,8 @@
 #define EV_RECEIVED_MSG		2
 #define EV_DATA_READABLE	8
 
+typedef void (*fExitFunc)(void);
+
 typedef struct {
 	tPid pid;
 	/* the signal that killed the process (SIG_COUNT if none) */
@@ -114,6 +116,22 @@ s32 wait(u8 events);
  * @return 0 on success
  */
 s32 waitChild(sExitState *state);
+
+/**
+ * Registers the given function for calling when _exit() is called. Registered functions are
+ * called in reverse order. Note that the number of functions is limited!
+ *
+ * @param func the function
+ * @return 0 if successfull
+ */
+s32 atexit(fExitFunc func);
+
+/**
+ * The internal exit-function (calls atexit-functions and then exit())
+ *
+ * @param errorCode the error-code for the parent
+ */
+void _exit(s32 exitCode);
 
 /**
  * Destroys the process and provides the parent the given error-code

@@ -20,13 +20,26 @@
 #include <esc/common.h>
 #include <esc/fileio.h>
 #include <esc/io.h>
+#include <esc/proc.h>
 #include <esc/heap.h>
 #include "fileiointern.h"
+
+static bool registeredExitFunc = false;
+
+static void flushStdStreams(void) {
+	fflush(stdout);
+	fflush(stderr);
+}
 
 sIOBuffer *bget(tFile *stream) {
 	sIOBuffer *buf = (sIOBuffer*)stream;
 	if(stream == NULL)
 		return NULL;
+
+	if(!registeredExitFunc) {
+		atexit(flushStdStreams);
+		registeredExitFunc = true;
+	}
 
 	/* if uninitialized, we have to create it */
 	if(buf->in.type == 0 && buf->out.type == 0) {

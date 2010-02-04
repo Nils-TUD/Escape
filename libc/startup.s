@@ -21,7 +21,7 @@
 
 [global init]
 [extern main]
-[extern exit]
+[extern _exit]
 [extern ackSignal]
 
 ALIGN 4
@@ -40,7 +40,7 @@ init:
 ; exit for additional threads
 threadExit:
 	push	eax
-	call	exit
+	call	_exit
 	; just to be sure
 	jmp		$
 	; c++-programs have address 0x2d for sigRetFunc. So we need to achieve this here, too

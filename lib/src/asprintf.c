@@ -38,12 +38,14 @@
 
 /* ensures that <buf> in util_vsprintf() has enough space for MAX(<width>,<pad>).
  * If necessary more space is allocated. If it fails false will be returned */
+/* <str> is also changed for the case that buf->str changes */
 #define SPRINTF_INCREASE(width,pad) \
 	if(buf->dynamic) { \
 		u32 tmpLen = MAX((width),(pad)); \
 		if(buf->len + tmpLen >= buf->size) { \
 			buf->size += MAX(SPRINTF_MIN_INC_SIZE,1 + buf->len + tmpLen - buf->size); \
 			buf->str = (char*)realloc(buf->str,buf->size * sizeof(char)); \
+			str = buf->str + buf->len; \
 			if(!buf->str) { \
 				buf->size = 0; \
 				return false; \

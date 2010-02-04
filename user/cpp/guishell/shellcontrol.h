@@ -36,6 +36,8 @@ using namespace esc::gui;
 
 class ShellApplication;
 
+bool handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c);
+
 class ShellControl : public Control {
 	friend class ShellApplication;
 
@@ -62,7 +64,7 @@ public:
 		size.width = (width - 4) / font.getWidth();
 		size.height = (height - 4) / (font.getHeight() + PADDING);
 
-		/* open speaker */
+		// open speaker
 		speakerFd = open("/services/speaker",IO_WRITE);
 		if(speakerFd < 0)
 			error("Unable to open '/services/speaker'");
@@ -79,9 +81,7 @@ public:
 			error("Unable to init vterm");
 		_vt->active = true;
 
-		// TODO
-		//vterms[i].handlerShortcut = vterm_handleShortcut;
-		//_vt->setCursor = setCursor;
+		_vt->handlerShortcut = handleShortcut;
 
 		// request ports for qemu and bochs
 		requestIOPort(0xe9);
@@ -96,7 +96,7 @@ public:
 		releaseIOPort(0x3fd);
 	};
 
-	/* no cloning */
+	// no cloning
 	ShellControl(const ShellControl &e);
 	ShellControl &operator=(const ShellControl &e);
 

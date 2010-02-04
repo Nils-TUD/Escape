@@ -22,8 +22,12 @@
 #include <esc/gui/common.h>
 #include <esc/gui/color.h>
 #include <esc/service.h>
+#include <esc/signals.h>
 #include <errors.h>
 #include "shellcontrol.h"
+
+#include <vterm/vtin.h>
+#include <vterm/vtctrl.h>
 
 using namespace esc;
 using namespace esc::gui;
@@ -52,6 +56,31 @@ const Color ShellControl::FGCOLOR = Color(0x0,0x0,0x0);
 const Color ShellControl::BORDER_COLOR = Color(0x0,0x0,0x0);
 const Color ShellControl::CURSOR_COLOR = Color(0x0,0x0,0x0);
 
+bool handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
+	UNUSED(c);
+	if(modifier & STATE_CTRL) {
+		switch(keycode) {
+			case VK_C:
+				/* send interrupt to shell (our parent) */
+				sendSignalTo(getppid(),SIG_INTRPT,0);
+				break;
+			case VK_D:
+				if(vt->readLine) {
+					vterm_rlPutchar(vt,IO_EOF);
+					vterm_rlFlushBuf(vt);
+				}
+				break;
+		}
+		/* notify the shell (otherwise it won't get the signal directly) */
+		if(keycode == VK_C || keycode == VK_D) {
+			if(rb_length(vt->inbuf) == 0)
+				setDataReadable(vt->sid,true);
+			return false;
+		}
+	}
+	return true;
+}
+
 void ShellControl::paint(Graphics &g) {
 	// fill bg
 	g.setColor(BGCOLOR);
@@ -77,7 +106,7 @@ void ShellControl::update() {
 	Graphics *g = getGraphics();
 
 	if(_vt->upScroll > 0) {
-		// move lines down
+		// move lines up
 		if(_vt->upScroll < _vt->rows) {
 			u32 lineHeight = g->getFont().getHeight() + PADDING;
 			u32 scrollPixel = _vt->upScroll * lineHeight;
@@ -98,7 +127,7 @@ void ShellControl::update() {
 		changed = true;
 	}
 	else if(_vt->upScroll < 0) {
-		// move lines up
+		// move lines down
 		if(-_vt->upScroll < _vt->rows) {
 			u32 lineHeight = g->getFont().getHeight() + PADDING;
 			u32 scrollPixel = -_vt->upScroll * lineHeight;
@@ -111,6 +140,7 @@ void ShellControl::update() {
 		changed = true;
 	}
 	else if(_vt->upLength > 0) {
+		// repaint all dirty lines
 		u32 startRow = _vt->upStart / (_vt->cols * 2);
 		u32 rowCount = (_vt->upLength + _vt->cols * 2 - 1) / (_vt->cols * 2);
 		clearRows(*g,startRow,rowCount);

@@ -21,10 +21,11 @@
 #include <assert.h>
 #include <string.h>
 
-void itoa(char *target,s32 n) {
+void itoa(char *target,u32 targetSize,s32 n) {
 	char *s = target,*a = target,*b;
 
-	vassert(target != NULL,"target == NULL");
+	assert(target != NULL);
+	assert(targetSize >= 12);
 
 	/* handle sign */
 	if(n < 0) {

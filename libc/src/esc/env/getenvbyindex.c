@@ -24,10 +24,11 @@
 #include "envintern.h"
 
 bool getEnvByIndex(char *name,u32 nameSize,u32 index) {
+	sMsg msg;
 	if(initEnv() < 0)
 		return false;
 
 	msg.args.arg1 = getpid();
 	msg.args.arg2 = index;
-	return doGetEnv(name,nameSize,MSG_ENV_GETI,sizeof(msg.args));
+	return doGetEnv(name,&msg,nameSize,MSG_ENV_GETI,sizeof(msg.args));
 }

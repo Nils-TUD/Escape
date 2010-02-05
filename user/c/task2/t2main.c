@@ -148,8 +148,8 @@ static void genTable(void) {
 	char test[MAX_LEN + 1];
 	sBigInteger n;
 	sBigInteger incr;
-	sprintf(n.data,"%0*Ld",MAX_LEN,5LL);
-	sprintf(test,"%Ld",5LL);
+	snprintf(n.data,sizeof(n.data),"%0*Ld",MAX_LEN,5LL);
+	snprintf(test,sizeof(test),"%Ld",5LL);
 	n.start = MAX_LEN - strlen(test);
 
 	for(i = 0; i < 52; i++) {

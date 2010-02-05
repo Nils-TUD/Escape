@@ -19,18 +19,24 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
+#include <esc/lock.h>
 #include <errors.h>
 
 #define MAX_EXIT_FUNCS	8
 
+static tULock exitLock = 0;
 static s16 exitFuncCount = 0;
 static fExitFunc exitFuncs[MAX_EXIT_FUNCS];
 
 s32 atexit(fExitFunc func) {
-	if(exitFuncCount >= MAX_EXIT_FUNCS)
+	locku(&exitLock);
+	if(exitFuncCount >= MAX_EXIT_FUNCS) {
+		unlocku(&exitLock);
 		return ERR_MAX_EXIT_FUNCS;
+	}
 
 	exitFuncs[exitFuncCount++] = func;
+	unlocku(&exitLock);
 	return 0;
 }
 

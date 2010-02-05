@@ -25,6 +25,7 @@
 #include "envintern.h"
 
 bool getEnv(char *value,u32 valSize,const char *name) {
+	sMsg msg;
 	if(initEnv() < 0)
 		return false;
 	if(strlen(name) >= sizeof(msg.str.s1))
@@ -32,5 +33,5 @@ bool getEnv(char *value,u32 valSize,const char *name) {
 
 	msg.str.arg1 = getpid();
 	strcpy(msg.str.s1,name);
-	return doGetEnv(value,valSize,MSG_ENV_GET,sizeof(msg.str));
+	return doGetEnv(value,&msg,valSize,MSG_ENV_GET,sizeof(msg.str));
 }

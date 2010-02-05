@@ -89,7 +89,7 @@ bool vterm_initAll(tServ *ids) {
 		vterms[i].sid = ids[i];
 		vterms[i].defForeground = LIGHTGRAY;
 		vterms[i].defBackground = BLACK;
-		sprintf(name,"vterm%d",i);
+		snprintf(name,sizeof(name),"vterm%d",i);
 		memcpy(vterms[i].name,name,MAX_VT_NAME_LEN + 1);
 		if(!vterm_init(vterms + i,&vidSize,vidFd,speakerFd))
 			return false;

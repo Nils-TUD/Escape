@@ -147,7 +147,7 @@ static void test_atol(void) {
 
 static bool test_itoacpy(s32 n,const char *expected) {
 	static char str[12];
-	itoa(str,n);
+	itoa(str,sizeof(str),n);
 	return test_assertStr(str,(char*)expected);
 }
 

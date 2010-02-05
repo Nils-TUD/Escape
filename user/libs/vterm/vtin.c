@@ -136,7 +136,7 @@ void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 	if(!vt->readLine) {
 		bool empty = rb_length(vt->inbuf) == 0;
 		char escape[SSTRLEN("\033[kc;123;123;7]") + 1];
-		sprintf(escape,"\033[kc;%d;%d;%d]",c,keycode,modifier);
+		snprintf(escape,sizeof(escape),"\033[kc;%d;%d;%d]",c,keycode,modifier);
 		rb_writen(vt->inbuf,escape,strlen(escape));
 		if(empty)
 			setDataReadable(vt->sid,true);

@@ -21,6 +21,7 @@
 #include <esc/dir.h>
 #include <esc/io.h>
 #include <esc/heap.h>
+#include <esc/lock.h>
 #include <string.h>
 
 /* for the directory-cache */
@@ -39,7 +40,7 @@ static void incCache(tFD fd);
  * demand and if we're reading from the real filesystem we have to make a request to fs. */
 /* But the cache is just usable for one directory. If the user-process opens another directory
  * in parallel we can't use the cache. */
-/* FIXME this is NOT thread-safe! */
+static tULock dirLock = 0;
 static tFD cfd = -1;
 static char *cache = NULL;
 static u32 cpos = 0;
@@ -48,22 +49,29 @@ static u32 csize = 0;
 tFD opendir(const char *path) {
 	tFD fd = open(path,IO_READ);
 	if(fd >= 0) {
+		locku(&dirLock);
 		/* if the cache is in use, leave it alone */
-		if(cache != NULL)
+		if(cache != NULL) {
+			unlocku(&dirLock);
 			return fd;
+		}
 		/* create cache */
 		cache = (char*)malloc(CACHE_SIZE);
 		/* if it fails, read without cache */
-		if(cache == NULL)
+		if(cache == NULL) {
+			unlocku(&dirLock);
 			return fd;
+		}
 		/* read the first bytes */
 		cpos = 0;
 		csize = read(fd,cache,CACHE_SIZE);
 		if((s32)csize < 0) {
+			unlocku(&dirLock);
 			close(fd);
 			return (s32)csize;
 		}
 		cfd = fd;
+		unlocku(&dirLock);
 	}
 	return fd;
 }
@@ -72,6 +80,7 @@ bool readdir(sDirEntry *e,tFD dir) {
 	u32 len;
 
 	/* if the cache is ours, use it */
+	locku(&dirLock);
 	if(dir == cfd && cache) {
 		/* check if we have to read more */
 		sDirEntry *ec = (sDirEntry*)(cache + cpos);
@@ -84,8 +93,10 @@ bool readdir(sDirEntry *e,tFD dir) {
 			if(csize - cpos >= DIRE_SIZE + ec->nameLen) {
 				/* copy to e and move to next */
 				len = ec->nameLen;
-				if(len >= MAX_NAME_LEN)
+				if(len >= MAX_NAME_LEN) {
+					unlocku(&dirLock);
 					return false;
+				}
 				memcpy(e,ec,DIRE_SIZE + len);
 				e->name[len] = '\0';
 				if(e->recLen - DIRE_SIZE > len)
@@ -93,11 +104,14 @@ bool readdir(sDirEntry *e,tFD dir) {
 				else
 					len += DIRE_SIZE;
 				cpos += len;
+				unlocku(&dirLock);
 				return true;
 			}
 		}
+		unlocku(&dirLock);
 		return false;
 	}
+	unlocku(&dirLock);
 
 	/* default way; read the entry without name first */
 	if(read(dir,(u8*)e,DIRE_SIZE) > 0) {
@@ -126,11 +140,13 @@ bool readdir(sDirEntry *e,tFD dir) {
 
 void closedir(tFD dir) {
 	/* free cache if it is our */
+	locku(&dirLock);
 	if(cfd == dir) {
 		cfd = -1;
 		free(cache);
 		cache = NULL;
 	}
+	unlocku(&dirLock);
 	close(dir);
 }
 

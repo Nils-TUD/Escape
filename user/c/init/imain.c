@@ -108,6 +108,7 @@ int main(void) {
 	tFD fd;
 	s32 child;
 	u32 i,retries = 0;
+	u32 vtLen;
 	char *vtermName;
 	char *servDefs;
 
@@ -143,12 +144,13 @@ int main(void) {
 		error("Unable to load services");
 
 	/* now load the shells */
-	vtermName = (char*)malloc(SSTRLEN("vterm") + getnwidth(VTERM_COUNT) + 1);
+	vtLen = SSTRLEN("vterm") + getnwidth(VTERM_COUNT) + 1;
+	vtermName = (char*)malloc(vtLen);
 	if(vtermName == NULL)
 		error("Unable to allocate mem for vterm-name");
 
 	for(i = 0; i < VTERM_COUNT; i++) {
-		sprintf(vtermName,"vterm%d",i);
+		snprintf(vtermName,vtLen,"vterm%d",i);
 		child = fork();
 		if(child == 0) {
 			const char *args[] = {"/bin/shell",NULL,NULL};

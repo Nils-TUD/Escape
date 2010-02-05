@@ -530,12 +530,12 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	fWrite whdlr;
 
 	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
-	name = (char*)kheap_alloc(12 * sizeof(char));
+	name = (char*)kheap_alloc(12);
 	if(name == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* create usage-node */
-	itoa(name,tid);
+	itoa(name,12,tid);
 
 	/* check duplicate usage */
 	m = NODE_FIRST_CHILD(n);
@@ -564,20 +564,21 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child) {
 	char *name;
 	sVFSNode *m;
-	u32 len;
+	u32 len,size;
 	sThread *t = thread_getRunning();
 
 	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
 	/* we want to have to form <pid>.<x>, therefore two ints and a '.' */
-	name = (char*)kheap_alloc((11 * 2 + 2) * sizeof(char));
+	size = 11 * 2 + 2;
+	name = (char*)kheap_alloc(size);
 	if(name == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* create usage-node */
-	itoa(name,t->tid);
+	itoa(name,size,t->tid);
 	len = strlen(name);
 	*(name + len) = '.';
-	itoa(name + len + 1,nextPipeId++);
+	itoa(name + len + 1,size - (len + 1),nextPipeId++);
 
 	/* ok, create a pipe-node */
 	m = vfsn_createPipeNode(t->tid,n,name);

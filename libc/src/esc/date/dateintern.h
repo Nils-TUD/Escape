@@ -30,6 +30,6 @@
 #define DEF_YEAR				0
 #define LEAP_YEAR				1
 
-extern u8 daysPerMonth[2][12];
+extern const u8 daysPerMonth[2][12];
 
 #endif /* DATEINTERN_H_ */

@@ -272,7 +272,7 @@ static sProcess *ps_getProcs(u32 *count) {
 				continue;
 
 			/* build path */
-			sprintf(ppath,"/system/processes/%s/info",entry.name);
+			snprintf(ppath,sizeof(ppath),"/system/processes/%s/info",entry.name);
 			if((dfd = open(ppath,IO_READ)) >= 0) {
 				/* increase array */
 				if(pos >= size) {
@@ -333,7 +333,7 @@ static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
 	p->threads = sll_create();
 
 	/* read threads */
-	sprintf(path,"/system/processes/%d/threads",pid);
+	snprintf(path,sizeof(path),"/system/processes/%d/threads",pid);
 	threads = opendir(path);
 	if(threads < 0) {
 		free(buf);
@@ -345,7 +345,7 @@ static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
 			continue;
 
 		/* build path */
-		sprintf(ppath,"/system/processes/%d/threads/%s",pid,entry.name);
+		snprintf(ppath,sizeof(ppath),"/system/processes/%d/threads/%s",pid,entry.name);
 		if((dfd = open(ppath,IO_READ)) >= 0) {
 			sPThread *t = (sPThread*)malloc(sizeof(sPThread));
 			/* read thread */

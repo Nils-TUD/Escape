@@ -75,7 +75,7 @@ int main(int argc,char **argv) {
 	u32 no = 0;
 	servName = new char[MAX_PATH_LEN + 1];
 	do {
-		sprintf(servName,"guiterm%d",no);
+		snprintf(servName,MAX_PATH_LEN + 1,"guiterm%d",no);
 		sid = regService(servName,SERV_DRIVER);
 		if(sid >= 0)
 			break;
@@ -107,7 +107,7 @@ int main(int argc,char **argv) {
 	// wait until the service is announced
 	delete servName;
 	char *servPath = new char[MAX_PATH_LEN + 1];
-	sprintf(servPath,"/drivers/guiterm%d",no);
+	snprintf(servPath,MAX_PATH_LEN + 1,"/drivers/guiterm%d",no);
 	tFD fin;
 	do {
 		fin = open(servPath,IO_READ);

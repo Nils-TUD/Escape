@@ -50,9 +50,10 @@ s64 atol(const char *str);
  * Converts the given signed integer to a string
  *
  * @param target the target-string (needs max. 12 elements)
+ * @param targetSize the size of <target>
  * @param n the integer
  */
-void itoa(char *target,s32 n);
+void itoa(char *target,u32 targetSize,s32 n);
 
 /**
  * The memchr() function looks for the first occurrence of c within count characters in

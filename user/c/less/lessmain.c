@@ -230,9 +230,9 @@ static void printStatus(u32 total,const char *totalStr) {
 	if(tmp == NULL)
 		return;
 	if(!totalStr)
-		sprintf(tmp,"Lines %d-%d / %d",startLine + 1,startLine + end,total);
+		snprintf(tmp,consSize.width + 1,"Lines %d-%d / %d",startLine + 1,startLine + end,total);
 	else
-		sprintf(tmp,"Lines %d-%d / %s",startLine + 1,startLine + end,totalStr);
+		snprintf(tmp,consSize.width + 1,"Lines %d-%d / %s",startLine + 1,startLine + end,totalStr);
 	if(filename == NULL)
 		displayName = "STDIN";
 	else

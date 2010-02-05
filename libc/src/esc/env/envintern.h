@@ -33,14 +33,14 @@ s32 initEnv(void);
  * Sends the given get-message to the env-service and returns the reply-data
  *
  * @param buf the buffer to write to
+ * @param msg the message
  * @param bufSize the size of the buffer
  * @param cmd the command
  * @param size the size of the msg
  * @return the received data
  */
-bool doGetEnv(char *buf,u32 bufSize,u32 cmd,u32 size);
+bool doGetEnv(char *buf,sMsg *msg,u32 bufSize,u32 cmd,u32 size);
 
-extern sMsg msg;
 /* the fd for the env-service */
 extern tFD envFd;
 

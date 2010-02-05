@@ -19,16 +19,21 @@
 
 #include <esc/common.h>
 #include <esc/env.h>
+#include <esc/lock.h>
 #include <esc/io.h>
 #include "envintern.h"
 
-sMsg msg;
 /* the fd for the env-service */
 tFD envFd = -1;
+static tULock envLock;
 
 s32 initEnv(void) {
-	if(envFd >= 0)
+	locku(&envLock);
+	if(envFd >= 0) {
+		unlocku(&envLock);
 		return 0;
+	}
 	envFd = open("/services/env",IO_READ | IO_WRITE);
+	unlocku(&envLock);
 	return envFd;
 }

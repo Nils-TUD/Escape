@@ -180,6 +180,8 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			}
 
 			res = shcmd[0]->func(cmd->exprCount,cmd->exprs);
+			/* flush stdout just to be sure */
+			flush();
 
 			/* restore stdin & stdout */
 			if(fdout >= 0) {

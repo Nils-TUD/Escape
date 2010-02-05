@@ -28,6 +28,7 @@
 
 s32 setEnv(const char *name,const char* value) {
 	s32 res;
+	sMsg msg;
 	if((res = initEnv()) < 0)
 		return res;
 	if(strlen(name) >= sizeof(msg.str.s1) || strlen(value) >= sizeof(msg.str.s2))

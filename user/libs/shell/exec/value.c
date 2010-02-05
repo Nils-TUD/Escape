@@ -145,7 +145,7 @@ char *val_getStr(sValue *v) {
 	switch(v->type) {
 		case TYPE_INT: {
 			char *s = (char*)emalloc(12);
-			itoa(s,v->intval);
+			itoa(s,12,v->intval);
 			return s;
 		}
 		case TYPE_STR:

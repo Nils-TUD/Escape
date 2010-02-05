@@ -152,7 +152,7 @@ static void waitForProc(tPid pid) {
 	tFD fd;
 	u32 time = 0;
 	char path[SSTRLEN("/system/processes/") + 12];
-	sprintf(path,"/system/processes/%d",pid);
+	snprintf(path,sizeof(path),"/system/processes/%d",pid);
 	while(1) {
 		fd = open(path,IO_READ);
 		if(fd < 0)
@@ -174,7 +174,7 @@ static void getProcName(tPid pid,char *name) {
 	tFD fd;
 	char buffer[PROC_BUFFER_SIZE];
 	char path[SSTRLEN("/system/processes//info") + 12];
-	sprintf(path,"/system/processes/%d/info",pid);
+	snprintf(path,sizeof(path),"/system/processes/%d/info",pid);
 	fd = open(path,IO_READ);
 	/* maybe the process has just been terminated */
 	if(fd < 0)

@@ -994,11 +994,11 @@ sVFSNode *vfs_createProcess(tPid pid,fRead handler) {
 	sVFSNode *dir,*tdir;
 
 	/* build name */
-	name = (char*)kheap_alloc(sizeof(char) * 12);
+	name = (char*)kheap_alloc(12);
 	if(name == NULL)
 		return NULL;
 
-	itoa(name,pid);
+	itoa(name,12,pid);
 
 	/* go to last entry */
 	while(n != NULL) {
@@ -1047,7 +1047,7 @@ void vfs_removeProcess(tPid pid) {
 	sVFSNode *proc = PROCESSES();
 	sProc *p = proc_getByPid(pid);
 	char name[12];
-	itoa(name,pid);
+	itoa(name,sizeof(name),pid);
 
 	/* remove from /system/processes */
 	vfsn_removeNode(p->threadDir->parent);
@@ -1065,10 +1065,10 @@ bool vfs_createThread(tTid tid,fRead handler) {
 	sThread *t = thread_getById(tid);
 
 	/* build name */
-	name = (char*)kheap_alloc(sizeof(char) * 12);
+	name = (char*)kheap_alloc(12);
 	if(name == NULL)
 		return false;
-	itoa(name,tid);
+	itoa(name,12,tid);
 
 	/* create thread-node */
 	n = vfsn_createFile(tid,t->proc->threadDir,name,handler,NULL);
@@ -1102,10 +1102,10 @@ void vfs_removeThread(tTid tid) {
 	}
 
 	/* build name */
-	name = (char*)kheap_alloc(sizeof(char) * 12);
+	name = (char*)kheap_alloc(12);
 	if(name == NULL)
 		return;
-	itoa(name,tid);
+	itoa(name,12,tid);
 
 	/* search for thread-node and remove it */
 	n = NODE_FIRST_CHILD(t->proc->threadDir);

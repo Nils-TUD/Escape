@@ -239,7 +239,7 @@ static void displ_printStatus(void) {
 	u32 fileLen = buffer->filename ? strlen(buffer->filename) : 0;
 	char *tmp = (char*)emalloc(consSize.width + 1);
 	printf("\033[go;%d;%d]",0,consSize.height + 1);
-	sprintf(tmp,"Cursor @ %d : %d",firstLine + curY + 1,curX + 1);
+	snprintf(tmp,consSize.width + 1,"Cursor @ %d : %d",firstLine + curY + 1,curX + 1);
 	printf("\033[co;0;7]%-*s%s%c\033[co]",
 			consSize.width - fileLen - 1,tmp,
 			buffer->filename ? buffer->filename : "",buffer->modified ? '*' : ' ');

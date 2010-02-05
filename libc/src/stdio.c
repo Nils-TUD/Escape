@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/fileio.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -65,6 +66,19 @@ char *fgets(char *str,int max,FILE *file) {
 
 int isatty(int fd) {
 	return isavterm(fd);
+}
+
+int sprintf(char *str,const char *fmt,...) {
+	va_list ap;
+	int res;
+	va_start(ap,fmt);
+	res = vsnprintf(str,-1,fmt,ap);
+	va_end(ap);
+	return res;
+}
+
+int vsprintf(char *str,const char *fmt,va_list ap) {
+	return vsnprintf(str,-1,fmt,ap);
 }
 
 void perror(const char *msg) {

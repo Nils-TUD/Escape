@@ -110,39 +110,39 @@ static void test_fileio_print(void) {
 
 	test_caseStart("Testing *printf()");
 
-	res = sprintf(str,"%d",4);
+	res = snprintf(str,sizeof(str),"%d",4);
 	if(!test_fileio_checkPrint(res,str,"4"))
 		return;
 
-	res = sprintf(str,"");
+	res = snprintf(str,sizeof(str),"");
 	if(!test_fileio_checkPrint(res,str,""))
 		return;
 
-	res = sprintf(str,"%i%d",123,456);
+	res = snprintf(str,sizeof(str),"%i%d",123,456);
 	if(!test_fileio_checkPrint(res,str,"123456"))
 		return;
 
-	res = sprintf(str,"_%d_%d_",1,2);
+	res = snprintf(str,sizeof(str),"_%d_%d_",1,2);
 	if(!test_fileio_checkPrint(res,str,"_1_2_"))
 		return;
 
-	res = sprintf(str,"x=%x, X=%X, b=%b, o=%o, d=%d, u=%u",0xABC,0xDEF,0xF0F,0723,-675,412);
+	res = snprintf(str,sizeof(str),"x=%x, X=%X, b=%b, o=%o, d=%d, u=%u",0xABC,0xDEF,0xF0F,0723,-675,412);
 	if(!test_fileio_checkPrint(res,str,"x=abc, X=DEF, b=111100001111, o=723, d=-675, u=412"))
 		return;
 
-	res = sprintf(str,"'%s'_%c_","test",'f');
+	res = snprintf(str,sizeof(str),"'%s'_%c_","test",'f');
 	if(!test_fileio_checkPrint(res,str,"'test'_f_"))
 		return;
 
-	res = sprintf(str,"%s","");
+	res = snprintf(str,sizeof(str),"%s","");
 	if(!test_fileio_checkPrint(res,str,""))
 		return;
 
-	res = sprintf(str,"%10s","padme");
+	res = snprintf(str,sizeof(str),"%10s","padme");
 	if(!test_fileio_checkPrint(res,str,"     padme"))
 		return;
 
-	res = sprintf(str,"%02d, % 4x, %08b",9,0xff,0xf);
+	res = snprintf(str,sizeof(str),"%02d, % 4x, %08b",9,0xff,0xf);
 	if(!test_fileio_checkPrint(res,str,"09,   ff, 00001111"))
 		return;
 
@@ -157,39 +157,39 @@ static void test_fileio_print(void) {
 		tmp[i] = c;
 	}
 
-	res = sprintf(str,"%p%n, %hx",0xdeadbeef,&i,0x12345678);
+	res = snprintf(str,sizeof(str),"%p%n, %hx",0xdeadbeef,&i,0x12345678);
 	if(!test_fileio_checkPrint(res,str,"dead:beef, 5678") || !test_assertUInt(i,9))
 		return;
 
-	res = sprintf(str,"%Ld, %017Ld, %-*Ld",1LL,8167127123123123LL,12,-81273123LL);
+	res = snprintf(str,sizeof(str),"%Ld, %017Ld, %-*Ld",1LL,8167127123123123LL,12,-81273123LL);
 	if(!test_fileio_checkPrint(res,str,"1, 08167127123123123, -81273123   "))
 		return;
 
-	res = sprintf(str,"%Lu, %017Lx, %#-*LX",1ULL,0x7179bafed2122ULL,12,0x1234ABULL);
+	res = snprintf(str,sizeof(str),"%Lu, %017Lx, %#-*LX",1ULL,0x7179bafed2122ULL,12,0x1234ABULL);
 	if(!test_fileio_checkPrint(res,str,"1, 00007179bafed2122, 0X1234AB    "))
 		return;
 
-	res = sprintf(str,"%f, %f, %f, %f, %f, %f",0.f,1.f,-1.f,0.f,0.4f,18.4f);
+	res = snprintf(str,sizeof(str),"%f, %f, %f, %f, %f, %f",0.f,1.f,-1.f,0.f,0.4f,18.4f);
 	if(!test_fileio_checkPrint(res,str,"0.000000, 1.000000, -1.000000, 0.000000, 0.400000, 18.399999"))
 		return;
 
-	res = sprintf(str,"%f, %f, %f, %f",-1.231f,999.999f,1234.5678f,1189378123.78167213123f);
+	res = snprintf(str,sizeof(str),"%f, %f, %f, %f",-1.231f,999.999f,1234.5678f,1189378123.78167213123f);
 	if(!test_fileio_checkPrint(res,str,"-1.230999, 999.999023, 1234.567749, 1189378176.000000"))
 		return;
 
-	res = sprintf(str,"%lf, %lf, %lf, %lf, %lf, %lf",0.,1.,-1.,0.,0.4,18.4);
+	res = snprintf(str,sizeof(str),"%lf, %lf, %lf, %lf, %lf, %lf",0.,1.,-1.,0.,0.4,18.4);
 	if(!test_fileio_checkPrint(res,str,"0.000000, 1.000000, -1.000000, 0.000000, 0.400000, 18.399999"))
 		return;
 
-	res = sprintf(str,"%lf, %lf, %lf, %lf",-1.231,999.999,1234.5678,1189378123.78167213123);
+	res = snprintf(str,sizeof(str),"%lf, %lf, %lf, %lf",-1.231,999.999,1234.5678,1189378123.78167213123);
 	if(!test_fileio_checkPrint(res,str,"-1.231000, 999.999000, 1234.567800, 1189378123.781672"))
 		return;
 
-	res = sprintf(str,"%8.4lf, %8.1lf, %8.10lf",1.,-1.,0.);
+	res = snprintf(str,sizeof(str),"%8.4lf, %8.1lf, %8.10lf",1.,-1.,0.);
 	if(!test_fileio_checkPrint(res,str,"  1.0000,     -1.0, 0.0000000000"))
 		return;
 
-	res = sprintf(str,"%3.0lf, %-06.1lf, %2.4lf, %10.10lf",-1.231,999.999,1234.5678,
+	res = snprintf(str,sizeof(str),"%3.0lf, %-06.1lf, %2.4lf, %10.10lf",-1.231,999.999,1234.5678,
 			1189378123.78167213123);
 	if(!test_fileio_checkPrint(res,str,"-1., 999.90, 1234.5678, 1189378123.7816722393"))
 		return;

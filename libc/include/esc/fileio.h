@@ -322,24 +322,14 @@ s32 printf(const char *fmt,...);
 s32 fprintf(tFile *file,const char *fmt,...);
 
 /**
- * Like printf(), but prints to the given string
- *
- * @param str the string to print to
- * @param fmt the format
- * @param ap the argument-list
- * @return the number of written chars
- */
-s32 sprintf(char *str,const char *fmt,...);
-
-/**
- * Like sprintf(), but prints max <max> chars into the buffer
+ * Like printf(), but prints to the given string (max. <max> chars)
  *
  * @param str the string to print to
  * @param max the maximum number of chars to print into the buffer (-1 = unlimited)
  * @param fmt the format
  * @return the number of written chars
  */
-s32 snprintf(char *str,u32 max,const char *fmt,...);
+s32 snprintf(char *str,s32 max,const char *fmt,...);
 
 /**
  * Like printf(), but lets you specify the argument-list
@@ -361,17 +351,7 @@ s32 vprintf(const char *fmt,va_list ap);
 s32 vfprintf(tFile *file,const char *fmt,va_list ap);
 
 /**
- * Like vprintf(), but prints to <str>
- *
- * @param str the string to print to
- * @param fmt the format
- * @param ap the argument-list
- * @return the number of written chars
- */
-s32 vsprintf(char *str,const char *fmt,va_list ap);
-
-/**
- * Like vsprintf(), but prints max <max> chars into the buffer
+ * Like vprintf(), but prints to <str> (max. <max> chars)
  *
  * @param str the string to print to
  * @param max the maximum number of chars to print into the buffer (-1 = unlimited)
@@ -379,7 +359,7 @@ s32 vsprintf(char *str,const char *fmt,va_list ap);
  * @param ap the argument-list
  * @return the number of written chars
  */
-s32 vsnprintf(char *str,u32 max,const char *fmt,va_list ap);
+s32 vsnprintf(char *str,s32 max,const char *fmt,va_list ap);
 
 /**
  * Flushes the output-channel of STDOUT

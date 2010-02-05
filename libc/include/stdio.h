@@ -206,7 +206,7 @@ extern int fprintf(FILE *file,const char *fmt,...);
  * @param ap the argument-list
  * @return the number of written chars
  */
-extern int sprintf(char *str,const char *fmt,...);
+int sprintf(char *str,const char *fmt,...);
 
 /**
  * Like printf(), but lets you specify the argument-list
@@ -235,7 +235,7 @@ extern int vfprintf(FILE *file,const char *fmt,va_list ap);
  * @param ap the argument-list
  * @return the number of written chars
  */
-extern int vsprintf(char *str,const char *fmt,va_list ap);
+int vsprintf(char *str,const char *fmt,va_list ap);
 
 /**
  * Reads one char from STDIN

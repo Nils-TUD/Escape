@@ -21,7 +21,7 @@
 #include <esc/fileio.h>
 #include <stdarg.h>
 
-s32 snprintf(char *str,u32 max,const char *fmt,...) {
+s32 snprintf(char *str,s32 max,const char *fmt,...) {
 	s32 count;
 	va_list ap;
 	va_start(ap,fmt);

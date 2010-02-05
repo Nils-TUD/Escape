@@ -22,7 +22,7 @@
 #include <stdarg.h>
 #include "fileiointern.h"
 
-s32 vsnprintf(char *str,u32 max,const char *fmt,va_list ap) {
+s32 vsnprintf(char *str,s32 max,const char *fmt,va_list ap) {
 	s32 res;
 	sBuffer buf;
 	buf.type = BUF_TYPE_STRING;

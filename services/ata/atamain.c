@@ -197,18 +197,18 @@ static void initDrives(void) {
 
 		/* build VFS-entry */
 		if(drives[i].info.general.isATAPI)
-			sprintf(name,"cd%c",'a' + i);
+			snprintf(name,sizeof(name),"cd%c",'a' + i);
 		else
-			sprintf(name,"hd%c",'a' + i);
+			snprintf(name,sizeof(name),"hd%c",'a' + i);
 		createVFSEntry(drives + i,NULL,name);
 
 		/* register driver for every partition */
 		for(p = 0; p < PARTITION_COUNT; p++) {
 			if(drives[i].partTable[p].present) {
 				if(!drives[i].info.general.isATAPI)
-					sprintf(name,"hd%c%d",'a' + i,p + 1);
+					snprintf(name,sizeof(name),"hd%c%d",'a' + i,p + 1);
 				else
-					sprintf(name,"cd%c%d",'a' + i,p + 1);
+					snprintf(name,sizeof(name),"cd%c%d",'a' + i,p + 1);
 				services[servCount] = regService(name,SERV_DRIVER);
 				if(services[servCount] < 0) {
 					debugf("Drive %d, Partition %d: Unable to register driver '%s'\n",
@@ -230,7 +230,7 @@ static void initDrives(void) {
 static void createVFSEntry(sATADrive *drive,sPartition *part,const char *name) {
 	tFile *f;
 	char path[SSTRLEN("/system/devices/hda1") + 1];
-	sprintf(path,"/system/devices/%s",name);
+	snprintf(path,sizeof(path),"/system/devices/%s",name);
 
 	/*ATA_PR1("Creating '%s'",path);*/
 

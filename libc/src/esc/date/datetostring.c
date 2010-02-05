@@ -130,9 +130,8 @@ s32 dateToString(char *str,u32 max,const char *fmt,sDate *date) {
 				break;
 		}
 		if(number != -1) {
-			if(str + 2 >= end)
+			if(snprintf(str,end - str,"%02d",number) < 2)
 				return 0;
-			sprintf(str,"%02d",number);
 			str += 2;
 			continue;
 		}
@@ -154,30 +153,23 @@ s32 dateToString(char *str,u32 max,const char *fmt,sDate *date) {
 				str += len;
 				break;
 			case 'j':
-				if(str + 3 >= end)
+				if(snprintf(str,end - str,"%03d",date->yearDay) < 3)
 					return 0;
-				sprintf(str,"%03d",date->yearDay);
 				str += 3;
 				break;
 			case 'p':
-				if(str + 2 >= end)
+				if(snprintf(str,end - str,"%s",date->hour < 12 ? "AM" : "PM") < 2)
 					return 0;
-				if(date->hour < 12)
-					sprintf(str,"%s","AM");
-				else
-					sprintf(str,"%s","PM");
 				str += 2;
 				break;
 			case 'w':
-				if(str + 1 >= end)
+				if(snprintf(str,end - str,"%d",date->weekDay - 1) < 1)
 					return 0;
-				sprintf(str,"%d",date->weekDay - 1);
 				str++;
 				break;
 			case 'Y':
-				if(str + 4 >= end)
+				if(snprintf(str,end - str,"%04d",date->year) < 4)
 					return 0;
-				sprintf(str,"%04d",date->year);
 				str += 4;
 				break;
 			case 'Z':

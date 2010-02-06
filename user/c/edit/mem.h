@@ -1,5 +1,5 @@
 /**
- * $Id: mem.h 427 2010-01-30 17:43:10Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

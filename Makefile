@@ -119,6 +119,7 @@ bochs: all prepareRun
 		bochs -f bochs.cfg -q | tee log.txt
 
 vmware: all prepareRun $(VMDISK)
+		sudo /etc/init.d/kvm stop || true # vmware doesn't like kvm :/
 		vmplayer vmware/escape.vmx
 
 vbox: all prepareRun $(VMDISK)

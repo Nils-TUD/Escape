@@ -32,9 +32,12 @@ typedef struct {
 	u8 state;
 	u32 val1;
 	u32 val2;
+	u32 count;
 	void *data;
 	u32 dsize;
-	u32 count;
+	u32 *readFrNos;
+	u32 readFrNoCount;
+	u32 readOffset;
 } sRequest;
 
 /* a request-handler */
@@ -73,6 +76,18 @@ void vfsreq_sendMsg(tMsgId id,tTid tid,const u8 *data,u32 size);
  * @return the request or NULL if not enough mem
  */
 sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size);
+
+/**
+ * Like waitForReply(), but intended for the driver-function read()
+ *
+ * @param tid the thread to block
+ * @param bufSize the buffer-size (stored in dsize)
+ * @param frameNos the array of frame-numbers which have been saved for later mapping
+ * @param frameNoCount the number of frame-numbers
+ * @param offset the offset in the first page where to copy the data to
+ * @return the request or NULL if not enough mem
+ */
+sRequest *vfsreq_waitForReadReply(tTid tid,u32 bufSize,u32 *frameNos,u32 frameNoCount,u32 offset);
 
 /**
  * Searches for the request of the given thread

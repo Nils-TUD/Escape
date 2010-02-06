@@ -51,16 +51,26 @@ typedef struct {
 	u16 dsegLen;
 } sAPMTable;
 
+typedef struct {
+	u32 size;
+	u8 number;
+	u8 mode;
+	u16 cylinders;
+	u8 heads;
+	u8 sectors;
+	u8 ports[];
+} sDrive;
+
 /* multi-boot-information */
 typedef struct {
 	u32 flags;
 	u32 memLower;				/* present if flags[0] is set */
 	u32 memUpper;				/* present if flags[0] is set */
 	struct {
-		s8 partition3;			/* sub-sub-partition (0xFF = not used) */
-		s8 partition2;			/* sub-partition (0xFF = not used) */
-		s8 partition1;			/* top-level partition-number (0xFF = not used) */
-		s8 drive;				/* contains the bios drive number as understood by the bios
+		u8 partition3;			/* sub-sub-partition (0xFF = not used) */
+		u8 partition2;			/* sub-partition (0xFF = not used) */
+		u8 partition1;			/* top-level partition-number (0xFF = not used) */
+		u8 drive;				/* contains the bios drive number as understood by the bios
 								   INT 0x13 low-level disk interface: e.g. 0x00 for the first
 								   floppy disk or 0x80 for the first hard disk */
 	} bootDevice;				/* present if flags[1] is set */
@@ -83,9 +93,9 @@ typedef struct {
 	} syms;
 	u32 mmapLength;				/* present if flags[6] is set */
 	sMemMap *mmapAddr;			/* present if flags[6] is set */
-#if 0
 	u32 drivesLength;			/* present if flags[7] is set */
-	tDrive *drivesAddr;			/* present if flags[7] is set */
+	sDrive *drivesAddr;			/* present if flags[7] is set */
+#if 0
 	u32 configTable;			/* present if flags[8] is set */
 	char *bootLoaderName;			/* present if flags[9] is set */
 	sAPMTable *apmTable;		/* present if flags[10] is set */

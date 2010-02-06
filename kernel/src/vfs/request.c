@@ -36,6 +36,12 @@
 #define REQUEST_COUNT		1024
 #define HANDLER_COUNT		32
 
+/**
+ * The internal function to add a request and wait for the reply
+ */
+static sRequest *vfsreq_waitForReplyIntern(tTid tid,void *buffer,u32 size,u32 *frameNos,
+		u32 frameNoCount,u32 offset);
+
 /* the vfs-service-file */
 static sRequest requests[REQUEST_COUNT];
 static fReqHandler handler[HANDLER_COUNT] = {NULL};
@@ -64,6 +70,15 @@ void vfsreq_sendMsg(tMsgId id,tTid tid,const u8 *data,u32 size) {
 }
 
 sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size) {
+	return vfsreq_waitForReplyIntern(tid,buffer,size,NULL,0,0);
+}
+
+sRequest *vfsreq_waitForReadReply(tTid tid,u32 bufSize,u32 *frameNos,u32 frameNoCount,u32 offset) {
+	return vfsreq_waitForReplyIntern(tid,NULL,bufSize,frameNos,frameNoCount,offset);
+}
+
+static sRequest *vfsreq_waitForReplyIntern(tTid tid,void *buffer,u32 size,u32 *frameNos,
+		u32 frameNoCount,u32 offset) {
 	u32 i;
 	volatile sRequest *vreq;
 	sRequest *req = requests;
@@ -81,6 +96,9 @@ sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size) {
 	req->val2 = 0;
 	req->data = buffer;
 	req->dsize = size;
+	req->readFrNos = frameNos;
+	req->readFrNoCount = frameNoCount;
+	req->readOffset = offset;
 	req->count = 0;
 
 	/* wait */

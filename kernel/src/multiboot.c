@@ -51,6 +51,7 @@ void mboot_init(sMultiBoot *mbp) {
 	mb->cmdLine = (char*)((u32)mb->cmdLine | KERNEL_AREA_V_ADDR);
 	mb->modsAddr = (sModule*)((u32)mb->modsAddr | KERNEL_AREA_V_ADDR);
 	mb->mmapAddr = (sMemMap*)((u32)mb->mmapAddr | KERNEL_AREA_V_ADDR);
+	mb->drivesAddr = (sDrive*)((u32)mb->drivesAddr | KERNEL_AREA_V_ADDR);
 	mod = mb->modsAddr;
 	for(i = 0; i < mb->modsCount; i++) {
 		mod->modStart |= KERNEL_AREA_V_ADDR;
@@ -191,8 +192,9 @@ void mboot_dbg_print(void) {
 		vid_printf("memLower=%d KB, memUpper=%d KB\n",mb->memLower,mb->memUpper);
 	}
 	if(CHECK_FLAG(mb->flags,1)) {
-		vid_printf("biosDriveNumber=%d, part1=%d, part2=%d, part3=%d\n",mb->bootDevice.drive,
-			mb->bootDevice.partition1,mb->bootDevice.partition2,mb->bootDevice.partition3);
+		vid_printf("biosDriveNumber=%2X, part1=%2X, part2=%2X, part3=%2X\n",
+			(u32)mb->bootDevice.drive,(u32)mb->bootDevice.partition1,(u32)mb->bootDevice.partition2,
+			(u32)mb->bootDevice.partition3);
 	}
 	if(CHECK_FLAG(mb->flags,2)) {
 		vid_printf("cmdLine=%s\n",mb->cmdLine);
@@ -228,6 +230,16 @@ void mboot_dbg_print(void) {
 						mmap->type == MMAP_TYPE_AVAILABLE ? "free" : "used");
 				x++;
 			}
+		}
+	}
+	if(CHECK_FLAG(mb->flags,7) && mb->drivesLength > 0) {
+		u32 i;
+		sDrive *drive = mb->drivesAddr;
+		vid_printf("Drives: (size=%u)\n",mb->drivesLength);
+		for(x = 0, i = 0; x < mb->drivesLength; x += drive->size) {
+			vid_printf("\t%d: no=%x, mode=%x, cyl=%u, heads=%u, sectors=%u\n",
+					i,(u32)drive->number,(u32)drive->mode,(u32)drive->cylinders,(u32)drive->heads,
+					(u32)drive->sectors);
 		}
 	}
 

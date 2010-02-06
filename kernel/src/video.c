@@ -275,7 +275,7 @@ void vid_vprintf(const char *fmt,va_list ap) {
 			case 'x':
 			case 'X':
 				u = va_arg(ap, u32);
-				base = c == 'o' ? 8 : (c == 'x' ? 16 : (c == 'b' ? 2 : 10));
+				base = c == 'o' ? 8 : ((c == 'x' || c == 'X') ? 16 : (c == 'b' ? 2 : 10));
 				if(pad > 0) {
 					width = getuwidth(u,base);
 					while(width++ < pad) {

@@ -15,7 +15,7 @@ mkdir $TMPDIR/etc
 # copy / create boot-stuff
 cp $ROOT/boot/* $TMPDIR/boot/grub/
 echo 'default 0' > $TMPDIR/boot/grub/menu.lst;
-echo 'timeout 0' >> $TMPDIR/boot/grub/menu.lst;
+echo 'timeout 3' >> $TMPDIR/boot/grub/menu.lst;
 echo '' >> $TMPDIR/boot/grub/menu.lst;
 echo "title $OSTITLE" >> $TMPDIR/boot/grub/menu.lst;
 echo "kernel /boot/$BINNAME" >> $TMPDIR/boot/grub/menu.lst;
@@ -55,6 +55,6 @@ while [ $i != 200 ]; do
 done;
 
 # finally create image and clean up
-genisoimage -U -iso-level 3 -input-charset ascii -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 \
-	-boot-info-table -o $ISO $TMPDIR
+genisoimage -U -iso-level 3 -input-charset ascii -R -b boot/grub/stage2_eltorito \
+	-no-emul-boot -boot-load-size 4 -boot-info-table -o $ISO $TMPDIR
 rm -fR $TMPDIR/*

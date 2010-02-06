@@ -100,7 +100,7 @@ umountp:
 createhdd:
 		tools/disk.sh build
 
-createcd:
+createcd:	all
 		tools/iso.sh
 
 $(VMDISK): $(HDD)

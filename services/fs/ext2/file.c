@@ -218,6 +218,12 @@ s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 
 	bufWork = (const u8*)buffer;
 	for(i = 0; i < blockCount; i++) {
 		u32 block = ext2_inode_getDataBlock(e,cnode,startBlock + i);
+		/* error (e.g. no free block) ? */
+		if(block == 0) {
+			ext2_icache_release(e,cnode);
+			return ERR_BLO_REQ_FAILED;
+		}
+
 		c = MIN(leftBytes,blockSize - offset);
 
 		/* if we're not writing a complete block, we have to read it from disk first */

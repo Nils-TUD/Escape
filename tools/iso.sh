@@ -36,6 +36,7 @@ for i in $BUILD/user_*.bin ; do
 	BASE=`basename $i .bin`
 	cp $i $TMPDIR/bin/`echo $BASE | sed "s/user_\(.*\)/\1/g"`
 done;
+cp $ROOT/kernel/src/mem/paging.c $TMPDIR/paging.c
 
 # add some test-data
 mkdir $TMPDIR/testdir

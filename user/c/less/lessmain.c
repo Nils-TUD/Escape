@@ -52,9 +52,9 @@ static u32 startLine = 0;
 
 static sIoCtlSize consSize;
 static char *emptyLine;
+static bool run = true;
 
 int main(int argc,char *argv[]) {
-	bool run = true;
 	char c;
 	char vterm[MAX_PATH_LEN] = "/drivers/";
 
@@ -193,7 +193,10 @@ static void scrollDown(s32 l) {
 		startLine += l;
 
 	if(l == 0 || startLine > lineCount - consSize.height) {
-		readLines(l == 0 ? 0 : startLine + consSize.height);
+		if(!readLines(l == 0 ? 0 : startLine + consSize.height)) {
+			run = false;
+			return;
+		}
 		if(lineCount < consSize.height)
 			startLine = 0;
 		else
@@ -264,7 +267,10 @@ static bool readLines(u32 end) {
 		cpy = buffer;
 		while(*cpy) {
 			if(*cpy == IO_EOF) {
-				copy('\n');
+				if(!copy('\n')) {
+					free(buffer);
+					return false;
+				}
 				seenEOF = true;
 				goto finished;
 			}
@@ -349,12 +355,12 @@ static bool copy(char c) {
 			if(lineCount >= lineSize) {
 				lineSize += BUFFER_INC_SIZE;
 				lines = (char**)realloc(lines,lineSize * sizeof(char*));
-				/* ensure that all pointers are NULL */
-				memclear(lines + lineSize - BUFFER_INC_SIZE,BUFFER_INC_SIZE * sizeof(char*));
 				if(lines == NULL) {
 					printe("Unable to reallocate lines");
 					return false;
 				}
+				/* ensure that all pointers are NULL */
+				memclear(lines + lineSize - BUFFER_INC_SIZE,BUFFER_INC_SIZE * sizeof(char*));
 			}
 			break;
 

@@ -55,10 +55,9 @@ int main(void) {
 						/* offset is ignored here */
 						u32 count = msg.args.arg2;
 						u8 *data = (u8*)calloc(count,sizeof(u8));
-						if(data)
-							msg.args.arg1 = count;
-						else
-							msg.args.arg1 = 0;
+						if(!data)
+							count = 0;
+						msg.args.arg1 = count;
 						msg.args.arg2 = true;
 						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 						if(data) {

@@ -338,11 +338,7 @@ paging_enable:
 ; NOTE: supported for >= Intel486
 ; void paging_flushAddr(u32 address);
 paging_flushAddr:
-	; TODO as it seems real hardware (my old notebook :)) and vmware do some strange things
-	; if we just use invlpg. I have no idea why, but it works if we flush the complete TLB
-	;invlpg	[esp + 4]
-	mov		eax,cr3
-	mov		cr3,eax
+	invlpg	[esp + 4]
 	ret
 
 ; void paging_flushTLB(void);

@@ -54,6 +54,13 @@ typedef struct {
 extern void paging_enable(void);
 
 /**
+ * Flushes the whole page-table including the page in the mapped page-table-area
+ *
+ * @param virt a virtual address in the page-table
+ */
+static void paging_flushPageTable(u32 virt);
+
+/**
  * Maps the page-directory of the given process at PAGE_DIR_TMP_AREA and the page-tables
  * at TMPMAP_PTS_START
  *
@@ -206,9 +213,10 @@ void paging_mapHigherHalf(void) {
 }
 
 void paging_gdtFinished(void) {
-	/* we can simply remove the first page-table since it just a "link" to the "real" page-table
+	/* we can simply remove the first 2 page-tables since it just a "link" to the "real" page-table
 	 * for the kernel */
 	proc0PD[0].present = false;
+	proc0PD[1].present = false;
 	paging_flushTLB();
 }
 
@@ -395,11 +403,10 @@ static void paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virt,u32 *frames,u3
 			pd->writable = true;
 			pd->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
 
+			paging_flushPageTable(virt);
 			/* clear frame (ensure that we start at the beginning of the frame) */
 			memclear((void*)ADDR_TO_MAPPED_CUSTOM(mappingArea,
 					virt & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),PAGE_SIZE);
-
-			paging_flushTLB();
 		}
 
 		/* setup page */
@@ -469,7 +476,7 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 	 *  - page-tables for stack
 	 * The frames for the page-content is not yet needed since we're using copy-on-write!
 	 */
-	p = proc_getRunning();
+	p = curThread->proc;
 	tPages = p->textPages;
 	dPages = p->dataPages;
 	sPages = curThread->ustackPages;
@@ -507,7 +514,7 @@ u32 paging_clonePageDir(u32 *stackFrame,sProc *newProc) {
 
 	/* map the page-tables of the new process so that we can access them */
 	pd[ADDR_TO_PDINDEX(TMPMAP_PTS_START)] = npd[ADDR_TO_PDINDEX(MAPPED_PTS_START)];
-
+	
 	/* get new page-table for the kernel-stack-area and the stack itself */
 	DBG_PGCLONEPD(vid_printf("Create kernel-stack\n"));
 	tpd = npd + ADDR_TO_PDINDEX(KERNEL_STACK);
@@ -621,6 +628,20 @@ void paging_destroyPageDir(sProc *p) {
 	mm_freeFrame(p->physPDirAddr >> PAGE_SIZE_SHIFT,MM_DEF);
 }
 
+static void paging_flushPageTable(u32 virt) {
+	u32 end;
+	/* to beginning of page-table */
+	virt &= ~(PT_ENTRY_COUNT * PAGE_SIZE - 1);
+	end = virt + PT_ENTRY_COUNT * PAGE_SIZE;
+	/* flush page-table-entries in mapped area */
+	paging_flushAddr(ADDR_TO_MAPPED(virt));
+	/* flush pages in the page-table */
+	while(virt < end) {
+		paging_flushAddr(virt);
+		virt += PAGE_SIZE;
+	}
+}
+
 static void paging_mapForeignPageDir(sProc *p) {
 	sPDEntry *pd,*ppd;
 	/* map page-dir of process */
@@ -663,9 +684,12 @@ static void paging_unmapIntern(sProc *p,u32 mappingArea,u32 virt,u32 count,bool 
 			pte->present = false;
 
 			/* invalidate TLB-entry */
-			if(mappingArea == MAPPED_PTS_START)
-				/*paging_flushAddr(virt & ~(PAGE_SIZE - 1));*/
+			if(mappingArea == MAPPED_PTS_START) {
+				/* FIXME I think a flushAddr() should be enough here. But somehow, we need
+				 * a complete flush. I don't know why :/ */
+				/*paging_flushAddr(virt);*/
 				paging_flushTLB();
+			}
 		}
 
 		/* to next page */

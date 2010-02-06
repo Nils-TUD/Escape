@@ -57,11 +57,11 @@
  *      |      |             mm-stack              |     k
  *      v      +-----------------------------------+     e
  *             |                ...                |     r
- * 0xC0400000: +-----------------------------------+     n
+ * 0xC0800000: +-----------------------------------+     n
  *             |                                   |     e
  *      |      |            kernel-heap            |     l
  *      v      |                                   |     a
- * 0xC1800000: +-----------------------------------+     r
+ * 0xC1C00000: +-----------------------------------+     r
  *             |           temp map area           |     e
  * 0xC2800000: +-----------------------------------+     a
  *             |                ...                |
@@ -89,7 +89,7 @@
 /* the start of the temporary mapped page-tables area */
 #define TMPMAP_PTS_START	(MAPPED_PTS_START - (PT_ENTRY_COUNT * PAGE_SIZE))
 /* the start of the kernel-heap */
-#define KERNEL_HEAP_START	(KERNEL_AREA_V_ADDR + (PT_ENTRY_COUNT * PAGE_SIZE))
+#define KERNEL_HEAP_START	(KERNEL_AREA_V_ADDR + (PT_ENTRY_COUNT * PAGE_SIZE) * 2)
 /* the size of the kernel-heap (16 MiB) */
 #define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE/* * 4*/)
 
@@ -311,6 +311,15 @@ u32 paging_getFrameOf(u32 virt);
  * @return the number of new frames we would need
  */
 u32 paging_countFramesForMap(u32 virt,u32 count);
+
+/**
+ * Writes the frame-numbers of all pages from <addr> to <addr> + <size> into <nos>.
+ *
+ * @param nos the array to fill
+ * @param addr the virtual address
+ * @param size the size of the area
+ */
+void paging_getFrameNos(u32 *nos,u32 addr,u32 size);
 
 /**
  * Maps the pages specified by <addr> and <size> from the process <p> into the current address-

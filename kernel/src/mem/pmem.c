@@ -273,6 +273,8 @@ static void mm_markFrameUsed(u32 frame,bool used) {
 		/* we don't mark frames as used since this function is just used for initializing the
 		 * memory-management */
 		if(!used) {
+			if((u32)u16mStack >= KERNEL_HEAP_START)
+				util_panic("MM-Stack too small for physical memory!");
 			/* Note that we assume that the kernel is not in the lower 16MB! */
 			*u16mStack = frame;
 			u16mStack++;

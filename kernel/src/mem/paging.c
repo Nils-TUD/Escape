@@ -120,9 +120,10 @@ static void paging_dbg_printPage(sPTEntry *page);
 #endif
 
 /* the page-directory for process 0 */
-sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] __attribute__ ((aligned (PAGE_SIZE)));
-/* the page-table for process 0 */
-sPTEntry proc0PT[PAGE_SIZE / sizeof(sPTEntry)] __attribute__ ((aligned (PAGE_SIZE)));
+static sPDEntry proc0PD[PAGE_SIZE / sizeof(sPDEntry)] __attribute__ ((aligned (PAGE_SIZE)));
+/* the page-tables for process 0 (two because our mm-stack may get large if we have a lot physmem) */
+static sPTEntry proc0PT1[PAGE_SIZE / sizeof(sPTEntry)] __attribute__ ((aligned (PAGE_SIZE)));
+static sPTEntry proc0PT2[PAGE_SIZE / sizeof(sPTEntry)] __attribute__ ((aligned (PAGE_SIZE)));
 
 /**
  * A list which contains each frame for each process that is marked as copy-on-write.
@@ -134,33 +135,41 @@ static sSLList *cowFrames = NULL;
 void paging_init(void) {
 	sPDEntry *pd,*pde;
 	sPTEntry *pt;
-	u32 i,addr,end;
-	/* note that we assume here that the kernel is not larger than a complete page-table (4MiB)! */
+	u32 j,i,vaddr,addr,end;
+	sPTEntry *pts[] = {proc0PT1,proc0PT2};
 
-	pd = (sPDEntry*)VIRT2PHYS(proc0PD);
-	pt = (sPTEntry*)VIRT2PHYS(proc0PT);
+	/* note that we assume here that the kernel including mm-stack is not larger than 2
+	 * complete page-tables (8MiB)! */
 
-	/* map the first 4MiB at 0xC0000000 (exclude page-dir and temp page-dir) */
+	/* map 2 page-tables at 0xC0000000 */
+	vaddr = KERNEL_AREA_V_ADDR;
 	addr = KERNEL_AREA_P_ADDR;
-	end = KERNEL_AREA_P_ADDR + (PT_ENTRY_COUNT - 2) * PAGE_SIZE;
-	for(i = 0; addr < end; i++, addr += PAGE_SIZE) {
-		/* build page-table entry */
-		proc0PT[i].frameNumber = (u32)addr >> PAGE_SIZE_SHIFT;
-		proc0PT[i].present = true;
-		proc0PT[i].writable = true;
+	pd = (sPDEntry*)VIRT2PHYS(proc0PD);
+	for(j = 0; j < 2; j++) {
+		pt = (sPTEntry*)VIRT2PHYS(pts[j]);
+
+		/* map one page-table */
+		end = addr + (PT_ENTRY_COUNT) * PAGE_SIZE;
+		for(i = 0; addr < end; i++, addr += PAGE_SIZE) {
+			/* build page-table entry */
+			pts[j][i].frameNumber = (u32)addr >> PAGE_SIZE_SHIFT;
+			pts[j][i].present = true;
+			pts[j][i].writable = true;
+		}
+
+		/* insert page-table in the page-directory */
+		pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(vaddr));
+		pde->ptFrameNo = (u32)pt >> PAGE_SIZE_SHIFT;
+		pde->present = true;
+		pde->writable = true;
+
+		/* map it at 0x0, too, because we need it until we've "corrected" our GDT */
+		pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(vaddr - KERNEL_AREA_V_ADDR));
+		pde->ptFrameNo = (u32)pt >> PAGE_SIZE_SHIFT;
+		pde->present = true;
+		pde->writable = true;
+		vaddr += PT_ENTRY_COUNT * PAGE_SIZE;
 	}
-
-	/* insert page-table in the page-directory */
-	pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR));
-	pde->ptFrameNo = (u32)pt >> PAGE_SIZE_SHIFT;
-	pde->present = true;
-	pde->writable = true;
-
-	/* map it at 0x0, too, because we need it until we've "corrected" our GDT */
-	pde = (sPDEntry*)proc0PD;
-	pde->ptFrameNo = (u32)pt >> PAGE_SIZE_SHIFT;
-	pde->present = true;
-	pde->writable = true;
 
 	/* put the page-directory in the last page-dir-slot */
 	pde = (sPDEntry*)(proc0PD + ADDR_TO_PDINDEX(MAPPED_PTS_START));
@@ -176,8 +185,8 @@ void paging_init(void) {
 void paging_mapHigherHalf(void) {
 	u32 addr,end;
 	sPDEntry *pde;
-	/* insert all page-tables for 0xC0400000 .. 0xFF3FFFFF into the page dir */
-	addr = KERNEL_AREA_V_ADDR + (PAGE_SIZE * PT_ENTRY_COUNT);
+	/* insert all page-tables for 0xC0800000 .. 0xFF3FFFFF into the page dir */
+	addr = KERNEL_AREA_V_ADDR + (PAGE_SIZE * PT_ENTRY_COUNT * 2);
 	end = KERNEL_STACK;
 	/*end = TMPMAP_PTS_START;*/
 	/*end = KERNEL_HEAP_START + KERNEL_HEAP_SIZE;*/
@@ -303,6 +312,15 @@ u32 paging_countFramesForMap(u32 virt,u32 count) {
 		virt += PAGE_SIZE * PT_ENTRY_COUNT;
 	}
 	return res;
+}
+
+void paging_getFrameNos(u32 *nos,u32 addr,u32 size) {
+	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(addr);
+	u32 pcount = BYTES_2_PAGES((addr & (PAGE_SIZE - 1)) + size);
+	while(pcount-- > 0) {
+		*nos++ = pt->frameNumber;
+		pt++;
+	}
 }
 
 void *paging_mapAreaOf(sProc *p,u32 addr,u32 size) {
@@ -646,7 +664,8 @@ static void paging_unmapIntern(sProc *p,u32 mappingArea,u32 virt,u32 count,bool 
 
 			/* invalidate TLB-entry */
 			if(mappingArea == MAPPED_PTS_START)
-				paging_flushAddr(virt);
+				/*paging_flushAddr(virt & ~(PAGE_SIZE - 1));*/
+				paging_flushTLB();
 		}
 
 		/* to next page */

@@ -75,7 +75,8 @@ int main(void) {
 		w1->add(cb);
 		pb = new ProgressBar("Progress...",10,120,200,20);
 		w1->add(*pb);
-		startThread(pbThread,NULL);
+		if(startThread(pbThread,NULL) < 0)
+			printe("[GUITEST] Unable to start thread");
 		return app->run();
 	}
 

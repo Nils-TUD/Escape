@@ -151,11 +151,12 @@ int main(void) {
 							data = (char*)malloc(c + 1);
 							msg.args.arg1 = 0;
 							if(data) {
-								receive(fd,&mid,data,c + 1);
-								data[c] = '\0';
-								vterm_puts(vt,data,c,true);
+								if(receive(fd,&mid,data,c + 1) >= 0) {
+									data[c] = '\0';
+									vterm_puts(vt,data,c,true);
+									msg.args.arg1 = c;
+								}
 								free(data);
-								msg.args.arg1 = c;
 							}
 							send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 						}

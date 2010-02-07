@@ -47,7 +47,7 @@ namespace esc {
 				u32 : 32;
 				/* offset of the data */
 				u32 dataOffset;
-			} __attribute__((packed)) sBMFileHeader;
+			} A_PACKED sBMFileHeader;
 
 			/* the information-header */
 			typedef struct {
@@ -77,11 +77,41 @@ namespace esc {
 				 * 							 color-table
 				 * otherwise: if color-table available, the number of them; otherwise 0 */
 				u32 colorsImportant;
-			} __attribute__((packed)) sBMInfoHeader;
+			} A_PACKED sBMInfoHeader;
 
 		public:
-			BitmapImage(const String &filename);
-			virtual ~BitmapImage();
+			BitmapImage(const String &filename)
+				: _fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL), _tableSize(0),
+					_data(NULL), _dataSize(0) {
+				loadFromFile(filename);
+				/*printf("FileHeader:\n");
+				dumpBytes(_fileHeader,sizeof(sBMFileHeader));
+				printf("\nInfoHeader:\n");
+				dumpBytes(_infoHeader,sizeof(sBMInfoHeader));
+				printf("\nColorTable:\n");
+				dumpDwords(_colorTable,_tableSize);
+				printf("\nData:\n");
+				dumpBytes(_data,_dataSize);*/
+			};
+			virtual ~BitmapImage() {
+				delete[] _fileHeader;
+				// don't delete _infoHeader since it's in the heap-area of fileHeader
+				delete[] _colorTable;
+				delete[] _data;
+			};
+
+			BitmapImage(const BitmapImage &img)
+				:	_fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL),
+					_tableSize(0), _data(NULL), _dataSize(0) {
+				clone(img);
+			};
+			BitmapImage &operator=(const BitmapImage &img) {
+				delete[] _fileHeader;
+				delete[] _colorTable;
+				delete[] _data;
+				clone(img);
+				return *this;
+			};
 
 			inline tSize getWidth() const {
 				return _infoHeader->width;
@@ -90,6 +120,21 @@ namespace esc {
 				return _infoHeader->height;
 			};
 			void paint(Graphics &g,tCoord x,tCoord y);
+
+		private:
+			inline void clone(const BitmapImage &img) {
+				u32 headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);
+				u8 *header = new u8[headerSize];
+				_fileHeader = (sBMFileHeader*)header;
+				_infoHeader = (sBMInfoHeader*)(_fileHeader + 1);
+				_tableSize = img._tableSize;
+				_dataSize = img._dataSize;
+				memcpy(_fileHeader,img._fileHeader,headerSize);
+				_colorTable = new u32[img._tableSize];
+				memcpy(_colorTable,img._colorTable,img._tableSize * sizeof(u32));
+				_data = new u8[img._dataSize];
+				memcpy(_data,img._data,img._dataSize * sizeof(u8));
+			};
 
 		private:
 			void loadFromFile(const String &filename);

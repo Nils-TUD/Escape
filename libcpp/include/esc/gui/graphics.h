@@ -47,7 +47,7 @@ namespace esc {
 		struct Pixel {
 		public:
 			Pixel() {};
-			~Pixel() {};
+			virtual ~Pixel() {};
 			virtual u32 getPixelSize() const = 0;
 			virtual u32 get(u32 offset) const = 0;
 			virtual void set(u32 offset,u32 col) = 0;
@@ -56,7 +56,7 @@ namespace esc {
 		struct Pixel8Bit : public Pixel {
 		public:
 			Pixel8Bit(u8 *pixels) : _pixels(pixels) {};
-			~Pixel8Bit() {};
+			virtual ~Pixel8Bit() {};
 
 			inline u32 getPixelSize() const {
 				return sizeof(u8);
@@ -68,6 +68,11 @@ namespace esc {
 				*(u8*)(_pixels + offset * sizeof(u8)) = col & 0xFF;
 			};
 
+		/* no cloning */
+		private:
+			Pixel8Bit(const Pixel8Bit &p);
+			Pixel8Bit &operator=(const Pixel8Bit &p);
+
 		private:
 			u8 *_pixels;
 		};
@@ -75,7 +80,7 @@ namespace esc {
 		struct Pixel16Bit : public Pixel {
 		public:
 			Pixel16Bit(u8 *pixels) : _pixels(pixels) {};
-			~Pixel16Bit() {};
+			virtual ~Pixel16Bit() {};
 
 			inline u32 getPixelSize() const {
 				return sizeof(u16);
@@ -87,6 +92,11 @@ namespace esc {
 				*(u16*)(_pixels + offset * sizeof(u16)) = col & 0xFFFF;
 			};
 
+		/* no cloning */
+		private:
+			Pixel16Bit(const Pixel16Bit &p);
+			Pixel16Bit &operator=(const Pixel16Bit &p);
+
 		private:
 			u8 *_pixels;
 		};
@@ -94,7 +104,7 @@ namespace esc {
 		struct Pixel24Bit : public Pixel {
 		public:
 			Pixel24Bit(u8 *pixels) : _pixels(pixels) {};
-			~Pixel24Bit() {};
+			virtual ~Pixel24Bit() {};
 
 			inline u32 getPixelSize() const {
 				return 3;
@@ -108,6 +118,11 @@ namespace esc {
 				memcpy(_pixels + offset * 3,&col,3);
 			};
 
+		/* no cloning */
+		private:
+			Pixel24Bit(const Pixel24Bit &p);
+			Pixel24Bit &operator=(const Pixel24Bit &p);
+
 		private:
 			u8 *_pixels;
 		};
@@ -115,7 +130,7 @@ namespace esc {
 		struct Pixel32Bit : public Pixel {
 		public:
 			Pixel32Bit(u8 *pixels) : _pixels(pixels) {};
-			~Pixel32Bit() {};
+			virtual ~Pixel32Bit() {};
 
 			inline u32 getPixelSize() const {
 				return sizeof(u32);
@@ -126,6 +141,11 @@ namespace esc {
 			inline void set(u32 offset,u32 col) {
 				*(u32*)(_pixels + offset * sizeof(u32)) = col;
 			};
+
+		/* no cloning */
+		private:
+			Pixel32Bit(const Pixel32Bit &p);
+			Pixel32Bit &operator=(const Pixel32Bit &p);
 
 		private:
 			u8 *_pixels;

@@ -97,6 +97,7 @@ static void sigHdlr(tSig sig,u32 data) {
 	UNUSED(data);
 	if(waitingPid > 0) {
 		/* send SIG_INTRPT to the child */
-		sendSignalTo(waitingPid,SIG_INTRPT,0);
+		if(sendSignalTo(waitingPid,SIG_INTRPT,0) < 0)
+			printe("Unable to send signal to %d",waitingPid);
 	}
 }

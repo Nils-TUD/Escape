@@ -92,6 +92,6 @@ typedef struct {
 	u16 recLen;
 	u16 nameLen;
 	char name[MAX_NAME_LEN + 1];
-} __attribute__((packed)) sDirEntry;
+} A_PACKED sDirEntry;
 
 #endif /* FSINTERFACE_H_ */

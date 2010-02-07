@@ -32,7 +32,7 @@ extern "C" {
  * @param port the port
  * @return a negative error-code or 0 if successfull
  */
-s32 requestIOPort(u16 port);
+s32 requestIOPort(u16 port) A_CHECKRET;
 
 /**
  * Request the given IO-ports
@@ -41,7 +41,7 @@ s32 requestIOPort(u16 port);
  * @param count the number of ports to reserve
  * @return a negative error-code or 0 if successfull
  */
-s32 requestIOPorts(u16 start,u16 count);
+s32 requestIOPorts(u16 start,u16 count) A_CHECKRET;
 
 /**
  * Releases the given IO-port

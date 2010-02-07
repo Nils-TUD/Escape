@@ -34,7 +34,7 @@ extern "C" {
  * @param index the index
  * @return true on success
  */
-bool getEnvByIndex(char *name,u32 nameSize,u32 index);
+bool getEnvByIndex(char *name,u32 nameSize,u32 index) A_CHECKRET;
 
 /**
  * Returns the value of the given environment-variable
@@ -44,7 +44,7 @@ bool getEnvByIndex(char *name,u32 nameSize,u32 index);
  * @param name the environment-variable-name
  * @return true on success
  */
-bool getEnv(char *value,u32 valSize,const char *name);
+bool getEnv(char *value,u32 valSize,const char *name) A_CHECKRET;
 
 /**
  * Sets the environment-variable <name> to <value>.

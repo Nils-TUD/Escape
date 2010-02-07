@@ -79,7 +79,7 @@ extern "C" {
  * @param mode the mode
  * @return the file-descriptor; negative if error
  */
-tFD open(const char *path,u8 mode);
+tFD open(const char *path,u8 mode) A_CHECKRET;
 
 /**
  * Creates a pipe with 2 separate files for reading and writing.
@@ -88,7 +88,7 @@ tFD open(const char *path,u8 mode);
  * @param writeFd will be set to the fd for writing
  * @return 0 on success
  */
-s32 pipe(tFD *readFd,tFD *writeFd);
+s32 pipe(tFD *readFd,tFD *writeFd) A_CHECKRET;
 
 /**
  * Retrieves information about the given file
@@ -97,7 +97,7 @@ s32 pipe(tFD *readFd,tFD *writeFd);
  * @param info will be filled
  * @return 0 on success
  */
-s32 stat(const char *path,sFileInfo *info);
+s32 stat(const char *path,sFileInfo *info) A_CHECKRET;
 
 /**
  * Asks for the current file-position
@@ -106,7 +106,7 @@ s32 stat(const char *path,sFileInfo *info);
  * @param pos will point to the current file-position on success
  * @return 0 on success
  */
-s32 tell(tFD fd,u32 *pos);
+s32 tell(tFD fd,u32 *pos) A_CHECKRET;
 
 /**
  * Checks wether we are at EOF
@@ -125,7 +125,7 @@ s32 eof(tFD fd);
  * @param whence the seek-type: SEEK_SET, SEEK_CUR or SEEK_END
  * @return the new position on success, of the negative error-code
  */
-s32 seek(tFD fd,s32 offset,u32 whence);
+s32 seek(tFD fd,s32 offset,u32 whence) A_CHECKRET;
 
 /**
  * Reads count bytes from the given file-descriptor into the given buffer and returns the
@@ -136,7 +136,7 @@ s32 seek(tFD fd,s32 offset,u32 whence);
  * @param count the number of bytes
  * @return the actual read number of bytes; negative if an error occurred
  */
-s32 read(tFD fd,void *buffer,u32 count);
+s32 read(tFD fd,void *buffer,u32 count) A_CHECKRET;
 
 /**
  * Writes count bytes from the given buffer into the given fd and returns the number of written
@@ -147,7 +147,7 @@ s32 read(tFD fd,void *buffer,u32 count);
  * @param count the number of bytes to write
  * @return the number of bytes written; negative if an error occurred
  */
-s32 write(tFD fd,const void *buffer,u32 count);
+s32 write(tFD fd,const void *buffer,u32 count) A_CHECKRET;
 
 /**
  * Performs the io-control command on the device identified by <fd>. This works with device-
@@ -181,7 +181,7 @@ s32 send(tFD fd,tMsgId id,const void *msg,u32 size);
  * @param size the (max) size of the message
  * @return the size of the message
  */
-s32 receive(tFD fd,tMsgId *id,void *msg,u32 size);
+s32 receive(tFD fd,tMsgId *id,void *msg,u32 size) A_CHECKRET;
 
 /**
  * Duplicates the given file-descriptor
@@ -207,7 +207,7 @@ s32 redirFd(tFD src,tFD dst);
  * @param newPath the link-path
  * @return 0 on success
  */
-s32 link(const char *oldPath,const char *newPath);
+s32 link(const char *oldPath,const char *newPath) A_CHECKRET;
 
 /**
  * Unlinks the given path. That means, the directory-entry will be removed and if there are no
@@ -216,7 +216,7 @@ s32 link(const char *oldPath,const char *newPath);
  * @param path the path
  * @return 0 on success
  */
-s32 unlink(const char *path);
+s32 unlink(const char *path) A_CHECKRET;
 
 /**
  * Creates the given directory. Expects that all except the last path-component exist.
@@ -224,7 +224,7 @@ s32 unlink(const char *path);
  * @param path the path
  * @return 0 on success
  */
-s32 mkdir(const char *path);
+s32 mkdir(const char *path) A_CHECKRET;
 
 /**
  * Removes the given directory. Expects that the directory is empty (except '.' and '..')
@@ -232,7 +232,7 @@ s32 mkdir(const char *path);
  * @param path the path
  * @return 0 on success
  */
-s32 rmdir(const char *path);
+s32 rmdir(const char *path) A_CHECKRET;
 
 /**
  * Mounts <device> at <path> with fs <type>
@@ -242,7 +242,7 @@ s32 rmdir(const char *path);
  * @param type the fs-type
  * @return 0 on success
  */
-s32 mount(const char *device,const char *path,u16 type);
+s32 mount(const char *device,const char *path,u16 type) A_CHECKRET;
 
 /**
  * Unmounts the device mounted at <path>
@@ -250,14 +250,14 @@ s32 mount(const char *device,const char *path,u16 type);
  * @param path the path
  * @return 0 on success
  */
-s32 unmount(const char *path);
+s32 unmount(const char *path) A_CHECKRET;
 
 /**
  * Writes all dirty objects of the filesystem to disk
  *
  * @return 0 on success
  */
-s32 sync(void);
+s32 sync(void) A_CHECKRET;
 
 /**
  * Closes the given file-descriptor

@@ -46,10 +46,12 @@ int mod_driver(int argc,char *argv[]) {
 		if(fd < 0)
 			printe("open");
 		printf("Reading...\n");
-		read(fd,buf,10);
+		if(read(fd,buf,10) < 0)
+			printe("read");
 		printf("Res: %s\n",buf);
 		printf("Writing %s...\n",buf);
-		write(fd,buf,10);
+		if(write(fd,buf,10) < 0)
+			printe("write");
 		printf("IOCtl read\n");
 		ioctl(fd,1,(u8*)buf,10);
 		printf("Got '%s'\n",buf);
@@ -83,9 +85,11 @@ int mod_driver(int argc,char *argv[]) {
 					case MSG_DRV_WRITE: {
 						char *buf = (char*)malloc(msg.args.arg2);
 						printf("Write: offset=%d, count=%d\n",msg.args.arg1,msg.args.arg2);
-						receive(cfd,&mid,buf,msg.args.arg2);
-						printf("Got %s\n",buf);
-						msg.args.arg1 = msg.args.arg2;
+						msg.args.arg1 = 0;
+						if(receive(cfd,&mid,buf,msg.args.arg2) >= 0) {
+							printf("Got %s\n",buf);
+							msg.args.arg1 = msg.args.arg2;
+						}
 						send(cfd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 						free(buf);
 					}

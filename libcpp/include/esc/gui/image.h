@@ -28,6 +28,9 @@ namespace esc {
 	namespace gui {
 		class Image {
 		public:
+			Image() {};
+			virtual ~Image() {};
+
 			virtual tSize getWidth() const = 0;
 			virtual tSize getHeight() const = 0;
 

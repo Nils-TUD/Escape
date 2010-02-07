@@ -148,11 +148,12 @@ int main(void) {
 						if(offset + count <= part->size * drive->secSize && offset + count > offset) {
 							buffer = (u16*)malloc(count);
 							if(buffer) {
-								receive(fd,&mid,buffer,count);
-								ATA_PR2("Writing %d bytes @ %x to drive 0x%x",count,offset,drive->basePort);
-								if(drive->rwHandler(drive,true,buffer,
-										offset / drive->secSize + part->start,count / drive->secSize)) {
-									msg.args.arg1 = count;
+								if(receive(fd,&mid,buffer,count) >= 0) {
+									ATA_PR2("Writing %d bytes @ %x to drive 0x%x",count,offset,drive->basePort);
+									if(drive->rwHandler(drive,true,buffer,
+											offset / drive->secSize + part->start,count / drive->secSize)) {
+										msg.args.arg1 = count;
+									}
 								}
 								free(buffer);
 							}

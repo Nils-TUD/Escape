@@ -62,7 +62,7 @@
 typedef struct {
 	u16 size;		/* the size of the table -1 (size=0 is not allowed) */
 	u32 offset;
-} __attribute__((packed)) sGDTTable;
+} A_PACKED sGDTTable;
 
 /* a GDT descriptor */
 typedef struct {
@@ -113,7 +113,7 @@ typedef struct {
 
 	/* address[24..31] */
 	u8 addrHigh;
-} __attribute__((packed)) sGDTDesc;
+} A_PACKED sGDTDesc;
 
 /* the Task State Segment */
 typedef struct {
@@ -182,7 +182,7 @@ typedef struct {
 	u16 ioMapOffset;
 	u8 ioMap[IO_MAP_SIZE / 8];
 	u8 ioMapEnd;
-} __attribute__((packed)) sTSS;
+} A_PACKED sTSS;
 
 /**
  * Assembler routine to flush the GDT

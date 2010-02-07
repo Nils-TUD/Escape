@@ -271,8 +271,8 @@ static void cmdWrite(tFD fd) {
 		msg.args.arg1 = 0;
 		buffer = malloc(count);
 		if(buffer) {
-			receive(fd,&mid,buffer,count);
-			msg.args.arg1 = inst->fs->write(inst->handle,ino,buffer,offset,count);
+			if(receive(fd,&mid,buffer,count) >= 0)
+				msg.args.arg1 = inst->fs->write(inst->handle,ino,buffer,offset,count);
 			free(buffer);
 		}
 	}

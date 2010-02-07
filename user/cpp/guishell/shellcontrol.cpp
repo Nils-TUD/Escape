@@ -62,7 +62,8 @@ bool handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 		switch(keycode) {
 			case VK_C:
 				/* send interrupt to shell (our parent) */
-				sendSignalTo(getppid(),SIG_INTRPT,0);
+				if(sendSignalTo(getppid(),SIG_INTRPT,0) < 0)
+					printe("Unable to send SIG_INTRPT to %d",getppid());
 				break;
 			case VK_D:
 				if(vt->readLine) {

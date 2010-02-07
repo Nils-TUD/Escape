@@ -29,7 +29,8 @@ static void f(int a);
 int mod_stack(int argc,char *argv[]) {
 	UNUSED(argc);
 	UNUSED(argv);
-	setSigHandler(SIG_TERM,sigHandler);
+	if(setSigHandler(SIG_TERM,sigHandler) < 0)
+		printe("Unable to set sig-handler");
 	f(0);
 	return 0;
 }
@@ -42,6 +43,7 @@ static void sigHandler(tSig sig,u32 data) {
 static void f(int a) {
 	if(a % 128 == 0)
 		printf("&a = %08x\n",&a);
-	sendSignalTo(getpid(),SIG_TERM,a);
+	if(sendSignalTo(getpid(),SIG_TERM,a) < 0)
+		printe("Unable to send signal");
 	f(a + 1);
 }

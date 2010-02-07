@@ -72,7 +72,7 @@ s32 freadesc(tFile *f,s32 *n1,s32 *n2,s32 *n3);
  * 			The file is created if it does not exist.
  * @return a tFile object if successfull or NULL if failed
  */
-tFile *fopen(const char *filename,const char *mode);
+tFile *fopen(const char *filename,const char *mode) A_CHECKRET;
 
 /**
  * Reads an array of count elements, each one with a size of size bytes, from the stream and

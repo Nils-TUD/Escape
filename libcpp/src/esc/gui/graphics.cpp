@@ -31,15 +31,15 @@ namespace esc {
 		Graphics::Graphics(Graphics &g,tCoord x,tCoord y)
 			: _offx(x), _offy(y), _x(0), _y(0), _width(g._width), _height(g._height),
 				_bpp(g._bpp), _col(0), _minx(0),_miny(0), _maxx(_width - 1),
-				_maxy(_height - 1), _font(Font()), _owner(&g) {
+				_maxy(_height - 1), _pixel(NULL), _pixels(NULL), _font(Font()), _owner(&g) {
 			_pixels = g._pixels;
 			_pixel = g._pixel;
 		}
 
 		Graphics::Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp)
 			: _offx(0), _offy(0), _x(x), _y(y), _width(width), _height(height), _bpp(bpp),
-				_col(0), _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),_font(Font()),
-				_owner(NULL) {
+				_col(0), _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),
+				_pixel(NULL), _pixels(NULL), _font(Font()), _owner(NULL) {
 			// allocate mem
 			switch(_bpp) {
 				case 32:
@@ -329,7 +329,8 @@ namespace esc {
 			msg.args.arg2 = y;
 			msg.args.arg3 = width;
 			msg.args.arg4 = height;
-			send(vesaFd,MSG_VESA_UPDATE,&msg,sizeof(msg.args));
+			if(send(vesaFd,MSG_VESA_UPDATE,&msg,sizeof(msg.args)) < 0)
+				err << "Unable to send update-request to VESA" << endl;
 		}
 
 		void Graphics::move(tCoord x,tCoord y) {

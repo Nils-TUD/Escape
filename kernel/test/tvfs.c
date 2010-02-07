@@ -39,11 +39,11 @@ typedef struct {
 	u16 recLen;
 	u16 nameLen;
 	/* name follows (up to 255 bytes) */
-} __attribute__((packed)) sVFSDirEntry;
+} A_PACKED sVFSDirEntry;
 typedef struct {
 	sVFSDirEntry header;
 	char name[MAX_NAME_LEN + 1];
-} __attribute__((packed)) sVFSDirEntryRead;
+} A_PACKED sVFSDirEntryRead;
 
 /* our test-module */
 sTestModule tModVFS = {

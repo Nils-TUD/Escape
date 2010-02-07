@@ -34,7 +34,7 @@ extern "C" {
  * @param count the number of pages to add / remove
  * @return the *old* end of the data-segment. A negative value indicates an error
  */
-s32 changeSize(s32 count);
+s32 changeSize(s32 count) A_CHECKRET;
 
 /**
  * Maps <count> bytes at <phys> into the virtual user-space and returns the start-address.
@@ -43,7 +43,7 @@ s32 changeSize(s32 count);
  * @param count the number of bytes to map
  * @return the start-address or NULL if an error occurred
  */
-void *mapPhysical(u32 phys,u32 count);
+void *mapPhysical(u32 phys,u32 count) A_CHECKRET;
 
 /**
  * Creates a shared-memory region
@@ -52,7 +52,7 @@ void *mapPhysical(u32 phys,u32 count);
  * @param byteCount the number of bytes
  * @return the address on success or NULL
  */
-void *createSharedMem(const char *name,u32 byteCount);
+void *createSharedMem(const char *name,u32 byteCount) A_CHECKRET;
 
 /**
  * Joines a shared-memory region
@@ -60,7 +60,7 @@ void *createSharedMem(const char *name,u32 byteCount);
  * @param name the name
  * @return the address on success or NULL
  */
-void *joinSharedMem(const char *name);
+void *joinSharedMem(const char *name) A_CHECKRET;
 
 /**
  * Leaves a shared-memory region

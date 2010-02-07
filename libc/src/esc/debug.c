@@ -78,7 +78,7 @@ void dumpDwords(void *addr,u32 dwordCount) {
 void dumpArray(void *array,u32 num,u32 elsize) {
 	s32 i,j;
 	char *a = (char*)array;
-	for(i = 0; i < num; i++) {
+	for(i = 0; i < (s32)num; i++) {
 		printf("%d: ",i);
 		/* little-endian... */
 		for(j = elsize - 1; j >= 0; j--)

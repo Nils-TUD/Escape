@@ -58,7 +58,7 @@ private:
 
 public:
 	ShellControl(tServ sid,tCoord x,tCoord y,tSize width,tSize height) :
-		Control(x,y,width,height), _lastCol(0), _lastRow(0) {
+		Control(x,y,width,height), _lastCol(0), _lastRow(0), _vt(NULL) {
 		tFD speakerFd;
 		sIoCtlSize size;
 		Font font;
@@ -77,7 +77,8 @@ public:
 		_vt->sid = sid;
 		_vt->defForeground = BLACK;
 		_vt->defBackground = WHITE;
-		getEnv(_vt->name,sizeof(_vt->name),"TERM");
+		if(!getEnv(_vt->name,sizeof(_vt->name),"TERM"))
+			error("Unable to get env-var TERM");
 		if(!vterm_init(_vt,&size,-1,speakerFd))
 			error("Unable to init vterm");
 		_vt->active = true;
@@ -85,9 +86,12 @@ public:
 		_vt->handlerShortcut = handleShortcut;
 
 		// request ports for qemu and bochs
-		requestIOPort(0xe9);
-		requestIOPort(0x3f8);
-		requestIOPort(0x3fd);
+		if(requestIOPort(0xe9) < 0)
+			printe("Unable to request io-port 0xe9");
+		if(requestIOPort(0x3f8) < 0)
+			printe("Unable to request io-port 0x3f8");
+		if(requestIOPort(0x3fd) < 0)
+			printe("Unable to request io-port 0x3fd");
 	};
 	virtual ~ShellControl() {
 		vterm_destroy(_vt);

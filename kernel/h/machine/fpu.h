@@ -165,7 +165,7 @@ typedef struct {
 	u32 : 32;
 	u32 : 32;
 	u32 : 32;
-} __attribute__((packed)) sXState;
+} A_PACKED sXState;
 
 /* the FPU-state */
 typedef struct {
@@ -185,8 +185,8 @@ typedef struct {
 		u16 high;
 		u32 mid;
 		u32 low;
-	} __attribute__((packed)) regs[8];
-} __attribute__((packed)) sFPUState;
+	} A_PACKED regs[8];
+} A_PACKED sFPUState;
 
 /**
  * Inits the FPU

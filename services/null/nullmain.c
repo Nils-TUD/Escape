@@ -59,7 +59,8 @@ int main(void) {
 					break;
 					case MSG_DRV_WRITE:
 						/* skip the data-message */
-						seek(fd,1,SEEK_CUR);
+						if(seek(fd,1,SEEK_CUR) < 0)
+							printe("[NULL] Unable to skip data-msg");
 						/* write response and pretend that we've written everything */
 						msg.args.arg1 = msg.args.arg2;
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));

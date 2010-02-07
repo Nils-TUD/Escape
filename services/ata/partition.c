@@ -40,7 +40,7 @@ typedef struct {
 	u32 start;
 	/* Total Sectors in partition */
 	u32 size;
-} __attribute__((packed)) sDiskPart;
+} A_PACKED sDiskPart;
 
 void part_fillPartitions(sPartition *table,void *mbr) {
 	u32 i;

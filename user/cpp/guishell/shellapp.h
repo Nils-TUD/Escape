@@ -43,6 +43,10 @@ protected:
 	void doEvents();
 
 private:
+	/* no cloning */
+	ShellApplication(const ShellApplication &app);
+	ShellApplication &operator=(const ShellApplication &app);
+
 	void putIn(char *s,u32 len);
 	void handleKbMsg();
 	void handleKeycode();

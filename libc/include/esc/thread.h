@@ -46,7 +46,7 @@ u32 getThreadCount(void);
  * @param args arguments to pass to the thread (analogous to exec)
  * @return new tid for current thread, 0 for new thread, < 0 if failed
  */
-s32 startThread(fThreadEntry entryPoint,const char **args);
+s32 startThread(fThreadEntry entryPoint,const char **args) A_CHECKRET;
 
 #ifdef __cplusplus
 }

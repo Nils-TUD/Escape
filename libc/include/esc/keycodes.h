@@ -131,15 +131,4 @@
 #define VK_PAUSE		126
 #define VK_PIPE			127
 
-/* special escape-codes */
-#define VK_ESC_FG		'f'
-#define VK_ESC_BG		'b'
-#define VK_ESC_RESET	'r'
-#define VK_ESC_SET_RL	'l'
-#define VK_ESC_SET_ECHO	'e'
-#define VK_ESC_KEYBOARD	'k'
-#define VK_ESC_NAVI		'n'
-#define VK_ESC_BACKUP	'c'
-#define VK_ESC_RESTORE	't'
-
 #endif /* KEYCODES_H_ */

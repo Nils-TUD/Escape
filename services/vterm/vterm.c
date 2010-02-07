@@ -135,8 +135,10 @@ void vterm_update(sVTerm *vt) {
 		if(vt->upStart < vt->cols * 2) {
 			locku(&titleBarLock);
 			byteCount = MIN(vt->cols * 2 - vt->upStart,vt->upLength);
-			seek(vt->video,vt->upStart,SEEK_SET);
-			write(vt->video,vt->titleBar,byteCount);
+			if(seek(vt->video,vt->upStart,SEEK_SET) < 0)
+				printe("[VTERM] Unable to seek in video-driver to %d",vt->upStart);
+			if(write(vt->video,vt->titleBar,byteCount) < 0)
+				printe("[VTERM] Unable to write to video-driver");
 			vt->upLength -= byteCount;
 			vt->upStart = vt->cols * 2;
 			unlocku(&titleBarLock);
@@ -145,8 +147,11 @@ void vterm_update(sVTerm *vt) {
 		/* refresh the rest */
 		byteCount = MIN((vt->rows * vt->cols * 2) - vt->upStart,vt->upLength);
 		if(byteCount > 0) {
-			seek(vt->video,vt->upStart,SEEK_SET);
-			write(vt->video,vt->buffer + (vt->firstVisLine * vt->cols * 2) + vt->upStart,byteCount);
+			char *startPos = vt->buffer + (vt->firstVisLine * vt->cols * 2) + vt->upStart;
+			if(seek(vt->video,vt->upStart,SEEK_SET) < 0)
+				printe("[VTERM] Unable to seek in video-driver to %d",vt->upStart);
+			if(write(vt->video,startPos,byteCount) < 0)
+				printe("[VTERM] Unable to write to video-driver");
 		}
 	}
 	vterm_setCursor(vt);
@@ -164,8 +169,10 @@ static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 		switch(keycode) {
 			case VK_C:
 				/* send interrupt to shell */
-				if(vt->shellPid)
-					sendSignalTo(vt->shellPid,SIG_INTRPT,0);
+				if(vt->shellPid) {
+					if(sendSignalTo(vt->shellPid,SIG_INTRPT,0) < 0)
+						printe("[VTERM] Unable to send SIG_INTRPT to %d",vt->shellPid);
+				}
 				break;
 			case VK_D:
 				if(vt->readLine) {
@@ -219,8 +226,10 @@ static int vterm_dateThread(int argc,char *argv[]) {
 				*title++ = LIGHTGRAY | (BLUE << 4);
 			}
 			if(vterms[i].active) {
-				seek(vterms[i].video,(vterms[i].cols - len) * 2,SEEK_SET);
-				write(vterms[i].video,vterms[i].titleBar + (vterms[i].cols - len) * 2,len * 2);
+				if(seek(vterms[i].video,(vterms[i].cols - len) * 2,SEEK_SET) < 0)
+					printe("[VTERM] Unable to seek in video-driver");
+				if(write(vterms[i].video,vterms[i].titleBar + (vterms[i].cols - len) * 2,len * 2) < 0)
+					printe("[VTERM] Unable to write to video-driver");
 			}
 		}
 		unlocku(&titleBarLock);

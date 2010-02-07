@@ -44,6 +44,10 @@
 /* for declaring unused parameters */
 #define UNUSED(x)				(void)(x)
 
+/* gcc-attributes */
+#define A_PACKED				__attribute__((packed))
+#define A_CHECKRET				__attribute__((__warn_unused_result__))
+
 /* process id */
 typedef u16 tPid;
 /* thread id */

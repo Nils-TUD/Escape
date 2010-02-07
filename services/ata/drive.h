@@ -95,7 +95,7 @@ typedef struct {
 		: 7,
 		/* 0 = ATA, 1 = ATAPI */
 		isATAPI : 1;
-	} __attribute__((packed)) general;
+	} A_PACKED general;
 	u16 oldCylinderCount;
 	/* specific configuration */
 	u16 : 16;
@@ -138,7 +138,7 @@ typedef struct {
 		IORDYSupported : 1,
 		/* reserved / uninteresting */
 		: 4;
-	} __attribute__((packed)) capabilities;
+	} A_PACKED capabilities;
 	/* further capabilities */
 	u16 : 16;
 	/* obsolete */
@@ -204,7 +204,7 @@ typedef struct {
 			ata6 : 1,
 			ata7 : 1,
 			: 8;
-		} __attribute__((packed)) bits;
+		} A_PACKED bits;
 		u16 raw;
     } majorVersion;
 	u16 minorVersion;
@@ -242,9 +242,9 @@ typedef struct {
 		flushCache : 1,
 		flushCacheExt : 1,
 		: 2;
-	} __attribute__((packed)) features;
+	} A_PACKED features;
 	u16 reserved[172];
-} __attribute__((packed)) sATAIdentify;
+} A_PACKED sATAIdentify;
 
 struct sATADrive;
 typedef bool (*fReadWrite)(struct sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount);

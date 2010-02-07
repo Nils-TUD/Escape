@@ -139,6 +139,11 @@ namespace esc {
 			virtual s32 write(void *buffer,u32 count);
 			virtual s32 format(const char *fmt,va_list ap);
 
+		/* no cloning */
+		private:
+			StringBuffer(const StringBuffer &b);
+			StringBuffer &operator=(const StringBuffer &b);
+
 		protected:
 			s32 _max;
 			u32 _pos;
@@ -172,8 +177,10 @@ namespace esc {
 				return _fd;
 			};
 			inline u32 getPos() const {
-				// TODO determine file position
-				return 0;
+				u32 pos;
+				if(tell(_fd,&pos) == 0)
+					return pos;
+				return IO_EOF;
 			};
 			inline bool isEOF() const {
 				return eof(_fd);
@@ -274,6 +281,11 @@ namespace esc {
 		 * @return the number of written chars
 		 */
 		s32 format(const char *fmt,...);
+
+	/* no cloning */
+	private:
+		Stream(const Stream &s);
+		Stream &operator=(const Stream &s);
 
 	protected:
 		Buffer *_in;

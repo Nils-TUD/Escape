@@ -58,7 +58,7 @@ extern "C" {
  * @param handler the handler-function
  * @return 0 on success
  */
-s32 setSigHandler(tSig signal,fSigHandler handler);
+s32 setSigHandler(tSig signal,fSigHandler handler) A_CHECKRET;
 
 /**
  * Unsets the handler-function for a specific signal
@@ -75,7 +75,7 @@ s32 unsetSigHandler(tSig signal);
  * @param data the data to send
  * @return 0 on success
  */
-s32 sendSignal(tSig signal,u32 data);
+s32 sendSignal(tSig signal,u32 data) A_CHECKRET;
 
 /**
  * Sends the given signal to given process (interrupts can't be sended)
@@ -85,7 +85,7 @@ s32 sendSignal(tSig signal,u32 data);
  * @param data the data to send
  * @return 0 on success
  */
-s32 sendSignalTo(tPid pid,tSig signal,u32 data);
+s32 sendSignalTo(tPid pid,tSig signal,u32 data) A_CHECKRET;
 
 #ifdef __cplusplus
 }

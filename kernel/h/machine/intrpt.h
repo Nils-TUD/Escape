@@ -208,7 +208,7 @@ typedef struct {
 	/* if we come from user-mode this fields will be present and will be restored with iret */
 	u32 uesp;
 	u32 uss;
-} __attribute__((packed)) sIntrptStackFrame;
+} A_PACKED sIntrptStackFrame;
 
 /**
  * Returns the name for the given interrupt-number

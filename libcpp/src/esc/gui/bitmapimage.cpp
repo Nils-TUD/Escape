@@ -25,27 +25,6 @@
 
 namespace esc {
 	namespace gui {
-		BitmapImage::BitmapImage(const String &filename)
-			: _fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL), _tableSize(0),
-				_data(NULL), _dataSize(0) {
-			loadFromFile(filename);
-			/*printf("FileHeader:\n");
-			dumpBytes(_fileHeader,sizeof(sBMFileHeader));
-			printf("\nInfoHeader:\n");
-			dumpBytes(_infoHeader,sizeof(sBMInfoHeader));
-			printf("\nColorTable:\n");
-			dumpDwords(_colorTable,_tableSize);
-			printf("\nData:\n");
-			dumpBytes(_data,_dataSize);*/
-		}
-
-		BitmapImage::~BitmapImage() {
-			delete[] _fileHeader;
-			// don't delete _infoHeader since it's in the heap-area of fileHeader
-			delete[] _colorTable;
-			delete[] _data;
-		}
-
 		void BitmapImage::paint(Graphics &g,tCoord x,tCoord y) {
 			if(_data == NULL)
 				return;
@@ -136,7 +115,7 @@ namespace esc {
 			// read color-table, if present
 			if(_tableSize > 0) {
 				_colorTable = new u32[_tableSize];
-				if(f.read(_colorTable,_tableSize * sizeof(u32)) != (s32)_tableSize * sizeof(u32)) {
+				if(f.read(_colorTable,_tableSize * sizeof(u32)) != (s32)(_tableSize * sizeof(u32))) {
 					// TODO throw exception
 					printe("Invalid image '%s'",filename.c_str());
 					return;
@@ -155,7 +134,7 @@ namespace esc {
 			else
 				_dataSize = _infoHeader->sizeImage;
 			_data = new u8[_dataSize];
-			if(f.read(_data,_dataSize * sizeof(u8)) != (s32)_dataSize * sizeof(u8)) {
+			if(f.read(_data,_dataSize * sizeof(u8)) != (s32)(_dataSize * sizeof(u8))) {
 				// TODO throw exception
 				printe("Invalid image '%s'",filename.c_str());
 				return;

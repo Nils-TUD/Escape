@@ -96,13 +96,13 @@ typedef struct {
 	present		: 1;
 	/* The address[16..31] of the ISR */
 	u16	offsetHigh;
-} __attribute__((packed)) sIDTEntry;
+} A_PACKED sIDTEntry;
 
 /* represents an IDT-pointer */
 typedef struct {
 	u16 size;
 	u32 address;
-} __attribute__((packed)) sIDTPtr;
+} A_PACKED sIDTPtr;
 
 /* storage for "delayed" signal handling */
 typedef struct {

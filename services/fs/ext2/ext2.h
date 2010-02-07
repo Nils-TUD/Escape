@@ -255,7 +255,7 @@ typedef struct {
 	u32 firstMetaBg;
 	/* UNUSED */
 	u8 unused[760];
-} __attribute__((packed)) sExt2SuperBlock;
+} A_PACKED sExt2SuperBlock;
 
 typedef struct {
 	/* block id of the first block of the "block bitmap" for the group represented. */
@@ -274,7 +274,7 @@ typedef struct {
 	u32 : 32;
 	u32 : 32;
 	u32 : 32;
-} __attribute__((packed)) sExt2BlockGrp;
+} A_PACKED sExt2BlockGrp;
 
 typedef struct {
 	u16 mode;
@@ -312,7 +312,7 @@ typedef struct {
 	u32 fragAddr;
 	/* 96bit OS dependant structure. */
 	u16 osd2[6];
-} __attribute__((packed)) sExt2Inode;
+} A_PACKED sExt2Inode;
 
 typedef struct {
 	tInodeNo inode;
@@ -320,7 +320,7 @@ typedef struct {
 	u16 nameLen;
 	/* name follows (up to 255 bytes) */
 	char name[];
-} __attribute__((packed)) sExt2DirEntry;
+} A_PACKED sExt2DirEntry;
 
 typedef struct {
 	tInodeNo inodeNo;

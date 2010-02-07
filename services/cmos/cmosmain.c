@@ -77,8 +77,10 @@ static void cmos_refresh(void) {
 	date.sec = cmos_decodeBCD(cmos_read(CMOS_REG_SEC));
 	date.weekDay = cmos_decodeBCD(cmos_read(CMOS_REG_WEEKDAY));
 
-	seek(dateFD,0,SEEK_SET);
-	write(dateFD,&date,sizeof(sDate));
+	if(seek(dateFD,0,SEEK_SET) < 0)
+		printe("[CMOS] Unable to seek in /system/date");
+	if(write(dateFD,&date,sizeof(sDate)) < 0)
+		printe("[CMOS] Unable to write to /system/date");
 }
 
 static u32 cmos_decodeBCD(u8 val) {

@@ -24,6 +24,7 @@
 #include <esc/fileio.h>
 #include <esc/dir.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "thread.h"
 
 #define LOCK_ARRAY	0x1
@@ -50,15 +51,13 @@ int mod_thread(int argc,char *argv[]) {
 	UNUSED(argv);
 	const char *args[] = {"a","test","mein test",NULL};
 	array = create(sizeof(u32),10);
-	startThread(myThread,args);
-	startThread(myThread,args);
-	startThread(myThread,args);
-	startThread(myThread,args);
-	startThread(myThread,args);
-	startThread(myThread,NULL);
-	startThread(myThread,args);
-	startThread(myThread,args);
-	startThread(myThread,args);
+	assert(startThread(myThread,args) >= 0);
+	assert(startThread(myThread,args) >= 0);
+	assert(startThread(myThread,args) >= 0);
+	assert(startThread(myThread,NULL) >= 0);
+	assert(startThread(myThread,args) >= 0);
+	assert(startThread(myThread,args) >= 0);
+	assert(startThread(myThread,args) >= 0);
 	return EXIT_SUCCESS;
 }
 

@@ -193,9 +193,11 @@ int main(void) {
 						if(offset + count <= ROWS * COLS * 2 && offset + count > offset) {
 							char *str = (char*)malloc(count);
 							vassert(str,"Unable to alloc mem");
-							receive(fd,&mid,str,count);
-							vbe_drawStr((offset / 2) % COLS,(offset / 2) / COLS,str,count / 2);
-							msg.args.arg1 = count;
+							msg.args.arg1 = 0;
+							if(receive(fd,&mid,str,count) >= 0) {
+								vbe_drawStr((offset / 2) % COLS,(offset / 2) / COLS,str,count / 2);
+								msg.args.arg1 = count;
+							}
 							free(str);
 						}
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));

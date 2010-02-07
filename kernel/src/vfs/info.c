@@ -41,7 +41,7 @@ typedef struct {
 	u16 recLen;
 	u16 nameLen;
 	/* name follows (up to 255 bytes) */
-} __attribute__((packed)) sVFSDirEntry;
+} A_PACKED sVFSDirEntry;
 
 /**
  * The read-callback for the proc-read-handler

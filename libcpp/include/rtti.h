@@ -39,6 +39,10 @@ namespace std {
 		const char* name(void) const;
 		bool operator ==(const type_info&) const;
 		bool operator !=(const type_info&) const;
+
+	/* no assignment */
+	private:
+		type_info &operator=(const type_info &i);
 	};
 }
 

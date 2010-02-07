@@ -73,7 +73,7 @@ s32 getppidof(tPid pid);
  *
  * @return new pid for parent, 0 for child, < 0 if failed
  */
-s32 fork(void);
+s32 fork(void) A_CHECKRET;
 
 /**
  * Exchanges the process-data with the given program

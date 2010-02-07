@@ -47,7 +47,7 @@ extern "C" {
  * @param type the service-type: SERV_*
  * @return the service-id if successfull, < 0 if an error occurred
  */
-tServ regService(const char *name,u8 type);
+tServ regService(const char *name,u8 type) A_CHECKRET;
 
 /**
  * Unregisters your service
@@ -74,7 +74,7 @@ s32 setDataReadable(tServ service,bool readable);
  * @param serv will be set to the service from which the client has been taken
  * @return the file-descriptor if successfull or the error-code
  */
-tFD getClient(tServ *services,u32 count,tServ *serv);
+tFD getClient(tServ *services,u32 count,tServ *serv) A_CHECKRET;
 
 /**
  * Opens a file for the client with given thread-id. Works just for multipipe-services!
@@ -83,7 +83,7 @@ tFD getClient(tServ *services,u32 count,tServ *serv);
  * @param tid the client-thread-id
  * @return the file-descriptor or a negative error-code
  */
-tFD getClientThread(tServ id,tTid tid);
+tFD getClientThread(tServ id,tTid tid) A_CHECKRET;
 
 #ifdef __cplusplus
 }

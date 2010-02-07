@@ -26,12 +26,14 @@
 
 int mod_fault(int argc,char *argv[]) {
 	u32 *ptr;
+	tFD fd;
 	UNUSED(argc);
 	UNUSED(argv);
 	printf("I am evil ^^\n");
-	open((char*)0x12345678,IO_READ);
+	fd = open((char*)0x12345678,IO_READ);
 	ptr = (u32*)0xFFFFFFFF;
 	*ptr = 1;
 	printf("Never printed\n");
+	close(fd);
 	return EXIT_SUCCESS;
 }

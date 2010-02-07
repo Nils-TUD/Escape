@@ -90,7 +90,8 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 
 	if(!setSigHdl) {
 		setSigHdl = true;
-		setSigHandler(SIG_CHILD_TERM,ast_sigChildHndl);
+		if(setSigHandler(SIG_CHILD_TERM,ast_sigChildHndl) < 0)
+			error("Unable to set child-termination sig-handler");
 	}
 
 	prevPipe = -1;
@@ -329,7 +330,8 @@ static void ast_termProcsOfCmd(void) {
 	p = run_getXProcOf(curCmd,i);
 	while(p != NULL) {
 		/* send SIG_INTRPT */
-		sendSignalTo(p->pid,SIG_INTRPT,0);
+		if(sendSignalTo(p->pid,SIG_INTRPT,0) < 0)
+			printe("Unable to send SIG_INTRPT to process %d",p->pid);
 		/* clean up */
 		if(p->pipe[0] != -1)
 			close(p->pipe[0]);

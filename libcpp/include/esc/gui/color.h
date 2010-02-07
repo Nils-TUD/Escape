@@ -44,14 +44,12 @@ namespace esc {
 			static Color fromBits(u32 col,u8 bits);
 
 		public:
-			Color(u32 color = 0)
-				: _color(color) {
+			Color(u32 color = 0) : _color(color) {
 			};
-			Color(u8 red,u8 green,u8 blue,u8 alpha = 0) {
+			Color(u8 red,u8 green,u8 blue,u8 alpha = 0) : _color(0) {
 				setColor(red,green,blue,alpha);
 			};
-			Color(const Color &col)
-				: _color(col._color) {
+			Color(const Color &col) : _color(col._color) {
 			};
 			virtual ~Color() {
 			};

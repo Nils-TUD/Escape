@@ -36,7 +36,7 @@ extern "C" {
  * @param size the number of bytes to allocate
  * @return the address of the memory or NULL
  */
-void *malloc(u32 size);
+void *malloc(u32 size) A_CHECKRET;
 
 /**
  * Allocates space for <num> elements, each <size> big, on the heap and memset's the area to 0.
@@ -46,7 +46,7 @@ void *malloc(u32 size);
  * @param size the size of each element
  * @return the address of the memory or NULL
  */
-void *calloc(u32 num,u32 size);
+void *calloc(u32 num,u32 size) A_CHECKRET;
 
 /**
  * Reallocates the area at given address to the given size. That means either your data will
@@ -56,7 +56,7 @@ void *calloc(u32 num,u32 size);
  * @param size the number of bytes your area should be resized to
  * @return the address (may be different) of your area or NULL if there is not enough mem
  */
-void *realloc(void *addr,u32 size);
+void *realloc(void *addr,u32 size) A_CHECKRET;
 
 /**
  * Frees the area starting at <addr>.

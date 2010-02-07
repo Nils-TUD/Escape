@@ -80,7 +80,7 @@ typedef struct {
 	u8 minute;				/* Minute of the hour from 0 to 59. */
 	u8 second;				/* Second of the minute from 0 to 59. */
 	u8 offset;				/* Offset from GMT in 15 minute intervals from -48 (West) to +52 (East). */
-} __attribute__((packed)) sISODirDate;
+} A_PACKED sISODirDate;
 
 /* dates how they are stored in the volume-descriptor */
 typedef struct {
@@ -92,7 +92,7 @@ typedef struct {
 	char second[2];			/* Second from 0 to 59. */
 	char second100ths[2];	/* Hundredths of a second from 0 to 99. */
 	u8 offset;				/* Offset from GMT in 15 minute intervals from -48 (West) to +52 (East) */
-} __attribute__((packed)) sISOVolDate;
+} A_PACKED sISOVolDate;
 
 /* a directory-entry */
 typedef struct {
@@ -119,7 +119,7 @@ typedef struct {
 	u8 nameLen;
 	/* is padded with a byte so that a directory entry will always start on an even byte number. */
 	char name[];
-} __attribute__((packed)) sISODirEntry;
+} A_PACKED sISODirEntry;
 
 /* an entry in the path-table */
 typedef struct {
@@ -135,7 +135,7 @@ typedef struct {
 	/* Directory Identifier (name) in d-characters. padded with a zero, if necessary, so
 	 * that each table-entry starts on a even byte number. */
 	char name[];
-} __attribute__((packed)) sISOPathTblEntry;
+} A_PACKED sISOPathTblEntry;
 
 typedef struct {
 	/* see ISO_VOL_TYPE_* */
@@ -154,7 +154,7 @@ typedef struct {
 			/* Identification of the boot system defined in the rest of this descriptor in
 			 * a-characters */
 			char bootIdent[32];
-		} __attribute__((packed)) bootrecord;
+		} A_PACKED bootrecord;
 		struct {
 			/* unused; always 0x00 */
 			u8 : 8;
@@ -214,9 +214,9 @@ typedef struct {
 			sISOVolDate effective;
 			/* An 8 bit number specifying the directory records and path table version (always 0x01). */
 			u8 fileStructureVersion;
-		} __attribute__((packed)) primary;
+		} A_PACKED primary;
 	} data;
-} __attribute__((packed)) sISOVolDesc;
+} A_PACKED sISOVolDesc;
 
 /* entries in the directory-entry-cache */
 typedef struct {

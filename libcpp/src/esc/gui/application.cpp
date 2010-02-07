@@ -34,7 +34,8 @@ namespace esc {
 		Application *Application::_inst = NULL;
 
 		Application::Application()
-				: _mouseBtns(0) {
+				: _winFd(-1), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL),
+				  _screenWidth(0), _screenHeight(0), _colorDepth(0), _windows(Vector<Window*>()) {
 			tMsgId mid;
 			_winFd = open("/services/winmanager",IO_READ | IO_WRITE);
 			if(_winFd < 0) {

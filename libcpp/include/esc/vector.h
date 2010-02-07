@@ -121,17 +121,15 @@ namespace esc {
 	};
 
 	template<class T>
-	Vector<T>::Vector(u32 vsize) : _elCount(0), _elSize(vsize) {
+	Vector<T>::Vector(u32 vsize) : _elCount(0), _elSize(vsize), _elements(NULL) {
 		vassert(vsize > 0,"Empty vector not supported");
 		_elements = new T[vsize];
 	}
 
 	template<class T>
-	Vector<T>::Vector(const Vector<T> &v) {
-		_elements = new T[v._elSize];
+	Vector<T>::Vector(const Vector<T> &v) : _elCount(v._elCount), _elSize(v._elSize),
+			_elements(new T[v._elSize]) {
 		memcpy(_elements,v._elements,v._elCount * sizeof(T));
-		_elCount = v._elCount;
-		_elSize = v._elSize;
 	}
 
 	template<class T>

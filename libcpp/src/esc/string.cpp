@@ -27,14 +27,13 @@ namespace esc {
 		: _str(new char[size]), _length(0), _size(size) {
 	}
 
-	String::String(const String &s) {
-		_str = new char[s._size];
+	String::String(const String &s)
+		: _str(new char[s._size]), _length(s._length), _size(s._size) {
 		strcpy(_str,s._str);
-		_length = s._length;
-		_size = s._size;
 	}
 
-	String::String(const char *s) {
+	String::String(const char *s)
+		: _str(NULL), _length(0), _size(0) {
 		if(s != NULL) {
 			u32 len = strlen(s);
 			_str = new char[len + 1];

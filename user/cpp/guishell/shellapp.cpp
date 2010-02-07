@@ -31,12 +31,8 @@
 #include "shellapp.h"
 
 ShellApplication::ShellApplication(tServ sid,ShellControl *sh)
-		: Application(), _sid(sid), _sh(sh) {
+		: Application(), _sid(sid), _sh(sh), rbuffer(new char[READ_BUF_SIZE]), rbufPos(0) {
 	_inst = this;
-
-	// init read-buffer
-	rbuffer = new char[READ_BUF_SIZE];
-	rbufPos = 0;
 }
 
 ShellApplication::~ShellApplication() {
@@ -128,23 +124,24 @@ void ShellApplication::driverMain() {
 					data = (char*)malloc(c + 1);
 					_msg.args.arg1 = 0;
 					if(data) {
-						receive(fd,&mid,data,c + 1);
-						data[c] = '\0';
-						while(c > 0) {
-							amount = MIN(c,READ_BUF_SIZE - rbufPos);
-							memcpy(rbuffer + rbufPos,data,amount);
+						if(receive(fd,&mid,data,c + 1) >= 0) {
+							_msg.args.arg1 = c;
+							data[c] = '\0';
+							while(c > 0) {
+								amount = MIN(c,READ_BUF_SIZE - rbufPos);
+								memcpy(rbuffer + rbufPos,data,amount);
 
-							c -= amount;
-							rbufPos += amount;
-							data += amount;
-							if(rbufPos >= READ_BUF_SIZE) {
-								rbuffer[rbufPos] = '\0';
-								vterm_puts(_sh->getVTerm(),rbuffer,rbufPos,true);
-								rbufPos = 0;
+								c -= amount;
+								rbufPos += amount;
+								data += amount;
+								if(rbufPos >= READ_BUF_SIZE) {
+									rbuffer[rbufPos] = '\0';
+									vterm_puts(_sh->getVTerm(),rbuffer,rbufPos,true);
+									rbufPos = 0;
+								}
 							}
 						}
 						free(data);
-						_msg.args.arg1 = c;
 					}
 					send(fd,MSG_DRV_WRITE_RESP,&_msg,sizeof(_msg.args));
 				}

@@ -58,6 +58,8 @@
 #define IOCTL_VT_SHELLPID		30
 #define IOCTL_VT_GETSIZE		31		/* writes into sIoCtlSize */
 
+#define IOCTL_KM_SET			0		/* sets a keymap, expects the keymap-path as argument */
+
 typedef struct {
 	u32 col;
 	u32 row;

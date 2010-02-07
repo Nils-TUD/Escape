@@ -83,6 +83,7 @@
 #define ERR_INTERRUPTED				-60
 #define ERR_PIPE_SEEK				-61
 #define ERR_MAX_EXIT_FUNCS			-62
+#define ERR_INVALID_KEYMAP			-63
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

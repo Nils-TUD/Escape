@@ -122,7 +122,20 @@ int main(void) {
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 						break;
 					case MSG_DRV_IOCTL: {
-						msg.data.arg1 = ERR_UNSUPPORTED_OP;
+						if(msg.data.arg1 == IOCTL_KM_SET && msg.data.arg2 > 0) {
+							/* ensure that its null-terminated */
+							msg.data.d[msg.data.arg2 - 1] = '\0';
+							sKeymapEntry *newMap = km_parse((char*)msg.data.d);
+							if(!newMap)
+								msg.data.arg1 = ERR_INVALID_KEYMAP;
+							else {
+								msg.data.arg1 = 0;
+								free(map);
+								map = newMap;
+							}
+						}
+						else
+							msg.data.arg1 = ERR_UNSUPPORTED_OP;
 						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 					}
 					break;

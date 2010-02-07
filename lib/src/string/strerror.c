@@ -275,6 +275,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"You've reached the max. number of exit-functions!");
 			break;
 
+		case ERR_INVALID_KEYMAP:
+			strcpy(msg,"Invalid keymap-path or content!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

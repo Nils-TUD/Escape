@@ -1,5 +1,5 @@
 /**
- * $Id: kimain.c 312 2009-09-07 12:55:10Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

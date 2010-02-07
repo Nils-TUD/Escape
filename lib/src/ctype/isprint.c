@@ -21,5 +21,6 @@
 #include <ctype.h>
 
 bool isprint(s32 c) {
-	return c >= ' ' && c <= '~';
+	/* 0x15 = § in codepage 437 */
+	return c >= ' ' || c == 0x15;
 }

@@ -120,6 +120,17 @@ typedef struct {
 	u8 isBreak;
 } sKbData;
 
+typedef struct {
+	/* wether the key was released */
+	u8 isBreak;
+	/* the keycode (see keycodes.h) */
+	u8 keycode;
+	/* modifiers (STATE_CTRL, STATE_SHIFT, STATE_ALT) */
+	u8 modifier;
+	/* the character, translated by the current keymap */
+	char character;
+} sKmData;
+
 /* the data read from the mouse */
 typedef struct {
 	s8 x;

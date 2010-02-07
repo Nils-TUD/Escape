@@ -11,9 +11,10 @@ mkdir $TMPDIR/apps
 mkdir $TMPDIR/bin
 mkdir $TMPDIR/sbin
 mkdir $TMPDIR/etc
+mkdir $TMPDIR/etc/keymaps
 
 # copy / create boot-stuff
-cp $ROOT/boot/* $TMPDIR/boot/grub/
+cp $ROOT/dist/boot/* $TMPDIR/boot/grub/
 echo 'default 0' > $TMPDIR/boot/grub/menu.lst;
 echo 'timeout 3' >> $TMPDIR/boot/grub/menu.lst;
 echo '' >> $TMPDIR/boot/grub/menu.lst;
@@ -26,7 +27,10 @@ echo 'module /sbin/fs /services/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 cp $KERNELBIN $TMPDIR/boot/escape.bin
 
 # copy service-deps, apps, services and user-apps
-cp $ROOT/services/services.txt $TMPDIR/etc/services
+cp $ROOT/dist/services.txt $TMPDIR/etc/services
+cp $ROOT/dist/keymap-ger.map $TMPDIR/etc/keymaps/ger
+cp $ROOT/dist/keymap-us.map $TMPDIR/etc/keymaps/us
+echo "/etc/keymaps/ger" > $TMPDIR/etc/keymap
 cp $BUILD/apps/* $TMPDIR/apps
 for i in $BUILD/service_*.bin ; do
 	BASE=`basename $i .bin`
@@ -41,10 +45,10 @@ cp $ROOT/kernel/src/mem/paging.c $TMPDIR/paging.c
 # add some test-data
 mkdir $TMPDIR/testdir
 echo "Das ist ein Test-String!!" > $TMPDIR/file.txt
-cp $ROOT/user/libs/shell/test.sh $TMPDIR
-cp $ROOT/user/test.bmp $TMPDIR
-cp $ROOT/user/bbc.bmp $TMPDIR
-cp $ROOT/user/test.bmp $TMPDIR/bla.bmp
+cp $ROOT/dist/test.sh $TMPDIR
+cp $ROOT/dist/test.bmp $TMPDIR
+cp $ROOT/dist/bbc.bmp $TMPDIR
+cp $ROOT/dist/test.bmp $TMPDIR/bla.bmp
 cp $TMPDIR/file.txt $TMPDIR/testdir/file.txt
 dd if=/dev/zero of=$TMPDIR/zeros bs=1024 count=1024
 echo -n "" > $TMPDIR/bigfile

@@ -28,18 +28,6 @@ extern "C" {
 #endif
 
 /**
- * Translates the given keycode to modifiers and the character
- *
- * @param vt the vterm
- * @param isBreak wether it is a break-keycode
- * @param keycode the keycode
- * @param modifier will be set to the currently active modifiers
- * @param c will be set to the character
- * @return true if its not a break-code
- */
-bool vterm_translateKeycode(sVTerm *vt,bool isBreak,u32 keycode,u8 *modifier,char *c);
-
-/**
  * Handles the given keycode with modifiers and character
  *
  * @param vt the vterm

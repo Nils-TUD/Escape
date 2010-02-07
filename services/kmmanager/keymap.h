@@ -20,12 +20,6 @@
 #ifndef KEYMAP_H_
 #define KEYMAP_H_
 
-#include <esc/common.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* represents a not-printable character */
 #define NPRINT			'\0'
 
@@ -36,8 +30,25 @@ typedef struct {
 	char alt;
 } sKeymapEntry;
 
-#ifdef __cplusplus
-}
-#endif
+/**
+ * Parses the given file and returns the keymap. The keymap is allocated in one block,
+ * so that you can simply do "map[keycode].xyz" to get a mapping from it.
+ *
+ * @param file the keymap-file
+ * @return the keymap (or NULL)
+ */
+sKeymapEntry *km_parse(const char *file);
+
+/**
+ * Translates the given keycode + isBreak to the corresponding modifiers and character
+ * with the given keymap.
+ *
+ * @param map the keymap to use
+ * @param isBreak wether it is a breakcode
+ * @param keycode the keycode
+ * @param modifier will be set to the current modifiers
+ * @return the character
+ */
+char km_translateKeycode(sKeymapEntry *map,bool isBreak,u32 keycode,u8 *modifier);
 
 #endif /* KEYMAP_H_ */

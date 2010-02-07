@@ -1,0 +1,15 @@
+# Format: "<serviceName> ';' [<waitFor> ',' ...] ';' [<dependency> ',' ...]"
+speaker; /services/speaker;
+keyboard; /drivers/keyboard;
+video; /drivers/video;
+kmmanager; /drivers/kmmanager; keyboard
+#vesatext; /drivers/vesatext;
+vterm; /drivers/vterm0,/drivers/vterm1,/drivers/vterm2,/drivers/vterm3,/drivers/vterm4,/drivers/vterm5; kmmanager,speaker,video,cmos
+#vga; ;
+env; /services/env;
+cmos; ;
+zero; /drivers/zero;
+random; /drivers/random;
+null; /drivers/null;
+powermng; /services/powermng;
+pci; ;

@@ -85,7 +85,6 @@ bool vterm_init(sVTerm *vt,sIoCtlSize *vidSize,tFD vidFd,tFD speakerFd) {
 	vt->readLine = true;
 	vt->navigation = true;
 	vt->printToRL = false;
-	vt->keymap = 1;
 	vt->escapePos = -1;
 	vt->rlStartCol = 0;
 	vt->shellPid = 0;

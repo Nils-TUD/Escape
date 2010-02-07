@@ -28,13 +28,8 @@
 #include "vtctrl.h"
 #include "vtin.h"
 #include "vtout.h"
-#include "keymap.h"
-#include "keymap.us.h"
-#include "keymap.ger.h"
 
 #define RLBUF_INCR			20
-
-typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 
 /**
  * @return the current position in the readline-buffer
@@ -47,57 +42,6 @@ static u32 vterm_rlGetBufPos(sVTerm *vt);
  * @return true if handled
  */
 static bool vterm_rlHandleKeycode(sVTerm *vt,u8 keycode);
-
-/* our keymaps */
-static fKeymapGet keymaps[] = {
-	keymap_us_get,
-	keymap_ger_get
-};
-
-/* key-states */
-static bool shiftDown = false;
-static bool altDown = false;
-static bool ctrlDown = false;
-
-bool vterm_translateKeycode(sVTerm *vt,bool isBreak,u32 keycode,u8 *modifier,char *c) {
-	sKeymapEntry *e;
-	if(vt == NULL)
-		return false;
-
-	/* handle shift, alt and ctrl */
-	switch(keycode) {
-		case VK_LSHIFT:
-		case VK_RSHIFT:
-			shiftDown = !isBreak;
-			break;
-		case VK_LALT:
-		case VK_RALT:
-			altDown = !isBreak;
-			break;
-		case VK_LCTRL:
-		case VK_RCTRL:
-			ctrlDown = !isBreak;
-			break;
-	}
-
-	/* we don't need breakcodes anymore */
-	if(isBreak)
-		return false;
-
-	e = keymaps[vt->keymap](keycode);
-	if(e != NULL) {
-		*modifier = (altDown ? STATE_ALT : 0) | (ctrlDown ? STATE_CTRL : 0) |
-				(shiftDown ? STATE_SHIFT : 0);
-		if(shiftDown)
-			*c = e->shift;
-		else if(altDown)
-			*c = e->alt;
-		else
-			*c = e->def;
-		return true;
-	}
-	return false;
-}
 
 void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 	if((modifier & STATE_SHIFT) && vt->navigation) {
@@ -117,7 +61,7 @@ void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 		}
 	}
 
-	if(c == NPRINT || (modifier & (STATE_CTRL | STATE_ALT))) {
+	if(c == 0 || (modifier & (STATE_CTRL | STATE_ALT))) {
 		if(vt->handlerShortcut) {
 			if(!vt->handlerShortcut(vt,keycode,modifier,c))
 				return;

@@ -27,53 +27,37 @@
 #include <esc/signals.h>
 #include <stdlib.h>
 #include "window.h"
-#include "keymap.h"
-#include "keymap.ger.h"
-#include "keymap.us.h"
 
 #define MOUSE_DATA_BUF_SIZE	128
 #define KB_DATA_BUF_SIZE	128
-
-typedef sKeymapEntry *(*fKeymapGet)(u8 keyCode);
 
 /**
  * Destroys the windows of a died thread
  */
 static void deadThreadHandler(tSig sig,u32 data);
 /**
- * Handles a message from keyboard
+ * Handles a message from kmmng
  */
-static void handleKbMessage(tServ servId,sWindow *active,u8 keycode,u8 isBreak);
+static void handleKbMessage(tServ servId,sWindow *active,u8 keycode,bool isBreak,u8 modifier,char c);
 /**
  * Handles a message from the mouse
  */
 static void handleMouseMessage(tServ servId,sMouseData *mdata);
-
-/* our keymaps */
-static fKeymapGet keymaps[] = {
-	keymap_us_get,
-	keymap_ger_get
-};
 
 /* mouse state */
 static u8 buttons = 0;
 static tCoord curX = 0;
 static tCoord curY = 0;
 
-/* key states */
-static bool shiftDown;
-static bool altDown;
-static bool ctrlDown;
-
 static sMsg msg;
 static tSize screenWidth;
 static tSize screenHeight;
 static sMouseData mouseData[MOUSE_DATA_BUF_SIZE];
-static sKbData kbData[KB_DATA_BUF_SIZE];
+static sKmData kbData[KB_DATA_BUF_SIZE];
 static sWindow *mouseWin = NULL;
 
 int main(void) {
-	tFD mouse,keyboard;
+	tFD mouse,kmmng;
 	tServ servId,client;
 	tMsgId mid;
 
@@ -81,9 +65,9 @@ int main(void) {
 	if(mouse < 0)
 		error("Unable to open /drivers/mouse");
 
-	keyboard = open("/drivers/keyboard",IO_READ);
-	if(keyboard < 0)
-		error("Unable to open /drivers/keyboard");
+	kmmng = open("/drivers/kmmanager",IO_READ);
+	if(kmmng < 0)
+		error("Unable to open /drivers/kmmanager");
 
 	if(setSigHandler(SIG_THREAD_DIED,deadThreadHandler) < 0)
 		error("Unable to set sig-handler for %d",SIG_THREAD_DIED);
@@ -165,15 +149,16 @@ int main(void) {
 			}
 		}
 		/* don't use the blocking read() here */
-		else if(!eof(keyboard)) {
-			sKbData *kbd = kbData;
+		else if(!eof(kmmng)) {
+			sKmData *kbd = kbData;
 			sWindow *active = win_getActive();
-			u32 count = read(keyboard,kbData,sizeof(kbData));
+			u32 count = read(kmmng,kbData,sizeof(kbData));
 			if(active) {
-				count /= sizeof(sKbData);
+				count /= sizeof(sKmData);
 				while(count-- > 0) {
 					/*debugf("kc=%d, brk=%d\n",kbd->keycode,kbd->isBreak);*/
-					handleKbMessage(servId,active,kbd->keycode,kbd->isBreak);
+					handleKbMessage(servId,active,kbd->keycode,kbd->isBreak,kbd->modifier,
+							kbd->character);
 					kbd++;
 				}
 			}
@@ -184,7 +169,7 @@ int main(void) {
 	}
 
 	unregService(servId);
-	close(keyboard);
+	close(kmmng);
 	close(mouse);
 	return EXIT_SUCCESS;
 }
@@ -195,49 +180,17 @@ static void deadThreadHandler(tSig sig,u32 data) {
 	win_destroyWinsOf(data,curX,curY);
 }
 
-static void handleKbMessage(tServ servId,sWindow *active,u8 keycode,u8 isBreak) {
-	sKeymapEntry *e;
+static void handleKbMessage(tServ servId,sWindow *active,u8 keycode,bool isBreak,u8 modifier,char c) {
 	tFD aWin;
-	/* handle shift, alt and ctrl */
-	switch(keycode) {
-		case VK_LSHIFT:
-		case VK_RSHIFT:
-			shiftDown = !isBreak;
-			break;
-		case VK_LALT:
-		case VK_RALT:
-			altDown = !isBreak;
-			break;
-		case VK_LCTRL:
-		case VK_RCTRL:
-			ctrlDown = !isBreak;
-			break;
-	}
-
-	e = keymaps[active->keymap](keycode);
-	if(e != NULL) {
-		msg.args.arg1 = keycode;
-		msg.args.arg2 = isBreak;
-		msg.args.arg3 = active->id;
-		if(shiftDown)
-			msg.args.arg4 = e->shift;
-		else if(altDown)
-			msg.args.arg4 = e->alt;
-		else
-			msg.args.arg4 = e->def;
-		msg.args.arg5 = 0;
-		if(shiftDown)
-			msg.args.arg5 |= SHIFT_MASK;
-		if(ctrlDown)
-			msg.args.arg5 |= CTRL_MASK;
-		if(altDown)
-			msg.args.arg5 |= ALT_MASK;
-
-		aWin = getClientThread(servId,active->owner);
-		if(aWin >= 0) {
-			send(aWin,MSG_WIN_KEYBOARD,&msg,sizeof(msg.args));
-			close(aWin);
-		}
+	msg.args.arg1 = keycode;
+	msg.args.arg2 = isBreak;
+	msg.args.arg3 = active->id;
+	msg.args.arg4 = c;
+	msg.args.arg5 = modifier;
+	aWin = getClientThread(servId,active->owner);
+	if(aWin >= 0) {
+		send(aWin,MSG_WIN_KEYBOARD,&msg,sizeof(msg.args));
+		close(aWin);
 	}
 }
 

@@ -30,6 +30,7 @@ PART2BLOCKS=3000
 # check args
 if [ $# -lt 1 ]; then
 	echo "Usage: $0 build" 1>&2
+	echo "Usage: $0 update" 1>&2
 	echo "Usage: $0 mkdiskdev" 1>&2
 	echo "Usage: $0 rmdiskdev" 1>&2
 	echo "Usage: $0 mountp1" 1>&2
@@ -65,8 +66,8 @@ buildMenuLst() {
 addBootData() {
 	$SUDO mkdir $DISKMOUNT/boot
 	$SUDO mkdir $DISKMOUNT/boot/grub
-	$SUDO cp boot/stage1 $DISKMOUNT/boot/grub;
-	$SUDO cp boot/stage2 $DISKMOUNT/boot/grub;
+	$SUDO cp dist/boot/stage1 $DISKMOUNT/boot/grub;
+	$SUDO cp dist/boot/stage2 $DISKMOUNT/boot/grub;
 	$SUDO touch $DISKMOUNT/boot/grub/menu.lst;
 	$SUDO chmod 0666 $DISKMOUNT/boot/grub/menu.lst;
 	buildMenuLst;
@@ -78,14 +79,20 @@ addTestData() {
 	$SUDO mkdir $DISKMOUNT/bin
 	$SUDO mkdir $DISKMOUNT/sbin
 	$SUDO mkdir $DISKMOUNT/etc
-	$SUDO cp services/services.txt $DISKMOUNT/etc/services
+	$SUDO mkdir $DISKMOUNT/etc/keymaps
+	$SUDO cp dist/services.txt $DISKMOUNT/etc/services
+	$SUDO cp dist/keymap-ger.map $DISKMOUNT/etc/keymaps/ger
+	$SUDO cp dist/keymap-us.map $DISKMOUNT/etc/keymaps/us
+	$SUDO touch $DISKMOUNT/etc/keymap
+	$SUDO chmod 0666 $DISKMOUNT/etc/keymap
+	echo "/etc/keymaps/ger" > $DISKMOUNT/etc/keymap
+	$SUDO cp dist/test.bmp $DISKMOUNT
+	$SUDO cp dist/bbc.bmp $DISKMOUNT
+	$SUDO cp dist/test.bmp $DISKMOUNT/bla.bmp
 	$SUDO mkdir $DISKMOUNT/testdir
 	$SUDO touch $DISKMOUNT/file.txt
 	$SUDO chmod 0666 $DISKMOUNT/file.txt
 	echo "This is a test-string!!!" > $DISKMOUNT/file.txt
-	$SUDO cp user/test.bmp $DISKMOUNT
-	$SUDO cp user/bbc.bmp $DISKMOUNT
-	$SUDO cp user/test.bmp $DISKMOUNT/bla.bmp
 	$SUDO cp $DISKMOUNT/file.txt $DISKMOUNT/testdir/file.txt
 	$SUDO dd if=/dev/zero of=$DISKMOUNT/zeros bs=1024 count=1024
 	$SUDO touch $DISKMOUNT/bigfile
@@ -188,6 +195,13 @@ if [ "$1" == "copy" ]; then
 	
 	# update modify-timestamp of disk-image
 	touch $HDD
+fi
+
+# copy all files (except programs etc.) to disk
+if [ "$1" == "update" ]; then
+	mountDisk $PART1OFFSET
+	addTestData
+	unmountDisk
 fi
 
 # make our disk available under /dev/loop0

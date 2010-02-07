@@ -53,7 +53,7 @@ static sVTerm *getVTerm(tServ sid);
 static bool readKeyboard = true;
 
 static sMsg msg;
-static sKbData kbData[KB_DATA_BUF_SIZE];
+static sKmData kmData[KB_DATA_BUF_SIZE];
 /* vterms */
 static tServ servIds[VTERM_COUNT] = {-1};
 
@@ -77,9 +77,9 @@ int main(void) {
 		error("Unable to init vterms");
 
 	/* open keyboard */
-	kbFd = open("/drivers/keyboard",IO_READ);
+	kbFd = open("/drivers/kmmanager",IO_READ);
 	if(kbFd < 0)
-		error("Unable to open '/drivers/keyboard'");
+		error("Unable to open '/drivers/kmmanager'");
 
 	/* request io-ports for qemu and bochs */
 	if(requestIOPort(0xe9) < 0 || requestIOPort(0x3f8) < 0 || requestIOPort(0x3fd) < 0)
@@ -99,18 +99,15 @@ int main(void) {
 				/* read from keyboard */
 				/* don't block here since there may be waiting clients.. */
 				while(!eof(kbFd)) {
-					sKbData *kbd = kbData;
-					u32 count = read(kbFd,kbData,sizeof(kbData));
-					count /= sizeof(sKbData);
+					sKmData *kmsg = kmData;
+					u32 count = read(kbFd,kmData,sizeof(kmData));
+					count /= sizeof(sKmData);
 					while(count-- > 0) {
-						sVTerm *vt = vterm_getActive();
-						u8 modifier;
-						char c;
-						if(vterm_translateKeycode(vt,kbd->isBreak,kbd->keycode,&modifier,&c)) {
-							vterm_handleKey(vt,kbd->keycode,modifier,c);
+						if(!kmsg->isBreak) {
+							vterm_handleKey(vterm_getActive(),kmsg->keycode,kmsg->modifier,kmsg->character);
 							vterm_update(vterm_getActive());
 						}
-						kbd++;
+						kmsg++;
 					}
 				}
 				wait(EV_CLIENT | EV_DATA_READABLE);

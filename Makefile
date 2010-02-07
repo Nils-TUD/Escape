@@ -48,7 +48,7 @@ export ASMFLAGS=-f elf
 export SUDO=sudo
 
 .PHONY: all debughdd mountp1 mountp2 umountp debugp1 debugp2 checkp1 checkp2 createhdd \
-	dis qemu bochs debug debugu debugm debugt test clean
+	dis qemu bochs debug debugu debugm debugt test clean updatehdd
 
 all: $(BUILD) $(BUILDAPPS)
 		@[ -f $(HDD) ] || make createhdd;
@@ -99,6 +99,9 @@ umountp:
 
 createhdd:
 		tools/disk.sh build
+
+updatehdd:
+		tools/disk.sh update
 
 createcd:	all
 		tools/iso.sh

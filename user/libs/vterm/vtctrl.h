@@ -75,8 +75,6 @@ struct sVTerm {
 	u16 upStart;
 	u16 upLength;
 	s16 upScroll;
-	/* the used keymap */
-	u16 keymap;
 	/* wether entered characters should be echo'd to screen */
 	u8 echo;
 	/* wether the vterm should read until a newline occurrs */

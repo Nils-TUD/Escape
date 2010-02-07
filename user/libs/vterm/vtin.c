@@ -78,9 +78,11 @@ void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 
 	/* send escape-code when we're not in readline-mode */
 	if(!vt->readLine) {
+		/* we want to treat the character as unsigned here and extend it to 32bit */
+		u32 code = *(u8*)&c;
 		bool empty = rb_length(vt->inbuf) == 0;
 		char escape[SSTRLEN("\033[kc;123;123;7]") + 1];
-		snprintf(escape,sizeof(escape),"\033[kc;%d;%d;%d]",c,keycode,modifier);
+		snprintf(escape,sizeof(escape),"\033[kc;%u;%u;%u]",code,keycode,modifier);
 		rb_writen(vt->inbuf,escape,strlen(escape));
 		if(empty)
 			setDataReadable(vt->sid,true);

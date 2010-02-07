@@ -126,6 +126,11 @@ static char km_parseKey(tFile *f) {
 		}
 		return km_getKey(str);
 	}
+	else if(c == 'x') {
+		u32 code;
+		fscanf(f,"%2x",&code);
+		return (char)code;
+	}
 	return NPRINT;
 }
 

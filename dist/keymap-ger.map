@@ -1,15 +1,15 @@
-   1		'^'		-			-			# VK_ACCENT ( ° )
+   1		'^'		xF8		-			# VK_ACCENT ( ° )
    2		'0'		'='		'}'		# VK_0
    3		'1'		'!'		-			# VK_1
-   4		'2'		'"'		-			# VK_2 ( ² )
-   5		'3'		-			-			# VK_3 ( § and ³ )
+   4		'2'		'"'		xFD		# VK_2 ( ² )
+   5		'3'		x15		-			# VK_3 ( § and ³ )
    6		'4'		'$'		-			# VK_4
    7		'5'		'%'		-			# VK_5
    8		'6'		'&'		-			# VK_6
    9		'7'		'/'		'{'		# VK_7
   10		'8'		'('		'['		# VK_8
   11		'9'		')'		']'		# VK_9
-  12		-			'?'		'\\'	# VK_MINUS ( ß )
+  12		xE1		'?'		'\\'	# VK_MINUS ( ß )
   13		'\''	'`'		-			# VK_EQ
   14		-			-			-			# ---
   15		'\b'	'\b'	-			# VK_BACKSP
@@ -24,7 +24,7 @@
   24		'i'		'I'		-			# VK_I
   25		'o'		'O'		-			# VK_O
   26		'p'		'P'		-			# VK_P
-  27		-			-			-			# VK_LBRACKET ( ü )
+  27		x81		x9A		-			# VK_LBRACKET ( ü and Ü )
   28		'+'		'*'		'~'		# VK_RBRACKET
   29		'#'		'\''	-			# VK_BACKSLASH
   30		-			-			-			# VK_CAPS
@@ -37,8 +37,8 @@
   37		'j'		'J'		-			# VK_J
   38		'k'		'K'		-			# VK_K
   39		'l'		'L'		-			# VK_L
-  40		-			-			-			# VK_SEM ( ö )
-  41		-			-			-			# VK_APOS ( ä )
+  40		x94		x99		-			# VK_SEM ( ö and Ö )
+  41		x84		x8E		-			# VK_APOS ( ä and Ä )
   42		-			-			-			# non-US-1
   43		'\n'	'\n'	-			# VK_ENTER
   44		-			-			-			# VK_LSHIFT
@@ -49,7 +49,7 @@
   49		'v'		'V'		-			# VK_V
   50		'b'		'B'		-			# VK_B
   51		'n'		'N'		-			# VK_N
-  52		'm'		'M'		-			# VK_M ( µ )
+  52		'm'		'M'		xE6		# VK_M ( µ )
   53		','		';'		-			# VK_COMMA
   54		'.'		':'		-			# VK_DOT
   55		'-'		'_'		-			# VK_SLASH

@@ -200,7 +200,7 @@
 	lang_beginToken(yytext);
 }
 
-<INITIAL,CMDEXPR>[a-zA-Z0-9_\-!?:~,\.\+\-\*/%\^=]+ {
+<INITIAL,CMDEXPR>[a-zA-Z0-9\x15\x80-\xFF_\-!?:~,\.\+\-\*/%\^=]+ {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_STRING;

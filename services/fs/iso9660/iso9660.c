@@ -36,14 +36,26 @@
 
 #define MAX_DRIVER_OPEN_RETRIES		1000
 
+static bool iso_setup(const char *driver,sISO9660 *iso);
+
 void *iso_init(const char *driver) {
 	s32 res;
 	sFileInfo info;
-	u32 i;
-	tFD fd;
 	sISO9660 *iso = (sISO9660*)malloc(sizeof(sISO9660));
 	if(iso == NULL)
 		return NULL;
+
+	iso->blockCache.handle = iso;
+	iso->blockCache.blockCache = NULL;
+	iso->blockCache.blockCacheSize = ISO_BCACHE_SIZE;
+	iso->blockCache.freeBlocks = NULL;
+	iso->blockCache.usedBlocks = NULL;
+	iso->blockCache.oldestBlock = NULL;
+	/* cast is ok, because the only difference is that iso_rw_* receive a sISO9660* as first argument
+	 * and read/write expect void* */
+	iso->blockCache.read = (fReadBlocks)iso_rw_readBlocks;
+	/* no writing here ;) */
+	iso->blockCache.write = NULL;
 
 	/* wait until ata is ready */
 	/* we have to try it multiple times in this case since the kernel loads ata and fs
@@ -55,12 +67,52 @@ void *iso_init(const char *driver) {
 	}
 	while(res < 0);
 
-	/* now open the driver */
-	fd = open(driver,IO_WRITE | IO_READ);
-	if(fd < 0) {
-		printe("Unable to find driver '%s'",driver);
-		return NULL;
+	/* if the driver is provided, simply use it */
+	if(strcmp(driver,"cdrom") != 0) {
+		if(!iso_setup(driver,iso)) {
+			printe("Unable to find driver '%s'",driver);
+			free(iso);
+			return NULL;
+		}
 	}
+	/* otherwise try all possible ATAPI-drives */
+	else {
+		u32 i;
+		/* just needed if we would have a mount-point on the cd. this can't happen at this point */
+		tDevNo dev = 0x1234;
+		tInodeNo ino;
+		char path[SSTRLEN("/drivers/cda1") + 1];
+		for(i = 0; i < 4; i++) {
+			snprintf(path,sizeof(path),"/drivers/cd%c1",'a' + i);
+			if(!iso_setup(path,iso))
+				continue;
+
+			/* try to find our kernel. if we've found it, it's likely that the user wants to
+			 * boot from this device. unfortunatly there doesn't seem to be an easy way
+			 * to find out the real boot-device from GRUB */
+			ino = iso_dir_resolve(iso,"/boot/escape.bin",IO_READ,&dev,false);
+			if(ino >= 0)
+				break;
+
+			/* destroy the block-cache; we'll create a new one with iso_setup() in the next loop */
+			bcache_destroy(&iso->blockCache);
+		}
+
+		/* not found? */
+		if(i >= 4) {
+			free(iso);
+			return NULL;
+		}
+	}
+	return iso;
+}
+
+static bool iso_setup(const char *driver,sISO9660 *iso) {
+	u32 i;
+	/* now open the driver */
+	tFD fd = open(driver,IO_WRITE | IO_READ);
+	if(fd < 0)
+		return false;
 
 	iso->driverFd = fd;
 	/* read volume descriptors */
@@ -72,22 +124,11 @@ void *iso_init(const char *driver) {
 			break;
 	}
 
-	iso->blockCache.blockCache = NULL;
-	iso->blockCache.blockCacheSize = ISO_BCACHE_SIZE;
 	iso->blockCache.blockSize = ISO_BLK_SIZE(iso);
-	iso->blockCache.freeBlocks = NULL;
-	iso->blockCache.usedBlocks = NULL;
-	iso->blockCache.oldestBlock = NULL;
-	iso->blockCache.handle = iso;
-	/* case is ok, because the only difference is that iso_rw_* receive a sISO9660* as first argument
-	 * and read/write expect void* */
-	iso->blockCache.read = (fReadBlocks)iso_rw_readBlocks;
-	/* no writing here ;) */
-	iso->blockCache.write = NULL;
 
 	iso_direc_init(iso);
 	bcache_init(&iso->blockCache);
-	return iso;
+	return true;
 }
 
 void iso_deinit(void *h) {

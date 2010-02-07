@@ -56,6 +56,13 @@ void bcache_init(sBlockCache *c) {
 	}
 }
 
+void bcache_destroy(sBlockCache *c) {
+	c->usedBlocks = NULL;
+	c->freeBlocks = NULL;
+	c->oldestBlock = NULL;
+	free(c->blockCache);
+}
+
 void bcache_flush(sBlockCache *c) {
 	sCBlock *bentry = c->usedBlocks;
 	while(bentry != NULL) {

@@ -18,12 +18,12 @@ echo 'default 0' > $TMPDIR/boot/grub/menu.lst;
 echo 'timeout 3' >> $TMPDIR/boot/grub/menu.lst;
 echo '' >> $TMPDIR/boot/grub/menu.lst;
 echo "title $OSTITLE" >> $TMPDIR/boot/grub/menu.lst;
-echo "kernel /boot/$BINNAME" >> $TMPDIR/boot/grub/menu.lst;
+echo "kernel /boot/escape.bin" >> $TMPDIR/boot/grub/menu.lst;
 echo 'module /sbin/ata /services/ata' >> $TMPDIR/boot/grub/menu.lst;
-echo 'module /sbin/fs /services/fs /drivers/cdc1 iso9660' >> $TMPDIR/boot/grub/menu.lst;
+echo 'module /sbin/fs /services/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 
 # copy kernel
-cp $KERNELBIN $TMPDIR/boot
+cp $KERNELBIN $TMPDIR/boot/escape.bin
 
 # copy service-deps, apps, services and user-apps
 cp $ROOT/services/services.txt $TMPDIR/etc/services

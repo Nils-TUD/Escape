@@ -57,6 +57,13 @@ typedef struct {
 void bcache_init(sBlockCache *c);
 
 /**
+ * Destroyes the given cache
+ *
+ * @param c the block-cache
+ */
+void bcache_destroy(sBlockCache *c);
+
+/**
  * Writes all dirty blocks to disk
  *
  * @param c the block-cache

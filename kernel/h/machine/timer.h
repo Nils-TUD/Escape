@@ -22,10 +22,11 @@
 
 #include <common.h>
 
-#define TIMER_FREQUENCY			50
+/* timer frequency => time-slice = 5ms */
+#define TIMER_FREQUENCY			200
 
-/* the time that we give one process */
-#define PROC_TIMESLICE			((1000 / TIMER_FREQUENCY) * 3)
+/* the time that we give one process (60ms) */
+#define PROC_TIMESLICE			((1000 / TIMER_FREQUENCY) * 12)
 
 /**
  * Initializes the timer

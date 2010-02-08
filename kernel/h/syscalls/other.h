@@ -22,6 +22,11 @@
 
 #include <machine/intrpt.h>
 
+#define CONF_TIMER_FREQ		0
+#define CONF_MAX_PROCS		1
+#define CONF_MAX_THREADS	2
+#define CONF_MAX_FDS		3
+
 /**
  * Loads the multiboot-modules. This is intended for initloader only!
  */
@@ -38,6 +43,14 @@ void sysc_debugc(sIntrptStackFrame *stack);
  * debugging infos in the kernel to points of time controlled by user-apps.
  */
 void sysc_debug(sIntrptStackFrame *stack);
+
+/**
+ * Gets the value of a kernel-configuration
+ *
+ * @param u32 the id of the config-value (CONF_*)
+ * @return s32 the value or the negative error-code
+ */
+void sysc_getConf(sIntrptStackFrame *stack);
 
 /**
  * Aquire a lock; wait until its unlocked, if necessary

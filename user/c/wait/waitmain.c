@@ -23,12 +23,12 @@
 #include <esc/fileio.h>
 #include <esc/dir.h>
 #include <esc/signals.h>
+#include <esc/conf.h>
 #include <string.h>
 #include <errors.h>
 #include <stdlib.h>
 
-#define TIMER_FREQUENCY		50
-#define TIMER_INC			(1000 / TIMER_FREQUENCY)
+#define TIMER_INC			(1000 / timerFreq)
 
 static void sigTimer(tSig sig,u32 data);
 static void sigHdlr(tSig sig,u32 data);
@@ -37,6 +37,7 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
+static s32 timerFreq;
 static u32 ms = 0;
 static s32 waitingPid = 0;
 
@@ -44,6 +45,10 @@ int main(int argc,char **argv) {
 	char path[MAX_PATH_LEN + 1] = "/bin/";
 	if(argc < 2 || isHelpCmd(argc,argv))
 		usage(argv[0]);
+
+	timerFreq = getConf(CONF_TIMER_FREQ);
+	if(timerFreq < 0)
+		error("Unable to get timer-frequency");
 
 	strcat(path,argv[1]);
 	if(setSigHandler(SIG_INTRPT,sigHdlr) < 0)

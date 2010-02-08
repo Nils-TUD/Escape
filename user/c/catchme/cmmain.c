@@ -22,6 +22,7 @@
 #include <esc/fileio.h>
 #include <esc/io.h>
 #include <esc/keycodes.h>
+#include <esc/conf.h>
 #include <esc/signals.h>
 #include <messages.h>
 #include <stdlib.h>
@@ -34,9 +35,10 @@
 #include "object.h"
 
 #define KEYCODE_COUNT		128
-#define UPDATE_INTERVAL		1
-#define KEYPRESS_INTERVAL	2
-#define FIRE_INTERVAL		8
+#define TICK_SLICE			10
+#define UPDATE_INTERVAL		(TICK_SLICE / (1000 / (timerFreq)))
+#define KEYPRESS_INTERVAL	(UPDATE_INTERVAL * 2)
+#define FIRE_INTERVAL		(UPDATE_INTERVAL * 8)
 
 static void performAction(u8 keycode);
 static void tick(void);
@@ -44,6 +46,7 @@ static void sigTimer(tSig sig,u32 data);
 static void qerror(const char *msg,...);
 static void quit(void);
 
+static s32 timerFreq;
 static bool run = true;
 static bool lastLastBreak = true;
 static bool lastBreak = true;
@@ -61,6 +64,10 @@ int main(void) {
 	if(keymap < 0)
 		qerror("Unable to open keymap-driver");
 
+	timerFreq = getConf(CONF_TIMER_FREQ);
+	if(timerFreq < 0)
+		qerror("Unable to get timer-frequency");
+
 	if(!displ_init()) {
 		quit();
 		exit(EXIT_FAILURE);
@@ -73,7 +80,6 @@ int main(void) {
 
 	tick();
 	while(run) {
-		u32 i;
 		if(wait(EV_DATA_READABLE) != ERR_INTERRUPTED) {
 			while(!eof(keymap)) {
 				if(read(keymap,&kmdata,sizeof(kmdata)) < 0)

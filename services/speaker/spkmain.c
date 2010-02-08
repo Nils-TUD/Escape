@@ -23,11 +23,11 @@
 #include <esc/ports.h>
 #include <esc/service.h>
 #include <esc/proc.h>
-#include <messages.h>
 #include <esc/signals.h>
+#include <esc/conf.h>
+#include <messages.h>
 #include <stdlib.h>
 
-#define TIMER_FREQUENCY				50
 #define PIC_FREQUENCY				1193180
 #define IOPORT_PIT_SPEAKER			0x42
 #define IOPORT_PIT_CTRL_WORD_REG	0x43
@@ -51,6 +51,7 @@ static void stopSound(void);
 static void timerIntrptHandler(tSig sig,u32 data);
 
 static sMsg msg;
+static s32 timerFreq;
 static u16 intrptCount = 0;
 static u16 intrptTarget = 0;
 
@@ -63,6 +64,10 @@ int main(void) {
 	id = regService("speaker",SERV_DEFAULT);
 	if(id < 0)
 		error("Unable to register service 'speaker'");
+
+	timerFreq = getConf(CONF_TIMER_FREQ);
+	if(timerFreq < 0)
+		error("Unable to get timer-frequency");
 
 	/* request io-ports */
 	if(requestIOPorts(IOPORT_PIT_SPEAKER,2) < 0)
@@ -110,7 +115,7 @@ static void timerIntrptHandler(tSig sig,u32 data) {
 	UNUSED(sig);
 	UNUSED(data);
 	if(intrptTarget > 0) {
-		intrptCount += 1000 / TIMER_FREQUENCY;
+		intrptCount += 1000 / timerFreq;
 		if(intrptCount >= intrptTarget) {
 			stopSound();
 			/* reset */

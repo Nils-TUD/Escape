@@ -199,7 +199,7 @@ static void scrollDown(s32 l) {
 		}
 		if(lineCount < consSize.height)
 			startLine = 0;
-		else
+		else if(l == 0 || startLine > lineCount - consSize.height)
 			startLine = lineCount - consSize.height;
 	}
 

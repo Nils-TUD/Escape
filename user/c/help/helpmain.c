@@ -90,18 +90,29 @@ int main(int argc,char **argv) {
 		}
 	}
 
-	if(app || listUser) {
-		addApp(cdCmd,app,listUser,listSys);
-		addApp(pwdCmd,app,listUser,listSys);
-		addApp(envCmd,app,listUser,listSys);
-		addApp(echoCmd,app,listUser,listSys);
+	if(app) {
+		snprintf(path,sizeof(path),"/apps/%s",app);
+		appdef = readApp(path);
+		if(!appdef)
+			error("Unable to read '%s'",path);
+		if(!addApp(appdef,app,listUser,listSys)) {
+			free(appdef);
+			error("Unable to parse app in '%s'",path);
+		}
+		printf("Synopsis:		%s\n",apps[0]->start);
+		printf("Description:	%s\n",apps[0]->desc);
 	}
+	else if(listUser || listSys) {
+		if(listUser) {
+			addApp(cdCmd,app,listUser,listSys);
+			addApp(pwdCmd,app,listUser,listSys);
+			addApp(envCmd,app,listUser,listSys);
+			addApp(echoCmd,app,listUser,listSys);
+		}
 
-	if(app || listUser || listSys) {
 		dirFd = opendir("/apps");
 		if(dirFd < 0)
 			error("Unable to open /apps");
-
 		pathEnd = path + strlen(path);
 		while(readdir(&e,dirFd)) {
 			if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
@@ -121,18 +132,7 @@ int main(int argc,char **argv) {
 			free(appdef);
 		}
 		closedir(dirFd);
-	}
 
-	if(app) {
-		for(i = 0; i < appCount; i++) {
-			if(strcmp(apps[i]->name,app) == 0) {
-				printf("Synopsis:		%s\n",apps[i]->start);
-				printf("Description:	%s\n",apps[i]->desc);
-				break;
-			}
-		}
-	}
-	else if(listUser || listSys) {
 		qsort(apps,appCount,sizeof(sApp*),appCompare);
 
 		for(i = 0; i < appCount; i++) {
@@ -149,40 +149,6 @@ int main(int argc,char **argv) {
 			printf("\n");
 	}
 	else {
-		/*printf("Currently you can use the following commands/programs:\n");
-		printf("	cat [<file>]					Read file or from STDIN and print\n");
-		printf("	colortbl						Print a table with all fg- and bg-colors\n");
-		printf("	date [<format>]					Print date (with specified format or %%c)\n");
-		printf("	kill <pid>						Kill process\n");
-		printf("	libctest						Run libc-tests\n");
-		printf("	test <testName> ...				Run test-module <testName>\n");
-		printf("	login							Just for fun ;)\n");
-		printf("	ls [-ali] [<dir>]				List current or specified directory\n");
-		printf("	progress						Shows a progress-bar\n");
-		printf("	ps [-t]							Print processes\n");
-		printf("	echo <string> ...				Print given arguments\n");
-		printf("	env [<name>|<name>=<value>]		Print or set env-variable(s)\n");
-		printf("	help							Print this message\n");
-		printf("	cd <dir>						Change to given directory\n");
-		printf("	pwd								Print current directory\n");
-		printf("	wc								Count and/or print words\n");
-		printf("	stat <file>						Print file-information\n");
-		printf("	less [<file>]					Allows navigation through <file> or STDIN\n");
-		printf("	dump [-n <b>][-f <f>][<file>]	Dumps bytes from <file> or STDIN to STDOUT\n");
-		printf("	grep <pattern> [<file>]			Prints all lines that match <pattern>\n");
-		printf("	ln <target> <name>				Lets <name> point to <target>\n");
-		printf("	mkdir <dir> ...					Creates the given directories\n");
-		printf("	rm <file> ...					Removes the given files\n");
-		printf("	rmdir <dir> ...					Removes the given (empty!) directories\n");
-		printf("	sync							Flushes the filesystem-buffers\n");
-		printf("	write <file>					Reads from STDIN and writes it to <file>\n");
-		printf("	mount <device> <path> <type>	Mounts <device> @ <path> with fs <type>\n");
-		printf("	umount <path>					Unmounts the device @ <path>\n");
-		printf("\n");
-		printf("	gui								Start GUI\n");
-		printf("									(be carefull: this is a oneway-ticket ;))\n");
-		printf("	guishell						A shell for the GUI\n");*/
-
 		printf("Some words to 'help':\n");
 		printf("	Use 'help --user' to get a list of all user-applications\n");
 		printf("	Use 'help --system' to get a list of all system-applications\n");

@@ -30,15 +30,6 @@ typedef s32 tFileNo;
 #define DEBUGGING 1
 #endif
 
-/**
- * Assuming that <startx> < <endx> and <endx> is not included (that means with start=0 and end=10
- * 0 .. 9 is used), the macro determines wether the two ranges overlap anywhere.
- */
-#define OVERLAPS(start1,end1,start2,end2) \
-	(((start1) >= (start2) && (start1) < ((end2))) ||	/* start in range */	\
-	((end1) > (start2) && (end1) <= (end2)) ||			/* end in range */		\
-	((start1) < (start2) && (end1) > (end2)))			/* complete overlapped */
-
 /* debugging */
 #define DBG_PGCLONEPD(s)
 #define DBG_KMALLOC(s)

@@ -127,14 +127,14 @@ s32 waitChild(sExitState *state);
 s32 atexit(fExitFunc func);
 
 /**
- * The internal exit-function (calls atexit-functions and then exit())
+ * The syscall exit
  *
  * @param errorCode the error-code for the parent
  */
 void _exit(s32 exitCode);
 
 /**
- * Destroys the process and provides the parent the given error-code
+ * Calls atexit-functions and then _exit()
  *
  * @param errorCode the error-code for the parent
  */

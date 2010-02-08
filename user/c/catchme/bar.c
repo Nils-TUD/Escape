@@ -18,35 +18,28 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/lock.h>
-#include <errors.h>
+#include "display.h"
+#include "bar.h"
 
-#define MAX_EXIT_FUNCS	8
+#define BAR_WIDTH		6
 
-static tULock exitLock = 0;
-static s16 exitFuncCount = 0;
-static fExitFunc exitFuncs[MAX_EXIT_FUNCS];
+static u32 pos;
 
-s32 atexit(fExitFunc func) {
-	locku(&exitLock);
-	if(exitFuncCount >= MAX_EXIT_FUNCS) {
-		unlocku(&exitLock);
-		return ERR_MAX_EXIT_FUNCS;
-	}
-
-	exitFuncs[exitFuncCount++] = func;
-	unlocku(&exitLock);
-	return 0;
+void bar_init(void) {
+	pos = 0;
 }
 
-void exit(s32 exitCode) {
-	s16 i;
-	for(i = exitFuncCount - 1; i >= 0; i--)
-		exitFuncs[i]();
-	_exit(exitCode);
+void bar_getDim(u32 *start,u32 *end) {
+	*start = pos;
+	*end = pos + BAR_WIDTH - 1;
 }
 
-tPid getppid(void) {
-	return getppidof(getpid());
+void bar_moveLeft(void) {
+	if(pos > 0)
+		pos--;
+}
+
+void bar_moveRight(void) {
+	if(pos + BAR_WIDTH <= GWIDTH)
+		pos++;
 }

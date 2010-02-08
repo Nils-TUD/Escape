@@ -17,36 +17,36 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef OBJECT_H_
+#define OBJECT_H_
+
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/lock.h>
-#include <errors.h>
 
-#define MAX_EXIT_FUNCS	8
+#define TYPE_AIRPLAIN	0
+#define TYPE_BULLET		1
 
-static tULock exitLock = 0;
-static s16 exitFuncCount = 0;
-static fExitFunc exitFuncs[MAX_EXIT_FUNCS];
+#define DIR_UP			1
+#define DIR_LEFT		2
+#define DIR_RIGHT		4
+#define DIR_DOWN		8
 
-s32 atexit(fExitFunc func) {
-	locku(&exitLock);
-	if(exitFuncCount >= MAX_EXIT_FUNCS) {
-		unlocku(&exitLock);
-		return ERR_MAX_EXIT_FUNCS;
-	}
+typedef struct {
+	u8 type;
+	u8 x;
+	u8 y;
+	u8 width;
+	u8 height;
+	u8 direction;
+	u8 speed;
+	u8 moveCnt;
+} sObject;
 
-	exitFuncs[exitFuncCount++] = func;
-	unlocku(&exitLock);
-	return 0;
-}
+sObject *obj_create(u8 type,u8 x,u8 y,u8 width,u8 height,u8 direction,u8 speed);
 
-void exit(s32 exitCode) {
-	s16 i;
-	for(i = exitFuncCount - 1; i >= 0; i--)
-		exitFuncs[i]();
-	_exit(exitCode);
-}
+bool obj_collide(sObject *o1,sObject *o2);
 
-tPid getppid(void) {
-	return getppidof(getpid());
-}
+bool obj_tick(sObject *o);
+
+void obj_destroy(sObject *o);
+
+#endif /* OBJECT_H_ */

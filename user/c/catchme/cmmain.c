@@ -26,126 +26,119 @@
 #include <messages.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <errors.h>
 
-#define WIDTH				(size.width)
-#define HEIGHT				(size.height)
-#define VIDEO_DRIVER		"/drivers/video"
+#include "display.h"
+#include "bar.h"
+#include "objlist.h"
+#include "object.h"
 
-#define TIMER_INTERVAL		20
-#define UPDATE_INTERVAL		20
+#define KEYCODE_COUNT		128
+#define UPDATE_INTERVAL		1
+#define KEYPRESS_INTERVAL	2
+#define FIRE_INTERVAL		8
 
+static void performAction(u8 keycode);
 static void tick(void);
 static void sigTimer(tSig sig,u32 data);
 static void qerror(const char *msg,...);
 static void quit(void);
 
-static tFD video = -1;
+static bool run = true;
+static bool lastLastBreak = true;
+static bool lastBreak = true;
 static tFD keymap = -1;
-static char *buffer = NULL;
 static sKmData kmdata;
-static sIoCtlSize size;
-
 static u32 time = 0;
-static u32 xpos = 1, ypos = 1;
+static u8 pressed[KEYCODE_COUNT];
 
 int main(void) {
-	u32 x,y;
 	/* backup screen and stop vterm to read from keyboard */
 	ioctl(STDOUT_FILENO,IOCTL_VT_BACKUP,NULL,0);
 	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDKB,NULL,0);
-
-	video = open(VIDEO_DRIVER,IO_READ | IO_WRITE);
-	if(video < 0)
-		qerror("Unable to open video-driver");
 
 	keymap = open("/drivers/kmmanager",IO_READ | IO_WRITE);
 	if(keymap < 0)
 		qerror("Unable to open keymap-driver");
 
-	/* get screen size */
-	if(ioctl(video,IOCTL_VID_GETSIZE,&size,sizeof(sIoCtlSize)) < 0)
-		qerror("Unable to get screensize");
-
-	/* first line is the title */
-	HEIGHT--;
-	buffer = (char*)malloc(WIDTH * HEIGHT * 2);
-	if(!buffer)
-		qerror("Unable to alloc mem for buffer");
+	if(!displ_init()) {
+		quit();
+		exit(EXIT_FAILURE);
+	}
+	bar_init();
+	objlist_create();
 
 	if(setSigHandler(SIG_INTRPT_TIMER,sigTimer) < 0)
 		qerror("Unable to set sig-handler");
 
-	for(y = 1; y < HEIGHT - 1; y++) {
-		for(x = 1; x < WIDTH - 1; x++) {
-			buffer[y * WIDTH * 2 + x * 2] = ' ';
-			buffer[y * WIDTH * 2 + x * 2 + 1] = 0x07;
-		}
-	}
-
-	for(x = 1; x < WIDTH - 1; x++) {
-		buffer[0 * WIDTH * 2 + x * 2] = 0xCD;
-		buffer[0 * WIDTH * 2 + x * 2 + 1] = 0x07;
-		buffer[(HEIGHT - 1) * WIDTH * 2 + x * 2] = 0xCD;
-		buffer[(HEIGHT - 1) * WIDTH * 2 + x * 2 + 1] = 0x07;
-	}
-	for(y = 1; y < HEIGHT - 1; y++) {
-		buffer[y * WIDTH * 2 + 0 * 2] = 0xBA;
-		buffer[y * WIDTH * 2 + 0 * 2 + 1] = 0x07;
-		buffer[y * WIDTH * 2 + (WIDTH - 1) * 2] = 0xBA;
-		buffer[y * WIDTH * 2 + (WIDTH - 1) * 2 + 1] = 0x07;
-	}
-	buffer[0 * WIDTH * 2 + 0 * 2] = 0xC9;
-	buffer[0 * WIDTH * 2 + 0 * 2 + 1] = 0x07;
-	buffer[0 * WIDTH * 2 + (WIDTH - 1)  * 2] = 0xBB;
-	buffer[0 * WIDTH * 2 + (WIDTH - 1)  * 2 + 1] = 0x07;
-	buffer[(HEIGHT - 1) * WIDTH * 2 + 0 * 2] = 0xC8;
-	buffer[(HEIGHT - 1) * WIDTH * 2 + 0 * 2 + 1] = 0x07;
-	buffer[(HEIGHT - 1) * WIDTH * 2 + (WIDTH - 1) * 2] = 0xBC;
-	buffer[(HEIGHT - 1) * WIDTH * 2 + (WIDTH - 1) * 2 + 1] = 0x07;
 	tick();
-
-	while(1) {
-		if(!eof(keymap)) {
-			if(read(keymap,&kmdata,sizeof(kmdata)) < 0)
-				qerror("Unable to read from keymap");
-			if(kmdata.keycode == VK_Q)
-				break;
+	while(run) {
+		u32 i;
+		if(wait(EV_DATA_READABLE) != ERR_INTERRUPTED) {
+			while(!eof(keymap)) {
+				if(read(keymap,&kmdata,sizeof(kmdata)) < 0)
+					qerror("Unable to read from keymap");
+				pressed[kmdata.keycode] = !kmdata.isBreak;
+			}
+			/*lastLastBreak = lastBreak;
+			lastBreak = kmdata.isBreak;*/
 		}
 
-		if(time >= UPDATE_INTERVAL) {
-			time = 0;
+		if((time % UPDATE_INTERVAL) == 0)
 			tick();
-		}
-
-		wait(EV_DATA_READABLE);
 	}
 
 	quit();
 	return EXIT_SUCCESS;
 }
 
-static void tick(void) {
-	u32 lastX = xpos;
-	u32 lastY = ypos;
-	xpos++;
-	if(xpos >= WIDTH - 1) {
-		xpos = 1;
-		ypos++;
-		if(ypos >= HEIGHT - 1)
-			ypos = 1;
+static void performAction(u8 keycode) {
+	switch(keycode) {
+		case VK_LEFT:
+			if(!lastLastBreak)
+				bar_moveLeft();
+			if(!lastBreak)
+				bar_moveLeft();
+			bar_moveLeft();
+			break;
+		case VK_RIGHT:
+			if(!lastLastBreak)
+				bar_moveRight();
+			if(!lastBreak)
+				bar_moveRight();
+			bar_moveRight();
+			break;
+		case VK_SPACE:
+			if((time % FIRE_INTERVAL) == 0) {
+				u32 start,end;
+				sObject *o;
+				bar_getDim(&start,&end);
+				o = obj_create(TYPE_BULLET,start + (end - start) / 2,GHEIGHT - 2,1,1,DIR_UP,4);
+				objlist_add(o);
+			}
+			break;
+		case VK_Q:
+			run = false;
+			break;
 	}
+}
 
-	buffer[lastY * WIDTH * 2 + lastX * 2] = ' ';
-	buffer[ypos * WIDTH * 2 + xpos * 2] = 'X';
-
-	seek(video,WIDTH * 2,SEEK_SET);
-	write(video,buffer,WIDTH * HEIGHT * 2);
+static void tick(void) {
+	if((time % KEYPRESS_INTERVAL) == 0) {
+		u32 i;
+		for(i = 0; i < KEYCODE_COUNT; i++) {
+			if(pressed[i])
+				performAction(i);
+		}
+	}
+	objlist_tick();
+	displ_update();
 }
 
 static void sigTimer(tSig sig,u32 data) {
 	UNUSED(sig);
 	UNUSED(data);
-	time += TIMER_INTERVAL;
+	time++;
 }
 
 static void qerror(const char *msg,...) {
@@ -158,9 +151,8 @@ static void qerror(const char *msg,...) {
 }
 
 static void quit(void) {
-	close(video);
+	displ_destroy();
 	close(keymap);
-	free(buffer);
 	ioctl(STDOUT_FILENO,IOCTL_VT_RESTORE,NULL,0);
 	ioctl(STDOUT_FILENO,IOCTL_VT_EN_RDKB,NULL,0);
 }

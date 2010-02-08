@@ -17,36 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef BAR_H_
+#define BAR_H_
+
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/lock.h>
-#include <errors.h>
 
-#define MAX_EXIT_FUNCS	8
+void bar_init(void);
 
-static tULock exitLock = 0;
-static s16 exitFuncCount = 0;
-static fExitFunc exitFuncs[MAX_EXIT_FUNCS];
+void bar_getDim(u32 *start,u32 *end);
 
-s32 atexit(fExitFunc func) {
-	locku(&exitLock);
-	if(exitFuncCount >= MAX_EXIT_FUNCS) {
-		unlocku(&exitLock);
-		return ERR_MAX_EXIT_FUNCS;
-	}
+void bar_moveLeft(void);
 
-	exitFuncs[exitFuncCount++] = func;
-	unlocku(&exitLock);
-	return 0;
-}
+void bar_moveRight(void);
 
-void exit(s32 exitCode) {
-	s16 i;
-	for(i = exitFuncCount - 1; i >= 0; i--)
-		exitFuncs[i]();
-	_exit(exitCode);
-}
-
-tPid getppid(void) {
-	return getppidof(getpid());
-}
+#endif /* BAR_H_ */

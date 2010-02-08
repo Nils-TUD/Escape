@@ -17,36 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef OBJLIST_H_
+#define OBJLIST_H_
+
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/lock.h>
-#include <errors.h>
+#include <sllist.h>
+#include "object.h"
 
-#define MAX_EXIT_FUNCS	8
+void objlist_create(void);
 
-static tULock exitLock = 0;
-static s16 exitFuncCount = 0;
-static fExitFunc exitFuncs[MAX_EXIT_FUNCS];
+void objlist_add(sObject *o);
 
-s32 atexit(fExitFunc func) {
-	locku(&exitLock);
-	if(exitFuncCount >= MAX_EXIT_FUNCS) {
-		unlocku(&exitLock);
-		return ERR_MAX_EXIT_FUNCS;
-	}
+sSLList *objlist_get(void);
 
-	exitFuncs[exitFuncCount++] = func;
-	unlocku(&exitLock);
-	return 0;
-}
+void objlist_tick(void);
 
-void exit(s32 exitCode) {
-	s16 i;
-	for(i = exitFuncCount - 1; i >= 0; i--)
-		exitFuncs[i]();
-	_exit(exitCode);
-}
-
-tPid getppid(void) {
-	return getppidof(getpid());
-}
+#endif /* OBJLIST_H_ */

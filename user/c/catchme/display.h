@@ -17,36 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef DISPLAY_H_
+#define DISPLAY_H_
+
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/lock.h>
-#include <errors.h>
+#include <esc/io.h>
 
-#define MAX_EXIT_FUNCS	8
+#define WIDTH				(ssize.width)
+#define HEIGHT				(ssize.height)
+#define PADDING				1
+#define GWIDTH				(WIDTH - PADDING * 2)
+#define GHEIGHT				(HEIGHT - PADDING * 2)
 
-static tULock exitLock = 0;
-static s16 exitFuncCount = 0;
-static fExitFunc exitFuncs[MAX_EXIT_FUNCS];
+extern sIoCtlSize ssize;
 
-s32 atexit(fExitFunc func) {
-	locku(&exitLock);
-	if(exitFuncCount >= MAX_EXIT_FUNCS) {
-		unlocku(&exitLock);
-		return ERR_MAX_EXIT_FUNCS;
-	}
+bool displ_init(void);
 
-	exitFuncs[exitFuncCount++] = func;
-	unlocku(&exitLock);
-	return 0;
-}
+void displ_destroy(void);
 
-void exit(s32 exitCode) {
-	s16 i;
-	for(i = exitFuncCount - 1; i >= 0; i--)
-		exitFuncs[i]();
-	_exit(exitCode);
-}
+void displ_update(void);
 
-tPid getppid(void) {
-	return getppidof(getpid());
-}
+#endif /* DISPLAY_H_ */

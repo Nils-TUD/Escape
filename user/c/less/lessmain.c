@@ -246,7 +246,7 @@ static void printStatus(u32 total,const char *totalStr) {
 
 static bool readLines(u32 end) {
 	const char *states[] = {"|","/","-","\\","|","/","-"};
-	s32 count;
+	s32 count = 0;
 	u8 state = 0;
 	bool waitForEsc;
 	char *cpy;

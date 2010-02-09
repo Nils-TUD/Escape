@@ -22,6 +22,7 @@
 #include <sllist.h>
 #include "object.h"
 #include "objlist.h"
+#include "game.h"
 
 static sSLList *objects;
 
@@ -38,14 +39,17 @@ sSLList *objlist_get(void) {
 	return objects;
 }
 
-void objlist_tick(void) {
+s32 objlist_tick(void) {
 	sSLNode *n,*pn,*nnext,*m,*pm;
 	sObject *o1,*o2;
 	bool removeO1;
+	s32 scoreChg = 0;
 	pn = NULL;
 	for(n = sll_begin(objects); n != NULL; ) {
 		o1 = (sObject*)n->data;
 		if(!obj_tick(o1)) {
+			if(o1->type == TYPE_AIRPLANE)
+				scoreChg += SCORE_MISS;
 			nnext = n->next;
 			obj_destroy(o1);
 			sll_removeNode(objects,n,pn);
@@ -66,6 +70,7 @@ void objlist_tick(void) {
 				o1 = (sObject*)n->data;
 				o2 = (sObject*)m->data;
 				if(obj_collide(o1,o2)) {
+					scoreChg += SCORE_HIT;
 					if(!obj_explode(o1)) {
 						removeO1 = true;
 						obj_destroy(o1);
@@ -90,4 +95,5 @@ void objlist_tick(void) {
 			n = n->next;
 		}
 	}
+	return scoreChg;
 }

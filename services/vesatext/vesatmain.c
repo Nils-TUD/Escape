@@ -53,8 +53,8 @@
 #define VBE_DISPI_NOCLEARMEM            0x80
 
 #define VESA_MEMORY						0xE0000000
-#define RESOLUTION_X					800
-#define RESOLUTION_Y					600
+#define RESOLUTION_X					1024
+#define RESOLUTION_Y					768
 #define BITS_PER_PIXEL					24
 #define PIXEL_SIZE						(BITS_PER_PIXEL / 8)
 #define VESA_MEM_SIZE					(RESOLUTION_X * RESOLUTION_Y * PIXEL_SIZE)
@@ -65,6 +65,9 @@
 
 #define COLS							(RESOLUTION_X / (FONT_WIDTH + 2))
 #define ROWS							(RESOLUTION_Y / (FONT_HEIGHT + 2))
+
+#define PIXEL_SET(c,x,y)				\
+	((font8x16)[(c) * FONT_HEIGHT + (y)] & (1 << (FONT_WIDTH - (x) + 1)))
 
 typedef u16 tSize;
 typedef u16 tCoord;
@@ -93,7 +96,7 @@ typedef enum {
 static void vbe_write(u16 index,u16 value);
 static void vbe_setMode(tSize xres,tSize yres,u16 bpp);
 static void vbe_drawStr(tCoord col,tCoord row,const char *str,u32 len);
-static void vbe_drawChar(tCoord col,tCoord row,char c,u8 color);
+static void vbe_drawChar(tCoord col,tCoord row,u8 c,u8 color);
 static void vbe_setCursor(tCoord col,tCoord row);
 static void vbe_drawCursor(tCoord col,tCoord row,u8 color);
 
@@ -145,11 +148,10 @@ int main(void) {
 		error("Unable to alloc mem for white-on-black-cache");
 	cc = whOnBlCache;
 	for(i = 0; i < FONT_COUNT; i++) {
-		const char *pixel = font6x8[i];
 		for(y = 0; y < FONT_HEIGHT + 2; y++) {
 			for(x = 0; x < FONT_WIDTH + 2; x++) {
 				if(y > 0 && y < FONT_HEIGHT + 1 && x > 0 && x < FONT_WIDTH + 1 &&
-						pixel[(y - 1) * FONT_WIDTH + (x - 1)]) {
+						PIXEL_SET(i,x - 1,y - 1)) {
 					*cc++ = colors[WHITE][2];
 					*cc++ = colors[WHITE][1];
 					*cc++ = colors[WHITE][0];
@@ -272,15 +274,13 @@ static void vbe_drawStr(tCoord col,tCoord row,const char *str,u32 len) {
 	}
 }
 
-static void vbe_drawChar(tCoord col,tCoord row,char c,u8 color) {
+static void vbe_drawChar(tCoord col,tCoord row,u8 c,u8 color) {
 	u32 x,y;
 	u8 *vid = video +
 			row * (FONT_HEIGHT + 2) * RESOLUTION_X * PIXEL_SIZE +
 			col * (FONT_WIDTH + 2) * PIXEL_SIZE;
-	if(c < 32)
-		return;
 	if(color == ((BLACK << 4) | WHITE)) {
-		const u8 *cache = whOnBlCache + (c - 32) * (FONT_HEIGHT + 2) * (FONT_WIDTH + 2) * PIXEL_SIZE;
+		const u8 *cache = whOnBlCache + c * (FONT_HEIGHT + 2) * (FONT_WIDTH + 2) * PIXEL_SIZE;
 		for(y = 0; y < FONT_HEIGHT + 2; y++) {
 			memcpy(vid,cache,(FONT_WIDTH + 2) * PIXEL_SIZE);
 			cache += (FONT_WIDTH + 2) * PIXEL_SIZE;
@@ -295,12 +295,11 @@ static void vbe_drawChar(tCoord col,tCoord row,char c,u8 color) {
 		u8 colBack1 = colors[color >> 4][2];
 		u8 colBack2 = colors[color >> 4][1];
 		u8 colBack3 = colors[color >> 4][0];
-		const char *pixel = font6x8[(s32)c - 32];
 		for(y = 0; y < FONT_HEIGHT + 2; y++) {
 			vidwork = vid + y * RESOLUTION_X * PIXEL_SIZE;
 			for(x = 0; x < FONT_WIDTH + 2; x++) {
 				if(y > 0 && x < FONT_WIDTH + 1 && x > 0) {
-					if(y < FONT_HEIGHT + 1 && *pixel) {
+					if(y < FONT_HEIGHT + 1 && PIXEL_SET(c,x - 1,y - 1)) {
 						*vidwork++ = colFront1;
 						*vidwork++ = colFront2;
 						*vidwork++ = colFront3;
@@ -310,7 +309,6 @@ static void vbe_drawChar(tCoord col,tCoord row,char c,u8 color) {
 						*vidwork++ = colBack2;
 						*vidwork++ = colBack3;
 					}
-					pixel++;
 				}
 				else {
 					*vidwork++ = colBack1;

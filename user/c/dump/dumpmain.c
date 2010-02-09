@@ -149,7 +149,10 @@ int main(int argc,char *argv[]) {
 				printf("%08x: ",i);
 			}
 
-			ascii[i % base] = isprint(buffer[x]) && !isspace(buffer[x]) ? buffer[x] : NPRINT_CHAR;
+			if(isprint(buffer[x]) && buffer[x] < 0x80 && !isspace(buffer[x]))
+				ascii[i % base] = buffer[x];
+			else
+				ascii[i % base] = NPRINT_CHAR;
 			switch(format) {
 				case OUT_FORMAT_DEC:
 					printf("%03d ",buffer[x]);

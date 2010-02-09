@@ -27,6 +27,7 @@
 #define TYPE_EXPLO1		2
 #define TYPE_EXPLO2		3
 #define TYPE_EXPLO3		4
+#define TYPE_EXPLO4		5
 
 #define AIRPLANE_WIDTH	3
 #define AIRPLANE_HEIGHT	3

@@ -80,6 +80,13 @@ bool obj_tick(sObject *o) {
 		return true;
 	}
 	if(o->type == TYPE_EXPLO3) {
+		if(o->moveCnt == EXPLO_DURATION) {
+			o->moveCnt = 0;
+			o->type = TYPE_EXPLO4;
+		}
+		return true;
+	}
+	if(o->type == TYPE_EXPLO4) {
 		if(o->moveCnt == EXPLO_DURATION)
 			return false;
 		return true;

@@ -17,19 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef OBJLIST_H_
-#define OBJLIST_H_
+#ifndef GAME_H_
+#define GAME_H_
 
 #include <esc/common.h>
-#include <sllist.h>
-#include "object.h"
 
-void objlist_create(void);
+#define SCORE_HIT		2
+#define SCORE_MISS		(-2)
+#define SCORE_SELFHIT	(-4)
 
-void objlist_add(sObject *o);
+bool game_init(void);
 
-sSLList *objlist_get(void);
+void game_deinit(void);
 
-s32 objlist_tick(void);
+u32 game_getScore(void);
 
-#endif /* OBJLIST_H_ */
+void game_handleKey(u8 keycode,u8 modifiers,u8 isBreak,char c);
+
+bool game_tick(u32 time);
+
+#endif /* GAME_H_ */

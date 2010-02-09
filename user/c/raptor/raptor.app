@@ -1,4 +1,4 @@
-name:							"catchme"
-start:						"catchme"
+name:							"raptor"
+start:						"raptor"
 type:							"user"
 desc:							"A small game :)"

@@ -1,3 +1,3 @@
-NAME=catchme
+NAME=raptor
 
 -include ../DefMakefile.mk

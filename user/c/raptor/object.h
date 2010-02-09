@@ -22,8 +22,19 @@
 
 #include <esc/common.h>
 
-#define TYPE_AIRPLAIN	0
+#define TYPE_AIRPLANE	0
 #define TYPE_BULLET		1
+#define TYPE_EXPLO1		2
+#define TYPE_EXPLO2		3
+#define TYPE_EXPLO3		4
+
+#define AIRPLANE_WIDTH	3
+#define AIRPLANE_HEIGHT	3
+
+#define BULLET_WIDTH	1
+#define BULLET_HEIGHT	1
+
+#define EXPLO_DURATION	8
 
 #define DIR_UP			1
 #define DIR_LEFT		2
@@ -41,7 +52,13 @@ typedef struct {
 	u8 moveCnt;
 } sObject;
 
+sObject *obj_createAirplain(u8 x,u8 y,u8 direction,u8 speed);
+
+sObject *obj_createBullet(u8 x,u8 y,u8 direction,u8 speed);
+
 sObject *obj_create(u8 type,u8 x,u8 y,u8 width,u8 height,u8 direction,u8 speed);
+
+bool obj_explode(sObject *o);
 
 bool obj_collide(sObject *o1,sObject *o2);
 

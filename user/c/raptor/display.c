@@ -37,6 +37,34 @@ static void displ_drawBar(void);
 static void displ_restoreBackup(void);
 static void displ_setBackup(void);
 
+static char airplane[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+	0xDA, 0x07, 0xC4, 0x07, 0xBF, 0x07,
+	0xB3, 0x07, 0xDB, 0x07, 0xB3, 0x07,
+	0xD4, 0x07, 0xCD, 0x07, 0xBE, 0x07
+};
+
+static char explo1[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+	0xB2, 0x07, 0xB2, 0x07, 0xB2, 0x07,
+	0xB2, 0x07, 0xB2, 0x07, 0xB2, 0x07,
+	0xB2, 0x07, 0xB2, 0x07, 0xB2, 0x07
+};
+
+static char explo2[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+	0xB1, 0x07, 0xB1, 0x07, 0xB1, 0x07,
+	0xB1, 0x07, 0xB1, 0x07, 0xB1, 0x07,
+	0xB1, 0x07, 0xB1, 0x07, 0xB1, 0x07
+};
+
+static char explo3[AIRPLANE_WIDTH * AIRPLANE_HEIGHT * 2] = {
+	0xB0, 0x07, 0xB0, 0x07, 0xB0, 0x07,
+	0xB0, 0x07, 0xB0, 0x07, 0xB0, 0x07,
+	0xB0, 0x07, 0xB0, 0x07, 0xB0, 0x07
+};
+
+static char bullet[BULLET_WIDTH * BULLET_HEIGHT * 2] = {
+	0x04, 0x04
+};
+
 sIoCtlSize ssize;
 static tFD video;
 static char *buffer = NULL;
@@ -87,30 +115,34 @@ void displ_update(void) {
 }
 
 static void displ_drawObjects(void) {
-	u8 color;
-	char c;
-	u8 x,y;
+	u8 y;
 	sSLNode *n;
 	sObject *o;
+	char *src;
 	sSLList *objects = objlist_get();
 	for(n = sll_begin(objects); n != NULL; n = n->next) {
 		o = (sObject*)n->data;
 		switch(o->type) {
-			case TYPE_AIRPLAIN:
-				color = 0x07;
-				c = 0xDB;
+			case TYPE_AIRPLANE:
+				src = airplane;
 				break;
 			case TYPE_BULLET:
-				color = 0x04;
-				c = 0x04;
+				src = bullet;
+				break;
+			case TYPE_EXPLO1:
+				src = explo1;
+				break;
+			case TYPE_EXPLO2:
+				src = explo2;
+				break;
+			case TYPE_EXPLO3:
+				src = explo3;
 				break;
 		}
 
 		for(y = o->y + PADDING; y < o->y + PADDING + o->height; y++) {
-			for(x = o->x + PADDING; x < o->x + PADDING + o->width; x++) {
-				buffer[XYCHAR(x,y)] = c;
-				buffer[XYCOL(x,y)] = color;
-			}
+			memcpy(buffer + XYCHAR(o->x + PADDING,y),src,o->width * 2);
+			src += o->width * 2;
 		}
 	}
 }

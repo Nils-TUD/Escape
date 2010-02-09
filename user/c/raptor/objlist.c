@@ -41,29 +41,46 @@ sSLList *objlist_get(void) {
 void objlist_tick(void) {
 	sSLNode *n,*pn,*nnext,*m,*pm;
 	sObject *o1,*o2;
-	for(n = sll_begin(objects); n != NULL; n = n->next) {
+	bool removeO1;
+	pn = NULL;
+	for(n = sll_begin(objects); n != NULL; ) {
 		o1 = (sObject*)n->data;
-		obj_tick(o1);
+		if(!obj_tick(o1)) {
+			nnext = n->next;
+			obj_destroy(o1);
+			sll_removeNode(objects,n,pn);
+			n = nnext;
+		}
+		else {
+			pn = n;
+			n = n->next;
+		}
 	}
 
 	pn = NULL;
 	for(n = sll_begin(objects); n != NULL; ) {
 		pm = NULL;
+		removeO1 = false;
 		for(m = sll_begin(objects); m != NULL; pm = m, m = m->next) {
 			if(n != m) {
 				o1 = (sObject*)n->data;
 				o2 = (sObject*)m->data;
 				if(obj_collide(o1,o2)) {
-					obj_destroy(o1);
-					obj_destroy(o2);
-					sll_removeNode(objects,m,pm);
+					if(!obj_explode(o1)) {
+						removeO1 = true;
+						obj_destroy(o1);
+					}
+					if(!obj_explode(o2)) {
+						obj_destroy(o2);
+						sll_removeNode(objects,m,pm);
+					}
 					break;
 				}
 			}
 		}
 
 		/* collition? */
-		if(m != NULL) {
+		if(removeO1) {
 			nnext = n->next;
 			sll_removeNode(objects,n,pn);
 			n = nnext;

@@ -24,6 +24,7 @@
 #include <esc/keycodes.h>
 #include <esc/conf.h>
 #include <esc/signals.h>
+#include <esc/date.h>
 #include <messages.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -39,9 +40,11 @@
 #define UPDATE_INTERVAL		(TICK_SLICE / (1000 / (timerFreq)))
 #define KEYPRESS_INTERVAL	(UPDATE_INTERVAL * 2)
 #define FIRE_INTERVAL		(UPDATE_INTERVAL * 8)
+#define ADDPLAIN_INTERVAL	(UPDATE_INTERVAL * 30)
 
 static void performAction(u8 keycode);
 static void tick(void);
+static void addAirplain(void);
 static void sigTimer(tSig sig,u32 data);
 static void qerror(const char *msg,...);
 static void quit(void);
@@ -72,6 +75,7 @@ int main(void) {
 		quit();
 		exit(EXIT_FAILURE);
 	}
+	srand(getTime());
 	bar_init();
 	objlist_create();
 
@@ -119,7 +123,7 @@ static void performAction(u8 keycode) {
 				u32 start,end;
 				sObject *o;
 				bar_getDim(&start,&end);
-				o = obj_create(TYPE_BULLET,start + (end - start) / 2,GHEIGHT - 2,1,1,DIR_UP,4);
+				o = obj_createBullet(start + (end - start) / 2,GHEIGHT - 2,DIR_UP,4);
 				objlist_add(o);
 			}
 			break;
@@ -137,8 +141,26 @@ static void tick(void) {
 				performAction(i);
 		}
 	}
+	if((time % ADDPLAIN_INTERVAL) == 0)
+		addAirplain();
 	objlist_tick();
 	displ_update();
+}
+
+static void addAirplain(void) {
+	sObject *o;
+	u8 x = rand() % (GWIDTH - 2);
+	u8 dir = DIR_DOWN;
+	switch(rand() % 3) {
+		case 0:
+			dir |= DIR_LEFT;
+			break;
+		case 1:
+			dir |= DIR_RIGHT;
+			break;
+	}
+	o = obj_createAirplain(x,0,dir,16);
+	objlist_add(o);
 }
 
 static void sigTimer(tSig sig,u32 data) {

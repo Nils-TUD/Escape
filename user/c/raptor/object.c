@@ -23,6 +23,14 @@
 #include "object.h"
 #include "display.h"
 
+sObject *obj_createAirplain(u8 x,u8 y,u8 direction,u8 speed) {
+	return obj_create(TYPE_AIRPLANE,x,y,AIRPLANE_WIDTH,AIRPLANE_HEIGHT,direction,speed);
+}
+
+sObject *obj_createBullet(u8 x,u8 y,u8 direction,u8 speed) {
+	return obj_create(TYPE_BULLET,x,y,BULLET_WIDTH,BULLET_HEIGHT,direction,speed);
+}
+
 sObject *obj_create(u8 type,u8 x,u8 y,u8 width,u8 height,u8 direction,u8 speed) {
 	sObject *o = (sObject*)malloc(sizeof(sObject));
 	assert(o != NULL);
@@ -38,15 +46,45 @@ sObject *obj_create(u8 type,u8 x,u8 y,u8 width,u8 height,u8 direction,u8 speed) 
 }
 
 bool obj_collide(sObject *o1,sObject *o2) {
-	if((o1->type == TYPE_BULLET && o2->type != TYPE_BULLET) ||
-		(o1->type != TYPE_BULLET && o2->type == TYPE_BULLET)) {
+	if((o1->type == TYPE_BULLET && o2->type == TYPE_AIRPLANE) ||
+		(o1->type == TYPE_AIRPLANE && o2->type == TYPE_BULLET)) {
 		return OVERLAPS(o1->x,o1->x + o1->width - 1,o2->x,o2->x + o2->width - 1) &&
 			OVERLAPS(o1->y,o1->y + o1->height - 1,o2->y,o2->y + o2->height - 1);
 	}
 	return false;
 }
 
+bool obj_explode(sObject *o) {
+	if(o->type == TYPE_AIRPLANE) {
+		o->moveCnt = 0;
+		o->type = TYPE_EXPLO1;
+		return true;
+	}
+	return false;
+}
+
 bool obj_tick(sObject *o) {
+	o->moveCnt++;
+	if(o->type == TYPE_EXPLO1) {
+		if(o->moveCnt == EXPLO_DURATION) {
+			o->moveCnt = 0;
+			o->type = TYPE_EXPLO2;
+		}
+		return true;
+	}
+	if(o->type == TYPE_EXPLO2) {
+		if(o->moveCnt == EXPLO_DURATION) {
+			o->moveCnt = 0;
+			o->type = TYPE_EXPLO3;
+		}
+		return true;
+	}
+	if(o->type == TYPE_EXPLO3) {
+		if(o->moveCnt == EXPLO_DURATION)
+			return false;
+		return true;
+	}
+
 	if(++o->moveCnt == o->speed) {
 		o->moveCnt = 0;
 		if(o->direction & DIR_UP) {

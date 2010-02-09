@@ -191,10 +191,8 @@ s32 proc_clone(tPid newPid) {
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* clone page-dir */
-	if((pdirFrame = paging_clonePageDir(&stackFrame,procs + newPid)) == 0) {
-		vfs_removeProcess(newPid);
-		return ERR_NOT_ENOUGH_MEM;
-	}
+	if((pdirFrame = paging_clonePageDir(&stackFrame,procs + newPid)) == 0)
+		goto errorVFS;
 
 	/* set page-dir and pages for segments */
 	p->pid = newPid;
@@ -212,26 +210,14 @@ s32 proc_clone(tPid newPid) {
 
 	/* create thread-list */
 	p->threads = sll_create();
-	if(p->threads == NULL) {
-		paging_destroyPageDir(p);
-		vfs_removeProcess(newPid);
-		return ERR_NOT_ENOUGH_MEM;
-	}
+	if(p->threads == NULL)
+		goto errorPDir;
 
 	/* clone current thread */
-	if((res = thread_clone(curThread,&nt,p,&dummy,true)) < 0) {
-		kheap_free(p->threads);
-		paging_destroyPageDir(p);
-		vfs_removeProcess(newPid);
-		return res;
-	}
-	if(!sll_append(p->threads,nt)) {
-		thread_destroy(nt,true);
-		kheap_free(p->threads);
-		paging_destroyPageDir(p);
-		vfs_removeProcess(newPid);
-		return ERR_NOT_ENOUGH_MEM;
-	}
+	if((res = thread_clone(curThread,&nt,p,&dummy,true)) < 0)
+		goto errorThreadList;
+	if(!sll_append(p->threads,nt))
+		goto errorThread;
 	/* set kernel-stack-frame; thread_clone() doesn't do it for us */
 	nt->kstackFrame = stackFrame;
 	/* make thread ready */
@@ -239,19 +225,24 @@ s32 proc_clone(tPid newPid) {
 
 	/* clone text */
 	p->text = cur->text;
-	if(!text_clone(p->text,p->pid)) {
-		thread_destroy(nt,true);
-		kheap_free(p->threads);
-		paging_destroyPageDir(p);
-		vfs_removeProcess(newPid);
-		return ERR_NOT_ENOUGH_MEM;
-	}
+	if(!text_clone(p->text,p->pid))
+		goto errorThread;
 
 	res = proc_finishClone(nt,stackFrame);
 	if(res == 1)
 		return 1;
 	/* parent */
 	return 0;
+
+errorThread:
+	thread_destroy(nt,true);
+errorThreadList:
+	kheap_free(p->threads);
+errorPDir:
+	paging_destroyPageDir(p);
+errorVFS:
+	vfs_removeProcess(newPid);
+	return ERR_NOT_ENOUGH_MEM;
 }
 
 s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {

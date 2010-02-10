@@ -55,7 +55,9 @@
 
 /* gcc-attributes */
 #define A_PACKED				__attribute__((packed))
+#define A_ALIGNED(x)			__attribute__((aligned (x)))
 #define A_CHECKRET				__attribute__((__warn_unused_result__))
+#define A_NORETURN				__attribute__((noreturn))
 
 /* process id */
 typedef u16 tPid;

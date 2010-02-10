@@ -25,6 +25,9 @@
 #include <assert.h>
 #include <string.h>
 
+#define L16M_PAGE_COUNT			((16 * M - KERNEL_P_ADDR) / PAGE_SIZE)
+#define L16M_CACHE_SIZE			16
+
 /**
  * Marks the given range as used or not used
  *
@@ -42,7 +45,7 @@ static void mm_markAddrRangeUsed(u32 from,u32 to,bool used);
  */
 static void mm_markFrameUsed(u32 frame,bool used);
 
-#if DEBUGGING
+#if DEBUG_CHECK_DUPFREE
 
 /**
  * Checks wether the given frame of given type is free
@@ -88,11 +91,13 @@ static u32 frameUsagePos = 0;
 static sFrameUsage frameUsages[FRAME_USAGE_COUNT];
 #endif
 
-void mm_init(void) {
+void mm_init(const sMultiBoot *mb) {
 	sMemMap *mmap;
+	u32 memSize = mb->memUpper * K - KERNEL_P_ADDR;
+	u32 u16mPageCount = (memSize / PAGE_SIZE) - L16M_PAGE_COUNT;
 
 	/* init stack */
-	u16mStackFrameCount = (U16M_PAGE_COUNT + (PAGE_SIZE - 1) / sizeof(u32)) / (PAGE_SIZE / sizeof(u32));
+	u16mStackFrameCount = (u16mPageCount + (PAGE_SIZE - 1) / sizeof(u32)) / (PAGE_SIZE / sizeof(u32));
 
 	/* put the MM-stack behind the last multiboot-module */
 	if(mb->modsCount == 0)
@@ -218,7 +223,9 @@ void mm_freeFrames(eMemType type,u32 *frames,u32 count) {
 void mm_freeFrame(u32 frame,eMemType type) {
 	u32 *bitmapEntry;
 
-	/*vassert(!mm_dbg_isFrameFree(type,frame),"Frame 0x%x (type %d) is already free",frame,type);*/
+#if DEBUG_CHECK_DUPFREE
+	vassert(!mm_dbg_isFrameFree(type,frame),"Frame 0x%x (type %d) is already free",frame,type);
+#endif
 
 	/* TODO what do we need for DMA? */
 	if(type == MM_DMA) {
@@ -297,6 +304,7 @@ void mm_dbg_printFrameUsage(void) {
 }
 #endif
 
+#if DEBUG_CHECK_DUPFREE
 static bool mm_dbg_isFrameFree(eMemType type,u32 frame) {
 	u32 *ptr;
 	if(type == MM_DEF) {
@@ -312,6 +320,7 @@ static bool mm_dbg_isFrameFree(eMemType type,u32 frame) {
 	ptr = (u32*)(l16mBitmap + (frame >> 5));
 	return (*ptr & (1 << (frame & 0x1f))) == 0;
 }
+#endif
 
 void mm_dbg_printFreeFrames(void) {
 	u32 i,pos = 0;

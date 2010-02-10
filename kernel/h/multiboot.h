@@ -102,15 +102,17 @@ typedef struct {
 #endif
 } sMultiBoot;
 
-/* the multiboot-information */
-extern sMultiBoot *mb;
-
 /**
  * Inits the multi-boot infos
  *
  * @param mbp the pointer to the multi-boot-structure
  */
 void mboot_init(sMultiBoot *mbp);
+
+/**
+ * @return the multiboot-info-structure
+ */
+const sMultiBoot *mboot_getInfo(void);
 
 /**
  * @return size of the kernel (in bytes)

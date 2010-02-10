@@ -45,7 +45,7 @@ extern s32 errno;
  *
  * @param fmt the error-message-format
  */
-void error(const char *fmt,...) __attribute__((noreturn));
+void error(const char *fmt,...) A_NORETURN;
 
 /**
  * Calculates the stacktrace

@@ -138,7 +138,7 @@ void _exit(s32 exitCode);
  *
  * @param errorCode the error-code for the parent
  */
-void exit(s32 errorCode) __attribute__((noreturn));
+void exit(s32 errorCode) A_NORETURN;
 
 #ifdef __cplusplus
 }

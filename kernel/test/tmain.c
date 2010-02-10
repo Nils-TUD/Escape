@@ -79,7 +79,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 	/* mm */
 	vid_printf("Initializing physical memory-management...");
-	mm_init();
+	mm_init(mboot_getInfo());
 	vid_toLineEnd(SSTRLEN("DONE"));
 	vid_printf("\033[co;2]%s\033[co]","DONE");
 

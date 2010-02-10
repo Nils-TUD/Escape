@@ -222,7 +222,7 @@ static void gdt_set_tss_desc(u16 index,u32 address,u32 size);
 static sGDTDesc gdt[GDT_ENTRY_COUNT];
 
 /* our TSS (should not contain a page-boundary) */
-static sTSS tss __attribute__((aligned (PAGE_SIZE)));
+static sTSS tss A_ALIGNED(PAGE_SIZE);
 
 void gdt_init(void) {
 	sGDTTable gdtTable;

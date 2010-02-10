@@ -36,7 +36,7 @@
 #define CHECK_FLAG(flags,bit)	(flags & (1 << bit))
 
 extern u32 KernelStart;
-sMultiBoot *mb;
+static sMultiBoot *mb;
 static bool loadedMods = false;
 
 void mboot_init(sMultiBoot *mbp) {
@@ -59,6 +59,10 @@ void mboot_init(sMultiBoot *mbp) {
 		mod->name = (char*)((u32)mod->name | KERNEL_AREA_V_ADDR);
 		mod++;
 	}
+}
+
+const sMultiBoot *mboot_getInfo(void) {
+	return mb;
 }
 
 u32 mboot_getKernelSize(void) {

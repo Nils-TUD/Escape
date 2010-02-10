@@ -23,6 +23,7 @@
 #include <common.h>
 #include <multiboot.h>
 
+#define DEBUG_CHECK_DUPFREE		0
 #define DEBUG_FRAME_USAGE		0
 
 /* the physical start-address of the kernel-area */
@@ -30,26 +31,21 @@
 /* the physical start-address of the kernel itself */
 #define KERNEL_P_ADDR			(1 * M)
 
-/* total mem size (in bytes) */
-#define MEMSIZE					(mb->memUpper * K - KERNEL_P_ADDR)
-
 #define PAGE_SIZE				(4 * K)
 #define PAGE_SIZE_SHIFT			12
-#define L16M_PAGE_COUNT			((16 * M - KERNEL_P_ADDR) / PAGE_SIZE)
-#define U16M_PAGE_COUNT			((MEMSIZE / PAGE_SIZE) - L16M_PAGE_COUNT)
 
 /* converts bytes to pages */
 #define BYTES_2_PAGES(b)		(((u32)(b) + (PAGE_SIZE - 1)) >> PAGE_SIZE_SHIFT)
-
-#define L16M_CACHE_SIZE			16
 
 /* set values to support bit-masks of the types */
 typedef enum {MM_DMA = 1,MM_DEF = 2} eMemType;
 
 /**
  * Initializes the memory-management
+ *
+ * @param mb the multiboot-info
  */
-void mm_init(void);
+void mm_init(const sMultiBoot *mb);
 
 /**
  * @return the number of bytes used for the mm-stack

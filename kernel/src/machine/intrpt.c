@@ -510,6 +510,8 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 		/* syscall */
 		case IRQ_SYSCALL:
+			if(t->proc->isVM86)
+				util_panic("VM86-task wants to perform a syscall!?");
 			sysc_handle(&stack);
 			break;
 

@@ -271,6 +271,15 @@ void gdt_init(void) {
 	paging_gdtFinished();
 }
 
+void tss_setStackPtr(u8 isVM86) {
+	/* VM86-tasks should start at the beginning because the segment-registers are saved on the
+	 * stack first (not in protected mode) */
+	if(isVM86)
+		tss.esp0 = KERNEL_STACK + PAGE_SIZE - 4;
+	else
+		tss.esp0 = KERNEL_STACK + PAGE_SIZE - 4 - 4 * sizeof(u32);
+}
+
 bool tss_ioMapPresent(void) {
 	return tss.ioMapOffset != IO_MAP_OFFSET_INVALID;
 }

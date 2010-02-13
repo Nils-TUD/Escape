@@ -32,29 +32,30 @@
 #include <assert.h>
 #include <errors.h>
 
-#define X86OP_INT		0xCD
-#define X86OP_IRET		0xCF
-#define X86OP_PUSHF		0x9C
-#define X86OP_POPF		0x9D
-#define X86OP_OUTW		0xEF
-#define X86OP_OUTB		0xEE
-#define X86OP_INW		0xED
-#define X86OP_INB		0xEC
-#define X86OP_STI		0xFA
-#define X86OP_CLI		0xFB
+#define X86OP_INT			0xCD
+#define X86OP_IRET			0xCF
+#define X86OP_PUSHF			0x9C
+#define X86OP_POPF			0x9D
+#define X86OP_OUTW			0xEF
+#define X86OP_OUTB			0xEE
+#define X86OP_INW			0xED
+#define X86OP_INB			0xEC
+#define X86OP_STI			0xFA
+#define X86OP_CLI			0xFB
 
-#define X86OP_DATA32	0x66
-#define X86OP_ADDR32	0x67
-#define X86OP_CS		0x2E
-#define X86OP_DS		0x3E
-#define X86OP_ES		0x26
-#define X86OP_SS		0x36
-#define X86OP_GS		0x65
-#define X86OP_FS		0x64
-#define X86OP_REPNZ		0xF2
-#define X86OP_REP		0xF3
+#define X86OP_DATA32		0x66
+#define X86OP_ADDR32		0x67
+#define X86OP_CS			0x2E
+#define X86OP_DS			0x3E
+#define X86OP_ES			0x26
+#define X86OP_SS			0x36
+#define X86OP_GS			0x65
+#define X86OP_FS			0x64
+#define X86OP_REPNZ			0xF2
+#define X86OP_REP			0xF3
 
-#define VM86_IVT_SIZE	256
+#define VM86_IVT_SIZE		256
+#define VM86_MAX_MEMPAGES	2
 
 #define DBGVM86(fmt...)	/*vid_printf(fmt)*/
 
@@ -71,6 +72,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	sIntrptStackFrame *istack;
 	sVM86Info *info;
 	u32 *ivt;
+	u32 *mframeNos;
 	sThread *t;
 	sProc *p;
 	s32 res;
@@ -78,6 +80,10 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	tTid tid;
 	tPid pid;
 
+	for(i = 0; i < areaCount; i++) {
+		if(BYTES_2_PAGES(areas[i].size) > VM86_MAX_MEMPAGES)
+			return ERR_INVALID_ARGS;
+	}
 	if(interrupt >= VM86_IVT_SIZE)
 		return ERR_INVALID_ARGS;
 	t = thread_getRunning();
@@ -93,9 +99,19 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	/* store in calling process */
 	t->proc->vm86Info = info;
 
+	mframeNos = (u32*)kheap_alloc(areaCount * VM86_MAX_MEMPAGES * sizeof(u32));
+	if(mframeNos == NULL) {
+		vm86_destroyInfo(info);
+		return ERR_NOT_ENOUGH_MEM;
+	}
+
 	/* create child */
-	res = proc_clone(pid);
+	/* Note that it is really necessary to set wether we're a VM86-task or not BEFORE we get
+	 * chosen by the scheduler the first time. Otherwise the scheduler can't set the right
+	 * value for tss.esp0 and we will get a wrong stack-layout on the next interrupt */
+	res = proc_clone(pid,true);
 	if(res < 0) {
+		kheap_free(mframeNos);
 		vm86_destroyInfo(info);
 		t->proc->vm86Info = NULL;
 		return res;
@@ -122,6 +138,10 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	p = t->proc;
 	p->vm86Caller = tid;
 
+	/* first, collect the frame-numbers for the mapping (before unmapping the area) */
+	for(i = 0; i < areaCount; i++)
+		paging_getFrameNos(mframeNos + i * VM86_MAX_MEMPAGES,(u32)areas[i].src,areas[i].size);
+
 	/* free the current text; free frames if text_free() returns true */
 	paging_unmap(0,p->textPages,text_free(p->text,p->pid),false);
 	/* ensure that we don't have a text-usage anymore */
@@ -140,15 +160,14 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 		frameNos[i] = i;
 	paging_map(0x00000000,frameNos,ARRAY_SIZE(frameNos),PG_NOFREE | PG_WRITABLE,true);
 	paging_map(0x00100000,frameNos,(64 * K) / PAGE_SIZE,PG_NOFREE | PG_WRITABLE,true);
+
 	/* map the specified areas to the frames of the parent, so that the BIOS can write
 	 * it directly to the buffer of the calling process */
 	for(i = 0; i < areaCount; i++) {
 		u32 pages = BYTES_2_PAGES(areas[i].size);
-		u32 *mframeNos = (u32*)kheap_alloc(pages * sizeof(u32));
-		paging_getFrameNos(mframeNos,(u32)areas[i].src,areas[i].size);
-		paging_map(areas[i].dst,mframeNos,pages,PG_WRITABLE,true);
-		kheap_free(mframeNos);
+		paging_map(areas[i].dst,mframeNos + i * VM86_MAX_MEMPAGES,pages,PG_WRITABLE,true);
 	}
+	kheap_free(mframeNos);
 
 	/* now, remove the stack because we don't need it anymore (we needed it before to access
 	 * the areas!) */
@@ -160,7 +179,6 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 
 	/* give it a name */
 	strcpy(p->command,"VM86");
-	p->isVM86 = true;
 
 	istack = intrpt_getCurStack();
 	/* set stack-pointer (in an unsed area) */

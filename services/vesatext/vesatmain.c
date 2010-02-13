@@ -31,6 +31,7 @@
 #include <assert.h>
 
 #include "font.h"
+#include "vbe.h"
 
 #define VBE_DISPI_IOPORT_INDEX          0x01CE
 #define VBE_DISPI_IOPORT_DATA           0x01CF
@@ -67,7 +68,7 @@
 #define ROWS							(RESOLUTION_Y / (FONT_HEIGHT + 2))
 
 #define PIXEL_SET(c,x,y)				\
-	((font8x16)[(c) * FONT_HEIGHT + (y)] & (1 << (FONT_WIDTH - (x) + 1)))
+	((font8x16)[(c) * FONT_HEIGHT + (y)] & (1 << (FONT_WIDTH - (x) - 1)))
 
 typedef u16 tSize;
 typedef u16 tCoord;
@@ -93,12 +94,12 @@ typedef enum {
 	/* 15 */ LIGHTWHITE,
 } eColor;
 
-static void vbe_write(u16 index,u16 value);
-static void vbe_setMode(tSize xres,tSize yres,u16 bpp);
-static void vbe_drawStr(tCoord col,tCoord row,const char *str,u32 len);
-static void vbe_drawChar(tCoord col,tCoord row,u8 c,u8 color);
-static void vbe_setCursor(tCoord col,tCoord row);
-static void vbe_drawCursor(tCoord col,tCoord row,u8 color);
+static void vesa_write(u16 index,u16 value);
+static void vesa_setMode(tSize xres,tSize yres,u16 bpp);
+static void vesa_drawStr(tCoord col,tCoord row,const char *str,u32 len);
+static void vesa_drawChar(tCoord col,tCoord row,u8 c,u8 color);
+static void vesa_setCursor(tCoord col,tCoord row);
+static void vesa_drawCursor(tCoord col,tCoord row,u8 color);
 
 static u8 colors[][3] = {
 	/* BLACK   */ {0x00,0x00,0x00},
@@ -169,6 +170,11 @@ int main(void) {
 	if(id < 0)
 		error("Unable to register service 'vesatext'");
 
+	/*s32 res;
+	if((res = vbe_loadInfo()) < 0)
+		debugf("[VBE] Unable to load info: %d\n",res);*/
+	vbe_printModes();
+
 	while(1) {
 		tFD fd = getClient(&id,1,&client);
 		if(fd < 0)
@@ -178,7 +184,7 @@ int main(void) {
 				switch(mid) {
 					case MSG_DRV_OPEN:
 						msg.args.arg1 = 0;
-						vbe_setMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);
+						vesa_setMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);
 						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 						break;
 
@@ -197,7 +203,7 @@ int main(void) {
 							vassert(str,"Unable to alloc mem");
 							msg.args.arg1 = 0;
 							if(receive(fd,&mid,str,count) >= 0) {
-								vbe_drawStr((offset / 2) % COLS,(offset / 2) / COLS,str,count / 2);
+								vesa_drawStr((offset / 2) % COLS,(offset / 2) / COLS,str,count / 2);
 								msg.args.arg1 = count;
 							}
 							free(str);
@@ -212,7 +218,7 @@ int main(void) {
 								sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
 								pos->col = MIN(pos->col,COLS);
 								pos->row = MIN(pos->row,ROWS);
-								vbe_setCursor(pos->col,pos->row);
+								vesa_setCursor(pos->col,pos->row);
 								msg.data.arg1 = 0;
 							}
 							break;
@@ -247,24 +253,24 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void vbe_write(u16 index,u16 value) {
+static void vesa_write(u16 index,u16 value) {
 	outWord(VBE_DISPI_IOPORT_INDEX,index);
 	outWord(VBE_DISPI_IOPORT_DATA,value);
 }
 
-static void vbe_setMode(tSize xres,tSize yres,u16 bpp) {
-    vbe_write(VBE_DISPI_INDEX_ENABLE,VBE_DISPI_DISABLED);
-    vbe_write(VBE_DISPI_INDEX_XRES,xres);
-    vbe_write(VBE_DISPI_INDEX_YRES,yres);
-    vbe_write(VBE_DISPI_INDEX_BPP,bpp);
-    vbe_write(VBE_DISPI_INDEX_ENABLE,VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
+static void vesa_setMode(tSize xres,tSize yres,u16 bpp) {
+    vesa_write(VBE_DISPI_INDEX_ENABLE,VBE_DISPI_DISABLED);
+    vesa_write(VBE_DISPI_INDEX_XRES,xres);
+    vesa_write(VBE_DISPI_INDEX_YRES,yres);
+    vesa_write(VBE_DISPI_INDEX_BPP,bpp);
+    vesa_write(VBE_DISPI_INDEX_ENABLE,VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
 }
 
-static void vbe_drawStr(tCoord col,tCoord row,const char *str,u32 len) {
+static void vesa_drawStr(tCoord col,tCoord row,const char *str,u32 len) {
 	while(len-- > 0) {
 		char c = *str++;
 		char color = *str++;
-		vbe_drawChar(col,row,c,color);
+		vesa_drawChar(col,row,c,color);
 		if(col >= COLS - 1) {
 			row++;
 			col = 0;
@@ -274,7 +280,7 @@ static void vbe_drawStr(tCoord col,tCoord row,const char *str,u32 len) {
 	}
 }
 
-static void vbe_drawChar(tCoord col,tCoord row,u8 c,u8 color) {
+static void vesa_drawChar(tCoord col,tCoord row,u8 c,u8 color) {
 	u32 x,y;
 	u8 *vid = video +
 			row * (FONT_HEIGHT + 2) * RESOLUTION_X * PIXEL_SIZE +
@@ -320,15 +326,15 @@ static void vbe_drawChar(tCoord col,tCoord row,u8 c,u8 color) {
 	}
 }
 
-static void vbe_setCursor(tCoord col,tCoord row) {
+static void vesa_setCursor(tCoord col,tCoord row) {
 	if(lastCol < COLS && lastRow < ROWS)
-		vbe_drawCursor(lastCol,lastRow,BLACK);
-	vbe_drawCursor(col,row,WHITE);
+		vesa_drawCursor(lastCol,lastRow,BLACK);
+	vesa_drawCursor(col,row,WHITE);
 	lastCol = col;
 	lastRow = row;
 }
 
-static void vbe_drawCursor(tCoord col,tCoord row,u8 color) {
+static void vesa_drawCursor(tCoord col,tCoord row,u8 color) {
 	u32 x,y = FONT_HEIGHT + 1;
 	u8 *vid = video +
 			row * (FONT_HEIGHT + 2) * RESOLUTION_X * PIXEL_SIZE +

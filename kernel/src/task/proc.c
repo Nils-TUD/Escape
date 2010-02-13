@@ -174,7 +174,7 @@ bool proc_hasChild(tPid pid) {
 	return false;
 }
 
-s32 proc_clone(tPid newPid) {
+s32 proc_clone(tPid newPid,bool isVM86) {
 	u32 pdirFrame,dummy,stackFrame;
 	sProc *p;
 	sProc *cur = proc_getRunning();
@@ -207,7 +207,7 @@ s32 proc_clone(tPid newPid) {
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
-	p->isVM86 = false;
+	p->isVM86 = isVM86;
 	p->vm86Info = NULL;
 	/* give the process the same name (maybe changed by exec) */
 	strcpy(p->command,cur->command);

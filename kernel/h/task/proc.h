@@ -150,9 +150,10 @@ bool proc_hasChild(tPid pid);
  * The function returns -1 if there is not enough memory.
  *
  * @param newPid the target-pid
+ * @param isVM86 true if it should be a VM86-task
  * @return -1 if an error occurred, 0 for parent, 1 for child
  */
-s32 proc_clone(tPid newPid);
+s32 proc_clone(tPid newPid,bool isVM86);
 
 /**
  * Starts a new thread at given entry-point. Will clone the kernel-stack from the current thread

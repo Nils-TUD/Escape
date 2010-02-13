@@ -198,6 +198,7 @@ void thread_switchTo(tTid tid) {
 			/* remove the io-map. it will be set as soon as the process accesses an io-port
 			 * (we'll get an exception) */
 			tss_removeIOMap();
+			tss_setStackPtr(cur->proc->isVM86);
 		}
 
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon

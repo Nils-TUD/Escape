@@ -109,7 +109,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			util_panic("No free process-slots");
 
 		MB_PR("Cloning");
-		if(proc_clone(pid)) {
+		if(proc_clone(pid,false)) {
 			/* build args */
 			s32 argc;
 			u32 argSize = 0;

@@ -57,7 +57,7 @@ void sysc_fork(sIntrptStackFrame *stack) {
 	if(newPid == INVALID_PID)
 		SYSC_ERROR(stack,ERR_NO_FREE_PROCS);
 
-	res = proc_clone(newPid);
+	res = proc_clone(newPid,false);
 
 	/* error? */
 	if(res < 0)

@@ -36,7 +36,7 @@ void memclear(void *addr,u32 count) {
 		daddr += 8;
 		count -= sizeof(u32) * 8;
 	}
-	/* copy remaining dwords */
+	/* clear remaining dwords */
 	while(count >= sizeof(u32)) {
 		*daddr++ = 0;
 		count -= sizeof(u32);

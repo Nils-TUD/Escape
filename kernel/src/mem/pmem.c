@@ -117,6 +117,9 @@ void mm_init(const sMultiBoot *mb) {
 		}
 	}
 
+	/* mark the first MiB as used because we need it for VM86 */
+	mm_markAddrRangeUsed(0x00000000,KERNEL_AREA_P_ADDR,true);
+
 	/* mark the kernel-code and data (including stack for free frames) as used */
 	/* Note that we have to remove the 0xC0000000 since we want to work with physical addresses */
 	/* TODO we can use a little bit more because the kernel does not use the last few frames */

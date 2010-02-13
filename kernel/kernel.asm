@@ -24,7 +24,9 @@
 [global gdt_flush]
 [global tss_load]
 [global util_outByte]
+[global util_outWord]
 [global util_inByte]
+[global util_inWord]
 [global KernelStart]
 [global util_halt]
 [global intrpt_setEnabled]
@@ -146,6 +148,7 @@ higherhalf:
 	pushfd															; eflags
 	mov		ebx,[esp]
 	or		ebx,1 << 9										; enable IF-flag
+	and		ebx,~((1 << 12) | (1 << 13))	; set IOPL=0 (if CPL <= IOPL the user can change eflags..)
 	mov		[esp],ebx
 	push	DWORD 0x1B										; cs
 	push	eax														; eip (entry-point)
@@ -190,10 +193,23 @@ util_outByte:
 	out		dx,al													; write to port
 	ret
 
+; void util_outWord(u16 port,u16 val);
+util_outWord:
+	mov		dx,[esp+4]										; load port
+	mov		ax,[esp+8]										; load value
+	out		dx,ax													; write to port
+	ret
+
 ; u8 util_inByte(u16 port);
 util_inByte:
 	mov		dx,[esp+4]										; load port
 	in		al,dx													; read from port
+	ret
+
+; u16 util_inByte(u16 port);
+util_inWord:
+	mov		dx,[esp+4]										; load port
+	in		ax,dx													; read from port
 	ret
 
 ; u32 getStackFrameStart(void);
@@ -449,6 +465,14 @@ isrCommon:
 	push	fs
 	push	ds
 	push	es
+
+	; set segment-registers for kernel
+	; TODO just necessary for VM86-tasks because ds,es,fs and gs is set to 0 in this case
+	mov		eax,0x23
+	mov		ds,eax
+	mov		es,eax
+	mov		fs,eax
+	mov		gs,eax
 
 	; call c-routine
 	push	esp														; pointer to the "beginning" of the stack

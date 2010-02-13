@@ -246,8 +246,9 @@ void gdt_init(void) {
 	gdt_set_desc(4,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
 			GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,GDT_DPL_USER);
 
-	/* tss */
-	tss.esp0 = KERNEL_STACK + PAGE_SIZE - 4;
+	/* tss (leave a bit space for the vm86-segment-registers that will be present at the stack-top
+	 * in vm86-mode. This way we can have the same interrupt-stack for all processes) */
+	tss.esp0 = KERNEL_STACK + PAGE_SIZE - 4 - 4 * sizeof(u32);
 	tss.ss0 = 0x10;
 	/* init io-map */
 	tss.ioMapOffset = IO_MAP_OFFSET_INVALID;

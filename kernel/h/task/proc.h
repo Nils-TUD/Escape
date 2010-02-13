@@ -23,6 +23,7 @@
 #include <common.h>
 #include <machine/intrpt.h>
 #include <machine/fpu.h>
+#include <machine/vm86.h>
 #include <mem/text.h>
 #include <vfs/node.h>
 
@@ -74,6 +75,9 @@ typedef struct {
 	/* for the waiting parent */
 	s32 exitCode;
 	tSig exitSig;
+	u8 isVM86;
+	tTid vm86Caller;
+	sVM86Info *vm86Info;
 	/* the io-map (NULL by default) */
 	u8 *ioMap;
 	/* start-command */

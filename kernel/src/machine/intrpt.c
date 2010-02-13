@@ -23,6 +23,7 @@
 #include <machine/fpu.h>
 #include <machine/gdt.h>
 #include <machine/timer.h>
+#include <machine/vm86.h>
 #include <mem/paging.h>
 #include <mem/kheap.h>
 #include <task/signals.h>
@@ -547,8 +548,10 @@ void intrpt_handler(sIntrptStackFrame stack) {
 				exCount++;
 
 				/* stop here? */
-				if(exCount >= MAX_EX_COUNT)
-					util_panic("Got this exception %d times. Stopping here\n",exCount);
+				if(exCount >= MAX_EX_COUNT) {
+					util_panic("Got this exception (0x%x) %d times. Stopping here (@ 0x%x)\n",
+							stack.intrptNo,exCount,stack.eip);
+				}
 			}
 			else {
 				exCount = 0;
@@ -557,8 +560,13 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 			/* #GPF */
 			if(stack.intrptNo == EX_GEN_PROT_FAULT) {
+				if(t->proc->isVM86) {
+					vm86_handleGPF(&stack);
+					exCount = 0;
+					break;
+				}
 				/* io-map not loaded yet? */
-				if(t->proc->ioMap != NULL && !tss_ioMapPresent()) {
+				else if(t->proc->ioMap != NULL && !tss_ioMapPresent()) {
 					/* load it and give the process another try */
 					tss_setIOMap(t->proc->ioMap);
 					exCount = 0;

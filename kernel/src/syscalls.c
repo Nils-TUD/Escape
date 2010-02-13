@@ -97,6 +97,7 @@ static sSyscall syscalls[] = {
 	/* 54 */	{sysc_tell,					2},
 	/* 55 */	{sysc_pipe,					2},
 	/* 56 */	{sysc_getConf,				1},
+	/* 57 */	{sysc_vm86int,				4},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {

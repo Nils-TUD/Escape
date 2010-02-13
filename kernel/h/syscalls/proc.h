@@ -103,6 +103,19 @@ void sysc_requestIOPorts(sIntrptStackFrame *stack);
 void sysc_releaseIOPorts(sIntrptStackFrame *stack);
 
 /**
+ * Performs a VM86-interrupt. That means a VM86-task is created as a child-process, the
+ * registers are set correspondingly and the tasks starts at the handler for the given interrupt.
+ * As soon as the interrupt is finished the result is copied into the registers
+ *
+ * @param u16 the interrupt-number
+ * @param sVM86Regs* the registers
+ * @param sVM86Memarea* the memareas (may be NULL)
+ * @param u16 mem-area count
+ * @return 0 on success
+ */
+void sysc_vm86int(sIntrptStackFrame *stack);
+
+/**
  * Returns the cpu-cycles for the current thread
  *
  * @return u64 the cpu-cycles

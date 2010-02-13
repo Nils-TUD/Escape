@@ -25,6 +25,7 @@
 #include <task/signals.h>
 #include <machine/timer.h>
 #include <machine/gdt.h>
+#include <machine/vm86.h>
 #include <mem/paging.h>
 #include <mem/kheap.h>
 #include <syscalls/proc.h>
@@ -257,6 +258,42 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	proc_setupStart(stack,(u32)res);
 
 	kheap_free(argBuffer);
+}
+
+void sysc_vm86int(sIntrptStackFrame *stack) {
+	s32 res;
+	u16 interrupt = (u16)SYSC_ARG1(stack);
+	sVM86Regs *regs = (sVM86Regs*)SYSC_ARG2(stack);
+	sVM86Memarea *mAreas = (sVM86Memarea*)SYSC_ARG3(stack);
+	u16 mAreaCount = (u16)SYSC_ARG4(stack);
+
+	/* check args */
+	if(regs == NULL)
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(!paging_isRangeUserWritable((u32)regs,sizeof(sVM86Regs)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(mAreas != NULL) {
+		u32 i;
+		if(!paging_isRangeUserReadable((u32)mAreas,sizeof(sVM86Memarea) * mAreaCount))
+			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		for(i = 0; i < mAreaCount; i++) {
+			/* ensure that just something from the real-mode-memory can be copied */
+			if(mAreas[i].dst + mAreas[i].size >= (1 * M + 64 * K))
+				SYSC_ERROR(stack,ERR_INVALID_ARGS);
+			if(!paging_isRangeUserWritable((u32)mAreas[i].src,mAreas[i].size))
+				SYSC_ERROR(stack,ERR_INVALID_ARGS);
+		}
+	}
+	else
+		mAreaCount = 0;
+
+	/* do vm86-interrupt */
+	res = vm86_int(interrupt,regs,mAreas,mAreaCount);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	/* don't set the return-value for the vm86-task because we would overwrite eax! */
+	if(!proc_getRunning()->isVM86)
+		SYSC_RET1(stack,res);
 }
 
 void sysc_getCycles(sIntrptStackFrame *stack) {

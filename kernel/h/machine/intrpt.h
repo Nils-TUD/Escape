@@ -208,6 +208,15 @@ typedef struct {
 	/* if we come from user-mode this fields will be present and will be restored with iret */
 	u32 uesp;
 	u32 uss;
+	/* available when interrupting an vm86-task */
+	u16 vm86es;
+	u16 : 16;
+	u16 vm86ds;
+	u16 : 16;
+	u16 vm86fs;
+	u16 : 16;
+	u16 vm86gs;
+	u16 : 16;
 } A_PACKED sIntrptStackFrame;
 
 /**

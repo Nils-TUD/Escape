@@ -12,11 +12,9 @@ BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 BUILDAPPS = $(BUILDDIR)/apps
 
-#QEMU = qemu
-#QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
-#	-localtime -enable-kvm
-QEMU = /home/hrniels/Applications/qemu-0.10.3/build/i386-softmmu/qemu
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot c -vga std -m 512 \
+KVM = -enable-kvm
+QEMU = /home/hrniels/Applications/qemu-0.12.2/bin/bin/qemu
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
 	-localtime
 
 ifeq ($(BUILDDIR),$(abspath build/debug))
@@ -113,10 +111,8 @@ dis: all
 		objdump -d -S $(BIN) | less
 
 qemu:	all prepareRun
-		# TODO remove!
-		./tools/disk.sh copy user/libs/shell/test.sh /test.sh
 		sudo /etc/init.d/kvm start || true
-		$(QEMU) $(QEMUARGS) > log.txt 2>&1
+		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1
 
 bochs: all prepareRun
 		bochs -f bochs.cfg -q | tee log.txt
@@ -133,7 +129,7 @@ vbox: all prepareRun $(VMDISK)
 debug: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
-		gdbtui --command=gdb.start --symbols $(BUILD)/user_bisoncalc.bin
+		gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
 
 debugm: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &

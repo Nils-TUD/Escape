@@ -10,6 +10,7 @@ memsize = "128"
 MemAllowAutoScaleDown = "FALSE"
 ide1:0.present = "TRUE"
 ide1:0.fileName = "/home/hrniels/escape/source/build/debug/cd.iso"
+#ide1:0.fileName = "/home/hrniels/Data/Apps/damnsmalllinux/dsl-4.2.5.iso"
 ide1:0.deviceType = "cdrom-image"
 ide1:0.autodetect = "TRUE"
 floppy0.present = "FALSE"
@@ -31,6 +32,24 @@ tools.syncTime = "TRUE"
 uuid.action = "create"
 checkpoint.vmState = ""
 tools.remindInstall = "FALSE"
+
+#serial0.present = "TRUE"
+#serial0.fileType = "file"
+#serial0.fileName = "../log.txt"
+#serial0.irq = "4"
+#serial0.baseAddr = 0x3f8
+#serial0.startConnected = "TRUE"
+
+#serial0.present = "TRUE"
+#serial0.fileType = "file"
+#serial0.fileName = "log.txt"
+#serial0.tryNoRxLoss = "FALSE"
+#serial0.hardwareFlowControl = "TRUE"
+#serial0.startConnected = "TRUE"
+#serial0.irq = "4"
+#serial0.baseAddr = 0x3f8
+#serial0.autodetect = "FALSE"
+#serial0.allowGuestConnectionControl = "FALSE"
 
 extendedConfigFile = "escape.vmxf"
 

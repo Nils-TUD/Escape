@@ -83,7 +83,10 @@ typedef Elf64_Half Elf64_Versym;
 
 typedef struct
 {
-  unsigned char	e_ident[EI_NIDENT];	/* Magic number and other info */
+  union {
+	  unsigned char	chars[EI_NIDENT];	/* Magic number and other info */
+	  u32 dword;
+  } e_ident;
   Elf32_Half	e_type;			/* Object file type */
   Elf32_Half	e_machine;		/* Architecture */
   Elf32_Word	e_version;		/* Object file version */

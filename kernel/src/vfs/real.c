@@ -132,7 +132,7 @@ s32 vfsr_stat(tTid tid,const char *path,sFileInfo *info) {
 
 static s32 vfsr_doStat(tTid tid,const char *path,tInodeNo ino,tDevNo devNo,sFileInfo *info) {
 	s32 res;
-	u32 pathLen;
+	u32 pathLen = 0;
 	tFileNo virtFile;
 	sRequest *req;
 

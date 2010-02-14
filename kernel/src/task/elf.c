@@ -53,7 +53,7 @@ s32 elf_loadFromFile(char *path) {
 		goto failed;
 
 	/* check magic */
-	if(*(u32*)eheader.e_ident != *(u32*)ELFMAG)
+	if(eheader.e_ident.dword != *(u32*)ELFMAG)
 		goto failed;
 
 	/* load the LOAD segments. */
@@ -147,7 +147,7 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 	vassert(p->textPages == 0 && p->dataPages == 0,"Process is not empty");
 
 	/* check magic */
-	if(*(u32*)eheader->e_ident != *(u32*)ELFMAG)
+	if(eheader->e_ident.dword != *(u32*)ELFMAG)
 		return ERR_INVALID_ELF_BIN;
 
 	/* load the LOAD segments. */

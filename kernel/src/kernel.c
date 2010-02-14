@@ -23,6 +23,7 @@
 #include <machine/fpu.h>
 #include <machine/intrpt.h>
 #include <machine/cpu.h>
+#include <machine/serial.h>
 #include <mem/pmem.h>
 #include <mem/paging.h>
 #include <mem/kheap.h>
@@ -85,8 +86,9 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	gdt_init();
 	mboot_init(mbp);
 
-	/* init video */
+	/* init video and serial-ports */
 	vid_init();
+	ser_init();
 
 	vid_printf("GDT exchanged, paging enabled, video initialized");
 	vid_toLineEnd(SSTRLEN("DONE"));

@@ -26,6 +26,7 @@
 #include <mem/text.h>
 #include <mem/paging.h>
 #include <machine/vm86.h>
+#include <machine/gdt.h>
 #include <util.h>
 #include <video.h>
 #include <string.h>
@@ -57,7 +58,7 @@
 #define VM86_IVT_SIZE		256
 #define VM86_MAX_MEMPAGES	2
 
-#define DBGVM86(fmt...)	/*vid_printf(fmt)*/
+#define DBGVM86(fmt...)		/*vid_printf(fmt)*/
 
 static u16 vm86_popw(sIntrptStackFrame *stack);
 static u32 vm86_popl(sIntrptStackFrame *stack);
@@ -102,6 +103,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	mframeNos = (u32*)kheap_alloc(areaCount * VM86_MAX_MEMPAGES * sizeof(u32));
 	if(mframeNos == NULL) {
 		vm86_destroyInfo(info);
+		t->proc->vm86Info = NULL;
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -173,9 +175,15 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	 * the areas!) */
 	proc_changeSize(-p->stackPages,CHG_STACK);
 
-	/* TODO we need no io-map here, right? */
-	kheap_free(p->ioMap);
-	p->ioMap = NULL;
+	/* Give the vm86-task permission for all ports. As it seems vmware expects that if they
+	 * have used the 32-bit-data-prefix once (at least for inw) it takes effect for the
+	 * following instructions, too!? By giving the task the permission to perform port I/O
+	 * directly we prevent this problem :) */
+	/* FIXME but there has to be a better way.. */
+	if(p->ioMap == NULL)
+		p->ioMap = (u8*)kheap_alloc(IO_MAP_SIZE / 8);
+	if(p->ioMap != NULL)
+		memset(p->ioMap,0x00,IO_MAP_SIZE / 8);
 
 	/* give it a name */
 	strcpy(p->command,"VM86");
@@ -303,7 +311,10 @@ bool vm86_handleGPF(sIntrptStackFrame *stack) {
 			break;
 		case X86OP_OUTW:
 			DBGVM86("[VM86] outw (0x%x -> 0x%x)\n",stack->eax,stack->edx);
-			util_outWord(stack->edx,stack->eax);
+			if(data32)
+				util_outDWord(stack->edx,stack->eax);
+			else
+				util_outWord(stack->edx,stack->eax);
 			stack->eip++;
 			break;
 		case X86OP_OUTB:
@@ -312,7 +323,10 @@ bool vm86_handleGPF(sIntrptStackFrame *stack) {
 			stack->eip++;
 			break;
 		case X86OP_INW:
-            stack->eax = util_inWord(stack->edx);
+			if(data32)
+				stack->eax = util_inDWord(stack->edx);
+			else
+				stack->eax = util_inWord(stack->edx);
 			DBGVM86("[VM86] inw (0x%x <- 0x%x)\n",stack->eax,stack->edx);
 			stack->eip++;
 			break;

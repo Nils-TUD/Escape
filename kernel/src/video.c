@@ -17,8 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <video.h>
 #include <common.h>
+#include <video.h>
+#include <machine/serial.h>
 #include <util.h>
 #include <string.h>
 #include <stdarg.h>
@@ -139,13 +140,9 @@ void vid_putchar(char c) {
 	video = (char*)(VIDEO_BASE + row * COLS * 2 + col * 2);
 
 #ifdef LOGSERIAL
-	/* write to bochs/qemu console (some chars make no sense here) */
-	if(c != '\r' && c != '\t' && c != '\b') {
-		util_outByte(0xe9,c);
-	    util_outByte(0x3f8,c);
-	    while((util_inByte(0x3fd) & 0x20) == 0)
-	    	;
-	}
+	/* write to COM1 (some chars make no sense here) */
+	if(c != '\r' && c != '\t' && c != '\b')
+		ser_out(SER_COM1,c);
 #endif
 
 	if(c == '\n') {

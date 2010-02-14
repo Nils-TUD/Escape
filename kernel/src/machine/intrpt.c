@@ -562,15 +562,16 @@ void intrpt_handler(sIntrptStackFrame stack) {
 
 			/* #GPF */
 			if(stack.intrptNo == EX_GEN_PROT_FAULT) {
-				if(t->proc->isVM86) {
-					vm86_handleGPF(&stack);
+				/* io-map not loaded yet? */
+				if(t->proc->ioMap != NULL && !tss_ioMapPresent()) {
+					/* load it and give the process another try */
+					tss_setIOMap(t->proc->ioMap);
 					exCount = 0;
 					break;
 				}
-				/* io-map not loaded yet? */
-				else if(t->proc->ioMap != NULL && !tss_ioMapPresent()) {
-					/* load it and give the process another try */
-					tss_setIOMap(t->proc->ioMap);
+				/* vm86-task? */
+				if(t->proc->isVM86) {
+					vm86_handleGPF(&stack);
 					exCount = 0;
 					break;
 				}

@@ -85,7 +85,6 @@ bool vbe_getModeInfo(sVbeModeInfo *info,u16 mode) {
 		return false;
 	if(regs.ax != 0x4F)
 		return false;
-	vbe_dbg_printMode(info,mode);
 	return (info->modeAttributes & MODE_SUPPORTED) && info->memoryModel == memPK &&
 		info->bitsPerPixel == 8 && info->numberOfPlanes == 1;
 }
@@ -115,15 +114,23 @@ void vbe_printModes(void) {
 		return;
 	}
 
-	debugf("VESA VBE Version %d.%d detected (%x)\n\n",vbeInfo.version >> 8,
+	tFile *f = fopen("/system/devices/vbe","w");
+	fprintf(f,"VESA VBE Version %d.%d detected (%x)\n",vbeInfo.version >> 8,
 			vbeInfo.version & 0xF,vbeInfo.oemString);
-	debugf("Available 256 color video modes:\n");
+	fprintf(f,"Capabilities: 0x%x\n",vbeInfo.capabilities);
+	fprintf(f,"Signature: %c%c%c%c\n",vbeInfo.signature[0],
+			vbeInfo.signature[1],vbeInfo.signature[2],vbeInfo.signature[3]);
+	fprintf(f,"totalMemory: %d KiB\n",vbeInfo.totalMemory * 64);
+	fprintf(f,"videoModes: 0x%x\n",vbeInfo.videoModesPtr);
+	fprintf(f,"\n");
+	fprintf(f,"Available 256 color video modes:\n");
 	for(p = (u16*)vbeInfo.videoModesPtr; *p != (u16)-1; p++) {
 		if(vbe_getModeInfo(&mode,*p)) {
-			debugf("    %4d x %4d %d bits per pixel\n",mode.xResolution,mode.yResolution,
+			fprintf(f,"    %4d x %4d %d bits per pixel\n",mode.xResolution,mode.yResolution,
 					mode.bitsPerPixel);
 		}
 	}
+	fclose(f);
 }
 
 static void vbe_dbg_printMode(sVbeModeInfo *mode,u16 no) {

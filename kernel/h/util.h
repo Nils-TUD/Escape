@@ -60,6 +60,14 @@ extern void util_outByte(u16 port,u8 val);
 extern void util_outWord(u16 port,u16 val);
 
 /**
+ * Outputs the <val> to the I/O-Port <port>
+ *
+ * @param port the port
+ * @param val the value
+ */
+extern void util_outDWord(u16 port,u32 val);
+
+/**
  * Reads the value from the I/O-Port <port>
  *
  * @param port the port
@@ -74,6 +82,14 @@ extern u8 util_inByte(u16 port);
  * @return the value
  */
 extern u16 util_inWord(u16 port);
+
+/**
+ * Reads the value from the I/O-Port <port>
+ *
+ * @param port the port
+ * @return the value
+ */
+extern u32 util_inDWord(u16 port);
 
 /**
  * @return the address of the stack-frame-start

@@ -25,8 +25,10 @@
 [global tss_load]
 [global util_outByte]
 [global util_outWord]
+[global util_outDWord]
 [global util_inByte]
 [global util_inWord]
+[global util_inDWord]
 [global KernelStart]
 [global util_halt]
 [global intrpt_setEnabled]
@@ -200,6 +202,13 @@ util_outWord:
 	out		dx,ax													; write to port
 	ret
 
+; void util_outWord(u16 port,u32 val);
+util_outDWord:
+	mov		dx,[esp + 4]									; load port
+	mov		eax,[esp + 8]									; load value
+	out		dx,eax												; write to port
+	ret
+
 ; u8 util_inByte(u16 port);
 util_inByte:
 	mov		dx,[esp+4]										; load port
@@ -210,6 +219,12 @@ util_inByte:
 util_inWord:
 	mov		dx,[esp+4]										; load port
 	in		ax,dx													; read from port
+	ret
+
+; u32 util_inByte(u16 port);
+util_inDWord:
+	mov		dx,[esp+4]										; load port
+	in		eax,dx												; read from port
 	ret
 
 ; u32 getStackFrameStart(void);

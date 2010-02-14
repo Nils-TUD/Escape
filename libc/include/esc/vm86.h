@@ -46,7 +46,7 @@ typedef struct {
 #define VM86_PAGE_SIZE		4096
 #define VM86_ADDR(src,dst)	(((u32)(dst) & ~(VM86_PAGE_SIZE - 1)) | ((u32)(src) & (VM86_PAGE_SIZE - 1)))
 #define VM86_OFF(src,dst)	(VM86_ADDR(src,dst) & 0xFFFF)
-#define VM86_SEG(src,dst)	(VM86_ADDR(src,dst) >> 4)
+#define VM86_SEG(src,dst)	((VM86_ADDR(src,dst) & 0xF0000) >> 4)
 
 /**
  * Performs a VM86-interrupt. That means a VM86-task is created as a child-process, the

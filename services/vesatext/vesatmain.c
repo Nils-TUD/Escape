@@ -34,39 +34,15 @@
 #include "font.h"
 #include "vbe.h"
 
-#define VBE_DISPI_IOPORT_INDEX          0x01CE
-#define VBE_DISPI_IOPORT_DATA           0x01CF
-#define VBE_DISPI_INDEX_ID              0x0
-#define VBE_DISPI_INDEX_XRES            0x1
-#define VBE_DISPI_INDEX_YRES            0x2
-#define VBE_DISPI_INDEX_BPP             0x3
-#define VBE_DISPI_INDEX_ENABLE          0x4
-#define VBE_DISPI_INDEX_BANK            0x5
-#define VBE_DISPI_INDEX_VIRT_WIDTH      0x6
-#define VBE_DISPI_INDEX_VIRT_HEIGHT     0x7
-#define VBE_DISPI_INDEX_X_OFFSET        0x8
-#define VBE_DISPI_INDEX_Y_OFFSET        0x9
-
-#define VBE_DISPI_DISABLED              0x00
-#define VBE_DISPI_ENABLED               0x01
-#define VBE_DISPI_GETCAPS               0x02
-#define VBE_DISPI_8BIT_DAC              0x20
-#define VBE_DISPI_LFB_ENABLED           0x40
-#define VBE_DISPI_NOCLEARMEM            0x80
-
 #define RESOLUTION_X					1024
 #define RESOLUTION_Y					768
 #define BITS_PER_PIXEL					16
-#define PIXEL_SIZE						(BITS_PER_PIXEL / 8)
 
 #define CURSOR_LEN						FONT_WIDTH
 #define CURSOR_COLOR					0xFFFFFF
 #define CURSOR_SIZE						(CURSOR_LEN * 2 + 1)
 
 #define PAD								0
-#define COLS							(minfo->xResolution / (FONT_WIDTH + PAD * 2))
-#define ROWS							(minfo->yResolution / (FONT_HEIGHT + PAD * 2))
-
 #define PIXEL_SET(c,x,y)				\
 	((font8x16)[(c) * FONT_HEIGHT + (y)] & (1 << (FONT_WIDTH - (x) - 1)))
 
@@ -96,10 +72,7 @@ typedef enum {
 
 typedef u8 *(*fSetPixel)(u8 *vidwork,u8 r,u8 g,u8 b);
 
-static void vesa_write(u16 index,u16 value);
-static void vesa_setMode(tSize xres,tSize yres,u16 bpp);
 static void vesa_drawStr(tCoord col,tCoord row,const char *str,u32 len);
-static void vesa_update(tCoord startCol,tCoord col,tCoord row);
 static void vesa_drawChar(tCoord col,tCoord row,u8 c,u8 color);
 
 static void vesa_drawCharLoop16(u8 *vid,u8 c,u8 cf1,u8 cf2,u8 cf3,u8 cb1,u8 cb2,u8 cb3);
@@ -109,7 +82,6 @@ static u8 *vesa_setPixel16(u8 *vidwork,u8 r,u8 g,u8 b);
 static u8 *vesa_setPixel24(u8 *vidwork,u8 r,u8 g,u8 b);
 static u8 *vesa_setPixel32(u8 *vidwork,u8 r,u8 g,u8 b);
 
-static u8 *vesa_setPixel(u8 *vidwork,u8 r,u8 g,u8 b);
 static void vesa_setCursor(tCoord col,tCoord row);
 static void vesa_drawCursor(tCoord col,tCoord row,u8 color);
 
@@ -132,14 +104,18 @@ static u8 colors[][3] = {
 	/* LIWHITE */ {0xFF,0xFF,0xFF},
 };
 
+static sVbeModeInfo *minfo;
 static u8 *whOnBlCache;
+static u8 *content;
+static u8 *video;
 
+static u8 cols;
+static u8 rows;
 static u8 lastCol;
 static u8 lastRow;
-static u8 *video;
+
 static sMsg msg;
-static sVbeModeInfo *minfo;
-static u8 *content;
+
 static fSetPixel setPixel[] = {
 	/*  0 bpp */	NULL,
 	/*  8 bpp */	NULL,
@@ -151,14 +127,8 @@ static fSetPixel setPixel[] = {
 int main(void) {
 	tServ id,client;
 	tMsgId mid;
-	u32 i,x,y;
+	s32 i,x,y;
 	u8 *cc;
-
-	/* request ports; note that we read/write words to them, so we have to request 3 ports */
-	if(requestIOPorts(VBE_DISPI_IOPORT_INDEX,3) < 0) {
-		error("Unable to request io-ports %d..%d",VBE_DISPI_IOPORT_INDEX,
-				VBE_DISPI_IOPORT_INDEX + 2);
-	}
 
 	id = regService("vesatext",SERV_DRIVER);
 	if(id < 0)
@@ -185,6 +155,8 @@ int main(void) {
 					minfo->yResolution * (minfo->bitsPerPixel / 8));
 			if(video == NULL)
 				error("Unable to request physical memory at 0x%x",minfo->physBasePtr);
+			cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);
+			rows = minfo->yResolution / (FONT_HEIGHT + PAD * 2);
 			assert(vbe_setMode(mode));
 		}
 	}
@@ -195,13 +167,13 @@ int main(void) {
 	if(vm86int(0x10,&regs,NULL,0) < 0)
 		printe("Switch to text-mode failed");*/
 
-	content = (u8*)malloc(COLS * ROWS * 2);
+	content = (u8*)malloc(cols * rows * 2);
 	if(content == NULL)
 		error("Unable to alloc mem for content");
-	for(y = 0; y < ROWS; y++) {
-		for(x = 0; x < COLS; x++) {
-			content[y * COLS * 2 + x * 2] = ' ';
-			content[y * COLS * 2 + x * 2 + 1] = 0x07;
+	for(y = 0; y < rows; y++) {
+		for(x = 0; x < cols; x++) {
+			content[y * cols * 2 + x * 2] = ' ';
+			content[y * cols * 2 + x * 2 + 1] = 0x07;
 		}
 	}
 
@@ -211,7 +183,7 @@ int main(void) {
 	if(whOnBlCache == NULL)
 		error("Unable to alloc mem for white-on-black-cache");
 	cc = whOnBlCache;
-	for(i = 0; i < FONT_COUNT; i++) {
+	for(i = 0; i < (s32)FONT_COUNT; i++) {
 		for(y = 0; y < FONT_HEIGHT + PAD * 2; y++) {
 			for(x = 0; x < FONT_WIDTH + PAD * 2; x++) {
 				if(y >= PAD && y < FONT_HEIGHT + PAD && x >= PAD && x < FONT_WIDTH + PAD &&
@@ -225,8 +197,8 @@ int main(void) {
 		}
 	}
 
-	lastCol = COLS;
-	lastRow = ROWS;
+	lastCol = cols;
+	lastRow = rows;
 
 	while(1) {
 		tFD fd = getClient(&id,1,&client);
@@ -251,12 +223,12 @@ int main(void) {
 						u32 offset = msg.args.arg1;
 						u32 count = msg.args.arg2;
 						msg.args.arg1 = 0;
-						if(offset + count <= ROWS * COLS * 2 && offset + count > offset) {
+						if(offset + count <= (u32)(rows * cols * 2) && offset + count > offset) {
 							char *str = (char*)malloc(count);
 							vassert(str,"Unable to alloc mem");
 							msg.args.arg1 = 0;
 							if(receive(fd,&mid,str,count) >= 0) {
-								vesa_drawStr((offset / 2) % COLS,(offset / 2) / COLS,str,count / 2);
+								vesa_drawStr((offset / 2) % cols,(offset / 2) / cols,str,count / 2);
 								msg.args.arg1 = count;
 							}
 							free(str);
@@ -269,8 +241,8 @@ int main(void) {
 						switch(msg.data.arg1) {
 							case IOCTL_VID_SETCURSOR: {
 								sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
-								pos->col = MIN(pos->col,COLS);
-								pos->row = MIN(pos->row,ROWS);
+								pos->col = MIN(pos->col,cols);
+								pos->row = MIN(pos->row,rows);
 								vesa_setCursor(pos->col,pos->row);
 								msg.data.arg1 = 0;
 							}
@@ -278,8 +250,8 @@ int main(void) {
 
 							case IOCTL_VID_GETSIZE: {
 								sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
-								size->width = COLS;
-								size->height = ROWS;
+								size->width = cols;
+								size->height = rows;
 								msg.data.arg1 = sizeof(sIoCtlSize);
 							}
 							break;
@@ -302,21 +274,7 @@ int main(void) {
 	}
 
 	unregService(id);
-	releaseIOPorts(VBE_DISPI_IOPORT_INDEX,3);
 	return EXIT_SUCCESS;
-}
-
-static void vesa_write(u16 index,u16 value) {
-	outWord(VBE_DISPI_IOPORT_INDEX,index);
-	outWord(VBE_DISPI_IOPORT_DATA,value);
-}
-
-static void vesa_setMode(tSize xres,tSize yres,u16 bpp) {
-    vesa_write(VBE_DISPI_INDEX_ENABLE,VBE_DISPI_DISABLED);
-    vesa_write(VBE_DISPI_INDEX_XRES,xres);
-    vesa_write(VBE_DISPI_INDEX_YRES,yres);
-    vesa_write(VBE_DISPI_INDEX_BPP,bpp);
-    vesa_write(VBE_DISPI_INDEX_ENABLE,VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
 }
 
 static void vesa_drawStr(tCoord col,tCoord row,const char *str,u32 len) {
@@ -324,7 +282,7 @@ static void vesa_drawStr(tCoord col,tCoord row,const char *str,u32 len) {
 		char c = *str++;
 		char color = *str++;
 		vesa_drawChar(col,row,c,color);
-		if(col >= COLS - 1) {
+		if(col >= cols - 1) {
 			row++;
 			col = 0;
 		}
@@ -339,11 +297,11 @@ static void vesa_drawChar(tCoord col,tCoord row,u8 c,u8 color) {
 	u32 pxSize = minfo->bitsPerPixel / 8;
 	u8 *vid;
 	/* don't print the same again ;) */
-	if(content[row * COLS * 2 + col * 2] == c && content[row * COLS * 2 + col * 2 + 1] == color)
+	if(content[row * cols * 2 + col * 2] == c && content[row * cols * 2 + col * 2 + 1] == color)
 		return;
 
-	content[row * COLS * 2 + col * 2] = c;
-	content[row * COLS * 2 + col * 2 + 1] = color;
+	content[row * cols * 2 + col * 2] = c;
+	content[row * cols * 2 + col * 2 + 1] = color;
 	vid = video + row * (FONT_HEIGHT + PAD * 2) * rx * pxSize + col * (FONT_WIDTH + PAD * 2) * pxSize;
 	if(color == ((BLACK << 4) | WHITE)) {
 		const u8 *cache = whOnBlCache + c * (FONT_HEIGHT + PAD * 2) * (FONT_WIDTH + PAD * 2) * pxSize;
@@ -375,7 +333,7 @@ static void vesa_drawChar(tCoord col,tCoord row,u8 c,u8 color) {
 }
 
 static void vesa_drawCharLoop16(u8 *vid,u8 c,u8 cf1,u8 cf2,u8 cf3,u8 cb1,u8 cb2,u8 cb3) {
-	u32 x,y;
+	s32 x,y;
 	u8 *vidwork;
 	u32 rx = minfo->xResolution;
 	u8 rms = minfo->redMaskSize;
@@ -413,7 +371,7 @@ static void vesa_drawCharLoop16(u8 *vid,u8 c,u8 cf1,u8 cf2,u8 cf3,u8 cb1,u8 cb2,
 }
 
 static void vesa_drawCharLoop24(u8 *vid,u8 c,u8 cf1,u8 cf2,u8 cf3,u8 cb1,u8 cb2,u8 cb3) {
-	u32 x,y;
+	s32 x,y;
 	u8 *vidwork;
 	u32 rx = minfo->xResolution;
 	u8 rms = minfo->redMaskSize;
@@ -453,7 +411,7 @@ static void vesa_drawCharLoop24(u8 *vid,u8 c,u8 cf1,u8 cf2,u8 cf3,u8 cb1,u8 cb2,
 }
 
 static void vesa_drawCharLoop32(u8 *vid,u8 c,u8 cf1,u8 cf2,u8 cf3,u8 cb1,u8 cb2,u8 cb3) {
-	u32 x,y;
+	s32 x,y;
 	u8 *vidwork;
 	u32 rx = minfo->xResolution;
 	u8 rms = minfo->redMaskSize;
@@ -526,7 +484,7 @@ static u8 *vesa_setPixel32(u8 *vidwork,u8 r,u8 g,u8 b) {
 }
 
 static void vesa_setCursor(tCoord col,tCoord row) {
-	if(lastCol < COLS && lastRow < ROWS)
+	if(lastCol < cols && lastRow < rows)
 		vesa_drawCursor(lastCol,lastRow,BLACK);
 	vesa_drawCursor(col,row,WHITE);
 	lastCol = col;
@@ -543,7 +501,7 @@ static void vesa_drawCursor(tCoord col,tCoord row,u8 color) {
 			col * (FONT_WIDTH + PAD * 2) * pxSize;
 	u8 *vidwork = vid + y * xres * pxSize;
 	for(x = 0; x < CURSOR_LEN; x++) {
-		u8 *col = colors[color];
-		vidwork = pxFunc(vidwork,col[2],col[1],col[0]);
+		u8 *colPtr = colors[color];
+		vidwork = pxFunc(vidwork,colPtr[2],colPtr[1],colPtr[0]);
 	}
 }

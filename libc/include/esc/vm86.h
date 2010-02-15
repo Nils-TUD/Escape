@@ -51,7 +51,9 @@ typedef struct {
 /**
  * Performs a VM86-interrupt. That means a VM86-task is created as a child-process, the
  * registers are set correspondingly and the tasks starts at the handler for the given interrupt.
- * As soon as the interrupt is finished the result is copied into the registers
+ * As soon as the interrupt is finished the result is copied into the registers.
+ * You can also specify memory-areas which will be mapped at the requested real-mode-address,
+ * so that it can be read to it and written from it.
  *
  * @param sVM86Regs* the registers
  * @param sVM86Memarea* the memareas (may be NULL)

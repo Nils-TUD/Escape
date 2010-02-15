@@ -192,7 +192,8 @@ static bool vbe_loadModeInfo(sVbeModeInfo *info,u16 mode) {
 	if(regs.ax != 0x4F)
 		return false;
 	info->modeNo = mode;
-	return (info->modeAttributes & MODE_SUPPORTED)/* && info->physBasePtr != 0*/;
+	/* physBasePtr is only present (!= 0) with VBE 2.0 */
+	return (info->modeAttributes & MODE_SUPPORTED) && info->physBasePtr != 0;
 }
 
 static void vbe_detectModes(void) {

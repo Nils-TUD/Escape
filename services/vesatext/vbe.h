@@ -115,6 +115,4 @@ u16 vbe_getMode(void);
  */
 bool vbe_setMode(u16 mode);
 
-void vbe_printModes(void);
-
 #endif /* VBE_H_ */

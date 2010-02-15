@@ -5,6 +5,7 @@ virtualHW.version = "4"
 bios.bootDelay = 100
 ide0:0.present = "TRUE"
 ide0:0.filename = "vmwarehddimg.vmdk"
+ide0:0.deviceType = "disk"
 ide0:0.lba48 = "TRUE"
 memsize = "128"
 MemAllowAutoScaleDown = "FALSE"
@@ -22,7 +23,7 @@ displayName = "Escape v0.1"
 guestOS = "other"
 nvram = "escape.nvram"
 MemTrimRate = "-1"
-ide0:0.redo = ""
+#ide0:0.redo = ""
 ethernet0.addressType = "generated"
 ethernet0.connectionType = "nat"
 uuid.location = "56 4d 10 3a d9 ae e5 9c-5d 0c 75 e7 d3 79 12 0a"
@@ -41,17 +42,6 @@ serial0.irq = "4"
 serial0.baseAddr = 0x3f8
 serial0.startConnected = "TRUE"
 
-#serial0.present = "TRUE"
-#serial0.fileType = "file"
-#serial0.fileName = "log.txt"
-#serial0.tryNoRxLoss = "FALSE"
-#serial0.hardwareFlowControl = "TRUE"
-#serial0.startConnected = "TRUE"
-#serial0.irq = "4"
-#serial0.baseAddr = 0x3f8
-#serial0.autodetect = "FALSE"
-#serial0.allowGuestConnectionControl = "FALSE"
-
 extendedConfigFile = "escape.vmxf"
 
 virtualHW.productCompatibility = "hosted"
@@ -60,3 +50,5 @@ tools.upgrade.policy = "manual"
 vmotion.checkpointFBSize = "16777216"
 
 debugStub.linuxOffsets = "0x0,0xffffffff,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0"
+
+ide0:0.redo = ""

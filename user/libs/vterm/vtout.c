@@ -137,9 +137,8 @@ void vterm_putchar(sVTerm *vt,char c) {
 	/* write to bochs(0xe9) / qemu(0x3f8) console */
 	/* a few characters don't make much sense here */
 	if(c != '\r' && c != '\a' && c != '\b' && c != '\t') {
-		outByte(0xe9,c);
+		while((inByte(0x3f8 + 5) & 0x20) == 0);
 		outByte(0x3f8,c);
-		while((inByte(0x3fd) & 0x20) == 0);
 	}
 #endif
 

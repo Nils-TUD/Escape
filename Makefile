@@ -104,6 +104,9 @@ updatehdd:
 createcd:	all
 		tools/iso.sh
 
+$(ISO):	all
+		tools/iso.sh
+
 $(VMDISK): $(HDD)
 		qemu-img convert -f raw $(HDD) -O vmdk $(VMDISK)
 
@@ -117,11 +120,11 @@ qemu:	all prepareRun
 bochs: all prepareRun
 		bochs -f bochs.cfg -q | tee log.txt
 
-vmware: all prepareRun $(VMDISK)
+vmware: all prepareRun $(ISO) $(VMDISK)
 		sudo /etc/init.d/kvm stop || true # vmware doesn't like kvm :/
 		vmplayer vmware/escape.vmx
 
-vbox: all prepareRun $(VMDISK)
+vbox: all prepareRun $(ISO) $(VMDISK)
 		sudo /etc/init.d/kvm stop || true # vbox doesn't like kvm :/
 		tools/vboxhddupd.sh $(VBOXOSTITLE) $(VMDISK)
 		VBoxSDL --evdevkeymap -startvm $(VBOXOSTITLE)

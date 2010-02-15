@@ -176,7 +176,7 @@ int main(int argc,char *argv[]) {
 	qsort(procs,count,sizeof(sProcess),compareProcs);
 
 	/* now print processes */
-	printf("ID\t\tPPID MEM\t\tSTATE\t%%CPU (USER,KERNEL)\tCOMMAND\n");
+	printf("PID    PPID    MEM     STATE    %%CPU (USER,KERNEL) COMMAND\n");
 
 	if(numProcs == 0)
 		numProcs = count;
@@ -188,7 +188,7 @@ int main(int argc,char *argv[]) {
 		cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
 		userPercent = (u32)(100. / (procCycles / (double)procs[i].ucycleCount.val64));
 		kernelPercent = (u32)(100. / (procCycles / (double)procs[i].kcycleCount.val64));
-		printf("%2d\t\t%2d\t%4d KiB\t-\t\t%4.1f%% (%3d%%,%3d%%)\t%s\n",
+		printf("%2d     %2d   %5d KiB  -        %4.1f%% (%3d%%,%3d%%)  %s\n",
 				procs[i].pid,procs[i].parentPid,
 				(procs[i].textPages + procs[i].dataPages + procs[i].stackPages) * 4,
 				cyclePercent,userPercent,kernelPercent,procs[i].command);
@@ -200,7 +200,7 @@ int main(int argc,char *argv[]) {
 				float tcyclePercent = (float)(100. / (totalCycles / (double)threadCycles));
 				u32 tuserPercent = (u32)(100. / (threadCycles / (double)t->ucycleCount.val64));
 				u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
-				printf(" |-%2d\t\t\t\t\t%s\t%4.1f%% (%3d%%,%3d%%)\n",
+				printf(" |-%2d                  %s  %4.1f%% (%3d%%,%3d%%)\n",
 						t->tid,states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
 			}
 		}

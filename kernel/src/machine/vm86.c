@@ -73,7 +73,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	sIntrptStackFrame *istack;
 	sVM86Info *info;
 	u32 *ivt;
-	u32 *mframeNos;
+	u32 *mframeNos = NULL;
 	sThread *t;
 	sProc *p;
 	s32 res;
@@ -100,11 +100,13 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	/* store in calling process */
 	t->proc->vm86Info = info;
 
-	mframeNos = (u32*)kheap_alloc(areaCount * VM86_MAX_MEMPAGES * sizeof(u32));
-	if(mframeNos == NULL) {
-		vm86_destroyInfo(info);
-		t->proc->vm86Info = NULL;
-		return ERR_NOT_ENOUGH_MEM;
+	if(areaCount > 0) {
+		mframeNos = (u32*)kheap_alloc(areaCount * VM86_MAX_MEMPAGES * sizeof(u32));
+		if(mframeNos == NULL) {
+			vm86_destroyInfo(info);
+			t->proc->vm86Info = NULL;
+			return ERR_NOT_ENOUGH_MEM;
+		}
 	}
 
 	/* create child */

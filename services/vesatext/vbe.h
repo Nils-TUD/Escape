@@ -56,6 +56,8 @@ typedef struct {
 	u8 rsvdMaskSize;			/* Size of direct color res mask   */
 	u8 rsvdFieldPosition;		/* Bit posn of lsb of res mask     */
 	u8 directColorModeInfo;		/* Direct color mode attributes    */
+	u32 physBasePtr;			/* Physical address for flat memory frame buffer (VBE 2.0) */
+	u16 modeNo;					/* BEWARE: Used in this driver, reserved by VBE! */
 	u8 reserved[216];			/* Pad to 256 byte block size      */
 } A_PACKED sVbeModeInfo;
 
@@ -80,20 +82,25 @@ typedef enum {
 } eMemModel;
 
 /**
- * Loads the VBE-info and returns 0 if successfull or the negative error-code
- *
- * @return 0 on success
+ * Initializes VBE
  */
-s32 vbe_loadInfo(void);
+void vbe_init(void);
 
 /**
- * Writes information about the given mode in <info>
- *
- * @param info the pointer to the info-struct
  * @param mode the mode-number
- * @return true if successfull and the mode is supported
+ * @return information about the given mode (or NULL if not found)
  */
-bool vbe_getModeInfo(sVbeModeInfo *info,u16 mode);
+sVbeModeInfo *vbe_getModeInfo(u16 mode);
+
+/**
+ * Tries to find the most suitable mode for the given settings
+ *
+ * @param resX the x-resolution
+ * @param resY the y-resolution
+ * @param bpp bits per pixel
+ * @return the mode or 0 if no matching mode found
+ */
+u16 vbe_findMode(u16 resX,u16 resY,u16 bpp);
 
 /**
  * @return the current mode-number

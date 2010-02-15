@@ -34,7 +34,7 @@
 #include <vterm/vtout.h>
 #include "vterm.h"
 
-#define VIDEO_DRIVER		"/drivers/video"
+#define VIDEO_DRIVER		"/drivers/vesatext"
 
 /**
  * Handles shortcuts

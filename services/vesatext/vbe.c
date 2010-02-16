@@ -200,7 +200,7 @@ static void vbe_detectModes(void) {
 	u16 *p;
 	sVbeModeInfo mode;
 	sVbeModeInfo *modeCpy;
-	tFile *f = fopen("/system/devices/vbe","w");
+	tFile *f = fopen("/vbe","w");
 	fprintf(f,"VESA VBE Version %d.%d detected (%x)\n",vbeInfo.version >> 8,
 			vbeInfo.version & 0xF,vbeInfo.oemString);
 	fprintf(f,"Capabilities: 0x%x\n",vbeInfo.capabilities);

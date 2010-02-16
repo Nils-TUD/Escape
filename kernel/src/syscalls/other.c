@@ -26,6 +26,7 @@
 #include <task/lock.h>
 #include <syscalls/other.h>
 #include <syscalls.h>
+#include <config.h>
 #include <errors.h>
 #include <video.h>
 
@@ -49,26 +50,9 @@ void sysc_debug(sIntrptStackFrame *stack) {
 
 void sysc_getConf(sIntrptStackFrame *stack) {
 	u32 id = SYSC_ARG1(stack);
-	u32 res = 0;
-
-	switch(id) {
-		case CONF_TIMER_FREQ:
-			res = TIMER_FREQUENCY;
-			break;
-		case CONF_MAX_PROCS:
-			res = PROC_COUNT;
-			break;
-		case CONF_MAX_THREADS:
-			res = THREAD_COUNT;
-			break;
-		case CONF_MAX_FDS:
-			res = MAX_FD_COUNT;
-			break;
-		default:
-			SYSC_ERROR(stack,ERR_INVALID_ARGS);
-			break;
-	}
-
+	s32 res = conf_get(id);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 

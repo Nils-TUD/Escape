@@ -72,16 +72,16 @@ typedef enum {
 
 typedef u8 *(*fSetPixel)(u8 *vidwork,u8 r,u8 g,u8 b);
 
+static s32 vesa_setMode(void);
+static s32 vesa_init(void);
 static void vesa_drawStr(tCoord col,tCoord row,const char *str,u32 len);
 static void vesa_drawChar(tCoord col,tCoord row,u8 c,u8 color);
-
 static void vesa_drawCharLoop16(u8 *vid,u8 c,u8 cf1,u8 cf2,u8 cf3,u8 cb1,u8 cb2,u8 cb3);
 static void vesa_drawCharLoop24(u8 *vid,u8 c,u8 cf1,u8 cf2,u8 cf3,u8 cb1,u8 cb2,u8 cb3);
 static void vesa_drawCharLoop32(u8 *vid,u8 c,u8 cf1,u8 cf2,u8 cf3,u8 cb1,u8 cb2,u8 cb3);
 static u8 *vesa_setPixel16(u8 *vidwork,u8 r,u8 g,u8 b);
 static u8 *vesa_setPixel24(u8 *vidwork,u8 r,u8 g,u8 b);
 static u8 *vesa_setPixel32(u8 *vidwork,u8 r,u8 g,u8 b);
-
 static void vesa_setCursor(tCoord col,tCoord row);
 static void vesa_drawCursor(tCoord col,tCoord row,u8 color);
 
@@ -104,10 +104,10 @@ static u8 colors[][3] = {
 	/* LIWHITE */ {0xFF,0xFF,0xFF},
 };
 
-static sVbeModeInfo *minfo;
-static u8 *whOnBlCache;
-static u8 *content;
-static u8 *video;
+static sVbeModeInfo *minfo = NULL;
+static u8 *whOnBlCache = NULL;
+static u8 *content = NULL;
+static u8 *video = NULL;
 
 static u8 cols;
 static u8 rows;
@@ -127,78 +127,19 @@ static fSetPixel setPixel[] = {
 int main(void) {
 	tServ id,client;
 	tMsgId mid;
-	s32 i,x,y;
-	u8 *cc;
+
+	/* load available modes etc. */
+	vbe_init();
 
 	id = regService("vesatext",SERV_DRIVER);
 	if(id < 0)
 		error("Unable to register service 'vesatext'");
-
-	vbe_init();
-	u16 mode = vbe_findMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);
-	if(mode != 0) {
-		minfo = vbe_getModeInfo(mode);
-		if(minfo) {
-			debugf("	%4d x %4d %d bpp, %d planes, %s, %s, %s (@%x), %d banks\n",minfo->xResolution,minfo->yResolution,
-				minfo->bitsPerPixel,minfo->numberOfPlanes,
-				(minfo->modeAttributes & MODE_GRAPHICS_MODE) ? "graphics" : "text",
-				(minfo->modeAttributes & MODE_COLOR_MODE) ? "color" : "monochrome",
-				minfo->memoryModel == memPL ? "plane" :
-				minfo->memoryModel == memPK ? "packed" :
-				minfo->memoryModel == memRGB ? "direct RGB" :
-				minfo->memoryModel == memYUV ? "direct YUV" : "unknown",
-				minfo->physBasePtr,minfo->numberOfBanks);
-			debugf("	rsize=%d, rlsb=%d, gsize=%d, glsb=%d, bsize=%d, blsb=%d\n",
-					minfo->redMaskSize,minfo->redFieldPosition,minfo->greenMaskSize,
-					minfo->greenFieldPosition,minfo->blueMaskSize,minfo->blueFieldPosition);
-			video = mapPhysical(minfo->physBasePtr,minfo->xResolution *
-					minfo->yResolution * (minfo->bitsPerPixel / 8));
-			if(video == NULL)
-				error("Unable to request physical memory at 0x%x",minfo->physBasePtr);
-			cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);
-			rows = minfo->yResolution / (FONT_HEIGHT + PAD * 2);
-			assert(vbe_setMode(mode));
-		}
-	}
 
 	/*sVM86Regs regs;
 	memset(&regs,0,sizeof(regs));
 	regs.ax = 0x0002;
 	if(vm86int(0x10,&regs,NULL,0) < 0)
 		printe("Switch to text-mode failed");*/
-
-	content = (u8*)malloc(cols * rows * 2);
-	if(content == NULL)
-		error("Unable to alloc mem for content");
-	for(y = 0; y < rows; y++) {
-		for(x = 0; x < cols; x++) {
-			content[y * cols * 2 + x * 2] = ' ';
-			content[y * cols * 2 + x * 2 + 1] = 0x07;
-		}
-	}
-
-	/* init cache for white-on-black-chars */
-	whOnBlCache = (u8*)malloc((FONT_WIDTH + PAD * 2) * (FONT_HEIGHT + PAD * 2) *
-			(minfo->bitsPerPixel / 8) * FONT_COUNT);
-	if(whOnBlCache == NULL)
-		error("Unable to alloc mem for white-on-black-cache");
-	cc = whOnBlCache;
-	for(i = 0; i < (s32)FONT_COUNT; i++) {
-		for(y = 0; y < FONT_HEIGHT + PAD * 2; y++) {
-			for(x = 0; x < FONT_WIDTH + PAD * 2; x++) {
-				if(y >= PAD && y < FONT_HEIGHT + PAD && x >= PAD && x < FONT_WIDTH + PAD &&
-						PIXEL_SET(i,x - PAD,y - PAD)) {
-					cc = setPixel[minfo->bitsPerPixel / 8](cc,colors[WHITE][2],colors[WHITE][1],colors[WHITE][0]);
-				}
-				else {
-					cc = setPixel[minfo->bitsPerPixel / 8](cc,colors[BLACK][2],colors[BLACK][1],colors[BLACK][0]);
-				}
-			}
-		}
-	}
-
-	lastCol = cols;
-	lastRow = rows;
 
 	while(1) {
 		tFD fd = getClient(&id,1,&client);
@@ -208,8 +149,7 @@ int main(void) {
 			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
 				switch(mid) {
 					case MSG_DRV_OPEN:
-						msg.args.arg1 = 0;
-						/*vesa_setMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);*/
+						msg.args.arg1 = vesa_setMode();
 						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 						break;
 
@@ -223,7 +163,9 @@ int main(void) {
 						u32 offset = msg.args.arg1;
 						u32 count = msg.args.arg2;
 						msg.args.arg1 = 0;
-						if(offset + count <= (u32)(rows * cols * 2) && offset + count > offset) {
+						if(minfo == NULL)
+							msg.args.arg1 = ERR_UNSUPPORTED_OP;
+						else if(offset + count <= (u32)(rows * cols * 2) && offset + count > offset) {
 							char *str = (char*)malloc(count);
 							vassert(str,"Unable to alloc mem");
 							msg.args.arg1 = 0;
@@ -238,27 +180,31 @@ int main(void) {
 					break;
 
 					case MSG_DRV_IOCTL: {
-						switch(msg.data.arg1) {
-							case IOCTL_VID_SETCURSOR: {
-								sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
-								pos->col = MIN(pos->col,cols);
-								pos->row = MIN(pos->row,rows);
-								vesa_setCursor(pos->col,pos->row);
-								msg.data.arg1 = 0;
-							}
-							break;
-
-							case IOCTL_VID_GETSIZE: {
-								sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
-								size->width = cols;
-								size->height = rows;
-								msg.data.arg1 = sizeof(sIoCtlSize);
-							}
-							break;
-
-							default:
-								msg.data.arg1 = ERR_UNSUPPORTED_OP;
+						if(minfo == NULL)
+							msg.data.arg1 = ERR_UNSUPPORTED_OP;
+						else {
+							switch(msg.data.arg1) {
+								case IOCTL_VID_SETCURSOR: {
+									sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
+									pos->col = MIN(pos->col,cols);
+									pos->row = MIN(pos->row,rows);
+									vesa_setCursor(pos->col,pos->row);
+									msg.data.arg1 = 0;
+								}
 								break;
+
+								case IOCTL_VID_GETSIZE: {
+									sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
+									size->width = cols;
+									size->height = rows;
+									msg.data.arg1 = sizeof(sIoCtlSize);
+								}
+								break;
+
+								default:
+									msg.data.arg1 = ERR_UNSUPPORTED_OP;
+									break;
+							}
 						}
 						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 					}
@@ -275,6 +221,69 @@ int main(void) {
 
 	unregService(id);
 	return EXIT_SUCCESS;
+}
+
+static s32 vesa_setMode(void) {
+	u16 mode = vbe_findMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);
+	if(mode != 0) {
+		minfo = vbe_getModeInfo(mode);
+		if(minfo) {
+			video = mapPhysical(minfo->physBasePtr,minfo->xResolution *
+					minfo->yResolution * (minfo->bitsPerPixel / 8));
+			if(video == NULL)
+				return errno;
+			cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);
+			rows = minfo->yResolution / (FONT_HEIGHT + PAD * 2);
+			if(vbe_setMode(mode))
+				return vesa_init();
+			minfo = NULL;
+			return ERR_VESA_SETMODE_FAILED;
+		}
+	}
+	return ERR_VESA_MODE_NOT_FOUND;
+}
+
+static s32 vesa_init(void) {
+	s32 x,y;
+	if(content == NULL) {
+		content = (u8*)malloc(cols * rows * 2);
+		if(content == NULL)
+			return ERR_NOT_ENOUGH_MEM;
+		for(y = 0; y < rows; y++) {
+			for(x = 0; x < cols; x++) {
+				content[y * cols * 2 + x * 2] = ' ';
+				content[y * cols * 2 + x * 2 + 1] = 0x07;
+			}
+		}
+	}
+
+	/* init cache for white-on-black-chars */
+	if(whOnBlCache == NULL) {
+		u8 *cc;
+		u32 i;
+		whOnBlCache = (u8*)malloc((FONT_WIDTH + PAD * 2) * (FONT_HEIGHT + PAD * 2) *
+				(minfo->bitsPerPixel / 8) * FONT_COUNT);
+		if(whOnBlCache == NULL)
+			return ERR_NOT_ENOUGH_MEM;
+		cc = whOnBlCache;
+		for(i = 0; i < FONT_COUNT; i++) {
+			for(y = 0; y < FONT_HEIGHT + PAD * 2; y++) {
+				for(x = 0; x < FONT_WIDTH + PAD * 2; x++) {
+					if(y >= PAD && y < FONT_HEIGHT + PAD && x >= PAD && x < FONT_WIDTH + PAD &&
+							PIXEL_SET(i,x - PAD,y - PAD)) {
+						cc = setPixel[minfo->bitsPerPixel / 8](cc,colors[WHITE][2],colors[WHITE][1],colors[WHITE][0]);
+					}
+					else {
+						cc = setPixel[minfo->bitsPerPixel / 8](cc,colors[BLACK][2],colors[BLACK][1],colors[BLACK][0]);
+					}
+				}
+			}
+		}
+	}
+
+	lastCol = cols;
+	lastRow = rows;
+	return 0;
 }
 
 static void vesa_drawStr(tCoord col,tCoord row,const char *str,u32 len) {

@@ -27,6 +27,7 @@
 #include <multiboot.h>
 #include <video.h>
 #include <util.h>
+#include <config.h>
 #include <errors.h>
 #include <string.h>
 #include <assert.h>
@@ -59,6 +60,9 @@ void mboot_init(sMultiBoot *mbp) {
 		mod->name = (char*)((u32)mod->name | KERNEL_AREA_V_ADDR);
 		mod++;
 	}
+
+	/* parse the boot parameter */
+	conf_parseBootParams(mb->cmdLine);
 }
 
 const sMultiBoot *mboot_getInfo(void) {

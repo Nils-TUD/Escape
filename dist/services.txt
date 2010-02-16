@@ -4,8 +4,7 @@ keyboard; /drivers/keyboard;
 video; /drivers/video;
 kmmanager; /drivers/kmmanager; keyboard
 vesatext; /drivers/vesatext;
-vterm; /drivers/vterm0,/drivers/vterm1,/drivers/vterm2,/drivers/vterm3,/drivers/vterm4,/drivers/vterm5; kmmanager,speaker,video,cmos
-#vga; ;
+vterm; /drivers/vterm0,/drivers/vterm1,/drivers/vterm2,/drivers/vterm3,/drivers/vterm4,/drivers/vterm5; kmmanager,speaker,vesatext,video,cmos
 env; /services/env;
 cmos; ;
 zero; /drivers/zero;

@@ -18,8 +18,13 @@ cp $ROOT/dist/boot/* $TMPDIR/boot/grub/
 echo 'default 0' > $TMPDIR/boot/grub/menu.lst;
 echo 'timeout 3' >> $TMPDIR/boot/grub/menu.lst;
 echo '' >> $TMPDIR/boot/grub/menu.lst;
-echo "title $OSTITLE" >> $TMPDIR/boot/grub/menu.lst;
-echo "kernel /boot/escape.bin" >> $TMPDIR/boot/grub/menu.lst;
+echo "title $OSTITLE - VESA-text" >> $TMPDIR/boot/grub/menu.lst;
+echo "kernel /boot/escape.bin videomode=vesa" >> $TMPDIR/boot/grub/menu.lst;
+echo 'module /sbin/ata /services/ata' >> $TMPDIR/boot/grub/menu.lst;
+echo 'module /sbin/fs /services/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
+echo '' >> $TMPDIR/boot/grub/menu.lst;
+echo "title $OSTITLE - VGA-text" >> $TMPDIR/boot/grub/menu.lst;
+echo "kernel /boot/escape.bin videomode=vga" >> $TMPDIR/boot/grub/menu.lst;
 echo 'module /sbin/ata /services/ata' >> $TMPDIR/boot/grub/menu.lst;
 echo 'module /sbin/fs /services/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 

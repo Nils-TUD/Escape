@@ -22,11 +22,6 @@
 
 #include <machine/intrpt.h>
 
-#define CONF_TIMER_FREQ		0
-#define CONF_MAX_PROCS		1
-#define CONF_MAX_THREADS	2
-#define CONF_MAX_FDS		3
-
 /**
  * Loads the multiboot-modules. This is intended for initloader only!
  */

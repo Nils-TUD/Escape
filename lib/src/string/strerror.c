@@ -279,6 +279,14 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Invalid keymap-path or content!");
 			break;
 
+		case ERR_VESA_SETMODE_FAILED:
+			strcpy(msg,"Unable to set VESA-mode!");
+			break;
+
+		case ERR_VESA_MODE_NOT_FOUND:
+			strcpy(msg,"Unable to find the requested VESA-mode!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

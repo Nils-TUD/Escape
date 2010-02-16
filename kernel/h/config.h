@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CONF_H_
-#define CONF_H_
+#ifndef CONFIG_H_
+#define CONFIG_H_
 
-#include <esc/common.h>
+#include <common.h>
 
 #define CONF_TIMER_FREQ			0
 #define CONF_MAX_PROCS			1
@@ -32,11 +32,18 @@
 #define CONF_VIDMODE_VESATEXT	1
 
 /**
- * Gets the value of a kernel-configuration
+ * Parses the given boot-parameter and sets the configuration-options correspondingly
  *
- * @param id the id of the config-value (CONF_*)
- * @return s32 the value or the negative error-code
+ * @param params the parameter
  */
-s32 getConf(u32 id);
+void conf_parseBootParams(const char *params);
 
-#endif /* CONF_H_ */
+/**
+ * Returns the value for the given configuration-value
+ *
+ * @param id the config-id
+ * @return the value or < 0 if an error occurred
+ */
+s32 conf_get(u32 id);
+
+#endif /* CONFIG_H_ */

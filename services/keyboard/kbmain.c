@@ -86,10 +86,6 @@ int main(void) {
 	tMsgId mid;
 	u8 kbdata;
 
-	id = regService("keyboard",SERV_DRIVER);
-	if(id < 0)
-		error("Unable to register service 'keyboard'");
-
 	/* create buffers */
 	rbuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
 	ibuf = rb_create(sizeof(sKbData),BUF_SIZE,RB_OVERWRITE);
@@ -106,6 +102,10 @@ int main(void) {
 
 	/* wait for input buffer empty */
 	kb_waitInBuf();
+
+	/* first read all bytes from the buffer; maybe there are scancodes... */
+	while(inByte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL)
+		inByte(IOPORT_KB_DATA);
 
 	/* self test */
 	outByte(IOPORT_KB_CTRL,0xAA);
@@ -182,6 +182,10 @@ int main(void) {
 	/* we want to get notified about keyboard interrupts */
 	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
+
+	id = regService("keyboard",SERV_DRIVER);
+	if(id < 0)
+		error("Unable to register service 'keyboard'");
 
     /* wait for commands */
 	while(1) {

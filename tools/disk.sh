@@ -54,10 +54,16 @@ setupPart() {
 
 buildMenuLst() {
 	echo "default 0" > $DISKMOUNT/boot/grub/menu.lst;
-	echo "timeout 0" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "timeout 3" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "" >> $DISKMOUNT/boot/grub/menu.lst;
-	echo "title \"$OSTITLE\"" >> $DISKMOUNT/boot/grub/menu.lst;
-	echo "kernel /boot/$BINNAME" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "title \"$OSTITLE - VESA-text\"" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "kernel /boot/$BINNAME videomode=vesa" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "module /sbin/ata /services/ata" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "module /sbin/fs /services/fs /drivers/hda1 ext2" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "boot" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "title \"$OSTITLE - VGA-text\"" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "kernel /boot/$BINNAME videomode=vga" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/ata /services/ata" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/fs /services/fs /drivers/hda1 ext2" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "boot" >> $DISKMOUNT/boot/grub/menu.lst;

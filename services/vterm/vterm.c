@@ -26,6 +26,7 @@
 #include <esc/keycodes.h>
 #include <esc/signals.h>
 #include <esc/service.h>
+#include <esc/conf.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -34,7 +35,8 @@
 #include <vterm/vtout.h>
 #include "vterm.h"
 
-#define VIDEO_DRIVER		"/drivers/vesatext"
+#define VGA_DRIVER		"/drivers/video"
+#define VESA_DRIVER		"/drivers/vesatext"
 
 /**
  * Handles shortcuts
@@ -62,12 +64,17 @@ bool vterm_initAll(tServ *ids) {
 	tFD vidFd,speakerFd;
 	sIoCtlSize vidSize;
 	char name[MAX_VT_NAME_LEN + 1];
+	const char *driver;
 	u32 i;
 
-	/* open video */
-	vidFd = open(VIDEO_DRIVER,IO_WRITE);
+	/* open video-driver */
+	if(getConf(CONF_BOOT_VIDEOMODE) == CONF_VIDMODE_VESATEXT)
+		driver = VESA_DRIVER;
+	else
+		driver = VGA_DRIVER;
+	vidFd = open(driver,IO_WRITE);
 	if(vidFd < 0) {
-		printe("Unable to open '%s'",VIDEO_DRIVER);
+		printe("Unable to open '%s'",driver);
 		return false;
 	}
 

@@ -408,7 +408,7 @@ static bool loadService(sServiceLoad **loads,sServiceLoad *load) {
 		do {
 			res = stat(servName,&info);
 			if(res < 0)
-				yield();
+				sleep(10);
 		}
 		while(j++ < MAX_WAIT_RETRIES && res < 0);
 		if(res < 0) {

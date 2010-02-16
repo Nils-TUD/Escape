@@ -64,26 +64,31 @@ static u16 vm86_popw(sIntrptStackFrame *stack);
 static u32 vm86_popl(sIntrptStackFrame *stack);
 static void vm86_pushw(sIntrptStackFrame *stack,u16 word);
 static void vm86_pushl(sIntrptStackFrame *stack,u32 l);
-static void vm86_copyResult(sIntrptStackFrame* stack,sVM86Info *info);
+static void vm86_copyRegResult(sIntrptStackFrame* stack,sVM86Info *info);
+static void vm86_copyPtrResult(sVM86Info *info,sVM86Memarea *areas,u16 areaCount);
 static sVM86Info *vm86_createInfo(tPid pid,sVM86Regs *regs);
 static void vm86_destroyInfo(sVM86Info *info);
 
 s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
-	u32 frameNos[(1024 * K) / PAGE_SIZE];
+	u32 frameCount;
+	u32 *mFrameNos = NULL;
 	sIntrptStackFrame *istack;
 	sVM86Info *info;
 	u32 *ivt;
-	u32 *mframeNos = NULL;
 	sThread *t;
 	sProc *p;
 	s32 res;
-	u32 i;
+	u32 j,i;
 	tTid tid;
 	tPid pid;
 
 	for(i = 0; i < areaCount; i++) {
-		if(BYTES_2_PAGES(areas[i].size) > VM86_MAX_MEMPAGES)
+		if((areas[i].type == VM86_MEM_DIRECT &&
+				BYTES_2_PAGES(areas[i].data.direct.size) > VM86_MAX_MEMPAGES) ||
+			(areas[i].type == VM86_MEM_PTR &&
+				BYTES_2_PAGES(areas[i].data.ptr.size) > VM86_MAX_MEMPAGES)) {
 			return ERR_INVALID_ARGS;
+		}
 	}
 	if(interrupt >= VM86_IVT_SIZE)
 		return ERR_INVALID_ARGS;
@@ -100,9 +105,9 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	/* store in calling process */
 	t->proc->vm86Info = info;
 
-	if(areaCount > 0) {
-		mframeNos = (u32*)kheap_alloc(areaCount * VM86_MAX_MEMPAGES * sizeof(u32));
-		if(mframeNos == NULL) {
+	if(areaCount) {
+		mFrameNos = (u32*)kheap_alloc(areaCount * VM86_MAX_MEMPAGES * sizeof(u32));
+		if(mFrameNos == NULL) {
 			vm86_destroyInfo(info);
 			t->proc->vm86Info = NULL;
 			return ERR_NOT_ENOUGH_MEM;
@@ -115,7 +120,6 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	 * value for tss.esp0 and we will get a wrong stack-layout on the next interrupt */
 	res = proc_clone(pid,true);
 	if(res < 0) {
-		kheap_free(mframeNos);
 		vm86_destroyInfo(info);
 		t->proc->vm86Info = NULL;
 		return res;
@@ -128,6 +132,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 		thread_switch();
 		/* everything is finished :) */
 		memcpy(regs,&info->regs,sizeof(sVM86Regs));
+		vm86_copyPtrResult(info,areas,areaCount);
 		/* kill vm86-process */
 		proc_kill(proc_getByPid(info->vm86Pid));
 		vm86_destroyInfo(info);
@@ -143,8 +148,12 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	p->vm86Caller = tid;
 
 	/* first, collect the frame-numbers for the mapping (before unmapping the area) */
-	for(i = 0; i < areaCount; i++)
-		paging_getFrameNos(mframeNos + i * VM86_MAX_MEMPAGES,(u32)areas[i].src,areas[i].size);
+	for(i = 0; i < areaCount; i++) {
+		if(areas[i].type == VM86_MEM_DIRECT) {
+			paging_getFrameNos(mFrameNos + i * VM86_MAX_MEMPAGES,
+					(u32)areas[i].data.direct.src,areas[i].data.direct.size);
+		}
+	}
 
 	/* free the current text; free frames if text_free() returns true */
 	paging_unmap(0,p->textPages,text_free(p->text,p->pid),false);
@@ -160,18 +169,23 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	/* Now map the first MiB of physical memory to 0x00000000 and the first 64 KiB to 0x00100000,
 	 * too. Because in real-mode it occurs an address-wraparound at 1 MiB. In VM86-mode it doesn't
 	 * therefore we have to emulate it. We do that by simply mapping the same to >= 1MiB. */
-	for(i = 0; i < ARRAY_SIZE(frameNos); i++)
-		frameNos[i] = i;
-	paging_map(0x00000000,frameNos,ARRAY_SIZE(frameNos),PG_NOFREE | PG_WRITABLE,true);
-	paging_map(0x00100000,frameNos,(64 * K) / PAGE_SIZE,PG_NOFREE | PG_WRITABLE,true);
+	frameCount = (1024 * K) / PAGE_SIZE;
+	for(i = 0; i < frameCount; i++)
+		info->frameNos[i] = i;
+	paging_map(0x00000000,info->frameNos,frameCount,PG_NOFREE | PG_WRITABLE,true);
+	paging_map(0x00100000,info->frameNos,(64 * K) / PAGE_SIZE,PG_NOFREE | PG_WRITABLE,true);
 
 	/* map the specified areas to the frames of the parent, so that the BIOS can write
 	 * it directly to the buffer of the calling process */
 	for(i = 0; i < areaCount; i++) {
-		u32 pages = BYTES_2_PAGES(areas[i].size);
-		paging_map(areas[i].dst,mframeNos + i * VM86_MAX_MEMPAGES,pages,PG_WRITABLE,true);
+		if(areas[i].type == VM86_MEM_DIRECT) {
+			u32 pages = BYTES_2_PAGES(areas[i].data.direct.size);
+			paging_map(areas[i].data.direct.dst,mFrameNos + i * VM86_MAX_MEMPAGES,pages,PG_WRITABLE,true);
+			for(j = 0; j < pages; j++)
+				info->frameNos[areas[i].data.direct.dst / PAGE_SIZE] = mFrameNos[i * VM86_MAX_MEMPAGES + j];
+		}
 	}
-	kheap_free(mframeNos);
+	kheap_free(mFrameNos);
 
 	/* now, remove the stack because we don't need it anymore (we needed it before to access
 	 * the areas!) */
@@ -280,7 +294,7 @@ bool vm86_handleGPF(sIntrptStackFrame *stack) {
 				sProc *p = proc_getRunning();
 				sThread *caller = thread_getById(p->vm86Caller);
 				if(caller != NULL) {
-					vm86_copyResult(stack,caller->proc->vm86Info);
+					vm86_copyRegResult(stack,caller->proc->vm86Info);
 					sched_setReady(caller);
 				}
 				/* commit suicide and do a switch */
@@ -372,7 +386,7 @@ static void vm86_pushl(sIntrptStackFrame *stack,u32 l) {
 	*((u32*)(stack->uesp + (stack->uss << 4))) = l;
 }
 
-static void vm86_copyResult(sIntrptStackFrame* stack,sVM86Info *info) {
+static void vm86_copyRegResult(sIntrptStackFrame* stack,sVM86Info *info) {
 	info->regs.ax = stack->eax;
 	info->regs.bx = stack->ebx;
 	info->regs.cx = stack->ecx;
@@ -383,15 +397,46 @@ static void vm86_copyResult(sIntrptStackFrame* stack,sVM86Info *info) {
 	info->regs.es = stack->vm86es;
 }
 
+static void vm86_copyPtrResult(sVM86Info *info,sVM86Memarea *areas,u16 areaCount) {
+	u32 i;
+	for(i = 0; i < areaCount; i++) {
+		if(areas[i].type == VM86_MEM_PTR) {
+			u32 rmAddr = *(u32*)areas[i].data.ptr.srcPtr;
+			u32 virt = ((rmAddr & 0xFFFF0000) >> 12) | (rmAddr & 0xFFFF);
+			if(virt + areas[i].data.ptr.size <= 1 * M + 64 * K) {
+				if(info->frameNos[virt / PAGE_SIZE] != virt / PAGE_SIZE) {
+					u32 pcount = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) + areas[i].data.ptr.size);
+					paging_map(TEMP_MAP_AREA,info->frameNos + virt / PAGE_SIZE,pcount,PG_SUPERVISOR,true);
+					memcpy((void*)areas[i].data.ptr.result,
+							(void*)(TEMP_MAP_AREA + (virt & (PAGE_SIZE - 1))),
+							areas[i].data.ptr.size);
+					paging_unmap(TEMP_MAP_AREA,pcount,false,false);
+				}
+				else {
+					/* note that the first MiB is mapped to 0xC0000000, too */
+					memcpy((void*)areas[i].data.ptr.result,
+							(void*)(virt | KERNEL_AREA_V_ADDR),areas[i].data.ptr.size);
+				}
+			}
+		}
+	}
+}
+
 static sVM86Info *vm86_createInfo(tPid pid,sVM86Regs *regs) {
-	sVM86Info *info = kheap_alloc(sizeof(sVM86Info));
+	sVM86Info *info = (sVM86Info*)kheap_alloc(sizeof(sVM86Info));
 	if(info == NULL)
 		return NULL;
 	info->vm86Pid = pid;
 	memcpy(&info->regs,regs,sizeof(sVM86Regs));
+	info->frameNos = (u32*)kheap_alloc(((1024 * K) / PAGE_SIZE) * sizeof(u32));
+	if(info->frameNos == NULL) {
+		kheap_free(info);
+		return NULL;
+	}
 	return info;
 }
 
 static void vm86_destroyInfo(sVM86Info *info) {
+	kheap_free(info->frameNos);
 	kheap_free(info);
 }

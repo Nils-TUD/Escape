@@ -23,6 +23,9 @@
 #include <common.h>
 #include <machine/intrpt.h>
 
+#define VM86_MEM_DIRECT		0
+#define VM86_MEM_PTR		1
+
 typedef struct {
 	u16 ax;
 	u16 bx;
@@ -35,14 +38,25 @@ typedef struct {
 } sVM86Regs;
 
 typedef struct {
-	void *src;
-	u32 dst;
-	u32 size;
+	u8 type;
+	union {
+		struct {
+			void *src;
+			u32 dst;
+			u32 size;
+		} direct;
+		struct {
+			void **srcPtr;
+			u32 result;
+			u32 size;
+		} ptr;
+	} data;
 } sVM86Memarea;
 
 typedef struct {
 	tPid vm86Pid;
 	sVM86Regs regs;
+	u32 *frameNos;
 } sVM86Info;
 
 /**

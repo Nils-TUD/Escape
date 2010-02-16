@@ -31,8 +31,8 @@
 #include <errors.h>
 #include <assert.h>
 
+#include <vbe/vbe.h>
 #include "font.h"
-#include "vbe.h"
 
 #define RESOLUTION_X					1024
 #define RESOLUTION_Y					768

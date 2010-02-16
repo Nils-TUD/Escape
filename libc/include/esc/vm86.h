@@ -26,6 +26,9 @@
 extern "C" {
 #endif
 
+#define VM86_MEM_DIRECT		0
+#define VM86_MEM_PTR		1
+
 typedef struct {
 	u16 ax;
 	u16 bx;
@@ -38,9 +41,21 @@ typedef struct {
 } sVM86Regs;
 
 typedef struct {
-	void *src;
-	u32 dst;
-	u32 size;
+	u8 type;
+	union {
+		/* copy it directly to a place in the process-space (dst) */
+		struct {
+			void *src;
+			u32 dst;
+			u32 size;
+		} direct;
+		/* copy result from *<srcPtr> (a pointer to a real-mode-address) to the process space */
+		struct {
+			void **srcPtr;
+			u32 result;
+			u32 size;
+		} ptr;
+	} data;
 } sVM86Memarea;
 
 #define VM86_PAGE_SIZE		4096

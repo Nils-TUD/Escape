@@ -37,6 +37,8 @@
 
 #define VM86_DATA_ADDR						0x80000
 
+#define MAX_MODE_COUNT						256
+
 /* for setting a mode: (VBE v2.0+) use linear (flat) frame buffer */
 #define VBE_MODE_SET_LFB					0x4000
 
@@ -142,35 +144,30 @@ bool vbe_setMode(u16 mode) {
 static s32 vbe_loadInfo(void) {
 	s32 res;
 	sVM86Regs regs;
-	sVM86Memarea area;
+	sVM86Memarea areas[2];
 	regs.ax = 0x4F00;
 	regs.es = VM86_SEG(&vbeInfo,VM86_DATA_ADDR);
 	regs.di = VM86_OFF(&vbeInfo,VM86_DATA_ADDR);
-	area.dst = VM86_DATA_ADDR;
-	area.src = &vbeInfo;
-	area.size = sizeof(sVbeInfo);
+	areas[0].type = VM86_MEM_DIRECT;
+	areas[0].data.direct.dst = VM86_DATA_ADDR;
+	areas[0].data.direct.src = &vbeInfo;
+	areas[0].data.direct.size = sizeof(sVbeInfo);
+	areas[1].type = VM86_MEM_PTR;
+	areas[1].data.ptr.srcPtr = (void**)&vbeInfo.videoModesPtr;
+	areas[1].data.ptr.result = (u32)malloc(MAX_MODE_COUNT * sizeof(u32));
+	if(areas[1].data.ptr.result == 0)
+		return VBEERR_GETINFO_FAILED;
+	areas[1].data.ptr.size = MAX_MODE_COUNT * sizeof(u32);
 	memcpy(vbeInfo.signature,"VBE2",4);
-	if((res = vm86int(0x10,&regs,&area,1)) < 0)
+	if((res = vm86int(0x10,&regs,areas,2)) < 0)
 		return res;
 	if((regs.ax & 0x00FF) != 0x4F)
 		return VBEERR_UNSUPPORTED;
 	if((regs.ax & 0xFF00) != 0)
 		return VBEERR_GETINFO_FAILED;
-	/* convert address from realmode to pmode */
-	vbeInfo.videoModesPtr = (u16*)VM86_ADDR_RM2PM(vbeInfo.videoModesPtr);
-	/* in bounds of the mapped area? */
-	if((u32)vbeInfo.videoModesPtr >= VM86_DATA_ADDR &&
-			(u32)vbeInfo.videoModesPtr < VM86_DATA_ADDR + sizeof(sVbeInfo)) {
-		vbeInfo.videoModesPtr = (u16*)VM86_CHG_AREA(vbeInfo.videoModesPtr,VM86_DATA_ADDR,&vbeInfo);
-	}
-	else {
-		/* special case for vmware: it puts the video-modes outside of the mapped area. therefore
-		 * we have to map this area manually */
-		vbeInfo.videoModesPtr = (u16*)mapPhysical((u32)vbeInfo.videoModesPtr,4096);
-		if(vbeInfo.videoModesPtr == NULL)
-			return VBEERR_GETINFO_FAILED;
-	}
-	vbeInfo.oemString = (char*)VM86_CHG_AREA(vbeInfo.oemString,VM86_DATA_ADDR,&vbeInfo);
+	vbeInfo.videoModesPtr = (u16*)areas[1].data.ptr.result;
+	/* TODO */
+	vbeInfo.oemString = 0;
 	return 0;
 }
 
@@ -184,9 +181,10 @@ static bool vbe_loadModeInfo(sVbeModeInfo *info,u16 mode) {
 	regs.cx = mode;
 	regs.es = VM86_SEG(info,VM86_DATA_ADDR);
 	regs.di = VM86_OFF(info,VM86_DATA_ADDR);
-	area.dst = VM86_DATA_ADDR;
-	area.src = info;
-	area.size = sizeof(sVbeModeInfo);
+	area.type = VM86_MEM_DIRECT;
+	area.data.direct.dst = VM86_DATA_ADDR;
+	area.data.direct.src = info;
+	area.data.direct.size = sizeof(sVbeModeInfo);
 	if(vm86int(0x10,&regs,&area,1) < 0)
 		return false;
 	if(regs.ax != 0x4F)
@@ -197,10 +195,10 @@ static bool vbe_loadModeInfo(sVbeModeInfo *info,u16 mode) {
 }
 
 static void vbe_detectModes(void) {
-	u16 *p;
+	u16 i,*p;
 	sVbeModeInfo mode;
 	sVbeModeInfo *modeCpy;
-	tFile *f = fopen("/vbe","w");
+	tFile *f = fopen("/system/devices/vbe","w");
 	fprintf(f,"VESA VBE Version %d.%d detected (%x)\n",vbeInfo.version >> 8,
 			vbeInfo.version & 0xF,vbeInfo.oemString);
 	fprintf(f,"Capabilities: 0x%x\n",vbeInfo.capabilities);
@@ -210,7 +208,7 @@ static void vbe_detectModes(void) {
 	fprintf(f,"videoModes: 0x%x\n",vbeInfo.videoModesPtr);
 	fprintf(f,"\n");
 	fprintf(f,"Available video modes:\n");
-	for(p = (u16*)vbeInfo.videoModesPtr; *p != (u16)-1; p++) {
+	for(i = 0, p = (u16*)vbeInfo.videoModesPtr; i < MAX_MODE_COUNT && *p != (u16)-1; i++, p++) {
 		if(vbe_loadModeInfo(&mode,*p)) {
 			fprintf(f,"  %4x: %4d x %4d %2d bpp, %d planes, %s, %s, %s (attr %x) (@%x)\n",mode.modeNo,
 					mode.xResolution,mode.yResolution,

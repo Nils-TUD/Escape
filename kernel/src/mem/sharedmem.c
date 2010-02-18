@@ -149,6 +149,9 @@ s32 shm_destroy(char *name) {
 		paging_remPagesOf(p,mem->startPage,mem->pageCount);
 	}
 
+	/* Note that we can't remove the area from us (via proc_changeSize()) because maybe the
+	 * data-area has been increased afterwards */
+
 	/* free mem */
 	sll_destroy(mem->member,false);
 	sll_removeFirst(shareList,mem);

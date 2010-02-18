@@ -213,11 +213,13 @@ void thread_switchTo(tTid tid) {
 	/* destroy threads, if there are any */
 	if(deadThreads != NULL) {
 		sSLNode *n;
+		sThread *t;
 		for(n = sll_begin(deadThreads); n != NULL; n = n->next) {
 			/* we want to destroy the stacks here because if the whole process is destroyed
 			 * the proc-module doesn't kill the running thread anyway so there will never
 			 * be the case that we should destroy a single thread later */
-			thread_destroy((sThread*)n->data,true);
+			t = (sThread*)n->data;
+			t->proc->frameCount -= thread_destroy(t,true);
 		}
 		sll_destroy(deadThreads,false);
 		deadThreads = NULL;
@@ -370,6 +372,7 @@ s32 thread_extendStack(u32 address) {
 
 s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc) {
 	tFD i;
+	u32 frmCount = 0;
 	sSLList *list;
 	sThread *t = *dst;
 	t = (sThread*)kheap_alloc(sizeof(sThread));
@@ -417,10 +420,12 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 		/* create kernel-stack */
 		t->ustackBegin = ustackBegin;
 		*stackFrame = t->kstackFrame = mm_allocateFrame(MM_DEF);
+		frmCount++;
 
 		/* initial user-stack-pages */
 		t->ustackPages = INITIAL_STACK_PAGES;
-		paging_map(t->ustackBegin - t->ustackPages * PAGE_SIZE,NULL,t->ustackPages,PG_WRITABLE,true);
+		frmCount += paging_map(t->ustackBegin - t->ustackPages * PAGE_SIZE,NULL,
+				t->ustackPages,PG_WRITABLE,true);
 	}
 
 	/* create thread-list if necessary */
@@ -465,11 +470,12 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	}
 
 	*dst = t;
-	return 0;
+	return frmCount;
 }
 
-void thread_destroy(sThread *t,bool destroyStacks) {
+u32 thread_destroy(sThread *t,bool destroyStacks) {
 	tFD i;
+	u32 frmCnt = 0;
 	sSLList *list;
 	/* we can't destroy the current thread */
 	if(t == cur) {
@@ -484,7 +490,7 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 		/* remove from scheduler and ensure that he don't picks us again */
 		sched_removeThread(t);
 		t->state = ST_ZOMBIE;
-		return;
+		return 0;
 	}
 
 	list = threadMap[t->tid % THREAD_MAP_SIZE];
@@ -492,7 +498,7 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 
 	/* destroy stacks */
 	if(destroyStacks)
-		paging_destroyStacks(t);
+		frmCnt += paging_destroyStacks(t);
 
 	/* release file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
@@ -519,6 +525,7 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 	/* finally, destroy thread */
 	sll_removeFirst(list,t);
 	kheap_free(t);
+	return frmCnt;
 }
 
 /* #### TEST/DEBUG FUNCTIONS #### */

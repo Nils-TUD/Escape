@@ -155,16 +155,8 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 		}
 	}
 
-	/* free the current text; free frames if text_free() returns true */
-	paging_unmap(0,p->textPages,text_free(p->text,p->pid),false);
-	/* ensure that we don't have a text-usage anymore */
-	p->text = NULL;
-	/* remove process-data */
-	proc_changeSize(-p->dataPages,CHG_DATA);
-	/* Note that we HAVE TO do it behind the proc_changeSize() call since the data-pages are
-	 * still behind the text-pages, no matter if we've already unmapped the text-pages or not,
-	 * and proc_changeSize() trusts p->textPages */
-	p->textPages = 0;
+	/* remove text+data */
+	proc_truncate();
 
 	/* Now map the first MiB of physical memory to 0x00000000 and the first 64 KiB to 0x00100000,
 	 * too. Because in real-mode it occurs an address-wraparound at 1 MiB. In VM86-mode it doesn't
@@ -180,7 +172,8 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	for(i = 0; i < areaCount; i++) {
 		if(areas[i].type == VM86_MEM_DIRECT) {
 			u32 pages = BYTES_2_PAGES(areas[i].data.direct.size);
-			paging_map(areas[i].data.direct.dst,mFrameNos + i * VM86_MAX_MEMPAGES,pages,PG_WRITABLE,true);
+			paging_map(areas[i].data.direct.dst,mFrameNos + i * VM86_MAX_MEMPAGES,pages,
+					PG_NOFREE | PG_WRITABLE,true);
 			for(j = 0; j < pages; j++)
 				info->frameNos[areas[i].data.direct.dst / PAGE_SIZE] = mFrameNos[i * VM86_MAX_MEMPAGES + j];
 		}
@@ -189,6 +182,8 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 
 	/* now, remove the stack because we don't need it anymore (we needed it before to access
 	 * the areas!) */
+	/* Note: this assumes that the current thread owns all stack-pages, which is ok because we've
+	 * just cloned the process which creates just one thread */
 	proc_changeSize(-p->stackPages,CHG_STACK);
 
 	/* Give the vm86-task permission for all ports. As it seems vmware expects that if they

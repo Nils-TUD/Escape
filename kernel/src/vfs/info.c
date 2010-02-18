@@ -115,7 +115,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 	UNUSED(dataSize);
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
-	buf.size = 17 * 6 + 5 * 10 + MAX_PROC_NAME_LEN + 1;
+	buf.size = 17 * 7 + 6 * 10 + MAX_PROC_NAME_LEN + 1;
 	buf.len = 0;
 
 	asprintf(
@@ -126,10 +126,12 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
+		"%-16s%u\n"
 		,
 		"Pid:",p->pid,
 		"ParentPid:",p->parentPid,
 		"Command:",p->command,
+		"Frames:",p->frameCount,
 		"TextPages:",p->textPages,
 		"DataPages:",p->dataPages,
 		"StackPages:",p->stackPages

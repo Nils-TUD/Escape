@@ -43,7 +43,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define EXIT_CALL_ADDR	0xf
+#define EXIT_CALL_ADDR					0xf
 
 static s32 proc_finishClone(sThread *nt,u32 stackFrame);
 
@@ -64,6 +64,8 @@ void proc_init(void) {
 
 	p->pid = 0;
 	p->parentPid = 0;
+	/* 1 pagedir, 1 page-table for kernel-stack, 1 for kernelstack */
+	p->frameCount = 1 + 1 + 1;
 	/* the first process has no text, data and stack */
 	p->textPages = 0;
 	p->dataPages = 0;
@@ -142,25 +144,35 @@ u32 proc_getCount(void) {
 	return count;
 }
 
-void proc_getMemUsage(u32 *paging,u32 *data) {
+void proc_getMemUsageOf(sProc *p,u32 *paging,u32 *data) {
 	sSLNode *n;
 	sThread *t;
+	u32 pmem = 0,dmem = 0;
+	dmem += p->dataPages + p->textPages;
+	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
+		t = (sThread*)n->data;
+		dmem += t->ustackPages;
+		pmem += PAGES_TO_PTS(t->ustackPages);
+	}
+	/* page-directory, pt for kernel-stack and kernel-stack */
+	pmem += 3 + PAGES_TO_PTS(p->textPages + p->dataPages);
+	*paging = pmem * PAGE_SIZE;
+	*data = dmem * PAGE_SIZE;
+}
+
+void proc_getMemUsage(u32 *paging,u32 *data) {
 	u32 pmem = 0,dmem = 0;
 	u32 i;
 	for(i = 0; i < PROC_COUNT; i++) {
 		if(procs[i].pid != INVALID_PID) {
-			dmem += procs[i].dataPages + procs[i].textPages;
-			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
-				t = (sThread*)n->data;
-				dmem += t->ustackPages;
-				pmem += PAGES_TO_PTS(t->ustackPages);
-			}
-			/* page-directory, pt for kernel-stack and kernel-stack */
-			pmem += 3 + PAGES_TO_PTS(procs[i].textPages + procs[i].dataPages);
+			u32 ptmp,dtmp;
+			proc_getMemUsageOf(procs + i,&ptmp,&dtmp);
+			dmem += dtmp;
+			pmem += ptmp;
 		}
 	}
-	*paging = pmem * PAGE_SIZE;
-	*data = dmem * PAGE_SIZE;
+	*paging = pmem;
+	*data = dmem;
 }
 
 bool proc_hasChild(tPid pid) {
@@ -204,6 +216,10 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->textPages = cur->textPages;
 	p->dataPages = cur->dataPages;
 	p->stackPages = curThread->ustackPages;
+	/* 1 pagedir, 1 page-table for kernel-stack, 1 for kernelstack */
+	p->frameCount = 1 + 1 + 1;
+	/* text is shared, data+stack COW, therefore just the page-tables */
+	p->frameCount += PAGES_TO_PTS(p->textPages + p->dataPages) + PAGES_TO_PTS(p->stackPages);
 	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
@@ -239,7 +255,7 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	return 0;
 
 errorThread:
-	thread_destroy(nt,true);
+	p->frameCount -= thread_destroy(nt,true);
 errorThreadList:
 	kheap_free(p->threads);
 errorPDir:
@@ -258,11 +274,12 @@ s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 	if((res = thread_clone(t,&nt,t->proc,&stackFrame,false)) < 0)
 		return res;
 
+	p->frameCount += res;
 	p->stackPages += nt->ustackPages;
 
 	/* append thread */
 	if(!sll_append(p->threads,nt)) {
-		thread_destroy(nt,true);
+		p->frameCount -= thread_destroy(nt,true);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -291,7 +308,7 @@ s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 	return nt->tid;
 
 error:
-	thread_destroy(nt,true);
+	p->frameCount -= thread_destroy(nt,true);
 	/* do a switch here because we can't continue */
 	thread_switch();
 	/* never reached */
@@ -331,7 +348,7 @@ void proc_destroyThread(s32 exitCode) {
 	else {
 		/* just destroy the thread */
 		sThread *t = thread_getRunning();
-		thread_destroy(t,true);
+		cur->frameCount -= thread_destroy(t,true);
 	}
 }
 
@@ -410,13 +427,13 @@ void proc_kill(sProc *p) {
 	vassert(p->pid != cur->pid,"We can't kill the current process!");
 
 	/* destroy paging-structure */
-	paging_destroyPageDir(p);
+	p->frameCount -= paging_destroyPageDir(p);
 
 	/* destroy threads */
 	for(tn = sll_begin(p->threads); tn != NULL; ) {
 		sThread *t = (sThread*)tn->data;
 		tmpn = tn->next;
-		thread_destroy(t,false);
+		p->frameCount -= thread_destroy(t,false);
 		tn = tmpn;
 	}
 	sll_destroy(p->threads,false);
@@ -587,6 +604,20 @@ bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages) {
 	return textPages + dataPages + stackPages <= maxPages;
 }
 
+void proc_truncate(void) {
+	sProc *p = proc_getRunning();
+	/* free the current text; free frames if text_free() returns true */
+	p->frameCount -= paging_unmap(0,p->textPages,text_free(p->text,p->pid),false);
+	/* ensure that we don't have a text-usage anymore */
+	p->text = NULL;
+	/* remove process-data */
+	proc_changeSize(-p->dataPages,CHG_DATA);
+	/* Note that we HAVE TO do it behind the proc_changeSize() call since the data-pages are
+	 * still behind the text-pages, no matter if we've already unmapped the text-pages or not,
+	 * and proc_changeSize() trusts p->textPages */
+	p->textPages = 0;
+}
+
 bool proc_changeSize(s32 change,eChgArea area) {
 	u32 addr,chg = change,origPages;
 	sProc *cur = proc_getRunning();
@@ -619,7 +650,7 @@ bool proc_changeSize(s32 change,eChgArea area) {
 			return false;
 		}
 
-		paging_map(addr,NULL,change,PG_WRITABLE,false);
+		cur->frameCount += paging_map(addr,NULL,change,PG_WRITABLE,false);
 		/* now clear the memory */
 		memclear((void*)addr,PAGE_SIZE * change);
 	}
@@ -628,11 +659,11 @@ bool proc_changeSize(s32 change,eChgArea area) {
 		addr += change * PAGE_SIZE;
 
 		/* free and unmap memory */
-		paging_unmap(addr,-change,true,true);
+		cur->frameCount -= paging_unmap(addr,-change,true,true);
 
 		/* can we remove all page-tables? */
 		if(origPages + change == 0)
-			paging_unmapPageTables(ADDR_TO_PDINDEX(addr),PAGES_TO_PTS(-change));
+			cur->frameCount -= paging_unmapPageTables(ADDR_TO_PDINDEX(addr),PAGES_TO_PTS(-change));
 		/* ok, remove just the free ones */
 		else {
 			/* at first calculate the max. pts we may free (based on the pages we removed) */
@@ -651,7 +682,7 @@ bool proc_changeSize(s32 change,eChgArea area) {
 
 			/* finally unmap the pts */
 			if(count > 0)
-				paging_unmapPageTables(start,count);
+				cur->frameCount -= paging_unmapPageTables(start,count);
 		}
 	}
 

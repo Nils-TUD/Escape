@@ -125,7 +125,8 @@ s32 text_alloc(const char *path,tFileNo file,u32 position,u32 textSize,sTextUsag
 			return ERR_NOT_ENOUGH_MEM;
 
 		/* copy pages */
-		paging_getPagesOf(fp,0,0,fp->textPages,0);
+		/* using an existing text, so the frames are not ours (but the page-tables are) */
+		p->frameCount += paging_getPagesOf(fp,0,0,fp->textPages,0);
 		p->textPages = fp->textPages;
 	}
 
@@ -144,14 +145,24 @@ bool text_clone(sTextUsage *u,tPid pid) {
 }
 
 bool text_free(sTextUsage *u,tPid pid) {
-	sProc *p;
+	sProc *p,*first;
 	/* if there is no text-usage the process has no text, so ignore it */
 	if(u == NULL)
 		return false;
 
 	/* remove process */
 	p = proc_getByPid(pid);
-	vassert(sll_removeFirst(u->procs,p),"Unable to find process %x",p);
+	/* the first one in the list owns the frames; therefore, if we're the first one
+	 * we have to pass them to the second one (if there is a second...)  */
+	first = (sProc*)sll_get(u->procs,0);
+	if(first == p && sll_length(u->procs) > 1) {
+		sProc *second = sll_get(u->procs,1);
+		second->frameCount += p->textPages;
+		p->frameCount -= p->textPages;
+		sll_removeIndex(u->procs,0);
+	}
+	else
+		vassert(sll_removeFirst(u->procs,p),"Unable to find process %x",p);
 
 	/* if there are no more references we have to free the frames and
 	 * delete the usage-node */
@@ -175,7 +186,7 @@ static s32 text_load(sProc *p,tFileNo file,u32 position,u32 textSize) {
 	pages = BYTES_2_PAGES(textSize);
 	if(mm_getFreeFrmCount(MM_DEF) < pages)
 		return ERR_NOT_ENOUGH_MEM;
-	paging_map(0,NULL,pages,0,true);
+	p->frameCount += paging_map(0,NULL,pages,0,true);
 	p->textPages = pages;
 
 	/* load text from disk */

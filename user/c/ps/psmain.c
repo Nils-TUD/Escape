@@ -47,6 +47,7 @@ typedef struct {
 typedef struct {
 	tPid pid;
 	tPid parentPid;
+	u32 frames;
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
@@ -176,7 +177,7 @@ int main(int argc,char *argv[]) {
 	qsort(procs,count,sizeof(sProcess),compareProcs);
 
 	/* now print processes */
-	printf("PID    PPID    MEM     STATE    %%CPU (USER,KERNEL) COMMAND\n");
+	printf("PID   PPID     PMEM      VMEM  STATE    %%CPU (USER,KERNEL) COMMAND\n");
 
 	if(numProcs == 0)
 		numProcs = count;
@@ -188,8 +189,8 @@ int main(int argc,char *argv[]) {
 		cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
 		userPercent = (u32)(100. / (procCycles / (double)procs[i].ucycleCount.val64));
 		kernelPercent = (u32)(100. / (procCycles / (double)procs[i].kcycleCount.val64));
-		printf("%2d     %2d   %5d KiB  -        %4.1f%% (%3d%%,%3d%%)  %s\n",
-				procs[i].pid,procs[i].parentPid,
+		printf("%3d   %3d %5d KiB %5d KiB  -       %4.1f%% (%3d%%,%3d%%)  %s\n",
+				procs[i].pid,procs[i].parentPid,procs[i].frames * 4,
 				(procs[i].textPages + procs[i].dataPages + procs[i].stackPages) * 4,
 				cyclePercent,userPercent,kernelPercent,procs[i].command);
 
@@ -200,8 +201,9 @@ int main(int argc,char *argv[]) {
 				float tcyclePercent = (float)(100. / (totalCycles / (double)threadCycles));
 				u32 tuserPercent = (u32)(100. / (threadCycles / (double)t->ucycleCount.val64));
 				u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
-				printf(" |-%2d                  %s  %4.1f%% (%3d%%,%3d%%)\n",
-						t->tid,states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
+				printf("  %c\xC4%3d                        %s %4.1f%% (%3d%%,%3d%%)\n",
+						n->next == NULL ? 0xC0 : 0xC3,t->tid,states[t->state],tcyclePercent,
+						tuserPercent,tkernelPercent);
 			}
 		}
 	}
@@ -327,8 +329,9 @@ static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
 	/* parse string */
 	sscanf(
 		buf,
-		"%*s%hu" "%*s%hu" "%*s%s" "%*s%u" "%*s%u" "%*s%u",
-		&p->pid,&p->parentPid,&p->command,&p->textPages,&p->dataPages,&p->stackPages
+		"%*s%hu" "%*s%hu" "%*s%s" "%*s%u" "%*s%u" "%*s%u" "%*s%u",
+		&p->pid,&p->parentPid,&p->command,&p->frames,&p->textPages,
+		&p->dataPages,&p->stackPages
 	);
 	p->threads = sll_create();
 

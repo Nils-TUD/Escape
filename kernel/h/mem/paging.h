@@ -348,8 +348,9 @@ void paging_unmapArea(u32 addr,u32 size);
  * @param dstAddr the virtual address to copy to
  * @param count the number of pages
  * @param flags flags for the pages (PG_*)
+ * @return the number of allocated frames (including page-tables)
  */
-void paging_getPagesOf(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags);
+u32 paging_getPagesOf(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags);
 
 /**
  * Removes <count> pages at <addr> from the address-space of the given process
@@ -373,8 +374,9 @@ void paging_remPagesOf(sProc *p,u32 addr,u32 count);
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
  * @param force wether the mapping should be overwritten
+ * @return the number of allocated frames (including page-tables)
  */
-void paging_map(u32 virt,u32 *frames,u32 count,u8 flags,bool force);
+u32 paging_map(u32 virt,u32 *frames,u32 count,u8 flags,bool force);
 
 /**
  * Removes <count> pages starting at <virt> from the page-tables (in the CURRENT page-dir!).
@@ -385,16 +387,18 @@ void paging_map(u32 virt,u32 *frames,u32 count,u8 flags,bool force);
  * @param count the number of pages to unmap
  * @param freeFrames wether the frames should be free'd and not just unmapped
  * @param remCOW wether the frames should be removed from the COW-list
+ * @return the number of free'd frames (not COW)
  */
-void paging_unmap(u32 virt,u32 count,bool freeFrames,bool remCOW);
+u32 paging_unmap(u32 virt,u32 count,bool freeFrames,bool remCOW);
 
 /**
  * Unmaps and free's page-tables from the index <start> to <start> + <count>.
  *
  * @param start the index of the page-table to start with
  * @param count the number of page-tables to remove
+ * @return the number of free'd frames
  */
-void paging_unmapPageTables(u32 start,u32 count);
+u32 paging_unmapPageTables(u32 start,u32 count);
 
 /**
  * Clones the current page-directory.
@@ -410,16 +414,18 @@ u32 paging_clonePageDir(u32 *stackFrames,sProc *newProc);
  * thread!
  *
  * @param t the thread to destroy
+ * @return the number of free'd frames
  */
-void paging_destroyStacks(sThread *t);
+u32 paging_destroyStacks(sThread *t);
 
 /**
  * Destroyes the page-dir of the given process. That means all frames will be freed.
  * The function assumes that it is not the current process!
  *
  * @param p the process
+ * @return the number of free'd frames
  */
-void paging_destroyPageDir(sProc *p);
+u32 paging_destroyPageDir(sProc *p);
 
 /**
  * Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as

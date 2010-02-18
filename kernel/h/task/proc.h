@@ -68,6 +68,13 @@ typedef struct {
 	u32 physPDirAddr;
 	/* the text of this process. NULL if it has no text */
 	sTextUsage *text;
+	/* the number of frames (physical mem) the process uses:
+	 * - for text-usages: just the first user owns the frames
+	 * - for shared-mem: just the creator owns the frames
+	 * - for mapPhysical: doesn't count
+	 * - paging-structures are counted, too
+	 */
+	u32 frameCount;
 	/* the number of pages per segment */
 	u32 textPages;
 	u32 dataPages;
@@ -126,6 +133,16 @@ bool proc_exists(tPid pid);
  * @return the number of existing processes
  */
 u32 proc_getCount(void);
+
+/**
+ * Determines the mem-usage of the given process
+ *
+ * @param p the process
+ * @param paging will point to the number of bytes used for paging-structures
+ * @param data will point to the number of bytes mapped for data (not frames because of COW,
+ *  shmem, ...)
+ */
+void proc_getMemUsageOf(sProc *p,u32 *paging,u32 *data);
 
 /**
  * Determines the mem-usage of all processes
@@ -243,6 +260,11 @@ void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint);
  * @return true if so
  */
 bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages);
+
+/**
+ * Removes the text and data of the current process
+ */
+void proc_truncate(void);
 
 /**
  * Changes the size of either the data-segment of the current process or the stack-segment of

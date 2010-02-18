@@ -223,16 +223,8 @@ void sysc_exec(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	}
 
-	/* free the current text; free frames if text_free() returns true */
-	paging_unmap(0,p->textPages,text_free(p->text,p->pid),false);
-	/* ensure that we don't have a text-usage anymore */
-	p->text = NULL;
-	/* remove process-data */
-	proc_changeSize(-p->dataPages,CHG_DATA);
-	/* Note that we HAVE TO do it behind the proc_changeSize() call since the data-pages are
-	 * still behind the text-pages, no matter if we've already unmapped the text-pages or not,
-	 * and proc_changeSize() trusts p->textPages */
-	p->textPages = 0;
+	/* remove text+data */
+	proc_truncate();
 
 	/* load program */
 	res = elf_loadFromFile(path);

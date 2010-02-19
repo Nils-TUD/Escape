@@ -299,6 +299,8 @@ namespace esc {
 			if(width > 0 || height > 0) {
 				tSize screenWidth = Application::getInstance()->getScreenWidth();
 				tSize screenHeight = Application::getInstance()->getScreenHeight();
+				if(_x + x >= screenWidth || _y + y >= screenHeight)
+					return;
 				width = MIN(screenWidth - x - _x,MIN(_width - x,width));
 				height = MIN(screenHeight - y - _y,MIN(_height - y,height));
 				void *vesaMem = Application::getInstance()->getVesaMem();

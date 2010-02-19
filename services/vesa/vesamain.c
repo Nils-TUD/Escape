@@ -40,7 +40,7 @@
 #define CURSOR_SIZE						(CURSOR_LEN * 2 + 1)
 
 typedef u16 tSize;
-typedef u16 tCoord;
+typedef s16 tCoord;
 typedef u32 tColor;
 
 static s32 vesa_setMode(void);
@@ -84,7 +84,7 @@ int main(void) {
 						tCoord y = (tCoord)msg.args.arg2;
 						tSize width = (tSize)msg.args.arg3;
 						tSize height = (tSize)msg.args.arg4;
-						if(x < minfo->xResolution && y < minfo->yResolution &&
+						if(x >= 0 && y >= 0 && x < minfo->xResolution && y < minfo->yResolution &&
 							x + width <= minfo->xResolution && y + height <= minfo->yResolution &&
 							/* check for overflow */
 							x + width > x && y + height > y) {

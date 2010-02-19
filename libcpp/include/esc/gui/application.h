@@ -76,7 +76,7 @@ namespace esc {
 			inline void *getVesaMem() const {
 				return _vesaMem;
 			};
-			void passToWindow(tWinId win,u16 x,u16 y,s16 movedX,s16 movedY,u8 buttons);
+			void passToWindow(tWinId win,tCoord x,tCoord y,s16 movedX,s16 movedY,u8 buttons);
 			void closePopups(tWinId id,tCoord x,tCoord y);
 			void requestWinUpdate(tWinId id,tCoord x,tCoord y,tSize width,tSize height);
 			void addWindow(Window *win);

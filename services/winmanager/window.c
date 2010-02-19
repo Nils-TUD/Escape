@@ -95,7 +95,7 @@ void win_setCursor(tCoord x,tCoord y) {
 	send(vesa,MSG_VESA_CURSOR,&msg,sizeof(msg.args));
 }
 
-tWinId win_create(u16 x,u16 y,u16 width,u16 height,tPid owner,u8 style) {
+tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tPid owner,u8 style) {
 	tWinId i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(windows[i].id == WINID_UNSED) {
@@ -316,6 +316,10 @@ static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY) 
 static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id) {
 	tFD aWin = getClientThread(servId,windows[id].owner);
 	if(aWin >= 0) {
+		if(x - windows[id].x < 0) {
+			width += x - windows[id].x;
+			x = -windows[id].x;
+		}
 		msg.args.arg1 = x - windows[id].x;
 		msg.args.arg2 = y - windows[id].y;
 		msg.args.arg3 = width;
@@ -385,7 +389,14 @@ static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,s16 z,sRe
 static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height) {
 	tCoord ysave = y;
 	tCoord maxy = MIN(screenHeight - 1,y + height);
-	u32 count = width * PIXEL_SIZE;
+	u32 count;
+	if(x < 0) {
+		if(-x > width)
+			return;
+		width += x;
+		x = 0;
+	}
+	count = width * PIXEL_SIZE;
 	mem += (y * screenWidth + x) * PIXEL_SIZE;
 	while(y <= maxy) {
 		memclear(mem,count);
@@ -397,6 +408,10 @@ static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height) 
 }
 
 static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
+	if(x < 0) {
+		width += x;
+		x = 0;
+	}
 	msg.args.arg1 = x;
 	msg.args.arg2 = y;
 	msg.args.arg3 = MIN(screenWidth - x,width);

@@ -301,8 +301,12 @@ namespace esc {
 				tSize screenHeight = Application::getInstance()->getScreenHeight();
 				if(_x + x >= screenWidth || _y + y >= screenHeight)
 					return;
-				width = MIN(screenWidth - x - _x,MIN(_width - x,width));
-				height = MIN(screenHeight - y - _y,MIN(_height - y,height));
+				if(_x < 0 && _x + x < 0) {
+					width += _x + x;
+					x = -_x;
+				}
+				width = MIN(screenWidth - (x + _x),MIN(_width - x,width));
+				height = MIN(screenHeight - (y + _y),MIN(_height - y,height));
 				void *vesaMem = Application::getInstance()->getVesaMem();
 				u8 *src,*dst;
 				tCoord endy = y + height;
@@ -327,6 +331,10 @@ namespace esc {
 		void Graphics::notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
 			tFD vesaFd = Application::getInstance()->getVesaFd();
 			sMsg msg;
+			if(x < 0) {
+				width += x;
+				x = 0;
+			}
 			msg.args.arg1 = x;
 			msg.args.arg2 = y;
 			msg.args.arg3 = width;

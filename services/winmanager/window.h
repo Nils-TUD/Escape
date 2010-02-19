@@ -32,15 +32,15 @@
 #define WIN_STYLE_POPUP					1
 
 typedef u16 tSize;
-typedef u16 tCoord;
+typedef s16 tCoord;
 typedef u32 tColor;
 typedef u16 tWinId;
 
 /* a window */
 typedef struct {
-	s16 x;
-	s16 y;
-	s16 z;
+	tCoord x;
+	tCoord y;
+	tCoord z;
 	tSize width;
 	tSize height;
 	tWinId id;
@@ -86,7 +86,7 @@ void win_setCursor(tCoord x,tCoord y);
  * @param style style-attributes
  * @return the window-id or WINID_UNUSED if no slot is free
  */
-tWinId win_create(u16 x,u16 y,u16 width,u16 height,tPid owner,u8 style);
+tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tPid owner,u8 style);
 
 /**
  * Destroys all windows of the given thread

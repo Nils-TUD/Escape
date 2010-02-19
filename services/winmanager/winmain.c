@@ -88,11 +88,11 @@ int main(void) {
 			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
 				switch(mid) {
 					case MSG_WIN_CREATE_REQ: {
-						u16 x = (u16)(msg.args.arg1 >> 16);
-						u16 y = (u16)(msg.args.arg1 & 0xFFFF);
-						u16 width = (u16)(msg.args.arg2 >> 16);
-						u16 height = (u16)(msg.args.arg2 & 0xFFFF);
-						u16 tmpWinId = (u16)msg.args.arg3;
+						tCoord x = (tCoord)(msg.args.arg1 >> 16);
+						tCoord y = (tCoord)(msg.args.arg1 & 0xFFFF);
+						tSize width = (tSize)(msg.args.arg2 >> 16);
+						tSize height = (tSize)(msg.args.arg2 & 0xFFFF);
+						tWinId tmpWinId = (tWinId)msg.args.arg3;
 						tPid owner = (tPid)msg.args.arg4;
 						u8 style = (u8)msg.args.arg5;
 						msg.args.arg1 = tmpWinId;
@@ -112,8 +112,8 @@ int main(void) {
 
 					case MSG_WIN_MOVE_REQ: {
 						tWinId wid = (tWinId)msg.args.arg1;
-						u16 x = (u16)msg.args.arg2;
-						u16 y = (u16)msg.args.arg3;
+						tCoord x = (tCoord)msg.args.arg2;
+						tCoord y = (tCoord)msg.args.arg3;
 						if(win_exists(wid) && x < screenWidth && y < screenHeight)
 							win_moveTo(wid,x,y);
 					}
@@ -121,13 +121,11 @@ int main(void) {
 
 					case MSG_WIN_UPDATE_REQ: {
 						tWinId wid = (tWinId)msg.args.arg1;
-						u16 x = (u16)msg.args.arg2;
-						u16 y = (u16)msg.args.arg3;
-						u16 width = (u16)msg.args.arg4;
-						u16 height = (u16)msg.args.arg5;
+						tCoord x = (tCoord)msg.args.arg2;
+						tCoord y = (tCoord)msg.args.arg3;
+						tSize width = (tSize)msg.args.arg4;
+						tSize height = (tSize)msg.args.arg5;
 						sWindow *win = win_get(wid);
-						/*debugf("win=%x (%d) @%d,%d s=%d,%d\n",win,data.window,data.x,data.y,
-								data.width,data.height);*/
 						if(win != NULL && x + width > x && y + height > y &&
 							x + width <= win->width && y + height <= win->height) {
 							win_update(wid,x,y,width,height);

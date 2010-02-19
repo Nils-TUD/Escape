@@ -24,8 +24,8 @@
 
 /* a rectangle */
 typedef struct {
-	u16 x;
-	u16 y;
+	s16 x;
+	s16 y;
 	u16 width;
 	u16 height;
 	/* TODO remove! */
@@ -42,7 +42,7 @@ extern "C" {
  * @param y the y-coordinate
  * @return wether the rectangle contains the given point
  */
-bool rectContains(sRectangle *r,u16 x,u16 y);
+bool rectContains(sRectangle *r,s16 x,s16 y);
 
 /**
  * Splits <r1> by <r2> and creates an array of rectangles that are parts of <r1> and not

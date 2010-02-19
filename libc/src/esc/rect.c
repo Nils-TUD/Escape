@@ -22,7 +22,7 @@
 #include <esc/heap.h>
 #include <string.h>
 
-bool rectContains(sRectangle *r,u16 x,u16 y) {
+bool rectContains(sRectangle *r,s16 x,s16 y) {
 	return x >= r->x && x < r->x + r->width &&
 		y >= r->y && y < r->y + r->height;
 }

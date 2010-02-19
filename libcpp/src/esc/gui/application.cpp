@@ -104,8 +104,8 @@ namespace esc {
 				break;
 
 				case MSG_WIN_MOUSE: {
-					u16 x = (u16)msg->args.arg1;
-					u16 y = (u16)msg->args.arg2;
+					tCoord x = (tCoord)msg->args.arg1;
+					tCoord y = (tCoord)msg->args.arg2;
 					s16 movedX = (s16)msg->args.arg3;
 					s16 movedY = (s16)msg->args.arg4;
 					u8 buttons = (u8)msg->args.arg5;
@@ -121,8 +121,6 @@ namespace esc {
 					char character = (char)msg->args.arg4;
 					u8 modifier = (u8)msg->args.arg5;
 					Window *w = getWindowById(win);
-					/*debugf("kc=%d, brk=%d, win=%d, char='%c' (%d), modifier=%x\n",keycode,isBreak,
-							win,character,character,modifier);*/
 					if(w) {
 						if(isBreak) {
 							KeyEvent e(KeyEvent::KEY_RELEASED,keycode,character,modifier);
@@ -164,7 +162,7 @@ namespace esc {
 			}
 		}
 
-		void Application::passToWindow(tWinId win,u16 x,u16 y,s16 movedX,s16 movedY,u8 buttons) {
+		void Application::passToWindow(tWinId win,tCoord x,tCoord y,s16 movedX,s16 movedY,u8 buttons) {
 			bool moved,released,pressed;
 
 			moved = movedX || movedY;

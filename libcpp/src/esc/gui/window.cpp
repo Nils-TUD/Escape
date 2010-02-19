@@ -187,7 +187,7 @@ namespace esc {
 		void Window::move(s16 x,s16 y) {
 			tSize screenWidth = Application::getInstance()->getScreenWidth();
 			tSize screenHeight = Application::getInstance()->getScreenHeight();
-			x = MAX(0,MIN(screenWidth - 1,getX() + x));
+			x = MAX(-getWidth(),MIN(screenWidth - 1,getX() + x));
 			y = MAX(0,MIN(screenHeight - 1,getY() + y));
 			moveTo(x,y);
 		}

@@ -54,10 +54,19 @@ typedef struct {
 } sVM86Memarea;
 
 typedef struct {
-	tPid vm86Pid;
+	u16 interrupt;
 	sVM86Regs regs;
-	u32 *frameNos;
+	u32 *mFrameNos;
+	sVM86Memarea *areas;
+	u16 areaCount;
 } sVM86Info;
+
+/**
+ * Creates a vm86-task
+ *
+ * @return 0 on success
+ */
+s32 vm86_create(void);
 
 /**
  * Performs a VM86-interrupt

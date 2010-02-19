@@ -174,6 +174,9 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 
 		mod++;
 	}
+
+	/* create the vm86-task */
+	assert(vm86_create() == 0);
 }
 
 u32 mboot_getUsableMemCount(void) {

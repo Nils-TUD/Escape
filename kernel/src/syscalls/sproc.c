@@ -271,7 +271,8 @@ void sysc_vm86int(sIntrptStackFrame *stack) {
 		for(i = 0; i < mAreaCount; i++) {
 			/* ensure that just something from the real-mode-memory can be copied */
 			if(mAreas[i].type == VM86_MEM_DIRECT) {
-				if(mAreas[i].data.direct.dst + mAreas[i].data.direct.size >= (1 * M + 64 * K))
+				if(mAreas[i].data.direct.dst + mAreas[i].data.direct.size < mAreas[i].data.direct.dst ||
+					mAreas[i].data.direct.dst + mAreas[i].data.direct.size >= (1 * M + 64 * K))
 					SYSC_ERROR(stack,ERR_INVALID_ARGS);
 				if(!paging_isRangeUserWritable((u32)mAreas[i].data.direct.src,mAreas[i].data.direct.size))
 					SYSC_ERROR(stack,ERR_INVALID_ARGS);

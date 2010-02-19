@@ -138,6 +138,8 @@ sValue *ast_execute(sEnv *e,sASTNode *n) {
 }
 
 void ast_destroy(sASTNode *n) {
+	if(n == NULL)
+		return;
 	switch(n->type) {
 		case AST_ASSIGN_STMT:
 			ast_destroyAssignExpr((sAssignExpr*)n->data);

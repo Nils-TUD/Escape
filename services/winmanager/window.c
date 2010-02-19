@@ -229,7 +229,7 @@ void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY) {
 
 void win_moveTo(tWinId window,tCoord x,tCoord y) {
 	u32 i,count;
-	sRectangle *rects;
+	sRectangle **rects;
 	sRectangle *old = (sRectangle*)malloc(sizeof(sRectangle));
 	sRectangle *new = (sRectangle*)malloc(sizeof(sRectangle));
 
@@ -250,11 +250,8 @@ void win_moveTo(tWinId window,tCoord x,tCoord y) {
 	if(count > 0) {
 		/* if there is an intersection, use the splitted parts */
 		for(i = 0; i < count; i++) {
-			/* repaintWindow() will free one rect, but we've allocated multiple rects at once :/ */
-			sRectangle *tmp = (sRectangle*)malloc(sizeof(sRectangle));
-			memcpy(tmp,rects + i,sizeof(sRectangle));
-			tmp->window = WINDOW_COUNT;
-			win_repaint(tmp,NULL,-1);
+			rects[i]->window = WINDOW_COUNT;
+			win_repaint(rects[i],NULL,-1);
 		}
 		free(rects);
 		free(old);
@@ -330,7 +327,7 @@ static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id
 }
 
 static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,s16 z,sRectangle *r) {
-	sRectangle *rects;
+	sRectangle **rects;
 	sRectangle wr;
 	sRectangle *inter;
 	sWindow *w;
@@ -365,7 +362,8 @@ static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,s16 z,sRe
 		if(rects) {
 			/* split all by all other windows */
 			while(count-- > 0)
-				win_getRepaintRegions(list,id + 1,win,z,rects + count);
+				win_getRepaintRegions(list,id + 1,win,z,rects[count]);
+			free(rects);
 		}
 
 		/* if we made a recursive call we can leave here */

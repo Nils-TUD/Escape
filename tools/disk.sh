@@ -175,7 +175,6 @@ if [ "$1" == "build" ]; then
 	
 	# ensure that we'll copy all stuff to the disk with 'make all'
 	rm -f $BUILD/*.bin $BUILD/apps/*
-	touch services/services.txt
 	# now rebuild and copy it
 	make all
 fi

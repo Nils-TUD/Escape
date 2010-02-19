@@ -21,6 +21,7 @@
 #define KHEAP_H_
 
 #include <common.h>
+#include <assert.h>
 
 /**
  * @return the number of used bytes

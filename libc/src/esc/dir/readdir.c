@@ -93,7 +93,7 @@ bool readdir(sDirEntry *e,tFD dir) {
 			if(csize - cpos >= DIRE_SIZE + ec->nameLen) {
 				/* copy to e and move to next */
 				len = ec->nameLen;
-				if(len >= MAX_NAME_LEN) {
+				if(len == 0 || len >= MAX_NAME_LEN) {
 					unlocku(&dirLock);
 					return false;
 				}

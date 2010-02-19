@@ -36,7 +36,7 @@
 /* for exit (vassert) */
 #	include <esc/proc.h>
 #	include <esc/fileio.h>
-#	define sllprintf debugf
+#	define sllprintf	debugf
 #endif
 
 /* a node in a list */

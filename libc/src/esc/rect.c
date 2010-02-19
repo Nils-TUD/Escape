@@ -27,9 +27,9 @@ bool rectContains(sRectangle *r,u16 x,u16 y) {
 		y >= r->y && y < r->y + r->height;
 }
 
-sRectangle *rectSplit(sRectangle *r1,sRectangle *r2,u32 *rectCount) {
-	u32 count = 0;
-	sRectangle *res;
+sRectangle **rectSplit(sRectangle *r1,sRectangle *r2,u32 *rectCount) {
+	u32 i,orgCount,count = 0;
+	sRectangle **res;
 	bool other = false;
 	bool p1in,p2in,p3in,p4in;
 	bool op1in = false,op2in = false,op3in = false,op4in = false;
@@ -81,10 +81,21 @@ sRectangle *rectSplit(sRectangle *r1,sRectangle *r2,u32 *rectCount) {
 	}
 
 	/* allocate memory */
-	res = (sRectangle*)malloc(count * sizeof(sRectangle));
+	orgCount = count;
+	res = (sRectangle**)malloc(count * sizeof(sRectangle*));
 	if(res == NULL) {
 		*rectCount = 0;
 		return NULL;
+	}
+	for(i = 0; i < count; i++) {
+		res[i] = (sRectangle*)malloc(sizeof(sRectangle));
+		if(res[i] == 0) {
+			while(i-- > 0)
+				free(res[i]);
+			free(res);
+			*rectCount = 0;
+			return NULL;
+		}
 	}
 
 	/* other way around, that means r1 in r2? */
@@ -97,35 +108,35 @@ sRectangle *rectSplit(sRectangle *r1,sRectangle *r2,u32 *rectCount) {
 
 			/* left 2 points */
 			if(op1in && op4in) {
-				res[count].x = r2->x + r2->width;
-				res[count].y = r1->y;
-				res[count].width = (r1->x + r1->width) - res[count].x;
-				res[count].height = r1->height;
+				res[count]->x = r2->x + r2->width;
+				res[count]->y = r1->y;
+				res[count]->width = (r1->x + r1->width) - res[count]->x;
+				res[count]->height = r1->height;
 			}
 			/* right 2 points */
 			else if(op2in && op3in) {
-				res[count].x = r1->x;
-				res[count].y = r1->y;
-				res[count].width = r2->x - r1->x;
-				res[count].height = r1->height;
+				res[count]->x = r1->x;
+				res[count]->y = r1->y;
+				res[count]->width = r2->x - r1->x;
+				res[count]->height = r1->height;
 			}
 			/* top 2 points */
 			else if(op1in && op2in) {
-				res[count].x = r1->x;
-				res[count].y = r2->y + r2->height;
-				res[count].width = r1->width;
-				res[count].height = (r1->y + r1->height) - res[count].y;
+				res[count]->x = r1->x;
+				res[count]->y = r2->y + r2->height;
+				res[count]->width = r1->width;
+				res[count]->height = (r1->y + r1->height) - res[count]->y;
 			}
 			else {
 				/* bottom 2 points */
-				res[count].x = r1->x;
-				res[count].y = r1->y;
-				res[count].width = r1->width;
-				res[count].height = r2->y - res[count].y;
+				res[count]->x = r1->x;
+				res[count]->y = r1->y;
+				res[count]->width = r1->width;
+				res[count]->height = r2->y - res[count]->y;
 			}
 
 			/* we don't need empty rectangles */
-			if(res[count].width > 0 && res[count].height > 0)
+			if(res[count]->width > 0 && res[count]->height > 0)
 				count++;
 		}
 		else {
@@ -134,36 +145,36 @@ sRectangle *rectSplit(sRectangle *r1,sRectangle *r2,u32 *rectCount) {
 
 			if(r1->height > r2->height) {
 				/* top */
-				res[count].x = r1->x;
-				res[count].y = r1->y;
-				res[count].width = r1->width;
-				res[count].height = r2->y - r1->y;
-				if(res[count].width > 0 && res[count].height > 0)
+				res[count]->x = r1->x;
+				res[count]->y = r1->y;
+				res[count]->width = r1->width;
+				res[count]->height = r2->y - r1->y;
+				if(res[count]->width > 0 && res[count]->height > 0)
 					count++;
 
 				/* bottom */
-				res[count].x = r1->x;
-				res[count].y = r2->y + r2->height;
-				res[count].width = r1->width;
-				res[count].height = (r1->y + r1->height) - res[count].y;
-				if(res[count].width > 0 && res[count].height > 0)
+				res[count]->x = r1->x;
+				res[count]->y = r2->y + r2->height;
+				res[count]->width = r1->width;
+				res[count]->height = (r1->y + r1->height) - res[count]->y;
+				if(res[count]->width > 0 && res[count]->height > 0)
 					count++;
 			}
 			else {
 				/* left */
-				res[count].x = r1->x;
-				res[count].y = r1->y;
-				res[count].width = r2->x - r1->x;
-				res[count].height = r1->height;
-				if(res[count].width > 0 && res[count].height > 0)
+				res[count]->x = r1->x;
+				res[count]->y = r1->y;
+				res[count]->width = r2->x - r1->x;
+				res[count]->height = r1->height;
+				if(res[count]->width > 0 && res[count]->height > 0)
 					count++;
 
 				/* right */
-				res[count].x = r2->x + r2->width;
-				res[count].y = r1->y;
-				res[count].width = (r1->x + r1->width) - res[count].x;
-				res[count].height = r1->height;
-				if(res[count].width > 0 && res[count].height > 0)
+				res[count]->x = r2->x + r2->width;
+				res[count]->y = r1->y;
+				res[count]->width = (r1->x + r1->width) - res[count]->x;
+				res[count]->height = r1->height;
+				if(res[count]->width > 0 && res[count]->height > 0)
 					count++;
 			}
 		}
@@ -171,61 +182,63 @@ sRectangle *rectSplit(sRectangle *r1,sRectangle *r2,u32 *rectCount) {
 	else {
 		count = 0;
 		if(top) {
-			res[count].x = r1->x;
-			res[count].y = r1->y;
-			res[count].width = r1->width;
-			res[count].height = r2->y - r1->y;
-			if(res[count].width > 0 && res[count].height > 0)
+			res[count]->x = r1->x;
+			res[count]->y = r1->y;
+			res[count]->width = r1->width;
+			res[count]->height = r2->y - r1->y;
+			if(res[count]->width > 0 && res[count]->height > 0)
 				count++;
 		}
 		/* bottom */
 		if(bottom) {
-			res[count].x = r1->x;
-			res[count].y = r2->y + r2->height;
-			res[count].width = r1->width;
-			res[count].height = (r1->y + r1->height) - res[count].y;
-			if(res[count].width > 0 && res[count].height > 0)
+			res[count]->x = r1->x;
+			res[count]->y = r2->y + r2->height;
+			res[count]->width = r1->width;
+			res[count]->height = (r1->y + r1->height) - res[count]->y;
+			if(res[count]->width > 0 && res[count]->height > 0)
 				count++;
 		}
 		/* left */
 		if(left) {
-			res[count].x = r1->x;
+			res[count]->x = r1->x;
 			/* take care that the rectangle doesn't overlap the ones at top and bottom */
 			if(top)
-				res[count].y = r2->y;
+				res[count]->y = r2->y;
 			else
-				res[count].y = r1->y;
-			res[count].width = r2->x - r1->x;
+				res[count]->y = r1->y;
+			res[count]->width = r2->x - r1->x;
 			if(top && bottom)
-				res[count].height = r2->height;
+				res[count]->height = r2->height;
 			else if(bottom)
-				res[count].height = (r2->y + r2->height) - res[count].y;
+				res[count]->height = (r2->y + r2->height) - res[count]->y;
 			else
-				res[count].height = (r1->y + r1->height) - res[count].y;
-			if(res[count].width > 0 && res[count].height > 0)
+				res[count]->height = (r1->y + r1->height) - res[count]->y;
+			if(res[count]->width > 0 && res[count]->height > 0)
 				count++;
 		}
 		/* right */
 		if(right) {
-			res[count].x = r2->x + r2->width;
+			res[count]->x = r2->x + r2->width;
 			if(top)
-				res[count].y = r2->y;
+				res[count]->y = r2->y;
 			else
-				res[count].y = r1->y;
-			res[count].width = (r1->x + r1->width) - res[count].x;
+				res[count]->y = r1->y;
+			res[count]->width = (r1->x + r1->width) - res[count]->x;
 			if(top && bottom)
-				res[count].height = r2->height;
+				res[count]->height = r2->height;
 			else if(bottom)
-				res[count].height = (r2->y + r2->height) - res[count].y;
+				res[count]->height = (r2->y + r2->height) - res[count]->y;
 			else
-				res[count].height = (r1->y + r1->height) - res[count].y;
-			if(res[count].width > 0 && res[count].height > 0)
+				res[count]->height = (r1->y + r1->height) - res[count]->y;
+			if(res[count]->width > 0 && res[count]->height > 0)
 				count++;
 		}
 	}
 
 	/* free buffer if we have no rectangle */
 	if(count == 0) {
+		for(i = 0; i < orgCount; i++)
+			free(res[i]);
 		free(res);
 		*rectCount = 0;
 		return NULL;

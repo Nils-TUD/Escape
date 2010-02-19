@@ -27,7 +27,7 @@
 #	include <video.h>
 /* for util_panic (vassert) */
 #	include <util.h>
-#	define rbprintf	vid_printf
+#	define rbprintf		vid_printf
 #	define free(x)		kheap_free(x)
 #	define malloc(x)	kheap_alloc(x)
 #else
@@ -36,7 +36,7 @@
 /* for exit (vassert) */
 #	include <esc/proc.h>
 #	include <esc/fileio.h>
-#	define rbprintf debugf
+#	define rbprintf 	debugf
 #endif
 
 typedef struct {

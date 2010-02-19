@@ -91,7 +91,7 @@
 /* the start of the kernel-heap */
 #define KERNEL_HEAP_START	(KERNEL_AREA_V_ADDR + (PT_ENTRY_COUNT * PAGE_SIZE) * 2)
 /* the size of the kernel-heap (16 MiB) */
-#define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE/* * 4*/)
+#define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE * 2 /* * 4 */)
 
 /* page-directories in virtual memory */
 #define PAGE_DIR_AREA		(MAPPED_PTS_START + PAGE_SIZE * (PT_ENTRY_COUNT - 1))

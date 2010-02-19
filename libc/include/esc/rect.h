@@ -69,7 +69,7 @@ bool rectContains(sRectangle *r,u16 x,u16 y);
  * @param rectCount will be set to the number of created rects
  * @return the rectangle array, allocated on the heap; NULL if rectCount = 0
  */
-sRectangle *rectSplit(sRectangle *r1,sRectangle *r2,u32 *rectCount) A_CHECKRET;
+sRectangle **rectSplit(sRectangle *r1,sRectangle *r2,u32 *rectCount) A_CHECKRET;
 
 /**
  * Calculates the intersection of <r1> and <r2>.

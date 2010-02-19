@@ -22,14 +22,29 @@
 #include <mem/pmem.h>
 #include <mem/paging.h>
 #include <video.h>
+#include <assert.h>
 #include <string.h>
+#include <util.h>
 
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024
 #define DEBUG_ALLOC_N_FREE		0
+#define DEBUG_ADD_GUARDS		1
 
-#if DEBUG_ALLOC_N_FREE
-#include <util.h>
+#if DEBUG_ADD_GUARDS
+void *_kheap_alloc(u32 size);
+void *_kheap_calloc(u32 num,u32 size);
+void * _kheap_realloc(void *addr,u32 size);
+void _kheap_free(void *addr);
+#	define kheap_alloc_guard(size)			kheap_alloc(size)
+#	define kheap_calloc_guard(num,size)		kheap_calloc(num,size)
+#	define kheap_realloc_guard(addr,size)	kheap_realloc(addr,size)
+#	define kheap_free_guard(addr)			kheap_free(addr)
+#else
+#	define _kheap_alloc(size)				kheap_alloc(size)
+#	define _kheap_calloc(num,size)			kheap_calloc(num,size)
+#	define _kheap_realloc(addr,size)		kheap_realloc(addr,size)
+#	define _kheap_free(addr)				kheap_free(addr)
 #endif
 
 /* an area in memory */
@@ -110,7 +125,56 @@ u32 kheap_getAreaSize(void *addr) {
 	return 0;
 }
 
-void *kheap_alloc(u32 size) {
+#if DEBUG_ADD_GUARDS
+void *kheap_alloc_guard(u32 size) {
+	void *a = _kheap_alloc(size + sizeof(u32) * 3);
+	if(a) {
+		*((u32*)a) = 0xDEADBEEF;
+		*((u32*)a + 1) = size;
+		*((u32*)((u32)a + sizeof(u32) * 2 + size)) = 0xDEADBEEF;
+		return (void*)((u32)a + sizeof(u32) * 2);
+	}
+	return NULL;
+}
+
+void *kheap_calloc_guard(u32 num,u32 size) {
+	void *a = _kheap_alloc(num * size + sizeof(u32) * 3);
+	if(a) {
+		void *res;
+		*((u32*)a) = 0xDEADBEEF;
+		*((u32*)a + 1) = num * size;
+		*((u32*)((u32)a + sizeof(u32) * 2 + num * size)) = 0xDEADBEEF;
+		res = (void*)((u32)a + sizeof(u32) * 2);
+		memclear(res,num * size);
+		return res;
+	}
+	return NULL;
+}
+
+void *kheap_realloc_guard(void *addr,u32 size) {
+	void *a;
+	assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
+	assert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF);
+	a = _kheap_realloc((void*)((u32)addr - sizeof(u32) * 2),size + sizeof(u32) * 3);
+	if(a) {
+		*((u32*)a) = 0xDEADBEEF;
+		*((u32*)a + 1) = size;
+		*((u32*)((u32)a + sizeof(u32) * 2 + size)) = 0xDEADBEEF;
+		return (void*)((u32)a + sizeof(u32) * 2);
+	}
+	return NULL;
+}
+
+void kheap_free_guard(void *addr) {
+	if(addr) {
+		assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
+		assert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF);
+		_kheap_free((void*)((u32)addr - sizeof(u32) * 2));
+	}
+}
+#endif
+
+void *_kheap_alloc(u32 size) {
 	sMemArea *area,*prev,*narea;
 	sMemArea **list;
 
@@ -180,8 +244,8 @@ void *kheap_alloc(u32 size) {
 	return area->address;
 }
 
-void *kheap_calloc(u32 num,u32 size) {
-	void *a = kheap_alloc(num * size);
+void *_kheap_calloc(u32 num,u32 size) {
+	void *a = _kheap_alloc(num * size);
 	if(a == NULL)
 		return NULL;
 
@@ -189,7 +253,7 @@ void *kheap_calloc(u32 num,u32 size) {
 	return a;
 }
 
-void kheap_free(void *addr) {
+void _kheap_free(void *addr) {
 	sMemArea *area,*a,*prev,*next,*oprev,*nprev,*pprev,*tprev;
 
 	/* addr may be null */
@@ -300,8 +364,9 @@ void kheap_free(void *addr) {
 	}
 }
 
-void *kheap_realloc(void *addr,u32 size) {
+void *_kheap_realloc(void *addr,u32 size) {
 	sMemArea *area,*a,*prev;
+
 	/* find the area with given address */
 	area = occupiedMap[kheap_getHash(addr)];
 	while(area != NULL) {
@@ -355,13 +420,15 @@ void *kheap_realloc(void *addr,u32 size) {
 	}
 
 	/* the areas are not big enough, so allocate a new one */
-	a = (sMemArea*)kheap_alloc(size);
-	if(a == NULL)
+	a = (sMemArea*)_kheap_alloc(size);
+	if(a == NULL) {
+		_kheap_free(addr);
 		return NULL;
+	}
 
 	/* copy the old data and free it */
 	memcpy(a,addr,area->size);
-	kheap_free(addr);
+	_kheap_free(addr);
 	return a;
 }
 

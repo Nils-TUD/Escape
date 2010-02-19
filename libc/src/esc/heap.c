@@ -25,8 +25,25 @@
 #include <string.h>
 #include <assert.h>
 
-#define PAGE_SIZE			4096
-#define DEBUG_ALLOC_N_FREE	0
+#define PAGE_SIZE				4096
+#define DEBUG_ALLOC_N_FREE		0
+#define DEBUG_ADD_GUARDS		1
+
+#if DEBUG_ADD_GUARDS
+void *_malloc(u32 size);
+void *_calloc(u32 num,u32 size);
+void * _realloc(void *addr,u32 size);
+void _free(void *addr);
+#	define malloc_guard(size)			malloc(size)
+#	define calloc_guard(num,size)		calloc(num,size)
+#	define realloc_guard(addr,size)		realloc(addr,size)
+#	define free_guard(addr)				free(addr)
+#else
+#	define _malloc(size)				malloc(size)
+#	define _calloc(num,size)			calloc(num,size)
+#	define _realloc(addr,size)			realloc(addr,size)
+#	define _free(addr)					free(addr)
+#endif
 
 /* an area in memory */
 typedef struct sMemArea sMemArea;
@@ -71,7 +88,56 @@ static u32 getHash(void *addr);
 /* the lock for the heap */
 static tULock mlock = 0;
 
-void *malloc(u32 size) {
+#if DEBUG_ADD_GUARDS
+void *malloc_guard(u32 size) {
+	void *a = _malloc(size + sizeof(u32) * 3);
+	if(a) {
+		*((u32*)a) = 0xDEADBEEF;
+		*((u32*)a + 1) = size;
+		*((u32*)((u32)a + sizeof(u32) * 2 + size)) = 0xDEADBEEF;
+		return (void*)((u32)a + sizeof(u32) * 2);
+	}
+	return NULL;
+}
+
+void *calloc_guard(u32 num,u32 size) {
+	void *a = _malloc(num * size + sizeof(u32) * 3);
+	if(a) {
+		void *res;
+		*((u32*)a) = 0xDEADBEEF;
+		*((u32*)a + 1) = num * size;
+		*((u32*)((u32)a + sizeof(u32) * 2 + num * size)) = 0xDEADBEEF;
+		res = (void*)((u32)a + sizeof(u32) * 2);
+		memclear(res,num * size);
+		return res;
+	}
+	return NULL;
+}
+
+void *realloc_guard(void *addr,u32 size) {
+	void *a;
+	assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
+	assert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF);
+	a = _realloc((void*)((u32)addr - sizeof(u32) * 2),size + sizeof(u32) * 3);
+	if(a) {
+		*((u32*)a) = 0xDEADBEEF;
+		*((u32*)a + 1) = size;
+		*((u32*)((u32)a + sizeof(u32) * 2 + size)) = 0xDEADBEEF;
+		return (void*)((u32)a + sizeof(u32) * 2);
+	}
+	return NULL;
+}
+
+void free_guard(void *addr) {
+	if(addr) {
+		assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
+		assert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF);
+		_free((void*)((u32)addr - sizeof(u32) * 2));
+	}
+}
+#endif
+
+void *_malloc(u32 size) {
 	sMemArea *area,*prev,*narea;
 	sMemArea **list;
 
@@ -146,8 +212,8 @@ void *malloc(u32 size) {
 	return area->address;
 }
 
-void *calloc(u32 num,u32 size) {
-	void *a = malloc(num * size);
+void *_calloc(u32 num,u32 size) {
+	void *a = _malloc(num * size);
 	if(a == NULL)
 		return NULL;
 
@@ -155,7 +221,7 @@ void *calloc(u32 num,u32 size) {
 	return a;
 }
 
-void free(void *addr) {
+void _free(void *addr) {
 	sMemArea *area,*a,*prev,*next,*oprev,*nprev,*pprev,*tprev;
 
 	/* addr may be null */
@@ -271,7 +337,7 @@ void free(void *addr) {
 	unlocku(&mlock);
 }
 
-void *realloc(void *addr,u32 size) {
+void *_realloc(void *addr,u32 size) {
 	sMemArea *area,*a,*prev;
 	locku(&mlock);
 
@@ -335,13 +401,15 @@ void *realloc(void *addr,u32 size) {
 	unlocku(&mlock);
 
 	/* the areas are not big enough, so allocate a new one */
-	a = malloc(size);
-	if(a == NULL)
+	a = _malloc(size);
+	if(a == NULL) {
+		free(addr);
 		return NULL;
+	}
 
 	/* copy the old data and free it */
 	memcpy(a,addr,area->size);
-	free(addr);
+	_free(addr);
 	return a;
 }
 

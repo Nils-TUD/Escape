@@ -31,7 +31,7 @@
 #else
 #	include <esc/heap.h>
 #	include <esc/fileio.h>
-#	define apprintf printf
+#	define apprintf		printf
 #endif
 
 #define MAX_TOKEN_LEN	1024

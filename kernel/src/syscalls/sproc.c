@@ -292,9 +292,7 @@ void sysc_vm86int(sIntrptStackFrame *stack) {
 	res = vm86_int(interrupt,regs,mAreas,mAreaCount);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	/* don't set the return-value for the vm86-task because we would overwrite eax! */
-	if(!proc_getRunning()->isVM86)
-		SYSC_RET1(stack,res);
+	SYSC_RET1(stack,res);
 }
 
 void sysc_getCycles(sIntrptStackFrame *stack) {

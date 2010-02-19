@@ -125,15 +125,16 @@ void ShellApplication::driverMain() {
 					_msg.args.arg1 = 0;
 					if(data) {
 						if(receive(fd,&mid,data,c + 1) >= 0) {
+							char *dataWork = data;
 							_msg.args.arg1 = c;
-							data[c] = '\0';
+							dataWork[c] = '\0';
 							while(c > 0) {
 								amount = MIN(c,READ_BUF_SIZE - rbufPos);
-								memcpy(rbuffer + rbufPos,data,amount);
+								memcpy(rbuffer + rbufPos,dataWork,amount);
 
 								c -= amount;
 								rbufPos += amount;
-								data += amount;
+								dataWork += amount;
 								if(rbufPos >= READ_BUF_SIZE) {
 									rbuffer[rbufPos] = '\0';
 									vterm_puts(_sh->getVTerm(),rbuffer,rbufPos,true);

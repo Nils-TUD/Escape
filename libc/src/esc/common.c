@@ -20,14 +20,19 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
+#include <esc/dir.h>
+#include <esc/fileio.h>
 #include <register.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
-#define MAX_STACK_DEPTH 20
+#define PROCINFO_BUF_SIZE	256
+#define MAX_STACK_DEPTH		20
 /* the x86-call instruction is 5 bytes long */
-#define CALL_INSTR_SIZE 5
+#define CALL_INSTR_SIZE		5
+
+static char *getProcName(void);
 
 s32 errno = 0;
 
@@ -71,10 +76,35 @@ u32 *getStackTrace(void) {
 
 void printStackTrace(void) {
 	u32 *trace = getStackTrace();
-	debugf("Stack-trace:\n");
+	char *name = getProcName();
+	debugf("Process %s - stack-trace:\n",name ? name : "???");
 	/* TODO maybe we should skip printStackTrace here? */
 	while(*trace != 0) {
 		debugf("\t0x%08x\n",*trace);
 		trace++;
 	}
+}
+
+static char *getProcName(void) {
+	static char name[MAX_NAME_LEN];
+	char buffer[PROCINFO_BUF_SIZE];
+	char path[MAX_PATH_LEN];
+	tFD fd;
+	snprintf(path,sizeof(path),"/system/processes/%d/info",getpid());
+	fd = open(path,IO_READ);
+	if(fd >= 0) {
+		if(read(fd,buffer,PROCINFO_BUF_SIZE - 1) < 0) {
+			close(fd);
+			return NULL;
+		}
+		buffer[PROCINFO_BUF_SIZE - 1] = '\0';
+		sscanf(
+			buffer,
+			"%*s%*hu" "%*s%*hu" "%*s%s",
+			name
+		);
+		close(fd);
+		return name;
+	}
+	return NULL;
 }

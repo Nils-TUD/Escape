@@ -96,6 +96,7 @@ addTestData() {
 	$SUDO cp dist/bbc.bmp $DISKMOUNT
 	$SUDO cp dist/test.bmp $DISKMOUNT/bla.bmp
 	$SUDO cp dist/test.sh $DISKMOUNT/test.sh
+	$SUDO cp dist/cursor.bmp $DISKMOUNT/etc
 	$SUDO mkdir $DISKMOUNT/testdir
 	$SUDO touch $DISKMOUNT/file.txt
 	$SUDO chmod 0666 $DISKMOUNT/file.txt

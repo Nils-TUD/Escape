@@ -46,7 +46,6 @@ typedef struct {
 	tWinId id;
 	tTid owner;
 	u8 style;
-	u8 keymap;
 } sWindow;
 
 /**

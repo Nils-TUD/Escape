@@ -81,6 +81,10 @@ typedef enum {
 	memYUV	= 7,				/* Direct color YUV memory model */
 } eMemModel;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Initializes VBE
  */
@@ -114,5 +118,9 @@ u16 vbe_getMode(void);
  * @return true on success
  */
 bool vbe_setMode(u16 mode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* VBE_H_ */

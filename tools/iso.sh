@@ -54,6 +54,7 @@ cp $ROOT/dist/test.sh $TMPDIR
 cp $ROOT/dist/test.bmp $TMPDIR
 cp $ROOT/dist/bbc.bmp $TMPDIR
 cp $ROOT/dist/test.bmp $TMPDIR/bla.bmp
+cp $ROOT/dist/cursor.bmp $TMPDIR/etc
 cp $TMPDIR/file.txt $TMPDIR/testdir/file.txt
 dd if=/dev/zero of=$TMPDIR/zeros bs=1024 count=1024
 echo -n "" > $TMPDIR/bigfile

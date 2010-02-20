@@ -108,8 +108,6 @@ tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tPid owner,u8 style
 			windows[i].height = height;
 			windows[i].owner = owner;
 			windows[i].style = style;
-			/* TODO what keymap to set? */
-			windows[i].keymap = 1;
 			return i;
 		}
 	}

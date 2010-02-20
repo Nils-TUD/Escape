@@ -57,12 +57,10 @@ namespace esc {
 									else
 										data += 3;
 								}
-								if(bitCount <= 8) {
-									// lines are 4-byte aligned
-									cx &= (sizeof(u32) - 1);
-									if(cx)
-										data += sizeof(u32) - cx;
-								}
+								// lines are 4-byte aligned
+								cx = (cx * (bitCount / 8)) % 4;
+								if(cx)
+									data += 4 - cx;
 							}
 						}
 						break;
@@ -125,11 +123,9 @@ namespace esc {
 			// now read the data
 			if(_infoHeader->compression == BI_RGB) {
 				u32 bytesPerLine;
-				if(_infoHeader->bitCount <= 8)
-					bytesPerLine = (_infoHeader->width + sizeof(u32) - 1) & ~(sizeof(u32) - 1);
-				else
-					bytesPerLine = _infoHeader->width;
-				_dataSize = bytesPerLine * _infoHeader->height * (_infoHeader->bitCount / 8);
+				bytesPerLine = _infoHeader->width * (_infoHeader->bitCount / 8);
+				bytesPerLine = (bytesPerLine + sizeof(u32) - 1) & ~(sizeof(u32) - 1);
+				_dataSize = bytesPerLine * _infoHeader->height;
 			}
 			else
 				_dataSize = _infoHeader->sizeImage;

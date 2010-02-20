@@ -29,7 +29,11 @@
 #include <stdlib.h>
 #include <errors.h>
 
+#include "vesa.h"
+#include "bmp.h"
 #include <vbe/vbe.h>
+
+#define CURSOR_FILE						"/etc/cursor.bmp"
 
 #define RESOLUTION_X					1024
 #define RESOLUTION_Y					768
@@ -39,16 +43,11 @@
 #define CURSOR_COLOR					0xFFFFFF
 #define CURSOR_SIZE						(CURSOR_LEN * 2 + 1)
 
-typedef u16 tSize;
-typedef s16 tCoord;
-typedef u32 tColor;
-
 static s32 vesa_setMode(void);
 static s32 vesa_init(void);
 static void vesa_update(tCoord x,tCoord y,tSize width,tSize height);
+static void vesa_setPixel(tCoord x,tCoord y,tColor col);
 static void vesa_setCursor(tCoord x,tCoord y);
-static void vesa_drawCross(tCoord x,tCoord y);
-static tColor vesa_getVisibleFGColor(tColor bg);
 static void vesa_copyRegion(u8 *src,u8 *dst,tSize width,tSize height,tCoord x1,tCoord y1,
 		tCoord x2,tCoord y2,tSize w1,tSize w2);
 
@@ -59,10 +58,15 @@ static u8 *cursorCopy;
 static tCoord lastX = 0;
 static tCoord lastY = 0;
 static sMsg msg;
+static sBitmap *bmp;
 
 int main(void) {
 	tServ id,client;
 	tMsgId mid;
+
+	bmp = bmp_loadFromFile(CURSOR_FILE);
+	if(!bmp)
+		error("Unable to load bitmap from %s",CURSOR_FILE);
 
 	vbe_init();
 	if(vesa_setMode() < 0)
@@ -138,41 +142,31 @@ static s32 vesa_setMode(void) {
 }
 
 static s32 vesa_init(void) {
+	tSize curWidth = bmp->infoHeader->width;
+	tSize curHeight = bmp->infoHeader->height;
 	shmem = createSharedMem("vesa",minfo->xResolution *
 			minfo->yResolution * (minfo->bitsPerPixel / 8));
 	if(shmem == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
-	cursorCopy = (u8*)malloc(CURSOR_SIZE * CURSOR_SIZE * (minfo->bitsPerPixel / 8));
+	cursorCopy = (u8*)malloc(curWidth * curHeight * (minfo->bitsPerPixel / 8));
 	if(cursorCopy == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	return 0;
 }
 
 static void vesa_update(tCoord x,tCoord y,tSize width,tSize height) {
-	static sRectangle upRec,curRec,intersect;
+	sRectangle upRec,curRec,intersec;
 	tCoord y1,y2;
 	tSize xres = minfo->xResolution;
 	tSize pxSize = minfo->bitsPerPixel / 8;
+	tSize curWidth = bmp->infoHeader->width;
+	tSize curHeight = bmp->infoHeader->height;
 	u32 count;
 	u8 *src,*dst;
-	y1= y;
+	y1 = y;
 	y2 = y + height;
 	count = width * pxSize;
-
-	/* look if we have to update the cursor-copy */
-	upRec.x = x;
-	upRec.y = y;
-	upRec.width = width;
-	upRec.height = height;
-	curRec.x = MAX(0,lastX - CURSOR_LEN);
-	curRec.y = MAX(0,lastY - CURSOR_LEN);
-	curRec.width = CURSOR_SIZE;
-	curRec.height = CURSOR_SIZE;
-	if(rectIntersect(&upRec,&curRec,&intersect)) {
-		vesa_copyRegion(shmem,cursorCopy,intersect.width,intersect.height,intersect.x,intersect.y,
-				intersect.x - curRec.x,intersect.y - curRec.y,xres,CURSOR_SIZE);
-	}
 
 	/* copy from shared-mem to video-mem */
 	dst = (u8*)video + (y1 * xres + x) * pxSize;
@@ -183,10 +177,37 @@ static void vesa_update(tCoord x,tCoord y,tSize width,tSize height) {
 		dst += xres * pxSize;
 		y1++;
 	}
+
+	/* look if we have to update the cursor-copy */
+	upRec.x = x;
+	upRec.y = y;
+	upRec.width = width;
+	upRec.height = height;
+	curRec.x = lastX;
+	curRec.y = lastY;
+	curRec.width = curWidth;
+	curRec.height = curHeight;
+	if(rectIntersect(&curRec,&upRec,&intersec)) {
+		vesa_copyRegion(video,cursorCopy,intersec.width,intersec.height,
+			intersec.x,intersec.y,intersec.x - lastX,intersec.y - lastY,xres,curWidth);
+		bmp_draw(bmp,lastX,lastY,vesa_setPixel);
+	}
+}
+
+static void vesa_setPixel(tCoord x,tCoord y,tColor col) {
+	tSize xres = minfo->xResolution;
+	tSize pxSize = minfo->bitsPerPixel / 8;
+	if(x >= xres)
+		return;
+	u8 *data = (u8*)video + (y * xres + x) * pxSize;
+	*data++ = col & 0xFF;
+	*data++ = (col >> 8) & 0xFF;
+	*data++ = (col >> 16) & 0xFF;
 }
 
 static void vesa_setCursor(tCoord x,tCoord y) {
-	tCoord cx,cy;
+	tSize curWidth = bmp->infoHeader->width;
+	tSize curHeight = bmp->infoHeader->height;
 	tSize xres = minfo->xResolution;
 	tSize yres = minfo->yResolution;
 	/* validate position */
@@ -194,73 +215,15 @@ static void vesa_setCursor(tCoord x,tCoord y) {
 	y = MIN(y,yres - 1);
 
 	if(lastX != x || lastY != y) {
-		cx = MAX(0,lastX - CURSOR_LEN);
-		cy = MAX(0,lastY - CURSOR_LEN);
 		/* copy old content back */
-		vesa_copyRegion(cursorCopy,video,CURSOR_SIZE,CURSOR_SIZE,0,0,cx,cy,CURSOR_SIZE,xres);
+		vesa_copyRegion(cursorCopy,video,curWidth,curHeight,0,0,lastX,lastY,curWidth,xres);
+		/* save content */
+		vesa_copyRegion(video,cursorCopy,curWidth,curHeight,x,y,0,0,xres,curWidth);
 	}
-	/* save content */
-	cx = MAX(0,x - CURSOR_LEN);
-	cy = MAX(0,y - CURSOR_LEN);
-	vesa_copyRegion(video,cursorCopy,CURSOR_SIZE,CURSOR_SIZE,cx,cy,0,0,xres,CURSOR_SIZE);
 
-	vesa_drawCross(x,y);
+	bmp_draw(bmp,x,y,vesa_setPixel);
 	lastX = x;
 	lastY = y;
-}
-
-static void vesa_drawCross(tCoord x,tCoord y) {
-	tColor color = CURSOR_COLOR;
-	tSize xres = minfo->xResolution;
-	tSize yres = minfo->yResolution;
-	tSize pxSize = minfo->bitsPerPixel / 8;
-	u8 *mid = (u8*)video + (y * xres + x) * pxSize;
-	u8 *ccopyMid = cursorCopy + (CURSOR_LEN * CURSOR_SIZE + CURSOR_LEN) * pxSize;
-
-	/* draw pixel at cursor */
-	if(x < xres && y < yres) {
-		memcpy(&color,ccopyMid,pxSize);
-		color = vesa_getVisibleFGColor(color);
-		memcpy(mid,&color,pxSize);
-	}
-	/* draw left */
-	if(x >= CURSOR_LEN) {
-		memcpy(&color,ccopyMid - CURSOR_LEN * pxSize,pxSize);
-		color = vesa_getVisibleFGColor(color);
-		memcpy(mid - CURSOR_LEN * pxSize,&color,pxSize);
-	}
-	/* draw top */
-	if(y >= CURSOR_LEN) {
-		memcpy(&color,ccopyMid - CURSOR_LEN * CURSOR_SIZE * pxSize,pxSize);
-		color = vesa_getVisibleFGColor(color);
-		memcpy(mid - CURSOR_LEN * xres * pxSize,&color,pxSize);
-	}
-	/* draw right */
-	if(x < xres - CURSOR_LEN) {
-		memcpy(&color,ccopyMid + CURSOR_LEN * pxSize,pxSize);
-		color = vesa_getVisibleFGColor(color);
-		memcpy(mid + CURSOR_LEN * pxSize,&color,pxSize);
-	}
-	/* draw bottom */
-	if(y < yres - CURSOR_LEN) {
-		memcpy(&color,ccopyMid + CURSOR_LEN * CURSOR_SIZE * pxSize,pxSize);
-		color = vesa_getVisibleFGColor(color);
-		memcpy(mid + CURSOR_LEN * xres * pxSize,&color,pxSize);
-	}
-}
-
-static tColor vesa_getVisibleFGColor(tColor bg) {
-	/* NOTE: THIS ASSUMES 24BIT MODE! */
-	u32 red = (u8)(bg >> 16);
-	u32 green = (u8)(bg >> 8);
-	u32 blue = (u8)(bg & 0xFF);
-	/*
-	 * formular of W3C for the brightness of a color:
-	 * 	((Red value X 299) + (Green value X 587) + (Blue value X 114)) / 1000
-	 */
-	if((red * 299 + green * 587 + blue * 114) > 128000)
-		return 0;
-	return 0xFFFFFFFF;
 }
 
 static void vesa_copyRegion(u8 *src,u8 *dst,tSize width,tSize height,tCoord x1,tCoord y1,

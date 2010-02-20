@@ -46,14 +46,17 @@ namespace esc {
 			static Application *_inst;
 
 		public:
+			inline const sVESAInfo *getVesaInfo() const {
+				return &_vesaInfo;
+			};
 			inline tSize getScreenWidth() const {
-				return _screenWidth;
+				return _vesaInfo.width;
 			};
 			inline tSize getScreenHeight() const {
-				return _screenHeight;
+				return _vesaInfo.height;
 			};
 			inline u8 getColorDepth() const {
-				return _colorDepth;
+				return _vesaInfo.bitsPerPixel;
 			};
 
 			int run();
@@ -91,9 +94,7 @@ namespace esc {
 			u8 _mouseBtns;
 			tFD _vesaFd;
 			void *_vesaMem;
-			tSize _screenWidth;
-			tSize _screenHeight;
-			tColDepth _colorDepth;
+			sVESAInfo _vesaInfo;
 			Vector<Window*> _windows;
 		};
 	}

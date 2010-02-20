@@ -17,27 +17,32 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef GRAPHICS16_H_
+#define GRAPHICS16_H_
+
 #include <esc/common.h>
 #include <esc/gui/common.h>
+#include <esc/gui/graphics.h>
 #include <esc/gui/color.h>
-#include <esc/stream.h>
+#include <esc/gui/font.h>
 
 namespace esc {
 	namespace gui {
-		u32 Color::toCurMode() const {
-			const sVESAInfo *vesaInfo = Application::getInstance()->getVesaInfo();
-			u8 red = getRed() >> (8 - vesaInfo->redMaskSize);
-			u8 green = getGreen() >> (8 - vesaInfo->greenMaskSize);
-			u8 blue = getBlue() >> (8 - vesaInfo->blueMaskSize);
-			return (red << vesaInfo->redFieldPosition) |
-					(green << vesaInfo->greenFieldPosition) |
-					(blue << vesaInfo->blueFieldPosition);
-		}
+		/**
+		 * The implementation of graphics for 16bit
+		 */
+		class Graphics16 : public Graphics {
+		public:
+			Graphics16(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp);
+			Graphics16(Graphics &g,tCoord x,tCoord y);
+			virtual ~Graphics16();
 
-		Stream &operator<<(Stream &s,const Color &c) {
-			s << "Color[" << c.getRed() << "," << c.getGreen() << "," << c.getBlue();
-			s << "," << c.getAlpha() << "]";
-			return s;
-		}
+			void fillRect(tCoord x,tCoord y,tSize width,tSize height);
+
+		protected:
+			void doSetPixel(tCoord x,tCoord y);
+		};
 	}
 }
+
+#endif /* GRAPHICS16_H_ */

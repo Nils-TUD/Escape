@@ -48,7 +48,7 @@ namespace esc {
 									// TODO performance might be improvable
 									u32 col = bitCount <= 8 ? *data : *(u32*)data;
 									if(col != lastCol) {
-										g.setColor(Color::from32Bit(bitCount <= 8 ? _colorTable[col] : col));
+										g.setColor(Color(bitCount <= 8 ? _colorTable[col] : col));
 										lastCol = col;
 									}
 									g.doSetPixel(cx + x,y + (h - cy));

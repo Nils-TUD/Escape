@@ -18,42 +18,38 @@
  */
 
 #include <esc/common.h>
-#include <esc/gui/common.h>
-#include <esc/gui/control.h>
-#include <esc/gui/window.h>
+#include <esc/gui/graphics.h>
+#include <esc/gui/graphics16.h>
+#include <esc/gui/graphics24.h>
+#include <esc/gui/graphics32.h>
 #include <esc/gui/graphicfactory.h>
 
 namespace esc {
 	namespace gui {
-		Control &Control::operator=(const Control &c) {
-			// ignore self-assignments
-			if(this == &c)
-				return *this;
-			UIElement::operator=(c);
-			// don't assign the window; the user has to do it manually
-			_w = NULL;
-			return *this;
+		Graphics *GraphicFactory::get(Graphics &g,tCoord x,tCoord y) {
+			switch(g.getColorDepth()) {
+				case 32:
+					return new Graphics32(g,x,y);
+				case 24:
+					return new Graphics24(g,x,y);
+				case 16:
+					return new Graphics16(g,x,y);
+				default:
+					return NULL;
+			}
 		}
 
-		void Control::setWindow(Window *w) {
-			_w = w;
-			// we share the memory with the window, so that a control simply paints to that memory
-			// and just the window writes this memory to vesa
-			_g = GraphicFactory::get(*_w->getGraphics(),getX(),getY() + _w->getTitleBarHeight());
-		}
-
-		tWinId Control::getWindowId() const {
-			// TODO throw exception?
-			if(_w == NULL)
-				return -1;
-			return _w->getId();
-		}
-
-		void Control::onFocusGained() {
-			// do nothing by default
-		}
-		void Control::onFocusLost() {
-			// do nothing by default
+		Graphics *GraphicFactory::get(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp) {
+			switch(bpp) {
+				case 32:
+					return new Graphics32(x,y,width,height,bpp);
+				case 24:
+					return new Graphics24(x,y,width,height,bpp);
+				case 16:
+					return new Graphics16(x,y,width,height,bpp);
+				default:
+					return NULL;
+			}
 		}
 	}
 }

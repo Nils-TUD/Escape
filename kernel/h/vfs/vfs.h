@@ -23,7 +23,7 @@
 #include <common.h>
 #include <sllist.h>
 
-#define MAX_VFS_FILE_SIZE			(1 * K)
+#define MAX_VFS_FILE_SIZE			(64 * K)
 
 /* some additional types for the kernel */
 #define MODE_TYPE_SERVUSE			0x0010000

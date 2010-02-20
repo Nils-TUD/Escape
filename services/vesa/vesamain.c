@@ -35,9 +35,9 @@
 
 #define CURSOR_FILE						"/etc/cursor.bmp"
 
-#define RESOLUTION_X					1024
-#define RESOLUTION_Y					768
-#define BITS_PER_PIXEL					24
+#define RESOLUTION_X					800
+#define RESOLUTION_Y					600
+#define BITS_PER_PIXEL					16
 
 #define CURSOR_LEN						2
 #define CURSOR_COLOR					0xFFFFFF
@@ -46,7 +46,9 @@
 static s32 vesa_setMode(void);
 static s32 vesa_init(void);
 static void vesa_update(tCoord x,tCoord y,tSize width,tSize height);
-static void vesa_setPixel(tCoord x,tCoord y,tColor col);
+static void vesa_setPixel16(tCoord x,tCoord y,tColor col);
+static void vesa_setPixel24(tCoord x,tCoord y,tColor col);
+static void vesa_setPixel32(tCoord x,tCoord y,tColor col);
 static void vesa_setCursor(tCoord x,tCoord y);
 static void vesa_copyRegion(u8 *src,u8 *dst,tSize width,tSize height,tCoord x1,tCoord y1,
 		tCoord x2,tCoord y2,tSize w1,tSize w2);
@@ -59,6 +61,13 @@ static tCoord lastX = 0;
 static tCoord lastY = 0;
 static sMsg msg;
 static sBitmap *bmp;
+static fSetPixel setPixel[] = {
+	/* 0 bpp */		NULL,
+	/* 8 bpp */		NULL,
+	/* 16 bpp */	vesa_setPixel16,
+	/* 24 bpp */	vesa_setPixel24,
+	/* 32 bpp */	vesa_setPixel32
+};
 
 int main(void) {
 	tServ id,client;
@@ -105,10 +114,22 @@ int main(void) {
 					break;
 
 					case MSG_VESA_GETMODE_REQ: {
-						msg.args.arg1 = minfo->xResolution;
-						msg.args.arg2 = minfo->yResolution;
-						msg.args.arg3 = minfo->bitsPerPixel;
-						send(fd,MSG_VESA_GETMODE_RESP,&msg,sizeof(msg.args));
+						sVESAInfo *info = (sVESAInfo*)malloc(sizeof(sVESAInfo));
+						msg.data.arg1 = ERR_NOT_ENOUGH_MEM;
+						if(info) {
+							msg.data.arg1 = 0;
+							info->width = minfo->xResolution;
+							info->height = minfo->yResolution;
+							info->bitsPerPixel = minfo->bitsPerPixel;
+							info->redFieldPosition = minfo->redFieldPosition;
+							info->redMaskSize = minfo->redMaskSize;
+							info->greenFieldPosition = minfo->greenFieldPosition;
+							info->greenMaskSize = minfo->greenMaskSize;
+							info->blueFieldPosition = minfo->blueFieldPosition;
+							info->blueMaskSize = minfo->blueMaskSize;
+							memcpy(msg.data.d,info,sizeof(sVESAInfo));
+						}
+						send(fd,MSG_VESA_GETMODE_RESP,&msg,sizeof(msg.data));
 					}
 					break;
 				}
@@ -130,6 +151,8 @@ static s32 vesa_setMode(void) {
 		if(minfo) {
 			video = mapPhysical(minfo->physBasePtr,minfo->xResolution *
 					minfo->yResolution * (minfo->bitsPerPixel / 8));
+			debugf("Setting (%x) %4d x %4d x %2d\n",mode,
+					minfo->xResolution,minfo->yResolution,minfo->bitsPerPixel);
 			if(video == NULL)
 				return errno;
 			if(vbe_setMode(mode))
@@ -190,19 +213,52 @@ static void vesa_update(tCoord x,tCoord y,tSize width,tSize height) {
 	if(rectIntersect(&curRec,&upRec,&intersec)) {
 		vesa_copyRegion(video,cursorCopy,intersec.width,intersec.height,
 			intersec.x,intersec.y,intersec.x - lastX,intersec.y - lastY,xres,curWidth);
-		bmp_draw(bmp,lastX,lastY,vesa_setPixel);
+		bmp_draw(bmp,lastX,lastY,setPixel[pxSize]);
 	}
 }
 
-static void vesa_setPixel(tCoord x,tCoord y,tColor col) {
+static void vesa_setPixel16(tCoord x,tCoord y,tColor col) {
 	tSize xres = minfo->xResolution;
-	tSize pxSize = minfo->bitsPerPixel / 8;
 	if(x >= xres)
 		return;
-	u8 *data = (u8*)video + (y * xres + x) * pxSize;
-	*data++ = col & 0xFF;
-	*data++ = (col >> 8) & 0xFF;
-	*data++ = (col >> 16) & 0xFF;
+	u16 *data = (u16*)((u8*)video + (y * xres + x) * 2);
+	u8 red = (col >> 16) >> (8 - minfo->redMaskSize);
+	u8 green = (col >> 8) >> (8 - minfo->greenMaskSize);
+	u8 blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
+	u16 val = (red << minfo->redFieldPosition) |
+			(green << minfo->greenFieldPosition) |
+			(blue << minfo->blueFieldPosition);
+	*data = val;
+}
+
+static void vesa_setPixel24(tCoord x,tCoord y,tColor col) {
+	tSize xres = minfo->xResolution;
+	if(x >= xres)
+		return;
+	u8 *data = (u8*)video + (y * xres + x) * 3;
+	u8 red = (col >> 16) >> (8 - minfo->redMaskSize);
+	u8 green = (col >> 8) >> (8 - minfo->greenMaskSize);
+	u8 blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
+	u32 val = (red << minfo->redFieldPosition) |
+			(green << minfo->greenFieldPosition) |
+			(blue << minfo->blueFieldPosition);
+	data[2] = val >> 16;
+	data[1] = val >> 8;
+	data[0] = val & 0xFF;
+}
+
+static void vesa_setPixel32(tCoord x,tCoord y,tColor col) {
+	tSize xres = minfo->xResolution;
+	if(x >= xres)
+		return;
+	u8 *data = (u8*)video + (y * xres + x) * 4;
+	u8 red = (col >> 16) >> (8 - minfo->redMaskSize);
+	u8 green = (col >> 8) >> (8 - minfo->greenMaskSize);
+	u8 blue = (col & 0xFF) >> (8 - minfo->blueMaskSize);
+	u32 val = (red << minfo->redFieldPosition) |
+			(green << minfo->greenFieldPosition) |
+			(blue << minfo->blueFieldPosition);
+	*((u32*)data) = val;
 }
 
 static void vesa_setCursor(tCoord x,tCoord y) {
@@ -221,7 +277,7 @@ static void vesa_setCursor(tCoord x,tCoord y) {
 		vesa_copyRegion(video,cursorCopy,curWidth,curHeight,x,y,0,0,xres,curWidth);
 	}
 
-	bmp_draw(bmp,x,y,vesa_setPixel);
+	bmp_draw(bmp,x,y,setPixel[minfo->bitsPerPixel / 8]);
 	lastX = x;
 	lastY = y;
 }

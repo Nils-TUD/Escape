@@ -22,27 +22,12 @@
 
 #include <esc/common.h>
 #include <esc/gui/common.h>
+#include <esc/gui/application.h>
 #include <esc/stream.h>
 
 namespace esc {
 	namespace gui {
-		// TODO not finished yet!
 		class Color {
-		public:
-			static inline Color from8Bit(u8 col) {
-				return Color(col);
-			};
-			static inline Color from16Bit(u16 col) {
-				return Color((col & 0xF800) >> 11,(col & 0x7E0) >> 5,col & 0x1F);
-			};
-			static inline Color from24Bit(u32 col) {
-				return Color(col);
-			};
-			static inline Color from32Bit(u32 col) {
-				return Color(col);
-			};
-			static Color fromBits(u32 col,u8 bits);
-
 		public:
 			Color(u32 color = 0) : _color(color) {
 			};
@@ -81,22 +66,7 @@ namespace esc {
 			inline u8 getAlpha() const {
 				return (u8)(_color >> 24);
 			};
-
-			inline u8 to8Bit() const {
-				return _color & 0xFF;
-			};
-			inline u16 to16Bit() const {
-				return ((getRed() & 0x1F) << 11) |
-					((getGreen() & 0x3F) << 5) |
-					(getBlue() & 0x1F);
-			};
-			inline u32 to24Bit() const {
-				return _color & 0xFFFFFF;
-			};
-			inline u32 to32Bit() const {
-				return _color;
-			};
-			u32 toBits(u8 bits) const;
+			u32 toCurMode() const;
 
 		private:
 			u32 _color;

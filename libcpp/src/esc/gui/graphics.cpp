@@ -30,33 +30,25 @@ namespace esc {
 	namespace gui {
 		Graphics::Graphics(Graphics &g,tCoord x,tCoord y)
 			: _offx(x), _offy(y), _x(0), _y(0), _width(g._width), _height(g._height),
-				_bpp(g._bpp), _col(0), _minx(0),_miny(0), _maxx(_width - 1),
-				_maxy(_height - 1), _pixel(NULL), _pixels(NULL), _font(Font()), _owner(&g) {
+				_bpp(g._bpp), _col(0), _colInst(Color(0)), _minx(0),_miny(0), _maxx(_width - 1),
+				_maxy(_height - 1), _pixels(NULL), _font(Font()), _owner(&g) {
 			_pixels = g._pixels;
-			_pixel = g._pixel;
 		}
 
 		Graphics::Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp)
 			: _offx(0), _offy(0), _x(x), _y(y), _width(width), _height(height), _bpp(bpp),
-				_col(0), _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),
-				_pixel(NULL), _pixels(NULL), _font(Font()), _owner(NULL) {
+				_col(0), _colInst(Color(0)), _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),
+				_pixels(NULL), _font(Font()), _owner(NULL) {
 			// allocate mem
 			switch(_bpp) {
 				case 32:
-					_pixels = (u8*)calloc(_width * _height,sizeof(u32));
-					_pixel = new Pixel32Bit(_pixels);
+					_pixels = (u8*)calloc(_width * _height,4);
 					break;
 				case 24:
 					_pixels = (u8*)calloc(_width * _height,3);
-					_pixel = new Pixel24Bit(_pixels);
 					break;
 				case 16:
-					_pixels = (u8*)calloc(_width * _height,sizeof(u16));
-					_pixel = new Pixel16Bit(_pixels);
-					break;
-				case 8:
-					_pixels = (u8*)calloc(_width * _height,sizeof(u8));
-					_pixel = new Pixel8Bit(_pixels);
+					_pixels = (u8*)calloc(_width * _height,2);
 					break;
 				default:
 					err << "Unsupported color-depth: " << (u32)bpp << endl;
@@ -66,34 +58,8 @@ namespace esc {
 		}
 
 		Graphics::~Graphics() {
-			if(_owner == NULL) {
-				delete _pixel;
+			if(_owner == NULL)
 				delete _pixels;
-			}
-		}
-
-		void Graphics::doSetPixel(tCoord x,tCoord y) {
-			u32 offset = (_offy + y) * _width + (_offx + x);
-			switch(_bpp) {
-				case 8:
-					*(u8*)(_pixels + offset * sizeof(u8)) = _col & 0xFF;
-					break;
-				case 16:
-					*(u16*)(_pixels + offset * sizeof(u16)) = _col & 0xFFFF;
-					break;
-				case 24: {
-					u8 *col = (u8*)&_col;
-					u8 *addr = _pixels + offset * 3;
-					*addr++ = *col++;
-					*addr++ = *col++;
-					*addr++ = *col++;
-				}
-				break;
-				case 32:
-					*(u32*)(_pixels + offset * sizeof(u32)) = _col;
-					break;
-			}
-			//_pixel->set((_offy + y) * _width + (_offx + x),_col);
 		}
 
 		void Graphics::moveLines(tCoord y,tSize height,s16 up) {
@@ -101,7 +67,7 @@ namespace esc {
 			tSize width = _width;
 			validateParams(x,y,width,height);
 			tCoord starty = _offy + y;
-			u32 psize = _pixel->getPixelSize();
+			u32 psize = _bpp / 8;
 			if(up > 0) {
 				if(y < up)
 					up = y;
@@ -115,15 +81,6 @@ namespace esc {
 					height * _width * psize);
 			updateMinMax(0,y - up);
 			updateMinMax(_width - 1,y + height - up - 1);
-		}
-
-		void Graphics::copyLine(tCoord x,tCoord y,tSize width,void *line) {
-			u32 psize = _pixel->getPixelSize();
-			y %= _height;
-			width = MIN(width,_width);
-			memcpy(_pixels + ((_offy + y) * _width + (_offx + x)) * psize,line,width * psize);
-			updateMinMax(x,y);
-			updateMinMax(x + width,y);
 		}
 
 		void Graphics::drawChar(tCoord x,tCoord y,char c) {
@@ -232,33 +189,9 @@ namespace esc {
 			updateMinMax(x + width - 1,yend - 1);
 			tCoord xcur;
 			tCoord xend = x + width;
-			if(_pixel->getPixelSize() == 3) {
-				// optimized version for 24bit
-				// This is necessary if we want to have reasonable speed because the simple version
-				// performs too many function-calls (one to a virtual-function and one to memcpy
-				// that the compiler doesn't inline). Additionally the offset into the
-				// memory-region will be calculated many times.
-				// This version is much quicker :)
-				u8 *col = (u8*)&_col;
-				u32 widthadd = _width * 3;
-				u8 *addr;
-				u8 *orgaddr = _pixels + (((_offy + y) * _width + (_offx + x)) * 3);
-				for(; y < yend; y++) {
-					addr = orgaddr;
-					for(xcur = x; xcur < xend; xcur++) {
-						*addr++ = *col;
-						*addr++ = *(col + 1);
-						*addr++ = *(col + 2);
-					}
-					orgaddr += widthadd;
-				}
-			}
-			else {
-				// TODO write optimized version for 8,16 and 32 bit
-				for(; y < yend; y++) {
-					for(xcur = x; xcur < xend; xcur++)
-						doSetPixel(xcur,y);
-				}
+			for(; y < yend; y++) {
+				for(xcur = x; xcur < xend; xcur++)
+					doSetPixel(xcur,y);
 			}
 		}
 
@@ -310,7 +243,7 @@ namespace esc {
 				void *vesaMem = Application::getInstance()->getVesaMem();
 				u8 *src,*dst;
 				tCoord endy = y + height;
-				u32 psize = _pixel->getPixelSize();
+				u32 psize = _bpp / 8;
 				u32 count = width * psize;
 				u32 srcAdd = _width * psize;
 				u32 dstAdd = screenWidth * psize;
@@ -324,7 +257,6 @@ namespace esc {
 				}
 
 				notifyVesa(_x + x,_y + endy - height,width,height);
-				/*yield();*/
 			}
 		}
 
@@ -348,14 +280,6 @@ namespace esc {
 			tSize screenHeight = Application::getInstance()->getScreenHeight();
 			_x = MIN(screenWidth - 1,x);
 			_y = MIN(screenHeight - 1,y);
-		}
-
-		void Graphics::debug() const {
-			for(tCoord y = 0; y < _height; y++) {
-				for(tCoord x = 0; x < _width; x++)
-					out << (getPixel(x,y).getColor() == 0 ? ' ' : 'x');
-				out << endl;
-			}
 		}
 
 		void Graphics::validateParams(tCoord &x,tCoord &y,tSize &width,tSize &height) {

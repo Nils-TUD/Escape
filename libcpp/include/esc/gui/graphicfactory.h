@@ -17,27 +17,28 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef GRAPHICFACTORY_H_
+#define GRAPHICFACTORY_H_
+
 #include <esc/common.h>
 #include <esc/gui/common.h>
-#include <esc/gui/color.h>
-#include <esc/stream.h>
 
 namespace esc {
 	namespace gui {
-		u32 Color::toCurMode() const {
-			const sVESAInfo *vesaInfo = Application::getInstance()->getVesaInfo();
-			u8 red = getRed() >> (8 - vesaInfo->redMaskSize);
-			u8 green = getGreen() >> (8 - vesaInfo->greenMaskSize);
-			u8 blue = getBlue() >> (8 - vesaInfo->blueMaskSize);
-			return (red << vesaInfo->redFieldPosition) |
-					(green << vesaInfo->greenFieldPosition) |
-					(blue << vesaInfo->blueFieldPosition);
-		}
+		class GraphicFactory {
+		public:
+			static Graphics *get(Graphics &g,tCoord x,tCoord y);
+			static Graphics *get(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp);
 
-		Stream &operator<<(Stream &s,const Color &c) {
-			s << "Color[" << c.getRed() << "," << c.getGreen() << "," << c.getBlue();
-			s << "," << c.getAlpha() << "]";
-			return s;
-		}
+		private:
+			// no instantation
+			GraphicFactory();
+			~GraphicFactory();
+			// no cloning
+			GraphicFactory(const GraphicFactory &g);
+			GraphicFactory &operator=(const GraphicFactory &g);
+		};
 	}
 }
+
+#endif /* GRAPHICFACTORY_H_ */

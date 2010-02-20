@@ -26,7 +26,7 @@
 #define WINDOW_COUNT					32
 #define WINID_UNSED						WINDOW_COUNT
 
-#define PIXEL_SIZE						(colorDepth / 8)
+#define PIXEL_SIZE						(vesaInfo.bitsPerPixel / 8)
 
 #define WIN_STYLE_DEFAULT				0
 #define WIN_STYLE_POPUP					1

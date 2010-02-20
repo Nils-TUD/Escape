@@ -40,9 +40,7 @@ static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height);
 
 static tFD vesa;
 static tServ servId;
-static tSize screenWidth;
-static tSize screenHeight;
-static u8 colorDepth;
+static sVESAInfo vesaInfo;
 
 static sMsg msg;	/* TODO we already have a msg in winmain.c */
 static u8 *shmem;
@@ -66,13 +64,11 @@ bool win_init(tServ sid) {
 	/* request screen infos from vesa */
 	if(send(vesa,MSG_VESA_GETMODE_REQ,&msg,sizeof(msg.args)) < 0)
 		error("Unable to send get-mode-request to vesa");
-	if(receive(vesa,&mid,&msg,sizeof(msg)) < 0)
+	if(receive(vesa,&mid,&msg,sizeof(msg)) < 0 || mid != MSG_VESA_GETMODE_RESP || msg.data.arg1 != 0)
 		error("Unable to read the get-mode-response from vesa");
 
 	/* store */
-	screenWidth = (tSize)msg.args.arg1;
-	screenHeight = (tSize)msg.args.arg2;
-	colorDepth = (u8)msg.args.arg3;
+	memcpy(&vesaInfo,msg.data.d,sizeof(sVESAInfo));
 
 	shmem = (u8*)joinSharedMem("vesa");
 	if(shmem == NULL)
@@ -82,11 +78,11 @@ bool win_init(tServ sid) {
 }
 
 tCoord win_getScreenWidth(void) {
-	return screenWidth;
+	return vesaInfo.width;
 }
 
 tCoord win_getScreenHeight(void) {
-	return screenHeight;
+	return vesaInfo.height;
 }
 
 void win_setCursor(tCoord x,tCoord y) {
@@ -386,7 +382,7 @@ static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,s16 z,sRe
 
 static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height) {
 	tCoord ysave = y;
-	tCoord maxy = MIN(screenHeight - 1,y + height);
+	tCoord maxy = MIN(vesaInfo.height - 1,y + height);
 	u32 count;
 	if(x < 0) {
 		if(-x > width)
@@ -395,10 +391,10 @@ static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height) 
 		x = 0;
 	}
 	count = width * PIXEL_SIZE;
-	mem += (y * screenWidth + x) * PIXEL_SIZE;
+	mem += (y * vesaInfo.width + x) * PIXEL_SIZE;
 	while(y <= maxy) {
 		memclear(mem,count);
-		mem += screenWidth * PIXEL_SIZE;
+		mem += vesaInfo.width * PIXEL_SIZE;
 		y++;
 	}
 
@@ -412,8 +408,8 @@ static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
 	}
 	msg.args.arg1 = x;
 	msg.args.arg2 = y;
-	msg.args.arg3 = MIN(screenWidth - x,width);
-	msg.args.arg4 = MIN(screenHeight - y,height);
+	msg.args.arg3 = MIN(vesaInfo.width - x,width);
+	msg.args.arg4 = MIN(vesaInfo.height - y,height);
 	send(vesa,MSG_VESA_UPDATE,&msg,sizeof(msg.args));
 }
 

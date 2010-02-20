@@ -34,8 +34,7 @@ namespace esc {
 		Application *Application::_inst = NULL;
 
 		Application::Application()
-				: _winFd(-1), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL),
-				  _screenWidth(0), _screenHeight(0), _colorDepth(0), _windows(Vector<Window*>()) {
+				: _winFd(-1), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL), _windows(Vector<Window*>()) {
 			tMsgId mid;
 			_winFd = open("/services/winmanager",IO_READ | IO_WRITE);
 			if(_winFd < 0) {
@@ -60,15 +59,14 @@ namespace esc {
 				printe("Unable to send get-mode-request to vesa");
 				exit(EXIT_FAILURE);
 			}
-			if(receive(_vesaFd,&mid,&_msg,sizeof(_msg)) < 0 || mid != MSG_VESA_GETMODE_RESP) {
+			if(receive(_vesaFd,&mid,&_msg,sizeof(_msg)) < 0 || mid != MSG_VESA_GETMODE_RESP ||
+					_msg.data.arg1 != 0) {
 				printe("Unable to read the get-mode-response from vesa");
 				exit(EXIT_FAILURE);
 			}
 
 			// store it
-			_screenWidth = (tSize)_msg.args.arg1;
-			_screenHeight = (tSize)_msg.args.arg2;
-			_colorDepth = (tColDepth)_msg.args.arg3;
+			memcpy(&_vesaInfo,_msg.data.d,sizeof(sVESAInfo));
 		}
 
 		Application::~Application() {
@@ -173,8 +171,8 @@ namespace esc {
 
 			Window *w = getWindowById(win);
 			if(w) {
-				tCoord nx = MAX(0,MIN(_screenWidth - 1,x - w->getX()));
-				tCoord ny = MAX(0,MIN(_screenHeight - 1,y - w->getY()));
+				tCoord nx = MAX(0,MIN(_vesaInfo.width - 1,x - w->getX()));
+				tCoord ny = MAX(0,MIN(_vesaInfo.height - 1,y - w->getY()));
 
 				if(released) {
 					MouseEvent event(MouseEvent::MOUSE_RELEASED,movedX,movedY,nx,ny,_mouseBtns);

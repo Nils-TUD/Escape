@@ -25,6 +25,7 @@
 #include <esc/gui/window.h>
 #include <esc/gui/uielement.h>
 #include <esc/gui/color.h>
+#include <esc/gui/graphicfactory.h>
 #include <esc/string.h>
 #include <stdlib.h>
 
@@ -74,7 +75,7 @@ namespace esc {
 		}
 
 		void Window::init() {
-			_g = new Graphics(getX(),getY(),getWidth(),getHeight(),
+			_g = GraphicFactory::get(getX(),getY(),getWidth(),getHeight(),
 					Application::getInstance()->getColorDepth());
 			// add us to app; we'll receive a "created"-event as soon as the window
 			// manager knows about us

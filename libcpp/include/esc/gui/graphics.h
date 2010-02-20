@@ -44,113 +44,11 @@ namespace esc {
 			*b = t;
 		}
 
-		struct Pixel {
-		public:
-			Pixel() {};
-			virtual ~Pixel() {};
-			virtual u32 getPixelSize() const = 0;
-			virtual u32 get(u32 offset) const = 0;
-			virtual void set(u32 offset,u32 col) = 0;
-		};
-
-		struct Pixel8Bit : public Pixel {
-		public:
-			Pixel8Bit(u8 *pixels) : _pixels(pixels) {};
-			virtual ~Pixel8Bit() {};
-
-			inline u32 getPixelSize() const {
-				return sizeof(u8);
-			}
-			inline u32 get(u32 offset) const {
-				return *(u8*)(_pixels + offset * sizeof(u8));
-			}
-			inline void set(u32 offset,u32 col) {
-				*(u8*)(_pixels + offset * sizeof(u8)) = col & 0xFF;
-			};
-
-		/* no cloning */
-		private:
-			Pixel8Bit(const Pixel8Bit &p);
-			Pixel8Bit &operator=(const Pixel8Bit &p);
-
-		private:
-			u8 *_pixels;
-		};
-
-		struct Pixel16Bit : public Pixel {
-		public:
-			Pixel16Bit(u8 *pixels) : _pixels(pixels) {};
-			virtual ~Pixel16Bit() {};
-
-			inline u32 getPixelSize() const {
-				return sizeof(u16);
-			}
-			inline u32 get(u32 offset) const {
-				return *(u16*)(_pixels + offset * sizeof(u16));
-			}
-			inline void set(u32 offset,u32 col) {
-				*(u16*)(_pixels + offset * sizeof(u16)) = col & 0xFFFF;
-			};
-
-		/* no cloning */
-		private:
-			Pixel16Bit(const Pixel16Bit &p);
-			Pixel16Bit &operator=(const Pixel16Bit &p);
-
-		private:
-			u8 *_pixels;
-		};
-
-		struct Pixel24Bit : public Pixel {
-		public:
-			Pixel24Bit(u8 *pixels) : _pixels(pixels) {};
-			virtual ~Pixel24Bit() {};
-
-			inline u32 getPixelSize() const {
-				return 3;
-			}
-			inline u32 get(u32 offset) const {
-				u32 col;
-				memcpy((u8*)&col + 1,_pixels + offset * 3,3);
-				return col;
-			}
-			inline void set(u32 offset,u32 col) {
-				memcpy(_pixels + offset * 3,&col,3);
-			};
-
-		/* no cloning */
-		private:
-			Pixel24Bit(const Pixel24Bit &p);
-			Pixel24Bit &operator=(const Pixel24Bit &p);
-
-		private:
-			u8 *_pixels;
-		};
-
-		struct Pixel32Bit : public Pixel {
-		public:
-			Pixel32Bit(u8 *pixels) : _pixels(pixels) {};
-			virtual ~Pixel32Bit() {};
-
-			inline u32 getPixelSize() const {
-				return sizeof(u32);
-			}
-			inline u32 get(u32 offset) const {
-				return *(u32*)(_pixels + offset * sizeof(u32));
-			}
-			inline void set(u32 offset,u32 col) {
-				*(u32*)(_pixels + offset * sizeof(u32)) = col;
-			};
-
-		/* no cloning */
-		private:
-			Pixel32Bit(const Pixel32Bit &p);
-			Pixel32Bit &operator=(const Pixel32Bit &p);
-
-		private:
-			u8 *_pixels;
-		};
-
+		/**
+		 * The graphics-class is responsible for drawing on a buffer, copying it to the shared-
+		 * memory-region offered by vesa and notifying vesa for updates. It offers several
+		 * drawing routines like drawLine, drawRect, fillRect and so on.
+		 */
 		class Graphics {
 			friend class Window;
 			friend class Control;
@@ -158,38 +56,134 @@ namespace esc {
 			friend class BitmapImage;
 
 		public:
+			/**
+			 * Constructor for controls
+			 *
+			 * @param g the graphics-object of the window
+			 * @param x the x-coordinate of the control
+			 * @param y the y-coordinate of the control
+			 */
 			Graphics(Graphics &g,tCoord x,tCoord y);
-			Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp);
-			~Graphics();
 
+			/**
+			 * Constructor for windows
+			 *
+			 * @param x the x-coordinate of the window
+			 * @param y the y-coordinate of the window
+			 * @param width width of the window
+			 * @param height height of the window
+			 * @param bpp the used color-depth
+			 */
+			Graphics(tCoord x,tCoord y,tSize width,tSize height,tColDepth bpp);
+
+			/**
+			 * Destructor
+			 */
+			virtual ~Graphics();
+
+			/**
+			 * @return the current font
+			 */
 			inline Font getFont() const {
 				return _font;
-			}
+			};
+
+			/**
+			 * @return the color-depth
+			 */
+			inline tColDepth getColorDepth() const {
+				return _bpp;
+			};
+
+			/**
+			 * @return the current color
+			 */
 			inline Color getColor() const {
-				return Color::fromBits(_col,_bpp);
+				return _colInst;
 			};
+
+			/**
+			 * Sets the color
+			 *
+			 * @param col the new color
+			 */
 			inline void setColor(const Color &col) {
-				_col = col.toBits(_bpp);
+				_col = col.toCurMode();
+				_colInst = col;
 			};
-			inline Color getPixel(tCoord x,tCoord y) const {
-				return Color::fromBits(_pixel->get(y * _width + x),_bpp);
-			};
+
+			/**
+			 * Sets the pixel to the current color
+			 *
+			 * @param x the x-coordinate
+			 * @param y the y-coordinate
+			 */
 			inline void setPixel(tCoord x,tCoord y) {
 				x %= _width;
 				y %= _height;
 				updateMinMax(x,y);
 				doSetPixel(x,y);
 			};
-			inline tColDepth getColorDepth() const {
-				return _bpp;
-			};
-			void moveLines(tCoord y,tSize height,s16 up);
-			void drawChar(tCoord x,tCoord y,char c);
-			void drawString(tCoord x,tCoord y,const String &str);
-			void drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn);
-			void drawRect(tCoord x,tCoord y,tSize width,tSize height);
-			void fillRect(tCoord x,tCoord y,tSize width,tSize height);
-			void debug() const;
+
+			/**
+			 * Moves <height> lines at <y> up by <up> lines. If up is negative, it moves them
+			 * down
+			 *
+			 * @param y the y-coordinate where to start
+			 * @param height the number of lines to move
+			 * @param up amount to move up / down
+			 */
+			virtual void moveLines(tCoord y,tSize height,s16 up);
+
+			/**
+			 * Draws the given character at given position
+			 *
+			 * @param x the x-coordinate
+			 * @param y the y-coordinate
+			 * @param c the character
+			 */
+			virtual void drawChar(tCoord x,tCoord y,char c);
+
+			/**
+			 * Draws the given string at the given position. Note that the position is the top
+			 * left of the first character.
+			 *
+			 * @param x the x-coordinate
+			 * @param y the y-coordinate
+			 * @param str the string
+			 */
+			virtual void drawString(tCoord x,tCoord y,const String &str);
+
+			/**
+			 * Draws a line from (x0,y0) to (xn,yn)
+			 *
+			 * @param x0 first x-coordinate
+			 * @param y0 first y-coordinate
+			 * @param xn last x-coordinate
+			 * @param yn last y-coordinate
+			 */
+			virtual void drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn);
+
+			/**
+			 * Draws a rectangle
+			 *
+			 * @param x the x-coordinate
+			 * @param y the y-coordinate
+			 * @param width the width
+			 * @param height the height
+			 */
+			virtual void drawRect(tCoord x,tCoord y,tSize width,tSize height);
+
+
+			/**
+			 * Fills a rectangle
+			 *
+			 * @param x the x-coordinate
+			 * @param y the y-coordinate
+			 * @param width the width
+			 * @param height the height
+			 */
+			virtual void fillRect(tCoord x,tCoord y,tSize width,tSize height);
 
 		private:
 			// prevent the compiler from generating copy-constructor and assignment-operator
@@ -197,7 +191,14 @@ namespace esc {
 			Graphics(const Graphics &g);
 			Graphics &operator=(const Graphics &g);
 
-			void doSetPixel(tCoord x,tCoord y);
+		protected:
+			/**
+			 * Sets a pixel (without check)
+			 */
+			virtual void doSetPixel(tCoord x,tCoord y) = 0;
+			/**
+			 * Adds the given position to the dirty region
+			 */
 			inline void updateMinMax(tCoord x,tCoord y) {
 				if(x > _maxx)
 					_maxx = x;
@@ -208,24 +209,47 @@ namespace esc {
 				if(y < _miny)
 					_miny = y;
 			};
-			void copyLine(tCoord x,tCoord y,tSize width,void *line);
+			/**
+			 * Sets the coordinates for this control / window
+			 */
 			void move(tCoord x,tCoord y);
+			/**
+			 * Requests an update for the dirty region
+			 */
 			void requestUpdate(tWinId winid);
+			/**
+			 * Updates the given region: writes to the shared-mem offered by vesa and notifies vesa
+			 */
 			void update(tCoord x,tCoord y,tSize width,tSize height);
+			/**
+			 * Notifies vesa that the given region has changed
+			 */
 			void notifyVesa(tCoord x,tCoord y,tSize width,tSize height);
+			/**
+			 * Validates the given parameters
+			 */
 			void validateParams(tCoord &x,tCoord &y,tSize &width,tSize &height);
 
-		private:
+		protected:
+			// for controls: the offset of the control in the window (otherwise 0)
 			tCoord _offx,_offy;
+			// the position of the window on the screen
 			tCoord _x,_y;
+			// size of the window
 			tSize _width;
 			tSize _height;
+			// used color-depth
 			tColDepth _bpp;
+			// current color
 			u32 _col;
+			Color _colInst;
+			// dirty region
 			tCoord _minx,_miny,_maxx,_maxy;
-			Pixel *_pixel;
+			// buffer for this window; controls use this, too (don't have their own)
 			u8 *_pixels;
+			// current font
 			Font _font;
+			// for controls: the graphics-instance of the window
 			Graphics *_owner;
 		};
 	}

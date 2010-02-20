@@ -138,6 +138,18 @@ typedef struct {
 	u8 buttons;
 } sMouseData;
 
+typedef struct {
+	u16 width;					/* x-resolution */
+	u16 height;					/* y-resolution */
+	u8 bitsPerPixel;			/* Bits per pixel                  */
+	u8 redMaskSize;				/* Size of direct color red mask   */
+	u8 redFieldPosition;		/* Bit posn of lsb of red mask     */
+	u8 greenMaskSize;			/* Size of direct color green mask */
+	u8 greenFieldPosition;		/* Bit posn of lsb of green mask   */
+	u8 blueMaskSize;			/* Size of direct color blue mask  */
+	u8 blueFieldPosition;		/* Bit posn of lsb of blue mask    */
+} sVESAInfo;
+
 /* the message we're using for communication */
 typedef union {
 	/* for messages with integer arguments only */

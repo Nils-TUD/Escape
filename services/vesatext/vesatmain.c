@@ -34,8 +34,8 @@
 #include <vbe/vbe.h>
 #include "font.h"
 
-#define RESOLUTION_X					1024
-#define RESOLUTION_Y					768
+#define RESOLUTION_X					640
+#define RESOLUTION_Y					480
 #define BITS_PER_PIXEL					16
 
 #define CURSOR_LEN						FONT_WIDTH
@@ -230,6 +230,8 @@ static s32 vesa_setMode(void) {
 		if(minfo) {
 			video = mapPhysical(minfo->physBasePtr,minfo->xResolution *
 					minfo->yResolution * (minfo->bitsPerPixel / 8));
+			debugf("Setting (%x) %4d x %4d x %2d\n",mode,
+					minfo->xResolution,minfo->yResolution,minfo->bitsPerPixel);
 			if(video == NULL)
 				return errno;
 			cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);

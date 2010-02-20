@@ -85,9 +85,10 @@ tCoord win_getScreenHeight(void) {
 	return vesaInfo.height;
 }
 
-void win_setCursor(tCoord x,tCoord y) {
+void win_setCursor(tCoord x,tCoord y,u8 cursor) {
 	msg.args.arg1 = x;
 	msg.args.arg2 = y;
+	msg.args.arg3 = cursor;
 	send(vesa,MSG_VESA_CURSOR,&msg,sizeof(msg.args));
 }
 
@@ -221,6 +222,31 @@ void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY) {
 	}
 }
 
+void win_resize(tWinId window,tSize width,tSize height) {
+	tSize oldWidth = windows[window].width;
+	tSize oldHeight = windows[window].height;
+	windows[window].width = width;
+	windows[window].height = height;
+	if(width < oldWidth) {
+		sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
+		r->x = windows[window].x + width;
+		r->y = windows[window].y;
+		r->width = oldWidth - width;
+		r->height = oldHeight;
+		r->window = WINDOW_COUNT;
+		win_repaint(r,NULL,-1);
+	}
+	if(height < oldHeight) {
+		sRectangle *r = (sRectangle*)malloc(sizeof(sRectangle));
+		r->x = windows[window].x;
+		r->y = windows[window].y + height;
+		r->width = oldWidth;
+		r->height = oldHeight - height;
+		r->window = WINDOW_COUNT;
+		win_repaint(r,NULL,-1);
+	}
+}
+
 void win_moveTo(tWinId window,tCoord x,tCoord y) {
 	u32 i,count;
 	sRectangle **rects;
@@ -291,7 +317,7 @@ static void win_repaint(sRectangle *r,sWindow *win,s16 z) {
 			win_sendRepaint(rect->x,rect->y,rect->width,rect->height,rect->window);
 	}
 
-	/* free mem, too */
+	/* free data, too */
 	sll_destroy(list,true);
 }
 

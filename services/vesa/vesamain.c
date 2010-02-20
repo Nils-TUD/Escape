@@ -33,11 +33,14 @@
 #include "bmp.h"
 #include <vbe/vbe.h>
 
-#define CURSOR_FILE						"/etc/cursor.bmp"
+#define CURSOR_DEFAULT_FILE				"/etc/cursor.bmp"
+#define CURSOR_RESIZE_HOR_FILE			"/etc/cursor_reshor.bmp"
+#define CURSOR_RESIZE_BR_FILE			"/etc/cursor_resbr.bmp"
+#define CURSOR_RESIZE_VERT_FILE			"/etc/cursor_resvert.bmp"
 
-#define RESOLUTION_X					800
-#define RESOLUTION_Y					600
-#define BITS_PER_PIXEL					16
+#define RESOLUTION_X					1024
+#define RESOLUTION_Y					768
+#define BITS_PER_PIXEL					24
 
 #define CURSOR_LEN						2
 #define CURSOR_COLOR					0xFFFFFF
@@ -60,7 +63,8 @@ static u8 *cursorCopy;
 static tCoord lastX = 0;
 static tCoord lastY = 0;
 static sMsg msg;
-static sBitmap *bmp;
+static u8 curCursor = CURSOR_DEFAULT;
+static sBitmap *cursor[4];
 static fSetPixel setPixel[] = {
 	/* 0 bpp */		NULL,
 	/* 8 bpp */		NULL,
@@ -73,9 +77,18 @@ int main(void) {
 	tServ id,client;
 	tMsgId mid;
 
-	bmp = bmp_loadFromFile(CURSOR_FILE);
-	if(!bmp)
-		error("Unable to load bitmap from %s",CURSOR_FILE);
+	cursor[0] = bmp_loadFromFile(CURSOR_DEFAULT_FILE);
+	if(cursor[0] == NULL)
+		error("Unable to load bitmap from %s",CURSOR_DEFAULT_FILE);
+	cursor[1] = bmp_loadFromFile(CURSOR_RESIZE_HOR_FILE);
+	if(cursor[1] == NULL)
+		error("Unable to load bitmap from %s",CURSOR_RESIZE_HOR_FILE);
+	cursor[2] = bmp_loadFromFile(CURSOR_RESIZE_BR_FILE);
+	if(cursor[2] == NULL)
+		error("Unable to load bitmap from %s",CURSOR_RESIZE_BR_FILE);
+	cursor[3] = bmp_loadFromFile(CURSOR_RESIZE_VERT_FILE);
+	if(cursor[3] == NULL)
+		error("Unable to load bitmap from %s",CURSOR_RESIZE_VERT_FILE);
 
 	vbe_init();
 	if(vesa_setMode() < 0)
@@ -109,6 +122,7 @@ int main(void) {
 					case MSG_VESA_CURSOR: {
 						tCoord x = (tCoord)msg.args.arg1;
 						tCoord y = (tCoord)msg.args.arg2;
+						curCursor = ((u8)msg.args.arg3) % 4;
 						vesa_setCursor(x,y);
 					}
 					break;
@@ -165,8 +179,8 @@ static s32 vesa_setMode(void) {
 }
 
 static s32 vesa_init(void) {
-	tSize curWidth = bmp->infoHeader->width;
-	tSize curHeight = bmp->infoHeader->height;
+	tSize curWidth = cursor[curCursor]->infoHeader->width;
+	tSize curHeight = cursor[curCursor]->infoHeader->height;
 	shmem = createSharedMem("vesa",minfo->xResolution *
 			minfo->yResolution * (minfo->bitsPerPixel / 8));
 	if(shmem == NULL)
@@ -183,8 +197,8 @@ static void vesa_update(tCoord x,tCoord y,tSize width,tSize height) {
 	tCoord y1,y2;
 	tSize xres = minfo->xResolution;
 	tSize pxSize = minfo->bitsPerPixel / 8;
-	tSize curWidth = bmp->infoHeader->width;
-	tSize curHeight = bmp->infoHeader->height;
+	tSize curWidth = cursor[curCursor]->infoHeader->width;
+	tSize curHeight = cursor[curCursor]->infoHeader->height;
 	u32 count;
 	u8 *src,*dst;
 	y1 = y;
@@ -213,7 +227,7 @@ static void vesa_update(tCoord x,tCoord y,tSize width,tSize height) {
 	if(rectIntersect(&curRec,&upRec,&intersec)) {
 		vesa_copyRegion(video,cursorCopy,intersec.width,intersec.height,
 			intersec.x,intersec.y,intersec.x - lastX,intersec.y - lastY,xres,curWidth);
-		bmp_draw(bmp,lastX,lastY,setPixel[pxSize]);
+		bmp_draw(cursor[curCursor],lastX,lastY,setPixel[pxSize]);
 	}
 }
 
@@ -262,8 +276,8 @@ static void vesa_setPixel32(tCoord x,tCoord y,tColor col) {
 }
 
 static void vesa_setCursor(tCoord x,tCoord y) {
-	tSize curWidth = bmp->infoHeader->width;
-	tSize curHeight = bmp->infoHeader->height;
+	tSize curWidth = cursor[curCursor]->infoHeader->width;
+	tSize curHeight = cursor[curCursor]->infoHeader->height;
 	tSize xres = minfo->xResolution;
 	tSize yres = minfo->yResolution;
 	/* validate position */
@@ -277,7 +291,7 @@ static void vesa_setCursor(tCoord x,tCoord y) {
 		vesa_copyRegion(video,cursorCopy,curWidth,curHeight,x,y,0,0,xres,curWidth);
 	}
 
-	bmp_draw(bmp,x,y,setPixel[minfo->bitsPerPixel / 8]);
+	bmp_draw(cursor[curCursor],x,y,setPixel[minfo->bitsPerPixel / 8]);
 	lastX = x;
 	lastY = y;
 }

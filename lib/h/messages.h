@@ -29,6 +29,12 @@
 #define MAX_MSG_SIZE				(1024 + 4 * sizeof(u32))
 #define MAX_MSGSTR_LEN				64
 
+#define CURSOR_DEFAULT				0
+#define CURSOR_RESIZE_HOR			1
+#define CURSOR_RESIZE_BR			2
+#define CURSOR_RESIZE_VERT			3
+#define CURSOR_RESIZE_WIDTH			10
+
 /* == Messages handled by the kernel == */
 /* fs */
 #define MSG_FS_OPEN_RESP			0
@@ -105,6 +111,7 @@
 #define MSG_WIN_SET_ACTIVE			1106
 #define MSG_WIN_DESTROY_REQ			1107
 #define MSG_WIN_UPDATE_REQ			1108
+#define MSG_WIN_RESIZE_REQ			1109
 
 #define MSG_RECEIVE					1200
 #define MSG_SEND					1201

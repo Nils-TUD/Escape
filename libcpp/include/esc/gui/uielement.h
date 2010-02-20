@@ -90,6 +90,12 @@ namespace esc {
 			inline void setY(tCoord y) {
 				_y = y;
 			};
+			inline void setWidth(tSize width) {
+				_width = width;
+			};
+			inline void setHeight(tSize height) {
+				_height = height;
+			};
 			virtual tWinId getWindowId() const = 0;
 
 		private:

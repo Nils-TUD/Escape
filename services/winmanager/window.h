@@ -71,8 +71,9 @@ tCoord win_getScreenHeight(void);
  *
  * @param x the x-coordinate
  * @param y the y-coordinate
+ * @param cursor the cursor to use
  */
-void win_setCursor(tCoord x,tCoord y);
+void win_setCursor(tCoord x,tCoord y,u8 cursor);
 
 /**
  * Creates a new window from given create-message
@@ -141,6 +142,15 @@ sWindow *win_getActive(void);
  * @param mouseY the current y-coordinate of the mouse
  */
 void win_setActive(tWinId id,bool repaint,tCoord mouseX,tCoord mouseY);
+
+/**
+ * Resizes the window to the given size
+ *
+ * @param window the window-id
+ * @param width the new width
+ * @param height the new height
+ */
+void win_resize(tWinId window,tSize width,tSize height);
 
 /**
  * Moves the given window to given position

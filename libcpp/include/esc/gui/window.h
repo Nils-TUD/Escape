@@ -45,6 +45,9 @@ namespace esc {
 
 			static u16 NEXT_TMP_ID;
 
+			static const tSize MIN_WIDTH = 40;
+			static const tSize MIN_HEIGHT = 40;
+
 			static const u8 MOUSE_MOVED = 0;
 			static const u8 MOUSE_RELEASED = 1;
 			static const u8 MOUSE_PRESSED = 2;
@@ -92,6 +95,8 @@ namespace esc {
 			virtual void onKeyReleased(const KeyEvent &e);
 
 			virtual void paint(Graphics &g);
+			void resize(s16 width,s16 height);
+			void resizeTo(tSize width,tSize height);
 			void move(s16 x,s16 y);
 			void moveTo(tCoord x,tCoord y);
 			void add(Control &c);
@@ -118,6 +123,8 @@ namespace esc {
 			String _title;
 			tSize _titleBarHeight;
 			bool _inTitle;
+			bool _inResizeRight;
+			bool _inResizeBottom;
 			bool _isActive;
 		protected:
 			s32 _focus;

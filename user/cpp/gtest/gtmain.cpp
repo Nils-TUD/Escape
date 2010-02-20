@@ -63,10 +63,10 @@ private:
 int main(void) {
 	if(fork() == 0) {
 		Application *app = Application::getInstance();
-		w1 = new Window("Window 1",100,100,400,300);
+		w1 = new Window("Window 1",100,100,200,300);
 		Button b("Click me!!",10,10,80,20);
-		Editable e(10,40,200,20);
 		w1->add(b);
+		Editable e(10,40,200,20);
 		w1->add(e);
 		ComboBox cb(10,80,100,20);
 		cb.addItem("Test item");

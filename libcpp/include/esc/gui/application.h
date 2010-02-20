@@ -86,6 +86,7 @@ namespace esc {
 			void removeWindow(Window *win);
 			Window *getWindowById(tWinId id);
 			void moveWindow(Window *win);
+			void resizeWindow(Window *win);
 
 		protected:
 			tFD _winFd;

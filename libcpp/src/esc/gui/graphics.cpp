@@ -39,7 +39,15 @@ namespace esc {
 			: _offx(0), _offy(0), _x(x), _y(y), _width(width), _height(height), _bpp(bpp),
 				_col(0), _colInst(Color(0)), _minx(0),_miny(0), _maxx(width - 1), _maxy(height - 1),
 				_pixels(NULL), _font(Font()), _owner(NULL) {
-			// allocate mem
+			allocBuffer();
+		}
+
+		Graphics::~Graphics() {
+			if(_owner == NULL)
+				delete _pixels;
+		}
+
+		void Graphics::allocBuffer() {
 			switch(_bpp) {
 				case 32:
 					_pixels = (u8*)calloc(_width * _height,4);
@@ -51,15 +59,10 @@ namespace esc {
 					_pixels = (u8*)calloc(_width * _height,2);
 					break;
 				default:
-					err << "Unsupported color-depth: " << (u32)bpp << endl;
+					err << "Unsupported color-depth: " << (u32)_bpp << endl;
 					exit(EXIT_FAILURE);
 					break;
 			}
-		}
-
-		Graphics::~Graphics() {
-			if(_owner == NULL)
-				delete _pixels;
 		}
 
 		void Graphics::moveLines(tCoord y,tSize height,s16 up) {
@@ -117,11 +120,8 @@ namespace esc {
 			s32 incx, incy;
 			tCoord *px, *py;
 
-			x0 %= _width;
-			xn %= _width;
-			y0 %= _height;
-			yn %= _height;
-
+			validatePos(x0,y0);
+			validatePos(xn,yn);
 			updateMinMax(x0,y0);
 			updateMinMax(xn,yn);
 
@@ -275,16 +275,32 @@ namespace esc {
 				err << "Unable to send update-request to VESA" << endl;
 		}
 
-		void Graphics::move(tCoord x,tCoord y) {
+		void Graphics::moveTo(tCoord x,tCoord y) {
 			tSize screenWidth = Application::getInstance()->getScreenWidth();
 			tSize screenHeight = Application::getInstance()->getScreenHeight();
 			_x = MIN(screenWidth - 1,x);
 			_y = MIN(screenHeight - 1,y);
 		}
 
+		void Graphics::resizeTo(tSize width,tSize height) {
+			_width = width;
+			_height = height;
+			if(_owner == NULL) {
+				delete [] _pixels;
+				allocBuffer();
+			}
+			else
+				_pixels = _owner->_pixels;
+		}
+
+		void Graphics::validatePos(tCoord &x,tCoord &y) {
+			if(x >= _width - _offx)
+				x = _width - _offx - 1;
+			if(y >= _height - _offy)
+				y = _height - _offy - 1;
+		}
+
 		void Graphics::validateParams(tCoord &x,tCoord &y,tSize &width,tSize &height) {
-			x %= _width;
-			y %= _height;
 			if(_offx + x + width > _width)
 				width = MAX(0,(s32)_width - x - _offx);
 			if(_offy + y + height > _height)

@@ -48,6 +48,7 @@ static void handleMouseMessage(tServ servId,sMouseData *mdata);
 static u8 buttons = 0;
 static tCoord curX = 0;
 static tCoord curY = 0;
+static u8 cursor = CURSOR_DEFAULT;
 
 static sMsg msg;
 static tSize screenWidth;
@@ -116,6 +117,15 @@ int main(void) {
 						tCoord y = (tCoord)msg.args.arg3;
 						if(win_exists(wid) && x < screenWidth && y < screenHeight)
 							win_moveTo(wid,x,y);
+					}
+					break;
+
+					case MSG_WIN_RESIZE_REQ: {
+						tWinId wid = (tWinId)msg.args.arg1;
+						tSize width = (tSize)msg.args.arg2;
+						tSize height = (tSize)msg.args.arg3;
+						if(win_exists(wid))
+							win_resize(wid,width,height);
 					}
 					break;
 
@@ -199,10 +209,6 @@ static void handleMouseMessage(tServ servId,sMouseData *mdata) {
 	curX = MAX(0,MIN(screenWidth - 1,curX + mdata->x));
 	curY = MAX(0,MIN(screenHeight - 1,curY - mdata->y));
 
-	/* let vesa draw the cursor */
-	if(curX != oldx || curY != oldy)
-		win_setCursor(curX,curY);
-
 	/* set active window */
 	if(mdata->buttons != buttons) {
 		btnChanged = true;
@@ -216,6 +222,26 @@ static void handleMouseMessage(tServ servId,sMouseData *mdata) {
 			mouseWin = w;
 		}
 	}
+
+	/* if no buttons are pressed, change the cursor if we're at a window-border */
+	if(!buttons) {
+		w = mouseWin ? mouseWin : win_getAt(curX,curY);
+		cursor = CURSOR_DEFAULT;
+		if(w && w->style != WIN_STYLE_POPUP && curY >= w->y && curY < w->y + w->height) {
+			bool right = curX < w->x + w->width && curX >= w->x + w->width - CURSOR_RESIZE_WIDTH;
+			bool bottom = curY >= w->y + w->height - CURSOR_RESIZE_WIDTH;
+			if(right && bottom)
+				cursor = CURSOR_RESIZE_BR;
+			else if(right)
+				cursor = CURSOR_RESIZE_HOR;
+			else if(bottom)
+				cursor = CURSOR_RESIZE_VERT;
+		}
+	}
+
+	/* let vesa draw the cursor */
+	if(curX != oldx || curY != oldy)
+		win_setCursor(curX,curY,cursor);
 
 	/* send to window */
 	w = mouseWin ? mouseWin : win_getActive();

@@ -40,16 +40,18 @@ namespace esc {
 		tWinId Window::NEXT_TMP_ID = 0xFFFF;
 
 		Window::Window(const String &title,tCoord x,tCoord y,tSize width,tSize height,u8 style)
-			: UIElement(x,y,width,height), _id(NEXT_TMP_ID--), _created(false), _style(style),
-				_title(title), _titleBarHeight(20), _inTitle(false), _isActive(false), _focus(-1),
+			: UIElement(x,y,MAX(MIN_WIDTH,width),MAX(MIN_HEIGHT,height)),
+				_id(NEXT_TMP_ID--), _created(false), _style(style),
+				_title(title), _titleBarHeight(20), _inTitle(false), _inResizeRight(false),
+				_inResizeBottom(false), _isActive(false), _focus(-1),
 				_controls(Vector<Control*>()) {
 			init();
 		}
 
 		Window::Window(const Window &w)
 			: UIElement(w), _id(NEXT_TMP_ID--), _created(false), _style(w._style), _title(w._title),
-				_titleBarHeight(w._titleBarHeight), _inTitle(w._inTitle), _isActive(false),
-				_focus(w._focus), _controls(w._controls) {
+				_titleBarHeight(w._titleBarHeight), _inTitle(w._inTitle), _inResizeRight(false),
+				_inResizeBottom(false), _isActive(false), _focus(w._focus), _controls(w._controls) {
 			init();
 		}
 
@@ -65,6 +67,8 @@ namespace esc {
 			_style = w._style;
 			_titleBarHeight = w._titleBarHeight;
 			_inTitle = w._inTitle;
+			_inResizeRight = w._inResizeRight;
+			_inResizeBottom = w._inResizeBottom;
 			_isActive = false;
 			_focus = w._focus;
 			_controls = w._controls;
@@ -86,24 +90,43 @@ namespace esc {
 			// we store on release/pressed wether we are in the header because
 			// the delay between window-movement and cursor-movement may be too
 			// big so that we "loose" the window
-			if(_inTitle && _style != STYLE_POPUP) {
+			if(_inTitle) {
 				if(e.isButton1Down())
 					move(e.getXMovement(),e.getYMovement());
+				return;
+			}
+			if(_inResizeRight || _inResizeBottom) {
+				if(e.isButton1Down())
+					resize(_inResizeRight ? e.getXMovement() : 0,_inResizeBottom ? e.getYMovement() : 0);
 				return;
 			}
 			passToCtrl(e,MOUSE_MOVED);
 		}
 		void Window::onMouseReleased(const MouseEvent &e) {
-			if(_style != STYLE_POPUP && e.getY() < _titleBarHeight)
-				_inTitle = false;
-			else
-				passToCtrl(e,MOUSE_RELEASED);
+			if(_style != STYLE_POPUP) {
+				if(e.getY() < _titleBarHeight) {
+					_inTitle = false;
+					return;
+				}
+				if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
+					_inResizeRight = false;
+				if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
+					_inResizeBottom = false;
+			}
+			passToCtrl(e,MOUSE_RELEASED);
 		}
 		void Window::onMousePressed(const MouseEvent &e) {
-			if(_style != STYLE_POPUP && e.getY() < _titleBarHeight)
-				_inTitle = true;
-			else
-				passToCtrl(e,MOUSE_PRESSED);
+			if(_style != STYLE_POPUP) {
+				if(e.getY() < _titleBarHeight) {
+					_inTitle = true;
+					return;
+				}
+				if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
+					_inResizeRight = true;
+				if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
+					_inResizeBottom = true;
+			}
+			passToCtrl(e,MOUSE_PRESSED);
 		}
 		void Window::onKeyPressed(const KeyEvent &e) {
 			passToCtrl(e,KEY_PRESSED);
@@ -185,6 +208,30 @@ namespace esc {
 			}
 		}
 
+		void Window::resize(s16 width,s16 height) {
+			if(getWidth() + width < MIN_WIDTH)
+				width = -getWidth() + MIN_WIDTH;
+			if(getHeight() + height < MIN_HEIGHT)
+				height = -getHeight() + MIN_HEIGHT;
+			resizeTo(getWidth() + width,getHeight() + height);
+		}
+
+		void Window::resizeTo(tSize width,tSize height) {
+			tSize screenWidth = Application::getInstance()->getScreenWidth();
+			tSize screenHeight = Application::getInstance()->getScreenHeight();
+			width = MIN(screenWidth,width);
+			height = MIN(screenHeight,height);
+			if(width != getWidth() || height != getHeight()) {
+				_g->resizeTo(width,height);
+				for(u32 i = 0; i < _controls.size(); i++)
+					_controls[i]->getGraphics()->resizeTo(width,height);
+				setWidth(width);
+				setHeight(height);
+				Application::getInstance()->resizeWindow(this);
+				repaint();
+			}
+		}
+
 		void Window::move(s16 x,s16 y) {
 			tSize screenWidth = Application::getInstance()->getScreenWidth();
 			tSize screenHeight = Application::getInstance()->getScreenHeight();
@@ -199,7 +246,7 @@ namespace esc {
 				return;
 
 			if(getX() != x || getY() != y) {
-				_g->move(x,y);
+				_g->moveTo(x,y);
 				setX(_g->_x);
 				setY(_g->_y);
 				Application::getInstance()->moveWindow(this);

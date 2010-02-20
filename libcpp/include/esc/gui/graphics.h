@@ -212,7 +212,11 @@ namespace esc {
 			/**
 			 * Sets the coordinates for this control / window
 			 */
-			void move(tCoord x,tCoord y);
+			void moveTo(tCoord x,tCoord y);
+			/**
+			 * Sets the dimensions for this control / window
+			 */
+			void resizeTo(tSize width,tSize height);
 			/**
 			 * Requests an update for the dirty region
 			 */
@@ -226,9 +230,19 @@ namespace esc {
 			 */
 			void notifyVesa(tCoord x,tCoord y,tSize width,tSize height);
 			/**
+			 * Validates the given position
+			 */
+			void validatePos(tCoord &x,tCoord &y);
+			/**
 			 * Validates the given parameters
 			 */
 			void validateParams(tCoord &x,tCoord &y,tSize &width,tSize &height);
+
+		private:
+			/**
+			 * Allocates _pixels
+			 */
+			void allocBuffer();
 
 		protected:
 			// for controls: the offset of the control in the window (otherwise 0)

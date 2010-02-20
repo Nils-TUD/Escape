@@ -29,7 +29,7 @@
 #define BI_RLE4			2	/* valid if bitCount == 4 and height > 0 */
 #define BI_BITFIELDS	3	/* valid for bitCount == 16 or 32. uncompressed with colormasks */
 
-#define TRANSPARENCY	0x00FF44FF
+#define TRANSPARENCY	0x00FF00FF
 
 /* the file-header */
 typedef struct {

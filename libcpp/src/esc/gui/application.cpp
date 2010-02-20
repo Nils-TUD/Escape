@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
+#include <esc/debug.h>
 #include <messages.h>
 #include <esc/mem.h>
 #include <esc/thread.h>
@@ -139,8 +140,13 @@ namespace esc {
 					tSize height = (tSize)msg->args.arg4;
 					tWinId win = (tWinId)msg->args.arg5;
 					Window *w = getWindowById(win);
-					if(w)
+					if(w) {
+						if(x + width > w->getWidth())
+							width = w->getWidth() - x;
+						if(y + height > w->getHeight())
+							height = w->getHeight() - y;
 						w->update(x,y,width,height);
+					}
 				}
 				break;
 
@@ -200,6 +206,15 @@ namespace esc {
 		}
 
 		void Application::requestWinUpdate(tWinId id,tCoord x,tCoord y,tSize width,tSize height) {
+			Window *w = getWindowById(id);
+			if(x < 0)
+				x = 0;
+			if(y < 0)
+				y = 0;
+			if(x + width > w->getWidth())
+				width = w->getWidth() - x;
+			if(y + height > w->getHeight())
+				height = w->getHeight() - y;
 			_msg.args.arg1 = id;
 			_msg.args.arg2 = x;
 			_msg.args.arg3 = y;
@@ -242,6 +257,16 @@ namespace esc {
 			_msg.args.arg3 = win->getY();
 			if(send(_winFd,MSG_WIN_MOVE_REQ,&_msg,sizeof(_msg.args)) < 0) {
 				printe("Unable to move window");
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		void Application::resizeWindow(Window *win) {
+			_msg.args.arg1 = win->getId();
+			_msg.args.arg2 = win->getWidth();
+			_msg.args.arg3 = win->getHeight();
+			if(send(_winFd,MSG_WIN_RESIZE_REQ,&_msg,sizeof(_msg.args)) < 0) {
+				printe("Unable to resize window");
 				exit(EXIT_FAILURE);
 			}
 		}

@@ -22,6 +22,14 @@
 #include <esc/heap.h>
 #include <string.h>
 
+void rectAdd(sRectangle *r1,sRectangle *r2) {
+	s16 x = r1->x, y = r1->y;
+	r1->x = MIN(r1->x,r2->x);
+	r1->y = MIN(r1->y,r2->y);
+	r1->width = MAX(x + r1->width,r2->x + r2->width) - r1->x;
+	r1->height = MAX(y + r1->height,r2->y + r2->height) - r1->y;
+}
+
 bool rectContains(sRectangle *r,s16 x,s16 y) {
 	return x >= r->x && x < r->x + r->width &&
 		y >= r->y && y < r->y + r->height;

@@ -99,7 +99,8 @@ int main(void) {
 #endif
 
 	Application *app = Application::getInstance();
-	w1 = new Window("Window 4",180,90,900,800);
+	//w1 = new Window("Window 4",180,90,900,800);
+	w1 = new Window("Window 4",180,90,100,80);
 	/*startThread(pbThread);*/
 	return app->run();
 }

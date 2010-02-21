@@ -37,6 +37,14 @@ extern "C" {
 #endif
 
 /**
+ * Adds r2 to r1. That means r1 will enclose r1 and r2 after the call
+ *
+ * @param r1 the first rectangle
+ * @param r2 the second rectangle
+ */
+void rectAdd(sRectangle *r1,sRectangle *r2);
+
+/**
  * @param r the rectangle
  * @param x the x-coordinate
  * @param y the y-coordinate

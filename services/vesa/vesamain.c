@@ -34,10 +34,12 @@
 #include "bmp.h"
 #include <vbe/vbe.h>
 
-#define CURSOR_DEFAULT_FILE				"/etc/cursor.bmp"
-#define CURSOR_RESIZE_HOR_FILE			"/etc/cursor_reshor.bmp"
+#define CURSOR_DEFAULT_FILE				"/etc/cursor_def.bmp"
+#define CURSOR_RESIZE_L_FILE			"/etc/cursor_resl.bmp"
 #define CURSOR_RESIZE_BR_FILE			"/etc/cursor_resbr.bmp"
 #define CURSOR_RESIZE_VERT_FILE			"/etc/cursor_resvert.bmp"
+#define CURSOR_RESIZE_BL_FILE			"/etc/cursor_resbl.bmp"
+#define CURSOR_RESIZE_R_FILE			"/etc/cursor_resr.bmp"
 
 #define RESOLUTION_X					1024
 #define RESOLUTION_Y					768
@@ -70,7 +72,7 @@ static tCoord lastX = 0;
 static tCoord lastY = 0;
 static sMsg msg;
 static u8 curCursor = CURSOR_DEFAULT;
-static sBitmap *cursor[4];
+static sBitmap *cursor[5];
 static fSetPixel setPixel[] = {
 	/* 0 bpp */		NULL,
 	/* 8 bpp */		NULL,
@@ -86,15 +88,21 @@ int main(void) {
 	cursor[0] = bmp_loadFromFile(CURSOR_DEFAULT_FILE);
 	if(cursor[0] == NULL)
 		error("Unable to load bitmap from %s",CURSOR_DEFAULT_FILE);
-	cursor[1] = bmp_loadFromFile(CURSOR_RESIZE_HOR_FILE);
+	cursor[1] = bmp_loadFromFile(CURSOR_RESIZE_L_FILE);
 	if(cursor[1] == NULL)
-		error("Unable to load bitmap from %s",CURSOR_RESIZE_HOR_FILE);
+		error("Unable to load bitmap from %s",CURSOR_RESIZE_L_FILE);
 	cursor[2] = bmp_loadFromFile(CURSOR_RESIZE_BR_FILE);
 	if(cursor[2] == NULL)
 		error("Unable to load bitmap from %s",CURSOR_RESIZE_BR_FILE);
 	cursor[3] = bmp_loadFromFile(CURSOR_RESIZE_VERT_FILE);
 	if(cursor[3] == NULL)
 		error("Unable to load bitmap from %s",CURSOR_RESIZE_VERT_FILE);
+	cursor[4] = bmp_loadFromFile(CURSOR_RESIZE_BL_FILE);
+	if(cursor[4] == NULL)
+		error("Unable to load bitmap from %s",CURSOR_RESIZE_BL_FILE);
+	cursor[5] = bmp_loadFromFile(CURSOR_RESIZE_R_FILE);
+	if(cursor[5] == NULL)
+		error("Unable to load bitmap from %s",CURSOR_RESIZE_R_FILE);
 
 	vbe_init();
 	if(vesa_setMode() < 0)
@@ -155,7 +163,7 @@ int main(void) {
 					case MSG_VESA_CURSOR: {
 						newCurX = (tCoord)msg.args.arg1;
 						newCurY = (tCoord)msg.args.arg2;
-						curCursor = ((u8)msg.args.arg3) % 4;
+						curCursor = ((u8)msg.args.arg3) % 6;
 						updCursor = true;
 					}
 					break;

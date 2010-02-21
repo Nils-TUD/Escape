@@ -123,6 +123,7 @@ namespace esc {
 			String _title;
 			tSize _titleBarHeight;
 			bool _inTitle;
+			bool _inResizeLeft;
 			bool _inResizeRight;
 			bool _inResizeBottom;
 			bool _isActive;

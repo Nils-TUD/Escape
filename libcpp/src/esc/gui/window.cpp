@@ -42,16 +42,17 @@ namespace esc {
 		Window::Window(const String &title,tCoord x,tCoord y,tSize width,tSize height,u8 style)
 			: UIElement(x,y,MAX(MIN_WIDTH,width),MAX(MIN_HEIGHT,height)),
 				_id(NEXT_TMP_ID--), _created(false), _style(style),
-				_title(title), _titleBarHeight(20), _inTitle(false), _inResizeRight(false),
-				_inResizeBottom(false), _isActive(false), _focus(-1),
+				_title(title), _titleBarHeight(20), _inTitle(false), _inResizeLeft(false),
+				_inResizeRight(false), _inResizeBottom(false), _isActive(false), _focus(-1),
 				_controls(Vector<Control*>()) {
 			init();
 		}
 
 		Window::Window(const Window &w)
 			: UIElement(w), _id(NEXT_TMP_ID--), _created(false), _style(w._style), _title(w._title),
-				_titleBarHeight(w._titleBarHeight), _inTitle(w._inTitle), _inResizeRight(false),
-				_inResizeBottom(false), _isActive(false), _focus(w._focus), _controls(w._controls) {
+				_titleBarHeight(w._titleBarHeight), _inTitle(w._inTitle), _inResizeLeft(false),
+				_inResizeRight(false), _inResizeBottom(false), _isActive(false),
+				_focus(w._focus), _controls(w._controls) {
 			init();
 		}
 
@@ -67,6 +68,7 @@ namespace esc {
 			_style = w._style;
 			_titleBarHeight = w._titleBarHeight;
 			_inTitle = w._inTitle;
+			_inResizeLeft = w._inResizeLeft;
 			_inResizeRight = w._inResizeRight;
 			_inResizeBottom = w._inResizeBottom;
 			_isActive = false;
@@ -95,6 +97,14 @@ namespace esc {
 					move(e.getXMovement(),e.getYMovement());
 				return;
 			}
+			if(_inResizeLeft) {
+				if(e.isButton1Down()) {
+					if(_inResizeLeft)
+						move(e.getXMovement(),0);
+					resize(_inResizeLeft ? -e.getXMovement() : 0,_inResizeBottom ? e.getYMovement() : 0);
+				}
+				return;
+			}
 			if(_inResizeRight || _inResizeBottom) {
 				if(e.isButton1Down())
 					resize(_inResizeRight ? e.getXMovement() : 0,_inResizeBottom ? e.getYMovement() : 0);
@@ -108,10 +118,12 @@ namespace esc {
 					_inTitle = false;
 					return;
 				}
-				if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
-					_inResizeRight = false;
-				if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
+				else if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
 					_inResizeBottom = false;
+				if(e.getX() < CURSOR_RESIZE_WIDTH)
+					_inResizeLeft = false;
+				else if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
+					_inResizeRight = false;
 			}
 			passToCtrl(e,MOUSE_RELEASED);
 		}
@@ -121,10 +133,12 @@ namespace esc {
 					_inTitle = true;
 					return;
 				}
-				if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
-					_inResizeRight = true;
-				if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
+				else if(e.getY() >= getHeight() - CURSOR_RESIZE_WIDTH)
 					_inResizeBottom = true;
+				if(e.getX() < CURSOR_RESIZE_WIDTH)
+					_inResizeLeft = true;
+				else if(e.getX() >= getWidth() - CURSOR_RESIZE_WIDTH)
+					_inResizeRight = true;
 			}
 			passToCtrl(e,MOUSE_PRESSED);
 		}

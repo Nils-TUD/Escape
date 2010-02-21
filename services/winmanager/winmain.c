@@ -227,14 +227,19 @@ static void handleMouseMessage(tServ servId,sMouseData *mdata) {
 	if(!buttons) {
 		w = mouseWin ? mouseWin : win_getAt(curX,curY);
 		cursor = CURSOR_DEFAULT;
-		if(w && w->style != WIN_STYLE_POPUP && curY >= w->y && curY < w->y + w->height) {
-			bool right = curX < w->x + w->width && curX >= w->x + w->width - CURSOR_RESIZE_WIDTH;
+		if(w && w->style != WIN_STYLE_POPUP) {
+			bool left = curX < w->x + CURSOR_RESIZE_WIDTH;
+			bool right = curX >= w->x + w->width - CURSOR_RESIZE_WIDTH;
 			bool bottom = curY >= w->y + w->height - CURSOR_RESIZE_WIDTH;
+			if(left && bottom)
+				cursor = CURSOR_RESIZE_BL;
+			else if(left)
+				cursor = CURSOR_RESIZE_R;
 			if(right && bottom)
 				cursor = CURSOR_RESIZE_BR;
 			else if(right)
-				cursor = CURSOR_RESIZE_HOR;
-			else if(bottom)
+				cursor = CURSOR_RESIZE_R;
+			else if(bottom && !left)
 				cursor = CURSOR_RESIZE_VERT;
 		}
 	}

@@ -30,9 +30,11 @@
 #define MAX_MSGSTR_LEN				64
 
 #define CURSOR_DEFAULT				0
-#define CURSOR_RESIZE_HOR			1
+#define CURSOR_RESIZE_L				1
 #define CURSOR_RESIZE_BR			2
 #define CURSOR_RESIZE_VERT			3
+#define CURSOR_RESIZE_BL			4
+#define CURSOR_RESIZE_R				5
 #define CURSOR_RESIZE_WIDTH			10
 
 /* == Messages handled by the kernel == */

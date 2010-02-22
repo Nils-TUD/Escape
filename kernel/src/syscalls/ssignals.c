@@ -58,9 +58,27 @@ void sysc_unsetSigHandler(sIntrptStackFrame *stack) {
 }
 
 void sysc_ackSignal(sIntrptStackFrame *stack) {
+	u32 *esp;
 	sThread *t = thread_getRunning();
 	sig_ackHandling(t->tid);
-	SYSC_RET1(stack,0);
+
+	esp = (u32*)stack->uesp;
+	if(!paging_isRangeUserReadable((u32)esp,sizeof(u32) * 9))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	/* remove args */
+	esp += 2;
+	/* restore regs */
+	stack->esi = *esp++;
+	stack->edi = *esp++;
+	stack->edx = *esp++;
+	stack->ecx = *esp++;
+	stack->ebx = *esp++;
+	stack->eax = *esp++;
+	stack->eflags = *esp++;
+	/* return */
+	stack->eip = *esp++;
+	stack->uesp = (u32)esp;
 }
 
 void sysc_sendSignalTo(sIntrptStackFrame *stack) {

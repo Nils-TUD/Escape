@@ -299,6 +299,13 @@ void proc_dbg_stopProf(void);
 void proc_dbg_printAll(void);
 
 /**
+ * Prints the given parts of the page-directory for all existing processes
+ *
+ * @param parts the parts (see paging_dbg_printPageDirOf)
+ */
+void proc_dbg_printAllPDs(u8 parts);
+
+/**
  * Prints the given process
  *
  * @param p the pointer to the process

@@ -442,6 +442,7 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 		/* the ret-instruction of sigRet() should go to the old eip */
 		*--esp = stack->eip;
 		/* save regs */
+		*--esp = stack->eflags;
 		*--esp = stack->eax;
 		*--esp = stack->ebx;
 		*--esp = stack->ecx;
@@ -582,8 +583,8 @@ void intrpt_handler(sIntrptStackFrame stack) {
 			/* fall through */
 
 		default:
-			vid_printf("Got interrupt %d (%s) @ 0x%x\n",stack.intrptNo,
-					intrpt_no2Name(stack.intrptNo),stack.eip);
+			vid_printf("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack.intrptNo,
+					intrpt_no2Name(stack.intrptNo),stack.eip,t->proc->pid,t->proc->command);
 			break;
 	}
 

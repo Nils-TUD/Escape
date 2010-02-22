@@ -50,7 +50,6 @@ export SUDO=sudo
 
 all: $(BUILD) $(BUILDAPPS)
 		@[ -f $(HDD) ] || make createhdd;
-		@[ -f $(ISO) ] || make createcd;
 		@for i in $(DIRS); do \
 			make -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
@@ -110,15 +109,19 @@ $(ISO):	all
 $(VMDISK): $(HDD)
 		qemu-img convert -f raw $(HDD) -O vmdk $(VMDISK)
 
-dis: all
-		objdump -d -S $(BIN) | less
+dis:
+ifeq ($(APP),)
+		objdump -dS $(BIN) | less
+else
+		objdump -dS $(BUILD)/$(APP) | less
+endif
 
 qemu:	all prepareRun
 		sudo /etc/init.d/kvm start || true
 		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1
 
 bochs: all prepareRun
-		bochs -f bochs.cfg -q | tee log.txt
+		bochs -f bochs.cfg -q
 
 vmware: all prepareRun $(ISO) $(VMDISK)
 		sudo /etc/init.d/kvm stop || true # vmware doesn't like kvm :/
@@ -136,9 +139,6 @@ debug: all prepareRun
 
 debugm: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
-
-debugbochs: all prepareRun
-		bochs -f bochs.cfg | tee log.txt
 
 debugt: all prepareTest
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &

@@ -119,9 +119,11 @@ void sysc_handle(sIntrptStackFrame *stack) {
 	SYSC_SETERROR(stack,0);
 	syscalls[sysCallNo].handler(stack);
 
-	/* set error-code */
-	stack->ecx = stack->ebx;
-	stack->ebx = ebxSave;
+	/* set error-code (not for ackSignal) */
+	if(sysCallNo != 22) {
+		stack->ecx = stack->ebx;
+		stack->ebx = ebxSave;
+	}
 }
 
 bool sysc_isStringReadable(const char *str) {

@@ -98,6 +98,7 @@ static sRingBuf *ibuf;
 static sRingBuf *rbuf;
 static sMouseData mdata;
 static sMousePacket packet;
+static bool moving = false;
 
 int main(void) {
 	tMsgId mid;
@@ -109,6 +110,12 @@ int main(void) {
 
 	kb_init();
 
+	/* create input-buffer */
+	ibuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
+	rbuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
+	if(ibuf == NULL || rbuf == NULL)
+		error("Unable to create ring-buffers");
+
 	/* reg intrpt-handler */
 	if(setSigHandler(SIG_INTRPT_MOUSE,irqHandler) < 0)
 		error("Unable to announce interrupt-handler");
@@ -118,20 +125,16 @@ int main(void) {
 	if(sid < 0)
 		error("Unable to register service '%s'","mouse");
 
-	/* create input-buffer */
-	ibuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
-	rbuf = rb_create(sizeof(sMouseData),INPUT_BUF_SIZE,RB_OVERWRITE);
-	if(ibuf == NULL || rbuf == NULL)
-		error("Unable to create ring-buffers");
-
     /* wait for commands */
 	while(1) {
 		tFD fd;
 
-		/* move mouse-packages */
+		/* move mouse-packages (we can't access ibuf while doing this) */
+		moving = true;
 		rb_move(rbuf,ibuf,rb_length(ibuf));
 		if(rb_length(rbuf) > 0)
 			setDataReadable(sid,true);
+		moving = false;
 
 		fd = getClient(&sid,1,&client);
 		if(fd < 0)
@@ -207,13 +210,17 @@ static void irqHandler(tSig sig,u32 data) {
 		case 2:
 			packet.ycoord = inByte(IOPORT_KB_DATA);
 			byteNo = 0;
-			/* write the message in our receive-pipe*/
-			mdata.x = packet.xcoord;
-			mdata.y = packet.ycoord;
-			mdata.buttons = (packet.status.leftBtn << 2) |
-				(packet.status.rightBtn << 1) |
-				(packet.status.middleBtn << 0);
-			rb_write(ibuf,&mdata);
+			/* if we're currently moving stuff from ibuf to rbuf, we can't access ibuf */
+			/* so, simply skip the packet in this case */
+			if(!moving) {
+				/* write the message in our ringbuffer */
+				mdata.x = packet.xcoord;
+				mdata.y = packet.ycoord;
+				mdata.buttons = (packet.status.leftBtn << 2) |
+					(packet.status.rightBtn << 1) |
+					(packet.status.middleBtn << 0);
+				rb_write(ibuf,&mdata);
+			}
 			break;
 	}
 }

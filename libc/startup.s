@@ -22,9 +22,10 @@
 [global init]
 [extern main]
 [extern exit]
-[extern ackSignal]
 
 ALIGN 4
+
+%include "syscalls.s"
 
 init:
 	call	main
@@ -66,16 +67,6 @@ threadExit:
 
 ; all signal-handler return to this "function" (address 0x2d)
 sigRetFunc:
-	; ack signal so that the kernel knows that we accept another signal
-	call	ackSignal
-	; remove args
-	add		esp,8
-	; restore register
-	pop		esi
-	pop		edi
-	pop		edx
-	pop		ecx
-	pop		ebx
-	pop		eax
-	; return to the instruction before the signal
-	ret
+	mov		eax,SYSCALL_ACKSIG
+	int		SYSCALL_IRQ
+	; never reached

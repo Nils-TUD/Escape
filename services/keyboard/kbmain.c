@@ -80,6 +80,7 @@ static void kb_waitInBuf(void);
 static sMsg msg;
 static sRingBuf *rbuf;
 static sRingBuf *ibuf;
+static bool moving = false;
 
 int main(void) {
 	tServ id,client;
@@ -191,10 +192,12 @@ int main(void) {
 	while(1) {
 		tFD fd;
 
-		/* move keycodes */
+		/* move keycodes (we can't access ibuf while doing this) */
+		moving = true;
 		rb_move(rbuf,ibuf,rb_length(ibuf));
 		if(rb_length(rbuf) > 0)
 			setDataReadable(id,true);
+		moving = false;
 
 		fd = getClient(&id,1,&client);
 		if(fd < 0)
@@ -259,10 +262,13 @@ static void kbIntrptHandler(tSig sig,u32 d) {
 	if(!(inByte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
 		return;
 	scanCode = inByte(IOPORT_KB_DATA);
-	/*debugf("sc=%x\n",scanCode);*/
-	if(kb_set1_getKeycode(&data.isBreak,&data.keycode,scanCode)) {
-		/* write in buffer */
-		rb_write(ibuf,&data);
+	/* if we're currently moving stuff from ibuf to rbuf, we can't access ibuf */
+	/* so, simply skip the scancode in this case */
+	if(!moving) {
+		if(kb_set1_getKeycode(&data.isBreak,&data.keycode,scanCode)) {
+			/* write in buffer */
+			rb_write(ibuf,&data);
+		}
 	}
 	/* ack scancode
 	outByte(IOPORT_PIC,PIC_ICW1);*/

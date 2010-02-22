@@ -756,6 +756,17 @@ void proc_dbg_printAll(void) {
 	}
 }
 
+void proc_dbg_printAllPDs(u8 parts) {
+	u32 i;
+	for(i = 0; i < PROC_COUNT; i++) {
+		if(procs[i].pid != INVALID_PID) {
+			vid_printf("Process %d (%s):\n",procs[i].pid,procs[i].command);
+			paging_dbg_printPageDirOf(procs + i,parts);
+			vid_printf("\n");
+		}
+	}
+}
+
 void proc_dbg_print(sProc *p) {
 	sSLNode *n;
 	vid_printf("proc %d [ppid=%d, cmd=%s, pdir=%x, text=%d, data=%d, stack=%d]\n",p->pid,

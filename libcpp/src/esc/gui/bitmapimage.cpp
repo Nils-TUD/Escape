@@ -36,31 +36,36 @@ namespace esc {
 						case 8:
 						case 24: {
 							u32 bitCount = _infoHeader->bitCount;
-							u8 *data = _data;
+							u8 *oldData,*data = _data;
 							tSize w = _infoHeader->width, h = _infoHeader->height;
+							tSize pw = w, ph = h, pad;
 							tCoord cx,cy;
 							u32 lastCol = 0;
+							g.validateParams(x,y,pw,ph);
 							g.setColor(Color(0));
 							g.updateMinMax(x,y);
-							g.updateMinMax(x + w,y + h);
-							for(cy = 0; cy < h; cy++) {
+							g.updateMinMax(x + pw,y + ph);
+							pad = w % 4;
+							pad = pad ? 4 - pad : 0;
+							data += (h - 1) * (w + pad) * (bitCount / 8);
+							for(cy = ph - 1; cy >= 0; cy--) {
+								oldData = data;
 								for(cx = 0; cx < w; cx++) {
-									// TODO performance might be improvable
-									u32 col = bitCount <= 8 ? *data : *(u32*)data;
-									if(col != lastCol) {
-										g.setColor(Color(bitCount <= 8 ? _colorTable[col] : col));
-										lastCol = col;
+									if(cx < pw) {
+										// TODO performance might be improvable
+										u32 col = bitCount <= 8 ? *data : *(u32*)data;
+										if(col != lastCol) {
+											g.setColor(Color(bitCount <= 8 ? _colorTable[col] : col));
+											lastCol = col;
+										}
+										g.doSetPixel(cx + x,y + (ph - 1 - cy));
 									}
-									g.doSetPixel(cx + x,y + (h - cy));
 									if(bitCount <= 8)
 										data++;
 									else
 										data += 3;
 								}
-								// lines are 4-byte aligned
-								cx = (cx * (bitCount / 8)) % 4;
-								if(cx)
-									data += 4 - cx;
+								data = oldData - (w + pad) * (bitCount / 8);
 							}
 						}
 						break;

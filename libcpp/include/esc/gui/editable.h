@@ -62,6 +62,11 @@ namespace esc {
 			virtual void onKeyPressed(const KeyEvent &e);
 
 		private:
+			inline u32 getMaxCharNum(Graphics &g) {
+				return (getWidth() - PADDING) / g.getFont().getWidth();
+			};
+
+		private:
 			u32 _cursor;
 			bool _focused;
 			String _str;

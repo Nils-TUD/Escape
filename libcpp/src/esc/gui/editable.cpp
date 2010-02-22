@@ -43,6 +43,7 @@ namespace esc {
 		void Editable::paint(Graphics &g) {
 			u32 cwidth = g.getFont().getWidth();
 			u32 cheight = g.getFont().getHeight();
+			u32 count = getMaxCharNum(g);
 			g.setColor(BGCOLOR);
 			g.fillRect(1,1,getWidth() - 2,getHeight() - 2);
 			g.setColor(BORDER_COLOR);
@@ -50,11 +51,11 @@ namespace esc {
 
 			tCoord ystart = (getHeight() - cheight) / 2;
 			g.setColor(FGCOLOR);
-			g.drawString(PADDING,ystart,_str);
+			g.drawString(PADDING,ystart,_str,_cursor > count ? _cursor - count : 0,count);
 			if(_focused) {
 				g.setColor(CURSOR_COLOR);
-				g.fillRect(PADDING + cwidth * _cursor,ystart - CURSOR_OVERLAP,CURSOR_WIDTH,
-						cheight + CURSOR_OVERLAP * 2);
+				g.fillRect(PADDING + cwidth * (_cursor > count ? count : _cursor),
+						ystart - CURSOR_OVERLAP,CURSOR_WIDTH,cheight + CURSOR_OVERLAP * 2);
 			}
 		}
 

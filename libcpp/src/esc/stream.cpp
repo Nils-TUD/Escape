@@ -23,10 +23,15 @@
 #include <esc/stream.h>
 #include <string.h>
 
+#define BUF_TYPE_STRING		1
+#define BUF_TYPE_FILE		2
+#define BUF_TYPE_VTERM		4
+
 struct _sStreamBuf {
 	tFD fd;
 	u8 type;
 	s32 pos;
+	s32 length;
 	s32 max;
 	char *str;
 };
@@ -83,8 +88,9 @@ namespace esc {
 		// TODO this is an ugly hack! is there a better way?
 		struct _sStreamBuf streamBuf;
 		streamBuf.fd = -1;
-		streamBuf.type = 0;	// 0 = string
+		streamBuf.type = BUF_TYPE_STRING;
 		streamBuf.pos = _pos;
+		streamBuf.length = 0;
 		streamBuf.max = _max;
 		streamBuf.str = _buffer;
 		res = vbprintf(&streamBuf,fmt,ap);
@@ -135,8 +141,9 @@ namespace esc {
 		// TODO this is an ugly hack! is there a better way?
 		struct _sStreamBuf streamBuf;
 		streamBuf.fd = _fd;
-		streamBuf.type = 1;	// 1 = file
+		streamBuf.type = BUF_TYPE_FILE;
 		streamBuf.pos = _pos;
+		streamBuf.length = 0;
 		streamBuf.max = _max;
 		streamBuf.str = _buffer;
 		res = vbprintf(&streamBuf,fmt,ap);

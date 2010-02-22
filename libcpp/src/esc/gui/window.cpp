@@ -32,8 +32,8 @@
 namespace esc {
 	namespace gui {
 		Color Window::BGCOLOR = Color(0x88,0x88,0x88);
-		Color Window::TITLE_BGCOLOR = Color(0,0,0xFF);
-		Color Window::TITLE_ACTIVE_BGCOLOR = Color(0,0,0x80);
+		Color Window::TITLE_ACTIVE_BGCOLOR = Color(0,0,0xFF);
+		Color Window::TITLE_INACTIVE_BGCOLOR = Color(0,0,0x80);
 		Color Window::TITLE_FGCOLOR = Color(0xFF,0xFF,0xFF);
 		Color Window::BORDER_COLOR = Color(0x77,0x77,0x77);
 
@@ -274,9 +274,9 @@ namespace esc {
 
 			// paint titlebar
 			if(_isActive)
-				g.setColor(TITLE_BGCOLOR);
-			else
 				g.setColor(TITLE_ACTIVE_BGCOLOR);
+			else
+				g.setColor(TITLE_INACTIVE_BGCOLOR);
 			g.fillRect(1,1,getWidth() - 2,_titleBarHeight - 1);
 			g.setColor(TITLE_FGCOLOR);
 			g.drawString(5,(_titleBarHeight - g.getFont().getHeight()) / 2,_title);

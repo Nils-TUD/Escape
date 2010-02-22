@@ -28,6 +28,7 @@
 #include <esc/gui/button.h>
 #include <esc/gui/editable.h>
 #include <esc/gui/combobox.h>
+#include <esc/gui/checkbox.h>
 #include <esc/gui/progressbar.h>
 #include <esc/gui/bitmapimage.h>
 #include <esc/date.h>
@@ -73,7 +74,9 @@ int main(void) {
 		cb.addItem("Foo bar");
 		cb.addItem("abc 123");
 		w1->add(cb);
-		pb = new ProgressBar("Progress...",10,120,200,20);
+		Checkbox check("Meine Checkbox",10,120,200,20);
+		w1->add(check);
+		pb = new ProgressBar("Progress...",10,160,200,20);
 		w1->add(*pb);
 		if(startThread(pbThread,NULL) < 0)
 			printe("[GUITEST] Unable to start thread");

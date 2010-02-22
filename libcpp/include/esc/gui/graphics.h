@@ -155,6 +155,18 @@ namespace esc {
 			virtual void drawString(tCoord x,tCoord y,const String &str);
 
 			/**
+			 * Draws the given part of the given string at the given position. Note that the
+			 * position is the top left of the first character.
+			 *
+			 * @param x the x-coordinate
+			 * @param y the y-coordinate
+			 * @param str the string
+			 * @param start the start-position in the string
+			 * @param count the number of characters
+			 */
+			virtual void drawString(tCoord x,tCoord y,const String &str,u32 start,u32 count);
+
+			/**
 			 * Draws a line from (x0,y0) to (xn,yn)
 			 *
 			 * @param x0 first x-coordinate

@@ -29,9 +29,12 @@ namespace esc {
 			u8 red = getRed() >> (8 - vesaInfo->redMaskSize);
 			u8 green = getGreen() >> (8 - vesaInfo->greenMaskSize);
 			u8 blue = getBlue() >> (8 - vesaInfo->blueMaskSize);
-			return (red << vesaInfo->redFieldPosition) |
+			u32 val = (red << vesaInfo->redFieldPosition) |
 					(green << vesaInfo->greenFieldPosition) |
 					(blue << vesaInfo->blueFieldPosition);
+			if(vesaInfo->bitsPerPixel == 32)
+				val |= (u32)getAlpha() << 24;
+			return val;
 		}
 
 		Stream &operator<<(Stream &s,const Color &c) {

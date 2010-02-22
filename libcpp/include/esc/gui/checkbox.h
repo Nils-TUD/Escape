@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BUTTON_H_
-#define BUTTON_H_
+#ifndef CHECKBOX_H_
+#define CHECKBOX_H_
 
 #include <esc/common.h>
 #include <esc/gui/common.h>
@@ -27,30 +27,29 @@
 
 namespace esc {
 	namespace gui {
-		class Button : public Control {
+		class Checkbox : public Control {
 		private:
-			static Color BGCOLOR;
 			static Color FGCOLOR;
-			static Color LIGHT_BORDER_COLOR;
-			static Color DARK_BORDER_COLOR;
+			static Color BGCOLOR;
+			static Color BOX_COLOR;
 
 		public:
-			Button(tCoord x,tCoord y,tSize width,tSize height)
-				: Control(x,y,width,height), _focused(false), _pressed(false), _text(String()) {
+			Checkbox(tCoord x,tCoord y,tSize width,tSize height)
+				: Control(x,y,width,height), _focused(false), _checked(false), _text(String()) {
 			};
-			Button(const String &text,tCoord x,tCoord y,tSize width,tSize height)
-				: Control(x,y,width,height), _focused(false), _pressed(false), _text(text) {
+			Checkbox(const String &text,tCoord x,tCoord y,tSize width,tSize height)
+				: Control(x,y,width,height), _focused(false), _checked(false), _text(text) {
 			};
-			Button(const Button &b)
-				: Control(b), _focused(false), _pressed(b._pressed), _text(b._text) {
+			Checkbox(const Checkbox &b)
+				: Control(b), _focused(false), _checked(b._checked), _text(b._text) {
 			};
-			virtual ~Button() {
+			virtual ~Checkbox() {
 
 			};
-			Button &operator=(const Button &b);
+			Checkbox &operator=(const Checkbox &b);
 
-			inline bool isPressed() const {
-				return _pressed;
+			inline bool isChecked() const {
+				return _checked;
 			};
 			inline String getText() const {
 				return _text;
@@ -62,21 +61,19 @@ namespace esc {
 
 			virtual void onFocusGained();
 			virtual void onFocusLost();
-			virtual void onKeyPressed(const KeyEvent &e);
 			virtual void onKeyReleased(const KeyEvent &e);
-			virtual void onMousePressed(const MouseEvent &e);
 			virtual void onMouseReleased(const MouseEvent &e);
 			virtual void paint(Graphics &g);
 
 		private:
-			void setPressed(bool pressed);
+			void setChecked(bool checked);
 
 		private:
 			bool _focused;
-			bool _pressed;
+			bool _checked;
 			String _text;
 		};
 	}
 }
 
-#endif /* BUTTON_H_ */
+#endif /* CHECKBOX_H_ */

@@ -106,8 +106,13 @@ namespace esc {
 		}
 
 		void Graphics::drawString(tCoord x,tCoord y,const String &str) {
+			drawString(x,y,str,0,str.length());
+		}
+
+		void Graphics::drawString(tCoord x,tCoord y,const String &str,u32 start,u32 count) {
 			u32 charWidth = _font.getWidth();
-			for(u32 i = 0; i < str.length(); i++) {
+			u32 end = start + MIN(str.length(),count);
+			for(u32 i = start; i < end; i++) {
 				drawChar(x,y,str[i]);
 				x += charWidth;
 			}

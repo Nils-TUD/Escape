@@ -38,8 +38,8 @@ namespace esc {
 
 		private:
 			static Color BGCOLOR;
-			static Color TITLE_BGCOLOR;
 			static Color TITLE_ACTIVE_BGCOLOR;
+			static Color TITLE_INACTIVE_BGCOLOR;
 			static Color TITLE_FGCOLOR;
 			static Color BORDER_COLOR;
 

@@ -49,19 +49,33 @@ namespace esc {
 			repaint();
 		}
 
+		void Button::onKeyPressed(const KeyEvent &e) {
+			u8 keycode = e.getKeyCode();
+			UIElement::onKeyPressed(e);
+			if(keycode == VK_ENTER || keycode == VK_SPACE)
+				setPressed(true);
+		}
+		void Button::onKeyReleased(const KeyEvent &e) {
+			u8 keycode = e.getKeyCode();
+			UIElement::onKeyReleased(e);
+			if(keycode == VK_ENTER || keycode == VK_SPACE)
+				setPressed(false);
+		}
+
 		void Button::onMousePressed(const MouseEvent &e) {
 			UIElement::onMousePressed(e);
-			if(!_pressed) {
-				_pressed = true;
-				repaint();
-			}
+			if(!_pressed)
+				setPressed(true);
 		}
 		void Button::onMouseReleased(const MouseEvent &e) {
 			UIElement::onMouseReleased(e);
-			if(_pressed) {
-				_pressed = false;
-				repaint();
-			}
+			if(_pressed)
+				setPressed(false);
+		}
+
+		void Button::setPressed(bool pressed) {
+			_pressed = pressed;
+			repaint();
 		}
 
 		void Button::paint(Graphics &g) {

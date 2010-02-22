@@ -739,7 +739,7 @@ void proc_dbg_stopProf(void) {
 			curUcycles.val64 -= ucycles[i];
 			curKcycles.val64 -= kcycles[i];
 			if(curUcycles.val64 > 0 || curKcycles.val64 > 0) {
-				vid_printf("Process %d (%s): u=%08x%08x k=%08x%08x\n",
+				vid_printf("Process %3d (%18s): u=%08x%08x k=%08x%08x\n",
 					procs[i].pid,procs[i].command,
 					curUcycles.val32.upper,curUcycles.val32.lower,
 					curKcycles.val32.upper,curKcycles.val32.lower);

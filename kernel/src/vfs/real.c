@@ -188,6 +188,7 @@ s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,u8 *buffer
 		u32 count) {
 	sRequest *req;
 	sReal2Virt *r2v;
+	u32 pcount,*frameNos;
 	s32 res;
 
 	r2v = vfsr_get(tid,file,&res);
@@ -203,12 +204,27 @@ s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,u8 *buffer
 	if(res < 0)
 		return res;
 
+#if 0
+	/* get the frame-numbers which we'll map later to write the reply directly to the calling
+	 * process */
+	pcount = BYTES_2_PAGES(((u32)buffer & (PAGE_SIZE - 1)) + count);
+	frameNos = kheap_alloc(pcount * sizeof(u32));
+	if(frameNos == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+	paging_getFrameNos(frameNos,(u32)buffer,count);
+
 	/* wait for a reply */
+	req = vfsreq_waitForReadReply(tid,count,frameNos,pcount,(u32)buffer % PAGE_SIZE);
+#endif
 	req = vfsreq_waitForReply(tid,buffer,count);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
 	res = req->count;
+	if(req->readFrNos) {
+		memcpy(buffer,req->readFrNos,req->count);
+		kheap_free(req->readFrNos);
+	}
 	vfsreq_remRequest(req);
 	return res;
 }
@@ -368,11 +384,17 @@ static void vfsr_readRespHandler(tTid tid,const u8 *data,u32 size) {
 		}
 		else {
 			/* ok, it's the data */
-			sThread *t = thread_getById(tid);
 			/* map the buffer we have to copy it to */
-			u8 *target = (u8*)paging_mapAreaOf(t->proc,(u32)req->data,req->count);
-			memcpy(target,data,req->count);
-			paging_unmapArea((u32)req->data,req->count);
+			u8 *addr = (u8*)TEMP_MAP_AREA;
+			req->readFrNos = (u32*)kheap_alloc(req->count);
+			memcpy(req->readFrNos,data,req->count);
+#if 0
+			paging_map(TEMP_MAP_AREA,req->readFrNos,req->readFrNoCount,PG_SUPERVISOR | PG_WRITABLE,true);
+			memcpy(addr + req->readOffset,data,req->count);
+			/* unmap it and free the frame-nos */
+			paging_unmap(TEMP_MAP_AREA,req->readFrNoCount,false,false);
+			kheap_free(req->readFrNos);
+#endif
 			req->state = REQ_STATE_FINISHED;
 			/* the thread can continue now */
 			thread_wakeup(tid,EV_RECEIVED_MSG);

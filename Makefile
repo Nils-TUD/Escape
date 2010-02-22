@@ -1,5 +1,5 @@
 # general
-BUILDDIR = $(abspath build/debug)
+BUILDDIR = $(abspath build/release)
 DISKMOUNT = disk
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso
@@ -37,8 +37,8 @@ ifeq ($(BUILDDIR),$(abspath build/debug))
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g -D LOGSERIAL
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 else
-	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D NDEBUG
-	export CDEFFLAGS=$(CWFLAGS) -O3 -D NDEBUG
+	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D LOGSERIAL
+	export CDEFFLAGS=$(CWFLAGS) -O3 -D LOGSERIAL
 endif
 # flags for nasm
 export ASMFLAGS=-f elf
@@ -135,7 +135,8 @@ vbox: all prepareRun $(ISO) $(VMDISK)
 debug: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
-		gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
+		gdbtui --command=gdb.start
+		# --symbols $(BUILD)/kernel.bin
 
 debugm: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &

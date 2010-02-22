@@ -34,8 +34,8 @@
 #include <vbe/vbe.h>
 #include "font.h"
 
-#define RESOLUTION_X					640
-#define RESOLUTION_Y					480
+#define RESOLUTION_X					1024
+#define RESOLUTION_Y					768
 #define BITS_PER_PIXEL					16
 
 #define CURSOR_LEN						FONT_WIDTH

@@ -39,10 +39,16 @@ void sysc_debugc(sIntrptStackFrame *stack) {
 	vid_putchar((char)SYSC_ARG1(stack));
 }
 
+static bool started = false;
+
 void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 #if DEBUGGING
-	proc_dbg_print(proc_getRunning());
+	if(started)
+		proc_dbg_stopProf();
+	else
+		proc_dbg_startProf();
+	started = !started;
 	/*vfsn_dbg_printTree();
 	paging_dbg_printOwnPageDir(PD_PART_USER);*/
 #endif

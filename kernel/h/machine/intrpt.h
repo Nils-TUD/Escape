@@ -255,7 +255,7 @@ sIntrptStackFrame *intrpt_getCurStack(void);
  *
  * @param number the interrupt-number
  */
-void intrpt_handler(sIntrptStackFrame stack);
+void intrpt_handler(sIntrptStackFrame *stack);
 
 #if DEBUGGING
 

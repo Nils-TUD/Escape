@@ -490,12 +490,13 @@ isrCommon:
 	mov		gs,eax
 
 	; call c-routine
-	push	esp														; pointer to the "beginning" of the stack
+	push	esp														; stack-frame
+	mov		eax,esp
+	push	eax														; pointer to stack-frame
 	call	intrpt_handler
 
-	; remove argument from stack
-	pop		esp
-	;add		esp,4
+	; remove arguments from stack
+	add		esp,8
 
 	; restore registers
 	pop		es

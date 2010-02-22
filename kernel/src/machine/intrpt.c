@@ -463,10 +463,10 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	signalData.active = 0;
 }
 
-void intrpt_handler(sIntrptStackFrame stack) {
+void intrpt_handler(sIntrptStackFrame *stack) {
 	u64 cycles = cpu_rdtsc();
 	sThread *t = thread_getRunning();
-	curIntrptStack = &stack;
+	curIntrptStack = stack;
 	intrptCount++;
 
 	/* increase user-space cycles */
@@ -476,7 +476,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 	t->kcycleStart = cycles;
 
 	/* add signal */
-	switch(stack.intrptNo) {
+	switch(stack->intrptNo) {
 		case IRQ_KEYBOARD:
 		case IRQ_MOUSE:
 		case IRQ_TIMER:
@@ -486,7 +486,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		case IRQ_FLOPPY:
 		case IRQ_COM1:
 		case IRQ_COM2: {
-			tSig sig = irq2Signal[stack.intrptNo - IRQ_MASTER_BASE];
+			tSig sig = irq2Signal[stack->intrptNo - IRQ_MASTER_BASE];
 			if(sig != SIG_COUNT)
 				sig_addSignal(sig,0);
 		}
@@ -494,10 +494,10 @@ void intrpt_handler(sIntrptStackFrame stack) {
 	}
 
 	/* send EOI to PIC */
-	if(stack.intrptNo != IRQ_SYSCALL)
-		intrpt_eoi(stack.intrptNo);
+	if(stack->intrptNo != IRQ_SYSCALL)
+		intrpt_eoi(stack->intrptNo);
 
-	switch(stack.intrptNo) {
+	switch(stack->intrptNo) {
 		case IRQ_KEYBOARD:
 		case IRQ_ATA1:
 		case IRQ_ATA2:
@@ -513,56 +513,56 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		case IRQ_SYSCALL:
 			if(t->proc->isVM86)
 				util_panic("VM86-task wants to perform a syscall!?");
-			sysc_handle(&stack);
+			sysc_handle(stack);
 			break;
 
 		/* exceptions */
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
 			/* #PF */
-			if(stack.intrptNo == EX_PAGE_FAULT) {
+			if(stack->intrptNo == EX_PAGE_FAULT) {
 				u32 addr = cpu_getCR2();
 				/*vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
-						stack.eip,proc_getRunning()->pid);*/
+						stack->eip,proc_getRunning()->pid);*/
 
 				/* first check if the thread wants to write to COW-page */
 				if(!paging_handlePageFault(addr)) {
 					/* ok, now lets check if the thread wants more stack-pages */
 					if(thread_extendStack(addr) < 0) {
 						vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
-												stack.eip,proc_getRunning()->pid);
+												stack->eip,proc_getRunning()->pid);
 						/*proc_terminate(t->proc);
 						thread_switch();*/
 						/* hm...there is something wrong :) */
 						/* TODO later the process should be killed here */
-						util_panic("Page fault for address=0x%08x @ 0x%x",addr,stack.eip);
+						util_panic("Page fault for address=0x%08x @ 0x%x",addr,stack->eip);
 					}
 				}
 				break;
 			}
 
 			/* #NM */
-			if(stack.intrptNo == EX_CO_PROC_NA) {
+			if(stack->intrptNo == EX_CO_PROC_NA) {
 				fpu_handleCoProcNA(&t->fpuState);
 				break;
 			}
 
 			/* count consecutive occurrences */
-			if(lastEx == stack.intrptNo) {
+			if(lastEx == stack->intrptNo) {
 				exCount++;
 
 				/* stop here? */
 				if(exCount >= MAX_EX_COUNT) {
 					util_panic("Got this exception (0x%x) %d times. Stopping here (@ 0x%x)\n",
-							stack.intrptNo,exCount,stack.eip);
+							stack->intrptNo,exCount,stack->eip);
 				}
 			}
 			else {
 				exCount = 0;
-				lastEx = stack.intrptNo;
+				lastEx = stack->intrptNo;
 			}
 
 			/* #GPF */
-			if(stack.intrptNo == EX_GEN_PROT_FAULT) {
+			if(stack->intrptNo == EX_GEN_PROT_FAULT) {
 				/* io-map not loaded yet? */
 				if(t->proc->ioMap != NULL && !tss_ioMapPresent()) {
 					/* load it and give the process another try */
@@ -572,19 +572,19 @@ void intrpt_handler(sIntrptStackFrame stack) {
 				}
 				/* vm86-task? */
 				if(t->proc->isVM86) {
-					vm86_handleGPF(&stack);
+					vm86_handleGPF(stack);
 					exCount = 0;
 					break;
 				}
 				/* TODO later the process should be killed here */
-				util_panic("GPF @ 0x%x",stack.eip);
+				util_panic("GPF @ 0x%x",stack->eip);
 				break;
 			}
 			/* fall through */
 
 		default:
-			vid_printf("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack.intrptNo,
-					intrpt_no2Name(stack.intrptNo),stack.eip,t->proc->pid,t->proc->command);
+			vid_printf("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
+					intrpt_no2Name(stack->intrptNo),stack->eip,t->proc->pid,t->proc->command);
 			break;
 	}
 
@@ -593,7 +593,7 @@ void intrpt_handler(sIntrptStackFrame stack) {
 		intrpt_handleSignal();
 	/* don't try to deliver the signal if we're idling currently */
 	if(t->tid != IDLE_TID && signalData.active == 1)
-		intrpt_handleSignalFinish(&stack);
+		intrpt_handleSignalFinish(stack);
 
 	/* kernel-mode ends */
 	t = thread_getRunning();
@@ -646,7 +646,7 @@ static void intrpt_eoi(u32 intrptNo) {
     }
 }
 
-#if DEBUGGING
+#if 1 || DEBUGGING
 
 void intrpt_printStackFrame(sIntrptStackFrame *stack) {
 	vid_printf("stack-frame @ 0x%x\n",stack);

@@ -59,7 +59,7 @@ extern void paging_enable(void);
  *
  * @param virt a virtual address in the page-table
  */
-static void paging_flushPageTable(u32 virt);
+static void paging_flushPageTable(u32 virt,u32 mappingArea);
 
 /**
  * Maps the page-directory of the given process at PAGE_DIR_TMP_AREA and the page-tables
@@ -411,7 +411,7 @@ static u32 paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virt,u32 *frames,u32
 			pd->writable = true;
 			pd->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
 
-			paging_flushPageTable(virt);
+			paging_flushPageTable(virt,mappingArea);
 			/* clear frame (ensure that we start at the beginning of the frame) */
 			memclear((void*)ADDR_TO_MAPPED_CUSTOM(mappingArea,
 					virt & ~((PT_ENTRY_COUNT - 1) * PAGE_SIZE)),PAGE_SIZE);
@@ -455,6 +455,9 @@ static u32 paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virt,u32 *frames,u32
 		/* to next page */
 		virt += PAGE_SIZE;
 	}
+
+	/* FIXME: this is somehow just necessary for qemu. I have no idea why :/ */
+	paging_flushTLB();
 	return frmCount;
 }
 
@@ -638,13 +641,13 @@ u32 paging_destroyPageDir(sProc *p) {
 	return frmCnt;
 }
 
-static void paging_flushPageTable(u32 virt) {
+static void paging_flushPageTable(u32 virt,u32 mappingArea) {
 	u32 end;
 	/* to beginning of page-table */
 	virt &= ~(PT_ENTRY_COUNT * PAGE_SIZE - 1);
 	end = virt + PT_ENTRY_COUNT * PAGE_SIZE;
-	/* flush page-table-entries in mapped area */
-	paging_flushAddr(ADDR_TO_MAPPED(virt));
+	/* flush page-table in mapped area */
+	paging_flushAddr(ADDR_TO_MAPPED_CUSTOM(mappingArea,virt));
 	/* flush pages in the page-table */
 	while(virt < end) {
 		paging_flushAddr(virt);
@@ -701,12 +704,8 @@ static u32 paging_unmapIntern(sProc *p,u32 mappingArea,u32 virt,u32 count,bool f
 			pte->present = false;
 
 			/* invalidate TLB-entry */
-			if(mappingArea == MAPPED_PTS_START) {
-				/* FIXME I think a flushAddr() should be enough here. But somehow, we need
-				 * a complete flush. I don't know why :/ */
-				/*paging_flushAddr(virt);*/
-				paging_flushTLB();
-			}
+			if(mappingArea == MAPPED_PTS_START)
+				paging_flushAddr(virt);
 		}
 
 		/* to next page */
@@ -723,6 +722,7 @@ u32 paging_unmapPageTables(u32 start,u32 count) {
 static u32 paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
 	sPDEntry *pde;
 	u32 frmCount = 0;
+	u32 virt = start * PAGE_SIZE * PT_ENTRY_COUNT;
 	pde = (sPDEntry*)pageDir + start;
 
 	vassert(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
@@ -734,7 +734,10 @@ static u32 paging_unmapPageTablesIntern(u32 pageDir,u32 start,u32 count) {
 			pde->present = 0;
 			mm_freeFrame(pde->ptFrameNo,MM_DEF);
 			frmCount++;
+			if(pageDir == PAGE_DIR_TMP_AREA)
+				paging_flushAddr(ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,virt));
 		}
+		virt += PAGE_SIZE * PT_ENTRY_COUNT;
 		pde++;
 	}
 

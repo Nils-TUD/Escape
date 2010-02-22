@@ -1,5 +1,5 @@
 # general
-BUILDDIR = $(abspath build/release)
+BUILDDIR = $(abspath build/debug)
 DISKMOUNT = disk
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso
@@ -37,8 +37,8 @@ ifeq ($(BUILDDIR),$(abspath build/debug))
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g -D LOGSERIAL
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 else
-	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D LOGSERIAL
-	export CDEFFLAGS=$(CWFLAGS) -O3 -D LOGSERIAL
+	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D NDEBUG
+	export CDEFFLAGS=$(CWFLAGS) -O3 -D NDEBUG
 endif
 # flags for nasm
 export ASMFLAGS=-f elf

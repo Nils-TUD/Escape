@@ -30,7 +30,7 @@
 /*#define BUF_SIZE	4096 * 32
 #define COUNT		18000*/
 #define BUF_SIZE	4096 * 32
-#define COUNT		10000
+#define COUNT		1000
 
 static u8 buffer[BUF_SIZE];
 

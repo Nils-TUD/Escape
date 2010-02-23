@@ -26,7 +26,9 @@ namespace esc {
 	namespace gui {
 		Color Checkbox::FGCOLOR = Color(0xFF,0xFF,0xFF);
 		Color Checkbox::BGCOLOR = Color(0x88,0x88,0x88);
-		Color Checkbox::BOX_COLOR = Color(0x20,0x20,0x20);
+		Color Checkbox::LIGHT_BOX_COLOR = Color(0x60,0x60,0x60);
+		Color Checkbox::DARK_BOX_COLOR = Color(0x20,0x20,0x20);
+		Color Checkbox::BOX_BGCOLOR = Color(0xFF,0xFF,0xFF);
 
 		Checkbox &Checkbox::operator=(const Checkbox &b) {
 			// ignore self-assignments
@@ -67,21 +69,32 @@ namespace esc {
 
 		void Checkbox::paint(Graphics &g) {
 			u32 cheight = g.getFont().getHeight();
-			u32 boxSize = getHeight() - 2;
+			u32 boxSize = getHeight();
 
 			g.setColor(BGCOLOR);
 			g.fillRect(0,0,getWidth(),getHeight());
 
-			g.setColor(BOX_COLOR);
-			g.drawRect(1,1,boxSize - 2,boxSize - 2);
+			g.setColor(BOX_BGCOLOR);
+			g.fillRect(1,1,boxSize - 2,boxSize - 2);
+
+			g.setColor(LIGHT_BOX_COLOR);
+			g.drawLine(boxSize - 1,0,boxSize - 1,boxSize - 1);
+			g.drawLine(0,boxSize - 1,boxSize - 1,boxSize - 1);
+			g.setColor(DARK_BOX_COLOR);
+			g.drawLine(0,0,boxSize - 1,0);
+			g.drawLine(0,0,0,boxSize - 1);
 
 			if(_checked) {
-				g.drawLine(2,2,boxSize - 2,boxSize - 2);
-				g.drawLine(boxSize - 2,2,2,boxSize - 2);
+				g.setColor(DARK_BOX_COLOR);
+				g.drawLine(CROSS_PADDING,CROSS_PADDING,boxSize - CROSS_PADDING,boxSize - CROSS_PADDING);
+				g.drawLine(boxSize - CROSS_PADDING,CROSS_PADDING,CROSS_PADDING,boxSize - CROSS_PADDING);
+				g.setColor(LIGHT_BOX_COLOR);
+				g.drawLine(CROSS_PADDING,CROSS_PADDING + 1,boxSize - CROSS_PADDING,boxSize - CROSS_PADDING + 1);
+				g.drawLine(boxSize - CROSS_PADDING,CROSS_PADDING + 1,CROSS_PADDING,boxSize - CROSS_PADDING + 1);
 			}
 
 			g.setColor(FGCOLOR);
-			g.drawString(boxSize + 2,(getHeight() - cheight) / 2 + 1,_text);
+			g.drawString(boxSize + TEXT_PADDING,(boxSize - cheight) / 2 + 1,_text);
 		}
 	}
 }

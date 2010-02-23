@@ -28,20 +28,29 @@ namespace esc {
 	namespace gui {
 		class Editable : public Control {
 		public:
+			static const u8 DIR_NONE;
+			static const u8 DIR_LEFT;
+			static const u8 DIR_RIGHT;
+
 			static const u32 PADDING = 3;
 			static const u32 CURSOR_WIDTH = 2;
 			static const u32 CURSOR_OVERLAP = 2;
+
 			static const Color BGCOLOR;
 			static const Color FGCOLOR;
+			static const Color SEL_BGCOLOR;
+			static const Color SEL_FGCOLOR;
 			static const Color BORDER_COLOR;
 			static const Color CURSOR_COLOR;
 
 		public:
 			Editable(tCoord x,tCoord y,tSize width,tSize height)
-				: Control(x,y,width,height), _cursor(0), _focused(false), _str(String()) {
+				: Control(x,y,width,height), _cursor(0), _begin(0), _focused(false), _selecting(false),
+				  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str(String()) {
 			};
 			Editable(const Editable &e)
-				: Control(e), _cursor(e._cursor), _focused(false), _str(e._str) {
+				: Control(e), _cursor(e._cursor), _begin(0), _focused(false), _selecting(false),
+				  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str(e._str) {
 			};
 			virtual ~Editable() {
 			};
@@ -59,16 +68,31 @@ namespace esc {
 			virtual void paint(Graphics &g);
 			virtual void onFocusGained();
 			virtual void onFocusLost();
+			virtual void onMouseMoved(const MouseEvent &e);
+			virtual void onMouseReleased(const MouseEvent &e);
+			virtual void onMousePressed(const MouseEvent &e);
 			virtual void onKeyPressed(const KeyEvent &e);
 
 		private:
+			s32 getPosAt(tCoord x);
+			void moveCursor(s32 amount);
+			void moveCursorTo(u32 pos);
+			void clearSelection();
+			void changeSelection(s32 pos,s32 oldPos,u8 dir);
+			void deleteSelection();
 			inline u32 getMaxCharNum(Graphics &g) {
 				return (getWidth() - PADDING) / g.getFont().getWidth();
 			};
 
 		private:
 			u32 _cursor;
+			u32 _begin;
 			bool _focused;
+			bool _selecting;
+			bool _startSel;
+			u8 _selDir;
+			s32 _selStart;
+			s32 _selEnd;
 			String _str;
 		};
 	}

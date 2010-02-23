@@ -190,6 +190,19 @@ namespace esc {
 			if(!_created)
 				return;
 
+			/* if a control is focused and we get a moved or released event we have to pass this
+			 * event to the focused control. otherwise the control wouldn't know of them */
+			if(_focus >= 0) {
+				if(event == MOUSE_MOVED) {
+					_controls[_focus]->onMouseMoved(e);
+					return;
+				}
+				else if(event == MOUSE_RELEASED) {
+					_controls[_focus]->onMouseReleased(e);
+					return;
+				}
+			}
+
 			Control *c;
 			tCoord x = e.getX();
 			tCoord y = e.getY();
@@ -198,25 +211,14 @@ namespace esc {
 				c = _controls[i];
 				if(x >= c->getX() && x < c->getX() + c->getWidth() &&
 					y >= c->getY() && y < c->getY() + c->getHeight()) {
-					switch(event) {
-						case MOUSE_MOVED:
-							c->onMouseMoved(e);
-							break;
-						case MOUSE_RELEASED:
-							/* change focus */
-							if((s32)i != _focus) {
-								if(_focus >= 0)
-									_controls[_focus]->onFocusLost();
-								_controls[i]->onFocusGained();
-								_focus = i;
-							}
-
-							c->onMouseReleased(e);
-							break;
-						case MOUSE_PRESSED:
-							c->onMousePressed(e);
-							break;
+					/* change focus */
+					if((s32)i != _focus) {
+						if(_focus >= 0)
+							_controls[_focus]->onFocusLost();
+						_controls[i]->onFocusGained();
+						_focus = i;
 					}
+					c->onMousePressed(e);
 					break;
 				}
 			}

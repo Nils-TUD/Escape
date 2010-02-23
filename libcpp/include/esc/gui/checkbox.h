@@ -31,7 +31,11 @@ namespace esc {
 		private:
 			static Color FGCOLOR;
 			static Color BGCOLOR;
-			static Color BOX_COLOR;
+			static Color LIGHT_BOX_COLOR;
+			static Color DARK_BOX_COLOR;
+			static Color BOX_BGCOLOR;
+			static const u32 CROSS_PADDING = 2;
+			static const u32 TEXT_PADDING = 4;
 
 		public:
 			Checkbox(tCoord x,tCoord y,tSize width,tSize height)

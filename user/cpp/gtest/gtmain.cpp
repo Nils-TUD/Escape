@@ -74,7 +74,7 @@ int main(void) {
 		cb.addItem("Foo bar");
 		cb.addItem("abc 123");
 		w1->add(cb);
-		Checkbox check("Meine Checkbox",10,120,200,20);
+		Checkbox check("Meine Checkbox",10,120,200,16);
 		w1->add(check);
 		pb = new ProgressBar("Progress...",10,160,200,20);
 		w1->add(*pb);

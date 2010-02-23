@@ -177,6 +177,24 @@ namespace esc {
 			virtual void drawLine(tCoord x0,tCoord y0,tCoord xn,tCoord yn);
 
 			/**
+			 * Draws a vertical line (optimized compared to drawLine)
+			 *
+			 * @param x the x-coordinate
+			 * @param y1 the first y-coordinate
+			 * @param y2 the second y-coordinate
+			 */
+			virtual void drawVertLine(tCoord x,tCoord y1,tCoord y2);
+
+			/**
+			 * Draws a horizontal line (optimized compared to drawLine)
+			 *
+			 * @param y the y-coordinate
+			 * @param x1 the first x-coordinate
+			 * @param x2 the second x-coordinate
+			 */
+			virtual void drawHorLine(tCoord y,tCoord x1,tCoord x2);
+
+			/**
 			 * Draws a rectangle
 			 *
 			 * @param x the x-coordinate

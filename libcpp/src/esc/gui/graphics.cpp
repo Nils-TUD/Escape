@@ -125,6 +125,8 @@ namespace esc {
 			s32 incx, incy;
 			tCoord *px, *py;
 
+			// TODO later we should calculate with sin&cos the end-position in bounds so that
+			// the line will just be shorter and doesn't change the angle
 			validatePos(x0,y0);
 			validatePos(xn,yn);
 			updateMinMax(x0,y0);
@@ -176,15 +178,37 @@ namespace esc {
 			}
 		}
 
+		void Graphics::drawVertLine(tCoord x,tCoord y1,tCoord y2) {
+			validatePos(x,y1);
+			validatePos(x,y2);
+			updateMinMax(x,y1);
+			updateMinMax(x,y2);
+			if(y1 > y2)
+				swap<tCoord>(&y1,&y2);
+			for(; y1 < y2; y1++)
+				doSetPixel(x,y1);
+		}
+
+		void Graphics::drawHorLine(tCoord y,tCoord x1,tCoord x2) {
+			validatePos(x1,y);
+			validatePos(x2,y);
+			updateMinMax(x1,y);
+			updateMinMax(x2,y);
+			if(x1 > x2)
+				swap<tCoord>(&x1,&x2);
+			for(; x1 < x2; x1++)
+				doSetPixel(x1,y);
+		}
+
 		void Graphics::drawRect(tCoord x,tCoord y,tSize width,tSize height) {
 			// top
-			drawLine(x,y,x + width - 1,y);
+			drawHorLine(y,x,x + width - 1);
 			// right
-			drawLine(x + width - 1,y,x + width - 1,y + height - 1);
+			drawVertLine(x + width - 1,y,y + height - 1);
 			// bottom
-			drawLine(x + width - 1,y + height - 1,x,y + height - 1);
+			drawHorLine(y + height - 1,x,x + width - 1);
 			// left
-			drawLine(x,y + height - 1,x,y);
+			drawVertLine(x,y,y + height - 1);
 		}
 
 		void Graphics::fillRect(tCoord x,tCoord y,tSize width,tSize height) {

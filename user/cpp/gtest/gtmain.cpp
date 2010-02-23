@@ -65,18 +65,18 @@ int main(void) {
 	if(fork() == 0) {
 		Application *app = Application::getInstance();
 		w1 = new Window("Window 1",100,100,200,300);
-		Button b("Click me!!",10,10,80,20);
+		Button b("Click me!!",10,10,120,25);
 		w1->add(b);
-		Editable e(10,40,200,20);
+		Editable e(10,40,200,25);
 		w1->add(e);
-		ComboBox cb(10,80,100,20);
+		ComboBox cb(10,80,100,25);
 		cb.addItem("Test item");
 		cb.addItem("Foo bar");
 		cb.addItem("abc 123");
 		w1->add(cb);
-		Checkbox check("Meine Checkbox",10,120,200,16);
+		Checkbox check("Meine Checkbox",10,120,200,20);
 		w1->add(check);
-		pb = new ProgressBar("Progress...",10,160,200,20);
+		pb = new ProgressBar("Progress...",10,160,200,25);
 		w1->add(*pb);
 		if(startThread(pbThread,NULL) < 0)
 			printe("[GUITEST] Unable to start thread");

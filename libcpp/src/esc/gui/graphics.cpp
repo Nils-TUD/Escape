@@ -87,20 +87,16 @@ namespace esc {
 		}
 
 		void Graphics::drawChar(tCoord x,tCoord y,char c) {
-			char *font = _font.getChar(c);
-			if(font) {
-				tSize width = _font.getWidth();
-				tSize height = _font.getHeight();
-				validateParams(x,y,width,height);
-				updateMinMax(x,y);
-				updateMinMax(x + width - 1,y + height - 1);
-				tCoord cx,cy;
-				for(cy = 0; cy < height; cy++) {
-					for(cx = 0; cx < width; cx++) {
-						if(*font)
-							doSetPixel(x + cx,y + cy);
-						font++;
-					}
+			tSize width = _font.getWidth();
+			tSize height = _font.getHeight();
+			validateParams(x,y,width,height);
+			updateMinMax(x,y);
+			updateMinMax(x + width - 1,y + height - 1);
+			tCoord cx,cy;
+			for(cy = 0; cy < height; cy++) {
+				for(cx = 0; cx < width; cx++) {
+					if(_font.isPixelSet(c,cx,cy))
+						doSetPixel(x + cx,y + cy);
 				}
 			}
 		}

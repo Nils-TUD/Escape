@@ -115,11 +115,13 @@ namespace esc {
 		void Editable::onMouseMoved(const MouseEvent &e) {
 			UIElement::onMouseMoved(e);
 			if(_selecting) {
+				bool changed = false;
 				s32 pos = getPosAt(e.getX());
 				u8 dir = pos > (s32)_cursor ? DIR_RIGHT : DIR_LEFT;
-				changeSelection(pos,pos,dir);
-				moveCursorTo(pos);
-				repaint();
+				changed |= changeSelection(pos,pos,dir);
+				changed |= moveCursorTo(pos);
+				if(changed)
+					repaint();
 			}
 		}
 		void Editable::onMouseReleased(const MouseEvent &e) {
@@ -157,13 +159,15 @@ namespace esc {
 				_begin = _cursor;
 		}
 
-		void Editable::moveCursorTo(u32 pos) {
+		bool Editable::moveCursorTo(u32 pos) {
+			u32 oldCur = _cursor;
 			u32 max = getMaxCharNum(*getGraphics());
 			_cursor = pos;
 			if(_cursor > max)
 				_begin = _cursor - max;
 			else
 				_begin = 0;
+			return _cursor != oldCur;
 		}
 
 		void Editable::clearSelection() {
@@ -172,7 +176,9 @@ namespace esc {
 			_selDir = DIR_NONE;
 		}
 
-		void Editable::changeSelection(s32 pos,s32 oldPos,u8 dir) {
+		bool Editable::changeSelection(s32 pos,s32 oldPos,u8 dir) {
+			s32 oldStart = _selStart;
+			s32 oldEnd = _selEnd;
 			if(_startSel || _selStart == -1) {
 				_selStart = dir == DIR_RIGHT ? oldPos : pos;
 				_selEnd = dir == DIR_LEFT ? oldPos : pos;
@@ -191,14 +197,15 @@ namespace esc {
 				}
 				else {
 					if(pos <= _selStart) {
-						_selStart = pos;
 						_selEnd = _selStart;
+						_selStart = pos;
 						_selDir = dir;
 					}
 					else
 						_selEnd = pos;
 				}
 			}
+			return _selStart != oldStart || _selEnd != oldEnd;
 		}
 
 		void Editable::deleteSelection() {
@@ -218,6 +225,7 @@ namespace esc {
 				repaint();
 			}
 			else {
+				u32 oldPos;
 				bool changed = false;
 				switch(e.getKeyCode()) {
 					case VK_DELETE:
@@ -230,48 +238,6 @@ namespace esc {
 							changed = true;
 						}
 						break;
-					case VK_LEFT:
-						if(_cursor > 0) {
-							moveCursor(-1);
-							if(e.isShiftDown())
-								changeSelection(_cursor,_cursor + 1,DIR_LEFT);
-							else
-								clearSelection();
-							changed = true;
-						}
-						break;
-					case VK_RIGHT:
-						if(_cursor < _str.length()) {
-							moveCursor(1);
-							if(e.isShiftDown())
-								changeSelection(_cursor,_cursor - 1,DIR_RIGHT);
-							else
-								clearSelection();
-							changed = true;
-						}
-						break;
-					case VK_HOME:
-						if(_cursor > 0) {
-							u32 oldPos = _cursor;
-							moveCursorTo(0);
-							if(e.isShiftDown())
-								changeSelection(_cursor,oldPos,DIR_LEFT);
-							else
-								clearSelection();
-							changed = true;
-						}
-						break;
-					case VK_END:
-						if(_cursor < _str.length()) {
-							u32 oldPos = _cursor;
-							moveCursorTo(_str.length());
-							if(e.isShiftDown())
-								changeSelection(_cursor,oldPos,DIR_RIGHT);
-							else
-								clearSelection();
-							changed = true;
-						}
-						break;
 					case VK_BACKSP:
 						if(_selStart != -1) {
 							deleteSelection();
@@ -280,6 +246,56 @@ namespace esc {
 						else if(_cursor > 0) {
 							_str.erase(_cursor - 1,1);
 							moveCursor(-1);
+							changed = true;
+						}
+						break;
+					case VK_LEFT:
+						if(_cursor > 0) {
+							moveCursor(-1);
+							changed = true;
+						}
+						if(e.isShiftDown())
+							changed |= changeSelection(_cursor,_cursor + 1,DIR_LEFT);
+						else if(_selStart != -1) {
+							clearSelection();
+							changed = true;
+						}
+						break;
+					case VK_RIGHT:
+						if(_cursor < _str.length()) {
+							moveCursor(1);
+							changed = true;
+						}
+						if(e.isShiftDown())
+							changed |= changeSelection(_cursor,_cursor - 1,DIR_RIGHT);
+						else if(_selStart != -1) {
+							clearSelection();
+							changed = true;
+						}
+						break;
+					case VK_HOME:
+						oldPos = _cursor;
+						if(_cursor != 0) {
+							moveCursorTo(0);
+							changed = true;
+						}
+						if(e.isShiftDown())
+							changed |= changeSelection(_cursor,oldPos,DIR_LEFT);
+						else if(_selStart != -1) {
+							clearSelection();
+							changed = true;
+						}
+						break;
+					case VK_END:
+						oldPos = _cursor;
+						if(_cursor != _str.length()) {
+							moveCursorTo(_str.length());
+							changed = true;
+						}
+						if(e.isShiftDown())
+							changed |= changeSelection(_cursor,oldPos,DIR_RIGHT);
+						else if(_selStart != -1) {
+							clearSelection();
 							changed = true;
 						}
 						break;

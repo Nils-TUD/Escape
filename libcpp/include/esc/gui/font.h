@@ -27,8 +27,8 @@
 namespace esc {
 	namespace gui {
 		class Font {
-			static const u32 charWidth = 6;
-			static const u32 charHeight = 8;
+			static const tSize charWidth = 8;
+			static const tSize charHeight = 16;
 
 		public:
 			Font() {
@@ -44,19 +44,21 @@ namespace esc {
 				return *this;
 			};
 
-			inline u32 getWidth() {
+			inline tSize getWidth() {
 				return charWidth;
 			};
-			inline u32 getHeight() {
+			inline tSize getHeight() {
 				return charHeight;
 			};
-			inline u32 getStringWidth(const String &str) {
+			inline tSize getStringWidth(const String &str) {
 				return str.length() * charWidth;
 			};
-			char *getChar(char c);
+			inline bool isPixelSet(char c,tCoord x,tCoord y) {
+				return _font[(u32)c * charHeight + y] & (1 << (charWidth - x - 1));
+			};
 
 		private:
-			static char _font[][charHeight * charWidth];
+			static char _font[];
 		};
 	}
 }

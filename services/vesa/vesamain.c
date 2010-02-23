@@ -43,7 +43,7 @@
 
 #define RESOLUTION_X					1024
 #define RESOLUTION_Y					768
-#define BITS_PER_PIXEL					32
+#define BITS_PER_PIXEL					24
 
 #define CURSOR_LEN						2
 #define CURSOR_COLOR					0xFFFFFF

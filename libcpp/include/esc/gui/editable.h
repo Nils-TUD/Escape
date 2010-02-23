@@ -76,9 +76,9 @@ namespace esc {
 		private:
 			s32 getPosAt(tCoord x);
 			void moveCursor(s32 amount);
-			void moveCursorTo(u32 pos);
+			bool moveCursorTo(u32 pos);
 			void clearSelection();
-			void changeSelection(s32 pos,s32 oldPos,u8 dir);
+			bool changeSelection(s32 pos,s32 oldPos,u8 dir);
 			void deleteSelection();
 			inline u32 getMaxCharNum(Graphics &g) {
 				return (getWidth() - PADDING) / g.getFont().getWidth();

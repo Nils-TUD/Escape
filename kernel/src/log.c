@@ -84,9 +84,13 @@ static void log_printc(char c) {
 				break;
 			case '\t':
 				col = (col + (TAB_WIDTH - col % TAB_WIDTH)) % VID_COLS;
+				if(col == 0)
+					log_printc('\n');
 				break;
 			default:
 				col = (col + 1) % VID_COLS;
+				if(col == 0)
+					log_printc('\n');
 				break;
 		}
 	}

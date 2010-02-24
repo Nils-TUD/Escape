@@ -25,7 +25,7 @@
 #include <mem/pmem.h>
 #include <task/proc.h>
 #include <task/thread.h>
-#include <asprintf.h>
+#include <printf.h>
 
 /**
  * Virtual memory layout:

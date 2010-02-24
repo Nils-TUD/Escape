@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <app.h>
-#include "tapp.h"
+#include <esc/common.h>
 #include <test.h>
+#include "app.h"
+#include "tapp.h"
 
 static void test_app(void);
 static void test_app_1(void);
@@ -50,58 +50,30 @@ static void test_app(void) {
 }
 
 static void test_app_1(void) {
-	u32 i;
 	char *res;
 	sApp a;
-	sStringBuffer buf;
-	buf.dynamic = true;
-	buf.len = 0;
-	buf.size = 0;
-	buf.str = NULL;
 	test_caseStart("Parsing, toString(), parsing again");
 
 	res = app_fromString(app1,&a);
 	test_assertTrue(res != NULL);
-	for(i = 0; i < 2; i++) {
-		test_assertStr(a.name,"muh");
-		test_assertStr(a.desc,"mydesc");
-		test_assertStr(a.start,"mystart");
-		test_assertUInt(a.type,APP_TYPE_USER);
-
-		/* create str from it and parse again */
-		if(i < 1) {
-			test_assertTrue(app_toString(&buf,&a));
-			test_assertTrue(app_fromString(buf.str,&a) != NULL);
-		}
-	}
+	test_assertStr(a.name,"muh");
+	test_assertStr(a.desc,"mydesc");
+	test_assertStr(a.start,"mystart");
+	test_assertUInt(a.type,APP_TYPE_USER);
 
 	test_caseSucceded();
 }
 
 static void test_app_2(void) {
-	u32 i;
 	char *res;
 	sApp a;
-	sStringBuffer buf;
-	buf.dynamic = true;
-	buf.len = 0;
-	buf.size = 0;
-	buf.str = NULL;
 	test_caseStart("Parsing, toString(), parsing again");
 
 	res = app_fromString(app2,&a);
 	test_assertTrue(res != NULL);
-	for(i = 0; i < 2; i++) {
-		test_assertStr(a.name,"myapppp");
-		test_assertStr(a.desc,"a b c");
-		test_assertStr(a.start,"");
-		test_assertUInt(a.type,APP_TYPE_SERVICE);
-
-		/* create str from it and parse again */
-		if(i == 0) {
-			test_assertTrue(app_toString(&buf,&a));
-			test_assertTrue(app_fromString(buf.str,&a) != NULL);
-		}
-	}
+	test_assertStr(a.name,"myapppp");
+	test_assertStr(a.desc,"a b c");
+	test_assertStr(a.start,"");
+	test_assertUInt(a.type,APP_TYPE_SERVICE);
 	test_caseSucceded();
 }

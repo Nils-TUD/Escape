@@ -20,7 +20,7 @@
 #ifndef TAPP_H_
 #define TAPP_H_
 
-#include <common.h>
+#include <esc/common.h>
 #include <test.h>
 
 extern sTestModule tModApp;

@@ -17,22 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <types.h>
-#include <app.h>
+#include <esc/common.h>
+#include <esc/heap.h>
+#include <esc/fileio.h>
 #include <string.h>
 #include <ctype.h>
-
-#ifdef IN_KERNEL
-#	include <mem/kheap.h>
-#	include <video.h>
-#	define apprintf		vid_printf
-#	define free(x)		kheap_free(x)
-#	define malloc(x)	kheap_alloc(x)
-#else
-#	include <esc/heap.h>
-#	include <esc/fileio.h>
-#	define apprintf		printf
-#endif
+#include "app.h"
 
 #define MAX_TOKEN_LEN	1024
 
@@ -49,22 +39,6 @@ typedef struct {
 } sParseInfo;
 
 static bool app_nextToken(sParseInfo *info);
-
-#define ADD_PERM(str,fmt,...)						\
-	do {											\
-		if(!asprintf((str),(fmt),## __VA_ARGS__))	\
-			return false;							\
-	}												\
-	while(0);
-
-bool app_toString(sStringBuffer *str,sApp *app) {
-	const char *types[] = {"user","driver","service","fs"};
-	ADD_PERM(str,  "name:					\"%s\"\n",app->name);
-	ADD_PERM(str,  "type:					\"%s\"\n",types[app->type]);
-	ADD_PERM(str,  "start:					\"%s\"\n",app->start);
-	ADD_PERM(str,  "desc:					\"%s\"\n",app->desc);
-	return true;
-}
 
 char *app_fromString(const char *definition,sApp *app) {
 	sParseInfo info;

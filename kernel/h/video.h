@@ -41,15 +41,7 @@ void vid_init(void);
 void vid_putchar(char c);
 
 /**
- * The kernel-version of printf. Currently it supports:
- * %d: signed integer
- * %u: unsigned integer, base 10
- * %o: unsigned integer, base 8
- * %x: unsigned integer, base 16 (small letters)
- * %X: unsigned integer, base 16 (big letters)
- * %b: unsigned integer, base 2
- * %s: string
- * %c: character
+ * Formatted output to the video-screen
  *
  * @param fmt the format
  */

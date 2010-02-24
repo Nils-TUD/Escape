@@ -19,7 +19,7 @@
 
 #include <common.h>
 #include <machine/cpu.h>
-#include <asprintf.h>
+#include <printf.h>
 #include <string.h>
 
 /* based on http://forum.osdev.org/viewtopic.php?t=11998 */
@@ -191,19 +191,19 @@ void cpu_getStrInfo(u32 code,char *res) {
 
 void cpu_sprintf(sStringBuffer *buf) {
 	u32 size;
-	asprintf(buf,"%-12s%s\n","Vendor:",vendors[cpu.vendor]);
+	prf_sprintf(buf,"%-12s%s\n","Vendor:",vendors[cpu.vendor]);
 	switch(cpu.vendor) {
 		case CPUID_VENDOR_INTEL: {
 			const char **models = NULL;
 			if(cpu.type < ARRAY_SIZE(intelTypes))
-				asprintf(buf,"%-12s%s\n","Type:",intelTypes[cpu.type]);
+				prf_sprintf(buf,"%-12s%s\n","Type:",intelTypes[cpu.type]);
 			else
-				asprintf(buf,"%-12s%d\n","Type:",cpu.type);
+				prf_sprintf(buf,"%-12s%d\n","Type:",cpu.type);
 
 			if(cpu.family < ARRAY_SIZE(intelFamilies))
-				asprintf(buf,"%-12s%s\n","Family:",intelFamilies[cpu.family]);
+				prf_sprintf(buf,"%-12s%s\n","Family:",intelFamilies[cpu.family]);
 			else
-				asprintf(buf,"%-12s%d\n","Family:",cpu.family);
+				prf_sprintf(buf,"%-12s%d\n","Family:",cpu.family);
 
 			switch(cpu.family) {
 				case 4:
@@ -220,21 +220,21 @@ void cpu_sprintf(sStringBuffer *buf) {
 					break;
 			}
 			if(models != NULL && cpu.model < size)
-				asprintf(buf,"%-12s%s\n","Model:",models[cpu.model]);
+				prf_sprintf(buf,"%-12s%s\n","Model:",models[cpu.model]);
 			else
-				asprintf(buf,"%-12s%d\n","Model:",cpu.model);
-			asprintf(buf,"%-12s%d\n","Brand:",cpu.brand);
-			asprintf(buf,"%-12s%d\n","Stepping:",cpu.stepping);
-			asprintf(buf,"%-12s%08x\n","Signature:",cpu.signature);
+				prf_sprintf(buf,"%-12s%d\n","Model:",cpu.model);
+			prf_sprintf(buf,"%-12s%d\n","Brand:",cpu.brand);
+			prf_sprintf(buf,"%-12s%d\n","Stepping:",cpu.stepping);
+			prf_sprintf(buf,"%-12s%08x\n","Signature:",cpu.signature);
 		}
 		break;
 
 		case CPUID_VENDOR_AMD:
-			asprintf(buf,"%-12s%d\n","Family:",cpu.family);
-			asprintf(buf,"%-12s","Model:");
+			prf_sprintf(buf,"%-12s%d\n","Family:",cpu.family);
+			prf_sprintf(buf,"%-12s","Model:");
 			switch(cpu.family) {
 				case 4:
-					asprintf(buf,"%s%d\n","486 Model",cpu.model);
+					prf_sprintf(buf,"%s%d\n","486 Model",cpu.model);
 					break;
 				case 5:
 				switch(cpu.model) {
@@ -244,16 +244,16 @@ void cpu_sprintf(sStringBuffer *buf) {
 					case 3:
 					case 6:
 					case 7:
-						asprintf(buf,"%s%d\n","K6 Model",cpu.model);
+						prf_sprintf(buf,"%s%d\n","K6 Model",cpu.model);
 						break;
 					case 8:
-						asprintf(buf,"%s\n","K6-2 Model 8");
+						prf_sprintf(buf,"%s\n","K6-2 Model 8");
 						break;
 					case 9:
-						asprintf(buf,"%s\n","K6-III Model 9");
+						prf_sprintf(buf,"%s\n","K6-III Model 9");
 						break;
 					default:
-						asprintf(buf,"%s%d\n","K5/K6 Model",cpu.model);
+						prf_sprintf(buf,"%s%d\n","K5/K6 Model",cpu.model);
 						break;
 				}
 				break;
@@ -262,33 +262,33 @@ void cpu_sprintf(sStringBuffer *buf) {
 					case 1:
 					case 2:
 					case 4:
-						asprintf(buf,"%s%d\n","Athlon Model ",cpu.model);
+						prf_sprintf(buf,"%s%d\n","Athlon Model ",cpu.model);
 						break;
 					case 3:
-						asprintf(buf,"%s\n","Duron Model 3");
+						prf_sprintf(buf,"%s\n","Duron Model 3");
 						break;
 					case 6:
-						asprintf(buf,"%s\n","Athlon MP/Mobile Athlon Model 6");
+						prf_sprintf(buf,"%s\n","Athlon MP/Mobile Athlon Model 6");
 						break;
 					case 7:
-						asprintf(buf,"%s\n","Mobile Duron Model 7");
+						prf_sprintf(buf,"%s\n","Mobile Duron Model 7");
 						break;
 					default:
-						asprintf(buf,"%s%d\n","Duron/Athlon Model ",cpu.model);
+						prf_sprintf(buf,"%s%d\n","Duron/Athlon Model ",cpu.model);
 						break;
 				}
 				break;
 			}
-			asprintf(buf,"%-12s%d\n","Stepping:",cpu.stepping);
+			prf_sprintf(buf,"%-12s%d\n","Stepping:",cpu.stepping);
 			break;
 
 		default:
-			asprintf(buf,"%-12s%d\n","Model:",cpu.model);
-			asprintf(buf,"%-12s%d\n","Type:",cpu.type);
-			asprintf(buf,"%-12s%d\n","Family:",cpu.family);
-			asprintf(buf,"%-12s%d\n","Brand:",cpu.brand);
-			asprintf(buf,"%-12s%d\n","Stepping:",cpu.stepping);
-			asprintf(buf,"%-12s%08x\n","Signature:",cpu.signature);
+			prf_sprintf(buf,"%-12s%d\n","Model:",cpu.model);
+			prf_sprintf(buf,"%-12s%d\n","Type:",cpu.type);
+			prf_sprintf(buf,"%-12s%d\n","Family:",cpu.family);
+			prf_sprintf(buf,"%-12s%d\n","Brand:",cpu.brand);
+			prf_sprintf(buf,"%-12s%d\n","Stepping:",cpu.stepping);
+			prf_sprintf(buf,"%-12s%08x\n","Signature:",cpu.signature);
 			break;
 	}
 }

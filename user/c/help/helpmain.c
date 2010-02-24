@@ -23,7 +23,7 @@
 #include <esc/dir.h>
 #include <esc/fileio.h>
 #include <stdlib.h>
-#include <app.h>
+#include "app.h"
 
 #define MAX_APPS		256
 

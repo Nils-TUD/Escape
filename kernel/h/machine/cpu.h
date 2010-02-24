@@ -21,7 +21,7 @@
 #define CPU_H_
 
 #include <common.h>
-#include <asprintf.h>
+#include <printf.h>
 
 /* Enables the native (internal) mechanism for reporting x87 FPU errors when set;
  * enables the PC-style x87 FPU error reporting mechanism when clear. */

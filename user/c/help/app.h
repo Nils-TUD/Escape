@@ -20,8 +20,7 @@
 #ifndef APPSPARSER_H_
 #define APPSPARSER_H_
 
-#include <types.h>
-#include <asprintf.h>
+#include <esc/common.h>
 
 #define APP_TYPE_USER		0
 #define APP_TYPE_DRIVER		1
@@ -35,15 +34,6 @@ typedef struct {
 	char *start;
 	char *desc;
 } sApp;
-
-/**
- * Writes all info for <app> to the string specified by <str>.
- *
- * @param str the string to write to
- * @param app the application to write
- * @return true if successfull
- */
-bool app_toString(sStringBuffer *str,sApp *app);
 
 /**
  * Reads all info specified by <definition> into <app>.

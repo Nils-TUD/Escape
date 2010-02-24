@@ -33,7 +33,7 @@
 #include <util.h>
 #include <assert.h>
 #include <string.h>
-#include <asprintf.h>
+#include <printf.h>
 
 /* VFS-directory-entry (equal to the direntry of ext2) */
 typedef struct {
@@ -118,7 +118,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 	buf.size = 17 * 7 + 6 * 10 + MAX_PROC_NAME_LEN + 1;
 	buf.len = 0;
 
-	asprintf(
+	prf_sprintf(
 		&buf,
 		"%-16s%u\n"
 		"%-16s%u\n"
@@ -153,7 +153,7 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffe
 	buf.size = 17 * 6 + 4 * 10 + 2 * 16 + 1;
 	buf.len = 0;
 
-	asprintf(
+	prf_sprintf(
 		&buf,
 		"%-16s%u\n"
 		"%-16s%u\n"
@@ -207,7 +207,7 @@ static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer
 	buf.len = 0;
 
 	cycles.val64 = cpu_rdtsc();
-	asprintf(
+	prf_sprintf(
 		&buf,
 		"%-16s%u\n"
 		"%-16s%u\n"
@@ -251,7 +251,7 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buf
 	kheap = kheap_getOccupiedMem();
 	pmem = mm_getStackSize();
 	proc_getMemUsage(&paging,&userTotal);
-	asprintf(
+	prf_sprintf(
 		&buf,
 		"%-11s%10u\n"
 		"%-11s%10u\n"

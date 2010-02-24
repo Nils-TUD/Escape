@@ -54,11 +54,9 @@
 #include "tvfs.h"
 #include "tvfsnode.h"
 #include "tsignals.h"
-#include "tasprintf.h"
 #include "tringbuffer.h"
 #include "tesccodes.h"
 #include "tvfslist.h"
-#include "tapp.h"
 
 s32 main(sMultiBoot *mbp,u32 magic) {
 	UNUSED(magic);
@@ -149,11 +147,9 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	test_register(&tModVFS);
 	test_register(&tModVFSn);
 	test_register(&tModSignals);
-	test_register(&tModasprintf);
 	test_register(&tModRBuffer);
 	test_register(&tModEscCodes);
 	test_register(&tModVFSList);
-	test_register(&tModApp);
 	test_start();
 
 

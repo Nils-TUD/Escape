@@ -53,15 +53,12 @@ void util_panic(const char *fmt,...) {
 
 	/* print message */
 	vid_printf("\n");
-	vid_setLineBG(vid_getLine(),RED);
-	vid_useColor(RED,WHITE);
-	vid_printf("PANIC: ");
+	vid_printf("\033[co;7;4]PANIC: ");
 	va_start(ap,fmt);
 	vid_vprintf(fmt,ap);
 	va_end(ap);
+	vid_printf("%|s\033[co]\n","");
 
-	vid_printf("\n");
-	vid_restoreColor();
 	if(t != NULL)
 		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 	util_printStackTrace(util_getKernelStackTrace());

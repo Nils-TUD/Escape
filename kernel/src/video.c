@@ -26,118 +26,45 @@
 #include <esccodes.h>
 #include <width.h>
 
-#define VIDEO_BASE	0xC00B8000
-#define COL_WOB		0x07				/* white on black */
-#define COLS		80
-#define ROWS		25
-#define TAB_WIDTH	4
+#define VIDEO_BASE			0xC00B8000
+#define TAB_WIDTH			4
 
-/* special escape-codes */
-#define ESC_FG		'f'
-#define ESC_BG		'b'
-#define ESC_RESET	'r'
+/* format flags */
+#define FFL_PADRIGHT		1
+#define FFL_FORCESIGN		2
+#define FFL_SPACESIGN		4
+#define FFL_PRINTBASE		8
+#define FFL_PADZEROS		16
+#define FFL_CAPHEX			32
 
-/**
- * Handles a color-code
- *
- * @param str a pointer to the current string-position (will be changed)
- */
+static void vid_printnpad(s32 n,u8 pad,u16 flags);
+static void vid_printupad(u32 u,u8 base,u8 pad,u16 flags);
+static s32 vid_printpad(s32 count,u16 flags);
+static s32 vid_printu(u32 n,u8 base,char *chars);
+static s32 vid_printn(s32 n);
+static s32 vid_puts(const char *str);
+static void vid_clearScreen(void);
+static void vid_move(void);
 static void vid_handleColorCode(const char **str);
-
-/**
- * Removes the BIOS-cursor
- */
 static void vid_removeBIOSCursor(void);
-
-/**
- * Sames as vid_printu() but with lowercase letters
- *
- * @param n the number
- * @param base the base
- */
-static void vid_printuSmall(u32 n,u8 base);
 
 static u16 col = 0;
 static u16 row = 0;
 static char hexCharsBig[] = "0123456789ABCDEF";
 static char hexCharsSmall[] = "0123456789abcdef";
 static u8 color = 0;
-static u8 oldBG = 0, oldFG = 0;
 
 void vid_init(void) {
 	vid_removeBIOSCursor();
 	vid_clearScreen();
-	vid_setFGColor(WHITE);
-	vid_setBGColor(BLACK);
-}
-
-void vid_clearScreen(void) {
-	memclear((void*)VIDEO_BASE,COLS * 2 * ROWS);
-}
-
-void vid_useColor(eColor bg,eColor fg) {
-	oldBG = vid_getBGColor();
-	oldFG = vid_getFGColor();
-	vid_setBGColor(bg);
-	vid_setFGColor(fg);
-}
-
-void vid_restoreColor(void) {
-	vid_setBGColor((eColor)oldBG);
-	vid_setFGColor((eColor)oldFG);
-}
-
-eColor vid_getFGColor(void) {
-	return (eColor)(color & 0xF);
-}
-
-eColor vid_getBGColor(void) {
-	return (eColor)((color >> 4) & 0xF);
-}
-
-void vid_setFGColor(eColor ncol) {
-	color = (color & 0xF0) | (ncol & 0xF);
-}
-
-void vid_setBGColor(eColor ncol) {
-	color = (color & 0x0F) | ((ncol << 4) & 0xF0);
-}
-
-void vid_setLineBG(u8 line,eColor bg) {
-	u8 ncol = ((bg << 4) & 0xF0) | color;
-	u8 *addr = (u8*)(VIDEO_BASE + line * COLS * 2);
-	u8 *end = (u8*)((u32)addr + COLS * 2);
-	for(addr++; addr < end; addr += 2) {
-		*addr = ncol;
-	}
-}
-
-u8 vid_getLine(void) {
-	char *video = (char*)(VIDEO_BASE + row * COLS * 2 + col * 2);
-	return ((u32)video - VIDEO_BASE) / (COLS * 2);
-}
-
-void vid_toLineEnd(u8 pad) {
-	col = COLS - pad;
-}
-
-/**
- * Moves all lines one line up, if necessary
- */
-static void vid_move(void) {
-	/* last line? */
-	if(row >= ROWS) {
-		/* copy all chars one line back */
-		memmove((void*)VIDEO_BASE,(u8*)VIDEO_BASE + COLS * 2,ROWS * COLS * 2);
-		row--;
-	}
+	color = (BLACK << 4) | WHITE;
 }
 
 void vid_putchar(char c) {
 	u32 i;
 	char *video;
 	vid_move();
-	video = (char*)(VIDEO_BASE + row * COLS * 2 + col * 2);
+	video = (char*)(VIDEO_BASE + row * VID_COLS * 2 + col * 2);
 
 #ifdef LOGSERIAL
 	/* write to COM1 (some chars make no sense here) */
@@ -146,20 +73,15 @@ void vid_putchar(char c) {
 #endif
 
 	if(c == '\n') {
-		/* to next line */
 		row++;
-		/* move cursor to line start */
 		vid_putchar('\r');
 	}
-	else if(c == '\r') {
-		/* to line-start */
+	else if(c == '\r')
 		col = 0;
-	}
 	else if(c == '\t') {
 		i = TAB_WIDTH - col % TAB_WIDTH;
-		while(i-- > 0) {
+		while(i-- > 0)
 			vid_putchar(' ');
-		}
 	}
 	else {
 		*video = c;
@@ -168,43 +90,9 @@ void vid_putchar(char c) {
 
 		/* do an explicit newline if necessary */
 		col++;
-		if(col >= COLS)
+		if(col >= VID_COLS)
 			vid_putchar('\n');
 	}
-}
-
-void vid_printu(u32 n,u8 base) {
-	if(n >= base) {
-		vid_printu(n / base,base);
-	}
-	vid_putchar(hexCharsBig[(n % base)]);
-}
-
-void vid_puts(const char *str) {
-	char c;
-	while((c = *str)) {
-		/* color-code? */
-		if(c == '\033') {
-			str++;
-			vid_handleColorCode(&str);
-			continue;
-		}
-
-		vid_putchar(c);
-		str++;
-	}
-}
-
-void vid_printn(s32 n) {
-	if(n < 0) {
-		vid_putchar('-');
-		n = -n;
-	}
-
-	if(n >= 10) {
-		vid_printn(n / 10);
-	}
-	vid_putchar('0' + n % 10);
 }
 
 void vid_printf(const char *fmt,...) {
@@ -215,12 +103,14 @@ void vid_printf(const char *fmt,...) {
 }
 
 void vid_vprintf(const char *fmt,va_list ap) {
-	char c,b,padchar;
+	char c,b;
 	char *s;
 	u8 pad;
 	s32 n;
 	u32 u;
 	u8 width,base;
+	bool readFlags;
+	u16 flags;
 
 	while(1) {
 		/* wait for a '%' */
@@ -232,75 +122,109 @@ void vid_vprintf(const char *fmt,va_list ap) {
 			}
 
 			/* finished? */
-			if(c == '\0') {
+			if(c == '\0')
 				return;
-			}
 			vid_putchar(c);
 		}
 
-		/* read pad-character */
+		/* read flags */
+		flags = 0;
 		pad = 0;
-		padchar = ' ';
-		if(*fmt == '0' || *fmt == ' ') {
-			padchar = *fmt;
-			fmt++;
+		readFlags = true;
+		while(readFlags) {
+			switch(*fmt) {
+				case '-':
+					flags |= FFL_PADRIGHT;
+					fmt++;
+					break;
+				case '+':
+					flags |= FFL_FORCESIGN;
+					fmt++;
+					break;
+				case ' ':
+					flags |= FFL_SPACESIGN;
+					fmt++;
+					break;
+				case '#':
+					flags |= FFL_PRINTBASE;
+					fmt++;
+					break;
+				case '0':
+					flags |= FFL_PADZEROS;
+					fmt++;
+					break;
+				case '*':
+					pad = (u8)va_arg(ap, u32);
+					fmt++;
+					break;
+				case '|':
+					pad = VID_COLS - col;
+					fmt++;
+					break;
+				default:
+					readFlags = false;
+					break;
+			}
 		}
 
 		/* read pad-width */
-		while(*fmt >= '0' && *fmt <= '9') {
-			pad = pad * 10 + (*fmt - '0');
-			fmt++;
+		if(pad == 0) {
+			while(*fmt >= '0' && *fmt <= '9') {
+				pad = pad * 10 + (*fmt - '0');
+				fmt++;
+			}
 		}
 
 		/* determine format */
 		switch(c = *fmt++) {
 			/* signed integer */
 			case 'd':
+			case 'i':
 				n = va_arg(ap, s32);
-				if(pad > 0) {
-					width = getnwidth(n);
-					while(width++ < pad) {
-						vid_putchar(padchar);
-					}
-				}
-				vid_printn(n);
+				vid_printnpad(n,pad,flags);
 				break;
+
+			/* pointer */
+			case 'p':
+				u = va_arg(ap, u32);
+				flags |= FFL_PADZEROS;
+				pad = 9;
+				vid_printupad(u >> 16,16,pad - 5,flags);
+				vid_putchar(':');
+				vid_printupad(u & 0xFFFF,16,4,flags);
+				break;
+
 			/* unsigned integer */
 			case 'b':
 			case 'u':
 			case 'o':
 			case 'x':
 			case 'X':
-				u = va_arg(ap, u32);
 				base = c == 'o' ? 8 : ((c == 'x' || c == 'X') ? 16 : (c == 'b' ? 2 : 10));
-				if(pad > 0) {
-					width = getuwidth(u,base);
-					while(width++ < pad) {
-						vid_putchar(padchar);
-					}
-				}
-				if(c == 'x')
-					vid_printuSmall(u,base);
-				else
-					vid_printu(u,base);
+				if(c == 'X')
+					flags |= FFL_CAPHEX;
+				u = va_arg(ap, u32);
+				vid_printupad(u,base,pad,flags);
 				break;
+
 			/* string */
 			case 's':
 				s = va_arg(ap, char*);
-				if(pad > 0) {
+				if(pad > 0 && !(flags & FFL_PADRIGHT)) {
 					width = strlen(s);
-					while(width++ < pad) {
-						vid_putchar(padchar);
-					}
+					vid_printpad(pad - width,flags);
 				}
-				vid_puts(s);
+				n = vid_puts(s);
+				if(pad > 0 && (flags & FFL_PADRIGHT))
+					vid_printpad(pad - n,flags);
 				break;
+
 			/* character */
 			case 'c':
 				b = (char)va_arg(ap, u32);
 				vid_putchar(b);
 				break;
-			/* all other */
+
 			default:
 				vid_putchar(c);
 				break;
@@ -308,14 +232,133 @@ void vid_vprintf(const char *fmt,va_list ap) {
 	}
 }
 
+static void vid_printnpad(s32 n,u8 pad,u16 flags) {
+	s32 count = 0;
+	/* pad left */
+	if(!(flags & FFL_PADRIGHT) && pad > 0) {
+		u32 width = getnwidth(n);
+		if(n > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
+			width++;
+		count += vid_printpad(pad - width,flags);
+	}
+	/* print '+' or ' ' instead of '-' */
+	if(n > 0) {
+		if((flags & FFL_FORCESIGN)) {
+			vid_putchar('+');
+			count++;
+		}
+		else if(((flags) & FFL_SPACESIGN)) {
+			vid_putchar(' ');
+			count++;
+		}
+	}
+	/* print number */
+	count += vid_printn(n);
+	/* pad right */
+	if((flags & FFL_PADRIGHT) && pad > 0)
+		vid_printpad(pad - count,flags);
+}
+
+static void vid_printupad(u32 u,u8 base,u8 pad,u16 flags) {
+	s32 count = 0;
+	/* pad left - spaces */
+	if(!(flags & FFL_PADRIGHT) && !(flags & FFL_PADZEROS) && pad > 0) {
+		u32 width = getuwidth(u,base);
+		count += vid_printpad(pad - width,flags);
+	}
+	/* print base-prefix */
+	if((flags & FFL_PRINTBASE)) {
+		if(base == 16 || base == 8) {
+			vid_putchar('0');
+			count++;
+		}
+		if(base == 16) {
+			char c = (flags & FFL_CAPHEX) ? 'X' : 'x';
+			vid_putchar(c);
+			count++;
+		}
+	}
+	/* pad left - zeros */
+	if(!(flags & FFL_PADRIGHT) && (flags & FFL_PADZEROS) && pad > 0) {
+		u32 width = getuwidth(u,base);
+		count += vid_printpad(pad - width,flags);
+	}
+	/* print number */
+	if(flags & FFL_CAPHEX)
+		count += vid_printu(u,base,hexCharsBig);
+	else
+		count += vid_printu(u,base,hexCharsSmall);
+	/* pad right */
+	if((flags & FFL_PADRIGHT) && pad > 0)
+		vid_printpad(pad - count,flags);
+}
+
+static s32 vid_printpad(s32 count,u16 flags) {
+	s32 res = count;
+	char c = flags & FFL_PADZEROS ? '0' : ' ';
+	while(count-- > 0)
+		vid_putchar(c);
+	return res;
+}
+
+static s32 vid_printu(u32 n,u8 base,char *chars) {
+	s32 res = 0;
+	if(n >= base)
+		res += vid_printu(n / base,base,chars);
+	vid_putchar(chars[(n % base)]);
+	return res + 1;
+}
+
+static s32 vid_printn(s32 n) {
+	s32 res = 0;
+	if(n < 0) {
+		vid_putchar('-');
+		n = -n;
+		res++;
+	}
+
+	if(n >= 10)
+		res += vid_printn(n / 10);
+	vid_putchar('0' + n % 10);
+	return res + 1;
+}
+
+static s32 vid_puts(const char *str) {
+	const char *begin = str;
+	char c;
+	while((c = *str)) {
+		vid_putchar(c);
+		str++;
+	}
+	return str - begin;
+}
+
+static void vid_clearScreen(void) {
+	memclear((void*)VIDEO_BASE,VID_COLS * 2 * VID_ROWS);
+}
+
+/**
+ * Moves all lines one line up, if necessary
+ */
+static void vid_move(void) {
+	/* last line? */
+	if(row >= VID_ROWS) {
+		/* copy all chars one line back */
+		memmove((void*)VIDEO_BASE,(u8*)VIDEO_BASE + VID_COLS * 2,VID_ROWS * VID_COLS * 2);
+		row--;
+	}
+}
+
 static void vid_handleColorCode(const char **str) {
 	s32 n1,n2,n3;
 	s32 cmd = escc_get(str,&n1,&n2,&n3);
 	switch(cmd) {
-		case ESCC_COLOR:
-			vid_setFGColor(n1 == ESCC_ARG_UNUSED ? WHITE : MIN(9,n1));
-			vid_setBGColor(n2 == ESCC_ARG_UNUSED ? BLACK : MIN(9,n2));
-			break;
+		case ESCC_COLOR: {
+			u8 fg = n1 == ESCC_ARG_UNUSED ? WHITE : MIN(9,n1);
+			u8 bg = n2 == ESCC_ARG_UNUSED ? BLACK : MIN(9,n2);
+			color = (bg << 4) | fg;
+		}
+		break;
 		default:
 			util_panic("Invalid escape-code ^[%d;%d,%d,%d]",cmd,n1,n2,n3);
 			break;
@@ -327,11 +370,4 @@ static void vid_removeBIOSCursor(void) {
 	util_outByte(0x3D5,0x07);
 	util_outByte(0x3D4,15);
 	util_outByte(0x3D5,0xd0);
-}
-
-static void vid_printuSmall(u32 n,u8 base) {
-	if(n >= base) {
-		vid_printuSmall(n / base,base);
-	}
-	vid_putchar(hexCharsSmall[(n % base)]);
 }

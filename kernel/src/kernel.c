@@ -91,8 +91,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	ser_init();
 
 	vid_printf("GDT exchanged, paging enabled, video initialized");
-	vid_toLineEnd(SSTRLEN("DONE"));
-	vid_printf("\033[co;2]%s\033[co]","DONE");
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 #if DEBUGGING
 	mboot_dbg_print();
@@ -101,21 +100,18 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	/* mm */
 	vid_printf("Initializing physical memory-management...");
 	mm_init(mboot_getInfo());
-	vid_toLineEnd(SSTRLEN("DONE"));
-	vid_printf("\033[co;2]%s\033[co]","DONE");
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* paging */
 	vid_printf("Initializing paging...");
 	paging_mapHigherHalf();
 	paging_initCOWList();
-	vid_toLineEnd(SSTRLEN("DONE"));
-	vid_printf("\033[co;2]%s\033[co]","DONE");
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* fpu */
 	vid_printf("Initializing FPU...");
 	fpu_init();
-	vid_toLineEnd(SSTRLEN("DONE"));
-	vid_printf("\033[co;2]%s\033[co]","DONE");
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* vfs */
 	vid_printf("Initializing VFS...");
@@ -124,45 +120,38 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vfsreq_init();
 	vfsdrv_init();
 	vfsr_init();
-	vid_toLineEnd(SSTRLEN("DONE"));
-	vid_printf("\033[co;2]%s\033[co]","DONE");
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* processes */
 	vid_printf("Initializing process-management...");
 	proc_init();
 	sched_init();
-	vid_toLineEnd(SSTRLEN("DONE"));
-	vid_printf("\033[co;2]%s\033[co]","DONE");
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* idt */
 	vid_printf("Initializing IDT...");
 	intrpt_init();
-	vid_toLineEnd(SSTRLEN("DONE"));
-	vid_printf("\033[co;2]%s\033[co]","DONE");
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* timer */
 	vid_printf("Initializing timer...");
 	timer_init();
-	vid_toLineEnd(SSTRLEN("DONE"));
-	vid_printf("\033[co;2]%s\033[co]","DONE");
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* signals */
 	vid_printf("Initializing signal-handling...");
 	sig_init();
-	vid_toLineEnd(SSTRLEN("DONE"));
-	vid_printf("\033[co;2]%s\033[co]","DONE");
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* kevents */
 	vid_printf("Initializing KEvents...");
 	kev_init();
-	vid_toLineEnd(SSTRLEN("DONE"));
-	vid_printf("\033[co;2]%s\033[co]","DONE");
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* cpu */
 	vid_printf("Detecting CPU...");
 	cpu_detect();
-	vid_toLineEnd(SSTRLEN("DONE"));
-	vid_printf("\033[co;2]%s\033[co]","DONE");
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 #if DEBUGGING
 	vid_printf("Free frames=%d, pages mapped=%d, free mem=%d KiB\n",

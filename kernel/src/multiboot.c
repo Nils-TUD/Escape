@@ -169,8 +169,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			while(vfsn_resolvePath(service,&nodeNo,NULL,VFS_NOACCESS) < 0)
 				thread_switchInKernel();
 		}
-		vid_toLineEnd(SSTRLEN("DONE"));
-		vid_printf("\033[co;2]DONE\033[co]");
+		vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 		mod++;
 	}

@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <esccodes.h>
+#include <log.h>
 #include <printf.h>
 
 #define VIDEO_BASE			0xC00B8000
@@ -93,6 +94,7 @@ void vid_vprintf(const char *fmt,va_list ap) {
 	env.escape = vid_handleColorCode;
 	env.pipePad = vid_handlePipePad;
 	prf_vprintf(&env,fmt,ap);
+	log_vprintf(fmt,ap);
 }
 
 static void vid_clearScreen(void) {

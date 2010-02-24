@@ -40,6 +40,7 @@
 #include <multiboot.h>
 #include <debug.h>
 #include <kevent.h>
+#include <log.h>
 #include <video.h>
 #include <string.h>
 
@@ -126,6 +127,8 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("Initializing process-management...");
 	proc_init();
 	sched_init();
+	/* the process and thread-stuff has to be ready, too ... */
+	log_vfsIsReady();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* idt */

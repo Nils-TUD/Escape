@@ -27,8 +27,8 @@ s32 getDate(sDate *date) {
 	u8 yearType;
 	s32 m;
 
-	/* read date provided by CMOS */
-	tFD fd = open("/system/date",IO_READ);
+	/* open CMOS and read date */
+	tFD fd = open("/drivers/cmos",IO_READ);
 	if(fd < 0)
 		return fd;
 	if((err = read(fd,date,sizeof(sDate))) < 0)

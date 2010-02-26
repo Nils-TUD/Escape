@@ -20,11 +20,12 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/service.h>
-#include <messages.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/ports.h>
 #include <esc/date.h>
+#include <errors.h>
+#include <messages.h>
 #include <stdlib.h>
 
 #define IOPORT_CMOS_INDEX	0x70
@@ -43,32 +44,74 @@ static void cmos_refresh(void);
 static u32 cmos_decodeBCD(u8 val);
 static u8 cmos_read(u8 reg);
 
-static tFD dateFD;
+static sMsg msg;
+static sDate date;
 
 int main(void) {
+	tMsgId mid;
+	tServ id;
+	tServ client;
+
 	/* request io-ports */
 	if(requestIOPorts(IOPORT_CMOS_INDEX,2) < 0)
 		error("Unable to request io-ports %d .. %d",IOPORT_CMOS_INDEX,IOPORT_CMOS_INDEX + 1);
 
-	/* create a date-file */
-	dateFD = open("/system/date",IO_WRITE | IO_CREATE);
-	if(dateFD < 0)
-		error("Unable to open /system/date");
+	id = regService("cmos",SERV_DRIVER);
+	if(id < 0)
+		error("Unable to register service 'cmos'");
 
-	/* refresh once per second */
+	/* there is always data available */
+	if(setDataReadable(id,true) < 0)
+		error("setDataReadable");
+
+	/* wait for commands */
 	while(1) {
-		cmos_refresh();
-		sleep(1000);
+		tFD fd = getClient(&id,1,&client);
+		if(fd < 0)
+			wait(EV_CLIENT);
+		else {
+			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
+				switch(mid) {
+					case MSG_DRV_OPEN:
+						msg.args.arg1 = 0;
+						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
+						break;
+					case MSG_DRV_READ: {
+						u32 offset = msg.args.arg1;
+						u32 count = msg.args.arg2;
+						cmos_refresh();
+						msg.args.arg1 = count;
+						msg.args.arg2 = true;
+						if(offset + count <= offset || offset + count > sizeof(sDate))
+							msg.args.arg1 = 0;
+						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+						if(msg.args.arg1)
+							send(fd,MSG_DRV_READ_RESP,(u8*)&date + offset,count);
+					}
+					break;
+					case MSG_DRV_WRITE:
+						msg.args.arg1 = ERR_UNSUPPORTED_OP;
+						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+						break;
+					case MSG_DRV_IOCTL:
+						msg.data.arg1 = ERR_UNSUPPORTED_OP;
+						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+						break;
+					case MSG_DRV_CLOSE:
+						break;
+				}
+			}
+			close(fd);
+		}
 	}
 
 	/* clean up */
-	close(dateFD);
+	unregService(id);
 	releaseIOPorts(IOPORT_CMOS_INDEX,2);
 	return EXIT_SUCCESS;
 }
 
 static void cmos_refresh(void) {
-	sDate date;
 	date.monthDay = cmos_decodeBCD(cmos_read(CMOS_REG_MONTHDAY));
 	date.month = cmos_decodeBCD(cmos_read(CMOS_REG_MONTH));
 	date.year = cmos_decodeBCD(cmos_read(CMOS_REG_YEAR)) + 2000;
@@ -76,11 +119,6 @@ static void cmos_refresh(void) {
 	date.min = cmos_decodeBCD(cmos_read(CMOS_REG_MIN));
 	date.sec = cmos_decodeBCD(cmos_read(CMOS_REG_SEC));
 	date.weekDay = cmos_decodeBCD(cmos_read(CMOS_REG_WEEKDAY));
-
-	if(seek(dateFD,0,SEEK_SET) < 0)
-		printe("[CMOS] Unable to seek in /system/date");
-	if(write(dateFD,&date,sizeof(sDate)) < 0)
-		printe("[CMOS] Unable to write to /system/date");
 }
 
 static u32 cmos_decodeBCD(u8 val) {

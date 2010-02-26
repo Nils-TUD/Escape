@@ -135,8 +135,7 @@ vbox: all prepareRun $(ISO) $(VMDISK)
 debug: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
-		gdbtui --command=gdb.start
-		# --symbols $(BUILD)/kernel.bin
+		gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
 
 debugm: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &

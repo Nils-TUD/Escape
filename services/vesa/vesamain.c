@@ -41,8 +41,8 @@
 #define CURSOR_RESIZE_BL_FILE			"/etc/cursor_resbl.bmp"
 #define CURSOR_RESIZE_R_FILE			"/etc/cursor_resr.bmp"
 
-#define RESOLUTION_X					1024
-#define RESOLUTION_Y					768
+#define RESOLUTION_X					800
+#define RESOLUTION_Y					600
 #define BITS_PER_PIXEL					24
 
 #define CURSOR_LEN						2

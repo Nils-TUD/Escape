@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/heap.h>
+#include <esc/conf.h>
 #include <string.h>
 #include "display.h"
 #include "bar.h"
@@ -29,6 +30,7 @@
 #include "game.h"
 
 #define VIDEO_DRIVER		"/drivers/video"
+#define VESA_DRIVER			"/drivers/vesatext"
 
 #define SCORE_WIDTH			10
 #define SCORE_HEIGHT		4
@@ -82,7 +84,11 @@ static char *buffer = NULL;
 static char *backup = NULL;
 
 bool displ_init(void) {
-	video = open(VIDEO_DRIVER,IO_READ | IO_WRITE);
+	u32 vidMode = getConf(CONF_BOOT_VIDEOMODE);
+	if(vidMode == CONF_VIDMODE_VGATEXT)
+		video = open(VIDEO_DRIVER,IO_READ | IO_WRITE);
+	else
+		video = open(VESA_DRIVER,IO_READ | IO_WRITE);
 	if(video < 0) {
 		fprintf(stderr,"Unable to open video-driver");
 		return false;

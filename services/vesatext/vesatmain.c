@@ -34,8 +34,8 @@
 #include <vbe/vbe.h>
 #include "font.h"
 
-#define RESOLUTION_X					1024
-#define RESOLUTION_Y					768
+#define RESOLUTION_X					800
+#define RESOLUTION_Y					600
 #define BITS_PER_PIXEL					16
 
 #define CURSOR_LEN						FONT_WIDTH
@@ -224,7 +224,12 @@ int main(void) {
 }
 
 static s32 vesa_setMode(void) {
-	u16 mode = vbe_findMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);
+	u16 mode;
+	/* already done? */
+	if(minfo)
+		return 0;
+
+	mode = vbe_findMode(RESOLUTION_X,RESOLUTION_Y,BITS_PER_PIXEL);
 	if(mode != 0) {
 		minfo = vbe_getModeInfo(mode);
 		if(minfo) {

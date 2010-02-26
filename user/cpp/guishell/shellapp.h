@@ -55,6 +55,7 @@ private:
 private:
 	tServ _sid;
 	ShellControl *_sh;
+	sVTermCfg _cfg;
 	char *rbuffer;
 	u32 rbufPos;
 };

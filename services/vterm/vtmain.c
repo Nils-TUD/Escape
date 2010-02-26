@@ -49,10 +49,8 @@
  */
 static sVTerm *getVTerm(tServ sid);
 
-/* wether we should read from keyboard */
-static bool readKeyboard = true;
-
 static sMsg msg;
+static sVTermCfg cfg;
 static sKmData kmData[KB_DATA_BUF_SIZE];
 /* vterms */
 static tServ servIds[VTERM_COUNT] = {-1};
@@ -64,6 +62,9 @@ int main(void) {
 	tMsgId mid;
 	char name[MAX_VT_NAME_LEN + 1];
 
+	cfg.readKb = true;
+	cfg.refreshDate = true;
+
 	/* reg services */
 	for(i = 0; i < VTERM_COUNT; i++) {
 		snprintf(name,sizeof(name),"vterm%d",i);
@@ -73,7 +74,7 @@ int main(void) {
 	}
 
 	/* init vterms */
-	if(!vterm_initAll(servIds))
+	if(!vterm_initAll(servIds,&cfg))
 		error("Unable to init vterms");
 
 	/* open keyboard */
@@ -95,7 +96,7 @@ int main(void) {
 			if(fd >= 0)
 				close(fd);
 			reqc = 0;
-			if(readKeyboard) {
+			if(cfg.readKb) {
 				/* read from keyboard */
 				/* don't block here since there may be waiting clients.. */
 				while(!eof(kbFd)) {
@@ -159,7 +160,7 @@ int main(void) {
 						}
 						break;
 						case MSG_DRV_IOCTL: {
-							msg.data.arg1 = vterm_ioctl(vt,msg.data.arg1,msg.data.d,&readKeyboard);
+							msg.data.arg1 = vterm_ioctl(vt,&cfg,msg.data.arg1,msg.data.d);
 							send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 						}
 						break;

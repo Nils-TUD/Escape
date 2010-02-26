@@ -40,6 +40,12 @@ typedef struct sVTerm sVTerm;
 typedef bool (*fHandleShortcut)(sVTerm *vt,u32 keycode,u8 modifier,char c);
 typedef void (*fSetCursor)(sVTerm *vt);
 
+/* global configuration */
+typedef struct {
+	bool readKb;
+	bool refreshDate;
+} sVTermCfg;
+
 /* our vterm-state */
 struct sVTerm {
 	/* identification */
@@ -139,12 +145,12 @@ bool vterm_init(sVTerm *vt,sIoCtlSize *vidSize,tFD vidFd,tFD speakerFd);
  * Handles the ioctl-command
  *
  * @param vt the vterm
+ * @param cfg global configuration
  * @param cmd the command
  * @param data the data
- * @param readKb may be changed during ioctl
  * @return the result
  */
-s32 vterm_ioctl(sVTerm *vt,u32 cmd,void *data,bool *readKb);
+s32 vterm_ioctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data);
 
 /**
  * Scrolls the screen by <lines> up (positive) or down (negative)

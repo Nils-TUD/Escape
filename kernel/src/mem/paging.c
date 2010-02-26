@@ -393,7 +393,7 @@ static u32 paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virt,u32 *frames,u32
 	vassert(pageDir == PAGE_DIR_AREA || pageDir == PAGE_DIR_TMP_AREA,"pageDir invalid");
 	vassert(mappingArea == MAPPED_PTS_START || mappingArea == TMPMAP_PTS_START,"mappingArea invalid");
 	vassert(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_COPYONWRITE | PG_ADDR_TO_FRAME |
-			PG_NOFREE | PG_INHERIT)),"flags contain invalid bits");
+			PG_NOFREE | PG_INHERIT | PG_GLOBAL)),"flags contain invalid bits");
 	vassert(force == true || force == false,"force invalid");
 
 	virt &= ~(PAGE_SIZE - 1);

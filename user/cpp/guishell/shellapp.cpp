@@ -147,13 +147,10 @@ void ShellApplication::driverMain() {
 					send(fd,MSG_DRV_WRITE_RESP,&_msg,sizeof(_msg.args));
 				}
 				break;
-				case MSG_DRV_IOCTL: {
-					bool readKeyboard;
-					_msg.data.arg1 = vterm_ioctl(
-							_sh->getVTerm(),_msg.data.arg1,_msg.data.d,&readKeyboard);
+				case MSG_DRV_IOCTL:
+					_msg.data.arg1 = vterm_ioctl(_sh->getVTerm(),&_cfg,_msg.data.arg1,_msg.data.d);
 					send(fd,MSG_DRV_IOCTL_RESP,&_msg,sizeof(_msg.data));
-				}
-				break;
+					break;
 				case MSG_DRV_CLOSE:
 					break;
 			}

@@ -148,7 +148,7 @@ void vterm_destroy(sVTerm *vt) {
 	free(vt->rlBuffer);
 }
 
-s32 vterm_ioctl(sVTerm *vt,u32 cmd,void *data,bool *readKb) {
+s32 vterm_ioctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data) {
 	s32 res = 0;
 	UNUSED(data);
 	switch(cmd) {
@@ -156,6 +156,12 @@ s32 vterm_ioctl(sVTerm *vt,u32 cmd,void *data,bool *readKb) {
 			/* do it just once */
 			if(vt->shellPid == 0)
 				vt->shellPid = *(tPid*)data;
+			break;
+		case IOCTL_VT_EN_DATE:
+			cfg->refreshDate = true;
+			break;
+		case IOCTL_VT_DIS_DATE:
+			cfg->refreshDate = false;
 			break;
 		case IOCTL_VT_EN_ECHO:
 			vt->echo = true;
@@ -173,10 +179,10 @@ s32 vterm_ioctl(sVTerm *vt,u32 cmd,void *data,bool *readKb) {
 			vt->readLine = false;
 			break;
 		case IOCTL_VT_EN_RDKB:
-			*readKb = true;
+			cfg->readKb = true;
 			break;
 		case IOCTL_VT_DIS_RDKB:
-			*readKb = false;
+			cfg->readKb = false;
 			break;
 		case IOCTL_VT_EN_NAVI:
 			vt->navigation = true;

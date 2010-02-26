@@ -34,9 +34,10 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	// disable readline and stop reading from keyboard
+	// disable readline, stop reading from keyboard and stop date-refresh
 	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
 	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDKB,NULL,0);
+	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_DATE,NULL,0);
 
 	// start gui services
 	startService("vesa","/services/vesa");

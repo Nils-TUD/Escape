@@ -27,9 +27,10 @@
  * Inits all vterms
  *
  * @param ids the service-ids
+ * @param cfg the global config
  * @return true if successfull
  */
-bool vterm_initAll(tServ *ids);
+bool vterm_initAll(tServ *ids,sVTermCfg *cfg);
 
 /**
  * @param index the index

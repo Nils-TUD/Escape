@@ -234,7 +234,7 @@ static void handleMouseMessage(tServ servId,sMouseData *mdata) {
 			if(left && bottom)
 				cursor = CURSOR_RESIZE_BL;
 			else if(left)
-				cursor = CURSOR_RESIZE_R;
+				cursor = CURSOR_RESIZE_L;
 			if(right && bottom)
 				cursor = CURSOR_RESIZE_BR;
 			else if(right)

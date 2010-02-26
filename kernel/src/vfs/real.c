@@ -385,10 +385,11 @@ static void vfsr_readRespHandler(tTid tid,const u8 *data,u32 size) {
 		else {
 			/* ok, it's the data */
 			/* map the buffer we have to copy it to */
-			u8 *addr = (u8*)TEMP_MAP_AREA;
 			req->readFrNos = (u32*)kheap_alloc(req->count);
-			memcpy(req->readFrNos,data,req->count);
+			if(req->readFrNos)
+				memcpy(req->readFrNos,data,req->count);
 #if 0
+			u8 *addr = (u8*)TEMP_MAP_AREA;
 			paging_map(TEMP_MAP_AREA,req->readFrNos,req->readFrNoCount,PG_SUPERVISOR | PG_WRITABLE,true);
 			memcpy(addr + req->readOffset,data,req->count);
 			/* unmap it and free the frame-nos */

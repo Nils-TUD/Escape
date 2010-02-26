@@ -84,6 +84,7 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 	if(res < 0)
 		return res;
 
+#if 0
 	/* get the frame-numbers which we'll map later to write the reply directly to the calling
 	 * process */
 	pcount = BYTES_2_PAGES(((u32)buffer & (PAGE_SIZE - 1)) + count);
@@ -94,12 +95,18 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 
 	/* wait for a reply */
 	req = vfsreq_waitForReadReply(tid,count,frameNos,pcount,(u32)buffer % PAGE_SIZE);
+#endif
+	req = vfsreq_waitForReply(tid,buffer,count);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
 	res = req->count;
 	/* store wether there is more data readable */
 	node->parent->data.service.isEmpty = !req->val1;
+	if(req->readFrNos) {
+		memcpy(buffer,req->readFrNos,req->count);
+		kheap_free(req->readFrNos);
+	}
 	vfsreq_remRequest(req);
 	return res;
 }
@@ -209,12 +216,17 @@ static void vfsdrv_readReqHandler(tTid tid,const u8 *data,u32 size) {
 		else {
 			/* ok, it's the data */
 			/* map the buffer we have to copy it to */
+			req->readFrNos = (u32*)kheap_alloc(req->count);
+			if(req->readFrNos)
+				memcpy(req->readFrNos,data,req->count);
+#if 0
 			u8 *addr = (u8*)TEMP_MAP_AREA;
 			paging_map(TEMP_MAP_AREA,req->readFrNos,req->readFrNoCount,PG_SUPERVISOR | PG_WRITABLE,true);
 			memcpy(addr + req->readOffset,data,req->count);
 			/* unmap it and free the frame-nos */
 			paging_unmap(TEMP_MAP_AREA,req->readFrNoCount,false,false);
 			kheap_free(req->readFrNos);
+#endif
 			req->state = REQ_STATE_FINISHED;
 			/* the thread can continue now */
 			thread_wakeup(tid,EV_RECEIVED_MSG);

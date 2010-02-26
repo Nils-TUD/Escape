@@ -118,6 +118,8 @@
 #define PG_NOFREE			16
 /* tells paging_map() that the pages are inherited from another process; assumes PG_ADDR_TO_FRAME! */
 #define PG_INHERIT			32
+/* make it a global page */
+#define PG_GLOBAL			64
 
 /* converts a virtual address to the page-directory-index for that address */
 #define ADDR_TO_PDINDEX(addr) ((u32)(addr) / PAGE_SIZE / PT_ENTRY_COUNT)

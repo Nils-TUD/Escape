@@ -19,6 +19,7 @@
 
 #include <common.h>
 #include <machine/intrpt.h>
+#include <machine/cpu.h>
 #include <mem/paging.h>
 #include <mem/pmem.h>
 #include <mem/kheap.h>
@@ -164,6 +165,7 @@ void paging_init(void) {
 		for(i = 0; addr < end; i++, addr += PAGE_SIZE) {
 			/* build page-table entry */
 			pts[j][i].frameNumber = (u32)addr >> PAGE_SIZE_SHIFT;
+			pts[j][i].global = true;
 			pts[j][i].present = true;
 			pts[j][i].writable = true;
 		}
@@ -191,6 +193,8 @@ void paging_init(void) {
 	/* now set page-dir and enable paging */
 	paging_exchangePDir((u32)pd);
 	paging_enable();
+	/* enable global pages (TODO just possible for >= pentium pro (family 6)) */
+	cpu_setCR4(cpu_getCR4() | (1 << 7));
 }
 
 void paging_mapHigherHalf(void) {
@@ -432,6 +436,7 @@ static u32 paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virt,u32 *frames,u32
 				pt->noFree = (flags & PG_NOFREE) ? true : false;
 				pt->copyOnWrite = (flags & PG_COPYONWRITE) ? true : false;
 			}
+			pt->global = (flags & PG_GLOBAL) ? true : false;
 			pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
 			pt->writable = (flags & PG_WRITABLE) ? true : false;
 

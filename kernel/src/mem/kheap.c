@@ -452,7 +452,8 @@ static bool kheap_loadNewSpace(u32 size) {
 	count = BYTES_2_PAGES(size);
 	if((pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return false;
-	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,PG_WRITABLE | PG_SUPERVISOR,false);
+	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,
+			PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL,false);
 
 	/* take one area from the freelist and put the memory in it */
 	area = freeList;
@@ -474,7 +475,8 @@ static bool kheap_loadNewAreas(void) {
 		return false;
 
 	/* allocate one page for area-structs */
-	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,1,PG_WRITABLE | PG_SUPERVISOR,false);
+	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,1,
+			PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL,false);
 
 	/* determine start- and end-address */
 	area = (sMemArea*)(KERNEL_HEAP_START + pages * PAGE_SIZE);

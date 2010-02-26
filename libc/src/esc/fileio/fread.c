@@ -28,6 +28,7 @@ u32 fread(void *ptr,u32 size,u32 count,tFile *file) {
 	u8 *bPtr = (u8*)ptr;
 	sBuffer *in;
 	sIOBuffer *buf = bget(file);
+	/* TODO this is not correct; we should return 0 in this case and set ferror */
 	if(buf == NULL)
 		return IO_EOF;
 	/* no in-buffer? */

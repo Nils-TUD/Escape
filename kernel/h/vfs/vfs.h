@@ -36,8 +36,11 @@
 /* the device-number of the VFS */
 #define VFS_DEV_NO					((tDevNo)0xFF)
 
-/* checks wether the service with given mode is a driver */
 #define IS_DRIVER(mode)				(((mode) & MODE_SERVICE_DRIVER) != 0)
+#define IS_FS(mode)					(((mode) & MODE_SERVICE_FS) != 0)
+#define IS_SERVICE(mode)			(((mode) & MODE_TYPE_SERVICE) != 0)
+#define IS_SERVUSE(mode)			(((mode) & MODE_TYPE_SERVUSE) != 0)
+#define IS_PIPE(mode)				(((mode) & MODE_TYPE_PIPE) != 0)
 
 /* GFT flags */
 enum {

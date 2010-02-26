@@ -129,7 +129,7 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 	sVFSNode *n = vfsn_getNode(e->nodeNo);
 	vassert(e->flags != 0,"Invalid file %d",file);
 	/* we can't share service-usages since each thread has his own node */
-	if(e->devNo == VFS_DEV_NO && (n->mode & MODE_TYPE_SERVUSE)) {
+	if(e->devNo == VFS_DEV_NO && IS_SERVUSE(n->mode)) {
 		sVFSNode *child;
 		tInodeNo nodeNo;
 		tFileNo newFile;
@@ -146,7 +146,7 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 		return newFile;
 	}
 	/* if a pipe is inherited we need a new file for it (position should be different )*/
-	else if(e->devNo == VFS_DEV_NO && (n->mode & MODE_TYPE_PIPE)) {
+	else if(e->devNo == VFS_DEV_NO && IS_PIPE(n->mode)) {
 		tFileNo newFile;
 		/* we'll get a new file since the tid is different */
 		newFile = vfs_openFile(tid,e->flags & (VFS_READ | VFS_WRITE),e->nodeNo,e->devNo);
@@ -319,7 +319,7 @@ bool vfs_eof(tTid tid,tFileNo file) {
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = nodes + e->nodeNo;
 
-		if(n->mode & MODE_TYPE_SERVUSE) {
+		if(IS_SERVUSE(n->mode)) {
 			if(IS_DRIVER(n->parent->mode))
 				eof = n->parent->data.service.isEmpty;
 			else if(n->parent->owner == tid)
@@ -328,7 +328,7 @@ bool vfs_eof(tTid tid,tFileNo file) {
 				eof = sll_length(n->data.servuse.recvList) == 0;
 		}
 		/* we've read all from a pipe if there is one zero-length-entry left */
-		else if(n->mode & MODE_TYPE_PIPE)
+		else if(IS_PIPE(n->mode))
 			eof = sll_length(n->data.pipe.list) == 1 && n->data.pipe.total == 0;
 		else
 			eof = e->position >= n->data.def.pos;
@@ -367,10 +367,10 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = nodes + e->nodeNo;
 		/* no seek for pipes */
-		if(n->mode & MODE_TYPE_PIPE)
+		if(IS_PIPE(n->mode))
 			return ERR_PIPE_SEEK;
 
-		if(n->mode & MODE_TYPE_SERVUSE) {
+		if(IS_SERVUSE(n->mode)) {
 			if(IS_DRIVER(n->parent->mode)) {
 				/* not supported for drivers */
 				if(whence == SEEK_END)
@@ -516,7 +516,7 @@ s32 vfs_ioctl(tTid tid,tFileNo file,u32 cmd,u8 *data,u32 size) {
 		return err;
 
 	/* node not present anymore? */
-	if(n->name == NULL || !(n->mode & MODE_TYPE_SERVUSE) || !IS_DRIVER(n->parent->mode))
+	if(n->name == NULL || !IS_SERVUSE(n->mode) || !IS_DRIVER(n->parent->mode))
 		return ERR_INVALID_FILE;
 
 	return vfsdrv_ioctl(tid,file,n,cmd,data,size);
@@ -587,11 +587,11 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 				/* last usage? */
 				if(--(n->refCount) == 0) {
 					/* notify the driver, if it is one */
-					if((n->mode & MODE_TYPE_SERVUSE) && IS_DRIVER(n->parent->mode))
+					if(IS_SERVUSE(n->mode) && IS_DRIVER(n->parent->mode))
 						vfsdrv_close(tid,file,n);
 
 					/* remove pipe-nodes if there are no references anymore */
-					if(n->mode & MODE_TYPE_PIPE)
+					if(IS_PIPE(n->mode))
 						vfsn_removeNode(n);
 					/* if there are message for the service we don't want to throw them away */
 					/* if there are any in the receivelist (and no references of the node) we
@@ -599,15 +599,14 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 					 * (it means that the client has already closed the file) */
 					/* note also that we can assume that the service is still running since we
 					 * would have deleted the whole service-node otherwise */
-					else if((n->mode & MODE_TYPE_SERVUSE) &&
-							sll_length(n->data.servuse.sendList) == 0)
+					else if(IS_SERVUSE(n->mode) && sll_length(n->data.servuse.sendList) == 0)
 						vfsn_removeNode(n);
 				}
 				/* if we're the owner of the pipe, append an "EOF-message" */
 				/* otherwise we have a problem when the fd is inherited to multiple processes.
 				 * in this case all these processes would write an EOF (and of course not necessarily
 				 * at the right place) */
-				else if(n->owner == tid && (n->mode & MODE_TYPE_PIPE))
+				else if(n->owner == tid && IS_PIPE(n->mode))
 					vfsrw_writePipe(tid,file,n,NULL,e->position,0);
 			}
 		}
@@ -860,7 +859,7 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 					/* service-usage and a message in the receive-list? */
 					/* we don't want to check that if it is our own service. because it makes no
 					 * sense to read from ourself ;) */
-					if((n->mode & MODE_TYPE_SERVUSE) && n->parent->owner != tid) {
+					if(IS_SERVUSE(n->mode) && n->parent->owner != tid) {
 						isClient = true;
 						if(n->data.servuse.recvList != NULL && sll_length(n->data.servuse.recvList) > 0)
 							return true;
@@ -890,7 +889,7 @@ retry:
 			return ERR_INVALID_SERVID;
 
 		node = nodes + vfsNodes[i];
-		if(node->owner != tid || !(node->mode & MODE_TYPE_SERVICE))
+		if(node->owner != tid || !IS_SERVICE(node->mode))
 			return ERR_NOT_OWN_SERVICE;
 
 		/* search for a slot that needs work */
@@ -942,7 +941,7 @@ tFileNo vfs_openClientThread(tTid tid,tInodeNo nodeNo,tTid clientId) {
 	if(!vfsn_isValidNodeNo(nodeNo))
 		return ERR_INVALID_SERVID;
 	node = nodes + nodeNo;
-	if(node->owner != tid || !(node->mode & MODE_TYPE_SERVICE))
+	if(node->owner != tid || !IS_SERVICE(node->mode))
 		return ERR_NOT_OWN_SERVICE;
 
 	/* search for a slot that needs work */
@@ -979,7 +978,7 @@ s32 vfs_removeService(tTid tid,tInodeNo nodeNo) {
 
 	vassert(vfsn_isValidNodeNo(nodeNo),"Invalid node number %d",nodeNo);
 
-	if(n->owner != tid || !(n->mode & MODE_TYPE_SERVICE))
+	if(n->owner != tid || !IS_SERVICE(n->mode))
 		return ERR_NOT_OWN_SERVICE;
 
 	/* remove service-node including all service-usages */
@@ -1091,7 +1090,7 @@ void vfs_removeThread(tTid tid) {
 	for(i = 0; i < 2; i++) {
 		n = NODE_FIRST_CHILD(rn[i]->firstChild);
 		while(n != NULL) {
-			if((n->mode & MODE_TYPE_SERVICE) && n->owner == tid) {
+			if(IS_SERVICE(n->mode) && n->owner == tid) {
 				tn = n->next;
 				vfs_removeService(tid,NADDR_TO_VNNO(n));
 				n = tn;
@@ -1148,7 +1147,7 @@ void vfs_dbg_printGFT(void) {
 			vid_printf("\t\towner: %d\n",e->owner);
 			if(e->devNo == VFS_DEV_NO) {
 				sVFSNode *n = vfsn_getNode(e->nodeNo);
-				if(n->mode & MODE_TYPE_SERVUSE)
+				if(IS_SERVUSE(n->mode))
 					vid_printf("\t\tService-Usage of %s @ %s\n",n->name,n->parent->name);
 			}
 		}

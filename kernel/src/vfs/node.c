@@ -94,7 +94,7 @@ bool vfsn_isValidNodeNo(tInodeNo nodeNo) {
 bool vfsn_isOwnServiceNode(tInodeNo nodeNo) {
 	sThread *t = thread_getRunning();
 	sVFSNode *node = nodes + nodeNo;
-	return node->owner == t->tid && (node->mode & MODE_TYPE_SERVICE);
+	return node->owner == t->tid && IS_SERVICE(node->mode);
 }
 
 tInodeNo vfsn_getNodeNo(sVFSNode *node) {
@@ -124,7 +124,7 @@ s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info) {
 	info->uid = 0;
 	info->gid = 0;
 	info->mode = n->mode;
-	if((n->mode & MODE_TYPE_SERVUSE))
+	if(IS_SERVUSE(n->mode))
 		info->size = 0;
 	else
 		info->size = n->data.def.pos;
@@ -207,7 +207,7 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 			if(!*path)
 				break;
 
-			if(n->mode & MODE_TYPE_SERVICE)
+			if(IS_SERVICE(n->mode))
 				break;
 
 			/* move to childs of this node */
@@ -262,7 +262,7 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 	}
 
 	/* handle special node-types */
-	if((flags & VFS_CONNECT) && (n->mode & MODE_TYPE_SERVICE)) {
+	if((flags & VFS_CONNECT) && IS_SERVICE(n->mode)) {
 		sVFSNode *child;
 		/* create service-use */
 		s32 err = vfsn_createServiceUse(t->tid,n,&child);
@@ -479,7 +479,7 @@ void vfsn_removeNode(sVFSNode *n) {
 		child = tn;
 	}
 
-	if(n->mode & MODE_TYPE_SERVUSE) {
+	if(IS_SERVUSE(n->mode)) {
 		/* free send and receive list */
 		if(n->data.servuse.recvList != NULL) {
 			sll_destroy(n->data.servuse.recvList,true);
@@ -490,7 +490,7 @@ void vfsn_removeNode(sVFSNode *n) {
 			n->data.servuse.sendList = NULL;
 		}
 	}
-	else if(n->mode & MODE_TYPE_PIPE) {
+	else if(IS_PIPE(n->mode)) {
 		sll_destroy(n->data.pipe.list,true);
 		n->data.pipe.list = NULL;
 	}
@@ -657,7 +657,7 @@ void vfsn_dbg_printNode(sVFSNode *node) {
 		vid_printf("\tnext: 0x%x\n",node->next);
 		vid_printf("\tprev: 0x%x\n",node->prev);
 		vid_printf("\towner: %d\n",node->owner);
-		if(node->mode & MODE_TYPE_SERVUSE) {
+		if(IS_SERVUSE(node->mode)) {
 			vid_printf("\tSendList:\n");
 			sll_dbg_print(node->data.servuse.sendList);
 			vid_printf("\tRecvList:\n");

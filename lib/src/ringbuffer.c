@@ -32,11 +32,10 @@
 #	define malloc(x)	kheap_alloc(x)
 #else
 #	include <esc/heap.h>
-#	include <esc/debug.h>
 /* for exit (vassert) */
 #	include <esc/proc.h>
 #	include <esc/fileio.h>
-#	define rbprintf 	debugf
+#	define rbprintf 	printf
 #endif
 
 typedef struct {

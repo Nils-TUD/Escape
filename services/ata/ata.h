@@ -27,6 +27,11 @@
 /* for printing debug-infos */
 #define ATA_PR1(fmt,...) /*debugf("[ATA] " #fmt "\n",## __VA_ARGS__)*/
 #define ATA_PR2(fmt,...) /*debugf("[ATA] " #fmt "\n",## __VA_ARGS__)*/
+#define ATA_LOG(fmt,...)	do { \
+		printf("[ATA] "); \
+		printf(fmt,## __VA_ARGS__); \
+		printf("\n"); \
+	} while(0);
 
 /**
  * Announces signal-handler for the ATA-interrupts

@@ -52,12 +52,6 @@ void vid_putchar(char c) {
 	vid_move();
 	video = (char*)(VIDEO_BASE + row * VID_COLS * 2 + col * 2);
 
-#ifdef LOGSERIAL
-	/* write to COM1 (some chars make no sense here) */
-	if(c != '\r' && c != '\t' && c != '\b')
-		ser_out(SER_COM1,c);
-#endif
-
 	if(c == '\n') {
 		row++;
 		vid_putchar('\r');

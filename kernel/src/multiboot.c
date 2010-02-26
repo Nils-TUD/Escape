@@ -160,7 +160,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		}
 
 		/* wait until the service is registered */
-		vid_printf("Waiting for '%s'",service);
+		vid_printf("Loading '%s'...\n",service);
 		/* don't wait for ATA, since it doesn't register a service but multiple drivers depending
 		 * on the available drives and partitions */
 		/* TODO better solution? */
@@ -169,7 +169,6 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			while(vfsn_resolvePath(service,&nodeNo,NULL,VFS_NOACCESS) < 0)
 				thread_switchInKernel();
 		}
-		vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 		mod++;
 	}

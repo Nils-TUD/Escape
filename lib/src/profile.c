@@ -23,14 +23,11 @@
 #	include <video.h>
 #	include <util.h>
 #	include <ksymbols.h>
-#	define prprintf		vid_printf
 #	define outb			util_outByte
 #	define inb			util_inByte
 #else
 #	include <esc/fileio.h>
 #	include <esc/ports.h>
-#	include <esc/debug.h>
-#	define prprintf		debugf
 #	define outb			outByte
 #	define inb			inByte
 #endif

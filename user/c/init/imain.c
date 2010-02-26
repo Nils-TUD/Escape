@@ -143,6 +143,11 @@ int main(void) {
 	if(!loadServices(services))
 		error("Unable to load services");
 
+	/* remove stdin, stdout and stderr. the shell wants to provide them */
+	close(STDERR_FILENO);
+	close(STDOUT_FILENO);
+	close(STDIN_FILENO);
+
 	/* now load the shells */
 	vtLen = SSTRLEN("vterm") + getnwidth(VTERM_COUNT) + 1;
 	vtermName = (char*)malloc(vtLen);
@@ -435,23 +440,23 @@ static sServiceLoad *getService(sServiceLoad **loads,char *name) {
 
 static void printServices(sServiceLoad **loads) {
 	u8 i;
-	debugf("Loads:\n");
+	printf("Loads:\n");
 	if(loads != NULL) {
 		sServiceLoad *load = *loads;
 		while(load != NULL) {
-			debugf("\tname: '%s' waits(%d): ",load->name,load->waitCount);
+			printf("\tname: '%s' waits(%d): ",load->name,load->waitCount);
 			for(i = 0; i < load->waitCount; i++) {
-				debugf("'%s'",load->waits[i]);
+				printf("'%s'",load->waits[i]);
 				if(i < load->waitCount - 1)
-					debugf(",");
+					printf(",");
 			}
-			debugf(" deps(%d): ",load->depCount);
+			printf(" deps(%d): ",load->depCount);
 			for(i = 0; i < load->depCount; i++) {
-				debugf("'%s'",load->deps[i]);
+				printf("'%s'",load->deps[i]);
 				if(i < load->depCount - 1)
-					debugf(",");
+					printf(",");
 			}
-			debugf("\n");
+			printf("\n");
 			load = *++loads;
 		}
 	}

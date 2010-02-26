@@ -498,28 +498,28 @@ void heap_print(void) {
 	sMemArea *area;
 	u32 i;
 
-	debugf("PageCount=%d\n",pageCount);
-	debugf("UsableList:\n");
+	printf("PageCount=%d\n",pageCount);
+	printf("UsableList:\n");
 	area = usableList;
 	while(area != NULL) {
-		debugf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
+		printf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
 		area = area->next;
 	}
 
-	/*debugf("FreeList:\n");
+	/*printf("FreeList:\n");
 	area = freeList;
 	while(area != NULL) {
-		debugf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
+		printf("\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
 		area = area->next;
 	}*/
 
-	debugf("OccupiedMap:\n");
+	printf("OccupiedMap:\n");
 	for(i = 0; i < OCC_MAP_SIZE; i++) {
 		area = occupiedMap[i];
 		if(area != NULL) {
-			debugf("\t%d:\n",i);
+			printf("\t%d:\n",i);
 			while(area != NULL) {
-				debugf("\t\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
+				printf("\t\t0x%x: addr=0x%x, size=0x%x, next=0x%x\n",area,area->address,area->size,area->next);
 				area = area->next;
 			}
 		}

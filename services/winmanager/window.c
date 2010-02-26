@@ -445,10 +445,10 @@ static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height) {
 void win_dbg_print(void) {
 	tWinId i;
 	sWindow *w = windows;
-	debugf("Windows:\n");
+	printf("Windows:\n");
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(w->id != WINID_UNSED) {
-			debugf("\t[%d] @(%d,%d), size=(%d,%d), z=%d, owner=%d, style=%d\n",
+			printf("\t[%d] @(%d,%d), size=(%d,%d), z=%d, owner=%d, style=%d\n",
 					i,w->x,w->y,w->width,w->height,w->z,w->owner,w->style);
 		}
 		w++;

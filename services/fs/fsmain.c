@@ -153,7 +153,7 @@ int main(int argc,char *argv[]) {
 		else {
 			while((size = receive(fd,&mid,&msg,sizeof(msg))) > 0) {
 				if(mid < MSG_FS_OPEN || mid > MSG_FS_ISTAT)
-					debugf("[FS] Illegal command %d\n",mid);
+					printf("[FS] Illegal command %d\n",mid);
 				else
 					commands[mid - MSG_FS_OPEN](fd);
 			}

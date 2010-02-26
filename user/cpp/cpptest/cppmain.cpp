@@ -40,7 +40,7 @@ public:
 		printf("Constructor for %p...\n",this);
 	};
 	~my() {
-		debugf("Destructor for %x...\n",this);
+		printf("Destructor for %x...\n",this);
 		abc = 0;
 	};
 

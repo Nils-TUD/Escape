@@ -162,7 +162,7 @@ int main(void) {
 	outByte(IOPORT_KB_DATA,0x1);
 	sleep(20);
 	kbdata = inByte(IOPORT_KB_DATA);
-	debugf("Set scancode-set: %x\n",kbdata);
+	printf("Set scancode-set: %x\n",kbdata);
 #endif
 
 #if 0
@@ -177,7 +177,7 @@ int main(void) {
 	outByte(IOPORT_KB_DATA,0x0);
 	sleep(40);
 	kbdata = inByte(IOPORT_KB_DATA);
-	debugf("scancode-set=%x\n",kbdata);
+	printf("scancode-set=%x\n",kbdata);
 	while(1);*/
 
 	/* we want to get notified about keyboard interrupts */

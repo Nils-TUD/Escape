@@ -82,6 +82,8 @@ int main(void) {
 	ata_init();
 	drive_detect(drives,DRIVE_COUNT);
 	initDrives();
+	/* flush prints */
+	flush();
 
 	/* we're ready now, so create a dummy-vfs-node that tells fs that all ata-drives are registered */
 	tFile *f = fopen("/system/devices/ata","w");
@@ -211,10 +213,8 @@ static void initDrives(void) {
 				else
 					snprintf(name,sizeof(name),"cd%c%d",'a' + i,p + 1);
 				services[servCount] = regService(name,SERV_DRIVER);
-				if(services[servCount] < 0) {
-					debugf("Drive %d, Partition %d: Unable to register driver '%s'\n",
-							i,p + 1,name);
-				}
+				if(services[servCount] < 0)
+					printf("Drive %d, Partition %d: Unable to register driver '%s'\n",i,p + 1,name);
 				else {
 					/* we're a block-device, so always data available */
 					setDataReadable(services[servCount],true);

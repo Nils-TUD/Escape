@@ -164,7 +164,7 @@ int main(void) {
 			if(active) {
 				count /= sizeof(sKmData);
 				while(count-- > 0) {
-					/*debugf("kc=%d, brk=%d\n",kbd->keycode,kbd->isBreak);*/
+					/*printf("kc=%d, brk=%d\n",kbd->keycode,kbd->isBreak);*/
 					handleKbMessage(servId,active,kbd->keycode,kbd->isBreak,kbd->modifier,
 							kbd->character);
 					kbd++;

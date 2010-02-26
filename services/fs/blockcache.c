@@ -169,19 +169,19 @@ static sCBlock *bcache_getBlock(sBlockCache *c) {
 void bcache_print(sBlockCache *c) {
 	u32 i = 0;
 	sCBlock *block;
-	debugf("Used blocks:\n\t");
+	printf("Used blocks:\n\t");
 	block = c->usedBlocks;
 	while(block != NULL) {
 		if(++i % 8 == 0)
-			debugf("\n\t");
-		debugf("%d ",block->blockNo);
+			printf("\n\t");
+		printf("%d ",block->blockNo);
 		block = block->next;
 	}
-	debugf("\n");
+	printf("\n");
 }
 
 void bcache_printStats(void) {
-	debugf("[BlockCache] Hits: %d, Misses: %d; %d %%\n",cacheHits,cacheMisses,
+	printf("[BlockCache] Hits: %d, Misses: %d; %d %%\n",cacheHits,cacheMisses,
 			(u32)(100 / ((float)(cacheMisses + cacheHits) / cacheHits)));
 }
 

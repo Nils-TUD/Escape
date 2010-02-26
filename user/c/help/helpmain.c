@@ -153,7 +153,7 @@ int main(int argc,char **argv) {
 		printf("	Use 'help --user' to get a list of all user-applications\n");
 		printf("	Use 'help --system' to get a list of all system-applications\n");
 		printf("	Use 'help ... --detail' to see usage-details\n");
-		printf("	Use 'help <cmd>' to get help for a specific applicaiton\n");
+		printf("	Use 'help <cmd>' to get help for a specific application\n");
 
 		printf("\n");
 		printf("Execute a command with '--help', '-h' or '-?' to get further information\n");

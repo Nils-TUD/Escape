@@ -107,7 +107,7 @@ sExt2CInode *ext2_icache_request(sExt2 *e,tInodeNo no) {
 		}
 
 		if(inode == startNode) {
-			debugf("NO FREE INODE-CACHE-SLOT! What to to??");
+			printf("NO FREE INODE-CACHE-SLOT! What to to??");
 			return NULL;
 		}
 	}
@@ -156,6 +156,6 @@ static void ext2_icache_write(sExt2 *e,sExt2CInode *inode) {
 }
 
 void ext2_icache_printStats(void) {
-	debugf("[InodeCache] Hits: %d, Misses: %d; %d %%\n",cacheHits,cacheMisses,
+	printf("[InodeCache] Hits: %d, Misses: %d; %d %%\n",cacheHits,cacheMisses,
 			(u32)(100 / ((float)(cacheMisses + cacheHits) / cacheHits)));
 }

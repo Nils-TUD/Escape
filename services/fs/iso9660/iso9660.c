@@ -227,13 +227,13 @@ void iso_dbg_printPathTbl(sISO9660 *h) {
 		free(start);
 		return;
 	}
-	debugf("Path-Table:\n");
+	printf("Path-Table:\n");
 	while((u8*)pe < ((u8*)start + tblSize)) {
-		debugf("	length: %u\n",pe->length);
-		debugf("	extentLoc: %u\n",pe->extentLoc);
-		debugf("	parentTblIndx: %u\n",pe->parentTblIndx);
-		debugf("	name: %s\n",pe->name);
-		debugf("---\n");
+		printf("	length: %u\n",pe->length);
+		printf("	extentLoc: %u\n",pe->extentLoc);
+		printf("	parentTblIndx: %u\n",pe->parentTblIndx);
+		printf("	name: %s\n",pe->name);
+		printf("---\n");
 		if(pe->length % 2 == 0)
 			pe = (sISOPathTblEntry*)((u8*)pe + sizeof(sISOPathTblEntry) + pe->length);
 		else
@@ -257,15 +257,15 @@ void iso_dbg_printTree(sISO9660 *h,u32 extLoc,u32 extSize,u32 layer) {
 		if(e->length == 0)
 			break;
 		for(i = 0; i < layer; i++)
-			debugf("  ");
+			printf("  ");
 		if(e->name[0] == ISO_FILENAME_THIS)
-			debugf("name: '.'\n");
+			printf("name: '.'\n");
 		else if(e->name[0] == ISO_FILENAME_PARENT)
-			debugf("name: '..'\n");
+			printf("name: '..'\n");
 		else {
 			bak = e->name[e->nameLen];
 			e->name[e->nameLen] = '\0';
-			debugf("name: '%s'\n",e->name);
+			printf("name: '%s'\n",e->name);
 			e->name[e->nameLen] = bak;
 		}
 		if((e->flags & ISO_FILEFL_DIR) && e->name[0] != ISO_FILENAME_PARENT &&
@@ -278,66 +278,66 @@ void iso_dbg_printTree(sISO9660 *h,u32 extLoc,u32 extSize,u32 layer) {
 }
 
 void iso_dbg_printVolDesc(sISOVolDesc *desc) {
-	debugf("VolumeDescriptor @ %x\n",desc);
-	debugf("	version: 0x%02x\n",desc->version);
-	debugf("	identifier: %.5s\n",desc->identifier);
+	printf("VolumeDescriptor @ %x\n",desc);
+	printf("	version: 0x%02x\n",desc->version);
+	printf("	identifier: %.5s\n",desc->identifier);
 	switch(desc->type) {
 		case ISO_VOL_TYPE_BOOTRECORD:
-			debugf("	type: bootrecord\n");
-			debugf("	bootSystemIdent: %.32s\n",desc->data.bootrecord.bootSystemIdent);
-			debugf("	bootIdent: %.32s\n",desc->data.bootrecord.bootIdent);
+			printf("	type: bootrecord\n");
+			printf("	bootSystemIdent: %.32s\n",desc->data.bootrecord.bootSystemIdent);
+			printf("	bootIdent: %.32s\n",desc->data.bootrecord.bootIdent);
 			break;
 		case ISO_VOL_TYPE_PRIMARY:
-			debugf("	type: primary\n");
-			debugf("	systemIdent: %.32s\n",desc->data.primary.systemIdent);
-			debugf("	volumeIdent: %.32s\n",desc->data.primary.volumeIdent);
-			debugf("	volumeSetIdent: %.128s\n",desc->data.primary.volumeSetIdent);
-			debugf("	copyrightFile: %.38s\n",desc->data.primary.copyrightFile);
-			debugf("	abstractFile: %.36s\n",desc->data.primary.abstractFile);
-			debugf("	bibliographicFile: %.37s\n",desc->data.primary.bibliographicFile);
-			debugf("	applicationIdent: %.128s\n",desc->data.primary.applicationIdent);
-			debugf("	dataPreparerIdent: %.128s\n",desc->data.primary.dataPreparerIdent);
-			debugf("	publisherIdent: %.128s\n",desc->data.primary.publisherIdent);
-			debugf("	fileStructureVersion: %u\n",desc->data.primary.fileStructureVersion);
-			debugf("	lOptPathTblLoc: %u\n",desc->data.primary.lOptPathTblLoc);
-			debugf("	lPathTblLoc: %u\n",desc->data.primary.lPathTblLoc);
-			debugf("	mOptPathTblLoc: %u\n",desc->data.primary.mOptPathTblLoc);
-			debugf("	mPathTblLoc: %u\n",desc->data.primary.mPathTblLoc);
-			debugf("	logBlkSize: %u\n",desc->data.primary.logBlkSize.littleEndian);
-			debugf("	pathTableSize: %u\n",desc->data.primary.pathTableSize.littleEndian);
-			debugf("	volSeqNo: %u\n",desc->data.primary.volSeqNo.littleEndian);
-			debugf("	volSpaceSize: %u\n",desc->data.primary.volSpaceSize.littleEndian);
-			debugf("	created: ");
+			printf("	type: primary\n");
+			printf("	systemIdent: %.32s\n",desc->data.primary.systemIdent);
+			printf("	volumeIdent: %.32s\n",desc->data.primary.volumeIdent);
+			printf("	volumeSetIdent: %.128s\n",desc->data.primary.volumeSetIdent);
+			printf("	copyrightFile: %.38s\n",desc->data.primary.copyrightFile);
+			printf("	abstractFile: %.36s\n",desc->data.primary.abstractFile);
+			printf("	bibliographicFile: %.37s\n",desc->data.primary.bibliographicFile);
+			printf("	applicationIdent: %.128s\n",desc->data.primary.applicationIdent);
+			printf("	dataPreparerIdent: %.128s\n",desc->data.primary.dataPreparerIdent);
+			printf("	publisherIdent: %.128s\n",desc->data.primary.publisherIdent);
+			printf("	fileStructureVersion: %u\n",desc->data.primary.fileStructureVersion);
+			printf("	lOptPathTblLoc: %u\n",desc->data.primary.lOptPathTblLoc);
+			printf("	lPathTblLoc: %u\n",desc->data.primary.lPathTblLoc);
+			printf("	mOptPathTblLoc: %u\n",desc->data.primary.mOptPathTblLoc);
+			printf("	mPathTblLoc: %u\n",desc->data.primary.mPathTblLoc);
+			printf("	logBlkSize: %u\n",desc->data.primary.logBlkSize.littleEndian);
+			printf("	pathTableSize: %u\n",desc->data.primary.pathTableSize.littleEndian);
+			printf("	volSeqNo: %u\n",desc->data.primary.volSeqNo.littleEndian);
+			printf("	volSpaceSize: %u\n",desc->data.primary.volSpaceSize.littleEndian);
+			printf("	created: ");
 			iso_dbg_printVolDate(&desc->data.primary.created);
-			debugf("\n");
-			debugf("	modified: ");
+			printf("\n");
+			printf("	modified: ");
 			iso_dbg_printVolDate(&desc->data.primary.modified);
-			debugf("\n");
-			debugf("	expires: ");
+			printf("\n");
+			printf("	expires: ");
 			iso_dbg_printVolDate(&desc->data.primary.expires);
-			debugf("\n");
-			debugf("	effective: ");
+			printf("\n");
+			printf("	effective: ");
 			iso_dbg_printVolDate(&desc->data.primary.effective);
-			debugf("\n");
+			printf("\n");
 			break;
 		case ISO_VOL_TYPE_PARTITION:
-			debugf("	type: partition\n");
+			printf("	type: partition\n");
 			break;
 		case ISO_VOL_TYPE_SUPPLEMENTARY:
-			debugf("	type: supplementary\n");
+			printf("	type: supplementary\n");
 			break;
 		case ISO_VOL_TYPE_TERMINATOR:
-			debugf("	type: terminator\n");
+			printf("	type: terminator\n");
 			break;
 		default:
-			debugf("	type: *UNKNOWN*\n");
+			printf("	type: *UNKNOWN*\n");
 			break;
 	}
-	debugf("\n");
+	printf("\n");
 }
 
 void iso_dbg_printVolDate(sISOVolDate *date) {
-	debugf("%.4s-%.2s-%.2s %.2s:%.2s:%.2s.%.2s @%d",
+	printf("%.4s-%.2s-%.2s %.2s:%.2s:%.2s.%.2s @%d",
 			date->year,date->month,date->day,date->hour,date->minute,date->second,
 			date->second100ths,date->offset);
 }

@@ -41,7 +41,7 @@ void drive_detect(sATADrive *drives,u32 count) {
 		if(i % 2 == 0) {
 			ATA_PR1("Checking if bus %d is present",i / 2);
 			if(!drive_isBusResponding(drives + i)) {
-				ATA_PR1("Not present; skipping master & slave");
+				ATA_LOG("Bus %d not present",i / 2);
 				i++;
 				continue;
 			}
@@ -53,7 +53,7 @@ void drive_detect(sATADrive *drives,u32 count) {
 			ATA_PR1("Sending 'IDENTIFY PACKET DEVICE' to device %d",i);
 			/* if that failed, try IDENTIFY PACKET DEVICE. Perhaps its an ATAPI-drive */
 			if(!drive_identify(drives + i,COMMAND_IDENTIFY_PACKET)) {
-				ATA_PR1("Device seems not to be present");
+				ATA_LOG("Device %d not present",i);
 				continue;
 			}
 		}
@@ -63,7 +63,7 @@ void drive_detect(sATADrive *drives,u32 count) {
 		if(!drives[i].info.general.isATAPI) {
 			drives[i].secSize = ATA_SEC_SIZE;
 			drives[i].rwHandler = ata_readWrite;
-			ATA_PR1("Device %d is an ATA-device; reading partition-table",i);
+			ATA_LOG("Device %d is an ATA-device",i);
 			if(!ata_readWrite(drives + i,false,buffer,0,1)) {
 				drives[i].present = 0;
 				ATA_PR1("Drive %d: Unable to read partition-table!",i);
@@ -81,7 +81,7 @@ void drive_detect(sATADrive *drives,u32 count) {
 			drives[i].partTable[0].present = 1;
 			drives[i].partTable[0].start = 0;
 			drives[i].partTable[0].size = atapi_getCapacity(drives + i);
-			ATA_PR1("Device %d is an ATAPI-device; size=%d",i,drives[i].partTable[0].size);
+			ATA_LOG("Device %d is an ATAPI-device",i);
 		}
 	}
 }
@@ -171,83 +171,83 @@ static bool drive_identify(sATADrive *drive,u8 cmd) {
 
 void drive_dbg_printInfo(sATADrive *drive) {
 	u32 i;
-	debugf("oldCurCylinderCount = %u\n",drive->info.oldCurCylinderCount);
-	debugf("oldCurHeadCount = %u\n",drive->info.oldCurHeadCount);
-	debugf("oldCurSecsPerTrack = %u\n",drive->info.oldCurSecsPerTrack);
-	debugf("oldCylinderCount = %u\n",drive->info.oldCylinderCount);
-	debugf("oldHeadCount = %u\n",drive->info.oldHeadCount);
-	debugf("oldSecsPerTrack = %u\n",drive->info.oldSecsPerTrack);
-	debugf("oldswDMAActive = %u\n",drive->info.oldswDMAActive);
-	debugf("oldswDMASupported = %u\n",drive->info.oldswDMASupported);
-	debugf("oldUnformBytesPerSec = %u\n",drive->info.oldUnformBytesPerSec);
-	debugf("oldUnformBytesPerTrack = %u\n",drive->info.oldUnformBytesPerTrack);
-	debugf("curmaxSecsPerIntrpt = %u\n",drive->info.curmaxSecsPerIntrpt);
-	debugf("maxSecsPerIntrpt = %u\n",drive->info.maxSecsPerIntrpt);
-	debugf("firmwareRev = '");
+	printf("oldCurCylinderCount = %u\n",drive->info.oldCurCylinderCount);
+	printf("oldCurHeadCount = %u\n",drive->info.oldCurHeadCount);
+	printf("oldCurSecsPerTrack = %u\n",drive->info.oldCurSecsPerTrack);
+	printf("oldCylinderCount = %u\n",drive->info.oldCylinderCount);
+	printf("oldHeadCount = %u\n",drive->info.oldHeadCount);
+	printf("oldSecsPerTrack = %u\n",drive->info.oldSecsPerTrack);
+	printf("oldswDMAActive = %u\n",drive->info.oldswDMAActive);
+	printf("oldswDMASupported = %u\n",drive->info.oldswDMASupported);
+	printf("oldUnformBytesPerSec = %u\n",drive->info.oldUnformBytesPerSec);
+	printf("oldUnformBytesPerTrack = %u\n",drive->info.oldUnformBytesPerTrack);
+	printf("curmaxSecsPerIntrpt = %u\n",drive->info.curmaxSecsPerIntrpt);
+	printf("maxSecsPerIntrpt = %u\n",drive->info.maxSecsPerIntrpt);
+	printf("firmwareRev = '");
 	for(i = 0; i < 8; i += 2)
-		debugf("%c%c",drive->info.firmwareRev[i + 1],drive->info.firmwareRev[i]);
-	debugf("'\n");
-	debugf("modelNo = '");
+		printf("%c%c",drive->info.firmwareRev[i + 1],drive->info.firmwareRev[i]);
+	printf("'\n");
+	printf("modelNo = '");
 	for(i = 0; i < 40; i += 2)
-		debugf("%c%c",drive->info.modelNo[i + 1],drive->info.modelNo[i]);
-	debugf("'\n");
-	debugf("serialNumber = '");
+		printf("%c%c",drive->info.modelNo[i + 1],drive->info.modelNo[i]);
+	printf("'\n");
+	printf("serialNumber = '");
 	for(i = 0; i < 20; i += 2)
-		debugf("%c%c",drive->info.serialNumber[i + 1],drive->info.serialNumber[i]);
-	debugf("'\n");
-	debugf("majorVer = 0x%02x\n",drive->info.majorVersion.raw);
-	debugf("minorVer = 0x%02x\n",drive->info.minorVersion);
-	debugf("general.isATAPI = %u\n",drive->info.general.isATAPI);
-	debugf("general.remMediaDevice = %u\n",drive->info.general.remMediaDevice);
-	debugf("mwDMAMode0Supp = %u\n",drive->info.mwDMAMode0Supp);
-	debugf("mwDMAMode0Sel = %u\n",drive->info.mwDMAMode0Sel);
-	debugf("mwDMAMode1Supp = %u\n",drive->info.mwDMAMode1Supp);
-	debugf("mwDMAMode1Sel = %u\n",drive->info.mwDMAMode1Sel);
-	debugf("mwDMAMode2Supp = %u\n",drive->info.mwDMAMode2Supp);
-	debugf("mwDMAMode2Sel = %u\n",drive->info.mwDMAMode2Sel);
-	debugf("minMwDMATransTimePerWord = %u\n",drive->info.minMwDMATransTimePerWord);
-	debugf("recMwDMATransTime = %u\n",drive->info.recMwDMATransTime);
-	debugf("minPIOTransTime = %u\n",drive->info.minPIOTransTime);
-	debugf("minPIOTransTimeIncCtrlFlow = %u\n",drive->info.minPIOTransTimeIncCtrlFlow);
-	debugf("multipleSecsValid = %u\n",drive->info.multipleSecsValid);
-	debugf("word88Valid = %u\n",drive->info.word88Valid);
-	debugf("words5458Valid = %u\n",drive->info.words5458Valid);
-	debugf("words6470Valid = %u\n",drive->info.words6470Valid);
-	debugf("userSectorCount = %u\n",drive->info.userSectorCount);
-	debugf("Capabilities:\n");
-	debugf("	DMA = %u\n",drive->info.capabilities.DMA);
-	debugf("	LBA = %u\n",drive->info.capabilities.LBA);
-	debugf("	IORDYDis = %u\n",drive->info.capabilities.IORDYDisabled);
-	debugf("	IORDYSup = %u\n",drive->info.capabilities.IORDYSupported);
-	debugf("Features:\n");
-	debugf("	APM = %u\n",drive->info.features.apm);
-	debugf("	autoAcousticMngmnt = %u\n",drive->info.features.autoAcousticMngmnt);
-	debugf("	CFA = %u\n",drive->info.features.cfa);
-	debugf("	devConfigOverlay = %u\n",drive->info.features.devConfigOverlay);
-	debugf("	deviceReset = %u\n",drive->info.features.deviceReset);
-	debugf("	downloadMicrocode = %u\n",drive->info.features.downloadMicrocode);
-	debugf("	flushCache = %u\n",drive->info.features.flushCache);
-	debugf("	flushCacheExt = %u\n",drive->info.features.flushCacheExt);
-	debugf("	hostProtArea = %u\n",drive->info.features.hostProtArea);
-	debugf("	lba48 = %u\n",drive->info.features.lba48);
-	debugf("	lookAhead = %u\n",drive->info.features.lookAhead);
-	debugf("	nop = %u\n",drive->info.features.nop);
-	debugf("	packet = %u\n",drive->info.features.packet);
-	debugf("	powerManagement = %u\n",drive->info.features.powerManagement);
-	debugf("	powerupStandby = %u\n",drive->info.features.powerupStandby);
-	debugf("	readBuffer = %u\n",drive->info.features.readBuffer);
-	debugf("	releaseInt = %u\n",drive->info.features.releaseInt);
-	debugf("	removableMedia = %u\n",drive->info.features.removableMedia);
-	debugf("	removableMediaSN = %u\n",drive->info.features.removableMediaSN);
-	debugf("	rwDMAQueued = %u\n",drive->info.features.rwDMAQueued);
-	debugf("	securityMode = %u\n",drive->info.features.securityMode);
-	debugf("	serviceInt = %u\n",drive->info.features.serviceInt);
-	debugf("	setFeaturesSpinup = %u\n",drive->info.features.setFeaturesSpinup);
-	debugf("	setMaxSecurity = %u\n",drive->info.features.setMaxSecurity);
-	debugf("	smart = %u\n",drive->info.features.smart);
-	debugf("	writeBuffer = %u\n",drive->info.features.writeBuffer);
-	debugf("	writeCache = %u\n",drive->info.features.writeCache);
-	debugf("\n");
+		printf("%c%c",drive->info.serialNumber[i + 1],drive->info.serialNumber[i]);
+	printf("'\n");
+	printf("majorVer = 0x%02x\n",drive->info.majorVersion.raw);
+	printf("minorVer = 0x%02x\n",drive->info.minorVersion);
+	printf("general.isATAPI = %u\n",drive->info.general.isATAPI);
+	printf("general.remMediaDevice = %u\n",drive->info.general.remMediaDevice);
+	printf("mwDMAMode0Supp = %u\n",drive->info.mwDMAMode0Supp);
+	printf("mwDMAMode0Sel = %u\n",drive->info.mwDMAMode0Sel);
+	printf("mwDMAMode1Supp = %u\n",drive->info.mwDMAMode1Supp);
+	printf("mwDMAMode1Sel = %u\n",drive->info.mwDMAMode1Sel);
+	printf("mwDMAMode2Supp = %u\n",drive->info.mwDMAMode2Supp);
+	printf("mwDMAMode2Sel = %u\n",drive->info.mwDMAMode2Sel);
+	printf("minMwDMATransTimePerWord = %u\n",drive->info.minMwDMATransTimePerWord);
+	printf("recMwDMATransTime = %u\n",drive->info.recMwDMATransTime);
+	printf("minPIOTransTime = %u\n",drive->info.minPIOTransTime);
+	printf("minPIOTransTimeIncCtrlFlow = %u\n",drive->info.minPIOTransTimeIncCtrlFlow);
+	printf("multipleSecsValid = %u\n",drive->info.multipleSecsValid);
+	printf("word88Valid = %u\n",drive->info.word88Valid);
+	printf("words5458Valid = %u\n",drive->info.words5458Valid);
+	printf("words6470Valid = %u\n",drive->info.words6470Valid);
+	printf("userSectorCount = %u\n",drive->info.userSectorCount);
+	printf("Capabilities:\n");
+	printf("	DMA = %u\n",drive->info.capabilities.DMA);
+	printf("	LBA = %u\n",drive->info.capabilities.LBA);
+	printf("	IORDYDis = %u\n",drive->info.capabilities.IORDYDisabled);
+	printf("	IORDYSup = %u\n",drive->info.capabilities.IORDYSupported);
+	printf("Features:\n");
+	printf("	APM = %u\n",drive->info.features.apm);
+	printf("	autoAcousticMngmnt = %u\n",drive->info.features.autoAcousticMngmnt);
+	printf("	CFA = %u\n",drive->info.features.cfa);
+	printf("	devConfigOverlay = %u\n",drive->info.features.devConfigOverlay);
+	printf("	deviceReset = %u\n",drive->info.features.deviceReset);
+	printf("	downloadMicrocode = %u\n",drive->info.features.downloadMicrocode);
+	printf("	flushCache = %u\n",drive->info.features.flushCache);
+	printf("	flushCacheExt = %u\n",drive->info.features.flushCacheExt);
+	printf("	hostProtArea = %u\n",drive->info.features.hostProtArea);
+	printf("	lba48 = %u\n",drive->info.features.lba48);
+	printf("	lookAhead = %u\n",drive->info.features.lookAhead);
+	printf("	nop = %u\n",drive->info.features.nop);
+	printf("	packet = %u\n",drive->info.features.packet);
+	printf("	powerManagement = %u\n",drive->info.features.powerManagement);
+	printf("	powerupStandby = %u\n",drive->info.features.powerupStandby);
+	printf("	readBuffer = %u\n",drive->info.features.readBuffer);
+	printf("	releaseInt = %u\n",drive->info.features.releaseInt);
+	printf("	removableMedia = %u\n",drive->info.features.removableMedia);
+	printf("	removableMediaSN = %u\n",drive->info.features.removableMediaSN);
+	printf("	rwDMAQueued = %u\n",drive->info.features.rwDMAQueued);
+	printf("	securityMode = %u\n",drive->info.features.securityMode);
+	printf("	serviceInt = %u\n",drive->info.features.serviceInt);
+	printf("	setFeaturesSpinup = %u\n",drive->info.features.setFeaturesSpinup);
+	printf("	setMaxSecurity = %u\n",drive->info.features.setMaxSecurity);
+	printf("	smart = %u\n",drive->info.features.smart);
+	printf("	writeBuffer = %u\n",drive->info.features.writeBuffer);
+	printf("	writeCache = %u\n",drive->info.features.writeCache);
+	printf("\n");
 }
 
 #endif

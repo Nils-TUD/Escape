@@ -22,6 +22,7 @@
 #include <esc/debug.h>
 #include <esc/signals.h>
 #include <esc/proc.h>
+#include <esc/fileio.h>
 #include "drive.h"
 #include "ata.h"
 
@@ -63,11 +64,11 @@ bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCoun
 
 	if(!drive->info.features.lba48) {
 		if(lba & 0xFFFFFFFFF0000000LL) {
-			debugf("[ata] Trying to read from sector > 2^28-1\n");
+			printf("[ata] Trying to read from sector > 2^28-1\n");
 			return false;
 		}
 		if(secCount & 0xFF00) {
-			debugf("[ata] Trying to read %u sectors with LBA28\n",secCount);
+			printf("[ata] Trying to read %u sectors with LBA28\n",secCount);
 			return false;
 		}
 
@@ -145,7 +146,7 @@ bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCoun
 			if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == CMD_ST_DRQ)
 				break;
 			if((status & CMD_ST_ERROR) != 0) {
-				debugf("[ata] error: %x\n",inByte(basePort + REG_ERROR));
+				printf("[ata] error: %#x\n",inByte(basePort + REG_ERROR));
 				return false;
 			}
 

@@ -350,12 +350,12 @@ static void env_printAll(void) {
 	u32 i;
 	sSLNode *n;
 	sSLList **list = envVars;
-	debugf("Env-Vars:\n");
+	printf("Env-Vars:\n");
 	for(i = 0; i < MAP_SIZE; i++) {
 		if(*list != NULL) {
 			for(n = sll_begin(*list); n != NULL; n = n->next) {
 				sEnvVar *e = (sEnvVar*)n->data;
-				debugf("\t[pid=%d %c%c] %s=%s\n",e->pid,
+				printf("\t[pid=%d %c%c] %s=%s\n",e->pid,
 						e->dup ? '+' : '-',e->dead ? 'd' : ' ',e->name,e->value);
 			}
 		}

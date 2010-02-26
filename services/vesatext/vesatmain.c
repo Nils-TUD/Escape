@@ -235,8 +235,9 @@ static s32 vesa_setMode(void) {
 		if(minfo) {
 			video = mapPhysical(minfo->physBasePtr,minfo->xResolution *
 					minfo->yResolution * (minfo->bitsPerPixel / 8));
-			debugf("Setting (%x) %4d x %4d x %2d\n",mode,
+			printf("[VESATEXT] Setting (%x) %4d x %4d x %2d\n",mode,
 					minfo->xResolution,minfo->yResolution,minfo->bitsPerPixel);
+			flush();
 			if(video == NULL)
 				return errno;
 			cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);

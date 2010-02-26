@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/debug.h>
+#include <esc/fileio.h>
 #include <esc/date.h>
 #include <string.h>
 #include <errors.h>
@@ -255,28 +255,28 @@ static u32 ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sCBlock *cblock,u32 ind
 
 void ext2_inode_print(sExt2Inode *inode) {
 	u32 i;
-	debugf("\tmode=0x%08x\n",inode->mode);
-	debugf("\tuid=%d\n",inode->uid);
-	debugf("\tgid=%d\n",inode->gid);
-	debugf("\tsize=%d\n",inode->size);
-	debugf("\taccesstime=%d\n",inode->accesstime);
-	debugf("\tcreatetime=%d\n",inode->createtime);
-	debugf("\tmodifytime=%d\n",inode->modifytime);
-	debugf("\tdeletetime=%d\n",inode->deletetime);
-	debugf("\tlinkCount=%d\n",inode->linkCount);
-	debugf("\tblocks=%d\n",inode->blocks);
-	debugf("\tflags=0x%08x\n",inode->flags);
-	debugf("\tosd1=0x%08x\n",inode->osd1);
+	printf("\tmode=0x%08x\n",inode->mode);
+	printf("\tuid=%d\n",inode->uid);
+	printf("\tgid=%d\n",inode->gid);
+	printf("\tsize=%d\n",inode->size);
+	printf("\taccesstime=%d\n",inode->accesstime);
+	printf("\tcreatetime=%d\n",inode->createtime);
+	printf("\tmodifytime=%d\n",inode->modifytime);
+	printf("\tdeletetime=%d\n",inode->deletetime);
+	printf("\tlinkCount=%d\n",inode->linkCount);
+	printf("\tblocks=%d\n",inode->blocks);
+	printf("\tflags=0x%08x\n",inode->flags);
+	printf("\tosd1=0x%08x\n",inode->osd1);
 	for(i = 0; i < EXT2_DIRBLOCK_COUNT; i++)
-		debugf("\tblock%d=%d\n",i,inode->dBlocks[i]);
-	debugf("\tsinglyIBlock=%d\n",inode->singlyIBlock);
-	debugf("\tdoublyIBlock=%d\n",inode->doublyIBlock);
-	debugf("\ttriplyIBlock=%d\n",inode->triplyIBlock);
-	debugf("\tgeneration=%d\n",inode->generation);
-	debugf("\tfileACL=%d\n",inode->fileACL);
-	debugf("\tdirACL=%d\n",inode->dirACL);
-	debugf("\tfragAddr=%d\n",inode->fragAddr);
-	debugf("\tosd2=0x%08x%08x%08x%08x\n",inode->osd2[0],inode->osd2[1],inode->osd2[2],inode->osd2[3]);
+		printf("\tblock%d=%d\n",i,inode->dBlocks[i]);
+	printf("\tsinglyIBlock=%d\n",inode->singlyIBlock);
+	printf("\tdoublyIBlock=%d\n",inode->doublyIBlock);
+	printf("\ttriplyIBlock=%d\n",inode->triplyIBlock);
+	printf("\tgeneration=%d\n",inode->generation);
+	printf("\tfileACL=%d\n",inode->fileACL);
+	printf("\tdirACL=%d\n",inode->dirACL);
+	printf("\tfragAddr=%d\n",inode->fragAddr);
+	printf("\tosd2=0x%08x%08x%08x%08x\n",inode->osd2[0],inode->osd2[1],inode->osd2[2],inode->osd2[3]);
 }
 
 #endif

@@ -288,9 +288,9 @@ static bool ext2_isPowerOf(u32 x,u32 y) {
 
 void ext2_bg_prints(sExt2 *e) {
 	u32 i,count = ext2_getBlockGroupCount(e);
-	debugf("Blockgroups:\n");
+	printf("Blockgroups:\n");
 	for(i = 0; i < count; i++) {
-		debugf(" Block %d\n",i);
+		printf(" Block %d\n",i);
 		ext2_bg_print(e,i,e->groups + i);
 	}
 }

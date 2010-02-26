@@ -82,12 +82,12 @@ void ext2_bg_update(sExt2 *e) {
 static void ext2_bg_printRanges(sExt2 *e,const char *name,u32 first,u32 max,u8 *bitmap);
 
 void ext2_bg_print(sExt2 *e,u32 no,sExt2BlockGrp *bg) {
-	debugf("	blockBitmapStart = %d\n",bg->blockBitmap);
-	debugf("	inodeBitmapStart = %d\n",bg->inodeBitmap);
-	debugf("	inodeTableStart = %d\n",bg->inodeTable);
-	debugf("	freeBlocks = %d\n",bg->freeBlockCount);
-	debugf("	freeInodes = %d\n",bg->freeInodeCount);
-	debugf("	usedDirCount = %d\n",bg->usedDirCount);
+	printf("	blockBitmapStart = %d\n",bg->blockBitmap);
+	printf("	inodeBitmapStart = %d\n",bg->inodeBitmap);
+	printf("	inodeTableStart = %d\n",bg->inodeTable);
+	printf("	freeBlocks = %d\n",bg->freeBlockCount);
+	printf("	freeInodes = %d\n",bg->freeInodeCount);
+	printf("	usedDirCount = %d\n",bg->usedDirCount);
 	ext2_bg_printRanges(e,"Blocks",no * e->superBlock.blocksPerGroup,
 			MIN(e->superBlock.blocksPerGroup,e->superBlock.blockCount - (no * e->superBlock.blocksPerGroup)),
 			bcache_request(&e->blockCache,bg->blockBitmap)->buffer);
@@ -103,7 +103,7 @@ static void ext2_bg_printRanges(sExt2 *e,const char *name,u32 first,u32 max,u8 *
 	pcount = 0;
 	start = 0;
 	lastFree = (bitmap[0] & 1) == 0;
-	debugf("	Free%s:\n\t\t",name);
+	printf("	Free%s:\n\t\t",name);
 	for(i = 0; i < (u32)EXT2_BLK_SIZE(e); a = 0, i++) {
 		for(a = 0, j = 1; j < 256; a++, j <<= 1) {
 			if(i * 8 + a >= max)
@@ -111,9 +111,9 @@ static void ext2_bg_printRanges(sExt2 *e,const char *name,u32 first,u32 max,u8 *
 			if(bitmap[i] & j) {
 				if(lastFree) {
 					if(start < i * 8 + a) {
-						debugf("%d .. %d, ",first + start,first + i * 8 + a - 1);
+						printf("%d .. %d, ",first + start,first + i * 8 + a - 1);
 						if(++pcount % 4 == 0)
-							debugf("\n\t\t");
+							printf("\n\t\t");
 					}
 					start = i * 8 + a;
 					lastFree = false;
@@ -127,13 +127,13 @@ static void ext2_bg_printRanges(sExt2 *e,const char *name,u32 first,u32 max,u8 *
 	}
 freeDone:
 	if(lastFree && start < i * 8 + a)
-		debugf("%d .. %d, ",first + start,first + i * 8 + a - 1);
-	debugf("\n");
+		printf("%d .. %d, ",first + start,first + i * 8 + a - 1);
+	printf("\n");
 
 	pcount = 0;
 	start = 0;
 	lastFree = (bitmap[0] & 1) == 0;
-	debugf("	Used%s:\n\t\t",name);
+	printf("	Used%s:\n\t\t",name);
 	for(i = 0; i < (u32)EXT2_BLK_SIZE(e); a = 0, i++) {
 		for(a = 0, j = 1; j < 256; a++, j <<= 1) {
 			if(i * 8 + a >= max)
@@ -146,9 +146,9 @@ freeDone:
 			}
 			else if(!lastFree) {
 				if(start < i * 8 + a) {
-					debugf("%d .. %d, ",first + start,first + i * 8 + a - 1);
+					printf("%d .. %d, ",first + start,first + i * 8 + a - 1);
 					if(++pcount % 4 == 0)
-						debugf("\n\t\t");
+						printf("\n\t\t");
 				}
 				start = i * 8 + a;
 				lastFree = true;
@@ -157,8 +157,8 @@ freeDone:
 	}
 usedDone:
 	if(!lastFree && start < i * 8 + a)
-		debugf("%d .. %d, ",first + start,first + i * 8 + a - 1);
-	debugf("\n");
+		printf("%d .. %d, ",first + start,first + i * 8 + a - 1);
+	printf("\n");
 }
 
 #endif

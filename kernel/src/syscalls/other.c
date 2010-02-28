@@ -26,6 +26,7 @@
 #include <task/lock.h>
 #include <syscalls/other.h>
 #include <syscalls.h>
+#include <log.h>
 #include <config.h>
 #include <errors.h>
 #include <video.h>

@@ -102,7 +102,6 @@ static bool moving = false;
 
 int main(void) {
 	tMsgId mid;
-	tServ client;
 
 	/* request io-ports */
 	if(requestIOPort(IOPORT_KB_CTRL) < 0 || requestIOPort(IOPORT_KB_DATA) < 0)

@@ -38,7 +38,8 @@ int mod_forkbomb(int argc,char *argv[]) {
 			printf("Fork() failed, so kill all childs...\n");
 			flush();
 			while(i-- > 0) {
-				sendSignalTo(pids[i],SIG_KILL,0);
+				if(sendSignalTo(pids[i],SIG_KILL,0) < 0)
+					printe("Unable to send SIG_KILL to %d\n",pids[i]);
 				waitChild(NULL);
 			}
 			printf("Done :)\n");

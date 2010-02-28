@@ -40,11 +40,10 @@ void sysc_debugc(sIntrptStackFrame *stack) {
 	log_printf("%c",(char)SYSC_ARG1(stack));
 }
 
-static bool started = false;
-
 void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 #if DEBUGGING
+	static bool started = false;
 	if(started)
 		proc_dbg_stopProf();
 	else

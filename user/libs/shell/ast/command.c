@@ -80,7 +80,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	s32 res = 0;
 	sSLNode *sub;
 	sExecSubCmd *cmd;
-	sShellCmd **shcmd;
+	sShellCmd **shcmd = NULL;
 	u32 cmdNo,cmdCount;
 	sRedirFile *redirOut,*redirIn;
 	char path[MAX_CMD_LEN] = APPS_DIR;

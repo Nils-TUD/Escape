@@ -73,13 +73,14 @@ namespace esc {
 
 		void ComboBox::ItemWindow::onMouseMoved(const MouseEvent &e) {
 			s32 item = getItemAt(e.getX(),e.getY());
-			if(item < _cb->_items.size() && item != _highlighted) {
+			if(item < (s32)_cb->_items.size() && item != _highlighted) {
 				_highlighted = item;
 				repaint();
 			}
 		}
 
 		void ComboBox::ItemWindow::onMouseReleased(const MouseEvent &e) {
+			UNUSED(e);
 			_cb->_selected = _highlighted;
 			closeImpl();
 		}

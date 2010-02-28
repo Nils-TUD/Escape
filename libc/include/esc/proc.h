@@ -131,7 +131,7 @@ s32 atexit(fExitFunc func);
  *
  * @param errorCode the error-code for the parent
  */
-void _exit(s32 exitCode);
+void _exit(s32 exitCode) A_NORETURN;
 
 /**
  * Calls atexit-functions and then _exit()

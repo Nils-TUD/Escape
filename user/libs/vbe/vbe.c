@@ -88,7 +88,7 @@ sVbeModeInfo *vbe_getModeInfo(u16 mode) {
 u16 vbe_findMode(u16 resX,u16 resY,u16 bpp) {
 	sSLNode *n;
 	sVbeModeInfo *info;
-	u16 best;
+	u16 best = 0;
 	u32 pixdiff, bestpixdiff = ABS(320 * 200 - resX * resY);
 	u32 depthdiff, bestdepthdiff = 8 >= bpp ? 8 - bpp : (bpp - 8) * 2;
 	for(n = sll_begin(modes); n != NULL; n = n->next) {

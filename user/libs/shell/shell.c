@@ -411,7 +411,7 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 	if(icursorPos == ilength) {
 		sShellCmd **matches;
 		sShellCmd **cmd;
-		bool searchPath;
+		bool searchPath = false;
 		u32 partLen;
 		u32 startPos;
 		char *part;

@@ -73,7 +73,7 @@ void conf_parseBootParams(const char *params) {
 
 			default:
 				if(state == STATE_NAME) {
-					if(nameLen >= MAX_BPNAME_LEN) {
+					if(nameLen >= MAX_BPNAME_LEN - 1) {
 						name[nameLen] = '\0';
 						state = STATE_VAL;
 					}
@@ -81,7 +81,7 @@ void conf_parseBootParams(const char *params) {
 						name[nameLen++] = c;
 				}
 				else if(state == STATE_VAL) {
-					if(valLen >= MAX_BPVAL_LEN) {
+					if(valLen >= MAX_BPVAL_LEN - 1) {
 						value[valLen] = '\0';
 						state = STATE_IGNORE;
 					}

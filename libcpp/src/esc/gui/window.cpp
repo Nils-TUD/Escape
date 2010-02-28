@@ -192,15 +192,15 @@ namespace esc {
 
 			/* if a control is focused and we get a moved or released event we have to pass this
 			 * event to the focused control. otherwise the control wouldn't know of them */
-			if(_focus >= 0) {
-				if(event == MOUSE_MOVED) {
+			if(event == MOUSE_MOVED) {
+				if(_focus >= 0)
 					_controls[_focus]->onMouseMoved(e);
-					return;
-				}
-				else if(event == MOUSE_RELEASED) {
+				return;
+			}
+			else if(event == MOUSE_RELEASED) {
+				if(_focus >= 0)
 					_controls[_focus]->onMouseReleased(e);
-					return;
-				}
+				return;
 			}
 
 			Control *c;
@@ -219,9 +219,14 @@ namespace esc {
 						_focus = i;
 					}
 					c->onMousePressed(e);
-					break;
+					return;
 				}
 			}
+
+			// if we're here the user has not clicked on a control, so set the focus to "nothing"
+			if(_focus >= 0)
+				_controls[_focus]->onFocusLost();
+			_focus = -1;
 		}
 
 		void Window::resize(s16 width,s16 height) {

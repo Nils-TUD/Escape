@@ -135,9 +135,9 @@ void ShellControl::update() {
 			g->moveLines(TEXTSTARTY + lineHeight,
 					getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,-scrollPixel);
 		}
-		// repaint first lines
-		clearRows(*g,0,-_vt->upScroll);
-		paintRows(*g,0,-_vt->upScroll);
+		// repaint first lines (not title-bar)
+		clearRows(*g,1,-_vt->upScroll);
+		paintRows(*g,1,-_vt->upScroll);
 		changed = true;
 	}
 	else if(_vt->upLength > 0) {

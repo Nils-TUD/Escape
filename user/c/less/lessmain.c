@@ -82,6 +82,8 @@ int main(int argc,char *argv[]) {
 		if(file == NULL)
 			error("Unable to open '%s'",filename);
 	}
+	else if(isavterm(STDIN_FILENO))
+		error("Using a vterm as STDIN and have got no filename");
 
 	if(ioctl(STDOUT_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
 		error("Unable to get screensize");

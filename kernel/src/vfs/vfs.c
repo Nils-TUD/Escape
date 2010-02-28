@@ -91,7 +91,7 @@ void vfs_init(void) {
 	 *     |-devices
 	 *     |-bin
 	 *   services
-	 *   drivers
+	 *   dev
 	 */
 	root = vfsn_createDir(NULL,(char*)"");
 	sys = vfsn_createDir(root,(char*)"system");
@@ -100,7 +100,7 @@ void vfs_init(void) {
 	vfsn_createDir(root,(char*)"services");
 	vfsn_createDir(sys,(char*)"devices");
 	vfsn_createDir(sys,(char*)"bin");
-	vfsn_createDir(root,(char*)"drivers");
+	vfsn_createDir(root,(char*)"dev");
 }
 
 s32 vfs_hasAccess(tTid tid,tInodeNo nodeNo,u16 flags) {

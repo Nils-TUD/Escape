@@ -81,9 +81,9 @@ void *iso_init(const char *driver) {
 		/* just needed if we would have a mount-point on the cd. this can't happen at this point */
 		tDevNo dev = 0x1234;
 		tInodeNo ino;
-		char path[SSTRLEN("/drivers/cda1") + 1];
+		char path[SSTRLEN("/dev/cda1") + 1];
 		for(i = 0; i < 4; i++) {
-			snprintf(path,sizeof(path),"/drivers/cd%c1",'a' + i);
+			snprintf(path,sizeof(path),"/dev/cd%c1",'a' + i);
 			if(!iso_setup(path,iso))
 				continue;
 

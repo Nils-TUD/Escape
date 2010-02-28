@@ -41,7 +41,7 @@ int mod_driver(int argc,char *argv[]) {
 
 	if(fork() == 0) {
 		char buf[10] = {0};
-		tFD fd = open("/drivers/bla",IO_READ | IO_WRITE);
+		tFD fd = open("/dev/bla",IO_READ | IO_WRITE);
 		if(fd < 0)
 			printe("open");
 		printf("Reading...\n");

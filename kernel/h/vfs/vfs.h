@@ -87,7 +87,7 @@ struct sVFSNode {
 	/* a list of listeners for created, modified or deleted */
 	sSLList *listeners;
 	union {
-		/* for services/drivers */
+		/* for services/dev */
 		struct {
 			/* wether there is data to read or not */
 			bool isEmpty;

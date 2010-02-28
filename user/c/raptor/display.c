@@ -29,8 +29,8 @@
 #include "objlist.h"
 #include "game.h"
 
-#define VIDEO_DRIVER		"/drivers/video"
-#define VESA_DRIVER			"/drivers/vesatext"
+#define VIDEO_DRIVER		"/dev/video"
+#define VESA_DRIVER			"/dev/vesatext"
 
 #define SCORE_WIDTH			10
 #define SCORE_HEIGHT		4

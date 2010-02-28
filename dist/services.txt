@@ -1,14 +1,14 @@
 # Format: "<serviceName> ';' [<waitFor> ',' ...] ';' [<dependency> ',' ...]"
 speaker; /services/speaker;
-keyboard; /drivers/keyboard;
-video; /drivers/video;
-kmmanager; /drivers/kmmanager; keyboard
-vesatext; /drivers/vesatext;
-vterm; /drivers/vterm0,/drivers/vterm1,/drivers/vterm2,/drivers/vterm3,/drivers/vterm4,/drivers/vterm5; kmmanager,speaker,vesatext,video,cmos
+keyboard; /dev/keyboard;
+video; /dev/video;
+kmmanager; /dev/kmmanager; keyboard
+vesatext; /dev/vesatext;
+vterm; /dev/vterm0,/dev/vterm1,/dev/vterm2,/dev/vterm3,/dev/vterm4,/dev/vterm5; kmmanager,speaker,vesatext,video,cmos
 env; /services/env;
 cmos; ;
-zero; /drivers/zero;
-random; /drivers/random;
-null; /drivers/null;
+zero; /dev/zero;
+random; /dev/random;
+null; /dev/null;
 powermng; /services/powermng;
 pci; ;

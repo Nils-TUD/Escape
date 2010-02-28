@@ -38,7 +38,7 @@ int main(int argc,char **argv) {
 	if(argc > 2 && strcmp(argv[1],"--set") == 0) {
 		char path[MAX_PATH_LEN];
 		u32 len;
-		tFD fd = open("/drivers/kmmanager",IO_READ | IO_WRITE);
+		tFD fd = open("/dev/kmmanager",IO_READ | IO_WRITE);
 		if(fd < 0)
 			error("Unable to open keymap-manager");
 		len = snprintf(path,sizeof(path),KEYMAP_DIR"/%s",argv[2]);

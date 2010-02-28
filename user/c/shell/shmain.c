@@ -42,7 +42,7 @@ int main(int argc,char **argv) {
 	tPid pid;
 	u32 vterm;
 	char *buffer;
-	char servPath[SSTRLEN("/drivers/") + MAX_VTERM_NAME_LEN + 1] = "/drivers/";
+	char servPath[SSTRLEN("/dev/") + MAX_VTERM_NAME_LEN + 1] = "/dev/";
 
 	/* we need either the vterm as argument or "-e <cmd>" */
 	if((argc != 2 && argc != 3) || isHelpCmd(argc,argv)) {

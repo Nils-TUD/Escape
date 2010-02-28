@@ -107,7 +107,7 @@ int main(int argc,char **argv) {
 	// wait until the service is announced
 	delete servName;
 	char *servPath = new char[MAX_PATH_LEN + 1];
-	snprintf(servPath,MAX_PATH_LEN + 1,"/drivers/guiterm%d",no);
+	snprintf(servPath,MAX_PATH_LEN + 1,"/dev/guiterm%d",no);
 	tFD fin;
 	do {
 		fin = open(servPath,IO_READ);

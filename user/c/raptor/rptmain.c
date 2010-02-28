@@ -41,7 +41,7 @@ int main(void) {
 	ioctl(STDOUT_FILENO,IOCTL_VT_BACKUP,NULL,0);
 	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDKB,NULL,0);
 
-	keymap = open("/drivers/kmmanager",IO_READ | IO_WRITE);
+	keymap = open("/dev/kmmanager",IO_READ | IO_WRITE);
 	if(keymap < 0)
 		qerror("Unable to open keymap-driver");
 

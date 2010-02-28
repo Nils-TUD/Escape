@@ -41,7 +41,7 @@ int main(void) {
 
 	// start gui services
 	startService("vesa","/services/vesa");
-	startService("mouse","/drivers/mouse");
+	startService("mouse","/dev/mouse");
 	startService("winmanager","/services/winmanager");
 
 	// start gui-test-program

@@ -56,7 +56,7 @@ static bool run = true;
 
 int main(int argc,char *argv[]) {
 	char c;
-	char vterm[MAX_PATH_LEN] = "/drivers/";
+	char vterm[MAX_PATH_LEN] = "/dev/";
 
 	if((argc != 1 && argc != 2) || isHelpCmd(argc,argv)) {
 		fprintf(stderr,"Usage: %s [<file>]\n",argv[0]);
@@ -117,7 +117,7 @@ int main(int argc,char *argv[]) {
 	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_NAVI,NULL,0);
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
-	if(!getEnv(vterm + 9,MAX_PATH_LEN - 9,"TERM")) {
+	if(!getEnv(vterm + SSTRLEN("/dev/"),MAX_PATH_LEN - SSTRLEN("/dev/"),"TERM")) {
 		resetVterm();
 		error("Unable to get TERM");
 	}

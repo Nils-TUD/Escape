@@ -57,9 +57,9 @@ int main(void) {
 		error("Unable to create the ring-buffer");
 
 	/* open keyboard */
-	kbFd = open("/drivers/keyboard",IO_READ);
+	kbFd = open("/dev/keyboard",IO_READ);
 	if(kbFd < 0)
-		error("Unable to open '/drivers/keyboard'");
+		error("Unable to open '/dev/keyboard'");
 
 	/* determine default keymap */
 	f = fopen(KEYMAP_FILE,"r");

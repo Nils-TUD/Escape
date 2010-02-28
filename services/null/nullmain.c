@@ -35,7 +35,7 @@ int main(void) {
 	if(id < 0)
 		error("Unable to register service 'null'");
 
-	/* /drivers/null produces no output, so always available to prevent blocking */
+	/* /dev/null produces no output, so always available to prevent blocking */
 	if(setDataReadable(id,true) < 0)
 		error("setDataReadable");
 

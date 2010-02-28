@@ -35,8 +35,8 @@
 #include <vterm/vtout.h>
 #include "vterm.h"
 
-#define VGA_DRIVER		"/drivers/video"
-#define VESA_DRIVER		"/drivers/vesatext"
+#define VGA_DRIVER		"/dev/video"
+#define VESA_DRIVER		"/dev/vesatext"
 
 /**
  * Handles shortcuts

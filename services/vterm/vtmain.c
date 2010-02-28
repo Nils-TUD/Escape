@@ -78,9 +78,9 @@ int main(void) {
 		error("Unable to init vterms");
 
 	/* open keyboard */
-	kbFd = open("/drivers/kmmanager",IO_READ);
+	kbFd = open("/dev/kmmanager",IO_READ);
 	if(kbFd < 0)
-		error("Unable to open '/drivers/kmmanager'");
+		error("Unable to open '/dev/kmmanager'");
 
 	/* request io-ports for qemu and bochs */
 	if(requestIOPort(0xe9) < 0 || requestIOPort(0x3f8) < 0 || requestIOPort(0x3fd) < 0)

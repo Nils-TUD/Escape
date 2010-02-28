@@ -62,13 +62,13 @@ int main(void) {
 	tServ servId;
 	tMsgId mid;
 
-	mouse = open("/drivers/mouse",IO_READ);
+	mouse = open("/dev/mouse",IO_READ);
 	if(mouse < 0)
-		error("Unable to open /drivers/mouse");
+		error("Unable to open /dev/mouse");
 
-	kmmng = open("/drivers/kmmanager",IO_READ);
+	kmmng = open("/dev/kmmanager",IO_READ);
 	if(kmmng < 0)
-		error("Unable to open /drivers/kmmanager");
+		error("Unable to open /dev/kmmanager");
 
 	if(setSigHandler(SIG_THREAD_DIED,deadThreadHandler) < 0)
 		error("Unable to set sig-handler for %d",SIG_THREAD_DIED);

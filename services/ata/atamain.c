@@ -62,7 +62,6 @@ static sMsg msg;
 
 int main(void) {
 	u32 i;
-	tServ client;
 	tMsgId mid;
 
 	/* request ports */
@@ -90,94 +89,88 @@ int main(void) {
 	fclose(f);
 
 	while(1) {
-		tFD fd = getClient(services,servCount,&client);
-		if(fd < 0) {
-			if(fd != ERR_NO_CLIENT_WAITING)
-				printe("[ata] Unable to get client");
-			wait(EV_CLIENT);
-		}
+		tServ serv;
+		tFD fd = getWork(services,servCount,&serv,&mid,&msg,sizeof(msg),0);
+		if(fd < 0)
+			printe("[ata] Unable to get client");
 		else {
-			sDriver *drv = getDriver(client);
+			sDriver *drv = getDriver(serv);
 			sATADrive *drive = drv == NULL ? NULL : (drives + drv->drive);
 			sPartition *part = (drv == NULL || drive == NULL) ? NULL : (drive->partTable + drv->partition);
 			if(drv == NULL || drive->present == 0 || part->present == 0) {
 				/* should never happen */
 				printe("[ata] Invalid drive");
-				close(fd);
 				continue;
 			}
 
-			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-				ATA_PR2("Got message %d",mid);
-				switch(mid) {
-					case MSG_DRV_OPEN:
-						msg.args.arg1 = 0;
-						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-						break;
+			ATA_PR2("Got message %d",mid);
+			switch(mid) {
+				case MSG_DRV_OPEN:
+					msg.args.arg1 = 0;
+					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
+					break;
 
-					case MSG_DRV_READ: {
-						u16 *buffer = NULL;
-						u32 offset = msg.args.arg1;
-						u32 count = msg.args.arg2;
-						msg.args.arg1 = 0;
-						/* we have to check wether it is at least one sector. otherwise ATA can't
-						 * handle the request */
-						if(offset + count <= part->size * drive->secSize && offset + count > offset) {
-							u32 rcount = (count + drive->secSize - 1) & ~(drive->secSize - 1);
-							buffer = (u16*)malloc(rcount);
-							if(buffer) {
-								ATA_PR2("Reading %d bytes @ %x from drive 0x%x",rcount,offset,drive->basePort);
-								if(drive->rwHandler(drive,false,buffer,
-										offset / drive->secSize + part->start,rcount / drive->secSize)) {
-									msg.data.arg1 = count;
-								}
+				case MSG_DRV_READ: {
+					u16 *buffer = NULL;
+					u32 offset = msg.args.arg1;
+					u32 count = msg.args.arg2;
+					msg.args.arg1 = 0;
+					/* we have to check wether it is at least one sector. otherwise ATA can't
+					 * handle the request */
+					if(offset + count <= part->size * drive->secSize && offset + count > offset) {
+						u32 rcount = (count + drive->secSize - 1) & ~(drive->secSize - 1);
+						buffer = (u16*)malloc(rcount);
+						if(buffer) {
+							ATA_PR2("Reading %d bytes @ %x from drive 0x%x",rcount,offset,drive->basePort);
+							if(drive->rwHandler(drive,false,buffer,
+									offset / drive->secSize + part->start,rcount / drive->secSize)) {
+								msg.data.arg1 = count;
 							}
 						}
-						msg.args.arg2 = true;
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+					}
+					msg.args.arg2 = true;
+					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+					if(buffer) {
+						send(fd,MSG_DRV_READ_RESP,buffer,count);
+						free(buffer);
+					}
+				}
+				break;
+
+				case MSG_DRV_WRITE: {
+					u16 *buffer = NULL;
+					u32 offset = msg.args.arg1;
+					u32 count = msg.args.arg2;
+					msg.args.arg1 = 0;
+					if(offset + count <= part->size * drive->secSize && offset + count > offset) {
+						buffer = (u16*)malloc(count);
 						if(buffer) {
-							send(fd,MSG_DRV_READ_RESP,buffer,count);
+							if(receive(fd,&mid,buffer,count) > 0) {
+								ATA_PR2("Writing %d bytes @ %x to drive 0x%x",count,offset,drive->basePort);
+								if(drive->rwHandler(drive,true,buffer,
+										offset / drive->secSize + part->start,count / drive->secSize)) {
+									msg.args.arg1 = count;
+								}
+							}
 							free(buffer);
 						}
 					}
-					break;
-
-					case MSG_DRV_WRITE: {
-						u16 *buffer = NULL;
-						u32 offset = msg.args.arg1;
-						u32 count = msg.args.arg2;
-						msg.args.arg1 = 0;
-						if(offset + count <= part->size * drive->secSize && offset + count > offset) {
-							buffer = (u16*)malloc(count);
-							if(buffer) {
-								if(receive(fd,&mid,buffer,count) >= 0) {
-									ATA_PR2("Writing %d bytes @ %x to drive 0x%x",count,offset,drive->basePort);
-									if(drive->rwHandler(drive,true,buffer,
-											offset / drive->secSize + part->start,count / drive->secSize)) {
-										msg.args.arg1 = count;
-									}
-								}
-								free(buffer);
-							}
-						}
-						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
-					}
-					break;
-
-					case MSG_DRV_IOCTL: {
-						msg.data.arg1 = ERR_UNSUPPORTED_OP;
-						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
-					}
-					break;
-
-					case MSG_DRV_CLOSE:
-						/* ignore */
-						break;
+					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
-				ATA_PR2("Done");
-			}
+				break;
 
+				case MSG_DRV_IOCTL: {
+					msg.data.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+				}
+				break;
+
+				case MSG_DRV_CLOSE:
+					/* ignore */
+					break;
+			}
 			close(fd);
+			ATA_PR2("Done");
 		}
 	}
 

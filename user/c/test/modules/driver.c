@@ -31,7 +31,6 @@ static sMsg msg;
 int mod_driver(int argc,char *argv[]) {
 	bool quit = false;
 	tMsgId mid;
-	tServ client;
 	tServ id;
 	UNUSED(argc);
 	UNUSED(argv);
@@ -64,59 +63,57 @@ int mod_driver(int argc,char *argv[]) {
 
 	setDataReadable(id,true);
 	while(!quit) {
-		tFD cfd = getClient(&id,1,&client);
+		tFD cfd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(cfd < 0)
-			wait(EV_CLIENT | EV_RECEIVED_MSG);
+			printe("[TEST] Unable to get work");
 		else {
-			while(receive(cfd,&mid,&msg,sizeof(msg)) > 0) {
-				switch(mid) {
-					case MSG_DRV_OPEN:
-						printf("Open: flags=%d\n",msg.args.arg1);
-						msg.args.arg1 = 0;
-						send(cfd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-						break;
-					case MSG_DRV_READ:
-						printf("Read: offset=%d, count=%d\n",msg.args.arg1,msg.args.arg2);
+			switch(mid) {
+				case MSG_DRV_OPEN:
+					printf("Open: flags=%d\n",msg.args.arg1);
+					msg.args.arg1 = 0;
+					send(cfd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
+					break;
+				case MSG_DRV_READ:
+					printf("Read: offset=%d, count=%d\n",msg.args.arg1,msg.args.arg2);
+					msg.args.arg1 = msg.args.arg2;
+					msg.args.arg2 = true;
+					send(cfd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+					send(cfd,MSG_DRV_READ_RESP,"test!!",SSTRLEN("test!!"));
+					break;
+				case MSG_DRV_WRITE: {
+					char *buf = (char*)malloc(msg.args.arg2);
+					printf("Write: offset=%d, count=%d\n",msg.args.arg1,msg.args.arg2);
+					msg.args.arg1 = 0;
+					if(receive(cfd,&mid,buf,msg.args.arg2) >= 0) {
+						printf("Got %s\n",buf);
 						msg.args.arg1 = msg.args.arg2;
-						msg.args.arg2 = true;
-						send(cfd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
-						send(cfd,MSG_DRV_READ_RESP,"test!!",SSTRLEN("test!!"));
-						break;
-					case MSG_DRV_WRITE: {
-						char *buf = (char*)malloc(msg.args.arg2);
-						printf("Write: offset=%d, count=%d\n",msg.args.arg1,msg.args.arg2);
-						msg.args.arg1 = 0;
-						if(receive(cfd,&mid,buf,msg.args.arg2) >= 0) {
-							printf("Got %s\n",buf);
-							msg.args.arg1 = msg.args.arg2;
-						}
-						send(cfd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
-						free(buf);
 					}
-					break;
-					case MSG_DRV_IOCTL: {
-						u32 cmd = msg.data.arg2;
-						printf("Ioctl: cmd=%d, dsize=%d\n",msg.data.arg1,msg.data.arg2);
-						msg.data.arg1 = 0;
-						if(cmd == 0) {
-							msg.data.arg2 = 0;
-							printf("Got '%s'\n",msg.data.d);
-						}
-						else {
-							msg.data.arg2 = 9;
-							strcpy(msg.data.d,"test1234");
-						}
-						send(cfd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
-					}
-					break;
-					case MSG_DRV_CLOSE:
-						printf("Close\n");
-						quit = true;
-						break;
-					default:
-						printf("Unknown command");
-						break;
+					send(cfd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+					free(buf);
 				}
+				break;
+				case MSG_DRV_IOCTL: {
+					u32 cmd = msg.data.arg2;
+					printf("Ioctl: cmd=%d, dsize=%d\n",msg.data.arg1,msg.data.arg2);
+					msg.data.arg1 = 0;
+					if(cmd == 0) {
+						msg.data.arg2 = 0;
+						printf("Got '%s'\n",msg.data.d);
+					}
+					else {
+						msg.data.arg2 = 9;
+						strcpy(msg.data.d,"test1234");
+					}
+					send(cfd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+				}
+				break;
+				case MSG_DRV_CLOSE:
+					printf("Close\n");
+					quit = true;
+					break;
+				default:
+					printf("Unknown command");
+					break;
 			}
 			close(cfd);
 		}

@@ -28,6 +28,7 @@
 #include <esc/fileio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errors.h>
 #include <sllist.h>
 
 #define MAP_SIZE 64
@@ -110,7 +111,7 @@ static bool deadVars = false;
 static sMsg msg;
 
 int main(void) {
-	tServ id,client;
+	tServ id;
 	tMsgId mid;
 
 	id = regService("env",SERV_DEFAULT);
@@ -126,9 +127,11 @@ int main(void) {
 
 	/* wait for messages */
 	while(1) {
-		tFD fd = getClient(&id,1,&client);
-		if(fd < 0)
-			wait(EV_CLIENT);
+		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		if(fd < 0) {
+			if(fd != ERR_INTERRUPTED)
+				printe("[ENV] Unable to get work");
+		}
 		else {
 			/* first, delete dead vars if there are any */
 			if(deadVars) {
@@ -136,54 +139,51 @@ int main(void) {
 				deadVars = false;
 			}
 
-			/* read all available messages */
-			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-				/* see what we have to do */
-				switch(mid) {
-					case MSG_ENV_GET: {
-						sEnvVar *var;
-						u32 pid = msg.str.arg1;
-						char *name = msg.str.s1;
-						name[sizeof(msg.str.s1) - 1] = '\0';
+			/* see what we have to do */
+			switch(mid) {
+				case MSG_ENV_GET: {
+					sEnvVar *var;
+					u32 pid = msg.str.arg1;
+					char *name = msg.str.s1;
+					name[sizeof(msg.str.s1) - 1] = '\0';
 
-						var = env_get(pid,name);
+					var = env_get(pid,name);
 
-						msg.str.arg1 = 0;
-						if(var != NULL) {
-							msg.str.arg1 = strlen(var->value) + 1;
-							memcpy(msg.str.s1,var->value,msg.str.arg1);
-						}
-						send(fd,MSG_ENV_GET_RESP,&msg,sizeof(msg.str));
+					msg.str.arg1 = 0;
+					if(var != NULL) {
+						msg.str.arg1 = strlen(var->value) + 1;
+						memcpy(msg.str.s1,var->value,msg.str.arg1);
 					}
-					break;
-
-					case MSG_ENV_SET: {
-						u32 pid = msg.str.arg1;
-						char *name = msg.str.s1;
-						char *value = msg.str.s2;
-						name[sizeof(msg.str.s1) - 1] = '\0';
-						value[sizeof(msg.str.s2) - 1] = '\0';
-
-						env_set(pid,name,value);
-					}
-					break;
-
-					case MSG_ENV_GETI: {
-						sEnvVar *var;
-						u32 pid = msg.args.arg1;
-						u32 index = msg.args.arg2;
-
-						var = env_geti(pid,index);
-
-						msg.str.arg1 = 0;
-						if(var != NULL) {
-							msg.str.arg1 = strlen(var->name) + 1;
-							memcpy(msg.str.s1,var->name,msg.str.arg1);
-						}
-						send(fd,MSG_ENV_GET_RESP,&msg,sizeof(msg.str));
-					}
-					break;
+					send(fd,MSG_ENV_GET_RESP,&msg,sizeof(msg.str));
 				}
+				break;
+
+				case MSG_ENV_SET: {
+					u32 pid = msg.str.arg1;
+					char *name = msg.str.s1;
+					char *value = msg.str.s2;
+					name[sizeof(msg.str.s1) - 1] = '\0';
+					value[sizeof(msg.str.s2) - 1] = '\0';
+
+					env_set(pid,name,value);
+				}
+				break;
+
+				case MSG_ENV_GETI: {
+					sEnvVar *var;
+					u32 pid = msg.args.arg1;
+					u32 index = msg.args.arg2;
+
+					var = env_geti(pid,index);
+
+					msg.str.arg1 = 0;
+					if(var != NULL) {
+						msg.str.arg1 = strlen(var->name) + 1;
+						memcpy(msg.str.s1,var->name,msg.str.arg1);
+					}
+					send(fd,MSG_ENV_GET_RESP,&msg,sizeof(msg.str));
+				}
+				break;
 			}
 			close(fd);
 		}

@@ -83,7 +83,7 @@ static sRingBuf *ibuf;
 static bool moving = false;
 
 int main(void) {
-	tServ id,client;
+	tServ id;
 	tMsgId mid;
 	u8 kbdata;
 
@@ -199,43 +199,43 @@ int main(void) {
 			setDataReadable(id,true);
 		moving = false;
 
-		fd = getClient(&id,1,&client);
-		if(fd < 0)
-			wait(EV_CLIENT);
+		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		if(fd < 0) {
+			if(fd != ERR_INTERRUPTED)
+				printe("[KB] Unable to get work");
+		}
 		else {
-			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-				switch(mid) {
-					case MSG_DRV_OPEN:
-						msg.args.arg1 = 0;
-						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-						break;
-					case MSG_DRV_READ: {
-						/* offset is ignored here */
-						u32 count = msg.args.arg2 / sizeof(sKbData);
-						sKbData *buffer = (sKbData*)malloc(count * sizeof(sKbData));
-						msg.args.arg1 = 0;
-						if(buffer)
-							msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKbData);
-						msg.args.arg2 = rb_length(rbuf) > 0;
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
-						if(buffer) {
-							send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sKbData));
-							free(buffer);
-						}
-					}
+			switch(mid) {
+				case MSG_DRV_OPEN:
+					msg.args.arg1 = 0;
+					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 					break;
-					case MSG_DRV_WRITE:
-						msg.args.arg1 = ERR_UNSUPPORTED_OP;
-						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
-						break;
-					case MSG_DRV_IOCTL: {
-						msg.data.arg1 = ERR_UNSUPPORTED_OP;
-						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+				case MSG_DRV_READ: {
+					/* offset is ignored here */
+					u32 count = msg.args.arg2 / sizeof(sKbData);
+					sKbData *buffer = (sKbData*)malloc(count * sizeof(sKbData));
+					msg.args.arg1 = 0;
+					if(buffer)
+						msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKbData);
+					msg.args.arg2 = rb_length(rbuf) > 0;
+					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+					if(buffer) {
+						send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sKbData));
+						free(buffer);
 					}
-					break;
-					case MSG_DRV_CLOSE:
-						break;
 				}
+				break;
+				case MSG_DRV_WRITE:
+					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+					break;
+				case MSG_DRV_IOCTL: {
+					msg.data.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+				}
+				break;
+				case MSG_DRV_CLOSE:
+					break;
 			}
 			close(fd);
 		}

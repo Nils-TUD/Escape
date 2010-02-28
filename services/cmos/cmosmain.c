@@ -50,7 +50,6 @@ static sDate date;
 int main(void) {
 	tMsgId mid;
 	tServ id;
-	tServ client;
 
 	/* request io-ports */
 	if(requestIOPorts(IOPORT_CMOS_INDEX,2) < 0)
@@ -66,40 +65,38 @@ int main(void) {
 
 	/* wait for commands */
 	while(1) {
-		tFD fd = getClient(&id,1,&client);
+		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			wait(EV_CLIENT);
+			printe("[CMOS] Unable to get work");
 		else {
-			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-				switch(mid) {
-					case MSG_DRV_OPEN:
-						msg.args.arg1 = 0;
-						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-						break;
-					case MSG_DRV_READ: {
-						u32 offset = msg.args.arg1;
-						u32 count = msg.args.arg2;
-						cmos_refresh();
-						msg.args.arg1 = count;
-						msg.args.arg2 = true;
-						if(offset + count <= offset || offset + count > sizeof(sDate))
-							msg.args.arg1 = 0;
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
-						if(msg.args.arg1)
-							send(fd,MSG_DRV_READ_RESP,(u8*)&date + offset,count);
-					}
+			switch(mid) {
+				case MSG_DRV_OPEN:
+					msg.args.arg1 = 0;
+					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 					break;
-					case MSG_DRV_WRITE:
-						msg.args.arg1 = ERR_UNSUPPORTED_OP;
-						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
-						break;
-					case MSG_DRV_IOCTL:
-						msg.data.arg1 = ERR_UNSUPPORTED_OP;
-						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
-						break;
-					case MSG_DRV_CLOSE:
-						break;
+				case MSG_DRV_READ: {
+					u32 offset = msg.args.arg1;
+					u32 count = msg.args.arg2;
+					cmos_refresh();
+					msg.args.arg1 = count;
+					msg.args.arg2 = true;
+					if(offset + count <= offset || offset + count > sizeof(sDate))
+						msg.args.arg1 = 0;
+					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+					if(msg.args.arg1)
+						send(fd,MSG_DRV_READ_RESP,(u8*)&date + offset,count);
 				}
+				break;
+				case MSG_DRV_WRITE:
+					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+					break;
+				case MSG_DRV_IOCTL:
+					msg.data.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+					break;
+				case MSG_DRV_CLOSE:
+					break;
 			}
 			close(fd);
 		}

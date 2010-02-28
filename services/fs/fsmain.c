@@ -96,9 +96,8 @@ static void sigTermHndl(tSig sig,u32 data) {
 int main(int argc,char *argv[]) {
 	tFD fd;
 	tMsgId mid;
-	s32 size;
 	u32 i,fstype;
-	tServ id,client;
+	tServ id;
 	sFileSystem *fs;
 
 	if(argc < 3) {
@@ -147,16 +146,14 @@ int main(int argc,char *argv[]) {
 		error("Unable to register service 'fs'");
 
 	while(run) {
-		fd = getClient(&id,1,&client);
+		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			wait(EV_CLIENT);
+			printe("[FS] Unable to get work");
 		else {
-			while((size = receive(fd,&mid,&msg,sizeof(msg))) > 0) {
-				if(mid < MSG_FS_OPEN || mid > MSG_FS_ISTAT)
-					printf("[FS] Illegal command %d\n",mid);
-				else
-					commands[mid - MSG_FS_OPEN](fd);
-			}
+			if(mid < MSG_FS_OPEN || mid > MSG_FS_ISTAT)
+				printf("[FS] Illegal command %d\n",mid);
+			else
+				commands[mid - MSG_FS_OPEN](fd);
 			close(fd);
 		}
 	}

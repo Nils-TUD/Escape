@@ -33,6 +33,9 @@
 #define SYSC_ARG2(stack)				((stack)->edx)
 #define SYSC_ARG3(stack)				(*((u32*)(stack)->uesp))
 #define SYSC_ARG4(stack)				(*(((u32*)(stack)->uesp) + 1))
+#define SYSC_ARG5(stack)				(*(((u32*)(stack)->uesp) + 2))
+#define SYSC_ARG6(stack)				(*(((u32*)(stack)->uesp) + 3))
+#define SYSC_ARG7(stack)				(*(((u32*)(stack)->uesp) + 4))
 
 /**
  * Handles the syscall for the given stack

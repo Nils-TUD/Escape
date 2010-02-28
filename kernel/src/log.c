@@ -151,7 +151,7 @@ static s32 log_write(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 o
 
 static void log_flush(void) {
 	if(vfsIsReady && bufPos) {
-		assert(vfs_writeFile(KERNEL_TID,logFile,(u8*)buf,bufPos) == (s32)bufPos);
+		vfs_writeFile(KERNEL_TID,logFile,(u8*)buf,bufPos);
 		bufPos = 0;
 	}
 }

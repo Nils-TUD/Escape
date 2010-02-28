@@ -364,17 +364,6 @@ s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count);
 tFileNo vfs_openClientThread(tTid tid,tInodeNo nodeNo,tTid clientId);
 
 /**
- * Opens a file for a client of the given service-node
- *
- * @param tid the thread-id
- * @param vfsNodes an array of VFS-nodes to check for clients
- * @param count the size of <vfsNodes>
- * @param node will be set to the node-number from which the client has been taken
- * @return the error-code (negative) or the file to use
- */
-tFileNo vfs_openClient(tTid tid,tInodeNo *vfsNodes,u32 count,tInodeNo *servNode);
-
-/**
  * Removes the service with given node-number
  *
  * @param tid the thread-id

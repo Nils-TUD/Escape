@@ -36,6 +36,8 @@
 #define SERV_FS						2
 #define SERV_DRIVER					4
 
+#define GW_NOBLOCK					1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -67,16 +69,6 @@ s32 unregService(tServ service);
 s32 setDataReadable(tServ service,bool readable);
 
 /**
- * Looks wether a client wants to be served and returns a file-descriptor for it.
- *
- * @param services an array with service-ids to check
- * @param count the size of <services>
- * @param serv will be set to the service from which the client has been taken
- * @return the file-descriptor if successfull or the error-code
- */
-tFD getClient(tServ *services,u32 count,tServ *serv) A_CHECKRET;
-
-/**
  * Opens a file for the client with given thread-id. Works just for multipipe-services!
  *
  * @param id the service-id
@@ -84,6 +76,23 @@ tFD getClient(tServ *services,u32 count,tServ *serv) A_CHECKRET;
  * @return the file-descriptor or a negative error-code
  */
 tFD getClientThread(tServ id,tTid tid) A_CHECKRET;
+
+/**
+ * For services: Looks wether a client wants to be served. If not and GW_NOBLOCK is not provided
+ * it waits until a client should be served. if not and GW_NOBLOCK is enabled, it returns an error.
+ * If a client wants to be served, the message is fetched from him and a file-descriptor is returned.
+ * Note that you may be interrupted by a signal!
+ *
+ * @param ids an array with service-ids to check
+ * @param idCount the number of service-ids
+ * @param serv will be set to the service from which the client has been taken
+ * @param mid will be set to the msg-id
+ * @param msg the message
+ * @param size the (max) size of the message
+ * @param flags the flags
+ * @return the file-descriptor for the communication with the client
+ */
+tFD getWork(tServ *ids,u32 idCount,tServ *serv,tMsgId *mid,void *msg,u32 size,u8 flags) A_CHECKRET;
 
 #ifdef __cplusplus
 }

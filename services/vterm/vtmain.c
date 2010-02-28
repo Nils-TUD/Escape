@@ -91,8 +91,8 @@ int main(void) {
 
 	reqc = 0;
 	while(1) {
-		tFD fd = getClient(servIds,VTERM_COUNT,&client);
-		if(reqc >= MAX_SEQREQ || fd < 0) {
+		tFD fd = getWork(servIds,VTERM_COUNT,&client,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		if((cfg.readKb && reqc >= MAX_SEQREQ) || fd < 0) {
 			if(fd >= 0)
 				close(fd);
 			reqc = 0;
@@ -104,71 +104,70 @@ int main(void) {
 					u32 count = read(kbFd,kmData,sizeof(kmData));
 					count /= sizeof(sKmData);
 					while(count-- > 0) {
-						if(!kmsg->isBreak) {
+						if(!kmsg->isBreak)
 							vterm_handleKey(vterm_getActive(),kmsg->keycode,kmsg->modifier,kmsg->character);
-							vterm_update(vterm_getActive());
-						}
 						kmsg++;
 					}
 				}
+				vterm_update(vterm_getActive());
 				wait(EV_CLIENT | EV_DATA_READABLE);
 			}
-			else
+			else {
+				vterm_update(vterm_getActive());
 				wait(EV_CLIENT);
+			}
 		}
 		else {
 			sVTerm *vt = getVTerm(client);
 			if(vt != NULL) {
-				u32 c = 0;
-				while(reqc++ < MAX_SEQREQ && receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-					switch(mid) {
-						case MSG_DRV_OPEN:
-							msg.args.arg1 = 0;
-							send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-							break;
-						case MSG_DRV_READ: {
-							/* offset is ignored here */
-							u32 count = msg.args.arg2;
-							char *data = (char*)malloc(count);
-							msg.args.arg1 = 0;
-							if(data)
-								msg.args.arg1 = rb_readn(vt->inbuf,data,count);
-							msg.args.arg2 = vt->inbufEOF || rb_length(vt->inbuf) > 0;
-							if(rb_length(vt->inbuf) == 0)
-								vt->inbufEOF = false;
-							send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
-							if(data) {
-								send(fd,MSG_DRV_READ_RESP,data,count);
-								free(data);
-							}
-						}
+				reqc++;
+				switch(mid) {
+					case MSG_DRV_OPEN:
+						msg.args.arg1 = 0;
+						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 						break;
-						case MSG_DRV_WRITE: {
-							char *data;
-							c = msg.args.arg2;
-							data = (char*)malloc(c + 1);
-							msg.args.arg1 = 0;
-							if(data) {
-								if(receive(fd,&mid,data,c + 1) >= 0) {
-									data[c] = '\0';
-									vterm_puts(vt,data,c,true);
-									msg.args.arg1 = c;
-								}
-								free(data);
-							}
-							send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+					case MSG_DRV_READ: {
+						/* offset is ignored here */
+						u32 count = msg.args.arg2;
+						char *data = (char*)malloc(count);
+						msg.args.arg1 = 0;
+						if(data)
+							msg.args.arg1 = rb_readn(vt->inbuf,data,count);
+						msg.args.arg2 = vt->inbufEOF || rb_length(vt->inbuf) > 0;
+						if(rb_length(vt->inbuf) == 0)
+							vt->inbufEOF = false;
+						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+						if(data) {
+							send(fd,MSG_DRV_READ_RESP,data,count);
+							free(data);
 						}
-						break;
-						case MSG_DRV_IOCTL: {
-							msg.data.arg1 = vterm_ioctl(vt,&cfg,msg.data.arg1,msg.data.d);
-							send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
-						}
-						break;
-						case MSG_DRV_CLOSE:
-							break;
 					}
+					break;
+					case MSG_DRV_WRITE: {
+						char *data;
+						u32 c;
+						c = msg.args.arg2;
+						data = (char*)malloc(c + 1);
+						msg.args.arg1 = 0;
+						if(data) {
+							if(receive(fd,&mid,data,c + 1) >= 0) {
+								data[c] = '\0';
+								vterm_puts(vt,data,c,true);
+								msg.args.arg1 = c;
+							}
+							free(data);
+						}
+						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+					}
+					break;
+					case MSG_DRV_IOCTL: {
+						msg.data.arg1 = vterm_ioctl(vt,&cfg,msg.data.arg1,msg.data.d);
+						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+					}
+					break;
+					case MSG_DRV_CLOSE:
+						break;
 				}
-				vterm_update(vt);
 			}
 			close(fd);
 		}

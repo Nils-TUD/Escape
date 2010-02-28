@@ -28,7 +28,7 @@
 static sMsg msg;
 
 int main(void) {
-	tServ id,client;
+	tServ id;
 	tMsgId mid;
 
 	id = regService("zero",SERV_DRIVER);
@@ -41,43 +41,41 @@ int main(void) {
 
     /* wait for commands */
 	while(1) {
-		tFD fd = getClient(&id,1,&client);
+		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			wait(EV_CLIENT);
+			printe("[ZERO] Unable to get work");
 		else {
-			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-				switch(mid) {
-					case MSG_DRV_OPEN:
-						msg.args.arg1 = 0;
-						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-						break;
-					case MSG_DRV_READ: {
-						/* offset is ignored here */
-						u32 count = msg.args.arg2;
-						u8 *data = (u8*)calloc(count,sizeof(u8));
-						if(!data)
-							count = 0;
-						msg.args.arg1 = count;
-						msg.args.arg2 = true;
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
-						if(data) {
-							send(fd,MSG_DRV_READ_RESP,data,count);
-							free(data);
-						}
-					}
+			switch(mid) {
+				case MSG_DRV_OPEN:
+					msg.args.arg1 = 0;
+					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 					break;
-					case MSG_DRV_WRITE:
-						msg.args.arg1 = ERR_UNSUPPORTED_OP;
-						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
-						break;
-					case MSG_DRV_IOCTL: {
-						msg.data.arg1 = ERR_UNSUPPORTED_OP;
-						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+				case MSG_DRV_READ: {
+					/* offset is ignored here */
+					u32 count = msg.args.arg2;
+					u8 *data = (u8*)calloc(count,sizeof(u8));
+					if(!data)
+						count = 0;
+					msg.args.arg1 = count;
+					msg.args.arg2 = true;
+					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+					if(data) {
+						send(fd,MSG_DRV_READ_RESP,data,count);
+						free(data);
 					}
-					break;
-					case MSG_DRV_CLOSE:
-						break;
 				}
+				break;
+				case MSG_DRV_WRITE:
+					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+					break;
+				case MSG_DRV_IOCTL: {
+					msg.data.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+				}
+				break;
+				case MSG_DRV_CLOSE:
+					break;
 			}
 			close(fd);
 		}

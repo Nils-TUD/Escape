@@ -77,11 +77,10 @@ void ShellApplication::handleKbMsg() {
 
 void ShellApplication::driverMain() {
 	tMsgId mid;
-	tServ client;
-	tFD fd = getClient(&_sid,1,&client);
+	tFD fd = getWork(&_sid,1,NULL,&mid,&_msg,sizeof(_msg),GW_NOBLOCK);
 	if(fd < 0) {
 		if(fd != ERR_NO_CLIENT_WAITING)
-			printe("Unable to get client");
+			printe("[GUISH] Unable to get client");
 		// append the buffer now to reduce delays
 		if(rbufPos > 0) {
 			rbuffer[rbufPos] = '\0';
@@ -92,68 +91,66 @@ void ShellApplication::driverMain() {
 		wait(EV_CLIENT | EV_RECEIVED_MSG);
 	}
 	else {
-		while(receive(fd,&mid,&_msg,sizeof(_msg)) > 0) {
-			switch(mid) {
-				case MSG_DRV_OPEN:
-					_msg.args.arg1 = 0;
-					send(fd,MSG_DRV_OPEN_RESP,&_msg,sizeof(_msg.args));
-					break;
-				case MSG_DRV_READ: {
-					sVTerm *vt = _sh->getVTerm();
-					sRingBuf *inbuf = _sh->getInBuf();
-					// offset is ignored here
-					u32 count = _msg.args.arg2;
-					char *data = (char*)malloc(count);
-					_msg.args.arg1 = 0;
-					if(data)
-						_msg.args.arg1 = rb_readn(inbuf,data,count);
-					_msg.args.arg2 = vt->inbufEOF || rb_length(inbuf) > 0;
-					if(rb_length(inbuf) == 0)
-						vt->inbufEOF = false;
-					send(fd,MSG_DRV_READ_RESP,&_msg,sizeof(_msg.args));
-					if(data) {
-						send(fd,MSG_DRV_READ_RESP,data,count);
-						free(data);
-					}
-				}
+		switch(mid) {
+			case MSG_DRV_OPEN:
+				_msg.args.arg1 = 0;
+				send(fd,MSG_DRV_OPEN_RESP,&_msg,sizeof(_msg.args));
 				break;
-				case MSG_DRV_WRITE: {
-					u32 amount;
-					char *data;
-					u32 c = _msg.args.arg2;
-					data = (char*)malloc(c + 1);
-					_msg.args.arg1 = 0;
-					if(data) {
-						if(receive(fd,&mid,data,c + 1) >= 0) {
-							char *dataWork = data;
-							_msg.args.arg1 = c;
-							dataWork[c] = '\0';
-							while(c > 0) {
-								amount = MIN(c,READ_BUF_SIZE - rbufPos);
-								memcpy(rbuffer + rbufPos,dataWork,amount);
+			case MSG_DRV_READ: {
+				sVTerm *vt = _sh->getVTerm();
+				sRingBuf *inbuf = _sh->getInBuf();
+				// offset is ignored here
+				u32 count = _msg.args.arg2;
+				char *data = (char*)malloc(count);
+				_msg.args.arg1 = 0;
+				if(data)
+					_msg.args.arg1 = rb_readn(inbuf,data,count);
+				_msg.args.arg2 = vt->inbufEOF || rb_length(inbuf) > 0;
+				if(rb_length(inbuf) == 0)
+					vt->inbufEOF = false;
+				send(fd,MSG_DRV_READ_RESP,&_msg,sizeof(_msg.args));
+				if(data) {
+					send(fd,MSG_DRV_READ_RESP,data,count);
+					free(data);
+				}
+			}
+			break;
+			case MSG_DRV_WRITE: {
+				u32 amount;
+				char *data;
+				u32 c = _msg.args.arg2;
+				data = (char*)malloc(c + 1);
+				_msg.args.arg1 = 0;
+				if(data) {
+					if(receive(fd,&mid,data,c + 1) >= 0) {
+						char *dataWork = data;
+						_msg.args.arg1 = c;
+						dataWork[c] = '\0';
+						while(c > 0) {
+							amount = MIN(c,READ_BUF_SIZE - rbufPos);
+							memcpy(rbuffer + rbufPos,dataWork,amount);
 
-								c -= amount;
-								rbufPos += amount;
-								dataWork += amount;
-								if(rbufPos >= READ_BUF_SIZE) {
-									rbuffer[rbufPos] = '\0';
-									vterm_puts(_sh->getVTerm(),rbuffer,rbufPos,true);
-									rbufPos = 0;
-								}
+							c -= amount;
+							rbufPos += amount;
+							dataWork += amount;
+							if(rbufPos >= READ_BUF_SIZE) {
+								rbuffer[rbufPos] = '\0';
+								vterm_puts(_sh->getVTerm(),rbuffer,rbufPos,true);
+								rbufPos = 0;
 							}
 						}
-						free(data);
 					}
-					send(fd,MSG_DRV_WRITE_RESP,&_msg,sizeof(_msg.args));
+					free(data);
 				}
-				break;
-				case MSG_DRV_IOCTL:
-					_msg.data.arg1 = vterm_ioctl(_sh->getVTerm(),&_cfg,_msg.data.arg1,_msg.data.d);
-					send(fd,MSG_DRV_IOCTL_RESP,&_msg,sizeof(_msg.data));
-					break;
-				case MSG_DRV_CLOSE:
-					break;
+				send(fd,MSG_DRV_WRITE_RESP,&_msg,sizeof(_msg.args));
 			}
+			break;
+			case MSG_DRV_IOCTL:
+				_msg.data.arg1 = vterm_ioctl(_sh->getVTerm(),&_cfg,_msg.data.arg1,_msg.data.d);
+				send(fd,MSG_DRV_IOCTL_RESP,&_msg,sizeof(_msg.data));
+				break;
+			case MSG_DRV_CLOSE:
+				break;
 		}
 		_sh->update();
 		close(fd);

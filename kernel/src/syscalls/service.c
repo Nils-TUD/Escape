@@ -20,6 +20,8 @@
 #include <common.h>
 #include <mem/paging.h>
 #include <task/thread.h>
+#include <task/signals.h>
+#include <vfs/rw.h>
 #include <syscalls/service.h>
 #include <syscalls.h>
 #include <errors.h>
@@ -29,6 +31,8 @@
 #define SERV_FS						2
 #define SERV_DRIVER					4
 #define SERV_ALL					(SERV_DEFAULT | SERV_FS | SERV_DRIVER)
+
+#define GW_NOBLOCK					1
 
 void sysc_regService(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
@@ -86,43 +90,6 @@ void sysc_setDataReadable(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-void sysc_getClient(sIntrptStackFrame *stack) {
-	tServ *ids = (tServ*)SYSC_ARG1(stack);
-	u32 count = SYSC_ARG2(stack);
-	tServ *client = (tServ*)SYSC_ARG3(stack);
-	sThread *t = thread_getRunning();
-	tFD fd;
-	s32 res;
-	tFileNo file;
-
-	/* check arguments. limit count a little bit to prevent overflow */
-	if(count <= 0 || count > 32 || ids == NULL ||
-			!paging_isRangeUserReadable((u32)ids,count * sizeof(tServ)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(client == NULL || !paging_isRangeUserWritable((u32)client,sizeof(tServ)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	/* we need a file-desc */
-	fd = thread_getFreeFd();
-	if(fd < 0)
-		SYSC_ERROR(stack,fd);
-
-	/* open a client */
-	file = vfs_openClient(t->tid,(tInodeNo*)ids,count,(tInodeNo*)client);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
-
-	/* associate fd with file */
-	res = thread_assocFd(fd,file);
-	if(res < 0) {
-		/* we have already opened the file */
-		vfs_closeFile(t->tid,file);
-		SYSC_ERROR(stack,res);
-	}
-
-	SYSC_RET1(stack,fd);
-}
-
 void sysc_getClientThread(sIntrptStackFrame *stack) {
 	tServ id = (tServ)SYSC_ARG1(stack);
 	tTid tid = (tPid)SYSC_ARG2(stack);
@@ -152,5 +119,82 @@ void sysc_getClientThread(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 	}
 
+	SYSC_RET1(stack,fd);
+}
+
+void sysc_getWork(sIntrptStackFrame *stack) {
+	tServ *ids = (tServ*)SYSC_ARG1(stack);
+	u32 idCount = SYSC_ARG2(stack);
+	tServ *serv = (tServ*)SYSC_ARG3(stack);
+	tMsgId *id = (tMsgId*)SYSC_ARG4(stack);
+	u8 *data = (u8*)SYSC_ARG5(stack);
+	u32 size = SYSC_ARG6(stack);
+	u8 flags = (u8)SYSC_ARG7(stack);
+	sThread *t = thread_getRunning();
+	tFileNo file;
+	tFD fd;
+	sVFSNode *cnode;
+	tInodeNo client;
+	s32 res;
+
+	/* validate service-ids */
+	if(idCount <= 0 || idCount > 32 || ids == NULL ||
+			!paging_isRangeUserReadable((u32)ids,idCount * sizeof(tServ)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	/* validate id and data */
+	if(!paging_isRangeUserWritable((u32)id,sizeof(tMsgId)) ||
+			!paging_isRangeUserWritable((u32)data,size))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	/* check serv */
+	if(serv != NULL && !paging_isRangeUserWritable((u32)serv,sizeof(tServ)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	/* open a client */
+	while(1) {
+		client = vfs_getClient(t->tid,(tInodeNo*)ids,idCount);
+		if(client != ERR_NO_CLIENT_WAITING)
+			break;
+
+		/* if we shouldn't block, stop here */
+		if(flags & GW_NOBLOCK)
+			SYSC_ERROR(stack,client);
+
+		/* otherwise wait for a client (accept signals) */
+		thread_wait(t->tid,EV_CLIENT);
+		thread_switch();
+		if(sig_hasSignalFor(t->tid))
+			SYSC_ERROR(stack,ERR_INTERRUPTED);
+	}
+	if(client < 0)
+		SYSC_ERROR(stack,client);
+
+	/* get fd for communication with the client */
+	fd = thread_getFreeFd();
+	if(fd < 0)
+		SYSC_ERROR(stack,fd);
+
+	/* open file */
+	file = vfs_openFile(t->tid,VFS_READ | VFS_WRITE,client,VFS_DEV_NO);
+	if(file < 0)
+		SYSC_ERROR(stack,file);
+
+	/* assoc with fd */
+	res = thread_assocFd(fd,file);
+	if(res < 0) {
+		vfs_closeFile(t->tid,file);
+		SYSC_ERROR(stack,res);
+	}
+
+	/* receive a message */
+	cnode = vfsn_getNode(client);
+	res = vfsrw_readServUse(t->tid,file,cnode,id,data,size);
+	if(res < 0) {
+		thread_unassocFd(fd);
+		vfs_closeFile(t->tid,file);
+		SYSC_ERROR(stack,res);
+	}
+
+	if(serv)
+		*serv = NADDR_TO_VNNO(cnode->parent);
 	SYSC_RET1(stack,fd);
 }

@@ -45,7 +45,7 @@ static void getProcName(tPid pid,char *name);
 static sMsg msg;
 
 int main(void) {
-	tServ id,client;
+	tServ id;
 	tMsgId mid;
 	bool run = true;
 
@@ -60,32 +60,30 @@ int main(void) {
 
 	/* wait for commands */
 	while(run) {
-		tFD fd = getClient(&id,1,&client);
+		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			wait(EV_CLIENT);
+			printe("[PWMNG] Unable to get work");
 		else {
-			while(run && receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-				switch(mid) {
-					case MSG_POWER_REBOOT:
-						killProcs();
-						debugf("Using pulse-reset line of 8042 controller to reset...\n");
-						run = false;
-						/* wait until in-buffer empty */
-						while((inByte(IOPORT_KB_CTRL) & 0x2) != 0);
-						/* command 0xD1 to write the outputport */
-						outByte(IOPORT_KB_CTRL,0xD1);
-						/* wait again until in-buffer empty */
-						while((inByte(IOPORT_KB_CTRL) & 0x2) != 0);
-						/* now set the new output-port for reset */
-						outByte(IOPORT_KB_DATA,0xFE);
-						break;
-					case MSG_POWER_SHUTDOWN:
-						killProcs();
-						debugf("System is stopped\n");
-						debugf("You can turn off now\n");
-						/* TODO we should use ACPI later here */
-						break;
-				}
+			switch(mid) {
+				case MSG_POWER_REBOOT:
+					killProcs();
+					debugf("Using pulse-reset line of 8042 controller to reset...\n");
+					run = false;
+					/* wait until in-buffer empty */
+					while((inByte(IOPORT_KB_CTRL) & 0x2) != 0);
+					/* command 0xD1 to write the outputport */
+					outByte(IOPORT_KB_CTRL,0xD1);
+					/* wait again until in-buffer empty */
+					while((inByte(IOPORT_KB_CTRL) & 0x2) != 0);
+					/* now set the new output-port for reset */
+					outByte(IOPORT_KB_DATA,0xFE);
+					break;
+				case MSG_POWER_SHUTDOWN:
+					killProcs();
+					debugf("System is stopped\n");
+					debugf("You can turn off now\n");
+					/* TODO we should use ACPI later here */
+					break;
 			}
 			close(fd);
 		}

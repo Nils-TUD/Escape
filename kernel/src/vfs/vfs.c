@@ -960,19 +960,6 @@ tFileNo vfs_openClientThread(tTid tid,tInodeNo nodeNo,tTid clientId) {
 	return vfs_openFile(tid,VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n),VFS_DEV_NO);
 }
 
-tFileNo vfs_openClient(tTid tid,tInodeNo *vfsNodes,u32 count,tInodeNo *servNode) {
-	sVFSNode *n;
-	tInodeNo client = vfs_getClient(tid,vfsNodes,count);
-	/* error? */
-	if(!vfsn_isValidNodeNo(client))
-		return client;
-
-	/* open a file for it so that the service can read and write with it */
-	n = vfsn_getNode(client);
-	*servNode = NADDR_TO_VNNO(n->parent);
-	return vfs_openFile(tid,VFS_READ | VFS_WRITE,client,VFS_DEV_NO);
-}
-
 s32 vfs_removeService(tTid tid,tInodeNo nodeNo) {
 	sVFSNode *n = nodes + nodeNo;
 

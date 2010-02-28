@@ -125,7 +125,7 @@ static fSetPixel setPixel[] = {
 };
 
 int main(void) {
-	tServ id,client;
+	tServ id;
 	tMsgId mid;
 
 	/* load available modes etc. */
@@ -142,78 +142,76 @@ int main(void) {
 		printe("Switch to text-mode failed");*/
 
 	while(1) {
-		tFD fd = getClient(&id,1,&client);
+		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			wait(EV_CLIENT);
+			printe("[VESAT] Unable to get work");
 		else {
-			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-				switch(mid) {
-					case MSG_DRV_OPEN:
-						msg.args.arg1 = vesa_setMode();
-						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-						break;
+			switch(mid) {
+				case MSG_DRV_OPEN:
+					msg.args.arg1 = vesa_setMode();
+					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
+					break;
 
-					case MSG_DRV_READ:
-						msg.data.arg1 = ERR_UNSUPPORTED_OP;
-						msg.data.arg2 = true;
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
-						break;
+				case MSG_DRV_READ:
+					msg.data.arg1 = ERR_UNSUPPORTED_OP;
+					msg.data.arg2 = true;
+					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
+					break;
 
-					case MSG_DRV_WRITE: {
-						u32 offset = msg.args.arg1;
-						u32 count = msg.args.arg2;
+				case MSG_DRV_WRITE: {
+					u32 offset = msg.args.arg1;
+					u32 count = msg.args.arg2;
+					msg.args.arg1 = 0;
+					if(minfo == NULL)
+						msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					else if(offset + count <= (u32)(rows * cols * 2) && offset + count > offset) {
+						char *str = (char*)malloc(count);
+						vassert(str,"Unable to alloc mem");
 						msg.args.arg1 = 0;
-						if(minfo == NULL)
-							msg.args.arg1 = ERR_UNSUPPORTED_OP;
-						else if(offset + count <= (u32)(rows * cols * 2) && offset + count > offset) {
-							char *str = (char*)malloc(count);
-							vassert(str,"Unable to alloc mem");
-							msg.args.arg1 = 0;
-							if(receive(fd,&mid,str,count) >= 0) {
-								vesa_drawStr((offset / 2) % cols,(offset / 2) / cols,str,count / 2);
-								msg.args.arg1 = count;
-							}
-							free(str);
+						if(receive(fd,&mid,str,count) >= 0) {
+							vesa_drawStr((offset / 2) % cols,(offset / 2) / cols,str,count / 2);
+							msg.args.arg1 = count;
 						}
-						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+						free(str);
 					}
-					break;
-
-					case MSG_DRV_IOCTL: {
-						if(minfo == NULL)
-							msg.data.arg1 = ERR_UNSUPPORTED_OP;
-						else {
-							switch(msg.data.arg1) {
-								case IOCTL_VID_SETCURSOR: {
-									sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
-									pos->col = MIN(pos->col,cols);
-									pos->row = MIN(pos->row,rows);
-									vesa_setCursor(pos->col,pos->row);
-									msg.data.arg1 = 0;
-								}
-								break;
-
-								case IOCTL_VID_GETSIZE: {
-									sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
-									size->width = cols;
-									size->height = rows;
-									msg.data.arg1 = sizeof(sIoCtlSize);
-								}
-								break;
-
-								default:
-									msg.data.arg1 = ERR_UNSUPPORTED_OP;
-									break;
-							}
-						}
-						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
-					}
-					break;
-
-					case MSG_DRV_CLOSE:
-						/* ignore */
-						break;
+					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
+				break;
+
+				case MSG_DRV_IOCTL: {
+					if(minfo == NULL)
+						msg.data.arg1 = ERR_UNSUPPORTED_OP;
+					else {
+						switch(msg.data.arg1) {
+							case IOCTL_VID_SETCURSOR: {
+								sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
+								pos->col = MIN(pos->col,cols);
+								pos->row = MIN(pos->row,rows);
+								vesa_setCursor(pos->col,pos->row);
+								msg.data.arg1 = 0;
+							}
+							break;
+
+							case IOCTL_VID_GETSIZE: {
+								sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
+								size->width = cols;
+								size->height = rows;
+								msg.data.arg1 = sizeof(sIoCtlSize);
+							}
+							break;
+
+							default:
+								msg.data.arg1 = ERR_UNSUPPORTED_OP;
+								break;
+						}
+					}
+					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+				}
+				break;
+
+				case MSG_DRV_CLOSE:
+					/* ignore */
+					break;
 			}
 			close(fd);
 		}

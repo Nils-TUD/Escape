@@ -40,17 +40,6 @@ void sysc_regService(sIntrptStackFrame *stack);
 void sysc_unregService(sIntrptStackFrame *stack);
 
 /**
- * For services: Looks wether a client wants to be served and returns a file-descriptor
- * for it.
- *
- * @param tServ* services an array with service-ids to check
- * @param u32 count the size of <services>
- * @param tServ* serv will be set to the service from which the client has been taken
- * @return tFD the file-descriptor to use
- */
-void sysc_getClient(sIntrptStackFrame *stack);
-
-/**
  * For services: Returns the file-descriptor for a specific client
  *
  * @param tServ the service-id
@@ -67,5 +56,33 @@ void sysc_getClientThread(sIntrptStackFrame *stack);
  * @return s32 0 on success
  */
 void sysc_setDataReadable(sIntrptStackFrame *stack);
+
+/**
+ * For services: Looks wether a client wants to be served. If not and WG_NOBLOCK is not provided
+ * it waits until a client should be served. if not and WG_NOBLOCK is enabled, it returns an error.
+ * If a client wants to be served, the message is fetched from him and the client-id is returned.
+ * You can use the client-id for writing a reply.
+ *
+ * @param tServ* an array with service-ids to check
+ * @param u32 the number of service-ids
+ * @param tServ* serv will be set to the service from which the client has been taken
+ * @param tMsgId* will be set to the msg-id
+ * @param sMsg* the message
+ * @param u32 the (max) size of the message
+ * @param u8 flags
+ * @return tServ the client-id or a negative error-code
+ */
+void sysc_getWork(sIntrptStackFrame *stack);
+
+/**
+ * Sends a reply to the given client.
+ *
+ * @param tServ the client-id
+ * @param tMsgId the msg-id
+ * @param sMsg* the message
+ * @param u32 the size of the message
+ * @return s32 0 on success
+ */
+void sysc_reply(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_SERVICE_H_ */

@@ -27,6 +27,7 @@
 #include <esc/conf.h>
 #include <messages.h>
 #include <stdlib.h>
+#include <errors.h>
 
 #define PIC_FREQUENCY				1193180
 #define IOPORT_PIT_SPEAKER			0x42
@@ -58,7 +59,7 @@ static u16 intrptTarget = 0;
 int main(void) {
 	tFD fd;
 	tMsgId mid;
-	tServ id,client;
+	tServ id;
 
 	/* register service */
 	id = regService("speaker",SERV_DEFAULT);
@@ -78,26 +79,26 @@ int main(void) {
 		error("Unable to request io-port %d",IOPORT_KB_CTRL_B);
 
 	while(1) {
-		fd = getClient(&id,1,&client);
-		if(fd < 0)
-			wait(EV_CLIENT);
+		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+		if(fd < 0) {
+			if(fd != ERR_INTERRUPTED)
+				printe("[SPK] Unable to get work");
+		}
 		else {
-			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-				switch(mid) {
-					case MSG_SPEAKER_BEEP: {
-						u32 freq = msg.args.arg1;
-						u32 dur = msg.args.arg2;
-						if(freq > 0 && dur > 0) {
-							/* add timer-interrupt listener */
-							if(setSigHandler(SIG_INTRPT_TIMER,timerIntrptHandler) == 0) {
-								playSound(freq);
-								intrptCount = 0;
-								intrptTarget = dur;
-							}
+			switch(mid) {
+				case MSG_SPEAKER_BEEP: {
+					u32 freq = msg.args.arg1;
+					u32 dur = msg.args.arg2;
+					if(freq > 0 && dur > 0) {
+						/* add timer-interrupt listener */
+						if(setSigHandler(SIG_INTRPT_TIMER,timerIntrptHandler) == 0) {
+							playSound(freq);
+							intrptCount = 0;
+							intrptTarget = dur;
 						}
 					}
-					break;
 				}
+				break;
 			}
 			close(fd);
 		}

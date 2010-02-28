@@ -50,9 +50,11 @@
 #define CURSOR_SIZE						(CURSOR_LEN * 2 + 1)
 
 #define MERGE_TOLERANCE					40
+#define MAX_REQC						30
 
 #define ABS(x)							((x) > 0 ? (x) : -(x))
 
+static void vesa_doUpdate(void);
 static s32 vesa_setMode(void);
 static s32 vesa_init(void);
 static void vesa_update(tCoord x,tCoord y,tSize width,tSize height);
@@ -64,6 +66,9 @@ static void vesa_copyRegion(u8 *src,u8 *dst,tSize width,tSize height,tCoord x1,t
 		tCoord x2,tCoord y2,tSize w1,tSize w2);
 
 static sSLList *dirtyRects;
+static tCoord newCurX,newCurY;
+static bool updCursor = false;
+
 static sVbeModeInfo *minfo = NULL;
 static void *video;
 static void *shmem;
@@ -72,7 +77,7 @@ static tCoord lastX = 0;
 static tCoord lastY = 0;
 static sMsg msg;
 static u8 curCursor = CURSOR_DEFAULT;
-static sBitmap *cursor[5];
+static sBitmap *cursor[6];
 static fSetPixel setPixel[] = {
 	/* 0 bpp */		NULL,
 	/* 8 bpp */		NULL,
@@ -82,8 +87,9 @@ static fSetPixel setPixel[] = {
 };
 
 int main(void) {
-	tServ id,client;
+	tServ id;
 	tMsgId mid;
+	u32 reqc;
 
 	cursor[0] = bmp_loadFromFile(CURSOR_DEFAULT_FILE);
 	if(cursor[0] == NULL)
@@ -113,97 +119,84 @@ int main(void) {
 	if(id < 0)
 		error("Unable to register service 'vesa'");
 
+	reqc = 0;
 	while(1) {
-		tFD fd = getClient(&id,1,&client);
+		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		if(fd < 0 || reqc >= MAX_REQC) {
+			reqc = 0;
+			vesa_doUpdate();
+		}
 		if(fd < 0)
 			wait(EV_CLIENT);
 		else {
-			tCoord newCurX,newCurY;
-			bool updCursor = false;
-			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-				switch(mid) {
-					case MSG_VESA_UPDATE: {
-						tCoord x = (tCoord)msg.args.arg1;
-						tCoord y = (tCoord)msg.args.arg2;
-						tSize width = (tSize)msg.args.arg3;
-						tSize height = (tSize)msg.args.arg4;
-						if(x >= 0 && y >= 0 && x < minfo->xResolution && y < minfo->yResolution &&
-								x + width <= minfo->xResolution && y + height <= minfo->yResolution &&
-								/* check for overflow */
-								x + width > x && y + height > y) {
-							/* first check if we can merge this rectangle with another one.
-							 * maybe we have even got exactly this rectangle... */
-							sSLNode *n;
-							bool present = false;
-							sRectangle *add = (sRectangle*)malloc(sizeof(sRectangle));
-							add->x = x;
-							add->y = y;
-							add->width = width;
-							add->height = height;
-							for(n = sll_begin(dirtyRects); n != NULL; n = n->next) {
-								sRectangle *r = (sRectangle*)n->data;
-								if(ABS(r->x - x) < MERGE_TOLERANCE &&
-										ABS(r->y - y) < MERGE_TOLERANCE &&
-										ABS(r->width - width) < MERGE_TOLERANCE &&
-										ABS(r->height - height) < MERGE_TOLERANCE) {
-									/* mergable, so do it */
-									rectAdd(r,add);
-									free(add);
-									present = true;
-									break;
-								}
+			reqc++;
+			switch(mid) {
+				case MSG_VESA_UPDATE: {
+					tCoord x = (tCoord)msg.args.arg1;
+					tCoord y = (tCoord)msg.args.arg2;
+					tSize width = (tSize)msg.args.arg3;
+					tSize height = (tSize)msg.args.arg4;
+					if(x >= 0 && y >= 0 && x < minfo->xResolution && y < minfo->yResolution &&
+							x + width <= minfo->xResolution && y + height <= minfo->yResolution &&
+							/* check for overflow */
+							x + width > x && y + height > y) {
+						/* first check if we can merge this rectangle with another one.
+						 * maybe we have even got exactly this rectangle... */
+						sSLNode *n;
+						bool present = false;
+						sRectangle *add = (sRectangle*)malloc(sizeof(sRectangle));
+						add->x = x;
+						add->y = y;
+						add->width = width;
+						add->height = height;
+						for(n = sll_begin(dirtyRects); n != NULL; n = n->next) {
+							sRectangle *r = (sRectangle*)n->data;
+							if(ABS(r->x - x) < MERGE_TOLERANCE &&
+									ABS(r->y - y) < MERGE_TOLERANCE &&
+									ABS(r->width - width) < MERGE_TOLERANCE &&
+									ABS(r->height - height) < MERGE_TOLERANCE) {
+								/* mergable, so do it */
+								rectAdd(r,add);
+								free(add);
+								present = true;
+								break;
 							}
-							/* if not present yet, add it */
-							if(!present)
-								sll_append(dirtyRects,add);
 						}
+						/* if not present yet, add it */
+						if(!present)
+							sll_append(dirtyRects,add);
 					}
-					break;
-
-					case MSG_VESA_CURSOR: {
-						newCurX = (tCoord)msg.args.arg1;
-						newCurY = (tCoord)msg.args.arg2;
-						curCursor = ((u8)msg.args.arg3) % 6;
-						updCursor = true;
-					}
-					break;
-
-					case MSG_VESA_GETMODE_REQ: {
-						sVESAInfo *info = (sVESAInfo*)malloc(sizeof(sVESAInfo));
-						msg.data.arg1 = ERR_NOT_ENOUGH_MEM;
-						if(info) {
-							msg.data.arg1 = 0;
-							info->width = minfo->xResolution;
-							info->height = minfo->yResolution;
-							info->bitsPerPixel = minfo->bitsPerPixel;
-							info->redFieldPosition = minfo->redFieldPosition;
-							info->redMaskSize = minfo->redMaskSize;
-							info->greenFieldPosition = minfo->greenFieldPosition;
-							info->greenMaskSize = minfo->greenMaskSize;
-							info->blueFieldPosition = minfo->blueFieldPosition;
-							info->blueMaskSize = minfo->blueMaskSize;
-							memcpy(msg.data.d,info,sizeof(sVESAInfo));
-						}
-						send(fd,MSG_VESA_GETMODE_RESP,&msg,sizeof(msg.data));
-					}
-					break;
 				}
-			}
+				break;
 
-			/* update rectangles */
-			{
-				sSLNode *n;
-				for(n = sll_begin(dirtyRects); n != NULL; n = n->next) {
-					sRectangle *r = (sRectangle*)n->data;
-					vesa_update(r->x,r->y,r->width,r->height);
-					free(r);
+				case MSG_VESA_CURSOR: {
+					newCurX = (tCoord)msg.args.arg1;
+					newCurY = (tCoord)msg.args.arg2;
+					curCursor = ((u8)msg.args.arg3) % 6;
+					updCursor = true;
 				}
-				sll_removeAll(dirtyRects);
+				break;
+
+				case MSG_VESA_GETMODE_REQ: {
+					sVESAInfo *info = (sVESAInfo*)malloc(sizeof(sVESAInfo));
+					msg.data.arg1 = ERR_NOT_ENOUGH_MEM;
+					if(info) {
+						msg.data.arg1 = 0;
+						info->width = minfo->xResolution;
+						info->height = minfo->yResolution;
+						info->bitsPerPixel = minfo->bitsPerPixel;
+						info->redFieldPosition = minfo->redFieldPosition;
+						info->redMaskSize = minfo->redMaskSize;
+						info->greenFieldPosition = minfo->greenFieldPosition;
+						info->greenMaskSize = minfo->greenMaskSize;
+						info->blueFieldPosition = minfo->blueFieldPosition;
+						info->blueMaskSize = minfo->blueMaskSize;
+						memcpy(msg.data.d,info,sizeof(sVESAInfo));
+					}
+					send(fd,MSG_VESA_GETMODE_RESP,&msg,sizeof(msg.data));
+				}
+				break;
 			}
-
-			if(updCursor)
-				vesa_setCursor(newCurX,newCurY);
-
 			close(fd);
 		}
 	}
@@ -212,6 +205,21 @@ int main(void) {
 	free(cursorCopy);
 	destroySharedMem("vesa");
 	return EXIT_SUCCESS;
+}
+
+static void vesa_doUpdate(void) {
+	sSLNode *n;
+	for(n = sll_begin(dirtyRects); n != NULL; n = n->next) {
+		sRectangle *r = (sRectangle*)n->data;
+		vesa_update(r->x,r->y,r->width,r->height);
+		free(r);
+	}
+	sll_removeAll(dirtyRects);
+
+	if(updCursor) {
+		vesa_setCursor(newCurX,newCurY);
+		updCursor = false;
+	}
 }
 
 static s32 vesa_setMode(void) {

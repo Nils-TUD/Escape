@@ -59,7 +59,7 @@ static sWindow *mouseWin = NULL;
 
 int main(void) {
 	tFD mouse,kmmng;
-	tServ servId,client;
+	tServ servId;
 	tMsgId mid;
 
 	mouse = open("/drivers/mouse",IO_READ);
@@ -84,65 +84,63 @@ int main(void) {
 	screenHeight = win_getScreenHeight();
 
 	while(1) {
-		tFD fd = getClient(&servId,1,&client);
+		tFD fd = getWork(&servId,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd >= 0) {
-			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-				switch(mid) {
-					case MSG_WIN_CREATE_REQ: {
-						tCoord x = (tCoord)(msg.args.arg1 >> 16);
-						tCoord y = (tCoord)(msg.args.arg1 & 0xFFFF);
-						tSize width = (tSize)(msg.args.arg2 >> 16);
-						tSize height = (tSize)(msg.args.arg2 & 0xFFFF);
-						tWinId tmpWinId = (tWinId)msg.args.arg3;
-						tPid owner = (tPid)msg.args.arg4;
-						u8 style = (u8)msg.args.arg5;
-						msg.args.arg1 = tmpWinId;
-						msg.args.arg2 = win_create(x,y,width,height,owner,style);
-						send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
-						if(style == WIN_STYLE_POPUP)
-							win_setActive(msg.args.arg2,false,curX,curY);
-					}
-					break;
-
-					case MSG_WIN_DESTROY_REQ: {
-						tWinId wid = (tWinId)msg.args.arg1;
-						if(win_exists(wid))
-							win_destroy(wid,curX,curY);
-					}
-					break;
-
-					case MSG_WIN_MOVE_REQ: {
-						tWinId wid = (tWinId)msg.args.arg1;
-						tCoord x = (tCoord)msg.args.arg2;
-						tCoord y = (tCoord)msg.args.arg3;
-						if(win_exists(wid) && x < screenWidth && y < screenHeight)
-							win_moveTo(wid,x,y);
-					}
-					break;
-
-					case MSG_WIN_RESIZE_REQ: {
-						tWinId wid = (tWinId)msg.args.arg1;
-						tSize width = (tSize)msg.args.arg2;
-						tSize height = (tSize)msg.args.arg3;
-						if(win_exists(wid))
-							win_resize(wid,width,height);
-					}
-					break;
-
-					case MSG_WIN_UPDATE_REQ: {
-						tWinId wid = (tWinId)msg.args.arg1;
-						tCoord x = (tCoord)msg.args.arg2;
-						tCoord y = (tCoord)msg.args.arg3;
-						tSize width = (tSize)msg.args.arg4;
-						tSize height = (tSize)msg.args.arg5;
-						sWindow *win = win_get(wid);
-						if(win != NULL && x + width > x && y + height > y &&
-							x + width <= win->width && y + height <= win->height) {
-							win_update(wid,x,y,width,height);
-						}
-					}
-					break;
+			switch(mid) {
+				case MSG_WIN_CREATE_REQ: {
+					tCoord x = (tCoord)(msg.args.arg1 >> 16);
+					tCoord y = (tCoord)(msg.args.arg1 & 0xFFFF);
+					tSize width = (tSize)(msg.args.arg2 >> 16);
+					tSize height = (tSize)(msg.args.arg2 & 0xFFFF);
+					tWinId tmpWinId = (tWinId)msg.args.arg3;
+					tPid owner = (tPid)msg.args.arg4;
+					u8 style = (u8)msg.args.arg5;
+					msg.args.arg1 = tmpWinId;
+					msg.args.arg2 = win_create(x,y,width,height,owner,style);
+					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
+					if(style == WIN_STYLE_POPUP)
+						win_setActive(msg.args.arg2,false,curX,curY);
 				}
+				break;
+
+				case MSG_WIN_DESTROY_REQ: {
+					tWinId wid = (tWinId)msg.args.arg1;
+					if(win_exists(wid))
+						win_destroy(wid,curX,curY);
+				}
+				break;
+
+				case MSG_WIN_MOVE_REQ: {
+					tWinId wid = (tWinId)msg.args.arg1;
+					tCoord x = (tCoord)msg.args.arg2;
+					tCoord y = (tCoord)msg.args.arg3;
+					if(win_exists(wid) && x < screenWidth && y < screenHeight)
+						win_moveTo(wid,x,y);
+				}
+				break;
+
+				case MSG_WIN_RESIZE_REQ: {
+					tWinId wid = (tWinId)msg.args.arg1;
+					tSize width = (tSize)msg.args.arg2;
+					tSize height = (tSize)msg.args.arg3;
+					if(win_exists(wid))
+						win_resize(wid,width,height);
+				}
+				break;
+
+				case MSG_WIN_UPDATE_REQ: {
+					tWinId wid = (tWinId)msg.args.arg1;
+					tCoord x = (tCoord)msg.args.arg2;
+					tCoord y = (tCoord)msg.args.arg3;
+					tSize width = (tSize)msg.args.arg4;
+					tSize height = (tSize)msg.args.arg5;
+					sWindow *win = win_get(wid);
+					if(win != NULL && x + width > x && y + height > y &&
+						x + width <= win->width && y + height <= win->height) {
+						win_update(wid,x,y,width,height);
+					}
+				}
+				break;
 			}
 			close(fd);
 		}

@@ -15,6 +15,7 @@ CSRC = $(shell find $(SUBDIRS) -name "*.c")
 ASRC = $(filter-out startup.s,$(shell find $(SUBDIRS) -name "*.s"))
 LSRC = $(shell find $(LIBDIR)/src -name "*.c")
 START = startup.s
+SYSCALLS = syscalls.s
 
 # objects
 COBJS = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
@@ -44,7 +45,7 @@ $(BUILDL)/%.o: %.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
 
-$(BUILDL)/%.s.o: %.s
+$(BUILDL)/%.s.o: %.s $(SYSCALLS)
 		@echo "	" AS $<
 		@nasm $(ASMFLAGS) -o $@ $<
 

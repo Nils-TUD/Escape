@@ -80,68 +80,65 @@ int main(void) {
 
 	/* wait for messages */
 	while(1) {
-		tFD fd = getClient(&id,1,&client);
+		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
-			wait(EV_CLIENT);
+			printe("[VIDEO] Unable to get work");
 		else {
-			/* read all available messages */
-			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-				/* see what we have to do */
-				switch(mid) {
-					case MSG_DRV_OPEN:
-						msg.args.arg1 = 0;
-						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-						break;
-
-					case MSG_DRV_READ:
-						msg.data.arg1 = ERR_UNSUPPORTED_OP;
-						msg.data.arg2 = true;
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
-						break;
-
-					case MSG_DRV_WRITE: {
-						u32 offset = msg.args.arg1;
-						u32 count = msg.args.arg2;
-						msg.args.arg1 = 0;
-						if(offset + count <= ROWS * COLS * 2 && offset + count > offset) {
-							if(receive(fd,&mid,videoData + offset,count) >= 0)
-								msg.args.arg1 = count;
-						}
-						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
-					}
+			/* see what we have to do */
+			switch(mid) {
+				case MSG_DRV_OPEN:
+					msg.args.arg1 = 0;
+					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 					break;
 
-					case MSG_DRV_IOCTL: {
-						switch(msg.data.arg1) {
-							case IOCTL_VID_SETCURSOR: {
-								sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
-								pos->col = MIN(pos->col,COLS);
-								pos->row = MIN(pos->row,ROWS);
-								vid_setCursor(pos->row,pos->col);
-								msg.data.arg1 = 0;
-							}
-							break;
-
-							case IOCTL_VID_GETSIZE: {
-								sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
-								size->width = COLS;
-								size->height = ROWS;
-								msg.data.arg1 = sizeof(sIoCtlSize);
-							}
-							break;
-
-							default:
-								msg.data.arg1 = ERR_UNSUPPORTED_OP;
-								break;
-						}
-						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
-					}
+				case MSG_DRV_READ:
+					msg.data.arg1 = ERR_UNSUPPORTED_OP;
+					msg.data.arg2 = true;
+					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
 					break;
 
-					case MSG_DRV_CLOSE:
-						/* ignore */
-						break;
+				case MSG_DRV_WRITE: {
+					u32 offset = msg.args.arg1;
+					u32 count = msg.args.arg2;
+					msg.args.arg1 = 0;
+					if(offset + count <= ROWS * COLS * 2 && offset + count > offset) {
+						if(receive(fd,&mid,videoData + offset,count) >= 0)
+							msg.args.arg1 = count;
+					}
+					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
+				break;
+
+				case MSG_DRV_IOCTL: {
+					switch(msg.data.arg1) {
+						case IOCTL_VID_SETCURSOR: {
+							sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
+							pos->col = MIN(pos->col,COLS);
+							pos->row = MIN(pos->row,ROWS);
+							vid_setCursor(pos->row,pos->col);
+							msg.data.arg1 = 0;
+						}
+						break;
+
+						case IOCTL_VID_GETSIZE: {
+							sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
+							size->width = COLS;
+							size->height = ROWS;
+							msg.data.arg1 = sizeof(sIoCtlSize);
+						}
+						break;
+
+						default:
+							msg.data.arg1 = ERR_UNSUPPORTED_OP;
+							break;
+					}
+					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+				}
+				break;
+
+				case MSG_DRV_CLOSE:
+					/* ignore */
+					break;
 			}
 			close(fd);
 		}

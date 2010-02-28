@@ -44,7 +44,7 @@ static void test_unregService(void);
 static void test_changeSize(void);
 static void test_mapPhysical(void);
 static void test_write(void);
-static void test_getClient(void);
+static void test_getWork(void);
 static void test_requestIOPorts(void);
 static void test_releaseIOPorts(void);
 static void test_dupFd(void);
@@ -59,6 +59,32 @@ static void test_seek(void);
 static void test_stat(void);
 
 /* we want to be able to use u32 for all syscalls */
+static s32 test_doSyscall7(u32 syscallNo,u32 arg1,u32 arg2,u32 arg3,u32 arg4,u32 arg5,u32 arg6,u32 arg7) {
+	s32 res;
+	__asm__ __volatile__ (
+		"movl	%2,%%ecx\n"
+		"movl	%3,%%edx\n"
+		"movl	%7,%%eax\n"
+		"pushl	%%eax\n"
+		"movl	%6,%%eax\n"
+		"pushl	%%eax\n"
+		"movl	%5,%%eax\n"
+		"pushl	%%eax\n"
+		"movl	%4,%%eax\n"
+		"pushl	%%eax\n"
+		"movl	%1,%%eax\n"
+		"int	$0x30\n"
+		"add	$16,%%esp\n"
+		"test	%%ecx,%%ecx\n"
+		"jz		1f\n"
+		"movl	%%ecx,%%eax\n"
+		"1:\n"
+		"mov	%%eax,%0\n"
+		: "=a" (res) : "m" (syscallNo), "m" (arg1), "m" (arg2), "m" (arg3), "m" (arg4),
+		  "m" (arg5), "m" (arg6), "m" (arg7)
+	);
+	return res;
+}
 static s32 test_doSyscall(u32 syscallNo,u32 arg1,u32 arg2,u32 arg3) {
 	s32 res;
 	__asm__ __volatile__ (
@@ -106,44 +132,44 @@ static s32 __mapPhysical(u32 addr,u32 count) {
 static s32 _write(u32 fd,void *buffer,u32 count) {
 	return test_doSyscall(12,fd,(u32)buffer,count);
 }
-static s32 _getClient(tServ *ids,u32 count,tServ *client) {
-	return test_doSyscall(14,(u32)ids,count,(u32)client);
+static s32 _getWork(tServ *ids,u32 count,tServ *client,tMsgId *mid,sMsg *msg,u32 size,u8 flags) {
+	return test_doSyscall7(57,(u32)ids,count,(u32)client,(u32)mid,(u32)msg,size,flags);
 }
 static s32 _requestIOPorts(u32 start,u32 count) {
-	return test_doSyscall(15,start,count,0);
+	return test_doSyscall(14,start,count,0);
 }
 static s32 _releaseIOPorts(u32 start,u32 count) {
-	return test_doSyscall(16,start,count,0);
+	return test_doSyscall(15,start,count,0);
 }
 static s32 _dupFd(u32 fd) {
-	return test_doSyscall(17,fd,0,0);
+	return test_doSyscall(16,fd,0,0);
 }
 static s32 _redirFd(u32 src,u32 dst) {
-	return test_doSyscall(18,src,dst,0);
+	return test_doSyscall(17,src,dst,0);
 }
 static s32 _wait(u32 ev) {
-	return test_doSyscall(19,ev,0,0);
+	return test_doSyscall(18,ev,0,0);
 }
 static s32 _setSigHandler(u32 sig,u32 handler) {
-	return test_doSyscall(20,sig,handler,0);
+	return test_doSyscall(19,sig,handler,0);
 }
 static s32 _unsetSigHandler(u32 sig) {
-	return test_doSyscall(21,sig,0,0);
+	return test_doSyscall(20,sig,0,0);
 }
 static s32 _sendSignalTo(u32 pid,u32 sig,u32 data) {
-	return test_doSyscall(23,pid,sig,data);
+	return test_doSyscall(22,pid,sig,data);
 }
 static s32 _exec(const char *path,const char **args) {
-	return test_doSyscall(24,(u32)path,(u32)args,0);
+	return test_doSyscall(23,(u32)path,(u32)args,0);
 }
 static s32 _eof(u32 fd) {
-	return test_doSyscall(25,fd,0,0);
+	return test_doSyscall(24,fd,0,0);
 }
 static s32 _seek(u32 fd,s32 pos,u32 whence) {
-	return test_doSyscall(28,fd,pos,whence);
+	return test_doSyscall(27,fd,pos,whence);
 }
 static s32 _stat(const char *path,sFileInfo *info) {
-	return test_doSyscall(29,(u32)path,(u32)info,0);
+	return test_doSyscall(28,(u32)path,(u32)info,0);
 }
 
 /* our test-module */
@@ -162,7 +188,7 @@ static void test_syscalls(void) {
 	test_changeSize();
 	test_mapPhysical();
 	test_write();
-	test_getClient();
+	test_getWork();
 	test_requestIOPorts();
 	test_releaseIOPorts();
 	test_dupFd();
@@ -313,35 +339,46 @@ static void test_write(void) {
 	test_caseSucceded();
 }
 
-static void test_getClient(void) {
+static void test_getWork(void) {
 	tServ servs[3];
 	tServ s;
-	test_caseStart("Testing getClient()");
+	tMsgId mid;
+	sMsg msg;
+	test_caseStart("Testing getWork()");
 	/* test serv-array */
-	test_assertInt(_getClient(NULL,1,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0x12345678,1,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0x12345678,4 * K,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0x12345678,4 * K + 1,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0x12345678,8 * K,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0x12345678,8 * K - 1,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0xC0000000,1,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0xBFFFFFFF,1,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0xBFFFFFFF,2,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0xBFFFFFFF,4 * K,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0xBFFFFFFF,4 * K + 1,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0xBFFFFFFF,8 * K,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0xBFFFFFFF,8 * K - 1,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient((void*)0xFFFFFFFF,1,&s),ERR_INVALID_ARGS);
-	/* test client-id */
-	test_assertInt(_getClient(servs,1,(tServ*)NULL),ERR_INVALID_ARGS);
-	test_assertInt(_getClient(servs,1,(tServ*)0x12345678),ERR_INVALID_ARGS);
-	test_assertInt(_getClient(servs,1,(tServ*)0xC0000000),ERR_INVALID_ARGS);
-	test_assertInt(_getClient(servs,1,(tServ*)0xBFFFFFFF),ERR_INVALID_ARGS);
-	test_assertInt(_getClient(servs,1,(tServ*)0xFFFFFFFF),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(NULL,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0x12345678,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0x12345678,4 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0x12345678,4 * K + 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0x12345678,8 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0x12345678,8 * K - 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0xC0000000,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0xBFFFFFFF,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0xBFFFFFFF,2,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0xBFFFFFFF,4 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0xBFFFFFFF,4 * K + 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0xBFFFFFFF,8 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0xBFFFFFFF,8 * K - 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0xFFFFFFFF,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	/* test service-id */
+	test_assertInt(_getWork(servs,1,(tServ*)0x12345678,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(servs,1,(tServ*)0xC0000000,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(servs,1,(tServ*)0xBFFFFFFF,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(servs,1,(tServ*)0xFFFFFFFF,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test serv-array size */
-	test_assertInt(_getClient(servs,-1,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient(servs,4 * K,&s),ERR_INVALID_ARGS);
-	test_assertInt(_getClient(servs,0x7FFFFFFF,&s),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(servs,-1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(servs,4 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(servs,0x7FFFFFFF,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	/* test message-id */
+	test_assertInt(_getWork(servs,1,&s,(tMsgId*)0x12345678,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(servs,1,&s,(tMsgId*)0xC0000000,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(servs,1,&s,(tMsgId*)0xBFFFFFFF,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(servs,1,&s,(tMsgId*)0xFFFFFFFF,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	/* test message */
+	test_assertInt(_getWork(servs,1,&s,&mid,(sMsg*)0x12345678,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(servs,1,&s,&mid,(sMsg*)0xC0000000,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(servs,1,&s,&mid,(sMsg*)0xBFFFFFFF,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(servs,1,&s,&mid,(sMsg*)0xFFFFFFFF,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 

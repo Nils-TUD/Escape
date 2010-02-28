@@ -16,6 +16,7 @@ CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,$(LDCONF) -Wl,--build-id=
 # sources
 ASRC = $(wildcard *.s)
 AOBJ = $(patsubst %.s,$(BUILDL)/a%.o,$(ASRC))
+SYSCALLS = $(LIBC)/syscalls.s
 
 # objects
 CSRC = $(wildcard *.c)
@@ -35,7 +36,7 @@ $(BUILDDIRS):
 			if [ ! -d $$i ]; then mkdir -p $$i; fi \
 		done;
 
-$(BUILDL)/a%.o: %.s
+$(BUILDL)/a%.o: %.s	$(SYSCALLS)
 		@echo "	" AS $<
 		@nasm $(ASMFLAGS) -o $@ $<
 

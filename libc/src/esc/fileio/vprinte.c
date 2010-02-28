@@ -30,5 +30,6 @@ s32 vprinte(const char *prefix,va_list ap) {
 		fprintf(stderr,": %s",msg);
 	}
 	fprintf(stderr,"\n");
+	fflush(stderr);
 	return 0;
 }

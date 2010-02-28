@@ -42,7 +42,7 @@ static sKbData kbData[KB_DATA_BUF_SIZE];
 
 int main(void) {
 	char path[MAX_PATH_LEN];
-	tServ id,client;
+	tServ id;
 	tMsgId mid;
 	tFD kbFd;
 	tFile *f;
@@ -75,7 +75,7 @@ int main(void) {
 
     /* wait for commands */
 	while(1) {
-		tFD fd = getClient(&id,1,&client);
+		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0) {
 			/* read from keyboard */
 			/* don't block here since there may be waiting clients.. */
@@ -96,52 +96,50 @@ int main(void) {
 			wait(EV_CLIENT | EV_DATA_READABLE);
 		}
 		else {
-			while(receive(fd,&mid,&msg,sizeof(msg)) > 0) {
-				switch(mid) {
-					case MSG_DRV_OPEN:
-						msg.args.arg1 = 0;
-						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-						break;
-					case MSG_DRV_READ: {
-						/* offset is ignored here */
-						u32 count = msg.args.arg2 / sizeof(sKmData);
-						sKmData *buffer = (sKmData*)malloc(count * sizeof(sKmData));
-						msg.args.arg1 = 0;
-						if(buffer)
-							msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKmData);
-						msg.args.arg2 = rb_length(rbuf) > 0;
-						send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
-						if(buffer) {
-							send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sKmData));
-							free(buffer);
-						}
-					}
+			switch(mid) {
+				case MSG_DRV_OPEN:
+					msg.args.arg1 = 0;
+					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
 					break;
-					case MSG_DRV_WRITE:
-						msg.args.arg1 = ERR_UNSUPPORTED_OP;
-						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
-						break;
-					case MSG_DRV_IOCTL: {
-						if(msg.data.arg1 == IOCTL_KM_SET && msg.data.arg2 > 0) {
-							/* ensure that its null-terminated */
-							msg.data.d[msg.data.arg2 - 1] = '\0';
-							sKeymapEntry *newMap = km_parse((char*)msg.data.d);
-							if(!newMap)
-								msg.data.arg1 = ERR_INVALID_KEYMAP;
-							else {
-								msg.data.arg1 = 0;
-								free(map);
-								map = newMap;
-							}
-						}
-						else
-							msg.data.arg1 = ERR_UNSUPPORTED_OP;
-						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+				case MSG_DRV_READ: {
+					/* offset is ignored here */
+					u32 count = msg.args.arg2 / sizeof(sKmData);
+					sKmData *buffer = (sKmData*)malloc(count * sizeof(sKmData));
+					msg.args.arg1 = 0;
+					if(buffer)
+						msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKmData);
+					msg.args.arg2 = rb_length(rbuf) > 0;
+					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+					if(buffer) {
+						send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sKmData));
+						free(buffer);
 					}
-					break;
-					case MSG_DRV_CLOSE:
-						break;
 				}
+				break;
+				case MSG_DRV_WRITE:
+					msg.args.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+					break;
+				case MSG_DRV_IOCTL: {
+					if(msg.data.arg1 == IOCTL_KM_SET && msg.data.arg2 > 0) {
+						/* ensure that its null-terminated */
+						msg.data.d[msg.data.arg2 - 1] = '\0';
+						sKeymapEntry *newMap = km_parse((char*)msg.data.d);
+						if(!newMap)
+							msg.data.arg1 = ERR_INVALID_KEYMAP;
+						else {
+							msg.data.arg1 = 0;
+							free(map);
+							map = newMap;
+						}
+					}
+					else
+						msg.data.arg1 = ERR_UNSUPPORTED_OP;
+					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+				}
+				break;
+				case MSG_DRV_CLOSE:
+					break;
 			}
 			close(fd);
 		}

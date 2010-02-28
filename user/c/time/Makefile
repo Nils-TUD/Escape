@@ -1,3 +1,3 @@
-NAME=wait
+NAME=time
 
 -include ../DefMakefile.mk

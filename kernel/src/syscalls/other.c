@@ -36,7 +36,7 @@ void sysc_loadMods(sIntrptStackFrame *stack) {
 }
 
 void sysc_debugc(sIntrptStackFrame *stack) {
-	vid_putchar((char)SYSC_ARG1(stack));
+	log_printf("%c",(char)SYSC_ARG1(stack));
 }
 
 static bool started = false;

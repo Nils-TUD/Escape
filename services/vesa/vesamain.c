@@ -298,7 +298,7 @@ static void vesa_update(tCoord x,tCoord y,tSize width,tSize height) {
 
 static void vesa_setPixel16(tCoord x,tCoord y,tColor col) {
 	tSize xres = minfo->xResolution;
-	if(x >= xres)
+	if(x >= xres || y >= minfo->yResolution)
 		return;
 	u16 *data = (u16*)((u8*)video + (y * xres + x) * 2);
 	u8 red = (col >> 16) >> (8 - minfo->redMaskSize);
@@ -312,7 +312,7 @@ static void vesa_setPixel16(tCoord x,tCoord y,tColor col) {
 
 static void vesa_setPixel24(tCoord x,tCoord y,tColor col) {
 	tSize xres = minfo->xResolution;
-	if(x >= xres)
+	if(x >= xres || y >= minfo->yResolution)
 		return;
 	u8 *data = (u8*)video + (y * xres + x) * 3;
 	u8 red = (col >> 16) >> (8 - minfo->redMaskSize);
@@ -328,7 +328,7 @@ static void vesa_setPixel24(tCoord x,tCoord y,tColor col) {
 
 static void vesa_setPixel32(tCoord x,tCoord y,tColor col) {
 	tSize xres = minfo->xResolution;
-	if(x >= xres)
+	if(x >= xres || y >= minfo->yResolution)
 		return;
 	u8 *data = (u8*)video + (y * xres + x) * 4;
 	u8 red = (col >> 16) >> (8 - minfo->redMaskSize);
@@ -350,8 +350,9 @@ static void vesa_setCursor(tCoord x,tCoord y) {
 	y = MIN(y,yres - 1);
 
 	if(lastX != x || lastY != y) {
+		tSize upHeight = MIN(curHeight,yres - lastY);
 		/* copy old content back */
-		vesa_copyRegion(cursorCopy,video,curWidth,curHeight,0,0,lastX,lastY,curWidth,xres);
+		vesa_copyRegion(cursorCopy,video,curWidth,upHeight,0,0,lastX,lastY,curWidth,xres);
 		/* save content */
 		vesa_copyRegion(video,cursorCopy,curWidth,curHeight,x,y,0,0,xres,curWidth);
 	}

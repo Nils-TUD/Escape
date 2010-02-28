@@ -408,7 +408,7 @@ static void win_getRepaintRegions(sSLList *list,tWinId id,sWindow *win,s16 z,sRe
 
 static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height) {
 	tCoord ysave = y;
-	tCoord maxy = MIN(vesaInfo.height - 1,y + height);
+	tCoord maxy;
 	u32 count;
 	if(x < 0) {
 		if(-x > width)
@@ -416,7 +416,11 @@ static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height) 
 		width += x;
 		x = 0;
 	}
+	if(x >= vesaInfo.width || y >= vesaInfo.height)
+		return;
+	width = MIN(vesaInfo.width - x,width);
 	count = width * PIXEL_SIZE;
+	maxy = MIN(vesaInfo.height - 1,y + height);
 	mem += (y * vesaInfo.width + x) * PIXEL_SIZE;
 	while(y <= maxy) {
 		memclear(mem,count);

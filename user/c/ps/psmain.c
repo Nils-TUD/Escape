@@ -25,6 +25,7 @@
 #include <esc/cmdargs.h>
 #include <stdlib.h>
 #include <sllist.h>
+#include <width.h>
 #include <string.h>
 
 #define ARRAY_INC_SIZE		10
@@ -176,11 +177,40 @@ int main(int argc,char *argv[]) {
 	 * right? */
 	qsort(procs,count,sizeof(sProcess),compareProcs);
 
-	/* now print processes */
-	printf("PID   PPID     PMEM      VMEM  STATE    %%CPU (USER,KERNEL) COMMAND\n");
-
 	if(numProcs == 0)
 		numProcs = count;
+
+	/* determine max-values (we want to have a min-width here :)) */
+	u32 maxPid = 100;
+	u32 maxPpid = 100;
+	u32 maxPmem = 10000;
+	u32 maxVmem = 10000;
+	for(i = 0; i < numProcs; i++) {
+		if(procs[i].pid > maxPid)
+			maxPid = procs[i].pid;
+		if(procs[i].parentPid > maxPpid)
+			maxPpid = procs[i].parentPid;
+		if(procs[i].frames > maxPmem)
+			maxPmem = procs[i].frames;
+		if(procs[i].textPages + procs[i].dataPages + procs[i].stackPages > maxVmem)
+			maxVmem = procs[i].textPages + procs[i].dataPages + procs[i].stackPages;
+		if(printThreads) {
+			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
+				sPThread *t = (sPThread*)n->data;
+				if(t->tid > maxPpid)
+					maxPpid = t->tid;
+			}
+		}
+	}
+	maxPid = getuwidth(maxPid,10);
+	maxPpid = getuwidth(maxPpid,10);
+	maxPmem = getuwidth(maxPmem * 4,10);
+	maxVmem = getuwidth(maxVmem * 4,10);
+
+	/* now print processes */
+	printf("%*sPID%*sPPID%*sPMEM%*sVMEM  STATE    %%CPU (USER,KERNEL) COMMAND\n",
+			maxPid - 3,"",maxPpid - 1,"",maxPmem + 1,"",maxVmem + 1,"");
+
 	for(i = 0; i < numProcs; i++) {
 		u64 procCycles;
 		u32 userPercent,kernelPercent;
@@ -189,9 +219,9 @@ int main(int argc,char *argv[]) {
 		cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
 		userPercent = (u32)(100. / (procCycles / (double)procs[i].ucycleCount.val64));
 		kernelPercent = (u32)(100. / (procCycles / (double)procs[i].kcycleCount.val64));
-		printf("%3d   %3d %5d KiB %5d KiB  -       %4.1f%% (%3d%%,%3d%%)  %s\n",
-				procs[i].pid,procs[i].parentPid,procs[i].frames * 4,
-				(procs[i].textPages + procs[i].dataPages + procs[i].stackPages) * 4,
+		printf("%*u   %*u %*u KiB %*u KiB  -       %4.1f%% (%3d%%,%3d%%)   %s\n",
+				maxPid,procs[i].pid,maxPpid,procs[i].parentPid,maxPmem,procs[i].frames * 4,
+				maxVmem,(procs[i].textPages + procs[i].dataPages + procs[i].stackPages) * 4,
 				cyclePercent,userPercent,kernelPercent,procs[i].command);
 
 		if(printThreads) {
@@ -201,8 +231,9 @@ int main(int argc,char *argv[]) {
 				float tcyclePercent = (float)(100. / (totalCycles / (double)threadCycles));
 				u32 tuserPercent = (u32)(100. / (threadCycles / (double)t->ucycleCount.val64));
 				u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
-				printf("  %c\xC4%3d                        %s %4.1f%% (%3d%%,%3d%%)\n",
-						n->next == NULL ? 0xC0 : 0xC3,t->tid,states[t->state],tcyclePercent,
+				printf("  %c\xC4%*s%*d%*s%s %4.1f%% (%3d%%,%3d%%)\n",
+						n->next == NULL ? 0xC0 : 0xC3,
+						maxPid - 3,"",maxPpid,t->tid,14 + maxPmem + maxVmem,"",states[t->state],tcyclePercent,
 						tuserPercent,tkernelPercent);
 			}
 		}

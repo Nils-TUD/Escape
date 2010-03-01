@@ -349,6 +349,7 @@ static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPa
 	bool inWord = false;
 	u32 startPos = 0;
 	u32 i;
+	*searchPath = true;
 	for(i = 0; i < length; i++) {
 		c = line[i];
 		switch(c) {

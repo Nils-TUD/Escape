@@ -33,7 +33,7 @@
 #define FFL_CAPHEX			32
 
 /* the minimum space-increase-size in prf_aprintc() */
-#define SPRINTF_MIN_INC_SIZE	10
+#define SPRINTF_INC_SIZE	10
 
 static void prf_printnpad(sPrintEnv *env,s32 n,u8 pad,u16 flags);
 static void prf_printupad(sPrintEnv *env,u32 u,u8 base,u8 pad,u16 flags);
@@ -61,21 +61,26 @@ void prf_vsprintf(sStringBuffer *buf,const char *fmt,va_list ap) {
 	env.pipePad = NULL;
 	curbuf = buf;
 	prf_vprintf(&env,fmt,ap);
+	/* terminate */
+	prf_aprintc('\0');
 }
 
 static void prf_aprintc(char c) {
 	if(curbuf->dynamic) {
 		if(curbuf->str == NULL) {
-			curbuf->size = SPRINTF_MIN_INC_SIZE;
-			curbuf->str = (char*)kheap_alloc(SPRINTF_MIN_INC_SIZE * sizeof(char));
+			curbuf->size = SPRINTF_INC_SIZE;
+			curbuf->str = (char*)kheap_alloc(SPRINTF_INC_SIZE * sizeof(char));
 		}
 		if(curbuf->len >= curbuf->size) {
-			curbuf->size += SPRINTF_MIN_INC_SIZE;
+			curbuf->size += SPRINTF_INC_SIZE;
 			curbuf->str = (char*)kheap_realloc(curbuf->str,curbuf->size * sizeof(char));
 		}
 	}
-	if(curbuf->str)
-		curbuf->str[curbuf->len++] = c;
+	if(curbuf->str) {
+		curbuf->str[curbuf->len] = c;
+		if(c != '\0')
+			curbuf->len++;
+	}
 }
 
 void prf_printf(sPrintEnv *env,const char *fmt,...) {

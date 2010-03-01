@@ -192,8 +192,7 @@ static void vfsinfo_cpuReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) 
 static s32 vfsinfo_statsReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,
 		u32 offset,u32 count) {
 	UNUSED(file);
-	return vfsrw_readHelper(tid,node,buffer,offset,count,17 * 5 + 4 * 10 + 1 + 1 * 16 + 1,
-			vfsinfo_statsReadCallback);
+	return vfsrw_readHelper(tid,node,buffer,offset,count,0,vfsinfo_statsReadCallback);
 }
 
 static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
@@ -201,9 +200,9 @@ static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer
 	uLongLong cycles;
 	UNUSED(dataSize);
 	UNUSED(node);
-	buf.dynamic = false;
-	buf.str = *(char**)buffer;
-	buf.size = 17 * 5 + 4 * 10 + 1 + 1 * 16 + 1;
+	buf.dynamic = true;
+	buf.str = NULL;
+	buf.size = 0;
 	buf.len = 0;
 
 	cycles.val64 = cpu_rdtsc();
@@ -221,6 +220,8 @@ static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer
 		"CPUCycles:",cycles.val32.upper,cycles.val32.lower,
 		"UpTime:",timer_getIntrptCount() / TIMER_FREQUENCY
 	);
+	*buffer = buf.str;
+	*dataSize = buf.len + 1;
 }
 
 static s32 vfsinfo_memUsageReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,

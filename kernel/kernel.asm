@@ -87,7 +87,7 @@ STATE_EBX								equ 20
 %macro BUILD_DEF_ISR 1
 	[global isr%1]
 	isr%1:
-	cli																	; disable interrupts
+	; interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	push	0															; error-code (no error here)
 	push	dword %1											; the interrupt-number
 	jmp		isrCommon
@@ -97,7 +97,7 @@ STATE_EBX								equ 20
 %macro BUILD_ERR_ISR 1
 	[global isr%1]
 	isr%1:
-	cli																	; disable interrupts
+	; interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	; the error-code has already been pushed
 	push	dword %1											; the interrupt-number
 	jmp		isrCommon
@@ -332,6 +332,9 @@ thread_resume:
 	mov		edi,[ebp + 8]									; get page-dir
 	mov		esi,[ebp + 16]								; get stack-frame
 
+	test	esi,esi												; if stack-frame is 0 we just have one thread
+	je		thread_resume1Thread					; i.e. there can't be another stack-frame anyway
+
 	; load new page-dir
 	mov		cr3,edi												; set page-dir
 
@@ -344,6 +347,7 @@ thread_resume:
 	mov		[KERNEL_STACK_PTE],ecx				; store
 
 	; load page-dir again
+thread_resume1Thread:
 	mov		cr3,edi												; set page-dir
 
 	; now restore registers
@@ -461,7 +465,7 @@ BUILD_DEF_ISR 48
 ; our null-handler for all other interrupts
 [global isrNull]
 	isrNull:
-	cli																	; disable interrupts
+	; interrupts are already disabled here since its a interrupt-gate, not a trap-gate
 	push	0															; error-code (no error here)
 	push	dword 49											; the interrupt-number
 	jmp		isrCommon
@@ -469,13 +473,7 @@ BUILD_DEF_ISR 48
 ; the ISR for all interrupts
 isrCommon:
 	; save registers
-	push	eax
-	push	ebx
-	push	ecx
-	push	edx
-	push	ebp
-	push	esi
-	push	edi
+	pusha
 	push	gs
 	push	fs
 	push	ds
@@ -503,19 +501,12 @@ isrCommon:
 	pop		ds
 	pop		fs
 	pop		gs
-	pop		edi
-	pop		esi
-	pop		ebp
-	pop		edx
-	pop		ecx
-	pop		ebx
-	pop		eax
+	popa
 
 	; remove error-code and interrupt-number from stack
 	add		esp,8
 
-	; enable interrupts and return
-	sti
+	; return
 	iret
 
 [section .setup]

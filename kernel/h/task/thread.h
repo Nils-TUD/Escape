@@ -100,7 +100,7 @@ extern bool thread_save(sThreadRegs *saveArea);
  *
  * @param pageDir the physical address of the page-dir
  * @param saveArea the area to load the state from
- * @param kstackFrame the frame-number of the kernel-stack
+ * @param kstackFrame the frame-number of the kernel-stack (0 = don't change)
  * @return always true
  */
 extern bool thread_resume(u32 pageDir,sThreadRegs *saveArea,u32 kstackFrame);

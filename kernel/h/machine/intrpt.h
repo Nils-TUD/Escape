@@ -193,9 +193,10 @@ typedef struct {
 	u32 edi;
 	u32 esi;
 	u32 ebp;
+	u32 : 32; /* esp from pusha */
+	u32 ebx;
 	u32 edx;
 	u32 ecx;
-	u32 ebx;
 	u32 eax;
 	/* interrupt-number */
 	u32 intrptNo;

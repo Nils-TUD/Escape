@@ -204,7 +204,8 @@ void thread_switchTo(tTid tid) {
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */
 		fpu_lockFPU();
-		thread_resume(cur->proc->physPDirAddr,&cur->save,cur->kstackFrame);
+		thread_resume(cur->proc->physPDirAddr,&cur->save,
+				sll_length(cur->proc->threads) > 1 ? cur->kstackFrame : 0);
 	}
 
 	/* now start kernel-time again */

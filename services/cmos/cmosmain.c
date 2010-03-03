@@ -24,6 +24,7 @@
 #include <esc/fileio.h>
 #include <esc/ports.h>
 #include <esc/date.h>
+#include <esc/thread.h>
 #include <errors.h>
 #include <messages.h>
 #include <stdlib.h>
@@ -40,6 +41,7 @@
 #define CMOS_REG_MONTH		0x8		/* 01-12 */
 #define CMOS_REG_YEAR		0x9		/* 00-99 */
 
+static int refreshThread(int argc,char *argv[]);
 static void cmos_refresh(void);
 static u32 cmos_decodeBCD(u8 val);
 static u8 cmos_read(u8 reg);
@@ -54,6 +56,9 @@ int main(void) {
 	/* request io-ports */
 	if(requestIOPorts(IOPORT_CMOS_INDEX,2) < 0)
 		error("Unable to request io-ports %d .. %d",IOPORT_CMOS_INDEX,IOPORT_CMOS_INDEX + 1);
+
+	if(startThread(refreshThread,NULL) < 0)
+		error("Unable to start CMOS-thread");
 
 	id = regService("cmos",SERV_DRIVER);
 	if(id < 0)
@@ -77,7 +82,6 @@ int main(void) {
 				case MSG_DRV_READ: {
 					u32 offset = msg.args.arg1;
 					u32 count = msg.args.arg2;
-					cmos_refresh();
 					msg.args.arg1 = count;
 					msg.args.arg2 = true;
 					if(offset + count <= offset || offset + count > sizeof(sDate))
@@ -106,6 +110,16 @@ int main(void) {
 	unregService(id);
 	releaseIOPorts(IOPORT_CMOS_INDEX,2);
 	return EXIT_SUCCESS;
+}
+
+static int refreshThread(int argc,char *argv[]) {
+	UNUSED(argc);
+	UNUSED(argv);
+	while(1) {
+		cmos_refresh();
+		sleep(1000);
+	}
+	return 0;
 }
 
 static void cmos_refresh(void) {

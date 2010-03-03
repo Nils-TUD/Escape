@@ -190,20 +190,22 @@ s32 vfsrw_readServUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u
 
 	/* get first element and copy data to buffer */
 	msg = (sMessage*)sll_get(list,0);
-	if(msg->length > size) {
+	if(data && msg->length > size) {
 		kheap_free(msg);
 		sll_removeIndex(list,0);
 		return ERR_INVALID_ARGS;
 	}
 
 	/* the data is behind the message */
-	memcpy(data,(u8*)(msg + 1),msg->length);
+	if(data)
+		memcpy(data,(u8*)(msg + 1),msg->length);
 
 	/*vid_printf("%s received msg %d from %s\n",thread_getById(tid)->proc->command,
 					msg->id,node->parent->name);*/
 
 	/* set id, return size and free msg */
-	*id = msg->id;
+	if(id)
+		*id = msg->id;
 	res = msg->length;
 	kheap_free(msg);
 	sll_removeIndex(list,0);

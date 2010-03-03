@@ -26,8 +26,10 @@
 #include <assert.h>
 
 #define PAGE_SIZE				4096
+#if DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0
 #define DEBUG_ADD_GUARDS		1
+#endif
 
 #if DEBUG_ADD_GUARDS
 void *_malloc(u32 size);

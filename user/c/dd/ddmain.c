@@ -43,8 +43,8 @@ int main(int argc,char *argv[]) {
 	s32 i,res;
 	u32 bs = 4096;
 	u32 count = 0;
-	u32 total = 0;
-	u32 limit;
+	u64 total = 0;
+	u64 limit;
 	u8 *buffer;
 	char *inFile = NULL;
 	char *outFile = NULL;
@@ -88,16 +88,20 @@ int main(int argc,char *argv[]) {
 	if(!buffer)
 		error("Unable to alloc %u bytes of mem",bs);
 
-	limit = count * bs;
+	limit = (u64)count * bs;
 	while(run && (!count || total < limit)) {
-		if((res = read(in,buffer,bs)) <= 0)
+		if((res = read(in,buffer,bs)) <= 0) {
+			if(res < 0)
+				printe("Unable to read");
 			break;
+		}
 		if(write(out,buffer,res) < res)
 			error("Unable to write");
 		total += res;
 	}
 
-	printf("Wrote %u bytes in %.3f packages, each %u bytes long\n",total,total / (float)bs,bs);
+	printf("Wrote %Lu bytes in %.3f packages, each %u bytes long\n",
+			total,(float)(total / (double)bs),bs);
 
 	free(buffer);
 	if(inFile)

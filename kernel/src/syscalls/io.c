@@ -372,8 +372,8 @@ void sysc_receive(sIntrptStackFrame *stack) {
 	s32 res;
 
 	/* validate id and data */
-	if(!paging_isRangeUserWritable((u32)id,sizeof(tMsgId)) ||
-			!paging_isRangeUserWritable((u32)data,size))
+	if((id != NULL && !paging_isRangeUserWritable((u32)id,sizeof(tMsgId))) ||
+			(data != NULL && !paging_isRangeUserWritable((u32)data,size)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */

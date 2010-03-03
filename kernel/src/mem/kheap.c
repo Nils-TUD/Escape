@@ -28,8 +28,10 @@
 
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024
+#if DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0
 #define DEBUG_ADD_GUARDS		1
+#endif
 
 #if DEBUG_ADD_GUARDS
 void *_kheap_alloc(u32 size);

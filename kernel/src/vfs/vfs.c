@@ -377,29 +377,9 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 					return ERR_INVALID_ARGS;
 				e->position = newPos;
 			}
-			else {
-				sSLList *list;
-				/* just SEEK_CUR and SEEK_END is supported */
-				if(whence != SEEK_CUR && whence != SEEK_END)
-					return ERR_SERVUSE_SEEK;
-
-				/* services read from the send-list */
-				if(n->parent->owner == tid)
-					list = n->data.servuse.sendList;
-				/* other processes read to the receive-list*/
-				else
-					list = n->data.servuse.recvList;
-
-				/* skip the next <offset> messages */
-				if(list) {
-					if(whence == SEEK_END)
-						offset = sll_length(list);
-					while(offset-- > 0) {
-						if(!sll_removeFirst(list,NULL))
-							break;
-					}
-				}
-			}
+			/* not supported for services */
+			else
+				return ERR_INVALID_ARGS;
 		}
 		else {
 			if(whence == SEEK_END)

@@ -54,8 +54,10 @@ int main(void) {
 					/* offset is ignored here */
 					u32 count = msg.args.arg2;
 					u8 *data = (u8*)calloc(count,sizeof(u8));
-					if(!data)
+					if(!data) {
+						printe("[ZERO] Unable to alloc mem");
 						count = 0;
+					}
 					msg.args.arg1 = count;
 					msg.args.arg2 = true;
 					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));

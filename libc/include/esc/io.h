@@ -121,8 +121,7 @@ s32 tell(tFD fd,u32 *pos) A_CHECKRET;
 s32 eof(tFD fd);
 
 /**
- * Changes the position in the given file. For service-usages SEEK_CUR can be used to skip
- * <offset> messages and SEEK_END to skip all messages.
+ * Changes the position in the given file
  *
  * @param fd the file-descriptor
  * @param offset the offset
@@ -180,8 +179,8 @@ s32 send(tFD fd,tMsgId id,const void *msg,u32 size);
  * Receives a message from the service identified by <fd>. Blocks if no message is available.
  *
  * @param fd the file-descriptor
- * @param id will be set to the msg-id
- * @param msg the message
+ * @param id will be set to the msg-id (may be NULL to skip the message)
+ * @param msg the message (may be NULL to skip the message)
  * @param size the (max) size of the message
  * @return the size of the message
  */

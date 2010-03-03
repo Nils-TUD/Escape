@@ -14,7 +14,7 @@ if ('a' == 'a') then
 	#cat f5.txt | wc &;
 	#echo "bla" | wc &;
 	#cat file.txt > test.txt;
-	echo {$a \+ 2} hier 1>&2 > "test.txt";
+	echo {$a \+ 2} hier > "test.txt" 1>&2;
 	echo hier bin ich; echo ich nicht :P;
 	echo "mein kleiner string
 			bla

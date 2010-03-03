@@ -160,13 +160,13 @@ cmd:
 ;
 
 subcmd:
-			cmdexprlist cmdredirfd cmdredirin cmdredirout {
+			cmdexprlist cmdredirin cmdredirout cmdredirfd {
 				$$ = ast_createCommand();
-				ast_addSubCmd($$,ast_createSubCmd($1,$2,$3,$4));
+				ast_addSubCmd($$,ast_createSubCmd($1,$4,$2,$3));
 			}
-			| subcmd '|' cmdexprlist cmdredirfd cmdredirin cmdredirout {
+			| subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirfd {
 				$$ = $1;
-				ast_addSubCmd($1,ast_createSubCmd($3,$4,$5,$6));
+				ast_addSubCmd($1,ast_createSubCmd($3,$6,$4,$5));
 			}
 ;
 

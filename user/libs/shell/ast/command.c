@@ -30,6 +30,7 @@
 #include "../exec/value.h"
 #include "../exec/env.h"
 #include "../ast/redirfile.h"
+#include "../ast/redirfd.h"
 #include "node.h"
 #include "subcmd.h"
 #include "command.h"
@@ -89,6 +90,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	sShellCmd **shcmd = NULL;
 	u32 cmdNo,cmdCount;
 	sRedirFile *redirOut,*redirIn;
+	sRedirFd *redirFdesc;
 	char path[MAX_CMD_LEN] = APPS_DIR;
 	s32 pid,prevPid = -1;
 	tFD pipeFds[2],prevPipe;
@@ -126,6 +128,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 		pipeFds[1] = -1;
 		redirOut = (sRedirFile*)cmd->redirOut->data;
 		redirIn = (sRedirFile*)cmd->redirIn->data;
+		redirFdesc = (sRedirFd*)cmd->redirFd->data;
 		if(redirOut->expr) {
 			char absFileName[MAX_PATH_LEN];
 			/* redirection to file */
@@ -176,8 +179,12 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			/* redirect fds and make a copy of stdin and stdout because we want to keep them :) */
 			/* (no fork here) */
 			pid = 0;
-			tFD fdout = -1,fdin = -1;
-			if(pipeFds[1] >= 0) {
+			tFD fdout = -1,fdin = -1,fderr = -1;
+			if(redirFdesc->type == REDIR_OUT2ERR) {
+				fdout = dupFd(STDOUT_FILENO);
+				redirFd(STDOUT_FILENO,STDERR_FILENO);
+			}
+			else if(pipeFds[1] >= 0) {
 				fdout = dupFd(STDOUT_FILENO);
 				redirFd(STDOUT_FILENO,pipeFds[1]);
 			}
@@ -185,35 +192,45 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				fdin = dupFd(STDIN_FILENO);
 				redirFd(STDIN_FILENO,prevPipe);
 			}
+			if(redirFdesc->type == REDIR_ERR2OUT) {
+				fderr = dupFd(STDERR_FILENO);
+				redirFd(STDERR_FILENO,STDOUT_FILENO);
+			}
 
 			res = shcmd[0]->func(cmd->exprCount,cmd->exprs);
 			/* flush stdout just to be sure */
 			flush();
 
-			/* restore stdin & stdout */
+			/* restore stdin & stdout & stderr */
 			if(fdout >= 0) {
 				redirFd(STDOUT_FILENO,fdout);
 				/* we have to close fdout here because redirFd() will not do it for us */
 				close(fdout);
 				/* close write-end */
-				close(pipeFds[1]);
+				if(pipeFds[1] >= 0)
+					close(pipeFds[1]);
 			}
 			if(fdin >= 0) {
 				redirFd(STDIN_FILENO,fdin);
 				close(fdin);
 			}
-			/* close pipe (to file) if there is no next process */
-			if(pipeFds[1] >= 0 && cmdNo >= cmdCount - 1)
-				close(pipeFds[1]);
+			if(fderr >= 0) {
+				redirFd(STDERR_FILENO,fderr);
+				close(fderr);
+			}
 		}
 		else {
 			diedProc = -1;
 			if((pid = fork()) == 0) {
 				/* redirect fds */
-				if(pipeFds[1] >= 0)
+				if(redirFdesc->type == REDIR_OUT2ERR)
+					redirFd(STDOUT_FILENO,STDERR_FILENO);
+				else if(pipeFds[1] >= 0)
 					redirFd(STDOUT_FILENO,pipeFds[1]);
 				if(prevPipe >= 0)
 					redirFd(STDIN_FILENO,prevPipe);
+				if(redirFdesc->type == REDIR_ERR2OUT)
+					redirFd(STDERR_FILENO,STDOUT_FILENO);
 
 				/* exec */
 				strcat(path,shcmd[0]->name);

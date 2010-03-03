@@ -167,6 +167,7 @@ int main(int argc,char **argv) {
 		printf("	$a := 2; if ($a > 2) then echo greater; else echo lesseq; fi\n");
 		printf("	for($i := 0; $i < 10; $i := $i \\+ 1) do echo {$i \\* 2}; done\n");
 		printf("	echo \"test {$a \\+ `cat 'file.txt' | wc -c`} 123\"\n");
+		printf("	dump file.txt > dump.txt 2>&1\n");
 		printf("	...\n");
 
 		printf("\n");

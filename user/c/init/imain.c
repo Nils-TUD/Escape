@@ -30,6 +30,8 @@
 #include "parser.h"
 #include "service.h"
 
+#define SERVICES_FILE		"/etc/services"
+
 /**
  * Loads the service-dependency-file
  * @return the file-content
@@ -112,7 +114,7 @@ static char *getServices(void) {
 	char *buffer;
 
 	/* open file */
-	fd = open("/etc/services",IO_READ);
+	fd = open(SERVICES_FILE,IO_READ);
 	if(fd < 0)
 		return NULL;
 

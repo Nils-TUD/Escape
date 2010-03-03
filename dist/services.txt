@@ -1,5 +1,5 @@
 # Format: "<serviceName> ';' [<waitFor> ',' ...] ';' [<dependency> ',' ...]"
-speaker; /services/speaker;
+speaker ; /services/speaker ;
 keyboard; /dev/keyboard;
 video; /dev/video;
 kmmanager; /dev/kmmanager; keyboard

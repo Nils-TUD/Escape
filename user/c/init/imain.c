@@ -127,8 +127,6 @@ int main(void) {
 		error("Unable to open /services/fs after %d retries",retries);
 	close(fd);
 
-	/* TODO a blank behind a service-name in /etc/services causes a panic */
-
 	/* now read the services we should load */
 	servDefs = getServices();
 	if(servDefs == NULL)
@@ -250,7 +248,7 @@ static char *parseService(char *line,sServiceLoad *serv) {
 	char ***array;
 
 	/* search for name-end */
-	s = strpbrk(line,";\n");
+	s = strpbrk(line,"; \t\n");
 	if(s == NULL)
 		s = line + strlen(line);
 

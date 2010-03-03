@@ -22,5 +22,8 @@
 #include "fileiointern.h"
 
 void clearerr(tFile *stream) {
-	/* TODO implement! */
+	sIOBuffer *buf = bget(stream);
+	if(buf == NULL)
+		return;
+	buf->error = 0;
 }

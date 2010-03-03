@@ -162,37 +162,31 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 }
 
 s32 vfsrw_readServUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
-	sSLList *list;
+	sSLList **list;
 	sMessage *msg;
+	u16 event;
 	s32 res;
-
 	UNUSED(file);
 
-	/* services reads from the send-list */
+	/* wait until a message arrives */
 	if(node->parent->owner == tid) {
-		list = node->data.servuse.sendList;
-		/* don't block service-reads */
-		if(sll_length(list) == 0)
-			return 0;
+		event = EV_CLIENT;
+		list = &node->data.servuse.sendList;
 	}
-	/* other processes read from the receive-list */
 	else {
-		volatile sVFSNode *n = node;
-		/* wait until a message arrives */
-		/* don't cache the list here, because the pointer changes if the list is NULL */
-		while(sll_length(n->data.servuse.recvList) == 0) {
-			thread_wait(tid,0,EV_RECEIVED_MSG);
-			thread_switchInKernel();
-		}
-
-		list = node->data.servuse.recvList;
+		event = EV_RECEIVED_MSG;
+		list = &node->data.servuse.recvList;
+	}
+	while(sll_length(*list) == 0) {
+		thread_wait(tid,0,event);
+		thread_switchInKernel();
 	}
 
 	/* get first element and copy data to buffer */
-	msg = (sMessage*)sll_get(list,0);
+	msg = (sMessage*)sll_get(*list,0);
 	if(data && msg->length > size) {
 		kheap_free(msg);
-		sll_removeIndex(list,0);
+		sll_removeIndex(*list,0);
 		return ERR_INVALID_ARGS;
 	}
 
@@ -208,7 +202,7 @@ s32 vfsrw_readServUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u
 		*id = msg->id;
 	res = msg->length;
 	kheap_free(msg);
-	sll_removeIndex(list,0);
+	sll_removeIndex(*list,0);
 	return res;
 }
 

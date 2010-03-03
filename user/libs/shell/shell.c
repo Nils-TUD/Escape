@@ -362,6 +362,7 @@ static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPa
 				break;
 			case ' ':
 			case '\t':
+			case '=':
 				startPos = i + 1;
 				if(inWord) {
 					*searchPath = false;

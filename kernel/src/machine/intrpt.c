@@ -646,7 +646,7 @@ static void intrpt_eoi(u32 intrptNo) {
     }
 }
 
-#if 1 || DEBUGGING
+#if DEBUGGING
 
 void intrpt_printStackFrame(sIntrptStackFrame *stack) {
 	vid_printf("stack-frame @ 0x%x\n",stack);

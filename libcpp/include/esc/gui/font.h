@@ -54,7 +54,7 @@ namespace esc {
 				return str.length() * charWidth;
 			};
 			inline bool isPixelSet(char c,tCoord x,tCoord y) {
-				return _font[(u32)c * charHeight + y] & (1 << (charWidth - x - 1));
+				return _font[(u8)c * charHeight + y] & (1 << (charWidth - x - 1));
 			};
 
 		private:

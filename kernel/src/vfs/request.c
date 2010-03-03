@@ -64,9 +64,9 @@ bool vfsreq_setHandler(tMsgId id,fReqHandler f) {
 	return true;
 }
 
-void vfsreq_sendMsg(tMsgId id,tTid tid,const u8 *data,u32 size) {
+void vfsreq_sendMsg(tMsgId id,sVFSNode *node,tTid tid,const u8 *data,u32 size) {
 	if(id < HANDLER_COUNT && handler[id])
-		handler[id](tid,data,size);
+		handler[id](tid,node,data,size);
 }
 
 sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size) {
@@ -104,7 +104,7 @@ static sRequest *vfsreq_waitForReplyIntern(tTid tid,void *buffer,u32 size,u32 *f
 	/* wait */
 	vreq = req;
 	while(vreq->state != REQ_STATE_FINISHED) {
-		thread_wait(tid,EV_RECEIVED_MSG);
+		thread_wait(tid,0,EV_REQ_REPLY);
 		thread_switchInKernel();
 	}
 	return req;

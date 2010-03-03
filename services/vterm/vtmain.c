@@ -99,23 +99,22 @@ int main(void) {
 			if(cfg.readKb) {
 				/* read from keyboard */
 				/* don't block here since there may be waiting clients.. */
-				while(!eof(kbFd)) {
+				if(!eof(kbFd)) {
 					sKmData *kmsg = kmData;
 					u32 count = read(kbFd,kmData,sizeof(kmData));
 					count /= sizeof(sKmData);
 					while(count-- > 0) {
-						if(!kmsg->isBreak)
+						if(!kmsg->isBreak) {
 							vterm_handleKey(vterm_getActive(),kmsg->keycode,kmsg->modifier,kmsg->character);
+							vterm_update(vterm_getActive());
+						}
 						kmsg++;
 					}
 				}
-				vterm_update(vterm_getActive());
 				wait(EV_CLIENT | EV_DATA_READABLE);
 			}
-			else {
-				vterm_update(vterm_getActive());
+			else
 				wait(EV_CLIENT);
-			}
 		}
 		else {
 			sVTerm *vt = getVTerm(client);
@@ -153,6 +152,7 @@ int main(void) {
 							if(receive(fd,&mid,data,c + 1) >= 0) {
 								data[c] = '\0';
 								vterm_puts(vt,data,c,true);
+								vterm_update(vterm_getActive());
 								msg.args.arg1 = c;
 							}
 							free(data);

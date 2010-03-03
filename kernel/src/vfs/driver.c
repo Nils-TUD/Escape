@@ -30,10 +30,10 @@
 
 #include <messages.h>
 
-static void vfsdrv_openReqHandler(tTid tid,const u8 *data,u32 size);
-static void vfsdrv_readReqHandler(tTid tid,const u8 *data,u32 size);
-static void vfsdrv_writeReqHandler(tTid tid,const u8 *data,u32 size);
-static void vfsdrv_ioctlReqHandler(tTid tid,const u8 *data,u32 size);
+static void vfsdrv_openReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
+static void vfsdrv_readReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
+static void vfsdrv_writeReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
+static void vfsdrv_ioctlReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
 
 static sMsg msg;
 
@@ -69,11 +69,12 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 	sRequest *req;
 	volatile sVFSNode *n = node;
 	u32 pcount,*frameNos;
+	bool wasReadable;
 	s32 res;
 
 	/* wait until data is readable */
 	while(n->parent->data.service.isEmpty) {
-		thread_wait(tid,EV_DATA_READABLE);
+		thread_wait(tid,(u32)node->parent & 0xFFFF,EV_DATA_READABLE);
 		thread_switchInKernel();
 	}
 
@@ -101,8 +102,8 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 		return ERR_NOT_ENOUGH_MEM;
 
 	res = req->count;
-	/* store wether there is more data readable */
-	node->parent->data.service.isEmpty = !req->val1;
+	if(req->val1)
+		thread_wakeupAll((u32)node->parent & 0xFFFF,EV_DATA_READABLE | EV_RECEIVED_MSG);
 	if(req->readFrNos) {
 		memcpy(buffer,req->readFrNos,req->count);
 		kheap_free(req->readFrNos);
@@ -173,7 +174,8 @@ void vfsdrv_close(tTid tid,tFileNo file,sVFSNode *node) {
 	vfs_sendMsg(tid,file,MSG_DRV_CLOSE,(u8*)&msg,sizeof(msg.args));
 }
 
-static void vfsdrv_openReqHandler(tTid tid,const u8 *data,u32 size) {
+static void vfsdrv_openReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size) {
+	UNUSED(node);
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(size < sizeof(rmsg->args))
@@ -186,32 +188,39 @@ static void vfsdrv_openReqHandler(tTid tid,const u8 *data,u32 size) {
 		req->state = REQ_STATE_FINISHED;
 		req->count = (u32)rmsg->args.arg1;
 		/* the thread can continue now */
-		thread_wakeup(tid,EV_RECEIVED_MSG);
+		thread_wakeup(tid,EV_REQ_REPLY);
 	}
 }
 
-static void vfsdrv_readReqHandler(tTid tid,const u8 *data,u32 size) {
+static void vfsdrv_readReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size) {
 	/* find the request for the tid */
 	sRequest *req = vfsreq_getRequestByPid(tid);
 	if(req != NULL) {
 		/* the first one is the message */
 		if(req->state == REQ_STATE_WAITING) {
+			bool wasEmpty = node->data.service.isEmpty;
 			sMsg *rmsg = (sMsg*)data;
 			/* an error? */
 			if(size < sizeof(rmsg->args) || (s32)rmsg->args.arg1 <= 0) {
 				if(size >= sizeof(rmsg->args))
-					req->val1 = rmsg->args.arg2;
+					node->data.service.isEmpty = !rmsg->args.arg2;
 				else
-					req->val1 = 1;
+					node->data.service.isEmpty = false;
+				if(wasEmpty && !node->data.service.isEmpty)
+					thread_wakeupAll((u32)node & 0xFFFF,EV_DATA_READABLE | EV_RECEIVED_MSG);
 				req->count = 0;
 				req->state = REQ_STATE_FINISHED;
-				thread_wakeup(tid,EV_RECEIVED_MSG);
+				thread_wakeup(tid,EV_REQ_REPLY);
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
-			req->val1 = rmsg->args.arg2;
+			/* set wether data is readable; do this here because a thread-switch may cause
+			 * the service to set that data is readable although arg2 was 0 here (= no data) */
+			node->data.service.isEmpty = !rmsg->args.arg2;
 			req->count = MIN(req->dsize,rmsg->args.arg1);
 			req->state = REQ_STATE_WAIT_DATA;
+			if(wasEmpty && !node->data.service.isEmpty)
+				thread_wakeupAll((u32)node & 0xFFFF,EV_DATA_READABLE | EV_RECEIVED_MSG);
 		}
 		else {
 			/* ok, it's the data */
@@ -229,12 +238,13 @@ static void vfsdrv_readReqHandler(tTid tid,const u8 *data,u32 size) {
 #endif
 			req->state = REQ_STATE_FINISHED;
 			/* the thread can continue now */
-			thread_wakeup(tid,EV_RECEIVED_MSG);
+			thread_wakeup(tid,EV_REQ_REPLY);
 		}
 	}
 }
 
-static void vfsdrv_writeReqHandler(tTid tid,const u8 *data,u32 size) {
+static void vfsdrv_writeReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size) {
+	UNUSED(node);
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(size < sizeof(rmsg->args))
@@ -247,11 +257,12 @@ static void vfsdrv_writeReqHandler(tTid tid,const u8 *data,u32 size) {
 		req->state = REQ_STATE_FINISHED;
 		req->count = rmsg->args.arg1;
 		/* the thread can continue now */
-		thread_wakeup(tid,EV_RECEIVED_MSG);
+		thread_wakeup(tid,EV_REQ_REPLY);
 	}
 }
 
-static void vfsdrv_ioctlReqHandler(tTid tid,const u8 *data,u32 size) {
+static void vfsdrv_ioctlReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size) {
+	UNUSED(node);
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(size < sizeof(rmsg->data))
@@ -270,6 +281,6 @@ static void vfsdrv_ioctlReqHandler(tTid tid,const u8 *data,u32 size) {
 				memcpy(req->data,rmsg->data.d,req->count);
 		}
 		/* the thread can continue now */
-		thread_wakeup(tid,EV_RECEIVED_MSG);
+		thread_wakeup(tid,EV_REQ_REPLY);
 	}
 }

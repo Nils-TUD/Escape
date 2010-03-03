@@ -44,6 +44,7 @@
 #define EV_PIPE_FULL		32	/* kernel-intern */
 #define EV_PIPE_EMPTY		64	/* kernel-intern */
 #define EV_VM86_READY		128	/* kernel-intern */
+#define EV_REQ_REPLY		256	/* kernel-intern */
 
 typedef struct {
 	tPid pid;

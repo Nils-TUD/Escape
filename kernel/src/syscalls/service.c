@@ -160,7 +160,7 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 			SYSC_ERROR(stack,client);
 
 		/* otherwise wait for a client (accept signals) */
-		thread_wait(t->tid,EV_CLIENT);
+		thread_wait(t->tid,0,EV_CLIENT);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			SYSC_ERROR(stack,ERR_INTERRUPTED);

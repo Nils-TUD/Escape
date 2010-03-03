@@ -165,7 +165,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	/* if the vm86-task is active, wait here */
 	volInfo = (volatile sVM86Info **)&info;
 	while(*volInfo != NULL) {
-		thread_wait(t->tid,EV_VM86_READY);
+		thread_wait(t->tid,0,EV_VM86_READY);
 		thread_switchInKernel();
 	}
 
@@ -201,7 +201,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	vm86_destroyInfo(info);
 	info = NULL;
 	caller = INVALID_TID;
-	thread_wakeupAll(EV_VM86_READY);
+	thread_wakeupAll(0,EV_VM86_READY);
 	return vm86Res;
 }
 

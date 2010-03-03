@@ -65,8 +65,11 @@ void sched_setBlocked(sThread *t);
 
 /**
  * Unblocks all blocked threads that are waiting for the given event
+ *
+ * @param mask the mask that has to match
+ * @param event the event
  */
-void sched_unblockAll(u8 event);
+void sched_unblockAll(u16 mask,u16 event);
 
 /**
  * Removes the given thread from the scheduler (depending on the state)

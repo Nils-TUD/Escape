@@ -162,15 +162,17 @@ void sched_setBlocked(sThread *t) {
 	sched_qAppend(&blockedQueue,t);
 }
 
-void sched_unblockAll(u8 event) {
+void sched_unblockAll(u16 mask,u16 event) {
 	sQueueNode *n,*prev,*tmp;
 	sThread *t;
+	u16 tmask;
 
 	prev = NULL;
 	n = blockedQueue.first;
 	while(n != NULL) {
 		t = (sThread*)n->t;
-		if(t->events & event) {
+		tmask = t->events >> 16;
+		if((tmask == 0 || tmask == mask) && (t->events & event)) {
 			t->state = ST_READY;
 			t->events = EV_NOEVENT;
 			sched_qAppend(&readyQueue,t);

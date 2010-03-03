@@ -37,18 +37,15 @@ void sysc_loadMods(sIntrptStackFrame *stack) {
 }
 
 void sysc_debugc(sIntrptStackFrame *stack) {
-	log_printf("%c",(char)SYSC_ARG1(stack));
+	char c = (char)SYSC_ARG1(stack);
+	vid_putchar(c);
+	log_printf("%c",c);
 }
 
 void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 #if DEBUGGING
-	static bool started = false;
-	if(started)
-		proc_dbg_stopProf();
-	else
-		proc_dbg_startProf();
-	started = !started;
+	proc_dbg_printAll();
 	/*vfsn_dbg_printTree();
 	paging_dbg_printOwnPageDir(PD_PART_USER);*/
 #endif

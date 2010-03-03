@@ -237,18 +237,18 @@ void thread_switchInKernel(void) {
 	kev_notify(KEV_KWAIT_DONE,cur->tid);
 }
 
-void thread_wait(tTid tid,u8 events) {
+void thread_wait(tTid tid,u16 mask,u16 events) {
 	sThread *t = thread_getById(tid);
 	vassert(t != NULL,"Thread with id %d not found",tid);
-	t->events = events;
+	t->events = ((u32)mask << 16) | events;
 	sched_setBlocked(t);
 }
 
-void thread_wakeupAll(u8 event) {
-	sched_unblockAll(event);
+void thread_wakeupAll(u16 mask,u16 event) {
+	sched_unblockAll(mask,event);
 }
 
-void thread_wakeup(tTid tid,u8 event) {
+void thread_wakeup(tTid tid,u16 event) {
 	sThread *t = thread_getById(tid);
 	/* ignore the wakeup if the thread doesn't exist */
 	if(t == NULL)
@@ -553,6 +553,7 @@ void thread_dbg_print(sThread *t) {
 	tFD i;
 	vid_printf("\tthread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 	vid_printf("\t\tstate=%s\n",states[t->state]);
+	vid_printf("\t\tevents=%x\n",t->events);
 	vid_printf("\t\tustack=0x%08x (%d pages)\n",t->ustackBegin,t->ustackPages);
 	vid_printf("\t\tkstackFrame=0x%x\n",t->kstackFrame);
 	vid_printf("\t\tucycleCount = 0x%08x%08x\n",t->ucycleCount.val32.upper,
@@ -566,11 +567,8 @@ void thread_dbg_print(sThread *t) {
 			tDevNo dev;
 			if(vfs_getFileId(t->fileDescs[i],&ino,&dev) == 0) {
 				vid_printf("\t\t\t%d : %d",i,t->fileDescs[i]);
-				if(dev == VFS_DEV_NO && vfsn_isValidNodeNo(ino)) {
-					sVFSNode *n = vfsn_getNode(ino);
-					if(n && n->parent)
-						vid_printf(" (%s->%s)",n->parent->name,n->name);
-				}
+				if(dev == VFS_DEV_NO && vfsn_isValidNodeNo(ino))
+					vid_printf(" (%s)",vfsn_getPath(ino));
 				vid_printf("\n");
 			}
 		}

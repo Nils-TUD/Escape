@@ -60,16 +60,16 @@ typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE
 typedef struct {
 	/* thread state. see eThreadState */
 	u8 state;
-	/* the events the thread waits for (if waiting) */
-	u8 events;
 	/* wether this thread waits somewhere in the kernel (not directly triggered by the user) */
 	u8 waitsInKernel;
 	/* the signal that the thread is currently handling (if > 0) */
 	tSig signal;
-	/* the process we belong to */
-	sProc *proc;
 	/* thread id */
 	tTid tid;
+	/* the events the thread waits for (if waiting) */
+	u32 events;
+	/* the process we belong to */
+	sProc *proc;
 	/* start address of the stack */
 	u32 ustackBegin;
 	u32 ustackPages;
@@ -155,16 +155,18 @@ void thread_switchInKernel(void);
  * Puts the given thraed to sleep with given wake-up-events
  *
  * @param tid the thread to put to sleep
+ * @param mask the mask (to use an event for different purposes)
  * @param events the events on which the thread should wakeup
  */
-void thread_wait(tTid tid,u8 events);
+void thread_wait(tTid tid,u16 mask,u16 events);
 
 /**
  * Wakes up all blocked threads that wait for the given event
  *
+ * @param mask the mask that has to match
  * @param event the event
  */
-void thread_wakeupAll(u8 event);
+void thread_wakeupAll(u16 mask,u16 event);
 
 /**
  * Wakes up the given thread with the given event. If the thread is not waiting for it
@@ -173,7 +175,7 @@ void thread_wakeupAll(u8 event);
  * @param tid the thread to wakeup
  * @param event the event to send
  */
-void thread_wakeup(tTid tid,u8 event);
+void thread_wakeup(tTid tid,u16 event);
 
 /**
  * Returns the file-number for the given file-descriptor

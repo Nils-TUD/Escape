@@ -81,8 +81,6 @@ STATE_EBP								equ 12
 STATE_EFLAGS						equ 16
 STATE_EBX								equ 20
 
-; TODO consider callee-save-registers!!
-
 ; macro to build a default-isr-handler
 %macro BUILD_DEF_ISR 1
 	[global isr%1]

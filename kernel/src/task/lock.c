@@ -56,7 +56,7 @@ s32 lock_aquire(tTid tid,tPid pid,u32 ident) {
 		volatile sLock *myl = l;
 		myl->waitCount++;
 		do {
-			thread_wait(tid,EV_UNLOCK);
+			thread_wait(tid,ident & 0xFFFF,EV_UNLOCK);
 			thread_switchInKernel();
 		}
 		while(myl->locked);
@@ -98,7 +98,7 @@ s32 lock_release(tPid pid,u32 ident) {
 
 	/* unlock it */
 	l->locked = false;
-	thread_wakeupAll(EV_UNLOCK);
+	thread_wakeupAll(ident & 0xFFFF,EV_UNLOCK);
 
 	/* if nobody is waiting, we can free the lock-entry */
 	if(l->waitCount == 0) {

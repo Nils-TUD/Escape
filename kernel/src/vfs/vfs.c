@@ -820,7 +820,7 @@ s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable) {
 
 	n->data.service.isEmpty = !readable;
 	if(readable)
-		thread_wakeupAll(EV_DATA_READABLE | EV_RECEIVED_MSG);
+		thread_wakeupAll((u32)n & 0xFFFF,EV_DATA_READABLE | EV_RECEIVED_MSG);
 	return 0;
 }
 
@@ -999,12 +999,6 @@ sVFSNode *vfs_createProcess(tPid pid,fRead handler) {
 	if(dir == NULL)
 		goto errorName;
 
-	/* invalidate cache */
-	if(proc->data.def.cache != NULL) {
-		kheap_free(proc->data.def.cache);
-		proc->data.def.cache = NULL;
-	}
-
 	/* create process-info-node */
 	n = vfsn_createFile(KERNEL_TID,dir,(char*)"info",handler,NULL);
 	if(n == NULL)
@@ -1030,19 +1024,9 @@ errorName:
 }
 
 void vfs_removeProcess(tPid pid) {
-	sVFSNode *proc = PROCESSES();
-	sProc *p = proc_getByPid(pid);
-	char name[12];
-	itoa(name,sizeof(name),pid);
-
 	/* remove from /system/processes */
+	sProc *p = proc_getByPid(pid);
 	vfsn_removeNode(p->threadDir->parent);
-
-	/* invalidate cache */
-	if(proc->data.def.cache != NULL) {
-		kheap_free(proc->data.def.cache);
-		proc->data.def.cache = NULL;
-	}
 }
 
 bool vfs_createThread(tTid tid,fRead handler) {

@@ -122,6 +122,7 @@ void vterm_rlPutchar(sVTerm *vt,char c) {
 				vt->rlBufPos--;
 
 				/* overwrite line */
+				/* TODO just refresh the required part */
 				vterm_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
 			}
 		}

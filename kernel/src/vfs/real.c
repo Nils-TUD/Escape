@@ -46,10 +46,10 @@ static s32 vfsr_doStat(tTid tid,const char *path,tInodeNo ino,tDevNo devNo,sFile
 /* The request-handler for sending a path and receiving a result */
 static s32 vfsr_pathReqHandler(tTid tid,const char *path1,const char *path2,u32 arg1,u32 cmd);
 /* The response-handler for the different message-ids */
-static void vfsr_openRespHandler(tTid tid,const u8 *data,u32 size);
-static void vfsr_readRespHandler(tTid tid,const u8 *data,u32 size);
-static void vfsr_statRespHandler(tTid tid,const u8 *data,u32 size);
-static void vfsr_defRespHandler(tTid tid,const u8 *data,u32 size);
+static void vfsr_openRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
+static void vfsr_readRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
+static void vfsr_statRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
+static void vfsr_defRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
 static tFileNo vfsr_create(tTid tid);
 static s32 vfsr_add(tFileNo virtFile,tFileNo realFile);
 static sReal2Virt *vfsr_get(tTid tid,tFileNo real,s32 *err);
@@ -346,7 +346,8 @@ static s32 vfsr_pathReqHandler(tTid tid,const char *path1,const char *path2,u32 
 	return res;
 }
 
-static void vfsr_openRespHandler(tTid tid,const u8 *data,u32 size) {
+static void vfsr_openRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size) {
+	UNUSED(node);
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(size < sizeof(rmsg->args))
@@ -360,11 +361,12 @@ static void vfsr_openRespHandler(tTid tid,const u8 *data,u32 size) {
 		req->count = rmsg->args.arg1;
 		req->val1 = rmsg->args.arg2;
 		/* the thread can continue now */
-		thread_wakeup(tid,EV_RECEIVED_MSG);
+		thread_wakeup(tid,EV_REQ_REPLY);
 	}
 }
 
-static void vfsr_readRespHandler(tTid tid,const u8 *data,u32 size) {
+static void vfsr_readRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size) {
+	UNUSED(node);
 	/* find the request for the tid */
 	sRequest *req = vfsreq_getRequestByPid(tid);
 	if(req != NULL) {
@@ -375,7 +377,7 @@ static void vfsr_readRespHandler(tTid tid,const u8 *data,u32 size) {
 			if(size < sizeof(rmsg->args) || (s32)rmsg->args.arg1 <= 0) {
 				req->count = 0;
 				req->state = REQ_STATE_FINISHED;
-				thread_wakeup(tid,EV_RECEIVED_MSG);
+				thread_wakeup(tid,EV_REQ_REPLY);
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
@@ -398,12 +400,13 @@ static void vfsr_readRespHandler(tTid tid,const u8 *data,u32 size) {
 #endif
 			req->state = REQ_STATE_FINISHED;
 			/* the thread can continue now */
-			thread_wakeup(tid,EV_RECEIVED_MSG);
+			thread_wakeup(tid,EV_REQ_REPLY);
 		}
 	}
 }
 
-static void vfsr_statRespHandler(tTid tid,const u8 *data,u32 size) {
+static void vfsr_statRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size) {
+	UNUSED(node);
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(size < sizeof(rmsg->data))
@@ -419,11 +422,12 @@ static void vfsr_statRespHandler(tTid tid,const u8 *data,u32 size) {
 		if(req->data != NULL)
 			memcpy(req->data,rmsg->data.d,sizeof(sFileInfo));
 		/* the thread can continue now */
-		thread_wakeup(tid,EV_RECEIVED_MSG);
+		thread_wakeup(tid,EV_REQ_REPLY);
 	}
 }
 
-static void vfsr_defRespHandler(tTid tid,const u8 *data,u32 size) {
+static void vfsr_defRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size) {
+	UNUSED(node);
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(size < sizeof(rmsg->args))
@@ -436,7 +440,7 @@ static void vfsr_defRespHandler(tTid tid,const u8 *data,u32 size) {
 		req->state = REQ_STATE_FINISHED;
 		req->count = rmsg->args.arg1;
 		/* the thread can continue now */
-		thread_wakeup(tid,EV_RECEIVED_MSG);
+		thread_wakeup(tid,EV_REQ_REPLY);
 	}
 }
 

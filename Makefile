@@ -13,7 +13,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 BUILDAPPS = $(BUILDDIR)/apps
 
 KVM = -enable-kvm
-QEMU = /home/hrniels/Applications/qemu-0.12.2/bin/bin/qemu
+QEMU = /home/hrniels/Applications/qemu-0.12.3/bin/bin/qemu
 QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
 	-localtime
 

@@ -216,7 +216,6 @@ static void vterm_newLine(sVTerm *vt) {
 
 	/* we've scrolled one line up */
 	vt->upScroll++;
-	/*vterm_markDirty(vt,vt->cols * 2,(vt->cols - 1) * vt->rows * 2);*/
 }
 
 static void vterm_delete(sVTerm *vt,u32 count) {
@@ -234,6 +233,7 @@ static void vterm_delete(sVTerm *vt,u32 count) {
 		}
 
 		/* overwrite line */
+		/* TODO just refresh the required part */
 		vterm_markDirty(vt,vt->row * vt->cols * 2 + vt->col * 2,vt->cols * 2);
 	}
 	else {

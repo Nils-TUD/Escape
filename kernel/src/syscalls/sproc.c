@@ -77,7 +77,7 @@ void sysc_exit(sIntrptStackFrame *stack) {
 }
 
 void sysc_wait(sIntrptStackFrame *stack) {
-	u8 events = (u8)SYSC_ARG1(stack);
+	u16 events = (u8)SYSC_ARG1(stack);
 	sThread *t = thread_getRunning();
 
 	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) != 0)
@@ -85,7 +85,7 @@ void sysc_wait(sIntrptStackFrame *stack) {
 
 	/* check wether there is a chance that we'll wake up again */
 	if(!vfs_msgAvailableFor(t->tid,events)) {
-		thread_wait(t->tid,events);
+		thread_wait(t->tid,0,events);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			SYSC_ERROR(stack,ERR_INTERRUPTED);
@@ -115,7 +115,7 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 	res = proc_getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
-		thread_wait(t->tid,EV_CHILD_DIED);
+		thread_wait(t->tid,0,EV_CHILD_DIED);
 		thread_switch();
 
 		/* we're back again :) */

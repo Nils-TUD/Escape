@@ -32,7 +32,6 @@
 /* This is mostly borrowed from doc/vbecore.pdf */
 
 #define VM86_ADDR_RM2PM(addr)				((((u32)(addr) & 0xFFFF0000) >> 12) | ((u32)(addr) & 0xFFFF))
-#define VM86_CHG_AREA(addr,rmAddr,pmAddr)	(((u32)(addr) - (u32)(rmAddr)) + (u32)(pmAddr))
 #define ABS(x)								((x) > 0 ? (x) : -(x))
 
 #define VM86_DATA_ADDR						0x80000

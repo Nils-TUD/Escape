@@ -25,6 +25,7 @@
 #include <esc/ports.h>
 #include <esc/date.h>
 #include <esc/thread.h>
+#include <esc/lock.h>
 #include <errors.h>
 #include <messages.h>
 #include <stdlib.h>
@@ -46,6 +47,7 @@ static void cmos_refresh(void);
 static u32 cmos_decodeBCD(u8 val);
 static u8 cmos_read(u8 reg);
 
+static tULock dlock;
 static sMsg msg;
 static sDate date;
 
@@ -87,8 +89,13 @@ int main(void) {
 					if(offset + count <= offset || offset + count > sizeof(sDate))
 						msg.args.arg1 = 0;
 					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
-					if(msg.args.arg1)
+					if(msg.args.arg1) {
+						/* ensure that the refresh-thread doesn't access the date in the
+						 * meanwhile */
+						locku(&dlock);
 						send(fd,MSG_DRV_READ_RESP,(u8*)&date + offset,count);
+						unlocku(&dlock);
+					}
 				}
 				break;
 				case MSG_DRV_WRITE:
@@ -116,7 +123,10 @@ static int refreshThread(int argc,char *argv[]) {
 	UNUSED(argc);
 	UNUSED(argv);
 	while(1) {
+		/* ensure that the driver-loop doesn't access the date in the meanwhile */
+		locku(&dlock);
 		cmos_refresh();
+		unlocku(&dlock);
 		sleep(1000);
 	}
 	return 0;

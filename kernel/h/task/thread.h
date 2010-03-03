@@ -158,7 +158,7 @@ void thread_switchInKernel(void);
  * @param mask the mask (to use an event for different purposes)
  * @param events the events on which the thread should wakeup
  */
-void thread_wait(tTid tid,u16 mask,u16 events);
+void thread_wait(tTid tid,void *mask,u16 events);
 
 /**
  * Wakes up all blocked threads that wait for the given event
@@ -166,7 +166,7 @@ void thread_wait(tTid tid,u16 mask,u16 events);
  * @param mask the mask that has to match
  * @param event the event
  */
-void thread_wakeupAll(u16 mask,u16 event);
+void thread_wakeupAll(void *mask,u16 event);
 
 /**
  * Wakes up the given thread with the given event. If the thread is not waiting for it

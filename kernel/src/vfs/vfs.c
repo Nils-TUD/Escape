@@ -820,7 +820,7 @@ s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable) {
 
 	n->data.service.isEmpty = !readable;
 	if(readable)
-		thread_wakeupAll((u32)n & 0xFFFF,EV_DATA_READABLE | EV_RECEIVED_MSG);
+		thread_wakeupAll(n,EV_DATA_READABLE | EV_RECEIVED_MSG);
 	return 0;
 }
 

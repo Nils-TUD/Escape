@@ -115,7 +115,7 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 	/* wait until data is available */
 	/* don't cache the list here, because the pointer changes if the list is NULL */
 	while(sll_length(n->data.pipe.list) == 0) {
-		thread_wait(tid,(u32)node & 0xFFFF,EV_PIPE_FULL);
+		thread_wait(tid,node,EV_PIPE_FULL);
 		thread_switchInKernel();
 	}
 
@@ -147,8 +147,8 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 		while(sll_length(n->data.pipe.list) == 0) {
 			/* before we go to sleep we have to notify others that we've data written. otherwise
 			 * we may cause a deadlock here */
-			thread_wakeupAll((u32)node & 0xFFFF,EV_PIPE_EMPTY);
-			thread_wait(tid,(u32)node & 0xFFFF,EV_PIPE_FULL);
+			thread_wakeupAll(node,EV_PIPE_EMPTY);
+			thread_wait(tid,node,EV_PIPE_FULL);
 			thread_switchInKernel();
 		}
 		data = sll_get(list,0);
@@ -157,7 +157,7 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 			break;
 	}
 	/* we have to wakeup all here since we don't know our communication-partner :/ */
-	thread_wakeupAll((u32)node & 0xFFFF,EV_PIPE_EMPTY);
+	thread_wakeupAll(node,EV_PIPE_EMPTY);
 	return total;
 }
 
@@ -268,7 +268,7 @@ s32 vfsrw_writePipe(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 of
 	volatile sVFSNode *n = node;
 	/* wait while our node is full */
 	while((n->data.pipe.total + count) >= MAX_VFS_FILE_SIZE) {
-		thread_wait(tid,(u32)node & 0xFFFF,EV_PIPE_EMPTY);
+		thread_wait(tid,node,EV_PIPE_EMPTY);
 		thread_switchInKernel();
 	}
 
@@ -296,7 +296,7 @@ s32 vfsrw_writePipe(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 of
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	node->data.pipe.total += count;
-	thread_wakeupAll((u32)node & 0xFFFF,EV_PIPE_FULL);
+	thread_wakeupAll(node,EV_PIPE_FULL);
 	return count;
 }
 

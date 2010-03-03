@@ -74,7 +74,7 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 
 	/* wait until data is readable */
 	while(n->parent->data.service.isEmpty) {
-		thread_wait(tid,(u32)node->parent & 0xFFFF,EV_DATA_READABLE);
+		thread_wait(tid,node->parent,EV_DATA_READABLE);
 		thread_switchInKernel();
 	}
 
@@ -102,8 +102,6 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 		return ERR_NOT_ENOUGH_MEM;
 
 	res = req->count;
-	if(req->val1)
-		thread_wakeupAll((u32)node->parent & 0xFFFF,EV_DATA_READABLE | EV_RECEIVED_MSG);
 	if(req->readFrNos) {
 		memcpy(buffer,req->readFrNos,req->count);
 		kheap_free(req->readFrNos);
@@ -207,7 +205,7 @@ static void vfsdrv_readReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 siz
 				else
 					node->data.service.isEmpty = false;
 				if(wasEmpty && !node->data.service.isEmpty)
-					thread_wakeupAll((u32)node & 0xFFFF,EV_DATA_READABLE | EV_RECEIVED_MSG);
+					thread_wakeupAll(node,EV_DATA_READABLE | EV_RECEIVED_MSG);
 				req->count = 0;
 				req->state = REQ_STATE_FINISHED;
 				thread_wakeup(tid,EV_REQ_REPLY);
@@ -220,7 +218,7 @@ static void vfsdrv_readReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 siz
 			req->count = MIN(req->dsize,rmsg->args.arg1);
 			req->state = REQ_STATE_WAIT_DATA;
 			if(wasEmpty && !node->data.service.isEmpty)
-				thread_wakeupAll((u32)node & 0xFFFF,EV_DATA_READABLE | EV_RECEIVED_MSG);
+				thread_wakeupAll(node,EV_DATA_READABLE | EV_RECEIVED_MSG);
 		}
 		else {
 			/* ok, it's the data */

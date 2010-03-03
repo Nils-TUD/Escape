@@ -237,15 +237,15 @@ void thread_switchInKernel(void) {
 	kev_notify(KEV_KWAIT_DONE,cur->tid);
 }
 
-void thread_wait(tTid tid,u16 mask,u16 events) {
+void thread_wait(tTid tid,void *mask,u16 events) {
 	sThread *t = thread_getById(tid);
 	vassert(t != NULL,"Thread with id %d not found",tid);
 	t->events = ((u32)mask << 16) | events;
 	sched_setBlocked(t);
 }
 
-void thread_wakeupAll(u16 mask,u16 event) {
-	sched_unblockAll(mask,event);
+void thread_wakeupAll(void *mask,u16 event) {
+	sched_unblockAll((u32)mask & 0xFFFF,event);
 }
 
 void thread_wakeup(tTid tid,u16 event) {

@@ -41,6 +41,7 @@ sIOBuffer *bcreate(tFD fd,u8 flags) {
 	if(buf == NULL)
 		return NULL;
 
+	buf->error = 0;
 	/* init in-buffer */
 	buf->in.fd = -1;
 	buf->in.str = NULL;

@@ -137,10 +137,11 @@ int main(int argc,char *argv[]) {
 	while(count == -1 || count > 0) {
 		c = count != -1 ? MIN(count,BUF_SIZE) : BUF_SIZE;
 		c = fread(buffer,sizeof(u8),c,file);
-		if(c < 0)
-			error("Unable to read");
-		if(c == 0)
+		if(c == 0) {
+			if(ferror(file))
+				error("Unable to read");
 			break;
+		}
 
 		for(x = 0; x < c; x++, i++) {
 			if(i % base == 0) {

@@ -135,6 +135,10 @@ int main(void) {
 	if(id < 0)
 		error("Unable to register service 'vesatext'");
 
+	/* make data available, so that we can return an error to the calling processes */
+	if(setDataReadable(id,true) < 0)
+		error("setDataReadable");
+
 	/*sVM86Regs regs;
 	memset(&regs,0,sizeof(regs));
 	regs.ax = 0x0002;

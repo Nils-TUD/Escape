@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/fileio.h>
 #include <esc/io.h>
+#include <errors.h>
 #include "fileiointern.h"
 
 u32 fwrite(const void *ptr,u32 size,u32 count,tFile *file) {
@@ -27,12 +28,13 @@ u32 fwrite(const void *ptr,u32 size,u32 count,tFile *file) {
 	u8 *bPtr = (u8*)ptr;
 	sBuffer *out;
 	sIOBuffer *buf = bget(file);
-	/* TODO this is not correct; we should return 0 in this case and set ferror */
 	if(buf == NULL)
-		return IO_EOF;
+		return 0;
 	/* no out-buffer? */
-	if(buf->out.fd == -1)
-		return IO_EOF;
+	if(buf->out.fd == -1) {
+		buf->error = ERR_INVALID_FD;
+		return 0;
+	}
 
 	/* TODO don't write it byte for byte */
 	/* write to buffer */

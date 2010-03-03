@@ -89,6 +89,7 @@ typedef struct {
 typedef struct {
 	sBuffer in;
 	sBuffer out;
+	s32 error;
 } sIOBuffer;
 
 char bprintc(sBuffer *buf,char c);

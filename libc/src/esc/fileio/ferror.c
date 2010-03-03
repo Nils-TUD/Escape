@@ -19,10 +19,12 @@
 
 #include <esc/common.h>
 #include <esc/fileio.h>
+#include <errors.h>
 #include "fileiointern.h"
 
 s32 ferror(tFile *stream) {
-	/* TODO implement! */
-	UNUSED(stream);
-	return 0;
+	sIOBuffer *buf = bget(stream);
+	if(buf == NULL)
+		return 0;
+	return buf->error;
 }

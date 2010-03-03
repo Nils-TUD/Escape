@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/fileio.h>
 #include <esc/io.h>
+#include <errors.h>
 #include "fileiointern.h"
 
 u32 fread(void *ptr,u32 size,u32 count,tFile *file) {
@@ -28,12 +29,13 @@ u32 fread(void *ptr,u32 size,u32 count,tFile *file) {
 	u8 *bPtr = (u8*)ptr;
 	sBuffer *in;
 	sIOBuffer *buf = bget(file);
-	/* TODO this is not correct; we should return 0 in this case and set ferror */
 	if(buf == NULL)
-		return IO_EOF;
+		return 0;
 	/* no in-buffer? */
-	if(buf->in.fd == -1)
-		return IO_EOF;
+	if(buf->in.fd == -1) {
+		buf->error = ERR_INVALID_FD;
+		return 0;
+	}
 
 	/* first read from buffer */
 	in = &(buf->in);
@@ -46,8 +48,10 @@ u32 fread(void *ptr,u32 size,u32 count,tFile *file) {
 	/* TODO maybe we should use in smaller steps, if usefull? */
 	/* read from file */
 	res = read(in->fd,bPtr,total);
-	if(res < 0)
+	if(res < 0) {
+		buf->error = res;
 		return count - ((total + size - 1) / size);
+	}
 	total -= res;
 	return count - ((total + size - 1) / size);
 }

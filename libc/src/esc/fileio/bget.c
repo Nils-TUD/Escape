@@ -43,6 +43,7 @@ sIOBuffer *bget(tFile *stream) {
 
 	/* if uninitialized, we have to create it */
 	if(buf->in.type == 0 && buf->out.type == 0) {
+		buf->error = 0;
 		if(buf == stdin) {
 			buf->out.fd = -1;
 			buf->in.fd = STDIN_FILENO;

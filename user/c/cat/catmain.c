@@ -26,7 +26,7 @@
 
 #define BUF_SIZE 512
 
-static void printFile(tFile *file);
+static void printFile(const char *filename,tFile *file);
 
 int main(int argc,char *argv[]) {
 	tFile *file;
@@ -38,7 +38,7 @@ int main(int argc,char *argv[]) {
 	}
 
 	if(argc < 2)
-		printFile(stdin);
+		printFile("STDIN",stdin);
 	else {
 		s32 i;
 		sFileInfo info;
@@ -64,7 +64,7 @@ int main(int argc,char *argv[]) {
 				continue;
 			}
 
-			printFile(file);
+			printFile(path,file);
 			fclose(file);
 		}
 		free(path);
@@ -73,11 +73,13 @@ int main(int argc,char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-static void printFile(tFile *file) {
+static void printFile(const char *filename,tFile *file) {
 	s32 count;
 	char buffer[BUF_SIZE];
 	while((count = fread(buffer,sizeof(char),BUF_SIZE - 1,file)) > 0) {
 		*(buffer + count) = '\0';
 		printf("%s",buffer);
 	}
+	if(count == 0 && ferror(file))
+		printe("Unable to read from %s",filename);
 }

@@ -206,7 +206,7 @@ static void vfsdrv_readReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 siz
 					node->data.service.isEmpty = false;
 				if(wasEmpty && !node->data.service.isEmpty)
 					thread_wakeupAll(node,EV_DATA_READABLE | EV_RECEIVED_MSG);
-				req->count = 0;
+				req->count = rmsg->args.arg1;
 				req->state = REQ_STATE_FINISHED;
 				thread_wakeup(tid,EV_REQ_REPLY);
 				return;

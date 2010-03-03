@@ -159,13 +159,15 @@ int main(int argc,char **argv) {
 		printf("Execute a command with '--help', '-h' or '-?' to get further information\n");
 
 		printf("\n");
-		printf("Additionally there is a basic shell-'language', that supports '|', '\"' and ';'\n");
-		printf("So for example you can do:\n");
-		printf("	ls; ps; echo \"test\";\n");
-		printf("	ls | cat; ps\n");
-		printf("	echo \"word1\" word2 \"word3 and 4\" | wc\n");
-		printf("	cat /bigfile | less\n");
-		printf("	ps | wc | wc -p\n");
+		printf("Additionally there is a small shell-scripting-language. It supports pipes,\n");
+		printf("io-redirection, path-expansion, background-jobs, arithmetic, loops,\n");
+		printf("if-statements and variables. So for example:\n");
+		printf("	cat *.txt | wc > count.txt\n");
+		printf("	ps -s cpu -n 10 &\n");
+		printf("	$a := 2; if ($a > 2) then echo greater; else echo lesseq; fi\n");
+		printf("	for($i := 0; $i < 10; $i := $i \\+ 1) do echo {$i \\* 2}; done\n");
+		printf("	echo \"test {$a \\+ `cat 'file.txt' | wc -c`} 123\"\n");
+		printf("	...\n");
 
 		printf("\n");
 		printf("Other:\n");

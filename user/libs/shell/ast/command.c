@@ -59,11 +59,17 @@ static void ast_termProcsOfCmd(void);
  * Signal-handler for processes in background
  */
 static void ast_sigChildHndl(tSig sig,u32 data);
+/**
+ * Removes the given proc (called in sigChildHndl)
+ */
+static void ast_removeProc(sRunningProc *p,s32 res);
 
 static bool setSigHdl = false;
 static s32 curResult = 0;
 static volatile u32 curWaitCount = 0;
 static tCmdId curCmd = 0;
+static s32 diedProc = -1;
+static s32 diedRes = -1;
 static tFD closePipe[2] = {-1,-1};
 
 sASTNode *ast_createCommand(void) {
@@ -201,6 +207,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				close(pipeFds[1]);
 		}
 		else {
+			diedProc = -1;
 			if((pid = fork()) == 0) {
 				/* redirect fds */
 				if(pipeFds[1] >= 0)
@@ -221,6 +228,12 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			else {
 				curWaitCount++;
 				run_addProc(curCmd,pid,prevPipe,pipeFds[1],cmdNo < cmdCount - 1);
+				/* if the process has died before run_addProc() was called, we didn't know him.
+				 * Now we do, so remove him */
+				if(diedProc != -1) {
+					sRunningProc *rp = run_findProc(CMD_ID_ALL,diedProc);
+					ast_removeProc(rp,diedRes);
+				}
 				if(prevPid > 0) {
 					/* find the prev process */
 					sRunningProc *prevcmd = run_findProc(curCmd,prevPid);
@@ -349,40 +362,50 @@ static void ast_sigChildHndl(tSig sig,u32 data) {
 	sRunningProc *p;
 	sExitState state;
 	s32 res = waitChild(&state);
-	if(res < 0)
+	if(res < 0) {
+		printe("Unable to wait for child");
 		return;
-	p = run_findProc(CMD_ID_ALL,(tPid)data);
-	if(p) {
-		if(state.signal != SIG_COUNT)
-			printf("\nProcess %d was terminated by signal %d\n",state.pid,state.signal);
-		if(p->cmdId == curCmd && curWaitCount > 0) {
-			curResult = res;
-			curWaitCount--;
-		}
-		/*else
-			printf("\n[%d] process %d finished with %d\n",p->cmdId,p->pid,state.exitCode);*/
-
-		/* if we can close this pipe (not needed for reading output)... */
-		if(p->pipe[1] >= 0 && closePipe[1] != p->pipe[1]) {
-			if(p->next != CMD_NEXT_AWAIT) {
-				/* if the next command already exists (or there is no next),
-				 * everything is fine and we can close the write-end of the pipe */
-				close(p->pipe[1]);
-				p->removable = true;
-			}
-			else {
-				/* if we have no next proc yet we have to take care that run_findProc doesn't find us
-				 * again. because our pid may be reused since we're already terminated. */
-				p->terminated = true;
-			}
-		}
-		/* otherwise simply remove the process */
-		else
-			p->removable = true;
-		/* close read-end if we don't want to read the output ourself */
-		if(p->pipe[0] >= 0 && closePipe[0] != p->pipe[0])
-			close(p->pipe[0]);
 	}
+	if(state.signal != SIG_COUNT)
+		printf("\nProcess %d was terminated by signal %d\n",state.pid,state.signal);
+	p = run_findProc(CMD_ID_ALL,(tPid)data);
+	if(p)
+		ast_removeProc(p,res);
+	/* otherwise remember the pid */
+	else {
+		diedProc = data;
+		diedRes = res;
+	}
+}
+
+static void ast_removeProc(sRunningProc *p,s32 res) {
+	if(p->cmdId == curCmd && curWaitCount > 0) {
+		curResult = res;
+		curWaitCount--;
+	}
+	/*else
+		printf("\n[%d] process %d finished with %d\n",p->cmdId,p->pid,state.exitCode);*/
+
+	/* if we can close this pipe (not needed for reading output)... */
+	if(p->pipe[1] >= 0 && closePipe[1] != p->pipe[1]) {
+		if(p->next != CMD_NEXT_AWAIT) {
+			/* if the next command already exists (or there is no next),
+			 * everything is fine and we can close the write-end of the pipe */
+			close(p->pipe[1]);
+			p->removable = true;
+		}
+		else {
+			/* if we have no next proc yet we have to take care that run_findProc doesn't find us
+			 * again. because our pid may be reused since we're already terminated. */
+			p->terminated = true;
+		}
+	}
+	/* otherwise simply remove the process */
+	else
+		p->removable = true;
+	/* close read-end if we don't want to read the output ourself */
+	if(p->pipe[0] >= 0 && closePipe[0] != p->pipe[0])
+		close(p->pipe[0]);
 }
 
 void ast_setRetOutput(sASTNode *c,bool retOutput) {

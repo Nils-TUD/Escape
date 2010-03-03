@@ -145,7 +145,7 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 			break;
 		/* wait until data is available */
 		while(sll_length(n->data.pipe.list) == 0) {
-			/* before we go to sleep we have to notify others that we've data written. otherwise
+			/* before we go to sleep we have to notify others that we've read data. otherwise
 			 * we may cause a deadlock here */
 			thread_wakeupAll(node,EV_PIPE_EMPTY);
 			thread_wait(tid,node,EV_PIPE_FULL);
@@ -156,7 +156,7 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 		if(data->length == 0)
 			break;
 	}
-	/* we have to wakeup all here since we don't know our communication-partner :/ */
+	/* wakeup all threads that wait for writing in this node */
 	thread_wakeupAll(node,EV_PIPE_EMPTY);
 	return total;
 }

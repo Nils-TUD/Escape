@@ -135,7 +135,7 @@ int main(int argc,char **argv) {
 }
 
 static int shell_main(void) {
-	printf("\033[co;9]Welcome to Escape v0.2!\033[co]\n");
+	printf("\033[co;9]Welcome to Escape v0.3!\033[co]\n");
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");

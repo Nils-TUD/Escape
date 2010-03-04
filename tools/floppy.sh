@@ -2,7 +2,7 @@
 ROOT=$(dirname $(dirname $(readlink -f $0)))
 DISK=$BUILD/fd.img
 DISKMOUNT=$ROOT/disk
-OSTITLE="Escape v0.2"
+OSTITLE="Escape v0.3"
 KERNELBIN=$BUILD/kernel.bin
 
 sudo umount $DISKMOUNT || true;

@@ -52,7 +52,7 @@
 							"v\x17" \
 							"0\x17" \
 							".\x17" \
-							"2\x17"
+							"3\x17"
 
 bool vterm_init(sVTerm *vt,sIoCtlSize *vidSize,tFD vidFd,tFD speakerFd) {
 	u32 i,len;

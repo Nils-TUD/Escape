@@ -4,7 +4,7 @@ HDD=$BUILD/hd.img
 DISKMOUNT=$ROOT/disk
 TMPFILE=$BUILD/disktmp
 BINNAME=kernel.bin
-OSTITLE="Escape v0.2"
+OSTITLE="Escape v0.3"
 SUDO=sudo
 
 # 20 MB disk (40 * 16 * 63 * 512 = 20,643,840 byte)

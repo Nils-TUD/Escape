@@ -152,7 +152,7 @@ int main(void) {
 							if(receive(fd,&mid,data,c + 1) >= 0) {
 								data[c] = '\0';
 								vterm_puts(vt,data,c,true);
-								vterm_update(vterm_getActive());
+								vterm_update(vt);
 								msg.args.arg1 = c;
 							}
 							free(data);
@@ -163,6 +163,7 @@ int main(void) {
 					case MSG_DRV_IOCTL: {
 						msg.data.arg1 = vterm_ioctl(vt,&cfg,msg.data.arg1,msg.data.d);
 						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+						vterm_update(vt);
 					}
 					break;
 					case MSG_DRV_CLOSE:

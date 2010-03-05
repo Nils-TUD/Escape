@@ -80,7 +80,6 @@ sRequest *vfsreq_waitForReadReply(tTid tid,u32 bufSize,u32 *frameNos,u32 frameNo
 static sRequest *vfsreq_waitForReplyIntern(tTid tid,void *buffer,u32 size,u32 *frameNos,
 		u32 frameNoCount,u32 offset) {
 	u32 i;
-	volatile sRequest *vreq;
 	sRequest *req = requests;
 	for(i = 0; i < REQUEST_COUNT; i++) {
 		if(req->tid == INVALID_TID)
@@ -102,10 +101,13 @@ static sRequest *vfsreq_waitForReplyIntern(tTid tid,void *buffer,u32 size,u32 *f
 	req->count = 0;
 
 	/* wait */
-	vreq = req;
-	while(vreq->state != REQ_STATE_FINISHED) {
-		thread_wait(tid,0,EV_REQ_REPLY);
-		thread_switchInKernel();
+	thread_wait(tid,0,EV_REQ_REPLY);
+	thread_switchNoSigs();
+	/* if we waked up and the request is not finished, the driver probably died */
+	if(req->state != REQ_STATE_FINISHED) {
+		/* indicate an error */
+		req->count = ERR_INVALID_FILE;
+		req->state = REQ_STATE_FINISHED;
 	}
 	return req;
 }

@@ -31,6 +31,7 @@
 #include <mem/paging.h>
 #include <mem/pmem.h>
 #include <task/sched.h>
+#include <task/lock.h>
 #include <util.h>
 #include <debug.h>
 #include <kevent.h>
@@ -227,7 +228,7 @@ void thread_switchTo(tTid tid) {
 	}
 }
 
-void thread_switchInKernel(void) {
+void thread_switchNoSigs(void) {
 	/* remember that the current thread waits in the kernel */
 	/* atm this is just used by the signal-module to check wether we can send a signal to a
 	 * thread or not */
@@ -519,6 +520,7 @@ u32 thread_destroy(sThread *t,bool destroyStacks) {
 	fpu_freeState(&t->fpuState);
 	sig_removeHandlerFor(t->tid);
 	vfs_removeThread(t->tid);
+	lock_releaseAll(t->tid);
 
 	/* notify others that wait for dying threads */
 	sig_addSignal(SIG_THREAD_DIED,t->tid);

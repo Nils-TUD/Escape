@@ -74,7 +74,6 @@ void proc_init(void) {
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
 	p->isVM86 = false;
-	p->vm86Info = NULL;
 	/* note that this assumes that the page-dir is initialized */
 	p->physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 	memcpy(p->command,"initloader",11);
@@ -224,7 +223,6 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
 	p->isVM86 = isVM86;
-	p->vm86Info = NULL;
 	/* give the process the same name (maybe changed by exec) */
 	strcpy(p->command,cur->command);
 
@@ -450,10 +448,6 @@ void proc_kill(sProc *p) {
 	/* free io-map, if present */
 	if(p->ioMap != NULL)
 		kheap_free(p->ioMap);
-
-	/* remove vm86-info, if not already done */
-	if(p->vm86Info)
-		kheap_free(p->vm86Info);
 
 	/* remove from VFS */
 	vfs_removeProcess(p->pid);

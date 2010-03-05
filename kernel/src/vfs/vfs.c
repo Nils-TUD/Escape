@@ -571,6 +571,8 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 				 * at the right place) */
 				else if(n->owner == tid && IS_PIPE(n->mode))
 					vfsrw_writePipe(tid,file,n,NULL,e->position,0);
+				/* TODO perhaps we should notify the writer if the read has closed the file
+				 * (e.g. by a kill) */
 			}
 		}
 		else
@@ -826,8 +828,8 @@ s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count) {
 	u32 i;
 	bool skipped;
 	/* this is a bit more complicated because we want to do it in a fair way. that means every
-	 * process that requests something should be drved at some time. therefore we store the last
-	 * drved client and continue from the next one. */
+	 * process that requests something should be served at some time. therefore we store the last
+	 * served client and continue from the next one. */
 retry:
 	skipped = false;
 	for(i = 0; i < count; i++) {
@@ -913,6 +915,11 @@ s32 vfs_removeDriver(tTid tid,tInodeNo nodeNo) {
 
 	if(n->owner != tid || !IS_DRIVER(n->mode))
 		return ERR_NOT_OWN_DRIVER;
+
+	/* wakeup all threads that may be waiting for this node so they can check
+	 * wether they are affected by the remove of this driver and perform the corresponding
+	 * action */
+	thread_wakeupAll(0,EV_RECEIVED_MSG | EV_REQ_REPLY | EV_DATA_READABLE);
 
 	/* remove driver-node including all driver-usages */
 	vfsn_removeNode(n);

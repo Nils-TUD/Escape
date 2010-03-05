@@ -225,26 +225,26 @@ static int vterm_dateThread(int argc,char *argv[]) {
 	while(1) {
 		if(config->refreshDate) {
 			/* get date and format it */
-			if(getDate(&date) != 0)
-				continue;
-			len = dateToString(dateStr,30,"%a, %d. %b %Y, %H:%M:%S",&date);
+			if(getDate(&date) == 0) {
+				len = dateToString(dateStr,30,"%a, %d. %b %Y, %H:%M:%S",&date);
 
-			/* update all vterm-title-bars; use a lock to prevent race-conditions */
-			locku(&titleBarLock);
-			for(i = 0; i < VTERM_COUNT; i++) {
-				char *title = vterms[i].titleBar + (vterms[i].cols - len) * 2;
-				for(j = 0; j < len; j++) {
-					*title++ = dateStr[j];
-					*title++ = LIGHTGRAY | (BLUE << 4);
+				/* update all vterm-title-bars; use a lock to prevent race-conditions */
+				locku(&titleBarLock);
+				for(i = 0; i < VTERM_COUNT; i++) {
+					char *title = vterms[i].titleBar + (vterms[i].cols - len) * 2;
+					for(j = 0; j < len; j++) {
+						*title++ = dateStr[j];
+						*title++ = LIGHTGRAY | (BLUE << 4);
+					}
+					if(vterms[i].active) {
+						if(seek(vterms[i].video,(vterms[i].cols - len) * 2,SEEK_SET) < 0)
+							printe("[VTERM] Unable to seek in video-driver");
+						if(write(vterms[i].video,vterms[i].titleBar + (vterms[i].cols - len) * 2,len * 2) < 0)
+							printe("[VTERM] Unable to write to video-driver");
+					}
 				}
-				if(vterms[i].active) {
-					if(seek(vterms[i].video,(vterms[i].cols - len) * 2,SEEK_SET) < 0)
-						printe("[VTERM] Unable to seek in video-driver");
-					if(write(vterms[i].video,vterms[i].titleBar + (vterms[i].cols - len) * 2,len * 2) < 0)
-						printe("[VTERM] Unable to write to video-driver");
-				}
+				unlocku(&titleBarLock);
 			}
-			unlocku(&titleBarLock);
 		}
 
 		/* wait a second */

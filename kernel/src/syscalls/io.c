@@ -287,9 +287,6 @@ void sysc_write(sIntrptStackFrame *stack) {
 	s32 writtenBytes;
 	tFileNo file;
 
-	if(strcmp(t->proc->command,"/sbin/vterm") == 0)
-		writtenBytes = 4;
-
 	/* validate count and buffer */
 	if(count <= 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);

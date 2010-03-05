@@ -30,10 +30,16 @@
 typedef struct {
 	u8 locked;
 	u32 ident;
+	tTid owner;
 	tPid pid;
 	u32 waitCount;
 } sLock;
 
+
+/**
+ * Releases the given lock
+ */
+static void lock_relLock(sLock *l);
 /**
  * Searches the lock-entry for the given ident and process-id
  *
@@ -57,7 +63,7 @@ s32 lock_aquire(tTid tid,tPid pid,u32 ident) {
 		myl->waitCount++;
 		do {
 			thread_wait(tid,(void*)ident,EV_UNLOCK);
-			thread_switchInKernel();
+			thread_switchNoSigs();
 		}
 		while(myl->locked);
 		/* it is unlocked now, so we can stop waiting and use it */
@@ -87,6 +93,7 @@ s32 lock_aquire(tTid tid,tPid pid,u32 ident) {
 	}
 
 	/* lock it */
+	l->owner = tid;
 	l->locked = true;
 	return 0;
 }
@@ -96,16 +103,39 @@ s32 lock_release(tPid pid,u32 ident) {
 	if(!l)
 		return ERR_LOCK_NOT_FOUND;
 
+	lock_relLock(l);
+	return 0;
+}
+
+s32 lock_releaseAll(tTid tid) {
+	sSLNode *n;
+	sSLList **list = locks;
+	sLock *l;
+	u32 i;
+	for(i = 0; i < LOCK_MAP_SIZE; i++) {
+		if(list[i]) {
+			for(n = sll_begin(list[i]); n != NULL; ) {
+				l = (sLock*)n->data;
+				/* store next here because lock_relLock() may delete this node */
+				n = n->next;
+				if(l->owner == tid)
+					lock_relLock(l);
+			}
+		}
+	}
+}
+
+static void lock_relLock(sLock *l) {
 	/* unlock it */
 	l->locked = false;
-	thread_wakeupAll((void*)ident,EV_UNLOCK);
+	l->owner = INVALID_TID;
+	thread_wakeupAll((void*)l->ident,EV_UNLOCK);
 
 	/* if nobody is waiting, we can free the lock-entry */
 	if(l->waitCount == 0) {
-		sll_removeFirst(locks[ident % LOCK_MAP_SIZE],l);
+		sll_removeFirst(locks[l->ident % LOCK_MAP_SIZE],l);
 		kheap_free(l);
 	}
-	return 0;
 }
 
 static sLock *lock_get(tPid pid,u32 ident) {

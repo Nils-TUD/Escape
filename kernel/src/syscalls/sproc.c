@@ -142,7 +142,6 @@ void sysc_sleep(sIntrptStackFrame *stack) {
 
 void sysc_yield(sIntrptStackFrame *stack) {
 	UNUSED(stack);
-
 	thread_switch();
 }
 

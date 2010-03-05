@@ -491,6 +491,9 @@ void vfsn_removeNode(sVFSNode *n) {
 			sll_destroy(n->data.drvuse.sendList,true);
 			n->data.drvuse.sendList = NULL;
 		}
+		/* we have to reset the last client for the driver here */
+		if(n->parent->data.driver.lastClient == n)
+			n->parent->data.driver.lastClient = NULL;
 	}
 	else if(IS_PIPE(n->mode)) {
 		sll_destroy(n->data.pipe.list,true);
@@ -618,6 +621,7 @@ static void vfsn_releaseNode(sVFSNode *node) {
 	vassert(node != NULL,"node == NULL");
 	/* mark unused */
 	node->name = NULL;
+	node->owner = INVALID_TID;
 	node->next = freeList;
 	freeList = node;
 }

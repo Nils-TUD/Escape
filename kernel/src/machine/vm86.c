@@ -138,7 +138,7 @@ s32 vm86_create(void) {
 
 	/* block us; we get waked up as soon as someone wants to use us */
 	sched_setBlocked(thread_getRunning());
-	thread_switch();
+	thread_switchNoSigs();
 
 	/* ok, we're back again... */
 	vm86_start();
@@ -165,8 +165,10 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	/* if the vm86-task is active, wait here */
 	volInfo = (volatile sVM86Info **)&info;
 	while(*volInfo != NULL) {
+		/* TODO we have a problem if the process that currently uses vm86 gets killed... */
+		/* because we'll never get notified that we can use vm86 */
 		thread_wait(t->tid,0,EV_VM86_READY);
-		thread_switchInKernel();
+		thread_switchNoSigs();
 	}
 
 	/* store information in calling process */
@@ -389,7 +391,7 @@ start:
 		/* make caller ready, block us and do a switch */
 		sched_setReady(thread_getById(caller));
 		sched_setBlocked(thread_getRunning());
-		thread_switch();
+		thread_switchNoSigs();
 		goto start;
 	}
 
@@ -439,7 +441,7 @@ static void vm86_stop(sIntrptStackFrame *stack) {
 
 	/* block us and do a switch */
 	sched_setBlocked(t);
-	thread_switch();
+	thread_switchNoSigs();
 
 	/* lets start with a new request :) */
 	vm86_start();

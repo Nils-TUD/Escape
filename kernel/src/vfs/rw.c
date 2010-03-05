@@ -116,7 +116,7 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 	/* don't cache the list here, because the pointer changes if the list is NULL */
 	while(sll_length(n->data.pipe.list) == 0) {
 		thread_wait(tid,node,EV_PIPE_FULL);
-		thread_switchInKernel();
+		thread_switchNoSigs();
 	}
 
 	list = node->data.pipe.list;
@@ -149,7 +149,7 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 			 * we may cause a deadlock here */
 			thread_wakeupAll(node,EV_PIPE_EMPTY);
 			thread_wait(tid,node,EV_PIPE_FULL);
-			thread_switchInKernel();
+			thread_switchNoSigs();
 		}
 		data = sll_get(list,0);
 		/* keep the empty one for the next transfer */
@@ -179,7 +179,10 @@ s32 vfsrw_readDrvUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u3
 	}
 	while(sll_length(*list) == 0) {
 		thread_wait(tid,0,event);
-		thread_switchInKernel();
+		thread_switchNoSigs();
+		/* if we waked up and the node is not our, the node has been destroyed (driver died, ...) */
+		if(event == EV_RECEIVED_MSG && node->owner != tid)
+			return ERR_INVALID_FILE;
 	}
 
 	/* get first element and copy data to buffer */
@@ -265,7 +268,7 @@ s32 vfsrw_writePipe(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 of
 	/* wait while our node is full */
 	while((n->data.pipe.total + count) >= MAX_VFS_FILE_SIZE) {
 		thread_wait(tid,node,EV_PIPE_EMPTY);
-		thread_switchInKernel();
+		thread_switchNoSigs();
 	}
 
 	/* build pipe-data */

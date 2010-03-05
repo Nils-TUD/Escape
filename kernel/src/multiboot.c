@@ -167,7 +167,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		if(strcmp(driver,"/dev/ata") != 0) {
 			/* don't create a pipe- or driver-usage-node here */
 			while(vfsn_resolvePath(driver,&nodeNo,NULL,VFS_NOACCESS) < 0)
-				thread_switchInKernel();
+				thread_switchNoSigs();
 		}
 
 		mod++;

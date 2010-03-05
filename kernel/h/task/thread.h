@@ -149,7 +149,7 @@ void thread_switchTo(tTid tid);
  * to wait in the kernel for something, use this function so that other modules know that the
  * current thread waits and should for example not receive signals.
  */
-void thread_switchInKernel(void);
+void thread_switchNoSigs(void);
 
 /**
  * Puts the given thraed to sleep with given wake-up-events

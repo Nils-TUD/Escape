@@ -80,7 +80,10 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 	/* wait until data is readable */
 	while(n->parent->data.driver.isEmpty) {
 		thread_wait(tid,node->parent,EV_DATA_READABLE);
-		thread_switchInKernel();
+		thread_switchNoSigs();
+		/* if we waked up and the node is not our, the node has been destroyed (driver died, ...) */
+		if(n->owner != tid)
+			return ERR_INVALID_FILE;
 	}
 
 	/* send msg to driver */

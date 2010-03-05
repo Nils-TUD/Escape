@@ -169,8 +169,8 @@ static s32 vfsr_doStat(tTid tid,const char *path,tInodeNo ino,tDevNo devNo,sFile
 
 	/* error? */
 	vfsr_destroy(tid,virtFile);
-	if((s32)req->val1 < 0) {
-		tInodeNo no = req->val1;
+	if((s32)req->count < 0) {
+		tInodeNo no = req->count;
 		vfsreq_remRequest(req);
 		return no;
 	}
@@ -419,7 +419,7 @@ static void vfsr_statRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size
 	if(req != NULL) {
 		/* remove request and give him the inode-number */
 		req->state = REQ_STATE_FINISHED;
-		req->val1 = rmsg->data.arg1;
+		req->count = rmsg->data.arg1;
 		req->data = (void*)kheap_alloc(sizeof(sFileInfo));
 		if(req->data != NULL)
 			memcpy(req->data,rmsg->data.d,sizeof(sFileInfo));

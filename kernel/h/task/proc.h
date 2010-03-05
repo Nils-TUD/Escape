@@ -85,8 +85,6 @@ typedef struct {
 	s32 exitCode;
 	tSig exitSig;
 	u8 isVM86;
-	tTid vm86Caller;
-	sVM86Info *vm86Info;
 	/* the io-map (NULL by default) */
 	u8 *ioMap;
 	/* start-command */

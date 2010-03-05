@@ -43,4 +43,11 @@ s32 lock_aquire(tTid tid,tPid pid,u32 ident);
  */
 s32 lock_release(tPid pid,u32 ident);
 
+/**
+ * Releases all locks of the given thread
+ *
+ * @param tid the thread-id
+ */
+s32 lock_releaseAll(tTid tid);
+
 #endif /* LOCK_H_ */

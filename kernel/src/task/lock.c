@@ -107,7 +107,7 @@ s32 lock_release(tPid pid,u32 ident) {
 	return 0;
 }
 
-s32 lock_releaseAll(tTid tid) {
+void lock_releaseAll(tTid tid) {
 	sSLNode *n;
 	sSLList **list = locks;
 	sLock *l;

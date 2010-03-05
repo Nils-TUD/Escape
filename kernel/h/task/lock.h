@@ -48,6 +48,6 @@ s32 lock_release(tPid pid,u32 ident);
  *
  * @param tid the thread-id
  */
-s32 lock_releaseAll(tTid tid);
+void lock_releaseAll(tTid tid);
 
 #endif /* LOCK_H_ */

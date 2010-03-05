@@ -86,7 +86,7 @@ addTestData() {
 	$SUDO mkdir $DISKMOUNT/sbin
 	$SUDO mkdir $DISKMOUNT/etc
 	$SUDO mkdir $DISKMOUNT/etc/keymaps
-	$SUDO cp dist/services.txt $DISKMOUNT/etc/services
+	$SUDO cp dist/drivers.txt $DISKMOUNT/etc/drivers
 	$SUDO cp dist/keymap-ger.map $DISKMOUNT/etc/keymaps/ger
 	$SUDO cp dist/keymap-us.map $DISKMOUNT/etc/keymaps/us
 	$SUDO touch $DISKMOUNT/etc/keymap

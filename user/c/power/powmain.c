@@ -25,7 +25,7 @@
 #include <messages.h>
 #include <stdlib.h>
 
-#define POWER_SERV		"/dev/powermng"
+#define POWER_DRV		"/dev/powermng"
 
 static sMsg msg;
 
@@ -39,9 +39,9 @@ int main(int argc,char *argv[]) {
 	if(argc < 2 || isHelpCmd(argc,argv))
 		usage(argv[0]);
 
-	fd = open(POWER_SERV,IO_READ | IO_WRITE);
+	fd = open(POWER_DRV,IO_READ | IO_WRITE);
 	if(fd < 0)
-		error("Unable to open '%s'",POWER_SERV);
+		error("Unable to open '%s'",POWER_DRV);
 
 	if(strcmp(argv[1],"-r") == 0)
 		send(fd,MSG_POWER_REBOOT,&msg,sizeof(msg.args));

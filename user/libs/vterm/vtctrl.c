@@ -25,7 +25,7 @@
 #include <esc/keycodes.h>
 #include <esc/heap.h>
 #include <esc/signals.h>
-#include <esc/service.h>
+#include <esc/driver.h>
 #include <esc/fileio.h>
 #include <esc/lock.h>
 #include <esc/thread.h>

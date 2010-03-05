@@ -91,10 +91,10 @@ bool vfsn_isValidNodeNo(tInodeNo nodeNo) {
 	return nodeNo >= 0 && nodeNo < NODE_COUNT;
 }
 
-bool vfsn_isOwnServiceNode(tInodeNo nodeNo) {
+bool vfsn_isOwnDriverNode(tInodeNo nodeNo) {
 	sThread *t = thread_getRunning();
 	sVFSNode *node = nodes + nodeNo;
-	return node->owner == t->tid && IS_SERVICE(node->mode);
+	return node->owner == t->tid && IS_DRIVER(node->mode);
 }
 
 tInodeNo vfsn_getNodeNo(sVFSNode *node) {
@@ -124,7 +124,7 @@ s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info) {
 	info->uid = 0;
 	info->gid = 0;
 	info->mode = n->mode;
-	if(IS_SERVUSE(n->mode))
+	if(IS_DRVUSE(n->mode))
 		info->size = 0;
 	else
 		info->size = n->data.def.pos;
@@ -207,7 +207,7 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 			if(!*path)
 				break;
 
-			if(IS_SERVICE(n->mode))
+			if(IS_DRIVER(n->mode))
 				break;
 
 			/* move to childs of this node */
@@ -262,10 +262,10 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 	}
 
 	/* handle special node-types */
-	if((flags & VFS_CONNECT) && IS_SERVICE(n->mode)) {
+	if((flags & VFS_CONNECT) && IS_DRIVER(n->mode)) {
 		sVFSNode *child;
-		/* create service-use */
-		s32 err = vfsn_createServiceUse(t->tid,n,&child);
+		/* create driver-use */
+		s32 err = vfsn_createDriverUse(t->tid,n,&child);
 		if(err < 0)
 			return err;
 
@@ -353,8 +353,8 @@ sVFSNode *vfsn_createNode(char *name) {
 	node->prev = NULL;
 	node->firstChild = NULL;
 	node->lastChild = NULL;
-	node->data.servuse.recvList = NULL;
-	node->data.servuse.sendList = NULL;
+	node->data.drvuse.recvList = NULL;
+	node->data.drvuse.sendList = NULL;
 	node->data.def.cache = NULL;
 	node->data.def.size = 0;
 	node->data.def.pos = 0;
@@ -420,28 +420,28 @@ sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,f
 	return node;
 }
 
-sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 flags) {
+sVFSNode *vfsn_createDriverNode(tTid tid,sVFSNode *parent,char *name,u32 flags) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
 	node->owner = tid;
-	node->mode = MODE_TYPE_SERVICE | MODE_OWNER_READ | MODE_OTHER_READ;
+	node->mode = MODE_TYPE_DRIVER | MODE_OWNER_READ | MODE_OTHER_READ;
 	node->readHandler = NULL;
 	node->writeHandler = NULL;
-	node->data.service.funcs = flags;
-	node->data.service.isEmpty = true;
-	node->data.service.lastClient = NULL;
+	node->data.driver.funcs = flags;
+	node->data.driver.isEmpty = true;
+	node->data.driver.lastClient = NULL;
 	return node;
 }
 
-sVFSNode *vfsn_createServiceUseNode(tTid tid,sVFSNode *parent,char *name,fRead rhdlr,fWrite whdlr) {
+sVFSNode *vfsn_createDriverUseNode(tTid tid,sVFSNode *parent,char *name,fRead rhdlr,fWrite whdlr) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
 	node->owner = tid;
-	node->mode = MODE_TYPE_SERVUSE | MODE_OWNER_READ | MODE_OWNER_WRITE |
+	node->mode = MODE_TYPE_DRVUSE | MODE_OWNER_READ | MODE_OWNER_WRITE |
 		MODE_OTHER_READ | MODE_OTHER_WRITE;
 	node->readHandler = rhdlr;
 	node->writeHandler = whdlr;
@@ -480,15 +480,15 @@ void vfsn_removeNode(sVFSNode *n) {
 		child = tn;
 	}
 
-	if(IS_SERVUSE(n->mode)) {
+	if(IS_DRVUSE(n->mode)) {
 		/* free send and receive list */
-		if(n->data.servuse.recvList != NULL) {
-			sll_destroy(n->data.servuse.recvList,true);
-			n->data.servuse.recvList = NULL;
+		if(n->data.drvuse.recvList != NULL) {
+			sll_destroy(n->data.drvuse.recvList,true);
+			n->data.drvuse.recvList = NULL;
 		}
-		if(n->data.servuse.sendList != NULL) {
-			sll_destroy(n->data.servuse.sendList,true);
-			n->data.servuse.sendList = NULL;
+		if(n->data.drvuse.sendList != NULL) {
+			sll_destroy(n->data.drvuse.sendList,true);
+			n->data.drvuse.sendList = NULL;
 		}
 	}
 	else if(IS_PIPE(n->mode)) {
@@ -524,7 +524,7 @@ void vfsn_removeNode(sVFSNode *n) {
 	vfsn_releaseNode(n);
 }
 
-s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
+s32 vfsn_createDriverUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	char *name;
 	sVFSNode *m;
 
@@ -547,8 +547,8 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 		m = m->next;
 	}
 
-	/* ok, create a service-usage-node */
-	m = vfsn_createServiceUseNode(tid,n,name,(fRead)vfsdrv_read,(fWrite)vfsdrv_write);
+	/* ok, create a driver-usage-node */
+	m = vfsn_createDriverUseNode(tid,n,name,(fRead)vfsdrv_read,(fWrite)vfsdrv_write);
 	if(m == NULL) {
 		kheap_free(name);
 		return ERR_NOT_ENOUGH_MEM;
@@ -654,11 +654,11 @@ void vfsn_dbg_printNode(sVFSNode *node) {
 		vid_printf("\tnext: 0x%x\n",node->next);
 		vid_printf("\tprev: 0x%x\n",node->prev);
 		vid_printf("\towner: %d\n",node->owner);
-		if(IS_SERVUSE(node->mode)) {
+		if(IS_DRVUSE(node->mode)) {
 			vid_printf("\tSendList:\n");
-			sll_dbg_print(node->data.servuse.sendList);
+			sll_dbg_print(node->data.drvuse.sendList);
 			vid_printf("\tRecvList:\n");
-			sll_dbg_print(node->data.servuse.recvList);
+			sll_dbg_print(node->data.drvuse.recvList);
 		}
 		else {
 			vid_printf("\treadHandler: 0x%x\n",node->readHandler);

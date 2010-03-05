@@ -509,7 +509,7 @@ static sReal2Virt *vfsr_get(tTid tid,tFileNo real,s32 *err) {
 	}
 	/* if we're here and have found the real-file, we were not the owner.
 	 * that means that this file has been inherited, so we have to create a new virt-file and
-	 * use that (for accessing the fs-service). */
+	 * use that (for accessing the fs-driver). */
 	if(foundReal) {
 		tFileNo virt = vfsr_create(tid);
 		if(virt >= 0) {

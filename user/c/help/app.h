@@ -24,8 +24,7 @@
 
 #define APP_TYPE_USER		0
 #define APP_TYPE_DRIVER		1
-#define APP_TYPE_SERVICE	2
-#define APP_TYPE_FS			3
+#define APP_TYPE_FS			2
 
 /* information about an application */
 typedef struct {

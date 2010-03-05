@@ -31,15 +31,15 @@ echo 'module /sbin/fs /dev/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 # copy kernel
 cp $KERNELBIN $TMPDIR/boot/escape.bin
 
-# copy service-deps, apps, services and user-apps
-cp $ROOT/dist/services.txt $TMPDIR/etc/services
+# copy driver-deps, apps, drivers and user-apps
+cp $ROOT/dist/drivers.txt $TMPDIR/etc/drivers
 cp $ROOT/dist/keymap-ger.map $TMPDIR/etc/keymaps/ger
 cp $ROOT/dist/keymap-us.map $TMPDIR/etc/keymaps/us
 echo "/etc/keymaps/ger" > $TMPDIR/etc/keymap
 cp $BUILD/apps/* $TMPDIR/apps
-for i in $BUILD/service_*.bin ; do
+for i in $BUILD/driver_*.bin ; do
 	BASE=`basename $i .bin`
-	cp $i $TMPDIR/sbin/`echo $BASE | sed "s/service_\(.*\)/\1/g"`
+	cp $i $TMPDIR/sbin/`echo $BASE | sed "s/driver_\(.*\)/\1/g"`
 done;
 for i in $BUILD/user_*.bin ; do
 	BASE=`basename $i .bin`

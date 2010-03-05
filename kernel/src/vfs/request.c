@@ -42,7 +42,7 @@
 static sRequest *vfsreq_waitForReplyIntern(tTid tid,void *buffer,u32 size,u32 *frameNos,
 		u32 frameNoCount,u32 offset);
 
-/* the vfs-service-file */
+/* the vfs-driver-file */
 static sRequest requests[REQUEST_COUNT];
 static fReqHandler handler[HANDLER_COUNT] = {NULL};
 

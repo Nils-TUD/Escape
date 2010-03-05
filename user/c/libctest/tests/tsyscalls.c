@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <messages.h>
-#include <esc/service.h>
+#include <esc/driver.h>
 #include <esc/heap.h>
 #include <esc/mem.h>
 #include <esc/proc.h>
@@ -39,8 +39,8 @@ static void test_getppid(void);
 static void test_open(void);
 static void test_close(void);
 static void test_read(void);
-static void test_regService(void);
-static void test_unregService(void);
+static void test_regDriver(void);
+static void test_unregDriver(void);
 static void test_changeSize(void);
 static void test_mapPhysical(void);
 static void test_write(void);
@@ -117,10 +117,10 @@ static s32 _close(u32 fd) {
 static s32 _read(u32 fd,void *buffer,u32 count) {
 	return test_doSyscall(7,fd,(u32)buffer,count);
 }
-static s32 _regService(const char *name,u32 type) {
+static s32 _regDriver(const char *name,u32 type) {
 	return test_doSyscall(8,(u32)name,type,0);
 }
-static s32 _unregService(u32 id) {
+static s32 _unregDriver(u32 id) {
 	return test_doSyscall(9,id,0,0);
 }
 static s32 _changeSize(u32 change) {
@@ -132,7 +132,7 @@ static s32 __mapPhysical(u32 addr,u32 count) {
 static s32 _write(u32 fd,void *buffer,u32 count) {
 	return test_doSyscall(12,fd,(u32)buffer,count);
 }
-static s32 _getWork(tServ *ids,u32 count,tServ *client,tMsgId *mid,sMsg *msg,u32 size,u8 flags) {
+static s32 _getWork(tDrvId *ids,u32 count,tDrvId *client,tMsgId *mid,sMsg *msg,u32 size,u8 flags) {
 	return test_doSyscall7(57,(u32)ids,count,(u32)client,(u32)mid,(u32)msg,size,flags);
 }
 static s32 _requestIOPorts(u32 start,u32 count) {
@@ -183,8 +183,8 @@ static void test_syscalls(void) {
 	test_open();
 	test_close();
 	test_read();
-	test_regService();
-	test_unregService();
+	test_regDriver();
+	test_unregDriver();
 	test_changeSize();
 	test_mapPhysical();
 	test_write();
@@ -271,25 +271,25 @@ static void test_read(void) {
 	test_caseSucceded();
 }
 
-static void test_regService(void) {
-	test_caseStart("Testing regService()");
-	test_assertInt(_regService("MYVERYVERYVERYVERYVERYVERYVERYVERYLONGNAME",0),ERR_INVALID_ARGS);
-	test_assertInt(_regService("abc+-/",0),ERR_INVALID_ARGS);
-	test_assertInt(_regService("/",0),ERR_INVALID_ARGS);
-	test_assertInt(_regService("",0),ERR_INVALID_ARGS);
-	test_assertInt(_regService((char*)0xC0000000,0),ERR_INVALID_ARGS);
-	test_assertInt(_regService((char*)0xFFFFFFFF,0),ERR_INVALID_ARGS);
-	test_assertInt(_regService("serv",SERV_DEFAULT << 8),ERR_INVALID_ARGS);
-	test_assertInt(_regService("serv",0),ERR_INVALID_ARGS);
-	test_assertInt(_regService("serv",0x12345678),ERR_INVALID_ARGS);
+static void test_regDriver(void) {
+	test_caseStart("Testing regDriver()");
+	test_assertInt(_regDriver("MYVERYVERYVERYVERYVERYVERYVERYVERYLONGNAME",0),ERR_INVALID_ARGS);
+	test_assertInt(_regDriver("abc+-/",0),ERR_INVALID_ARGS);
+	test_assertInt(_regDriver("/",0),ERR_INVALID_ARGS);
+	test_assertInt(_regDriver("",0),ERR_INVALID_ARGS);
+	test_assertInt(_regDriver((char*)0xC0000000,0),ERR_INVALID_ARGS);
+	test_assertInt(_regDriver((char*)0xFFFFFFFF,0),ERR_INVALID_ARGS);
+	test_assertInt(_regDriver("drv",1 << 8),ERR_INVALID_ARGS);
+	test_assertInt(_regDriver("drv",0),ERR_INVALID_ARGS);
+	test_assertInt(_regDriver("drv",0x12345678),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 
-static void test_unregService(void) {
-	test_caseStart("Testing unregService()");
-	test_assertInt(_unregService(-1),ERR_INVALID_ARGS);
-	test_assertInt(_unregService(12345678),ERR_INVALID_ARGS);
-	test_assertInt(_unregService(0x7FFFFFFF),ERR_INVALID_ARGS);
+static void test_unregDriver(void) {
+	test_caseStart("Testing unregDriver()");
+	test_assertInt(_unregDriver(-1),ERR_INVALID_ARGS);
+	test_assertInt(_unregDriver(12345678),ERR_INVALID_ARGS);
+	test_assertInt(_unregDriver(0x7FFFFFFF),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 
@@ -340,12 +340,12 @@ static void test_write(void) {
 }
 
 static void test_getWork(void) {
-	tServ servs[3];
-	tServ s;
+	tDrvId drvs[3];
+	tDrvId s;
 	tMsgId mid;
 	sMsg msg;
 	test_caseStart("Testing getWork()");
-	/* test serv-array */
+	/* test drv-array */
 	test_assertInt(_getWork(NULL,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork((void*)0x12345678,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork((void*)0x12345678,4 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
@@ -360,25 +360,25 @@ static void test_getWork(void) {
 	test_assertInt(_getWork((void*)0xBFFFFFFF,8 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork((void*)0xBFFFFFFF,8 * K - 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork((void*)0xFFFFFFFF,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	/* test service-id */
-	test_assertInt(_getWork(servs,1,(tServ*)0x12345678,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(servs,1,(tServ*)0xC0000000,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(servs,1,(tServ*)0xBFFFFFFF,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(servs,1,(tServ*)0xFFFFFFFF,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	/* test serv-array size */
-	test_assertInt(_getWork(servs,-1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(servs,4 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(servs,0x7FFFFFFF,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	/* test driver-id */
+	test_assertInt(_getWork(drvs,1,(tDrvId*)0x12345678,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,(tDrvId*)0xC0000000,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,(tDrvId*)0xBFFFFFFF,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,(tDrvId*)0xFFFFFFFF,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	/* test drv-array size */
+	test_assertInt(_getWork(drvs,-1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,4 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,0x7FFFFFFF,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test message-id */
-	test_assertInt(_getWork(servs,1,&s,(tMsgId*)0x12345678,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(servs,1,&s,(tMsgId*)0xC0000000,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(servs,1,&s,(tMsgId*)0xBFFFFFFF,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(servs,1,&s,(tMsgId*)0xFFFFFFFF,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,&s,(tMsgId*)0x12345678,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,&s,(tMsgId*)0xC0000000,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,&s,(tMsgId*)0xBFFFFFFF,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,&s,(tMsgId*)0xFFFFFFFF,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test message */
-	test_assertInt(_getWork(servs,1,&s,&mid,(sMsg*)0x12345678,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(servs,1,&s,&mid,(sMsg*)0xC0000000,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(servs,1,&s,&mid,(sMsg*)0xBFFFFFFF,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(servs,1,&s,&mid,(sMsg*)0xFFFFFFFF,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,&s,&mid,(sMsg*)0x12345678,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,&s,&mid,(sMsg*)0xC0000000,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,&s,&mid,(sMsg*)0xBFFFFFFF,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,&s,&mid,(sMsg*)0xFFFFFFFF,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 

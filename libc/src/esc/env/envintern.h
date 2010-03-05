@@ -24,13 +24,13 @@
 #include <messages.h>
 
 /**
- * Opens the env-service
+ * Opens the env-driver
  * @return >= 0 if successfull
  */
 s32 initEnv(void);
 
 /**
- * Sends the given get-message to the env-service and returns the reply-data
+ * Sends the given get-message to the env-driver and returns the reply-data
  *
  * @param buf the buffer to write to
  * @param msg the message
@@ -41,7 +41,7 @@ s32 initEnv(void);
  */
 bool doGetEnv(char *buf,sMsg *msg,u32 bufSize,u32 cmd,u32 size);
 
-/* the fd for the env-service */
+/* the fd for the env-driver */
 extern tFD envFd;
 
 #endif /* ENVINTERN_H_ */

@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void startService(const char *name,const char *wait);
+static void startDriver(const char *name,const char *wait);
 
 int main(void) {
 	// check for duplicate gui-start
@@ -39,10 +39,10 @@ int main(void) {
 	send(STDOUT_FILENO,IOCTL_VT_DIS_RDKB,NULL,0);
 	send(STDOUT_FILENO,IOCTL_VT_DIS_DATE,NULL,0);
 
-	// start gui services
-	startService("vesa","/dev/vesa");
-	startService("mouse","/dev/mouse");
-	startService("winmanager","/dev/winmanager");
+	// start gui drivers
+	startDriver("vesa","/dev/vesa");
+	startDriver("mouse","/dev/mouse");
+	startDriver("winmanager","/dev/winmanager");
 
 	// start gui-test-program
 	if(fork() == 0) {
@@ -57,7 +57,7 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void startService(const char *name,const char *wait) {
+static void startDriver(const char *name,const char *wait) {
 	char path[MAX_PATH_LEN + 1] = "/sbin/";
 	strcat(path,name);
 	if(fork() == 0) {

@@ -36,7 +36,7 @@ using namespace esc::gui;
 
 class ShellApplication : public Application {
 public:
-	ShellApplication(tServ sid,ShellControl *sh);
+	ShellApplication(tDrvId sid,ShellControl *sh);
 	virtual ~ShellApplication();
 
 protected:
@@ -53,7 +53,7 @@ private:
 	void driverMain();
 
 private:
-	tServ _sid;
+	tDrvId _sid;
 	ShellControl *_sh;
 	sVTermCfg _cfg;
 	char *rbuffer;

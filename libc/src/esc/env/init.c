@@ -23,7 +23,7 @@
 #include <esc/io.h>
 #include "envintern.h"
 
-/* the fd for the env-service */
+/* the fd for the env-driver */
 tFD envFd = -1;
 static tULock envLock;
 

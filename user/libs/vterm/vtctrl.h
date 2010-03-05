@@ -50,7 +50,7 @@ typedef struct {
 struct sVTerm {
 	/* identification */
 	u8 index;
-	tServ sid;
+	tDrvId sid;
 	char name[MAX_VT_NAME_LEN + 1];
 	/* function-pointers */
 	fHandleShortcut handlerShortcut;

@@ -21,7 +21,7 @@
 #include <esc/debug.h>
 #include <esc/gui/common.h>
 #include <esc/gui/color.h>
-#include <esc/service.h>
+#include <esc/driver.h>
 #include <esc/signals.h>
 #include <errors.h>
 #include "shellcontrol.h"

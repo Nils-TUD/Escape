@@ -25,7 +25,7 @@
 #include <syscalls/proc.h>
 #include <syscalls/thread.h>
 #include <syscalls/other.h>
-#include <syscalls/service.h>
+#include <syscalls/driver.h>
 #include <syscalls/signals.h>
 #include <errors.h>
 
@@ -48,8 +48,8 @@ static sSyscall syscalls[] = {
 	/* 5 */ 	{sysc_open,					2},
 	/* 6 */ 	{sysc_close,				1},
 	/* 7 */ 	{sysc_read,					3},
-	/* 8 */		{sysc_regService,			2},
-	/* 9 */ 	{sysc_unregService,			1},
+	/* 8 */		{sysc_regDriver,			2},
+	/* 9 */ 	{sysc_unregDriver,			1},
 	/* 10 */	{sysc_changeSize,			1},
 	/* 11 */	{sysc_mapPhysical,			2},
 	/* 12 */	{sysc_write,				3},

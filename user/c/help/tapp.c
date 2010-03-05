@@ -36,7 +36,7 @@ static const char *app2 =
 	"name:					\"myapppp\""
 	"desc:					\"a b c\""
 	"start:					\"\""
-	"type:					\"service\"";
+	"type:					\"driver\"";
 
 /* our test-module */
 sTestModule tModApp = {
@@ -74,6 +74,6 @@ static void test_app_2(void) {
 	test_assertStr(a.name,"myapppp");
 	test_assertStr(a.desc,"a b c");
 	test_assertStr(a.start,"");
-	test_assertUInt(a.type,APP_TYPE_SERVICE);
+	test_assertUInt(a.type,APP_TYPE_DRIVER);
 	test_caseSucceded();
 }

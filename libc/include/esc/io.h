@@ -174,7 +174,7 @@ s32 read(tFD fd,void *buffer,u32 count) A_CHECKRET;
 s32 write(tFD fd,const void *buffer,u32 count) A_CHECKRET;
 
 /**
- * Sends a message to the service identified by <fd>.
+ * Sends a message to the driver identified by <fd>.
  *
  * @param fd the file-descriptor
  * @param id the msg-id
@@ -185,7 +185,7 @@ s32 write(tFD fd,const void *buffer,u32 count) A_CHECKRET;
 s32 send(tFD fd,tMsgId id,const void *msg,u32 size);
 
 /**
- * Receives a message from the service identified by <fd>. Blocks if no message is available.
+ * Receives a message from the driver identified by <fd>. Blocks if no message is available.
  *
  * @param fd the file-descriptor
  * @param id will be set to the msg-id (may be NULL to skip the message)

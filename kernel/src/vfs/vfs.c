@@ -123,12 +123,12 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n = vfsn_getNode(e->nodeNo);
 	vassert(e->flags != 0,"Invalid file %d",file);
-	/* we can't share service-usages since each thread has his own node */
-	if(e->devNo == VFS_DEV_NO && IS_SERVUSE(n->mode)) {
+	/* we can't share driver-usages since each thread has his own node */
+	if(e->devNo == VFS_DEV_NO && IS_DRVUSE(n->mode)) {
 		sVFSNode *child;
 		tInodeNo nodeNo;
 		tFileNo newFile;
-		s32 err = vfsn_createServiceUse(tid,n->parent,&child);
+		s32 err = vfsn_createDriverUse(tid,n->parent,&child);
 		if(err < 0)
 			return -1;
 
@@ -244,7 +244,7 @@ static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 	tFileNo i;
 	tFileNo freeSlot = ERR_NO_FREE_FILE;
 	u16 rwFlags = flags & (VFS_READ | VFS_WRITE);
-	bool isServUse = false;
+	bool isDrvUse = false;
 	sGFTEntry *e = &globalFileTable[0];
 
 	/* ensure that we don't increment usages of an unused slot */
@@ -255,7 +255,7 @@ static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 		sVFSNode *n = vfsn_getNode(nodeNo);
 		vassert(nodeNo < NODE_COUNT,"nodeNo invalid");
 		/* we can add pipes here, too, since every open() to a pipe will get a new node anyway */
-		isServUse = (n->mode & (MODE_TYPE_SERVUSE | MODE_TYPE_PIPE)) ? true : false;
+		isDrvUse = (n->mode & (MODE_TYPE_DRVUSE | MODE_TYPE_PIPE)) ? true : false;
 	}
 
 	for(i = 0; i < FILE_COUNT; i++) {
@@ -265,16 +265,16 @@ static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 			/* this is allowed only if we create a child-threads. he will inherit the files.
 			 * in this case we trust the threads that they know what they do :) */
 			if(e->devNo == devNo && e->nodeNo == nodeNo && e->owner == tid) {
-				/* service-usages may use a file twice for reading and writing because we
+				/* driver-usages may use a file twice for reading and writing because we
 				 * will prevent trouble anyway */
-				if(isServUse && (e->flags & (VFS_READ | VFS_WRITE)) == rwFlags)
+				if(isDrvUse && (e->flags & (VFS_READ | VFS_WRITE)) == rwFlags)
 					return i;
 
 				/* someone does already write to this file? so it's not really good
 				 * to use it atm, right? */
 				/* TODO this means that a different thread could open the same file for reading
 				 * or writing while another one is writing!? */
-				if(!isServUse && e->flags & VFS_WRITE)
+				if(!isDrvUse && e->flags & VFS_WRITE)
 					return ERR_FILE_IN_USE;
 
 				/* if the flags are different we need a different slot */
@@ -285,11 +285,11 @@ static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 		/* remember free slot */
 		else if(freeSlot == ERR_NO_FREE_FILE) {
 			freeSlot = i;
-			/* just for performance: if we've found an unused file and want to use a service,
+			/* just for performance: if we've found an unused file and want to use a driver,
 			 * use this slot because it doesn't really matter wether we use a new file or an
 			 * existing one (if there even is any) */
 			/* note: we can share a file for writing in this case! */
-			if(isServUse)
+			if(isDrvUse)
 				break;
 		}
 
@@ -314,8 +314,8 @@ bool vfs_eof(tTid tid,tFileNo file) {
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = nodes + e->nodeNo;
 
-		if(IS_SERVUSE(n->mode))
-			eof = n->parent->data.service.isEmpty;
+		if(IS_DRVUSE(n->mode))
+			eof = n->parent->data.driver.isEmpty;
 		/* we've read all from a pipe if there is one zero-length-entry left */
 		else if(IS_PIPE(n->mode))
 			eof = sll_length(n->data.pipe.list) == 1 && n->data.pipe.total == 0;
@@ -335,11 +335,11 @@ s32 vfs_hasMsg(tTid tid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n = nodes + e->nodeNo;
 	vassert(e->flags != 0,"Invalid file %d",file);
-	if(e->devNo != VFS_DEV_NO || !IS_SERVUSE(n->mode))
+	if(e->devNo != VFS_DEV_NO || !IS_DRVUSE(n->mode))
 		return ERR_INVALID_FILE;
 	if(n->parent->owner == tid)
-		return sll_length(n->data.servuse.sendList) > 0;
-	return sll_length(n->data.servuse.recvList) > 0;
+		return sll_length(n->data.drvuse.sendList) > 0;
+	return sll_length(n->data.drvuse.recvList) > 0;
 }
 
 bool vfs_isterm(tTid tid,tFileNo file) {
@@ -349,7 +349,7 @@ bool vfs_isterm(tTid tid,tFileNo file) {
 	vassert(e->flags != 0,"Invalid file %d",file);
 	if(e->devNo != VFS_DEV_NO)
 		return false;
-	return IS_SERVUSE(n->mode) && (n->parent->data.service.funcs & DRV_TERM);
+	return IS_DRVUSE(n->mode) && (n->parent->data.driver.funcs & DRV_TERM);
 }
 
 s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
@@ -380,7 +380,7 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 		if(IS_PIPE(n->mode))
 			return ERR_PIPE_SEEK;
 
-		if(IS_SERVUSE(n->mode)) {
+		if(IS_DRVUSE(n->mode)) {
 			/* not supported for drivers */
 			if(whence == SEEK_END)
 				return ERR_INVALID_ARGS;
@@ -405,7 +405,7 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 			e->position = info.size;
 		}
 		else {
-			/* since the fs-service validates the position anyway we can simply set it */
+			/* since the fs-driver validates the position anyway we can simply set it */
 			e->position = newPos;
 		}
 	}
@@ -439,7 +439,7 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 			e->position += readBytes;
 	}
 	else {
-		/* query the fs-service to read from the inode */
+		/* query the fs-driver to read from the inode */
 		readBytes = vfsr_readFile(tid,file,e->nodeNo,e->devNo,buffer,e->position,count);
 		if(readBytes > 0)
 			e->position += readBytes;
@@ -476,7 +476,7 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 		}
 	}
 	else {
-		/* query the fs-service to write to the inode */
+		/* query the fs-driver to write to the inode */
 		writtenBytes = vfsr_writeFile(tid,file,e->nodeNo,e->devNo,buffer,e->position,count);
 		if(writtenBytes > 0)
 			e->position += writtenBytes;
@@ -504,7 +504,7 @@ s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
 		return ERR_INVALID_FILE;
 
 	/* send the message */
-	return vfsrw_writeServUse(tid,file,n,id,data,size);
+	return vfsrw_writeDrvUse(tid,file,n,id,data,size);
 }
 
 s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
@@ -526,7 +526,7 @@ s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
 		return ERR_INVALID_FILE;
 
 	/* send the message */
-	return vfsrw_readServUse(tid,file,n,id,data,size);
+	return vfsrw_readDrvUse(tid,file,n,id,data,size);
 }
 
 void vfs_closeFile(tTid tid,tFileNo file) {
@@ -550,19 +550,19 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 				/* last usage? */
 				if(--(n->refCount) == 0) {
 					/* notify the driver, if it is one */
-					if(IS_SERVUSE(n->mode))
+					if(IS_DRVUSE(n->mode))
 						vfsdrv_close(tid,file,n);
 
 					/* remove pipe-nodes if there are no references anymore */
 					if(IS_PIPE(n->mode))
 						vfsn_removeNode(n);
-					/* if there are message for the service we don't want to throw them away */
+					/* if there are message for the driver we don't want to throw them away */
 					/* if there are any in the receivelist (and no references of the node) we
 					 * can throw them away because no one will read them anymore
 					 * (it means that the client has already closed the file) */
-					/* note also that we can assume that the service is still running since we
-					 * would have deleted the whole service-node otherwise */
-					else if(IS_SERVUSE(n->mode) && sll_length(n->data.servuse.sendList) == 0)
+					/* note also that we can assume that the driver is still running since we
+					 * would have deleted the whole driver-node otherwise */
+					else if(IS_DRVUSE(n->mode) && sll_length(n->data.drvuse.sendList) == 0)
 						vfsn_removeNode(n);
 				}
 				/* if we're the owner of the pipe, append an "EOF-message" */
@@ -731,21 +731,21 @@ s32 vfs_rmdir(tTid tid,const char *path) {
 	return 0;
 }
 
-tServ vfs_createService(tTid tid,const char *name,u32 flags) {
-	sVFSNode *serv = DRIVERS();
-	sVFSNode *n = serv->firstChild;
+tDrvId vfs_createDriver(tTid tid,const char *name,u32 flags) {
+	sVFSNode *drv = DRIVERS();
+	sVFSNode *n = drv->firstChild;
 	u32 len;
 	char *hname;
 	vassert(name != NULL,"name == NULL");
 
-	/* we don't want to have exotic service-names */
+	/* we don't want to have exotic driver-names */
 	if((len = strlen(name)) == 0 || !isalnumstr(name))
-		return ERR_INV_SERVICE_NAME;
+		return ERR_INV_DRIVER_NAME;
 
 	while(n != NULL) {
 		/* entry already existing? */
 		if(strcmp(n->name,name) == 0)
-			return ERR_SERVICE_EXISTS;
+			return ERR_DRIVER_EXISTS;
 		n = n->next;
 	}
 
@@ -757,7 +757,7 @@ tServ vfs_createService(tTid tid,const char *name,u32 flags) {
 	hname[len] = '\0';
 
 	/* create node */
-	n = vfsn_createServiceNode(tid,serv,hname,flags);
+	n = vfsn_createDriverNode(tid,drv,hname,flags);
 	if(n != NULL)
 		return NADDR_TO_VNNO(n);
 
@@ -768,12 +768,12 @@ tServ vfs_createService(tTid tid,const char *name,u32 flags) {
 
 s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable) {
 	sVFSNode *n = nodes + nodeNo;
-	if(n->name == NULL || !IS_SERVICE(n->mode) || !DRV_IMPL(n->data.service.funcs,DRV_READ))
-		return ERR_INVALID_SERVID;
+	if(n->name == NULL || !IS_DRIVER(n->mode) || !DRV_IMPL(n->data.driver.funcs,DRV_READ))
+		return ERR_INVALID_DRVID;
 	if(n->owner != tid)
-		return ERR_NOT_OWN_SERVICE;
+		return ERR_NOT_OWN_DRIVER;
 
-	n->data.service.isEmpty = !readable;
+	n->data.driver.isEmpty = !readable;
 	if(readable)
 		thread_wakeupAll(n,EV_DATA_READABLE | EV_RECEIVED_MSG);
 	return 0;
@@ -784,7 +784,7 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 	sThread *t = thread_getById(tid);
 	tFD i;
 
-	/* at first we check wether the process is a service */
+	/* at first we check wether the process is a driver */
 	if(events & EV_CLIENT) {
 		sVFSNode *rn = DRIVERS();
 		n = NODE_FIRST_CHILD(rn);
@@ -806,11 +806,11 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 				sGFTEntry *e = globalFileTable + t->fileDescs[i];
 				if(e->devNo == VFS_DEV_NO) {
 					n = vfsn_getNode(e->nodeNo);
-					/* service-usage and a message in the receive-list? */
-					/* we don't want to check that if it is our own service. because it makes no
+					/* driver-usage and a message in the receive-list? */
+					/* we don't want to check that if it is our own driver. because it makes no
 					 * sense to read from ourself ;) */
-					if(IS_SERVUSE(n->mode) && n->parent->owner != tid) {
-						if(n->data.servuse.recvList != NULL && sll_length(n->data.servuse.recvList) > 0)
+					if(IS_DRVUSE(n->mode) && n->parent->owner != tid) {
+						if(n->data.drvuse.recvList != NULL && sll_length(n->data.drvuse.recvList) > 0)
 							return true;
 					}
 				}
@@ -826,26 +826,26 @@ s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count) {
 	u32 i;
 	bool skipped;
 	/* this is a bit more complicated because we want to do it in a fair way. that means every
-	 * process that requests something should be served at some time. therefore we store the last
-	 * served client and continue from the next one. */
+	 * process that requests something should be drved at some time. therefore we store the last
+	 * drved client and continue from the next one. */
 retry:
 	skipped = false;
 	for(i = 0; i < count; i++) {
 		if(!vfsn_isValidNodeNo(vfsNodes[i]))
-			return ERR_INVALID_SERVID;
+			return ERR_INVALID_DRVID;
 
 		node = nodes + vfsNodes[i];
-		if(node->owner != tid || !IS_SERVICE(node->mode))
-			return ERR_NOT_OWN_SERVICE;
+		if(node->owner != tid || !IS_DRIVER(node->mode))
+			return ERR_NOT_OWN_DRIVER;
 
 		/* search for a slot that needs work */
-		last = node->data.service.lastClient;
+		last = node->data.driver.lastClient;
 		if(last == NULL)
 			n = NODE_FIRST_CHILD(node);
 		else if(last->next == NULL) {
-			/* if we have checked all clients in this service, give the other services
+			/* if we have checked all clients in this driver, give the other drivers
 			 * a chance (if there are any others) */
-			node->data.service.lastClient = NULL;
+			node->data.driver.lastClient = NULL;
 			skipped = true;
 			continue;
 		}
@@ -854,25 +854,25 @@ retry:
 searchBegin:
 		while(n != NULL && n != last) {
 			/* data available? */
-			if(sll_length(n->data.servuse.sendList) > 0) {
-				node->data.service.lastClient = n;
+			if(sll_length(n->data.drvuse.sendList) > 0) {
+				node->data.driver.lastClient = n;
 				return NADDR_TO_VNNO(n);
 			}
 			n = n->next;
 		}
 		/* if we have looked through all nodes and the last one has a message again, we have to
 		 * store it because we'll not check it again */
-		if(last && n == last && sll_length(n->data.servuse.sendList) > 0)
+		if(last && n == last && sll_length(n->data.drvuse.sendList) > 0)
 			match = n;
-		else if(node->data.service.lastClient) {
+		else if(node->data.driver.lastClient) {
 			n = NODE_FIRST_CHILD(node);
-			node->data.service.lastClient = NULL;
+			node->data.driver.lastClient = NULL;
 			goto searchBegin;
 		}
 	}
 	/* if we have a match, use this one */
 	if(match) {
-		node->data.service.lastClient = match;
+		node->data.driver.lastClient = match;
 		return NADDR_TO_VNNO(match);
 	}
 	/* if not and we've skipped a client, try another time */
@@ -885,10 +885,10 @@ tFileNo vfs_openClientThread(tTid tid,tInodeNo nodeNo,tTid clientId) {
 	sVFSNode *n,*node;
 	/* check if the node is valid */
 	if(!vfsn_isValidNodeNo(nodeNo))
-		return ERR_INVALID_SERVID;
+		return ERR_INVALID_DRVID;
 	node = nodes + nodeNo;
-	if(node->owner != tid || !IS_SERVICE(node->mode))
-		return ERR_NOT_OWN_SERVICE;
+	if(node->owner != tid || !IS_DRIVER(node->mode))
+		return ERR_NOT_OWN_DRIVER;
 
 	/* search for a slot that needs work */
 	n = NODE_FIRST_CHILD(node);
@@ -906,15 +906,15 @@ tFileNo vfs_openClientThread(tTid tid,tInodeNo nodeNo,tTid clientId) {
 	return vfs_openFile(tid,VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n),VFS_DEV_NO);
 }
 
-s32 vfs_removeService(tTid tid,tInodeNo nodeNo) {
+s32 vfs_removeDriver(tTid tid,tInodeNo nodeNo) {
 	sVFSNode *n = nodes + nodeNo;
 
 	vassert(vfsn_isValidNodeNo(nodeNo),"Invalid node number %d",nodeNo);
 
-	if(n->owner != tid || !IS_SERVICE(n->mode))
-		return ERR_NOT_OWN_SERVICE;
+	if(n->owner != tid || !IS_DRIVER(n->mode))
+		return ERR_NOT_OWN_DRIVER;
 
-	/* remove service-node including all service-usages */
+	/* remove driver-node including all driver-usages */
 	vfsn_removeNode(n);
 	return 0;
 }
@@ -1002,12 +1002,12 @@ void vfs_removeThread(tTid tid) {
 	sVFSNode *n,*tn;
 	char *name;
 
-	/* check if the thread is a service */
+	/* check if the thread is a driver */
 	n = NODE_FIRST_CHILD(rn->firstChild);
 	while(n != NULL) {
-		if(IS_SERVICE(n->mode) && n->owner == tid) {
+		if(IS_DRIVER(n->mode) && n->owner == tid) {
 			tn = n->next;
-			vfs_removeService(tid,NADDR_TO_VNNO(n));
+			vfs_removeDriver(tid,NADDR_TO_VNNO(n));
 			n = tn;
 		}
 		else
@@ -1061,8 +1061,8 @@ void vfs_dbg_printGFT(void) {
 			vid_printf("\t\towner: %d\n",e->owner);
 			if(e->devNo == VFS_DEV_NO) {
 				sVFSNode *n = vfsn_getNode(e->nodeNo);
-				if(IS_SERVUSE(n->mode))
-					vid_printf("\t\tService-Usage of %s @ %s\n",n->name,n->parent->name);
+				if(IS_DRVUSE(n->mode))
+					vid_printf("\t\tDriver-Usage of %s @ %s\n",n->name,n->parent->name);
 			}
 		}
 		e++;

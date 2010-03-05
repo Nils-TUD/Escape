@@ -26,18 +26,16 @@
 #define MAX_VFS_FILE_SIZE			(64 * K)
 
 /* some additional types for the kernel */
-#define MODE_TYPE_SERVUSE			0x0010000
-#define MODE_TYPE_SERVICE			0x0020000
+#define MODE_TYPE_DRVUSE			0x0010000
+#define MODE_TYPE_DRIVER			0x0020000
 #define MODE_TYPE_PIPECON			0x0040000
 #define MODE_TYPE_PIPE				0x0080000
-#define MODE_SERVICE_FS				0x0100000
-#define MODE_SERVICE_DRIVER			0x0200000
 
 /* the device-number of the VFS */
 #define VFS_DEV_NO					((tDevNo)0xFF)
 
-#define IS_SERVICE(mode)			(((mode) & MODE_TYPE_SERVICE) != 0)
-#define IS_SERVUSE(mode)			(((mode) & MODE_TYPE_SERVUSE) != 0)
+#define IS_DRIVER(mode)				(((mode) & MODE_TYPE_DRIVER) != 0)
+#define IS_DRVUSE(mode)				(((mode) & MODE_TYPE_DRVUSE) != 0)
 #define IS_PIPE(mode)				(((mode) & MODE_TYPE_PIPE) != 0)
 
 #define DRV_OPEN					1
@@ -57,7 +55,7 @@ enum {
 	VFS_CREATE = 4,
 	VFS_TRUNCATE = 8,
 	VFS_APPEND = 16,
-	VFS_CONNECT = 32,		/* kernel-intern: connect to service/driver */
+	VFS_CONNECT = 32,		/* kernel-intern: connect to driver/driver */
 	VFS_NOLINKRES = 64,		/* kernel-intern: don't resolve last link in path */
 	VFS_CREATED = 128,		/* kernel-intern: wether a new node has been created */
 	VFS_MODIFIED = 256		/* kernel-intern: wether it has been written to the file */
@@ -89,12 +87,12 @@ struct sVFSNode {
 	/* the handler that perform a read-/write-operation on this node */
 	fRead readHandler;
 	fWrite writeHandler;
-	/* the owner of this node: used for service-usages */
+	/* the owner of this node: used for driver-usages */
 	tTid owner;
 	/* a list of listeners for created, modified or deleted */
 	sSLList *listeners;
 	union {
-		/* for services/dev */
+		/* for drivers/dev */
 		struct {
 			/* wether there is data to read or not */
 			bool isEmpty;
@@ -102,14 +100,14 @@ struct sVFSNode {
 			u32 funcs;
 			/* the last served client */
 			sVFSNode *lastClient;
-		} service;
-		/* for service-usages */
+		} driver;
+		/* for driver-usages */
 		struct {
-			/* a list for sending messages to the service */
+			/* a list for sending messages to the driver */
 			sSLList *sendList;
-			/* a list for reading messages from the service */
+			/* a list for reading messages from the driver */
 			sSLList *recvList;
-		} servuse;
+		} drvuse;
 		/* for pipes */
 		struct {
 			u32 total;
@@ -216,7 +214,7 @@ s32 vfs_hasMsg(tTid tid,tFileNo file);
 
 /**
  * Checks wether the given file links to a terminal. That means it has to be a virtual file
- * that acts as a service-client for a terminal-service.
+ * that acts as a driver-client for a terminal-driver.
  *
  * @param tid the thread-id
  * @param file the file
@@ -239,7 +237,7 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence);
  * Reads max. count bytes from the given file into the given buffer and returns the number
  * of read bytes.
  *
- * @param tid will be used to check wether the service writes or a service-user
+ * @param tid will be used to check wether the driver writes or a driver-user
  * @param file the file
  * @param buffer the buffer to write to
  * @param count the max. number of bytes to read
@@ -251,7 +249,7 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count);
  * Writes count bytes from the given buffer into the given file and returns the number of written
  * bytes.
  *
- * @param tid will be used to check wether the service writes or a service-user
+ * @param tid will be used to check wether the driver writes or a driver-user
  * @param file the file
  * @param buffer the buffer to read from
  * @param count the number of bytes to write
@@ -260,7 +258,7 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count);
 s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count);
 
 /**
- * Sends a message to the corresponding service
+ * Sends a message to the corresponding driver
  *
  * @param tid the sender-thread-id
  * @param file the file to send the message to
@@ -272,7 +270,7 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count);
 s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size);
 
 /**
- * Receives a message from the corresponding service
+ * Receives a message from the corresponding driver
  *
  * @param tid the receiver-thread-id
  * @param file the file to receive the message from
@@ -329,28 +327,28 @@ s32 vfs_mkdir(tTid tid,const char *path);
 s32 vfs_rmdir(tTid tid,const char *path);
 
 /**
- * Creates a service-node for the given thread and given name
+ * Creates a driver-node for the given thread and given name
  *
  * @param tid the thread-id
- * @param name the service-name
+ * @param name the driver-name
  * @param flags the specified flags (implemented functions)
  * @return 0 if ok, negative if an error occurred
  */
-s32 vfs_createService(tTid tid,const char *name,u32 flags);
+s32 vfs_createDriver(tTid tid,const char *name,u32 flags);
 
 /**
  * Sets wether data is currently readable or not
  *
  * @param tid the thread-id
- * @param nodeNo the service-node-number
+ * @param nodeNo the driver-node-number
  * @param readable wether there is data or not
  * @return 0 on success
  */
 s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable);
 
 /**
- * Checks wether there is a message for the given thread. That if the thread is a service
- * and should serve a client or if the thread has got a message from a service.
+ * Checks wether there is a message for the given thread. That if the thread is a driver
+ * and should serve a client or if the thread has got a message from a driver.
  *
  * @param tid the thread-id
  * @param events the events to wait for
@@ -359,9 +357,9 @@ s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable);
 bool vfs_msgAvailableFor(tTid tid,u8 events);
 
 /**
- * For services: Looks wether a client wants to be served and return the node-number
+ * For drivers: Looks wether a client wants to be served and return the node-number
  *
- * @param tid the service-thread-id
+ * @param tid the driver-thread-id
  * @param vfsNodes an array of VFS-nodes to check for clients
  * @param count the size of <vfsNodes>
  * @return the error-code or the node-number of the client
@@ -369,22 +367,22 @@ bool vfs_msgAvailableFor(tTid tid,u8 events);
 s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count);
 
 /**
- * Opens a file for the client with given thread-id. This works just for multipipe-services!
+ * Opens a file for the client with given thread-id.
  *
  * @param tid the own thread-id
- * @param nodeNo the service-node-number
+ * @param nodeNo the driver-node-number
  * @param clientId the thread-id of the desired client
  * @return the file or a negative error-code
  */
 tFileNo vfs_openClientThread(tTid tid,tInodeNo nodeNo,tTid clientId);
 
 /**
- * Removes the service with given node-number
+ * Removes the driver with given node-number
  *
  * @param tid the thread-id
- * @param nodeNo the node-number of the service
+ * @param nodeNo the node-number of the driver
  */
-s32 vfs_removeService(tTid tid,tInodeNo nodeNo);
+s32 vfs_removeDriver(tTid tid,tInodeNo nodeNo);
 
 /**
  * Creates a process-node with given pid and handler-function

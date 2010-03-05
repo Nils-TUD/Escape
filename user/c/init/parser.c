@@ -22,57 +22,57 @@
 #include <string.h>
 #include <sllist.h>
 #include "parser.h"
-#include "service.h"
+#include "driver.h"
 
 /**
- * Parses one service from the given line (until newline or \0) and fills the
- * given service-load
+ * Parses one driver from the given line (until newline or \0) and fills the
+ * given driver-load
  *
  * @param line the line-beginning
- * @param serv the service-load to fill
+ * @param drv the driver-load to fill
  * @return the position where to continue
  */
-static char *parseService(char *line,sServiceLoad *serv);
+static char *parseDriver(char *line,sDriverLoad *drv);
 
-sServiceLoad **parseServices(char *servFile) {
-	u32 servSize = 8;
-	u32 servPos = 0;
-	sServiceLoad **servBak;
-	sServiceLoad **servs;
-	sServiceLoad **serv;
-	sServiceLoad *s;
+sDriverLoad **parseDrivers(char *drvFile) {
+	u32 drvSize = 8;
+	u32 drvPos = 0;
+	sDriverLoad **drvBak;
+	sDriverLoad **drvs;
+	sDriverLoad **drv;
+	sDriverLoad *s;
 	char *str;
 
 	/* create array */
-	servs = (sServiceLoad**)malloc(servSize * sizeof(sServiceLoad*));
-	if(servs == NULL)
+	drvs = (sDriverLoad**)malloc(drvSize * sizeof(sDriverLoad*));
+	if(drvs == NULL)
 		return NULL;
 
-	servBak = servs;
-	str = servFile;
+	drvBak = drvs;
+	str = drvFile;
 	while(*str) {
 		/* ";" at the line-start is a comment */
 		if(*str != '#') {
 			/* increase array-size? leave one slot for NULL */
-			if(servPos >= servSize - 1) {
-				servSize += 8;
-				servs = (sServiceLoad**)realloc(servs,servSize * sizeof(sServiceLoad*));
-				if(servs == NULL)
+			if(drvPos >= drvSize - 1) {
+				drvSize += 8;
+				drvs = (sDriverLoad**)realloc(drvs,drvSize * sizeof(sDriverLoad*));
+				if(drvs == NULL)
 					goto failed;
 			}
 
-			/* alloc mem for service-load */
-			s = (sServiceLoad*)malloc(sizeof(sServiceLoad));
+			/* alloc mem for driver-load */
+			s = (sDriverLoad*)malloc(sizeof(sDriverLoad));
 			if(s == NULL)
 				goto failed;
 
 			/* parse this line */
-			str = parseService(str,s);
+			str = parseDriver(str,s);
 			if(str == NULL)
 				goto failed;
 			/* if the line was empty (name == NULL), simply ignore it */
 			if(s->name != NULL)
-				servs[servPos++] = s;
+				drvs[drvPos++] = s;
 			else
 				free(s);
 		}
@@ -86,24 +86,24 @@ sServiceLoad **parseServices(char *servFile) {
 	}
 
 	/* terminate */
-	servs[servPos] = NULL;
-	return servs;
+	drvs[drvPos] = NULL;
+	return drvs;
 
 failed:
 	/* we have to free the already allocated mem */
-	serv = servBak + servPos - 1;
-	while(serv > servBak) {
-		free((*serv)->name);
-		free((*serv)->deps);
-		free((*serv)->waits);
-		free(*serv);
-		serv--;
+	drv = drvBak + drvPos - 1;
+	while(drv > drvBak) {
+		free((*drv)->name);
+		free((*drv)->deps);
+		free((*drv)->waits);
+		free(*drv);
+		drv--;
 	}
-	free(servBak);
+	free(drvBak);
 	return NULL;
 }
 
-static char *parseService(char *line,sServiceLoad *serv) {
+static char *parseDriver(char *line,sDriverLoad *drv) {
 	char *s,*brk,*lineStart;
 	u32 i,len,size;
 	u8 *count;
@@ -119,26 +119,26 @@ static char *parseService(char *line,sServiceLoad *serv) {
 		return s;
 
 	/* set name */
-	serv->name = (char*)malloc(s - line + 1);
-	if(serv->name == NULL)
+	drv->name = (char*)malloc(s - line + 1);
+	if(drv->name == NULL)
 		return false;
-	strncpy(serv->name,line,s - line);
-	serv->name[s - line] = '\0';
+	strncpy(drv->name,line,s - line);
+	drv->name[s - line] = '\0';
 
 	/* create wait-array */
-	serv->waitCount = 0;
-	serv->waits = (char**)malloc(8 * sizeof(char*));
-	if(serv->waits == NULL) {
-		free(serv->name);
+	drv->waitCount = 0;
+	drv->waits = (char**)malloc(8 * sizeof(char*));
+	if(drv->waits == NULL) {
+		free(drv->name);
 		return NULL;
 	}
 
 	/* create dep-array */
-	serv->depCount = 0;
-	serv->deps = (char**)malloc(8 * sizeof(char*));
-	if(serv->deps == NULL) {
-		free(serv->name);
-		free(serv->waits);
+	drv->depCount = 0;
+	drv->deps = (char**)malloc(8 * sizeof(char*));
+	if(drv->deps == NULL) {
+		free(drv->name);
+		free(drv->waits);
 		return NULL;
 	}
 
@@ -152,12 +152,12 @@ static char *parseService(char *line,sServiceLoad *serv) {
 	for(i = 0; i < 2; i++) {
 		size = 8;
 		if(i == 0) {
-			array = &serv->waits;
-			count = &serv->waitCount;
+			array = &drv->waits;
+			count = &drv->waitCount;
 		}
 		else {
-			array = &serv->deps;
-			count = &serv->depCount;
+			array = &drv->deps;
+			count = &drv->depCount;
 		}
 
 		while(1) {
@@ -207,8 +207,8 @@ static char *parseService(char *line,sServiceLoad *serv) {
 	return line;
 
 failed:
-	free(serv->name);
-	free(serv->deps);
-	free(serv->waits);
+	free(drv->name);
+	free(drv->deps);
+	free(drv->waits);
 	return NULL;
 }

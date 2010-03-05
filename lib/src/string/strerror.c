@@ -58,20 +58,20 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"No write-permission!");
 			break;
 
-		case ERR_INV_SERVICE_NAME:
-			strcpy(msg,"Invalid service name. Alphanumeric, not empty name expected!");
+		case ERR_INV_DRIVER_NAME:
+			strcpy(msg,"Invalid driver name. Alphanumeric, not empty name expected!");
 			break;
 
 		case ERR_NOT_ENOUGH_MEM:
 			strcpy(msg,"Not enough memory!");
 			break;
 
-		case ERR_SERVICE_EXISTS:
-			strcpy(msg,"The service with desired name does already exist!");
+		case ERR_DRIVER_EXISTS:
+			strcpy(msg,"The driver with desired name does already exist!");
 			break;
 
-		case ERR_NOT_OWN_SERVICE:
-			strcpy(msg,"The service-node is not your own!");
+		case ERR_NOT_OWN_DRIVER:
+			strcpy(msg,"The driver-node is not your own!");
 			break;
 
 		case ERR_IOMAP_RESERVED:
@@ -114,8 +114,8 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Invalid inode-number!");
 			break;
 
-		case ERR_SERVUSE_SEEK:
-			strcpy(msg,"seek() with SEEK_SET is not supported for service-usages!");
+		case ERR_DRVUSE_SEEK:
+			strcpy(msg,"seek() with SEEK_SET is not supported for driver-usages!");
 			break;
 
 		case ERR_NO_FREE_PROCS:
@@ -202,8 +202,8 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Block-request failed!");
 			break;
 
-		case ERR_INVALID_SERVID:
-			strcpy(msg,"Invalid service-id!");
+		case ERR_INVALID_DRVID:
+			strcpy(msg,"Invalid driver-id!");
 			break;
 
 		case ERR_INVALID_APP:
@@ -231,24 +231,16 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Application has no permission to join the shared-memory with specified name!");
 			break;
 
-		case ERR_APPS_CRTSERV_NO_PERM:
-			strcpy(msg,"Application has no permission to create a service!");
+		case ERR_APPS_CRTDRV_NO_PERM:
+			strcpy(msg,"Application has no permission to create a driver!");
 			break;
 
 		case ERR_APPS_CRTFS_NO_PERM:
 			strcpy(msg,"Application has no permission to create a fs!");
 			break;
 
-		case ERR_APPS_CRTDRV_NO_PERM:
-			strcpy(msg,"Application has no permission to create a driver!");
-			break;
-
 		case ERR_APPS_DRV_NO_PERM:
 			strcpy(msg,"Application has no permission to use the desired driver!");
-			break;
-
-		case ERR_APPS_SERV_NO_PERM:
-			strcpy(msg,"Application has no permission to use the desired service!");
 			break;
 
 		case ERR_APPS_FS_NO_PERM:

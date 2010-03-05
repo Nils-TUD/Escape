@@ -28,15 +28,15 @@
 #include <string.h>
 #include <width.h>
 #include "parser.h"
-#include "service.h"
+#include "driver.h"
 
-#define SERVICES_FILE		"/etc/services"
+#define DRIVERS_FILE		"/etc/drivers"
 
 /**
- * Loads the service-dependency-file
+ * Loads the driver-dependency-file
  * @return the file-content
  */
-static char *getServices(void);
+static char *getDrivers(void);
 
 int main(void) {
 	tFD fd;
@@ -44,8 +44,8 @@ int main(void) {
 	u32 i,retries = 0;
 	u32 vtLen;
 	char *vtermName;
-	char *servDefs;
-	sServiceLoad **services;
+	char *drvDefs;
+	sDriverLoad **drivers;
 
 	if(getpid() != 0)
 		error("It's not good to start init twice ;)\n");
@@ -62,19 +62,19 @@ int main(void) {
 		error("Unable to open /dev/fs after %d retries",retries);
 	close(fd);
 
-	/* now read the services we should load */
-	servDefs = getServices();
-	if(servDefs == NULL)
-		error("Unable to read service-file");
+	/* now read the drivers we should load */
+	drvDefs = getDrivers();
+	if(drvDefs == NULL)
+		error("Unable to read driver-file");
 
 	/* parse them */
-	services = parseServices(servDefs);
-	if(services == NULL)
-		error("Unable to parse service-file");
+	drivers = parseDrivers(drvDefs);
+	if(drivers == NULL)
+		error("Unable to parse driver-file");
 
 	/* finally load them */
-	if(!loadServices(services))
-		error("Unable to load services");
+	if(!loadDrivers(drivers))
+		error("Unable to load drivers");
 
 	/* remove stdin, stdout and stderr. the shell wants to provide them */
 	close(STDERR_FILENO);
@@ -107,14 +107,14 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static char *getServices(void) {
+static char *getDrivers(void) {
 	const u32 stepSize = 128 * sizeof(u8);
 	tFD fd;
 	u32 c,pos = 0,bufSize = stepSize;
 	char *buffer;
 
 	/* open file */
-	fd = open(SERVICES_FILE,IO_READ);
+	fd = open(DRIVERS_FILE,IO_READ);
 	if(fd < 0)
 		return NULL;
 

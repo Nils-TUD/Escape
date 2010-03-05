@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <messages.h>
-#include <esc/service.h>
+#include <esc/driver.h>
 #include <esc/io.h>
 #include <esc/signals.h>
 #include <esc/gui/common.h>
@@ -30,7 +30,7 @@
 #include <vterm/vtout.h>
 #include "shellapp.h"
 
-ShellApplication::ShellApplication(tServ sid,ShellControl *sh)
+ShellApplication::ShellApplication(tDrvId sid,ShellControl *sh)
 		: Application(), _sid(sid), _sh(sh), rbuffer(new char[READ_BUF_SIZE]), rbufPos(0) {
 	_inst = this;
 }

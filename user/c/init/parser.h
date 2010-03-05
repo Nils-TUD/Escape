@@ -21,14 +21,14 @@
 #define PARSER_H_
 
 #include <esc/common.h>
-#include "service.h"
+#include "driver.h"
 
 /**
- * Parses the given services-file and creates an array of sServiceLoad's.
+ * Parses the given drivers-file and creates an array of sDriverLoad's.
  *
- * @param services the service-file-content
- * @return an array of sServiceLoad's
+ * @param drivers the driver-file-content
+ * @return an array of sDriverLoad's
  */
-sServiceLoad **parseServices(char *services);
+sDriverLoad **parseDrivers(char *drivers);
 
 #endif /* PARSER_H_ */

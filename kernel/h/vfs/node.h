@@ -51,12 +51,12 @@ void vfsn_init(void);
 bool vfsn_isValidNodeNo(tInodeNo nodeNo);
 
 /**
- * Checks wether the given node is a service-node and belongs to the current process
+ * Checks wether the given node is a driver-node and belongs to the current process
  *
  * @param nodeNo the node-number
  * @return true if so
  */
-bool vfsn_isOwnServiceNode(tInodeNo nodeNo);
+bool vfsn_isOwnDriverNode(tInodeNo nodeNo);
 
 /**
  * @param node the node
@@ -199,7 +199,7 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name);
 sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler);
 
 /**
- * Creates a service-node
+ * Creates a driver-node
  *
  * @param tid the thread-id to use
  * @param parent the parent-node
@@ -208,10 +208,10 @@ sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,f
  * @param flags the flags
  * @return the node
  */
-sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 flags);
+sVFSNode *vfsn_createDriverNode(tTid tid,sVFSNode *parent,char *name,u32 flags);
 
 /**
- * Creates a service-use-node
+ * Creates a driver-use-node
  *
  * @param tid the thread-id to use
  * @param parent the parent node
@@ -220,7 +220,7 @@ sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 flags)
  * @param whdlr the write-handler
  * @return the node or NULL
  */
-sVFSNode *vfsn_createServiceUseNode(tTid tid,sVFSNode *parent,char *name,fRead rhdlr,fWrite whdlr);
+sVFSNode *vfsn_createDriverUseNode(tTid tid,sVFSNode *parent,char *name,fRead rhdlr,fWrite whdlr);
 
 /**
  * Appends the given node as last child to the parent
@@ -239,7 +239,7 @@ void vfsn_appendChild(sVFSNode *parent,sVFSNode *node);
 void vfsn_removeNode(sVFSNode *n);
 
 /**
- * Appends a service-usage-node to the given node and stores the pointer to the new node
+ * Appends a driver-usage-node to the given node and stores the pointer to the new node
  * at <child>.
  *
  * @param tid the thread for which the usage should be created
@@ -247,7 +247,7 @@ void vfsn_removeNode(sVFSNode *n);
  * @param child will contain the pointer to the new node, if successfull
  * @return the error-code if negative or 0 if successfull
  */
-s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child);
+s32 vfsn_createDriverUse(tTid tid,sVFSNode *n,sVFSNode **child);
 
 #if DEBUGGING
 

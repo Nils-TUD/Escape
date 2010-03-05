@@ -100,7 +100,7 @@ void sysc_open(sIntrptStackFrame *stack) {
 	/* if it is a driver, call the driver open-command */
 	if(isVirt) {
 		sVFSNode *node = vfsn_getNode(nodeNo);
-		if((node->mode & MODE_TYPE_SERVUSE)) {
+		if((node->mode & MODE_TYPE_DRVUSE)) {
 			err = vfsdrv_open(t->tid,file,node,flags);
 			/* if this went wrong, undo everything and report an error to the user */
 			if(err < 0) {

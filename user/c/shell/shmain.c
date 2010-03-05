@@ -42,7 +42,7 @@ int main(int argc,char **argv) {
 	tPid pid;
 	u32 vterm;
 	char *buffer;
-	char servPath[SSTRLEN("/dev/") + MAX_VTERM_NAME_LEN + 1] = "/dev/";
+	char drvPath[SSTRLEN("/dev/") + MAX_VTERM_NAME_LEN + 1] = "/dev/";
 
 	/* we need either the vterm as argument or "-e <cmd>" */
 	if((argc != 2 && argc != 3) || isHelpCmd(argc,argv)) {
@@ -67,15 +67,15 @@ int main(int argc,char **argv) {
 	/* interactive mode */
 
 	/* open stdin */
-	strcat(servPath,argv[1]);
+	strcat(drvPath,argv[1]);
 	/* parse vterm-number from "vtermX" */
 	vterm = atoi(argv[1] + 5);
-	if(open(servPath,IO_READ) < 0)
-		error("Unable to open '%s' for STDIN",servPath);
+	if(open(drvPath,IO_READ) < 0)
+		error("Unable to open '%s' for STDIN",drvPath);
 
 	/* open stdout */
-	if((fd = open(servPath,IO_WRITE)) < 0)
-		error("Unable to open '%s' for STDOUT",servPath);
+	if((fd = open(drvPath,IO_WRITE)) < 0)
+		error("Unable to open '%s' for STDOUT",drvPath);
 
 	/* dup stdout to stderr */
 	if(dupFd(fd) < 0)

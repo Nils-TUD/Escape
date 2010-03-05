@@ -31,7 +31,7 @@
 
 /* forward declarations */
 static void test_vfs(void);
-static void test_vfs_createService(void);
+static void test_vfs_createDriver(void);
 
 /* public vfs-node for test-purposes */
 typedef struct {
@@ -52,30 +52,30 @@ sTestModule tModVFS = {
 };
 
 static void test_vfs(void) {
-	test_vfs_createService();
+	test_vfs_createDriver();
 }
 
-static void test_vfs_createService(void) {
+static void test_vfs_createDriver(void) {
 	u32 oldHeap,newHeap;
 	s32 id,id2,id3;
 
-	test_caseStart("Testing vfs_createService()");
+	test_caseStart("Testing vfs_createDriver()");
 
 	oldHeap = kheap_getFreeMem();
 
-	id = vfs_createService(0,"test",0);
+	id = vfs_createDriver(0,"test",0);
 	if(!test_assertTrue(vfsn_isValidNodeNo(id))) return;
-	id2 = vfs_createService(0,"test2",0);
+	id2 = vfs_createDriver(0,"test2",0);
 	if(!test_assertTrue(vfsn_isValidNodeNo(id2))) return;
-	if(!test_assertInt(vfs_createService(1,"test",0),ERR_SERVICE_EXISTS)) return;
-	if(!test_assertInt(vfs_createService(1,"",0),ERR_INV_SERVICE_NAME)) return;
-	if(!test_assertInt(vfs_createService(1,"abc.def",0),ERR_INV_SERVICE_NAME)) return;
-	id3 = vfs_createService(1,"test3",0);
+	if(!test_assertInt(vfs_createDriver(1,"test",0),ERR_DRIVER_EXISTS)) return;
+	if(!test_assertInt(vfs_createDriver(1,"",0),ERR_INV_DRIVER_NAME)) return;
+	if(!test_assertInt(vfs_createDriver(1,"abc.def",0),ERR_INV_DRIVER_NAME)) return;
+	id3 = vfs_createDriver(1,"test3",0);
 	if(!test_assertTrue(vfsn_isValidNodeNo(id3))) return;
 
-	vfs_removeService(0,id);
-	vfs_removeService(0,id2);
-	vfs_removeService(1,id3);
+	vfs_removeDriver(0,id);
+	vfs_removeDriver(0,id2);
+	vfs_removeDriver(1,id3);
 
 	/* check mem-usage */
 	newHeap = kheap_getFreeMem();

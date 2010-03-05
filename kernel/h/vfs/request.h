@@ -61,7 +61,7 @@ bool vfsreq_setHandler(tMsgId id,fReqHandler f);
  * Sends the given message to the appropriate handler
  *
  * @param id the message-id
- * @param node the service-node
+ * @param node the driver-node
  * @param tid the receiver-tid
  * @param data the message
  * @param size the size of the message

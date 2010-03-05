@@ -53,9 +53,9 @@ s32 vfsrw_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32
 s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
- * Read-handler for service-usages (receive a message)
+ * Read-handler for driver-usages (receive a message)
  */
-s32 vfsrw_readServUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size);
+s32 vfsrw_readDrvUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size);
 
 /**
  * The default write-handler for the VFS
@@ -68,8 +68,8 @@ s32 vfsrw_writeDef(tTid tid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset
 s32 vfsrw_writePipe(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
 
 /**
- * Write-handler for service-usages (send a message)
+ * Write-handler for driver-usages (send a message)
  */
-s32 vfsrw_writeServUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size);
+s32 vfsrw_writeDrvUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size);
 
 #endif /* VFSRW_H_ */

@@ -21,7 +21,7 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/proc.h>
-#include <esc/service.h>
+#include <esc/driver.h>
 #include <messages.h>
 #include <stdlib.h>
 #include "driver.h"
@@ -31,13 +31,13 @@ static sMsg msg;
 int mod_driver(int argc,char *argv[]) {
 	bool quit = false;
 	tMsgId mid;
-	tServ id;
+	tDrvId id;
 	UNUSED(argc);
 	UNUSED(argv);
 
-	id = regService("bla",DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE);
+	id = regDriver("bla",DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE);
 	if(id < 0)
-		printe("regService");
+		printe("regDriver");
 
 	if(fork() == 0) {
 		char buf[10] = {0};
@@ -121,6 +121,6 @@ int mod_driver(int argc,char *argv[]) {
 		}
 	}
 
-	unregService(id);
+	unregDriver(id);
 	return EXIT_SUCCESS;
 }

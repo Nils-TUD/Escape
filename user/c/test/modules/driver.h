@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DRIVER_H_
-#define DRIVER_H_
+#ifndef TEST_DRIVER_H_
+#define TEST_DRIVER_H_
 
 #include <esc/common.h>
 
@@ -27,4 +27,4 @@
  */
 int mod_driver(int argc,char *argv[]);
 
-#endif /* DRIVER_H_ */
+#endif /* TEST_DRIVER_H_ */

@@ -51,7 +51,7 @@ void sysc_pipe(sIntrptStackFrame *stack);
 void sysc_tell(sIntrptStackFrame *stack);
 
 /**
- * Tests wether we are at the end of the file (or if there is a message for service-usages)
+ * Tests wether we are at the end of the file (or if there is a message for driver-usages)
  *
  * @param tFD file-descriptor
  * @return bool true if we are at EOF
@@ -143,7 +143,7 @@ void sysc_hasMsg(sIntrptStackFrame *stack);
 
 /**
  * Checks wether the given file links to a terminal. That means it has to be a virtual file
- * that acts as a service-client for a terminal-service.
+ * that acts as a driver-client for a terminal-driver.
  *
  * @param tFD the file-descriptor
  * @return bool true if so

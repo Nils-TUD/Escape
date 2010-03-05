@@ -321,8 +321,8 @@ s32 vfsinfo_dirReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 o
 			n = n->next;
 		}
 
-		/* the root-directory is distributed on the fs-service and the kernel */
-		/* therefore we have to read it from the fs-service, too */
+		/* the root-directory is distributed on the fs-driver and the kernel */
+		/* therefore we have to read it from the fs-driver, too */
 		if(node->parent == NULL) {
 			const u32 bufSize = 1024;
 			u32 c,curSize = bufSize;

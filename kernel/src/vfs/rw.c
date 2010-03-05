@@ -29,10 +29,10 @@
 #include <errors.h>
 #include <assert.h>
 
-/* the initial size of the write-cache for service-usage-nodes */
+/* the initial size of the write-cache for driver-usage-nodes */
 #define VFS_INITIAL_WRITECACHE		128
 
-/* a message (for communicating with services) */
+/* a message (for communicating with drivers) */
 typedef struct {
 	tMsgId id;
 	u32 length;
@@ -161,7 +161,7 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 	return total;
 }
 
-s32 vfsrw_readServUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
+s32 vfsrw_readDrvUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
 	sSLList **list;
 	sMessage *msg;
 	u16 event;
@@ -171,11 +171,11 @@ s32 vfsrw_readServUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u
 	/* wait until a message arrives */
 	if(node->parent->owner == tid) {
 		event = EV_CLIENT;
-		list = &node->data.servuse.sendList;
+		list = &node->data.drvuse.sendList;
 	}
 	else {
 		event = EV_RECEIVED_MSG;
-		list = &node->data.servuse.recvList;
+		list = &node->data.drvuse.recvList;
 	}
 	while(sll_length(*list) == 0) {
 		thread_wait(tid,0,event);
@@ -296,27 +296,27 @@ s32 vfsrw_writePipe(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 of
 	return count;
 }
 
-s32 vfsrw_writeServUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
+s32 vfsrw_writeDrvUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
 	sSLList **list;
 	sMessage *msg;
 
 	UNUSED(file);
 
-	/* services write to the receive-list (which will be read by other processes) */
+	/* drivers write to the receive-list (which will be read by other processes) */
 	if(n->parent->owner == tid) {
 		/* if it is from a driver or fs, don't enqueue it but pass it directly to
 		 * the corresponding handler */
-		if(DRV_IS_FS(n->parent->data.service.funcs) ||
+		if(DRV_IS_FS(n->parent->data.driver.funcs) ||
 			(id == MSG_DRV_OPEN_RESP || id == MSG_DRV_READ_RESP || id == MSG_DRV_WRITE_RESP)) {
 			vfsreq_sendMsg(id,n->parent,n->owner,data,size);
 			return 0;
 		}
 
-		list = &(n->data.servuse.recvList);
+		list = &(n->data.drvuse.recvList);
 	}
-	/* other processes write to the send-list (which will be read by the service) */
+	/* other processes write to the send-list (which will be read by the driver) */
 	else
-		list = &(n->data.servuse.sendList);
+		list = &(n->data.drvuse.sendList);
 
 	if(*list == NULL)
 		*list = sll_create();
@@ -340,8 +340,8 @@ s32 vfsrw_writeServUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *dat
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
-	/* notify the service */
-	if(list == &(n->data.servuse.sendList))
+	/* notify the driver */
+	if(list == &(n->data.drvuse.sendList))
 		thread_wakeup(n->parent->owner,EV_CLIENT);
 	/* notify the process that there is a message */
 	else

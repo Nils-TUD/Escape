@@ -23,7 +23,7 @@
 #include <esc/io.h>
 #include <esc/env.h>
 #include <esc/signals.h>
-#include <esc/service.h>
+#include <esc/driver.h>
 #include <esc/dir.h>
 #include <esc/thread.h>
 #include <esc/lock.h>
@@ -43,7 +43,7 @@
 
 using namespace esc::gui;
 
-static char *servName;
+static char *drvName;
 
 /**
  * The shell-Thread
@@ -69,32 +69,32 @@ int main(int argc,char **argv) {
 	// use a lock here to ensure that no one uses our guiterm-number
 	lockg(GUI_SHELL_LOCK);
 
-	// announce service; try to find an unused service-name because maybe a user wants
+	// announce driver; try to find an unused driver-name because maybe a user wants
 	// to start us multiple times
-	tServ sid;
+	tDrvId sid;
 	u32 no = 0;
-	servName = new char[MAX_PATH_LEN + 1];
+	drvName = new char[MAX_PATH_LEN + 1];
 	do {
-		snprintf(servName,MAX_PATH_LEN + 1,"guiterm%d",no);
-		sid = regService(servName,DRV_READ | DRV_WRITE | DRV_TERM);
+		snprintf(drvName,MAX_PATH_LEN + 1,"guiterm%d",no);
+		sid = regDriver(drvName,DRV_READ | DRV_WRITE | DRV_TERM);
 		if(sid >= 0)
 			break;
 		no++;
 	}
 	while(sid < 0);
-	unregService(sid);
+	unregDriver(sid);
 
 	// set term as env-variable
-	setEnv("TERM",servName);
+	setEnv("TERM",drvName);
 
 	// the child handles the GUI
 	if(fork() == 0) {
-		// re-register service
-		sid = regService(servName,DRV_READ | DRV_WRITE | DRV_TERM);
+		// re-register driver
+		sid = regDriver(drvName,DRV_READ | DRV_WRITE | DRV_TERM);
 		unlockg(GUI_SHELL_LOCK);
 		if(sid < 0)
-			error("Unable to re-register driver %s",servName);
-		delete servName;
+			error("Unable to re-register driver %s",drvName);
+		delete drvName;
 
 		// now start GUI
 		ShellControl *sh = new ShellControl(sid,0,0,700,480);
@@ -104,29 +104,29 @@ int main(int argc,char **argv) {
 		return app->run();
 	}
 
-	// wait until the service is announced
-	delete servName;
-	char *servPath = new char[MAX_PATH_LEN + 1];
-	snprintf(servPath,MAX_PATH_LEN + 1,"/dev/guiterm%d",no);
+	// wait until the driver is announced
+	delete drvName;
+	char *drvPath = new char[MAX_PATH_LEN + 1];
+	snprintf(drvPath,MAX_PATH_LEN + 1,"/dev/guiterm%d",no);
 	tFD fin;
 	do {
-		fin = open(servPath,IO_READ);
+		fin = open(drvPath,IO_READ);
 		if(fin < 0)
 			yield();
 	}
 	while(fin < 0);
 
-	// redirect fds so that stdin, stdout and stderr refer to our service
+	// redirect fds so that stdin, stdout and stderr refer to our driver
 	if(redirFd(STDIN_FILENO,fin) < 0)
 		error("Unable to redirect STDIN to %d",fin);
-	tFD fout = open(servPath,IO_WRITE);
+	tFD fout = open(drvPath,IO_WRITE);
 	if(fout < 0)
-		error("Unable to open '%s' for writing",servPath);
+		error("Unable to open '%s' for writing",drvPath);
 	if(redirFd(STDOUT_FILENO,fout) < 0)
 		error("Unable to redirect STDOUT to %d",fout);
 	if(redirFd(STDERR_FILENO,fout) < 0)
 		error("Unable to redirect STDERR to %d",fout);
-	delete servPath;
+	delete drvPath;
 
 	/* give vterm our pid */
 	sendMsgData(fin,IOCTL_VT_SHELLPID,(u8*)getpid(),sizeof(tPid));

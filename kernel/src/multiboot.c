@@ -85,7 +85,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	u32 i,entryPoint;
 	tPid pid;
 	sProc *p;
-	char *name,*space,*service;
+	char *name,*space,*driver;
 	tInodeNo nodeNo;
 	sModule *mod = mb->modsAddr;
 
@@ -99,13 +99,13 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	for(i = 0; i < mb->modsCount; i++) {
 		name = mod->name;
 		space = strchr(name,' ');
-		service = space + 1;
-		service[-1] = '\0';
-		space = strchr(service,' ');
+		driver = space + 1;
+		driver[-1] = '\0';
+		space = strchr(driver,' ');
 		if(space)
 			space[0] = '\0';
 
-		MB_PR("Loading module %d: '%s' '%s'",i,name,service);
+		MB_PR("Loading module %d: '%s' '%s'",i,name,driver);
 
 		/* clone proc */
 		pid = proc_getFreePid();
@@ -140,7 +140,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			/* remove data-pages */
 			proc_changeSize(-p->dataPages,CHG_DATA);
 			MB_PR("Loading from mem");
-			/* now load service */
+			/* now load driver */
 			memcpy(p->command,name,strlen(name) + 1);
 			entryPoint = elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart);
 			if((s32)entryPoint < 0)
@@ -159,14 +159,14 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			return;
 		}
 
-		/* wait until the service is registered */
-		vid_printf("Loading '%s'...\n",service);
-		/* don't wait for ATA, since it doesn't register a service but multiple drivers depending
+		/* wait until the driver is registered */
+		vid_printf("Loading '%s'...\n",driver);
+		/* don't wait for ATA, since it doesn't register a driver but multiple drivers depending
 		 * on the available drives and partitions */
 		/* TODO better solution? */
-		if(strcmp(service,"/dev/ata") != 0) {
-			/* don't create a pipe- or service-usage-node here */
-			while(vfsn_resolvePath(service,&nodeNo,NULL,VFS_NOACCESS) < 0)
+		if(strcmp(driver,"/dev/ata") != 0) {
+			/* don't create a pipe- or driver-usage-node here */
+			while(vfsn_resolvePath(driver,&nodeNo,NULL,VFS_NOACCESS) < 0)
 				thread_switchInKernel();
 		}
 

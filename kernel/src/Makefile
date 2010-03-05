@@ -40,7 +40,7 @@ SYMBOLOBJ = $(patsubst %.c,$(BUILDK)/%.o,$(SYMBOLSRC))
 
 all:	$(BIN)
 
-$(BIN):	$(BUILDDIRS) $(SYMBOLS) $(SERVICES) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ) $(GCCLIB)
+$(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ) $(GCCLIB)
 		@echo "	" LINKING $(BIN)
 		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) $(GCCLIB);
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect

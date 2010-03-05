@@ -27,7 +27,9 @@
 #include <esc/signals.h>
 #include <esc/heap.h>
 #include <esc/proc.h>
+#include <esc/algo.h>
 #include <messages.h>
+#include <string.h>
 #include <errors.h>
 
 #define IOPORT_KB_DATA				0x60

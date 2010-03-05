@@ -24,7 +24,6 @@
 #include <esc/debug.h>
 #include <esc/date.h>
 #include <errors.h>
-#include <stdlib.h>
 #include "speed.h"
 
 /*#define BUF_SIZE	4096 * 32

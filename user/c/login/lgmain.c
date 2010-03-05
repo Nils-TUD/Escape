@@ -21,7 +21,6 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/signals.h>
-#include <stdlib.h>
 #include <string.h>
 #include <messages.h>
 

@@ -21,8 +21,6 @@
 #include <esc/date.h>
 #include <esc/fileio.h>
 #include <esc/cmdargs.h>
-#include <stdlib.h>
-
 #define MAX_DATE_LEN 100
 
 int main(int argc,char **argv) {

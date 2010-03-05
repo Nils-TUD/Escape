@@ -25,7 +25,6 @@
 #include <messages.h>
 #include <esc/heap.h>
 #include <string.h>
-#include <stdlib.h>
 #include "env.h"
 
 #define MAX_ENV_LEN		255

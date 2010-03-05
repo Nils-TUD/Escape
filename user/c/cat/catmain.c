@@ -20,9 +20,9 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/dir.h>
+#include <esc/heap.h>
 #include <esc/fileio.h>
 #include <esc/cmdargs.h>
-#include <stdlib.h>
 
 #define BUF_SIZE 512
 

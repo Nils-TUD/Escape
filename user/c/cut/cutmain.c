@@ -21,10 +21,9 @@
 #include <esc/fileio.h>
 #include <esc/dir.h>
 #include <esc/cmdargs.h>
+#include <esc/proc.h>
 #include <string.h>
 #include <ctype.h>
-#include <stdlib.h>
-
 #define MAX_LINE_LEN	255
 
 static void printFields(char *line,const char *delim,s32 first,s32 last);

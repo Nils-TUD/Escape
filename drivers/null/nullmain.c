@@ -21,7 +21,6 @@
 #include <esc/driver.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
-#include <stdlib.h>
 #include <messages.h>
 #include <errors.h>
 

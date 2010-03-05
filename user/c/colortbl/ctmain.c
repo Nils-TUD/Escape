@@ -20,8 +20,6 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/fileio.h>
-#include <stdlib.h>
-
 int main(void) {
 	u32 i,j;
 	prints("    ");

@@ -22,7 +22,6 @@
 #include <esc/ports.h>
 #include <esc/debug.h>
 #include <esc/dir.h>
-#include <stdlib.h>
 #include <assert.h>
 #include "pcilist.h"
 

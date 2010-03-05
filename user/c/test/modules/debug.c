@@ -19,7 +19,6 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include <stdlib.h>
 #include "debug.h"
 
 int mod_debug(int argc,char *argv[]) {

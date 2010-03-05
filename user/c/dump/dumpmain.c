@@ -22,10 +22,11 @@
 #include <esc/dir.h>
 #include <esc/fileio.h>
 #include <esc/cmdargs.h>
+#include <esc/heap.h>
+#include <esc/proc.h>
 #include <string.h>
 #include <messages.h>
 #include <ctype.h>
-#include <stdlib.h>
 #include <width.h>
 
 #define BUF_SIZE 512

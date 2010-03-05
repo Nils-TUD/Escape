@@ -26,7 +26,6 @@
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <errors.h>
 #include <sllist.h>

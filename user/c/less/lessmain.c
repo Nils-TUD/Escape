@@ -25,10 +25,9 @@
 #include <esc/keycodes.h>
 #include <esc/cmdargs.h>
 #include <esc/env.h>
+#include <string.h>
 #include <messages.h>
 #include <esccodes.h>
-#include <stdlib.h>
-
 #define BUFFER_SIZE			1024
 #define BUFFER_INC_SIZE		64
 #define TAB_WIDTH			4

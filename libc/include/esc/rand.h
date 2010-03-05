@@ -17,22 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/debug.h>
-#include <esc/io.h>
-#include <esc/fileio.h>
-#include "fault.h"
+#ifndef RAND_H_
+#define RAND_H_
 
-int mod_fault(int argc,char *argv[]) {
-	u32 *ptr;
-	tFD fd;
-	UNUSED(argc);
-	UNUSED(argv);
-	printf("I am evil ^^\n");
-	fd = open((char*)0x12345678,IO_READ);
-	ptr = (u32*)0xFFFFFFFF;
-	*ptr = 1;
-	printf("Never printed\n");
-	close(fd);
-	return EXIT_SUCCESS;
-}
+#include <esc/common.h>
+
+/* max rand-number */
+#define RAND_MAX 0xFFFFFFFF
+
+/**
+ * Rand will generate a random number between 0 and 'RAND_MAX' (at least 32767).
+ *
+ * @return the random number
+ */
+s32 rand(void);
+
+/**
+ * Srand seeds the random number generation function rand so it does not produce the same
+ * sequence of numbers.
+ */
+void srand(u32 seed);
+
+#endif /* RAND_H_ */

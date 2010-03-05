@@ -22,10 +22,10 @@
 #include <esc/io.h>
 #include <esc/debug.h>
 #include <esc/driver.h>
-#include <messages.h>
 #include <esc/keycodes.h>
 #include <esc/signals.h>
-#include <stdlib.h>
+#include <esc/proc.h>
+#include <messages.h>
 #include "window.h"
 
 #define MOUSE_DATA_BUF_SIZE	128

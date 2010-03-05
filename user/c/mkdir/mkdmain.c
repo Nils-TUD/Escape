@@ -22,8 +22,6 @@
 #include <esc/fileio.h>
 #include <esc/dir.h>
 #include <esc/io.h>
-#include <stdlib.h>
-
 int main(int argc,char *argv[]) {
 	s32 i;
 	char path[MAX_PATH_LEN];

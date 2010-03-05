@@ -21,7 +21,6 @@
 #include <esc/fileio.h>
 #include <esc/proc.h>
 #include <string.h>
-#include <stdlib.h>
 #include "procswarm.h"
 
 int mod_procswarm(int argc,char *argv[]) {

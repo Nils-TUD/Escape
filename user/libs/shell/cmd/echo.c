@@ -20,7 +20,6 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
-#include <stdlib.h>
 #include "echo.h"
 
 s32 shell_cmdEcho(u32 argc,char *argv[]) {

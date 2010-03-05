@@ -22,7 +22,6 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/dir.h>
-#include <stdlib.h>
 #include <string.h>
 
 int main(int argc,char *argv[]) {

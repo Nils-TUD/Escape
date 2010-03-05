@@ -18,21 +18,26 @@
  */
 
 #include <esc/common.h>
-#include <esc/debug.h>
-#include <esc/io.h>
-#include <esc/fileio.h>
-#include "fault.h"
+#include <esc/math.h>
 
-int mod_fault(int argc,char *argv[]) {
-	u32 *ptr;
-	tFD fd;
-	UNUSED(argc);
-	UNUSED(argv);
-	printf("I am evil ^^\n");
-	fd = open((char*)0x12345678,IO_READ);
-	ptr = (u32*)0xFFFFFFFF;
-	*ptr = 1;
-	printf("Never printed\n");
-	close(fd);
-	return EXIT_SUCCESS;
+s32 abs(s32 n) {
+	return n < 0 ? -n : n;
+}
+
+s64 labs(s64 n) {
+	return n < 0 ? -n : n;
+}
+
+tDiv div(s32 numerator,s32 denominator) {
+	tDiv res;
+	res.quot = numerator / denominator;
+	res.rem = numerator % denominator;
+	return res;
+}
+
+tLDiv ldiv(s64 numerator,s64 denominator) {
+	tLDiv res;
+	res.quot = numerator / denominator;
+	res.rem = numerator % denominator;
+	return res;
 }

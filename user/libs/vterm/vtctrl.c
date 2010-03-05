@@ -30,7 +30,6 @@
 #include <esc/lock.h>
 #include <esc/thread.h>
 #include <esc/date.h>
-#include <stdlib.h>
 #include <string.h>
 #include <errors.h>
 #include <assert.h>

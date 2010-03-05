@@ -23,7 +23,7 @@
 #include <esc/dir.h>
 #include <esc/fileio.h>
 #include <esc/cmdargs.h>
-#include <stdlib.h>
+#include <esc/proc.h>
 #include <string.h>
 #include <ctype.h>
 

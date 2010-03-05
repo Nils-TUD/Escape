@@ -21,7 +21,6 @@
 #include <esc/proc.h>
 #include <esc/fileio.h>
 #include <esc/heap.h>
-#include <stdlib.h>
 #include <string.h>
 
 #if 0

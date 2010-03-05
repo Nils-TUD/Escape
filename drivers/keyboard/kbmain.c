@@ -29,7 +29,6 @@
 #include <esc/signals.h>
 #include <esc/lock.h>
 #include <esc/keycodes.h>
-#include <stdlib.h>
 #include <string.h>
 #include <ringbuffer.h>
 #include <errors.h>

@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <stdlib.h>
 #include <test.h>
 
 #include "tests/theap.h"

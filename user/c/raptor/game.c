@@ -22,7 +22,7 @@
 #include <esc/conf.h>
 #include <esc/keycodes.h>
 #include <esc/date.h>
-#include <stdlib.h>
+#include <esc/rand.h>
 #include "game.h"
 #include "bar.h"
 #include "objlist.h"

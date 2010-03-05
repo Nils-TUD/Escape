@@ -24,8 +24,6 @@
 #include <esc/date.h>
 #include <esc/cmdargs.h>
 #include <fsinterface.h>
-#include <stdlib.h>
-
 #define MAX_DATE_LEN	64
 
 static void stat_printDate(const char *title,u32 timestamp);

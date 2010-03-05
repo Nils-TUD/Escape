@@ -23,7 +23,6 @@
 #include <esc/thread.h>
 #include <esc/fileio.h>
 #include <esc/dir.h>
-#include <stdlib.h>
 #include <assert.h>
 #include "thread.h"
 

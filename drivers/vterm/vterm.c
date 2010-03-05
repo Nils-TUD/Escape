@@ -26,9 +26,9 @@
 #include <esc/keycodes.h>
 #include <esc/signals.h>
 #include <esc/driver.h>
+#include <esc/proc.h>
 #include <esc/conf.h>
 #include <messages.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <vterm/vtctrl.h>

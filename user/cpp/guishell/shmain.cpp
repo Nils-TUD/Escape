@@ -27,8 +27,6 @@
 #include <esc/dir.h>
 #include <esc/thread.h>
 #include <esc/lock.h>
-#include <stdlib.h>
-
 #include <esc/gui/application.h>
 #include <esc/gui/window.h>
 

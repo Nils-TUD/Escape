@@ -28,7 +28,6 @@
 #include <esc/signals.h>
 #include <messages.h>
 #include <errors.h>
-#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <fsinterface.h>

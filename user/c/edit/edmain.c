@@ -24,7 +24,6 @@
 #include <esc/keycodes.h>
 #include <esc/dir.h>
 #include <esccodes.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <limits.h>
 #include "buffer.h"

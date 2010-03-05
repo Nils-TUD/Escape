@@ -20,7 +20,6 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/fileio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "fork.h"
 

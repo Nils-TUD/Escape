@@ -118,6 +118,19 @@ s32 wait(u8 events);
 s32 waitChild(sExitState *state);
 
 /**
+ * The system function is used to issue a command. Execution of your program will not
+ * continue until the command has completed.
+ *
+ * @param cmd string containing the system command to be executed.
+ * @return The value returned when the argument passed is not NULL, depends on the running
+ * 	environment specifications. In many systems, 0 is used to indicate that the command was
+ * 	successfully executed and other values to indicate some sort of error.
+ * 	When the argument passed is NULL, the function returns a nonzero value if the command
+ * 	processor is available, and zero otherwise.
+ */
+s32 system(const char *cmd);
+
+/**
  * Registers the given function for calling when _exit() is called. Registered functions are
  * called in reverse order. Note that the number of functions is limited!
  *

@@ -27,8 +27,9 @@
 #include <esc/mem.h>
 #include <esc/rect.h>
 #include <esc/vm86.h>
-#include <stdlib.h>
+#include <esc/heap.h>
 #include <errors.h>
+#include <string.h>
 #include <assert.h>
 
 #include <vbe/vbe.h>

@@ -26,8 +26,6 @@
 #include <esc/conf.h>
 #include <string.h>
 #include <errors.h>
-#include <stdlib.h>
-
 #define TIMER_INC			(1000 / timerFreq)
 
 static void sigTimer(tSig sig,u32 data);

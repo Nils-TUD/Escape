@@ -22,8 +22,6 @@
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <esc/cmdargs.h>
-#include <stdlib.h>
-
 int main(int argc,char *argv[]) {
 	char oldPath[MAX_PATH_LEN];
 	char newPath[MAX_PATH_LEN];

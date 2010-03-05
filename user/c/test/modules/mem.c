@@ -20,7 +20,6 @@
 #include <esc/common.h>
 #include <esc/heap.h>
 #include <esc/fileio.h>
-#include <stdlib.h>
 #include "mem.h"
 
 #define STEP_SIZE 1024

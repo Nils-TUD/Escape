@@ -27,7 +27,6 @@
 #include <esc/mem.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
-#include <stdlib.h>
 #include <string.h>
 #include <errors.h>
 

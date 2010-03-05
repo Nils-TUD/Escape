@@ -26,7 +26,6 @@
 #include <esc/driver.h>
 #include <esc/debug.h>
 #include <esc/io.h>
-#include <stdlib.h>
 #include <sllist.h>
 #include <string.h>
 #include "window.h"

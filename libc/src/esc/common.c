@@ -25,8 +25,6 @@
 #include <register.h>
 #include <string.h>
 #include <stdarg.h>
-#include <stdlib.h>
-
 #define PROCINFO_BUF_SIZE	256
 #define MAX_STACK_DEPTH		20
 /* the x86-call instruction is 5 bytes long */

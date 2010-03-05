@@ -23,7 +23,7 @@
 #include <esc/env.h>
 #include <esc/signals.h>
 #include <esc/cmdargs.h>
-#include <stdlib.h>
+#include <esc/heap.h>
 #include <messages.h>
 
 #include <shell/shell.h>

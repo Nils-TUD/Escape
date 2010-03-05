@@ -23,7 +23,8 @@
 #include <esc/dir.h>
 #include <esc/heap.h>
 #include <esc/cmdargs.h>
-#include <stdlib.h>
+#include <esc/algo.h>
+#include <esc/proc.h>
 #include <string.h>
 
 #define ARRAY_INC		16

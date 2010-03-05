@@ -22,7 +22,8 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/date.h>
-#include <stdlib.h>
+#include <esc/heap.h>
+#include <esc/rand.h>
 #include <messages.h>
 #include <errors.h>
 

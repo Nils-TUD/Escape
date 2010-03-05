@@ -21,7 +21,6 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/proc.h>
-#include <stdlib.h>
 #include <messages.h>
 
 int main(void) {

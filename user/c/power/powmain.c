@@ -23,7 +23,7 @@
 #include <esc/fileio.h>
 #include <esc/proc.h>
 #include <messages.h>
-#include <stdlib.h>
+#include <string.h>
 
 #define POWER_DRV		"/dev/powermng"
 

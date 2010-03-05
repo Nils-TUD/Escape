@@ -24,10 +24,9 @@
 #include <esc/heap.h>
 #include <esc/cmdargs.h>
 #include <esc/signals.h>
+#include <esc/proc.h>
 #include <string.h>
 #include <ctype.h>
-#include <stdlib.h>
-
 static void usage(char *name) {
 	fprintf(stderr,"Usage: %s [if=<file>] [of=<file>] [bs=N] [count=N]\n",name);
 	fprintf(stderr,"	You can use the suffixes K, M and G to specify N\n");

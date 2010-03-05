@@ -25,7 +25,6 @@
 #include <fsinterface.h>
 #include <string.h>
 #include <sllist.h>
-#include <stdlib.h>
 #include "driver.h"
 
 static bool loadDriver(sDriverLoad **loads,sDriverLoad *load);

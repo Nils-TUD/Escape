@@ -23,7 +23,6 @@
 #include <esc/io.h>
 #include <esc/signals.h>
 #include <messages.h>
-#include <stdlib.h>
 #include <stdarg.h>
 #include <errors.h>
 #include "game.h"

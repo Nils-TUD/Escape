@@ -22,8 +22,6 @@
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <esc/cmdargs.h>
-#include <stdlib.h>
-
 int main(int argc,char *argv[]) {
 	s32 i;
 	char rPath[MAX_PATH_LEN];

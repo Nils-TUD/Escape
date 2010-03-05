@@ -23,7 +23,6 @@
 #include <esc/proc.h>
 #include <esc/heap.h>
 #include <esc/debug.h>
-#include <stdlib.h>
 #include <sllist.h>
 #include <string.h>
 #include <width.h>

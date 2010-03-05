@@ -22,7 +22,8 @@
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <esc/fileio.h>
-#include <stdlib.h>
+#include <esc/proc.h>
+#include <string.h>
 
 #define BUF_SIZE 512
 

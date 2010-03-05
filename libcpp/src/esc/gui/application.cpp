@@ -28,8 +28,6 @@
 #include <esc/gui/application.h>
 #include <esc/gui/window.h>
 #include <esc/gui/popupwindow.h>
-#include <stdlib.h>
-
 namespace esc {
 	namespace gui {
 		Application *Application::_inst = NULL;

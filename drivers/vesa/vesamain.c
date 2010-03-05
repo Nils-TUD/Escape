@@ -26,8 +26,10 @@
 #include <esc/debug.h>
 #include <esc/mem.h>
 #include <esc/rect.h>
-#include <stdlib.h>
+#include <esc/heap.h>
+#include <esc/proc.h>
 #include <errors.h>
+#include <string.h>
 #include <sllist.h>
 
 #include "vesa.h"

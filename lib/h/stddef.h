@@ -41,6 +41,10 @@
 #define MAX(a,b)				((a) > (b) ? (a) : (b))
 #define MIN(a,b)				((a) > (b) ? (b) : (a))
 
+/* exit-codes */
+#define EXIT_FAILURE			1
+#define EXIT_SUCCESS			0
+
 /**
  * Assuming that <startx> < <endx> and <endx> is not included (that means with start=0 and end=10
  * 0 .. 9 is used), the macro determines wether the two ranges overlap anywhere.

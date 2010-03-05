@@ -32,8 +32,6 @@
 #include <esc/gui/font.h>
 #include <esc/gui/color.h>
 #include <esc/string.h>
-#include <stdlib.h>
-
 namespace esc {
 	namespace gui {
 		// TODO wrong place

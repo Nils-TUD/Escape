@@ -22,7 +22,6 @@
 #include <esc/fileio.h>
 #include <esc/signals.h>
 #include <esc/cmdargs.h>
-#include <stdlib.h>
 #include <string.h>
 
 #define SIG_NAME_LEN		7

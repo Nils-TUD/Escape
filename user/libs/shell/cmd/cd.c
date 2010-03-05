@@ -25,7 +25,6 @@
 #include <esc/fileio.h>
 #include <esc/heap.h>
 #include <string.h>
-#include <stdlib.h>
 #include "cd.h"
 
 s32 shell_cmdCd(u32 argc,char **argv) {

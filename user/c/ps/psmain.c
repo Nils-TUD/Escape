@@ -23,7 +23,8 @@
 #include <esc/dir.h>
 #include <esc/proc.h>
 #include <esc/cmdargs.h>
-#include <stdlib.h>
+#include <esc/heap.h>
+#include <esc/algo.h>
 #include <sllist.h>
 #include <width.h>
 #include <string.h>

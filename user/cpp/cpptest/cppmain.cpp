@@ -25,8 +25,6 @@
 #include <esc/string.h>
 #include <esc/thread.h>
 #include <esc/gui/bitmapimage.h>
-#include <stdlib.h>
-
 using namespace esc;
 using namespace esc::gui;
 

@@ -22,10 +22,10 @@
 #include <esc/io.h>
 #include <esc/signals.h>
 #include <esc/driver.h>
+#include <esc/heap.h>
 #include <esc/fileio.h>
 #include <messages.h>
 #include <esc/lock.h>
-#include <stdlib.h>
 #include <ringbuffer.h>
 #include <errors.h>
 

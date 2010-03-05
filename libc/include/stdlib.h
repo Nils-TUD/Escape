@@ -20,40 +20,19 @@
 #ifndef STDLIB_H_
 #define STDLIB_H_
 
+#include <esc/common.h>
 #include <esc/heap.h>
 #include <esc/proc.h>
+#include <esc/math.h>
+#include <esc/algo.h>
 #include <types.h>
 #include <limits.h>
 #include <stddef.h>
 #include <string.h>
 
 /* results of div and ldiv */
-typedef struct {
-	int quot;
-	int rem;
-} div_t;
-typedef struct {
-	long quot;
-	long rem;
-} ldiv_t;
-
-/* max rand-number */
-#define RAND_MAX 0xFFFFFFFF
-
-/* exit-codes */
-#define EXIT_FAILURE	1
-#define EXIT_SUCCESS	0
-
-/* function that compares <a> and <b> and returns:
- * 	<a> <  <b>: negative value
- *  <a> == <b>: 0
- *  <a> >  <b>: positive value
- *
- * @param a the first operand
- * @param b the second operand
- * @return the compare-result
- */
-typedef int (*fCompare)(const void *a,const void *b);
+typedef tDiv div_t;
+typedef tLDiv ldiv_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,13 +53,13 @@ extern int atoi(const char *str);
  *
  * @return the random number
  */
-int rand(void);
+extern int rand(void);
 
 /**
  * Srand seeds the random number generation function rand so it does not produce the same
  * sequence of numbers.
  */
-void srand(unsigned int seed);
+extern void srand(unsigned int seed);
 
 /**
  * Allocates space for <nobj> elements, each <size> big, on the heap and memset's the area to 0.
@@ -147,7 +126,7 @@ char *getenv(const char *name);
  * 	When the argument passed is NULL, the function returns a nonzero value if the command
  * 	processor is available, and zero otherwise.
  */
-int system(const char *cmd);
+extern int system(const char *cmd);
 
 /**
  * Searches the given key in the array pointed by base that is formed by num elements,
@@ -167,7 +146,7 @@ int system(const char *cmd);
  * @param cmp the compare-function
  * @return a pointer to an entry in the array that matches the search key or NULL if not found
  */
-void *bsearch(const void *key,const void *base,size_t num,size_t size,fCompare cmp);
+extern void *bsearch(const void *key,const void *base,size_t num,size_t size,fCompare cmp);
 
 /**
  * Sorts the num elements of the array pointed by base, each element size bytes long, using the
@@ -182,19 +161,13 @@ void *bsearch(const void *key,const void *base,size_t num,size_t size,fCompare c
  * @param size the size of each element
  * @param cmp the compare-function
  */
-void qsort(void *base,size_t num,size_t size,fCompare cmp);
+extern void qsort(void *base,size_t num,size_t size,fCompare cmp);
 
 /**
  * @param n the number
  * @return absolute value of <n>
  */
-int abs(int n);
-
-/**
- * @param n the number
- * @return absolute value of <n>
- */
-long int labs(long int n);
+extern int abs(int n);
 
 /**
  * Returns the integral quotient and remainder of the division of numerator by denominator as a
@@ -204,17 +177,7 @@ long int labs(long int n);
  * @param denominator the denominator
  * @return quotient and remainder
  */
-div_t div(int numerator,int denominator);
-
-/**
- * Returns the integral quotient and remainder of the division of numerator by denominator as a
- * structure of type ldiv_t, which has two members: quot and rem.
- *
- * @param numerator the numerator
- * @param denominator the denominator
- * @return quotient and remainder
- */
-ldiv_t ldiv(long numerator,long denominator);
+extern div_t div(int numerator,int denominator);
 
 #ifdef __cplusplus
 }

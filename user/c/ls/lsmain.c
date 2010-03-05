@@ -24,9 +24,12 @@
 #include <esc/env.h>
 #include <esc/date.h>
 #include <esc/cmdargs.h>
-#include <stdlib.h>
+#include <esc/heap.h>
+#include <esc/proc.h>
+#include <esc/algo.h>
 #include <width.h>
 #include <messages.h>
+#include <string.h>
 
 #define DATE_LEN			(SSTRLEN("2009-09-09 14:12") + 1)
 #define ARRAY_INC_SIZE		8

@@ -18,21 +18,23 @@
  */
 
 #include <esc/common.h>
-#include <esc/debug.h>
-#include <esc/io.h>
-#include <esc/fileio.h>
-#include "fault.h"
+#include <esc/lock.h>
+#include <esc/rand.h>
 
-int mod_fault(int argc,char *argv[]) {
-	u32 *ptr;
-	tFD fd;
-	UNUSED(argc);
-	UNUSED(argv);
-	printf("I am evil ^^\n");
-	fd = open((char*)0x12345678,IO_READ);
-	ptr = (u32*)0xFFFFFFFF;
-	*ptr = 1;
-	printf("Never printed\n");
-	close(fd);
-	return EXIT_SUCCESS;
+/* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
+static tULock randLock = 0;
+static u32 randm = RAND_MAX;
+static u32 randa = 1103515245;
+static u32 randc = 12345;
+static u32 lastRand = 0;
+
+s32 rand(void) {
+	locku(&randLock);
+	lastRand = (randa * lastRand + randc) % randm;
+	unlocku(&randLock);
+	return lastRand;
+}
+
+void srand(u32 seed) {
+	lastRand = seed;
 }

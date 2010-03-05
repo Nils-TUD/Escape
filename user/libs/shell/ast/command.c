@@ -23,7 +23,7 @@
 #include <esc/signals.h>
 #include <esc/proc.h>
 #include <esc/dir.h>
-#include <stdlib.h>
+#include <esc/heap.h>
 #include <errors.h>
 #include "../mem.h"
 #include "../exec/running.h"

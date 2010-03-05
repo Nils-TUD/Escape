@@ -27,8 +27,6 @@
 #include <esc/gui/color.h>
 #include <esc/gui/graphicfactory.h>
 #include <esc/string.h>
-#include <stdlib.h>
-
 namespace esc {
 	namespace gui {
 		Color Window::BGCOLOR = Color(0x88,0x88,0x88);

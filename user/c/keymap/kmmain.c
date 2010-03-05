@@ -22,7 +22,6 @@
 #include <esc/fileio.h>
 #include <esc/cmdargs.h>
 #include <esc/dir.h>
-#include <stdlib.h>
 #include <string.h>
 #include <messages.h>
 

@@ -25,7 +25,8 @@
 #include <esc/fileio.h>
 #include <esc/ports.h>
 #include <esc/signals.h>
-#include <stdlib.h>
+#include <esc/heap.h>
+#include <esc/proc.h>
 #include <messages.h>
 #include <errors.h>
 

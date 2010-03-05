@@ -29,7 +29,6 @@
 #include <fsinterface.h>
 #include <messages.h>
 #include <string.h>
-#include <stdlib.h>
 #include <esccodes.h>
 #include <ctype.h>
 #include <errors.h>

@@ -26,7 +26,6 @@
 #include <messages.h>
 #include <errors.h>
 #include <ringbuffer.h>
-#include <stdlib.h>
 #include "keymap.h"
 
 #define KEYMAP_FILE					"/etc/keymap"

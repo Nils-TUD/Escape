@@ -54,7 +54,7 @@
 							".\x17" \
 							"3\x17"
 
-bool vterm_init(sVTerm *vt,sIoCtlSize *vidSize,tFD vidFd,tFD speakerFd) {
+bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd) {
 	u32 i,len;
 	u8 color;
 	char *ptr,*s;
@@ -148,48 +148,48 @@ void vterm_destroy(sVTerm *vt) {
 	free(vt->rlBuffer);
 }
 
-s32 vterm_ioctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data) {
+s32 vterm_ctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data) {
 	s32 res = 0;
 	switch(cmd) {
-		case IOCTL_VT_SHELLPID:
+		case MSG_VT_SHELLPID:
 			/* do it just once */
 			if(vt->shellPid == 0)
 				vt->shellPid = *(tPid*)data;
 			break;
-		case IOCTL_VT_EN_DATE:
+		case MSG_VT_EN_DATE:
 			cfg->refreshDate = true;
 			break;
-		case IOCTL_VT_DIS_DATE:
+		case MSG_VT_DIS_DATE:
 			cfg->refreshDate = false;
 			break;
-		case IOCTL_VT_EN_ECHO:
+		case MSG_VT_EN_ECHO:
 			vt->echo = true;
 			break;
-		case IOCTL_VT_DIS_ECHO:
+		case MSG_VT_DIS_ECHO:
 			vt->echo = false;
 			break;
-		case IOCTL_VT_EN_RDLINE:
+		case MSG_VT_EN_RDLINE:
 			vt->readLine = true;
 			/* reset reading */
 			vt->rlBufPos = 0;
 			vt->rlStartCol = vt->col;
 			break;
-		case IOCTL_VT_DIS_RDLINE:
+		case MSG_VT_DIS_RDLINE:
 			vt->readLine = false;
 			break;
-		case IOCTL_VT_EN_RDKB:
+		case MSG_VT_EN_RDKB:
 			cfg->readKb = true;
 			break;
-		case IOCTL_VT_DIS_RDKB:
+		case MSG_VT_DIS_RDKB:
 			cfg->readKb = false;
 			break;
-		case IOCTL_VT_EN_NAVI:
+		case MSG_VT_EN_NAVI:
 			vt->navigation = true;
 			break;
-		case IOCTL_VT_DIS_NAVI:
+		case MSG_VT_DIS_NAVI:
 			vt->navigation = false;
 			break;
-		case IOCTL_VT_BACKUP:
+		case MSG_VT_BACKUP:
 			if(!vt->screenBackup)
 				vt->screenBackup = (char*)malloc(vt->rows * vt->cols * 2);
 			memcpy(vt->screenBackup,
@@ -198,7 +198,7 @@ s32 vterm_ioctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data) {
 			vt->backupCol = vt->col;
 			vt->backupRow = vt->row;
 			break;
-		case IOCTL_VT_RESTORE:
+		case MSG_VT_RESTORE:
 			if(vt->screenBackup) {
 				memcpy(vt->buffer + vt->firstVisLine * vt->cols * 2,
 						vt->screenBackup,
@@ -210,12 +210,12 @@ s32 vterm_ioctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data) {
 				vterm_markScrDirty(vt);
 			}
 			break;
-		case IOCTL_VT_GETSIZE: {
-			sIoCtlSize *size = (sIoCtlSize*)data;
+		case MSG_VT_GETSIZE: {
+			sVTSize *size = (sVTSize*)data;
 			size->width = vt->cols;
 			/* one line for the title */
 			size->height = vt->rows - 1;
-			res = sizeof(sIoCtlSize);
+			res = sizeof(sVTSize);
 		}
 		break;
 	}

@@ -245,7 +245,7 @@ namespace esc {
 
 			// let window-manager destroy our window
 			_msg.args.arg1 = win->getId();
-			if(send(_winFd,MSG_WIN_DESTROY_REQ,&_msg,sizeof(_msg.args)) < 0) {
+			if(send(_winFd,MSG_WIN_DESTROY,&_msg,sizeof(_msg.args)) < 0) {
 				printe("Unable to destroy window");
 				exit(EXIT_FAILURE);
 			}
@@ -255,7 +255,7 @@ namespace esc {
 			_msg.args.arg1 = win->getId();
 			_msg.args.arg2 = win->getX();
 			_msg.args.arg3 = win->getY();
-			if(send(_winFd,MSG_WIN_MOVE_REQ,&_msg,sizeof(_msg.args)) < 0) {
+			if(send(_winFd,MSG_WIN_MOVE,&_msg,sizeof(_msg.args)) < 0) {
 				printe("Unable to move window");
 				exit(EXIT_FAILURE);
 			}
@@ -265,7 +265,7 @@ namespace esc {
 			_msg.args.arg1 = win->getId();
 			_msg.args.arg2 = win->getWidth();
 			_msg.args.arg3 = win->getHeight();
-			if(send(_winFd,MSG_WIN_RESIZE_REQ,&_msg,sizeof(_msg.args)) < 0) {
+			if(send(_winFd,MSG_WIN_RESIZE,&_msg,sizeof(_msg.args)) < 0) {
 				printe("Unable to resize window");
 				exit(EXIT_FAILURE);
 			}

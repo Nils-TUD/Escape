@@ -27,6 +27,7 @@
 #include <esc/signals.h>
 #include <esc/driver.h>
 #include <esc/conf.h>
+#include <messages.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -63,7 +64,7 @@ sVTerm *vterm_get(u32 index) {
 
 bool vterm_initAll(tDrvId *ids,sVTermCfg *cfg) {
 	tFD vidFd,speakerFd;
-	sIoCtlSize vidSize;
+	sVTSize vidSize;
 	char name[MAX_VT_NAME_LEN + 1];
 	const char *driver;
 	u32 i;
@@ -82,7 +83,7 @@ bool vterm_initAll(tDrvId *ids,sVTermCfg *cfg) {
 	}
 
 	/* request screensize from video-driver */
-	if(recvMsgData(vidFd,IOCTL_VID_GETSIZE,&vidSize,sizeof(sIoCtlSize)) < 0) {
+	if(recvMsgData(vidFd,MSG_VID_GETSIZE,&vidSize,sizeof(sVTSize)) < 0) {
 		printe("Getting screensize failed");
 		return false;
 	}
@@ -208,10 +209,10 @@ static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 
 static void vterm_setCursor(sVTerm *vt) {
 	if(vt->active) {
-		sIoCtlPos pos;
+		sVTPos pos;
 		pos.col = vt->col;
 		pos.row = vt->row;
-		sendMsgData(vt->video,IOCTL_VID_SETCURSOR,&pos,sizeof(pos));
+		sendMsgData(vt->video,MSG_VID_SETCURSOR,&pos,sizeof(pos));
 	}
 }
 

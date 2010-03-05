@@ -157,23 +157,23 @@ int main(void) {
 					}
 					break;
 
-					case IOCTL_VT_SHELLPID:
-					case IOCTL_VT_EN_DATE:
-					case IOCTL_VT_DIS_DATE:
-					case IOCTL_VT_EN_ECHO:
-					case IOCTL_VT_DIS_ECHO:
-					case IOCTL_VT_EN_RDLINE:
-					case IOCTL_VT_DIS_RDLINE:
-					case IOCTL_VT_EN_RDKB:
-					case IOCTL_VT_DIS_RDKB:
-					case IOCTL_VT_EN_NAVI:
-					case IOCTL_VT_DIS_NAVI:
-					case IOCTL_VT_BACKUP:
-					case IOCTL_VT_RESTORE:
-					case IOCTL_VT_GETSIZE:
-						msg.data.arg1 = vterm_ioctl(vt,&cfg,mid,msg.data.d);
+					case MSG_VT_SHELLPID:
+					case MSG_VT_EN_DATE:
+					case MSG_VT_DIS_DATE:
+					case MSG_VT_EN_ECHO:
+					case MSG_VT_DIS_ECHO:
+					case MSG_VT_EN_RDLINE:
+					case MSG_VT_DIS_RDLINE:
+					case MSG_VT_EN_RDKB:
+					case MSG_VT_DIS_RDKB:
+					case MSG_VT_EN_NAVI:
+					case MSG_VT_DIS_NAVI:
+					case MSG_VT_BACKUP:
+					case MSG_VT_RESTORE:
+					case MSG_VT_GETSIZE:
+						msg.data.arg1 = vterm_ctl(vt,&cfg,mid,msg.data.d);
 						vterm_update(vt);
-						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+						send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 						break;
 				}
 			}

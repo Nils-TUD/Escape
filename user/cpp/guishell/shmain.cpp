@@ -129,7 +129,7 @@ int main(int argc,char **argv) {
 	delete drvPath;
 
 	/* give vterm our pid */
-	sendMsgData(fin,IOCTL_VT_SHELLPID,(u8*)getpid(),sizeof(tPid));
+	sendMsgData(fin,MSG_VT_SHELLPID,(u8*)getpid(),sizeof(tPid));
 
 	return shell_main();
 }

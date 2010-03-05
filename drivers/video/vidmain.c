@@ -95,22 +95,22 @@ int main(void) {
 				}
 				break;
 
-				case IOCTL_VID_SETCURSOR: {
-					sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
+				case MSG_VID_SETCURSOR: {
+					sVTPos *pos = (sVTPos*)msg.data.d;
 					pos->col = MIN(pos->col,COLS);
 					pos->row = MIN(pos->row,ROWS);
 					vid_setCursor(pos->row,pos->col);
 					msg.data.arg1 = 0;
-					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
 
-				case IOCTL_VID_GETSIZE: {
-					sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
+				case MSG_VID_GETSIZE: {
+					sVTSize *size = (sVTSize*)msg.data.d;
 					size->width = COLS;
 					size->height = ROWS;
-					msg.data.arg1 = sizeof(sIoCtlSize);
-					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+					msg.data.arg1 = sizeof(sVTSize);
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
 			}

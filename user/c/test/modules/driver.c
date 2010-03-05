@@ -51,12 +51,6 @@ int mod_driver(int argc,char *argv[]) {
 		printf("Writing %s...\n",buf);
 		if(write(fd,buf,10) < 0)
 			printe("write");
-		printf("IOCtl read\n");
-		/* TODO remove me! */
-		/*ioctl(fd,1,(u8*)buf,10);
-		printf("Got '%s'\n",buf);
-		printf("IOCtl write\n");
-		ioctl(fd,0,(u8*)buf,10);*/
 		printf("Closing...\n");
 		close(fd);
 		return EXIT_SUCCESS;
@@ -93,22 +87,6 @@ int mod_driver(int argc,char *argv[]) {
 					free(buf);
 				}
 				break;
-				/* TODO remove me! */
-				/*case MSG_DRV_IOCTL: {
-					u32 cmd = msg.data.arg2;
-					printf("Ioctl: cmd=%d, dsize=%d\n",msg.data.arg1,msg.data.arg2);
-					msg.data.arg1 = 0;
-					if(cmd == 0) {
-						msg.data.arg2 = 0;
-						printf("Got '%s'\n",msg.data.d);
-					}
-					else {
-						msg.data.arg2 = 9;
-						strcpy(msg.data.d,"test1234");
-					}
-					send(cfd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
-				}
-				break;*/
 				case MSG_DRV_CLOSE:
 					printf("Close\n");
 					quit = true;

@@ -23,6 +23,7 @@
 #include <esc/fileio.h>
 #include <esc/cmdargs.h>
 #include <string.h>
+#include <messages.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <width.h>

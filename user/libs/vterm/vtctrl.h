@@ -23,6 +23,7 @@
 #include <esc/common.h>
 #include <ringbuffer.h>
 #include <esccodes.h>
+#include <messages.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -139,10 +140,10 @@ typedef enum {
  * @param speakerFd the file-descriptor for the speaker-driver
  * @return true if successfull
  */
-bool vterm_init(sVTerm *vt,sIoCtlSize *vidSize,tFD vidFd,tFD speakerFd);
+bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd);
 
 /**
- * Handles the ioctl-command
+ * Handles the control-commands
  *
  * @param vt the vterm
  * @param cfg global configuration
@@ -150,7 +151,7 @@ bool vterm_init(sVTerm *vt,sIoCtlSize *vidSize,tFD vidFd,tFD speakerFd);
  * @param data the data
  * @return the result
  */
-s32 vterm_ioctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data);
+s32 vterm_ctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data);
 
 /**
  * Scrolls the screen by <lines> up (positive) or down (negative)

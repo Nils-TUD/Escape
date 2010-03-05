@@ -112,7 +112,7 @@ int main(void) {
 					}
 				}
 				break;
-				case IOCTL_KM_SET: {
+				case MSG_KM_SET: {
 					char *str = msg.data.d;
 					str[sizeof(msg.data.d) - 1] = '\0';
 					sKeymapEntry *newMap = km_parse(str);
@@ -123,7 +123,7 @@ int main(void) {
 						free(map);
 						map = newMap;
 					}
-					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
 			}

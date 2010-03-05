@@ -33,7 +33,7 @@ extern "C" {
 /**
  * Creates a new ring-buffer with given element-size and -count.
  *
- * @param sSize the size of each element
+ * @param eSize the size of each element
  * @param eCount the max. number of elements in the ring
  * @param flags RB_DEFAULT or RB_OVERWRITE
  * @return the ring-buffer or NULL if failed

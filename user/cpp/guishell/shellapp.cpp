@@ -143,22 +143,22 @@ void ShellApplication::driverMain() {
 			}
 			break;
 
-			case IOCTL_VT_SHELLPID:
-			case IOCTL_VT_EN_DATE:
-			case IOCTL_VT_DIS_DATE:
-			case IOCTL_VT_EN_ECHO:
-			case IOCTL_VT_DIS_ECHO:
-			case IOCTL_VT_EN_RDLINE:
-			case IOCTL_VT_DIS_RDLINE:
-			case IOCTL_VT_EN_RDKB:
-			case IOCTL_VT_DIS_RDKB:
-			case IOCTL_VT_EN_NAVI:
-			case IOCTL_VT_DIS_NAVI:
-			case IOCTL_VT_BACKUP:
-			case IOCTL_VT_RESTORE:
-			case IOCTL_VT_GETSIZE:
-				_msg.data.arg1 = vterm_ioctl(_sh->getVTerm(),&_cfg,mid,_msg.data.d);
-				send(fd,MSG_DRV_IOCTL_RESP,&_msg,sizeof(_msg.data));
+			case MSG_VT_SHELLPID:
+			case MSG_VT_EN_DATE:
+			case MSG_VT_DIS_DATE:
+			case MSG_VT_EN_ECHO:
+			case MSG_VT_DIS_ECHO:
+			case MSG_VT_EN_RDLINE:
+			case MSG_VT_DIS_RDLINE:
+			case MSG_VT_EN_RDKB:
+			case MSG_VT_DIS_RDKB:
+			case MSG_VT_EN_NAVI:
+			case MSG_VT_DIS_NAVI:
+			case MSG_VT_BACKUP:
+			case MSG_VT_RESTORE:
+			case MSG_VT_GETSIZE:
+				_msg.data.arg1 = vterm_ctl(_sh->getVTerm(),&_cfg,mid,_msg.data.d);
+				send(fd,MSG_DEF_RESPONSE,&_msg,sizeof(_msg.data));
 				break;
 		}
 		_sh->update();

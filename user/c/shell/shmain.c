@@ -24,6 +24,7 @@
 #include <esc/signals.h>
 #include <esc/cmdargs.h>
 #include <stdlib.h>
+#include <messages.h>
 
 #include <shell/shell.h>
 #include <shell/history.h>
@@ -83,7 +84,7 @@ int main(int argc,char **argv) {
 
 	/* give vterm our pid */
 	pid = getpid();
-	sendMsgData(fd,IOCTL_VT_SHELLPID,(u8*)&pid,sizeof(tPid));
+	sendMsgData(fd,MSG_VT_SHELLPID,(u8*)&pid,sizeof(tPid));
 
 	/* set vterm as env-variable */
 	setEnv("TERM",argv[1]);

@@ -38,8 +38,8 @@ static u32 time = 0;
 
 int main(void) {
 	/* backup screen and stop vterm to read from keyboard */
-	send(STDOUT_FILENO,IOCTL_VT_BACKUP,NULL,0);
-	send(STDOUT_FILENO,IOCTL_VT_DIS_RDKB,NULL,0);
+	send(STDOUT_FILENO,MSG_VT_BACKUP,NULL,0);
+	send(STDOUT_FILENO,MSG_VT_DIS_RDKB,NULL,0);
 
 	keymap = open("/dev/kmmanager",IO_READ | IO_WRITE);
 	if(keymap < 0)
@@ -89,6 +89,6 @@ static void qerror(const char *msg,...) {
 static void quit(void) {
 	game_deinit();
 	close(keymap);
-	send(STDOUT_FILENO,IOCTL_VT_RESTORE,NULL,0);
-	send(STDOUT_FILENO,IOCTL_VT_EN_RDKB,NULL,0);
+	send(STDOUT_FILENO,MSG_VT_RESTORE,NULL,0);
+	send(STDOUT_FILENO,MSG_VT_EN_RDKB,NULL,0);
 }

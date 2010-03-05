@@ -55,8 +55,9 @@
 #define MSG_DRV_OPEN_RESP			12
 #define MSG_DRV_READ_RESP			13
 #define MSG_DRV_WRITE_RESP			14
-#define MSG_DRV_IOCTL_RESP			15
-#define MSG_DRV_CLOSE_RESP			16
+#define MSG_DRV_CLOSE_RESP			15
+/* default response */
+#define MSG_DEF_RESPONSE			100
 /* requests to fs */
 #define MSG_FS_OPEN					200
 #define MSG_FS_READ					201
@@ -75,22 +76,10 @@
 #define MSG_DRV_OPEN				300
 #define MSG_DRV_READ				301
 #define MSG_DRV_WRITE				302
-#define MSG_DRV_IOCTL				303
-#define MSG_DRV_CLOSE				304
+#define MSG_DRV_CLOSE				303
 
 /* == Other messages == */
-#define MSG_KEYBOARD_READ			400
-#define MSG_KEYBOARD_DATA			401
-
-#define MSG_VIDEO_SET				500
-#define MSG_VIDEO_SETSCREEN			501
-#define MSG_VIDEO_SETCURSOR			502
-
 #define MSG_SPEAKER_BEEP			600
-
-#define MSG_ATA_READ_REQ			700
-#define MSG_ATA_WRITE_REQ			701
-#define MSG_ATA_READ_RESP			702
 
 #define MSG_ENV_GET					800
 #define MSG_ENV_SET					801
@@ -107,19 +96,36 @@
 #define MSG_WIN_CREATE_REQ			1100
 #define MSG_WIN_CREATE_RESP			1101
 #define MSG_WIN_MOUSE				1102
-#define MSG_WIN_MOVE_REQ			1103
-#define MSG_WIN_UPDATE				1104
+#define MSG_WIN_MOVE				1103
+#define MSG_WIN_UPDATE_REQ			1104
 #define MSG_WIN_KEYBOARD			1105
 #define MSG_WIN_SET_ACTIVE			1106
-#define MSG_WIN_DESTROY_REQ			1107
-#define MSG_WIN_UPDATE_REQ			1108
-#define MSG_WIN_RESIZE_REQ			1109
-
-#define MSG_RECEIVE					1200
-#define MSG_SEND					1201
+#define MSG_WIN_DESTROY				1107
+#define MSG_WIN_UPDATE				1108
+#define MSG_WIN_RESIZE				1109
 
 #define MSG_POWER_REBOOT			1300
 #define MSG_POWER_SHUTDOWN			1301
+
+#define MSG_VID_SETCURSOR			1400	/* expects sVTPos */
+#define MSG_VID_GETSIZE				1401	/* writes into sVTSize */
+
+#define MSG_VT_EN_ECHO				1500
+#define MSG_VT_DIS_ECHO				1501
+#define MSG_VT_EN_RDLINE			1502
+#define MSG_VT_DIS_RDLINE			1503
+#define MSG_VT_EN_RDKB				1504
+#define MSG_VT_DIS_RDKB				1505
+#define MSG_VT_EN_NAVI				1506
+#define MSG_VT_DIS_NAVI				1507
+#define MSG_VT_BACKUP				1508
+#define MSG_VT_RESTORE				1509
+#define MSG_VT_SHELLPID				1510
+#define MSG_VT_GETSIZE				1511	/* writes into sVTSize */
+#define MSG_VT_EN_DATE				1512
+#define MSG_VT_DIS_DATE				1513
+
+#define MSG_KM_SET					1600	/* sets a keymap, expects the keymap-path as argument */
 
 /* the data read from the keyboard */
 typedef struct {
@@ -158,6 +164,16 @@ typedef struct {
 	u8 blueMaskSize;			/* Size of direct color blue mask  */
 	u8 blueFieldPosition;		/* Bit posn of lsb of blue mask    */
 } sVESAInfo;
+
+typedef struct {
+	u32 col;
+	u32 row;
+} sVTPos;
+
+typedef struct {
+	u32 width;
+	u32 height;
+} sVTSize;
 
 /* the message we're using for communication */
 typedef union {

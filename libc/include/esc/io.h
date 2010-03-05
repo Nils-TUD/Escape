@@ -41,41 +41,6 @@
 #define SEEK_CUR				1
 #define SEEK_END				2
 
-/* ioctl-commands */
-#define IOCTL_VID_SETCURSOR		0		/* expects sIoCtlPos */
-#define IOCTL_VID_GETSIZE		1		/* writes into sIoCtlSize */
-
-#define IOCTL_VT_EN_ECHO		20
-#define IOCTL_VT_DIS_ECHO		21
-#define IOCTL_VT_EN_RDLINE		22
-#define IOCTL_VT_DIS_RDLINE		23
-#define IOCTL_VT_EN_RDKB		24
-#define IOCTL_VT_DIS_RDKB		25
-#define IOCTL_VT_EN_NAVI		26
-#define IOCTL_VT_DIS_NAVI		27
-#define IOCTL_VT_BACKUP			28
-#define IOCTL_VT_RESTORE		29
-#define IOCTL_VT_SHELLPID		30
-#define IOCTL_VT_GETSIZE		31		/* writes into sIoCtlSize */
-#define IOCTL_VT_EN_DATE		32
-#define IOCTL_VT_DIS_DATE		33
-
-#define IOCTL_KM_SET			0		/* sets a keymap, expects the keymap-path as argument */
-
-#define TK_SEND_DATA	1
-#define TK_RECV_RESP	2
-#define TK_RECV_DATA	4
-
-typedef struct {
-	u32 col;
-	u32 row;
-} sIoCtlPos;
-
-typedef struct {
-	u32 width;
-	u32 height;
-} sIoCtlSize;
-
 #ifdef __cplusplus
 extern "C" {
 #endif

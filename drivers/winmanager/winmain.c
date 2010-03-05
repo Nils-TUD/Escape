@@ -103,14 +103,14 @@ int main(void) {
 				}
 				break;
 
-				case MSG_WIN_DESTROY_REQ: {
+				case MSG_WIN_DESTROY: {
 					tWinId wid = (tWinId)msg.args.arg1;
 					if(win_exists(wid))
 						win_destroy(wid,curX,curY);
 				}
 				break;
 
-				case MSG_WIN_MOVE_REQ: {
+				case MSG_WIN_MOVE: {
 					tWinId wid = (tWinId)msg.args.arg1;
 					tCoord x = (tCoord)msg.args.arg2;
 					tCoord y = (tCoord)msg.args.arg3;
@@ -119,7 +119,7 @@ int main(void) {
 				}
 				break;
 
-				case MSG_WIN_RESIZE_REQ: {
+				case MSG_WIN_RESIZE: {
 					tWinId wid = (tWinId)msg.args.arg1;
 					tSize width = (tSize)msg.args.arg2;
 					tSize height = (tSize)msg.args.arg3;

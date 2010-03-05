@@ -60,7 +60,7 @@ public:
 	ShellControl(tDrvId sid,tCoord x,tCoord y,tSize width,tSize height) :
 		Control(x,y,width,height), _lastCol(0), _lastRow(0), _vt(NULL) {
 		tFD speakerFd;
-		sIoCtlSize size;
+		sVTSize size;
 		Font font;
 		size.width = (width - 4) / font.getWidth();
 		size.height = (height - 4) / (font.getHeight() + PADDING);

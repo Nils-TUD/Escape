@@ -23,6 +23,7 @@
 #include <esc/heap.h>
 #include <esc/conf.h>
 #include <string.h>
+#include <messages.h>
 #include "display.h"
 #include "bar.h"
 #include "object.h"
@@ -78,7 +79,7 @@ static char bullet[BULLET_WIDTH * BULLET_HEIGHT * 2] = {
 	0x04, 0x04
 };
 
-sIoCtlSize ssize;
+sVTSize ssize;
 static tFD video;
 static char *buffer = NULL;
 static char *backup = NULL;
@@ -95,7 +96,7 @@ bool displ_init(void) {
 	}
 
 	/* get screen size */
-	if(recvMsgData(video,IOCTL_VID_GETSIZE,&ssize,sizeof(sIoCtlSize)) < 0) {
+	if(recvMsgData(video,MSG_VID_GETSIZE,&ssize,sizeof(sVTSize)) < 0) {
 		fprintf(stderr,"Unable to get screensize");
 		return false;
 	}

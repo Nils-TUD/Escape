@@ -22,12 +22,13 @@
 #include <esc/fileio.h>
 #include <esc/proc.h>
 #include <stdlib.h>
+#include <messages.h>
 
 int main(void) {
-	sIoCtlSize consSize;
+	sVTSize consSize;
 	u32 maxWidth;
 	u32 p,i,j;
-	if(recvMsgData(STDIN_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
+	if(recvMsgData(STDIN_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
 		error("Unable to get vterm-size");
 	maxWidth = consSize.width - 3;
 

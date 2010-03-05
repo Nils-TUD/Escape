@@ -22,6 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <messages.h>
 
 #define WIDTH				(ssize.width)
 #define HEIGHT				(ssize.height)
@@ -29,7 +30,7 @@
 #define GWIDTH				(WIDTH - PADDING * 2)
 #define GHEIGHT				(HEIGHT - PADDING * 2)
 
-extern sIoCtlSize ssize;
+extern sVTSize ssize;
 
 bool displ_init(void);
 

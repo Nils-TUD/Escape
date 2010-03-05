@@ -50,7 +50,7 @@ static char **lines;
 static char *filename;
 static u32 startLine = 0;
 
-static sIoCtlSize consSize;
+static sVTSize consSize;
 static char *emptyLine;
 static bool run = true;
 
@@ -85,13 +85,13 @@ int main(int argc,char *argv[]) {
 	else if(isterm(STDIN_FILENO))
 		error("Using a vterm as STDIN and have got no filename");
 
-	if(recvMsgData(STDOUT_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
+	if(recvMsgData(STDOUT_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
 		error("Unable to get screensize");
 	/* one line for the status */
 	consSize.height--;
 
 	/* backup screen */
-	send(STDOUT_FILENO,IOCTL_VT_BACKUP,NULL,0);
+	send(STDOUT_FILENO,MSG_VT_BACKUP,NULL,0);
 
 	/* create empty line */
 	emptyLine = (char*)malloc(consSize.width + 1);
@@ -115,8 +115,8 @@ int main(int argc,char *argv[]) {
 	}
 
 	/* stop readline and navigation */
-	send(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
-	send(STDOUT_FILENO,IOCTL_VT_DIS_NAVI,NULL,0);
+	send(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
+	send(STDOUT_FILENO,MSG_VT_DIS_NAVI,NULL,0);
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
 	if(!getEnv(vterm + SSTRLEN("/dev/"),MAX_PATH_LEN - SSTRLEN("/dev/"),"TERM")) {
@@ -178,9 +178,9 @@ int main(int argc,char *argv[]) {
 static void resetVterm(void) {
 	printf("\n");
 	flush();
-	send(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
-	send(STDOUT_FILENO,IOCTL_VT_EN_NAVI,NULL,0);
-	send(STDOUT_FILENO,IOCTL_VT_RESTORE,NULL,0);
+	send(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
+	send(STDOUT_FILENO,MSG_VT_EN_NAVI,NULL,0);
+	send(STDOUT_FILENO,MSG_VT_RESTORE,NULL,0);
 }
 
 static void scrollDown(s32 l) {

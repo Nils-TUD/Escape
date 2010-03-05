@@ -26,6 +26,7 @@
 #include <esc/cmdargs.h>
 #include <stdlib.h>
 #include <width.h>
+#include <messages.h>
 
 #define DATE_LEN			(SSTRLEN("2009-09-09 14:12") + 1)
 #define ARRAY_INC_SIZE		8
@@ -79,7 +80,7 @@ int main(int argc,char *argv[]) {
 	u32 widths[WIDTHS_COUNT] = {0};
 	u32 i,pos,x,count,flags = 0;
 	sFullDirEntry **entries,*entry;
-	sIoCtlSize consSize;
+	sVTSize consSize;
 	sDate date;
 
 	if(isHelpCmd(argc,argv))
@@ -123,7 +124,7 @@ int main(int argc,char *argv[]) {
 	if(!pathGiven && !getEnv(path,MAX_PATH_LEN + 1,"CWD"))
 		error("Unable to get CWD");
 
-	if(recvMsgData(STDIN_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
+	if(recvMsgData(STDIN_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
 		error("Unable to determine screensize");
 
 	/* get entries */

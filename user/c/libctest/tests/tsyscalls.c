@@ -273,15 +273,15 @@ static void test_read(void) {
 
 static void test_regDriver(void) {
 	test_caseStart("Testing regDriver()");
-	test_assertInt(_regDriver("MYVERYVERYVERYVERYVERYVERYVERYVERYLONGNAME",0),ERR_INVALID_ARGS);
-	test_assertInt(_regDriver("abc+-/",0),ERR_INVALID_ARGS);
-	test_assertInt(_regDriver("/",0),ERR_INVALID_ARGS);
-	test_assertInt(_regDriver("",0),ERR_INVALID_ARGS);
+	test_assertInt(_regDriver("MYVERYVERYVERYVERYVERYVERYVERYVERY"
+			"VERYVERYVERYVERYVERYVERYVERYVERYVERYVERYVERYVERYVERYVERYLONGNAME",0),ERR_NOT_ENOUGH_MEM);
+	test_assertInt(_regDriver("abc+-/",0),ERR_INV_DRIVER_NAME);
+	test_assertInt(_regDriver("/",0),ERR_INV_DRIVER_NAME);
+	test_assertInt(_regDriver("",0),ERR_INV_DRIVER_NAME);
 	test_assertInt(_regDriver((char*)0xC0000000,0),ERR_INVALID_ARGS);
 	test_assertInt(_regDriver((char*)0xFFFFFFFF,0),ERR_INVALID_ARGS);
-	test_assertInt(_regDriver("drv",1 << 8),ERR_INVALID_ARGS);
-	test_assertInt(_regDriver("drv",0),ERR_INVALID_ARGS);
-	test_assertInt(_regDriver("drv",0x12345678),ERR_INVALID_ARGS);
+	test_assertInt(_regDriver("drv",0xFFFFFFFF),ERR_INVALID_ARGS);
+	test_assertInt(_regDriver("drv",DRV_READ | 1234),ERR_INVALID_ARGS);
 	test_caseSucceded();
 }
 

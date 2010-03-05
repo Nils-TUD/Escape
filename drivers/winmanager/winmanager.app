@@ -1,4 +1,4 @@
 name:							"winmanager"
 start:						"winmanager"
-type:							"service"
+type:							"driver"
 desc:							"Manages all windows in the GUI"

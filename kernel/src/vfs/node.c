@@ -328,7 +328,8 @@ sVFSNode *vfsn_findInDir(sVFSNode *node,const char *name,u32 nameLen) {
 
 sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,char *name) {
 	sVFSNode *node = vfsn_createNode(name);
-	vfsn_appendChild(parent,node);
+	if(node)
+		vfsn_appendChild(parent,node);
 	return node;
 }
 

@@ -1,4 +1,4 @@
 name:							"env"
 start:						"env"
-type:							"service"
+type:							"driver"
 desc:							"Manages environment-variables for all processes"

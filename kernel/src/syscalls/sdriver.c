@@ -40,6 +40,8 @@ void sysc_regDriver(sIntrptStackFrame *stack) {
 	/* check flags */
 	if((flags & ~DRV_ALL) != 0 && flags != DRV_FS)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(!sysc_isStringReadable(name))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	res = vfs_createDriver(t->tid,name,flags);
 	if(res < 0)

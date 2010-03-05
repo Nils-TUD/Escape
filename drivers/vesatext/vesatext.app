@@ -1,4 +1,4 @@
 name:							"vesatext"
 start:						"vesatext"
-type:							"service"
-desc:							"A service for VESA, that is used for the TUI"
+type:							"driver"
+desc:							"A driver for VESA, that is used for the TUI"

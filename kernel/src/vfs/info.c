@@ -94,9 +94,9 @@ void vfsinfo_init(void) {
 	vfsn_resolvePath("/system",&nodeNo,NULL,VFS_NOACCESS);
 	sysNode = vfsn_getNode(nodeNo);
 
-	vfsn_createFile(KERNEL_TID,sysNode,(char*)"memusage",vfsinfo_memUsageReadHandler,NULL);
-	vfsn_createFile(KERNEL_TID,sysNode,(char*)"cpu",vfsinfo_cpuReadHandler,NULL);
-	vfsn_createFile(KERNEL_TID,sysNode,(char*)"stats",vfsinfo_statsReadHandler,NULL);
+	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"memusage",vfsinfo_memUsageReadHandler,NULL) != NULL);
+	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"cpu",vfsinfo_cpuReadHandler,NULL) != NULL);
+	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"stats",vfsinfo_statsReadHandler,NULL) != NULL);
 }
 
 s32 vfsinfo_procReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {

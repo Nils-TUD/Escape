@@ -420,15 +420,16 @@ sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,f
 	return node;
 }
 
-sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 type) {
+sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 flags) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
 	node->owner = tid;
-	node->mode = MODE_TYPE_SERVICE | MODE_OWNER_READ | MODE_OTHER_READ | type;
+	node->mode = MODE_TYPE_SERVICE | MODE_OWNER_READ | MODE_OTHER_READ;
 	node->readHandler = NULL;
 	node->writeHandler = NULL;
+	node->data.service.funcs = flags;
 	node->data.service.isEmpty = true;
 	node->data.service.lastClient = NULL;
 	return node;
@@ -514,7 +515,7 @@ void vfsn_removeNode(sVFSNode *n) {
 		n->parent->lastChild = n->prev;
 
 	/* invalidate cache of parent-folder */
-	if(n->parent->data.def.cache) {
+	if(MODE_IS_DIR(n->parent->mode) && n->parent->data.def.cache) {
 		kheap_free(n->parent->data.def.cache);
 		n->parent->data.def.cache = NULL;
 		n->parent->data.def.size = 0;
@@ -526,8 +527,6 @@ void vfsn_removeNode(sVFSNode *n) {
 s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	char *name;
 	sVFSNode *m;
-	fRead rhdlr;
-	fWrite whdlr;
 
 	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
 	name = (char*)kheap_alloc(12);
@@ -549,9 +548,7 @@ s32 vfsn_createServiceUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	}
 
 	/* ok, create a service-usage-node */
-	rhdlr = (fRead)(IS_DRIVER(n->mode) ? vfsdrv_read : NULL);
-	whdlr = (fWrite)(IS_DRIVER(n->mode) ? vfsdrv_write : NULL);
-	m = vfsn_createServiceUseNode(tid,n,name,rhdlr,whdlr);
+	m = vfsn_createServiceUseNode(tid,n,name,(fRead)vfsdrv_read,(fWrite)vfsdrv_write);
 	if(m == NULL) {
 		kheap_free(name);
 		return ERR_NOT_ENOUGH_MEM;

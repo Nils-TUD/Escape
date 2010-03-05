@@ -134,15 +134,21 @@ void sysc_send(sIntrptStackFrame *stack);
 void sysc_receive(sIntrptStackFrame *stack);
 
 /**
- * Performs IO-Control on the device that is identified by the given file-descriptor
+ * Checks wether a message is available
  *
  * @param tFD the file-descriptor
- * @param u32 the command
- * @param u8 * the data (may be NULL)
- * @param u32 the size of the data
- * @return s32 0 on success
+ * @return s32 true if so, 0 otherwise or a negative error-code
  */
-void sysc_ioctl(sIntrptStackFrame *stack);
+void sysc_hasMsg(sIntrptStackFrame *stack);
+
+/**
+ * Checks wether the given file links to a terminal. That means it has to be a virtual file
+ * that acts as a service-client for a terminal-service.
+ *
+ * @param tFD the file-descriptor
+ * @return bool true if so
+ */
+void sysc_isterm(sIntrptStackFrame *stack);
 
 /**
  * Retrieves information about the given file

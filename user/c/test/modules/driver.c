@@ -35,7 +35,7 @@ int mod_driver(int argc,char *argv[]) {
 	UNUSED(argc);
 	UNUSED(argv);
 
-	id = regService("bla",SERV_DRIVER);
+	id = regService("bla",DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE);
 	if(id < 0)
 		printe("regService");
 
@@ -52,10 +52,11 @@ int mod_driver(int argc,char *argv[]) {
 		if(write(fd,buf,10) < 0)
 			printe("write");
 		printf("IOCtl read\n");
-		ioctl(fd,1,(u8*)buf,10);
+		/* TODO remove me! */
+		/*ioctl(fd,1,(u8*)buf,10);
 		printf("Got '%s'\n",buf);
 		printf("IOCtl write\n");
-		ioctl(fd,0,(u8*)buf,10);
+		ioctl(fd,0,(u8*)buf,10);*/
 		printf("Closing...\n");
 		close(fd);
 		return EXIT_SUCCESS;
@@ -92,7 +93,8 @@ int mod_driver(int argc,char *argv[]) {
 					free(buf);
 				}
 				break;
-				case MSG_DRV_IOCTL: {
+				/* TODO remove me! */
+				/*case MSG_DRV_IOCTL: {
 					u32 cmd = msg.data.arg2;
 					printf("Ioctl: cmd=%d, dsize=%d\n",msg.data.arg1,msg.data.arg2);
 					msg.data.arg1 = 0;
@@ -106,7 +108,7 @@ int mod_driver(int argc,char *argv[]) {
 					}
 					send(cfd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 				}
-				break;
+				break;*/
 				case MSG_DRV_CLOSE:
 					printf("Close\n");
 					quit = true;

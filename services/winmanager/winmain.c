@@ -73,7 +73,7 @@ int main(void) {
 	if(setSigHandler(SIG_THREAD_DIED,deadThreadHandler) < 0)
 		error("Unable to set sig-handler for %d",SIG_THREAD_DIED);
 
-	servId = regService("winmanager",SERV_DEFAULT);
+	servId = regService("winmanager",0);
 	if(servId < 0)
 		error("Unable to create service winmanager");
 

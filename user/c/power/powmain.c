@@ -25,7 +25,7 @@
 #include <messages.h>
 #include <stdlib.h>
 
-#define POWER_SERV		"/services/powermng"
+#define POWER_SERV		"/dev/powermng"
 
 static sMsg msg;
 

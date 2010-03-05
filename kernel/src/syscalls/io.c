@@ -100,7 +100,7 @@ void sysc_open(sIntrptStackFrame *stack) {
 	/* if it is a driver, call the driver open-command */
 	if(isVirt) {
 		sVFSNode *node = vfsn_getNode(nodeNo);
-		if((node->mode & MODE_TYPE_SERVUSE) && IS_DRIVER(node->parent->mode)) {
+		if((node->mode & MODE_TYPE_SERVUSE)) {
 			err = vfsdrv_open(t->tid,file,node,flags);
 			/* if this went wrong, undo everything and report an error to the user */
 			if(err < 0) {
@@ -287,6 +287,9 @@ void sysc_write(sIntrptStackFrame *stack) {
 	s32 writtenBytes;
 	tFileNo file;
 
+	if(strcmp(t->proc->command,"/sbin/vterm") == 0)
+		writtenBytes = 4;
+
 	/* validate count and buffer */
 	if(count <= 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -306,20 +309,11 @@ void sysc_write(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,writtenBytes);
 }
 
-void sysc_ioctl(sIntrptStackFrame *stack) {
+void sysc_hasMsg(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	u32 cmd = SYSC_ARG2(stack);
-	u8 *data = (u8*)SYSC_ARG3(stack);
-	u32 size = SYSC_ARG4(stack);
 	sThread *t = thread_getRunning();
 	tFileNo file;
 	s32 res;
-
-	if(data != NULL && size == 0)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	/* TODO always writable ok? */
-	if(data != NULL && !paging_isRangeUserWritable((u32)data,size))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
 	file = thread_fdToFile(fd);
@@ -327,10 +321,24 @@ void sysc_ioctl(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,file);
 
 	/* perform io-control */
-	res = vfs_ioctl(t->tid,file,cmd,data,size);
+	res = vfs_hasMsg(t->tid,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
 
+void sysc_isterm(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
+	sThread *t = thread_getRunning();
+	tFileNo file;
+	bool res;
+
+	/* get file */
+	file = thread_fdToFile(fd);
+	if(file < 0)
+		SYSC_ERROR(stack,file);
+
+	res = vfs_isterm(t->tid,file);
 	SYSC_RET1(stack,res);
 }
 
@@ -344,9 +352,7 @@ void sysc_send(sIntrptStackFrame *stack) {
 	s32 res;
 
 	/* validate size and data */
-	if(size <= 0)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	if(!paging_isRangeUserReadable((u32)data,size))
+	if(data != NULL && !paging_isRangeUserReadable((u32)data,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */

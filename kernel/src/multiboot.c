@@ -164,7 +164,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		/* don't wait for ATA, since it doesn't register a service but multiple drivers depending
 		 * on the available drives and partitions */
 		/* TODO better solution? */
-		if(strcmp(service,"/services/ata") != 0) {
+		if(strcmp(service,"/dev/ata") != 0) {
 			/* don't create a pipe- or service-usage-node here */
 			while(vfsn_resolvePath(service,&nodeNo,NULL,VFS_NOACCESS) < 0)
 				thread_switchInKernel();

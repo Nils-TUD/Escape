@@ -66,9 +66,9 @@ public:
 		size.height = (height - 4) / (font.getHeight() + PADDING);
 
 		// open speaker
-		speakerFd = open("/services/speaker",IO_WRITE);
+		speakerFd = open("/dev/speaker",IO_WRITE);
 		if(speakerFd < 0)
-			error("Unable to open '/services/speaker'");
+			error("Unable to open '/dev/speaker'");
 
 		_vt = (sVTerm*)malloc(sizeof(sVTerm));
 		if(!_vt)

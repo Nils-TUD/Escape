@@ -62,6 +62,10 @@
 
 #define IOCTL_KM_SET			0		/* sets a keymap, expects the keymap-path as argument */
 
+#define TK_SEND_DATA	1
+#define TK_RECV_RESP	2
+#define TK_RECV_DATA	4
+
 typedef struct {
 	u32 col;
 	u32 row;
@@ -121,6 +125,23 @@ s32 tell(tFD fd,u32 *pos) A_CHECKRET;
 s32 eof(tFD fd);
 
 /**
+ * Checks wether a message is available (for drivers)
+ *
+ * @param fd the file-descriptor
+ * @return 1 if so, 0 if not, < 0 if an error occurred
+ */
+s32 hasMsg(tFD fd);
+
+/**
+ * The  isterm()  function  tests  whether  fd  is an open file descriptor
+ * referring to a terminal.
+ *
+ * @param fd the file-descriptor
+ * @return true if it referrs to a terminal
+ */
+bool isterm(tFD fd);
+
+/**
  * Changes the position in the given file
  *
  * @param fd the file-descriptor
@@ -153,23 +174,11 @@ s32 read(tFD fd,void *buffer,u32 count) A_CHECKRET;
 s32 write(tFD fd,const void *buffer,u32 count) A_CHECKRET;
 
 /**
- * Performs the io-control command on the device identified by <fd>. This works with device-
- * drivers only!
- *
- * @param fd the file-descriptor
- * @param cmd the command
- * @param data the data
- * @param size the data-size
- * @return 0 on success
- */
-s32 ioctl(tFD fd,u32 cmd,void *data,u32 size);
-
-/**
  * Sends a message to the service identified by <fd>.
  *
  * @param fd the file-descriptor
  * @param id the msg-id
- * @param msg the message
+ * @param msg the message (may be NULL)
  * @param size the size of the message
  * @return 0 on success or < 0 if an error occurred
  */
@@ -185,6 +194,29 @@ s32 send(tFD fd,tMsgId id,const void *msg,u32 size);
  * @return the size of the message
  */
 s32 receive(tFD fd,tMsgId *id,void *msg,u32 size) A_CHECKRET;
+
+/**
+ * Sends the given data in the data-part of the standard-message. Doesn't wait for the response.
+ *
+ * @param fd the file-descriptor
+ * @param id the msg-id
+ * @param data the data to send
+ * @param size the size of the data (if too big an error will be reported)
+ * @return 0 on success
+ */
+s32 sendMsgData(tFD fd,tMsgId id,const void *data,u32 size);
+
+/**
+ * Sends a message with given id and no data to the given driver, receives a message and
+ * copies the data-part of size msg.data.arg1 into <data> with at most <size> bytes.
+ *
+ * @param fd the file-descriptor
+ * @param id the msg-id
+ * @param data the buffer where to copy the received data to
+ * @param size the size of the buffer
+ * @return the number of copied bytes on success
+ */
+s32 recvMsgData(tFD fd,tMsgId id,void *data,u32 size) A_CHECKRET;
 
 /**
  * Duplicates the given file-descriptor

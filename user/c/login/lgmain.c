@@ -40,10 +40,10 @@ int main(void) {
 	while(1) {
 		printf("Username: ");
 		scanl(un,MAX_LEN);
-		ioctl(STDOUT_FILENO,IOCTL_VT_DIS_ECHO,NULL,0);
+		send(STDOUT_FILENO,IOCTL_VT_DIS_ECHO,NULL,0);
 		printf("Password: ");
 		scanl(pw,MAX_LEN);
-		ioctl(STDOUT_FILENO,IOCTL_VT_EN_ECHO,NULL,0);
+		send(STDOUT_FILENO,IOCTL_VT_EN_ECHO,NULL,0);
 		printf("\n");
 
 		if(strcmp(un,USERNAME) != 0)

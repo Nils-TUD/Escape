@@ -25,8 +25,8 @@
 #include <fsinterface.h>
 
 /*
- * dirs: /, /fs, /system, /system/processes, /system/services
- * files: /system/processes/%, /system/services/%
+ * dirs: /, /fs, /system, /system/processes, /system/dev
+ * files: /system/processes/%, /system/dev/%
  */
 #define NODE_COUNT					(20 * K)
 
@@ -205,10 +205,10 @@ sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,f
  * @param parent the parent-node
  * @param prev the previous node
  * @param name the node-name
- * @param type single-pipe or multi-pipe
+ * @param flags the flags
  * @return the node
  */
-sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 type);
+sVFSNode *vfsn_createServiceNode(tTid tid,sVFSNode *parent,char *name,u32 flags);
 
 /**
  * Creates a service-use-node

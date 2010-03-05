@@ -26,33 +26,22 @@
 #include <syscalls.h>
 #include <errors.h>
 
-/* service-types, as defined in libc/include/esc/service.h */
-#define SERV_DEFAULT				1
-#define SERV_FS						2
-#define SERV_DRIVER					4
-#define SERV_ALL					(SERV_DEFAULT | SERV_FS | SERV_DRIVER)
+/* implementable functions */
+#define DRV_ALL						(DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE | DRV_TERM)
 
 #define GW_NOBLOCK					1
 
 void sysc_regService(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
-	u32 type = (u32)SYSC_ARG2(stack);
-	u32 vtype;
+	u32 flags = SYSC_ARG2(stack);
 	sThread *t = thread_getRunning();
 	tServ res;
 
-	/* check type */
-	if((type & SERV_ALL) == 0 || (type & ~SERV_ALL) != 0)
+	/* check flags */
+	if((flags & ~DRV_ALL) != 0 && flags != DRV_FS)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	/* convert and check type */
-	vtype = 0;
-	if(type & SERV_FS)
-		vtype |= MODE_SERVICE_FS;
-	else if(type & SERV_DRIVER)
-		vtype |= MODE_SERVICE_DRIVER;
-
-	res = vfs_createService(t->tid,name,vtype);
+	res = vfs_createService(t->tid,name,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

@@ -82,15 +82,15 @@ bool vterm_initAll(tServ *ids,sVTermCfg *cfg) {
 	}
 
 	/* request screensize from video-driver */
-	if(ioctl(vidFd,IOCTL_VID_GETSIZE,&vidSize,sizeof(sIoCtlSize)) < 0) {
+	if(recvMsgData(vidFd,IOCTL_VID_GETSIZE,&vidSize,sizeof(sIoCtlSize)) < 0) {
 		printe("Getting screensize failed");
 		return false;
 	}
 
 	/* open speaker */
-	speakerFd = open("/services/speaker",IO_WRITE);
+	speakerFd = open("/dev/speaker",IO_WRITE);
 	if(speakerFd < 0) {
-		printe("Unable to open '/services/speaker'");
+		printe("Unable to open '/dev/speaker'");
 		return false;
 	}
 
@@ -211,7 +211,7 @@ static void vterm_setCursor(sVTerm *vt) {
 		sIoCtlPos pos;
 		pos.col = vt->col;
 		pos.row = vt->row;
-		ioctl(vt->video,IOCTL_VID_SETCURSOR,(u8*)&pos,sizeof(pos));
+		sendMsgData(vt->video,IOCTL_VID_SETCURSOR,&pos,sizeof(pos));
 	}
 }
 

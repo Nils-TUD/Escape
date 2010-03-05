@@ -141,7 +141,7 @@ int main(int argc,char *argv[]) {
 		error("Unable to get root mount-point");
 
 	/* register service */
-	id = regService("fs",SERV_FS);
+	id = regService("fs",DRV_FS);
 	if(id < 0)
 		error("Unable to register service 'fs'");
 

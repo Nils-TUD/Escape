@@ -76,7 +76,7 @@ int main(int argc,char **argv) {
 	servName = new char[MAX_PATH_LEN + 1];
 	do {
 		snprintf(servName,MAX_PATH_LEN + 1,"guiterm%d",no);
-		sid = regService(servName,SERV_DRIVER);
+		sid = regService(servName,DRV_READ | DRV_WRITE | DRV_TERM);
 		if(sid >= 0)
 			break;
 		no++;
@@ -90,7 +90,7 @@ int main(int argc,char **argv) {
 	// the child handles the GUI
 	if(fork() == 0) {
 		// re-register service
-		sid = regService(servName,SERV_DRIVER);
+		sid = regService(servName,DRV_READ | DRV_WRITE | DRV_TERM);
 		unlockg(GUI_SHELL_LOCK);
 		if(sid < 0)
 			error("Unable to re-register driver %s",servName);
@@ -129,7 +129,7 @@ int main(int argc,char **argv) {
 	delete servPath;
 
 	/* give vterm our pid */
-	ioctl(fin,IOCTL_VT_SHELLPID,(u8*)getpid(),sizeof(tPid));
+	sendMsgData(fin,IOCTL_VT_SHELLPID,(u8*)getpid(),sizeof(tPid));
 
 	return shell_main();
 }

@@ -18,13 +18,29 @@
  */
 
 #include <esc/common.h>
-#include <esc/fileio.h>
 #include <esc/io.h>
+#include <messages.h>
+#include <errors.h>
+#include <string.h>
 
-bool isavterm(tFD fd) {
-	/* a way to determine wether its a vterm is to try an ioctl-command that every vterm
-	 * should implement (and that doesn't change anything) */
-	/* other drivers should respond with ERR_UNSUPPORTED_OP */
-	sIoCtlSize consSize;
-	return ioctl(fd,IOCTL_VT_GETSIZE,&consSize,sizeof(consSize)) >= 0;
+s32 sendMsgData(tFD fd,tMsgId id,const void *data,u32 size) {
+	sMsg msg;
+	if(size > sizeof(msg.data.d))
+		return ERR_NOT_ENOUGH_MEM;
+	memcpy(msg.data.d,data,size);
+	return send(fd,id,&msg,sizeof(msg.data));
+}
+
+s32 recvMsgData(tFD fd,tMsgId id,void *data,u32 size) {
+	sMsg msg;
+	s32 res;
+	if((res = send(fd,id,NULL,0)) < 0)
+		return res;
+	if((res = receive(fd,NULL,&msg,sizeof(msg))) < 0)
+		return res;
+	res = (s32)msg.data.arg1;
+	if(res > (s32)size)
+		res = size;
+	memcpy(data,msg.data.d,res);
+	return res;
 }

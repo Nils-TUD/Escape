@@ -95,7 +95,7 @@ bool displ_init(void) {
 	}
 
 	/* get screen size */
-	if(ioctl(video,IOCTL_VID_GETSIZE,&ssize,sizeof(sIoCtlSize)) < 0) {
+	if(recvMsgData(video,IOCTL_VID_GETSIZE,&ssize,sizeof(sIoCtlSize)) < 0) {
 		fprintf(stderr,"Unable to get screensize");
 		return false;
 	}

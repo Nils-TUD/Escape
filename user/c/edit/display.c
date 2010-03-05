@@ -43,7 +43,7 @@ static s32 curY = 0;
 static sFileBuffer *buffer;
 
 void displ_init(sFileBuffer *buf) {
-	if(ioctl(STDOUT_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
+	if(recvMsgData(STDOUT_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
 		error("Unable to get screensize");
 
 	/* one line for status-information :) */
@@ -52,19 +52,19 @@ void displ_init(sFileBuffer *buf) {
 	dirtyCount = consSize.height;
 
 	/* backup screen */
-	ioctl(STDOUT_FILENO,IOCTL_VT_BACKUP,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_BACKUP,NULL,0);
 	/* stop readline and navigation */
-	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
-	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_NAVI,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_DIS_NAVI,NULL,0);
 }
 
 void displ_finish(void) {
 	printf("\n");
 	/* ensure that the output is flushed before the vterm restores the old screen */
 	flush();
-	ioctl(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
-	ioctl(STDOUT_FILENO,IOCTL_VT_EN_NAVI,NULL,0);
-	ioctl(STDOUT_FILENO,IOCTL_VT_RESTORE,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_EN_NAVI,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_RESTORE,NULL,0);
 }
 
 void displ_getCurPos(s32 *col,s32 *row) {
@@ -181,12 +181,12 @@ s32 displ_getSaveFile(char *file,u32 bufSize) {
 	for(i = 0; i < consSize.width; i++)
 		printc(' ');
 	printc('\r');
-	ioctl(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
 	printf("\033[co;0;7]Save to file:\033[co] ");
 	if(buffer->filename)
 		printf("\033[si;1]%s\033[si;0]",buffer->filename);
 	res = scanl(file,bufSize);
-	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
 	displ_markDirty(firstLine + consSize.height - 1,1);
 	displ_update();
 	return res;

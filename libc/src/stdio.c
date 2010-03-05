@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/io.h>
 #include <esc/fileio.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -65,7 +66,7 @@ char *fgets(char *str,int max,FILE *file) {
 }
 
 int isatty(int fd) {
-	return isavterm(fd);
+	return isterm(fd);
 }
 
 int sprintf(char *str,const char *fmt,...) {

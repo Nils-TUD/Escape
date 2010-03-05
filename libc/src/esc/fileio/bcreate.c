@@ -75,14 +75,6 @@ sIOBuffer *bcreate(tFD fd,u8 flags) {
 		}
 	}
 
-	/* determine and store wether its a vterm */
-	if(isavterm(fd)) {
-		if(flags & IO_READ)
-			buf->in.type |= BUF_TYPE_VTERM;
-		if(flags & IO_WRITE)
-			buf->out.type |= BUF_TYPE_VTERM;
-	}
-
 	sll_append(bufList,buf);
 	return buf;
 }

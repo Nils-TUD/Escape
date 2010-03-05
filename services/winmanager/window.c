@@ -57,9 +57,9 @@ bool win_init(tServ sid) {
 	for(i = 0; i < WINDOW_COUNT; i++)
 		windows[i].id = WINID_UNSED;
 
-	vesa = open("/services/vesa",IO_WRITE);
+	vesa = open("/dev/vesa",IO_WRITE);
 	if(vesa < 0)
-		error("Unable to open /services/vesa");
+		error("Unable to open /dev/vesa");
 
 	/* request screen infos from vesa */
 	if(send(vesa,MSG_VESA_GETMODE_REQ,&msg,sizeof(msg.args)) < 0)

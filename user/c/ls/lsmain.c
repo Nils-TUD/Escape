@@ -123,7 +123,7 @@ int main(int argc,char *argv[]) {
 	if(!pathGiven && !getEnv(path,MAX_PATH_LEN + 1,"CWD"))
 		error("Unable to get CWD");
 
-	if(ioctl(STDIN_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
+	if(recvMsgData(STDIN_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
 		error("Unable to determine screensize");
 
 	/* get entries */

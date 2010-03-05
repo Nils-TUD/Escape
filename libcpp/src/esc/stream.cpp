@@ -25,7 +25,6 @@
 
 #define BUF_TYPE_STRING		1
 #define BUF_TYPE_FILE		2
-#define BUF_TYPE_VTERM		4
 
 struct _sStreamBuf {
 	tFD fd;

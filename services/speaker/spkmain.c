@@ -62,7 +62,7 @@ int main(void) {
 	tServ id;
 
 	/* register service */
-	id = regService("speaker",SERV_DEFAULT);
+	id = regService("speaker",0);
 	if(id < 0)
 		error("Unable to register service 'speaker'");
 

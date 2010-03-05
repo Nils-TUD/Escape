@@ -68,19 +68,6 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 s32 vfsdrv_write(tTid tid,tFileNo file,sVFSNode *node,const void *buffer,u32 offset,u32 count);
 
 /**
- * Sends the given ioctl-command to the given driver
- *
- * @param tid the thread-id
- * @param file the file for the driver
- * @param node the VFS-node of the driver
- * @param cmd the command
- * @param data additional data (may be NULL); may be used for sending and/or receiving
- * @param size the size of the data; may be used for sending and/or receiving
- * @return 0 on success
- */
-s32 vfsdrv_ioctl(tTid tid,tFileNo file,sVFSNode *node,u32 cmd,void *data,u32 size);
-
-/**
  * Sends the close-command to the given driver
  *
  * @param tid the thread-id

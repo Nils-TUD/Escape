@@ -36,11 +36,18 @@
 /* the device-number of the VFS */
 #define VFS_DEV_NO					((tDevNo)0xFF)
 
-#define IS_DRIVER(mode)				(((mode) & MODE_SERVICE_DRIVER) != 0)
-#define IS_FS(mode)					(((mode) & MODE_SERVICE_FS) != 0)
 #define IS_SERVICE(mode)			(((mode) & MODE_TYPE_SERVICE) != 0)
 #define IS_SERVUSE(mode)			(((mode) & MODE_TYPE_SERVUSE) != 0)
 #define IS_PIPE(mode)				(((mode) & MODE_TYPE_PIPE) != 0)
+
+#define DRV_OPEN					1
+#define DRV_READ					2
+#define DRV_WRITE					4
+#define DRV_CLOSE					8
+#define DRV_FS						16
+#define DRV_TERM					32
+#define DRV_IMPL(funcs,func)		(((funcs) & (func)) != 0)
+#define DRV_IS_FS(funcs)			((funcs) == DRV_FS)
 
 /* GFT flags */
 enum {
@@ -91,6 +98,8 @@ struct sVFSNode {
 		struct {
 			/* wether there is data to read or not */
 			bool isEmpty;
+			/* implemented functions */
+			u32 funcs;
 			/* the last served client */
 			sVFSNode *lastClient;
 		} service;
@@ -197,6 +206,25 @@ u32 vfs_tell(tTid tid,tFileNo file);
 bool vfs_eof(tTid tid,tFileNo file);
 
 /**
+ * Checks wether a message is available
+ *
+ * @param tid the thread-id
+ * @param file the file
+ * @return 1 if so, 0 if not, < 0 if an error occurred
+ */
+s32 vfs_hasMsg(tTid tid,tFileNo file);
+
+/**
+ * Checks wether the given file links to a terminal. That means it has to be a virtual file
+ * that acts as a service-client for a terminal-service.
+ *
+ * @param tid the thread-id
+ * @param file the file
+ * @return true if so
+ */
+bool vfs_isterm(tTid tid,tFileNo file);
+
+/**
  * Sets the position for the given file
  *
  * @param tid the thread-id
@@ -230,19 +258,6 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count);
  * @return the number of bytes written
  */
 s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count);
-
-/**
- * Performs the io-control command on the device identified by <file>. This works with device-
- * drivers only!
- *
- * @param tid the sender-thread-id
- * @param file the file to send the message to
- * @param cmd the command
- * @param data the data
- * @param size the data-size
- * @return 0 on success
- */
-s32 vfs_ioctl(tTid tid,tFileNo file,u32 cmd,u8 *data,u32 size);
 
 /**
  * Sends a message to the corresponding service
@@ -318,10 +333,10 @@ s32 vfs_rmdir(tTid tid,const char *path);
  *
  * @param tid the thread-id
  * @param name the service-name
- * @param type single-pipe or multi-pipe
+ * @param flags the specified flags (implemented functions)
  * @return 0 if ok, negative if an error occurred
  */
-s32 vfs_createService(tTid tid,const char *name,u32 type);
+s32 vfs_createService(tTid tid,const char *name,u32 flags);
 
 /**
  * Sets wether data is currently readable or not

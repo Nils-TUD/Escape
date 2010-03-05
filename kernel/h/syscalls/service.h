@@ -26,7 +26,7 @@
  * Registers a service
  *
  * @param const char* name of the service
- * @param u8 type: SINGLE-PIPE OR MULTI-PIPE
+ * @param u32 flags: what functions are implemented
  * @return tServ the service-id if successfull
  */
 void sysc_regService(sIntrptStackFrame *stack);

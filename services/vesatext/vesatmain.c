@@ -131,13 +131,10 @@ int main(void) {
 	/* load available modes etc. */
 	vbe_init();
 
-	id = regService("vesatext",SERV_DRIVER);
+	/* TODO maybe we should provide close to restore the old mode? */
+	id = regService("vesatext",DRV_OPEN | DRV_WRITE);
 	if(id < 0)
 		error("Unable to register service 'vesatext'");
-
-	/* make data available, so that we can return an error to the calling processes */
-	if(setDataReadable(id,true) < 0)
-		error("setDataReadable");
 
 	/*sVM86Regs regs;
 	memset(&regs,0,sizeof(regs));
@@ -154,12 +151,6 @@ int main(void) {
 				case MSG_DRV_OPEN:
 					msg.args.arg1 = vesa_setMode();
 					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-					break;
-
-				case MSG_DRV_READ:
-					msg.data.arg1 = ERR_UNSUPPORTED_OP;
-					msg.data.arg2 = true;
-					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
 					break;
 
 				case MSG_DRV_WRITE: {
@@ -182,40 +173,24 @@ int main(void) {
 				}
 				break;
 
-				case MSG_DRV_IOCTL: {
-					if(minfo == NULL)
-						msg.data.arg1 = ERR_UNSUPPORTED_OP;
-					else {
-						switch(msg.data.arg1) {
-							case IOCTL_VID_SETCURSOR: {
-								sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
-								pos->col = MIN(pos->col,cols);
-								pos->row = MIN(pos->row,rows);
-								vesa_setCursor(pos->col,pos->row);
-								msg.data.arg1 = 0;
-							}
-							break;
-
-							case IOCTL_VID_GETSIZE: {
-								sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
-								size->width = cols;
-								size->height = rows;
-								msg.data.arg1 = sizeof(sIoCtlSize);
-							}
-							break;
-
-							default:
-								msg.data.arg1 = ERR_UNSUPPORTED_OP;
-								break;
-						}
-					}
+				case IOCTL_VID_SETCURSOR: {
+					sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
+					pos->col = MIN(pos->col,cols);
+					pos->row = MIN(pos->row,rows);
+					vesa_setCursor(pos->col,pos->row);
+					msg.data.arg1 = 0;
 					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 				}
 				break;
 
-				case MSG_DRV_CLOSE:
-					/* ignore */
-					break;
+				case IOCTL_VID_GETSIZE: {
+					sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
+					size->width = cols;
+					size->height = rows;
+					msg.data.arg1 = sizeof(sIoCtlSize);
+					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+				}
+				break;
 			}
 			close(fd);
 		}

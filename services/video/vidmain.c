@@ -56,10 +56,10 @@ static u8 *videoData;
 static sMsg msg;
 
 int main(void) {
-	tServ id,client;
+	tServ id;
 	tMsgId mid;
 
-	id = regService("video",SERV_DRIVER);
+	id = regService("video",DRV_WRITE);
 	if(id < 0)
 		error("Unable to register service 'video'");
 
@@ -74,9 +74,6 @@ int main(void) {
 
 	/* clear screen */
 	memclear(videoData,COLS * ROWS * 2);
-	/* make data available, so that we can return an error to the calling processes */
-	if(setDataReadable(id,true) < 0)
-		error("setDataReadable");
 
 	/* wait for messages */
 	while(1) {
@@ -86,17 +83,6 @@ int main(void) {
 		else {
 			/* see what we have to do */
 			switch(mid) {
-				case MSG_DRV_OPEN:
-					msg.args.arg1 = 0;
-					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-					break;
-
-				case MSG_DRV_READ:
-					msg.data.arg1 = ERR_UNSUPPORTED_OP;
-					msg.data.arg2 = true;
-					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.data));
-					break;
-
 				case MSG_DRV_WRITE: {
 					u32 offset = msg.args.arg1;
 					u32 count = msg.args.arg2;
@@ -109,36 +95,24 @@ int main(void) {
 				}
 				break;
 
-				case MSG_DRV_IOCTL: {
-					switch(msg.data.arg1) {
-						case IOCTL_VID_SETCURSOR: {
-							sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
-							pos->col = MIN(pos->col,COLS);
-							pos->row = MIN(pos->row,ROWS);
-							vid_setCursor(pos->row,pos->col);
-							msg.data.arg1 = 0;
-						}
-						break;
-
-						case IOCTL_VID_GETSIZE: {
-							sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
-							size->width = COLS;
-							size->height = ROWS;
-							msg.data.arg1 = sizeof(sIoCtlSize);
-						}
-						break;
-
-						default:
-							msg.data.arg1 = ERR_UNSUPPORTED_OP;
-							break;
-					}
+				case IOCTL_VID_SETCURSOR: {
+					sIoCtlPos *pos = (sIoCtlPos*)msg.data.d;
+					pos->col = MIN(pos->col,COLS);
+					pos->row = MIN(pos->row,ROWS);
+					vid_setCursor(pos->row,pos->col);
+					msg.data.arg1 = 0;
 					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 				}
 				break;
 
-				case MSG_DRV_CLOSE:
-					/* ignore */
-					break;
+				case IOCTL_VID_GETSIZE: {
+					sIoCtlSize *size = (sIoCtlSize*)msg.data.d;
+					size->width = COLS;
+					size->height = ROWS;
+					msg.data.arg1 = sizeof(sIoCtlSize);
+					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+				}
+				break;
 			}
 			close(fd);
 		}

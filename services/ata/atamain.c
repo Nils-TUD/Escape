@@ -105,11 +105,6 @@ int main(void) {
 
 			ATA_PR2("Got message %d",mid);
 			switch(mid) {
-				case MSG_DRV_OPEN:
-					msg.args.arg1 = 0;
-					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-					break;
-
 				case MSG_DRV_READ: {
 					u16 *buffer = NULL;
 					u32 offset = msg.args.arg1;
@@ -158,16 +153,6 @@ int main(void) {
 					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 				}
 				break;
-
-				case MSG_DRV_IOCTL: {
-					msg.data.arg1 = ERR_UNSUPPORTED_OP;
-					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
-				}
-				break;
-
-				case MSG_DRV_CLOSE:
-					/* ignore */
-					break;
 			}
 			close(fd);
 			ATA_PR2("Done");
@@ -205,7 +190,7 @@ static void initDrives(void) {
 					snprintf(name,sizeof(name),"hd%c%d",'a' + i,p + 1);
 				else
 					snprintf(name,sizeof(name),"cd%c%d",'a' + i,p + 1);
-				services[servCount] = regService(name,SERV_DRIVER);
+				services[servCount] = regService(name,DRV_READ | DRV_WRITE);
 				if(services[servCount] < 0)
 					printf("Drive %d, Partition %d: Unable to register driver '%s'\n",i,p + 1,name);
 				else {

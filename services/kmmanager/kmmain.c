@@ -47,7 +47,7 @@ int main(void) {
 	tFD kbFd;
 	tFile *f;
 
-	id = regService("kmmanager",SERV_DRIVER);
+	id = regService("kmmanager",DRV_READ);
 	if(id < 0)
 		error("Unable to register service 'kmmanager'");
 
@@ -97,10 +97,6 @@ int main(void) {
 		}
 		else {
 			switch(mid) {
-				case MSG_DRV_OPEN:
-					msg.args.arg1 = 0;
-					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-					break;
 				case MSG_DRV_READ: {
 					/* offset is ignored here */
 					u32 count = msg.args.arg2 / sizeof(sKmData);
@@ -116,30 +112,20 @@ int main(void) {
 					}
 				}
 				break;
-				case MSG_DRV_WRITE:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
-					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
-					break;
-				case MSG_DRV_IOCTL: {
-					if(msg.data.arg1 == IOCTL_KM_SET && msg.data.arg2 > 0) {
-						/* ensure that its null-terminated */
-						msg.data.d[msg.data.arg2 - 1] = '\0';
-						sKeymapEntry *newMap = km_parse((char*)msg.data.d);
-						if(!newMap)
-							msg.data.arg1 = ERR_INVALID_KEYMAP;
-						else {
-							msg.data.arg1 = 0;
-							free(map);
-							map = newMap;
-						}
+				case IOCTL_KM_SET: {
+					char *str = msg.data.d;
+					str[sizeof(msg.data.d) - 1] = '\0';
+					sKeymapEntry *newMap = km_parse(str);
+					if(!newMap)
+						msg.data.arg1 = ERR_INVALID_KEYMAP;
+					else {
+						msg.data.arg1 = 0;
+						free(map);
+						map = newMap;
 					}
-					else
-						msg.data.arg1 = ERR_UNSUPPORTED_OP;
 					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 				}
 				break;
-				case MSG_DRV_CLOSE:
-					break;
 			}
 			close(fd);
 		}

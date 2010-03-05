@@ -82,7 +82,7 @@ static sSyscall syscalls[] = {
 	/* 39 */	{sysc_getThreadCount,		0},
 	/* 40 */	{sysc_send,					4},
 	/* 41 */	{sysc_receive,				3},
-	/* 42 */	{sysc_ioctl,				4},
+	/* 42 */	{sysc_hasMsg,				1},
 	/* 43 */	{sysc_setDataReadable,		2},
 	/* 44 */	{sysc_getCycles,			0},
 	/* 45 */	{sysc_sync,					0},
@@ -98,6 +98,7 @@ static sSyscall syscalls[] = {
 	/* 55 */	{sysc_getConf,				1},
 	/* 56 */	{sysc_vm86int,				4},
 	/* 57 */	{sysc_getWork,				7},
+	/* 58 */	{sysc_isterm,				1},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {

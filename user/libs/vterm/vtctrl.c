@@ -150,7 +150,6 @@ void vterm_destroy(sVTerm *vt) {
 
 s32 vterm_ioctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data) {
 	s32 res = 0;
-	UNUSED(data);
 	switch(cmd) {
 		case IOCTL_VT_SHELLPID:
 			/* do it just once */
@@ -219,9 +218,6 @@ s32 vterm_ioctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data) {
 			res = sizeof(sIoCtlSize);
 		}
 		break;
-		default:
-			res = ERR_UNSUPPORTED_OP;
-			break;
 	}
 	return res;
 }

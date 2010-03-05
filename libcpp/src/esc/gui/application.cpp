@@ -37,13 +37,13 @@ namespace esc {
 		Application::Application()
 				: _winFd(-1), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL), _windows(Vector<Window*>()) {
 			tMsgId mid;
-			_winFd = open("/services/winmanager",IO_READ | IO_WRITE);
+			_winFd = open("/dev/winmanager",IO_READ | IO_WRITE);
 			if(_winFd < 0) {
 				printe("Unable to open window-manager");
 				exit(EXIT_FAILURE);
 			}
 
-			_vesaFd = open("/services/vesa",IO_READ);
+			_vesaFd = open("/dev/vesa",IO_READ);
 			if(_vesaFd < 0) {
 				printe("Unable to open vesa");
 				exit(EXIT_FAILURE);

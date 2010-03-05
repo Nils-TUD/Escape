@@ -36,6 +36,13 @@
 #define SERV_FS						2
 #define SERV_DRIVER					4
 
+#define DRV_OPEN					1
+#define DRV_READ					2
+#define DRV_WRITE					4
+#define DRV_CLOSE					8
+#define DRV_FS						16
+#define DRV_TERM					32
+
 #define GW_NOBLOCK					1
 
 #ifdef __cplusplus
@@ -46,10 +53,10 @@ extern "C" {
  * Registers a service with given name.
  *
  * @param name the service-name. Should be alphanumeric!
- * @param type the service-type: SERV_*
+ * @param flags what functions do you want to implement (DRV_*) ?
  * @return the service-id if successfull, < 0 if an error occurred
  */
-tServ regService(const char *name,u8 type) A_CHECKRET;
+tServ regService(const char *name,u32 flags) A_CHECKRET;
 
 /**
  * Unregisters your service

@@ -29,20 +29,20 @@ static void startService(const char *name,const char *wait);
 
 int main(void) {
 	// check for duplicate gui-start
-	if(open("/services/vesa",IO_READ) >= 0) {
+	if(open("/dev/vesa",IO_READ) >= 0) {
 		printe("GUI seems to be running. Stopping here");
 		return EXIT_FAILURE;
 	}
 
 	// disable readline, stop reading from keyboard and stop date-refresh
-	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
-	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDKB,NULL,0);
-	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_DATE,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_DIS_RDKB,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_DIS_DATE,NULL,0);
 
 	// start gui services
-	startService("vesa","/services/vesa");
+	startService("vesa","/dev/vesa");
 	startService("mouse","/dev/mouse");
-	startService("winmanager","/services/winmanager");
+	startService("winmanager","/dev/winmanager");
 
 	// start gui-test-program
 	if(fork() == 0) {

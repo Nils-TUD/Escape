@@ -306,7 +306,8 @@ s32 vfsrw_writeServUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *dat
 	if(n->parent->owner == tid) {
 		/* if it is from a driver or fs, don't enqueue it but pass it directly to
 		 * the corresponding handler */
-		if(IS_DRIVER(n->parent->mode) || IS_FS(n->parent->mode)) {
+		if(DRV_IS_FS(n->parent->data.service.funcs) ||
+			(id == MSG_DRV_OPEN_RESP || id == MSG_DRV_READ_RESP || id == MSG_DRV_WRITE_RESP)) {
 			vfsreq_sendMsg(id,n->parent,n->owner,data,size);
 			return 0;
 		}
@@ -327,7 +328,8 @@ s32 vfsrw_writeServUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *dat
 
 	msg->length = size;
 	msg->id = id;
-	memcpy(msg + 1,data,size);
+	if(data)
+		memcpy(msg + 1,data,size);
 
 	/*vid_printf("%s sent msg %d to %s\n",thread_getById(tid)->proc->command,
 					msg->id,n->parent->name);*/

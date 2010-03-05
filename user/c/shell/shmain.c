@@ -83,7 +83,7 @@ int main(int argc,char **argv) {
 
 	/* give vterm our pid */
 	pid = getpid();
-	ioctl(fd,IOCTL_VT_SHELLPID,(u8*)&pid,sizeof(tPid));
+	sendMsgData(fd,IOCTL_VT_SHELLPID,(u8*)&pid,sizeof(tPid));
 
 	/* set vterm as env-variable */
 	setEnv("TERM",argv[1]);

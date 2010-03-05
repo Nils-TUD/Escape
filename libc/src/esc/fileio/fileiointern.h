@@ -25,7 +25,6 @@
 
 #define BUF_TYPE_STRING		1
 #define BUF_TYPE_FILE		2
-#define BUF_TYPE_VTERM		4
 
 /* the number of entries in the hash-map */
 #define BUF_MAP_SIZE		8

@@ -1,14 +1,14 @@
 # Format: "<serviceName> ';' [<waitFor> ',' ...] ';' [<dependency> ',' ...]"
-speaker ; /services/speaker ;
+speaker ; /dev/speaker ;
 keyboard; /dev/keyboard;
 video; /dev/video;
 kmmanager; /dev/kmmanager; keyboard
 vesatext; /dev/vesatext;
 vterm; /dev/vterm0,/dev/vterm1,/dev/vterm2,/dev/vterm3,/dev/vterm4,/dev/vterm5; kmmanager,speaker,vesatext,video,cmos
-env; /services/env;
+env; /dev/env;
 cmos; ;
 zero; /dev/zero;
 random; /dev/random;
 null; /dev/null;
-powermng; /services/powermng;
+powermng; /dev/powermng;
 pci; ;

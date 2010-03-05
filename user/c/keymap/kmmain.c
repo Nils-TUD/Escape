@@ -42,7 +42,7 @@ int main(int argc,char **argv) {
 		if(fd < 0)
 			error("Unable to open keymap-manager");
 		len = snprintf(path,sizeof(path),KEYMAP_DIR"/%s",argv[2]);
-		if(ioctl(fd,IOCTL_KM_SET,path,len + 1) < 0)
+		if(sendMsgData(fd,IOCTL_KM_SET,path,len + 1) < 0)
 			fprintf(stderr,"Setting the keymap '%s' failed\n",argv[2]);
 		else
 			printf("Successfully changed keymap to '%s'\n",argv[2]);

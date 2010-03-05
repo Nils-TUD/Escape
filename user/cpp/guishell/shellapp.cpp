@@ -41,7 +41,7 @@ ShellApplication::~ShellApplication() {
 
 void ShellApplication::doEvents() {
 	tMsgId mid;
-	if(!eof(_winFd)) {
+	if(hasMsg(_winFd)) {
 		if(receive(_winFd,&mid,&_msg,sizeof(_msg)) < 0) {
 			printe("Read from window-manager failed");
 			exit(EXIT_FAILURE);
@@ -92,10 +92,6 @@ void ShellApplication::driverMain() {
 	}
 	else {
 		switch(mid) {
-			case MSG_DRV_OPEN:
-				_msg.args.arg1 = 0;
-				send(fd,MSG_DRV_OPEN_RESP,&_msg,sizeof(_msg.args));
-				break;
 			case MSG_DRV_READ: {
 				sVTerm *vt = _sh->getVTerm();
 				sRingBuf *inbuf = _sh->getInBuf();
@@ -115,6 +111,7 @@ void ShellApplication::driverMain() {
 				}
 			}
 			break;
+
 			case MSG_DRV_WRITE: {
 				u32 amount;
 				char *data;
@@ -145,11 +142,23 @@ void ShellApplication::driverMain() {
 				send(fd,MSG_DRV_WRITE_RESP,&_msg,sizeof(_msg.args));
 			}
 			break;
-			case MSG_DRV_IOCTL:
-				_msg.data.arg1 = vterm_ioctl(_sh->getVTerm(),&_cfg,_msg.data.arg1,_msg.data.d);
+
+			case IOCTL_VT_SHELLPID:
+			case IOCTL_VT_EN_DATE:
+			case IOCTL_VT_DIS_DATE:
+			case IOCTL_VT_EN_ECHO:
+			case IOCTL_VT_DIS_ECHO:
+			case IOCTL_VT_EN_RDLINE:
+			case IOCTL_VT_DIS_RDLINE:
+			case IOCTL_VT_EN_RDKB:
+			case IOCTL_VT_DIS_RDKB:
+			case IOCTL_VT_EN_NAVI:
+			case IOCTL_VT_DIS_NAVI:
+			case IOCTL_VT_BACKUP:
+			case IOCTL_VT_RESTORE:
+			case IOCTL_VT_GETSIZE:
+				_msg.data.arg1 = vterm_ioctl(_sh->getVTerm(),&_cfg,mid,_msg.data.d);
 				send(fd,MSG_DRV_IOCTL_RESP,&_msg,sizeof(_msg.data));
-				break;
-			case MSG_DRV_CLOSE:
 				break;
 		}
 		_sh->update();

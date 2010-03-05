@@ -33,7 +33,7 @@ s32 initEnv(void) {
 		unlocku(&envLock);
 		return 0;
 	}
-	envFd = open("/services/env",IO_READ | IO_WRITE);
+	envFd = open("/dev/env",IO_READ | IO_WRITE);
 	unlocku(&envLock);
 	return envFd;
 }

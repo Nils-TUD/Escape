@@ -52,14 +52,14 @@ int main(void) {
 
 	/* wait for fs; we need it for exec */
 	do {
-		fd = open("/services/fs",IO_READ | IO_WRITE);
+		fd = open("/dev/fs",IO_READ | IO_WRITE);
 		if(fd < 0)
 			yield();
 		retries++;
 	}
 	while(fd < 0 && retries < MAX_WAIT_RETRIES);
 	if(fd < 0)
-		error("Unable to open /services/fs after %d retries",retries);
+		error("Unable to open /dev/fs after %d retries",retries);
 	close(fd);
 
 	/* now read the services we should load */

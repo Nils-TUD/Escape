@@ -34,7 +34,7 @@
 #include <fsinterface.h>
 #include <messages.h>
 
-#define FS_PATH				"/services/fs"
+#define FS_PATH				"/dev/fs"
 #define R2V_MAP_SIZE		64
 
 typedef struct {
@@ -350,7 +350,7 @@ static void vfsr_openRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size
 	UNUSED(node);
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
-	if(size < sizeof(rmsg->args))
+	if(!data || size < sizeof(rmsg->args))
 		return;
 
 	/* find the request for the tid */
@@ -374,7 +374,7 @@ static void vfsr_readRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size
 		if(req->state == REQ_STATE_WAITING) {
 			sMsg *rmsg = (sMsg*)data;
 			/* an error? */
-			if(size < sizeof(rmsg->args) || (s32)rmsg->args.arg1 <= 0) {
+			if(!data || size < sizeof(rmsg->args) || (s32)rmsg->args.arg1 <= 0) {
 				req->count = 0;
 				req->state = REQ_STATE_FINISHED;
 				thread_wakeup(tid,EV_REQ_REPLY);
@@ -386,10 +386,12 @@ static void vfsr_readRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size
 		}
 		else {
 			/* ok, it's the data */
-			/* map the buffer we have to copy it to */
-			req->readFrNos = (u32*)kheap_alloc(req->count);
-			if(req->readFrNos)
-				memcpy(req->readFrNos,data,req->count);
+			if(data) {
+				/* map the buffer we have to copy it to */
+				req->readFrNos = (u32*)kheap_alloc(req->count);
+				if(req->readFrNos)
+					memcpy(req->readFrNos,data,req->count);
+			}
 #if 0
 			u8 *addr = (u8*)TEMP_MAP_AREA;
 			paging_map(TEMP_MAP_AREA,req->readFrNos,req->readFrNoCount,PG_SUPERVISOR | PG_WRITABLE,true);
@@ -409,7 +411,7 @@ static void vfsr_statRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size
 	UNUSED(node);
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
-	if(size < sizeof(rmsg->data))
+	if(!data || size < sizeof(rmsg->data))
 		return;
 
 	/* find the request for the tid */
@@ -430,7 +432,7 @@ static void vfsr_defRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size)
 	UNUSED(node);
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
-	if(size < sizeof(rmsg->args))
+	if(!data || size < sizeof(rmsg->args))
 		return;
 
 	/* find the request for the tid */

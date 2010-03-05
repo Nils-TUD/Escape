@@ -82,16 +82,16 @@ int main(int argc,char *argv[]) {
 		if(file == NULL)
 			error("Unable to open '%s'",filename);
 	}
-	else if(isavterm(STDIN_FILENO))
+	else if(isterm(STDIN_FILENO))
 		error("Using a vterm as STDIN and have got no filename");
 
-	if(ioctl(STDOUT_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
+	if(recvMsgData(STDOUT_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
 		error("Unable to get screensize");
 	/* one line for the status */
 	consSize.height--;
 
 	/* backup screen */
-	ioctl(STDOUT_FILENO,IOCTL_VT_BACKUP,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_BACKUP,NULL,0);
 
 	/* create empty line */
 	emptyLine = (char*)malloc(consSize.width + 1);
@@ -115,8 +115,8 @@ int main(int argc,char *argv[]) {
 	}
 
 	/* stop readline and navigation */
-	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
-	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_NAVI,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_DIS_NAVI,NULL,0);
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
 	if(!getEnv(vterm + SSTRLEN("/dev/"),MAX_PATH_LEN - SSTRLEN("/dev/"),"TERM")) {
@@ -178,9 +178,9 @@ int main(int argc,char *argv[]) {
 static void resetVterm(void) {
 	printf("\n");
 	flush();
-	ioctl(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
-	ioctl(STDOUT_FILENO,IOCTL_VT_EN_NAVI,NULL,0);
-	ioctl(STDOUT_FILENO,IOCTL_VT_RESTORE,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_EN_NAVI,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_RESTORE,NULL,0);
 }
 
 static void scrollDown(s32 l) {

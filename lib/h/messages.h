@@ -26,7 +26,7 @@
 
 /* general */
 #define MAX_MSG_ARGS				10
-#define MAX_MSG_SIZE				(1024 + 4 * sizeof(u32))
+#define MAX_MSG_SIZE				128
 #define MAX_MSGSTR_LEN				64
 
 #define CURSOR_DEFAULT				0
@@ -185,7 +185,7 @@ typedef union {
 		u32 arg2;
 		u32 arg3;
 		u32 arg4;
-		char d[MAX_MSG_SIZE - sizeof(u32) * 4];
+		char d[MAX_MSG_SIZE];
 	} data;
 } sMsg;
 

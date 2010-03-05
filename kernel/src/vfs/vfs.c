@@ -43,10 +43,8 @@
 #define FILE_COUNT					(PROC_COUNT * 16)
 /* the processes node */
 #define PROCESSES()					(nodes + 7)
-/* the services node */
-#define SERVICES()					(nodes + 10)
 /* the drivers-node */
-#define DRIVERS()					(nodes + 19)
+#define DRIVERS()					(nodes + 13)
 
 /* an entry in the global file table */
 typedef struct {
@@ -90,16 +88,13 @@ void vfs_init(void) {
 	 *     |-processes
 	 *     |-devices
 	 *     |-bin
-	 *   services
 	 *   dev
 	 */
 	root = vfsn_createDir(NULL,(char*)"");
 	sys = vfsn_createDir(root,(char*)"system");
 	vfsn_createPipeCon(sys,(char*)"pipe");
 	vfsn_createDir(sys,(char*)"processes");
-	vfsn_createDir(root,(char*)"services");
 	vfsn_createDir(sys,(char*)"devices");
-	vfsn_createDir(sys,(char*)"bin");
 	vfsn_createDir(root,(char*)"dev");
 }
 
@@ -319,14 +314,8 @@ bool vfs_eof(tTid tid,tFileNo file) {
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = nodes + e->nodeNo;
 
-		if(IS_SERVUSE(n->mode)) {
-			if(IS_DRIVER(n->parent->mode))
-				eof = n->parent->data.service.isEmpty;
-			else if(n->parent->owner == tid)
-				eof = sll_length(n->data.servuse.sendList) == 0;
-			else
-				eof = sll_length(n->data.servuse.recvList) == 0;
-		}
+		if(IS_SERVUSE(n->mode))
+			eof = n->parent->data.service.isEmpty;
 		/* we've read all from a pipe if there is one zero-length-entry left */
 		else if(IS_PIPE(n->mode))
 			eof = sll_length(n->data.pipe.list) == 1 && n->data.pipe.total == 0;
@@ -340,6 +329,27 @@ bool vfs_eof(tTid tid,tFileNo file) {
 	}
 
 	return eof;
+}
+
+s32 vfs_hasMsg(tTid tid,tFileNo file) {
+	sGFTEntry *e = globalFileTable + file;
+	sVFSNode *n = nodes + e->nodeNo;
+	vassert(e->flags != 0,"Invalid file %d",file);
+	if(e->devNo != VFS_DEV_NO || !IS_SERVUSE(n->mode))
+		return ERR_INVALID_FILE;
+	if(n->parent->owner == tid)
+		return sll_length(n->data.servuse.sendList) > 0;
+	return sll_length(n->data.servuse.recvList) > 0;
+}
+
+bool vfs_isterm(tTid tid,tFileNo file) {
+	sGFTEntry *e = globalFileTable + file;
+	sVFSNode *n = nodes + e->nodeNo;
+	UNUSED(tid);
+	vassert(e->flags != 0,"Invalid file %d",file);
+	if(e->devNo != VFS_DEV_NO)
+		return false;
+	return IS_SERVUSE(n->mode) && (n->parent->data.service.funcs & DRV_TERM);
 }
 
 s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
@@ -371,15 +381,10 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 			return ERR_PIPE_SEEK;
 
 		if(IS_SERVUSE(n->mode)) {
-			if(IS_DRIVER(n->parent->mode)) {
-				/* not supported for drivers */
-				if(whence == SEEK_END)
-					return ERR_INVALID_ARGS;
-				e->position = newPos;
-			}
-			/* not supported for services */
-			else
+			/* not supported for drivers */
+			if(whence == SEEK_END)
 				return ERR_INVALID_ARGS;
+			e->position = newPos;
 		}
 		else {
 			if(whence == SEEK_END)
@@ -480,28 +485,6 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 	return writtenBytes;
 }
 
-s32 vfs_ioctl(tTid tid,tFileNo file,u32 cmd,u8 *data,u32 size) {
-	s32 err;
-	sGFTEntry *e = globalFileTable + file;
-	sVFSNode *n;
-	vassert(e->flags != 0,"Invalid file %d",file);
-
-	if(e->devNo != VFS_DEV_NO)
-		return ERR_INVALID_FILE;
-
-	n = nodes + e->nodeNo;
-
-	/* TODO keep this? */
-	if((err = vfs_hasAccess(tid,e->nodeNo,VFS_WRITE)) < 0)
-		return err;
-
-	/* node not present anymore? */
-	if(n->name == NULL || !IS_SERVUSE(n->mode) || !IS_DRIVER(n->parent->mode))
-		return ERR_INVALID_FILE;
-
-	return vfsdrv_ioctl(tid,file,n,cmd,data,size);
-}
-
 s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
@@ -567,7 +550,7 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 				/* last usage? */
 				if(--(n->refCount) == 0) {
 					/* notify the driver, if it is one */
-					if(IS_SERVUSE(n->mode) && IS_DRIVER(n->parent->mode))
+					if(IS_SERVUSE(n->mode))
 						vfsdrv_close(tid,file,n);
 
 					/* remove pipe-nodes if there are no references anymore */
@@ -748,19 +731,11 @@ s32 vfs_rmdir(tTid tid,const char *path) {
 	return 0;
 }
 
-tServ vfs_createService(tTid tid,const char *name,u32 type) {
-	sVFSNode *serv;
-	sVFSNode *n;
+tServ vfs_createService(tTid tid,const char *name,u32 flags) {
+	sVFSNode *serv = DRIVERS();
+	sVFSNode *n = serv->firstChild;
 	u32 len;
 	char *hname;
-
-	/* determine position in VFS */
-	if(IS_DRIVER(type))
-		serv = DRIVERS();
-	else
-		serv = SERVICES();
-	n = serv->firstChild;
-
 	vassert(name != NULL,"name == NULL");
 
 	/* we don't want to have exotic service-names */
@@ -782,7 +757,7 @@ tServ vfs_createService(tTid tid,const char *name,u32 type) {
 	hname[len] = '\0';
 
 	/* create node */
-	n = vfsn_createServiceNode(tid,serv,hname,type);
+	n = vfsn_createServiceNode(tid,serv,hname,flags);
 	if(n != NULL)
 		return NADDR_TO_VNNO(n);
 
@@ -793,7 +768,7 @@ tServ vfs_createService(tTid tid,const char *name,u32 type) {
 
 s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable) {
 	sVFSNode *n = nodes + nodeNo;
-	if(n->name == NULL || !IS_DRIVER(n->mode))
+	if(n->name == NULL || !IS_SERVICE(n->mode) || !DRV_IMPL(n->data.service.funcs,DRV_READ))
 		return ERR_INVALID_SERVID;
 	if(n->owner != tid)
 		return ERR_NOT_OWN_SERVICE;
@@ -807,25 +782,20 @@ s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable) {
 bool vfs_msgAvailableFor(tTid tid,u8 events) {
 	sVFSNode *n;
 	sThread *t = thread_getById(tid);
-	bool isService = false;
-	bool isClient = false;
 	tFD i;
 
 	/* at first we check wether the process is a service */
 	if(events & EV_CLIENT) {
-		sVFSNode *rn[2] = {SERVICES(),DRIVERS()};
-		for(i = 0; i < 2; i++) {
-			n = NODE_FIRST_CHILD(rn[i]);
-			while(n != NULL) {
-				if(n->owner == tid) {
-					tInodeNo nodeNo = NADDR_TO_VNNO(n);
-					tInodeNo client = vfs_getClient(tid,&nodeNo,1);
-					isService = true;
-					if(vfsn_isValidNodeNo(client))
-						return true;
-				}
-				n = n->next;
+		sVFSNode *rn = DRIVERS();
+		n = NODE_FIRST_CHILD(rn);
+		while(n != NULL) {
+			if(n->owner == tid) {
+				tInodeNo nodeNo = NADDR_TO_VNNO(n);
+				tInodeNo client = vfs_getClient(tid,&nodeNo,1);
+				if(vfsn_isValidNodeNo(client))
+					return true;
 			}
+			n = n->next;
 		}
 	}
 
@@ -840,7 +810,6 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 					/* we don't want to check that if it is our own service. because it makes no
 					 * sense to read from ourself ;) */
 					if(IS_SERVUSE(n->mode) && n->parent->owner != tid) {
-						isClient = true;
 						if(n->data.servuse.recvList != NULL && sll_length(n->data.servuse.recvList) > 0)
 							return true;
 					}
@@ -849,10 +818,7 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 		}
 	}
 
-	/* if we are no client and no service we'll never receive a message */
-	/*if(isClient || isService)*/
-		return false;
-	/*return true;*/
+	return false;
 }
 
 s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count) {
@@ -1032,23 +998,20 @@ bool vfs_createThread(tTid tid,fRead handler) {
 
 void vfs_removeThread(tTid tid) {
 	sThread *t = thread_getById(tid);
-	sVFSNode *rn[2] = {SERVICES(),DRIVERS()};
+	sVFSNode *rn = DRIVERS();
 	sVFSNode *n,*tn;
-	u32 i;
 	char *name;
 
 	/* check if the thread is a service */
-	for(i = 0; i < 2; i++) {
-		n = NODE_FIRST_CHILD(rn[i]->firstChild);
-		while(n != NULL) {
-			if(IS_SERVICE(n->mode) && n->owner == tid) {
-				tn = n->next;
-				vfs_removeService(tid,NADDR_TO_VNNO(n));
-				n = tn;
-			}
-			else
-				n = n->next;
+	n = NODE_FIRST_CHILD(rn->firstChild);
+	while(n != NULL) {
+		if(IS_SERVICE(n->mode) && n->owner == tid) {
+			tn = n->next;
+			vfs_removeService(tid,NADDR_TO_VNNO(n));
+			n = tn;
 		}
+		else
+			n = n->next;
 	}
 
 	/* build name */

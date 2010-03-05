@@ -184,7 +184,7 @@ int main(void) {
 	if(setSigHandler(SIG_INTRPT_KB,kbIntrptHandler) < 0)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT_KB);
 
-	id = regService("keyboard",SERV_DRIVER);
+	id = regService("keyboard",DRV_READ);
 	if(id < 0)
 		error("Unable to register service 'keyboard'");
 
@@ -206,10 +206,6 @@ int main(void) {
 		}
 		else {
 			switch(mid) {
-				case MSG_DRV_OPEN:
-					msg.args.arg1 = 0;
-					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-					break;
 				case MSG_DRV_READ: {
 					/* offset is ignored here */
 					u32 count = msg.args.arg2 / sizeof(sKbData);
@@ -225,17 +221,6 @@ int main(void) {
 					}
 				}
 				break;
-				case MSG_DRV_WRITE:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
-					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
-					break;
-				case MSG_DRV_IOCTL: {
-					msg.data.arg1 = ERR_UNSUPPORTED_OP;
-					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
-				}
-				break;
-				case MSG_DRV_CLOSE:
-					break;
 			}
 			close(fd);
 		}

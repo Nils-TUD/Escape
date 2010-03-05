@@ -62,7 +62,7 @@ int main(void) {
 	if(startThread(refreshThread,NULL) < 0)
 		error("Unable to start CMOS-thread");
 
-	id = regService("cmos",SERV_DRIVER);
+	id = regService("cmos",DRV_READ);
 	if(id < 0)
 		error("Unable to register service 'cmos'");
 
@@ -77,10 +77,6 @@ int main(void) {
 			printe("[CMOS] Unable to get work");
 		else {
 			switch(mid) {
-				case MSG_DRV_OPEN:
-					msg.args.arg1 = 0;
-					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-					break;
 				case MSG_DRV_READ: {
 					u32 offset = msg.args.arg1;
 					u32 count = msg.args.arg2;
@@ -98,16 +94,6 @@ int main(void) {
 					}
 				}
 				break;
-				case MSG_DRV_WRITE:
-					msg.args.arg1 = ERR_UNSUPPORTED_OP;
-					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
-					break;
-				case MSG_DRV_IOCTL:
-					msg.data.arg1 = ERR_UNSUPPORTED_OP;
-					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
-					break;
-				case MSG_DRV_CLOSE:
-					break;
 			}
 			close(fd);
 		}

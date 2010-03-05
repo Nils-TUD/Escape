@@ -115,7 +115,7 @@ int main(void) {
 		error("Unable to set mode");
 
 	dirtyRects = sll_create();
-	id = regService("vesa",SERV_DEFAULT);
+	id = regService("vesa",0);
 	if(id < 0)
 		error("Unable to register service 'vesa'");
 

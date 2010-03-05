@@ -114,7 +114,7 @@ int main(void) {
 	tServ id;
 	tMsgId mid;
 
-	id = regService("env",SERV_DEFAULT);
+	id = regService("env",0);
 	if(id < 0)
 		error("Unable to register service 'env'");
 

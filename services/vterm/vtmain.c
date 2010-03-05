@@ -68,7 +68,7 @@ int main(void) {
 	/* reg services */
 	for(i = 0; i < VTERM_COUNT; i++) {
 		snprintf(name,sizeof(name),"vterm%d",i);
-		servIds[i] = regService(name,SERV_DRIVER);
+		servIds[i] = regService(name,DRV_READ | DRV_WRITE | DRV_TERM);
 		if(servIds[i] < 0)
 			error("Unable to register service '%s'",name);
 	}
@@ -121,10 +121,6 @@ int main(void) {
 			if(vt != NULL) {
 				reqc++;
 				switch(mid) {
-					case MSG_DRV_OPEN:
-						msg.args.arg1 = 0;
-						send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-						break;
 					case MSG_DRV_READ: {
 						/* offset is ignored here */
 						u32 count = msg.args.arg2;
@@ -160,13 +156,24 @@ int main(void) {
 						send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
 					}
 					break;
-					case MSG_DRV_IOCTL: {
-						msg.data.arg1 = vterm_ioctl(vt,&cfg,msg.data.arg1,msg.data.d);
-						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
+
+					case IOCTL_VT_SHELLPID:
+					case IOCTL_VT_EN_DATE:
+					case IOCTL_VT_DIS_DATE:
+					case IOCTL_VT_EN_ECHO:
+					case IOCTL_VT_DIS_ECHO:
+					case IOCTL_VT_EN_RDLINE:
+					case IOCTL_VT_DIS_RDLINE:
+					case IOCTL_VT_EN_RDKB:
+					case IOCTL_VT_DIS_RDKB:
+					case IOCTL_VT_EN_NAVI:
+					case IOCTL_VT_DIS_NAVI:
+					case IOCTL_VT_BACKUP:
+					case IOCTL_VT_RESTORE:
+					case IOCTL_VT_GETSIZE:
+						msg.data.arg1 = vterm_ioctl(vt,&cfg,mid,msg.data.d);
 						vterm_update(vt);
-					}
-					break;
-					case MSG_DRV_CLOSE:
+						send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
 						break;
 				}
 			}

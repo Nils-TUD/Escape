@@ -31,7 +31,7 @@ int main(void) {
 	tServ id;
 	tMsgId mid;
 
-	id = regService("null",SERV_DRIVER);
+	id = regService("null",DRV_READ | DRV_WRITE);
 	if(id < 0)
 		error("Unable to register service 'null'");
 
@@ -46,16 +46,11 @@ int main(void) {
 			printe("[NULL] Unable to get work");
 		else {
 			switch(mid) {
-				case MSG_DRV_OPEN:
-					msg.args.arg1 = 0;
-					send(fd,MSG_DRV_OPEN_RESP,&msg,sizeof(msg.args));
-					break;
-				case MSG_DRV_READ: {
+				case MSG_DRV_READ:
 					msg.args.arg1 = 0;
 					msg.args.arg2 = true;
 					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
-				}
-				break;
+					break;
 				case MSG_DRV_WRITE:
 					/* skip the data-message */
 					if(receive(fd,NULL,NULL,0) < 0)
@@ -63,13 +58,6 @@ int main(void) {
 					/* write response and pretend that we've written everything */
 					msg.args.arg1 = msg.args.arg2;
 					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
-					break;
-				case MSG_DRV_IOCTL: {
-					msg.data.arg1 = ERR_UNSUPPORTED_OP;
-					send(fd,MSG_DRV_IOCTL_RESP,&msg,sizeof(msg.data));
-				}
-				break;
-				case MSG_DRV_CLOSE:
 					break;
 			}
 			close(fd);

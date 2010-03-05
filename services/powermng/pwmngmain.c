@@ -54,7 +54,7 @@ int main(void) {
 	if(requestIOPort(IOPORT_KB_CTRL) < 0)
 		error("Unable to request io-port %d",IOPORT_KB_CTRL);
 
-	id = regService("powermng",SERV_DEFAULT);
+	id = regService("powermng",0);
 	if(id < 0)
 		error("Unable to register service 'powermng'");
 

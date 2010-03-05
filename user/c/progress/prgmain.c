@@ -27,7 +27,8 @@ int main(void) {
 	sIoCtlSize consSize;
 	u32 maxWidth;
 	u32 p,i,j;
-	ioctl(STDIN_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize));
+	if(recvMsgData(STDIN_FILENO,IOCTL_VT_GETSIZE,&consSize,sizeof(sIoCtlSize)) < 0)
+		error("Unable to get vterm-size");
 	maxWidth = consSize.width - 3;
 
 	printf("Waiting for fun...\n");

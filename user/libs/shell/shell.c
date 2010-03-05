@@ -107,9 +107,9 @@ u32 shell_readLine(char *buffer,u32 max) {
 	resetReadLine = false;
 
 	/* disable "readline", enable "echo", enable "navi" (just to be sure) */
-	ioctl(STDOUT_FILENO,IOCTL_VT_EN_NAVI,NULL,0);
-	ioctl(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
-	ioctl(STDOUT_FILENO,IOCTL_VT_EN_ECHO,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_EN_NAVI,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_DIS_RDLINE,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_EN_ECHO,NULL,0);
 
 	/* ensure that the line is empty */
 	*buffer = '\0';
@@ -174,7 +174,7 @@ u32 shell_readLine(char *buffer,u32 max) {
 	}
 
 	/* enable "readline" */
-	ioctl(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
+	send(STDOUT_FILENO,IOCTL_VT_EN_RDLINE,NULL,0);
 
 	buffer[i] = '\0';
 	return i;

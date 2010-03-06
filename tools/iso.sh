@@ -20,12 +20,12 @@ echo 'timeout 3' >> $TMPDIR/boot/grub/menu.lst;
 echo '' >> $TMPDIR/boot/grub/menu.lst;
 echo "title $OSTITLE - VESA-text" >> $TMPDIR/boot/grub/menu.lst;
 echo "kernel /boot/escape.bin videomode=vesa" >> $TMPDIR/boot/grub/menu.lst;
-echo 'module /sbin/ata /dev/ata' >> $TMPDIR/boot/grub/menu.lst;
+echo 'module /sbin/ata /system/devices/ata' >> $TMPDIR/boot/grub/menu.lst;
 echo 'module /sbin/fs /dev/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 echo '' >> $TMPDIR/boot/grub/menu.lst;
 echo "title $OSTITLE - VGA-text" >> $TMPDIR/boot/grub/menu.lst;
 echo "kernel /boot/escape.bin videomode=vga" >> $TMPDIR/boot/grub/menu.lst;
-echo 'module /sbin/ata /dev/ata' >> $TMPDIR/boot/grub/menu.lst;
+echo 'module /sbin/ata /system/devices/ata' >> $TMPDIR/boot/grub/menu.lst;
 echo 'module /sbin/fs /dev/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 
 # copy kernel

@@ -140,7 +140,6 @@ void thread_switch(void) {
 }
 
 void thread_switchTo(tTid tid) {
-	u64 kcstart;
 	/* if we're idling we have to leave this interrupt first and stop idling then */
 	if(cur->tid == IDLE_TID) {
 		/* ignore it if we should continue idling */
@@ -160,57 +159,59 @@ void thread_switchTo(tTid tid) {
 	}
 
 	/* finish kernel-time here since we're switching the process */
-	kcstart = cur->kcycleStart;
-	if(kcstart > 0) {
-		u64 cycles = cpu_rdtsc();
-		cur->kcycleCount.val64 += cycles - kcstart;
-	}
-
-	if(tid != cur->tid && !thread_save(&cur->save)) {
-		sThread *old;
-		sThread *t = thread_getById(tid);
-		vassert(t != NULL,"Thread with tid %d not found",tid);
-
-		/* mark old process ready, if it should not be blocked, killed or something */
-		if(cur->state == ST_RUNNING)
-			sched_setReady(cur);
-
-		old = cur;
-		cur = t;
-
-		/* if it is the idle-thread, stay here and wait for an interrupt */
-		if(cur->tid == IDLE_TID) {
-			/* user-mode starts here */
-			cur->ucycleStart = cpu_rdtsc();
-			/* idle until there is another thread to run */
-			__asm__("sti");
-			while(runnableThread == INVALID_TID)
-				__asm__("hlt");
-
-			/* now a thread wants to run */
-			__asm__("cli");
-			cur = thread_getById(runnableThread);
-			runnableThread = INVALID_TID;
+	if(tid != cur->tid) {
+		u64 kcstart = cur->kcycleStart;
+		if(kcstart > 0) {
+			u64 cycles = cpu_rdtsc();
+			cur->kcycleCount.val64 += cycles - kcstart;
 		}
 
-		sched_setRunning(cur);
+		if(!thread_save(&cur->save)) {
+			sThread *old;
+			sThread *t = thread_getById(tid);
+			vassert(t != NULL,"Thread with tid %d not found",tid);
 
-		if(old->proc != cur->proc) {
-			/* remove the io-map. it will be set as soon as the process accesses an io-port
-			 * (we'll get an exception) */
-			tss_removeIOMap();
-			tss_setStackPtr(cur->proc->isVM86);
+			/* mark old process ready, if it should not be blocked, killed or something */
+			if(cur->state == ST_RUNNING)
+				sched_setReady(cur);
+
+			old = cur;
+			cur = t;
+
+			/* if it is the idle-thread, stay here and wait for an interrupt */
+			if(cur->tid == IDLE_TID) {
+				/* user-mode starts here */
+				cur->ucycleStart = cpu_rdtsc();
+				/* idle until there is another thread to run */
+				__asm__("sti");
+				while(runnableThread == INVALID_TID)
+					__asm__("hlt");
+
+				/* now a thread wants to run */
+				__asm__("cli");
+				cur = thread_getById(runnableThread);
+				runnableThread = INVALID_TID;
+			}
+
+			sched_setRunning(cur);
+
+			if(old->proc != cur->proc) {
+				/* remove the io-map. it will be set as soon as the process accesses an io-port
+				 * (we'll get an exception) */
+				tss_removeIOMap();
+				tss_setStackPtr(cur->proc->isVM86);
+			}
+
+			/* lock the FPU so that we can save the FPU-state for the previous process as soon
+			 * as this one wants to use the FPU */
+			fpu_lockFPU();
+			thread_resume(cur->proc->physPDirAddr,&cur->save,
+					sll_length(cur->proc->threads) > 1 ? cur->kstackFrame : 0);
 		}
 
-		/* lock the FPU so that we can save the FPU-state for the previous process as soon
-		 * as this one wants to use the FPU */
-		fpu_lockFPU();
-		thread_resume(cur->proc->physPDirAddr,&cur->save,
-				sll_length(cur->proc->threads) > 1 ? cur->kstackFrame : 0);
+		/* now start kernel-time again */
+		cur->kcycleStart = cpu_rdtsc();
 	}
-
-	/* now start kernel-time again */
-	cur->kcycleStart = cpu_rdtsc();
 
 	/* destroy threads, if there are any */
 	if(deadThreads != NULL) {

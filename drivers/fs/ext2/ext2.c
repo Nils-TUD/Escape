@@ -43,24 +43,12 @@
 static bool ext2_isPowerOf(u32 x,u32 y);
 
 void *ext2_init(const char *driver) {
-	s32 res;
-	sFileInfo info;
 	tFD fd;
 	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
 	if(e == NULL)
 		return NULL;
 
-	/* wait until ata is ready */
-	/* we have to try it multiple times in this case since the kernel loads ata and fs
-	 * directly after another and we don't know who's ready first */
-	do {
-		res = stat("/system/devices/ata",&info);
-		if(res < 0)
-			yield();
-	}
-	while(res < 0);
-
-	/* now open the driver */
+	/* open the driver */
 	fd = open(driver,IO_WRITE | IO_READ);
 	if(fd < 0) {
 		printe("Unable to find driver '%s'",driver);

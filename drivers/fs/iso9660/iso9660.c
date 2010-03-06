@@ -39,8 +39,6 @@
 static bool iso_setup(const char *driver,sISO9660 *iso);
 
 void *iso_init(const char *driver) {
-	s32 res;
-	sFileInfo info;
 	sISO9660 *iso = (sISO9660*)malloc(sizeof(sISO9660));
 	if(iso == NULL)
 		return NULL;
@@ -56,16 +54,6 @@ void *iso_init(const char *driver) {
 	iso->blockCache.read = (fReadBlocks)iso_rw_readBlocks;
 	/* no writing here ;) */
 	iso->blockCache.write = NULL;
-
-	/* wait until ata is ready */
-	/* we have to try it multiple times in this case since the kernel loads ata and fs
-	 * directly after another and we don't know who's ready first */
-	do {
-		res = stat("/system/devices/ata",&info);
-		if(res < 0)
-			yield();
-	}
-	while(res < 0);
 
 	/* if the driver is provided, simply use it */
 	if(strcmp(driver,"cdrom") != 0) {

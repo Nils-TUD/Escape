@@ -18,6 +18,7 @@
  */
 
 #include <common.h>
+#include <machine/timer.h>
 #include <mem/paging.h>
 #include <mem/kheap.h>
 #include <task/proc.h>
@@ -31,8 +32,6 @@
 #include <errors.h>
 #include <string.h>
 #include <assert.h>
-
-#define MB_PR(fmt,...)			/*vid_printf("[MB] " #fmt "\n",## __VA_ARGS__)*/
 
 #define CHECK_FLAG(flags,bit)	(flags & (1 << bit))
 
@@ -93,8 +92,6 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	if(loadedMods)
 		return;
 
-	MB_PR("We're going to load %d modules",mb->modsCount);
-
 	loadedMods = true;
 	for(i = 0; i < mb->modsCount; i++) {
 		name = mod->name;
@@ -105,14 +102,11 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		if(space)
 			space[0] = '\0';
 
-		MB_PR("Loading module %d: '%s' '%s'",i,name,driver);
-
 		/* clone proc */
 		pid = proc_getFreePid();
 		if(pid == INVALID_PID)
 			util_panic("No free process-slots");
 
-		MB_PR("Cloning");
 		if(proc_clone(pid,false)) {
 			/* build args */
 			s32 argc;
@@ -120,7 +114,6 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			char *argBuffer = NULL;
 			char *args[] = {NULL,NULL,NULL,NULL};
 			args[0] = name;
-			MB_PR("We're the child");
 			/* just two arguments supported here */
 			if(space != NULL) {
 				char *nnspace = strchr(space + 1,' ');
@@ -132,42 +125,36 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 				}
 				args[1] = space + 1;
 			}
-			MB_PR("Arguments (%d): '%s' '%s' '%s'",argc,args[0],args[1] ? args[1] : "",
-					args[2] ? args[2] : "");
 			/* we'll reach this as soon as the scheduler has chosen the created process */
 			p = proc_getRunning();
-			MB_PR("Removing data-pages");
 			/* remove data-pages */
 			proc_changeSize(-p->dataPages,CHG_DATA);
-			MB_PR("Loading from mem");
 			/* now load driver */
 			memcpy(p->command,name,strlen(name) + 1);
 			entryPoint = elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart);
 			if((s32)entryPoint < 0)
 				util_panic("Loading multiboot-module %s failed",p->command);
-			MB_PR("Building arguments");
 			argc = proc_buildArgs(args,&argBuffer,&argSize,false);
 			if(argc < 0)
 				util_panic("Building args for multiboot-module %s failed: %d",p->command,argc);
-			MB_PR("Setup stack");
 			vassert(proc_setupUserStack(stack,argc,argBuffer,argSize),
 					"Unable to setup user-stack for multiboot module %s",p->command);
 			proc_setupStart(stack,entryPoint);
 			kheap_free(argBuffer);
-			MB_PR("We're done :)");
 			/* we don't want to continue the loop ;) */
 			return;
 		}
 
 		/* wait until the driver is registered */
-		vid_printf("Loading '%s'...\n",driver);
-		/* don't wait for ATA, since it doesn't register a driver but multiple drivers depending
-		 * on the available drives and partitions */
-		/* TODO better solution? */
-		if(strcmp(driver,"/dev/ata") != 0) {
-			/* don't create a pipe- or driver-usage-node here */
-			while(vfsn_resolvePath(driver,&nodeNo,NULL,VFS_NOACCESS) < 0)
-				thread_switchNoSigs();
+		vid_printf("Loading '%s'...\n",name);
+		/* don't create a pipe- or driver-usage-node here */
+		while(vfsn_resolvePath(driver,&nodeNo,NULL,VFS_NOACCESS) < 0) {
+			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
+			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
+			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
+			 * a switch but stay here for ever (and get no timer-interrupts to wakeup ata) */
+			timer_sleepFor(thread_getRunning()->tid,20);
+			thread_switchNoSigs();
 		}
 
 		mod++;

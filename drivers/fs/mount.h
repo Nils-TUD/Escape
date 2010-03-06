@@ -29,7 +29,7 @@
 #define ROOT_MNT_INO			-1
 
 /* The handler for the functions of the filesystem */
-typedef void *(*fFSInit)(const char *driver);
+typedef void *(*fFSInit)(const char *driver,char **usedDev);
 typedef void (*fFSDeinit)(void *h);
 typedef tInodeNo (*fFSResPath)(void *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt);
 typedef s32 (*fFSOpen)(void *h,tInodeNo ino,u8 flags);

@@ -235,8 +235,12 @@ typedef struct {
 
 /**
  * Inits the ISO9660-filesystem
+ *
+ * @param driver the driver-name (cdrom = find the device yourself)
+ * @param usedDev will be set to the used driver
+ * @return the handle
  */
-void *iso_init(const char *driver);
+void *iso_init(const char *driver,char **usedDev);
 
 /**
  * Deinits the ISO9660-filesystem

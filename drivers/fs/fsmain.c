@@ -115,6 +115,7 @@ int main(int argc,char *argv[]) {
 		error("Unable to get ext2-filesystem");
 	if(mount_addFS(fs) != 0)
 		error("Unable to add ext2-filesystem");
+	printf("[FS] Loaded ext2-driver\n");
 
 	/* add iso9660 */
 	fs = iso_getFS();
@@ -122,6 +123,7 @@ int main(int argc,char *argv[]) {
 		error("Unable to get iso9660-filesystem");
 	if(mount_addFS(fs) != 0)
 		error("Unable to add iso9660-filesystem");
+	printf("[FS] Loaded iso9660-driver\n");
 
 	/* create root-fs */
 	fstype = 0;
@@ -138,6 +140,8 @@ int main(int argc,char *argv[]) {
 	root = mount_get(rootDev);
 	if(root == NULL)
 		error("Unable to get root mount-point");
+	printf("[FS] Mounted '%s' with fs '%s' at '/'\n",root->driver,argv[2]);
+	flush();
 
 	/* register driver */
 	id = regDriver("fs",DRV_FS);

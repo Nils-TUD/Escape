@@ -38,7 +38,7 @@
 
 static bool iso_setup(const char *driver,sISO9660 *iso);
 
-void *iso_init(const char *driver) {
+void *iso_init(const char *driver,char **usedDev) {
 	sISO9660 *iso = (sISO9660*)malloc(sizeof(sISO9660));
 	if(iso == NULL)
 		return NULL;
@@ -91,7 +91,19 @@ void *iso_init(const char *driver) {
 			free(iso);
 			return NULL;
 		}
+
+		driver = path;
 	}
+
+	/* report used driver */
+	*usedDev = malloc(strlen(driver) + 1);
+	if(!*usedDev) {
+		printe("Not enough mem for driver-name");
+		bcache_destroy(&iso->blockCache);
+		free(iso);
+		return NULL;
+	}
+	strcpy(*usedDev,driver);
 	return iso;
 }
 

@@ -91,17 +91,19 @@ tDevNo mount_addMnt(tDevNo dev,tInodeNo inode,const char *driver,u16 type) {
 
 	/* if not, create a new one */
 	if(n == NULL) {
+		char *usedDev;
 		inst = (sFSInst*)malloc(sizeof(sFSInst));
 		if(inst == NULL)
 			return ERR_NOT_ENOUGH_MEM;
 		inst->refs = 0;
 		inst->fs = fs;
-		inst->handle = fs->init(driver);
-		strcpy(inst->driver,driver);
+		inst->handle = fs->init(driver,&usedDev);
 		if(inst->handle == NULL) {
 			free(inst);
 			return ERR_FS_INIT_FAILED;
 		}
+		strcpy(inst->driver,usedDev);
+		free(usedDev);
 	}
 	inst->refs++;
 	if(!sll_append(fsInsts,inst)) {

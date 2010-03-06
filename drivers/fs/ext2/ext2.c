@@ -42,7 +42,7 @@
  */
 static bool ext2_isPowerOf(u32 x,u32 y);
 
-void *ext2_init(const char *driver) {
+void *ext2_init(const char *driver,char **usedDev) {
 	tFD fd;
 	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
 	if(e == NULL)
@@ -85,6 +85,16 @@ void *ext2_init(const char *driver) {
 	/* init caches */
 	ext2_icache_init(e);
 	bcache_init(&e->blockCache);
+
+	/* report used driver */
+	*usedDev = malloc(strlen(driver) + 1);
+	if(!*usedDev) {
+		printe("Not enough mem for driver-name");
+		bcache_destroy(&e->blockCache);
+		free(e);
+		return NULL;
+	}
+	strcpy(*usedDev,driver);
 	return e;
 }
 

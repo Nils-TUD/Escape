@@ -348,9 +348,10 @@ typedef struct {
  * Inits the ext2-filesystem
  *
  * @param driver the driver-path
+ * @param usedDev will be set to the used driver
  * @return the ext2-handle
  */
-void *ext2_init(const char *driver);
+void *ext2_init(const char *driver,char **usedDev);
 
 /**
  * Deinits the ext2-filesystem

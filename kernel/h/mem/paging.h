@@ -192,7 +192,8 @@ typedef struct {
 	copyOnWrite			: 1,
 	/* Indicates that the frame should not be free'd when this page is removed */
 	noFree				: 1,
-						: 1,
+	/* Indicates that the frame is swapped out */
+	swapped				: 1,
 	/* the physical address of the page */
 	frameNumber			: 20;
 } sPTEntry;
@@ -442,6 +443,36 @@ void paging_gdtFinished(void);
  * @param p the process
  */
 void paging_sprintfVirtMem(sStringBuffer *buf,sProc *p);
+
+/**
+ * Maps the pagedir of the given process and finds the next swappable page of this process.
+ * It assumes that you have checked that there is a swappable page!
+ *
+ * @param p the process
+ * @return the virtual address
+ */
+u32 paging_swapGetNextAddr(sProc *p);
+
+/**
+ * Maps the pagedir of the given process and swaps the page with given virtual address out.
+ * That means the bits of the page-table-entry are manipulated correspondingly.
+ *
+ * @param p the process
+ * @param addr the virtual address
+ * @return the physical address the page was mapped to
+ */
+u32 paging_swapOut(sProc *p,u32 addr);
+
+/**
+ * Maps the pagedir of the given process and swaps the page with given virtual address in.
+ * That means the bits of the page-table-entry are manipulated correspondingly.
+ *
+ * @param p the process
+ * @param virt the virtual address
+ * @param phys the physical address to set
+ * @return true if successfull
+ */
+void paging_swapIn(sProc *p,u32 virt,u32 phys);
 
 
 #if DEBUGGING

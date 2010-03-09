@@ -21,6 +21,7 @@
 #include <machine/timer.h>
 #include <mem/paging.h>
 #include <mem/kheap.h>
+#include <mem/swap.h>
 #include <task/proc.h>
 #include <task/thread.h>
 #include <task/elf.h>
@@ -158,6 +159,12 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		}
 
 		mod++;
+	}
+
+	/* start the swapper-thread. it will never return */
+	if(proc_startThread(0,0,NULL,0) == 0) {
+		swap_start();
+		util_panic("Swapper reached this");
 	}
 
 	/* create the vm86-task */

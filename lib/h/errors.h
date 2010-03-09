@@ -84,6 +84,7 @@
 #define ERR_INVALID_KEYMAP			-63
 #define ERR_VESA_SETMODE_FAILED		-64
 #define ERR_VESA_MODE_NOT_FOUND		-65
+#define ERR_NO_VM86_TASK			-66
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

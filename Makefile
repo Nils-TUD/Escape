@@ -12,9 +12,9 @@ BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 BUILDAPPS = $(BUILDDIR)/apps
 
-KVM = -enable-kvm
+#KVM = -enable-kvm
 QEMU = /home/hrniels/Applications/qemu-0.12.2/bin/bin/qemu
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 20 \
 	-localtime
 
 ifeq ($(BUILDDIR),$(abspath build/debug))
@@ -109,6 +109,9 @@ $(ISO):	all
 $(VMDISK): $(HDD)
 		qemu-img convert -f raw $(HDD) -O vmdk $(VMDISK)
 
+swapbl:
+		tools/disk.sh swapbl $(BLOCK)
+
 dis:
 ifeq ($(APP),)
 		objdump -dS $(BIN) | less
@@ -159,7 +162,7 @@ testvmware:	all prepareTest $(VMDISK)
 prepareTest:
 		tools/disk.sh mountp1
 		@if [ "`cat $(DISKMOUNT)/boot/grub/menu.lst | grep kernel.bin`" != "" ]; then \
-			$(SUDO) sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel_test.bin \/appsdb/g" \
+			$(SUDO) sed --in-place -e "s/kernel\.bin\(.*\)/kernel_test.bin\\1/g" \
 				$(DISKMOUNT)/boot/grub/menu.lst; \
 				touch $(HDD); \
 		fi;
@@ -168,7 +171,7 @@ prepareTest:
 prepareRun:
 		tools/disk.sh mountp1
 		@if [ "`cat $(DISKMOUNT)/boot/grub/menu.lst | grep kernel_test.bin`" != "" ]; then \
-			$(SUDO) sed --in-place -e "s/^kernel.*/kernel \/boot\/kernel.bin \/appsdb/g" \
+			$(SUDO) sed --in-place -e "s/kernel_test\.bin\(.*\)/kernel.bin\\1/g" \
 				$(DISKMOUNT)/boot/grub/menu.lst; \
 				touch $(HDD); \
 		fi;

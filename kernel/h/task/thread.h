@@ -54,7 +54,17 @@ typedef struct {
 } sThreadRegs;
 
 /* the thread states */
-typedef enum {ST_UNUSED = 0,ST_RUNNING = 1,ST_READY = 2,ST_BLOCKED = 3,ST_ZOMBIE = 4} eThreadState;
+typedef enum {
+	ST_UNUSED = 0,
+	ST_RUNNING = 1,
+	ST_READY = 2,
+	ST_BLOCKED = 3,
+	ST_ZOMBIE = 4,
+	/* involved in a swapping-operation => CAN'T run. will be set to blocked when swapping done */
+	ST_BLOCKED_SWAP = 5,
+	/* same as ST_BLOCKED_SWAP, but will be set to ready when done */
+	ST_READY_SWAP = 6
+} eThreadState;
 
 /* represents a thread */
 typedef struct {
@@ -70,6 +80,12 @@ typedef struct {
 	u32 events;
 	/* the process we belong to */
 	sProc *proc;
+	/* the number of times we got chosen so far */
+	u32 schedCount;
+	/* kernel-internal timestamp of last scheduling; note that this is not really correct
+	 * since its just used for swapping (we'll set the same timestamp for a thread of all
+	 * procs that use the same text) */
+	u64 lastSched;
 	/* start address of the stack */
 	u32 ustackBegin;
 	u32 ustackPages;

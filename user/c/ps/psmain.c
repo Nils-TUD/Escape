@@ -50,6 +50,7 @@ typedef struct {
 	tPid pid;
 	tPid parentPid;
 	u32 frames;
+	u32 swapped;
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
@@ -186,6 +187,7 @@ int main(int argc,char *argv[]) {
 	u32 maxPpid = 100;
 	u32 maxPmem = 10000;
 	u32 maxVmem = 10000;
+	u32 maxSmem = 10000;
 	for(i = 0; i < numProcs; i++) {
 		if(procs[i].pid > maxPid)
 			maxPid = procs[i].pid;
@@ -193,6 +195,8 @@ int main(int argc,char *argv[]) {
 			maxPpid = procs[i].parentPid;
 		if(procs[i].frames > maxPmem)
 			maxPmem = procs[i].frames;
+		if(procs[i].swapped > maxSmem)
+			maxSmem = procs[i].swapped;
 		if(procs[i].textPages + procs[i].dataPages + procs[i].stackPages > maxVmem)
 			maxVmem = procs[i].textPages + procs[i].dataPages + procs[i].stackPages;
 		if(printThreads) {
@@ -205,12 +209,14 @@ int main(int argc,char *argv[]) {
 	}
 	maxPid = getuwidth(maxPid,10);
 	maxPpid = getuwidth(maxPpid,10);
+	/* display in KiB, its in pages, i.e. 4 KiB blocks */
 	maxPmem = getuwidth(maxPmem * 4,10);
 	maxVmem = getuwidth(maxVmem * 4,10);
+	maxSmem = getuwidth(maxSmem * 4,10);
 
 	/* now print processes */
-	printf("%*sPID%*sPPID%*sPMEM%*sVMEM  STATE    %%CPU (USER,KERNEL) COMMAND\n",
-			maxPid - 3,"",maxPpid - 1,"",maxPmem + 1,"",maxVmem + 1,"");
+	printf("%*sPID%*sPPID%*sPMEM%*sVMEM%*sSMEM  STATE    %%CPU (USER,KERNEL) COMMAND\n",
+			maxPid - 3,"",maxPpid - 1,"",maxPmem + 1,"",maxVmem + 1,"",maxSmem + 1,"");
 
 	for(i = 0; i < numProcs; i++) {
 		u64 procCycles;
@@ -220,9 +226,10 @@ int main(int argc,char *argv[]) {
 		cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
 		userPercent = (u32)(100. / (procCycles / (double)procs[i].ucycleCount.val64));
 		kernelPercent = (u32)(100. / (procCycles / (double)procs[i].kcycleCount.val64));
-		printf("%*u   %*u %*u KiB %*u KiB  -       %4.1f%% (%3d%%,%3d%%)   %s\n",
+		printf("%*u   %*u %*u KiB %*u KiB %*u KiB  -       %4.1f%% (%3d%%,%3d%%)   %s\n",
 				maxPid,procs[i].pid,maxPpid,procs[i].parentPid,maxPmem,procs[i].frames * 4,
 				maxVmem,(procs[i].textPages + procs[i].dataPages + procs[i].stackPages) * 4,
+				maxSmem,procs[i].swapped * 4,
 				cyclePercent,userPercent,kernelPercent,procs[i].command);
 
 		if(printThreads) {
@@ -234,8 +241,8 @@ int main(int argc,char *argv[]) {
 				u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
 				printf("  %c\xC4%*s%*d%*s%s %4.1f%% (%3d%%,%3d%%)\n",
 						n->next == NULL ? 0xC0 : 0xC3,
-						maxPid - 3,"",maxPpid,t->tid,14 + maxPmem + maxVmem,"",states[t->state],tcyclePercent,
-						tuserPercent,tkernelPercent);
+						maxPid - 3,"",maxPpid,t->tid,19 + maxPmem + maxVmem + maxSmem,"",
+						states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
 			}
 		}
 	}
@@ -361,8 +368,8 @@ static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
 	/* parse string */
 	sscanf(
 		buf,
-		"%*s%hu" "%*s%hu" "%*s%s" "%*s%u" "%*s%u" "%*s%u" "%*s%u",
-		&p->pid,&p->parentPid,&p->command,&p->frames,&p->textPages,
+		"%*s%hu" "%*s%hu" "%*s%s" "%*s%u" "%*s%u" "%*s%u" "%*s%u" "%*s%u",
+		&p->pid,&p->parentPid,&p->command,&p->frames,&p->swapped,&p->textPages,
 		&p->dataPages,&p->stackPages
 	);
 	p->threads = sll_create();
@@ -418,7 +425,7 @@ static bool ps_readThread(tFD fd,sPThread *t) {
 	/* parse string; use separate u16 storage for state since we can't tell scanf that is a byte */
 	sscanf(
 		buf,
-		"%*s%hu" "%*s%hu" "%*s%hu" "%*s%u" "%*s%8x%8x" "%*s%8x%8x",
+		"%*s%hu" "%*s%hu" "%*s%hu" "%*s%u" "%*s%*u" "%*s%8x%8x" "%*s%8x%8x",
 		&t->tid,&t->pid,&state,&t->stackPages,
 		&t->ucycleCount.val32.upper,&t->ucycleCount.val32.lower,
 		&t->kcycleCount.val32.upper,&t->kcycleCount.val32.lower

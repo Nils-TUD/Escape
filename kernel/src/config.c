@@ -36,6 +36,7 @@
 static void conf_set(const char *name,const char *value);
 
 static u8 bootVidMode;
+static char swapDev[MAX_BPVAL_LEN + 1] = "";
 
 void conf_parseBootParams(const char *params) {
 	char name[MAX_BPNAME_LEN];
@@ -98,6 +99,16 @@ void conf_parseBootParams(const char *params) {
 	}
 }
 
+const char *conf_getStr(u32 id) {
+	const char *res = NULL;
+	switch(id) {
+		case CONF_SWAP_DEVICE:
+			res = strlen(swapDev) ? swapDev : NULL;
+			break;
+	}
+	return res;
+}
+
 s32 conf_get(u32 id) {
 	s32 res;
 	switch(id) {
@@ -130,4 +141,6 @@ static void conf_set(const char *name,const char *value) {
 		else
 			bootVidMode = CONF_VIDMODE_VGATEXT;
 	}
+	else if(strcmp(name,"swapdev") == 0)
+		strcpy(swapDev,value);
 }

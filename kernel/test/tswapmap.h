@@ -17,26 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LIMITS_H_
-#define LIMITS_H_
+#ifndef TSWAPMAP_H_
+#define TSWAPMAP_H_
 
-#define CHAR_BIT		8
-#define CHAR_MAX		SCHAR_MAX
-#define CHAR_MIN		SCHAR_MIN
-#define SCHAR_MAX		127
-#define SCHAR_MIN		(-128)
-#define SHRT_MAX		32767
-#define SHRT_MIN		(-32768)
-#define INT_MAX			32767
-#define INT_MIN			(-32768)
-#define LONG_MAX		2147483647LL
-#define LONG_MIN		(-2147483648LL)
-#define LLONG_MAX		9223372036854775807LL
-#define LLONG_MIN		(-LLONG_MAX - 1LL)
-#define UCHAR_MAX		255
-#define USHRT_MAX		65535
-#define UINT_MAX		65535
-#define ULONG_MAX		4294967295ULL
-#define ULLONG_MAX		18446744073709551615ULL
+#include <common.h>
+#include <test.h>
 
-#endif /* LIMITS_H_ */
+extern sTestModule tModSwapMap;
+
+#endif /* TSWAPMAP_H_ */

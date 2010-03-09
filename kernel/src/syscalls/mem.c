@@ -89,6 +89,7 @@ void sysc_mapPhysical(sIntrptStackFrame *stack) {
 
 	/* increase datapages */
 	p->dataPages += pages;
+	p->unswappable += pages;
 	/* return start-addr */
 	SYSC_RET1(stack,addr);
 }

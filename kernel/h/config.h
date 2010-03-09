@@ -27,6 +27,7 @@
 #define CONF_MAX_THREADS		2
 #define CONF_MAX_FDS			3
 #define CONF_BOOT_VIDEOMODE		4
+#define CONF_SWAP_DEVICE		5
 
 #define CONF_VIDMODE_VGATEXT	0
 #define CONF_VIDMODE_VESATEXT	1
@@ -37,6 +38,14 @@
  * @param params the parameter
  */
 void conf_parseBootParams(const char *params);
+
+/**
+ * Returns the value for the given configuration-string-value
+ *
+ * @param id the config-id
+ * @return the value or NULL
+ */
+const char *conf_getStr(u32 id);
 
 /**
  * Returns the value for the given configuration-value

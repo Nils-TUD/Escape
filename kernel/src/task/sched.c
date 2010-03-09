@@ -57,6 +57,7 @@ typedef struct {
 	sQueueNode *last;
 } sQueue;
 
+static bool sched_setReadyState(sThread *t);
 static void sched_qInit(sQueue *q);
 static sThread *sched_qDequeue(sQueue *q);
 static void sched_qDequeueThread(sQueue *q,sThread *t);
@@ -104,7 +105,7 @@ sThread *sched_perform(void) {
 }
 
 void sched_setRunning(sThread *t) {
-	vassert(t != NULL,"p == NULL");
+	assert(t != NULL);
 
 	switch(t->state) {
 		case ST_RUNNING:
@@ -115,47 +116,66 @@ void sched_setRunning(sThread *t) {
 		case ST_BLOCKED:
 			sched_qDequeueThread(&blockedQueue,t);
 			break;
+		default:
+			vassert(false,"Invalid state for setRunning (%d)",t->state);
+			break;
 	}
 
 	t->state = ST_RUNNING;
 }
 
 void sched_setReady(sThread *t) {
-	vassert(t != NULL,"p == NULL");
-
-	/* nothing to do? */
-	if(t->state == ST_READY)
-		return;
-	/* remove from blocked-list? */
-	if(t->state == ST_BLOCKED)
-		sched_qDequeueThread(&blockedQueue,t);
-	t->state = ST_READY;
-
-	sched_qAppend(&readyQueue,t);
+	assert(t != NULL);
+	if(sched_setReadyState(t))
+		sched_qAppend(&readyQueue,t);
 }
 
 void sched_setReadyQuick(sThread *t) {
-	vassert(t != NULL,"p == NULL");
+	assert(t != NULL);
+	if(sched_setReadyState(t))
+		sched_qPrepend(&readyQueue,t);
+}
 
-	/* nothing to do? */
-	if(t->state == ST_READY)
-		return;
-	/* remove from blocked-list? */
-	if(t->state == ST_BLOCKED)
-		sched_qDequeueThread(&blockedQueue,t);
+static bool sched_setReadyState(sThread *t) {
+	switch(t->state) {
+		case ST_READY:
+		case ST_READY_SWAP:
+			return false;
+		case ST_BLOCKED_SWAP:
+			t->state = ST_READY_SWAP;
+			return false;
+		case ST_BLOCKED:
+			sched_qDequeueThread(&blockedQueue,t);
+			break;
+		case ST_RUNNING:
+			break;
+		default:
+			vassert(false,"Invalid state for setReady (%d)",t->state);
+			break;
+	}
 	t->state = ST_READY;
-
-	sched_qPrepend(&readyQueue,t);
+	return true;
 }
 
 void sched_setBlocked(sThread *t) {
-	vassert(t != NULL,"p == NULL");
+	assert(t != NULL);
 
-	/* nothing to do? */
-	if(t->state == ST_BLOCKED)
-		return;
-	if(t->state == ST_READY)
-		sched_qDequeueThread(&readyQueue,t);
+	switch(t->state) {
+		case ST_BLOCKED:
+		case ST_BLOCKED_SWAP:
+			return;
+		case ST_READY_SWAP:
+			t->state = ST_BLOCKED_SWAP;
+			return;
+		case ST_READY:
+			sched_qDequeueThread(&readyQueue,t);
+			break;
+		case ST_RUNNING:
+			break;
+		default:
+			vassert(false,"Invalid state for setBlocked (%d)",t->state);
+			break;
+	}
 	t->state = ST_BLOCKED;
 
 	/* insert in blocked-list */
@@ -172,41 +192,97 @@ void sched_unblockAll(u16 mask,u16 event) {
 	while(n != NULL) {
 		t = (sThread*)n->t;
 		tmask = t->events >> 16;
+		/* if blocked in swapping, just remember that it should be ready when done */
 		if((tmask == 0 || tmask == mask) && (t->events & event)) {
-			t->state = ST_READY;
-			t->events = EV_NOEVENT;
-			sched_qAppend(&readyQueue,t);
-
-			/* dequeue */
-			if(prev == NULL)
-				tmp = blockedQueue.first = n->next;
-			else {
-				tmp = prev;
-				prev->next = n->next;
+			if(t->state == ST_BLOCKED_SWAP) {
+				t->state = ST_READY_SWAP;
+				t->events = EV_NOEVENT;
 			}
-			if(n->next == NULL)
-				blockedQueue.last = tmp;
+			else if(t->state != ST_READY_SWAP) {
+				t->state = ST_READY;
+				t->events = EV_NOEVENT;
+				sched_qAppend(&readyQueue,t);
 
-			/* put n on the free-list and continue */
-			tmp = n->next;
-			n->next = blockedQueue.free;
-			blockedQueue.free = n;
-			n = tmp;
+				/* dequeue */
+				if(prev == NULL)
+					tmp = blockedQueue.first = n->next;
+				else {
+					tmp = prev;
+					prev->next = n->next;
+				}
+				if(n->next == NULL)
+					blockedQueue.last = tmp;
+
+				/* put n on the free-list and continue */
+				tmp = n->next;
+				n->next = blockedQueue.free;
+				blockedQueue.free = n;
+				n = tmp;
+				continue;
+			}
 		}
-		else {
-			prev = n;
-			n = n->next;
+
+		prev = n;
+		n = n->next;
+	}
+}
+
+void sched_setBlockForSwap(sThread *t,bool blocked) {
+	assert(t != NULL);
+
+	if(blocked) {
+		switch(t->state) {
+			case ST_BLOCKED:
+				t->state = ST_BLOCKED_SWAP;
+				break;
+			case ST_READY:
+				t->state = ST_READY_SWAP;
+				sched_qDequeueThread(&readyQueue,t);
+				sched_qAppend(&blockedQueue,t);
+				break;
+			case ST_RUNNING:
+				/* this happens when swapping in. we don't need to do something here
+				 * because the process is blocked until swapping is done anyway */
+				break;
+			default:
+				vassert(false,"Invalid state for starting swapping (%d)",t->state);
+				break;
+		}
+	}
+	else {
+		switch(t->state) {
+			case ST_BLOCKED_SWAP:
+				t->state = ST_BLOCKED;
+				break;
+			case ST_READY_SWAP:
+				t->state = ST_READY;
+				sched_qDequeueThread(&blockedQueue,t);
+				sched_qAppend(&readyQueue,t);
+				break;
+			case ST_RUNNING:
+				/* see above */
+				break;
+			default:
+				vassert(false,"Invalid state for starting swapping (%d)",t->state);
+				break;
 		}
 	}
 }
 
 void sched_removeThread(sThread *t) {
 	switch(t->state) {
+		case ST_RUNNING:
+		case ST_ZOMBIE:
+			break;
 		case ST_READY:
 			sched_qDequeueThread(&readyQueue,t);
 			break;
 		case ST_BLOCKED:
 			sched_qDequeueThread(&blockedQueue,t);
+			break;
+		default:
+			/* TODO threads can die during swap, right? */
+			vassert(false,"Invalid state for removeThread (%d)",t->state);
 			break;
 	}
 }

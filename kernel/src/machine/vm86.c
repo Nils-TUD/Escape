@@ -149,6 +149,7 @@ s32 vm86_create(void) {
 s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	u32 i;
 	sThread *t;
+	sThread *vm86t;
 	volatile sVM86Info **volInfo;
 	for(i = 0; i < areaCount; i++) {
 		if((areas[i].type == VM86_MEM_DIRECT &&
@@ -161,6 +162,11 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	if(interrupt >= VM86_IVT_SIZE)
 		return ERR_INVALID_ARGS;
 	t = thread_getRunning();
+
+	/* check wether there still is a vm86-task */
+	vm86t = thread_getById(vm86Tid);
+	if(vm86t == NULL || !vm86t->proc->isVM86)
+		return ERR_NO_VM86_TASK;
 
 	/* if the vm86-task is active, wait here */
 	volInfo = (volatile sVM86Info **)&info;
@@ -186,7 +192,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	}
 
 	/* make vm86 ready */
-	sched_setReady(thread_getById(vm86Tid));
+	sched_setReady(vm86t);
 
 	/* block the calling thread and then do a switch */
 	/* we'll wakeup the thread as soon as the vm86-task is done with the interrupt */

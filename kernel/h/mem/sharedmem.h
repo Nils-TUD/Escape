@@ -30,7 +30,17 @@
  * @param pageCount the number of pages
  * @return the start-page on success
  */
-s32 shm_create(char *name,u32 pageCount);
+s32 shm_create(const char *name,u32 pageCount);
+
+/**
+ * Checks wether a shared-memory region exists with the given owner and that contains the given
+ * address. If so the members are returned (owner is no member)
+ *
+ * @param owner the process that created the shm
+ * @param addr the virtual address
+ * @return a linked list of the processes that have joined the region or NULL
+ */
+sSLList *shm_getMembers(sProc *owner,u32 addr);
 
 /**
  * Joins the shared-memory with given name. Will copy the pages into the end of the data-segment
@@ -38,7 +48,7 @@ s32 shm_create(char *name,u32 pageCount);
  * @param name the name
  * @return the start-page on success
  */
-s32 shm_join(char *name);
+s32 shm_join(const char *name);
 
 /**
  * Leaves the shared-memory with given name. Will NOT unmap the pages!
@@ -50,7 +60,7 @@ s32 shm_join(char *name);
  * @param name the name
  * @return 0 on success
  */
-s32 shm_leave(char *name);
+s32 shm_leave(const char *name);
 
 /**
  * Destroys the shared-memory with given name. Unmaps the pages for all member-processes
@@ -58,7 +68,7 @@ s32 shm_leave(char *name);
  * @param name the name
  * @return 0 on success
  */
-s32 shm_destroy(char *name);
+s32 shm_destroy(const char *name);
 
 /**
  * Removes the process from all shared-memory stuff

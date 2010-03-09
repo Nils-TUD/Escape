@@ -23,9 +23,13 @@
 #include <esc/fileio.h>
 #include <esc/dir.h>
 #include <string.h>
+#include <stdarg.h>
 #include <messages.h>
 
+#define MAX_RETRY_COUNT	50
+
 static void startDriver(const char *name,const char *wait);
+static void quit(const char *msg,...);
 
 int main(void) {
 	// check for duplicate gui-start
@@ -47,8 +51,7 @@ int main(void) {
 	// start gui-test-program
 	if(fork() == 0) {
 		exec("/bin/gtest",NULL);
-		printe("Unable to start gui-test");
-		exit(EXIT_FAILURE);
+		quit("Unable to start gui-test");
 	}
 
 	// wait here
@@ -58,19 +61,36 @@ int main(void) {
 }
 
 static void startDriver(const char *name,const char *wait) {
+	tFD fd;
+	u32 i;
 	char path[MAX_PATH_LEN + 1] = "/sbin/";
+	// start
 	strcat(path,name);
 	if(fork() == 0) {
 		exec(path,NULL);
-		printe("Exec with '%s' failed",path);
-		exit(EXIT_FAILURE);
+		quit("Exec with '%s' failed",path);
 	}
 
-	tFD fd;
+	// wait for it
+	i = 0;
 	do {
 		fd = open(wait,IO_READ);
 		if(fd < 0)
-			yield();
+			sleep(20);
+		i++;
 	}
-	while(fd < 0);
+	while(fd < 0 && i < MAX_RETRY_COUNT);
+	if(fd < 0)
+		quit("Haven't found '%s' after %d retries",wait,i);
+}
+
+static void quit(const char *msg,...) {
+	va_list ap;
+	send(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
+	send(STDOUT_FILENO,MSG_VT_EN_RDKB,NULL,0);
+	send(STDOUT_FILENO,MSG_VT_EN_DATE,NULL,0);
+	va_start(ap,msg);
+	vprinte(msg,ap);
+	va_end(ap);
+	exit(EXIT_FAILURE);
 }

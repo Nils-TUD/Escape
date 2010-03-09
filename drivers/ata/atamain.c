@@ -90,8 +90,10 @@ int main(void) {
 	while(1) {
 		tDrvId drv;
 		tFD fd = getWork(drivers,drvCount,&drv,&mid,&msg,sizeof(msg),0);
-		if(fd < 0)
-			printe("[ata] Unable to get client");
+		if(fd < 0) {
+			if(fd != ERR_INTERRUPTED)
+				printe("[ata] Unable to get client");
+		}
 		else {
 			sId2Drv *driver = getDriver(drv);
 			sATADrive *drive = driver == NULL ? NULL : (drives + driver->drive);

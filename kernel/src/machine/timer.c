@@ -80,6 +80,10 @@ u32 timer_getIntrptCount(void) {
 	return timerIntrpts;
 }
 
+u64 timer_getTimestamp(void) {
+	return elapsedMsecs;
+}
+
 s32 timer_sleepFor(tTid tid,u32 msecs) {
 	u32 msecDiff;
 	sSLNode *n,*p;

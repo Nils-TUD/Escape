@@ -7,15 +7,16 @@ BINNAME=kernel.bin
 OSTITLE="Escape v0.3"
 SUDO=sudo
 
-# 20 MB disk (40 * 16 * 63 * 512 = 20,643,840 byte)
-HDDCYL=40
+# 30 MB disk (60 * 16 * 63 * 512 = 20,643,840 byte)
+HDDCYL=60
 HDDHEADS=16
 HDDTRACKSECS=63
 # partitions
 PART1OFFSET=$HDDTRACKSECS
 PART1BLOCKS=16000
 PART2OFFSET=32063
-PART2BLOCKS=3000
+PART2BLOCKS=1000
+PART3OFFSET=34063
 
 # 50 MB disk (100 * 16 * 63 * 512 = 51,609,600 byte)
 #HDDCYL=100
@@ -38,6 +39,7 @@ if [ $# -lt 1 ]; then
 	echo "Usage: $0 unmount" 1>&2
 	echo "Usage: $0 copy <src> <dst>" 1>&2
 	echo "Usage: $0 appsdb <src> <dst>" 1>&2
+	echo "Usage: $0 swapbl <block>" 1>&2
 	exit 1
 fi;
 
@@ -57,13 +59,13 @@ buildMenuLst() {
 	echo "timeout 3" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "title \"$OSTITLE - VESA-text\"" >> $DISKMOUNT/boot/grub/menu.lst;
-	echo "kernel /boot/$BINNAME videomode=vesa" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "kernel /boot/$BINNAME videomode=vesa swapdev=/dev/hda3" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/ata /system/devices/ata" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/fs /dev/fs /dev/hda1 ext2" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "boot" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "title \"$OSTITLE - VGA-text\"" >> $DISKMOUNT/boot/grub/menu.lst;
-	echo "kernel /boot/$BINNAME videomode=vga" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "kernel /boot/$BINNAME videomode=vga swapdev=/dev/hda3" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/ata /system/devices/ata" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/fs /dev/fs /dev/hda1 ext2" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "boot" >> $DISKMOUNT/boot/grub/menu.lst;
@@ -148,6 +150,13 @@ unmountDisk() {
 	done
 }
 
+# view swap block?
+if [ "$1" == "swapbl" ]; then
+	$SUDO losetup -o`expr $PART3OFFSET \* 512` /dev/loop0 $HDD
+	$SUDO hexdump -v -C -s `expr $2 \* 4096` -n 4096 /dev/loop0 | less
+	$SUDO losetup -d /dev/loop0
+fi
+
 # build disk?
 if [ "$1" == "build" ]; then
 	# create disk
@@ -164,6 +173,11 @@ if [ "$1" == "build" ]; then
 		echo "p" >> $TMPFILE && \
 		echo "2" >> $TMPFILE && \
 		echo "" >> $TMPFILE && \
+		echo `expr $PART3OFFSET - 1` >> $TMPFILE && \
+		echo "n" >> $TMPFILE && \
+		echo "p" >> $TMPFILE && \
+		echo "3" >> $TMPFILE && \
+		echo "" >> $TMPFILE && \
 		echo "" >> $TMPFILE && \
 		echo "w" >> $TMPFILE;
 	$SUDO fdisk -u -C$HDDCYL -S$HDDTRACKSECS -H$HDDHEADS /dev/loop0 < $TMPFILE || true
@@ -173,6 +187,7 @@ if [ "$1" == "build" ]; then
 	# build ext2-filesystem
 	setupPart $PART1OFFSET $PART1BLOCKS;
 	setupPart $PART2OFFSET $PART2BLOCKS;
+	# part 3 is swap, therefore no fs
 	
 	# add data to disk
 	mountDisk $PART1OFFSET

@@ -38,6 +38,7 @@
 #include <string.h>
 #include <sllist.h>
 #include <assert.h>
+#include <limits.h>
 #include <errors.h>
 
 /* the max. size we'll allow for exec()-arguments */
@@ -45,6 +46,7 @@
 
 #define EXIT_CALL_ADDR					0xf
 
+static void proc_notifyProcDied(tPid parent,tPid pid);
 static s32 proc_finishClone(sThread *nt,u32 stackFrame);
 
 /* our processes */
@@ -70,6 +72,8 @@ void proc_init(void) {
 	p->textPages = 0;
 	p->dataPages = 0;
 	p->stackPages = 0;
+	p->swapped = 0;
+	p->unswappable = 0;
 	p->text = NULL;
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
@@ -143,6 +147,43 @@ u32 proc_getCount(void) {
 	return count;
 }
 
+sProc *proc_getLRUProc(void) {
+	u32 i;
+	sProc *cur = proc_getRunning();
+	sProc *lru = NULL;
+	u64 lruTime = LLONG_MAX;
+	for(i = 0; i < PROC_COUNT; i++) {
+		/* we don't want to swap the current one */
+		if(procs[i].pid != INVALID_PID && procs + i != cur && proc_getSwapCount(procs + i) > 0) {
+			sSLNode *n;
+			u64 time = 0;
+			/* find last used thread */
+			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
+				sThread *t = (sThread*)n->data;
+				/* don't swap out ata because ata performs the swapping ;) */
+				if(t->tid == ATA_TID) {
+					time = LLONG_MAX;
+					break;
+				}
+				if(t->lastSched > time)
+					time = t->lastSched;
+			}
+
+			/* if it was used before the current one, its our LRU */
+			if(time < lruTime) {
+				lruTime = time;
+				lru = procs + i;
+			}
+		}
+	}
+	return lru;
+}
+
+u32 proc_getSwapCount(sProc *p) {
+	assert(p->pid != INVALID_PID);
+	return (p->textPages + p->dataPages + p->stackPages - p->unswappable) - p->swapped;
+}
+
 void proc_getMemUsageOf(sProc *p,u32 *paging,u32 *data) {
 	sSLNode *n;
 	sThread *t;
@@ -202,6 +243,10 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->threadDir = vfs_createProcess(newPid,&vfsinfo_procReadHandler);
 	if(p->threadDir == NULL)
 		return ERR_NOT_ENOUGH_MEM;
+
+	/* unswappable may be changed in clonePageDir() */
+	p->swapped = 0;
+	p->unswappable = 0;
 
 	/* clone page-dir */
 	if((pdirFrame = paging_clonePageDir(&stackFrame,procs + newPid)) == 0)
@@ -402,17 +447,8 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 	/* store exit-conditions */
 	p->exitCode = exitCode;
 	p->exitSig = signal;
-	sig_addSignalFor(p->parentPid,SIG_CHILD_TERM,p->pid);
 
-	/* check wether there is a parent-thread that waits for a child */
-	for(tn = sll_begin(proc_getByPid(p->parentPid)->threads); tn != NULL; tn = tn->next) {
-		sThread *t = (sThread*)tn->data;
-		if(t->events & EV_CHILD_DIED) {
-			/* wake the thread and delay the destruction until this read has got the exit-state */
-			thread_wakeup(t->tid,EV_CHILD_DIED);
-			return;
-		}
-	}
+	proc_notifyProcDied(p->parentPid,p->pid);
 }
 
 void proc_kill(sProc *p) {
@@ -439,9 +475,13 @@ void proc_kill(sProc *p) {
 	/* give childs the ppid 0 */
 	cp = procs;
 	for(i = 0; i < PROC_COUNT; i++) {
-		/* TODO use parent id of parent? */
-		if(cp->pid != INVALID_PID && cp->parentPid == p->pid)
+		if(cp->pid != INVALID_PID && cp->parentPid == p->pid) {
 			cp->parentPid = 0;
+			/* if this process has already died, the parent can't wait for it since its dying
+			 * right now. therefore notify init of it */
+			if(((sThread*)sll_begin(cp->threads)->data)->state == ST_ZOMBIE)
+				proc_notifyProcDied(0,cp->pid);
+		}
 		cp++;
 	}
 
@@ -461,6 +501,21 @@ void proc_kill(sProc *p) {
 	p->stackPages = 0;
 	p->pid = INVALID_PID;
 	p->physPDirAddr = 0;
+}
+
+static void proc_notifyProcDied(tPid parent,tPid pid) {
+	sSLNode *tn;
+	sig_addSignalFor(parent,SIG_CHILD_TERM,pid);
+
+	/* check wether there is a parent-thread that waits for a child */
+	for(tn = sll_begin(proc_getByPid(parent)->threads); tn != NULL; tn = tn->next) {
+		sThread *t = (sThread*)tn->data;
+		if(t->events & EV_CHILD_DIED) {
+			/* wake the thread and delay the destruction until this read has got the exit-state */
+			thread_wakeup(t->tid,EV_CHILD_DIED);
+			return;
+		}
+	}
 }
 
 s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser) {

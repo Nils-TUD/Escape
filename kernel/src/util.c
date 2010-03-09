@@ -210,7 +210,7 @@ void util_dumpBytes(void *addr,u32 byteCount) {
 	for(i = 0; byteCount-- > 0; i++) {
 		vid_printf("%02x ",*ptr);
 		ptr++;
-		if(i % 12 == 11)
+		if(i % 16 == 15)
 			vid_printf("\n");
 	}
 }

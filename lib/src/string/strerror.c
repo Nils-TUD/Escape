@@ -279,6 +279,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"Unable to find the requested VESA-mode!");
 			break;
 
+		case ERR_NO_VM86_TASK:
+			strcpy(msg,"A VM86-task doesn't exist (maybe killed?)!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

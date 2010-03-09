@@ -39,6 +39,11 @@ void timer_init(void);
 u32 timer_getIntrptCount(void);
 
 /**
+ * @return the kernel-internal timestamp; starts from zero, in milliseconds, increased by timer-irq
+ */
+u64 timer_getTimestamp(void);
+
+/**
  * Puts the given thread to sleep for the given number of milliseconds
  *
  * @param tid the thread-id

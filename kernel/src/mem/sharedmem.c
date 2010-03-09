@@ -49,12 +49,12 @@ typedef struct {
  * @param pageCount the number of pages
  * @return the shared mem or NULL
  */
-static sSharedMem *shm_get(char *name,sProc *p,u32 startPage,u32 pageCount);
+static sSharedMem *shm_get(const char *name,sProc *p,u32 startPage,u32 pageCount);
 
 /* list with all shared memories */
 static sSLList *shareList = NULL;
 
-s32 shm_create(char *name,u32 pageCount) {
+s32 shm_create(const char *name,u32 pageCount) {
 	sSharedMem *mem;
 	sProc *p = proc_getRunning();
 	u32 startPage = p->textPages + p->dataPages;
@@ -103,7 +103,12 @@ s32 shm_create(char *name,u32 pageCount) {
 	return startPage;
 }
 
-s32 shm_join(char *name) {
+sSLList *shm_getMembers(sProc *owner,u32 addr) {
+	sSharedMem *mem = shm_get(NULL,owner,addr / PAGE_SIZE,1);
+	return mem ? mem->member : NULL;
+}
+
+s32 shm_join(const char *name) {
 	sProc *p = proc_getRunning();
 	sSharedMem *mem = shm_get(name,NULL,0,0);
 	if(mem == NULL || mem->owner == p || sll_indexOf(mem->member,p) >= 0)
@@ -120,11 +125,12 @@ s32 shm_join(char *name) {
 	paging_getPagesOf(mem->owner,mem->startPage * PAGE_SIZE,
 			(p->textPages + p->dataPages) * PAGE_SIZE,mem->pageCount,PG_WRITABLE | PG_NOFREE);
 	p->dataPages += mem->pageCount;
+	p->unswappable += mem->pageCount;
 
 	return (p->textPages + p->dataPages) - mem->pageCount;
 }
 
-s32 shm_leave(char *name) {
+s32 shm_leave(const char *name) {
 	sProc *p = proc_getRunning();
 	sSharedMem *mem = shm_get(name,NULL,0,0);
 	if(mem == NULL || mem->owner == p)
@@ -134,7 +140,7 @@ s32 shm_leave(char *name) {
 	return 0;
 }
 
-s32 shm_destroy(char *name) {
+s32 shm_destroy(const char *name) {
 	sSLNode *n;
 	sProc *p = proc_getRunning();
 	sSharedMem *mem = shm_get(name,NULL,0,0);
@@ -178,14 +184,14 @@ void shm_remProc(sProc *p) {
 	}
 }
 
-static sSharedMem *shm_get(char *name,sProc *p,u32 startPage,u32 pageCount) {
+static sSharedMem *shm_get(const char *name,sProc *p,u32 startPage,u32 pageCount) {
 	sSLNode *n;
 	sSharedMem *mem;
 	if(shareList == NULL)
 		return NULL;
 	for(n = sll_begin(shareList); n != NULL; n = n->next) {
 		mem = (sSharedMem*)n->data;
-		if(strcmp(mem->name,name) == 0)
+		if(name && strcmp(mem->name,name) == 0)
 			return mem;
 		/* check wether the address-range overlaps */
 		if(p && mem->owner == p && OVERLAPS(mem->startPage,mem->startPage + mem->pageCount,

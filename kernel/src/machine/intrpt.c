@@ -26,6 +26,7 @@
 #include <machine/vm86.h>
 #include <mem/paging.h>
 #include <mem/kheap.h>
+#include <mem/swap.h>
 #include <task/signals.h>
 #include <task/ioports.h>
 #include <task/proc.h>
@@ -410,9 +411,14 @@ static void intrpt_handleSignal(void) {
 		 * in the current page-dir and so on :)
 		 */
 		if(thread_getRunning()->tid != tid) {
+			sThread *sigt = thread_getById(tid);
 			/* ensure that the thread is ready */
-			sched_setReady(thread_getById(tid));
-			thread_switchTo(tid);
+			sched_setReady(sigt);
+			/* this may fail because perhaps we're involved in a swapping-operation */
+			/* in this case do nothing, we'll handle the signal later (handleSignalFinish() cares
+			 * about that) */
+			if(sigt->state == ST_READY)
+				thread_switchTo(tid);
 		}
 	}
 }
@@ -465,6 +471,7 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 
 void intrpt_handler(sIntrptStackFrame *stack) {
 	u64 cycles = cpu_rdtsc();
+	u32 pfaddr;
 	sThread *t = thread_getRunning();
 	curIntrptStack = stack;
 	intrptCount++;
@@ -497,6 +504,12 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	if(stack->intrptNo != IRQ_SYSCALL)
 		intrpt_eoi(stack->intrptNo);
 
+	/* we need to save the page-fault address here because swapping may cause other ones */
+	if(stack->intrptNo == EX_PAGE_FAULT)
+		pfaddr = cpu_getCR2();
+
+	swap_check();
+
 	switch(stack->intrptNo) {
 		case IRQ_KEYBOARD:
 		case IRQ_ATA1:
@@ -520,21 +533,28 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
 			/* #PF */
 			if(stack->intrptNo == EX_PAGE_FAULT) {
-				u32 addr = cpu_getCR2();
 				/*vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
 						stack->eip,proc_getRunning()->pid);*/
 
 				/* first check if the thread wants to write to COW-page */
-				if(!paging_handlePageFault(addr)) {
+				if(!paging_handlePageFault(pfaddr)) {
 					/* ok, now lets check if the thread wants more stack-pages */
-					if(thread_extendStack(addr) < 0) {
-						vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
+					if(thread_extendStack(pfaddr) < 0) {
+						vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
 												stack->eip,proc_getRunning()->pid);
+						vid_printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
+								(stack->errorCode & 0x1) ?
+									"page-level protection violation" : "not-present page",
+								(stack->errorCode & 0x2) ? "write" : "read",
+								(stack->errorCode & 0x4) ? "user-mode" : "kernel-mode",
+								(stack->errorCode & 0x8) ? "reserved bits set to 1\n\t" : "",
+								(stack->errorCode & 0x16) ? "instruction-fetch" : "");
+
 						/*proc_terminate(t->proc);
 						thread_switch();*/
 						/* hm...there is something wrong :) */
 						/* TODO later the process should be killed here */
-						util_panic("Page fault for address=0x%08x @ 0x%x",addr,stack->eip);
+						util_panic("Page fault for address=0x%08x @ 0x%x",pfaddr,stack->eip);
 					}
 				}
 				break;

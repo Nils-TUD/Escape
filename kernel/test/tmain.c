@@ -31,6 +31,7 @@
 #include <mem/pmem.h>
 #include <mem/paging.h>
 #include <mem/kheap.h>
+#include <mem/swapmap.h>
 #include <vfs/vfs.h>
 #include <vfs/info.h>
 #include <vfs/request.h>
@@ -58,6 +59,7 @@
 #include "tringbuffer.h"
 #include "tesccodes.h"
 #include "tvfslist.h"
+#include "tswapmap.h"
 
 s32 main(sMultiBoot *mbp,u32 magic) {
 	UNUSED(magic);
@@ -139,8 +141,13 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 			mm_getFreeFrmCount(MM_DMA | MM_DEF),paging_dbg_getPageCount(),
 			mm_getFreeFrmCount(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 
+	/* swapmap (needed for swapmap tests) */
+	vid_printf("Initializing Swapmap...");
+	swmap_init(256 * K);
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
 	/* start tests */
-	test_register(&tModMM);
+	/*test_register(&tModMM);
 	test_register(&tModPaging);
 	test_register(&tModProc);
 	test_register(&tModKHeap);
@@ -152,7 +159,8 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	test_register(&tModSignals);
 	test_register(&tModRBuffer);
 	test_register(&tModEscCodes);
-	test_register(&tModVFSList);
+	test_register(&tModVFSList);*/
+	test_register(&tModSwapMap);
 	test_start();
 
 

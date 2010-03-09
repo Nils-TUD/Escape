@@ -45,6 +45,9 @@
 #define EV_PIPE_EMPTY		64	/* kernel-intern */
 #define EV_VM86_READY		128	/* kernel-intern */
 #define EV_REQ_REPLY		256	/* kernel-intern */
+#define EV_SWAP_DONE		512 /* kernel-intern */
+#define EV_SWAP_WORK		1024 /* kernel-intern */
+#define EV_SWAP_FREE		2048 /* kernel-intern */
 
 typedef struct {
 	tPid pid;
@@ -81,6 +84,10 @@ typedef struct {
 	u32 textPages;
 	u32 dataPages;
 	u32 stackPages;
+	/* pages that are in swap */
+	u32 swapped;
+	/* the number of pages that can't be swapped (shared mem and mapped physical) */
+	u32 unswappable;
 	/* for the waiting parent */
 	s32 exitCode;
 	tSig exitSig;
@@ -133,6 +140,19 @@ bool proc_exists(tPid pid);
  * @return the number of existing processes
  */
 u32 proc_getCount(void);
+
+/**
+ * Finds the least recently used process where something can be swapped. The current one is excluded.
+ *
+ * @return the process or NULL if no one found
+ */
+sProc *proc_getLRUProc(void);
+
+/**
+ * @param p the process
+ * @return the number of pages that can be swapped
+ */
+u32 proc_getSwapCount(sProc *p);
 
 /**
  * Determines the mem-usage of the given process

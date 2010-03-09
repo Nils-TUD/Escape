@@ -63,7 +63,7 @@ void shell_init(void) {
 bool shell_prompt(void) {
 	char path[MAX_PATH_LEN + 1];
 	if(!getEnv(path,MAX_PATH_LEN + 1,"CWD")) {
-		printf("ERROR: unable to get CWD\n");
+		printe("Unable to get CWD");
 		return false;
 	}
 	printf("\033[co;8]%s\033[co] # ",path);

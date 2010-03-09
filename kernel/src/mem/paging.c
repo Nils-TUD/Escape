@@ -25,6 +25,7 @@
 #include <mem/kheap.h>
 #include <mem/text.h>
 #include <mem/swap.h>
+#include <mem/swapmap.h>
 #include <task/proc.h>
 #include <task/thread.h>
 #include <util.h>
@@ -448,6 +449,7 @@ static u32 paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virt,u32 *frames,u32
 				pt->noFree = ((sPTEntry*)frames)->noFree;
 				if(!pt->noFree)
 					pt->copyOnWrite = (flags & PG_COPYONWRITE) ? true : false;
+				assert(((sPTEntry*)frames)->swapped == 0);
 			}
 			else {
 				pt->noFree = (flags & PG_NOFREE) ? true : false;
@@ -619,6 +621,9 @@ u32 paging_destroyPageDir(sProc *p) {
 
 	/* map page-dir and page-tables */
 	paging_mapForeignPageDir(p);
+
+	/* remove all default-pages (no shm and no text-sharing) of this process from swap */
+	swmap_remProc(p->pid,NULL);
 
 	/* free text; free frames if text_free() returns true */
 	frmCnt += paging_unmapIntern(p,TMPMAP_PTS_START,0,p->textPages,text_free(p->text,p->pid),false);

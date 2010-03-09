@@ -23,6 +23,7 @@
 #include <task/proc.h>
 #include <video.h>
 #include <assert.h>
+#include <sllist.h>
 
 /* The idea is:
  * Keeping track of all blocks of the swap-device would cost A LOT of memory (consider a 4GiB
@@ -37,12 +38,12 @@
  * need 8192 areas for it. That means it may be possible (and likely, too) that we can't use
  * the whole swap-space due to a limited number of areas. But it means also that our memory-usage
  * for it is independent of the swap-space-size and that we don't need much memory if the swap-
- * space is not used at all (to be precise, the memory-usage is constant: 8192 areas, with 20
- * bytes each -> 160 KiB).
+ * space is not used at all (to be precise, the memory-usage is constant: 8192 areas, with 24
+ * bytes each -> 192 KiB).
  *
  * TODO an improvement of this could be to allocate the areas dynamically. i.e. for example we
  * allocate one frame at the beginning and as soon as we have no areas anymore we allocate a new
- * frame and would get (4096 / 20) new ones. A problem could be that - of course - we use this
+ * frame and would get (4096 / 24) new ones. A problem could be that - of course - we use this
  * stuff here if we have not enough memory. So its not really good to aquire memory here...
  */
 
@@ -57,18 +58,22 @@ struct sSwMapArea {
 	u32 size;
 	/* position in virtual memory of the process */
 	u32 virt;
+	/* a linked list of processes that use this area; if no text-sharing and no shared-mem the list
+	 * is NULL. otherwise it is the list that is managed by text or shared-mem (no copy!!) */
+	sSLList *procs;
+	/* the process that allocated the area */
 	tPid pid;
 	/* wether this area is free or not (16bit to fill the whole) */
 	u16 free;
 };
 
-static sSwMapArea *swmap_getNewArea(u32 block,u32 size,tPid pid,u32 virt,bool free);
+static sSwMapArea *swmap_getNewArea(u32 block,u32 size,tPid pid,sSLList *procs,u32 virt,bool free);
 static void swmap_remUsedArea(sSwMapArea *a,sSwMapArea *p,sSwMapArea *pp);
 static void swmap_remFreeArea(sSwMapArea *area,sSwMapArea *prev);
 
 static sSwMapArea entries[SWMAP_SIZE];
-static sSwMapArea *freelist;
-static sSwMapArea *used;
+static sSwMapArea *freelist = NULL;
+static sSwMapArea *used = NULL;
 
 void swmap_init(u32 swapSize) {
 	u32 i;
@@ -81,24 +86,46 @@ void swmap_init(u32 swapSize) {
 	}
 
 	/* create one block with all free space */
-	used = swmap_getNewArea(0,swapSize / PAGE_SIZE,INVALID_PID,0,true);
+	used = swmap_getNewArea(0,swapSize / PAGE_SIZE,INVALID_PID,NULL,0,true);
 	assert(used != NULL);
 	used->next = NULL;
 }
 
-void swmap_remProc(tPid pid) {
+void swmap_remProc(tPid pid,sSLList *procs) {
+	sSwMapArea *p = NULL;
+	sSwMapArea *pp = NULL;
+	sSwMapArea *a = used;
+	while(a != NULL) {
+		/* it has to be removed if:
+		 * - its in use
+		 * - its either our own memory or we're the last user of the shared-memory
+		 */
+		if(!a->free && a->procs == procs && ((a->pid == pid && !procs) ||
+			(procs && sll_length(procs) == 1 && ((sProc*)sll_get(procs,0))->pid == pid))) {
+			swmap_remUsedArea(a,p,pp);
+			/* its easier to start a new search because we don't know how the list
+			 * has been changed */
+			a = used;
+			pp = p = NULL;
+			continue;
+		}
 
+		pp = p;
+		p = a;
+		a = a->next;
+	}
 }
 
-u32 swmap_alloc(tPid pid,u32 virt,u32 count) {
+u32 swmap_alloc(tPid pid,sSLList *procs,u32 virt,u32 count) {
 	sSwMapArea *p = NULL;
 	sSwMapArea *pp = NULL;
 	sSwMapArea *a = used;
 	while(a != NULL) {
 		/* if our requested stuff is directly behind this area and the next area has enough
 		 * room, we can add it to this area */
-		if(a->pid == pid && !a->free && a->virt + a->size * PAGE_SIZE == virt && a->next &&
-				a->next->free && a->next->size >= count) {
+		/* additionally we have to take care that it belongs to the same processes... */
+		if(a->pid == pid && a->procs == procs && !a->free && a->virt + a->size * PAGE_SIZE == virt &&
+				a->next && a->next->free && a->next->size >= count) {
 			u32 block = a->block + a->size;
 			/* prevent that the last region will be removed */
 			if(!a->next->next && a->next->size == count)
@@ -115,7 +142,7 @@ u32 swmap_alloc(tPid pid,u32 virt,u32 count) {
 		/* if our requested stuff is directly before the next area and this area is free and
 		 * has enough room, we can put our stuff before the next one */
 		if(a->free && a->size >= count && a->next && a->next->pid == pid &&
-				virt + count * PAGE_SIZE == a->next->virt) {
+				a->next->procs == procs && virt + count * PAGE_SIZE == a->next->virt) {
 			u32 block = a->next->block - count;
 			a->next->virt = virt;
 			a->next->size += count;
@@ -138,7 +165,7 @@ u32 swmap_alloc(tPid pid,u32 virt,u32 count) {
 	/* don't remove the last area */
 	if(p->size <= count)
 		return INVALID_BLOCK;
-	a = swmap_getNewArea(p->block,count,pid,virt,false);
+	a = swmap_getNewArea(p->block,count,pid,procs,virt,false);
 	if(!a)
 		return INVALID_BLOCK;
 	/* insert in used-list */
@@ -190,9 +217,9 @@ void swmap_free(tPid pid,u32 block,u32 count) {
 			if(block > a->block && block + count < a->block + a->size) {
 				/* we need 2 new areas */
 				sSwMapArea *pre = swmap_getNewArea(
-						a->block,block - a->block,a->pid,a->virt,false);
+						a->block,block - a->block,a->pid,a->procs,a->virt,false);
 				sSwMapArea *post = swmap_getNewArea(
-						block + count,a->block + a->size - (block + count),a->pid,
+						block + count,a->block + a->size - (block + count),a->pid,a->procs,
 						a->virt + ((block - a->block) + count) * PAGE_SIZE,false);
 				assert(pre != NULL && post != NULL);
 				if(p)
@@ -207,7 +234,7 @@ void swmap_free(tPid pid,u32 block,u32 count) {
 			/* space on the left */
 			else if(block > a->block) {
 				sSwMapArea *pre = swmap_getNewArea(
-						a->block,block - a->block,a->pid,a->virt,false);
+						a->block,block - a->block,a->pid,a->procs,a->virt,false);
 				assert(pre != NULL);
 				if(p)
 					p->next = pre;
@@ -229,7 +256,7 @@ void swmap_free(tPid pid,u32 block,u32 count) {
 			/* space on the right */
 			else {
 				sSwMapArea *post = swmap_getNewArea(
-					block + count,a->block + a->size - (block + count),a->pid,
+					block + count,a->block + a->size - (block + count),a->pid,a->procs,
 					a->virt + count * PAGE_SIZE,false);
 				assert(post != NULL);
 				post->next = a->next;
@@ -257,7 +284,7 @@ void swmap_free(tPid pid,u32 block,u32 count) {
 	vassert(false,"Area with pid=%u, blocks=%u..%u not found",pid,block,block + count - 1);
 }
 
-static sSwMapArea *swmap_getNewArea(u32 block,u32 size,tPid pid,u32 virt,bool free) {
+static sSwMapArea *swmap_getNewArea(u32 block,u32 size,tPid pid,sSLList *procs,u32 virt,bool free) {
 	sSwMapArea *a = freelist;
 	if(a == NULL)
 		return NULL;
@@ -266,6 +293,7 @@ static sSwMapArea *swmap_getNewArea(u32 block,u32 size,tPid pid,u32 virt,bool fr
 	a->block = block;
 	a->size = size;
 	a->pid = pid;
+	a->procs = procs;
 	a->virt = virt;
 	a->free = free;
 	return a;

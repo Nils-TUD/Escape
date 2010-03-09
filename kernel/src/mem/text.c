@@ -22,6 +22,7 @@
 #include <mem/pmem.h>
 #include <mem/paging.h>
 #include <mem/kheap.h>
+#include <mem/swapmap.h>
 #include <vfs/vfs.h>
 #include <vfs/real.h>
 #include <task/elf.h>
@@ -149,6 +150,10 @@ bool text_free(sTextUsage *u,tPid pid) {
 	/* if there is no text-usage the process has no text, so ignore it */
 	if(u == NULL)
 		return false;
+
+	/* remove all blocks from swap (will just be done if this process is the last user of it) */
+	/* Note that we have to do it before destroying the list and before removing the process! */
+	swmap_remProc(pid,u->procs);
 
 	/* remove process */
 	p = proc_getByPid(pid);

@@ -21,6 +21,7 @@
 #define SWAPMAP_H_
 
 #include <common.h>
+#include <sllist.h>
 
 #define INVALID_BLOCK		0xFFFFFFFF
 
@@ -32,14 +33,26 @@
 void swmap_init(u32 swapSize);
 
 /**
+ * Removes all areas of the given process (that of course are not needed anymore by anyone else)
+ * IMPORTANT: You HAVE TO call this function before you remove a process from the text-sharing-
+ * or shared-memory-list!
+ *
+ * @param pid the process-id
+ * @param procs the list of processes that use the area (this HAS TO be the list of shm, text-sharing
+ * 	or NULL to remove all stuff that is owned by the process)
+ */
+void swmap_remProc(tPid pid,sSLList *procs);
+
+/**
  * Allocates a place in the swap-device for the given virtual-memory-part
  *
  * @param pid the pid
+ * @param procs a linked lists with processes that use this area (NULL if just <pid>)
  * @param virt the virtual address
  * @param count the number of pages to swap
  * @return the starting block on the swap-device or INVALID_BLOCK if no free space is left
  */
-u32 swmap_alloc(tPid pid,u32 virt,u32 count);
+u32 swmap_alloc(tPid pid,sSLList *procs,u32 virt,u32 count);
 
 /**
  * Searches for the block on the swap-device which has the content of the given page

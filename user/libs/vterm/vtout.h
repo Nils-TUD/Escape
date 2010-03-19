@@ -33,7 +33,7 @@ extern "C" {
  * @param vt the vterm
  * @param str the string
  * @param len the string-length
- * @param resetRead wether readline-stuff should be reset
+ * @param resetRead whether readline-stuff should be reset
  */
 void vterm_puts(sVTerm *vt,char *str,u32 len,bool resetRead);
 

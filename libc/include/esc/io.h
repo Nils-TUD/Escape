@@ -82,7 +82,7 @@ s32 stat(const char *path,sFileInfo *info) A_CHECKRET;
 s32 tell(tFD fd,u32 *pos) A_CHECKRET;
 
 /**
- * Checks wether we are at EOF
+ * Checks whether we are at EOF
  *
  * @param fd the file-descriptor
  * @return 1 if at EOF
@@ -90,7 +90,7 @@ s32 tell(tFD fd,u32 *pos) A_CHECKRET;
 s32 eof(tFD fd);
 
 /**
- * Checks wether a message is available (for drivers)
+ * Checks whether a message is available (for drivers)
  *
  * @param fd the file-descriptor
  * @return 1 if so, 0 if not, < 0 if an error occurred

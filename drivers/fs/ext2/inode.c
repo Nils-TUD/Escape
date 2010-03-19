@@ -32,7 +32,7 @@
 
 /**
  * Puts a new block in cblock->buffer if cblock->buffer[index] is 0. Marks the cblock dirty,
- * if necessary. Sets <added> to true or false, depending on wether a block was allocated.
+ * if necessary. Sets <added> to true or false, depending on whether a block was allocated.
  */
 static u32 ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sCBlock *cblock,u32 index,bool *added);
 

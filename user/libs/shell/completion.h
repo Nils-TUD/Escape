@@ -49,7 +49,7 @@ extern "C" {
  * @param line the line
  * @param length the current cursorpos
  * @param max the maximum number of matches to collect
- * @param searchCmd wether you're looking for a command to execute
+ * @param searchCmd whether you're looking for a command to execute
  * @return the matches or NULL if failed
  */
 sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPath);

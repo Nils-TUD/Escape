@@ -26,7 +26,7 @@
 #include <stdarg.h>
 #include <messages.h>
 
-#define MAX_RETRY_COUNT	50
+#define MAX_RETRY_COUNT	500
 
 static void startDriver(const char *name,const char *wait);
 static void quit(const char *msg,...);

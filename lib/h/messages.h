@@ -131,12 +131,12 @@
 typedef struct {
 	/* the keycode (see keycodes.h) */
 	u8 keycode;
-	/* wether the key was released */
+	/* whether the key was released */
 	u8 isBreak;
 } sKbData;
 
 typedef struct {
-	/* wether the key was released */
+	/* whether the key was released */
 	u8 isBreak;
 	/* the keycode (see keycodes.h) */
 	u8 keycode;

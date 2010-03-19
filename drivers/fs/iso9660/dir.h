@@ -30,7 +30,7 @@
  * @param path the path
  * @param flags the flags with which to open the file
  * @param dev should be set to the device-number
- * @param resLastMnt wether mount-points should be resolved if the path is finished
+ * @param resLastMnt whether mount-points should be resolved if the path is finished
  * @return the id or < 0
  */
 tInodeNo iso_dir_resolve(sISO9660 *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt);

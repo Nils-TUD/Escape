@@ -49,16 +49,16 @@ void sysc_unregDriver(sIntrptStackFrame *stack);
 void sysc_getClientThread(sIntrptStackFrame *stack);
 
 /**
- * For drivers: Sets wether read() has currently something to read or not
+ * For drivers: Sets whether read() has currently something to read or not
  *
  * @param tDrvId the driver-id
- * @param bool wether there is data to read
+ * @param bool whether there is data to read
  * @return s32 0 on success
  */
 void sysc_setDataReadable(sIntrptStackFrame *stack);
 
 /**
- * For drivers: Looks wether a client wants to be served. If not and WG_NOBLOCK is not provided
+ * For drivers: Looks whether a client wants to be served. If not and WG_NOBLOCK is not provided
  * it waits until a client should be served. if not and WG_NOBLOCK is enabled, it returns an error.
  * If a client wants to be served, the message is fetched from him and the client-id is returned.
  * You can use the client-id for writing a reply.

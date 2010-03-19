@@ -235,6 +235,9 @@ void sched_setBlockForSwap(sThread *t,bool blocked) {
 			case ST_BLOCKED:
 				t->state = ST_BLOCKED_SWAP;
 				break;
+			case ST_ZOMBIE:
+				t->state = ST_ZOMBIE_SWAP;
+				break;
 			case ST_READY:
 				t->state = ST_READY_SWAP;
 				sched_qDequeueThread(&readyQueue,t);
@@ -253,6 +256,9 @@ void sched_setBlockForSwap(sThread *t,bool blocked) {
 		switch(t->state) {
 			case ST_BLOCKED_SWAP:
 				t->state = ST_BLOCKED;
+				break;
+			case ST_ZOMBIE_SWAP:
+				t->state = ST_ZOMBIE;
 				break;
 			case ST_READY_SWAP:
 				t->state = ST_READY;

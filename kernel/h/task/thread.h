@@ -29,7 +29,7 @@
 #define MAX_STACK_PAGES			128
 #define MAX_FD_COUNT			64
 
-#define INITIAL_STACK_PAGES		2
+#define INITIAL_STACK_PAGES		1
 
 #define IDLE_TID				0
 #define INIT_TID				1
@@ -63,14 +63,16 @@ typedef enum {
 	/* involved in a swapping-operation => CAN'T run. will be set to blocked when swapping done */
 	ST_BLOCKED_SWAP = 5,
 	/* same as ST_BLOCKED_SWAP, but will be set to ready when done */
-	ST_READY_SWAP = 6
+	ST_READY_SWAP = 6,
+	/* same as ST_BLOCKED_SwAP, but will be set to zombie when done */
+	ST_ZOMBIE_SWAP = 7
 } eThreadState;
 
 /* represents a thread */
 typedef struct {
 	/* thread state. see eThreadState */
 	u8 state;
-	/* wether this thread waits somewhere in the kernel (not directly triggered by the user) */
+	/* whether this thread waits somewhere in the kernel (not directly triggered by the user) */
 	u8 waitsInKernel;
 	/* the signal that the thread is currently handling (if > 0) */
 	tSig signal;
@@ -246,6 +248,8 @@ tFileNo thread_unassocFd(tFD fd);
  * Extends the stack of the current thread so that the given address is accessible. If that
  * is not possible the function returns a negative error-code
  *
+ * IMPORTANT: May cause a thread-switch for swapping!
+ *
  * @param address the address that should be accessible
  * @return 0 on success
  */
@@ -260,7 +264,7 @@ s32 thread_extendStack(u32 address);
  * @param p the process the thread should belong to
  * @param stackFrame will contain the stack-frame that has been used for the kernel-stack of the
  * 	new thread
- * @param cloneProc wether a process is cloned or just a thread
+ * @param cloneProc whether a process is cloned or just a thread
  * @return the number of allocated frames on success
  */
 s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc);
@@ -269,7 +273,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
  * Destroys the given thread. If it is the current one it will be stored for later deletion.
  *
  * @param t the thread
- * @param destroyStacks wether the stacks should be destroyed (should be true if the process
+ * @param destroyStacks whether the stacks should be destroyed (should be true if the process
  *  will not be destroyed)
  * @return the number of free'd frames
  */

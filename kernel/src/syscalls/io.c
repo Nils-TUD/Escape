@@ -82,7 +82,7 @@ void sysc_open(sIntrptStackFrame *stack) {
 		fd = thread_getFreeFd();
 		if(fd < 0)
 			SYSC_ERROR(stack,fd);
-		/* store wether we have created the node */
+		/* store whether we have created the node */
 		if(created)
 			flags |= VFS_CREATED;
 		/* open file */

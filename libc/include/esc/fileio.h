@@ -122,7 +122,7 @@ s32 fflush(tFile *file);
 s32 ftell(tFile *file,u32 *pos);
 
 /**
- * Checks wether we are at EOF
+ * Checks whether we are at EOF
  *
  * @param file the file
  * @return 1 if at EOF

@@ -51,7 +51,7 @@ void sysc_pipe(sIntrptStackFrame *stack);
 void sysc_tell(sIntrptStackFrame *stack);
 
 /**
- * Tests wether we are at the end of the file (or if there is a message for driver-usages)
+ * Tests whether we are at the end of the file (or if there is a message for driver-usages)
  *
  * @param tFD file-descriptor
  * @return bool true if we are at EOF
@@ -134,7 +134,7 @@ void sysc_send(sIntrptStackFrame *stack);
 void sysc_receive(sIntrptStackFrame *stack);
 
 /**
- * Checks wether a message is available
+ * Checks whether a message is available
  *
  * @param tFD the file-descriptor
  * @return s32 true if so, 0 otherwise or a negative error-code
@@ -142,7 +142,7 @@ void sysc_receive(sIntrptStackFrame *stack);
 void sysc_hasMsg(sIntrptStackFrame *stack);
 
 /**
- * Checks wether the given file links to a terminal. That means it has to be a virtual file
+ * Checks whether the given file links to a terminal. That means it has to be a virtual file
  * that acts as a driver-client for a terminal-driver.
  *
  * @param tFD the file-descriptor

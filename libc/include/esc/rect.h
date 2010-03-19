@@ -48,7 +48,7 @@ void rectAdd(sRectangle *r1,sRectangle *r2);
  * @param r the rectangle
  * @param x the x-coordinate
  * @param y the y-coordinate
- * @return wether the rectangle contains the given point
+ * @return whether the rectangle contains the given point
  */
 bool rectContains(sRectangle *r,s16 x,s16 y);
 

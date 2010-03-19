@@ -60,7 +60,7 @@ tPid shell_getWaitingPid(void);
  * Executes the given line or file
  *
  * @param line the entered line
- * @param isFile wether <line> is a file
+ * @param isFile whether <line> is a file
  * @return the result
  */
 s32 shell_executeCmd(char *line,bool isFile);

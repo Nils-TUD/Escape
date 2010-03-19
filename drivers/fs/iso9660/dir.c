@@ -32,7 +32,7 @@
 #define GET_INODENO(blockNo,blockSize,offset) (((blockNo) * (blockSize)) + (offset))
 
 /**
- * Checks wether <user> matches <disk>
+ * Checks whether <user> matches <disk>
  */
 static bool iso_dir_match(const char *user,const char *disk,u32 userLen,u32 diskLen);
 

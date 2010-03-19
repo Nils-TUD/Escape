@@ -43,7 +43,7 @@
 void vfsn_init(void);
 
 /**
- * Checks wether the given node-number is valid
+ * Checks whether the given node-number is valid
  *
  * @param nodeNo the number
  * @return true if so
@@ -51,7 +51,7 @@ void vfsn_init(void);
 bool vfsn_isValidNodeNo(tInodeNo nodeNo);
 
 /**
- * Checks wether the given node is a driver-node and belongs to the current process
+ * Checks whether the given node is a driver-node and belongs to the current process
  *
  * @param nodeNo the node-number
  * @return true if so

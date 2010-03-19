@@ -54,7 +54,7 @@ void fpu_init(void) {
 	cr0 &= ~CR0_EMULATE;
 	cpu_setCR0(cr0);
 
-	/* TODO check wether we have a FPU */
+	/* TODO check whether we have a FPU */
 	/* set the OSFXSR bit
 	cpu_setCR4(cpu_getCR4() | 0x200);*/
 	/* init the fpu */

@@ -97,6 +97,10 @@ int main(void) {
 		exec("/bin/guishell",NULL);
 		exit(EXIT_FAILURE);
 	}
+	if(fork() == 0) {
+		exec("/bin/guishell",NULL);
+		exit(EXIT_FAILURE);
+	}
 #endif
 
 	Application *app = Application::getInstance();

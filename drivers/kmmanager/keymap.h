@@ -44,7 +44,7 @@ sKeymapEntry *km_parse(const char *file);
  * with the given keymap.
  *
  * @param map the keymap to use
- * @param isBreak wether it is a breakcode
+ * @param isBreak whether it is a breakcode
  * @param keycode the keycode
  * @param modifier will be set to the current modifiers
  * @return the character

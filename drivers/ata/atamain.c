@@ -33,6 +33,8 @@
 #include "drive.h"
 #include "partition.h"
 
+#define MAX_RW_SIZE	4096
+
 typedef struct {
 	u32 drive;
 	u32 partition;
@@ -56,6 +58,10 @@ static sATADrive drives[DRIVE_COUNT] = {
 static u32 drvCount = 0;
 static tDrvId drivers[DRIVE_COUNT * PARTITION_COUNT];
 static sId2Drv id2drv[DRIVE_COUNT * PARTITION_COUNT];
+/* don't use dynamic memory here since this may cause trouble with swapping (which we do) */
+/* because if the heap hasn't enough memory and we request more when we should swap the kernel
+ * may not have more memory and can't do anything about it */
+static u16 buffer[MAX_RW_SIZE / sizeof(u16)];
 
 static sMsg msg;
 
@@ -107,16 +113,14 @@ int main(void) {
 			ATA_PR2("Got message %d",mid);
 			switch(mid) {
 				case MSG_DRV_READ: {
-					u16 *buffer = NULL;
 					u32 offset = msg.args.arg1;
 					u32 count = msg.args.arg2;
 					msg.args.arg1 = 0;
-					/* we have to check wether it is at least one sector. otherwise ATA can't
+					/* we have to check whether it is at least one sector. otherwise ATA can't
 					 * handle the request */
 					if(offset + count <= part->size * drive->secSize && offset + count > offset) {
 						u32 rcount = (count + drive->secSize - 1) & ~(drive->secSize - 1);
-						buffer = (u16*)malloc(rcount);
-						if(buffer) {
+						if(rcount <= MAX_RW_SIZE) {
 							ATA_PR2("Reading %d bytes @ %x from drive 0x%x",rcount,offset,drive->basePort);
 							if(drive->rwHandler(drive,false,buffer,
 									offset / drive->secSize + part->start,rcount / drive->secSize)) {
@@ -126,21 +130,17 @@ int main(void) {
 					}
 					msg.args.arg2 = true;
 					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
-					if(buffer) {
+					if(msg.args.arg1 > 0)
 						send(fd,MSG_DRV_READ_RESP,buffer,count);
-						free(buffer);
-					}
 				}
 				break;
 
 				case MSG_DRV_WRITE: {
-					u16 *buffer = NULL;
 					u32 offset = msg.args.arg1;
 					u32 count = msg.args.arg2;
 					msg.args.arg1 = 0;
 					if(offset + count <= part->size * drive->secSize && offset + count > offset) {
-						buffer = (u16*)malloc(count);
-						if(buffer) {
+						if(count <= MAX_RW_SIZE) {
 							if(receive(fd,&mid,buffer,count) > 0) {
 								ATA_PR2("Writing %d bytes @ %x to drive 0x%x",count,offset,drive->basePort);
 								if(drive->rwHandler(drive,true,buffer,
@@ -148,7 +148,6 @@ int main(void) {
 									msg.args.arg1 = count;
 								}
 							}
-							free(buffer);
 						}
 					}
 					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));

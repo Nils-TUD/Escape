@@ -37,7 +37,15 @@ void swap_start(void);
 bool swap_in(sProc *p,u32 addr);
 
 /**
- * Checks wether there we should swap something out
+ * Swaps out frames until at least <frameCount> frames are free
+ *
+ * @param frameCount the number of frames you need
+ * @return true if successfull. May fail if swap-space is full or nothing left to swap
+ */
+bool swap_outUntil(u32 frameCount);
+
+/**
+ * Checks whether there we should swap something out
  */
 void swap_check(void);
 

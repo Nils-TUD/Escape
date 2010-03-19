@@ -33,7 +33,7 @@ void lang_reset(void);
 void lang_setInterrupted(void);
 
 /**
- * @return wether the shell has been interrupted
+ * @return whether the shell has been interrupted
  */
 bool lang_isInterrupted(void);
 

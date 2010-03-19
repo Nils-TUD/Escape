@@ -22,9 +22,6 @@
 
 #include <types.h>
 
-/* our list (the user should not know about the internal structure) */
-typedef void* sSLList;
-
 /* a node in the list (public view) */
 typedef struct sSLNode sSLNode;
 struct sSLNode {
@@ -32,6 +29,15 @@ struct sSLNode {
 	sSLNode *const next;
 	void *const data;
 };
+
+/* our list (the user should not know about the internal structure) */
+/*typedef void* sSLList;*/
+/* but for debugging, it is helpful :) */
+typedef struct {
+	sSLNode *first;
+	sSLNode *last;
+	u32 length;
+} sSLList;
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,7 +54,7 @@ sSLList *sll_create(void);
  * Destroyes the given list
  *
  * @param list the list
- * @param freeData wether the data of the nodes should be free'd. Requires that they are allocated
+ * @param freeData whether the data of the nodes should be free'd. Requires that they are allocated
  * 	on the heap
  */
 void sll_destroy(sSLList *list,bool freeData);

@@ -25,7 +25,7 @@
 /**
  * Converts the given scancode to a keycode
  *
- * @param isBreak wether it is a break-keycode
+ * @param isBreak whether it is a break-keycode
  * @param keycode the keycode
  * @param scanCode the received scancode
  * @return true if it was a keycode

@@ -47,12 +47,12 @@ void gdt_init(void);
 /**
  * Sets the stack-pointer for the TSS
  *
- * @param isVM86 wether the current task is a Vm86-task
+ * @param isVM86 whether the current task is a Vm86-task
  */
 void tss_setStackPtr(u8 isVM86);
 
 /**
- * Checks wether the io-map is set
+ * Checks whether the io-map is set
  *
  * @return true if so
  */

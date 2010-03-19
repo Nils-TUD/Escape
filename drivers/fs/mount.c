@@ -27,8 +27,8 @@
 #include "mount.h"
 
 static u32 mntPntCount = 0;
-static sSLList fileSystems = NULL;
-static sSLList fsInsts = NULL;
+static sSLList *fileSystems = NULL;
+static sSLList *fsInsts = NULL;
 static sMountPoint mounts[MOUNT_TABLE_SIZE];
 
 bool mount_init(void) {

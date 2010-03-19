@@ -50,7 +50,7 @@ static void test_init(const char *fmt,...) {
 }
 
 /**
- * Checks wether the page-count and free-frames are still the same and finishes the test-case
+ * Checks whether the page-count and free-frames are still the same and finishes the test-case
  */
 static void test_check(void) {
 	newPC = paging_dbg_getPageCount();

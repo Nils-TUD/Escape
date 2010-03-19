@@ -291,7 +291,7 @@ static bool readLines(u32 end) {
 			cpy++;
 		}
 
-		/* check wether the user has pressed a key */
+		/* check whether the user has pressed a key */
 		{
 			char c;
 			while(!feof(fvterm) && (c = fscanc(fvterm)) != IO_EOF) {

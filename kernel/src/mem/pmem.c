@@ -33,7 +33,7 @@
  *
  * @param from the start-address
  * @param to the end-address
- * @param used wether the frame is used
+ * @param used whether the frame is used
  */
 static void mm_markAddrRangeUsed(u32 from,u32 to,bool used);
 
@@ -41,14 +41,14 @@ static void mm_markAddrRangeUsed(u32 from,u32 to,bool used);
  * Marks the given frame-number as used or not used
  *
  * @param frame the frame-number
- * @param used wether the frame is used
+ * @param used whether the frame is used
  */
 static void mm_markFrameUsed(u32 frame,bool used);
 
 #if DEBUG_CHECK_DUPFREE
 
 /**
- * Checks wether the given frame of given type is free
+ * Checks whether the given frame of given type is free
  *
  * @param type the type: MM_DEF or MM_DMA
  * @param frame the frame-number

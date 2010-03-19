@@ -412,13 +412,16 @@ static void intrpt_handleSignal(void) {
 		 */
 		if(thread_getRunning()->tid != tid) {
 			sThread *sigt = thread_getById(tid);
-			/* ensure that the thread is ready */
-			sched_setReady(sigt);
-			/* this may fail because perhaps we're involved in a swapping-operation */
-			/* in this case do nothing, we'll handle the signal later (handleSignalFinish() cares
-			 * about that) */
-			if(sigt->state == ST_READY)
-				thread_switchTo(tid);
+			/* don't wake threads that don't want to get sigs */
+			if(!sigt->waitsInKernel) {
+				/* ensure that the thread is ready */
+				sched_setReady(sigt);
+				/* this may fail because perhaps we're involved in a swapping-operation */
+				/* in this case do nothing, we'll handle the signal later (handleSignalFinish() cares
+				 * about that) */
+				if(sigt->state == ST_READY)
+					thread_switchTo(tid);
+			}
 		}
 	}
 }
@@ -426,25 +429,32 @@ static void intrpt_handleSignal(void) {
 static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	fSigHandler handler;
+	u32 *esp = (u32*)stack->uesp;
+
+	/* release signal-data */
+	signalData.active = 0;
+
 	/* if the thread_switchTo() wasn't successfull it means that we have tried to switch to
 	 * multiple threads during idle. So we ignore it and try to give the signal later to the thread */
-	if(t->tid != signalData.tid) {
-		signalData.active = 0;
+	if(t->tid != signalData.tid)
+		return;
+
+	/* extend the stack, if necessary */
+	if(thread_extendStack((u32)(esp - 11)) < 0) {
+		/* TODO later we should kill the process here! */
+		util_panic("Thread %d: stack overflow",t->tid);
 		return;
 	}
+	/* will handle copy-on-write */
+	paging_isRangeUserWritable((u32)(esp - 11),10 * sizeof(u32));
+
+	/* thread_extendStack() and paging_isRangeUserWritable() may cause a thread-switch. therefore
+	 * we may have delivered another signal in the meanwhile... */
+	if(t->tid != signalData.tid)
+		return;
 
 	handler = sig_startHandling(signalData.tid,signalData.sig);
 	if(handler != NULL) {
-		u32 *esp = (u32*)stack->uesp;
-		/* extend the stack, if necessary */
-		if(thread_extendStack((u32)(esp - 11)) < 0) {
-			/* TODO later we should kill the process here! */
-			util_panic("Thread %d: stack overflow",t->tid);
-			return;
-		}
-		/* will handle copy-on-write */
-		paging_isRangeUserWritable((u32)(esp - 11),10 * sizeof(u32));
-
 		/* the ret-instruction of sigRet() should go to the old eip */
 		*--esp = stack->eip;
 		/* save regs */
@@ -464,9 +474,6 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 		stack->eip = (u32)handler;
 		stack->uesp = (u32)esp;
 	}
-
-	/* we don't want to do this again */
-	signalData.active = 0;
 }
 
 void intrpt_handler(sIntrptStackFrame *stack) {

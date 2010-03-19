@@ -48,18 +48,18 @@ sASTNode *ast_createCommand(void);
 sValue *ast_execCommand(sEnv *e,sCommand *n);
 
 /**
- * Sets wether this command should return the output
+ * Sets whether this command should return the output
  *
  * @param c the command
- * @param retOutput wether to return the output
+ * @param retOutput whether to return the output
  */
 void ast_setRetOutput(sASTNode *c,bool retOutput);
 
 /**
- * Sets wether this command should run in bg
+ * Sets whether this command should run in bg
  *
  * @param c the command
- * @param runInBG wether to run in background
+ * @param runInBG whether to run in background
  */
 void ast_setRunInBG(sASTNode *c,bool runInBG);
 

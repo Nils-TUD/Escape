@@ -29,7 +29,7 @@
  *
  * @param e the ext2-data
  * @param dirNode the directory-inode
- * @param isDir wether the inode should be an directory
+ * @param isDir whether the inode should be an directory
  * @return the inode-number or 0 if failed
  */
 tInodeNo ext2_bm_allocInode(sExt2 *e,sExt2CInode *dirInode,bool isDir);
@@ -39,7 +39,7 @@ tInodeNo ext2_bm_allocInode(sExt2 *e,sExt2CInode *dirInode,bool isDir);
  *
  * @param e the ext2-data
  * @param ino the inode-number
- * @param isDir wether the inode is an directory
+ * @param isDir whether the inode is an directory
  * @return 0 on success
  */
 s32 ext2_bm_freeInode(sExt2 *e,tInodeNo ino,bool isDir);

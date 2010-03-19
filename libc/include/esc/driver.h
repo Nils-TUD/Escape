@@ -63,10 +63,10 @@ tDrvId regDriver(const char *name,u32 flags) A_CHECKRET;
 s32 unregDriver(tDrvId driver);
 
 /**
- * For drivers: Sets wether currently data is readable or not
+ * For drivers: Sets whether currently data is readable or not
  *
  * @param driver the driver-id
- * @param readable wether there is data to read
+ * @param readable whether there is data to read
  * @return 0 on success
  */
 s32 setDataReadable(tDrvId driver,bool readable);
@@ -81,7 +81,7 @@ s32 setDataReadable(tDrvId driver,bool readable);
 tFD getClientThread(tDrvId id,tTid tid) A_CHECKRET;
 
 /**
- * For drivers: Looks wether a client wants to be served. If not and GW_NOBLOCK is not provided
+ * For drivers: Looks whether a client wants to be served. If not and GW_NOBLOCK is not provided
  * it waits until a client should be served. if not and GW_NOBLOCK is enabled, it returns an error.
  * If a client wants to be served, the message is fetched from him and a file-descriptor is returned.
  * Note that you may be interrupted by a signal!

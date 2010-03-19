@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 /**
- * Checks wether the given arguments may be a kind of help-request. That means one of:
+ * Checks whether the given arguments may be a kind of help-request. That means one of:
  * <prog> --help
  * <prog> -h
  * <prog> -?

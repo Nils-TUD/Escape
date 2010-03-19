@@ -452,7 +452,7 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 				printc(c);
 			}
 
-			/* append '/' or ' ' depending on wether its a dir or not */
+			/* append '/' or ' ' depending on whether its a dir or not */
 			last = MODE_IS_DIR(matches[0]->mode) ? '/' : ' ';
 			if(orgLine[ilength - 1] != last) {
 				orgLine[ilength++] = last;

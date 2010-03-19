@@ -26,6 +26,7 @@
 #include <mem/text.h>
 #include <mem/swap.h>
 #include <mem/swapmap.h>
+#include <mem/sharedmem.h>
 #include <task/proc.h>
 #include <task/thread.h>
 #include <util.h>
@@ -34,6 +35,7 @@
 #include <string.h>
 #include <assert.h>
 #include <printf.h>
+#include <errors.h>
 
 /* builds the address of the page in the mapped page-tables to which the given addr belongs */
 #define ADDR_TO_MAPPED(addr) (MAPPED_PTS_START + (((u32)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
@@ -403,7 +405,6 @@ u32 paging_map(u32 virt,u32 *frames,u32 count,u8 flags,bool force) {
 
 static u32 paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virt,u32 *frames,u32 count,u8 flags,
 		bool force) {
-	u32 frame;
 	sPDEntry *pd;
 	sPTEntry *pt;
 	u32 frmCount = 0;
@@ -414,20 +415,45 @@ static u32 paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virt,u32 *frames,u32
 			PG_NOFREE | PG_INHERIT | PG_GLOBAL)),"flags contain invalid bits");
 	vassert(force == true || force == false,"force invalid");
 
+	/* if we should allocate the frames, check first if there are enough */
+	if(frames == NULL) {
+		/* max. we will need count + necessary page-tables + 1 */
+		u32 needed = (count + (count + PT_ENTRY_COUNT - 1) / PT_ENTRY_COUNT) + 1;
+		if(mm_getFreeFrmCount(MM_DEF) < needed) {
+			/* first check how many we'll really need... */
+			s32 countCpy = count;
+			u32 virtCpy = virt;
+			needed = count;
+			while(countCpy > 0) {
+				pd = (sPDEntry*)pageDir + ADDR_TO_PDINDEX(virtCpy);
+				if(!pd->present) {
+					needed++;
+					/* skip this page-table */
+					countCpy -= PT_ENTRY_COUNT;
+					virtCpy += PAGE_SIZE * PT_ENTRY_COUNT;
+					continue;
+				}
+				pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(mappingArea,virtCpy);
+				if(!force && pt->present)
+					needed--;
+				countCpy--;
+				virtCpy += PAGE_SIZE;
+			}
+			/* try to swap out some pages */
+			if(!swap_outUntil(needed))
+				return ERR_NOT_ENOUGH_MEM;
+		}
+	}
+
 	virt &= ~(PAGE_SIZE - 1);
 	while(count-- > 0) {
 		pd = (sPDEntry*)pageDir + ADDR_TO_PDINDEX(virt);
 		/* page table not present? */
 		if(!pd->present) {
 			/* get new frame for page-table */
-			frame = mm_allocateFrame(MM_DEF);
-			frmCount++;
-			if(frame == 0) {
-				util_panic("Not enough memory");
-			}
-
-			pd->ptFrameNo = frame;
+			pd->ptFrameNo = mm_allocateFrame(MM_DEF);
 			pd->present = true;
+			frmCount++;
 			/* writable because we want to be able to change PTE's in the PTE-area */
 			/* is there another reason? :) */
 			pd->writable = true;
@@ -628,8 +654,23 @@ u32 paging_destroyPageDir(sProc *p) {
 	/* free text; free frames if text_free() returns true */
 	frmCnt += paging_unmapIntern(p,TMPMAP_PTS_START,0,p->textPages,text_free(p->text,p->pid),false);
 
-	/* free data-pages */
-	frmCnt += paging_unmapIntern(p,TMPMAP_PTS_START,p->textPages * PAGE_SIZE,p->dataPages,true,true);
+	/* free data-pages; we can't do that in one step because shared-memory-regions may be in
+	 * the data-area, too. so we have to take care not to remove them if we're not the owner */
+	u32 addr = p->textPages * PAGE_SIZE;
+	u32 end = addr + p->dataPages * PAGE_SIZE;
+	while(addr < end) {
+		u32 pageCount;
+		bool isOwner;
+		if(shm_isSharedMem(p,addr,&pageCount,&isOwner)) {
+			if(isOwner)
+				frmCnt += paging_unmapIntern(p,TMPMAP_PTS_START,addr,pageCount,true,true);
+			addr += pageCount * PAGE_SIZE;
+		}
+		else {
+			frmCnt += paging_unmapIntern(p,TMPMAP_PTS_START,addr,1,true,true);
+			addr += PAGE_SIZE;
+		}
+	}
 
 	/* free text- and data page-tables */
 	frmCnt += paging_unmapPageTablesIntern(PAGE_DIR_TMP_AREA,0,PAGES_TO_PTS(p->textPages + p->dataPages));
@@ -668,18 +709,43 @@ u32 paging_destroyPageDir(sProc *p) {
 	return frmCnt;
 }
 
+#define RAND_MAX 0xFFFFFFFF
+
+static u32 randm = RAND_MAX;
+static u32 randa = 1103515245;
+static u32 randc = 12345;
+static u32 lastRand = 0;
+
+static s32 krand(void) {
+	lastRand = (randa * lastRand + randc) % randm;
+	return lastRand;
+}
+
+static void ksrand(u32 seed) {
+	lastRand = seed;
+}
+
 u32 paging_swapGetNextAddr(sProc *p) {
+	static bool randInit = false;
 	sPTEntry *pt;
 	sSLNode *n;
 	u32 i,tdPages = p->textPages + p->dataPages;
 	u32 addr = 0;
+	s32 pi;
+	if(!randInit) {
+		ksrand((u32)cpu_rdtsc());
+		randInit = true;
+	}
+	pi = krand() % (p->textPages + p->dataPages + p->stackPages - (p->unswappable + p->swapped));
 	paging_mapForeignPageDir(p);
 	/* first search in text- and data-pages */
 	pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,addr);
 	for(i = 0; i < tdPages; i++) {
 		if(!pt->swapped && !pt->noFree && !pt->copyOnWrite) {
-			paging_unmapForeignPageDir();
-			return addr;
+			if(pi-- == 0) {
+				paging_unmapForeignPageDir();
+				return addr;
+			}
 		}
 		addr += PAGE_SIZE;
 		pt++;
@@ -692,8 +758,10 @@ u32 paging_swapGetNextAddr(sProc *p) {
 		pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(TMPMAP_PTS_START,addr);
 		for(i = 0; i < t->ustackPages; i++) {
 			if(!pt->swapped && !pt->noFree && !pt->copyOnWrite) {
-				paging_unmapForeignPageDir();
-				return addr;
+				if(pi-- == 0) {
+					paging_unmapForeignPageDir();
+					return addr;
+				}
 			}
 			addr += PAGE_SIZE;
 			pt++;
@@ -881,7 +949,7 @@ bool paging_handlePageFault(u32 address) {
 	if(!pt->copyOnWrite || !pt->present)
 		return false;
 
-	/* search through the copy-on-write-list wether there is another one who wants to get
+	/* search through the copy-on-write-list whether there is another one who wants to get
 	 * the frame */
 	owner = false;
 	ourCOW = NULL;

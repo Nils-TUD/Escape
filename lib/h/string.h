@@ -76,7 +76,7 @@ void *memchr(const void *buffer,int c,u32 count);
 void *memcpy(void *dest,const void *src,u32 len);
 
 /**
- * Compares <count> words of <str1> and <str2> and returns wether they are equal
+ * Compares <count> words of <str1> and <str2> and returns whether they are equal
  *
  * @param str1 the first data
  * @param str2 the second data
@@ -336,7 +336,7 @@ u32 strlen(const char *str);
 s32 strnlen(const char *str,s32 max);
 
 /**
- * Checks wether the given string contains just alphanumeric characters
+ * Checks whether the given string contains just alphanumeric characters
  *
  * @param str the string
  * @return true if so
@@ -364,7 +364,7 @@ char *strerror(s32 errnum);
 char *strdup(const char *s);
 
 /**
- * Checks wether <str> matches <pattern>. Pattern may contain '*' which acts as a wildcard.
+ * Checks whether <str> matches <pattern>. Pattern may contain '*' which acts as a wildcard.
  *
  * @param pattern the pattern
  * @param str the string to match

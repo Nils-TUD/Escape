@@ -59,7 +59,7 @@ tCmdId run_requestId(void);
  * @param pid the pid
  * @param inPipe the pipe for stdin
  * @param outPipe the pipe for stdout
- * @param hasNext wether there is a next process in the chain
+ * @param hasNext whether there is a next process in the chain
  * @return the entry on success or NULL on failure
  */
 bool run_addProc(tCmdId cmdId,tPid pid,tFD inPipe,tFD outPipe,bool hasNext);

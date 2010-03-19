@@ -28,6 +28,7 @@
 
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024
+#define AREA_PAGE_COUNT			16
 #if DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0
 #define DEBUG_ADD_GUARDS		1
@@ -58,6 +59,10 @@ struct sMemArea {
 };
 
 /**
+ * Loads all available areas and space
+ */
+static void kheap_init(void);
+/**
  * Allocates a new page for areas
  *
  * @return true on success
@@ -86,8 +91,30 @@ static sMemArea *usableList = NULL;
 static sMemArea *freeList = NULL;
 /* a hashmap with occupied-lists, key is getHash(address) */
 static sMemArea *occupiedMap[OCC_MAP_SIZE] = {NULL};
+static bool initialized = false;
 /* number of currently occupied pages */
 static u32 pages = 0;
+
+/*
+ * Note that we alloc all memory and areas at the beginning because otherwise we may not have
+ * enough memory if we need it. We can't swap something out for it because that would mean
+ * that in NEARLY ALL parts of the kernel (that use the kheap) may occurr thread-switches. I
+ * think that would lead to uncontrolable behaviour and therefore we do it this way.
+ */
+
+static void kheap_init(void) {
+	u32 freeMem,i;
+	for(i = 0; i < AREA_PAGE_COUNT; i++)
+		kheap_loadNewAreas();
+
+	freeMem = mm_getFreeFrmCount(MM_DEF);
+	if(freeMem * PAGE_SIZE < KERNEL_HEAP_SIZE)
+		freeMem = (freeMem / 2) * PAGE_SIZE;
+	else
+		freeMem = KERNEL_HEAP_SIZE - AREA_PAGE_COUNT * PAGE_SIZE;
+	kheap_loadNewSpace(freeMem);
+	initialized = true;
+}
 
 u32 kheap_getUsedMem(void) {
 	u32 i,c = 0;
@@ -180,6 +207,8 @@ void *_kheap_alloc(u32 size) {
 	sMemArea *area,*prev,*narea;
 	sMemArea **list;
 
+	if(!initialized)
+		kheap_init();
 	if(size == 0)
 		return NULL;
 
@@ -436,7 +465,11 @@ void *_kheap_realloc(void *addr,u32 size) {
 
 static bool kheap_loadNewSpace(u32 size) {
 	sMemArea *area;
-	s32 count;
+	u32 addr,frmBuf[8];
+	s32 count,remaining;
+
+	if(initialized)
+		util_panic("Not enough space in kheap for additional %d bytes",size);
 
 	/* no free areas? */
 	if(freeList == NULL) {
@@ -454,8 +487,16 @@ static bool kheap_loadNewSpace(u32 size) {
 	count = BYTES_2_PAGES(size);
 	if((pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return false;
-	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,
-			PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL,false);
+	/* don't use NULL for paging_map here to prevent swapping */
+	remaining = count;
+	addr = KERNEL_HEAP_START + pages * PAGE_SIZE;
+	while(remaining > 0) {
+		u32 amount = MIN((s32)ARRAY_SIZE(frmBuf),remaining);
+		mm_allocateFrames(MM_DEF,frmBuf,amount);
+		paging_map(addr,frmBuf,amount,PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL,false);
+		addr += amount * PAGE_SIZE;
+		remaining -= amount;
+	}
 
 	/* take one area from the freelist and put the memory in it */
 	area = freeList;
@@ -472,12 +513,18 @@ static bool kheap_loadNewSpace(u32 size) {
 
 static bool kheap_loadNewAreas(void) {
 	sMemArea *area,*end;
+	u32 frameNo;
+
+	if(initialized)
+		util_panic("Not enough areas in kheap");
 
 	if((pages + 1) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return false;
 
 	/* allocate one page for area-structs */
-	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,1,
+	/* don't use NULL for paging_map here to prevent swapping */
+	frameNo = mm_allocateFrame(MM_DEF);
+	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,&frameNo,1,
 			PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL,false);
 
 	/* determine start- and end-address */

@@ -286,7 +286,7 @@ static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 		else if(freeSlot == ERR_NO_FREE_FILE) {
 			freeSlot = i;
 			/* just for performance: if we've found an unused file and want to use a driver,
-			 * use this slot because it doesn't really matter wether we use a new file or an
+			 * use this slot because it doesn't really matter whether we use a new file or an
 			 * existing one (if there even is any) */
 			/* note: we can share a file for writing in this case! */
 			if(isDrvUse)
@@ -590,7 +590,7 @@ s32 vfs_link(tTid tid,const char *oldPath,const char *newPath) {
 	tInodeNo oldIno,newIno;
 	sVFSNode *dir,*target;
 	s32 oldRes,newRes;
-	/* first check wether it is a realpath */
+	/* first check whether it is a realpath */
 	oldRes = vfsn_resolvePath(oldPath,&oldIno,NULL,VFS_READ);
 	newRes = vfsn_resolvePath(newPath,&newIno,NULL,VFS_WRITE);
 	if(oldRes == ERR_REAL_PATH) {
@@ -610,7 +610,7 @@ s32 vfs_link(tTid tid,const char *oldPath,const char *newPath) {
 	if(len >= MAX_PATH_LEN)
 		return ERR_INVALID_PATH;
 	strcpy(newPathCpy,newPath);
-	/* check wether the directory exists */
+	/* check whether the directory exists */
 	name = vfsn_basename((char*)newPathCpy,&len);
 	backup = *name;
 	vfsn_dirname((char*)newPathCpy,len);
@@ -786,7 +786,7 @@ bool vfs_msgAvailableFor(tTid tid,u8 events) {
 	sThread *t = thread_getById(tid);
 	tFD i;
 
-	/* at first we check wether the process is a driver */
+	/* at first we check whether the process is a driver */
 	if(events & EV_CLIENT) {
 		sVFSNode *rn = DRIVERS();
 		n = NODE_FIRST_CHILD(rn);
@@ -917,7 +917,7 @@ s32 vfs_removeDriver(tTid tid,tInodeNo nodeNo) {
 		return ERR_NOT_OWN_DRIVER;
 
 	/* wakeup all threads that may be waiting for this node so they can check
-	 * wether they are affected by the remove of this driver and perform the corresponding
+	 * whether they are affected by the remove of this driver and perform the corresponding
 	 * action */
 	thread_wakeupAll(0,EV_RECEIVED_MSG | EV_REQ_REPLY | EV_DATA_READABLE);
 
@@ -1050,6 +1050,15 @@ u32 vfs_dbg_getGFTEntryCount(void) {
 			count++;
 	}
 	return count;
+}
+
+void vfs_dbg_printMsgsOf(sVFSNode *n) {
+	sVFSNode *child = NODE_FIRST_CHILD(n);
+	vid_printf("Msgs for %s:\n",n->name);
+	while(child != NULL) {
+		vid_printf("	%d: %d\n",child->owner,sll_length(child->data.drvuse.sendList));
+		child = child->next;
+	}
 }
 
 void vfs_dbg_printGFT(void) {

@@ -242,7 +242,7 @@ cpu_cpuidSupported:
 	pushfd
 	pop		eax														; load again to eax
 	and		eax,0x200000									; isolate cpuid-bit
-	xor		eax,ebx												; check wether the bit has been set
+	xor		eax,ebx												; check whether the bit has been set
 	shr		eax,21												; if so, return 1 (cpuid supported)
 	ret
 

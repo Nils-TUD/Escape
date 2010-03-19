@@ -83,7 +83,7 @@ void sysc_wait(sIntrptStackFrame *stack) {
 	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	/* check wether there is a chance that we'll wake up again */
+	/* check whether there is a chance that we'll wake up again */
 	if(!vfs_msgAvailableFor(t->tid,events)) {
 		thread_wait(t->tid,0,events);
 		thread_switch();

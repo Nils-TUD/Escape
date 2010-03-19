@@ -67,7 +67,7 @@ struct sVTerm {
 	u8 defBackground;
 	u8 foreground;
 	u8 background;
-	/* wether this vterm is currently active */
+	/* whether this vterm is currently active */
 	u8 active;
 	/* file-descriptors */
 	tFD video;
@@ -82,13 +82,13 @@ struct sVTerm {
 	u16 upStart;
 	u16 upLength;
 	s16 upScroll;
-	/* wether entered characters should be echo'd to screen */
+	/* whether entered characters should be echo'd to screen */
 	u8 echo;
-	/* wether the vterm should read until a newline occurrs */
+	/* whether the vterm should read until a newline occurrs */
 	u8 readLine;
-	/* wether navigation via up/down/pageup/pagedown is enabled */
+	/* whether navigation via up/down/pageup/pagedown is enabled */
 	u8 navigation;
-	/* wether all output should be printed into the readline-buffer */
+	/* whether all output should be printed into the readline-buffer */
 	u8 printToRL;
 	/* a backup of the screen; initially NULL */
 	char *screenBackup;

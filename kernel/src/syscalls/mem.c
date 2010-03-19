@@ -67,7 +67,7 @@ void sysc_mapPhysical(sIntrptStackFrame *stack) {
 	origPages = p->textPages + p->dataPages;
 
 	/* not enough mem? */
-	if(mm_getFreeFrmCount(MM_DEF) < paging_countFramesForMap(addr,pages))
+	if(mm_getFreeFrmCount(MM_DEF) < (paging_countFramesForMap(addr,pages) - pages))
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 
 	/* invalid segment sizes? */

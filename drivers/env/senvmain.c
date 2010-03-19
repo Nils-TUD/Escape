@@ -34,8 +34,8 @@
 
 typedef struct {
 	tPid pid;		/* the creator */
-	bool dup;		/* wether this is a duplicate of a parent-var */
-	bool dead;		/* wether the process is dead and this entry should be removed */
+	bool dup;		/* whether this is a duplicate of a parent-var */
+	bool dead;		/* whether the process is dead and this entry should be removed */
 	char *name;
 	char *value;
 } sEnvVar;
@@ -272,7 +272,7 @@ static bool env_set(tPid pid,char *name,char *value) {
 	sEnvVar *var;
 	u32 len;
 
-	/* at first we have to look wether the var already exists for the given process */
+	/* at first we have to look whether the var already exists for the given process */
 	var = env_getOf(pid,name);
 	if(var != NULL) {
 		/* we don't need the previous value anymore */

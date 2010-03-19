@@ -405,7 +405,7 @@ void *_realloc(void *addr,u32 size) {
 	/* the areas are not big enough, so allocate a new one */
 	a = _malloc(size);
 	if(a == NULL) {
-		free(addr);
+		_free(addr);
 		return NULL;
 	}
 

@@ -32,7 +32,7 @@ static fExitFunc exitFuncs[MAX_EXIT_FUNCS];
 s32 system(const char *cmd) {
 	s32 child;
 	sExitState state;
-	/* check wether we have a shell */
+	/* check whether we have a shell */
 	if(cmd == NULL) {
 		tFD fd = open("/bin/shell",IO_READ);
 		if(fd >= 0) {

@@ -33,17 +33,43 @@
 s32 shm_create(const char *name,u32 pageCount);
 
 /**
- * Checks wether a shared-memory region exists with the given owner and that contains the given
- * address. If so the members are returned (owner is no member)
+ * Checks whether the given addr of the given process belongs to a shared-memory region. If so
+ * <pageCount> and <isOwner> is set to the corresponding values.
  *
- * @param owner the process that created the shm
+ * @param p the process
  * @param addr the virtual address
- * @return a linked list of the processes that have joined the region or NULL
+ * @param pageCount will be set to the size of the area, if it is one
+ * @param isOwner will be set to true if it is one and the process is the owner
+ * @return true if it belongs to a shared-memory region
+ */
+bool shm_isSharedMem(sProc *p,u32 addr,u32 *pageCount,bool *isOwner);
+
+/**
+ * Determines the address of the corresponding page in the shared-memory-area specified by <p> and
+ * <addr> in the other given process. That means if the area starts in <p> at 0x00001000, <addr>
+ * is 0x00002000 and it starts in <other> at 0x00040000, the function returns 0x00041000.
+ * This is needed if you want to manipulate a page of the shared-memory-area of another user
+ * of this area.
+ *
+ * @param p the process
+ * @param addr the virtual address in the shm-area of <p>
+ * @param other the other process
+ * @return the virtual address of that page in <other> or 0 if not found
+ */
+u32 shm_getAddrOfOther(sProc *p,u32 addr,sProc *other);
+
+/**
+ * Checks whether the given addr of the given process belongs to a shared-memory region. If so the
+ * members are returned including the owner.
+ *
+ * @param owner the process
+ * @param addr the virtual address
+ * @return a linked list of the processes that use the region or NULL
  */
 sSLList *shm_getMembers(sProc *owner,u32 addr);
 
 /**
- * Joins the shared-memory with given name. Will copy the pages into the end of the data-segment
+ * Joins the shared-memory with given name. Will copy the pages to the end of the data-segment
  *
  * @param name the name
  * @return the start-page on success
@@ -63,7 +89,8 @@ s32 shm_join(const char *name);
 s32 shm_leave(const char *name);
 
 /**
- * Destroys the shared-memory with given name. Unmaps the pages for all member-processes
+ * Destroys the shared-memory with given name. Unmaps the pages for all joined processes but
+ * NOT for the owner
  *
  * @param name the name
  * @return 0 on success

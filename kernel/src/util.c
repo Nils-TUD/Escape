@@ -84,6 +84,7 @@ void util_panic(const char *fmt,...) {
 		PRINT_REGS(regs,"\t");
 	}
 
+	paging_dbg_printOwnPageDir(PD_PART_USER);
 	/*proc_dbg_printAll();*/
 	intrpt_setEnabled(false);
 	/* TODO vmware seems to shutdown if we disable interrupts and htl?? */

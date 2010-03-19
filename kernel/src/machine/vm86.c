@@ -92,7 +92,7 @@ s32 vm86_create(void) {
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* create child */
-	/* Note that it is really necessary to set wether we're a VM86-task or not BEFORE we get
+	/* Note that it is really necessary to set whether we're a VM86-task or not BEFORE we get
 	 * chosen by the scheduler the first time. Otherwise the scheduler can't set the right
 	 * value for tss.esp0 and we will get a wrong stack-layout on the next interrupt */
 	res = proc_clone(pid,true);
@@ -163,7 +163,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 		return ERR_INVALID_ARGS;
 	t = thread_getRunning();
 
-	/* check wether there still is a vm86-task */
+	/* check whether there still is a vm86-task */
 	vm86t = thread_getById(vm86Tid);
 	if(vm86t == NULL || !vm86t->proc->isVM86)
 		return ERR_NO_VM86_TASK;

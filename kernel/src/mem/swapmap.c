@@ -63,7 +63,7 @@ struct sSwMapArea {
 	sSLList *procs;
 	/* the process that allocated the area */
 	tPid pid;
-	/* wether this area is free or not (16bit to fill the whole) */
+	/* whether this area is free or not (16bit to fill the whole) */
 	u16 free;
 };
 

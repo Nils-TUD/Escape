@@ -90,8 +90,8 @@
 #define TMPMAP_PTS_START	(MAPPED_PTS_START - (PT_ENTRY_COUNT * PAGE_SIZE))
 /* the start of the kernel-heap */
 #define KERNEL_HEAP_START	(KERNEL_AREA_V_ADDR + (PT_ENTRY_COUNT * PAGE_SIZE) * 2)
-/* the size of the kernel-heap (16 MiB) */
-#define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE * 2 /* * 4 */)
+/* the size of the kernel-heap (4 MiB) */
+#define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE /* * 4 */)
 
 /* page-directories in virtual memory */
 #define PAGE_DIR_AREA		(MAPPED_PTS_START + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
@@ -142,7 +142,7 @@
 typedef struct {
 	/* 1 if the page is present in memory */
 	u32 present			: 1,
-	/* wether the page is writable */
+	/* whether the page is writable */
 	writable			: 1,
 	/* if enabled the page may be used by privilege level 0, 1 and 2 only. */
 	notSuperVisor		: 1,
@@ -154,7 +154,7 @@ typedef struct {
 	accessed			: 1,
 	/* 1 ignored bit */
 						: 1,
-	/* wether the pages are 4 KiB (=0) or 4 MiB (=1) large */
+	/* whether the pages are 4 KiB (=0) or 4 MiB (=1) large */
 	pageSize			: 1,
 	/* 1 ignored bit */
 						: 1,
@@ -168,7 +168,7 @@ typedef struct {
 typedef struct {
 	/* 1 if the page is present in memory */
 	u32 present			: 1,
-	/* wether the page is writable */
+	/* whether the page is writable */
 	writable			: 1,
 	/* if enabled the page may be used by privilege level 0, 1 and 2 only. */
 	notSuperVisor		: 1,
@@ -187,7 +187,7 @@ typedef struct {
 	 * to enable this feature. (>= pentium pro) */
 	global				: 1,
 	/* 3 Bits for the OS */
-	/* Indicates wether this page is currently readonly, shared with another process and should
+	/* Indicates whether this page is currently readonly, shared with another process and should
 	 * be copied as soon as the user writes to it */
 	copyOnWrite			: 1,
 	/* Indicates that the frame should not be free'd when this page is removed */
@@ -249,7 +249,7 @@ extern void paging_flushAddr(u32 address);
 extern void paging_exchangePDir(u32 physAddr);
 
 /**
- * Checks wether the given virtual-address is currently mapped. This should not be used
+ * Checks whether the given virtual-address is currently mapped. This should not be used
  * for user-space addresses!
  *
  * @param virt the virt address
@@ -258,7 +258,7 @@ extern void paging_exchangePDir(u32 physAddr);
 bool paging_isMapped(u32 virt);
 
 /**
- * Checks wether the given address-range is currently readable for the user
+ * Checks whether the given address-range is currently readable for the user
  *
  * @param virt the start-address
  * @param count the number of bytes
@@ -267,7 +267,7 @@ bool paging_isMapped(u32 virt);
 bool paging_isRangeUserReadable(u32 virt,u32 count);
 
 /**
- * Checks wether the given address-range is currently readable
+ * Checks whether the given address-range is currently readable
  *
  * @param virt the start-address
  * @param count the number of bytes
@@ -276,7 +276,7 @@ bool paging_isRangeUserReadable(u32 virt,u32 count);
 bool paging_isRangeReadable(u32 virt,u32 count);
 
 /**
- * Checks wether the given address-range is currently writable for the user.
+ * Checks whether the given address-range is currently writable for the user.
  * Note that the function handles copy-on-write if necessary. So you can be sure that you
  * can write to the page(s) after calling the function.
  *
@@ -287,7 +287,7 @@ bool paging_isRangeReadable(u32 virt,u32 count);
 bool paging_isRangeUserWritable(u32 virt,u32 count);
 
 /**
- * Checks wether the given address-range is currently writable.
+ * Checks whether the given address-range is currently writable.
  * Note that the function handles copy-on-write if necessary. So you can be sure that you
  * can write to the page(s) after calling the function.
  *
@@ -366,18 +366,20 @@ void paging_remPagesOf(sProc *p,u32 addr,u32 count);
 
 /**
  * Maps <count> virtual addresses starting at <virt> to the given frames (in the CURRENT
- * page-dir!). You can decide (via <force>) wether the mapping should be done in every
+ * page-dir!). You can decide (via <force>) whether the mapping should be done in every
  * case or just if the page is not already mapped.
  *
- * @panic if there is not enough memory to get a frame for a page-table
+ * If new frames should be allocated (frames = NULL), the function checks wether there are enough.
+ * If not, frames are swapped out, if possible. If that fails as well, ERR_NOT_ENOUGH_MEM is
+ * returned. That means: the function causes a THREAD-SWITCH in this case!!
  *
  * @param virt the virt start-address
  * @param frames an array with <count> elements which contains the frame-numbers to use.
  * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
- * @param force wether the mapping should be overwritten
- * @return the number of allocated frames (including page-tables)
+ * @param force whether the mapping should be overwritten
+ * @return the number of allocated frames (including page-tables) or ERR_NOT_ENOUGH_MEM
  */
 u32 paging_map(u32 virt,u32 *frames,u32 count,u8 flags,bool force);
 
@@ -388,8 +390,8 @@ u32 paging_map(u32 virt,u32 *frames,u32 count,u8 flags,bool force);
  *
  * @param virt the virtual start-address
  * @param count the number of pages to unmap
- * @param freeFrames wether the frames should be free'd and not just unmapped
- * @param remCOW wether the frames should be removed from the COW-list
+ * @param freeFrames whether the frames should be free'd and not just unmapped
+ * @param remCOW whether the frames should be removed from the COW-list
  * @return the number of free'd frames (not COW)
  */
 u32 paging_unmap(u32 virt,u32 count,bool freeFrames,bool remCOW);
@@ -497,7 +499,7 @@ sPTEntry *paging_dbg_getPTEntry(u32 virt);
 u32 paging_dbg_getPageCount(void);
 
 /**
- * Checks wether the given page-table is empty
+ * Checks whether the given page-table is empty
  *
  * @param pt the pointer to the first entry of the page-table
  * @return true if empty

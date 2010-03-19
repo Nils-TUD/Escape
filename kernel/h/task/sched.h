@@ -76,7 +76,7 @@ void sched_unblockAll(u16 mask,u16 event);
  * that ensures that it can't be chosen until swapping is done.
  *
  * @param t the thread
- * @param blocked wether to block or unblock it
+ * @param blocked whether to block or unblock it
  */
 void sched_setBlockForSwap(sThread *t,bool blocked);
 

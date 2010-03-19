@@ -211,14 +211,12 @@ s32 vfsrw_readDrvUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u3
 
 s32 vfsrw_writeDef(tTid tid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count) {
 	void *cache;
-	void *oldCache;
 	u32 newSize = 0;
 
 	UNUSED(tid);
 	UNUSED(file);
 
 	cache = n->data.def.cache;
-	oldCache = cache;
 
 	/* need to create cache? */
 	if(cache == NULL) {
@@ -255,9 +253,6 @@ s32 vfsrw_writeDef(tTid tid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset
 
 		return count;
 	}
-
-	/* restore cache */
-	n->data.def.cache = oldCache;
 	return ERR_NOT_ENOUGH_MEM;
 }
 

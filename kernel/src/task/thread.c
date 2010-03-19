@@ -30,6 +30,7 @@
 #include <mem/kheap.h>
 #include <mem/paging.h>
 #include <mem/pmem.h>
+#include <mem/swap.h>
 #include <task/sched.h>
 #include <task/lock.h>
 #include <util.h>
@@ -261,7 +262,7 @@ static void thread_setUsed(sThread *t) {
 
 void thread_switchNoSigs(void) {
 	/* remember that the current thread waits in the kernel */
-	/* atm this is just used by the signal-module to check wether we can send a signal to a
+	/* atm this is just used by the signal-module to check whether we can send a signal to a
 	 * thread or not */
 	cur->waitsInKernel = 1;
 	thread_switch();
@@ -439,7 +440,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 		 */
 		sSLNode *n;
 		bool ubeginOk;
-		u32 ustackBegin = KERNEL_AREA_V_ADDR;
+		u32 neededFrms,res,ustackBegin = KERNEL_AREA_V_ADDR;
 		do {
 			ubeginOk = true;
 			for(n = sll_begin(src->proc->threads); n != NULL; n = n->next) {
@@ -454,6 +455,12 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 		}
 		while(!ubeginOk);
 
+		/* no swapping here because we don't want to make a thread-switch */
+		neededFrms = paging_countFramesForMap(t->ustackBegin - t->ustackPages * PAGE_SIZE,
+				INITIAL_STACK_PAGES);
+		if(mm_getFreeFrmCount(MM_DEF) < 1 + neededFrms)
+			return ERR_NOT_ENOUGH_MEM;
+
 		/* create kernel-stack */
 		t->ustackBegin = ustackBegin;
 		*stackFrame = t->kstackFrame = mm_allocateFrame(MM_DEF);
@@ -461,8 +468,13 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 
 		/* initial user-stack-pages */
 		t->ustackPages = INITIAL_STACK_PAGES;
-		frmCount += paging_map(t->ustackBegin - t->ustackPages * PAGE_SIZE,NULL,
+		res = paging_map(t->ustackBegin - t->ustackPages * PAGE_SIZE,NULL,
 				t->ustackPages,PG_WRITABLE,true);
+		if((s32)res == ERR_NOT_ENOUGH_MEM) {
+			mm_freeFrame(t->kstackFrame,MM_DEF);
+			return ERR_NOT_ENOUGH_MEM;
+		}
+		frmCount += res;
 	}
 
 	/* create thread-list if necessary */
@@ -586,7 +598,9 @@ void thread_dbg_printAll(void) {
 }
 
 void thread_dbg_print(sThread *t) {
-	static const char *states[] = {"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE"};
+	static const char *states[] = {
+		"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE","BLOCKEDSWAP","READYSWAP"
+	};
 	tFD i;
 	vid_printf("\tthread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 	vid_printf("\t\tstate=%s\n",states[t->state]);

@@ -507,7 +507,7 @@ static void proc_notifyProcDied(tPid parent,tPid pid) {
 	sSLNode *tn;
 	sig_addSignalFor(parent,SIG_CHILD_TERM,pid);
 
-	/* check wether there is a parent-thread that waits for a child */
+	/* check whether there is a parent-thread that waits for a child */
 	for(tn = sll_begin(proc_getByPid(parent)->threads); tn != NULL; tn = tn->next) {
 		sThread *t = (sThread*)tn->data;
 		if(t->events & EV_CHILD_DIED) {
@@ -545,7 +545,7 @@ s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser) {
 		if(*arg == NULL)
 			break;
 
-		/* check wether the string is readable */
+		/* check whether the string is readable */
 		if(fromUser && !sysc_isStringReadable(*arg)) {
 			kheap_free(*argBuffer);
 			return ERR_INVALID_ARGS;
@@ -685,11 +685,7 @@ bool proc_changeSize(s32 change,eChgArea area) {
 	}
 
 	if(change > 0) {
-		u32 ts,ds,ss;
-		/* not enough mem? */
-		if(mm_getFreeFrmCount(MM_DEF) < paging_countFramesForMap(addr,change))
-			return false;
-
+		u32 ts,ds,ss,res;
 		/* invalid segment sizes? */
 		ts = cur->textPages;
 		ds = cur->dataPages;
@@ -699,7 +695,10 @@ bool proc_changeSize(s32 change,eChgArea area) {
 			return false;
 		}
 
-		cur->frameCount += paging_map(addr,NULL,change,PG_WRITABLE,false);
+		res = paging_map(addr,NULL,change,PG_WRITABLE,false);
+		if((s32)res == ERR_NOT_ENOUGH_MEM)
+			return false;
+		cur->frameCount += res;
 		/* now clear the memory */
 		memclear((void*)addr,PAGE_SIZE * change);
 	}

@@ -262,7 +262,7 @@ sFileSystem *iso_getFS(void);
  * @param path the path
  * @param flags the flags
  * @param dev should be set to the device-number
- * @param resLastMnt wether mount-points should be resolved if the path is finished
+ * @param resLastMnt whether mount-points should be resolved if the path is finished
  * @return the inode-number on success
  */
 tInodeNo iso_resPath(void *h,const char *path,u8 flags,tDevNo *dev,bool resLastMnt);

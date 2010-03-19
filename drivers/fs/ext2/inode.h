@@ -29,7 +29,7 @@
  * @param e the ext2-handle
  * @param dirNode the directory-inode
  * @param ino will be set to the inode on success
- * @param isDir wether it should be an directory
+ * @param isDir whether it should be an directory
  * @return 0 on success
  */
 s32 ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir);

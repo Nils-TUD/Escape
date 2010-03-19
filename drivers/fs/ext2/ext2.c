@@ -38,7 +38,7 @@
 #include "rw.h"
 
 /**
- * Checks wether x is a power of y
+ * Checks whether x is a power of y
  */
 static bool ext2_isPowerOf(u32 x,u32 y);
 

@@ -120,7 +120,7 @@ static bool drive_identify(sATADrive *drive,u8 cmd) {
 	/* disable interrupts */
 	outByte(basePort + REG_CONTROL,CTRL_INTRPTS_ENABLED);
 
-	/* check wether the drive exists */
+	/* check whether the drive exists */
 	outByte(basePort + REG_COMMAND,cmd);
 	status = inByte(basePort + REG_STATUS);
 	ATA_PR1("Got 0x%x from status-port",status);

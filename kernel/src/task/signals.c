@@ -79,7 +79,7 @@ static void sig_remFromQueue(sHandler *h);
  * @param pid the pid (may be INVALID_PID)
  * @param signal the signal
  * @param data the data to send
- * @param add wether the signal should be added to the handler
+ * @param add whether the signal should be added to the handler
  */
 static void sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data,bool add);
 
@@ -101,9 +101,9 @@ static void sig_kWaitDone(u32 tid);
 static u32 totalSigs = 0;
 /* a linked list of handlers for each signal */
 static sSLList *handler[SIG_COUNT - 1] = {NULL};
-/* wether our handler is already announced in kevents */
+/* whether our handler is already announced in kevents */
 static bool kevAdded = false;
-/* wether we should look in the queue which signals we can deliver now */
+/* whether we should look in the queue which signals we can deliver now */
 static bool sendQueued = false;
 /* a queue for signals that can't be delivered atm */
 static sSLList *signalQueue = NULL;
@@ -218,8 +218,6 @@ bool sig_hasSignal(tSig *sig,tTid *tid,u32 *data) {
 	sThread *t;
 	if(!sig_hasSigPre())
 		return false;
-
-	/*sig_dbg_print();*/
 
 	/* search through all signal-lists */
 	list = handler;

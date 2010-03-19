@@ -205,7 +205,7 @@ static void vfsdrv_readReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 siz
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
-			/* set wether data is readable; do this here because a thread-switch may cause
+			/* set whether data is readable; do this here because a thread-switch may cause
 			 * the driver to set that data is readable although arg2 was 0 here (= no data) */
 			node->data.driver.isEmpty = !rmsg->args.arg2;
 			req->count = MIN(req->dsize,rmsg->args.arg1);

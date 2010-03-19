@@ -99,7 +99,7 @@ void test_caseSucceded(void);
 void test_caseFailed(const char *fmt,...);
 
 /**
- * Checks wether the given argument is true. If not it calls test_caseFailed() and returns
+ * Checks whether the given argument is true. If not it calls test_caseFailed() and returns
  * false.
  *
  * @param received your received value
@@ -110,7 +110,7 @@ void test_caseFailed(const char *fmt,...);
 bool test_doAssertTrue(bool received,const char *func,u32 line);
 
 /**
- * Checks wether the given argument is false. If not it calls test_caseFailed() and returns
+ * Checks whether the given argument is false. If not it calls test_caseFailed() and returns
  * false.
  *
  * @param received your received value
@@ -121,7 +121,7 @@ bool test_doAssertTrue(bool received,const char *func,u32 line);
 bool test_doAssertFalse(bool received,const char *func,u32 line);
 
 /**
- * Checks wether the given pointers are equal. If not it calls test_caseFailed() and returns
+ * Checks whether the given pointers are equal. If not it calls test_caseFailed() and returns
  * false.
  *
  * @param received the result you received
@@ -133,7 +133,7 @@ bool test_doAssertFalse(bool received,const char *func,u32 line);
 bool test_doAssertPtr(const void *received,const void *expected,const char *func,u32 line);
 
 /**
- * Checks wether the given integers are equal. If not it calls test_caseFailed() and returns
+ * Checks whether the given integers are equal. If not it calls test_caseFailed() and returns
  * false.
  *
  * @param received the result you received
@@ -145,7 +145,7 @@ bool test_doAssertPtr(const void *received,const void *expected,const char *func
 bool test_doAssertInt(s32 received,s32 expected,const char *func,u32 line);
 
 /**
- * Checks wether the given integers are equal. If not it calls test_caseFailed() and returns
+ * Checks whether the given integers are equal. If not it calls test_caseFailed() and returns
  * false.
  *
  * @param received the result you received
@@ -157,7 +157,7 @@ bool test_doAssertInt(s32 received,s32 expected,const char *func,u32 line);
 bool test_doAssertUInt(u32 received,u32 expected,const char *func,u32 line);
 
 /**
- * Checks wether the given long integers are equal. If not it calls test_caseFailed() and returns
+ * Checks whether the given long integers are equal. If not it calls test_caseFailed() and returns
  * false.
  *
  * @param received the result you received
@@ -169,7 +169,7 @@ bool test_doAssertUInt(u32 received,u32 expected,const char *func,u32 line);
 bool test_doAssertLInt(s64 received,s64 expected,const char *func,u32 line);
 
 /**
- * Checks wether the given unsigned long integers are equal. If not it calls test_caseFailed()
+ * Checks whether the given unsigned long integers are equal. If not it calls test_caseFailed()
  * and returns false.
  *
  * @param received the result you received
@@ -181,7 +181,7 @@ bool test_doAssertLInt(s64 received,s64 expected,const char *func,u32 line);
 bool test_doAssertULInt(u64 received,u64 expected,const char *func,u32 line);
 
 /**
- * Checks wether the given strings are equal. If not it calls test_caseFailed() and returns
+ * Checks whether the given strings are equal. If not it calls test_caseFailed() and returns
  * false.
  *
  * @param received the result you received

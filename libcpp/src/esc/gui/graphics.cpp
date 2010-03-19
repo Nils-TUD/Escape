@@ -63,6 +63,10 @@ namespace esc {
 					exit(EXIT_FAILURE);
 					break;
 			}
+			if(!_pixels) {
+				err << "Not enough memory" << endl;
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		void Graphics::moveLines(tCoord y,tSize height,s16 up) {

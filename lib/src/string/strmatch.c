@@ -40,7 +40,7 @@ bool strmatch(const char *pattern,const char *str) {
 			return false;
 	}
 
-	/* now check wether the parts between the stars match */
+	/* now check whether the parts between the stars match */
 	str += firstStar - pattern;
 	while(1) {
 		char *match;

@@ -51,7 +51,7 @@ namespace esc {
 			virtual u32 getPos() const = 0;
 
 			/**
-			 * @return wether we are at EOF
+			 * @return whether we are at EOF
 			 */
 			virtual bool isEOF() const = 0;
 
@@ -221,7 +221,7 @@ namespace esc {
 		u32 getPos() const;
 
 		/**
-		 * @return wether we are at EOF
+		 * @return whether we are at EOF
 		 */
 		bool isEOF() const;
 

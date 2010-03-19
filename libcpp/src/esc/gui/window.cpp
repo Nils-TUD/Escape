@@ -87,7 +87,7 @@ namespace esc {
 		}
 
 		void Window::onMouseMoved(const MouseEvent &e) {
-			// we store on release/pressed wether we are in the header because
+			// we store on release/pressed whether we are in the header because
 			// the delay between window-movement and cursor-movement may be too
 			// big so that we "loose" the window
 			if(_inTitle) {

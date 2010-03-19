@@ -45,7 +45,7 @@
 void sysc_handle(sIntrptStackFrame *intrptStack);
 
 /**
- * Checks wether the given null-terminated string (in user-space) is readable
+ * Checks whether the given null-terminated string (in user-space) is readable
  *
  * @param char* the string
  * @return true if so

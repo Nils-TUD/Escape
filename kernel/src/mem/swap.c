@@ -31,19 +31,22 @@
 #include <assert.h>
 #include <config.h>
 
-#define SWAP_SIZE		(10 * M)
-#define HIGH_WATER		40
-#define LOW_WATER		20
-#define CRIT_WATER		10
+#define SWAP_SIZE			(10 * M)
+#define HIGH_WATER			40
+#define LOW_WATER			20
+#define CRIT_WATER			10
 
-#define SW_TYPE_DEF		0
-#define SW_TYPE_SHM		1
-#define SW_TYPE_TEXT	2
+#define SW_TYPE_DEF			0
+#define SW_TYPE_SHM			1
+#define SW_TYPE_TEXT		2
+
+#define MAX_SWAP_AT_ONCE	10
 
 static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr);
 static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr);
 static sSLList *swap_getAffectedProcs(sProc *p,u32 addr,u8 *type);
-static void swap_freeAffectedProcs(sSLList *procs,sProc *p,u8 type);
+static void swap_freeAffectedProcs(sSLList *procs,u8 type);
+static u32 swap_getPageAddr(sProc *p,sProc *other,u32 addr,u8 type);
 static void swap_setBlocked(sSLList *procs,bool blocked);
 static bool swap_findVictim(sProc **p,u32 *addr);
 
@@ -53,10 +56,15 @@ static sProc *swapinProc = NULL;
 static u32 swapinAddr = 0;
 static tTid swapinTid = INVALID_TID;
 static tTid swapperTid = INVALID_TID;
+static u32 neededFrames = HIGH_WATER;
+/* no heap-usage here */
+static u8 buffer[PAGE_SIZE];
 
+/* TODO currently we have the problem that if something that the swapper calls uses the kheap and
+ * the kheap needs more space, we get a panic. Although its not very likely that this happens, its
+ * possible. What to do against it? */
 /* TODO we have problems with shared memory. like text-sharing we have to check which
  * processes use it and give all the same "last-usage-time". otherwise we have trashing... */
-/* TODO additionally, shared mem is marked as "no-free" in all joined processes. is this a problem? */
 
 /* TODO why do the processes (not ata and init!) do sooo much time in userspace while swapping? */
 
@@ -67,11 +75,11 @@ static tTid swapperTid = INVALID_TID;
  * - swmap_remProc() will be called BEFORE removing the process from shmem / textsharing. This way
  * 		the list remains valid. If just one process is in the list and thats the process to remove,
  * 		we can remove it from swap. Otherwise its either not our memory or we're not the last one.
- * - shared memory can't use the nofree flag since paging needs this as indicator to decide wether
+ * - shared memory can't use the nofree flag since paging needs this as indicator to decide whether
  * 		a page can be swapped or not. So we need a different way to keep track of the shared-memory
  * 		regions. The nofree-flag was just used for removing on process-destroy anyway, so thats
  * 		the only part we've to change.
- * - shmem will not just store one entry per shmem-area but one for each usage and store wether
+ * - shmem will not just store one entry per shmem-area but one for each usage and store whether
  * 		its the owner or not. This way we can save the location of it in virtual memory for all
  * 		users.
  * - additionally shmem will put the owner into the memberlist, too. That makes it easier.
@@ -100,15 +108,24 @@ void swap_start(void) {
 	/* start main-loop; wait for work */
 	while(1) {
 		/* swapping out is more important than swapping in to prevent that we run out of memory */
-		if(mm_getFreeFrmCount(MM_DEF) < LOW_WATER) {
+		if(mm_getFreeFrmCount(MM_DEF) < LOW_WATER || neededFrames > HIGH_WATER) {
+			u32 count = 0;
 			swapping = true;
-			while(mm_getFreeFrmCount(MM_DEF) < HIGH_WATER) {
+			while(count < MAX_SWAP_AT_ONCE && mm_getFreeFrmCount(MM_DEF) < neededFrames) {
 				sProc *p;
-				u32 addr;
+				u32 addr,free;
 				if(!swap_findVictim(&p,&addr))
 					util_panic("No process to swap out");
 				swap_doSwapOut(swapperTid,swapFile,p,addr);
+				/* notify the threads that require the currently available frame-count */
+				free = mm_getFreeFrmCount(MM_DEF);
+				if(free > HIGH_WATER)
+					thread_wakeupAll((void*)(free - HIGH_WATER),EV_SWAP_FREE);
+				count++;
 			}
+			/* if we've reached the needed frame-count, reset it */
+			if(mm_getFreeFrmCount(MM_DEF) >= neededFrames)
+				neededFrames = HIGH_WATER;
 			swapping = false;
 		}
 		if(swapinProc != NULL) {
@@ -119,12 +136,35 @@ void swap_start(void) {
 			swapping = false;
 		}
 
-		/* we may receive new work now */
-		thread_wakeupAll(0,EV_SWAP_FREE);
-		thread_wait(swapperTid,0,EV_SWAP_WORK);
-		thread_switch();
+		if(mm_getFreeFrmCount(MM_DEF) >= LOW_WATER && neededFrames == HIGH_WATER) {
+			/* we may receive new work now */
+			thread_wakeupAll(0,EV_SWAP_FREE);
+			thread_wait(swapperTid,0,EV_SWAP_WORK);
+			thread_switch();
+		}
 	}
 	vfs_closeFile(swapperTid,swapFile);
+}
+
+bool swap_outUntil(u32 frameCount) {
+	u32 free = mm_getFreeFrmCount(MM_DEF);
+	sThread *t = thread_getRunning();
+	if(free >= frameCount)
+		return true;
+	if(t->tid == ATA_TID || t->tid == swapperTid)
+		return false;
+	do {
+		/* notify swapper-thread */
+		if(!swapping)
+			thread_wakeup(swapperTid,EV_SWAP_WORK);
+		neededFrames += frameCount - free;
+		thread_wait(t->tid,(void*)(frameCount - free),EV_SWAP_FREE);
+		thread_switchNoSigs();
+		/* TODO report error if swap-space is full or nothing left to swap */
+		free = mm_getFreeFrmCount(MM_DEF);
+	}
+	while(free < frameCount);
+	return true;
 }
 
 void swap_check(void) {
@@ -175,7 +215,6 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	sSLList *procs;
 	u32 frame;
 	u8 type;
-	u8 *buffer;
 	u32 block;
 	addr &= ~(PAGE_SIZE - 1);
 
@@ -186,7 +225,7 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	 * the process that aquires it first again (text-sharing, ...) */
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *sp = (sProc*)n->data;
-		block = swmap_find(sp->pid,addr);
+		block = swmap_find(sp->pid,swap_getPageAddr(p,sp,addr,type));
 		if(block != INVALID_BLOCK) {
 			vid_printf("(alloc by %d) ",sp->pid);
 			swmap_free(sp->pid,block,1);
@@ -200,15 +239,11 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 		 * swapping out, one of the processes swaps in. Then the second one wants to swap in
 		 * the same page but doesn't find it in the swapmap since it has already been swapped in */
 		vid_printf("Seems already do be swapped in -> skipping (%d @ %p)\n",p->pid,addr);
-		swap_freeAffectedProcs(procs,p,type);
+		swap_freeAffectedProcs(procs,type);
 		return;
 	}
 
 	vid_printf("from blk %d...",block);
-
-	buffer = kheap_alloc(PAGE_SIZE);
-	if(buffer == NULL)
-		util_panic("Not enough kheap-mem");
 
 	/* read into buffer */
 	assert(vfs_seek(tid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
@@ -221,24 +256,23 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	paging_map(TEMP_MAP_AREA,&frame,1,PG_SUPERVISOR,true);
 	memcpy((void*)TEMP_MAP_AREA,buffer,PAGE_SIZE);
 	paging_unmap(TEMP_MAP_AREA,1,false,false);
-	kheap_free(buffer);
 
 	/* mark page as 'not swapped' and 'present' and do the actual swapping */
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *sp = (sProc*)n->data;
-		paging_swapIn(sp,addr,frame);
+		paging_swapIn(sp,swap_getPageAddr(p,sp,addr,type),frame);
 		/* we've swapped in one page */
 		sp->swapped--;
 	}
 
 	vid_printf("Done\n");
-	swap_freeAffectedProcs(procs,p,type);
+	swap_freeAffectedProcs(procs,type);
 }
 
 static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	sSLList *procs;
 	sSLNode *n;
-	u8 type = false;
+	u8 type;
 	u32 block;
 
 	procs = swap_getAffectedProcs(p,addr,&type);
@@ -249,14 +283,12 @@ static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	/* mark page as 'swapped out' and 'not-present' and do the actual swapping */
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *sp = (sProc*)n->data;
-		u32 phys = paging_swapOut(sp,addr);
+		u32 phys = paging_swapOut(sp,swap_getPageAddr(p,sp,addr,type));
+
 		/* if the first one, do the actual swapping */
 		if(n == sll_begin(procs)) {
 			/* copy to a temporary buffer because we can't use TEMP_MAP_AREA when switching
 			 * threads */
-			u8 *buffer = kheap_alloc(PAGE_SIZE);
-			if(buffer == NULL)
-				util_panic("Not enough kheap-mem");
 			paging_map(TEMP_MAP_AREA,&phys,1,PG_SUPERVISOR | PG_ADDR_TO_FRAME,true);
 			memcpy(buffer,(void*)TEMP_MAP_AREA,PAGE_SIZE);
 			paging_unmap(TEMP_MAP_AREA,1,false,false);
@@ -265,7 +297,6 @@ static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr) {
 
 			assert(vfs_seek(tid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
 			assert(vfs_writeFile(tid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
-			kheap_free(buffer);
 		}
 
 		/* we've swapped one page */
@@ -273,48 +304,52 @@ static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	}
 
 	vid_printf("Done\n");
-	swap_freeAffectedProcs(procs,p,type);
+	swap_freeAffectedProcs(procs,type);
 }
 
 static sSLList *swap_getAffectedProcs(sProc *p,u32 addr,u8 *type) {
 	sSLList *procs;
 	/* belongs to text? so we have to change the mapping for all users of the text */
 	if(addr < p->textPages * PAGE_SIZE) {
+		vassert(p->text,"Process %d (%s) has textpages but no text!?",p->pid,p->command);
 		procs = p->text->procs;
 		*type = SW_TYPE_TEXT;
 	}
 	else {
-		/* check wether it belongs to a shared-memory-region. this is just the case if we're the
-		 * owner because for the members it is mapped as "no-free" so we won't get the page anyway */
+		/* check whether it belongs to a shared-memory-region */
 		procs = shm_getMembers(p,addr);
 		if(!procs) {
 			/* default case: create a linked list just with the process */
 			procs = sll_create();
 			if(procs == NULL)
 				util_panic("Not enough kheap-mem");
+			if(!sll_append(procs,p))
+				util_panic("Not enough kheap-mem");
 			*type = SW_TYPE_DEF;
 		}
 		else
 			*type = SW_TYPE_SHM;
-		/* Note: the owner of a shared-memory-region is no member. therefore we add the owner
-		 * here temporary and remove him later */
-		if(!sll_append(procs,p))
-			util_panic("Not enough kheap-mem");
 	}
 	/* block all threads that are affected of the swap-operation */
 	swap_setBlocked(procs,true);
 	return procs;
 }
 
-static void swap_freeAffectedProcs(sSLList *procs,sProc *p,u8 type) {
+static void swap_freeAffectedProcs(sSLList *procs,u8 type) {
 	/* threads can continue now */
 	swap_setBlocked(procs,false);
-	/* if it is shared mem remove the process */
-	if(type == SW_TYPE_SHM)
-		sll_removeFirst(procs,p);
 	/* if default, destroy the list */
-	else if(type == SW_TYPE_DEF)
+	if(type == SW_TYPE_DEF)
 		sll_destroy(procs,false);
+}
+
+static u32 swap_getPageAddr(sProc *p,sProc *other,u32 addr,u8 type) {
+	if(type == SW_TYPE_SHM) {
+		u32 otherAddr = shm_getAddrOfOther(p,addr,other);
+		assert(otherAddr != 0);
+		return otherAddr;
+	}
+	return addr;
 }
 
 static void swap_setBlocked(sSLList *procs,bool blocked) {

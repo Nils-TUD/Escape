@@ -30,7 +30,7 @@
  * @param dirNode the directory
  * @param name the name
  * @param ino will be set to the inode-number on success
- * @param isDir wether it should be an directory
+ * @param isDir whether it should be an directory
  * @return 0 on success
  */
 s32 ext2_file_create(sExt2 *e,sExt2CInode *dirNode,const char *name,tInodeNo *ino,bool isDir);

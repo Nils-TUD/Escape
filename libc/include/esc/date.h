@@ -37,7 +37,7 @@ typedef struct {
 	u16 year;
 	/* 1 - 365 */
 	u16 yearDay;
-	/* wether daylightsaving time is enabled */
+	/* whether daylightsaving time is enabled */
 	u8 isDst;
 } sDate;
 

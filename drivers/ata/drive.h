@@ -250,7 +250,7 @@ struct sATADrive;
 typedef bool (*fReadWrite)(struct sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
 
 typedef struct sATADrive {
-	/* wether the drive exists and we can use it */
+	/* whether the drive exists and we can use it */
 	u8 present;
 	/* master / slave */
 	u8 slaveBit;

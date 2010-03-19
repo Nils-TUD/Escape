@@ -57,8 +57,8 @@ enum {
 	VFS_APPEND = 16,
 	VFS_CONNECT = 32,		/* kernel-intern: connect to driver/driver */
 	VFS_NOLINKRES = 64,		/* kernel-intern: don't resolve last link in path */
-	VFS_CREATED = 128,		/* kernel-intern: wether a new node has been created */
-	VFS_MODIFIED = 256		/* kernel-intern: wether it has been written to the file */
+	VFS_CREATED = 128,		/* kernel-intern: whether a new node has been created */
+	VFS_MODIFIED = 256		/* kernel-intern: whether it has been written to the file */
 };
 
 /* seek-types */
@@ -94,7 +94,7 @@ struct sVFSNode {
 	union {
 		/* for drivers/dev */
 		struct {
-			/* wether there is data to read or not */
+			/* whether there is data to read or not */
 			bool isEmpty;
 			/* implemented functions */
 			u32 funcs;
@@ -130,7 +130,7 @@ struct sVFSNode {
 void vfs_init(void);
 
 /**
- * Checks wether the thread with given tid has the permission to do the given stuff with <nodeNo>.
+ * Checks whether the thread with given tid has the permission to do the given stuff with <nodeNo>.
  *
  * @param tid the thread-id
  * @param nodeNo the node-number
@@ -178,7 +178,7 @@ s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev);
  * Note that multiple threads may read from the same file simultaneously but NOT write!
  *
  * @param tid the thread-id with which the file should be opened
- * @param flags wether it is a virtual or real file and wether you want to read or write
+ * @param flags whether it is a virtual or real file and whether you want to read or write
  * @param nodeNo the node-number (in the virtual or real environment)
  * @param devNo the device-number
  * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FILE)
@@ -195,7 +195,7 @@ tFileNo vfs_openFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo);
 u32 vfs_tell(tTid tid,tFileNo file);
 
 /**
- * Checks wether we are at EOF in the given file
+ * Checks whether we are at EOF in the given file
  *
  * @param tid the thread-id
  * @param file the file
@@ -204,7 +204,7 @@ u32 vfs_tell(tTid tid,tFileNo file);
 bool vfs_eof(tTid tid,tFileNo file);
 
 /**
- * Checks wether a message is available
+ * Checks whether a message is available
  *
  * @param tid the thread-id
  * @param file the file
@@ -213,7 +213,7 @@ bool vfs_eof(tTid tid,tFileNo file);
 s32 vfs_hasMsg(tTid tid,tFileNo file);
 
 /**
- * Checks wether the given file links to a terminal. That means it has to be a virtual file
+ * Checks whether the given file links to a terminal. That means it has to be a virtual file
  * that acts as a driver-client for a terminal-driver.
  *
  * @param tid the thread-id
@@ -237,7 +237,7 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence);
  * Reads max. count bytes from the given file into the given buffer and returns the number
  * of read bytes.
  *
- * @param tid will be used to check wether the driver writes or a driver-user
+ * @param tid will be used to check whether the driver writes or a driver-user
  * @param file the file
  * @param buffer the buffer to write to
  * @param count the max. number of bytes to read
@@ -249,7 +249,7 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count);
  * Writes count bytes from the given buffer into the given file and returns the number of written
  * bytes.
  *
- * @param tid will be used to check wether the driver writes or a driver-user
+ * @param tid will be used to check whether the driver writes or a driver-user
  * @param file the file
  * @param buffer the buffer to read from
  * @param count the number of bytes to write
@@ -337,17 +337,17 @@ s32 vfs_rmdir(tTid tid,const char *path);
 s32 vfs_createDriver(tTid tid,const char *name,u32 flags);
 
 /**
- * Sets wether data is currently readable or not
+ * Sets whether data is currently readable or not
  *
  * @param tid the thread-id
  * @param nodeNo the driver-node-number
- * @param readable wether there is data or not
+ * @param readable whether there is data or not
  * @return 0 on success
  */
 s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable);
 
 /**
- * Checks wether there is a message for the given thread. That if the thread is a driver
+ * Checks whether there is a message for the given thread. That if the thread is a driver
  * and should serve a client or if the thread has got a message from a driver.
  *
  * @param tid the thread-id
@@ -357,7 +357,7 @@ s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable);
 bool vfs_msgAvailableFor(tTid tid,u8 events);
 
 /**
- * For drivers: Looks wether a client wants to be served and return the node-number
+ * For drivers: Looks whether a client wants to be served and return the node-number
  *
  * @param tid the driver-thread-id
  * @param vfsNodes an array of VFS-nodes to check for clients
@@ -422,6 +422,11 @@ void vfs_removeThread(tTid tid);
  * Prints all used entries in the global file table
  */
 void vfs_dbg_printGFT(void);
+
+/**
+ * Prints the avaiable messages for the given driver-node
+ */
+void vfs_dbg_printMsgsOf(sVFSNode *n);
 
 /**
  * @return the number of entries in the global file table

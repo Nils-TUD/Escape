@@ -53,7 +53,7 @@ typedef void (*fSigHandler)(tSig sigNo,u32 data);
 void sig_init(void);
 
 /**
- * Checks wether we can handle the given signal
+ * Checks whether we can handle the given signal
  *
  * @param signal the signal
  * @return true if so
@@ -61,7 +61,7 @@ void sig_init(void);
 bool sig_canHandle(tSig signal);
 
 /**
- * Checks wether the given signal can be send by user-programs
+ * Checks whether the given signal can be send by user-programs
  *
  * @param signal the signal
  * @return true if so
@@ -94,7 +94,7 @@ void sig_unsetHandler(tTid tid,tSig signal);
 void sig_removeHandlerFor(tTid tid);
 
 /**
- * Checks wether there is any signal to handle. If so <sig>,<tid> and <data> will be set
+ * Checks whether there is any signal to handle. If so <sig>,<tid> and <data> will be set
  * to the signal to handle.
  *
  * @param sig the signal (will be set on success)
@@ -105,7 +105,7 @@ void sig_removeHandlerFor(tTid tid);
 bool sig_hasSignal(tSig *sig,tPid *tid,u32 *data);
 
 /**
- * Checks wether <tid> has a signal
+ * Checks whether <tid> has a signal
  *
  * @param tid the thread-id
  * @return true if so

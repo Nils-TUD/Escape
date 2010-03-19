@@ -114,7 +114,7 @@ sWindow *win_get(tWinId id);
 
 /**
  * @param id the window-id
- * @return wether the window with given id exists
+ * @return whether the window with given id exists
  */
 bool win_exists(tWinId id);
 
@@ -137,7 +137,7 @@ sWindow *win_getActive(void);
  * are above one step behind (z-coordinate)
  *
  * @param id the window-id
- * @param repaint wether the window should receive a repaint-event
+ * @param repaint whether the window should receive a repaint-event
  * @param mouseX the current x-coordinate of the mouse
  * @param mouseY the current y-coordinate of the mouse
  */

@@ -47,7 +47,7 @@
 
 /**
  * Assuming that <startx> < <endx> and <endx> is not included (that means with start=0 and end=10
- * 0 .. 9 is used), the macro determines wether the two ranges overlap anywhere.
+ * 0 .. 9 is used), the macro determines whether the two ranges overlap anywhere.
  */
 #define OVERLAPS(start1,end1,start2,end2) \
 	(((start1) >= (start2) && (start1) < ((end2))) ||	/* start in range */	\

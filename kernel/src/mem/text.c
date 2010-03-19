@@ -183,16 +183,15 @@ bool text_free(sTextUsage *u,tPid pid) {
 
 static s32 text_load(sProc *p,tFileNo file,u32 position,u32 textSize) {
 	u8 *target;
-	s32 rem,res;
+	s32 rem,res,frames;
 	u32 pages;
 	sThread *t = thread_getRunning();
 
 	/* at first we have to create the pages for the process */
 	pages = BYTES_2_PAGES(textSize);
-	if(mm_getFreeFrmCount(MM_DEF) < pages)
-		return ERR_NOT_ENOUGH_MEM;
-	p->frameCount += paging_map(0,NULL,pages,0,true);
-	p->textPages = pages;
+	frames = paging_map(0,NULL,pages,0,true);
+	if(frames == ERR_NOT_ENOUGH_MEM)
+		return frames;
 
 	/* load text from disk */
 	vfs_seek(t->tid,file,position,SEEK_SET);
@@ -200,14 +199,20 @@ static s32 text_load(sProc *p,tFileNo file,u32 position,u32 textSize) {
 	rem = textSize;
 	while(rem > 0) {
 		res = vfs_readFile(t->tid,file,target,MIN(BUF_SIZE,rem));
-		if(res < 0)
+		if(res < 0) {
+			paging_unmap(0,pages,true,true);
 			return res;
+		}
 		rem -= res;
 		target += res;
 	}
 	/* ensure that the specified size was correct */
-	if(rem != 0)
+	if(rem != 0) {
+		paging_unmap(0,pages,true,true);
 		return ERR_INVALID_ELF_BIN;
+	}
+	p->frameCount += frames;
+	p->textPages = pages;
 	return 0;
 }
 

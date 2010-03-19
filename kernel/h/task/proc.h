@@ -129,7 +129,7 @@ sProc *proc_getRunning(void);
 sProc *proc_getByPid(tPid pid);
 
 /**
- * Checks wether the process with given id exists
+ * Checks whether the process with given id exists
  *
  * @param pid the process-id
  * @return true if so
@@ -174,7 +174,7 @@ void proc_getMemUsageOf(sProc *p,u32 *paging,u32 *data);
 void proc_getMemUsage(u32 *paging,u32 *data);
 
 /**
- * Determines wether the given process has a child
+ * Determines whether the given process has a child
  *
  * @param pid the process-id
  * @return true if it has a child
@@ -247,7 +247,7 @@ void proc_kill(sProc *p);
  * @param argBuffer will point to the location where it has been copied (to be used by
  * 	proc_setupUserStack())
  * @param size will point to the size the arguments take in <argBuffer>
- * @param fromUser wether the arguments are from user-space
+ * @param fromUser whether the arguments are from user-space
  * @return the number of arguments on success or < 0
  */
 s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser);
@@ -272,7 +272,7 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint);
 
 /**
- * Checks wether the given segment-sizes are valid
+ * Checks whether the given segment-sizes are valid
  *
  * @param textPages the number of text-pages
  * @param dataPages the number of data-pages
@@ -291,12 +291,14 @@ void proc_truncate(void);
  * the current thread.
  * If <change> is positive pages will be added and otherwise removed. Added pages
  * will always be cleared.
- * If there is not enough memory the function returns false.
  * Note that the size of the current process (dataPages / stackPages) will be adjusted!
+ *
+ * IMPORTANT: The function may cause a thread-switch if not enough memory is available and needs
+ * to swap something out first.
  *
  * @param change the number of pages to add or remove
  * @param area the data or stack? (CHG_*)
- * @return true if successfull
+ * @return true if successfull (false if not enough mem)
  */
 bool proc_changeSize(s32 change,eChgArea area);
 

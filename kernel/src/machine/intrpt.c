@@ -483,11 +483,14 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	curIntrptStack = stack;
 	intrptCount++;
 
-	/* increase user-space cycles */
-	if(t->ucycleStart > 0)
-		t->ucycleCount.val64 += cycles - t->ucycleStart;
-	/* kernel-mode starts here */
-	t->kcycleStart = cycles;
+	/* increase user-space cycles (not when coming from kernel-space) */
+	if(t->tid == IDLE_TID || stack->eip < KERNEL_AREA_V_ADDR) {
+		cycles = cpu_rdtsc();
+		if(t->ucycleStart > 0)
+			t->ucycleCount.val64 += cycles - t->ucycleStart;
+		/* kernel-mode starts here */
+		t->kcycleStart = cycles;
+	}
 
 	/* add signal */
 	switch(stack->intrptNo) {
@@ -623,12 +626,14 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		intrpt_handleSignalFinish(stack);
 
 	/* kernel-mode ends */
-	t = thread_getRunning();
-	cycles = cpu_rdtsc();
-	if(t->kcycleStart > 0)
-		t->kcycleCount.val64 += cycles - t->kcycleStart;
-	/* user-mode starts here */
-	t->ucycleStart = cycles;
+	if(t->tid == IDLE_TID || stack->eip < KERNEL_AREA_V_ADDR) {
+		t = thread_getRunning();
+		cycles = cpu_rdtsc();
+		if(t->kcycleStart > 0)
+			t->kcycleCount.val64 += cycles - t->kcycleStart;
+		/* user-mode starts here */
+		t->ucycleStart = cycles;
+	}
 }
 
 static void intrpt_initPic(void) {

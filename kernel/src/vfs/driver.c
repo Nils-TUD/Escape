@@ -111,12 +111,8 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 
 	res = req->count;
 	frameNos = req->readFrNos;
-	/* Note that its important to release the request BEFORE doing the memcpy. Because it is possible
-	 * that the page to which buffer refers has been swapped out during wait. Therefore we might
-	 * get a page-fault and swap it in before continuing. But swapin needs the driver, too and would
-	 * use the same thread-id for it. Therefore we have to remove the request to ensure that the
-	 * thread-id isn't already used in the request-list (otherwise the swapin-op might get the wrong
-	 * request) */
+	/* Better release the request before the memcpy so that it can be reused. Because memcpy might
+	 * cause a page-fault which leads to swapping -> thread-switch. */
 	vfsreq_remRequest(req);
 	if(frameNos) {
 		memcpy(buffer,frameNos,res);

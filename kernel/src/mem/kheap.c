@@ -28,7 +28,7 @@
 
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024
-#define AREA_PAGE_COUNT			16
+#define AREA_PAGE_COUNT			32
 #if DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0
 #define DEBUG_ADD_GUARDS		1

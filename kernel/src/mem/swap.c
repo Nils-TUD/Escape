@@ -42,6 +42,8 @@
 
 #define MAX_SWAP_AT_ONCE	10
 
+#define vid_printf(...)
+
 static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr);
 static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr);
 static sSLList *swap_getAffectedProcs(sProc *p,u32 addr,u8 *type);
@@ -60,13 +62,10 @@ static u32 neededFrames = HIGH_WATER;
 /* no heap-usage here */
 static u8 buffer[PAGE_SIZE];
 
-/* TODO currently we have the problem that if something that the swapper calls uses the kheap and
- * the kheap needs more space, we get a panic. Although its not very likely that this happens, its
- * possible. What to do against it? */
 /* TODO we have problems with shared memory. like text-sharing we have to check which
  * processes use it and give all the same "last-usage-time". otherwise we have trashing... */
-
-/* TODO why do the processes (not ata and init!) do sooo much time in userspace while swapping? */
+/* TODO additionally copy-on-write is not swapped */
+/* TODO a problem is also that we can't yet clone processes that have swapped something out, right? */
 
 /* concept:
  *

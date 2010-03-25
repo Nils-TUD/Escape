@@ -473,13 +473,22 @@ static u32 paging_mapIntern(u32 pageDir,u32 mappingArea,u32 virt,u32 *frames,u32
 			pt->dirty = false;
 			if(flags & PG_INHERIT) {
 				pt->noFree = ((sPTEntry*)frames)->noFree;
-				if(!pt->noFree)
-					pt->copyOnWrite = (flags & PG_COPYONWRITE) ? true : false;
-				assert(((sPTEntry*)frames)->swapped == 0);
+				if(!pt->noFree) {
+					if(flags & PG_COPYONWRITE) {
+						pt->copyOnWrite = true;
+						pt->swapped = false;
+						assert(((sPTEntry*)frames)->swapped == false);
+					}
+					else {
+						pt->copyOnWrite = false;
+						pt->swapped = ((sPTEntry*)frames)->swapped;
+					}
+				}
 			}
 			else {
 				pt->noFree = (flags & PG_NOFREE) ? true : false;
 				pt->copyOnWrite = (flags & PG_COPYONWRITE) ? true : false;
+				pt->swapped = false;
 			}
 			pt->global = (flags & PG_GLOBAL) ? true : false;
 			pt->notSuperVisor = (flags & PG_SUPERVISOR) == 0 ? true : false;
@@ -781,7 +790,7 @@ u32 paging_swapOut(sProc *p,u32 addr) {
 	}
 	else
 		pt = (sPTEntry*)ADDR_TO_MAPPED(addr);
-	assert(!pt->noFree && !pt->swapped && !pt->copyOnWrite);
+	vassert(!pt->noFree && !pt->swapped && !pt->copyOnWrite,"pt=%x",*(u32*)pt);
 	pt->swapped = true;
 	pt->present = false;
 	frm = pt->frameNumber << PAGE_SIZE_SHIFT;
@@ -802,7 +811,7 @@ void paging_swapIn(sProc *p,u32 virt,u32 phys) {
 	}
 	else
 		pt = (sPTEntry*)ADDR_TO_MAPPED(virt);
-	assert(!pt->noFree && pt->swapped && !pt->copyOnWrite);
+	vassert(!pt->noFree && pt->swapped && !pt->copyOnWrite,"pt=%x",*(u32*)pt);
 	pt->swapped = false;
 	pt->present = true;
 	pt->frameNumber = phys;
@@ -863,11 +872,18 @@ static u32 paging_unmapIntern(sProc *p,u32 mappingArea,u32 virt,u32 count,bool f
 	while(count-- > 0) {
 		/* remove and free, if desired */
 		if(pte->present) {
-			/* we don't want to free copy-on-write pages and not frames in front of the kernel
-			 * because they may be mapped more than once and will never be free'd */
 			if(freeFrames && !pte->noFree) {
-				if(pte->copyOnWrite && remCOW)
+				/* remove from swap-map, if necessary */
+				if(pte->swapped) {
+					u32 block = swmap_find(p->pid,virt);
+					if(block != INVALID_BLOCK)
+						swmap_free(p->pid,block,1);
+					pte->swapped = false;
+				}
+				else if(pte->copyOnWrite && remCOW) {
 					paging_remFromCow(p,pte->frameNumber);
+					pte->copyOnWrite = false;
+				}
 				else if(!pte->copyOnWrite) {
 					mm_freeFrame(pte->frameNumber,MM_DEF);
 					freed++;

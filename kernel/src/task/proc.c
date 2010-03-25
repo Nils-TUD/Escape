@@ -817,8 +817,10 @@ void proc_dbg_printAllPDs(u8 parts) {
 
 void proc_dbg_print(sProc *p) {
 	sSLNode *n;
-	vid_printf("proc %d [ppid=%d, cmd=%s, pdir=%x, text=%d, data=%d, stack=%d]\n",p->pid,
-			p->parentPid,p->command,p->physPDirAddr,p->textPages,p->dataPages,p->stackPages);
+	vid_printf("proc %d:\n",p->pid);
+	vid_printf("\tppid=%d, cmd=%s, pdir=%x\n",p->parentPid,p->command,p->physPDirAddr);
+	vid_printf("\ttext=%d, data=%d, stack=%d\n",p->textPages,p->dataPages,p->stackPages);
+	vid_printf("\tunswappable=%d, swapped=%d\n",p->unswappable,p->swapped);
 	for(n = sll_begin(p->threads); n != NULL; n = n->next)
 		thread_dbg_print((sThread*)n->data);
 	vid_printf("\n");

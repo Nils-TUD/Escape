@@ -243,12 +243,8 @@ void sched_setBlockForSwap(sThread *t,bool blocked) {
 				sched_qDequeueThread(&readyQueue,t);
 				sched_qAppend(&blockedQueue,t);
 				break;
-			case ST_RUNNING:
-				/* this happens when swapping in. we don't need to do something here
-				 * because the process is blocked until swapping is done anyway */
-				break;
 			default:
-				vassert(false,"Invalid state for starting swapping (%d)",t->state);
+				vassert(false,"Thread %d has invalid state for starting swapping (%d)",t->tid,t->state);
 				break;
 		}
 	}
@@ -265,11 +261,8 @@ void sched_setBlockForSwap(sThread *t,bool blocked) {
 				sched_qDequeueThread(&blockedQueue,t);
 				sched_qAppend(&readyQueue,t);
 				break;
-			case ST_RUNNING:
-				/* see above */
-				break;
 			default:
-				vassert(false,"Invalid state for starting swapping (%d)",t->state);
+				vassert(false,"Thread %d has invalid state for stopping swapping (%d)",t->tid,t->state);
 				break;
 		}
 	}

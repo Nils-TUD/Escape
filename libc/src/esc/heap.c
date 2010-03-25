@@ -404,10 +404,8 @@ void *_realloc(void *addr,u32 size) {
 
 	/* the areas are not big enough, so allocate a new one */
 	a = _malloc(size);
-	if(a == NULL) {
-		_free(addr);
+	if(a == NULL)
 		return NULL;
-	}
 
 	/* copy the old data and free it */
 	memcpy(a,addr,area->size);

@@ -152,8 +152,12 @@ void closedir(tFD dir) {
 
 static void incCache(tFD fd) {
 	s32 res;
+	char *dup;
 	u32 nsize = MAX(cpos + CACHE_SIZE,csize + CACHE_SIZE);
-	cache = (char*)realloc(cache,nsize);
+	dup = (char*)realloc(cache,nsize);
+	if(!dup)
+		free(cache);
+	cache = dup;
 	if(cache) {
 		res = read(fd,cache + csize,nsize - csize);
 		if(res >= 0) {

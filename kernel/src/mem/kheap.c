@@ -452,10 +452,8 @@ void *_kheap_realloc(void *addr,u32 size) {
 
 	/* the areas are not big enough, so allocate a new one */
 	a = (sMemArea*)_kheap_alloc(size);
-	if(a == NULL) {
-		_kheap_free(addr);
+	if(a == NULL)
 		return NULL;
-	}
 
 	/* copy the old data and free it */
 	memcpy(a,addr,area->size);

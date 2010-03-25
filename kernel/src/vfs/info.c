@@ -315,7 +315,7 @@ s32 vfsinfo_dirReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 o
 	/* not cached yet? */
 	if(node->data.def.cache == NULL) {
 		/* we need the number of bytes first */
-		u8 *fsBytes = NULL;
+		u8 *fsBytes = NULL,*fsBytesDup;
 		sVFSNode *n = NODE_FIRST_CHILD(node);
 		byteCount = 0;
 		fsByteCount = 0;
@@ -340,9 +340,13 @@ s32 vfsinfo_dirReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 o
 							break;
 
 						curSize += bufSize;
-						fsBytes = kheap_realloc(fsBytes,curSize);
-						if(fsBytes == NULL)
+						fsBytesDup = kheap_realloc(fsBytes,curSize);
+						if(fsBytesDup == NULL) {
+							kheap_free(fsBytes);
+							fsBytes = NULL;
 							break;
+						}
+						fsBytes = fsBytesDup;
 					}
 					vfs_closeFile(tid,rfile);
 				}
@@ -361,6 +365,8 @@ s32 vfsinfo_dirReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 o
 				childs = (u8*)kheap_alloc(byteCount);
 
 			if(childs == NULL) {
+				if(fsBytes)
+					kheap_free(fsBytes);
 				node->data.def.size = 0;
 				node->data.def.pos = 0;
 			}

@@ -72,8 +72,12 @@ static void prf_aprintc(char c) {
 			curbuf->str = (char*)kheap_alloc(SPRINTF_INC_SIZE * sizeof(char));
 		}
 		if(curbuf->len >= curbuf->size) {
+			char *dup;
 			curbuf->size += SPRINTF_INC_SIZE;
-			curbuf->str = (char*)kheap_realloc(curbuf->str,curbuf->size * sizeof(char));
+			dup = (char*)kheap_realloc(curbuf->str,curbuf->size * sizeof(char));
+			if(!dup)
+				kheap_free(curbuf->str);
+			curbuf->str = dup;
 		}
 	}
 	if(curbuf->str) {

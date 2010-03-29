@@ -1,5 +1,5 @@
 /**
- * $Id: ctmain.c 271 2009-08-29 15:08:30Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

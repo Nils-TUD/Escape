@@ -1,5 +1,5 @@
 /**
- * $Id: init.cpp 323 2009-09-11 17:19:21Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

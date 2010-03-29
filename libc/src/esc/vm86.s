@@ -1,5 +1,5 @@
 ;
-; $Id: thread.s 360 2009-09-26 21:25:17Z nasmussen $
+; $Id$
 ; Copyright (C) 2008 - 2009 Nils Asmussen
 ;
 ; This program is free software; you can redistribute it and/or

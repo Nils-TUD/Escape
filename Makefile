@@ -18,9 +18,9 @@ QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga s
 	-localtime
 
 ifeq ($(BUILDDIR),$(abspath build/debug))
-	DIRS = tools libc libcpp user/libs drivers user kernel/src kernel/test
+	DIRS = tools dmd libc libcpp libd user/libs drivers user kernel/src kernel/test
 else
-	DIRS = tools libc libcpp user/libs drivers user kernel/src
+	DIRS = tools dmd libc libcpp libd user/libs drivers user kernel/src
 endif
 
 # flags for gcc
@@ -33,12 +33,15 @@ export CWFLAGS=-Wall -ansi \
 export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long -fno-builtin
+export DWFLAGS=-w -wi
 ifeq ($(BUILDDIR),$(abspath build/debug))
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g -D LOGSERIAL
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
+	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 else
 	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D NDEBUG
 	export CDEFFLAGS=$(CWFLAGS) -O3 -D NDEBUG
+	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 endif
 # flags for nasm
 export ASMFLAGS=-f elf
@@ -138,7 +141,7 @@ vbox: all prepareRun $(ISO) $(VMDISK)
 debug: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
-		gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
+		/usr/local/bin/gdbtui --command=gdb.start --symbols $(BUILD)/user_dtest.bin
 
 debugm: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &

@@ -152,15 +152,15 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	test_register(&tModProc);
 	test_register(&tModKHeap);
 	test_register(&tModSched);
-	test_register(&tModSLList);
+	test_register(&tModSLList);*/
 	test_register(&tModString);
-	test_register(&tModVFS);
+	/*test_register(&tModVFS);
 	test_register(&tModVFSn);
 	test_register(&tModSignals);
 	test_register(&tModRBuffer);
 	test_register(&tModEscCodes);
-	test_register(&tModVFSList);*/
-	test_register(&tModSwapMap);
+	test_register(&tModVFSList);
+	test_register(&tModSwapMap);*/
 	test_start();
 
 

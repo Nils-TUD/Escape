@@ -382,6 +382,25 @@ bool strmatch(const char *pattern,const char *str);
  */
 char *strndup(const char *s,u32 n);
 
+/**
+ * The strtod, strtof, and strtold functions convert the initial portion of the string
+ * pointed to by nptr to double, float, and long double representation,
+ * respectively. First, they decompose the input string into three parts: an initial, possibly
+ * empty, sequence of white-space characters (as specified by the isspace function), a
+ * subject sequence resembling a floating-point constant or representing an infinity or NaN;
+ * and a final string of one or more unrecognized characters, including the terminating null
+ * character of the input string. Then, they attempt to convert the subject sequence to a
+ * floating-point number, and return the result.
+ *
+ * @param nptr the pointer to the floating-point-number
+ * @param endptr will point to the end of the number (the first character that doesn't belong to it),
+ * 	if not NULL
+ * @return the value or 0 if conversion failed
+ */
+float strtof(const char *nptr,char **endptr);
+double strtod(const char *nptr,char **endptr);
+long double strtold(const char *nptr,char **endptr);
+
 #ifdef __cplusplus
 }
 #endif

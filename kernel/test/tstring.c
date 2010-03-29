@@ -21,6 +21,7 @@
 #include <video.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "tstring.h"
 #include <test.h>
@@ -58,6 +59,7 @@ static void test_tolower(void);
 static void test_toupper(void);
 static void test_isalnumstr(void);
 static void test_strmatch(void);
+static void test_strtold(void);
 
 /* our test-module */
 sTestModule tModString = {
@@ -97,6 +99,7 @@ static void test_string(void) {
 	test_toupper();
 	test_isalnumstr();
 	test_strmatch();
+	test_strtold();
 }
 
 static void test_atoi(void) {
@@ -705,6 +708,40 @@ static void test_strmatch(void) {
 	if(!test_assertFalse(strmatch("abc","ab"))) return;
 	if(!test_assertFalse(strmatch("abc","test"))) return;
 	if(!test_assertFalse(strmatch("abc",""))) return;
+
+	test_caseSucceded();
+}
+
+static void test_strtold(void) {
+	typedef struct {
+		const char *str;
+		long double res;
+	} sStrtoldTest;
+	sStrtoldTest tests[] = {
+		{"1234",		1234L},
+		{" 12.34",		12.34L},
+		{".5",			.5L},
+		{" INF",		INFINITY},
+		{"-infINITY",	-INFINITY},
+		{"NAN",			NAN},
+		{"  \tnan",		NAN},
+		{"+6.0e2",		6.0e2L},
+		{"-12.34E10",	-12.34E10L},
+		{"0xABC.DEp2",	0xABC.DEp2L},
+		{"0xA.",		0xAL},
+	};
+	u32 i;
+	long double res;
+	char *end;
+	test_caseStart("Testing strtold()");
+
+	for(i = 0; i < ARRAY_SIZE(tests); i++) {
+		res = strtold(tests[i].str,NULL);
+		test_assertTrue(res == tests[i].res);
+		res = strtold(tests[i].str,&end);
+		test_assertTrue(res == tests[i].res);
+		test_assertTrue(*end == '\0');
+	}
 
 	test_caseSucceded();
 }

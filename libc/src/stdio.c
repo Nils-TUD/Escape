@@ -29,7 +29,7 @@ int putchar(int c) {
 	return printc(c);
 }
 
-int putc(FILE *file,int c) {
+int putc(int c,FILE *file) {
 	return fprintc(file,c);
 }
 
@@ -37,7 +37,11 @@ int puts(const char *str) {
 	return prints(str);
 }
 
-int fputs(FILE *file,const char *str) {
+int fputc(int c,FILE *file) {
+	return fprintc(file,c);
+}
+
+int fputs(const char *str,FILE *file) {
 	return fprints(file,str);
 }
 
@@ -46,6 +50,10 @@ int getchar(void) {
 }
 
 int getc(FILE *file) {
+	return fscanc(file);
+}
+
+int fgetc(FILE *file) {
 	return fscanc(file);
 }
 

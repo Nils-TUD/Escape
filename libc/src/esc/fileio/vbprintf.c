@@ -36,7 +36,7 @@ s32 vbprintf(void *vbuf,const char *fmt,va_list ap) {
 	float f;
 	bool readFlags;
 	u16 flags;
-	u16 precision;
+	s16 precision;
 	u8 width,base;
 	s32 count = 0;
 
@@ -96,7 +96,7 @@ s32 vbprintf(void *vbuf,const char *fmt,va_list ap) {
 		}
 
 		/* read precision */
-		precision = 6;
+		precision = -1;
 		if(*fmt == '.') {
 			fmt++;
 			precision = 0;
@@ -160,6 +160,7 @@ s32 vbprintf(void *vbuf,const char *fmt,va_list ap) {
 
 			/* floating points */
 			case 'f':
+				precision = precision == -1 ? 6 : precision;
 				if(flags & FFL_LONG) {
 					d = va_arg(ap, double);
 					count += bprintdblpad(buf,d,pad,flags,precision);
@@ -197,10 +198,16 @@ s32 vbprintf(void *vbuf,const char *fmt,va_list ap) {
 			case 's':
 				s = va_arg(ap, char*);
 				if(pad > 0 && !(flags & FFL_PADRIGHT)) {
-					width = strlen(s);
+					width = precision == -1 ? strlen(s) : (u32)precision;
 					count += bprintpad(buf,pad - width,flags);
 				}
+				if(precision != -1) {
+					b = s[precision];
+					s[precision] = '\0';
+				}
 				n = bprints(buf,s);
+				if(precision != -1)
+					s[precision] = b;
 				if(pad > 0 && (flags & FFL_PADRIGHT))
 					count += bprintpad(buf,pad - n,flags);
 				count += n;

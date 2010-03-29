@@ -118,9 +118,11 @@ void *calloc_guard(u32 num,u32 size) {
 
 void *realloc_guard(void *addr,u32 size) {
 	void *a;
-	assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
-	assert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF);
-	a = _realloc((void*)((u32)addr - sizeof(u32) * 2),size + sizeof(u32) * 3);
+	if(addr) {
+		assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
+		assert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF);
+	}
+	a = _realloc(addr ? (void*)((u32)addr - sizeof(u32) * 2) : NULL,size + sizeof(u32) * 3);
 	if(a) {
 		*((u32*)a) = 0xDEADBEEF;
 		*((u32*)a + 1) = size;
@@ -341,6 +343,9 @@ void _free(void *addr) {
 
 void *_realloc(void *addr,u32 size) {
 	sMemArea *area,*a,*prev;
+	if(addr == NULL)
+		return _malloc(size);
+
 	locku(&mlock);
 
 	/* find the area with given address */

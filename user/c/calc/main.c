@@ -19,17 +19,8 @@
 
 #include <stdio.h>
 
-int pow(int a,int b);
 void yyerror(char const *s);
 extern int yyparse(void);
-
-int pow(int a,int b) {
-	int i;
-	int res = 1;
-	for(i = 0; i < b; i++)
-		res *= a;
-	return res;
-}
 
 /* Called by yyparse on error.  */
 void yyerror(char const *s) {

@@ -115,11 +115,11 @@ int putchar(int c);
 /**
  * Prints the given character to <file>
  *
- * @param file the file
  * @param c the character
+ * @param file the file
  * @return the character or IO_EOF if failed
  */
-int putc(FILE *file,int c);
+int putc(int c,FILE *file);
 
 /**
  * Prints the given string to STDOUT
@@ -130,13 +130,22 @@ int putc(FILE *file,int c);
 int puts(const char *str);
 
 /**
+ * Prints the given character to <file>
+ *
+ * @param c the character
+ * @param file the file
+ * @return the character or IO_EOF if failed
+ */
+int fputc(int c,FILE *file);
+
+/**
  * Prints the given string to <file>
  *
- * @param file the file
  * @param str the string
+ * @param file the file
  * @return the number of written chars
  */
-int fputs(FILE *file,const char *str);
+int fputs(const char *str,FILE *file);
 
 /**
  * Formated output to STDOUT. Supports:
@@ -269,6 +278,14 @@ int ungetc(int c,FILE *file);
  * @return the number of read chars
  */
 int gets(char *buffer);
+
+/**
+ * Reads one char from <file>
+ *
+ * @param file the file
+ * @return the character or IO_EOF
+ */
+int fgetc(FILE *stream);
 
 /**
  * Reads max. <max> from <file> (or till EOF) into the given buffer

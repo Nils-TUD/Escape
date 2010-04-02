@@ -4,11 +4,11 @@ DIRS = $(filter-out $(wildcard *.*) libs Makefile,$(wildcard *))
 
 all:
 		@for i in $(DIRS) ; do \
-			$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
+			$(MAKE) $(JOBS) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
 
 clean:
 		@for i in $(DIRS) ; do \
-			$(MAKE) -C $$i clean || { echo "Make: Error (`pwd`)"; exit 1; } ; \
+			$(MAKE) $(JOBS) -C $$i clean || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
 		rm -f *~

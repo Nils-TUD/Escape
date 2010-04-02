@@ -24,14 +24,16 @@
 #include <machine/cpu.h>
 #include <machine/timer.h>
 #include <machine/serial.h>
+#include <mem/pmem.h>
+#include <mem/paging.h>
+#include <mem/kheap.h>
+#include <mem/vmm.h>
+#include <mem/cow.h>
+#include <mem/swapmap.h>
 #include <task/sched.h>
 #include <task/elf.h>
 #include <task/proc.h>
 #include <task/signals.h>
-#include <mem/pmem.h>
-#include <mem/paging.h>
-#include <mem/kheap.h>
-#include <mem/swapmap.h>
 #include <vfs/vfs.h>
 #include <vfs/info.h>
 #include <vfs/request.h>
@@ -60,6 +62,8 @@
 #include "tesccodes.h"
 #include "tvfslist.h"
 #include "tswapmap.h"
+#include "tregion.h"
+#include "tvmm.h"
 
 s32 main(sMultiBoot *mbp,u32 magic) {
 	UNUSED(magic);
@@ -86,8 +90,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 	/* paging */
 	vid_printf("Initializing paging...");
-	paging_mapHigherHalf();
-	paging_initCOWList();
+	paging_mapKernelSpace();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* fpu */
@@ -109,7 +112,14 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	proc_init();
 	sched_init();
 	/* the process and thread-stuff has to be ready, too ... */
-	log_vfsIsReady();
+	/* but no logging to vfs in test-mode */
+	/*log_vfsIsReady();*/
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* vmm */
+	vid_printf("Initializing virtual memory management...");
+	vmm_init();
+	cow_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* idt */
@@ -137,8 +147,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	cpu_detect();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
-	vid_printf("Free frames=%d, pages mapped=%d, free mem=%d KiB\n",
-			mm_getFreeFrmCount(MM_DMA | MM_DEF),paging_dbg_getPageCount(),
+	vid_printf("%d free frames (%d KiB)\n",mm_getFreeFrmCount(MM_DMA | MM_DEF),
 			mm_getFreeFrmCount(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 
 	/* swapmap (needed for swapmap tests) */
@@ -148,19 +157,21 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 	/* start tests */
 	/*test_register(&tModMM);
-	test_register(&tModPaging);
+	test_register(&tModPaging);*/
 	test_register(&tModProc);
-	test_register(&tModKHeap);
+	/*test_register(&tModKHeap);
 	test_register(&tModSched);
-	test_register(&tModSLList);*/
+	test_register(&tModSLList);
 	test_register(&tModString);
-	/*test_register(&tModVFS);
+	test_register(&tModVFS);
 	test_register(&tModVFSn);
 	test_register(&tModSignals);
 	test_register(&tModRBuffer);
 	test_register(&tModEscCodes);
 	test_register(&tModVFSList);
-	test_register(&tModSwapMap);*/
+	test_register(&tModSwapMap);
+	test_register(&tModRegion);*/
+	test_register(&tModVmm);
 	test_start();
 
 

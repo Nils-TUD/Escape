@@ -158,7 +158,7 @@ int main(void) {
 					u32 offset = msg.args.arg1;
 					u32 count = msg.args.arg2;
 					msg.args.arg1 = 0;
-					if(minfo == NULL)
+					if(video == NULL || minfo == NULL)
 						msg.args.arg1 = ERR_UNSUPPORTED_OP;
 					else if(offset + count <= (u32)(rows * cols * 2) && offset + count > offset) {
 						char *str = (char*)malloc(count);

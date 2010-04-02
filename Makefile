@@ -12,16 +12,20 @@ BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 BUILDAPPS = $(BUILDDIR)/apps
 
-KVM = -enable-kvm
+#KVM = -enable-kvm
 QEMU = /home/hrniels/Applications/qemu-0.12.2/bin/bin/qemu
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 512 \
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 32 \
 	-localtime
+BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 
 ifeq ($(BUILDDIR),$(abspath build/debug))
 	DIRS = tools dmd libc libcpp libd user/libs drivers user kernel/src kernel/test
 else
 	DIRS = tools dmd libc libcpp libd user/libs drivers user kernel/src
 endif
+
+# number of jobs passing to make
+export JOBS =
 
 # flags for gcc
 export BUILD = $(BUILDDIR)
@@ -54,7 +58,7 @@ export SUDO=sudo
 all: $(BUILD) $(BUILDAPPS)
 		@[ -f $(HDD) ] || make createhdd;
 		@for i in $(DIRS); do \
-			make -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
+			make $(JOBS) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
 
 $(BUILD):
@@ -143,6 +147,14 @@ debug: all prepareRun
 		sleep 1;
 		/usr/local/bin/gdbtui --command=gdb.start --symbols $(BUILD)/user_dtest.bin
 
+debugb:	all prepareRun
+		$(BOCHSDBG) -f bochsgdb.cfg -q
+
+debugbt:
+		$(BOCHSDBG) -f bochsgdb.cfg -q &
+		sleep 1;
+		/usr/local/bin/gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
+
 debugm: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 
@@ -153,7 +165,7 @@ test: all prepareTest
 		$(QEMU) $(QEMUARGS) > log.txt 2>&1
 
 testbochs: all prepareTest
-		bochs -f bochs.cfg -q | tee log.txt
+		bochs -f bochs.cfg -q
 
 testvbox: all prepareTest $(VMDISK)
 		tools/vboxhddupd.sh $(VBOXOSTITLE) $(VMDISK)
@@ -182,6 +194,6 @@ prepareRun:
 
 clean:
 		@for i in $(DIRS); do \
-			make -C $$i clean || { echo "Make: Error (`pwd`)"; exit 1; } ; \
+			make $(JOBS) -C $$i clean || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
 		rm -f $(APPSDB)

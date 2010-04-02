@@ -28,6 +28,7 @@
 #include <machine/vm86.h>
 #include <mem/paging.h>
 #include <mem/kheap.h>
+#include <mem/vmm.h>
 #include <syscalls/proc.h>
 #include <syscalls.h>
 #include <errors.h>
@@ -222,13 +223,13 @@ void sysc_exec(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	}
 
-	/* remove text+data */
-	proc_truncate();
+	/* remove all except stack */
+	vmm_removeAll(p,false);
 
 	/* load program */
 	res = elf_loadFromFile(path);
 	if(res < 0) {
-		/* there is no undo for proc_changeSize() :/ */
+		/* there is no undo for vmm_removeAll() :/ */
 		kheap_free(argBuffer);
 		proc_terminate(p,res,SIG_COUNT);
 		thread_switch();

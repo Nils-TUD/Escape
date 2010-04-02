@@ -21,11 +21,13 @@
 #include <mem/paging.h>
 #include <mem/pmem.h>
 #include <video.h>
+#include <string.h>
 #include <test.h>
 #include "tpaging.h"
 
 /* forward declarations */
 static void test_paging(void);
+static void test_paging_foreign(void);
 static bool test_paging_cycle(u32 addr,u32 count);
 static void test_paging_allocate(u32 addr,u32 count);
 static void test_paging_access(u32 addr,u32 count);
@@ -50,6 +52,47 @@ static void test_paging(void) {
 			test_paging_cycle(addr[y],count[x]);
 		}
 	}
+
+	test_paging_foreign();
+}
+
+static void test_paging_foreign(void) {
+	u32 oldFF, newFF;
+	u32 pdirFrame = mm_allocateFrame(MM_DEF);
+	sPDEntry *pde;
+	/* create page-dir and put the page-dir in the last slot of itself */
+	paging_map(TEMP_MAP_AREA,&pdirFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	memclear((void*)TEMP_MAP_AREA,PAGE_SIZE);
+	pde = (sPDEntry*)TEMP_MAP_AREA;
+	pde[ADDR_TO_PDINDEX(MAPPED_PTS_START)].present = true;
+	pde[ADDR_TO_PDINDEX(MAPPED_PTS_START)].notSuperVisor = false;
+	pde[ADDR_TO_PDINDEX(MAPPED_PTS_START)].writable = true;
+	pde[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo = pdirFrame;
+	paging_unmap(TEMP_MAP_AREA,1,false);
+
+	oldFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
+	test_caseStart("Mapping %d pages to %#08x into pdir %#x",3,0,pdirFrame);
+	test_assertUInt(paging_mapTo(pdirFrame * PAGE_SIZE,0,NULL,3,PG_PRESENT | PG_WRITABLE),4);
+	test_assertUInt(paging_unmapFrom(pdirFrame * PAGE_SIZE,0,3,true),4);
+	newFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
+	if(oldFF != newFF)
+		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
+	else
+		test_caseSucceded();
+
+	oldFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
+	test_caseStart("Mapping %d pages to %#08x into pdir %#x, separatly",6,0x40000000,pdirFrame);
+	test_assertUInt(paging_mapTo(pdirFrame * PAGE_SIZE,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE),4);
+	test_assertUInt(paging_mapTo(pdirFrame * PAGE_SIZE,0x40003000,NULL,3,PG_PRESENT | PG_WRITABLE),3);
+	test_assertUInt(paging_unmapFrom(pdirFrame * PAGE_SIZE,0x40000000,1,true),1);
+	test_assertUInt(paging_unmapFrom(pdirFrame * PAGE_SIZE,0x40001000,5,true),6);
+	newFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
+	if(oldFF != newFF)
+		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
+	else
+		test_caseSucceded();
+
+	mm_freeFrame(pdirFrame,MM_DEF);
 }
 
 static bool test_paging_cycle(u32 addr,u32 count) {
@@ -79,12 +122,11 @@ static bool test_paging_cycle(u32 addr,u32 count) {
 
 static void test_paging_allocate(u32 addr,u32 count) {
 	mm_allocateFrames(MM_DEF,frames,count);
-	paging_map(addr,frames,count,PG_WRITABLE,false);
+	paging_map(addr,frames,count,PG_PRESENT | PG_WRITABLE);
 }
 
 static void test_paging_access(u32 addr,u32 count) {
 	u32 i;
-	/* make page-aligned */
 	addr &= ~(PAGE_SIZE - 1);
 	for(i = 0; i < count; i++) {
 		/* write to the first word */
@@ -96,11 +138,5 @@ static void test_paging_access(u32 addr,u32 count) {
 }
 
 static void test_paging_free(u32 addr,u32 count) {
-	paging_unmap(addr,count,false,false);
-	if(count > 0) {
-		/* unmap & remove affected page-tables */
-		paging_unmapPageTables(ADDR_TO_PDINDEX(addr),
-				PAGES_TO_PTS((addr - (addr & ~(PAGE_SIZE * PT_ENTRY_COUNT - 1))) / PAGE_SIZE + count));
-	}
-	mm_freeFrames(MM_DEF,frames,count);
+	paging_unmap(addr,count,true);
 }

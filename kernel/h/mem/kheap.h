@@ -83,6 +83,13 @@ void kheap_free(void *addr);
 #if DEBUGGING
 
 /**
+ * Enables/disables "allocate and free" prints
+ *
+ * @param enabled the new value
+ */
+void kheap_dbg_setAaFEnabled(bool enabled);
+
+/**
  * Prints the kernel-heap data-structure
  */
 void kheap_dbg_print(void);

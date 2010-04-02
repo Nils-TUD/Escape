@@ -31,7 +31,7 @@ init:
 	call	main
 	call	threadExit
 
-	; c++-programs have address 0xf for threadExit. So we need to achieve this here, too
+	; c++-programs have address 0x100f for threadExit. So we need to achieve this here, too
 	nop
 	nop
 	nop
@@ -44,7 +44,7 @@ threadExit:
 	call	exit
 	; just to be sure
 	jmp		$
-	; c++-programs have address 0x2d for sigRetFunc. So we need to achieve this here, too
+	; c++-programs have address 0x102d for sigRetFunc. So we need to achieve this here, too
 	nop
 	nop
 	nop
@@ -65,7 +65,7 @@ threadExit:
 	nop
 	nop
 
-; all signal-handler return to this "function" (address 0x2d)
+; all signal-handler return to this "function" (address 0x102d)
 sigRetFunc:
 	mov		eax,SYSCALL_ACKSIG
 	int		SYSCALL_IRQ

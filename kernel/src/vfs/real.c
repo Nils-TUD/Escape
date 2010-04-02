@@ -394,10 +394,11 @@ static void vfsr_readRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size
 			}
 #if 0
 			u8 *addr = (u8*)TEMP_MAP_AREA;
-			paging_map(TEMP_MAP_AREA,req->readFrNos,req->readFrNoCount,PG_SUPERVISOR | PG_WRITABLE,true);
+			paging_map(TEMP_MAP_AREA,req->readFrNos,req->readFrNoCount,
+					PG_PRESENT | PG_SUPERVISOR | PG_WRITABLE);
 			memcpy(addr + req->readOffset,data,req->count);
 			/* unmap it and free the frame-nos */
-			paging_unmap(TEMP_MAP_AREA,req->readFrNoCount,false,false);
+			paging_unmap(TEMP_MAP_AREA,req->readFrNoCount,false);
 			kheap_free(req->readFrNos);
 #endif
 			req->state = REQ_STATE_FINISHED;

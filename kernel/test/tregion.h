@@ -17,23 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef COMMON_H_
-#define COMMON_H_
+#ifndef TREGION_H_
+#define TREGION_H_
 
-#include <types.h>
-#include <stddef.h>
+#include <common.h>
+#include <test.h>
 
-/* file-number (in global file table) */
-typedef s32 tFileNo;
-typedef u32 tPageDir;
-typedef s32 tVMRegNo;
+extern sTestModule tModRegion;
 
-#ifndef NDEBUG
-#define DEBUGGING 1
-#endif
-
-/* debugging */
-#define DBG_PGCLONEPD(s)
-#define DBG_KMALLOC(s)
-
-#endif /*COMMON_H_*/
+#endif /* TREGION_H_ */

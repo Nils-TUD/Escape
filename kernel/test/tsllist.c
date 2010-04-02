@@ -239,7 +239,8 @@ static void test_7(void) {
 	tprintf("done\n");
 
 	if(kheap_getFreeMem() < free)
-		test_caseFailed("Memory not freed (before=%d, after=%d)",free,kheap_getFreeMem());
+		test_caseFailed("Memory not freed (before=%d, after=%d), used=%d",free,
+				kheap_getFreeMem(),kheap_getUsedMem());
 	else
 		test_caseSucceded();
 }

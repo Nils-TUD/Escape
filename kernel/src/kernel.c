@@ -27,6 +27,8 @@
 #include <mem/pmem.h>
 #include <mem/paging.h>
 #include <mem/kheap.h>
+#include <mem/vmm.h>
+#include <mem/cow.h>
 #include <task/proc.h>
 #include <task/elf.h>
 #include <task/sched.h>
@@ -78,6 +80,7 @@ static u8 initloader[] = {
 
 s32 main(sMultiBoot *mbp,u32 magic) {
 	u32 entryPoint;
+	sThread *t;
 
 	UNUSED(magic);
 
@@ -105,8 +108,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 	/* paging */
 	vid_printf("Initializing paging...");
-	paging_mapHigherHalf();
-	paging_initCOWList();
+	paging_mapKernelSpace();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* fpu */
@@ -129,6 +131,12 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	sched_init();
 	/* the process and thread-stuff has to be ready, too ... */
 	log_vfsIsReady();
+	vid_printf("\033[co;2]%|s\033[co]","DONE");
+
+	/* vmm */
+	vid_printf("Initializing virtual memory management...");
+	vmm_init();
+	cow_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* idt */
@@ -157,16 +165,17 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 #if DEBUGGING
-	vid_printf("Free frames=%d, pages mapped=%d, free mem=%d KiB\n",
-			mm_getFreeFrmCount(MM_DMA | MM_DEF),paging_dbg_getPageCount(),
+	vid_printf("%d free frames (%d KiB)\n",mm_getFreeFrmCount(MM_DMA | MM_DEF),
 			mm_getFreeFrmCount(MM_DMA | MM_DEF) * PAGE_SIZE / K);
 #endif
 
 #if 1
 	/* load initloader */
 	entryPoint = elf_loadFromMem(initloader,sizeof(initloader));
+	t = thread_getRunning();
 	/* give the process some stack pages */
-	proc_changeSize(INITIAL_STACK_PAGES,CHG_STACK);
+	t->stackRegion = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
+	assert(t->stackRegion >= 0);
 	return entryPoint;
 #else
 	while(1);

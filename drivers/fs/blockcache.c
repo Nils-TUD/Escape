@@ -136,10 +136,12 @@ static sCBlock *bcache_getBlock(sBlockCache *c) {
 	if(block != NULL) {
 		/* remove from freelist and put in usedlist */
 		c->freeBlocks = block->next;
-		block->next->prev = NULL;
+		if(c->freeBlocks)
+			c->freeBlocks->prev = NULL;
 		/* block->prev is already NULL */
 		block->next = c->usedBlocks;
-		block->next->prev = block;
+		if(block->next)
+			block->next->prev = block;
 		c->usedBlocks = block;
 		/* update oldest */
 		if(c->oldestBlock == NULL)
@@ -154,7 +156,8 @@ static sCBlock *bcache_getBlock(sBlockCache *c) {
 	/* put at beginning of usedlist */
 	block->prev = NULL;
 	block->next = c->usedBlocks;
-	block->next->prev = block;
+	if(block->next)
+		block->next->prev = block;
 	c->usedBlocks = block;
 	/* if it is dirty we have to write it first to disk */
 	if(block->dirty) {

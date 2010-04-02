@@ -112,14 +112,13 @@
 /* flags for paging_map() */
 #define PG_WRITABLE			1
 #define PG_SUPERVISOR		2
-#define PG_COPYONWRITE		4
+#define PG_PRESENT			4
 /* tells paging_map() that it gets the frame-address and should convert it to a frame-number first */
 #define PG_ADDR_TO_FRAME	8
-#define PG_NOFREE			16
-/* tells paging_map() that the pages are inherited from another process; assumes PG_ADDR_TO_FRAME! */
-#define PG_INHERIT			32
 /* make it a global page */
-#define PG_GLOBAL			64
+#define PG_GLOBAL			16
+/* tells paging_map() to keep the currently set frame-number */
+#define PG_KEEPFRM			32
 
 /* converts a virtual address to the page-directory-index for that address */
 #define ADDR_TO_PDINDEX(addr) ((u32)(addr) / PAGE_SIZE / PT_ENTRY_COUNT)
@@ -128,7 +127,9 @@
 #define ADDR_TO_PTINDEX(addr) (((u32)(addr) / PAGE_SIZE) % PT_ENTRY_COUNT)
 
 /* converts pages to page-tables (how many page-tables are required for the pages?) */
-#define PAGES_TO_PTS(pageCount) (((pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
+#define PAGES_TO_PTS(pageCount) (((u32)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
+
+#define PAGEDIR(ptables)	((u32)(ptables) + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
 
 /* for printing the page-directory */
 #define PD_PART_ALL		0
@@ -137,6 +138,9 @@
 #define PD_PART_KHEAP	4
 #define PD_PART_PTBLS	8
 #define PD_PART_TEMPMAP	16
+
+/* start-address of the text */
+#define TEXT_BEGIN		0x1000
 
 /* represents a page-directory-entry */
 typedef struct {
@@ -159,7 +163,10 @@ typedef struct {
 	/* 1 ignored bit */
 						: 1,
 	/* can be used by the OS */
-						: 3,
+	/* Indicates that this pagetable exists (but must not necessarily be present) */
+	exists				: 1,
+	/* unused */
+						: 2,
 	/* the physical address of the page-table */
 	ptFrameNo			: 20;
 } sPDEntry;
@@ -187,13 +194,10 @@ typedef struct {
 	 * to enable this feature. (>= pentium pro) */
 	global				: 1,
 	/* 3 Bits for the OS */
-	/* Indicates whether this page is currently readonly, shared with another process and should
-	 * be copied as soon as the user writes to it */
-	copyOnWrite			: 1,
-	/* Indicates that the frame should not be free'd when this page is removed */
-	noFree				: 1,
-	/* Indicates that the frame is swapped out */
-	swapped				: 1,
+	/* Indicates that this page exists (but must not necessarily be present) */
+	exists				: 1,
+	/* unused */
+						: 2,
 	/* the physical address of the page */
 	frameNumber			: 20;
 } sPTEntry;
@@ -204,15 +208,17 @@ typedef struct {
 void paging_init(void);
 
 /**
+ * Sets the current page-dir. Has to be called on every context-switch!
+ *
+ * @param pdir the pagedir
+ */
+void paging_setCur(tPageDir pdir);
+
+/**
  * Reserves page-tables for the whole higher-half and inserts them into the page-directory.
  * This should be done ONCE at the beginning as soon as the physical memory management is set up
  */
-void paging_mapHigherHalf(void);
-
-/**
- * Inits the COW-list. Is possible as soon as the kheap is initialized.
- */
-void paging_initCOWList(void);
+void paging_mapKernelSpace(void);
 
 /**
  * Note that this should just be used by proc_init()!
@@ -220,14 +226,6 @@ void paging_initCOWList(void);
  * @return the address of the page-directory of process 0
  */
 sPDEntry *paging_getProc0PD(void);
-
-/**
- * Handles a page-fault for the given address
- *
- * @param address the address that caused the page-fault
- * @return true if the page-fault could be handled
- */
-bool paging_handlePageFault(u32 address);
 
 /**
  * Assembler routine to flush the TLB
@@ -247,15 +245,6 @@ extern void paging_flushAddr(u32 address);
  * @param physAddr the physical address of the page-directory
  */
 extern void paging_exchangePDir(u32 physAddr);
-
-/**
- * Checks whether the given virtual-address is currently mapped. This should not be used
- * for user-space addresses!
- *
- * @param virt the virt address
- * @return true if so
- */
-bool paging_isMapped(u32 virt);
 
 /**
  * Checks whether the given address-range is currently readable for the user
@@ -298,139 +287,98 @@ bool paging_isRangeUserWritable(u32 virt,u32 count);
 bool paging_isRangeWritable(u32 virt,u32 count);
 
 /**
- * Determines the frame-number for the given virtual-address. This should not be used
- * for user-space addresses!
+ * Clones the kernel-space of the current page-dir into a new one.
  *
- * @param virt the virt address
- * @return the frame-number to which it is currently mapped or 0 if not mapped
+ * @param stackFrame will be set to the used kernel-stackframe
+ * @return the created pagedir
  */
-u32 paging_getFrameOf(u32 virt);
+u32 paging_cloneKernelspace(u32 *stackFrame);
 
 /**
- * Determines how many new frames we need for calling paging_map(<virt>,...,<count>,...).
+ * Destroys the given page-directory (not the current!)
  *
- * @param virt the virtual start-address
- * @param count the number of pages to map
- * @return the number of new frames we would need
+ * @param pdir the page-dir
+ * @return the number of free'd frames
  */
-u32 paging_countFramesForMap(u32 virt,u32 count);
+u32 paging_destroyPDir(tPageDir pdir);
 
 /**
- * Writes the frame-numbers of all pages from <addr> to <addr> + <size> into <nos>.
- *
- * @param nos the array to fill
- * @param addr the virtual address
- * @param size the size of the area
+ * @param virt the virtual address
+ * @return the frame-number of the given virtual address
  */
-void paging_getFrameNos(u32 *nos,u32 addr,u32 size);
+u32 paging_getFrameNo(u32 virt);
 
 /**
- * Maps the pages specified by <addr> and <size> from the process <p> into the current address-
- * space and returns the address of it.
+ * Clones <count> pages at <virtSrc> to <virtDst> from <src> into <dst>. That means
+ * the flags are copied. If <share> is true, the frames will be copied as well. Otherwise new
+ * frames will be allocated if the page in <src> is present. Additionally, if <share> is false
+ * all present pages will be marked as not-writable and share the frame in the cloned pagedir
+ * so that they can be copied on write-access. Note that either <src> or <dst> has to be the
+ * current page-dir!
  *
- * @param p the process
- * @param addr the start of the range you want to access
- * @param size the size of the range you want to access
- * @return the address you can use
- */
-void *paging_mapAreaOf(sProc *p,u32 addr,u32 size);
-
-/**
- * Unmaps the area previously mapped by paging_mapAreaOf().
- *
- * @param addr the start of the range you want to access
- * @param size the size of the range you want to access
- */
-void paging_unmapArea(u32 addr,u32 size);
-
-/**
- * Copies <count> pages from <vaddr> of the given process to the current one
- *
- * @param p the process
- * @param srcAddr the virtual address to copy from
- * @param dstAddr the virtual address to copy to
- * @param count the number of pages
- * @param flags flags for the pages (PG_*)
+ * @param src the source-pagedir
+ * @param dst the destination-pagedir
+ * @param virtSrc the virtual source address
+ * @param virtDst the virtual destination address
+ * @param count the number of pages to copy
+ * @param share wether to share the frames
  * @return the number of allocated frames (including page-tables)
  */
-u32 paging_getPagesOf(sProc *p,u32 srcAddr,u32 dstAddr,u32 count,u8 flags);
+u32 paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,u32 count,bool share);
 
 /**
- * Removes <count> pages at <addr> from the address-space of the given process
- *
- * @param p the process
- * @param addr the start-address
- * @param count the number of pages
- */
-void paging_remPagesOf(sProc *p,u32 addr,u32 count);
-
-/**
- * Maps <count> virtual addresses starting at <virt> to the given frames (in the CURRENT
- * page-dir!). You can decide (via <force>) whether the mapping should be done in every
- * case or just if the page is not already mapped.
- *
- * If new frames should be allocated (frames = NULL), the function checks wether there are enough.
- * If not, frames are swapped out, if possible. If that fails as well, ERR_NOT_ENOUGH_MEM is
- * returned. That means: the function causes a THREAD-SWITCH in this case!!
+ * Maps <count> virtual addresses starting at <virt> to the given frames in the CURRENT page-directory.
+ * Note that the frame-number will just be set (and thus, <frames> used) when the flag PG_PRESENT
+ * is specified.
  *
  * @param virt the virt start-address
  * @param frames an array with <count> elements which contains the frame-numbers to use.
  * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
- * @param force whether the mapping should be overwritten
- * @return the number of allocated frames (including page-tables) or ERR_NOT_ENOUGH_MEM
+ * @return the number of allocated frames (including page-tables)
  */
-u32 paging_map(u32 virt,u32 *frames,u32 count,u8 flags,bool force);
+u32 paging_map(u32 virt,u32 *frames,u32 count,u8 flags);
 
 /**
- * Removes <count> pages starting at <virt> from the page-tables (in the CURRENT page-dir!).
+ * Maps <count> virtual addresses starting at <virt> to the given frames in the given page-directory.
+ * Note that the frame-number will just be set (and thus, <frames> used) when the flag PG_PRESENT
+ * is specified.
+ *
+ * @param pdir the physical address of the page-directory
+ * @param virt the virt start-address
+ * @param frames an array with <count> elements which contains the frame-numbers to use.
+ * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
+ * @param count the number of pages to map
+ * @param flags some flags for the pages (PG_*)
+ * @return the number of allocated frames (including page-tables)
+ */
+u32 paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags);
+
+/**
+ * Removes <count> pages starting at <virt> from the page-tables in the CURRENT page-directory.
  * If you like the function free's the frames.
- * Note that the function will NOT delete page-tables!
+ * Note that the function will delete page-tables, too, if they are empty!
  *
  * @param virt the virtual start-address
  * @param count the number of pages to unmap
  * @param freeFrames whether the frames should be free'd and not just unmapped
- * @param remCOW whether the frames should be removed from the COW-list
- * @return the number of free'd frames (not COW)
- */
-u32 paging_unmap(u32 virt,u32 count,bool freeFrames,bool remCOW);
-
-/**
- * Unmaps and free's page-tables from the index <start> to <start> + <count>.
- *
- * @param start the index of the page-table to start with
- * @param count the number of page-tables to remove
  * @return the number of free'd frames
  */
-u32 paging_unmapPageTables(u32 start,u32 count);
+u32 paging_unmap(u32 virt,u32 count,bool freeFrames);
 
 /**
- * Clones the current page-directory.
+ * Removes <count> pages starting at <virt> from the page-tables in the given page-directory.
+ * If you like the function free's the frames.
+ * Note that the function will delete page-tables, too, if they are empty!
  *
- * @param stackFrame will contain the stack-frame for each thread after the call
- * @param newProc the process for which to create the page-dir
- * @return the frame-number of the new page-directory or 0 if there is not enough mem
- */
-u32 paging_clonePageDir(u32 *stackFrames,sProc *newProc);
-
-/**
- * Destroys the stack of the given thread. The function assumes that t is not the current
- * thread!
- *
- * @param t the thread to destroy
+ * @param pdir the physical address of the page-directory
+ * @param virt the virtual start-address
+ * @param count the number of pages to unmap
+ * @param freeFrames whether the frames should be free'd and not just unmapped
  * @return the number of free'd frames
  */
-u32 paging_destroyStacks(sThread *t);
-
-/**
- * Destroyes the page-dir of the given process. That means all frames will be freed.
- * The function assumes that it is not the current process!
- *
- * @param p the process
- * @return the number of free'd frames
- */
-u32 paging_destroyPageDir(sProc *p);
+u32 paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames);
 
 /**
  * Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as
@@ -438,57 +386,8 @@ u32 paging_destroyPageDir(sProc *p);
  */
 void paging_gdtFinished(void);
 
-/**
- * Prints the user-part of the page-directory of the given process to the given buffer
- *
- * @param buffer the buffer
- * @param p the process
- */
-void paging_sprintfVirtMem(sStringBuffer *buf,sProc *p);
-
-/**
- * Maps the pagedir of the given process and finds the next swappable page of this process.
- * It assumes that you have checked that there is a swappable page!
- *
- * @param p the process
- * @return the virtual address
- */
-u32 paging_swapGetNextAddr(sProc *p);
-
-/**
- * Maps the pagedir of the given process and swaps the page with given virtual address out.
- * That means the bits of the page-table-entry are manipulated correspondingly.
- *
- * @param p the process
- * @param addr the virtual address
- * @return the physical address the page was mapped to
- */
-u32 paging_swapOut(sProc *p,u32 addr);
-
-/**
- * Maps the pagedir of the given process and swaps the page with given virtual address in.
- * That means the bits of the page-table-entry are manipulated correspondingly.
- *
- * @param p the process
- * @param virt the virtual address
- * @param phys the physical address to set
- * @return true if successfull
- */
-void paging_swapIn(sProc *p,u32 virt,u32 phys);
-
 
 #if DEBUGGING
-
-/**
- * Prints all entries in the copy-on-write-list
- */
-void paging_dbg_printCOW(void);
-
-/**
- * @param virt the virtual address
- * @return the page-table-entry for the given address
- */
-sPTEntry *paging_dbg_getPTEntry(u32 virt);
 
 /**
  * Counts the number of pages that are currently present in the given page-directory
@@ -499,34 +398,19 @@ sPTEntry *paging_dbg_getPTEntry(u32 virt);
 u32 paging_dbg_getPageCount(void);
 
 /**
- * Checks whether the given page-table is empty
- *
- * @param pt the pointer to the first entry of the page-table
- * @return true if empty
- */
-bool paging_dbg_isPTEmpty(sPTEntry *pt);
-
-/**
- * Counts the number of present pages in the given page-table
- *
- * @param pt the page-table
- * @return the number of present pages
- */
-u32 paging_dbg_getPTEntryCount(sPTEntry *pt);
-
-/**
- * Prints the given parts from the own page-directory
+ * Prints the given parts of the current page-directory
  *
  * @param parts the parts to print
  */
-void paging_dbg_printOwnPageDir(u8 parts);
+void paging_dbg_printCur(u8 parts);
 
 /**
- * Prints the given parts from the page-directory of the given process
+ * Prints the given parts from the given page-directory
  *
+ * @param pdir the page-directory
  * @param parts the parts to print
  */
-void paging_dbg_printPageDirOf(sProc *p,u8 parts);
+void paging_dbg_printPDir(tPageDir pdir,u8 parts);
 
 #endif
 

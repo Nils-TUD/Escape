@@ -1,0 +1,49 @@
+#define PF_COPYONWRITE	1
+#define PF_DEMANDLOAD		2
+#define PF_DEMANDZERO		4
+#define PF_SWAPPED			8
+
+#define REG_GROWABLE		1
+#define REG_SHAREABLE		2
+
+typedef u32 tPageDir;
+typedef s16 tRegUseNo;
+
+typedef struct {
+	tInodeNo inodeNo;
+	tDevNo devNo;
+	u32 modifytime;
+} sBinDesc;
+
+typedef struct {
+	u32 flags;				/* flags that specify the attributes of this region */
+	sBinDesc binary;	/* the source-binary (for demand-paging) */
+	u32 binOffset;		/* offset in the binary */
+	u32 byteCount;		/* number of bytes */
+	u32 pfSize;				/* size of pageFlags */
+	u8 *pageFlags;		/* flags for each page */
+	sSLList *pdirs;		/* linked list of page-dirs that use this region */
+} sRegion;
+
+typedef struct {
+	sRegion *reg;
+	u32 virt;
+} sRegionUse;
+
+typedef struct {
+	...
+	sRegionUse *regions;
+	...
+} sProc;
+
+sRegion *reg_create(tPageDir pdir,sBinDesc *binary,u32 binOffset,u32 byteCount,u8 pageFlags,u32 flags);
+s32 reg_destroy(sRegion *reg);
+s32 reg_addTo(sRegion *reg,tPageDir pdir);
+s32 reg_remFrom(sRegion *reg,tPageDir pdir);
+sRegion *reg_clone(sRegion *reg);
+s32 reg_grow(sRegion *reg,s32 amount);
+
+tRegUseNo reguse_create(tPageDir pdir,sBinDesc *binary,u32 binOffset,u32 byteCount,u8 pageFlags,u32 flags);
+s32 reguse_destroy(tRegUseNo use);
+tRegUseNo reguse_clone(tRegUseNo use,tPageDir pdir);
+s32 reguse_grow(tRegUseNo use,s32 amount);

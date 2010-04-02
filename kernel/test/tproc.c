@@ -34,7 +34,7 @@ sTestModule tModProc = {
 	&test_proc
 };
 
-s32 oldFF, newFF, oldPC, newPC;
+s32 oldFF, newFF;
 
 /**
  * Stores the current page-count and free frames and starts a test-case
@@ -45,7 +45,6 @@ static void test_init(const char *fmt,...) {
 	test_caseStartv(fmt,ap);
 	va_end(ap);
 
-	oldPC = paging_dbg_getPageCount();
 	oldFF = mm_getFreeFrmCount(MM_DEF);
 }
 
@@ -53,10 +52,9 @@ static void test_init(const char *fmt,...) {
  * Checks whether the page-count and free-frames are still the same and finishes the test-case
  */
 static void test_check(void) {
-	newPC = paging_dbg_getPageCount();
 	newFF = mm_getFreeFrmCount(MM_DEF);
-	if(oldFF != newFF || oldPC != newPC) {
-		test_caseFailed("oldPC=%d, oldFF=%d, newPC=%d, newFF=%d",oldPC,oldFF,newPC,newFF);
+	if(oldFF != newFF) {
+		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
 	}
 	else {
 		test_caseSucceded();
@@ -64,11 +62,7 @@ static void test_check(void) {
 }
 
 static void test_proc(void) {
-	u32 x,y,z;
-	bool res;
-	s32 changes[] = {/*0,1,10,1024,1025,*/2048,2047,2049,0};
-	eChgArea areas[] = {CHG_DATA,CHG_STACK};
-	changes[ARRAY_SIZE(changes) - 1] = mm_getFreeFrmCount(MM_DEF) + 1;
+	u32 x;
 
 	/* test process clone & destroy */
 	test_init("Cloning and destroying processes");
@@ -80,56 +74,4 @@ static void test_proc(void) {
 		proc_kill(proc_getByPid(newPid));
 	}
 	test_check();
-
-	/* allocate one, free one */
-	for(y = 0; y < ARRAY_SIZE(areas); y++) {
-		for(x = 0; x < ARRAY_SIZE(changes); x++) {
-			test_init("Change area %d by %d (allocate, free)",areas[y],changes[x]);
-			res = true;
-
-			res = res && (changes[x] > oldFF ? !proc_changeSize(changes[x],areas[y]) :
-				proc_changeSize(changes[x],areas[y]));
-			if(changes[x] <= oldFF) {
-				res = res && proc_changeSize(-changes[x],areas[y]);
-			}
-			else {
-				vid_printf("Not enough mem or invalid segment sizes!\n");
-			}
-
-			test_check();
-		}
-	}
-
-	/* allocate one, allocate one other, free other, free first */
-	for(y = 0; y < ARRAY_SIZE(areas); y++) {
-		for(x = 0; x < ARRAY_SIZE(changes) - 1; x++) {
-			test_init("Change area %d by %d (allocate, allocate, free, free)",areas[y],changes[x]);
-
-			test_assertTrue(proc_changeSize(changes[x],areas[y]));
-			for(z = 0; z < ARRAY_SIZE(changes) - 1; z++) {
-				tprintf("Changing by %d and rewinding\n",changes[z]);
-				test_assertTrue(proc_changeSize(changes[z],areas[y]));
-				test_assertTrue(proc_changeSize(-changes[z],areas[y]));
-			}
-			test_assertTrue(proc_changeSize(-changes[x],areas[y]));
-
-			test_check();
-		}
-	}
-
-	/* allocate all, free all */
-	for(y = 0; y < ARRAY_SIZE(areas); y++) {
-		test_init("Change area %d (allocate all, free all)",areas[y]);
-
-		for(x = 0; x < ARRAY_SIZE(changes) - 1; x++) {
-			tprintf("Allocating %d pages\n",changes[x]);
-			test_assertTrue(proc_changeSize(changes[x],areas[y]));
-		}
-		for(x = 0; x < ARRAY_SIZE(changes) - 1; x++) {
-			tprintf("Freeing %d pages\n",changes[x]);
-			test_assertTrue(proc_changeSize(-changes[x],areas[y]));
-		}
-
-		test_check();
-	}
 }

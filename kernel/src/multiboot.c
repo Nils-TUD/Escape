@@ -22,6 +22,7 @@
 #include <mem/paging.h>
 #include <mem/kheap.h>
 #include <mem/swap.h>
+#include <mem/vmm.h>
 #include <task/proc.h>
 #include <task/thread.h>
 #include <task/elf.h>
@@ -128,8 +129,8 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			}
 			/* we'll reach this as soon as the scheduler has chosen the created process */
 			p = proc_getRunning();
-			/* remove data-pages */
-			proc_changeSize(-p->dataPages,CHG_DATA);
+			/* remove regions (except stack) */
+			vmm_removeAll(p,false);
 			/* now load driver */
 			memcpy(p->command,name,strlen(name) + 1);
 			entryPoint = elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart);

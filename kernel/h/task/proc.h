@@ -24,7 +24,6 @@
 #include <machine/intrpt.h>
 #include <machine/fpu.h>
 #include <machine/vm86.h>
-#include <mem/text.h>
 #include <vfs/node.h>
 
 /* max number of processes */
@@ -71,8 +70,6 @@ typedef struct {
 	tPid parentPid;
 	/* the physical address for the page-directory of this process */
 	u32 physPDirAddr;
-	/* the text of this process. NULL if it has no text */
-	sTextUsage *text;
 	/* the number of frames (physical mem) the process uses:
 	 * - for text-usages: just the first user owns the frames
 	 * - for shared-mem: just the creator owns the frames
@@ -80,10 +77,9 @@ typedef struct {
 	 * - paging-structures are counted, too
 	 */
 	u32 frameCount;
-	/* the number of pages per segment */
-	u32 textPages;
-	u32 dataPages;
-	u32 stackPages;
+	/* the regions */
+	u32 regSize;
+	void *regions;
 	/* pages that are in swap */
 	u32 swapped;
 	/* the number of pages that can't be swapped (shared mem and mapped physical) */
@@ -270,37 +266,6 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
  * @param entryPoint the entry-point
  */
 void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint);
-
-/**
- * Checks whether the given segment-sizes are valid
- *
- * @param textPages the number of text-pages
- * @param dataPages the number of data-pages
- * @param stackPages the number of stack-pages
- * @return true if so
- */
-bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages);
-
-/**
- * Removes the text and data of the current process
- */
-void proc_truncate(void);
-
-/**
- * Changes the size of either the data-segment of the current process or the stack-segment of
- * the current thread.
- * If <change> is positive pages will be added and otherwise removed. Added pages
- * will always be cleared.
- * Note that the size of the current process (dataPages / stackPages) will be adjusted!
- *
- * IMPORTANT: The function may cause a thread-switch if not enough memory is available and needs
- * to swap something out first.
- *
- * @param change the number of pages to add or remove
- * @param area the data or stack? (CHG_*)
- * @return true if successfull (false if not enough mem)
- */
-bool proc_changeSize(s32 change,eChgArea area);
 
 #if DEBUGGING
 

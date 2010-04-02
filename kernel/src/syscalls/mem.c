@@ -22,6 +22,7 @@
 #include <mem/paging.h>
 #include <mem/kheap.h>
 #include <mem/sharedmem.h>
+#include <mem/vmm.h>
 #include <syscalls/mem.h>
 #include <syscalls.h>
 #include <errors.h>
@@ -29,68 +30,27 @@
 void sysc_changeSize(sIntrptStackFrame *stack) {
 	s32 count = SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
-	u32 oldEnd = p->textPages + p->dataPages;
-
-	/* check argument */
-	if(count > 0) {
-		if(!proc_segSizesValid(p->textPages,p->dataPages + count,p->stackPages))
-			SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-	}
-	else if(count == 0) {
-		SYSC_RET1(stack,oldEnd);
-		return;
-	}
-	else if((u32)-count > p->dataPages)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	/* change size */
-	if(proc_changeSize(count,CHG_DATA) == false)
+	s32 oldEnd;
+	if((oldEnd = vmm_grow(p,RNO_DATA,count)) < 0)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-
 	SYSC_RET1(stack,oldEnd);
 }
 
 void sysc_mapPhysical(sIntrptStackFrame *stack) {
-	u32 addr,origPages;
 	u32 phys = SYSC_ARG1(stack);
-	u32 pages = BYTES_2_PAGES(SYSC_ARG2(stack));
+	u32 bytes = SYSC_ARG2(stack);
+	u32 pages = BYTES_2_PAGES(bytes);
 	sProc *p = proc_getRunning();
-	u32 i,*frames;
+	u32 addr;
 
 	/* trying to map memory in kernel area? */
 	/* TODO is this ok? */
 	if(OVERLAPS(phys,phys + pages,KERNEL_P_ADDR,KERNEL_P_ADDR + PAGE_SIZE * PT_ENTRY_COUNT))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	/* determine start-address */
-	addr = (p->textPages + p->dataPages) * PAGE_SIZE;
-	origPages = p->textPages + p->dataPages;
-
-	/* not enough mem? */
-	if(mm_getFreeFrmCount(MM_DEF) < (paging_countFramesForMap(addr,pages) - pages))
+	addr = vmm_addPhys(p,phys,bytes);
+	if(addr == 0)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-
-	/* invalid segment sizes? */
-	if(!proc_segSizesValid(p->textPages,p->dataPages + pages,p->stackPages))
-		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-
-	/* we have to allocate temporary space for the frame-address :( */
-	frames = (u32*)kheap_alloc(sizeof(u32) * pages);
-	if(frames == NULL)
-		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-
-	for(i = 0; i < pages; i++) {
-		frames[i] = phys / PAGE_SIZE;
-		phys += PAGE_SIZE;
-	}
-	/* map the physical memory and free the temporary memory */
-	paging_map(addr,frames,pages,PG_WRITABLE | PG_NOFREE,false);
-	kheap_free(frames);
-
-	/* increase datapages */
-	p->dataPages += pages;
-	p->unswappable += pages;
-	/* return start-addr */
 	SYSC_RET1(stack,addr);
 }
 

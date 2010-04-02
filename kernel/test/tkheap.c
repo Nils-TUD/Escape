@@ -34,7 +34,6 @@ static void test_kheap_t1v3(void);
 static void test_kheap_t1v4(void);
 static void test_kheap_t2(void);
 static void test_kheap_t3(void);
-static void test_kheap_t4(void);
 static void test_kheap_t5(void);
 static void test_kheap_realloc(void);
 
@@ -44,7 +43,7 @@ sTestModule tModKHeap = {
 	&test_kheap
 };
 
-#define SINGLE_BYTE_COUNT 50000
+#define SINGLE_BYTE_COUNT 10000
 u32 *ptrsSingle[SINGLE_BYTE_COUNT];
 
 u32 sizes[] = {1,4,10,1023,1024,1025,2048,4097};
@@ -109,7 +108,6 @@ static void test_kheap(void) {
 		&test_kheap_t1v4,
 		&test_kheap_t2,
 		&test_kheap_t3,
-		&test_kheap_t4,
 		&test_kheap_t5,
 		&test_kheap_realloc
 	};
@@ -231,15 +229,6 @@ static void test_kheap_t3(void) {
 	for(i = 0; i < SINGLE_BYTE_COUNT; i++) {
 		kheap_free(ptrsSingle[i]);
 	}
-	test_check();
-}
-
-/* allocate all */
-static void test_kheap_t4(void) {
-	u32 *ptr;
-	test_init("Allocate all and free it");
-	ptr = kheap_alloc(kheap_getFreeMem() - 1);
-	kheap_free(ptr);
 	test_check();
 }
 

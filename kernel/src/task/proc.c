@@ -25,6 +25,7 @@
 #include <mem/paging.h>
 #include <mem/pmem.h>
 #include <mem/kheap.h>
+#include <mem/vmm.h>
 #include <machine/intrpt.h>
 #include <machine/fpu.h>
 #include <machine/gdt.h>
@@ -44,7 +45,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-#define EXIT_CALL_ADDR					0xf
+#define EXIT_CALL_ADDR					(TEXT_BEGIN + 0xf)
 
 static void proc_notifyProcDied(tPid parent,tPid pid);
 static s32 proc_finishClone(sThread *nt,u32 stackFrame);
@@ -60,6 +61,9 @@ void proc_init(void) {
 	sThread *t;
 	u32 stackFrame;
 
+	/* do this first because vfs_createProcess may use the kheap so that the kheap needs paging
+	 * and paging refers to the current process's pagedir */
+	p->physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 	/* create nodes in vfs */
 	p->threadDir = vfs_createProcess(0,&vfsinfo_procReadHandler);
 	vassert(p->threadDir != NULL,"Not enough mem for init process");
@@ -69,17 +73,11 @@ void proc_init(void) {
 	/* 1 pagedir, 1 page-table for kernel-stack, 1 for kernelstack */
 	p->frameCount = 1 + 1 + 1;
 	/* the first process has no text, data and stack */
-	p->textPages = 0;
-	p->dataPages = 0;
-	p->stackPages = 0;
 	p->swapped = 0;
 	p->unswappable = 0;
-	p->text = NULL;
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
 	p->isVM86 = false;
-	/* note that this assumes that the page-dir is initialized */
-	p->physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 	memcpy(p->command,"initloader",11);
 
 	/* create first thread */
@@ -90,7 +88,7 @@ void proc_init(void) {
 	paging_exchangePDir(p->physPDirAddr);
 	/* setup kernel-stack for us */
 	stackFrame = mm_allocateFrame(MM_DEF);
-	paging_map(KERNEL_STACK,&stackFrame,1,PG_WRITABLE | PG_SUPERVISOR,false);
+	paging_map(KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 
 	/* set kernel-stack for first thread */
 	t = (sThread*)sll_get(p->threads,0);
@@ -181,12 +179,17 @@ sProc *proc_getLRUProc(void) {
 
 u32 proc_getSwapCount(sProc *p) {
 	assert(p->pid != INVALID_PID);
-	return (p->textPages + p->dataPages + p->stackPages - p->unswappable) - p->swapped;
+	/* TODO */
+	return 0/*(p->textPages + p->dataPages + p->stackPages - p->unswappable) - p->swapped*/;
 }
 
 void proc_getMemUsageOf(sProc *p,u32 *paging,u32 *data) {
 	sSLNode *n;
 	sThread *t;
+	/* TODO */
+	*paging = 0;
+	*data = 0;
+#if 0
 	u32 pmem = 0,dmem = 0;
 	dmem += p->dataPages + p->textPages;
 	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
@@ -198,6 +201,7 @@ void proc_getMemUsageOf(sProc *p,u32 *paging,u32 *data) {
 	pmem += 3 + PAGES_TO_PTS(p->textPages + p->dataPages);
 	*paging = pmem * PAGE_SIZE;
 	*data = dmem * PAGE_SIZE;
+#endif
 }
 
 void proc_getMemUsage(u32 *paging,u32 *data) {
@@ -249,32 +253,32 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->unswappable = 0;
 
 	/* clone page-dir */
-	if((pdirFrame = paging_clonePageDir(&stackFrame,procs + newPid)) == 0)
+	if((pdirFrame = paging_cloneKernelspace(&stackFrame)) == 0)
 		goto errorVFS;
 
-	/* set page-dir and pages for segments */
+	/* clone regions */
 	p->pid = newPid;
-	/* set text for paging_destroyPageDir() */
-	p->text = NULL;
+	/* give the process the same name (maybe changed by exec) */
+	strcpy(p->command,cur->command);
+	p->regions = NULL;
+	p->regSize = 0;
+	/* required for cloning */
+	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
+	if((res = vmm_cloneAll(p)) < 0)
+		goto errorPDir;
+
+	/* set page-dir and pages for segments */
 	p->parentPid = cur->pid;
-	p->textPages = cur->textPages;
-	p->dataPages = cur->dataPages;
-	p->stackPages = curThread->ustackPages;
 	/* 1 pagedir, 1 page-table for kernel-stack, 1 for kernelstack */
 	p->frameCount = 1 + 1 + 1;
-	/* text is shared, data+stack COW, therefore just the page-tables */
-	p->frameCount += PAGES_TO_PTS(p->textPages + p->dataPages) + PAGES_TO_PTS(p->stackPages);
-	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
 	p->isVM86 = isVM86;
-	/* give the process the same name (maybe changed by exec) */
-	strcpy(p->command,cur->command);
 
 	/* create thread-list */
 	p->threads = sll_create();
 	if(p->threads == NULL)
-		goto errorPDir;
+		goto errorRegs;
 
 	/* clone current thread */
 	if((res = thread_clone(curThread,&nt,p,&dummy,true)) < 0)
@@ -286,11 +290,6 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	/* make thread ready */
 	sched_setReady(nt);
 
-	/* clone text */
-	p->text = cur->text;
-	if(!text_clone(p->text,p->pid))
-		goto errorThread;
-
 	res = proc_finishClone(nt,stackFrame);
 	if(res == 1)
 		return 1;
@@ -301,8 +300,10 @@ errorThread:
 	p->frameCount -= thread_destroy(nt,true);
 errorThreadList:
 	kheap_free(p->threads);
+errorRegs:
+	vmm_removeAll(p,true);
 errorPDir:
-	paging_destroyPageDir(p);
+	paging_destroyPDir(p->physPDirAddr);
 errorVFS:
 	vfs_removeProcess(newPid);
 	return ERR_NOT_ENOUGH_MEM;
@@ -318,7 +319,6 @@ s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 		return res;
 
 	p->frameCount += res;
-	p->stackPages += nt->ustackPages;
 
 	/* append thread */
 	if(!sll_append(p->threads,nt)) {
@@ -362,7 +362,7 @@ static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
 	u32 i,*src,*dst;
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	paging_map(TEMP_MAP_PAGE,&stackFrame,1,PG_SUPERVISOR | PG_WRITABLE,true);
+	paging_map(TEMP_MAP_PAGE,&stackFrame,1,PG_PRESENT | PG_SUPERVISOR | PG_WRITABLE);
 
 	if(thread_save(&nt->save)) {
 		/* child */
@@ -377,7 +377,7 @@ static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
 		*dst++ = *src++;
 
 	/* unmap it */
-	paging_unmap(TEMP_MAP_PAGE,1,false,false);
+	paging_unmap(TEMP_MAP_PAGE,1,false);
 
 	/* parent */
 	return 0;
@@ -413,8 +413,9 @@ s32 proc_getExitState(tPid ppid,sExitState *state) {
 					state->pid = procs[i].pid;
 					state->exitCode = procs[i].exitCode;
 					state->signal = procs[i].exitSig;
-					state->memory = (procs[i].textPages + procs[i].dataPages +
-							procs[i].stackPages) * PAGE_SIZE;
+					/* TODO */
+					state->memory = 0;/*(procs[i].textPages + procs[i].dataPages +
+							procs[i].stackPages) * PAGE_SIZE;*/
 					state->ucycleCount.val64 = 0;
 					state->kcycleCount.val64 = 0;
 					for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
@@ -460,8 +461,9 @@ void proc_kill(sProc *p) {
 			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
 	vassert(p->pid != cur->pid,"We can't kill the current process!");
 
-	/* destroy paging-structure */
-	p->frameCount -= paging_destroyPageDir(p);
+	/* remove all regions and page-dir */
+	vmm_removeAll(p,true);
+	p->frameCount -= paging_destroyPDir(p->physPDirAddr);
 
 	/* destroy threads */
 	for(tn = sll_begin(p->threads); tn != NULL; ) {
@@ -496,9 +498,6 @@ void proc_kill(sProc *p) {
 	sig_addSignalFor(p->parentPid,SIG_CHILD_DIED,p->pid);
 
 	/* mark as unused */
-	p->textPages = 0;
-	p->dataPages = 0;
-	p->stackPages = 0;
 	p->pid = INVALID_PID;
 	p->physPDirAddr = 0;
 }
@@ -588,14 +587,17 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 	/* finally we need argc and argv itself */
 	totalSize += sizeof(u32) * 2;
 
+	/* get esp */
+	vmm_getRegRange(thread->proc,thread->stackRegion,NULL,(u32*)&esp);
+
 	/* extend the stack if necessary */
-	if(thread_extendStack(thread->ustackBegin - totalSize) < 0)
+	if(thread_extendStack((u32)esp - totalSize) < 0)
 		return false;
 	/* will handle copy-on-write */
-	paging_isRangeUserWritable(thread->ustackBegin - totalSize,totalSize);
+	paging_isRangeUserWritable((u32)esp - totalSize,totalSize);
 
-	/* copy arguments on the user-stack */
-	esp = (u32*)thread->ustackBegin - 1;
+	/* copy arguments on the user-stack (4byte space) */
+	esp--;
 	argv = NULL;
 	if(argc > 0) {
 		char *str;
@@ -646,103 +648,6 @@ void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint) {
 	frame->edx = 0;
 	frame->esi = 0;
 	frame->edi = 0;
-}
-
-bool proc_segSizesValid(u32 textPages,u32 dataPages,u32 stackPages) {
-	u32 maxPages = KERNEL_AREA_V_ADDR / PAGE_SIZE;
-	return textPages + dataPages + stackPages <= maxPages;
-}
-
-void proc_truncate(void) {
-	sProc *p = proc_getRunning();
-	/* free the current text; free frames if text_free() returns true */
-	p->frameCount -= paging_unmap(0,p->textPages,text_free(p->text,p->pid),false);
-	/* ensure that we don't have a text-usage anymore */
-	p->text = NULL;
-	/* remove process-data */
-	proc_changeSize(-p->dataPages,CHG_DATA);
-	/* Note that we HAVE TO do it behind the proc_changeSize() call since the data-pages are
-	 * still behind the text-pages, no matter if we've already unmapped the text-pages or not,
-	 * and proc_changeSize() trusts p->textPages */
-	p->textPages = 0;
-}
-
-bool proc_changeSize(s32 change,eChgArea area) {
-	u32 addr,chg = change,origPages;
-	sProc *cur = proc_getRunning();
-	sThread *thread = thread_getRunning();
-
-	vassert(area == CHG_DATA || area== CHG_STACK,"area invalid");
-
-	/* determine start-address */
-	if(area == CHG_DATA) {
-		addr = (cur->textPages + cur->dataPages) * PAGE_SIZE;
-		origPages = cur->textPages + cur->dataPages;
-	}
-	else {
-		addr = thread->ustackBegin - (thread->ustackPages + change) * PAGE_SIZE;
-		origPages = thread->ustackPages;
-	}
-
-	if(change > 0) {
-		u32 ts,ds,ss,res;
-		/* invalid segment sizes? */
-		ts = cur->textPages;
-		ds = cur->dataPages;
-		ss = cur->stackPages;
-		if((area == CHG_DATA && !proc_segSizesValid(ts,ds + change,ss))
-				|| (area == CHG_STACK && !proc_segSizesValid(ts,ds,ss + change))) {
-			return false;
-		}
-
-		res = paging_map(addr,NULL,change,PG_WRITABLE,false);
-		if((s32)res == ERR_NOT_ENOUGH_MEM)
-			return false;
-		cur->frameCount += res;
-		/* now clear the memory */
-		memclear((void*)addr,PAGE_SIZE * change);
-	}
-	else {
-		/* we have to correct the address */
-		addr += change * PAGE_SIZE;
-
-		/* free and unmap memory */
-		cur->frameCount -= paging_unmap(addr,-change,true,true);
-
-		/* can we remove all page-tables? */
-		if(origPages + change == 0)
-			cur->frameCount -= paging_unmapPageTables(ADDR_TO_PDINDEX(addr),PAGES_TO_PTS(-change));
-		/* ok, remove just the free ones */
-		else {
-			/* at first calculate the max. pts we may free (based on the pages we removed) */
-			s32 start = ADDR_TO_PDINDEX(addr & ~(PAGE_SIZE * PT_ENTRY_COUNT - 1));
-			s32 count = ADDR_TO_PDINDEX(addr - (change + 1) * PAGE_SIZE) - ADDR_TO_PDINDEX(addr) + 1;
-			/* don't delete the first pt? */
-			if(area == CHG_DATA && (addr & (PAGE_SIZE * PT_ENTRY_COUNT - 1)) > 0) {
-				start++;
-				count--;
-			}
-			/* don't delete last pt? */
-			else if(area == CHG_STACK &&
-					((addr - change * PAGE_SIZE) & (PAGE_SIZE * PT_ENTRY_COUNT - 1)) > 0) {
-				count--;
-			}
-
-			/* finally unmap the pts */
-			if(count > 0)
-				cur->frameCount -= paging_unmapPageTables(start,count);
-		}
-	}
-
-	/* adjust sizes */
-	if(area == CHG_DATA)
-		cur->dataPages += chg;
-	else {
-		thread->ustackPages += chg;
-		cur->stackPages += chg;
-	}
-
-	return true;
 }
 
 
@@ -809,7 +714,7 @@ void proc_dbg_printAllPDs(u8 parts) {
 	for(i = 0; i < PROC_COUNT; i++) {
 		if(procs[i].pid != INVALID_PID) {
 			vid_printf("Process %d (%s):\n",procs[i].pid,procs[i].command);
-			paging_dbg_printPageDirOf(procs + i,parts);
+			paging_dbg_printPDir(procs[i].physPDirAddr,parts);
 			vid_printf("\n");
 		}
 	}
@@ -819,7 +724,6 @@ void proc_dbg_print(sProc *p) {
 	sSLNode *n;
 	vid_printf("proc %d:\n",p->pid);
 	vid_printf("\tppid=%d, cmd=%s, pdir=%x\n",p->parentPid,p->command,p->physPDirAddr);
-	vid_printf("\ttext=%d, data=%d, stack=%d\n",p->textPages,p->dataPages,p->stackPages);
 	vid_printf("\tunswappable=%d, swapped=%d\n",p->unswappable,p->swapped);
 	for(n = sll_begin(p->threads); n != NULL; n = n->next)
 		thread_dbg_print((sThread*)n->data);

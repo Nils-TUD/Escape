@@ -21,6 +21,7 @@
 #include <mem/pmem.h>
 #include <mem/paging.h>
 #include <mem/kheap.h>
+#include <mem/vmm.h>
 #include <machine/timer.h>
 #include <machine/cpu.h>
 #include <task/proc.h>
@@ -118,6 +119,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 	buf.size = 17 * 8 + 7 * 10 + MAX_PROC_NAME_LEN + 1;
 	buf.len = 0;
 
+	/* TODO */
 	prf_sprintf(
 		&buf,
 		"%-16s%u\n"
@@ -125,18 +127,18 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 		"%-16s%s\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
+		/*"%-16s%u\n"
 		"%-16s%u\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
+		"%-16s%u\n"*/
 		,
 		"Pid:",p->pid,
 		"ParentPid:",p->parentPid,
 		"Command:",p->command,
 		"Frames:",p->frameCount,
-		"Swapped:",p->swapped,
+		"Swapped:",p->swapped/*,
 		"TextPages:",p->textPages,
 		"DataPages:",p->dataPages,
-		"StackPages:",p->stackPages
+		"StackPages:",p->stackPages*/
 	);
 }
 
@@ -149,11 +151,14 @@ s32 vfsinfo_threadReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u3
 static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
 	sThread *t = thread_getById(atoi(node->name));
 	sStringBuffer buf;
+	u32 stackBegin = 0,stackEnd = 0;
 	UNUSED(dataSize);
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = 17 * 7 + 5 * 10 + 2 * 16 + 1;
 	buf.len = 0;
+	if(t->stackRegion >= 0)
+		vmm_getRegRange(t->proc,t->stackRegion,&stackBegin,&stackEnd);
 
 	prf_sprintf(
 		&buf,
@@ -168,7 +173,7 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffe
 		"Tid:",t->tid,
 		"Pid:",t->proc->pid,
 		"State:",t->state,
-		"StackPages:",t->ustackPages,
+		"StackPages:",(stackEnd - stackBegin) / PAGE_SIZE,
 		"SchedCount:",t->schedCount,
 		"UCPUCycles:",t->ucycleCount.val32.upper,t->ucycleCount.val32.lower,
 		"KCPUCycles:",t->kcycleCount.val32.upper,t->kcycleCount.val32.lower
@@ -297,7 +302,8 @@ static void vfsinfo_virtMemReadCallback(sVFSNode *node,u32 *dataSize,void **buff
 	buf.size = 0;
 	buf.len = 0;
 	p = proc_getByPid(atoi(node->parent->name));
-	paging_sprintfVirtMem(&buf,p);
+	/* TODO */
+	/*paging_sprintfVirtMem(&buf,p);*/
 	*buffer = buf.str;
 	*dataSize = buf.len + 1;
 }

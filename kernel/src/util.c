@@ -24,6 +24,7 @@
 #include <mem/pmem.h>
 #include <mem/paging.h>
 #include <mem/kheap.h>
+#include <mem/vmm.h>
 #include <ksymbols.h>
 #include <video.h>
 #include <stdarg.h>
@@ -63,7 +64,7 @@ void util_panic(const char *fmt,...) {
 		vid_printf("Caused by thread %d (%s)\n\n",t->tid,t->proc->command);
 	util_printStackTrace(util_getKernelStackTrace());
 
-	if(t != NULL) {
+	if(t != NULL && t->stackRegion) {
 		util_printStackTrace(util_getUserStackTrace(t,intrpt_getCurStack()));
 		vid_printf("User-Register:\n");
 		regs[R_EAX] = istack->eax;
@@ -84,7 +85,10 @@ void util_panic(const char *fmt,...) {
 		PRINT_REGS(regs,"\t");
 	}
 
-	/*paging_dbg_printOwnPageDir(PD_PART_USER);*/
+#if DEBUGGING
+	vmm_dbg_print(t->proc);
+	paging_dbg_printCur(PD_PART_USER);
+#endif
 	intrpt_setEnabled(false);
 	/* TODO vmware seems to shutdown if we disable interrupts and htl?? */
 	while(1);
@@ -132,8 +136,9 @@ void util_stopTimer(const char *prefix,...) {
 }
 
 sFuncCall *util_getUserStackTrace(sThread *t,sIntrptStackFrame *stack) {
-	return util_getStackTrace((u32*)stack->ebp,
-			t->ustackBegin - t->ustackPages * PAGE_SIZE,t->ustackBegin);
+	u32 start,end;
+	vmm_getRegRange(t->proc,t->stackRegion,&start,&end);
+	return util_getStackTrace((u32*)stack->ebp,start,end);
 }
 
 sFuncCall *util_getKernelStackTrace(void) {

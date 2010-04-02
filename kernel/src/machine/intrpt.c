@@ -27,6 +27,7 @@
 #include <mem/paging.h>
 #include <mem/kheap.h>
 #include <mem/swap.h>
+#include <mem/vmm.h>
 #include <task/signals.h>
 #include <task/ioports.h>
 #include <task/proc.h>
@@ -82,7 +83,7 @@
 #define MSG_MAX_LEN				8
 
 /* the address of the return-from-signal "function" in the startup.s */
-#define SIGRETFUNC_ADDR			0x2d
+#define SIGRETFUNC_ADDR			(TEXT_BEGIN + 0x2d)
 
 /* represents an IDT-entry */
 typedef struct {
@@ -546,8 +547,8 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 				/*vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
 						stack->eip,proc_getRunning()->pid);*/
 
-				/* first check if the thread wants to write to COW-page */
-				if(!paging_handlePageFault(pfaddr)) {
+				/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
+				if(!vmm_pagefault(pfaddr)) {
 					/* ok, now lets check if the thread wants more stack-pages */
 					if(thread_extendStack(pfaddr) < 0) {
 						vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,

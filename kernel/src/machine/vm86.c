@@ -23,8 +23,8 @@
 #include <task/sched.h>
 #include <task/signals.h>
 #include <mem/kheap.h>
-#include <mem/text.h>
 #include <mem/paging.h>
+#include <mem/vmm.h>
 #include <machine/vm86.h>
 #include <machine/gdt.h>
 #include <util.h>
@@ -79,6 +79,7 @@ static s32 vm86Res = -1;
 
 s32 vm86_create(void) {
 	sProc *p;
+	sThread *t;
 	tPid pid;
 	u32 i,frameCount;
 	s32 res;
@@ -102,11 +103,14 @@ s32 vm86_create(void) {
 	if(res == 0)
 		return 0;
 
-	p = proc_getRunning();
-	vm86Tid = thread_getRunning()->tid;
+	t = thread_getRunning();
+	p = t->proc;
+	vm86Tid = t->tid;
 
-	/* remove text+data */
-	proc_truncate();
+	/* remove all regions */
+	vmm_removeAll(p,true);
+	/* unset stack-region, so that we can't access it anymore */
+	t->stackRegion = -1;
 
 	/* Now map the first MiB of physical memory to 0x00000000 and the first 64 KiB to 0x00100000,
 	 * too. Because in real-mode it occurs an address-wraparound at 1 MiB. In VM86-mode it doesn't
@@ -114,14 +118,8 @@ s32 vm86_create(void) {
 	frameCount = (1024 * K) / PAGE_SIZE;
 	for(i = 0; i < frameCount; i++)
 		frameNos[i] = i;
-	paging_map(0x00000000,frameNos,frameCount,PG_NOFREE | PG_WRITABLE,true);
-	paging_map(0x00100000,frameNos,(64 * K) / PAGE_SIZE,PG_NOFREE | PG_WRITABLE,true);
-
-	/* now, remove the stack because we don't need it anymore (we needed it before to access
-	 * the areas!) */
-	/* Note: this assumes that the current thread owns all stack-pages, which is ok because we've
-	 * just cloned the process which creates just one thread */
-	proc_changeSize(-p->stackPages,CHG_STACK);
+	paging_map(0x00000000,frameNos,frameCount,PG_PRESENT | PG_WRITABLE);
+	paging_map(0x00100000,frameNos,(64 * K) / PAGE_SIZE,PG_PRESENT | PG_WRITABLE);
 
 	/* Give the vm86-task permission for all ports. As it seems vmware expects that if they
 	 * have used the 32-bit-data-prefix once (at least for inw) it takes effect for the
@@ -137,7 +135,7 @@ s32 vm86_create(void) {
 	strcpy(p->command,"VM86");
 
 	/* block us; we get waked up as soon as someone wants to use us */
-	sched_setBlocked(thread_getRunning());
+	sched_setBlocked(t);
 	thread_switchNoSigs();
 
 	/* ok, we're back again... */
@@ -186,8 +184,9 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	/* collect the frame-numbers for the mapping */
 	for(i = 0; i < areaCount; i++) {
 		if(areas[i].type == VM86_MEM_DIRECT) {
-			paging_getFrameNos(info->mFrameNos + i * VM86_MAX_MEMPAGES,
-					(u32)areas[i].data.direct.src,areas[i].data.direct.size);
+			/* TODO */
+			/*paging_getFrameNos(info->mFrameNos + i * VM86_MAX_MEMPAGES,
+					(u32)areas[i].data.direct.src,areas[i].data.direct.size);*/
 		}
 	}
 
@@ -377,7 +376,7 @@ start:
 	/* undo the mappings of the previous call */
 	for(i = 0; i < (1024 * K) / PAGE_SIZE; i++) {
 		if(frameNos[i] != i) {
-			paging_map(i * PAGE_SIZE,frameNos + i,1,PG_NOFREE | PG_WRITABLE,true);
+			paging_map(i * PAGE_SIZE,frameNos + i,1,PG_PRESENT | PG_WRITABLE);
 			frameNos[i] = i;
 		}
 	}
@@ -409,7 +408,7 @@ start:
 			u32 pages = BYTES_2_PAGES(info->areas[i].data.direct.size);
 			for(j = 0; j < pages; j++)
 				frameNos[start + j] = mm_allocateFrame(MM_DEF);
-			paging_map(info->areas[i].data.direct.dst,frameNos + start,pages,PG_NOFREE | PG_WRITABLE,true);
+			paging_map(info->areas[i].data.direct.dst,frameNos + start,pages,PG_PRESENT | PG_WRITABLE);
 		}
 	}
 
@@ -473,11 +472,11 @@ static void vm86_copyPtrResult(sVM86Memarea *areas,u16 areaCount) {
 			if(virt + areas[i].data.ptr.size > virt && virt + areas[i].data.ptr.size <= 1 * M + 64 * K) {
 				if(frameNos[virt / PAGE_SIZE] != virt / PAGE_SIZE) {
 					u32 pcount = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) + areas[i].data.ptr.size);
-					paging_map(TEMP_MAP_AREA,frameNos + virt / PAGE_SIZE,pcount,PG_SUPERVISOR,true);
+					paging_map(TEMP_MAP_AREA,frameNos + virt / PAGE_SIZE,pcount,PG_PRESENT | PG_SUPERVISOR);
 					memcpy((void*)areas[i].data.ptr.result,
 							(void*)(TEMP_MAP_AREA + (virt & (PAGE_SIZE - 1))),
 							areas[i].data.ptr.size);
-					paging_unmap(TEMP_MAP_AREA,pcount,false,false);
+					paging_unmap(TEMP_MAP_AREA,pcount,false);
 				}
 				else {
 					/* note that the first MiB is mapped to 0xC0000000, too */
@@ -490,10 +489,10 @@ static void vm86_copyPtrResult(sVM86Memarea *areas,u16 areaCount) {
 			u32 start = areas[i].data.direct.dst / PAGE_SIZE;
 			u32 virt = (u32)areas[i].data.direct.src;
 			u32 pages = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) + areas[i].data.direct.size);
-			paging_map(TEMP_MAP_AREA,frameNos + start,pages,PG_NOFREE | PG_WRITABLE,true);
+			paging_map(TEMP_MAP_AREA,frameNos + start,pages,PG_PRESENT | PG_WRITABLE);
 			memcpy((void*)virt,(void*)(TEMP_MAP_AREA + (virt & (PAGE_SIZE - 1))),
 					areas[i].data.direct.size);
-			paging_unmap(TEMP_MAP_AREA,pages,false,false);
+			paging_unmap(TEMP_MAP_AREA,pages,false);
 		}
 	}
 }

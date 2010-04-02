@@ -39,7 +39,6 @@
 
 static void log_printc(char c);
 static u8 log_pipePad(void);
-static s32 log_write(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
 static void log_escape(const char **str);
 static void log_flush(void);
 
@@ -68,7 +67,7 @@ void log_vfsIsReady(void) {
 	assert(vfsn_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);
 	nameCpy = strdup(LOG_FILENAME);
 	assert(nameCpy != NULL);
-	logNode = vfsn_createFile(KERNEL_TID,vfsn_getNode(inodeNo),nameCpy,vfsrw_readDef,log_write);
+	logNode = vfsn_createFile(KERNEL_TID,vfsn_getNode(inodeNo),nameCpy,vfsrw_readDef,vfsrw_writeDef);
 	assert(logNode != NULL);
 	logFile = vfs_openFile(KERNEL_TID,VFS_WRITE,NADDR_TO_VNNO(logNode),VFS_DEV_NO);
 	assert(logFile >= 0);
@@ -103,6 +102,11 @@ void log_vprintf(const char *fmt,va_list ap) {
 }
 
 static void log_printc(char c) {
+#ifdef LOGSERIAL
+	/* write to COM1 (some chars make no sense here) */
+	if(c != '\r' && c != '\b')
+		ser_out(SER_COM1,c);
+#endif
 	if(bufPos >= BUF_SIZE)
 		log_flush();
 	if(bufPos < BUF_SIZE) {
@@ -133,20 +137,6 @@ static u8 log_pipePad(void) {
 static void log_escape(const char **str) {
 	s32 n1,n2,n3;
 	escc_get(str,&n1,&n2,&n3);
-}
-
-static s32 log_write(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count) {
-#ifdef LOGSERIAL
-	char *str = (char*)buffer;
-	u32 i;
-	for(i = 0; i < count; i++) {
-		char c = str[i];
-		/* write to COM1 (some chars make no sense here) */
-		if(c != '\r' && c != '\b')
-			ser_out(SER_COM1,c);
-	}
-#endif
-	return vfsrw_writeDef(tid,file,node,buffer,offset,count);
 }
 
 static void log_flush(void) {

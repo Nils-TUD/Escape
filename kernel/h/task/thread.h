@@ -88,9 +88,8 @@ typedef struct {
 	 * since its just used for swapping (we'll set the same timestamp for a thread of all
 	 * procs that use the same text) */
 	u64 lastSched;
-	/* start address of the stack */
-	u32 ustackBegin;
-	u32 ustackPages;
+	/* the stack-region for this thread */
+	tVMRegNo stackRegion;
 	/* the frame mapped at KERNEL_STACK */
 	u32 kstackFrame;
 	sThreadRegs save;

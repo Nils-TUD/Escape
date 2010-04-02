@@ -252,14 +252,15 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	if(mm_getFreeFrmCount(MM_DEF) == 0)
 		util_panic("No free frame to swap in");
 	frame = mm_allocateFrame(MM_DEF);
-	paging_map(TEMP_MAP_AREA,&frame,1,PG_SUPERVISOR,true);
+	paging_map(TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_SUPERVISOR);
 	memcpy((void*)TEMP_MAP_AREA,buffer,PAGE_SIZE);
-	paging_unmap(TEMP_MAP_AREA,1,false,false);
+	paging_unmap(TEMP_MAP_AREA,1,false);
 
 	/* mark page as 'not swapped' and 'present' and do the actual swapping */
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *sp = (sProc*)n->data;
-		paging_swapIn(sp,swap_getPageAddr(p,sp,addr,type),frame);
+		/* TODO */
+		/*paging_swapIn(sp,swap_getPageAddr(p,sp,addr,type),frame);*/
 		/* we've swapped in one page */
 		sp->swapped--;
 	}
@@ -282,15 +283,16 @@ static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	/* mark page as 'swapped out' and 'not-present' and do the actual swapping */
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *sp = (sProc*)n->data;
-		u32 phys = paging_swapOut(sp,swap_getPageAddr(p,sp,addr,type));
+		/* TODO */
+		u32 phys = 0;/*paging_swapOut(sp,swap_getPageAddr(p,sp,addr,type));*/
 
 		/* if the first one, do the actual swapping */
 		if(n == sll_begin(procs)) {
 			/* copy to a temporary buffer because we can't use TEMP_MAP_AREA when switching
 			 * threads */
-			paging_map(TEMP_MAP_AREA,&phys,1,PG_SUPERVISOR | PG_ADDR_TO_FRAME,true);
+			paging_map(TEMP_MAP_AREA,&phys,1,PG_PRESENT | PG_SUPERVISOR | PG_ADDR_TO_FRAME);
 			memcpy(buffer,(void*)TEMP_MAP_AREA,PAGE_SIZE);
-			paging_unmap(TEMP_MAP_AREA,1,false,false);
+			paging_unmap(TEMP_MAP_AREA,1,false);
 			/* frame is no longer needed, so free it */
 			mm_freeFrame(phys >> PAGE_SIZE_SHIFT,MM_DEF);
 
@@ -309,9 +311,10 @@ static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr) {
 static sSLList *swap_getAffectedProcs(sProc *p,u32 addr,u8 *type) {
 	sSLList *procs;
 	/* belongs to text? so we have to change the mapping for all users of the text */
-	if(addr < p->textPages * PAGE_SIZE) {
-		vassert(p->text,"Process %d (%s) has textpages but no text!?",p->pid,p->command);
-		procs = p->text->procs;
+	/* TODO */
+	if(false/*addr < p->textPages * PAGE_SIZE*/) {
+		/*vassert(p->text,"Process %d (%s) has textpages but no text!?",p->pid,p->command);
+		procs = p->text->procs;*/
 		*type = SW_TYPE_TEXT;
 	}
 	else {
@@ -369,6 +372,7 @@ static bool swap_findVictim(sProc **p,u32 *addr) {
 	if(vp == NULL)
 		return false;
 	*p = vp;
-	*addr = paging_swapGetNextAddr(vp);
+	/* TODO */
+	*addr = 0;/*paging_swapGetNextAddr(vp);*/
 	return true;
 }

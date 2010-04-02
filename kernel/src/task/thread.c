@@ -31,6 +31,7 @@
 #include <mem/paging.h>
 #include <mem/pmem.h>
 #include <mem/swap.h>
+#include <mem/vmm.h>
 #include <task/sched.h>
 #include <task/lock.h>
 #include <util.h>
@@ -87,8 +88,6 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->tid = nextTid++;
 	t->proc = p;
 	/* we'll give the thread a stack later */
-	t->ustackBegin = KERNEL_AREA_V_ADDR;
-	t->ustackPages = 0;
 	t->ucycleCount.val64 = 0;
 	t->ucycleStart = 0;
 	t->kcycleCount.val64 = 0;
@@ -211,6 +210,7 @@ void thread_switchTo(tTid tid) {
 				 * (we'll get an exception) */
 				tss_removeIOMap();
 				tss_setStackPtr(cur->proc->isVM86);
+				paging_setCur(cur->proc->physPDirAddr);
 			}
 
 			/* lock the FPU so that we can save the FPU-state for the previous process as soon
@@ -244,6 +244,8 @@ static void thread_setUsed(sThread *t) {
 	sSLNode *n;
 	t->schedCount++;
 	t->lastSched = timer_getTimestamp();
+	/* TODO */
+#if 0
 	if(t->proc->text) {
 		/* set this for all that use the same text, too. this is a small trick for swapping
 		 * because this way we won't swap the text of one of those processes out because
@@ -258,6 +260,7 @@ static void thread_setUsed(sThread *t) {
 			((sThread*)sll_get(tp->threads,0))->lastSched = t->lastSched;
 		}
 	}
+#endif
 }
 
 void thread_switchNoSigs(void) {
@@ -390,18 +393,7 @@ tFileNo thread_unassocFd(tFD fd) {
 }
 
 s32 thread_extendStack(u32 address) {
-	s32 newPages;
-	address &= ~(PAGE_SIZE - 1);
-	newPages = ((cur->ustackBegin - address) >> PAGE_SIZE_SHIFT) - cur->ustackPages;
-	if(newPages > 0) {
-		if(cur->ustackPages + newPages > MAX_STACK_PAGES)
-			return ERR_NOT_ENOUGH_MEM;
-		if(!proc_segSizesValid(cur->proc->textPages,cur->proc->dataPages,cur->proc->stackPages + newPages))
-			return ERR_NOT_ENOUGH_MEM;
-		if(!proc_changeSize(newPages,CHG_STACK))
-			return ERR_NOT_ENOUGH_MEM;
-	}
-	return 0;
+	return vmm_growStackTo(cur,address);
 }
 
 s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc) {
@@ -430,86 +422,40 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	t->lastSched = timer_getTimestamp();
 	if(cloneProc) {
 		/* proc_clone() sets t->kstackFrame in this case */
-		t->ustackBegin = src->ustackBegin;
-		t->ustackPages = src->ustackPages;
+		t->stackRegion = src->stackRegion;
 	}
 	else {
-		/* find an unused stack-beginning. we don't know which stack-begins are occupied because
-		 * if we clone a process we clone just the current thread, which is an arbitrary one. And
-		 * the stack is kept at the same place. So we have to search which begin is free...
-		 */
-		sSLNode *n;
-		bool ubeginOk;
-		u32 neededFrms,res,ustackBegin = KERNEL_AREA_V_ADDR;
-		do {
-			ubeginOk = true;
-			for(n = sll_begin(src->proc->threads); n != NULL; n = n->next) {
-				sThread *pt = (sThread*)n->data;
-				if(ustackBegin == pt->ustackBegin) {
-					ubeginOk = false;
-					break;
-				}
-			}
-			if(!ubeginOk)
-				ustackBegin -= MAX_STACK_PAGES * PAGE_SIZE;
-		}
-		while(!ubeginOk);
-
 		/* no swapping here because we don't want to make a thread-switch */
-		neededFrms = paging_countFramesForMap(t->ustackBegin - t->ustackPages * PAGE_SIZE,
-				INITIAL_STACK_PAGES);
+		/* TODO */
+		u32 neededFrms = 0;/*paging_countFramesForMap(t->ustackBegin - t->ustackPages * PAGE_SIZE,
+				INITIAL_STACK_PAGES);*/
 		if(mm_getFreeFrmCount(MM_DEF) < 1 + neededFrms)
-			return ERR_NOT_ENOUGH_MEM;
+			goto errThread;
 
-		/* create kernel-stack */
-		t->ustackBegin = ustackBegin;
+		/* add a new stack-region */
+		t->stackRegion = vmm_add(p,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
+		if(t->stackRegion < 0)
+			goto errThread;
+		/* add kernel-stack */
 		*stackFrame = t->kstackFrame = mm_allocateFrame(MM_DEF);
-		frmCount++;
-
-		/* initial user-stack-pages */
-		t->ustackPages = INITIAL_STACK_PAGES;
-		res = paging_map(t->ustackBegin - t->ustackPages * PAGE_SIZE,NULL,
-				t->ustackPages,PG_WRITABLE,true);
-		if((s32)res == ERR_NOT_ENOUGH_MEM) {
-			mm_freeFrame(t->kstackFrame,MM_DEF);
-			return ERR_NOT_ENOUGH_MEM;
-		}
-		frmCount += res;
+		frmCount += INITIAL_STACK_PAGES + 1;
 	}
 
 	/* create thread-list if necessary */
 	list = threadMap[t->tid % THREAD_MAP_SIZE];
 	if(list == NULL) {
 		list = threadMap[t->tid % THREAD_MAP_SIZE] = sll_create();
-		if(list == NULL) {
-			if(!cloneProc) {
-				mm_freeFrame(t->kstackFrame,MM_DEF);
-				paging_unmap(t->ustackBegin - t->ustackPages * PAGE_SIZE,t->ustackPages,true,true);
-			}
-			kheap_free(t);
-			return ERR_NOT_ENOUGH_MEM;
-		}
+		if(list == NULL)
+			goto errStack;
 	}
 
 	/* insert */
-	if(!sll_append(list,t)) {
-		if(!cloneProc) {
-			mm_freeFrame(t->kstackFrame,MM_DEF);
-			paging_unmap(t->ustackBegin - t->ustackPages * PAGE_SIZE,t->ustackPages,true,true);
-		}
-		kheap_free(t);
-		return ERR_NOT_ENOUGH_MEM;
-	}
+	if(!sll_append(list,t))
+		goto errStack;
 
 	/* insert in VFS; thread needs to be inserted for it */
-	if(!vfs_createThread(t->tid,vfsinfo_threadReadHandler)) {
-		if(!cloneProc) {
-			mm_freeFrame(t->kstackFrame,MM_DEF);
-			paging_unmap(t->ustackBegin - t->ustackPages * PAGE_SIZE,t->ustackPages,true,true);
-		}
-		kheap_free(t);
-		return ERR_NOT_ENOUGH_MEM;
-	}
+	if(!vfs_createThread(t->tid,vfsinfo_threadReadHandler))
+		goto errAppend;
 
 	/* inherit file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
@@ -520,6 +466,17 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 
 	*dst = t;
 	return frmCount;
+
+errAppend:
+	sll_removeFirst(list,t);
+errStack:
+	if(!cloneProc) {
+		mm_freeFrame(t->kstackFrame,MM_DEF);
+		vmm_remove(p,t->stackRegion);
+	}
+errThread:
+	kheap_free(t);
+	return ERR_NOT_ENOUGH_MEM;
 }
 
 u32 thread_destroy(sThread *t,bool destroyStacks) {
@@ -545,9 +502,12 @@ u32 thread_destroy(sThread *t,bool destroyStacks) {
 	list = threadMap[t->tid % THREAD_MAP_SIZE];
 	vassert(list != NULL,"Thread %d not found in thread-map",t->tid);
 
-	/* destroy stacks */
-	if(destroyStacks)
-		frmCnt += paging_destroyStacks(t);
+	if(destroyStacks) {
+		/* remove stack-region */
+		vmm_remove(t->proc,t->stackRegion);
+		/* free kernel-stack */
+		mm_freeFrame(t->kstackFrame,MM_DEF);
+	}
 
 	/* release file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {
@@ -558,7 +518,6 @@ u32 thread_destroy(sThread *t,bool destroyStacks) {
 	}
 
 	/* remove from process */
-	t->proc->stackPages -= t->ustackPages;
 	sll_removeFirst(t->proc->threads,t);
 
 	/* remove from all modules we may be announced */
@@ -605,7 +564,6 @@ void thread_dbg_print(sThread *t) {
 	vid_printf("\tthread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 	vid_printf("\t\tstate=%s\n",states[t->state]);
 	vid_printf("\t\tevents=%x\n",t->events);
-	vid_printf("\t\tustack=0x%08x (%d pages)\n",t->ustackBegin,t->ustackPages);
 	vid_printf("\t\tkstackFrame=0x%x\n",t->kstackFrame);
 	vid_printf("\t\tucycleCount = 0x%08x%08x\n",t->ucycleCount.val32.upper,
 			t->ucycleCount.val32.lower);

@@ -22,7 +22,7 @@
 #include <task/elf.h>
 #include <mem/paging.h>
 #include <mem/pmem.h>
-#include <mem/text.h>
+#include <mem/vmm.h>
 #include <vfs/vfs.h>
 #include <vfs/real.h>
 #include <video.h>
@@ -30,10 +30,9 @@
 #include <errors.h>
 #include <assert.h>
 
-#define BUF_SIZE (16 * K)
+static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo);
 
 s32 elf_loadFromFile(char *path) {
-	sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
 	tFileNo file;
 	s32 res;
@@ -41,12 +40,24 @@ s32 elf_loadFromFile(char *path) {
 	u8 const *datPtr;
 	Elf32_Ehdr eheader;
 	Elf32_Phdr pheader;
-
-	vassert(p->textPages == 0 && p->dataPages == 0,"Process is not empty");
+	sFileInfo info;
+	sBinDesc bindesc;
+	tInodeNo ino;
+	tDevNo dev;
 
 	file = vfsr_openFile(t->tid,VFS_READ,path);
 	if(file < 0)
 		return ERR_INVALID_ELF_BIN;
+
+	/* fill bindesc */
+	if(vfs_getFileId(file,&ino,&dev) < 0)
+		goto failed;
+	if(vfsr_istat(t->tid,ino,dev,&info) < 0)
+		goto failed;
+	bindesc.path = path;
+	if(bindesc.path == NULL)
+		goto failed;
+	bindesc.modifytime = info.modifytime;
 
 	/* first read the header */
 	if((res = vfs_readFile(t->tid,file,(u8*)&eheader,sizeof(Elf32_Ehdr))) < 0)
@@ -68,62 +79,8 @@ s32 elf_loadFromFile(char *path) {
 			goto failed;
 
 		if(pheader.p_type == PT_LOAD) {
-			u32 pages;
-
-			if(loadSeg >= 2)
-				goto failed;
-
-			/* check if the sizes are valid */
-			if(pheader.p_filesz > pheader.p_memsz)
-				goto failed;
-
-			pages = BYTES_2_PAGES(pheader.p_memsz);
-
-			/* text */
-			if(loadSeg == 0) {
-				/* get to know the lowest virtual address. must be 0x0.  */
-				if(pheader.p_vaddr != 0)
-					goto failed;
-				if(!proc_segSizesValid(pages,p->dataPages,p->stackPages))
-					goto failed;
-
-				/* load text */
-				res = text_alloc(path,file,pheader.p_offset,pheader.p_filesz,&p->text);
-				if(res < 0)
-					goto failed;
-			}
-			/* data */
-			else {
-				u8 *target;
-				s32 rem;
-				/* has to be directly behind the text */
-				if(pheader.p_vaddr != p->textPages * PAGE_SIZE)
-					goto failed;
-				/* get more space for the data area and make sure that the segment-sizes are valid */
-				if(!proc_segSizesValid(p->textPages,p->dataPages + pages,p->stackPages))
-					goto failed;
-				if(!proc_changeSize(pages,CHG_DATA))
-					goto failed;
-
-				/* load data from fs */
-				if(vfs_seek(t->tid,file,pheader.p_offset,SEEK_SET) < 0)
-					goto failed;
-				target = (u8*)pheader.p_vaddr;
-				rem = pheader.p_filesz;
-				while(rem > 0) {
-					res = vfs_readFile(t->tid,file,target,MIN(BUF_SIZE,rem));
-					if(res < 0)
-						goto failed;
-					rem -= res;
-					target += res;
-				}
-				/* ensure that the specified size was correct */
-				if(rem != 0)
-					goto failed;
-
-				/* zero remaining bytes */
-				memclear((void*)(pheader.p_vaddr + pheader.p_filesz),pheader.p_memsz - pheader.p_filesz);
-			}
+			if(elf_addSegment(&bindesc,&pheader,loadSeg) < 0)
+				return ERR_INVALID_ELF_BIN;
 			loadSeg++;
 		}
 	}
@@ -137,14 +94,11 @@ failed:
 }
 
 s32 elf_loadFromMem(u8 *code,u32 length) {
-	u32 seenLoadSegments = 0;
-	sProc *p = proc_getRunning();
+	u32 loadSegNo = 0;
 	u32 j;
 	u8 const *datPtr;
 	Elf32_Ehdr *eheader = (Elf32_Ehdr*)code;
 	Elf32_Phdr *pheader = NULL;
-
-	vassert(p->textPages == 0 && p->dataPages == 0,"Process is not empty");
 
 	/* check magic */
 	if(eheader->e_ident.dword != *(u32*)ELFMAG)
@@ -159,46 +113,49 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 			return ERR_INVALID_ELF_BIN;
 
 		if(pheader->p_type == PT_LOAD) {
-			u32 pages;
-			u8 const* segmentSrc;
-			segmentSrc = code + pheader->p_offset;
-
-			/* get to know the lowest virtual address. must be 0x0.  */
-			if(seenLoadSegments == 0) {
-				if(pheader->p_vaddr != 0)
-					return ERR_INVALID_ELF_BIN;
-			}
-			else if(seenLoadSegments == 2) {
-				/* uh oh a third LOAD segment. that's not allowed
-				* indeed */
-				return ERR_INVALID_ELF_BIN;
-			}
-
-			/* check if the sizes are valid */
-			if(pheader->p_filesz > pheader->p_memsz)
-				return ERR_INVALID_ELF_BIN;
 			if(pheader->p_vaddr + pheader->p_filesz >= (u32)(code + length))
 				return ERR_INVALID_ELF_BIN;
-
-			/* Note that we put everything in the data-segment here atm */
-			pages = BYTES_2_PAGES(pheader->p_memsz);
-			if(seenLoadSegments != 0) {
-				if(pheader->p_vaddr & (PAGE_SIZE - 1))
-					pages++;
-			}
-
-			/* get more space for the data area and make sure that the segment-sizes are valid */
-			if(!proc_segSizesValid(p->textPages,p->dataPages + pages,p->stackPages))
+			if(elf_addSegment(NULL,pheader,loadSegNo) < 0)
 				return ERR_INVALID_ELF_BIN;
-			if(!proc_changeSize(pages,CHG_DATA))
-				return ERR_INVALID_ELF_BIN;
-
-			/* copy the data, and zero remaining bytes */
-			memcpy((void*)pheader->p_vaddr, (void*)segmentSrc, pheader->p_filesz);
-			memclear((void*)(pheader->p_vaddr + pheader->p_filesz),pheader->p_memsz - pheader->p_filesz);
-			seenLoadSegments++;
+			/* copy the data; we zero on demand */
+			memcpy((void*)pheader->p_vaddr,code + pheader->p_offset,pheader->p_filesz);
+			loadSegNo++;
 		}
 	}
 
 	return (u32)eheader->e_entry;
+}
+
+static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo) {
+	sProc *p = proc_getRunning();
+	u8 type;
+	s32 res;
+	/* determine type */
+	if(loadSegNo == 0) {
+		if(pheader->p_flags != (PF_X | PF_R) || pheader->p_vaddr != TEXT_BEGIN)
+			return ERR_INVALID_ELF_BIN;
+		type = REG_TEXT;
+	}
+	else if(pheader->p_flags == PF_R)
+		type = REG_RODATA;
+	else if(pheader->p_flags == (PF_R | PF_W)) {
+		if(pheader->p_filesz == 0)
+			type = REG_BSS;
+		else
+			type = REG_DATA;
+	}
+	else
+		return ERR_INVALID_ELF_BIN;
+
+	/* check if the sizes are valid */
+	if(pheader->p_filesz > pheader->p_memsz)
+		return ERR_INVALID_ELF_BIN;
+
+	/* bss needs no binary */
+	if(type == REG_BSS)
+		bindesc = NULL;
+	/* add the region */
+	if((res = vmm_add(p,bindesc,pheader->p_offset,pheader->p_memsz,type)) < 0)
+		return res;
+	return 0;
 }

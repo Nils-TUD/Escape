@@ -95,6 +95,10 @@ static bool initialized = false;
 /* number of currently occupied pages */
 static u32 pages = 0;
 
+#if DEBUGGING
+static bool aafEnabled = false;
+#endif
+
 /*
  * Note that we alloc all memory and areas at the beginning because otherwise we may not have
  * enough memory if we need it. We can't swap something out for it because that would mean
@@ -182,9 +186,13 @@ void *kheap_calloc_guard(u32 num,u32 size) {
 
 void *kheap_realloc_guard(void *addr,u32 size) {
 	void *a;
-	assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
-	assert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF);
-	a = _kheap_realloc((void*)((u32)addr - sizeof(u32) * 2),size + sizeof(u32) * 3);
+	if(addr) {
+		assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
+		assert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF);
+		a = _kheap_realloc((void*)((u32)addr - sizeof(u32) * 2),size + sizeof(u32) * 3);
+	}
+	else
+		a = _kheap_realloc(NULL,size + sizeof(u32) * 3);
 	if(a) {
 		*((u32*)a) = 0xDEADBEEF;
 		*((u32*)a + 1) = size;
@@ -260,11 +268,14 @@ void *_kheap_alloc(u32 size) {
 	}
 
 #if DEBUG_ALLOC_N_FREE
-	u32* ebp = (u32*)getStackFrameStart();
-	u32 symaddr = *(ebp + 1) - 5;
-	sSymbol *sym = ksym_getSymbolAt(symaddr);
-	vid_printf("[A] p=%s a=%08x s=%d c=%s\n",proc_getRunning()->command,area->address,area->size,
-			sym->funcName);
+	if(aafEnabled) {
+		u32* ebp = (u32*)getStackFrameStart();
+		u32 symaddr = *(ebp + 1) - 5;
+		sSymbol *sym = ksym_getSymbolAt(symaddr);
+		vid_printf("[A] p=%s a=%08x s=%d c=%s\n",proc_getRunning()->command,area->address,area->size,
+				sym->funcName);
+		util_printStackTrace(util_getKernelStackTrace());
+	}
 #endif
 
 	/* insert in occupied-map */
@@ -335,11 +346,13 @@ void _kheap_free(void *addr) {
 		occupiedMap[kheap_getHash(addr)] = area->next;
 
 #if DEBUG_ALLOC_N_FREE
-	u32* ebp = (u32*)getStackFrameStart();
-	u32 symaddr = *(ebp + 1) - 5;
-	sSymbol *sym = ksym_getSymbolAt(symaddr);
-	vid_printf("[F] p=%s a=%08x s=%d c=%s\n",
-			proc_getRunning()->command,addr,area->size,sym->funcName);
+	if(aafEnabled) {
+		u32* ebp = (u32*)getStackFrameStart();
+		u32 symaddr = *(ebp + 1) - 5;
+		sSymbol *sym = ksym_getSymbolAt(symaddr);
+		vid_printf("[F] p=%s a=%08x s=%d c=%s\n",
+				proc_getRunning()->command,addr,area->size,sym->funcName);
+	}
 #endif
 
 	/* see what we have to merge */
@@ -397,6 +410,9 @@ void _kheap_free(void *addr) {
 
 void *_kheap_realloc(void *addr,u32 size) {
 	sMemArea *area,*a,*prev;
+
+	if(addr == NULL)
+		return _kheap_alloc(size);
 
 	/* find the area with given address */
 	area = occupiedMap[kheap_getHash(addr)];
@@ -467,7 +483,7 @@ static bool kheap_loadNewSpace(u32 size) {
 	s32 count,remaining;
 
 	if(initialized)
-		util_panic("Not enough space in kheap for additional %d bytes",size);
+		return false;
 
 	/* no free areas? */
 	if(freeList == NULL) {
@@ -491,7 +507,7 @@ static bool kheap_loadNewSpace(u32 size) {
 	while(remaining > 0) {
 		u32 amount = MIN((s32)ARRAY_SIZE(frmBuf),remaining);
 		mm_allocateFrames(MM_DEF,frmBuf,amount);
-		paging_map(addr,frmBuf,amount,PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL,false);
+		paging_map(addr,frmBuf,amount,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL);
 		addr += amount * PAGE_SIZE;
 		remaining -= amount;
 	}
@@ -514,7 +530,7 @@ static bool kheap_loadNewAreas(void) {
 	u32 frameNo;
 
 	if(initialized)
-		util_panic("Not enough areas in kheap");
+		return false;
 
 	if((pages + 1) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return false;
@@ -523,7 +539,7 @@ static bool kheap_loadNewAreas(void) {
 	/* don't use NULL for paging_map here to prevent swapping */
 	frameNo = mm_allocateFrame(MM_DEF);
 	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,&frameNo,1,
-			PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL,false);
+			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL);
 
 	/* determine start- and end-address */
 	area = (sMemArea*)(KERNEL_HEAP_START + pages * PAGE_SIZE);
@@ -556,6 +572,10 @@ static u32 kheap_getHash(void *addr) {
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
+
+void kheap_dbg_setAaFEnabled(bool enabled) {
+	aafEnabled = enabled;
+}
 
 void kheap_dbg_print(void) {
 	sMemArea *area;

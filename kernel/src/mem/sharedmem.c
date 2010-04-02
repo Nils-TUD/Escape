@@ -66,10 +66,10 @@ static sSLList *shareList = NULL;
 s32 shm_create(const char *name,u32 pageCount) {
 	sShMem *mem;
 	sProc *p = proc_getRunning();
-	u32 startPage = p->textPages + p->dataPages;
+	u32 startPage = 0/*p->textPages + p->dataPages*/;
 	/* checks */
-	if(!proc_segSizesValid(p->textPages,p->dataPages + pageCount,p->stackPages))
-		return ERR_NOT_ENOUGH_MEM;
+	/*if(!proc_segSizesValid(p->textPages,p->dataPages + pageCount,p->stackPages))
+		return ERR_NOT_ENOUGH_MEM;*/
 	if(strlen(name) > MAX_SHAREDMEM_NAME)
 		return ERR_SHARED_MEM_NAME;
 
@@ -81,11 +81,11 @@ s32 shm_create(const char *name,u32 pageCount) {
 	}
 
 	/* change size */
-	if(!proc_changeSize(pageCount,CHG_DATA))
-		return ERR_NOT_ENOUGH_MEM;
+	/*if(!proc_changeSize(pageCount,CHG_DATA))
+		return ERR_NOT_ENOUGH_MEM;*/
 	/* check here because proc_changeSize() can cause a thread-switch! */
 	if(shm_get(name) != NULL) {
-		proc_changeSize(-pageCount,CHG_DATA);
+		/*proc_changeSize(-pageCount,CHG_DATA);*/
 		return ERR_SHARED_MEM_EXISTS;
 	}
 
@@ -111,7 +111,7 @@ errUser:
 errMem:
 	kheap_free(mem);
 errChangeSize:
-	proc_changeSize(-pageCount,CHG_DATA);
+	/*proc_changeSize(-pageCount,CHG_DATA);*/
 	return ERR_NOT_ENOUGH_MEM;
 }
 
@@ -153,24 +153,25 @@ s32 shm_join(const char *name) {
 		return ERR_SHARED_MEM_INVALID;
 
 	/* check process-size */
-	if(!proc_segSizesValid(p->textPages,p->dataPages + mem->pageCount,p->stackPages))
-		return ERR_NOT_ENOUGH_MEM;
+	/*if(!proc_segSizesValid(p->textPages,p->dataPages + mem->pageCount,p->stackPages))
+		return ERR_NOT_ENOUGH_MEM;*/
 
 	if(!sll_append(mem->user,p))
 		return ERR_NOT_ENOUGH_MEM;
 
-	if(!shm_addUsage(mem,p,p->textPages + p->dataPages)) {
+	/*if(!shm_addUsage(mem,p,p->textPages + p->dataPages)) {
 		sll_removeFirst(mem->user,p);
 		return ERR_NOT_ENOUGH_MEM;
-	}
+	}*/
 
 	/* copy the pages from the owner */
 	owner = (sProc*)sll_get(mem->user,0);
-	paging_getPagesOf(owner,mem->ownerStart * PAGE_SIZE,
-			(p->textPages + p->dataPages) * PAGE_SIZE,mem->pageCount,PG_WRITABLE);
-	p->dataPages += mem->pageCount;
+	/* TODO */
+	/*paging_getPagesOf(owner,mem->ownerStart * PAGE_SIZE,
+			(p->textPages + p->dataPages) * PAGE_SIZE,mem->pageCount,PG_WRITABLE);*/
+	/*p->dataPages += mem->pageCount;*/
 
-	return (p->textPages + p->dataPages) - mem->pageCount;
+	return 0/*(p->textPages + p->dataPages) - mem->pageCount*/;
 }
 
 s32 shm_leave(const char *name) {
@@ -196,8 +197,9 @@ s32 shm_destroy(const char *name) {
 	 * lead to unpredictable results. so its better to unmap them which may cause a page-fault
 	 * and termination of the process */
 	while((usage = shm_getUsage(name,NULL))) {
-		if(usage->proc != p)
-			paging_remPagesOf(usage->proc,usage->startPage,mem->pageCount);
+		/* TODO */
+		/*if(usage->proc != p)
+			paging_remPagesOf(usage->proc,usage->startPage,mem->pageCount);*/
 		sll_removeFirst(shareList,usage);
 		kheap_free(usage);
 	}

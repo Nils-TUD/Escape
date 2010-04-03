@@ -122,6 +122,45 @@ errReg:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
+void vmm_getMemUsage(sProc *p,u32 *paging,u32 *data) {
+	u32 i,maxPtbls = 0,ppaging = 0,pdata = 0;
+	for(i = 0; i < p->regSize; i++) {
+		sVMRegion *vm = REG(p,i);
+		if(vm) {
+			u32 pages = BYTES_2_PAGES(vm->reg->byteCount);
+			pdata += pages;
+			maxPtbls += PAGES_TO_PTS(pages);
+		}
+	}
+	if(maxPtbls > 0) {
+		u32 j,k,*ptbls = kheap_alloc(maxPtbls * sizeof(u32));
+		if(ptbls != NULL) {
+			for(i = 0; i < p->regSize; i++) {
+				sVMRegion *vm = REG(p,i);
+				if(vm) {
+					u32 rptbls = PAGES_TO_PTS(BYTES_2_PAGES(vm->reg->byteCount));
+					u32 pdi = ADDR_TO_PDINDEX(vm->virt);
+					for(j = 0; j < rptbls; j++) {
+						bool found = false;
+						for(k = 0; k < ppaging; k++) {
+							if(ptbls[k] == pdi + j) {
+								found = true;
+								break;
+							}
+						}
+						if(!found)
+							ptbls[ppaging++] = pdi + j;
+					}
+				}
+			}
+			kheap_free(ptbls);
+		}
+	}
+	*data = pdata;
+	/* + pagedir, page-table for kstack and kstack */
+	*paging = ppaging + 3;
+}
+
 void vmm_getRegRange(sProc *p,tVMRegNo reg,u32 *start,u32 *end) {
 	sVMRegion *vm = REG(p,reg);
 	assert(p && reg >= 0 && reg < (s32)p->regSize && vm);

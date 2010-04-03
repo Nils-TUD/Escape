@@ -82,6 +82,15 @@ u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount);
 tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type);
 
 /**
+ * Determines the memory-usage of the given process
+ *
+ * @param p the process
+ * @param paging the number of frames allocated for paging-structures
+ * @param data the number of data-pages
+ */
+void vmm_getMemUsage(sProc *p,u32 *paging,u32 *data);
+
+/**
  * Queries the start- and end-address of a region
  *
  * @param p the process

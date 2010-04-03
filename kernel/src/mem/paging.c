@@ -504,6 +504,32 @@ u32 paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames) {
 	return freed;
 }
 
+void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {
+	u32 i,j;
+	u32 ptables = paging_getPTables(pdir);
+	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
+	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR); i++) {
+		if(pdirAddr[i].present) {
+			u32 addr = PAGE_SIZE * PT_ENTRY_COUNT * i;
+			sPTEntry *pte = (sPTEntry*)(ptables + i * PAGE_SIZE);
+			prf_sprintf(buf,"PageTable 0x%x (VM: 0x%08x - 0x%08x)\n",i,addr,
+					addr + (PAGE_SIZE * PT_ENTRY_COUNT) - 1);
+			for(j = 0; j < PT_ENTRY_COUNT; j++) {
+				if(pte[j].exists) {
+					sPTEntry *page = pte + j;
+					prf_sprintf(buf,"\tPage 0x%03x: ",j);
+					prf_sprintf(buf,"frame 0x%05x [%c%c%c] (VM: 0x%08x - 0x%08x)\n",
+							page->frameNumber,page->present ? 'p' : '-',
+							page->notSuperVisor ? 'u' : 'k',
+							page->writable ? 'w' : 'r',
+							addr,addr + PAGE_SIZE - 1);
+				}
+				addr += PAGE_SIZE;
+			}
+		}
+	}
+}
+
 static u32 paging_getPTables(tPageDir pdir) {
 	sPDEntry *pde;
 	if(pdir == curPDir)

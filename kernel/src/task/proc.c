@@ -183,34 +183,13 @@ u32 proc_getSwapCount(sProc *p) {
 	return 0/*(p->textPages + p->dataPages + p->stackPages - p->unswappable) - p->swapped*/;
 }
 
-void proc_getMemUsageOf(sProc *p,u32 *paging,u32 *data) {
-	sSLNode *n;
-	sThread *t;
-	/* TODO */
-	*paging = 0;
-	*data = 0;
-#if 0
-	u32 pmem = 0,dmem = 0;
-	dmem += p->dataPages + p->textPages;
-	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
-		t = (sThread*)n->data;
-		dmem += t->ustackPages;
-		pmem += PAGES_TO_PTS(t->ustackPages);
-	}
-	/* page-directory, pt for kernel-stack and kernel-stack */
-	pmem += 3 + PAGES_TO_PTS(p->textPages + p->dataPages);
-	*paging = pmem * PAGE_SIZE;
-	*data = dmem * PAGE_SIZE;
-#endif
-}
-
 void proc_getMemUsage(u32 *paging,u32 *data) {
 	u32 pmem = 0,dmem = 0;
 	u32 i;
 	for(i = 0; i < PROC_COUNT; i++) {
 		if(procs[i].pid != INVALID_PID) {
 			u32 ptmp,dtmp;
-			proc_getMemUsageOf(procs + i,&ptmp,&dtmp);
+			vmm_getMemUsage(procs + i,&ptmp,&dtmp);
 			dmem += dtmp;
 			pmem += ptmp;
 		}

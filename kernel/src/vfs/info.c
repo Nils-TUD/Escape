@@ -113,13 +113,14 @@ s32 vfsinfo_procReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 
 static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
 	sProc *p = proc_getByPid(atoi(node->parent->name));
 	sStringBuffer buf;
+	u32 paging,pages;
 	UNUSED(dataSize);
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = 17 * 8 + 7 * 10 + MAX_PROC_NAME_LEN + 1;
 	buf.len = 0;
+	vmm_getMemUsage(p,&paging,&pages);
 
-	/* TODO */
 	prf_sprintf(
 		&buf,
 		"%-16s%u\n"
@@ -127,18 +128,14 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 		"%-16s%s\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
-		/*"%-16s%u\n"
 		"%-16s%u\n"
-		"%-16s%u\n"*/
 		,
 		"Pid:",p->pid,
 		"ParentPid:",p->parentPid,
 		"Command:",p->command,
+		"Pages:",pages,
 		"Frames:",p->frameCount,
-		"Swapped:",p->swapped/*,
-		"TextPages:",p->textPages,
-		"DataPages:",p->dataPages,
-		"StackPages:",p->stackPages*/
+		"Swapped:",p->swapped
 	);
 }
 
@@ -302,8 +299,7 @@ static void vfsinfo_virtMemReadCallback(sVFSNode *node,u32 *dataSize,void **buff
 	buf.size = 0;
 	buf.len = 0;
 	p = proc_getByPid(atoi(node->parent->name));
-	/* TODO */
-	/*paging_sprintfVirtMem(&buf,p);*/
+	paging_sprintfVirtMem(&buf,p->pagedir);
 	*buffer = buf.str;
 	*dataSize = buf.len + 1;
 }

@@ -49,11 +49,9 @@ typedef struct {
 typedef struct {
 	tPid pid;
 	tPid parentPid;
+	u32 pages;
 	u32 frames;
 	u32 swapped;
-	u32 textPages;
-	u32 dataPages;
-	u32 stackPages;
 	uLongLong ucycleCount;
 	uLongLong kcycleCount;
 	sSLList *threads;
@@ -197,8 +195,8 @@ int main(int argc,char *argv[]) {
 			maxPmem = procs[i].frames;
 		if(procs[i].swapped > maxSmem)
 			maxSmem = procs[i].swapped;
-		if(procs[i].textPages + procs[i].dataPages + procs[i].stackPages > maxVmem)
-			maxVmem = procs[i].textPages + procs[i].dataPages + procs[i].stackPages;
+		if(procs[i].pages > maxVmem)
+			maxVmem = procs[i].pages;
 		if(printThreads) {
 			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
 				sPThread *t = (sPThread*)n->data;
@@ -228,7 +226,7 @@ int main(int argc,char *argv[]) {
 		kernelPercent = (u32)(100. / (procCycles / (double)procs[i].kcycleCount.val64));
 		printf("%*u   %*u %*u KiB %*u KiB %*u KiB  -       %4.1f%% (%3d%%,%3d%%)   %s\n",
 				maxPid,procs[i].pid,maxPpid,procs[i].parentPid,maxPmem,procs[i].frames * 4,
-				maxVmem,(procs[i].textPages + procs[i].dataPages + procs[i].stackPages) * 4,
+				maxVmem,procs[i].pages * 4,
 				maxSmem,procs[i].swapped * 4,
 				cyclePercent,userPercent,kernelPercent,procs[i].command);
 
@@ -267,8 +265,7 @@ static int compareProcs(const void *a,const void *b) {
 			return p1->parentPid - p2->parentPid;
 		case SORT_MEM:
 			/* descending */
-			return (p2->textPages + p2->dataPages + p2->stackPages) -
-				(p1->textPages + p1->dataPages + p1->stackPages);
+			return p2->pages - p1->pages;
 		case SORT_CPU:
 			/* descending */
 			return cmpulongs(p2->ucycleCount.val64 + p2->kcycleCount.val64,
@@ -368,9 +365,8 @@ static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
 	/* parse string */
 	sscanf(
 		buf,
-		"%*s%hu" "%*s%hu" "%*s%s" "%*s%u" "%*s%u" "%*s%u" "%*s%u" "%*s%u",
-		&p->pid,&p->parentPid,&p->command,&p->frames,&p->swapped,&p->textPages,
-		&p->dataPages,&p->stackPages
+		"%*s%hu" "%*s%hu" "%*s%s" "%*s%u" "%*s%u" "%*s%u",
+		&p->pid,&p->parentPid,&p->command,&p->pages,&p->frames,&p->swapped
 	);
 	p->threads = sll_create();
 

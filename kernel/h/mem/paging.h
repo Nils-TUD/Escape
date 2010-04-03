@@ -222,6 +222,12 @@ void paging_setCur(tPageDir pdir);
 void paging_mapKernelSpace(void);
 
 /**
+ * Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as
+ * soon as the GDT is setup for a flat memory layout!
+ */
+void paging_gdtFinished(void);
+
+/**
  * Note that this should just be used by proc_init()!
  *
  * @return the address of the page-directory of process 0
@@ -393,10 +399,12 @@ u32 paging_unmap(u32 virt,u32 count,bool freeFrames);
 u32 paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames);
 
 /**
- * Unmaps the page-table 0. This should be used only by the GDT to unmap the first page-table as
- * soon as the GDT is setup for a flat memory layout!
+ * Prints the user-part of the given page-directory to the given buffer
+ *
+ * @param buffer the buffer
+ * @param pdir the page-directory
  */
-void paging_gdtFinished(void);
+void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir);
 
 
 #if DEBUGGING

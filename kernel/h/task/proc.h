@@ -151,16 +151,6 @@ sProc *proc_getLRUProc(void);
 u32 proc_getSwapCount(sProc *p);
 
 /**
- * Determines the mem-usage of the given process
- *
- * @param p the process
- * @param paging will point to the number of bytes used for paging-structures
- * @param data will point to the number of bytes mapped for data (not frames because of COW,
- *  shmem, ...)
- */
-void proc_getMemUsageOf(sProc *p,u32 *paging,u32 *data);
-
-/**
  * Determines the mem-usage of all processes
  *
  * @param paging will point to the number of bytes used for paging-structures

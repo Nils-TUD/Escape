@@ -61,14 +61,13 @@ static void test_paging_foreign(void) {
 	u32 pdirFrame = mm_allocateFrame(MM_DEF);
 	sPDEntry *pde;
 	/* create page-dir and put the page-dir in the last slot of itself */
-	paging_map(TEMP_MAP_AREA,&pdirFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-	memclear((void*)TEMP_MAP_AREA,PAGE_SIZE);
-	pde = (sPDEntry*)TEMP_MAP_AREA;
+	pde = (sPDEntry*)paging_mapToTemp(&pdirFrame,1);
+	memclear((void*)pde,PAGE_SIZE);
 	pde[ADDR_TO_PDINDEX(MAPPED_PTS_START)].present = true;
 	pde[ADDR_TO_PDINDEX(MAPPED_PTS_START)].notSuperVisor = false;
 	pde[ADDR_TO_PDINDEX(MAPPED_PTS_START)].writable = true;
 	pde[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo = pdirFrame;
-	paging_unmap(TEMP_MAP_AREA,1,false);
+	paging_unmapFromTemp(1);
 
 	oldFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
 	test_caseStart("Mapping %d pages to %#08x into pdir %#x",3,0,pdirFrame);

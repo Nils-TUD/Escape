@@ -21,8 +21,8 @@
 #include <esc/heap.h>
 #include <string.h>
 #include <sllist.h>
-#include "parser.h"
-#include "driver.h"
+#include "iparser.h"
+#include "idriver.h"
 
 /**
  * Parses one driver from the given line (until newline or \0) and fills the

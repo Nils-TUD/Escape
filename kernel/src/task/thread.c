@@ -210,13 +210,13 @@ void thread_switchTo(tTid tid) {
 				 * (we'll get an exception) */
 				tss_removeIOMap();
 				tss_setStackPtr(cur->proc->isVM86);
-				paging_setCur(cur->proc->physPDirAddr);
+				paging_setCur(cur->proc->pagedir);
 			}
 
 			/* lock the FPU so that we can save the FPU-state for the previous process as soon
 			 * as this one wants to use the FPU */
 			fpu_lockFPU();
-			thread_resume(cur->proc->physPDirAddr,&cur->save,
+			thread_resume(cur->proc->pagedir,&cur->save,
 					sll_length(cur->proc->threads) > 1 ? cur->kstackFrame : 0);
 		}
 
@@ -233,7 +233,7 @@ void thread_switchTo(tTid tid) {
 			 * the proc-module doesn't kill the running thread anyway so there will never
 			 * be the case that we should destroy a single thread later */
 			t = (sThread*)n->data;
-			t->proc->frameCount -= thread_destroy(t,true);
+			thread_destroy(t,true);
 		}
 		sll_destroy(deadThreads,false);
 		deadThreads = NULL;
@@ -398,7 +398,6 @@ s32 thread_extendStack(u32 address) {
 
 s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc) {
 	tFD i;
-	u32 frmCount = 0;
 	sSLList *list;
 	sThread *t = *dst;
 	t = (sThread*)kheap_alloc(sizeof(sThread));
@@ -438,7 +437,6 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 			goto errThread;
 		/* add kernel-stack */
 		*stackFrame = t->kstackFrame = mm_allocateFrame(MM_DEF);
-		frmCount += INITIAL_STACK_PAGES + 1;
 	}
 
 	/* create thread-list if necessary */
@@ -465,7 +463,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	}
 
 	*dst = t;
-	return frmCount;
+	return 0;
 
 errAppend:
 	sll_removeFirst(list,t);
@@ -479,9 +477,8 @@ errThread:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-u32 thread_destroy(sThread *t,bool destroyStacks) {
+void thread_destroy(sThread *t,bool destroyStacks) {
 	tFD i;
-	u32 frmCnt = 0;
 	sSLList *list;
 	/* we can't destroy the current thread */
 	if(t == cur) {
@@ -496,7 +493,7 @@ u32 thread_destroy(sThread *t,bool destroyStacks) {
 		/* remove from scheduler and ensure that he don't picks us again */
 		sched_removeThread(t);
 		t->state = ST_ZOMBIE;
-		return 0;
+		return;
 	}
 
 	list = threadMap[t->tid % THREAD_MAP_SIZE];
@@ -534,7 +531,6 @@ u32 thread_destroy(sThread *t,bool destroyStacks) {
 	/* finally, destroy thread */
 	sll_removeFirst(list,t);
 	kheap_free(t);
-	return frmCnt;
 }
 
 /* #### TEST/DEBUG FUNCTIONS #### */

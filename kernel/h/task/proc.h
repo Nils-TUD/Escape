@@ -69,7 +69,7 @@ typedef struct {
 	/* parent process id */
 	tPid parentPid;
 	/* the physical address for the page-directory of this process */
-	u32 physPDirAddr;
+	tPageDir pagedir;
 	/* the number of frames (physical mem) the process uses:
 	 * - for text-usages: just the first user owns the frames
 	 * - for shared-mem: just the creator owns the frames
@@ -288,8 +288,9 @@ void proc_dbg_printAll(void);
  * Prints the given parts of the page-directory for all existing processes
  *
  * @param parts the parts (see paging_dbg_printPageDirOf)
+ * @param regions wether to print the regions too
  */
-void proc_dbg_printAllPDs(u8 parts);
+void proc_dbg_printAllPDs(u8 parts,bool regions);
 
 /**
  * Prints the given process

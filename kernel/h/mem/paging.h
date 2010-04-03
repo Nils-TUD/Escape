@@ -30,25 +30,30 @@
 /**
  * Virtual memory layout:
  * 0x00000000: +-----------------------------------+   -----
- *             |                                   |     |
- *             |             user-code             |     |
- *             |                                   |     |
+ *             |                text               |     |
  *             +-----------------------------------+     |
- *             |                                   |
- *      |      |             user-data             |     u
- *      v      |                                   |     s
- *             +-----------------------------------+     e
- *             |                ...                |     r
+ *             |               rodata              |     |
+ *             +-----------------------------------+     |
+ *             |                bss                |
+ *     ---     +-----------------------------------+     u
+ *             |                data               |     s
+ *      |      |                                   |     e
+ *      v      |                ...                |     r
  *     ---     +-----------------------------------+     a
  *      ^      |                                   |     r
  *      |      |        user-stack thread n        |     e
  *             |                                   |     a
- *             +-----------------------------------+
+ *     ---     +-----------------------------------+
  *             |                ...                |     |
  *     ---     +-----------------------------------+     |
  *      ^      |                                   |     |
  *      |      |        user-stack thread 0        |     |
  *             |                                   |     |
+ * 0xA0000000: +-----------------------------------+     |
+ *             |           shared memory           |     |
+ *             |         shared libraries          |     |
+ *             |        memory mapped stuff        |     |
+ *             |        (in arbitrary order)       |     |
  * 0xC0000000: +-----------------------------------+   -----
  *             |                ...                |     |
  * 0xC0100000: +-----------------------------------+     |
@@ -65,82 +70,78 @@
  *             |           temp map area           |     e
  * 0xC2800000: +-----------------------------------+     a
  *             |                ...                |
- * 0xFF7FE000: +-----------------------------------+     |      -----
+ * 0xFF7FF000: +-----------------------------------+     |      -----
  *             |            kernel-stack           |     |        |
- * 0xFF7FF000: +-----------------------------------+     |        |
- *             |         temp kernel-stack         |     |
- * 0xFF800000: +-----------------------------------+     |     not shared page-tables (3)
- *             |     temp mapped page-tables       |     |
- * 0xFFC00000: +-----------------------------------+     |        |
+ * 0xFF800000: +-----------------------------------+     |
+ *             |     temp mapped page-tables       |     |    not shared page-tables (3)
+ * 0xFFC00000: +-----------------------------------+     |
  *             |        mapped page-tables         |     |        |
  * 0xFFFFFFFF: +-----------------------------------+   -----    -----
  */
 
 /* the virtual address of the kernel-area */
-#define KERNEL_AREA_V_ADDR	((u32)0xC0000000)
+#define KERNEL_AREA_V_ADDR		((u32)0xC0000000)
 /* the virtual address of the kernel itself */
-#define KERNEL_V_ADDR		(KERNEL_AREA_V_ADDR + KERNEL_P_ADDR)
+#define KERNEL_V_ADDR			(KERNEL_AREA_V_ADDR + KERNEL_P_ADDR)
 
 /* the number of entries in a page-directory or page-table */
-#define PT_ENTRY_COUNT		(PAGE_SIZE / 4)
+#define PT_ENTRY_COUNT			(PAGE_SIZE / 4)
 
 /* the start of the mapped page-tables area */
-#define MAPPED_PTS_START	(0xFFFFFFFF - (PT_ENTRY_COUNT * PAGE_SIZE) + 1)
+#define MAPPED_PTS_START		(0xFFFFFFFF - (PT_ENTRY_COUNT * PAGE_SIZE) + 1)
 /* the start of the temporary mapped page-tables area */
-#define TMPMAP_PTS_START	(MAPPED_PTS_START - (PT_ENTRY_COUNT * PAGE_SIZE))
+#define TMPMAP_PTS_START		(MAPPED_PTS_START - (PT_ENTRY_COUNT * PAGE_SIZE))
 /* the start of the kernel-heap */
-#define KERNEL_HEAP_START	(KERNEL_AREA_V_ADDR + (PT_ENTRY_COUNT * PAGE_SIZE) * 2)
+#define KERNEL_HEAP_START		(KERNEL_AREA_V_ADDR + (PT_ENTRY_COUNT * PAGE_SIZE) * 2)
 /* the size of the kernel-heap (4 MiB) */
-#define KERNEL_HEAP_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE /* * 4 */)
+#define KERNEL_HEAP_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE /* * 4 */)
 
 /* page-directories in virtual memory */
-#define PAGE_DIR_AREA		(MAPPED_PTS_START + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
+#define PAGE_DIR_AREA			(MAPPED_PTS_START + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
 /* needed for building a new page-dir */
-#define PAGE_DIR_TMP_AREA	(TMPMAP_PTS_START + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
+#define PAGE_DIR_TMP_AREA		(TMPMAP_PTS_START + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
 /* our kernel-stack */
-#define KERNEL_STACK		(TEMP_MAP_PAGE - PAGE_SIZE)
-/* temporary page for various purposes */
-#define TEMP_MAP_PAGE		(TMPMAP_PTS_START - PAGE_SIZE)
+#define KERNEL_STACK			(TMPMAP_PTS_START - PAGE_SIZE)
 
 /* for mapping some pages of foreign processes */
-#define TEMP_MAP_AREA		(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
-#define TEMP_MAP_AREA_SIZE	(PT_ENTRY_COUNT * PAGE_SIZE * 4)
+#define TEMP_MAP_AREA			(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
+#define TEMP_MAP_AREA_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE * 4)
 
 /* the size of the temporary stack we use at the beginning */
-#define TMP_STACK_SIZE		PAGE_SIZE
+#define TMP_STACK_SIZE			PAGE_SIZE
 
 /* flags for paging_map() */
-#define PG_WRITABLE			1
-#define PG_SUPERVISOR		2
-#define PG_PRESENT			4
+#define PG_WRITABLE				1
+#define PG_SUPERVISOR			2
+#define PG_PRESENT				4
 /* tells paging_map() that it gets the frame-address and should convert it to a frame-number first */
-#define PG_ADDR_TO_FRAME	8
+#define PG_ADDR_TO_FRAME		8
 /* make it a global page */
-#define PG_GLOBAL			16
+#define PG_GLOBAL				16
 /* tells paging_map() to keep the currently set frame-number */
-#define PG_KEEPFRM			32
+#define PG_KEEPFRM				32
 
 /* converts a virtual address to the page-directory-index for that address */
-#define ADDR_TO_PDINDEX(addr) ((u32)(addr) / PAGE_SIZE / PT_ENTRY_COUNT)
+#define ADDR_TO_PDINDEX(addr)	((u32)(addr) / PAGE_SIZE / PT_ENTRY_COUNT)
 
 /* converts a virtual address to the index in the corresponding page-table */
-#define ADDR_TO_PTINDEX(addr) (((u32)(addr) / PAGE_SIZE) % PT_ENTRY_COUNT)
+#define ADDR_TO_PTINDEX(addr)	(((u32)(addr) / PAGE_SIZE) % PT_ENTRY_COUNT)
 
 /* converts pages to page-tables (how many page-tables are required for the pages?) */
-#define PAGES_TO_PTS(pageCount) (((u32)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
+#define PAGES_TO_PTS(pageCount)	(((u32)(pageCount) + (PT_ENTRY_COUNT - 1)) / PT_ENTRY_COUNT)
 
-#define PAGEDIR(ptables)	((u32)(ptables) + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
+#define PAGEDIR(ptables)		((u32)(ptables) + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
 
 /* for printing the page-directory */
-#define PD_PART_ALL		0
-#define PD_PART_USER 	1
-#define PD_PART_KERNEL	2
-#define PD_PART_KHEAP	4
-#define PD_PART_PTBLS	8
-#define PD_PART_TEMPMAP	16
+#define PD_PART_ALL				0
+#define PD_PART_USER 			1
+#define PD_PART_KERNEL			2
+#define PD_PART_KHEAP			4
+#define PD_PART_PTBLS			8
+#define PD_PART_TEMPMAP			16
 
 /* start-address of the text */
-#define TEXT_BEGIN		0x1000
+#define TEXT_BEGIN				0x1000
 
 /* represents a page-directory-entry */
 typedef struct {
@@ -233,13 +234,6 @@ sPDEntry *paging_getProc0PD(void);
 extern void paging_flushTLB(void);
 
 /**
- * Flushes the TLB-entry for the given address
- *
- * @param address the virtual address
- */
-extern void paging_flushAddr(u32 address);
-
-/**
  * Assembler routine to exchange the page-directory to the given one
  *
  * @param physAddr the physical address of the page-directory
@@ -287,12 +281,30 @@ bool paging_isRangeUserWritable(u32 virt,u32 count);
 bool paging_isRangeWritable(u32 virt,u32 count);
 
 /**
+ * Maps the given frames (frame-numbers) to a temporary area (writable, super-visor), so that you
+ * can access it. Please use paging_unmapFromTemp() as soon as you're finished!
+ *
+ * @param frames the frame-numbers
+ * @param count the number of frames
+ * @return the virtual start-address
+ */
+u32 paging_mapToTemp(u32 *frames,u32 count);
+
+/**
+ * Unmaps the temporary mappings
+ *
+ * @param count the number of pages
+ */
+void paging_unmapFromTemp(u32 count);
+
+/**
  * Clones the kernel-space of the current page-dir into a new one.
  *
  * @param stackFrame will be set to the used kernel-stackframe
- * @return the created pagedir
+ * @param pdir will be set to the page-directory address (physical)
+ * @return the number of allocated frames
  */
-u32 paging_cloneKernelspace(u32 *stackFrame);
+s32 paging_cloneKernelspace(u32 *stackFrame,tPageDir *pdir);
 
 /**
  * Destroys the given page-directory (not the current!)

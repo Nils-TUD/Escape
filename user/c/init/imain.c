@@ -26,8 +26,8 @@
 #include <sllist.h>
 #include <string.h>
 #include <width.h>
-#include "parser.h"
-#include "driver.h"
+#include "iparser.h"
+#include "idriver.h"
 
 #define DRIVERS_FILE		"/etc/drivers"
 

@@ -63,7 +63,7 @@ void proc_init(void) {
 
 	/* do this first because vfs_createProcess may use the kheap so that the kheap needs paging
 	 * and paging refers to the current process's pagedir */
-	p->physPDirAddr = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
+	p->pagedir = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 	/* create nodes in vfs */
 	p->threadDir = vfs_createProcess(0,&vfsinfo_procReadHandler);
 	vassert(p->threadDir != NULL,"Not enough mem for init process");
@@ -85,7 +85,7 @@ void proc_init(void) {
 	vassert(p->threads != NULL,"Unable to create initial thread-list");
 	vassert(sll_append(p->threads,thread_init(p)),"Unable to append the initial thread");
 
-	paging_exchangePDir(p->physPDirAddr);
+	paging_exchangePDir(p->pagedir);
 	/* setup kernel-stack for us */
 	stackFrame = mm_allocateFrame(MM_DEF);
 	paging_map(KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
@@ -231,7 +231,7 @@ bool proc_hasChild(tPid pid) {
 }
 
 s32 proc_clone(tPid newPid,bool isVM86) {
-	u32 pdirFrame,dummy,stackFrame;
+	u32 dummy,stackFrame;
 	sProc *p;
 	sProc *cur = proc_getRunning();
 	sThread *curThread = thread_getRunning();
@@ -253,7 +253,7 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->unswappable = 0;
 
 	/* clone page-dir */
-	if((pdirFrame = paging_cloneKernelspace(&stackFrame)) == 0)
+	if((p->frameCount = paging_cloneKernelspace(&stackFrame,&p->pagedir)) < 0)
 		goto errorVFS;
 
 	/* clone regions */
@@ -262,15 +262,11 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	strcpy(p->command,cur->command);
 	p->regions = NULL;
 	p->regSize = 0;
-	/* required for cloning */
-	p->physPDirAddr = pdirFrame << PAGE_SIZE_SHIFT;
 	if((res = vmm_cloneAll(p)) < 0)
 		goto errorPDir;
 
 	/* set page-dir and pages for segments */
 	p->parentPid = cur->pid;
-	/* 1 pagedir, 1 page-table for kernel-stack, 1 for kernelstack */
-	p->frameCount = 1 + 1 + 1;
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
 	p->isVM86 = isVM86;
@@ -297,13 +293,13 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	return 0;
 
 errorThread:
-	p->frameCount -= thread_destroy(nt,true);
+	thread_destroy(nt,true);
 errorThreadList:
 	kheap_free(p->threads);
 errorRegs:
 	vmm_removeAll(p,true);
 errorPDir:
-	paging_destroyPDir(p->physPDirAddr);
+	paging_destroyPDir(p->pagedir);
 errorVFS:
 	vfs_removeProcess(newPid);
 	return ERR_NOT_ENOUGH_MEM;
@@ -318,11 +314,9 @@ s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 	if((res = thread_clone(t,&nt,t->proc,&stackFrame,false)) < 0)
 		return res;
 
-	p->frameCount += res;
-
 	/* append thread */
 	if(!sll_append(p->threads,nt)) {
-		p->frameCount -= thread_destroy(nt,true);
+		thread_destroy(nt,true);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -351,7 +345,7 @@ s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 	return nt->tid;
 
 error:
-	p->frameCount -= thread_destroy(nt,true);
+	thread_destroy(nt,true);
 	/* do a switch here because we can't continue */
 	thread_switch();
 	/* never reached */
@@ -359,10 +353,10 @@ error:
 }
 
 static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
-	u32 i,*src,*dst;
+	u32 i,*src;
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
-	paging_map(TEMP_MAP_PAGE,&stackFrame,1,PG_PRESENT | PG_SUPERVISOR | PG_WRITABLE);
+	u32 *dst = (u32*)paging_mapToTemp(&stackFrame,1);
 
 	if(thread_save(&nt->save)) {
 		/* child */
@@ -372,12 +366,10 @@ static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
 	/* now copy the stack */
 	/* copy manually to prevent a function-call (otherwise we would change the stack) */
 	src = (u32*)KERNEL_STACK;
-	dst = (u32*)TEMP_MAP_PAGE;
 	for(i = 0; i < PT_ENTRY_COUNT; i++)
 		*dst++ = *src++;
 
-	/* unmap it */
-	paging_unmap(TEMP_MAP_PAGE,1,false);
+	paging_unmapFromTemp(1);
 
 	/* parent */
 	return 0;
@@ -391,7 +383,7 @@ void proc_destroyThread(s32 exitCode) {
 	else {
 		/* just destroy the thread */
 		sThread *t = thread_getRunning();
-		cur->frameCount -= thread_destroy(t,true);
+		thread_destroy(t,true);
 	}
 }
 
@@ -463,13 +455,13 @@ void proc_kill(sProc *p) {
 
 	/* remove all regions and page-dir */
 	vmm_removeAll(p,true);
-	p->frameCount -= paging_destroyPDir(p->physPDirAddr);
+	paging_destroyPDir(p->pagedir);
 
 	/* destroy threads */
 	for(tn = sll_begin(p->threads); tn != NULL; ) {
 		sThread *t = (sThread*)tn->data;
 		tmpn = tn->next;
-		p->frameCount -= thread_destroy(t,false);
+		thread_destroy(t,false);
 		tn = tmpn;
 	}
 	sll_destroy(p->threads,false);
@@ -499,7 +491,7 @@ void proc_kill(sProc *p) {
 
 	/* mark as unused */
 	p->pid = INVALID_PID;
-	p->physPDirAddr = 0;
+	p->pagedir = 0;
 }
 
 static void proc_notifyProcDied(tPid parent,tPid pid) {
@@ -709,12 +701,14 @@ void proc_dbg_printAll(void) {
 	}
 }
 
-void proc_dbg_printAllPDs(u8 parts) {
+void proc_dbg_printAllPDs(u8 parts,bool regions) {
 	u32 i;
 	for(i = 0; i < PROC_COUNT; i++) {
 		if(procs[i].pid != INVALID_PID) {
 			vid_printf("Process %d (%s):\n",procs[i].pid,procs[i].command);
-			paging_dbg_printPDir(procs[i].physPDirAddr,parts);
+			if(regions)
+				vmm_dbg_print(procs + i);
+			paging_dbg_printPDir(procs[i].pagedir,parts);
 			vid_printf("\n");
 		}
 	}
@@ -723,7 +717,7 @@ void proc_dbg_printAllPDs(u8 parts) {
 void proc_dbg_print(sProc *p) {
 	sSLNode *n;
 	vid_printf("proc %d:\n",p->pid);
-	vid_printf("\tppid=%d, cmd=%s, pdir=%x\n",p->parentPid,p->command,p->physPDirAddr);
+	vid_printf("\tppid=%d, cmd=%s, pdir=%x\n",p->parentPid,p->command,p->pagedir);
 	vid_printf("\tunswappable=%d, swapped=%d\n",p->unswappable,p->swapped);
 	for(n = sll_begin(p->threads); n != NULL; n = n->next)
 		thread_dbg_print((sThread*)n->data);

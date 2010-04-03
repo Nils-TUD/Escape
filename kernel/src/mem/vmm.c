@@ -59,7 +59,7 @@ void vmm_init(void) {
 u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount) {
 	tVMRegNo reg;
 	sVMRegion *vm;
-	u32 i,pages = BYTES_2_PAGES(bCount);
+	u32 frmCount,i,pages = BYTES_2_PAGES(bCount);
 	u32 *frames = (u32*)kheap_alloc(sizeof(u32) * pages);
 	if(frames == NULL)
 		return 0;
@@ -74,7 +74,9 @@ u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount) {
 		phys += PAGE_SIZE;
 	}
 	/* TODO we have to check somehow wether we have enough mem for the page-tables */
-	paging_mapTo(p->physPDirAddr,vm->virt,frames,pages,PG_PRESENT | PG_WRITABLE);
+	frmCount = paging_mapTo(p->pagedir,vm->virt,frames,pages,PG_PRESENT | PG_WRITABLE);
+	/* the page-tables count as used frames */
+	p->frameCount += frmCount - pages;
 	kheap_free(frames);
 	return vm->virt;
 }
@@ -94,7 +96,7 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
 	reg = reg_create(bin,binOffset,bCount,pgFlags,flags);
 	if(!reg)
 		return ERR_NOT_ENOUGH_MEM;
-	if(!reg_addTo(reg,p->physPDirAddr))
+	if(!reg_addTo(reg,p->pagedir))
 		goto errReg;
 	vm = vmm_alloc();
 	if(vm == NULL)
@@ -107,12 +109,14 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
 		mapFlags |= PG_PRESENT;
 	if(flags & (RF_WRITABLE))
 		mapFlags |= PG_WRITABLE;
-	if(type != REG_PHYS)
-		paging_mapTo(p->physPDirAddr,virt,NULL,BYTES_2_PAGES(vm->reg->byteCount),mapFlags);
+	if(type != REG_PHYS) {
+		p->frameCount += paging_mapTo(p->pagedir,virt,NULL,
+				BYTES_2_PAGES(vm->reg->byteCount),mapFlags);
+	}
 	return rno;
 
 errAdd:
-	reg_remFrom(reg,p->physPDirAddr);
+	reg_remFrom(reg,p->pagedir);
 errReg:
 	reg_destroy(reg);
 	return ERR_NOT_ENOUGH_MEM;
@@ -153,7 +157,7 @@ bool vmm_pagefault(u32 addr) {
 			u8 mapFlags = PG_PRESENT;
 			if(vm->reg->flags & RF_WRITABLE)
 				mapFlags |= PG_WRITABLE;
-			paging_map(addr,NULL,1,mapFlags);
+			p->frameCount += paging_map(addr,NULL,1,mapFlags);
 			/* TODO actually we may have to read less */
 			if(vfs_readFile(t->tid,file,(u8*)addr,PAGE_SIZE) < 0)
 				res = false;
@@ -164,7 +168,7 @@ bool vmm_pagefault(u32 addr) {
 		return res;
 	}
 	else if(*flags & PF_DEMANDZERO) {
-		paging_map(addr,NULL,1,PG_PRESENT | PG_WRITABLE);
+		p->frameCount += paging_map(addr,NULL,1,PG_PRESENT | PG_WRITABLE);
 		/* TODO actually we may have to clear less */
 		memclear((void*)addr,PAGE_SIZE);
 		*flags &= ~PF_DEMANDZERO;
@@ -175,7 +179,7 @@ bool vmm_pagefault(u32 addr) {
 		util_panic("No swapping yet");
 	}
 	else if(*flags & PF_COPYONWRITE) {
-		cow_pagefault(addr);
+		p->frameCount += cow_pagefault(addr);
 		*flags &= ~PF_COPYONWRITE;
 		return true;
 	}
@@ -196,15 +200,19 @@ void vmm_remove(sProc *p,tVMRegNo reg) {
 	u32 i,c = 0;
 	sVMRegion *vm = REG(p,reg);
 	assert(p && reg < (s32)p->regSize && vm != NULL);
-	assert(reg_remFrom(vm->reg,p->physPDirAddr));
+	assert(reg_remFrom(vm->reg,p->pagedir));
 	if(reg_refCount(vm->reg) == 0) {
 		u32 pcount = BYTES_2_PAGES(vm->reg->byteCount), virt = vm->virt;
 		/* remove us from cow and unmap the pages (and free frames, if necessary) */
 		for(i = 0; i < pcount; i++) {
 			bool freeFrame = true;
-			if(vm->reg->pageFlags[i] & PF_COPYONWRITE)
-				freeFrame = cow_remove(p,paging_getFrameNo(virt));
-			paging_unmapFrom(p->physPDirAddr,virt,1,freeFrame);
+			if(vm->reg->pageFlags[i] & PF_COPYONWRITE) {
+				u32 foundOther;
+				/* we can free the frame if there is no other user */
+				p->frameCount -= cow_remove(p,paging_getFrameNo(virt),&foundOther);
+				freeFrame = !foundOther;
+			}
+			p->frameCount -= paging_unmapFrom(p->pagedir,virt,1,freeFrame);
 			virt += PAGE_SIZE;
 		}
 		/* now destroy region */
@@ -212,7 +220,8 @@ void vmm_remove(sProc *p,tVMRegNo reg) {
 	}
 	else {
 		/* no free here, just unmap */
-		paging_unmapFrom(p->physPDirAddr,vm->virt,BYTES_2_PAGES(vm->reg->byteCount),false);
+		p->frameCount -= paging_unmapFrom(p->pagedir,vm->virt,
+				BYTES_2_PAGES(vm->reg->byteCount),false);
 	}
 	REG(p,reg) = NULL;
 
@@ -245,18 +254,18 @@ tVMRegNo vmm_join(sProc *src,tVMRegNo rno,sProc *dst) {
 	nvm->virt = vmm_findFreeAddr(dst,vm->reg->byteCount);
 	if(nvm->virt == 0)
 		goto errVmm;
-	if(!reg_addTo(vm->reg,dst->physPDirAddr))
+	if(!reg_addTo(vm->reg,dst->pagedir))
 		goto errVmm;
 	nrno = vmm_findRegIndex(dst);
 	if(nrno < 0)
 		goto errRem;
 	REG(dst,nrno) = nvm;
-	paging_clonePages(src->physPDirAddr,dst->physPDirAddr,vm->virt,nvm->virt,
+	dst->frameCount += paging_clonePages(src->pagedir,dst->pagedir,vm->virt,nvm->virt,
 			BYTES_2_PAGES(vm->reg->byteCount),true);
 	return nrno;
 
 errRem:
-	reg_remFrom(vm->reg,dst->physPDirAddr);
+	reg_remFrom(vm->reg,dst->pagedir);
 errVmm:
 	vmm_free(nvm);
 	return ERR_NOT_ENOUGH_MEM;
@@ -282,18 +291,18 @@ s32 vmm_cloneAll(sProc *dst) {
 				goto error;
 			nvm->virt = vm->virt;
 			if(vm->reg->flags & RF_SHAREABLE) {
-				reg_addTo(vm->reg,dst->physPDirAddr);
+				reg_addTo(vm->reg,dst->pagedir);
 				nvm->reg = vm->reg;
 			}
 			else {
-				nvm->reg = reg_clone(dst->physPDirAddr,vm->reg);
+				nvm->reg = reg_clone(dst->pagedir,vm->reg);
 				if(nvm->reg == NULL)
 					goto error;
 			}
 			regs[i] = nvm;
 			/* now copy the pages */
-			paging_clonePages(src->physPDirAddr,dst->physPDirAddr,vm->virt,nvm->virt,
-					BYTES_2_PAGES(nvm->reg->byteCount),vm->reg->flags & RF_SHAREABLE);
+			dst->frameCount += paging_clonePages(src->pagedir,dst->pagedir,vm->virt,
+					nvm->virt,BYTES_2_PAGES(nvm->reg->byteCount),vm->reg->flags & RF_SHAREABLE);
 			/* add frames to copy-on-write, if not shared */
 			if(!(vm->reg->flags & RF_SHAREABLE)) {
 				u32 pcount = BYTES_2_PAGES(vm->reg->byteCount), virt = nvm->virt;
@@ -311,6 +320,8 @@ s32 vmm_cloneAll(sProc *dst) {
 						nvm->reg->pageFlags[j] |= PF_COPYONWRITE;
 						if(!cow_add(dst,frameNo,false))
 							goto error;
+						/* we don't own the frame yet */
+						dst->frameCount--;
 					}
 					virt += PAGE_SIZE;
 				}
@@ -375,7 +386,7 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 			}
 			else
 				virt = vm->virt + ROUNDUP(oldSize);
-			paging_mapTo(p->physPDirAddr,virt,NULL,amount,mapFlags);
+			p->frameCount += paging_mapTo(p->pagedir,virt,NULL,amount,mapFlags);
 		}
 		else {
 			if(vm->reg->flags & RF_STACK) {
@@ -384,7 +395,7 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 			}
 			else
 				virt = vm->virt + ROUNDUP(vm->reg->byteCount);
-			paging_unmapFrom(p->physPDirAddr,virt,-amount,true);
+			p->frameCount -= paging_unmapFrom(p->pagedir,virt,-amount,true);
 		}
 	}
 	return ((vm->reg->flags & RF_STACK) ? oldVirt : oldVirt + ROUNDUP(oldSize)) / PAGE_SIZE;

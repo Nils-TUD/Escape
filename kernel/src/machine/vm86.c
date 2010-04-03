@@ -472,11 +472,11 @@ static void vm86_copyPtrResult(sVM86Memarea *areas,u16 areaCount) {
 			if(virt + areas[i].data.ptr.size > virt && virt + areas[i].data.ptr.size <= 1 * M + 64 * K) {
 				if(frameNos[virt / PAGE_SIZE] != virt / PAGE_SIZE) {
 					u32 pcount = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) + areas[i].data.ptr.size);
-					paging_map(TEMP_MAP_AREA,frameNos + virt / PAGE_SIZE,pcount,PG_PRESENT | PG_SUPERVISOR);
+					u32 temp = paging_mapToTemp(frameNos + virt / PAGE_SIZE,pcount);
 					memcpy((void*)areas[i].data.ptr.result,
-							(void*)(TEMP_MAP_AREA + (virt & (PAGE_SIZE - 1))),
+							(void*)(temp + (virt & (PAGE_SIZE - 1))),
 							areas[i].data.ptr.size);
-					paging_unmap(TEMP_MAP_AREA,pcount,false);
+					paging_unmapFromTemp(pcount);
 				}
 				else {
 					/* note that the first MiB is mapped to 0xC0000000, too */
@@ -489,10 +489,10 @@ static void vm86_copyPtrResult(sVM86Memarea *areas,u16 areaCount) {
 			u32 start = areas[i].data.direct.dst / PAGE_SIZE;
 			u32 virt = (u32)areas[i].data.direct.src;
 			u32 pages = BYTES_2_PAGES((virt & (PAGE_SIZE - 1)) + areas[i].data.direct.size);
-			paging_map(TEMP_MAP_AREA,frameNos + start,pages,PG_PRESENT | PG_WRITABLE);
-			memcpy((void*)virt,(void*)(TEMP_MAP_AREA + (virt & (PAGE_SIZE - 1))),
+			u32 temp = paging_mapToTemp(frameNos + start,pages);
+			memcpy((void*)virt,(void*)(temp + (virt & (PAGE_SIZE - 1))),
 					areas[i].data.direct.size);
-			paging_unmap(TEMP_MAP_AREA,pages,false);
+			paging_unmapFromTemp(pages);
 		}
 	}
 }

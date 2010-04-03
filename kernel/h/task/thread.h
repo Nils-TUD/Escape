@@ -264,7 +264,7 @@ s32 thread_extendStack(u32 address);
  * @param stackFrame will contain the stack-frame that has been used for the kernel-stack of the
  * 	new thread
  * @param cloneProc whether a process is cloned or just a thread
- * @return the number of allocated frames on success
+ * @return 0 on success
  */
 s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc);
 
@@ -274,9 +274,8 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
  * @param t the thread
  * @param destroyStacks whether the stacks should be destroyed (should be true if the process
  *  will not be destroyed)
- * @return the number of free'd frames
  */
-u32 thread_destroy(sThread *t,bool destroyStacks);
+void thread_destroy(sThread *t,bool destroyStacks);
 
 
 /* #### TEST/DEBUG FUNCTIONS #### */

@@ -21,7 +21,7 @@
 #define PARSER_H_
 
 #include <esc/common.h>
-#include "driver.h"
+#include "idriver.h"
 
 /**
  * Parses the given drivers-file and creates an array of sDriverLoad's.

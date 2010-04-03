@@ -33,8 +33,9 @@ void cow_init(void);
  * to a copy-on-write page!
  *
  * @param address the address
+ * @return the number of frames that should be added to the current process
  */
-void cow_pagefault(u32 address);
+u32 cow_pagefault(u32 address);
 
 /**
  * Adds the given frame and process to the cow-list.
@@ -51,8 +52,10 @@ bool cow_add(sProc *p,u32 frameNo,bool isParent);
  *
  * @param p the process
  * @param frameNo the frame-number
+ * @param foundOther will be set to true if another process still uses the frame
+ * @return the number of frames to remove from <p>
  */
-bool cow_remove(sProc *p,u32 frameNo);
+u32 cow_remove(sProc *p,u32 frameNo,bool *foundOther);
 
 #if DEBUGGING
 

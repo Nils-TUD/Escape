@@ -46,17 +46,18 @@ void cow_init(void) {
 	assert(cowFrames != NULL);
 }
 
-void cow_pagefault(u32 address) {
+u32 cow_pagefault(u32 address) {
 	sSLNode *n,*ln;
 	sCOW *cow;
 	bool owner;
 	sSLNode *ourCOW,*ourPrevCOW;
 	bool foundOther;
-	u32 flags,frameNumber;
+	u32 frmCount,flags,frameNumber;
 	sProc *cp = proc_getRunning();
 
 	/* search through the copy-on-write-list whether there is another one who wants to get
 	 * the frame */
+	frmCount = 0;
 	owner = false;
 	ourCOW = NULL;
 	ourPrevCOW = NULL;
@@ -94,15 +95,16 @@ void cow_pagefault(u32 address) {
 	/* if we're not the owner of this cow-page, we don't "own" the physical mem yet. so
 	 * we're changing that here */
 	if(!owner)
-		cp->frameCount++;
+		frmCount++;
 
 	/* copy? */
 	if(foundOther) {
 		/* map the frame and copy it */
-		paging_map(TEMP_MAP_PAGE,&frameNumber,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
-		memcpy((void*)(address & ~(PAGE_SIZE - 1)),(void*)TEMP_MAP_PAGE,PAGE_SIZE);
-		paging_unmap(TEMP_MAP_PAGE,1,false);
+		u32 temp = paging_mapToTemp(&frameNumber,1);
+		memcpy((void*)(address & ~(PAGE_SIZE - 1)),(void*)temp,PAGE_SIZE);
+		paging_unmapFromTemp(1);
 	}
+	return frmCount;
 }
 
 bool cow_add(sProc *p,u32 frameNo,bool isParent) {
@@ -120,20 +122,22 @@ bool cow_add(sProc *p,u32 frameNo,bool isParent) {
 	return true;
 }
 
-bool cow_remove(sProc *p,u32 frameNo) {
+u32 cow_remove(sProc *p,u32 frameNo,bool *foundOther) {
 	sSLNode *n,*tn,*ln;
 	sCOW *cow;
-	bool foundOwn = false,foundOther = false;
+	u32 frmCount = 0;
+	bool foundOwn = false;
 
 	/* search for the frame in the COW-list */
 	ln = NULL;
+	*foundOther = false;
 	for(n = sll_begin(cowFrames); n != NULL; ) {
 		cow = (sCOW*)n->data;
 		if(cow->proc == p && cow->frameNumber == frameNo) {
 			/* remove from COW-list */
 			tn = n->next;
 			if(cow->isOwner)
-				p->frameCount--;
+				frmCount++;
 			kheap_free(cow);
 			sll_removeNode(cowFrames,n,ln);
 			n = tn;
@@ -143,16 +147,14 @@ bool cow_remove(sProc *p,u32 frameNo) {
 
 		/* usage of other process? */
 		if(cow->frameNumber == frameNo)
-			foundOther = true;
+			*foundOther = true;
 		/* we can stop if we have both */
-		if(foundOther && foundOwn)
+		if(*foundOther && foundOwn)
 			break;
 		ln = n;
 		n = n->next;
 	}
-
-	/* if no other process uses this frame, we have to free it */
-	return !foundOther;
+	return frmCount;
 }
 
 

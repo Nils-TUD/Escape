@@ -212,7 +212,7 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	sThread *t = thread_getRunning();
 	sSLNode *n;
 	sSLList *procs;
-	u32 frame;
+	u32 temp,frame;
 	u8 type;
 	u32 block;
 	addr &= ~(PAGE_SIZE - 1);
@@ -252,9 +252,9 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	if(mm_getFreeFrmCount(MM_DEF) == 0)
 		util_panic("No free frame to swap in");
 	frame = mm_allocateFrame(MM_DEF);
-	paging_map(TEMP_MAP_AREA,&frame,1,PG_PRESENT | PG_SUPERVISOR);
-	memcpy((void*)TEMP_MAP_AREA,buffer,PAGE_SIZE);
-	paging_unmap(TEMP_MAP_AREA,1,false);
+	temp = paging_mapToTemp(&frame,1);
+	memcpy((void*)temp,buffer,PAGE_SIZE);
+	paging_unmapFromTemp(1);
 
 	/* mark page as 'not swapped' and 'present' and do the actual swapping */
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
@@ -284,17 +284,17 @@ static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *sp = (sProc*)n->data;
 		/* TODO */
-		u32 phys = 0;/*paging_swapOut(sp,swap_getPageAddr(p,sp,addr,type));*/
+		u32 phys = 0;/*paging_swapOut(sp,swap_getPageAddr(p,sp,addr,type)) >> PAGE_SIZE_SHIFT;*/
 
 		/* if the first one, do the actual swapping */
 		if(n == sll_begin(procs)) {
-			/* copy to a temporary buffer because we can't use TEMP_MAP_AREA when switching
+			/* copy to a temporary buffer because we can't use the temp-area when switching
 			 * threads */
-			paging_map(TEMP_MAP_AREA,&phys,1,PG_PRESENT | PG_SUPERVISOR | PG_ADDR_TO_FRAME);
-			memcpy(buffer,(void*)TEMP_MAP_AREA,PAGE_SIZE);
-			paging_unmap(TEMP_MAP_AREA,1,false);
+			u32 temp = paging_mapToTemp(&phys,1);
+			memcpy(buffer,(void*)temp,PAGE_SIZE);
+			paging_unmapFromTemp(1);
 			/* frame is no longer needed, so free it */
-			mm_freeFrame(phys >> PAGE_SIZE_SHIFT,MM_DEF);
+			mm_freeFrame(phys,MM_DEF);
 
 			assert(vfs_seek(tid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
 			assert(vfs_writeFile(tid,file,buffer,PAGE_SIZE) == PAGE_SIZE);

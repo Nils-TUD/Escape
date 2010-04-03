@@ -34,7 +34,6 @@
 [global intrpt_setEnabled]
 [global intrpt_loadidt]
 [global paging_enable]
-[global paging_flushAddr]
 [global paging_flushTLB]
 [global paging_exchangePDir]
 [global cpu_cpuidSupported]
@@ -68,8 +67,8 @@ MULTIBOOT_CHECKSUM			equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 ; general constants
 ; TODO better way which uses the defines from paging.h?
 PAGE_SIZE								equ 4096
-KERNEL_STACK						equ 0xFF7FE000
-KERNEL_STACK_PTE				equ 0xFFFFDFF8
+KERNEL_STACK						equ 0xFF7FF000
+KERNEL_STACK_PTE				equ 0xFFFFDFFC
 TMP_STACK_SIZE					equ PAGE_SIZE
 USER_STACK							equ 0xC0000000
 
@@ -366,12 +365,6 @@ paging_enable:
 	mov		eax,cr0
 	or		eax,1 << 31										; set bit for paging-enabled
 	mov		cr0,eax												; now paging is enabled :)
-	ret
-
-; NOTE: supported for >= Intel486
-; void paging_flushAddr(u32 address);
-paging_flushAddr:
-	invlpg	[esp + 4]
 	ret
 
 ; void paging_flushTLB(void);

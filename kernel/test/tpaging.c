@@ -58,21 +58,15 @@ static void test_paging(void) {
 
 static void test_paging_foreign(void) {
 	u32 oldFF, newFF;
-	u32 pdirFrame = mm_allocateFrame(MM_DEF);
-	sPDEntry *pde;
-	/* create page-dir and put the page-dir in the last slot of itself */
-	pde = (sPDEntry*)paging_mapToTemp(&pdirFrame,1);
-	memclear((void*)pde,PAGE_SIZE);
-	pde[ADDR_TO_PDINDEX(MAPPED_PTS_START)].present = true;
-	pde[ADDR_TO_PDINDEX(MAPPED_PTS_START)].notSuperVisor = false;
-	pde[ADDR_TO_PDINDEX(MAPPED_PTS_START)].writable = true;
-	pde[ADDR_TO_PDINDEX(MAPPED_PTS_START)].ptFrameNo = pdirFrame;
-	paging_unmapFromTemp(1);
+	sProc *child;
+	tPid pid = proc_getFreePid();
+	test_assertInt(proc_clone(pid,false),0);
+	child = proc_getByPid(pid);
 
 	oldFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
-	test_caseStart("Mapping %d pages to %#08x into pdir %#x",3,0,pdirFrame);
-	test_assertUInt(paging_mapTo(pdirFrame * PAGE_SIZE,0,NULL,3,PG_PRESENT | PG_WRITABLE),4);
-	test_assertUInt(paging_unmapFrom(pdirFrame * PAGE_SIZE,0,3,true),4);
+	test_caseStart("Mapping %d pages to %#08x into pdir %#x",3,0,child->pagedir);
+	test_assertUInt(paging_mapTo(child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE),4);
+	test_assertUInt(paging_unmapFrom(child->pagedir,0,3,true),4);
 	newFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
 	if(oldFF != newFF)
 		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
@@ -80,18 +74,17 @@ static void test_paging_foreign(void) {
 		test_caseSucceded();
 
 	oldFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
-	test_caseStart("Mapping %d pages to %#08x into pdir %#x, separatly",6,0x40000000,pdirFrame);
-	test_assertUInt(paging_mapTo(pdirFrame * PAGE_SIZE,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE),4);
-	test_assertUInt(paging_mapTo(pdirFrame * PAGE_SIZE,0x40003000,NULL,3,PG_PRESENT | PG_WRITABLE),3);
-	test_assertUInt(paging_unmapFrom(pdirFrame * PAGE_SIZE,0x40000000,1,true),1);
-	test_assertUInt(paging_unmapFrom(pdirFrame * PAGE_SIZE,0x40001000,5,true),6);
+	test_caseStart("Mapping %d pages to %#08x into pdir %#x, separatly",6,0x40000000,child->pagedir);
+	test_assertUInt(paging_mapTo(child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE),4);
+	test_assertUInt(paging_mapTo(child->pagedir,0x40003000,NULL,3,PG_PRESENT | PG_WRITABLE),3);
+	test_assertUInt(paging_unmapFrom(child->pagedir,0x40000000,1,true),1);
+	test_assertUInt(paging_unmapFrom(child->pagedir,0x40001000,5,true),6);
 	newFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
 	if(oldFF != newFF)
 		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
 	else
 		test_caseSucceded();
-
-	mm_freeFrame(pdirFrame,MM_DEF);
+	proc_kill(child);
 }
 
 static bool test_paging_cycle(u32 addr,u32 count) {

@@ -48,16 +48,78 @@
 #define ADDR_TO_MAPPED_CUSTOM(mappingArea,addr) ((mappingArea) + \
 		(((u32)(addr) & ~(PAGE_SIZE - 1)) / PT_ENTRY_COUNT))
 
+#define PAGEDIR(ptables)	((u32)(ptables) + PAGE_SIZE * (PT_ENTRY_COUNT - 1))
+
 /**
  * Flushes the TLB-entry for the given virtual address.
  * NOTE: supported for >= Intel486
  */
-#define	FLUSHADDR(addr)	__asm__ __volatile__ ("invlpg (%0)" : : "r" (addr));
+#define	FLUSHADDR(addr)		__asm__ __volatile__ ("invlpg (%0)" : : "r" (addr));
 
 /* converts the given virtual address to a physical
  * (this assumes that the kernel lies at 0xC0000000)
  * Note that this does not work anymore as soon as the GDT is "corrected" and paging enabled! */
-#define VIRT2PHYS(addr) ((u32)(addr) + 0x40000000)
+#define VIRT2PHYS(addr)		((u32)(addr) + 0x40000000)
+
+/* represents a page-directory-entry */
+typedef struct {
+	/* 1 if the page is present in memory */
+	u32 present			: 1,
+	/* whether the page is writable */
+	writable			: 1,
+	/* if enabled the page may be used by privilege level 0, 1 and 2 only. */
+	notSuperVisor		: 1,
+	/* >= 80486 only. if enabled everything will be written immediatly into memory */
+	pageWriteThrough	: 1,
+	/* >= 80486 only. if enabled the CPU will not put anything from the page in the cache */
+	pageCacheDisable	: 1,
+	/* enabled if the page-table has been accessed (has to be cleared by the OS!) */
+	accessed			: 1,
+	/* 1 ignored bit */
+						: 1,
+	/* whether the pages are 4 KiB (=0) or 4 MiB (=1) large */
+	pageSize			: 1,
+	/* 1 ignored bit */
+						: 1,
+	/* can be used by the OS */
+	/* Indicates that this pagetable exists (but must not necessarily be present) */
+	exists				: 1,
+	/* unused */
+						: 2,
+	/* the physical address of the page-table */
+	ptFrameNo			: 20;
+} sPDEntry;
+
+/* represents a page-table-entry */
+typedef struct {
+	/* 1 if the page is present in memory */
+	u32 present			: 1,
+	/* whether the page is writable */
+	writable			: 1,
+	/* if enabled the page may be used by privilege level 0, 1 and 2 only. */
+	notSuperVisor		: 1,
+	/* >= 80486 only. if enabled everything will be written immediatly into memory */
+	pageWriteThrough	: 1,
+	/* >= 80486 only. if enabled the CPU will not put anything from the page in the cache */
+	pageCacheDisable	: 1,
+	/* enabled if the page has been accessed (has to be cleared by the OS!) */
+	accessed			: 1,
+	/* enabled if the page can not be removed currently (has to be cleared by the OS!) */
+	dirty				: 1,
+	/* 1 ignored bit */
+						: 1,
+	/* The Global, or 'G' above, flag, if set, prevents the TLB from updating the address in
+	 * it's cache if CR3 is reset. Note, that the page global enable bit in CR4 must be set
+	 * to enable this feature. (>= pentium pro) */
+	global				: 1,
+	/* 3 Bits for the OS */
+	/* Indicates that this page exists (but must not necessarily be present) */
+	exists				: 1,
+	/* unused */
+						: 2,
+	/* the physical address of the page */
+	frameNumber			: 20;
+} sPTEntry;
 
 /**
  * Assembler routine to enable paging
@@ -187,8 +249,8 @@ void paging_gdtFinished(void) {
 	paging_flushTLB();
 }
 
-sPDEntry *paging_getProc0PD(void) {
-	return proc0PD;
+tPageDir paging_getProc0PD(void) {
+	return (tPageDir)proc0PD;
 }
 
 /* TODO perhaps we should move isRange*() to vmm? */

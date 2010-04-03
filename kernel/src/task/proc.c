@@ -63,7 +63,7 @@ void proc_init(void) {
 
 	/* do this first because vfs_createProcess may use the kheap so that the kheap needs paging
 	 * and paging refers to the current process's pagedir */
-	p->pagedir = (u32)paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
+	p->pagedir = paging_getProc0PD() & ~KERNEL_AREA_V_ADDR;
 	/* create nodes in vfs */
 	p->threadDir = vfs_createProcess(0,&vfsinfo_procReadHandler);
 	vassert(p->threadDir != NULL,"Not enough mem for init process");

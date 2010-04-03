@@ -95,7 +95,7 @@ extern (C) void* rt_stackBottom()
     }
     else version (Escape)
     {
-    	return cast(void*)0xc0000000;
+    	return cast(void*)0xa0000000;
     }
     else
     {

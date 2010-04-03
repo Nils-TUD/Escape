@@ -98,7 +98,8 @@ static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool read) {
 					c->oldestBlock = bentry->prev;
 				/* remove */
 				bentry->prev->next = bentry->next;
-				bentry->next->prev = bentry->prev;
+				if(bentry->next)
+					bentry->next->prev = bentry->prev;
 				/* put at the beginning */
 				bentry->prev = NULL;
 				bentry->next = c->usedBlocks;

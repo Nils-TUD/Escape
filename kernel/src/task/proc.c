@@ -232,12 +232,13 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->unswappable = 0;
 
 	/* clone page-dir */
-	if((p->frameCount = paging_cloneKernelspace(&stackFrame,&p->pagedir)) < 0)
+	if((res = paging_cloneKernelspace(&stackFrame,&p->pagedir)) < 0)
 		goto errorVFS;
+	p->frameCount = res;
 
 	/* clone regions */
 	p->pid = newPid;
-	/* give the process the same name (maybe changed by exec) */
+	/* give the process the same name (may be changed by exec) */
 	strcpy(p->command,cur->command);
 	p->regions = NULL;
 	p->regSize = 0;
@@ -266,8 +267,10 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	sched_setReady(nt);
 
 	res = proc_finishClone(nt,stackFrame);
-	if(res == 1)
+	if(res == 1) {
+		/* child */
 		return 1;
+	}
 	/* parent */
 	return 0;
 

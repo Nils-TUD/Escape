@@ -141,6 +141,11 @@
 /* start-address of the text */
 #define TEXT_BEGIN				0x1000
 
+typedef struct {
+	u32 ptables;
+	u32 frames;
+} sAllocStats;
+
 /**
  * Inits the paging. Sets up the page-dir and page-tables for the kernel and enables paging
  */
@@ -256,7 +261,7 @@ s32 paging_cloneKernelspace(u32 *stackFrame,tPageDir *pdir);
  * @param pdir the page-dir
  * @return the number of free'd frames
  */
-u32 paging_destroyPDir(tPageDir pdir);
+sAllocStats paging_destroyPDir(tPageDir pdir);
 
 /**
  * @param virt the virtual address
@@ -280,7 +285,7 @@ u32 paging_getFrameNo(u32 virt);
  * @param share wether to share the frames
  * @return the number of allocated frames (including page-tables)
  */
-u32 paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,u32 count,bool share);
+sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,u32 count,bool share);
 
 /**
  * Maps <count> virtual addresses starting at <virt> to the given frames in the CURRENT page-directory.
@@ -294,7 +299,7 @@ u32 paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,u32 coun
  * @param flags some flags for the pages (PG_*)
  * @return the number of allocated frames (including page-tables)
  */
-u32 paging_map(u32 virt,u32 *frames,u32 count,u8 flags);
+sAllocStats paging_map(u32 virt,u32 *frames,u32 count,u8 flags);
 
 /**
  * Maps <count> virtual addresses starting at <virt> to the given frames in the given page-directory.
@@ -309,7 +314,7 @@ u32 paging_map(u32 virt,u32 *frames,u32 count,u8 flags);
  * @param flags some flags for the pages (PG_*)
  * @return the number of allocated frames (including page-tables)
  */
-u32 paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags);
+sAllocStats paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags);
 
 /**
  * Removes <count> pages starting at <virt> from the page-tables in the CURRENT page-directory.
@@ -321,7 +326,7 @@ u32 paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags);
  * @param freeFrames whether the frames should be free'd and not just unmapped
  * @return the number of free'd frames
  */
-u32 paging_unmap(u32 virt,u32 count,bool freeFrames);
+sAllocStats paging_unmap(u32 virt,u32 count,bool freeFrames);
 
 /**
  * Removes <count> pages starting at <virt> from the page-tables in the given page-directory.
@@ -334,7 +339,7 @@ u32 paging_unmap(u32 virt,u32 count,bool freeFrames);
  * @param freeFrames whether the frames should be free'd and not just unmapped
  * @return the number of free'd frames
  */
-u32 paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames);
+sAllocStats paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames);
 
 /**
  * Prints the user-part of the given page-directory to the given buffer

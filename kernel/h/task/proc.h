@@ -70,13 +70,11 @@ typedef struct {
 	tPid parentPid;
 	/* the physical address for the page-directory of this process */
 	tPageDir pagedir;
-	/* the number of frames (physical mem) the process uses:
-	 * - for text-usages: just the first user owns the frames
-	 * - for shared-mem: just the creator owns the frames
-	 * - for mapPhysical: doesn't count
-	 * - paging-structures are counted, too
-	 */
-	u32 frameCount;
+	/* the number of frames the process owns, i.e. no cow, no shm, no text, no mapPhysical.
+	 * paging-structures are counted, too */
+	u32 ownFrames;
+	/* the number of frames the process uses, but maybe other processes as well */
+	u32 sharedFrames;
 	/* the regions */
 	u32 regSize;
 	void *regions;

@@ -71,7 +71,7 @@ void proc_init(void) {
 	p->pid = 0;
 	p->parentPid = 0;
 	/* 1 pagedir, 1 page-table for kernel-stack, 1 for kernelstack */
-	p->frameCount = 1 + 1 + 1;
+	p->ownFrames = 1 + 1 + 1;
 	/* the first process has no text, data and stack */
 	p->swapped = 0;
 	p->unswappable = 0;
@@ -234,7 +234,7 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	/* clone page-dir */
 	if((res = paging_cloneKernelspace(&stackFrame,&p->pagedir)) < 0)
 		goto errorVFS;
-	p->frameCount = res;
+	p->ownFrames = res;
 
 	/* clone regions */
 	p->pid = newPid;
@@ -700,7 +700,8 @@ void proc_dbg_print(sProc *p) {
 	sSLNode *n;
 	vid_printf("proc %d:\n",p->pid);
 	vid_printf("\tppid=%d, cmd=%s, pdir=%x\n",p->parentPid,p->command,p->pagedir);
-	vid_printf("\tunswappable=%d, swapped=%d\n",p->unswappable,p->swapped);
+	vid_printf("\townFrames=%u, sharedFrames=%u\n",p->ownFrames,p->sharedFrames);
+	vid_printf("\tunswappable=%u, swapped=%u\n",p->unswappable,p->swapped);
 	for(n = sll_begin(p->threads); n != NULL; n = n->next)
 		thread_dbg_print((sThread*)n->data);
 	vid_printf("\n");

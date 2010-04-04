@@ -42,10 +42,9 @@ u32 cow_pagefault(u32 address);
  *
  * @param p the process
  * @param frameNo the frame-number
- * @param isParent wether its the parent-process of the cow-create-progress
  * @return true if successfull
  */
-bool cow_add(sProc *p,u32 frameNo,bool isParent);
+bool cow_add(sProc *p,u32 frameNo);
 
 /**
  * Removes the given process and frame from the cow-list

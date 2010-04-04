@@ -59,14 +59,19 @@ static void test_paging(void) {
 static void test_paging_foreign(void) {
 	u32 oldFF, newFF;
 	sProc *child;
+	sAllocStats stats;
 	tPid pid = proc_getFreePid();
 	test_assertInt(proc_clone(pid,false),0);
 	child = proc_getByPid(pid);
 
 	oldFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
 	test_caseStart("Mapping %d pages to %#08x into pdir %#x",3,0,child->pagedir);
-	test_assertUInt(paging_mapTo(child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE),4);
-	test_assertUInt(paging_unmapFrom(child->pagedir,0,3,true),4);
+	stats = paging_mapTo(child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE);
+	test_assertUInt(stats.frames,3);
+	test_assertUInt(stats.ptables,1);
+	stats = paging_unmapFrom(child->pagedir,0,3,true);
+	test_assertUInt(stats.frames,3);
+	test_assertUInt(stats.ptables,1);
 	newFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
 	if(oldFF != newFF)
 		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
@@ -75,10 +80,18 @@ static void test_paging_foreign(void) {
 
 	oldFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
 	test_caseStart("Mapping %d pages to %#08x into pdir %#x, separatly",6,0x40000000,child->pagedir);
-	test_assertUInt(paging_mapTo(child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE),4);
-	test_assertUInt(paging_mapTo(child->pagedir,0x40003000,NULL,3,PG_PRESENT | PG_WRITABLE),3);
-	test_assertUInt(paging_unmapFrom(child->pagedir,0x40000000,1,true),1);
-	test_assertUInt(paging_unmapFrom(child->pagedir,0x40001000,5,true),6);
+	stats = paging_mapTo(child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
+	test_assertUInt(stats.frames,3);
+	test_assertUInt(stats.ptables,1);
+	stats = paging_mapTo(child->pagedir,0x40003000,NULL,3,PG_PRESENT | PG_WRITABLE);
+	test_assertUInt(stats.frames,3);
+	test_assertUInt(stats.ptables,0);
+	stats = paging_unmapFrom(child->pagedir,0x40000000,1,true);
+	test_assertUInt(stats.frames,1);
+	test_assertUInt(stats.ptables,0);
+	stats = paging_unmapFrom(child->pagedir,0x40001000,5,true);
+	test_assertUInt(stats.frames,5);
+	test_assertUInt(stats.ptables,1);
 	newFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
 	if(oldFF != newFF)
 		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);

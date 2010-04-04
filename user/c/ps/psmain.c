@@ -50,7 +50,8 @@ typedef struct {
 	tPid pid;
 	tPid parentPid;
 	u32 pages;
-	u32 frames;
+	u32 ownFrames;
+	u32 sharedFrames;
 	u32 swapped;
 	uLongLong ucycleCount;
 	uLongLong kcycleCount;
@@ -183,16 +184,19 @@ int main(int argc,char *argv[]) {
 	/* determine max-values (we want to have a min-width here :)) */
 	u32 maxPid = 100;
 	u32 maxPpid = 100;
-	u32 maxPmem = 10000;
-	u32 maxVmem = 10000;
-	u32 maxSmem = 10000;
+	u32 maxPmem = 1000;
+	u32 maxVmem = 1000;
+	u32 maxSmem = 1000;
+	u32 maxShmem = 1000;
 	for(i = 0; i < numProcs; i++) {
 		if(procs[i].pid > maxPid)
 			maxPid = procs[i].pid;
 		if(procs[i].parentPid > maxPpid)
 			maxPpid = procs[i].parentPid;
-		if(procs[i].frames > maxPmem)
-			maxPmem = procs[i].frames;
+		if(procs[i].ownFrames > maxPmem)
+			maxPmem = procs[i].ownFrames;
+		if(procs[i].sharedFrames > maxShmem)
+			maxShmem = procs[i].sharedFrames;
 		if(procs[i].swapped > maxSmem)
 			maxSmem = procs[i].swapped;
 		if(procs[i].pages > maxVmem)
@@ -211,10 +215,11 @@ int main(int argc,char *argv[]) {
 	maxPmem = getuwidth(maxPmem * 4,10);
 	maxVmem = getuwidth(maxVmem * 4,10);
 	maxSmem = getuwidth(maxSmem * 4,10);
+	maxShmem = getuwidth(maxShmem * 4,10);
 
 	/* now print processes */
-	printf("%*sPID%*sPPID%*sPMEM%*sVMEM%*sSMEM  STATE    %%CPU (USER,KERNEL) COMMAND\n",
-			maxPid - 3,"",maxPpid - 1,"",maxPmem + 1,"",maxVmem + 1,"",maxSmem + 1,"");
+	printf("%*sPID%*sPPID%*sPMEM%*sSHMEM%*sVMEM%*sSMEM  STATE    %%CPU (USER,KERNEL) COMMAND\n",
+			maxPid - 3,"",maxPpid - 1,"",maxPmem + 1,"",maxShmem,"",maxVmem + 1,"",maxSmem + 1,"");
 
 	for(i = 0; i < numProcs; i++) {
 		u64 procCycles;
@@ -224,8 +229,10 @@ int main(int argc,char *argv[]) {
 		cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
 		userPercent = (u32)(100. / (procCycles / (double)procs[i].ucycleCount.val64));
 		kernelPercent = (u32)(100. / (procCycles / (double)procs[i].kcycleCount.val64));
-		printf("%*u   %*u %*u KiB %*u KiB %*u KiB  -       %4.1f%% (%3d%%,%3d%%)   %s\n",
-				maxPid,procs[i].pid,maxPpid,procs[i].parentPid,maxPmem,procs[i].frames * 4,
+		printf("%*u   %*u %*u KiB %*u KiB %*u KiB %*u KiB  -       %4.1f%% (%3d%%,%3d%%)   %s\n",
+				maxPid,procs[i].pid,maxPpid,procs[i].parentPid,
+				maxPmem,procs[i].ownFrames * 4,
+				maxShmem,procs[i].sharedFrames * 4,
 				maxVmem,procs[i].pages * 4,
 				maxSmem,procs[i].swapped * 4,
 				cyclePercent,userPercent,kernelPercent,procs[i].command);
@@ -239,7 +246,7 @@ int main(int argc,char *argv[]) {
 				u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
 				printf("  %c\xC4%*s%*d%*s%s %4.1f%% (%3d%%,%3d%%)\n",
 						n->next == NULL ? 0xC0 : 0xC3,
-						maxPid - 3,"",maxPpid,t->tid,19 + maxPmem + maxVmem + maxSmem,"",
+						maxPid - 3,"",maxPpid,t->tid,19 + maxPmem + maxShmem + maxVmem + maxSmem,"",
 						states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
 			}
 		}
@@ -365,8 +372,8 @@ static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
 	/* parse string */
 	sscanf(
 		buf,
-		"%*s%hu" "%*s%hu" "%*s%s" "%*s%u" "%*s%u" "%*s%u",
-		&p->pid,&p->parentPid,&p->command,&p->pages,&p->frames,&p->swapped
+		"%*s%hu" "%*s%hu" "%*s%s" "%*s%u" "%*s%u" "%*s%u" "%*s%u",
+		&p->pid,&p->parentPid,&p->command,&p->pages,&p->ownFrames,&p->sharedFrames,&p->swapped
 	);
 	p->threads = sll_create();
 

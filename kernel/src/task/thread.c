@@ -437,6 +437,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 			goto errThread;
 		/* add kernel-stack */
 		*stackFrame = t->kstackFrame = mm_allocateFrame(MM_DEF);
+		p->ownFrames++;
 	}
 
 	/* create thread-list if necessary */
@@ -470,6 +471,7 @@ errAppend:
 errStack:
 	if(!cloneProc) {
 		mm_freeFrame(t->kstackFrame,MM_DEF);
+		p->ownFrames--;
 		vmm_remove(p,t->stackRegion);
 	}
 errThread:
@@ -504,6 +506,7 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 		vmm_remove(t->proc,t->stackRegion);
 		/* free kernel-stack */
 		mm_freeFrame(t->kstackFrame,MM_DEF);
+		t->proc->ownFrames++;
 	}
 
 	/* release file-descriptors */

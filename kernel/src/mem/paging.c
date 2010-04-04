@@ -396,25 +396,25 @@ s32 paging_cloneKernelspace(u32 *stackFrame,tPageDir *pdir) {
 	return frmCount;
 }
 
-u32 paging_destroyPDir(tPageDir pdir) {
-	u32 frmCnt = 0;
+sAllocStats paging_destroyPDir(tPageDir pdir) {
+	sAllocStats stats;
 	u32 ptables = paging_getPTables(pdir);
 	sPDEntry *pde;
 	assert(pdir != curPDir);
 	/* free frame for kernel-stack */
-	frmCnt += paging_unmapFrom(pdir,KERNEL_STACK,1,true);
+	stats = paging_unmapFrom(pdir,KERNEL_STACK,1,true);
 	/* free page-table for kernel-stack */
 	pde = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(KERNEL_STACK);
 	pde->present = false;
 	pde->exists = false;
 	mm_freeFrame(pde->ptFrameNo,MM_DEF);
-	frmCnt++;
+	stats.ptables++;
 	/* free page-dir */
 	mm_freeFrame(pdir >> PAGE_SIZE_SHIFT,MM_DEF);
-	frmCnt++;
+	stats.ptables++;
 	/* ensure that we don't use it again */
 	otherPDir = 0;
-	return frmCnt;
+	return stats;
 }
 
 u32 paging_getFrameNo(u32 virt) {
@@ -422,11 +422,12 @@ u32 paging_getFrameNo(u32 virt) {
 	return pt->frameNumber;
 }
 
-u32 paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,u32 count,bool share) {
+sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,u32 count,bool share) {
+	sAllocStats stats = {0,0};
 	u32 srctables = paging_getPTables(src);
-	u32 frmCount = 0;
 	assert(src != dst && (src == curPDir || dst == curPDir));
 	while(count-- > 0) {
+		sAllocStats mstats;
 		sPTEntry *pte = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(srctables,virtSrc);
 		u32 *frames = NULL;
 		u8 flags = 0;
@@ -443,27 +444,29 @@ u32 paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,u32 coun
 			flags |= PG_ADDR_TO_FRAME;
 			frames = (u32*)pte;
 		}
-		frmCount += paging_mapTo(dst,virtDst,frames,1,flags);
+		mstats = paging_mapTo(dst,virtDst,frames,1,flags);
+		stats.frames += mstats.frames;
+		stats.ptables += mstats.ptables;
 		/* if copy-on-write should be used, mark it as readable for the current (parent), too */
 		if(!share && pte->present)
 			paging_mapTo(src,virtSrc,NULL,1,flags | PG_KEEPFRM);
 		virtSrc += PAGE_SIZE;
 		virtDst += PAGE_SIZE;
 	}
-	return frmCount;
+	return stats;
 }
 
-u32 paging_map(u32 virt,u32 *frames,u32 count,u8 flags) {
+sAllocStats paging_map(u32 virt,u32 *frames,u32 count,u8 flags) {
 	sProc *p = proc_getRunning();
 	return paging_mapTo(p->pagedir,virt,frames,count,flags);
 }
 
-u32 paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags) {
+sAllocStats paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags) {
+	sAllocStats stats = {0,0};
 	u32 ptables = paging_getPTables(pdir);
 	u32 pdirAddr = PAGEDIR(ptables);
 	sPDEntry *pde;
 	sPTEntry *pte;
-	u32 frmCount = 0;
 	assert(!(flags & ~(PG_WRITABLE | PG_SUPERVISOR | PG_PRESENT | PG_ADDR_TO_FRAME |
 			PG_GLOBAL | PG_KEEPFRM)));
 
@@ -480,7 +483,7 @@ u32 paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags) {
 			/* is there another reason? :) */
 			pde->writable = true;
 			pde->notSuperVisor = !((flags & PG_SUPERVISOR) >> PG_SUPERVISOR_SHIFT);
-			frmCount++;
+			stats.ptables++;
 
 			paging_flushPageTable(virt,ptables);
 			/* clear frame (ensure that we start at the beginning of the frame) */
@@ -501,7 +504,7 @@ u32 paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags) {
 		if(!(flags & PG_KEEPFRM) && (flags & PG_PRESENT)) {
 			if(frames == NULL) {
 				pte->frameNumber = mm_allocateFrame(MM_DEF);
-				frmCount++;
+				stats.frames++;
 			}
 			else {
 				if(flags & PG_ADDR_TO_FRAME)
@@ -519,17 +522,17 @@ u32 paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags) {
 		virt += PAGE_SIZE;
 	}
 
-	return frmCount;
+	return stats;
 }
 
-u32 paging_unmap(u32 virt,u32 count,bool freeFrames) {
+sAllocStats paging_unmap(u32 virt,u32 count,bool freeFrames) {
 	sProc *p = proc_getRunning();
 	return paging_unmapFrom(p->pagedir,virt,count,freeFrames);
 }
 
-u32 paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames) {
+sAllocStats paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames) {
+	sAllocStats stats = {0,0};
 	u32 ptables = paging_getPTables(pdir);
-	u32 freed = 0;
 	u32 pti = PT_ENTRY_COUNT;
 	u32 lastPti = PT_ENTRY_COUNT;
 	sPTEntry *pte = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
@@ -538,7 +541,7 @@ u32 paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames) {
 		pti = ADDR_TO_PDINDEX(virt);
 		if(pti != lastPti) {
 			if(lastPti != PT_ENTRY_COUNT && virt < KERNEL_AREA_V_ADDR)
-				freed += paging_remEmptyPt(ptables,lastPti);
+				stats.ptables += paging_remEmptyPt(ptables,lastPti);
 			lastPti = pti;
 		}
 
@@ -547,7 +550,7 @@ u32 paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames) {
 			pte->present = false;
 			if(freeFrames) {
 				mm_freeFrame(pte->frameNumber,MM_DEF);
-				freed++;
+				stats.frames++;
 			}
 		}
 		pte->exists = false;
@@ -562,8 +565,8 @@ u32 paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames) {
 	}
 	/* check if the last changed pagetable is empty */
 	if(pti != PT_ENTRY_COUNT && virt < KERNEL_AREA_V_ADDR)
-		freed += paging_remEmptyPt(ptables,pti);
-	return freed;
+		stats.ptables += paging_remEmptyPt(ptables,pti);
+	return stats;
 }
 
 void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {

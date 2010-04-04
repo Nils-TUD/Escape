@@ -30,7 +30,6 @@
 
 typedef struct {
 	u32 frameNumber;
-	bool isOwner;
 	sProc *proc;
 } sCOW;
 
@@ -49,7 +48,6 @@ void cow_init(void) {
 u32 cow_pagefault(u32 address) {
 	sSLNode *n,*ln;
 	sCOW *cow;
-	bool owner;
 	sSLNode *ourCOW,*ourPrevCOW;
 	bool foundOther;
 	u32 frmCount,flags,frameNumber;
@@ -58,7 +56,6 @@ u32 cow_pagefault(u32 address) {
 	/* search through the copy-on-write-list whether there is another one who wants to get
 	 * the frame */
 	frmCount = 0;
-	owner = false;
 	ourCOW = NULL;
 	ourPrevCOW = NULL;
 	foundOther = false;
@@ -70,7 +67,6 @@ u32 cow_pagefault(u32 address) {
 			if(cow->proc == cp) {
 				ourCOW = n;
 				ourPrevCOW = ln;
-				owner = cow->isOwner;
 			}
 			else
 				foundOther = true;
@@ -92,10 +88,7 @@ u32 cow_pagefault(u32 address) {
 	if(!foundOther)
 		flags |= PG_KEEPFRM;
 	paging_map(address,NULL,1,flags);
-	/* if we're not the owner of this cow-page, we don't "own" the physical mem yet. so
-	 * we're changing that here */
-	if(!owner)
-		frmCount++;
+	frmCount++;
 
 	/* copy? */
 	if(foundOther) {
@@ -107,14 +100,13 @@ u32 cow_pagefault(u32 address) {
 	return frmCount;
 }
 
-bool cow_add(sProc *p,u32 frameNo,bool isParent) {
+bool cow_add(sProc *p,u32 frameNo) {
 	sCOW *cc;
 	cc = (sCOW*)kheap_alloc(sizeof(sCOW));
 	if(cc == NULL)
 		return false;
 	cc->frameNumber = frameNo;
 	cc->proc = p;
-	cc->isOwner = isParent;
 	if(!sll_append(cowFrames,cc)) {
 		kheap_free(cc);
 		return false;
@@ -136,8 +128,7 @@ u32 cow_remove(sProc *p,u32 frameNo,bool *foundOther) {
 		if(cow->proc == p && cow->frameNumber == frameNo) {
 			/* remove from COW-list */
 			tn = n->next;
-			if(cow->isOwner)
-				frmCount++;
+			frmCount++;
 			kheap_free(cow);
 			sll_removeNode(cowFrames,n,ln);
 			n = tn;

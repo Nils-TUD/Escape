@@ -962,6 +962,11 @@ sVFSNode *vfs_createProcess(tPid pid,fRead handler) {
 	if(n == NULL)
 		goto errorDir;
 
+	/* create regions-info-node */
+	n = vfsn_createFile(KERNEL_TID,dir,(char*)"regions",vfsinfo_regionsReadHandler,NULL);
+	if(n == NULL)
+		goto errorDir;
+
 	/* create threads-dir */
 	tdir = vfsn_createDir(dir,(char*)"threads");
 	if(tdir == NULL)

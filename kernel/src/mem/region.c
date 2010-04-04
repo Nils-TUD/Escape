@@ -138,10 +138,7 @@ sRegion *reg_clone(tPageDir pdir,sRegion *reg) {
 	return clone;
 }
 
-
-#if DEBUGGING
-
-void reg_dbg_print(sRegion *reg) {
+void reg_sprintf(sStringBuffer *buf,sRegion *reg) {
 	u32 i,x;
 	sSLNode *n;
 	struct {
@@ -153,27 +150,27 @@ void reg_dbg_print(sRegion *reg) {
 		{"Writable",RF_WRITABLE},
 		{"Stack",RF_STACK},
 	};
-	vid_printf("\t\tSize: %u bytes\n",reg->byteCount);
-	vid_printf("\t\tflags: ");
+	prf_sprintf(buf,"\tSize: %u bytes\n",reg->byteCount);
+	prf_sprintf(buf,"\tflags: ");
 	for(i = 0; i < ARRAY_SIZE(flagNames); i++) {
 		if(reg->flags & flagNames[i].no)
-			vid_printf("%s ",flagNames[i].name);
+			prf_sprintf(buf,"%s ",flagNames[i].name);
 	}
-	vid_printf("\n");
-	vid_printf("\t\tbinary: path=%s modified=%u\n",
-			reg->binary.path ? reg->binary.path : "NULL",reg->binary.modifytime);
-	vid_printf("\t\tbinOffset: %#x\n",reg->binOffset);
-	vid_printf("\t\tPDirs: ");
+	prf_sprintf(buf,"\n");
+	if(reg->binary.path) {
+		prf_sprintf(buf,"\tbinary: path=%s modified=%u offset=%#x\n",
+				reg->binary.path ? reg->binary.path : "NULL",reg->binary.modifytime,reg->binOffset);
+	}
+	prf_sprintf(buf,"\tPDirs: ");
 	for(n = sll_begin(reg->pdirs); n != NULL; n = n->next)
-		vid_printf("%#x ",(u32)n->data);
-	vid_printf("\n");
-	vid_printf("\t\tPages (%d):\n",reg->pfSize);
-	for(i = 0, x = BYTES_2_PAGES(reg->byteCount); i < x; i++)
-		vid_printf("\t\t\t[%d] %c%c%c\n",i,
+		prf_sprintf(buf,"%#x ",(u32)n->data);
+	prf_sprintf(buf,"\n");
+	prf_sprintf(buf,"\tPages (%d):\n",reg->pfSize);
+	for(i = 0, x = BYTES_2_PAGES(reg->byteCount); i < x; i++) {
+		prf_sprintf(buf,"\t\t[%d] %c%c%c\n",i,
 				reg->pageFlags[i] & PF_COPYONWRITE ? 'c' : '-',
 				reg->pageFlags[i] & PF_DEMANDLOAD ? 'l' : '-',
 				reg->pageFlags[i] & PF_DEMANDZERO ? 'z' : '-',
 				reg->pageFlags[i] & PF_SWAPPED ? 's' : '-');
+	}
 }
-
-#endif

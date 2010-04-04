@@ -21,6 +21,7 @@
 #define REGION_H_
 
 #include <common.h>
+#include <printf.h>
 #include <sllist.h>
 
 #define PF_COPYONWRITE		1
@@ -114,15 +115,12 @@ bool reg_grow(sRegion *reg,s32 amount);
  */
 sRegion *reg_clone(tPageDir pdir,sRegion *reg);
 
-#if DEBUGGING
-
 /**
- * Prints the given region
+ * Prints information about the given region in the given buffer
  *
+ * @param buf the buffer
  * @param reg the region
  */
-void reg_dbg_print(sRegion *reg);
-
-#endif
+void reg_sprintf(sStringBuffer *buf,sRegion *reg);
 
 #endif /* REGION_H_ */

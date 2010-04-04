@@ -24,6 +24,7 @@
 #include <mem/region.h>
 #include <task/proc.h>
 #include <task/thread.h>
+#include <printf.h>
 
 #define MAX_REGUSE_COUNT	(PROC_COUNT * 8)
 
@@ -164,6 +165,14 @@ s32 vmm_growStackTo(sThread *t,u32 addr);
  * @return the old offset to the region-beginning, in pages
  */
 s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount);
+
+/**
+ * Prints information about all regions in the given process to the given buffer
+ *
+ * @param buf the buffer
+ * @param p the process
+ */
+void vmm_sprintfRegions(sStringBuffer *buf,sProc *p);
 
 #if DEBUGGING
 

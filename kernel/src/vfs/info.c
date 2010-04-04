@@ -85,6 +85,11 @@ static s32 vfsinfo_memUsageReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *
 static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
 
 /**
+ * The read-callback for the regions-read-handler
+ */
+static void vfsinfo_regionsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
+
+/**
  * The read-callback for the virtual-memory-read-handler
  */
 static void vfsinfo_virtMemReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
@@ -106,7 +111,7 @@ s32 vfsinfo_procReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 
 	/* (if the process doesn't call close() the cache will not be invalidated and therefore
 	 * other processes might miss changes) */
 	return vfsrw_readHelper(tid,node,buffer,offset,count,
-			17 * 8 + 7 * 10 + MAX_PROC_NAME_LEN + 1,
+			17 * 7 + 6 * 10 + MAX_PROC_NAME_LEN + 1,
 			vfsinfo_procReadCallback);
 }
 
@@ -117,7 +122,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 	UNUSED(dataSize);
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
-	buf.size = 17 * 8 + 7 * 10 + MAX_PROC_NAME_LEN + 1;
+	buf.size = 17 * 7 + 6 * 10 + MAX_PROC_NAME_LEN + 1;
 	buf.len = 0;
 	vmm_getMemUsage(p,&paging,&pages);
 
@@ -129,12 +134,14 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
+		"%-16s%u\n"
 		,
 		"Pid:",p->pid,
 		"ParentPid:",p->parentPid,
 		"Command:",p->command,
 		"Pages:",pages,
-		"Frames:",p->frameCount,
+		"OwnFrames:",p->ownFrames,
+		"SharedFrames:",p->sharedFrames,
 		"Swapped:",p->swapped
 	);
 }
@@ -284,6 +291,24 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buf
 		"KHeapSize:",kheap,
 		"KHeapUsage:",kheap_getUsedMem()
 	);
+}
+
+s32 vfsinfo_regionsReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	UNUSED(file);
+	return vfsrw_readHelper(tid,node,buffer,offset,count,0,vfsinfo_regionsReadCallback);
+}
+
+static void vfsinfo_regionsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
+	sStringBuffer buf;
+	sProc *p;
+	buf.dynamic = true;
+	buf.str = NULL;
+	buf.size = 0;
+	buf.len = 0;
+	p = proc_getByPid(atoi(node->parent->name));
+	vmm_sprintfRegions(&buf,p);
+	*buffer = buf.str;
+	*dataSize = buf.len + 1;
 }
 
 s32 vfsinfo_virtMemReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {

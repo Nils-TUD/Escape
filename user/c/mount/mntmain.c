@@ -61,7 +61,7 @@ int main(int argc,char *argv[]) {
 		}
 	}
 	if(i >= ARRAY_SIZE(types))
-		error("Unknown type '%s'\n",argv[3]);
+		error("Unknown type '%s'",argv[3]);
 
 	if(mount(rdev,rpath,type) < 0)
 		error("Unable to mount '%s' @ '%s' with type %d",rdev,rpath,type);

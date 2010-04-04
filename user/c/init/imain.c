@@ -47,7 +47,7 @@ int main(void) {
 	sDriverLoad **drivers;
 
 	if(getpid() != 0)
-		error("It's not good to start init twice ;)\n");
+		error("It's not good to start init twice ;)");
 
 	/* wait for fs; we need it for exec */
 	do {

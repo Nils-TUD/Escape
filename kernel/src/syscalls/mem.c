@@ -45,6 +45,7 @@ void sysc_mapPhysical(sIntrptStackFrame *stack) {
 
 	/* trying to map memory in kernel area? */
 	/* TODO is this ok? */
+	/* TODO I think we should check here wether it is in a used-region, according to multiboot-memmap */
 	if(OVERLAPS(phys,phys + pages,KERNEL_P_ADDR,KERNEL_P_ADDR + PAGE_SIZE * PT_ENTRY_COUNT))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 

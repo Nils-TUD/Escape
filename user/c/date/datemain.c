@@ -42,7 +42,7 @@ int main(int argc,char **argv) {
 		error("Unable to get date");
 
 	if(dateToString(str,MAX_DATE_LEN,fmt,&date) == 0)
-		error("Unable to format date\n");
+		error("Unable to format date");
 
 	printf("%s\n",str);
 	return EXIT_SUCCESS;

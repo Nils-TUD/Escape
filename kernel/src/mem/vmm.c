@@ -435,11 +435,12 @@ error:
 
 s32 vmm_growStackTo(sThread *t,u32 addr) {
 	sVMRegion *vm = REG(t->proc,t->stackRegion);
-	s32 newPages;
 	addr &= ~(PAGE_SIZE - 1);
-	newPages = (vm->virt - addr) / PAGE_SIZE;
-	if(newPages > 0)
-		return vmm_grow(t->proc,t->stackRegion,newPages);
+	if(addr < vm->virt) {
+		s32 newPages = (vm->virt - addr) / PAGE_SIZE;
+		if(newPages > 0)
+			return vmm_grow(t->proc,t->stackRegion,newPages);
+	}
 	return 0;
 }
 
@@ -478,6 +479,8 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 				virt = vm->virt + ROUNDUP(oldSize);
 			stats = paging_mapTo(p->pagedir,virt,NULL,amount,mapFlags);
 			p->ownFrames += stats.frames + stats.ptables;
+			/* now clear the memory */
+			memclear((void*)virt,PAGE_SIZE * amount);
 		}
 		else {
 			if(vm->reg->flags & RF_STACK) {

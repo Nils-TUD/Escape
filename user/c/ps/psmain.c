@@ -246,7 +246,7 @@ int main(int argc,char *argv[]) {
 				u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
 				printf("  %c\xC4%*s%*d%*s%s %4.1f%% (%3d%%,%3d%%)\n",
 						n->next == NULL ? 0xC0 : 0xC3,
-						maxPid - 3,"",maxPpid,t->tid,19 + maxPmem + maxShmem + maxVmem + maxSmem,"",
+						maxPid - 3,"",maxPpid,t->tid,24 + maxPmem + maxShmem + maxVmem + maxSmem,"",
 						states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
 			}
 		}

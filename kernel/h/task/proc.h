@@ -24,6 +24,7 @@
 #include <machine/intrpt.h>
 #include <machine/fpu.h>
 #include <machine/vm86.h>
+#include <mem/region.h>
 #include <vfs/node.h>
 
 /* max number of processes */
@@ -134,6 +135,14 @@ bool proc_exists(tPid pid);
  * @return the number of existing processes
  */
 u32 proc_getCount(void);
+
+/**
+ * Searches for a process with given binary
+ *
+ * @param bin the binary
+ * @return the process with the binary or NULL if not found
+ */
+sProc *proc_getProcWithBin(sBinDesc *bin);
 
 /**
  * Finds the least recently used process where something can be swapped. The current one is excluded.

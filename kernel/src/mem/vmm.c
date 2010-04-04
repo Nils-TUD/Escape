@@ -31,6 +31,12 @@
 #include <assert.h>
 #include <util.h>
 
+/**
+ * The vmm-module manages the user-part of a process's virtual addressspace. That means it
+ * manages the regions that are used by the process (as an instance of sVMRegion) and decides
+ * where the regions are placed. So it bounds a region to a virtual address via sVMRegion.
+ */
+
 #define FREE_AREA_BEGIN		0xA0000000
 #define FREE_AREA_END		KERNEL_AREA_V_ADDR
 
@@ -39,7 +45,7 @@
 
 static u8 *vmm_getPageFlag(sVMRegion *reg,u32 addr);
 static tVMRegNo vmm_getRegionOf(sProc *p,u32 addr);
-static s32 vmm_findRegIndex(sProc *p);
+static s32 vmm_findRegIndex(sProc *p,bool text);
 static u32 vmm_findFreeStack(sProc *p,u32 byteCount);
 static sVMRegion *vmm_isOccupied(sProc *p,u32 start,u32 end);
 static u32 vmm_getFirstUsableAddr(sProc *p,bool textNData);
@@ -85,16 +91,23 @@ u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount) {
 
 tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
 	sRegion *reg;
+	sProc *binowner;
 	sVMRegion *vm;
 	tVMRegNo rno;
 	s32 res;
-	u32 mapFlags;
 	u32 virt,pgFlags,flags;
+	/* first, get the attributes of the region (depending on type) */
 	if((res = vmm_getAttr(p,type,bCount,&pgFlags,&flags,&virt,&rno)) < 0)
 		return res;
+
 	/* no demand-loading if the binary isn't present */
 	if(bin == NULL)
 		pgFlags &= ~PF_DEMANDLOAD;
+	/* for text: try to find another process with that text */
+	else if(type == REG_TEXT && (binowner = proc_getProcWithBin(bin)) != NULL)
+		return vmm_join(binowner,RNO_TEXT,p);
+
+	/* create region */
 	reg = reg_create(bin,binOffset,bCount,pgFlags,flags);
 	if(!reg)
 		return ERR_NOT_ENOUGH_MEM;
@@ -106,14 +119,17 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
 	vm->reg = reg;
 	vm->virt = virt;
 	REG(p,rno) = vm;
-	mapFlags = 0;
-	if(!(pgFlags & (PF_DEMANDLOAD | PF_DEMANDZERO)))
-		mapFlags |= PG_PRESENT;
-	if(flags & (RF_WRITABLE))
-		mapFlags |= PG_WRITABLE;
+
+	/* map into process */
 	if(type != REG_PHYS) {
+		sAllocStats stats;
+		u8 mapFlags = 0;
 		u32 pageCount = BYTES_2_PAGES(vm->reg->byteCount);
-		sAllocStats stats = paging_mapTo(p->pagedir,virt,NULL,pageCount,mapFlags);
+		if(!(pgFlags & (PF_DEMANDLOAD | PF_DEMANDZERO)))
+			mapFlags |= PG_PRESENT;
+		if(flags & (RF_WRITABLE))
+			mapFlags |= PG_WRITABLE;
+		stats = paging_mapTo(p->pagedir,virt,NULL,pageCount,mapFlags);
 		if(flags & RF_SHAREABLE)
 			p->sharedFrames += stats.frames;
 		else
@@ -175,6 +191,15 @@ void vmm_getRegRange(sProc *p,tVMRegNo reg,u32 *start,u32 *end) {
 		*start = vm->virt;
 	if(end)
 		*end = vm->virt + ROUNDUP(vm->reg->byteCount);
+}
+
+bool vmm_hasBinary(sProc *p,sBinDesc *bin) {
+	sVMRegion *vm;
+	if(p->regSize == 0 || p->regions == NULL)
+		return false;
+	vm = REG(p,RNO_TEXT);
+	return vm && vm->reg->binary.modifytime == bin->modifytime &&
+			strcmp(vm->reg->binary.path,bin->path) == 0;
 }
 
 bool vmm_pagefault(u32 addr) {
@@ -325,12 +350,15 @@ tVMRegNo vmm_join(sProc *src,tVMRegNo rno,sProc *dst) {
 	if(nvm == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 	nvm->reg = vm->reg;
-	nvm->virt = vmm_findFreeAddr(dst,vm->reg->byteCount);
+	if(rno == RNO_TEXT)
+		nvm->virt = TEXT_BEGIN;
+	else
+		nvm->virt = vmm_findFreeAddr(dst,vm->reg->byteCount);
 	if(nvm->virt == 0)
 		goto errVmm;
 	if(!reg_addTo(vm->reg,dst->pagedir))
 		goto errVmm;
-	nrno = vmm_findRegIndex(dst);
+	nrno = vmm_findRegIndex(dst,rno == RNO_TEXT);
 	if(nrno < 0)
 		goto errRem;
 	REG(dst,nrno) = nvm;
@@ -505,10 +533,10 @@ static tVMRegNo vmm_getRegionOf(sProc *p,u32 addr) {
 	return -1;
 }
 
-static tVMRegNo vmm_findRegIndex(sProc *p) {
+static tVMRegNo vmm_findRegIndex(sProc *p,bool text) {
 	u32 j;
 	/* start behind the fix regions (text, rodata, bss and data) */
-	tVMRegNo i = RNO_DATA + 1;
+	tVMRegNo i = text ? 0 : RNO_DATA + 1;
 	for(j = 0; j < 2; j++) {
 		for(; i < (s32)p->regSize; i++) {
 			if(REG(p,i) == NULL)
@@ -684,7 +712,7 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 		case REG_STACK:
 		case REG_PHYS:
 		case REG_SHM:
-			*rno = vmm_findRegIndex(p);
+			*rno = vmm_findRegIndex(p,false);
 			if(*rno < 0)
 				return ERR_NOT_ENOUGH_MEM;
 			break;

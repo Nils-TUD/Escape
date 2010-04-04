@@ -145,6 +145,15 @@ u32 proc_getCount(void) {
 	return count;
 }
 
+sProc *proc_getProcWithBin(sBinDesc *bin) {
+	u32 i;
+	for(i = 0; i < PROC_COUNT; i++) {
+		if(procs[i].pid != INVALID_PID && vmm_hasBinary(procs + i,bin))
+			return procs + i;
+	}
+	return NULL;
+}
+
 sProc *proc_getLRUProc(void) {
 	u32 i;
 	sProc *cur = proc_getRunning();

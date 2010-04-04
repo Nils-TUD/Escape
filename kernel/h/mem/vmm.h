@@ -103,6 +103,15 @@ void vmm_getMemUsage(sProc *p,u32 *paging,u32 *data);
 void vmm_getRegRange(sProc *p,tVMRegNo reg,u32 *start,u32 *end);
 
 /**
+ * Checks wether the given process has the given binary as text-region
+ *
+ * @param p the process
+ * @param bin the binary
+ * @return true if so
+ */
+bool vmm_hasBinary(sProc *p,sBinDesc *bin);
+
+/**
  * Tries to handle a page-fault for the given address. That means, loads a page on demand, zeros
  * it on demand, handles copy-on-write or swapping.
  *

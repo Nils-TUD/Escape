@@ -25,6 +25,16 @@
 #include <assert.h>
 #include <video.h>
 
+/**
+ * The region-module implements the abstraction 'region' which is simply a group of pages that
+ * have common properties. So for example 'text' is a group, 'read-only-data', 'data', 'stack'
+ * and so on. A region has no address and can be shared (if RF_SHAREABLE is set) by multiple
+ * processes (and of course the virtual address to which it is mapped may be different).
+ * A region has some flags that specify what operations are allowed and it has an array of
+ * page-flags (flags for each page). So that each page can have different flags like copy-on-write,
+ * swapped, demand-load or demand-zero.
+ */
+
 sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u8 pgFlags,u32 flags) {
 	u32 i,pageCount;
 	sRegion *reg;
@@ -99,7 +109,6 @@ bool reg_grow(sRegion *reg,s32 amount) {
 	assert(reg != NULL && (reg->flags & RF_GROWABLE));
 	if(amount > 0) {
 		s32 i;
-		/* TODO perhaps *= 2? */
 		u8 *pf = (u8*)kheap_realloc(reg->pageFlags,reg->pfSize + amount);
 		if(pf == NULL)
 			return false;

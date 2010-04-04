@@ -28,6 +28,7 @@
 #define PF_DEMANDLOAD		2
 #define PF_DEMANDZERO		4
 #define PF_SWAPPED			8
+#define PF_LOADINPROGRESS	16
 
 #define RF_GROWABLE			1
 #define RF_SHAREABLE		2
@@ -46,12 +47,12 @@ typedef struct {
 	u32 byteCount;		/* number of bytes */
 	u32 pfSize;			/* size of pageFlags */
 	u8 *pageFlags;		/* flags for each page */
-	sSLList *pdirs;		/* linked list of page-dirs that use this region */
+	sSLList *procs;		/* linked list of processes that use this region */
 } sRegion;
 
 /**
  * Creates a new region with given attributes. Note that the path in <bin> will be copied
- * to the heap. Initially the pagedirs-collection that use the region will be empty!
+ * to the heap. Initially the process-collection that use the region will be empty!
  *
  * @param bin the binary (may be NULL)
  * @param binOffset the offset in the binary (ignored if bin is NULL)
@@ -70,28 +71,36 @@ sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u8 pgFlags,u32 flags)
 void reg_destroy(sRegion *reg);
 
 /**
+ * Counts the number of present pages in the given region
+ *
+ * @param reg the region
+ * @return the number of present pages
+ */
+u32 reg_presentPageCount(sRegion *reg);
+
+/**
  * @param reg the region
  * @return the number of references of the given region
  */
 u32 reg_refCount(sRegion *reg);
 
 /**
- * Adds the given page-dir as user to the region
+ * Adds the given process as user to the region
  *
  * @param reg the region
- * @param pdir the page-directory
+ * @param p the process
  * @return true if successfull
  */
-bool reg_addTo(sRegion *reg,tPageDir pdir);
+bool reg_addTo(sRegion *reg,const void *p);
 
 /**
- * Removes the given page-dir as user from the region
+ * Removes the given process as user from the region
  *
  * @param reg the region
- * @param pdir the page-directory
+ * @param p the process
  * @return true if found
  */
-bool reg_remFrom(sRegion *reg,tPageDir pdir);
+bool reg_remFrom(sRegion *reg,const void *p);
 
 /**
  * Grows/shrinks the given region by <amount> pages. The added page-flags are always 0.
@@ -104,16 +113,16 @@ bool reg_remFrom(sRegion *reg,tPageDir pdir);
 bool reg_grow(sRegion *reg,s32 amount);
 
 /**
- * Clones the given region for the given pagedir. That means it copies the attributes from the
- * given region into a new one and puts <pdir> as the only user into it. It assumes that <reg>
+ * Clones the given region for the given process. That means it copies the attributes from the
+ * given region into a new one and puts <p> as the only user into it. It assumes that <reg>
  * has just one user, too (since shared regions can't be cloned).
  * The page-flags are simply copied, i.e. you have to handle copy-on-write!
  *
- * @param pdir the pagedir
+ * @param p the process
  * @param reg the region
  * @return the created region or NULL if failed
  */
-sRegion *reg_clone(tPageDir pdir,sRegion *reg);
+sRegion *reg_clone(const void *p,sRegion *reg);
 
 /**
  * Prints information about the given region in the given buffer

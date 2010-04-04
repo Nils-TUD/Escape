@@ -48,6 +48,7 @@
 #define EV_SWAP_DONE		512 /* kernel-intern */
 #define EV_SWAP_WORK		1024 /* kernel-intern */
 #define EV_SWAP_FREE		2048 /* kernel-intern */
+#define EV_VMM_DONE			4096 /* kernel-intern */
 
 typedef struct {
 	tPid pid;

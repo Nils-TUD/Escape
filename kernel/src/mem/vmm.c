@@ -43,6 +43,7 @@
 #define REG(p,i)			(((sVMRegion**)(p)->regions)[(i)])
 #define ROUNDUP(bytes)		(((bytes) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
+static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr);
 static u8 *vmm_getPageFlag(sVMRegion *reg,u32 addr);
 static tVMRegNo vmm_getRegionOf(sProc *p,u32 addr);
 static s32 vmm_findRegIndex(sProc *p,bool text);
@@ -111,7 +112,7 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
 	reg = reg_create(bin,binOffset,bCount,pgFlags,flags);
 	if(!reg)
 		return ERR_NOT_ENOUGH_MEM;
-	if(!reg_addTo(reg,p->pagedir))
+	if(!reg_addTo(reg,p))
 		goto errReg;
 	vm = vmm_alloc();
 	if(vm == NULL)
@@ -139,7 +140,7 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
 	return rno;
 
 errAdd:
-	reg_remFrom(reg,p->pagedir);
+	reg_remFrom(reg,p);
 errReg:
 	reg_destroy(reg);
 	return ERR_NOT_ENOUGH_MEM;
@@ -213,43 +214,15 @@ bool vmm_pagefault(u32 addr) {
 	flags = vmm_getPageFlag(vm,addr);
 	addr &= ~(PAGE_SIZE - 1);
 	if(*flags & PF_DEMANDLOAD) {
-		bool res = true;
-		sFileInfo info;
-		sThread *t = thread_getRunning();
-		tFileNo file;
-		/* file not present or modified? */
-		if(vfsr_stat(t->tid,vm->reg->binary.path,&info) < 0 ||
-				info.modifytime != vm->reg->binary.modifytime)
-			return false;
-		file = vfsr_openFile(t->tid,VFS_READ,vm->reg->binary.path);
-		if(file < 0)
-			return false;
-		if(vfs_seek(t->tid,file,vm->reg->binOffset + (addr - vm->virt),SEEK_SET) >= 0) {
-			sAllocStats stats;
-			u8 mapFlags = PG_PRESENT;
-			if(vm->reg->flags & RF_WRITABLE)
-				mapFlags |= PG_WRITABLE;
-			stats = paging_map(addr,NULL,1,mapFlags);
-			assert(stats.ptables == 0);
-			if(vm->reg->flags & RF_SHAREABLE)
-				p->sharedFrames += stats.frames;
-			else
-				p->ownFrames += stats.frames;
-			/* TODO actually we may have to read less */
-			if(vfs_readFile(t->tid,file,(u8*)addr,PAGE_SIZE) < 0)
-				res = false;
-		}
-		vfs_closeFile(t->tid,file);
-		if(res)
+		if(vmm_demandLoad(vm,flags,addr)) {
 			*flags &= ~PF_DEMANDLOAD;
-		return res;
+			return true;
+		}
 	}
 	else if(*flags & PF_DEMANDZERO) {
 		sAllocStats stats = paging_map(addr,NULL,1,PG_PRESENT | PG_WRITABLE);
-		if(vm->reg->flags & RF_SHAREABLE)
-			p->sharedFrames += stats.frames;
-		else
-			p->ownFrames += stats.frames;
+		assert(!(vm->reg->flags & RF_SHAREABLE));
+		p->ownFrames += stats.frames;
 		/* TODO actually we may have to clear less */
 		memclear((void*)addr,PAGE_SIZE);
 		*flags &= ~PF_DEMANDZERO;
@@ -284,7 +257,7 @@ void vmm_remove(sProc *p,tVMRegNo reg) {
 	sVMRegion *vm = REG(p,reg);
 	u32 pcount = BYTES_2_PAGES(vm->reg->byteCount);
 	assert(p && reg < (s32)p->regSize && vm != NULL);
-	assert(reg_remFrom(vm->reg,p->pagedir));
+	assert(reg_remFrom(vm->reg,p));
 	if(reg_refCount(vm->reg) == 0) {
 		u32 virt = vm->virt;
 		/* remove us from cow and unmap the pages (and free frames, if necessary) */
@@ -316,8 +289,9 @@ void vmm_remove(sProc *p,tVMRegNo reg) {
 		/* no free here, just unmap */
 		sAllocStats stats = paging_unmapFrom(p->pagedir,vm->virt,pcount,false);
 		/* in this case its always a shared region because otherwise there wouldn't be other users */
-		/* so we have to substract the content-frames from the shared ones, and the ptables from ours */
-		p->sharedFrames -= pcount;
+		/* so we have to substract the present content-frames from the shared ones,
+		 * and the ptables from ours */
+		p->sharedFrames -= reg_presentPageCount(vm->reg);
 		p->ownFrames -= stats.ptables;
 	}
 	REG(p,reg) = NULL;
@@ -356,7 +330,7 @@ tVMRegNo vmm_join(sProc *src,tVMRegNo rno,sProc *dst) {
 		nvm->virt = vmm_findFreeAddr(dst,vm->reg->byteCount);
 	if(nvm->virt == 0)
 		goto errVmm;
-	if(!reg_addTo(vm->reg,dst->pagedir))
+	if(!reg_addTo(vm->reg,dst))
 		goto errVmm;
 	nrno = vmm_findRegIndex(dst,rno == RNO_TEXT);
 	if(nrno < 0)
@@ -365,12 +339,12 @@ tVMRegNo vmm_join(sProc *src,tVMRegNo rno,sProc *dst) {
 	/* shared, so content-frames to shared, ptables to own */
 	pageCount = BYTES_2_PAGES(vm->reg->byteCount);
 	stats = paging_clonePages(src->pagedir,dst->pagedir,vm->virt,nvm->virt,pageCount,true);
-	dst->sharedFrames += pageCount;
+	dst->sharedFrames += stats.frames;
 	dst->ownFrames += stats.ptables;
 	return nrno;
 
 errRem:
-	reg_remFrom(vm->reg,dst->pagedir);
+	reg_remFrom(vm->reg,dst);
 errVmm:
 	vmm_free(nvm);
 	return ERR_NOT_ENOUGH_MEM;
@@ -398,11 +372,11 @@ s32 vmm_cloneAll(sProc *dst) {
 				goto error;
 			nvm->virt = vm->virt;
 			if(vm->reg->flags & RF_SHAREABLE) {
-				reg_addTo(vm->reg,dst->pagedir);
+				reg_addTo(vm->reg,dst);
 				nvm->reg = vm->reg;
 			}
 			else {
-				nvm->reg = reg_clone(dst->pagedir,vm->reg);
+				nvm->reg = reg_clone(dst,vm->reg);
 				if(nvm->reg == NULL)
 					goto error;
 			}
@@ -413,7 +387,7 @@ s32 vmm_cloneAll(sProc *dst) {
 					vm->reg->flags & RF_SHAREABLE);
 			dst->ownFrames += stats.ptables;
 			if(vm->reg->flags & RF_SHAREABLE)
-				dst->sharedFrames += pageCount;
+				dst->sharedFrames += stats.frames;
 			/* add frames to copy-on-write, if not shared */
 			else {
 				u32 virt = nvm->virt;
@@ -517,6 +491,66 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 		}
 	}
 	return ((vm->reg->flags & RF_STACK) ? oldVirt : oldVirt + ROUNDUP(oldSize)) / PAGE_SIZE;
+}
+
+static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
+	bool res = false;
+	sFileInfo info;
+	sThread *t = thread_getRunning();
+	tFileNo file;
+	/* if another thread already loads it, wait here until he's done */
+	if(*flags & PF_LOADINPROGRESS) {
+		do {
+			thread_wait(t->tid,vm->reg,EV_VMM_DONE);
+			thread_switchNoSigs();
+		}
+		while(*flags & PF_LOADINPROGRESS);
+		return (*flags & PF_DEMANDLOAD) == 0;
+	}
+
+	*flags |= PF_LOADINPROGRESS;
+	/* file not present or modified? */
+	if(vfsr_stat(t->tid,vm->reg->binary.path,&info) >= 0 &&
+			info.modifytime == vm->reg->binary.modifytime) {
+		file = vfsr_openFile(t->tid,VFS_READ,vm->reg->binary.path);
+		if(file >= 0 && vfs_seek(t->tid,file,vm->reg->binOffset + (addr - vm->virt),SEEK_SET) >= 0) {
+			/* first read into a temp-buffer because we can't mark the page as present until
+			 * its read from disk. and we can't use a temporary mapping when switching threads. */
+			u8 *tempBuf = (u8*)kheap_alloc(PAGE_SIZE);
+			if(tempBuf != NULL) {
+				/* TODO actually we may have to read less */
+				if(vfs_readFile(t->tid,file,(u8*)tempBuf,PAGE_SIZE) >= 0) {
+					sSLNode *n;
+					u32 temp;
+					u32 frame = mm_allocateFrame(MM_DEF);
+					u8 mapFlags = PG_PRESENT;
+					if(vm->reg->flags & RF_WRITABLE)
+						mapFlags |= PG_WRITABLE;
+					/* copy into frame */
+					temp = paging_mapToTemp(&frame,1);
+					memcpy((void*)temp,tempBuf,PAGE_SIZE);
+					paging_unmapFromTemp(1);
+					/* map into all pagedirs */
+					for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
+						sProc *mp = (sProc*)n->data;
+						paging_mapTo(mp->pagedir,addr,&frame,1,mapFlags);
+						if(vm->reg->flags & RF_SHAREABLE)
+							mp->sharedFrames++;
+						else
+							mp->ownFrames++;
+					}
+					res = true;
+				}
+				kheap_free(tempBuf);
+			}
+		}
+		if(file >= 0)
+			vfs_closeFile(t->tid,file);
+	}
+	/* wakeup all waiting processes */
+	*flags &= ~PF_LOADINPROGRESS;
+	thread_wakeupAll(vm->reg,EV_VMM_DONE);
+	return res;
 }
 
 static u8 *vmm_getPageFlag(sVMRegion *reg,u32 addr) {

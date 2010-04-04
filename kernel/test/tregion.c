@@ -98,12 +98,12 @@ static void test_2(void) {
 	test_init();
 	reg = reg_create(NULL,123,124,PF_DEMANDLOAD,RF_SHAREABLE);
 	test_assertTrue(reg != NULL);
-	test_assertTrue(reg_addTo(reg,0x1234));
-	test_assertTrue(reg_addTo(reg,0x5678));
+	test_assertTrue(reg_addTo(reg,(const void*)0x1234));
+	test_assertTrue(reg_addTo(reg,(const void*)0x5678));
 	test_assertUInt(reg_refCount(reg),2);
-	test_assertTrue(reg_remFrom(reg,0x5678));
+	test_assertTrue(reg_remFrom(reg,(const void*)0x5678));
 	test_assertUInt(reg_refCount(reg),1);
-	test_assertTrue(reg_remFrom(reg,0x1234));
+	test_assertTrue(reg_remFrom(reg,(const void*)0x1234));
 	test_assertUInt(reg_refCount(reg),0);
 	reg_destroy(reg);
 	test_finish();
@@ -173,7 +173,7 @@ static void test_4(void) {
 	bindesc.path = "wuh";
 	reg = reg_create(&bindesc,123,0x1000,PF_DEMANDZERO,RF_GROWABLE | RF_STACK);
 	test_assertTrue(reg != NULL);
-	clone = reg_clone(0x1234,reg);
+	clone = reg_clone((const void*)0x1234,reg);
 	test_assertTrue(clone != NULL);
 	test_assertUInt(clone->binary.modifytime,444);
 	test_assertStr(clone->binary.path,"wuh");

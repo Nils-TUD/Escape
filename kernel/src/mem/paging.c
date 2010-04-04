@@ -445,7 +445,8 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,
 			frames = (u32*)pte;
 		}
 		mstats = paging_mapTo(dst,virtDst,frames,1,flags);
-		stats.frames += mstats.frames;
+		if(flags & PG_PRESENT)
+			stats.frames++;
 		stats.ptables += mstats.ptables;
 		/* if copy-on-write should be used, mark it as readable for the current (parent), too */
 		if(!share && pte->present)

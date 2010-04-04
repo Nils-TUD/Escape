@@ -544,7 +544,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
 			/* #PF */
 			if(stack->intrptNo == EX_PAGE_FAULT) {
-				/*vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",cpu_getCR2(),
+				/*vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
 						stack->eip,proc_getRunning()->pid);*/
 
 				/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
@@ -552,7 +552,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 					/* ok, now lets check if the thread wants more stack-pages */
 					if(thread_extendStack(pfaddr) < 0) {
 						vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
-												stack->eip,proc_getRunning()->pid);
+											stack->eip,proc_getRunning()->pid);
 						vid_printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
 								(stack->errorCode & 0x1) ?
 									"page-level protection violation" : "not-present page",

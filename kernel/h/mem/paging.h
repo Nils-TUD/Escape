@@ -259,7 +259,7 @@ s32 paging_cloneKernelspace(u32 *stackFrame,tPageDir *pdir);
  * Destroys the given page-directory (not the current!)
  *
  * @param pdir the page-dir
- * @return the number of free'd frames
+ * @return the number of free'd frames and ptables
  */
 sAllocStats paging_destroyPDir(tPageDir pdir);
 
@@ -283,7 +283,7 @@ u32 paging_getFrameNo(u32 virt);
  * @param virtDst the virtual destination address
  * @param count the number of pages to copy
  * @param share wether to share the frames
- * @return the number of allocated frames (including page-tables)
+ * @return the number of mapped frames (not necessarily new allocated), and allocated ptables
  */
 sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,u32 count,bool share);
 
@@ -297,7 +297,7 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,
  * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
- * @return the number of allocated frames (including page-tables)
+ * @return the number of allocated frames and page-tables
  */
 sAllocStats paging_map(u32 virt,u32 *frames,u32 count,u8 flags);
 
@@ -312,7 +312,7 @@ sAllocStats paging_map(u32 virt,u32 *frames,u32 count,u8 flags);
  * 	a NULL-value causes the function to request MM_DEF-frames from mm on its own!
  * @param count the number of pages to map
  * @param flags some flags for the pages (PG_*)
- * @return the number of allocated frames (including page-tables)
+ * @return the number of allocated frames and page-tables
  */
 sAllocStats paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags);
 
@@ -324,7 +324,7 @@ sAllocStats paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags);
  * @param virt the virtual start-address
  * @param count the number of pages to unmap
  * @param freeFrames whether the frames should be free'd and not just unmapped
- * @return the number of free'd frames
+ * @return the number of free'd frames and ptables
  */
 sAllocStats paging_unmap(u32 virt,u32 count,bool freeFrames);
 
@@ -337,7 +337,7 @@ sAllocStats paging_unmap(u32 virt,u32 count,bool freeFrames);
  * @param virt the virtual start-address
  * @param count the number of pages to unmap
  * @param freeFrames whether the frames should be free'd and not just unmapped
- * @return the number of free'd frames
+ * @return the number of free'd frames and ptables
  */
 sAllocStats paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames);
 

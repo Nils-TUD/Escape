@@ -44,8 +44,8 @@ sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u8 pgFlags,u32 flags)
 	reg = (sRegion*)kheap_alloc(sizeof(sRegion));
 	if(reg == NULL)
 		return NULL;
-	reg->pdirs = sll_create();
-	if(reg->pdirs == NULL)
+	reg->procs = sll_create();
+	if(reg->procs == NULL)
 		goto errReg;
 	if(bin != NULL && bin->path) {
 		reg->binary.path = strdup(bin->path);
@@ -73,7 +73,7 @@ sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u8 pgFlags,u32 flags)
 errPath:
 	kheap_free((void*)reg->binary.path);
 errPDirs:
-	sll_destroy(reg->pdirs,false);
+	sll_destroy(reg->procs,false);
 errReg:
 	kheap_free(reg);
 	return NULL;
@@ -84,24 +84,34 @@ void reg_destroy(sRegion *reg) {
 	if(reg->binary.path)
 		kheap_free((void*)reg->binary.path);
 	kheap_free(reg->pageFlags);
-	sll_destroy(reg->pdirs,false);
+	sll_destroy(reg->procs,false);
 	kheap_free(reg);
+}
+
+u32 reg_presentPageCount(sRegion *reg) {
+	u32 i,c = 0;
+	assert(reg != NULL);
+	for(i = 0; i < reg->pfSize; i++) {
+		if((reg->pageFlags[i] & (PF_DEMANDLOAD | PF_DEMANDZERO | PF_LOADINPROGRESS)) == 0)
+			c++;
+	}
+	return c;
 }
 
 u32 reg_refCount(sRegion *reg) {
 	assert(reg != NULL);
-	return sll_length(reg->pdirs);
+	return sll_length(reg->procs);
 }
 
-bool reg_addTo(sRegion *reg,tPageDir pdir) {
+bool reg_addTo(sRegion *reg,const void *p) {
 	assert(reg != NULL);
-	assert(sll_length(reg->pdirs) == 0 || (reg->flags & RF_SHAREABLE));
-	return sll_append(reg->pdirs,(void*)pdir);
+	assert(sll_length(reg->procs) == 0 || (reg->flags & RF_SHAREABLE));
+	return sll_append(reg->procs,(void*)p);
 }
 
-bool reg_remFrom(sRegion *reg,tPageDir pdir) {
+bool reg_remFrom(sRegion *reg,const void *p) {
 	assert(reg != NULL);
-	return sll_removeFirst(reg->pdirs,(void*)pdir);
+	return sll_removeFirst(reg->procs,(void*)p);
 }
 
 bool reg_grow(sRegion *reg,s32 amount) {
@@ -136,13 +146,13 @@ bool reg_grow(sRegion *reg,s32 amount) {
 	return true;
 }
 
-sRegion *reg_clone(tPageDir pdir,sRegion *reg) {
+sRegion *reg_clone(const void *p,sRegion *reg) {
 	sRegion *clone;
 	assert(reg != NULL && !(reg->flags & RF_SHAREABLE));
 	clone = reg_create(&reg->binary,reg->binOffset,reg->byteCount,0,reg->flags);
 	if(clone) {
 		memcpy(clone->pageFlags,reg->pageFlags,reg->pfSize);
-		reg_addTo(clone,pdir);
+		reg_addTo(clone,p);
 	}
 	return clone;
 }
@@ -170,9 +180,9 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg) {
 		prf_sprintf(buf,"\tbinary: path=%s modified=%u offset=%#x\n",
 				reg->binary.path ? reg->binary.path : "NULL",reg->binary.modifytime,reg->binOffset);
 	}
-	prf_sprintf(buf,"\tPDirs: ");
-	for(n = sll_begin(reg->pdirs); n != NULL; n = n->next)
-		prf_sprintf(buf,"%#x ",(u32)n->data);
+	prf_sprintf(buf,"\tProcesses: ");
+	for(n = sll_begin(reg->procs); n != NULL; n = n->next)
+		prf_sprintf(buf,"%d ",((sProc*)n->data)->pid);
 	prf_sprintf(buf,"\n");
 	prf_sprintf(buf,"\tPages (%d):\n",reg->pfSize);
 	for(i = 0, x = BYTES_2_PAGES(reg->byteCount); i < x; i++) {

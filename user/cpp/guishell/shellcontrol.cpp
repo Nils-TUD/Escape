@@ -115,15 +115,22 @@ void ShellControl::update() {
 					getHeight() - scrollPixel - lineHeight - TEXTSTARTY * 2,scrollPixel);
 		}
 		// (re-)paint rows below
-		if(_vt->upLength > 0) {
-			// if the content has changed, too we have to start the refresh one line before
-			clearRows(*g,_vt->rows - _vt->upScroll - 1,_vt->upScroll + 1);
-			paintRows(*g,_vt->rows - _vt->upScroll - 1,_vt->upScroll + 1);
+		if(_vt->rows >= _vt->upScroll) {
+			if(_vt->upLength > 0 && _vt->rows > _vt->upScroll) {
+				// if the content has changed, too we have to start the refresh one line before
+				clearRows(*g,_vt->rows - _vt->upScroll - 1,_vt->upScroll + 1);
+				paintRows(*g,_vt->rows - _vt->upScroll - 1,_vt->upScroll + 1);
+			}
+			else {
+				// no content-change, i.e. just scrolling
+				clearRows(*g,_vt->rows - _vt->upScroll,_vt->upScroll + 1);
+				paintRows(*g,_vt->rows - _vt->upScroll,_vt->upScroll + 1);
+			}
 		}
+		// repaint all
 		else {
-			// no content-change, i.e. just scrolling
-			clearRows(*g,_vt->rows - _vt->upScroll,_vt->upScroll + 1);
-			paintRows(*g,_vt->rows - _vt->upScroll,_vt->upScroll + 1);
+			clearRows(*g,0,_vt->rows);
+			paintRows(*g,0,_vt->rows);
 		}
 		changed = true;
 	}

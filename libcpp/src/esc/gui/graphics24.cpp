@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/debug.h>
 #include <esc/gui/graphics.h>
 #include <esc/gui/graphics24.h>
 

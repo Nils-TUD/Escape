@@ -28,21 +28,24 @@ extern u32 _joinSharedMem(const char *name);
 /* just a convenience for the user because the return-value is negative if an error occurred */
 void *mapPhysical(u32 phys,u32 count) {
 	u32 addr = _mapPhysical(phys,count);
-	if(errno < 0)
+	/* FIXME workaround until we have TLS */
+	if((s32)addr >= -200 && (s32)addr < 0)
 		return NULL;
 	return (void*)addr;
 }
 
 void *createSharedMem(const char *name,u32 byteCount) {
 	u32 addr = _createSharedMem(name,byteCount);
-	if(errno < 0)
+	/* FIXME workaround until we have TLS */
+	if((s32)addr >= -200 && (s32)addr < 0)
 		return NULL;
 	return (void*)addr;
 }
 
 void *joinSharedMem(const char *name) {
 	u32 addr = _joinSharedMem(name);
-	if(errno < 0)
+	/* FIXME workaround until we have TLS */
+	if((s32)addr >= -200 && (s32)addr < 0)
 		return NULL;
 	return (void*)addr;
 }

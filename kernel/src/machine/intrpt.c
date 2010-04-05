@@ -270,6 +270,8 @@ static u32 intrptCount = 0;
 /* stuff to count exceptions */
 static u32 exCount = 0;
 static u32 lastEx = 0xFFFFFFFF;
+static u32 lastPFAddr = 0xFFFFFFFF;
+static tPid lastPFProc = INVALID_PID;
 
 /* pointer to the current interrupt-stack */
 static sIntrptStackFrame *curIntrptStack = NULL;
@@ -544,7 +546,16 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
 			/* #PF */
 			if(stack->intrptNo == EX_PAGE_FAULT) {
-				/*vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
+				/*if(pfaddr == lastPFAddr && lastPFProc == proc_getRunning()->pid) {
+					exCount++;
+					if(exCount >= MAX_EX_COUNT)
+						util_panic("%d page-faults at the same address of the same process",exCount);
+				}
+				else
+					exCount = 0;
+				lastPFAddr = pfaddr;
+				lastPFProc = proc_getRunning()->pid;
+				vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
 						stack->eip,proc_getRunning()->pid);*/
 
 				/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */

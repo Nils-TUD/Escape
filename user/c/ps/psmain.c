@@ -86,11 +86,11 @@ static sSort sorts[] = {
 };
 
 static const char *states[] = {
-	"Unused ",
-	"Running",
-	"Ready  ",
-	"Blocked",
-	"Zombie "
+	"Ill ",
+	"Run ",
+	"Rdy ",
+	"Blk ",
+	"Zom "
 };
 static u8 sort = SORT_PID;
 
@@ -184,10 +184,10 @@ int main(int argc,char *argv[]) {
 	/* determine max-values (we want to have a min-width here :)) */
 	u32 maxPid = 100;
 	u32 maxPpid = 100;
-	u32 maxPmem = 1000;
-	u32 maxVmem = 1000;
-	u32 maxSmem = 1000;
-	u32 maxShmem = 1000;
+	u32 maxPmem = 100;
+	u32 maxVmem = 100;
+	u32 maxSmem = 100;
+	u32 maxShmem = 100;
 	for(i = 0; i < numProcs; i++) {
 		if(procs[i].pid > maxPid)
 			maxPid = procs[i].pid;
@@ -218,7 +218,7 @@ int main(int argc,char *argv[]) {
 	maxShmem = getuwidth(maxShmem * 4,10);
 
 	/* now print processes */
-	printf("%*sPID%*sPPID%*sPMEM%*sSHMEM%*sVMEM%*sSMEM  STATE    %%CPU (USER,KERNEL) COMMAND\n",
+	printf("%*sPID%*sPPID%*sPMEM%*sSHMEM%*sVMEM%*sSMEM STATE  %%CPU (USER,KERNEL) COMMAND\n",
 			maxPid - 3,"",maxPpid - 1,"",maxPmem + 1,"",maxShmem,"",maxVmem + 1,"",maxSmem + 1,"");
 
 	for(i = 0; i < numProcs; i++) {
@@ -229,7 +229,7 @@ int main(int argc,char *argv[]) {
 		cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
 		userPercent = (u32)(100. / (procCycles / (double)procs[i].ucycleCount.val64));
 		kernelPercent = (u32)(100. / (procCycles / (double)procs[i].kcycleCount.val64));
-		printf("%*u   %*u %*u KiB %*u KiB %*u KiB %*u KiB  -       %4.1f%% (%3d%%,%3d%%)   %s\n",
+		printf("%*u   %*u %*u KiB %*u KiB %*u KiB %*u KiB -     %4.1f%% (%3d%%,%3d%%)   %s\n",
 				maxPid,procs[i].pid,maxPpid,procs[i].parentPid,
 				maxPmem,procs[i].ownFrames * 4,
 				maxShmem,procs[i].sharedFrames * 4,
@@ -244,9 +244,9 @@ int main(int argc,char *argv[]) {
 				float tcyclePercent = (float)(100. / (totalCycles / (double)threadCycles));
 				u32 tuserPercent = (u32)(100. / (threadCycles / (double)t->ucycleCount.val64));
 				u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
-				printf("  %c\xC4%*s%*d%*s%s %4.1f%% (%3d%%,%3d%%)\n",
+				printf("  %c\xC4%*s%*d%*s%s  %4.1f%% (%3d%%,%3d%%)\n",
 						n->next == NULL ? 0xC0 : 0xC3,
-						maxPid - 3,"",maxPpid,t->tid,24 + maxPmem + maxShmem + maxVmem + maxSmem,"",
+						maxPid - 3,"",maxPpid,t->tid,23 + maxPmem + maxShmem + maxVmem + maxSmem,"",
 						states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
 			}
 		}

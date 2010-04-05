@@ -219,7 +219,7 @@ int main(int argc,char *argv[]) {
 
 	/* now print processes */
 	printf("%*sPID%*sPPID%*sPMEM%*sSHMEM%*sVMEM%*sSMEM STATE  %%CPU (USER,KERNEL) COMMAND\n",
-			maxPid - 3,"",maxPpid - 1,"",maxPmem + 1,"",maxShmem,"",maxVmem + 1,"",maxSmem + 1,"");
+			maxPid - 3,"",maxPpid - 1,"",maxPmem - 2,"",maxShmem - 2,"",maxVmem - 2,"",maxSmem - 2,"");
 
 	for(i = 0; i < numProcs; i++) {
 		u64 procCycles;
@@ -229,7 +229,7 @@ int main(int argc,char *argv[]) {
 		cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
 		userPercent = (u32)(100. / (procCycles / (double)procs[i].ucycleCount.val64));
 		kernelPercent = (u32)(100. / (procCycles / (double)procs[i].kcycleCount.val64));
-		printf("%*u   %*u %*u KiB %*u KiB %*u KiB %*u KiB -     %4.1f%% (%3d%%,%3d%%)   %s\n",
+		printf("%*u   %*u %*uK  %*uK %*uK %*uK -     %4.1f%% (%3d%%,%3d%%)   %s\n",
 				maxPid,procs[i].pid,maxPpid,procs[i].parentPid,
 				maxPmem,procs[i].ownFrames * 4,
 				maxShmem,procs[i].sharedFrames * 4,
@@ -246,7 +246,7 @@ int main(int argc,char *argv[]) {
 				u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
 				printf("  %c\xC4%*s%*d%*s%s  %4.1f%% (%3d%%,%3d%%)\n",
 						n->next == NULL ? 0xC0 : 0xC3,
-						maxPid - 3,"",maxPpid,t->tid,23 + maxPmem + maxShmem + maxVmem + maxSmem,"",
+						maxPid - 3,"",maxPpid,t->tid,12 + maxPmem + maxShmem + maxVmem + maxSmem,"",
 						states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
 			}
 		}

@@ -22,12 +22,12 @@
 #include "fileiointern.h"
 
 s32 bscans(sBuffer *buf,char *buffer,u32 max) {
-	char c;
+	char c = 0;
 	char *start = buffer;
 	/* wait for one char left (\0) or till EOF */
 	while(max-- > 1 && (c = bscanc(buf)) != IO_EOF)
 		*buffer++ = c;
 	/* terminate */
 	*buffer = '\0';
-	return buffer - start;
+	return c == IO_EOF ? IO_EOF : (buffer - start);
 }

@@ -35,7 +35,7 @@ static void strtolower(char *s);
 int main(int argc,char *argv[]) {
 	tFile *file;
 	char *pattern;
-	u32 count;
+	s32 count;
 
 	if(argc <= 1 || argc > 3 || isHelpCmd(argc,argv)) {
 		fprintf(stderr,"Usage: %s <pattern> [<file>]\n",argv[0]);
@@ -60,7 +60,7 @@ int main(int argc,char *argv[]) {
 	}
 
 	strtolower(pattern);
-	while((count = fscanl(file,buffer,MAX_LINE_LEN)) > 0) {
+	while((count = fscanl(file,buffer,MAX_LINE_LEN)) >= 0) {
 		*(buffer + count) = '\0';
 		if(matches(buffer,count,pattern))
 			printf("%s\n",buffer);

@@ -21,6 +21,7 @@
 #include <esc/proc.h>
 #include <esc/fileio.h>
 #include <esc/signals.h>
+#include <string.h>
 #include "forkbomb.h"
 
 #define MAX_PIDS	2048
@@ -28,18 +29,17 @@
 s32 pids[MAX_PIDS];
 
 int mod_forkbomb(int argc,char *argv[]) {
-	UNUSED(argc);
-	UNUSED(argv);
+	u32 n = argc > 2 ? atoi(argv[2]) : 100;
 	u32 i = 0;
 	while(1) {
 		pids[i] = fork();
 		/* failed? so send all created child-procs the kill-signal */
-		if(pids[i] < 0) {
+		if(i >= n || pids[i] < 0) {
 			printf("Fork() failed, so kill all childs...\n");
 			flush();
 			while(i-- > 0) {
-				if(sendSignalTo(pids[i],SIG_KILL,0) < 0)
-					printe("Unable to send SIG_KILL to %d\n",pids[i]);
+				s32 res = sendSignalTo(pids[i],SIG_KILL,0);
+				res = 1;
 				waitChild(NULL);
 			}
 			printf("Done :)\n");

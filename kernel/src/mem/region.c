@@ -205,7 +205,10 @@ void reg_dbg_print(sRegion *reg,u32 virt) {
 	buf.size = 0;
 	buf.str = NULL;
 	reg_sprintf(&buf,reg,virt);
-	vid_printf("%s",buf.str);
+	if(buf.str != NULL)
+		vid_printf("%s",buf.str);
+	else
+		vid_printf("- no regions -\n");
 	kheap_free(buf.str);
 }
 

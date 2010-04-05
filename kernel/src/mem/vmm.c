@@ -774,9 +774,6 @@ void vmm_sprintfRegions(sStringBuffer *buf,sProc *p) {
 			c++;
 		}
 	}
-	/* side-effect: we prevent that nothing gets written into buf (-> buf.str == NULL) */
-	if(c == 0)
-		prf_sprintf(buf,"- no regions -\n");
 }
 
 
@@ -790,7 +787,10 @@ void vmm_dbg_print(sProc *p) {
 	buf.str = NULL;
 	vid_printf("Regions of proc %d (%s)\n",p->pid,p->command);
 	vmm_sprintfRegions(&buf,p);
-	vid_printf("%s\n",buf.str);
+	if(buf.str != NULL)
+		vid_printf("%s\n",buf.str);
+	else
+		vid_printf("- no regions -\n");
 	kheap_free(buf.str);
 }
 

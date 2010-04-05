@@ -423,8 +423,11 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 	for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
 		sThread *t = (sThread*)tn->data;
 		sched_removeThread(t);
+		/* remove from timer, too, so that we don't get waked up again */
+		timer_removeThread(t->tid);
 		/* ensure that we don't get a signal anymore */
 		sig_removeHandlerFor(t->tid);
+		/* TODO we should introduce a thread_terminate() and thread_kill() */
 		t->state = ST_ZOMBIE;
 	}
 

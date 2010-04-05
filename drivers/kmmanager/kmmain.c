@@ -80,15 +80,21 @@ int main(void) {
 			/* don't block here since there may be waiting clients.. */
 			while(!eof(kbFd)) {
 				sKbData *kbd = kbData;
-				u32 count = read(kbFd,kbData,sizeof(kbData));
-				count /= sizeof(sKbData);
-				while(count-- > 0) {
-					data.isBreak = kbd->isBreak;
-					data.keycode = kbd->keycode;
-					data.character = km_translateKeycode(
-							map,kbd->isBreak,kbd->keycode,&(data.modifier));
-					rb_write(rbuf,&data);
-					kbd++;
+				s32 count = read(kbFd,kbData,sizeof(kbData));
+				if(count >= 0) {
+					count /= sizeof(sKbData);
+					while(count-- > 0) {
+						data.isBreak = kbd->isBreak;
+						data.keycode = kbd->keycode;
+						data.character = km_translateKeycode(
+								map,kbd->isBreak,kbd->keycode,&(data.modifier));
+						rb_write(rbuf,&data);
+						kbd++;
+					}
+				}
+				else {
+					printe("Unable to read");
+					break;
 				}
 				setDataReadable(id,true);
 			}

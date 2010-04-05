@@ -494,6 +494,8 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 			util_panic("Not enough mem to append dead thread");
 		/* remove from scheduler and ensure that he don't picks us again */
 		sched_removeThread(t);
+		/* remove from timer, too, so that we don't get waked up again */
+		timer_removeThread(t->tid);
 		t->state = ST_ZOMBIE;
 		return;
 	}

@@ -88,7 +88,7 @@ void swap_start(void) {
 	tFileNo swapFile = -1;
 	sThread *t = thread_getRunning();
 	tInodeNo swapIno;
-	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
+	const char *dev = NULL;/*conf_getStr(CONF_SWAP_DEVICE);*/
 	/* if there is no valid swap-dev specified, don't even try... */
 	if(dev == NULL || vfsn_resolvePath(dev,&swapIno,NULL,VFS_CONNECT) < 0) {
 		while(1) {

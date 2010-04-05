@@ -89,6 +89,8 @@ s32 vfsrw_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32
 
 	/* copy values to public struct */
 	callback(node,&dataSize,&mem);
+	if(mem == NULL)
+		return 0;
 
 	/* stored on kheap? */
 	if((u32)mem != (u32)buffer) {

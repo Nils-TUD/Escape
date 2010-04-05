@@ -319,7 +319,8 @@ static sSLList *swap_getAffectedProcs(sProc *p,u32 addr,u8 *type) {
 	}
 	else {
 		/* check whether it belongs to a shared-memory-region */
-		procs = shm_getMembers(p,addr);
+		/* TODO */
+		procs = NULL/*shm_getMembers(p,addr)*/;
 		if(!procs) {
 			/* default case: create a linked list just with the process */
 			procs = sll_create();

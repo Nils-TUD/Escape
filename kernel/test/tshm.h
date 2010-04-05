@@ -17,32 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/mem.h>
+#ifndef TSHM_H_
+#define TSHM_H_
 
-/* the assembler-routine */
-extern u32 _mapPhysical(u32 phys,u32 count);
-extern u32 _createSharedMem(const char *name,u32 byteCount);
-extern u32 _joinSharedMem(const char *name);
+#include <common.h>
+#include <test.h>
 
-/* just a convenience for the user because the return-value is negative if an error occurred */
-void *mapPhysical(u32 phys,u32 count) {
-	u32 addr = _mapPhysical(phys,count);
-	if(errno < 0)
-		return NULL;
-	return (void*)addr;
-}
+extern sTestModule tModShm;
 
-void *createSharedMem(const char *name,u32 byteCount) {
-	u32 addr = _createSharedMem(name,byteCount);
-	if(errno < 0)
-		return NULL;
-	return (void*)addr;
-}
-
-void *joinSharedMem(const char *name) {
-	u32 addr = _joinSharedMem(name);
-	if(errno < 0)
-		return NULL;
-	return (void*)addr;
-}
+#endif /* TSHM_H_ */

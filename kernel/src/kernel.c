@@ -29,6 +29,7 @@
 #include <mem/kheap.h>
 #include <mem/vmm.h>
 #include <mem/cow.h>
+#include <mem/sharedmem.h>
 #include <task/proc.h>
 #include <task/elf.h>
 #include <task/sched.h>
@@ -137,6 +138,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("Initializing virtual memory management...");
 	vmm_init();
 	cow_init();
+	shm_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* idt */

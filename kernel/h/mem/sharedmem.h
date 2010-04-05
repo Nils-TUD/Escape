@@ -24,25 +24,19 @@
 #include <task/proc.h>
 
 /**
+ * Inits the shared-memory-module
+ */
+void shm_init(void);
+
+/**
  * Creates a shared-memory with given name and page-count
  *
+ * @param p the process
  * @param name the name
  * @param pageCount the number of pages
  * @return the start-page on success
  */
-s32 shm_create(const char *name,u32 pageCount);
-
-/**
- * Checks whether the given addr of the given process belongs to a shared-memory region. If so
- * <pageCount> and <isOwner> is set to the corresponding values.
- *
- * @param p the process
- * @param addr the virtual address
- * @param pageCount will be set to the size of the area, if it is one
- * @param isOwner will be set to true if it is one and the process is the owner
- * @return true if it belongs to a shared-memory region
- */
-bool shm_isSharedMem(sProc *p,u32 addr,u32 *pageCount,bool *isOwner);
+s32 shm_create(sProc *p,const char *name,u32 pageCount);
 
 /**
  * Determines the address of the corresponding page in the shared-memory-area specified by <p> and
@@ -59,43 +53,32 @@ bool shm_isSharedMem(sProc *p,u32 addr,u32 *pageCount,bool *isOwner);
 u32 shm_getAddrOfOther(sProc *p,u32 addr,sProc *other);
 
 /**
- * Checks whether the given addr of the given process belongs to a shared-memory region. If so the
- * members are returned including the owner.
+ * Joins the shared-memory with given name
  *
- * @param owner the process
- * @param addr the virtual address
- * @return a linked list of the processes that use the region or NULL
- */
-sSLList *shm_getMembers(sProc *owner,u32 addr);
-
-/**
- * Joins the shared-memory with given name. Will copy the pages to the end of the data-segment
- *
+ * @param p the process
  * @param name the name
  * @return the start-page on success
  */
-s32 shm_join(const char *name);
+s32 shm_join(sProc *p,const char *name);
 
 /**
- * Leaves the shared-memory with given name. Will NOT unmap the pages!
- * The problem is that the shared-memory is in the data-segment of the process. The process may
- * have added additional data-pages behind the shared-memory. Since the data-segment must be
- * "one piece" we can't remove pages in the middle. So we do it never. I think that's not
- * really a problem because the shm-owner has trusted the process anyway.
+ * Leaves the shared-memory with given name.
  *
+ * @param p the process
  * @param name the name
  * @return 0 on success
  */
-s32 shm_leave(const char *name);
+s32 shm_leave(sProc *p,const char *name);
 
 /**
- * Destroys the shared-memory with given name. Unmaps the pages for all joined processes but
- * NOT for the owner
+ * Destroys the shared-memory with given name. Unmaps the pages for all joined processes and
+ * the owner.
  *
+ * @param p the process
  * @param name the name
  * @return 0 on success
  */
-s32 shm_destroy(const char *name);
+s32 shm_destroy(sProc *p,const char *name);
 
 /**
  * Removes the process from all shared-memory stuff

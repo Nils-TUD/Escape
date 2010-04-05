@@ -30,6 +30,7 @@
 #include <mem/vmm.h>
 #include <mem/cow.h>
 #include <mem/swapmap.h>
+#include <mem/sharedmem.h>
 #include <task/sched.h>
 #include <task/elf.h>
 #include <task/proc.h>
@@ -64,6 +65,7 @@
 #include "tswapmap.h"
 #include "tregion.h"
 #include "tvmm.h"
+#include "tshm.h"
 
 s32 main(sMultiBoot *mbp,u32 magic) {
 	UNUSED(magic);
@@ -120,6 +122,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("Initializing virtual memory management...");
 	vmm_init();
 	cow_init();
+	shm_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* idt */
@@ -172,6 +175,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	test_register(&tModSwapMap);
 	test_register(&tModRegion);
 	test_register(&tModVmm);
+	test_register(&tModShm);
 	test_start();
 
 

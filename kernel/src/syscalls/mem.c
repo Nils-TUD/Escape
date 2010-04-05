@@ -58,12 +58,13 @@ void sysc_mapPhysical(sIntrptStackFrame *stack) {
 void sysc_createSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
 	u32 byteCount = SYSC_ARG2(stack);
+	sProc *p = proc_getRunning();
 	s32 res;
 
 	if(!sysc_isStringReadable(name) || byteCount == 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = shm_create(name,BYTES_2_PAGES(byteCount));
+	res = shm_create(p,name,BYTES_2_PAGES(byteCount));
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res * PAGE_SIZE);
@@ -71,12 +72,13 @@ void sysc_createSharedMem(sIntrptStackFrame *stack) {
 
 void sysc_joinSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
+	sProc *p = proc_getRunning();
 	s32 res;
 
 	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = shm_join(name);
+	res = shm_join(p,name);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res * PAGE_SIZE);
@@ -84,12 +86,13 @@ void sysc_joinSharedMem(sIntrptStackFrame *stack) {
 
 void sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
+	sProc *p = proc_getRunning();
 	s32 res;
 
 	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = shm_leave(name);
+	res = shm_leave(p,name);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -97,12 +100,13 @@ void sysc_leaveSharedMem(sIntrptStackFrame *stack) {
 
 void sysc_destroySharedMem(sIntrptStackFrame *stack) {
 	char *name = (char*)SYSC_ARG1(stack);
+	sProc *p = proc_getRunning();
 	s32 res;
 
 	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = shm_destroy(name);
+	res = shm_destroy(p,name);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

@@ -214,6 +214,8 @@ bool vmm_pagefault(u32 addr) {
 	flags = vmm_getPageFlag(vm,addr);
 	addr &= ~(PAGE_SIZE - 1);
 	if(*flags & PF_DEMANDLOAD) {
+		if(addr == 0x1aff0)
+			rno = rno + 1;
 		if(vmm_demandLoad(vm,flags,addr)) {
 			*flags &= ~PF_DEMANDLOAD;
 			return true;

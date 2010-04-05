@@ -21,7 +21,7 @@
 #include <mem/sharedmem.h>
 #include <mem/kheap.h>
 #include <mem/paging.h>
-#include <mem/pmem.h>
+#include <mem/vmm.h>
 #include <task/proc.h>
 #include <video.h>
 #include <sllist.h>
@@ -31,221 +31,177 @@
 #define MAX_SHAREDMEM_NAME	15
 
 typedef struct {
-	/* all users of this area, including the owner; owner is always the first */
-	sSLList *user;
-	/* start-page of the area in the page-dir of the owner */
-	u32 ownerStart;
-	u32 pageCount;
+	sSLList *users;
 	char name[MAX_SHAREDMEM_NAME + 1];
 } sShMem;
 
 typedef struct {
-	/* pointer to the area */
-	sShMem *mem;
-	/* start-page of the area for this process */
-	u32 startPage;
 	sProc *proc;
-} sShMemUsage;
+	tVMRegNo region;
+} sShMemUser;
 
 /**
- * Creates and adds a new usage
+ * Tests wether its the own (creator) shm
  */
-static bool shm_addUsage(sShMem *mem,sProc *p,u32 startPage);
+static bool shm_isOwn(sShMem *mem,sProc *p);
+/**
+ * Creates and adds a new user
+ */
+static bool shm_addUser(sShMem *mem,sProc *p,tVMRegNo reg);
 /**
  * Retrieve the shared-memory-area by name
  */
 static sShMem *shm_get(const char *name);
 /**
- * Retrieve the usage of the shared-memory-area with given name of the given process
+ * Retrieve the usage of the shared-memory-area of the given process
  */
-static sShMemUsage *shm_getUsage(const char *name,sProc *p);
+static sShMemUser *shm_getUser(sShMem *mem,sProc *p);
 
 /* list with all shared memories */
 static sSLList *shareList = NULL;
 
-s32 shm_create(const char *name,u32 pageCount) {
+void shm_init(void) {
+	shareList = sll_create();
+	assert(shareList != NULL);
+}
+
+s32 shm_create(sProc *p,const char *name,u32 pageCount) {
 	sShMem *mem;
-	sProc *p = proc_getRunning();
-	u32 startPage = 0/*p->textPages + p->dataPages*/;
+	u32 start;
+	tVMRegNo reg;
+
 	/* checks */
-	/*if(!proc_segSizesValid(p->textPages,p->dataPages + pageCount,p->stackPages))
-		return ERR_NOT_ENOUGH_MEM;*/
 	if(strlen(name) > MAX_SHAREDMEM_NAME)
 		return ERR_SHARED_MEM_NAME;
-
-	/* create list */
-	if(shareList == NULL) {
-		shareList = sll_create();
-		if(shareList == NULL)
-			return ERR_NOT_ENOUGH_MEM;
-	}
-
-	/* change size */
-	/*if(!proc_changeSize(pageCount,CHG_DATA))
-		return ERR_NOT_ENOUGH_MEM;*/
-	/* check here because proc_changeSize() can cause a thread-switch! */
-	if(shm_get(name) != NULL) {
-		/*proc_changeSize(-pageCount,CHG_DATA);*/
+	if(shm_get(name) != NULL)
 		return ERR_SHARED_MEM_EXISTS;
-	}
 
 	/* create entry */
 	mem = (sShMem*)kheap_alloc(sizeof(sShMem));
 	if(mem == NULL)
-		goto errChangeSize;
-	mem->ownerStart = startPage;
-	mem->pageCount = pageCount;
+		return ERR_NOT_ENOUGH_MEM;
 	strcpy(mem->name,name);
-	mem->user = sll_create();
-	if(mem->user == NULL)
+	mem->users = sll_create();
+	if(mem == NULL)
 		goto errMem;
-	if(!sll_append(mem->user,p))
-		goto errUser;
+	reg = vmm_add(p,NULL,0,pageCount * PAGE_SIZE,REG_SHM);
+	if(reg < 0)
+		goto errUList;
+	if(!shm_addUser(mem,p,reg))
+		goto errVmm;
+	if(!sll_append(shareList,mem))
+		goto errVmm;
+	vmm_getRegRange(p,reg,&start,NULL);
+	return start / PAGE_SIZE;
 
-	if(!shm_addUsage(mem,p,startPage))
-		goto errUser;
-	return startPage;
-
-errUser:
-	sll_destroy(mem->user,false);
+errVmm:
+	vmm_remove(p,reg);
+errUList:
+	sll_destroy(mem->users,true);
 errMem:
 	kheap_free(mem);
-errChangeSize:
-	/*proc_changeSize(-pageCount,CHG_DATA);*/
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-bool shm_isSharedMem(sProc *p,u32 addr,u32 *pageCount,bool *isOwner) {
-	sShMemUsage *use = shm_getUsage(NULL,p);
-	if(use && addr >= use->startPage * PAGE_SIZE &&
-			addr < (use->startPage + use->mem->pageCount) * PAGE_SIZE) {
-		*pageCount = use->mem->pageCount;
-		*isOwner = sll_get(use->mem->user,0) == p;
-		return true;
-	}
-	return false;
-}
-
 u32 shm_getAddrOfOther(sProc *p,u32 addr,sProc *other) {
-	sShMemUsage *use = shm_getUsage(NULL,p);
+	/* TODO */
+	/*sShMemUsage *use = shm_getUser(NULL,p);
 	if(use && addr >= use->startPage * PAGE_SIZE &&
 		addr < (use->startPage + use->mem->pageCount) * PAGE_SIZE) {
-		sShMemUsage *useOther = shm_getUsage(NULL,other);
+		sShMemUsage *useOther = shm_getUser(NULL,other);
 		if(useOther)
 			return useOther->startPage * PAGE_SIZE + (addr - use->startPage * PAGE_SIZE);
-	}
-	return 0;
-}
-
-sSLList *shm_getMembers(sProc *owner,u32 addr) {
-	sShMemUsage *use = shm_getUsage(NULL,owner);
-	if(use && addr >= use->startPage * PAGE_SIZE &&
-			addr < (use->startPage + use->mem->pageCount) * PAGE_SIZE)
-		return use->mem->user;
-	return NULL;
-}
-
-s32 shm_join(const char *name) {
-	sProc *p = proc_getRunning();
-	sProc *owner;
-	sShMem *mem = shm_get(name);
-	if(mem == NULL || sll_indexOf(mem->user,p) >= 0)
-		return ERR_SHARED_MEM_INVALID;
-
-	/* check process-size */
-	/*if(!proc_segSizesValid(p->textPages,p->dataPages + mem->pageCount,p->stackPages))
-		return ERR_NOT_ENOUGH_MEM;*/
-
-	if(!sll_append(mem->user,p))
-		return ERR_NOT_ENOUGH_MEM;
-
-	/*if(!shm_addUsage(mem,p,p->textPages + p->dataPages)) {
-		sll_removeFirst(mem->user,p);
-		return ERR_NOT_ENOUGH_MEM;
 	}*/
-
-	/* copy the pages from the owner */
-	owner = (sProc*)sll_get(mem->user,0);
-	/* TODO */
-	/*paging_getPagesOf(owner,mem->ownerStart * PAGE_SIZE,
-			(p->textPages + p->dataPages) * PAGE_SIZE,mem->pageCount,PG_WRITABLE);*/
-	/*p->dataPages += mem->pageCount;*/
-
-	return 0/*(p->textPages + p->dataPages) - mem->pageCount*/;
-}
-
-s32 shm_leave(const char *name) {
-	sProc *p = proc_getRunning();
-	sShMemUsage *usage = shm_getUsage(name,p);
-	if(usage == NULL)
-		return ERR_SHARED_MEM_INVALID;
-
-	sll_removeFirst(usage->mem->user,p);
-	sll_removeFirst(shareList,usage);
-	kheap_free(usage);
 	return 0;
 }
 
-s32 shm_destroy(const char *name) {
-	sProc *p = proc_getRunning();
-	sShMemUsage *usage;
+s32 shm_join(sProc *p,const char *name) {
+	u32 start;
+	tVMRegNo reg;
+	sShMemUser *owner;
 	sShMem *mem = shm_get(name);
-	if(mem == NULL || sll_get(mem->user,0) != p)
+	if(mem == NULL || shm_getUser(mem,p) != NULL)
 		return ERR_SHARED_MEM_INVALID;
 
-	/* unmap it from the joined processes. otherwise we might reuse the frames which would
+	owner = (sShMemUser*)sll_get(mem->users,0);
+	reg = vmm_join(owner->proc,owner->region,p);
+	if(reg < 0)
+		return ERR_NOT_ENOUGH_MEM;
+	if(!shm_addUser(mem,p,reg)) {
+		vmm_remove(p,reg);
+		return ERR_NOT_ENOUGH_MEM;
+	}
+	vmm_getRegRange(p,reg,&start,NULL);
+	return start / PAGE_SIZE;
+}
+
+s32 shm_leave(sProc *p,const char *name) {
+	sShMem *mem = shm_get(name);
+	sShMemUser *user;
+	if(mem == NULL)
+		return ERR_SHARED_MEM_INVALID;
+	user = shm_getUser(mem,p);
+	if(user == NULL || shm_isOwn(mem,p))
+		return ERR_SHARED_MEM_INVALID;
+
+	sll_removeFirst(mem->users,user);
+	vmm_remove(p,user->region);
+	kheap_free(user);
+	return 0;
+}
+
+s32 shm_destroy(sProc *p,const char *name) {
+	sShMem *mem = shm_get(name);
+	sSLNode *n;
+	if(mem == NULL)
+		return ERR_SHARED_MEM_INVALID;
+	if(!shm_isOwn(mem,p))
+		return ERR_SHARED_MEM_INVALID;
+
+	/* unmap it from the processes. otherwise we might reuse the frames which would
 	 * lead to unpredictable results. so its better to unmap them which may cause a page-fault
 	 * and termination of the process */
-	while((usage = shm_getUsage(name,NULL))) {
-		/* TODO */
-		/*if(usage->proc != p)
-			paging_remPagesOf(usage->proc,usage->startPage,mem->pageCount);*/
-		sll_removeFirst(shareList,usage);
-		kheap_free(usage);
+	for(n = sll_begin(mem->users); n != NULL; n = n->next) {
+		sShMemUser *user = (sShMemUser*)n->data;
+		vmm_remove(user->proc,user->region);
 	}
-
-	/* Note that we can't remove the area from us (via proc_changeSize()) because maybe the
-	 * data-area has been increased afterwards */
-
-	/* free mem */
-	sll_destroy(mem->user,false);
+	/* free shmem */
+	sll_removeFirst(shareList,mem);
+	sll_destroy(mem->users,true);
 	kheap_free(mem);
 	return 0;
 }
 
 void shm_remProc(sProc *p) {
 	sSLNode *n,*t;
-	sShMemUsage *use;
 	for(n = sll_begin(shareList); n != NULL; ) {
-		use = (sShMemUsage*)n->data;
-		if(use->proc == p) {
-			if(sll_get(use->mem->user,0) == p) {
-				shm_destroy(use->mem->name);
-				/* start from the beginning because several usages may have been removed */
-				n = sll_begin(shareList);
-			}
-			else {
-				t = n->next;
-				/* will remove this usage */
-				shm_leave(use->mem->name);
-				n = t;
-			}
+		sShMem *mem = (sShMem*)n->data;
+		if(shm_isOwn(mem,p)) {
+			t = n->next;
+			shm_destroy(p,mem->name);
+			n = t;
 		}
-		else
+		else {
+			sShMemUser *user = shm_getUser(mem,p);
+			if(user)
+				shm_leave(p,mem->name);
 			n = n->next;
+		}
 	}
 }
 
-static bool shm_addUsage(sShMem *mem,sProc *p,u32 startPage) {
-	sShMemUsage *usage = (sShMemUsage*)kheap_alloc(sizeof(sShMemUsage));
-	if(usage == NULL)
-		return false;
-	usage->mem = mem;
-	usage->proc = p;
-	usage->startPage = startPage;
+static bool shm_isOwn(sShMem *mem,sProc *p) {
+	return ((sShMemUser*)sll_get(mem->users,0))->proc == p;
+}
 
-	if(!sll_append(shareList,usage)) {
-		kheap_free(usage);
+static bool shm_addUser(sShMem *mem,sProc *p,tVMRegNo reg) {
+	sShMemUser *user = (sShMemUser*)kheap_alloc(sizeof(sShMemUser));
+	if(user == NULL)
+		return false;
+	user->proc = p;
+	user->region = reg;
+	if(!sll_append(mem->users,user)) {
+		kheap_free(user);
 		return false;
 	}
 	return true;
@@ -253,28 +209,22 @@ static bool shm_addUsage(sShMem *mem,sProc *p,u32 startPage) {
 
 static sShMem *shm_get(const char *name) {
 	sSLNode *n;
-	sShMemUsage *use;
 	if(shareList == NULL)
 		return NULL;
 	for(n = sll_begin(shareList); n != NULL; n = n->next) {
-		use = (sShMemUsage*)n->data;
-		if(strcmp(use->mem->name,name) == 0)
-			return use->mem;
+		sShMem *mem = (sShMem*)n->data;
+		if(strcmp(mem->name,name) == 0)
+			return mem;
 	}
 	return NULL;
 }
 
-static sShMemUsage *shm_getUsage(const char *name,sProc *p) {
+static sShMemUser *shm_getUser(sShMem *mem,sProc *p) {
 	sSLNode *n;
-	sShMemUsage *use;
-	if(shareList == NULL)
-		return NULL;
-	for(n = sll_begin(shareList); n != NULL; n = n->next) {
-		use = (sShMemUsage*)n->data;
-		if(name == NULL && use->proc == p)
-			return use;
-		if((p == NULL || use->proc == p) && strcmp(use->mem->name,name) == 0)
-			return use;
+	for(n = sll_begin(mem->users); n != NULL; n = n->next) {
+		sShMemUser *user = (sShMemUser*)n->data;
+		if(user->proc == p)
+			return user;
 	}
 	return NULL;
 }
@@ -284,16 +234,18 @@ static sShMemUsage *shm_getUsage(const char *name,sProc *p) {
 #if DEBUGGING
 
 void shm_dbg_print(void) {
-	sSLNode *n;
-	sShMemUsage *use;
+	sSLNode *n,*m;
 	vid_printf("Shared memory:\n");
 	if(shareList == NULL)
 		return;
 	for(n = sll_begin(shareList); n != NULL; n = n->next) {
-		use = (sShMemUsage*)n->data;
-		vid_printf("\tproc=%s, startPage=%d [%s of %s with %d pages]\n",use->proc->command,
-				use->startPage,use->mem->name,((sProc*)sll_get(use->mem->user,0))->command,
-				use->mem->pageCount);
+		sShMem *mem = (sShMem*)n->data;
+		vid_printf("\tname=%s, users:\n",mem->name);
+		for(m = sll_begin(mem->users); m != NULL; m = m->next) {
+			sShMemUser *user = (sShMemUser*)m->data;
+			vid_printf("\t\tproc %d (%s) with region %d\n",user->proc->pid,user->proc->command,
+					user->region);
+		}
 	}
 }
 

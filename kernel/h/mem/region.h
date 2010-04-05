@@ -34,6 +34,7 @@
 #define RF_SHAREABLE		2
 #define RF_WRITABLE			4
 #define RF_STACK			8	/* means, grows downwards, and is used to find a free stack-address */
+#define RF_NOFREE			16	/* means that the memory should not be free'd on release */
 
 typedef struct {
 	const char *path;
@@ -129,7 +130,21 @@ sRegion *reg_clone(const void *p,sRegion *reg);
  *
  * @param buf the buffer
  * @param reg the region
+ * @param virt the virtual-address at which the region is mapped
  */
-void reg_sprintf(sStringBuffer *buf,sRegion *reg);
+void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt);
+
+
+#if DEBUGGING
+
+/**
+ * Prints the given region
+ *
+ * @param reg the region
+ * @param virt the virtual-address at which the region is mapped
+ */
+void reg_dbg_print(sRegion *reg,u32 virt);
+
+#endif
 
 #endif /* REGION_H_ */

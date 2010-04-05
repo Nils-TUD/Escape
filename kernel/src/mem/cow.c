@@ -59,7 +59,7 @@ u32 cow_pagefault(u32 address) {
 	ourCOW = NULL;
 	ourPrevCOW = NULL;
 	foundOther = false;
-	frameNumber = paging_getFrameNo(address);
+	frameNumber = paging_getFrameNo(cp->pagedir,address);
 	ln = NULL;
 	for(n = sll_begin(cowFrames); n != NULL; ln = n, n = n->next) {
 		cow = (sCOW*)n->data;
@@ -145,6 +145,7 @@ u32 cow_remove(sProc *p,u32 frameNo,bool *foundOther) {
 		ln = n;
 		n = n->next;
 	}
+	vassert(foundOwn,"For frameNo %#x and proc %d",frameNo,p->pid);
 	return frmCount;
 }
 

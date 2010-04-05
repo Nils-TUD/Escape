@@ -263,11 +263,11 @@ void vmm_remove(sProc *p,tVMRegNo reg) {
 		/* remove us from cow and unmap the pages (and free frames, if necessary) */
 		for(i = 0; i < pcount; i++) {
 			sAllocStats stats;
-			bool freeFrame = true;
+			bool freeFrame = !(vm->reg->flags & RF_NOFREE);
 			if(vm->reg->pageFlags[i] & PF_COPYONWRITE) {
 				u32 foundOther;
 				/* we can free the frame if there is no other user */
-				p->sharedFrames -= cow_remove(p,paging_getFrameNo(virt),&foundOther);
+				p->sharedFrames -= cow_remove(p,paging_getFrameNo(p->pagedir,virt),&foundOther);
 				freeFrame = !foundOther;
 				/* if we'll free the frame with unmap we will substract 1 too much because
 				 * we don't own the frame */
@@ -394,7 +394,7 @@ s32 vmm_cloneAll(sProc *dst) {
 				for(j = 0; j < pageCount; j++) {
 					/* not when using demand-loading since we've not loaded it from disk yet */
 					if(!(vm->reg->pageFlags[j] & (PF_DEMANDLOAD | PF_DEMANDZERO))) {
-						u32 frameNo = paging_getFrameNo(virt);
+						u32 frameNo = paging_getFrameNo(src->pagedir,virt);
 						/* if not already done, mark as cow for parent */
 						if(!(vm->reg->pageFlags[j] & PF_COPYONWRITE)) {
 							vm->reg->pageFlags[j] |= PF_COPYONWRITE;
@@ -501,6 +501,7 @@ static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
 	sFileInfo info;
 	sThread *t = thread_getRunning();
 	tFileNo file;
+
 	/* if another thread already loads it, wait here until he's done */
 	if(*flags & PF_LOADINPROGRESS) {
 		do {
@@ -710,7 +711,7 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 		case REG_SHM:
 			*pgFlags = 0;
 			if(type == REG_PHYS)
-				*flags = RF_WRITABLE;
+				*flags = RF_WRITABLE | RF_NOFREE;
 			else
 				*flags = RF_SHAREABLE | RF_WRITABLE;
 			*virt = vmm_findFreeAddr(p,bCount);
@@ -767,7 +768,7 @@ void vmm_sprintfRegions(sStringBuffer *buf,sProc *p) {
 				prf_sprintf(buf,"\n");
 			prf_sprintf(buf,"VMRegion %d (%#08x .. %#08x):\n",i,reg->virt,
 					reg->virt + ROUNDUP(reg->reg->byteCount) - 1);
-			reg_sprintf(buf,reg->reg);
+			reg_sprintf(buf,reg->reg,reg->virt);
 			c++;
 		}
 	}

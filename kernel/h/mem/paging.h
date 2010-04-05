@@ -264,10 +264,14 @@ s32 paging_cloneKernelspace(u32 *stackFrame,tPageDir *pdir);
 sAllocStats paging_destroyPDir(tPageDir pdir);
 
 /**
+ * Returns the frame-number of the given virtual address in the given pagedir. Assumes that
+ * its present.
+ *
+ * @param pdir the page-dir
  * @param virt the virtual address
  * @return the frame-number of the given virtual address
  */
-u32 paging_getFrameNo(u32 virt);
+u32 paging_getFrameNo(tPageDir pdir,u32 virt);
 
 /**
  * Clones <count> pages at <virtSrc> to <virtDst> from <src> into <dst>. That means

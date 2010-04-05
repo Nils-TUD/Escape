@@ -417,8 +417,10 @@ sAllocStats paging_destroyPDir(tPageDir pdir) {
 	return stats;
 }
 
-u32 paging_getFrameNo(u32 virt) {
-	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED(virt);
+u32 paging_getFrameNo(tPageDir pdir,u32 virt) {
+	u32 ptables = paging_getPTables(pdir);
+	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
+	assert(pt->present && pt->exists);
 	return pt->frameNumber;
 }
 

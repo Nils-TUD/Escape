@@ -39,7 +39,7 @@ sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u8 pgFlags,u32 flags)
 	u32 i,pageCount;
 	sRegion *reg;
 	assert(pgFlags == PF_DEMANDLOAD || pgFlags == PF_DEMANDZERO || pgFlags == 0);
-	assert((flags & ~(RF_GROWABLE | RF_SHAREABLE | RF_WRITABLE | RF_STACK)) == 0);
+	assert((flags & ~(RF_GROWABLE | RF_SHAREABLE | RF_WRITABLE | RF_STACK | RF_NOFREE)) == 0);
 
 	reg = (sRegion*)kheap_alloc(sizeof(sRegion));
 	if(reg == NULL)
@@ -157,7 +157,7 @@ sRegion *reg_clone(const void *p,sRegion *reg) {
 	return clone;
 }
 
-void reg_sprintf(sStringBuffer *buf,sRegion *reg) {
+void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt) {
 	u32 i,x;
 	sSLNode *n;
 	struct {
@@ -168,6 +168,7 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg) {
 		{"Shareable",RF_SHAREABLE},
 		{"Writable",RF_WRITABLE},
 		{"Stack",RF_STACK},
+		{"NoFree",RF_NOFREE}
 	};
 	prf_sprintf(buf,"\tSize: %u bytes\n",reg->byteCount);
 	prf_sprintf(buf,"\tflags: ");
@@ -186,10 +187,26 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg) {
 	prf_sprintf(buf,"\n");
 	prf_sprintf(buf,"\tPages (%d):\n",reg->pfSize);
 	for(i = 0, x = BYTES_2_PAGES(reg->byteCount); i < x; i++) {
-		prf_sprintf(buf,"\t\t[%d] %c%c%c\n",i,
+		prf_sprintf(buf,"\t\t%d: (%#08x) %c%c%c\n",i,virt + i * PAGE_SIZE,
 				reg->pageFlags[i] & PF_COPYONWRITE ? 'c' : '-',
 				reg->pageFlags[i] & PF_DEMANDLOAD ? 'l' : '-',
 				reg->pageFlags[i] & PF_DEMANDZERO ? 'z' : '-',
 				reg->pageFlags[i] & PF_SWAPPED ? 's' : '-');
 	}
 }
+
+
+#if DEBUGGING
+
+void reg_dbg_print(sRegion *reg,u32 virt) {
+	sStringBuffer buf;
+	buf.dynamic = true;
+	buf.len = 0;
+	buf.size = 0;
+	buf.str = NULL;
+	reg_sprintf(&buf,reg,virt);
+	vid_printf("%s",buf.str);
+	kheap_free(buf.str);
+}
+
+#endif

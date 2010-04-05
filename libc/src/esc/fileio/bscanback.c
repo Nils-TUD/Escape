@@ -31,7 +31,8 @@ s32 bscanback(sBuffer *buf,char c) {
 		return 0;
 	}
 	else if(buf->pos > 0) {
-		buf->str[--(buf->pos)] = c;
+		/* don't write the char back here since we never change the string */
+		buf->pos--;
 		return 0;
 	}
 	return IO_EOF;

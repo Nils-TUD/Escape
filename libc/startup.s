@@ -22,7 +22,7 @@
 [global init]
 [extern main]
 [extern exit]
-[extern __libc_start]
+[extern init_tls]
 
 ALIGN 4
 
@@ -45,8 +45,8 @@ ALIGN 4
 ;  +------------------+
 
 init:
-	; first call __libc_start(entryPoint,TLSStart,TLSSize)
-	call	__libc_start
+	; first call init_tls(entryPoint,TLSStart,TLSSize)
+	call	init_tls
 	; remove args from stack
 	add		esp,12
 	; it returns the entrypoint; 0 if we're the initial thread
@@ -66,7 +66,24 @@ threadExit:
 	; just to be sure
 	jmp		$
 
-	; c++-programs have address 0x102d for sigRetFunc. So we need to achieve this here, too
+	; c++-programs have address 0x103e for sigRetFunc. So we need to achieve this here, too
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
 	nop
 	nop
 	nop
@@ -75,7 +92,7 @@ threadExit:
 	nop
 	nop
 
-; all signal-handler return to this "function" (address 0x102d)
+; all signal-handler return to this "function" (address 0x103e)
 sigRetFunc:
 	mov		eax,SYSCALL_ACKSIG
 	int		SYSCALL_IRQ

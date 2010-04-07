@@ -26,12 +26,31 @@
 static tULock tlsLock;
 static u32 *tlsCopy = NULL;
 
-/* make gcc happy */
-u32 __libc_start(u32 entryPoint,u32 *tlsStart,u32 tlsSize);
+/**
+ * The TLS-system (variant 2) looks like this:
+ *
+ *                        %gs offset
+ *                            |
+ * TLS-region of a thread:    v
+ * +--------+--------+--------+--------+
+ * |  val3  |  val2  |  val1  |  TCB   | ---\
+ * +--------+--------+--------+--------+    |
+ *                   ^                      |
+ *              /----/  ...      ...        |
+ * dtv:         |        |        |         |
+ * +--------+--------+--------+--------+    |
+ * |  gen   |  ptr1  |  ptr2  |  ptr3  |    |
+ * +--------+--------+--------+--------+    |
+ * ^                                        |
+ * \----------------------------------------/
+ */
 
-u32 __libc_start(u32 entryPoint,u32 *tlsStart,u32 tlsSize) {
+/* make gcc happy */
+u32 init_tls(u32 entryPoint,u32 *tlsStart,u32 tlsSize);
+
+u32 init_tls(u32 entryPoint,u32 *tlsStart,u32 tlsSize) {
 	if(tlsSize) {
-		u32 i,*dvt;
+		u32 i,*dtv;
 		locku(&tlsLock);
 		/* create copy if not already done */
 		if(tlsCopy == NULL) {
@@ -41,19 +60,19 @@ u32 __libc_start(u32 entryPoint,u32 *tlsStart,u32 tlsSize) {
 		}
 
 		/* create dynamic thread vector for this thread */
-		dvt = (u32*)malloc(tlsSize);
-		assert(dvt);
+		dtv = (u32*)malloc(tlsSize);
+		assert(dtv);
 		/* store size in first dword */
-		dvt[0] = tlsSize;
+		dtv[0] = tlsSize;
 		/* now put the pointers to the values into the array in the tls-region */
 		tlsSize /= 4;
 		for(i = 0; i < tlsSize - 1; i++) {
-			dvt[i + 1] = (u32)(tlsCopy + i);
+			dtv[i + 1] = (u32)(tlsCopy + i);
 			/* put value in tls-region */
 			tlsStart[i] = tlsCopy[i];
 		}
 		/* put pointer in thread-control-block */
-		tlsStart[tlsSize - 1] = (u32)dvt;
+		tlsStart[tlsSize - 1] = (u32)dtv;
 		unlocku(&tlsLock);
 	}
 	return entryPoint;

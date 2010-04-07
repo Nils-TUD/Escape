@@ -24,19 +24,46 @@
 [extern __libcpp_start]
 [extern __cxa_finalize]
 [extern getThreadCount]
+[extern init_tls]
 
 ALIGN 4
 
 %include "../libc/syscalls.s"
 
+;  Initial stack:
+;  +------------------+  <- top
+;  |     arguments    |
+;  |        ...       |
+;  +------------------+
+;  |       argv       |
+;  +------------------+
+;  |       argc       |
+;  +------------------+
+;  |     TLSSize      |  0 if not present
+;  +------------------+
+;  |     TLSStart     |  0 if not present
+;  +------------------+
+;  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
+;  +------------------+
+
 init:
+	; first call init_tls(entryPoint,TLSStart,TLSSize)
+	call	init_tls
+	; remove args from stack
+	add		esp,12
+	; it returns the entrypoint; 0 if we're the initial thread
+	test	eax,eax
+	je		initialThread
+	; we're an additional thread, so call the desired function
+	call	eax
+	jmp		threadExit
+
+	; initial thread calls main
+initialThread:
 	; call constructors
 	call	__libcpp_start
-
 	call	main
-	call	threadExit
 
-; exit for all threads
 threadExit:
 	; first, save return-value of main
 	push	eax
@@ -52,7 +79,7 @@ threadExitFinish:
 	; just to be sure
 	jmp		$
 
-; all signal-handler return to this "function" (address 0x2d)
+; all signal-handler return to this "function" (address 0x103e)
 sigRetFunc:
 	mov		eax,SYSCALL_ACKSIG
 	int		SYSCALL_IRQ

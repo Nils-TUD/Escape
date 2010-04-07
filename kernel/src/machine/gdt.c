@@ -276,8 +276,9 @@ void gdt_init(void) {
 
 void gdt_setTLS(u32 tlsAddr,u32 tlsSize) {
 	/* the thread-control-block is at the end of the tls-region; %gs:0x0 should reference
-	 * the thread-control-block */
-	gdt_set_desc(5,(tlsAddr + tlsSize - sizeof(u32)),BYTES_2_PAGES(tlsSize),
+	 * the thread-control-block; use 0xFFFFFFFF as limit because we want to be able to use
+	 * %gs:0xFFFFFFF8 etc. */
+	gdt_set_desc(5,(tlsAddr + tlsSize - sizeof(u32)),0xFFFFFFFF >> PAGE_SIZE_SHIFT,
 			GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,GDT_DPL_USER);
 }
 

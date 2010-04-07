@@ -22,41 +22,51 @@
 [global init]
 [extern main]
 [extern exit]
+[extern __libc_start]
 
 ALIGN 4
 
 %include "syscalls.s"
 
+;  Initial stack:
+;  +------------------+  <- top
+;  |     arguments    |
+;  |        ...       |
+;  +------------------+
+;  |       argv       |
+;  +------------------+
+;  |       argc       |
+;  +------------------+
+;  |     TLSSize      |  0 if not present
+;  +------------------+
+;  |     TLSStart     |  0 if not present
+;  +------------------+
+;  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
+;  +------------------+
+
 init:
+	; first call __libc_start(entryPoint,TLSStart,TLSSize)
+	call	__libc_start
+	; remove args from stack
+	add		esp,12
+	; it returns the entrypoint; 0 if we're the initial thread
+	test	eax,eax
+	je		initialThread
+	; we're an additional thread, so call the desired function
+	call	eax
+	jmp		threadExit
+
+	; initial thread calls main
+initialThread:
 	call	main
-	call	threadExit
 
-	; c++-programs have address 0x100f for threadExit. So we need to achieve this here, too
-	nop
-	nop
-	nop
-	nop
-	nop
-
-; exit for additional threads
 threadExit:
 	push	eax
 	call	exit
 	; just to be sure
 	jmp		$
+
 	; c++-programs have address 0x102d for sigRetFunc. So we need to achieve this here, too
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
 	nop
 	nop
 	nop

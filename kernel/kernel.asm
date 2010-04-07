@@ -155,7 +155,8 @@ higherhalf:
 	mov		ds,eax												; reload segments
 	mov		es,eax
 	mov		fs,eax
-	mov		gs,eax
+	mov		eax,0x2B
+	mov		gs,eax												; TLS segment
 	iret																; jump to task and switch to user-mode
 
 	; just a simple protection...

@@ -34,6 +34,7 @@
 #include "modules/mem.h"
 #include "modules/stack.h"
 #include "modules/forkbomb.h"
+#include "modules/tls.h"
 
 #define NAME_LEN 10
 
@@ -55,6 +56,7 @@ static sTestModule modules[] = {
 	{"procswarm",mod_procswarm},
 	{"mem",mod_mem},
 	{"stack",mod_stack},
+	{"tls",mod_tls},
 };
 
 int main(int argc,char *argv[]) {

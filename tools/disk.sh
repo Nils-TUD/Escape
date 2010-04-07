@@ -61,12 +61,14 @@ buildMenuLst() {
 	echo "title \"$OSTITLE - VESA-text\"" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "kernel /boot/$BINNAME videomode=vesa swapdev=/dev/hda3" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/ata /system/devices/ata" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "module /sbin/cmos /dev/cmos" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/fs /dev/fs /dev/hda1 ext2" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "boot" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "title \"$OSTITLE - VGA-text\"" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "kernel /boot/$BINNAME videomode=vga swapdev=/dev/hda3" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/ata /system/devices/ata" >> $DISKMOUNT/boot/grub/menu.lst;
+	echo "module /sbin/cmos /dev/cmos" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "module /sbin/fs /dev/fs /dev/hda1 ext2" >> $DISKMOUNT/boot/grub/menu.lst;
 	echo "boot" >> $DISKMOUNT/boot/grub/menu.lst;
 }

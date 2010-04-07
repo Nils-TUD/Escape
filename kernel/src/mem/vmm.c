@@ -191,7 +191,7 @@ void vmm_getRegRange(sProc *p,tVMRegNo reg,u32 *start,u32 *end) {
 	if(start)
 		*start = vm->virt;
 	if(end)
-		*end = vm->virt + ROUNDUP(vm->reg->byteCount);
+		*end = vm->virt + vm->reg->byteCount;
 }
 
 bool vmm_hasBinary(sProc *p,sBinDesc *bin) {
@@ -635,7 +635,7 @@ static u32 vmm_findFreeAddr(sProc *p,u32 byteCount) {
 		if(reg == NULL)
 			return addr;
 		/* try again behind this area */
-		addr = ROUNDUP(reg->reg->byteCount);
+		addr = reg->virt + ROUNDUP(reg->reg->byteCount);
 	}
 	return 0;
 }
@@ -709,10 +709,13 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 			if(*virt == 0)
 				return ERR_NOT_ENOUGH_MEM;
 			break;
+		case REG_TLS:
 		case REG_PHYS:
 		case REG_SHM:
 			*pgFlags = 0;
-			if(type == REG_PHYS)
+			if(type == REG_TLS)
+				*flags = RF_WRITABLE;
+			else if(type == REG_PHYS)
 				*flags = RF_WRITABLE | RF_NOFREE;
 			else
 				*flags = RF_SHAREABLE | RF_WRITABLE;
@@ -749,6 +752,7 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 			assert(REG(p,RNO_DATA) == NULL);
 			break;
 
+		case REG_TLS:
 		case REG_STACK:
 		case REG_PHYS:
 		case REG_SHM:
@@ -769,7 +773,7 @@ void vmm_sprintfRegions(sStringBuffer *buf,sProc *p) {
 			if(c)
 				prf_sprintf(buf,"\n");
 			prf_sprintf(buf,"VMRegion %d (%#08x .. %#08x):\n",i,reg->virt,
-					reg->virt + ROUNDUP(reg->reg->byteCount) - 1);
+					reg->virt + reg->reg->byteCount - 1);
 			reg_sprintf(buf,reg->reg,reg->virt);
 			c++;
 		}

@@ -34,7 +34,7 @@
 #define IDLE_TID				0
 #define INIT_TID				1
 #define ATA_TID					2
-#define FS_TID					3
+#define FS_TID					5
 
 #define INVALID_TID				THREAD_COUNT
 /* use an invalid pid to identify the kernel */
@@ -90,6 +90,8 @@ typedef struct {
 	u64 lastSched;
 	/* the stack-region for this thread */
 	tVMRegNo stackRegion;
+	/* the TLS-region for this thread (-1 if not present) */
+	tVMRegNo tlsRegion;
 	/* the frame mapped at KERNEL_STACK */
 	u32 kstackFrame;
 	sThreadRegs save;

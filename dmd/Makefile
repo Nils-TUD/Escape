@@ -35,12 +35,12 @@ DMD_OBJS = $(patsubst %.o,$(BUILDL)/%.o, \
 	declaration.o dsymbol.o dt.o dump.o e2ir.o ee.o eh.o el.o \
 	dwarf.o enum.o evalu8.o expression.o func.o gdag.o gflow.o \
 	glocal.o gloop.o glue.o gnuc.o go.o gother.o html.o iasm.o id.o \
-	identifier.o impcnvtab.o import.o inifile.o init.o inline.o \
+	identifier.o impcnvtab.o import.o inifile.o dmdinit.o inline.o \
 	lexer.o link.o lstring.o mangle.o mars.o rmem.o module.o msc.o mtype.o \
 	nteh.o cppmangle.o opover.o optimize.o os.o out.o outbuf.o \
 	parse.o ph.o ptrntab.o root.o rtlsym.o s2ir.o scope.o statement.o \
 	stringtable.o struct.o csymbol.o template.o tk.o tocsym.o todt.o \
-	type.o typinf.o util.o var.o version.o strtold.o utf.o staticassert.o \
+	type.o typinf.o dmdutil.o var.o version.o strtold.o utf.o staticassert.o \
 	unialpha.o toobj.o toctype.o toelfdebug.o entity.o doc.o macro.o \
 	hdrgen.o delegatize.o aa.o ti_achar.o toir.o interpret.o traits.o \
 	builtin.o clone.o aliasthis.o \
@@ -51,10 +51,10 @@ SRC = mars.c enum.c struct.c dsymbol.c import.c idgen.c impcnvgen.c \
 	identifier.c mtype.c expression.c optimize.c template.h \
 	template.c lexer.c declaration.c cast.c cond.h cond.c link.c \
 	aggregate.h parse.c statement.c constfold.c version.h version.c \
-	inifile.c iasm.c module.c scope.c dump.c init.h init.c attrib.h \
+	inifile.c iasm.c module.c scope.c dump.c init.h dmdinit.c attrib.h \
 	attrib.c opover.c class.c mangle.c bit.c tocsym.c func.c inline.c \
 	access.c complex_t.h irstate.h irstate.c glue.c msc.c ph.c tk.c \
-	s2ir.c todt.c e2ir.c util.c identifier.h parse.h objfile.h \
+	s2ir.c todt.c e2ir.c dmdutil.c identifier.h parse.h objfile.h \
 	scope.h enum.h import.h mars.h module.h mtype.h dsymbol.h \
 	declaration.h lexer.h expression.h irstate.h statement.h eh.c \
 	utf.h utf.c staticassert.h staticassert.c unialpha.c \
@@ -343,7 +343,7 @@ $(BUILDL)/import.o: import.c
 $(BUILDL)/inifile.o: inifile.c
 	$(CC) -o $@ -c $(CFLAGS) $<
 
-$(BUILDL)/init.o: init.c
+$(BUILDL)/dmdinit.o: dmdinit.c
 	$(CC) -o $@ -c $(CFLAGS) $<
 
 $(BUILDL)/inline.o: inline.c
@@ -496,7 +496,7 @@ $(BUILDL)/type.o: $C/type.c
 $(BUILDL)/typinf.o: $(CH) $(TOTALH) mars.h module.h mtype.h typinf.c
 	$(CC) -o $@ -c $(MFLAGS) -I$(ROOT) typinf.c
 
-$(BUILDL)/util.o: util.c
+$(BUILDL)/dmdutil.o: dmdutil.c
 	$(CC) -o $@ -c $(MFLAGS) $<
 
 $(BUILDL)/utf.o: utf.h utf.c
@@ -541,7 +541,7 @@ gcov:
 	gcov identifier.c
 	gcov import.c
 	gcov inifile.c
-	gcov init.c
+	gcov dmdinit.c
 	gcov inline.c
 	gcov interpret.c
 	gcov irstate.c
@@ -574,7 +574,7 @@ gcov:
 	gcov typinf.c
 	gcov unialpha.c
 	gcov utf.c
-	gcov util.c
+	gcov dmdutil.c
 	gcov version.c
 
 #	gcov hdrgen.c

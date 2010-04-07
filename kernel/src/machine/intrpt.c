@@ -42,6 +42,8 @@
 #include <string.h>
 #include <sllist.h>
 
+#define DEBUG_PAGEFAULTS		0
+
 #define IDT_COUNT				256
 /* the privilege level */
 #define IDT_DPL_KERNEL			0
@@ -270,8 +272,10 @@ static u32 intrptCount = 0;
 /* stuff to count exceptions */
 static u32 exCount = 0;
 static u32 lastEx = 0xFFFFFFFF;
+#if DEBUG_PAGEFAULTS
 static u32 lastPFAddr = 0xFFFFFFFF;
 static tPid lastPFProc = INVALID_PID;
+#endif
 
 /* pointer to the current interrupt-stack */
 static sIntrptStackFrame *curIntrptStack = NULL;
@@ -546,7 +550,8 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
 			/* #PF */
 			if(stack->intrptNo == EX_PAGE_FAULT) {
-				/*if(pfaddr == lastPFAddr && lastPFProc == proc_getRunning()->pid) {
+#if DEBUG_PAGEFAULTS
+				if(pfaddr == lastPFAddr && lastPFProc == proc_getRunning()->pid) {
 					exCount++;
 					if(exCount >= MAX_EX_COUNT)
 						util_panic("%d page-faults at the same address of the same process",exCount);
@@ -556,7 +561,8 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 				lastPFAddr = pfaddr;
 				lastPFProc = proc_getRunning()->pid;
 				vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
-						stack->eip,proc_getRunning()->pid);*/
+						stack->eip,proc_getRunning()->pid);
+#endif
 
 				/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
 				if(!vmm_pagefault(pfaddr)) {

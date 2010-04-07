@@ -95,6 +95,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->fpuState = NULL;
 	t->signal = 0;
 	t->schedCount = 0;
+	t->tlsRegion = -1;
 	/* pretend that we've been scheduled now the last time to prevent that we'll be the first victim
 	 * for swapping */
 	t->lastSched = timer_getTimestamp();
@@ -175,6 +176,7 @@ void thread_switchTo(tTid tid) {
 		}
 
 		if(!thread_save(&cur->save)) {
+			u32 tlsStart,tlsEnd;
 			sThread *old;
 			sThread *t = thread_getById(tid);
 			vassert(t != NULL,"Thread with tid %d not found",tid);
@@ -213,6 +215,13 @@ void thread_switchTo(tTid tid) {
 				paging_setCur(cur->proc->pagedir);
 			}
 
+			/* set TLS-segment in GDT */
+			if(cur->tlsRegion >= 0) {
+				vmm_getRegRange(cur->proc,cur->tlsRegion,&tlsStart,&tlsEnd);
+				gdt_setTLS(tlsStart,tlsEnd - tlsStart);
+			}
+			else
+				gdt_setTLS(0,0xFFFFFFFF);
 			/* lock the FPU so that we can save the FPU-state for the previous process as soon
 			 * as this one wants to use the FPU */
 			fpu_lockFPU();
@@ -422,6 +431,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	if(cloneProc) {
 		/* proc_clone() sets t->kstackFrame in this case */
 		t->stackRegion = src->stackRegion;
+		t->tlsRegion = src->tlsRegion;
 	}
 	else {
 		/* no swapping here because we don't want to make a thread-switch */
@@ -438,6 +448,15 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 		/* add kernel-stack */
 		*stackFrame = t->kstackFrame = mm_allocateFrame(MM_DEF);
 		p->ownFrames++;
+		/* add a new tls-region, if its present in the src-thread */
+		t->tlsRegion = -1;
+		if(src->tlsRegion >= 0) {
+			u32 tlsStart,tlsEnd;
+			vmm_getRegRange(src->proc,src->tlsRegion,&tlsStart,&tlsEnd);
+			t->tlsRegion = vmm_add(p,NULL,0,tlsEnd - tlsStart,REG_TLS);
+			if(t->tlsRegion < 0)
+				goto errStack;
+		}
 	}
 
 	/* create thread-list if necessary */
@@ -445,12 +464,12 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	if(list == NULL) {
 		list = threadMap[t->tid % THREAD_MAP_SIZE] = sll_create();
 		if(list == NULL)
-			goto errStack;
+			goto errTLS;
 	}
 
 	/* insert */
 	if(!sll_append(list,t))
-		goto errStack;
+		goto errTLS;
 
 	/* insert in VFS; thread needs to be inserted for it */
 	if(!vfs_createThread(t->tid,vfsinfo_threadReadHandler))
@@ -468,6 +487,9 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 
 errAppend:
 	sll_removeFirst(list,t);
+errTLS:
+	if(t->tlsRegion >= 0)
+		vmm_remove(p,t->tlsRegion);
 errStack:
 	if(!cloneProc) {
 		mm_freeFrame(t->kstackFrame,MM_DEF);
@@ -504,6 +526,9 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 	vassert(list != NULL,"Thread %d not found in thread-map",t->tid);
 
 	if(destroyStacks) {
+		/* remove tls */
+		vmm_remove(t->proc,t->tlsRegion);
+		t->tlsRegion = -1;
 		/* remove stack-region */
 		vmm_remove(t->proc,t->stackRegion);
 		/* free kernel-stack */
@@ -521,6 +546,13 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 
 	/* remove from process */
 	sll_removeFirst(t->proc->threads,t);
+	/* if there is just one thread left we have to map his kernel-stack again because we won't
+	 * do it for single-thread-processes on a switch for performance-reasons */
+	if(sll_length(t->proc->threads) == 1) {
+		u32 stackFrame = ((sThread*)sll_get(t->proc->threads,0))->kstackFrame;
+		paging_mapTo(t->proc->pagedir,KERNEL_STACK,&stackFrame,1,
+				PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
+	}
 
 	/* remove from all modules we may be announced */
 	sched_removeThread(t);
@@ -558,6 +590,7 @@ void thread_dbg_printAll(void) {
 }
 
 void thread_dbg_print(sThread *t) {
+	sFuncCall *calls;
 	static const char *states[] = {
 		"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE","BLOCKEDSWAP","READYSWAP"
 	};
@@ -581,6 +614,20 @@ void thread_dbg_print(sThread *t) {
 					vid_printf(" (%s)",vfsn_getPath(ino));
 				vid_printf("\n");
 			}
+		}
+	}
+	vid_printf("\t\tkernel-trace:\n");
+	calls = util_getKernelStackTraceOf(t);
+	while(calls->addr != 0) {
+		vid_printf("\t\t\t%#08x -> %#08x (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
+		calls++;
+	}
+	calls = util_getUserStackTraceOf(t);
+	if(calls) {
+		vid_printf("\t\tuser-trace:\n");
+		while(calls->addr != 0) {
+			vid_printf("\t\t\t%#08x -> %#08x (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
+			calls++;
 		}
 	}
 }

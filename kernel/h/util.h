@@ -130,13 +130,27 @@ void util_startTimer(void);
 void util_stopTimer(const char *prefix,...);
 
 /**
- * Builds the stack-trace for a user-app
+ * Builds the user-stack-trace for the current thread
  *
- * @param t the thread
- * @param stack the interrupt-stack
  * @return the first function-call (for util_printStackTrace())
  */
-sFuncCall *util_getUserStackTrace(sThread *t,sIntrptStackFrame *stack);
+sFuncCall *util_getUserStackTrace(void);
+
+/**
+ * Builds the user-stack-trace for the given thread
+ *
+ * @param t the thread
+ * @return the first function-call (for util_printStackTrace()) or NULL if failed
+ */
+sFuncCall *util_getUserStackTraceOf(sThread *t);
+
+/**
+ * Builds the kernel-stack-trace of the given thread
+ *
+ * @param t the thread
+ * @return the first function-call (for util_printStackTrace())
+ */
+sFuncCall *util_getKernelStackTraceOf(sThread *t);
 
 /**
  * Builds the stack-trace for the kernel
@@ -149,11 +163,13 @@ sFuncCall *util_getKernelStackTrace(void);
  * Builds the stacktrace with given vars
  *
  * @param ebp the current value of ebp
- * @param start the stack-start
- * @param end the stack-end
+ * @param rstart the stack-start (the real address)
+ * @param rend the stack-end (the real address)
+ * @param mstart the stack-start (the mapped address)
+ * @param mend the stack-end (the mapped address)
  * @return the first function-call (for util_printStackTrace())
  */
-sFuncCall *util_getStackTrace(u32 *ebp,u32 start,u32 end);
+sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 rend,u32 mstart,u32 mend);
 
 /**
  * Prints the given stack-trace

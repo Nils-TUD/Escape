@@ -32,10 +32,9 @@
 
 static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo);
 
-s32 elf_loadFromFile(char *path) {
+s32 elf_loadFromFile(const char *path) {
 	sThread *t = thread_getRunning();
 	tFileNo file;
-	s32 res;
 	u32 j,loadSeg = 0;
 	u8 const *datPtr;
 	Elf32_Ehdr eheader;
@@ -55,12 +54,10 @@ s32 elf_loadFromFile(char *path) {
 	if(vfsr_istat(t->tid,ino,dev,&info) < 0)
 		goto failed;
 	bindesc.path = path;
-	if(bindesc.path == NULL)
-		goto failed;
 	bindesc.modifytime = info.modifytime;
 
 	/* first read the header */
-	if((res = vfs_readFile(t->tid,file,(u8*)&eheader,sizeof(Elf32_Ehdr))) < 0)
+	if(vfs_readFile(t->tid,file,(u8*)&eheader,sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr))
 		goto failed;
 
 	/* check magic */
@@ -74,13 +71,24 @@ s32 elf_loadFromFile(char *path) {
 		if(vfs_seek(t->tid,file,(u32)datPtr,SEEK_SET) < 0)
 			goto failed;
 		/* read pheader */
-		res = vfs_readFile(t->tid,file,(u8*)&pheader,sizeof(Elf32_Phdr));
-		if(res < 0 || res != sizeof(Elf32_Phdr))
+		if(vfs_readFile(t->tid,file,(u8*)&pheader,sizeof(Elf32_Phdr)) != sizeof(Elf32_Phdr))
 			goto failed;
 
-		if(pheader.p_type == PT_LOAD) {
-			if(elf_addSegment(&bindesc,&pheader,loadSeg) < 0)
-				return ERR_INVALID_ELF_BIN;
+		if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
+			s32 type = elf_addSegment(&bindesc,&pheader,loadSeg);
+			if(type < 0)
+				goto failed;
+			if(type == REG_TLS) {
+				u32 tlsStart,tlsEnd;
+				vmm_getRegRange(t->proc,t->tlsRegion,&tlsStart,&tlsEnd);
+				/* read tdata */
+				if(vfs_seek(t->tid,file,(u32)pheader.p_offset,SEEK_SET) < 0)
+					goto failed;
+				if(vfs_readFile(t->tid,file,(u8*)tlsStart,pheader.p_filesz) < 0)
+					goto failed;
+				/* clear tbss */
+				memclear((void*)(tlsStart + pheader.p_filesz),pheader.p_memsz - pheader.p_filesz);
+			}
 			loadSeg++;
 		}
 	}
@@ -127,7 +135,7 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 }
 
 static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo) {
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
 	u8 type;
 	s32 res;
 	/* determine type */
@@ -135,6 +143,11 @@ static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo) {
 		if(pheader->p_flags != (PF_X | PF_R) || pheader->p_vaddr != TEXT_BEGIN)
 			return ERR_INVALID_ELF_BIN;
 		type = REG_TEXT;
+	}
+	else if(pheader->p_type == PT_TLS) {
+		type = REG_TLS;
+		/* we need the thread-control-block at the end */
+		pheader->p_memsz += sizeof(void*);
 	}
 	else if(pheader->p_flags == PF_R)
 		type = REG_RODATA;
@@ -151,11 +164,13 @@ static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo) {
 	if(pheader->p_filesz > pheader->p_memsz)
 		return ERR_INVALID_ELF_BIN;
 
-	/* bss needs no binary */
-	if(type == REG_BSS)
+	/* bss and tls need no binary */
+	if(type == REG_BSS || type == REG_TLS)
 		bindesc = NULL;
 	/* add the region */
-	if((res = vmm_add(p,bindesc,pheader->p_offset,pheader->p_memsz,type)) < 0)
+	if((res = vmm_add(t->proc,bindesc,pheader->p_offset,pheader->p_memsz,type)) < 0)
 		return res;
-	return 0;
+	if(type == REG_TLS)
+		t->tlsRegion = res;
+	return type;
 }

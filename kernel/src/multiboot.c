@@ -139,9 +139,9 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			argc = proc_buildArgs(args,&argBuffer,&argSize,false);
 			if(argc < 0)
 				util_panic("Building args for multiboot-module %s failed: %d",p->command,argc);
-			vassert(proc_setupUserStack(stack,argc,argBuffer,argSize),
+			vassert(proc_setupUserStack(stack,argc,argBuffer,argSize,entryPoint),
 					"Unable to setup user-stack for multiboot module %s",p->command);
-			proc_setupStart(stack,entryPoint);
+			proc_setupStart(stack);
 			kheap_free(argBuffer);
 			/* we don't want to continue the loop ;) */
 			return;

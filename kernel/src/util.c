@@ -65,7 +65,7 @@ void util_panic(const char *fmt,...) {
 	util_printStackTrace(util_getKernelStackTrace());
 
 	if(t != NULL && t->stackRegion) {
-		util_printStackTrace(util_getUserStackTrace(t,intrpt_getCurStack()));
+		util_printStackTrace(util_getUserStackTrace());
 		vid_printf("User-Register:\n");
 		regs[R_EAX] = istack->eax;
 		regs[R_EBX] = istack->ebx;
@@ -135,10 +135,49 @@ void util_stopTimer(const char *prefix,...) {
 	vid_printf(": 0x%08x%08x\n",diff.val32.upper,diff.val32.lower);
 }
 
-sFuncCall *util_getUserStackTrace(sThread *t,sIntrptStackFrame *stack) {
+sFuncCall *util_getUserStackTrace(void) {
 	u32 start,end;
+	sIntrptStackFrame *stack = intrpt_getCurStack();
+	sThread *t = thread_getRunning();
 	vmm_getRegRange(t->proc,t->stackRegion,&start,&end);
-	return util_getStackTrace((u32*)stack->ebp,start,end);
+	return util_getStackTrace((u32*)stack->ebp,start,end,start,end);
+}
+
+sFuncCall *util_getUserStackTraceOf(sThread *t) {
+	u32 start,end,pcount;
+	sFuncCall *calls;
+	u32 *frames;
+	if(t->stackRegion >= 0) {
+		vmm_getRegRange(t->proc,t->stackRegion,&start,&end);
+		pcount = (end - start) / PAGE_SIZE;
+		frames = kheap_alloc((pcount + 1) * sizeof(u32));
+		if(frames) {
+			sIntrptStackFrame *istack = intrpt_getCurStack();
+			u32 temp,i,startCpy = start;
+			frames[0] = t->kstackFrame;
+			for(i = 0; startCpy < end; i++) {
+				frames[i + 1] = paging_getFrameNo(t->proc->pagedir,startCpy);
+				startCpy += PAGE_SIZE;
+			}
+			temp = paging_mapToTemp(frames,pcount + 1);
+			istack = (sIntrptStackFrame*)(temp + ((u32)istack & (PAGE_SIZE - 1)));
+			calls = util_getStackTrace((u32*)istack->ebp,start,end,
+					temp + PAGE_SIZE,temp + (pcount + 1) * PAGE_SIZE);
+			paging_unmapFromTemp(pcount + 1);
+			kheap_free(frames);
+			return calls;
+		}
+	}
+	return NULL;
+}
+
+sFuncCall *util_getKernelStackTraceOf(sThread *t) {
+	u32 ebp = t->save.ebp;
+	u32 temp = paging_mapToTemp(&t->kstackFrame,1);
+	sFuncCall *calls = util_getStackTrace((u32*)ebp,KERNEL_STACK,KERNEL_STACK + PAGE_SIZE,
+			temp,temp + PAGE_SIZE);
+	paging_unmapFromTemp(1);
+	return calls;
 }
 
 sFuncCall *util_getKernelStackTrace(void) {
@@ -155,10 +194,10 @@ sFuncCall *util_getKernelStackTrace(void) {
 		end = (u32)&kernelStack;
 	}
 
-	return util_getStackTrace(ebp,start,end);
+	return util_getStackTrace(ebp,start,end,start,end);
 }
 
-sFuncCall *util_getStackTrace(u32 *ebp,u32 start,u32 end) {
+sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 rend,u32 mstart,u32 mend) {
 	static sFuncCall frames[MAX_STACK_DEPTH];
 	u32 i;
 	bool isKernel = (u32)ebp >= KERNEL_AREA_V_ADDR;
@@ -166,8 +205,12 @@ sFuncCall *util_getStackTrace(u32 *ebp,u32 start,u32 end) {
 	sSymbol *sym;
 
 	for(i = 0; i < MAX_STACK_DEPTH; i++) {
+		/* adjust it if we're in the kernel-stack but are using the temp-area (to print the trace
+		 * for another thread) */
+		if((u32)ebp >= rstart && (u32)ebp < rend + PAGE_SIZE)
+			ebp = (u32*)(mstart + ((u32)ebp & (PAGE_SIZE - 1)));
 		/* prevent page-fault */
-		if((u32)ebp < start || (u32)ebp >= end)
+		if((u32)ebp < mstart || (u32)ebp >= mend)
 			break;
 		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;
 		if(isKernel) {

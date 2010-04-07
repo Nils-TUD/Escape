@@ -30,6 +30,7 @@
 #define SEGSEL_GDTI_KDATA		(2 << 3)
 #define SEGSEL_GDTI_UCODE		(3 << 3)
 #define SEGSEL_GDTI_UDATA		(4 << 3)
+#define SEGSEL_GDTI_UTLS		(5 << 3)
 
 /* the table-indicators */
 #define SEGSEL_TI_GDT			0x00
@@ -43,6 +44,11 @@
  * Inits the GDT
  */
 void gdt_init(void);
+
+/**
+ * Initializes the TLS-segment for the given TLS-region
+ */
+void gdt_setTLS(u32 tlsAddr,u32 tlsSize);
 
 /**
  * Sets the stack-pointer for the TSS

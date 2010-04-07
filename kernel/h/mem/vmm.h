@@ -40,6 +40,7 @@
 #define REG_STACK			4
 #define REG_SHM				5
 #define REG_PHYS			6
+#define REG_TLS				7
 
 typedef struct {
 	sRegion *reg;

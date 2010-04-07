@@ -29,7 +29,7 @@
  * @param path the path to the program
  * @return entry-point on success, ERR_INVALID_ELF_BIN on failure
  */
-s32 elf_loadFromFile(char *path);
+s32 elf_loadFromFile(const char *path);
 
 /**
  * Loads the given code into the user-space. This is just intended for loading initloader

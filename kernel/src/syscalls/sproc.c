@@ -75,6 +75,7 @@ void sysc_exit(sIntrptStackFrame *stack) {
 	s32 exitCode = (s32)SYSC_ARG1(stack);
 	proc_destroyThread(exitCode);
 	thread_switch();
+	util_panic("We shouldn't get here...");
 }
 
 void sysc_wait(sIntrptStackFrame *stack) {
@@ -241,13 +242,13 @@ void sysc_exec(sIntrptStackFrame *stack) {
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
 	/* make process ready */
-	if(!proc_setupUserStack(stack,argc,argBuffer,argSize)) {
+	if(!proc_setupUserStack(stack,argc,argBuffer,argSize,(u32)res)) {
 		kheap_free(argBuffer);
 		proc_terminate(p,res,SIG_COUNT);
 		thread_switch();
 		return;
 	}
-	proc_setupStart(stack,(u32)res);
+	proc_setupStart(stack);
 
 	kheap_free(argBuffer);
 }

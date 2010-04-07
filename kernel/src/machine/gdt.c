@@ -26,9 +26,9 @@
 /* for offsetof() */
 #include <stddef.h>
 
-/* we need 6 entries: null-entry, code for kernel, data for kernel, user-code, user-data
+/* we need 6 entries: null-entry, code for kernel, data for kernel, user-code, user-data, tls
  * and one entry for our TSS */
-#define GDT_ENTRY_COUNT 6
+#define GDT_ENTRY_COUNT 7
 
 /* == for the access-field == */
 
@@ -245,6 +245,9 @@ void gdt_init(void) {
 	/* user data */
 	gdt_set_desc(4,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
 			GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,GDT_DPL_USER);
+	/* tls */
+	gdt_set_desc(5,0,0xFFFFFFFF >> PAGE_SIZE_SHIFT,
+			GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,GDT_DPL_USER);
 
 	/* tss (leave a bit space for the vm86-segment-registers that will be present at the stack-top
 	 * in vm86-mode. This way we can have the same interrupt-stack for all processes) */
@@ -253,13 +256,13 @@ void gdt_init(void) {
 	/* init io-map */
 	tss.ioMapOffset = IO_MAP_OFFSET_INVALID;
 	tss.ioMapEnd = 0xFF;
-	gdt_set_tss_desc(5,(u32)&tss,sizeof(sTSS) - 1);
+	gdt_set_tss_desc(6,(u32)&tss,sizeof(sTSS) - 1);
 
 	/* now load the GDT */
 	gdt_flush(&gdtTable);
 
 	/* load tss */
-	tss_load(5 * sizeof(sGDTDesc));
+	tss_load(6 * sizeof(sGDTDesc));
 
 	/* We needed the area 0x0 .. 0x00400000 because in the first phase the GDT was setup so that
 	 * the stuff at 0xC0000000 has been mapped to 0x00000000. Therefore, after enabling paging
@@ -269,6 +272,13 @@ void gdt_init(void) {
 	 * Now our GDT is setup in the "right" way, so that 0xC0000000 will arrive at the MMU.
 	 * Therefore we can unmap the 0x0 area. */
 	paging_gdtFinished();
+}
+
+void gdt_setTLS(u32 tlsAddr,u32 tlsSize) {
+	/* the thread-control-block is at the end of the tls-region; %gs:0x0 should reference
+	 * the thread-control-block */
+	gdt_set_desc(5,(tlsAddr + tlsSize - sizeof(u32)),BYTES_2_PAGES(tlsSize),
+			GDT_TYPE_DATA | GDT_PRESENT | GDT_DATA_WRITE,GDT_DPL_USER);
 }
 
 void tss_setStackPtr(u8 isVM86) {

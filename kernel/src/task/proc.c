@@ -30,6 +30,7 @@
 #include <machine/fpu.h>
 #include <machine/gdt.h>
 #include <machine/cpu.h>
+#include <machine/timer.h>
 #include <vfs/vfs.h>
 #include <vfs/info.h>
 #include <vfs/node.h>
@@ -44,8 +45,6 @@
 
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
-
-#define EXIT_CALL_ADDR					(TEXT_BEGIN + 0xf)
 
 static void proc_notifyProcDied(tPid parent,tPid pid);
 static s32 proc_finishClone(sThread *nt,u32 stackFrame);
@@ -318,16 +317,9 @@ s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 	if(res == 1) {
 		u32 *esp;
 		sIntrptStackFrame *istack = intrpt_getCurStack();
-		if(!proc_setupUserStack(istack,argc,args,argSize))
+		if(!proc_setupUserStack(istack,argc,args,argSize,entryPoint))
 			goto error;
-		proc_setupStart(istack,entryPoint);
-
-		/* we want to call exit when the thread-function returns */
-		esp = (u32*)istack->uesp;
-		if(thread_extendStack((u32)esp - sizeof(u32)) < 0)
-			goto error;
-		*--esp = EXIT_CALL_ADDR;
-		istack->uesp = (u32)esp;
+		proc_setupStart(istack);
 
 		/* child */
 		return 0;
@@ -556,12 +548,30 @@ s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser) {
 	return argc;
 }
 
-bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize) {
+bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize,u32 tentryPoint) {
 	u32 *esp;
 	char **argv;
 	u32 totalSize;
-	sThread *thread = thread_getRunning();
+	sThread *t = thread_getRunning();
 	vassert(frame != NULL,"frame == NULL");
+
+	/*
+	 * Initial stack:
+	 * +------------------+  <- top
+	 * |     arguments    |
+	 * |        ...       |
+	 * +------------------+
+	 * |       argv       |
+	 * +------------------+
+	 * |       argc       |
+	 * +------------------+
+	 * |     TLSSize      |  0 if not present
+	 * +------------------+
+	 * |     TLSStart     |  0 if not present
+	 * +------------------+
+	 * |    entryPoint    |  0 for initial thread, thread-entrypoint for others
+	 * +------------------+
+	 */
 
 	/* we need to know the total number of bytes we'll store on the stack */
 	totalSize = 0;
@@ -570,11 +580,11 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 		totalSize += (argsSize + sizeof(u32) - 1) & ~(sizeof(u32) - 1);
 		totalSize += sizeof(u32) * (argc + 1);
 	}
-	/* finally we need argc and argv itself */
-	totalSize += sizeof(u32) * 2;
+	/* finally we need argc, argv, tlsSize, tlsStart and entryPoint */
+	totalSize += sizeof(u32) * 5;
 
 	/* get esp */
-	vmm_getRegRange(thread->proc,thread->stackRegion,NULL,(u32*)&esp);
+	vmm_getRegRange(t->proc,t->stackRegion,NULL,(u32*)&esp);
 
 	/* extend the stack if necessary */
 	if(thread_extendStack((u32)esp - totalSize) < 0)
@@ -609,14 +619,29 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 
 	/* store argc and argv */
 	*esp-- = (u32)argv;
-	*esp = argc;
+	*esp-- = argc;
+
+	/* put address and size of the tls-region on the stack */
+	if(t->tlsRegion >= 0) {
+		u32 tlsStart,tlsEnd;
+		vmm_getRegRange(t->proc,t->tlsRegion,&tlsStart,&tlsEnd);
+		*esp-- = tlsEnd - tlsStart;
+		*esp-- = tlsStart;
+	}
+	else {
+		/* no tls */
+		*esp-- = 0;
+		*esp-- = 0;
+	}
+
+	*esp = tentryPoint == TEXT_BEGIN ? 0 : tentryPoint;
 
 	frame->uesp = (u32)esp;
 	frame->ebp = frame->uesp;
 	return true;
 }
 
-void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint) {
+void proc_setupStart(sIntrptStackFrame *frame) {
 	vassert(frame != NULL,"frame == NULL");
 
 	/* user-mode segments */
@@ -624,9 +649,11 @@ void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint) {
 	frame->ds = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
 	frame->es = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
 	frame->fs = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	frame->gs = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
+	/* gs is used for TLS */
+	frame->gs = SEGSEL_GDTI_UTLS | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
 	frame->uss = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	frame->eip = entryPoint;
+	/* entrypoint is always TEXT_BEGIN; the stack tells the user-app where to go */
+	frame->eip = TEXT_BEGIN;
 	/* general purpose register */
 	frame->eax = 0;
 	frame->ebx = 0;

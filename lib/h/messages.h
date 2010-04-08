@@ -90,6 +90,7 @@
 #define MSG_VESA_CURSOR				901
 #define MSG_VESA_GETMODE_REQ		902
 #define MSG_VESA_GETMODE_RESP		903
+#define MSG_VESA_SETMODE			904
 
 #define MSG_MOUSE					1000
 
@@ -103,12 +104,15 @@
 #define MSG_WIN_DESTROY				1107
 #define MSG_WIN_UPDATE				1108
 #define MSG_WIN_RESIZE				1109
+#define MSG_WIN_ENABLE				1110
+#define MSG_WIN_DISABLE				1111
 
 #define MSG_POWER_REBOOT			1300
 #define MSG_POWER_SHUTDOWN			1301
 
 #define MSG_VID_SETCURSOR			1400	/* expects sVTPos */
 #define MSG_VID_GETSIZE				1401	/* writes into sVTSize */
+#define MSG_VID_SETMODE				1402
 
 #define MSG_VT_EN_ECHO				1500
 #define MSG_VT_DIS_ECHO				1501
@@ -122,10 +126,22 @@
 #define MSG_VT_RESTORE				1509
 #define MSG_VT_SHELLPID				1510
 #define MSG_VT_GETSIZE				1511	/* writes into sVTSize */
-#define MSG_VT_EN_DATE				1512
-#define MSG_VT_DIS_DATE				1513
+#define MSG_VT_ENABLE				1512	/* enables vterm */
+#define MSG_VT_DISABLE				1513	/* disables vterm */
+#define MSG_VT_SELECT				1514	/* selects the vterm */
 
 #define MSG_KM_SET					1600	/* sets a keymap, expects the keymap-path as argument */
+#define MSG_KM_EVENT				1601	/* the message-id for sending events to the listeners */
+
+#define MSG_KE_ADDLISTENER			1700
+#define MSG_KE_REMLISTENER			1701
+
+/* the possible km-events to listen to; KE_EV_PRESSED, KE_EV_RELEASED and KE_EV_KEYCODE,
+ * KE_EV_CHARACTER are mutually exclusive, each */
+#define KE_EV_PRESSED				1
+#define KE_EV_RELEASED				2
+#define KE_EV_KEYCODE				4
+#define KE_EV_CHARACTER				8
 
 /* the data read from the keyboard */
 typedef struct {

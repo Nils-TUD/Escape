@@ -144,8 +144,8 @@ void ShellApplication::driverMain() {
 			break;
 
 			case MSG_VT_SHELLPID:
-			case MSG_VT_EN_DATE:
-			case MSG_VT_DIS_DATE:
+			case MSG_VT_ENABLE:
+			case MSG_VT_DISABLE:
 			case MSG_VT_EN_ECHO:
 			case MSG_VT_DIS_ECHO:
 			case MSG_VT_EN_RDLINE:

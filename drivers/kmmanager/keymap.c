@@ -74,10 +74,6 @@ char km_translateKeycode(sKeymapEntry *map,bool isBreak,u32 keycode,u8 *modifier
 			break;
 	}
 
-	/* we don't need breakcodes anymore */
-	if(isBreak)
-		return '\0';
-
 	e = map + keycode;
 	*modifier = (altDown ? STATE_ALT : 0) | (ctrlDown ? STATE_CTRL : 0) |
 			(shiftDown ? STATE_SHIFT : 0);

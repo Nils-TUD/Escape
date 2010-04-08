@@ -283,6 +283,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"A VM86-task doesn't exist (maybe killed?)!");
 			break;
 
+		case ERR_LISTENER_EXISTS:
+			strcpy(msg,"The keylistener does already exist!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

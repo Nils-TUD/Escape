@@ -110,6 +110,11 @@ tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tPid owner,u8 style
 	return WINID_UNSED;
 }
 
+void win_updateScreen(void) {
+	send(vesa,MSG_VESA_SETMODE,NULL,0);
+	win_notifyVesa(0,0,vesaInfo.width,vesaInfo.height);
+}
+
 void win_destroyWinsOf(tTid tid,tCoord mouseX,tCoord mouseY) {
 	tWinId id;
 	for(id = 0; id < WINDOW_COUNT; id++) {

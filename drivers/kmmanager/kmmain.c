@@ -27,10 +27,14 @@
 #include <errors.h>
 #include <ringbuffer.h>
 #include "keymap.h"
+#include "events.h"
 
 #define KEYMAP_FILE					"/etc/keymap"
 #define KB_DATA_BUF_SIZE			128
 #define BUF_SIZE					128
+
+static void handleKeymap(tMsgId mid,tFD fd);
+static void handleKeyevents(tMsgId mid,tFD fd);
 
 /* file-descriptor for ourself */
 static sMsg msg;
@@ -41,13 +45,16 @@ static sKbData kbData[KB_DATA_BUF_SIZE];
 
 int main(void) {
 	char path[MAX_PATH_LEN];
-	tDrvId id;
+	tDrvId ids[2];
+	tDrvId drv;
 	tMsgId mid;
 	tFD kbFd;
 	tFile *f;
 
-	id = regDriver("kmmanager",DRV_READ);
-	if(id < 0)
+	events_init();
+
+	ids[0] = regDriver("kmmanager",DRV_READ);
+	if(ids[0] < 0)
 		error("Unable to register driver 'kmmanager'");
 
 	/* create buffers */
@@ -72,9 +79,13 @@ int main(void) {
 	if(!map)
 		error("Unable to load default keymap");
 
+	ids[1] = regDriver("keyevents",0);
+	if(ids[1] < 0)
+		error("Unable to register driver 'keyevents'");
+
     /* wait for commands */
 	while(1) {
-		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),GW_NOBLOCK);
+		tFD fd = getWork(ids,2,&drv,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0) {
 			/* read from keyboard */
 			/* don't block here since there may be waiting clients.. */
@@ -88,7 +99,9 @@ int main(void) {
 						data.keycode = kbd->keycode;
 						data.character = km_translateKeycode(
 								map,kbd->isBreak,kbd->keycode,&(data.modifier));
-						rb_write(rbuf,&data);
+						/* if nobody has announced a global key-listener for it, add it to our rb */
+						if(!events_send(ids[1],&data))
+							rb_write(rbuf,&data);
 						kbd++;
 					}
 				}
@@ -96,50 +109,83 @@ int main(void) {
 					printe("Unable to read");
 					break;
 				}
-				setDataReadable(id,true);
+				setDataReadable(ids[0],true);
 			}
 			wait(EV_CLIENT | EV_DATA_READABLE);
 		}
 		else {
-			switch(mid) {
-				case MSG_DRV_READ: {
-					/* offset is ignored here */
-					u32 count = msg.args.arg2 / sizeof(sKmData);
-					sKmData *buffer = (sKmData*)malloc(count * sizeof(sKmData));
-					msg.args.arg1 = 0;
-					if(buffer)
-						msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKmData);
-					msg.args.arg2 = rb_length(rbuf) > 0;
-					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
-					if(buffer) {
-						send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sKmData));
-						free(buffer);
-					}
-				}
-				break;
-				case MSG_KM_SET: {
-					char *str = msg.data.d;
-					str[sizeof(msg.data.d) - 1] = '\0';
-					sKeymapEntry *newMap = km_parse(str);
-					if(!newMap)
-						msg.data.arg1 = ERR_INVALID_KEYMAP;
-					else {
-						msg.data.arg1 = 0;
-						free(map);
-						map = newMap;
-					}
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
-				}
-				break;
-			}
+			if(drv == ids[0])
+				handleKeymap(mid,fd);
+			else if(drv == ids[1])
+				handleKeyevents(mid,fd);
+			else
+				printe("[KM] Unknown driver-id %d\n",drv);
 			close(fd);
 		}
 	}
 
 	/* clean up */
+	unregDriver(ids[1]);
 	free(map);
 	rb_destroy(rbuf);
-	unregDriver(id);
+	unregDriver(ids[0]);
 
 	return EXIT_SUCCESS;
+}
+
+static void handleKeymap(tMsgId mid,tFD fd) {
+	switch(mid) {
+		case MSG_DRV_READ: {
+			/* offset is ignored here */
+			u32 count = msg.args.arg2 / sizeof(sKmData);
+			sKmData *buffer = (sKmData*)malloc(count * sizeof(sKmData));
+			msg.args.arg1 = 0;
+			if(buffer)
+				msg.args.arg1 = rb_readn(rbuf,buffer,count) * sizeof(sKmData);
+			msg.args.arg2 = rb_length(rbuf) > 0;
+			send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
+			if(buffer) {
+				send(fd,MSG_DRV_READ_RESP,buffer,count * sizeof(sKmData));
+				free(buffer);
+			}
+		}
+		break;
+		case MSG_KM_SET: {
+			char *str = msg.data.d;
+			str[sizeof(msg.data.d) - 1] = '\0';
+			sKeymapEntry *newMap = km_parse(str);
+			if(!newMap)
+				msg.data.arg1 = ERR_INVALID_KEYMAP;
+			else {
+				msg.data.arg1 = 0;
+				free(map);
+				map = newMap;
+			}
+			send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
+		}
+		break;
+	}
+}
+
+static void handleKeyevents(tMsgId mid,tFD fd) {
+	switch(mid) {
+		case MSG_KE_ADDLISTENER: {
+			tTid tid = (tTid)msg.args.arg1;
+			u8 flags = (u8)msg.args.arg2;
+			u8 key = (u8)msg.args.arg3;
+			u8 modifier = (u8)msg.args.arg4;
+			msg.args.arg1 = events_add(tid,flags,key,modifier);
+			send(fd,MSG_KE_ADDLISTENER,&msg,sizeof(msg.args));
+		}
+		break;
+
+		case MSG_KE_REMLISTENER: {
+			tTid tid = (tTid)msg.args.arg1;
+			u8 flags = (u8)msg.args.arg2;
+			u8 key = (u8)msg.args.arg3;
+			u8 modifier = (u8)msg.args.arg4;
+			events_remove(tid,flags,key,modifier);
+		}
+		break;
+	}
 }

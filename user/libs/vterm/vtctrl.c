@@ -155,11 +155,11 @@ s32 vterm_ctl(sVTerm *vt,sVTermCfg *cfg,u32 cmd,void *data) {
 			if(vt->shellPid == 0)
 				vt->shellPid = *(tPid*)data;
 			break;
-		case MSG_VT_EN_DATE:
-			cfg->refreshDate = true;
+		case MSG_VT_ENABLE:
+			cfg->enabled = true;
 			break;
-		case MSG_VT_DIS_DATE:
-			cfg->refreshDate = false;
+		case MSG_VT_DISABLE:
+			cfg->enabled = false;
 			break;
 		case MSG_VT_EN_ECHO:
 			vt->echo = true;

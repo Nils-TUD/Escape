@@ -109,8 +109,8 @@ bool vterm_initAll(tDrvId *ids,sVTermCfg *cfg) {
 		vterms[i].setCursor = vterm_setCursor;
 	}
 
-	/*if(startThread(vterm_dateThread,NULL) < 0)
-		error("Unable to start date-thread");*/
+	if(startThread(vterm_dateThread,NULL) < 0)
+		error("Unable to start date-thread");
 	return true;
 }
 
@@ -176,7 +176,6 @@ void vterm_update(sVTerm *vt) {
 static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 	UNUSED(c);
 	if(modifier & STATE_CTRL) {
-		u32 index;
 		switch(keycode) {
 			case VK_C:
 				/* send interrupt to shell */
@@ -191,11 +190,6 @@ static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 					vterm_rlFlushBuf(vt);
 				}
 				break;
-			case VK_1 ... VK_9:
-				index = keycode - VK_1;
-				if(index < VTERM_COUNT && vt->index != index)
-					vterm_selectVTerm(index);
-				return false;
 		}
 		/* notify the shell (otherwise it won't get the signal directly) */
 		if(keycode == VK_C || keycode == VK_D) {
@@ -223,7 +217,7 @@ static int vterm_dateThread(int argc,char *argv[]) {
 	UNUSED(argc);
 	UNUSED(argv);
 	while(1) {
-		if(config->refreshDate) {
+		if(config->enabled) {
 			/* get date and format it */
 			if(getDate(&date) == 0) {
 				len = dateToString(dateStr,30,"%a, %d. %b %Y, %H:%M:%S",&date);

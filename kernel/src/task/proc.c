@@ -202,8 +202,8 @@ void proc_getMemUsage(u32 *paging,u32 *data) {
 			pmem += ptmp;
 		}
 	}
-	*paging = pmem;
-	*data = dmem;
+	*paging = pmem * PAGE_SIZE;
+	*data = dmem * PAGE_SIZE;
 }
 
 bool proc_hasChild(tPid pid) {

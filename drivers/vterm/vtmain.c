@@ -62,7 +62,7 @@ int main(void) {
 	char name[MAX_VT_NAME_LEN + 1];
 
 	cfg.readKb = true;
-	cfg.refreshDate = true;
+	cfg.enabled = true;
 
 	/* reg drivers */
 	for(i = 0; i < VTERM_COUNT; i++) {
@@ -91,11 +91,11 @@ int main(void) {
 	reqc = 0;
 	while(1) {
 		tFD fd = getWork(drvIds,VTERM_COUNT,&client,&mid,&msg,sizeof(msg),GW_NOBLOCK);
-		if((cfg.readKb && reqc >= MAX_SEQREQ) || fd < 0) {
+		if((cfg.enabled && cfg.readKb && reqc >= MAX_SEQREQ) || fd < 0) {
 			if(fd < 0 && fd != ERR_NO_CLIENT_WAITING)
 				printe("[VTERM] Unable to get work");
 			reqc = 0;
-			if(cfg.readKb) {
+			if(cfg.enabled && cfg.readKb) {
 				/* read from keyboard */
 				/* don't block here since there may be waiting clients.. */
 				if(!eof(kbFd)) {
@@ -118,7 +118,7 @@ int main(void) {
 			/* if we've received a msg (and just interrupted because reqc >= MAX_SEQREQ), we
 			 * HAVE TO handle it of course */
 			if(fd < 0) {
-				if(cfg.readKb)
+				if(cfg.enabled && cfg.readKb)
 					wait(EV_CLIENT | EV_DATA_READABLE);
 				else
 					wait(EV_CLIENT);
@@ -170,9 +170,18 @@ int main(void) {
 				}
 				break;
 
+				case MSG_VT_SELECT: {
+					u32 index = msg.args.arg1;
+					if(index < VTERM_COUNT && vterm_getActive()->index != index) {
+						vterm_selectVTerm(index);
+						vterm_update(vterm_getActive());
+					}
+				}
+				break;
+
 				case MSG_VT_SHELLPID:
-				case MSG_VT_EN_DATE:
-				case MSG_VT_DIS_DATE:
+				case MSG_VT_ENABLE:
+				case MSG_VT_DISABLE:
 				case MSG_VT_EN_ECHO:
 				case MSG_VT_DIS_ECHO:
 				case MSG_VT_EN_RDLINE:
@@ -185,6 +194,11 @@ int main(void) {
 				case MSG_VT_RESTORE:
 				case MSG_VT_GETSIZE:
 					msg.data.arg1 = vterm_ctl(vt,&cfg,mid,msg.data.d);
+					/* reenable mode, if necessary */
+					if(mid == MSG_VT_ENABLE) {
+						send(vt->video,MSG_VID_SETMODE,NULL,0);
+						vterm_markScrDirty(vt);
+					}
 					vterm_update(vt);
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 					break;

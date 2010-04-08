@@ -43,8 +43,8 @@
 #define CURSOR_RESIZE_BL_FILE			"/etc/cursor_resbl.bmp"
 #define CURSOR_RESIZE_R_FILE			"/etc/cursor_resr.bmp"
 
-#define RESOLUTION_X					800
-#define RESOLUTION_Y					600
+#define RESOLUTION_X					1024
+#define RESOLUTION_Y					768
 #define BITS_PER_PIXEL					24
 
 #define CURSOR_LEN						2
@@ -171,6 +171,12 @@ int main(void) {
 				}
 				break;
 
+				case MSG_VESA_SETMODE: {
+					if(minfo)
+						vbe_setMode(minfo->modeNo);
+				}
+				break;
+
 				case MSG_VESA_CURSOR: {
 					newCurX = (tCoord)msg.args.arg1;
 					newCurY = (tCoord)msg.args.arg2;
@@ -256,6 +262,9 @@ static s32 vesa_init(void) {
 	cursorCopy = (u8*)malloc(curWidth * curHeight * (minfo->bitsPerPixel / 8));
 	if(cursorCopy == NULL)
 		return ERR_NOT_ENOUGH_MEM;
+
+	/* black screen */
+	memclear(video,minfo->xResolution * minfo->yResolution * (minfo->bitsPerPixel / 8));
 	return 0;
 }
 

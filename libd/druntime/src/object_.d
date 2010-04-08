@@ -1817,70 +1817,62 @@ void _moduleCtor2(ModuleInfo*[] mi, int skip)
 
 extern (C) void _moduleTlsCtor()
 {
-	// TODO not available yet
-	version (Escape)
-	{
-		return;
-	}
-	else
-	{
-    debug(PRINTF) printf("_moduleTlsCtor()\n");
+	debug(PRINTF) printf("_moduleTlsCtor()\n");
 
-    void* p = alloca(_moduleinfo_array.length * ubyte.sizeof);
-    auto flags = cast(ubyte[])p[0 .. _moduleinfo_array.length];
-    flags[] = 0;
+  void* p = alloca(_moduleinfo_array.length * ubyte.sizeof);
+  auto flags = cast(ubyte[])p[0 .. _moduleinfo_array.length];
+  flags[] = 0;
 
-    foreach (i, m; _moduleinfo_array)
+  foreach (i, m; _moduleinfo_array)
+  {
+if (m)
+    m.index = i;
+  }
+
+  _moduleinfo_tlsdtors = new ModuleInfo*[_moduleinfo_array.length];
+
+  void _moduleTlsCtor2(ModuleInfo*[] mi, int skip)
+  {
+debug(PRINTF) printf("_moduleTlsCtor2(skip = %d): %d modules\n", skip, mi.length);
+foreach (i, m; mi)
+{
+    debug(PRINTF) printf("\tmodule[%d] = '%p'\n", i, m);
+    if (!m)
+	continue;
+    debug(PRINTF) printf("\tmodule[%d] = '%.*s'\n", i, m.name);
+    if (flags[m.index] & MIctordone)
+	continue;
+    debug(PRINTF) printf("\tmodule[%d] = '%.*s', m = x%x\n", i, m.name, m);
+
+    if (m.tlsctor || m.tlsdtor)
     {
-	if (m)
-	    m.index = i;
+	if (flags[m.index] & MIctorstart)
+	{   if (skip || m.flags & MIstandalone)
+		continue;
+	    throw new Exception("Cyclic dependency in module " ~ m.name);
+	}
+
+	flags[m.index] |= MIctorstart;
+	_moduleTlsCtor2(m.importedModules, 0);
+	if (m.tlsctor)
+	    (*m.tlsctor)();
+	flags[m.index] &= ~MIctorstart;
+	flags[m.index] |= MIctordone;
+
+	// Now that construction is done, register the destructor
+	//printf("**** adding module tlsdtor %p, [%d]\n", m, _moduleinfo_tlsdtors_i);
+	assert(_moduleinfo_tlsdtors_i < _moduleinfo_tlsdtors.length);
+	_moduleinfo_tlsdtors[_moduleinfo_tlsdtors_i++] = m;
     }
-
-    _moduleinfo_tlsdtors = new ModuleInfo*[_moduleinfo_array.length];
-
-    void _moduleTlsCtor2(ModuleInfo*[] mi, int skip)
+    else
     {
-	debug(PRINTF) printf("_moduleTlsCtor2(skip = %d): %d modules\n", skip, mi.length);
-	foreach (i, m; mi)
-	{
-	    debug(PRINTF) printf("\tmodule[%d] = '%p'\n", i, m);
-	    if (!m)
-		continue;
-	    debug(PRINTF) printf("\tmodule[%d] = '%.*s'\n", i, m.name);
-	    if (flags[m.index] & MIctordone)
-		continue;
-	    debug(PRINTF) printf("\tmodule[%d] = '%.*s', m = x%x\n", i, m.name, m);
-
-	    if (m.tlsctor || m.tlsdtor)
-	    {
-		if (flags[m.index] & MIctorstart)
-		{   if (skip || m.flags & MIstandalone)
-			continue;
-		    throw new Exception("Cyclic dependency in module " ~ m.name);
-		}
-
-		flags[m.index] |= MIctorstart;
-		_moduleTlsCtor2(m.importedModules, 0);
-		if (m.tlsctor)
-		    (*m.tlsctor)();
-		flags[m.index] &= ~MIctorstart;
-		flags[m.index] |= MIctordone;
-
-		// Now that construction is done, register the destructor
-		//printf("**** adding module tlsdtor %p, [%d]\n", m, _moduleinfo_tlsdtors_i);
-		assert(_moduleinfo_tlsdtors_i < _moduleinfo_tlsdtors.length);
-		_moduleinfo_tlsdtors[_moduleinfo_tlsdtors_i++] = m;
-	    }
-	    else
-	    {
-		flags[m.index] |= MIctordone;
-		_moduleTlsCtor2(m.importedModules, 1);
-	    }
-	}
+	flags[m.index] |= MIctordone;
+	_moduleTlsCtor2(m.importedModules, 1);
     }
+}
+  }
 
-    _moduleTlsCtor2(_moduleinfo_array, 0);
-	}
+  _moduleTlsCtor2(_moduleinfo_array, 0);
 }
 
 
@@ -1911,33 +1903,25 @@ extern (C) void _moduleDtor()
 
 extern (C) void _moduleTlsDtor()
 {
-	// TODO not available yet
-	version (Escape)
-	{
-		return;
-	}
-	else
-	{
-    debug(PRINTF) printf("_moduleTlsDtor(): %d modules\n", _moduleinfo_tlsdtors_i);
-    version(none)
-    {
-        printf("_moduleinfo_tlsdtors = %d,%p\n", _moduleinfo_tlsdtors);
-        foreach (i,m; _moduleinfo_tlsdtors[0..11])
-            printf("[%d] = %p\n", i, m);
-    }
+  debug(PRINTF) printf("_moduleTlsDtor(): %d modules\n", _moduleinfo_tlsdtors_i);
+  version(none)
+  {
+      printf("_moduleinfo_tlsdtors = %d,%p\n", _moduleinfo_tlsdtors);
+      foreach (i,m; _moduleinfo_tlsdtors[0..11])
+          printf("[%d] = %p\n", i, m);
+  }
 
-    for (uint i = _moduleinfo_tlsdtors_i; i-- != 0;)
-    {
-        ModuleInfo* m = _moduleinfo_tlsdtors[i];
+  for (uint i = _moduleinfo_tlsdtors_i; i-- != 0;)
+  {
+      ModuleInfo* m = _moduleinfo_tlsdtors[i];
 
-        debug(PRINTF) printf("\tmodule[%d] = '%.*s', x%x\n", i, m.name, m);
-        if (m.tlsdtor)
-        {
-            (*m.tlsdtor)();
-        }
-    }
-    debug(PRINTF) printf("_moduleTlsDtor() done\n");
-	}
+      debug(PRINTF) printf("\tmodule[%d] = '%.*s', x%x\n", i, m.name, m);
+      if (m.tlsdtor)
+      {
+          (*m.tlsdtor)();
+      }
+  }
+  debug(PRINTF) printf("_moduleTlsDtor() done\n");
 }
 
 // Alias the TLS ctor and dtor using "rt_" prefixes, since these routines

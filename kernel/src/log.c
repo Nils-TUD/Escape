@@ -40,6 +40,7 @@
 static void log_printc(char c);
 static u8 log_pipePad(void);
 static void log_escape(const char **str);
+static s32 log_write(tTid tid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count);
 static void log_flush(void);
 
 /* don't use a heap here to prevent problems */
@@ -47,6 +48,7 @@ static char buf[BUF_SIZE];
 static u32 bufPos;
 static u32 col = 0;
 
+static bool logToSer = true;
 static tFileNo logFile;
 static bool vfsIsReady = false;
 static sPrintEnv env = {
@@ -67,7 +69,7 @@ void log_vfsIsReady(void) {
 	assert(vfsn_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);
 	nameCpy = strdup(LOG_FILENAME);
 	assert(nameCpy != NULL);
-	logNode = vfsn_createFile(KERNEL_TID,vfsn_getNode(inodeNo),nameCpy,vfsrw_readDef,vfsrw_writeDef);
+	logNode = vfsn_createFile(KERNEL_TID,vfsn_getNode(inodeNo),nameCpy,vfsrw_readDef,log_write);
 	assert(logNode != NULL);
 	logFile = vfs_openFile(KERNEL_TID,VFS_WRITE,NADDR_TO_VNNO(logNode),VFS_DEV_NO);
 	assert(logFile >= 0);
@@ -86,7 +88,10 @@ void log_vfsIsReady(void) {
 
 	/* now write the stuff we've saved so far to the log-file */
 	vfsIsReady = true;
+	/* don't write that again to COM1 */
+	logToSer = false;
 	log_flush();
+	logToSer = true;
 }
 
 void log_printf(const char *fmt,...) {
@@ -103,9 +108,11 @@ void log_vprintf(const char *fmt,va_list ap) {
 
 static void log_printc(char c) {
 #ifdef LOGSERIAL
-	/* write to COM1 (some chars make no sense here) */
-	if(c != '\r' && c != '\b')
-		ser_out(SER_COM1,c);
+	if(!vfsIsReady) {
+		/* write to COM1 (some chars make no sense here) */
+		if(c != '\r' && c != '\b')
+			ser_out(SER_COM1,c);
+	}
 #endif
 	if(bufPos >= BUF_SIZE)
 		log_flush();
@@ -137,6 +144,22 @@ static u8 log_pipePad(void) {
 static void log_escape(const char **str) {
 	s32 n1,n2,n3;
 	escc_get(str,&n1,&n2,&n3);
+}
+
+static s32 log_write(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count) {
+#ifdef LOGSERIAL
+	if(logToSer) {
+		char *str = (char*)buffer;
+		u32 i;
+		for(i = 0; i < count; i++) {
+			char c = str[i];
+			/* write to COM1 (some chars make no sense here) */
+			if(c != '\r' && c != '\b')
+				ser_out(SER_COM1,c);
+		}
+	}
+#endif
+	return vfsrw_writeDef(tid,file,node,buffer,offset,count);
 }
 
 static void log_flush(void) {

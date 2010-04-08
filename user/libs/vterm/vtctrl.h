@@ -44,7 +44,7 @@ typedef void (*fSetCursor)(sVTerm *vt);
 /* global configuration */
 typedef struct {
 	bool readKb;
-	bool refreshDate;
+	bool enabled;
 } sVTermCfg;
 
 /* our vterm-state */

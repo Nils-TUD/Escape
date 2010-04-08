@@ -137,12 +137,6 @@ int main(void) {
 	if(id < 0)
 		error("Unable to register driver 'vesatext'");
 
-	/*sVM86Regs regs;
-	memset(&regs,0,sizeof(regs));
-	regs.ax = 0x0002;
-	if(vm86int(0x10,&regs,NULL,0) < 0)
-		printe("Switch to text-mode failed");*/
-
 	while(1) {
 		tFD fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
 		if(fd < 0)
@@ -171,6 +165,15 @@ int main(void) {
 						free(str);
 					}
 					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));
+				}
+				break;
+
+				case MSG_VID_SETMODE: {
+					if(minfo) {
+						vbe_setMode(minfo->modeNo);
+						/* force refresh on next update */
+						memclear(content,rows * cols * 2);
+					}
 				}
 				break;
 

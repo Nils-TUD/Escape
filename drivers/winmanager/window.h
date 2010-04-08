@@ -89,6 +89,11 @@ void win_setCursor(tCoord x,tCoord y,u8 cursor);
 tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tPid owner,u8 style);
 
 /**
+ * Updates the whole screen
+ */
+void win_updateScreen(void);
+
+/**
  * Destroys all windows of the given thread
  *
  * @param tid the thread-id

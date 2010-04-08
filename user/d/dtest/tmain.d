@@ -7,6 +7,13 @@ shared static ~this() {
 	printf("Aus die Maus!!\n");
 }
 
+static this() {
+	printf("WAS??\n");
+}
+static ~this() {
+	printf("bye\n");
+}
+
 void main(string[] args) {
 	try {
 		printf("Huhu!\n");

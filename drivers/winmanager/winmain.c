@@ -50,6 +50,7 @@ static tCoord curX = 0;
 static tCoord curY = 0;
 static u8 cursor = CURSOR_DEFAULT;
 
+static bool enabled = true;
 static sMsg msg;
 static tSize screenWidth;
 static tSize screenHeight;
@@ -114,7 +115,7 @@ int main(void) {
 					tWinId wid = (tWinId)msg.args.arg1;
 					tCoord x = (tCoord)msg.args.arg2;
 					tCoord y = (tCoord)msg.args.arg3;
-					if(win_exists(wid) && x < screenWidth && y < screenHeight)
+					if(enabled && win_exists(wid) && x < screenWidth && y < screenHeight)
 						win_moveTo(wid,x,y);
 				}
 				break;
@@ -123,7 +124,7 @@ int main(void) {
 					tWinId wid = (tWinId)msg.args.arg1;
 					tSize width = (tSize)msg.args.arg2;
 					tSize height = (tSize)msg.args.arg3;
-					if(win_exists(wid))
+					if(enabled && win_exists(wid))
 						win_resize(wid,width,height);
 				}
 				break;
@@ -135,17 +136,27 @@ int main(void) {
 					tSize width = (tSize)msg.args.arg4;
 					tSize height = (tSize)msg.args.arg5;
 					sWindow *win = win_get(wid);
-					if(win != NULL && x + width > x && y + height > y &&
+					if(enabled && win != NULL && x + width > x && y + height > y &&
 						x + width <= win->width && y + height <= win->height) {
 						win_update(wid,x,y,width,height);
 					}
 				}
 				break;
+
+				case MSG_WIN_ENABLE:
+					if(!enabled)
+						win_updateScreen();
+					enabled = true;
+					break;
+
+				case MSG_WIN_DISABLE:
+					enabled = false;
+					break;
 			}
 			close(fd);
 		}
 		/* don't use the blocking read() here */
-		else if(!eof(mouse)) {
+		else if(enabled && !eof(mouse)) {
 			sMouseData *msd = mouseData;
 			u32 count = read(mouse,mouseData,sizeof(mouseData));
 			count /= sizeof(sMouseData);
@@ -155,7 +166,7 @@ int main(void) {
 			}
 		}
 		/* don't use the blocking read() here */
-		else if(!eof(kmmng)) {
+		else if(enabled && !eof(kmmng)) {
 			sKmData *kbd = kbData;
 			sWindow *active = win_getActive();
 			u32 count = read(kmmng,kbData,sizeof(kbData));

@@ -19,7 +19,7 @@ private
     import core.stdc.stddef;
     import core.stdc.stdlib;
     import core.stdc.string;
-    //import core.stdc.stdio;	// for printf()
+    import core.stdc.stdio;	// for printf()
 }
 
 version (Windows)

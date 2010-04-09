@@ -14,9 +14,16 @@ static ~this() {
 	printf("bye\n");
 }
 
+int t1;
+int t2;
+int t3 = 123;
+auto t4 = "bla und mehr";
+auto t5 = "blub oder?";
+
 void main(string[] args) {
 	try {
-		printf("Huhu!\n");
+		printf("hier\n");
+		printf("t1=%d, t2=%d, t3=%d, t4=%s, t5=%s\n",t1,t2,t3,t4.ptr,t5.ptr);
 		try {
 			myexfunc();
 		}
@@ -31,6 +38,10 @@ void main(string[] args) {
 	finally {
 		printf("Finally ...\n");
 	}
+}
+
+unittest {
+	assert(1);
 }
 
 void myexfunc() {

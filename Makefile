@@ -41,7 +41,7 @@ export DWFLAGS=-w -wi
 ifeq ($(BUILDDIR),$(abspath build/debug))
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g -D LOGSERIAL
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
-	export DDEFFLAGS=$(DWFLAGS) -gc -debug
+	export DDEFFLAGS=$(DWFLAGS) -gc -debug -unittest
 else
 	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D NDEBUG
 	export CDEFFLAGS=$(CWFLAGS) -O3 -D NDEBUG

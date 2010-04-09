@@ -27,6 +27,7 @@ module rt.qsort;
 
 //debug=qsort;          // uncomment to turn on debugging printf's
 
+debug(qsort) import core.stdc.stdio;
 
 struct Array
 {

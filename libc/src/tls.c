@@ -27,7 +27,12 @@ static tULock tlsLock;
 static u32 *tlsCopy = NULL;
 
 /**
- * The TLS-system (variant 2) looks like this:
+ * TODO: Actually this is not exact the model described in doc/thread-local-storage.pdf.
+ * But linux seems to do it this way, dmd expects it to be that way (at least on linux) and it
+ * works for gcc (c) and dmd (d). So its ok for now. But I don't know how it works with dynamic
+ * linking...
+ *
+ * The TLS-system looks like this:
  *
  *                        %gs offset
  *                            |
@@ -35,14 +40,7 @@ static u32 *tlsCopy = NULL;
  * +--------+--------+--------+--------+
  * |  val3  |  val2  |  val1  |  TCB   | ---\
  * +--------+--------+--------+--------+    |
- *                   ^                      |
- *              /----/  ...      ...        |
- * dtv:         |        |        |         |
- * +--------+--------+--------+--------+    |
- * |  gen   |  ptr1  |  ptr2  |  ptr3  |    |
- * +--------+--------+--------+--------+    |
- * ^                                        |
- * \----------------------------------------/
+ *                            ^-------------/
  */
 
 /* make gcc happy */
@@ -50,7 +48,7 @@ u32 init_tls(u32 entryPoint,u32 *tlsStart,u32 tlsSize);
 
 u32 init_tls(u32 entryPoint,u32 *tlsStart,u32 tlsSize) {
 	if(tlsSize) {
-		u32 i,*dtv;
+		u32 i;
 		locku(&tlsLock);
 		/* create copy if not already done */
 		if(tlsCopy == NULL) {
@@ -59,20 +57,12 @@ u32 init_tls(u32 entryPoint,u32 *tlsStart,u32 tlsSize) {
 			memcpy(tlsCopy,tlsStart,tlsSize);
 		}
 
-		/* create dynamic thread vector for this thread */
-		dtv = (u32*)malloc(tlsSize);
-		assert(dtv);
-		/* store size in first dword */
-		dtv[0] = tlsSize;
-		/* now put the pointers to the values into the array in the tls-region */
+		/* copy values to TLS-region */
 		tlsSize /= 4;
-		for(i = 0; i < tlsSize - 1; i++) {
-			dtv[i + 1] = (u32)(tlsCopy + i);
-			/* put value in tls-region */
+		for(i = 0; i < tlsSize - 1; i++)
 			tlsStart[i] = tlsCopy[i];
-		}
-		/* put pointer in thread-control-block */
-		tlsStart[tlsSize - 1] = (u32)dtv;
+		/* put pointer to TCB in TCB */
+		tlsStart[tlsSize - 1] = (u32)(tlsStart + tlsSize - 1);
 		unlocku(&tlsLock);
 	}
 	return entryPoint;

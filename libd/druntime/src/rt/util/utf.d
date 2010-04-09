@@ -26,6 +26,9 @@
  */
 module rt.util.utf;
 
+import core.stdc.stdio;
+
+//debug=utf;
 
 extern (C) void onUnicodeError( string msg, size_t idx );
 

@@ -1605,7 +1605,8 @@ private:
         }
         else version( Escape )
         {
-        	assert(setThreadVal(sm_this,cast(void*)t));
+        	bool res = setThreadVal(sm_this,cast(void*)t);
+        	assert(res);
         }
     }
 
@@ -3776,7 +3777,8 @@ private:
         }
         else version( Escape )
         {
-        	assert(setThreadVal(sm_this,cast(void*)f));
+        	bool res = setThreadVal(sm_this,cast(void*)f);
+        	assert(res);
         }
     }
 

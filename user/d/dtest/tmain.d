@@ -31,7 +31,7 @@ void testThread(void *arg) {
 	c.name(cast(string)blub);
 	printf("I am a thread (%s)!!!\n",c.name().ptr);
 	fflush(stdout);
-	Thread.sleep(1_000_000);
+	Thread.sleep(5_000_000);
 	printf("nu aber");
 	fflush(stdout);
 }

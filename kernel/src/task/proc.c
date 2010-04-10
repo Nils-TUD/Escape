@@ -48,6 +48,8 @@
 
 static void proc_notifyProcDied(tPid parent,tPid pid);
 static s32 proc_finishClone(sThread *nt,u32 stackFrame);
+static bool proc_setupThreadStack(sIntrptStackFrame *frame,void *arg,u32 tentryPoint);
+static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint);
 
 /* our processes */
 static tPid nextPid = 1;
@@ -295,7 +297,7 @@ errorVFS:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
+s32 proc_startThread(u32 entryPoint,void *arg) {
 	u32 stackFrame;
 	sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
@@ -315,10 +317,14 @@ s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 
 	res = proc_finishClone(nt,stackFrame);
 	if(res == 1) {
-		u32 *esp;
 		sIntrptStackFrame *istack = intrpt_getCurStack();
-		if(!proc_setupUserStack(istack,argc,args,argSize,entryPoint))
-			goto error;
+		if(!proc_setupThreadStack(istack,arg,entryPoint)) {
+			thread_destroy(nt,true);
+			/* do a switch here because we can't continue */
+			thread_switch();
+			/* never reached */
+			return ERR_NOT_ENOUGH_MEM;
+		}
 		proc_setupStart(istack);
 
 		/* child */
@@ -326,13 +332,6 @@ s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize) {
 	}
 
 	return nt->tid;
-
-error:
-	thread_destroy(nt,true);
-	/* do a switch here because we can't continue */
-	thread_switch();
-	/* never reached */
-	return ERR_NOT_ENOUGH_MEM;
 }
 
 static s32 proc_finishClone(sThread *nt,u32 stackFrame) {
@@ -620,21 +619,8 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 	/* store argc and argv */
 	*esp-- = (u32)argv;
 	*esp-- = argc;
-
-	/* put address and size of the tls-region on the stack */
-	if(t->tlsRegion >= 0) {
-		u32 tlsStart,tlsEnd;
-		vmm_getRegRange(t->proc,t->tlsRegion,&tlsStart,&tlsEnd);
-		*esp-- = tlsEnd - tlsStart;
-		*esp-- = tlsStart;
-	}
-	else {
-		/* no tls */
-		*esp-- = 0;
-		*esp-- = 0;
-	}
-
-	*esp = tentryPoint == TEXT_BEGIN ? 0 : tentryPoint;
+	/* add TLS args and entrypoint */
+	esp = proc_addStartArgs(t,esp,tentryPoint);
 
 	frame->uesp = (u32)esp;
 	frame->ebp = frame->uesp;
@@ -661,6 +647,62 @@ void proc_setupStart(sIntrptStackFrame *frame) {
 	frame->edx = 0;
 	frame->esi = 0;
 	frame->edi = 0;
+}
+
+static bool proc_setupThreadStack(sIntrptStackFrame *frame,void *arg,u32 tentryPoint) {
+	u32 *esp;
+	u32 totalSize = 3 * sizeof(u32) + sizeof(void*);
+	sThread *t = thread_getRunning();
+
+	/*
+	 * Initial stack:
+	 * +------------------+  <- top
+	 * |       arg        |
+	 * +------------------+
+	 * |     TLSSize      |  0 if not present
+	 * +------------------+
+	 * |     TLSStart     |  0 if not present
+	 * +------------------+
+	 * |    entryPoint    |  0 for initial thread, thread-entrypoint for others
+	 * +------------------+
+	 */
+
+	/* get esp */
+	vmm_getRegRange(t->proc,t->stackRegion,NULL,(u32*)&esp);
+
+	/* extend the stack if necessary */
+	if(thread_extendStack((u32)esp - totalSize) < 0)
+		return false;
+	/* will handle copy-on-write */
+	paging_isRangeUserWritable((u32)esp - totalSize,totalSize);
+
+	/* put arg on stack */
+	esp--;
+	*esp-- = (u32)arg;
+	/* add TLS args and entrypoint */
+	esp = proc_addStartArgs(t,esp,tentryPoint);
+
+	frame->uesp = (u32)esp;
+	frame->ebp = frame->uesp;
+	return true;
+}
+
+static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint) {
+	/* put address and size of the tls-region on the stack */
+	if(t->tlsRegion >= 0) {
+		u32 tlsStart,tlsEnd;
+		vmm_getRegRange(t->proc,t->tlsRegion,&tlsStart,&tlsEnd);
+		*esp-- = tlsEnd - tlsStart;
+		*esp-- = tlsStart;
+	}
+	else {
+		/* no tls */
+		*esp-- = 0;
+		*esp-- = 0;
+	}
+
+	*esp = tentryPoint == TEXT_BEGIN ? 0 : tentryPoint;
+	return esp;
 }
 
 

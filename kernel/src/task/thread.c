@@ -564,6 +564,7 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 
 	/* notify others that wait for dying threads */
 	sig_addSignal(SIG_THREAD_DIED,t->tid);
+	thread_wakeupAll(t->proc,EV_THREAD_DIED);
 
 	/* finally, destroy thread */
 	sll_removeFirst(list,t);

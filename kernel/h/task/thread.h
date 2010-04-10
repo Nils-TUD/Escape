@@ -60,12 +60,12 @@ typedef enum {
 	ST_READY = 2,
 	ST_BLOCKED = 3,
 	ST_ZOMBIE = 4,
-	/* involved in a swapping-operation => CAN'T run. will be set to blocked when swapping done */
-	ST_BLOCKED_SWAP = 5,
-	/* same as ST_BLOCKED_SWAP, but will be set to ready when done */
-	ST_READY_SWAP = 6,
-	/* same as ST_BLOCKED_SwAP, but will be set to zombie when done */
-	ST_ZOMBIE_SWAP = 7
+	/* suspended => CAN'T run. will be set to blocked when resumed (also used for swapping) */
+	ST_BLOCKED_SUSP = 5,
+	/* same as ST_BLOCKED_SUSP, but will be set to ready when done */
+	ST_READY_SUSP = 6,
+	/* same as ST_BLOCKED_SUSP, but will be set to zombie when done */
+	ST_ZOMBIE_SUSP = 7
 } eThreadState;
 
 /* represents a thread */

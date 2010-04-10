@@ -40,7 +40,7 @@
 #define CMOS_REG_MONTH		0x8		/* 01-12 */
 #define CMOS_REG_YEAR		0x9		/* 00-99 */
 
-static int refreshThread(int argc,char *argv[]);
+static int refreshThread(void *arg);
 static void cmos_refresh(void);
 static u32 cmos_decodeBCD(u8 val);
 static u8 cmos_read(u8 reg);
@@ -103,9 +103,8 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static int refreshThread(int argc,char *argv[]) {
-	UNUSED(argc);
-	UNUSED(argv);
+static int refreshThread(void *arg) {
+	UNUSED(arg);
 	while(1) {
 		/* ensure that the driver-loop doesn't access the date in the meanwhile */
 		locku(&dlock);

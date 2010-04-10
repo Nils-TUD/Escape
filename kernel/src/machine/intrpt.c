@@ -407,7 +407,7 @@ static void intrpt_handleSignal(void) {
 		signalData.data = data;
 		signalData.tid = tid;
 
-		/* a little trick: we store the signal to handle and manipulate the user-stack
+		/* a small trick: we store the signal to handle and manipulate the user-stack
 		 * and so on later. if the thread is currently running everything is fine. we return
 		 * from here and intrpt_handleSignalFinish() will be called.
 		 * if the target-thread is not running we switch to him now. the thread is somewhere

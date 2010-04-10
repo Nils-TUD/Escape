@@ -138,8 +138,12 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 
 void sysc_sleep(sIntrptStackFrame *stack) {
 	u32 msecs = SYSC_ARG1(stack);
-	timer_sleepFor(thread_getRunning()->tid,msecs);
+	sThread *t = thread_getRunning();
+	timer_sleepFor(t->tid,msecs);
 	thread_switch();
+	if(sig_hasSignalFor(t->tid))
+		SYSC_ERROR(stack,ERR_INTERRUPTED);
+	SYSC_RET1(stack,0);
 }
 
 void sysc_yield(sIntrptStackFrame *stack) {

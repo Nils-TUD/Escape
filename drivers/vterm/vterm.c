@@ -50,7 +50,7 @@ static void vterm_setCursor(sVTerm *vt);
 /**
  * The thread that updates the titlebars every second and puts the date in
  */
-static int vterm_dateThread(int argc,char *argv[]);
+static int vterm_dateThread(void *arg);
 
 /* vterms */
 static tULock titleBarLock;
@@ -210,12 +210,11 @@ static void vterm_setCursor(sVTerm *vt) {
 	}
 }
 
-static int vterm_dateThread(int argc,char *argv[]) {
+static int vterm_dateThread(void *arg) {
 	u32 i,j,len;
 	char dateStr[SSTRLEN("Mon, 14. Jan 2009, 12:13:14") + 1];
 	sDate date;
-	UNUSED(argc);
-	UNUSED(argv);
+	UNUSED(arg);
 	while(1) {
 		if(config->enabled) {
 			/* get date and format it */

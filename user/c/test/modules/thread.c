@@ -26,119 +26,41 @@
 #include <assert.h>
 #include "thread.h"
 
-#define LOCK_ARRAY	0x1
-#define TEST_COUNT	100
+#define THREAD_COUNT	10
 
-typedef struct {
-	void **ptr;
-	u32 dataSize;
-	u32 num;
-	u32 count;
-} sArray;
+static tULock lck;
 
-static int myThread(int argc,char *argv[]);
-static void treadDir(const char *path);
-static sArray *create(u32 dataSize,u32 num);
-static void add(sArray *a,void *e);
-static void print(sArray *a);
-
-tULock alock = 0;
-sArray *array;
+static int myThread(void *arg) {
+	u32 i;
+	UNUSED(arg);
+	locku(&lck);
+	printf("Thread %d starts\n",gettid());
+	flush();
+	unlocku(&lck);
+	for(i = 0; i < 10; i++)
+		sleep(100);
+	locku(&lck);
+	printf("Thread %d is done\n",gettid());
+	flush();
+	unlocku(&lck);
+	return 0;
+}
 
 int mod_thread(int argc,char *argv[]) {
 	UNUSED(argc);
 	UNUSED(argv);
-	const char *args[] = {"a","test","mein test",NULL};
-	array = create(sizeof(u32),10);
-	assert(startThread(myThread,args) >= 0);
-	assert(startThread(myThread,args) >= 0);
-	assert(startThread(myThread,args) >= 0);
-	assert(startThread(myThread,NULL) >= 0);
-	assert(startThread(myThread,args) >= 0);
-	assert(startThread(myThread,args) >= 0);
-	assert(startThread(myThread,args) >= 0);
+	s32 threads[THREAD_COUNT];
+	u32 i;
+	for(i = 0; i < THREAD_COUNT; i++)
+		assert((threads[i] = startThread(myThread,NULL)) >= 0);
+	sleep(100);
+	for(i = 0; i < THREAD_COUNT / 2; i++)
+		assert(suspend(threads[i]) == 0);
+	sleep(500);
+	for(i = 0; i < THREAD_COUNT / 2; i++)
+		assert(resume(threads[i]) == 0);
+	for(i = 0; i < THREAD_COUNT; i++)
+		join(threads[i]);
+	assert(getThreadCount() == 1);
 	return EXIT_SUCCESS;
-}
-
-static int myThread(int argc,char *argv[]) {
-	s32 i;
-	const char *folders[] = {
-		"/","/bin","/system"
-	};
-	printf("Got %d args (%d):\n",argc,gettid());
-	for(i = 0; i < argc; i++)
-		printf("	%d: %s\n",i,argv[i]);
-#if 0
-	while(1) {
-		treadDir(folders[gettid() % ARRAY_SIZE(folders)]);
-		/*printf("I am thread %d\n",gettid());*/
-	}
-#endif
-	/*u32 i;
-	u32 *ptrs[TEST_COUNT];
-	for(i = 0; i < TEST_COUNT; i++) {
-		dbg_startTimer();
-		ptrs[i] = malloc(sizeof(u32));
-		dbg_stopTimer("malloc");
-	}
-	for(i = 0; i < TEST_COUNT; i++) {
-		dbg_startTimer();
-		free(ptrs[i]);
-		dbg_stopTimer("free");
-	}*/
-	/*add(a,(void*)10);
-	add(a,(void*)11);
-	add(a,(void*)12);
-	print(a);*/
-	return 0;
-}
-
-static void treadDir(const char *path) {
-	u32 i;
-	sDirEntry e;
-	tTid tid = gettid();
-	tFD dir = opendir(path);
-	if(dir < 0) {
-		printe("Unable to open '%s'",path);
-		return;
-	}
-
-	printf("[%d] opening '%s'\n",tid,path);
-	while(readdir(&e,dir)) {
-		if(i++ % 3 == 0)
-			yield();
-		printf("[%d] '%s'\n",tid,e.name);
-	}
-	printf("[%d] done\n",tid);
-
-	closedir(dir);
-}
-
-static sArray *create(u32 dataSize,u32 num) {
-	sArray *a = (sArray*)malloc(sizeof(sArray));
-	a->ptr = (void**)malloc(dataSize * num);
-	a->dataSize = dataSize;
-	a->num = num;
-	a->count = 0;
-	return a;
-}
-
-static void add(sArray *a,void *e) {
-	locku(&alock);
-	if(a->count >= a->num) {
-		a->num *= 2;
-		a->ptr = (void**)realloc(a->ptr,a->dataSize * a->num);
-	}
-	a->ptr[a->count] = e;
-	a->count++;
-	unlocku(&alock);
-}
-
-static void print(sArray *a) {
-	u32 i;
-	locku(&alock);
-	printf("Thread %d: Array[size=%d, elements=%d]\n",gettid(),a->num,a->count);
-	for(i = 0; i < a->count; i++)
-		printf("\t%d: %x\n",i,a->ptr[i]);
-	unlocku(&alock);
 }

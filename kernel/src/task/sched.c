@@ -139,10 +139,10 @@ void sched_setReadyQuick(sThread *t) {
 static bool sched_setReadyState(sThread *t) {
 	switch(t->state) {
 		case ST_READY:
-		case ST_READY_SWAP:
+		case ST_READY_SUSP:
 			return false;
-		case ST_BLOCKED_SWAP:
-			t->state = ST_READY_SWAP;
+		case ST_BLOCKED_SUSP:
+			t->state = ST_READY_SUSP;
 			return false;
 		case ST_BLOCKED:
 			sched_qDequeueThread(&blockedQueue,t);
@@ -162,10 +162,10 @@ void sched_setBlocked(sThread *t) {
 
 	switch(t->state) {
 		case ST_BLOCKED:
-		case ST_BLOCKED_SWAP:
+		case ST_BLOCKED_SUSP:
 			return;
-		case ST_READY_SWAP:
-			t->state = ST_BLOCKED_SWAP;
+		case ST_READY_SUSP:
+			t->state = ST_BLOCKED_SUSP;
 			return;
 		case ST_READY:
 			sched_qDequeueThread(&readyQueue,t);
@@ -192,13 +192,13 @@ void sched_unblockAll(u16 mask,u16 event) {
 	while(n != NULL) {
 		t = (sThread*)n->t;
 		tmask = t->events >> 16;
-		/* if blocked in swapping, just remember that it should be ready when done */
+		/* if suspended, just remember that it should be ready when done */
 		if((tmask == 0 || tmask == mask) && (t->events & event)) {
-			if(t->state == ST_BLOCKED_SWAP) {
-				t->state = ST_READY_SWAP;
+			if(t->state == ST_BLOCKED_SUSP) {
+				t->state = ST_READY_SUSP;
 				t->events = EV_NOEVENT;
 			}
-			else if(t->state != ST_READY_SWAP) {
+			else if(t->state != ST_READY_SUSP) {
 				t->state = ST_READY;
 				t->events = EV_NOEVENT;
 				sched_qAppend(&readyQueue,t);
@@ -227,42 +227,52 @@ void sched_unblockAll(u16 mask,u16 event) {
 	}
 }
 
-void sched_setBlockForSwap(sThread *t,bool blocked) {
+void sched_setSuspended(sThread *t,bool blocked) {
 	assert(t != NULL);
 
 	if(blocked) {
 		switch(t->state) {
+			/* already suspended, so ignore it */
+			case ST_BLOCKED_SUSP:
+			case ST_ZOMBIE_SUSP:
+			case ST_READY_SUSP:
+				break;
 			case ST_BLOCKED:
-				t->state = ST_BLOCKED_SWAP;
+				t->state = ST_BLOCKED_SUSP;
 				break;
 			case ST_ZOMBIE:
-				t->state = ST_ZOMBIE_SWAP;
+				t->state = ST_ZOMBIE_SUSP;
 				break;
 			case ST_READY:
-				t->state = ST_READY_SWAP;
+				t->state = ST_READY_SUSP;
 				sched_qDequeueThread(&readyQueue,t);
 				sched_qAppend(&blockedQueue,t);
 				break;
 			default:
-				vassert(false,"Thread %d has invalid state for starting swapping (%d)",t->tid,t->state);
+				vassert(false,"Thread %d has invalid state for suspending (%d)",t->tid,t->state);
 				break;
 		}
 	}
 	else {
 		switch(t->state) {
-			case ST_BLOCKED_SWAP:
+			/* not suspended, so ignore it */
+			case ST_BLOCKED:
+			case ST_ZOMBIE:
+			case ST_READY:
+				break;
+			case ST_BLOCKED_SUSP:
 				t->state = ST_BLOCKED;
 				break;
-			case ST_ZOMBIE_SWAP:
+			case ST_ZOMBIE_SUSP:
 				t->state = ST_ZOMBIE;
 				break;
-			case ST_READY_SWAP:
+			case ST_READY_SUSP:
 				t->state = ST_READY;
 				sched_qDequeueThread(&blockedQueue,t);
 				sched_qAppend(&readyQueue,t);
 				break;
 			default:
-				vassert(false,"Thread %d has invalid state for stopping swapping (%d)",t->tid,t->state);
+				vassert(false,"Thread %d has invalid state for resuming (%d)",t->tid,t->state);
 				break;
 		}
 	}

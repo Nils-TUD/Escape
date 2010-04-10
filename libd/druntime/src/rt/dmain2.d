@@ -244,8 +244,7 @@ extern (C) bool rt_term(ExceptionHandler dg = null)
 {
     try
     {
-    	// TODO threading not available yet
-        //thread_joinAll();
+    	thread_joinAll();
         _d_isHalting = true;
         _moduleDtor();
         gc_term();
@@ -427,8 +426,7 @@ extern (C) int main(int argc, char **argv)
         _moduleCtor();
         if (runModuleUnitTests())
             tryExec(&runMain);
-        // TODO threading is not available yet
-        //thread_joinAll();
+        thread_joinAll();
         _d_isHalting = true;
         _moduleDtor();
         gc_term();

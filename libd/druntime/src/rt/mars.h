@@ -86,7 +86,7 @@ typedef struct Array
 typedef struct Delegate
 {
     void *thisptr;
-    void (*funcptr)();
+    void (*funcptr)(void);
 } Delegate;
 
 void _d_monitorenter(Object *h);
@@ -98,7 +98,7 @@ Object *_d_dynamic_cast(Object *o, ClassInfo *ci);
 Object * _d_newclass(ClassInfo *ci);
 void _d_delclass(Object **p);
 
-void _d_OutOfMemory();
+void _d_OutOfMemory(void);
 
 #if __cplusplus
 }

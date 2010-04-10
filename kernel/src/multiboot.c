@@ -163,7 +163,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	}
 
 	/* start the swapper-thread. it will never return */
-	if(proc_startThread(0,0,NULL,0) == 0) {
+	if(proc_startThread(0,NULL) == 0) {
 		swap_start();
 		util_panic("Swapper reached this");
 	}

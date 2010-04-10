@@ -20,6 +20,8 @@
 #include <common.h>
 #include <task/thread.h>
 #include <task/proc.h>
+#include <task/signals.h>
+#include <task/sched.h>
 #include <mem/kheap.h>
 #include <syscalls/thread.h>
 #include <syscalls.h>
@@ -37,23 +39,51 @@ void sysc_getThreadCount(sIntrptStackFrame *stack) {
 
 void sysc_startThread(sIntrptStackFrame *stack) {
 	u32 entryPoint = SYSC_ARG1(stack);
-	char **args = (char**)SYSC_ARG2(stack);
-	char *argBuffer = NULL;
-	u32 argSize = 0;
-	s32 res,argc = 0;
-
-	/* build arguments */
-	if(args != NULL) {
-		argc = proc_buildArgs(args,&argBuffer,&argSize,true);
-		if(argc < 0)
-			SYSC_ERROR(stack,argc);
-	}
-
-	res = proc_startThread(entryPoint,argc,argBuffer,argSize);
+	void *arg = (void*)SYSC_ARG2(stack);
+	s32 res = proc_startThread(entryPoint,arg);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	/* free arguments when new thread returns */
-	if(res == 0)
-		kheap_free(argBuffer);
 	SYSC_RET1(stack,res);
+}
+
+void sysc_join(sIntrptStackFrame *stack) {
+	tTid tid = (tTid)SYSC_ARG1(stack);
+	sThread *t = thread_getRunning();
+	sThread *tt = thread_getById(tid);
+	/* just threads from the own process */
+	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	/* wait until this thread doesn't exist anymore */
+	do {
+		thread_wait(t->tid,t->proc,EV_THREAD_DIED);
+		thread_switchNoSigs();
+	}
+	while(thread_getById(tid) != NULL);
+
+	SYSC_RET1(stack,0);
+}
+
+void sysc_suspend(sIntrptStackFrame *stack) {
+	tTid tid = (tTid)SYSC_ARG1(stack);
+	sThread *t = thread_getRunning();
+	sThread *tt = thread_getById(tid);
+	/* just threads from the own process */
+	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	/* suspend it */
+	sched_setSuspended(tt,true);
+	SYSC_RET1(stack,0);
+}
+
+void sysc_resume(sIntrptStackFrame *stack) {
+	tTid tid = (tTid)SYSC_ARG1(stack);
+	sThread *t = thread_getRunning();
+	sThread *tt = thread_getById(tid);
+	/* just threads from the own process */
+	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	/* resume it */
+	sched_setSuspended(tt,false);
+	SYSC_RET1(stack,0);
 }

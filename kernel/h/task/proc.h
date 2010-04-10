@@ -49,6 +49,7 @@
 #define EV_SWAP_WORK		1024 /* kernel-intern */
 #define EV_SWAP_FREE		2048 /* kernel-intern */
 #define EV_VMM_DONE			4096 /* kernel-intern */
+#define EV_THREAD_DIED		8192 /* kernel-intern */
 
 typedef struct {
 	tPid pid;
@@ -190,12 +191,10 @@ s32 proc_clone(tPid newPid,bool isVM86);
  * Starts a new thread at given entry-point. Will clone the kernel-stack from the current thread
  *
  * @param entryPoint the address where to start
- * @param argc the number of arguments
- * @param args the arguments (may be NULL)
- * @param argSize the size of <args>
+ * @param arg the argument
  * @return < 0 if an error occurred, new tid for current thread, 0 for new thread
  */
-s32 proc_startThread(u32 entryPoint,s32 argc,char *args,u32 argSize);
+s32 proc_startThread(u32 entryPoint,void *arg);
 
 /**
  * Destroys the current thread. If it's the only thread in the process, the complete process will

@@ -1,4 +1,5 @@
 import std.c.stdio;
+import core.thread;
 
 shared static this() {
 	printf("MUH!?\n");
@@ -20,7 +21,26 @@ int t3 = 123;
 auto t4 = "bla und mehr";
 auto t5 = "blub oder?";
 
+extern (C) int gettid();
+
+void testThread(void *arg) {
+	char[] blub = cast(char[])"mythread";
+	for(int i = 0; i < gettid() % 4; i++)
+		blub ~= "+";
+	Thread c = Thread.getThis();
+	c.name(cast(string)blub);
+	printf("I am a thread (%s)!!!\n",c.name().ptr);
+	fflush(stdout);
+	Thread.sleep(1_000_000);
+	printf("nu aber");
+	fflush(stdout);
+}
+
 void main(string[] args) {
+	Thread t = new Thread(&testThread);
+	t.start();
+	Thread t2 = new Thread(&testThread);
+	t2.start();
 	try {
 		printf("hier\n");
 		printf("t1=%d, t2=%d, t3=%d, t4=%s, t5=%s\n",t1,t2,t3,t4.ptr,t5.ptr);

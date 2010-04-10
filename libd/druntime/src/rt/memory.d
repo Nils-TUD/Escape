@@ -95,6 +95,7 @@ extern (C) void* rt_stackBottom()
     }
     else version (Escape)
     {
+    	// TODO is that always correct?
     	return cast(void*)0xa0000000;
     }
     else

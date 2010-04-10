@@ -112,8 +112,7 @@ extern (C) void gc_init()
     _gc.initialize();
     // NOTE: The GC must initialize the thread library
     //       before its first collection.
-    // TODO no threading yet
-    //thread_init();
+    thread_init();
     initProxy();
 }
 

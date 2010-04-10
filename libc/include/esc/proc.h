@@ -26,10 +26,10 @@
 #define INVALID_PID			1026
 
 /* the events we can wait for */
-#define EV_NOEVENT			0
-#define EV_CLIENT			1
-#define EV_RECEIVED_MSG		2
-#define EV_DATA_READABLE	8
+#define EV_NOEVENT			0	/* just wakeup on signals */
+#define EV_CLIENT			1	/* wakeup when we have a client to be served (for drivers) */
+#define EV_RECEIVED_MSG		2	/* wakeup if a driver we're connected to (fd) has a msg for us */
+#define EV_DATA_READABLE	8	/* wakeup if we can read from a driver (data available) */
 
 typedef void (*fExitFunc)(void);
 
@@ -90,7 +90,7 @@ s32 exec(const char *path,const char **args);
 void yield(void);
 
 /**
- * Puts the process to sleep for <msecs> milliseconds.
+ * Puts the process to sleep for <msecs> milliseconds. If interrupted, ERR_INTERRUPTED is returned
  *
  * @param msecs the number of milliseconds to wait
  * @return 0 on success

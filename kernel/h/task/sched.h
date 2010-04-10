@@ -72,13 +72,13 @@ void sched_setBlocked(sThread *t);
 void sched_unblockAll(u16 mask,u16 event);
 
 /**
- * Blocks or unblocks the given thread for swapping. That means it will be put into a state
- * that ensures that it can't be chosen until swapping is done.
+ * Suspends / resumes the given thread. That means it will be put into a state
+ * that ensures that it can't be chosen until its resumed.
  *
  * @param t the thread
  * @param blocked whether to block or unblock it
  */
-void sched_setBlockForSwap(sThread *t,bool blocked);
+void sched_setSuspended(sThread *t,bool blocked);
 
 /**
  * Removes the given thread from the scheduler (depending on the state)

@@ -30,8 +30,7 @@ module gc.gcx;
 version = STACKGROWSDOWN;       // growing the stack means subtracting from the stack pointer
                                 // (use for Intel X86 CPUs)
                                 // else growing the stack means adding to the stack pointer
-// TODO better no multithreaded version atm
-//version = MULTI_THREADED;       // produce multithreaded version
+version = MULTI_THREADED;       // produce multithreaded version
 
 /***************************************************/
 
@@ -82,9 +81,9 @@ private
     else
     {
     	// Fix for single-threaded-version
-    	extern (C) bool thread_needLock() { return false; }
-    	extern (C) void thread_suspendAll() {}
-    	extern (C) void thread_resumeAll() {}
+    	extern (C) bool thread_needLock();
+    	extern (C) void thread_suspendAll();
+    	extern (C) void thread_resumeAll();
     }
 
     extern (C) void onOutOfMemoryError();

@@ -16,22 +16,30 @@
 #include <assert.h>
 #include "mars.h"
 
+#define MONPTR(h)       (&((Monitor *)(h)->monitor)->mon)
+
 /* This is what the monitor reference in Object points to */
 typedef struct Monitor {
 	void* impl; /* for user-level monitors */
 	Array devt; /* for internal monitors */
+	u32 count;	/* needed to allow multiple locks from the same thread */
 	tULock mon;
 } Monitor;
 
-#define MONPTR(h)       (&((Monitor *)(h)->monitor)->mon)
+void _STI_monitor_staticctor(void);
+void _STD_monitor_staticdtor(void);
+void _d_monitor_create(Object *h);
+void _d_monitor_destroy(Object *h);
+int _d_monitor_lock(Object *h);
+void _d_monitor_unlock(Object *h);
 
 static tULock _monitor_critsec;
 
-void _STI_monitor_staticctor() {
+void _STI_monitor_staticctor(void) {
 	/* nothing to do */
 }
 
-void _STD_monitor_staticdtor() {
+void _STD_monitor_staticdtor(void) {
 	/* nothing to do */
 }
 
@@ -64,11 +72,17 @@ void _d_monitor_destroy(Object *h) {
 }
 
 int _d_monitor_lock(Object *h) {
-	assert(h && h->monitor && !(((Monitor*)h->monitor)->impl));
-	locku(MONPTR(h));
+	Monitor *m = (Monitor*)h->monitor;
+	assert(h && m && !m->impl);
+	if(m->count == 0)
+		locku(MONPTR(h));
+	m->count++;
+	return 0;
 }
 
 void _d_monitor_unlock(Object *h) {
-	assert(h && h->monitor && !(((Monitor*)h->monitor)->impl));
-	unlocku(MONPTR(h));
+	Monitor *m = (Monitor*)h->monitor;
+	assert(h && m && !m->impl);
+	if(--m->count == 0)
+		unlocku(MONPTR(h));
 }

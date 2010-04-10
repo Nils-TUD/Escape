@@ -23,7 +23,7 @@
 #include <esc/proc.h>
 #include "tls.h"
 
-static int otherThread(int argc,char *argv[]);
+static int otherThread(void *arg);
 
 __thread int t1;
 __thread int t2;
@@ -33,7 +33,8 @@ int mod_tls(int argc,char *argv[]) {
 	u32 i;
 	UNUSED(argc);
 	UNUSED(argv);
-	startThread(otherThread,NULL);
+	if(startThread(otherThread,NULL) < 0)
+		error("Unable to start thread");
 	for(i = 0; i < 4; i++) {
 		t1++;
 		t2++;
@@ -43,10 +44,9 @@ int mod_tls(int argc,char *argv[]) {
 	return 0;
 }
 
-static int otherThread(int argc,char *argv[]) {
+static int otherThread(void *arg) {
 	u32 i;
-	UNUSED(argc);
-	UNUSED(argv);
+	UNUSED(arg);
 	t1 = 4;
 	t2 = 5;
 	for(i = 0; i < 4; i++) {

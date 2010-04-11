@@ -10,7 +10,7 @@ BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 DC = $(BUILD)/dmd
-DFLAGS = $(DDEFFLAGS) -I$(LIBD)/druntime/import -I$(LIBD)/phobos
+DFLAGS = $(DDEFFLAGS) -I$(LIBD)
 LINKER = ld
 LFLAGS = -T$(LDCONF) --build-id=none $(ADDFLAGS)
 

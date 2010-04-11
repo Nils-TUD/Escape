@@ -47,8 +47,8 @@ $(BUILDL)/%.o: %.c
 		@$(CC) $(CFLAGS) -MMD -c -o $@ $<
 
 $(BUILDL)/%.o: %.d
-		@echo "	" CC $<
-		@$(DC) $(DDEFFLAGS) -d -noboundscheck -c -of$@ $<
+		@echo "	" DC $<
+		@$(DC) $(DDEFFLAGS) -d -c -of$@ $<
 
 $(STARTO): $(START)
 		@echo "	" AS $(START)

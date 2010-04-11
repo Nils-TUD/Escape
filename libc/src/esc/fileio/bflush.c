@@ -19,11 +19,15 @@
 
 #include <esc/common.h>
 #include <esc/fileio.h>
+#include <esc/lock.h>
 #include <esc/io.h>
 #include "fileiointern.h"
 
+static tULock lck;
+
 s32 bflush(sBuffer *buf) {
 	s32 res = 0;
+	locku(&lck);
 	if((buf->type & BUF_TYPE_FILE) && buf->pos > 0) {
 		if(write(buf->fd,buf->str,buf->pos * sizeof(char)) < 0)
 			res = IO_EOF;
@@ -32,5 +36,6 @@ s32 bflush(sBuffer *buf) {
 		/*if(res >= 64)
 			yield();*/
 	}
+	unlocku(&lck);
 	return res;
 }

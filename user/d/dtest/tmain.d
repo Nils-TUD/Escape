@@ -1,12 +1,8 @@
-import std.c.stdio;
-import core.thread;
-
-shared static this() {
-	printf("MUH!?\n");
-}
-shared static ~this() {
-	printf("Aus die Maus!!\n");
-}
+import tango.stdc.stdio;
+import tango.core.Thread;
+import tango.io.Console;
+import tango.io.Stdout;
+import tango.sys.Process;
 
 static this() {
 	printf("WAS??\n");
@@ -23,25 +19,36 @@ auto t5 = "blub oder?";
 
 extern (C) int gettid();
 
-void testThread(void *arg) {
-	char[] blub = cast(char[])"mythread";
+void testThread() {
+	char[] blub = "mythread";
 	for(int i = 0; i < gettid() % 4; i++)
 		blub ~= "+";
 	Thread c = Thread.getThis();
-	c.name(cast(string)blub);
+	c.name(blub);
 	printf("I am a thread (%s)!!!\n",c.name().ptr);
 	fflush(stdout);
-	Thread.sleep(5_000_000);
+	Thread.sleep(Interval.milli * 500);
 	printf("nu aber");
 	fflush(stdout);
 }
 
-void main(string[] args) {
-	Thread t = new Thread(&testThread);
+void main(char[][] args) {
+	/*Thread t = new Thread(&testThread);
 	t.start();
 	Thread t2 = new Thread(&testThread);
-	t2.start();
-	try {
+	t2.start();*/
+	
+	Stdout.format("{0}, {1}, {2}, {3}\n","test",1234,1 + 4 * 3,'a');
+	Stdout.flush();
+	
+	char[][] pargs = ["/bin/ls"];
+	char[] res;
+	Process p = new Process(pargs);
+	p.execute(pargs);
+	/*p.stdout().read(res);
+	Cout.append(res);*/
+	
+	/*try {
 		printf("hier\n");
 		printf("t1=%d, t2=%d, t3=%d, t4=%s, t5=%s\n",t1,t2,t3,t4.ptr,t5.ptr);
 		try {
@@ -57,7 +64,7 @@ void main(string[] args) {
 	}
 	finally {
 		printf("Finally ...\n");
-	}
+	}*/
 }
 
 unittest {

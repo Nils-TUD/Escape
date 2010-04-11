@@ -160,6 +160,15 @@ void sysc_isterm(sIntrptStackFrame *stack);
 void sysc_stat(sIntrptStackFrame *stack);
 
 /**
+ * Retrieves information about the file behind the given file-descriptor
+ *
+ * @param tFD the file-descriptor
+ * @param tFileInfo* info will be filled
+ * @return s32 0 on success
+ */
+void sysc_fstat(sIntrptStackFrame *stack);
+
+/**
  * Writes all dirty objects of the filesystem to disk
  *
  * @return s32 0 on success

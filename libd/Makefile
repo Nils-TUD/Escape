@@ -10,6 +10,7 @@ CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -Iinclude -I$(LIBDIR)/h \
 	-I$(LIBCDIR)/include
 DC = $(BUILD)/dmd
+DFLAGS = $(DDEFFLAGS) -d
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -name "*.c")
@@ -48,7 +49,7 @@ $(BUILDL)/%.o: %.c
 
 $(BUILDL)/%.o: %.d
 		@echo "	" DC $<
-		@$(DC) $(DDEFFLAGS) -d -c -of$@ $<
+		@$(DC) $(DFLAGS) -c -of$@ $<
 
 $(STARTO): $(START)
 		@echo "	" AS $(START)

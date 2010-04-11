@@ -60,6 +60,7 @@ static void test_toupper(void);
 static void test_isalnumstr(void);
 static void test_strmatch(void);
 static void test_strtold(void);
+static void test_strtol(void);
 
 /* our test-module */
 sTestModule tModString = {
@@ -100,6 +101,7 @@ static void test_string(void) {
 	test_isalnumstr();
 	test_strmatch();
 	test_strtold();
+	test_strtol();
 }
 
 static void test_atoi(void) {
@@ -741,6 +743,44 @@ static void test_strtold(void) {
 		res = strtold(tests[i].str,&end);
 		test_assertTrue(res == tests[i].res);
 		test_assertTrue(*end == '\0');
+	}
+
+	test_caseSucceded();
+}
+
+static void test_strtol(void) {
+	typedef struct {
+		const char *str;
+		u16 base;
+		s32 res;
+	} sStrtolTest;
+	sStrtolTest tests[] = {
+		{"1234",		10,	1234},
+		{" \t12",		0,	12},
+		{"+234",		10,	234},
+		{"-1234",		10,	-1234},
+		{"55",			8,	055},
+		{"055",			0,	055},
+		{"AbC",			16,	0xABC},
+		{"0xaBC",		0,	0xABC},
+		{"0x80000000",	16,	0x80000000},
+		{"aiz",			36,	13643},
+		{"01101",		2,	13},
+		{"0",			7,	0},
+		{"-1",			7,	-1},
+	};
+	u32 i;
+	s32 res;
+	char *end;
+
+	test_caseStart("Testing strtol()");
+
+	for(i = 0; i < ARRAY_SIZE(tests); i++) {
+		res = strtol(tests[i].str,&end,tests[i].base);
+		test_assertInt(res,tests[i].res);
+		test_assertTrue(*end == '\0');
+		res = strtol(tests[i].str,NULL,tests[i].base);
+		test_assertInt(res,tests[i].res);
 	}
 
 	test_caseSucceded();

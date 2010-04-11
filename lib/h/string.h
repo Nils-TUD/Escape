@@ -383,6 +383,65 @@ bool strmatch(const char *pattern,const char *str);
 char *strndup(const char *s,u32 n);
 
 /**
+ * The  strtol()  function  converts  the  initial part of the string in nptr to a long integer
+ * value according to the given base, which must be between 2 and 36 inclusive, or be the special
+ * value 0.
+ *
+ * The string may begin with an arbitrary amount of white space (as determined by isspace(3))
+ * followed by a single  optional '+'  or  '-' sign.  If base is zero or 16, the string may then
+ * include a "0x" prefix, and the number will be read in base 16; otherwise, a zero base is taken
+ * as 10 (decimal) unless the next character is '0', in which case  it  is  taken  as  8 (octal).
+ *
+ * The remainder of the string is converted to a long int value in the obvious manner, stopping at
+ * the first character which is not a valid digit in the given base.  (In bases above 10, the
+ * letter 'A' in either upper or lower case represents  10, 'B' represents 11, and so forth,
+ * with 'Z' representing 35.)
+ *
+ * If endptr is not NULL, strtol() stores the address of the first invalid character in *endptr.
+ * If there were no digits at all, strtol() stores the original value of nptr in *endptr (and
+ * returns 0).  In particular, if  *nptr  is  not  '\0'  but **endptr is '\0' on return, the
+ * entire string is valid.
+ *
+ * @param nptr the string
+ * @param endptr if not NULL, it will be set to the first character that doesn't belong to the
+ * 	converted integer
+ * @param base the base (2 - 36 inclusive; 0 = determine automatically)
+ * @return the number
+ */
+s32 strtol(const char *nptr,char **endptr,s16 base);
+s64 strtoll(const char *nptr,char **endptr,s16 base);
+
+/**
+ * The  strtoul()  function  converts  the initial part of the string in nptr to an unsigned long
+ * int value according to the given base, which must be between 2 and 36 inclusive, or be the
+ * special value 0.
+ *
+ * The string may begin with an arbitrary amount of white space (as determined by isspace(3))
+ * followed by a single  optional '+'  or  '-' sign.  If base is zero or 16, the string may
+ * then include a "0x" prefix, and the number will be read in base 16; otherwise, a zero base
+ * is taken as 10 (decimal) unless the next character is '0', in which case  it  is  taken  as  8
+ * (octal).
+ *
+ * The remainder of the string is converted to an unsigned long int value in the obvious manner,
+ * stopping at the first character which is not a valid digit in the given base.  (In bases above
+ * 10, the letter 'A' in either  upper  or  lower  case represents 10, 'B' represents 11, and
+ * so forth, with 'Z' representing 35.)
+ *
+ * If  endptr  is not NULL, strtoul() stores the address of the first invalid character in *endptr.
+ * If there were no digits at all, strtoul() stores the original value of nptr in *endptr
+ * (and returns 0).  In particular, if *nptr is not '\0'  but **endptr is '\0' on return, the
+ * entire string is valid.
+ *
+ * @param nptr the string
+ * @param endptr if not NULL, it will be set to the first character that doesn't belong to the
+ * 	converted integer
+ * @param base the base (2 - 36 inclusive; 0 = determine automatically)
+ * @return the number
+*/
+u32 strtoul(const char *nptr,char **endptr,s16 base);
+u64 strtoull(const char *nptr,char **endptr,s16 base);
+
+/**
  * The strtod, strtof, and strtold functions convert the initial portion of the string
  * pointed to by nptr to double, float, and long double representation,
  * respectively. First, they decompose the input string into three parts: an initial, possibly

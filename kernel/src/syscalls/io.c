@@ -455,6 +455,36 @@ void sysc_stat(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
+void sysc_fstat(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
+	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
+	sThread *t = thread_getRunning();
+	tInodeNo ino;
+	tDevNo devNo;
+	tFileNo file;
+	s32 res;
+
+	if(info == NULL || !paging_isRangeUserWritable((u32)info,sizeof(sFileInfo)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	/* get inode-number and device */
+	file = thread_fdToFile(fd);
+	if(file < 0)
+		SYSC_ERROR(stack,file);
+	res = vfs_getFileId(file,&ino,&devNo);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+
+	/* retrieve info */
+	if(devNo == VFS_DEV_NO)
+		res = vfsn_getNodeInfo(ino,info);
+	else
+		res = vfsr_istat(t->tid,ino,devNo,info);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,0);
+}
+
 void sysc_sync(sIntrptStackFrame *stack) {
 	s32 res;
 	sThread *t = thread_getRunning();

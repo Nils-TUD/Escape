@@ -73,6 +73,15 @@ s32 pipe(tFD *readFd,tFD *writeFd) A_CHECKRET;
 s32 stat(const char *path,sFileInfo *info) A_CHECKRET;
 
 /**
+ * Retrieves information about the file behind the given file-descriptor
+ *
+ * @param fd the file-descriptor
+ * @param info will be filled
+ * @return 0 on success
+ */
+s32 fstat(tFD fd,sFileInfo *info) A_CHECKRET;
+
+/**
  * Asks for the current file-position
  *
  * @param fd the file-descriptor

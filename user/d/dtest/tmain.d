@@ -1,8 +1,8 @@
 import tango.stdc.stdio;
-import tango.core.Thread;
+/*import tango.core.Thread;
 import tango.io.Console;
 import tango.io.Stdout;
-import tango.sys.Process;
+import tango.sys.Process;*/
 
 static this() {
 	printf("WAS??\n");
@@ -20,6 +20,7 @@ auto t5 = "blub oder?";
 extern (C) int gettid();
 
 void testThread() {
+	/+
 	char[] blub = "mythread";
 	for(int i = 0; i < gettid() % 4; i++)
 		blub ~= "+";
@@ -29,7 +30,7 @@ void testThread() {
 	fflush(stdout);
 	Thread.sleep(Interval.milli * 500);
 	printf("nu aber");
-	fflush(stdout);
+	fflush(stdout);+/
 }
 
 void main(char[][] args) {
@@ -38,13 +39,13 @@ void main(char[][] args) {
 	Thread t2 = new Thread(&testThread);
 	t2.start();*/
 	
-	Stdout.format("{0}, {1}, {2}, {3}\n","test",1234,1 + 4 * 3,'a');
+	/+Stdout.format("{0}, {1}, {2}, {3}\n","test",1234,1 + 4 * 3,'a');
 	Stdout.flush();
 	
 	char[][] pargs = ["/bin/ls"];
 	char[] res;
 	Process p = new Process(pargs);
-	p.execute(pargs);
+	p.execute(pargs);+/
 	/*p.stdout().read(res);
 	Cout.append(res);*/
 	

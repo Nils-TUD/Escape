@@ -82,6 +82,7 @@ SYSCALL_ISTERM				equ 58
 SYSCALL_JOIN					equ 59
 SYSCALL_SUSPEND				equ 60
 SYSCALL_RESUME				equ 61
+SYSCALL_FSTAT					equ 62
 
 ; the IRQ for syscalls
 SYSCALL_IRQ						equ	0x30

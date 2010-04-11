@@ -23,27 +23,5 @@
 #include <ctype.h>
 
 s64 atol(const char *str) {
-	s64 i = 0;
-	bool neg = false;
-	char c;
-
-	vassert(str != NULL,"str == NULL");
-
-	/* skip leading whitespace */
-	while(isspace(*str))
-		str++;
-	/* negative? */
-	if(*str == '-') {
-		neg = true;
-		str++;
-	}
-	/* read number */
-	while((c = *str) >= '0' && c <= '9') {
-		i = i * 10 + c - '0';
-		str++;
-	}
-	/* switch sign? */
-	if(neg)
-		i = -i;
-	return i;
+	return strtoll(str,NULL,10);
 }

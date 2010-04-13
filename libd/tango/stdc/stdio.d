@@ -508,6 +508,7 @@ else version( solaris )
 }
 else version(Escape)
 {
+	void flush();
     void clearerr(FILE* stream);
     int  feof(FILE* stream);
     int  ferror(FILE* stream);

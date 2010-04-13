@@ -401,8 +401,8 @@ sAllocStats paging_destroyPDir(tPageDir pdir) {
 	u32 ptables = paging_getPTables(pdir);
 	sPDEntry *pde;
 	assert(pdir != curPDir);
-	/* free frame for kernel-stack */
-	stats = paging_unmapFrom(pdir,KERNEL_STACK,1,true);
+	/* remove kernel-stack (don't free the frame; its done in thread_kill()) */
+	stats = paging_unmapFrom(pdir,KERNEL_STACK,1,false);
 	/* free page-table for kernel-stack */
 	pde = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(KERNEL_STACK);
 	pde->present = false;

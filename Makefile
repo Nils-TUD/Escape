@@ -12,7 +12,7 @@ BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 BUILDAPPS = $(BUILDDIR)/apps
 
-KVM = -enable-kvm
+#KVM = -enable-kvm
 QEMU = /home/hrniels/Applications/qemu-0.12.2/bin/bin/qemu
 QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 32 \
 	-localtime
@@ -33,15 +33,15 @@ export CC = gcc
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
-				 -Wstrict-prototypes -fno-builtin
+				 -Wstrict-prototypes -ffreestanding
 export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
-				-Wno-long-long -fno-builtin
+				-Wno-long-long -ffreestanding
 export DWFLAGS=-w -wi
 ifeq ($(BUILDDIR),$(abspath build/debug))
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g -D LOGSERIAL
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
-	export DDEFFLAGS=$(DWFLAGS) -gc -debug -unittest
+	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 else
 	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D NDEBUG
 	export CDEFFLAGS=$(CWFLAGS) -O3 -D NDEBUG
@@ -145,7 +145,7 @@ vbox: all prepareRun $(ISO) $(VMDISK)
 debug: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
-		/usr/local/bin/gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
+		/usr/local/bin/gdbtui --command=gdb.start --symbols $(BUILD)/user_dtest.bin
 
 debugb:	all prepareRun
 		$(BOCHSDBG) -f bochsgdb.cfg -q

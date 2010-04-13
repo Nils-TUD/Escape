@@ -460,6 +460,18 @@ float strtof(const char *nptr,char **endptr);
 double strtod(const char *nptr,char **endptr);
 long double strtold(const char *nptr,char **endptr);
 
+/**
+ * The  ecvt() function converts number to a null-terminated string of ndigits digits (where
+ * ndigits is reduced to a system-specific limit determined by the precision of a double), and
+ * returns a pointer to the string.  The  high-order  digit  is non-zero,  unless  number  is
+ * zero.  The low order digit is rounded.  The string itself does not contain a decimal point;
+ * however, the position of the decimal point relative to the start of the string is stored in
+ * *decpt.  A negative value for *decpt  means that the decimal point is to the left of the start
+ * of the string.  If the sign of number is negative, *sign is set to a non-zero value, otherwise
+ * it is set to 0.  If number is zero, it is unspecified whether *decpt is 0 or 1.
+ */
+char *ecvt(double number,s32 ndigits,s32 *decpt,s32 *sign);
+
 #ifdef __cplusplus
 }
 #endif

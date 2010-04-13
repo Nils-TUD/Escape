@@ -130,7 +130,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			/* we'll reach this as soon as the scheduler has chosen the created process */
 			p = proc_getRunning();
 			/* remove regions (except stack) */
-			vmm_removeAll(p,false);
+			proc_removeRegions(p,false);
 			/* now load driver */
 			memcpy(p->command,name,strlen(name) + 1);
 			entryPoint = elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart);

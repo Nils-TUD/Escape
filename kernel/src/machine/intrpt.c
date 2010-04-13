@@ -541,7 +541,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 
 		/* syscall */
 		case IRQ_SYSCALL:
-			if(t->proc->isVM86)
+			if(t->proc->flags & P_VM86)
 				util_panic("VM86-task wants to perform a syscall!?");
 			sysc_handle(stack);
 			break;
@@ -619,7 +619,7 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 					break;
 				}
 				/* vm86-task? */
-				if(t->proc->isVM86) {
+				if(t->proc->flags & P_VM86) {
 					vm86_handleGPF(stack);
 					exCount = 0;
 					break;

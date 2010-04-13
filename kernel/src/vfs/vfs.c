@@ -140,15 +140,6 @@ tFileNo vfs_inheritFileNo(tTid tid,tFileNo file) {
 		}
 		return newFile;
 	}
-	/* if a pipe is inherited we need a new file for it (position should be different )*/
-	else if(e->devNo == VFS_DEV_NO && IS_PIPE(n->mode)) {
-		tFileNo newFile;
-		/* we'll get a new file since the tid is different */
-		newFile = vfs_openFile(tid,e->flags & (VFS_READ | VFS_WRITE),e->nodeNo,e->devNo);
-		if(newFile < 0)
-			return -1;
-		return newFile;
-	}
 	else {
 		/* just increase references */
 		e->refCount++;
@@ -565,11 +556,10 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 					else if(IS_DRVUSE(n->mode) && sll_length(n->data.drvuse.sendList) == 0)
 						vfsn_removeNode(n);
 				}
-				/* if we're the owner of the pipe, append an "EOF-message" */
-				/* otherwise we have a problem when the fd is inherited to multiple processes.
-				 * in this case all these processes would write an EOF (and of course not necessarily
-				 * at the right place) */
-				else if(n->owner == tid && IS_PIPE(n->mode))
+				/* there are still references to the pipe, write an EOF into it (0 references
+				 * mean that the pipe should be removed)
+				 */
+				else if(IS_PIPE(n->mode))
 					vfsrw_writePipe(tid,file,n,NULL,e->position,0);
 				/* TODO perhaps we should notify the writer if the read has closed the file
 				 * (e.g. by a kill) */

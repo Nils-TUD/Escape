@@ -20,6 +20,7 @@ private import tango.text.locale.Data;
 private import tango.stdc.ctype;
 private import tango.stdc.string;
 private import tango.stdc.time;
+private import tango.stdc.stringz : fromStringz;
 
 int getUserCulture() {
   // TODO hardcoded until we have a locale
@@ -27,25 +28,29 @@ int getUserCulture() {
 
   // getenv returns a string of the form <language>_<region>.
   // Therefore we need to replace underscores with hyphens.
-  char* p = env;
-  int len;
-  while (*p) {
-    if (*p == '.'){
-      break;
-    }
-    if (*p == '_'){
-      *p = '-';
-    }
-    p++;
-    len++;
+  char[] s;
+  if (env){
+      s = fromStringz(env).dup;
+      foreach (ref c; s)
+               if (c == '.')
+                   break;
+               else
+                  if (c == '_')
+                      c = '-';
+  } else {
+      s="en-US";
   }
-
-  char[] s = env[0 .. len];
   foreach (entry; CultureData.cultureDataTable) {
     // todo: there is also a local compareString defined. Is it correct that here 
     // we use tango.text.locale.Data, which matches the signature?
     if (tango.text.locale.Data.compareString(entry.name, s) == 0)
-	// todo: here was entry.id returned, which does not exist. Is lcid correct?
+      return entry.lcid;
+  }
+  
+  foreach (entry; CultureData.cultureDataTable) {
+    // todo: there is also a local compareString defined. Is it correct that here 
+    // we use tango.text.locale.Data, which matches the signature?
+    if (tango.text.locale.Data.compareString(entry.name, "en-US") == 0)
       return entry.lcid;
   }
   return 0;

@@ -51,6 +51,9 @@
 #define EV_VMM_DONE			4096 /* kernel-intern */
 #define EV_THREAD_DIED		8192 /* kernel-intern */
 
+#define P_ZOMBIE			1
+#define P_VM86				2
+
 typedef struct {
 	tPid pid;
 	/* the signal that killed the process (SIG_COUNT if none) */
@@ -67,6 +70,8 @@ typedef struct {
 /* represents a process */
 /* TODO move stuff for existing processes to the kernel-stack-page */
 typedef struct {
+	/* flags for vm86 and zombie */
+	u8 flags;
 	/* process id (2^16 processes should be enough :)) */
 	tPid pid;
 	/* parent process id */
@@ -88,7 +93,6 @@ typedef struct {
 	/* for the waiting parent */
 	s32 exitCode;
 	tSig exitSig;
-	u8 isVM86;
 	/* the io-map (NULL by default) */
 	u8 *ioMap;
 	/* start-command */
@@ -204,6 +208,14 @@ s32 proc_startThread(u32 entryPoint,void *arg);
  * @param exitCode the exit-code
  */
 void proc_destroyThread(s32 exitCode);
+
+/**
+ * Removes all regions from the given process
+ *
+ * @param p the process
+ * @param remStack wether the stack should be removed too
+ */
+void proc_removeRegions(sProc *p,bool remStack);
 
 /**
  * Stores the exit-state of the first terminated child-process of <ppid> into <state>

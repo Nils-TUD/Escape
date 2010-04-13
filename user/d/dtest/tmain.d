@@ -1,8 +1,11 @@
-import tango.stdc.stdio;
-/*import tango.core.Thread;
-import tango.io.Console;
 import tango.io.Stdout;
-import tango.sys.Process;*/
+import tango.stdc.stdio;
+import tango.text.Regex;
+import tango.io.Stdout;
+import tango.core.Exception;
+import tango.io.device.File;
+import tango.time.Clock;
+import tango.sys.Process;
 
 static this() {
 	printf("WAS??\n");
@@ -39,16 +42,43 @@ void main(char[][] args) {
 	Thread t2 = new Thread(&testThread);
 	t2.start();*/
 	
-	/+Stdout.format("{0}, {1}, {2}, {3}\n","test",1234,1 + 4 * 3,'a');
+	Stdout.format("{0}, {1}, {2}, {3}, {4}\n","test",1234,1 + 4 * 3,'a',12.4661e2);
 	Stdout.flush();
 	
-	char[][] pargs = ["/bin/ls"];
-	char[] res;
-	Process p = new Process(pargs);
-	p.execute(pargs);+/
-	/*p.stdout().read(res);
-	Cout.append(res);*/
-	
+	Regex r = new Regex(r"[0-9a-fA-F]{3,}");
+	foreach(m; r.search("abc123 fffx 44 4412"))
+		Stdout.format("found {0}\n",m.match(0));
+
+    // open a file for reading
+    auto from = new File("/file.txt");
+    // stream directly to console
+    Stdout.copy(from);
+    
+    auto fields = Clock.toDate;
+    Stdout.formatln("{}, {} {:D2}:{:D2}:{:D2}",
+                     fields.date.day,
+                     fields.date.year,
+                     fields.time.hours,
+                     fields.time.minutes,
+                     fields.time.seconds);
+
+	try
+	{
+		auto p = new Process ("ps -n 5 -s cpu", null);
+		p.execute();
+		
+		Stdout.formatln ("Output from {}:", p.programName);
+		Stdout.copy (p.stdout).flush;
+		auto result = p.wait;
+		Stdout.formatln ("Process '{}' ({}) exited with reason {}, status {}",
+		p.programName, p.pid, cast(int) result.reason, result.status);
+		p.close();
+	}
+	catch (ProcessException e)
+	{
+		Stdout.formatln ("Process execution failed: {}", e);
+	}
+    
 	/*try {
 		printf("hier\n");
 		printf("t1=%d, t2=%d, t3=%d, t4=%s, t5=%s\n",t1,t2,t3,t4.ptr,t5.ptr);

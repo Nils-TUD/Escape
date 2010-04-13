@@ -1,0 +1,11 @@
+#Mon Apr 12 22:52:31 CEST 2010
+descent.core.compiler.allowDeprecated=disabled
+descent.core.compiler.analyzeTemplates=enabled
+descent.core.compiler.debugIdentifiers=
+descent.core.compiler.debugLevel=0
+descent.core.compiler.enableSemanticErrorReporting=2
+descent.core.compiler.enableWarnings=enabled
+descent.core.compiler.source=1
+descent.core.compiler.versionIdentifiers=DigitalMars, Escape, X86, LittleEndian, D_InlineAsm, D_InlineAsm_X86, all
+descent.core.compiler.versionLevel=0
+eclipse.preferences.version=1

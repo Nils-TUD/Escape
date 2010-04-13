@@ -78,7 +78,7 @@ static void test_1(void) {
 	test_assertInt(rno,RNO_BSS);
 	rno = vmm_add(p,NULL,0,PAGE_SIZE * 5,REG_DATA);
 	test_assertInt(rno,RNO_DATA);
-	vmm_removeAll(p,false);
+	proc_removeRegions(p,false);
 	test_finish();
 
 	test_init();

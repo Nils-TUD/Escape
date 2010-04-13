@@ -698,6 +698,7 @@ version( freebsd )
 }
 else
 {
+	/+ TODO
     double  acos(double x);
     float   acosf(float x);
     real    acosl(real x);
@@ -924,5 +925,5 @@ else
 
     double  fma(double x, double y, double z);
     float   fmaf(float x, float y, float z);
-    real    fmal(real x, real y, real z);
+    real    fmal(real x, real y, real z);+/
 }

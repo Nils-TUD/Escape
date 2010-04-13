@@ -31,17 +31,19 @@
 
 module rt.compiler.dmd.rt.arraycat;
 
+//debug=ARRAYCAT;
+
 private
 {
     import tango.stdc.string : memcpy;
-    debug import tango.stdc.stdio : printf;
+    debug(ARRAYCAT) import tango.stdc.stdio : printf;
 }
 
 extern (C):
 
 byte[] _d_arraycopy(size_t size, byte[] from, byte[] to)
 {
-    debug printf("f = %p,%d, t = %p,%d, size = %d\n",
+    debug(ARRAYCAT) printf("f = %p,%d, t = %p,%d, size = %d\n",
                  from.ptr, from.length, to.ptr, to.length, size);
 
     if (to.length != from.length)

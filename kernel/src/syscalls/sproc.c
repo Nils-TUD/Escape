@@ -229,12 +229,12 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	}
 
 	/* remove all except stack */
-	vmm_removeAll(p,false);
+	proc_removeRegions(p,false);
 
 	/* load program */
 	res = elf_loadFromFile(path);
 	if(res < 0) {
-		/* there is no undo for vmm_removeAll() :/ */
+		/* there is no undo for proc_removeRegions() :/ */
 		kheap_free(argBuffer);
 		proc_terminate(p,res,SIG_COUNT);
 		thread_switch();

@@ -78,7 +78,7 @@ void proc_init(void) {
 	p->unswappable = 0;
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
-	p->isVM86 = false;
+	p->flags = 0;
 	memcpy(p->command,"initloader",11);
 
 	/* create first thread */
@@ -259,7 +259,8 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->parentPid = cur->pid;
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
-	p->isVM86 = isVM86;
+	if(isVM86)
+		p->flags |= P_VM86;
 
 	/* create thread-list */
 	p->threads = sll_create();
@@ -285,11 +286,11 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	return 0;
 
 errorThread:
-	thread_destroy(nt,true);
+	thread_kill(nt);
 errorThreadList:
 	kheap_free(p->threads);
 errorRegs:
-	vmm_removeAll(p,true);
+	proc_removeRegions(p,true);
 errorPDir:
 	paging_destroyPDir(p->pagedir);
 errorVFS:
@@ -308,7 +309,7 @@ s32 proc_startThread(u32 entryPoint,void *arg) {
 
 	/* append thread */
 	if(!sll_append(p->threads,nt)) {
-		thread_destroy(nt,true);
+		thread_kill(nt);
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
@@ -319,7 +320,7 @@ s32 proc_startThread(u32 entryPoint,void *arg) {
 	if(res == 1) {
 		sIntrptStackFrame *istack = intrpt_getCurStack();
 		if(!proc_setupThreadStack(istack,arg,entryPoint)) {
-			thread_destroy(nt,true);
+			thread_kill(nt);
 			/* do a switch here because we can't continue */
 			thread_switch();
 			/* never reached */
@@ -365,24 +366,33 @@ void proc_destroyThread(s32 exitCode) {
 	else {
 		/* just destroy the thread */
 		sThread *t = thread_getRunning();
-		thread_destroy(t,true);
+		thread_kill(t);
+	}
+}
+
+void proc_removeRegions(sProc *p,bool remStack) {
+	u32 i;
+	sSLNode *n;
+	assert(p);
+	for(i = 0; i < p->regSize; i++) {
+		sVMRegion *vm = ((sVMRegion**)p->regions)[i];
+		if(vm && (!(vm->reg->flags & RF_STACK) || remStack))
+			vmm_remove(p,i);
+	}
+	/* unset TLS-region (and stack-region, if needed) from all threads */
+	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
+		sThread *t = (sThread*)n->data;
+		t->tlsRegion = -1;
+		if(remStack)
+			t->stackRegion = -1;
 	}
 }
 
 s32 proc_getExitState(tPid ppid,sExitState *state) {
 	u32 i;
-	sThread *t;
-	sSLNode *n;
 	for(i = 0; i < PROC_COUNT; i++) {
 		if(procs[i].pid != INVALID_PID && procs[i].parentPid == ppid) {
-			bool isZombie = true;
-			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
-				if(((sThread*)n->data)->state != ST_ZOMBIE) {
-					isZombie = false;
-					break;
-				}
-			}
-			if(isZombie) {
+			if(procs[i].flags & P_ZOMBIE) {
 				if(state) {
 					state->pid = procs[i].pid;
 					state->exitCode = procs[i].exitCode;
@@ -392,11 +402,12 @@ s32 proc_getExitState(tPid ppid,sExitState *state) {
 							procs[i].stackPages) * PAGE_SIZE;*/
 					state->ucycleCount.val64 = 0;
 					state->kcycleCount.val64 = 0;
+					/* TODO
 					for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
 						t = (sThread*)n->data;
 						state->ucycleCount.val64 += t->ucycleCount.val64;
 						state->kcycleCount.val64 += t->kcycleCount.val64;
-					}
+					}*/
 				}
 				return procs[i].pid;
 			}
@@ -406,50 +417,40 @@ s32 proc_getExitState(tPid ppid,sExitState *state) {
 }
 
 void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
-	sSLNode *tn;
+	sSLNode *tn,*tmpn;
 	vassert(p->pid != 0 && p->pid != INVALID_PID,
 			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
 
-	/* ensure that no thread of our process will be selected on the next resched */
-	for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
+	/* remove all threads */
+	for(tn = sll_begin(p->threads); tn != NULL; ) {
 		sThread *t = (sThread*)tn->data;
-		sched_removeThread(t);
-		/* remove from timer, too, so that we don't get waked up again */
-		timer_removeThread(t->tid);
-		/* ensure that we don't get a signal anymore */
-		sig_removeHandlerFor(t->tid);
-		/* TODO we should introduce a thread_terminate() and thread_kill() */
-		t->state = ST_ZOMBIE;
+		tmpn = tn->next;
+		thread_kill(t);
+		tn = tmpn;
 	}
+
+	/* remove all regions */
+	proc_removeRegions(p,true);
+
+	/* free io-map, if present */
+	if(p->ioMap != NULL)
+		kheap_free(p->ioMap);
 
 	/* store exit-conditions */
 	p->exitCode = exitCode;
 	p->exitSig = signal;
+	p->flags |= P_ZOMBIE;
 
 	proc_notifyProcDied(p->parentPid,p->pid);
 }
 
 void proc_kill(sProc *p) {
 	u32 i;
-	sSLNode *tn,*tmpn;
 	sProc *cp;
 	sProc *cur = proc_getRunning();
 	vassert(p->pid != 0 && p->pid != INVALID_PID,
 			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
 	vassert(p->pid != cur->pid,"We can't kill the current process!");
-
-	/* remove all regions and page-dir */
-	vmm_removeAll(p,true);
-	paging_destroyPDir(p->pagedir);
-
-	/* destroy threads */
-	for(tn = sll_begin(p->threads); tn != NULL; ) {
-		sThread *t = (sThread*)tn->data;
-		tmpn = tn->next;
-		thread_destroy(t,false);
-		tn = tmpn;
-	}
-	sll_destroy(p->threads,false);
 
 	/* give childs the ppid 0 */
 	cp = procs;
@@ -458,15 +459,16 @@ void proc_kill(sProc *p) {
 			cp->parentPid = 0;
 			/* if this process has already died, the parent can't wait for it since its dying
 			 * right now. therefore notify init of it */
-			if(((sThread*)sll_begin(cp->threads)->data)->state == ST_ZOMBIE)
+			if(cp->flags & P_ZOMBIE)
 				proc_notifyProcDied(0,cp->pid);
 		}
 		cp++;
 	}
 
-	/* free io-map, if present */
-	if(p->ioMap != NULL)
-		kheap_free(p->ioMap);
+	/* remove pagedir; TODO we can do that on terminate, too (if we delay it when its the current) */
+	paging_destroyPDir(p->pagedir);
+	/* destroy threads-list */
+	sll_destroy(p->threads,false);
 
 	/* remove from VFS */
 	vfs_removeProcess(p->pid);

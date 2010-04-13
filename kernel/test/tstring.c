@@ -61,6 +61,7 @@ static void test_isalnumstr(void);
 static void test_strmatch(void);
 static void test_strtold(void);
 static void test_strtol(void);
+static void test_ecvt(void);
 
 /* our test-module */
 sTestModule tModString = {
@@ -102,6 +103,7 @@ static void test_string(void) {
 	test_strmatch();
 	test_strtold();
 	test_strtol();
+	test_ecvt();
 }
 
 static void test_atoi(void) {
@@ -782,6 +784,34 @@ static void test_strtol(void) {
 		res = strtol(tests[i].str,NULL,tests[i].base);
 		test_assertInt(res,tests[i].res);
 	}
+
+	test_caseSucceded();
+}
+
+static void test_ecvt(void) {
+	s32 decpt,sign;
+	char *s;
+	test_caseStart("Testing ecvt()");
+
+	s = ecvt(1234.5678,3,&decpt,&sign);
+	test_assertStr(s,"123");
+	test_assertInt(decpt,4);
+	test_assertInt(sign,0);
+
+	s = ecvt(0,1,&decpt,&sign);
+	test_assertStr(s,"");
+	test_assertInt(decpt,0);
+	test_assertInt(sign,0);
+
+	s = ecvt(0.23,4,&decpt,&sign);
+	test_assertStr(s,"2300");
+	test_assertInt(decpt,0);
+	test_assertInt(sign,0);
+
+	s = ecvt(-10.33,12,&decpt,&sign);
+	test_assertStr(s,"103300000000");
+	test_assertInt(decpt,2);
+	test_assertInt(sign,1);
 
 	test_caseSucceded();
 }

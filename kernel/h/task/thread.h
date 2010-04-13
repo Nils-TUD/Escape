@@ -271,13 +271,11 @@ s32 thread_extendStack(u32 address);
 s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc);
 
 /**
- * Destroys the given thread. If it is the current one it will be stored for later deletion.
+ * Kills the given thread. If it is the current one it will be stored for later deletion.
  *
  * @param t the thread
- * @param destroyStacks whether the stacks should be destroyed (should be true if the process
- *  will not be destroyed)
  */
-void thread_destroy(sThread *t,bool destroyStacks);
+void thread_kill(sThread *t);
 
 
 /* #### TEST/DEBUG FUNCTIONS #### */

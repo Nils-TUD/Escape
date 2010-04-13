@@ -44,32 +44,113 @@ private alias real NumType;
 
 private extern (C)
 {
-        double log10 (double x);
-        double ceil (double num);
-        double modf (double num, double *i);
-        double pow  (double base, double exp);
+		version (Escape)
+		{
+			private import tango.stdc.math;
+			
+			/**
+			 * Since all usages of log10 cast the result to an integer, we can use a very
+			 * simple version here.
+			 */
+			real log10l(real x)
+			{
+				real res = 0;
+				while(x >= 10)
+				{
+					x /= 10;
+					res += 1;
+				}
+				return res;
+			}
+			
+			real ceill(real num)
+			{
+				long inum = cast(long)num;
+				if(inum == num || inum < 0)
+					return inum;
+				return inum + 1;
+			}
+			
+			real modfl(real num,real *i)
+			{
+				if(num is real.nan)
+				{
+					*i = real.nan;
+					return real.nan;
+				}
+				if(num is real.infinity)
+				{
+					*i = 0;
+					return real.infinity;
+				}
+				if(num is -real.infinity)
+				{
+					*i = -0;
+					return -real.infinity;
+				}
+				long inum = cast(long)num;
+				*i = inum;
+				real res = num - inum;
+				return res;
+			}
+			
+			/**
+			 * In all usages exp is an integer (positive or negative). So we can provide a
+			 * simply version here
+			 */
+			real powl(real base,real exp)
+			{
+				real res = 1;
+				if(exp >= 0)
+				{
+					while(exp-- > 0)
+						res *= base;
+				}
+				else
+				{
+					while(exp++ < 0)
+						res /= base;
+				}
+				return res;
+			}
+			
+			unittest
+			{
+				assert(log10l(4) == 0);
+				assert(log10l(10) == 1);
+				assert(log10l(100) == 2);
+				assert(log10l(123) == 2);
+				assert(log10l(5812) == 3);
+				
+				assert(ceill(0.5) == 1);
+				assert(ceill(0.2) == 1);
+				assert(ceill(41.2) == 42);
+				assert(ceill(-13.9) == -13);
+				assert(ceill(-11) == -11);
+				assert(ceill(123) == 123);
+				assert(ceill(0) == 0);
 
-        real log10l (real x);
-        real ceill (real num);
-        real modfl (real num, real *i);
-        real powl  (real base, real exp);
+				assert(powl(10.,3.) == 1000.);
+				assert(powl(10.,1.) == 10.);
+				assert(powl(10.,0.) == 1.);
+				assert(powl(10.,-1.) == 0.1);
+				assert(powl(10.,-3.) == 0.001);
+			}
+		}
+		else
+		{
+	        real log10l (real x);
+	        real ceill (real num);
+	        real modfl (real num, real *i);
+	        real powl  (real base, real exp);
+		}
 
         int printf (char*, ...);
         version (Windows)
-                {
-                alias ecvt econvert;
-                alias ecvt fconvert;
-                }
-        else
-           {
-           alias ecvtl econvert;
-           alias ecvtl fconvert;
-           }
-
-        char* ecvt (double d, int digits, int* decpt, int* sign);
-        char* fcvt (double d, int digits, int* decpt, int* sign);
-        char* ecvtl (real d, int digits, int* decpt, int* sign);
-        char* fcvtl (real d, int digits, int* decpt, int* sign);
+	    {
+		    alias ecvt econvert;
+		    alias ecvt fconvert;
+	    }
 }
 
 /******************************************************************************

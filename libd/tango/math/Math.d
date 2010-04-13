@@ -141,10 +141,12 @@ int abs(int x)
 }
 
 /** ditto */
+/+ TODO
 real abs(creal z)
 {
     return hypot(z.re, z.im);
 }
++/
 
 /** ditto */
 real abs(ireal y)
@@ -308,6 +310,7 @@ unittest
  *      Results are undefined if |x| >= $(POWER 2,64).
  */
 
+/+ TODO
 real cos(real x) /* intrinsic */
 {
     version(LDC)
@@ -334,6 +337,7 @@ unittest {
     assert(isIdentical(cos(NaN(314)), NaN(314)));
 }
 }
++/
 
 /***********************************
  * Returns sine of x. x is in radians.
@@ -347,6 +351,7 @@ unittest {
  * Bugs:
  *      Results are undefined if |x| >= $(POWER 2,64).
  */
+/+ TODO
 real sin(real x) /* intrinsic */
 {
     version(LDC)
@@ -373,6 +378,7 @@ unittest {
     assert(isIdentical(sin(NaN(314)), NaN(314)));
 }
 }
++/
 
 version (GNU) {
     extern (C) real tanl(real);
@@ -388,6 +394,7 @@ version (GNU) {
  *	$(TR $(TD $(PLUSMN)$(INFIN)) $(TD $(NAN))     $(TD yes))
  *	)
  */
+/+ TODO
 real tan(real x)
 {
     version (GNU) {
@@ -486,24 +493,30 @@ debug(UnitTest) {
         assert(isIdentical( tan(NaN(0x0123L)), NaN(0x0123L) ));
     }
 }
++/
 
 /*****************************************
  * Sine, cosine, and arctangent of multiple of &pi;
  *
  * Accuracy is preserved for large values of x.
  */
+/+ TODO
 real cosPi(real x)
 {
     return cos((x%2.0)*PI);
 }
++/
 
 /** ditto */
+/+ TODO
 real sinPi(real x)
 {
     return sin((x%2.0)*PI);
 }
++/
 
 /** ditto */
+/+ TODO
 real atanPi(real x)
 {
     return PI * atan(x); // BUG: Fix this.
@@ -517,6 +530,7 @@ unittest {
     assert(isIdentical(atanPi(-0.0), -0.0));
 }
 }
++/
 
 /***********************************
  *  sine, complex and imaginary
@@ -526,6 +540,7 @@ unittest {
  * If both sin(&theta;) and cos(&theta;) are required,
  * it is most efficient to use expi(&theta).
  */
+/+ TODO
 creal sin(creal z)
 {
   creal cs = expi(z.re);
@@ -544,12 +559,14 @@ unittest {
   assert(sin(2.0+0.0i) == sin(2.0L) );
 }
 }
++/
 
 /***********************************
  *  cosine, complex and imaginary
  *
  *  cos(z) = cos(z.re)*cosh(z.im) + sin(z.re)*sinh(z.im)i
  */
+/+ TODO
 creal cos(creal z)
 {
   creal cs = expi(z.re);
@@ -569,6 +586,7 @@ unittest{
   assert(cos(5.2Li)== cosh(5.2L));
 }
 }
++/
 
 /***************
  * Calculates the arc cosine of x,
@@ -581,6 +599,7 @@ unittest{
  *      $(TR $(TD $(NAN))    $(TD $(NAN))  $(TD yes))
  *      )
  */
+/+ TODO
 real acos(real x)
 {
     return tango.stdc.math.acosl(x);
@@ -595,6 +614,7 @@ unittest {
     }
 }
 }
++/
 
 /***************
  * Calculates the arc sine of x,
@@ -607,6 +627,7 @@ unittest {
  *      $(TR $(TD $(LT)-1.0)    $(TD $(NAN))       $(TD yes))
  *      )
  */
+/+ TODO
 real asin(real x)
 {
     return tango.stdc.math.asinl(x);
@@ -621,6 +642,7 @@ unittest {
     }
 }
 }
++/
 
 /***************
  * Calculates the arc tangent of x,
@@ -632,6 +654,7 @@ unittest {
  *      $(TR $(TD $(PLUSMN)$(INFIN)) $(TD $(NAN))       $(TD yes))
  *      )
  */
+/+ TODO
 real atan(real x)
 {
     return tango.stdc.math.atanl(x);
@@ -643,6 +666,7 @@ unittest {
     assert(isIdentical(atan(NaN(9876)), NaN(9876)));
 }
 }
++/
 
 /***************
  * Calculates the arc tangent of y / x,
@@ -665,6 +689,7 @@ unittest {
  *      $(TR $(TD $(PLUSMN)$(INFIN)) $(TD -$(INFIN))    $(TD $(PLUSMN)3$(PI)/4))
  *      )
  */
+/+ TODO
 real atan2(real y, real x)
 {
     return tango.stdc.math.atan2l(y,x);
@@ -677,6 +702,7 @@ unittest {
     assert(isIdentical(atan2(NaN(9876), 2.18), NaN(9876)));
 }
 }
++/
 
 /***********************************
  * Complex inverse sine
@@ -684,6 +710,7 @@ unittest {
  * asin(z) = -i log( sqrt(1-$(POWER z, 2)) + iz)
  * where both log and sqrt are complex.
  */
+/+ TODO
 creal asin(creal z)
 {
     return -log(sqrt(1-z*z) + z*1i)*1i;
@@ -694,12 +721,14 @@ unittest {
    assert(asin(sin(0+0i)) == 0 + 0i);
 }
 }
++/
 
 /***********************************
  * Complex inverse cosine
  *
  * acos(z) = $(PI)/2 - asin(z)
  */
+/+ TODO
 creal acos(creal z)
 {
     return PI_2 - asin(z);
@@ -728,6 +757,7 @@ unittest {
     assert(isIdentical(cosh(NaN(432)), NaN(432)));
 }
 }
++/
 
 /***********************************
  * Calculates the hyperbolic sine of x.
@@ -738,6 +768,7 @@ unittest {
  *      $(TR $(TD $(PLUSMN)$(INFIN)) $(TD $(PLUSMN)$(INFIN)) $(TD no))
  *      )
  */
+/+ TODO
 real sinh(real x)
 {
     //  sinh(x) =  (exp(x)-exp(-x))/2;    
@@ -757,6 +788,7 @@ unittest {
     assert(isIdentical(sinh(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /***********************************
  * Calculates the hyperbolic tangent of x.
@@ -767,6 +799,7 @@ unittest {
  *      $(TR $(TD $(PLUSMN)$(INFIN)) $(TD $(PLUSMN)1.0) $(TD no))
  *      )
  */
+/+ TODO
 real tanh(real x)
 {
     //  tanh(x) = (exp(x) - exp(-x))/(exp(x)+exp(-x))
@@ -783,12 +816,14 @@ unittest {
     assert(isIdentical(tanh(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /***********************************
  *  hyperbolic sine, complex and imaginary
  *
  *  sinh(z) = cos(z.im)*sinh(z.re) + sin(z.im)*cosh(z.re)i
  */
+/+ TODO
 creal sinh(creal z)
 {
   creal cs = expi(z.im);
@@ -806,12 +841,14 @@ unittest {
   assert(sinh(4.2L + 0i)==sinh(4.2L));
 }
 }
++/
 
 /***********************************
  *  hyperbolic cosine, complex and imaginary
  *
  *  cosh(z) = cos(z.im)*cosh(z.re) + sin(z.im)*sinh(z.re)i
  */
+/+ TODO
 creal cosh(creal z)
 {
   creal cs = expi(z.im);
@@ -829,6 +866,7 @@ unittest {
   assert(cosh(8.3L + 0i)==cosh(8.3L));
 }
 }
++/
 
 
 /***********************************
@@ -844,6 +882,7 @@ unittest {
  *    $(SV  +$(INFIN),+$(INFIN))
  *  )
  */
+/+ TODO
 real acosh(real x)
 {
     if (x > 1/real.epsilon)
@@ -863,6 +902,7 @@ unittest
     assert(isIdentical(acosh(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /***********************************
  * Calculates the inverse hyperbolic sine of x.
@@ -880,6 +920,7 @@ unittest
  *    $(SV  $(PLUSMN)$(INFIN),$(PLUSMN)$(INFIN))
  *    )
  */
+/+ TODO
 real asinh(real x)
 {
     if (tango.math.IEEE.fabs(x) > 1 / real.epsilon) // beyond this point, x*x + 1 == x*x
@@ -903,6 +944,7 @@ unittest
     assert(isIdentical(asinh(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /***********************************
  * Calculates the inverse hyperbolic tangent of x,
@@ -918,6 +960,7 @@ unittest
  *    $(SV  -$(INFIN), -0)
  *    )
  */
+/+ TODO
 real atanh(real x)
 {
     // log( (1+x)/(1-x) ) == log ( 1 + (2*x)/(1-x) )
@@ -936,20 +979,25 @@ unittest
     assert(isIdentical(atanh(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /** ditto */
+/+ TODO
 creal atanh(ireal y)
 {
     // Not optimised for accuracy or speed
     return 0.5*(log(1+y) - log(1-y));
 }
++/
 
 /** ditto */
+/+ TODO
 creal atanh(creal z)
 {
     // Not optimised for accuracy or speed
     return 0.5 * (log(1 + z) - log(1-z));
 }
++/
 
 /*
  * Powers and Roots
@@ -965,6 +1013,7 @@ creal atanh(creal z)
  *      $(TR $(TD +$(INFIN)) $(TD +$(INFIN)) $(TD no))
  *      )
  */
+/+ TODO
 float sqrt(float x) /* intrinsic */
 {
     version(LDC)
@@ -1061,6 +1110,7 @@ unittest {
     assert(cfeqrel(sqrt(4+16i)*sqrt(4+16i), 4+16i)>=real.mant_dig-2);
 }
 }
++/
 
 /***************
  * Calculates the cube root of x.
@@ -1072,11 +1122,11 @@ unittest {
  *      $(TR $(TD $(PLUSMN)$(INFIN)) $(TD $(PLUSMN)$(INFIN)) $(TD no) )
  *      )
  */
+/+ TODO
 real cbrt(real x)
 {
     return tango.stdc.math.cbrtl(x);
 }
-
 
 debug(UnitTest) {
 unittest {
@@ -1084,6 +1134,7 @@ unittest {
     assert(isIdentical(cbrt(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 public:
 
@@ -1097,6 +1148,7 @@ public:
  *    $(TR $(TD $(NAN))        $(TD $(NAN))    )
  *  )
  */
+/+ TODO
 real exp(real x) {
     version(Naked_D_InlineAsm_X86) {
    //  e^x = 2^(LOG2E*x)
@@ -1107,6 +1159,7 @@ real exp(real x) {
         return tango.stdc.math.expl(x);        
     }    
 }
++/
 
 /**
  * Calculates the value of the natural logarithm base (e)
@@ -1123,6 +1176,7 @@ real exp(real x) {
  *    $(TR $(TD $(NAN))        $(TD $(NAN))       )
  *  )
  */
+/+ TODO
 real expm1(real x) 
 {
     version(Naked_D_InlineAsm_X86) {
@@ -1318,6 +1372,7 @@ unittest {
     assert(isIdentical(exp2(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /*
  * Powers and Roots
@@ -1333,6 +1388,7 @@ unittest {
  *    $(TR $(TD +$(INFIN))    $(TD +$(INFIN)) $(TD no)           $(TD no))
  *    )
  */
+/+ TODO
 real log(real x)
 {
     return tango.stdc.math.logl(x);
@@ -1344,6 +1400,7 @@ unittest {
     assert(isIdentical(log(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /******************************************
  *      Calculates the natural logarithm of 1 + x.
@@ -1359,6 +1416,7 @@ unittest {
  *  $(TR $(TD +$(INFIN))    $(TD -$(INFIN))    $(TD no)           $(TD no))
  *  )
  */
+/+ TODO
 real log1p(real x)
 {
     return tango.stdc.math.log1pl(x);
@@ -1370,6 +1428,7 @@ unittest {
     assert(isIdentical(log1p(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /***************************************
  * Calculates the base-2 logarithm of x:
@@ -1382,6 +1441,7 @@ unittest {
  *  $(TR $(TD +$(INFIN))    $(TD +$(INFIN)) $(TD no)           $(TD no) )
  *  )
  */
+/+ TODO
 real log2(real x)
 {
     return tango.stdc.math.log2l(x);
@@ -1393,6 +1453,7 @@ unittest {
     assert(isIdentical(log2(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /**************************************
  * Calculate the base-10 logarithm of x.
@@ -1404,6 +1465,7 @@ unittest {
  *      $(TR $(TD +$(INFIN))    $(TD +$(INFIN)) $(TD no)           $(TD no))
  *      )
  */
+/+ TODO
 real log10(real x)
 {
     return tango.stdc.math.log10l(x);
@@ -1415,6 +1477,7 @@ unittest {
     assert(isIdentical(log10(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /***********************************
  * Exponential, complex and imaginary
@@ -1427,6 +1490,7 @@ unittest {
  *  exp(&theta;i)  = cos(&theta;) + sin(&theta;)i.
  *
  */
+/+ TODO
 creal exp(ireal y)
 {
    return expi(y.im);
@@ -1449,6 +1513,7 @@ unittest {
     assert(isNaN(c.re) && isNaN(c.im));
 }
 }
++/
 
 /***********************************
  *  Natural logarithm, complex
@@ -1468,6 +1533,7 @@ unittest {
  *    log(-0.0 + yi) = log(-y) - PI_2i  // y<=-0.0
  * ------------
  */
+/+ TODO
 creal log(creal z)
 {
   return log(abs(z)) + atan2(z.im, z.re)*1i;
@@ -1492,6 +1558,7 @@ unittest {
   assert(cfeqrel(log(0.0L+2i),( log(2.0L)+PI_2*1i)) >= real.mant_dig-10);
 }
 }
++/
 
 /**
  * Fast integral powers.
@@ -1530,11 +1597,13 @@ real pow(real x, uint n)
 }
 
 /** ditto */
+/+ TODO
 real pow(real x, int n)
 {
     if (n < 0) return pow(x, cast(real)n);
     else return pow(x, cast(uint)n);
 }
++/
 
 /*********************************************
  * Calculates x$(SUP y).
@@ -1578,6 +1647,7 @@ real pow(real x, int n)
  *      $(TD no)        $(TD no) )
  * )
  */
+/+ TODO
 real pow(real x, real y)
 {
     version (linux) // C pow() often does not handle special values correctly
@@ -1695,6 +1765,7 @@ unittest
     assert(isIdentical(pow(NaN(0xABC), 19), NaN(0xABC)));
 }
 }
++/
 
 /***********************************************************************
  * Calculates the length of the
@@ -1714,6 +1785,7 @@ unittest
  *  $(TR $(TD $(PLUSMNINF)) $(TD $(NAN))       $(TD +$(INFIN))   $(TD no))
  *  )
  */
+/+ TODO
 real hypot(real x, real y)
 {
     /*
@@ -1812,6 +1884,7 @@ unittest
     assert(isIdentical(hypot(7.6e39, NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /***********************************
  * Evaluate polynomial A(x) = $(SUB a, 0) + $(SUB a, 1)x + $(SUB a, 2)$(POWER x,2)
@@ -1822,6 +1895,7 @@ unittest
  * Params:
  *      A =     array of coefficients $(SUB a, 0), $(SUB a, 1), etc.
  */
+/+ TODO
 T poly(T)(T x, T[] A)
 in
 {
@@ -1910,7 +1984,9 @@ unittest
     assert(isIdentical(poly(NaN(0xABC), pp), NaN(0xABC)));
 }
 }
++/
 
+/+ TODO
 package {
 T rationalPoly(T)(T x, T [] numerator, T [] denominator)
 {
@@ -1938,6 +2014,7 @@ unittest{
     assert(feq!(20)(58, y));
 }
 }
++/
 
 /*
  * Rounding (returning real)
@@ -1947,6 +2024,7 @@ unittest{
  * Returns the value of x rounded downward to the next integer
  * (toward negative infinity).
  */
+/+ TODO
 real floor(real x)
 {
     return tango.stdc.math.floorl(x);
@@ -1957,11 +2035,13 @@ unittest {
     assert(isIdentical(floor(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /**
  * Returns the value of x rounded upward to the next integer
  * (toward positive infinity).
  */
+/+ TODO
 real ceil(real x)
 {
     return tango.stdc.math.ceill(x);
@@ -1970,12 +2050,14 @@ real ceil(real x)
 unittest {
     assert(isIdentical(ceil(NaN(0xABC)), NaN(0xABC)));
 }
++/
 
 /**
  * Return the value of x rounded to the nearest integer.
  * If the fractional part of x is exactly 0.5, the return value is rounded to
  * the even integer.
  */
+/+ TODO
 real round(real x)
 {
     return tango.stdc.math.roundl(x);
@@ -1986,12 +2068,14 @@ unittest {
     assert(isIdentical(round(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /**
  * Returns the integer portion of x, dropping the fractional portion.
  *
  * This is also known as "chop" rounding.
  */
+/+ TODO
 real trunc(real x)
 {
     return tango.stdc.math.truncl(x);
@@ -2002,6 +2086,7 @@ unittest {
     assert(isIdentical(trunc(NaN(0xABC)), NaN(0xABC)));
 }
 }
++/
 
 /**
 * Rounds x to the nearest int or long.
@@ -2012,6 +2097,7 @@ unittest {
 * If using the default rounding mode (ties round to even integers)
 * rndint(4.5) == 4, rndint(5.5)==6.
 */
+/+ TODO
 int rndint(real x)
 {
     version(Naked_D_InlineAsm_X86)
@@ -2074,3 +2160,4 @@ unittest {
 }
 }
 }
++/

@@ -10,7 +10,8 @@ CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -Iinclude -I$(LIBDIR)/h \
 	-I$(LIBCDIR)/include
 DC = $(BUILD)/dmd
-DFLAGS = $(DDEFFLAGS) -d
+# don't use the default d-flags here since this would be to slow (because of -debug)
+DFLAGS = -gc -debug -d
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -name "*.c")

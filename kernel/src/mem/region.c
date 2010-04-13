@@ -39,7 +39,7 @@ sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u8 pgFlags,u32 flags)
 	u32 i,pageCount;
 	sRegion *reg;
 	assert(pgFlags == PF_DEMANDLOAD || pgFlags == PF_DEMANDZERO || pgFlags == 0);
-	assert((flags & ~(RF_GROWABLE | RF_SHAREABLE | RF_WRITABLE | RF_STACK | RF_NOFREE)) == 0);
+	assert((flags & ~(RF_GROWABLE | RF_SHAREABLE | RF_WRITABLE | RF_STACK | RF_NOFREE | RF_TLS)) == 0);
 
 	reg = (sRegion*)kheap_alloc(sizeof(sRegion));
 	if(reg == NULL)
@@ -168,7 +168,8 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt) {
 		{"Shareable",RF_SHAREABLE},
 		{"Writable",RF_WRITABLE},
 		{"Stack",RF_STACK},
-		{"NoFree",RF_NOFREE}
+		{"NoFree",RF_NOFREE},
+		{"TLS",RF_TLS}
 	};
 	prf_sprintf(buf,"\tSize: %u bytes\n",reg->byteCount);
 	prf_sprintf(buf,"\tflags: ");

@@ -35,6 +35,7 @@
 #include "modules/stack.h"
 #include "modules/forkbomb.h"
 #include "modules/tls.h"
+#include "modules/pipe.h"
 
 #define NAME_LEN 10
 
@@ -57,6 +58,7 @@ static sTestModule modules[] = {
 	{"mem",mod_mem},
 	{"stack",mod_stack},
 	{"tls",mod_tls},
+	{"pipe",mod_pipe},
 };
 
 int main(int argc,char *argv[]) {

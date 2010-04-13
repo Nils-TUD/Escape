@@ -266,9 +266,11 @@ s32 vfsrw_writePipe(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 of
 	UNUSED(file);
 	volatile sVFSNode *n = node;
 	/* wait while our node is full */
-	while((n->data.pipe.total + count) >= MAX_VFS_FILE_SIZE) {
-		thread_wait(tid,node,EV_PIPE_EMPTY);
-		thread_switchNoSigs();
+	if(count) {
+		while((n->data.pipe.total + count) >= MAX_VFS_FILE_SIZE) {
+			thread_wait(tid,node,EV_PIPE_EMPTY);
+			thread_switchNoSigs();
+		}
 	}
 
 	/* build pipe-data */

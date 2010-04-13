@@ -173,8 +173,8 @@ import tango.math.random.engines.KissCmwc;
 import tango.math.random.engines.ArraySource;
 // TODO import tango.math.random.engines.Sync;
 import tango.math.random.engines.Twister;
-import tango.math.random.NormalSource;
-import tango.math.random.ExpSource;
+// TODO import tango.math.random.NormalSource;
+// TODO import tango.math.random.ExpSource;
 import tango.math.Math;
 import tango.core.Traits;
 
@@ -233,6 +233,7 @@ final class RandomG(SourceT=DefaultEngine)
 {
     // uniform random source
     SourceT source;
+    /+ TODO
     // normal distributed sources
     NormalSource!(RandomG,float)  normalFloat;
     NormalSource!(RandomG,double) normalDouble;
@@ -241,6 +242,7 @@ final class RandomG(SourceT=DefaultEngine)
     ExpSource!(RandomG,float)  expFloat;
     ExpSource!(RandomG,double) expDouble;
     ExpSource!(RandomG,real)   expReal;
+    +/
 
     /// Creates and seeds a new generator
     this (bool randomInit=true)

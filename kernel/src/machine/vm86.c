@@ -108,7 +108,7 @@ s32 vm86_create(void) {
 	vm86Tid = t->tid;
 
 	/* remove all regions */
-	vmm_removeAll(p,true);
+	proc_removeRegions(p,true);
 	/* unset stack-region, so that we can't access it anymore */
 	t->stackRegion = -1;
 
@@ -163,7 +163,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 
 	/* check whether there still is a vm86-task */
 	vm86t = thread_getById(vm86Tid);
-	if(vm86t == NULL || !vm86t->proc->isVM86)
+	if(vm86t == NULL || !(vm86t->proc->flags & P_VM86))
 		return ERR_NO_VM86_TASK;
 
 	/* if the vm86-task is active, wait here */

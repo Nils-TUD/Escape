@@ -35,6 +35,7 @@
 #define RF_WRITABLE			4
 #define RF_STACK			8	/* means, grows downwards, and is used to find a free stack-address */
 #define RF_NOFREE			16	/* means that the memory should not be free'd on release */
+#define RF_TLS				32	/* needed to distinguish TLS-regions from others on delete */
 
 typedef struct {
 	const char *path;

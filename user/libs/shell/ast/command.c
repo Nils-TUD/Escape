@@ -71,7 +71,6 @@ static volatile u32 curWaitCount = 0;
 static tCmdId curCmd = 0;
 static s32 diedProc = -1;
 static s32 diedRes = -1;
-static tFD closePipe[2] = {-1,-1};
 
 sASTNode *ast_createCommand(void) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
@@ -218,6 +217,14 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				redirFd(STDERR_FILENO,fderr);
 				close(fderr);
 			}
+
+			/* close the previous pipe since we don't need it anymore */
+			if(prevPipe >= 0)
+				close(prevPipe);
+			/* close read-end of the current if we don't want to read the command-output */
+			/* otherwise we need it for the next process or ourself */
+			if(!n->retOutput && cmdNo == cmdCount - 1)
+				close(pipeFds[0]);
 		}
 		else {
 			diedProc = -1;
@@ -231,6 +238,9 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 					redirFd(STDIN_FILENO,prevPipe);
 				if(redirFdesc->type == REDIR_ERR2OUT)
 					redirFd(STDERR_FILENO,STDOUT_FILENO);
+				/* close our read-end */
+				if(pipeFds[0] >= 0)
+					close(pipeFds[0]);
 
 				/* exec */
 				strcat(path,shcmd[0]->name);
@@ -244,27 +254,22 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				printe("Fork of '%s%s' failed",path,shcmd[0]->name);
 			else {
 				curWaitCount++;
-				run_addProc(curCmd,pid,prevPipe,pipeFds[1],cmdNo < cmdCount - 1);
+				run_addProc(curCmd,pid);
+				/* always close write-end */
+				close(pipeFds[1]);
+				/* close the previous pipe since we don't need it anymore */
+				if(prevPipe >= 0)
+					close(prevPipe);
+				/* close read-end of the current if we don't want to read the command-output */
+				/* otherwise we need it for the next process or ourself */
+				if(!n->retOutput && cmdNo == cmdCount - 1)
+					close(pipeFds[0]);
+
 				/* if the process has died before run_addProc() was called, we didn't know him.
 				 * Now we do, so remove him */
 				if(diedProc != -1) {
 					sRunningProc *rp = run_findProc(CMD_ID_ALL,diedProc);
 					ast_removeProc(rp,diedRes);
-				}
-				if(prevPid > 0) {
-					/* find the prev process */
-					sRunningProc *prevcmd = run_findProc(curCmd,prevPid);
-					/* if there is any, tell the prev one that we're running now */
-					if(prevcmd) {
-						prevcmd->next = CMD_NEXT_RUNNING;
-						/* if the prev-process is already terminated, close the pipe and remove
-						 * the command because we haven't done that yet */
-						if(prevcmd->terminated) {
-							if(prevcmd->pipe[1] >= 0)
-								close(prevcmd->pipe[1]);
-							run_remProc(prevcmd->pid);
-						}
-					}
 				}
 			}
 		}
@@ -304,16 +309,7 @@ static sValue *ast_readCmdOutput(tFD *pipeFds) {
 	u32 outPos = 0;
 	char *outBuf;
 	s32 count;
-	/* first wait for all processes to terminated. atm we won't get interrupted by a signal
-	 * during read()... */
-	closePipe[0] = pipeFds[0];
-	closePipe[1] = pipeFds[1];
-	ast_waitForCmd();
-	closePipe[0] = -1;
-	closePipe[1] = -1;
-	/* first send EOF by closing the write-end */
-	close(pipeFds[1]);
-	/* now read from the pipe and return it as string */
+	/* read from the pipe and return it as string */
 	outBuf = (char*)malloc(OUTBUF_SIZE + 1);
 	while(outBuf && (count = read(pipeFds[0],outBuf + outPos,OUTBUF_SIZE)) > 0) {
 		outPos += count;
@@ -362,11 +358,6 @@ static void ast_termProcsOfCmd(void) {
 		/* send SIG_INTRPT */
 		if(sendSignalTo(p->pid,SIG_INTRPT,0) < 0)
 			printe("Unable to send SIG_INTRPT to process %d",p->pid);
-		/* clean up */
-		if(p->pipe[0] != -1)
-			close(p->pipe[0]);
-		if(p->pipe[1] != -1)
-			close(p->pipe[1]);
 		run_remProc(p->pid);
 		/* to next */
 		i++;
@@ -402,27 +393,7 @@ static void ast_removeProc(sRunningProc *p,s32 res) {
 	}
 	/*else
 		printf("\n[%d] process %d finished with %d\n",p->cmdId,p->pid,state.exitCode);*/
-
-	/* if we can close this pipe (not needed for reading output)... */
-	if(p->pipe[1] >= 0 && closePipe[1] != p->pipe[1]) {
-		if(p->next != CMD_NEXT_AWAIT) {
-			/* if the next command already exists (or there is no next),
-			 * everything is fine and we can close the write-end of the pipe */
-			close(p->pipe[1]);
-			p->removable = true;
-		}
-		else {
-			/* if we have no next proc yet we have to take care that run_findProc doesn't find us
-			 * again. because our pid may be reused since we're already terminated. */
-			p->terminated = true;
-		}
-	}
-	/* otherwise simply remove the process */
-	else
-		p->removable = true;
-	/* close read-end if we don't want to read the output ourself */
-	if(p->pipe[0] >= 0 && closePipe[0] != p->pipe[0])
-		close(p->pipe[0]);
+	p->removable = true;
 }
 
 void ast_setRetOutput(sASTNode *c,bool retOutput) {

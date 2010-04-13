@@ -211,7 +211,7 @@ void thread_switchTo(tTid tid) {
 				/* remove the io-map. it will be set as soon as the process accesses an io-port
 				 * (we'll get an exception) */
 				tss_removeIOMap();
-				tss_setStackPtr(cur->proc->isVM86);
+				tss_setStackPtr(cur->proc->flags & P_VM86);
 				paging_setCur(cur->proc->pagedir);
 			}
 
@@ -242,7 +242,7 @@ void thread_switchTo(tTid tid) {
 			 * the proc-module doesn't kill the running thread anyway so there will never
 			 * be the case that we should destroy a single thread later */
 			t = (sThread*)n->data;
-			thread_destroy(t,true);
+			thread_kill(t);
 		}
 		sll_destroy(deadThreads,false);
 		deadThreads = NULL;
@@ -501,7 +501,7 @@ errThread:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-void thread_destroy(sThread *t,bool destroyStacks) {
+void thread_kill(sThread *t) {
 	tFD i;
 	sSLList *list;
 	/* we can't destroy the current thread */
@@ -525,16 +525,19 @@ void thread_destroy(sThread *t,bool destroyStacks) {
 	list = threadMap[t->tid % THREAD_MAP_SIZE];
 	vassert(list != NULL,"Thread %d not found in thread-map",t->tid);
 
-	if(destroyStacks) {
-		/* remove tls */
+	/* remove tls */
+	if(t->tlsRegion >= 0) {
 		vmm_remove(t->proc,t->tlsRegion);
 		t->tlsRegion = -1;
+	}
+	if(t->stackRegion >= 0) {
 		/* remove stack-region */
 		vmm_remove(t->proc,t->stackRegion);
-		/* free kernel-stack */
-		mm_freeFrame(t->kstackFrame,MM_DEF);
-		t->proc->ownFrames++;
+		t->stackRegion = -1;
 	}
+	/* free kernel-stack */
+	mm_freeFrame(t->kstackFrame,MM_DEF);
+	t->proc->ownFrames--;
 
 	/* release file-descriptors */
 	for(i = 0; i < MAX_FD_COUNT; i++) {

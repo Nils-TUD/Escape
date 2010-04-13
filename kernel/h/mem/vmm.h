@@ -122,14 +122,6 @@ bool vmm_hasBinary(sProc *p,sBinDesc *bin);
 bool vmm_pagefault(u32 addr);
 
 /**
- * Removes all regions from the given process
- *
- * @param p the process
- * @param remStack do you want to remove all stack-regions, too?
- */
-void vmm_removeAll(sProc *p,bool remStack);
-
-/**
  * Removes the given region from the given process
  *
  * @param p the process

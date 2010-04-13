@@ -244,16 +244,6 @@ bool vmm_pagefault(u32 addr) {
 	return false;
 }
 
-void vmm_removeAll(sProc *p,bool remStack) {
-	u32 i;
-	assert(p);
-	for(i = 0; i < p->regSize; i++) {
-		sVMRegion *vm = REG(p,i);
-		if(vm && (!(vm->reg->flags & RF_STACK) || remStack))
-			vmm_remove(p,i);
-	}
-}
-
 void vmm_remove(sProc *p,tVMRegNo reg) {
 	u32 i,c = 0;
 	sVMRegion *vm = REG(p,reg);
@@ -430,7 +420,7 @@ error:
 	/* Note also that we don't restore the old frame-counts; for dst it makes no sense because
 	 * we'll destroy the process anyway. for src we can't do it because the cow-entries still
 	 * exists and therefore its correct. */
-	vmm_removeAll(dst,true);
+	proc_removeRegions(dst,true);
 	/* no need to free regs, since vmm_remove has already done it */
 	return ERR_NOT_ENOUGH_MEM;
 }
@@ -714,7 +704,7 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 		case REG_SHM:
 			*pgFlags = 0;
 			if(type == REG_TLS)
-				*flags = RF_WRITABLE;
+				*flags = RF_WRITABLE | RF_TLS;
 			else if(type == REG_PHYS)
 				*flags = RF_WRITABLE | RF_NOFREE;
 			else

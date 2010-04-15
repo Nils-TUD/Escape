@@ -1094,7 +1094,7 @@ package struct FS
                                 return Time.epoch1970 +
                                        TimeSpan.fromSeconds(secs);
                         }
-
+                        
                         stat_t stats = void;
                         Stamps time  = void;
 

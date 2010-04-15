@@ -654,7 +654,7 @@ struct FileSystem
                         if (.getEnv(tmp.ptr,tmp.length,"CWD") < 0)
                             exception ("Failed to get current directory");
 
-                        auto path = tmp[0 .. strlen(tmp)+1].dup;
+                        auto path = tmp[0 .. strlen(tmp.ptr)+1].dup;
                         path[$-1] = '/';
                         return path;
                 }

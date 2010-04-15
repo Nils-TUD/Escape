@@ -11,7 +11,8 @@ CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -Iinclude -I$(LIBDI
 	-I$(LIBCDIR)/include
 DC = $(BUILD)/dmd
 # don't use the default d-flags here since this would be to slow (because of -debug)
-DFLAGS = -gc -debug -d
+DFLAGS = $(DDEFFLAGS)
+#DFLAGS = -gc -debug -d
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -name "*.c")

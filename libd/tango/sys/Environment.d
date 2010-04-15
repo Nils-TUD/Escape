@@ -476,10 +476,10 @@ struct Environment
                 static char[] get (char[] variable, char[] def = null)
                 {
                 		char tmp[MAX_NAME_LEN];
-                        if (!.getEnv(tmp,MAX_NAME_LEN,(variable ~ '\0').ptr))
+                        if (!.getEnv(tmp.ptr,MAX_NAME_LEN,(variable ~ '\0').ptr))
                             return def;
 
-                        return tmp[0 .. strlen(tmp)].dup;
+                        return tmp[0 .. strlen(tmp.ptr)].dup;
                 }
 
                 /**************************************************************
@@ -513,9 +513,9 @@ struct Environment
                 {
                         char[][char[]] arr;
                         char tmp[MAX_NAME_LEN];
-                        for(uint i = 0; .getEnvByIndex(tmp,MAX_NAME_LEN,i); i++)
+                        for(uint i = 0; .getEnvByIndex(tmp.ptr,MAX_NAME_LEN,i); i++)
                         {
-                        	char[] key = tmp[0..strlen(tmp)].dup;
+                        	char[] key = tmp[0..strlen(tmp.ptr)].dup;
                         	arr[key] = get(key);
                         }
                         return arr;

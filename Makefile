@@ -1,5 +1,5 @@
 # general
-BUILDDIR = $(abspath build/release)
+BUILDDIR = $(abspath build/debug)
 DISKMOUNT = disk
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso

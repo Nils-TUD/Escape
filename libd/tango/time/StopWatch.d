@@ -27,14 +27,14 @@ version (Win32)
         }
 }
 
-version (Posix)
-{
-        private import tango.stdc.posix.sys.time;
-}
-
-version (Escape)
+else version (Escape)
 {
         private import tango.stdc.time;
+}
+
+else version (Posix)
+{
+        private import tango.stdc.posix.sys.time;
 }
 
 /*******************************************************************************
@@ -105,14 +105,12 @@ public struct StopWatch
         
         ulong microsec ()
         {
-                version (Posix)
+            	version (Escape)
+        				return (timer - started);
+        		else version (Posix)
                          return (timer - started);
-
-                version (Win32)
+        		else version (Win32)
                          return cast(ulong) ((timer - started) * microsecond);
-                
-                version (Escape)
-                		return (timer - started);
         }
 
         /***********************************************************************
@@ -141,7 +139,15 @@ public struct StopWatch
 
         private static ulong timer ()
         {
-                version (Posix)       
+	            version (Escape)       
+	            {
+	                    timeval tv;
+	                    // TODO no milliseconds here
+	                    tv.tv_sec = .time(null);
+	                    tv.tv_usec = 0;
+	                    return (cast(ulong) tv.tv_sec * 1_000_000) + tv.tv_usec;
+	            }
+        		else version (Posix)
                 {
                         timeval tv;
                         if (gettimeofday (&tv, null))
@@ -149,8 +155,7 @@ public struct StopWatch
 
                         return (cast(ulong) tv.tv_sec * 1_000_000) + tv.tv_usec;
                 }
-
-                version (Win32)
+                else version (Win32)
                 {
                         ulong now;
 
@@ -158,15 +163,6 @@ public struct StopWatch
                               throw new PlatformException ("high-resolution timer is not available");
 
                         return now;
-                }
-                
-                version (Escape)       
-                {
-                        timeval tv;
-                        // TODO no milliseconds here
-                        tv.tv_sec = .time(null);
-                        tv.tv_usec = 0;
-                        return (cast(ulong) tv.tv_sec * 1_000_000) + tv.tv_usec;
                 }
         }
 }

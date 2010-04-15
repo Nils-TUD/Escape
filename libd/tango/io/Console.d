@@ -18,11 +18,11 @@ private import  tango.sys.Common;
 
 private import  tango.io.device.Device,
                 tango.io.stream.Buffered;
-              
-version (Posix)
-	private import tango.stdc.posix.unistd;  // needed for isatty()
-else version(Escape)
+				
+version(Escape)
 	private import tango.stdc.io;
+else version (Posix)
+	private import tango.stdc.posix.unistd;  // needed for isatty()
 
 /*******************************************************************************
 

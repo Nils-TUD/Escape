@@ -20,15 +20,13 @@ version (Win32)
 	private extern (C) int memicmp (char *, char *, uint);
 	private extern (C) int memcmp (char *, char *, uint);
 }
-
-version (Posix)
+else version (Escape)
 {
 	private extern (C) int memcmp (char *, char *, uint);
 	private extern (C) int strncasecmp (char *, char*, uint);
 	private alias strncasecmp memicmp;
 }
-
-version (Escape)
+else version (Posix)
 {
 	private extern (C) int memcmp (char *, char *, uint);
 	private extern (C) int strncasecmp (char *, char*, uint);

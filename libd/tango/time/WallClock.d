@@ -138,7 +138,106 @@ struct WallClock
                }
         }
 
-        version (Posix)
+        version (Escape)
+        {
+                /***************************************************************
+
+                        Return the current local time
+
+                ***************************************************************/
+
+                static Time now ()
+                {
+                        tm *t;
+                        timeval tv = void;
+                        // TODO no milliseconds here
+                        tv.tv_sec = .time(null);
+                        tv.tv_usec = 0;
+                        // TODO not reentrant here
+                        t = localtime(&tv.tv_sec);
+                        tv.tv_sec = mktime(t);
+                        return Clock.convert (tv);
+                }
+
+                /***************************************************************
+
+                        Return the timezone relative to GMT. The value is 
+                        negative when west of GMT
+
+                ***************************************************************/
+
+                static TimeSpan zone ()
+                {
+                		// TODO no timezone
+                        return TimeSpan.fromSeconds(0);
+                }
+
+                /***************************************************************
+
+                        Set fields to represent a local version of the 
+                        current UTC time. All values must fall within 
+                        the domain supported by the OS
+
+                ***************************************************************/
+
+                static DateTime toDate ()
+                {
+                        return toDate (Clock.now);
+                }
+
+                /***************************************************************
+
+                        Set fields to represent a local version of the 
+                        provided UTC time. All values must fall within 
+                        the domain supported by the OS
+
+                ***************************************************************/
+
+                static DateTime toDate (Time utc)
+                {
+                        DateTime dt = void;
+                        auto timeval = Clock.convert (utc);
+                        dt.time.millis = timeval.tv_usec / 1000;
+
+                        tm *t = localtime(&timeval.tv_sec);
+        
+                        dt.date.year    = t.tm_year + 1900;
+                        dt.date.month   = t.tm_mon + 1;
+                        dt.date.day     = t.tm_mday;
+                        dt.date.dow     = t.tm_wday;
+                        dt.date.era     = 0;
+                        dt.time.hours   = t.tm_hour;
+                        dt.time.minutes = t.tm_min;
+                        dt.time.seconds = t.tm_sec;
+
+                        Clock.setDoy(dt);
+                        return dt;
+                }
+
+                /***************************************************************
+
+                        Convert Date fields to local time
+
+                ***************************************************************/
+
+                static Time fromDate (ref DateTime dt)
+                {
+                        tm t = void;
+
+                        t.tm_year = dt.date.year - 1900;
+                        t.tm_mon  = dt.date.month - 1;
+                        t.tm_mday = dt.date.day;
+                        t.tm_hour = dt.time.hours;
+                        t.tm_min  = dt.time.minutes;
+                        t.tm_sec  = dt.time.seconds;
+
+                        auto seconds = mktime (&t);
+                        return Time.epoch1970 + TimeSpan.fromSeconds(seconds) 
+                                              + TimeSpan.fromMillis(dt.time.millis);
+                }
+        }
+
+		else version (Posix)
         {
                 /***************************************************************
 
@@ -241,105 +340,6 @@ struct WallClock
                 }
         }
 
-        version (Escape)
-        {
-                /***************************************************************
-
-                        Return the current local time
-
-                ***************************************************************/
-
-                static Time now ()
-                {
-                        tm *t;
-                        timeval tv = void;
-                        // TODO no milliseconds here
-                        tv.tv_sec = .time(null);
-                        tv.tv_usec = 0;
-                        // TODO not reentrant here
-                        t = localtime(&tv.tv_sec);
-                        tv.tv_sec = mktime(t);
-                        return Clock.convert (tv);
-                }
-
-                /***************************************************************
-
-                        Return the timezone relative to GMT. The value is 
-                        negative when west of GMT
-
-                ***************************************************************/
-
-                static TimeSpan zone ()
-                {
-                		// TODO no timezone
-                        return TimeSpan.fromSeconds(0);
-                }
-
-                /***************************************************************
-
-                        Set fields to represent a local version of the 
-                        current UTC time. All values must fall within 
-                        the domain supported by the OS
-
-                ***************************************************************/
-
-                static DateTime toDate ()
-                {
-                        return toDate (Clock.now);
-                }
-
-                /***************************************************************
-
-                        Set fields to represent a local version of the 
-                        provided UTC time. All values must fall within 
-                        the domain supported by the OS
-
-                ***************************************************************/
-
-                static DateTime toDate (Time utc)
-                {
-                        DateTime dt = void;
-                        auto timeval = Clock.convert (utc);
-                        dt.time.millis = timeval.tv_usec / 1000;
-
-                        tm *t = localtime(&timeval.tv_sec);
-        
-                        dt.date.year    = t.tm_year + 1900;
-                        dt.date.month   = t.tm_mon + 1;
-                        dt.date.day     = t.tm_mday;
-                        dt.date.dow     = t.tm_wday;
-                        dt.date.era     = 0;
-                        dt.time.hours   = t.tm_hour;
-                        dt.time.minutes = t.tm_min;
-                        dt.time.seconds = t.tm_sec;
-
-                        Clock.setDoy(dt);
-                        return dt;
-                }
-
-                /***************************************************************
-
-                        Convert Date fields to local time
-
-                ***************************************************************/
-
-                static Time fromDate (ref DateTime dt)
-                {
-                        tm t = void;
-
-                        t.tm_year = dt.date.year - 1900;
-                        t.tm_mon  = dt.date.month - 1;
-                        t.tm_mday = dt.date.day;
-                        t.tm_hour = dt.time.hours;
-                        t.tm_min  = dt.time.minutes;
-                        t.tm_sec  = dt.time.seconds;
-
-                        auto seconds = mktime (&t);
-                        return Time.epoch1970 + TimeSpan.fromSeconds(seconds) 
-                                              + TimeSpan.fromMillis(dt.time.millis);
-                }
-        }
-
         /***********************************************************************
 
         ***********************************************************************/
@@ -364,7 +364,8 @@ struct WallClock
 }
 
 
-version (Posix)
+version (Escape) {}
+else version (Posix)
 {
     version (darwin) {}
     else

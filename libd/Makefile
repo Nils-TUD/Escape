@@ -9,10 +9,9 @@ LIB = $(BUILD)/libd.a
 CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -Iinclude -I$(LIBDIR)/h \
 	-I$(LIBCDIR)/include
-DC = $(BUILD)/dmd
-# don't use the default d-flags here since this would be to slow (because of -debug)
-DFLAGS = $(DDEFFLAGS)
-#DFLAGS = -gc -debug -d
+DC = dmd
+DFLAGS = $(DDEFFLAGS) -version=Escape -I. -Itango/core -Itango/core/vendor \
+	-Itango/core/rt/compiler/dmd
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -name "*.c")

@@ -423,7 +423,9 @@ debug (UnitTest)
     {
     version (Win32)
         assert(patternMatch("foo", "Foo"));
-    version (Posix)
+    else version(Escape)
+    	assert(!patternMatch("foo", "Foo"));
+    else version (Posix)
         assert(!patternMatch("foo", "Foo"));
     
     assert(patternMatch("foo", "*"));
@@ -486,11 +488,11 @@ private bool charMatch(char c1, char c2)
         }
         return true;
     }
-    version (Posix)
+	else version (Escape)
     {
         return c1 == c2;
     }
-    version (Escape)
+	else version (Posix)
     {
         return c1 == c2;
     }

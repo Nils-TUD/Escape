@@ -19,7 +19,15 @@ private import tango.stdc.stdlib;
 private import tango.stdc.string;
 private import tango.stdc.stringz;
 
-version (Posix)
+version (Escape)
+{
+    private import tango.stdc.errno;
+	private import tango.stdc.io;
+	private import tango.stdc.proc;
+	private import tango.stdc.env;
+	private import tango.stdc.stdio;
+}
+else version (Posix)
 {
     private import tango.stdc.errno;
     private import tango.stdc.posix.fcntl;
@@ -40,8 +48,7 @@ version (Posix)
     else
         private extern (C) extern char** environ;
 }
-
-version (Windows)
+else version (Windows)
 {
   version (Win32SansUnicode)
   {
@@ -50,15 +57,6 @@ version (Windows)
   {
     private import tango.text.convert.Utf : toString16;
   }
-}
-
-version (Escape)
-{
-    private import tango.stdc.errno;
-	private import tango.stdc.io;
-	private import tango.stdc.proc;
-	private import tango.stdc.env;
-	private import tango.stdc.stdio;
 }
 
 debug (Process)
@@ -1187,6 +1185,171 @@ class Process
               }
             }
         }
+        else version (Escape)
+        {
+            // We close and delete the pipes that could have been left open
+            // from a previous execution.
+            cleanPipes();
+
+            // validate the redirection flags
+            if((_redirect & (Redirect.OutputToError | Redirect.ErrorToOutput)) == (Redirect.OutputToError | Redirect.ErrorToOutput))
+                throw new ProcessCreateException(_args[0], "Illegal redirection flags", __FILE__, __LINE__);
+
+
+            Pipe pin, pout, perr;
+            if(_redirect & Redirect.Input)
+                pin = new Pipe(DefaultStdinBufferSize);
+            if((_redirect & (Redirect.Output | Redirect.OutputToError)) == Redirect.Output)
+                pout = new Pipe(DefaultStdoutBufferSize);
+
+            if((_redirect & (Redirect.Error | Redirect.ErrorToOutput)) == Redirect.Error)
+                perr = new Pipe(DefaultStderrBufferSize);
+
+            // This pipe is used to propagate the result of the call to
+            // execv*() from the child process to the parent process.
+            Pipe pexec = new Pipe(8);
+            int status = 0;
+
+            _pid = .fork();
+            if (_pid >= 0)
+            {
+                if (_pid != 0)
+                {
+                    // Parent process
+                    if(pin !is null)
+                    {
+                        _stdin = pin.sink;
+                        pin.source.close();
+                    }
+
+                    if(pout !is null)
+                    {
+                        _stdout = pout.source;
+                        pout.sink.close();
+                    }
+
+                    if(perr !is null)
+                    {
+                        _stderr = perr.source;
+                        perr.sink.close();
+                    }
+
+                    pexec.sink.close();
+                    scope(exit)
+                       pexec.source.close();
+
+                    try
+                    {
+                    	pexec.source.input.read((cast(byte*) &status)[0 .. status.sizeof]);
+                    }
+                    catch (Exception e)
+                    {
+                        // Everything's OK, the pipe was closed after the call to execv*()
+                    }
+
+                    if (status == 0)
+                    {
+                        _running = true;
+                    }
+                    else
+                    {
+                        // We set errno to the value that was sent through
+                        // the pipe from the child process
+                        errno = status;
+                        _running = false;
+
+                        throw new ProcessCreateException(_args[0], __FILE__, __LINE__);
+                    }
+                }
+                else
+                {
+                    // Child process
+                    int rc;
+                    char*[] argptr;
+                    char*[] envptr;
+
+                    // Note that for all the pipes, we can close both ends
+                    // because dup2 opens a duplicate file descriptor to the
+                    // same resource.
+
+                    // Replace stdin with the "read" pipe
+                    if(pin !is null)
+                    {
+                        redirFd(STDIN_FILENO,pin.source.fileHandle());
+                        pin.sink().close();
+                        pin.source.close();
+                    }
+
+                    // Replace stdout with the "write" pipe
+                    if(pout !is null)
+                    {
+                        redirFd(STDOUT_FILENO,pout.sink.fileHandle());
+                        pout.source.close();
+                        pout.sink.close();
+                    }
+
+                    // Replace stderr with the "write" pipe
+                    if(perr !is null)
+                    {
+                        redirFd(STDERR_FILENO,perr.sink.fileHandle());
+                        perr.source.close();
+                        perr.sink.close();
+                    }
+
+                    // Check for redirection from stdout to stderr or vice
+                    // versa
+                    if(_redirect & Redirect.OutputToError)
+                    {
+                        redirFd(STDOUT_FILENO,STDERR_FILENO);
+                    }
+
+                    if(_redirect & Redirect.ErrorToOutput)
+                    {
+                        redirFd(STDERR_FILENO,STDOUT_FILENO);
+                    }
+
+                    // We close the unneeded part of the execv*() notification pipe
+                    pexec.source.close();
+
+                    // Convert the arguments and the environment variables to
+                    // the format expected by the execv() family of functions.
+                    argptr = toNullEndedArray(_args);
+                	// TODO env is ignored here
+
+                    // Switch to the working directory if it has been set.
+                    if (_workDir.length > 0)
+                    {
+                    	.setEnv("CWD",toStringz(_workDir));
+                    }
+
+                    // Replace the child fork with a new process. We always use the
+                    // system PATH to look for executables that don't specify
+                    // directories in their names.
+                    rc = execvpe(_args[0], argptr);
+                    if (rc == -1)
+                    {
+                        Cerr("Failed to exec ")(_args[0])(": ")(SysError.lastMsg).newline;
+
+                        try
+                        {
+                            status = errno;
+
+                            // Propagate the child process' errno value to
+                            // the parent process.
+                            pexec.sink.output.write((cast(byte*) &status)[0 .. status.sizeof]);
+                        }
+                        catch (Exception e)
+                        {
+                        }
+                        exit(errno);
+                    }
+                }
+            }
+            else
+            {
+                throw new ProcessForkException(_pid, __FILE__, __LINE__);
+            }
+        }
         else version (Posix)
         {
             // We close and delete the pipes that could have been left open
@@ -1363,171 +1526,6 @@ class Process
                 throw new ProcessForkException(_pid, __FILE__, __LINE__);
             }
         }
-        else version (Escape)
-        {
-            // We close and delete the pipes that could have been left open
-            // from a previous execution.
-            cleanPipes();
-
-            // validate the redirection flags
-            if((_redirect & (Redirect.OutputToError | Redirect.ErrorToOutput)) == (Redirect.OutputToError | Redirect.ErrorToOutput))
-                throw new ProcessCreateException(_args[0], "Illegal redirection flags", __FILE__, __LINE__);
-
-
-            Pipe pin, pout, perr;
-            if(_redirect & Redirect.Input)
-                pin = new Pipe(DefaultStdinBufferSize);
-            if((_redirect & (Redirect.Output | Redirect.OutputToError)) == Redirect.Output)
-                pout = new Pipe(DefaultStdoutBufferSize);
-
-            if((_redirect & (Redirect.Error | Redirect.ErrorToOutput)) == Redirect.Error)
-                perr = new Pipe(DefaultStderrBufferSize);
-
-            // This pipe is used to propagate the result of the call to
-            // execv*() from the child process to the parent process.
-            Pipe pexec = new Pipe(8);
-            int status = 0;
-
-            _pid = .fork();
-            if (_pid >= 0)
-            {
-                if (_pid != 0)
-                {
-                    // Parent process
-                    if(pin !is null)
-                    {
-                        _stdin = pin.sink;
-                        pin.source.close();
-                    }
-
-                    if(pout !is null)
-                    {
-                        _stdout = pout.source;
-                        pout.sink.close();
-                    }
-
-                    if(perr !is null)
-                    {
-                        _stderr = perr.source;
-                        perr.sink.close();
-                    }
-
-                    pexec.sink.close();
-                    scope(exit)
-                       pexec.source.close();
-
-                    try
-                    {
-                    	pexec.source.input.read((cast(byte*) &status)[0 .. status.sizeof]);
-                    }
-                    catch (Exception e)
-                    {
-                        // Everything's OK, the pipe was closed after the call to execv*()
-                    }
-
-                    if (status == 0)
-                    {
-                        _running = true;
-                    }
-                    else
-                    {
-                        // We set errno to the value that was sent through
-                        // the pipe from the child process
-                        errno = status;
-                        _running = false;
-
-                        throw new ProcessCreateException(_args[0], __FILE__, __LINE__);
-                    }
-                }
-                else
-                {
-                    // Child process
-                    int rc;
-                    char*[] argptr;
-                    char*[] envptr;
-
-                    // Note that for all the pipes, we can close both ends
-                    // because dup2 opens a duplicate file descriptor to the
-                    // same resource.
-
-                    // Replace stdin with the "read" pipe
-                    if(pin !is null)
-                    {
-                        redirFd(STDIN_FILENO,pin.source.fileHandle());
-                        pin.sink().close();
-                        pin.source.close();
-                    }
-
-                    // Replace stdout with the "write" pipe
-                    if(pout !is null)
-                    {
-                        redirFd(STDOUT_FILENO,pout.sink.fileHandle());
-                        pout.source.close();
-                        pout.sink.close();
-                    }
-
-                    // Replace stderr with the "write" pipe
-                    if(perr !is null)
-                    {
-                        redirFd(STDERR_FILENO,perr.sink.fileHandle());
-                        perr.source.close();
-                        perr.sink.close();
-                    }
-
-                    // Check for redirection from stdout to stderr or vice
-                    // versa
-                    if(_redirect & Redirect.OutputToError)
-                    {
-                        redirFd(STDOUT_FILENO,STDERR_FILENO);
-                    }
-
-                    if(_redirect & Redirect.ErrorToOutput)
-                    {
-                        redirFd(STDERR_FILENO,STDOUT_FILENO);
-                    }
-
-                    // We close the unneeded part of the execv*() notification pipe
-                    pexec.source.close();
-
-                    // Convert the arguments and the environment variables to
-                    // the format expected by the execv() family of functions.
-                    argptr = toNullEndedArray(_args);
-                	// TODO env is ignored here
-
-                    // Switch to the working directory if it has been set.
-                    if (_workDir.length > 0)
-                    {
-                    	.setEnv("CWD",toStringz(_workDir));
-                    }
-
-                    // Replace the child fork with a new process. We always use the
-                    // system PATH to look for executables that don't specify
-                    // directories in their names.
-                    rc = execvpe(_args[0], argptr);
-                    if (rc == -1)
-                    {
-                        Cerr("Failed to exec ")(_args[0])(": ")(SysError.lastMsg).newline;
-
-                        try
-                        {
-                            status = errno;
-
-                            // Propagate the child process' errno value to
-                            // the parent process.
-                            pexec.sink.output.write((cast(byte*) &status)[0 .. status.sizeof]);
-                        }
-                        catch (Exception e)
-                        {
-                        }
-                        exit(errno);
-                    }
-                }
-            }
-            else
-            {
-                throw new ProcessForkException(_pid, __FILE__, __LINE__);
-            }
-        }
         else
         {
             assert(false, "tango.sys.Process: Unsupported platform");
@@ -1634,6 +1632,49 @@ class Process
             }
             return result;
         }
+        else version (Escape)
+        {
+            Result result;
+
+            if (_running)
+            {
+            	ExitState rc;
+
+                // Wait for child process to end.
+                if (waitChild(&rc) == 0 || rc.pid != _pid)
+                {
+                	if(rc.signal != SIG_COUNT)
+                	{
+                		result.reason = Result.Signal;
+                		result.status = rc.signal;
+                	}
+                	else
+                	{
+                		result.reason = Result.Exit;
+                		result.status = rc.exitCode;
+                	}
+                }
+                else
+                {
+                    result.reason = Result.Error;
+                    result.status = errno;
+
+                    debug (Process)
+	                    Stdout.formatln("Could not wait on child process '{0}' ({1}): ({2}) {3}",
+	                            _args[0], _pid, result.status, SysError.lastMsg);
+                }
+            }
+            else
+            {
+                result.reason = Result.Error;
+                result.status = -1;
+
+                debug (Process)
+                    Stdout.formatln("Child process '{0}' is not running", _args[0]);
+            }
+            
+            return result;
+        }
         else version (Posix)
         {
             Result result;
@@ -1733,49 +1774,6 @@ class Process
             }
             return result;
         }
-        else version (Escape)
-        {
-            Result result;
-
-            if (_running)
-            {
-            	ExitState rc;
-
-                // Wait for child process to end.
-                if (waitChild(&rc) == 0 || rc.pid != _pid)
-                {
-                	if(rc.signal != SIG_COUNT)
-                	{
-                		result.reason = Result.Signal;
-                		result.status = rc.signal;
-                	}
-                	else
-                	{
-                		result.reason = Result.Exit;
-                		result.status = rc.exitCode;
-                	}
-                }
-                else
-                {
-                    result.reason = Result.Error;
-                    result.status = errno;
-
-                    debug (Process)
-	                    Stdout.formatln("Could not wait on child process '{0}' ({1}): ({2}) {3}",
-	                            _args[0], _pid, result.status, SysError.lastMsg);
-                }
-            }
-            else
-            {
-                result.reason = Result.Error;
-                result.status = -1;
-
-                debug (Process)
-                    Stdout.formatln("Child process '{0}' is not running", _args[0]);
-            }
-            
-            return result;
-        }
         else
         {
             assert(false, "tango.sys.Process: Unsupported platform");
@@ -1843,54 +1841,6 @@ class Process
                     Stdout.print("Tried to kill an invalid process");
             }
         }
-        else version (Posix)
-        {
-            if (_running)
-            {
-                int rc;
-
-                assert(_pid > 0);
-
-                if (.kill(_pid, SIGTERM) != -1)
-                {
-                    // We clean up the process related data and set the _running
-                    // flag to false once we're done waiting for the process to
-                    // finish.
-                    //
-                    // IMPORTANT: we don't delete the open pipes so that the parent
-                    //            process can get whatever the child process left on
-                    //            these pipes before dying.
-                    scope(exit)
-                    {
-                        _running = false;
-                    }
-
-                    // FIXME: is this loop really needed?
-                    for (uint i = 0; i < 100; i++)
-                    {
-                        rc = waitpid(pid, null, WNOHANG | WUNTRACED);
-                        if (rc == _pid)
-                        {
-                            break;
-                        }
-                        else if (rc == -1)
-                        {
-                            throw new ProcessWaitException(cast(int) _pid, __FILE__, __LINE__);
-                        }
-                        usleep(50000);
-                    }
-                }
-                else
-                {
-                    throw new ProcessKillException(_pid, __FILE__, __LINE__);
-                }
-            }
-            else
-            {
-                debug (Process)
-                    Stdout.print("Tried to kill an invalid process");
-            }
-        }
         else version (Escape)
         {
             if (_running)
@@ -1926,6 +1876,54 @@ class Process
                             throw new ProcessWaitException(cast(int) _pid, __FILE__, __LINE__);
                         }
                         .sleep(50);
+                    }
+                }
+                else
+                {
+                    throw new ProcessKillException(_pid, __FILE__, __LINE__);
+                }
+            }
+            else
+            {
+                debug (Process)
+                    Stdout.print("Tried to kill an invalid process");
+            }
+        }
+        else version (Posix)
+        {
+            if (_running)
+            {
+                int rc;
+
+                assert(_pid > 0);
+
+                if (.kill(_pid, SIGTERM) != -1)
+                {
+                    // We clean up the process related data and set the _running
+                    // flag to false once we're done waiting for the process to
+                    // finish.
+                    //
+                    // IMPORTANT: we don't delete the open pipes so that the parent
+                    //            process can get whatever the child process left on
+                    //            these pipes before dying.
+                    scope(exit)
+                    {
+                        _running = false;
+                    }
+
+                    // FIXME: is this loop really needed?
+                    for (uint i = 0; i < 100; i++)
+                    {
+                        rc = waitpid(pid, null, WNOHANG | WUNTRACED);
+                        if (rc == _pid)
+                        {
+                            break;
+                        }
+                        else if (rc == -1)
+                        {
+                            throw new ProcessWaitException(cast(int) _pid, __FILE__, __LINE__);
+                        }
+                        usleep(50000);
                     }
                 }
                 else
@@ -2121,6 +2119,112 @@ class Process
             return dest;
         }
     }
+    else version (Escape)
+    {
+        /**
+         * Convert an array of strings to an array of pointers to char with
+         * a terminating null character (C strings). The resulting array
+         * has a null pointer at the end. This is the format expected by
+         * the execv*() family of POSIX functions.
+         */
+        protected static char*[] toNullEndedArray(char[][] src)
+        {
+            if (src !is null)
+            {
+                char*[] dest = new char*[src.length + 1];
+                int     i = src.length;
+
+                // Add terminating null pointer to the array
+                dest[i] = null;
+
+                while (--i >= 0)
+                {
+                    // Add a terminating null character to each string
+                    dest[i] = toStringz(src[i]);
+                }
+                return dest;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /**
+         * Convert an associative array of strings to an array of pointers to
+         * char with a terminating null character (C strings). The resulting
+         * array has a null pointer at the end. This is the format expected by
+         * the execv*() family of POSIX functions for environment variables.
+         */
+        protected static char*[] toNullEndedArray(char[][char[]] src)
+        {
+            char*[] dest;
+
+            foreach (key, value; src)
+            {
+                dest ~= (key ~ '=' ~ value ~ '\0').ptr;
+            }
+
+            dest ~= null;
+            return dest;
+        }
+
+        /**
+         * Execute a process by looking up a file in the system path, passing
+         * the array of arguments and the the environment variables. This
+         * method is a combination of the execve() and execvp() POSIX system
+         * calls.
+         */
+        protected static int execvpe(char[] filename, char*[] argv)
+        in
+        {
+            assert(filename.length > 0);
+        }
+        body
+        {
+            int rc = -1;
+
+            if (!contains(filename, FileConst.PathSeparatorChar))
+            {
+                char[] str = Environment.get("PATH");
+                char[][] pathList = delimit(str, ":");
+
+                foreach (path; pathList)
+                {
+                    if (path[path.length - 1] != FileConst.PathSeparatorChar)
+                    {
+                        path ~= FileConst.PathSeparatorChar;
+                    }
+
+                    debug (Process)
+                        Stdout.formatln("Trying execution of '{0}' in directory '{1}'",
+                                        filename, path);
+
+                    path ~= filename;
+                    path ~= '\0';
+
+                    rc = exec(path.ptr, argv.ptr);
+                    // If the process execution failed because of an error
+                    // other than ENOENT (No such file or directory) we
+                    // abort the loop.
+                    // TODO
+                    if (rc < 0/* && errno != ENOENT*/)
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                debug (Process)
+                    Stdout.formatln("Calling execve('{0}', argv[{1}])",
+                                    (argv[0])[0 .. strlen(argv[0])],argv.length);
+
+                rc = exec(argv[0], argv.ptr);
+            }
+            return rc;
+        }
+    }
     else version (Posix)
     {
         /**
@@ -2224,112 +2328,6 @@ class Process
                                     argv.length, (envp.length > 0 ? "envp" : "null"));
 
                 rc = execve(argv[0], argv.ptr, (envp.length == 0 ? environ : envp.ptr));
-            }
-            return rc;
-        }
-    }
-    else version (Escape)
-    {
-        /**
-         * Convert an array of strings to an array of pointers to char with
-         * a terminating null character (C strings). The resulting array
-         * has a null pointer at the end. This is the format expected by
-         * the execv*() family of POSIX functions.
-         */
-        protected static char*[] toNullEndedArray(char[][] src)
-        {
-            if (src !is null)
-            {
-                char*[] dest = new char*[src.length + 1];
-                int     i = src.length;
-
-                // Add terminating null pointer to the array
-                dest[i] = null;
-
-                while (--i >= 0)
-                {
-                    // Add a terminating null character to each string
-                    dest[i] = toStringz(src[i]);
-                }
-                return dest;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        /**
-         * Convert an associative array of strings to an array of pointers to
-         * char with a terminating null character (C strings). The resulting
-         * array has a null pointer at the end. This is the format expected by
-         * the execv*() family of POSIX functions for environment variables.
-         */
-        protected static char*[] toNullEndedArray(char[][char[]] src)
-        {
-            char*[] dest;
-
-            foreach (key, value; src)
-            {
-                dest ~= (key ~ '=' ~ value ~ '\0').ptr;
-            }
-
-            dest ~= null;
-            return dest;
-        }
-
-        /**
-         * Execute a process by looking up a file in the system path, passing
-         * the array of arguments and the the environment variables. This
-         * method is a combination of the execve() and execvp() POSIX system
-         * calls.
-         */
-        protected static int execvpe(char[] filename, char*[] argv)
-        in
-        {
-            assert(filename.length > 0);
-        }
-        body
-        {
-            int rc = -1;
-
-            if (!contains(filename, FileConst.PathSeparatorChar))
-            {
-                char[] str = Environment.get("PATH");
-                char[][] pathList = delimit(str, ":");
-
-                foreach (path; pathList)
-                {
-                    if (path[path.length - 1] != FileConst.PathSeparatorChar)
-                    {
-                        path ~= FileConst.PathSeparatorChar;
-                    }
-
-                    debug (Process)
-                        Stdout.formatln("Trying execution of '{0}' in directory '{1}'",
-                                        filename, path);
-
-                    path ~= filename;
-                    path ~= '\0';
-
-                    rc = exec(path.ptr, argv.ptr);
-                    // If the process execution failed because of an error
-                    // other than ENOENT (No such file or directory) we
-                    // abort the loop.
-                    // TODO
-                    if (rc < 0/* && errno != ENOENT*/)
-                    {
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                debug (Process)
-                    Stdout.formatln("Calling execve('{0}', argv[{1}])",
-                                    (argv[0])[0 .. strlen(argv[0])],argv.length);
-
-                rc = exec(argv[0], argv.ptr);
             }
             return rc;
         }

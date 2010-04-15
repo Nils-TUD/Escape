@@ -121,7 +121,9 @@ class MapOutput(T) : OutputFilter
         private const T[] equals = " = ";
         version (Win32)
                  private const T[] NL = "\r\n";
-        version (Posix)
+		else version (Escape)
+	             private const T[] NL = "\n";
+		else version (Posix)
                  private const T[] NL = "\n";
 
         /***********************************************************************

@@ -118,6 +118,8 @@ else version( darwin )
 {
     void tzset();
 }
+else version (Escape)
+{}
 else version( linux )
 {
     void tzset();

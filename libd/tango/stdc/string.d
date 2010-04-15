@@ -36,7 +36,9 @@ char*  strtok(char* s1, in char* s2);
 char*  strerror(int errnum);
 size_t strlen(in char* s);
 
-version( Posix )
+version( Escape)
+{}
+else version( Posix )
 {
     char* strdup(char*);
     char *strsignal(int sig);

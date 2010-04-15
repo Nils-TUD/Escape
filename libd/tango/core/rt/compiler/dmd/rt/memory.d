@@ -28,7 +28,11 @@ module rt.compiler.dmd.rt.memory;
 
 private
 {
-    version( linux )
+	version( Escape)
+	{
+		
+	}
+	else version( linux )
     {
         version = SimpleLibcStackEnd;
 
@@ -69,6 +73,11 @@ extern (C) void* rt_stackBottom()
             ret;
         }
     }
+	else version( Escape )
+	{
+    	// TODO is that always correct?
+    	return cast(void*)0xa0000000;
+    }
     else version( linux )
     {
         version( SimpleLibcStackEnd ) {
@@ -89,9 +98,6 @@ extern (C) void* rt_stackBottom()
         return __osx_stack_end;
     } else version( freebsd ) {
         return __libc_stack_end;
-    } else version( Escape ) {
-    	// TODO is that always correct?
-    	return cast(void*)0xa0000000;
     } else {
         static assert( false, "Operating system not supported." );
     }
@@ -130,6 +136,14 @@ private
             extern int _end;    // &_end is past end of BSS
         }
     }
+    else version(Escape)
+    {
+    	extern (C)
+    	{
+    		extern int start_data;
+    		extern int end_data;
+    	}
+    }
     else version( linux )
     {
         extern (C)
@@ -146,14 +160,6 @@ private
 
             alias __data_start  Data_Start;
             alias _end          Data_End;
-    }
-    else version(Escape)
-    {
-    	extern (C)
-    	{
-    		extern int start_data;
-    		extern int end_data;
-    	}
     }
 
     alias void delegate( void*, void* ) scanFn;
@@ -186,6 +192,10 @@ extern (C) void rt_scanStaticData( scanFn scan )
     {
         scan( &_xi_a, &_end );
     }
+    else version(Escape)
+    {
+    	scan( &start_data, &end_data );
+    }
     else version( linux )
     {
         scan( &__data_start, &_end );
@@ -200,10 +210,6 @@ extern (C) void rt_scanStaticData( scanFn scan )
     else version (Solaris)
     {
         scan( &etext, &_end );
-    }
-    else version(Escape)
-    {
-    	scan( &start_data, &end_data );
     }
     else
     {

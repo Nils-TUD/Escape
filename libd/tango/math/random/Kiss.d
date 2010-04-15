@@ -20,15 +20,13 @@ module tango.math.random.Kiss;
 
 version (Win32)
 	private extern(Windows) int QueryPerformanceCounter (ulong *);
-
-version (Posix)
-{
-	private import tango.stdc.posix.sys.time;
-}
-
-version(Escape)
+else version(Escape)
 {
 	extern (C) ulong cpu_rdtsc();
+}
+else version (Posix)
+{
+	private import tango.stdc.posix.sys.time;
 }
 
 
@@ -110,17 +108,17 @@ struct Kiss
         {
                 ulong s;
 
-                version (Posix)
+                version (Escape)
+        				s = cast(uint)cpu_rdtsc();
+        		else version (Posix)
                         {
                         timeval tv;
 
                         gettimeofday (&tv, null);
                         s = tv.tv_usec;
                         }
-                version (Win32)
+        		else version (Win32)
                          QueryPerformanceCounter (&s);
-                version (Escape)
-        				s = cast(uint)cpu_rdtsc();
 
                 return seed (cast(uint) s);
         }

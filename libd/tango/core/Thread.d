@@ -139,6 +139,96 @@ version( Win32 )
         }
     }
 }
+else version( Escape )
+{
+    private
+    {
+    	extern (C) int startThread(void *function(void *arg),void *arg);
+    	extern (C) int sleep(uint ms);
+    	extern (C) void yield();
+		extern (C) int gettid();
+		extern (C) int suspend(int tid);
+		extern (C) int resume(int tid);
+		extern (C) int join(int tid);
+		extern (C) bool setThreadVal(uint key,void *val);
+		extern (C) void *getThreadVal(uint key);
+
+
+        //
+        // entry point for POSIX threads
+        //
+        extern (C) void* thread_entryPoint( void* arg )
+        {
+            Thread  obj = cast(Thread) arg;
+            assert( obj );
+            scope( exit )
+            {
+                // NOTE: isRunning should be set to false after the thread is
+                //       removed or a double-removal could occur between this
+                //       function and thread_suspendAll.
+                Thread.remove( obj );
+                obj.m_isRunning = false;
+            }
+
+            static extern (C) void thread_cleanupHandler( void* arg )
+            {
+                Thread  obj = cast(Thread) arg;
+                assert( obj );
+
+                // NOTE: If the thread terminated abnormally, just set it as
+                //       not running and let thread_suspendAll remove it from
+                //       the thread list.  This is safer and is consistent
+                //       with the Windows thread code.
+                obj.m_isRunning = false;
+            }
+
+            // NOTE: For some reason this does not always work for threads.
+            //obj.m_main.bstack = getStackBottom();
+            version( D_InlineAsm_X86 )
+            {
+                static void* getBasePtr()
+                {
+                    asm
+                    {
+                        naked;
+                        mov EAX, EBP;
+                        ret;
+                    }
+                }
+
+                obj.m_main.bstack = getBasePtr();
+            }
+            else version( StackGrowsDown )
+                obj.m_main.bstack = &obj + 1;
+            else
+                obj.m_main.bstack = &obj;
+            obj.m_main.tstack = obj.m_main.bstack;
+            assert( obj.m_curr == &obj.m_main );
+            Thread.add( &obj.m_main );
+            Thread.setThis( obj );
+
+            // NOTE: No GC allocations may occur until the stack pointers have
+            //       been set and Thread.getThis returns a valid reference to
+            //       this thread object (this latter condition is not strictly
+            //       necessary on Win32 but it should be followed for the sake
+            //       of consistency).
+
+            // TODO: Consider putting an auto exception object here (using
+            //       alloca) forOutOfMemoryError plus something to track
+            //       whether an exception is in-flight?
+
+            try
+            {
+                obj.run();
+            }
+            catch( Object o )
+            {
+                obj.m_unhandled = o;
+            }
+            return null;
+        }
+    }
+}
 else version( Posix )
 {
     private
@@ -207,8 +297,6 @@ else version( Posix )
                 pthread_cleanup cleanup = void;
                 cleanup.push( &thread_cleanupHandler, cast(void*) obj );
             }
-			else version (Escape)
-			{} // TODO ?
             else
             {
                 pthread_cleanup_push( &thread_cleanupHandler, cast(void*) obj );
@@ -421,96 +509,6 @@ else version( Posix )
         }
     }
 }
-else version( Escape )
-{
-    private
-    {
-    	extern (C) int startThread(void *function(void *arg),void *arg);
-    	extern (C) int sleep(uint ms);
-    	extern (C) void yield();
-		extern (C) int gettid();
-		extern (C) int suspend(int tid);
-		extern (C) int resume(int tid);
-		extern (C) int join(int tid);
-		extern (C) bool setThreadVal(uint key,void *val);
-		extern (C) void *getThreadVal(uint key);
-
-
-        //
-        // entry point for POSIX threads
-        //
-        extern (C) void* thread_entryPoint( void* arg )
-        {
-            Thread  obj = cast(Thread) arg;
-            assert( obj );
-            scope( exit )
-            {
-                // NOTE: isRunning should be set to false after the thread is
-                //       removed or a double-removal could occur between this
-                //       function and thread_suspendAll.
-                Thread.remove( obj );
-                obj.m_isRunning = false;
-            }
-
-            static extern (C) void thread_cleanupHandler( void* arg )
-            {
-                Thread  obj = cast(Thread) arg;
-                assert( obj );
-
-                // NOTE: If the thread terminated abnormally, just set it as
-                //       not running and let thread_suspendAll remove it from
-                //       the thread list.  This is safer and is consistent
-                //       with the Windows thread code.
-                obj.m_isRunning = false;
-            }
-
-            // NOTE: For some reason this does not always work for threads.
-            //obj.m_main.bstack = getStackBottom();
-            version( D_InlineAsm_X86 )
-            {
-                static void* getBasePtr()
-                {
-                    asm
-                    {
-                        naked;
-                        mov EAX, EBP;
-                        ret;
-                    }
-                }
-
-                obj.m_main.bstack = getBasePtr();
-            }
-            else version( StackGrowsDown )
-                obj.m_main.bstack = &obj + 1;
-            else
-                obj.m_main.bstack = &obj;
-            obj.m_main.tstack = obj.m_main.bstack;
-            assert( obj.m_curr == &obj.m_main );
-            Thread.add( &obj.m_main );
-            Thread.setThis( obj );
-
-            // NOTE: No GC allocations may occur until the stack pointers have
-            //       been set and Thread.getThis returns a valid reference to
-            //       this thread object (this latter condition is not strictly
-            //       necessary on Win32 but it should be followed for the sake
-            //       of consistency).
-
-            // TODO: Consider putting an auto exception object here (using
-            //       alloca) forOutOfMemoryError plus something to track
-            //       whether an exception is in-flight?
-
-            try
-            {
-                obj.run();
-            }
-            catch( Object o )
-            {
-                obj.m_unhandled = o;
-            }
-            return null;
-        }
-    }
-}
 else
 {
     // NOTE: This is the only place threading versions are checked.  If a new
@@ -639,6 +637,8 @@ class Thread
             CloseHandle( m_hndl );
             m_hndl = m_hndl.init;
         }
+    	else version(Escape)
+    	{}
         else version( Posix )
         {
             pthread_detach( m_addr );
@@ -670,6 +670,7 @@ class Thread
     body
     {
         version( Win32 ) {} else
+		version(Escape) {} else
         version( Posix )
         {
             pthread_attr_t  attr;
@@ -696,13 +697,6 @@ class Thread
                 if( cast(size_t) m_hndl == 0 )
                     throw new ThreadException( "Error creating thread" );
             }
-            else version( Posix )
-            {
-                m_isRunning = true;
-                scope( failure ) m_isRunning = false;
-                if( pthread_create( &m_addr, &attr, &thread_entryPoint, cast(void*) this ) != 0 )
-                    throw new ThreadException( "Error creating thread" );
-            }
 		    else version( Escape )
 		    {
 		        m_isRunning = true;
@@ -711,6 +705,13 @@ class Thread
 		        if((m_addr = startThread(&thread_entryPoint,cast(void*)this)) < 0)
 		        	throw new ThreadException("Error creating thread");
 		    }
+            else version( Posix )
+            {
+                m_isRunning = true;
+                scope( failure ) m_isRunning = false;
+                if( pthread_create( &m_addr, &attr, &thread_entryPoint, cast(void*) this ) != 0 )
+                    throw new ThreadException( "Error creating thread" );
+            }
             add( this );
         }
     }
@@ -745,6 +746,13 @@ class Thread
             CloseHandle( m_hndl );
             m_hndl = m_hndl.init;
         }
+        else version( Escape )
+        {
+        	if(.join(m_addr) != 0)
+        		throw new ThreadException("Unable to join thread");
+        	// thread is dead now
+            volatile m_addr = m_addr.init;
+        }
         else version( Posix )
         {
             if( pthread_join( m_addr, null ) != 0 )
@@ -753,13 +761,6 @@ class Thread
             //       which is normally called by the dtor.  Setting m_addr
             //       to zero ensures that pthread_detach will not be called
             //       on object destruction.
-            volatile m_addr = m_addr.init;
-        }
-        else version( Escape )
-        {
-        	if(.join(m_addr) != 0)
-        		throw new ThreadException("Unable to join thread");
-        	// thread is dead now
             volatile m_addr = m_addr.init;
         }
         if( m_unhandled )
@@ -864,16 +865,16 @@ class Thread
             GetExitCodeThread( m_hndl, &ecode );
             return ecode == STILL_ACTIVE;
         }
+        else version( Escape )
+        {
+        	return m_isRunning;
+        }
         else version( Posix )
         {
             // NOTE: It should be safe to access this value without
             //       memory barriers because word-tearing and such
             //       really isn't an issue for boolean values.
             return m_isRunning;
-        }
-        else version( Escape )
-        {
-        	return m_isRunning;
         }
     }
 
@@ -912,6 +913,11 @@ class Thread
         {
             return GetThreadPriority( m_hndl );
         }
+        else version( Escape )
+        {
+        	// TODO we have no prio
+        	return 0;
+        }
         else version( Posix )
         {
             int         policy;
@@ -920,11 +926,6 @@ class Thread
             if( pthread_getschedparam( m_addr, &policy, &param ) )
                 throw new ThreadException( "Unable to get thread priority" );
             return param.sched_priority;
-        }
-        else version( Escape )
-        {
-        	// TODO we have no prio
-        	return 0;
         }
     }
 
@@ -942,6 +943,10 @@ class Thread
             if( !SetThreadPriority( m_hndl, val ) )
                 throw new ThreadException( "Unable to set thread priority" );
         }
+        else version( Escape )
+        {
+        	// TODO we have no prio
+        }
         else version( Posix )
         {
             // NOTE: pthread_setschedprio is not implemented on linux, so use
@@ -957,10 +962,6 @@ class Thread
             param.sched_priority = val;
             if( pthread_setschedparam( m_addr, policy, &param ) )
                 throw new ThreadException( "Unable to set thread priority" );
-        }
-        else version( Escape )
-        {
-        	// TODO we have no prio
         }
     }
 
@@ -1002,6 +1003,11 @@ class Thread
         {
             Sleep( cast(uint)( period * 1000 + 0.1 ) );
         }
+        else version( Escape )
+        {
+        	if(.sleep(cast(uint)(period * 1000 + 0.1)) < 0)
+        		throw new ThreadException("Unable to sleep for the specified duration");
+        }
         else version( Posix )
         {
             timespec tin  = void;
@@ -1028,11 +1034,6 @@ class Thread
                     throw new ThreadException( "Unable to sleep for specified duration" );
                 tin = tout;
             }
-        }
-        else version( Escape )
-        {
-        	if(.sleep(cast(uint)(period * 1000 + 0.1)) < 0)
-        		throw new ThreadException("Unable to sleep for the specified duration");
         }
     }
 
@@ -1067,6 +1068,11 @@ class Thread
         {
             Sleep( cast(uint)( period.milliseconds ) );
         }
+	    else version( Escape )
+	    {
+	    	if(.sleep(cast(uint)( period.milliseconds )) < 0)
+	    		throw new ThreadException("Unable to sleep for the specified duration");
+	    }
         else version( Posix )
         {
             timespec tin  = void;
@@ -1091,11 +1097,6 @@ class Thread
                     throw new ThreadException( "Unable to sleep for specified duration" );
                 tin = tout;
             }
-        }
-        else version( Escape )
-        {
-        	if(.sleep(cast(uint)( period.milliseconds )) < 0)
-        		throw new ThreadException("Unable to sleep for the specified duration");
         }
     }
 
@@ -1142,13 +1143,13 @@ class Thread
             //       Sleep(0) could be resource-intensive in some cases.
             Sleep( 1 );
         }
-        else version( Posix )
-        {
-            sched_yield();
-        }
         else version( Escape )
         {
         	.yield();
+        }
+        else version( Posix )
+        {
+            sched_yield();
         }
     }
 
@@ -1174,13 +1175,13 @@ class Thread
         {
             return cast(Thread) TlsGetValue( sm_this );
         }
-        else version( Posix )
-        {
-            return cast(Thread) pthread_getspecific( sm_this );
-        }
         else version( Escape )
         {
         	return cast(Thread)getThreadVal(sm_this);
+        }
+        else version( Posix )
+        {
+            return cast(Thread) pthread_getspecific( sm_this );
         }
     }
 
@@ -1349,6 +1350,12 @@ class Thread
             PRIORITY_MIN = -15;
             PRIORITY_MAX =  15;
         }
+        else version( Escape )
+        {
+        	// TODO we have no prio
+            PRIORITY_MIN = 0;
+            PRIORITY_MAX = 0;
+        }
         else version( Posix )
         {
             int         policy;
@@ -1363,12 +1370,6 @@ class Thread
 
             PRIORITY_MAX = sched_get_priority_max( policy );
             assert( PRIORITY_MAX != -1 );
-        }
-        else version( Escape )
-        {
-        	// TODO we have no prio
-            PRIORITY_MIN = 0;
-            PRIORITY_MAX = 0;
         }
     }
 
@@ -1425,15 +1426,15 @@ private:
         alias uint TLSKey;
         alias uint ThreadAddr;
     }
-    else version( Posix )
-    {
-        alias pthread_key_t TLSKey;
-        alias pthread_t     ThreadAddr;
-    }
     else version( Escape )
     {
     	alias uint TLSKey;
     	alias int ThreadAddr;
+    }
+    else version( Posix )
+    {
+        alias pthread_key_t TLSKey;
+        alias pthread_t     ThreadAddr;
     }
 
 
@@ -1462,11 +1463,11 @@ private:
         void delegate() m_dg;
     }
     size_t              m_sz;
-    version( Posix )
+    version( Escape )
     {
         bool            m_isRunning;
     }
-    else version( Escape )
+	else version( Posix )
     {
         bool            m_isRunning;
     }
@@ -1489,15 +1490,15 @@ private:
         {
             TlsSetValue( sm_this, cast(void*) t );
         }
-        else version( Posix )
-        {
-            pthread_setspecific( sm_this, cast(void*) t );
-        }
 		else version( Escape )
 		{
 			bool res = setThreadVal(sm_this,cast(void*)t);
 			assert(res);
 		}
+        else version( Posix )
+        {
+            pthread_setspecific( sm_this, cast(void*) t );
+        }
     }
 
 
@@ -1775,6 +1776,8 @@ extern (C) void thread_init()
         Thread.sm_this = TlsAlloc();
         assert( Thread.sm_this != TLS_OUT_OF_INDEXES );
     }
+	else version(Escape)
+	{}
     else version( Posix )
     {
         int         status;
@@ -1855,21 +1858,6 @@ extern (C) void thread_attachThis()
 
         Thread.setThis( thisThread );
     }
-    else version( Posix )
-    {
-        Thread          thisThread  = new Thread();
-        Thread.Context* thisContext = thisThread.m_curr;
-        assert( thisContext == &thisThread.m_main );
-
-        thisThread.m_addr  = pthread_self();
-        thisContext.bstack = getStackBottom();
-        thisContext.tstack = thisContext.bstack;
-
-        thisThread.m_isRunning = true;
-        thisThread.m_isDaemon  = true;
-
-        Thread.setThis( thisThread );
-    }
     else version( Escape )
     {
 		Thread          thisThread  = new Thread();
@@ -1883,6 +1871,21 @@ extern (C) void thread_attachThis()
         thisThread.m_isRunning = true;
         thisThread.m_isDaemon  = true;
         
+        Thread.setThis( thisThread );
+    }
+    else version( Posix )
+    {
+        Thread          thisThread  = new Thread();
+        Thread.Context* thisContext = thisThread.m_curr;
+        assert( thisContext == &thisThread.m_main );
+
+        thisThread.m_addr  = pthread_self();
+        thisContext.bstack = getStackBottom();
+        thisContext.tstack = thisContext.bstack;
+
+        thisThread.m_isRunning = true;
+        thisThread.m_isDaemon  = true;
+
         Thread.setThis( thisThread );
     }
 
@@ -2023,6 +2026,23 @@ extern (C) void thread_suspendAll()
             t.m_reg[6] = context.Ecx;
             t.m_reg[7] = context.Eax;
         }
+        else version( Escape )
+        {
+        	if(t.m_addr != gettid())
+        	{
+        		if(.suspend(t.m_addr) != 0)
+        		{
+        			if( !t.isRunning )
+	                {
+	                    Thread.remove( t );
+	                    return;
+	                }
+	                throw new ThreadException( "Unable to suspend thread" );
+        		}
+        	}
+        	
+        	// TODO what to do when its the current thread?
+        }
         else version( Posix )
         {
             if( t.m_addr != pthread_self() )
@@ -2059,23 +2079,6 @@ extern (C) void thread_suspendAll()
             {
                 t.m_curr.tstack = getStackTop();
             }
-        }
-        else version( Escape )
-        {
-        	if(t.m_addr != gettid())
-        	{
-        		if(.suspend(t.m_addr) != 0)
-        		{
-        			if( !t.isRunning )
-	                {
-	                    Thread.remove( t );
-	                    return;
-	                }
-	                throw new ThreadException( "Unable to suspend thread" );
-        		}
-        	}
-        	
-        	// TODO what to do when its the current thread?
         }
     }
 
@@ -2177,6 +2180,23 @@ body
                 t.m_curr.tstack = t.m_curr.bstack;
             t.m_reg[0 .. $] = 0;
         }
+        else version( Escape )
+        {
+        	if(t.m_addr != gettid())
+        	{
+        		if(.resume(t.m_addr) != 0)
+        		{
+                    if( !t.isRunning )
+                    {
+                        Thread.remove( t );
+                        return;
+                    }
+                    throw new ThreadException( "Unable to resume thread" );
+        		}
+        	}
+        	
+        	// TODO what to do when its the current thread?
+        }
         else version( Posix )
         {
             if( t.m_addr != pthread_self() )
@@ -2203,23 +2223,6 @@ body
             {
                 t.m_curr.tstack = t.m_curr.bstack;
             }
-        }
-        else version( Escape )
-        {
-        	if(t.m_addr != gettid())
-        	{
-        		if(.resume(t.m_addr) != 0)
-        		{
-                    if( !t.isRunning )
-                    {
-                        Thread.remove( t );
-                        return;
-                    }
-                    throw new ThreadException( "Unable to resume thread" );
-        		}
-        	}
-        	
-        	// TODO what to do when its the current thread?
         }
     }
 
@@ -2591,22 +2594,30 @@ private
         {
             version( Win32 )
                 version = AsmX86_Win32;
+        	else version(Escape)
+        	{}
             else version( Posix )
                 version = AsmX86_Posix;
         }
     }
     else version( D_InlineAsm_X86_64 )
     {
-        version( Posix )
+    	version(Escape)
+    	{}
+		else version( Posix )
             version = AsmX86_64_Posix;
     }
     else version( PPC )
     {
-        version( Posix )
+    	version(Escape)
+    	{}
+		else version( Posix )
             version = AsmPPC_Posix;
     }
 
-    version( Posix )
+	version(Escape)
+	{}
+	else version( Posix )
     {
         import tango.stdc.posix.unistd;   // for sysconf
         import tango.stdc.posix.sys.mman; // for mmap
@@ -3329,13 +3340,13 @@ class Fiber
         {
             return cast(Fiber) TlsGetValue( sm_this );
         }
-        else version( Posix )
-        {
-            return cast(Fiber) pthread_getspecific( sm_this );
-        }
         else version( Escape )
         {
             return cast(Fiber) getThreadVal( sm_this );
+        }
+        else version( Posix )
+        {
+            return cast(Fiber) pthread_getspecific( sm_this );
         }
     }
 
@@ -3352,6 +3363,8 @@ class Fiber
             sm_this = TlsAlloc();
             assert( sm_this != TLS_OUT_OF_INDEXES );
         }
+        else version( Escape )
+        {}
         else version( Posix )
         {
             int status;
@@ -3748,14 +3761,14 @@ private:
         {
             TlsSetValue( sm_this, cast(void*) f );
         }
-        else version( Posix )
-        {
-            pthread_setspecific( sm_this, cast(void*) f );
-        }
         else version( Escape )
         {
 			bool res = setThreadVal(sm_this,cast(void*)f);
 			assert(res);
+        }
+        else version( Posix )
+        {
+            pthread_setspecific( sm_this, cast(void*) f );
         }
     }
 

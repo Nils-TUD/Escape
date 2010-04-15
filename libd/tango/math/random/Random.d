@@ -195,16 +195,17 @@ private T ctfe_powI(T)(T x,int p){
 version (Win32) {
          private extern(Windows) int QueryPerformanceCounter (ulong *);
 }
-version (Posix) {
-    private import tango.stdc.posix.sys.time;
-}
-version (Escape) {
+else version (Escape) {
 	extern (C) ulong cpu_rdtsc();
+}
+else version (Posix) {
+    private import tango.stdc.posix.sys.time;
 }
 
 version(darwin) { version=has_urandom; }
-version(linux)  { version=has_urandom; }
-version(solaris){ version=has_urandom; }
+else version(Escape) {}
+else version(linux)  { version=has_urandom; }
+else version(solaris){ version=has_urandom; }
 
 /// if T is a float
 template isFloat(T){
@@ -1249,15 +1250,16 @@ static this ()
         rand.seed(&r.next);
     } else {
         ulong s;
-        version (Posix){
+        version(Escape) {
+        	s = cpu_rdtsc();
+        }
+    	else version (Posix){
             timeval tv;
             gettimeofday (&tv, null);
             s = tv.tv_usec;
-        } else version (Win32) {
+        }
+    	else version (Win32) {
              QueryPerformanceCounter (&s);
-         }
-        else version(Escape) {
-        	s = cpu_rdtsc();
         }
         uint[2] a;
         a[0]= cast(uint)(s & 0xFFFF_FFFFUL);

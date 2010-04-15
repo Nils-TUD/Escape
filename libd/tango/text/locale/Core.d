@@ -120,13 +120,12 @@ private import  tango.time.chrono.Hijri,
                 tango.time.chrono.ThaiBuddhist;
         
 version (Windows)
-         private import tango.text.locale.Win32;
+	private import tango.text.locale.Win32;	 
+else version (Escape)
+	private import tango.text.locale.Escape;
+else version (Posix)
+	private import tango.text.locale.Posix;
 
-version (Posix)
-         private import tango.text.locale.Posix;
-
-version (Escape)
-  private import tango.text.locale.Escape;
 
 
 // Initializes an array.
@@ -298,7 +297,8 @@ version (Clone)
   public static Culture getCulture(int cultureID) {
     Culture culture = getCultureInternal(cultureID, null);
 
-version (Posix) {
+version (Escape) {}
+else version (Posix) {
     if (culture is null)
         error ("Culture not found - if this was not tried set by the application, Tango\n"
             ~ "will expect that a locale is set via environment variables LANG or LC_ALL.");

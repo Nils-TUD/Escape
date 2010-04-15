@@ -239,93 +239,6 @@ class Device : Conduit, ISelectable
 
         /***********************************************************************
 
-                 Unix-specific code.
-
-        ***********************************************************************/
-
-        version (Posix)
-        {
-                protected int handle = -1;
-
-                /***************************************************************
-
-                        Allow adjustment of standard IO handles
-
-                ***************************************************************/
-
-                protected void reopen (Handle handle)
-                {
-                        this.handle = handle;
-                }
-
-                /***************************************************************
-
-                        Return the underlying OS handle of this Conduit
-
-                ***************************************************************/
-
-                final Handle fileHandle ()
-                {
-                        return cast(Handle) handle;
-                }
-
-                /***************************************************************
-
-                        Release the underlying file
-
-                ***************************************************************/
-
-                override void detach ()
-                {
-                        if (handle >= 0)
-                           {
-                           //if (scheduler)
-                               // TODO Not supported on Posix
-                               // scheduler.close (handle, toString);
-                           posix.close (handle);
-                           }
-                        handle = -1;
-                }
-
-                /***************************************************************
-
-                        Read a chunk of bytes from the file into the provided
-                        array. Returns the number of bytes read, or Eof where 
-                        there is no further data.
-
-                ***************************************************************/
-
-                override size_t read (void[] dst)
-                {
-                        int read = posix.read (handle, dst.ptr, dst.length);
-                        if (read is -1)
-                            error;
-                        else
-                           if (read is 0 && dst.length > 0)
-                               return Eof;
-                        return read;
-                }
-
-                /***************************************************************
-
-                        Write a chunk of bytes to the file from the provided
-                        array. Returns the number of bytes written, or Eof if 
-                        the output is no longer available.
-
-                ***************************************************************/
-
-                override size_t write (void[] src)
-                {
-                        int written = posix.write (handle, src.ptr, src.length);
-                        if (written is -1)
-                            error;
-                        return written;
-                }
-        }
-
-
-        /***********************************************************************
-
                  Escape-specific code.
 
         ***********************************************************************/
@@ -399,6 +312,93 @@ class Device : Conduit, ISelectable
                 override size_t write (void[] src)
                 {
                         int written = .write (handle, src.ptr, src.length);
+                        if (written is -1)
+                            error;
+                        return written;
+                }
+        }
+
+
+        /***********************************************************************
+
+                 Unix-specific code.
+
+        ***********************************************************************/
+
+		else version (Posix)
+        {
+                protected int handle = -1;
+
+                /***************************************************************
+
+                        Allow adjustment of standard IO handles
+
+                ***************************************************************/
+
+                protected void reopen (Handle handle)
+                {
+                        this.handle = handle;
+                }
+
+                /***************************************************************
+
+                        Return the underlying OS handle of this Conduit
+
+                ***************************************************************/
+
+                final Handle fileHandle ()
+                {
+                        return cast(Handle) handle;
+                }
+
+                /***************************************************************
+
+                        Release the underlying file
+
+                ***************************************************************/
+
+                override void detach ()
+                {
+                        if (handle >= 0)
+                           {
+                           //if (scheduler)
+                               // TODO Not supported on Posix
+                               // scheduler.close (handle, toString);
+                           posix.close (handle);
+                           }
+                        handle = -1;
+                }
+
+                /***************************************************************
+
+                        Read a chunk of bytes from the file into the provided
+                        array. Returns the number of bytes read, or Eof where 
+                        there is no further data.
+
+                ***************************************************************/
+
+                override size_t read (void[] dst)
+                {
+                        int read = posix.read (handle, dst.ptr, dst.length);
+                        if (read is -1)
+                            error;
+                        else
+                           if (read is 0 && dst.length > 0)
+                               return Eof;
+                        return read;
+                }
+
+                /***************************************************************
+
+                        Write a chunk of bytes to the file from the provided
+                        array. Returns the number of bytes written, or Eof if 
+                        the output is no longer available.
+
+                ***************************************************************/
+
+                override size_t write (void[] src)
+                {
+                        int written = posix.write (handle, src.ptr, src.length);
                         if (written is -1)
                             error;
                         return written;

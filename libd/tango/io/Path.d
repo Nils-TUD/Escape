@@ -71,32 +71,30 @@ private extern (C) void memmove (void* dst, void* src, uint bytes);
 *******************************************************************************/
 
 version (Win32)
-        {
-        version (Win32SansUnicode)
-                {
-                private extern (C) int strlen (char *s);
-                private alias WIN32_FIND_DATA FIND_DATA;
-                }
-             else
-                {
-                private extern (C) int wcslen (wchar *s);
-                private alias WIN32_FIND_DATAW FIND_DATA;
-                }
-        }
-
-version (Posix)
+{
+	version (Win32SansUnicode)
+    {
+	    private extern (C) int strlen (char *s);
+	    private alias WIN32_FIND_DATA FIND_DATA;
+    }
+ 	else
+    {
+	    private extern (C) int wcslen (wchar *s);
+	    private alias WIN32_FIND_DATAW FIND_DATA;
+    }
+}	
+else version (Escape)
+{
+	private import tango.stdc.io;
+	private import tango.stdc.stat;
+	private import tango.stdc.dir;
+}
+else version (Posix)
 {
 	private import tango.stdc.stdio;
 	private import tango.stdc.string;
 	private import tango.stdc.posix.utime;
 	private import tango.stdc.posix.dirent;
-}
-
-version (Escape)
-{
-	private import tango.stdc.io;
-	private import tango.stdc.stat;
-	private import tango.stdc.dir;
 }
 
 /*******************************************************************************
@@ -671,11 +669,312 @@ package struct FS
 
         /***********************************************************************
 
+                Escape-specific code
+
+        ***********************************************************************/
+
+        version (Escape)
+        {
+                /***************************************************************
+
+                        Get info about this path
+
+                ***************************************************************/
+
+                private static uint getInfo (char[] name, ref stat_t stats)
+                {
+                        if (.stat (name.ptr, &stats))
+                            exception (name);
+
+                        return stats.st_mode;
+                }
+
+                /***************************************************************
+
+                        Return whether the file or path exists
+
+                ***************************************************************/
+
+                static bool exists (char[] name)
+                {
+                        stat_t stats = void;
+                        return .stat (name.ptr, &stats) is 0;
+                }
+
+                /***************************************************************
+
+                        Return the file length (in bytes)
+
+                ***************************************************************/
+
+                static ulong fileSize (char[] name)
+                {
+                        stat_t stats = void;
+
+                        getInfo (name, stats);
+                        return cast(ulong) stats.st_size;
+                }
+
+                /***************************************************************
+
+                        Is this file writable?
+
+                ***************************************************************/
+
+                static bool isWritable (char[] name)
+                {
+                		// TODO always writable atm
+                		return true;
+                }
+
+                /***************************************************************
+
+                        Is this file actually a folder/directory?
+
+                ***************************************************************/
+
+                static bool isFolder (char[] name)
+                {
+                        stat_t stats = void;
+
+                        return S_ISDIR(cast(mode_t)getInfo(name, stats));
+                }
+
+                /***************************************************************
+
+                        Is this a normal file?
+
+                ***************************************************************/
+
+                static bool isFile (char[] name)
+                {
+                        stat_t stats = void;
+
+                        return S_ISREG(cast(mode_t)getInfo(name, stats));
+                }
+
+                /***************************************************************
+
+                        Return timestamp information
+
+                        Timestamps are returns in a format dictated by the 
+                        file-system. For example NTFS keeps UTC time, 
+                        while FAT timestamps are based on the local time
+
+                ***************************************************************/
+
+                static Stamps timeStamps (char[] name)
+                {
+                        static Time convert (typeof(stat_t.st_mtime) secs)
+                        {
+                                return Time.epoch1970 +
+                                       TimeSpan.fromSeconds(secs);
+                        }
+                        
+                        stat_t stats = void;
+                        Stamps time  = void;
+
+                        getInfo (name, stats);
+
+                        time.modified = convert (stats.st_mtime);
+                        time.accessed = convert (stats.st_atime);
+                        time.created  = convert (stats.st_ctime);
+                        return time;
+                }
+
+                /***************************************************************
+
+                        Set the accessed and modified timestamps of the
+                        specified file
+
+                ***************************************************************/
+
+                static void timeStamps (char[] name, Time accessed, Time modified)
+                {
+                    	// TODO not available
+                        assert(0);
+                }
+
+                /***********************************************************************
+
+                        Transfer the content of another file to this one. Returns a
+                        reference to this class on success, or throws an IOException
+                        upon failure.
+
+                        Note: allocates a memory buffer
+
+                ***********************************************************************/
+
+                static void copy (char[] source, char[] dest)
+                {
+                        auto src = .open (source.ptr, IO_READ);
+                        scope (exit)
+                               if (src != -1)
+                                   .close (src);
+
+                        auto dst = .open (dest.ptr, IO_CREATE | IO_READ | IO_WRITE);
+                        scope (exit)
+                               if (dst != -1)
+                                   .close (dst);
+
+                        if (src < 0 || dst < 0)
+                            exception (source);
+
+                        // copy content
+                        ubyte[] buf = new ubyte [16 * 1024];
+                        int read = .read (src, buf.ptr, buf.length);
+                        while (read > 0)
+                              {
+                              auto p = buf.ptr;
+                              do {
+                                 int written = .write (dst, p, read);
+                                 p += written;
+                                 read -= written;
+                                 if (written < 0)
+                                     exception (dest);
+                                 } while (read > 0);
+                              read = .read (src, buf.ptr, buf.length);
+                              }
+                        if (read < 0)
+                            exception (source);
+
+                        // TODO no timestamp-copy here
+                }
+
+                /***************************************************************
+
+                        Remove the file/directory from the file-system. 
+                        Returns true on success - false otherwise.
+
+                ***************************************************************/
+
+                static bool remove (char[] name)
+                {
+                        return .unlink(name.ptr) != -1;
+                }
+
+                /***************************************************************
+
+                       change the name or location of a file/directory, and
+                       adopt the provided FilePath
+
+                ***************************************************************/
+
+                static void rename (char[] src, char[] dst)
+                {
+                		// TODO not supported
+                		assert(0);
+                }
+
+                /***************************************************************
+
+                        Create a new file
+
+                ***************************************************************/
+
+                static void createFile (char[] name)
+                {
+                        int fd;
+
+                        fd = .open (name.ptr, IO_CREATE | IO_WRITE | IO_TRUNCATE);
+                        if (fd < 0)
+                            exception (name);
+                        .close(fd);
+                }
+
+                /***************************************************************
+
+                        Create a new directory
+
+                ***************************************************************/
+
+                static void createFolder (char[] name)
+                {
+                        if (.mkdir (name.ptr))
+                            exception (name);
+                }
+                /***************************************************************
+
+                        List the set of filenames within this folder.
+
+                        Each path and filename is passed to the provided
+                        delegate, along with the path prefix and whether
+                        the entry is a folder or not.
+
+                        Note: allocates and reuses a small memory buffer
+
+                ***************************************************************/
+
+                static int list (char[] folder, int delegate(ref FileInfo) dg, bool all=false)
+                {
+                        int             ret;
+                        int	            dir;
+                        dirent          entry;
+                        stat_t          sbuf;
+                        char[]          prefix;
+                        char[]          sfnbuf;
+
+                        dir = .opendir (folder.ptr);
+                        if (! dir)
+                              return ret;
+
+                        scope (exit)
+                               .closedir (dir);
+
+                        // ensure a trailing '/' is present
+                        prefix = FS.padded (folder[0..$-1]);
+
+                        // prepare our filename buffer
+                        sfnbuf = prefix.dup;
+                        
+                        while (.readdir(&entry,dir))
+                              {
+                              auto len = tango.stdc.string.strlen (entry.name.ptr);
+                              auto str = entry.name.ptr [0 .. len];
+                              ++len;  // include the null
+
+                              // resize the buffer as necessary ...
+                              if (sfnbuf.length < prefix.length + len)
+                                  sfnbuf.length = prefix.length + len;
+
+                              sfnbuf [prefix.length .. prefix.length + len]
+                                      = entry.name.ptr [0 .. len];
+
+                              // skip "..." names
+                              if (str.length > 3 || str != "..."[0 .. str.length])
+                                 {
+                                 FileInfo info = void;
+                                 info.bytes  = 0;
+                                 info.name   = str;
+                                 info.path   = prefix;
+                                 info.hidden = str[0] is '.';
+                                 info.folder = info.system = false;
+                                 
+                                 if (! .stat (sfnbuf.ptr, &sbuf))
+                                    {
+                                    info.folder = (sbuf.st_mode & S_IFDIR) != 0;
+                                    if (info.folder is false)
+                                        if ((sbuf.st_mode & S_IFREG) is 0)
+                                             info.system = true;
+                                        else
+                                           info.bytes = cast(ulong) sbuf.st_size;
+                                    }
+                                 if (all || (info.hidden | info.system) is false)
+                                     if ((ret = dg(info)) != 0)
+                                          break;
+                                 }
+                              }
+                        return ret;
+                }
+        }
+
+        /***********************************************************************
+
                 Posix-specific code
 
         ***********************************************************************/
 
-        version (Posix)
+		else version (Posix)
         {
                 /***************************************************************
 
@@ -974,307 +1273,6 @@ package struct FS
                                  info.folder = info.system = false;
                                  
                                  if (! stat (sfnbuf.ptr, &sbuf))
-                                    {
-                                    info.folder = (sbuf.st_mode & S_IFDIR) != 0;
-                                    if (info.folder is false)
-                                        if ((sbuf.st_mode & S_IFREG) is 0)
-                                             info.system = true;
-                                        else
-                                           info.bytes = cast(ulong) sbuf.st_size;
-                                    }
-                                 if (all || (info.hidden | info.system) is false)
-                                     if ((ret = dg(info)) != 0)
-                                          break;
-                                 }
-                              }
-                        return ret;
-                }
-        }
-
-        /***********************************************************************
-
-                Escape-specific code
-
-        ***********************************************************************/
-
-        version (Escape)
-        {
-                /***************************************************************
-
-                        Get info about this path
-
-                ***************************************************************/
-
-                private static uint getInfo (char[] name, ref stat_t stats)
-                {
-                        if (.stat (name.ptr, &stats))
-                            exception (name);
-
-                        return stats.st_mode;
-                }
-
-                /***************************************************************
-
-                        Return whether the file or path exists
-
-                ***************************************************************/
-
-                static bool exists (char[] name)
-                {
-                        stat_t stats = void;
-                        return .stat (name.ptr, &stats) is 0;
-                }
-
-                /***************************************************************
-
-                        Return the file length (in bytes)
-
-                ***************************************************************/
-
-                static ulong fileSize (char[] name)
-                {
-                        stat_t stats = void;
-
-                        getInfo (name, stats);
-                        return cast(ulong) stats.st_size;
-                }
-
-                /***************************************************************
-
-                        Is this file writable?
-
-                ***************************************************************/
-
-                static bool isWritable (char[] name)
-                {
-                		// TODO always writable atm
-                		return true;
-                }
-
-                /***************************************************************
-
-                        Is this file actually a folder/directory?
-
-                ***************************************************************/
-
-                static bool isFolder (char[] name)
-                {
-                        stat_t stats = void;
-
-                        return S_ISDIR(cast(mode_t)getInfo(name, stats));
-                }
-
-                /***************************************************************
-
-                        Is this a normal file?
-
-                ***************************************************************/
-
-                static bool isFile (char[] name)
-                {
-                        stat_t stats = void;
-
-                        return S_ISREG(cast(mode_t)getInfo(name, stats));
-                }
-
-                /***************************************************************
-
-                        Return timestamp information
-
-                        Timestamps are returns in a format dictated by the 
-                        file-system. For example NTFS keeps UTC time, 
-                        while FAT timestamps are based on the local time
-
-                ***************************************************************/
-
-                static Stamps timeStamps (char[] name)
-                {
-                        static Time convert (typeof(stat_t.st_mtime) secs)
-                        {
-                                return Time.epoch1970 +
-                                       TimeSpan.fromSeconds(secs);
-                        }
-                        
-                        stat_t stats = void;
-                        Stamps time  = void;
-
-                        getInfo (name, stats);
-
-                        time.modified = convert (stats.st_mtime);
-                        time.accessed = convert (stats.st_atime);
-                        time.created  = convert (stats.st_ctime);
-                        return time;
-                }
-
-                /***************************************************************
-
-                        Set the accessed and modified timestamps of the
-                        specified file
-
-                ***************************************************************/
-
-                static void timeStamps (char[] name, Time accessed, Time modified)
-                {
-                    	// TODO not available
-                        assert(0);
-                }
-
-                /***********************************************************************
-
-                        Transfer the content of another file to this one. Returns a
-                        reference to this class on success, or throws an IOException
-                        upon failure.
-
-                        Note: allocates a memory buffer
-
-                ***********************************************************************/
-
-                static void copy (char[] source, char[] dest)
-                {
-                        auto src = .open (source.ptr, IO_READ);
-                        scope (exit)
-                               if (src != -1)
-                                   .close (src);
-
-                        auto dst = .open (dest.ptr, IO_CREATE | IO_READ | IO_WRITE);
-                        scope (exit)
-                               if (dst != -1)
-                                   .close (dst);
-
-                        if (src < 0 || dst < 0)
-                            exception (source);
-
-                        // copy content
-                        ubyte[] buf = new ubyte [16 * 1024];
-                        int read = .read (src, buf.ptr, buf.length);
-                        while (read > 0)
-                              {
-                              auto p = buf.ptr;
-                              do {
-                                 int written = .write (dst, p, read);
-                                 p += written;
-                                 read -= written;
-                                 if (written < 0)
-                                     exception (dest);
-                                 } while (read > 0);
-                              read = .read (src, buf.ptr, buf.length);
-                              }
-                        if (read < 0)
-                            exception (source);
-
-                        // TODO no timestamp-copy here
-                }
-
-                /***************************************************************
-
-                        Remove the file/directory from the file-system. 
-                        Returns true on success - false otherwise.
-
-                ***************************************************************/
-
-                static bool remove (char[] name)
-                {
-                        return .unlink(name.ptr) != -1;
-                }
-
-                /***************************************************************
-
-                       change the name or location of a file/directory, and
-                       adopt the provided FilePath
-
-                ***************************************************************/
-
-                static void rename (char[] src, char[] dst)
-                {
-                		// TODO not supported
-                		assert(0);
-                }
-
-                /***************************************************************
-
-                        Create a new file
-
-                ***************************************************************/
-
-                static void createFile (char[] name)
-                {
-                        int fd;
-
-                        fd = .open (name.ptr, IO_CREATE | IO_WRITE | IO_TRUNCATE);
-                        if (fd < 0)
-                            exception (name);
-                        .close(fd);
-                }
-
-                /***************************************************************
-
-                        Create a new directory
-
-                ***************************************************************/
-
-                static void createFolder (char[] name)
-                {
-                        if (.mkdir (name.ptr))
-                            exception (name);
-                }
-                /***************************************************************
-
-                        List the set of filenames within this folder.
-
-                        Each path and filename is passed to the provided
-                        delegate, along with the path prefix and whether
-                        the entry is a folder or not.
-
-                        Note: allocates and reuses a small memory buffer
-
-                ***************************************************************/
-
-                static int list (char[] folder, int delegate(ref FileInfo) dg, bool all=false)
-                {
-                        int             ret;
-                        int	            dir;
-                        dirent          entry;
-                        stat_t          sbuf;
-                        char[]          prefix;
-                        char[]          sfnbuf;
-
-                        dir = .opendir (folder.ptr);
-                        if (! dir)
-                              return ret;
-
-                        scope (exit)
-                               .closedir (dir);
-
-                        // ensure a trailing '/' is present
-                        prefix = FS.padded (folder[0..$-1]);
-
-                        // prepare our filename buffer
-                        sfnbuf = prefix.dup;
-                        
-                        while (.readdir(&entry,dir))
-                              {
-                              auto len = tango.stdc.string.strlen (entry.name.ptr);
-                              auto str = entry.name.ptr [0 .. len];
-                              ++len;  // include the null
-
-                              // resize the buffer as necessary ...
-                              if (sfnbuf.length < prefix.length + len)
-                                  sfnbuf.length = prefix.length + len;
-
-                              sfnbuf [prefix.length .. prefix.length + len]
-                                      = entry.name.ptr [0 .. len];
-
-                              // skip "..." names
-                              if (str.length > 3 || str != "..."[0 .. str.length])
-                                 {
-                                 FileInfo info = void;
-                                 info.bytes  = 0;
-                                 info.name   = str;
-                                 info.path   = prefix;
-                                 info.hidden = str[0] is '.';
-                                 info.folder = info.system = false;
-                                 
-                                 if (! .stat (sfnbuf.ptr, &sbuf))
                                     {
                                     info.folder = (sbuf.st_mode & S_IFDIR) != 0;
                                     if (info.folder is false)
@@ -2150,9 +2148,9 @@ body
                            ((c2 >= 'a' && c2 <= 'z') ? c2 - ('a' - 'A') : c2);
                 return true;
                 }
-        version (Posix)
+        else version (Escape)
                  return c1 == c2;
-        version (Escape)
+        else version (Posix)
                  return c1 == c2;
         }
 
@@ -2234,9 +2232,11 @@ debug (UnitTest)
         unittest
         {
         version (Win32)
-        assert(patternMatch("foo", "Foo"));
-        version (Posix)
-        assert(!patternMatch("foo", "Foo"));
+        	assert(patternMatch("foo", "Foo"));
+        else version (Escape)
+        	assert(!patternMatch("foo", "Foo"));
+        else version (Posix)
+        	assert(!patternMatch("foo", "Foo"));
         
         assert(patternMatch("foo", "*"));
         assert(patternMatch("foo.bar", "*"));

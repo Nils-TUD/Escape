@@ -16,31 +16,30 @@ version (Win32)
         {
         public import tango.sys.win32.UserGdi;
         }
-
-version (linux)
+else version (Escape)
+		{
+		}
+else version (linux)
         {
         public import tango.sys.linux.linux;
         alias tango.sys.linux.linux posix;
         }
 
-version (darwin)
+else version (darwin)
         {
         public import tango.sys.darwin.darwin;
         alias tango.sys.darwin.darwin posix;
         }
-version (freebsd)
+else version (freebsd)
         {
         public import tango.sys.freebsd.freebsd;
         alias tango.sys.freebsd.freebsd posix;
         }
-version (solaris)
+else version (solaris)
         {
         public import tango.sys.solaris.solaris;
         alias tango.sys.solaris.solaris posix;
         }
-version (Escape)
-		{
-		}
 
 /*******************************************************************************
 
@@ -79,22 +78,21 @@ version (Win32)
                        HLOCAL LocalFree(HLOCAL hMem);
                        }
         }
-else
-version (Posix)
-        {
-        private import tango.stdc.errno;
-        private import tango.stdc.string;
-        }
 else version (Escape)
 {
 	private import tango.stdc.errno;
 	private import tango.stdc.string;
 }
+else version (Posix)
+{
+	private import tango.stdc.errno;
+	private import tango.stdc.string;
+}
 else
-   {
-   pragma (msg, "Unsupported environment; neither Win32 or Posix is declared");
-   static assert(0);
-   }
+{
+	pragma (msg, "Unsupported environment; neither Win32 or Posix is declared");
+	static assert(0);
+}
 
    
 /*******************************************************************************

@@ -29,10 +29,9 @@ version (Windows)
         private extern (Windows) bool WriteConsoleW (int, wchar*, int, int*, void*);
         private extern (Windows) int MultiByteToWideChar (int, int, char*, int, wchar*, int);
         } 
-else 
-version (Posix)
-         extern(C) ptrdiff_t write (int, in void*, size_t);
 else version (Escape)
+         extern(C) ptrdiff_t write (int, in void*, size_t);
+else version (Posix)
          extern(C) ptrdiff_t write (int, in void*, size_t);
 
 
@@ -82,10 +81,10 @@ extern(C) void consoleString (char[] s)
                    // output is probably redirected (we assume utf8 output)
                    WriteFile (handle, s.ptr, s.length, &count, null);
                 }
-
-        version (Posix)
-                 write (2, s.ptr, s.length);
+		
         version (Escape)
+                 write (2, s.ptr, s.length);
+		else version (Posix)
                  write (2, s.ptr, s.length);
 }
 
@@ -119,9 +118,9 @@ struct Console
         {
                 version (Windows)
                          const eol = "\r\n";
-                version (Posix)
+                else version (Escape)
                          const eol = "\n";
-                version (Escape)
+        		else version (Posix)
                          const eol = "\n";
 
                 return emit (eol);

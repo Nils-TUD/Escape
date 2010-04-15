@@ -66,7 +66,7 @@ interface FileConst
                 static const char[] NewlineString = "\r\n";
         }
 
-        version (Posix)
+        version (Escape)
         {
                 ///
                 enum : char 
@@ -103,7 +103,7 @@ interface FileConst
                 static const char[] NewlineString = "\n";
         }
 
-        version (Escape)
+		else version (Posix)
         {
                 ///
                 enum : char 

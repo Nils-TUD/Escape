@@ -133,6 +133,10 @@ extern (C){
             int   _bufsiz;
             int   __tmpnum;
         }
+		else version(Escape)
+		{
+			// the content doesn't really matter
+		}
         else version( linux )
         {
             char*   _read_ptr;
@@ -229,10 +233,6 @@ extern (C){
             // .. I don't think we really need this in D
         //  #endif
         }
-		else version(Escape)
-		{
-			// the content doesn't really matter
-		}
         else
         {
             static assert( false );
@@ -329,7 +329,15 @@ version( Win32 )
        FILE* stdaux = &_iob[3];
        FILE* stdprn = &_iob[4];
     }
-} else version( linux ) {
+}
+else version(Escape)
+{
+	extern FILE *stdin;
+	extern FILE *stdout;
+	extern FILE *stderr;
+}
+else version( linux )
+{
     enum
     {
         _IOFBF = 0,
@@ -373,12 +381,6 @@ else version( solaris )
     FILE* stdin  = &__iob[0];
     FILE* stdout = &__iob[1];
     FILE* stderr = &__iob[2];
-}
-else version(Escape)
-{
-	extern FILE *stdin;
-	extern FILE *stdout;
-	extern FILE *stderr;
 }
 else
 {
@@ -462,6 +464,17 @@ version( Win32 )
     int   _vsnprintf(char* s, size_t n, in char* format, va_list arg);
     alias _vsnprintf vsnprintf;
 }
+else version(Escape)
+{
+	void flush();
+    void clearerr(FILE* stream);
+    int  feof(FILE* stream);
+    int  ferror(FILE* stream);
+    int  fileno(FILE *);
+
+    int  snprintf(char* s, size_t n, in char* format, ...);
+    int  vsnprintf(char* s, size_t n, in char* format, va_list arg);
+}
 else version( linux )
 {
     void rewind(FILE* stream);
@@ -505,17 +518,6 @@ else version( solaris )
 
     int  snprintf(char* s, size_t n, in char* format, ...);
     int  vsnprintf(char* s, size_t n, in char* format, va_list arg);    
-}
-else version(Escape)
-{
-	void flush();
-    void clearerr(FILE* stream);
-    int  feof(FILE* stream);
-    int  ferror(FILE* stream);
-    int  fileno(FILE *);
-
-    int  snprintf(char* s, size_t n, in char* format, ...);
-    int  vsnprintf(char* s, size_t n, in char* format, va_list arg);
 }
 else
 {

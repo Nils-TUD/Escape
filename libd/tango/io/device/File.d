@@ -587,161 +587,6 @@ class File : Device, Device.Seek, Device.Truncate
 
         /***********************************************************************
 
-                 Unix-specific code. Note that some methods are 32bit only
-        
-        ***********************************************************************/
-
-        version (Posix)
-        {
-                /***************************************************************
-
-                    Low level open for sub-classes that need to apply specific
-                    attributes.
-
-                    Return:
-                        false in case of failure
-
-                ***************************************************************/
-
-                protected bool open (char[] path, Style style,
-                                     int addflags, int access = 0666)
-                {
-                        alias int[] Flags;
-
-                        const O_LARGEFILE = 0x8000;
-
-                        static const Flags Access =  
-                                        [
-                                        0,                      // invalid
-                                        O_RDONLY,
-                                        O_WRONLY,
-                                        O_RDWR,
-                                        ];
-                                                
-                        static const Flags Create =  
-                                        [
-                                        0,                      // open existing
-                                        O_CREAT | O_TRUNC,      // truncate always
-                                        O_CREAT,                // create if needed
-                                        O_APPEND | O_CREAT,     // append
-                                        O_CREAT | O_EXCL,       // can't exist
-                                        ];
-
-                        static const short[] Locks =   
-                                        [
-                                        F_WRLCK,                // no sharing
-                                        F_RDLCK,                // shared read
-                                        ];
-                                                
-                        // remember our settings
-                        assert(path);
-                        path_ = path;
-                        style_ = style;
-
-                        // zero terminate and convert to utf16
-                        char[512] zero = void;
-                        auto name = stdc.toStringz (path, zero);
-                        auto mode = Access[style.access] | Create[style.open];
-
-                        // always open as a large file
-                        handle = posix.open (name, mode | O_LARGEFILE | addflags, 
-                                             access);
-                        if (handle is -1)
-                            return false;
-
-                        return true;
-                }
-
-                /***************************************************************
-
-                        Open a file with the provided style.
-
-                        Note that files default to no-sharing. That is, 
-                        they are locked exclusively to the host process 
-                        unless otherwise stipulated. We do this in order
-                        to expose the same default behaviour as Win32
-
-                        NO FILE LOCKING FOR BORKED POSIX
-
-                ***************************************************************/
-
-                void open (char[] path, Style style = ReadExisting)
-                {
-                    if (! open (path, style, 0))
-                          error;
-                }
-
-                /***************************************************************
-
-                        Set the file size to be that of the current seek 
-                        position. The file must be writable for this to
-                        succeed.
-
-                ***************************************************************/
-
-                void truncate ()
-                {
-                        truncate (position);
-                }               
-
-                /***************************************************************
-
-                        Set the file size to be the specified length. The 
-                        file must be writable for this to succeed.
-
-                ***************************************************************/
-
-                override void truncate (long size)
-                {
-                        // set filesize to be current seek-position
-                        if (posix.ftruncate (handle, cast(off_t) size) is -1)
-                            error;
-                }               
-
-                /***************************************************************
-
-                        Set the file seek position to the specified offset
-                        from the given anchor. 
-
-                ***************************************************************/
-
-                override long seek (long offset, Anchor anchor = Anchor.Begin)
-                {
-                        long result = posix.lseek (handle, cast(off_t) offset, anchor);
-                        if (result is -1)
-                            error;
-                        return result;
-                }               
-
-                /***************************************************************
-                
-                        Return the current file position.
-                
-                ***************************************************************/
-
-                long position ()
-                {
-                        return seek (0, Anchor.Current);
-                }               
-
-                /***************************************************************
-        
-                        Return the total length of this file. 
-
-                ***************************************************************/
-
-                long length ()
-                {
-                        stat_t stats = void;
-                        if (posix.fstat (handle, &stats))
-                            error;
-                        return cast(long) stats.st_size;
-                }               
-        }
-
-
-        /***********************************************************************
-
                  Escape-specific code. Note that some methods are 32bit only
         
         ***********************************************************************/
@@ -899,6 +744,161 @@ class File : Device, Device.Seek, Device.Truncate
                             error;
                         return cast(long) stats.st_size;
                 }
+        }
+
+
+        /***********************************************************************
+
+                 Unix-specific code. Note that some methods are 32bit only
+        
+        ***********************************************************************/
+
+		else version (Posix)
+        {
+                /***************************************************************
+
+                    Low level open for sub-classes that need to apply specific
+                    attributes.
+
+                    Return:
+                        false in case of failure
+
+                ***************************************************************/
+
+                protected bool open (char[] path, Style style,
+                                     int addflags, int access = 0666)
+                {
+                        alias int[] Flags;
+
+                        const O_LARGEFILE = 0x8000;
+
+                        static const Flags Access =  
+                                        [
+                                        0,                      // invalid
+                                        O_RDONLY,
+                                        O_WRONLY,
+                                        O_RDWR,
+                                        ];
+                                                
+                        static const Flags Create =  
+                                        [
+                                        0,                      // open existing
+                                        O_CREAT | O_TRUNC,      // truncate always
+                                        O_CREAT,                // create if needed
+                                        O_APPEND | O_CREAT,     // append
+                                        O_CREAT | O_EXCL,       // can't exist
+                                        ];
+
+                        static const short[] Locks =   
+                                        [
+                                        F_WRLCK,                // no sharing
+                                        F_RDLCK,                // shared read
+                                        ];
+                                                
+                        // remember our settings
+                        assert(path);
+                        path_ = path;
+                        style_ = style;
+
+                        // zero terminate and convert to utf16
+                        char[512] zero = void;
+                        auto name = stdc.toStringz (path, zero);
+                        auto mode = Access[style.access] | Create[style.open];
+
+                        // always open as a large file
+                        handle = posix.open (name, mode | O_LARGEFILE | addflags, 
+                                             access);
+                        if (handle is -1)
+                            return false;
+
+                        return true;
+                }
+
+                /***************************************************************
+
+                        Open a file with the provided style.
+
+                        Note that files default to no-sharing. That is, 
+                        they are locked exclusively to the host process 
+                        unless otherwise stipulated. We do this in order
+                        to expose the same default behaviour as Win32
+
+                        NO FILE LOCKING FOR BORKED POSIX
+
+                ***************************************************************/
+
+                void open (char[] path, Style style = ReadExisting)
+                {
+                    if (! open (path, style, 0))
+                          error;
+                }
+
+                /***************************************************************
+
+                        Set the file size to be that of the current seek 
+                        position. The file must be writable for this to
+                        succeed.
+
+                ***************************************************************/
+
+                void truncate ()
+                {
+                        truncate (position);
+                }               
+
+                /***************************************************************
+
+                        Set the file size to be the specified length. The 
+                        file must be writable for this to succeed.
+
+                ***************************************************************/
+
+                override void truncate (long size)
+                {
+                        // set filesize to be current seek-position
+                        if (posix.ftruncate (handle, cast(off_t) size) is -1)
+                            error;
+                }               
+
+                /***************************************************************
+
+                        Set the file seek position to the specified offset
+                        from the given anchor. 
+
+                ***************************************************************/
+
+                override long seek (long offset, Anchor anchor = Anchor.Begin)
+                {
+                        long result = posix.lseek (handle, cast(off_t) offset, anchor);
+                        if (result is -1)
+                            error;
+                        return result;
+                }               
+
+                /***************************************************************
+                
+                        Return the current file position.
+                
+                ***************************************************************/
+
+                long position ()
+                {
+                        return seek (0, Anchor.Current);
+                }               
+
+                /***************************************************************
+        
+                        Return the total length of this file. 
+
+                ***************************************************************/
+
+                long length ()
+                {
+                        stat_t stats = void;
+                        if (posix.fstat (handle, &stats))
+                            error;
+                        return cast(long) stats.st_size;
+                }               
         }
 }
 

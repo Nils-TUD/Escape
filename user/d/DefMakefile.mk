@@ -9,8 +9,9 @@ SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
-DC = $(BUILD)/dmd
-DFLAGS = $(DDEFFLAGS) -I$(LIBD)
+DC = dmd
+DFLAGS = $(DDEFFLAGS) -version=Escape -I$(LIBD) -I$(LIBD)/tango/core -I$(LIBD)/tango/core/vendor \
+	-I$(LIBD)/tango/core/rt/compiler/dmd -L-L$(BUILD)
 LINKER = ld
 LFLAGS = -T$(LDCONF) --build-id=none $(ADDFLAGS)
 

@@ -16,10 +16,10 @@ private import tango.text.locale.Core;
 
 version (Windows)
   private import tango.text.locale.Win32;
-else version (Posix)
-  private import tango.text.locale.Posix;
 else version (Escape)
   private import tango.text.locale.Escape;
+else version (Posix)
+  private import tango.text.locale.Posix;
 
   /**
   Compares strings using the specified case and cultural comparision rules.

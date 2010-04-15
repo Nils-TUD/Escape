@@ -38,6 +38,10 @@ version (Win32)
 
     //version = GC_Use_Alloc_Win32;
 }
+else version (Escape)
+{
+    private import tango.stdc.stdlib;
+}
 else version (Posix)
 {
     private import tango.stdc.posix.sys.mman;

@@ -1187,8 +1187,7 @@ class ModuleInfo
 // linux: this gets initialized in _moduleCtor()
 extern (C) ModuleInfo[] _moduleinfo_array;
 
-
-version (linux)
+version (Escape)
 {
     // This linked list is created by a compiler generated function inserted
     // into the .ctor list by the compiler.
@@ -1200,8 +1199,7 @@ version (linux)
 
     extern (C) ModuleReference* _Dmodule_ref;   // start of linked list
 }
-
-version (Escape)
+else version (linux)
 {
     // This linked list is created by a compiler generated function inserted
     // into the .ctor list by the compiler.
@@ -1248,7 +1246,8 @@ extern (C) int _fatexit(void *);
 extern (C) void _moduleCtor()
 {
     debug(PRINTF) printf("_moduleCtor()\n");
-    version (linux)
+    
+    version (Escape)
     {
         int len = 0;
         ModuleReference *mr;
@@ -1262,8 +1261,7 @@ extern (C) void _moduleCtor()
             len++;
         }
     }
-    
-    version (Escape)
+    else version (linux)
     {
         int len = 0;
         ModuleReference *mr;

@@ -1,0 +1,7 @@
+[compileoptions]
+buildtype = EXECUTABLE
+out = bin
+outname = Escape - DUser
+buildtool = rebuild -rfbuild.rf
+extraOptions = -oq$DEEBUILDER.OUTPUTPATH\n-of$DEEBUILDER.OUTPUTEXE\n$DEEBUILDER.SRCLIBS.-I\n$DEEBUILDER.SRCFOLDERS.-I\n$DEEBUILDER.SRCMODULES\n
+

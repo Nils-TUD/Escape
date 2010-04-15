@@ -32,6 +32,8 @@ version( DigitalMars )
         {
             version=EnableVararg;
         }
+    	else version(Escape)
+    	{}
         else version( Posix )
         {
             version=EnableVararg;

@@ -345,11 +345,104 @@ struct Environment
 
         /***********************************************************************
 
+                Escape implementation
+
+        ***********************************************************************/
+
+        version (Escape)
+        {
+        		private const uint MAX_NAME_LEN = 64;
+        	
+                /**************************************************************
+
+                        Returns the provided 'def' value if the variable 
+                        does not exist
+
+                **************************************************************/
+
+                static char[] get (char[] variable, char[] def = null)
+                {
+                		char tmp[MAX_NAME_LEN];
+                        if (!.getEnv(tmp.ptr,MAX_NAME_LEN,(variable ~ '\0').ptr))
+                            return def;
+
+                        return tmp[0 .. strlen(tmp.ptr)].dup;
+                }
+
+                /**************************************************************
+
+                        clears the variable, if value is null or empty
+        
+                **************************************************************/
+
+                static void set (char[] variable, char[] value = null)
+                {
+                        int result;
+
+                        // TODO not supported yet
+                        //if (value.length is 0)
+                        //    unsetenv ((variable ~ '\0').ptr);
+                        //else
+                           result = .setEnv((variable ~ '\0').ptr, (value ~ '\0').ptr);
+
+                        if (result < 0)
+                            exception (SysError.lastMsg);
+                }
+
+                /**************************************************************
+
+                        Get all set environment variables as an associative
+                        array.
+
+                **************************************************************/
+
+                static char[][char[]] get ()
+                {
+                        char[][char[]] arr;
+                        char tmp[MAX_NAME_LEN];
+                        for(uint i = 0; .getEnvByIndex(tmp.ptr,MAX_NAME_LEN,i); i++)
+                        {
+                        	char[] key = tmp[0..strlen(tmp.ptr)].dup;
+                        	arr[key] = get(key);
+                        }
+                        return arr;
+                }
+
+                /**************************************************************
+
+                        Set the current working directory
+
+                **************************************************************/
+
+                static void cwd (char[] path)
+                {
+                        set("CWD",path);
+                }
+
+                /**************************************************************
+
+                        Get the current working directory
+
+                **************************************************************/
+
+                static char[] cwd ()
+                {
+                		auto path = get("CWD");
+                        if (path[$-2] is '/') // root path has the slash
+                            path.length = path.length-1;
+                        else
+                            path[$-1] = '/';
+                        return path;
+                }
+        }
+
+        /***********************************************************************
+
                 Posix implementation
 
         ***********************************************************************/
 
-        version (Posix)
+		else version (Posix)
         {
                 /**************************************************************
 
@@ -448,99 +541,6 @@ struct Environment
                             exception ("Failed to get current directory");
 
                         auto path = s[0 .. strlen(s)+1].dup;
-                        if (path[$-2] is '/') // root path has the slash
-                            path.length = path.length-1;
-                        else
-                            path[$-1] = '/';
-                        return path;
-                }
-        }
-
-        /***********************************************************************
-
-                Escape implementation
-
-        ***********************************************************************/
-
-        version (Escape)
-        {
-        		private const uint MAX_NAME_LEN = 64;
-        	
-                /**************************************************************
-
-                        Returns the provided 'def' value if the variable 
-                        does not exist
-
-                **************************************************************/
-
-                static char[] get (char[] variable, char[] def = null)
-                {
-                		char tmp[MAX_NAME_LEN];
-                        if (!.getEnv(tmp.ptr,MAX_NAME_LEN,(variable ~ '\0').ptr))
-                            return def;
-
-                        return tmp[0 .. strlen(tmp.ptr)].dup;
-                }
-
-                /**************************************************************
-
-                        clears the variable, if value is null or empty
-        
-                **************************************************************/
-
-                static void set (char[] variable, char[] value = null)
-                {
-                        int result;
-
-                        // TODO not supported yet
-                        //if (value.length is 0)
-                        //    unsetenv ((variable ~ '\0').ptr);
-                        //else
-                           result = .setEnv((variable ~ '\0').ptr, (value ~ '\0').ptr);
-
-                        if (result < 0)
-                            exception (SysError.lastMsg);
-                }
-
-                /**************************************************************
-
-                        Get all set environment variables as an associative
-                        array.
-
-                **************************************************************/
-
-                static char[][char[]] get ()
-                {
-                        char[][char[]] arr;
-                        char tmp[MAX_NAME_LEN];
-                        for(uint i = 0; .getEnvByIndex(tmp.ptr,MAX_NAME_LEN,i); i++)
-                        {
-                        	char[] key = tmp[0..strlen(tmp.ptr)].dup;
-                        	arr[key] = get(key);
-                        }
-                        return arr;
-                }
-
-                /**************************************************************
-
-                        Set the current working directory
-
-                **************************************************************/
-
-                static void cwd (char[] path)
-                {
-                        set("CWD",path);
-                }
-
-                /**************************************************************
-
-                        Get the current working directory
-
-                **************************************************************/
-
-                static char[] cwd ()
-                {
-                		auto path = get("CWD");
                         if (path[$-2] is '/') // root path has the slash
                             path.length = path.length-1;
                         else

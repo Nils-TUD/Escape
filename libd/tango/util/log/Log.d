@@ -208,18 +208,16 @@ public struct Log
 
                 foreach (p; Pairs)
                          map[p.name] = p.value;
-
-                version (Posix)       
+		 
+		         version (Escape)       
+	             {
+	                     beginTime = Clock.now;
+	             }
+        		else version (Posix)       
                 {
                         beginTime = Clock.now;
                 }
-
-                version (Escape)       
-                {
-                        beginTime = Clock.now;
-                }
-
-                version (Win32)
+				else version (Win32)
                 {
                         ulong freq;
 
@@ -254,17 +252,15 @@ public struct Log
 
         static Time time ()
         {
-                version (Posix)       
+	            version (Escape)       
+	            {
+	            		return Clock.now;
+	            }
+        		else version (Posix)       
                 {
                         return Clock.now;
                 }
-
-                version (Escape)       
-                {
-                		return Clock.now;
-                }
-
-                version (Win32)
+        		else version (Win32)
                 {
                         ulong now;
 

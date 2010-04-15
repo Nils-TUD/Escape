@@ -11,14 +11,13 @@ private import tango.io.device.Device;
 
 private import tango.core.Exception;
 
-version (Posix)
-{
-    private import tango.stdc.posix.unistd;
-}
-
 version (Escape)
 {
     private import tango.stdc.io;
+}
+else version (Posix)
+{
+    private import tango.stdc.posix.unistd;
 }
 
 debug (PipeConduit)
@@ -158,11 +157,11 @@ class Pipe
         {
             this(bufferSize, null);
         }
-        else version (Posix)
+        else version (Escape)
         {
             int fd[2];
 
-            if (pipe(fd) == 0)
+            if (.pipe(&fd[0],&fd[1]) == 0)
             {
                 _source = new PipeConduit(cast(ISelectable.Handle) fd[0], bufferSize);
                 _sink = new PipeConduit(cast(ISelectable.Handle) fd[1], bufferSize);
@@ -172,11 +171,11 @@ class Pipe
                 error();
             }
         }
-        else version (Escape)
+        else version (Posix)
         {
             int fd[2];
 
-            if (.pipe(&fd[0],&fd[1]) == 0)
+            if (pipe(fd) == 0)
             {
                 _source = new PipeConduit(cast(ISelectable.Handle) fd[0], bufferSize);
                 _sink = new PipeConduit(cast(ISelectable.Handle) fd[1], bufferSize);

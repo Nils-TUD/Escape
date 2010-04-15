@@ -168,6 +168,8 @@ version( DigitalMarsWin32 )
     }
   }
 }
+else version( Escape)
+{}
 else version( linux )
 {
     enum

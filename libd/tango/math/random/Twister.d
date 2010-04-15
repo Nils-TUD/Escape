@@ -17,14 +17,13 @@ module tango.math.random.Twister;
 
 version (Win32)
 	private extern(Windows) int QueryPerformanceCounter (ulong *);
-
-version (Posix)
-{
-	private import tango.stdc.posix.sys.time;
-}
-version (Escape)
+else version (Escape)
 {
 	extern (C) ulong cpu_rdtsc();
+}
+else version (Posix)
+{
+	private import tango.stdc.posix.sys.time;
 }
         
 /*******************************************************************************
@@ -221,17 +220,17 @@ struct Twister
         {
                 ulong s;
 
-                version (Posix)
+                version (Escape)
+                		s = cpu_rdtsc();
+        		else version (Posix)
                         {
                         timeval tv;
 
                         gettimeofday (&tv, null);
                         s = tv.tv_usec;
                         }
-                version (Win32)
+				else version (Win32)
                          QueryPerformanceCounter (&s);
-                version (Escape)
-                		s = cpu_rdtsc();
 
                 return seed (cast(uint) s);
         }

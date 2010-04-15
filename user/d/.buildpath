@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<buildpath>
+	<buildpathentry kind="src" path="ddd"/>
+	<buildpathentry kind="src" path="dtest"/>
+	<buildpathentry kind="con" path="org.eclipse.dltk.launching.INTERPRETER_CONTAINER"/>
+	<buildpathentry combineaccessrules="false" kind="prj" path="/Escape - Libd"/>
+	<buildpathentry external="true" kind="lib" path="/home/hrniels/escape/libd"/>
+</buildpath>

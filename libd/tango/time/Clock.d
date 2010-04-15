@@ -176,132 +176,7 @@ struct Clock
                 }
         }
 
-        version (Posix)
-        {
-                /***************************************************************
-
-                        Return the current time as UTC since the epoch
-
-                ***************************************************************/
-
-                static Time now ()
-                {
-                        timeval tv = void;
-                        if (gettimeofday (&tv, null))
-                            throw new PlatformException ("Clock.now :: Posix timer is not available");
-
-                        return convert (tv);
-                }
-
-                /***************************************************************
-
-                        Set Date fields to represent the current time. 
-
-                ***************************************************************/
-
-                static DateTime toDate ()
-                {
-                        return toDate (now);
-                }
-
-                /***************************************************************
-
-                        Set fields to represent the provided UTC time. Note 
-                        that the conversion is limited by the underlying OS,
-                        and will fail to operate correctly with Time
-                        values beyond the domain. On Win32 the earliest
-                        representable date is 1601. On linux it is 1970. Both
-                        systems have limitations upon future dates also. Date
-                        is limited to millisecond accuracy at best.
-
-                **************************************************************/
-
-                static DateTime toDate (Time time)
-                {
-                        DateTime dt = void;
-                        auto timeval = convert (time);
-                        dt.time.millis = timeval.tv_usec / 1000;
-
-                        tm t = void;
-                        gmtime_r (&timeval.tv_sec, &t);
-
-                        dt.date.year    = t.tm_year + 1900;
-                        dt.date.month   = t.tm_mon + 1;
-                        dt.date.day     = t.tm_mday;
-                        dt.date.dow     = t.tm_wday;
-                        dt.date.era     = 0;
-                        dt.time.hours   = t.tm_hour;
-                        dt.time.minutes = t.tm_min;
-                        dt.time.seconds = t.tm_sec;
-
-                        // Calculate the day-of-year
-                        setDoy(dt);
-
-                        return dt;
-                }
-
-                /***************************************************************
-
-                        Convert Date fields to Time
-
-                        Note that the conversion is limited by the underlying 
-                        OS, and will not operate correctly with Time
-                        values beyond the domain. On Win32 the earliest
-                        representable date is 1601. On linux it is 1970. Both
-                        systems have limitations upon future dates also. Date
-                        is limited to millisecond accuracy at best.
-
-                ***************************************************************/
-
-                static Time fromDate (ref DateTime dt)
-                {
-                        tm t = void;
-
-                        t.tm_year = dt.date.year - 1900;
-                        t.tm_mon  = dt.date.month - 1;
-                        t.tm_mday = dt.date.day;
-                        t.tm_hour = dt.time.hours;
-                        t.tm_min  = dt.time.minutes;
-                        t.tm_sec  = dt.time.seconds;
-
-                        auto seconds = timegm (&t);
-                        return Time.epoch1970 + 
-                               TimeSpan.fromSeconds(seconds) + 
-                               TimeSpan.fromMillis(dt.time.millis);
-                }
-
-                /***************************************************************
-
-                        Convert timeval to a Time
-
-                ***************************************************************/
-
-                package static Time convert (ref timeval tv)
-                {
-                        return Time.epoch1970 + 
-                               TimeSpan.fromSeconds(tv.tv_sec) + 
-                               TimeSpan.fromMicros(tv.tv_usec);
-                }
-
-                /***************************************************************
-
-                        Convert Time to a timeval
-
-                ***************************************************************/
-
-                package static timeval convert (Time time)
-                {
-                        timeval tv = void;
-
-                        TimeSpan span = time - time.epoch1970;
-                        assert (span >= TimeSpan.zero);
-                        tv.tv_sec  = cast(typeof(tv.tv_sec)) span.seconds;
-                        tv.tv_usec = cast(typeof(tv.tv_usec)) (span.micros % 1_000_000L);
-                        return tv;
-                }
-        }
-
-        version (Escape)
+		else version (Escape)
         {
                 /***************************************************************
 
@@ -390,6 +265,131 @@ struct Clock
                         t.tm_sec  = dt.time.seconds;
 
                         auto seconds = .mktime (&t);
+                        return Time.epoch1970 + 
+                               TimeSpan.fromSeconds(seconds) + 
+                               TimeSpan.fromMillis(dt.time.millis);
+                }
+
+                /***************************************************************
+
+                        Convert timeval to a Time
+
+                ***************************************************************/
+
+                package static Time convert (ref timeval tv)
+                {
+                        return Time.epoch1970 + 
+                               TimeSpan.fromSeconds(tv.tv_sec) + 
+                               TimeSpan.fromMicros(tv.tv_usec);
+                }
+
+                /***************************************************************
+
+                        Convert Time to a timeval
+
+                ***************************************************************/
+
+                package static timeval convert (Time time)
+                {
+                        timeval tv = void;
+
+                        TimeSpan span = time - time.epoch1970;
+                        assert (span >= TimeSpan.zero);
+                        tv.tv_sec  = cast(typeof(tv.tv_sec)) span.seconds;
+                        tv.tv_usec = cast(typeof(tv.tv_usec)) (span.micros % 1_000_000L);
+                        return tv;
+                }
+        }
+
+		else version (Posix)
+        {
+                /***************************************************************
+
+                        Return the current time as UTC since the epoch
+
+                ***************************************************************/
+
+                static Time now ()
+                {
+                        timeval tv = void;
+                        if (gettimeofday (&tv, null))
+                            throw new PlatformException ("Clock.now :: Posix timer is not available");
+
+                        return convert (tv);
+                }
+
+                /***************************************************************
+
+                        Set Date fields to represent the current time. 
+
+                ***************************************************************/
+
+                static DateTime toDate ()
+                {
+                        return toDate (now);
+                }
+
+                /***************************************************************
+
+                        Set fields to represent the provided UTC time. Note 
+                        that the conversion is limited by the underlying OS,
+                        and will fail to operate correctly with Time
+                        values beyond the domain. On Win32 the earliest
+                        representable date is 1601. On linux it is 1970. Both
+                        systems have limitations upon future dates also. Date
+                        is limited to millisecond accuracy at best.
+
+                **************************************************************/
+
+                static DateTime toDate (Time time)
+                {
+                        DateTime dt = void;
+                        auto timeval = convert (time);
+                        dt.time.millis = timeval.tv_usec / 1000;
+
+                        tm t = void;
+                        gmtime_r (&timeval.tv_sec, &t);
+
+                        dt.date.year    = t.tm_year + 1900;
+                        dt.date.month   = t.tm_mon + 1;
+                        dt.date.day     = t.tm_mday;
+                        dt.date.dow     = t.tm_wday;
+                        dt.date.era     = 0;
+                        dt.time.hours   = t.tm_hour;
+                        dt.time.minutes = t.tm_min;
+                        dt.time.seconds = t.tm_sec;
+
+                        // Calculate the day-of-year
+                        setDoy(dt);
+
+                        return dt;
+                }
+
+                /***************************************************************
+
+                        Convert Date fields to Time
+
+                        Note that the conversion is limited by the underlying 
+                        OS, and will not operate correctly with Time
+                        values beyond the domain. On Win32 the earliest
+                        representable date is 1601. On linux it is 1970. Both
+                        systems have limitations upon future dates also. Date
+                        is limited to millisecond accuracy at best.
+
+                ***************************************************************/
+
+                static Time fromDate (ref DateTime dt)
+                {
+                        tm t = void;
+
+                        t.tm_year = dt.date.year - 1900;
+                        t.tm_mon  = dt.date.month - 1;
+                        t.tm_mday = dt.date.day;
+                        t.tm_hour = dt.time.hours;
+                        t.tm_min  = dt.time.minutes;
+                        t.tm_sec  = dt.time.seconds;
+
+                        auto seconds = timegm (&t);
                         return Time.epoch1970 + 
                                TimeSpan.fromSeconds(seconds) + 
                                TimeSpan.fromMillis(dt.time.millis);

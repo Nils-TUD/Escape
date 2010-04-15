@@ -89,12 +89,12 @@ extern (C) bool rt_trapExceptions = true;
 
 void _d_criticalInit()
 {
-    version (Posix)
+	version (Escape)
     {
         _STI_monitor_staticctor();
         _STI_critical_init();
     }
-    else version (Escape)
+	else version (Posix)
     {
         _STI_monitor_staticctor();
         _STI_critical_init();
@@ -130,12 +130,12 @@ extern (C) bool rt_init( ExceptionHandler dg = null )
 
 void _d_criticalTerm()
 {
-    version (Posix)
+	version (Escape)
     {
         _STD_critical_term();
         _STD_monitor_staticdtor();
     }
-    else version (Escape)
+    else version (Posix)
     {
         _STD_critical_term();
         _STD_monitor_staticdtor();
@@ -225,12 +225,12 @@ extern (C) int main(int argc, char **argv)
 	 */
 	__libc_stack_end = cast(void*)&argv;
     }
-    version (Posix)
+    version (Escape)
     {
         _STI_monitor_staticctor();
         _STI_critical_init();
     }
-    version (Escape)
+    else version (Posix)
     {
         _STI_monitor_staticctor();
         _STI_critical_init();
@@ -262,7 +262,7 @@ extern (C) int main(int argc, char **argv)
         wargs = null;
         wargc = 0;
     }
-    else version (Posix)
+    else version (Escape)
     {
         char[]* am = cast(char[]*) malloc(argc * (char[]).sizeof);
         scope(exit) free(am);
@@ -274,7 +274,7 @@ extern (C) int main(int argc, char **argv)
         }
         args = am[0 .. argc];
     }
-    else version (Escape)
+    else version (Posix)
     {
         char[]* am = cast(char[]*) malloc(argc * (char[]).sizeof);
         scope(exit) free(am);
@@ -346,12 +346,12 @@ extern (C) int main(int argc, char **argv)
 
     tryExec(&runAll);
 
-    version (Posix)
+    version (Escape)
     {
         _STD_critical_term();
         _STD_monitor_staticdtor();
     }
-    else version (Escape)
+    else version (Posix)
     {
         _STD_critical_term();
         _STD_monitor_staticdtor();

@@ -27,25 +27,29 @@ private import tango.io.Path : standard, native;
 *******************************************************************************/
 
 version (Win32)
-        {
-        private import Text = tango.text.Util;
-        private extern (Windows) DWORD GetLogicalDriveStringsA (DWORD, LPSTR);
-        private import tango.stdc.stringz : fromString16z, fromStringz;
-
-        enum {        
-            FILE_DEVICE_DISK = 7,
-            IOCTL_DISK_BASE = FILE_DEVICE_DISK,
-            METHOD_BUFFERED = 0,
-            FILE_READ_ACCESS = 1
-        }
-        uint CTL_CODE(uint t, uint f, uint m, uint a) {
-            return (t << 16) | (a << 14) | (f << 2) | m;
-        }
-
-        const IOCTL_DISK_GET_LENGTH_INFO = CTL_CODE(IOCTL_DISK_BASE,0x17,METHOD_BUFFERED,FILE_READ_ACCESS);
-        }
-
-version (Posix)
+{
+	private import Text = tango.text.Util;
+	private extern (Windows) DWORD GetLogicalDriveStringsA (DWORD, LPSTR);
+	private import tango.stdc.stringz : fromString16z, fromStringz;
+	
+	enum {        
+	    FILE_DEVICE_DISK = 7,
+	    IOCTL_DISK_BASE = FILE_DEVICE_DISK,
+	    METHOD_BUFFERED = 0,
+	    FILE_READ_ACCESS = 1
+	}
+	uint CTL_CODE(uint t, uint f, uint m, uint a) {
+	    return (t << 16) | (a << 14) | (f << 2) | m;
+	}
+	
+	const IOCTL_DISK_GET_LENGTH_INFO = CTL_CODE(IOCTL_DISK_BASE,0x17,METHOD_BUFFERED,FILE_READ_ACCESS);
+}
+else version (Escape)
+{
+	private import tango.stdc.env;
+	private import tango.stdc.string;
+}
+else version (Posix)
 {
 	private import tango.stdc.string;
 	private import tango.stdc.posix.unistd,
@@ -53,12 +57,6 @@ version (Posix)
 	
 	private import tango.io.device.File;
 	private import Integer = tango.text.convert.Integer;
-}
-
-version (Escape)
-{
-	private import tango.stdc.env;
-	private import tango.stdc.string;
 }
 
 /*******************************************************************************
@@ -451,7 +449,123 @@ struct FileSystem
 
         ***********************************************************************/
 
-        version (Posix)
+        version (Escape)
+        {
+                /***************************************************************
+
+                        Set the current working directory
+
+                        deprecated: see Environment.cwd()
+
+                ***************************************************************/
+
+                deprecated static void setDirectory (char[] path)
+                {
+                        char[512] tmp = void;
+                        tmp [path.length] = 0;
+                        tmp[0..path.length] = path;
+
+                        if (.setEnv("CWD",tmp.ptr) < 0)
+                            exception ("Failed to set current directory");
+                }
+
+                /***************************************************************
+
+                        Return the current working directory
+
+                        deprecated: see Environment.cwd()
+
+                ***************************************************************/
+
+                deprecated static char[] getDirectory ()
+                {
+                        char[512] tmp = void;
+
+                        if (.getEnv(tmp.ptr,tmp.length,"CWD") < 0)
+                            exception ("Failed to get current directory");
+
+                        auto path = tmp[0 .. strlen(tmp.ptr)+1].dup;
+                        path[$-1] = '/';
+                        return path;
+                }
+
+                /***************************************************************
+
+                        List the set of root devices.
+
+                 ***************************************************************/
+
+                static char[][] roots ()
+                {
+                        assert(0);
+                }
+
+                /***************************************************************
+ 
+                        Request how much free space in bytes is available on the 
+                        disk/mountpoint where folder resides.
+
+                        If a quota limit exists for this area, that will be taken 
+                        into account unless superuser is set to true.
+
+                        If a user has exceeded the quota, a negative number can 
+                        be returned.
+
+                        Note that the difference between total available space
+                        and free space will not equal the combined size of the 
+                        contents on the file system, since the numbers for the
+                        functions here are calculated from the used blocks,
+                        including those spent on metadata and file nodes.
+
+                        If actual used space is wanted one should use the
+                        statistics functionality of tango.io.vfs.
+
+                        See also: totalSpace()
+
+                        Since: 0.99.9
+
+                ***************************************************************/
+
+                static long freeSpace(char[] folder, bool superuser = false)
+                {
+                	// TODO
+                	assert(0);
+                	return 0;
+                }
+
+                /***************************************************************
+
+                        Request how large in bytes the
+                        disk/mountpoint where folder resides is.
+
+                        If a quota limit exists for this area, then
+                        that quota can be what will be returned unless superuser
+                        is set to true. On Posix systems this distinction is not
+                        made though.
+
+                        NOTE Access to this information when _superuser is
+                        set to true may only be available if the program is
+                        run in superuser mode.
+
+                        See also: freeSpace()
+
+                        Since: 0.99.9
+
+                ***************************************************************/
+
+                static long totalSpace(char[] folder, bool superuser = false)
+                {
+                	// TODO
+                	assert(0);
+                	return 0;
+                }
+        }
+
+        /***********************************************************************
+
+        ***********************************************************************/
+
+		else version (Posix)
         {
                 /***************************************************************
 
@@ -612,122 +726,6 @@ struct FileSystem
                                    ~ SysError.lastMsg);
 
                     return cast(long)info.f_blocks *  cast(long)info.f_frsize;
-                }
-        }
-
-        /***********************************************************************
-
-        ***********************************************************************/
-
-        version (Escape)
-        {
-                /***************************************************************
-
-                        Set the current working directory
-
-                        deprecated: see Environment.cwd()
-
-                ***************************************************************/
-
-                deprecated static void setDirectory (char[] path)
-                {
-                        char[512] tmp = void;
-                        tmp [path.length] = 0;
-                        tmp[0..path.length] = path;
-
-                        if (.setEnv("CWD",tmp.ptr) < 0)
-                            exception ("Failed to set current directory");
-                }
-
-                /***************************************************************
-
-                        Return the current working directory
-
-                        deprecated: see Environment.cwd()
-
-                ***************************************************************/
-
-                deprecated static char[] getDirectory ()
-                {
-                        char[512] tmp = void;
-
-                        if (.getEnv(tmp.ptr,tmp.length,"CWD") < 0)
-                            exception ("Failed to get current directory");
-
-                        auto path = tmp[0 .. strlen(tmp.ptr)+1].dup;
-                        path[$-1] = '/';
-                        return path;
-                }
-
-                /***************************************************************
-
-                        List the set of root devices.
-
-                 ***************************************************************/
-
-                static char[][] roots ()
-                {
-                        assert(0);
-                }
-
-                /***************************************************************
- 
-                        Request how much free space in bytes is available on the 
-                        disk/mountpoint where folder resides.
-
-                        If a quota limit exists for this area, that will be taken 
-                        into account unless superuser is set to true.
-
-                        If a user has exceeded the quota, a negative number can 
-                        be returned.
-
-                        Note that the difference between total available space
-                        and free space will not equal the combined size of the 
-                        contents on the file system, since the numbers for the
-                        functions here are calculated from the used blocks,
-                        including those spent on metadata and file nodes.
-
-                        If actual used space is wanted one should use the
-                        statistics functionality of tango.io.vfs.
-
-                        See also: totalSpace()
-
-                        Since: 0.99.9
-
-                ***************************************************************/
-
-                static long freeSpace(char[] folder, bool superuser = false)
-                {
-                	// TODO
-                	assert(0);
-                	return 0;
-                }
-
-                /***************************************************************
-
-                        Request how large in bytes the
-                        disk/mountpoint where folder resides is.
-
-                        If a quota limit exists for this area, then
-                        that quota can be what will be returned unless superuser
-                        is set to true. On Posix systems this distinction is not
-                        made though.
-
-                        NOTE Access to this information when _superuser is
-                        set to true may only be available if the program is
-                        run in superuser mode.
-
-                        See also: freeSpace()
-
-                        Since: 0.99.9
-
-                ***************************************************************/
-
-                static long totalSpace(char[] folder, bool superuser = false)
-                {
-                	// TODO
-                	assert(0);
-                	return 0;
                 }
         }
 }

@@ -181,15 +181,6 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	if(info == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
-	/* collect the frame-numbers for the mapping */
-	for(i = 0; i < areaCount; i++) {
-		if(areas[i].type == VM86_MEM_DIRECT) {
-			/* TODO */
-			/*paging_getFrameNos(info->mFrameNos + i * VM86_MAX_MEMPAGES,
-					(u32)areas[i].data.direct.src,areas[i].data.direct.size);*/
-		}
-	}
-
 	/* make vm86 ready */
 	sched_setReady(vm86t);
 
@@ -505,7 +496,6 @@ static sVM86Info *vm86_createInfo(u16 interrupt,sVM86Regs *regs,sVM86Memarea *ar
 	memcpy(&i->regs,regs,sizeof(sVM86Regs));
 	i->areas = NULL;
 	i->areaCount = areaCount;
-	i->mFrameNos = NULL;
 	if(areaCount) {
 		i->areas = (sVM86Memarea*)kheap_alloc(areaCount * sizeof(sVM86Memarea));
 		if(i->areas == NULL) {
@@ -513,18 +503,11 @@ static sVM86Info *vm86_createInfo(u16 interrupt,sVM86Regs *regs,sVM86Memarea *ar
 			return NULL;
 		}
 		memcpy(i->areas,areas,areaCount * sizeof(sVM86Memarea));
-		i->mFrameNos = (u32*)kheap_alloc(areaCount * VM86_MAX_MEMPAGES * sizeof(u32));
-		if(i->mFrameNos == NULL) {
-			kheap_free(i->areas);
-			kheap_free(i);
-			return NULL;
-		}
 	}
 	return i;
 }
 
 static void vm86_destroyInfo(sVM86Info *i) {
-	kheap_free(i->mFrameNos);
 	kheap_free(i->areas);
 	kheap_free(i);
 }

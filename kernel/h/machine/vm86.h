@@ -56,7 +56,6 @@ typedef struct {
 typedef struct {
 	u16 interrupt;
 	sVM86Regs regs;
-	u32 *mFrameNos;
 	sVM86Memarea *areas;
 	u16 areaCount;
 } sVM86Info;

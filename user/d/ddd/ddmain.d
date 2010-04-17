@@ -1,6 +1,7 @@
 import tango.text.Arguments;
 import tango.core.Runtime;
 import tango.io.Stdout;
+import tango.io.device.File;
 import tango.stdc.stdlib;
 import Integer = tango.text.convert.Integer;
 
@@ -11,16 +12,16 @@ int main(char[][] args) {
 	char[] inFile;
 	char[] outFile;
 
-	a.get("if=").bind(delegate void (char[] value) {
+	a.get("if").bind(delegate void (char[] value) {
 		inFile = value[0..$];
 	});
-	a.get("of=").bind(delegate void (char[] value) {
+	a.get("of").bind(delegate void (char[] value) {
 		outFile = value[0..$];
 	});
-	a.get("bs=").bind(delegate void (char[] value) {
+	a.get("bs").bind(delegate void (char[] value) {
 		bs = Integer.toInt(value);
 	});
-	a.get("count=").bind(delegate void (char[] value) {
+	a.get("count").bind(delegate void (char[] value) {
 		count = Integer.toInt(value);
 	});
 	if(!a.parse(args,false))

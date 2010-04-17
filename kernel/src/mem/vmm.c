@@ -506,7 +506,7 @@ static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
 
 	*flags |= PF_LOADINPROGRESS;
 	/* file not present or modified? */
-	if(vfsr_stat(t->tid,vm->reg->binary.path,&info) >= 0 &&
+	if(vfs_stat(t->tid,vm->reg->binary.path,&info) >= 0 &&
 			info.modifytime == vm->reg->binary.modifytime) {
 		file = vfsr_openFile(t->tid,VFS_READ,vm->reg->binary.path);
 		if(file >= 0 && vfs_seek(t->tid,file,vm->reg->binOffset + (addr - vm->virt),SEEK_SET) >= 0) {

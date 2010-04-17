@@ -88,7 +88,8 @@ tInodeNo ext2_path_resolve(sExt2 *e,const char *path,u8 flags,tDevNo *dev,bool r
 			/* should we create a new file? */
 			if((slash == NULL || *(slash + 1) == '\0') && (flags & IO_CREATE)) {
 				/* ensure that there is no '/' in the name */
-				*slash = '\0';
+				if(slash)
+					*slash = '\0';
 				err = ext2_file_create(e,cnode,p,&res,false);
 				ext2_icache_release(e,cnode);
 				if(err < 0)

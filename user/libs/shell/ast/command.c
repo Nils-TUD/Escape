@@ -248,6 +248,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 
 				/* if we're here, there is something wrong */
 				printe("Exec of '%s' failed",path);
+				fflush(stderr);
 				exit(EXIT_FAILURE);
 			}
 			else if(pid < 0)

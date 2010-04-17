@@ -22,6 +22,7 @@
 
 #include <common.h>
 #include <sllist.h>
+#include <fsinterface.h>
 
 #define MAX_VFS_FILE_SIZE			(64 * K)
 
@@ -202,6 +203,26 @@ u32 vfs_tell(tTid tid,tFileNo file);
  * @return true if at EOF
  */
 bool vfs_eof(tTid tid,tFileNo file);
+
+/**
+ * Retrieves information about the given path
+ *
+ * @param tid the thread-id
+ * @param path the path
+ * @param info the info to fill
+ * @return 0 on success
+ */
+s32 vfs_stat(tTid tid,const char *path,sFileInfo *info);
+
+/**
+ * Retrieves information about the given file
+ *
+ * @param tid the thread-id
+ * @param file the file
+ * @param info the info to fill
+ * @return 0 on success
+ */
+s32 vfs_fstat(tTid tid,tFileNo file,sFileInfo *info);
 
 /**
  * Checks whether a message is available

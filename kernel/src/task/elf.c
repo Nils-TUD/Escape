@@ -41,17 +41,13 @@ s32 elf_loadFromFile(const char *path) {
 	Elf32_Phdr pheader;
 	sFileInfo info;
 	sBinDesc bindesc;
-	tInodeNo ino;
-	tDevNo dev;
 
 	file = vfsr_openFile(t->tid,VFS_READ,path);
 	if(file < 0)
 		return ERR_INVALID_ELF_BIN;
 
 	/* fill bindesc */
-	if(vfs_getFileId(file,&ino,&dev) < 0)
-		goto failed;
-	if(vfsr_istat(t->tid,ino,dev,&info) < 0)
+	if(vfs_fstat(t->tid,file,&info) < 0)
 		goto failed;
 	bindesc.path = path;
 	bindesc.modifytime = info.modifytime;

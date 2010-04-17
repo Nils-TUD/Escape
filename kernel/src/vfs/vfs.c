@@ -322,6 +322,27 @@ bool vfs_eof(tTid tid,tFileNo file) {
 	return eof;
 }
 
+s32 vfs_stat(tTid tid,const char *path,sFileInfo *info) {
+	tInodeNo nodeNo;
+	s32 res = vfsn_resolvePath(path,&nodeNo,NULL,VFS_READ);
+	if(res == ERR_REAL_PATH)
+		res = vfsr_stat(tid,path,info);
+	else if(res == 0)
+		res = vfsn_getNodeInfo(nodeNo,info);
+	return res;
+}
+
+s32 vfs_fstat(tTid tid,tFileNo file,sFileInfo *info) {
+	sGFTEntry *e = globalFileTable + file;
+	s32 res;
+	vassert(e->flags != 0,"Invalid file %d",file);
+	if(e->devNo == VFS_DEV_NO)
+		res = vfsn_getNodeInfo(e->nodeNo,info);
+	else
+		res = vfsr_istat(tid,e->nodeNo,e->devNo,info);
+	return res;
+}
+
 s32 vfs_hasMsg(tTid tid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n = nodes + e->nodeNo;

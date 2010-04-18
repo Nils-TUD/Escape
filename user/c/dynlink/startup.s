@@ -20,9 +20,9 @@
 [BITS 32]
 
 [global init]
-[global lookupSymbolStart]
-[extern lookupSymbol]
-[extern loadProg]
+[global lookup_resolveStart]
+[extern lookup_resolve]
+[extern load_setupProg]
 
 ALIGN 4
 
@@ -46,14 +46,14 @@ ALIGN 4
 
 init:
 	; we have no TLS, so don't waste time
-	call	loadProg
+	call	load_setupProg
 	; first, remove fd from stack
 	add		esp,4
-	; loadProg returns the entrypoint
+	; load_setupProg returns the entrypoint
 	jmp		eax
 
-lookupSymbolStart:
-	call	lookupSymbol
+lookup_resolveStart:
+	call	lookup_resolve
 	add		esp,8
 	; jump to function
 	jmp		eax

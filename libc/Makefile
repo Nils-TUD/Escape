@@ -5,22 +5,27 @@ SUBDIRS = $(filter-out $(shell find src -name "*.*"),$(shell find src -name "*")
 LSUBDIRS = $(filter-out $(wildcard $(LIBDIR)/src/*.*),$(wildcard $(LIBDIR)/src/*))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS)) $(patsubst $(LIBDIR)/%,$(BUILDL)/lib/%,$(LSUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
-LIB = $(BUILD)/libc.a
+STLIB = $(BUILD)/libc.a
+DYNLIBNAME = libc.so
+DYNLIB = $(BUILD)/$(DYNLIBNAME)
+SHLDCONF = shld.conf
 
 CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -Iinclude -I$(LIBDIR)/h
 
 # sources
-CSRC = $(shell find $(SUBDIRS) -name "*.c")
-ASRC = $(filter-out startup.s,$(shell find $(SUBDIRS) -name "*.s"))
+CSRC = $(shell find src -name "*.c")
+ASRC = $(filter-out startup.s,$(shell find src -name "*.s"))
 LSRC = $(shell find $(LIBDIR)/src -name "*.c")
 START = startup.s
 SYSCALLS = syscalls.s
 
 # objects
 COBJS = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
+CPICOBJS = $(patsubst %.c,$(BUILDL)/%_pic.o,$(CSRC))
 AOBJS = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
 LOBJ = $(patsubst $(LIBDIR)/%.c,$(BUILDL)/lib/%.o,$(LSRC))
+LPICOBJ = $(patsubst $(LIBDIR)/%.c,$(BUILDL)/lib/%_pic.o,$(LSRC))
 STARTO = $(BUILD)/libc_startup.o
 # for long long arithmetic
 GCCLIB = $(GCCLIBDIR)/_divdi3.object \
@@ -30,11 +35,17 @@ GCCLIB = $(GCCLIBDIR)/_divdi3.object \
 
 .PHONY:		all clean
 
-all: $(LIB)
+all: $(STLIB) $(DYNLIB) $(STARTO)
 
-$(LIB): $(BUILDDIRS) $(COBJS) $(AOBJS) $(LOBJ) $(STARTO) $(GCCLIB)
-		@echo "	" AR $(LIB)
-		@ar rcs $(LIB) $(COBJS) $(AOBJS) $(LOBJ) $(GCCLIB)
+$(STLIB): $(BUILDDIRS) $(COBJS) $(AOBJS) $(LOBJ) $(GCCLIB)
+		@echo "	" AR $(STLIB)
+		@ar rcs $(STLIB) $(COBJS) $(AOBJS) $(LOBJ) $(GCCLIB)
+
+$(DYNLIB):	$(BUILDDIRS) $(CPICOBJS) $(AOBJS) $(LPICOBJ) $(GCCLIB) $(SHLDCONF)
+		@echo "	" LINKING $(DYNLIB)
+		@$(CC) $(CFLAGS) -shared -Wl,--build-id=none -Wl,-T,$(SHLDCONF) -Wl,-soname,$(DYNLIBNAME) \
+			-o $(DYNLIB) $(CPICOBJS) $(AOBJS) $(LPICOBJ) $(GCCLIB);
+		../tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
 		
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
@@ -45,6 +56,10 @@ $(BUILDL)/%.o: %.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
 
+$(BUILDL)/%_pic.o: %.c
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MMD
+
 $(BUILDL)/%.s.o: %.s $(SYSCALLS)
 		@echo "	" AS $<
 		@nasm $(ASMFLAGS) -o $@ $<
@@ -52,6 +67,10 @@ $(BUILDL)/%.s.o: %.s $(SYSCALLS)
 $(BUILDL)/lib/%.o:	$(LIBDIR)/%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
+
+$(BUILDL)/lib/%_pic.o:	$(LIBDIR)/%.c
+		@echo "	" CC $<
+		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MMD
 
 $(STARTO): $(START)
 		@echo "	" AS $(START)
@@ -61,4 +80,4 @@ $(STARTO): $(START)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(COBJS) $(AOBJS) $(LOBJ) $(LIB) $(DEPS) $(STARTO)
+		rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(LOBJ) $(LPICOBJ) $(STLIB) $(DEPS) $(STARTO)

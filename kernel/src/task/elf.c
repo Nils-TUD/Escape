@@ -23,6 +23,7 @@
 #include <mem/paging.h>
 #include <mem/pmem.h>
 #include <mem/vmm.h>
+#include <mem/kheap.h>
 #include <vfs/vfs.h>
 #include <vfs/real.h>
 #include <video.h>
@@ -30,71 +31,14 @@
 #include <errors.h>
 #include <assert.h>
 
-static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo);
+#define ELF_TYPE_PROG		0
+#define ELF_TYPE_INTERP		1
+
+static s32 elf_doLoadFromFile(const char *path,u8 type);
+static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,u8 type);
 
 s32 elf_loadFromFile(const char *path) {
-	sThread *t = thread_getRunning();
-	tFileNo file;
-	u32 j,loadSeg = 0;
-	u8 const *datPtr;
-	Elf32_Ehdr eheader;
-	Elf32_Phdr pheader;
-	sFileInfo info;
-	sBinDesc bindesc;
-
-	file = vfsr_openFile(t->tid,VFS_READ,path);
-	if(file < 0)
-		return ERR_INVALID_ELF_BIN;
-
-	/* fill bindesc */
-	if(vfs_fstat(t->tid,file,&info) < 0)
-		goto failed;
-	bindesc.path = path;
-	bindesc.modifytime = info.modifytime;
-
-	/* first read the header */
-	if(vfs_readFile(t->tid,file,(u8*)&eheader,sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr))
-		goto failed;
-
-	/* check magic */
-	if(eheader.e_ident.dword != *(u32*)ELFMAG)
-		goto failed;
-
-	/* load the LOAD segments. */
-	datPtr = (u8 const*)(eheader.e_phoff);
-	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
-		/* go to header */
-		if(vfs_seek(t->tid,file,(u32)datPtr,SEEK_SET) < 0)
-			goto failed;
-		/* read pheader */
-		if(vfs_readFile(t->tid,file,(u8*)&pheader,sizeof(Elf32_Phdr)) != sizeof(Elf32_Phdr))
-			goto failed;
-
-		if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
-			s32 type = elf_addSegment(&bindesc,&pheader,loadSeg);
-			if(type < 0)
-				goto failed;
-			if(type == REG_TLS) {
-				u32 tlsStart,tlsEnd;
-				vmm_getRegRange(t->proc,t->tlsRegion,&tlsStart,&tlsEnd);
-				/* read tdata */
-				if(vfs_seek(t->tid,file,(u32)pheader.p_offset,SEEK_SET) < 0)
-					goto failed;
-				if(vfs_readFile(t->tid,file,(u8*)tlsStart,pheader.p_filesz) < 0)
-					goto failed;
-				/* clear tbss */
-				memclear((void*)(tlsStart + pheader.p_filesz),pheader.p_memsz - pheader.p_filesz);
-			}
-			loadSeg++;
-		}
-	}
-
-	vfs_closeFile(t->tid,file);
-	return (u32)eheader.e_entry;
-
-failed:
-	vfs_closeFile(t->tid,file);
-	return ERR_INVALID_ELF_BIN;
+	return elf_doLoadFromFile(path,ELF_TYPE_PROG);
 }
 
 s32 elf_loadFromMem(u8 *code,u32 length) {
@@ -119,7 +63,7 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 		if(pheader->p_type == PT_LOAD) {
 			if(pheader->p_vaddr + pheader->p_filesz >= (u32)(code + length))
 				return ERR_INVALID_ELF_BIN;
-			if(elf_addSegment(NULL,pheader,loadSegNo) < 0)
+			if(elf_addSegment(NULL,pheader,loadSegNo,ELF_TYPE_PROG) < 0)
 				return ERR_INVALID_ELF_BIN;
 			/* copy the data; we zero on demand */
 			memcpy((void*)pheader->p_vaddr,code + pheader->p_offset,pheader->p_filesz);
@@ -130,28 +74,133 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 	return (u32)eheader->e_entry;
 }
 
-static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo) {
+static s32 elf_doLoadFromFile(const char *path,u8 type) {
 	sThread *t = thread_getRunning();
-	u8 type;
+	tFileNo file;
+	u32 j,loadSeg = 0;
+	u8 const *datPtr;
+	Elf32_Ehdr eheader;
+	Elf32_Phdr pheader;
+	sFileInfo info;
+	sBinDesc bindesc;
+
+	file = vfsr_openFile(t->tid,VFS_READ,path);
+	if(file < 0)
+		return ERR_INVALID_ELF_BIN;
+
+	/* fill bindesc */
+	if(vfs_fstat(t->tid,file,&info) < 0)
+		goto failed;
+	bindesc.ino = info.inodeNo;
+	bindesc.dev = info.device;
+	bindesc.modifytime = info.modifytime;
+
+	/* first read the header */
+	if(vfs_readFile(t->tid,file,(u8*)&eheader,sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr))
+		goto failed;
+
+	/* check magic */
+	if(eheader.e_ident.dword != *(u32*)ELFMAG)
+		goto failed;
+
+	/* load the LOAD segments. */
+	datPtr = (u8 const*)(eheader.e_phoff);
+	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
+		/* go to header */
+		if(vfs_seek(t->tid,file,(u32)datPtr,SEEK_SET) < 0)
+			goto failed;
+		/* read pheader */
+		if(vfs_readFile(t->tid,file,(u8*)&pheader,sizeof(Elf32_Phdr)) != sizeof(Elf32_Phdr))
+			goto failed;
+
+		if(pheader.p_type == PT_INTERP) {
+			char *interpName;
+			u32 entryPoint;
+			/* has to be the first segment and is not allowed for the dynamic linker */
+			if(loadSeg > 0 || type != ELF_TYPE_PROG)
+				goto failed;
+			/* read name of dynamic linker */
+			interpName = (char*)kheap_alloc(pheader.p_filesz);
+			if(interpName == NULL)
+				goto failed;
+			if(vfs_seek(t->tid,file,pheader.p_offset,SEEK_SET) < 0) {
+				kheap_free(interpName);
+				goto failed;
+			}
+			if(vfs_readFile(t->tid,file,(u8*)interpName,pheader.p_filesz) != (s32)pheader.p_filesz) {
+				kheap_free(interpName);
+				goto failed;
+			}
+			vfs_closeFile(t->tid,file);
+			/* now load him and return the entry-point; the caller can distinguish the dynamic linker
+			 * from others by the entrypoint */
+			entryPoint = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP);
+			kheap_free(interpName);
+			return entryPoint;
+		}
+
+		if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
+			s32 stype;
+			stype = elf_addSegment(&bindesc,&pheader,loadSeg,type);
+			if(stype < 0)
+				goto failed;
+			if(stype == REG_TLS) {
+				u32 tlsStart,tlsEnd;
+				vmm_getRegRange(t->proc,t->tlsRegion,&tlsStart,&tlsEnd);
+				/* read tdata */
+				if(vfs_seek(t->tid,file,(u32)pheader.p_offset,SEEK_SET) < 0)
+					goto failed;
+				if(vfs_readFile(t->tid,file,(u8*)tlsStart,pheader.p_filesz) < 0)
+					goto failed;
+				/* clear tbss */
+				memclear((void*)(tlsStart + pheader.p_filesz),pheader.p_memsz - pheader.p_filesz);
+			}
+			loadSeg++;
+		}
+	}
+
+	vfs_closeFile(t->tid,file);
+	return (u32)eheader.e_entry;
+
+failed:
+	vfs_closeFile(t->tid,file);
+	return ERR_INVALID_ELF_BIN;
+}
+
+static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,u8 type) {
+	sThread *t = thread_getRunning();
+	u8 stype;
 	s32 res;
 	/* determine type */
 	if(loadSegNo == 0) {
-		if(pheader->p_flags != (PF_X | PF_R) || pheader->p_vaddr != TEXT_BEGIN)
+		/* dynamic linker has a special entrypoint */
+		if(type == ELF_TYPE_INTERP && pheader->p_vaddr != INTERP_TEXT_BEGIN)
 			return ERR_INVALID_ELF_BIN;
-		type = REG_TEXT;
+		if(pheader->p_flags != (PF_X | PF_R) ||
+			(type == ELF_TYPE_INTERP && pheader->p_vaddr != INTERP_TEXT_BEGIN) ||
+			(type == ELF_TYPE_PROG && pheader->p_vaddr != TEXT_BEGIN))
+			return ERR_INVALID_ELF_BIN;
+		stype = type == ELF_TYPE_INTERP ? REG_SHLIBTEXT : REG_TEXT;
 	}
 	else if(pheader->p_type == PT_TLS) {
-		type = REG_TLS;
+		/* not allowed for the dynamic linker */
+		if(type == ELF_TYPE_INTERP)
+			return ERR_INVALID_ELF_BIN;
+		stype = REG_TLS;
 		/* we need the thread-control-block at the end */
 		pheader->p_memsz += sizeof(void*);
 	}
-	else if(pheader->p_flags == PF_R)
-		type = REG_RODATA;
+	else if(pheader->p_flags == PF_R) {
+		/* not allowed for the dynamic linker */
+		if(type == ELF_TYPE_INTERP)
+			return ERR_INVALID_ELF_BIN;
+		stype = REG_RODATA;
+	}
 	else if(pheader->p_flags == (PF_R | PF_W)) {
 		if(pheader->p_filesz == 0)
-			type = REG_BSS;
+			stype = type == ELF_TYPE_INTERP ? REG_SHLIBBSS : REG_BSS;
 		else
-			type = REG_DATA;
+			stype = type == ELF_TYPE_INTERP ? REG_DLDATA : REG_DATA;
 	}
 	else
 		return ERR_INVALID_ELF_BIN;
@@ -161,12 +210,12 @@ static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo) {
 		return ERR_INVALID_ELF_BIN;
 
 	/* bss and tls need no binary */
-	if(type == REG_BSS || type == REG_TLS)
+	if(stype == REG_BSS || stype == REG_SHLIBBSS || stype == REG_TLS)
 		bindesc = NULL;
 	/* add the region */
-	if((res = vmm_add(t->proc,bindesc,pheader->p_offset,pheader->p_memsz,type)) < 0)
+	if((res = vmm_add(t->proc,bindesc,pheader->p_offset,pheader->p_memsz,stype)) < 0)
 		return res;
-	if(type == REG_TLS)
+	if(stype == REG_TLS)
 		t->tlsRegion = res;
-	return type;
+	return stype;
 }

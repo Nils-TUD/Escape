@@ -47,15 +47,15 @@ sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u8 pgFlags,u32 flags)
 	reg->procs = sll_create();
 	if(reg->procs == NULL)
 		goto errReg;
-	if(bin != NULL && bin->path) {
-		reg->binary.path = strdup(bin->path);
-		if(reg->binary.path == NULL)
-			goto errPDirs;
+	if(bin != NULL && bin->ino) {
+		reg->binary.ino = bin->ino;
+		reg->binary.dev = bin->dev;
 		reg->binary.modifytime = bin->modifytime;
 		reg->binOffset = binOffset;
 	}
 	else {
-		reg->binary.path = NULL;
+		reg->binary.ino = 0;
+		reg->binary.dev = 0;
 		reg->binary.modifytime = 0;
 		reg->binOffset = 0;
 	}
@@ -65,13 +65,11 @@ sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u8 pgFlags,u32 flags)
 	reg->pfSize = pageCount;
 	reg->pageFlags = (u8*)kheap_alloc(pageCount);
 	if(reg->pageFlags == NULL)
-		goto errPath;
+		goto errPDirs;
 	for(i = 0; i < pageCount; i++)
 		reg->pageFlags[i] = pgFlags;
 	return reg;
 
-errPath:
-	kheap_free((void*)reg->binary.path);
 errPDirs:
 	sll_destroy(reg->procs,false);
 errReg:
@@ -81,8 +79,6 @@ errReg:
 
 void reg_destroy(sRegion *reg) {
 	assert(reg != NULL);
-	if(reg->binary.path)
-		kheap_free((void*)reg->binary.path);
 	kheap_free(reg->pageFlags);
 	sll_destroy(reg->procs,false);
 	kheap_free(reg);
@@ -178,9 +174,9 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt) {
 			prf_sprintf(buf,"%s ",flagNames[i].name);
 	}
 	prf_sprintf(buf,"\n");
-	if(reg->binary.path) {
-		prf_sprintf(buf,"\tbinary: path=%s modified=%u offset=%#x\n",
-				reg->binary.path ? reg->binary.path : "NULL",reg->binary.modifytime,reg->binOffset);
+	if(reg->binary.ino) {
+		prf_sprintf(buf,"\tbinary: ino=%d dev=%d modified=%u offset=%#x\n",
+				reg->binary.ino,reg->binary.dev,reg->binary.modifytime,reg->binOffset);
 	}
 	prf_sprintf(buf,"\tProcesses: ");
 	for(n = sll_begin(reg->procs); n != NULL; n = n->next)

@@ -31,6 +31,18 @@
 void sysc_changeSize(sIntrptStackFrame *stack);
 
 /**
+ * Adds a region to the current process at the appropriate virtual address (depending on
+ * existing regions and the region-type) from given binary.
+ *
+ * @param sBinDesc* the binary (may be NULL; means: no demand-loading possible)
+ * @param u32 the offset of the region in the binary (for demand-loading)
+ * @param u32 the number of bytes of the region
+ * @param u8 the region-type (see REG_*)
+ * @return void* the address of the region on success, NULL on failure
+ */
+void sysc_addRegion(sIntrptStackFrame *stack);
+
+/**
  * Maps physical memory in the virtual user-space
  *
  * @param u32 physical address

@@ -136,6 +136,11 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
 		else
 			p->ownFrames += stats.frames;
 		p->ownFrames += stats.ptables;
+#if DISABLE_DEMLOAD
+		u32 i;
+		for(i = 0; i < vm->reg->pfSize; i++)
+			vmm_pagefault(vm->virt + i * PAGE_SIZE);
+#endif
 	}
 	return rno;
 
@@ -144,6 +149,23 @@ errAdd:
 errReg:
 	reg_destroy(reg);
 	return ERR_NOT_ENOUGH_MEM;
+}
+
+bool vmm_exists(sProc *p,tVMRegNo reg) {
+	assert(p);
+	return reg >= 0 && reg < (s32)p->regSize && REG(p,reg);
+}
+
+tVMRegNo vmm_getDLDataReg(sProc *p) {
+	u32 i;
+	assert(p);
+	for(i = 0; i < p->regSize; i++) {
+		sVMRegion *vm = REG(p,i);
+		if(vm && vm->reg->flags == (RF_WRITABLE | RF_GROWABLE) &&
+				vm->virt >= FREE_AREA_BEGIN)
+			return i;
+	}
+	return -1;
 }
 
 void vmm_getMemUsage(sProc *p,u32 *paging,u32 *data) {
@@ -200,7 +222,7 @@ bool vmm_hasBinary(sProc *p,sBinDesc *bin) {
 		return false;
 	vm = REG(p,RNO_TEXT);
 	return vm && vm->reg->binary.modifytime == bin->modifytime &&
-			strcmp(vm->reg->binary.path,bin->path) == 0;
+			vm->reg->binary.ino == bin->ino && vm->reg->binary.dev == bin->dev;
 }
 
 bool vmm_pagefault(u32 addr) {
@@ -454,6 +476,18 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 		/* not enough mem? TODO we should use swapping later */
 		if(amount > 0 && (s32)mm_getFreeFrmCount(MM_DEF) < amount)
 			return ERR_NOT_ENOUGH_MEM;
+		/* check wether the space is free */
+		if(amount > 0) {
+			if(vm->reg->flags & RF_STACK) {
+				if(vmm_isOccupied(p,oldVirt - amount * PAGE_SIZE,oldVirt))
+					return ERR_NOT_ENOUGH_MEM;
+			}
+			else {
+				u32 end = oldVirt + ROUNDUP(vm->reg->byteCount);
+				if(vmm_isOccupied(p,end,end + amount * PAGE_SIZE))
+					return ERR_NOT_ENOUGH_MEM;
+			}
+		}
 		if(!reg_grow(vm->reg,amount))
 			return ERR_NOT_ENOUGH_MEM;
 
@@ -505,43 +539,43 @@ static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
 	}
 
 	*flags |= PF_LOADINPROGRESS;
-	/* file not present or modified? */
-	if(vfs_stat(t->tid,vm->reg->binary.path,&info) >= 0 &&
-			info.modifytime == vm->reg->binary.modifytime) {
-		file = vfsr_openFile(t->tid,VFS_READ,vm->reg->binary.path);
-		if(file >= 0 && vfs_seek(t->tid,file,vm->reg->binOffset + (addr - vm->virt),SEEK_SET) >= 0) {
-			/* first read into a temp-buffer because we can't mark the page as present until
-			 * its read from disk. and we can't use a temporary mapping when switching threads. */
-			u8 *tempBuf = (u8*)kheap_alloc(PAGE_SIZE);
-			if(tempBuf != NULL) {
-				/* TODO actually we may have to read less */
-				if(vfs_readFile(t->tid,file,(u8*)tempBuf,PAGE_SIZE) >= 0) {
-					sSLNode *n;
-					u32 temp;
-					u32 frame = mm_allocateFrame(MM_DEF);
-					u8 mapFlags = PG_PRESENT;
-					if(vm->reg->flags & RF_WRITABLE)
-						mapFlags |= PG_WRITABLE;
-					/* copy into frame */
-					temp = paging_mapToTemp(&frame,1);
-					memcpy((void*)temp,tempBuf,PAGE_SIZE);
-					paging_unmapFromTemp(1);
-					/* map into all pagedirs */
-					for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
-						sProc *mp = (sProc*)n->data;
-						paging_mapTo(mp->pagedir,addr,&frame,1,mapFlags);
-						if(vm->reg->flags & RF_SHAREABLE)
-							mp->sharedFrames++;
-						else
-							mp->ownFrames++;
+	file = vfsr_openInode(t->tid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
+	if(file >= 0) {
+		/* file not present or modified? */
+		if(vfs_fstat(t->tid,file,&info) >= 0 && info.modifytime == vm->reg->binary.modifytime) {
+			if(vfs_seek(t->tid,file,vm->reg->binOffset + (addr - vm->virt),SEEK_SET) >= 0) {
+				/* first read into a temp-buffer because we can't mark the page as present until
+				 * its read from disk. and we can't use a temporary mapping when switching threads. */
+				u8 *tempBuf = (u8*)kheap_alloc(PAGE_SIZE);
+				if(tempBuf != NULL) {
+					/* TODO actually we may have to read less */
+					if(vfs_readFile(t->tid,file,(u8*)tempBuf,PAGE_SIZE) >= 0) {
+						sSLNode *n;
+						u32 temp;
+						u32 frame = mm_allocateFrame(MM_DEF);
+						u8 mapFlags = PG_PRESENT;
+						if(vm->reg->flags & RF_WRITABLE)
+							mapFlags |= PG_WRITABLE;
+						/* copy into frame */
+						temp = paging_mapToTemp(&frame,1);
+						memcpy((void*)temp,tempBuf,PAGE_SIZE);
+						paging_unmapFromTemp(1);
+						/* map into all pagedirs */
+						for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
+							sProc *mp = (sProc*)n->data;
+							paging_mapTo(mp->pagedir,addr,&frame,1,mapFlags);
+							if(vm->reg->flags & RF_SHAREABLE)
+								mp->sharedFrames++;
+							else
+								mp->ownFrames++;
+						}
+						res = true;
 					}
-					res = true;
+					kheap_free(tempBuf);
 				}
-				kheap_free(tempBuf);
 			}
 		}
-		if(file >= 0)
-			vfs_closeFile(t->tid,file);
+		vfs_closeFile(t->tid,file);
 	}
 	/* wakeup all waiting processes */
 	*flags &= ~PF_LOADINPROGRESS;
@@ -699,6 +733,11 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 			if(*virt == 0)
 				return ERR_NOT_ENOUGH_MEM;
 			break;
+
+		case REG_SHLIBTEXT:
+		case REG_SHLIBBSS:
+		case REG_SHLIBDATA:
+		case REG_DLDATA:
 		case REG_TLS:
 		case REG_PHYS:
 		case REG_SHM:
@@ -707,8 +746,29 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 				*flags = RF_WRITABLE | RF_TLS;
 			else if(type == REG_PHYS)
 				*flags = RF_WRITABLE | RF_NOFREE;
-			else
+			else if(type == REG_SHM)
 				*flags = RF_SHAREABLE | RF_WRITABLE;
+			/* Note that this assumes for the dynamic linker that everything is put one after
+			 * another @ INTERP_TEXT_BEGIN (begin of free area, too). But this is always the
+			 * case since when doing exec(), the process is empty except stacks. */
+			else if(type == REG_SHLIBTEXT) {
+				*flags = RF_SHAREABLE;
+				*pgFlags = PF_DEMANDLOAD;
+			}
+			else if(type == REG_DLDATA) {
+				/* its growable to give the dynamic linker the chance to use dynamic memory
+				 * (at least until he maps the first region behind this one) */
+				*flags = RF_WRITABLE | RF_GROWABLE;
+				*pgFlags = PF_DEMANDLOAD;
+			}
+			else if(type == REG_SHLIBDATA) {
+				*flags = RF_WRITABLE;
+				*pgFlags = PF_DEMANDLOAD;
+			}
+			else if(type == REG_SHLIBBSS) {
+				*flags = RF_WRITABLE;
+				*pgFlags = PF_DEMANDZERO;
+			}
 			*virt = vmm_findFreeAddr(p,bCount);
 			if(*virt == 0)
 				return ERR_NOT_ENOUGH_MEM;
@@ -742,6 +802,10 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 			assert(REG(p,RNO_DATA) == NULL);
 			break;
 
+		case REG_SHLIBTEXT:
+		case REG_SHLIBBSS:
+		case REG_SHLIBDATA:
+		case REG_DLDATA:
 		case REG_TLS:
 		case REG_STACK:
 		case REG_PHYS:

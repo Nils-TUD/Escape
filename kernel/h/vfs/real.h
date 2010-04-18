@@ -39,6 +39,17 @@ void vfsr_init(void);
 s32 vfsr_openFile(tTid tid,u16 flags,const char *path);
 
 /**
+ * Opens the given inode+devno with given flags for given thread
+ *
+ * @param tid the thread-id
+ * @param flags read / write
+ * @param ino the inode-number
+ * @param dev the dev-number
+ * @return 0 on success or the error-code
+ */
+s32 vfsr_openInode(tTid tid,u16 flags,tInodeNo ino,tDevNo dev);
+
+/**
  * Retrieves information about the given (real!) path
  *
  * @param tid the thread-id

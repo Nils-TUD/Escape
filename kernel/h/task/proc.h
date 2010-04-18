@@ -264,6 +264,7 @@ s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser);
  * @param argc the argument-count
  * @param args the arguments on after another, allocated on the heap; may be NULL
  * @param argsSize the total number of bytes for the arguments (just the data)
+ * @param tentryPoint the entry-point for the thread
  * @return true if successfull
  */
 bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize,u32 tentryPoint);
@@ -272,8 +273,9 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
  * Setups the start of execution in user-mode for given interrupt-stack
  *
  * @param frame the interrupt-stack-frame
+ * @param entryPoint the entry-point for the thread
  */
-void proc_setupStart(sIntrptStackFrame *frame);
+void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint);
 
 #if DEBUGGING
 

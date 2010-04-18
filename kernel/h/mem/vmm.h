@@ -26,6 +26,8 @@
 #include <task/thread.h>
 #include <printf.h>
 
+#define DISABLE_DEMLOAD		1
+
 #define MAX_REGUSE_COUNT	(PROC_COUNT * 8)
 
 #define RNO_TEXT			0
@@ -41,6 +43,10 @@
 #define REG_SHM				5
 #define REG_PHYS			6
 #define REG_TLS				7
+#define REG_SHLIBTEXT		8
+#define REG_SHLIBDATA		9
+#define REG_SHLIBBSS		10
+#define REG_DLDATA			11
 
 typedef struct {
 	sRegion *reg;
@@ -82,6 +88,23 @@ u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount);
  * @return the region-number on success or a negative error-code
  */
 tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type);
+
+/**
+ * Tests wether the region with given number exists
+ *
+ * @param p the process
+ * @param reg the region-number
+ * @return true if so
+ */
+bool vmm_exists(sProc *p,tVMRegNo reg);
+
+/**
+ * Searches for the dynamic-link-data-region (growable)
+ *
+ * @param p the process
+ * @return the region-number of -1 if not found
+ */
+tVMRegNo vmm_getDLDataReg(sProc *p);
 
 /**
  * Determines the memory-usage of the given process

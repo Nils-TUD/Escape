@@ -122,6 +122,25 @@ s32 vfsr_openFile(tTid tid,u16 flags,const char *path) {
 	return realFile;
 }
 
+s32 vfsr_openInode(tTid tid,u16 flags,tInodeNo ino,tDevNo dev) {
+	s32 res;
+	tFileNo virtFile,realFile;
+
+	virtFile = vfsr_create(tid);
+	if(virtFile < 0)
+		return virtFile;
+
+	/* TODO maybe we should send an open-msg to fs, too but in a different form? */
+
+	/* now open the file */
+	realFile = vfs_openFile(tid,flags,ino,dev);
+	if((res = vfsr_add(virtFile,realFile)) < 0) {
+		vfsr_destroy(tid,virtFile);
+		return res;
+	}
+	return realFile;
+}
+
 s32 vfsr_istat(tTid tid,tInodeNo ino,tDevNo devNo,sFileInfo *info) {
 	return vfsr_doStat(tid,NULL,ino,devNo,info);
 }

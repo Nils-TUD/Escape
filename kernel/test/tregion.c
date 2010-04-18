@@ -63,7 +63,8 @@ static void test_1(void) {
 	reg = reg_create(NULL,123,124,PF_DEMANDLOAD,RF_GROWABLE);
 	test_assertTrue(reg != NULL);
 	test_assertUInt(reg->binary.modifytime,0);
-	test_assertUInt((u32)reg->binary.path,0);
+	test_assertUInt((u32)reg->binary.ino,0);
+	test_assertUInt((u32)reg->binary.dev,0);
 	test_assertUInt(reg->binOffset,0);
 	test_assertUInt(reg->flags,RF_GROWABLE);
 	test_assertUInt(reg->byteCount,124);
@@ -74,11 +75,13 @@ static void test_1(void) {
 
 	test_init();
 	bindesc.modifytime = 1234;
-	bindesc.path = "test!";
+	bindesc.ino = 42;
+	bindesc.dev = 4;
 	reg = reg_create(&bindesc,123,4097,0,RF_STACK);
 	test_assertTrue(reg != NULL);
 	test_assertUInt(reg->binary.modifytime,1234);
-	test_assertStr(reg->binary.path,"test!");
+	test_assertInt(reg->binary.ino,42);
+	test_assertInt(reg->binary.dev,4);
 	test_assertUInt(reg->binOffset,123);
 	test_assertUInt(reg->flags,RF_STACK);
 	test_assertUInt(reg->byteCount,4097);
@@ -170,14 +173,15 @@ static void test_4(void) {
 
 	test_init();
 	bindesc.modifytime = 444;
-	bindesc.path = "wuh";
+	bindesc.ino = 23;
+	bindesc.dev = 2;
 	reg = reg_create(&bindesc,123,0x1000,PF_DEMANDZERO,RF_GROWABLE | RF_STACK);
 	test_assertTrue(reg != NULL);
 	clone = reg_clone((const void*)0x1234,reg);
 	test_assertTrue(clone != NULL);
 	test_assertUInt(clone->binary.modifytime,444);
-	test_assertStr(clone->binary.path,"wuh");
-	test_assertTrue(reg->binary.path != clone->binary.path);
+	test_assertInt(clone->binary.ino,23);
+	test_assertInt(clone->binary.dev,2);
 	test_assertUInt(clone->binOffset,123);
 	test_assertUInt(clone->flags,RF_GROWABLE | RF_STACK);
 	test_assertUInt(clone->byteCount,0x1000);

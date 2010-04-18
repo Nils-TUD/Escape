@@ -419,7 +419,8 @@ void *_realloc(void *addr,u32 size) {
 }
 
 static bool loadNewSpace(u32 size) {
-	s32 res,count;
+	void *oldEnd;
+	s32 count;
 	sMemArea *area;
 
 	/* no free areas? */
@@ -434,15 +435,15 @@ static bool loadNewSpace(u32 size) {
 
 	/* allocate the required pages */
 	count = (size + PAGE_SIZE - 1) / PAGE_SIZE;
-	res = changeSize(count);
-	if(res < 0)
+	oldEnd = changeSize(count);
+	if(oldEnd == NULL)
 		return false;
 
 	pageCount += count;
 	/* take one area from the freelist and put the memory in it */
 	area = freeList;
 	freeList = freeList->next;
-	area->address = (void*)(res * PAGE_SIZE);
+	area->address = (void*)((u32)oldEnd * PAGE_SIZE);
 	area->size = PAGE_SIZE * count;
 	/* put area in the usable-list */
 	area->next = usableList;
@@ -452,16 +453,16 @@ static bool loadNewSpace(u32 size) {
 
 static bool loadNewAreas(void) {
 	sMemArea *area,*end;
-	s32 res;
+	void *oldEnd;
 
 	/* allocate one page for area-structs */
-	res = changeSize(1);
-	if(res < 0)
+	oldEnd = changeSize(1);
+	if(oldEnd == NULL)
 		return false;
 
 	/* determine start- and end-address */
 	pageCount++;
-	area = (sMemArea*)(res * PAGE_SIZE);
+	area = (sMemArea*)((u32)oldEnd * PAGE_SIZE);
 	end = area + (PAGE_SIZE / sizeof(sMemArea));
 
 	/* put all areas in the freelist */

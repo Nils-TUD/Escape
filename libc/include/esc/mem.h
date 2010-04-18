@@ -26,15 +26,48 @@
 extern "C" {
 #endif
 
+/* description of a binary */
+typedef struct {
+	tInodeNo ino;
+	tDevNo dev;
+	u32 modifytime;
+} sBinDesc;
+
+/* the region-types */
+#define REG_TEXT			0
+#define REG_RODATA			1
+#define REG_DATA			2
+#define REG_BSS				3
+#define REG_STACK			4
+#define REG_SHM				5
+#define REG_PHYS			6
+#define REG_TLS				7
+#define REG_SHLIBTEXT		8
+#define REG_SHLIBDATA		9
+#define REG_SHLIBBSS		10
+#define REG_DLDATA			11
+
 /**
  * Changes the size of the process's data-area. If <count> is positive <count> pages
  * will be added to the end of the data-area. Otherwise <count> pages will be removed at the
  * end.
  *
  * @param count the number of pages to add / remove
- * @return the *old* end of the data-segment. A negative value indicates an error
+ * @return the *old* end of the data-segment. NULL indicates an error
  */
-s32 changeSize(s32 count) A_CHECKRET;
+void *changeSize(s32 count) A_CHECKRET;
+
+/**
+ * Adds a region to the current process at the appropriate virtual address (depending on
+ * existing regions and the region-type) from given binary.
+ *
+ * @param bin the binary (may be NULL; means: no demand-loading possible)
+ * @param binOffset the offset of the region in the binary (for demand-loading)
+ * @param byteCount the number of bytes of the region
+ * @param type the region-type (see REG_*)
+ * @return the address of the region on success, NULL on failure
+ */
+void *addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u8 type);
 
 /**
  * Maps <count> bytes at <phys> into the virtual user-space and returns the start-address.

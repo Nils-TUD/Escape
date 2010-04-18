@@ -121,9 +121,9 @@ swapbl:
 
 dis:
 ifeq ($(APP),)
-		objdump -dS $(BIN) | less
+		objdump -dS -M intel $(BIN) | less
 else
-		objdump -dS $(BUILD)/$(APP) | less
+		objdump -dS -M intel $(BUILD)/$(APP) | less
 endif
 
 qemu:	all prepareRun
@@ -145,7 +145,7 @@ vbox: all prepareRun $(ISO) $(VMDISK)
 debug: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
-		/usr/local/bin/gdbtui --command=gdb.start --symbols $(BUILD)/user_dtest.bin
+		/usr/local/bin/gdbtui --command=gdb.start
 
 debugb:	all prepareRun
 		$(BOCHSDBG) -f bochsgdb.cfg -q

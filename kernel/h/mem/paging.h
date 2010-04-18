@@ -140,6 +140,8 @@
 
 /* start-address of the text */
 #define TEXT_BEGIN				0x1000
+/* start-address of the text in dynamic linker */
+#define INTERP_TEXT_BEGIN		0xA0000000
 
 typedef struct {
 	u32 ptables;

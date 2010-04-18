@@ -30,10 +30,76 @@
 void sysc_changeSize(sIntrptStackFrame *stack) {
 	s32 count = SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
-	s32 oldEnd;
-	if((oldEnd = vmm_grow(p,RNO_DATA,count)) < 0)
-		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+	u32 oldEnd;
+	tVMRegNo rno = RNO_DATA;
+	/* if there is no data-region, maybe we're the dynamic linker that has a dldata-region */
+	if(!vmm_exists(p,rno)) {
+		/* if so, grow that region instead */
+		rno = vmm_getDLDataReg(p);
+		if(rno == -1)
+			SYSC_ERROR(stack,0);
+	}
+	if((s32)(oldEnd = vmm_grow(p,rno,count)) < 0)
+		SYSC_ERROR(stack,0);
 	SYSC_RET1(stack,oldEnd);
+}
+
+void sysc_addRegion(sIntrptStackFrame *stack) {
+	sBinDesc *bin = (sBinDesc*)SYSC_ARG1(stack);
+	u32 binOffset = SYSC_ARG2(stack);
+	u32 byteCount = SYSC_ARG3(stack);
+	u8 type = (u8)SYSC_ARG4(stack);
+	sThread *t = thread_getRunning();
+	sProc *p = t->proc;
+	tVMRegNo rno = -1;
+	u32 start;
+
+	/* check bin */
+	if(bin != NULL && !paging_isRangeUserReadable((u32)bin,sizeof(sBinDesc)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	/* check type */
+	switch(type) {
+		case REG_TEXT:
+			rno = RNO_TEXT;
+			break;
+		case REG_DATA:
+			rno = RNO_DATA;
+			break;
+		case REG_BSS:
+			rno = RNO_BSS;
+			break;
+		case REG_RODATA:
+			rno = RNO_RODATA;
+			break;
+		case REG_SHLIBBSS:
+		case REG_SHLIBDATA:
+		case REG_SHLIBTEXT:
+		case REG_SHM:
+		case REG_PHYS:
+		case REG_TLS:
+		/* the user can't create a new stack here */
+			break;
+		default:
+			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+			break;
+	}
+
+	/* check if the region-type does already exist */
+	if(rno >= 0) {
+		if(vmm_exists(p,rno))
+			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	}
+
+	/* add region */
+	rno = vmm_add(p,bin,binOffset,byteCount,type);
+	if(rno < 0)
+		SYSC_ERROR(stack,rno);
+	/* save tls-region-number */
+	if(type == REG_TLS)
+		t->tlsRegion = rno;
+	vmm_getRegRange(p,rno,&start,0);
+	SYSC_RET1(stack,start);
 }
 
 void sysc_mapPhysical(sIntrptStackFrame *stack) {

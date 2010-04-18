@@ -38,7 +38,8 @@
 #define RF_TLS				32	/* needed to distinguish TLS-regions from others on delete */
 
 typedef struct {
-	const char *path;
+	tInodeNo ino;
+	tDevNo dev;
 	u32 modifytime;
 } sBinDesc;
 

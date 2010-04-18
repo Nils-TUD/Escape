@@ -10,6 +10,7 @@ mkdir -p $TMPDIR/boot/grub
 mkdir $TMPDIR/apps
 mkdir $TMPDIR/bin
 mkdir $TMPDIR/sbin
+mkdir $TMPDIR/lib
 mkdir $TMPDIR/etc
 mkdir $TMPDIR/etc/keymaps
 

@@ -31,6 +31,8 @@
 #include <mem/vmm.h>
 #include <syscalls/proc.h>
 #include <syscalls.h>
+#include <vfs/vfs.h>
+#include <vfs/real.h>
 #include <errors.h>
 #include <string.h>
 
@@ -194,9 +196,10 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	char **args = (char**)SYSC_ARG2(stack);
 	char *argBuffer;
 	s32 argc,pathLen,res;
-	u32 argSize;
+	u32 argSize,entryPoint;
 	tInodeNo nodeNo;
-	sProc *p = proc_getRunning();
+	sThread *t = thread_getRunning();
+	sProc *p = t->proc;
 
 	argc = 0;
 	argBuffer = NULL;
@@ -232,29 +235,45 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	proc_removeRegions(p,false);
 
 	/* load program */
-	res = elf_loadFromFile(path);
-	if(res < 0) {
+	entryPoint = elf_loadFromFile(path);
+	if(entryPoint != TEXT_BEGIN && entryPoint != INTERP_TEXT_BEGIN) {
 		/* there is no undo for proc_removeRegions() :/ */
-		kheap_free(argBuffer);
-		proc_terminate(p,res,SIG_COUNT);
-		thread_switch();
-		return;
+		goto error;
 	}
 
 	/* copy path so that we can identify the process */
 	memcpy(p->command,pathSave + (pathLen > MAX_PROC_NAME_LEN ? (pathLen - MAX_PROC_NAME_LEN) : 0),
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
-	/* make process ready */
-	if(!proc_setupUserStack(stack,argc,argBuffer,argSize,(u32)res)) {
-		kheap_free(argBuffer);
-		proc_terminate(p,res,SIG_COUNT);
-		thread_switch();
-		return;
+	/* make process ready; entrypoint is always TEXT_BEGIN, even for the dynamic linker
+	 * (in this case for the program to load) */
+	if(!proc_setupUserStack(stack,argc,argBuffer,argSize,TEXT_BEGIN))
+		goto error;
+	proc_setupStart(stack,entryPoint);
+
+	/* if its the dynamic linker, open the program to exec and give him the filedescriptor,
+	 * so that he can load it including all shared libraries */
+	if(entryPoint == INTERP_TEXT_BEGIN) {
+		u32 *esp = (u32*)stack->uesp;
+		tFileNo file;
+		tFD fd = thread_getFreeFd();
+		if(fd < 0)
+			goto error;
+		file = vfsr_openFile(t->tid,VFS_READ,path);
+		if(file < 0)
+			goto error;
+		assert(thread_assocFd(fd,file) == 0);
+		*--esp = fd;
+		stack->uesp = (u32)esp;
 	}
-	proc_setupStart(stack);
 
 	kheap_free(argBuffer);
+	return;
+
+error:
+	kheap_free(argBuffer);
+	proc_terminate(p,res,SIG_COUNT);
+	thread_switch();
 }
 
 void sysc_vm86int(sIntrptStackFrame *stack) {

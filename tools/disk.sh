@@ -88,6 +88,7 @@ addTestData() {
 	$SUDO mkdir $DISKMOUNT/apps
 	$SUDO mkdir $DISKMOUNT/bin
 	$SUDO mkdir $DISKMOUNT/sbin
+	$SUDO mkdir $DISKMOUNT/lib
 	$SUDO mkdir $DISKMOUNT/etc
 	$SUDO mkdir $DISKMOUNT/etc/keymaps
 	$SUDO cp dist/drivers.txt $DISKMOUNT/etc/drivers

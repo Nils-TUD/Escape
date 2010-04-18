@@ -326,7 +326,7 @@ s32 proc_startThread(u32 entryPoint,void *arg) {
 			/* never reached */
 			return ERR_NOT_ENOUGH_MEM;
 		}
-		proc_setupStart(istack);
+		proc_setupStart(istack,entryPoint);
 
 		/* child */
 		return 0;
@@ -629,7 +629,7 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 	return true;
 }
 
-void proc_setupStart(sIntrptStackFrame *frame) {
+void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint) {
 	vassert(frame != NULL,"frame == NULL");
 
 	/* user-mode segments */
@@ -640,8 +640,7 @@ void proc_setupStart(sIntrptStackFrame *frame) {
 	/* gs is used for TLS */
 	frame->gs = SEGSEL_GDTI_UTLS | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
 	frame->uss = SEGSEL_GDTI_UDATA | SEGSEL_RPL_USER | SEGSEL_TI_GDT;
-	/* entrypoint is always TEXT_BEGIN; the stack tells the user-app where to go */
-	frame->eip = TEXT_BEGIN;
+	frame->eip = entryPoint;
 	/* general purpose register */
 	frame->eax = 0;
 	frame->ebx = 0;

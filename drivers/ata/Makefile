@@ -1,3 +1,3 @@
 NAME=ata
 
--include ../DefMakefile.mk
+-include ../StlibMakefile.mk

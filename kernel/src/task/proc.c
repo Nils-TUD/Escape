@@ -146,11 +146,16 @@ u32 proc_getCount(void) {
 	return count;
 }
 
-sProc *proc_getProcWithBin(sBinDesc *bin) {
+sProc *proc_getProcWithBin(sBinDesc *bin,tVMRegNo *rno) {
 	u32 i;
 	for(i = 0; i < PROC_COUNT; i++) {
-		if(procs[i].pid != INVALID_PID && vmm_hasBinary(procs + i,bin))
-			return procs + i;
+		if(procs[i].pid != INVALID_PID) {
+			tVMRegNo res = vmm_hasBinary(procs + i,bin);
+			if(res != -1) {
+				*rno = res;
+				return procs + i;
+			}
+		}
 	}
 	return NULL;
 }

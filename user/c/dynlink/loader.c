@@ -195,7 +195,7 @@ static void load_relocLib(sSharedLib *l) {
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr);
 			}
 			else
-				DBGDL("Rel (?) off=%x info=%x\n",rel[x].r_offset,rel[x].r_info);
+				error("Unknown relocation: off=%x info=%x\n",rel[x].r_offset,rel[x].r_info);
 		}
 	}
 

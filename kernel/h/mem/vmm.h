@@ -26,7 +26,7 @@
 #include <task/thread.h>
 #include <printf.h>
 
-#define DISABLE_DEMLOAD		1
+#define DISABLE_DEMLOAD		0
 
 #define MAX_REGUSE_COUNT	(PROC_COUNT * 8)
 
@@ -131,9 +131,9 @@ void vmm_getRegRange(sProc *p,tVMRegNo reg,u32 *start,u32 *end);
  *
  * @param p the process
  * @param bin the binary
- * @return true if so
+ * @return the region-number if so or -1
  */
-bool vmm_hasBinary(sProc *p,sBinDesc *bin);
+tVMRegNo vmm_hasBinary(sProc *p,sBinDesc *bin);
 
 /**
  * Tries to handle a page-fault for the given address. That means, loads a page on demand, zeros

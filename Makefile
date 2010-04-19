@@ -38,14 +38,15 @@ export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long -ffreestanding
 export DWFLAGS=-w -wi
+# flags for programs that want to link dynamic libraries
 export DLNKFLAGS=-Wl,--dynamic-linker=/bin/dynlink -L$(BUILD)
 ifeq ($(BUILDDIR),$(abspath build/debug))
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g -D LOGSERIAL
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 else
-	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D NDEBUG
-	export CDEFFLAGS=$(CWFLAGS) -O3 -D NDEBUG
+	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D NDEBUG -D LOGSERIAL
+	export CDEFFLAGS=$(CWFLAGS) -O3 -D NDEBUG -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 endif
 # flags for nasm

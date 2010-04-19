@@ -1,3 +1,3 @@
 NAME=kmmanager
 
--include ../DefMakefile.mk
+-include ../ShlibMakefile.mk

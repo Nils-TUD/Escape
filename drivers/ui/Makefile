@@ -1,3 +1,3 @@
 NAME=ui
 
--include ../DefMakefile.mk
+-include ../ShlibMakefile.mk

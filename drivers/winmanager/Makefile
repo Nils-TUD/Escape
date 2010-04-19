@@ -1,3 +1,3 @@
 NAME=winmanager
 
--include ../DefMakefile.mk
+-include ../ShlibMakefile.mk

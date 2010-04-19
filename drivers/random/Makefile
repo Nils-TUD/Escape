@@ -1,3 +1,3 @@
 NAME=random
 
--include ../DefMakefile.mk
+-include ../ShlibMakefile.mk

@@ -22,12 +22,12 @@
 %include "syscalls.s"
 
 [extern errno]
-[global inByte]
-[global inWord]
-[global inDWord]
-[global outByte]
-[global outWord]
-[global outDWord]
+[global inByte:function]
+[global inWord:function]
+[global inDWord:function]
+[global outByte:function]
+[global outWord:function]
+[global outDWord:function]
 
 ; u8 inByte(u16 port)
 inByte:

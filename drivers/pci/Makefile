@@ -1,3 +1,3 @@
 NAME=pci
 
--include ../DefMakefile.mk
+-include ../ShlibMakefile.mk

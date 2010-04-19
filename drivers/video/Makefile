@@ -1,3 +1,3 @@
 NAME=video
 
--include ../DefMakefile.mk
+-include ../ShlibMakefile.mk

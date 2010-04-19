@@ -1,3 +1,3 @@
 NAME=powermng
 
--include ../DefMakefile.mk
+-include ../ShlibMakefile.mk

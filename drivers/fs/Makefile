@@ -1,3 +1,3 @@
 NAME=fs
 
--include ../DefMakefile.mk
+-include ../StlibMakefile.mk

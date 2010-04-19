@@ -104,9 +104,15 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
 	/* no demand-loading if the binary isn't present */
 	if(bin == NULL)
 		pgFlags &= ~PF_DEMANDLOAD;
-	/* for text: try to find another process with that text */
-	else if(type == REG_TEXT && (binowner = proc_getProcWithBin(bin)) != NULL)
-		return vmm_join(binowner,RNO_TEXT,p);
+	else {
+		/* for text and shared-library-text: try to find another process with that text */
+		if(type == REG_TEXT || type == REG_SHLIBTEXT) {
+			tVMRegNo prno;
+			binowner = proc_getProcWithBin(bin,&prno);
+			if(binowner)
+				return vmm_join(binowner,prno,p);
+		}
+	}
 
 	/* create region */
 	reg = reg_create(bin,binOffset,bCount,pgFlags,flags);
@@ -216,13 +222,21 @@ void vmm_getRegRange(sProc *p,tVMRegNo reg,u32 *start,u32 *end) {
 		*end = vm->virt + vm->reg->byteCount;
 }
 
-bool vmm_hasBinary(sProc *p,sBinDesc *bin) {
+tVMRegNo vmm_hasBinary(sProc *p,sBinDesc *bin) {
 	sVMRegion *vm;
+	u32 i;
 	if(p->regSize == 0 || p->regions == NULL)
-		return false;
-	vm = REG(p,RNO_TEXT);
-	return vm && vm->reg->binary.modifytime == bin->modifytime &&
-			vm->reg->binary.ino == bin->ino && vm->reg->binary.dev == bin->dev;
+		return -1;
+	for(i = 0; i < p->regSize; i++) {
+		vm = REG(p,i);
+		/* if its shareable and the binary fits, return region-number */
+		if(vm && (vm->reg->flags & RF_SHAREABLE) &&
+				vm->reg->binary.modifytime == bin->modifytime &&
+				vm->reg->binary.ino == bin->ino && vm->reg->binary.dev == bin->dev) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 bool vmm_pagefault(u32 addr) {

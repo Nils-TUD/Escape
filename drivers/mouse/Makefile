@@ -1,3 +1,3 @@
 NAME=mouse
 
--include ../DefMakefile.mk
+-include ../ShlibMakefile.mk

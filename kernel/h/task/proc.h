@@ -146,9 +146,10 @@ u32 proc_getCount(void);
  * Searches for a process with given binary
  *
  * @param bin the binary
+ * @param rno will be set to the region-number if found
  * @return the process with the binary or NULL if not found
  */
-sProc *proc_getProcWithBin(sBinDesc *bin);
+sProc *proc_getProcWithBin(sBinDesc *bin,tVMRegNo *rno);
 
 /**
  * Finds the least recently used process where something can be swapped. The current one is excluded.

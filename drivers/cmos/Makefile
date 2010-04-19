@@ -1,3 +1,3 @@
 NAME=cmos
 
--include ../DefMakefile.mk
+-include ../StlibMakefile.mk

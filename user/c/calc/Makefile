@@ -33,9 +33,9 @@ GENOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN) $(BISONGEN))
 
 all:	$(APPCPY) $(BISONGEN) $(LEXGEN) $(BIN)
 
-$(BIN):	$(BUILDDIRS) $(APPDST) $(LDCONF) $(COBJ) $(GENOBJ) $(START) $(LIBCA) $(ADDLIBS)
+$(BIN):	$(BUILDDIRS) $(APPDST) $(LDCONF) $(COBJ) $(GENOBJ) $(START) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(GENOBJ) $(LIBCA) $(ADDLIBS);
+		$(CC) $(CFLAGS) $(DLNKFLAGS) -o $(BIN) $(START) $(COBJ) $(GENOBJ) $(ADDLIBS) -lc;
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 

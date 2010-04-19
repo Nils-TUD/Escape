@@ -38,6 +38,7 @@ export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long -ffreestanding
 export DWFLAGS=-w -wi
+export DLNKFLAGS=-Wl,--dynamic-linker=/bin/dynlink -L$(BUILD)
 ifeq ($(BUILDDIR),$(abspath build/debug))
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g -D LOGSERIAL
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL

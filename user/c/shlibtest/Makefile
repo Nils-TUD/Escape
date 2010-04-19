@@ -36,8 +36,8 @@ all:	$(APPCPY) $(BIN)
 
 $(BIN):	$(BUILDDIRS) $(LDCONF) $(COBJ) $(START) $(LIBCA) $(SHLIB) $(SECLIB)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) -L$(BUILD) -l$(NAME) -l$(NAME)2 \
-			-Wl,--dynamic-linker=/bin/dynlink $(START) $(COBJ) $(LIBCA);
+		@$(CC) $(CFLAGS) $(DLNKFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) -l$(NAME) -l$(NAME)2 \
+			$(START) $(COBJ) $(LIBCA);
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 

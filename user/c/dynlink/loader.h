@@ -27,6 +27,8 @@
 
 #define TEXT_BEGIN		0x1000
 
+#define DBGDL(x,...)	debugf(x,## __VA_ARGS__)
+
 typedef struct {
 	char *name;
 	tFD fd;

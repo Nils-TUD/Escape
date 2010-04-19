@@ -126,6 +126,8 @@ static void load_reloc(void) {
 		Elf32_Addr *got;
 		Elf32_Rel *rel;
 
+		DBGDL("Relocating stuff of %s (loaded @ %x)\n",l->name ? l->name : "-Main-",l->loadAddr);
+
 		rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
 		if(rel) {
 			u32 x;
@@ -138,6 +140,7 @@ static void load_reloc(void) {
 					u32 symIndex = ELF32_R_SYM(rel[x].r_info);
 					u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
 					*ptr = l->symbols[symIndex].st_value + l->loadAddr;
+					DBGDL("Rel (GLOB_DAT) off=%x reloc=%x\n",rel[x].r_offset,*ptr);
 				}
 				else if(relType == R_386_COPY) {
 					u32 value;
@@ -147,7 +150,10 @@ static void load_reloc(void) {
 					if(foundSym == NULL)
 						error("Unable to find symbol %s",name);
 					memcpy((void*)(rel[x].r_offset),(void*)value,foundSym->st_size);
+					DBGDL("Rel (COPY) off=%x sym=%s\n",rel[x].r_offset,name);
 				}
+				else
+					DBGDL("Rel (?) off=%x info=%x\n",rel[x].r_offset,rel[x].r_info);
 			}
 		}
 
@@ -170,6 +176,11 @@ static void load_reloc(void) {
 					if(!foundSym)
 						error("Unable to find symbol %s",name);
 					*addr = value;
+					DBGDL("JmpRel off=%x addr=%x reloc=%x (%s)\n",l->jmprel[x].r_offset,addr,value,name);
+				}
+				else {
+					*addr += l->loadAddr;
+					DBGDL("JmpRel off=%x addr=%x reloc=%x\n",l->jmprel[x].r_offset,addr,*addr);
 				}
 			}
 		}

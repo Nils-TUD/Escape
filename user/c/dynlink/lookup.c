@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/debug.h>
 #include <string.h>
 #include <sllist.h>
 #include "elf.h"
@@ -80,7 +81,7 @@ static Elf32_Sym *lookup_byNameIn(sSharedLib *lib,const char *name,u32 hash) {
 	symindex = lib->hashTbl[(hash % nhash) + 2];
 	while(symindex != STN_UNDEF) {
 		sym = lib->symbols + symindex;
-		if(sym->st_size != 0 && strcmp(name,lib->strtbl + sym->st_name) == 0)
+		if(sym->st_shndx != STN_UNDEF && strcmp(name,lib->strtbl + sym->st_name) == 0)
 			return sym;
 		symindex = lib->hashTbl[2 + nhash + symindex];
 	}

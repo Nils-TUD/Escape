@@ -27,9 +27,15 @@
 
 #define TEXT_BEGIN		0x1000
 
-#define DBGDL(x,...)	debugf(x,## __VA_ARGS__)
+#define DEBUG_LOADER	0
+#if DEBUG_LOADER
+#	define DBGDL(x,...)	debugf(x,## __VA_ARGS__)
+#else
+#	define DBGDL(x,...)
+#endif
 
-typedef struct {
+typedef struct sSharedLib sSharedLib;
+struct sSharedLib {
 	char *name;
 	tFD fd;
 	sBinDesc bin;
@@ -39,7 +45,9 @@ typedef struct {
 	Elf32_Rel *jmprel;
 	Elf32_Sym *symbols;
 	char *strtbl;
-} sSharedLib;
+	sSLList *deps;
+	bool relocated;
+};
 
 extern sSLList *libs;
 

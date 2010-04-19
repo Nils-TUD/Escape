@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/debug.h>
 #include <esc/heap.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
@@ -29,9 +30,10 @@
 
 static u32 load_addSegments(void);
 static void load_reloc(void);
+static void load_relocLib(sSharedLib *l);
 static void load_library(sSharedLib *dst);
 static void load_doLoad(tFD binFd,sSharedLib *dst);
-static bool load_addLib(sSharedLib *lib);
+static sSharedLib *load_addLib(sSharedLib *lib);
 static u32 load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag);
 static void load_read(tFD binFd,u32 offset,void *buffer,u32 count);
 static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,bool isLib);
@@ -48,14 +50,29 @@ u32 load_setupProg(tFD binFd) {
 	sSharedLib *main = (sSharedLib*)malloc(sizeof(sSharedLib));
 	if(!main)
 		error("Not enough mem!");
+	main->relocated = false;
 	main->strtbl = NULL;
 	main->dyn = NULL;
 	main->name = NULL;
-	if(!sll_append(libs,main))
+	main->deps = sll_create();
+	if(!main->deps || !sll_append(libs,main))
 		error("Not enough mem!");
 
 	/* load program including shared libraries into linked list */
 	load_doLoad(binFd,main);
+
+#if DEBUG_LOADER
+	sSLNode *n,*m;
+	for(n = sll_begin(libs); n != NULL; n = n->next) {
+		sSharedLib *l = (sSharedLib*)n->data;
+		DBGDL("Loaded %s with deps:\n",l->name ? l->name : "-Main-");
+		for(m = sll_begin(l->deps); m != NULL; m = m->next) {
+			sSharedLib *dl = (sSharedLib*)m->data;
+			DBGDL(" %s",dl->name);
+		}
+		DBGDL("\n");
+	}
+#endif
 
 	/* load segments into memory */
 	entryPoint = load_addSegments();
@@ -123,76 +140,102 @@ static void load_reloc(void) {
 	sSLNode *n;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
-		Elf32_Addr *got;
-		Elf32_Rel *rel;
+		load_relocLib(l);
+	}
+}
 
-		DBGDL("Relocating stuff of %s (loaded @ %x)\n",l->name ? l->name : "-Main-",l->loadAddr);
+static void load_relocLib(sSharedLib *l) {
+	Elf32_Addr *got;
+	Elf32_Rel *rel;
+	sSLNode *n;
 
-		rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
-		if(rel) {
-			u32 x;
-			u32 relCount = load_getDyn(l->dyn,DT_RELSZ);
-			relCount /= sizeof(Elf32_Rel);
-			rel = (Elf32_Rel*)((u32)rel + l->loadAddr);
-			for(x = 0; x < relCount; x++) {
-				u32 relType = ELF32_R_TYPE(rel[x].r_info);
-				if(relType == R_386_GLOB_DAT) {
-					u32 symIndex = ELF32_R_SYM(rel[x].r_info);
-					u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
-					*ptr = l->symbols[symIndex].st_value + l->loadAddr;
-					DBGDL("Rel (GLOB_DAT) off=%x reloc=%x\n",rel[x].r_offset,*ptr);
-				}
-				else if(relType == R_386_COPY) {
-					u32 value;
-					u32 symIndex = ELF32_R_SYM(rel[x].r_info);
-					const char *name = l->strtbl + l->symbols[symIndex].st_name;
-					Elf32_Sym *foundSym = lookup_byName(l,name,&value);
-					if(foundSym == NULL)
-						error("Unable to find symbol %s",name);
-					memcpy((void*)(rel[x].r_offset),(void*)value,foundSym->st_size);
-					DBGDL("Rel (COPY) off=%x sym=%s\n",rel[x].r_offset,name);
-				}
-				else
-					DBGDL("Rel (?) off=%x info=%x\n",rel[x].r_offset,rel[x].r_info);
+	/* already relocated? */
+	if(l->relocated)
+		return;
+
+	/* first go through the dependencies; this may be required for the R_386_COPY-relocation */
+	for(n = sll_begin(l->deps); n != NULL; n = n->next) {
+		sSharedLib *dl = (sSharedLib*)n->data;
+		load_relocLib(dl);
+	}
+
+	DBGDL("Relocating stuff of %s (loaded @ %x)\n",l->name ? l->name : "-Main-",l->loadAddr);
+
+	rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
+	if(rel) {
+		u32 x;
+		u32 relCount = load_getDyn(l->dyn,DT_RELSZ);
+		relCount /= sizeof(Elf32_Rel);
+		rel = (Elf32_Rel*)((u32)rel + l->loadAddr);
+		for(x = 0; x < relCount; x++) {
+			u32 relType = ELF32_R_TYPE(rel[x].r_info);
+			if(relType == R_386_GLOB_DAT) {
+				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
+				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
+				*ptr = l->symbols[symIndex].st_value + l->loadAddr;
+				DBGDL("Rel (GLOB_DAT) off=%x orgoff=%x reloc=%x orgval=%x\n",
+						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr,
+						l->symbols[symIndex].st_value);
 			}
-		}
-
-		/* adjust addresses in PLT-jumps */
-		if(l->jmprel) {
-			u32 x,jmpCount = load_getDyn(l->dyn,DT_PLTRELSZ);
-			jmpCount /= sizeof(Elf32_Rel);
-			for(x = 0; x < jmpCount; x++) {
-				u32 *addr = (u32*)(l->jmprel[x].r_offset + l->loadAddr);
-				/* if the address is 0 (should be the next instruction at the beginning),
-				 * do the symbol-lookup immediatly.
-				 * TODO i can't imagine that this is the intended way. why is the address 0 in
-				 * this case??? (instead of the offset from the beginning of the shared lib,
-				 * so that we can simply add the loadAddr) */
-				if(*addr == 0) {
-					u32 value;
-					u32 symIndex = ELF32_R_SYM(l->jmprel[x].r_info);
-					const char *name = l->strtbl + l->symbols[symIndex].st_name;
-					Elf32_Sym *foundSym = lookup_byName(l,name,&value);
-					if(!foundSym)
-						error("Unable to find symbol %s",name);
-					*addr = value;
-					DBGDL("JmpRel off=%x addr=%x reloc=%x (%s)\n",l->jmprel[x].r_offset,addr,value,name);
-				}
-				else {
-					*addr += l->loadAddr;
-					DBGDL("JmpRel off=%x addr=%x reloc=%x\n",l->jmprel[x].r_offset,addr,*addr);
-				}
+			else if(relType == R_386_COPY) {
+				u32 value;
+				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
+				const char *name = l->strtbl + l->symbols[symIndex].st_name;
+				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
+				if(foundSym == NULL)
+					error("Unable to find symbol %s",name);
+				memcpy((void*)(rel[x].r_offset),(void*)value,foundSym->st_size);
+				DBGDL("Rel (COPY) off=%x sym=%s addr=%x val=%x\n",rel[x].r_offset,name,
+						value,*(u32*)value);
 			}
-		}
-
-		/* store pointer to library and lookup-function into GOT */
-		got = (u32*)load_getDyn(l->dyn,DT_PLTGOT);
-		if(got) {
-			got = (Elf32_Addr*)((u32)got + l->loadAddr);
-			got[1] = (Elf32_Addr)l;
-			got[2] = (Elf32_Addr)&lookup_resolveStart;
+			else if(relType == R_386_RELATIVE) {
+				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
+				*ptr += l->loadAddr;
+				DBGDL("Rel (RELATIVE) off=%x orgoff=%x reloc=%x\n",
+						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr);
+			}
+			else
+				DBGDL("Rel (?) off=%x info=%x\n",rel[x].r_offset,rel[x].r_info);
 		}
 	}
+
+	/* adjust addresses in PLT-jumps */
+	if(l->jmprel) {
+		u32 x,jmpCount = load_getDyn(l->dyn,DT_PLTRELSZ);
+		jmpCount /= sizeof(Elf32_Rel);
+		for(x = 0; x < jmpCount; x++) {
+			u32 *addr = (u32*)(l->jmprel[x].r_offset + l->loadAddr);
+			/* if the address is 0 (should be the next instruction at the beginning),
+			 * do the symbol-lookup immediatly.
+			 * TODO i can't imagine that this is the intended way. why is the address 0 in
+			 * this case??? (instead of the offset from the beginning of the shared lib,
+			 * so that we can simply add the loadAddr) */
+			if(*addr == 0) {
+				u32 value;
+				u32 symIndex = ELF32_R_SYM(l->jmprel[x].r_info);
+				const char *name = l->strtbl + l->symbols[symIndex].st_name;
+				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
+				if(!foundSym)
+					error("Unable to find symbol %s",name);
+				*addr = value;
+				DBGDL("JmpRel off=%x addr=%x reloc=%x (%s)\n",l->jmprel[x].r_offset,addr,value,name);
+			}
+			else {
+				*addr += l->loadAddr;
+				DBGDL("JmpRel off=%x addr=%x reloc=%x\n",l->jmprel[x].r_offset,addr,*addr);
+			}
+		}
+	}
+
+	/* store pointer to library and lookup-function into GOT */
+	got = (u32*)load_getDyn(l->dyn,DT_PLTGOT);
+	if(got) {
+		got = (Elf32_Addr*)((u32)got + l->loadAddr);
+		got[1] = (Elf32_Addr)l;
+		got[2] = (Elf32_Addr)&lookup_resolveStart;
+	}
+
+	l->relocated = true;
 }
 
 static void load_library(sSharedLib *dst) {
@@ -253,36 +296,46 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 
 			for(i = 0; i < (pheader.p_filesz / sizeof(Elf32_Dyn)); i++) {
 				if(dst->dyn[i].d_tag == DT_NEEDED) {
-					sSharedLib *lib = (sSharedLib*)malloc(sizeof(sSharedLib));
+					sSharedLib *nlib,*lib = (sSharedLib*)malloc(sizeof(sSharedLib));
 					if(!lib)
 						error("Not enough mem!");
+					lib->relocated = false;
 					lib->dyn = NULL;
 					lib->strtbl = NULL;
 					lib->name = dst->strtbl + dst->dyn[i].d_un.d_val;
 					lib->loadAddr = 0;
-					if(!load_addLib(lib))
-						free(lib);
-					else
+					lib->deps = sll_create();
+					if(!lib->deps)
+						error("Not enough mem!");
+					nlib = load_addLib(lib);
+					if(nlib == NULL) {
 						load_library(lib);
+						nlib = lib;
+					}
+					else
+						free(lib);
+					sll_append(dst->deps,nlib);
 				}
 			}
 		}
 	}
 }
 
-static bool load_addLib(sSharedLib *lib) {
+static sSharedLib *load_addLib(sSharedLib *lib) {
 	sSLNode *n;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
 		if(l->name && strcmp(l->name,lib->name) == 0)
-			return false;
+			return l;
 	}
 	if(!sll_append(libs,lib))
 		error("Not enough mem!");
-	return true;
+	return NULL;
 }
 
 static u32 load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
+	if(dyn == NULL)
+		error("No dynamic entries");
 	while(dyn->d_tag != DT_NULL) {
 		if(dyn->d_tag == tag)
 			return dyn->d_un.d_val;

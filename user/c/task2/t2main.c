@@ -23,7 +23,7 @@
 #include <esc/heap.h>
 #include <string.h>
 
-#if 0
+#if 1
 int main(void) {
 	/*if(exec((const char*)0x12345678,NULL) < 0) {
 		printe("Exec failed");
@@ -40,7 +40,7 @@ int main(void) {
 
 	return EXIT_SUCCESS;
 }
-#endif
+#else
 
 #define SINGLE_MANTISSE_BITS	23
 #define DOUBLE_MANTISSE_BITS	52
@@ -357,3 +357,4 @@ int main(int argc,char *argv[]) {
 	printf("opost=%Ld\n",opost);*/
 	return 0;
 }
+#endif

@@ -21,7 +21,7 @@
 
 %include "syscalls.s"
 
-[global cpu_rdtsc]
+[global cpu_rdtsc:function]
 
 SYSC_RET_0ARGS getCycles,SYSCALL_GETCYCLES
 SYSC_VOID_1ARGS debugChar,SYSCALL_DEBUGCHAR

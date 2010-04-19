@@ -24,7 +24,6 @@ CSRC = $(filter-out ./$(BISONGEN) ./$(LEXGEN),\
 	$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
 
 # objects
-LIBCA = $(BUILD)/libc.a
 START = $(BUILD)/libc_startup.o
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 GENOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN) $(BISONGEN))

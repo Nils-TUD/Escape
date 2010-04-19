@@ -19,6 +19,8 @@
 
 [BITS 32]
 
+[extern  _GLOBAL_OFFSET_TABLE_]
+
 ; the syscall-numbers
 SYSCALL_PID						equ 0
 SYSCALL_PPID					equ 1
@@ -91,7 +93,7 @@ SYSCALL_IRQ						equ	0x30
 ; macros for the different syscall-types (void / ret-value, arg-count, error-handling)
 
 %macro SYSC_VOID_0ARGS 2
-[global %1]
+[global %1:function]
 %1:
 	mov		eax,%2								; set syscall-number
 	int		SYSCALL_IRQ
@@ -99,7 +101,7 @@ SYSCALL_IRQ						equ	0x30
 %endmacro
 
 %macro SYSC_VOID_1ARGS 2
-[global %1]
+[global %1:function]
 %1:
 	mov		eax,%2								; set syscall-number
 	mov		ecx,[esp + 4]					; set arg1
@@ -108,7 +110,7 @@ SYSCALL_IRQ						equ	0x30
 %endmacro
 
 %macro SYSC_RET_0ARGS 2
-[global %1]
+[global %1:function]
 %1:
 	mov		eax,%2								; set syscall-number
 	int		SYSCALL_IRQ
@@ -116,34 +118,34 @@ SYSCALL_IRQ						equ	0x30
 %endmacro
 
 %macro SYSC_RET_0ARGS_ERR 2
-[global %1]
+[global %1:function]
 %1:
 	mov		eax,%2								; set syscall-number
 	int		SYSCALL_IRQ
 	test	ecx,ecx
 	jz		.return								; no-error?
-	mov		[errno],ecx						; store error-code
+	STORE_ERRNO
 	mov		eax,ecx								; return error-code
 .return:
 	ret
 %endmacro
 
 %macro SYSC_RET_1ARGS_ERR 2
-[global %1]
+[global %1:function]
 %1:
 	mov		eax,%2								; set syscall-number
 	mov		ecx,[esp + 4]					; set arg1
 	int		SYSCALL_IRQ
 	test	ecx,ecx
 	jz		.return								; no-error?
-	mov		[errno],ecx						; store error-code
+	STORE_ERRNO
 	mov		eax,ecx								; return error-code
 .return:
 	ret
 %endmacro
 
 %macro SYSC_RET_2ARGS_ERR 2
-[global %1]
+[global %1:function]
 %1:
 	mov		eax,%2								; set syscall-number
 	mov		ecx,[esp + 4]					; set arg1
@@ -151,14 +153,14 @@ SYSCALL_IRQ						equ	0x30
 	int		SYSCALL_IRQ
 	test	ecx,ecx
 	jz		.return								; no-error?
-	mov		[errno],ecx						; store error-code
+	STORE_ERRNO
 	mov		eax,ecx								; return error-code
 .return:
 	ret
 %endmacro
 
 %macro SYSC_RET_3ARGS_ERR 2
-[global %1]
+[global %1:function]
 %1:
 	push	ebp
 	mov		ebp,esp
@@ -170,7 +172,7 @@ SYSCALL_IRQ						equ	0x30
 	add		esp,4									; remove arg3
 	test	ecx,ecx
 	jz		.return								; no-error?
-	mov		[errno],ecx						; store error-code
+	STORE_ERRNO
 	mov		eax,ecx								; return error-code
 .return:
 	leave
@@ -178,7 +180,7 @@ SYSCALL_IRQ						equ	0x30
 %endmacro
 
 %macro SYSC_RET_4ARGS_ERR 2
-[global %1]
+[global %1:function]
 %1:
 	push	ebp
 	mov		ebp,esp
@@ -191,7 +193,7 @@ SYSCALL_IRQ						equ	0x30
 	add		esp,8									; remove arg3 and arg4
 	test	ecx,ecx
 	jz		.return								; no-error?
-	mov		[errno],ecx						; store error-code
+	STORE_ERRNO
 	mov		eax,ecx								; return error-code
 .return:
 	leave
@@ -199,7 +201,7 @@ SYSCALL_IRQ						equ	0x30
 %endmacro
 
 %macro SYSC_RET_7ARGS_ERR 2
-[global %1]
+[global %1:function]
 %1:
 	push	ebp
 	mov		ebp,esp
@@ -215,9 +217,29 @@ SYSCALL_IRQ						equ	0x30
 	add		esp,20								; remove args
 	test	ecx,ecx
 	jz		.return								; no-error?
-	mov		[errno],ecx						; store error-code
+	STORE_ERRNO
 	mov		eax,ecx								; return error-code
 .return:
 	leave
 	ret
+%endmacro
+
+; stores the received error-code (in ecx) to the global variable errno
+%macro STORE_ERRNO 0
+	%ifdef SHAREDLIB
+	; use GOT for shared-libraries
+	GET_GOT
+	mov		[ebx + errno wrt ..gotoff],ecx
+	%else
+	; otherwise access errno directly
+	mov		[errno],ecx						; store error-code
+	%endif
+%endmacro
+
+; loads the address of the GOT into ebx
+%macro GET_GOT 0
+	call	%%getgot
+%%getgot:
+	pop		ebx
+	add		ebx,_GLOBAL_OFFSET_TABLE_+$$-%%getgot wrt ..gotpc
 %endmacro

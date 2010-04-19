@@ -24,6 +24,7 @@ SYSCALLS = syscalls.s
 COBJS = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 CPICOBJS = $(patsubst %.c,$(BUILDL)/%_pic.o,$(CSRC))
 AOBJS = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
+APICOBJS = $(patsubst %.s,$(BUILDL)/%_pic.s.o,$(ASRC))
 LOBJ = $(patsubst $(LIBDIR)/%.c,$(BUILDL)/lib/%.o,$(LSRC))
 LPICOBJ = $(patsubst $(LIBDIR)/%.c,$(BUILDL)/lib/%_pic.o,$(LSRC))
 STARTO = $(BUILD)/libc_startup.o
@@ -41,10 +42,10 @@ $(STLIB): $(BUILDDIRS) $(COBJS) $(AOBJS) $(LOBJ) $(GCCLIB)
 		@echo "	" AR $(STLIB)
 		@ar rcs $(STLIB) $(COBJS) $(AOBJS) $(LOBJ) $(GCCLIB)
 
-$(DYNLIB):	$(BUILDDIRS) $(CPICOBJS) $(AOBJS) $(LPICOBJ) $(GCCLIB) $(SHLDCONF)
+$(DYNLIB):	$(BUILDDIRS) $(CPICOBJS) $(APICOBJS) $(LPICOBJ) $(GCCLIB) $(SHLDCONF)
 		@echo "	" LINKING $(DYNLIB)
 		@$(CC) $(CFLAGS) -shared -Wl,--build-id=none -Wl,-T,$(SHLDCONF) -Wl,-soname,$(DYNLIBNAME) \
-			-o $(DYNLIB) $(CPICOBJS) $(AOBJS) $(LPICOBJ) $(GCCLIB);
+			-o $(DYNLIB) $(CPICOBJS) $(APICOBJS) $(LPICOBJ) $(GCCLIB);
 		../tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
 		
 $(BUILDDIRS):
@@ -59,6 +60,10 @@ $(BUILDL)/%.o: %.c
 $(BUILDL)/%_pic.o: %.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MMD
+
+$(BUILDL)/%_pic.s.o: %.s $(SYSCALLS)
+		@echo "	" AS $<
+		@nasm $(ASMFLAGS) -D SHAREDLIB -o $@ $<
 
 $(BUILDL)/%.s.o: %.s $(SYSCALLS)
 		@echo "	" AS $<
@@ -80,4 +85,4 @@ $(STARTO): $(START)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(LOBJ) $(LPICOBJ) $(STLIB) $(DEPS) $(STARTO)
+		rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(APICOBJS) $(LOBJ) $(LPICOBJ) $(STLIB) $(DEPS) $(STARTO)

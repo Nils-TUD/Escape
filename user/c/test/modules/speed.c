@@ -106,7 +106,7 @@ int mod_speed(int argc,char *argv[]) {
 	diff = getTime() - t;
 	printf("\n");
 	printf("Instructions:	%08x%08x\n",total.val32.upper,total.val32.lower);
-	printf("Speed:			%07d KiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / K));
+	printf("Speed:			%07d KiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / (double)diff) / K));
 
 	close(fd);
 

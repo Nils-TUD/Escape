@@ -132,18 +132,18 @@ else
 endif
 
 qemu:	all prepareRun
-		sudo /etc/init.d/kvm start || true
+		sudo /etc/init.d/qemu-kvm start || true
 		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1
 
 bochs: all prepareRun
 		bochs -f bochs.cfg -q
 
 vmware: all prepareRun $(ISO) $(VMDISK)
-		sudo /etc/init.d/kvm stop || true # vmware doesn't like kvm :/
+		sudo /etc/init.d/qemu-kvm stop || true # vmware doesn't like kvm :/
 		vmplayer vmware/escape.vmx
 
 vbox: all prepareRun $(ISO) $(VMDISK)
-		sudo /etc/init.d/kvm stop || true # vbox doesn't like kvm :/
+		sudo /etc/init.d/qemu-kvm stop || true # vbox doesn't like kvm :/
 		tools/vboxhddupd.sh $(VBOXOSTITLE) $(VMDISK)
 		VBoxSDL --evdevkeymap -startvm $(VBOXOSTITLE)
 

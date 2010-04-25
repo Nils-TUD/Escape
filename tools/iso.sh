@@ -40,6 +40,10 @@ cp $ROOT/dist/keymap-ger.map $TMPDIR/etc/keymaps/ger
 cp $ROOT/dist/keymap-us.map $TMPDIR/etc/keymaps/us
 echo "/etc/keymaps/ger" > $TMPDIR/etc/keymap
 cp $BUILD/apps/* $TMPDIR/apps
+for i in $BUILD/lib*.so; do
+	BASE=`basename $i`
+	cp $i $TMPDIR/lib/$BASE
+done;
 for i in $BUILD/driver_*.bin ; do
 	BASE=`basename $i .bin`
 	cp $i $TMPDIR/sbin/`echo $BASE | sed "s/driver_\(.*\)/\1/g"`

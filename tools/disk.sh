@@ -7,7 +7,7 @@ BINNAME=kernel.bin
 OSTITLE="Escape v0.3"
 SUDO=sudo
 
-# 30 MB disk (60 * 16 * 63 * 512 = 20,643,840 byte)
+# 30 MB disk (60 * 16 * 63 * 512 = 30,965,760 byte)
 HDDCYL=60
 HDDHEADS=16
 HDDTRACKSECS=63
@@ -183,7 +183,7 @@ if [ "$1" == "build" ]; then
 		echo "" >> $TMPFILE && \
 		echo "" >> $TMPFILE && \
 		echo "w" >> $TMPFILE;
-	$SUDO fdisk -u -C$HDDCYL -S$HDDTRACKSECS -H$HDDHEADS /dev/loop0 < $TMPFILE || true
+	$SUDO fdisk -u -C $HDDCYL -S $HDDTRACKSECS -H $HDDHEADS /dev/loop0 < $TMPFILE || true
 	rmDiskDev
 	rm -f $TMPFILE
 	

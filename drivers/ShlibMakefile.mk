@@ -8,12 +8,17 @@ BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 APP = $(NAME).app
 APPCPY = $(BUILD)/apps/$(APP)
+LIBCA = $(BUILD)/libc.a
 
 CC = gcc
 # Note: we need -Wl,--build-id=none atm to prevent ld to generate the .note.gnu.build-id
 # This seems to be put at the beginning of the binary and therefore the entry-point changes
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I../../lib/h \
 	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS) $(ADDFLAGS)
+
+ifeq ($(LINKTYPE),static)
+	ADDLIBS += $(LIBCA)
+endif
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
@@ -28,7 +33,11 @@ all:	$(APPCPY) $(BIN)
 
 $(BIN):	$(BUILDDIRS) $(APPDST) $(LDCONF) $(COBJ) $(START) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
+ifeq ($(LINKTYPE),static)
+		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(ADDLIBS);
+else
 		@$(CC) $(CFLAGS) $(DLNKFLAGS) -o $(BIN) -lc $(START) $(COBJ) $(ADDLIBS);
+endif
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /sbin/$(NAME)
 

@@ -26,7 +26,6 @@
 #include <esc/conf.h>
 #include <string.h>
 #include <errors.h>
-#define TIMER_INC			(1000 / timerFreq)
 
 static void sigTimer(tSig sig,u32 data);
 static void sigHdlr(tSig sig,u32 data);
@@ -92,7 +91,7 @@ int main(int argc,char **argv) {
 static void sigTimer(tSig sig,u32 data) {
 	UNUSED(sig);
 	UNUSED(data);
-	ms += TIMER_INC;
+	ms += 1000 / timerFreq;
 }
 
 static void sigHdlr(tSig sig,u32 data) {

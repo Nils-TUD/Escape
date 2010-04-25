@@ -210,14 +210,17 @@ static void load_relocLib(sSharedLib *l) {
 			 * TODO i can't imagine that this is the intended way. why is the address 0 in
 			 * this case??? (instead of the offset from the beginning of the shared lib,
 			 * so that we can simply add the loadAddr) */
-			if(*addr == 0) {
+			if(LD_BIND_NOW || *addr == 0) {
 				u32 value;
 				u32 symIndex = ELF32_R_SYM(l->jmprel[x].r_info);
 				const char *name = l->strtbl + l->symbols[symIndex].st_name;
 				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
-				if(!foundSym)
+				if(!foundSym && !LD_BIND_NOW)
 					error("Unable to find symbol %s",name);
-				*addr = value;
+				else if(foundSym)
+					*addr = value;
+				else
+					*addr += l->loadAddr;
 				DBGDL("JmpRel off=%x addr=%x reloc=%x (%s)\n",l->jmprel[x].r_offset,addr,value,name);
 			}
 			else {

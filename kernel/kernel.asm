@@ -38,6 +38,8 @@
 [global paging_exchangePDir]
 [global cpu_cpuidSupported]
 [global cpu_rdtsc]
+[global cpu_getInfo]
+[global cpu_getStrInfo]
 [global cpu_getCR0]
 [global cpu_setCR0]
 [global cpu_getCR2]
@@ -281,6 +283,44 @@ cpu_getCR4:
 cpu_setCR4:
 	mov		eax,[esp + 4]
 	mov		cr4,eax
+	ret
+
+; void cpu_getInfo(u32 code,u32 *a,u32 *b,u32 *c,u32 *d);
+cpu_getInfo:
+	push	ebp
+	mov		ebp,esp
+	push	ebx														; save ebx
+	push	esi														; save esi
+	mov		eax,[ebp + 8]									; load code into eax
+	cpuid
+	mov		esi,[ebp + 12]								; store result in a,b,c and d
+	mov		[esi],eax
+	mov		esi,[ebp + 16]
+	mov		[esi],ebx
+	mov		esi,[ebp + 20]
+	mov		[esi],ecx
+	mov		esi,[ebp + 24]
+	mov		[esi],edx
+	pop		esi														; restore esi
+	pop		ebx														; restore ebx
+	leave
+	ret
+
+; void cpu_getStrInfo(u32 code,char *res);
+cpu_getStrInfo:
+	push	ebp
+	mov		ebp,esp
+	push	ebx														; save ebx
+	push	esi														; save esi
+	mov		eax,[ebp + 8]									; load code into eax
+	cpuid
+	mov		esi,[ebp + 12]								; load res into esi
+	mov		[esi + 0],ebx									; store result in res
+	mov		[esi + 4],edx
+	mov		[esi + 8],ecx
+	pop		esi														; restore esi
+	pop		ebx														; restore ebx
+	leave
 	ret
 
 ; void fpu_finit(void);

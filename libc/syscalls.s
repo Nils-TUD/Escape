@@ -229,17 +229,17 @@ SYSCALL_IRQ						equ	0x30
 	%ifdef SHAREDLIB
 	; use GOT for shared-libraries
 	GET_GOT
-	mov		[ebx + errno wrt ..gotoff],ecx
+	mov		[eax + errno wrt ..gotoff],ecx
 	%else
 	; otherwise access errno directly
 	mov		[errno],ecx						; store error-code
 	%endif
 %endmacro
 
-; loads the address of the GOT into ebx
+; loads the address of the GOT into eax; not ebx since we would have to save&restore it
 %macro GET_GOT 0
 	call	%%getgot
 %%getgot:
-	pop		ebx
-	add		ebx,_GLOBAL_OFFSET_TABLE_+$$-%%getgot wrt ..gotpc
+	pop		eax
+	add		eax,_GLOBAL_OFFSET_TABLE_+$$-%%getgot wrt ..gotpc
 %endmacro

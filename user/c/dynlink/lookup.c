@@ -31,7 +31,7 @@ static Elf32_Sym *lookup_byNameIn(sSharedLib *lib,const char *name,u32 hash);
 u32 lookup_resolve(sSharedLib *lib,u32 offset) {
 	Elf32_Sym *foundSym;
 	Elf32_Rel *rel = (Elf32_Rel*)((u32)lib->jmprel + offset);
-	Elf32_Sym *sym = lib->symbols + ELF32_M_SYM(rel->r_info);
+	Elf32_Sym *sym = lib->symbols + ELF32_R_SYM(rel->r_info);
 	u32 value,*addr;
 	DBGDL("Lookup symbol @ %x (%s) in lib %s\n",offset,lib->strtbl + sym->st_name,
 			lib->name ? lib->name : "-Main-");

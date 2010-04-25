@@ -24,6 +24,9 @@ else
 	DIRS = tools libc libcpp libd user/libs drivers user kernel/src
 endif
 
+# wether to link drivers and user-apps statically or dynamically
+export LINKTYPE = dynamic
+
 # number of jobs passing to make
 export JOBS =
 
@@ -33,7 +36,7 @@ export CC = gcc
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
-				 -Wstrict-prototypes -ffreestanding
+				 -Wstrict-prototypes -ffreestanding -fno-builtin
 export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long -ffreestanding
@@ -45,8 +48,8 @@ ifeq ($(BUILDDIR),$(abspath build/debug))
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 else
-	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D NDEBUG -D LOGSERIAL
-	export CDEFFLAGS=$(CWFLAGS) -O3 -D NDEBUG -D LOGSERIAL
+	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D NDEBUG
+	export CDEFFLAGS=$(CWFLAGS) -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 endif
 # flags for nasm

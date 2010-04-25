@@ -10,10 +10,15 @@ BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 APP = $(NAME).app
 APPCPY = $(BUILD)/apps/$(APP)
+LIBCA = $(BUILD)/libc.a
 
 CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
 	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS) $(ADDFLAGS)
+
+ifeq ($(LINKTYPE),static)
+	ADDLIBS += $(LIBCA)
+endif
 
 # sources
 LEXSRC = calc.l
@@ -34,7 +39,11 @@ all:	$(APPCPY) $(BISONGEN) $(LEXGEN) $(BIN)
 
 $(BIN):	$(BUILDDIRS) $(APPDST) $(LDCONF) $(COBJ) $(GENOBJ) $(START) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-		$(CC) $(CFLAGS) $(DLNKFLAGS) -o $(BIN) $(START) $(COBJ) $(GENOBJ) $(ADDLIBS) -lc;
+ifeq ($(LINKTYPE),static)
+		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(GENOBJ) $(ADDLIBS);
+else
+		$(CC) $(CFLAGS) $(DLNKFLAGS) -o $(BIN) -lc $(START) $(COBJ) $(GENOBJ) $(ADDLIBS);
+endif
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 

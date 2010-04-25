@@ -27,6 +27,7 @@
 
 #define TEXT_BEGIN		0x1000
 
+#define LD_BIND_NOW		0
 #define DEBUG_LOADER	0
 #if DEBUG_LOADER
 #	define DBGDL(x,...)	debugf(x,## __VA_ARGS__)

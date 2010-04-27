@@ -21,13 +21,21 @@ LIBCPPA = $(BUILD)/libcpp.a
 START = $(BUILD)/libcpp_startup.o
 COBJ = $(patsubst %.cpp,$(BUILDL)/%.o,$(CSRC))
 
+ifeq ($(LINKTYPE),static)
+	ADDLIBS += $(LIBCPPA)
+endif
+
 .PHONY: all clean
 
 all:	$(BIN)
 
-$(BIN):	$(BUILDDIRS) $(LDCONF) $(COBJ) $(START) $(LIBCPPA) $(ADDLIBS)
+$(BIN):	$(BUILDDIRS) $(LDCONF) $(COBJ) $(START) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCPPA) $(ADDLIBS);
+ifeq ($(LINKTYPE),static)
+		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(ADDLIBS);
+else
+		@$(CC) $(CFLAGS) $(DLNKFLAGS) -o $(BIN) -lcpp $(START) $(COBJ) $(ADDLIBS);
+endif
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 

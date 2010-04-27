@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/debug.h>
 #include <esc/fileio.h>
 
 #define MAX_GLOBAL_OBJS		32
@@ -83,7 +84,9 @@ void __cxa_finalize(void *d) {
 
 void __libcpp_start() {
 	fConstr *constr = &__libcpp_constr_start;
+	debugf("constr=%x, constrend=%x\n",constr,&__libcpp_constr_end);
 	while(constr < &__libcpp_constr_end) {
+		debugf("Calling %x\n",*constr);
 		(*constr)();
 		constr++;
 	}

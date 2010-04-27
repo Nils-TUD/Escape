@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/fileio.h>
 #include <esc/proc.h>
+#include <esc/debug.h>
 #include <esc/stream.h>
 #include <string.h>
 

@@ -61,7 +61,7 @@ init:
 	; initial thread calls main
 initialThread:
 	; call constructors
-	call	__libcpp_start
+	;call	__libcpp_start
 	call	main
 
 threadExit:

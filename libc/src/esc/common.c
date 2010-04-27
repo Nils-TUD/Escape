@@ -53,7 +53,7 @@ u32 *getStackTrace(void) {
 	u32 i;
 	u32 *ebp;
 	/* TODO just temporary */
-	u32 end = 0xC0000000;
+	u32 end = 0xA0000000;
 	u32 start = end - 0x1000 * 2;
 	u32 *frame = &frames[0];
 
@@ -75,10 +75,10 @@ u32 *getStackTrace(void) {
 void printStackTrace(void) {
 	u32 *trace = getStackTrace();
 	char *name = getProcName();
-	printf("Process %s - stack-trace:\n",name ? name : "???");
+	debugf("Process %s - stack-trace:\n",name ? name : "???");
 	/* TODO maybe we should skip printStackTrace here? */
 	while(*trace != 0) {
-		printf("\t0x%08x\n",*trace);
+		debugf("\t0x%08x\n",*trace);
 		trace++;
 	}
 }

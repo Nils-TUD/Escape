@@ -30,17 +30,17 @@
 void sysc_changeSize(sIntrptStackFrame *stack) {
 	s32 count = SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();
-	u32 oldEnd;
+	s32 oldEnd;
 	tVMRegNo rno = RNO_DATA;
 	/* if there is no data-region, maybe we're the dynamic linker that has a dldata-region */
 	if(!vmm_exists(p,rno)) {
 		/* if so, grow that region instead */
 		rno = vmm_getDLDataReg(p);
 		if(rno == -1)
-			SYSC_ERROR(stack,0);
+			SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	}
-	if((s32)(oldEnd = vmm_grow(p,rno,count)) < 0)
-		SYSC_ERROR(stack,0);
+	if((oldEnd = vmm_grow(p,rno,count)) < 0)
+		SYSC_ERROR(stack,oldEnd);
 	SYSC_RET1(stack,oldEnd);
 }
 

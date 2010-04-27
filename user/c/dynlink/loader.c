@@ -28,9 +28,14 @@
 #include "lookup.h"
 #include "loader.h"
 
+typedef void (*fConstr)(void);
+
 static u32 load_addSegments(void);
+static void load_init(void);
+static void load_initLib(sSharedLib *l);
 static void load_reloc(void);
 static void load_relocLib(sSharedLib *l);
+static void load_adjustCopyGotEntry(sSharedLib *l,u32 address,u32 copyAddr);
 static void load_library(sSharedLib *dst);
 static void load_doLoad(tFD binFd,sSharedLib *dst);
 static sSharedLib *load_addLib(sSharedLib *lib);
@@ -51,6 +56,7 @@ u32 load_setupProg(tFD binFd) {
 	if(!main)
 		error("Not enough mem!");
 	main->relocated = false;
+	main->initialized = false;
 	main->strtbl = NULL;
 	main->dyn = NULL;
 	main->name = NULL;
@@ -79,6 +85,9 @@ u32 load_setupProg(tFD binFd) {
 
 	/* relocate everything we need so that the program can start */
 	load_reloc();
+
+	/* call global constructors */
+	load_init();
 
 	return entryPoint;
 }
@@ -136,6 +145,51 @@ static u32 load_addSegments(void) {
 	return entryPoint;
 }
 
+static void load_init(void) {
+	sSLNode *n;
+	for(n = sll_begin(libs); n != NULL; n = n->next) {
+		sSharedLib *l = (sSharedLib*)n->data;
+		load_initLib(l);
+	}
+}
+
+static void load_initLib(sSharedLib *l) {
+	sSLNode *n;
+	u32 constrStart,constrEnd;
+	Elf32_Sym *symStart,*symEnd;
+	fConstr *constr;
+
+	/* already initialized? */
+	if(l->initialized)
+		return;
+
+	/* first go through the dependencies */
+	for(n = sll_begin(l->deps); n != NULL; n = n->next) {
+		sSharedLib *dl = (sSharedLib*)n->data;
+		load_initLib(dl);
+	}
+
+	/* lookup symbols */
+	symStart = lookup_byNameIn(l,"__libcpp_constr_start",&constrStart);
+	if(!symStart)
+		return;
+	symEnd = lookup_byNameIn(l,"__libcpp_constr_end",&constrEnd);
+	if(!symEnd)
+		return;
+
+	DBGDL("Calling global constructors of %s\n",l->name ? l->name : "-Main-");
+
+	/* call constructors */
+	constr = (fConstr*)constrStart;
+	while(constr < (fConstr*)constrEnd) {
+		DBGDL("Calling constructor %x\n",*constr);
+		(*constr)();
+		constr++;
+	}
+
+	l->initialized = true;
+}
+
 static void load_reloc(void) {
 	sSLNode *n;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
@@ -179,12 +233,16 @@ static void load_relocLib(sSharedLib *l) {
 			}
 			else if(relType == R_386_COPY) {
 				u32 value;
+				sSharedLib *foundLib;
 				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
 				const char *name = l->strtbl + l->symbols[symIndex].st_name;
-				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
+				Elf32_Sym *foundSym = lookup_byName(l,name,&value,&foundLib);
 				if(foundSym == NULL)
 					error("Unable to find symbol %s",name);
 				memcpy((void*)(rel[x].r_offset),(void*)value,foundSym->st_size);
+				/* set the GOT-Entry in the library of the symbol to the address we've copied
+				 * the value to. TODO I'm not sure if that's the intended way... */
+				load_adjustCopyGotEntry(foundLib,value,rel[x].r_offset);
 				DBGDL("Rel (COPY) off=%x sym=%s addr=%x val=%x\n",rel[x].r_offset,name,
 						value,*(u32*)value);
 			}
@@ -193,6 +251,14 @@ static void load_relocLib(sSharedLib *l) {
 				*ptr += l->loadAddr;
 				DBGDL("Rel (RELATIVE) off=%x orgoff=%x reloc=%x\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr);
+			}
+			else if(relType == R_386_32) {
+				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
+				Elf32_Sym *sym = l->symbols + ELF32_R_SYM(rel[x].r_info);
+				DBGDL("Rel (32) off=%x orgoff=%x symval=%x org=%x reloc=%x\n",
+						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr,
+						sym->st_value + l->loadAddr);
+				*ptr += sym->st_value + l->loadAddr;
 			}
 			else
 				error("Unknown relocation: off=%x info=%x\n",rel[x].r_offset,rel[x].r_info);
@@ -212,9 +278,10 @@ static void load_relocLib(sSharedLib *l) {
 			 * so that we can simply add the loadAddr) */
 			if(LD_BIND_NOW || *addr == 0) {
 				u32 value;
+				sSharedLib *foundLib;
 				u32 symIndex = ELF32_R_SYM(l->jmprel[x].r_info);
 				const char *name = l->strtbl + l->symbols[symIndex].st_name;
-				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
+				Elf32_Sym *foundSym = lookup_byName(l,name,&value,&foundLib);
 				if(!foundSym && !LD_BIND_NOW)
 					error("Unable to find symbol %s",name);
 				else if(foundSym)
@@ -239,6 +306,27 @@ static void load_relocLib(sSharedLib *l) {
 	}
 
 	l->relocated = true;
+}
+
+static void load_adjustCopyGotEntry(sSharedLib *l,u32 address,u32 copyAddr) {
+	/* TODO we should store DT_REL and DT_RELSZ */
+	Elf32_Rel *rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
+	if(rel) {
+		u32 x;
+		u32 relCount = load_getDyn(l->dyn,DT_RELSZ);
+		relCount /= sizeof(Elf32_Rel);
+		rel = (Elf32_Rel*)((u32)rel + l->loadAddr);
+		for(x = 0; x < relCount; x++) {
+			if(ELF32_R_TYPE(rel[x].r_info) == R_386_GLOB_DAT) {
+				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
+				if(l->symbols[symIndex].st_value + l->loadAddr == address) {
+					u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
+					*ptr = copyAddr;
+					return;
+				}
+			}
+		}
+	}
 }
 
 static void load_library(sSharedLib *dst) {
@@ -303,6 +391,7 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 					if(!lib)
 						error("Not enough mem!");
 					lib->relocated = false;
+					lib->initialized = false;
 					lib->dyn = NULL;
 					lib->strtbl = NULL;
 					lib->name = dst->strtbl + dst->dyn[i].d_un.d_val;

@@ -48,8 +48,19 @@ u32 lookup_resolve(sSharedLib *lib,u32 offset);
  * @param skip the library to skip (don't search for symbols in it)
  * @param name the name of the symbol
  * @param value will be set to the address (absolute = already adjusted by the loadAddr)
+ * @param lib will be set to the library in which the symbol has been found
  * @return the symbol if successfull or NULL
  */
-Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,u32 *value);
+Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,u32 *value,sSharedLib **lib);
+
+/**
+ * Resolves a symbol by name in the given library
+ *
+ * @param lib the library to look in
+ * @param name the name of the symbol
+ * @param value will be set to the address (absolute = already adjusted by the loadAddr)
+ * @return the symbol if successfull or NULL
+ */
+Elf32_Sym *lookup_byNameIn(sSharedLib *lib,const char *name,u32 *value);
 
 #endif /* LOOKUP_H_ */

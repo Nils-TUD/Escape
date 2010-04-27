@@ -48,6 +48,7 @@ struct sSharedLib {
 	char *strtbl;
 	sSLList *deps;
 	bool relocated;
+	bool initialized;
 };
 
 extern sSLList *libs;

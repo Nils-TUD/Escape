@@ -36,9 +36,11 @@ private:
 public:
 	my() : abc(4) {
 		printf("Constructor for %p...\n",this);
+		flush();
 	};
 	~my() {
 		printf("Destructor for %x...\n",this);
+		flush();
 		abc = 0;
 	};
 
@@ -52,9 +54,9 @@ void my::doIt() {
 }
 
 int main(void) {
-#if 0
-	startThread(threadFunc);
-	startThread(threadFunc);
+#if 1
+	/*startThread(threadFunc);
+	startThread(threadFunc);*/
 
 	char str[10];
 	char buffer[1024];

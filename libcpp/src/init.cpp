@@ -35,20 +35,6 @@ extern "C" {
 	 * We'll call this function before exit() to call all destructors registered by __cxa_atexit()
 	 */
 	void __cxa_finalize(void *d);
-
-	/**
-	 * Start of pointer-array to constructors to call
-	 */
-	extern fConstr __libcpp_constr_start;
-	/**
-	 * End of array
-	 */
-	extern fConstr __libcpp_constr_end;
-
-	/**
-	 * We'll call this function before main() to call the constructors for global objects
-	 */
-	void __libcpp_start();
 }
 
 typedef struct {
@@ -80,14 +66,4 @@ void __cxa_finalize(void *d) {
 	s32 i;
 	for(i = objPos - 1; i >= 0; i--)
 		objs[i].f(objs[i].p);
-}
-
-void __libcpp_start() {
-	fConstr *constr = &__libcpp_constr_start;
-	debugf("constr=%x, constrend=%x\n",constr,&__libcpp_constr_end);
-	while(constr < &__libcpp_constr_end) {
-		debugf("Calling %x\n",*constr);
-		(*constr)();
-		constr++;
-	}
 }

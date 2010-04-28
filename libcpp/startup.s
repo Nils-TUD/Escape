@@ -60,8 +60,6 @@ init:
 
 	; initial thread calls main
 initialThread:
-	; call constructors
-	;call	__libcpp_start
 	call	main
 
 threadExit:
@@ -79,7 +77,7 @@ threadExitFinish:
 	; just to be sure
 	jmp		$
 
-; all signal-handler return to this "function" (address 0x103e)
+; all signal-handler return to this "function" (address 0x1039)
 sigRetFunc:
 	mov		eax,SYSCALL_ACKSIG
 	int		SYSCALL_IRQ

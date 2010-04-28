@@ -86,13 +86,8 @@ threadExit:
 	nop
 	nop
 	nop
-	nop
-	nop
-	nop
-	nop
-	nop
 
-; all signal-handler return to this "function" (address 0x103e)
+; all signal-handler return to this "function" (address 0x1039)
 sigRetFunc:
 	mov		eax,SYSCALL_ACKSIG
 	int		SYSCALL_IRQ

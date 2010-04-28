@@ -83,11 +83,6 @@ threadExit:
 	nop
 	nop
 	nop
-	nop
-	nop
-	nop
-	nop
-	nop
 
 ; all signal-handler return to this "function" (address 0x103e)
 sigRetFunc:

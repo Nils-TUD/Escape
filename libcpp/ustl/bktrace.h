@@ -28,21 +28,25 @@ class ostream;
 ///
 class CBacktrace {
 public:
-			CBacktrace (void) throw();
-			CBacktrace (const CBacktrace& v) throw();
-    inline		~CBacktrace (void) throw()	{ if (m_Symbols) free (m_Symbols); }
-    const CBacktrace&	operator= (const CBacktrace& v) throw();
-    void		text_write (ostringstream& os) const;
-    void		read (istream& is);
-    void		write (ostream& os) const;
-    size_t		stream_size (void) const;
+	CBacktrace(void) throw ();
+	CBacktrace(const CBacktrace& v) throw ();
+	inline ~CBacktrace(void) throw () {
+		if (m_Symbols)
+			free(m_Symbols);
+	}
+	const CBacktrace& operator=(const CBacktrace& v) throw ();
+	void text_write(ostringstream& os) const;
+	void read(istream& is);
+	void write(ostream& os) const;
+	size_t stream_size(void) const;
 private:
-    void		GetSymbols (void) throw() DLL_LOCAL;
+	void GetSymbols(void) throw ()
+DLL_LOCAL	;
 private:
-    void*		m_Addresses [64];	///< Addresses of each function on the stack.
-    char*		m_Symbols;		///< Symbols corresponding to each address.
-    uint32_t		m_nFrames;		///< Number of addresses in m_Addresses.
-    uint32_t		m_SymbolsSize;		///< Size of m_Symbols.
+	void* m_Addresses [64]; ///< Addresses of each function on the stack.
+	char* m_Symbols; ///< Symbols corresponding to each address.
+	uint32_t m_nFrames; ///< Number of addresses in m_Addresses.
+	uint32_t m_SymbolsSize; ///< Size of m_Symbols.
 };
 
 } // namespace ustl

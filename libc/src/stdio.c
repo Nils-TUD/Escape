@@ -73,6 +73,10 @@ char *fgets(char *str,int max,FILE *file) {
 	return str;
 }
 
+off_t lseek(int fd,off_t offset,int whence) {
+	return seek(fd,offset,whence);
+}
+
 int isatty(int fd) {
 	return isterm(fd);
 }

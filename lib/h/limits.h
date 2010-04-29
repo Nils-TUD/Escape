@@ -20,6 +20,8 @@
 #ifndef LIMITS_H_
 #define LIMITS_H_
 
+#include <fsinterface.h>
+
 #define CHAR_BIT		8
 #define CHAR_MAX		SCHAR_MAX
 #define CHAR_MIN		SCHAR_MIN
@@ -38,5 +40,7 @@
 #define UINT_MAX		65535
 #define ULONG_MAX		4294967295ULL
 #define ULLONG_MAX		18446744073709551615ULL
+
+#define PATH_MAX		MAX_PATH_LEN
 
 #endif /* LIMITS_H_ */

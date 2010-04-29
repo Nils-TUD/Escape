@@ -15,21 +15,19 @@ namespace ustl {
 /// This is used as a primitive operation by many other algorithms. 
 /// \ingroup SwapAlgorithms
 ///
-template <typename Assignable> 
-inline void swap (Assignable& a, Assignable& b)
-{
-    Assignable tmp = a;
-    a = b;
-    b = tmp;
+template<typename Assignable>
+inline void swap(Assignable& a, Assignable& b) {
+	Assignable tmp = a;
+	a = b;
+	b = tmp;
 }
 
 /// Equivalent to swap (*a, *b)
 /// \ingroup SwapAlgorithms
 ///
-template <typename Iterator> 
-inline void iter_swap (Iterator a, Iterator b)
-{
-    swap (*a, *b);
+template<typename Iterator>
+inline void iter_swap(Iterator a, Iterator b) {
+	swap(*a, *b);
 }
 
 /// Copy copies elements from the range [first, last) to the range
@@ -40,12 +38,12 @@ inline void iter_swap (Iterator a, Iterator b)
 /// i.e. in order of increasing n. 
 /// \ingroup MutatingAlgorithms
 ///
-template <typename InputIterator, typename OutputIterator>
-inline OutputIterator copy (InputIterator first, InputIterator last, OutputIterator result)
-{
-    for (; first != last; ++result, ++first)
-	*result = *first;
-    return (result);
+template<typename InputIterator, typename OutputIterator>
+inline OutputIterator copy(InputIterator first, InputIterator last,
+		OutputIterator result) {
+	for (; first != last; ++result, ++first)
+		*result = *first;
+	return (result);
 }
 
 /// Copy_n copies elements from the range [first, first + n) to the range
@@ -56,24 +54,24 @@ inline OutputIterator copy (InputIterator first, InputIterator last, OutputItera
 /// in forward order, i.e. in order of increasing n.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename InputIterator, typename OutputIterator>
-inline OutputIterator copy_n (InputIterator first, size_t count, OutputIterator result)
-{
-    for (; count; --count, ++result, ++first)
-	*result = *first;
-    return (result);
+template<typename InputIterator, typename OutputIterator>
+inline OutputIterator copy_n(InputIterator first, size_t count,
+		OutputIterator result) {
+	for (; count; --count, ++result, ++first)
+		*result = *first;
+	return (result);
 }
 
 /// \brief Copy copies elements from the range (last, first] to result.
 /// \ingroup MutatingAlgorithms
 /// Copies elements starting at last, decrementing both last and result.
 ///
-template <typename InputIterator, typename OutputIterator>
-inline OutputIterator copy_backward (InputIterator first, InputIterator last, OutputIterator result)
-{
-    while (first != last)
-	*--result = *--last;
-    return (result);
+template<typename InputIterator, typename OutputIterator>
+inline OutputIterator copy_backward(InputIterator first, InputIterator last,
+		OutputIterator result) {
+	while (first != last)
+		*--result = *--last;
+	return (result);
 }
 
 /// For_each applies the function object f to each element in the range
@@ -82,12 +80,12 @@ inline OutputIterator copy_backward (InputIterator first, InputIterator last, Ou
 /// the function object after it has been applied to each element.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename InputIterator, typename UnaryFunction>
-inline UnaryFunction for_each (InputIterator first, InputIterator last, UnaryFunction f)
-{
-    for (; first != last; ++first)
-	f (*first);
-    return (f);
+template<typename InputIterator, typename UnaryFunction>
+inline UnaryFunction for_each(InputIterator first, InputIterator last,
+		UnaryFunction f) {
+	for (; first != last; ++first)
+		f(*first);
+	return (f);
 }
 
 /// Fill assigns the value value to every element in the range [first, last).
@@ -95,11 +93,10 @@ inline UnaryFunction for_each (InputIterator first, InputIterator last, UnaryFun
 /// it performs the assignment *i = value.
 /// \ingroup GeneratorAlgorithms
 ///
-template <typename ForwardIterator, typename T>
-inline void fill (ForwardIterator first, ForwardIterator last, const T& value)
-{
-    for (; first != last; ++first)
-	*first = value;
+template<typename ForwardIterator, typename T>
+inline void fill(ForwardIterator first, ForwardIterator last, const T& value) {
+	for (; first != last; ++first)
+		*first = value;
 }
 
 /// Fill_n assigns the value value to every element in the range
@@ -107,40 +104,45 @@ inline void fill (ForwardIterator first, ForwardIterator last, const T& value)
 /// it performs the assignment *i = value. The return value is first + count.
 /// \ingroup GeneratorAlgorithms
 ///
-template <typename OutputIterator, typename T>
-inline OutputIterator fill_n (OutputIterator first, size_t count, const T& value)
-{
-    for (; count; --count, ++first)
-	*first = value;
-    return (first);
+template<typename OutputIterator, typename T>
+inline OutputIterator fill_n(OutputIterator first, size_t count, const T& value) {
+	for (; count; --count, ++first)
+		*first = value;
+	return (first);
 }
 
 #if CPU_HAS_MMX
 extern "C" void copy_n_fast (const void* src, size_t count, void* dest) throw();
 #else
-inline void copy_n_fast (const void* src, size_t count, void* dest) throw()
-    { memcpy (dest, src, count); }
+inline void copy_n_fast(const void* src, size_t count, void* dest) throw () {
+	memcpy(dest, src, count);
+}
 #endif
 #if __i386__ || __x86_64__
-extern "C" void copy_backward_fast (const void* first, const void* last, void* result) throw();
+extern "C" void copy_backward_fast(const void* first, const void* last,
+		void* result) throw ();
 #else
 inline void copy_backward_fast (const void* first, const void* last, void* result) throw()
 {
-    const size_t nBytes (distance (first, last));
-    memmove (advance (result, -nBytes), first, nBytes);
+	const size_t nBytes (distance (first, last));
+	memmove (advance (result, -nBytes), first, nBytes);
 }
 #endif
-extern "C" void fill_n8_fast (uint8_t* dest, size_t count, uint8_t v) throw();
-extern "C" void fill_n16_fast (uint16_t* dest, size_t count, uint16_t v) throw();
-extern "C" void fill_n32_fast (uint32_t* dest, size_t count, uint32_t v) throw();
-extern "C" void rotate_fast (void* first, void* middle, void* last) throw();
+extern "C" void fill_n8_fast(uint8_t* dest, size_t count, uint8_t v) throw ();
+extern "C" void
+		fill_n16_fast(uint16_t* dest, size_t count, uint16_t v) throw ();
+extern "C" void
+		fill_n32_fast(uint32_t* dest, size_t count, uint32_t v) throw ();
+extern "C" void rotate_fast(void* first, void* middle, void* last) throw ();
 
 #if __GNUC__ >= 4
 /// \brief Computes the number of 1 bits in a number.
 /// \ingroup ConditionAlgorithms
-inline size_t popcount (uint32_t v)	{ return (__builtin_popcount (v)); }
+inline size_t popcount(uint32_t v) {
+	return (__builtin_popcount(v));
+}
 #if HAVE_INT64_T
-inline size_t popcount (uint64_t v)	{ return (__builtin_popcountll (v)); }
+inline size_t popcount (uint64_t v) {return (__builtin_popcountll (v));}
 #endif
 #else
 size_t popcount (uint32_t v);
@@ -148,7 +150,6 @@ size_t popcount (uint32_t v);
 size_t popcount (uint64_t v);
 #endif	// HAVE_INT64_T
 #endif	// __GNUC__
-
 //----------------------------------------------------------------------
 // Optimized versions for standard types
 //----------------------------------------------------------------------
@@ -158,32 +159,32 @@ size_t popcount (uint64_t v);
 template <typename T>
 inline T* unrolled_copy (const T* first, size_t count, T* result)
 {
-    copy_n_fast (first, count * sizeof(T), result);
-    return (advance (result, count));
+	copy_n_fast (first, count * sizeof(T), result);
+	return (advance (result, count));
 }
 
 template <>
 inline uint8_t* copy_backward (const uint8_t* first, const uint8_t* last, uint8_t* result)
 {
-    copy_backward_fast (first, last, result);
-    return (result);
+	copy_backward_fast (first, last, result);
+	return (result);
 }
 
 template <typename T>
 inline T* unrolled_fill (T* result, size_t count, T value)
 {
-    for (; count; --count, ++result)
+	for (; count; --count, ++result)
 	*result = value;
-    return (result);
+	return (result);
 }
 template <> inline uint8_t* unrolled_fill (uint8_t* result, size_t count, uint8_t value)
-    { fill_n8_fast (result, count, value); return (advance (result, count)); }
+{	fill_n8_fast (result, count, value); return (advance (result, count));}
 template <> inline uint16_t* unrolled_fill (uint16_t* result, size_t count, uint16_t value)
-    { fill_n16_fast (result, count, value); return (advance (result, count)); }
+{	fill_n16_fast (result, count, value); return (advance (result, count));}
 template <> inline uint32_t* unrolled_fill (uint32_t* result, size_t count, uint32_t value)
-    { fill_n32_fast (result, count, value); return (advance (result, count)); }
+{	fill_n32_fast (result, count, value); return (advance (result, count));}
 template <> inline float* unrolled_fill (float* result, size_t count, float value)
-    { fill_n32_fast ((uint32_t*) result, count, *noalias_cast<uint32_t*>(&value)); return (advance (result, count)); }
+{	fill_n32_fast ((uint32_t*) result, count, *noalias_cast<uint32_t*>(&value)); return (advance (result, count));}
 
 #if CPU_HAS_MMX
 #define UNROLLED_COPY_SPECIALIZATION(type)						\
@@ -208,7 +209,6 @@ UNROLLED_FILL_SPECIALIZATION(float)
 #undef UNROLLED_COPY_SPECIALIZATION
 #endif // WANT_UNROLLED_COPY
 #endif // CPU_HAS_MMX
-
 // Specializations for void* and char*, aliasing the above optimized versions.
 //
 // All these need duplication with const and non-const arguments, since

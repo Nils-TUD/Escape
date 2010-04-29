@@ -19,7 +19,7 @@
 
 #include "ulimits.h"
 #if HAVE_MATH_H
-    #include <math.h>
+#include <math.h>
 #endif
 
 namespace ustl {
@@ -30,86 +30,85 @@ namespace simd {
 //----------------------------------------------------------------------
 
 /// Applies \p op to each element in \p op1.
-template <typename Ctr, typename UnaryOperation>
-inline void packop (Ctr& op1, UnaryOperation op)
-{
-    foreach (typename Ctr::iterator, i, op1)
-	op (*i);
+template<typename Ctr, typename UnaryOperation>
+inline void packop(Ctr& op1, UnaryOperation op) {
+	foreach (typename Ctr::iterator, i, op1)
+		op (*i);
 }
 
 /// Applies \p op to each element in \p op1 and \p op2 and stores in \p op2.
 template <typename Ctr, typename BinaryOperation>
 inline void packop (const Ctr& op1, Ctr& op2, BinaryOperation op)
 {
-    assert (op2.size() <= op1.size());
-    typename Ctr::const_iterator i1 (op1.begin());
-    typename Ctr::iterator i2 (op2.begin());
-    for (; i2 != op2.end(); ++i1, ++i2)
-	*i2 = op (*i2, *i1);
+	assert (op2.size() <= op1.size());
+	typename Ctr::const_iterator i1 (op1.begin());
+	typename Ctr::iterator i2 (op2.begin());
+	for (; i2 != op2.end(); ++i1, ++i2)
+		*i2 = op (*i2, *i1);
 }
 
 /// Applies \p op to corresponding elements in \p op1 and \p op2 and stores in \p result.
 template <typename Ctr, typename BinaryOperation>
 inline void packop (const Ctr& op1, const Ctr& op2, Ctr& result, BinaryOperation op)
 {
-    assert (op1.size() <= op2.size() && op1.size() <= result.size());
-    passign (op1, result);
-    packop (op2, result);
+	assert (op1.size() <= op2.size() && op1.size() <= result.size());
+	passign (op1, result);
+	packop (op2, result);
 }
 
 /// Copies \p op1 into \p result.
 template <typename Ctr>
 inline void passign (const Ctr& op1, Ctr& result)
 {
-    assert (op1.size() <= result.size());
-    typename Ctr::iterator d (result.begin());
-    foreach (typename Ctr::const_iterator, s, op1)
-	*d++ = *s;
+	assert (op1.size() <= result.size());
+	typename Ctr::iterator d (result.begin());
+	foreach (typename Ctr::const_iterator, s, op1)
+		*d++ = *s;
 }
 
 /// Copies \p result.size() elements from \p op1 to \p result.
 template <typename Ctr>
 inline void ipassign (typename Ctr::const_iterator op1, Ctr& result)
 {
-    foreach (typename Ctr::iterator, d, result)
-	*d = *op1++;
+	foreach (typename Ctr::iterator, d, result)
+		*d = *op1++;
 }
 
 template <typename Ctr1, typename Ctr2, typename ConvertFunction>
 inline void pconvert (const Ctr1& op1, Ctr2& op2, ConvertFunction f)
 {
-    assert (op1.size() <= op2.size());
-    typename Ctr1::const_iterator i1 (op1.begin());
-    typename Ctr2::iterator i2 (op2.begin());
-    for (; i1 != op1.end(); ++i1, ++i2)
-	*i2 = f (*i1);
+	assert (op1.size() <= op2.size());
+	typename Ctr1::const_iterator i1 (op1.begin());
+	typename Ctr2::iterator i2 (op2.begin());
+	for (; i1 != op1.end(); ++i1, ++i2)
+		*i2 = f (*i1);
 }
 
 // Functionoids for SIMD operations, like saturation arithmetic, shifts, etc.
 STD_BINARY_FUNCTOR (fpadds, T, ((b > numeric_limits<T>::max() - a) ? numeric_limits<T>::max() : a + b))
 STD_BINARY_FUNCTOR (fpsubs, T, ((a < numeric_limits<T>::min() + b) ? numeric_limits<T>::min() : a - b))
-STD_BINARY_FUNCTOR (fpshl,  T, (a << b))
-STD_BINARY_FUNCTOR (fpshr,  T, (a >> b))
-STD_BINARY_FUNCTOR (fpmin,  T, (min (a, b)))
-STD_BINARY_FUNCTOR (fpmax,  T, (max (a, b)))
-STD_BINARY_FUNCTOR (fpavg,  T, ((a + b + 1) / 2))
+STD_BINARY_FUNCTOR (fpshl, T, (a << b))
+STD_BINARY_FUNCTOR (fpshr, T, (a >> b))
+STD_BINARY_FUNCTOR (fpmin, T, (min (a, b)))
+STD_BINARY_FUNCTOR (fpmax, T, (max (a, b)))
+STD_BINARY_FUNCTOR (fpavg, T, ((a + b + 1) / 2))
 STD_CONVERSION_FUNCTOR (fcast, (D(a)))
 #if HAVE_MATH_H
 STD_UNARY_FUNCTOR (fpreciprocal,T, (1 / a))
-STD_UNARY_FUNCTOR (fpsqrt,	T, (reset_mmx(), T (sqrt (a))))
-STD_UNARY_FUNCTOR (fprecipsqrt,	T, (reset_mmx(), 1 / T(sqrt (a))))
-STD_UNARY_FUNCTOR (fsin,	T, (reset_mmx(), T (sin (a))))
-STD_UNARY_FUNCTOR (fcos,	T, (reset_mmx(), T (cos (a))))
-STD_UNARY_FUNCTOR (ftan,	T, (reset_mmx(), T (tan (a))))
+STD_UNARY_FUNCTOR (fpsqrt, T, (reset_mmx(), T (sqrt (a))))
+STD_UNARY_FUNCTOR (fprecipsqrt, T, (reset_mmx(), 1 / T(sqrt (a))))
+STD_UNARY_FUNCTOR (fsin, T, (reset_mmx(), T (sin (a))))
+STD_UNARY_FUNCTOR (fcos, T, (reset_mmx(), T (cos (a))))
+STD_UNARY_FUNCTOR (ftan, T, (reset_mmx(), T (tan (a))))
 #if HAVE_RINTF
 STD_CONVERSION_FUNCTOR (fround, (reset_mmx(), D(rintf(a))))
 #else
 STD_CONVERSION_FUNCTOR (fround, (reset_mmx(), D(rint(a))))
 #endif
-template <> inline int32_t fround<double,int32_t>::operator()(const double& a) const { reset_mmx(); return (int32_t(rint(a))); }
+template <> inline int32_t fround<double,int32_t>::operator()(const double& a) const {reset_mmx(); return (int32_t(rint(a)));}
 #endif
-template <> inline float fpavg<float>::operator()(const float& a, const float& b) const { return ((a + b) / 2); }
-template <> inline double fpavg<double>::operator()(const double& a, const double& b) const { return ((a + b) / 2); }
+template <> inline float fpavg<float>::operator()(const float& a, const float& b) const {return ((a + b) / 2);}
+template <> inline double fpavg<double>::operator()(const double& a, const double& b) const {return ((a + b) / 2);}
 
 #define SIMD_PACKEDOP1(name, operation)		\
 template <typename Ctr>				\
@@ -194,7 +193,7 @@ SIMD_SINGLEOP1 (stan, ftan)
 
 SIMD_CONVERTOP (pround, fround)
 
-template <typename T> inline int32_t sround (T op) { fround<T,int32_t> obj; return (obj (op)); }
+template <typename T> inline int32_t sround (T op) {fround<T,int32_t> obj; return (obj (op));}
 #endif
 
 #undef SIMD_SINGLEOP1
@@ -353,7 +352,6 @@ MMX_PKOP2_SPEC(8,uint8_t,fpmax,pmaxub)
 MMX_PKOP2_SPEC(4,int16_t,fpmax,pmaxsw)
 MMX_PKOP2_SPEC(4,int16_t,fpmin,pminsw)
 #endif // CPU_HAS_SSE || CPU_HAS_3DNOW
-
 #if CPU_HAS_3DNOW
 MMX_PASSIGN_SPEC(2,float)
 MMX_PKOP2_SPEC(2,float,plus,pfadd)
@@ -369,7 +367,6 @@ MMX_DBL_PKOP2_SPEC(4,float,fpmin,pfmin)
 MMX_DBL_PKOP2_SPEC(4,float,fpmax,pfmax)
 #endif
 #endif // CPU_HAS_3DNOW
-
 MMX_IPASSIGN_SPEC(8,uint8_t)
 MMX_IPASSIGN_SPEC(4,uint16_t)
 MMX_IPASSIGN_SPEC(2,uint32_t)
@@ -389,7 +386,6 @@ MMX_DBL_IPASSIGN_SPEC(4,int32_t)
 #undef MMX_PKOP2_SPEC
 #undef STD_MMX_ARGS
 #endif // CPU_HAS_MMX
-
 #if CPU_HAS_SSE
 #define STD_SSE_ARGS	: "m"(oout[0]), "m"(oin[0]) : "xmm0", "memory"
 #define SSE_PKOP2_SPEC(n,type,optype,instruction)	\
@@ -415,33 +411,33 @@ SSE_PKOP2_SPEC(4,float,fpmax,maxps)
 SSE_PKOP2_SPEC(4,float,fpmin,minps)
 
 SIMD_CONVERT_SPEC(4,float,int32_t,fround) {
-    asm ("cvtps2pi %2, %%mm0\n\t"
-	 "cvtps2pi %3, %%mm1\n\t"
-	 "movq %%mm0, %0\n\t"
-	 "movq %%mm1, %1"
-	 : DBL_MMX_ARGS);
-    reset_mmx();
+asm ("cvtps2pi %2, %%mm0\n\t"
+		"cvtps2pi %3, %%mm1\n\t"
+		"movq %%mm0, %0\n\t"
+		"movq %%mm1, %1"
+		: DBL_MMX_ARGS);
+reset_mmx();
 }
 SIMD_CONVERT_SPEC(4,int32_t,float,fround) {
-    asm ("cvtpi2ps %2, %%xmm0\n\t"
-	 "shufps $0x4E,%%xmm0,%%xmm0\n\t"
-	 "cvtpi2ps %1, %%xmm0\n\t"
-	 "movups %%xmm0, %0"
-	 :: "m"(oout[0]), "m"(oin[0]), "m"(oin[2]) : "xmm0", "memory");
+asm ("cvtpi2ps %2, %%xmm0\n\t"
+		"shufps $0x4E,%%xmm0,%%xmm0\n\t"
+		"cvtpi2ps %1, %%xmm0\n\t"
+		"movups %%xmm0, %0"
+		:: "m"(oout[0]), "m"(oin[0]), "m"(oin[2]) : "xmm0", "memory");
 }
 template <> inline int32_t fround<float,int32_t>::operator()(const float& a) const {
-    register int32_t rv;
-    asm ("movss %1, %%xmm0\n\t"
-	 "cvtss2si %%xmm0, %0"
-	 : "=r"(rv) : "m"(a) : "xmm0" );
-    return (rv);
+register int32_t rv;
+asm ("movss %1, %%xmm0\n\t"
+		"cvtss2si %%xmm0, %0"
+		: "=r"(rv) : "m"(a) : "xmm0" );
+return (rv);
 }
 template <> inline uint32_t fround<float,uint32_t>::operator()(const float& a) const {
-    register uint32_t rv;
-    asm ("movss %1, %%xmm0\n\t"
-	 "cvtss2si %%xmm0, %0"
-	 : "=r"(rv) : "m"(a) : "xmm0" );
-    return (rv);
+register uint32_t rv;
+asm ("movss %1, %%xmm0\n\t"
+		"cvtss2si %%xmm0, %0"
+		: "=r"(rv) : "m"(a) : "xmm0" );
+return (rv);
 }
 
 SSE_IPASSIGN_SPEC(4,float)
@@ -453,7 +449,6 @@ SSE_IPASSIGN_SPEC(4,uint32_t)
 #undef SSE_PKOP2_SPEC
 #undef STD_SSE_ARGS
 #endif // CPU_HAS_SSE
-
 #undef SIMDA_RI
 #undef SIMDA_RO
 #undef SIMDA_WI

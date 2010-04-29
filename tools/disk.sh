@@ -199,7 +199,7 @@ if [ "$1" == "build" ]; then
 	unmountDisk
 	
 	# ensure that we'll copy all stuff to the disk with 'make all'
-	rm -f $BUILD/*.bin $BUILD/apps/* $BUILD/*.so
+	rm -f $BUILD/*.bin $BUILD/apps/* $BUILD/*.so*
 	# now rebuild and copy it
 	make all
 fi

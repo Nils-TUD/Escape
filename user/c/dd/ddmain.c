@@ -118,15 +118,15 @@ static u32 scanNumber(const char *str) {
 	switch(*str) {
 		case 'K':
 		case 'k':
-			val *= K;
+			val *= 1024;
 			break;
 		case 'M':
 		case 'm':
-			val *= M;
+			val *= 1024 * 1024;
 			break;
 		case 'G':
 		case 'g':
-			val *= G;
+			val *= 1024 * 1024 * 1024;
 			break;
 	}
 	return val;

@@ -22,6 +22,10 @@
 
 #include <esc/common.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define CONF_TIMER_FREQ			0
 #define CONF_MAX_PROCS			1
 #define CONF_MAX_THREADS		2
@@ -38,5 +42,9 @@
  * @return s32 the value or the negative error-code
  */
 s32 getConf(u32 id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CONF_H_ */

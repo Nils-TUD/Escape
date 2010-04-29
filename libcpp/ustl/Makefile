@@ -14,9 +14,9 @@ all:	Config.mk config.h ${NAME}/config.h
 ALLTGTS	:= Config.mk config.h ${NAME}/config.h
 
 ifdef BUILD_SHARED
-SLIBL	:= $O$(call slib_lnk,${NAME})
-SLIBS	:= $O$(call slib_son,${NAME})
-SLIBT	:= $O$(call slib_tgt,${NAME})
+SLIBL	:= $(BUILD)/$(call slib_lnk,${NAME})
+SLIBS	:= $(BUILD)/$(call slib_son,${NAME})
+SLIBT	:= $(BUILD)/$(call slib_tgt,${NAME})
 SLINKS	:= ${SLIBL}
 ifneq (${SLIBS},${SLIBT})
 SLINKS	+= ${SLIBS}
@@ -26,7 +26,8 @@ ALLTGTS	+= ${SLIBT} ${SLINKS}
 all:	${SLIBT} ${SLINKS}
 ${SLIBT}:	${OBJS}
 	@echo "Linking $(notdir $@) ..."
-	@${LD} -fPIC ${LDFLAGS} $(call slib_flags,$(subst $O,,${SLIBS})) -o $@ $^ ${LIBS}
+	@${LD} -fPIC ${LDFLAGS} $(call slib_flags,$(subst $O,,$(call slib_lnk,${NAME}))) -o $@ $^ ${LIBS}
+	../../tools/disk.sh copy $@ /lib/$(call slib_lnk,${NAME})
 ${SLINKS}:	${SLIBT}
 	@(cd $(dir $@); rm -f $(notdir $@); ln -s $(notdir $<) $(notdir $@))
 

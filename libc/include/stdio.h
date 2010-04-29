@@ -23,7 +23,9 @@
 #include <types.h>
 #include <esc/fileio.h>
 
-#define EOF IO_EOF
+#ifndef EOF
+#	define EOF			IO_EOF
+#endif
 typedef tFile FILE;
 
 #ifdef __cplusplus
@@ -296,6 +298,19 @@ int fgetc(FILE *stream);
  * @return the number of read chars
  */
 char *fgets(char *str,int max,FILE *file);
+
+/**
+ * The lseek() function repositions the offset of the open file associated with the file descriptor
+ * fd to the argument offset according to the directive whence as follows:
+ * 	SEEK_SET: The offset is set to offset bytes.
+ * 	SEEK_CUR: The offset is set to its current location plus offset bytes.
+ * 	SEEK_END: The offset is set to the size of the file plus offset bytes.
+ *
+ * @param fd the file-descriptor
+ * @param offset the offset
+ * @param whence the type of seek (SEEK_*)
+ */
+off_t lseek(int fd,off_t offset,int whence);
 
 /**
  * Reads data in the specified format from STDIN. Supports:

@@ -25,6 +25,7 @@
 #include <fsinterface.h>
 
 /* IO flags */
+#define IO_ACCESSMODE	   		3
 #define IO_READ					1
 #define IO_WRITE				2
 #define IO_CREATE				4

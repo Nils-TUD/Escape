@@ -32,6 +32,10 @@ typedef s32 tVMRegNo;
 #define DEBUGGING 1
 #endif
 
+#define K						1024
+#define M						(1024 * K)
+#define G						(1024 * M)
+
 /* debugging */
 #define DBG_PGCLONEPD(s)
 #define DBG_KMALLOC(s)

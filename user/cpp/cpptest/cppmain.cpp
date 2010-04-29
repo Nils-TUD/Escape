@@ -17,18 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/fileio.h>
-#include <esc/debug.h>
-#include <esc/vector.h>
-#include <esc/stream.h>
-#include <esc/string.h>
-#include <esc/thread.h>
-#include <esc/gui/bitmapimage.h>
-using namespace esc;
-using namespace esc::gui;
+#include <ustl.h>
 
-static int threadFunc(void);
+using namespace ustl;
 
 class my {
 private:
@@ -54,7 +45,7 @@ void my::doIt() {
 }
 
 int main(void) {
-#if 1
+#if 0
 	/*startThread(threadFunc);
 	startThread(threadFunc);*/
 
@@ -105,6 +96,14 @@ int main(void) {
 		out << i << ": " << v2[i] << endl;
 	}
 #else
+    vector<int> v;
+    v.resize (30);
+    for (size_t i = 0; i < v.size(); ++ i)
+	v[i] = i;
+    v.push_back (57);
+    v.insert (v.begin() + 20, 555);
+    v.erase (v.begin() + 3);
+
 	/*
 	String s1 = "abc";
 	String s2 = "def";
@@ -138,12 +137,4 @@ int main(void) {
 	delete y;*/
 
 	return EXIT_SUCCESS;
-}
-
-static int threadFunc(void) {
-	while(1) {
-		printf("I am thread %d\n",gettid());
-		sleep(100);
-	}
-	return 0;
 }

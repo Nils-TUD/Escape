@@ -14,26 +14,26 @@ namespace ustl {
 
 /// \brief void-returning function abstract interface.
 /// \ingroup FunctorObjects
-template <typename Result>
+template<typename Result>
 struct void_function {
-    typedef Result	result_type;
+	typedef Result result_type;
 };
 
 /// \brief \p Result f (\p Arg) function abstract interface.
 /// \ingroup FunctorObjects
-template <typename Arg, typename Result>
+template<typename Arg, typename Result>
 struct unary_function {
-    typedef Arg		argument_type;
-    typedef Result	result_type;
+	typedef Arg argument_type;
+	typedef Result result_type;
 };
 
 /// \brief \p Result f (\p Arg1, \p Arg2) function abstract interface.
 /// \ingroup FunctorObjects
-template <typename Arg1, typename Arg2, typename Result>
+template<typename Arg1, typename Arg2, typename Result>
 struct binary_function {
-    typedef Arg1	first_argument_type;
-    typedef Arg2	second_argument_type;
-    typedef Result	result_type;
+	typedef Arg1 first_argument_type;
+	typedef Arg2 second_argument_type;
+	typedef Result result_type;
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -48,36 +48,45 @@ template <class T> struct name : public unary_function<T,rv> \
 template <class S, class D> struct name : public unary_function<S,D> \
 { inline D operator()(const S& a) const { return func; } };
 
-STD_BINARY_FUNCTOR (plus,		T,	(a + b))
-STD_BINARY_FUNCTOR (minus,		T,	(a - b))
-STD_BINARY_FUNCTOR (divides,		T,	(a / b))
-STD_BINARY_FUNCTOR (modulus,		T,	(a % b))
-STD_BINARY_FUNCTOR (multiplies,		T,	(a * b))
-STD_BINARY_FUNCTOR (logical_and,	T,	(a && b))
-STD_BINARY_FUNCTOR (logical_or,		T,	(a || b))
-STD_UNARY_FUNCTOR  (logical_not,	T,	(!a))
-STD_BINARY_FUNCTOR (bitwise_or,		T,	(a | b))
-STD_BINARY_FUNCTOR (bitwise_and,	T,	(a & b))
-STD_BINARY_FUNCTOR (bitwise_xor,	T,	(a ^ b))
-STD_UNARY_FUNCTOR  (bitwise_not,	T,	(~a))
-STD_UNARY_FUNCTOR  (negate,		T,	(-a))
-STD_BINARY_FUNCTOR (equal_to,		bool,	(a == b))
-STD_BINARY_FUNCTOR (not_equal_to,	bool,	(!(a == b)))
-STD_BINARY_FUNCTOR (greater,		bool,	(b < a))
-STD_BINARY_FUNCTOR (less,		bool,	(a < b))
-STD_BINARY_FUNCTOR (greater_equal,	bool,	(!(a < b)))
-STD_BINARY_FUNCTOR (less_equal,		bool,	(!(b < a)))
-STD_BINARY_FUNCTOR (compare,		int,	(a < b ? -1 : (b < a)))
-STD_UNARY_FUNCTOR  (identity,		T,	(a))
+STD_BINARY_FUNCTOR (plus, T, (a + b))
+STD_BINARY_FUNCTOR (minus, T, (a - b))
+STD_BINARY_FUNCTOR (divides, T, (a / b))
+STD_BINARY_FUNCTOR (modulus, T, (a % b))
+STD_BINARY_FUNCTOR (multiplies, T, (a * b))
+STD_BINARY_FUNCTOR (logical_and, T, (a && b))
+STD_BINARY_FUNCTOR (logical_or, T, (a || b))
+STD_UNARY_FUNCTOR (logical_not, T, (!a))
+STD_BINARY_FUNCTOR (bitwise_or, T, (a | b))
+STD_BINARY_FUNCTOR (bitwise_and, T, (a & b))
+STD_BINARY_FUNCTOR (bitwise_xor, T, (a ^ b))
+STD_UNARY_FUNCTOR (bitwise_not, T, (~a))
+STD_UNARY_FUNCTOR (negate, T, (-a))
+STD_BINARY_FUNCTOR (equal_to, bool, (a == b))
+STD_BINARY_FUNCTOR (not_equal_to, bool, (!(a == b)))
+STD_BINARY_FUNCTOR (greater, bool, (b < a))
+STD_BINARY_FUNCTOR (less, bool, (a < b))
+STD_BINARY_FUNCTOR (greater_equal, bool, (!(a < b)))
+STD_BINARY_FUNCTOR (less_equal, bool, (!(b < a)))
+STD_BINARY_FUNCTOR (compare, int, (a < b ? -1 : (b < a)))
+STD_UNARY_FUNCTOR (identity, T, (a))
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
-
 /// \brief Selects and returns the first argument.
 /// \ingroup FunctorObjects
-template <class T1, class T2> struct project1st	: public binary_function<T1,T2,T1>    { inline const T1& operator()(const T1& a, const T2&) const { return (a); } };
+template<class T1, class T2> struct project1st: public binary_function<T1, T2,
+		T1> {
+	inline const T1& operator()(const T1& a, const T2&) const {
+		return (a);
+	}
+};
 /// \brief Selects and returns the second argument.
 /// \ingroup FunctorObjects
-template <class T1, class T2> struct project2nd	: public binary_function<T1,T2,T2>    { inline const T2& operator()(const T1&, const T2& a) const { return (a); } };
+template<class T1, class T2> struct project2nd: public binary_function<T1, T2,
+		T2> {
+	inline const T2& operator()(const T1&, const T2& a) const {
+		return (a);
+	}
+};
 
 //----------------------------------------------------------------------
 // Generic function to functor converters.
@@ -86,50 +95,58 @@ template <class T1, class T2> struct project2nd	: public binary_function<T1,T2,T
 /// \brief Wrapper object for unary function pointers.
 /// Use the ptr_fun accessor to create this object.
 /// \ingroup FunctorObjects
-template <typename Arg, typename Result>
-class pointer_to_unary_function : public unary_function<Arg,Result> {
+template<typename Arg, typename Result>
+class pointer_to_unary_function: public unary_function<Arg, Result> {
 public:
-    typedef Arg		argument_type;
-    typedef Result	result_type;
-    typedef Result	(*pfunc_t)(Arg);
+	typedef Arg argument_type;
+	typedef Result result_type;
+	typedef Result (*pfunc_t)(Arg);
 public:
-    explicit inline	pointer_to_unary_function (pfunc_t pfn) : m_pfn (pfn) {}
-    inline result_type	operator() (argument_type v) const { return (m_pfn(v)); }
+	explicit inline pointer_to_unary_function(pfunc_t pfn) :
+		m_pfn(pfn) {
+	}
+	inline result_type operator()(argument_type v) const {
+		return (m_pfn(v));
+	}
 private:
-    pfunc_t		m_pfn;	///< Pointer to the wrapped function.
+	pfunc_t m_pfn; ///< Pointer to the wrapped function.
 };
 
 /// \brief Wrapper object for binary function pointers.
 /// Use the ptr_fun accessor to create this object.
 /// \ingroup FunctorObjects
-template <typename Arg1, typename Arg2, typename Result>
-class pointer_to_binary_function : public binary_function<Arg1,Arg2,Result> {
+template<typename Arg1, typename Arg2, typename Result>
+class pointer_to_binary_function: public binary_function<Arg1, Arg2, Result> {
 public:
-    typedef Arg1	first_argument_type;
-    typedef Arg2	second_argument_type;
-    typedef Result	result_type;
-    typedef Result	(*pfunc_t)(Arg1, Arg2);
+	typedef Arg1 first_argument_type;
+	typedef Arg2 second_argument_type;
+	typedef Result result_type;
+	typedef Result (*pfunc_t)(Arg1, Arg2);
 public:
-    explicit inline	pointer_to_binary_function (pfunc_t pfn) : m_pfn (pfn) {}
-    inline result_type	operator() (first_argument_type v1, second_argument_type v2) const { return (m_pfn(v1, v2)); }
+	explicit inline pointer_to_binary_function(pfunc_t pfn) :
+		m_pfn(pfn) {
+	}
+	inline result_type operator()(first_argument_type v1,
+			second_argument_type v2) const {
+		return (m_pfn(v1, v2));
+	}
 private:
-    pfunc_t		m_pfn;	///< Pointer to the wrapped function.
+	pfunc_t m_pfn; ///< Pointer to the wrapped function.
 };
 
 /// ptr_fun(pfn) wraps function pointer pfn into a functor class that calls it.
 /// \ingroup FunctorAccessors
-template <typename Arg, typename Result>
-inline pointer_to_unary_function<Arg,Result> ptr_fun (Result (*pfn)(Arg))
-{
-    return (pointer_to_unary_function<Arg,Result> (pfn));
+template<typename Arg, typename Result>
+inline pointer_to_unary_function<Arg, Result> ptr_fun(Result(*pfn)(Arg)) {
+	return (pointer_to_unary_function<Arg, Result> (pfn));
 }
 
 /// ptr_fun(pfn) wraps function pointer pfn into a functor class that calls it.
 /// \ingroup FunctorAccessors
-template <typename Arg1, typename Arg2, typename Result>
-inline pointer_to_binary_function<Arg1,Arg2,Result> ptr_fun (Result (*pfn)(Arg1,Arg2))
-{
-    return (pointer_to_binary_function<Arg1,Arg2,Result> (pfn));
+template<typename Arg1, typename Arg2, typename Result>
+inline pointer_to_binary_function<Arg1, Arg2, Result> ptr_fun(Result(*pfn)(
+		Arg1, Arg2)) {
+	return (pointer_to_binary_function<Arg1, Arg2, Result> (pfn));
 }
 
 //----------------------------------------------------------------------
@@ -139,25 +156,29 @@ inline pointer_to_binary_function<Arg1,Arg2,Result> ptr_fun (Result (*pfn)(Arg1,
 /// \brief Wraps a unary function to return its logical negative.
 /// Use the unary_negator accessor to create this object.
 /// \ingroup FunctorObjects
-template <class UnaryFunction>
-class unary_negate : public unary_function<typename UnaryFunction::argument_type,
-					   typename UnaryFunction::result_type> {
+template<class UnaryFunction>
+class unary_negate: public unary_function<
+		typename UnaryFunction::argument_type,
+		typename UnaryFunction::result_type> {
 public:
-    typedef typename UnaryFunction::argument_type	argument_type;
-    typedef typename UnaryFunction::result_type		result_type;
+	typedef typename UnaryFunction::argument_type argument_type;
+	typedef typename UnaryFunction::result_type result_type;
 public:
-    explicit inline unary_negate (UnaryFunction pfn) : m_pfn (pfn) {}
-    inline result_type operator() (argument_type v) const { return (!m_pfn(v)); }
+	explicit inline unary_negate(UnaryFunction pfn) :
+		m_pfn(pfn) {
+	}
+	inline result_type operator()(argument_type v) const {
+		return (!m_pfn(v));
+	}
 private:
-    UnaryFunction	m_pfn;
+	UnaryFunction m_pfn;
 };
 
 /// Returns the functor that negates the result of *pfn().
 /// \ingroup FunctorAccessors
-template <class UnaryFunction>
-inline unary_negate<UnaryFunction> unary_negator (UnaryFunction pfn)
-{
-    return (unary_negate<UnaryFunction>(pfn));
+template<class UnaryFunction>
+inline unary_negate<UnaryFunction> unary_negator(UnaryFunction pfn) {
+	return (unary_negate<UnaryFunction> (pfn));
 }
 
 //----------------------------------------------------------------------
@@ -168,56 +189,64 @@ inline unary_negate<UnaryFunction> unary_negator (UnaryFunction pfn)
 /// by binding a constant value to the first argument.
 /// Use the bind1st accessor to create this object.
 /// \ingroup FunctorObjects
-template <class BinaryFunction> 
-class binder1st : public unary_function<typename BinaryFunction::second_argument_type,
-					typename BinaryFunction::result_type> {
+template<class BinaryFunction>
+class binder1st: public unary_function<
+		typename BinaryFunction::second_argument_type,
+		typename BinaryFunction::result_type> {
 public:
-    typedef typename BinaryFunction::first_argument_type	arg1_t;
-    typedef typename BinaryFunction::second_argument_type	arg2_t;
-    typedef typename BinaryFunction::result_type		result_t;
+	typedef typename BinaryFunction::first_argument_type arg1_t;
+	typedef typename BinaryFunction::second_argument_type arg2_t;
+	typedef typename BinaryFunction::result_type result_t;
 public:
-    inline binder1st (const BinaryFunction& pfn, const arg1_t& v) : m_pfn (pfn), m_Value(v) {}
-    inline result_t operator()(arg2_t v2) const { return (m_pfn (m_Value, v2)); }
+	inline binder1st(const BinaryFunction& pfn, const arg1_t& v) :
+		m_pfn(pfn), m_Value(v) {
+	}
+	inline result_t operator()(arg2_t v2) const {
+		return (m_pfn(m_Value, v2));
+	}
 protected:
-    BinaryFunction	m_pfn;
-    arg1_t		m_Value;
+	BinaryFunction m_pfn;
+	arg1_t m_Value;
 };
 
 /// \brief Converts a binary function to a unary function
 /// by binding a constant value to the second argument.
 /// Use the bind2nd accessor to create this object.
 /// \ingroup FunctorObjects
-template <class BinaryFunction> 
-class binder2nd : public unary_function<typename BinaryFunction::first_argument_type,
-					typename BinaryFunction::result_type> {
+template<class BinaryFunction>
+class binder2nd: public unary_function<
+		typename BinaryFunction::first_argument_type,
+		typename BinaryFunction::result_type> {
 public:
-    typedef typename BinaryFunction::first_argument_type	arg1_t;
-    typedef typename BinaryFunction::second_argument_type	arg2_t;
-    typedef typename BinaryFunction::result_type		result_t;
+	typedef typename BinaryFunction::first_argument_type arg1_t;
+	typedef typename BinaryFunction::second_argument_type arg2_t;
+	typedef typename BinaryFunction::result_type result_t;
 public:
-    inline binder2nd (const BinaryFunction& pfn, const arg2_t& v) : m_pfn (pfn), m_Value(v) {}
-    inline result_t operator()(arg1_t v1) const { return (m_pfn (v1, m_Value)); }
+	inline binder2nd(const BinaryFunction& pfn, const arg2_t& v) :
+		m_pfn(pfn), m_Value(v) {
+	}
+	inline result_t operator()(arg1_t v1) const {
+		return (m_pfn(v1, m_Value));
+	}
 protected:
-    BinaryFunction	m_pfn;
-    arg2_t		m_Value;
+	BinaryFunction m_pfn;
+	arg2_t m_Value;
 };
 
 /// Converts \p pfn into a unary function by binding the first argument to \p v.
 /// \ingroup FunctorAccessors
-template <typename BinaryFunction>
-inline binder1st<BinaryFunction>
-bind1st (BinaryFunction pfn, typename BinaryFunction::first_argument_type v) 
-{
-    return (binder1st<BinaryFunction> (pfn, v));
+template<typename BinaryFunction>
+inline binder1st<BinaryFunction> bind1st(BinaryFunction pfn,
+		typename BinaryFunction::first_argument_type v) {
+	return (binder1st<BinaryFunction> (pfn, v));
 }
 
 /// Converts \p pfn into a unary function by binding the second argument to \p v.
 /// \ingroup FunctorAccessors
-template <typename BinaryFunction>
-inline binder2nd<BinaryFunction>
-bind2nd (BinaryFunction pfn, typename BinaryFunction::second_argument_type v) 
-{
-    return (binder2nd<BinaryFunction> (pfn, v));
+template<typename BinaryFunction>
+inline binder2nd<BinaryFunction> bind2nd(BinaryFunction pfn,
+		typename BinaryFunction::second_argument_type v) {
+	return (binder2nd<BinaryFunction> (pfn, v));
 }
 
 //----------------------------------------------------------------------
@@ -231,27 +260,32 @@ bind2nd (BinaryFunction pfn, typename BinaryFunction::second_argument_type v)
 /// This template is an extension, implemented by SGI STL and uSTL.
 /// \ingroup FunctorObjects
 ///
-template <typename Operation1, typename Operation2>
-class unary_compose : public unary_function<typename Operation2::argument_type,
-					    typename Operation1::result_type> {
+template<typename Operation1, typename Operation2>
+class unary_compose: public unary_function<typename Operation2::argument_type,
+		typename Operation1::result_type> {
 public:
-    typedef typename Operation2::argument_type	arg_t;
-    typedef const arg_t&			rcarg_t;
-    typedef typename Operation1::result_type	result_t;
+	typedef typename Operation2::argument_type arg_t;
+	typedef const arg_t& rcarg_t;
+	typedef typename Operation1::result_type result_t;
 public:
-    inline unary_compose (const Operation1& f, const Operation2& g) : m_f(f), m_g(g) {}
-    inline result_t operator() (rcarg_t x) const { return m_f(m_g(x)); }
+	inline unary_compose(const Operation1& f, const Operation2& g) :
+		m_f(f), m_g(g) {
+	}
+	inline result_t operator()(rcarg_t x) const {
+		return m_f(m_g(x));
+	}
 protected:
-    Operation1	m_f;	///< f(x), if c(x) = f(g(x))
-    Operation2	m_g;	///< g(x), if c(x) = f(g(x))
+	Operation1 m_f; ///< f(x), if c(x) = f(g(x))
+	Operation2 m_g; ///< g(x), if c(x) = f(g(x))
 };
 
 /// Creates a \ref unary_compose object whose function c(x)=f(g(x))
 /// \ingroup FunctorAccessors
-template <typename Operation1, typename Operation2>
-inline unary_compose<Operation1, Operation2>
-compose1 (const Operation1& f, const Operation2& g)
-{ return unary_compose<Operation1,Operation2>(f, g); }
+template<typename Operation1, typename Operation2>
+inline unary_compose<Operation1, Operation2> compose1(const Operation1& f,
+		const Operation2& g) {
+	return unary_compose<Operation1, Operation2> (f, g);
+}
 
 /// \brief Chains two unary functions through a binary function.
 ///
@@ -260,28 +294,34 @@ compose1 (const Operation1& f, const Operation2& g)
 /// object. This template is an extension, implemented by SGI STL and uSTL.
 /// \ingroup FunctorObjects
 ///
-template <typename Operation1, typename Operation2, typename Operation3>
-class binary_compose : public unary_function<typename Operation2::argument_type,
-					    typename Operation1::result_type> {
+template<typename Operation1, typename Operation2, typename Operation3>
+class binary_compose: public unary_function<typename Operation2::argument_type,
+		typename Operation1::result_type> {
 public:
-    typedef typename Operation2::argument_type	arg_t;
-    typedef const arg_t&			rcarg_t;
-    typedef typename Operation1::result_type	result_t;
+	typedef typename Operation2::argument_type arg_t;
+	typedef const arg_t& rcarg_t;
+	typedef typename Operation1::result_type result_t;
 public:
-    inline binary_compose (const Operation1& f, const Operation2& g, const Operation3& h) : m_f(f), m_g(g), m_h(h) {}
-    inline result_t operator() (rcarg_t x) const { return m_f(m_g(x), m_h(x)); }
+	inline binary_compose(const Operation1& f, const Operation2& g,
+			const Operation3& h) :
+		m_f(f), m_g(g), m_h(h) {
+	}
+	inline result_t operator()(rcarg_t x) const {
+		return m_f(m_g(x), m_h(x));
+	}
 protected:
-    Operation1	m_f;	///< f(x,y), if c(x) = f(g(x),h(x))
-    Operation2	m_g;	///< g(x), if c(x) = f(g(x),h(x))
-    Operation3	m_h;	///< h(x), if c(x) = f(g(x),h(x))
+	Operation1 m_f; ///< f(x,y), if c(x) = f(g(x),h(x))
+	Operation2 m_g; ///< g(x), if c(x) = f(g(x),h(x))
+	Operation3 m_h; ///< h(x), if c(x) = f(g(x),h(x))
 };
 
 /// Creates a \ref binary_compose object whose function c(x)=f(g(x),h(x))
 /// \ingroup FunctorAccessors
-template <typename Operation1, typename Operation2, typename Operation3>
-inline binary_compose<Operation1, Operation2, Operation3>
-compose2 (const Operation1& f, const Operation2& g, const Operation3& h)
-{ return binary_compose<Operation1, Operation2, Operation3> (f, g, h); }
+template<typename Operation1, typename Operation2, typename Operation3>
+inline binary_compose<Operation1, Operation2, Operation3> compose2(
+		const Operation1& f, const Operation2& g, const Operation3& h) {
+	return binary_compose<Operation1, Operation2, Operation3> (f, g, h);
+}
 
 //----------------------------------------------------------------------
 // Member function adaptors
@@ -307,10 +347,10 @@ compose2 (const Operation1& f, const Operation2& g, const Operation3& h)
 	return (ClassName<Ret,T> (pf));		\
     }
 
-MEM_FUN_T(mem_fun,	mem_fun_t, 		T*,		(void),		->*)
-MEM_FUN_T(mem_fun,	const_mem_fun_t, 	const T*,	(void) const,	->*)
-MEM_FUN_T(mem_fun_ref,	mem_fun_ref_t,		T&,		(void),		.*)
-MEM_FUN_T(mem_fun_ref,	const_mem_fun_ref_t, 	const T&,	(void) const,	.*)
+MEM_FUN_T(mem_fun, mem_fun_t, T*, (void), ->*)
+MEM_FUN_T(mem_fun, const_mem_fun_t, const T*, (void) const, ->*)
+MEM_FUN_T(mem_fun_ref, mem_fun_ref_t, T&, (void), .*)
+MEM_FUN_T(mem_fun_ref, const_mem_fun_ref_t, const T&, (void) const, .*)
 
 #define EXT_MEM_FUN_T(ClassName, HostType, FuncType) \
     template <class T, typename Ret, typename V> \
@@ -331,11 +371,10 @@ MEM_FUN_T(mem_fun_ref,	const_mem_fun_ref_t, 	const T&,	(void) const,	.*)
 	return (ClassName<T,Ret,V> (p, pf));						\
     }
 
-EXT_MEM_FUN_T(ext_mem_fun_t,		T*,		)
-EXT_MEM_FUN_T(const_ext_mem_fun_t,	const T*,	const)
+EXT_MEM_FUN_T(ext_mem_fun_t, T*, )
+EXT_MEM_FUN_T(const_ext_mem_fun_t, const T*, const)
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
-
 //----------------------------------------------------------------------
 // Member variable adaptors (uSTL extension)
 //----------------------------------------------------------------------
@@ -372,50 +411,45 @@ EXT_MEM_FUN_T(const_ext_mem_fun_t,	const T*,	const)
 #define MEM_VAR_BINARY_ARGS		(argument_type p1, argument_type p2) const \
 					{ return (m_pfn(p1.*m_pv, p2.*m_pv)); }
 
-MEM_VAR_T(mem_var1,		T&, VT T::*,		FUNCTOR_UNARY_BASE(T&),  MEM_VAR_UNARY_ARGS)
-MEM_VAR_T(const_mem_var1, const T&, const VT T::*,	FUNCTOR_UNARY_BASE(T&),  MEM_VAR_UNARY_ARGS)
-MEM_VAR_T(mem_var2,		T&, VT T::*,		FUNCTOR_BINARY_BASE(T&), MEM_VAR_BINARY_ARGS)
-MEM_VAR_T(const_mem_var2, const T&, const VT T::*,	FUNCTOR_BINARY_BASE(T&), MEM_VAR_BINARY_ARGS)
+MEM_VAR_T(mem_var1, T&, VT T::*, FUNCTOR_UNARY_BASE(T&), MEM_VAR_UNARY_ARGS)
+		MEM_VAR_T(const_mem_var1, const T&, const VT T::*, FUNCTOR_UNARY_BASE(T&), MEM_VAR_UNARY_ARGS)
+MEM_VAR_T(mem_var2, T&, VT T::*, FUNCTOR_BINARY_BASE(T&), MEM_VAR_BINARY_ARGS)
+		MEM_VAR_T(const_mem_var2, const T&, const VT T::*, FUNCTOR_BINARY_BASE(T&), MEM_VAR_BINARY_ARGS)
 
 #undef MEM_VAR_UNARY_ARGS
 #undef MEM_VAR_BINARY_ARGS
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
-
 /// Returned functor passes member variable \p mvp reference of given object to equal\<VT\>.
 /// \ingroup FunctorAccessors
-template <class T, typename VT>
-inline const_mem_var1_t<binder2nd<equal_to<VT> >, T, VT>
-mem_var_equal_to (const VT T::*mvp, const VT& v)
-{
-    return (const_mem_var1_t<binder2nd<equal_to<VT> >,T,VT> (mvp, bind2nd(equal_to<VT>(), v)));
+template<class T, typename VT>
+inline const_mem_var1_t<binder2nd<equal_to<VT> > , T, VT> mem_var_equal_to(
+		const VT T::*mvp, const VT& v) {
+	return (const_mem_var1_t<binder2nd<equal_to<VT> > , T, VT> (mvp, bind2nd(
+			equal_to<VT> (), v)));
 }
 
 /// Returned functor passes member variable \p mvp reference of given object to less\<VT\>.
 /// \ingroup FunctorAccessors
-template <class T, typename VT>
-inline const_mem_var1_t<binder2nd<less<VT> >, T, VT>
-mem_var_less (const VT T::*mvp, const VT& v)
-{
-    return (const_mem_var1_t<binder2nd<less<VT> >,T,VT> (mvp, bind2nd(less<VT>(), v)));
+template<class T, typename VT>
+inline const_mem_var1_t<binder2nd<less<VT> > , T, VT> mem_var_less(
+		const VT T::*mvp, const VT& v) {
+	return (const_mem_var1_t<binder2nd<less<VT> > , T, VT> (mvp, bind2nd(less<
+			VT> (), v)));
 }
 
 /// Returned functor passes member variable \p mvp reference of given object to equal\<VT\>.
 /// \ingroup FunctorAccessors
-template <class T, typename VT>
-inline const_mem_var2_t<equal_to<VT>, T, VT>
-mem_var_equal_to (const VT T::*mvp)
-{
-    return (const_mem_var2_t<equal_to<VT>,T,VT> (mvp, equal_to<VT>()));
+template<class T, typename VT>
+inline const_mem_var2_t<equal_to<VT> , T, VT> mem_var_equal_to(const VT T::*mvp) {
+	return (const_mem_var2_t<equal_to<VT> , T, VT> (mvp, equal_to<VT> ()));
 }
 
 /// Returned functor passes member variable \p mvp reference of given object to less\<VT\>.
 /// \ingroup FunctorAccessors
-template <class T, typename VT>
-inline const_mem_var2_t<less<VT>, T, VT>
-mem_var_less (const VT T::*mvp)
-{
-    return (const_mem_var2_t<less<VT>,T,VT> (mvp, less<VT>()));
+template<class T, typename VT>
+inline const_mem_var2_t<less<VT> , T, VT> mem_var_less(const VT T::*mvp) {
+	return (const_mem_var2_t<less<VT> , T, VT> (mvp, less<VT> ()));
 }
 
 //----------------------------------------------------------------------
@@ -448,10 +482,10 @@ mem_var_less (const VT T::*mvp)
 #define DEREF_BINARY_ARGS		(argument_type p1, argument_type p2) const \
 					{ return (m_pfn(*p1, *p2)); }
 
-DEREFERENCER_T(deref1_t,	T, 		FUNCTOR_UNARY_BASE(T*),		DEREF_UNARY_ARGS,	FUNCTOR_UNARY_BASE(T))
-DEREFERENCER_T(const_deref1_t,	const T, 	FUNCTOR_UNARY_BASE(const T*),	DEREF_UNARY_ARGS,	FUNCTOR_UNARY_BASE(const T))
-DEREFERENCER_T(deref2_t,	T, 		FUNCTOR_BINARY_BASE(T*),	DEREF_BINARY_ARGS,	FUNCTOR_BINARY_BASE(T))
-DEREFERENCER_T(const_deref2_t,	const T, 	FUNCTOR_BINARY_BASE(const T*),	DEREF_BINARY_ARGS,	FUNCTOR_BINARY_BASE(const T))
+		DEREFERENCER_T(deref1_t, T, FUNCTOR_UNARY_BASE(T*), DEREF_UNARY_ARGS, FUNCTOR_UNARY_BASE(T))
+		DEREFERENCER_T(const_deref1_t, const T, FUNCTOR_UNARY_BASE(const T*), DEREF_UNARY_ARGS, FUNCTOR_UNARY_BASE(const T))
+		DEREFERENCER_T(deref2_t, T, FUNCTOR_BINARY_BASE(T*), DEREF_BINARY_ARGS, FUNCTOR_BINARY_BASE(T))
+		DEREFERENCER_T(const_deref2_t, const T, FUNCTOR_BINARY_BASE(const T*), DEREF_BINARY_ARGS, FUNCTOR_BINARY_BASE(const T))
 
 #define dereference(f) _dereference(f,f)
 

@@ -22,6 +22,10 @@
 
 #include <esc/common.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* max rand-number */
 #define RAND_MAX 0xFFFFFFFF
 
@@ -37,5 +41,9 @@ s32 rand(void);
  * sequence of numbers.
  */
 void srand(u32 seed);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* RAND_H_ */

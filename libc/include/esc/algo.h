@@ -22,6 +22,10 @@
 
 #include <esc/common.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* function that compares <a> and <b> and returns:
  * 	<a> <  <b>: negative value
  *  <a> == <b>: 0
@@ -67,5 +71,9 @@ void *bsearch(const void *key,const void *base,u32 num,u32 size,fCompare cmp);
  * @param cmp the compare-function
  */
 void qsort(void *base,u32 num,u32 size,fCompare cmp);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ALGO_H_ */

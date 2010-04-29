@@ -22,6 +22,10 @@
 
 #include <esc/common.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* results of div and ldiv */
 typedef struct {
 	s32 quot;
@@ -63,5 +67,9 @@ tDiv div(s32 numerator,s32 denominator);
  * @return quotient and remainder
  */
 tLDiv ldiv(s64 numerator,s64 denominator);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MATH_H_ */

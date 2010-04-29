@@ -248,22 +248,22 @@ static void test_read(void) {
 	char toosmallbuf[10];
 	test_caseStart("Testing read()");
 	test_assertInt(_read(0,(void*)0x12345678,1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)0x12345678,4 * K),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)0x12345678,4 * K + 1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)0x12345678,8 * K),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)0x12345678,8 * K - 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0x12345678,4 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0x12345678,4 * 1024 + 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0x12345678,8 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0x12345678,8 * 1024 - 1),ERR_INVALID_ARGS);
 	test_assertInt(_read(0,(void*)0xC0000000,1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)0xC0000000,4 * K),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)0xC0000000,4 * K + 1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)0xC0000000,8 * K),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)0xC0000000,8 * K - 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xC0000000,4 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xC0000000,4 * 1024 + 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xC0000000,8 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xC0000000,8 * 1024 - 1),ERR_INVALID_ARGS);
 	test_assertInt(_read(0,(void*)0xFFFFFFFF,1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)0xFFFFFFFF,4 * K),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)0xFFFFFFFF,4 * K + 1),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)0xFFFFFFFF,8 * K),ERR_INVALID_ARGS);
-	test_assertInt(_read(0,(void*)0xFFFFFFFF,8 * K - 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xFFFFFFFF,4 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xFFFFFFFF,4 * 1024 + 1),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xFFFFFFFF,8 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,(void*)0xFFFFFFFF,8 * 1024 - 1),ERR_INVALID_ARGS);
 	/* this may be successfull if our stack has been resized previously and is now big enough */
-	test_assertInt(_read(0,toosmallbuf,4 * K),ERR_INVALID_ARGS);
+	test_assertInt(_read(0,toosmallbuf,4 * 1024),ERR_INVALID_ARGS);
 	test_assertInt(_read(0,toosmallbuf,1024),ERR_INVALID_ARGS);
 	test_assertInt(_read(-1,toosmallbuf,10),ERR_INVALID_FD);
 	test_assertInt(_read(32,toosmallbuf,10),ERR_INVALID_FD);
@@ -296,7 +296,7 @@ static void test_unregDriver(void) {
 static void test_changeSize(void) {
 	test_caseStart("Testing changeSize()");
 	test_assertPtr(_changeSize(-1000),NULL);
-	test_assertPtr(_changeSize(0xC0000000 / (4 * K)),NULL);
+	test_assertPtr(_changeSize(0xC0000000 / (4 * 1024)),NULL);
 	test_assertPtr(_changeSize(0x7FFFFFFF),NULL);
 	test_caseSucceded();
 }
@@ -316,22 +316,22 @@ static void test_write(void) {
 	char toosmallbuf[10];
 	test_caseStart("Testing write()");
 	test_assertInt(_write(0,(void*)0x12345678,1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)0x12345678,4 * K),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)0x12345678,4 * K + 1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)0x12345678,8 * K),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)0x12345678,8 * K - 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0x12345678,4 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0x12345678,4 * 1024 + 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0x12345678,8 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0x12345678,8 * 1024 - 1),ERR_INVALID_ARGS);
 	test_assertInt(_write(0,(void*)0xC0000000,1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)0xC0000000,4 * K),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)0xC0000000,4 * K + 1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)0xC0000000,8 * K),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)0xC0000000,8 * K - 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xC0000000,4 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xC0000000,4 * 1024 + 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xC0000000,8 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xC0000000,8 * 1024 - 1),ERR_INVALID_ARGS);
 	test_assertInt(_write(0,(void*)0xFFFFFFFF,1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)0xFFFFFFFF,4 * K),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)0xFFFFFFFF,4 * K + 1),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)0xFFFFFFFF,8 * K),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,(void*)0xFFFFFFFF,8 * K - 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xFFFFFFFF,4 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xFFFFFFFF,4 * 1024 + 1),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xFFFFFFFF,8 * 1024),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,(void*)0xFFFFFFFF,8 * 1024 - 1),ERR_INVALID_ARGS);
 	/* this may be successfull if our stack has been resized previously and is now big enough */
-	test_assertInt(_write(0,toosmallbuf,4 * K),ERR_INVALID_ARGS);
+	test_assertInt(_write(0,toosmallbuf,4 * 1024),ERR_INVALID_ARGS);
 	test_assertInt(_write(0,toosmallbuf,1024),ERR_INVALID_ARGS);
 	test_assertInt(_write(-1,toosmallbuf,10),ERR_INVALID_FD);
 	test_assertInt(_write(32,toosmallbuf,10),ERR_INVALID_FD);
@@ -348,17 +348,17 @@ static void test_getWork(void) {
 	/* test drv-array */
 	test_assertInt(_getWork(NULL,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork((void*)0x12345678,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)0x12345678,4 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)0x12345678,4 * K + 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)0x12345678,8 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)0x12345678,8 * K - 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0x12345678,4 * 1024,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0x12345678,4 * 1024 + 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0x12345678,8 * 1024,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0x12345678,8 * 1024 - 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork((void*)0xC0000000,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork((void*)0xBFFFFFFF,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork((void*)0xBFFFFFFF,2,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)0xBFFFFFFF,4 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)0xBFFFFFFF,4 * K + 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)0xBFFFFFFF,8 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork((void*)0xBFFFFFFF,8 * K - 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0xBFFFFFFF,4 * 1024,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0xBFFFFFFF,4 * 1024 + 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0xBFFFFFFF,8 * 1024,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork((void*)0xBFFFFFFF,8 * 1024 - 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork((void*)0xFFFFFFFF,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test driver-id */
 	test_assertInt(_getWork(drvs,1,(tDrvId*)0x12345678,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
@@ -367,7 +367,7 @@ static void test_getWork(void) {
 	test_assertInt(_getWork(drvs,1,(tDrvId*)0xFFFFFFFF,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test drv-array size */
 	test_assertInt(_getWork(drvs,-1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,4 * K,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,4 * 1024,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork(drvs,0x7FFFFFFF,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test message-id */
 	test_assertInt(_getWork(drvs,1,&s,(tMsgId*)0x12345678,&msg,sizeof(msg),0),ERR_INVALID_ARGS);

@@ -14,18 +14,23 @@
 namespace ustl {
 
 /// For partial specialization of stream_size_of for objects
-template <typename T> struct object_stream_size {
-    inline streamsize operator()(const T& v) const { return (v.stream_size()); }
+template<typename T> struct object_stream_size {
+	inline streamsize operator()(const T& v) const {
+		return (v.stream_size());
+	}
 };
-template <typename T> struct integral_object_stream_size {
-    inline streamsize operator()(const T& v) const { return (sizeof(v)); }
+template<typename T> struct integral_object_stream_size {
+	inline streamsize operator()(const T& v) const {
+		return (sizeof(v));
+	}
 };
 /// Returns the size of the given object. Overloads for standard types are available.
-template <typename T>
-inline streamsize stream_size_of (const T& v) {
-    typedef typename tm::Select <numeric_limits<T>::is_integral,
-	integral_object_stream_size<T>, object_stream_size<T> >::Result stream_sizer_t;
-    return (stream_sizer_t()(v));
+template<typename T>
+inline streamsize stream_size_of(const T& v) {
+	typedef typename tm::Select<numeric_limits<T>::is_integral,
+			integral_object_stream_size<T> , object_stream_size<T> >::Result
+			stream_sizer_t;
+	return (stream_sizer_t()(v));
 }
 
 } // namespace ustl

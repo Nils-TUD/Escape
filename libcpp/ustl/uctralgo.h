@@ -16,20 +16,19 @@ namespace ustl {
 /// i.e. in order of increasing n. 
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename OutputIterator>
-inline OutputIterator copy (const Container& ctr, OutputIterator result)
-{
-    return (copy (ctr.begin(), ctr.end(), result));
+template<typename Container, typename OutputIterator>
+inline OutputIterator copy(const Container& ctr, OutputIterator result) {
+	return (copy(ctr.begin(), ctr.end(), result));
 }
 
 /// Copy_if copies elements from the range [first, last) to the range
 /// [result, result + (last - first)) if pred(*i) returns true.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename OutputIterator, typename Predicate>
-inline OutputIterator copy_if (Container& ctr, OutputIterator result, Predicate pred)
-{
-    return (copy_if (ctr.begin(), ctr.end(), result, pred));
+template<typename Container, typename OutputIterator, typename Predicate>
+inline OutputIterator copy_if(Container& ctr, OutputIterator result,
+		Predicate pred) {
+	return (copy_if(ctr.begin(), ctr.end(), result, pred));
 }
 
 /// For_each applies the function object f to each element in the range
@@ -38,10 +37,9 @@ inline OutputIterator copy_if (Container& ctr, OutputIterator result, Predicate 
 /// the function object after it has been applied to each element.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename UnaryFunction>
-inline UnaryFunction for_each (Container& ctr, UnaryFunction f)
-{
-    return (for_each (ctr.begin(), ctr.end(), f));
+template<typename Container, typename UnaryFunction>
+inline UnaryFunction for_each(Container& ctr, UnaryFunction f) {
+	return (for_each(ctr.begin(), ctr.end(), f));
 }
 
 /// For_each applies the function object f to each element in the range
@@ -50,40 +48,38 @@ inline UnaryFunction for_each (Container& ctr, UnaryFunction f)
 /// the function object after it has been applied to each element.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename UnaryFunction>
-inline UnaryFunction for_each (const Container& ctr, UnaryFunction f)
-{
-    return (for_each (ctr.begin(), ctr.end(), f));
+template<typename Container, typename UnaryFunction>
+inline UnaryFunction for_each(const Container& ctr, UnaryFunction f) {
+	return (for_each(ctr.begin(), ctr.end(), f));
 }
 
 /// Returns the first iterator i in the range [first, last) such that
 /// *i == value. Returns last if no such iterator exists. 
 /// \ingroup SearchingAlgorithms
 ///
-template <typename Container, typename EqualityComparable>
-inline typename Container::const_iterator find (const Container& ctr, const EqualityComparable& value)
-{
-    return (find (ctr.begin(), ctr.end(), value));
+template<typename Container, typename EqualityComparable>
+inline typename Container::const_iterator find(const Container& ctr,
+		const EqualityComparable& value) {
+	return (find(ctr.begin(), ctr.end(), value));
 }
-template <typename Container, typename EqualityComparable>
-inline typename Container::iterator find (Container& ctr, const EqualityComparable& value)
-{
-    return (find (ctr.begin(), ctr.end(), value));
+template<typename Container, typename EqualityComparable>
+inline typename Container::iterator find(Container& ctr,
+		const EqualityComparable& value) {
+	return (find(ctr.begin(), ctr.end(), value));
 }
 
 /// Returns the first iterator i in the range [first, last) such that
 /// pred(*i) is true. Returns last if no such iterator exists.
 /// \ingroup SearchingAlgorithms
 ///
-template <typename Container, typename Predicate>
-inline typename Container::const_iterator find_if (const Container& ctr, Predicate pred)
-{
-    return (find_if (ctr.begin(), ctr.end(), pred));
+template<typename Container, typename Predicate>
+inline typename Container::const_iterator find_if(const Container& ctr,
+		Predicate pred) {
+	return (find_if(ctr.begin(), ctr.end(), pred));
 }
-template <typename Container, typename Predicate>
-inline typename Container::iterator find_if (Container& ctr, Predicate pred)
-{
-    return (find_if (ctr.begin(), ctr.end(), pred));
+template<typename Container, typename Predicate>
+inline typename Container::iterator find_if(Container& ctr, Predicate pred) {
+	return (find_if(ctr.begin(), ctr.end(), pred));
 }
 
 /// Count finds the number of elements in [first, last) that are equal
@@ -91,10 +87,9 @@ inline typename Container::iterator find_if (Container& ctr, Predicate pred)
 /// number of iterators i in [first, last) such that *i == value.
 /// \ingroup ConditionAlgorithms
 ///
-template <typename Container, typename EqualityComparable>
-inline size_t count (const Container& ctr, const EqualityComparable& value)
-{
-    return (count (ctr.begin(), ctr.end(), value));
+template<typename Container, typename EqualityComparable>
+inline size_t count(const Container& ctr, const EqualityComparable& value) {
+	return (count(ctr.begin(), ctr.end(), value));
 }
 
 /// Count_if finds the number of elements in [first, last) that satisfy the
@@ -102,10 +97,9 @@ inline size_t count (const Container& ctr, const EqualityComparable& value)
 /// number of iterators i in [first, last) such that pred(*i) is true.
 /// \ingroup ConditionAlgorithms
 ///
-template <typename Container, typename Predicate>
-inline size_t count_if (const Container& ctr, Predicate pred)
-{
-    return (count_if (ctr.begin(), ctr.end(), pred));
+template<typename Container, typename Predicate>
+inline size_t count_if(const Container& ctr, Predicate pred) {
+	return (count_if(ctr.begin(), ctr.end(), pred));
 }
 
 /// The first version of transform performs the operation op(*i) for each
@@ -116,10 +110,9 @@ inline size_t count_if (const Container& ctr, Predicate pred)
 /// The return value is result + (last - first).
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename UnaryFunction>
-inline void transform (Container& ctr, UnaryFunction op)
-{
-    transform (ctr.begin(), ctr.end(), ctr.begin(), op);
+template<typename Container, typename UnaryFunction>
+inline void transform(Container& ctr, UnaryFunction op) {
+	transform(ctr.begin(), ctr.end(), ctr.begin(), op);
 }
 
 /// The first version of transform performs the operation op(*i) for each
@@ -130,10 +123,10 @@ inline void transform (Container& ctr, UnaryFunction op)
 /// The return value is result + (last - first).
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename OutputIterator, typename UnaryFunction>
-inline OutputIterator transform (Container& ctr, OutputIterator result, UnaryFunction op)
-{
-    return (transform (ctr.begin(), ctr.end(), result, op));
+template<typename Container, typename OutputIterator, typename UnaryFunction>
+inline OutputIterator transform(Container& ctr, OutputIterator result,
+		UnaryFunction op) {
+	return (transform(ctr.begin(), ctr.end(), result, op));
 }
 
 /// The second version of transform is very similar, except that it uses a
@@ -146,10 +139,11 @@ inline OutputIterator transform (Container& ctr, OutputIterator result, UnaryFun
 /// The return value is result + (last1 - first1).
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename InputIterator, typename OutputIterator, typename BinaryFunction>
-inline OutputIterator transform (Container& ctr, InputIterator first, OutputIterator result, BinaryFunction op)
-{
-    return (transform (ctr.begin(), ctr.end(), first, result, op));
+template<typename Container, typename InputIterator, typename OutputIterator,
+		typename BinaryFunction>
+inline OutputIterator transform(Container& ctr, InputIterator first,
+		OutputIterator result, BinaryFunction op) {
+	return (transform(ctr.begin(), ctr.end(), first, result, op));
 }
 
 /// Replace replaces every element in the range [first, last) equal to
@@ -157,10 +151,9 @@ inline OutputIterator transform (Container& ctr, InputIterator first, OutputIter
 /// if *i == old_value then it performs the assignment *i = new_value.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename T>
-inline void replace (Container& ctr, const T& old_value, const T& new_value)
-{
-    replace (ctr.begin(), ctr.end(), old_value, new_value);
+template<typename Container, typename T>
+inline void replace(Container& ctr, const T& old_value, const T& new_value) {
+	replace(ctr.begin(), ctr.end(), old_value, new_value);
 }
 
 /// Replace_if replaces every element in the range [first, last) for which
@@ -168,10 +161,9 @@ inline void replace (Container& ctr, const T& old_value, const T& new_value)
 /// pred(*i) is true then it performs the assignment *i = new_value.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename Predicate, typename T>
-inline void replace_if (Container& ctr, Predicate pred, const T& new_value)
-{
-    replace_if (ctr.begin(), ctr.end(), pred, new_value);
+template<typename Container, typename Predicate, typename T>
+inline void replace_if(Container& ctr, Predicate pred, const T& new_value) {
+	replace_if(ctr.begin(), ctr.end(), pred, new_value);
 }
 
 /// Replace_copy copies elements from the range [first, last) to the range
@@ -182,10 +174,10 @@ inline void replace_if (Container& ctr, Predicate pred, const T& new_value)
 /// *(result+n) = *(first+n) otherwise.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename OutputIterator, typename T>
-inline OutputIterator replace_copy (const Container& ctr, OutputIterator result, const T& old_value, const T& new_value)
-{
-    return (replace_copy (ctr.begin(), ctr.end(), result, old_value, new_value));
+template<typename Container, typename OutputIterator, typename T>
+inline OutputIterator replace_copy(const Container& ctr, OutputIterator result,
+		const T& old_value, const T& new_value) {
+	return (replace_copy(ctr.begin(), ctr.end(), result, old_value, new_value));
 }
 
 /// Replace_copy_if copies elements from the range [first, last) to the range
@@ -196,10 +188,11 @@ inline OutputIterator replace_copy (const Container& ctr, OutputIterator result,
 /// and *(result+n) = *(first+n) otherwise.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename OutputIterator, typename Predicate, typename T>
-inline OutputIterator replace_copy_if (const Container& ctr, OutputIterator result, Predicate pred, const T& new_value) 
-{
-    return (replace_copy_if (ctr.begin(), ctr.end(), result, pred, new_value));
+template<typename Container, typename OutputIterator, typename Predicate,
+		typename T>
+inline OutputIterator replace_copy_if(const Container& ctr,
+		OutputIterator result, Predicate pred, const T& new_value) {
+	return (replace_copy_if(ctr.begin(), ctr.end(), result, pred, new_value));
 }
 
 /// Fill assigns the value value to every element in the range [first, last).
@@ -207,29 +200,26 @@ inline OutputIterator replace_copy_if (const Container& ctr, OutputIterator resu
 /// it performs the assignment *i = value.
 /// \ingroup GeneratorAlgorithms
 ///
-template <typename Container, typename T>
-inline void fill (Container& ctr, const T& value)
-{
-    fill (ctr.begin(), ctr.end(), value);
+template<typename Container, typename T>
+inline void fill(Container& ctr, const T& value) {
+	fill(ctr.begin(), ctr.end(), value);
 }
 
 /// Generate assigns the result of invoking gen, a function object that
 /// takes no arguments, to each element in the range [first, last).
 /// \ingroup GeneratorAlgorithms
 ///
-template <typename Container, typename Generator>
-inline void generate (Container& ctr, Generator gen)
-{
-    generate (ctr.begin(), ctr.end(), gen);
+template<typename Container, typename Generator>
+inline void generate(Container& ctr, Generator gen) {
+	generate(ctr.begin(), ctr.end(), gen);
 }
 
 /// Randomly permute the elements of the container.
 /// \ingroup GeneratorAlgorithms
 ///
-template <typename Container>
-inline void random_shuffle (Container& ctr)
-{
-    random_shuffle (ctr.begin(), ctr.end());
+template<typename Container>
+inline void random_shuffle(Container& ctr) {
+	random_shuffle(ctr.begin(), ctr.end());
 }
 
 /// Remove_copy copies elements that are not equal to value from the range
@@ -239,10 +229,10 @@ inline void random_shuffle (Container& ctr)
 /// range [first, last).
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename OutputIterator, typename T>
-inline OutputIterator remove_copy (const Container& ctr, OutputIterator result, const T& value)
-{
-    return (remove_copy (ctr.begin(), ctr.end(), result, value));
+template<typename Container, typename OutputIterator, typename T>
+inline OutputIterator remove_copy(const Container& ctr, OutputIterator result,
+		const T& value) {
+	return (remove_copy(ctr.begin(), ctr.end(), result, value));
 }
 
 /// Remove_copy_if copies elements from the range [first, last) to a range
@@ -252,10 +242,10 @@ inline OutputIterator remove_copy (const Container& ctr, OutputIterator result, 
 /// is the same as in the range [first, last).
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename OutputIterator, typename Predicate>
-inline OutputIterator remove_copy_if (const Container& ctr, OutputIterator result, Predicate pred)
-{
-    return (remove_copy_if (ctr.begin(), ctr.end(), result, pred));
+template<typename Container, typename OutputIterator, typename Predicate>
+inline OutputIterator remove_copy_if(const Container& ctr,
+		OutputIterator result, Predicate pred) {
+	return (remove_copy_if(ctr.begin(), ctr.end(), result, pred));
 }
 
 /// Remove removes from the range [first, last) all elements that are equal to
@@ -265,10 +255,10 @@ inline OutputIterator remove_copy_if (const Container& ctr, OutputIterator resul
 /// unchanged.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename T>
-inline void remove (Container& ctr, const T& value)
-{
-    ctr.erase (remove_copy (ctr.begin(), ctr.end(), ctr.begin(), value), ctr.end());
+template<typename Container, typename T>
+inline void remove(Container& ctr, const T& value) {
+	ctr.erase(remove_copy(ctr.begin(), ctr.end(), ctr.begin(), value),
+			ctr.end());
 }
 
 /// Remove removes from the range [first, last) all elements that have an iterator
@@ -279,10 +269,11 @@ inline void remove (Container& ctr, const T& value)
 /// unchanged. This version of the algorithm is a uSTL extension.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename ForwardIterator>
-inline void remove (Container& ctr, ForwardIterator rfirst, ForwardIterator rlast)
-{
-    ctr.erase (remove_copy (ctr.begin(), ctr.end(), ctr.begin(), rfirst, rlast), ctr.end());
+template<typename Container, typename ForwardIterator>
+inline void remove(Container& ctr, ForwardIterator rfirst,
+		ForwardIterator rlast) {
+	ctr.erase(remove_copy(ctr.begin(), ctr.end(), ctr.begin(), rfirst, rlast),
+			ctr.end());
 }
 
 /// Remove_if removes from the range [first, last) every element x such that
@@ -294,10 +285,10 @@ inline void remove (Container& ctr, ForwardIterator rfirst, ForwardIterator rlas
 /// unchanged.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename Predicate>
-inline void remove_if (Container& ctr, Predicate pred)
-{
-    ctr.erase (remove_copy_if (ctr.begin(), ctr.end(), ctr.begin(), pred), ctr.end());
+template<typename Container, typename Predicate>
+inline void remove_if(Container& ctr, Predicate pred) {
+	ctr.erase(remove_copy_if(ctr.begin(), ctr.end(), ctr.begin(), pred),
+			ctr.end());
 }
 
 /// Unique_copy copies elements from the range [first, last) to a range
@@ -307,10 +298,9 @@ inline void remove_if (Container& ctr, Predicate pred)
 /// to the Unix filter uniq.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename OutputIterator>
-inline OutputIterator unique_copy (const Container& ctr, OutputIterator result)
-{
-    return (unique_copy (ctr.begin(), ctr.end(), result));
+template<typename Container, typename OutputIterator>
+inline OutputIterator unique_copy(const Container& ctr, OutputIterator result) {
+	return (unique_copy(ctr.begin(), ctr.end(), result));
 }
 
 /// Every time a consecutive group of duplicate elements appears in the range
@@ -323,10 +313,9 @@ inline OutputIterator unique_copy (const Container& ctr, OutputIterator result)
 /// unchanged.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container>
-inline void unique (Container& ctr)
-{
-    ctr.erase (unique_copy (ctr.begin(), ctr.end(), ctr.begin()), ctr.end());
+template<typename Container>
+inline void unique(Container& ctr) {
+	ctr.erase(unique_copy(ctr.begin(), ctr.end(), ctr.begin()), ctr.end());
 }
 
 /// Every time a consecutive group of duplicate elements appears in the range
@@ -339,10 +328,10 @@ inline void unique (Container& ctr)
 /// unchanged.
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container, typename BinaryPredicate>
-inline void unique (Container& ctr, BinaryPredicate binary_pred)
-{
-    ctr.erase (unique_copy (ctr.begin(), ctr.end(), ctr.begin(), binary_pred), ctr.end());
+template<typename Container, typename BinaryPredicate>
+inline void unique(Container& ctr, BinaryPredicate binary_pred) {
+	ctr.erase(unique_copy(ctr.begin(), ctr.end(), ctr.begin(), binary_pred),
+			ctr.end());
 }
 
 /// Reverse reverses a range.
@@ -350,23 +339,21 @@ inline void unique (Container& ctr, BinaryPredicate binary_pred)
 /// it exchanges *(first + i) and *(last - (i + 1)).
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container>
-inline void reverse (Container& ctr)
-{
-    reverse (ctr.begin(), ctr.end());
+template<typename Container>
+inline void reverse(Container& ctr) {
+	reverse(ctr.begin(), ctr.end());
 }
 
 /// Exchanges ranges [first, middle) and [middle, last)
 /// \ingroup MutatingAlgorithms
 ///
-template <typename Container>
-inline void rotate (Container& ctr, off_t offset)
-{
-    assert (size_t(offset > 0 ? offset : -offset) < ctr.size());
-    if (offset > 0)
-	rotate (ctr.begin(), ctr.end() - offset, ctr.end());
-    else
-	rotate (ctr.begin(), ctr.begin() - offset, ctr.end());
+template<typename Container>
+inline void rotate(Container& ctr, off_t offset) {
+	assert(size_t(offset > 0 ? offset : -offset) < ctr.size());
+	if (offset > 0)
+		rotate(ctr.begin(), ctr.end() - offset, ctr.end());
+	else
+		rotate(ctr.begin(), ctr.begin() - offset, ctr.end());
 }
 
 /// Returns the furthermost iterator i in [first, last) such that,
@@ -374,95 +361,92 @@ inline void rotate (Container& ctr, off_t offset)
 /// Assumes the range is sorted.
 /// \ingroup SearchingAlgorithms
 ///
-template <typename Container, typename LessThanComparable>
-inline typename Container::const_iterator lower_bound (const Container& ctr, const LessThanComparable& value)
-{
-    return (lower_bound (ctr.begin(), ctr.end(), value));
+template<typename Container, typename LessThanComparable>
+inline typename Container::const_iterator lower_bound(const Container& ctr,
+		const LessThanComparable& value) {
+	return (lower_bound(ctr.begin(), ctr.end(), value));
 }
-template <typename Container, typename LessThanComparable>
-inline typename Container::iterator lower_bound (Container& ctr, const LessThanComparable& value)
-{
-    return (lower_bound (ctr.begin(), ctr.end(), value));
+template<typename Container, typename LessThanComparable>
+inline typename Container::iterator lower_bound(Container& ctr,
+		const LessThanComparable& value) {
+	return (lower_bound(ctr.begin(), ctr.end(), value));
 }
 
 /// Returns the furthermost iterator i in [first,last) such that for
 /// every iterator j in [first,i), value < *j is false.
 /// \ingroup SearchingAlgorithms
 ///
-template <typename Container, typename LessThanComparable>
-inline typename Container::const_iterator upper_bound (const Container& ctr, const LessThanComparable& value)
-{
-    return (upper_bound (ctr.begin(), ctr.end(), value));
+template<typename Container, typename LessThanComparable>
+inline typename Container::const_iterator upper_bound(const Container& ctr,
+		const LessThanComparable& value) {
+	return (upper_bound(ctr.begin(), ctr.end(), value));
 }
-template <typename Container, typename LessThanComparable>
-inline typename Container::iterator upper_bound (Container& ctr, const LessThanComparable& value)
-{
-    return (upper_bound (ctr.begin(), ctr.end(), value));
+template<typename Container, typename LessThanComparable>
+inline typename Container::iterator upper_bound(Container& ctr,
+		const LessThanComparable& value) {
+	return (upper_bound(ctr.begin(), ctr.end(), value));
 }
 
 /// Performs a binary search for \p value.
 /// Assumes the range is sorted.
 /// \ingroup SearchingAlgorithms
 ///
-template <typename Container>
-inline bool binary_search (const Container& ctr, const typename Container::value_type& value)
-{
-    return (binary_search (ctr.begin(), ctr.end(), value));
+template<typename Container>
+inline bool binary_search(const Container& ctr,
+		const typename Container::value_type& value) {
+	return (binary_search(ctr.begin(), ctr.end(), value));
 }
-template <typename Container>
-inline bool binary_search (Container& ctr, const typename Container::value_type& value)
-{
-    return (binary_search (ctr.begin(), ctr.end(), value));
+template<typename Container>
+inline bool binary_search(Container& ctr,
+		const typename Container::value_type& value) {
+	return (binary_search(ctr.begin(), ctr.end(), value));
 }
 
 /// Returns pair<lower_bound,upper_bound>
 /// \ingroup SearchingAlgorithms
 ///
-template <typename Container, typename LessThanComparable>
-inline pair<typename Container::const_iterator,typename Container::const_iterator> equal_range (const Container& ctr, const LessThanComparable& value)
-{
-    return (equal_range (ctr.begin(), ctr.end(), value));
+template<typename Container, typename LessThanComparable>
+inline pair<typename Container::const_iterator,
+		typename Container::const_iterator> equal_range(const Container& ctr,
+		const LessThanComparable& value) {
+	return (equal_range(ctr.begin(), ctr.end(), value));
 }
-template <typename Container, typename LessThanComparable>
-inline pair<typename Container::iterator,typename Container::iterator> equal_range (Container& ctr, const LessThanComparable& value)
-{
-    return (equal_range (ctr.begin(), ctr.end(), value));
-}
-
-/// Sorts the container
-/// \ingroup SortingAlgorithms
-///
-template <typename Container>
-inline void sort (Container& ctr)
-{
-    sort (ctr.begin(), ctr.end());
+template<typename Container, typename LessThanComparable>
+inline pair<typename Container::iterator, typename Container::iterator> equal_range(
+		Container& ctr, const LessThanComparable& value) {
+	return (equal_range(ctr.begin(), ctr.end(), value));
 }
 
 /// Sorts the container
 /// \ingroup SortingAlgorithms
 ///
-template <typename Container, typename Compare>
-inline void sort (Container& ctr, Compare comp)
-{
-    sort (ctr.begin(), ctr.end(), comp);
+template<typename Container>
+inline void sort(Container& ctr) {
+	sort(ctr.begin(), ctr.end());
 }
 
 /// Sorts the container
 /// \ingroup SortingAlgorithms
 ///
-template <typename Container>
-inline void stable_sort (Container& ctr)
-{
-    stable_sort (ctr.begin(), ctr.end());
+template<typename Container, typename Compare>
+inline void sort(Container& ctr, Compare comp) {
+	sort(ctr.begin(), ctr.end(), comp);
 }
 
 /// Sorts the container
 /// \ingroup SortingAlgorithms
 ///
-template <typename Container, typename Compare>
-inline void stable_sort (Container& ctr, Compare comp)
-{
-    stable_sort (ctr.begin(), ctr.end(), comp);
+template<typename Container>
+inline void stable_sort(Container& ctr) {
+	stable_sort(ctr.begin(), ctr.end());
+}
+
+/// Sorts the container
+/// \ingroup SortingAlgorithms
+///
+template<typename Container, typename Compare>
+inline void stable_sort(Container& ctr, Compare comp) {
+	stable_sort(ctr.begin(), ctr.end(), comp);
 }
 
 } // namespace ustl

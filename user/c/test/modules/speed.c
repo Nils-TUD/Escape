@@ -48,7 +48,8 @@ int mod_speed(int argc,char *argv[]) {
 		error("open");
 
 	printf("Testing speed of read/write from/to '%s'\n",rpath);
-	printf("Transferring %u MiB in chunks of %d bytes\n",(u32)(((u64)COUNT * BUF_SIZE) / M),BUF_SIZE);
+	printf("Transferring %u MiB in chunks of %d bytes\n",(u32)(((u64)COUNT * BUF_SIZE) / (1024 * 1024)),
+			BUF_SIZE);
 	printf("\n");
 
 #if 0
@@ -66,7 +67,7 @@ int mod_speed(int argc,char *argv[]) {
 		}
 		if(i % (COUNT / 1000) == 0) {
 			diff = getTime() - t;
-			printf("\rWriting with	%07d KiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / K));
+			printf("\rWriting with	%07d KiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / 1024));
 			flush();
 		}
 	}
@@ -75,7 +76,7 @@ int mod_speed(int argc,char *argv[]) {
 	diff = getTime() - t;
 	printf("\n");
 	printf("Instructions:	%08x%08x\n",total.val32.upper,total.val32.lower);
-	printf("Speed:			%07d KiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / K));
+	printf("Speed:			%07d KiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / 1024));
 	printf("\n");
 #endif
 
@@ -95,7 +96,7 @@ int mod_speed(int argc,char *argv[]) {
 		}
 		if(i % (COUNT / 1000) == 0) {
 			diff = getTime() - t;
-			printf("\rReading with	%07d KiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / K));
+			printf("\rReading with	%07d KiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / 1024));
 			flush();
 		}
 #endif
@@ -106,7 +107,7 @@ int mod_speed(int argc,char *argv[]) {
 	diff = getTime() - t;
 	printf("\n");
 	printf("Instructions:	%08x%08x\n",total.val32.upper,total.val32.lower);
-	printf("Speed:			%07d KiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / (double)diff) / K));
+	printf("Speed:			%07d KiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / (double)diff) / 1024));
 
 	close(fd);
 

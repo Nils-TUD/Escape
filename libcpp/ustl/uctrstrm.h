@@ -67,40 +67,37 @@ namespace ustl {
 //----------------------------------------------------------------------
 
 /// Reads fixed size container \p v from stream \p is.
-template <typename Container>
-inline istream& nr_container_read (istream& is, Container& v)
-{
-    foreach (typename Container::iterator, i, v)
-	is >> *i;
-    return (is);
+template<typename Container>
+inline istream& nr_container_read(istream& is, Container& v) {
+	foreach (typename Container::iterator, i, v)
+		is >> *i;
+	return (is);
 }
 
 /// Writes fixed size container \p v into stream \p os.
-template <typename Container>
-inline ostream& nr_container_write (ostream& os, const Container& v)
-{
-    foreach (typename Container::const_iterator, i, v)
-	os << *i;
-    return (os);
+template<typename Container>
+inline ostream& nr_container_write(ostream& os, const Container& v) {
+	foreach (typename Container::const_iterator, i, v)
+		os << *i;
+	return (os);
 }
 
 /// Computes the stream size of a fixed size standard container.
-template <typename Container>
-inline size_t nr_container_stream_size (const Container& v)
-{
-    typedef typename Container::const_iterator vciter_t;
-    typedef typename iterator_traits<vciter_t>::value_type value_type;
-    if (!v.size())
-	return (0);
-    size_t s = 0, dvs;
-    vciter_t i = v.begin();
-    do {
-	dvs = stream_size_of(*i);
-	s += dvs;
-    } while (++i != v.end() && !__builtin_constant_p(dvs));
-    if (__builtin_constant_p(dvs))
-	s *= v.size();
-    return (s);
+template<typename Container>
+inline size_t nr_container_stream_size(const Container& v) {
+	typedef typename Container::const_iterator vciter_t;
+	typedef typename iterator_traits<vciter_t>::value_type value_type;
+	if (!v.size())
+		return (0);
+	size_t s = 0, dvs;
+	vciter_t i = v.begin();
+	do {
+		dvs = stream_size_of(*i);
+		s += dvs;
+	} while (++i != v.end() && !__builtin_constant_p(dvs));
+	if (__builtin_constant_p(dvs))
+		s *= v.size();
+	return (s);
 }
 
 //----------------------------------------------------------------------
@@ -108,70 +105,68 @@ inline size_t nr_container_stream_size (const Container& v)
 //----------------------------------------------------------------------
 
 /// Reads container \p v from stream \p is.
-template <typename Container>
-istream& container_read (istream& is, Container& v)
-{
-    typedef typename Container::value_type value_type;
-    typedef typename Container::iterator iterator;
-    typedef typename Container::written_size_type written_size_type;
-    written_size_type n = 0;
-    is >> n;
-    const size_t expectedSize = n * stream_size_of(value_type());
-    if (!is.verify_remaining ("read", typeid(v).name(), expectedSize))
+template<typename Container>
+istream& container_read(istream& is, Container& v) {
+	typedef typename Container::value_type value_type;
+	typedef typename Container::iterator iterator;
+	typedef typename Container::written_size_type written_size_type;
+	written_size_type n = 0;
+	is >> n;
+	const size_t expectedSize = n * stream_size_of(value_type());
+	if (!is.verify_remaining("read", typeid(v).name(), expectedSize))
+		return (is);
+	if (alignof(NullValue<value_type> ()) > alignof(n))
+		is >> ios::talign<value_type>();
+	v.resize(n);
+	nr_container_read(is, v);
+	is >> ios::talign<written_size_type>();
 	return (is);
-    if (alignof(NullValue<value_type>()) > alignof(n))
-	is >> ios::talign<value_type>();
-    v.resize (n);
-    nr_container_read (is, v);
-    is >> ios::talign<written_size_type>();
-    return (is);
 }
 
 /// Writes the vector to stream \p os.
-template <typename Container>
-ostream& container_write (ostream& os, const Container& v)
-{
-    typedef typename Container::value_type value_type;
-    typedef typename Container::written_size_type written_size_type;
-    const written_size_type sz (v.size());
-    os << sz;
-    if (alignof(NullValue<value_type>()) > alignof(sz))
-	os << ios::talign<value_type>();
-    nr_container_write (os, v);
-    os << ios::talign<written_size_type>();
-    return (os);
+template<typename Container>
+ostream& container_write(ostream& os, const Container& v) {
+	typedef typename Container::value_type value_type;
+	typedef typename Container::written_size_type written_size_type;
+	const written_size_type sz(v.size());
+	os << sz;
+	if (alignof(NullValue<value_type> ()) > alignof(sz))
+		os << ios::talign<value_type>();
+	nr_container_write(os, v);
+	os << ios::talign<written_size_type>();
+	return (os);
 }
 
 /// Computes the stream size of a standard container.
-template <typename Container>
-size_t container_stream_size (const Container& v)
-{
-    typedef typename Container::value_type value_type;
-    typedef typename Container::written_size_type written_size_type;
-    const written_size_type sz (v.size());
-    size_t sizeSize = stream_size_of (sz);
-    if (alignof(NullValue<value_type>()) > alignof(sz))
-	sizeSize = Align (sizeSize, alignof(NullValue<value_type>()));
-    return (Align (sizeSize + nr_container_stream_size (v), alignof(sz)));
+template<typename Container>
+size_t container_stream_size(const Container& v) {
+	typedef typename Container::value_type value_type;
+	typedef typename Container::written_size_type written_size_type;
+	const written_size_type sz(v.size());
+	size_t sizeSize = stream_size_of(sz);
+	if (alignof(NullValue<value_type> ()) > alignof(sz))
+		sizeSize = Align(sizeSize, alignof(NullValue<value_type> ()));
+	return (Align(sizeSize + nr_container_stream_size(v), alignof(sz)));
 }
 
 /// \brief Writes element \p v into stream \p os as text.
 /// Specialize to custom print elements.
-template <typename T>
-inline ostringstream& container_element_text_write (ostringstream& os, const T& v)
-{ return (os << v); }
+template<typename T>
+inline ostringstream& container_element_text_write(ostringstream& os,
+		const T& v) {
+	return (os << v);
+}
 
 /// Writes container \p v into stream \p os as text.
-template <typename Container>
-ostringstream& container_text_write (ostringstream& os, const Container& v)
-{
-    typename Container::const_iterator i = v.begin();
-    os << '(';
-    while (i < v.end()) {
-	container_element_text_write (os, *i);
-	os << ",)"[++i == v.end()];
-    }
-    return (os);
+template<typename Container>
+ostringstream& container_text_write(ostringstream& os, const Container& v) {
+	typename Container::const_iterator i = v.begin();
+	os << '(';
+	while (i < v.end()) {
+		container_element_text_write(os, *i);
+		os << ",)"[++i == v.end()];
+	}
+	return (os);
 }
 
 //----------------------------------------------------------------------

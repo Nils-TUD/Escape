@@ -10,9 +10,12 @@
 #include <stdlib.h>
 
 /// Just like malloc, but throws on failure.
-void* tmalloc (size_t n) throw (ustl::bad_alloc) __attribute__((malloc));
+void* tmalloc(size_t n) throw (ustl::bad_alloc) __attribute__((malloc));
 /// Just like free, but doesn't crash when given a NULL.
-inline void nfree (void* p) throw() { if (p) free (p); }
+inline void nfree(void* p) throw () {
+	if (p)
+		free(p);
+}
 
 #if WITHOUT_LIBSTDCPP
 
@@ -27,21 +30,20 @@ inline void nfree (void* p) throw() { if (p) free (p); }
 //  Placement new and delete signatures (take a memory address argument,
 //  does nothing) may not be replaced by a user's program.
 //
-inline void* operator new (size_t n) throw (ustl::bad_alloc)	{ return (tmalloc (n)); }
-inline void* operator new[] (size_t n) throw (ustl::bad_alloc)	{ return (tmalloc (n)); }
-inline void  operator delete (void* p) throw()			{ nfree (p); }
-inline void  operator delete[] (void* p) throw()		{ nfree (p); }
+inline void* operator new (size_t n) throw (ustl::bad_alloc) {return (tmalloc (n));}
+inline void* operator new[] (size_t n) throw (ustl::bad_alloc) {return (tmalloc (n));}
+inline void operator delete (void* p) throw() {nfree (p);}
+inline void operator delete[] (void* p) throw() {nfree (p);}
 
 // Default placement versions of operator new.
-inline void* operator new (size_t, void* p) throw() { return (p); }
-inline void* operator new[] (size_t, void* p) throw() { return (p); }
+inline void* operator new (size_t, void* p) throw() {return (p);}
+inline void* operator new[] (size_t, void* p) throw() {return (p);}
 
 // Default placement versions of operator delete.
-inline void  operator delete  (void*, void*) throw() { }
-inline void  operator delete[](void*, void*) throw() { }
+inline void operator delete (void*, void*) throw() {}
+inline void operator delete[](void*, void*) throw() {}
 
 #else
 #include <new>
 #endif	// WITHOUT_LIBSTDCPP
-
 #endif

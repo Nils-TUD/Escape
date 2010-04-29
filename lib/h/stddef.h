@@ -30,10 +30,6 @@
 #	define NULL					(void*)0
 #endif
 
-#define K						1024
-#define M						(1024 * K)
-#define G						(1024 * M)
-
 #define ARRAY_SIZE(array)		(sizeof((array)) / sizeof((array)[0]))
 /* static strlen() */
 #define SSTRLEN(str)			(sizeof((str)) - 1)
@@ -82,5 +78,8 @@ typedef u32 tMsgId;
 
 typedef u32 ptrdiff_t;
 typedef u32 size_t;
+typedef s32 ssize_t;
+typedef s32 off_t;
+typedef u16 mode_t;
 
 #endif /* STDDEF_H_ */

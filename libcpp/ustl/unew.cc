@@ -5,10 +5,9 @@
 
 #include "unew.h"
 
-void* tmalloc (size_t n) throw (ustl::bad_alloc)
-{
-    void* p = malloc (n);
-    if (!p)
-	throw ustl::bad_alloc (n);
-    return (p);
+void* tmalloc(size_t n) throw (ustl::bad_alloc) {
+	void* p = malloc(n);
+	if (!p)
+		throw ustl::bad_alloc(n);
+	return (p);
 }

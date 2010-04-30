@@ -98,8 +98,12 @@ void ofstream_close(sOStream *s) {
 
 static s32 ofstream_writec(sOStream *s,char c) {
 	sOFStream *fs = (sOFStream*)s->obj;
-	if(fs->pos >= fs->max)
-		s->flush(s);
-	fs->buffer[fs->pos++] = c;
-	return 1;
+	/* ignore '\0' here */
+	if(c) {
+		if(fs->pos >= fs->max)
+			s->flush(s);
+		fs->buffer[fs->pos++] = c;
+		return 1;
+	}
+	return 0;
 }

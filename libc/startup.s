@@ -58,6 +58,10 @@ init:
 
 	; initial thread calls main
 initialThread:
+%ifndef SHAREDLIB
+	[extern __libc_init]
+	call	__libc_init
+%endif
 	call	main
 
 threadExit:
@@ -66,12 +70,14 @@ threadExit:
 	; just to be sure
 	jmp		$
 
-	; c++-programs have address 0x103e for sigRetFunc. So we need to achieve this here, too
+	; c++-programs have address 0x1039 for sigRetFunc. So we need to achieve this here, too
+%ifdef SHAREDLIB
 	nop
 	nop
 	nop
 	nop
 	nop
+%endif
 	nop
 	nop
 	nop

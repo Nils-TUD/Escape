@@ -21,6 +21,7 @@
 #include <esc/dir.h>
 #include <esc/io.h>
 #include <mem/heap.h>
+#include <streams/streams.h>
 #include <streams/ifilestream.h>
 #include <streams/inputstream.h>
 #include <exceptions/io.h>
@@ -91,7 +92,9 @@ static void ifstream_unread(sIStream *s,char c) {
 
 static char ifstream_readc(sIStream *s) {
 	sIFStream *fs = (sIFStream*)s->obj;
-	/* TODO flush stdout if we're stdin */
+	/* flush stdout if we're stdin */
+	if(s == cin)
+		cout->flush(cout);
 	if(fs->pos >= fs->length) {
 		s32 count = read(fs->fd,fs->buffer,BUF_SIZE);
 		if(count <= 0)

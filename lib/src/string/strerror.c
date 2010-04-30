@@ -287,6 +287,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"The keylistener does already exist!");
 			break;
 
+		case ERR_EOF:
+			strcpy(msg,"EOF reached!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

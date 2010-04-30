@@ -1,7 +1,7 @@
 BUILDL = $(BUILD)/libsupc++
 LIBDIR = ../lib
 LIBCDIR = ../libc
-SUBDIRS = . unwind
+SUBDIRS = .
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 LIB = $(BUILD)/libsupc++.a

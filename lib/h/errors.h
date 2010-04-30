@@ -86,6 +86,7 @@
 #define ERR_VESA_MODE_NOT_FOUND		-65
 #define ERR_NO_VM86_TASK			-66
 #define ERR_LISTENER_EXISTS			-67
+#define ERR_EOF						-68
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

@@ -42,7 +42,7 @@
 #include <string.h>
 #include <sllist.h>
 
-#define DEBUG_PAGEFAULTS		0
+#define DEBUG_PAGEFAULTS		1
 
 #define IDT_COUNT				256
 /* the privilege level */
@@ -79,7 +79,7 @@
 #define ICW4_SFNM				0x10				/* Special fully nested */
 
 /* maximum number of a exception in a row */
-#define MAX_EX_COUNT			3
+#define MAX_EX_COUNT			10
 
 /* the maximum length of messages (for interrupt-listeners) */
 #define MSG_MAX_LEN				8

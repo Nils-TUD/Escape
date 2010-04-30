@@ -1,0 +1,91 @@
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#include <esc/common.h>
+#include <esc/io.h>
+#include <mem/heap.h>
+#include <streams/istringstream.h>
+#include <streams/inputstream.h>
+#include <exceptions/io.h>
+#include <errors.h>
+#include <string.h>
+
+static void isstream_unread(sIStream *s,char c);
+static char isstream_readc(sIStream *s);
+
+sIStream *isstream_open(const char *str) {
+	sISStream *s = (sISStream*)heap_alloc(sizeof(sISStream));
+	sIStream *in = istream_open();
+	in->obj = s;
+	in->readc = isstream_readc;
+	in->unread = isstream_unread;
+	in->eof = isstream_eof;
+	in->seek = isstream_seek;
+	in->close = isstream_close;
+	s->buffer = str;
+	s->length = strlen(str);
+	s->pos = 0;
+	return in;
+}
+
+s32 isstream_seek(sIStream *s,s32 offset,u32 whence) {
+	sISStream *ss = (sISStream*)s->obj;
+	switch(whence) {
+		case SEEK_CUR:
+			offset += ss->pos;
+			/* fall through */
+		case SEEK_SET:
+			if(offset > ss->length)
+				ss->pos = ss->length;
+			else
+				ss->pos = MAX(0,offset);
+			break;
+		case SEEK_END:
+			ss->pos = ss->length;
+			break;
+	}
+	return ss->pos;
+}
+
+bool isstream_eof(sIStream *s) {
+	sISStream *ss = (sISStream*)s->obj;
+	return ss->pos >= ss->length;
+}
+
+void isstream_close(sIStream *s) {
+	sISStream *ss = (sISStream*)s->obj;
+	istream_close(s);
+	heap_free(ss);
+}
+
+static void isstream_unread(sIStream *s,char c) {
+	sISStream *ss = (sISStream*)s->obj;
+	UNUSED(c);
+	if(ss->pos == 0)
+		THROW(IOException,ERR_EOF);
+	/* don't write to the string here */
+	ss->pos--;
+}
+
+static char isstream_readc(sIStream *s) {
+	sISStream *ss = (sISStream*)s->obj;
+	if(ss->pos > ss->length)
+		THROW(IOException,ERR_EOF);
+	return ss->buffer[ss->pos++];
+}

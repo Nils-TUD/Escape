@@ -85,4 +85,5 @@ $(STARTO): $(START)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(APICOBJS) $(LOBJ) $(LPICOBJ) $(STLIB) $(DEPS) $(STARTO)
+		rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(APICOBJS) $(LOBJ) $(LPICOBJ) $(STLIB) \
+			$(DEPS) $(STARTO) $(DYNLIB)

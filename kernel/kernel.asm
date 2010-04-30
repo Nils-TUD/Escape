@@ -344,7 +344,6 @@ fpu_restoreState:
 thread_save:
 	push	ebp
 	mov		ebp,esp
-	sub		esp,4
 
 	; save register
 	mov		eax,[ebp + 8]									; get saveArea
@@ -365,7 +364,6 @@ thread_resume:
 	push	ebp
 	mov		ebp,esp
 
-	; restore register
 	mov		eax,[ebp + 12]								; get saveArea
 	mov		edi,[ebp + 8]									; get page-dir
 	mov		esi,[ebp + 16]								; get stack-frame

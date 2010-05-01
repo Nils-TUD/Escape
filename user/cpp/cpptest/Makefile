@@ -13,7 +13,7 @@ DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 ADDLIBS = $(LIBGCC)/libgcc.a $(LIBGCC)/libgcc_eh.a
 
 CC = g++
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBCPP)/ustl -I$(LIBC)/include \
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBCPP) -I$(LIBCPP)/ustl -I$(LIBC)/include \
 	-I$(LIB)/h -Wl,-T,$(LDCONF) -Wl,--build-id=none $(CPPDEFFLAGS) $(ADDFLAGS)
 
 # sources

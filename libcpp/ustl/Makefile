@@ -28,8 +28,6 @@ ${SLIBT}:	${OBJS}
 	@echo "Linking $(notdir $@) ..."
 	@${LD} -fPIC ${LDFLAGS} $(call slib_flags,$(subst $O,,$(call slib_lnk,${NAME}))) -o $@ $^ ${LIBS}
 	../../tools/disk.sh copy $@ /lib/$(call slib_lnk,${NAME})
-${SLINKS}:	${SLIBT}
-	@(cd $(dir $@); rm -f $(notdir $@); ln -s $(notdir $<) $(notdir $@))
 
 endif
 ifdef BUILD_STATIC

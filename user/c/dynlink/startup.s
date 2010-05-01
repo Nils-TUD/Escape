@@ -1,5 +1,5 @@
 ;
-; $Id: startup.s 602 2010-04-07 19:18:57Z nasmussen $
+; $Id$
 ; Copyright (C) 2008 - 2009 Nils Asmussen
 ;
 ; This program is free software; you can redistribute it and/or

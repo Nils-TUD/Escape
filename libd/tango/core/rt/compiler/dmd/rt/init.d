@@ -1,5 +1,5 @@
 /**
- * $Id: init.d 610 2010-04-11 11:41:59Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

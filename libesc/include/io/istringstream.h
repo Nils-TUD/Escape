@@ -17,28 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef OFILESTREAM_H_
-#define OFILESTREAM_H_
+#ifndef ISTRINGSTREAM_H_
+#define ISTRINGSTREAM_H_
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <esc/lock.h>
-#include <stdarg.h>
-#include "outputstream.h"
+#include "inputstream.h"
 
 typedef struct {
-	tFD fd;
 	s32 pos;
-	s32 max;
-	char *buffer;
-	tULock lck;
-} sOFStream;
+	s32 length;
+	const char *buffer;
+} sISStream;
 
-sOStream *ofstream_open(const char *file,u8 mode);
-sOStream *ofstream_openfd(tFD fd);
-s32 ofstream_seek(sOStream *s,s32 offset,u32 whence);
-bool ofstream_eof(sOStream *s);
-void ofstream_flush(sOStream *s);
-void ofstream_close(sOStream *s);
+sIStream *isstream_open(const char *str);
 
-#endif /* OFILESTREAM_H_ */
+#endif /* ISTRINGSTREAM_H_ */

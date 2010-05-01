@@ -21,15 +21,19 @@
 #include <esc/dir.h>
 #include <esc/io.h>
 #include <mem/heap.h>
-#include <streams/streams.h>
-#include <streams/ifilestream.h>
-#include <streams/inputstream.h>
+#include <io/streams.h>
+#include <io/ifilestream.h>
+#include <io/inputstream.h>
 #include <exceptions/io.h>
 #include <errors.h>
 #include <assert.h>
 
 #define BUF_SIZE	64
 
+static s32 ifstream_read(sIStream *s,void *buffer,u32 count);
+static s32 ifstream_seek(sIStream *s,s32 offset,u32 whence);
+static bool ifstream_eof(sIStream *s);
+static void ifstream_close(sIStream *s);
 static void ifstream_unread(sIStream *s,char c);
 static char ifstream_readc(sIStream *s);
 
@@ -48,6 +52,7 @@ sIStream *ifstream_openfd(tFD fd) {
 	sIFStream *s = (sIFStream*)heap_alloc(sizeof(sIFStream));
 	sIStream *in = istream_open();
 	in->obj = s;
+	in->read = ifstream_read;
 	in->readc = ifstream_readc;
 	in->unread = ifstream_unread;
 	in->eof = ifstream_eof;
@@ -60,7 +65,15 @@ sIStream *ifstream_openfd(tFD fd) {
 	return in;
 }
 
-s32 ifstream_seek(sIStream *s,s32 offset,u32 whence) {
+static s32 ifstream_read(sIStream *s,void *buffer,u32 count) {
+	sIFStream *fs = (sIFStream*)s->obj;
+	s32 res = read(fs->fd,buffer,count);
+	if(res < 0)
+		THROW(IOException,res);
+	return res;
+}
+
+static s32 ifstream_seek(sIStream *s,s32 offset,u32 whence) {
 	s32 res;
 	sIFStream *fs = (sIFStream*)s->obj;
 	res = seek(fs->fd,offset,whence);
@@ -69,12 +82,12 @@ s32 ifstream_seek(sIStream *s,s32 offset,u32 whence) {
 	return res;
 }
 
-bool ifstream_eof(sIStream *s) {
+static bool ifstream_eof(sIStream *s) {
 	sIFStream *fs = (sIFStream*)s->obj;
 	return eof(fs->fd);
 }
 
-void ifstream_close(sIStream *s) {
+static void ifstream_close(sIStream *s) {
 	sIFStream *fs = (sIFStream*)s->obj;
 	istream_close(s);
 	close(fs->fd);

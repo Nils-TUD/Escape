@@ -17,34 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef TFILE_H_
+#define TFILE_H_
+
 #include <esc/common.h>
-#include <esc/io.h>
-#include <esc/proc.h>
-#include <streams/ifilestream.h>
-#include <streams/ofilestream.h>
+#include <test.h>
 
-typedef void (*fConstr)(void);
+extern sTestModule tModFile;
 
-static void streamConstr(void);
-static void streamDestr(void);
-
-fConstr constr[1] __attribute__((section(".ctors"))) = {
-	streamConstr
-};
-
-sIStream *cin = NULL;
-sOStream *cout = NULL;
-sOStream *cerr = NULL;
-
-static void streamConstr(void) {
-	cin = ifstream_openfd(STDIN_FILENO);
-	cout = ofstream_openfd(STDOUT_FILENO);
-	cerr = ofstream_openfd(STDERR_FILENO);
-	atexit(streamDestr);
-}
-
-static void streamDestr(void) {
-	cin->close(cin);
-	cout->close(cout);
-	cerr->close(cerr);
-}
+#endif /* TFILE_H_ */

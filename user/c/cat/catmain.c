@@ -18,68 +18,70 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <esc/dir.h>
-#include <esc/heap.h>
-#include <esc/fileio.h>
-#include <esc/cmdargs.h>
+#include <esc/proc.h>
+#include <exceptions/io.h>
+#include <io/file.h>
+#include <io/streams.h>
+#include <io/ifilestream.h>
+#include <util/cmdargs.h>
 
 #define BUF_SIZE 512
 
-static void printFile(const char *filename,tFile *file);
+static void printStream(sIStream *s);
 
-int main(int argc,char *argv[]) {
-	tFile *file;
-	char *path;
+static void usage(const char *name) {
+	cerr->format(cerr,"Usage: %s [<file> ...]\n",name);
+	exit(EXIT_FAILURE);
+}
 
-	if(isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s [<file> ...]\n",argv[0]);
-		return EXIT_FAILURE;
-	}
+int main(int argc,const char *argv[]) {
+	/* no exception here since we don't have required- or value-args */
+	sCmdArgs *args = cmdargs_create(argc,argv);
+	args->parse(args,"");
+	if(args->isHelp)
+		usage(argv[0]);
 
-	if(argc < 2)
-		printFile("STDIN",stdin);
-	else {
-		s32 i;
-		sFileInfo info;
-		path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-		if(path == NULL)
-			error("Unable to allocate mem for path");
-		for(i = 1; i < argc; i++) {
-			abspath(path,MAX_PATH_LEN + 1,argv[i]);
-
-			/* check if it's a directory */
-			if(stat(path,&info) < 0) {
-				printe("Unable to get info about '%s'",path);
-				continue;
-			}
-			if(MODE_IS_DIR(info.mode)) {
-				printe("'%s' is a directory!",path);
-				continue;
-			}
-
-			file = fopen(path,"r");
-			if(file == NULL) {
-				printe("Unable to open '%s'",path);
-				continue;
-			}
-
-			printFile(path,file);
-			fclose(file);
+	if(argc < 2) {
+		TRY {
+			printStream(cin);
 		}
-		free(path);
+		CATCH(IOException,e) {
+			cerr->format(cerr,"Unable to read from STDIN: %s\n",e->toString(e));
+		}
+		ENDCATCH
+	}
+	else {
+		sIterator it = args->getFreeArgs(args);
+		while(it.hasNext(&it)) {
+			sIStream *s = NULL;
+			sFile *f = NULL;
+			const char *arg = (const char*)it.next(&it);
+			TRY {
+				f = file_get(arg);
+				if(f->isDir(f))
+					cerr->format(cerr,"'%s' is a directory!\n",arg);
+				else {
+					s = ifstream_open(arg,IO_READ);
+					printStream(s);
+				}
+			}
+			CATCH(IOException,e) {
+				cerr->format(cerr,"Unable to read file '%s': %s\n",arg,e->toString(e));
+			}
+			ENDCATCH
+			if(f)
+				f->destroy(f);
+			if(s)
+				s->close(s);
+		}
 	}
 
 	return EXIT_SUCCESS;
 }
 
-static void printFile(const char *filename,tFile *file) {
+static void printStream(sIStream *s) {
 	s32 count;
 	char buffer[BUF_SIZE];
-	while((count = fread(buffer,sizeof(char),BUF_SIZE - 1,file)) > 0) {
-		*(buffer + count) = '\0';
-		printf("%s",buffer);
-	}
-	if(count == 0 && ferror(file))
-		printe("Unable to read from %s",filename);
+	while((count = s->read(s,buffer,BUF_SIZE)) > 0)
+		cout->write(cout,buffer,count);
 }

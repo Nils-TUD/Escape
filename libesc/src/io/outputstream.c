@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <mem/heap.h>
-#include <streams/outputstream.h>
+#include <io/outputstream.h>
 #include <string.h>
 #include <width.h>
 #include <stdarg.h>

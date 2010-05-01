@@ -27,7 +27,7 @@
 #include <string.h>
 
 static void cmdargs_parse(sCmdArgs *a,const char *fmt,...);
-static s32 cmdargs_find(sCmdArgs *a,char *begin,char *end);
+static s32 cmdargs_find(sCmdArgs *a,const char *begin,const char *end);
 static void cmdargs_setVal(sCmdArgs *a,bool required,bool hasVal,s32 argi,char type,void *ptr);
 static const char *cmdargs_getArgVal(sCmdArgs *a,s32 i);
 static sIterator cmdargs_getFreeArgs(sCmdArgs *a);
@@ -38,6 +38,7 @@ sCmdArgs *cmdargs_create(int argc,const char **argv) {
 	sCmdArgs *a = (sCmdArgs*)heap_alloc(sizeof(sCmdArgs));
 	a->argc = argc;
 	a->argv = argv;
+	a->isHelp = false;
 	a->freeArgs = NULL;
 	a->destroy = cmdargs_destroy;
 	a->parse = cmdargs_parse;
@@ -52,6 +53,7 @@ void cmdargs_destroy(sCmdArgs *a) {
 }
 
 static void cmdargs_parse(sCmdArgs *a,const char *fmt,...) {
+	const char *helps[] = {"h","help","?"};
 	va_list ap;
 	bool required;
 	bool hasVal;
@@ -104,9 +106,18 @@ static void cmdargs_parse(sCmdArgs *a,const char *fmt,...) {
 		while(*f && *f++ != ' ');
 	}
 	va_end(ap);
+
+	/* check for help-requests */
+	for(i = 0; i < (s32)ARRAY_SIZE(helps); i++) {
+		s32 index = cmdargs_find(a,helps[i],helps[i] + strlen(helps[i]));
+		if(index != -1) {
+			a->isHelp = true;
+			break;
+		}
+	}
 }
 
-static s32 cmdargs_find(sCmdArgs *a,char *begin,char *end) {
+static s32 cmdargs_find(sCmdArgs *a,const char *begin,const char *end) {
 	s32 i;
 	bool onechar = end - begin == 1;
 	for(i = 1; i < a->argc; i++) {

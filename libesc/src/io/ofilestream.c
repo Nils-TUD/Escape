@@ -22,13 +22,18 @@
 #include <esc/dir.h>
 #include <esc/io.h>
 #include <mem/heap.h>
-#include <streams/ofilestream.h>
-#include <streams/outputstream.h>
+#include <io/ofilestream.h>
+#include <io/outputstream.h>
 #include <exceptions/io.h>
 #include <assert.h>
 
 #define BUF_SIZE	256
 
+static s32 ofstream_write(sOStream *s,const void *buffer,u32 count);
+static s32 ofstream_seek(sOStream *s,s32 offset,u32 whence);
+static bool ofstream_eof(sOStream *s);
+static void ofstream_flush(sOStream *s);
+static void ofstream_close(sOStream *s);
 static s32 ofstream_writec(sOStream *s,char c);
 
 sOStream *ofstream_open(const char *file,u8 mode) {
@@ -46,6 +51,7 @@ sOStream *ofstream_openfd(tFD fd) {
 	sOFStream *s = (sOFStream*)heap_alloc(sizeof(sOFStream));
 	sOStream *out = ostream_open();
 	out->obj = s;
+	out->write = ofstream_write;
 	out->writec = ofstream_writec;
 	out->eof = ofstream_eof;
 	out->seek = ofstream_seek;
@@ -59,7 +65,15 @@ sOStream *ofstream_openfd(tFD fd) {
 	return out;
 }
 
-s32 ofstream_seek(sOStream *s,s32 offset,u32 whence) {
+static s32 ofstream_write(sOStream *s,const void *buffer,u32 count) {
+	sOFStream *fs = (sOFStream*)s->obj;
+	s32 res = write(fs->fd,buffer,count);
+	if(res < 0)
+		THROW(IOException,res);
+	return res;
+}
+
+static s32 ofstream_seek(sOStream *s,s32 offset,u32 whence) {
 	s32 res;
 	sOFStream *fs = (sOFStream*)s->obj;
 	/* flush the output before we seek */
@@ -70,12 +84,12 @@ s32 ofstream_seek(sOStream *s,s32 offset,u32 whence) {
 	return res;
 }
 
-bool ofstream_eof(sOStream *s) {
+static bool ofstream_eof(sOStream *s) {
 	sOFStream *fs = (sOFStream*)s->obj;
 	return eof(fs->fd);
 }
 
-void ofstream_flush(sOStream *s) {
+static void ofstream_flush(sOStream *s) {
 	sOFStream *fs = (sOFStream*)s->obj;
 	if(fs->pos > 0) {
 		s32 res;
@@ -87,7 +101,7 @@ void ofstream_flush(sOStream *s) {
 	}
 }
 
-void ofstream_close(sOStream *s) {
+static void ofstream_close(sOStream *s) {
 	sOFStream *fs = (sOFStream*)s->obj;
 	s->flush(s);
 	ostream_close(s);

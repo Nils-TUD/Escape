@@ -20,12 +20,16 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <mem/heap.h>
-#include <streams/istringstream.h>
-#include <streams/inputstream.h>
+#include <io/istringstream.h>
+#include <io/inputstream.h>
 #include <exceptions/io.h>
 #include <errors.h>
 #include <string.h>
 
+static s32 isstream_read(sIStream *s,void *buffer,u32 count);
+static s32 isstream_seek(sIStream *s,s32 offset,u32 whence);
+static bool isstream_eof(sIStream *s);
+static void isstream_close(sIStream *s);
 static void isstream_unread(sIStream *s,char c);
 static char isstream_readc(sIStream *s);
 
@@ -33,6 +37,7 @@ sIStream *isstream_open(const char *str) {
 	sISStream *s = (sISStream*)heap_alloc(sizeof(sISStream));
 	sIStream *in = istream_open();
 	in->obj = s;
+	in->read = isstream_read;
 	in->readc = isstream_readc;
 	in->unread = isstream_unread;
 	in->eof = isstream_eof;
@@ -44,7 +49,14 @@ sIStream *isstream_open(const char *str) {
 	return in;
 }
 
-s32 isstream_seek(sIStream *s,s32 offset,u32 whence) {
+static s32 isstream_read(sIStream *s,void *buffer,u32 count) {
+	sISStream *ss = (sISStream*)s->obj;
+	s32 amount = MIN(ss->length - ss->pos,(s32)count);
+	memcpy(buffer,ss->buffer + ss->pos,amount);
+	return amount;
+}
+
+static s32 isstream_seek(sIStream *s,s32 offset,u32 whence) {
 	sISStream *ss = (sISStream*)s->obj;
 	switch(whence) {
 		case SEEK_CUR:
@@ -63,12 +75,12 @@ s32 isstream_seek(sIStream *s,s32 offset,u32 whence) {
 	return ss->pos;
 }
 
-bool isstream_eof(sIStream *s) {
+static bool isstream_eof(sIStream *s) {
 	sISStream *ss = (sISStream*)s->obj;
 	return ss->pos >= ss->length;
 }
 
-void isstream_close(sIStream *s) {
+static void isstream_close(sIStream *s) {
 	sISStream *ss = (sISStream*)s->obj;
 	istream_close(s);
 	heap_free(ss);

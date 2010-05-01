@@ -17,30 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CMDARGS_H_
-#define CMDARGS_H_
+#ifndef OFILESTREAM_H_
+#define OFILESTREAM_H_
 
 #include <esc/common.h>
-#include <util/iterator.h>
-#include <sllist.h>
+#include <esc/io.h>
+#include <esc/lock.h>
 #include <stdarg.h>
+#include "outputstream.h"
 
-typedef struct sCmdArgs sCmdArgs;
-typedef void (*fCAParse)(sCmdArgs *a,const char *fmt,...);
-typedef sIterator (*fCAFreeArgs)(sCmdArgs *a);
-typedef void (*fCADestroy)(sCmdArgs *a);
+typedef struct {
+	tFD fd;
+	s32 pos;
+	s32 max;
+	char *buffer;
+	tULock lck;
+} sOFStream;
 
-struct sCmdArgs {
-	int argc;
-	const char **argv;
-	bool isHelp;
-	sSLList *freeArgs;
-	fCAParse parse;
-	fCAFreeArgs getFreeArgs;
-	fCADestroy destroy;
-};
+sOStream *ofstream_open(const char *file,u8 mode);
+sOStream *ofstream_openfd(tFD fd);
 
-sCmdArgs *cmdargs_create(int argc,const char **argv);
-void cmdargs_destroy(sCmdArgs *a);
-
-#endif /* CMDARGS_H_ */
+#endif /* OFILESTREAM_H_ */

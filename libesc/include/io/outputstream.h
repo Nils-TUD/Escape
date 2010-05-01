@@ -24,6 +24,7 @@
 #include <stdarg.h>
 
 typedef struct sOStream sOStream;
+typedef s32 (*fWrite)(sOStream *s,const void *buffer,u32 count);
 typedef s32 (*fWritec)(sOStream *s,char c);
 typedef s32 (*fWrites)(sOStream *s,const char *str);
 typedef s32 (*fWriten)(sOStream *s,s32 n);
@@ -39,6 +40,7 @@ typedef void (*fFlush)(sOStream *s);
 typedef void (*fOutClose)(sOStream *s);
 
 struct sOStream {
+	fWrite write;
 	fWritec writec;
 	fWrites writes;
 	fWriten writen;

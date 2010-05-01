@@ -17,21 +17,39 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ISTRINGSTREAM_H_
-#define ISTRINGSTREAM_H_
+#ifndef FILE_H_
+#define FILE_H_
 
 #include <esc/common.h>
-#include "inputstream.h"
+#include <fsinterface.h>
 
-typedef struct {
-	s32 pos;
-	s32 length;
-	const char *buffer;
-} sISStream;
+typedef struct sFile sFile;
 
-sIStream *isstream_open(const char *str);
-s32 isstream_seek(sIStream *s,s32 offset,u32 whence);
-bool isstream_eof(sIStream *s);
-void isstream_close(sIStream *s);
+typedef sFileInfo *(*fGetInfo)(sFile *f);
+typedef bool (*fIsFile)(sFile *f);
+typedef bool (*fIsDir)(sFile *f);
+typedef s32 (*fGetSize)(sFile *f);
+typedef u32 (*fGetName)(sFile *f,char *buf,u32 size);
+typedef u32 (*fGetParent)(sFile *f,char *buf,u32 size);
+typedef u32 (*fGetAbsolute)(sFile *f,char *buf,u32 size);
+typedef void (*fDestroy)(sFile *f);
 
-#endif /* ISTRINGSTREAM_H_ */
+struct sFile {
+/* private: */
+	sFileInfo _info;
+	const char *_path;
+
+/* public: */
+	fIsFile isFile;
+	fIsDir isDir;
+	fGetName getName;
+	fGetParent getParent;
+	fGetAbsolute getAbsolute;
+	fGetInfo getInfo;
+	fGetSize getSize;
+	fDestroy destroy;
+};
+
+sFile *file_get(const char *path);
+
+#endif /* FILE_H_ */

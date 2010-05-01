@@ -17,30 +17,34 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CMDARGS_H_
-#define CMDARGS_H_
-
 #include <esc/common.h>
-#include <util/iterator.h>
-#include <sllist.h>
-#include <stdarg.h>
+#include <esc/io.h>
+#include <esc/proc.h>
+#include <io/ifilestream.h>
+#include <io/ofilestream.h>
 
-typedef struct sCmdArgs sCmdArgs;
-typedef void (*fCAParse)(sCmdArgs *a,const char *fmt,...);
-typedef sIterator (*fCAFreeArgs)(sCmdArgs *a);
-typedef void (*fCADestroy)(sCmdArgs *a);
+typedef void (*fConstr)(void);
 
-struct sCmdArgs {
-	int argc;
-	const char **argv;
-	bool isHelp;
-	sSLList *freeArgs;
-	fCAParse parse;
-	fCAFreeArgs getFreeArgs;
-	fCADestroy destroy;
+static void streamConstr(void);
+static void streamDestr(void);
+
+fConstr constr[1] __attribute__((section(".ctors"))) = {
+	streamConstr
 };
 
-sCmdArgs *cmdargs_create(int argc,const char **argv);
-void cmdargs_destroy(sCmdArgs *a);
+sIStream *cin = NULL;
+sOStream *cout = NULL;
+sOStream *cerr = NULL;
 
-#endif /* CMDARGS_H_ */
+static void streamConstr(void) {
+	cin = ifstream_openfd(STDIN_FILENO);
+	cout = ofstream_openfd(STDOUT_FILENO);
+	cerr = ofstream_openfd(STDERR_FILENO);
+	atexit(streamDestr);
+}
+
+static void streamDestr(void) {
+	cin->close(cin);
+	cout->close(cout);
+	cerr->close(cerr);
+}

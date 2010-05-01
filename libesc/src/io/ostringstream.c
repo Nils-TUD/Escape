@@ -21,16 +21,23 @@
 #include <esc/io.h>
 #include <mem/heap.h>
 #include <exceptions/io.h>
-#include <streams/ostringstream.h>
-#include <streams/outputstream.h>
+#include <io/ostringstream.h>
+#include <io/outputstream.h>
 #include <errors.h>
+#include <string.h>
 #include <assert.h>
 
+static s32 osstream_write(sOStream *s,const void *buffer,u32 count);
+static s32 osstream_seek(sOStream *s,s32 offset,u32 whence);
+static bool osstream_eof(sOStream *s);
+static void osstream_flush(sOStream *s);
+static void osstream_close(sOStream *s);
 static s32 osstream_writec(sOStream *s,char c);
 
 sOStream *osstream_open(char *buffer,s32 size) {
 	sOSStream *s = (sOSStream*)heap_alloc(sizeof(sOSStream));
 	sOStream *out = ostream_open();
+	out->write = osstream_write;
 	out->writec = osstream_writec;
 	out->eof = osstream_eof;
 	out->seek = osstream_seek;
@@ -43,7 +50,14 @@ sOStream *osstream_open(char *buffer,s32 size) {
 	return out;
 }
 
-s32 osstream_seek(sOStream *s,s32 offset,u32 whence) {
+static s32 osstream_write(sOStream *s,const void *buffer,u32 count) {
+	sOSStream *ss = (sOSStream*)s->obj;
+	s32 amount = MIN(ss->max - ss->pos,(s32)count);
+	memcpy(ss->buffer + ss->pos,buffer,amount);
+	return amount;
+}
+
+static s32 osstream_seek(sOStream *s,s32 offset,u32 whence) {
 	sOSStream *ss = (sOSStream*)s->obj;
 	switch(whence) {
 		case SEEK_CUR:
@@ -64,17 +78,17 @@ s32 osstream_seek(sOStream *s,s32 offset,u32 whence) {
 	return ss->pos;
 }
 
-bool osstream_eof(sOStream *s) {
+static bool osstream_eof(sOStream *s) {
 	sOSStream *ss = (sOSStream*)s->obj;
 	return ss->max != -1 && ss->pos >= ss->max;
 }
 
-void osstream_flush(sOStream *s) {
+static void osstream_flush(sOStream *s) {
 	/* ignore */
 	UNUSED(s);
 }
 
-void osstream_close(sOStream *s) {
+static void osstream_close(sOStream *s) {
 	sOSStream *ss = (sOSStream*)s->obj;
 	ostream_close(s);
 	heap_free(ss);

@@ -17,25 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef IFILESTREAM_H_
-#define IFILESTREAM_H_
+#ifndef OSTRINGSTREAM_H_
+#define OSTRINGSTREAM_H_
 
 #include <esc/common.h>
-#include <esc/io.h>
 #include <stdarg.h>
-#include "inputstream.h"
+#include "outputstream.h"
 
 typedef struct {
-	tFD fd;
 	s32 pos;
-	s32 length;
+	s32 max;
 	char *buffer;
-} sIFStream;
+} sOSStream;
 
-sIStream *ifstream_open(const char *file,u8 mode);
-sIStream *ifstream_openfd(tFD fd);
-s32 ifstream_seek(sIStream *s,s32 offset,u32 whence);
-bool ifstream_eof(sIStream *s);
-void ifstream_close(sIStream *s);
+sOStream *osstream_open(char *buffer,s32 size);
 
-#endif /* IFILESTREAM_H_ */
+#endif /* OSTRINGSTREAM_H_ */

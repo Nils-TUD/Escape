@@ -21,8 +21,8 @@
 #define STREAMS_H_
 
 #include <esc/common.h>
-#include <streams/inputstream.h>
-#include <streams/outputstream.h>
+#include <io/inputstream.h>
+#include <io/outputstream.h>
 
 extern sIStream *cin;
 extern sOStream *cout;

@@ -22,11 +22,11 @@
 #include <esc/fileio.h>
 #include <esc/proc.h>
 #include <esc/heap.h>
-#include <streams/streams.h>
-#include <streams/ofilestream.h>
-#include <streams/ifilestream.h>
-#include <streams/ostringstream.h>
-#include <streams/istringstream.h>
+#include <io/streams.h>
+#include <io/ofilestream.h>
+#include <io/ifilestream.h>
+#include <io/ostringstream.h>
+#include <io/istringstream.h>
 #include <exceptions/exception.h>
 #include <exceptions/io.h>
 #include <exceptions/outofmemory.h>
@@ -39,6 +39,7 @@
 #include "tests/tvector.h"
 #include "tests/texceptions.h"
 #include "tests/tcmdargs.h"
+#include "tests/tfile.h"
 
 int main(int argc,char *argv[]) {
 #if 0
@@ -96,6 +97,7 @@ int main(int argc,char *argv[]) {
 	test_register(&tModVector);
 	test_register(&tModExc);
 	test_register(&tModCmdArgs);
+	test_register(&tModFile);
 	test_start();
 	return 0;
 }

@@ -20,20 +20,25 @@
 #include <esc/common.h>
 #include <mem/heap.h>
 #include <util/cmdargs.h>
+#include <exceptions/outofmemory.h>
+#include <exceptions/cmdargs.h>
+#include <assert.h>
+#include <sllist.h>
 #include <string.h>
 
 static void cmdargs_parse(sCmdArgs *a,const char *fmt,...);
 static s32 cmdargs_find(sCmdArgs *a,char *begin,char *end);
 static void cmdargs_setVal(sCmdArgs *a,bool required,bool hasVal,s32 argi,char type,void *ptr);
+static const char *cmdargs_getArgVal(sCmdArgs *a,s32 i);
 static sIterator cmdargs_getFreeArgs(sCmdArgs *a);
 static bool cmdargs_itHasNext(sIterator *it);
 static void *cmdargs_itNext(sIterator *it);
-static s32 cmdargs_itGetNext(sIterator *it,sCmdArgs *a);
 
-sCmdArgs *cmdargs_create(int argc,char **argv) {
+sCmdArgs *cmdargs_create(int argc,const char **argv) {
 	sCmdArgs *a = (sCmdArgs*)heap_alloc(sizeof(sCmdArgs));
 	a->argc = argc;
 	a->argv = argv;
+	a->freeArgs = NULL;
 	a->destroy = cmdargs_destroy;
 	a->parse = cmdargs_parse;
 	a->getFreeArgs = cmdargs_getFreeArgs;
@@ -41,6 +46,8 @@ sCmdArgs *cmdargs_create(int argc,char **argv) {
 }
 
 void cmdargs_destroy(sCmdArgs *a) {
+	if(a->freeArgs)
+		sll_destroy(a->freeArgs,false);
 	heap_free(a);
 }
 
@@ -48,39 +55,51 @@ static void cmdargs_parse(sCmdArgs *a,const char *fmt,...) {
 	va_list ap;
 	bool required;
 	bool hasVal;
-	bool onechar;
 	char type;
+	s32 i;
 	char *f = (char*)fmt;
+
+	a->freeArgs = sll_create();
+	if(a->freeArgs == NULL)
+		THROW(OutOfMemoryException);
+	for(i = 1; i < a->argc; i++)
+		sll_append(a->freeArgs,(void*)i);
 
 	va_start(ap,fmt);
 	while(*f) {
 		char *begin = f,*end;
 		char c;
+		required = false;
+		hasVal = false;
+		type = '\0';
 		do {
 			c = *f++;
 		}
-		while(c != '=' && c != ' ' && c != '*');
-		end = f;
-		onechar = end - begin == 1;
+		while(c && c != '=' && c != ' ' && c != '*');
+		end = --f;
 
 		if(*f == '=') {
 			hasVal = true;
 			f++;
-			switch(*f) {
-				case 's':
-				case 'd':
-				case 'i':
-				case 'x':
-				case 'X':
-					type = *f;
-					break;
-				case '*':
-					required = true;
-					break;
+			while(*f && *f != ' ') {
+				switch(*f) {
+					case 's':
+					case 'd':
+					case 'i':
+					case 'x':
+					case 'X':
+						type = *f;
+						break;
+					case '*':
+						required = true;
+						break;
+				}
+				f++;
 			}
 		}
 
-		cmdargs_setVal(a,required,hasVal,cmdargs_find(a,begin,end),type,va_arg(ap,void*));
+		i = cmdargs_find(a,begin,end);
+		cmdargs_setVal(a,required,hasVal,i,type,va_arg(ap,void*));
 
 		while(*f && *f++ != ' ');
 	}
@@ -91,42 +110,45 @@ static s32 cmdargs_find(sCmdArgs *a,char *begin,char *end) {
 	s32 i;
 	bool onechar = end - begin == 1;
 	for(i = 1; i < a->argc; i++) {
-		if(onechar && a->argv[i][0] == '-' && a->argv[i][1] == *begin &&
-				a->argv[i][2] == '\0')
-			return i;
-		if(!onechar && strncmp(a->argv[i],"--",2) == 0 &&
-				strncmp(a->argv[i] + 2,begin,end - begin) == 0 &&
-				strlen(a->argv[i]) == (u32)(end - begin) + 2)
-			return i;
+		if(onechar) {
+			char next = a->argv[i][2];
+			if(a->argv[i][0] == '-' && a->argv[i][1] == *begin && (next == '\0' || next == '='))
+				return i;
+		}
+		else {
+			char next = a->argv[i][2 + end - begin];
+			if(strncmp(a->argv[i],"--",2) == 0 &&
+				strncmp(a->argv[i] + 2,begin,end - begin) == 0 && (next == '\0' || next == '='))
+				return i;
+		}
 	}
 	return -1;
 }
 
 static void cmdargs_setVal(sCmdArgs *a,bool required,bool hasVal,s32 argi,char type,void *ptr) {
-	/* TODO */
-	if((required && argi == -1) || argi >= a->argc - 1)
-		/*THROW(CmdArgException);*/error("Cmdargexception");
+	if(required && argi == -1)
+		THROW(CmdArgsException);
 	if(hasVal) {
 		if(argi == -1)
 			return;
 		switch(type) {
 			case 's': {
-				char **str = (char**)ptr;
-				*str = a->argv[argi + 1];
+				const char **str = (const char**)ptr;
+				*str = cmdargs_getArgVal(a,argi);
 			}
 			break;
 
 			case 'd':
 			case 'i': {
 				s32 *n = (s32*)ptr;
-				*n = strtol(a->argv[argi + 1],NULL,10);
+				*n = strtol(cmdargs_getArgVal(a,argi),NULL,10);
 			}
 			break;
 
 			case 'x':
 			case 'X': {
 				u32 *u = (u32*)ptr;
-				*u = strtoul(a->argv[argi + 1],NULL,16);
+				*u = strtoul(cmdargs_getArgVal(a,argi),NULL,16);
 			}
 			break;
 		}
@@ -134,13 +156,29 @@ static void cmdargs_setVal(sCmdArgs *a,bool required,bool hasVal,s32 argi,char t
 	else {
 		bool *b = (bool*)ptr;
 		*b = argi != -1;
+		if(argi != -1)
+			sll_removeFirst(a->freeArgs,(void*)argi);
 	}
+}
+
+static const char *cmdargs_getArgVal(sCmdArgs *a,s32 i) {
+	const char *arg = a->argv[i];
+	char *eqPos = strchr(arg,'=');
+	sll_removeFirst(a->freeArgs,(void*)i);
+	if(eqPos == NULL) {
+		if(i >= a->argc - 1)
+			THROW(CmdArgsException);
+		sll_removeFirst(a->freeArgs,(void*)(i + 1));
+		return a->argv[i + 1];
+	}
+	return eqPos + 1;
 }
 
 static sIterator cmdargs_getFreeArgs(sCmdArgs *a) {
 	sIterator it;
+	vassert(a->freeArgs != NULL,"Please call parse() first!");
 	it.con = a;
-	it.pos = 1;
+	it.pos = 0;
 	it.next = cmdargs_itNext;
 	it.hasNext = cmdargs_itHasNext;
 	return it;
@@ -148,25 +186,15 @@ static sIterator cmdargs_getFreeArgs(sCmdArgs *a) {
 
 static bool cmdargs_itHasNext(sIterator *it) {
 	sCmdArgs *a = (sCmdArgs*)it->con;
-	return cmdargs_itGetNext(it,a) != -1;
+	return it->pos < sll_length(a->freeArgs);
 }
 
 static void *cmdargs_itNext(sIterator *it) {
 	sCmdArgs *a = (sCmdArgs*)it->con;
-	s32 i = cmdargs_itGetNext(it,a);
-	if(i == -1)
-		return NULL;
-	it->pos = i + 1;
-	return a->argv[i];
-}
-
-static s32 cmdargs_itGetNext(sIterator *it,sCmdArgs *a) {
 	s32 i;
-	if((s32)it->pos >= a->argc)
-		return -1;
-	for(i = it->pos; i < a->argc; i++) {
-		if(a->argv[i][0] != '-')
-			return i;
-	}
-	return -1;
+	if(it->pos >= sll_length(a->freeArgs))
+		return NULL;
+	i = (s32)sll_get(a->freeArgs,it->pos);
+	it->pos++;
+	return (void*)a->argv[i];
 }

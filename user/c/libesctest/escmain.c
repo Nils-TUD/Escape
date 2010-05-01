@@ -38,22 +38,26 @@
 #include "tests/tstring.h"
 #include "tests/tvector.h"
 #include "tests/texceptions.h"
+#include "tests/tcmdargs.h"
 
 int main(int argc,char *argv[]) {
-	char *sort;
-	s32 num;
+#if 0
+	const char *sort = "def";
+	s32 num = 10;
+	bool flag = false;
+	const char *b = "meinb";
 	sCmdArgs *a = cmdargs_create(argc,argv);
-	a->parse(a,"s=s n=d",&sort,&num);
-	cout->format(cout,"sort=%s num=%d\n",sort,num);
+	a->parse(a,"s=s n=d flag b=s*",&sort,&num,&flag,&b);
+	cout->format(cout,"sort=%s num=%d flag=%d b=%s\n",sort,num,flag,b);
 	sIterator it = a->getFreeArgs(a);
 	cout->format(cout,"Free arguments:\n");
 	while(it.hasNext(&it)) {
+
 		char *arg = (char*)it.next(&it);
 		cout->format(cout,"	%s\n",arg);
 	}
 	a->destroy(a);
 
-#if 0
 	char buf[30];
 	sOStream *s = osstream_open(buf,sizeof(buf));
 	s->format(s,"%-4d: %.2f: %15s",12,-12.45,"test woot?");
@@ -86,11 +90,12 @@ int main(int argc,char *argv[]) {
 				i * 1024 * sizeof(u32),e->file,e->line);
 	}
 	ENDCATCH*/
+#endif
 
 	test_register(&tModString);
 	test_register(&tModVector);
 	test_register(&tModExc);
+	test_register(&tModCmdArgs);
 	test_start();
-#endif
 	return 0;
 }

@@ -17,29 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CMDARGS_H_
-#define CMDARGS_H_
-
 #include <esc/common.h>
-#include <util/iterator.h>
-#include <sllist.h>
-#include <stdarg.h>
+#include <esc/heap.h>
+#include <exceptions/cmdargs.h>
 
-typedef struct sCmdArgs sCmdArgs;
-typedef void (*fCAParse)(sCmdArgs *a,const char *fmt,...);
-typedef sIterator (*fCAFreeArgs)(sCmdArgs *a);
-typedef void (*fCADestroy)(sCmdArgs *a);
+static const char *ex_printCmdArgsException(sCmdArgsException *e);
 
-struct sCmdArgs {
-	int argc;
-	const char **argv;
-	sSLList *freeArgs;
-	fCAParse parse;
-	fCAFreeArgs getFreeArgs;
-	fCADestroy destroy;
-};
+sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file) {
+	sCmdArgsException *e = (sCmdArgsException*)malloc(sizeof(sCmdArgsException));
+	if(!e)
+		error("Unable to create exception-object (%s:%d)",file,line);
+	e->handled = 0;
+	e->id = id;
+	e->line = line;
+	e->file = file;
+	e->toString = (fToString)ex_printCmdArgsException;
+	return e;
+}
 
-sCmdArgs *cmdargs_create(int argc,const char **argv);
-void cmdargs_destroy(sCmdArgs *a);
-
-#endif /* CMDARGS_H_ */
+static const char *ex_printCmdArgsException(sCmdArgsException *e) {
+	UNUSED(e);
+	return "An required argument is missing";
+}

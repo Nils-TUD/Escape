@@ -44,11 +44,10 @@ int main(int argc,const char *argv[]) {
 	if(argc < 2)
 		printStream(cin);
 	else {
-		sIterator it = args->getFreeArgs(args);
-		while(it.hasNext(&it)) {
+		const char *arg;
+		foreach(args->getFreeArgs(args),arg) {
 			sIStream *s = NULL;
 			sFile *f = NULL;
-			const char *arg = (const char*)it.next(&it);
 			TRY {
 				f = file_get(arg);
 				if(f->isDir(f))

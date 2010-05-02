@@ -123,8 +123,8 @@ static s32 _regDriver(const char *name,u32 type) {
 static s32 _unregDriver(u32 id) {
 	return test_doSyscall(9,id,0,0);
 }
-static void *_changeSize(u32 change) {
-	return (void*)test_doSyscall(10,change,0,0);
+static s32 _changeSize(u32 change) {
+	return test_doSyscall(10,change,0,0);
 }
 static s32 __mapPhysical(u32 addr,u32 count) {
 	return test_doSyscall(11,addr,count,0);
@@ -295,9 +295,9 @@ static void test_unregDriver(void) {
 
 static void test_changeSize(void) {
 	test_caseStart("Testing changeSize()");
-	test_assertPtr(_changeSize(-1000),NULL);
-	test_assertPtr(_changeSize(0xC0000000 / (4 * 1024)),NULL);
-	test_assertPtr(_changeSize(0x7FFFFFFF),NULL);
+	test_assertInt(_changeSize(-1000),ERR_NOT_ENOUGH_MEM);
+	test_assertInt(_changeSize(0xC0000000 / (4 * 1024)),ERR_NOT_ENOUGH_MEM);
+	test_assertInt(_changeSize(0x7FFFFFFF),ERR_NOT_ENOUGH_MEM);
 	test_caseSucceded();
 }
 

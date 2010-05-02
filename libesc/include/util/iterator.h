@@ -47,11 +47,9 @@ struct sIterator {
 	void *(*next)(sIterator *it);
 };
 
-/* TODO atm just for vector :/ */
-#define foreach(v,type,eName)	\
-	sIterator __it##eName = vec_iterator(v); \
-	type eName; \
+#define foreach(it,eName)	\
+	sIterator __it##eName = (it); \
 	while((__it##eName).hasNext(&__it##eName) && \
-			(eName = *(type*)(__it##eName).next(&(__it##eName))))
+			(eName = *(__typeof__(eName)*)(__it##eName).next(&(__it##eName))))
 
 #endif /* ITERATOR_H_ */

@@ -117,10 +117,10 @@ static void test_iterator(void) {
 	vec_addInt(v,2);
 	vec_addInt(v,3);
 	sVector *v2 = vec_copy(v);
-	u32 i = 1;
-	foreach(v,u32,e) {
+	u32 e,e2,i = 1;
+	foreach(vec_iterator(v),e) {
 		u32 j = 1;
-		foreach(v2,u32,e2) {
+		foreach(vec_iterator(v2),e2) {
 			test_assertUInt(e2,j);
 			j++;
 		}
@@ -145,8 +145,8 @@ static void test_sort(void) {
 	vec_addInt(v,2);
 	vec_addInt(v,7);
 	vec_sort(v);
-	u32 i = 1;
-	foreach(v,u32,e) {
+	u32 e,i = 1;
+	foreach(vec_iterator(v),e) {
 		test_assertUInt(e,i);
 		i++;
 	}

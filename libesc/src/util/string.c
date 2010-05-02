@@ -95,7 +95,7 @@ void str_destroy(sString *s) {
 }
 
 void str_resize(sString *s,u32 size) {
-	assert(size > 0);
+	assert(size > 0 && s->size > 0);
 	if(s->size == size)
 		return;
 	if(size <= s->len) {
@@ -107,6 +107,7 @@ void str_resize(sString *s,u32 size) {
 }
 
 static void str_grow(sString *s,u32 reqSize) {
+	assert(s->size > 0);
 	if(s->size < reqSize) {
 		s->size = MAX(s->size * 2,reqSize);
 		s->str = heap_realloc(s->str,s->size);

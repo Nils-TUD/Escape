@@ -26,15 +26,21 @@
 #include <stdarg.h>
 #include "outputstream.h"
 
-typedef struct {
-	tFD fd;
-	s32 pos;
-	s32 max;
-	char *buffer;
-	tULock lck;
-} sOFStream;
-
+/**
+ * Opens an output-stream to the given file
+ *
+ * @param file the path (doesn't need to be absolute)
+ * @param mode the mode to open it with (IO_*)
+ * @return the output-stream
+ */
 sOStream *ofstream_open(const char *file,u8 mode);
+
+/**
+ * Builds an output-stream for the given file-descriptor
+ *
+ * @param fd the file-descriptor
+ * @return the output-stream
+ */
 sOStream *ofstream_openfd(tFD fd);
 
 #endif /* OFILESTREAM_H_ */

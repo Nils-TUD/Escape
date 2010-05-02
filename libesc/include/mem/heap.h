@@ -22,9 +22,37 @@
 
 #include <esc/common.h>
 
+/**
+ * Allocates <size> bytes on the heap. Uses malloc(), but throws an exception on failure
+ *
+ * @param size the size
+ * @return a pointer to the allocated mem
+ */
 void *heap_alloc(u32 size);
+
+/**
+ * Increases/decreases the given memory-area. Uses realloc(), but throws an exception on failure
+ *
+ * @param p the memory-area (NULL is the same as heap_alloc(<size))
+ * @param size the size
+ * @return a pointer to the allocated mem
+ */
 void *heap_realloc(void *p,u32 size);
+
+/**
+ * Allocates <size> bytes on the heap and fills them with zeros. Uses calloc(), but throws an
+ * exception on failure
+ *
+ * @param size the size
+ * @return a pointer to the allocated mem
+ */
 void *heap_calloc(u32 size);
+
+/**
+ * Free's the given memory. Uses free()
+ *
+ * @param p the memory
+ */
 void heap_free(void *p);
 
 #endif /* ESCHEAP_H_ */

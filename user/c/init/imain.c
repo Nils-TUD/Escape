@@ -21,11 +21,14 @@
 #include <esc/io.h>
 #include <esc/fileio.h>
 #include <esc/proc.h>
-#include <esc/heap.h>
 #include <esc/debug.h>
-#include <sllist.h>
+#include <io/ifilestream.h>
+#include <util/string.h>
+#include <util/vector.h>
+#include <mem/heap.h>
 #include <string.h>
 #include <width.h>
+
 #include "iparser.h"
 #include "idriver.h"
 
@@ -43,8 +46,7 @@ int main(void) {
 	u32 i,retries = 0;
 	u32 vtLen;
 	char *vtermName;
-	char *drvDefs;
-	sDriverLoad **drivers;
+	sVector *drivers;
 
 	if(getpid() != 0)
 		error("It's not good to start init twice ;)");
@@ -61,16 +63,8 @@ int main(void) {
 		error("Unable to open /dev/fs after %d retries",retries);
 	close(fd);
 
-	/* now read the drivers we should load */
-	drvDefs = getDrivers();
-	if(drvDefs == NULL)
-		error("Unable to read driver-file");
-
-	/* parse them */
-	drivers = parseDrivers(drvDefs);
-	if(drivers == NULL)
-		error("Unable to parse driver-file");
-
+	/* now read the drivers we should load and parse them */
+	drivers = parseDrivers(getDrivers());
 	/* finally load them */
 	if(!loadDrivers(drivers))
 		error("Unable to load drivers");
@@ -82,9 +76,7 @@ int main(void) {
 
 	/* now load the shells */
 	vtLen = SSTRLEN("vterm") + getnwidth(VTERM_COUNT) + 1;
-	vtermName = (char*)malloc(vtLen);
-	if(vtermName == NULL)
-		error("Unable to allocate mem for vterm-name");
+	vtermName = (char*)heap_alloc(vtLen);
 
 	for(i = 0; i < VTERM_COUNT; i++) {
 		snprintf(vtermName,vtLen,"vterm%d",i);
@@ -98,7 +90,7 @@ int main(void) {
 		else if(child < 0)
 			error("Fork of '%s %s' failed","/bin/shell",vtermName);
 	}
-	free(vtermName);
+	heap_free(vtermName);
 
 	/* loop and wait forever */
 	while(1)
@@ -107,38 +99,9 @@ int main(void) {
 }
 
 static char *getDrivers(void) {
-	const u32 stepSize = 128 * sizeof(u8);
-	tFD fd;
-	u32 c,pos = 0,bufSize = stepSize;
-	char *buffer;
-
-	/* open file */
-	fd = open(DRIVERS_FILE,IO_READ);
-	if(fd < 0)
-		return NULL;
-
-	/* create buffer */
-	buffer = (char*)malloc(stepSize);
-	if(buffer == NULL) {
-		close(fd);
-		return NULL;
-	}
-
-	/* read file */
-	while((c = read(fd,buffer + pos,stepSize - 1)) > 0) {
-		bufSize += stepSize;
-		buffer = (char*)realloc(buffer,bufSize);
-		if(buffer == NULL) {
-			close(fd);
-			return NULL;
-		}
-
-		pos += c;
-	}
-
-	/* terminate */
-	*(buffer + pos) = '\0';
-
-	close(fd);
-	return buffer;
+	sString *s = str_create();
+	sIStream *is = ifstream_open(DRIVERS_FILE,IO_READ);
+	is->readAll(is,s);
+	is->close(is);
+	return s->str;
 }

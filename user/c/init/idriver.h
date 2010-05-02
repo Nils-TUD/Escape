@@ -21,6 +21,7 @@
 #define DRIVER_H_
 
 #include <esc/common.h>
+#include <util/vector.h>
 
 #define MAX_SNAME_LEN			50
 #define MAX_DRIVER_PATH_LEN	255
@@ -30,11 +31,9 @@ typedef struct {
 	/* the driver-name */
 	char *name;
 	/* an array of driver-names to wait for */
-	u8 waitCount;
-	char **waits;
+	sVector *waits;
 	/* an array of dependencies to load before */
-	u8 depCount;
-	char **deps;
+	sVector *deps;
 } sDriverLoad;
 
 /**
@@ -43,13 +42,13 @@ typedef struct {
  * @param loads the drivers to load
  * @return true if successfull
  */
-bool loadDrivers(sDriverLoad **loads);
+bool loadDrivers(sVector *loads);
 
 /**
  * Prints the given drivers
  *
  * @param loads the drivers to print
  */
-void printDrivers(sDriverLoad **loads);
+void printDrivers(sVector *loads);
 
 #endif /* DRIVER_H_ */

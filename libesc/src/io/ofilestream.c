@@ -29,6 +29,14 @@
 
 #define BUF_SIZE	256
 
+typedef struct {
+	tFD fd;
+	s32 pos;
+	s32 max;
+	char *buffer;
+	tULock lck;
+} sOFStream;
+
 static s32 ofstream_write(sOStream *s,const void *buffer,u32 count);
 static s32 ofstream_seek(sOStream *s,s32 offset,u32 whence);
 static bool ofstream_eof(sOStream *s);

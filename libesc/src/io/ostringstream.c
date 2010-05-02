@@ -27,6 +27,12 @@
 #include <string.h>
 #include <assert.h>
 
+typedef struct {
+	s32 pos;
+	s32 max;
+	char *buffer;
+} sOSStream;
+
 static s32 osstream_write(sOStream *s,const void *buffer,u32 count);
 static s32 osstream_seek(sOStream *s,s32 offset,u32 whence);
 static bool osstream_eof(sOStream *s);

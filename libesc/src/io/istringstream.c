@@ -26,6 +26,12 @@
 #include <errors.h>
 #include <string.h>
 
+typedef struct {
+	s32 pos;
+	s32 length;
+	const char *buffer;
+} sISStream;
+
 static s32 isstream_read(sIStream *s,void *buffer,u32 count);
 static s32 isstream_seek(sIStream *s,s32 offset,u32 whence);
 static bool isstream_eof(sIStream *s);

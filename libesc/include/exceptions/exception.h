@@ -55,13 +55,13 @@
 										else {
 
 #define CATCH(name,obj)				} { s##name *(obj) = (s##name*)__ex; \
-										if((obj) && (obj)->id == (ID_##name) && ((obj)->handled = 1))
+										if((obj) && (obj)->_id == (ID_##name) && ((obj)->_handled = 1))
 
 #define FINALLY						} {
 
 #define ENDCATCH					} \
 									if(__ex) { \
-										if(!__ex->handled) \
+										if(!__ex->_handled) \
 											ex_unwind(__ex); \
 										else \
 											__ex->destroy(__ex); \
@@ -71,25 +71,75 @@
 
 #define THROW(name,...)				ex_unwind((__exPtr = (sException*)\
 										ex_create##name(ID_##name,__LINE__,__FILE__,## __VA_ARGS__)))
-#define RETHROW(exObj)				(__ex = (sException*)(exObj))->handled = 0
+#define RETHROW(exObj)				(__ex = (sException*)(exObj))->_handled = 0
 
+/**
+ * Methods of an exception
+ */
 typedef const char *(*fExToString)(void *e);
 typedef void (*fExDestroy)(void *e);
 
 typedef struct {
-	s32 handled;
-	s32 id;
-	s32 line;
-	const char *file;
+/* private: */
+	s32 _handled;
+	s32 _id;
+
+/* public: */
+	/**
+	 * The line where it was thrown
+	 */
+	const s32 line;
+	/**
+	 * The file where it was thrown
+	 */
+	const char *const file;
+
+	/**
+	 * Returns the message of the exception
+	 *
+	 * @param e the exception
+	 * @return the message
+	 */
 	fExToString toString;
+
+	/**
+	 * Destroys this exception
+	 *
+	 * @param e the exception
+	 */
 	fExDestroy destroy;
 } sException;
 
 extern sException *__exPtr;
 
+/**
+ * Creates an the base-exception
+ *
+ * @param id the exception-id
+ * @param line the line
+ * @param file the file
+ * @param size the size of your struct
+ * @return the exception
+ */
 sException *ex_create(s32 id,s32 line,const char *file,u32 size);
+
+/**
+ * Pushes a jump-env on the stack and returns it
+ *
+ * @return the jump-env for setjmp
+ */
 sJumpEnv *ex_push(void);
+
+/**
+ * Pops a jump-env from the stack
+ */
 void ex_pop(void);
+
+/**
+ * Unwinds the stack with the given exception
+ *
+ * @param exObj the exception
+ */
 void ex_unwind(void *exObj);
 
 #endif /* EXCEPTION_H_ */

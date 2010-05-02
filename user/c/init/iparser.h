@@ -24,11 +24,11 @@
 #include "idriver.h"
 
 /**
- * Parses the given drivers-file and creates an array of sDriverLoad's.
+ * Parses the given drivers-file and creates a vector of sDriverLoad's.
  *
  * @param drivers the driver-file-content
- * @return an array of sDriverLoad's
+ * @return a vector of sDriverLoad*
  */
-sDriverLoad **parseDrivers(char *drivers);
+sVector *parseDrivers(char *drivers);
 
 #endif /* PARSER_H_ */

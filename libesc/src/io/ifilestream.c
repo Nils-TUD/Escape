@@ -30,6 +30,13 @@
 
 #define BUF_SIZE	64
 
+typedef struct {
+	tFD fd;
+	s32 pos;
+	s32 length;
+	char *buffer;
+} sIFStream;
+
 static s32 ifstream_read(sIStream *s,void *buffer,u32 count);
 static s32 ifstream_seek(sIStream *s,s32 offset,u32 whence);
 static bool ifstream_eof(sIStream *s);
@@ -69,6 +76,7 @@ sIStream *ifstream_openfd(tFD fd) {
 
 static s32 ifstream_read(sIStream *s,void *buffer,u32 count) {
 	sIFStream *fs = (sIFStream*)s->obj;
+	/* TODO read from buffer first! */
 	s32 res = read(fs->fd,buffer,count);
 	if(res < 0)
 		THROW(IOException,res);
@@ -78,6 +86,7 @@ static s32 ifstream_read(sIStream *s,void *buffer,u32 count) {
 static s32 ifstream_seek(sIStream *s,s32 offset,u32 whence) {
 	s32 res;
 	sIFStream *fs = (sIFStream*)s->obj;
+	/* TODO what to do with the buffered stuff? */
 	res = seek(fs->fd,offset,whence);
 	if(res < 0)
 		THROW(IOException,res);
@@ -86,6 +95,7 @@ static s32 ifstream_seek(sIStream *s,s32 offset,u32 whence) {
 
 static bool ifstream_eof(sIStream *s) {
 	sIFStream *fs = (sIFStream*)s->obj;
+	/* TODO look in the buffer first! */
 	return eof(fs->fd);
 }
 

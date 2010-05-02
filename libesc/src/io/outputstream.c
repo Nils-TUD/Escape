@@ -61,6 +61,15 @@
 		} \
 	}
 
+static s32 ostream_writes(sOStream *s,const char *str);
+static s32 ostream_writeln(sOStream *s,const char *str);
+static s32 ostream_writen(sOStream *s,s32 n);
+static s32 ostream_writel(sOStream *s,s64 l);
+static s32 ostream_writeu(sOStream *s,u32 u,u8 base);
+static s32 ostream_writeul(sOStream *s,u64 u,u8 base);
+static s32 ostream_writedbl(sOStream *s,double d,u32 precision);
+static s32 ostream_format(sOStream *s,const char *fmt,...);
+static s32 ostream_vformat(sOStream *s,const char *fmt,va_list ap);
 static s32 ostream_writeuchars(sOStream *s,u32 u,u8 base,const char *hexchars);
 static s32 ostream_writeulchars(sOStream *s,u64 u,u8 base,const char *hexchars);
 static s32 ostream_writenpad(sOStream *s,s32 n,u8 pad,u16 flags);
@@ -81,6 +90,7 @@ sOStream *ostream_open() {
 	s->writeu = ostream_writeu;
 	s->writeul = ostream_writeul;
 	s->writedbl = ostream_writedbl;
+	s->writeln = ostream_writeln;
 	s->format = ostream_format;
 	s->vformat = ostream_vformat;
 	return s;
@@ -90,7 +100,7 @@ void ostream_close(sOStream *s) {
 	heap_free(s);
 }
 
-s32 ostream_writes(sOStream *s,const char *str) {
+static s32 ostream_writes(sOStream *s,const char *str) {
 	char c;
 	char *start = (char*)str;
 	while((c = *str)) {
@@ -100,7 +110,13 @@ s32 ostream_writes(sOStream *s,const char *str) {
 	return str - start;
 }
 
-s32 ostream_writen(sOStream *s,s32 n) {
+static s32 ostream_writeln(sOStream *s,const char *str) {
+	s32 c = s->writes(s,str);
+	c += s->writec(s,'\n');
+	return c;
+}
+
+static s32 ostream_writen(sOStream *s,s32 n) {
 	u32 c = 0;
 	if(n < 0) {
 		s->writec(s,'-');
@@ -114,7 +130,7 @@ s32 ostream_writen(sOStream *s,s32 n) {
 	return c + 1;
 }
 
-s32 ostream_writel(sOStream *s,s64 l) {
+static s32 ostream_writel(sOStream *s,s64 l) {
 	s32 c = 0;
 	if(l < 0) {
 		s->writec(s,'-');
@@ -127,15 +143,15 @@ s32 ostream_writel(sOStream *s,s64 l) {
 	return c + 1;
 }
 
-s32 ostream_writeu(sOStream *s,u32 u,u8 base) {
+static s32 ostream_writeu(sOStream *s,u32 u,u8 base) {
 	return ostream_writeuchars(s,u,base,hexCharsSmall);
 }
 
-s32 ostream_writeul(sOStream *s,u64 u,u8 base) {
+static s32 ostream_writeul(sOStream *s,u64 u,u8 base) {
 	return ostream_writeulchars(s,u,base,hexCharsSmall);
 }
 
-s32 ostream_writedbl(sOStream *s,double d,u32 precision) {
+static s32 ostream_writedbl(sOStream *s,double d,u32 precision) {
 	s32 c = 0;
 	s64 val = 0;
 
@@ -159,7 +175,7 @@ s32 ostream_writedbl(sOStream *s,double d,u32 precision) {
 	return c;
 }
 
-s32 ostream_format(sOStream *s,const char *fmt,...) {
+static s32 ostream_format(sOStream *s,const char *fmt,...) {
 	va_list ap;
 	s32 res;
 	va_start(ap,fmt);
@@ -168,7 +184,7 @@ s32 ostream_format(sOStream *s,const char *fmt,...) {
 	return res;
 }
 
-s32 ostream_vformat(sOStream *s,const char *fmt,va_list ap) {
+static s32 ostream_vformat(sOStream *s,const char *fmt,va_list ap) {
 	char c;
 	bool readFlags;
 	u16 flags;

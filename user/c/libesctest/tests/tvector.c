@@ -52,7 +52,7 @@ static void test_create(void) {
 	before = heap_getFreeSpace();
 	sVector *v = vec_create(sizeof(u32));
 	test_assertUInt(v->count,0);
-	vec_destroy(v);
+	vec_destroy(v,false);
 	test_assertUInt(heap_getFreeSpace(),before);
 
 	before = heap_getFreeSpace();
@@ -60,8 +60,8 @@ static void test_create(void) {
 	sVector *v2 = vec_copy(v1);
 	test_assertUInt(v1->count,0);
 	test_assertUInt(v2->count,0);
-	vec_destroy(v1);
-	vec_destroy(v2);
+	vec_destroy(v1,false);
+	vec_destroy(v2,false);
 	test_assertUInt(heap_getFreeSpace(),before);
 
 	test_caseSucceded();
@@ -80,7 +80,7 @@ static void test_insert(void) {
 	test_assertUInt(vec_findInt(v,12),0);
 	test_assertUInt(vec_findInt(v,13),1);
 	test_assertUInt(vec_find(v,&i),2);
-	vec_destroy(v);
+	vec_destroy(v,false);
 
 	v = vec_create(sizeof(u32));
 	vec_insertInt(v,0,1);
@@ -90,7 +90,7 @@ static void test_insert(void) {
 	test_assertUInt(vec_findInt(v,1),0);
 	test_assertUInt(vec_findInt(v,2),1);
 	test_assertUInt(vec_findInt(v,3),2);
-	vec_destroy(v);
+	vec_destroy(v,false);
 
 	v = vec_create(sizeof(u32));
 	vec_addInt(v,1);
@@ -104,7 +104,7 @@ static void test_insert(void) {
 	test_assertUInt(vec_findInt(v,2),4);
 	test_assertUInt(vec_findInt(v,4),2);
 	test_assertUInt(vec_findInt(v,5),3);
-	vec_destroy(v);
+	vec_destroy(v,false);
 
 	test_caseSucceded();
 }
@@ -127,8 +127,8 @@ static void test_iterator(void) {
 		test_assertUInt(e,i);
 		i++;
 	}
-	vec_destroy(v2);
-	vec_destroy(v);
+	vec_destroy(v2,false);
+	vec_destroy(v,false);
 
 	test_caseSucceded();
 }
@@ -150,7 +150,7 @@ static void test_sort(void) {
 		test_assertUInt(e,i);
 		i++;
 	}
-	vec_destroy(v);
+	vec_destroy(v,false);
 
 	test_caseSucceded();
 }
@@ -171,7 +171,7 @@ static void test_remove(void) {
 	test_assertUInt(v->count,1);
 	vec_removeInt(v,2);
 	test_assertUInt(v->count,0);
-	vec_destroy(v);
+	vec_destroy(v,false);
 
 	test_caseSucceded();
 }

@@ -23,12 +23,12 @@
 #include <esc/common.h>
 #include "inputstream.h"
 
-typedef struct {
-	s32 pos;
-	s32 length;
-	const char *buffer;
-} sISStream;
-
+/**
+ * Opens a input-string-stream for the given string
+ *
+ * @param str the string
+ * @return the stream
+ */
 sIStream *isstream_open(const char *str);
 
 #endif /* ISTRINGSTREAM_H_ */

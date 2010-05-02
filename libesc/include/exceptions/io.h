@@ -26,15 +26,19 @@
 #define ID_IOException					0
 
 typedef struct {
-	s32 handled;
-	s32 id;
-	s32 line;
-	const char *file;
-	fExToString toString;
-	fExDestroy destroy;
+	sException;
 	s32 error;
 } sIOException;
 
+/**
+ * Constructor for the io-exception
+ *
+ * @param id the exception-id
+ * @param line the line
+ * @param file the file
+ * @param errorNo the error-number
+ * @return the exception
+ */
 sIOException *ex_createIOException(s32 id,s32 line,const char *file,s32 errorNo);
 
 #endif /* IOEXCEPTION_H_ */

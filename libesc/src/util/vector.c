@@ -55,8 +55,8 @@ sVector *vec_copy(const sVector *v) {
 
 sIterator vec_iterator(sVector *v) {
 	sIterator it;
-	it.con = v;
-	it.pos = 0;
+	it._con = v;
+	it._pos = 0;
 	it.next = vec_itNext;
 	it.hasNext = vec_itHasNext;
 	return it;
@@ -135,7 +135,14 @@ void vec_sortCustom(sVector *v,fCompare cmp) {
 	qsort(v->elements,v->count,v->elSize,cmp);
 }
 
-void vec_destroy(sVector *v) {
+void vec_destroy(sVector *v,bool freeElements) {
+	if(freeElements) {
+		sIterator it = vec_iterator(v);
+		while(it.hasNext(&it)) {
+			void *p = *(void**)it.next(&it);
+			heap_free(p);
+		}
+	}
 	heap_free(v->elements);
 	heap_free(v);
 }
@@ -145,15 +152,15 @@ static int vec_sortCmp(const void *a,const void *b) {
 }
 
 static void *vec_itNext(sIterator *it) {
-	sVector *v = (sVector*)it->con;
-	if(it->pos >= v->count)
+	sVector *v = (sVector*)it->_con;
+	if(it->_pos >= v->count)
 		return NULL;
-	return (char*)v->elements + it->pos++ * v->elSize;
+	return (char*)v->elements + it->_pos++ * v->elSize;
 }
 
 static bool vec_itHasNext(sIterator *it) {
-	sVector *v = (sVector*)it->con;
-	return it->pos < v->count;
+	sVector *v = (sVector*)it->_con;
+	return it->_pos < v->count;
 }
 
 static void vec_grow(sVector *v,u32 reqSize) {

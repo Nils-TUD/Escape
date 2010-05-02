@@ -24,8 +24,8 @@
 #include <io/inputstream.h>
 #include <io/outputstream.h>
 
-extern sIStream *cin;
-extern sOStream *cout;
-extern sOStream *cerr;
+extern sIStream *const cin;
+extern sOStream *const cout;
+extern sOStream *const cerr;
 
 #endif /* STREAMS_H_ */

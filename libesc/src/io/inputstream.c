@@ -21,16 +21,23 @@
 #include <mem/heap.h>
 #include <io/inputstream.h>
 #include <exceptions/io.h>
+#include <util/string.h>
 #include <errors.h>
 #include <string.h>
 #include <ctype.h>
 
+static s32 istream_reads(sIStream *s,char *str,u32 size);
+static s32 istream_readline(sIStream *s,char *str,u32 size);
+static s32 istream_format(sIStream *s,const char *fmt,...);
+static s32 istream_vformat(sIStream *s,const char *fmt,va_list ap);
+static s32 istream_readAll(sIStream *s,sString *str);
 static s32 istream_readfstr(sIStream *s,s32 length,char *str);
 static s32 istream_readfnum(sIStream *s,s32 length,char c,s32 *res);
 
 sIStream *istream_open(void) {
 	sIStream *s = (sIStream*)heap_alloc(sizeof(sIStream));
 	s->reads = istream_reads;
+	s->readAll = istream_readAll;
 	s->readline = istream_readline;
 	s->format = istream_format;
 	s->vformat = istream_vformat;
@@ -41,7 +48,7 @@ void istream_close(sIStream *s) {
 	heap_free(s);
 }
 
-s32 istream_reads(sIStream *s,char *str,u32 size) {
+static s32 istream_reads(sIStream *s,char *str,u32 size) {
 	char *start = str;
 	/* wait for one char left (\0) or till EOF */
 	TRY {
@@ -58,7 +65,7 @@ s32 istream_reads(sIStream *s,char *str,u32 size) {
 	return (str - start);
 }
 
-s32 istream_readline(sIStream *s,char *str,u32 size) {
+static s32 istream_readline(sIStream *s,char *str,u32 size) {
 	char *start = str;
 	/* wait for one char left (\0) or a newline or EOF */
 	TRY {
@@ -76,7 +83,7 @@ s32 istream_readline(sIStream *s,char *str,u32 size) {
 	return (str - start);
 }
 
-s32 istream_format(sIStream *s,const char *fmt,...) {
+static s32 istream_format(sIStream *s,const char *fmt,...) {
 	va_list ap;
 	s32 res;
 	va_start(ap,fmt);
@@ -85,7 +92,7 @@ s32 istream_format(sIStream *s,const char *fmt,...) {
 	return res;
 }
 
-s32 istream_vformat(sIStream *s,const char *fmt,va_list ap) {
+static s32 istream_vformat(sIStream *s,const char *fmt,va_list ap) {
 	char *str = NULL,c,rc = 0;
 	s32 *n,count = 0;
 	u32 *u,x;
@@ -201,6 +208,23 @@ s32 istream_vformat(sIStream *s,const char *fmt,va_list ap) {
 				return count;
 		}
 	}
+}
+
+static s32 istream_readAll(sIStream *s,sString *str) {
+	const u32 stepSize = 128;
+	u32 size = 0;
+	s32 res;
+	do {
+		size += stepSize;
+		/* since we're reading one times more (and get 0) as we have to and call str_resize()
+		 * its garanteed that the string is null-terminated */
+		str_resize(str,size);
+		/* NOTE that we're assume a bit about the internal layout of the string */
+		res = s->read(s,str->str + str->len,stepSize - 1);
+		str->len += res;
+	}
+	while(res > 0);
+	return str->len;
 }
 
 static s32 istream_readfstr(sIStream *s,s32 length,char *str) {

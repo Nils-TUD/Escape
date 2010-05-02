@@ -24,21 +24,34 @@
 
 typedef struct sIterator sIterator;
 
-typedef void *(*fItNext)(sIterator *it);
-typedef bool (*fItHasNext)(sIterator *it);
-
-/* All elements are READ-ONLY for the public! */
 struct sIterator {
-	void *con;
-	u32 pos;
-	fItNext next;
-	fItHasNext hasNext;
+/* private: */
+	void *_con;
+	u32 _pos;
+
+/* public: */
+	/**
+	 * Checks wether there is a next element
+	 *
+	 * @param it the iterator
+	 * @return true if so
+	 */
+	bool (*hasNext)(sIterator *it);
+
+	/**
+	 * Returns the next element and moves forward
+	 *
+	 * @param it the iterator
+	 * @return the element
+	 */
+	void *(*next)(sIterator *it);
 };
 
+/* TODO atm just for vector :/ */
 #define foreach(v,type,eName)	\
-	sIterator __it##v = vec_iterator(v); \
+	sIterator __it##eName = vec_iterator(v); \
 	type eName; \
-	while((__it##v).hasNext(&__it##v) && \
-			(eName = *(type*)(__it##v).next(&(__it##v))))
+	while((__it##eName).hasNext(&__it##eName) && \
+			(eName = *(type*)(__it##eName).next(&(__it##eName))))
 
 #endif /* ITERATOR_H_ */

@@ -34,10 +34,10 @@ sException *ex_create(s32 id,s32 line,const char *file,u32 size) {
 	sException *e = (sException*)malloc(size);
 	if(!e)
 		error("Unable to create exception-object (%s:%d)",file,line);
-	e->handled = 0;
-	e->id = id;
-	e->line = line;
-	e->file = file;
+	e->_handled = 0;
+	e->_id = id;
+	*(s32*)&e->line = line;
+	*(const char**)&e->file = file;
 	e->destroy = (fExDestroy)ex_destroy;
 	e->toString = (fExToString)ex_toString;
 	return e;

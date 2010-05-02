@@ -24,12 +24,13 @@
 #include <stdarg.h>
 #include "outputstream.h"
 
-typedef struct {
-	s32 pos;
-	s32 max;
-	char *buffer;
-} sOSStream;
-
+/**
+ * Opens a output-string-stream for the given string
+ *
+ * @param buffer the string
+ * @param size the size of the buffer
+ * @return the stream
+ */
 sOStream *osstream_open(char *buffer,s32 size);
 
 #endif /* OSTRINGSTREAM_H_ */

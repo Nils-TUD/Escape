@@ -26,15 +26,20 @@
 #define ID_CmdArgsException					2
 
 typedef struct {
-	s32 handled;
-	s32 id;
-	s32 line;
-	const char *file;
-	fExToString toString;
-	fExDestroy destroy;
-	char *msg;
+	sException;
+/* private: */
+	char *_msg;
 } sCmdArgsException;
 
+/**
+ * Constructor for the command-argument-exception
+ *
+ * @param id the exception-id
+ * @param line the line
+ * @param file the file
+ * @param msg a message to display (with variable arguments)
+ * @return the exception
+ */
 sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file,const char *msg,...);
 
 #endif /* CMDARGSEXCEPTION_H_ */

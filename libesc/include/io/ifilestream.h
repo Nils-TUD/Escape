@@ -25,14 +25,21 @@
 #include <stdarg.h>
 #include "inputstream.h"
 
-typedef struct {
-	tFD fd;
-	s32 pos;
-	s32 length;
-	char *buffer;
-} sIFStream;
-
+/**
+ * Opens an input-stream to the given file
+ *
+ * @param file the path (doesn't need to be absolute)
+ * @param mode the mode to open it with (IO_*)
+ * @return the input-stream
+ */
 sIStream *ifstream_open(const char *file,u8 mode);
+
+/**
+ * Builds an input-stream for the given file-descriptor
+ *
+ * @param fd the file-descriptor
+ * @return the input-stream
+ */
 sIStream *ifstream_openfd(tFD fd);
 
 #endif /* IFILESTREAM_H_ */

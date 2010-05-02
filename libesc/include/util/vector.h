@@ -47,7 +47,7 @@ s32 vec_findInt(sVector *v,u32 val);
 s32 vec_find(sVector *v,const void *p);
 void vec_sort(sVector *v);
 void vec_sortCustom(sVector *v,fCompare cmp);
-void vec_destroy(sVector *v);
+void vec_destroy(sVector *v,bool freeElements);
 
 #if DEBUGGING
 void vec_dbg_print(sVector *v);

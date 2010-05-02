@@ -31,11 +31,11 @@ static const char *ex_printCmdArgsException(sCmdArgsException *e);
 sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file,const char *msg,...) {
 	va_list ap;
 	sCmdArgsException *e = (sCmdArgsException*)ex_create(id,line,file,sizeof(sCmdArgsException));
-	e->msg = malloc(MAX_EXMSG_LEN);
-	if(!e->msg)
+	e->_msg = malloc(MAX_EXMSG_LEN);
+	if(!e->_msg)
 		error("Unable to alloc memory for exception-msg (%s:%d)",file,line);
 	va_start(ap,msg);
-	vsnprintf(e->msg,MAX_EXMSG_LEN,msg,ap);
+	vsnprintf(e->_msg,MAX_EXMSG_LEN,msg,ap);
 	va_end(ap);
 	e->destroy = (fExDestroy)ex_destroyCmdArgsException;
 	e->toString = (fExToString)ex_printCmdArgsException;
@@ -43,11 +43,11 @@ sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file,co
 }
 
 static void ex_destroyCmdArgsException(sCmdArgsException *e) {
-	free(e->msg);
+	free(e->_msg);
 	free(e);
 }
 
 static const char *ex_printCmdArgsException(sCmdArgsException *e) {
 	UNUSED(e);
-	return e->msg;
+	return e->_msg;
 }

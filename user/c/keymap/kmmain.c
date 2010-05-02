@@ -20,46 +20,60 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/fileio.h>
-#include <esc/cmdargs.h>
-#include <esc/dir.h>
+#include <esc/proc.h>
+#include <io/file.h>
+#include <io/streams.h>
+#include <exceptions/cmdargs.h>
+#include <util/cmdargs.h>
 #include <string.h>
 #include <messages.h>
 
 #define KEYMAP_DIR		"/etc/keymaps"
 
-int main(int argc,char **argv) {
-	tFD dir;
-	if(isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s [--set <name>]\n",argv[0]);
-		return EXIT_FAILURE;
+static void usage(const char *name) {
+	cerr->format(cerr,"Usage: %s [--set <name>]\n",name);
+	exit(EXIT_FAILURE);
+}
+
+int main(int argc,const char **argv) {
+	char *kmname = NULL;
+	sCmdArgs *args;
+
+	TRY {
+		args = cmdargs_create(argc,argv,CA_NO_FREE);
+		args->parse(args,"set=s",&kmname);
+		if(args->isHelp)
+			usage(argv[0]);
 	}
+	CATCH(CmdArgsException,e) {
+		cerr->format(cerr,"Invalid arguments: %s\n",e->toString(e));
+		usage(argv[0]);
+	}
+	ENDCATCH
 
 	/* set keymap? */
-	if(argc > 2 && strcmp(argv[1],"--set") == 0) {
+	if(kmname != NULL) {
 		char path[MAX_PATH_LEN];
+		sMsg msg;
 		u32 len;
 		tFD fd = open("/dev/kmmanager",IO_READ | IO_WRITE);
 		if(fd < 0)
 			error("Unable to open keymap-manager");
-		len = snprintf(path,sizeof(path),KEYMAP_DIR"/%s",argv[2]);
-		if(sendMsgData(fd,MSG_KM_SET,path,len + 1) < 0)
-			fprintf(stderr,"Setting the keymap '%s' failed\n",argv[2]);
+		len = snprintf(path,sizeof(path),KEYMAP_DIR"/%s",kmname);
+		if(sendMsgData(fd,MSG_KM_SET,path,len + 1) < 0 ||
+				receive(fd,NULL,&msg,sizeof(msg)) < 0 || (s32)msg.args.arg1 < 0)
+			cerr->format(cerr,"Setting the keymap '%s' failed\n",kmname);
 		else
-			printf("Successfully changed keymap to '%s'\n",argv[2]);
+			cout->format(cout,"Successfully changed keymap to '%s'\n",kmname);
 		close(fd);
-		return EXIT_SUCCESS;
 	}
-
 	/* list all keymaps */
-	if((dir = opendir(KEYMAP_DIR)) >= 0) {
-		sDirEntry e;
-		while(readdir(&e,dir)) {
-			if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
-				continue;
-			printf("%s\n",e.name);
-		}
-		closedir(dir);
+	else {
+		sFile *f = file_get(KEYMAP_DIR);
+		sVector *files = f->listFiles(f,false);
+		foreach(files,sDirEntry*,e)
+			cout->writeln(cout,e->name);
+		vec_destroy(files,true);
 	}
-
 	return EXIT_SUCCESS;
 }

@@ -18,62 +18,49 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/proc.h>
-#include <esc/fileio.h>
 #include <esc/io.h>
-#include <fsinterface.h>
+#include <io/streams.h>
+#include <util/vector.h>
 #include <string.h>
 #include <sllist.h>
 #include "idriver.h"
 
-static bool loadDriver(sDriverLoad **loads,sDriverLoad *load);
-static sDriverLoad *getDriver(sDriverLoad **loads,char *name);
+static bool loadDriver(sVector *loads,sDriverLoad *load);
+static sDriverLoad *getDriver(sVector *loads,char *name);
 
 /* the already loaded drivers; we don't want to load a driver twice */
 static sSLList *loadedDrivers;
 
-bool loadDrivers(sDriverLoad **loads) {
-	sDriverLoad *load;
+bool loadDrivers(sVector *loads) {
 	loadedDrivers = sll_create();
 	if(loadedDrivers == NULL)
 		return false;
 
-	load = *loads;
-	while(load != NULL) {
+	foreach(loads,sDriverLoad*,load) {
 		if(!loadDriver(loads,load))
 			return false;
-		load = *++loads;
 	}
 	return true;
 }
 
-void printDrivers(sDriverLoad **loads) {
-	u8 i;
-	printf("Loads:\n");
+void printDrivers(sVector *loads) {
+	cout->writes(cout,"Loads:\n");
 	if(loads != NULL) {
-		sDriverLoad *load = *loads;
-		while(load != NULL) {
-			printf("\tname: '%s' waits(%d): ",load->name,load->waitCount);
-			for(i = 0; i < load->waitCount; i++) {
-				printf("'%s'",load->waits[i]);
-				if(i < load->waitCount - 1)
-					printf(",");
-			}
-			printf(" deps(%d): ",load->depCount);
-			for(i = 0; i < load->depCount; i++) {
-				printf("'%s'",load->deps[i]);
-				if(i < load->depCount - 1)
-					printf(",");
-			}
-			printf("\n");
-			load = *++loads;
+		foreach(loads,sDriverLoad*,load) {
+			cout->format(cout,"\tname: '%s' waits(%d): ",load->name,load->waits->count);
+			foreach(load->waits,char*,wname)
+				cout->format(cout,"'%s' ",wname);
+			cout->format(cout," deps(%d): ",load->deps->count);
+			foreach(load->deps,char*,dname)
+				cout->format(cout,"'%s' ",dname);
+			cout->format(cout,"\n");
 		}
 	}
 }
 
-static bool loadDriver(sDriverLoad **loads,sDriverLoad *load) {
-	u32 i,j;
+static bool loadDriver(sVector *loads,sDriverLoad *load) {
+	u32 j;
 	s32 res,child;
 	char path[MAX_DRIVER_PATH_LEN + 1] = "/sbin/";
 	char drvName[MAX_DRIVER_PATH_LEN + 1] = "";
@@ -88,8 +75,8 @@ static bool loadDriver(sDriverLoad **loads,sDriverLoad *load) {
 	}
 
 	/* load dependencies */
-	for(i = 0; i < load->depCount; i++) {
-		sDriverLoad *l = getDriver(loads,load->deps[i]);
+	foreach(load->deps,char*,dname) {
+		sDriverLoad *l = getDriver(loads,dname);
 		if(l != NULL) {
 			if(!loadDriver(loads,l))
 				return false;
@@ -101,18 +88,18 @@ static bool loadDriver(sDriverLoad **loads,sDriverLoad *load) {
 	child = fork();
 	if(child == 0) {
 		exec(path,NULL);
-		printe("Exec of '%s' failed",path);
+		cerr->format(cerr,"Exec of '%s' failed\n",path);
 		exit(EXIT_FAILURE);
 	}
 	else if(child < 0) {
-		printe("Fork of '%s' failed",path);
+		cerr->format(cerr,"Fork of '%s' failed\n",path);
 		return false;
 	}
 
 	/* wait for all specified waits */
 	sname = drvName;
-	for(i = 0; i < load->waitCount; i++) {
-		strcpy(sname,load->waits[i]);
+	foreach(load->waits,char*,wname) {
+		strcpy(sname,wname);
 		j = 0;
 		do {
 			res = stat(drvName,&info);
@@ -121,7 +108,8 @@ static bool loadDriver(sDriverLoad **loads,sDriverLoad *load) {
 		}
 		while(j++ < MAX_WAIT_RETRIES && res < 0);
 		if(res < 0) {
-			printe("The driver '%s' was not found after %d retries",drvName,MAX_WAIT_RETRIES);
+			cerr->format(cerr,"The driver '%s' was not found after %d retries\n",
+					drvName,MAX_WAIT_RETRIES);
 			return false;
 		}
 	}
@@ -132,12 +120,10 @@ static bool loadDriver(sDriverLoad **loads,sDriverLoad *load) {
 	return true;
 }
 
-static sDriverLoad *getDriver(sDriverLoad **loads,char *name) {
-	sDriverLoad *load = *loads;
-	while(load != NULL) {
+static sDriverLoad *getDriver(sVector *loads,char *name) {
+	foreach(loads,sDriverLoad*,load) {
 		if(strcmp(load->name,name) == 0)
 			return load;
-		load = *++loads;
 	}
 	return NULL;
 }

@@ -22,17 +22,9 @@
 
 #include <esc/common.h>
 #include <fsinterface.h>
+#include <util/vector.h>
 
 typedef struct sFile sFile;
-
-typedef sFileInfo *(*fGetInfo)(sFile *f);
-typedef bool (*fIsFile)(sFile *f);
-typedef bool (*fIsDir)(sFile *f);
-typedef s32 (*fGetSize)(sFile *f);
-typedef u32 (*fGetName)(sFile *f,char *buf,u32 size);
-typedef u32 (*fGetParent)(sFile *f,char *buf,u32 size);
-typedef u32 (*fGetAbsolute)(sFile *f,char *buf,u32 size);
-typedef void (*fDestroy)(sFile *f);
 
 struct sFile {
 /* private: */
@@ -40,16 +32,97 @@ struct sFile {
 	const char *_path;
 
 /* public: */
-	fIsFile isFile;
-	fIsDir isDir;
-	fGetName getName;
-	fGetParent getParent;
-	fGetAbsolute getAbsolute;
-	fGetInfo getInfo;
-	fGetSize getSize;
-	fDestroy destroy;
+	/**
+	 * Builds a vector with all entries in the directory denoted by this file-object.
+	 * Note that you HAVE TO free the vector via vec_destroy(v,true); when you're done!
+	 *
+	 * @param f the file-object
+	 * @param showHidden wether to include hidden files/folders
+	 * @return the vector with sDirEntry* elements
+	 */
+	sVector *(*listFiles)(sFile *f,bool showHidden);
+
+	/**
+	 * Like listFiles(), but lets you specify a pattern.
+	 *
+	 * @param f the file-object
+	 * @param pattern a pattern the files have to match
+	 * @param showHidden wether to include hidden files/folders
+	 * @return the vector with sDirEntry* elements
+	 */
+	sVector *(*listMatchingFiles)(sFile *f,const char *pattern,bool showHidden);
+
+	/**
+	 * @param f the file-object
+	 * @return true if its a file
+	 */
+	bool (*isFile)(sFile *f);
+
+	/**
+	 * @param f the file-object
+	 * @return true if its a directory
+	 */
+	bool (*isDir)(sFile *f);
+
+	/**
+	 * Writes the name of this file into the given buffer
+	 *
+	 * @param f the file-object
+	 * @param buf the buffer
+	 * @param size the size of the buffer
+	 * @return the length of the name
+	 */
+	u32 (*getName)(sFile *f,char *buf,u32 size);
+
+	/**
+	 * Writes the path of the parent-directory into the given buffer
+	 *
+	 * @param f the file-object
+	 * @param buf the buffer
+	 * @param size the size of the buffer
+	 * @return the length of the parent-path
+	 */
+	u32 (*getParent)(sFile *f,char *buf,u32 size);
+
+	/**
+	 * Writes the absolute path of this file into the given buffer
+	 *
+	 * @param f the file-object
+	 * @param buf the buffer
+	 * @param size the size of the buffer
+	 * @return the length of the path
+	 */
+	u32 (*getAbsolute)(sFile *f,char *buf,u32 size);
+
+	/**
+	 * Returns a pointer to the sFileInfo-struct with information about the file
+	 *
+	 * @param f the file-object
+	 * @return the pointer
+	 */
+	sFileInfo *(*getInfo)(sFile *f);
+
+	/**
+	 * @param f the file-object
+	 * @return the size of this file
+	 */
+	s32 (*getSize)(sFile *f);
+
+	/**
+	 * Destroys this file (free's all memory)
+	 *
+	 * @param f the file-object
+	 */
+	void (*destroy)(sFile *f);
 };
 
+/**
+ * Creates an sFile-object for the given path. The path doesn't need to be absolute. It will
+ * be made absolute with abspath(), i.e. depending on CWD.
+ *
+ * @param path the path
+ * @return the file-object
+ */
 sFile *file_get(const char *path);
 
 #endif /* FILE_H_ */

@@ -26,6 +26,8 @@
 #include <string.h>
 #include <assert.h>
 
+static sVector *file_listFiles(sFile *f,bool showHidden);
+static sVector *file_listMatchingFiles(sFile *f,const char *pattern,bool showHidden);
 static bool file_isFile(sFile *f);
 static bool file_isDir(sFile *f);
 static sFileInfo *file_getInfo(sFile *f);
@@ -45,6 +47,8 @@ sFile *file_get(const char *path) {
 	res = stat(abs,&f->_info);
 	if(res < 0)
 		THROW(IOException,res);
+	f->listFiles = file_listFiles;
+	f->listMatchingFiles = file_listMatchingFiles;
 	f->isFile = file_isFile;
 	f->isDir = file_isDir;
 	f->destroy = file_destroy;
@@ -54,6 +58,33 @@ sFile *file_get(const char *path) {
 	f->getInfo = file_getInfo;
 	f->getSize = file_getSize;
 	return f;
+}
+
+static sVector *file_listFiles(sFile *f,bool showHidden) {
+	return f->listMatchingFiles(f,NULL,showHidden);
+}
+
+static sVector *file_listMatchingFiles(sFile *f,const char *pattern,bool showHidden) {
+	bool res;
+	sDirEntry *e;
+	sVector *vec = vec_create(sizeof(sDirEntry*));
+	tFD dir = opendir(f->_path);
+	if(dir < 0)
+		THROW(IOException,dir);
+	while(1) {
+		e = heap_alloc(sizeof(sDirEntry));
+		res = readdir(e,dir);
+		if(!res) {
+			heap_free(e);
+			break;
+		}
+		if((pattern == NULL || strmatch(pattern,e->name)) && (showHidden || e->name[0] != '.'))
+			vec_add(vec,&e);
+		else
+			heap_free(e);
+	}
+	closedir(dir);
+	return vec;
 }
 
 static bool file_isFile(sFile *f) {
@@ -118,4 +149,3 @@ static s32 file_getDirSlash(const char *path,u32 len) {
 	}
 	return -1;
 }
-

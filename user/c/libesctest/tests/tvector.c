@@ -118,9 +118,9 @@ static void test_iterator(void) {
 	vec_addInt(v,3);
 	sVector *v2 = vec_copy(v);
 	u32 e,e2,i = 1;
-	foreach(vec_iterator(v),e) {
+	vforeach(v,e) {
 		u32 j = 1;
-		foreach(vec_iterator(v2),e2) {
+		vforeach(v2,e2) {
 			test_assertUInt(e2,j);
 			j++;
 		}
@@ -146,7 +146,7 @@ static void test_sort(void) {
 	vec_addInt(v,7);
 	vec_sort(v);
 	u32 e,i = 1;
-	foreach(vec_iterator(v),e) {
+	vforeach(v,e) {
 		test_assertUInt(e,i);
 		i++;
 	}

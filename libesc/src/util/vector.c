@@ -31,6 +31,7 @@ static void *vec_itNext(sIterator *it);
 static bool vec_itHasNext(sIterator *it);
 static void vec_grow(sVector *v,u32 reqSize);
 
+/* TODO this is not thread-safe atm! */
 static u32 sortElSize;
 
 sVector *vec_create(u32 elSize) {
@@ -39,16 +40,16 @@ sVector *vec_create(u32 elSize) {
 
 sVector *vec_createSize(u32 elSize,u32 count) {
 	sVector *v = (sVector*)heap_alloc(sizeof(sVector));
-	v->elSize = elSize;
-	v->size = elSize * count;
+	v->_elSize = elSize;
+	v->_size = elSize * count;
+	v->_elements = heap_alloc(elSize * count);
 	v->count = 0;
-	v->elements = heap_alloc(elSize * count);
 	return v;
 }
 
 sVector *vec_copy(const sVector *v) {
-	sVector *cpy = vec_createSize(v->elSize,v->count);
-	memcpy(cpy->elements,v->elements,v->elSize * v->count);
+	sVector *cpy = vec_createSize(v->_elSize,v->count);
+	memcpy(cpy->_elements,v->_elements,v->_elSize * v->count);
 	cpy->count = v->count;
 	return cpy;
 }
@@ -63,33 +64,33 @@ sIterator vec_iterator(sVector *v) {
 }
 
 void vec_addInt(sVector *v,u32 val) {
-	assert(v->elSize <= sizeof(u32));
+	assert(v->_elSize <= sizeof(u32));
 	vec_add(v,&val);
 }
 
 void vec_add(sVector *v,const void *p) {
-	vec_grow(v,v->elSize * (v->count + 1));
-	memcpy((char*)v->elements + v->count * v->elSize,p,v->elSize);
+	vec_grow(v,v->_elSize * (v->count + 1));
+	memcpy((char*)v->_elements + v->count * v->_elSize,p,v->_elSize);
 	v->count++;
 }
 
 void vec_insertInt(sVector *v,u32 index,u32 val) {
-	assert(v->elSize <= sizeof(u32));
+	assert(v->_elSize <= sizeof(u32));
 	vec_insert(v,index,&val);
 }
 
 void vec_insert(sVector *v,u32 index,const void *p) {
-	char *dst = (char*)v->elements + v->elSize * index;
+	char *dst = (char*)v->_elements + v->_elSize * index;
 	assert(index <= v->count);
-	vec_grow(v,v->elSize * (v->count + 1));
+	vec_grow(v,v->_elSize * (v->count + 1));
 	if(index < v->count)
-		memmove(dst + v->elSize,dst,(v->count - index) * v->elSize);
-	memcpy(dst,p,v->elSize);
+		memmove(dst + v->_elSize,dst,(v->count - index) * v->_elSize);
+	memcpy(dst,p,v->_elSize);
 	v->count++;
 }
 
 void vec_removeInt(sVector *v,u32 val) {
-	assert(v->elSize <= sizeof(u32));
+	assert(v->_elSize <= sizeof(u32));
 	vec_removeObj(v,&val);
 }
 
@@ -104,35 +105,35 @@ void vec_remove(sVector *v,u32 start,u32 count) {
 	assert(start < v->count);
 	assert(start + count <= v->count && start + count >= start);
 	if(start + count < v->count) {
-		memmove((char*)v->elements + start * v->elSize,
-				(char*)v->elements + (start + count) * v->elSize,
-				(v->count - (start + count)) * v->elSize);
+		memmove((char*)v->_elements + start * v->_elSize,
+				(char*)v->_elements + (start + count) * v->_elSize,
+				(v->count - (start + count)) * v->_elSize);
 	}
 	v->count -= count;
 }
 
 s32 vec_findInt(sVector *v,u32 val) {
-	assert(v->elSize <= sizeof(u32));
+	assert(v->_elSize <= sizeof(u32));
 	return vec_find(v,&val);
 }
 
 s32 vec_find(sVector *v,const void *p) {
 	s32 i,count = v->count;
 	for(i = 0; i < count; i++) {
-		void *el = (char*)v->elements + i * v->elSize;
-		if(memcmp(p,el,v->elSize) == 0)
+		void *el = (char*)v->_elements + i * v->_elSize;
+		if(memcmp(p,el,v->_elSize) == 0)
 			return i;
 	}
 	return -1;
 }
 
 void vec_sort(sVector *v) {
-	sortElSize = v->elSize;
-	qsort(v->elements,v->count,v->elSize,vec_sortCmp);
+	sortElSize = v->_elSize;
+	qsort(v->_elements,v->count,v->_elSize,vec_sortCmp);
 }
 
 void vec_sortCustom(sVector *v,fCompare cmp) {
-	qsort(v->elements,v->count,v->elSize,cmp);
+	qsort(v->_elements,v->count,v->_elSize,cmp);
 }
 
 void vec_destroy(sVector *v,bool freeElements) {
@@ -143,7 +144,7 @@ void vec_destroy(sVector *v,bool freeElements) {
 			heap_free(p);
 		}
 	}
-	heap_free(v->elements);
+	heap_free(v->_elements);
 	heap_free(v);
 }
 
@@ -155,7 +156,7 @@ static void *vec_itNext(sIterator *it) {
 	sVector *v = (sVector*)it->_con;
 	if(it->_pos >= v->count)
 		return NULL;
-	return (char*)v->elements + it->_pos++ * v->elSize;
+	return (char*)v->_elements + it->_pos++ * v->_elSize;
 }
 
 static bool vec_itHasNext(sIterator *it) {
@@ -164,9 +165,9 @@ static bool vec_itHasNext(sIterator *it) {
 }
 
 static void vec_grow(sVector *v,u32 reqSize) {
-	if(v->size < reqSize) {
-		v->size = MAX(v->size * 2,reqSize);
-		v->elements = heap_realloc(v->elements,v->size);
+	if(v->_size < reqSize) {
+		v->_size = MAX(v->_size * 2,reqSize);
+		v->_elements = heap_realloc(v->_elements,v->_size);
 	}
 }
 
@@ -174,12 +175,12 @@ static void vec_grow(sVector *v,u32 reqSize) {
 
 void vec_dbg_print(sVector *v) {
 	u32 i;
-	debugf("Vector @ %x (%d bytes, %d elements, %d bytes each)\n",v,v->size,v->count,v->elSize);
+	debugf("Vector @ %x (%d bytes, %d elements, %d bytes each)\n",v,v->_size,v->count,v->_elSize);
 	for(i = 0; i < v->count; i++) {
 		u32 j;
 		debugf("	");
-		for(j = 0; j < v->elSize / sizeof(u32); j++)
-			debugf("%08x",*(u32*)((char*)v->elements + v->elSize * i + j * sizeof(u32)));
+		for(j = 0; j < v->_elSize / sizeof(u32); j++)
+			debugf("%08x",*(u32*)((char*)v->_elements + v->_elSize * i + j * sizeof(u32)));
 		debugf("\n");
 	}
 	debugf("\n");

@@ -50,6 +50,6 @@ struct sIterator {
 #define foreach(it,eName)	\
 	sIterator __it##eName = (it); \
 	while((__it##eName).hasNext(&__it##eName) && \
-			(eName = *(__typeof__(eName)*)(__it##eName).next(&(__it##eName))))
+			(eName = (__typeof__(eName))(__it##eName).next(&(__it##eName))))
 
 #endif /* ITERATOR_H_ */

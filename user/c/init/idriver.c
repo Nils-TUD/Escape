@@ -33,11 +33,12 @@ static sDriverLoad *getDriver(sVector *loads,char *name);
 static sSLList *loadedDrivers;
 
 bool loadDrivers(sVector *loads) {
+	sDriverLoad *load;
 	loadedDrivers = sll_create();
 	if(loadedDrivers == NULL)
 		return false;
 
-	foreach(loads,sDriverLoad*,load) {
+	vforeach(loads,load) {
 		if(!loadDriver(loads,load))
 			return false;
 	}
@@ -45,14 +46,16 @@ bool loadDrivers(sVector *loads) {
 }
 
 void printDrivers(sVector *loads) {
+	sDriverLoad *load;
 	cout->writes(cout,"Loads:\n");
 	if(loads != NULL) {
-		foreach(loads,sDriverLoad*,load) {
+		vforeach(loads,load) {
+			char *wname,*dname;
 			cout->format(cout,"\tname: '%s' waits(%d): ",load->name,load->waits->count);
-			foreach(load->waits,char*,wname)
+			vforeach(load->waits,wname)
 				cout->format(cout,"'%s' ",wname);
 			cout->format(cout," deps(%d): ",load->deps->count);
-			foreach(load->deps,char*,dname)
+			vforeach(load->deps,dname)
 				cout->format(cout,"'%s' ",dname);
 			cout->format(cout,"\n");
 		}
@@ -64,7 +67,7 @@ static bool loadDriver(sVector *loads,sDriverLoad *load) {
 	s32 res,child;
 	char path[MAX_DRIVER_PATH_LEN + 1] = "/sbin/";
 	char drvName[MAX_DRIVER_PATH_LEN + 1] = "";
-	char *sname;
+	char *sname,*dname,*wname;
 	sFileInfo info;
 	sSLNode *n;
 
@@ -75,7 +78,7 @@ static bool loadDriver(sVector *loads,sDriverLoad *load) {
 	}
 
 	/* load dependencies */
-	foreach(load->deps,char*,dname) {
+	vforeach(load->deps,dname) {
 		sDriverLoad *l = getDriver(loads,dname);
 		if(l != NULL) {
 			if(!loadDriver(loads,l))
@@ -98,7 +101,7 @@ static bool loadDriver(sVector *loads,sDriverLoad *load) {
 
 	/* wait for all specified waits */
 	sname = drvName;
-	foreach(load->waits,char*,wname) {
+	vforeach(load->waits,wname) {
 		strcpy(sname,wname);
 		j = 0;
 		do {
@@ -121,7 +124,8 @@ static bool loadDriver(sVector *loads,sDriverLoad *load) {
 }
 
 static sDriverLoad *getDriver(sVector *loads,char *name) {
-	foreach(loads,sDriverLoad*,load) {
+	sDriverLoad *load;
+	vforeach(loads,load) {
 		if(strcmp(load->name,name) == 0)
 			return load;
 	}

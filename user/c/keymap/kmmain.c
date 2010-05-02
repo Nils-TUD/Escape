@@ -72,7 +72,7 @@ int main(int argc,const char **argv) {
 		sFile *f = file_get(KEYMAP_DIR);
 		sVector *files = f->listFiles(f,false);
 		sDirEntry *e;
-		foreach(vec_iterator(files),e)
+		vforeach(files,e)
 			cout->writeln(cout,e->name);
 		vec_destroy(files,true);
 	}

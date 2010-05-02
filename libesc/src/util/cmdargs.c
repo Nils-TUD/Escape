@@ -27,6 +27,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#define MAX_ARGNAME_LEN		16
+
 static const char *cmdargs_getFirstFree(sCmdArgs *a);
 static void cmdargs_parse(sCmdArgs *a,const char *fmt,...);
 static s32 cmdargs_find(sCmdArgs *a,const char *begin,const char *end);
@@ -136,9 +138,10 @@ static void cmdargs_parse(sCmdArgs *a,const char *fmt,...) {
 		/* find the argument and set it */
 		i = cmdargs_find(a,begin,end);
 		if(required && i == -1) {
-			/* TODO actually we can't write to it since it may be in readonly memory */
-			*end = '\0';
-			THROW(CmdArgsException,"Required argument '%s' is missing",begin);
+			char argName[MAX_ARGNAME_LEN];
+			strncpy(argName,begin,end - begin);
+			argName[end - begin] = '\0';
+			THROW(CmdArgsException,"Required argument '%s' is missing",argName);
 		}
 		cmdargs_setVal(a,hasVal,begin == end,i,type,va_arg(ap,void*));
 

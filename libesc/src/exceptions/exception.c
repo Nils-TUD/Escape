@@ -23,9 +23,25 @@
 
 #define MAX_TRIES					16
 
+static void ex_destroy(sException *e);
+static const char *ex_toString(sException *e);
+
 sException *__exPtr = NULL;
 static int tryNo = 0;
 static sJumpEnv tries[MAX_TRIES];
+
+sException *ex_create(s32 id,s32 line,const char *file,u32 size) {
+	sException *e = (sException*)malloc(size);
+	if(!e)
+		error("Unable to create exception-object (%s:%d)",file,line);
+	e->handled = 0;
+	e->id = id;
+	e->line = line;
+	e->file = file;
+	e->destroy = (fExDestroy)ex_destroy;
+	e->toString = (fExToString)ex_toString;
+	return e;
+}
 
 sJumpEnv *ex_push(void) {
 	return tries + tryNo++;
@@ -43,4 +59,13 @@ void ex_unwind(void *exObj) {
 		sException *e = (sException*)exObj;
 		error("Unhandled exception in %s line %d: %s",e->file,e->line,e->toString(e));
 	}
+}
+
+static void ex_destroy(sException *e) {
+	free(e);
+}
+
+static const char *ex_toString(sException *e) {
+	UNUSED(e);
+	return "";
 }

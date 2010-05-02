@@ -21,21 +21,6 @@
 #include <esc/heap.h>
 #include <exceptions/outofmemory.h>
 
-static const char *ex_printOutOfMemoryException(sOutOfMemoryException *e);
-
 sOutOfMemoryException *ex_createOutOfMemoryException(s32 id,s32 line,const char *file) {
-	sOutOfMemoryException *e = (sOutOfMemoryException*)malloc(sizeof(sOutOfMemoryException));
-	if(!e)
-		error("Unable to create exception-object (%s:%d)",file,line);
-	e->handled = 0;
-	e->id = id;
-	e->line = line;
-	e->file = file;
-	e->toString = (fToString)ex_printOutOfMemoryException;
-	return e;
-}
-
-static const char *ex_printOutOfMemoryException(sOutOfMemoryException *e) {
-	UNUSED(e);
-	return "";
+	return (sOutOfMemoryException*)ex_create(id,line,file,sizeof(sOutOfMemoryException));
 }

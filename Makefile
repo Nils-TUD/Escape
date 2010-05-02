@@ -49,8 +49,8 @@ ifeq ($(BUILDDIR),$(abspath build/debug))
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 else
-	export CPPDEFFLAGS=$(CPPWFLAGS) -O3 -D NDEBUG
-	export CDEFFLAGS=$(CWFLAGS) -O3 -D NDEBUG
+	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -O3 -D NDEBUG
+	export CDEFFLAGS=$(CWFLAGS) -g0 -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 endif
 # flags for nasm

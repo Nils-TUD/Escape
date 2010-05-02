@@ -25,25 +25,26 @@
 
 #define MAX_EXMSG_LEN	64
 
+static void ex_destroyCmdArgsException(sCmdArgsException *e);
 static const char *ex_printCmdArgsException(sCmdArgsException *e);
 
 sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file,const char *msg,...) {
 	va_list ap;
-	sCmdArgsException *e = (sCmdArgsException*)malloc(sizeof(sCmdArgsException));
-	if(!e)
-		error("Unable to create exception-object (%s:%d)",file,line);
-	e->handled = 0;
-	e->id = id;
-	e->line = line;
-	e->file = file;
+	sCmdArgsException *e = (sCmdArgsException*)ex_create(id,line,file,sizeof(sCmdArgsException));
 	e->msg = malloc(MAX_EXMSG_LEN);
 	if(!e->msg)
 		error("Unable to alloc memory for exception-msg (%s:%d)",file,line);
 	va_start(ap,msg);
 	vsnprintf(e->msg,MAX_EXMSG_LEN,msg,ap);
 	va_end(ap);
-	e->toString = (fToString)ex_printCmdArgsException;
+	e->destroy = (fExDestroy)ex_destroyCmdArgsException;
+	e->toString = (fExToString)ex_printCmdArgsException;
 	return e;
+}
+
+static void ex_destroyCmdArgsException(sCmdArgsException *e) {
+	free(e->msg);
+	free(e);
 }
 
 static const char *ex_printCmdArgsException(sCmdArgsException *e) {

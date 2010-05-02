@@ -201,9 +201,9 @@ void *_malloc(u32 size) {
 	}
 
 #if DEBUG_ALLOC_N_FREE
-	if(getpid() == 14) {
+	if(getpid() == 24) {
 		u32 *trace = getStackTrace();
-		debugf("[A] a=%08x s=%d c=%08x, %08x\n",area->address,area->size,*(trace + 1),*(trace + 2));
+		debugf("[A] a=%08x s=%d c=%08x, %08x\n",area->address,area->size,*(trace + 2),*(trace + 3));
 	}
 #endif
 
@@ -280,9 +280,9 @@ void _free(void *addr) {
 		occupiedMap[getHash(addr)] = area->next;
 
 #if DEBUG_ALLOC_N_FREE
-	if(getpid() == 14) {
+	if(getpid() == 24) {
 		u32 *trace = getStackTrace();
-		debugf("[F] a=%08x s=%d c=%08x, %08x\n",area->address,area->size,*(trace + 1),*(trace + 2));
+		debugf("[F] a=%08x s=%d c=%08x, %08x\n",area->address,area->size,*(trace + 2),*(trace + 3));
 	}
 #endif
 

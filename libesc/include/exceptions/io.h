@@ -30,7 +30,8 @@ typedef struct {
 	s32 id;
 	s32 line;
 	const char *file;
-	fToString toString;
+	fExToString toString;
+	fExDestroy destroy;
 	s32 error;
 } sIOException;
 

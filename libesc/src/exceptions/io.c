@@ -25,15 +25,9 @@
 static const char *ex_printIOException(sIOException *e);
 
 sIOException *ex_createIOException(s32 id,s32 line,const char *file,s32 errorNo) {
-	sIOException *e = (sIOException*)malloc(sizeof(sIOException));
-	if(!e)
-		error("Unable to create exception-object (%s:%d)",file,line);
-	e->handled = 0;
-	e->id = id;
-	e->line = line;
-	e->file = file;
+	sIOException *e = (sIOException*)ex_create(id,line,file,sizeof(sIOException));
 	e->error = errorNo;
-	e->toString = (fToString)ex_printIOException;
+	e->toString = (fExToString)ex_printIOException;
 	return e;
 }
 

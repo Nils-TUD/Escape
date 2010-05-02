@@ -30,8 +30,9 @@ typedef struct {
 	s32 id;
 	s32 line;
 	const char *file;
+	fExToString toString;
+	fExDestroy destroy;
 	char *msg;
-	fToString toString;
 } sCmdArgsException;
 
 sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file,const char *msg,...);

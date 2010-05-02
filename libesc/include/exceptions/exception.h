@@ -64,7 +64,7 @@
 										if(!__ex->handled) \
 											ex_unwind(__ex); \
 										else \
-											free(__ex); \
+											__ex->destroy(__ex); \
 									} \
 									ex_pop(); \
 								}
@@ -73,18 +73,21 @@
 										ex_create##name(ID_##name,__LINE__,__FILE__,## __VA_ARGS__)))
 #define RETHROW(exObj)				(__ex = (sException*)(exObj))->handled = 0
 
-typedef const char *(*fToString)(void *e);
+typedef const char *(*fExToString)(void *e);
+typedef void (*fExDestroy)(void *e);
 
 typedef struct {
 	s32 handled;
 	s32 id;
 	s32 line;
 	const char *file;
-	fToString toString;
+	fExToString toString;
+	fExDestroy destroy;
 } sException;
 
 extern sException *__exPtr;
 
+sException *ex_create(s32 id,s32 line,const char *file,u32 size);
 sJumpEnv *ex_push(void);
 void ex_pop(void);
 void ex_unwind(void *exObj);

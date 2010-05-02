@@ -10,8 +10,8 @@ OBJS	:= $(addprefix $O,$(SRCS:.cc=.o))
 
 .PHONY: all clean html check dist distclean maintainer-clean
 
-all:	Config.mk config.h ${NAME}/config.h
-ALLTGTS	:= Config.mk config.h ${NAME}/config.h
+all:	Config.mk config.h
+ALLTGTS	:= Config.mk config.h
 
 ifdef BUILD_SHARED
 SLIBL	:= $(BUILD)/$(call slib_lnk,${NAME})
@@ -27,7 +27,7 @@ all:	${SLIBT}
 ${SLIBT}:	${OBJS}
 	@echo "Linking $(notdir $@) ..."
 	@${LD} -fPIC ${LDFLAGS} $(call slib_flags,$(subst $O,,$(call slib_lnk,${NAME}))) -o $@ $^ ${LIBS}
-	ln -s $(SLIBT) $(SLIBL)
+	ln -f -s $(SLIBT) $(SLIBL)
 	../../tools/disk.sh copy $@ /lib/$(call slib_lnk,${NAME})
 
 endif
@@ -138,10 +138,10 @@ distclean:	clean
 maintainer-clean: distclean
 	@if [ -d docs/html ]; then rm -f docs/html/*; rmdir docs/html; fi
 
-INPLACE_INCS := $(addprefix ${NAME}/,$(filter-out config.h,${INCS}))
-${INPLACE_INCS}: ${NAME}/%:	${NAME}/config.h
-${NAME}/config.h:	config.h
-	@echo "    Linking inplace header location ..."
+#INPLACE_INCS := $(addprefix ${NAME}/,$(filter-out config.h,${INCS}))
+#${INPLACE_INCS}: ${NAME}/%:	${NAME}/config.h
+#${NAME}/config.h:	config.h
+#	@echo "    Linking inplace header location ..."
 #	@rm -f ${NAME}; ln -s . ${NAME}
 
 ${OBJS}:		Makefile Config.mk config.h

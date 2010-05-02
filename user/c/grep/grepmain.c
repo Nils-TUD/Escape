@@ -18,68 +18,75 @@
  */
 
 #include <esc/common.h>
-#include <esc/cmdargs.h>
-#include <esc/dir.h>
-#include <esc/fileio.h>
-#include <esc/heap.h>
+#include <esc/proc.h>
+#include <io/streams.h>
+#include <io/ifilestream.h>
+#include <exceptions/io.h>
+#include <exceptions/cmdargs.h>
+#include <util/cmdargs.h>
 #include <string.h>
 #include <ctype.h>
 
 #define MAX_LINE_LEN		512
 
-static char buffer[MAX_LINE_LEN + 1];
-
-static bool matches(char *line,u32 len,char *pattern);
+static bool matches(const char *line,const char *pattern);
 static void strtolower(char *s);
+static void usage(const char *name) {
+	cerr->format(cerr,"Usage: %s <pattern> [<file>]\n",name);
+	cerr->format(cerr,"	<pattern> will be treated case-insensitive and is NOT a\n");
+	cerr->format(cerr,"	regular expression because we have no regexp-library yet ;)\n");
+	exit(EXIT_FAILURE);
+}
 
-int main(int argc,char *argv[]) {
-	tFile *file;
-	char *pattern;
-	s32 count;
+static char buffer[MAX_LINE_LEN];
+static char lbuffer[MAX_LINE_LEN];
 
-	if(argc <= 1 || argc > 3 || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s <pattern> [<file>]\n",argv[0]);
-		fprintf(stderr,"	<pattern> will be treated case-insensitive and is NOT a\n");
-		fprintf(stderr,"	regular expression because we have no regexp-library yet ;)\n");
-		return EXIT_FAILURE;
+int main(int argc,const char *argv[]) {
+	sIStream *in = cin;
+	char *pattern = NULL;
+	sCmdArgs *args;
+
+	TRY {
+		args = cmdargs_create(argc,argv,CA_MAX1_FREE);
+		args->parse(args,"=s*",&pattern);
+		if(args->isHelp)
+			usage(argv[0]);
 	}
-
-	pattern = argv[1];
-	file = stdin;
-	if(argc > 2) {
-		char *rpath = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-		if(rpath == NULL)
-			error("Unable to allocate mem for path");
-
-		abspath(rpath,MAX_PATH_LEN + 1,argv[2]);
-		file = fopen(rpath,"r");
-		if(file == NULL)
-			error("Unable to open '%s'",rpath);
-
-		free(rpath);
+	CATCH(CmdArgsException,e) {
+		cerr->format(cerr,"Invalid arguments: %s\n",e->toString(e));
+		usage(argv[0]);
 	}
+	ENDCATCH
 
-	strtolower(pattern);
-	while((count = fscanl(file,buffer,MAX_LINE_LEN)) >= 0) {
-		*(buffer + count) = '\0';
-		if(matches(buffer,count,pattern))
-			printf("%s\n",buffer);
+	TRY {
+		s32 count;
+		const char *inFile = args->getFirstFree(args);
+		if(inFile)
+			in = ifstream_open(inFile,IO_READ);
+
+		strtolower(pattern);
+		while(!in->eof(in)) {
+			count = in->readline(in,buffer,MAX_LINE_LEN);
+			if(count) {
+				if(matches(buffer,pattern))
+					cout->format(cout,"%s\n",buffer);
+			}
+		}
 	}
+	CATCH(IOException,e) {
+		error("Got IOException: %s",e->toString(e));
+	}
+	ENDCATCH
 
-	if(argc == 3)
-		fclose(file);
-
+	in->close(in);
+	args->destroy(args);
 	return EXIT_SUCCESS;
 }
 
-static bool matches(char *line,u32 len,char *pattern) {
-	bool res;
-	char *cpy = (char*)malloc(len + 1);
-	memcpy(cpy,line,len + 1);
-	strtolower(cpy);
-	res = strstr(cpy,pattern) != NULL;
-	free(cpy);
-	return res;
+static bool matches(const char *line,const char *pattern) {
+	strcpy(lbuffer,line);
+	strtolower(lbuffer);
+	return strstr(lbuffer,pattern) != NULL;
 }
 
 static void strtolower(char *s) {

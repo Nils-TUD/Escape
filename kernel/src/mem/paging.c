@@ -683,6 +683,17 @@ u32 paging_dbg_getPageCount(void) {
 	return count;
 }
 
+void paging_dbg_printPageOf(tPageDir pdir,u32 virt) {
+	u32 ptables = paging_getPTables(pdir);
+	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
+	if(pdirAddr[ADDR_TO_PDINDEX(virt)].present) {
+		sPTEntry *page = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
+		vid_printf("Page @ %08x: ",virt);
+		paging_dbg_printPage(page);
+		vid_printf("\n");
+	}
+}
+
 void paging_dbg_printCur(u8 parts) {
 	paging_dbg_printPDir(curPDir,parts);
 }

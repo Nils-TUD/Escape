@@ -58,28 +58,28 @@ static void test_flags(void) {
 		sCmdArgs *a;
 
 		flag1 = flag2 = false;
-		a = cmdargs_create(ARRAY_SIZE(argv1) - 1,argv1);
+		a = cmdargs_create(ARRAY_SIZE(argv1) - 1,argv1,0);
 		a->parse(a,format,&flag1,&flag2);
 		test_assertFalse(flag1);
 		test_assertFalse(flag2);
 		a->destroy(a);
 
 		flag1 = flag2 = false;
-		a = cmdargs_create(ARRAY_SIZE(argv2) - 1,argv2);
+		a = cmdargs_create(ARRAY_SIZE(argv2) - 1,argv2,0);
 		a->parse(a,format,&flag1,&flag2);
 		test_assertFalse(flag1);
 		test_assertFalse(flag2);
 		a->destroy(a);
 
 		flag1 = flag2 = false;
-		a = cmdargs_create(ARRAY_SIZE(argv3) - 1,argv3);
+		a = cmdargs_create(ARRAY_SIZE(argv3) - 1,argv3,0);
 		a->parse(a,format,&flag1,&flag2);
 		test_assertFalse(flag1);
 		test_assertTrue(flag2);
 		a->destroy(a);
 
 		flag1 = flag2 = false;
-		a = cmdargs_create(ARRAY_SIZE(argv4) - 1,argv4);
+		a = cmdargs_create(ARRAY_SIZE(argv4) - 1,argv4,0);
 		a->parse(a,format,&flag1,&flag2);
 		test_assertTrue(flag1);
 		test_assertTrue(flag2);
@@ -107,7 +107,7 @@ static void test_vals(void) {
 
 		a = NULL;
 		b = c = _long = d = 0;
-		args = cmdargs_create(ARRAY_SIZE(argv1) - 1,argv1);
+		args = cmdargs_create(ARRAY_SIZE(argv1) - 1,argv1,0);
 		args->parse(args,format,&a,&b,&c,&d,&_long);
 		test_assertTrue(a == NULL);
 		test_assertInt(b,0);
@@ -118,7 +118,7 @@ static void test_vals(void) {
 
 		a = NULL;
 		b = c = _long = d = 0;
-		args = cmdargs_create(ARRAY_SIZE(argv2) - 1,argv2);
+		args = cmdargs_create(ARRAY_SIZE(argv2) - 1,argv2,0);
 		args->parse(args,format,&a,&b,&c,&d,&_long);
 		test_assertStr(a,"test");
 		test_assertInt(b,4);
@@ -129,7 +129,7 @@ static void test_vals(void) {
 
 		a = NULL;
 		b = c = _long = d = 0;
-		args = cmdargs_create(ARRAY_SIZE(argv3) - 1,argv3);
+		args = cmdargs_create(ARRAY_SIZE(argv3) - 1,argv3,0);
 		args->parse(args,format,&a,&b,&c,&d,&_long);
 		test_assertStr(a,"test");
 		test_assertInt(b,0);
@@ -164,7 +164,7 @@ static void test_reqNFree(void) {
 		TRY {
 			b = nreq = ex = 0;
 			req = NULL;
-			a = cmdargs_create(ARRAY_SIZE(argv1) - 1,argv1);
+			a = cmdargs_create(ARRAY_SIZE(argv1) - 1,argv1,0);
 			a->parse(a,format,&b,&req,&nreq);
 		}
 		CATCH(CmdArgsException,e) {
@@ -184,7 +184,7 @@ static void test_reqNFree(void) {
 		TRY {
 			b = nreq = ex = 0;
 			req = NULL;
-			a = cmdargs_create(ARRAY_SIZE(argv2) - 1,argv2);
+			a = cmdargs_create(ARRAY_SIZE(argv2) - 1,argv2,0);
 			a->parse(a,format,&b,&req,&nreq);
 		}
 		CATCH(CmdArgsException,e) {
@@ -204,7 +204,7 @@ static void test_reqNFree(void) {
 		TRY {
 			b = nreq = ex = 0;
 			req = NULL;
-			a = cmdargs_create(ARRAY_SIZE(argv3) - 1,argv3);
+			a = cmdargs_create(ARRAY_SIZE(argv3) - 1,argv3,0);
 			a->parse(a,format,&b,&req,&nreq);
 		}
 		CATCH(CmdArgsException,e) {
@@ -224,7 +224,7 @@ static void test_reqNFree(void) {
 		TRY {
 			b = nreq = ex = 0;
 			req = NULL;
-			a = cmdargs_create(ARRAY_SIZE(argv4) - 1,argv4);
+			a = cmdargs_create(ARRAY_SIZE(argv4) - 1,argv4,0);
 			a->parse(a,format,&b,&req,&nreq);
 		}
 		CATCH(CmdArgsException,e) {

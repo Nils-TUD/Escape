@@ -35,6 +35,7 @@ static s32 ifstream_seek(sIStream *s,s32 offset,u32 whence);
 static bool ifstream_eof(sIStream *s);
 static void ifstream_close(sIStream *s);
 static void ifstream_unread(sIStream *s,char c);
+static char ifstream_getc(sIStream *s);
 static char ifstream_readc(sIStream *s);
 
 sIStream *ifstream_open(const char *file,u8 mode) {
@@ -53,6 +54,7 @@ sIStream *ifstream_openfd(tFD fd) {
 	sIStream *in = istream_open();
 	in->obj = s;
 	in->read = ifstream_read;
+	in->getc = ifstream_getc;
 	in->readc = ifstream_readc;
 	in->unread = ifstream_unread;
 	in->eof = ifstream_eof;
@@ -101,6 +103,13 @@ static void ifstream_unread(sIStream *s,char c) {
 		THROW(IOException,ERR_EOF);
 	fs->buffer[fs->pos - 1] = c;
 	fs->pos--;
+}
+
+static char ifstream_getc(sIStream *s) {
+	sIFStream *fs = (sIFStream*)s->obj;
+	char c = ifstream_readc(s);
+	fs->pos--;
+	return c;
 }
 
 static char ifstream_readc(sIStream *s) {

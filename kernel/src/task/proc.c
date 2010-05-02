@@ -251,21 +251,20 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 		goto errorVFS;
 	p->ownFrames = res;
 
-	/* clone regions */
+	/* set basic attributes */
 	p->pid = newPid;
-	/* give the process the same name (may be changed by exec) */
-	strcpy(p->command,cur->command);
-	p->regions = NULL;
-	p->regSize = 0;
-	if((res = vmm_cloneAll(p)) < 0)
-		goto errorPDir;
-
-	/* set page-dir and pages for segments */
 	p->parentPid = cur->pid;
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
 	if(isVM86)
 		p->flags |= P_VM86;
+	/* give the process the same name (may be changed by exec) */
+	strcpy(p->command,cur->command);
+	/* clone regions */
+	p->regions = NULL;
+	p->regSize = 0;
+	if((res = vmm_cloneAll(p)) < 0)
+		goto errorPDir;
 
 	/* create thread-list */
 	p->threads = sll_create();

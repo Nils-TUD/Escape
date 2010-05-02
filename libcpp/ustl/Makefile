@@ -23,10 +23,11 @@ SLINKS	+= ${SLIBS}
 endif
 ALLTGTS	+= ${SLIBT} ${SLINKS}
 
-all:	${SLIBT} ${SLINKS}
+all:	${SLIBT}
 ${SLIBT}:	${OBJS}
 	@echo "Linking $(notdir $@) ..."
 	@${LD} -fPIC ${LDFLAGS} $(call slib_flags,$(subst $O,,$(call slib_lnk,${NAME}))) -o $@ $^ ${LIBS}
+	ln -s $(SLIBT) $(SLIBL)
 	../../tools/disk.sh copy $@ /lib/$(call slib_lnk,${NAME})
 
 endif
@@ -107,7 +108,7 @@ endif
 ################ Maintenance ###########################################
 
 clean:
-	@[ ! -d ./$O ] || rm -rf ./$O
+	@[ ! -d ./$O ] || rm -rf ./$O $(SLIBL)
 
 html:	${SRCS} ${INCS} ${NAME}doc.in
 	@${DOXYGEN} ${NAME}doc.in

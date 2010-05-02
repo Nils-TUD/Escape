@@ -25,8 +25,15 @@
 
 #define ID_CmdArgsException					2
 
-typedef sException sCmdArgsException;;
+typedef struct {
+	s32 handled;
+	s32 id;
+	s32 line;
+	const char *file;
+	char *msg;
+	fToString toString;
+} sCmdArgsException;
 
-sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file);
+sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file,const char *msg,...);
 
 #endif /* CMDARGSEXCEPTION_H_ */

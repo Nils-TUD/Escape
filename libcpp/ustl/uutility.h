@@ -43,7 +43,7 @@ namespace ustl {
 #ifndef NDEBUG
 #	define DebugArg(x)	x
 #else
-#	define DebugArg(x)
+#	define DebugArg(x)	x
 #endif
 
 /// Shorthand for container iteration.

@@ -25,6 +25,7 @@
 
 typedef struct sIStream sIStream;
 typedef s32 (*fRead)(sIStream *s,void *buffer,u32 count);
+typedef char (*fGetc)(sIStream *s);
 typedef char (*fReadc)(sIStream *s);
 typedef s32 (*fReads)(sIStream *s,char *str,u32 size);
 typedef s32 (*fReadline)(sIStream *s,char *str,u32 size);
@@ -37,6 +38,7 @@ typedef void (*fInClose)(sIStream *s);
 
 struct sIStream {
 	fRead read;
+	fGetc getc;
 	fReadc readc;
 	fReads reads;
 	fReadline readline;

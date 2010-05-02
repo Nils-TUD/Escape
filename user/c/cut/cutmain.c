@@ -18,108 +18,117 @@
  */
 
 #include <esc/common.h>
-#include <esc/fileio.h>
-#include <esc/dir.h>
-#include <esc/cmdargs.h>
 #include <esc/proc.h>
+#include <exceptions/cmdargs.h>
+#include <exceptions/io.h>
+#include <io/streams.h>
+#include <io/istringstream.h>
+#include <io/ifilestream.h>
+#include <io/file.h>
+#include <util/cmdargs.h>
 #include <string.h>
-#include <ctype.h>
+
 #define MAX_LINE_LEN	255
 
 static void printFields(char *line,const char *delim,s32 first,s32 last);
 static void parseFields(const char *fields,s32 *first,s32 *last);
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s -f <fields> [-d <delim>] [<file>]\n",name);
-	fprintf(stderr,"	-f: <fields> may be:\n");
-	fprintf(stderr,"		N		N'th field, counted from 1\n");
-	fprintf(stderr,"		N-		from N'th field, to end of line\n");
-	fprintf(stderr,"		N-M		from N'th to M'th (included) field\n");
-	fprintf(stderr,"		-M		from first to M'th (included) field\n");
-	fprintf(stderr,"	-d: use <delim> as delimiter instead of TAB\n");
+	cerr->format(cerr,"Usage: %s -f <fields> [-d <delim>] [<file>]\n",name);
+	cerr->format(cerr,"	-f: <fields> may be:\n");
+	cerr->format(cerr,"		N		N'th field, counted from 1\n");
+	cerr->format(cerr,"		N-		from N'th field, to end of line\n");
+	cerr->format(cerr,"		N-M		from N'th to M'th (included) field\n");
+	cerr->format(cerr,"		-M		from first to M'th (included) field\n");
+	cerr->format(cerr,"	-d: use <delim> as delimiter instead of TAB\n");
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,char **argv) {
+int main(int argc,const char **argv) {
 	char line[MAX_LINE_LEN];
-	s32 i;
 	s32 first = 1,last = -1;
+	char *fields = NULL;
 	char *delim = (char*)"\t";
-	char *filename = NULL;
-	tFile *f = stdin;
+	sCmdArgs *args;
 
-	if(argc < 3 || isHelpCmd(argc,argv))
+	TRY {
+		args = cmdargs_create(argc,argv,0);
+		args->parse(args,"f=s* d=s",&fields,&delim);
+		if(args->isHelp)
+			usage(argv[0]);
+	}
+	CATCH(CmdArgsException,e) {
+		cerr->format(cerr,"Invalid arguments: %s\n",e->toString(e));
 		usage(argv[0]);
+	}
+	ENDCATCH
 
-	for(i = 1; i < argc; i++) {
-		if(argv[i][0] == '-') {
-			switch(argv[i][1]) {
-				case 'f':
-					if(i >= argc - 1)
-						usage(argv[0]);
-					parseFields(argv[i + 1],&first,&last);
-					i++;
-					break;
-				case 'd':
-					if(i >= argc - 1)
-						usage(argv[0]);
-					delim = argv[i + 1];
-					i++;
-					break;
+	parseFields(fields,&first,&last);
+
+	sIterator it = args->getFreeArgs(args);
+	if(!it.hasNext(&it)) {
+		while(cin->readline(cin,line,sizeof(line)) > 0)
+			printFields(line,delim,first,last);
+	}
+	else {
+		while(it.hasNext(&it)) {
+			sIStream *s = NULL;
+			sFile *f = NULL;
+			const char *arg = (const char*)it.next(&it);
+			TRY {
+				f = file_get(arg);
+				if(f->isDir(f))
+					cerr->format(cerr,"'%s' is a directory!\n",arg);
+				else {
+					s = ifstream_open(arg,IO_READ);
+					while(s->readline(s,line,sizeof(line)) > 0)
+						printFields(line,delim,first,last);
+				}
 			}
+			CATCH(IOException,e) {
+				cerr->format(cerr,"Unable to read file '%s': %s\n",arg,e->toString(e));
+			}
+			ENDCATCH
+			if(f)
+				f->destroy(f);
+			if(s)
+				s->close(s);
 		}
-		else
-			filename = argv[i];
 	}
 
-	if(filename != NULL) {
-		char apath[MAX_PATH_LEN];
-		abspath(apath,sizeof(apath),filename);
-		f = fopen(apath,"r");
-		if(!f)
-			error("Unable to open '%s'",apath);
-	}
-
-	while(fscanl(f,line,sizeof(line)) > 0) {
-		printFields(line,delim,first,last);
-	}
-
-	if(filename != NULL)
-		fclose(f);
+	args->destroy(args);
 	return EXIT_SUCCESS;
 }
 
 static void printFields(char *line,const char *delim,s32 first,s32 last) {
 	if(first == 0 && last == -1)
-		printf("%s\n",line);
+		cout->format(cout,"%s\n",line);
 	else {
 		s32 i = 1;
 		char *tok = strtok(line,delim);
 		while(tok != NULL) {
 			if(i >= first && (last == -1 || i <= last))
-				printf("%s ",tok);
+				cout->format(cout,"%s ",tok);
 			tok = strtok(NULL,delim);
 			i++;
 		}
-		printf("\n");
+		cout->writec(cout,'\n');
 	}
 }
 
 static void parseFields(const char *fields,s32 *first,s32 *last) {
-	if(*fields == '-')
+	sIStream *s = isstream_open(fields);
+	if(s->getc(s) == '-')
 		*first = 1;
-	else {
-		sscanf(fields,"%d",first);
-		while(isdigit(*fields))
-			fields++;
-	}
-	if(*fields == '-') {
-		fields++;
-		if(*fields != '\0')
-			sscanf(fields,"%d",last);
+	else
+		s->format(s,"%d",first);
+	if(!s->eof(s) && s->readc(s) == '-') {
+		if(!s->eof(s))
+			s->format(s,"%d",last);
 		else
 			*last = -1;
 	}
 	else
 		*last = *first;
+	s->close(s);
 }

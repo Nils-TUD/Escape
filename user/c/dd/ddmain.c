@@ -18,118 +18,87 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <esc/fileio.h>
-#include <esc/dir.h>
-#include <esc/heap.h>
-#include <esc/cmdargs.h>
 #include <esc/signals.h>
 #include <esc/proc.h>
-#include <string.h>
-#include <ctype.h>
-static void usage(char *name) {
-	fprintf(stderr,"Usage: %s [if=<file>] [of=<file>] [bs=N] [count=N]\n",name);
-	fprintf(stderr,"	You can use the suffixes K, M and G to specify N\n");
+#include <mem/heap.h>
+#include <exceptions/io.h>
+#include <exceptions/cmdargs.h>
+#include <io/streams.h>
+#include <io/ifilestream.h>
+#include <io/ofilestream.h>
+#include <util/cmdargs.h>
+
+static void usage(const char *name) {
+	cerr->format(cerr,"Usage: %s [if=<file>] [of=<file>] [bs=N] [count=N]\n",name);
+	cerr->format(cerr,"	You can use the suffixes K, M and G to specify N\n");
 	exit(EXIT_FAILURE);
 }
 
-static u32 scanNumber(const char *str);
 static void interrupted(tSig sig,u32 data);
 
 static bool run = true;
 
-int main(int argc,char *argv[]) {
-	s32 i,res;
+int main(int argc,const char *argv[]) {
 	u32 bs = 4096;
 	u32 count = 0;
 	u64 total = 0;
-	u64 limit;
-	u8 *buffer;
 	char *inFile = NULL;
 	char *outFile = NULL;
-	tFD in = STDIN_FILENO;
-	tFD out = STDOUT_FILENO;
-	if(isHelpCmd(argc,argv))
+	sIStream *in = cin;
+	sOStream *out = cout;
+	sCmdArgs *args;
+
+	TRY {
+		args = cmdargs_create(argc,argv,CA_NO_DASHES | CA_NO_FREE | CA_REQ_EQ);
+		args->parse(args,"if=s of=s bs=k count=k",&inFile,&outFile,&bs,&count);
+		if(args->isHelp)
+			usage(argv[0]);
+	}
+	CATCH(CmdArgsException,e) {
+		cerr->format(cerr,"Invalid arguments: %s\n",e->toString(e));
 		usage(argv[0]);
+	}
+	ENDCATCH
 
 	if(setSigHandler(SIG_INTRPT,interrupted) < 0)
 		error("Unable to set sig-handler for SIG_INTRPT");
 
-	for(i = 1; i < argc; i++) {
-		if(strncmp(argv[i],"if=",3) == 0)
-			inFile = argv[i] + 3;
-		else if(strncmp(argv[i],"of=",3) == 0)
-			outFile = argv[i] + 3;
-		else if(strncmp(argv[i],"bs=",3) == 0)
-			bs = scanNumber(argv[i] + 3);
-		else if(strncmp(argv[i],"count=",6) == 0)
-			count = scanNumber(argv[i] + 6);
-		else
-			usage(argv[0]);
+	TRY {
+		if(inFile)
+			in = ifstream_open(inFile,IO_READ);
+		if(outFile)
+			out = ofstream_open(outFile,IO_WRITE | IO_TRUNCATE | IO_CREATE);
 	}
-
-	if(inFile) {
-		char apath[MAX_PATH_LEN];
-		abspath(apath,sizeof(apath),inFile);
-		in = open(apath,IO_READ);
-		if(in < 0)
-			error("Unable to open '%s' for reading",apath);
+	CATCH(IOException,e) {
+		error("Unable to open stream: %s",e->toString(e));
 	}
-	if(outFile) {
-		char apath[MAX_PATH_LEN];
-		abspath(apath,sizeof(apath),outFile);
-		out = open(apath,IO_WRITE | IO_TRUNCATE | IO_CREATE);
-		if(out < 0)
-			error("Unable to open '%s' for writing",apath);
-	}
+	ENDCATCH
 
-	buffer = malloc(bs);
-	if(!buffer)
-		error("Unable to alloc %u bytes of mem",bs);
-
-	limit = (u64)count * bs;
-	while(run && (!count || total < limit)) {
-		if((res = read(in,buffer,bs)) <= 0) {
-			if(res < 0)
-				printe("Unable to read");
-			break;
+	TRY {
+		s32 res;
+		u8 *buffer = heap_alloc(bs);
+		u64 limit = (u64)count * bs;
+		while(run && (!count || total < limit)) {
+			if((res = in->read(in,buffer,bs)) <= 0)
+				break;
+			out->write(out,buffer,res);
+			total += res;
 		}
-		if(write(out,buffer,res) < res)
-			error("Unable to write");
-		total += res;
+		heap_free(buffer);
 	}
+	CATCH(IOException,e) {
+		error("Unable to transfer: %s",e->toString(e));
+	}
+	ENDCATCH
 
-	printf("Wrote %Lu bytes in %.3f packages, each %u bytes long\n",
+	cout->format(cout,"Wrote %Lu bytes in %.3f packages, each %u bytes long\n",
 			total,(float)(total / (double)bs),bs);
 
-	free(buffer);
-	if(inFile)
-		close(in);
-	if(outFile)
-		close(out);
+	out->close(out);
+	in->close(in);
 	unsetSigHandler(SIG_INTRPT);
+	args->destroy(args);
 	return EXIT_SUCCESS;
-}
-
-static u32 scanNumber(const char *str) {
-	u32 val = 0;
-	while(isdigit(*str))
-		val = val * 10 + (*str++ - '0');
-	switch(*str) {
-		case 'K':
-		case 'k':
-			val *= 1024;
-			break;
-		case 'M':
-		case 'm':
-			val *= 1024 * 1024;
-			break;
-		case 'G':
-		case 'g':
-			val *= 1024 * 1024 * 1024;
-			break;
-	}
-	return val;
 }
 
 static void interrupted(tSig sig,u32 data) {

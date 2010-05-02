@@ -403,7 +403,7 @@ static void vfsr_readRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size
 			req->count = rmsg->args.arg1;
 			req->state = REQ_STATE_WAIT_DATA;
 		}
-		else {
+		else if(req->state == REQ_STATE_WAIT_DATA) {
 			/* ok, it's the data */
 			if(data) {
 				/* map the buffer we have to copy it to */

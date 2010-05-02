@@ -19,11 +19,16 @@
 
 #include <esc/common.h>
 #include <esc/heap.h>
+#include <esc/fileio.h>
 #include <exceptions/cmdargs.h>
+#include <stdarg.h>
+
+#define MAX_EXMSG_LEN	64
 
 static const char *ex_printCmdArgsException(sCmdArgsException *e);
 
-sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file) {
+sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file,const char *msg,...) {
+	va_list ap;
 	sCmdArgsException *e = (sCmdArgsException*)malloc(sizeof(sCmdArgsException));
 	if(!e)
 		error("Unable to create exception-object (%s:%d)",file,line);
@@ -31,11 +36,17 @@ sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file) {
 	e->id = id;
 	e->line = line;
 	e->file = file;
+	e->msg = malloc(MAX_EXMSG_LEN);
+	if(!e->msg)
+		error("Unable to alloc memory for exception-msg (%s:%d)",file,line);
+	va_start(ap,msg);
+	vsnprintf(e->msg,MAX_EXMSG_LEN,msg,ap);
+	va_end(ap);
 	e->toString = (fToString)ex_printCmdArgsException;
 	return e;
 }
 
 static const char *ex_printCmdArgsException(sCmdArgsException *e) {
 	UNUSED(e);
-	return "An required argument is missing";
+	return e->msg;
 }

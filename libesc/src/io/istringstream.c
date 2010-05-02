@@ -31,6 +31,7 @@ static s32 isstream_seek(sIStream *s,s32 offset,u32 whence);
 static bool isstream_eof(sIStream *s);
 static void isstream_close(sIStream *s);
 static void isstream_unread(sIStream *s,char c);
+static char isstream_getc(sIStream *s);
 static char isstream_readc(sIStream *s);
 
 sIStream *isstream_open(const char *str) {
@@ -38,6 +39,7 @@ sIStream *isstream_open(const char *str) {
 	sIStream *in = istream_open();
 	in->obj = s;
 	in->read = isstream_read;
+	in->getc = isstream_getc;
 	in->readc = isstream_readc;
 	in->unread = isstream_unread;
 	in->eof = isstream_eof;
@@ -77,6 +79,7 @@ static s32 isstream_seek(sIStream *s,s32 offset,u32 whence) {
 
 static bool isstream_eof(sIStream *s) {
 	sISStream *ss = (sISStream*)s->obj;
+	/* null-terminated */
 	return ss->pos >= ss->length;
 }
 
@@ -95,9 +98,16 @@ static void isstream_unread(sIStream *s,char c) {
 	ss->pos--;
 }
 
+static char isstream_getc(sIStream *s) {
+	sISStream *ss = (sISStream*)s->obj;
+	if(ss->pos >= ss->length)
+		THROW(IOException,ERR_EOF);
+	return ss->buffer[ss->pos];
+}
+
 static char isstream_readc(sIStream *s) {
 	sISStream *ss = (sISStream*)s->obj;
-	if(ss->pos > ss->length)
+	if(ss->pos >= ss->length)
 		THROW(IOException,ERR_EOF);
 	return ss->buffer[ss->pos++];
 }

@@ -209,7 +209,7 @@ static void vfsdrv_readReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 siz
 			if(wasEmpty && !node->data.driver.isEmpty)
 				thread_wakeupAll(node,EV_DATA_READABLE | EV_RECEIVED_MSG);
 		}
-		else {
+		else if(req->state == REQ_STATE_WAIT_DATA) {
 			/* ok, it's the data */
 			if(data) {
 				/* map the buffer we have to copy it to */

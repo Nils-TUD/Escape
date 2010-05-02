@@ -245,7 +245,8 @@ static void cmdRead(tFD fd) {
 	}
 	send(fd,MSG_FS_READ_RESP,&msg,sizeof(msg.args));
 	if(buffer) {
-		send(fd,MSG_FS_READ_RESP,buffer,count);
+		if(msg.args.arg1 > 0)
+			send(fd,MSG_FS_READ_RESP,buffer,count);
 		free(buffer);
 	}
 

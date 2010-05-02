@@ -18,19 +18,16 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <esc/dir.h>
-#include <esc/fileio.h>
-#include <esc/cmdargs.h>
-#include <esc/heap.h>
 #include <esc/proc.h>
-#include <string.h>
-#include <messages.h>
-#include <ctype.h>
+#include <io/streams.h>
+#include <io/ifilestream.h>
+#include <exceptions/io.h>
+#include <exceptions/cmdargs.h>
+#include <util/cmdargs.h>
 #include <width.h>
+#include <ctype.h>
 
-#define BUF_SIZE 512
-
+#define BUF_SIZE		512
 #define NPRINT_CHAR		'.'
 #define OUT_FORMAT_OCT	'o'
 #define OUT_FORMAT_DEC	'd'
@@ -40,13 +37,13 @@
 static char ascii[MAX_BASE];
 static u8 buffer[BUF_SIZE];
 
-static void usage(char *name) {
-	fprintf(stderr,"Usage: %s [-n <bytes>] [-f o|h|d] [<file>]\n",name);
-	fprintf(stderr,"	-n <bytes>	: Read the first <bytes> bytes\n");
-	fprintf(stderr,"	-f o|h|d	: The base to print the bytes in:\n");
-	fprintf(stderr,"					o = octal\n");
-	fprintf(stderr,"					h = hexadecimal\n");
-	fprintf(stderr,"					d = decimal\n");
+static void usage(const char *name) {
+	cerr->format(cerr,"Usage: %s [-n <bytes>] [-f o|h|d] [<file>]\n",name);
+	cerr->format(cerr,"	-n <bytes>	: Read the first <bytes> bytes\n");
+	cerr->format(cerr,"	-f o|h|d	: The base to print the bytes in:\n");
+	cerr->format(cerr,"					o = octal\n");
+	cerr->format(cerr,"					h = hexadecimal\n");
+	cerr->format(cerr,"					d = decimal\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -55,73 +52,41 @@ static void printAscii(u8 base,s32 pos) {
 	if(pos > 0) {
 		while(pos % base != 0) {
 			ascii[pos % base] = ' ';
-			printf("%*s ",getuwidth(0xFF,base)," ");
+			cout->format(cout,"%*s ",getuwidth(0xFF,base)," ");
 			pos++;
 		}
-		printc('|');
+		cout->writec(cout,'|');
 		for(j = 0; j < base; j++)
-			printc(ascii[j]);
-		printc('|');
+			cout->writec(cout,ascii[j]);
+		cout->writec(cout,'|');
 	}
-	printf("\n");
+	cout->writec(cout,'\n');
 }
 
-int main(int argc,char *argv[]) {
-	tFile *file;
-	char *s;
-	char *path = NULL;
+int main(int argc,const char *argv[]) {
+	sIStream *in = cin;
 	u8 base = 16;
 	char format = OUT_FORMAT_HEX;
-	s32 i,x,c,count = -1;
+	s32 count = -1;
+	sCmdArgs *args;
 
-	if(isHelpCmd(argc,argv))
+	TRY {
+		args = cmdargs_create(argc,argv,CA_MAX1_FREE);
+		args->parse(args,"n=d f=c",&count,&format);
+		if(args->isHelp)
+			usage(argv[0]);
+	}
+	CATCH(CmdArgsException,e) {
+		cerr->format(cerr,"Invalid arguments: %s\n",e->toString(e));
 		usage(argv[0]);
-
-	for(i = 1; i < argc; i++) {
-		s = argv[i];
-		if(*s == '-') {
-			s++;
-			while(*s) {
-				switch(*s) {
-					case 'n':
-						if(i >= argc - 1)
-							usage(argv[0]);
-						count = atoi(argv[i + 1]);
-						if(count <= 0)
-							usage(argv[0]);
-						break;
-					case 'f':
-						if(i >= argc - 1)
-							usage(argv[0]);
-						format = argv[i + 1][0];
-						if(format != OUT_FORMAT_DEC && format != OUT_FORMAT_HEX &&
-								format != OUT_FORMAT_OCT)
-							usage(argv[0]);
-						break;
-					default:
-						usage(argv[0]);
-						break;
-				}
-				s++;
-			}
-		}
-		else
-			path = s;
 	}
+	ENDCATCH
 
-	file = stdin;
-	if(path != NULL) {
-		char *rpath = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-		if(rpath == NULL)
-			error("Unable to allocate mem for path");
-
-		abspath(rpath,MAX_PATH_LEN + 1,path);
-		file = fopen(rpath,"r");
-		if(file == NULL)
-			error("Unable to open '%s'",rpath);
-
-		free(rpath);
-	}
+	/* TODO perhaps cmdargs should provide a possibility to restrict the values of an option */
+	/* like 'arg=[ohd]' */
+	if(format != OUT_FORMAT_DEC && format != OUT_FORMAT_HEX &&
+			format != OUT_FORMAT_OCT)
+		usage(argv[0]);
 
 	switch(format) {
 		case OUT_FORMAT_DEC:
@@ -135,48 +100,56 @@ int main(int argc,char *argv[]) {
 			break;
 	}
 
-	i = 0;
-	while(count == -1 || count > 0) {
-		c = count != -1 ? MIN(count,BUF_SIZE) : BUF_SIZE;
-		c = fread(buffer,sizeof(u8),c,file);
-		if(c == 0) {
-			if(ferror(file))
-				error("Unable to read");
-			break;
-		}
+	TRY {
+		s32 i;
+		const char *path = args->getFirstFree(args);
+		if(path != NULL)
+			in = ifstream_open(path,IO_READ);
 
-		for(x = 0; x < c; x++, i++) {
-			if(i % base == 0) {
-				if(i > 0)
-					printAscii(base,i);
-				printf("%08x: ",i);
+		i = 0;
+		while(count < 0 || count > 0) {
+			s32 x,c;
+			c = count >= 0 ? MIN(count,BUF_SIZE) : BUF_SIZE;
+			c = in->read(in,buffer,c);
+			if(c == 0)
+				break;
+
+			for(x = 0; x < c; x++, i++) {
+				if(i % base == 0) {
+					if(i > 0)
+						printAscii(base,i);
+					cout->format(cout,"%08x: ",i);
+				}
+
+				if(isprint(buffer[x]) && buffer[x] < 0x80 && !isspace(buffer[x]))
+					ascii[i % base] = buffer[x];
+				else
+					ascii[i % base] = NPRINT_CHAR;
+				switch(format) {
+					case OUT_FORMAT_DEC:
+						cout->format(cout,"%03d ",buffer[x]);
+						break;
+					case OUT_FORMAT_HEX:
+						cout->format(cout,"%02x ",buffer[x]);
+						break;
+					case OUT_FORMAT_OCT:
+						cout->format(cout,"%03o ",buffer[x]);
+						break;
+				}
 			}
 
-			if(isprint(buffer[x]) && buffer[x] < 0x80 && !isspace(buffer[x]))
-				ascii[i % base] = buffer[x];
-			else
-				ascii[i % base] = NPRINT_CHAR;
-			switch(format) {
-				case OUT_FORMAT_DEC:
-					printf("%03d ",buffer[x]);
-					break;
-				case OUT_FORMAT_HEX:
-					printf("%02x ",buffer[x]);
-					break;
-				case OUT_FORMAT_OCT:
-					printf("%03o ",buffer[x]);
-					break;
-			}
+			if(count >= 0)
+				count -= c;
 		}
 
-		if(count != -1)
-			count -= c;
+		printAscii(base,i);
 	}
+	CATCH(IOException,e) {
+		error("Got an IOException: %s",e->toString(e));
+	}
+	ENDCATCH
 
-	printAscii(base,i);
-
-	if(path != NULL)
-		fclose(file);
-
+	in->close(in);
+	args->destroy(args);
 	return EXIT_SUCCESS;
 }

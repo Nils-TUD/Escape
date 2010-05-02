@@ -307,6 +307,9 @@ s32 vfsrw_writeDrvUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data
 
 	UNUSED(file);
 
+	/*vid_printf("%s sent msg %d with %d bytes to %s\n",
+			thread_getById(tid)->proc->command,id,size,n->parent->name);*/
+
 	/* drivers write to the receive-list (which will be read by other processes) */
 	if(n->parent->owner == tid) {
 		/* if it is from a driver or fs, don't enqueue it but pass it directly to
@@ -335,9 +338,6 @@ s32 vfsrw_writeDrvUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data
 	msg->id = id;
 	if(data)
 		memcpy(msg + 1,data,size);
-
-	/*vid_printf("%s sent msg %d to %s\n",thread_getById(tid)->proc->command,
-					msg->id,n->parent->name);*/
 
 	/* append to list */
 	if(!sll_append(*list,msg)) {

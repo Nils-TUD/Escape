@@ -45,6 +45,7 @@
 
 static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr);
 static u8 *vmm_getPageFlag(sVMRegion *reg,u32 addr);
+static tVMRegNo vmm_getRNoByRegion(sProc *p,sRegion *reg);
 static tVMRegNo vmm_getRegionOf(sProc *p,u32 addr);
 static s32 vmm_findRegIndex(sProc *p,bool text);
 static u32 vmm_findFreeStack(sProc *p,u32 byteCount);
@@ -250,8 +251,6 @@ bool vmm_pagefault(u32 addr) {
 	flags = vmm_getPageFlag(vm,addr);
 	addr &= ~(PAGE_SIZE - 1);
 	if(*flags & PF_DEMANDLOAD) {
-		if(addr == 0x1aff0)
-			rno = rno + 1;
 		if(vmm_demandLoad(vm,flags,addr)) {
 			*flags &= ~PF_DEMANDLOAD;
 			return true;
@@ -464,6 +463,9 @@ error:
 s32 vmm_growStackTo(sThread *t,u32 addr) {
 	sVMRegion *vm = REG(t->proc,t->stackRegion);
 	addr &= ~(PAGE_SIZE - 1);
+	/* report failure if its outside (upper) of the region */
+	if(addr >= vm->virt + ROUNDUP(vm->reg->byteCount))
+		return ERR_NOT_ENOUGH_MEM;
 	if(addr < vm->virt) {
 		s32 newPages = (vm->virt - addr) / PAGE_SIZE;
 		if(newPages > 0)
@@ -577,7 +579,11 @@ static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
 						/* map into all pagedirs */
 						for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
 							sProc *mp = (sProc*)n->data;
-							paging_mapTo(mp->pagedir,addr,&frame,1,mapFlags);
+							/* the region may be mapped to a different virtual address */
+							tVMRegNo mprno = vmm_getRNoByRegion(mp,vm->reg);
+							sVMRegion *mpreg = REG(mp,mprno);
+							assert(mprno != -1);
+							paging_mapTo(mp->pagedir,mpreg->virt + (addr - vm->virt),&frame,1,mapFlags);
 							if(vm->reg->flags & RF_SHAREABLE)
 								mp->sharedFrames++;
 							else
@@ -599,6 +605,16 @@ static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
 
 static u8 *vmm_getPageFlag(sVMRegion *reg,u32 addr) {
 	return reg->reg->pageFlags + (addr - reg->virt) / PAGE_SIZE;
+}
+
+static tVMRegNo vmm_getRNoByRegion(sProc *p,sRegion *reg) {
+	u32 i;
+	for(i = 0; i < p->regSize; i++) {
+		sVMRegion *vm = REG(p,i);
+		if(vm && vm->reg == reg)
+			return i;
+	}
+	return -1;
 }
 
 static tVMRegNo vmm_getRegionOf(sProc *p,u32 addr) {

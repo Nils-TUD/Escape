@@ -36,20 +36,13 @@ static void usage(const char *name) {
 
 int main(int argc,const char *argv[]) {
 	/* no exception here since we don't have required- or value-args */
-	sCmdArgs *args = cmdargs_create(argc,argv);
+	sCmdArgs *args = cmdargs_create(argc,argv,0);
 	args->parse(args,"");
 	if(args->isHelp)
 		usage(argv[0]);
 
-	if(argc < 2) {
-		TRY {
-			printStream(cin);
-		}
-		CATCH(IOException,e) {
-			cerr->format(cerr,"Unable to read from STDIN: %s\n",e->toString(e));
-		}
-		ENDCATCH
-	}
+	if(argc < 2)
+		printStream(cin);
 	else {
 		sIterator it = args->getFreeArgs(args);
 		while(it.hasNext(&it)) {
@@ -76,6 +69,7 @@ int main(int argc,const char *argv[]) {
 		}
 	}
 
+	args->destroy(args);
 	return EXIT_SUCCESS;
 }
 

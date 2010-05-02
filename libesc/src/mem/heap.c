@@ -24,21 +24,21 @@
 
 void *heap_alloc(u32 size) {
 	void *p = malloc(size);
-	if(!p)
+	if(size && !p)
 		THROW(OutOfMemoryException);
 	return p;
 }
 
 void *heap_realloc(void *p,u32 size) {
 	p = realloc(p,size);
-	if(!p)
+	if(size && !p)
 		THROW(OutOfMemoryException);
 	return p;
 }
 
 void *heap_calloc(u32 size) {
 	void *p = calloc(size,1);
-	if(!p)
+	if(size && !p)
 		THROW(OutOfMemoryException);
 	return p;
 }

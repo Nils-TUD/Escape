@@ -18,22 +18,20 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/fileio.h>
+#include <io/streams.h>
+
 int main(void) {
 	u32 i,j;
-	prints("    ");
+	cout->writes(cout,"    ");
 	for(i = 0; i < 16; i++)
-		printf("%02x ",i << 4);
-	printc('\n');
+		cout->format(cout,"%02x ",i << 4);
+	cout->writec(cout,'\n');
 
 	for(i = 0; i < 16; i++) {
-		printf("%02x: ",i);
+		cout->format(cout,"%02x: ",i);
 		for(j = 0; j < 16; j++)
-			printf("\033[co;%d;%d]##\033[co] ",i,j);
-		printc('\n');
+			cout->format(cout,"\033[co;%d;%d]##\033[co] ",i,j);
+		cout->writec(cout,'\n');
 	}
-	flush();
-
 	return EXIT_SUCCESS;
 }

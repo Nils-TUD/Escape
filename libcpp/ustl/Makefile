@@ -142,7 +142,7 @@ INPLACE_INCS := $(addprefix ${NAME}/,$(filter-out config.h,${INCS}))
 ${INPLACE_INCS}: ${NAME}/%:	${NAME}/config.h
 ${NAME}/config.h:	config.h
 	@echo "    Linking inplace header location ..."
-	@rm -f ${NAME}; ln -s . ${NAME}
+#	@rm -f ${NAME}; ln -s . ${NAME}
 
 ${OBJS}:		Makefile Config.mk config.h
 Config.mk:		Config.mk.in

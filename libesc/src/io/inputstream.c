@@ -227,16 +227,18 @@ static s32 istream_readAll(sIStream *s,sString *str) {
 	return str->len;
 }
 
-static s32 istream_readfstr(sIStream *s,s32 length,char *str) {
+static s32 istream_readfstr(sIStream *s,s32 length,char *volatile str) {
 	TRY {
+		/* make copy to prevent gcc to warn about possible clobbering */
+		s32 clength = length;
 		char rc;
-		while(length != 0) {
+		while(clength != 0) {
 			rc = s->readc(s);
 			if(!isspace(rc)) {
 				if(str)
 					*str++ = rc;
-				if(length > 0)
-					length--;
+				if(clength > 0)
+					clength--;
 			}
 			else {
 				s->unread(s,rc);
@@ -260,49 +262,51 @@ static s32 istream_readfstr(sIStream *s,s32 length,char *str) {
 
 static s32 istream_readfnum(sIStream *s,s32 length,char c,s32 *res) {
 	const char *numTable = "0123456789abcdef";
-	bool neg = false;
+	volatile bool neg = false;
 	s32 val = 0,x = 0;
-	u8 base;
 
-	/* determine base */
-	switch(c) {
-		case 'b':
-			base = 2;
-			break;
-		case 'o':
-			base = 8;
-			break;
-		case 'x':
-		case 'X':
-			base = 16;
-			break;
-		default:
-			base = 10;
-			break;
-	}
-
-	/* handle '-' */
-	if(c == 'd') {
-		char rc = s->readc(s);
-		if(rc == '-') {
-			neg = true;
-			length--;
-		}
-		else
-			s->unread(s,rc);
-	}
-
-	/* read until an invalid char is found or the max length is reached */
 	TRY {
-		while(length != 0) {
+		u8 base;
+		/* make copy to prevent gcc to warn about possible clobbering */
+		s32 clength = length;
+		/* handle '-' */
+		if(c == 'd') {
+			char rc = s->readc(s);
+			if(rc == '-') {
+				neg = true;
+				clength--;
+			}
+			else
+				s->unread(s,rc);
+		}
+
+		/* determine base */
+		switch(c) {
+			case 'b':
+				base = 2;
+				break;
+			case 'o':
+				base = 8;
+				break;
+			case 'x':
+			case 'X':
+				base = 16;
+				break;
+			default:
+				base = 10;
+				break;
+		}
+
+		/* read until an invalid char is found or the max length is reached */
+		while(clength != 0) {
 			char tc = tolower(s->readc(s));
 			if(tc >= '0' && tc <= numTable[base - 1]) {
 				if(base > 10 && tc >= 'a')
 					val = val * base + (10 + tc - 'a');
 				else
 					val = val * base + (tc - '0');
-				if(length > 0)
-					length--;
+				if(clength > 0)
+					clength--;
 				x++;
 			}
 			else {

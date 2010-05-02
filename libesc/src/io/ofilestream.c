@@ -74,8 +74,11 @@ sOStream *ofstream_openfd(tFD fd) {
 }
 
 static s32 ofstream_write(sOStream *s,const void *buffer,u32 count) {
+	s32 res;
 	sOFStream *fs = (sOFStream*)s->obj;
-	s32 res = write(fs->fd,buffer,count);
+	/* first flush the output, just to be sure */
+	s->flush(s);
+	res = write(fs->fd,buffer,count);
 	if(res < 0)
 		THROW(IOException,res);
 	return res;

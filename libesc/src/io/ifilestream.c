@@ -27,6 +27,7 @@
 #include <exceptions/io.h>
 #include <errors.h>
 #include <assert.h>
+#include <string.h>
 
 #define BUF_SIZE	64
 
@@ -75,18 +76,32 @@ sIStream *ifstream_openfd(tFD fd) {
 }
 
 static s32 ifstream_read(sIStream *s,void *buffer,u32 count) {
+	s32 res = 0;
 	sIFStream *fs = (sIFStream*)s->obj;
-	/* TODO read from buffer first! */
-	s32 res = read(fs->fd,buffer,count);
-	if(res < 0)
-		THROW(IOException,res);
+	/* first copy the stuff from the buffer */
+	if(fs->length - fs->pos > 0) {
+		res = MIN(fs->length - fs->pos,(s32)count);
+		memcpy(buffer,fs->buffer + fs->pos,res);
+		buffer = (char*)buffer + res;
+		count -= res;
+		fs->pos += res;
+	}
+	/* now read from OS, if anything left */
+	if(count) {
+		s32 readRes = read(fs->fd,buffer,count);
+		if(readRes < 0)
+			THROW(IOException,readRes);
+		res += readRes;
+	}
 	return res;
 }
 
 static s32 ifstream_seek(sIStream *s,s32 offset,u32 whence) {
 	s32 res;
 	sIFStream *fs = (sIFStream*)s->obj;
-	/* TODO what to do with the buffered stuff? */
+	/* throw buffered stuff away */
+	fs->pos = 0;
+	fs->length = 0;
 	res = seek(fs->fd,offset,whence);
 	if(res < 0)
 		THROW(IOException,res);
@@ -95,7 +110,9 @@ static s32 ifstream_seek(sIStream *s,s32 offset,u32 whence) {
 
 static bool ifstream_eof(sIStream *s) {
 	sIFStream *fs = (sIFStream*)s->obj;
-	/* TODO look in the buffer first! */
+	/* anything left in the buffer? */
+	if(fs->length - fs->pos > 0)
+		return false;
 	return eof(fs->fd);
 }
 

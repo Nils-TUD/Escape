@@ -330,9 +330,6 @@ static void test_write(void) {
 	test_assertInt(_write(0,(void*)0xFFFFFFFF,4 * 1024 + 1),ERR_INVALID_ARGS);
 	test_assertInt(_write(0,(void*)0xFFFFFFFF,8 * 1024),ERR_INVALID_ARGS);
 	test_assertInt(_write(0,(void*)0xFFFFFFFF,8 * 1024 - 1),ERR_INVALID_ARGS);
-	/* this may be successfull if our stack has been resized previously and is now big enough */
-	test_assertInt(_write(0,toosmallbuf,4 * 1024),ERR_INVALID_ARGS);
-	test_assertInt(_write(0,toosmallbuf,1024),ERR_INVALID_ARGS);
 	test_assertInt(_write(-1,toosmallbuf,10),ERR_INVALID_FD);
 	test_assertInt(_write(32,toosmallbuf,10),ERR_INVALID_FD);
 	test_assertInt(_write(33,toosmallbuf,10),ERR_INVALID_FD);

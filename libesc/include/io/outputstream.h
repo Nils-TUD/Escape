@@ -27,7 +27,7 @@ typedef struct sOStream sOStream;
 
 /* abstract */ struct sOStream {
 /* private: */
-	void *obj;
+	void *_obj;
 
 /* public: */
 

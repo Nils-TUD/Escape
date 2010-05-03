@@ -28,7 +28,7 @@ typedef struct sIStream sIStream;
 
 /* abstract */ struct sIStream {
 /* private: */
-	void *obj;
+	void *_obj;
 
 /* public: */
 	/**

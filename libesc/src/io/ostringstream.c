@@ -49,7 +49,7 @@ sOStream *osstream_open(char *buffer,s32 size) {
 	out->seek = osstream_seek;
 	out->flush = osstream_flush;
 	out->close = osstream_close;
-	out->obj = s;
+	out->_obj = s;
 	s->buffer = buffer;
 	s->max = size <= 0 ? -1 : size;
 	s->pos = 0;
@@ -57,14 +57,14 @@ sOStream *osstream_open(char *buffer,s32 size) {
 }
 
 static s32 osstream_write(sOStream *s,const void *buffer,u32 count) {
-	sOSStream *ss = (sOSStream*)s->obj;
+	sOSStream *ss = (sOSStream*)s->_obj;
 	s32 amount = MIN(ss->max - ss->pos,(s32)count);
 	memcpy(ss->buffer + ss->pos,buffer,amount);
 	return amount;
 }
 
 static s32 osstream_seek(sOStream *s,s32 offset,u32 whence) {
-	sOSStream *ss = (sOSStream*)s->obj;
+	sOSStream *ss = (sOSStream*)s->_obj;
 	switch(whence) {
 		case SEEK_CUR:
 			offset += ss->pos;
@@ -85,7 +85,7 @@ static s32 osstream_seek(sOStream *s,s32 offset,u32 whence) {
 }
 
 static bool osstream_eof(sOStream *s) {
-	sOSStream *ss = (sOSStream*)s->obj;
+	sOSStream *ss = (sOSStream*)s->_obj;
 	return ss->max != -1 && ss->pos >= ss->max;
 }
 
@@ -95,13 +95,13 @@ static void osstream_flush(sOStream *s) {
 }
 
 static void osstream_close(sOStream *s) {
-	sOSStream *ss = (sOSStream*)s->obj;
+	sOSStream *ss = (sOSStream*)s->_obj;
 	ostream_close(s);
 	heap_free(ss);
 }
 
 static s32 osstream_writec(sOStream *s,char c) {
-	sOSStream *ss = (sOSStream*)s->obj;
+	sOSStream *ss = (sOSStream*)s->_obj;
 	if(ss->max != -1 && ss->pos >= ss->max)
 		THROW(IOException,ERR_EOF);
 	ss->buffer[ss->pos++] = c;

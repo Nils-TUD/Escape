@@ -28,8 +28,8 @@
  * A convenience-foreach for the vector. For example:
  * sVector *myVector = vec_create(sizeof(u32));
  * u32 e;
- * foreach(myVector,e)
- *   cout->writeu(cout,e,10);
+ * vforeach(myVector,e)
+ *   cout->format(cout,"%u ",e);
  */
 #define vforeach(v,eName)	\
 	sIterator __it##eName = vec_iterator(v); \

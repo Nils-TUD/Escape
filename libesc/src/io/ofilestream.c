@@ -58,7 +58,7 @@ sOStream *ofstream_open(const char *file,u8 mode) {
 sOStream *ofstream_openfd(tFD fd) {
 	sOFStream *s = (sOFStream*)heap_alloc(sizeof(sOFStream));
 	sOStream *out = ostream_open();
-	out->obj = s;
+	out->_obj = s;
 	out->write = ofstream_write;
 	out->writec = ofstream_writec;
 	out->eof = ofstream_eof;
@@ -75,7 +75,7 @@ sOStream *ofstream_openfd(tFD fd) {
 
 static s32 ofstream_write(sOStream *s,const void *buffer,u32 count) {
 	s32 res;
-	sOFStream *fs = (sOFStream*)s->obj;
+	sOFStream *fs = (sOFStream*)s->_obj;
 	/* first flush the output, just to be sure */
 	s->flush(s);
 	res = write(fs->fd,buffer,count);
@@ -86,7 +86,7 @@ static s32 ofstream_write(sOStream *s,const void *buffer,u32 count) {
 
 static s32 ofstream_seek(sOStream *s,s32 offset,u32 whence) {
 	s32 res;
-	sOFStream *fs = (sOFStream*)s->obj;
+	sOFStream *fs = (sOFStream*)s->_obj;
 	/* flush the output before we seek */
 	s->flush(s);
 	res = seek(fs->fd,offset,whence);
@@ -96,12 +96,12 @@ static s32 ofstream_seek(sOStream *s,s32 offset,u32 whence) {
 }
 
 static bool ofstream_eof(sOStream *s) {
-	sOFStream *fs = (sOFStream*)s->obj;
+	sOFStream *fs = (sOFStream*)s->_obj;
 	return eof(fs->fd);
 }
 
 static void ofstream_flush(sOStream *s) {
-	sOFStream *fs = (sOFStream*)s->obj;
+	sOFStream *fs = (sOFStream*)s->_obj;
 	if(fs->pos > 0) {
 		s32 res;
 		locku(&fs->lck);
@@ -113,7 +113,7 @@ static void ofstream_flush(sOStream *s) {
 }
 
 static void ofstream_close(sOStream *s) {
-	sOFStream *fs = (sOFStream*)s->obj;
+	sOFStream *fs = (sOFStream*)s->_obj;
 	s->flush(s);
 	ostream_close(s);
 	close(fs->fd);
@@ -122,7 +122,7 @@ static void ofstream_close(sOStream *s) {
 }
 
 static s32 ofstream_writec(sOStream *s,char c) {
-	sOFStream *fs = (sOFStream*)s->obj;
+	sOFStream *fs = (sOFStream*)s->_obj;
 	/* ignore '\0' here */
 	if(c) {
 		if(fs->pos >= fs->max)

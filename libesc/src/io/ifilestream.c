@@ -60,7 +60,7 @@ sIStream *ifstream_open(const char *file,u8 mode) {
 sIStream *ifstream_openfd(tFD fd) {
 	sIFStream *s = (sIFStream*)heap_alloc(sizeof(sIFStream));
 	sIStream *in = istream_open();
-	in->obj = s;
+	in->_obj = s;
 	in->read = ifstream_read;
 	in->getc = ifstream_getc;
 	in->readc = ifstream_readc;
@@ -77,7 +77,7 @@ sIStream *ifstream_openfd(tFD fd) {
 
 static s32 ifstream_read(sIStream *s,void *buffer,u32 count) {
 	s32 res = 0;
-	sIFStream *fs = (sIFStream*)s->obj;
+	sIFStream *fs = (sIFStream*)s->_obj;
 	/* first copy the stuff from the buffer */
 	if(fs->length - fs->pos > 0) {
 		res = MIN(fs->length - fs->pos,(s32)count);
@@ -98,7 +98,7 @@ static s32 ifstream_read(sIStream *s,void *buffer,u32 count) {
 
 static s32 ifstream_seek(sIStream *s,s32 offset,u32 whence) {
 	s32 res;
-	sIFStream *fs = (sIFStream*)s->obj;
+	sIFStream *fs = (sIFStream*)s->_obj;
 	/* throw buffered stuff away */
 	fs->pos = 0;
 	fs->length = 0;
@@ -109,7 +109,7 @@ static s32 ifstream_seek(sIStream *s,s32 offset,u32 whence) {
 }
 
 static bool ifstream_eof(sIStream *s) {
-	sIFStream *fs = (sIFStream*)s->obj;
+	sIFStream *fs = (sIFStream*)s->_obj;
 	/* anything left in the buffer? */
 	if(fs->length - fs->pos > 0)
 		return false;
@@ -117,7 +117,7 @@ static bool ifstream_eof(sIStream *s) {
 }
 
 static void ifstream_close(sIStream *s) {
-	sIFStream *fs = (sIFStream*)s->obj;
+	sIFStream *fs = (sIFStream*)s->_obj;
 	istream_close(s);
 	close(fs->fd);
 	heap_free(fs->buffer);
@@ -125,7 +125,7 @@ static void ifstream_close(sIStream *s) {
 }
 
 static void ifstream_unread(sIStream *s,char c) {
-	sIFStream *fs = (sIFStream*)s->obj;
+	sIFStream *fs = (sIFStream*)s->_obj;
 	if(fs->pos == 0)
 		THROW(IOException,ERR_EOF);
 	fs->buffer[fs->pos - 1] = c;
@@ -133,14 +133,14 @@ static void ifstream_unread(sIStream *s,char c) {
 }
 
 static char ifstream_getc(sIStream *s) {
-	sIFStream *fs = (sIFStream*)s->obj;
+	sIFStream *fs = (sIFStream*)s->_obj;
 	char c = ifstream_readc(s);
 	fs->pos--;
 	return c;
 }
 
 static char ifstream_readc(sIStream *s) {
-	sIFStream *fs = (sIFStream*)s->obj;
+	sIFStream *fs = (sIFStream*)s->_obj;
 	/* flush stdout if we're stdin */
 	if(s == cin)
 		cout->flush(cout);

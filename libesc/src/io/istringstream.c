@@ -43,7 +43,7 @@ static char isstream_readc(sIStream *s);
 sIStream *isstream_open(const char *str) {
 	sISStream *s = (sISStream*)heap_alloc(sizeof(sISStream));
 	sIStream *in = istream_open();
-	in->obj = s;
+	in->_obj = s;
 	in->read = isstream_read;
 	in->getc = isstream_getc;
 	in->readc = isstream_readc;
@@ -58,14 +58,14 @@ sIStream *isstream_open(const char *str) {
 }
 
 static s32 isstream_read(sIStream *s,void *buffer,u32 count) {
-	sISStream *ss = (sISStream*)s->obj;
+	sISStream *ss = (sISStream*)s->_obj;
 	s32 amount = MIN(ss->length - ss->pos,(s32)count);
 	memcpy(buffer,ss->buffer + ss->pos,amount);
 	return amount;
 }
 
 static s32 isstream_seek(sIStream *s,s32 offset,u32 whence) {
-	sISStream *ss = (sISStream*)s->obj;
+	sISStream *ss = (sISStream*)s->_obj;
 	switch(whence) {
 		case SEEK_CUR:
 			offset += ss->pos;
@@ -84,19 +84,19 @@ static s32 isstream_seek(sIStream *s,s32 offset,u32 whence) {
 }
 
 static bool isstream_eof(sIStream *s) {
-	sISStream *ss = (sISStream*)s->obj;
+	sISStream *ss = (sISStream*)s->_obj;
 	/* null-terminated */
 	return ss->pos >= ss->length;
 }
 
 static void isstream_close(sIStream *s) {
-	sISStream *ss = (sISStream*)s->obj;
+	sISStream *ss = (sISStream*)s->_obj;
 	istream_close(s);
 	heap_free(ss);
 }
 
 static void isstream_unread(sIStream *s,char c) {
-	sISStream *ss = (sISStream*)s->obj;
+	sISStream *ss = (sISStream*)s->_obj;
 	UNUSED(c);
 	if(ss->pos == 0)
 		THROW(IOException,ERR_EOF);
@@ -105,14 +105,14 @@ static void isstream_unread(sIStream *s,char c) {
 }
 
 static char isstream_getc(sIStream *s) {
-	sISStream *ss = (sISStream*)s->obj;
+	sISStream *ss = (sISStream*)s->_obj;
 	if(ss->pos >= ss->length)
 		THROW(IOException,ERR_EOF);
 	return ss->buffer[ss->pos];
 }
 
 static char isstream_readc(sIStream *s) {
-	sISStream *ss = (sISStream*)s->obj;
+	sISStream *ss = (sISStream*)s->_obj;
 	if(ss->pos >= ss->length)
 		THROW(IOException,ERR_EOF);
 	return ss->buffer[ss->pos++];

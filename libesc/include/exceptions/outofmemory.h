@@ -23,8 +23,6 @@
 #include <esc/common.h>
 #include <exceptions/exception.h>
 
-#define ID_OutOfMemoryException					1
-
 typedef sException sOutOfMemoryException;
 
 /**

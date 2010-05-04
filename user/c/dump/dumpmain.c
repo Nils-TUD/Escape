@@ -38,12 +38,12 @@ static char ascii[MAX_BASE];
 static u8 buffer[BUF_SIZE];
 
 static void usage(const char *name) {
-	cerr->format(cerr,"Usage: %s [-n <bytes>] [-f o|h|d] [<file>]\n",name);
-	cerr->format(cerr,"	-n <bytes>	: Read the first <bytes> bytes\n");
-	cerr->format(cerr,"	-f o|h|d	: The base to print the bytes in:\n");
-	cerr->format(cerr,"					o = octal\n");
-	cerr->format(cerr,"					h = hexadecimal\n");
-	cerr->format(cerr,"					d = decimal\n");
+	cerr->writef(cerr,"Usage: %s [-n <bytes>] [-f o|h|d] [<file>]\n",name);
+	cerr->writef(cerr,"	-n <bytes>	: Read the first <bytes> bytes\n");
+	cerr->writef(cerr,"	-f o|h|d	: The base to print the bytes in:\n");
+	cerr->writef(cerr,"					o = octal\n");
+	cerr->writef(cerr,"					h = hexadecimal\n");
+	cerr->writef(cerr,"					d = decimal\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -52,7 +52,7 @@ static void printAscii(u8 base,s32 pos) {
 	if(pos > 0) {
 		while(pos % base != 0) {
 			ascii[pos % base] = ' ';
-			cout->format(cout,"%*s ",getuwidth(0xFF,base)," ");
+			cout->writef(cout,"%*s ",getuwidth(0xFF,base)," ");
 			pos++;
 		}
 		cout->writec(cout,'|');
@@ -77,7 +77,7 @@ int main(int argc,const char *argv[]) {
 			usage(argv[0]);
 	}
 	CATCH(CmdArgsException,e) {
-		cerr->format(cerr,"Invalid arguments: %s\n",e->toString(e));
+		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
 		usage(argv[0]);
 	}
 	ENDCATCH
@@ -118,7 +118,7 @@ int main(int argc,const char *argv[]) {
 				if(i % base == 0) {
 					if(i > 0)
 						printAscii(base,i);
-					cout->format(cout,"%08x: ",i);
+					cout->writef(cout,"%08x: ",i);
 				}
 
 				if(isprint(buffer[x]) && buffer[x] < 0x80 && !isspace(buffer[x]))
@@ -127,13 +127,13 @@ int main(int argc,const char *argv[]) {
 					ascii[i % base] = NPRINT_CHAR;
 				switch(format) {
 					case OUT_FORMAT_DEC:
-						cout->format(cout,"%03d ",buffer[x]);
+						cout->writef(cout,"%03d ",buffer[x]);
 						break;
 					case OUT_FORMAT_HEX:
-						cout->format(cout,"%02x ",buffer[x]);
+						cout->writef(cout,"%02x ",buffer[x]);
 						break;
 					case OUT_FORMAT_OCT:
-						cout->format(cout,"%03o ",buffer[x]);
+						cout->writef(cout,"%03o ",buffer[x]);
 						break;
 				}
 			}

@@ -23,8 +23,6 @@
 #include <esc/common.h>
 #include <exceptions/exception.h>
 
-#define ID_IOException					0
-
 typedef struct {
 	sException;
 	s32 error;

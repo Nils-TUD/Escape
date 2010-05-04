@@ -68,8 +68,8 @@ static s32 ostream_writel(sOStream *s,s64 l);
 static s32 ostream_writeu(sOStream *s,u32 u,u8 base);
 static s32 ostream_writeul(sOStream *s,u64 u,u8 base);
 static s32 ostream_writedbl(sOStream *s,double d,u32 precision);
-static s32 ostream_format(sOStream *s,const char *fmt,...);
-static s32 ostream_vformat(sOStream *s,const char *fmt,va_list ap);
+static s32 ostream_writef(sOStream *s,const char *fmt,...);
+static s32 ostream_vwritef(sOStream *s,const char *fmt,va_list ap);
 static s32 ostream_writeuchars(sOStream *s,u32 u,u8 base,const char *hexchars);
 static s32 ostream_writeulchars(sOStream *s,u64 u,u8 base,const char *hexchars);
 static s32 ostream_writenpad(sOStream *s,s32 n,u8 pad,u16 flags);
@@ -91,8 +91,8 @@ sOStream *ostream_open() {
 	s->writeul = ostream_writeul;
 	s->writedbl = ostream_writedbl;
 	s->writeln = ostream_writeln;
-	s->format = ostream_format;
-	s->vformat = ostream_vformat;
+	s->writef = ostream_writef;
+	s->vwritef = ostream_vwritef;
 	return s;
 }
 
@@ -175,16 +175,16 @@ static s32 ostream_writedbl(sOStream *s,double d,u32 precision) {
 	return c;
 }
 
-static s32 ostream_format(sOStream *s,const char *fmt,...) {
+static s32 ostream_writef(sOStream *s,const char *fmt,...) {
 	va_list ap;
 	s32 res;
 	va_start(ap,fmt);
-	res = ostream_vformat(s,fmt,ap);
+	res = ostream_vwritef(s,fmt,ap);
 	va_end(ap);
 	return res;
 }
 
-static s32 ostream_vformat(sOStream *s,const char *fmt,va_list ap) {
+static s32 ostream_vwritef(sOStream *s,const char *fmt,va_list ap) {
 	char c;
 	bool readFlags;
 	u16 flags;

@@ -77,6 +77,17 @@ typedef struct sIStream sIStream;
 	s32 (*readAll)(sIStream *s,sString *str);
 
 	/**
+	 * Reads an escape-code from the given stream. Assumes that the last read char was '\033'.
+	 *
+	 * @param s the stream
+	 * @param n1 will be set to the first argument (ESCC_ARG_UNUSED if unused)
+	 * @param n2 will be set to the second argument (ESCC_ARG_UNUSED if unused)
+	 * @param n3 will be set to the third argument (ESCC_ARG_UNUSED if unused)
+	 * @return the scanned escape-code (ESCC_*)
+	 */
+	s32 (*readEsc)(sIStream *s,s32 *n1,s32 *n2,s32 *n3);
+
+	/**
 	 * Reads a line from the stream (i.e. until \n, EOF or if <size> is reached)
 	 *
 	 * @param s the stream
@@ -93,17 +104,17 @@ typedef struct sIStream sIStream;
 	 * @param fmt the format
 	 * @return the number of read items
 	 */
-	s32 (*format)(sIStream *s,const char *fmt,...);
+	s32 (*readf)(sIStream *s,const char *fmt,...);
 
 	/**
-	 * Like format(), but with given variable-argument-list
+	 * Like readf(), but with given variable-argument-list
 	 *
 	 * @param s the stream
 	 * @param fmt the format
 	 * @param ap the argument-list
 	 * @return the number of read items
 	 */
-	s32 (*vformat)(sIStream *s,const char *fmt,va_list ap);
+	s32 (*vreadf)(sIStream *s,const char *fmt,va_list ap);
 
 	/**
 	 * 'Unreads' the given character, i.e. puts it back to the stream.

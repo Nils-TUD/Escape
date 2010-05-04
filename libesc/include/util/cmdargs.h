@@ -45,7 +45,7 @@
  *     usage(argv[0]);
  * }
  * CATCH(CmdArgsException,e) {
- *   cerr->format(cerr,"Invalid arguments: %s",e->toString(e));
+ *   cerr->writef(cerr,"Invalid arguments: %s",e->toString(e));
  *   usage(argv[0]);
  * }
  * ENDCATCH

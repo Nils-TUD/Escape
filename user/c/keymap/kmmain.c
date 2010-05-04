@@ -31,7 +31,7 @@
 #define KEYMAP_DIR		"/etc/keymaps"
 
 static void usage(const char *name) {
-	cerr->format(cerr,"Usage: %s [--set <name>]\n",name);
+	cerr->writef(cerr,"Usage: %s [--set <name>]\n",name);
 	exit(EXIT_FAILURE);
 }
 
@@ -46,7 +46,7 @@ int main(int argc,const char **argv) {
 			usage(argv[0]);
 	}
 	CATCH(CmdArgsException,e) {
-		cerr->format(cerr,"Invalid arguments: %s\n",e->toString(e));
+		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
 		usage(argv[0]);
 	}
 	ENDCATCH
@@ -62,19 +62,20 @@ int main(int argc,const char **argv) {
 		len = snprintf(path,sizeof(path),KEYMAP_DIR"/%s",kmname);
 		if(sendMsgData(fd,MSG_KM_SET,path,len + 1) < 0 ||
 				receive(fd,NULL,&msg,sizeof(msg)) < 0 || (s32)msg.args.arg1 < 0)
-			cerr->format(cerr,"Setting the keymap '%s' failed\n",kmname);
+			cerr->writef(cerr,"Setting the keymap '%s' failed\n",kmname);
 		else
-			cout->format(cout,"Successfully changed keymap to '%s'\n",kmname);
+			cout->writef(cout,"Successfully changed keymap to '%s'\n",kmname);
 		close(fd);
 	}
 	/* list all keymaps */
 	else {
+		sDirEntry *e;
 		sFile *f = file_get(KEYMAP_DIR);
 		sVector *files = f->listFiles(f,false);
-		sDirEntry *e;
 		vforeach(files,e)
 			cout->writeln(cout,e->name);
 		vec_destroy(files,true);
+		f->destroy(f);
 	}
 	return EXIT_SUCCESS;
 }

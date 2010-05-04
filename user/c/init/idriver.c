@@ -51,13 +51,13 @@ void printDrivers(sVector *loads) {
 	if(loads != NULL) {
 		vforeach(loads,load) {
 			char *wname,*dname;
-			cout->format(cout,"\tname: '%s' waits(%d): ",load->name,load->waits->count);
+			cout->writef(cout,"\tname: '%s' waits(%d): ",load->name,load->waits->count);
 			vforeach(load->waits,wname)
-				cout->format(cout,"'%s' ",wname);
-			cout->format(cout," deps(%d): ",load->deps->count);
+				cout->writef(cout,"'%s' ",wname);
+			cout->writef(cout," deps(%d): ",load->deps->count);
 			vforeach(load->deps,dname)
-				cout->format(cout,"'%s' ",dname);
-			cout->format(cout,"\n");
+				cout->writef(cout,"'%s' ",dname);
+			cout->writef(cout,"\n");
 		}
 	}
 }
@@ -91,11 +91,11 @@ static bool loadDriver(sVector *loads,sDriverLoad *load) {
 	child = fork();
 	if(child == 0) {
 		exec(path,NULL);
-		cerr->format(cerr,"Exec of '%s' failed\n",path);
+		cerr->writef(cerr,"Exec of '%s' failed\n",path);
 		exit(EXIT_FAILURE);
 	}
 	else if(child < 0) {
-		cerr->format(cerr,"Fork of '%s' failed\n",path);
+		cerr->writef(cerr,"Fork of '%s' failed\n",path);
 		return false;
 	}
 
@@ -111,7 +111,7 @@ static bool loadDriver(sVector *loads,sDriverLoad *load) {
 		}
 		while(j++ < MAX_WAIT_RETRIES && res < 0);
 		if(res < 0) {
-			cerr->format(cerr,"The driver '%s' was not found after %d retries\n",
+			cerr->writef(cerr,"The driver '%s' was not found after %d retries\n",
 					drvName,MAX_WAIT_RETRIES);
 			return false;
 		}

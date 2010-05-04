@@ -123,17 +123,17 @@ typedef struct sOStream sOStream;
 	 * @param fmt the format
 	 * @return the number of written bytes
 	 */
-	s32 (*format)(sOStream *s,const char *fmt,...);
+	s32 (*writef)(sOStream *s,const char *fmt,...);
 
 	/**
-	 * Like format(), but with given variable-argument-list
+	 * Like writef(), but with given variable-argument-list
 	 *
 	 * @param s the stream
 	 * @param fmt the format
 	 * @param ap the argument-list
 	 * @return the number of written bytes
 	 */
-	s32 (*vformat)(sOStream *s,const char *fmt,va_list ap);
+	s32 (*vwritef)(sOStream *s,const char *fmt,va_list ap);
 
 	/**
 	 * Seeks in the stream

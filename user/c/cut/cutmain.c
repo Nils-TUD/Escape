@@ -34,13 +34,13 @@ static void printFields(char *line,const char *delim,s32 first,s32 last);
 static void parseFields(const char *fields,s32 *first,s32 *last);
 
 static void usage(const char *name) {
-	cerr->format(cerr,"Usage: %s -f <fields> [-d <delim>] [<file>]\n",name);
-	cerr->format(cerr,"	-f: <fields> may be:\n");
-	cerr->format(cerr,"		N		N'th field, counted from 1\n");
-	cerr->format(cerr,"		N-		from N'th field, to end of line\n");
-	cerr->format(cerr,"		N-M		from N'th to M'th (included) field\n");
-	cerr->format(cerr,"		-M		from first to M'th (included) field\n");
-	cerr->format(cerr,"	-d: use <delim> as delimiter instead of TAB\n");
+	cerr->writef(cerr,"Usage: %s -f <fields> [-d <delim>] [<file>]\n",name);
+	cerr->writef(cerr,"	-f: <fields> may be:\n");
+	cerr->writef(cerr,"		N		N'th field, counted from 1\n");
+	cerr->writef(cerr,"		N-		from N'th field, to end of line\n");
+	cerr->writef(cerr,"		N-M		from N'th to M'th (included) field\n");
+	cerr->writef(cerr,"		-M		from first to M'th (included) field\n");
+	cerr->writef(cerr,"	-d: use <delim> as delimiter instead of TAB\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -58,7 +58,7 @@ int main(int argc,const char **argv) {
 			usage(argv[0]);
 	}
 	CATCH(CmdArgsException,e) {
-		cerr->format(cerr,"Invalid arguments: %s\n",e->toString(e));
+		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
 		usage(argv[0]);
 	}
 	ENDCATCH
@@ -78,7 +78,7 @@ int main(int argc,const char **argv) {
 			TRY {
 				f = file_get(arg);
 				if(f->isDir(f))
-					cerr->format(cerr,"'%s' is a directory!\n",arg);
+					cerr->writef(cerr,"'%s' is a directory!\n",arg);
 				else {
 					s = ifstream_open(arg,IO_READ);
 					while(s->readline(s,line,sizeof(line)) > 0)
@@ -86,7 +86,7 @@ int main(int argc,const char **argv) {
 				}
 			}
 			CATCH(IOException,e) {
-				cerr->format(cerr,"Unable to read file '%s': %s\n",arg,e->toString(e));
+				cerr->writef(cerr,"Unable to read file '%s': %s\n",arg,e->toString(e));
 			}
 			ENDCATCH
 			if(f)
@@ -102,13 +102,13 @@ int main(int argc,const char **argv) {
 
 static void printFields(char *line,const char *delim,s32 first,s32 last) {
 	if(first == 0 && last == -1)
-		cout->format(cout,"%s\n",line);
+		cout->writef(cout,"%s\n",line);
 	else {
 		s32 i = 1;
 		char *tok = strtok(line,delim);
 		while(tok != NULL) {
 			if(i >= first && (last == -1 || i <= last))
-				cout->format(cout,"%s ",tok);
+				cout->writef(cout,"%s ",tok);
 			tok = strtok(NULL,delim);
 			i++;
 		}
@@ -121,10 +121,10 @@ static void parseFields(const char *fields,s32 *first,s32 *last) {
 	if(s->getc(s) == '-')
 		*first = 1;
 	else
-		s->format(s,"%d",first);
+		s->readf(s,"%d",first);
 	if(!s->eof(s) && s->readc(s) == '-') {
 		if(!s->eof(s))
-			s->format(s,"%d",last);
+			s->readf(s,"%d",last);
 		else
 			*last = -1;
 	}

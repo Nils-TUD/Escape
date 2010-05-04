@@ -27,12 +27,25 @@
 /**
  * This module tries to emulate exceptions known from c++ or java. You can use it (nearly) as
  * you're used to it except that you have to note the following restrictions:
- * 	- You can't use THROW in catch- and finally-blocks (just RETHROW)
- * 	- You can't use TRY-CATCH in catch-blocks
+ * 	- You can't use THROW in CATCH- and FINALLY-blocks (just RETHROW)
+ * 	- You can't use TRY-CATCH in CATCH-blocks
  *  - Atm it's not thread-safe!
- *  - Of course, you have to take care not to manipulate the control-flow in try/catch/finally.
+ *  - Of course, you have to take care not to manipulate the control-flow in TRY/CATCH/FINALLY.
  *    That means, you can't use break, goto etc., since otherwise FINALLY or ENDCATCH
  *    wouldn't be executed
+ *  - And take care that you don't use variables in or after CATCH/FINALLY-blocks that you have
+ *    changed in the TRY-block. So for example the following would be a bad idea:
+ *    u32 c = 0;
+ *    TRY {
+ *    	c++;
+ *    	THROW(IOException,ERR_EOF);
+ *    }
+ *    CATCH(IOException,e) {
+ *    	printf("c=%d\n",c);
+ *    }
+ *    ENDCATCH
+ *    Because the compiler might put the variable in a register and just increment the register.
+ *    And since the registers have been saved in TRY, c would not have been incremented.
  *
  * An example would be:
  * #include <exceptions/io.h>
@@ -48,6 +61,11 @@
  * }
  * ENDCATCH
  */
+
+/* the exception-ids */
+#define ID_IOException							0
+#define ID_OutOfMemoryException					1
+#define ID_CmdArgsException						2
 
 #define TRY							{ sException *__ex = NULL; \
 										if(setjmp(ex_push()) != 0) \
@@ -73,9 +91,6 @@
 										ex_create##name(ID_##name,__LINE__,__FILE__,## __VA_ARGS__)))
 #define RETHROW(exObj)				(__ex = (sException*)(exObj))->_handled = 0
 
-/**
- * Methods of an exception
- */
 typedef const char *(*fExToString)(void *e);
 typedef void (*fExDestroy)(void *e);
 
@@ -100,15 +115,19 @@ typedef struct {
 	 * @param e the exception
 	 * @return the message
 	 */
-	fExToString toString;
+	const char *(*toString)(void *e);
 
 	/**
 	 * Destroys this exception
 	 *
 	 * @param e the exception
 	 */
-	fExDestroy destroy;
+	void (*destroy)(void *e);
 } sException;
+
+
+/* DON'T USE the following variables and functions directly. They are just necessary for
+ * the macros!! */
 
 extern sException *__exPtr;
 

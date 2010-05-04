@@ -24,13 +24,13 @@ int main(void) {
 	u32 i,j;
 	cout->writes(cout,"    ");
 	for(i = 0; i < 16; i++)
-		cout->format(cout,"%02x ",i << 4);
+		cout->writef(cout,"%02x ",i << 4);
 	cout->writec(cout,'\n');
 
 	for(i = 0; i < 16; i++) {
-		cout->format(cout,"%02x: ",i);
+		cout->writef(cout,"%02x: ",i);
 		for(j = 0; j < 16; j++)
-			cout->format(cout,"\033[co;%d;%d]##\033[co] ",i,j);
+			cout->writef(cout,"\033[co;%d;%d]##\033[co] ",i,j);
 		cout->writec(cout,'\n');
 	}
 	return EXIT_SUCCESS;

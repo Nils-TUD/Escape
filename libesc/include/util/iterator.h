@@ -28,6 +28,7 @@ struct sIterator {
 /* private: */
 	void *_con;
 	u32 _pos;
+	u32 _end;
 
 /* public: */
 	/**

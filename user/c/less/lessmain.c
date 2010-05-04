@@ -18,71 +18,80 @@
  */
 
 #include <esc/common.h>
-#include <esc/dir.h>
-#include <esc/fileio.h>
-#include <esc/heap.h>
 #include <esc/io.h>
+#include <esc/fileio.h>
 #include <esc/keycodes.h>
 #include <esc/cmdargs.h>
 #include <esc/env.h>
+#include <mem/heap.h>
+#include <io/file.h>
+#include <io/streams.h>
+#include <io/ifilestream.h>
+#include <exceptions/io.h>
+#include <exceptions/outofmemory.h>
+#include <util/vector.h>
 #include <string.h>
 #include <messages.h>
 #include <esccodes.h>
+
 #define BUFFER_SIZE			1024
-#define BUFFER_INC_SIZE		64
 #define TAB_WIDTH			4
 
 static void resetVterm(void);
-static bool readLines(u32 end);
+static void readLines(u32 end);
 static void scrollDown(s32 lines);
 static void refreshScreen(void);
-static void printStatus(u32 total,const char *totalStr);
-static bool copy(char c);
+static void printStatus(const char *totalStr);
+static void copy(char c);
+static void newline(void);
 
-static tFile *fvterm;
-static tFile *file;
+static sIStream *vt;
+static sIStream *in;
 static bool seenEOF;
 static u32 linePos;
-static u32 lineCount;
-static u32 lineSize;
-static char **lines;
+static sVector *lines;
 static char *filename;
 static u32 startLine = 0;
 
 static sVTSize consSize;
 static char *emptyLine;
-static bool run = true;
 
 int main(int argc,char *argv[]) {
 	char c;
 	char vterm[MAX_PATH_LEN] = "/dev/";
+	bool run = true;
 
 	if((argc != 1 && argc != 2) || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s [<file>]\n",argv[0]);
-		fprintf(stderr,"	navigation:\n");
-		fprintf(stderr,"		up/down	- one line up/down\n");
-		fprintf(stderr,"		pageup/pagedown - one page up/down\n");
-		fprintf(stderr,"		home/end - to the very beginning or end\n");
-		fprintf(stderr,"		q - quit\n");
-		fprintf(stderr,"		s - stop reading (e.g. when walking to EOF)\n");
+		cerr->writef(cerr,"Usage: %s [<file>]\n",argv[0]);
+		cerr->writef(cerr,"	navigation:\n");
+		cerr->writef(cerr,"		up/down	- one line up/down\n");
+		cerr->writef(cerr,"		pageup/pagedown - one page up/down\n");
+		cerr->writef(cerr,"		home/end - to the very beginning or end\n");
+		cerr->writef(cerr,"		q - quit\n");
+		cerr->writef(cerr,"		s - stop reading (e.g. when walking to EOF)\n");
 		return EXIT_FAILURE;
 	}
 
 	/* determine source */
-	file = stdin;
+	in = cin;
 	filename = NULL;
-	if(argc == 2) {
-		filename = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-		if(filename == NULL)
-			error("Unable to allocate mem for path");
-
-		abspath(filename,MAX_PATH_LEN + 1,argv[1]);
-		file = fopen(filename,"r");
-		if(file == NULL)
-			error("Unable to open '%s'",filename);
+	TRY {
+		if(argc == 2) {
+			sFile *f = file_get(argv[1]);
+			filename = (char*)heap_alloc(MAX_PATH_LEN);
+			f->getAbsolute(f,filename,MAX_PATH_LEN);
+			if(f->isDir(f))
+				error("'%s' is a directory",filename);
+			in = ifstream_open(filename,IO_READ);
+			f->destroy(f);
+		}
+		else if(isterm(STDIN_FILENO))
+			error("Using a vterm as STDIN and have got no filename");
 	}
-	else if(isterm(STDIN_FILENO))
-		error("Using a vterm as STDIN and have got no filename");
+	CATCH(IOException,e) {
+		error("Unable to open '%s' for reading: %s",argv[1],e->toString(e));
+	}
+	ENDCATCH
 
 	if(recvMsgData(STDOUT_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
 		error("Unable to get screensize");
@@ -93,90 +102,82 @@ int main(int argc,char *argv[]) {
 	send(STDOUT_FILENO,MSG_VT_BACKUP,NULL,0);
 
 	/* create empty line */
-	emptyLine = (char*)malloc(consSize.width + 1);
-	if(emptyLine == NULL)
-		error("Unable to alloc memory for empty line");
+	emptyLine = (char*)heap_alloc(consSize.width + 1);
 	memset(emptyLine,' ',consSize.width);
 	emptyLine[consSize.width] = '\0';
-
-	/* create line-buffer */
-	seenEOF = false;
-	lineCount = 0;
-	lineSize = BUFFER_INC_SIZE;
-	lines = (char**)calloc(lineSize,sizeof(char*));
-	if(lines == NULL)
-		error("Unable to create lines");
-
-	/* read all */
-	if(!readLines(consSize.height)) {
-		resetVterm();
-		return EXIT_FAILURE;
-	}
-
-	/* stop readline and navigation */
-	send(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
-	send(STDOUT_FILENO,MSG_VT_DIS_NAVI,NULL,0);
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
 	if(!getEnv(vterm + SSTRLEN("/dev/"),MAX_PATH_LEN - SSTRLEN("/dev/"),"TERM")) {
 		resetVterm();
 		error("Unable to get TERM");
 	}
-	fvterm = fopen(vterm,"r");
-	if(fvterm == NULL) {
-		resetVterm();
-		error("Unable to open '%s'",vterm);
-	}
+	vt = ifstream_open(vterm,IO_READ);
 
-	refreshScreen();
+	TRY {
+		/* create line-buffer and read the first lines into it */
+		seenEOF = false;
+		lines = vec_create(sizeof(char*));
+		newline();
+		readLines(consSize.height);
 
-	/* read from vterm */
-	while(run && (c = fscanc(fvterm)) != IO_EOF) {
-		if(c == '\033') {
-			s32 n1,n2,n3;
-			s32 cmd = freadesc(fvterm,&n1,&n2,&n3);
-			if(cmd != ESCC_KEYCODE)
-				continue;
-			switch(n2) {
-				case VK_Q:
-					run = false;
-					break;
-				case VK_HOME:
-					/* scrollDown(0) means scroll to end.. */
-					if(startLine > 0)
-						scrollDown(-startLine);
-					break;
-				case VK_END:
-					scrollDown(0);
-					break;
-				case VK_UP:
-					scrollDown(-1);
-					break;
-				case VK_DOWN:
-					scrollDown(1);
-					break;
-				case VK_PGUP:
-					scrollDown(-consSize.height);
-					break;
-				case VK_PGDOWN:
-					scrollDown(consSize.height);
-					break;
+		/* stop readline and navigation */
+		send(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
+		send(STDOUT_FILENO,MSG_VT_DIS_NAVI,NULL,0);
+
+		refreshScreen();
+
+		/* read from vterm */
+		while(run && (c = vt->readc(vt)) != IO_EOF) {
+			if(c == '\033') {
+				s32 n1,n2,n3;
+				s32 cmd = vt->readEsc(vt,&n1,&n2,&n3);
+				if(cmd != ESCC_KEYCODE)
+					continue;
+				switch(n2) {
+					case VK_Q:
+						run = false;
+						break;
+					case VK_HOME:
+						/* scrollDown(0) means scroll to end.. */
+						if(startLine > 0)
+							scrollDown(-startLine);
+						break;
+					case VK_END:
+						scrollDown(0);
+						break;
+					case VK_UP:
+						scrollDown(-1);
+						break;
+					case VK_DOWN:
+						scrollDown(1);
+						break;
+					case VK_PGUP:
+						scrollDown(-consSize.height);
+						break;
+					case VK_PGDOWN:
+						scrollDown(consSize.height);
+						break;
+				}
 			}
 		}
 	}
+	CATCH(OutOfMemoryException,e) {
+		resetVterm();
+		error("Not enough memory");
+	}
+	ENDCATCH
 
-	free(emptyLine);
-	if(argc == 2)
-		fclose(file);
-	fclose(fvterm);
+	heap_free(emptyLine);
 	resetVterm();
+	vt->close(vt);
+	in->close(in);
 
 	return EXIT_SUCCESS;
 }
 
 static void resetVterm(void) {
-	printf("\n");
-	flush();
+	cout->writeln(cout,"");
+	cout->flush(cout);
 	send(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
 	send(STDOUT_FILENO,MSG_VT_EN_NAVI,NULL,0);
 	send(STDOUT_FILENO,MSG_VT_RESTORE,NULL,0);
@@ -190,18 +191,15 @@ static void scrollDown(s32 l) {
 		else
 			startLine = 0;
 	}
-	else if(lineCount >= consSize.height)
+	else if(lines->count >= consSize.height)
 		startLine += l;
 
-	if(l == 0 || startLine > lineCount - consSize.height) {
-		if(!readLines(l == 0 ? 0 : startLine + consSize.height)) {
-			run = false;
-			return;
-		}
-		if(lineCount < consSize.height)
+	if(l == 0 || startLine > lines->count - consSize.height) {
+		readLines(l == 0 ? 0 : startLine + consSize.height);
+		if(lines->count < consSize.height)
 			startLine = 0;
-		else if(l == 0 || startLine > lineCount - consSize.height)
-			startLine = lineCount - consSize.height;
+		else if(l == 0 || startLine > lines->count - consSize.height)
+			startLine = lines->count - consSize.height;
 	}
 
 	if(oldStart != startLine)
@@ -209,160 +207,107 @@ static void scrollDown(s32 l) {
 }
 
 static void refreshScreen(void) {
-	u32 i,end = MIN(lineCount,consSize.height);
+	u32 i,end = MIN(lines->count,consSize.height);
 	/* walk to the top of the screen */
-	printf("\033[mh]");
-	for(i = 0; i < end; i++) {
-		prints(lines[startLine + i]);
+	cout->writes(cout,"\033[mh]");
+	sIterator it = vec_iteratorIn(lines,startLine,end);
+	for(i = 0; it.hasNext(&it); i++) {
+		char *line = (char*)it.next(&it);
+		cout->writes(cout,line);
 		if(i < consSize.height - 1)
-			printc('\n');
+			cout->writec(cout,'\n');
 	}
 	for(; i < consSize.height; i++) {
-		prints(emptyLine);
+		cout->writes(cout,emptyLine);
 		if(i < consSize.height - 1)
-			printc('\n');
+			cout->writec(cout,'\n');
 	}
-	printStatus(lineCount,seenEOF ? NULL : "?");
-	flush();
+	printStatus(seenEOF ? NULL : "?");
+	cout->flush(cout);
 }
 
-static void printStatus(u32 total,const char *totalStr) {
+static void printStatus(const char *totalStr) {
 	char *tmp;
 	const char *displayName;
-	u32 end = MIN(lineCount,consSize.height);
-	tmp = (char*)malloc(consSize.width + 1);
-	if(tmp == NULL)
-		return;
+	u32 end = MIN(lines->count,consSize.height);
+	tmp = (char*)heap_alloc(consSize.width + 1);
 	if(!totalStr)
-		snprintf(tmp,consSize.width + 1,"Lines %d-%d / %d",startLine + 1,startLine + end,total);
+		snprintf(tmp,consSize.width + 1,"Lines %d-%d / %d",startLine + 1,startLine + end,lines->count);
 	else
 		snprintf(tmp,consSize.width + 1,"Lines %d-%d / %s",startLine + 1,startLine + end,totalStr);
-	if(filename == NULL)
-		displayName = "STDIN";
-	else
-		displayName = filename;
-	printf("\033[co;0;7]%-*s%s\033[co]",consSize.width - strlen(displayName),tmp,displayName);
-	free(tmp);
+	displayName = (filename == NULL) ? "STDIN" : filename;
+	cout->writef(cout,"\033[co;0;7]%-*s%s\033[co]",consSize.width - strlen(displayName),tmp,displayName);
+	heap_free(tmp);
 }
 
-static bool readLines(u32 end) {
+static void readLines(u32 end) {
 	const char *states[] = {"|","/","-","\\","|","/","-"};
 	s32 count = 0;
 	u8 state = 0;
 	bool waitForEsc;
-	char *cpy;
-	char *buffer;
-
-	/* create buffer for reading */
-	buffer = (char*)malloc(BUFFER_SIZE * sizeof(char));
-	if(buffer == NULL) {
-		printe("Unable to allocate mem");
-		return false;
-	}
+	char c,*cpy,*buffer;
 
 	/* read and split into lines */
+	buffer = (char*)heap_alloc(BUFFER_SIZE);
 	waitForEsc = false;
-	while((end == 0 || lineCount < end) &&
-			(count = fread(buffer,sizeof(char),BUFFER_SIZE - 1,file)) > 0) {
+	while((end == 0 || lines->count < end) && (count = in->read(in,buffer,BUFFER_SIZE - 1)) > 0) {
 		*(buffer + count) = '\0';
 		cpy = buffer;
-		while(*cpy) {
-			if(*cpy == IO_EOF) {
-				if(!copy('\n')) {
-					free(buffer);
-					return false;
-				}
-				seenEOF = true;
-				goto finished;
-			}
+		while((c = *cpy)) {
 			/* skip escape-codes */
-			if(*cpy == '\033' || waitForEsc) {
+			if(c == '\033' || waitForEsc) {
 				waitForEsc = true;
-				while(*cpy != ']' && *cpy)
+				while((c = *cpy) != ']' && c)
 					cpy++;
-				if(!*cpy)
+				if(!c)
 					break;
 				waitForEsc = false;
 			}
-			else if(!copy(*cpy)) {
-				free(buffer);
-				return false;
-			}
+			else
+				copy(c);
 			cpy++;
 		}
 
 		/* check whether the user has pressed a key */
-		{
-			char c;
-			while(!feof(fvterm) && (c = fscanc(fvterm)) != IO_EOF) {
-				if(c == '\033') {
-					s32 n1,n2,n3;
-					s32 cmd = freadesc(fvterm,&n1,&n2,&n3);
-					if(cmd != ESCC_KEYCODE)
-						continue;
-					if(n2 == VK_S)
-						goto finished;
-				}
+		while(!vt->eof(vt) && (c = vt->readc(vt)) != IO_EOF) {
+			if(c == '\033') {
+				s32 n1,n2,n3;
+				s32 cmd = vt->readEsc(vt,&n1,&n2,&n3);
+				if(cmd != ESCC_KEYCODE)
+					continue;
+				if(n2 == VK_S)
+					goto finished;
 			}
 		}
 
-		printf("\r");
-		printStatus(lineCount,states[state]);
+		cout->writec(cout,'\r');
+		printStatus(states[state]);
 		state = (state + 1) % ARRAY_SIZE(states);
 	}
 	if(count <= 0)
 		seenEOF = true;
 finished:
-	free(buffer);
-	return true;
+	heap_free(buffer);
 }
 
-static bool copy(char c) {
+static void copy(char c) {
 	char *pos;
 	/* implicit newline? */
-	if(c != '\n' && linePos >= consSize.width) {
-		if(!copy('\n'))
-			return false;
-	}
+	if(c != '\n' && linePos >= consSize.width)
+		copy('\n');
 
-	/* line not yet present? */
-	if(lines[lineCount] == NULL) {
-		lines[lineCount] = (char*)malloc((consSize.width + 1) * sizeof(char));
-		if(lines[lineCount] == NULL) {
-			printe("Unable to allocate mem");
-			return false;
-		}
-		/* fill the line with spaces */
-		memset(lines[lineCount],' ',consSize.width);
-		/* terminate */
-		lines[lineCount][consSize.width] = '\0';
-	}
-
-	pos = lines[lineCount] + linePos;
+	pos = (char*)vec_get(lines,lines->count - 1) + linePos;
 	switch(c) {
 		case '\t': {
 			u32 i;
-			for(i = TAB_WIDTH - linePos % TAB_WIDTH; i > 0; i--) {
-				if(!copy(' '))
-					return false;
-			}
+			for(i = TAB_WIDTH - linePos % TAB_WIDTH; i > 0; i--)
+				copy(' ');
 		}
 		break;
 
 		case '\n':
 			linePos = 0;
-			lineCount++;
-			/* line-buffer full? */
-			if(lineCount >= lineSize) {
-				lineSize += BUFFER_INC_SIZE;
-				lines = (char**)realloc(lines,lineSize * sizeof(char*));
-				if(lines == NULL) {
-					printe("Unable to reallocate lines");
-					return false;
-				}
-				/* ensure that all pointers are NULL */
-				memclear(lines + lineSize - BUFFER_INC_SIZE,BUFFER_INC_SIZE * sizeof(char*));
-			}
+			newline();
 			break;
 
 		/* ignore */
@@ -376,5 +321,12 @@ static bool copy(char c) {
 			linePos++;
 			break;
 	}
-	return true;
+}
+
+static void newline(void) {
+	char *line = (char*)heap_alloc(consSize.width + 1);
+	vec_add(lines,&line);
+	/* fill the line with spaces */
+	memset(line,' ',consSize.width);
+	line[consSize.width] = '\0';
 }

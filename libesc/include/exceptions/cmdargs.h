@@ -23,8 +23,6 @@
 #include <esc/common.h>
 #include <exceptions/exception.h>
 
-#define ID_CmdArgsException					2
-
 typedef struct {
 	sException;
 /* private: */

@@ -22,15 +22,17 @@
 #include <io/inputstream.h>
 #include <exceptions/io.h>
 #include <util/string.h>
+#include <esccodes.h>
 #include <errors.h>
 #include <string.h>
 #include <ctype.h>
 
 static s32 istream_reads(sIStream *s,char *str,u32 size);
 static s32 istream_readline(sIStream *s,char *str,u32 size);
-static s32 istream_format(sIStream *s,const char *fmt,...);
-static s32 istream_vformat(sIStream *s,const char *fmt,va_list ap);
+static s32 istream_readf(sIStream *s,const char *fmt,...);
+static s32 istream_vreadf(sIStream *s,const char *fmt,va_list ap);
 static s32 istream_readAll(sIStream *s,sString *str);
+static s32 istream_readEsc(sIStream *s,s32 *n1,s32 *n2,s32 *n3);
 static s32 istream_readfstr(sIStream *s,s32 length,char *str);
 static s32 istream_readfnum(sIStream *s,s32 length,char c,s32 *res);
 
@@ -38,9 +40,10 @@ sIStream *istream_open(void) {
 	sIStream *s = (sIStream*)heap_alloc(sizeof(sIStream));
 	s->reads = istream_reads;
 	s->readAll = istream_readAll;
+	s->readEsc = istream_readEsc;
 	s->readline = istream_readline;
-	s->format = istream_format;
-	s->vformat = istream_vformat;
+	s->readf = istream_readf;
+	s->vreadf = istream_vreadf;
 	return s;
 }
 
@@ -83,16 +86,16 @@ static s32 istream_readline(sIStream *s,char *str,u32 size) {
 	return (str - start);
 }
 
-static s32 istream_format(sIStream *s,const char *fmt,...) {
+static s32 istream_readf(sIStream *s,const char *fmt,...) {
 	va_list ap;
 	s32 res;
 	va_start(ap,fmt);
-	res = istream_vformat(s,fmt,ap);
+	res = istream_vreadf(s,fmt,ap);
 	va_end(ap);
 	return res;
 }
 
-static s32 istream_vformat(sIStream *s,const char *fmt,va_list ap) {
+static s32 istream_vreadf(sIStream *s,const char *fmt,va_list ap) {
 	char *str = NULL,c,rc = 0;
 	s32 *n,count = 0;
 	u32 *u,x;
@@ -225,6 +228,17 @@ static s32 istream_readAll(sIStream *s,sString *str) {
 	}
 	while(res > 0);
 	return str->len;
+}
+
+static s32 istream_readEsc(sIStream *s,s32 *n1,s32 *n2,s32 *n3) {
+	u32 i;
+	char ec,escape[MAX_ESCC_LENGTH] = {0};
+	const char *escPtr = (const char*)escape;
+	for(i = 0; i < MAX_ESCC_LENGTH - 1 && (ec = s->readc(s)) != ']'; i++)
+		escape[i] = ec;
+	if(i < MAX_ESCC_LENGTH - 1 && ec == ']')
+		escape[i] = ec;
+	return escc_get(&escPtr,n1,n2,n3);
 }
 
 static s32 istream_readfstr(sIStream *s,s32 length,char *volatile str) {

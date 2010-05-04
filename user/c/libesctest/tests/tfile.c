@@ -46,13 +46,13 @@ static void test_file(void) {
 	f = file_get("bin/libesctest");
 	res = f->getAbsolute(f,buffer,sizeof(buffer));
 	test_assertUInt(res,strlen(buffer));
-	test_assertStr(buffer,"/bin/libesctest/");
+	test_assertStr(buffer,"/bin/libesctest");
 	res = f->getName(f,buffer,sizeof(buffer));
 	test_assertUInt(res,strlen(buffer));
 	test_assertStr(buffer,"libesctest");
 	res = f->getParent(f,buffer,sizeof(buffer));
 	test_assertUInt(res,strlen(buffer));
-	test_assertStr(buffer,"/bin/");
+	test_assertStr(buffer,"/bin");
 	f->destroy(f);
 	test_assertUInt(heap_getFreeSpace(),before);
 
@@ -73,13 +73,27 @@ static void test_file(void) {
 	f = file_get("/system/processes/0/regions");
 	res = f->getAbsolute(f,buffer,sizeof(buffer));
 	test_assertUInt(res,strlen(buffer));
-	test_assertStr(buffer,"/system/processes/0/regions/");
+	test_assertStr(buffer,"/system/processes/0/regions");
 	res = f->getName(f,buffer,sizeof(buffer));
 	test_assertUInt(res,strlen(buffer));
 	test_assertStr(buffer,"regions");
 	res = f->getParent(f,buffer,sizeof(buffer));
 	test_assertUInt(res,strlen(buffer));
-	test_assertStr(buffer,"/system/processes/0/");
+	test_assertStr(buffer,"/system/processes/0");
+	f->destroy(f);
+	test_assertUInt(heap_getFreeSpace(),before);
+
+	before = heap_getFreeSpace();
+	f = file_get("/");
+	res = f->getAbsolute(f,buffer,sizeof(buffer));
+	test_assertUInt(res,strlen(buffer));
+	test_assertStr(buffer,"/");
+	res = f->getName(f,buffer,sizeof(buffer));
+	test_assertUInt(res,strlen(buffer));
+	test_assertStr(buffer,"");
+	res = f->getParent(f,buffer,sizeof(buffer));
+	test_assertUInt(res,strlen(buffer));
+	test_assertStr(buffer,"/");
 	f->destroy(f);
 	test_assertUInt(heap_getFreeSpace(),before);
 

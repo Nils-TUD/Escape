@@ -43,11 +43,11 @@ int main(int argc,char *argv[]) {
 	char rpath[MAX_PATH_LEN];
 	char rdev[MAX_PATH_LEN];
 	if(argc != 4 || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s <device> <path> <type>\n",argv[0]);
-		fprintf(stderr,"	Types: ");
+		cerr->writef(cerr,"Usage: %s <device> <path> <type>\n",argv[0]);
+		cerr->writef(cerr,"	Types: ");
 		for(i = 0; i < ARRAY_SIZE(types); i++)
-			fprintf(stderr,"%s ",types[i].name);
-		fprintf(stderr,"\n");
+			cerr->writef(cerr,"%s ",types[i].name);
+		cerr->writef(cerr,"\n");
 		return EXIT_FAILURE;
 	}
 

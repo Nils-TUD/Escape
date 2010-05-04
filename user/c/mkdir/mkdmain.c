@@ -22,11 +22,13 @@
 #include <esc/fileio.h>
 #include <esc/dir.h>
 #include <esc/io.h>
+#include <io/streams.h>
+
 int main(int argc,char *argv[]) {
 	s32 i;
 	char path[MAX_PATH_LEN];
 	if(argc < 2 || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s <path> ...\n",argv[0]);
+		cerr->writef(cerr,"Usage: %s <path> ...\n",argv[0]);
 		return EXIT_FAILURE;
 	}
 

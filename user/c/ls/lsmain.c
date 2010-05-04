@@ -31,13 +31,14 @@
 #include <messages.h>
 #include <string.h>
 
-#define DATE_LEN			(SSTRLEN("2009-09-09 14:12") + 1)
-#define ARRAY_INC_SIZE		8
+#include <exceptions/cmdargs.h>
+#include <exceptions/io.h>
+#include <io/file.h>
+#include <io/streams.h>
+#include <util/cmdargs.h>
+#include <util/vector.h>
 
-/* flags */
-#define LS_FL_ALL			1
-#define LS_FL_LONG			2
-#define LS_FL_INODE			4
+#define DATE_LEN			(SSTRLEN("2009-09-09 14:12") + 1)
 
 /* for calculating the widths of the fields */
 #define WIDTHS_COUNT		6
@@ -48,312 +49,166 @@
 #define W_SIZE				4
 #define W_NAME				5
 
-/* internal data-structure for storing all attributes we want to display about a file/folder */
-typedef struct {
-	tInodeNo inodeNo;
-	u16 uid;
-	u16 gid;
-	u16 mode;
-	u16 linkCount;
-	u32 modifytime;
-	s32 size;
-	char name[MAX_NAME_LEN + 1];
-} sFullDirEntry;
-
-static void printMode(u16 mode);
 static s32 compareEntries(const void *a,const void *b);
+static sVector *getEntries(const char *path,bool fall);
+static void printMode(u16 mode);
 static void printPerm(u16 mode,u16 flags,char c);
-static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count);
-static sFullDirEntry *getEntry(sFileInfo *info,const char *name);
-static void freeEntries(sFullDirEntry **entries,u32 count);
 
-static void usage(char *name) {
-	fprintf(stderr,"Usage: %s [-lia] [<path>]\n",name);
-	fprintf(stderr,"	-l: long listing\n");
-	fprintf(stderr,"	-i: print inode-numbers\n");
-	fprintf(stderr,"	-a: print also '.' and '..'\n");
+static void usage(const char *name) {
+	cerr->writef(cerr,"Usage: %s [-lia] [<path>]\n",name);
+	cerr->writef(cerr,"	-l: long listing\n");
+	cerr->writef(cerr,"	-i: print inode-numbers\n");
+	cerr->writef(cerr,"	-a: print also '.' and '..'\n");
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,char *argv[]) {
-	bool pathGiven = false;
-	char *path;
-	char *str;
-	char dateStr[DATE_LEN];
+int main(int argc,const char *argv[]) {
+	char path[MAX_PATH_LEN];
 	u32 widths[WIDTHS_COUNT] = {0};
-	u32 i,pos,x,count,flags = 0;
-	sFullDirEntry **entries,*entry;
+	u32 pos,x;
+	sVector *entries;
+	sFile *f;
 	sVTSize consSize;
-	sDate date;
+	sCmdArgs *args;
+	const char *filename;
+	bool flong = 0,finode = 0,fall = 0;
 
-	if(isHelpCmd(argc,argv))
-		usage(argv[0]);
-
-	path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-	if(path == NULL)
-		error("Not enough mem for path");
-
-	/* parse args */
-	for(i = 1; (s32)i < argc; i++) {
-		if(*argv[i] == '-') {
-			str = argv[i] + 1;
-			while(*str) {
-				switch(*str) {
-					case 'a':
-						flags |= LS_FL_ALL;
-						break;
-					case 'l':
-						flags |= LS_FL_LONG;
-						break;
-					case 'i':
-						flags |= LS_FL_INODE;
-						break;
-					default:
-						usage(argv[0]);
-						break;
-				}
-				str++;
-			}
-		}
-		else {
-			if(pathGiven)
-				usage(argv[0]);
-			abspath(path,MAX_PATH_LEN + 1,argv[argc - 1]);
-			pathGiven = true;
-		}
+	/* parse params */
+	TRY {
+		args = cmdargs_create(argc,argv,CA_MAX1_FREE);
+		args->parse(args,"l i a",&flong,&finode,&fall);
+		if(args->isHelp)
+			usage(argv[0]);
 	}
+	CATCH(CmdArgsException,e) {
+		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
+		usage(argv[0]);
+	}
+	ENDCATCH
 
+	filename = args->getFirstFree(args);
+	if(filename)
+		abspath(path,sizeof(path),filename);
 	/* path not provided? so use CWD */
-	if(!pathGiven && !getEnv(path,MAX_PATH_LEN + 1,"CWD"))
+	else if(!getEnv(path,MAX_PATH_LEN + 1,"CWD"))
 		error("Unable to get CWD");
 
 	if(recvMsgData(STDIN_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
 		error("Unable to determine screensize");
 
-	/* get entries */
-	entries = getEntries(path,flags,&count);
-	if(entries == NULL)
-		return EXIT_FAILURE;
-
-	/* sort */
-	qsort(entries,count,sizeof(sFullDirEntry*),compareEntries);
+	/* get entries and sort them */
+	TRY {
+		entries = getEntries(path,fall);
+		vec_sortCustom(entries,compareEntries);
+	}
+	CATCH(IOException,e) {
+		error("Unable to read dir-entries: %s",e->toString(e));
+	}
+	ENDCATCH
 
 	/* calc widths */
 	pos = 0;
-	for(i = 0; i < count; i++) {
-		if(!(flags & LS_FL_LONG)) {
-			if((x = strlen(entries[i]->name)) > widths[W_NAME])
-				widths[W_NAME] = x;
-		}
-		if(flags & LS_FL_INODE) {
-			if((x = getnwidth(entries[i]->inodeNo)) > widths[W_INODE])
-				widths[W_INODE] = x;
-		}
-		if(flags & LS_FL_LONG) {
-			if((x = getuwidth(entries[i]->linkCount,10)) > widths[W_LINKCOUNT])
-				widths[W_LINKCOUNT] = x;
-			if((x = getuwidth(entries[i]->uid,10)) > widths[W_UID])
-				widths[W_UID] = x;
-			if((x = getuwidth(entries[i]->gid,10)) > widths[W_GID])
-				widths[W_GID] = x;
-			if((x = getnwidth(entries[i]->size)) > widths[W_SIZE])
-				widths[W_SIZE] = x;
+	{
+		vforeach(entries,f) {
+			sFileInfo *info = f->getInfo(f);
+			if(!flong) {
+				if((x = strlen(f->name(f))) > widths[W_NAME])
+					widths[W_NAME] = x;
+			}
+			if(finode) {
+				if((x = getnwidth(info->inodeNo)) > widths[W_INODE])
+					widths[W_INODE] = x;
+			}
+			if(flong) {
+				if((x = getuwidth(info->linkCount,10)) > widths[W_LINKCOUNT])
+					widths[W_LINKCOUNT] = x;
+				if((x = getuwidth(info->uid,10)) > widths[W_UID])
+					widths[W_UID] = x;
+				if((x = getuwidth(info->gid,10)) > widths[W_GID])
+					widths[W_GID] = x;
+				if((x = getnwidth(info->size)) > widths[W_SIZE])
+					widths[W_SIZE] = x;
+			}
 		}
 	}
 
 	/* display */
-	for(i = 0; i < count; i++) {
-		entry = entries[i];
-
-		if(flags & LS_FL_LONG) {
-			if(flags & LS_FL_INODE)
-				printf("%*d ",widths[W_INODE],entry->inodeNo);
-			printMode(entry->mode);
-			printf("%*u ",widths[W_LINKCOUNT],entry->linkCount);
-			printf("%*u ",widths[W_UID],entry->uid);
-			printf("%*u ",widths[W_GID],entry->gid);
-			printf("%*d ",widths[W_SIZE],entry->size);
-			getDateOf(&date,entry->modifytime);
-			dateToString(dateStr,DATE_LEN,"%Y-%m-%d %H:%M",&date);
-			printf("%s ",dateStr);
-			if(MODE_IS_DIR(entry->mode))
-				printf("\033[co;9]%s\033[co]",entry->name);
-			else if(entry->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
-				printf("\033[co;2]%s\033[co]",entry->name);
-			else
-				printf("%s",entry->name);
-			printf("\n");
-		}
-		else {
-			/* if the entry does not fit on the line, use next */
-			if(pos + widths[W_NAME] + widths[W_INODE] + 2 >= consSize.width) {
-				printf("\n");
-				pos = 0;
+	{
+		vforeach(entries,f) {
+			sFileInfo *info = f->getInfo(f);
+			if(flong) {
+				sDate date;
+				char dateStr[DATE_LEN];
+				if(finode)
+					cout->writef(cout,"%*d ",widths[W_INODE],info->inodeNo);
+				printMode(info->mode);
+				cout->writef(cout,"%*u ",widths[W_LINKCOUNT],info->linkCount);
+				cout->writef(cout,"%*u ",widths[W_UID],info->uid);
+				cout->writef(cout,"%*u ",widths[W_GID],info->gid);
+				cout->writef(cout,"%*d ",widths[W_SIZE],info->size);
+				getDateOf(&date,info->modifytime);
+				dateToString(dateStr,DATE_LEN,"%Y-%m-%d %H:%M",&date);
+				cout->writef(cout,"%s ",dateStr);
+				if(MODE_IS_DIR(info->mode))
+					cout->writef(cout,"\033[co;9]%s\033[co]",f->name(f));
+				else if(info->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
+					cout->writef(cout,"\033[co;2]%s\033[co]",f->name(f));
+				else
+					cout->writes(cout,f->name(f));
+				cout->writec(cout,'\n');
 			}
-			if(flags & LS_FL_INODE)
-				printf("%*d ",widths[W_INODE],entry->inodeNo);
-			if(MODE_IS_DIR(entry->mode))
-				printf("\033[co;9]%-*s\033[co]",widths[W_NAME] + 1,entry->name);
-			else if(entry->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
-				printf("\033[co;2]%-*s\033[co]",widths[W_NAME] + 1,entry->name);
-			else
-				printf("%-*s",widths[W_NAME] + 1,entry->name);
-			pos += widths[W_NAME] + widths[W_INODE] + 2;
+			else {
+				/* if the entry does not fit on the line, use next */
+				if(pos + widths[W_NAME] + widths[W_INODE] + 2 >= consSize.width) {
+					cout->writec(cout,'\n');
+					pos = 0;
+				}
+				if(finode)
+					cout->writef(cout,"%*d ",widths[W_INODE],info->inodeNo);
+				if(MODE_IS_DIR(info->mode))
+					cout->writef(cout,"\033[co;9]%-*s\033[co]",widths[W_NAME] + 1,f->name(f));
+				else if(info->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))
+					cout->writef(cout,"\033[co;2]%-*s\033[co]",widths[W_NAME] + 1,f->name(f));
+				else
+					cout->writef(cout,"%-*s",widths[W_NAME] + 1,f->name(f));
+				pos += widths[W_NAME] + widths[W_INODE] + 2;
+			}
 		}
 	}
 
-	if(!(flags & LS_FL_LONG))
-		printf("\n");
+	if(!flong)
+		cout->writec(cout,'\n');
 
-	freeEntries(entries,count);
-	free(path);
+	vec_destroy(entries,true);
 	return EXIT_SUCCESS;
 }
 
 static s32 compareEntries(const void *a,const void *b) {
-	sFullDirEntry *ea = *(sFullDirEntry**)a;
-	sFullDirEntry *eb = *(sFullDirEntry**)b;
-	if(MODE_IS_DIR(ea->mode) == MODE_IS_DIR(eb->mode))
-		return strcmp(ea->name,eb->name);
-	if(MODE_IS_DIR(ea->mode))
+	sFile *ea = *(sFile**)a;
+	sFile *eb = *(sFile**)b;
+	if(ea->isDir(ea) == eb->isDir(eb))
+		return strcmp(ea->name(ea),eb->name(eb));
+	if(ea->isDir(ea))
 		return -1;
 	return 1;
 }
 
-static sFullDirEntry **getEntries(const char *path,u16 flags,u32 *count) {
-	tFD dd;
-	sDirEntry de;
-	sFullDirEntry *fde;
-	sFileInfo info;
-	char *fpath;
-	u32 pathLen;
-	u32 pos = 0;
-	u32 size = ARRAY_INC_SIZE;
-	sFullDirEntry **entries = (sFullDirEntry**)malloc(size * sizeof(sFullDirEntry*));
-	if(entries == NULL) {
-		printe("Unable to allocate memory for dir-entries");
-		return NULL;
-	}
-
-	if(stat(path,&info) < 0) {
-		printe("Unable to get file-info for '%s'",path);
-		free(entries);
-		return NULL;
-	}
-
-	/* allocate mem for path */
-	pathLen = strlen(path);
-	fpath = (char*)malloc(pathLen + MAX_NAME_LEN + 1);
-	if(fpath == NULL) {
-		printe("Unable to allocate memory for file-path");
-		free(entries);
-		return NULL;
-	}
-	strcpy(fpath,path);
-
-	if(MODE_IS_DIR(info.mode)) {
-		if((dd = opendir(path)) >= 0) {
-			while(readdir(&de,dd)) {
-				/* skip "." and ".." if -a is not enabled */
-				if(!(flags & LS_FL_ALL) && (strcmp(de.name,".") == 0 || strcmp(de.name,"..") == 0))
-					continue;
-
-				/* retrieve information */
-				strcpy(fpath + pathLen,de.name);
-				if(stat(fpath,&info) < 0) {
-					printe("Unable to get file-info for '%s'",fpath);
-					freeEntries(entries,pos);
-					free(fpath);
-					closedir(dd);
-					return NULL;
-				}
-
-				/* increase array-size? */
-				if(pos >= size) {
-					size += ARRAY_INC_SIZE;
-					entries = (sFullDirEntry**)realloc(entries,size * sizeof(sFullDirEntry*));
-					if(entries == NULL) {
-						printe("Unable to reallocate memory for dir-entries");
-						free(fpath);
-						closedir(dd);
-						return NULL;
-					}
-				}
-
-				/* create entry */
-				fde = getEntry(&info,de.name);
-				if(fde == NULL) {
-					freeEntries(entries,pos);
-					free(fpath);
-					closedir(dd);
-					return NULL;
-				}
-				entries[pos++] = fde;
-			}
-			closedir(dd);
+static sVector *getEntries(const char *path,bool fall) {
+	sFile *p;
+	sVector *entries = vec_create(sizeof(sFile*));
+	p = file_get(path);
+	if(p->isDir(p)) {
+		sDirEntry *de;
+		sVector *files = p->listFiles(p,fall);
+		vforeach(files,de) {
+			sFile *f = file_getIn(path,de->name);
+			vec_add(entries,&f);
 		}
-		else {
-			printe("Unable to open '%s'",path);
-			freeEntries(entries,pos);
-			free(fpath);
-			return NULL;
-		}
+		vec_destroy(files,true);
 	}
-	else {
-		/* determine name */
-		char *lastSlash = strrchr(path,'/');
-		if(lastSlash != NULL) {
-			if(*(lastSlash + 1) == '\0') {
-				*lastSlash = '\0';
-				lastSlash = strrchr(path,'/');
-				if(lastSlash == NULL)
-					lastSlash = (char*)path;
-				else
-					lastSlash++;
-			}
-			else
-				lastSlash++;
-		}
-		else
-			lastSlash = (char*)path;
-
-		fde = getEntry(&info,lastSlash);
-		if(fde == NULL) {
-			freeEntries(entries,pos);
-			free(fpath);
-			return NULL;
-		}
-		entries[pos++] = fde;
-	}
-
-	*count = pos;
+	else
+		vec_add(entries,&p);
 	return entries;
-}
-
-static sFullDirEntry *getEntry(sFileInfo *info,const char *name) {
-	sFullDirEntry *fde = (sFullDirEntry*)malloc(sizeof(sFullDirEntry));
-	if(fde == NULL) {
-		printe("Unable to allocate memory for dir-entry");
-		return NULL;
-	}
-
-	/* set content */
-	fde->gid = info->gid;
-	fde->uid = info->uid;
-	fde->size = info->size;
-	fde->inodeNo = info->inodeNo;
-	fde->linkCount = info->linkCount;
-	fde->mode = info->mode;
-	fde->modifytime = info->modifytime;
-	strcpy(fde->name,name);
-	return fde;
-}
-
-static void freeEntries(sFullDirEntry **entries,u32 count) {
-	u32 i;
-	for(i = 0; i < count; i++)
-		free(entries[i]);
-	free(entries);
 }
 
 static void printMode(u16 mode) {
@@ -367,12 +222,12 @@ static void printMode(u16 mode) {
 	printPerm(mode,MODE_OTHER_READ,'r');
 	printPerm(mode,MODE_OTHER_WRITE,'w');
 	printPerm(mode,MODE_OTHER_EXEC,'x');
-	printc(' ');
+	cout->writec(cout,' ');
 }
 
 static void printPerm(u16 mode,u16 flags,char c) {
 	if((mode & flags) != 0)
-		printc(c);
+		cout->writec(cout,c);
 	else
-		printc('-');
+		cout->writec(cout,'-');
 }

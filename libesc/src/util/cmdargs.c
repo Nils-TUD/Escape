@@ -32,10 +32,11 @@
 static void cmdargs_destroy(sCmdArgs *a);
 static const char *cmdargs_getFirstFree(sCmdArgs *a);
 static void cmdargs_parse(sCmdArgs *a,const char *fmt,...);
-static s32 cmdargs_find(sCmdArgs *a,const char *begin,const char *end);
-static void cmdargs_setVal(sCmdArgs *a,bool hasVal,bool isEmpty,s32 argi,char type,void *ptr);
+static s32 cmdargs_find(sCmdArgs *a,const char *begin,const char *end,bool hasVal);
+static void cmdargs_setVal(sCmdArgs *a,bool hasVal,bool isEmpty,const char *begin,
+		s32 argi,char type,void *ptr);
 static u32 cmdargs_readk(const char *str);
-static const char *cmdargs_getArgVal(sCmdArgs *a,s32 i,bool isEmpty);
+static const char *cmdargs_getArgVal(sCmdArgs *a,s32 i,bool isEmpty,bool hasVal,const char *begin);
 static sIterator cmdargs_getFreeArgs(sCmdArgs *a);
 static bool cmdargs_itHasNext(sIterator *it);
 static void *cmdargs_itNext(sIterator *it);
@@ -89,7 +90,7 @@ static void cmdargs_parse(sCmdArgs *a,const char *fmt,...) {
 	flagsBak = a->_flags;
 	a->_flags = 0;
 	for(i = 0; i < (s32)ARRAY_SIZE(helps); i++) {
-		s32 index = cmdargs_find(a,helps[i],helps[i] + strlen(helps[i]));
+		s32 index = cmdargs_find(a,helps[i],helps[i] + strlen(helps[i]),true);
 		if(index != -1) {
 			a->isHelp = true;
 			return;
@@ -137,14 +138,14 @@ static void cmdargs_parse(sCmdArgs *a,const char *fmt,...) {
 		}
 
 		/* find the argument and set it */
-		i = cmdargs_find(a,begin,end);
+		i = cmdargs_find(a,begin,end,hasVal);
 		if(required && i == -1) {
 			char argName[MAX_ARGNAME_LEN];
 			strncpy(argName,begin,end - begin);
 			argName[end - begin] = '\0';
 			THROW(CmdArgsException,"Required argument '%s' is missing",argName);
 		}
-		cmdargs_setVal(a,hasVal,begin == end,i,type,va_arg(ap,void*));
+		cmdargs_setVal(a,hasVal,begin == end,begin,i,type,va_arg(ap,void*));
 
 		/* to next */
 		while(*f && *f++ != ' ');
@@ -158,7 +159,7 @@ static void cmdargs_parse(sCmdArgs *a,const char *fmt,...) {
 		THROW(CmdArgsException,"Max. 1 free argument is allowed");
 }
 
-static s32 cmdargs_find(sCmdArgs *a,const char *begin,const char *end) {
+static s32 cmdargs_find(sCmdArgs *a,const char *begin,const char *end,bool hasVal) {
 	s32 i;
 	bool onechar = end - begin == 1;
 	/* empty? */
@@ -169,20 +170,20 @@ static s32 cmdargs_find(sCmdArgs *a,const char *begin,const char *end) {
 		return (s32)sll_get(a->_freeArgs,0);
 	}
 	for(i = 1; i < a->_argc; i++) {
-		char next;
+		const char *next;
 		if(onechar) {
-			next = (a->_flags & CA_NO_DASHES) ? a->_argv[i][1] : a->_argv[i][2];
-			if(a->_flags & CA_NO_DASHES) {
-				if(a->_argv[i][0] != *begin)
-					continue;
-			}
-			else {
-				if(a->_argv[i][0] != '-' || a->_argv[i][1] != *begin)
-					continue;
-			}
+			next = (a->_flags & CA_NO_DASHES) ? &a->_argv[i][1] : &a->_argv[i][2];
+			if(!(a->_flags & CA_NO_DASHES) && a->_argv[i][0] != '-')
+				continue;
+			/* multiple flags may be passed with one argument */
+			if(!hasVal && strchr(next - 1,*begin) != NULL)
+				return i;
+			/* otherwise the first char has to match and has to be the last, too */
+			if(next[-1] != *begin)
+				continue;
 		}
 		else {
-			next = (a->_flags & CA_NO_DASHES) ? a->_argv[i][end - begin] : a->_argv[i][2 + end - begin];
+			next = (a->_flags & CA_NO_DASHES) ? &a->_argv[i][end - begin] : &a->_argv[i][2 + end - begin];
 			if(a->_flags & CA_NO_DASHES) {
 				if(strncmp(a->_argv[i],begin,end - begin))
 					continue;
@@ -192,28 +193,29 @@ static s32 cmdargs_find(sCmdArgs *a,const char *begin,const char *end) {
 					continue;
 			}
 		}
-		if(!(a->_flags & CA_NO_EQ) && next == '=')
+		if(!(a->_flags & CA_NO_EQ) && *next == '=')
 			return i;
-		if(!(a->_flags & CA_REQ_EQ) && next == '\0')
+		if(!(a->_flags & CA_REQ_EQ) && *next == '\0')
 			return i;
 	}
 	return -1;
 }
 
-static void cmdargs_setVal(sCmdArgs *a,bool hasVal,bool isEmpty,s32 argi,char type,void *ptr) {
+static void cmdargs_setVal(sCmdArgs *a,bool hasVal,bool isEmpty,const char *begin,
+		s32 argi,char type,void *ptr) {
 	if(hasVal) {
 		if(argi == -1)
 			return;
 		switch(type) {
 			case 's': {
 				const char **str = (const char**)ptr;
-				*str = cmdargs_getArgVal(a,argi,isEmpty);
+				*str = cmdargs_getArgVal(a,argi,isEmpty,hasVal,begin);
 			}
 			break;
 
 			case 'c': {
 				char *c = (char*)ptr;
-				const char *str = cmdargs_getArgVal(a,argi,isEmpty);
+				const char *str = cmdargs_getArgVal(a,argi,isEmpty,hasVal,begin);
 				*c = *str;
 			}
 			break;
@@ -221,20 +223,20 @@ static void cmdargs_setVal(sCmdArgs *a,bool hasVal,bool isEmpty,s32 argi,char ty
 			case 'd':
 			case 'i': {
 				s32 *n = (s32*)ptr;
-				*n = strtol(cmdargs_getArgVal(a,argi,isEmpty),NULL,10);
+				*n = strtol(cmdargs_getArgVal(a,argi,isEmpty,hasVal,begin),NULL,10);
 			}
 			break;
 
 			case 'x':
 			case 'X': {
 				u32 *u = (u32*)ptr;
-				*u = strtoul(cmdargs_getArgVal(a,argi,isEmpty),NULL,16);
+				*u = strtoul(cmdargs_getArgVal(a,argi,isEmpty,hasVal,begin),NULL,16);
 			}
 			break;
 
 			case 'k': {
 				u32 *k = (u32*)ptr;
-				*k = cmdargs_readk(cmdargs_getArgVal(a,argi,isEmpty));
+				*k = cmdargs_readk(cmdargs_getArgVal(a,argi,isEmpty,hasVal,begin));
 			}
 			break;
 		}
@@ -268,11 +270,15 @@ static u32 cmdargs_readk(const char *str) {
 	return val;
 }
 
-static const char *cmdargs_getArgVal(sCmdArgs *a,s32 i,bool isEmpty) {
+static const char *cmdargs_getArgVal(sCmdArgs *a,s32 i,bool isEmpty,bool hasVal,const char *begin) {
 	const char *arg = a->_argv[i];
 	char *eqPos = strchr(arg,'=');
 	sll_removeFirst(a->_freeArgs,(void*)i);
 	if(eqPos == NULL) {
+		/* if its a flag, simply return the pointer to the character; we'll just use the first one
+		 * anyway */
+		if(!hasVal)
+			return strchr(a->_argv[i],*begin);
 		if(!isEmpty) {
 			if((a->_flags & CA_REQ_EQ) || i >= a->_argc - 1)
 				THROW(CmdArgsException,"Please use '=' to specify values");
@@ -281,6 +287,8 @@ static const char *cmdargs_getArgVal(sCmdArgs *a,s32 i,bool isEmpty) {
 		}
 		return a->_argv[i];
 	}
+	if(!hasVal)
+		THROW(CmdArgsException,"Found '=' in flag-argument");
 	if(a->_flags & CA_NO_EQ)
 		THROW(CmdArgsException,"Please use no '=' to specify values");
 	return eqPos + 1;

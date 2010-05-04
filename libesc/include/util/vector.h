@@ -29,12 +29,13 @@
  * sVector *myVector = vec_create(sizeof(u32));
  * u32 e;
  * vforeach(myVector,e)
- *   cout->format(cout,"%u ",e);
+ *   cout->writef(cout,"%u ",e);
+ * vec_destroy(myVector,false);
  */
 #define vforeach(v,eName)	\
 	sIterator __it##eName = vec_iterator(v); \
 	while((__it##eName).hasNext(&__it##eName) && \
-			(eName = *(__typeof__(eName)*)(__it##eName).next(&(__it##eName))))
+			(eName = (__typeof__(eName))(__it##eName).next(&(__it##eName))))
 
 typedef struct {
 /* private: */
@@ -78,6 +79,26 @@ sVector *vec_copy(const sVector *v);
  * @return the iterator
  */
 sIterator vec_iterator(sVector *v);
+
+/**
+ * Returns an iterator (allocated on the stack, nothing to free) for the given vector between
+ * <start> and <start> + <count>, i.e. the element at <start> + <count> is not included.
+ *
+ * @param v the vector
+ * @param start the start-position
+ * @param count the number of items to iterate
+ * @return the iterator
+ */
+sIterator vec_iteratorIn(sVector *v,u32 start,u32 count);
+
+/**
+ * Returns the element with index <i>
+ *
+ * @param v the vector
+ * @param i the index
+ * @return the element
+ */
+void *vec_get(sVector *v,u32 i);
 
 /**
  * Adds an integer to the vector. This makes just sense if your vector contains elements with

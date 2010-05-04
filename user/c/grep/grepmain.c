@@ -32,9 +32,9 @@
 static bool matches(const char *line,const char *pattern);
 static void strtolower(char *s);
 static void usage(const char *name) {
-	cerr->format(cerr,"Usage: %s <pattern> [<file>]\n",name);
-	cerr->format(cerr,"	<pattern> will be treated case-insensitive and is NOT a\n");
-	cerr->format(cerr,"	regular expression because we have no regexp-library yet ;)\n");
+	cerr->writef(cerr,"Usage: %s <pattern> [<file>]\n",name);
+	cerr->writef(cerr,"	<pattern> will be treated case-insensitive and is NOT a\n");
+	cerr->writef(cerr,"	regular expression because we have no regexp-library yet ;)\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -53,7 +53,7 @@ int main(int argc,const char *argv[]) {
 			usage(argv[0]);
 	}
 	CATCH(CmdArgsException,e) {
-		cerr->format(cerr,"Invalid arguments: %s\n",e->toString(e));
+		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
 		usage(argv[0]);
 	}
 	ENDCATCH
@@ -69,7 +69,7 @@ int main(int argc,const char *argv[]) {
 			count = in->readline(in,buffer,MAX_LINE_LEN);
 			if(count) {
 				if(matches(buffer,pattern))
-					cout->format(cout,"%s\n",buffer);
+					cout->writef(cout,"%s\n",buffer);
 			}
 		}
 	}

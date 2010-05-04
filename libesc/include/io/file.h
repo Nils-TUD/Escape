@@ -29,7 +29,8 @@ typedef struct sFile sFile;
 struct sFile {
 /* private: */
 	sFileInfo _info;
-	const char *_path;
+	char *_name;
+	char *_path;
 
 /* public: */
 	/**
@@ -63,6 +64,22 @@ struct sFile {
 	 * @return true if its a directory
 	 */
 	bool (*isDir)(sFile *f);
+
+	/**
+	 * Returns a pointer to the name-beginning of the internal path
+	 *
+	 * @param f the file
+	 * @return a pointer to the name
+	 */
+	const char *(*name)(sFile *f);
+
+	/**
+	 * Returns a pointer to the path-beginning of the internal path
+	 *
+	 * @param f the file
+	 * @return a pointer to the path
+	 */
+	const char *(*parent)(sFile *f);
 
 	/**
 	 * Writes the name of this file into the given buffer
@@ -124,5 +141,15 @@ struct sFile {
  * @return the file-object
  */
 sFile *file_get(const char *path);
+
+/**
+ * Creates an sFile-object for path "<parent>/<filename>". The path doesn't need to be absolute.
+ * It will be made absolute with abspath(), i.e. depending on CWD.
+ *
+ * @param parent the parent-path
+ * @param filename the filename in <parent>
+ * @return the file-object
+ */
+sFile *file_getIn(const char *parent,const char *filename);
 
 #endif /* FILE_H_ */

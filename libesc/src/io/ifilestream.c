@@ -29,7 +29,7 @@
 #include <assert.h>
 #include <string.h>
 
-#define BUF_SIZE	64
+#define BUF_SIZE	512
 
 typedef struct {
 	tFD fd;

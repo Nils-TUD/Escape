@@ -27,7 +27,7 @@
 #include <exceptions/io.h>
 #include <assert.h>
 
-#define BUF_SIZE	256
+#define BUF_SIZE	512
 
 typedef struct {
 	tFD fd;

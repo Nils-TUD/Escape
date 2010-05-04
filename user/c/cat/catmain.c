@@ -30,7 +30,7 @@
 static void printStream(sIStream *s);
 
 static void usage(const char *name) {
-	cerr->format(cerr,"Usage: %s [<file> ...]\n",name);
+	cerr->writef(cerr,"Usage: %s [<file> ...]\n",name);
 	exit(EXIT_FAILURE);
 }
 
@@ -51,14 +51,14 @@ int main(int argc,const char *argv[]) {
 			TRY {
 				f = file_get(arg);
 				if(f->isDir(f))
-					cerr->format(cerr,"'%s' is a directory!\n",arg);
+					cerr->writef(cerr,"'%s' is a directory!\n",arg);
 				else {
 					s = ifstream_open(arg,IO_READ);
 					printStream(s);
 				}
 			}
 			CATCH(IOException,e) {
-				cerr->format(cerr,"Unable to read file '%s': %s\n",arg,e->toString(e));
+				cerr->writef(cerr,"Unable to read file '%s': %s\n",arg,e->toString(e));
 			}
 			ENDCATCH
 			if(f)

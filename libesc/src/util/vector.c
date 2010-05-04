@@ -58,9 +58,25 @@ sIterator vec_iterator(sVector *v) {
 	sIterator it;
 	it._con = v;
 	it._pos = 0;
+	it._end = v->count;
 	it.next = vec_itNext;
 	it.hasNext = vec_itHasNext;
 	return it;
+}
+
+sIterator vec_iteratorIn(sVector *v,u32 start,u32 count) {
+	sIterator it;
+	it._con = v;
+	it._pos = start;
+	it._end = MIN(v->count,start + count);
+	it.next = vec_itNext;
+	it.hasNext = vec_itHasNext;
+	return it;
+}
+
+void *vec_get(sVector *v,u32 i) {
+	assert(i < v->count);
+	return *(void**)((char*)v->_elements + i * v->_elSize);
 }
 
 void vec_addInt(sVector *v,u32 val) {
@@ -139,10 +155,8 @@ void vec_sortCustom(sVector *v,fCompare cmp) {
 void vec_destroy(sVector *v,bool freeElements) {
 	if(freeElements) {
 		sIterator it = vec_iterator(v);
-		while(it.hasNext(&it)) {
-			void *p = *(void**)it.next(&it);
-			heap_free(p);
-		}
+		while(it.hasNext(&it))
+			heap_free(it.next(&it));
 	}
 	heap_free(v->_elements);
 	heap_free(v);
@@ -154,14 +168,13 @@ static int vec_sortCmp(const void *a,const void *b) {
 
 static void *vec_itNext(sIterator *it) {
 	sVector *v = (sVector*)it->_con;
-	if(it->_pos >= v->count)
+	if(it->_pos >= it->_end)
 		return NULL;
-	return (char*)v->_elements + it->_pos++ * v->_elSize;
+	return *(void**)((char*)v->_elements + it->_pos++ * v->_elSize);
 }
 
 static bool vec_itHasNext(sIterator *it) {
-	sVector *v = (sVector*)it->_con;
-	return it->_pos < v->count;
+	return it->_pos < it->_end;
 }
 
 static void vec_grow(sVector *v,u32 reqSize) {

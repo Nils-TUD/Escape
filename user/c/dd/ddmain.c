@@ -29,8 +29,8 @@
 #include <util/cmdargs.h>
 
 static void usage(const char *name) {
-	cerr->format(cerr,"Usage: %s [if=<file>] [of=<file>] [bs=N] [count=N]\n",name);
-	cerr->format(cerr,"	You can use the suffixes K, M and G to specify N\n");
+	cerr->writef(cerr,"Usage: %s [if=<file>] [of=<file>] [bs=N] [count=N]\n",name);
+	cerr->writef(cerr,"	You can use the suffixes K, M and G to specify N\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -55,7 +55,7 @@ int main(int argc,const char *argv[]) {
 			usage(argv[0]);
 	}
 	CATCH(CmdArgsException,e) {
-		cerr->format(cerr,"Invalid arguments: %s\n",e->toString(e));
+		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
 		usage(argv[0]);
 	}
 	ENDCATCH
@@ -91,7 +91,7 @@ int main(int argc,const char *argv[]) {
 	}
 	ENDCATCH
 
-	cout->format(cout,"Wrote %Lu bytes in %.3f packages, each %u bytes long\n",
+	cout->writef(cout,"Wrote %Lu bytes in %.3f packages, each %u bytes long\n",
 			total,(float)(total / (double)bs),bs);
 
 	out->close(out);

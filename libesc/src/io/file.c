@@ -32,6 +32,8 @@ static bool file_isFile(sFile *f);
 static bool file_isDir(sFile *f);
 static sFileInfo *file_getInfo(sFile *f);
 static s32 file_getSize(sFile *f);
+static const char *file_name(sFile *f);
+static const char *file_parent(sFile *f);
 static u32 file_getName(sFile *f,char *buf,u32 size);
 static u32 file_getParent(sFile *f,char *buf,u32 size);
 static u32 file_getAbsolute(sFile *f,char *buf,u32 size);
@@ -39,12 +41,36 @@ static void file_destroy(sFile *f);
 static s32 file_getDirSlash(const char *path,u32 len);
 
 sFile *file_get(const char *path) {
+	return file_getIn(path,"");
+}
+
+sFile *file_getIn(const char *parent,const char *filename) {
+	char tmp[MAX_PATH_LEN];
 	s32 res;
 	sFile *f = (sFile*)heap_alloc(sizeof(sFile));
 	char *abs = (char*)heap_alloc(MAX_PATH_LEN);
-	abspath(abs,MAX_PATH_LEN,path);
+	if(*filename) {
+		s32 len = abspath(abs,MAX_PATH_LEN,parent);
+		/* replace last '/' with '\0' if its not "/" */
+		if(len > 1)
+			abs[len - 1] = '\0';
+		f->_name = (char*)heap_alloc(strlen(filename) + 1);
+		strcpy(f->_name,filename);
+	}
+	else {
+		u32 lastSlash;
+		s32 len = abspath(abs,MAX_PATH_LEN,parent);
+		lastSlash = file_getDirSlash(abs,len);
+		abs[lastSlash] = '\0';
+		f->_name = (char*)heap_alloc(len - lastSlash - 1);
+		strncpy(f->_name,abs + lastSlash + 1,len - lastSlash - 2);
+		f->_name[len - lastSlash - 2] = '\0';
+		if(lastSlash == 0)
+			strcpy(abs,"/");
+	}
 	f->_path = abs;
-	res = stat(abs,&f->_info);
+	file_getAbsolute(f,tmp,sizeof(tmp));
+	res = stat(tmp,&f->_info);
 	if(res < 0)
 		THROW(IOException,res);
 	f->listFiles = file_listFiles;
@@ -53,6 +79,8 @@ sFile *file_get(const char *path) {
 	f->isDir = file_isDir;
 	f->destroy = file_destroy;
 	f->getAbsolute = file_getAbsolute;
+	f->name = file_name;
+	f->parent = file_parent;
 	f->getName = file_getName;
 	f->getParent = file_getParent;
 	f->getInfo = file_getInfo;
@@ -65,10 +93,12 @@ static sVector *file_listFiles(sFile *f,bool showHidden) {
 }
 
 static sVector *file_listMatchingFiles(sFile *f,const char *pattern,bool showHidden) {
+	char path[MAX_PATH_LEN];
 	bool res;
 	sDirEntry *e;
 	sVector *vec = vec_create(sizeof(sDirEntry*));
-	tFD dir = opendir(f->_path);
+	f->getAbsolute(f,path,sizeof(path));
+	tFD dir = opendir(path);
 	if(dir < 0)
 		THROW(IOException,dir);
 	while(1) {
@@ -103,39 +133,43 @@ static s32 file_getSize(sFile *f) {
 	return f->_info.size;
 }
 
+static const char *file_name(sFile *f) {
+	return f->_name;
+}
+
+static const char *file_parent(sFile *f) {
+	return f->_path;
+}
+
 static u32 file_getName(sFile *f,char *buf,u32 size) {
-	u32 res,len = strlen(f->_path);
-	s32 lastSlash = file_getDirSlash(f->_path,len);
-	assert(lastSlash != -1);
-	res = MIN(size,len - (lastSlash + 2));
-	strncpy(buf,f->_path + lastSlash + 1,res);
-	buf[res] = '\0';
-	return res;
+	u32 len = strlen(f->_name);
+	strncpy(buf,f->_name,size);
+	buf[len] = '\0';
+	return len;
 }
 
 static u32 file_getParent(sFile *f,char *buf,u32 size) {
-	s32 len,lastSlash = file_getDirSlash(f->_path,strlen(f->_path));
-	if(lastSlash <= 0) {
-		len = MIN(1,size);
-		strncpy(buf,"/",len);
-	}
-	else {
-		len = MIN((s32)size,lastSlash + 1);
-		strncpy(buf,f->_path,len);
-	}
+	u32 len = strlen(f->_path);
+	strncpy(buf,f->_path,size);
 	buf[len] = '\0';
 	return len;
 }
 
 static u32 file_getAbsolute(sFile *f,char *buf,u32 size) {
-	u32 res = MIN(size,strlen(f->_path));
-	strncpy(buf,f->_path,res);
-	buf[res] = '\0';
-	return res;
+	u32 plen = strlen(f->_path),nlen = strlen(f->_name);
+	strncpy(buf,f->_path,size);
+	if(nlen && (plen + 1) < size) {
+		buf[plen] = '/';
+		strncpy(buf + plen + 1,f->_name,size - (plen + 1));
+		buf[plen + nlen + 1] = '\0';
+		return MIN(size - 1,plen + nlen + 1);
+	}
+	return MIN(size - 1,plen);
 }
 
 static void file_destroy(sFile *f) {
 	heap_free((void*)f->_path);
+	heap_free((void*)f->_name);
 	heap_free(f);
 }
 

@@ -136,13 +136,13 @@ rmDiskDev() {
 }
 
 mountDisk() {
-	$SUDO umount $DISKMOUNT > /dev/null 2>&1 || true;
+	$SUDO umount -d -f $DISKMOUNT > /dev/null 2>&1 || true;
 	$SUDO mount -text2 -oloop=/dev/loop0,offset=`expr $1 \* 512` $HDD $DISKMOUNT;
 }
 
 unmountDisk() {
 	i=0
-	$SUDO umount /dev/loop0 > /dev/null 2>&1
+	$SUDO umount -d -f /dev/loop0 > /dev/null 2>&1
 	while [ $? != 0 ]; \
 	do \
 		i=`expr $i + 1`
@@ -150,7 +150,7 @@ unmountDisk() {
 			echo "Unmount failed after $i tries" 1>&2
 			exit 1
 		fi
-		$SUDO umount /dev/loop0 > /dev/null 2>&1
+		$SUDO umount -d -f /dev/loop0 > /dev/null 2>&1
 	done
 }
 

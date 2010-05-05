@@ -19,16 +19,16 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include "echo.h"
 
 s32 shell_cmdEcho(u32 argc,char *argv[]) {
 	u32 i;
 	for(i = 1; i < argc; i++) {
-		prints(argv[i]);
+		puts(argv[i]);
 		if(i < argc - 1)
-			printc(' ');
+			putchar(' ');
 	}
-	printf("\n");
+	putchar('\n');
 	return EXIT_SUCCESS;
 }

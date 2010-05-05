@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/proc.h>
 #include <messages.h>
 
@@ -39,13 +39,13 @@ int main(void) {
 		printf("\r[");
 		/* completed */
 		for(i = 0; i < j; i++)
-			printc('=');
-		printc('>');
+			putchar('=');
+		putchar('>');
 		/* uncompleted */
 		for(i = j + 1; i <= maxWidth; i++)
-			printc(' ');
-		printc(']');
-		flush();
+			putchar(' ');
+		putchar(']');
+		fflush(stdout);
 
 		/* wait a little bit */
 		sleep(100);

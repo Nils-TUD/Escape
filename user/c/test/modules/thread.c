@@ -21,7 +21,7 @@
 #include <esc/heap.h>
 #include <esc/lock.h>
 #include <esc/thread.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/dir.h>
 #include <assert.h>
 #include "thread.h"
@@ -35,13 +35,13 @@ static int myThread(void *arg) {
 	UNUSED(arg);
 	locku(&lck);
 	printf("Thread %d starts\n",gettid());
-	flush();
+	fflush(stdout);
 	unlocku(&lck);
 	for(i = 0; i < 10; i++)
 		sleep(100);
 	locku(&lck);
 	printf("Thread %d is done\n",gettid());
-	flush();
+	fflush(stdout);
 	unlocku(&lck);
 	return 0;
 }

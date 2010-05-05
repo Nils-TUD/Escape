@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/signals.h>
 #include <esc/cmdargs.h>
 #include <string.h>

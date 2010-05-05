@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <messages.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/proc.h>
 #include "rw.h"
 #include "ext2.h"

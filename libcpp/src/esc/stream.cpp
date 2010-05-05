@@ -18,11 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/proc.h>
 #include <esc/debug.h>
 #include <esc/stream.h>
 #include <string.h>
+#include <assert.h>
 
 #define BUF_TYPE_STRING		1
 #define BUF_TYPE_FILE		2
@@ -84,9 +85,9 @@ namespace esc {
 	}
 
 	s32 Stream::StringBuffer::format(const char *fmt,va_list ap) {
-		s32 res;
+		s32 res = 0;
 		// TODO this is an ugly hack! is there a better way?
-		struct _sStreamBuf streamBuf;
+		/*struct _sStreamBuf streamBuf;
 		streamBuf.fd = -1;
 		streamBuf.type = BUF_TYPE_STRING;
 		streamBuf.pos = _pos;
@@ -94,7 +95,8 @@ namespace esc {
 		streamBuf.max = _max;
 		streamBuf.str = _buffer;
 		res = vbprintf(&streamBuf,fmt,ap);
-		_pos = streamBuf.pos;
+		_pos = streamBuf.pos;*/
+		assert(false);
 		return res;
 	}
 
@@ -137,9 +139,9 @@ namespace esc {
 	}
 
 	s32 Stream::FileBuffer::format(const char *fmt,va_list ap) {
-		s32 res;
+		s32 res = 0;
 		// TODO this is an ugly hack! is there a better way?
-		struct _sStreamBuf streamBuf;
+		/*struct _sStreamBuf streamBuf;
 		streamBuf.fd = _fd;
 		streamBuf.type = BUF_TYPE_FILE;
 		streamBuf.pos = _pos;
@@ -147,7 +149,8 @@ namespace esc {
 		streamBuf.max = _max;
 		streamBuf.str = _buffer;
 		res = vbprintf(&streamBuf,fmt,ap);
-		_pos = streamBuf.pos;
+		_pos = streamBuf.pos;*/
+		assert(false);
 		return res;
 	}
 

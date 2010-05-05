@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/dir.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/env.h>
 #include <esc/date.h>
 #include <esc/cmdargs.h>
@@ -31,12 +31,12 @@
 #include <messages.h>
 #include <string.h>
 
-#include <exceptions/cmdargs.h>
-#include <exceptions/io.h>
-#include <io/file.h>
-#include <io/streams.h>
-#include <util/cmdargs.h>
-#include <util/vector.h>
+#include <esc/exceptions/cmdargs.h>
+#include <esc/exceptions/io.h>
+#include <esc/io/file.h>
+#include <esc/io/console.h>
+#include <esc/util/cmdargs.h>
+#include <esc/util/vector.h>
 
 #define DATE_LEN			(SSTRLEN("2009-09-09 14:12") + 1)
 

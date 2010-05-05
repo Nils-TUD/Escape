@@ -25,7 +25,7 @@
 #include <esc/signals.h>
 #include <esc/debug.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <string.h>
 #include <errors.h>
 #include <sllist.h>

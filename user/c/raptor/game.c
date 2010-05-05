@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/conf.h>
 #include <esc/keycodes.h>
 #include <esc/date.h>

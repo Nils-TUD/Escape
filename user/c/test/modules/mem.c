@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/heap.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include "mem.h"
 
 #define STEP_SIZE 1024
@@ -31,7 +31,7 @@ int mod_mem(int argc,char *argv[]) {
 	 * fileio will allocate the io-buffer lazy and if we can't use the heap anymore because its full
 	 * we can't create the io-buffer. */
 	printf("Allocating all mem... ^^\n");
-	flush();
+	fflush(stdout);
 	while(1) {
 		if(malloc(STEP_SIZE) == NULL) {
 			printf("Not enough mem :(\n");

@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/driver.h>
 #include <esc/proc.h>
 #include <esc/heap.h>
@@ -141,7 +141,7 @@ int main(int argc,char *argv[]) {
 	if(root == NULL)
 		error("Unable to get root mount-point");
 	printf("[FS] Mounted '%s' with fs '%s' at '/'\n",root->driver,argv[2]);
-	flush();
+	fflush(stdout);
 
 	/* register driver */
 	id = regDriver("fs",DRV_FS);

@@ -22,7 +22,7 @@
 #include <esc/debug.h>
 #include <esc/signals.h>
 #include <esc/proc.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include "drive.h"
 #include "ata.h"
 

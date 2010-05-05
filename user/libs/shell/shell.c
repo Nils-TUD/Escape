@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/env.h>
 #include <esc/dir.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/heap.h>
 #include <esc/proc.h>
 #include <esc/signals.h>
@@ -48,7 +48,7 @@ extern int yylex_destroy(void);
 
 static bool resetReadLine = false;
 static u32 tabCount = 0;
-tFile *curStream = NULL;
+FILE *curStream = NULL;
 char *curLine = NULL;
 bool curIsStream = false;
 sEnv *curEnv = NULL;
@@ -116,7 +116,7 @@ u32 shell_readLine(char *buffer,u32 max) {
 	while(i < max) {
 		char c;
 		s32 cmd,n1,n2,n3;
-		c = scanc();
+		c = getchar();
 		if(c != '\033')
 			continue;
 		cmd = freadesc(stdin,&n1,&n2,&n3);
@@ -143,8 +143,8 @@ u32 shell_readLine(char *buffer,u32 max) {
 		tabCount = 0;
 
 		/* echo */
-		printc(n1);
-		flush();
+		putchar(n1);
+		fflush(stdout);
 
 		/* put the newline at the end */
 		if(n1 == '\n') {
@@ -159,7 +159,7 @@ u32 shell_readLine(char *buffer,u32 max) {
 			buffer[cursorPos] = n1;
 			/* now write the chars to vterm */
 			for(x = cursorPos + 1; x <= i; x++)
-				printc(buffer[x]);
+				putchar(buffer[x]);
 			/* and walk backwards */
 			printf("\033[ml;%d]",i - cursorPos);
 		}
@@ -196,8 +196,8 @@ bool shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 					buffer[icharcount] = '\0';
 					/* send backspaces */
 					while(count-- > 0)
-						printc('\b');
-					flush();
+						putchar('\b');
+					fflush(stdout);
 				}
 				res = true;
 			}
@@ -212,8 +212,8 @@ bool shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 				icursorPos--;
 				buffer[icharcount] = '\0';
 				/* send backspace */
-				printc('\b');
-				flush();
+				putchar('\b');
+				fflush(stdout);
 			}
 			res = true;
 			break;
@@ -289,15 +289,15 @@ bool shell_handleSpecialKey(char *buffer,s32 keycode,s32 modifier,u32 *cursorPos
 		printf("\033[mr;%d]",*charcount - *cursorPos);
 		/* delete chars */
 		while(pos-- > 0)
-			printc('\b');
+			putchar('\b');
 
 		/* replace in buffer and write string to vterm */
 		memcpy(buffer,line,len + 1);
 		for(i = 0; i < len; i++)
-			printc(buffer[i]);
+			putchar(buffer[i]);
 
 		/* now send the commands */
-		flush();
+		fflush(stdout);
 
 		/* set the cursor to the end */
 		*cursorPos = len;
@@ -428,8 +428,8 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 		matches = compl_get(part,partLen,0,false,searchPath);
 		if(matches == NULL || matches[0] == NULL) {
 			/* beep because we have found no match */
-			printc('\a');
-			flush();
+			putchar('\a');
+			fflush(stdout);
 			free(part);
 			compl_free(matches);
 			return;
@@ -449,20 +449,20 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 			for(; i < cmdlen; i++) {
 				char c = matches[0]->name[i];
 				orgLine[ilength++] = c;
-				printc(c);
+				putchar(c);
 			}
 
 			/* append '/' or ' ' depending on whether its a dir or not */
 			last = MODE_IS_DIR(matches[0]->mode) ? '/' : ' ';
 			if(orgLine[ilength - 1] != last) {
 				orgLine[ilength++] = last;
-				printc(last);
+				putchar(last);
 			}
 
 			/* set length and cursor */
 			*length = ilength;
 			*cursorPos = ilength;
-			flush();
+			fflush(stdout);
 		}
 		else {
 			char last;
@@ -493,7 +493,7 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 				/* if so, add it */
 				if(allEqual && last != '\0') {
 					orgLine[ilength++] = last;
-					printc(last);
+					putchar(last);
 				}
 				else
 					break;
@@ -504,15 +504,15 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 				*length = ilength;
 				*cursorPos = ilength;
 				/* beep */
-				printc('\a');
-				flush();
+				putchar('\a');
+				fflush(stdout);
 			}
 			/* show all on second tab */
 			else if(tabCount == 0) {
 				tabCount++;
 				/* beep */
-				printc('\a');
-				flush();
+				putchar('\a');
+				fflush(stdout);
 			}
 			else {
 				tabCount = 0;

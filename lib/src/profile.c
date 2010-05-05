@@ -26,8 +26,8 @@
 #	define outb			util_outByte
 #	define inb			util_inByte
 #else
-#	include <esc/fileio.h>
 #	include <esc/ports.h>
+#	include <stdio.h>
 #	define outb			outByte
 #	define inb			inByte
 #endif

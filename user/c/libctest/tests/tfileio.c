@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <test.h>
 #include <stdarg.h>
 #include <string.h>

@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/driver.h>
 #include <esc/proc.h>
 #include <esc/ports.h>

@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <io/streams.h>
+#include <esc/io/console.h>
 
 int main(void) {
 	u32 i,j;

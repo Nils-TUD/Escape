@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/proc.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <string.h>
 #include "pipe.h"
 
@@ -33,19 +33,19 @@ int mod_pipe(int argc,char *argv[]) {
 	UNUSED(argc);
 	UNUSED(argv);
 	printf("Reading from child...\n");
-	flush();
+	fflush(stdout);
 	pipeReadChild();
 	printf("Done\n\n");
 	printf("Reading from parent...\n");
-	flush();
+	fflush(stdout);
 	pipeReadParent();
 	printf("Done\n\n");
 	printf("Letting child 'ls' write to child 'wc'...\n");
-	flush();
+	fflush(stdout);
 	pipeChild2Child();
 	printf("Done\n\n");
 	printf("Letting child 'ls' write to child 'wc' and read it from the parent...\n");
-	flush();
+	fflush(stdout);
 	pipeThrough();
 	printf("Done\n\n");
 	return 0;

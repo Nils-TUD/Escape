@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include "shltlib.h"
 #include "seclib.h"
 

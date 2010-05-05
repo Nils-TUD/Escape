@@ -26,7 +26,7 @@
 #include <esc/heap.h>
 #include <esc/signals.h>
 #include <esc/driver.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/lock.h>
 #include <esc/thread.h>
 #include <esc/date.h>

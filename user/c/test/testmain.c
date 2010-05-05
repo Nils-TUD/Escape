@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/cmdargs.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <string.h>
 #include <messages.h>
 

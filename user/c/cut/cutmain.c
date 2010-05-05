@@ -19,13 +19,13 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
-#include <exceptions/cmdargs.h>
-#include <exceptions/io.h>
-#include <io/streams.h>
-#include <io/istringstream.h>
-#include <io/ifilestream.h>
-#include <io/file.h>
-#include <util/cmdargs.h>
+#include <esc/exceptions/cmdargs.h>
+#include <esc/exceptions/io.h>
+#include <esc/io/console.h>
+#include <esc/io/istringstream.h>
+#include <esc/io/ifilestream.h>
+#include <esc/io/file.h>
+#include <esc/util/cmdargs.h>
 #include <string.h>
 
 #define MAX_LINE_LEN	255

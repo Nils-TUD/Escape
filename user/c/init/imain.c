@@ -19,13 +19,13 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/proc.h>
 #include <esc/debug.h>
-#include <io/ifilestream.h>
-#include <util/string.h>
-#include <util/vector.h>
-#include <mem/heap.h>
+#include <esc/io/ifilestream.h>
+#include <esc/util/string.h>
+#include <esc/util/vector.h>
+#include <esc/mem/heap.h>
 #include <string.h>
 #include <width.h>
 

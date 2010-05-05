@@ -19,8 +19,8 @@
 
 #include <esc/common.h>
 #include <esc/heap.h>
-#include <exceptions/io.h>
-#include <exceptions/outofmemory.h>
+#include <esc/exceptions/io.h>
+#include <esc/exceptions/outofmemory.h>
 #include <test.h>
 #include <errors.h>
 #include "texceptions.h"

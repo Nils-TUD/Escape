@@ -23,7 +23,7 @@
 #include <esc/signals.h>
 #include <esc/driver.h>
 #include <esc/heap.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <messages.h>
 #include <esc/lock.h>
 #include <ringbuffer.h>

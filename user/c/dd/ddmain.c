@@ -20,13 +20,13 @@
 #include <esc/common.h>
 #include <esc/signals.h>
 #include <esc/proc.h>
-#include <mem/heap.h>
-#include <exceptions/io.h>
-#include <exceptions/cmdargs.h>
-#include <io/streams.h>
-#include <io/ifilestream.h>
-#include <io/ofilestream.h>
-#include <util/cmdargs.h>
+#include <esc/mem/heap.h>
+#include <esc/exceptions/io.h>
+#include <esc/exceptions/cmdargs.h>
+#include <esc/io/console.h>
+#include <esc/io/ifilestream.h>
+#include <esc/io/ofilestream.h>
+#include <esc/util/cmdargs.h>
 
 static void usage(const char *name) {
 	cerr->writef(cerr,"Usage: %s [if=<file>] [of=<file>] [bs=N] [count=N]\n",name);

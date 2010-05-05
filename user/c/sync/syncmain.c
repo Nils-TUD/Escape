@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 int main(void) {
 	if(sync() < 0)
 		error("Sync failed");

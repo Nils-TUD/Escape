@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/io.h>
 #include <esc/signals.h>
 #include <esc/proc.h>
@@ -198,7 +198,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 
 			res = shcmd[0]->func(cmd->exprCount,cmd->exprs);
 			/* flush stdout just to be sure */
-			flush();
+			fflush(stdout);
 
 			/* restore stdin & stdout & stderr */
 			if(fdout >= 0) {

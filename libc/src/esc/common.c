@@ -21,10 +21,11 @@
 #include <esc/debug.h>
 #include <esc/proc.h>
 #include <esc/dir.h>
-#include <esc/fileio.h>
 #include <register.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdarg.h>
+
 #define PROCINFO_BUF_SIZE	256
 #define MAX_STACK_DEPTH		20
 /* the x86-call instruction is 5 bytes long */

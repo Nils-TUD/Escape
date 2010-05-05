@@ -69,7 +69,7 @@ int main(void) {
 	if(requestIOPorts(IOPORT_PCI_CFG_ADDR,4) < 0)
 		error("Unable to request io-port %x",IOPORT_PCI_CFG_ADDR);
 
-	tFile *f = fopen("/system/devices/pci","w");
+	FILE *f = fopen("/system/devices/pci","w");
 	if(f == NULL)
 		error("Unable to open /system/devices/pci");
 	for(bus = 0; bus < BUS_COUNT; bus++) {

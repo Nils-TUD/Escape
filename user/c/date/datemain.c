@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/date.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/cmdargs.h>
 #define MAX_DATE_LEN 100
 

@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/signals.h>
 #include <string.h>
 #include <messages.h>
@@ -39,10 +39,10 @@ int main(void) {
 
 	while(1) {
 		printf("Username: ");
-		scanl(un,MAX_LEN);
+		fgets(un,MAX_LEN,stdin);
 		send(STDOUT_FILENO,MSG_VT_DIS_ECHO,NULL,0);
 		printf("Password: ");
-		scanl(pw,MAX_LEN);
+		fgets(pw,MAX_LEN,stdin);
 		send(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0);
 		printf("\n");
 

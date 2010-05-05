@@ -22,7 +22,7 @@
 #include <esc/env.h>
 #include <esc/dir.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/heap.h>
 #include <string.h>
 #include "cd.h"

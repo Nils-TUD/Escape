@@ -22,6 +22,7 @@
 #include <esc/mem.h>
 #include <esc/debug.h>
 #include <esc/lock.h>
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 

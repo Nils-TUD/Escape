@@ -19,8 +19,8 @@
 
 #include <esc/common.h>
 #include <esc/heap.h>
-#include <exceptions/io.h>
-#include <io/file.h>
+#include <esc/exceptions/io.h>
+#include <esc/io/file.h>
 #include <test.h>
 #include <string.h>
 #include "tfile.h"

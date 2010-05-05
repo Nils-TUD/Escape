@@ -19,12 +19,12 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/proc.h>
-#include <io/file.h>
-#include <io/streams.h>
-#include <exceptions/cmdargs.h>
-#include <util/cmdargs.h>
+#include <esc/io/file.h>
+#include <esc/io/console.h>
+#include <esc/exceptions/cmdargs.h>
+#include <esc/util/cmdargs.h>
 #include <string.h>
 #include <messages.h>
 

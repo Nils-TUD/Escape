@@ -34,7 +34,7 @@
 #	include <esc/heap.h>
 /* for exit (vassert) */
 #	include <esc/proc.h>
-#	include <esc/fileio.h>
+#	include <stdio.h>
 #	define sllprintf	printf
 #endif
 

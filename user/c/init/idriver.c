@@ -20,8 +20,8 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/io.h>
-#include <io/streams.h>
-#include <util/vector.h>
+#include <esc/io/console.h>
+#include <esc/util/vector.h>
 #include <string.h>
 #include <sllist.h>
 #include "idriver.h"

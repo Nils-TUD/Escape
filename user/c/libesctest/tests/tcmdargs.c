@@ -19,8 +19,8 @@
 
 #include <esc/common.h>
 #include <esc/heap.h>
-#include <util/cmdargs.h>
-#include <exceptions/cmdargs.h>
+#include <esc/util/cmdargs.h>
+#include <esc/exceptions/cmdargs.h>
 #include <test.h>
 #include <errors.h>
 #include "tcmdargs.h"

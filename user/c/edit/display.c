@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <assert.h>
 #include <limits.h>
 #include <sllist.h>
@@ -62,7 +62,7 @@ void displ_init(sFileBuffer *buf) {
 void displ_finish(void) {
 	printf("\n");
 	/* ensure that the output is flushed before the vterm restores the old screen */
-	flush();
+	fflush(stdout);
 	send(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
 	send(STDOUT_FILENO,MSG_VT_EN_NAVI,NULL,0);
 	send(STDOUT_FILENO,MSG_VT_RESTORE,NULL,0);
@@ -177,20 +177,20 @@ u32 displ_getCharLen(char c) {
 
 s32 displ_getSaveFile(char *file,u32 bufSize) {
 	u32 i;
-	s32 res;
+	char *res;
 	printf("\033[go;%d;%d]",0,consSize.height - 1);
 	for(i = 0; i < consSize.width; i++)
-		printc(' ');
-	printc('\r');
+		putchar(' ');
+	putchar('\r');
 	send(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
 	printf("\033[co;0;7]Save to file:\033[co] ");
 	if(buffer->filename)
 		printf("\033[si;1]%s\033[si;0]",buffer->filename);
-	res = scanl(file,bufSize);
+	res = fgets(file,bufSize,stdin);
 	send(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
 	displ_markDirty(firstLine + consSize.height - 1,1);
 	displ_update();
-	return res;
+	return res ? 0 : EOF;
 }
 
 static void displ_updateLines(u32 start,u32 count) {
@@ -207,8 +207,8 @@ static void displ_updateLines(u32 start,u32 count) {
 					char c = line->str[i];
 					switch(c) {
 						case '\t':
-							printc(' ');
-							printc(' ');
+							putchar(' ');
+							putchar(' ');
 							j += 2;
 							break;
 						case '\a':
@@ -217,20 +217,20 @@ static void displ_updateLines(u32 start,u32 count) {
 							/* ignore */
 							break;
 						default:
-							printc(c);
+							putchar(c);
 							j++;
 							break;
 					}
 				}
 				for(; j < consSize.width; j++)
-					printc(' ');
+					putchar(' ');
 			}
 		}
 		for(; count > 0; count--) {
 			for(i = 0; i < consSize.width; i++)
-				printc(' ');
+				putchar(' ');
 		}
-		flush();
+		fflush(stdout);
 	}
 	displ_printStatus();
 	printf("\033[go;%d;%d]",curXDispl,curY);

@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/driver.h>
 #include <esc/proc.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/io.h>
 #include <esc/heap.h>
 #include <messages.h>
@@ -49,7 +49,7 @@ int main(void) {
 	tDrvId drv;
 	tMsgId mid;
 	tFD kbFd;
-	tFile *f;
+	FILE *f;
 
 	events_init();
 
@@ -71,7 +71,7 @@ int main(void) {
 	f = fopen(KEYMAP_FILE,"r");
 	if(f == NULL)
 		error("Unable to open %s",KEYMAP_FILE);
-	fscanl(f,path,MAX_PATH_LEN);
+	fgets(path,MAX_PATH_LEN,f);
 	fclose(f);
 
 	/* load default map */

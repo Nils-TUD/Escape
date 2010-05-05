@@ -19,17 +19,17 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/keycodes.h>
 #include <esc/cmdargs.h>
 #include <esc/env.h>
-#include <mem/heap.h>
-#include <io/file.h>
-#include <io/streams.h>
-#include <io/ifilestream.h>
-#include <exceptions/io.h>
-#include <exceptions/outofmemory.h>
-#include <util/vector.h>
+#include <esc/mem/heap.h>
+#include <esc/io/file.h>
+#include <esc/io/console.h>
+#include <esc/io/ifilestream.h>
+#include <esc/exceptions/io.h>
+#include <esc/exceptions/outofmemory.h>
+#include <esc/util/vector.h>
 #include <string.h>
 #include <messages.h>
 #include <esccodes.h>
@@ -127,7 +127,7 @@ int main(int argc,char *argv[]) {
 		refreshScreen();
 
 		/* read from vterm */
-		while(run && (c = vt->readc(vt)) != IO_EOF) {
+		while(run && (c = vt->readc(vt)) != EOF) {
 			if(c == '\033') {
 				s32 n1,n2,n3;
 				s32 cmd = vt->readEsc(vt,&n1,&n2,&n3);
@@ -269,7 +269,7 @@ static void readLines(u32 end) {
 		}
 
 		/* check whether the user has pressed a key */
-		while(!vt->eof(vt) && (c = vt->readc(vt)) != IO_EOF) {
+		while(!vt->eof(vt) && (c = vt->readc(vt)) != EOF) {
 			if(c == '\033') {
 				s32 n1,n2,n3;
 				s32 cmd = vt->readEsc(vt,&n1,&n2,&n3);

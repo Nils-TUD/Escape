@@ -27,11 +27,11 @@ private:
 public:
 	my() : abc(4) {
 		printf("Constructor for %p...\n",this);
-		flush();
+		fflush(stdout);
 	};
 	~my() {
 		printf("Destructor for %x...\n",this);
-		flush();
+		fflush(stdout);
 		abc = 0;
 	};
 

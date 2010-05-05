@@ -30,7 +30,7 @@ static u32 cacheMisses = 0;
 /**
  * Requests the given block and reads it from disk if desired
  */
-static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool read);
+static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool doRead);
 /**
  * Fetches a block-cache-entry
  */
@@ -83,7 +83,7 @@ sCBlock *bcache_request(sBlockCache *c,u32 blockNo) {
 	return bcache_doRequest(c,blockNo,true);
 }
 
-static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool read) {
+static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool doRead) {
 	sCBlock *block,*bentry;
 
 	/* search for the block. perhaps it's already in cache */
@@ -123,7 +123,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool read) {
 	block->dirty = false;
 
 	/* now read from disk */
-	if(read && !c->read(c->handle,block->buffer,blockNo,1)) {
+	if(doRead && !c->read(c->handle,block->buffer,blockNo,1)) {
 		block->blockNo = 0;
 		return NULL;
 	}

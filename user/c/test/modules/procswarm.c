@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/proc.h>
 #include <string.h>
 #include "procswarm.h"
@@ -34,7 +34,7 @@ int mod_procswarm(int argc,char *argv[]) {
 
 	while(1) {
 		printf(".");
-		flush();
+		fflush(stdout);
 		sleep(100);
 	}
 	return EXIT_SUCCESS;

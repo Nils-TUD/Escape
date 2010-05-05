@@ -19,10 +19,10 @@
 
 #include <esc/common.h>
 #include <esc/cmdargs.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/dir.h>
 #include <esc/io.h>
-#include <io/streams.h>
+#include <esc/io/console.h>
 
 int main(int argc,char *argv[]) {
 	s32 i;

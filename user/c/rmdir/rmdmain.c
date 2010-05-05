@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/cmdargs.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/dir.h>
 #include <esc/io.h>
 int main(int argc,char *argv[]) {

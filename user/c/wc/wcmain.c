@@ -21,7 +21,7 @@
 #include <esc/heap.h>
 #include <esc/io.h>
 #include <esc/dir.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/cmdargs.h>
 #include <esc/proc.h>
 #include <string.h>
@@ -40,7 +40,7 @@ static void usage(char *name) {
 }
 
 int main(int argc,char **argv) {
-	tFile *file = stdin;
+	FILE *file = stdin;
 	bool gotFlag = false;
 	u8 flags = WC_BYTES | WC_WORDS | WC_LINES;
 	char *arg,*path = NULL;
@@ -110,7 +110,7 @@ int main(int argc,char **argv) {
 	bytes = 0;
 	bufPos = 0;
 
-	while((ch = fscanc(file)) > 0) {
+	while((ch = fgetc(file)) > 0) {
 		if(isspace(ch)) {
 			if(bufPos > 0) {
 				if(ch == '\n')

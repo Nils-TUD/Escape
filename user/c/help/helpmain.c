@@ -21,7 +21,7 @@
 #include <esc/cmdargs.h>
 #include <esc/io.h>
 #include <esc/dir.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/heap.h>
 #include <esc/proc.h>
 #include <esc/algo.h>

@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/cmdargs.h>
 #include <esc/proc.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/keycodes.h>
 #include <esc/dir.h>
 #include <esccodes.h>
@@ -46,7 +46,7 @@ int main(int argc,char *argv[]) {
 	displ_init(buf_get());
 	displ_update();
 
-	while(run && (c = fscanc(stdin)) != IO_EOF) {
+	while(run && (c = fgetc(stdin)) != EOF) {
 		if(c == '\033') {
 			/* just accept keycode-escapecodes */
 			cmd = freadesc(stdin,&n1,&n2,&n3);

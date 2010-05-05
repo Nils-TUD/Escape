@@ -20,9 +20,9 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
 #include <esc/dir.h>
 #include <width.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
 

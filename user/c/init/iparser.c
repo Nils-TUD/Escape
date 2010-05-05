@@ -18,8 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <util/vector.h>
-#include <mem/heap.h>
+#include <esc/util/vector.h>
+#include <esc/mem/heap.h>
 #include <string.h>
 #include "iparser.h"
 #include "idriver.h"

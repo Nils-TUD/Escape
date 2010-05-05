@@ -21,7 +21,7 @@
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <esc/env.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/lock.h>
 #include <stdlib.h>
 

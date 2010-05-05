@@ -25,7 +25,7 @@
 #	include <video.h>
 #	define rprintf	vid_printf
 #else
-#	include <esc/fileio.h>
+#	include <stdio.h>
 #	define rprintf	printf
 #endif
 

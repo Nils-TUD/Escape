@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include "fault.h"
 
 int mod_fault(int argc,char *argv[]) {

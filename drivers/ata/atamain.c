@@ -21,7 +21,7 @@
 #include <esc/driver.h>
 #include <messages.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/ports.h>
 #include <esc/heap.h>
 #include <esc/proc.h>
@@ -87,10 +87,10 @@ int main(void) {
 	drive_detect(drives,DRIVE_COUNT);
 	initDrives();
 	/* flush prints */
-	flush();
+	fflush(stdout);
 
 	/* we're ready now, so create a dummy-vfs-node that tells fs that all ata-drives are registered */
-	tFile *f = fopen("/system/devices/ata","w");
+	FILE *f = fopen("/system/devices/ata","w");
 	fclose(f);
 
 	while(1) {
@@ -207,7 +207,7 @@ static void initDrives(void) {
 }
 
 static void createVFSEntry(sATADrive *drive,sPartition *part,const char *name) {
-	tFile *f;
+	FILE *f;
 	char path[SSTRLEN("/system/devices/hda1") + 1];
 	snprintf(path,sizeof(path),"/system/devices/%s",name);
 

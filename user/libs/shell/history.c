@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/heap.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <string.h>
 #include "history.h"
 

@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/vm86.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/debug.h>
 #include <esc/mem.h>
 #include <esc/heap.h>
@@ -197,7 +197,7 @@ static void vbe_detectModes(void) {
 	u16 i,*p;
 	sVbeModeInfo mode;
 	sVbeModeInfo *modeCpy;
-	tFile *f = fopen("/system/devices/vbe","w");
+	FILE *f = fopen("/system/devices/vbe","w");
 	fprintf(f,"VESA VBE Version %d.%d detected (%x)\n",vbeInfo.version >> 8,
 			vbeInfo.version & 0xF,vbeInfo.oemString);
 	fprintf(f,"Capabilities: 0x%x\n",vbeInfo.capabilities);

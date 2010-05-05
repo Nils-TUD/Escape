@@ -21,7 +21,7 @@
 #define SHELL_H_
 
 #include <esc/common.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include "exec/env.h"
 
 #define MAX_ARG_COUNT		10
@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-extern tFile *curStream;
+extern FILE *curStream;
 extern bool curIsStream;
 extern char *curLine;
 extern sEnv *curEnv;

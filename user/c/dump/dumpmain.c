@@ -19,11 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
-#include <io/streams.h>
-#include <io/ifilestream.h>
-#include <exceptions/io.h>
-#include <exceptions/cmdargs.h>
-#include <util/cmdargs.h>
+#include <esc/io/console.h>
+#include <esc/io/ifilestream.h>
+#include <esc/exceptions/io.h>
+#include <esc/exceptions/cmdargs.h>
+#include <esc/util/cmdargs.h>
 #include <width.h>
 #include <ctype.h>
 

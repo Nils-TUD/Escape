@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/dir.h>
 #include <sllist.h>
 #include <assert.h>
@@ -30,7 +30,7 @@
 #define INITIAL_LINE_SIZE	16
 
 static sLine *buf_createLine(void);
-static sLine *buf_readLine(tFile *f,bool *reachedEOF);
+static sLine *buf_readLine(FILE *f,bool *reachedEOF);
 
 static sFileBuffer buf;
 
@@ -51,7 +51,7 @@ void buf_open(const char *file) {
 	}
 	else {
 		char absp[MAX_PATH_LEN];
-		tFile *f;
+		FILE *f;
 		sLine *line;
 		bool reachedEOF = false;
 		abspath(absp,MAX_PATH_LEN,file);
@@ -158,14 +158,14 @@ static sLine *buf_createLine(void) {
 	return line;
 }
 
-static sLine *buf_readLine(tFile *f,bool *reachedEOF) {
+static sLine *buf_readLine(FILE *f,bool *reachedEOF) {
 	char c;
 	sLine *line = (sLine*)emalloc(sizeof(sLine));
 	line->size = INITIAL_LINE_SIZE;
 	line->length = 0;
 	line->displLen = 0;
 	line->str = (char*)emalloc(INITIAL_LINE_SIZE);
-	while((c = fscanc(f)) != IO_EOF && c != '\n') {
+	while((c = getc(f)) != EOF && c != '\n') {
 		line->displLen += displ_getCharLen(c);
 		line->str[line->length++] = c;
 		/* +1 for null-termination */
@@ -174,13 +174,13 @@ static sLine *buf_readLine(tFile *f,bool *reachedEOF) {
 			line->str = erealloc(line->str,line->size);
 		}
 	}
-	*reachedEOF = c == IO_EOF;
+	*reachedEOF = c == EOF;
 	line->str[line->length] = '\0';
 	return line;
 }
 
 void buf_store(const char *file) {
-	tFile *f;
+	FILE *f;
 	sLine *line;
 	sSLNode *n;
 	char absDstFile[MAX_PATH_LEN];

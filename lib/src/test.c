@@ -28,8 +28,8 @@
 #	define testPrintf	vid_printf
 #	define testvPrintf	vid_vprintf
 #else
-#	include <esc/fileio.h>
 #	include <esc/proc.h>
+#	include <stdio.h>
 
 #	define testPrintf	printf
 #	define testvPrintf	vprintf

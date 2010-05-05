@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/thread.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/proc.h>
 #include "tls.h"
 

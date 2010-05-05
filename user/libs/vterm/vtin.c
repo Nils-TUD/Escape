@@ -22,7 +22,7 @@
 #include <esc/signals.h>
 #include <esc/io.h>
 #include <esc/driver.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/heap.h>
 #include <string.h>
 #include "vtctrl.h"
@@ -182,7 +182,7 @@ void vterm_rlPutchar(sVTerm *vt,char c) {
 						vt->col = vt->rlStartCol + bufPos + 1;
 					}
 				}
-				else if(c != IO_EOF)
+				else if(c != EOF)
 					vterm_putchar(vt,c);
 			}
 			if(flushed)

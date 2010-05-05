@@ -3,6 +3,7 @@
 
 %{
 	#include <string.h>
+	#include <stdio.h>
 	#include "parser.h"
 	#include "lang.h"
 	#include "shell.h"
@@ -11,7 +12,7 @@
 %{
 	#define YY_INPUT(buf,result,max_size) \
 		{ \
-			int c = curIsStream ? fscanc(curStream) : *curLine++; \
+			int c = curIsStream ? getc(curStream) : *curLine++; \
 			result = (c == '\0' || c == EOF) ? YY_NULL : (buf[0] = c, 1); \
 		}
 %}

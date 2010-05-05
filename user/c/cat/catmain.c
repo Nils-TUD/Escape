@@ -19,11 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
-#include <exceptions/io.h>
-#include <io/file.h>
-#include <io/streams.h>
-#include <io/ifilestream.h>
-#include <util/cmdargs.h>
+#include <esc/exceptions/io.h>
+#include <esc/io/file.h>
+#include <esc/io/console.h>
+#include <esc/io/ifilestream.h>
+#include <esc/util/cmdargs.h>
 
 #define BUF_SIZE 512
 

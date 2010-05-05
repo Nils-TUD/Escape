@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 
 #define MAX_GLOBAL_OBJS		32
 

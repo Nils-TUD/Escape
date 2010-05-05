@@ -23,8 +23,8 @@
 #if IN_KERNEL
 #	include <util.h>
 #else
-#	include <esc/fileio.h>
 #	include <esc/proc.h>
+#	include <stdio.h>
 #endif
 
 #ifndef NDEBUG

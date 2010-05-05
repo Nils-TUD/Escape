@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/ports.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/io.h>
 #include <esc/driver.h>
 #include <messages.h>
@@ -218,7 +218,7 @@ static s32 vesa_setMode(void) {
 					minfo->yResolution * (minfo->bitsPerPixel / 8));
 			printf("[VESATEXT] Setting (%x) %4d x %4d x %2d\n",mode,
 					minfo->xResolution,minfo->yResolution,minfo->bitsPerPixel);
-			flush();
+			fflush(stdout);
 			if(video == NULL)
 				return errno;
 			cols = minfo->xResolution / (FONT_WIDTH + PAD * 2);

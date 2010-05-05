@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/date.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <string.h>
 
 static const char *weekDays[] = {

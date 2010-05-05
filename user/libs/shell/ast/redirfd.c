@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include "../mem.h"
 #include "redirfd.h"
 #include "node.h"

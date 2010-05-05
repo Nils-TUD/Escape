@@ -21,7 +21,7 @@
 #define DRIVER_H_
 
 #include <esc/common.h>
-#include <util/vector.h>
+#include <esc/util/vector.h>
 
 #define MAX_SNAME_LEN			50
 #define MAX_DRIVER_PATH_LEN	255

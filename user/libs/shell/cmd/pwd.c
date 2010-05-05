@@ -22,7 +22,7 @@
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <esc/heap.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include "pwd.h"
 
 s32 shell_cmdPwd(u32 argc,char **argv) {

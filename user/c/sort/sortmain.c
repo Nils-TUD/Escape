@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/dir.h>
 #include <esc/heap.h>
 #include <esc/cmdargs.h>
@@ -31,7 +31,7 @@
 #define MAX_LINE_LEN	255
 
 static int compareStrs(const void *a,const void *b);
-static char *scanLine(tFile *f);
+static char *scanLine(FILE *f);
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-r] [-i] [<file>]\n",name);
@@ -48,7 +48,7 @@ int main(int argc,char *argv[]) {
 	u32 i,j,size = ARRAY_INC;
 	char **lines;
 	char *filename = NULL;
-	tFile *f = stdin;
+	FILE *f = stdin;
 
 	if(isHelpCmd(argc,argv))
 		usage(argv[0]);
@@ -122,14 +122,14 @@ static int compareStrs(const void *a,const void *b) {
 	return reverse ? -res : res;
 }
 
-static char *scanLine(tFile *f) {
+static char *scanLine(FILE *f) {
 	u32 i = 0;
 	u32 size = ARRAY_INC;
 	char c;
 	char *line = (char*)malloc(size);
 	if(!line)
 		return NULL;
-	while((c = fscanc(f)) != IO_EOF && c != '\n') {
+	while((c = fgetc(f)) != EOF && c != '\n') {
 		line[i++] = c;
 		if(i >= size - 1) {
 			size += ARRAY_INC;

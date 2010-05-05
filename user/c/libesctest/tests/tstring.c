@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/heap.h>
-#include <util/string.h>
+#include <esc/util/string.h>
 #include <test.h>
 #include "tstring.h"
 

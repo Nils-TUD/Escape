@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/signals.h>
 #include <string.h>
 #include "forkbomb.h"
@@ -36,7 +36,7 @@ int mod_forkbomb(int argc,char *argv[]) {
 		/* failed? so send all created child-procs the kill-signal */
 		if(i >= n || pids[i] < 0) {
 			printf("Fork() failed, so kill all childs...\n");
-			flush();
+			fflush(stdout);
 			while(i-- > 0) {
 				s32 res = sendSignalTo(pids[i],SIG_KILL,0);
 				res = 1;
@@ -53,7 +53,7 @@ int mod_forkbomb(int argc,char *argv[]) {
 
 	/* now stay here until we get killed ^^ */
 	printf("Child %d running...\n",getpid());
-	flush();
+	fflush(stdout);
 	while(1)
 		sleep(1000);
 	return 0;

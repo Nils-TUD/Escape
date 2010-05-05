@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/keycodes.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <esc/io.h>
 #include <esc/heap.h>
 #include <esccodes.h>
@@ -29,17 +29,17 @@
 
 #define KEYMAP_SIZE		128
 
-static bool km_parseLine(tFile *f,sKeymapEntry *map);
-static char km_parseKey(tFile *f);
+static bool km_parseLine(FILE *f,sKeymapEntry *map);
+static char km_parseKey(FILE *f);
 static char km_getKey(char *str);
-static bool km_skipTrash(tFile *f);
+static bool km_skipTrash(FILE *f);
 
 static bool shiftDown = false;
 static bool altDown = false;
 static bool ctrlDown = false;
 
 sKeymapEntry *km_parse(const char *file) {
-	tFile *f;
+	FILE *f;
 	sKeymapEntry *map = (sKeymapEntry*)calloc(KEYMAP_SIZE,sizeof(sKeymapEntry));
 	if(!map)
 		return NULL;
@@ -84,7 +84,7 @@ char km_translateKeycode(sKeymapEntry *map,bool isBreak,u32 keycode,u8 *modifier
 	return e->def;
 }
 
-static bool km_parseLine(tFile *f,sKeymapEntry *map) {
+static bool km_parseLine(FILE *f,sKeymapEntry *map) {
 	u32 i,no;
 	char *entries[3];
 	/* scan number */
@@ -98,7 +98,7 @@ static bool km_parseLine(tFile *f,sKeymapEntry *map) {
 	entries[2] = &(map[no].alt);
 	for(i = 0; i < 3; i++) {
 		char c = km_parseKey(f);
-		if(c == IO_EOF)
+		if(c == EOF)
 			return false;
 		*(entries[i]) = c;
 		if(!km_skipTrash(f))
@@ -107,17 +107,17 @@ static bool km_parseLine(tFile *f,sKeymapEntry *map) {
 	return true;
 }
 
-static char km_parseKey(tFile *f) {
+static char km_parseKey(FILE *f) {
 	char str[3];
-	char c = fscanc(f);
+	char c = fgetc(f);
 	if(c == '\'') {
-		str[0] = fscanc(f);
-		str[1] = fscanc(f);
+		str[0] = fgetc(f);
+		str[1] = fgetc(f);
 		if(str[0] != '\\' && str[1] == '\'')
 			str[1] = '\0';
 		else {
-			if(fscanc(f) != '\'')
-				return IO_EOF;
+			if(fgetc(f) != '\'')
+				return EOF;
 			str[2] = '\0';
 		}
 		return km_getKey(str);
@@ -150,11 +150,11 @@ static char km_getKey(char *str) {
 	return *str;
 }
 
-static bool km_skipTrash(tFile *f) {
+static bool km_skipTrash(FILE *f) {
 	bool comment = false;
 	while(1) {
-		char c = fscanc(f);
-		if(c == IO_EOF)
+		char c = fgetc(f);
+		if(c == EOF)
 			return false;
 		if(c == '#')
 			comment = true;
@@ -162,7 +162,7 @@ static bool km_skipTrash(tFile *f) {
 			if(comment && c == '\n')
 				comment = false;
 			else if(!comment && !isspace(c)) {
-				fscanback(f,c);
+				ungetc(c,f);
 				break;
 			}
 		}

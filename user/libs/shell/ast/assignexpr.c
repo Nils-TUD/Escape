@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include "assignexpr.h"
 #include "varexpr.h"
 #include "node.h"

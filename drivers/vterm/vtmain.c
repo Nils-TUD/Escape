@@ -25,7 +25,7 @@
 #include <esc/heap.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <sllist.h>
 #include <string.h>
 #include <ringbuffer.h>

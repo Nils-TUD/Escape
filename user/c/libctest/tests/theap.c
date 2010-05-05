@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/heap.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <test.h>
 #include <stdarg.h>
 #include "theap.h"

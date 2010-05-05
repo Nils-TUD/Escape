@@ -21,7 +21,7 @@
 #include <esc/debug.h>
 #include <esc/heap.h>
 #include <esc/io.h>
-#include <esc/fileio.h>
+#include <stdio.h>
 #include <sllist.h>
 #include <string.h>
 #include "elf.h"

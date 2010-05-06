@@ -17,33 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef RAND_H_
-#define RAND_H_
-
 #include <esc/common.h>
+#include <esc/proc.h>
+#include <stdlib.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* max rand-number */
-#define RAND_MAX 0xFFFFFFFF
-
-/**
- * Rand will generate a random number between 0 and 'RAND_MAX' (at least 32767).
- *
- * @return the random number
- */
-s32 rand(void);
-
-/**
- * Srand seeds the random number generation function rand so it does not produce the same
- * sequence of numbers.
- */
-void srand(u32 seed);
-
-#ifdef __cplusplus
+void abort(void) {
+	exit(EXIT_FAILURE);
 }
-#endif
-
-#endif /* RAND_H_ */

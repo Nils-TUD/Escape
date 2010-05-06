@@ -159,14 +159,14 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* start tests */
-	/*test_register(&tModMM);
+	test_register(&tModMM);
 	test_register(&tModPaging);
 	test_register(&tModProc);
 	test_register(&tModKHeap);
 	test_register(&tModSched);
-	test_register(&tModSLList);*/
+	test_register(&tModSLList);
 	test_register(&tModString);
-	/*test_register(&tModVFS);
+	test_register(&tModVFS);
 	test_register(&tModVFSn);
 	test_register(&tModSignals);
 	test_register(&tModRBuffer);
@@ -175,7 +175,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	test_register(&tModSwapMap);
 	test_register(&tModRegion);
 	test_register(&tModVmm);
-	test_register(&tModShm);*/
+	test_register(&tModShm);
 	test_start();
 
 

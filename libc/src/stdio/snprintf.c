@@ -21,8 +21,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-int snprintf(char *str,size_t n,const char *fmt,...) {
-	int res;
+s32 snprintf(char *str,size_t n,const char *fmt,...) {
+	s32 res;
 	va_list ap;
 	va_start(ap,fmt);
 	res = vsnprintf(str,n,fmt,ap);

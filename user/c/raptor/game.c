@@ -18,11 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
 #include <esc/conf.h>
 #include <esc/keycodes.h>
 #include <esc/date.h>
-#include <esc/rand.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "game.h"
 #include "bar.h"
 #include "objlist.h"
@@ -73,18 +73,18 @@ void game_handleKey(u8 keycode,u8 modifiers,u8 isBreak,char c) {
 	pressed[keycode] = !isBreak;
 }
 
-bool game_tick(u32 time) {
+bool game_tick(u32 gtime) {
 	bool stop = false;
-	if((time % UPDATE_INTERVAL) == 0) {
+	if((gtime % UPDATE_INTERVAL) == 0) {
 		s32 scoreChg;
-		if((time % KEYPRESS_INTERVAL) == 0) {
+		if((gtime % KEYPRESS_INTERVAL) == 0) {
 			u32 i;
 			for(i = 0; i < KEYCODE_COUNT; i++) {
 				if(pressed[i])
-					stop |= !game_performAction(time,i);
+					stop |= !game_performAction(gtime,i);
 			}
 		}
-		if((time % ADDPLAIN_INTERVAL) == 0)
+		if((gtime % ADDPLAIN_INTERVAL) == 0)
 			game_addAirplain();
 		scoreChg = objlist_tick();
 		if((s32)(scoreChg + score) < 0)
@@ -96,7 +96,7 @@ bool game_tick(u32 time) {
 	return !stop;
 }
 
-static bool game_performAction(u32 time,u8 keycode) {
+static bool game_performAction(u32 gtime,u8 keycode) {
 	switch(keycode) {
 		case VK_LEFT:
 			bar_moveLeft();
@@ -105,7 +105,7 @@ static bool game_performAction(u32 time,u8 keycode) {
 			bar_moveRight();
 			break;
 		case VK_SPACE:
-			if((time % FIRE_INTERVAL) == 0)
+			if((gtime % FIRE_INTERVAL) == 0)
 				game_fire();
 			break;
 		case VK_Q:

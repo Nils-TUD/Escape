@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/env.h>
 #include <esc/heap.h>
 #include <test.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include "tenv.h"
 
@@ -41,29 +41,27 @@ static void test_env(void) {
 }
 
 static void test_setget(void) {
-	char *value = (char*)malloc(255);
-	test_caseStart("Testing setEnv() and getEnv()");
-	test_assertInt(setEnv("TEST","my value"),0);
-	test_assertTrue(getEnv(value,255,"TEST"));
+	char *value;
+	test_caseStart("Testing setenv() and getenv()");
+	test_assertInt(setenv("TEST","my value"),0);
+	test_assertTrue((value = getenv("TEST")) != NULL);
 	test_assertStr(value,"my value");
-	test_assertInt(setEnv("A","123"),0);
-	test_assertTrue(getEnv(value,255,"A"));
+	test_assertInt(setenv("A","123"),0);
+	test_assertTrue((value = getenv("A")) != NULL);
 	test_assertStr(value,"123");
 	test_caseSucceded();
-	free(value);
 }
 
 static void test_geti(void) {
 	u32 i;
-	char *name = (char*)malloc(255);
-	test_caseStart("Testing getEnvByIndex()");
+	test_caseStart("Testing getenvi()");
 
 	for(i = 0; ; i++) {
-		if(!getEnvByIndex(name,255,i))
+		char *name = getenvi(i);
+		if(!name)
 			break;
-		test_assertTrue(getEnv(name,255,name));
+		test_assertTrue(getenv(name) != NULL);
 	}
 
 	test_caseSucceded();
-	free(name);
 }

@@ -17,18 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/env.h>
-#include <esc/proc.h>
-#include <messages.h>
-#include "envintern.h"
+#include <stddef.h>
+#include <string.h>
 
-bool getEnvByIndex(char *name,u32 nameSize,u32 index) {
-	sMsg msg;
-	if(initEnv() < 0)
-		return false;
-
-	msg.args.arg1 = getpid();
-	msg.args.arg2 = index;
-	return doGetEnv(name,&msg,nameSize,MSG_ENV_GETI,sizeof(msg.args));
+double atof(const char *nptr) {
+	return strtod(nptr,NULL);
 }

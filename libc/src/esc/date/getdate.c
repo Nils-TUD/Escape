@@ -20,26 +20,15 @@
 #include <esc/common.h>
 #include <esc/date.h>
 #include <esc/io.h>
-#include "dateintern.h"
 
-s32 getDate(sDate *date) {
-	s32 err;
-	u8 yearType;
-	s32 m;
-
+s32 getDate(sCMOSDate *date) {
 	/* open CMOS and read date */
+	s32 err;
 	tFD fd = open("/dev/cmos",IO_READ);
 	if(fd < 0)
 		return fd;
-	if((err = read(fd,date,sizeof(sDate))) < 0)
+	if((err = read(fd,date,sizeof(sCMOSDate))) < 0)
 		return err;
 	close(fd);
-
-	/* set year-day */
-	date->yearDay = date->monthDay - 1;
-	yearType = IS_LEAP_YEAR(date->year) ? LEAP_YEAR : DEF_YEAR;
-	for(m = (s32)date->month - 2; m >= 0; m--)
-		date->yearDay += daysPerMonth[yearType][m];
-
 	return 0;
 }

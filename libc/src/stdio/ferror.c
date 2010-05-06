@@ -21,7 +21,7 @@
 #include <esc/io/iofilestream.h>
 #include <stdio.h>
 
-int ferror(FILE *stream) {
+s32 ferror(FILE *stream) {
 	sIOStream *s = (sIOStream*)stream;
 	return s->_error;
 }

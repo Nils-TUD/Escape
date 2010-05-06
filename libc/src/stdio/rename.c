@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-int rename(const char *old,const char *newn) {
+s32 rename(const char *old,const char *newn) {
 	UNUSED(old);
 	UNUSED(newn);
 	/* TODO not supported atm */

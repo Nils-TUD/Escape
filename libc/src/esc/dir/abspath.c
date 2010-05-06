@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/env.h>
 #include <esc/dir.h>
 #include <string.h>
+#include <stdlib.h>
 
 u32 abspath(char *dst,u32 dstSize,const char *src) {
 	char *curtemp,*pathtemp,*p;
@@ -32,7 +32,7 @@ u32 abspath(char *dst,u32 dstSize,const char *src) {
 	layer = 0;
 	if(*p != '/') {
 		char envPath[MAX_PATH_LEN + 1];
-		if(!getEnv(envPath,MAX_PATH_LEN + 1,"CWD"))
+		if(!getenvto(envPath,MAX_PATH_LEN + 1,"CWD"))
 			return count;
 		if(dstSize < strlen(envPath))
 			return count;

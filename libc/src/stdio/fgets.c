@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-char *fgets(char *str,int max,FILE *file) {
+char *fgets(char *str,s32 max,FILE *file) {
 	char *res = str;
 	sIOStream *s = (sIOStream*)file;
 	assert(s->in);

@@ -203,17 +203,10 @@ s32 iso_read(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
 }
 
 u32 iso_dirDate2Timestamp(sISO9660 *h,sISODirDate *ddate) {
-	sDate date;
 	UNUSED(h);
-	date.year = ddate->year + 1900;
-	date.month = ddate->month;
-	date.monthDay = ddate->day;
-	date.hour = ddate->hour;
-	date.min = ddate->minute;
-	date.sec = ddate->second;
-	/* note that we assume here that getTimeOf() doesn't need the other fields
-	 * (weekDay, yearDay and isDst) */
-	return getTimeOf(&date);
+	sDate date = date_getOfDateTime(ddate->month,ddate->day,ddate->year + 1900,
+			ddate->hour,ddate->minute,ddate->second);
+	return date.timestamp;
 }
 
 #if DEBUGGING

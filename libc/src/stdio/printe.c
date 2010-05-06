@@ -21,9 +21,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-int printe(const char *prefix,...) {
+s32 printe(const char *prefix,...) {
 	va_list ap;
-	int res;
+	s32 res;
 	va_start(ap,prefix);
 	res = vprinte(prefix,ap);
 	va_end(ap);

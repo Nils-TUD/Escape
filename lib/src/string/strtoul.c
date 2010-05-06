@@ -22,6 +22,6 @@
 #include <string.h>
 #include <assert.h>
 
-u32 strtoul(const char *nptr,char **endptr,s16 base) {
+u32 strtoul(const char *nptr,char **endptr,s32 base) {
 	return strtol(nptr,endptr,base);
 }

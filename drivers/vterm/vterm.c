@@ -20,7 +20,6 @@
 #include <esc/common.h>
 #include <esc/lock.h>
 #include <esc/thread.h>
-#include <stdio.h>
 #include <esc/io.h>
 #include <esc/date.h>
 #include <esc/keycodes.h>
@@ -28,6 +27,8 @@
 #include <esc/driver.h>
 #include <esc/proc.h>
 #include <esc/conf.h>
+#include <esc/exceptions/date.h>
+#include <stdio.h>
 #include <messages.h>
 #include <string.h>
 
@@ -213,13 +214,13 @@ static void vterm_setCursor(sVTerm *vt) {
 static int vterm_dateThread(void *arg) {
 	u32 i,j,len;
 	char dateStr[SSTRLEN("Mon, 14. Jan 2009, 12:13:14") + 1];
-	sDate date;
 	UNUSED(arg);
 	while(1) {
 		if(config->enabled) {
 			/* get date and format it */
-			if(getDate(&date) == 0) {
-				len = dateToString(dateStr,30,"%a, %d. %b %Y, %H:%M:%S",&date);
+			TRY {
+				sDate date = date_get();
+				len = date.format(&date,dateStr,30,"%a, %d. %b %Y, %H:%M:%S");
 
 				/* update all vterm-title-bars; use a lock to prevent race-conditions */
 				locku(&titleBarLock);
@@ -238,6 +239,10 @@ static int vterm_dateThread(void *arg) {
 				}
 				unlocku(&titleBarLock);
 			}
+			CATCH(DateException,e) {
+
+			}
+			ENDCATCH
 		}
 
 		/* wait a second */

@@ -18,30 +18,25 @@
  */
 
 #include <esc/common.h>
-#include <esc/date.h>
-#include "dateintern.h"
+#include <stdlib.h>
 
-u32 getTimeOf(const sDate *date) {
-	s32 m;
-	u32 y,ts;
-	u8 yearType;
-	ts = 0;
-	/* add full years */
-	for(y = 1970; y < date->year; y++) {
-		if(IS_LEAP_YEAR(y))
-			ts += SECS_PER_LEAPYEAR;
-		else
-			ts += SECS_PER_YEAR;
-	}
-	/* add full months */
-	yearType = IS_LEAP_YEAR(date->year) ? LEAP_YEAR : DEF_YEAR;
-	for(m = (s32)date->month - 2; m >= 0; m--)
-		ts += daysPerMonth[yearType][m] * SECS_PER_DAY;
-	/* add full days */
-	ts += (date->monthDay - 1) * SECS_PER_DAY;
-	/* add hours, mins and secs */
-	ts += date->hour * SECS_PER_HOUR;
-	ts += date->min * SECS_PER_MIN;
-	ts += date->sec;
-	return ts;
+div_t div(s32 numerator,s32 denominator) {
+	div_t res;
+	res.quot = numerator / denominator;
+	res.rem = numerator % denominator;
+	return res;
+}
+
+ldiv_t ldiv(s32 numerator,s32 denominator) {
+	ldiv_t res;
+	res.quot = numerator / denominator;
+	res.rem = numerator % denominator;
+	return res;
+}
+
+lldiv_t lldiv(s64 numerator,s64 denominator) {
+	lldiv_t res;
+	res.quot = numerator / denominator;
+	res.rem = numerator % denominator;
+	return res;
 }

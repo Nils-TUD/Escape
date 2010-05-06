@@ -22,8 +22,8 @@
 #include <esc/io/iofilestream.h>
 #include <stdio.h>
 
-int fgetpos(FILE *stream,fpos_t *pos) {
-	int res = 0;
+s32 fgetpos(FILE *stream,fpos_t *pos) {
+	s32 res = 0;
 	sIOStream *s = (sIOStream*)stream;
 	TRY {
 		if(s->in)

@@ -19,12 +19,12 @@
 
 #include <esc/common.h>
 #include <esc/cmdargs.h>
-#include <esc/env.h>
 #include <esc/dir.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/heap.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "cd.h"
 
 s32 shell_cmdCd(u32 argc,char **argv) {
@@ -56,7 +56,7 @@ s32 shell_cmdCd(u32 argc,char **argv) {
 	}
 
 	/* finally change dir */
-	setEnv("CWD",path);
+	setenv("CWD",path);
 	free(path);
 	return EXIT_SUCCESS;
 }

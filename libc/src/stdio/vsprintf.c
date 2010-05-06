@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <limits.h>
 
-int vsprintf(char *str,const char *fmt,va_list ap) {
+s32 vsprintf(char *str,const char *fmt,va_list ap) {
 	/* TODO not perfect, but should be enough for now */
 	return vsnprintf(str,LONG_MAX,fmt,ap);
 }

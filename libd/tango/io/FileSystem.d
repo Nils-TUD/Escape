@@ -465,7 +465,7 @@ struct FileSystem
                         tmp [path.length] = 0;
                         tmp[0..path.length] = path;
 
-                        if (.setEnv("CWD",tmp.ptr) < 0)
+                        if (.setenv("CWD",tmp.ptr) < 0)
                             exception ("Failed to set current directory");
                 }
 
@@ -481,7 +481,7 @@ struct FileSystem
                 {
                         char[512] tmp = void;
 
-                        if (.getEnv(tmp.ptr,tmp.length,"CWD") < 0)
+                        if (.getenvto(tmp.ptr,tmp.length,"CWD") < 0)
                             exception ("Failed to get current directory");
 
                         auto path = tmp[0 .. strlen(tmp.ptr)+1].dup;

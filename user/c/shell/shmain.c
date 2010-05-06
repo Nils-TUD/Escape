@@ -18,13 +18,13 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
 #include <esc/io.h>
-#include <esc/env.h>
 #include <esc/signals.h>
 #include <esc/cmdargs.h>
 #include <esc/heap.h>
 #include <messages.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <shell/shell.h>
 #include <shell/history.h>
@@ -87,7 +87,7 @@ int main(int argc,char **argv) {
 	sendMsgData(fd,MSG_VT_SHELLPID,(u8*)&pid,sizeof(tPid));
 
 	/* set vterm as env-variable */
-	setEnv("TERM",argv[1]);
+	setenv("TERM",argv[1]);
 
 	printf("\033[co;9]Welcome to Escape v0.3!\033[co]\n");
 	printf("\n");

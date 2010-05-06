@@ -24,8 +24,8 @@
 #include <stdarg.h>
 #include <assert.h>
 
-int vfprintf(FILE *file,const char *fmt,va_list ap) {
-	int res = 0;
+s32 vfprintf(FILE *file,const char *fmt,va_list ap) {
+	s32 res = 0;
 	sIOStream *s = (sIOStream*)file;
 	assert(s->out);
 	TRY {

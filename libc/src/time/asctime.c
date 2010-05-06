@@ -18,23 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/env.h>
-#include <esc/io.h>
-#include <messages.h>
-#include <string.h>
-#include "envintern.h"
+#include <time.h>
 
-bool doGetEnv(char *buf,sMsg *msg,u32 bufSize,u32 cmd,u32 size) {
-	tMsgId mid;
+#define MAX_DATE_LEN	25
 
-	/* send message */
-	if(send(envFd,cmd,msg,size) < 0)
-		return false;
-
-	/* wait for reply */
-	if(receive(envFd,&mid,msg,sizeof(sMsg)) <= 0)
-		return false;
-
-	memcpy(buf,msg->str.s1,MIN(bufSize,msg->str.arg1));
-	return msg->str.arg1 > 0;
+char *asctime(const struct tm *timeptr) {
+	static char dateStr[MAX_DATE_LEN];
+	strftime(dateStr,MAX_DATE_LEN,"%c",timeptr);
+	return dateStr;
 }

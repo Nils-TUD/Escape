@@ -23,8 +23,8 @@
 #include <stdio.h>
 #include <assert.h>
 
-int fputs(const char *str,FILE *file) {
-	int res = 0;
+s32 fputs(const char *str,FILE *file) {
+	s32 res = 0;
 	sIOStream *s = (sIOStream*)file;
 	assert(s->out);
 	TRY {

@@ -27,6 +27,16 @@ extern "C" {
 #endif
 
 /**
+ * The atof function converts the initial portion of the string pointed to by nptr to
+ * double representation. Except for the behavior on error, it is equivalent to
+ * 	strtod(nptr, (char **)NULL)
+ *
+ * @param nptr the string
+ * @return the double
+ */
+double atof(const char *nptr);
+
+/**
  * The atoi() function converts str into an integer, and returns that integer. str should start
  * with whitespace or some sort of number, and atoi() will stop reading from str as soon as
  * a non-numerical character has been read.
@@ -34,17 +44,23 @@ extern "C" {
  * @param str the string
  * @return the integer
  */
-s32 atoi(const char *str);
+s32 atoi(const char *nptr);
 
 /**
- * The atol() function converts str into a long integer, and returns that long integer. str should
- * start with whitespace or some sort of number, and atoi() will stop reading from str as soon as
- * a non-numerical character has been read.
+ * An alias of atoi()
  *
- * @param str the string
- * @return the long integer
+ * @param nptr the string
+ * @return the integer
  */
-s64 atol(const char *str);
+s32 atol(const char *nptr);
+
+/**
+ * The same as atoi(), but for a long long int
+ *
+ * @param nptr the string
+ * @return the integer
+ */
+s64 atoll(const char *nptr);
 
 /**
  * Converts the given signed integer to a string
@@ -408,8 +424,8 @@ char *strndup(const char *s,u32 n);
  * @param base the base (2 - 36 inclusive; 0 = determine automatically)
  * @return the number
  */
-s32 strtol(const char *nptr,char **endptr,s16 base);
-s64 strtoll(const char *nptr,char **endptr,s16 base);
+s32 strtol(const char *nptr,char **endptr,s32 base);
+s64 strtoll(const char *nptr,char **endptr,s32 base);
 
 /**
  * The  strtoul()  function  converts  the initial part of the string in nptr to an unsigned long
@@ -438,8 +454,8 @@ s64 strtoll(const char *nptr,char **endptr,s16 base);
  * @param base the base (2 - 36 inclusive; 0 = determine automatically)
  * @return the number
 */
-u32 strtoul(const char *nptr,char **endptr,s16 base);
-u64 strtoull(const char *nptr,char **endptr,s16 base);
+u32 strtoul(const char *nptr,char **endptr,s32 base);
+u64 strtoull(const char *nptr,char **endptr,s32 base);
 
 /**
  * The strtod, strtof, and strtold functions convert the initial portion of the string

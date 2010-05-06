@@ -20,6 +20,6 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-int putchar(int c) {
+s32 putchar(s32 c) {
 	return fputc(c,stdout);
 }

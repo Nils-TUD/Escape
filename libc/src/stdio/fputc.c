@@ -23,8 +23,8 @@
 #include <stdio.h>
 #include <assert.h>
 
-int fputc(int c,FILE *file) {
-	int res = 0;
+s32 fputc(s32 c,FILE *file) {
+	s32 res = 0;
 	sIOStream *s = (sIOStream*)file;
 	assert(s->out);
 	TRY {

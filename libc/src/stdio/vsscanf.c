@@ -23,8 +23,8 @@
 #include <esc/io/istringstream.h>
 #include <stdio.h>
 
-int vsscanf(const char *str,const char *fmt,va_list ap) {
-	int res = 0;
+s32 vsscanf(const char *str,const char *fmt,va_list ap) {
+	s32 res = 0;
 	sIStream *s = NULL;
 	TRY {
 		s = isstream_open(str);

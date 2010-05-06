@@ -21,8 +21,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-int sscanf(const char *str,const char *fmt,...) {
-	int res;
+s32 sscanf(const char *str,const char *fmt,...) {
+	s32 res;
 	va_list ap;
 	va_start(ap,fmt);
 	res = vsscanf(str,fmt,ap);

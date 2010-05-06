@@ -18,9 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/env.h>
 #include <esc/dir.h>
-#include <stdio.h>
 #include <esc/heap.h>
 #include <esc/proc.h>
 #include <esc/signals.h>
@@ -29,6 +27,8 @@
 #include <fsinterface.h>
 #include <messages.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <esccodes.h>
 #include <ctype.h>
 #include <errors.h>
@@ -62,7 +62,7 @@ void shell_init(void) {
 
 bool shell_prompt(void) {
 	char path[MAX_PATH_LEN + 1];
-	if(!getEnv(path,MAX_PATH_LEN + 1,"CWD")) {
+	if(!getenvto(path,MAX_PATH_LEN + 1,"CWD")) {
 		printe("Unable to get CWD");
 		return false;
 	}

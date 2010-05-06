@@ -22,8 +22,8 @@
 #include <esc/io/iofilestream.h>
 #include <stdio.h>
 
-int fclose(FILE *stream) {
-	int res = 0;
+s32 fclose(FILE *stream) {
+	s32 res = 0;
 	sIOStream *s = (sIOStream*)stream;
 	/* just the output-stream may throw an exception when the output is flushed */
 	if(s->in)

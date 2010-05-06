@@ -29,7 +29,7 @@
 /* forward declarations */
 static void test_string(void);
 static void test_atoi(void);
-static void test_atol(void);
+static void test_atoll(void);
 static void test_itoa(void);
 static void test_memset(void);
 static void test_memchr(void);
@@ -71,7 +71,7 @@ sTestModule tModString = {
 
 static void test_string(void) {
 	test_atoi();
-	test_atol();
+	test_atoll();
 	test_itoa();
 	test_memset();
 	test_memchr();
@@ -127,27 +127,27 @@ static void test_atoi(void) {
 	test_caseSucceded();
 }
 
-static void test_atol(void) {
-	test_caseStart("Testing atol()");
+static void test_atoll(void) {
+	test_caseStart("Testing atoll()");
 
-	if(!test_assertLInt(atol("123"),123)) return;
-	if(!test_assertLInt(atol("1"),1)) return;
-	if(!test_assertLInt(atol("0"),0)) return;
-	if(!test_assertLInt(atol("123456789"),123456789)) return;
-	if(!test_assertLInt(atol("-1"),-1)) return;
-	if(!test_assertLInt(atol("-546"),-546)) return;
-	if(!test_assertLInt(atol("  45  "),45)) return;
-	if(!test_assertLInt(atol("\t\n\r12.4\n"),12)) return;
-	if(!test_assertLInt(atol("2147483647"),2147483647LL)) return;
-	if(!test_assertLInt(atol("-2147483648"),-2147483648LL)) return;
-	if(!test_assertLInt(atol("8278217191231"),8278217191231LL)) return;
-	if(!test_assertLInt(atol("-8278217191231"),-8278217191231LL)) return;
-	if(!test_assertLInt(atol("9223372036854775807"),9223372036854775807LL)) return;
-	if(!test_assertLInt(atol("-9223372036854775808"),-9223372036854775808LL)) return;
-	if(!test_assertLInt(atol(""),0)) return;
-	if(!test_assertLInt(atol("-"),0)) return;
-	if(!test_assertLInt(atol("abc"),0)) return;
-	if(!test_assertLInt(atol("a123b"),0)) return;
+	if(!test_assertLInt(atoll("123"),123)) return;
+	if(!test_assertLInt(atoll("1"),1)) return;
+	if(!test_assertLInt(atoll("0"),0)) return;
+	if(!test_assertLInt(atoll("123456789"),123456789)) return;
+	if(!test_assertLInt(atoll("-1"),-1)) return;
+	if(!test_assertLInt(atoll("-546"),-546)) return;
+	if(!test_assertLInt(atoll("  45  "),45)) return;
+	if(!test_assertLInt(atoll("\t\n\r12.4\n"),12)) return;
+	if(!test_assertLInt(atoll("2147483647"),2147483647LL)) return;
+	if(!test_assertLInt(atoll("-2147483648"),-2147483648LL)) return;
+	if(!test_assertLInt(atoll("8278217191231"),8278217191231LL)) return;
+	if(!test_assertLInt(atoll("-8278217191231"),-8278217191231LL)) return;
+	if(!test_assertLInt(atoll("9223372036854775807"),9223372036854775807LL)) return;
+	if(!test_assertLInt(atoll("-9223372036854775808"),-9223372036854775808LL)) return;
+	if(!test_assertLInt(atoll(""),0)) return;
+	if(!test_assertLInt(atoll("-"),0)) return;
+	if(!test_assertLInt(atoll("abc"),0)) return;
+	if(!test_assertLInt(atoll("a123b"),0)) return;
 
 	test_caseSucceded();
 }

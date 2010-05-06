@@ -18,10 +18,8 @@
  */
 
 #include <stddef.h>
-#include <assert.h>
 #include <string.h>
-#include <ctype.h>
 
-s32 atoi(const char *str) {
-	return strtol(str,NULL,10);
+s32 atoi(const char *nptr) {
+	return strtol(nptr,NULL,10);
 }

@@ -28,6 +28,7 @@
 #include <esc/lock.h>
 #include <errors.h>
 #include <messages.h>
+
 #define IOPORT_CMOS_INDEX	0x70
 #define IOPORT_CMOS_DATA	0x71
 
@@ -47,7 +48,7 @@ static u8 cmos_read(u8 reg);
 
 static tULock dlock;
 static sMsg msg;
-static sDate date;
+static sCMOSDate date;
 
 int main(void) {
 	tMsgId mid;
@@ -80,7 +81,7 @@ int main(void) {
 					u32 count = msg.args.arg2;
 					msg.args.arg1 = count;
 					msg.args.arg2 = true;
-					if(offset + count <= offset || offset + count > sizeof(sDate))
+					if(offset + count <= offset || offset + count > sizeof(sCMOSDate))
 						msg.args.arg1 = 0;
 					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1) {
@@ -123,6 +124,11 @@ static void cmos_refresh(void) {
 	date.min = cmos_decodeBCD(cmos_read(CMOS_REG_MIN));
 	date.sec = cmos_decodeBCD(cmos_read(CMOS_REG_SEC));
 	date.weekDay = cmos_decodeBCD(cmos_read(CMOS_REG_WEEKDAY));
+	{
+		sDate edate = date_getOfDateTime(date.month,date.monthDay,date.year,date.hour,date.min,date.sec);
+		date.timestamp = edate.timestamp;
+		date.yearDay = edate.yearDay;
+	}
 }
 
 static u32 cmos_decodeBCD(u8 val) {

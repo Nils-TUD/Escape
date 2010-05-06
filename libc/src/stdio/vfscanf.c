@@ -24,8 +24,8 @@
 #include <assert.h>
 #include <stdarg.h>
 
-int vfscanf(FILE *file,const char *fmt,va_list ap) {
-	int res = 0;
+s32 vfscanf(FILE *file,const char *fmt,va_list ap) {
+	s32 res = 0;
 	sIOStream *s = (sIOStream*)file;
 	assert(s->in);
 	TRY {

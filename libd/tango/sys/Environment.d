@@ -363,7 +363,7 @@ struct Environment
                 static char[] get (char[] variable, char[] def = null)
                 {
                 		char tmp[MAX_NAME_LEN];
-                        if (!.getEnv(tmp.ptr,MAX_NAME_LEN,(variable ~ '\0').ptr))
+                        if (!.getenvto(tmp.ptr,MAX_NAME_LEN,(variable ~ '\0').ptr))
                             return def;
 
                         return tmp[0 .. strlen(tmp.ptr)].dup;
@@ -383,7 +383,7 @@ struct Environment
                         //if (value.length is 0)
                         //    unsetenv ((variable ~ '\0').ptr);
                         //else
-                           result = .setEnv((variable ~ '\0').ptr, (value ~ '\0').ptr);
+                           result = .setenv((variable ~ '\0').ptr, (value ~ '\0').ptr);
 
                         if (result < 0)
                             exception (SysError.lastMsg);
@@ -400,7 +400,7 @@ struct Environment
                 {
                         char[][char[]] arr;
                         char tmp[MAX_NAME_LEN];
-                        for(uint i = 0; .getEnvByIndex(tmp.ptr,MAX_NAME_LEN,i); i++)
+                        for(uint i = 0; .getenvito(tmp.ptr,MAX_NAME_LEN,i); i++)
                         {
                         	char[] key = tmp[0..strlen(tmp.ptr)].dup;
                         	arr[key] = get(key);

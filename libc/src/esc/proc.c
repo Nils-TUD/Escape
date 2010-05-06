@@ -19,65 +19,6 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
-#include <esc/lock.h>
-#include <esc/io.h>
-#include <errors.h>
-
-#define MAX_EXIT_FUNCS	8
-
-static tULock exitLock = 0;
-static s16 exitFuncCount = 0;
-static fExitFunc exitFuncs[MAX_EXIT_FUNCS];
-
-s32 system(const char *cmd) {
-	s32 child;
-	sExitState state;
-	/* check whether we have a shell */
-	if(cmd == NULL) {
-		tFD fd = open("/bin/shell",IO_READ);
-		if(fd >= 0) {
-			close(fd);
-			return EXIT_SUCCESS;
-		}
-		return EXIT_FAILURE;
-	}
-
-	child = fork();
-	if(child == 0) {
-		const char *args[] = {"/bin/shell","-e",NULL,NULL};
-		args[2] = cmd;
-		exec(args[0],args);
-
-		/* if we're here there is something wrong */
-		error("Exec of '%s' failed",args[0]);
-	}
-	else if(child < 0)
-		error("Fork failed");
-
-	/* wait and return exit-code */
-	if((child = waitChild(&state)) < 0)
-		return child;
-	return state.exitCode;
-}
-
-s32 atexit(fExitFunc func) {
-	locku(&exitLock);
-	if(exitFuncCount >= MAX_EXIT_FUNCS) {
-		unlocku(&exitLock);
-		return ERR_MAX_EXIT_FUNCS;
-	}
-
-	exitFuncs[exitFuncCount++] = func;
-	unlocku(&exitLock);
-	return 0;
-}
-
-void exit(s32 exitCode) {
-	s16 i;
-	for(i = exitFuncCount - 1; i >= 0; i--)
-		exitFuncs[i]();
-	_exit(exitCode);
-}
 
 tPid getppid(void) {
 	return getppidof(getpid());

@@ -23,8 +23,8 @@
 #include <stdio.h>
 #include <assert.h>
 
-int ungetc(int c,FILE *file) {
-	int res = 0;
+s32 ungetc(s32 c,FILE *file) {
+	s32 res = 0;
 	sIOStream *s = (sIOStream*)file;
 	assert(s->in);
 	TRY {

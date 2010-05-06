@@ -22,6 +22,6 @@
 #include <string.h>
 #include <assert.h>
 
-u64 strtoull(const char *nptr,char **endptr,s16 base) {
+u64 strtoull(const char *nptr,char **endptr,s32 base) {
 	return strtoll(nptr,endptr,base);
 }

@@ -20,6 +20,6 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-int getchar(void) {
+s32 getchar(void) {
 	return fgetc(stdin);
 }

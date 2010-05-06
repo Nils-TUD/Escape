@@ -26,7 +26,7 @@
 #include <esc/gui/control.h>
 #include <esc/debug.h>
 #include <esc/string.h>
-#include <esc/env.h>
+#include <stdlib.h>
 #include <ringbuffer.h>
 #include <esccodes.h>
 
@@ -77,7 +77,7 @@ public:
 		_vt->sid = sid;
 		_vt->defForeground = BLACK;
 		_vt->defBackground = WHITE;
-		if(!getEnv(_vt->name,sizeof(_vt->name),"TERM"))
+		if(!getenvto(_vt->name,sizeof(_vt->name),"TERM"))
 			error("Unable to get env-var TERM");
 		if(!vterm_init(_vt,&size,-1,speakerFd))
 			error("Unable to init vterm");

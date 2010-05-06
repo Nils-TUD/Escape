@@ -24,8 +24,8 @@
 #include <stdarg.h>
 #include <assert.h>
 
-int fprintf(FILE *file,const char *fmt,...) {
-	int res;
+s32 fprintf(FILE *file,const char *fmt,...) {
+	s32 res;
 	va_list ap;
 	va_start(ap,fmt);
 	res = vfprintf(file,fmt,ap);

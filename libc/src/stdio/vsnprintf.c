@@ -23,8 +23,8 @@
 #include <esc/io/ostringstream.h>
 #include <stdio.h>
 
-int vsnprintf(char *str,size_t n,const char *fmt,va_list ap) {
-	int res = 0;
+s32 vsnprintf(char *str,size_t n,const char *fmt,va_list ap) {
+	s32 res = 0;
 	sOStream *s = NULL;
 	TRY {
 		s = osstream_open(str,n);

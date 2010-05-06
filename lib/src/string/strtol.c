@@ -22,7 +22,7 @@
 #include <string.h>
 #include <assert.h>
 
-s32 strtol(const char *nptr,char **endptr,s16 base) {
+s32 strtol(const char *nptr,char **endptr,s32 base) {
 	s32 i = 0;
 	bool neg = false;
 	char c;

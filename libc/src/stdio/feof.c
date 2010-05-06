@@ -21,7 +21,7 @@
 #include <esc/io/iofilestream.h>
 #include <stdio.h>
 
-int feof(FILE *stream) {
+s32 feof(FILE *stream) {
 	sIOStream *s = (sIOStream*)stream;
 	if(s->in)
 		return s->in->eof(s->in);

@@ -22,7 +22,7 @@
 #include <string.h>
 #include <assert.h>
 
-s64 strtoll(const char *nptr,char **endptr,s16 base) {
+s64 strtoll(const char *nptr,char **endptr,s32 base) {
 	s64 i = 0;
 	bool neg = false;
 	char c;

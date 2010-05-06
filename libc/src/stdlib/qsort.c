@@ -18,8 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <esc/algo.h>
 #include <string.h>
+#include <stdlib.h>
 
 /* macro to get a pointer to element <elNo> from <array> with a size of <elSize> per element */
 #define QSORT_AGET(array,elSize,elNo) (((char*)(array)) + (elSize) * (elNo))
@@ -29,34 +29,8 @@
  * source: http://de.wikipedia.org/wiki/Quicksort
  */
 static void _qsort(void *base,size_t size,fCompare cmp,s32 left,s32 right);
-static int divide(void *base,size_t size,fCompare cmp,s32 left,s32 right);
+static s32 divide(void *base,size_t size,fCompare cmp,s32 left,s32 right);
 
-void *bsearch(const void *key,const void *base,u32 num,u32 size,fCompare cmp) {
-	u32 from = 0;
-	u32 to = num - 1;
-	u32 m;
-	s32 res;
-	void *val;
-
-	while(from <= to) {
-		m = (from + to) / 2;
-		val = (void*)((u32)base + m * size);
-
-		/* compare */
-		res = cmp(val,key);
-
-		/* have we found it? */
-		if(res == 0)
-			return val;
-
-		/* where to continue? */
-		if(res > 0)
-			to = m - 1;
-		else
-			from = m + 1;
-	}
-	return NULL;
-}
 
 void qsort(void *base,u32 nmemb,u32 size,fCompare cmp) {
 	_qsort(base,size,cmp,0,nmemb - 1);
@@ -66,13 +40,13 @@ static void _qsort(void *base,u32 size,fCompare cmp,s32 left,s32 right) {
 	/* TODO someday we should provide a better implementation which uses another sort-algo
 	 * for small arrays, don't uses recursion and so on */
 	if(left < right) {
-		int i = divide(base,size,cmp,left,right);
+		s32 i = divide(base,size,cmp,left,right);
 		_qsort(base,size,cmp,left,i - 1);
 		_qsort(base,size,cmp,i + 1,right);
 	}
 }
 
-static int divide(void *base,u32 size,fCompare cmp,s32 left,s32 right) {
+static s32 divide(void *base,u32 size,fCompare cmp,s32 left,s32 right) {
 	char *pleft = (char*)base + left * size;
 	char *piv = (char*)base + right * size;
 	char *i = pleft;

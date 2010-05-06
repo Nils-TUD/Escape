@@ -66,6 +66,7 @@
 #define ID_IOException							0
 #define ID_OutOfMemoryException					1
 #define ID_CmdArgsException						2
+#define ID_DateException						3
 
 #define TRY							{ sException *__ex = NULL; \
 										if(setjmp(ex_push()) != 0) \

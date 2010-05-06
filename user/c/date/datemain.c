@@ -18,19 +18,21 @@
  */
 
 #include <esc/common.h>
-#include <esc/date.h>
-#include <stdio.h>
 #include <esc/cmdargs.h>
+#include <esc/date.h>
+#include <esc/io/console.h>
+#include <esc/exceptions/date.h>
+#include <stdio.h>
+
 #define MAX_DATE_LEN 100
 
 int main(int argc,char **argv) {
-	sDate date;
 	char *fmt = (char*)"%c";
 	char str[MAX_DATE_LEN];
 
 	if((argc != 1 && argc != 2) || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s [<format>]\n",argv[0]);
-		fprintf(stderr,"	<format> may be anything that dateToString() accepts\n");
+		cerr->writef(cerr,"Usage: %s [<format>]\n",argv[0]);
+		cerr->writef(cerr,"	<format> may be anything that dateToString() accepts\n");
 		return EXIT_FAILURE;
 	}
 
@@ -38,12 +40,14 @@ int main(int argc,char **argv) {
 	if(argc == 2)
 		fmt = argv[1];
 
-	if(getDate(&date) < 0)
-		error("Unable to get date");
-
-	if(dateToString(str,MAX_DATE_LEN,fmt,&date) == 0)
-		error("Unable to format date");
-
-	printf("%s\n",str);
+	TRY {
+		sDate d = date_get();
+		d.format(&d,str,MAX_DATE_LEN,fmt);
+	}
+	CATCH(DateException,e) {
+		error("Unable to retrieve date");
+	}
+	ENDCATCH
+	cout->writeln(cout,str);
 	return EXIT_SUCCESS;
 }

@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-long int ftell(FILE *stream) {
+s32 ftell(FILE *stream) {
 	fpos_t pos;
 	if(fgetpos(stream,&pos) == EOF)
 		return -1L;

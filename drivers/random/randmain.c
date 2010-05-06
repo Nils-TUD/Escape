@@ -23,8 +23,8 @@
 #include <stdio.h>
 #include <esc/date.h>
 #include <esc/heap.h>
-#include <esc/rand.h>
 #include <messages.h>
+#include <stdlib.h>
 #include <errors.h>
 
 static sMsg msg;
@@ -55,9 +55,9 @@ int main(void) {
 					u32 *data = (u32*)malloc(count);
 					msg.args.arg1 = 0;
 					if(data) {
-						u32 *d = data;
+						u16 *d = (u16*)data;
 						msg.args.arg1 = count;
-						count /= sizeof(u32);
+						count /= sizeof(u16);
 						while(count-- > 0)
 							*d++ = rand();
 					}

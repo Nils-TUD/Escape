@@ -18,11 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <esc/env.h>
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <esc/heap.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "pwd.h"
 
 s32 shell_cmdPwd(u32 argc,char **argv) {
@@ -36,7 +36,7 @@ s32 shell_cmdPwd(u32 argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	if(!getEnv(path,MAX_PATH_LEN + 1,"CWD")) {
+	if(!getenvto(path,MAX_PATH_LEN + 1,"CWD")) {
 		printe("Unable to get CWD");
 		return EXIT_FAILURE;
 	}

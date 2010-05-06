@@ -18,26 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/env.h>
-#include <esc/proc.h>
-#include <esc/io.h>
-#include <messages.h>
-#include <errors.h>
-#include <string.h>
-#include "envintern.h"
+#include <esc/date.h>
+#include <time.h>
 
-s32 setEnv(const char *name,const char* value) {
-	s32 res;
-	sMsg msg;
-	if((res = initEnv()) < 0)
-		return res;
-	if(strlen(name) >= sizeof(msg.str.s1) || strlen(value) >= sizeof(msg.str.s2))
-		return ERR_INVALID_ARGS;
-
-	msg.str.arg1 = getpid();
-	strcpy(msg.str.s1,name);
-	strcpy(msg.str.s2,value);
-
-	/* send message */
-	return send(envFd,MSG_ENV_SET,&msg,sizeof(msg.str));
+time_t time(time_t *timer) {
+	time_t res = (time_t)getTime();
+	if(timer)
+		*timer = res;
+	return res;
 }

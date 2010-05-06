@@ -22,8 +22,8 @@
 #include <esc/io/iofilestream.h>
 #include <stdio.h>
 
-int fseek(FILE *stream,long int offset,int whence) {
-	int res = 0;
+s32 fseek(FILE *stream,s32 offset,s32 whence) {
+	s32 res = 0;
 	sIOStream *s = (sIOStream*)stream;
 	TRY {
 		if(s->in)

@@ -21,8 +21,8 @@
 #include <esc/date.h>
 
 u32 getTime(void) {
-	sDate date;
+	sCMOSDate date;
 	if(getDate(&date) == 0)
-		return getTimeOf(&date);
+		return date.timestamp;
 	return 0;
 }

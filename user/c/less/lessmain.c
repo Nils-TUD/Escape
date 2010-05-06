@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <esc/keycodes.h>
 #include <esc/cmdargs.h>
-#include <esc/env.h>
 #include <esc/mem/heap.h>
 #include <esc/io/file.h>
 #include <esc/io/console.h>
@@ -31,6 +30,7 @@
 #include <esc/exceptions/outofmemory.h>
 #include <esc/util/vector.h>
 #include <string.h>
+#include <stdlib.h>
 #include <messages.h>
 #include <esccodes.h>
 
@@ -107,7 +107,7 @@ int main(int argc,char *argv[]) {
 	emptyLine[consSize.width] = '\0';
 
 	/* open the "real" stdin, because stdin maybe redirected to something else */
-	if(!getEnv(vterm + SSTRLEN("/dev/"),MAX_PATH_LEN - SSTRLEN("/dev/"),"TERM")) {
+	if(!getenvto(vterm + SSTRLEN("/dev/"),MAX_PATH_LEN - SSTRLEN("/dev/"),"TERM")) {
 		resetVterm();
 		error("Unable to get TERM");
 	}

@@ -16,23 +16,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
+#ifndef TIMEINTERN_H_
+#define TIMEINTERN_H_
+
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/io.h>
-#include <esc/dir.h>
-#include <esc/env.h>
-#include <stdio.h>
-#include <esc/lock.h>
-#include <stdlib.h>
+#include <esc/date.h>
+#include <time.h>
 
-void abort(void) {
-	exit(EXIT_FAILURE);
-}
+void datetotm(struct tm *timeptr,const sDate *date);
+sDate tmtodate(const struct tm *timeptr);
 
-char *getenv(const char *name) {
-	/* TODO */
-	static char val[MAX_PATH_LEN + 1];
-	if(getEnv(val,MAX_PATH_LEN + 1,name))
-		return val;
-	return NULL;
-}
+#endif /* TIMEINTERN_H_ */

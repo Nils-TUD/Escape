@@ -20,8 +20,6 @@
 #include <esc/common.h>
 #include <esc/dir.h>
 #include <esc/io.h>
-#include <stdio.h>
-#include <esc/env.h>
 #include <esc/date.h>
 #include <esc/cmdargs.h>
 #include <esc/heap.h>
@@ -29,6 +27,8 @@
 #include <esc/algo.h>
 #include <width.h>
 #include <messages.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <esc/exceptions/cmdargs.h>
@@ -90,7 +90,7 @@ int main(int argc,const char *argv[]) {
 	if(filename)
 		abspath(path,sizeof(path),filename);
 	/* path not provided? so use CWD */
-	else if(!getEnv(path,MAX_PATH_LEN + 1,"CWD"))
+	else if(!getenvto(path,MAX_PATH_LEN + 1,"CWD"))
 		error("Unable to get CWD");
 
 	if(recvMsgData(STDIN_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
@@ -137,8 +137,6 @@ int main(int argc,const char *argv[]) {
 		vforeach(entries,f) {
 			sFileInfo *info = f->getInfo(f);
 			if(flong) {
-				sDate date;
-				char dateStr[DATE_LEN];
 				if(finode)
 					cout->writef(cout,"%*d ",widths[W_INODE],info->inodeNo);
 				printMode(info->mode);
@@ -146,9 +144,12 @@ int main(int argc,const char *argv[]) {
 				cout->writef(cout,"%*u ",widths[W_UID],info->uid);
 				cout->writef(cout,"%*u ",widths[W_GID],info->gid);
 				cout->writef(cout,"%*d ",widths[W_SIZE],info->size);
-				getDateOf(&date,info->modifytime);
-				dateToString(dateStr,DATE_LEN,"%Y-%m-%d %H:%M",&date);
-				cout->writef(cout,"%s ",dateStr);
+				{
+					char dateStr[DATE_LEN];
+					sDate date = date_getOfTS(info->modifytime);
+					date.format(&date,dateStr,DATE_LEN,"%Y-%m-%d %H:%M");
+					cout->writef(cout,"%s ",dateStr);
+				}
 				if(MODE_IS_DIR(info->mode))
 					cout->writef(cout,"\033[co;9]%s\033[co]",f->name(f));
 				else if(info->mode & (MODE_OWNER_EXEC | MODE_GROUP_EXEC | MODE_OTHER_EXEC))

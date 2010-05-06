@@ -17,27 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef EXDATE_H_
+#define EXDATE_H_
+
 #include <esc/common.h>
-#include <esc/math.h>
+#include <esc/exceptions/exception.h>
 
-s32 abs(s32 n) {
-	return n < 0 ? -n : n;
-}
+typedef sException sDateException;
 
-s64 labs(s64 n) {
-	return n < 0 ? -n : n;
-}
+/**
+ * Constructor for the date-exception
+ *
+ * @param id the exception-id
+ * @param line the line
+ * @param file the file
+ * @return the exception
+ */
+sDateException *ex_createDateException(s32 id,s32 line,const char *file);
 
-tDiv div(s32 numerator,s32 denominator) {
-	tDiv res;
-	res.quot = numerator / denominator;
-	res.rem = numerator % denominator;
-	return res;
-}
-
-tLDiv ldiv(s64 numerator,s64 denominator) {
-	tLDiv res;
-	res.quot = numerator / denominator;
-	res.rem = numerator % denominator;
-	return res;
-}
+#endif /* EXDATE_H_ */

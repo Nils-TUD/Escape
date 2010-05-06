@@ -18,23 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/lock.h>
-#include <esc/rand.h>
+#include <stdlib.h>
+#include "envintern.h"
 
-/* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
-static tULock randLock = 0;
-static u32 randm = RAND_MAX;
-static u32 randa = 1103515245;
-static u32 randc = 12345;
-static u32 lastRand = 0;
-
-s32 rand(void) {
-	locku(&randLock);
-	lastRand = (randa * lastRand + randc) % randm;
-	unlocku(&randLock);
-	return lastRand;
-}
-
-void srand(u32 seed) {
-	lastRand = seed;
+char *getenv(const char *name) {
+	static char value[MAX_PATH_LEN];
+	if(getenvto(value,sizeof(value),name))
+		return value;
+	return NULL;
 }

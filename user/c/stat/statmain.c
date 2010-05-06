@@ -62,9 +62,8 @@ int main(int argc,char *argv[]) {
 
 static void stat_printDate(const char *title,u32 timestamp) {
 	static char dateStr[MAX_DATE_LEN];
-	sDate date;
-	getDateOf(&date,timestamp);
-	dateToString(dateStr,MAX_DATE_LEN,"%a, %m/%d/%Y %H:%M:%S",&date);
+	sDate date = date_getOfTS(timestamp);
+	date.format(&date,dateStr,MAX_DATE_LEN,"%a, %m/%d/%Y %H:%M:%S");
 	printf("%-15s%s\n",title,dateStr);
 }
 

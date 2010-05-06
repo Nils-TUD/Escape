@@ -23,43 +23,156 @@
 #include <esc/common.h>
 #include <esc/heap.h>
 #include <esc/proc.h>
-#include <esc/math.h>
 #include <esc/algo.h>
 #include <types.h>
 #include <limits.h>
 #include <stddef.h>
 #include <string.h>
 
-/* results of div and ldiv */
-typedef tDiv div_t;
-typedef tLDiv ldiv_t;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* max rand-number */
+#define RAND_MAX 32767
+
+/* results of div, ldiv and lldiv */
+typedef struct {
+	s32 quot;
+	s32 rem;
+} div_t;
+typedef struct {
+	s64 quot;
+	s64 rem;
+} ldiv_t;
+typedef ldiv_t lldiv_t;
+
+/**
+ * The atof function converts the initial portion of the string pointed to by nptr to
+ * double representation. Except for the behavior on error, it is equivalent to
+ * 	strtod(nptr, (char **)NULL)
+ *
+ * @param nptr the string
+ * @return the double
+ */
+double atof(const char *nptr);
 
 /**
  * The atoi() function converts str into an integer, and returns that integer. str should start
  * with whitespace or some sort of number, and atoi() will stop reading from str as soon as
  * a non-numerical character has been read.
  *
- * @param str the string
+ * @param nptr the string
  * @return the integer
  */
-extern int atoi(const char *str);
+s32 atoi(const char *nptr);
+
+/**
+ * An alias of atoi()
+ *
+ * @param nptr the string
+ * @return the integer
+ */
+s32 atol(const char *nptr);
+
+/**
+ * The same as atoi(), but for a long long int
+ *
+ * @param nptr the string
+ * @return the integer
+ */
+s64 atoll(const char *nptr);
+
+/**
+ * The strtod, strtof, and strtold functions convert the initial portion of the string
+ * pointed to by nptr to double, float, and long double representation,
+ * respectively. First, they decompose the input string into three parts: an initial, possibly
+ * empty, sequence of white-space characters (as specified by the isspace function), a
+ * subject sequence resembling a floating-point constant or representing an infinity or NaN;
+ * and a final string of one or more unrecognized characters, including the terminating null
+ * character of the input string. Then, they attempt to convert the subject sequence to a
+ * floating-point number, and return the result.
+ *
+ * @param nptr the pointer to the floating-point-number
+ * @param endptr will point to the end of the number (the first character that doesn't belong to it),
+ * 	if not NULL
+ * @return the value or 0 if conversion failed
+ */
+float strtof(const char *nptr,char **endptr);
+double strtod(const char *nptr,char **endptr);
+long double strtold(const char *nptr,char **endptr);
+
+/**
+ * The  strtol()  function  converts  the  initial part of the string in nptr to a long integer
+ * value according to the given base, which must be between 2 and 36 inclusive, or be the special
+ * value 0.
+ *
+ * The string may begin with an arbitrary amount of white space (as determined by isspace(3))
+ * followed by a single  optional '+'  or  '-' sign.  If base is zero or 16, the string may then
+ * include a "0x" prefix, and the number will be read in base 16; otherwise, a zero base is taken
+ * as 10 (decimal) unless the next character is '0', in which case  it  is  taken  as  8 (octal).
+ *
+ * The remainder of the string is converted to a long int value in the obvious manner, stopping at
+ * the first character which is not a valid digit in the given base.  (In bases above 10, the
+ * letter 'A' in either upper or lower case represents  10, 'B' represents 11, and so forth,
+ * with 'Z' representing 35.)
+ *
+ * If endptr is not NULL, strtol() stores the address of the first invalid character in *endptr.
+ * If there were no digits at all, strtol() stores the original value of nptr in *endptr (and
+ * returns 0).  In particular, if  *nptr  is  not  '\0'  but **endptr is '\0' on return, the
+ * entire string is valid.
+ *
+ * @param nptr the string
+ * @param endptr if not NULL, it will be set to the first character that doesn't belong to the
+ * 	converted integer
+ * @param base the base (2 - 36 inclusive; 0 = determine automatically)
+ * @return the number
+ */
+s32 strtol(const char *nptr,char **endptr,s32 base);
+s64 strtoll(const char *nptr,char **endptr,s32 base);
+
+/**
+ * The  strtoul()  function  converts  the initial part of the string in nptr to an unsigned long
+ * int value according to the given base, which must be between 2 and 36 inclusive, or be the
+ * special value 0.
+ *
+ * The string may begin with an arbitrary amount of white space (as determined by isspace(3))
+ * followed by a single  optional '+'  or  '-' sign.  If base is zero or 16, the string may
+ * then include a "0x" prefix, and the number will be read in base 16; otherwise, a zero base
+ * is taken as 10 (decimal) unless the next character is '0', in which case  it  is  taken  as  8
+ * (octal).
+ *
+ * The remainder of the string is converted to an unsigned long int value in the obvious manner,
+ * stopping at the first character which is not a valid digit in the given base.  (In bases above
+ * 10, the letter 'A' in either  upper  or  lower  case represents 10, 'B' represents 11, and
+ * so forth, with 'Z' representing 35.)
+ *
+ * If  endptr  is not NULL, strtoul() stores the address of the first invalid character in *endptr.
+ * If there were no digits at all, strtoul() stores the original value of nptr in *endptr
+ * (and returns 0).  In particular, if *nptr is not '\0'  but **endptr is '\0' on return, the
+ * entire string is valid.
+ *
+ * @param nptr the string
+ * @param endptr if not NULL, it will be set to the first character that doesn't belong to the
+ * 	converted integer
+ * @param base the base (2 - 36 inclusive; 0 = determine automatically)
+ * @return the number
+*/
+u32 strtoul(const char *nptr,char **endptr,s32 base);
+u64 strtoull(const char *nptr,char **endptr,s32 base);
 
 /**
  * Rand will generate a random number between 0 and 'RAND_MAX' (at least 32767).
  *
  * @return the random number
  */
-extern int rand(void);
+s32 rand(void);
 
 /**
  * Srand seeds the random number generation function rand so it does not produce the same
  * sequence of numbers.
  */
-extern void srand(unsigned int seed);
+void srand(u32 seed);
 
 /**
  * Allocates space for <nobj> elements, each <size> big, on the heap and memset's the area to 0.
@@ -69,12 +182,12 @@ extern void srand(unsigned int seed);
  * @param size the size of each element
  * @return the address of the memory or NULL
  */
-extern void *calloc(size_t nobj,size_t size);
+void *calloc(size_t nobj,size_t size);
 
 /**
  * Frees the area starting at <addr>.
  */
-extern void free(void *addr);
+void free(void *addr);
 
 /**
  * Allocates <size> bytes on the heap and returns the pointer to the beginning of
@@ -83,7 +196,7 @@ extern void free(void *addr);
  * @param size the number of bytes to allocate
  * @return the address of the memory or NULL
  */
-extern void *malloc(size_t size);
+void *malloc(size_t size);
 
 /**
  * Reallocates the area at given address to the given size. That means either your data will
@@ -93,7 +206,7 @@ extern void *malloc(size_t size);
  * @param size the number of bytes your area should be resized to
  * @return the address (may be different) of your area or NULL if there is not enough mem
  */
-extern void *realloc(void *addr,size_t size);
+void *realloc(void *addr,size_t size);
 
 /**
  * Aborts the process
@@ -101,19 +214,77 @@ extern void *realloc(void *addr,size_t size);
 void abort(void);
 
 /**
+ * The atexit function registers the function pointed to by func, to be called without
+ * arguments at normal program termination.
+ *
+ * @param func the function
+ * @return zero if the registration succeeds, nonzero if it fails
+ */
+s32 atexit(void (*func)(void));
+
+/**
  * Exit causes the program to end and supplies a status code to the calling environment.
  *
  * @param status the status-code
  */
-extern void exit(int status);
+void exit(s32 status);
 
 /**
- * Get an environment variable
+ * The _Exit function causes normal program termination to occur and control to be
+ * returned to the host environment. No functions registered by the atexit function or
+ * signal handlers registered by the signal function are called. The status returned to the
+ * host environment is determined in the same way as for the exit function (7.20.4.3).
+ * Whether open streams with unwritten buffered data are flushed, open streams are closed,
+ * or temporary files are removed is implementation-defined.
  *
- * @param name the variable-name
- * @return the variable-value or NULL if there is no match.
+ * @param status the status-code
  */
-char *getenv(const char *name);
+void _Exit(s32 status);
+
+/**
+ * Fetches the value of the given environment-variable
+ *
+ * @param value the buffer to write the value to
+ * @param valSize the size of the buffer
+ * @param name the environment-variable-name
+ * @return true if successfull
+ */
+bool getenvto(char *value,u32 valSize,const char *name) A_CHECKRET;
+
+/**
+ * Returns the value of the given environment-variable
+ *
+ * @param name the environment-variable-name
+ * @return the value (statically allocated) or NULL
+ */
+char *getenv(const char *name) A_CHECKRET;
+
+/**
+ * Fetches the env-variable-name with given index
+ *
+ * @param name the buffer to write the name to
+ * @param nameSize the size of the buffer
+ * @param index the index
+ * @return true on success
+ */
+bool getenvito(char *name,u32 nameSize,u32 index);
+
+/**
+ * Returns the env-variable-name with given index
+ *
+ * @param index the index
+ * @return the value (statically allocated) or NULL
+ */
+char *getenvi(u32 index) A_CHECKRET;
+
+/**
+ * Sets the environment-variable <name> to <value>.
+ *
+ * @param name the name
+ * @param value the value
+ * @return 0 on success
+ */
+s32 setenv(const char *name,const char *value);
 
 /**
  * The system function is used to issue a command. Execution of your program will not
@@ -126,7 +297,7 @@ char *getenv(const char *name);
  * 	When the argument passed is NULL, the function returns a nonzero value if the command
  * 	processor is available, and zero otherwise.
  */
-extern int system(const char *cmd);
+s32 system(const char *cmd);
 
 /**
  * Searches the given key in the array pointed by base that is formed by num elements,
@@ -146,7 +317,7 @@ extern int system(const char *cmd);
  * @param cmp the compare-function
  * @return a pointer to an entry in the array that matches the search key or NULL if not found
  */
-extern void *bsearch(const void *key,const void *base,size_t num,size_t size,fCompare cmp);
+void *bsearch(const void *key,const void *base,size_t num,size_t size,fCompare cmp);
 
 /**
  * Sorts the num elements of the array pointed by base, each element size bytes long, using the
@@ -161,13 +332,15 @@ extern void *bsearch(const void *key,const void *base,size_t num,size_t size,fCo
  * @param size the size of each element
  * @param cmp the compare-function
  */
-extern void qsort(void *base,size_t num,size_t size,fCompare cmp);
+void qsort(void *base,size_t num,size_t size,fCompare cmp);
 
 /**
- * @param n the number
- * @return absolute value of <n>
+ * @param j the number
+ * @return absolute value of <j>
  */
-extern int abs(int n);
+s32 abs(s32 j);
+s32 labs(s32 j);
+s64 llabs(s64 j);
 
 /**
  * Returns the integral quotient and remainder of the division of numerator by denominator as a
@@ -177,7 +350,9 @@ extern int abs(int n);
  * @param denominator the denominator
  * @return quotient and remainder
  */
-extern div_t div(int numerator,int denominator);
+div_t div(s32 numer,s32 denom);
+ldiv_t ldiv(s32 numer,s32 denom);
+lldiv_t lldiv(s64 numer,s64 denom);
 
 #ifdef __cplusplus
 }

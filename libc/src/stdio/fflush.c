@@ -22,8 +22,8 @@
 #include <esc/io/iofilestream.h>
 #include <stdio.h>
 
-int fflush(FILE *stream) {
-	int res = 0;
+s32 fflush(FILE *stream) {
+	s32 res = 0;
 	sIOStream *s = (sIOStream*)stream;
 	TRY {
 		s->out->flush(s->out);

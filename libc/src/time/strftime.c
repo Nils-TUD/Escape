@@ -17,19 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DATEINTERN_H_
-#define DATEINTERN_H_
+#include <esc/common.h>
+#include <time.h>
+#include "timeintern.h"
 
-/* timestamp stuff */
-#define SECS_PER_MIN			60
-#define SECS_PER_HOUR			(60 * SECS_PER_MIN)
-#define SECS_PER_DAY			(24 * SECS_PER_HOUR)
-#define SECS_PER_YEAR			(365 * SECS_PER_DAY)
-#define SECS_PER_LEAPYEAR		(366 * SECS_PER_DAY)
-#define IS_LEAP_YEAR(y)			(((y) % 4) == 0 && (((y) % 100) != 0 || ((y) % 400) == 0))
-#define DEF_YEAR				0
-#define LEAP_YEAR				1
-
-extern const u8 daysPerMonth[2][12];
-
-#endif /* DATEINTERN_H_ */
+size_t strftime(char *ptr,size_t maxsize,const char *format,const struct tm *timeptr) {
+	sDate d = tmtodate(timeptr);
+	return d.format(&d,ptr,maxsize,format);
+}

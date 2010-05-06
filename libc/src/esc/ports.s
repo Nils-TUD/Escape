@@ -19,9 +19,6 @@
 
 [BITS 32]
 
-%include "syscalls.s"
-
-[extern errno]
 [global inByte:function]
 [global inWord:function]
 [global inDWord:function]
@@ -67,6 +64,3 @@ outDWord:
 	mov		eax,[esp + 8]									; load value
 	out		dx,eax												; write to port
 	ret
-
-SYSC_RET_2ARGS_ERR requestIOPorts,SYSCALL_REQIOPORTS
-SYSC_RET_2ARGS_ERR releaseIOPorts,SYSCALL_RELIOPORTS

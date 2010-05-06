@@ -18,10 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
 #include <esc/debug.h>
 #include <esc/io.h>
-#include <esc/env.h>
 #include <esc/signals.h>
 #include <esc/driver.h>
 #include <esc/dir.h>
@@ -29,6 +27,8 @@
 #include <esc/lock.h>
 #include <esc/gui/application.h>
 #include <esc/gui/window.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <shell/shell.h>
 #include <shell/history.h>
@@ -83,7 +83,7 @@ int main(int argc,char **argv) {
 	unregDriver(sid);
 
 	// set term as env-variable
-	setEnv("TERM",drvName);
+	setenv("TERM",drvName);
 
 	// the child handles the GUI
 	if(fork() == 0) {

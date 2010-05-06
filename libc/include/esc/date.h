@@ -21,7 +21,120 @@
 #define DATE_H_
 
 #include <esc/common.h>
+#include <time.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct {
+	u8 sec;
+	u8 min;
+	u8 hour;
+	/* 1 - 7; 1 = sunday */
+	u8 weekDay;
+	/* 1 - 31 */
+	u8 monthDay;
+	/* 1 - 12 */
+	u8 month;
+	/* full year */
+	u16 year;
+	/* 1 - 365 */
+	u16 yearDay;
+	/* the timestamp of the date */
+	u32 timestamp;
+} sCMOSDate;
+
+typedef u32 tTime;
+typedef struct sDate sDate;
+
+struct sDate {
+/* public: */
+	const u8 sec;
+	const u8 min;
+	const u8 hour;
+	/* 1 - 7; 1 = sunday */
+	const u8 weekDay;
+	/* 1 - 31 */
+	const u8 monthDay;
+	/* 1 - 12 */
+	const u8 month;
+	/* full year */
+	const u16 year;
+	/* 1 - 365 */
+	const u16 yearDay;
+	/* whether daylightsaving time is enabled */
+	const u8 isDst;
+	const tTime timestamp;
+
+	void (*set)(sDate *d,tTime ts);
+	s32 (*format)(sDate *d,char *str,u32 max,const char *fmt);
+};
+
+/**
+ * @return the current unix-timestamp
+ */
+tTime getTime(void);
+
+/**
+ * Fills the given date-struct with the current date- and time information
+ *
+ * @param date the date-struct to fill
+ * @return 0 on success
+ */
+s32 getDate(sCMOSDate *date);
+
+/**
+ * Creates a date-object (on the stack, nothing to free) for the current date
+ *
+ * @return the date-object
+ * @throws DateException if the date couldn't been read from CMOS
+ */
+sDate date_get(void);
+
+/**
+ * Creates a date-object (on the stack, nothing to free) for the given timestamp
+ *
+ * @param ts the timestamp
+ * @return the date-object
+ */
+sDate date_getOfTS(tTime ts);
+
+/**
+ * Creates a date-object (on the stack, nothing to free) for the given date and time=0:0:0
+ *
+ * @param month the month (1..12)
+ * @param day the day (1..31)
+ * @param year the year (full)
+ * @return the date-object
+ */
+sDate date_getOfDate(u8 month,u8 day,u16 year);
+
+/**
+ * Creates a date-object (on the stack, nothing to free) for the current date and given time
+ *
+ * @param hour the hour
+ * @param min the minute
+ * @param sec the second
+ * @return the date-object
+ * @throws DateException if the date couldn't been read from CMOS
+ */
+sDate date_getOfTime(u8 hour,u8 min,u8 sec);
+
+/**
+ * Creates a date-object (on the stack, nothing to free) for the given date
+ *
+ * @param month the month (1..12)
+ * @param day the day (1..31)
+ * @param year the year (full)
+ * @param hour the hour
+ * @param min the minute
+ * @param sec the second
+ * @return the date-object
+ */
+sDate date_getOfDateTime(u8 month,u8 day,u16 year,u8 hour,u8 min,u8 sec);
+
+#if 0
 /* all information about the current date and time */
 typedef struct {
 	u8 sec;
@@ -40,10 +153,6 @@ typedef struct {
 	/* whether daylightsaving time is enabled */
 	u8 isDst;
 } sDate;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * Copies into str the content of format, expanding its format tags into the corresponding
@@ -106,6 +215,7 @@ s32 getDate(sDate *date);
  * @param timestamp the timestamp to use
  */
 void getDateOf(sDate *date,u32 timestamp);
+#endif
 
 #ifdef __cplusplus
 }

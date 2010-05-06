@@ -18,22 +18,24 @@
  */
 
 #include <esc/common.h>
-#include <esc/env.h>
 #include <esc/lock.h>
-#include <esc/io.h>
-#include "envintern.h"
+#include <stdlib.h>
 
-/* the fd for the env-driver */
-tFD envFd = -1;
-static tULock envLock;
+/* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
+static tULock randLock = 0;
+static u32 randa = 1103515245;
+static u32 randc = 12345;
+static u32 lastRand = 0;
 
-s32 initEnv(void) {
-	locku(&envLock);
-	if(envFd >= 0) {
-		unlocku(&envLock);
-		return 0;
-	}
-	envFd = open("/dev/env",IO_READ | IO_WRITE);
-	unlocku(&envLock);
-	return envFd;
+s32 rand(void) {
+	s32 res;
+	locku(&randLock);
+	lastRand = randa * lastRand + randc;
+	res = (s32)((u32)(lastRand / 65536) % 32768);
+	unlocku(&randLock);
+	return res;
+}
+
+void srand(u32 seed) {
+	lastRand = seed;
 }

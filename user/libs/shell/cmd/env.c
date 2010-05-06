@@ -20,11 +20,11 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/cmdargs.h>
-#include <stdio.h>
-#include <esc/env.h>
-#include <messages.h>
 #include <esc/heap.h>
+#include <messages.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "env.h"
 
 #define MAX_ENV_LEN		255
@@ -47,8 +47,8 @@ s32 shell_cmdEnv(u32 argc,char **argv) {
 	/* list all env-vars */
 	if(argc < 2) {
 		u32 i;
-		for(i = 0; getEnvByIndex(nameBuf,MAX_ENV_LEN + 1,i); i++) {
-			if(getEnv(valBuf,MAX_ENV_LEN + 1,nameBuf))
+		for(i = 0; getenvito(nameBuf,MAX_ENV_LEN + 1,i); i++) {
+			if(getenvto(valBuf,MAX_ENV_LEN + 1,nameBuf))
 				printf("%s=%s\n",nameBuf,valBuf);
 		}
 	}
@@ -56,14 +56,14 @@ s32 shell_cmdEnv(u32 argc,char **argv) {
 		/* set? */
 		u32 pos = strchri(argv[1],'=');
 		if(argv[1][pos] == '\0') {
-			if(getEnv(valBuf,MAX_ENV_LEN + 1,argv[1]))
+			if(getenvto(valBuf,MAX_ENV_LEN + 1,argv[1]))
 				printf("%s=%s\n",argv[1],valBuf);
 		}
 		/* get */
 		else {
 			argv[1][pos] = '\0';
-			setEnv(argv[1],argv[1] + pos + 1);
-			if(getEnv(valBuf,MAX_ENV_LEN + 1,argv[1]))
+			setenv(argv[1],argv[1] + pos + 1);
+			if(getenvto(valBuf,MAX_ENV_LEN + 1,argv[1]))
 				printf("%s=%s\n",argv[1],valBuf);
 		}
 	}

@@ -1319,7 +1319,7 @@ class Process
                     // Switch to the working directory if it has been set.
                     if (_workDir.length > 0)
                     {
-                    	.setEnv("CWD",toStringz(_workDir));
+                    	.setenv("CWD",toStringz(_workDir));
                     }
 
                     // Replace the child fork with a new process. We always use the

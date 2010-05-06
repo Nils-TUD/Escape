@@ -23,8 +23,8 @@
 #include <stdio.h>
 #include <assert.h>
 
-int fgetc(FILE *stream) {
-	int res = 0;
+s32 fgetc(FILE *stream) {
+	s32 res = 0;
 	sIOStream *s = (sIOStream*)stream;
 	assert(s->in);
 	TRY {

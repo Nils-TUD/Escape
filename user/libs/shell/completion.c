@@ -18,8 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/dir.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "shell.h"

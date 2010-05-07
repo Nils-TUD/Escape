@@ -24,7 +24,7 @@
 #	include <mem/kheap.h>
 #	define malloc kheap_alloc
 #else
-#	include <esc/heap.h>
+#	include <stdlib.h>
 #endif
 
 char *strdup(const char *s) {

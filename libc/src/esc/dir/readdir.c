@@ -20,8 +20,8 @@
 #include <esc/common.h>
 #include <esc/dir.h>
 #include <esc/io.h>
-#include <esc/heap.h>
 #include <esc/lock.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* for the directory-cache */

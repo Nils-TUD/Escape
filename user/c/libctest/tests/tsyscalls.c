@@ -18,18 +18,18 @@
  */
 
 #include <esc/common.h>
-#include <messages.h>
 #include <esc/driver.h>
-#include <esc/heap.h>
 #include <esc/mem.h>
 #include <esc/proc.h>
 #include <esc/io.h>
+#include <esc/ports.h>
+#include <messages.h>
 #include <stdio.h>
 #include <signal.h>
-#include <esc/ports.h>
 #include <errors.h>
 #include <test.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include "tsyscalls.h"
 

@@ -18,12 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/debug.h>
 #include <esc/date.h>
 #include <string.h>
 #include <errors.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include "ext2.h"
 #include "rw.h"

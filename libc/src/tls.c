@@ -18,10 +18,10 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/lock.h>
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 
 static tULock tlsLock;
 static u32 *tlsCopy = NULL;

@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/util/vector.h>
 #include <test.h>
+#include <stdlib.h>
 #include "tstring.h"
 
 /* forward declarations */
@@ -49,20 +49,20 @@ static void test_create(void) {
 	u32 before;
 	test_caseStart("Testing create & destroy");
 
-	before = heap_getFreeSpace();
+	before = heapspace();
 	sVector *v = vec_create(sizeof(u32));
 	test_assertUInt(v->count,0);
 	vec_destroy(v,false);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
-	before = heap_getFreeSpace();
+	before = heapspace();
 	sVector *v1 = vec_create(sizeof(u32));
 	sVector *v2 = vec_copy(v1);
 	test_assertUInt(v1->count,0);
 	test_assertUInt(v2->count,0);
 	vec_destroy(v1,false);
 	vec_destroy(v2,false);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 }

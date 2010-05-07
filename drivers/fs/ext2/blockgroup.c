@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/debug.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "ext2.h"
 #include "../blockcache.h"

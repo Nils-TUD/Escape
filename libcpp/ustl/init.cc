@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define MAX_GLOBAL_OBJS		32

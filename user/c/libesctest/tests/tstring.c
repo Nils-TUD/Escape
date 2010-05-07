@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/util/string.h>
 #include <test.h>
+#include <stdlib.h>
 #include "tstring.h"
 
 /* forward declarations */
@@ -43,26 +43,26 @@ static void test_string(void) {
 
 static void test_create(void) {
 	test_caseStart("Testing create & destroy");
-	u32 before = heap_getFreeSpace();
+	u32 before = heapspace();
 	sString *s1 = str_create();
 	test_assertUInt(s1->len,0);
 	str_destroy(s1);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
-	before = heap_getFreeSpace();
+	before = heapspace();
 	s1 = str_copy("my string");
 	test_assertUInt(s1->len,9);
 	test_assertStr(s1->str,"my string");
 	str_destroy(s1);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
-	before = heap_getFreeSpace();
+	before = heapspace();
 	s1 = str_link((char*)"my link");
 	test_assertUInt(s1->len,7);
 	test_assertStr(s1->str,"my link");
 	test_assertUInt(s1->size,0);
 	str_destroy(s1);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 }

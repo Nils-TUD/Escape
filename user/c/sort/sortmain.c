@@ -19,13 +19,12 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/dir.h>
-#include <esc/heap.h>
 #include <esc/cmdargs.h>
-#include <esc/algo.h>
 #include <esc/proc.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define ARRAY_INC		16
 #define MAX_LINE_LEN	255

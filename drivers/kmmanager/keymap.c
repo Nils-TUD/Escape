@@ -19,10 +19,10 @@
 
 #include <esc/common.h>
 #include <esc/keycodes.h>
-#include <stdio.h>
 #include <esc/io.h>
-#include <esc/heap.h>
 #include <esccodes.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include "keymap.h"

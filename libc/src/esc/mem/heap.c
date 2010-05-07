@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/mem/heap.h>
 #include <esc/exceptions/outofmemory.h>
+#include <stdlib.h>
 
 void *heap_alloc(u32 size) {
 	void *p = malloc(size);

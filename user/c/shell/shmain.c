@@ -19,9 +19,8 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <signal.h>
 #include <esc/cmdargs.h>
-#include <esc/heap.h>
+#include <signal.h>
 #include <messages.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/exceptions/outofmemory.h>
 
 sOutOfMemoryException *ex_createOutOfMemoryException(s32 id,s32 line,const char *file) {

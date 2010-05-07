@@ -18,11 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/util/cmdargs.h>
 #include <esc/exceptions/cmdargs.h>
 #include <test.h>
 #include <errors.h>
+#include <stdlib.h>
 #include "tcmdargs.h"
 
 /* forward declarations */
@@ -47,7 +47,7 @@ static void test_flags(void) {
 	u32 before;
 	test_caseStart("Testing flags");
 
-	before = heap_getFreeSpace();
+	before = heapspace();
 	{
 		const char *argv1[] = {"progname",NULL};
 		const char *argv2[] = {"progname","-flag",NULL};
@@ -85,7 +85,7 @@ static void test_flags(void) {
 		test_assertTrue(flag2);
 		a->destroy(a);
 	}
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 }
@@ -94,7 +94,7 @@ static void test_vals(void) {
 	u32 before;
 	test_caseStart("Testing values");
 
-	before = heap_getFreeSpace();
+	before = heapspace();
 	{
 		const char *argv1[] = {"progname",NULL};
 		const char *argv2[] = {"progname","-a","test","-b=4","-c","-12","-d","0xabc","--long=4",NULL};
@@ -138,7 +138,7 @@ static void test_vals(void) {
 		test_assertInt(_long,444);
 		args->destroy(args);
 	}
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 }
@@ -147,7 +147,7 @@ static void test_reqNFree(void) {
 	u32 before;
 	test_caseStart("Testing required and free args");
 
-	before = heap_getFreeSpace();
+	before = heapspace();
 	{
 		const char *argv1[] = {"progname",NULL};
 		const char *argv2[] = {"progname","-b","12",NULL};
@@ -242,7 +242,7 @@ static void test_reqNFree(void) {
 		test_assertUInt(nreq,0xf);
 		a->destroy(a);
 	}
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 }

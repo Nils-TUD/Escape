@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <test.h>
 #include <stdlib.h>
 #include <stdarg.h>

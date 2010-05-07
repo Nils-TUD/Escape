@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/io.h>
 #include <string.h>
+#include <stdlib.h>
 #include <errors.h>
 #include "iso9660.h"
 #include "rw.h"

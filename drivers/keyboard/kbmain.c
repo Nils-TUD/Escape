@@ -18,18 +18,18 @@
  */
 
 #include <esc/common.h>
-#include <messages.h>
 #include <esc/driver.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/ports.h>
-#include <esc/heap.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
-#include <signal.h>
 #include <esc/lock.h>
 #include <esc/keycodes.h>
+#include <messages.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
 #include <ringbuffer.h>
 #include <errors.h>
 

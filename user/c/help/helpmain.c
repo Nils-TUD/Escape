@@ -21,11 +21,10 @@
 #include <esc/cmdargs.h>
 #include <esc/io.h>
 #include <esc/dir.h>
-#include <stdio.h>
-#include <esc/heap.h>
 #include <esc/proc.h>
-#include <esc/algo.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "app.h"
 
 #define MAX_APPS		256

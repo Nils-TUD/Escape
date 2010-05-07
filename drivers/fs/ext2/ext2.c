@@ -19,13 +19,13 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <stdio.h>
-#include <esc/heap.h>
 #include <esc/proc.h>
 #include <esc/debug.h>
 #include <esc/dir.h>
 #include <errors.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "ext2.h"
 #include "../blockcache.h"
 #include "inodecache.h"

@@ -21,10 +21,9 @@
 #include <esc/cmdargs.h>
 #include <esc/dir.h>
 #include <esc/io.h>
-#include <esc/heap.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include "cd.h"
 
 s32 shell_cmdCd(u32 argc,char **argv) {

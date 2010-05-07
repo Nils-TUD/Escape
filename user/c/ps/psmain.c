@@ -19,15 +19,14 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/dir.h>
 #include <esc/proc.h>
 #include <esc/cmdargs.h>
-#include <esc/heap.h>
-#include <esc/algo.h>
 #include <sllist.h>
 #include <width.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define ARRAY_INC_SIZE		10
 #define MAX_SORTNAME_LEN	16

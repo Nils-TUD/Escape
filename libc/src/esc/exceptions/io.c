@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/exceptions/io.h>
 #include <string.h>
 

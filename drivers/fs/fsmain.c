@@ -19,12 +19,12 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/driver.h>
 #include <esc/proc.h>
-#include <esc/heap.h>
 #include <esc/debug.h>
 #include <esc/dir.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <messages.h>
 #include <errors.h>

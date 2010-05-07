@@ -18,10 +18,10 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "bmp.h"
 #include "vesa.h"
 

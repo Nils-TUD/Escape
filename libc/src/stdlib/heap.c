@@ -18,14 +18,15 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/mem.h>
 #include <esc/debug.h>
 #include <esc/lock.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
+#define OCC_MAP_SIZE			512
 #define PAGE_SIZE				4096
 #if DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0
@@ -487,7 +488,7 @@ static u32 getHash(void *addr) {
 	return (h ^ (h >> 7) ^ (h >> 4)) & (OCC_MAP_SIZE - 1);
 }
 
-u32 heap_getFreeSpace(void) {
+u32 heapspace(void) {
 	sMemArea *area;
 	u32 c = 0;
 	area = usableList;
@@ -501,7 +502,7 @@ u32 heap_getFreeSpace(void) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-void heap_print(void) {
+void printheap(void) {
 	sMemArea *area;
 	u32 i;
 

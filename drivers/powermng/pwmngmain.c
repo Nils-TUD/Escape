@@ -22,13 +22,12 @@
 #include <esc/dir.h>
 #include <esc/driver.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/ports.h>
-#include <signal.h>
-#include <esc/heap.h>
 #include <esc/proc.h>
-#include <esc/algo.h>
 #include <messages.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <errors.h>
 

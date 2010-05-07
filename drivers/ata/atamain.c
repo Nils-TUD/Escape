@@ -19,15 +19,15 @@
 
 #include <esc/common.h>
 #include <esc/driver.h>
-#include <messages.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/ports.h>
-#include <esc/heap.h>
 #include <esc/proc.h>
 #include <esc/debug.h>
+#include <messages.h>
 #include <signal.h>
 #include <errors.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "ata.h"
 #include "drive.h"

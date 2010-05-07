@@ -19,11 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <stdio.h>
-#include <esc/heap.h>
 #include <esc/conf.h>
-#include <string.h>
 #include <messages.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "display.h"
 #include "bar.h"
 #include "object.h"

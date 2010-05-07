@@ -31,10 +31,10 @@
 #	define free(x)		kheap_free(x)
 #	define malloc(x)	kheap_alloc(x)
 #else
-#	include <esc/heap.h>
 /* for exit (vassert) */
 #	include <esc/proc.h>
 #	include <stdio.h>
+#	include <stdlib.h>
 #	define rbprintf 	printf
 #endif
 

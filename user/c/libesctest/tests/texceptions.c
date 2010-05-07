@@ -18,11 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/exceptions/io.h>
 #include <esc/exceptions/outofmemory.h>
 #include <test.h>
 #include <errors.h>
+#include <stdlib.h>
 #include "texceptions.h"
 
 /* forward declarations */
@@ -58,7 +58,7 @@ static void test_trycatch(void) {
 	test_caseStart("Testing try & catch without throw");
 
 	i = 0;
-	before = heap_getFreeSpace();
+	before = heapspace();
 	TRY {
 		i = 1;
 	}
@@ -67,7 +67,7 @@ static void test_trycatch(void) {
 	}
 	ENDCATCH
 	test_assertUInt(i,1);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 
@@ -75,7 +75,7 @@ static void test_trycatch(void) {
 
 	i = 0;
 	j = 0;
-	before = heap_getFreeSpace();
+	before = heapspace();
 	TRY {
 		i = 1;
 		test_doThrow();
@@ -87,7 +87,7 @@ static void test_trycatch(void) {
 	ENDCATCH
 	test_assertUInt(i,2);
 	test_assertUInt(j,0);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 }
@@ -97,7 +97,7 @@ static void test_tryfinally(void) {
 	test_caseStart("Testing try & finally without throw");
 
 	i = 0;
-	before = heap_getFreeSpace();
+	before = heapspace();
 	TRY {
 		i = 1;
 	}
@@ -106,7 +106,7 @@ static void test_tryfinally(void) {
 	}
 	ENDCATCH
 	test_assertUInt(i,2);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 
@@ -114,7 +114,7 @@ static void test_tryfinally(void) {
 
 	i = 0;
 	j = 0;
-	before = heap_getFreeSpace();
+	before = heapspace();
 	TRY {
 		i = 1;
 		test_doThrow();
@@ -129,7 +129,7 @@ static void test_tryfinally(void) {
 	ENDCATCH
 	test_assertUInt(i,3);
 	test_assertUInt(j,0);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 }
@@ -140,7 +140,7 @@ static void test_trythrow(void) {
 
 	i = 0;
 	j = 0;
-	before = heap_getFreeSpace();
+	before = heapspace();
 	TRY {
 		i = 1;
 		THROW(IOException,ERR_EOF);
@@ -152,7 +152,7 @@ static void test_trythrow(void) {
 	ENDCATCH
 	test_assertUInt(i,2);
 	test_assertUInt(j,0);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 
@@ -160,7 +160,7 @@ static void test_trythrow(void) {
 
 	i = 0;
 	j = 0;
-	before = heap_getFreeSpace();
+	before = heapspace();
 	TRY {
 		i = 1;
 		THROW(IOException,ERR_EOF);
@@ -175,7 +175,7 @@ static void test_trythrow(void) {
 	ENDCATCH
 	test_assertUInt(i,3);
 	test_assertUInt(j,0);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 }
@@ -187,7 +187,7 @@ static void test_tryinfinally(void) {
 	i = 0;
 	j = 0;
 	k = 0;
-	before = heap_getFreeSpace();
+	before = heapspace();
 	TRY {
 		i = 1;
 		THROW(IOException,-1);
@@ -214,7 +214,7 @@ static void test_tryinfinally(void) {
 	test_assertUInt(i,2);
 	test_assertUInt(j,0);
 	test_assertUInt(k,3);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 }
@@ -226,7 +226,7 @@ static void test_multiplecatch(void) {
 	i = 0;
 	j = 0;
 	k = 0;
-	before = heap_getFreeSpace();
+	before = heapspace();
 	TRY {
 		i = 1;
 		test_doThrow();
@@ -245,7 +245,7 @@ static void test_multiplecatch(void) {
 	test_assertUInt(i,2);
 	test_assertUInt(j,0);
 	test_assertUInt(k,1);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 }
@@ -267,7 +267,7 @@ static void test_trynested(void) {
 	i = 0;
 	j = 0;
 	k = 0;
-	before = heap_getFreeSpace();
+	before = heapspace();
 	TRY {
 		i = 1;
 		test_trynested1();
@@ -283,7 +283,7 @@ static void test_trynested(void) {
 	test_assertUInt(i,2);
 	test_assertUInt(j,0);
 	test_assertUInt(k,1);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 }

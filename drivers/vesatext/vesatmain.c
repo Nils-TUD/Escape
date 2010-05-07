@@ -19,18 +19,18 @@
 
 #include <esc/common.h>
 #include <esc/ports.h>
-#include <stdio.h>
 #include <esc/io.h>
 #include <esc/driver.h>
-#include <messages.h>
 #include <esc/debug.h>
 #include <esc/mem.h>
 #include <esc/rect.h>
 #include <esc/vm86.h>
-#include <esc/heap.h>
+#include <messages.h>
 #include <errors.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <vbe/vbe.h>
 #include "font.h"

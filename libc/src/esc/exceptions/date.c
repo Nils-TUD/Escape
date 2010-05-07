@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/exceptions/date.h>
 
 sDateException *ex_createDateException(s32 id,s32 line,const char *file) {

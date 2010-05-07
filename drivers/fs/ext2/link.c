@@ -18,10 +18,10 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <fsinterface.h>
 #include <errors.h>
 #include <string.h>
+#include <stdlib.h>
 #include "ext2.h"
 #include "file.h"
 #include "link.h"

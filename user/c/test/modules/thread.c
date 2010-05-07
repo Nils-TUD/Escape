@@ -18,11 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/lock.h>
 #include <esc/thread.h>
-#include <stdio.h>
 #include <esc/dir.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include "thread.h"
 

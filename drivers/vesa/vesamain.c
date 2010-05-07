@@ -19,18 +19,18 @@
 
 #include <esc/common.h>
 #include <esc/ports.h>
-#include <stdio.h>
 #include <esc/io.h>
 #include <esc/driver.h>
-#include <messages.h>
 #include <esc/debug.h>
 #include <esc/mem.h>
 #include <esc/rect.h>
-#include <esc/heap.h>
 #include <esc/proc.h>
+#include <messages.h>
+#include <stdio.h>
 #include <errors.h>
 #include <string.h>
 #include <sllist.h>
+#include <stdlib.h>
 
 #include "vesa.h"
 #include "bmp.h"

@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <test.h>
 #include <stdarg.h>
@@ -75,11 +75,11 @@ static void test_init(const char *fmt,...) {
 	test_caseStartv(fmt,ap);
 	va_end(ap);
 
-	oldFree = heap_getFreeSpace();
+	oldFree = heapspace();
 }
 
 static void test_check(void) {
-	newFree = heap_getFreeSpace();
+	newFree = heapspace();
 	if(newFree < oldFree) {
 		test_caseFailed("Mem not free'd: oldFree=%u, newFree=%u",oldFree,newFree);
 	}

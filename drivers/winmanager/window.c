@@ -20,12 +20,12 @@
 #include <esc/common.h>
 #include <esc/rect.h>
 #include <esc/mem.h>
-#include <stdio.h>
-#include <esc/heap.h>
 #include <esc/proc.h>
 #include <esc/driver.h>
 #include <esc/debug.h>
 #include <esc/io.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sllist.h>
 #include <string.h>
 #include "window.h"

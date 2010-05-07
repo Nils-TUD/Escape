@@ -18,8 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/debug.h>
+#include <stdlib.h>
 #include <assert.h>
 #include "blockcache.h"
 

@@ -18,21 +18,21 @@
  */
 
 #include <esc/common.h>
-#include <messages.h>
 #include <esc/io.h>
 #include <esc/ports.h>
 #include <esc/proc.h>
 #include <esc/keycodes.h>
-#include <esc/heap.h>
-#include <signal.h>
 #include <esc/driver.h>
-#include <stdio.h>
 #include <esc/lock.h>
 #include <esc/thread.h>
 #include <esc/date.h>
+#include <messages.h>
 #include <string.h>
 #include <errors.h>
 #include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
 #include <ringbuffer.h>
 
 #include "vtctrl.h"

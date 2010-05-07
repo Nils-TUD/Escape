@@ -18,10 +18,10 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/io.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "history.h"
 
 #define HISTORY_SIZE		30

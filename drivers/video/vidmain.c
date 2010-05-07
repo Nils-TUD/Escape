@@ -20,15 +20,15 @@
 #include <esc/common.h>
 #include <esc/driver.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/ports.h>
-#include <messages.h>
-#include <esc/heap.h>
 #include <esc/mem.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
 #include <esc/vm86.h>
+#include <messages.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <errors.h>
 
 /* the physical memory of the 80x25 device */

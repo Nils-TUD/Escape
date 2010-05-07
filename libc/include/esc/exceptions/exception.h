@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/setjmp.h>
-#include <esc/heap.h>
+#include <stdlib.h>
 
 /**
  * This module tries to emulate exceptions known from c++ or java. You can use it (nearly) as

@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
+#include <stdlib.h>
 #include "value.h"
 #include "../mem.h"
 #include "../ast/cmpexpr.h"

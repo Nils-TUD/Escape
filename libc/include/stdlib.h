@@ -21,9 +21,7 @@
 #define STDLIB_H_
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/proc.h>
-#include <esc/algo.h>
 #include <types.h>
 #include <limits.h>
 #include <stddef.h>
@@ -44,8 +42,19 @@ typedef struct {
 typedef struct {
 	s64 quot;
 	s64 rem;
-} ldiv_t;
-typedef ldiv_t lldiv_t;
+} lldiv_t;
+typedef div_t ldiv_t;
+
+/* function that compares <a> and <b> and returns:
+ * 	<a> <  <b>: negative value
+ *  <a> == <b>: 0
+ *  <a> >  <b>: positive value
+ *
+ * @param a the first operand
+ * @param b the second operand
+ * @return the compare-result
+ */
+typedef int (*fCompare)(const void *a,const void *b);
 
 /**
  * The atof function converts the initial portion of the string pointed to by nptr to
@@ -207,6 +216,21 @@ void *malloc(size_t size);
  * @return the address (may be different) of your area or NULL if there is not enough mem
  */
 void *realloc(void *addr,size_t size);
+
+/**
+ * Note that the heap does increase the data-pages of the process as soon as it's required and
+ * does not decrease them. So the free-space may increase during runtime!
+ *
+ * @return the free space on the heap
+ */
+u32 heapspace(void);
+
+#if DEBUGGING
+/**
+ * Prints the heap
+ */
+void printheap(void);
+#endif
 
 /**
  * Aborts the process

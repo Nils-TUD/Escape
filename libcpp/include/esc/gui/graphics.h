@@ -21,17 +21,18 @@
 #define GRAPHICS_H_
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/stream.h>
 #include <esc/io.h>
 #include <esc/proc.h>
-#include <messages.h>
 #include <esc/mem.h>
 #include <esc/gui/common.h>
 #include <esc/gui/application.h>
 #include <esc/gui/font.h>
 #include <esc/gui/color.h>
 #include <esc/string.h>
+#include <messages.h>
+#include <stdlib.h>
+
 namespace esc {
 	namespace gui {
 		// TODO wrong place

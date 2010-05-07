@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <stdio.h>
-#include <esc/heap.h>
+#include <stdlib.h>
 #include "ext2.h"
 #include "rw.h"
 #include "../blockcache.h"

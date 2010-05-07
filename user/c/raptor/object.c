@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
+#include <stdlib.h>
 #include <assert.h>
 #include "object.h"
 #include "display.h"

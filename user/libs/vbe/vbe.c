@@ -19,10 +19,10 @@
 
 #include <esc/common.h>
 #include <esc/vm86.h>
-#include <stdio.h>
 #include <esc/debug.h>
 #include <esc/mem.h>
-#include <esc/heap.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <sllist.h>
 #include <assert.h>

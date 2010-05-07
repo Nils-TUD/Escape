@@ -18,12 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/io.h>
 #include <esc/dir.h>
-#include <stdio.h>
 #include <esc/cmdargs.h>
 #include <esc/proc.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 

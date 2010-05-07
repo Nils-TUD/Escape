@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/exceptions/cmdargs.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 
 #define MAX_EXMSG_LEN	64

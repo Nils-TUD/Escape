@@ -21,8 +21,8 @@
 #define VECTOR_H_
 
 #include <esc/common.h>
-#include <esc/algo.h>
 #include <esc/util/iterator.h>
+#include <stdlib.h>
 
 /**
  * A convenience-foreach for the vector. For example:

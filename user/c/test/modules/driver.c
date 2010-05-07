@@ -19,10 +19,10 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/proc.h>
 #include <esc/driver.h>
-#include <esc/heap.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <messages.h>
 #include "driver.h"
 

@@ -20,12 +20,12 @@
 #include <esc/common.h>
 #include <esc/ports.h>
 #include <esc/io.h>
-#include <signal.h>
-#include <esc/driver.h>
-#include <esc/heap.h>
-#include <stdio.h>
-#include <messages.h>
 #include <esc/lock.h>
+#include <esc/driver.h>
+#include <stdio.h>
+#include <signal.h>
+#include <messages.h>
+#include <stdlib.h>
 #include <ringbuffer.h>
 #include <errors.h>
 

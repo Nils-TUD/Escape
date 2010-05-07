@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <stdio.h>
-#include <esc/heap.h>
+#include <stdlib.h>
 #include <string.h>
 
 #if 1

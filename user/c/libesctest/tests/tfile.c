@@ -18,11 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/exceptions/io.h>
 #include <esc/io/file.h>
 #include <test.h>
 #include <string.h>
+#include <stdlib.h>
 #include "tfile.h"
 
 /* forward declarations */
@@ -42,7 +42,7 @@ static void test_file(void) {
 	sFile *f;
 	test_caseStart("Testing creation & destroy & paths");
 
-	before = heap_getFreeSpace();
+	before = heapspace();
 	f = file_get("bin/libesctest");
 	res = f->getAbsolute(f,buffer,sizeof(buffer));
 	test_assertUInt(res,strlen(buffer));
@@ -54,10 +54,10 @@ static void test_file(void) {
 	test_assertUInt(res,strlen(buffer));
 	test_assertStr(buffer,"/bin");
 	f->destroy(f);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	ex = false;
-	before = heap_getFreeSpace();
+	before = heapspace();
 	TRY {
 		f = file_get("myexoticpath");
 	}
@@ -67,9 +67,9 @@ static void test_file(void) {
 	ENDCATCH
 	test_assertTrue(ex);
 	f->destroy(f);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
-	before = heap_getFreeSpace();
+	before = heapspace();
 	f = file_get("/system/processes/0/regions");
 	res = f->getAbsolute(f,buffer,sizeof(buffer));
 	test_assertUInt(res,strlen(buffer));
@@ -81,9 +81,9 @@ static void test_file(void) {
 	test_assertUInt(res,strlen(buffer));
 	test_assertStr(buffer,"/system/processes/0");
 	f->destroy(f);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
-	before = heap_getFreeSpace();
+	before = heapspace();
 	f = file_get("/");
 	res = f->getAbsolute(f,buffer,sizeof(buffer));
 	test_assertUInt(res,strlen(buffer));
@@ -95,7 +95,7 @@ static void test_file(void) {
 	test_assertUInt(res,strlen(buffer));
 	test_assertStr(buffer,"/");
 	f->destroy(f);
-	test_assertUInt(heap_getFreeSpace(),before);
+	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
 }

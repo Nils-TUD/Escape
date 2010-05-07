@@ -19,9 +19,9 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include <esc/heap.h>
 #include <esc/io.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sllist.h>
 #include <string.h>
 #include "elf.h"

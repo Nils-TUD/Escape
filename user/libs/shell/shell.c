@@ -19,13 +19,12 @@
 
 #include <esc/common.h>
 #include <esc/dir.h>
-#include <esc/heap.h>
 #include <esc/proc.h>
-#include <signal.h>
 #include <esc/io.h>
 #include <esc/keycodes.h>
 #include <fsinterface.h>
 #include <messages.h>
+#include <signal.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

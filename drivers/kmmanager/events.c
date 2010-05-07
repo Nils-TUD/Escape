@@ -18,11 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <esc/io.h>
 #include <esc/driver.h>
 #include <messages.h>
 #include <sllist.h>
+#include <stdlib.h>
 #include <errors.h>
 #include <string.h>
 #include <assert.h>

@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/rect.h>
-#include <esc/heap.h>
+#include <stdlib.h>
 #include <string.h>
 
 void rectAdd(sRectangle *r1,sRectangle *r2) {

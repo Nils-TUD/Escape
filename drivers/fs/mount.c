@@ -18,12 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
 #include <fsinterface.h>
 #include <assert.h>
 #include <errors.h>
 #include <string.h>
 #include <sllist.h>
+#include <stdlib.h>
 #include "mount.h"
 
 static u32 mntPntCount = 0;

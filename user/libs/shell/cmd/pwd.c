@@ -20,7 +20,6 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/dir.h>
-#include <esc/heap.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "pwd.h"

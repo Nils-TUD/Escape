@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/heap.h>
+#include <stdlib.h>
 #include <sllist.h>
 #include <assert.h>
 #include "running.h"

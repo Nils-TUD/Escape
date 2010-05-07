@@ -18,12 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
 #include <esc/io.h>
-#include <signal.h>
 #include <esc/proc.h>
 #include <esc/dir.h>
-#include <esc/heap.h>
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
 #include <errors.h>
 #include "../mem.h"
 #include "../exec/running.h"

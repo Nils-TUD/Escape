@@ -9,7 +9,7 @@
 
 #include <esc/common.h>
 #include <esc/lock.h>
-#include <esc/heap.h>
+#include <stdlib.h>
 #include <assert.h>
 #include "mars.h"
 

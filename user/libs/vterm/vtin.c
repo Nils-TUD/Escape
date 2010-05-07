@@ -19,11 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/keycodes.h>
-#include <signal.h>
 #include <esc/io.h>
 #include <esc/driver.h>
+#include <signal.h>
 #include <stdio.h>
-#include <esc/heap.h>
+#include <stdlib.h>
 #include <string.h>
 #include "vtctrl.h"
 #include "vtin.h"

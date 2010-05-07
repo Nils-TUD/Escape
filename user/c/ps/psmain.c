@@ -75,21 +75,6 @@ static int compareProcs(const void *a,const void *b);
 static sVector *ps_getProcs(void);
 static sProcess *ps_readProc(const char *pid);
 
-static void usage(const char *name) {
-	u32 i;
-	cerr->writef(cerr,"Usage: %s [-t][-n <count>][-s <sort>]\n",name);
-	cerr->writef(cerr,"	-t			: Print threads, too\n");
-	cerr->writef(cerr,"	-n <count>	: Print first <count> processes\n");
-	cerr->writef(cerr,"	-s <sort>	: Sort by ");
-	for(i = 0; i < ARRAY_SIZE(sorts); i++) {
-		cerr->writef(cerr,"'%s'",sorts[i].name);
-		if(i < ARRAY_SIZE(sorts) - 1)
-			cerr->writef(cerr,", ");
-	}
-	cerr->writef(cerr,"\n");
-	exit(EXIT_FAILURE);
-}
-
 static sSort sorts[] = {
 	{SORT_PID,"pid"},
 	{SORT_PPID,"ppid"},
@@ -107,6 +92,21 @@ static const char *states[] = {
 	"Zom "
 };
 static u8 sort = SORT_PID;
+
+static void usage(const char *name) {
+	u32 i;
+	cerr->writef(cerr,"Usage: %s [-t][-n <count>][-s <sort>]\n",name);
+	cerr->writef(cerr,"	-t			: Print threads, too\n");
+	cerr->writef(cerr,"	-n <count>	: Print first <count> processes\n");
+	cerr->writef(cerr,"	-s <sort>	: Sort by ");
+	for(i = 0; i < ARRAY_SIZE(sorts); i++) {
+		cerr->writef(cerr,"'%s'",sorts[i].name);
+		if(i < ARRAY_SIZE(sorts) - 1)
+			cerr->writef(cerr,", ");
+	}
+	cerr->writef(cerr,"\n");
+	exit(EXIT_FAILURE);
+}
 
 int main(int argc,const char *argv[]) {
 	sVector *procs;

@@ -1,7 +1,8 @@
 ROOT = ../..
 BUILDL = $(BUILD)/drivers/$(NAME)
 BIN = $(BUILD)/driver_$(NAME).bin
-LIBC = $(ROOT)/libc
+LIB = $(ROOT)/lib/basic
+LIBC = $(ROOT)/lib/c
 LDCONF = $(LIBC)/ld.conf
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
@@ -12,7 +13,7 @@ APPCPY = $(BUILD)/apps/$(APP)
 CC = gcc
 # Note: we need -Wl,--build-id=none atm to prevent ld to generate the .note.gnu.build-id
 # This seems to be put at the beginning of the binary and therefore the entry-point changes
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I../../lib/h \
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
 	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS) $(ADDFLAGS)
 
 # sources

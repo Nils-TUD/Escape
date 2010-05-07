@@ -18,11 +18,14 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <esc/dir.h>
-#include <esc/proc.h>
-#include <esc/cmdargs.h>
-#include <sllist.h>
+#include <esc/mem/heap.h>
+#include <esc/io/console.h>
+#include <esc/io/file.h>
+#include <esc/io/ifilestream.h>
+#include <esc/exceptions/io.h>
+#include <esc/exceptions/cmdargs.h>
+#include <esc/util/vector.h>
+#include <esc/util/cmdargs.h>
 #include <width.h>
 #include <string.h>
 #include <stdio.h>
@@ -54,7 +57,7 @@ typedef struct {
 	u32 swapped;
 	uLongLong ucycleCount;
 	uLongLong kcycleCount;
-	sSLList *threads;
+	sVector *threads;
 	char command[MAX_PROC_NAME_LEN + 1];
 } sProcess;
 
@@ -69,29 +72,8 @@ typedef struct {
 
 static int cmpulongs(u64 a,u64 b);
 static int compareProcs(const void *a,const void *b);
-static sProcess *ps_getProcs(u32 *count);
-static bool ps_readProc(tFD fd,tPid pid,sProcess *p);
-static bool ps_readThread(tFD fd,sPThread *t);
-static char *ps_readNode(tFD fd);
-
-static sSort sorts[] = {
-	{SORT_PID,"pid"},
-	{SORT_PPID,"ppid"},
-	{SORT_MEM,"mem"},
-	{SORT_CPU,"cpu"},
-	{SORT_UCPU,"ucpu"},
-	{SORT_KCPU,"kcpu"},
-	{SORT_NAME,"name"},
-};
-
-static const char *states[] = {
-	"Ill ",
-	"Run ",
-	"Rdy ",
-	"Blk ",
-	"Zom "
-};
-static u8 sort = SORT_PID;
+static sVector *ps_getProcs(void);
+static sProcess *ps_readProc(const char *pid);
 
 static void usage(const char *name) {
 	u32 i;
@@ -108,15 +90,32 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,char *argv[]) {
-	sProcess *procs;
-	u32 i,j,count;
-	u64 totalCycles;
-	sSLNode *n;
-	u32 numProcs = 0;
-	bool printThreads = false;
-	char *s;
+static sSort sorts[] = {
+	{SORT_PID,"pid"},
+	{SORT_PPID,"ppid"},
+	{SORT_MEM,"mem"},
+	{SORT_CPU,"cpu"},
+	{SORT_UCPU,"ucpu"},
+	{SORT_KCPU,"kcpu"},
+	{SORT_NAME,"name"},
+};
+static const char *states[] = {
+	"Ill ",
+	"Run ",
+	"Rdy ",
+	"Blk ",
+	"Zom "
+};
+static u8 sort = SORT_PID;
 
+int main(int argc,const char *argv[]) {
+	sVector *procs;
+	sProcess *p;
+	sPThread *t;
+	u64 totalCycles;
+	u32 i,numProcs = 0;
+	bool printThreads = false;
+	char *ssort = (char*)"pid";
 	sCmdArgs *args;
 
 	TRY {
@@ -131,68 +130,35 @@ int main(int argc,char *argv[]) {
 	}
 	ENDCATCH
 
-	if(isHelpCmd(argc,argv))
-		usage(argv[0]);
-
-	for(i = 1; (int)i < argc; i++) {
-		if(strcmp(argv[i],"-s") == 0) {
-			if((s32)i >= argc - 1)
-				usage(argv[0]);
-			i++;
-			for(j = 0; j < ARRAY_SIZE(sorts); j++) {
-				if(strcmp(argv[i],sorts[j].name) == 0) {
-					sort = sorts[j].type;
-					break;
-				}
-			}
+	for(i = 0; i < ARRAY_SIZE(sorts); i++) {
+		if(strcmp(ssort,sorts[i].name) == 0) {
+			sort = sorts[i].type;
+			break;
 		}
-		else if(strcmp(argv[i],"-n") == 0) {
-			if((s32)i >= argc - 1)
-				usage(argv[0]);
-			i++;
-			numProcs = atoi(argv[i]);
-		}
-		else if(argv[i][0] == '-') {
-			s = argv[i] + 1;
-			while(*s) {
-				switch(*s) {
-					case 't':
-						printThreads = true;
-						break;
-					default:
-						usage(argv[0]);
-				}
-				s++;
-			}
-		}
-		else
-			usage(argv[0]);
 	}
 
-	procs = ps_getProcs(&count);
-	if(procs == NULL)
-		return EXIT_FAILURE;
+	procs = ps_getProcs();
 
 	/* sum total cycles and assign cycles to processes */
 	totalCycles = 0;
-	for(i = 0; i < count; i++) {
-		u64 procUCycles = 0,procKCycles = 0;
-		for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
-			sPThread *t = (sPThread*)n->data;
-			totalCycles += t->ucycleCount.val64 + t->kcycleCount.val64;
-			procUCycles += t->ucycleCount.val64;
-			procKCycles += t->kcycleCount.val64;
+	{
+		vforeach(procs,p) {
+			u64 procUCycles = 0,procKCycles = 0;
+			vforeach(p->threads,t) {
+				totalCycles += t->ucycleCount.val64 + t->kcycleCount.val64;
+				procUCycles += t->ucycleCount.val64;
+				procKCycles += t->kcycleCount.val64;
+			}
+			p->ucycleCount.val64 = procUCycles;
+			p->kcycleCount.val64 = procKCycles;
 		}
-		procs[i].ucycleCount.val64 = procUCycles;
-		procs[i].kcycleCount.val64 = procKCycles;
 	}
 
-	/* TODO it would be better to store pointers so that we don't have to swap the whole processes,
-	 * right? */
-	qsort(procs,count,sizeof(sProcess),compareProcs);
+	/* sort */
+	vec_sortCustom(procs,compareProcs);
 
 	if(numProcs == 0)
-		numProcs = count;
+		numProcs = procs->count;
 
 	/* determine max-values (we want to have a min-width here :)) */
 	u32 maxPid = 100;
@@ -201,24 +167,25 @@ int main(int argc,char *argv[]) {
 	u32 maxVmem = 100;
 	u32 maxSmem = 100;
 	u32 maxShmem = 100;
-	for(i = 0; i < numProcs; i++) {
-		if(procs[i].pid > maxPid)
-			maxPid = procs[i].pid;
-		if(procs[i].parentPid > maxPpid)
-			maxPpid = procs[i].parentPid;
-		if(procs[i].ownFrames > maxPmem)
-			maxPmem = procs[i].ownFrames;
-		if(procs[i].sharedFrames > maxShmem)
-			maxShmem = procs[i].sharedFrames;
-		if(procs[i].swapped > maxSmem)
-			maxSmem = procs[i].swapped;
-		if(procs[i].pages > maxVmem)
-			maxVmem = procs[i].pages;
-		if(printThreads) {
-			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
-				sPThread *t = (sPThread*)n->data;
-				if(t->tid > maxPpid)
-					maxPpid = t->tid;
+	{
+		vforeach(procs,p) {
+			if(p->pid > maxPid)
+				maxPid = p->pid;
+			if(p->parentPid > maxPpid)
+				maxPpid = p->parentPid;
+			if(p->ownFrames > maxPmem)
+				maxPmem = p->ownFrames;
+			if(p->sharedFrames > maxShmem)
+				maxShmem = p->sharedFrames;
+			if(p->swapped > maxSmem)
+				maxSmem = p->swapped;
+			if(p->pages > maxVmem)
+				maxVmem = p->pages;
+			if(printThreads) {
+				vforeach(p->threads,t) {
+					if(t->tid > maxPpid)
+						maxPpid = t->tid;
+				}
 			}
 		}
 	}
@@ -231,51 +198,56 @@ int main(int argc,char *argv[]) {
 	maxShmem = getuwidth(maxShmem * 4,10);
 
 	/* now print processes */
-	printf("%*sPID%*sPPID%*sPMEM%*sSHMEM%*sVMEM%*sSMEM STATE  %%CPU (USER,KERNEL) COMMAND\n",
-			maxPid - 3,"",maxPpid - 1,"",maxPmem - 2,"",maxShmem - 2,"",maxVmem - 2,"",maxSmem - 2,"");
+	cout->writef(cout,
+		"%*sPID%*sPPID%*sPMEM%*sSHMEM%*sVMEM%*sSMEM STATE  %%CPU (USER,KERNEL) COMMAND\n",
+		maxPid - 3,"",maxPpid - 1,"",maxPmem - 2,"",maxShmem - 2,"",maxVmem - 2,"",maxSmem - 2,""
+	);
 
-	for(i = 0; i < numProcs; i++) {
+	sIterator it = vec_iteratorIn(procs,0,numProcs);
+	while(it.hasNext(&it)) {
 		u64 procCycles;
 		u32 userPercent,kernelPercent;
 		float cyclePercent;
-		procCycles = procs[i].ucycleCount.val64 + procs[i].kcycleCount.val64;
+		p = (sProcess*)it.next(&it);
+
+		procCycles = p->ucycleCount.val64 + p->kcycleCount.val64;
 		cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
-		userPercent = (u32)(100. / (procCycles / (double)procs[i].ucycleCount.val64));
-		kernelPercent = (u32)(100. / (procCycles / (double)procs[i].kcycleCount.val64));
-		printf("%*u   %*u %*uK  %*uK %*uK %*uK -     %4.1f%% (%3d%%,%3d%%)   %s\n",
-				maxPid,procs[i].pid,maxPpid,procs[i].parentPid,
-				maxPmem,procs[i].ownFrames * 4,
-				maxShmem,procs[i].sharedFrames * 4,
-				maxVmem,procs[i].pages * 4,
-				maxSmem,procs[i].swapped * 4,
-				cyclePercent,userPercent,kernelPercent,procs[i].command);
+		userPercent = (u32)(100. / (procCycles / (double)p->ucycleCount.val64));
+		kernelPercent = (u32)(100. / (procCycles / (double)p->kcycleCount.val64));
+		cout->writef(cout,"%*u   %*u %*uK  %*uK %*uK %*uK -     %4.1f%% (%3d%%,%3d%%)   %s\n",
+				maxPid,p->pid,maxPpid,p->parentPid,
+				maxPmem,p->ownFrames * 4,
+				maxShmem,p->sharedFrames * 4,
+				maxVmem,p->pages * 4,
+				maxSmem,p->swapped * 4,
+				cyclePercent,userPercent,kernelPercent,p->command);
 
 		if(printThreads) {
-			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
-				sPThread *t = (sPThread*)n->data;
+			sIterator tit = vec_iterator(p->threads);
+			while(tit.hasNext(&tit)) {
+				t = (sPThread*)tit.next(&tit);
 				u64 threadCycles = t->ucycleCount.val64 + t->kcycleCount.val64;
 				float tcyclePercent = (float)(100. / (totalCycles / (double)threadCycles));
 				u32 tuserPercent = (u32)(100. / (threadCycles / (double)t->ucycleCount.val64));
 				u32 tkernelPercent = (u32)(100. / (threadCycles / (double)t->kcycleCount.val64));
-				printf("  %c\xC4%*s%*d%*s%s  %4.1f%% (%3d%%,%3d%%)\n",
-						n->next == NULL ? 0xC0 : 0xC3,
+				cout->writef(cout,"  %c\xC4%*s%*d%*s%s  %4.1f%% (%3d%%,%3d%%)\n",
+						tit.hasNext(&tit) ? 0xC3 : 0xC0,
 						maxPid - 3,"",maxPpid,t->tid,12 + maxPmem + maxShmem + maxVmem + maxSmem,"",
 						states[t->state],tcyclePercent,tuserPercent,tkernelPercent);
 			}
 		}
 	}
 
-	printf("\n");
-
-	for(i = 0; i < count; i++)
-		sll_destroy(procs[i].threads,true);
-	free(procs);
+	cout->writec(cout,'\n');
+	vforeach(procs,p)
+		vec_destroy(p->threads,true);
+	vec_destroy(procs,true);
 	return EXIT_SUCCESS;
 }
 
 static int compareProcs(const void *a,const void *b) {
-	sProcess *p1 = (sProcess*)a;
-	sProcess *p2 = (sProcess*)b;
+	sProcess *p1 = *(sProcess**)a;
+	sProcess *p2 = *(sProcess**)b;
 	switch(sort) {
 		case SORT_PID:
 			/* ascending */
@@ -312,160 +284,65 @@ static int cmpulongs(u64 a,u64 b) {
 	return 0;
 }
 
-static sProcess *ps_getProcs(u32 *count) {
-	tFD dd,dfd;
-	sDirEntry entry;
-	char ppath[MAX_PATH_LEN + 1];
-	u32 pos = 0;
-	u32 size = ARRAY_INC_SIZE;
-	sProcess *procs = (sProcess*)malloc(size * sizeof(sProcess));
-	if(procs == NULL) {
-		printe("Unable to allocate mem for processes");
-		return NULL;
-	}
-
-	if((dd = opendir("/system/processes")) >= 0) {
-		while(readdir(&entry,dd)) {
-			if(strcmp(entry.name,".") == 0 || strcmp(entry.name,"..") == 0)
-				continue;
-
-			/* build path */
-			snprintf(ppath,sizeof(ppath),"/system/processes/%s/info",entry.name);
-			if((dfd = open(ppath,IO_READ)) >= 0) {
-				/* increase array */
-				if(pos >= size) {
-					size += ARRAY_INC_SIZE;
-					procs = (sProcess*)realloc(procs,size * sizeof(sProcess));
-					if(procs == NULL) {
-						printe("Unable to allocate mem for processes");
-						return NULL;
-					}
-				}
-
-				/* read process */
-				if(!ps_readProc(dfd,atoi(entry.name),procs + pos)) {
-					close(dfd);
-					free(procs);
-					printe("Unable to read process-data");
-					return NULL;
-				}
-
-				pos++;
-				close(dfd);
-			}
-			else {
-				free(procs);
-				printe("Unable to open '%s'",ppath);
-				return NULL;
-			}
+static sVector *ps_getProcs(void) {
+	sVector *v = vec_create(sizeof(sProcess*));
+	sDirEntry *f;
+	sFile *d = file_get("/system/processes");
+	sVector *files = d->listFiles(d,false);
+	vforeach(files,f) {
+		TRY {
+			sProcess *p = ps_readProc(f->name);
+			vec_add(v,&p);
 		}
-		closedir(dd);
+		CATCH(IOException,e) {
+			cerr->writef(cerr,"Unable to read process with pid %s\n",f->name);
+		}
+		ENDCATCH
 	}
-	else {
-		free(procs);
-		printe("Unable to open '%s'","/system/processes");
-		return NULL;
-	}
-
-	*count = pos;
-	return procs;
+	vec_destroy(files,true);
+	d->destroy(d);
+	return v;
 }
 
-static bool ps_readProc(tFD fd,tPid pid,sProcess *p) {
-	sDirEntry entry;
+static sProcess *ps_readProc(const char *pid) {
 	char path[MAX_PATH_LEN + 1];
-	char ppath[MAX_PATH_LEN + 1];
-	tFD threads,dfd;
-	char *buf;
+	char tpath[MAX_PATH_LEN + 1];
+	sDirEntry *e;
+	sFile *d;
+	sIStream *s;
+	sVector *files;
+	sProcess *p = (sProcess*)heap_alloc(sizeof(sProcess));
 
-	buf = ps_readNode(fd);
-	if(buf == NULL)
-		return false;
-
-	/* parse string */
-	sscanf(
-		buf,
+	/* read process info */
+	snprintf(path,sizeof(path),"/system/processes/%s/info",pid);
+	s = ifstream_open(path,IO_READ);
+	s->readf(s,
 		"%*s%hu" "%*s%hu" "%*s%s" "%*s%u" "%*s%u" "%*s%u" "%*s%u",
 		&p->pid,&p->parentPid,&p->command,&p->pages,&p->ownFrames,&p->sharedFrames,&p->swapped
 	);
-	p->threads = sll_create();
+	s->close(s);
 
 	/* read threads */
-	snprintf(path,sizeof(path),"/system/processes/%d/threads",pid);
-	threads = opendir(path);
-	if(threads < 0) {
-		free(buf);
-		sll_destroy(p->threads,true);
-		return false;
+	p->threads = vec_create(sizeof(sPThread*));
+	snprintf(path,sizeof(path),"/system/processes/%s/threads",pid);
+	d = file_get(path);
+	files = d->listFiles(d,false);
+	vforeach(files,e) {
+		u16 state;
+		sPThread *t = heap_alloc(sizeof(sPThread));
+		snprintf(tpath,sizeof(tpath),"/system/processes/%s/threads/%s",pid,e->name);
+		s = ifstream_open(tpath,IO_READ);
+		/* parse string; use separate u16 storage for state since we can't tell scanf that is a byte */
+		s->readf(s,
+			"%*s%hu" "%*s%hu" "%*s%hu" "%*s%u" "%*s%*u" "%*s%8x%8x" "%*s%8x%8x",
+			&t->tid,&t->pid,&state,&t->stackPages,
+			&t->ucycleCount.val32.upper,&t->ucycleCount.val32.lower,
+			&t->kcycleCount.val32.upper,&t->kcycleCount.val32.lower
+		);
+		t->state = state;
+		s->close(s);
+		vec_add(p->threads,&t);
 	}
-	while(readdir(&entry,threads)) {
-		if(strcmp(entry.name,".") == 0 || strcmp(entry.name,"..") == 0)
-			continue;
-
-		/* build path */
-		snprintf(ppath,sizeof(ppath),"/system/processes/%d/threads/%s",pid,entry.name);
-		if((dfd = open(ppath,IO_READ)) >= 0) {
-			sPThread *t = (sPThread*)malloc(sizeof(sPThread));
-			/* read thread */
-			if(t == NULL || !ps_readThread(dfd,t)) {
-				free(t);
-				close(dfd);
-				free(buf);
-				sll_destroy(p->threads,true);
-				printe("Unable to read thread-data");
-				return false;
-			}
-
-			sll_append(p->threads,t);
-			close(dfd);
-		}
-		else {
-			free(buf);
-			sll_destroy(p->threads,true);
-			printe("Unable to open '%s'",ppath);
-			return false;
-		}
-	}
-	closedir(threads);
-
-	free(buf);
-	return true;
-}
-
-static bool ps_readThread(tFD fd,sPThread *t) {
-	u16 state;
-	char *buf = ps_readNode(fd);
-	if(buf == NULL)
-		return false;
-
-	/* parse string; use separate u16 storage for state since we can't tell scanf that is a byte */
-	sscanf(
-		buf,
-		"%*s%hu" "%*s%hu" "%*s%hu" "%*s%u" "%*s%*u" "%*s%8x%8x" "%*s%8x%8x",
-		&t->tid,&t->pid,&state,&t->stackPages,
-		&t->ucycleCount.val32.upper,&t->ucycleCount.val32.lower,
-		&t->kcycleCount.val32.upper,&t->kcycleCount.val32.lower
-	);
-	t->state = state;
-
-	free(buf);
-	return true;
-}
-
-static char *ps_readNode(tFD fd) {
-	u32 pos = 0;
-	u32 size = 256;
-	s32 res;
-	char *buf = (char*)malloc(size);
-	if(buf == NULL)
-		return NULL;
-
-	while((res = read(fd,buf + pos,size - pos)) > 0) {
-		pos += res;
-		size += 256;
-		buf = (char*)realloc(buf,size);
-		if(buf == NULL)
-			return NULL;
-	}
-	return buf;
+	vec_destroy(files,true);
+	return p;
 }

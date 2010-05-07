@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <stdio.h>
+#include <esc/io/console.h>
 #include <esc/proc.h>
+#include <stdio.h>
 #include <messages.h>
 
 int main(void) {
@@ -31,25 +31,25 @@ int main(void) {
 		error("Unable to get vterm-size");
 	maxWidth = consSize.width - 3;
 
-	printf("Waiting for fun...\n");
+	cout->writes(cout,"Waiting for fun...\n");
 	for(p = 0; p <= 100; p++) {
 		/* percent to console width */
 		j = p == 0 ? 0 : maxWidth / (100. / p);
 
-		printf("\r[");
+		cout->writes(cout,"\r[");
 		/* completed */
 		for(i = 0; i < j; i++)
-			putchar('=');
-		putchar('>');
+			cout->writec(cout,'=');
+		cout->writec(cout,'>');
 		/* uncompleted */
 		for(i = j + 1; i <= maxWidth; i++)
-			putchar(' ');
-		putchar(']');
-		fflush(stdout);
+			cout->writec(cout,' ');
+		cout->writec(cout,']');
+		cout->flush(cout);
 
 		/* wait a little bit */
 		sleep(100);
 	}
-	printf("Ready!\n");
+	cout->writes(cout,"Ready!\n");
 	return EXIT_SUCCESS;
 }

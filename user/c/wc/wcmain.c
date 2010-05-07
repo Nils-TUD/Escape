@@ -18,10 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <esc/dir.h>
-#include <esc/cmdargs.h>
-#include <esc/proc.h>
+#include <esc/io/console.h>
+#include <esc/io/file.h>
+#include <esc/io/ifilestream.h>
+#include <esc/exceptions/io.h>
+#include <esc/exceptions/cmdargs.h>
+#include <esc/util/cmdargs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,89 +33,93 @@
 #define WC_WORDS	2
 #define WC_LINES	4
 
-static void usage(char *name) {
-	fprintf(stderr,"Usage: %s [-clw] [<file>]\n",name);
-	fprintf(stderr,"	-c: Print byte-count\n");
-	fprintf(stderr,"	-l: Print line-count\n");
-	fprintf(stderr,"	-w: Print word-count\n");
+static void countFile(sIStream *in);
+static void usage(const char *name) {
+	cerr->writef(cerr,"Usage: %s [-clw] [<file>...]\n",name);
+	cerr->writef(cerr,"	-c: Print byte-count\n");
+	cerr->writef(cerr,"	-l: Print line-count\n");
+	cerr->writef(cerr,"	-w: Print word-count\n");
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,char **argv) {
-	FILE *file = stdin;
-	bool gotFlag = false;
-	u8 flags = WC_BYTES | WC_WORDS | WC_LINES;
-	char *arg,*path = NULL;
-	u32 lines,bytes,words,bufPos;
-	s32 i,ch;
+static u32 lines = 0;
+static u32 bytes = 0;
+static u32 words = 0;
 
-	if(isHelpCmd(argc,argv))
+int main(int argc,const char *argv[]) {
+	u8 flags;
+	sCmdArgs *args;
+
+	TRY {
+		bool flines = false,fwords = false,fbytes = false;
+		args = cmdargs_create(argc,argv,0);
+		args->parse(args,"w c l",&fwords,&fbytes,&flines);
+		if(args->isHelp)
+			usage(argv[0]);
+		if(flines == false && fwords == false && fbytes == false)
+			flags = WC_BYTES | WC_WORDS | WC_LINES;
+		else
+			flags = (flines ? WC_LINES : 0) | (fwords ? WC_WORDS : 0) | (fbytes ? WC_BYTES : 0);
+	}
+	CATCH(CmdArgsException,e) {
+		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
 		usage(argv[0]);
+	}
+	ENDCATCH
 
-	for(i = 1; i < argc; i++) {
-		arg = argv[i];
-		if(*arg == '-') {
-			arg++;
-			while(*arg) {
-				if(!gotFlag) {
-					flags = 0;
-					gotFlag = true;
+	sIterator it = args->getFreeArgs(args);
+	if(!it.hasNext(&it))
+		countFile(cin);
+	else {
+		while(it.hasNext(&it)) {
+			const char *arg = it.next(&it);
+			sFile *f = NULL;
+			sIStream *in = NULL;
+			TRY {
+				f = file_get(arg);
+				if(f->isDir(f))
+					cerr->writef(cerr,"'%s' is a directory!\n",arg);
+				else {
+					in = ifstream_open(arg,IO_READ);
+					countFile(in);
 				}
-				switch(*arg) {
-					case 'c':
-						flags |= WC_BYTES;
-						break;
-					case 'l':
-						flags |= WC_LINES;
-						break;
-					case 'w':
-						flags |= WC_WORDS;
-						break;
-					default:
-						usage(argv[0]);
-						break;
-				}
-				arg++;
 			}
-		}
-		else {
-			if(path)
-				usage(argv[0]);
-			path = argv[i];
+			CATCH(IOException,e) {
+				cerr->writef(cerr,"Unable to read '%s'\n",arg);
+			}
+			ENDCATCH
+			if(in)
+				in->close(in);
+			if(f)
+				f->destroy(f);
 		}
 	}
 
-	/* open file, if specified */
-	if(path) {
-		sFileInfo info;
-		char *rpath = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-		if(rpath == NULL)
-			error("Unable to allocate mem for path");
-
-		abspath(rpath,MAX_PATH_LEN + 1,path);
-
-		/* check if it's a directory */
-		if(stat(rpath,&info) < 0)
-			error("Unable to get info about '%s'",rpath);
-		if(MODE_IS_DIR(info.mode))
-			error("'%s' is a directory!",rpath);
-
-		file = fopen(rpath,"r");
-		if(file == NULL)
-			error("Unable to open '%s'",rpath);
-
-		free(rpath);
+	if(flags == WC_BYTES)
+		cout->writef(cout,"%u\n",bytes);
+	else if(flags == WC_WORDS)
+		cout->writef(cout,"%u\n",words);
+	else if(flags == WC_LINES)
+		cout->writef(cout,"%u\n",lines);
+	else {
+		if(flags & WC_LINES)
+			cout->writef(cout,"%7u",lines);
+		if(flags & WC_WORDS)
+			cout->writef(cout,"%7u",words);
+		if(flags & WC_BYTES)
+			cout->writef(cout,"%7u",bytes);
+		cout->writef(cout,"\n");
 	}
+	return EXIT_SUCCESS;
+}
 
-	lines = 0;
-	words = 0;
-	bytes = 0;
-	bufPos = 0;
-
-	while((ch = fgetc(file)) > 0) {
-		if(isspace(ch)) {
+static void countFile(sIStream *in) {
+	u32 bufPos = 0;
+	while(!in->eof(in)) {
+		char c = in->readc(in);
+		if(isspace(c)) {
 			if(bufPos > 0) {
-				if(ch == '\n')
+				if(c == '\n')
 					lines++;
 				words++;
 				bufPos = 0;
@@ -129,24 +135,4 @@ int main(int argc,char **argv) {
 		words++;
 		lines++;
 	}
-
-	if(flags == WC_BYTES)
-		printf("%u\n",bytes);
-	else if(flags == WC_WORDS)
-		printf("%u\n",words);
-	else if(flags == WC_LINES)
-		printf("%u\n",lines);
-	else {
-		if(flags & WC_LINES)
-			printf("%7u",lines);
-		if(flags & WC_WORDS)
-			printf("%7u",words);
-		if(flags & WC_BYTES)
-			printf("%7u",bytes);
-		printf("\n");
-	}
-
-	if(path)
-		fclose(file);
-	return EXIT_SUCCESS;
 }

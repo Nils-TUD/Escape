@@ -18,10 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
+#include <esc/io/console.h>
+#include <esc/exceptions/cmdargs.h>
+#include <esc/util/cmdargs.h>
 #include <stdio.h>
 #include <signal.h>
-#include <esc/cmdargs.h>
 #include <string.h>
 
 #define SIG_NAME_LEN		7
@@ -38,46 +39,61 @@ static sSigName signals[] = {
 	{"SIGINT",SIG_INTRPT}
 };
 
-int main(int argc,char **argv) {
-	tPid pid;
-	tSig signal = SIG_KILL;
+static void usage(const char *name) {
+	cerr->writef(cerr,"Usage: %s [-L] [-s <signal>] <pid>...\n",name);
+	cerr->writef(cerr,"	<signal> may be: SIGKILL, SIGTERM, SIGINT, KILL, TERM, INT\n");
+	exit(EXIT_FAILURE);
+}
 
-	if(argc < 2 || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s [-L][-<signal>] <pid>\n",argv[0]);
-		return EXIT_FAILURE;
-	}
+int main(int argc,const char *argv[]) {
+	tSig sig = SIG_KILL;
+	char *ssig = NULL;
+	bool list = false;
+	sCmdArgs *args;
+	u32 i;
 
-	/* print signals */
-	if(strcmp(argv[1],"-L") == 0) {
-		u32 i;
-		for(i = 0; i < ARRAY_SIZE(signals); i++)
-			printf("%10s - %d\n",signals[i].name,signals[i].signal);
-		return EXIT_SUCCESS;
-	}
-
-	/* the user has specified the signal */
-	if(argv[1][0] == '-') {
-		u32 i;
-		for(i = 0; i < ARRAY_SIZE(signals); i++) {
-			if(strcmp(argv[1] + 1,signals[i].name) == 0 ||
-				strcmp(argv[1] + 1,signals[i].name + 3) == 0) {
-				signal = signals[i].signal;
-				break;
+	TRY {
+		args = cmdargs_create(argc,argv,0);
+		args->parse(args,"L s=s",&list,&ssig);
+		if(args->isHelp)
+			usage(argv[0]);
+		/* translate signal-name to signal-number */
+		if(ssig) {
+			for(i = 0; i < ARRAY_SIZE(signals); i++) {
+				if(strcmp(ssig,signals[i].name) == 0 ||
+					strcmp(ssig,signals[i].name + 3) == 0) {
+					sig = signals[i].signal;
+					break;
+				}
 			}
 		}
-		pid = atoi(argv[2]);
 	}
-	else
-		pid = atoi(argv[1]);
-
-	if(pid > 0) {
-		if(sendSignalTo(pid,signal,0) < 0)
-			error("Unable to send signal %d to %d",signal,pid);
+	CATCH(CmdArgsException,e) {
+		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
+		usage(argv[0]);
 	}
-	else if(strcmp(argv[1],"0") != 0)
-		fprintf(stderr,"Unable to kill process with pid '%s'\n",argv[1]);
-	else
-		fprintf(stderr,"You can't kill 'init'\n");
+	ENDCATCH
 
+	/* print signals */
+	if(list) {
+		for(i = 0; i < ARRAY_SIZE(signals); i++)
+			cout->writef(cout,"%10s - %d\n",signals[i].name,signals[i].signal);
+	}
+	else {
+		/* kill processes */
+		sIterator it = args->getFreeArgs(args);
+		while(it.hasNext(&it)) {
+			const char *spid = (const char*)it.next(&it);
+			tPid pid = atoi(spid);
+			if(pid > 0) {
+				if(sendSignalTo(pid,sig,0) < 0)
+					cerr->writef(cerr,"Unable to send signal %d to %d",sig,pid);
+			}
+			else if(strcmp(spid,"0") != 0)
+				cerr->writef(cerr,"Unable to kill process with pid '%s'\n",spid);
+			else
+				cerr->writef(cerr,"You can't kill 'init'\n");
+		}
+	}
 	return EXIT_SUCCESS;
 }

@@ -19,10 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/cmdargs.h>
+#include <esc/io/console.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/proc.h>
 #include <messages.h>
+#include <stdio.h>
 #include <string.h>
 
 #define POWER_DRV		"/dev/powermng"
@@ -30,7 +31,7 @@
 static sMsg msg;
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s -r|-s\n",name);
+	cerr->writef(cerr,"Usage: %s -r|-s\n",name);
 	exit(EXIT_FAILURE);
 }
 

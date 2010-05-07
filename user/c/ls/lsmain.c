@@ -91,10 +91,10 @@ int main(int argc,const char *argv[]) {
 	char path[MAX_PATH_LEN];
 	u32 widths[WIDTHS_COUNT] = {0};
 	u32 pos,x;
-	sVector *entries;
 	sLSFile *f;
 	sVTSize consSize;
-	sCmdArgs *args;
+	sVector *entries = NULL;
+	sCmdArgs *args = NULL;
 	const char *filename;
 
 	/* parse params */

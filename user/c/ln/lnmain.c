@@ -18,23 +18,38 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
+#include <esc/io/console.h>
+#include <esc/exceptions/cmdargs.h>
+#include <esc/util/cmdargs.h>
 #include <esc/io.h>
 #include <esc/dir.h>
-#include <esc/cmdargs.h>
+#include <stdio.h>
 
-int main(int argc,char *argv[]) {
+static void usage(const char *name) {
+	cerr->writef(cerr,"Usage: %s <target> <linkName>\n",name);
+	exit(EXIT_FAILURE);
+}
+
+int main(int argc,const char *argv[]) {
 	char oldPath[MAX_PATH_LEN];
 	char newPath[MAX_PATH_LEN];
-	if(argc != 3 || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s <target> <linkName>\n",argv[0]);
-		return EXIT_FAILURE;
-	}
+	char *oldp,*newp;
 
-	abspath(oldPath,MAX_PATH_LEN,argv[1]);
-	abspath(newPath,MAX_PATH_LEN,argv[2]);
+	TRY {
+		sCmdArgs *args = cmdargs_create(argc,argv,CA_NO_FREE);
+		args->parse(args,"=s =s",&oldp,&newp);
+		if(args->isHelp)
+			usage(argv[0]);
+	}
+	CATCH(CmdArgsException,e) {
+		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
+		usage(argv[0]);
+	}
+	ENDCATCH
+
+	abspath(oldPath,MAX_PATH_LEN,oldp);
+	abspath(newPath,MAX_PATH_LEN,newp);
 	if(link(oldPath,newPath) < 0)
 		error("Unable to create the link '%s' to '%s'",newPath,oldPath);
-
 	return EXIT_SUCCESS;
 }

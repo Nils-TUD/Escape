@@ -18,25 +18,39 @@
  */
 
 #include <esc/common.h>
-#include <esc/cmdargs.h>
-#include <stdio.h>
+#include <esc/io/console.h>
+#include <esc/exceptions/cmdargs.h>
+#include <esc/util/cmdargs.h>
 #include <esc/dir.h>
 #include <esc/io.h>
-#include <esc/io/console.h>
+#include <stdio.h>
 
-int main(int argc,char *argv[]) {
-	s32 i;
+static void usage(const char *name) {
+	cerr->writef(cerr,"Usage: %s <path> ...\n",name);
+	exit(EXIT_FAILURE);
+}
+
+int main(int argc,const char *argv[]) {
 	char path[MAX_PATH_LEN];
-	if(argc < 2 || isHelpCmd(argc,argv)) {
-		cerr->writef(cerr,"Usage: %s <path> ...\n",argv[0]);
-		return EXIT_FAILURE;
+	sCmdArgs *args;
+	TRY {
+		args = cmdargs_create(argc,argv,0);
+		args->parse(args,"");
+		if(args->isHelp)
+			usage(argv[0]);
 	}
+	CATCH(CmdArgsException,e) {
+		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
+		usage(argv[0]);
+	}
+	ENDCATCH
 
-	for(i = 1; i < argc; i++) {
-		abspath(path,MAX_PATH_LEN,argv[i]);
+	sIterator it = args->getFreeArgs(args);
+	while(it.hasNext(&it)) {
+		const char *arg = it.next(&it);
+		abspath(path,sizeof(path),arg);
 		if(mkdir(path) < 0)
-			error("Unable to create directory '%s'",path);
+			cerr->writef(cerr,"Unable to create directory '%s'\n",path);
 	}
-
 	return EXIT_SUCCESS;
 }

@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/io/console.h>
 #include <esc/io.h>
 #include <stdio.h>
 #include <signal.h>
@@ -28,7 +29,7 @@
 #define PASSWORD	"test"
 #define MAX_LEN		10
 
-static void termHandler(tSig signal,u32 data);
+static void termHandler(tSig sig,u32 data);
 
 int main(void) {
 	char un[MAX_LEN];
@@ -38,28 +39,28 @@ int main(void) {
 		error("Unable to announce term-signal-handler");
 
 	while(1) {
-		printf("Username: ");
-		fgets(un,MAX_LEN,stdin);
+		cout->writes(cout,"Username: ");
+		cin->readline(cin,un,sizeof(un));
 		send(STDOUT_FILENO,MSG_VT_DIS_ECHO,NULL,0);
-		printf("Password: ");
-		fgets(pw,MAX_LEN,stdin);
+		cout->writes(cout,"Password: ");
+		cin->readline(cin,pw,sizeof(pw));
 		send(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0);
-		printf("\n");
+		cout->writec(cout,'\n');
 
 		if(strcmp(un,USERNAME) != 0)
-			printf("\033[co;4]Sorry, invalid username. Try again!\033[co]\n");
+			cout->writef(cout,"\033[co;4]Sorry, invalid username. Try again!\033[co]\n");
 		else if(strcmp(pw,PASSWORD) != 0)
-			printf("\033[co;4]Sorry, invalid password. Try again!\033[co]\n");
+			cout->writef(cout,"\033[co;4]Sorry, invalid password. Try again!\033[co]\n");
 		else {
-			printf("\033[co;2]Login successfull.\033[co]\n");
+			cout->writef(cout,"\033[co;2]Login successfull.\033[co]\n");
 			break;
 		}
 	}
 	return EXIT_SUCCESS;
 }
 
-static void termHandler(tSig signal,u32 data) {
-	UNUSED(signal);
+static void termHandler(tSig sig,u32 data) {
+	UNUSED(sig);
 	UNUSED(data);
-	printf("Got TERM-signal but I don't want to die :P\n");
+	cout->writef(cout,"Got TERM-signal but I don't want to die :P\n");
 }

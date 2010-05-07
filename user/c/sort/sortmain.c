@@ -18,10 +18,12 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <esc/dir.h>
-#include <esc/cmdargs.h>
-#include <esc/proc.h>
+#include <esc/exceptions/io.h>
+#include <esc/exceptions/cmdargs.h>
+#include <esc/io/console.h>
+#include <esc/io/ifilestream.h>
+#include <esc/util/cmdargs.h>
+#include <esc/util/vector.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,113 +32,77 @@
 #define MAX_LINE_LEN	255
 
 static int compareStrs(const void *a,const void *b);
-static char *scanLine(FILE *f);
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-r] [-i] [<file>]\n",name);
-	fprintf(stderr,"	-r: reverse; i.e. descending instead of ascending\n");
-	fprintf(stderr,"	-i: ignore case\n");
+	cerr->writef(cerr,"Usage: %s [-r] [-i] [<file>]\n",name);
+	cerr->writef(cerr,"	-r: reverse; i.e. descending instead of ascending\n");
+	cerr->writef(cerr,"	-i: ignore case\n");
 	exit(EXIT_FAILURE);
 }
 
-static bool ignoreCase = false;
+static bool igncase = false;
 static bool reverse = false;
 
-int main(int argc,char *argv[]) {
-	char apath[MAX_PATH_LEN];
-	u32 i,j,size = ARRAY_INC;
-	char **lines;
-	char *filename = NULL;
-	FILE *f = stdin;
+int main(int argc,const char *argv[]) {
+	const char *filename = NULL;
+	sIStream *in = cin;
+	sVector *lines = NULL;
+	sString *line;
+	sCmdArgs *args;
 
-	if(isHelpCmd(argc,argv))
+	TRY {
+		args = cmdargs_create(argc,argv,CA_MAX1_FREE);
+		args->parse(args,"r i",&reverse,&igncase);
+		if(args->isHelp)
+			usage(argv[0]);
+	}
+	CATCH(CmdArgsException,e) {
+		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
 		usage(argv[0]);
-
-	for(i = 1; (s32)i < argc; i++) {
-		if(*argv[i] == '-') {
-			switch(argv[i][1]) {
-				case 'r':
-					reverse = true;
-					break;
-				case 'i':
-					ignoreCase = true;
-					break;
-				default:
-					usage(argv[0]);
-					break;
-			}
-		}
-		else
-			filename = argv[i];
 	}
+	ENDCATCH
 
-	/* a file? */
-	if(filename != NULL) {
-		abspath(apath,MAX_PATH_LEN,filename);
-		f = fopen(apath,"r");
-		if(f == NULL)
-			error("Unable to open '%s'",apath);
-	}
+	TRY {
+		/* a file? */
+		filename = args->getFirstFree(args);
+		if(filename)
+			in = ifstream_open(filename,IO_READ);
 
-	/* read lines */
-	lines = (char**)malloc(size * sizeof(char*));
-	if(!lines)
-		error("Unable to allocate memory");
-	i = 0;
-	while(!feof(f)) {
-		char *line = scanLine(f);
-		if(!line)
-			error("Unable to allocate memory");
-		lines[i++] = line;
-		if(i >= size) {
-			size *= 2;
-			lines = (char**)realloc(lines,size * sizeof(char*));
-			if(!lines)
-				error("Unable to allocate memory");
+		/* read lines */
+		lines = vec_create(sizeof(sString*));
+		while(!in->eof(in)) {
+			char c;
+			line = str_create();
+			while(!in->eof(in) && (c = in->readc(in)) != '\n')
+				str_appendc(line,c);
+			vec_add(lines,&line);
 		}
 	}
+	CATCH(IOException,e) {
+		error("Got an IO-Exception: %s",e->toString(e));
+	}
+	ENDCATCH
 
 	/* sort */
-	qsort(lines,i,sizeof(char*),compareStrs);
+	vec_sortCustom(lines,compareStrs);
 
 	/* print */
-	for(j = 0; j < i; j++) {
-		printf("%s\n",lines[j]);
-		free(lines[j]);
+	vforeach(lines,line) {
+		cout->writeln(cout,line->str);
+		str_destroy(line);
 	}
-	free(lines);
-	if(filename != NULL)
-		fclose(f);
+	vec_destroy(lines,false);
+	in->close(in);
 	return EXIT_SUCCESS;
 }
 
 static int compareStrs(const void *a,const void *b) {
-	char *s1 = *(char**)a;
-	char *s2 = *(char**)b;
+	sString *s1 = *(sString**)a;
+	sString *s2 = *(sString**)b;
 	s32 res;
-	if(ignoreCase)
-		res = strcasecmp(s1,s2);
+	if(igncase)
+		res = strcasecmp(s1->str,s2->str);
 	else
-		res = strcmp(s1,s2);
+		res = strcmp(s1->str,s2->str);
 	return reverse ? -res : res;
-}
-
-static char *scanLine(FILE *f) {
-	u32 i = 0;
-	u32 size = ARRAY_INC;
-	char c;
-	char *line = (char*)malloc(size);
-	if(!line)
-		return NULL;
-	while((c = fgetc(f)) != EOF && c != '\n') {
-		line[i++] = c;
-		if(i >= size - 1) {
-			size += ARRAY_INC;
-			line = (char*)realloc(line,size);
-			if(!line)
-				return NULL;
-		}
-	}
-	line[i] = '\0';
-	return line;
 }

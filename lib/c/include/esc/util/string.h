@@ -63,12 +63,29 @@ sString *str_link(char *str);
 sString *str_copy(const char *str);
 
 /**
+ * Appends the given character to the string
+ *
+ * @param s the string
+ * @param c the character
+ */
+void str_appendc(sString *s,char c);
+
+/**
  * Appends the given string
  *
  * @param s the string-instance
  * @param str the string to append
  */
 void str_append(sString *s,const char *str);
+
+/**
+ * Inserts the given character at <index> into the string
+ *
+ * @param s the string
+ * @param index the index
+ * @param c the character
+ */
+void str_insertc(sString *s,u32 index,char c);
 
 /**
  * Inserts <str> at <index>

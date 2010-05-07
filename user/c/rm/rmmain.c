@@ -18,15 +18,16 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
+#include <esc/cmdargs.h>
+#include <esc/io/console.h>
 #include <esc/io.h>
 #include <esc/dir.h>
-#include <esc/cmdargs.h>
+
 int main(int argc,char *argv[]) {
 	s32 i;
 	char rPath[MAX_PATH_LEN];
 	if(argc < 2 || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s <path> ...\n",argv[0]);
+		cerr->writef(cerr,"Usage: %s <path> ...\n",argv[0]);
 		return EXIT_FAILURE;
 	}
 

@@ -52,18 +52,32 @@ sString *str_copy(const char *str) {
 	return s;
 }
 
+void str_appendc(sString *s,char c) {
+	char str[2];
+	str[0] = c;
+	str[1] = '\0';
+	str_append(s,str);
+}
+
 void str_append(sString *s,const char *str) {
 	u32 len = strlen(str);
-	str_grow(s,s->len + len);
+	str_grow(s,s->len + len + 1);
 	strcpy(s->str + s->len,str);
 	s->len += len;
+}
+
+void str_insertc(sString *s,u32 index,char c) {
+	char str[2];
+	str[0] = c;
+	str[1] = '\0';
+	str_insert(s,index,str);
 }
 
 void str_insert(sString *s,u32 index,const char *str) {
 	u32 len = strlen(str);
 	char *begin;
 	assert(index <= s->len);
-	str_grow(s,s->len + len);
+	str_grow(s,s->len + len + 1);
 	begin = s->str + index;
 	if(index <= s->len)
 		memmove(begin + len,begin,s->len - index + 1);

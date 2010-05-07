@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/ports.h>
 #include <esc/io.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/driver.h>
 #include <esc/heap.h>
 #include <stdio.h>
@@ -167,7 +167,6 @@ int main(void) {
 	rb_destroy(rbuf);
 	releaseIOPort(IOPORT_KB_CTRL);
 	releaseIOPort(IOPORT_KB_DATA);
-	unsetSigHandler(SIG_INTRPT_MOUSE);
 	unregDriver(sid);
 	return EXIT_SUCCESS;
 }

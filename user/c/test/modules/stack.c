@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <stdio.h>
 #include <esc/proc.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include "stack.h"
 
 static void sigHandler(tSig sig,u32 data);

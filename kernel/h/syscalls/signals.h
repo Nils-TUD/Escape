@@ -32,14 +32,6 @@
 void sysc_setSigHandler(sIntrptStackFrame *stack);
 
 /**
- * Unsets the handler-function for a specific signal
- *
- * @param tSig signal
- * @return s32 0 if no error
- */
-void sysc_unsetSigHandler(sIntrptStackFrame *stack);
-
-/**
  * Acknoledges that the processing of a signal is finished
  *
  * @return s32 0 if no error

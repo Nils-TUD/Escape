@@ -25,7 +25,7 @@
 #include <esc/heap.h>
 #include <esc/debug.h>
 #include <esc/dir.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <messages.h>
 #include <errors.h>
 #include <string.h>

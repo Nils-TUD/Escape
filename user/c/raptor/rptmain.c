@@ -21,7 +21,7 @@
 #include <esc/proc.h>
 #include <stdio.h>
 #include <esc/io.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <messages.h>
 #include <stdarg.h>
 #include <errors.h>

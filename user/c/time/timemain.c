@@ -22,7 +22,7 @@
 #include <esc/proc.h>
 #include <stdio.h>
 #include <esc/dir.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/conf.h>
 #include <string.h>
 #include <errors.h>
@@ -74,7 +74,7 @@ int main(int argc,char **argv) {
 		}
 		if(res < 0)
 			error("Wait failed");
-		unsetSigHandler(SIG_INTRPT_TIMER);
+		setSigHandler(SIG_INTRPT_TIMER,SIG_DFL);
 		printf("\n");
 		printf("Process %d (%s) terminated with exit-code %d\n",state.pid,path,state.exitCode);
 		if(state.signal != SIG_COUNT)

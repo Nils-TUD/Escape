@@ -21,22 +21,79 @@
 #define SIGNAL_H_
 
 #include <esc/common.h>
-#include <esc/signals.h>
 
-#define SIGABRT		SIG_KILL
+#define SIG_COUNT			18
+
+/* special signal-handler-addresses */
+#define SIG_IGN				((fSigHandler)-3)		/* ignore signal */
+#define SIG_DFL				((fSigHandler)-2)		/* reset to default behaviour */
+#define SIG_ERR				-1						/* indicates an error */
+
+/* the signals */
+#define SIG_KILL			0
+#define SIG_TERM			1
+#define SIG_ILL_INSTR		2
+#define SIG_SEGFAULT		3
+#define SIG_PROC_DIED		4
+#define SIG_THREAD_DIED		5
+#define SIG_CHILD_DIED		6
+#define SIG_CHILD_TERM		7
+#define SIG_INTRPT			8
+#define SIG_INTRPT_TIMER	9
+#define SIG_INTRPT_KB		10
+#define SIG_INTRPT_COM1		11
+#define SIG_INTRPT_COM2		12
+#define SIG_INTRPT_FLOPPY	13
+#define SIG_INTRPT_CMOS		14
+#define SIG_INTRPT_ATA1		15
+#define SIG_INTRPT_ATA2		16
+#define SIG_INTRPT_MOUSE	17
+
+/* standarg signal-names */
+#define SIGABRT				SIG_KILL
 /* TODO */
-#define SIGFPE		-1
-#define SIGILL		SIG_ILL_INSTR
-#define SIGINT		SIG_INTRPT
-#define SIGSEGV		SIG_SEGFAULT
-#define SIGTERM		SIG_TERM
-/* TODO */
-#define SIG_IGN		-1
-#define SIG_DFL		-1
+#define SIGFPE				-1
+#define SIGILL				SIG_ILL_INSTR
+#define SIGINT				SIG_INTRPT
+#define SIGSEGV				SIG_SEGFAULT
+#define SIGTERM				SIG_TERM
+
+/* the real signal-handler-signature */
+typedef void (*fSigHandler)(tSig sigNo,u32 data);
+/* the standard signature */
+typedef void (*fSignal)(s32);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * Sets a handler-function for a specific signal
+ *
+ * @param signal the signal-number
+ * @param handler the handler-function
+ * @return 0 on success
+ */
+s32 setSigHandler(tSig signal,fSigHandler handler) A_CHECKRET;
+
+/**
+ * Sends the given signal to all process (that have announced a handler)
+ *
+ * @param signal the signal
+ * @param data the data to send
+ * @return 0 on success
+ */
+s32 sendSignal(tSig signal,u32 data) A_CHECKRET;
+
+/**
+ * Sends the given signal to given process (interrupts can't be sended)
+ *
+ * @param pid the process-id
+ * @param signal the signal
+ * @param data the data to send
+ * @return 0 on success
+ */
+s32 sendSignalTo(tPid pid,tSig signal,u32 data) A_CHECKRET;
 
 /**
  * The  signal  system call installs a new signal handler for#
@@ -49,7 +106,7 @@ extern "C" {
  * @param handler the new handler-function
  * @return the previous handler-function
  */
-void (*signal(int sig,void (*handler)(int)))(int);
+fSignal signal(s32 sig,fSignal handler);
 
 /**
  * raise()  sends  a  signal  to  the current process.  It is
@@ -58,7 +115,7 @@ void (*signal(int sig,void (*handler)(int)))(int);
  * @param sig the signal
  * @return zero on success
  */
-int raise(int sig);
+s32 raise(s32 sig);
 
 #ifdef __cplusplus
 }

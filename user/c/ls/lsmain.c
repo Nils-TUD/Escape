@@ -18,25 +18,20 @@
  */
 
 #include <esc/common.h>
-#include <esc/dir.h>
-#include <esc/io.h>
-#include <esc/date.h>
-#include <esc/cmdargs.h>
-#include <esc/heap.h>
 #include <esc/proc.h>
-#include <esc/algo.h>
-#include <width.h>
-#include <messages.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
+#include <esc/dir.h>
+#include <esc/date.h>
 #include <esc/exceptions/cmdargs.h>
 #include <esc/exceptions/io.h>
 #include <esc/io/file.h>
 #include <esc/io/console.h>
 #include <esc/util/cmdargs.h>
 #include <esc/util/vector.h>
+#include <width.h>
+#include <messages.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #define DATE_LEN			(SSTRLEN("2009-09-09 14:12") + 1)
 

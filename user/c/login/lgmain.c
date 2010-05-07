@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <stdio.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <string.h>
 #include <messages.h>
 
@@ -55,8 +55,6 @@ int main(void) {
 			break;
 		}
 	}
-
-	unsetSigHandler(SIG_TERM);
 	return EXIT_SUCCESS;
 }
 

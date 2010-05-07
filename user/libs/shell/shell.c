@@ -21,7 +21,7 @@
 #include <esc/dir.h>
 #include <esc/heap.h>
 #include <esc/proc.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/io.h>
 #include <esc/keycodes.h>
 #include <fsinterface.h>

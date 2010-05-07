@@ -23,7 +23,7 @@
 #include <esc/ports.h>
 #include <esc/driver.h>
 #include <esc/proc.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/conf.h>
 #include <messages.h>
 #include <errors.h>
@@ -121,7 +121,7 @@ static void timerIntrptHandler(tSig sig,u32 data) {
 			/* reset */
 			intrptTarget = 0;
 			intrptCount = 0;
-			unsetSigHandler(SIG_INTRPT_TIMER);
+			setSigHandler(SIG_INTRPT_TIMER,SIG_DFL);
 		}
 	}
 }

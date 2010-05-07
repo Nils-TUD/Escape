@@ -26,7 +26,7 @@
 #include <esc/heap.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/lock.h>
 #include <esc/keycodes.h>
 #include <string.h>
@@ -226,7 +226,6 @@ int main(void) {
 	}
 
 	/* clean up */
-	unsetSigHandler(SIG_INTRPT_KB);
 	releaseIOPort(IOPORT_PIC);
 	releaseIOPort(IOPORT_KB_DATA);
 	releaseIOPort(IOPORT_KB_CTRL);

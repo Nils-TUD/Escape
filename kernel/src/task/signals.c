@@ -80,8 +80,9 @@ static void sig_remFromQueue(sHandler *h);
  * @param signal the signal
  * @param data the data to send
  * @param add whether the signal should be added to the handler
+ * @return true if the signal should be handled (now or later); false it should be ignored
  */
-static void sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data,bool add);
+static bool sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data,bool add);
 
 /**
  * Finds the handler for the given thread and signal
@@ -295,14 +296,16 @@ bool sig_addSignalFor(tPid pid,tSig signal,u32 data) {
 			h = (sHandler*)n->data;
 			t = thread_getById(h->tid);
 			if(t->proc->pid == pid) {
-				/* ensure that the thread can handle the signal atm. if not, queue it */
-				sig_addSig(h,pid,signal,data,t->waitsInKernel == 0);
 				sent = true;
-				if(t->waitsInKernel)
-					sig_addToQueue(h,signal,data);
-				else {
-					if(!h->active && t->signal == 0)
-						res = true;
+				/* if we should not ignore the signal */
+				if(sig_addSig(h,pid,signal,data,t->waitsInKernel == 0)) {
+					/* ensure that the thread can handle the signal atm. if not, queue it */
+					if(t->waitsInKernel)
+						sig_addToQueue(h,signal,data);
+					else {
+						if(!h->active && t->signal == 0)
+							res = true;
+					}
 				}
 			}
 		}
@@ -326,12 +329,14 @@ tTid sig_addSignal(tSig signal,u32 data) {
 		for(n = sll_begin(list); n != NULL; n = n->next) {
 			h = (sHandler*)n->data;
 			t = thread_getById(h->tid);
-			sig_addSig(h,INVALID_PID,signal,data,t->waitsInKernel == 0);
-			if(t->waitsInKernel)
-				sig_addToQueue(h,signal,data);
-			/* remember first thread for direct notification */
-			else if(res == INVALID_TID && !h->active && t->signal == 0)
-				res = h->tid;
+			/* if we should not ignore the signal */
+			if(sig_addSig(h,INVALID_PID,signal,data,t->waitsInKernel == 0)) {
+				if(t->waitsInKernel)
+					sig_addToQueue(h,signal,data);
+				/* remember first thread for direct notification */
+				else if(res == INVALID_TID && !h->active && t->signal == 0)
+					res = h->tid;
+			}
 		}
 	}
 
@@ -440,16 +445,17 @@ static void sig_remFromQueue(sHandler *h) {
 	}
 }
 
-static void sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data,bool add) {
-	if(h != NULL && add) {
+static bool sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data,bool add) {
+	if(h != NULL && h->handler != SIG_IGN && add) {
 		if(h->pending == NULL) {
 			h->pending = sll_create();
 			if(h->pending == NULL)
-				return;
+				return false;
 		}
 		if(!sll_append(h->pending,(void*)data))
-			return;
+			return false;
 		totalSigs++;
+		return true;
 	}
 
 	if(pid != INVALID_PID) {
@@ -458,11 +464,14 @@ static void sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data,bool add) {
 			case SIG_TERM:
 			case SIG_KILL:
 			case SIG_SEGFAULT:
-				if(signal == SIG_KILL || h == NULL)
+				if(signal == SIG_KILL || h == NULL || h->handler != SIG_IGN) {
 					proc_terminate(proc_getByPid(pid),1,signal);
+					return false;
+				}
 				break;
 		}
 	}
+	return h != NULL && h->handler != SIG_IGN;
 }
 
 static sHandler *sig_get(tTid tid,tSig signal) {

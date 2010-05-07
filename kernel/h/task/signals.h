@@ -24,6 +24,10 @@
 
 #define SIG_COUNT			18
 
+#define SIG_IGN				((fSigHandler)-3)		/* ignore signal */
+#define SIG_DFL				((fSigHandler)-2)		/* reset to default behaviour */
+#define SIG_ERR				((fSigHandler)-1)		/* error-return */
+
 /* the signals */
 #define SIG_KILL			0
 #define SIG_TERM			1

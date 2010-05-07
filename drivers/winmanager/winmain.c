@@ -23,7 +23,7 @@
 #include <esc/debug.h>
 #include <esc/driver.h>
 #include <esc/keycodes.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/proc.h>
 #include <messages.h>
 #include "window.h"

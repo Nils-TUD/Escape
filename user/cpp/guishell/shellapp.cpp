@@ -21,7 +21,7 @@
 #include <messages.h>
 #include <esc/driver.h>
 #include <esc/io.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/gui/common.h>
 #include <esccodes.h>
 #include <errors.h>

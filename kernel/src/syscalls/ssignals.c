@@ -29,32 +29,23 @@ void sysc_setSigHandler(sIntrptStackFrame *stack) {
 	tSig signal = (tSig)SYSC_ARG1(stack);
 	fSigHandler handler = (fSigHandler)SYSC_ARG2(stack);
 	sThread *t = thread_getRunning();
-	s32 err;
+	s32 err = 0;
 
 	/* address should be valid */
-	if(!paging_isRangeUserReadable((u32)handler,1))
+	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isRangeUserReadable((u32)handler,1))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* check signal */
 	if(!sig_canHandle(signal))
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
 
-	err = sig_setHandler(t->tid,signal,handler);
+	if(handler == SIG_DFL)
+		sig_unsetHandler(t->tid,signal);
+	else
+		err = sig_setHandler(t->tid,signal,handler);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,err);
-}
-
-void sysc_unsetSigHandler(sIntrptStackFrame *stack) {
-	tSig signal = (tSig)SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
-
-	if(!sig_canHandle(signal))
-		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
-
-	sig_unsetHandler(t->tid,signal);
-
-	SYSC_RET1(stack,0);
 }
 
 void sysc_ackSignal(sIntrptStackFrame *stack) {

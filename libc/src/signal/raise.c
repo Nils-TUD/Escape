@@ -18,9 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/signals.h>
+#include <signal.h>
 
-s32 sendSignal(tSig signal,u32 data) {
-	return sendSignalTo(INVALID_PID,signal,data);
+s32 raise(s32 sig) {
+	return sendSignal(sig,0);
 }

@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/proc.h>
 #include <esc/mem/heap.h>
 #include <esc/exceptions/io.h>
@@ -96,7 +96,6 @@ int main(int argc,const char *argv[]) {
 
 	out->close(out);
 	in->close(in);
-	unsetSigHandler(SIG_INTRPT);
 	args->destroy(args);
 	return EXIT_SUCCESS;
 }

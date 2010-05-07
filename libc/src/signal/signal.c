@@ -20,12 +20,9 @@
 #include <esc/common.h>
 #include <signal.h>
 
-void (*signal(int sig,void (*handler)(int)))(int) {
-	setSigHandler(sig,(fSigHandler)handler);
+fSignal signal(s32 sig,fSignal handler) {
+	if(setSigHandler(sig,(fSigHandler)handler) < 0)
+		return (fSignal)SIG_ERR;
 	/* TODO return old handler */
 	return NULL;
-}
-
-int raise(int sig) {
-	return sendSignal(sig,0);
 }

@@ -23,7 +23,7 @@
 #include <esc/io.h>
 #include <esc/date.h>
 #include <esc/keycodes.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/driver.h>
 #include <esc/proc.h>
 #include <esc/conf.h>

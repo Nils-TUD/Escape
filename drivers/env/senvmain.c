@@ -22,7 +22,7 @@
 #include <esc/heap.h>
 #include <messages.h>
 #include <esc/proc.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <stdio.h>

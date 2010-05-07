@@ -25,7 +25,7 @@
 #include <esc/proc.h>
 #include <esc/io.h>
 #include <stdio.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/ports.h>
 #include <errors.h>
 #include <test.h>
@@ -51,7 +51,6 @@ static void test_dupFd(void);
 static void test_redirFd(void);
 static void test_wait(void);
 static void test_setSigHandler(void);
-static void test_unsetSigHandler(void);
 static void test_sendSignalTo(void);
 static void test_exec(void);
 static void test_eof(void);
@@ -132,9 +131,6 @@ static s32 __mapPhysical(u32 addr,u32 count) {
 static s32 _write(u32 fd,void *buffer,u32 count) {
 	return test_doSyscall(12,fd,(u32)buffer,count);
 }
-static s32 _getWork(tDrvId *ids,u32 count,tDrvId *client,tMsgId *mid,sMsg *msg,u32 size,u8 flags) {
-	return test_doSyscall7(57,(u32)ids,count,(u32)client,(u32)mid,(u32)msg,size,flags);
-}
 static s32 _requestIOPorts(u32 start,u32 count) {
 	return test_doSyscall(14,start,count,0);
 }
@@ -153,23 +149,23 @@ static s32 _wait(u32 ev) {
 static s32 _setSigHandler(u32 sig,u32 handler) {
 	return test_doSyscall(19,sig,handler,0);
 }
-static s32 _unsetSigHandler(u32 sig) {
-	return test_doSyscall(20,sig,0,0);
-}
 static s32 _sendSignalTo(u32 pid,u32 sig,u32 data) {
-	return test_doSyscall(22,pid,sig,data);
+	return test_doSyscall(21,pid,sig,data);
 }
 static s32 _exec(const char *path,const char **args) {
-	return test_doSyscall(23,(u32)path,(u32)args,0);
+	return test_doSyscall(22,(u32)path,(u32)args,0);
 }
 static s32 _eof(u32 fd) {
-	return test_doSyscall(24,fd,0,0);
+	return test_doSyscall(23,fd,0,0);
 }
 static s32 _seek(u32 fd,s32 pos,u32 whence) {
-	return test_doSyscall(27,fd,pos,whence);
+	return test_doSyscall(26,fd,pos,whence);
 }
 static s32 _stat(const char *path,sFileInfo *info) {
-	return test_doSyscall(28,(u32)path,(u32)info,0);
+	return test_doSyscall(27,(u32)path,(u32)info,0);
+}
+static s32 _getWork(tDrvId *ids,u32 count,tDrvId *client,tMsgId *mid,sMsg *msg,u32 size,u8 flags) {
+	return test_doSyscall7(56,(u32)ids,count,(u32)client,(u32)mid,(u32)msg,size,flags);
 }
 
 /* our test-module */
@@ -195,7 +191,6 @@ static void test_syscalls(void) {
 	test_redirFd();
 	test_wait();
 	test_setSigHandler();
-	test_unsetSigHandler();
 	test_sendSignalTo();
 	test_exec();
 	test_eof();
@@ -454,14 +449,6 @@ static void test_setSigHandler(void) {
 	test_assertInt(_setSigHandler(1,0xC0000000),ERR_INVALID_ARGS);
 	test_assertInt(_setSigHandler(1,0xFFFFFFFF),ERR_INVALID_ARGS);
 	test_assertInt(_setSigHandler(1,0x12345678),ERR_INVALID_ARGS);
-	test_caseSucceded();
-}
-
-static void test_unsetSigHandler(void) {
-	test_caseStart("Testing unsetSigHandler()");
-	test_assertInt(_unsetSigHandler(-1),ERR_INVALID_SIGNAL);
-	test_assertInt(_unsetSigHandler(SIG_COUNT),ERR_INVALID_SIGNAL);
-	test_assertInt(_unsetSigHandler(0),ERR_INVALID_SIGNAL);
 	test_caseSucceded();
 }
 

@@ -44,6 +44,7 @@ static s32 osstream_writec(sOStream *s,char c);
 sOStream *osstream_open(char *buffer,s32 size) {
 	sOSStream *s = (sOSStream*)heap_alloc(sizeof(sOSStream));
 	sOStream *out = ostream_open();
+	assert(size > 0 || buffer == NULL);
 	out->write = osstream_write;
 	out->writec = osstream_writec;
 	out->fileno = osstream_fileno;
@@ -53,7 +54,7 @@ sOStream *osstream_open(char *buffer,s32 size) {
 	out->close = osstream_close;
 	out->_obj = s;
 	s->buffer = buffer;
-	s->max = size <= 0 ? -1 : size;
+	s->max = size < 0 ? -1 : size;
 	s->pos = 0;
 	return out;
 }
@@ -67,6 +68,7 @@ static tFD osstream_fileno(sOStream *s) {
 static s32 osstream_write(sOStream *s,const void *buffer,u32 count) {
 	sOSStream *ss = (sOSStream*)s->_obj;
 	s32 amount = MIN(ss->max - ss->pos,(s32)count);
+	assert(ss->buffer);
 	memcpy(ss->buffer + ss->pos,buffer,amount);
 	return amount;
 }
@@ -110,8 +112,13 @@ static void osstream_close(sOStream *s) {
 
 static s32 osstream_writec(sOStream *s,char c) {
 	sOSStream *ss = (sOSStream*)s->_obj;
-	if(ss->max != -1 && ss->pos >= ss->max)
-		THROW(IOException,ERR_EOF);
-	ss->buffer[ss->pos++] = c;
+	/* max is always > 0; ignore writes if the buffer is full */
+	if(ss->max != -1 && ss->pos >= ss->max - 1) {
+		/* buffer may be NULL if max is zero */
+		if(ss->buffer)
+			ss->buffer[ss->pos] = '\0';
+	}
+	else
+		ss->buffer[ss->pos++] = c;
 	return 1;
 }

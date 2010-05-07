@@ -519,7 +519,8 @@ s32 sprintf(char *str,const char *fmt,...);
  * @param str the string to print to
  * @param n the size of <str>
  * @param fmt the format
- * @return the number of written chars
+ * @return the number chars that have been written or would have been written if <n> were
+ * 	large enough
  */
 s32 snprintf(char *str,size_t n,const char *fmt,...);
 
@@ -530,7 +531,8 @@ s32 snprintf(char *str,size_t n,const char *fmt,...);
  * @param n the size of <str>
  * @param fmt the format
  * @param ap the argument-list
- * @return the number of written chars
+ * @return the number chars that have been written or would have been written if <n> were
+ * 	large enough
  */
 s32 vsnprintf(char *str,size_t n,const char *fmt,va_list ap);
 

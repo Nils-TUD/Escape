@@ -24,7 +24,7 @@
 #include <esc/proc.h>
 #include <esc/keycodes.h>
 #include <esc/heap.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/driver.h>
 #include <stdio.h>
 #include <esc/lock.h>

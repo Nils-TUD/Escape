@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <stdio.h>
 #include <esc/io.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/proc.h>
 #include <esc/dir.h>
 #include <esc/heap.h>

@@ -26,7 +26,7 @@
 
 /* forward declarations */
 static void test_fileio(void);
-static bool test_fileio_checkPrint(u32 recvRes,char *recvStr,const char *expStr);
+static bool test_fileio_checkPrint(s32 recvRes,s32 expRes,char *recvStr,const char *expStr);
 static bool test_fileio_checkScan(u32 recvRes,u32 expRes,const char *fmt,...);
 static void test_fileio_print(void);
 static void test_fileio_scan(void);
@@ -42,10 +42,10 @@ static void test_fileio(void) {
 	test_fileio_scan();
 }
 
-static bool test_fileio_checkPrint(u32 res,char *recvStr,const char *expStr) {
+static bool test_fileio_checkPrint(s32 res,s32 expRes,char *recvStr,const char *expStr) {
 	if(!test_assertStr(recvStr,expStr))
 		return false;
-	if(!test_assertUInt(res,strlen(expStr)))
+	if(!test_assertInt(res,expRes == -1 ? (s32)strlen(expStr) : expRes))
 		return false;
 	return true;
 }
@@ -106,92 +106,99 @@ static bool test_fileio_checkScan(u32 recvRes,u32 expRes,const char *fmt,...) {
 
 static void test_fileio_print(void) {
 	char str[200],tmp[200],c;
-	u32 res,i;
+	u32 tmplen,i;
+	s32 res;
 
 	test_caseStart("Testing *printf()");
 
 	res = snprintf(str,sizeof(str),"%d",4);
-	if(!test_fileio_checkPrint(res,str,"4"))
+	if(!test_fileio_checkPrint(res,-1,str,"4"))
 		return;
 
 	res = snprintf(str,sizeof(str),"");
-	if(!test_fileio_checkPrint(res,str,""))
+	if(!test_fileio_checkPrint(res,-1,str,""))
 		return;
 
 	res = snprintf(str,sizeof(str),"%i%d",123,456);
-	if(!test_fileio_checkPrint(res,str,"123456"))
+	if(!test_fileio_checkPrint(res,-1,str,"123456"))
 		return;
 
 	res = snprintf(str,sizeof(str),"_%d_%d_",1,2);
-	if(!test_fileio_checkPrint(res,str,"_1_2_"))
+	if(!test_fileio_checkPrint(res,-1,str,"_1_2_"))
 		return;
 
 	res = snprintf(str,sizeof(str),"x=%x, X=%X, b=%b, o=%o, d=%d, u=%u",0xABC,0xDEF,0xF0F,0723,-675,412);
-	if(!test_fileio_checkPrint(res,str,"x=abc, X=DEF, b=111100001111, o=723, d=-675, u=412"))
+	if(!test_fileio_checkPrint(res,-1,str,"x=abc, X=DEF, b=111100001111, o=723, d=-675, u=412"))
 		return;
 
 	res = snprintf(str,sizeof(str),"'%s'_%c_","test",'f');
-	if(!test_fileio_checkPrint(res,str,"'test'_f_"))
+	if(!test_fileio_checkPrint(res,-1,str,"'test'_f_"))
 		return;
 
 	res = snprintf(str,sizeof(str),"%s","");
-	if(!test_fileio_checkPrint(res,str,""))
+	if(!test_fileio_checkPrint(res,-1,str,""))
 		return;
 
 	res = snprintf(str,sizeof(str),"%10s","padme");
-	if(!test_fileio_checkPrint(res,str,"     padme"))
+	if(!test_fileio_checkPrint(res,-1,str,"     padme"))
 		return;
 
 	res = snprintf(str,sizeof(str),"%02d, % 4x, %08b",9,0xff,0xf);
-	if(!test_fileio_checkPrint(res,str,"09,   ff, 00001111"))
+	if(!test_fileio_checkPrint(res,-1,str,"09,   ff, 00001111"))
 		return;
 
 	strcpy(tmp,"09,   ff, AB , 0x12, 0X0AB,   +12,  13, 00000123, 00001111");
-	for(i = 0; i <= strlen(tmp); i++) {
+
+	res = snprintf(NULL,0,"%02d, %4x, %-3X, %#2x, %#03X, %+5d, % 3d, %0*x, %08b",9,0xff,0xab,
+			0x12,0xAB,12,13,8,0x123,0xf);
+	test_assertInt(res,strlen(tmp));
+
+	tmplen = strlen(tmp);
+	for(i = 1; i <= strlen(tmp); i++) {
 		c = tmp[i];
 		tmp[i] = '\0';
-		res = snprintf(str,i,"%02d, %4x, %-3X, %#2x, %#03X, %+5d, % 3d, %0*x, %08b",9,0xff,0xab,0x12,
-				0xAB,12,13,8,0x123,0xf);
-		if(!test_fileio_checkPrint(res,str,tmp))
+		res = snprintf(str,i + 1,"%02d, %4x, %-3X, %#2x, %#03X, %+5d, % 3d, %0*x, %08b",9,0xff,0xab,
+				0x12,0xAB,12,13,8,0x123,0xf);
+		if(!test_fileio_checkPrint(res,tmplen,str,tmp))
 			return;
 		tmp[i] = c;
 	}
 
 	res = snprintf(str,sizeof(str),"%p%n, %hx",0xdeadbeef,&i,0x12345678);
-	if(!test_fileio_checkPrint(res,str,"dead:beef, 5678") || !test_assertUInt(i,9))
+	if(!test_fileio_checkPrint(res,-1,str,"dead:beef, 5678") || !test_assertUInt(i,9))
 		return;
 
 	res = snprintf(str,sizeof(str),"%Ld, %017Ld, %-*Ld",1LL,8167127123123123LL,12,-81273123LL);
-	if(!test_fileio_checkPrint(res,str,"1, 08167127123123123, -81273123   "))
+	if(!test_fileio_checkPrint(res,-1,str,"1, 08167127123123123, -81273123   "))
 		return;
 
 	res = snprintf(str,sizeof(str),"%Lu, %017Lx, %#-*LX",1ULL,0x7179bafed2122ULL,12,0x1234ABULL);
-	if(!test_fileio_checkPrint(res,str,"1, 00007179bafed2122, 0X1234AB    "))
+	if(!test_fileio_checkPrint(res,-1,str,"1, 00007179bafed2122, 0X1234AB    "))
 		return;
 
 	res = snprintf(str,sizeof(str),"%f, %f, %f, %f, %f, %f",0.f,1.f,-1.f,0.f,0.4f,18.4f);
-	if(!test_fileio_checkPrint(res,str,"0.000000, 1.000000, -1.000000, 0.000000, 0.400000, 18.399999"))
+	if(!test_fileio_checkPrint(res,-1,str,"0.000000, 1.000000, -1.000000, 0.000000, 0.400000, 18.399999"))
 		return;
 
 	res = snprintf(str,sizeof(str),"%f, %f, %f, %f",-1.231f,999.999f,1234.5678f,1189378123.78167213123f);
-	if(!test_fileio_checkPrint(res,str,"-1.230999, 999.999023, 1234.567749, 1189378176.000000"))
+	if(!test_fileio_checkPrint(res,-1,str,"-1.230999, 999.999023, 1234.567749, 1189378176.000000"))
 		return;
 
 	res = snprintf(str,sizeof(str),"%lf, %lf, %lf, %lf, %lf, %lf",0.,1.,-1.,0.,0.4,18.4);
-	if(!test_fileio_checkPrint(res,str,"0.000000, 1.000000, -1.000000, 0.000000, 0.400000, 18.399999"))
+	if(!test_fileio_checkPrint(res,-1,str,"0.000000, 1.000000, -1.000000, 0.000000, 0.400000, 18.399999"))
 		return;
 
 	res = snprintf(str,sizeof(str),"%lf, %lf, %lf, %lf",-1.231,999.999,1234.5678,1189378123.78167213123);
-	if(!test_fileio_checkPrint(res,str,"-1.231000, 999.999000, 1234.567800, 1189378123.781672"))
+	if(!test_fileio_checkPrint(res,-1,str,"-1.231000, 999.999000, 1234.567800, 1189378123.781672"))
 		return;
 
 	res = snprintf(str,sizeof(str),"%8.4lf, %8.1lf, %8.10lf",1.,-1.,0.);
-	if(!test_fileio_checkPrint(res,str,"  1.0000,     -1.0, 0.0000000000"))
+	if(!test_fileio_checkPrint(res,-1,str,"  1.0000,     -1.0, 0.0000000000"))
 		return;
 
 	res = snprintf(str,sizeof(str),"%3.0lf, %-06.1lf, %2.4lf, %10.10lf",-1.231,999.999,1234.5678,
 			1189378123.78167213123);
-	if(!test_fileio_checkPrint(res,str,"-1., 999.90, 1234.5678, 1189378123.7816722393"))
+	if(!test_fileio_checkPrint(res,-1,str,"-1., 999.90, 1234.5678, 1189378123.7816722393"))
 		return;
 
 	test_caseSucceded();

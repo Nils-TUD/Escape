@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
 #include <esc/exceptions/outofmemory.h>
 #include <esc/io/ostringstream.h>
 #include <stdio.h>
@@ -30,9 +29,7 @@ s32 vsnprintf(char *str,size_t n,const char *fmt,va_list ap) {
 		s = osstream_open(str,n);
 		res = s->vwritef(s,fmt,ap);
 	}
-	CATCH(IOException,e) {
-		res = EOF;
-	}
+	/* no io-exception here */
 	CATCH(OutOfMemoryException,e) {
 		res = EOF;
 	}

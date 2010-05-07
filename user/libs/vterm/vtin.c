@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/keycodes.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <esc/io.h>
 #include <esc/driver.h>
 #include <stdio.h>

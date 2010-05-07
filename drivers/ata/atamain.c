@@ -26,7 +26,7 @@
 #include <esc/heap.h>
 #include <esc/proc.h>
 #include <esc/debug.h>
-#include <esc/signals.h>
+#include <signal.h>
 #include <errors.h>
 
 #include "ata.h"

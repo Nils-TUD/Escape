@@ -2,8 +2,8 @@ NAME = vterm
 ROOT = ../../..
 BUILDL = $(BUILD)/user/libs/$(NAME)
 BIN = $(BUILD)/user_libs_$(NAME).a
-LIB = $(ROOT)/lib
-LIBC = $(ROOT)/libc
+LIB = $(ROOT)/lib/basic
+LIBC = $(ROOT)/lib/c
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
@@ -16,7 +16,7 @@ CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
 
 # put all libc-object-files into the archive
-LIBCOBJ = $(shell find $(BUILD)/libc -mindepth 0 -maxdepth 5 -name "*.o")
+LIBCOBJ = $(shell find $(BUILD)/lib/c -mindepth 0 -maxdepth 5 -name "*.o")
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 
 .PHONY: all clean

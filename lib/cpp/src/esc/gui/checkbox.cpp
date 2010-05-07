@@ -1,0 +1,100 @@
+/**
+ * $Id: checkbox.cpp 578 2010-03-29 15:54:22Z nasmussen $
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#include <esc/common.h>
+#include <esc/gui/common.h>
+#include <esc/gui/checkbox.h>
+#include <esc/gui/control.h>
+
+namespace esc {
+	namespace gui {
+		Color Checkbox::FGCOLOR = Color(0xFF,0xFF,0xFF);
+		Color Checkbox::BGCOLOR = Color(0x88,0x88,0x88);
+		Color Checkbox::LIGHT_BOX_COLOR = Color(0x60,0x60,0x60);
+		Color Checkbox::DARK_BOX_COLOR = Color(0x20,0x20,0x20);
+		Color Checkbox::BOX_BGCOLOR = Color(0xFF,0xFF,0xFF);
+
+		Checkbox &Checkbox::operator=(const Checkbox &b) {
+			// ignore self-assignments
+			if(this == &b)
+				return *this;
+			Control::operator=(b);
+			_focused = false;
+			_checked = b._checked;
+			_text = b._text;
+			return *this;
+		}
+
+		void Checkbox::onFocusGained() {
+			_focused = true;
+			repaint();
+		}
+		void Checkbox::onFocusLost() {
+			_focused = false;
+			repaint();
+		}
+
+		void Checkbox::onKeyReleased(const KeyEvent &e) {
+			u8 keycode = e.getKeyCode();
+			UIElement::onKeyReleased(e);
+			if(keycode == VK_ENTER || keycode == VK_SPACE)
+				setChecked(!_checked);
+		}
+
+		void Checkbox::onMouseReleased(const MouseEvent &e) {
+			UIElement::onMouseReleased(e);
+			setChecked(!_checked);
+		}
+
+		void Checkbox::setChecked(bool checked) {
+			_checked = checked;
+			repaint();
+		}
+
+		void Checkbox::paint(Graphics &g) {
+			u32 cheight = g.getFont().getHeight();
+			u32 boxSize = getHeight();
+
+			g.setColor(BGCOLOR);
+			g.fillRect(0,0,getWidth(),getHeight());
+
+			g.setColor(BOX_BGCOLOR);
+			g.fillRect(1,1,boxSize - 2,boxSize - 2);
+
+			g.setColor(LIGHT_BOX_COLOR);
+			g.drawLine(boxSize - 1,0,boxSize - 1,boxSize - 1);
+			g.drawLine(0,boxSize - 1,boxSize - 1,boxSize - 1);
+			g.setColor(DARK_BOX_COLOR);
+			g.drawLine(0,0,boxSize - 1,0);
+			g.drawLine(0,0,0,boxSize - 1);
+
+			if(_checked) {
+				g.setColor(DARK_BOX_COLOR);
+				g.drawLine(CROSS_PADDING,CROSS_PADDING,boxSize - CROSS_PADDING,boxSize - CROSS_PADDING);
+				g.drawLine(boxSize - CROSS_PADDING,CROSS_PADDING,CROSS_PADDING,boxSize - CROSS_PADDING);
+				g.setColor(LIGHT_BOX_COLOR);
+				g.drawLine(CROSS_PADDING,CROSS_PADDING + 1,boxSize - CROSS_PADDING,boxSize - CROSS_PADDING + 1);
+				g.drawLine(boxSize - CROSS_PADDING,CROSS_PADDING + 1,CROSS_PADDING,boxSize - CROSS_PADDING + 1);
+			}
+
+			g.setColor(FGCOLOR);
+			g.drawString(boxSize + TEXT_PADDING,(boxSize - cheight) / 2 + 1,_text);
+		}
+	}
+}

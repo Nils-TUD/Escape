@@ -1,9 +1,9 @@
 ROOT = ../../..
 BUILDL = $(BUILD)/user/d/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
-LIB = $(ROOT)/lib
-LIBC = $(ROOT)/libc
-LIBD = $(ROOT)/libd
+LIB = $(ROOT)/lib/basic
+LIBC = $(ROOT)/lib/c
+LIBD = $(ROOT)/lib/d
 LDCONF=$(LIBD)/ld.conf
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))

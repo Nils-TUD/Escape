@@ -19,9 +19,9 @@ QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga s
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 
 ifeq ($(BUILDDIR),$(abspath build/debug))
-	DIRS = tools libc libcpp libsupc++ libcpp/ustl libd user/libs drivers user kernel/src kernel/test
+	DIRS = tools lib user/libs drivers user kernel/src kernel/test
 else
-	DIRS = tools libc libcpp libsupc++ libcpp/ustl libd user/libs drivers user kernel/src
+	DIRS = tools lib user/libs drivers user kernel/src
 endif
 
 # wether to link drivers and user-apps statically or dynamically

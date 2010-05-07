@@ -23,7 +23,7 @@
 
 ALIGN 4
 
-%include "../../../libc/syscalls.s"
+%include "../../../lib/c/syscalls.s"
 
 init:
 	; load modules first

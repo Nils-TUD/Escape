@@ -1,0 +1,3 @@
+#! /bin/sh
+./configure --with-debug --with-demangler --without-mmx
+

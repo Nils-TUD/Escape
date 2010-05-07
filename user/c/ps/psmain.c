@@ -93,18 +93,18 @@ static const char *states[] = {
 };
 static u8 sort = SORT_PID;
 
-static void usage(char *name) {
+static void usage(const char *name) {
 	u32 i;
-	fprintf(stderr,"Usage: %s [-t][-n <count>][-s <sort>]\n",name);
-	fprintf(stderr,"	-t			: Print threads, too\n");
-	fprintf(stderr,"	-n <count>	: Print first <count> processes\n");
-	fprintf(stderr,"	-s <sort>	: Sort by ");
+	cerr->writef(cerr,"Usage: %s [-t][-n <count>][-s <sort>]\n",name);
+	cerr->writef(cerr,"	-t			: Print threads, too\n");
+	cerr->writef(cerr,"	-n <count>	: Print first <count> processes\n");
+	cerr->writef(cerr,"	-s <sort>	: Sort by ");
 	for(i = 0; i < ARRAY_SIZE(sorts); i++) {
-		fprintf(stderr,"'%s'",sorts[i].name);
+		cerr->writef(cerr,"'%s'",sorts[i].name);
 		if(i < ARRAY_SIZE(sorts) - 1)
-			fprintf(stderr,", ");
+			cerr->writef(cerr,", ");
 	}
-	fprintf(stderr,"\n");
+	cerr->writef(cerr,"\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -116,6 +116,20 @@ int main(int argc,char *argv[]) {
 	u32 numProcs = 0;
 	bool printThreads = false;
 	char *s;
+
+	sCmdArgs *args;
+
+	TRY {
+		args = cmdargs_create(argc,argv,CA_NO_FREE);
+		args->parse(args,"s=s n=d t",&ssort,&numProcs,&printThreads);
+		if(args->isHelp)
+			usage(argv[0]);
+	}
+	CATCH(CmdArgsException,e) {
+		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
+		usage(argv[0]);
+	}
+	ENDCATCH
 
 	if(isHelpCmd(argc,argv))
 		usage(argv[0]);

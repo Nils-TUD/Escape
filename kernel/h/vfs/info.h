@@ -28,6 +28,11 @@
 void vfsinfo_init(void);
 
 /**
+ * The trace-read-handler
+ */
+s32 vfsinfo_traceReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+
+/**
  * The proc-read-handler
  */
 s32 vfsinfo_procReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);

@@ -425,10 +425,9 @@ void vfs_removeProcess(tPid pid);
  * Creates the VFS-node for the given thread
  *
  * @param tid the thread-id
- * @param handler the read-handler for the node
  * @return true on success
  */
-bool vfs_createThread(tTid tid,fRead handler);
+bool vfs_createThread(tTid tid);
 
 /**
  * Removes all occurrences of the given thread from VFS

@@ -998,9 +998,9 @@ void vfs_removeProcess(tPid pid) {
 	vfsn_removeNode(p->threadDir->parent);
 }
 
-bool vfs_createThread(tTid tid,fRead handler) {
+bool vfs_createThread(tTid tid) {
 	char *name;
-	sVFSNode *n;
+	sVFSNode *n,*dir;
 	sThread *t = thread_getById(tid);
 
 	/* build name */
@@ -1009,14 +1009,27 @@ bool vfs_createThread(tTid tid,fRead handler) {
 		return false;
 	itoa(name,12,tid);
 
-	/* create thread-node */
-	n = vfsn_createFile(tid,t->proc->threadDir,name,handler,NULL);
-	if(n == NULL) {
-		kheap_free(name);
-		return false;
-	}
+	/* create dir */
+	dir = vfsn_createDir(t->proc->threadDir,name);
+	if(dir == NULL)
+		goto errorDir;
 
+	/* create info-node */
+	n = vfsn_createFile(KERNEL_TID,dir,(char*)"info",vfsinfo_threadReadHandler,NULL);
+	if(n == NULL)
+		goto errorInfo;
+
+	/* create trace-node */
+	n = vfsn_createFile(KERNEL_TID,dir,(char*)"trace",vfsinfo_traceReadHandler,NULL);
+	if(n == NULL)
+		goto errorInfo;
 	return true;
+
+errorInfo:
+	vfsn_removeNode(dir);
+errorDir:
+	kheap_free(name);
+	return false;
 }
 
 void vfs_removeThread(tTid tid) {

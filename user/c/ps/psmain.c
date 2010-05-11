@@ -330,7 +330,7 @@ static sProcess *ps_readProc(const char *pid) {
 	vforeach(files,e) {
 		u16 state;
 		sPThread *t = heap_alloc(sizeof(sPThread));
-		snprintf(tpath,sizeof(tpath),"/system/processes/%s/threads/%s",pid,e->name);
+		snprintf(tpath,sizeof(tpath),"/system/processes/%s/threads/%s/info",pid,e->name);
 		s = ifstream_open(tpath,IO_READ);
 		/* parse string; use separate u16 storage for state since we can't tell scanf that is a byte */
 		s->readf(s,

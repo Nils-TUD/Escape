@@ -113,7 +113,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 		util_panic("Unable to append initial thread");
 
 	/* insert in VFS; thread needs to be inserted for it */
-	if(!vfs_createThread(t->tid,vfsinfo_threadReadHandler))
+	if(!vfs_createThread(t->tid))
 		util_panic("Unable to put first thread in vfs");
 
 	return t;
@@ -472,7 +472,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 		goto errTLS;
 
 	/* insert in VFS; thread needs to be inserted for it */
-	if(!vfs_createThread(t->tid,vfsinfo_threadReadHandler))
+	if(!vfs_createThread(t->tid))
 		goto errAppend;
 
 	/* inherit file-descriptors */

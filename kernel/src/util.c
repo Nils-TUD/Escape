@@ -150,7 +150,7 @@ sFuncCall *util_getUserStackTraceOf(sThread *t) {
 	if(t->stackRegion >= 0) {
 		vmm_getRegRange(t->proc,t->stackRegion,&start,&end);
 		pcount = (end - start) / PAGE_SIZE;
-		frames = kheap_alloc((pcount + 1) * sizeof(u32));
+		frames = kheap_alloc((pcount + 2) * sizeof(u32));
 		if(frames) {
 			sIntrptStackFrame *istack = intrpt_getCurStack();
 			u32 temp,i,startCpy = start;

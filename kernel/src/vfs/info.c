@@ -45,6 +45,10 @@ typedef struct {
 } A_PACKED sVFSDirEntry;
 
 /**
+ * The read-callback for the trace-read-handler
+ */
+static void vfsinfo_traceReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
+/**
  * The read-callback for the proc-read-handler
  */
 static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer);
@@ -105,6 +109,36 @@ void vfsinfo_init(void) {
 	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"stats",vfsinfo_statsReadHandler,NULL) != NULL);
 }
 
+s32 vfsinfo_traceReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+	UNUSED(file);
+	return vfsrw_readHelper(tid,node,buffer,offset,count,0,vfsinfo_traceReadCallback);
+}
+
+static void vfsinfo_traceReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
+	sThread *t = thread_getById(atoi(node->parent->name));
+	sFuncCall *call;
+	sStringBuffer buf;
+	UNUSED(dataSize);
+	buf.dynamic = true;
+	buf.str = NULL;
+	buf.size = 0;
+	buf.len = 0;
+	prf_sprintf(&buf,"Kernel:\n");
+	call = util_getKernelStackTraceOf(t);
+	while(call->addr != 0) {
+		prf_sprintf(&buf,"\t%#08x -> %#08x (%s)\n",(call + 1)->addr,call->funcAddr,call->funcName);
+		call++;
+	}
+	prf_sprintf(&buf,"User:\n");
+	call = util_getUserStackTraceOf(t);
+	while(call->addr != 0) {
+		prf_sprintf(&buf,"\t%#08x -> %#08x\n",(call + 1)->addr,call->funcAddr);
+		call++;
+	}
+	*buffer = buf.str;
+	*dataSize = buf.len + 1;
+}
+
 s32 vfsinfo_procReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	UNUSED(file);
 	/* don't use the cache here to prevent that one process occupies it for all others */
@@ -153,7 +187,7 @@ s32 vfsinfo_threadReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u3
 }
 
 static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
-	sThread *t = thread_getById(atoi(node->name));
+	sThread *t = thread_getById(atoi(node->parent->name));
 	sStringBuffer buf;
 	u32 stackBegin = 0,stackEnd = 0;
 	UNUSED(dataSize);

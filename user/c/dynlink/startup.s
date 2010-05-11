@@ -21,6 +21,7 @@
 
 [global init]
 [global lookup_resolveStart]
+[extern __libc_init]
 [extern lookup_resolve]
 [extern load_setupProg]
 
@@ -46,6 +47,7 @@ ALIGN 4
 
 init:
 	; we have no TLS, so don't waste time
+	call	__libc_init
 	call	load_setupProg
 	; first, remove fd from stack
 	add		esp,4

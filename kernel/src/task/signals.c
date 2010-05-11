@@ -464,7 +464,7 @@ static bool sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data,bool add) {
 			case SIG_TERM:
 			case SIG_KILL:
 			case SIG_SEGFAULT:
-				if(signal == SIG_KILL || h == NULL || h->handler != SIG_IGN) {
+				if(signal == SIG_KILL || h == NULL) {
 					proc_terminate(proc_getByPid(pid),1,signal);
 					return false;
 				}

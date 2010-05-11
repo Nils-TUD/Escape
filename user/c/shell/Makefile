@@ -1,5 +1,9 @@
 NAME = shell
-ADDLIBS = $(BUILD)/user_libs_shell.a
-ADDFLAGS = -I../../libs
+ifeq ($(LINKTYPE),static)
+	ADDLIBS += $(BUILD)/libshell.a
+	ADDFLAGS = -I../../../lib
+else
+	ADDFLAGS = -I../../../lib -lshell
+endif
 
 -include ../DefMakefile.mk

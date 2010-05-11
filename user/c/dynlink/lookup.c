@@ -30,13 +30,12 @@ static u32 lookup_getHash(const unsigned char *name);
 
 u32 lookup_resolve(sSharedLib *lib,u32 offset) {
 	Elf32_Sym *foundSym;
-	sSharedLib *fl;
 	Elf32_Rel *rel = (Elf32_Rel*)((u32)lib->jmprel + offset);
 	Elf32_Sym *sym = lib->symbols + ELF32_R_SYM(rel->r_info);
 	u32 value,*addr;
 	DBGDL("Lookup symbol @ %x (%s) in lib %s\n",offset,lib->strtbl + sym->st_name,
 			lib->name ? lib->name : "-Main-");
-	foundSym = lookup_byName(NULL,lib->strtbl + sym->st_name,&value,&fl);
+	foundSym = lookup_byName(NULL,lib->strtbl + sym->st_name,&value);
 	if(foundSym == NULL)
 		error("Unable to find symbol %s",lib->strtbl + sym->st_name);
 	addr = (u32*)(rel->r_offset + lib->loadAddr);
@@ -45,7 +44,7 @@ u32 lookup_resolve(sSharedLib *lib,u32 offset) {
 	return value;
 }
 
-Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,u32 *value,sSharedLib **lib) {
+Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,u32 *value) {
 	sSLNode *n;
 	Elf32_Sym *s;
 	u32 hash = lookup_getHash((const unsigned char*)name);
@@ -55,7 +54,6 @@ Elf32_Sym *lookup_byName(sSharedLib *skip,const char *name,u32 *value,sSharedLib
 			continue;
 		s = lookup_byNameIntern(l,name,hash);
 		if(s) {
-			*lib = l;
 			*value = s->st_value + l->loadAddr;
 			return s;
 		}

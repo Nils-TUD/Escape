@@ -20,6 +20,13 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 
+/* nasm doesn't like 'wait' as a symbol */
+extern s32 _wait(u8 events);
+
+s32 wait(u8 events) {
+	return _wait(events);
+}
+
 tPid getppid(void) {
 	return getppidof(getpid());
 }

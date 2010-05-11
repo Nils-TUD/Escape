@@ -284,8 +284,10 @@ static s32 getDirSize(sFile *d) {
 		d->getAbsolute(d,path,sizeof(path));
 		vforeach(files,e) {
 			sFile *f = file_getIn(path,e->name);
-			if(f->isDir(f))
-				res += getDirSize(f);
+			if(f->isDir(f)) {
+				if(strcmp(e->name,".") != 0 && strcmp(e->name,"..") != 0)
+					res += getDirSize(f);
+			}
 			else
 				res += f->getInfo(f)->size;
 			f->destroy(f);

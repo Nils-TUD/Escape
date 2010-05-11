@@ -19,13 +19,16 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/debug.h>
 #include <esc/proc.h>
+#include <esc/exceptions/io.h>
 #include <esc/io/ifilestream.h>
 #include <esc/io/ofilestream.h>
 #include <esc/io/iofilestream.h>
 #include <stdio.h>
 
 typedef void (*fConstr)(void);
+typedef void (*fStreamClose)(void *);
 
 static void streamConstr(void);
 static void streamDestr(void);
@@ -53,7 +56,19 @@ static void streamConstr(void) {
 }
 
 static void streamDestr(void) {
-	cin->close(cin);
-	cout->close(cout);
-	cerr->close(cerr);
+	u32 i;
+	fStreamClose funcs[3] = {
+		(fStreamClose)cin->close,(fStreamClose)cout->close,(fStreamClose)cerr->close
+	};
+	void *streams[3] = {cin,cout,cerr};
+	for(i = 0; i < 3; i++) {
+		/* an uncatched io-exception is not good here since it may call exit() again */
+		TRY {
+			funcs[i](streams[i]);
+		}
+		CATCH(IOException,e) {
+			debugf("Got an IO-Exception when destroying std-stream %d: %s\n",i,e->toString(e));
+		}
+		ENDCATCH
+	}
 }

@@ -1,5 +1,9 @@
 NAME=vesatext
-ADDLIBS = $(BUILD)/user_libs_vbe.a
-ADDFLAGS = -I../../user/libs
+ifeq ($(LINKTYPE),static)
+	ADDLIBS += $(BUILD)/libvbe.a
+	ADDFLAGS = -I../../lib
+else
+	ADDFLAGS = -I../../lib -lvbe
+endif
 
 -include ../ShlibMakefile.mk

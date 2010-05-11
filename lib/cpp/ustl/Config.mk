@@ -59,4 +59,4 @@ O		:= $(BUILD)/lib/cpp/ustl/
 slib_lnk	= lib$1.so
 slib_son	= lib$1.so.${MAJOR}.${MINOR}
 slib_tgt	= lib$1.so.${MAJOR}.${MINOR}
-slib_flags	= -shared -Wl,-soname=$1 -Wl,-T,../shld.conf
+slib_flags	= -shared -Wl,-soname=$1 -Wl,-T,../../shld.conf

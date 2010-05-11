@@ -9,7 +9,7 @@ DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 STLIB = $(BUILD)/libc.a
 DYNLIBNAME = libc.so
 DYNLIB = $(BUILD)/$(DYNLIBNAME)
-SHLDCONF = shld.conf
+SHLDCONF = ../shld.conf
 
 CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -Iinclude -I$(LIBDIR)/h

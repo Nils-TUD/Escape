@@ -35,7 +35,7 @@ static void load_init(void);
 static void load_initLib(sSharedLib *l);
 static void load_reloc(void);
 static void load_relocLib(sSharedLib *l);
-static void load_adjustCopyGotEntry(sSharedLib *l,u32 address,u32 copyAddr);
+static void load_adjustCopyGotEntry(const char *name,u32 copyAddr);
 static void load_library(sSharedLib *dst);
 static void load_doLoad(tFD binFd,sSharedLib *dst);
 static sSharedLib *load_addLib(sSharedLib *lib);
@@ -226,23 +226,32 @@ static void load_relocLib(sSharedLib *l) {
 			if(relType == R_386_GLOB_DAT) {
 				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
 				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
-				*ptr = l->symbols[symIndex].st_value + l->loadAddr;
+				Elf32_Sym *sym = l->symbols + symIndex;
+				/* if the symbol-value is 0, it seems that we have to lookup the symbol now and
+				 * store that value instead. TODO I'm not sure if thats correct */
+				if(sym->st_value == 0) {
+					u32 value;
+					if(!lookup_byName(l,l->strtbl + sym->st_name,&value))
+						error("Unable to find symbol %s",l->strtbl + sym->st_name);
+					*ptr = value;
+				}
+				else
+					*ptr = l->symbols[symIndex].st_value + l->loadAddr;
 				DBGDL("Rel (GLOB_DAT) off=%x orgoff=%x reloc=%x orgval=%x\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr,
 						l->symbols[symIndex].st_value);
 			}
 			else if(relType == R_386_COPY) {
 				u32 value;
-				sSharedLib *foundLib;
 				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
 				const char *name = l->strtbl + l->symbols[symIndex].st_name;
-				Elf32_Sym *foundSym = lookup_byName(l,name,&value,&foundLib);
+				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
 				if(foundSym == NULL)
 					error("Unable to find symbol %s",name);
 				memcpy((void*)(rel[x].r_offset),(void*)value,foundSym->st_size);
 				/* set the GOT-Entry in the library of the symbol to the address we've copied
 				 * the value to. TODO I'm not sure if that's the intended way... */
-				load_adjustCopyGotEntry(foundLib,value,rel[x].r_offset);
+				load_adjustCopyGotEntry(name,rel[x].r_offset);
 				DBGDL("Rel (COPY) off=%x sym=%s addr=%x val=%x\n",rel[x].r_offset,name,
 						value,*(u32*)value);
 			}
@@ -278,10 +287,9 @@ static void load_relocLib(sSharedLib *l) {
 			 * so that we can simply add the loadAddr) */
 			if(LD_BIND_NOW || *addr == 0) {
 				u32 value;
-				sSharedLib *foundLib;
 				u32 symIndex = ELF32_R_SYM(l->jmprel[x].r_info);
 				const char *name = l->strtbl + l->symbols[symIndex].st_name;
-				Elf32_Sym *foundSym = lookup_byName(l,name,&value,&foundLib);
+				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
 				if(!foundSym && !LD_BIND_NOW)
 					error("Unable to find symbol %s",name);
 				else if(foundSym)
@@ -308,21 +316,34 @@ static void load_relocLib(sSharedLib *l) {
 	l->relocated = true;
 }
 
-static void load_adjustCopyGotEntry(sSharedLib *l,u32 address,u32 copyAddr) {
-	/* TODO we should store DT_REL and DT_RELSZ */
-	Elf32_Rel *rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
-	if(rel) {
-		u32 x;
-		u32 relCount = load_getDyn(l->dyn,DT_RELSZ);
-		relCount /= sizeof(Elf32_Rel);
-		rel = (Elf32_Rel*)((u32)rel + l->loadAddr);
-		for(x = 0; x < relCount; x++) {
-			if(ELF32_R_TYPE(rel[x].r_info) == R_386_GLOB_DAT) {
-				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
-				if(l->symbols[symIndex].st_value + l->loadAddr == address) {
-					u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
-					*ptr = copyAddr;
-					return;
+static void load_adjustCopyGotEntry(const char *name,u32 copyAddr) {
+	sSLNode *n;
+	u32 address;
+	/* go through all libraries and copy the address of the object (copy-relocated) to
+	 * the corresponding GOT-entry. this ensures that all DSO's use the same object */
+	for(n = sll_begin(libs); n != NULL; n = n->next) {
+		sSharedLib *l = (sSharedLib*)n->data;
+		/* don't do that in the executable */
+		if(l->name == NULL)
+			continue;
+
+		if(lookup_byNameIn(l,name,&address)) {
+			/* TODO we should store DT_REL and DT_RELSZ */
+			Elf32_Rel *rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
+			if(rel) {
+				u32 x;
+				u32 relCount = load_getDyn(l->dyn,DT_RELSZ);
+				relCount /= sizeof(Elf32_Rel);
+				rel = (Elf32_Rel*)((u32)rel + l->loadAddr);
+				for(x = 0; x < relCount; x++) {
+					if(ELF32_R_TYPE(rel[x].r_info) == R_386_GLOB_DAT) {
+						u32 symIndex = ELF32_R_SYM(rel[x].r_info);
+						if(l->symbols[symIndex].st_value + l->loadAddr == address) {
+							u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
+							*ptr = copyAddr;
+							break;
+						}
+					}
 				}
 			}
 		}
@@ -344,7 +365,7 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 	Elf32_Phdr pheader;
 	sFileInfo info;
 	u8 const *datPtr;
-	u32 j,loadSeg;
+	u32 j,loadSeg,textOffset = 0xFFFFFFFF;
 
 	/* build bindesc */
 	if(fstat(binFd,&info) < 0)
@@ -368,6 +389,14 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 		/* read pheader */
 		load_read(binFd,(u32)datPtr,&pheader,sizeof(Elf32_Phdr));
 
+		/* in shared libraries the text is @ 0x0 (will be relocated anyway), but the entry
+		 * DT_STRTAB in the dynamic table is the virtual address, not the file offset. Therefore
+		 * we have to add the difference of the text in the file and in virtual memory.
+		 * This will be 0 for executables and 0x1000 for shared libraries
+		 * (Note that the first load-segment is the text) */
+		if(textOffset == 0xFFFFFFFF && pheader.p_type == PT_LOAD)
+			textOffset = pheader.p_offset - pheader.p_vaddr;
+
 		if(pheader.p_type == PT_DYNAMIC) {
 			u32 strtblSize,i;
 			/* TODO we don't have to read them from file; if we load data and text first, we
@@ -383,7 +412,7 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 			dst->strtbl = (char*)malloc(strtblSize);
 			if(!dst->strtbl)
 				error("Not enough mem!");
-			load_read(binFd,load_getDyn(dst->dyn,DT_STRTAB),dst->strtbl,strtblSize);
+			load_read(binFd,load_getDyn(dst->dyn,DT_STRTAB) + textOffset,dst->strtbl,strtblSize);
 
 			for(i = 0; i < (pheader.p_filesz / sizeof(Elf32_Dyn)); i++) {
 				if(dst->dyn[i].d_tag == DT_NEEDED) {

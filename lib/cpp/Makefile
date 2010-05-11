@@ -8,7 +8,7 @@ BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 DYNLIBNAME = libcpp.so
 DYNLIB = $(BUILD)/$(DYNLIBNAME)
-SHLDCONF = shld.conf
+SHLDCONF = ../shld.conf
 
 CC = g++
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CPPDEFFLAGS) -Iinclude -I$(LIBDIR)/h \

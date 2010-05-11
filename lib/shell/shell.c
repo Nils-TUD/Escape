@@ -75,7 +75,6 @@ static void shell_sigIntrpt(tSig sig,u32 data) {
 	lang_setInterrupted();
 	/* ensure that we start a new readline */
 	resetReadLine = true;
-	printf("\n");
 }
 
 s32 shell_executeCmd(char *line,bool isFile) {
@@ -116,6 +115,15 @@ u32 shell_readLine(char *buffer,u32 max) {
 		char c;
 		s32 cmd,n1,n2,n3;
 		c = getchar();
+		/* maybe we've received a ^C. if so do a reset */
+		if(resetReadLine) {
+			i = 0;
+			cursorPos = 0;
+			resetReadLine = false;
+			printf("\n");
+			shell_prompt();
+			continue;
+		}
 		if(c != '\033')
 			continue;
 		cmd = freadesc(stdin,&n1,&n2,&n3);
@@ -123,12 +131,6 @@ u32 shell_readLine(char *buffer,u32 max) {
 		if(cmd != ESCC_KEYCODE)
 			continue;
 
-		/* maybe we've received a ^C. if so do a reset */
-		if(resetReadLine) {
-			i = 0;
-			cursorPos = 0;
-			resetReadLine = false;
-		}
 
 		if(n3 != 0 || (n1 != '\t' && n1 != '\n' && !isprint(n1))) {
 			if(shell_handleSpecialKey(buffer,n2,n3,&cursorPos,&i) || !isprint(n1))

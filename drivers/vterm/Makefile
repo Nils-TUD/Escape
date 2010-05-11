@@ -1,5 +1,9 @@
 NAME=vterm
-ADDLIBS = $(BUILD)/user_libs_vterm.a
-ADDFLAGS = -I../../user/libs
+ifeq ($(LINKTYPE),static)
+	ADDLIBS += $(BUILD)/libvterm.a
+	ADDFLAGS = -I../../lib
+else
+	ADDFLAGS = -I../../lib -lvterm
+endif
 
 -include ../ShlibMakefile.mk

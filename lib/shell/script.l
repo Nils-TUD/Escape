@@ -7,6 +7,8 @@
 	#include "parser.h"
 	#include "lang.h"
 	#include "shell.h"
+	
+	int openBrk = 0;
 %}
 
 %{
@@ -20,16 +22,17 @@
 %s COMMENT
 %s CMDEXPR
 %s DCONSTSTR
+%s EXPR
 
 %%
 
 <INITIAL>"#" {
 	lang_beginToken(yytext);
-	BEGIN(COMMENT);
+	yy_push_state(COMMENT);
 }
 <COMMENT>\n {
 	lang_beginToken(yytext);
-	BEGIN(INITIAL);
+	yy_pop_state();
 }
 <COMMENT>. {
 	lang_beginToken(yytext);
@@ -67,6 +70,17 @@
 <INITIAL>"while" {
 	lang_beginToken(yytext);
 	return T_WHILE;
+}
+
+<INITIAL,EXPR>"(" {
+	lang_beginToken(yytext);
+	if(openBrk++ == 0)
+		yy_push_state(EXPR);
+}
+<EXPR>")" {
+	lang_beginToken(yytext);
+	if(--openBrk == 0)
+		yy_pop_state();
 }
 
 <INITIAL,CMDEXPR>[0-9]+ {

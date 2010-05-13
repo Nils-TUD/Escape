@@ -37,8 +37,7 @@ sValue *ast_execVarExpr(sEnv *e,sVarExpr *n) {
 	/* we have to clone it because the user of this method may destroy it if its no longer needed */
 	if(v)
 		return val_clone(v);
-	/* TODO what to do with undefined variables? */
-	return NULL;
+	return val_createInt(0);
 }
 
 void ast_printVarExpr(sVarExpr *s,u32 layer) {

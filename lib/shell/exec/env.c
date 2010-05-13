@@ -66,13 +66,13 @@ sValue *env_get(sEnv *env,const char *name) {
 		return env_get(env->parent,name);
 	if(v)
 		return v->val;
-	return val_createInt(0);
+	return NULL;
 }
 
 sValue *env_set(sEnv *env,const char *name,sValue *val) {
 	sVar *v = env_getByName(env,name);
 	if(v) {
-		efree(v->val);
+		val_destroy(v->val);
 		v->val = val;
 	}
 	else {

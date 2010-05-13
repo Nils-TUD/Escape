@@ -26,7 +26,7 @@
 s32 shell_cmdEcho(u32 argc,char *argv[]) {
 	u32 i = 1;
 	bool nl = true;
-	if(strcmp(argv[i],"-n") == 0) {
+	if(argc > 1 && strcmp(argv[i],"-n") == 0) {
 		nl = false;
 		i++;
 	}

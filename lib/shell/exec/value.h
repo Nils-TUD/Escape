@@ -25,10 +25,11 @@
 #include <assert.h>
 #include "../lang.h"
 
-#define TYPE_INT	0
-#define TYPE_STR	1
-#define TYPE_FUNC	2
+#define VAL_TYPE_INT	0
+#define VAL_TYPE_STR	1
+#define VAL_TYPE_FUNC	2
 
+/* a value */
 typedef struct {
 	u8 type;
 	union {
@@ -38,26 +39,91 @@ typedef struct {
 	} v;
 } sValue;
 
+/**
+ * Creates an integer
+ *
+ * @param i the value
+ * @return the instance
+ */
 sValue *val_createInt(tIntType i);
 
+/**
+ * Creates a string
+ *
+ * @param s the string (will be copied)
+ * @return the instance
+ */
 sValue *val_createStr(const char *s);
 
+/**
+ * Creates a function
+ *
+ * @param n the sFunctionStmt-pointer
+ * @return the instance
+ */
 sValue *val_createFunc(void *n);
 
+/**
+ * Clones the given value
+ *
+ * @param v the value
+ * @return the clone
+ */
 sValue *val_clone(sValue *v);
 
+/**
+ * Destroys the given value
+ *
+ * @param v the value
+ */
 void val_destroy(sValue *v);
 
+/**
+ * Tests wether the value is true (!= 0 or none-empty string, not allowed for functions)
+ *
+ * @param v the value
+ * @return true or false
+ */
 bool val_isTrue(sValue *v);
 
+/**
+ * Compares the two values with given compare-operator (not allowed for functions)
+ *
+ * @param v1 the first value
+ * @param v2 the second value
+ * @param op the compare-op (CMP_OP_*)
+ * @return the compare-result
+ */
 sValue *val_cmp(sValue *v1,sValue *v2,u8 op);
 
+/**
+ * Sets <var> to the value of <val>
+ *
+ * @param var the value to change
+ * @param val the value to set
+ */
 void val_set(sValue *var,sValue *val);
 
+/**
+ * @param v the value
+ * @return the sFunctionStmt-pointer of the given value. Just allowed for functions
+ */
 void *val_getFunc(sValue *v);
 
+/**
+ * Returns the integer-representation of the given value (will be converted, if necessary)
+ *
+ * @param v the value
+ * @return the integer
+ */
 tIntType val_getInt(sValue *v);
 
+/**
+ * Returns the string-representation of the given value (will be converted, if necessary)
+ *
+ * @param v the value
+ * @return the string; you have to free the string!
+ */
 char *val_getStr(sValue *v);
 
 #endif /* VALUE_H_ */

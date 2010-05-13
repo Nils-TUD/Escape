@@ -31,6 +31,7 @@
 #include "../exec/env.h"
 #include "../ast/redirfile.h"
 #include "../ast/redirfd.h"
+#include "../ast/functionstmt.h"
 #include "node.h"
 #include "subcmd.h"
 #include "command.h"
@@ -121,7 +122,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 		}
 
 		/* get the command */
-		shcmd = compl_get(cmd->exprs[0],strlen(cmd->exprs[0]),2,true,true);
+		shcmd = compl_get(e,cmd->exprs[0],strlen(cmd->exprs[0]),2,true,true);
 
 		/* we need exactly one match and it has to be executable */
 		if(shcmd == NULL || shcmd[0] == NULL || shcmd[1] != NULL ||
@@ -169,7 +170,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 		}
 
 		/* execute command */
-		if(shcmd[0]->type == TYPE_BUILTIN) {
+		if(shcmd[0]->type == TYPE_BUILTIN || shcmd[0]->type == TYPE_FUNCTION) {
 			/* redirect fds and make a copy of stdin and stdout because we want to keep them :) */
 			/* (no fork here) */
 			pid = 0;
@@ -195,7 +196,16 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				redirFd(STDERR_FILENO,errFd);
 			}
 
-			res = shcmd[0]->func(cmd->exprCount,cmd->exprs);
+			/* execute it */
+			if(shcmd[0]->type == TYPE_BUILTIN)
+				res = shcmd[0]->func(cmd->exprCount,cmd->exprs);
+			else {
+				sValue *func = env_get(e,shcmd[0]->name);
+				assert(func);
+				sFunctionStmt *stmt = (sFunctionStmt*)val_getFunc(func);
+				res = ast_callFunction(stmt);
+			}
+
 			/* flush stdout just to be sure */
 			fflush(stdout);
 

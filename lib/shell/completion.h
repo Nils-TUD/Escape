@@ -26,6 +26,8 @@
 #define TYPE_BUILTIN		0
 #define TYPE_EXTERN			1
 #define TYPE_PATH			2
+#define TYPE_FUNCTION		3
+#define TYPE_VARIABLE		4
 
 #define APPS_DIR			"/bin/"
 
@@ -46,13 +48,14 @@ extern "C" {
 /**
  * Determines all matches for the given line
  *
+ * @param e the environment
  * @param line the line
  * @param length the current cursorpos
  * @param max the maximum number of matches to collect
  * @param searchCmd whether you're looking for a command to execute
  * @return the matches or NULL if failed
  */
-sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPath);
+sShellCmd **compl_get(sEnv *e,char *str,u32 length,u32 max,bool searchCmd,bool searchPath);
 
 /**
  * Free's the given matches

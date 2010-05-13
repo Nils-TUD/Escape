@@ -28,6 +28,8 @@
 #include "cmd/env.h"
 #include "cmd/pwd.h"
 #include "cmd/cd.h"
+#include "exec/env.h"
+#include "exec/value.h"
 
 #define MATCHES_ARRAY_INC	8
 
@@ -49,7 +51,7 @@ static sShellCmd commands[] = {
 	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"cd"	}, shell_cmdCd		,-1},
 };
 
-sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPath) {
+sShellCmd **compl_get(sEnv *e,char *str,u32 length,u32 max,bool searchCmd,bool searchPath) {
 	u32 arraySize,arrayPos;
 	u32 i,len,cmdlen,start,matchLen,pathLen;
 	tFD dd;
@@ -70,6 +72,8 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 
 	/* look in builtin commands */
 	if(searchPath) {
+		sSLList *vars;
+		sSLNode *n;
 		for(i = 0; (max == 0 || arrayPos < max) && i < ARRAY_SIZE(commands); i++) {
 			cmdlen = strlen(commands[i].name);
 			matchLen = searchCmd ? cmdlen : length;
@@ -81,6 +85,23 @@ sShellCmd **compl_get(char *str,u32 length,u32 max,bool searchCmd,bool searchPat
 				matches[arrayPos++] = commands + i;
 			}
 		}
+
+		/* look for matching variables */
+		vars = env_getMatching(e,str,length,searchCmd);
+		for(n = sll_begin(vars); n != NULL; n = n->next) {
+			const char *vname = (const char*)n->data;
+			cmd = (sShellCmd*)malloc(sizeof(sShellCmd));
+			cmd->func = NULL;
+			cmd->mode = MODE_TYPE_FILE | MODE_OTHER_EXEC;
+			strcpy(cmd->name,vname);
+			cmd->type = cmd->name[0] == '$' ? TYPE_VARIABLE : TYPE_FUNCTION;
+			cmd->complStart = -1;
+			matches = compl_incrArray(matches,arrayPos,&arraySize);
+			if(matches == NULL)
+				goto failed;
+			matches[arrayPos++] = cmd;
+		}
+		sll_destroy(vars,false);
 	}
 
 	/* calc the absolute path of the current line and search for matching entries in it */

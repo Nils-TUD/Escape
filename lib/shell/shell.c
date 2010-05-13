@@ -55,7 +55,7 @@ sEnv *curEnv = NULL;
 
 void shell_init(void) {
 	run_init();
-	curEnv = env_create();
+	curEnv = env_create(NULL);
 	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT);
 }
@@ -427,7 +427,7 @@ void shell_complete(char *line,u32 *cursorPos,u32 *length) {
 
 		/* get matches for last token */
 		partLen = strlen(part);
-		matches = compl_get(part,partLen,0,false,searchPath);
+		matches = compl_get(curEnv,part,partLen,0,false,searchPath);
 		if(matches == NULL || matches[0] == NULL) {
 			/* beep because we have found no match */
 			putchar('\a');

@@ -22,34 +22,51 @@
 #include "value.h"
 #include "../mem.h"
 #include "../ast/cmpexpr.h"
+#include "../ast/functionstmt.h"
 
 sValue *val_createInt(tIntType i) {
 	sValue *res = (sValue*)emalloc(sizeof(sValue));
 	res->type = TYPE_INT;
-	res->intval = i;
-	res->strval = NULL;
+	res->v.intval = i;
 	return res;
 }
 
 sValue *val_createStr(const char *s) {
 	sValue *res = (sValue*)emalloc(sizeof(sValue));
 	res->type = TYPE_STR;
-	res->intval = 0;
-	res->strval = estrdup(s);
+	res->v.strval = estrdup(s);
+	return res;
+}
+
+sValue *val_createFunc(void *func) {
+	sValue *res = (sValue*)emalloc(sizeof(sValue));
+	res->type = TYPE_FUNC;
+	res->v.func = func;
 	return res;
 }
 
 sValue *val_clone(sValue *v) {
 	sValue *res = (sValue*)emalloc(sizeof(sValue));
 	res->type = v->type;
-	res->intval = v->intval;
-	res->strval = v->type == TYPE_STR ? estrdup(v->strval) : NULL;
+	switch(v->type) {
+		case TYPE_INT:
+			res->v.intval = v->v.intval;
+			break;
+		case TYPE_STR:
+			res->v.strval = estrdup(v->v.strval);
+			break;
+		case TYPE_FUNC:
+			res->v.func = v->v.func;
+			break;
+	}
 	return res;
 }
 
 void val_destroy(sValue *v) {
-	if(v && v->type == TYPE_STR)
-		efree(v->strval);
+	if(v && v->type == TYPE_FUNC)
+		ast_killFunctionStmt((sFunctionStmt*)v->v.func);
+	else if(v && v->type == TYPE_STR)
+		efree(v->v.strval);
 	efree(v);
 }
 
@@ -65,6 +82,7 @@ bool val_isTrue(sValue *v) {
 		}
 	}
 	/* never reached */
+	assert(false);
 	return false;
 }
 
@@ -74,6 +92,7 @@ sValue *val_cmp(sValue *v1,sValue *v2,u8 op) {
 	u8 t2 = v2->type;
 	tIntType diff;
 	bool res = false;
+	assert(t1 != TYPE_FUNC && t2 != TYPE_FUNC);
 	/* first compute the difference; compare strings if both are strings
 	 * compare integers otherwise and convert the values to integers if necessary */
 	if(t1 == TYPE_STR && t2 == TYPE_STR) {
@@ -118,26 +137,38 @@ sValue *val_cmp(sValue *v1,sValue *v2,u8 op) {
 }
 
 void val_set(sValue *var,sValue *val) {
-	var->intval = 0;
-	efree(var->strval);
+	assert(val->type != TYPE_FUNC);
+	efree(var->v.strval);
 	switch(val->type) {
 		case TYPE_INT:
-			var->intval = val_getInt(val);
+			var->v.intval = val_getInt(val);
 			break;
 		case TYPE_STR:
-			var->strval = val_getStr(val);
+			var->v.strval = val_getStr(val);
 			break;
 	}
+}
+
+void *val_getFunc(sValue *v) {
+	switch(v->type) {
+		case TYPE_FUNC:
+			return v->v.func;
+	}
+	assert(false);
+	return NULL;
 }
 
 tIntType val_getInt(sValue *v) {
 	switch(v->type) {
 		case TYPE_INT:
-			return v->intval;
+			return v->v.intval;
+		case TYPE_FUNC:
+			return 0;
 		case TYPE_STR:
-			return atoi(v->strval);
+			return atoi(v->v.strval);
 	}
 	/* never reached */
+	assert(false);
 	return 0;
 }
 
@@ -145,12 +176,15 @@ char *val_getStr(sValue *v) {
 	switch(v->type) {
 		case TYPE_INT: {
 			char *s = (char*)emalloc(12);
-			itoa(s,12,v->intval);
+			itoa(s,12,v->v.intval);
 			return s;
 		}
+		case TYPE_FUNC:
+			return estrdup("<FUNC>");
 		case TYPE_STR:
-			return estrdup(v->strval);
+			return estrdup(v->v.strval);
 	}
 	/* never reached */
+	assert(false);
 	return NULL;
 }

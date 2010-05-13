@@ -56,6 +56,7 @@
 	#include "ast/exprstmt.h"
 	#include "ast/dstrexpr.h"
 	#include "ast/whilestmt.h"
+	#include "ast/functionstmt.h"
 	#include "exec/env.h"
 	#include "mem.h"
 	#include "shell.h"
@@ -63,7 +64,7 @@
 
 
 /* Line 1676 of yacc.c  */
-#line 67 "parser.h"
+#line 68 "parser.h"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -79,29 +80,32 @@
      T_DO = 263,
      T_DONE = 264,
      T_WHILE = 265,
-     T_NUMBER = 266,
-     T_STRING = 267,
-     T_STRING_SCONST = 268,
-     T_VAR = 269,
-     T_ERR2OUT = 270,
-     T_OUT2ERR = 271,
-     T_APPEND = 272,
-     T_ERR2FILE = 273,
-     T_OUT2FILE = 274,
-     T_ASSIGN = 275,
-     T_NEQ = 276,
-     T_EQ = 277,
-     T_GEQ = 278,
-     T_LEQ = 279,
-     T_SUB = 280,
-     T_ADD = 281,
-     T_MOD = 282,
-     T_DIV = 283,
-     T_MUL = 284,
-     T_NEG = 285,
-     T_DEC = 286,
-     T_INC = 287,
-     T_POW = 288
+     T_FUNCTION = 266,
+     T_BEGIN = 267,
+     T_END = 268,
+     T_NUMBER = 269,
+     T_STRING = 270,
+     T_STRING_SCONST = 271,
+     T_VAR = 272,
+     T_ERR2OUT = 273,
+     T_OUT2ERR = 274,
+     T_APPEND = 275,
+     T_ERR2FILE = 276,
+     T_OUT2FILE = 277,
+     T_ASSIGN = 278,
+     T_NEQ = 279,
+     T_EQ = 280,
+     T_GEQ = 281,
+     T_LEQ = 282,
+     T_SUB = 283,
+     T_ADD = 284,
+     T_MOD = 285,
+     T_DIV = 286,
+     T_MUL = 287,
+     T_NEG = 288,
+     T_DEC = 289,
+     T_INC = 290,
+     T_POW = 291
    };
 #endif
 
@@ -112,7 +116,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 32 "script.y"
+#line 33 "script.y"
 
 	int intval;
 	char *strval;
@@ -121,7 +125,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 125 "parser.h"
+#line 129 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

@@ -35,9 +35,11 @@ typedef struct {
 	sValue *val;
 } sVar;
 
-sEnv *env_create(void);
+sEnv *env_create(sEnv *parent);
 
 void env_print(sEnv *env);
+
+sSLList *env_getMatching(sEnv *env,const char *name,u32 length,bool searchCmd);
 
 sValue *env_get(sEnv *env,const char *name);
 

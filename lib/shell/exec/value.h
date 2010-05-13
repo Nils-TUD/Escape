@@ -27,16 +27,22 @@
 
 #define TYPE_INT	0
 #define TYPE_STR	1
+#define TYPE_FUNC	2
 
 typedef struct {
 	u8 type;
-	tIntType intval;
-	char *strval;
+	union {
+		tIntType intval;
+		char *strval;
+		void *func;
+	} v;
 } sValue;
 
 sValue *val_createInt(tIntType i);
 
 sValue *val_createStr(const char *s);
+
+sValue *val_createFunc(void *n);
 
 sValue *val_clone(sValue *v);
 
@@ -47,6 +53,8 @@ bool val_isTrue(sValue *v);
 sValue *val_cmp(sValue *v1,sValue *v2,u8 op);
 
 void val_set(sValue *var,sValue *val);
+
+void *val_getFunc(sValue *v);
 
 tIntType val_getInt(sValue *v);
 

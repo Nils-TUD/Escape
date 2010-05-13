@@ -43,7 +43,7 @@ sValue *ast_execVarExpr(sEnv *e,sVarExpr *n) {
 
 void ast_printVarExpr(sVarExpr *s,u32 layer) {
 	UNUSED(layer);
-	printf("$%s",s->name);
+	printf("%s",s->name);
 }
 
 void ast_destroyVarExpr(sVarExpr *n) {

@@ -25,6 +25,7 @@
 	#include "ast/exprstmt.h"
 	#include "ast/dstrexpr.h"
 	#include "ast/whilestmt.h"
+	#include "ast/functionstmt.h"
 	#include "exec/env.h"
 	#include "mem.h"
 	#include "shell.h"
@@ -43,6 +44,9 @@
 %token T_DO
 %token T_DONE
 %token T_WHILE
+%token T_FUNCTION
+%token T_BEGIN
+%token T_END
 
 %token <intval> T_NUMBER
 %token <strval> T_STRING
@@ -74,6 +78,7 @@
 start:
 			stmtlist {
 				ast_execute(curEnv,$1);
+				env_print(curEnv);
 				ast_destroy($1);
 			}
 ;
@@ -90,7 +95,10 @@ stmtlistr:
 ;
 
 stmt:
-			T_IF '(' expr ')' T_THEN stmtlist T_FI {
+			T_FUNCTION T_STRING T_BEGIN stmtlist T_END {
+				$$ = ast_createFunctionStmt($2,$4);
+			}
+			| T_IF '(' expr ')' T_THEN stmtlist T_FI {
 				$$ = ast_createIfStmt($3,$6,NULL);
 			}
 			| T_IF '(' expr ')' T_THEN stmtlist T_ELSE stmtlist T_FI {

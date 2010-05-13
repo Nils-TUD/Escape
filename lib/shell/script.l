@@ -72,6 +72,18 @@
 	lang_beginToken(yytext);
 	return T_WHILE;
 }
+<INITIAL>"function" {
+	lang_beginToken(yytext);
+	return T_FUNCTION;
+}
+<INITIAL>"begin" {
+	lang_beginToken(yytext);
+	return T_BEGIN;
+}
+<INITIAL>"end" {
+	lang_beginToken(yytext);
+	return T_END;
+}
 
  /* "( ... )" puts an expression in a command or elsewhere. that means we can do something like
   * "echo (4 * 2^10)". it also means that we can use *,+,/,... in commands with no problems since
@@ -100,7 +112,7 @@
 }
 <INITIAL,EXPR,ASSIGNEXPR,DCONSTSTR>\$[a-zA-Z_0-9]+ {
 	lang_beginToken(yytext);
-	yylval.strval = strdup(yytext + 1);
+	yylval.strval = strdup(yytext);
 	return T_VAR;
 }
 <INITIAL,EXPR,ASSIGNEXPR>'[^']*' {

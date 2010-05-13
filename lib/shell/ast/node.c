@@ -37,6 +37,7 @@
 #include "exprstmt.h"
 #include "dstrexpr.h"
 #include "whilestmt.h"
+#include "functionstmt.h"
 #include "../mem.h"
 
 void ast_printTree(sASTNode *n,u32 layer) {
@@ -95,6 +96,9 @@ void ast_printTree(sASTNode *n,u32 layer) {
 		case AST_WHILE_STMT:
 			ast_printWhileStmt((sWhileStmt*)n->data,layer);
 			break;
+		case AST_FUNC_STMT:
+			ast_printFunctionStmt((sFunctionStmt*)n->data,layer);
+			break;
 	}
 }
 
@@ -132,6 +136,8 @@ sValue *ast_execute(sEnv *e,sASTNode *n) {
 			return ast_execDStrExpr(e,(sDStrExpr*)n->data);
 		case AST_WHILE_STMT:
 			return ast_execWhileStmt(e,(sWhileStmt*)n->data);
+		case AST_FUNC_STMT:
+			return ast_execFunctionStmt(e,(sFunctionStmt*)n->data);
 	}
 	/* never reached */
 	return NULL;
@@ -194,6 +200,9 @@ void ast_destroy(sASTNode *n) {
 			break;
 		case AST_WHILE_STMT:
 			ast_destroyWhileStmt((sWhileStmt*)n->data);
+			break;
+		case AST_FUNC_STMT:
+			ast_destroyFunctionStmt((sFunctionStmt*)n->data);
 			break;
 	}
 	efree(n->data);

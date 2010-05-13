@@ -43,6 +43,7 @@
 #define AST_EXPR_STMT			16
 #define AST_DSTR_EXPR			17
 #define AST_WHILE_STMT			18
+#define AST_FUNC_STMT			19
 
 typedef u8 tASTType;
 

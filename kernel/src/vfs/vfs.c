@@ -310,8 +310,17 @@ bool vfs_eof(tTid tid,tFileNo file) {
 		/* we've read all from a pipe if there is one zero-length-entry left */
 		else if(IS_PIPE(n->mode))
 			eof = sll_length(n->data.pipe.list) == 1 && n->data.pipe.total == 0;
-		else
-			eof = e->position >= n->data.def.pos;
+		else {
+			/* -1 means the content is generated */
+			if((s32)n->data.def.pos == -1) {
+				/* TODO this is not a really good way since it means that we may have to generate
+				 * the whole content on every eof()-call */
+				u8 tmp[1];
+				eof = n->readHandler(tid,file,n,tmp,e->position,1) < 1;
+			}
+			else
+				eof = e->position >= n->data.def.pos;
+		}
 	}
 	else {
 		sFileInfo info;
@@ -964,17 +973,17 @@ sVFSNode *vfs_createProcess(tPid pid,fRead handler) {
 		goto errorName;
 
 	/* create process-info-node */
-	n = vfsn_createFile(KERNEL_TID,dir,(char*)"info",handler,NULL);
+	n = vfsn_createFile(KERNEL_TID,dir,(char*)"info",handler,NULL,true);
 	if(n == NULL)
 		goto errorDir;
 
 	/* create virt-mem-info-node */
-	n = vfsn_createFile(KERNEL_TID,dir,(char*)"virtmem",vfsinfo_virtMemReadHandler,NULL);
+	n = vfsn_createFile(KERNEL_TID,dir,(char*)"virtmem",vfsinfo_virtMemReadHandler,NULL,true);
 	if(n == NULL)
 		goto errorDir;
 
 	/* create regions-info-node */
-	n = vfsn_createFile(KERNEL_TID,dir,(char*)"regions",vfsinfo_regionsReadHandler,NULL);
+	n = vfsn_createFile(KERNEL_TID,dir,(char*)"regions",vfsinfo_regionsReadHandler,NULL,true);
 	if(n == NULL)
 		goto errorDir;
 
@@ -1015,12 +1024,12 @@ bool vfs_createThread(tTid tid) {
 		goto errorDir;
 
 	/* create info-node */
-	n = vfsn_createFile(KERNEL_TID,dir,(char*)"info",vfsinfo_threadReadHandler,NULL);
+	n = vfsn_createFile(KERNEL_TID,dir,(char*)"info",vfsinfo_threadReadHandler,NULL,true);
 	if(n == NULL)
 		goto errorInfo;
 
 	/* create trace-node */
-	n = vfsn_createFile(KERNEL_TID,dir,(char*)"trace",vfsinfo_traceReadHandler,NULL);
+	n = vfsn_createFile(KERNEL_TID,dir,(char*)"trace",vfsinfo_traceReadHandler,NULL,true);
 	if(n == NULL)
 		goto errorInfo;
 	return true;

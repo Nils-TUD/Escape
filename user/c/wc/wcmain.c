@@ -85,7 +85,7 @@ int main(int argc,const char *argv[]) {
 				}
 			}
 			CATCH(IOException,e) {
-				cerr->writef(cerr,"Unable to read '%s'\n",arg);
+				cerr->writef(cerr,"Unable to read '%s': %s\n",arg,e->toString(e));
 			}
 			ENDCATCH
 			if(in)

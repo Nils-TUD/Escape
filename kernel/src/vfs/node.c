@@ -249,7 +249,7 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 				return ERR_NOT_ENOUGH_MEM;
 			memcpy(nameCpy,path,nameLen + 1);
 			/* now create the node and pass the node-number back */
-			if((child = vfsn_createFile(t->tid,dir,nameCpy,vfsrw_readDef,vfsrw_writeDef)) == NULL) {
+			if((child = vfsn_createFile(t->tid,dir,nameCpy,vfsrw_readDef,vfsrw_writeDef,false)) == NULL) {
 				kheap_free(nameCpy);
 				return ERR_NOT_ENOUGH_MEM;
 			}
@@ -406,7 +406,8 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name) {
 	return node;
 }
 
-sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler) {
+sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler,
+		bool generated) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
@@ -418,6 +419,8 @@ sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,f
 		| MODE_OTHER_WRITE;
 	node->readHandler = rwHandler;
 	node->writeHandler = wrHandler;
+	if(generated)
+		node->data.def.pos = -1;
 	return node;
 }
 

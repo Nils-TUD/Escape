@@ -194,9 +194,11 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name);
  * @param name the node-name
  * @param rwHandler the read-handler
  * @param wrHandler the write-handler
+ * @param generated wether the content is generated and therefore the size is not available
  * @return the node
  */
-sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler);
+sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler,
+		bool generated);
 
 /**
  * Creates a driver-node

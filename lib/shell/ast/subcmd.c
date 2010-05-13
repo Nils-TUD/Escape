@@ -31,9 +31,13 @@
  */
 static bool ast_expandable(sASTNode *node);
 /**
+ * Copies <str> to <path> + <pos> and ensures that max. MAX_PATH_LEN chars are copied into <path>.
+ */
+static void ast_appendToPath(char *path,u32 pos,const char *str);
+/**
  * Adds all pathnames that match <str> to <buf> beginning at <i> and increments <i> correspondingly
  */
-static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,const char *str);
+static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char *str);
 
 sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redirFd,sASTNode *redirIn,sASTNode *redirOut) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
@@ -71,7 +75,10 @@ sValue *ast_execSubCmd(sEnv *e,sSubCmd *n) {
 			res->exprs[i++] = str;
 		}
 		else {
-			res->exprs = ast_expandPathname(res->exprs,&exprSize,&i,str);
+			char *path = (char*)emalloc(MAX_PATH_LEN + 1);
+			*path = '\0';
+			res->exprs = ast_expandPathname(res->exprs,&exprSize,&i,path,str);
+			efree(path);
 			efree(str);
 		}
 		val_destroy(v);
@@ -93,29 +100,117 @@ static bool ast_expandable(sASTNode *node) {
 	return node->type == AST_VAR_EXPR;
 }
 
-static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,const char *str) {
-	sShellCmd **cmds = compl_get((char*)"",0,0,false,false);
-	sShellCmd **cmd;
-	cmd = cmds;
-	while(*cmd != NULL) {
-		if(strmatch(str,(*cmd)->name)) {
-			u32 namelen = strlen((*cmd)->name);
-			char *dup = (char*)emalloc(namelen + 2);
-			strcpy(dup,(*cmd)->name);
-			if(MODE_IS_DIR((*cmd)->mode)) {
-				dup[namelen] = '/';
-				dup[namelen + 1] = '\0';
+static void ast_appendToPath(char *path,u32 pos,const char *str) {
+	u32 amount = MIN(MAX_PATH_LEN - pos,strlen(str));
+	strncpy(path + pos,str,amount);
+	path[pos + amount] = '\0';
+}
+
+static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char *str) {
+	bool hasStar,wasNull = false;
+	u32 ipathlen = strlen(path);
+	/* the basic idea is to split the pattern by '/' and append the names together until we find
+	 * a '*' or are at the end. then we collect the matching items and for each item we do it
+	 * recursively again if its a directory and the pattern has something left. */
+	char *last = str;
+	char *tok = strpbrk(str,"/");
+	while(!wasNull) {
+		sShellCmd **cmds,**cmd;
+		if(tok)
+			*tok = '\0';
+
+		/* last one? */
+		wasNull = tok == NULL || tok[1] == '\0';
+		/* has it a star in it or is it the last one? in this case we have to collect
+		 * the matching items */
+		if((hasStar = strchr(last,'*') != NULL) || wasNull) {
+			/* determine path and search-pattern */
+			char *search,*pos;
+			if((pos = strrchr(last,'/')) != NULL) {
+				u32 x = 0;
+				*pos = '\0';
+				if(*path) {
+					ast_appendToPath(path,ipathlen,"/");
+					x++;
+				}
+				ast_appendToPath(path,ipathlen + x,last);
+				search = pos + 1;
 			}
-			if(*i >= *bufSize - 1) {
-				*bufSize *= 2;
-				buf = erealloc(buf,*bufSize * sizeof(char*));
+			else {
+				path[ipathlen] = '\0';
+				search = last;
 			}
-			buf[*i] = dup;
-			(*i)++;
+			/* get all files in that directory */
+			cmds = compl_get(path,0,0,false,false);
+			cmd = cmds;
+			while(*cmd != NULL) {
+				if(strmatch(search,(*cmd)->name)) {
+					u32 pathlen = strlen(path);
+					if(!wasNull) {
+						if(MODE_IS_DIR((*cmd)->mode)) {
+							/* we need the full pattern for recursion */
+							*tok = '/';
+							if(pos)
+								*pos = '/';
+							/* append dirname */
+							path[pathlen] = '/';
+							ast_appendToPath(path,pathlen + 1,(*cmd)->name);
+							buf = ast_expandPathname(buf,bufSize,i,path,tok + 1);
+							/* path may have been extended */
+							path[pathlen] = '\0';
+							/* restore pattern */
+							*tok = '\0';
+							if(pos)
+								*pos = '\0';
+						}
+					}
+					else {
+						/* copy path and filename into a new string */
+						u32 namelen = strlen((*cmd)->name);
+						u32 totallen = (pathlen ? pathlen + 1 : 0) + namelen + 1;
+						char *dup = (char*)emalloc(totallen + 1);
+						if(pathlen) {
+							strcpy(dup,path);
+							dup[pathlen] = '/';
+							strcpy(dup + pathlen + 1,(*cmd)->name);
+						}
+						else
+							strcpy(dup,(*cmd)->name);
+						/* append '/' for dirs */
+						if(MODE_IS_DIR((*cmd)->mode)) {
+							dup[totallen - 1] = '/';
+							dup[totallen] = '\0';
+						}
+						/* increase array? */
+						if(*i >= *bufSize - 1) {
+							*bufSize *= 2;
+							buf = erealloc(buf,*bufSize * sizeof(char*));
+						}
+						buf[*i] = dup;
+						(*i)++;
+					}
+				}
+				cmd++;
+			}
+			/* restore pattern */
+			if(tok)
+				*tok = '/';
+			if(pos)
+				*pos = '/';
+			compl_free(cmds);
+			/* break here since just recursion would go "deeper" in the pattern */
+			break;
 		}
-		cmd++;
+
+		/* restore pattern and go to next if there is one */
+		if(tok)
+			*tok = '/';
+		if(!wasNull) {
+			if(hasStar)
+				last = tok + 1;
+			tok = strpbrk(tok + 1,"/");
+		}
 	}
-	compl_free(cmds);
 	return buf;
 }
 

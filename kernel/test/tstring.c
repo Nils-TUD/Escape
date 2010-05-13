@@ -322,6 +322,7 @@ static void test_strtok(void) {
 	char str4[] = "abcdef";
 	char str5[] = ",abc,def,";
 	char str6[] = "abc,def";
+	char str7[] = "?a???b,,,#c";
 	char *p;
 	test_caseStart("Testing strtok()");
 
@@ -366,6 +367,15 @@ static void test_strtok(void) {
 	if(!test_assertStr(p,"def")) return;
 	p = strtok(NULL," -,.");
 	if(!test_assertTrue(p == NULL)) return;
+
+	p = strtok(str7,"?");
+	if(!test_assertStr(p,"a")) return;
+	p = strtok(NULL,",");
+	if(!test_assertStr(p,"??b")) return;
+	p = strtok(NULL,"#,");
+	if(!test_assertStr(p,"c")) return;
+	p = strtok(NULL,"?");
+	if(!test_assertStr(p,NULL)) return;
 
 	test_caseSucceded();
 }

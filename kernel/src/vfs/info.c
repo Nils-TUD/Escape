@@ -104,9 +104,12 @@ void vfsinfo_init(void) {
 	vfsn_resolvePath("/system",&nodeNo,NULL,VFS_NOACCESS);
 	sysNode = vfsn_getNode(nodeNo);
 
-	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"memusage",vfsinfo_memUsageReadHandler,NULL) != NULL);
-	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"cpu",vfsinfo_cpuReadHandler,NULL) != NULL);
-	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"stats",vfsinfo_statsReadHandler,NULL) != NULL);
+	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"memusage",
+			vfsinfo_memUsageReadHandler,NULL,true) != NULL);
+	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"cpu",
+			vfsinfo_cpuReadHandler,NULL,true) != NULL);
+	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"stats",
+			vfsinfo_statsReadHandler,NULL,true) != NULL);
 }
 
 s32 vfsinfo_traceReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
@@ -125,18 +128,18 @@ static void vfsinfo_traceReadCallback(sVFSNode *node,u32 *dataSize,void **buffer
 	buf.len = 0;
 	prf_sprintf(&buf,"Kernel:\n");
 	call = util_getKernelStackTraceOf(t);
-	while(call->addr != 0) {
+	while(call && call->addr != 0) {
 		prf_sprintf(&buf,"\t%#08x -> %#08x (%s)\n",(call + 1)->addr,call->funcAddr,call->funcName);
 		call++;
 	}
 	prf_sprintf(&buf,"User:\n");
 	call = util_getUserStackTraceOf(t);
-	while(call->addr != 0) {
+	while(call && call->addr != 0) {
 		prf_sprintf(&buf,"\t%#08x -> %#08x\n",(call + 1)->addr,call->funcAddr);
 		call++;
 	}
 	*buffer = buf.str;
-	*dataSize = buf.len + 1;
+	*dataSize = buf.len;
 }
 
 s32 vfsinfo_procReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
@@ -153,7 +156,6 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 	sProc *p = proc_getByPid(atoi(node->parent->name));
 	sStringBuffer buf;
 	u32 paging,pages;
-	UNUSED(dataSize);
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = 17 * 7 + 6 * 10 + MAX_PROC_NAME_LEN + 1;
@@ -178,6 +180,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 		"SharedFrames:",p->sharedFrames,
 		"Swapped:",p->swapped
 	);
+	*dataSize = buf.len;
 }
 
 s32 vfsinfo_threadReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
@@ -190,7 +193,6 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffe
 	sThread *t = thread_getById(atoi(node->parent->name));
 	sStringBuffer buf;
 	u32 stackBegin = 0,stackEnd = 0;
-	UNUSED(dataSize);
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = 17 * 7 + 5 * 10 + 2 * 16 + 1;
@@ -216,6 +218,7 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffe
 		"UCPUCycles:",t->ucycleCount.val32.upper,t->ucycleCount.val32.lower,
 		"KCPUCycles:",t->kcycleCount.val32.upper,t->kcycleCount.val32.lower
 	);
+	*dataSize = buf.len;
 }
 
 static s32 vfsinfo_cpuReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,
@@ -233,7 +236,7 @@ static void vfsinfo_cpuReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) 
 	buf.len = 0;
 	cpu_sprintf(&buf);
 	*buffer = buf.str;
-	*dataSize = buf.len + 1;
+	*dataSize = buf.len;
 }
 
 static s32 vfsinfo_statsReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,
@@ -268,7 +271,7 @@ static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer
 		"UpTime:",timer_getIntrptCount() / TIMER_FREQUENCY
 	);
 	*buffer = buf.str;
-	*dataSize = buf.len + 1;
+	*dataSize = buf.len;
 }
 
 static s32 vfsinfo_memUsageReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,
@@ -283,7 +286,6 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buf
 	u32 free,total;
 	u32 paging,userTotal,ksize,msize,kheap,pmem,kptbls;
 	UNUSED(node);
-	UNUSED(dataSize);
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = (11 + 10 + 1) * 11 + 1;
@@ -325,6 +327,7 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buf
 		"KHeapSize:",kheap,
 		"KHeapUsage:",kheap_getUsedMem()
 	);
+	*dataSize = buf.len;
 }
 
 s32 vfsinfo_regionsReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
@@ -342,7 +345,7 @@ static void vfsinfo_regionsReadCallback(sVFSNode *node,u32 *dataSize,void **buff
 	p = proc_getByPid(atoi(node->parent->name));
 	vmm_sprintfRegions(&buf,p);
 	*buffer = buf.str;
-	*dataSize = buf.len + 1;
+	*dataSize = buf.len;
 }
 
 s32 vfsinfo_virtMemReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
@@ -360,7 +363,7 @@ static void vfsinfo_virtMemReadCallback(sVFSNode *node,u32 *dataSize,void **buff
 	p = proc_getByPid(atoi(node->parent->name));
 	paging_sprintfVirtMem(&buf,p->pagedir);
 	*buffer = buf.str;
-	*dataSize = buf.len + 1;
+	*dataSize = buf.len;
 }
 
 s32 vfsinfo_dirReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {

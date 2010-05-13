@@ -135,10 +135,12 @@ static s32 ofstream_writec(sOStream *s,char c) {
 	sOFStream *fs = (sOFStream*)s->_obj;
 	/* ignore '\0' here */
 	if(c) {
-		/* flush stderr on '\n' */
-		if(fs->pos >= fs->max || (s == cerr && c == '\n'))
+		if(fs->pos >= fs->max)
 			s->flush(s);
 		fs->buffer[fs->pos++] = c;
+		/* flush stderr on '\n' */
+		if(s == cerr && c == '\n')
+			s->flush(s);
 		return 1;
 	}
 	return 0;

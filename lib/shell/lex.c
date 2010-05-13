@@ -959,30 +959,32 @@ YY_RULE_SETUP
   * they have just special meanings inside the "(...)". this does also work for if/for/while etc.
   * since they require "(...)" for the "header" part. */
 /* therefore we simply count the brackets to know where we are */
+/* Note that we always push/pop the EXPR-state because we don't know at which count we would 
+  * really have to do that (we can have nested stuff like: echo (`foo (1+2)` + 2);) */
 case 15:
 YY_RULE_SETUP
-#line 94 "<stdin>"
+#line 96 "<stdin>"
 {
 	lang_beginToken(yytext);
-	if(openBrk++ == 0)
-		yy_push_state(EXPR);
+	openBrk++;
+	yy_push_state(EXPR);
 	return *yytext;
 }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 100 "<stdin>"
+#line 102 "<stdin>"
 {
 	lang_beginToken(yytext);
-	if(--openBrk == 0)
-		yy_pop_state();
+	openBrk--;
+	yy_pop_state();
 	return *yytext;
 }
 	YY_BREAK
 /* numbers, variables and single-quote strings */
 case 17:
 YY_RULE_SETUP
-#line 108 "<stdin>"
+#line 110 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yylval.intval = atoi(yytext);
@@ -991,7 +993,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 113 "<stdin>"
+#line 115 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
@@ -1001,7 +1003,7 @@ YY_RULE_SETUP
 case 19:
 /* rule 19 can match eol */
 YY_RULE_SETUP
-#line 118 "<stdin>"
+#line 120 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yylval.strval = strndup(yytext + 1,strlen(yytext) - 2);
@@ -1011,7 +1013,7 @@ YY_RULE_SETUP
 /* double-quote strings: we can use variables and expressions (in brackets) in them */
 case 20:
 YY_RULE_SETUP
-#line 125 "<stdin>"
+#line 127 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yy_push_state(DCONSTSTR);
@@ -1020,7 +1022,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 130 "<stdin>"
+#line 132 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yy_pop_state();
@@ -1030,7 +1032,7 @@ YY_RULE_SETUP
 case 22:
 /* rule 22 can match eol */
 YY_RULE_SETUP
-#line 135 "<stdin>"
+#line 137 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
@@ -1040,7 +1042,7 @@ YY_RULE_SETUP
 /* io-redirection */
 case 23:
 YY_RULE_SETUP
-#line 142 "<stdin>"
+#line 144 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_APPEND;
@@ -1048,7 +1050,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 146 "<stdin>"
+#line 148 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_ERR2OUT;
@@ -1056,7 +1058,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 150 "<stdin>"
+#line 152 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_OUT2ERR;
@@ -1064,7 +1066,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 154 "<stdin>"
+#line 156 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_ERR2FILE;
@@ -1072,7 +1074,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 158 "<stdin>"
+#line 160 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_OUT2FILE;
@@ -1081,7 +1083,7 @@ YY_RULE_SETUP
 /* comparation */
 case 28:
 YY_RULE_SETUP
-#line 164 "<stdin>"
+#line 166 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_LEQ;
@@ -1089,7 +1091,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 168 "<stdin>"
+#line 170 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_GEQ;
@@ -1097,7 +1099,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 172 "<stdin>"
+#line 174 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_EQ;
@@ -1105,7 +1107,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 176 "<stdin>"
+#line 178 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_NEQ;
@@ -1114,7 +1116,7 @@ YY_RULE_SETUP
 /* io-redirection / comparation */
 case 32:
 YY_RULE_SETUP
-#line 182 "<stdin>"
+#line 184 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return *yytext;
@@ -1123,7 +1125,7 @@ YY_RULE_SETUP
 /* arithmetic operators */
 case 33:
 YY_RULE_SETUP
-#line 188 "<stdin>"
+#line 190 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_ADD;
@@ -1131,7 +1133,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 192 "<stdin>"
+#line 194 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_SUB;
@@ -1139,7 +1141,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 196 "<stdin>"
+#line 198 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_MUL;
@@ -1147,7 +1149,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 200 "<stdin>"
+#line 202 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_DIV;
@@ -1155,7 +1157,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 204 "<stdin>"
+#line 206 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_MOD;
@@ -1163,7 +1165,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 208 "<stdin>"
+#line 210 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_POW;
@@ -1171,7 +1173,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 212 "<stdin>"
+#line 214 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_INC;
@@ -1179,7 +1181,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 216 "<stdin>"
+#line 218 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_DEC;
@@ -1193,7 +1195,7 @@ YY_RULE_SETUP
   * when we're in the INITIAL-state and openGraves is > 0. */
 case 41:
 YY_RULE_SETUP
-#line 227 "<stdin>"
+#line 229 "<stdin>"
 {
 	lang_beginToken(yytext);
 	if(openGraves > 0) {
@@ -1210,7 +1212,7 @@ YY_RULE_SETUP
 /* in an expression its always an opening ` */
 case 42:
 YY_RULE_SETUP
-#line 240 "<stdin>"
+#line 242 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yy_push_state(INITIAL);
@@ -1220,7 +1222,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 247 "<stdin>"
+#line 249 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return *yytext;
@@ -1228,7 +1230,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 251 "<stdin>"
+#line 253 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return *yytext;
@@ -1239,7 +1241,7 @@ YY_RULE_SETUP
   * differently). the end of it is a \n, ; or EOF. */
 case 45:
 YY_RULE_SETUP
-#line 259 "<stdin>"
+#line 261 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yy_push_state(ASSIGNEXPR);
@@ -1248,14 +1250,14 @@ YY_RULE_SETUP
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 264 "<stdin>"
+#line 266 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_ASSIGN;
 }
 	YY_BREAK
 case YY_STATE_EOF(ASSIGNEXPR):
-#line 268 "<stdin>"
+#line 270 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yy_pop_state();
@@ -1265,7 +1267,7 @@ case YY_STATE_EOF(ASSIGNEXPR):
 case 47:
 /* rule 47 can match eol */
 YY_RULE_SETUP
-#line 273 "<stdin>"
+#line 275 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yy_pop_state();
@@ -1275,7 +1277,7 @@ YY_RULE_SETUP
 /* whitespace */
 case 48:
 YY_RULE_SETUP
-#line 280 "<stdin>"
+#line 282 "<stdin>"
 {
 	/* eat up whitespace */
 	lang_beginToken(yytext);
@@ -1284,7 +1286,7 @@ YY_RULE_SETUP
 case 49:
 /* rule 49 can match eol */
 YY_RULE_SETUP
-#line 284 "<stdin>"
+#line 286 "<stdin>"
 {
 	/* eat up whitespace */
 	lang_beginToken(yytext);
@@ -1293,7 +1295,7 @@ YY_RULE_SETUP
 /* strings without quotes */
 case 50:
 YY_RULE_SETUP
-#line 290 "<stdin>"
+#line 292 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
@@ -1303,7 +1305,7 @@ YY_RULE_SETUP
 /* everything else is ignored */
 case 51:
 YY_RULE_SETUP
-#line 297 "<stdin>"
+#line 299 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yyerror("Unrecognized character %c",*yytext);
@@ -1311,10 +1313,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 301 "<stdin>"
+#line 303 "<stdin>"
 ECHO;
 	YY_BREAK
-#line 1318 "lex.c"
+#line 1320 "lex.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT):
 case YY_STATE_EOF(DCONSTSTR):
@@ -2360,4 +2362,4 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 301 "<stdin>"
+#line 303 "<stdin>"

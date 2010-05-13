@@ -1,3 +1,11 @@
+function fak begin
+	if ($1 <= 1) then
+		echo 1;
+	else
+		echo (`fak ($1 - 1)` * $1);
+	fi
+end;
+
 if ('a' == 'a') then
 	$a := 4;
 	$b := 5;

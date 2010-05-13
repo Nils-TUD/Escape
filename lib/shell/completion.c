@@ -28,6 +28,7 @@
 #include "cmd/env.h"
 #include "cmd/pwd.h"
 #include "cmd/cd.h"
+#include "cmd/include.h"
 #include "exec/env.h"
 #include "exec/value.h"
 
@@ -45,10 +46,11 @@ static sShellCmd **compl_incrArray(sShellCmd **array,u32 pos,u32 *size);
 
 /* our commands */
 static sShellCmd commands[] = {
-	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"echo"	}, shell_cmdEcho	,-1},
-	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"env"	}, shell_cmdEnv		,-1},
-	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"pwd"	}, shell_cmdPwd		,-1},
-	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"cd"	}, shell_cmdCd		,-1},
+	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"echo"		}, shell_cmdEcho	,-1},
+	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"env"		}, shell_cmdEnv		,-1},
+	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"pwd"		}, shell_cmdPwd		,-1},
+	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC),	{"cd"		}, shell_cmdCd		,-1},
+	{TYPE_BUILTIN,	(MODE_TYPE_FILE | MODE_OTHER_EXEC), {"include"	}, shell_cmdInclude	,-1},
 };
 
 sShellCmd **compl_get(sEnv *e,char *str,u32 length,u32 max,bool searchCmd,bool searchPath) {

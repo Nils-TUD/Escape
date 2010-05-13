@@ -55,6 +55,10 @@ static const char *echoCmd = "name: \"echo\""
 		"start: \"echo <string> ...\""
 		"type: \"user\""
 		"desc: \"Prints the given arguments\"";
+static const char *includeCmd = "name: \"include\""
+		"start: \"include <file>\""
+		"type: \"user\""
+		"desc: \"Executes the given file in the current shell\"";
 
 static u32 appCount = 0;
 static sApp *apps[MAX_APPS];
@@ -110,6 +114,7 @@ int main(int argc,char **argv) {
 			addApp(pwdCmd,app,listUser,listSys);
 			addApp(envCmd,app,listUser,listSys);
 			addApp(echoCmd,app,listUser,listSys);
+			addApp(includeCmd,app,listUser,listSys);
 		}
 
 		dirFd = opendir("/apps");

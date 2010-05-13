@@ -90,17 +90,19 @@
   * they have just special meanings inside the "(...)". this does also work for if/for/while etc.
   * since they require "(...)" for the "header" part. */
  /* therefore we simply count the brackets to know where we are */
+ /* Note that we always push/pop the EXPR-state because we don't know at which count we would 
+  * really have to do that (we can have nested stuff like: echo (`foo (1+2)` + 2);) */
 
-<INITIAL,EXPR,ASSIGNEXPR,DCONSTSTR>"(" {
+<INITIAL,DCONSTSTR,EXPR,ASSIGNEXPR>"(" {
 	lang_beginToken(yytext);
-	if(openBrk++ == 0)
-		yy_push_state(EXPR);
+	openBrk++;
+	yy_push_state(EXPR);
 	return *yytext;
 }
 <EXPR,ASSIGNEXPR>")" {
 	lang_beginToken(yytext);
-	if(--openBrk == 0)
-		yy_pop_state();
+	openBrk--;
+	yy_pop_state();
 	return *yytext;
 }
 

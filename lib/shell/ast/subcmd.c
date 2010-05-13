@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/dir.h>
 #include <stdio.h>
 #include <fsinterface.h>
 #include "../mem.h"
@@ -118,7 +119,6 @@ static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char 
 	char *last = str;
 	char *tok = strpbrk(str,"/");
 	while(!wasNull) {
-		sShellCmd **cmds,**cmd;
 		if(tok)
 			*tok = '\0';
 
@@ -127,6 +127,8 @@ static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char 
 		/* has it a star in it or is it the last one? in this case we have to collect
 		 * the matching items */
 		if((hasStar = strchr(last,'*') != NULL) || wasNull) {
+			char apath[MAX_PATH_LEN + 1];
+			tFD dir;
 			/* determine path and search-pattern */
 			char *search,*pos;
 			if((pos = strrchr(last,'/')) != NULL) {
@@ -144,63 +146,70 @@ static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char 
 				search = last;
 			}
 			/* get all files in that directory */
-			cmds = compl_get(path,0,0,false,false);
-			cmd = cmds;
-			while(*cmd != NULL) {
-				if(strmatch(search,(*cmd)->name)) {
-					u32 pathlen = strlen(path);
-					if(!wasNull) {
-						if(MODE_IS_DIR((*cmd)->mode)) {
-							/* we need the full pattern for recursion */
-							*tok = '/';
-							if(pos)
-								*pos = '/';
-							/* append dirname */
-							path[pathlen] = '/';
-							ast_appendToPath(path,pathlen + 1,(*cmd)->name);
-							buf = ast_expandPathname(buf,bufSize,i,path,tok + 1);
-							/* path may have been extended */
-							path[pathlen] = '\0';
-							/* restore pattern */
-							*tok = '\0';
-							if(pos)
-								*pos = '\0';
+			abspath(apath,sizeof(apath),path);
+			if((dir = opendir(apath))) {
+				u32 apathlen = strlen(apath);
+				sDirEntry e;
+				while(readdir(&e,dir)) {
+					if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
+						continue;
+					if(strmatch(search,e.name)) {
+						sFileInfo info;
+						u32 pathlen = strlen(path);
+						ast_appendToPath(apath,apathlen,e.name);
+						if(stat(apath,&info) < 0)
+							continue;
+						if(!wasNull) {
+							if(MODE_IS_DIR(info.mode)) {
+								/* we need the full pattern for recursion */
+								*tok = '/';
+								if(pos)
+									*pos = '/';
+								/* append dirname */
+								path[pathlen] = '/';
+								ast_appendToPath(path,pathlen + 1,e.name);
+								buf = ast_expandPathname(buf,bufSize,i,path,tok + 1);
+								/* path may have been extended */
+								path[pathlen] = '\0';
+								/* restore pattern */
+								*tok = '\0';
+								if(pos)
+									*pos = '\0';
+							}
 						}
-					}
-					else {
-						/* copy path and filename into a new string */
-						u32 namelen = strlen((*cmd)->name);
-						u32 totallen = (pathlen ? pathlen + 1 : 0) + namelen + 1;
-						char *dup = (char*)emalloc(totallen + 1);
-						if(pathlen) {
-							strcpy(dup,path);
-							dup[pathlen] = '/';
-							strcpy(dup + pathlen + 1,(*cmd)->name);
+						else {
+							/* copy path and filename into a new string */
+							u32 totallen = (pathlen ? pathlen + 1 : 0) + e.nameLen + 1;
+							char *dup = (char*)emalloc(totallen + 1);
+							if(pathlen) {
+								strcpy(dup,path);
+								dup[pathlen] = '/';
+								strcpy(dup + pathlen + 1,e.name);
+							}
+							else
+								strcpy(dup,e.name);
+							/* append '/' for dirs */
+							if(MODE_IS_DIR(info.mode)) {
+								dup[totallen - 1] = '/';
+								dup[totallen] = '\0';
+							}
+							/* increase array? */
+							if(*i >= *bufSize - 1) {
+								*bufSize *= 2;
+								buf = erealloc(buf,*bufSize * sizeof(char*));
+							}
+							buf[*i] = dup;
+							(*i)++;
 						}
-						else
-							strcpy(dup,(*cmd)->name);
-						/* append '/' for dirs */
-						if(MODE_IS_DIR((*cmd)->mode)) {
-							dup[totallen - 1] = '/';
-							dup[totallen] = '\0';
-						}
-						/* increase array? */
-						if(*i >= *bufSize - 1) {
-							*bufSize *= 2;
-							buf = erealloc(buf,*bufSize * sizeof(char*));
-						}
-						buf[*i] = dup;
-						(*i)++;
 					}
 				}
-				cmd++;
+				closedir(dir);
 			}
 			/* restore pattern */
 			if(tok)
 				*tok = '/';
 			if(pos)
 				*pos = '/';
-			compl_free(cmds);
 			/* break here since just recursion would go "deeper" in the pattern */
 			break;
 		}

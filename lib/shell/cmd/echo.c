@@ -20,15 +20,22 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <stdio.h>
+#include <string.h>
 #include "echo.h"
 
 s32 shell_cmdEcho(u32 argc,char *argv[]) {
-	u32 i;
-	for(i = 1; i < argc; i++) {
+	u32 i = 1;
+	bool nl = true;
+	if(strcmp(argv[i],"-n") == 0) {
+		nl = false;
+		i++;
+	}
+	for(; i < argc; i++) {
 		puts(argv[i]);
 		if(i < argc - 1)
 			putchar(' ');
 	}
-	putchar('\n');
+	if(nl)
+		putchar('\n');
 	return EXIT_SUCCESS;
 }

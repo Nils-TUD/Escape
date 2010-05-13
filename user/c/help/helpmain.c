@@ -163,12 +163,13 @@ int main(int argc,char **argv) {
 		printf("\n");
 		printf("Additionally there is a small shell-scripting-language. It supports pipes,\n");
 		printf("io-redirection, path-expansion, background-jobs, arithmetic, loops,\n");
-		printf("if-statements and variables. So for example:\n");
+		printf("if-statements, functions and variables. So for example:\n");
 		printf("	cat *.txt | wc > count.txt\n");
 		printf("	ps -s cpu -n 10 &\n");
 		printf("	$a := 2; if ($a > 2) then echo greater; else echo lesseq; fi\n");
 		printf("	for($i := 0; $i < 10; $i := $i + 1) do echo ($i * 2); done\n");
 		printf("	echo \"test ($a + `cat 'file.txt' | wc -c`) 123\"\n");
+		printf("	function foo begin echo $0, $1; end; foo test\n");
 		printf("	dump file.txt > dump.txt 2>&1\n");
 		printf("	...\n");
 

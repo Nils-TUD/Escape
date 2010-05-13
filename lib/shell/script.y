@@ -78,7 +78,6 @@
 start:
 			stmtlist {
 				ast_execute(curEnv,$1);
-				env_print(curEnv);
 				ast_destroy($1);
 			}
 ;

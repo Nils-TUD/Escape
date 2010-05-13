@@ -37,6 +37,8 @@ typedef struct {
 
 sEnv *env_create(sEnv *parent);
 
+void env_addArgs(sEnv *e,s32 count,const char **args);
+
 void env_print(sEnv *env);
 
 sSLList *env_getMatching(sEnv *env,const char *name,u32 length,bool searchCmd);

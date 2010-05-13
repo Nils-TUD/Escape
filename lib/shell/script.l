@@ -110,7 +110,7 @@
 	yylval.intval = atoi(yytext);
 	return T_NUMBER;
 }
-<INITIAL,EXPR,ASSIGNEXPR,DCONSTSTR>\$[a-zA-Z_0-9]+ {
+<INITIAL,EXPR,ASSIGNEXPR,DCONSTSTR>\$[a-zA-Z_0-9#]+ {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_VAR;

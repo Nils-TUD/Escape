@@ -34,6 +34,16 @@ sEnv *env_create(sEnv *parent) {
 	return env;
 }
 
+void env_addArgs(sEnv *e,s32 count,const char **args) {
+	s32 i;
+	char name[16];
+	for(i = 0; i < count; i++) {
+		sprintf(name,"$%d",i);
+		env_set(e,name,val_createStr(args[i]));
+	}
+	env_set(e,"$#",val_createInt(count));
+}
+
 void env_print(sEnv *env) {
 	sSLNode *n;
 	sVar *v;

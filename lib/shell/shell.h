@@ -40,9 +40,13 @@ extern char *curLine;
 extern sEnv *curEnv;
 
 /**
- * Inits the shell; announces the signal-handler for SIG_INTRPT
+ * Inits the shell; announces the signal-handler for SIG_INTRPT and creates the environment with
+ * given arguments
+ *
+ * @param argc the number of args
+ * @param argv the arguments
  */
-void shell_init(void);
+void shell_init(s32 argc,const char **argv);
 
 /**
  * Prints the shell-prompt

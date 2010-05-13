@@ -53,9 +53,10 @@ char *curLine = NULL;
 bool curIsStream = false;
 sEnv *curEnv = NULL;
 
-void shell_init(void) {
+void shell_init(s32 argc,const char **argv) {
 	run_init();
 	curEnv = env_create(NULL);
+	env_addArgs(curEnv,argc,argv);
 	if(setSigHandler(SIG_INTRPT,shell_sigIntrpt) < 0)
 		error("Unable to announce sig-handler for %d",SIG_INTRPT);
 }

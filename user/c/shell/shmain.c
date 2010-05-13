@@ -50,7 +50,7 @@ int main(int argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	shell_init();
+	shell_init(argc,(const char**)argv);
 
 	/* none-interactive-mode */
 	if(argc == 3) {

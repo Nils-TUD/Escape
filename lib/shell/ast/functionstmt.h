@@ -53,9 +53,11 @@ sValue *ast_execFunctionStmt(sEnv *e,sFunctionStmt *n);
  * Calls the given function and executes it in a new (sub-)environment
  *
  * @param n the function
+ * @param argc the number of arguments
+ * @param argv the arguments
  * @return the result
  */
-s32 ast_callFunction(sFunctionStmt *n);
+s32 ast_callFunction(sFunctionStmt *n,s32 argc,const char **argv);
 
 /**
  * Prints this function-statement

@@ -203,7 +203,7 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				sValue *func = env_get(e,shcmd[0]->name);
 				assert(func);
 				sFunctionStmt *stmt = (sFunctionStmt*)val_getFunc(func);
-				res = ast_callFunction(stmt);
+				res = ast_callFunction(stmt,cmd->exprCount,(const char**)cmd->exprs);
 			}
 
 			/* flush stdout just to be sure */

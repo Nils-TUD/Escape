@@ -49,7 +49,7 @@ static char *drvName;
 static int shell_main(void);
 
 int main(int argc,char **argv) {
-	shell_init();
+	shell_init(argc,(const char**)argv);
 
 	// none-interactive-mode
 	if(argc == 3) {

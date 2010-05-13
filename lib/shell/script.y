@@ -1,4 +1,5 @@
 %code top {
+	#define YYDEBUG 1
 	#include <stdio.h>
 	int yylex (void);
 	void yyerror(char const *,...);
@@ -52,8 +53,9 @@
 %token T_OUT2ERR
 %token T_APPEND
 
-%type <node> stmtlist stmtlistr stmt expr exprstmt cmdexpr cmdexprlist cmd subcmd 
-%type <node> cmdredirfd cmdredirin cmdredirout strlist strcomp
+%type <node> stmtlist stmtlistr stmt expr assignstmt cmdexpr cmdexprlist cmd subcmd 
+%type <node> cmdredirfd cmdredirin cmdredirout strlist strcomp nestedcmdexpr nestedcmdexprlist
+%type <node> nestedsubcmd
 
 %nonassoc '>' '<' T_LEQ T_GEQ T_EQ T_NEQ T_ASSIGN
 %left T_ADD T_SUB
@@ -97,8 +99,8 @@ stmt:
 			| T_WHILE '(' expr ')' T_DO stmtlist T_DONE {
 				$$ = ast_createWhileStmt($3,$6);
 			}
-			| exprstmt {
-				$$ = ast_createExprStmt($1);
+			| assignstmt	{
+				$$ = $1;
 			}
 			| cmd {
 				$$ = $1;
@@ -107,18 +109,21 @@ stmt:
 
 strlist:
 			strlist strcomp			{ $$ = $1; ast_addDStrComp($1,$2); }
-			| strcomp						{ $$ = ast_createDStrExpr(); ast_addDStrComp($$,$1); }
+			| /* empty */				{ $$ = ast_createDStrExpr(); }
 ;
 
 strcomp:
 			T_STRING						{ $$ = ast_createConstStrExpr($1,false); }
 			| T_VAR							{ $$ = ast_createVarExpr($1); }
-			| '{' expr '}'			{ $$ = $2; }
+			| '(' expr ')'			{ $$ = $2; }
 ;
 
 expr:
-			cmdexpr							{ $$ = $1; }
-			| exprstmt					{ $$ = $1; }
+			T_NUMBER						{ $$ = ast_createIntExpr($1); }
+			| T_STRING_SCONST		{ $$ = ast_createConstStrExpr($1,true); }
+			| '"' strlist '"'		{ $$ = $2; }
+			| T_VAR							{ $$ = ast_createVarExpr($1); }
+			| assignstmt				{ $$ = $1; }
 			| expr T_ADD expr		{ $$ = ast_createBinOpExpr($1,'+',$3); }
 			| expr T_SUB expr		{ $$ = ast_createBinOpExpr($1,'-',$3); }
 			| expr T_MUL expr		{ $$ = ast_createBinOpExpr($1,'*',$3); }
@@ -132,12 +137,12 @@ expr:
 			| expr T_GEQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_GEQ,$3); }
 			| expr T_EQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_EQ,$3); }
 			| expr T_NEQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_NEQ,$3); }
+			| '`' nestedsubcmd '`'		{ $$ = $2; ast_setRetOutput($2,true); }
 			| '(' expr ')'			{ $$ = $2; }
 ;
 
-exprstmt:
+assignstmt:
 			T_VAR T_ASSIGN expr	{ $$ = ast_createAssignExpr(ast_createVarExpr($1),$3); }
-			| '`' subcmd '`'		{ $$ = $2; ast_setRetOutput($2,true); }
 ;
 
 cmdexpr:
@@ -146,7 +151,8 @@ cmdexpr:
 			| T_STRING_SCONST		{ $$ = ast_createConstStrExpr($1,true); }
 			| '"' strlist '"'		{ $$ = $2; }
 			| T_VAR							{ $$ = ast_createVarExpr($1); }
-			| '{' expr '}'			{ $$ = $2; }
+			| '`' nestedsubcmd '`'		{ $$ = $2; ast_setRetOutput($2,true); }
+			| '(' expr ')'			{ $$ = $2; }
 ;
 
 cmdexprlist:
@@ -165,6 +171,34 @@ subcmd:
 				ast_addSubCmd($$,ast_createSubCmd($1,$4,$2,$3));
 			}
 			| subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirfd {
+				$$ = $1;
+				ast_addSubCmd($1,ast_createSubCmd($3,$6,$4,$5));
+			}
+;
+
+/* unfortunatly we need another version of cmdexpr, cmdexprlist and subcmd. because we can't allow
+ * nesting of `...`-expressions (the end of it wouldn't be clear). Therefore we duplicate the stuff
+ * and drop the '`' nestedsubcmd '`' part in cmdexpr. */
+nestedcmdexpr:
+			T_NUMBER						{ $$ = ast_createIntExpr($1); }
+			| T_STRING					{ $$ = ast_createConstStrExpr($1,false); }
+			| T_STRING_SCONST		{ $$ = ast_createConstStrExpr($1,true); }
+			| '"' strlist '"'		{ $$ = $2; }
+			| T_VAR							{ $$ = ast_createVarExpr($1); }
+			| '(' expr ')'			{ $$ = $2; }
+;
+
+nestedcmdexprlist:
+			nestedcmdexpr							{ $$ = ast_createCmdExprList(); ast_addCmdExpr($$,$1); }
+			| nestedcmdexprlist nestedcmdexpr { $$ = $1; ast_addCmdExpr($1,$2); }
+;
+
+nestedsubcmd:
+			nestedcmdexprlist cmdredirin cmdredirout cmdredirfd {
+				$$ = ast_createCommand();
+				ast_addSubCmd($$,ast_createSubCmd($1,$4,$2,$3));
+			}
+			| nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirfd {
 				$$ = $1;
 				ast_addSubCmd($1,ast_createSubCmd($3,$6,$4,$5));
 			}

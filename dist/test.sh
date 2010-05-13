@@ -14,7 +14,7 @@ if ('a' == 'a') then
 	#cat f5.txt | wc &;
 	#echo "bla" | wc &;
 	#cat file.txt > test.txt;
-	echo {$a \+ 2} hier > "test.txt" 1>&2;
+	echo ($a + 2) hier > "test.txt" 1>&2;
 	echo hier bin ich; echo ich nicht :P;
 	echo "mein kleiner string
 			bla
@@ -23,17 +23,17 @@ blub";
 multiline
 singlequote
 string :P';
-	echo "huhu, ich bin der penner!!! a \+ b";
-	echo "abc {$a \+ `cat 'file.txt' | wc -c`} und mehr";
+	echo "huhu, ich bin der penner!!! a + b";
+	echo "abc ($a + `cat 'file.txt' | wc -c`) und mehr";
 fi;
 
-for ($x := 0; $x < 5; $x := $x \+ 1) do
+for ($x := 0; $x < 5; $x := $x + 1) do
 	cat bigfile | grep "test" | wc;
 done;
 
 while ($x > 0) do
-	echo {$x};
-	$x := $x \- 1;
+	echo ($x);
+	$x := $x - 1;
 done;
 
 if (1 < 3) then
@@ -42,9 +42,9 @@ if (1 < 3) then
 	else
 		$muh := "bla";
 	fi;
-	$b := `echo test | wc -c` \+ 10;
+	$b := `echo test | wc -c` + 10;
 	$e := `echo test`;
-	$c := 123 \+ (4 \* 6) \^ 2 \- 12;
+	$c := 123 + (4 * 6) ^ 2 - 12;
 else
 	$c := 'test';
 fi;

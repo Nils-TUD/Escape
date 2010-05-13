@@ -35,7 +35,7 @@
 /* "%code requires" blocks.  */
 
 /* Line 1676 of yacc.c  */
-#line 7 "script.y"
+#line 8 "script.y"
 
 	#include "ast/node.h"
 	#include "ast/assignexpr.h"
@@ -108,7 +108,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 31 "script.y"
+#line 32 "script.y"
 
 	int intval;
 	char *strval;

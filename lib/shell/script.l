@@ -1,5 +1,6 @@
 /* required for us! */
 %option noyywrap
+%option stack
 
 %{
 	#include <string.h>
@@ -7,8 +8,6 @@
 	#include "parser.h"
 	#include "lang.h"
 	#include "shell.h"
-	
-	int openBrk = 0;
 %}
 
 %{
@@ -20,12 +19,13 @@
 %}
 
 %s COMMENT
-%s CMDEXPR
 %s DCONSTSTR
 %s EXPR
+%s ASSIGNEXPR
 
 %%
 
+ /* single line comment */
 <INITIAL>"#" {
 	lang_beginToken(yytext);
 	yy_push_state(COMMENT);
@@ -39,6 +39,7 @@
 	/* eat up all chars */
 }
 
+ /* if, for, while */
 <INITIAL>"if" {
 	lang_beginToken(yytext);
 	return T_IF;
@@ -72,157 +73,200 @@
 	return T_WHILE;
 }
 
-<INITIAL,EXPR>"(" {
+ /* "( ... )" puts an expression in a command or elsewhere. that means we can do something like
+  * "echo (4 * 2^10)". it also means that we can use *,+,/,... in commands with no problems since
+  * they have just special meanings inside the "(...)". this does also work for if/for/while etc.
+  * since they require "(...)" for the "header" part. */
+ /* therefore we simply count the brackets to know where we are */
+
+<INITIAL,EXPR,ASSIGNEXPR,DCONSTSTR>"(" {
 	lang_beginToken(yytext);
 	if(openBrk++ == 0)
 		yy_push_state(EXPR);
+	return *yytext;
 }
-<EXPR>")" {
+<EXPR,ASSIGNEXPR>")" {
 	lang_beginToken(yytext);
 	if(--openBrk == 0)
 		yy_pop_state();
+	return *yytext;
 }
 
-<INITIAL,CMDEXPR>[0-9]+ {
+ /* numbers, variables and single-quote strings */
+<EXPR,ASSIGNEXPR>[0-9]+ {
 	lang_beginToken(yytext);
 	yylval.intval = atoi(yytext);
 	return T_NUMBER;
 }
-
-<INITIAL,CMDEXPR,DCONSTSTR>\$[a-zA-Z_0-9]+ {
+<INITIAL,EXPR,ASSIGNEXPR,DCONSTSTR>\$[a-zA-Z_0-9]+ {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext + 1);
 	return T_VAR;
 }
-
-<INITIAL,CMDEXPR>'[^']*' {
+<INITIAL,EXPR,ASSIGNEXPR>'[^']*' {
 	lang_beginToken(yytext);
 	yylval.strval = strndup(yytext + 1,strlen(yytext) - 2);
 	return T_STRING_SCONST;
 }
 
-<INITIAL>\" {
+ /* double-quote strings: we can use variables and expressions (in brackets) in them */
+<INITIAL,EXPR,ASSIGNEXPR>\" {
 	lang_beginToken(yytext);
-	BEGIN(DCONSTSTR);
+	yy_push_state(DCONSTSTR);
 	return *yytext;
 }
-
 <DCONSTSTR>\" {
 	lang_beginToken(yytext);
-	BEGIN(INITIAL);
+	yy_pop_state();
 	return *yytext;
 }
-
-<DCONSTSTR>"{" {
-	lang_beginToken(yytext);
-	BEGIN(CMDEXPR);
-	return *yytext;
-}
-
-<DCONSTSTR>[^\"\{\$]+ {
+<DCONSTSTR>[^\"\(\$]+ {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_STRING;
 }
 
-<CMDEXPR>"}" {
-	lang_beginToken(yytext);
-	BEGIN(DCONSTSTR);
-	return *yytext;
-}
-
-<INITIAL,CMDEXPR>"<=" {
-	lang_beginToken(yytext);
-	return T_LEQ;
-}
-<INITIAL,CMDEXPR>">=" {
-	lang_beginToken(yytext);
-	return T_GEQ;
-}
-<INITIAL,CMDEXPR>"==" {
-	lang_beginToken(yytext);
-	return T_EQ;
-}
-<INITIAL,CMDEXPR>"!=" {
-	lang_beginToken(yytext);
-	return T_NEQ;
-}
-<INITIAL,CMDEXPR>">>" {
+ /* io-redirection */
+<INITIAL>">>" {
 	lang_beginToken(yytext);
 	return T_APPEND;
 }
-<INITIAL,CMDEXPR>"2>&1" {
+<INITIAL>"2>&1" {
 	lang_beginToken(yytext);
 	return T_ERR2OUT;
 }
-<INITIAL,CMDEXPR>"1>&2" {
+<INITIAL>"1>&2" {
 	lang_beginToken(yytext);
 	return T_OUT2ERR;
 }
 
-<INITIAL,CMDEXPR>">"|"<" {
+ /* comparation */
+<EXPR,ASSIGNEXPR>"<=" {
+	lang_beginToken(yytext);
+	return T_LEQ;
+}
+<EXPR,ASSIGNEXPR>">=" {
+	lang_beginToken(yytext);
+	return T_GEQ;
+}
+<EXPR,ASSIGNEXPR>"==" {
+	lang_beginToken(yytext);
+	return T_EQ;
+}
+<EXPR,ASSIGNEXPR>"!=" {
+	lang_beginToken(yytext);
+	return T_NEQ;
+}
+
+ /* io-redirection / comparation */
+<INITIAL,EXPR,ASSIGNEXPR>">"|"<" {
 	lang_beginToken(yytext);
 	return *yytext;
 }
-<INITIAL,CMDEXPR>":=" {
-	lang_beginToken(yytext);
-	return T_ASSIGN;
-}
-<INITIAL,CMDEXPR>"\\+" {
+
+ /* arithmetic operators */
+<EXPR,ASSIGNEXPR>"+" {
 	lang_beginToken(yytext);
 	return T_ADD;
 }
-<INITIAL,CMDEXPR>"\\-" {
+<EXPR,ASSIGNEXPR>"-" {
 	lang_beginToken(yytext);
 	return T_SUB;
 }
-<INITIAL,CMDEXPR>"\\*" {
+<EXPR,ASSIGNEXPR>"*" {
 	lang_beginToken(yytext);
 	return T_MUL;
 }
-<INITIAL,CMDEXPR>"\\/" {
+<EXPR,ASSIGNEXPR>"/" {
 	lang_beginToken(yytext);
 	return T_DIV;
 }
-<INITIAL,CMDEXPR>"\\%" {
+<EXPR,ASSIGNEXPR>"%" {
 	lang_beginToken(yytext);
 	return T_MOD;
 }
-<INITIAL,CMDEXPR>"\\^" {
+<EXPR,ASSIGNEXPR>"^" {
 	lang_beginToken(yytext);
 	return T_POW;
 }
 
-<INITIAL,CMDEXPR>"`"|"&"|";"|"|" {
+ /* the "`...`" allow us to execute a command and collect the output, so that we can do something
+  * like $a := `wc -l file.txt`; */
+ /* this is possible directly in commands and in expressions. the stuff inside `...` is of course
+  * also a command, therefore we go into the INITIAL state again. to know wether its an opening
+  * or closing ` we simply count them. since we don't allow nested `...` its always an closing `
+  * when we're in the INITIAL-state and openGraves is > 0. */
+<INITIAL>"`" {
+	lang_beginToken(yytext);
+	if(openGraves > 0) {
+		yy_pop_state();
+		openGraves--;
+	}
+	else {
+		yy_push_state(INITIAL);
+		openGraves++;
+	}
+	return *yytext;
+}
+ /* in an expression its always an opening ` */
+<EXPR,ASSIGNEXPR>"`" {
+	lang_beginToken(yytext);
+	yy_push_state(INITIAL);
+	openGraves++;
+	return *yytext;
+}
+
+<INITIAL,EXPR>";" {
 	lang_beginToken(yytext);
 	return *yytext;
 }
-<INITIAL,CMDEXPR>"("|")" {
-	lang_beginToken(yytext);
-	return *yytext;
-}
-<INITIAL>"{"|"}" {
+<INITIAL>"&"|"|" {
 	lang_beginToken(yytext);
 	return *yytext;
 }
 
-<INITIAL,CMDEXPR>[ \t]+ {
+ /* assignment. we want to allow assignments directly in "command-level" and without "(...)".
+  * therefore we start an ASSIGNEXPR (which is the same as EXPR except that we handle the ending
+  * differently). the end of it is a \n, ; or EOF. */
+<INITIAL>":=" {
+	lang_beginToken(yytext);
+	yy_push_state(ASSIGNEXPR);
+	return T_ASSIGN;
+}
+<EXPR,ASSIGNEXPR>":=" {
+	lang_beginToken(yytext);
+	return T_ASSIGN;
+}
+<ASSIGNEXPR><<EOF>> {
+	lang_beginToken(yytext);
+	yy_pop_state();
+	yyterminate();
+}
+<ASSIGNEXPR>"\n"|";" {
+	lang_beginToken(yytext);
+	yy_pop_state();
+	return *yytext;
+}
+
+ /* whitespace */
+<INITIAL,EXPR,ASSIGNEXPR>[ \t]+ {
 	/* eat up whitespace */
 	lang_beginToken(yytext);
 }
-<INITIAL,CMDEXPR>"\n" {
+<INITIAL,EXPR>"\n" {
 	/* eat up whitespace */
 	lang_beginToken(yytext);
 }
 
-<INITIAL,CMDEXPR>[a-zA-Z0-9\x15\x80-\xFF_\-!?:~,\.\+\-\*/%\^=]+ {
+ /* strings without quotes */
+<INITIAL>[a-zA-Z0-9\x15\x80-\xFF_\-!?:~,\.\+\-\*/%\^=]+ {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_STRING;
 }
 
-<INITIAL,CMDEXPR>. {
+ /* everything else is ignored */
+<INITIAL,EXPR,ASSIGNEXPR>. {
 	lang_beginToken(yytext);
 	yyerror("Unrecognized character %c",*yytext);
-	BEGIN(INITIAL);
 }

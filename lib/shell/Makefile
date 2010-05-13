@@ -50,7 +50,7 @@ $(LEXGEN):	$(LEXSRC)
 
 $(BISONGEN):	$(BISONSRC)
 		@echo "	" GEN $@
-		@bison -t -d --report-file=$(BISONDEBUG) -o $(BISONGEN) $(BISONSRC)
+		@bison -t -d --report=all --report-file=$(BISONDEBUG) -o $(BISONGEN) $(BISONSRC)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

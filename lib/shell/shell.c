@@ -44,6 +44,7 @@ static u16 shell_toPrevWord(char *buffer,u32 *icursorPos);
 static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPath);
 extern int yyparse(void);
 extern int yylex_destroy(void);
+extern int yydebug;
 
 static bool resetReadLine = false;
 static u32 tabCount = 0;

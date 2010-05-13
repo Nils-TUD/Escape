@@ -22,6 +22,9 @@
 
 typedef s32 tIntType;
 
+extern int openBrk;
+extern int openGraves;
+
 /**
  * Resets the position
  */

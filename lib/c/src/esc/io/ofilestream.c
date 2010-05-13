@@ -22,6 +22,7 @@
 #include <esc/dir.h>
 #include <esc/io.h>
 #include <esc/mem/heap.h>
+#include <esc/io/console.h>
 #include <esc/io/ofilestream.h>
 #include <esc/io/outputstream.h>
 #include <esc/exceptions/io.h>
@@ -134,7 +135,8 @@ static s32 ofstream_writec(sOStream *s,char c) {
 	sOFStream *fs = (sOFStream*)s->_obj;
 	/* ignore '\0' here */
 	if(c) {
-		if(fs->pos >= fs->max)
+		/* flush stderr on '\n' */
+		if(fs->pos >= fs->max || (s == cerr && c == '\n'))
 			s->flush(s);
 		fs->buffer[fs->pos++] = c;
 		return 1;

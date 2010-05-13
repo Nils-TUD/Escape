@@ -30,12 +30,16 @@ typedef struct {
 	s32 last_column;
 } sYYLoc;
 
+int openBrk = 0;
+int openGraves = 0;
 static sYYLoc yylloc;
 static s32 nCol = 1;
 static s32 nRow = 1;
 static bool interrupted = false;
 
 void lang_reset(void) {
+	openBrk = 0;
+	openGraves = 0;
 	nCol = 1;
 	nRow = 1;
 	interrupted = false;
@@ -75,4 +79,5 @@ void yyerror(char const *s,...) {
 	vfprintf(stderr,s,l);
 	va_end(l);
 	fprintf(stderr,"\n");
+	fflush(stderr);
 }

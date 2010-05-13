@@ -43,19 +43,22 @@ sValue *ast_execDStrExpr(sEnv *e,sDStrExpr *n) {
 	u32 total = 0,len;
 	char *part;
 	char *buf = NULL;
-	vassert(sll_length(n->list) > 0,"Empty expr-list!?");
-	for(node = sll_begin(n->list); node != NULL; node = node->next) {
-		v = ast_execute(e,(sASTNode*)node->data);
-		part = val_getStr(v);
-		len = strlen(part);
-		if(!buf)
-			buf = emalloc(len + 1);
-		else
-			buf = erealloc(buf,total + len + 1);
-		strcpy(buf + total,part);
-		total += len;
-		efree(part);
-		val_destroy(v);
+	if(sll_length(n->list) == 0)
+		buf = estrdup("");
+	else {
+		for(node = sll_begin(n->list); node != NULL; node = node->next) {
+			v = ast_execute(e,(sASTNode*)node->data);
+			part = val_getStr(v);
+			len = strlen(part);
+			if(!buf)
+				buf = emalloc(len + 1);
+			else
+				buf = erealloc(buf,total + len + 1);
+			strcpy(buf + total,part);
+			total += len;
+			efree(part);
+			val_destroy(v);
+		}
 	}
 	return val_createStr(buf);
 }

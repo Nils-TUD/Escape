@@ -39,13 +39,15 @@ static void ast_appendToPath(char *path,u32 pos,const char *str);
  */
 static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char *str);
 
-sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redirFd,sASTNode *redirIn,sASTNode *redirOut) {
+sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redFd,sASTNode *redirIn,sASTNode *redirOut,
+		sASTNode *redirErr) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sSubCmd *expr = node->data = emalloc(sizeof(sSubCmd));
 	expr->exprList = exprList;
-	expr->redirFd = redirFd;
+	expr->redirFd = redFd;
 	expr->redirIn = redirIn;
 	expr->redirOut = redirOut;
+	expr->redirErr = redirErr;
 	node->type = AST_SUB_CMD;
 	return node;
 }
@@ -88,6 +90,7 @@ sValue *ast_execSubCmd(sEnv *e,sSubCmd *n) {
 	res->redirFd = n->redirFd;
 	res->redirIn = n->redirIn;
 	res->redirOut = n->redirOut;
+	res->redirErr = n->redirErr;
 	sll_destroy(elist,false);
 	return (sValue*)res;
 }
@@ -219,6 +222,7 @@ void ast_printSubCmd(sSubCmd *s,u32 layer) {
 	ast_printTree(s->redirFd,layer);
 	ast_printTree(s->redirIn,layer);
 	ast_printTree(s->redirOut,layer);
+	ast_printTree(s->redirErr,layer);
 }
 
 void ast_destroySubCmd(sSubCmd *n) {
@@ -226,4 +230,5 @@ void ast_destroySubCmd(sSubCmd *n) {
 	ast_destroy(n->redirFd);
 	ast_destroy(n->redirIn);
 	ast_destroy(n->redirOut);
+	ast_destroy(n->redirErr);
 }

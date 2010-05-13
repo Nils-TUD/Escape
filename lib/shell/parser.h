@@ -86,18 +86,20 @@
      T_ERR2OUT = 270,
      T_OUT2ERR = 271,
      T_APPEND = 272,
-     T_ASSIGN = 273,
-     T_NEQ = 274,
-     T_EQ = 275,
-     T_GEQ = 276,
-     T_LEQ = 277,
-     T_SUB = 278,
-     T_ADD = 279,
-     T_MOD = 280,
-     T_DIV = 281,
-     T_MUL = 282,
-     T_NEG = 283,
-     T_POW = 284
+     T_ERR2FILE = 273,
+     T_OUT2FILE = 274,
+     T_ASSIGN = 275,
+     T_NEQ = 276,
+     T_EQ = 277,
+     T_GEQ = 278,
+     T_LEQ = 279,
+     T_SUB = 280,
+     T_ADD = 281,
+     T_MOD = 282,
+     T_DIV = 283,
+     T_MUL = 284,
+     T_NEG = 285,
+     T_POW = 286
    };
 #endif
 
@@ -117,7 +119,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 121 "parser.h"
+#line 123 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

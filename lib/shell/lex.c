@@ -370,8 +370,8 @@ static void yy_fatal_error (yyconst char msg[]  );
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
 
-#define YY_NUM_RULES 45
-#define YY_END_OF_BUFFER 46
+#define YY_NUM_RULES 47
+#define YY_END_OF_BUFFER 48
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -382,15 +382,15 @@ struct yy_trans_info
 static yyconst flex_int16_t yy_accept[95] =
     {   0,
         0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-       46,   44,   41,   42,   43,   17,    1,   44,   37,   44,
-       12,   43,   43,   43,   36,   27,   27,   34,   43,   43,
-       43,   43,   43,   43,    3,    2,   19,   18,   45,   12,
-       44,   32,   13,   30,   28,   29,   31,   14,   44,   27,
-       44,   27,   33,   35,   40,   40,   41,   43,   15,    0,
-       16,    0,    0,   38,   20,    9,   43,    7,   43,    4,
-       43,   43,   19,   26,   14,   39,   23,   25,   24,    0,
-        0,   43,   43,    8,   43,   43,   22,   21,   10,    6,
-        5,   43,   11,    0
+       48,   46,   43,   44,   45,   17,    1,   46,   39,   46,
+       12,   45,   45,   45,   38,   29,   29,   36,   45,   45,
+       45,   45,   45,   45,    3,    2,   19,   18,   47,   12,
+       46,   34,   13,   32,   30,   31,   33,   14,   46,   29,
+       46,   29,   35,   37,   42,   42,   43,   45,   15,    0,
+       16,   24,   23,   40,   20,    9,   45,    7,   45,    4,
+       45,   45,   19,   28,   14,   41,   25,   27,   26,    0,
+        0,   45,   45,    8,   45,   45,   22,   21,   10,    6,
+        5,   45,   11,    0
 
     } ;
 
@@ -1027,29 +1027,29 @@ YY_RULE_SETUP
 	return T_OUT2ERR;
 }
 	YY_BREAK
-/* comparation */
 case 23:
 YY_RULE_SETUP
-#line 144 "<stdin>"
+#line 142 "<stdin>"
 {
 	lang_beginToken(yytext);
-	return T_LEQ;
+	return T_ERR2FILE;
 }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 148 "<stdin>"
+#line 146 "<stdin>"
 {
 	lang_beginToken(yytext);
-	return T_GEQ;
+	return T_OUT2FILE;
 }
 	YY_BREAK
+/* comparation */
 case 25:
 YY_RULE_SETUP
 #line 152 "<stdin>"
 {
 	lang_beginToken(yytext);
-	return T_EQ;
+	return T_LEQ;
 }
 	YY_BREAK
 case 26:
@@ -1057,41 +1057,41 @@ YY_RULE_SETUP
 #line 156 "<stdin>"
 {
 	lang_beginToken(yytext);
+	return T_GEQ;
+}
+	YY_BREAK
+case 27:
+YY_RULE_SETUP
+#line 160 "<stdin>"
+{
+	lang_beginToken(yytext);
+	return T_EQ;
+}
+	YY_BREAK
+case 28:
+YY_RULE_SETUP
+#line 164 "<stdin>"
+{
+	lang_beginToken(yytext);
 	return T_NEQ;
 }
 	YY_BREAK
 /* io-redirection / comparation */
-case 27:
+case 29:
 YY_RULE_SETUP
-#line 162 "<stdin>"
+#line 170 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return *yytext;
 }
 	YY_BREAK
 /* arithmetic operators */
-case 28:
-YY_RULE_SETUP
-#line 168 "<stdin>"
-{
-	lang_beginToken(yytext);
-	return T_ADD;
-}
-	YY_BREAK
-case 29:
-YY_RULE_SETUP
-#line 172 "<stdin>"
-{
-	lang_beginToken(yytext);
-	return T_SUB;
-}
-	YY_BREAK
 case 30:
 YY_RULE_SETUP
 #line 176 "<stdin>"
 {
 	lang_beginToken(yytext);
-	return T_MUL;
+	return T_ADD;
 }
 	YY_BREAK
 case 31:
@@ -1099,7 +1099,7 @@ YY_RULE_SETUP
 #line 180 "<stdin>"
 {
 	lang_beginToken(yytext);
-	return T_DIV;
+	return T_SUB;
 }
 	YY_BREAK
 case 32:
@@ -1107,12 +1107,28 @@ YY_RULE_SETUP
 #line 184 "<stdin>"
 {
 	lang_beginToken(yytext);
-	return T_MOD;
+	return T_MUL;
 }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
 #line 188 "<stdin>"
+{
+	lang_beginToken(yytext);
+	return T_DIV;
+}
+	YY_BREAK
+case 34:
+YY_RULE_SETUP
+#line 192 "<stdin>"
+{
+	lang_beginToken(yytext);
+	return T_MOD;
+}
+	YY_BREAK
+case 35:
+YY_RULE_SETUP
+#line 196 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_POW;
@@ -1124,9 +1140,9 @@ YY_RULE_SETUP
   * also a command, therefore we go into the INITIAL state again. to know wether its an opening
   * or closing ` we simply count them. since we don't allow nested `...` its always an closing `
   * when we're in the INITIAL-state and openGraves is > 0. */
-case 34:
+case 36:
 YY_RULE_SETUP
-#line 199 "<stdin>"
+#line 207 "<stdin>"
 {
 	lang_beginToken(yytext);
 	if(openGraves > 0) {
@@ -1141,9 +1157,9 @@ YY_RULE_SETUP
 }
 	YY_BREAK
 /* in an expression its always an opening ` */
-case 35:
+case 37:
 YY_RULE_SETUP
-#line 212 "<stdin>"
+#line 220 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yy_push_state(INITIAL);
@@ -1151,17 +1167,17 @@ YY_RULE_SETUP
 	return *yytext;
 }
 	YY_BREAK
-case 36:
+case 38:
 YY_RULE_SETUP
-#line 219 "<stdin>"
+#line 227 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return *yytext;
 }
 	YY_BREAK
-case 37:
+case 39:
 YY_RULE_SETUP
-#line 223 "<stdin>"
+#line 231 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return *yytext;
@@ -1170,35 +1186,35 @@ YY_RULE_SETUP
 /* assignment. we want to allow assignments directly in "command-level" and without "(...)".
   * therefore we start an ASSIGNEXPR (which is the same as EXPR except that we handle the ending
   * differently). the end of it is a \n, ; or EOF. */
-case 38:
+case 40:
 YY_RULE_SETUP
-#line 231 "<stdin>"
+#line 239 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yy_push_state(ASSIGNEXPR);
 	return T_ASSIGN;
 }
 	YY_BREAK
-case 39:
+case 41:
 YY_RULE_SETUP
-#line 236 "<stdin>"
+#line 244 "<stdin>"
 {
 	lang_beginToken(yytext);
 	return T_ASSIGN;
 }
 	YY_BREAK
 case YY_STATE_EOF(ASSIGNEXPR):
-#line 240 "<stdin>"
+#line 248 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yy_pop_state();
 	yyterminate();
 }
 	YY_BREAK
-case 40:
-/* rule 40 can match eol */
+case 42:
+/* rule 42 can match eol */
 YY_RULE_SETUP
-#line 245 "<stdin>"
+#line 253 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yy_pop_state();
@@ -1206,27 +1222,27 @@ YY_RULE_SETUP
 }
 	YY_BREAK
 /* whitespace */
-case 41:
+case 43:
 YY_RULE_SETUP
-#line 252 "<stdin>"
+#line 260 "<stdin>"
 {
 	/* eat up whitespace */
 	lang_beginToken(yytext);
 }
 	YY_BREAK
-case 42:
-/* rule 42 can match eol */
+case 44:
+/* rule 44 can match eol */
 YY_RULE_SETUP
-#line 256 "<stdin>"
+#line 264 "<stdin>"
 {
 	/* eat up whitespace */
 	lang_beginToken(yytext);
 }
 	YY_BREAK
 /* strings without quotes */
-case 43:
+case 45:
 YY_RULE_SETUP
-#line 262 "<stdin>"
+#line 270 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
@@ -1234,20 +1250,20 @@ YY_RULE_SETUP
 }
 	YY_BREAK
 /* everything else is ignored */
-case 44:
+case 46:
 YY_RULE_SETUP
-#line 269 "<stdin>"
+#line 277 "<stdin>"
 {
 	lang_beginToken(yytext);
 	yyerror("Unrecognized character %c",*yytext);
 }
 	YY_BREAK
-case 45:
+case 47:
 YY_RULE_SETUP
-#line 273 "<stdin>"
+#line 281 "<stdin>"
 ECHO;
 	YY_BREAK
-#line 1251 "lex.c"
+#line 1267 "lex.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT):
 case YY_STATE_EOF(DCONSTSTR):
@@ -2293,4 +2309,4 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 273 "<stdin>"
+#line 281 "<stdin>"

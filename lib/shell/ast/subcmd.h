@@ -29,6 +29,7 @@ typedef struct {
 	sASTNode *redirFd;
 	sASTNode *redirIn;
 	sASTNode *redirOut;
+	sASTNode *redirErr;
 } sSubCmd;
 
 typedef struct {
@@ -37,18 +38,21 @@ typedef struct {
 	sASTNode *redirFd;
 	sASTNode *redirIn;
 	sASTNode *redirOut;
+	sASTNode *redirErr;
 } sExecSubCmd;
 
 /**
  * Creates an if-statement-node with the condition, then- and else-list
  *
  * @param exprList the list of expressions
- * @param redirFd the fd-redirections
+ * @param redFd the fd-redirections
  * @param redirIn the input-file
  * @param redirOut the output-file
+ * @param redirErr the error-file
  * @return the created node
  */
-sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redirFd,sASTNode *redirIn,sASTNode *redirOut);
+sASTNode *ast_createSubCmd(sASTNode *exprList,sASTNode *redFd,sASTNode *redirIn,sASTNode *redirOut,
+		sASTNode *redirErr);
 
 /**
  * Executes the given node(-tree)

@@ -41,6 +41,14 @@
 #define OUTBUF_SIZE		128
 
 /**
+ * Opens the given file for input-redirection
+ */
+static tFD ast_redirFromFile(sEnv *e,sRedirFile *redir);
+/**
+ * Opens the given file for output-redirection
+ */
+static tFD ast_redirToFile(sEnv *e,sRedirFile *redir);
+/**
  * Free's the memory of the given command
  */
 static void ast_destroyExecCmd(sExecSubCmd *cmd);
@@ -88,11 +96,11 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 	sExecSubCmd *cmd;
 	sShellCmd **shcmd = NULL;
 	u32 cmdNo,cmdCount;
-	sRedirFile *redirOut,*redirIn;
+	sRedirFile *redirOut,*redirIn,*redirErr;
 	sRedirFd *redirFdesc;
 	char path[MAX_CMD_LEN] = APPS_DIR;
 	s32 pid,prevPid = -1;
-	tFD pipeFds[2],prevPipe;
+	tFD pipeFds[2],prevPipe,errFd;
 	curCmd = run_requestId();
 
 	if(!setSigHdl) {
@@ -123,43 +131,30 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			goto error;
 		}
 
+		errFd = -1;
 		pipeFds[0] = -1;
 		pipeFds[1] = -1;
 		redirOut = (sRedirFile*)cmd->redirOut->data;
+		redirErr = (sRedirFile*)cmd->redirErr->data;
 		redirIn = (sRedirFile*)cmd->redirIn->data;
 		redirFdesc = (sRedirFd*)cmd->redirFd->data;
 		if(redirOut->expr) {
-			char absFileName[MAX_PATH_LEN];
-			/* redirection to file */
-			u8 flags = IO_WRITE;
-			sValue *fileExpr = ast_execute(e,redirOut->expr);
-			char *filename = val_getStr(fileExpr);
-			if(redirOut->type == REDIR_OUTCREATE)
-				flags |= IO_CREATE | IO_TRUNCATE;
-			else if(redirOut->type == REDIR_OUTAPPEND)
-				flags |= IO_APPEND;
-			abspath(absFileName,MAX_PATH_LEN,filename);
-			pipeFds[1] = open(absFileName,flags);
-			efree(filename);
-			val_destroy(fileExpr);
+			pipeFds[1] = ast_redirToFile(e,redirOut);
 			if(pipeFds[1] < 0) {
-				printe("Unable to open %s",filename);
+				res = -1;
+				goto error;
+			}
+		}
+		if(redirErr->expr) {
+			errFd = ast_redirToFile(e,redirErr);
+			if(errFd < 0) {
 				res = -1;
 				goto error;
 			}
 		}
 		if(redirIn->expr) {
-			char absFileName[MAX_PATH_LEN];
-			/* redirection to file */
-			u8 flags = IO_READ;
-			sValue *fileExpr = ast_execute(e,redirIn->expr);
-			char *filename = val_getStr(fileExpr);
-			abspath(absFileName,MAX_PATH_LEN,filename);
-			prevPipe = open(absFileName,flags);
-			efree(filename);
-			val_destroy(fileExpr);
+			prevPipe = ast_redirFromFile(e,redirIn);
 			if(prevPipe < 0) {
-				printe("Unable to open %s",filename);
 				res = -1;
 				goto error;
 			}
@@ -195,6 +190,10 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				fderr = dupFd(STDERR_FILENO);
 				redirFd(STDERR_FILENO,STDOUT_FILENO);
 			}
+			else if(errFd >= 0) {
+				fderr = dupFd(STDERR_FILENO);
+				redirFd(STDERR_FILENO,errFd);
+			}
 
 			res = shcmd[0]->func(cmd->exprCount,cmd->exprs);
 			/* flush stdout just to be sure */
@@ -216,6 +215,8 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 			if(fderr >= 0) {
 				redirFd(STDERR_FILENO,fderr);
 				close(fderr);
+				if(errFd >= 0)
+					close(errFd);
 			}
 
 			/* close the previous pipe since we don't need it anymore */
@@ -238,6 +239,8 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 					redirFd(STDIN_FILENO,prevPipe);
 				if(redirFdesc->type == REDIR_ERR2OUT)
 					redirFd(STDERR_FILENO,STDOUT_FILENO);
+				else if(errFd >= 0)
+					redirFd(STDERR_FILENO,errFd);
 				/* close our read-end */
 				if(pipeFds[0] >= 0)
 					close(pipeFds[0]);
@@ -258,6 +261,9 @@ sValue *ast_execCommand(sEnv *e,sCommand *n) {
 				run_addProc(curCmd,pid);
 				/* always close write-end */
 				close(pipeFds[1]);
+				/* close error-redirection */
+				if(errFd >= 0)
+					close(errFd);
 				/* close the previous pipe since we don't need it anymore */
 				if(prevPipe >= 0)
 					close(prevPipe);
@@ -293,6 +299,46 @@ error:
 	compl_free(shcmd);
 	ast_destroyExecCmd(cmd);
 	return val_createInt(res);
+}
+
+static tFD ast_redirFromFile(sEnv *e,sRedirFile *redir) {
+	tFD fd;
+	char absFileName[MAX_PATH_LEN];
+	/* redirection to file */
+	u8 flags = IO_READ;
+	sValue *fileExpr = ast_execute(e,redir->expr);
+	char *filename = val_getStr(fileExpr);
+	abspath(absFileName,MAX_PATH_LEN,filename);
+	fd = open(absFileName,flags);
+	efree(filename);
+	val_destroy(fileExpr);
+	if(fd < 0) {
+		printe("Unable to open %s",filename);
+		return -1;
+	}
+	return fd;
+}
+
+static tFD ast_redirToFile(sEnv *e,sRedirFile *redir) {
+	char absFileName[MAX_PATH_LEN];
+	tFD fd;
+	/* redirection to file */
+	u8 flags = IO_WRITE;
+	sValue *fileExpr = ast_execute(e,redir->expr);
+	char *filename = val_getStr(fileExpr);
+	if(redir->type == REDIR_OUTCREATE)
+		flags |= IO_CREATE | IO_TRUNCATE;
+	else if(redir->type == REDIR_OUTAPPEND)
+		flags |= IO_APPEND;
+	abspath(absFileName,MAX_PATH_LEN,filename);
+	fd = open(absFileName,flags);
+	efree(filename);
+	val_destroy(fileExpr);
+	if(fd < 0) {
+		printe("Unable to open %s",filename);
+		return -1;
+	}
+	return fd;
 }
 
 static void ast_destroyExecCmd(sExecSubCmd *cmd) {

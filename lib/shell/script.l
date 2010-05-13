@@ -139,6 +139,14 @@
 	lang_beginToken(yytext);
 	return T_OUT2ERR;
 }
+<INITIAL>"2>" {
+	lang_beginToken(yytext);
+	return T_ERR2FILE;
+}
+<INITIAL>"1>" {
+	lang_beginToken(yytext);
+	return T_OUT2FILE;
+}
 
  /* comparation */
 <EXPR,ASSIGNEXPR>"<=" {

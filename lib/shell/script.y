@@ -63,6 +63,7 @@
 %left T_ADD T_SUB
 %left T_MUL T_DIV T_MOD
 %left T_NEG
+%right T_INC T_DEC
 %right T_POW
 
 %destructor { free($$); } <strval>
@@ -133,6 +134,10 @@ expr:
 			| expr T_MOD expr		{ $$ = ast_createBinOpExpr($1,'%',$3); }
 			| expr T_POW expr		{ $$ = ast_createBinOpExpr($1,'^',$3); }
 			| T_SUB expr %prec T_NEG { $$ = ast_createUnaryOpExpr($2,UN_OP_NEG); }
+			| T_INC T_VAR				{ $$ = ast_createUnaryOpExpr(ast_createVarExpr($2),UN_OP_PREINC); }
+			| T_DEC T_VAR				{ $$ = ast_createUnaryOpExpr(ast_createVarExpr($2),UN_OP_PREDEC); }
+			| T_VAR T_INC				{ $$ = ast_createUnaryOpExpr(ast_createVarExpr($1),UN_OP_POSTINC); }
+			| T_VAR T_DEC				{ $$ = ast_createUnaryOpExpr(ast_createVarExpr($1),UN_OP_POSTDEC); }
 			| expr '<' expr			{ $$ = ast_createCmpExpr($1,CMP_OP_LT,$3); }
 			| expr '>' expr			{ $$ = ast_createCmpExpr($1,CMP_OP_GT,$3); }
 			| expr T_LEQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_LEQ,$3); }

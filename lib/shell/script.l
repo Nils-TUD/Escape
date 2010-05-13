@@ -197,6 +197,14 @@
 	lang_beginToken(yytext);
 	return T_POW;
 }
+<EXPR,ASSIGNEXPR>"++" {
+	lang_beginToken(yytext);
+	return T_INC;
+}
+<EXPR,ASSIGNEXPR>"--" {
+	lang_beginToken(yytext);
+	return T_DEC;
+}
 
  /* the "`...`" allow us to execute a command and collect the output, so that we can do something
   * like $a := `wc -l file.txt`; */

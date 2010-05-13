@@ -99,7 +99,9 @@
      T_DIV = 283,
      T_MUL = 284,
      T_NEG = 285,
-     T_POW = 286
+     T_DEC = 286,
+     T_INC = 287,
+     T_POW = 288
    };
 #endif
 
@@ -119,7 +121,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 123 "parser.h"
+#line 125 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

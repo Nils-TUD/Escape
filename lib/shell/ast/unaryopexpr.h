@@ -25,6 +25,10 @@
 #include "../exec/env.h"
 
 #define UN_OP_NEG		0
+#define UN_OP_PREINC	1
+#define UN_OP_POSTINC	2
+#define UN_OP_PREDEC	3
+#define UN_OP_POSTDEC	4
 
 typedef struct {
 	u8 operation;

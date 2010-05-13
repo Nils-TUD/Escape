@@ -20,8 +20,12 @@
 #include <esc/common.h>
 #include <stdio.h>
 #include "unaryopexpr.h"
+#include "varexpr.h"
 #include "node.h"
 #include "../mem.h"
+
+static sValue *ast_execUnaryPreOp(sEnv *e,sUnaryOpExpr *n,sValue *v,tIntType inc);
+static sValue *ast_execUnaryPostOp(sEnv *e,sUnaryOpExpr *n,sValue *v,tIntType inc);
 
 sASTNode *ast_createUnaryOpExpr(sASTNode *expr,u8 op) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
@@ -39,6 +43,18 @@ sValue *ast_execUnaryOpExpr(sEnv *e,sUnaryOpExpr *n) {
 		case UN_OP_NEG:
 			res = val_createInt(-val_getInt(v));
 			break;
+		case UN_OP_PREINC:
+			res = ast_execUnaryPreOp(e,n,v,1);
+			break;
+		case UN_OP_POSTINC:
+			res = ast_execUnaryPostOp(e,n,v,1);
+			break;
+		case UN_OP_PREDEC:
+			res = ast_execUnaryPreOp(e,n,v,-1);
+			break;
+		case UN_OP_POSTDEC:
+			res = ast_execUnaryPostOp(e,n,v,-1);
+			break;
 	}
 	val_destroy(v);
 	return res;
@@ -49,10 +65,44 @@ void ast_printUnaryOpExpr(sUnaryOpExpr *s,u32 layer) {
 		case UN_OP_NEG:
 			printf("-");
 			break;
+		case UN_OP_PREINC:
+			printf("++");
+			break;
+		case UN_OP_PREDEC:
+			printf("--");
+			break;
 	}
 	ast_printTree(s->operand1,layer);
+	switch(s->operation) {
+		case UN_OP_POSTINC:
+			printf("++");
+			break;
+		case UN_OP_POSTDEC:
+			printf("--");
+			break;
+	}
 }
 
 void ast_destroyUnaryOpExpr(sUnaryOpExpr *l) {
 	ast_destroy(l->operand1);
+}
+
+static sValue *ast_execUnaryPreOp(sEnv *e,sUnaryOpExpr *n,sValue *v,tIntType inc) {
+	/* its always a variable */
+	const char *name = ((sVarExpr*)n->operand1->data)->name;
+	/* don't free it since its kept in the env */
+	sValue *res = val_createInt(val_getInt(v) + inc);
+	res = env_set(e,name,res);
+	/* we have to clone it because the user of this method may destroy it if its no longer needed */
+	return val_clone(res);
+}
+
+static sValue *ast_execUnaryPostOp(sEnv *e,sUnaryOpExpr *n,sValue *v,tIntType inc) {
+	/* its always a variable */
+	const char *name = ((sVarExpr*)n->operand1->data)->name;
+	/* don't free it since its kept in the env */
+	sValue *res = val_createInt(val_getInt(v) + inc);
+	res = env_set(e,name,res);
+	/* we have to clone it because the user of this method may destroy it if its no longer needed */
+	return val_createInt(val_getInt(res) - inc);
 }

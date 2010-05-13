@@ -37,75 +37,79 @@ Grammar
    27     | expr T_MOD expr
    28     | expr T_POW expr
    29     | T_SUB expr
-   30     | expr '<' expr
-   31     | expr '>' expr
-   32     | expr T_LEQ expr
-   33     | expr T_GEQ expr
-   34     | expr T_EQ expr
-   35     | expr T_NEQ expr
-   36     | '`' nestedsubcmd '`'
-   37     | '(' expr ')'
+   30     | T_INC T_VAR
+   31     | T_DEC T_VAR
+   32     | T_VAR T_INC
+   33     | T_VAR T_DEC
+   34     | expr '<' expr
+   35     | expr '>' expr
+   36     | expr T_LEQ expr
+   37     | expr T_GEQ expr
+   38     | expr T_EQ expr
+   39     | expr T_NEQ expr
+   40     | '`' nestedsubcmd '`'
+   41     | '(' expr ')'
 
-   38 assignstmt: T_VAR T_ASSIGN expr
+   42 assignstmt: T_VAR T_ASSIGN expr
 
-   39 cmdexpr: T_NUMBER
-   40        | T_STRING
-   41        | T_STRING_SCONST
-   42        | '"' strlist '"'
-   43        | T_VAR
-   44        | '`' nestedsubcmd '`'
-   45        | '(' expr ')'
+   43 cmdexpr: T_NUMBER
+   44        | T_STRING
+   45        | T_STRING_SCONST
+   46        | '"' strlist '"'
+   47        | T_VAR
+   48        | '`' nestedsubcmd '`'
+   49        | '(' expr ')'
 
-   46 cmdexprlist: cmdexpr
-   47            | cmdexprlist cmdexpr
+   50 cmdexprlist: cmdexpr
+   51            | cmdexprlist cmdexpr
 
-   48 cmd: subcmd
-   49    | subcmd '&'
+   52 cmd: subcmd
+   53    | subcmd '&'
 
-   50 subcmd: cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
-   51       | subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   54 subcmd: cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   55       | subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
-   52 nestedcmdexpr: T_NUMBER
-   53              | T_STRING
-   54              | T_STRING_SCONST
-   55              | '"' strlist '"'
-   56              | T_VAR
-   57              | '(' expr ')'
+   56 nestedcmdexpr: T_NUMBER
+   57              | T_STRING
+   58              | T_STRING_SCONST
+   59              | '"' strlist '"'
+   60              | T_VAR
+   61              | '(' expr ')'
 
-   58 nestedcmdexprlist: nestedcmdexpr
-   59                  | nestedcmdexprlist nestedcmdexpr
+   62 nestedcmdexprlist: nestedcmdexpr
+   63                  | nestedcmdexprlist nestedcmdexpr
 
-   60 nestedsubcmd: nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
-   61             | nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   64 nestedsubcmd: nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   65             | nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
-   62 cmdredirfd: T_ERR2OUT
-   63           | T_OUT2ERR
-   64           | /* empty */
+   66 cmdredirfd: T_ERR2OUT
+   67           | T_OUT2ERR
+   68           | /* empty */
 
-   65 cmdredirin: '<' nestedcmdexpr
-   66           | /* empty */
+   69 cmdredirin: '<' nestedcmdexpr
+   70           | /* empty */
 
-   67 cmdredirerr: T_ERR2FILE nestedcmdexpr
-   68            | /* empty */
-
-   69 cmdredirout: '>' nestedcmdexpr
-   70            | T_OUT2FILE nestedcmdexpr
-   71            | T_APPEND nestedcmdexpr
+   71 cmdredirerr: T_ERR2FILE nestedcmdexpr
    72            | /* empty */
+
+   73 cmdredirout: '>' nestedcmdexpr
+   74            | T_OUT2FILE nestedcmdexpr
+   75            | T_APPEND nestedcmdexpr
+   76            | /* empty */
 
 
 Terminals, with rules where they appear
 
 $end (0) 0
-'"' (34) 20 42 55
-'&' (38) 49
-'(' (40) 7 8 9 10 17 37 45 57
-')' (41) 7 8 9 10 17 37 45 57
+'"' (34) 20 46 59
+'&' (38) 53
+'(' (40) 7 8 9 10 17 41 49 61
+')' (41) 7 8 9 10 17 41 49 61
 ';' (59) 4 6 9
-'<' (60) 30 65
-'>' (62) 31 69
-'`' (96) 36 44
-'|' (124) 51 61
+'<' (60) 34 69
+'>' (62) 35 73
+'`' (96) 40 48
+'|' (124) 55 65
 error (256)
 T_IF (258) 7 8
 T_THEN (259) 7 8
@@ -115,73 +119,75 @@ T_FOR (262) 9
 T_DO (263) 9 10
 T_DONE (264) 9 10
 T_WHILE (265) 10
-T_NUMBER (266) 18 39 52
-T_STRING (267) 15 40 53
-T_STRING_SCONST (268) 19 41 54
-T_VAR (269) 16 21 38 43 56
-T_ERR2OUT (270) 62
-T_OUT2ERR (271) 63
-T_APPEND (272) 71
-T_ERR2FILE (273) 67
-T_OUT2FILE (274) 70
-T_ASSIGN (275) 38
-T_NEQ (276) 35
-T_EQ (277) 34
-T_GEQ (278) 33
-T_LEQ (279) 32
+T_NUMBER (266) 18 43 56
+T_STRING (267) 15 44 57
+T_STRING_SCONST (268) 19 45 58
+T_VAR (269) 16 21 30 31 32 33 42 47 60
+T_ERR2OUT (270) 66
+T_OUT2ERR (271) 67
+T_APPEND (272) 75
+T_ERR2FILE (273) 71
+T_OUT2FILE (274) 74
+T_ASSIGN (275) 42
+T_NEQ (276) 39
+T_EQ (277) 38
+T_GEQ (278) 37
+T_LEQ (279) 36
 T_SUB (280) 24 29
 T_ADD (281) 23
 T_MOD (282) 27
 T_DIV (283) 26
 T_MUL (284) 25
 T_NEG (285)
-T_POW (286) 28
+T_DEC (286) 31 33
+T_INC (287) 30 32
+T_POW (288) 28
 
 
 Nonterminals, with rules where they appear
 
-$accept (41)
+$accept (43)
     on left: 0
-start (42)
+start (44)
     on left: 1, on right: 0
-stmtlist (43)
+stmtlist (45)
     on left: 2 3 4, on right: 1 7 8 9 10
-stmtlistr (44)
+stmtlistr (46)
     on left: 5 6, on right: 3 4 6
-stmt (45)
+stmt (47)
     on left: 7 8 9 10 11 12, on right: 5 6
-strlist (46)
-    on left: 13 14, on right: 13 20 42 55
-strcomp (47)
+strlist (48)
+    on left: 13 14, on right: 13 20 46 59
+strcomp (49)
     on left: 15 16 17, on right: 13
-expr (48)
+expr (50)
     on left: 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35
-    36 37, on right: 7 8 9 10 17 23 24 25 26 27 28 29 30 31 32 33 34
-    35 37 38 45 57
-assignstmt (49)
-    on left: 38, on right: 11 22
-cmdexpr (50)
-    on left: 39 40 41 42 43 44 45, on right: 46 47
-cmdexprlist (51)
-    on left: 46 47, on right: 47 50 51
-cmd (52)
-    on left: 48 49, on right: 12
-subcmd (53)
-    on left: 50 51, on right: 48 49 51
-nestedcmdexpr (54)
-    on left: 52 53 54 55 56 57, on right: 58 59 65 67 69 70 71
-nestedcmdexprlist (55)
-    on left: 58 59, on right: 59 60 61
-nestedsubcmd (56)
-    on left: 60 61, on right: 36 44 61
-cmdredirfd (57)
-    on left: 62 63 64, on right: 50 51 60 61
-cmdredirin (58)
-    on left: 65 66, on right: 50 51 60 61
-cmdredirerr (59)
-    on left: 67 68, on right: 50 51 60 61
-cmdredirout (60)
-    on left: 69 70 71 72, on right: 50 51 60 61
+    36 37 38 39 40 41, on right: 7 8 9 10 17 23 24 25 26 27 28 29 34
+    35 36 37 38 39 41 42 49 61
+assignstmt (51)
+    on left: 42, on right: 11 22
+cmdexpr (52)
+    on left: 43 44 45 46 47 48 49, on right: 50 51
+cmdexprlist (53)
+    on left: 50 51, on right: 51 54 55
+cmd (54)
+    on left: 52 53, on right: 12
+subcmd (55)
+    on left: 54 55, on right: 52 53 55
+nestedcmdexpr (56)
+    on left: 56 57 58 59 60 61, on right: 62 63 69 71 73 74 75
+nestedcmdexprlist (57)
+    on left: 62 63, on right: 63 64 65
+nestedsubcmd (58)
+    on left: 64 65, on right: 40 48 65
+cmdredirfd (59)
+    on left: 66 67 68, on right: 54 55 64 65
+cmdredirin (60)
+    on left: 69 70, on right: 54 55 64 65
+cmdredirerr (61)
+    on left: 71 72, on right: 54 55 64 65
+cmdredirout (62)
+    on left: 73 74 75 76, on right: 54 55 64 65
 
 
 state 0
@@ -199,20 +205,20 @@ state 0
    10     | . T_WHILE '(' expr ')' T_DO stmtlist T_DONE
    11     | . assignstmt
    12     | . cmd
-   38 assignstmt: . T_VAR T_ASSIGN expr
-   39 cmdexpr: . T_NUMBER
-   40        | . T_STRING
-   41        | . T_STRING_SCONST
-   42        | . '"' strlist '"'
-   43        | . T_VAR
-   44        | . '`' nestedsubcmd '`'
-   45        | . '(' expr ')'
-   46 cmdexprlist: . cmdexpr
-   47            | . cmdexprlist cmdexpr
-   48 cmd: . subcmd
-   49    | . subcmd '&'
-   50 subcmd: . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
-   51       | . subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   42 assignstmt: . T_VAR T_ASSIGN expr
+   43 cmdexpr: . T_NUMBER
+   44        | . T_STRING
+   45        | . T_STRING_SCONST
+   46        | . '"' strlist '"'
+   47        | . T_VAR
+   48        | . '`' nestedsubcmd '`'
+   49        | . '(' expr ')'
+   50 cmdexprlist: . cmdexpr
+   51            | . cmdexprlist cmdexpr
+   52 cmd: . subcmd
+   53    | . subcmd '&'
+   54 subcmd: . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   55       | . subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
     T_IF             shift, and go to state 1
     T_FOR            shift, and go to state 2
@@ -262,33 +268,33 @@ state 3
 
 state 4
 
-   39 cmdexpr: T_NUMBER .
+   43 cmdexpr: T_NUMBER .
 
-    $default  reduce using rule 39 (cmdexpr)
+    $default  reduce using rule 43 (cmdexpr)
 
 
 state 5
 
-   40 cmdexpr: T_STRING .
+   44 cmdexpr: T_STRING .
 
-    $default  reduce using rule 40 (cmdexpr)
+    $default  reduce using rule 44 (cmdexpr)
 
 
 state 6
 
-   41 cmdexpr: T_STRING_SCONST .
+   45 cmdexpr: T_STRING_SCONST .
 
-    $default  reduce using rule 41 (cmdexpr)
+    $default  reduce using rule 45 (cmdexpr)
 
 
 state 7
 
-   38 assignstmt: T_VAR . T_ASSIGN expr
-   43 cmdexpr: T_VAR .  [$end, T_ELSE, T_FI, T_DONE, T_NUMBER, T_STRING, T_STRING_SCONST, T_VAR, T_ERR2OUT, T_OUT2ERR, T_APPEND, T_ERR2FILE, T_OUT2FILE, '>', '<', ';', '(', '"', '`', '&', '|']
+   42 assignstmt: T_VAR . T_ASSIGN expr
+   47 cmdexpr: T_VAR .  [$end, T_ELSE, T_FI, T_DONE, T_NUMBER, T_STRING, T_STRING_SCONST, T_VAR, T_ERR2OUT, T_OUT2ERR, T_APPEND, T_ERR2FILE, T_OUT2FILE, '>', '<', ';', '(', '"', '`', '&', '|']
 
     T_ASSIGN  shift, and go to state 23
 
-    $default  reduce using rule 43 (cmdexpr)
+    $default  reduce using rule 47 (cmdexpr)
 
 
 state 8
@@ -305,71 +311,77 @@ state 8
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
-   45 cmdexpr: '(' . expr ')'
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
+   49 cmdexpr: '(' . expr ')'
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
-    expr        go to state 31
-    assignstmt  go to state 32
+    expr        go to state 33
+    assignstmt  go to state 34
 
 
 state 9
 
    13 strlist: . strlist strcomp
    14        | .
-   42 cmdexpr: '"' . strlist '"'
+   46 cmdexpr: '"' . strlist '"'
 
     $default  reduce using rule 14 (strlist)
 
-    strlist  go to state 33
+    strlist  go to state 35
 
 
 state 10
 
-   44 cmdexpr: '`' . nestedsubcmd '`'
-   52 nestedcmdexpr: . T_NUMBER
-   53              | . T_STRING
-   54              | . T_STRING_SCONST
-   55              | . '"' strlist '"'
-   56              | . T_VAR
-   57              | . '(' expr ')'
-   58 nestedcmdexprlist: . nestedcmdexpr
-   59                  | . nestedcmdexprlist nestedcmdexpr
-   60 nestedsubcmd: . nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
-   61             | . nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   48 cmdexpr: '`' . nestedsubcmd '`'
+   56 nestedcmdexpr: . T_NUMBER
+   57              | . T_STRING
+   58              | . T_STRING_SCONST
+   59              | . '"' strlist '"'
+   60              | . T_VAR
+   61              | . '(' expr ')'
+   62 nestedcmdexprlist: . nestedcmdexpr
+   63                  | . nestedcmdexprlist nestedcmdexpr
+   64 nestedsubcmd: . nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   65             | . nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
-    T_NUMBER         shift, and go to state 34
-    T_STRING         shift, and go to state 35
-    T_STRING_SCONST  shift, and go to state 36
-    T_VAR            shift, and go to state 37
-    '('              shift, and go to state 38
-    '"'              shift, and go to state 39
+    T_NUMBER         shift, and go to state 36
+    T_STRING         shift, and go to state 37
+    T_STRING_SCONST  shift, and go to state 38
+    T_VAR            shift, and go to state 39
+    '('              shift, and go to state 40
+    '"'              shift, and go to state 41
 
-    nestedcmdexpr      go to state 40
-    nestedcmdexprlist  go to state 41
-    nestedsubcmd       go to state 42
+    nestedcmdexpr      go to state 42
+    nestedcmdexprlist  go to state 43
+    nestedsubcmd       go to state 44
 
 
 state 11
 
     0 $accept: start . $end
 
-    $end  shift, and go to state 43
+    $end  shift, and go to state 45
 
 
 state 12
@@ -385,7 +397,7 @@ state 13
     4         | stmtlistr . ';'
     6 stmtlistr: stmtlistr . ';' stmt
 
-    ';'  shift, and go to state 44
+    ';'  shift, and go to state 46
 
     $default  reduce using rule 3 (stmtlist)
 
@@ -406,38 +418,38 @@ state 15
 
 state 16
 
-   46 cmdexprlist: cmdexpr .
+   50 cmdexprlist: cmdexpr .
 
-    $default  reduce using rule 46 (cmdexprlist)
+    $default  reduce using rule 50 (cmdexprlist)
 
 
 state 17
 
-   39 cmdexpr: . T_NUMBER
-   40        | . T_STRING
-   41        | . T_STRING_SCONST
-   42        | . '"' strlist '"'
-   43        | . T_VAR
-   44        | . '`' nestedsubcmd '`'
-   45        | . '(' expr ')'
-   47 cmdexprlist: cmdexprlist . cmdexpr
-   50 subcmd: cmdexprlist . cmdredirin cmdredirout cmdredirerr cmdredirfd
-   65 cmdredirin: . '<' nestedcmdexpr
-   66           | .  [$end, T_ELSE, T_FI, T_DONE, T_ERR2OUT, T_OUT2ERR, T_APPEND, T_ERR2FILE, T_OUT2FILE, '>', ';', '&', '|']
+   43 cmdexpr: . T_NUMBER
+   44        | . T_STRING
+   45        | . T_STRING_SCONST
+   46        | . '"' strlist '"'
+   47        | . T_VAR
+   48        | . '`' nestedsubcmd '`'
+   49        | . '(' expr ')'
+   51 cmdexprlist: cmdexprlist . cmdexpr
+   54 subcmd: cmdexprlist . cmdredirin cmdredirout cmdredirerr cmdredirfd
+   69 cmdredirin: . '<' nestedcmdexpr
+   70           | .  [$end, T_ELSE, T_FI, T_DONE, T_ERR2OUT, T_OUT2ERR, T_APPEND, T_ERR2FILE, T_OUT2FILE, '>', ';', '&', '|']
 
     T_NUMBER         shift, and go to state 4
     T_STRING         shift, and go to state 5
     T_STRING_SCONST  shift, and go to state 6
-    T_VAR            shift, and go to state 45
-    '<'              shift, and go to state 46
+    T_VAR            shift, and go to state 47
+    '<'              shift, and go to state 48
     '('              shift, and go to state 8
     '"'              shift, and go to state 9
     '`'              shift, and go to state 10
 
-    $default  reduce using rule 66 (cmdredirin)
+    $default  reduce using rule 70 (cmdredirin)
 
-    cmdexpr     go to state 47
-    cmdredirin  go to state 48
+    cmdexpr     go to state 49
+    cmdredirin  go to state 50
 
 
 state 18
@@ -449,14 +461,14 @@ state 18
 
 state 19
 
-   48 cmd: subcmd .  [$end, T_ELSE, T_FI, T_DONE, ';']
-   49    | subcmd . '&'
-   51 subcmd: subcmd . '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   52 cmd: subcmd .  [$end, T_ELSE, T_FI, T_DONE, ';']
+   53    | subcmd . '&'
+   55 subcmd: subcmd . '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
-    '&'  shift, and go to state 49
-    '|'  shift, and go to state 50
+    '&'  shift, and go to state 51
+    '|'  shift, and go to state 52
 
-    $default  reduce using rule 48 (cmd)
+    $default  reduce using rule 52 (cmd)
 
 
 state 20
@@ -475,26 +487,32 @@ state 20
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
-    expr        go to state 51
-    assignstmt  go to state 32
+    expr        go to state 53
+    assignstmt  go to state 34
 
 
 state 21
@@ -512,26 +530,32 @@ state 21
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
-    expr        go to state 52
-    assignstmt  go to state 32
+    expr        go to state 54
+    assignstmt  go to state 34
 
 
 state 22
@@ -549,26 +573,32 @@ state 22
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
-    expr        go to state 53
-    assignstmt  go to state 32
+    expr        go to state 55
+    assignstmt  go to state 34
 
 
 state 23
@@ -585,27 +615,33 @@ state 23
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
-   38           | T_VAR T_ASSIGN . expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
+   42           | T_VAR T_ASSIGN . expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
-    expr        go to state 54
-    assignstmt  go to state 32
+    expr        go to state 56
+    assignstmt  go to state 34
 
 
 state 24
@@ -625,9 +661,13 @@ state 25
 state 26
 
    21 expr: T_VAR .  [$end, T_ELSE, T_FI, T_DONE, '>', '<', T_NEQ, T_EQ, T_GEQ, T_LEQ, T_SUB, T_ADD, T_MOD, T_DIV, T_MUL, T_POW, ';', ')']
-   38 assignstmt: T_VAR . T_ASSIGN expr
+   32     | T_VAR . T_INC
+   33     | T_VAR . T_DEC
+   42 assignstmt: T_VAR . T_ASSIGN expr
 
     T_ASSIGN  shift, and go to state 23
+    T_DEC     shift, and go to state 57
+    T_INC     shift, and go to state 58
 
     $default  reduce using rule 21 (expr)
 
@@ -647,29 +687,49 @@ state 27
    28     | . expr T_POW expr
    29     | . T_SUB expr
    29     | T_SUB . expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
-    expr        go to state 55
-    assignstmt  go to state 32
+    expr        go to state 59
+    assignstmt  go to state 34
 
 
 state 28
+
+   31 expr: T_DEC . T_VAR
+
+    T_VAR  shift, and go to state 60
+
+
+state 29
+
+   30 expr: T_INC . T_VAR
+
+    T_VAR  shift, and go to state 61
+
+
+state 30
 
    18 expr: . T_NUMBER
    19     | . T_STRING_SCONST
@@ -683,30 +743,36 @@ state 28
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   37     | '(' . expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   41     | '(' . expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
-    expr        go to state 56
-    assignstmt  go to state 32
+    expr        go to state 62
+    assignstmt  go to state 34
 
 
-state 29
+state 31
 
    13 strlist: . strlist strcomp
    14        | .
@@ -714,36 +780,36 @@ state 29
 
     $default  reduce using rule 14 (strlist)
 
-    strlist  go to state 57
+    strlist  go to state 63
 
 
-state 30
+state 32
 
-   36 expr: '`' . nestedsubcmd '`'
-   52 nestedcmdexpr: . T_NUMBER
-   53              | . T_STRING
-   54              | . T_STRING_SCONST
-   55              | . '"' strlist '"'
-   56              | . T_VAR
-   57              | . '(' expr ')'
-   58 nestedcmdexprlist: . nestedcmdexpr
-   59                  | . nestedcmdexprlist nestedcmdexpr
-   60 nestedsubcmd: . nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
-   61             | . nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   40 expr: '`' . nestedsubcmd '`'
+   56 nestedcmdexpr: . T_NUMBER
+   57              | . T_STRING
+   58              | . T_STRING_SCONST
+   59              | . '"' strlist '"'
+   60              | . T_VAR
+   61              | . '(' expr ')'
+   62 nestedcmdexprlist: . nestedcmdexpr
+   63                  | . nestedcmdexprlist nestedcmdexpr
+   64 nestedsubcmd: . nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   65             | . nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
-    T_NUMBER         shift, and go to state 34
-    T_STRING         shift, and go to state 35
-    T_STRING_SCONST  shift, and go to state 36
-    T_VAR            shift, and go to state 37
-    '('              shift, and go to state 38
-    '"'              shift, and go to state 39
+    T_NUMBER         shift, and go to state 36
+    T_STRING         shift, and go to state 37
+    T_STRING_SCONST  shift, and go to state 38
+    T_VAR            shift, and go to state 39
+    '('              shift, and go to state 40
+    '"'              shift, and go to state 41
 
-    nestedcmdexpr      go to state 40
-    nestedcmdexprlist  go to state 41
-    nestedsubcmd       go to state 58
+    nestedcmdexpr      go to state 42
+    nestedcmdexprlist  go to state 43
+    nestedsubcmd       go to state 64
 
 
-state 31
+state 33
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -751,81 +817,81 @@ state 31
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
-   45 cmdexpr: '(' expr . ')'
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
+   49 cmdexpr: '(' expr . ')'
 
-    '>'    shift, and go to state 59
-    '<'    shift, and go to state 60
-    T_NEQ  shift, and go to state 61
-    T_EQ   shift, and go to state 62
-    T_GEQ  shift, and go to state 63
-    T_LEQ  shift, and go to state 64
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
-    ')'    shift, and go to state 71
+    '>'    shift, and go to state 65
+    '<'    shift, and go to state 66
+    T_NEQ  shift, and go to state 67
+    T_EQ   shift, and go to state 68
+    T_GEQ  shift, and go to state 69
+    T_LEQ  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
+    ')'    shift, and go to state 77
 
 
-state 32
+state 34
 
    22 expr: assignstmt .
 
     $default  reduce using rule 22 (expr)
 
 
-state 33
+state 35
 
    13 strlist: strlist . strcomp
    15 strcomp: . T_STRING
    16        | . T_VAR
    17        | . '(' expr ')'
-   42 cmdexpr: '"' strlist . '"'
+   46 cmdexpr: '"' strlist . '"'
 
-    T_STRING  shift, and go to state 72
-    T_VAR     shift, and go to state 73
-    '('       shift, and go to state 74
-    '"'       shift, and go to state 75
+    T_STRING  shift, and go to state 78
+    T_VAR     shift, and go to state 79
+    '('       shift, and go to state 80
+    '"'       shift, and go to state 81
 
-    strcomp  go to state 76
-
-
-state 34
-
-   52 nestedcmdexpr: T_NUMBER .
-
-    $default  reduce using rule 52 (nestedcmdexpr)
-
-
-state 35
-
-   53 nestedcmdexpr: T_STRING .
-
-    $default  reduce using rule 53 (nestedcmdexpr)
+    strcomp  go to state 82
 
 
 state 36
 
-   54 nestedcmdexpr: T_STRING_SCONST .
-
-    $default  reduce using rule 54 (nestedcmdexpr)
-
-
-state 37
-
-   56 nestedcmdexpr: T_VAR .
+   56 nestedcmdexpr: T_NUMBER .
 
     $default  reduce using rule 56 (nestedcmdexpr)
 
 
+state 37
+
+   57 nestedcmdexpr: T_STRING .
+
+    $default  reduce using rule 57 (nestedcmdexpr)
+
+
 state 38
+
+   58 nestedcmdexpr: T_STRING_SCONST .
+
+    $default  reduce using rule 58 (nestedcmdexpr)
+
+
+state 39
+
+   60 nestedcmdexpr: T_VAR .
+
+    $default  reduce using rule 60 (nestedcmdexpr)
+
+
+state 40
 
    18 expr: . T_NUMBER
    19     | . T_STRING_SCONST
@@ -839,91 +905,97 @@ state 38
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
-   57 nestedcmdexpr: '(' . expr ')'
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
+   61 nestedcmdexpr: '(' . expr ')'
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
-    expr        go to state 77
-    assignstmt  go to state 32
-
-
-state 39
-
-   13 strlist: . strlist strcomp
-   14        | .
-   55 nestedcmdexpr: '"' . strlist '"'
-
-    $default  reduce using rule 14 (strlist)
-
-    strlist  go to state 78
-
-
-state 40
-
-   58 nestedcmdexprlist: nestedcmdexpr .
-
-    $default  reduce using rule 58 (nestedcmdexprlist)
+    expr        go to state 83
+    assignstmt  go to state 34
 
 
 state 41
 
-   52 nestedcmdexpr: . T_NUMBER
-   53              | . T_STRING
-   54              | . T_STRING_SCONST
-   55              | . '"' strlist '"'
-   56              | . T_VAR
-   57              | . '(' expr ')'
-   59 nestedcmdexprlist: nestedcmdexprlist . nestedcmdexpr
-   60 nestedsubcmd: nestedcmdexprlist . cmdredirin cmdredirout cmdredirerr cmdredirfd
-   65 cmdredirin: . '<' nestedcmdexpr
-   66           | .  [T_ERR2OUT, T_OUT2ERR, T_APPEND, T_ERR2FILE, T_OUT2FILE, '>', '`', '|']
+   13 strlist: . strlist strcomp
+   14        | .
+   59 nestedcmdexpr: '"' . strlist '"'
 
-    T_NUMBER         shift, and go to state 34
-    T_STRING         shift, and go to state 35
-    T_STRING_SCONST  shift, and go to state 36
-    T_VAR            shift, and go to state 37
-    '<'              shift, and go to state 46
-    '('              shift, and go to state 38
-    '"'              shift, and go to state 39
+    $default  reduce using rule 14 (strlist)
 
-    $default  reduce using rule 66 (cmdredirin)
-
-    nestedcmdexpr  go to state 79
-    cmdredirin     go to state 80
+    strlist  go to state 84
 
 
 state 42
 
-   44 cmdexpr: '`' nestedsubcmd . '`'
-   61 nestedsubcmd: nestedsubcmd . '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   62 nestedcmdexprlist: nestedcmdexpr .
 
-    '`'  shift, and go to state 81
-    '|'  shift, and go to state 82
+    $default  reduce using rule 62 (nestedcmdexprlist)
 
 
 state 43
+
+   56 nestedcmdexpr: . T_NUMBER
+   57              | . T_STRING
+   58              | . T_STRING_SCONST
+   59              | . '"' strlist '"'
+   60              | . T_VAR
+   61              | . '(' expr ')'
+   63 nestedcmdexprlist: nestedcmdexprlist . nestedcmdexpr
+   64 nestedsubcmd: nestedcmdexprlist . cmdredirin cmdredirout cmdredirerr cmdredirfd
+   69 cmdredirin: . '<' nestedcmdexpr
+   70           | .  [T_ERR2OUT, T_OUT2ERR, T_APPEND, T_ERR2FILE, T_OUT2FILE, '>', '`', '|']
+
+    T_NUMBER         shift, and go to state 36
+    T_STRING         shift, and go to state 37
+    T_STRING_SCONST  shift, and go to state 38
+    T_VAR            shift, and go to state 39
+    '<'              shift, and go to state 48
+    '('              shift, and go to state 40
+    '"'              shift, and go to state 41
+
+    $default  reduce using rule 70 (cmdredirin)
+
+    nestedcmdexpr  go to state 85
+    cmdredirin     go to state 86
+
+
+state 44
+
+   48 cmdexpr: '`' nestedsubcmd . '`'
+   65 nestedsubcmd: nestedsubcmd . '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+
+    '`'  shift, and go to state 87
+    '|'  shift, and go to state 88
+
+
+state 45
 
     0 $accept: start $end .
 
     $default  accept
 
 
-state 44
+state 46
 
     4 stmtlist: stmtlistr ';' .  [$end, T_ELSE, T_FI, T_DONE]
     6 stmtlistr: stmtlistr ';' . stmt
@@ -933,20 +1005,20 @@ state 44
    10     | . T_WHILE '(' expr ')' T_DO stmtlist T_DONE
    11     | . assignstmt
    12     | . cmd
-   38 assignstmt: . T_VAR T_ASSIGN expr
-   39 cmdexpr: . T_NUMBER
-   40        | . T_STRING
-   41        | . T_STRING_SCONST
-   42        | . '"' strlist '"'
-   43        | . T_VAR
-   44        | . '`' nestedsubcmd '`'
-   45        | . '(' expr ')'
-   46 cmdexprlist: . cmdexpr
-   47            | . cmdexprlist cmdexpr
-   48 cmd: . subcmd
-   49    | . subcmd '&'
-   50 subcmd: . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
-   51       | . subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   42 assignstmt: . T_VAR T_ASSIGN expr
+   43 cmdexpr: . T_NUMBER
+   44        | . T_STRING
+   45        | . T_STRING_SCONST
+   46        | . '"' strlist '"'
+   47        | . T_VAR
+   48        | . '`' nestedsubcmd '`'
+   49        | . '(' expr ')'
+   50 cmdexprlist: . cmdexpr
+   51            | . cmdexprlist cmdexpr
+   52 cmd: . subcmd
+   53    | . subcmd '&'
+   54 subcmd: . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   55       | . subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
     T_IF             shift, and go to state 1
     T_FOR            shift, and go to state 2
@@ -961,7 +1033,7 @@ state 44
 
     $default  reduce using rule 4 (stmtlist)
 
-    stmt         go to state 83
+    stmt         go to state 89
     assignstmt   go to state 15
     cmdexpr      go to state 16
     cmdexprlist  go to state 17
@@ -969,90 +1041,90 @@ state 44
     subcmd       go to state 19
 
 
-state 45
-
-   43 cmdexpr: T_VAR .
-
-    $default  reduce using rule 43 (cmdexpr)
-
-
-state 46
-
-   52 nestedcmdexpr: . T_NUMBER
-   53              | . T_STRING
-   54              | . T_STRING_SCONST
-   55              | . '"' strlist '"'
-   56              | . T_VAR
-   57              | . '(' expr ')'
-   65 cmdredirin: '<' . nestedcmdexpr
-
-    T_NUMBER         shift, and go to state 34
-    T_STRING         shift, and go to state 35
-    T_STRING_SCONST  shift, and go to state 36
-    T_VAR            shift, and go to state 37
-    '('              shift, and go to state 38
-    '"'              shift, and go to state 39
-
-    nestedcmdexpr  go to state 84
-
-
 state 47
 
-   47 cmdexprlist: cmdexprlist cmdexpr .
+   47 cmdexpr: T_VAR .
 
-    $default  reduce using rule 47 (cmdexprlist)
+    $default  reduce using rule 47 (cmdexpr)
 
 
 state 48
 
-   50 subcmd: cmdexprlist cmdredirin . cmdredirout cmdredirerr cmdredirfd
-   69 cmdredirout: . '>' nestedcmdexpr
-   70            | . T_OUT2FILE nestedcmdexpr
-   71            | . T_APPEND nestedcmdexpr
-   72            | .  [$end, T_ELSE, T_FI, T_DONE, T_ERR2OUT, T_OUT2ERR, T_ERR2FILE, ';', '&', '|']
+   56 nestedcmdexpr: . T_NUMBER
+   57              | . T_STRING
+   58              | . T_STRING_SCONST
+   59              | . '"' strlist '"'
+   60              | . T_VAR
+   61              | . '(' expr ')'
+   69 cmdredirin: '<' . nestedcmdexpr
 
-    T_APPEND    shift, and go to state 85
-    T_OUT2FILE  shift, and go to state 86
-    '>'         shift, and go to state 87
+    T_NUMBER         shift, and go to state 36
+    T_STRING         shift, and go to state 37
+    T_STRING_SCONST  shift, and go to state 38
+    T_VAR            shift, and go to state 39
+    '('              shift, and go to state 40
+    '"'              shift, and go to state 41
 
-    $default  reduce using rule 72 (cmdredirout)
-
-    cmdredirout  go to state 88
+    nestedcmdexpr  go to state 90
 
 
 state 49
 
-   49 cmd: subcmd '&' .
+   51 cmdexprlist: cmdexprlist cmdexpr .
 
-    $default  reduce using rule 49 (cmd)
+    $default  reduce using rule 51 (cmdexprlist)
 
 
 state 50
 
-   39 cmdexpr: . T_NUMBER
-   40        | . T_STRING
-   41        | . T_STRING_SCONST
-   42        | . '"' strlist '"'
-   43        | . T_VAR
-   44        | . '`' nestedsubcmd '`'
-   45        | . '(' expr ')'
-   46 cmdexprlist: . cmdexpr
-   47            | . cmdexprlist cmdexpr
-   51 subcmd: subcmd '|' . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   54 subcmd: cmdexprlist cmdredirin . cmdredirout cmdredirerr cmdredirfd
+   73 cmdredirout: . '>' nestedcmdexpr
+   74            | . T_OUT2FILE nestedcmdexpr
+   75            | . T_APPEND nestedcmdexpr
+   76            | .  [$end, T_ELSE, T_FI, T_DONE, T_ERR2OUT, T_OUT2ERR, T_ERR2FILE, ';', '&', '|']
+
+    T_APPEND    shift, and go to state 91
+    T_OUT2FILE  shift, and go to state 92
+    '>'         shift, and go to state 93
+
+    $default  reduce using rule 76 (cmdredirout)
+
+    cmdredirout  go to state 94
+
+
+state 51
+
+   53 cmd: subcmd '&' .
+
+    $default  reduce using rule 53 (cmd)
+
+
+state 52
+
+   43 cmdexpr: . T_NUMBER
+   44        | . T_STRING
+   45        | . T_STRING_SCONST
+   46        | . '"' strlist '"'
+   47        | . T_VAR
+   48        | . '`' nestedsubcmd '`'
+   49        | . '(' expr ')'
+   50 cmdexprlist: . cmdexpr
+   51            | . cmdexprlist cmdexpr
+   55 subcmd: subcmd '|' . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
     T_NUMBER         shift, and go to state 4
     T_STRING         shift, and go to state 5
     T_STRING_SCONST  shift, and go to state 6
-    T_VAR            shift, and go to state 45
+    T_VAR            shift, and go to state 47
     '('              shift, and go to state 8
     '"'              shift, and go to state 9
     '`'              shift, and go to state 10
 
     cmdexpr      go to state 16
-    cmdexprlist  go to state 89
+    cmdexprlist  go to state 95
 
 
-state 51
+state 53
 
     7 stmt: T_IF '(' expr . ')' T_THEN stmtlist T_FI
     8     | T_IF '(' expr . ')' T_THEN stmtlist T_ELSE stmtlist T_FI
@@ -1062,29 +1134,29 @@ state 51
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    '>'    shift, and go to state 59
-    '<'    shift, and go to state 60
-    T_NEQ  shift, and go to state 61
-    T_EQ   shift, and go to state 62
-    T_GEQ  shift, and go to state 63
-    T_LEQ  shift, and go to state 64
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
-    ')'    shift, and go to state 90
+    '>'    shift, and go to state 65
+    '<'    shift, and go to state 66
+    T_NEQ  shift, and go to state 67
+    T_EQ   shift, and go to state 68
+    T_GEQ  shift, and go to state 69
+    T_LEQ  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
+    ')'    shift, and go to state 96
 
 
-state 52
+state 54
 
     9 stmt: T_FOR '(' expr . ';' expr ';' expr ')' T_DO stmtlist T_DONE
    23 expr: expr . T_ADD expr
@@ -1093,29 +1165,29 @@ state 52
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    '>'    shift, and go to state 59
-    '<'    shift, and go to state 60
-    T_NEQ  shift, and go to state 61
-    T_EQ   shift, and go to state 62
-    T_GEQ  shift, and go to state 63
-    T_LEQ  shift, and go to state 64
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
-    ';'    shift, and go to state 91
+    '>'    shift, and go to state 65
+    '<'    shift, and go to state 66
+    T_NEQ  shift, and go to state 67
+    T_EQ   shift, and go to state 68
+    T_GEQ  shift, and go to state 69
+    T_LEQ  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
+    ';'    shift, and go to state 97
 
 
-state 53
+state 55
 
    10 stmt: T_WHILE '(' expr . ')' T_DO stmtlist T_DONE
    23 expr: expr . T_ADD expr
@@ -1124,29 +1196,29 @@ state 53
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    '>'    shift, and go to state 59
-    '<'    shift, and go to state 60
-    T_NEQ  shift, and go to state 61
-    T_EQ   shift, and go to state 62
-    T_GEQ  shift, and go to state 63
-    T_LEQ  shift, and go to state 64
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
-    ')'    shift, and go to state 92
+    '>'    shift, and go to state 65
+    '<'    shift, and go to state 66
+    T_NEQ  shift, and go to state 67
+    T_EQ   shift, and go to state 68
+    T_GEQ  shift, and go to state 69
+    T_LEQ  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
+    ')'    shift, and go to state 98
 
 
-state 54
+state 56
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -1154,20 +1226,20 @@ state 54
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
-   38 assignstmt: T_VAR T_ASSIGN expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
+   42 assignstmt: T_VAR T_ASSIGN expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
 
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
 
     '>'    error (nonassociative)
     '<'    error (nonassociative)
@@ -1176,23 +1248,37 @@ state 54
     T_GEQ  error (nonassociative)
     T_LEQ  error (nonassociative)
 
-    $default  reduce using rule 38 (assignstmt)
+    $default  reduce using rule 42 (assignstmt)
 
-    Conflict between rule 38 and token '>' resolved as an error (%nonassoc '>').
-    Conflict between rule 38 and token '<' resolved as an error (%nonassoc '<').
-    Conflict between rule 38 and token T_NEQ resolved as an error (%nonassoc T_NEQ).
-    Conflict between rule 38 and token T_EQ resolved as an error (%nonassoc T_EQ).
-    Conflict between rule 38 and token T_GEQ resolved as an error (%nonassoc T_GEQ).
-    Conflict between rule 38 and token T_LEQ resolved as an error (%nonassoc T_LEQ).
-    Conflict between rule 38 and token T_SUB resolved as shift (T_ASSIGN < T_SUB).
-    Conflict between rule 38 and token T_ADD resolved as shift (T_ASSIGN < T_ADD).
-    Conflict between rule 38 and token T_MOD resolved as shift (T_ASSIGN < T_MOD).
-    Conflict between rule 38 and token T_DIV resolved as shift (T_ASSIGN < T_DIV).
-    Conflict between rule 38 and token T_MUL resolved as shift (T_ASSIGN < T_MUL).
-    Conflict between rule 38 and token T_POW resolved as shift (T_ASSIGN < T_POW).
+    Conflict between rule 42 and token '>' resolved as an error (%nonassoc '>').
+    Conflict between rule 42 and token '<' resolved as an error (%nonassoc '<').
+    Conflict between rule 42 and token T_NEQ resolved as an error (%nonassoc T_NEQ).
+    Conflict between rule 42 and token T_EQ resolved as an error (%nonassoc T_EQ).
+    Conflict between rule 42 and token T_GEQ resolved as an error (%nonassoc T_GEQ).
+    Conflict between rule 42 and token T_LEQ resolved as an error (%nonassoc T_LEQ).
+    Conflict between rule 42 and token T_SUB resolved as shift (T_ASSIGN < T_SUB).
+    Conflict between rule 42 and token T_ADD resolved as shift (T_ASSIGN < T_ADD).
+    Conflict between rule 42 and token T_MOD resolved as shift (T_ASSIGN < T_MOD).
+    Conflict between rule 42 and token T_DIV resolved as shift (T_ASSIGN < T_DIV).
+    Conflict between rule 42 and token T_MUL resolved as shift (T_ASSIGN < T_MUL).
+    Conflict between rule 42 and token T_POW resolved as shift (T_ASSIGN < T_POW).
 
 
-state 55
+state 57
+
+   33 expr: T_VAR T_DEC .
+
+    $default  reduce using rule 33 (expr)
+
+
+state 58
+
+   32 expr: T_VAR T_INC .
+
+    $default  reduce using rule 32 (expr)
+
+
+state 59
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -1201,14 +1287,14 @@ state 55
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
    29     | T_SUB expr .  [$end, T_ELSE, T_FI, T_DONE, '>', '<', T_NEQ, T_EQ, T_GEQ, T_LEQ, T_SUB, T_ADD, T_MOD, T_DIV, T_MUL, ';', ')']
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    T_POW  shift, and go to state 70
+    T_POW  shift, and go to state 76
 
     $default  reduce using rule 29 (expr)
 
@@ -1226,7 +1312,21 @@ state 55
     Conflict between rule 29 and token T_POW resolved as shift (T_NEG < T_POW).
 
 
-state 56
+state 60
+
+   31 expr: T_DEC T_VAR .
+
+    $default  reduce using rule 31 (expr)
+
+
+state 61
+
+   30 expr: T_INC T_VAR .
+
+    $default  reduce using rule 30 (expr)
+
+
+state 62
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -1234,30 +1334,30 @@ state 56
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
-   37     | '(' expr . ')'
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
+   41     | '(' expr . ')'
 
-    '>'    shift, and go to state 59
-    '<'    shift, and go to state 60
-    T_NEQ  shift, and go to state 61
-    T_EQ   shift, and go to state 62
-    T_GEQ  shift, and go to state 63
-    T_LEQ  shift, and go to state 64
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
-    ')'    shift, and go to state 93
+    '>'    shift, and go to state 65
+    '<'    shift, and go to state 66
+    T_NEQ  shift, and go to state 67
+    T_EQ   shift, and go to state 68
+    T_GEQ  shift, and go to state 69
+    T_LEQ  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
+    ')'    shift, and go to state 99
 
 
-state 57
+state 63
 
    13 strlist: strlist . strcomp
    15 strcomp: . T_STRING
@@ -1265,243 +1365,21 @@ state 57
    17        | . '(' expr ')'
    20 expr: '"' strlist . '"'
 
-    T_STRING  shift, and go to state 72
-    T_VAR     shift, and go to state 73
-    '('       shift, and go to state 74
-    '"'       shift, and go to state 94
+    T_STRING  shift, and go to state 78
+    T_VAR     shift, and go to state 79
+    '('       shift, and go to state 80
+    '"'       shift, and go to state 100
 
-    strcomp  go to state 76
-
-
-state 58
-
-   36 expr: '`' nestedsubcmd . '`'
-   61 nestedsubcmd: nestedsubcmd . '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
-
-    '`'  shift, and go to state 95
-    '|'  shift, and go to state 82
-
-
-state 59
-
-   18 expr: . T_NUMBER
-   19     | . T_STRING_SCONST
-   20     | . '"' strlist '"'
-   21     | . T_VAR
-   22     | . assignstmt
-   23     | . expr T_ADD expr
-   24     | . expr T_SUB expr
-   25     | . expr T_MUL expr
-   26     | . expr T_DIV expr
-   27     | . expr T_MOD expr
-   28     | . expr T_POW expr
-   29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   31     | expr '>' . expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
-
-    T_NUMBER         shift, and go to state 24
-    T_STRING_SCONST  shift, and go to state 25
-    T_VAR            shift, and go to state 26
-    T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
-
-    expr        go to state 96
-    assignstmt  go to state 32
-
-
-state 60
-
-   18 expr: . T_NUMBER
-   19     | . T_STRING_SCONST
-   20     | . '"' strlist '"'
-   21     | . T_VAR
-   22     | . assignstmt
-   23     | . expr T_ADD expr
-   24     | . expr T_SUB expr
-   25     | . expr T_MUL expr
-   26     | . expr T_DIV expr
-   27     | . expr T_MOD expr
-   28     | . expr T_POW expr
-   29     | . T_SUB expr
-   30     | . expr '<' expr
-   30     | expr '<' . expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
-
-    T_NUMBER         shift, and go to state 24
-    T_STRING_SCONST  shift, and go to state 25
-    T_VAR            shift, and go to state 26
-    T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
-
-    expr        go to state 97
-    assignstmt  go to state 32
-
-
-state 61
-
-   18 expr: . T_NUMBER
-   19     | . T_STRING_SCONST
-   20     | . '"' strlist '"'
-   21     | . T_VAR
-   22     | . assignstmt
-   23     | . expr T_ADD expr
-   24     | . expr T_SUB expr
-   25     | . expr T_MUL expr
-   26     | . expr T_DIV expr
-   27     | . expr T_MOD expr
-   28     | . expr T_POW expr
-   29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   35     | expr T_NEQ . expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
-
-    T_NUMBER         shift, and go to state 24
-    T_STRING_SCONST  shift, and go to state 25
-    T_VAR            shift, and go to state 26
-    T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
-
-    expr        go to state 98
-    assignstmt  go to state 32
-
-
-state 62
-
-   18 expr: . T_NUMBER
-   19     | . T_STRING_SCONST
-   20     | . '"' strlist '"'
-   21     | . T_VAR
-   22     | . assignstmt
-   23     | . expr T_ADD expr
-   24     | . expr T_SUB expr
-   25     | . expr T_MUL expr
-   26     | . expr T_DIV expr
-   27     | . expr T_MOD expr
-   28     | . expr T_POW expr
-   29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   34     | expr T_EQ . expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
-
-    T_NUMBER         shift, and go to state 24
-    T_STRING_SCONST  shift, and go to state 25
-    T_VAR            shift, and go to state 26
-    T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
-
-    expr        go to state 99
-    assignstmt  go to state 32
-
-
-state 63
-
-   18 expr: . T_NUMBER
-   19     | . T_STRING_SCONST
-   20     | . '"' strlist '"'
-   21     | . T_VAR
-   22     | . assignstmt
-   23     | . expr T_ADD expr
-   24     | . expr T_SUB expr
-   25     | . expr T_MUL expr
-   26     | . expr T_DIV expr
-   27     | . expr T_MOD expr
-   28     | . expr T_POW expr
-   29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   33     | expr T_GEQ . expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
-
-    T_NUMBER         shift, and go to state 24
-    T_STRING_SCONST  shift, and go to state 25
-    T_VAR            shift, and go to state 26
-    T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
-
-    expr        go to state 100
-    assignstmt  go to state 32
+    strcomp  go to state 82
 
 
 state 64
 
-   18 expr: . T_NUMBER
-   19     | . T_STRING_SCONST
-   20     | . '"' strlist '"'
-   21     | . T_VAR
-   22     | . assignstmt
-   23     | . expr T_ADD expr
-   24     | . expr T_SUB expr
-   25     | . expr T_MUL expr
-   26     | . expr T_DIV expr
-   27     | . expr T_MOD expr
-   28     | . expr T_POW expr
-   29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   32     | expr T_LEQ . expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   40 expr: '`' nestedsubcmd . '`'
+   65 nestedsubcmd: nestedsubcmd . '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
-    T_NUMBER         shift, and go to state 24
-    T_STRING_SCONST  shift, and go to state 25
-    T_VAR            shift, and go to state 26
-    T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
-
-    expr        go to state 101
-    assignstmt  go to state 32
+    '`'  shift, and go to state 101
+    '|'  shift, and go to state 88
 
 
 state 65
@@ -1513,32 +1391,38 @@ state 65
    22     | . assignstmt
    23     | . expr T_ADD expr
    24     | . expr T_SUB expr
-   24     | expr T_SUB . expr
    25     | . expr T_MUL expr
    26     | . expr T_DIV expr
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   35     | expr '>' . expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
     expr        go to state 102
-    assignstmt  go to state 32
+    assignstmt  go to state 34
 
 
 state 66
@@ -1549,33 +1433,39 @@ state 66
    21     | . T_VAR
    22     | . assignstmt
    23     | . expr T_ADD expr
-   23     | expr T_ADD . expr
    24     | . expr T_SUB expr
    25     | . expr T_MUL expr
    26     | . expr T_DIV expr
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   34     | expr '<' . expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
     expr        go to state 103
-    assignstmt  go to state 32
+    assignstmt  go to state 34
 
 
 state 67
@@ -1590,29 +1480,35 @@ state 67
    25     | . expr T_MUL expr
    26     | . expr T_DIV expr
    27     | . expr T_MOD expr
-   27     | expr T_MOD . expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   39     | expr T_NEQ . expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
     expr        go to state 104
-    assignstmt  go to state 32
+    assignstmt  go to state 34
 
 
 state 68
@@ -1626,30 +1522,36 @@ state 68
    24     | . expr T_SUB expr
    25     | . expr T_MUL expr
    26     | . expr T_DIV expr
-   26     | expr T_DIV . expr
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   38     | expr T_EQ . expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
     expr        go to state 105
-    assignstmt  go to state 32
+    assignstmt  go to state 34
 
 
 state 69
@@ -1662,31 +1564,37 @@ state 69
    23     | . expr T_ADD expr
    24     | . expr T_SUB expr
    25     | . expr T_MUL expr
-   25     | expr T_MUL . expr
    26     | . expr T_DIV expr
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   37     | expr T_GEQ . expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
     expr        go to state 106
-    assignstmt  go to state 32
+    assignstmt  go to state 34
 
 
 state 70
@@ -1702,52 +1610,316 @@ state 70
    26     | . expr T_DIV expr
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
-   28     | expr T_POW . expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   36     | expr T_LEQ . expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
     expr        go to state 107
-    assignstmt  go to state 32
+    assignstmt  go to state 34
 
 
 state 71
 
-   45 cmdexpr: '(' expr ')' .
+   18 expr: . T_NUMBER
+   19     | . T_STRING_SCONST
+   20     | . '"' strlist '"'
+   21     | . T_VAR
+   22     | . assignstmt
+   23     | . expr T_ADD expr
+   24     | . expr T_SUB expr
+   24     | expr T_SUB . expr
+   25     | . expr T_MUL expr
+   26     | . expr T_DIV expr
+   27     | . expr T_MOD expr
+   28     | . expr T_POW expr
+   29     | . T_SUB expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
-    $default  reduce using rule 45 (cmdexpr)
+    T_NUMBER         shift, and go to state 24
+    T_STRING_SCONST  shift, and go to state 25
+    T_VAR            shift, and go to state 26
+    T_SUB            shift, and go to state 27
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
+
+    expr        go to state 108
+    assignstmt  go to state 34
 
 
 state 72
+
+   18 expr: . T_NUMBER
+   19     | . T_STRING_SCONST
+   20     | . '"' strlist '"'
+   21     | . T_VAR
+   22     | . assignstmt
+   23     | . expr T_ADD expr
+   23     | expr T_ADD . expr
+   24     | . expr T_SUB expr
+   25     | . expr T_MUL expr
+   26     | . expr T_DIV expr
+   27     | . expr T_MOD expr
+   28     | . expr T_POW expr
+   29     | . T_SUB expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
+
+    T_NUMBER         shift, and go to state 24
+    T_STRING_SCONST  shift, and go to state 25
+    T_VAR            shift, and go to state 26
+    T_SUB            shift, and go to state 27
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
+
+    expr        go to state 109
+    assignstmt  go to state 34
+
+
+state 73
+
+   18 expr: . T_NUMBER
+   19     | . T_STRING_SCONST
+   20     | . '"' strlist '"'
+   21     | . T_VAR
+   22     | . assignstmt
+   23     | . expr T_ADD expr
+   24     | . expr T_SUB expr
+   25     | . expr T_MUL expr
+   26     | . expr T_DIV expr
+   27     | . expr T_MOD expr
+   27     | expr T_MOD . expr
+   28     | . expr T_POW expr
+   29     | . T_SUB expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
+
+    T_NUMBER         shift, and go to state 24
+    T_STRING_SCONST  shift, and go to state 25
+    T_VAR            shift, and go to state 26
+    T_SUB            shift, and go to state 27
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
+
+    expr        go to state 110
+    assignstmt  go to state 34
+
+
+state 74
+
+   18 expr: . T_NUMBER
+   19     | . T_STRING_SCONST
+   20     | . '"' strlist '"'
+   21     | . T_VAR
+   22     | . assignstmt
+   23     | . expr T_ADD expr
+   24     | . expr T_SUB expr
+   25     | . expr T_MUL expr
+   26     | . expr T_DIV expr
+   26     | expr T_DIV . expr
+   27     | . expr T_MOD expr
+   28     | . expr T_POW expr
+   29     | . T_SUB expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
+
+    T_NUMBER         shift, and go to state 24
+    T_STRING_SCONST  shift, and go to state 25
+    T_VAR            shift, and go to state 26
+    T_SUB            shift, and go to state 27
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
+
+    expr        go to state 111
+    assignstmt  go to state 34
+
+
+state 75
+
+   18 expr: . T_NUMBER
+   19     | . T_STRING_SCONST
+   20     | . '"' strlist '"'
+   21     | . T_VAR
+   22     | . assignstmt
+   23     | . expr T_ADD expr
+   24     | . expr T_SUB expr
+   25     | . expr T_MUL expr
+   25     | expr T_MUL . expr
+   26     | . expr T_DIV expr
+   27     | . expr T_MOD expr
+   28     | . expr T_POW expr
+   29     | . T_SUB expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
+
+    T_NUMBER         shift, and go to state 24
+    T_STRING_SCONST  shift, and go to state 25
+    T_VAR            shift, and go to state 26
+    T_SUB            shift, and go to state 27
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
+
+    expr        go to state 112
+    assignstmt  go to state 34
+
+
+state 76
+
+   18 expr: . T_NUMBER
+   19     | . T_STRING_SCONST
+   20     | . '"' strlist '"'
+   21     | . T_VAR
+   22     | . assignstmt
+   23     | . expr T_ADD expr
+   24     | . expr T_SUB expr
+   25     | . expr T_MUL expr
+   26     | . expr T_DIV expr
+   27     | . expr T_MOD expr
+   28     | . expr T_POW expr
+   28     | expr T_POW . expr
+   29     | . T_SUB expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
+
+    T_NUMBER         shift, and go to state 24
+    T_STRING_SCONST  shift, and go to state 25
+    T_VAR            shift, and go to state 26
+    T_SUB            shift, and go to state 27
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
+
+    expr        go to state 113
+    assignstmt  go to state 34
+
+
+state 77
+
+   49 cmdexpr: '(' expr ')' .
+
+    $default  reduce using rule 49 (cmdexpr)
+
+
+state 78
 
    15 strcomp: T_STRING .
 
     $default  reduce using rule 15 (strcomp)
 
 
-state 73
+state 79
 
    16 strcomp: T_VAR .
 
     $default  reduce using rule 16 (strcomp)
 
 
-state 74
+state 80
 
    17 strcomp: '(' . expr ')'
    18 expr: . T_NUMBER
@@ -1762,43 +1934,49 @@ state 74
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
-    expr        go to state 108
-    assignstmt  go to state 32
-
-
-state 75
-
-   42 cmdexpr: '"' strlist '"' .
-
-    $default  reduce using rule 42 (cmdexpr)
+    expr        go to state 114
+    assignstmt  go to state 34
 
 
-state 76
+state 81
+
+   46 cmdexpr: '"' strlist '"' .
+
+    $default  reduce using rule 46 (cmdexpr)
+
+
+state 82
 
    13 strlist: strlist strcomp .
 
     $default  reduce using rule 13 (strlist)
 
 
-state 77
+state 83
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -1806,224 +1984,224 @@ state 77
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
-   57 nestedcmdexpr: '(' expr . ')'
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
+   61 nestedcmdexpr: '(' expr . ')'
 
-    '>'    shift, and go to state 59
-    '<'    shift, and go to state 60
-    T_NEQ  shift, and go to state 61
-    T_EQ   shift, and go to state 62
-    T_GEQ  shift, and go to state 63
-    T_LEQ  shift, and go to state 64
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
-    ')'    shift, and go to state 109
+    '>'    shift, and go to state 65
+    '<'    shift, and go to state 66
+    T_NEQ  shift, and go to state 67
+    T_EQ   shift, and go to state 68
+    T_GEQ  shift, and go to state 69
+    T_LEQ  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
+    ')'    shift, and go to state 115
 
 
-state 78
+state 84
 
    13 strlist: strlist . strcomp
    15 strcomp: . T_STRING
    16        | . T_VAR
    17        | . '(' expr ')'
-   55 nestedcmdexpr: '"' strlist . '"'
+   59 nestedcmdexpr: '"' strlist . '"'
 
-    T_STRING  shift, and go to state 72
-    T_VAR     shift, and go to state 73
-    '('       shift, and go to state 74
-    '"'       shift, and go to state 110
+    T_STRING  shift, and go to state 78
+    T_VAR     shift, and go to state 79
+    '('       shift, and go to state 80
+    '"'       shift, and go to state 116
 
-    strcomp  go to state 76
-
-
-state 79
-
-   59 nestedcmdexprlist: nestedcmdexprlist nestedcmdexpr .
-
-    $default  reduce using rule 59 (nestedcmdexprlist)
+    strcomp  go to state 82
 
 
-state 80
+state 85
 
-   60 nestedsubcmd: nestedcmdexprlist cmdredirin . cmdredirout cmdredirerr cmdredirfd
-   69 cmdredirout: . '>' nestedcmdexpr
-   70            | . T_OUT2FILE nestedcmdexpr
-   71            | . T_APPEND nestedcmdexpr
-   72            | .  [T_ERR2OUT, T_OUT2ERR, T_ERR2FILE, '`', '|']
+   63 nestedcmdexprlist: nestedcmdexprlist nestedcmdexpr .
 
-    T_APPEND    shift, and go to state 85
-    T_OUT2FILE  shift, and go to state 86
-    '>'         shift, and go to state 87
-
-    $default  reduce using rule 72 (cmdredirout)
-
-    cmdredirout  go to state 111
+    $default  reduce using rule 63 (nestedcmdexprlist)
 
 
-state 81
+state 86
 
-   44 cmdexpr: '`' nestedsubcmd '`' .
+   64 nestedsubcmd: nestedcmdexprlist cmdredirin . cmdredirout cmdredirerr cmdredirfd
+   73 cmdredirout: . '>' nestedcmdexpr
+   74            | . T_OUT2FILE nestedcmdexpr
+   75            | . T_APPEND nestedcmdexpr
+   76            | .  [T_ERR2OUT, T_OUT2ERR, T_ERR2FILE, '`', '|']
 
-    $default  reduce using rule 44 (cmdexpr)
+    T_APPEND    shift, and go to state 91
+    T_OUT2FILE  shift, and go to state 92
+    '>'         shift, and go to state 93
 
+    $default  reduce using rule 76 (cmdredirout)
 
-state 82
-
-   52 nestedcmdexpr: . T_NUMBER
-   53              | . T_STRING
-   54              | . T_STRING_SCONST
-   55              | . '"' strlist '"'
-   56              | . T_VAR
-   57              | . '(' expr ')'
-   58 nestedcmdexprlist: . nestedcmdexpr
-   59                  | . nestedcmdexprlist nestedcmdexpr
-   61 nestedsubcmd: nestedsubcmd '|' . nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
-
-    T_NUMBER         shift, and go to state 34
-    T_STRING         shift, and go to state 35
-    T_STRING_SCONST  shift, and go to state 36
-    T_VAR            shift, and go to state 37
-    '('              shift, and go to state 38
-    '"'              shift, and go to state 39
-
-    nestedcmdexpr      go to state 40
-    nestedcmdexprlist  go to state 112
+    cmdredirout  go to state 117
 
 
-state 83
+state 87
+
+   48 cmdexpr: '`' nestedsubcmd '`' .
+
+    $default  reduce using rule 48 (cmdexpr)
+
+
+state 88
+
+   56 nestedcmdexpr: . T_NUMBER
+   57              | . T_STRING
+   58              | . T_STRING_SCONST
+   59              | . '"' strlist '"'
+   60              | . T_VAR
+   61              | . '(' expr ')'
+   62 nestedcmdexprlist: . nestedcmdexpr
+   63                  | . nestedcmdexprlist nestedcmdexpr
+   65 nestedsubcmd: nestedsubcmd '|' . nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+
+    T_NUMBER         shift, and go to state 36
+    T_STRING         shift, and go to state 37
+    T_STRING_SCONST  shift, and go to state 38
+    T_VAR            shift, and go to state 39
+    '('              shift, and go to state 40
+    '"'              shift, and go to state 41
+
+    nestedcmdexpr      go to state 42
+    nestedcmdexprlist  go to state 118
+
+
+state 89
 
     6 stmtlistr: stmtlistr ';' stmt .
 
     $default  reduce using rule 6 (stmtlistr)
 
 
-state 84
+state 90
 
-   65 cmdredirin: '<' nestedcmdexpr .
+   69 cmdredirin: '<' nestedcmdexpr .
 
-    $default  reduce using rule 65 (cmdredirin)
-
-
-state 85
-
-   52 nestedcmdexpr: . T_NUMBER
-   53              | . T_STRING
-   54              | . T_STRING_SCONST
-   55              | . '"' strlist '"'
-   56              | . T_VAR
-   57              | . '(' expr ')'
-   71 cmdredirout: T_APPEND . nestedcmdexpr
-
-    T_NUMBER         shift, and go to state 34
-    T_STRING         shift, and go to state 35
-    T_STRING_SCONST  shift, and go to state 36
-    T_VAR            shift, and go to state 37
-    '('              shift, and go to state 38
-    '"'              shift, and go to state 39
-
-    nestedcmdexpr  go to state 113
+    $default  reduce using rule 69 (cmdredirin)
 
 
-state 86
+state 91
 
-   52 nestedcmdexpr: . T_NUMBER
-   53              | . T_STRING
-   54              | . T_STRING_SCONST
-   55              | . '"' strlist '"'
-   56              | . T_VAR
-   57              | . '(' expr ')'
-   70 cmdredirout: T_OUT2FILE . nestedcmdexpr
+   56 nestedcmdexpr: . T_NUMBER
+   57              | . T_STRING
+   58              | . T_STRING_SCONST
+   59              | . '"' strlist '"'
+   60              | . T_VAR
+   61              | . '(' expr ')'
+   75 cmdredirout: T_APPEND . nestedcmdexpr
 
-    T_NUMBER         shift, and go to state 34
-    T_STRING         shift, and go to state 35
-    T_STRING_SCONST  shift, and go to state 36
-    T_VAR            shift, and go to state 37
-    '('              shift, and go to state 38
-    '"'              shift, and go to state 39
+    T_NUMBER         shift, and go to state 36
+    T_STRING         shift, and go to state 37
+    T_STRING_SCONST  shift, and go to state 38
+    T_VAR            shift, and go to state 39
+    '('              shift, and go to state 40
+    '"'              shift, and go to state 41
 
-    nestedcmdexpr  go to state 114
-
-
-state 87
-
-   52 nestedcmdexpr: . T_NUMBER
-   53              | . T_STRING
-   54              | . T_STRING_SCONST
-   55              | . '"' strlist '"'
-   56              | . T_VAR
-   57              | . '(' expr ')'
-   69 cmdredirout: '>' . nestedcmdexpr
-
-    T_NUMBER         shift, and go to state 34
-    T_STRING         shift, and go to state 35
-    T_STRING_SCONST  shift, and go to state 36
-    T_VAR            shift, and go to state 37
-    '('              shift, and go to state 38
-    '"'              shift, and go to state 39
-
-    nestedcmdexpr  go to state 115
+    nestedcmdexpr  go to state 119
 
 
-state 88
+state 92
 
-   50 subcmd: cmdexprlist cmdredirin cmdredirout . cmdredirerr cmdredirfd
-   67 cmdredirerr: . T_ERR2FILE nestedcmdexpr
-   68            | .  [$end, T_ELSE, T_FI, T_DONE, T_ERR2OUT, T_OUT2ERR, ';', '&', '|']
+   56 nestedcmdexpr: . T_NUMBER
+   57              | . T_STRING
+   58              | . T_STRING_SCONST
+   59              | . '"' strlist '"'
+   60              | . T_VAR
+   61              | . '(' expr ')'
+   74 cmdredirout: T_OUT2FILE . nestedcmdexpr
 
-    T_ERR2FILE  shift, and go to state 116
+    T_NUMBER         shift, and go to state 36
+    T_STRING         shift, and go to state 37
+    T_STRING_SCONST  shift, and go to state 38
+    T_VAR            shift, and go to state 39
+    '('              shift, and go to state 40
+    '"'              shift, and go to state 41
 
-    $default  reduce using rule 68 (cmdredirerr)
-
-    cmdredirerr  go to state 117
+    nestedcmdexpr  go to state 120
 
 
-state 89
+state 93
 
-   39 cmdexpr: . T_NUMBER
-   40        | . T_STRING
-   41        | . T_STRING_SCONST
-   42        | . '"' strlist '"'
-   43        | . T_VAR
-   44        | . '`' nestedsubcmd '`'
-   45        | . '(' expr ')'
-   47 cmdexprlist: cmdexprlist . cmdexpr
-   51 subcmd: subcmd '|' cmdexprlist . cmdredirin cmdredirout cmdredirerr cmdredirfd
-   65 cmdredirin: . '<' nestedcmdexpr
-   66           | .  [$end, T_ELSE, T_FI, T_DONE, T_ERR2OUT, T_OUT2ERR, T_APPEND, T_ERR2FILE, T_OUT2FILE, '>', ';', '&', '|']
+   56 nestedcmdexpr: . T_NUMBER
+   57              | . T_STRING
+   58              | . T_STRING_SCONST
+   59              | . '"' strlist '"'
+   60              | . T_VAR
+   61              | . '(' expr ')'
+   73 cmdredirout: '>' . nestedcmdexpr
+
+    T_NUMBER         shift, and go to state 36
+    T_STRING         shift, and go to state 37
+    T_STRING_SCONST  shift, and go to state 38
+    T_VAR            shift, and go to state 39
+    '('              shift, and go to state 40
+    '"'              shift, and go to state 41
+
+    nestedcmdexpr  go to state 121
+
+
+state 94
+
+   54 subcmd: cmdexprlist cmdredirin cmdredirout . cmdredirerr cmdredirfd
+   71 cmdredirerr: . T_ERR2FILE nestedcmdexpr
+   72            | .  [$end, T_ELSE, T_FI, T_DONE, T_ERR2OUT, T_OUT2ERR, ';', '&', '|']
+
+    T_ERR2FILE  shift, and go to state 122
+
+    $default  reduce using rule 72 (cmdredirerr)
+
+    cmdredirerr  go to state 123
+
+
+state 95
+
+   43 cmdexpr: . T_NUMBER
+   44        | . T_STRING
+   45        | . T_STRING_SCONST
+   46        | . '"' strlist '"'
+   47        | . T_VAR
+   48        | . '`' nestedsubcmd '`'
+   49        | . '(' expr ')'
+   51 cmdexprlist: cmdexprlist . cmdexpr
+   55 subcmd: subcmd '|' cmdexprlist . cmdredirin cmdredirout cmdredirerr cmdredirfd
+   69 cmdredirin: . '<' nestedcmdexpr
+   70           | .  [$end, T_ELSE, T_FI, T_DONE, T_ERR2OUT, T_OUT2ERR, T_APPEND, T_ERR2FILE, T_OUT2FILE, '>', ';', '&', '|']
 
     T_NUMBER         shift, and go to state 4
     T_STRING         shift, and go to state 5
     T_STRING_SCONST  shift, and go to state 6
-    T_VAR            shift, and go to state 45
-    '<'              shift, and go to state 46
+    T_VAR            shift, and go to state 47
+    '<'              shift, and go to state 48
     '('              shift, and go to state 8
     '"'              shift, and go to state 9
     '`'              shift, and go to state 10
 
-    $default  reduce using rule 66 (cmdredirin)
+    $default  reduce using rule 70 (cmdredirin)
 
-    cmdexpr     go to state 47
-    cmdredirin  go to state 118
+    cmdexpr     go to state 49
+    cmdredirin  go to state 124
 
 
-state 90
+state 96
 
     7 stmt: T_IF '(' expr ')' . T_THEN stmtlist T_FI
     8     | T_IF '(' expr ')' . T_THEN stmtlist T_ELSE stmtlist T_FI
 
-    T_THEN  shift, and go to state 119
+    T_THEN  shift, and go to state 125
 
 
-state 91
+state 97
 
     9 stmt: T_FOR '(' expr ';' . expr ';' expr ')' T_DO stmtlist T_DONE
    18 expr: . T_NUMBER
@@ -2038,103 +2216,63 @@ state 91
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
-    expr        go to state 120
-    assignstmt  go to state 32
+    expr        go to state 126
+    assignstmt  go to state 34
 
 
-state 92
+state 98
 
    10 stmt: T_WHILE '(' expr ')' . T_DO stmtlist T_DONE
 
-    T_DO  shift, and go to state 121
+    T_DO  shift, and go to state 127
 
 
-state 93
+state 99
 
-   37 expr: '(' expr ')' .
+   41 expr: '(' expr ')' .
 
-    $default  reduce using rule 37 (expr)
+    $default  reduce using rule 41 (expr)
 
 
-state 94
+state 100
 
    20 expr: '"' strlist '"' .
 
     $default  reduce using rule 20 (expr)
 
 
-state 95
+state 101
 
-   36 expr: '`' nestedsubcmd '`' .
+   40 expr: '`' nestedsubcmd '`' .
 
-    $default  reduce using rule 36 (expr)
-
-
-state 96
-
-   23 expr: expr . T_ADD expr
-   24     | expr . T_SUB expr
-   25     | expr . T_MUL expr
-   26     | expr . T_DIV expr
-   27     | expr . T_MOD expr
-   28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   31     | expr '>' expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
-
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
-
-    '>'    error (nonassociative)
-    '<'    error (nonassociative)
-    T_NEQ  error (nonassociative)
-    T_EQ   error (nonassociative)
-    T_GEQ  error (nonassociative)
-    T_LEQ  error (nonassociative)
-
-    $default  reduce using rule 31 (expr)
-
-    Conflict between rule 31 and token '>' resolved as an error (%nonassoc '>').
-    Conflict between rule 31 and token '<' resolved as an error (%nonassoc '<').
-    Conflict between rule 31 and token T_NEQ resolved as an error (%nonassoc T_NEQ).
-    Conflict between rule 31 and token T_EQ resolved as an error (%nonassoc T_EQ).
-    Conflict between rule 31 and token T_GEQ resolved as an error (%nonassoc T_GEQ).
-    Conflict between rule 31 and token T_LEQ resolved as an error (%nonassoc T_LEQ).
-    Conflict between rule 31 and token T_SUB resolved as shift ('>' < T_SUB).
-    Conflict between rule 31 and token T_ADD resolved as shift ('>' < T_ADD).
-    Conflict between rule 31 and token T_MOD resolved as shift ('>' < T_MOD).
-    Conflict between rule 31 and token T_DIV resolved as shift ('>' < T_DIV).
-    Conflict between rule 31 and token T_MUL resolved as shift ('>' < T_MUL).
-    Conflict between rule 31 and token T_POW resolved as shift ('>' < T_POW).
+    $default  reduce using rule 40 (expr)
 
 
-state 97
+state 102
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -2142,66 +2280,20 @@ state 97
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   30     | expr '<' expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   35     | expr '>' expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
-
-    '>'    error (nonassociative)
-    '<'    error (nonassociative)
-    T_NEQ  error (nonassociative)
-    T_EQ   error (nonassociative)
-    T_GEQ  error (nonassociative)
-    T_LEQ  error (nonassociative)
-
-    $default  reduce using rule 30 (expr)
-
-    Conflict between rule 30 and token '>' resolved as an error (%nonassoc '>').
-    Conflict between rule 30 and token '<' resolved as an error (%nonassoc '<').
-    Conflict between rule 30 and token T_NEQ resolved as an error (%nonassoc T_NEQ).
-    Conflict between rule 30 and token T_EQ resolved as an error (%nonassoc T_EQ).
-    Conflict between rule 30 and token T_GEQ resolved as an error (%nonassoc T_GEQ).
-    Conflict between rule 30 and token T_LEQ resolved as an error (%nonassoc T_LEQ).
-    Conflict between rule 30 and token T_SUB resolved as shift ('<' < T_SUB).
-    Conflict between rule 30 and token T_ADD resolved as shift ('<' < T_ADD).
-    Conflict between rule 30 and token T_MOD resolved as shift ('<' < T_MOD).
-    Conflict between rule 30 and token T_DIV resolved as shift ('<' < T_DIV).
-    Conflict between rule 30 and token T_MUL resolved as shift ('<' < T_MUL).
-    Conflict between rule 30 and token T_POW resolved as shift ('<' < T_POW).
-
-
-state 98
-
-   23 expr: expr . T_ADD expr
-   24     | expr . T_SUB expr
-   25     | expr . T_MUL expr
-   26     | expr . T_DIV expr
-   27     | expr . T_MOD expr
-   28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
-   35     | expr T_NEQ expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
-
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
 
     '>'    error (nonassociative)
     '<'    error (nonassociative)
@@ -2218,15 +2310,15 @@ state 98
     Conflict between rule 35 and token T_EQ resolved as an error (%nonassoc T_EQ).
     Conflict between rule 35 and token T_GEQ resolved as an error (%nonassoc T_GEQ).
     Conflict between rule 35 and token T_LEQ resolved as an error (%nonassoc T_LEQ).
-    Conflict between rule 35 and token T_SUB resolved as shift (T_NEQ < T_SUB).
-    Conflict between rule 35 and token T_ADD resolved as shift (T_NEQ < T_ADD).
-    Conflict between rule 35 and token T_MOD resolved as shift (T_NEQ < T_MOD).
-    Conflict between rule 35 and token T_DIV resolved as shift (T_NEQ < T_DIV).
-    Conflict between rule 35 and token T_MUL resolved as shift (T_NEQ < T_MUL).
-    Conflict between rule 35 and token T_POW resolved as shift (T_NEQ < T_POW).
+    Conflict between rule 35 and token T_SUB resolved as shift ('>' < T_SUB).
+    Conflict between rule 35 and token T_ADD resolved as shift ('>' < T_ADD).
+    Conflict between rule 35 and token T_MOD resolved as shift ('>' < T_MOD).
+    Conflict between rule 35 and token T_DIV resolved as shift ('>' < T_DIV).
+    Conflict between rule 35 and token T_MUL resolved as shift ('>' < T_MUL).
+    Conflict between rule 35 and token T_POW resolved as shift ('>' < T_POW).
 
 
-state 99
+state 103
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -2234,20 +2326,20 @@ state 99
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   34     | expr T_EQ expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   34     | expr '<' expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
 
     '>'    error (nonassociative)
     '<'    error (nonassociative)
@@ -2264,15 +2356,15 @@ state 99
     Conflict between rule 34 and token T_EQ resolved as an error (%nonassoc T_EQ).
     Conflict between rule 34 and token T_GEQ resolved as an error (%nonassoc T_GEQ).
     Conflict between rule 34 and token T_LEQ resolved as an error (%nonassoc T_LEQ).
-    Conflict between rule 34 and token T_SUB resolved as shift (T_EQ < T_SUB).
-    Conflict between rule 34 and token T_ADD resolved as shift (T_EQ < T_ADD).
-    Conflict between rule 34 and token T_MOD resolved as shift (T_EQ < T_MOD).
-    Conflict between rule 34 and token T_DIV resolved as shift (T_EQ < T_DIV).
-    Conflict between rule 34 and token T_MUL resolved as shift (T_EQ < T_MUL).
-    Conflict between rule 34 and token T_POW resolved as shift (T_EQ < T_POW).
+    Conflict between rule 34 and token T_SUB resolved as shift ('<' < T_SUB).
+    Conflict between rule 34 and token T_ADD resolved as shift ('<' < T_ADD).
+    Conflict between rule 34 and token T_MOD resolved as shift ('<' < T_MOD).
+    Conflict between rule 34 and token T_DIV resolved as shift ('<' < T_DIV).
+    Conflict between rule 34 and token T_MUL resolved as shift ('<' < T_MUL).
+    Conflict between rule 34 and token T_POW resolved as shift ('<' < T_POW).
 
 
-state 100
+state 104
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -2280,20 +2372,20 @@ state 100
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   33     | expr T_GEQ expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
+   39     | expr T_NEQ expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
 
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
 
     '>'    error (nonassociative)
     '<'    error (nonassociative)
@@ -2302,23 +2394,23 @@ state 100
     T_GEQ  error (nonassociative)
     T_LEQ  error (nonassociative)
 
-    $default  reduce using rule 33 (expr)
+    $default  reduce using rule 39 (expr)
 
-    Conflict between rule 33 and token '>' resolved as an error (%nonassoc '>').
-    Conflict between rule 33 and token '<' resolved as an error (%nonassoc '<').
-    Conflict between rule 33 and token T_NEQ resolved as an error (%nonassoc T_NEQ).
-    Conflict between rule 33 and token T_EQ resolved as an error (%nonassoc T_EQ).
-    Conflict between rule 33 and token T_GEQ resolved as an error (%nonassoc T_GEQ).
-    Conflict between rule 33 and token T_LEQ resolved as an error (%nonassoc T_LEQ).
-    Conflict between rule 33 and token T_SUB resolved as shift (T_GEQ < T_SUB).
-    Conflict between rule 33 and token T_ADD resolved as shift (T_GEQ < T_ADD).
-    Conflict between rule 33 and token T_MOD resolved as shift (T_GEQ < T_MOD).
-    Conflict between rule 33 and token T_DIV resolved as shift (T_GEQ < T_DIV).
-    Conflict between rule 33 and token T_MUL resolved as shift (T_GEQ < T_MUL).
-    Conflict between rule 33 and token T_POW resolved as shift (T_GEQ < T_POW).
+    Conflict between rule 39 and token '>' resolved as an error (%nonassoc '>').
+    Conflict between rule 39 and token '<' resolved as an error (%nonassoc '<').
+    Conflict between rule 39 and token T_NEQ resolved as an error (%nonassoc T_NEQ).
+    Conflict between rule 39 and token T_EQ resolved as an error (%nonassoc T_EQ).
+    Conflict between rule 39 and token T_GEQ resolved as an error (%nonassoc T_GEQ).
+    Conflict between rule 39 and token T_LEQ resolved as an error (%nonassoc T_LEQ).
+    Conflict between rule 39 and token T_SUB resolved as shift (T_NEQ < T_SUB).
+    Conflict between rule 39 and token T_ADD resolved as shift (T_NEQ < T_ADD).
+    Conflict between rule 39 and token T_MOD resolved as shift (T_NEQ < T_MOD).
+    Conflict between rule 39 and token T_DIV resolved as shift (T_NEQ < T_DIV).
+    Conflict between rule 39 and token T_MUL resolved as shift (T_NEQ < T_MUL).
+    Conflict between rule 39 and token T_POW resolved as shift (T_NEQ < T_POW).
 
 
-state 101
+state 105
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -2326,20 +2418,20 @@ state 101
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   32     | expr T_LEQ expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   38     | expr T_EQ expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
+   39     | expr . T_NEQ expr
 
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
 
     '>'    error (nonassociative)
     '<'    error (nonassociative)
@@ -2348,23 +2440,115 @@ state 101
     T_GEQ  error (nonassociative)
     T_LEQ  error (nonassociative)
 
-    $default  reduce using rule 32 (expr)
+    $default  reduce using rule 38 (expr)
 
-    Conflict between rule 32 and token '>' resolved as an error (%nonassoc '>').
-    Conflict between rule 32 and token '<' resolved as an error (%nonassoc '<').
-    Conflict between rule 32 and token T_NEQ resolved as an error (%nonassoc T_NEQ).
-    Conflict between rule 32 and token T_EQ resolved as an error (%nonassoc T_EQ).
-    Conflict between rule 32 and token T_GEQ resolved as an error (%nonassoc T_GEQ).
-    Conflict between rule 32 and token T_LEQ resolved as an error (%nonassoc T_LEQ).
-    Conflict between rule 32 and token T_SUB resolved as shift (T_LEQ < T_SUB).
-    Conflict between rule 32 and token T_ADD resolved as shift (T_LEQ < T_ADD).
-    Conflict between rule 32 and token T_MOD resolved as shift (T_LEQ < T_MOD).
-    Conflict between rule 32 and token T_DIV resolved as shift (T_LEQ < T_DIV).
-    Conflict between rule 32 and token T_MUL resolved as shift (T_LEQ < T_MUL).
-    Conflict between rule 32 and token T_POW resolved as shift (T_LEQ < T_POW).
+    Conflict between rule 38 and token '>' resolved as an error (%nonassoc '>').
+    Conflict between rule 38 and token '<' resolved as an error (%nonassoc '<').
+    Conflict between rule 38 and token T_NEQ resolved as an error (%nonassoc T_NEQ).
+    Conflict between rule 38 and token T_EQ resolved as an error (%nonassoc T_EQ).
+    Conflict between rule 38 and token T_GEQ resolved as an error (%nonassoc T_GEQ).
+    Conflict between rule 38 and token T_LEQ resolved as an error (%nonassoc T_LEQ).
+    Conflict between rule 38 and token T_SUB resolved as shift (T_EQ < T_SUB).
+    Conflict between rule 38 and token T_ADD resolved as shift (T_EQ < T_ADD).
+    Conflict between rule 38 and token T_MOD resolved as shift (T_EQ < T_MOD).
+    Conflict between rule 38 and token T_DIV resolved as shift (T_EQ < T_DIV).
+    Conflict between rule 38 and token T_MUL resolved as shift (T_EQ < T_MUL).
+    Conflict between rule 38 and token T_POW resolved as shift (T_EQ < T_POW).
 
 
-state 102
+state 106
+
+   23 expr: expr . T_ADD expr
+   24     | expr . T_SUB expr
+   25     | expr . T_MUL expr
+   26     | expr . T_DIV expr
+   27     | expr . T_MOD expr
+   28     | expr . T_POW expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   37     | expr T_GEQ expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
+
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
+
+    '>'    error (nonassociative)
+    '<'    error (nonassociative)
+    T_NEQ  error (nonassociative)
+    T_EQ   error (nonassociative)
+    T_GEQ  error (nonassociative)
+    T_LEQ  error (nonassociative)
+
+    $default  reduce using rule 37 (expr)
+
+    Conflict between rule 37 and token '>' resolved as an error (%nonassoc '>').
+    Conflict between rule 37 and token '<' resolved as an error (%nonassoc '<').
+    Conflict between rule 37 and token T_NEQ resolved as an error (%nonassoc T_NEQ).
+    Conflict between rule 37 and token T_EQ resolved as an error (%nonassoc T_EQ).
+    Conflict between rule 37 and token T_GEQ resolved as an error (%nonassoc T_GEQ).
+    Conflict between rule 37 and token T_LEQ resolved as an error (%nonassoc T_LEQ).
+    Conflict between rule 37 and token T_SUB resolved as shift (T_GEQ < T_SUB).
+    Conflict between rule 37 and token T_ADD resolved as shift (T_GEQ < T_ADD).
+    Conflict between rule 37 and token T_MOD resolved as shift (T_GEQ < T_MOD).
+    Conflict between rule 37 and token T_DIV resolved as shift (T_GEQ < T_DIV).
+    Conflict between rule 37 and token T_MUL resolved as shift (T_GEQ < T_MUL).
+    Conflict between rule 37 and token T_POW resolved as shift (T_GEQ < T_POW).
+
+
+state 107
+
+   23 expr: expr . T_ADD expr
+   24     | expr . T_SUB expr
+   25     | expr . T_MUL expr
+   26     | expr . T_DIV expr
+   27     | expr . T_MOD expr
+   28     | expr . T_POW expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   36     | expr T_LEQ expr .  [$end, T_ELSE, T_FI, T_DONE, ';', ')']
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
+
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
+
+    '>'    error (nonassociative)
+    '<'    error (nonassociative)
+    T_NEQ  error (nonassociative)
+    T_EQ   error (nonassociative)
+    T_GEQ  error (nonassociative)
+    T_LEQ  error (nonassociative)
+
+    $default  reduce using rule 36 (expr)
+
+    Conflict between rule 36 and token '>' resolved as an error (%nonassoc '>').
+    Conflict between rule 36 and token '<' resolved as an error (%nonassoc '<').
+    Conflict between rule 36 and token T_NEQ resolved as an error (%nonassoc T_NEQ).
+    Conflict between rule 36 and token T_EQ resolved as an error (%nonassoc T_EQ).
+    Conflict between rule 36 and token T_GEQ resolved as an error (%nonassoc T_GEQ).
+    Conflict between rule 36 and token T_LEQ resolved as an error (%nonassoc T_LEQ).
+    Conflict between rule 36 and token T_SUB resolved as shift (T_LEQ < T_SUB).
+    Conflict between rule 36 and token T_ADD resolved as shift (T_LEQ < T_ADD).
+    Conflict between rule 36 and token T_MOD resolved as shift (T_LEQ < T_MOD).
+    Conflict between rule 36 and token T_DIV resolved as shift (T_LEQ < T_DIV).
+    Conflict between rule 36 and token T_MUL resolved as shift (T_LEQ < T_MUL).
+    Conflict between rule 36 and token T_POW resolved as shift (T_LEQ < T_POW).
+
+
+state 108
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -2373,17 +2557,17 @@ state 102
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
 
     $default  reduce using rule 24 (expr)
 
@@ -2401,7 +2585,7 @@ state 102
     Conflict between rule 24 and token T_POW resolved as shift (T_SUB < T_POW).
 
 
-state 103
+state 109
 
    23 expr: expr . T_ADD expr
    23     | expr T_ADD expr .  [$end, T_ELSE, T_FI, T_DONE, '>', '<', T_NEQ, T_EQ, T_GEQ, T_LEQ, T_SUB, T_ADD, ';', ')']
@@ -2410,17 +2594,17 @@ state 103
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
 
     $default  reduce using rule 23 (expr)
 
@@ -2438,7 +2622,7 @@ state 103
     Conflict between rule 23 and token T_POW resolved as shift (T_ADD < T_POW).
 
 
-state 104
+state 110
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -2447,14 +2631,14 @@ state 104
    27     | expr . T_MOD expr
    27     | expr T_MOD expr .  [$end, T_ELSE, T_FI, T_DONE, '>', '<', T_NEQ, T_EQ, T_GEQ, T_LEQ, T_SUB, T_ADD, T_MOD, T_DIV, T_MUL, ';', ')']
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    T_POW  shift, and go to state 70
+    T_POW  shift, and go to state 76
 
     $default  reduce using rule 27 (expr)
 
@@ -2472,7 +2656,7 @@ state 104
     Conflict between rule 27 and token T_POW resolved as shift (T_MOD < T_POW).
 
 
-state 105
+state 111
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -2481,14 +2665,14 @@ state 105
    26     | expr T_DIV expr .  [$end, T_ELSE, T_FI, T_DONE, '>', '<', T_NEQ, T_EQ, T_GEQ, T_LEQ, T_SUB, T_ADD, T_MOD, T_DIV, T_MUL, ';', ')']
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    T_POW  shift, and go to state 70
+    T_POW  shift, and go to state 76
 
     $default  reduce using rule 26 (expr)
 
@@ -2506,7 +2690,7 @@ state 105
     Conflict between rule 26 and token T_POW resolved as shift (T_DIV < T_POW).
 
 
-state 106
+state 112
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -2515,14 +2699,14 @@ state 106
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    T_POW  shift, and go to state 70
+    T_POW  shift, and go to state 76
 
     $default  reduce using rule 25 (expr)
 
@@ -2540,7 +2724,7 @@ state 106
     Conflict between rule 25 and token T_POW resolved as shift (T_MUL < T_POW).
 
 
-state 107
+state 113
 
    23 expr: expr . T_ADD expr
    24     | expr . T_SUB expr
@@ -2549,14 +2733,14 @@ state 107
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
    28     | expr T_POW expr .  [$end, T_ELSE, T_FI, T_DONE, '>', '<', T_NEQ, T_EQ, T_GEQ, T_LEQ, T_SUB, T_ADD, T_MOD, T_DIV, T_MUL, ';', ')']
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    T_POW  shift, and go to state 70
+    T_POW  shift, and go to state 76
 
     $default  reduce using rule 28 (expr)
 
@@ -2574,7 +2758,7 @@ state 107
     Conflict between rule 28 and token T_POW resolved as shift (%right T_POW).
 
 
-state 108
+state 114
 
    17 strcomp: '(' expr . ')'
    23 expr: expr . T_ADD expr
@@ -2583,156 +2767,156 @@ state 108
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    '>'    shift, and go to state 59
-    '<'    shift, and go to state 60
-    T_NEQ  shift, and go to state 61
-    T_EQ   shift, and go to state 62
-    T_GEQ  shift, and go to state 63
-    T_LEQ  shift, and go to state 64
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
-    ')'    shift, and go to state 122
-
-
-state 109
-
-   57 nestedcmdexpr: '(' expr ')' .
-
-    $default  reduce using rule 57 (nestedcmdexpr)
-
-
-state 110
-
-   55 nestedcmdexpr: '"' strlist '"' .
-
-    $default  reduce using rule 55 (nestedcmdexpr)
-
-
-state 111
-
-   60 nestedsubcmd: nestedcmdexprlist cmdredirin cmdredirout . cmdredirerr cmdredirfd
-   67 cmdredirerr: . T_ERR2FILE nestedcmdexpr
-   68            | .  [T_ERR2OUT, T_OUT2ERR, '`', '|']
-
-    T_ERR2FILE  shift, and go to state 116
-
-    $default  reduce using rule 68 (cmdredirerr)
-
-    cmdredirerr  go to state 123
-
-
-state 112
-
-   52 nestedcmdexpr: . T_NUMBER
-   53              | . T_STRING
-   54              | . T_STRING_SCONST
-   55              | . '"' strlist '"'
-   56              | . T_VAR
-   57              | . '(' expr ')'
-   59 nestedcmdexprlist: nestedcmdexprlist . nestedcmdexpr
-   61 nestedsubcmd: nestedsubcmd '|' nestedcmdexprlist . cmdredirin cmdredirout cmdredirerr cmdredirfd
-   65 cmdredirin: . '<' nestedcmdexpr
-   66           | .  [T_ERR2OUT, T_OUT2ERR, T_APPEND, T_ERR2FILE, T_OUT2FILE, '>', '`', '|']
-
-    T_NUMBER         shift, and go to state 34
-    T_STRING         shift, and go to state 35
-    T_STRING_SCONST  shift, and go to state 36
-    T_VAR            shift, and go to state 37
-    '<'              shift, and go to state 46
-    '('              shift, and go to state 38
-    '"'              shift, and go to state 39
-
-    $default  reduce using rule 66 (cmdredirin)
-
-    nestedcmdexpr  go to state 79
-    cmdredirin     go to state 124
-
-
-state 113
-
-   71 cmdredirout: T_APPEND nestedcmdexpr .
-
-    $default  reduce using rule 71 (cmdredirout)
-
-
-state 114
-
-   70 cmdredirout: T_OUT2FILE nestedcmdexpr .
-
-    $default  reduce using rule 70 (cmdredirout)
+    '>'    shift, and go to state 65
+    '<'    shift, and go to state 66
+    T_NEQ  shift, and go to state 67
+    T_EQ   shift, and go to state 68
+    T_GEQ  shift, and go to state 69
+    T_LEQ  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
+    ')'    shift, and go to state 128
 
 
 state 115
 
-   69 cmdredirout: '>' nestedcmdexpr .
+   61 nestedcmdexpr: '(' expr ')' .
 
-    $default  reduce using rule 69 (cmdredirout)
+    $default  reduce using rule 61 (nestedcmdexpr)
 
 
 state 116
 
-   52 nestedcmdexpr: . T_NUMBER
-   53              | . T_STRING
-   54              | . T_STRING_SCONST
-   55              | . '"' strlist '"'
-   56              | . T_VAR
-   57              | . '(' expr ')'
-   67 cmdredirerr: T_ERR2FILE . nestedcmdexpr
+   59 nestedcmdexpr: '"' strlist '"' .
 
-    T_NUMBER         shift, and go to state 34
-    T_STRING         shift, and go to state 35
-    T_STRING_SCONST  shift, and go to state 36
-    T_VAR            shift, and go to state 37
-    '('              shift, and go to state 38
-    '"'              shift, and go to state 39
-
-    nestedcmdexpr  go to state 125
+    $default  reduce using rule 59 (nestedcmdexpr)
 
 
 state 117
 
-   50 subcmd: cmdexprlist cmdredirin cmdredirout cmdredirerr . cmdredirfd
-   62 cmdredirfd: . T_ERR2OUT
-   63           | . T_OUT2ERR
-   64           | .  [$end, T_ELSE, T_FI, T_DONE, ';', '&', '|']
+   64 nestedsubcmd: nestedcmdexprlist cmdredirin cmdredirout . cmdredirerr cmdredirfd
+   71 cmdredirerr: . T_ERR2FILE nestedcmdexpr
+   72            | .  [T_ERR2OUT, T_OUT2ERR, '`', '|']
 
-    T_ERR2OUT  shift, and go to state 126
-    T_OUT2ERR  shift, and go to state 127
+    T_ERR2FILE  shift, and go to state 122
 
-    $default  reduce using rule 64 (cmdredirfd)
+    $default  reduce using rule 72 (cmdredirerr)
 
-    cmdredirfd  go to state 128
+    cmdredirerr  go to state 129
 
 
 state 118
 
-   51 subcmd: subcmd '|' cmdexprlist cmdredirin . cmdredirout cmdredirerr cmdredirfd
-   69 cmdredirout: . '>' nestedcmdexpr
-   70            | . T_OUT2FILE nestedcmdexpr
-   71            | . T_APPEND nestedcmdexpr
-   72            | .  [$end, T_ELSE, T_FI, T_DONE, T_ERR2OUT, T_OUT2ERR, T_ERR2FILE, ';', '&', '|']
+   56 nestedcmdexpr: . T_NUMBER
+   57              | . T_STRING
+   58              | . T_STRING_SCONST
+   59              | . '"' strlist '"'
+   60              | . T_VAR
+   61              | . '(' expr ')'
+   63 nestedcmdexprlist: nestedcmdexprlist . nestedcmdexpr
+   65 nestedsubcmd: nestedsubcmd '|' nestedcmdexprlist . cmdredirin cmdredirout cmdredirerr cmdredirfd
+   69 cmdredirin: . '<' nestedcmdexpr
+   70           | .  [T_ERR2OUT, T_OUT2ERR, T_APPEND, T_ERR2FILE, T_OUT2FILE, '>', '`', '|']
 
-    T_APPEND    shift, and go to state 85
-    T_OUT2FILE  shift, and go to state 86
-    '>'         shift, and go to state 87
+    T_NUMBER         shift, and go to state 36
+    T_STRING         shift, and go to state 37
+    T_STRING_SCONST  shift, and go to state 38
+    T_VAR            shift, and go to state 39
+    '<'              shift, and go to state 48
+    '('              shift, and go to state 40
+    '"'              shift, and go to state 41
 
-    $default  reduce using rule 72 (cmdredirout)
+    $default  reduce using rule 70 (cmdredirin)
 
-    cmdredirout  go to state 129
+    nestedcmdexpr  go to state 85
+    cmdredirin     go to state 130
 
 
 state 119
+
+   75 cmdredirout: T_APPEND nestedcmdexpr .
+
+    $default  reduce using rule 75 (cmdredirout)
+
+
+state 120
+
+   74 cmdredirout: T_OUT2FILE nestedcmdexpr .
+
+    $default  reduce using rule 74 (cmdredirout)
+
+
+state 121
+
+   73 cmdredirout: '>' nestedcmdexpr .
+
+    $default  reduce using rule 73 (cmdredirout)
+
+
+state 122
+
+   56 nestedcmdexpr: . T_NUMBER
+   57              | . T_STRING
+   58              | . T_STRING_SCONST
+   59              | . '"' strlist '"'
+   60              | . T_VAR
+   61              | . '(' expr ')'
+   71 cmdredirerr: T_ERR2FILE . nestedcmdexpr
+
+    T_NUMBER         shift, and go to state 36
+    T_STRING         shift, and go to state 37
+    T_STRING_SCONST  shift, and go to state 38
+    T_VAR            shift, and go to state 39
+    '('              shift, and go to state 40
+    '"'              shift, and go to state 41
+
+    nestedcmdexpr  go to state 131
+
+
+state 123
+
+   54 subcmd: cmdexprlist cmdredirin cmdredirout cmdredirerr . cmdredirfd
+   66 cmdredirfd: . T_ERR2OUT
+   67           | . T_OUT2ERR
+   68           | .  [$end, T_ELSE, T_FI, T_DONE, ';', '&', '|']
+
+    T_ERR2OUT  shift, and go to state 132
+    T_OUT2ERR  shift, and go to state 133
+
+    $default  reduce using rule 68 (cmdredirfd)
+
+    cmdredirfd  go to state 134
+
+
+state 124
+
+   55 subcmd: subcmd '|' cmdexprlist cmdredirin . cmdredirout cmdredirerr cmdredirfd
+   73 cmdredirout: . '>' nestedcmdexpr
+   74            | . T_OUT2FILE nestedcmdexpr
+   75            | . T_APPEND nestedcmdexpr
+   76            | .  [$end, T_ELSE, T_FI, T_DONE, T_ERR2OUT, T_OUT2ERR, T_ERR2FILE, ';', '&', '|']
+
+    T_APPEND    shift, and go to state 91
+    T_OUT2FILE  shift, and go to state 92
+    '>'         shift, and go to state 93
+
+    $default  reduce using rule 76 (cmdredirout)
+
+    cmdredirout  go to state 135
+
+
+state 125
 
     2 stmtlist: .  [T_ELSE, T_FI]
     3         | . stmtlistr
@@ -2747,20 +2931,20 @@ state 119
    10     | . T_WHILE '(' expr ')' T_DO stmtlist T_DONE
    11     | . assignstmt
    12     | . cmd
-   38 assignstmt: . T_VAR T_ASSIGN expr
-   39 cmdexpr: . T_NUMBER
-   40        | . T_STRING
-   41        | . T_STRING_SCONST
-   42        | . '"' strlist '"'
-   43        | . T_VAR
-   44        | . '`' nestedsubcmd '`'
-   45        | . '(' expr ')'
-   46 cmdexprlist: . cmdexpr
-   47            | . cmdexprlist cmdexpr
-   48 cmd: . subcmd
-   49    | . subcmd '&'
-   50 subcmd: . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
-   51       | . subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   42 assignstmt: . T_VAR T_ASSIGN expr
+   43 cmdexpr: . T_NUMBER
+   44        | . T_STRING
+   45        | . T_STRING_SCONST
+   46        | . '"' strlist '"'
+   47        | . T_VAR
+   48        | . '`' nestedsubcmd '`'
+   49        | . '(' expr ')'
+   50 cmdexprlist: . cmdexpr
+   51            | . cmdexprlist cmdexpr
+   52 cmd: . subcmd
+   53    | . subcmd '&'
+   54 subcmd: . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   55       | . subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
     T_IF             shift, and go to state 1
     T_FOR            shift, and go to state 2
@@ -2775,7 +2959,7 @@ state 119
 
     $default  reduce using rule 2 (stmtlist)
 
-    stmtlist     go to state 130
+    stmtlist     go to state 136
     stmtlistr    go to state 13
     stmt         go to state 14
     assignstmt   go to state 15
@@ -2785,7 +2969,7 @@ state 119
     subcmd       go to state 19
 
 
-state 120
+state 126
 
     9 stmt: T_FOR '(' expr ';' expr . ';' expr ')' T_DO stmtlist T_DONE
    23 expr: expr . T_ADD expr
@@ -2794,29 +2978,29 @@ state 120
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    '>'    shift, and go to state 59
-    '<'    shift, and go to state 60
-    T_NEQ  shift, and go to state 61
-    T_EQ   shift, and go to state 62
-    T_GEQ  shift, and go to state 63
-    T_LEQ  shift, and go to state 64
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
-    ';'    shift, and go to state 131
+    '>'    shift, and go to state 65
+    '<'    shift, and go to state 66
+    T_NEQ  shift, and go to state 67
+    T_EQ   shift, and go to state 68
+    T_GEQ  shift, and go to state 69
+    T_LEQ  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
+    ';'    shift, and go to state 137
 
 
-state 121
+state 127
 
     2 stmtlist: .  [T_DONE]
     3         | . stmtlistr
@@ -2830,20 +3014,20 @@ state 121
    10     | T_WHILE '(' expr ')' T_DO . stmtlist T_DONE
    11     | . assignstmt
    12     | . cmd
-   38 assignstmt: . T_VAR T_ASSIGN expr
-   39 cmdexpr: . T_NUMBER
-   40        | . T_STRING
-   41        | . T_STRING_SCONST
-   42        | . '"' strlist '"'
-   43        | . T_VAR
-   44        | . '`' nestedsubcmd '`'
-   45        | . '(' expr ')'
-   46 cmdexprlist: . cmdexpr
-   47            | . cmdexprlist cmdexpr
-   48 cmd: . subcmd
-   49    | . subcmd '&'
-   50 subcmd: . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
-   51       | . subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   42 assignstmt: . T_VAR T_ASSIGN expr
+   43 cmdexpr: . T_NUMBER
+   44        | . T_STRING
+   45        | . T_STRING_SCONST
+   46        | . '"' strlist '"'
+   47        | . T_VAR
+   48        | . '`' nestedsubcmd '`'
+   49        | . '(' expr ')'
+   50 cmdexprlist: . cmdexpr
+   51            | . cmdexprlist cmdexpr
+   52 cmd: . subcmd
+   53    | . subcmd '&'
+   54 subcmd: . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   55       | . subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
     T_IF             shift, and go to state 1
     T_FOR            shift, and go to state 2
@@ -2858,7 +3042,7 @@ state 121
 
     $default  reduce using rule 2 (stmtlist)
 
-    stmtlist     go to state 132
+    stmtlist     go to state 138
     stmtlistr    go to state 13
     stmt         go to state 14
     assignstmt   go to state 15
@@ -2868,96 +3052,96 @@ state 121
     subcmd       go to state 19
 
 
-state 122
+state 128
 
    17 strcomp: '(' expr ')' .
 
     $default  reduce using rule 17 (strcomp)
 
 
-state 123
-
-   60 nestedsubcmd: nestedcmdexprlist cmdredirin cmdredirout cmdredirerr . cmdredirfd
-   62 cmdredirfd: . T_ERR2OUT
-   63           | . T_OUT2ERR
-   64           | .  ['`', '|']
-
-    T_ERR2OUT  shift, and go to state 126
-    T_OUT2ERR  shift, and go to state 127
-
-    $default  reduce using rule 64 (cmdredirfd)
-
-    cmdredirfd  go to state 133
-
-
-state 124
-
-   61 nestedsubcmd: nestedsubcmd '|' nestedcmdexprlist cmdredirin . cmdredirout cmdredirerr cmdredirfd
-   69 cmdredirout: . '>' nestedcmdexpr
-   70            | . T_OUT2FILE nestedcmdexpr
-   71            | . T_APPEND nestedcmdexpr
-   72            | .  [T_ERR2OUT, T_OUT2ERR, T_ERR2FILE, '`', '|']
-
-    T_APPEND    shift, and go to state 85
-    T_OUT2FILE  shift, and go to state 86
-    '>'         shift, and go to state 87
-
-    $default  reduce using rule 72 (cmdredirout)
-
-    cmdredirout  go to state 134
-
-
-state 125
-
-   67 cmdredirerr: T_ERR2FILE nestedcmdexpr .
-
-    $default  reduce using rule 67 (cmdredirerr)
-
-
-state 126
-
-   62 cmdredirfd: T_ERR2OUT .
-
-    $default  reduce using rule 62 (cmdredirfd)
-
-
-state 127
-
-   63 cmdredirfd: T_OUT2ERR .
-
-    $default  reduce using rule 63 (cmdredirfd)
-
-
-state 128
-
-   50 subcmd: cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd .
-
-    $default  reduce using rule 50 (subcmd)
-
-
 state 129
 
-   51 subcmd: subcmd '|' cmdexprlist cmdredirin cmdredirout . cmdredirerr cmdredirfd
-   67 cmdredirerr: . T_ERR2FILE nestedcmdexpr
-   68            | .  [$end, T_ELSE, T_FI, T_DONE, T_ERR2OUT, T_OUT2ERR, ';', '&', '|']
+   64 nestedsubcmd: nestedcmdexprlist cmdredirin cmdredirout cmdredirerr . cmdredirfd
+   66 cmdredirfd: . T_ERR2OUT
+   67           | . T_OUT2ERR
+   68           | .  ['`', '|']
 
-    T_ERR2FILE  shift, and go to state 116
+    T_ERR2OUT  shift, and go to state 132
+    T_OUT2ERR  shift, and go to state 133
 
-    $default  reduce using rule 68 (cmdredirerr)
+    $default  reduce using rule 68 (cmdredirfd)
 
-    cmdredirerr  go to state 135
+    cmdredirfd  go to state 139
 
 
 state 130
 
-    7 stmt: T_IF '(' expr ')' T_THEN stmtlist . T_FI
-    8     | T_IF '(' expr ')' T_THEN stmtlist . T_ELSE stmtlist T_FI
+   65 nestedsubcmd: nestedsubcmd '|' nestedcmdexprlist cmdredirin . cmdredirout cmdredirerr cmdredirfd
+   73 cmdredirout: . '>' nestedcmdexpr
+   74            | . T_OUT2FILE nestedcmdexpr
+   75            | . T_APPEND nestedcmdexpr
+   76            | .  [T_ERR2OUT, T_OUT2ERR, T_ERR2FILE, '`', '|']
 
-    T_ELSE  shift, and go to state 136
-    T_FI    shift, and go to state 137
+    T_APPEND    shift, and go to state 91
+    T_OUT2FILE  shift, and go to state 92
+    '>'         shift, and go to state 93
+
+    $default  reduce using rule 76 (cmdredirout)
+
+    cmdredirout  go to state 140
 
 
 state 131
+
+   71 cmdredirerr: T_ERR2FILE nestedcmdexpr .
+
+    $default  reduce using rule 71 (cmdredirerr)
+
+
+state 132
+
+   66 cmdredirfd: T_ERR2OUT .
+
+    $default  reduce using rule 66 (cmdredirfd)
+
+
+state 133
+
+   67 cmdredirfd: T_OUT2ERR .
+
+    $default  reduce using rule 67 (cmdredirfd)
+
+
+state 134
+
+   54 subcmd: cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd .
+
+    $default  reduce using rule 54 (subcmd)
+
+
+state 135
+
+   55 subcmd: subcmd '|' cmdexprlist cmdredirin cmdredirout . cmdredirerr cmdredirfd
+   71 cmdredirerr: . T_ERR2FILE nestedcmdexpr
+   72            | .  [$end, T_ELSE, T_FI, T_DONE, T_ERR2OUT, T_OUT2ERR, ';', '&', '|']
+
+    T_ERR2FILE  shift, and go to state 122
+
+    $default  reduce using rule 72 (cmdredirerr)
+
+    cmdredirerr  go to state 141
+
+
+state 136
+
+    7 stmt: T_IF '(' expr ')' T_THEN stmtlist . T_FI
+    8     | T_IF '(' expr ')' T_THEN stmtlist . T_ELSE stmtlist T_FI
+
+    T_ELSE  shift, and go to state 142
+    T_FI    shift, and go to state 143
+
+
+state 137
 
     9 stmt: T_FOR '(' expr ';' expr ';' . expr ')' T_DO stmtlist T_DONE
    18 expr: . T_NUMBER
@@ -2972,71 +3156,77 @@ state 131
    27     | . expr T_MOD expr
    28     | . expr T_POW expr
    29     | . T_SUB expr
-   30     | . expr '<' expr
-   31     | . expr '>' expr
-   32     | . expr T_LEQ expr
-   33     | . expr T_GEQ expr
-   34     | . expr T_EQ expr
-   35     | . expr T_NEQ expr
-   36     | . '`' nestedsubcmd '`'
-   37     | . '(' expr ')'
-   38 assignstmt: . T_VAR T_ASSIGN expr
+   30     | . T_INC T_VAR
+   31     | . T_DEC T_VAR
+   32     | . T_VAR T_INC
+   33     | . T_VAR T_DEC
+   34     | . expr '<' expr
+   35     | . expr '>' expr
+   36     | . expr T_LEQ expr
+   37     | . expr T_GEQ expr
+   38     | . expr T_EQ expr
+   39     | . expr T_NEQ expr
+   40     | . '`' nestedsubcmd '`'
+   41     | . '(' expr ')'
+   42 assignstmt: . T_VAR T_ASSIGN expr
 
     T_NUMBER         shift, and go to state 24
     T_STRING_SCONST  shift, and go to state 25
     T_VAR            shift, and go to state 26
     T_SUB            shift, and go to state 27
-    '('              shift, and go to state 28
-    '"'              shift, and go to state 29
-    '`'              shift, and go to state 30
+    T_DEC            shift, and go to state 28
+    T_INC            shift, and go to state 29
+    '('              shift, and go to state 30
+    '"'              shift, and go to state 31
+    '`'              shift, and go to state 32
 
-    expr        go to state 138
-    assignstmt  go to state 32
+    expr        go to state 144
+    assignstmt  go to state 34
 
 
-state 132
+state 138
 
    10 stmt: T_WHILE '(' expr ')' T_DO stmtlist . T_DONE
 
-    T_DONE  shift, and go to state 139
+    T_DONE  shift, and go to state 145
 
 
-state 133
+state 139
 
-   60 nestedsubcmd: nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd .
+   64 nestedsubcmd: nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd .
 
-    $default  reduce using rule 60 (nestedsubcmd)
-
-
-state 134
-
-   61 nestedsubcmd: nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout . cmdredirerr cmdredirfd
-   67 cmdredirerr: . T_ERR2FILE nestedcmdexpr
-   68            | .  [T_ERR2OUT, T_OUT2ERR, '`', '|']
-
-    T_ERR2FILE  shift, and go to state 116
-
-    $default  reduce using rule 68 (cmdredirerr)
-
-    cmdredirerr  go to state 140
+    $default  reduce using rule 64 (nestedsubcmd)
 
 
-state 135
+state 140
 
-   51 subcmd: subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr . cmdredirfd
-   62 cmdredirfd: . T_ERR2OUT
-   63           | . T_OUT2ERR
-   64           | .  [$end, T_ELSE, T_FI, T_DONE, ';', '&', '|']
+   65 nestedsubcmd: nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout . cmdredirerr cmdredirfd
+   71 cmdredirerr: . T_ERR2FILE nestedcmdexpr
+   72            | .  [T_ERR2OUT, T_OUT2ERR, '`', '|']
 
-    T_ERR2OUT  shift, and go to state 126
-    T_OUT2ERR  shift, and go to state 127
+    T_ERR2FILE  shift, and go to state 122
 
-    $default  reduce using rule 64 (cmdredirfd)
+    $default  reduce using rule 72 (cmdredirerr)
 
-    cmdredirfd  go to state 141
+    cmdredirerr  go to state 146
 
 
-state 136
+state 141
+
+   55 subcmd: subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr . cmdredirfd
+   66 cmdredirfd: . T_ERR2OUT
+   67           | . T_OUT2ERR
+   68           | .  [$end, T_ELSE, T_FI, T_DONE, ';', '&', '|']
+
+    T_ERR2OUT  shift, and go to state 132
+    T_OUT2ERR  shift, and go to state 133
+
+    $default  reduce using rule 68 (cmdredirfd)
+
+    cmdredirfd  go to state 147
+
+
+state 142
 
     2 stmtlist: .  [T_FI]
     3         | . stmtlistr
@@ -3050,20 +3240,20 @@ state 136
    10     | . T_WHILE '(' expr ')' T_DO stmtlist T_DONE
    11     | . assignstmt
    12     | . cmd
-   38 assignstmt: . T_VAR T_ASSIGN expr
-   39 cmdexpr: . T_NUMBER
-   40        | . T_STRING
-   41        | . T_STRING_SCONST
-   42        | . '"' strlist '"'
-   43        | . T_VAR
-   44        | . '`' nestedsubcmd '`'
-   45        | . '(' expr ')'
-   46 cmdexprlist: . cmdexpr
-   47            | . cmdexprlist cmdexpr
-   48 cmd: . subcmd
-   49    | . subcmd '&'
-   50 subcmd: . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
-   51       | . subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   42 assignstmt: . T_VAR T_ASSIGN expr
+   43 cmdexpr: . T_NUMBER
+   44        | . T_STRING
+   45        | . T_STRING_SCONST
+   46        | . '"' strlist '"'
+   47        | . T_VAR
+   48        | . '`' nestedsubcmd '`'
+   49        | . '(' expr ')'
+   50 cmdexprlist: . cmdexpr
+   51            | . cmdexprlist cmdexpr
+   52 cmd: . subcmd
+   53    | . subcmd '&'
+   54 subcmd: . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   55       | . subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
     T_IF             shift, and go to state 1
     T_FOR            shift, and go to state 2
@@ -3078,7 +3268,7 @@ state 136
 
     $default  reduce using rule 2 (stmtlist)
 
-    stmtlist     go to state 142
+    stmtlist     go to state 148
     stmtlistr    go to state 13
     stmt         go to state 14
     assignstmt   go to state 15
@@ -3088,14 +3278,14 @@ state 136
     subcmd       go to state 19
 
 
-state 137
+state 143
 
     7 stmt: T_IF '(' expr ')' T_THEN stmtlist T_FI .
 
     $default  reduce using rule 7 (stmt)
 
 
-state 138
+state 144
 
     9 stmt: T_FOR '(' expr ';' expr ';' expr . ')' T_DO stmtlist T_DONE
    23 expr: expr . T_ADD expr
@@ -3104,86 +3294,86 @@ state 138
    26     | expr . T_DIV expr
    27     | expr . T_MOD expr
    28     | expr . T_POW expr
-   30     | expr . '<' expr
-   31     | expr . '>' expr
-   32     | expr . T_LEQ expr
-   33     | expr . T_GEQ expr
-   34     | expr . T_EQ expr
-   35     | expr . T_NEQ expr
+   34     | expr . '<' expr
+   35     | expr . '>' expr
+   36     | expr . T_LEQ expr
+   37     | expr . T_GEQ expr
+   38     | expr . T_EQ expr
+   39     | expr . T_NEQ expr
 
-    '>'    shift, and go to state 59
-    '<'    shift, and go to state 60
-    T_NEQ  shift, and go to state 61
-    T_EQ   shift, and go to state 62
-    T_GEQ  shift, and go to state 63
-    T_LEQ  shift, and go to state 64
-    T_SUB  shift, and go to state 65
-    T_ADD  shift, and go to state 66
-    T_MOD  shift, and go to state 67
-    T_DIV  shift, and go to state 68
-    T_MUL  shift, and go to state 69
-    T_POW  shift, and go to state 70
-    ')'    shift, and go to state 143
+    '>'    shift, and go to state 65
+    '<'    shift, and go to state 66
+    T_NEQ  shift, and go to state 67
+    T_EQ   shift, and go to state 68
+    T_GEQ  shift, and go to state 69
+    T_LEQ  shift, and go to state 70
+    T_SUB  shift, and go to state 71
+    T_ADD  shift, and go to state 72
+    T_MOD  shift, and go to state 73
+    T_DIV  shift, and go to state 74
+    T_MUL  shift, and go to state 75
+    T_POW  shift, and go to state 76
+    ')'    shift, and go to state 149
 
 
-state 139
+state 145
 
    10 stmt: T_WHILE '(' expr ')' T_DO stmtlist T_DONE .
 
     $default  reduce using rule 10 (stmt)
 
 
-state 140
+state 146
 
-   61 nestedsubcmd: nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr . cmdredirfd
-   62 cmdredirfd: . T_ERR2OUT
-   63           | . T_OUT2ERR
-   64           | .  ['`', '|']
+   65 nestedsubcmd: nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr . cmdredirfd
+   66 cmdredirfd: . T_ERR2OUT
+   67           | . T_OUT2ERR
+   68           | .  ['`', '|']
 
-    T_ERR2OUT  shift, and go to state 126
-    T_OUT2ERR  shift, and go to state 127
+    T_ERR2OUT  shift, and go to state 132
+    T_OUT2ERR  shift, and go to state 133
 
-    $default  reduce using rule 64 (cmdredirfd)
+    $default  reduce using rule 68 (cmdredirfd)
 
-    cmdredirfd  go to state 144
-
-
-state 141
-
-   51 subcmd: subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd .
-
-    $default  reduce using rule 51 (subcmd)
+    cmdredirfd  go to state 150
 
 
-state 142
+state 147
+
+   55 subcmd: subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd .
+
+    $default  reduce using rule 55 (subcmd)
+
+
+state 148
 
     8 stmt: T_IF '(' expr ')' T_THEN stmtlist T_ELSE stmtlist . T_FI
 
-    T_FI  shift, and go to state 145
+    T_FI  shift, and go to state 151
 
 
-state 143
+state 149
 
     9 stmt: T_FOR '(' expr ';' expr ';' expr ')' . T_DO stmtlist T_DONE
 
-    T_DO  shift, and go to state 146
+    T_DO  shift, and go to state 152
 
 
-state 144
+state 150
 
-   61 nestedsubcmd: nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd .
+   65 nestedsubcmd: nestedsubcmd '|' nestedcmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd .
 
-    $default  reduce using rule 61 (nestedsubcmd)
+    $default  reduce using rule 65 (nestedsubcmd)
 
 
-state 145
+state 151
 
     8 stmt: T_IF '(' expr ')' T_THEN stmtlist T_ELSE stmtlist T_FI .
 
     $default  reduce using rule 8 (stmt)
 
 
-state 146
+state 152
 
     2 stmtlist: .  [T_DONE]
     3         | . stmtlistr
@@ -3197,20 +3387,20 @@ state 146
    10     | . T_WHILE '(' expr ')' T_DO stmtlist T_DONE
    11     | . assignstmt
    12     | . cmd
-   38 assignstmt: . T_VAR T_ASSIGN expr
-   39 cmdexpr: . T_NUMBER
-   40        | . T_STRING
-   41        | . T_STRING_SCONST
-   42        | . '"' strlist '"'
-   43        | . T_VAR
-   44        | . '`' nestedsubcmd '`'
-   45        | . '(' expr ')'
-   46 cmdexprlist: . cmdexpr
-   47            | . cmdexprlist cmdexpr
-   48 cmd: . subcmd
-   49    | . subcmd '&'
-   50 subcmd: . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
-   51       | . subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   42 assignstmt: . T_VAR T_ASSIGN expr
+   43 cmdexpr: . T_NUMBER
+   44        | . T_STRING
+   45        | . T_STRING_SCONST
+   46        | . '"' strlist '"'
+   47        | . T_VAR
+   48        | . '`' nestedsubcmd '`'
+   49        | . '(' expr ')'
+   50 cmdexprlist: . cmdexpr
+   51            | . cmdexprlist cmdexpr
+   52 cmd: . subcmd
+   53    | . subcmd '&'
+   54 subcmd: . cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
+   55       | . subcmd '|' cmdexprlist cmdredirin cmdredirout cmdredirerr cmdredirfd
 
     T_IF             shift, and go to state 1
     T_FOR            shift, and go to state 2
@@ -3225,7 +3415,7 @@ state 146
 
     $default  reduce using rule 2 (stmtlist)
 
-    stmtlist     go to state 147
+    stmtlist     go to state 153
     stmtlistr    go to state 13
     stmt         go to state 14
     assignstmt   go to state 15
@@ -3235,14 +3425,14 @@ state 146
     subcmd       go to state 19
 
 
-state 147
+state 153
 
     9 stmt: T_FOR '(' expr ';' expr ';' expr ')' T_DO stmtlist . T_DONE
 
-    T_DONE  shift, and go to state 148
+    T_DONE  shift, and go to state 154
 
 
-state 148
+state 154
 
     9 stmt: T_FOR '(' expr ';' expr ';' expr ')' T_DO stmtlist T_DONE .
 

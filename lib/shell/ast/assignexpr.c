@@ -45,7 +45,7 @@ sValue *ast_execAssignExpr(sEnv *e,sAssignExpr *n) {
 
 void ast_printAssignExpr(sAssignExpr *s,u32 layer) {
 	ast_printTree(s->var,layer);
-	printf(" = ");
+	printf(" := ");
 	ast_printTree(s->expr,layer);
 }
 

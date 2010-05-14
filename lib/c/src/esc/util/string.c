@@ -32,6 +32,7 @@ sString *str_create(void) {
 	s->len = 0;
 	s->size = INIT_SIZE;
 	s->str = (char*)heap_alloc(s->size);
+	*s->str = '\0';
 	return s;
 }
 

@@ -170,7 +170,20 @@ extern FILE *yyin, *yyout;
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
 
-    #define YY_LESS_LINENO(n)
+    /* Note: We specifically omit the test for yy_rule_can_match_eol because it requires
+     *       access to the local variable yy_act. Since yyless() is a macro, it would break
+     *       existing scanners that call yyless() from OUTSIDE yylex. 
+     *       One obvious solution it to make yy_act a global. I tried that, and saw
+     *       a 5% performance hit in a non-yylineno scanner, because yy_act is
+     *       normally declared as a register variable-- so it is not worth it.
+     */
+    #define  YY_LESS_LINENO(n) \
+            do { \
+                int yyl;\
+                for ( yyl = n; yyl < yyleng; ++yyl )\
+                    if ( yytext[yyl] == '\n' )\
+                        --yylineno;\
+            }while(0)
     
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
@@ -538,6 +551,13 @@ static yyconst flex_int16_t yy_chk[252] =
       115
     } ;
 
+/* Table of booleans, true if rule could match eol. */
+static yyconst flex_int32_t yy_rule_can_match_eol[56] =
+    {   0,
+0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+    0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0,     };
+
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
 
@@ -554,23 +574,41 @@ int yy_flex_debug = 0;
 char *yytext;
 #line 1 "<stdin>"
 /* required for us! */
-#line 6 "<stdin>"
+#line 7 "<stdin>"
 	#include <string.h>
 	#include <stdio.h>
 	#include "parser.h"
 	#include "lang.h"
 	#include "shell.h"
-#line 14 "<stdin>"
+#line 15 "<stdin>"
+	extern YYLTYPE yylloc;
+	YYLTYPE yylastloc;
+	int yycolumn = 1;
+	int openGraves = 0;
+	
 	#define YY_INPUT(buf,result,max_size) \
 		{ \
 			int c = curIsStream ? getc(curStream) : *curLine++; \
 			result = (c == '\0' || c == EOF) ? YY_NULL : (buf[0] = c, 1); \
 		}
+		
+	#define YY_USER_ACTION yylloc.filename = filename; \
+		if(yylineno > 1 && yylloc.first_line != yylineno) { \
+			memcpy(&yylastloc,&yylloc,sizeof(YYLTYPE)); \
+			yycolumn = 1; \
+			*yylloc.line = '\0'; \
+		} \
+    yylloc.first_line = yylloc.last_line = yylineno; \
+    yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng - 1; \
+    yycolumn += yyleng; \
+    /* '\n' is always alone */ \
+    if(*yytext != '\n') \
+    	strcat(yylloc.line,yytext);
 
 
 
 
-#line 574 "lex.c"
+#line 612 "lex.c"
 
 #define INITIAL 0
 #define COMMENT 1
@@ -763,11 +801,11 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 26 "<stdin>"
+#line 45 "<stdin>"
 
 
  /* single line comment */
-#line 771 "lex.c"
+#line 809 "lex.c"
 
 	if ( !(yy_init) )
 		{
@@ -839,6 +877,16 @@ yy_find_action:
 
 		YY_DO_BEFORE_ACTION;
 
+		if ( yy_act != YY_END_OF_BUFFER && yy_rule_can_match_eol[yy_act] )
+			{
+			int yyl;
+			for ( yyl = 0; yyl < yyleng; ++yyl )
+				if ( yytext[yyl] == '\n' )
+					   
+    yylineno++;
+;
+			}
+
 do_action:	/* This label is used only to access EOF actions. */
 
 		switch ( yy_act )
@@ -852,115 +900,101 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 29 "<stdin>"
+#line 48 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yy_push_state(COMMENT);
 }
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 33 "<stdin>"
+#line 51 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yy_pop_state();
 }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 37 "<stdin>"
+#line 54 "<stdin>"
 {
-	lang_beginToken(yytext);
 	/* eat up all chars */
 }
 	YY_BREAK
 /* if, for, while */
 case 4:
 YY_RULE_SETUP
-#line 43 "<stdin>"
+#line 59 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_IF;
 }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 47 "<stdin>"
+#line 62 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_THEN;
 }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 51 "<stdin>"
+#line 65 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_ELSE;
 }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 55 "<stdin>"
+#line 68 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_FI;
 }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 59 "<stdin>"
+#line 71 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_FOR;
 }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 63 "<stdin>"
+#line 74 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_DO;
 }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 67 "<stdin>"
+#line 77 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_DONE;
 }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 71 "<stdin>"
+#line 80 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_WHILE;
 }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 75 "<stdin>"
+#line 83 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_FUNCTION;
 }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 79 "<stdin>"
+#line 86 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_BEGIN;
 }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 83 "<stdin>"
+#line 89 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_END;
 }
 	YY_BREAK
@@ -968,25 +1002,20 @@ YY_RULE_SETUP
   * "echo (4 * 2^10)". it also means that we can use *,+,/,... in commands with no problems since
   * they have just special meanings inside the "(...)". this does also work for if/for/while etc.
   * since they require "(...)" for the "header" part. */
-/* therefore we simply count the brackets to know where we are */
 /* Note that we always push/pop the EXPR-state because we don't know at which count we would 
   * really have to do that (we can have nested stuff like: echo (`foo (1+2)` + 2);) */
 case 15:
 YY_RULE_SETUP
-#line 96 "<stdin>"
+#line 100 "<stdin>"
 {
-	lang_beginToken(yytext);
-	openBrk++;
 	yy_push_state(EXPR);
 	return *yytext;
 }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 102 "<stdin>"
+#line 104 "<stdin>"
 {
-	lang_beginToken(yytext);
-	openBrk--;
 	yy_pop_state();
 	return *yytext;
 }
@@ -996,16 +1025,14 @@ case 17:
 YY_RULE_SETUP
 #line 110 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yylval.intval = atoi(yytext);
 	return T_NUMBER;
 }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 115 "<stdin>"
+#line 114 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_VAR;
 }
@@ -1013,9 +1040,8 @@ YY_RULE_SETUP
 case 19:
 /* rule 19 can match eol */
 YY_RULE_SETUP
-#line 120 "<stdin>"
+#line 118 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yylval.strval = strndup(yytext + 1,strlen(yytext) - 2);
 	return T_STRING_SCONST;
 }
@@ -1023,18 +1049,16 @@ YY_RULE_SETUP
 /* double-quote strings: we can use variables and expressions (in brackets) in them */
 case 20:
 YY_RULE_SETUP
-#line 127 "<stdin>"
+#line 124 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yy_push_state(DCONSTSTR);
 	return *yytext;
 }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 132 "<stdin>"
+#line 128 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yy_pop_state();
 	return *yytext;
 }
@@ -1042,9 +1066,8 @@ YY_RULE_SETUP
 case 22:
 /* rule 22 can match eol */
 YY_RULE_SETUP
-#line 137 "<stdin>"
+#line 132 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_STRING;
 }
@@ -1052,67 +1075,59 @@ YY_RULE_SETUP
 /* io-redirection */
 case 23:
 YY_RULE_SETUP
-#line 144 "<stdin>"
+#line 138 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_APPEND;
 }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 148 "<stdin>"
+#line 141 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_ERR2OUT;
 }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 152 "<stdin>"
+#line 144 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_OUT2ERR;
 }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 156 "<stdin>"
+#line 147 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_ERR2FILE;
 }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 160 "<stdin>"
+#line 150 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_OUT2FILE;
 }
 	YY_BREAK
 /* array stuff */
 case 28:
 YY_RULE_SETUP
-#line 166 "<stdin>"
+#line 155 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return *yytext;
 }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 170 "<stdin>"
+#line 158 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return *yytext;
 }
 	YY_BREAK
 /* for properties */
 case 30:
 YY_RULE_SETUP
-#line 175 "<stdin>"
+#line 162 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_STRING;
 }
@@ -1120,107 +1135,94 @@ YY_RULE_SETUP
 /* comparation */
 case 31:
 YY_RULE_SETUP
-#line 183 "<stdin>"
+#line 169 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_LEQ;
 }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 187 "<stdin>"
+#line 172 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_GEQ;
 }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 191 "<stdin>"
+#line 175 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_EQ;
 }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 195 "<stdin>"
+#line 178 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_NEQ;
 }
 	YY_BREAK
 /* io-redirection / comparation */
 case 35:
 YY_RULE_SETUP
-#line 201 "<stdin>"
+#line 183 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return *yytext;
 }
 	YY_BREAK
 /* arithmetic operators */
 case 36:
 YY_RULE_SETUP
-#line 207 "<stdin>"
+#line 188 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_ADD;
 }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 211 "<stdin>"
+#line 191 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_SUB;
 }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 215 "<stdin>"
+#line 194 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_MUL;
 }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 219 "<stdin>"
+#line 197 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_DIV;
 }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 223 "<stdin>"
+#line 200 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_MOD;
 }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 227 "<stdin>"
+#line 203 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_POW;
 }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 231 "<stdin>"
+#line 206 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_INC;
 }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 235 "<stdin>"
+#line 209 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_DEC;
 }
 	YY_BREAK
@@ -1232,9 +1234,8 @@ YY_RULE_SETUP
   * when we're in the INITIAL-state and openGraves is > 0. */
 case 44:
 YY_RULE_SETUP
-#line 246 "<stdin>"
+#line 219 "<stdin>"
 {
-	lang_beginToken(yytext);
 	if(openGraves > 0) {
 		yy_pop_state();
 		openGraves--;
@@ -1249,9 +1250,8 @@ YY_RULE_SETUP
 /* in an expression its always an opening ` */
 case 45:
 YY_RULE_SETUP
-#line 259 "<stdin>"
+#line 231 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yy_push_state(INITIAL);
 	openGraves++;
 	return *yytext;
@@ -1259,17 +1259,15 @@ YY_RULE_SETUP
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 266 "<stdin>"
+#line 237 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return *yytext;
 }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 270 "<stdin>"
+#line 240 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return *yytext;
 }
 	YY_BREAK
@@ -1278,25 +1276,22 @@ YY_RULE_SETUP
   * differently). the end of it is a \n, ; or EOF. */
 case 48:
 YY_RULE_SETUP
-#line 278 "<stdin>"
+#line 247 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yy_push_state(ASSIGNEXPR);
 	return T_ASSIGN;
 }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 283 "<stdin>"
+#line 251 "<stdin>"
 {
-	lang_beginToken(yytext);
 	return T_ASSIGN;
 }
 	YY_BREAK
 case YY_STATE_EOF(ASSIGNEXPR):
-#line 287 "<stdin>"
+#line 254 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yy_pop_state();
 	yyterminate();
 }
@@ -1304,9 +1299,8 @@ case YY_STATE_EOF(ASSIGNEXPR):
 case 50:
 /* rule 50 can match eol */
 YY_RULE_SETUP
-#line 292 "<stdin>"
+#line 258 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yy_pop_state();
 	return *yytext;
 }
@@ -1314,27 +1308,24 @@ YY_RULE_SETUP
 /* whitespace */
 case 51:
 YY_RULE_SETUP
-#line 299 "<stdin>"
+#line 264 "<stdin>"
 {
 	/* eat up whitespace */
-	lang_beginToken(yytext);
 }
 	YY_BREAK
 case 52:
 /* rule 52 can match eol */
 YY_RULE_SETUP
-#line 303 "<stdin>"
+#line 267 "<stdin>"
 {
 	/* eat up whitespace */
-	lang_beginToken(yytext);
 }
 	YY_BREAK
 /* strings without quotes */
 case 53:
 YY_RULE_SETUP
-#line 309 "<stdin>"
+#line 272 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_STRING;
 }
@@ -1342,18 +1333,17 @@ YY_RULE_SETUP
 /* everything else is ignored */
 case 54:
 YY_RULE_SETUP
-#line 316 "<stdin>"
+#line 278 "<stdin>"
 {
-	lang_beginToken(yytext);
 	yyerror("Unrecognized character %c",*yytext);
 }
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 320 "<stdin>"
+#line 281 "<stdin>"
 ECHO;
 	YY_BREAK
-#line 1357 "lex.c"
+#line 1347 "lex.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT):
 case YY_STATE_EOF(DCONSTSTR):
@@ -1717,6 +1707,10 @@ static int yy_get_next_buffer (void)
 
 	*--yy_cp = (char) c;
 
+    if ( c == '\n' ){
+        --yylineno;
+    }
+
 	(yytext_ptr) = yy_bp;
 	(yy_hold_char) = *yy_cp;
 	(yy_c_buf_p) = yy_cp;
@@ -1791,6 +1785,11 @@ static int yy_get_next_buffer (void)
 	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
 	*(yy_c_buf_p) = '\0';	/* preserve yytext */
 	(yy_hold_char) = *++(yy_c_buf_p);
+
+	if ( c == '\n' )
+		   
+    yylineno++;
+;
 
 	return c;
 }
@@ -2299,6 +2298,9 @@ static int yy_init_globals (void)
      * This function is called from yylex_destroy(), so don't allocate here.
      */
 
+    /* We do not touch yylineno unless the option is enabled. */
+    yylineno =  1;
+    
     (yy_buffer_stack) = 0;
     (yy_buffer_stack_top) = 0;
     (yy_buffer_stack_max) = 0;
@@ -2399,4 +2401,4 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 320 "<stdin>"
+#line 281 "<stdin>"

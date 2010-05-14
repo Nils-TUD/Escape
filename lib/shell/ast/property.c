@@ -24,10 +24,11 @@
 #include "../mem.h"
 #include "../exec/value.h"
 
-sASTNode *ast_createProperty(sASTNode *expr,char *name) {
+sASTNode *ast_createProperty(sASTNode *expr,char *name,sASTNode *args) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
 	sProperty *p = node->data = emalloc(sizeof(sProperty));
 	p->expr = expr;
+	p->args = args;
 	/* no clone here since we've already cloned it in the scanner */
 	p->name = name;
 	node->type = AST_PROPERTY;
@@ -36,9 +37,25 @@ sASTNode *ast_createProperty(sASTNode *expr,char *name) {
 
 sValue *ast_execProperty(sEnv *e,sProperty *n) {
 	sValue *res;
+	/* TODO there is a better way... */
 	sValue *v = ast_execute(e,n->expr);
 	if(strcmp(n->name,"len") == 0)
 		res = val_createInt(val_len(v));
+	else if(strcmp(n->name,"tos") == 0)
+		res = val_tos(v);
+	else if(strcmp(n->name,"toa") == 0)
+		res = val_toa(v);
+	else if(strcmp(n->name,"sub") == 0) {
+		sValue *args,*start,*count;
+		assert(n->args);
+		args = ast_execute(e,n->args);
+		start = val_createInt(0);
+		count = val_createInt(1);
+		res = val_sub(v,val_index(args,start),val_index(args,count));
+		val_destroy(args);
+		val_destroy(start);
+		val_destroy(count);
+	}
 	else
 		res = val_createInt(0);
 	val_destroy(v);
@@ -48,9 +65,15 @@ sValue *ast_execProperty(sEnv *e,sProperty *n) {
 void ast_printProperty(sProperty *s,u32 layer) {
 	ast_printTree(s->expr,layer);
 	printf(".%s",s->name);
+	if(s->args) {
+		printf("(");
+		ast_printTree(s->args,layer);
+		printf(")");
+	}
 }
 
 void ast_destroyProperty(sProperty *n) {
 	ast_destroy(n->expr);
+	ast_destroy(n->args);
 	efree(n->name);
 }

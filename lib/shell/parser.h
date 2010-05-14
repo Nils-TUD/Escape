@@ -35,7 +35,48 @@
 /* "%code requires" blocks.  */
 
 /* Line 1676 of yacc.c  */
-#line 8 "script.y"
+#line 9 "script.y"
+
+	char *filename; /* current filename here for the lexer */
+	
+	#define MAX_LINE_LEN	255
+
+	typedef struct YYLTYPE {
+	  int first_line;
+	  int first_column;
+	  int last_line;
+	  int last_column;
+	  char *filename;
+	  char line[MAX_LINE_LEN + 1];
+	} YYLTYPE;
+	
+	#define YYLTYPE_IS_DECLARED 1 /* alert the parser that we have our own definition */
+	
+	#define YYLLOC_DEFAULT(Current, Rhs, N)                                \
+	    do                                                                 \
+	      if (N)                                                           \
+	        {                                                              \
+	          (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;       \
+	          (Current).first_column = YYRHSLOC (Rhs, 1).first_column;     \
+	          (Current).last_line    = YYRHSLOC (Rhs, N).last_line;        \
+	          (Current).last_column  = YYRHSLOC (Rhs, N).last_column;      \
+	          (Current).filename     = YYRHSLOC (Rhs, 1).filename;         \
+	          strcpy((Current).line,YYRHSLOC(Rhs,1).line);                 \
+	        }                                                              \
+	      else                                                             \
+	        { /* empty RHS */                                              \
+	          (Current).first_line   = (Current).last_line   =             \
+	            YYRHSLOC (Rhs, 0).last_line;                               \
+	          (Current).first_column = (Current).last_column =             \
+	            YYRHSLOC (Rhs, 0).last_column;                             \
+	          (Current).filename  = NULL;                                  \
+	          strcpy((Current).line,YYRHSLOC(Rhs,0).line);                 \
+	        }                                                              \
+	    while (0)
+
+
+/* Line 1676 of yacc.c  */
+#line 48 "script.y"
 
 	#include "ast/node.h"
 	#include "ast/assignexpr.h"
@@ -66,7 +107,7 @@
 
 
 /* Line 1676 of yacc.c  */
-#line 70 "parser.h"
+#line 111 "parser.h"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -118,7 +159,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 35 "script.y"
+#line 75 "script.y"
 
 	int intval;
 	char *strval;
@@ -127,7 +168,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 131 "parser.h"
+#line 172 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -136,4 +177,18 @@ typedef union YYSTYPE
 
 extern YYSTYPE yylval;
 
+#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+typedef struct YYLTYPE
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+} YYLTYPE;
+# define yyltype YYLTYPE /* obsolescent; will be withdrawn */
+# define YYLTYPE_IS_DECLARED 1
+# define YYLTYPE_IS_TRIVIAL 1
+#endif
+
+extern YYLTYPE yylloc;
 

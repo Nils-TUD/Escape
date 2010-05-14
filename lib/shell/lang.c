@@ -22,27 +22,26 @@
 #include <string.h>
 #include <stdarg.h>
 #include "lang.h"
+#include "parser.h"
 
-typedef struct {
-	s32 first_line;
-	s32 last_line;
-	s32 first_column;
-	s32 last_column;
-} sYYLoc;
-
-int openBrk = 0;
-int openGraves = 0;
-static sYYLoc yylloc;
-static s32 nCol = 1;
-static s32 nRow = 1;
+extern YYLTYPE yylloc;
+extern YYLTYPE yylastloc;
+extern int yycolumn;
+extern int openGraves;
+extern int yylineno;
 static bool interrupted = false;
 
 void lang_reset(void) {
-	openBrk = 0;
 	openGraves = 0;
-	nCol = 1;
-	nRow = 1;
 	interrupted = false;
+	yylloc.filename = NULL;
+	yylloc.first_line = 1;
+	yylloc.first_column = 1;
+	yylloc.last_line = 1;
+	yylloc.last_column = 1;
+	*yylloc.line = '\0';
+	yylineno = 1;
+	yycolumn = 1;
 }
 
 void lang_setInterrupted(void) {
@@ -53,31 +52,32 @@ bool lang_isInterrupted(void) {
 	return interrupted;
 }
 
-void lang_beginToken(char *t) {
-	u32 len = strlen(t);
-	while(*t) {
-		if(*t == '\n') {
-			nRow++;
-			nCol = 1;
-		}
-		else
-			nCol++;
-		t++;
-	}
-
-	yylloc.first_line = nRow;
-	yylloc.first_column = nCol;
-	yylloc.last_line = nRow;
-	yylloc.last_column = nCol + len - 1;
+static void vlyyerror(YYLTYPE t,const char *s,va_list ap) {
+	s32 i;
+	if(t.first_line)
+		fprintf(stderr,"%s:%d: ",t.filename,t.first_line);
+	vfprintf(stderr,s,ap);
+	fprintf(stderr,":\n");
+	fprintf(stderr,"  %s\n",t.line);
+	fprintf(stderr,"  %*s",t.first_column - 1,"");
+	for(i = t.last_column - t.first_column; i >= 0; i--)
+		putc('^',stderr);
+	putc('\n',stderr);
 }
 
-/* Called by yyparse on error.  */
-void yyerror(char const *s,...) {
-	va_list l;
-	fprintf(stderr,"Line %d, Column %d: ",yylloc.first_line,yylloc.first_column);
-	va_start(l,s);
-	vfprintf(stderr,s,l);
-	va_end(l);
-	fprintf(stderr,"\n");
-	fflush(stderr);
+void yyerror(const char *s,...) {
+	va_list ap;
+	va_start(ap,s);
+	if(strspn(yylloc.line," \t\n\r") == strlen(yylloc.line))
+		vlyyerror(yylastloc,s,ap);
+	else
+		vlyyerror(yylloc,s,ap);
+	va_end(ap);
+}
+
+void lyyerror(YYLTYPE t,const char *s,...) {
+	va_list ap;
+	va_start(ap,s);
+	vlyyerror(t,s,ap);
+	va_end(ap);
 }

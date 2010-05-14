@@ -45,11 +45,12 @@ static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPa
 extern int yyparse(void);
 extern int yylex_destroy(void);
 extern int yydebug;
+extern char *filename;
 
 static bool resetReadLine = false;
 static u32 tabCount = 0;
-FILE *curStream = NULL;
 char *curLine = NULL;
+FILE *curStream = NULL;
 bool curIsStream = false;
 sEnv *curEnv = NULL;
 
@@ -88,7 +89,10 @@ s32 shell_executeCmd(char *line,bool isFile) {
 		curStream = fopen(absp,"r");
 		if(curStream == NULL)
 			return errno;
+		filename = line;
 	}
+	else
+		filename = (char*)"<stdin>";
 	curLine = line;
 	lang_reset();
 	res = yyparse();

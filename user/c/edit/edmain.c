@@ -68,7 +68,7 @@ int main(int argc,char *argv[]) {
 							if(buf_get()->modified) {
 								char dstFile[MAX_PATH_LEN];
 								s32 res = displ_getSaveFile(dstFile,MAX_PATH_LEN);
-								if(res > 0) {
+								if(res != EOF) {
 									buf_store(dstFile);
 									run = false;
 								}

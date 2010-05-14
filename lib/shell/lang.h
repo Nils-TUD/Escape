@@ -22,9 +22,6 @@
 
 typedef s32 tIntType;
 
-extern int openBrk;
-extern int openGraves;
-
 /**
  * Resets the position
  */
@@ -39,13 +36,6 @@ void lang_setInterrupted(void);
  * @return whether the shell has been interrupted
  */
 bool lang_isInterrupted(void);
-
-/**
- * Begins the given token (stores location)
- *
- * @param t the token
- */
-void lang_beginToken(char *t);
 
 /**
  * Error-reporting-function called by flex

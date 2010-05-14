@@ -73,7 +73,7 @@ void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 				vterm_rlHandleKeycode(vt,keycode);
 		}
 	}
-	else if(vt->readLine)
+	if(c && vt->readLine)
 		vterm_rlPutchar(vt,c);
 
 	/* send escape-code when we're not in readline-mode */

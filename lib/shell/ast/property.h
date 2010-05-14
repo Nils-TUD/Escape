@@ -26,6 +26,7 @@
 
 typedef struct {
 	sASTNode *expr;
+	sASTNode *args;
 	char *name;
 } sProperty;
 
@@ -34,9 +35,10 @@ typedef struct {
  *
  * @param expr the expression
  * @param name the property-name
+ * @param args the arguments (may be NULL)
  * @return the created node
  */
-sASTNode *ast_createProperty(sASTNode *expr,char *name);
+sASTNode *ast_createProperty(sASTNode *expr,char *name,sASTNode *args);
 
 /**
  * Executes the given node(-tree)

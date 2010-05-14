@@ -71,11 +71,15 @@ sValue *ast_execSubCmd(sEnv *e,sSubCmd *n) {
 		sValue *v = (sValue*)node->data;
 		str = val_getStr(v);
 		if(!ast_expandable(valNode) || strchr(str,'*') == NULL) {
-			if(i >= exprSize - 1) {
-				exprSize *= 2;
-				res->exprs = erealloc(res->exprs,exprSize);
+			/* ignore empty values if they have not been explicitly entered by "" or '' */
+			if(valNode->type == AST_CONST_STR_EXPR || valNode->type == AST_DSTR_EXPR ||
+					strlen(str) > 0) {
+				if(i >= exprSize - 1) {
+					exprSize *= 2;
+					res->exprs = erealloc(res->exprs,exprSize);
+				}
+				res->exprs[i++] = str;
 			}
-			res->exprs[i++] = str;
 		}
 		else {
 			char *path = (char*)emalloc(MAX_PATH_LEN + 1);

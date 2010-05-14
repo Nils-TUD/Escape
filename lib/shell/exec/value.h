@@ -98,6 +98,32 @@ void val_destroy(sValue *v);
 tIntType val_len(const sValue *v);
 
 /**
+ * Extracts a sub-part of the given value
+ *
+ * @param v the value
+ * @param start the start-position
+ * @param count the number of elements to extract
+ * @return the sub-value
+ */
+sValue *val_sub(const sValue *v,sValue *start,sValue *count);
+
+/**
+ * Converts the given value to a space-separated string
+ *
+ * @param v the value
+ * @return the space-separated string-value
+ */
+sValue *val_tos(const sValue *v);
+
+/**
+ * Converts the given value to an array (splits the string by whitespace)
+ *
+ * @param v the value
+ * @return the array-value
+ */
+sValue *val_toa(const sValue *v);
+
+/**
  * Tests wether the value is true (!= 0 or none-empty string, not allowed for functions)
  *
  * @param v the value

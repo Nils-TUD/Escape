@@ -101,7 +101,7 @@ addTestData() {
 	$SUDO cp dist/test.bmp $DISKMOUNT
 	$SUDO cp dist/bbc.bmp $DISKMOUNT
 	$SUDO cp dist/test.bmp $DISKMOUNT/bla.bmp
-	$SUDO cp dist/test.sh $DISKMOUNT/test.sh
+	$SUDO cp -R dist/scripts $DISKMOUNT
 	$SUDO cp dist/cursor_def.bmp $DISKMOUNT/etc
 	$SUDO cp dist/cursor_resl.bmp $DISKMOUNT/etc
 	$SUDO cp dist/cursor_resr.bmp $DISKMOUNT/etc

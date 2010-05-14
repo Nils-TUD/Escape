@@ -1,8 +1,48 @@
+%locations
 %code top {
 	#define YYDEBUG 1
 	#include <stdio.h>
 	int yylex (void);
 	void yyerror(char const *,...);
+}
+
+%code requires {
+	char *filename; /* current filename here for the lexer */
+	
+	#define MAX_LINE_LEN	255
+
+	typedef struct YYLTYPE {
+	  int first_line;
+	  int first_column;
+	  int last_line;
+	  int last_column;
+	  char *filename;
+	  char line[MAX_LINE_LEN + 1];
+	} YYLTYPE;
+	
+	#define YYLTYPE_IS_DECLARED 1 /* alert the parser that we have our own definition */
+	
+	#define YYLLOC_DEFAULT(Current, Rhs, N)                                \
+	    do                                                                 \
+	      if (N)                                                           \
+	        {                                                              \
+	          (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;       \
+	          (Current).first_column = YYRHSLOC (Rhs, 1).first_column;     \
+	          (Current).last_line    = YYRHSLOC (Rhs, N).last_line;        \
+	          (Current).last_column  = YYRHSLOC (Rhs, N).last_column;      \
+	          (Current).filename     = YYRHSLOC (Rhs, 1).filename;         \
+	          strcpy((Current).line,YYRHSLOC(Rhs,1).line);                 \
+	        }                                                              \
+	      else                                                             \
+	        { /* empty RHS */                                              \
+	          (Current).first_line   = (Current).last_line   =             \
+	            YYRHSLOC (Rhs, 0).last_line;                               \
+	          (Current).first_column = (Current).last_column =             \
+	            YYRHSLOC (Rhs, 0).last_column;                             \
+	          (Current).filename  = NULL;                                  \
+	          strcpy((Current).line,YYRHSLOC(Rhs,0).line);                 \
+	        }                                                              \
+	    while (0)
 }
 
 %code requires {
@@ -158,7 +198,8 @@ expr:
 			| expr T_NEQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_NEQ,$3); }
 			| '`' nestedsubcmd '`'		{ $$ = $2; ast_setRetOutput($2,true); }
 			| '(' expr ')'			{ $$ = $2; }
-			| expr '.' T_STRING	{ $$ = ast_createProperty($1,$3); }
+			| expr '.' T_STRING	{ $$ = ast_createProperty($1,$3,NULL); }
+			| expr '.' T_STRING '(' exprlist ')' { $$ = ast_createProperty($1,$3,$5); }
 ;
 
 /* for comma-separated expressions; may be empty */

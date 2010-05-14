@@ -28,8 +28,10 @@
 
 static sVector *val_cloneArray(const sValue *v);
 static void val_destroyValue(sValue *v);
+static void val_validateRange(tIntType vallen,tIntType *start,tIntType *count);
 static bool val_doCmp(const sValue *v1,const sValue *v2,u8 op);
 static void val_ensureArray(sValue *array);
+static char *val_arr2Str(const sValue *v,bool brackets);
 
 sValue *val_createInt(tIntType i) {
 	sValue *res = (sValue*)emalloc(sizeof(sValue));
@@ -132,16 +134,101 @@ tIntType val_len(const sValue *v) {
 	return 0;
 }
 
+sValue *val_sub(const sValue *v,sValue *start,sValue *count) {
+	assert(v->type != VAL_TYPE_FUNC);
+	tIntType istart = start ? val_getInt(start) : 0;
+	tIntType icount = count ? val_getInt(count) : 0;
+	switch(v->type) {
+		case VAL_TYPE_INT:
+		case VAL_TYPE_STR: {
+			sValue *res;
+			char *str = val_getStr(v);
+			tIntType len = strlen(str);
+			val_validateRange(len,&istart,&icount);
+			str[istart + icount] = '\0';
+			res = val_createStr(str + istart);
+			efree(str);
+			return res;
+		}
+		case VAL_TYPE_ARRAY: {
+			tIntType i;
+			sValue *arr = val_createArray(NULL);
+			val_validateRange(v->v.vec->count,&istart,&icount);
+			for(i = istart; i < istart + icount; i++)
+				val_append(arr,vec_get(v->v.vec,i));
+			return arr;
+		}
+	}
+	/* never reached */
+	assert(false);
+	return NULL;
+}
+
+static void val_validateRange(tIntType vallen,tIntType *start,tIntType *count) {
+	if(*start >= vallen) {
+		*start = vallen;
+		*count = 0;
+		return;
+	}
+	if(*start < 0)
+		*start = 0;
+	if(*count == 0)
+		*count = vallen - *start;
+	else if(*start + *count < *start)
+		*count = 0;
+	else if(*start + *count > vallen)
+		*count = vallen - *start;
+}
+
+sValue *val_tos(const sValue *v) {
+	sValue *res = NULL;
+	assert(v->type != VAL_TYPE_FUNC);
+	switch(v->type) {
+		case VAL_TYPE_INT:
+		case VAL_TYPE_STR: {
+			char *str = val_getStr(v);
+			res = val_createStr(str);
+			efree(str);
+		}
+		break;
+		case VAL_TYPE_ARRAY:
+			res = val_createStr(val_arr2Str(v,false));
+			break;
+	}
+	return res;
+}
+
+sValue *val_toa(const sValue *v) {
+	sValue *res = NULL;
+	assert(v->type != VAL_TYPE_FUNC);
+	switch(v->type) {
+		case VAL_TYPE_INT:
+		case VAL_TYPE_STR: {
+			res = val_createArray(NULL);
+			char *str = val_getStr(v);
+			char *tok = strtok(str," \n\t\r");
+			while(tok != NULL) {
+				sValue *tokVal = val_createStr(tok);
+				val_append(res,tokVal);
+				val_destroy(tokVal);
+				tok = strtok(NULL," \n\t\r");
+			}
+			efree(str);
+		}
+		break;
+		case VAL_TYPE_ARRAY:
+			res = val_clone(v);
+			break;
+	}
+	return res;
+}
+
 bool val_isTrue(const sValue *v) {
 	switch(v->type) {
 		case VAL_TYPE_INT:
 			return val_getInt(v) != 0;
-		case VAL_TYPE_STR: {
-			char *str = val_getStr(v);
-			bool res = *str != '\0';
-			efree(str);
-			return res;
-		}
+		case VAL_TYPE_STR:
+			return *(v->v.strval) != '\0';
 		case VAL_TYPE_ARRAY:
 			return v->v.vec->count > 0;
 	}
@@ -294,24 +381,8 @@ char *val_getStr(const sValue *v) {
 			itoa(s,12,v->v.intval);
 			return s;
 		}
-		/* TODO should we convert the array recursively to string? */
-		case VAL_TYPE_ARRAY: {
-			u32 i,len = v->v.vec->count;
-			sString *str = str_create();
-			str_appendc(str,'[');
-			for(i = 0; i < len; i++) {
-				sValue *el = vec_get(v->v.vec,i);
-				char *elstr = val_getStr(el);
-				str_append(str,elstr);
-				efree(elstr);
-				if(i < len - 1)
-					str_append(str,", ");
-			}
-			str_appendc(str,']');
-			/* TODO maybe we should provide a method for extracting the string and freeing sString? */
-			efree(str);
-			return str->str;
-		}
+		case VAL_TYPE_ARRAY:
+			return val_arr2Str(v,true);
 		case VAL_TYPE_FUNC:
 			return estrdup("<FUNC>");
 		case VAL_TYPE_STR:
@@ -334,4 +405,24 @@ sVector *val_getArray(const sValue *v) {
 	/* never reached */
 	assert(false);
 	return NULL;
+}
+
+static char *val_arr2Str(const sValue *v,bool brackets) {
+	u32 i,len = v->v.vec->count;
+	sString *str = str_create();
+	if(brackets)
+		str_appendc(str,'[');
+	for(i = 0; i < len; i++) {
+		sValue *el = vec_get(v->v.vec,i);
+		char *elstr = val_getStr(el);
+		str_append(str,elstr);
+		efree(elstr);
+		if(i < len - 1)
+			str_append(str,brackets ? ", " : " ");
+	}
+	if(brackets)
+		str_appendc(str,']');
+	/* TODO maybe we should provide a method for extracting the string and freeing sString? */
+	efree(str);
+	return str->str;
 }

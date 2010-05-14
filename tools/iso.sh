@@ -57,7 +57,7 @@ cp $ROOT/kernel/src/mem/paging.c $TMPDIR/paging.c
 # add some test-data
 mkdir $TMPDIR/testdir
 echo "Das ist ein Test-String!!" > $TMPDIR/file.txt
-cp $ROOT/dist/test.sh $TMPDIR
+cp -R dist/scripts $DISKMOUNT
 cp $ROOT/dist/test.bmp $TMPDIR
 cp $ROOT/dist/bbc.bmp $TMPDIR
 cp $ROOT/dist/test.bmp $TMPDIR/bla.bmp

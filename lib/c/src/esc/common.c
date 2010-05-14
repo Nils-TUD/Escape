@@ -55,7 +55,7 @@ u32 *getStackTrace(void) {
 	u32 *ebp;
 	/* TODO just temporary */
 	u32 end = 0xA0000000;
-	u32 start = end - 0x1000 * 2;
+	u32 start = end - 0x1000 * 64;
 	u32 *frame = &frames[0];
 
 	GET_REG("ebp",ebp)

@@ -30,6 +30,7 @@
 #define PAGE_SIZE				4096
 #if DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0
+#define DEBUG_ALLOC_N_FREE_PID	18	/* -1 = all */
 #define DEBUG_ADD_GUARDS		1
 #endif
 
@@ -203,9 +204,16 @@ void *_malloc(u32 size) {
 	}
 
 #if DEBUG_ALLOC_N_FREE
-	if(getpid() == 24) {
-		u32 *trace = getStackTrace();
-		debugf("[A] a=%08x s=%d c=%08x, %08x\n",area->address,area->size,*(trace + 2),*(trace + 3));
+	if(DEBUG_ALLOC_N_FREE_PID == -1 || getpid() == DEBUG_ALLOC_N_FREE_PID) {
+		u32 i = 0,*trace = getStackTrace();
+		debugf("[A] %x %d ",area->address,area->size);
+		while(*trace && i++ < 10) {
+			debugf("%x",*trace);
+			if(trace[1])
+				debugf(",");
+			trace++;
+		}
+		debugf("\n");
 	}
 #endif
 
@@ -282,9 +290,16 @@ void _free(void *addr) {
 		occupiedMap[getHash(addr)] = area->next;
 
 #if DEBUG_ALLOC_N_FREE
-	if(getpid() == 24) {
-		u32 *trace = getStackTrace();
-		debugf("[F] a=%08x s=%d c=%08x, %08x\n",area->address,area->size,*(trace + 2),*(trace + 3));
+	if(DEBUG_ALLOC_N_FREE_PID == -1 || getpid() == DEBUG_ALLOC_N_FREE_PID) {
+		u32 i = 0,*trace = getStackTrace();
+		debugf("[F] %x %d ",area->address,area->size);
+		while(*trace && i++ < 10) {
+			debugf("%x",*trace);
+			if(trace[1])
+				debugf(",");
+			trace++;
+		}
+		debugf("\n");
 	}
 #endif
 

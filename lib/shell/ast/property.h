@@ -17,30 +17,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ASSIGNSTMT_H_
-#define ASSIGNSTMT_H_
+#ifndef PROPERTY_H_
+#define PROPERTY_H_
 
 #include <esc/common.h>
 #include "node.h"
 #include "../exec/env.h"
 
 typedef struct {
-	sASTNode *var;
 	sASTNode *expr;
-	bool hasIndex;
-	sASTNode *index;
-} sAssignExpr;
+	char *name;
+} sProperty;
 
 /**
- * Creates an assign-node with given variable and the expression to evaluate.
+ * Creates a property
  *
- * @param var the variable
  * @param expr the expression
- * @param hasIndex wether the assignment has an index
- * @param index the index (NULL for '[]')
+ * @param name the property-name
  * @return the created node
  */
-sASTNode *ast_createAssignExpr(sASTNode *var,sASTNode *expr,bool hasIndex,sASTNode *index);
+sASTNode *ast_createProperty(sASTNode *expr,char *name);
 
 /**
  * Executes the given node(-tree)
@@ -49,7 +45,7 @@ sASTNode *ast_createAssignExpr(sASTNode *var,sASTNode *expr,bool hasIndex,sASTNo
  * @param n the node
  * @return the value
  */
-sValue *ast_execAssignExpr(sEnv *e,sAssignExpr *n);
+sValue *ast_execProperty(sEnv *e,sProperty *n);
 
 /**
  * Prints this expression
@@ -57,13 +53,13 @@ sValue *ast_execAssignExpr(sEnv *e,sAssignExpr *n);
  * @param s the expression
  * @param layer the layer
  */
-void ast_printAssignExpr(sAssignExpr *s,u32 layer);
+void ast_printProperty(sProperty *s,u32 layer);
 
 /**
- * Destroys the given assign-expression (should be called from ast_destroy() only!)
+ * Destroys the given expression (should be called from ast_destroy() only!)
  *
  * @param n the expression
  */
-void ast_destroyAssignExpr(sAssignExpr *n);
+void ast_destroyProperty(sProperty *n);
 
-#endif /* ASSIGNSTMT_H_ */
+#endif /* PROPERTY_H_ */

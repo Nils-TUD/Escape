@@ -26,15 +26,17 @@
 
 typedef struct {
 	char *name;
+	sASTNode *index;
 } sVarExpr;
 
 /**
  * Creates an variable-node
  *
  * @param s the name (will NOT be cloned)
+ * @param index the array-index (NULL if not indexed)
  * @return the created node
  */
-sASTNode *ast_createVarExpr(char *s);
+sASTNode *ast_createVarExpr(char *s,sASTNode *index);
 
 /**
  * Executes the given node(-tree)

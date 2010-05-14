@@ -50,6 +50,7 @@ sValue *ast_execStmtList(sEnv *e,sStmtList *n);
  *
  * @param l the list
  * @param s the statement
+ * @return the list
  */
 sASTNode *ast_addStmt(sASTNode *l,sASTNode *s);
 

@@ -17,30 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ASSIGNSTMT_H_
-#define ASSIGNSTMT_H_
+#ifndef EXPRLIST_H_
+#define EXPRLIST_H_
 
 #include <esc/common.h>
+#include <sllist.h>
 #include "node.h"
 #include "../exec/env.h"
 
 typedef struct {
-	sASTNode *var;
-	sASTNode *expr;
-	bool hasIndex;
-	sASTNode *index;
-} sAssignExpr;
+	sSLList *list;
+} sExprList;
 
 /**
- * Creates an assign-node with given variable and the expression to evaluate.
+ * Creates a expression-list-node
  *
- * @param var the variable
- * @param expr the expression
- * @param hasIndex wether the assignment has an index
- * @param index the index (NULL for '[]')
  * @return the created node
  */
-sASTNode *ast_createAssignExpr(sASTNode *var,sASTNode *expr,bool hasIndex,sASTNode *index);
+sASTNode *ast_createExprList(void);
 
 /**
  * Executes the given node(-tree)
@@ -49,21 +43,30 @@ sASTNode *ast_createAssignExpr(sASTNode *var,sASTNode *expr,bool hasIndex,sASTNo
  * @param n the node
  * @return the value
  */
-sValue *ast_execAssignExpr(sEnv *e,sAssignExpr *n);
+sValue *ast_execExprList(sEnv *e,sExprList *n);
 
 /**
- * Prints this expression
+ * Adds the given expression to the list
  *
- * @param s the expression
+ * @param l the list
+ * @param e the expression
+ * @return the list
+ */
+sASTNode *ast_addExpr(sASTNode *l,sASTNode *e);
+
+/**
+ * Prints this expression-list
+ *
+ * @param s the list
  * @param layer the layer
  */
-void ast_printAssignExpr(sAssignExpr *s,u32 layer);
+void ast_printExprList(sExprList *s,u32 layer);
 
 /**
- * Destroys the given assign-expression (should be called from ast_destroy() only!)
+ * Destroys the given expression-list (should be called from ast_destroy() only!)
  *
- * @param n the expression
+ * @param n the list
  */
-void ast_destroyAssignExpr(sAssignExpr *n);
+void ast_destroyExprList(sExprList *n);
 
-#endif /* ASSIGNSTMT_H_ */
+#endif /* EXPRLIST_H_ */

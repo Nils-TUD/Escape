@@ -112,7 +112,7 @@
 	yylval.intval = atoi(yytext);
 	return T_NUMBER;
 }
-<INITIAL,EXPR,ASSIGNEXPR,DCONSTSTR>\$[a-zA-Z_0-9#]+ {
+<INITIAL,EXPR,ASSIGNEXPR,DCONSTSTR>\$[a-zA-Z_0-9]+ {
 	lang_beginToken(yytext);
 	yylval.strval = strdup(yytext);
 	return T_VAR;
@@ -161,6 +161,23 @@
 	lang_beginToken(yytext);
 	return T_OUT2FILE;
 }
+
+ /* array stuff */
+<INITIAL,EXPR,ASSIGNEXPR,DCONSTSTR>"["|"]" {
+	lang_beginToken(yytext);
+	return *yytext;
+}
+<EXPR,ASSIGNEXPR>","|"~"|"." {
+	lang_beginToken(yytext);
+	return *yytext;
+}
+ /* for properties */
+<EXPR,ASSIGNEXPR>[a-zA-Z0-9]+ {
+	lang_beginToken(yytext);
+	yylval.strval = strdup(yytext);
+	return T_STRING;
+}
+	
 
  /* comparation */
 <EXPR,ASSIGNEXPR>"<=" {

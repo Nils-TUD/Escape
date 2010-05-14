@@ -21,6 +21,7 @@
 #define VALUE_H_
 
 #include <esc/common.h>
+#include <esc/util/vector.h>
 #include <string.h>
 #include <assert.h>
 #include "../lang.h"
@@ -28,6 +29,7 @@
 #define VAL_TYPE_INT	0
 #define VAL_TYPE_STR	1
 #define VAL_TYPE_FUNC	2
+#define VAL_TYPE_ARRAY	3
 
 /* a value */
 typedef struct {
@@ -36,6 +38,7 @@ typedef struct {
 		tIntType intval;
 		char *strval;
 		void *func;
+		sVector *vec;
 	} v;
 } sValue;
 
@@ -64,12 +67,20 @@ sValue *val_createStr(const char *s);
 sValue *val_createFunc(void *n);
 
 /**
+ * Creates an array with given elements
+ *
+ * @param vals the elements (may be NULL)
+ * @return the instance
+ */
+sValue *val_createArray(sVector *vals);
+
+/**
  * Clones the given value
  *
  * @param v the value
  * @return the clone
  */
-sValue *val_clone(sValue *v);
+sValue *val_clone(const sValue *v);
 
 /**
  * Destroys the given value
@@ -79,12 +90,20 @@ sValue *val_clone(sValue *v);
 void val_destroy(sValue *v);
 
 /**
+ * Determines the length of the given value
+ *
+ * @param v the value
+ * @return the length
+ */
+tIntType val_len(const sValue *v);
+
+/**
  * Tests wether the value is true (!= 0 or none-empty string, not allowed for functions)
  *
  * @param v the value
  * @return true or false
  */
-bool val_isTrue(sValue *v);
+bool val_isTrue(const sValue *v);
 
 /**
  * Compares the two values with given compare-operator (not allowed for functions)
@@ -94,7 +113,33 @@ bool val_isTrue(sValue *v);
  * @param op the compare-op (CMP_OP_*)
  * @return the compare-result
  */
-sValue *val_cmp(sValue *v1,sValue *v2,u8 op);
+sValue *val_cmp(const sValue *v1,const sValue *v2,u8 op);
+
+/**
+ * Returns the value at given index, if possible.
+ *
+ * @param array the array
+ * @param index the index
+ * @return the value at given index or NULL if not possible; this will be no clone!
+ */
+sValue *val_index(sValue *array,const sValue *index);
+
+/**
+ * Appends the given value at given index
+ *
+ * @param array the array
+ * @param val the value to append
+ */
+void val_append(sValue *array,const sValue *val);
+
+/**
+ * Sets the index of the array to given value. will resize the array, if necessary
+ *
+ * @param array the array
+ * @param index the index
+ * @param val the value to append
+ */
+void val_setIndex(sValue *array,const sValue *index,const sValue *val);
 
 /**
  * Sets <var> to the value of <val>
@@ -102,13 +147,13 @@ sValue *val_cmp(sValue *v1,sValue *v2,u8 op);
  * @param var the value to change
  * @param val the value to set
  */
-void val_set(sValue *var,sValue *val);
+void val_set(sValue *var,const sValue *val);
 
 /**
  * @param v the value
  * @return the sFunctionStmt-pointer of the given value. Just allowed for functions
  */
-void *val_getFunc(sValue *v);
+void *val_getFunc(const sValue *v);
 
 /**
  * Returns the integer-representation of the given value (will be converted, if necessary)
@@ -116,7 +161,7 @@ void *val_getFunc(sValue *v);
  * @param v the value
  * @return the integer
  */
-tIntType val_getInt(sValue *v);
+tIntType val_getInt(const sValue *v);
 
 /**
  * Returns the string-representation of the given value (will be converted, if necessary)
@@ -124,6 +169,15 @@ tIntType val_getInt(sValue *v);
  * @param v the value
  * @return the string; you have to free the string!
  */
-char *val_getStr(sValue *v);
+char *val_getStr(const sValue *v);
+
+/**
+ * Returns the array-representation of the given value (will be converted, if necessary)
+ * TODO that does not work!!
+ *
+ * @param v the value
+ * @return the vector with the elements; you have to free it!
+ */
+sVector *val_getArray(const sValue *v);
 
 #endif /* VALUE_H_ */

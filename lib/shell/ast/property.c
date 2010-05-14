@@ -19,48 +19,38 @@
 
 #include <esc/common.h>
 #include <stdio.h>
-#include "varexpr.h"
+#include "property.h"
 #include "node.h"
 #include "../mem.h"
+#include "../exec/value.h"
 
-sASTNode *ast_createVarExpr(char *s,sASTNode *index) {
+sASTNode *ast_createProperty(sASTNode *expr,char *name) {
 	sASTNode *node = (sASTNode*)emalloc(sizeof(sASTNode));
-	sVarExpr *expr = node->data = emalloc(sizeof(sVarExpr));
-	/* no clone necessary here because we've already cloned it in the scanner */
-	expr->name = s;
-	expr->index = index;
-	node->type = AST_VAR_EXPR;
+	sProperty *p = node->data = emalloc(sizeof(sProperty));
+	p->expr = expr;
+	/* no clone here since we've already cloned it in the scanner */
+	p->name = name;
+	node->type = AST_PROPERTY;
 	return node;
 }
 
-sValue *ast_execVarExpr(sEnv *e,sVarExpr *n) {
-	sValue *v = env_get(e,n->name);
-	/* we have to clone it because the user of this method may destroy it if its no longer needed */
-	if(v) {
-		if(n->index) {
-			sValue *index = ast_execute(e,n->index);
-			v = val_index(v,index);
-			if(v)
-				return val_clone(v);
-			return val_createInt(0);
-		}
-		return val_clone(v);
-	}
-	return val_createInt(0);
-}
-
-void ast_printVarExpr(sVarExpr *s,u32 layer) {
-	UNUSED(layer);
-	if(s->index) {
-		printf("%s[",s->name);
-		ast_printTree(s->index,layer);
-		printf("]");
-	}
+sValue *ast_execProperty(sEnv *e,sProperty *n) {
+	sValue *res;
+	sValue *v = ast_execute(e,n->expr);
+	if(strcmp(n->name,"len") == 0)
+		res = val_createInt(val_len(v));
 	else
-		printf("%s",s->name);
+		res = val_createInt(0);
+	val_destroy(v);
+	return res;
 }
 
-void ast_destroyVarExpr(sVarExpr *n) {
-	ast_destroy(n->index);
+void ast_printProperty(sProperty *s,u32 layer) {
+	ast_printTree(s->expr,layer);
+	printf(".%s",s->name);
+}
+
+void ast_destroyProperty(sProperty *n) {
+	ast_destroy(n->expr);
 	efree(n->name);
 }

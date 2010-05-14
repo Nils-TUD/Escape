@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef VECTOR_H_
-#define VECTOR_H_
+#ifndef UTILVECTOR_H_
+#define UTILVECTOR_H_
 
 #include <esc/common.h>
 #include <esc/util/iterator.h>
@@ -118,6 +118,27 @@ void vec_addInt(sVector *v,u32 val);
  * @param p the pointer to the element to insert
  */
 void vec_add(sVector *v,const void *p);
+
+/**
+ * Sets the integer at <index> to <val>. This makes just sense if your vector contains
+ * elements with size <= sizeof(u32). This is just a convenience-function for:
+ * u32 i = 1234;
+ * vec_set(v,index,&i);
+ *
+ * @param v the vector
+ * @param index the index
+ * @param p the value
+ */
+void vec_setInt(sVector *v,u32 index,u32 val);
+
+/**
+ * Sets the value at <index> to <p>.
+ *
+ * @param v the vector
+ * @param index the index
+ * @param p the value
+ */
+void vec_set(sVector *v,u32 index,const void *p);
 
 /**
  * Inserts an integer at given index into the vector. This makes just sense if your vector contains
@@ -232,4 +253,4 @@ void vec_dbg_print(sVector *v);
 
 #endif
 
-#endif /* VECTOR_H_ */
+#endif /* UTILVECTOR_H_ */

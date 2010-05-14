@@ -38,6 +38,8 @@
 #include "dstrexpr.h"
 #include "whilestmt.h"
 #include "functionstmt.h"
+#include "exprlist.h"
+#include "property.h"
 #include "../mem.h"
 
 void ast_printTree(sASTNode *n,u32 layer) {
@@ -99,6 +101,15 @@ void ast_printTree(sASTNode *n,u32 layer) {
 		case AST_FUNC_STMT:
 			ast_printFunctionStmt((sFunctionStmt*)n->data,layer);
 			break;
+		case AST_EXPR_LIST:
+			ast_printExprList((sExprList*)n->data,layer);
+			break;
+		case AST_PROPERTY:
+			ast_printProperty((sProperty*)n->data,layer);
+			break;
+		default:
+			assert(false);
+			break;
 	}
 }
 
@@ -138,8 +149,13 @@ sValue *ast_execute(sEnv *e,sASTNode *n) {
 			return ast_execWhileStmt(e,(sWhileStmt*)n->data);
 		case AST_FUNC_STMT:
 			return ast_execFunctionStmt(e,(sFunctionStmt*)n->data);
+		case AST_EXPR_LIST:
+			return ast_execExprList(e,(sExprList*)n->data);
+		case AST_PROPERTY:
+			return ast_execProperty(e,(sProperty*)n->data);
 	}
 	/* never reached */
+	assert(false);
 	return NULL;
 }
 
@@ -203,6 +219,12 @@ void ast_destroy(sASTNode *n) {
 			break;
 		case AST_FUNC_STMT:
 			ast_destroyFunctionStmt((sFunctionStmt*)n->data);
+			break;
+		case AST_EXPR_LIST:
+			ast_destroyExprList((sExprList*)n->data);
+			break;
+		case AST_PROPERTY:
+			ast_destroyProperty((sProperty*)n->data);
 			break;
 	}
 	efree(n->data);

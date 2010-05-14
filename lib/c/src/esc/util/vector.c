@@ -90,6 +90,16 @@ void vec_add(sVector *v,const void *p) {
 	v->count++;
 }
 
+void vec_setInt(sVector *v,u32 index,u32 val) {
+	assert(v->_elSize <= sizeof(u32));
+	vec_set(v,index,&val);
+}
+
+void vec_set(sVector *v,u32 index,const void *p) {
+	assert(index < v->count);
+	memcpy((char*)v->_elements + index * v->_elSize,p,v->_elSize);
+}
+
 void vec_insertInt(sVector *v,u32 index,u32 val) {
 	assert(v->_elSize <= sizeof(u32));
 	vec_insert(v,index,&val);

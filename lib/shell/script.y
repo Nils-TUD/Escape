@@ -26,6 +26,8 @@
 	#include "ast/dstrexpr.h"
 	#include "ast/whilestmt.h"
 	#include "ast/functionstmt.h"
+	#include "ast/exprlist.h"
+	#include "ast/property.h"
 	#include "exec/env.h"
 	#include "mem.h"
 	#include "shell.h"
@@ -61,7 +63,7 @@
 
 %type <node> stmtlist stmtlistr stmt expr assignstmt cmdexpr cmdexprlist cmd subcmd 
 %type <node> cmdredirfd cmdredirin cmdredirout cmdredirerr strlist strcomp nestedcmdexpr
-%type <node> nestedcmdexprlist nestedsubcmd
+%type <node> nestedcmdexprlist nestedsubcmd neexprlist exprlist
 
 %nonassoc '>' '<' T_LEQ T_GEQ T_EQ T_NEQ T_ASSIGN
 %left T_ADD T_SUB
@@ -69,6 +71,7 @@
 %left T_NEG
 %right T_INC T_DEC
 %right T_POW
+%left '.'
 
 %destructor { free($$); } <strval>
 %destructor { ast_destroy($$); } <node>
@@ -124,7 +127,7 @@ strlist:
 
 strcomp:
 			T_STRING						{ $$ = ast_createConstStrExpr($1,false); }
-			| T_VAR							{ $$ = ast_createVarExpr($1); }
+			| T_VAR							{ $$ = ast_createVarExpr($1,NULL); }
 			| '(' expr ')'			{ $$ = $2; }
 ;
 
@@ -132,7 +135,9 @@ expr:
 			T_NUMBER						{ $$ = ast_createIntExpr($1); }
 			| T_STRING_SCONST		{ $$ = ast_createConstStrExpr($1,true); }
 			| '"' strlist '"'		{ $$ = $2; }
-			| T_VAR							{ $$ = ast_createVarExpr($1); }
+			| T_VAR							{ $$ = ast_createVarExpr($1,NULL); }
+			| T_VAR '[' expr ']' { $$ = ast_createVarExpr($1,$3); }
+			| '[' exprlist ']'	{ $$ = $2; }
 			| assignstmt				{ $$ = $1; }
 			| expr T_ADD expr		{ $$ = ast_createBinOpExpr($1,'+',$3); }
 			| expr T_SUB expr		{ $$ = ast_createBinOpExpr($1,'-',$3); }
@@ -141,10 +146,10 @@ expr:
 			| expr T_MOD expr		{ $$ = ast_createBinOpExpr($1,'%',$3); }
 			| expr T_POW expr		{ $$ = ast_createBinOpExpr($1,'^',$3); }
 			| T_SUB expr %prec T_NEG { $$ = ast_createUnaryOpExpr($2,UN_OP_NEG); }
-			| T_INC T_VAR				{ $$ = ast_createUnaryOpExpr(ast_createVarExpr($2),UN_OP_PREINC); }
-			| T_DEC T_VAR				{ $$ = ast_createUnaryOpExpr(ast_createVarExpr($2),UN_OP_PREDEC); }
-			| T_VAR T_INC				{ $$ = ast_createUnaryOpExpr(ast_createVarExpr($1),UN_OP_POSTINC); }
-			| T_VAR T_DEC				{ $$ = ast_createUnaryOpExpr(ast_createVarExpr($1),UN_OP_POSTDEC); }
+			| T_INC T_VAR				{ $$ = ast_createUnaryOpExpr(ast_createVarExpr($2,NULL),UN_OP_PREINC); }
+			| T_DEC T_VAR				{ $$ = ast_createUnaryOpExpr(ast_createVarExpr($2,NULL),UN_OP_PREDEC); }
+			| T_VAR T_INC				{ $$ = ast_createUnaryOpExpr(ast_createVarExpr($1,NULL),UN_OP_POSTINC); }
+			| T_VAR T_DEC				{ $$ = ast_createUnaryOpExpr(ast_createVarExpr($1,NULL),UN_OP_POSTDEC); }
 			| expr '<' expr			{ $$ = ast_createCmpExpr($1,CMP_OP_LT,$3); }
 			| expr '>' expr			{ $$ = ast_createCmpExpr($1,CMP_OP_GT,$3); }
 			| expr T_LEQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_LEQ,$3); }
@@ -153,10 +158,30 @@ expr:
 			| expr T_NEQ expr		{ $$ = ast_createCmpExpr($1,CMP_OP_NEQ,$3); }
 			| '`' nestedsubcmd '`'		{ $$ = $2; ast_setRetOutput($2,true); }
 			| '(' expr ')'			{ $$ = $2; }
+			| expr '.' T_STRING	{ $$ = ast_createProperty($1,$3); }
+;
+
+/* for comma-separated expressions; may be empty */
+exprlist:
+			neexprlist					{ $$ = $1; }
+			| /* empty */				{ $$ = ast_createExprList(); }
+;
+
+neexprlist:
+			neexprlist ',' expr		{ $$ = $1; ast_addExpr($1,$3); }
+			| expr								{ $$ = ast_createExprList(); ast_addExpr($$,$1); }
 ;
 
 assignstmt:
-			T_VAR T_ASSIGN expr	{ $$ = ast_createAssignExpr(ast_createVarExpr($1),$3); }
+			T_VAR T_ASSIGN expr	{
+				$$ = ast_createAssignExpr(ast_createVarExpr($1,NULL),$3,false,NULL);
+			}
+			| T_VAR '[' ']' T_ASSIGN expr {
+				$$ = ast_createAssignExpr(ast_createVarExpr($1,NULL),$5,true,NULL); 
+			}
+			| T_VAR '[' expr ']' T_ASSIGN expr {
+				$$ = ast_createAssignExpr(ast_createVarExpr($1,NULL),$6,true,$3);
+			}
 ;
 
 cmdexpr:
@@ -164,7 +189,7 @@ cmdexpr:
 			| T_STRING					{ $$ = ast_createConstStrExpr($1,false); }
 			| T_STRING_SCONST		{ $$ = ast_createConstStrExpr($1,true); }
 			| '"' strlist '"'		{ $$ = $2; }
-			| T_VAR							{ $$ = ast_createVarExpr($1); }
+			| T_VAR							{ $$ = ast_createVarExpr($1,NULL); }
 			| '`' nestedsubcmd '`'		{ $$ = $2; ast_setRetOutput($2,true); }
 			| '(' expr ')'			{ $$ = $2; }
 ;
@@ -198,7 +223,7 @@ nestedcmdexpr:
 			| T_STRING					{ $$ = ast_createConstStrExpr($1,false); }
 			| T_STRING_SCONST		{ $$ = ast_createConstStrExpr($1,true); }
 			| '"' strlist '"'		{ $$ = $2; }
-			| T_VAR							{ $$ = ast_createVarExpr($1); }
+			| T_VAR							{ $$ = ast_createVarExpr($1,NULL); }
 			| '(' expr ')'			{ $$ = $2; }
 ;
 

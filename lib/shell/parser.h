@@ -57,6 +57,8 @@
 	#include "ast/dstrexpr.h"
 	#include "ast/whilestmt.h"
 	#include "ast/functionstmt.h"
+	#include "ast/exprlist.h"
+	#include "ast/property.h"
 	#include "exec/env.h"
 	#include "mem.h"
 	#include "shell.h"
@@ -64,7 +66,7 @@
 
 
 /* Line 1676 of yacc.c  */
-#line 68 "parser.h"
+#line 70 "parser.h"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -116,7 +118,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 33 "script.y"
+#line 35 "script.y"
 
 	int intval;
 	char *strval;
@@ -125,7 +127,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 129 "parser.h"
+#line 131 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

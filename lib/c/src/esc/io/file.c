@@ -48,27 +48,27 @@ sFile *file_getIn(const char *parent,const char *filename) {
 	char tmp[MAX_PATH_LEN];
 	s32 res;
 	sFile *f = (sFile*)heap_alloc(sizeof(sFile));
-	char *abs = (char*)heap_alloc(MAX_PATH_LEN);
+	char *absp = (char*)heap_alloc(MAX_PATH_LEN);
 	if(*filename) {
-		s32 len = abspath(abs,MAX_PATH_LEN,parent);
+		s32 len = abspath(absp,MAX_PATH_LEN,parent);
 		/* replace last '/' with '\0' if its not "/" */
 		if(len > 1)
-			abs[len - 1] = '\0';
+			absp[len - 1] = '\0';
 		f->_name = (char*)heap_alloc(strlen(filename) + 1);
 		strcpy(f->_name,filename);
 	}
 	else {
 		u32 lastSlash;
-		s32 len = abspath(abs,MAX_PATH_LEN,parent);
-		lastSlash = file_getDirSlash(abs,len);
-		abs[lastSlash] = '\0';
+		s32 len = abspath(absp,MAX_PATH_LEN,parent);
+		lastSlash = file_getDirSlash(absp,len);
+		absp[lastSlash] = '\0';
 		f->_name = (char*)heap_alloc(len - lastSlash - 1);
-		strncpy(f->_name,abs + lastSlash + 1,len - lastSlash - 2);
+		strncpy(f->_name,absp + lastSlash + 1,len - lastSlash - 2);
 		f->_name[len - lastSlash - 2] = '\0';
 		if(lastSlash == 0)
-			strcpy(abs,"/");
+			strcpy(absp,"/");
 	}
-	f->_path = abs;
+	f->_path = absp;
 	file_getAbsolute(f,tmp,sizeof(tmp));
 	res = stat(tmp,&f->_info);
 	if(res < 0)

@@ -36,12 +36,10 @@ sEnv *env_create(sEnv *parent) {
 
 void env_addArgs(sEnv *e,s32 count,const char **args) {
 	s32 i;
-	char name[16];
-	for(i = 0; i < count; i++) {
-		sprintf(name,"$%d",i);
-		env_set(e,name,val_createStr(args[i]));
-	}
-	env_set(e,"$#",val_createInt(count));
+	sValue *vargs = val_createArray(NULL);
+	for(i = 0; i < count; i++)
+		val_append(vargs,val_createStr(args[i]));
+	env_set(e,"$args",vargs);
 }
 
 void env_print(sEnv *env) {

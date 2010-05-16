@@ -74,8 +74,6 @@ sShellCmd **compl_get(sEnv *e,char *str,u32 length,u32 max,bool searchCmd,bool s
 
 	/* look in builtin commands */
 	if(searchPath) {
-		sSLList *vars;
-		sSLNode *n;
 		for(i = 0; (max == 0 || arrayPos < max) && i < ARRAY_SIZE(commands); i++) {
 			cmdlen = strlen(commands[i].name);
 			matchLen = searchCmd ? cmdlen : length;
@@ -87,9 +85,12 @@ sShellCmd **compl_get(sEnv *e,char *str,u32 length,u32 max,bool searchCmd,bool s
 				matches[arrayPos++] = commands + i;
 			}
 		}
+	}
 
-		/* look for matching variables */
-		vars = env_getMatching(e,str,length,searchCmd);
+	/* look for matching variables */
+	{
+		sSLNode *n;
+		sSLList *vars = env_getMatching(e,str,length,searchCmd);
 		for(n = sll_begin(vars); n != NULL; n = n->next) {
 			const char *vname = (const char*)n->data;
 			cmd = (sShellCmd*)malloc(sizeof(sShellCmd));

@@ -354,6 +354,7 @@ static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPa
 	bool inSStr = false;
 	bool inDStr = false;
 	bool inWord = false;
+	bool inSubCmd = false;
 	u32 startPos = 0;
 	u32 i;
 	*searchPath = true;
@@ -370,9 +371,21 @@ static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPa
 			case ' ':
 			case '\t':
 			case '=':
-				startPos = i + 1;
-				if(inWord) {
-					*searchPath = false;
+			case '(':
+			case ')':
+				if((c != '(' && c != ')') || !inSStr) {
+					startPos = i + 1;
+					if(inWord) {
+						*searchPath = false;
+						inWord = false;
+					}
+				}
+				break;
+			case '`':
+				if(!inSStr) {
+					inSubCmd = !inSubCmd;
+					startPos = i + 1;
+					*searchPath = inSubCmd;
 					inWord = false;
 				}
 				break;

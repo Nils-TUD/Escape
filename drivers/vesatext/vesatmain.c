@@ -179,8 +179,8 @@ int main(void) {
 
 				case MSG_VID_SETCURSOR: {
 					sVTPos *pos = (sVTPos*)msg.data.d;
-					pos->col = MIN(pos->col,cols);
-					pos->row = MIN(pos->row,rows);
+					pos->col = MIN(pos->col,(u32)(cols - 1));
+					pos->row = MIN(pos->row,(u32)(rows - 1));
 					vesa_setCursor(pos->col,pos->row);
 					msg.data.arg1 = 0;
 					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));

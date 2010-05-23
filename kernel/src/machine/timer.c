@@ -166,7 +166,8 @@ void timer_intrpt(void) {
 		foundThread = true;
 		tn = n->next;
 		/* wake up process */
-		sched_setReadyQuick(thread_getById(l->tid));
+		/*sched_setReadyQuick(thread_getById(l->tid));*/
+		sched_setReady(thread_getById(l->tid));
 		kheap_free(l);
 		sll_removeNode(listener,n,NULL);
 		n = tn;

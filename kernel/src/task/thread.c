@@ -301,8 +301,8 @@ void thread_wakeup(tTid tid,u16 event) {
 	if(t->events & event) {
 		/* TODO somehow it is by far slower to use setReadyQuick() here. I can't really
 		 * explain this behaviour :/ */
-		sched_setReadyQuick(t);
-		/*sched_setReady(t);*/
+		/*sched_setReadyQuick(t);*/
+		sched_setReady(t);
 		t->events = EV_NOEVENT;
 	}
 }

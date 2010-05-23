@@ -36,6 +36,7 @@
 #include "modules/forkbomb.h"
 #include "modules/tls.h"
 #include "modules/pipe.h"
+#include "modules/shmclone.h"
 
 #define NAME_LEN 10
 
@@ -59,6 +60,7 @@ static sTestModule modules[] = {
 	{"stack",mod_stack},
 	{"tls",mod_tls},
 	{"pipe",mod_pipe},
+	{"shmclone",mod_shmclone},
 };
 
 int main(int argc,char *argv[]) {

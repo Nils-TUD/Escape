@@ -172,6 +172,23 @@ s32 shm_destroy(sProc *p,const char *name) {
 	return 0;
 }
 
+s32 shm_cloneProc(sProc *parent,sProc *child) {
+	s32 res;
+	sSLNode *n;
+	for(n = sll_begin(shareList); n != NULL; n = n->next) {
+		sShMem *mem = (sShMem*)n->data;
+		sShMemUser *user = shm_getUser(mem,parent);
+		if(user) {
+			if((res = shm_addUser(mem,child,user->region)) < 0) {
+				/* remove all already created entries */
+				shm_remProc(child);
+				return res;
+			}
+		}
+	}
+	return 0;
+}
+
 void shm_remProc(sProc *p) {
 	sSLNode *n,*t;
 	for(n = sll_begin(shareList); n != NULL; ) {

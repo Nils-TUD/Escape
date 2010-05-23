@@ -26,6 +26,7 @@
 #include <mem/pmem.h>
 #include <mem/kheap.h>
 #include <mem/vmm.h>
+#include <mem/sharedmem.h>
 #include <machine/intrpt.h>
 #include <machine/fpu.h>
 #include <machine/gdt.h>
@@ -266,10 +267,14 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	if((res = vmm_cloneAll(p)) < 0)
 		goto errorPDir;
 
+	/* clone shared-memory-regions */
+	if((res = shm_cloneProc(cur,p)) < 0)
+		goto errorRegs;
+
 	/* create thread-list */
 	p->threads = sll_create();
 	if(p->threads == NULL)
-		goto errorRegs;
+		goto errorShm;
 
 	/* clone current thread */
 	if((res = thread_clone(curThread,&nt,p,&dummy,true)) < 0)
@@ -293,6 +298,8 @@ errorThread:
 	thread_kill(nt);
 errorThreadList:
 	kheap_free(p->threads);
+errorShm:
+	shm_remProc(p);
 errorRegs:
 	proc_removeRegions(p,true);
 errorPDir:
@@ -378,6 +385,9 @@ void proc_removeRegions(sProc *p,bool remStack) {
 	u32 i;
 	sSLNode *n;
 	assert(p);
+	/* remove from shared-memory; do this first because it will remove the region and simply
+	 * assumes that the region still exists. */
+	shm_remProc(p);
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = ((sVMRegion**)p->regions)[i];
 		if(vm && (!(vm->reg->flags & RF_STACK) || remStack))

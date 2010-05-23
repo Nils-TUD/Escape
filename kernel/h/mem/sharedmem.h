@@ -81,6 +81,16 @@ s32 shm_leave(sProc *p,const char *name);
 s32 shm_destroy(sProc *p,const char *name);
 
 /**
+ * Joins all shared-memory areas with <child> that have been created by <parent> or which <parent>
+ * has joined. Assumes that the regions have already been cloned.
+ *
+ * @param parent the parent-process
+ * @param child the child-process
+ * @return 0 on success
+ */
+s32 shm_cloneProc(sProc *parent,sProc *child);
+
+/**
  * Removes the process from all shared-memory stuff
  *
  * @param p the process

@@ -156,7 +156,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
 			 * a switch but stay here for ever (and get no timer-interrupts to wakeup ata) */
 			timer_sleepFor(thread_getRunning()->tid,20);
-			thread_switchNoSigs();
+			thread_switch();
 		}
 
 		mod++;

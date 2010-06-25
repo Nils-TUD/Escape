@@ -154,6 +154,7 @@ void timer_intrpt(void) {
 
 	/* look if there are threads to wakeup */
 	for(n = sll_begin(listener); n != NULL; ) {
+		sThread *t;
 		l = (sTimerListener*)n->data;
 		/* stop if we have to continue waiting for this one */
 		/* note that multiple listeners may have l->time = 0 */
@@ -165,9 +166,10 @@ void timer_intrpt(void) {
 		timeInc -= l->time;
 		foundThread = true;
 		tn = n->next;
-		/* wake up process */
-		/*sched_setReadyQuick(thread_getById(l->tid));*/
-		sched_setReady(thread_getById(l->tid));
+		/* wake up thread; don't wake threads that don't want to get sigs */
+		t = thread_getById(l->tid);
+		if(!t->waitsInKernel)
+			sched_setReady(t);
 		kheap_free(l);
 		sll_removeNode(listener,n,NULL);
 		n = tn;

@@ -29,6 +29,7 @@
 #include <util.h>
 #include <string.h>
 #include <errors.h>
+#include <video.h>
 
 #include <fsinterface.h>
 #include <messages.h>
@@ -132,3 +133,21 @@ sRequest *vfsreq_getRequestByPid(tTid tid) {
 void vfsreq_remRequest(sRequest *r) {
 	r->tid = INVALID_TID;
 }
+
+#if DEBUGGING
+
+void vfsreq_dbg_print(sRequest *r) {
+	vid_printf("Request:\n");
+	vid_printf("	tid: %d\n",r->tid);
+	vid_printf("	state: %d\n",r->state);
+	vid_printf("	val1: %d\n",r->val1);
+	vid_printf("	val2: %d\n",r->val2);
+	vid_printf("	data: %d\n",r->data);
+	vid_printf("	dsize: %d\n",r->dsize);
+	vid_printf("	readFrNos: %d\n",r->readFrNos);
+	vid_printf("	readFrNoCount: %d\n",r->readFrNoCount);
+	vid_printf("	readOffset: %d\n",r->readOffset);
+	vid_printf("	count: %d\n",r->count);
+}
+
+#endif

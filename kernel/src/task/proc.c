@@ -399,6 +399,8 @@ void proc_removeRegions(sProc *p,bool remStack) {
 		t->tlsRegion = -1;
 		if(remStack)
 			t->stackRegion = -1;
+		/* remove all signal-handler since we've removed the code to handle signals */
+		sig_removeHandlerFor(t->tid);
 	}
 }
 

@@ -189,7 +189,7 @@ static s32 vfsr_doStat(tTid tid,const char *path,tInodeNo ino,tDevNo devNo,sFile
 	/* error? */
 	vfsr_destroy(tid,virtFile);
 	if((s32)req->count < 0) {
-		tInodeNo no = req->count;
+		s32 no = req->count;
 		vfsreq_remRequest(req);
 		return no;
 	}

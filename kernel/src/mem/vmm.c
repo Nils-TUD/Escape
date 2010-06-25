@@ -93,7 +93,6 @@ u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount) {
 
 tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
 	sRegion *reg;
-	sProc *binowner;
 	sVMRegion *vm;
 	tVMRegNo rno;
 	s32 res;
@@ -109,7 +108,7 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
 		/* for text and shared-library-text: try to find another process with that text */
 		if(type == REG_TEXT || type == REG_SHLIBTEXT) {
 			tVMRegNo prno;
-			binowner = proc_getProcWithBin(bin,&prno);
+			sProc *binowner = proc_getProcWithBin(bin,&prno);
 			if(binowner)
 				return vmm_join(binowner,prno,p);
 		}
@@ -540,6 +539,7 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 
 static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
 	bool res = false;
+	s32 err;
 	sFileInfo info;
 	sThread *t = thread_getRunning();
 	tFileNo file;
@@ -558,14 +558,14 @@ static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
 	file = vfsr_openInode(t->tid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
 	if(file >= 0) {
 		/* file not present or modified? */
-		if(vfs_fstat(t->tid,file,&info) >= 0 && info.modifytime == vm->reg->binary.modifytime) {
-			if(vfs_seek(t->tid,file,vm->reg->binOffset + (addr - vm->virt),SEEK_SET) >= 0) {
+		if((err = vfs_fstat(t->tid,file,&info)) >= 0 && info.modifytime == vm->reg->binary.modifytime) {
+			if((err = vfs_seek(t->tid,file,vm->reg->binOffset + (addr - vm->virt),SEEK_SET)) >= 0) {
 				/* first read into a temp-buffer because we can't mark the page as present until
 				 * its read from disk. and we can't use a temporary mapping when switching threads. */
 				u8 *tempBuf = (u8*)kheap_alloc(PAGE_SIZE);
 				if(tempBuf != NULL) {
 					/* TODO actually we may have to read less */
-					if(vfs_readFile(t->tid,file,(u8*)tempBuf,PAGE_SIZE) >= 0) {
+					if((err = vfs_readFile(t->tid,file,(u8*)tempBuf,PAGE_SIZE)) >= 0) {
 						sSLNode *n;
 						u32 temp;
 						u32 frame = mm_allocateFrame(MM_DEF);
@@ -591,12 +591,22 @@ static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
 						}
 						res = true;
 					}
+					else
+						vid_printf("Demandload for proc %s: Unable to read: %d\n",t->proc->command,err);
 					kheap_free(tempBuf);
 				}
+				else
+					vid_printf("Demandload for proc %s: Not enough memory\n",t->proc->command);
 			}
+			else
+				vid_printf("Demandload for proc %s: Unable to seek: %d\n",t->proc->command,err);
 		}
+		else
+			vid_printf("Demandload for proc %s: Stat failed: %d\n",t->proc->command,err);
 		vfs_closeFile(t->tid,file);
 	}
+	else
+		vid_printf("Demandload for proc %s: Unable to open file: %d\n",t->proc->command,file);
 	/* wakeup all waiting processes */
 	*flags &= ~PF_LOADINPROGRESS;
 	thread_wakeupAll(vm->reg,EV_VMM_DONE);

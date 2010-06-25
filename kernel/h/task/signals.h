@@ -91,6 +91,15 @@ s32 sig_setHandler(tTid tid,tSig signal,fSigHandler func);
 void sig_unsetHandler(tTid tid,tSig signal);
 
 /**
+ * Clones all handler of <parent> for <child>.
+ *
+ * @param parent the parent-thread-id
+ * @param child the child-thread-id
+ * @return 0 on success
+ */
+s32 sig_cloneHandler(tTid parent,tTid child);
+
+/**
  * Removes all handler for the given thread
  *
  * @param tid the thread-id

@@ -432,6 +432,10 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 		/* proc_clone() sets t->kstackFrame in this case */
 		t->stackRegion = src->stackRegion;
 		t->tlsRegion = src->tlsRegion;
+
+		/* clone signal-handler */
+		if(sig_cloneHandler(src->tid,t->tid) < 0)
+			goto errThread;
 	}
 	else {
 		/* no swapping here because we don't want to make a thread-switch */
@@ -464,12 +468,12 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	if(list == NULL) {
 		list = threadMap[t->tid % THREAD_MAP_SIZE] = sll_create();
 		if(list == NULL)
-			goto errTLS;
+			goto errClone;
 	}
 
 	/* insert */
 	if(!sll_append(list,t))
-		goto errTLS;
+		goto errClone;
 
 	/* insert in VFS; thread needs to be inserted for it */
 	if(!vfs_createThread(t->tid))
@@ -487,9 +491,11 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 
 errAppend:
 	sll_removeFirst(list,t);
-errTLS:
+errClone:
 	if(t->tlsRegion >= 0)
 		vmm_remove(p,t->tlsRegion);
+	else if(cloneProc)
+		sig_removeHandlerFor(t->tid);
 errStack:
 	if(!cloneProc) {
 		mm_freeFrame(t->kstackFrame,MM_DEF);

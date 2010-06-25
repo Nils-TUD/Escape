@@ -35,13 +35,14 @@ sASTNode *ast_createIfStmt(sASTNode *cond,sASTNode *thenList,sASTNode *elseList)
 
 sValue *ast_execIfStmt(sEnv *e,sIfStmt *n) {
 	sValue *cond = ast_execute(e,n->cond);
-	sValue *res;
+	sValue *res = NULL;
 	if(val_isTrue(cond))
 		res = ast_execute(e,n->thenList);
-	else
+	else if(n->elseList)
 		res = ast_execute(e,n->elseList);
 	val_destroy(cond);
-	val_destroy(res);
+	if(res)
+		val_destroy(res);
 	return NULL;
 }
 

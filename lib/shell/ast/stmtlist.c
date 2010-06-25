@@ -44,6 +44,7 @@ sValue *ast_execStmtList(sEnv *e,sStmtList *n) {
 
 sASTNode *ast_addStmt(sASTNode *l,sASTNode *s) {
 	sStmtList *list = (sStmtList*)l->data;
+	assert(s != NULL);
 	esll_append(list->list,s);
 	return l;
 }

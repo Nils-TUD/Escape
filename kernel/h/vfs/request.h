@@ -105,4 +105,15 @@ sRequest *vfsreq_getRequestByPid(tTid tid);
  */
 void vfsreq_remRequest(sRequest *r);
 
+#if DEBUGGING
+
+/**
+ * Prints the given request
+ *
+ * @param r the request
+ */
+void vfsreq_dbg_print(sRequest *r);
+
+#endif
+
 #endif /* VFSREQ_H_ */

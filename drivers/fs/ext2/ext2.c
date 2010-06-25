@@ -71,7 +71,7 @@ void *ext2_init(const char *driver,char **usedDev) {
 	e->blockCache.usedBlocks = NULL;
 	e->blockCache.oldestBlock = NULL;
 	e->blockCache.handle = e;
-	/* case is ok, because the only difference is that ext2_rw_* receive a sExt2* as first argument
+	/* cast is ok, because the only difference is that ext2_rw_* receive a sExt2* as first argument
 	 * and read/write expect void* */
 	e->blockCache.read = (fReadBlocks)ext2_rw_readBlocks;
 	e->blockCache.write = (fWriteBlocks)ext2_rw_writeBlocks;

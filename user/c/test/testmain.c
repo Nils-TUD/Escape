@@ -37,6 +37,7 @@
 #include "modules/tls.h"
 #include "modules/pipe.h"
 #include "modules/shmclone.h"
+#include "modules/sigclone.h"
 
 #define NAME_LEN 10
 
@@ -61,6 +62,7 @@ static sTestModule modules[] = {
 	{"tls",mod_tls},
 	{"pipe",mod_pipe},
 	{"shmclone",mod_shmclone},
+	{"sigclone",mod_sigclone},
 };
 
 int main(int argc,char *argv[]) {

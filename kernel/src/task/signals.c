@@ -177,13 +177,34 @@ void sig_unsetHandler(tTid tid,tSig signal) {
 	}
 }
 
+s32 sig_cloneHandler(tTid parent,tTid child) {
+	s32 i,res;
+	sSLNode *n;
+	sHandler *h;
+	sSLList **list = handler;
+	for(i = 0; i < SIG_COUNT - 1; i++) {
+		if(*list != NULL) {
+			for(n = sll_begin(*list); n != NULL; n = n->next) {
+				h = (sHandler*)n->data;
+				if(h->tid == parent) {
+					if((res = sig_setHandler(child,i + 1,h->handler)) < 0) {
+						/* remove all handlers that we've added so far */
+						sig_removeHandlerFor(child);
+						return res;
+					}
+				}
+			}
+		}
+		list++;
+	}
+	return 0;
+}
+
 void sig_removeHandlerFor(tTid tid) {
 	u32 i;
 	sSLNode *p,*n,*m;
 	sHandler *h;
-	sSLList **list;
-
-	list = handler;
+	sSLList **list = handler;
 	for(i = 0; i < SIG_COUNT - 1; i++) {
 		if(*list != NULL) {
 			p = NULL;

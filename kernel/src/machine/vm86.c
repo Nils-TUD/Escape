@@ -135,8 +135,8 @@ s32 vm86_create(void) {
 	strcpy(p->command,"VM86");
 
 	/* block us; we get waked up as soon as someone wants to use us */
-	sched_setBlocked(t);
-	thread_switchNoSigs();
+	thread_setBlocked(t->tid);
+	thread_switch();
 
 	/* ok, we're back again... */
 	vm86_start();
@@ -182,11 +182,11 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* make vm86 ready */
-	sched_setReady(vm86t);
+	thread_setReady(vm86t->tid);
 
 	/* block the calling thread and then do a switch */
 	/* we'll wakeup the thread as soon as the vm86-task is done with the interrupt */
-	sched_setBlocked(thread_getRunning());
+	thread_setBlocked(thread_getRunning()->tid);
 	thread_switch();
 
 	/* everything is finished :) */
@@ -385,9 +385,9 @@ start:
 	if(mm_getFreeFrmCount(MM_DEF) < frameCnt) {
 		vm86Res = ERR_NOT_ENOUGH_MEM;
 		/* make caller ready, block us and do a switch */
-		sched_setReady(thread_getById(caller));
-		sched_setBlocked(thread_getRunning());
-		thread_switchNoSigs();
+		thread_setReady(caller);
+		thread_setBlocked(thread_getRunning()->tid);
+		thread_switch();
 		goto start;
 	}
 
@@ -431,13 +431,13 @@ static void vm86_stop(sIntrptStackFrame *stack) {
 	sThread *ct = thread_getById(caller);
 	if(ct != NULL) {
 		vm86_copyRegResult(stack);
-		sched_setReady(ct);
+		thread_setReady(caller);
 	}
 	vm86Res = 0;
 
 	/* block us and do a switch */
-	sched_setBlocked(t);
-	thread_switchNoSigs();
+	thread_setBlocked(t->tid);
+	thread_switch();
 
 	/* lets start with a new request :) */
 	vm86_start();

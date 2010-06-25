@@ -209,6 +209,30 @@ void thread_wakeupAll(void *mask,u16 event);
 void thread_wakeup(tTid tid,u16 event);
 
 /**
+ * Marks the given thread as ready (if the thread hasn't said that he don't wants to be interrupted)
+ *
+ * @param tid the thread-id
+ * @return true if the thread is ready now
+ */
+bool thread_setReady(tTid tid);
+
+/**
+ * Marks the given thread as blocked
+ *
+ * @param tid the thread-id
+ * @return true if the thread is blocked now
+ */
+bool thread_setBlocked(tTid tid);
+
+/**
+ * Marks the given thread as suspended or not-suspended
+ *
+ * @param tid the thread-id
+ * @param blocked wether to suspend or "unsuspend" the thread
+ */
+void thread_setSuspended(tTid tid,bool blocked);
+
+/**
  * Returns the file-number for the given file-descriptor
  *
  * @param fd the file-descriptor

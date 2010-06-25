@@ -119,7 +119,7 @@ s32 timer_sleepFor(tTid tid,u32 msecs) {
 		nl->time -= l->time;
 
 	/* put process to sleep */
-	sched_setBlocked(thread_getById(tid));
+	thread_setBlocked(tid);
 	return 0;
 }
 
@@ -154,7 +154,6 @@ void timer_intrpt(void) {
 
 	/* look if there are threads to wakeup */
 	for(n = sll_begin(listener); n != NULL; ) {
-		sThread *t;
 		l = (sTimerListener*)n->data;
 		/* stop if we have to continue waiting for this one */
 		/* note that multiple listeners may have l->time = 0 */
@@ -166,10 +165,8 @@ void timer_intrpt(void) {
 		timeInc -= l->time;
 		foundThread = true;
 		tn = n->next;
-		/* wake up thread; don't wake threads that don't want to get sigs */
-		t = thread_getById(l->tid);
-		if(!t->waitsInKernel)
-			sched_setReady(t);
+		/* wake up thread */
+		thread_setReady(l->tid);
 		kheap_free(l);
 		sll_removeNode(listener,n,NULL);
 		n = tn;

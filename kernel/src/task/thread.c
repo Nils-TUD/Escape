@@ -307,6 +307,27 @@ void thread_wakeup(tTid tid,u16 event) {
 	}
 }
 
+bool thread_setReady(tTid tid) {
+	sThread *t = thread_getById(tid);
+	assert(t != NULL && t != cur);
+	if(!t->waitsInKernel)
+		sched_setReady(t);
+	return t->state == ST_READY || t->state == ST_READY_SUSP;
+}
+
+bool thread_setBlocked(tTid tid) {
+	sThread *t = thread_getById(tid);
+	assert(t != NULL);
+	sched_setBlocked(t);
+	return t->state == ST_BLOCKED || t->state == ST_BLOCKED_SUSP;
+}
+
+void thread_setSuspended(tTid tid,bool blocked) {
+	sThread *t = thread_getById(tid);
+	assert(t != NULL);
+	sched_setSuspended(t,blocked);
+}
+
 tFileNo thread_fdToFile(tFD fd) {
 	tFileNo fileNo;
 	if(fd < 0 || fd >= MAX_FD_COUNT)

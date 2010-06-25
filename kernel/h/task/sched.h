@@ -24,6 +24,10 @@
 #include <task/thread.h>
 
 /**
+ * Note that this module is intended to be used by the thread-module ONLY!
+ */
+
+/**
  * Inits the scheduler
  */
 void sched_init(void);

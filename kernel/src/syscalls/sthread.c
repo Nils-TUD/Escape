@@ -72,7 +72,7 @@ void sysc_suspend(sIntrptStackFrame *stack) {
 	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	/* suspend it */
-	sched_setSuspended(tt,true);
+	thread_setSuspended(tt->tid,true);
 	SYSC_RET1(stack,0);
 }
 
@@ -84,6 +84,6 @@ void sysc_resume(sIntrptStackFrame *stack) {
 	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	/* resume it */
-	sched_setSuspended(tt,false);
+	thread_setSuspended(tt->tid,false);
 	SYSC_RET1(stack,0);
 }

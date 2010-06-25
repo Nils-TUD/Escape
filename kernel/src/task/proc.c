@@ -284,7 +284,7 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	/* set kernel-stack-frame; thread_clone() doesn't do it for us */
 	nt->kstackFrame = stackFrame;
 	/* make thread ready */
-	sched_setReady(nt);
+	thread_setReady(nt->tid);
 
 	res = proc_finishClone(nt,stackFrame);
 	if(res == 1) {
@@ -325,7 +325,7 @@ s32 proc_startThread(u32 entryPoint,void *arg) {
 	}
 
 	/* mark ready */
-	sched_setReady(nt);
+	thread_setReady(nt->tid);
 
 	res = proc_finishClone(nt,stackFrame);
 	if(res == 1) {

@@ -418,17 +418,12 @@ static void intrpt_handleSignal(void) {
 		 * in the current page-dir and so on :)
 		 */
 		if(thread_getRunning()->tid != tid) {
-			sThread *sigt = thread_getById(tid);
-			/* don't wake threads that don't want to get sigs */
-			if(!sigt->waitsInKernel) {
-				/* ensure that the thread is ready */
-				sched_setReady(sigt);
-				/* this may fail because perhaps we're involved in a swapping-operation */
-				/* in this case do nothing, we'll handle the signal later (handleSignalFinish() cares
-				 * about that) */
-				if(sigt->state == ST_READY)
-					thread_switchTo(tid);
-			}
+			/* ensure that the thread is ready */
+			/* this may fail because perhaps we're involved in a swapping-operation or similar */
+			/* in this case do nothing, we'll handle the signal later (handleSignalFinish() cares
+			 * about that) */
+			if(thread_setReady(tid))
+				thread_switchTo(tid);
 		}
 	}
 }

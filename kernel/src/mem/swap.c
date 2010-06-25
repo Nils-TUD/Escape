@@ -363,7 +363,7 @@ static void swap_setBlocked(sSLList *procs,bool blocked) {
 		p = (sProc*)n->data;
 		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
 			t = (sThread*)tn->data;
-			sched_setSuspended(t,blocked);
+			thread_setSuspended(t->tid,blocked);
 		}
 	}
 }

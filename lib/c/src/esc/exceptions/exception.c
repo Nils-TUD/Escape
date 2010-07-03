@@ -26,6 +26,7 @@
 static void ex_destroy(sException *e);
 static const char *ex_toString(sException *e);
 
+sException *__curEx = NULL;
 sException *__exPtr = NULL;
 static int tryNo = 0;
 static sJumpEnv tries[MAX_TRIES];

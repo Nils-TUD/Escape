@@ -23,6 +23,7 @@
 #include <test.h>
 #include <errors.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "texceptions.h"
 
 /* forward declarations */
@@ -33,6 +34,7 @@ static void test_trythrow(void);
 static void test_tryinfinally(void);
 static void test_multiplecatch(void);
 static void test_trynested(void);
+static void test_throwincatch(void);
 
 /* our test-module */
 sTestModule tModExc = {
@@ -47,6 +49,7 @@ static void test_exc(void) {
 	test_tryinfinally();
 	test_multiplecatch();
 	test_trynested();
+	test_throwincatch();
 }
 
 static void test_doThrow(void) {
@@ -93,19 +96,32 @@ static void test_trycatch(void) {
 }
 
 static void test_tryfinally(void) {
-	u32 i,j,before;
+	u32 i,j,k,before;
 	test_caseStart("Testing try & finally without throw");
 
 	i = 0;
+	j = 0;
+	k = 0;
 	before = heapspace();
 	TRY {
-		i = 1;
+		TRY {
+			test_doThrow();
+		}
+		FINALLY {
+			j = 1;
+		}
+		ENDCATCH
+	}
+	CATCH(IOException,e) {
+		k = 1;
 	}
 	FINALLY {
-		i = 2;
+		i = 1;
 	}
 	ENDCATCH
-	test_assertUInt(i,2);
+	test_assertUInt(i,1);
+	test_assertUInt(j,1);
+	test_assertUInt(k,1);
 	test_assertUInt(heapspace(),before);
 
 	test_caseSucceded();
@@ -256,8 +272,10 @@ static void test_trynested1(void) {
 	}
 	CATCH(IOException,e) {
 		RETHROW(e);
+		assert(false);
 	}
 	ENDCATCH
+	assert(false);
 }
 
 static void test_trynested(void) {
@@ -274,6 +292,41 @@ static void test_trynested(void) {
 		j = 1;
 	}
 	CATCH(IOException,e) {
+		i = 2;
+	}
+	FINALLY {
+		k = 1;
+	}
+	ENDCATCH
+	test_assertUInt(i,2);
+	test_assertUInt(j,0);
+	test_assertUInt(k,1);
+	test_assertUInt(heapspace(),before);
+
+	test_caseSucceded();
+}
+
+static void test_throwincatch(void) {
+	u32 i,j,k,before;
+	test_caseStart("Testing throw in catch-block");
+
+	i = 0;
+	j = 0;
+	k = 0;
+	before = heapspace();
+	TRY {
+		TRY {
+			i = 1;
+			THROW(IOException,ERR_EOF);
+			j = 1;
+		}
+		CATCH(IOException,e) {
+			THROW(OutOfMemoryException);
+		}
+		ENDCATCH
+		j = 1;
+	}
+	CATCH(OutOfMemoryException,e) {
 		i = 2;
 	}
 	FINALLY {

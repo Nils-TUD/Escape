@@ -27,7 +27,6 @@
 /**
  * This module tries to emulate exceptions known from c++ or java. You can use it (nearly) as
  * you're used to it except that you have to note the following restrictions:
- * 	- You can't use THROW in CATCH- and FINALLY-blocks (just RETHROW)
  * 	- You can't use TRY-CATCH in CATCH-blocks
  *  - Atm it's not thread-safe!
  *  - Of course, you have to take care not to manipulate the control-flow in TRY/CATCH/FINALLY.
@@ -73,12 +72,14 @@
 											__ex = __exPtr; \
 										else {
 
-#define CATCH(name,obj)				} { s##name *(obj) = (s##name*)__ex; \
+#define CATCH(name,obj)				} { __curEx = __ex; \
+										s##name *(obj) = (s##name*)__ex; \
 										if((obj) && (obj)->_id == (ID_##name) && ((obj)->_handled = 1))
 
 #define FINALLY						} {
 
 #define ENDCATCH					} \
+									__curEx = NULL; \
 									if(__ex) { \
 										if(!__ex->_handled) \
 											ex_unwind(__ex); \
@@ -88,9 +89,20 @@
 									ex_pop(); \
 								}
 
-#define THROW(name,...)				ex_unwind((__exPtr = (sException*)\
-										ex_create##name(ID_##name,__LINE__,__FILE__,## __VA_ARGS__)))
-#define RETHROW(exObj)				(__ex = (sException*)(exObj))->_handled = 0
+#define THROW(name,...)				{ \
+										if(__curEx) { \
+											__curEx->destroy(__curEx); \
+											__curEx = NULL; \
+										} \
+										ex_unwind((__exPtr = (sException*) \
+												ex_create##name(ID_##name,__LINE__, \
+													__FILE__,## __VA_ARGS__))); \
+									}
+
+#define RETHROW(exObj)				{ \
+										(__ex = (sException*)(exObj))->_handled = 0; \
+										ex_unwind(__ex); \
+									}
 
 typedef const char *(*fExToString)(void *e);
 typedef void (*fExDestroy)(void *e);
@@ -130,6 +142,7 @@ typedef struct {
 /* DON'T USE the following variables and functions directly. They are just necessary for
  * the macros!! */
 
+extern sException *__curEx;
 extern sException *__exPtr;
 
 /**

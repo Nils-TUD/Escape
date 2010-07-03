@@ -26,12 +26,12 @@
 
 namespace std {
 
-bad_typeid::~bad_typeid() throw() { }
+	bad_typeid::~bad_typeid() throw () {
+	}
 
-const char* 
-bad_typeid::what() const throw()
-{
-  return "std::bad_typeid";
-}
+	const char*
+	bad_typeid::what() const throw () {
+		return "std::bad_typeid";
+	}
 
 } // namespace std

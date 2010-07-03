@@ -18,16 +18,69 @@
  */
 
 #include <esc/common.h>
+#include <esc/lock.h>
+#include <esc/thread.h>
+#include <esc/debug.h>
+#include <errors.h>
+
+#define MAX_EXIT_FUNCS		32
 
 typedef void (*fConstr)(void);
+typedef struct {
+	void (*f)(void*);
+	void *p;
+	void *d;
+} sGlobalObj;
 
 void __libc_init(void);
 extern fConstr __libcpp_constr_start;
 extern fConstr __libcpp_constr_end;
 
+static tULock exitLock = 0;
+static s16 exitFuncCount = 0;
+static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
+
+/**
+ * Will be called by gcc at the beginning for every global object to register the
+ * destructor of the object
+ */
+int __cxa_atexit(void (*f)(void *),void *p,void *d);
+/**
+ * We'll call this function in exit() to call all destructors registered by *atexit()
+ */
+void __cxa_finalize(void *d);
+
+int __cxa_atexit(void (*f)(void *),void *p,void *d) {
+	locku(&exitLock);
+	if(exitFuncCount >= MAX_EXIT_FUNCS) {
+		unlocku(&exitLock);
+		return ERR_MAX_EXIT_FUNCS;
+	}
+
+	exitFuncs[exitFuncCount].f = f;
+	exitFuncs[exitFuncCount].p = p;
+	exitFuncs[exitFuncCount].d = d;
+	exitFuncCount++;
+	unlocku(&exitLock);
+	return 0;
+}
+
+void __cxa_finalize(void *d) {
+	UNUSED(d);
+	/* if we're the last thread, call the exit-functions */
+	if(getThreadCount() == 1) {
+		s16 i;
+		for(i = exitFuncCount - 1; i >= 0; i--) {
+			debugf("Calling destr %x(%x)\n",exitFuncs[i].f,exitFuncs[i].p);
+			exitFuncs[i].f(exitFuncs[i].p);
+		}
+	}
+}
+
 void __libc_init(void) {
 	fConstr *constr = &__libcpp_constr_start;
 	while(constr < &__libcpp_constr_end) {
+		debugf("Calling %x\n",*constr);
 		(*constr)();
 		constr++;
 	}

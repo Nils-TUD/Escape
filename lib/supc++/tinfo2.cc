@@ -24,21 +24,23 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#include <cstddef>
+#include <stddef.h>
 #include "tinfo.h"
 
 using std::type_info;
 
+#if 0
 #if !__GXX_TYPEINFO_EQUALITY_INLINE
 
 bool
 type_info::before (const type_info &arg) const
 {
 #if __GXX_MERGED_TYPEINFO_NAMES
-  return name () < arg.name ();
+	return name () < arg.name ();
 #else
-  return __builtin_strcmp (name (), arg.name ()) < 0;
+	return __builtin_strcmp (name (), arg.name ()) < 0;
 #endif
 }
 
+#endif
 #endif

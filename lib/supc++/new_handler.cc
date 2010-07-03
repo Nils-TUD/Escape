@@ -27,23 +27,20 @@
 
 #include "new"
 
-const std::nothrow_t std::nothrow = { };
+const std::nothrow_t std::nothrow = {};
 
 using std::new_handler;
 new_handler __new_handler;
 
-new_handler
-std::set_new_handler (new_handler handler) throw()
-{
-  new_handler prev_handler = __new_handler;
-  __new_handler = handler;
-  return prev_handler;
+new_handler std::set_new_handler(new_handler handler) throw () {
+	new_handler prev_handler = __new_handler;
+	__new_handler = handler;
+	return prev_handler;
 }
 
-std::bad_alloc::~bad_alloc() throw() { }
+std::bad_alloc::~bad_alloc() throw () {
+}
 
-const char* 
-std::bad_alloc::what() const throw()
-{
-  return "std::bad_alloc";
+const char* std::bad_alloc::what() const throw () {
+	return "std::bad_alloc";
 }

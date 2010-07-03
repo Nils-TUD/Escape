@@ -26,27 +26,15 @@
 // This is derived from the C++ ABI for IA-64.  Where we diverge
 // for cross-architecture compatibility are noted with "@@@".
 
-#include <bits/c++config.h>
-#include <cstdlib>
-#if _GLIBCXX_HOSTED
-#include <cstring>
-#endif
-#include <climits>
-#include <exception>
+#include <esc/lock.h>
+#include "exception"
 #include "unwind-cxx.h"
-#include <ext/concurrence.h>
 
-#if _GLIBCXX_HOSTED
-using std::free;
-using std::malloc;
-using std::memset;
-#else
 // In a freestanding environment, these functions may not be available
 // -- but for now, we assume that they are.
 extern "C" void *malloc (std::size_t);
 extern "C" void free(void *);
 extern "C" void *memset (void *, int, std::size_t);
-#endif
 
 using namespace __cxxabiv1;
 
@@ -79,7 +67,6 @@ typedef unsigned int bitmask_type;
 typedef unsigned long bitmask_type;
 #endif
 
-
 typedef char one_buffer[EMERGENCY_OBJ_SIZE] __attribute__((aligned));
 static one_buffer emergency_buffer[EMERGENCY_OBJ_COUNT];
 static bitmask_type emergency_used;
@@ -87,134 +74,119 @@ static bitmask_type emergency_used;
 static __cxa_dependent_exception dependents_buffer[EMERGENCY_OBJ_COUNT];
 static bitmask_type dependents_used;
 
-namespace
-{
-  // A single mutex controlling emergency allocations.
-  __gnu_cxx::__mutex emergency_mutex;
+namespace {
+	// A single mutex controlling emergency allocations.
+	tULock emergency_lock;
 }
 
 extern "C" void *
-__cxxabiv1::__cxa_allocate_exception(std::size_t thrown_size) throw()
-{
-  void *ret;
+__cxxabiv1::__cxa_allocate_exception(std::size_t thrown_size) throw () {
+	void *ret;
 
-  thrown_size += sizeof (__cxa_refcounted_exception);
-  ret = malloc (thrown_size);
+	thrown_size += sizeof(__cxa_refcounted_exception );
+	ret = malloc(thrown_size);
 
-  if (! ret)
-    {
-      __gnu_cxx::__scoped_lock sentry(emergency_mutex);
+	if(!ret) {
+		locku(&emergency_lock);
 
-      bitmask_type used = emergency_used;
-      unsigned int which = 0;
+		bitmask_type used = emergency_used;
+		unsigned int which = 0;
 
-      if (thrown_size > EMERGENCY_OBJ_SIZE)
-	goto failed;
-      while (used & 1)
-	{
-	  used >>= 1;
-	  if (++which >= EMERGENCY_OBJ_COUNT)
-	    goto failed;
+		if (thrown_size > EMERGENCY_OBJ_SIZE)
+			goto failed;
+		while (used & 1)
+		{
+			used >>= 1;
+			if (++which >= EMERGENCY_OBJ_COUNT)
+				goto failed;
+		}
+
+		emergency_used |= (bitmask_type)1 << which;
+		ret = &emergency_buffer[which][0];
+
+		failed:;
+
+		unlocku(&emergency_lock);
+		if (!ret)
+			std::terminate ();
 	}
 
-      emergency_used |= (bitmask_type)1 << which;
-      ret = &emergency_buffer[which][0];
+	// We have an uncaught exception as soon as we allocate memory.  This
+	// yields uncaught_exception() true during the copy-constructor that
+	// initializes the exception object.  See Issue 475.
+	__cxa_eh_globals *globals = __cxa_get_globals ();
+	globals->uncaughtExceptions += 1;
 
-    failed:;
+	memset (ret, 0, sizeof (__cxa_refcounted_exception));
 
-      if (!ret)
-	std::terminate ();
-    }
-
-  // We have an uncaught exception as soon as we allocate memory.  This
-  // yields uncaught_exception() true during the copy-constructor that
-  // initializes the exception object.  See Issue 475.
-  __cxa_eh_globals *globals = __cxa_get_globals ();
-  globals->uncaughtExceptions += 1;
-
-  memset (ret, 0, sizeof (__cxa_refcounted_exception));
-
-  return (void *)((char *)ret + sizeof (__cxa_refcounted_exception));
+	return (void *)((char *)ret + sizeof (__cxa_refcounted_exception));
 }
 
+extern "C" void __cxxabiv1::__cxa_free_exception(void *vptr) throw () {
+	char *base = (char *)emergency_buffer;
+	char *ptr = (char *)vptr;
+	if(ptr >= base && ptr < base + sizeof(emergency_buffer)) {
+		const unsigned int which = (unsigned)(ptr - base) / EMERGENCY_OBJ_SIZE;
 
-extern "C" void
-__cxxabiv1::__cxa_free_exception(void *vptr) throw()
-{
-  char *base = (char *) emergency_buffer;
-  char *ptr = (char *) vptr;
-  if (ptr >= base
-      && ptr < base + sizeof (emergency_buffer))
-    {
-      const unsigned int which
-	= (unsigned) (ptr - base) / EMERGENCY_OBJ_SIZE;
-
-      __gnu_cxx::__scoped_lock sentry(emergency_mutex);
-      emergency_used &= ~((bitmask_type)1 << which);
-    }
-  else
-    free (ptr - sizeof (__cxa_refcounted_exception));
+		locku(&emergency_lock);
+		emergency_used &= ~((bitmask_type)1 << which);
+		unlocku(&emergency_lock);
+	}
+	else
+		free (ptr - sizeof (__cxa_refcounted_exception));
 }
 
-
-extern "C" __cxa_dependent_exception*
-__cxxabiv1::__cxa_allocate_dependent_exception() throw()
+extern "C" __cxa_dependent_exception* __cxxabiv1:: __cxa_allocate_dependent_exception()  throw()
 {
-  __cxa_dependent_exception *ret;
+	__cxa_dependent_exception *ret;
 
-  ret = static_cast<__cxa_dependent_exception*>
-    (malloc (sizeof (__cxa_dependent_exception)));
+	ret = static_cast<__cxa_dependent_exception*>(malloc (sizeof (__cxa_dependent_exception)));
 
-  if (!ret)
-    {
-      __gnu_cxx::__scoped_lock sentry(emergency_mutex);
-
-      bitmask_type used = dependents_used;
-      unsigned int which = 0;
-
-      while (used & 1)
+	if (!ret)
 	{
-	  used >>= 1;
-	  if (++which >= EMERGENCY_OBJ_COUNT)
-	    goto failed;
+		locku(&emergency_lock);
+
+		bitmask_type used = dependents_used;
+		unsigned int which = 0;
+
+		while (used & 1)
+		{
+			used >>= 1;
+			if (++which >= EMERGENCY_OBJ_COUNT)
+				goto failed;
+		}
+
+		dependents_used |= (bitmask_type)1 << which;
+		ret = &dependents_buffer[which];
+
+		failed:;
+
+		unlocku(&emergency_lock);
+		if (!ret)
+			std::terminate ();
 	}
 
-      dependents_used |= (bitmask_type)1 << which;
-      ret = &dependents_buffer[which];
+	// We have an uncaught exception as soon as we allocate memory.  This
+	// yields uncaught_exception() true during the copy-constructor that
+	// initializes the exception object.  See Issue 475.
+	__cxa_eh_globals *globals = __cxa_get_globals ();
+	globals->uncaughtExceptions += 1;
 
-    failed:;
+	memset (ret, 0, sizeof (__cxa_dependent_exception));
 
-      if (!ret)
-	std::terminate ();
-    }
-
-  // We have an uncaught exception as soon as we allocate memory.  This
-  // yields uncaught_exception() true during the copy-constructor that
-  // initializes the exception object.  See Issue 475.
-  __cxa_eh_globals *globals = __cxa_get_globals ();
-  globals->uncaughtExceptions += 1;
-
-  memset (ret, 0, sizeof (__cxa_dependent_exception));
-
-  return ret;
+	return ret;
 }
 
+extern "C" void __cxxabiv1::__cxa_free_dependent_exception(__cxa_dependent_exception *vptr) throw () {
+	char *base = (char *)dependents_buffer;
+	char *ptr = (char *)vptr;
+	if(ptr >= base && ptr < base + sizeof(dependents_buffer)) {
+		const unsigned int which = (unsigned)(ptr - base) / sizeof(__cxa_dependent_exception );
 
-extern "C" void
-__cxxabiv1::__cxa_free_dependent_exception
-  (__cxa_dependent_exception *vptr) throw()
-{
-  char *base = (char *) dependents_buffer;
-  char *ptr = (char *) vptr;
-  if (ptr >= base
-      && ptr < base + sizeof (dependents_buffer))
-    {
-      const unsigned int which
-	= (unsigned) (ptr - base) / sizeof (__cxa_dependent_exception);
-
-      __gnu_cxx::__scoped_lock sentry(emergency_mutex);
-      dependents_used &= ~((bitmask_type)1 << which);
-    }
-  else
-    free (vptr);
+		locku(&emergency_lock);
+		dependents_used &= ~((bitmask_type)1 << which);
+		unlocku(&emergency_lock);
+	}
+	else
+		free (vptr);
 }

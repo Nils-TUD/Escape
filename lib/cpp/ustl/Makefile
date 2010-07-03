@@ -32,14 +32,16 @@ ${SLIBT}:	${OBJS}
 
 endif
 ifdef BUILD_STATIC
-LIBA	:= $Olib${NAME}.a
+LIBA	:= $(BUILD)/lib${NAME}.a
+LIBCOBJS = $(filter-out $(shell find $(BUILD)/lib/c -name "*_pic*"), \
+	$(shell find $(BUILD)/lib/c -name "*.o"))
 ALLTGTS	+= ${LIBA}
 
 all:	${LIBA}
-${LIBA}:	${OBJS}
+${LIBA}:	${OBJS} $(LIBCOBJS)
 	@echo "Linking $@ ..."
 	@rm -f $@
-	@${AR} qc $@ ${OBJS}
+	@${AR} qc $@ ${OBJS} $(LIBCOBJS)
 	@${RANLIB} $@
 endif
 

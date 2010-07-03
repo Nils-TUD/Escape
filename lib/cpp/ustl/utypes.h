@@ -55,9 +55,9 @@
 #	define BYTE_ORDER		USTL_BYTE_ORDER
 #endif
 
-typedef size_t uoff_t; ///< A type for storing offsets into blocks measured by size_t.
+typedef std::size_t uoff_t; ///< A type for storing offsets into blocks measured by size_t.
 typedef uint32_t hashvalue_t; ///< Value type returned by the hash functions.
-typedef size_t streamsize; ///< Size of stream data
+typedef std::size_t streamsize; ///< Size of stream data
 typedef uoff_t streamoff; ///< Offset into a stream
 
 

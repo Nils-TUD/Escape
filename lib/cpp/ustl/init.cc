@@ -21,20 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_GLOBAL_OBJS		32
-
-typedef void (*fConstr)();
-
 extern "C" {
-	/**
-	 * Will be called by gcc at the beginning for every global object to register the
-	 * destructor of the object
-	 */
-	int __cxa_atexit(void (*f)(void *),void *p,void *d);
-	/**
-	 * We'll call this function before exit() to call all destructors registered by __cxa_atexit()
-	 */
-	void __cxa_finalize(void *d);
 	/**
 	 * From osdev-wiki: There's also a strange function dl_iterate_phdrs. You don't need this so let
 	 * it simply return -1. It's usually used to find exception frames for dynamically linked
@@ -63,35 +50,8 @@ extern "C" {
 	char* __cxa_demangle(const char *mangled_name,char *output_buffer,size_t *length,int *status);
 }
 
-typedef struct {
-	void (*f)(void*);
-	void *p;
-	void *d;
-} sGlobalObj;
-
 /* gcc needs the symbol __dso_handle */
 void *__dso_handle;
-
-/* global objects */
-static sGlobalObj objs[MAX_GLOBAL_OBJS];
-static int objPos = 0;
-
-int __cxa_atexit(void (*f)(void *),void *p,void *d) {
-	if(objPos >= MAX_GLOBAL_OBJS)
-		return -1;
-
-	objs[objPos].f = f;
-	objs[objPos].p = p;
-	objs[objPos].d = d;
-	objPos++;
-	return 0;
-}
-
-void __cxa_finalize(void *d) {
-	int i;
-	for(i = objPos - 1; i >= 0; i--)
-		objs[i].f(objs[i].p);
-}
 
 int dl_iterate_phdr(void) {
 	return -1;

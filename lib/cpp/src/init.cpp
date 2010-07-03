@@ -21,49 +21,5 @@
 #include <esc/debug.h>
 #include <stdio.h>
 
-#define MAX_GLOBAL_OBJS		32
-
-typedef void (*fConstr)();
-
-extern "C" {
-	/**
-	 * Will be called by gcc at the beginning for every global object to register the
-	 * destructor of the object
-	 */
-	s32 __cxa_atexit(void (*f)(void *),void *p,void *d);
-	/**
-	 * We'll call this function before exit() to call all destructors registered by __cxa_atexit()
-	 */
-	void __cxa_finalize(void *d);
-}
-
-typedef struct {
-	void (*f)(void*);
-	void *p;
-	void *d;
-} sGlobalObj;
-
 /* gcc needs the symbol __dso_handle */
 void *__dso_handle;
-
-/* global objects */
-static sGlobalObj objs[MAX_GLOBAL_OBJS];
-static s32 objPos = 0;
-
-s32 __cxa_atexit(void (*f)(void *),void *p,void *d) {
-	if(objPos >= MAX_GLOBAL_OBJS)
-		return -1;
-
-	objs[objPos].f = f;
-	objs[objPos].p = p;
-	objs[objPos].d = d;
-	objPos++;
-	return 0;
-}
-
-void __cxa_finalize(void *d) {
-	UNUSED(d);
-	s32 i;
-	for(i = objPos - 1; i >= 0; i--)
-		objs[i].f(objs[i].p);
-}

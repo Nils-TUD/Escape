@@ -25,27 +25,23 @@
 
 #include "typeinfo"
 #include "exception"
-#include <cstdlib>
 #include "unwind-cxx.h"
 #include "exception_defines.h"
+#include <stdlib.h>
 
-extern "C" void
-__cxxabiv1::__cxa_bad_cast ()
-{
+extern "C" void __cxxabiv1::__cxa_bad_cast() {
 #ifdef __EXCEPTIONS  
-  throw std::bad_cast();
+	throw std::bad_cast();
 #else
-  std::abort();
+	std::abort();
 #endif
 }
 
-extern "C" void
-__cxxabiv1::__cxa_bad_typeid ()
-{
+extern "C" void __cxxabiv1::__cxa_bad_typeid() {
 #ifdef __EXCEPTIONS  
-  throw std::bad_typeid();
+	throw std::bad_typeid();
 #else
-  std::abort();
+	std::abort();
 #endif
 }
 

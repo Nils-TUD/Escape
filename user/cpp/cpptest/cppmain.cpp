@@ -99,10 +99,21 @@ int main(void) {
     vector<int> v;
     v.resize (30);
     for (size_t i = 0; i < v.size(); ++ i)
-	v[i] = i;
+    	v[i] = i;
     v.push_back (57);
     v.insert (v.begin() + 20, 555);
     v.erase (v.begin() + 3);
+
+    cout << "Hello world!" << endl;
+    cout << 456 << ios::hex << 0x1234 << endl;
+    //cerr.format ("You objects are at 0x%08X\n", &v);
+
+    try {
+    	throw 3;
+    }
+    catch(int &e) {
+    	cout << "Got " << e << endl;
+    }
 
 	/*
 	String s1 = "abc";

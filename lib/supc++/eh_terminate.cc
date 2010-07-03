@@ -23,56 +23,48 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+#include <esc/common.h>
+#include <esc/debug.h>
+#include <stdlib.h>
 #include "typeinfo"
 #include "exception"
-#include <cstdlib>
 #include "unwind-cxx.h"
 #include "exception_defines.h"
 
 using namespace __cxxabiv1;
 
-void
-__cxxabiv1::__terminate (std::terminate_handler handler)
-{
-  try {
-    handler ();
-    std::abort ();
-  } catch (...) {
-    std::abort ();
-  }
+void __cxxabiv1::__terminate(std::terminate_handler handler) {
+	try {
+		handler();
+		abort();
+	}
+	catch(...) {
+		abort();
+	}
 }
 
-void
-std::terminate ()
-{
-  __terminate (__terminate_handler);
+void std::terminate() {
+	debugf("Terminating\n");
+	__terminate(__terminate_handler);
 }
 
-void
-__cxxabiv1::__unexpected (std::unexpected_handler handler)
-{
-  handler();
-  std::terminate ();
+void __cxxabiv1::__unexpected(std::unexpected_handler handler) {
+	handler();
+	std::terminate();
 }
 
-void
-std::unexpected ()
-{
-  __unexpected (__unexpected_handler);
+void std::unexpected() {
+	__unexpected(__unexpected_handler);
 }
 
-std::terminate_handler
-std::set_terminate (std::terminate_handler func) throw()
-{
-  std::terminate_handler old = __terminate_handler;
-  __terminate_handler = func;
-  return old;
+std::terminate_handler std::set_terminate(std::terminate_handler func) throw () {
+	std::terminate_handler old = __terminate_handler;
+	__terminate_handler = func;
+	return old;
 }
 
-std::unexpected_handler
-std::set_unexpected (std::unexpected_handler func) throw()
-{
-  std::unexpected_handler old = __unexpected_handler;
-  __unexpected_handler = func;
-  return old;
+std::unexpected_handler std::set_unexpected(std::unexpected_handler func) throw () {
+	std::unexpected_handler old = __unexpected_handler;
+	__unexpected_handler = func;
+	return old;
 }

@@ -51,6 +51,7 @@ typedef void FILE;
 
 #ifdef __cplusplus
 extern "C" {
+using namespace std;
 #endif
 
 /* std-streams */

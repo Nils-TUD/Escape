@@ -26,27 +26,27 @@
 
 #include "typeinfo"
 #include "exception"
-#include <cxxabi.h>
+#include "cxxabi.h"
 
-std::exception::~exception() throw() { }
-
-std::bad_exception::~bad_exception() throw() { }
-
-abi::__forced_unwind::~__forced_unwind() throw() { }
-
-abi::__foreign_exception::~__foreign_exception() throw() { }
-
-const char* 
-std::exception::what() const throw()
-{
-  // NB: Another elegant option would be returning typeid(*this).name()
-  // and not overriding what() in bad_exception, bad_alloc, etc.  In
-  // that case, however, mangled names would be returned, PR 14493.
-  return "std::exception";
+std::exception::~exception() throw () {
 }
 
-const char* 
-std::bad_exception::what() const throw()
-{
-  return "std::bad_exception";
+std::bad_exception::~bad_exception() throw () {
+}
+
+abi::__forced_unwind::~__forced_unwind() throw () {
+}
+
+abi::__foreign_exception::~__foreign_exception() throw () {
+}
+
+const char *std::exception::what() const throw () {
+	// NB: Another elegant option would be returning typeid(*this).name()
+	// and not overriding what() in bad_exception, bad_alloc, etc.  In
+	// that case, however, mangled names would be returned, PR 14493.
+	return "std::exception";
+}
+
+const char *std::bad_exception::what() const throw () {
+	return "std::bad_exception";
 }

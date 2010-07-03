@@ -23,11 +23,8 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#include <bits/c++config.h>
 #include "new"
 
-_GLIBCXX_WEAK_DEFINITION void*
-operator new[] (std::size_t sz) throw (std::bad_alloc)
-{
-  return ::operator new(sz);
+void* operator new[](std::size_t sz) throw (std::bad_alloc) {
+	return ::operator new(sz);
 }

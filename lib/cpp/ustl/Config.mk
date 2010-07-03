@@ -6,7 +6,7 @@ MINOR		:= 4
 
 DEBUG		:= 1
 BUILD_SHARED	:= 1
-#BUILD_STATIC	:= 1
+BUILD_STATIC	:= 1
 NOLIBSTDCPP	:= 1
 
 ################ Programs ############################################

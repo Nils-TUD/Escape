@@ -29,6 +29,7 @@
 
 #ifdef __cplusplus
 extern "C" {
+using namespace std;
 #endif
 
 /* max rand-number */
@@ -244,7 +245,7 @@ void abort(void);
  * @param func the function
  * @return zero if the registration succeeds, nonzero if it fails
  */
-s32 atexit(void (*func)(void));
+s32 atexit(void (*func)(void *));
 
 /**
  * Exit causes the program to end and supplies a status code to the calling environment.

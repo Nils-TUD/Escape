@@ -26,4 +26,3 @@
 
 /* The current installed user handler.  */
 std::unexpected_handler __cxxabiv1::__unexpected_handler = std::terminate;
-

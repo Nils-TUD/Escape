@@ -31,7 +31,7 @@
 #define EV_RECEIVED_MSG		2	/* wakeup if a driver we're connected to (fd) has a msg for us */
 #define EV_DATA_READABLE	8	/* wakeup if we can read from a driver (data available) */
 
-typedef void (*fExitFunc)(void);
+typedef void (*fExitFunc)(void *arg);
 
 typedef struct {
 	tPid pid;

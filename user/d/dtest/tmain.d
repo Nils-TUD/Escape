@@ -49,18 +49,27 @@ void main(char[][] args) {
 	foreach(m; r.search("abc123 fffx 44 4412"))
 		Stdout.format("found {0}\n",m.match(0));
 
-    // open a file for reading
-    auto from = new File("/file.txt");
-    // stream directly to console
-    Stdout.copy(from);
+  // open a file for reading
+  auto from = new File("/file.txt");
+  // stream directly to console
+  Stdout.copy(from);
     
-    auto fields = Clock.toDate;
-    Stdout.formatln("{}, {} {:D2}:{:D2}:{:D2}",
-                     fields.date.day,
-                     fields.date.year,
-                     fields.time.hours,
-                     fields.time.minutes,
-                     fields.time.seconds);
+  /+auto fields = Clock.toDate;
+  Stdout.formatln("{}, {} {:D2}:{:D2}:{:D2}",
+                   fields.date.day,
+                   fields.date.year,
+                   fields.time.hours,
+                   fields.time.minutes,
+                   fields.time.seconds);+/
+
+	try {
+		Stdout.formatln("Huhu!!");
+		throw new ProcessException("bla");
+	}
+	catch(ProcessException e) {
+		Stdout.formatln ("Process execution failed: {}", e);
+	}
+	
 
 	try
 	{

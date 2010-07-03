@@ -18,12 +18,10 @@
 ;
 
 [BITS 32]
+
 [global init]
 [extern main]
 [extern exit]
-[extern __libcpp_start]
-[extern __cxa_finalize]
-[extern getThreadCount]
 [extern init_tls]
 
 ALIGN 4
@@ -60,24 +58,19 @@ init:
 
 	; initial thread calls main
 initialThread:
+%ifndef SHAREDLIB
+	[extern __libc_init]
+	call	__libc_init
+%endif
 	call	main
 
 threadExit:
-	; first, save return-value of main
 	push	eax
-	; we want to call global destructors just for the last thread
-	call	getThreadCount
-	mov		ebx,1
-	cmp		eax,ebx
-	jne		threadExitFinish
-	; call global destructors
-	call	__cxa_finalize
-threadExitFinish:
 	call	exit
 	; just to be sure
 	jmp		$
 
-; all signal-handler return to this "function" (address 0x1039)
+; all signal-handler return to this "function" (address 0x102b)
 sigRetFunc:
 	mov		eax,SYSCALL_ACKSIG
 	int		SYSCALL_IRQ

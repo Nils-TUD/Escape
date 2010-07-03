@@ -8,21 +8,24 @@ DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 LIB = $(BUILD)/libsupc++.a
 
 CPP = g++
-CPPFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CPPDEFFLAGS) -I.
+CPPFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CPPDEFFLAGS) \
+	-I. -I$(LIBDIR)/h -I$(LIBCDIR)/include
 
 # sources
 CPPSRC = $(shell find . -name "*.cc")
 
 # objects
 CPPOBJS = $(patsubst %.cc,$(BUILDL)/%.o,$(CPPSRC))
+LIBCOBJS = $(filter-out $(shell find $(BUILD)/lib/c -name "*_pic*"), \
+	$(shell find $(BUILD)/lib/c -name "*.o"))
 
 .PHONY:		all clean
 
 all: $(LIB)
 
-$(LIB): $(BUILDDIRS) $(CPPOBJS)
+$(LIB): $(BUILDDIRS) $(CPPOBJS) $(LIBCOBJS)
 		@echo "	" AR $(LIB)
-		@ar rcs $(LIB) $(CPPOBJS)
+		@ar rcs $(LIB) $(CPPOBJS) $(LIBCOBJS)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

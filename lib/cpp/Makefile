@@ -51,7 +51,7 @@ $(BUILDL)/%.o: %.cpp
 
 $(STARTO): $(START)
 		@echo "	" AS $(START)
-		@nasm $(ASMFLAGS) -D SHAREDLIB -o $(STARTO) $(START)
+		@nasm $(ASMFLAGS) -o $(STARTO) $(START)
 
 -include $(DEPS)
 

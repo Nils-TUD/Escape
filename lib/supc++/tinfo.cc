@@ -24,14 +24,13 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#include <bits/c++config.h>
-#include <cstddef>
+#include <stddef.h>
 #include "tinfo.h"
 
-std::type_info::
-~type_info ()
-{ }
+std::type_info::~type_info() {
+}
 
+#if 0
 #if !__GXX_TYPEINFO_EQUALITY_INLINE
 
 // We can't rely on common symbols being shared between shared objects.
@@ -39,42 +38,35 @@ bool std::type_info::
 operator== (const std::type_info& arg) const
 {
 #if __GXX_MERGED_TYPEINFO_NAMES
-  return name () == arg.name ();
+	return name () == arg.name ();
 #else
-  return (&arg == this) || (__builtin_strcmp (name (), arg.name ()) == 0);
+	return (&arg == this) || (__builtin_strcmp (name (), arg.name ()) == 0);
 #endif
 }
 
+#endif
 #endif
 
 namespace std {
 
-// return true if this is a type_info for a pointer type
-bool type_info::
-__is_pointer_p () const
-{
-  return false;
-}
+	// return true if this is a type_info for a pointer type
+	bool type_info::__is_pointer_p() const {
+		return false;
+	}
 
-// return true if this is a type_info for a function type
-bool type_info::
-__is_function_p () const
-{
-  return false;
-}
+	// return true if this is a type_info for a function type
+	bool type_info::__is_function_p() const {
+		return false;
+	}
 
-// try and catch a thrown object.
-bool type_info::
-__do_catch (const type_info *thr_type, void **, unsigned) const
-{
-  return *this == *thr_type;
-}
+	// try and catch a thrown object.
+	bool type_info::__do_catch(const type_info *thr_type,void **,unsigned) const {
+		return *this == *thr_type;
+	}
 
-// upcast from this type to the target. __class_type_info will override
-bool type_info::
-__do_upcast (const abi::__class_type_info *, void **) const
-{
-  return false;
-}
+	// upcast from this type to the target. __class_type_info will override
+	bool type_info::__do_upcast(const abi::__class_type_info *,void **) const {
+		return false;
+	}
 
 }

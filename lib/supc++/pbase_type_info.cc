@@ -26,37 +26,32 @@
 
 namespace __cxxabiv1 {
 
-__pbase_type_info::
-~__pbase_type_info ()
-{}
+	__pbase_type_info::~__pbase_type_info() {
+	}
 
-bool __pbase_type_info::
-__do_catch (const type_info *thr_type,
-            void **thr_obj,
-            unsigned outer) const
-{
-  if (*this == *thr_type)
-    return true;      // same type
-  if (typeid (*this) != typeid (*thr_type))
-    return false;     // not both same kind of pointers
-  
-  if (!(outer & 1))
-    // We're not the same and our outer pointers are not all const qualified
-    // Therefore there must at least be a qualification conversion involved
-    // But for that to be valid, our outer pointers must be const qualified.
-    return false;
-  
-  const __pbase_type_info *thrown_type =
-    static_cast <const __pbase_type_info *> (thr_type);
-  
-  if (thrown_type->__flags & ~__flags)
-    // We're less qualified.
-    return false;
-  
-  if (!(__flags & __const_mask))
-    outer &= ~1;
-  
-  return __pointer_catch (thrown_type, thr_obj, outer);
-}
+	bool __pbase_type_info::__do_catch(const type_info *thr_type,void **thr_obj,unsigned outer) const {
+		if(*this == *thr_type)
+			return true; // same type
+		if(typeid (*this) != typeid (*thr_type))
+			return false; // not both same kind of pointers
+
+		if(!(outer & 1))
+			// We're not the same and our outer pointers are not all const qualified
+			// Therefore there must at least be a qualification conversion involved
+			// But for that to be valid, our outer pointers must be const qualified.
+			return false;
+
+		const __pbase_type_info *thrown_type =
+				static_cast<const __pbase_type_info *> (thr_type);
+
+		if(thrown_type->__flags & ~__flags)
+			// We're less qualified.
+			return false;
+
+		if(!(__flags & __const_mask))
+			outer &= ~1;
+
+		return __pointer_catch(thrown_type,thr_obj,outer);
+	}
 
 }

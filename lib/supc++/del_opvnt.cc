@@ -23,11 +23,8 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#include <bits/c++config.h>
 #include "new"
 
-_GLIBCXX_WEAK_DEFINITION void
-operator delete[] (void *ptr, const std::nothrow_t&) throw ()
-{
-  ::operator delete (ptr);
+void operator delete[](void *ptr,const std::nothrow_t&) throw () {
+	::operator delete(ptr);
 }

@@ -95,7 +95,7 @@ namespace ustl { _NUMERIC_LIMITS (type, minVal, maxVal, bSigned, bInteger, bInte
 /// \brief Returns the recommended stream alignment for type \p T. Override with ALIGNOF.
 /// Because this is occasionally called with a null value, do not access the argument!
 template<typename T>
-inline size_t alignof(const T&) {
+inline std::size_t alignof(const T&) {
 	if (numeric_limits<T>::is_integral)
 		return (__alignof__(T));
 	return (4);
@@ -103,7 +103,7 @@ inline size_t alignof(const T&) {
 
 #define ALIGNOF(type,grain)	\
 namespace ustl {		\
-    template <> inline size_t alignof (const type&) { return (grain); } }
+    template <> inline std::size_t alignof (const type&) { return (grain); } }
 
 } // namespace ustl
 

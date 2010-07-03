@@ -26,12 +26,12 @@
 
 namespace std {
 
-bad_cast::~bad_cast() throw() { }
+	bad_cast::~bad_cast() throw () {
+	}
 
-const char* 
-bad_cast::what() const throw()
-{
-  return "std::bad_cast";
-}
+	const char*
+	bad_cast::what() const throw () {
+		return "std::bad_cast";
+	}
 
 } // namespace std

@@ -45,9 +45,16 @@
 #pragma GCC visibility push(default)
 
 #include <stddef.h>
-#include <bits/cxxabi_tweaks.h>
-#include <cxxabi-forced.h>
- 
+//#include <bits/cxxabi_tweaks.h>
+#include "cxxabi-forced.h"
+
+// --- from bits/cxxabi_tweaks.h ---
+// Constructors and destructors do not return a value.
+typedef void __cxa_cdtor_return_type;
+// __cxa_vec_ctor has void return type.
+typedef void __cxa_vec_ctor_return_type;
+typedef int __guard __attribute__((mode (__DI__)));
+
 #ifdef __cplusplus
 #define _GLIBCXX_NOTHROW throw() 
 #else
@@ -55,6 +62,7 @@
 #endif
 
 #ifdef __cplusplus
+using namespace std;
 namespace __cxxabiv1
 {  
   extern "C" 

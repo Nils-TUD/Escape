@@ -70,30 +70,7 @@ threadExit:
 	; just to be sure
 	jmp		$
 
-	; c++-programs have address 0x1039 for sigRetFunc. So we need to achieve this here, too
-%ifdef SHAREDLIB
-	nop
-	nop
-	nop
-	nop
-	nop
-%endif
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-
-; all signal-handler return to this "function" (address 0x1039)
+; all signal-handler return to this "function" (address 0x102b)
 sigRetFunc:
 	mov		eax,SYSCALL_ACKSIG
 	int		SYSCALL_IRQ

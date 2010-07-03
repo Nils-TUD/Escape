@@ -10,7 +10,7 @@ LDCONF = $(ROOT)/lib/ld.conf
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
-ADDLIBS = $(LIBGCC)/libgcc.a $(LIBGCC)/libgcc_eh.a
+ADDLIBS = $(BUILD)/libustl.a $(BUILD)/libsupc++.a $(LIBGCC)/libgcc.a $(LIBGCC)/libgcc_eh.a
 
 CC = g++
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBCPP) -I$(LIBCPP)/ustl -I$(LIBC)/include \
@@ -29,7 +29,7 @@ all:	$(BIN)
 
 $(BIN):	$(BUILDDIRS) $(LDCONF) $(COBJ) $(START) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) $(DLNKFLAGS) -o $(BIN) -lc -lustl $(START) $(COBJ) $(ADDLIBS);
+		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(BUILD)/libc.a $(COBJ) $(ADDLIBS);
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 

@@ -76,10 +76,18 @@ typedef s32 tDrvId;
 /* msg-id */
 typedef u32 tMsgId;
 
+#ifdef __cplusplus
+namespace std {
+#endif
+
 typedef u32 ptrdiff_t;
 typedef u32 size_t;
 typedef s32 ssize_t;
 typedef s32 off_t;
 typedef u16 mode_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* STDDEF_H_ */

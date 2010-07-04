@@ -70,14 +70,17 @@ void __cxa_finalize(void *d) {
 	/* if we're the last thread, call the exit-functions */
 	if(getThreadCount() == 1) {
 		s16 i;
-		for(i = exitFuncCount - 1; i >= 0; i--)
+		for(i = exitFuncCount - 1; i >= 0; i--) {
+			debugf("Calling destr %x\n",exitFuncs[i].f);
 			exitFuncs[i].f(exitFuncs[i].p);
+		}
 	}
 }
 
 void __libc_init(void) {
 	fConstr *constr = &__libcpp_constr_start;
 	while(constr < &__libcpp_constr_end) {
+		debugf("Calling constr %x\n",*constr);
 		(*constr)();
 		constr++;
 	}

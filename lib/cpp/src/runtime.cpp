@@ -24,24 +24,38 @@
 // <http://www.gnu.org/licenses/>.
 
 #include "typeinfo"
-#include "exception"
-#include "unwind-cxx.h"
-#include "exception_defines.h"
+#include "cxxabi.h"
 #include <stdlib.h>
+#include <stdio.h>
+
+extern "C" void __cxa_pure_virtual();
+extern "C" void _Unwind_Resume();
+extern "C" void __gxx_personality_v0();
+
+/* gcc needs the symbol __dso_handle */
+void *__dso_handle;
 
 extern "C" void __cxxabiv1::__cxa_bad_cast() {
-#ifdef __EXCEPTIONS
-	throw std::bad_cast();
-#else
-	std::abort();
-#endif
+	// TODO use exceptions
+	fprintf(stderr,"Bad cast!\n");
+	exit(1);
 }
 
 extern "C" void __cxxabiv1::__cxa_bad_typeid() {
-#ifdef __EXCEPTIONS
-	throw std::bad_typeid();
-#else
-	std::abort();
-#endif
+	// TODO use exceptions
+	fprintf(stderr,"Bad typeid!\n");
+	exit(1);
 }
 
+extern "C" void __cxa_pure_virtual() {
+	fprintf(stderr,"Called pure virtual method!\n");
+	exit(1);
+}
+
+extern "C" void _Unwind_Resume() {
+	// do nothing
+}
+
+extern "C" void __gxx_personality_v0() {
+    // do nothing
+}

@@ -80,7 +80,7 @@ typedef u32 tMsgId;
 namespace std {
 #endif
 
-typedef u32 ptrdiff_t;
+typedef s32 ptrdiff_t;
 typedef u32 size_t;
 typedef s32 ssize_t;
 typedef s32 off_t;

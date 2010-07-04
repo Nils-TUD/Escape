@@ -17,9 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <ustl.h>
+#include <esc/common.h>
+#include <stdio.h>
+//#include <ustl.h>
 
-using namespace ustl;
+//using namespace ustl;
 
 class my {
 private:
@@ -38,6 +40,20 @@ public:
 	void doIt();
 };
 
+class A {
+public:
+	virtual ~A() {}
+};
+class B : public A {
+public:
+	virtual ~B() {}
+};
+class C : public B {
+public:
+	virtual ~C() {}
+	inline void myMethod() { printf("hi!\n"); }
+};
+
 my myobj;
 
 void my::doIt() {
@@ -45,6 +61,26 @@ void my::doIt() {
 }
 
 int main(void) {
+	A *a = new C();
+	C *c = dynamic_cast<C*>(a);
+	if(c) {
+		printf("Worked!\n");
+		c->myMethod();
+	}
+	else {
+		printf("Didn't work!\n");
+	}
+
+	A *a2 = new B();
+	C *c2 = dynamic_cast<C*>(a2);
+	if(c2) {
+		printf("Worked!\n");
+		c2->myMethod();
+	}
+	else {
+		printf("Didn't work!\n");
+	}
+
 #if 0
 	/*startThread(threadFunc);
 	startThread(threadFunc);*/
@@ -96,6 +132,7 @@ int main(void) {
 		out << i << ": " << v2[i] << endl;
 	}
 #else
+	/*
     vector<int> v;
     v.resize (30);
     for (size_t i = 0; i < v.size(); ++ i)
@@ -113,7 +150,7 @@ int main(void) {
     }
     catch(int &e) {
     	cout << "Got " << e << endl;
-    }
+    }*/
 
 	/*
 	String s1 = "abc";

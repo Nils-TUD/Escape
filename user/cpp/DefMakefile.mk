@@ -11,19 +11,20 @@ DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 CC = g++
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBCPP)/include -I$(LIBC)/include \
-	-I$(LIB)/h -Wl,-T,$(LDCONF) -Wl,--build-id=none $(CPPDEFFLAGS) -fno-exceptions -fno-rtti $(ADDFLAGS)
+	-I$(LIB)/h -Wl,-T,$(LDCONF) -Wl,--build-id=none $(CPPDEFFLAGS) -fno-exceptions $(ADDFLAGS)
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.cpp")
 
 # objects
+LIBCA = $(BUILD)/libc.a
 LIBCPPA = $(BUILD)/libcpp.a
 START = $(BUILD)/libcpp_startup.o
 COBJ = $(patsubst %.cpp,$(BUILDL)/%.o,$(CSRC))
 
-#ifeq ($(LINKTYPE),static)
-#	ADDLIBS += $(LIBCPPA)
-#endif
+ifeq ($(LINKTYPE),static)
+	ADDLIBS += $(LIBCPPA)
+endif
 
 .PHONY: all clean
 
@@ -31,11 +32,11 @@ all:	$(BIN)
 
 $(BIN):	$(BUILDDIRS) $(LDCONF) $(COBJ) $(START) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-#ifeq ($(LINKTYPE),static)
-#		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(ADDLIBS);
-#else
+ifeq ($(LINKTYPE),static)
+		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(LIBCA) $(COBJ) $(ADDLIBS);
+else
 		@$(CC) $(CFLAGS) $(DLNKFLAGS) -o $(BIN) -lcpp $(START) $(COBJ) $(ADDLIBS);
-#endif
+endif
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 

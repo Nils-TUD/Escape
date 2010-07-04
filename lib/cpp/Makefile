@@ -6,6 +6,7 @@ GCCLIBDIR = $(ROOT)/lib/gcc
 SUBDIRS = $(filter-out $(shell find src -name "*.*"),$(shell find src -name "*"))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
+STLIB = $(BUILD)/libcpp.a
 DYNLIBNAME = libcpp.so
 DYNLIB = $(BUILD)/$(DYNLIBNAME)
 SHLDCONF = ../shld.conf
@@ -32,7 +33,11 @@ STARTO = $(BUILD)/libcpp_startup.o
 
 .PHONY:		all clean
 
-all: $(DYNLIB) $(STARTO)
+all: $(STLIB) $(DYNLIB) $(STARTO)
+
+$(STLIB): $(BUILDDIRS) $(COBJS) $(LIBCOBJS)
+		@echo "	" AR $(STLIB)
+		@ar rcs $(STLIB) $(LIBCOBJS) $(COBJS)
 
 $(DYNLIB): $(BUILDDIRS) $(COBJS) $(LIBCOBJS)
 		@echo "	" LINKING $(DYNLIB)
@@ -57,4 +62,4 @@ $(STARTO): $(START)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(COBJS) $(DYNLIB) $(DEPS) $(STARTO)
+		rm -f $(COBJS) $(STLIB) $(DYNLIB) $(DEPS) $(STARTO)

@@ -31,7 +31,7 @@
 #ifndef _TYPEINFO
 #define _TYPEINFO
 
-#include "exception"
+#include <runtime/exception>
 
 #pragma GCC visibility push(default)
 

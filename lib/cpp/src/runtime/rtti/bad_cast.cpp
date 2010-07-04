@@ -1,5 +1,5 @@
-// Copyright (C) 1994, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2007, 2009
-// Free Software Foundation
+// Copyright (C) 1994, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2007,
+// 2009  Free Software Foundation
 //
 // This file is part of GCC.
 //
@@ -22,14 +22,16 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#include "tinfo.h"
+#include <runtime/typeinfo>
 
-namespace __cxxabiv1 {
+namespace std {
 
-	// This has special meaning to the compiler, and will cause it
-	// to emit the type_info structures for the fundamental types which are
-	// mandated to exist in the runtime.
-	__fundamental_type_info::~__fundamental_type_info() {
+	bad_cast::~bad_cast() throw () {
 	}
 
-}
+	const char*
+	bad_cast::what() const throw () {
+		return "std::bad_cast";
+	}
+
+} // namespace std

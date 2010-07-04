@@ -1,6 +1,4 @@
-// Methods for type_info for -*- C++ -*- Run Time Type Identification.
-// Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-// 2003, 2004, 2005, 2006, 2007, 2009
+// Copyright (C) 1994, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2007, 2009
 // Free Software Foundation
 //
 // This file is part of GCC.
@@ -24,32 +22,25 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#include <stddef.h>
-#include "tinfo.h"
+#include <runtime/tinfo.h>
 
-std::type_info::~type_info() {
-}
+namespace __cxxabiv1 {
 
-namespace std {
-
-	// return true if this is a type_info for a pointer type
-	bool type_info::__is_pointer_p() const {
-		return false;
+	__pointer_type_info::~__pointer_type_info() {
 	}
 
-	// return true if this is a type_info for a function type
-	bool type_info::__is_function_p() const {
-		return false;
+	bool __pointer_type_info::__is_pointer_p() const {
+		return true;
 	}
 
-	// try and catch a thrown object.
-	bool type_info::__do_catch(const type_info *thr_type,void **,unsigned) const {
-		return *this == *thr_type;
-	}
+	bool __pointer_type_info::__pointer_catch(const __pbase_type_info *thrown_type,void **thr_obj,
+			unsigned outer) const {
+		if(outer < 2 && *__pointee == typeid(void)) {
+			// conversion to void
+			return !thrown_type->__pointee->__is_function_p();
+		}
 
-	// upcast from this type to the target. __class_type_info will override
-	bool type_info::__do_upcast(const abi::__class_type_info *,void **) const {
-		return false;
+		return __pbase_type_info::__pointer_catch(thrown_type,thr_obj,outer);
 	}
 
 }

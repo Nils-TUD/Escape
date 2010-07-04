@@ -1,5 +1,5 @@
-// Copyright (C) 1994, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2007,
-// 2009 Free Software Foundation
+// Copyright (C) 1994, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2007, 2009
+// Free Software Foundation
 //
 // This file is part of GCC.
 //
@@ -22,11 +22,14 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#include "tinfo.h"
+#include <runtime/tinfo.h>
 
 namespace __cxxabiv1 {
 
-	__array_type_info::~__array_type_info() {
+	// This has special meaning to the compiler, and will cause it
+	// to emit the type_info structures for the fundamental types which are
+	// mandated to exist in the runtime.
+	__fundamental_type_info::~__fundamental_type_info() {
 	}
 
 }

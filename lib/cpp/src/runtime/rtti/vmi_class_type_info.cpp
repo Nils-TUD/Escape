@@ -22,7 +22,7 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#include "tinfo.h"
+#include <runtime/tinfo.h>
 
 namespace __cxxabiv1 {
 

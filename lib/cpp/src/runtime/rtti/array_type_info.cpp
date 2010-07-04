@@ -1,5 +1,5 @@
-// Copyright (C) 1994, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2007, 2009
-// Free Software Foundation
+// Copyright (C) 1994, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2007,
+// 2009 Free Software Foundation
 //
 // This file is part of GCC.
 //
@@ -22,25 +22,11 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#include "tinfo.h"
+#include <runtime/tinfo.h>
 
 namespace __cxxabiv1 {
 
-	__pointer_type_info::~__pointer_type_info() {
-	}
-
-	bool __pointer_type_info::__is_pointer_p() const {
-		return true;
-	}
-
-	bool __pointer_type_info::__pointer_catch(const __pbase_type_info *thrown_type,void **thr_obj,
-			unsigned outer) const {
-		if(outer < 2 && *__pointee == typeid(void)) {
-			// conversion to void
-			return !thrown_type->__pointee->__is_function_p();
-		}
-
-		return __pbase_type_info::__pointer_catch(thrown_type,thr_obj,outer);
+	__array_type_info::~__array_type_info() {
 	}
 
 }

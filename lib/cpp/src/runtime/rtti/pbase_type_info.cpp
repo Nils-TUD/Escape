@@ -22,24 +22,36 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#include "tinfo.h"
+#include <runtime/tinfo.h>
 
 namespace __cxxabiv1 {
 
-	__pointer_to_member_type_info::~__pointer_to_member_type_info() {
+	__pbase_type_info::~__pbase_type_info() {
 	}
 
-	bool __pointer_to_member_type_info::__pointer_catch(const __pbase_type_info *thr_type,
-			void **thr_obj,unsigned outer) const {
-		// This static cast is always valid, as our caller will have determined that
-		// thr_type is really a __pointer_to_member_type_info.
-		const __pointer_to_member_type_info *thrown_type =
-				static_cast<const __pointer_to_member_type_info *> (thr_type);
+	bool __pbase_type_info::__do_catch(const type_info *thr_type,void **thr_obj,unsigned outer) const {
+		if(*this == *thr_type)
+			return true; // same type
+		if(typeid (*this) != typeid (*thr_type))
+			return false; // not both same kind of pointers
 
-		if(*__context != *thrown_type->__context)
-			return false; // not pointers to member of same class
+		if(!(outer & 1))
+			// We're not the same and our outer pointers are not all const qualified
+			// Therefore there must at least be a qualification conversion involved
+			// But for that to be valid, our outer pointers must be const qualified.
+			return false;
 
-		return __pbase_type_info::__pointer_catch(thrown_type,thr_obj,outer);
+		const __pbase_type_info *thrown_type =
+				static_cast<const __pbase_type_info *> (thr_type);
+
+		if(thrown_type->__flags & ~__flags)
+			// We're less qualified.
+			return false;
+
+		if(!(__flags & __const_mask))
+			outer &= ~1;
+
+		return __pointer_catch(thrown_type,thr_obj,outer);
 	}
 
 }

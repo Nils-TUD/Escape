@@ -23,12 +23,11 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#include "typeinfo"
 #include <stddef.h>
+#include <runtime/typeinfo>
+#include <runtime/cxxabi.h>
 
 // Class declarations shared between the typeinfo implementation files.
-
-#include "cxxabi.h"
 
 namespace __cxxabiv1 {
 

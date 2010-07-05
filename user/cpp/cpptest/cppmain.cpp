@@ -19,9 +19,10 @@
 
 #include <esc/common.h>
 #include <stdio.h>
+#include <string>
 //#include <ustl.h>
 
-//using namespace ustl;
+using namespace std;
 
 class my {
 private:
@@ -80,6 +81,11 @@ int main(void) {
 	else {
 		printf("Didn't work!\n");
 	}
+
+	string abc;
+	abc.append("test");
+	string def(abc);
+	printf("len=%d, cap=%d, str=%s\n",def.length(),def.capacity(),def.c_str());
 
 #if 0
 	/*startThread(threadFunc);

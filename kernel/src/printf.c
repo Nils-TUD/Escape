@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/kheap.h>
+#include <sys/common.h>
+#include <sys/mem/kheap.h>
 #include <stdarg.h>
 #include <string.h>
 #include <width.h>
-#include <printf.h>
+#include <sys/printf.h>
 
 /* format flags */
 #define FFL_PADRIGHT		1

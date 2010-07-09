@@ -19,10 +19,10 @@
 
 #include <assert.h>
 #ifdef IN_KERNEL
-#	include <machine/cpu.h>
-#	include <video.h>
-#	include <util.h>
-#	include <ksymbols.h>
+#	include <sys/machine/cpu.h>
+#	include <sys/video.h>
+#	include <sys/util.h>
+#	include <sys/ksymbols.h>
 #	define outb			util_outByte
 #	define inb			util_inByte
 #else

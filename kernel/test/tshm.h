@@ -20,7 +20,7 @@
 #ifndef TSHM_H_
 #define TSHM_H_
 
-#include <common.h>
+#include <sys/common.h>
 #include <test.h>
 
 extern sTestModule tModShm;

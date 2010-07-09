@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/kheap.h>
-#include <mem/pmem.h>
-#include <mem/paging.h>
-#include <video.h>
+#include <sys/common.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/pmem.h>
+#include <sys/mem/paging.h>
+#include <sys/video.h>
 #include <assert.h>
 #include <string.h>
-#include <util.h>
+#include <sys/util.h>
 
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024

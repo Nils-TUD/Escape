@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <machine/cpu.h>
-#include <debug.h>
-#include <video.h>
+#include <sys/common.h>
+#include <sys/machine/cpu.h>
+#include <sys/debug.h>
+#include <sys/video.h>
 
 static u64 start = 0;
 

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/sched.h>
+#include <sys/common.h>
+#include <sys/task/sched.h>
 
 #include <test.h>
 #include "tsched.h"

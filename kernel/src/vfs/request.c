@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
-#include <task/sched.h>
-#include <mem/kheap.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
-#include <vfs/real.h>
-#include <vfs/request.h>
-#include <kevent.h>
-#include <util.h>
+#include <sys/common.h>
+#include <sys/task/proc.h>
+#include <sys/task/sched.h>
+#include <sys/mem/kheap.h>
+#include <sys/vfs/vfs.h>
+#include <sys/vfs/node.h>
+#include <sys/vfs/real.h>
+#include <sys/vfs/request.h>
+#include <sys/kevent.h>
+#include <sys/util.h>
 #include <string.h>
 #include <errors.h>
-#include <video.h>
+#include <sys/video.h>
 
 #include <fsinterface.h>
 #include <messages.h>

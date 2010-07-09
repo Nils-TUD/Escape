@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/signals.h>
-#include <task/thread.h>
-#include <mem/paging.h>
-#include <syscalls/signals.h>
-#include <syscalls.h>
+#include <sys/common.h>
+#include <sys/task/signals.h>
+#include <sys/task/thread.h>
+#include <sys/mem/paging.h>
+#include <sys/syscalls/signals.h>
+#include <sys/syscalls.h>
 #include <errors.h>
 
 void sysc_setSigHandler(sIntrptStackFrame *stack) {

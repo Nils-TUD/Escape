@@ -23,7 +23,7 @@
 #include <assert.h>
 
 #ifdef IN_KERNEL
-#	include <video.h>
+#	include <sys/video.h>
 
 #	define testPrintf	vid_printf
 #	define testvPrintf	vid_vprintf

@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <multiboot.h>
-#include <machine/intrpt.h>
-#include <machine/timer.h>
-#include <mem/paging.h>
-#include <task/thread.h>
-#include <task/lock.h>
-#include <syscalls/other.h>
-#include <syscalls.h>
-#include <log.h>
-#include <config.h>
+#include <sys/common.h>
+#include <sys/multiboot.h>
+#include <sys/machine/intrpt.h>
+#include <sys/machine/timer.h>
+#include <sys/mem/paging.h>
+#include <sys/task/thread.h>
+#include <sys/task/lock.h>
+#include <sys/syscalls/other.h>
+#include <sys/syscalls.h>
+#include <sys/log.h>
+#include <sys/config.h>
 #include <errors.h>
-#include <video.h>
+#include <sys/video.h>
 
 void sysc_loadMods(sIntrptStackFrame *stack) {
 	UNUSED(stack);

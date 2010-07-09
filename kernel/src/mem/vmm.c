@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/region.h>
-#include <mem/paging.h>
-#include <mem/vmm.h>
-#include <mem/cow.h>
-#include <mem/kheap.h>
-#include <vfs/vfs.h>
-#include <vfs/real.h>
+#include <sys/common.h>
+#include <sys/mem/region.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/vmm.h>
+#include <sys/mem/cow.h>
+#include <sys/mem/kheap.h>
+#include <sys/vfs/vfs.h>
+#include <sys/vfs/real.h>
 #include <errors.h>
 #include <string.h>
-#include <video.h>
+#include <sys/video.h>
 #include <assert.h>
-#include <util.h>
+#include <sys/util.h>
 
 /**
  * The vmm-module manages the user-part of a process's virtual addressspace. That means it

@@ -17,20 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <machine/timer.h>
-#include <mem/paging.h>
-#include <mem/kheap.h>
-#include <mem/swap.h>
-#include <mem/vmm.h>
-#include <task/proc.h>
-#include <task/thread.h>
-#include <task/elf.h>
-#include <vfs/node.h>
-#include <multiboot.h>
-#include <video.h>
-#include <util.h>
-#include <config.h>
+#include <sys/common.h>
+#include <sys/machine/timer.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/swap.h>
+#include <sys/mem/vmm.h>
+#include <sys/task/proc.h>
+#include <sys/task/thread.h>
+#include <sys/task/elf.h>
+#include <sys/vfs/node.h>
+#include <sys/multiboot.h>
+#include <sys/video.h>
+#include <sys/util.h>
+#include <sys/config.h>
 #include <errors.h>
 #include <string.h>
 #include <assert.h>

@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/kheap.h>
-#include <mem/region.h>
-#include <video.h>
+#include <sys/common.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/region.h>
+#include <sys/video.h>
 #include <test.h>
 #include "tregion.h"
 

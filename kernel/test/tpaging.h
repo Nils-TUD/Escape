@@ -20,7 +20,7 @@
 #ifndef TESTPAGING_H_
 #define TESTPAGING_H_
 
-#include <common.h>
+#include <sys/common.h>
 #include <test.h>
 
 extern sTestModule tModPaging;

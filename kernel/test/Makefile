@@ -13,7 +13,7 @@ BUILDDIRS = $(BUILDT) $(patsubst $(LIB)/%,$(BUILDT)/lib/%,$(LSUBDIRS))
 
 CC = gcc
 CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
-	-D TESTING=1 -D IN_KERNEL=1 -I../h -I$(LIB)/h
+	-D TESTING=1 -D IN_KERNEL=1 -I$(ROOT)/include -I$(LIB)/h
 
 # sources
 TSRC = $(wildcard *.c)

@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/thread.h>
-#include <machine/serial.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
-#include <vfs/rw.h>
-#include <printf.h>
+#include <sys/common.h>
+#include <sys/task/thread.h>
+#include <sys/machine/serial.h>
+#include <sys/vfs/vfs.h>
+#include <sys/vfs/node.h>
+#include <sys/vfs/rw.h>
+#include <sys/printf.h>
 #include <esccodes.h>
 #include <stdarg.h>
 #include <assert.h>
 #include <string.h>
-#include <log.h>
+#include <sys/log.h>
 
 #define VID_COLS		80
 #define TAB_WIDTH		4

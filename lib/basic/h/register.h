@@ -22,7 +22,7 @@
 
 #include <types.h>
 #ifdef IN_KERNEL
-#	include <video.h>
+#	include <sys/video.h>
 #	define rprintf	vid_printf
 #else
 #	include <stdio.h>

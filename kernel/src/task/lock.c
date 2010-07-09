@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/lock.h>
-#include <task/thread.h>
-#include <mem/kheap.h>
+#include <sys/common.h>
+#include <sys/task/lock.h>
+#include <sys/task/thread.h>
+#include <sys/mem/kheap.h>
 #include <errors.h>
 #include <sllist.h>
 

@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <machine/serial.h>
+#include <sys/common.h>
+#include <sys/machine/serial.h>
 #include <assert.h>
-#include <util.h>
+#include <sys/util.h>
 
 static int ser_isTransmitEmpty(u16 port);
 static void ser_initPort(u16 port);

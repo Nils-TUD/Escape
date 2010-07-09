@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <machine/fpu.h>
-#include <machine/cpu.h>
-#include <mem/kheap.h>
-#include <video.h>
+#include <sys/common.h>
+#include <sys/machine/fpu.h>
+#include <sys/machine/cpu.h>
+#include <sys/mem/kheap.h>
+#include <sys/video.h>
 #include <string.h>
 
 /**

@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/signals.h>
-#include <task/proc.h>
-#include <task/thread.h>
+#include <sys/common.h>
+#include <sys/task/signals.h>
+#include <sys/task/proc.h>
+#include <sys/task/thread.h>
 #include "test.h"
 #include "tsignals.h"
 

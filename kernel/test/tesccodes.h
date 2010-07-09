@@ -20,7 +20,7 @@
 #ifndef TESCCODES_H_
 #define TESCCODES_H_
 
-#include <common.h>
+#include <sys/common.h>
 #include <test.h>
 
 extern sTestModule tModEscCodes;

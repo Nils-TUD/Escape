@@ -17,24 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/pmem.h>
-#include <mem/paging.h>
-#include <mem/kheap.h>
-#include <mem/vmm.h>
-#include <machine/timer.h>
-#include <machine/cpu.h>
-#include <task/proc.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
-#include <vfs/info.h>
-#include <vfs/rw.h>
-#include <vfs/real.h>
-#include <multiboot.h>
-#include <util.h>
+#include <sys/common.h>
+#include <sys/mem/pmem.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/vmm.h>
+#include <sys/machine/timer.h>
+#include <sys/machine/cpu.h>
+#include <sys/task/proc.h>
+#include <sys/vfs/vfs.h>
+#include <sys/vfs/node.h>
+#include <sys/vfs/info.h>
+#include <sys/vfs/rw.h>
+#include <sys/vfs/real.h>
+#include <sys/multiboot.h>
+#include <sys/util.h>
 #include <assert.h>
 #include <string.h>
-#include <printf.h>
+#include <sys/printf.h>
 
 /* VFS-directory-entry (equal to the direntry of ext2) */
 typedef struct {

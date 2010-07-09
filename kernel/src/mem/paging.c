@@ -17,24 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <machine/intrpt.h>
-#include <machine/cpu.h>
-#include <mem/paging.h>
-#include <mem/pmem.h>
-#include <mem/kheap.h>
-#include <mem/swap.h>
-#include <mem/swapmap.h>
-#include <mem/sharedmem.h>
-#include <mem/vmm.h>
-#include <task/proc.h>
-#include <task/thread.h>
-#include <util.h>
-#include <video.h>
+#include <sys/common.h>
+#include <sys/machine/intrpt.h>
+#include <sys/machine/cpu.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/pmem.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/swap.h>
+#include <sys/mem/swapmap.h>
+#include <sys/mem/sharedmem.h>
+#include <sys/mem/vmm.h>
+#include <sys/task/proc.h>
+#include <sys/task/thread.h>
+#include <sys/util.h>
+#include <sys/video.h>
 #include <sllist.h>
 #include <string.h>
 #include <assert.h>
-#include <printf.h>
+#include <sys/printf.h>
 #include <errors.h>
 
 /* to shift a flag down to the first bit */

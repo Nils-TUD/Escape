@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/kheap.h>
-#include <mem/vmm.h>
-#include <mem/paging.h>
-#include <video.h>
+#include <sys/common.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/vmm.h>
+#include <sys/mem/paging.h>
+#include <sys/video.h>
 #include <test.h>
 #include "tvmm.h"
 

@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
-#include <task/elf.h>
-#include <mem/paging.h>
-#include <mem/pmem.h>
-#include <mem/vmm.h>
-#include <mem/kheap.h>
-#include <vfs/vfs.h>
-#include <vfs/real.h>
-#include <video.h>
+#include <sys/common.h>
+#include <sys/task/proc.h>
+#include <sys/task/elf.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/pmem.h>
+#include <sys/mem/vmm.h>
+#include <sys/mem/kheap.h>
+#include <sys/vfs/vfs.h>
+#include <sys/vfs/real.h>
+#include <sys/video.h>
 #include <string.h>
 #include <errors.h>
 #include <assert.h>

@@ -17,22 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
-#include <task/thread.h>
-#include <task/ioports.h>
-#include <task/elf.h>
-#include <task/signals.h>
-#include <machine/timer.h>
-#include <machine/gdt.h>
-#include <machine/vm86.h>
-#include <mem/paging.h>
-#include <mem/kheap.h>
-#include <mem/vmm.h>
-#include <syscalls/proc.h>
-#include <syscalls.h>
-#include <vfs/vfs.h>
-#include <vfs/real.h>
+#include <sys/common.h>
+#include <sys/task/proc.h>
+#include <sys/task/thread.h>
+#include <sys/task/ioports.h>
+#include <sys/task/elf.h>
+#include <sys/task/signals.h>
+#include <sys/machine/timer.h>
+#include <sys/machine/gdt.h>
+#include <sys/machine/vm86.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/vmm.h>
+#include <sys/syscalls/proc.h>
+#include <sys/syscalls.h>
+#include <sys/vfs/vfs.h>
+#include <sys/vfs/real.h>
 #include <errors.h>
 #include <string.h>
 

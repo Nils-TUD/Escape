@@ -23,10 +23,10 @@
 #include <sllist.h>
 
 #ifdef IN_KERNEL
-#	include <mem/kheap.h>
-#	include <video.h>
+#	include <sys/mem/kheap.h>
+#	include <sys/video.h>
 /* for util_panic (vassert) */
-#	include <util.h>
+#	include <sys/util.h>
 #	define sllprintf	vid_printf
 #	define free(x)		kheap_free(x)
 #	define malloc(x)	kheap_alloc(x)

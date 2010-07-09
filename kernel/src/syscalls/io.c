@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/paging.h>
-#include <vfs/real.h>
-#include <vfs/driver.h>
-#include <task/thread.h>
-#include <syscalls/io.h>
-#include <syscalls.h>
+#include <sys/common.h>
+#include <sys/mem/paging.h>
+#include <sys/vfs/real.h>
+#include <sys/vfs/driver.h>
+#include <sys/task/thread.h>
+#include <sys/syscalls/io.h>
+#include <sys/syscalls.h>
 #include <errors.h>
 #include <string.h>
 

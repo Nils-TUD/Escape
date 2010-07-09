@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
-#include <task/thread.h>
-#include <task/sched.h>
-#include <task/signals.h>
-#include <mem/kheap.h>
-#include <mem/paging.h>
-#include <mem/vmm.h>
-#include <machine/vm86.h>
-#include <machine/gdt.h>
-#include <util.h>
-#include <video.h>
+#include <sys/common.h>
+#include <sys/task/proc.h>
+#include <sys/task/thread.h>
+#include <sys/task/sched.h>
+#include <sys/task/signals.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/vmm.h>
+#include <sys/machine/vm86.h>
+#include <sys/machine/gdt.h>
+#include <sys/util.h>
+#include <sys/video.h>
 #include <string.h>
 #include <assert.h>
 #include <errors.h>

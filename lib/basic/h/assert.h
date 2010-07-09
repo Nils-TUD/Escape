@@ -21,7 +21,7 @@
 #define ASSERT_H_
 
 #if IN_KERNEL
-#	include <util.h>
+#	include <sys/util.h>
 #else
 #	include <esc/proc.h>
 #	include <stdio.h>

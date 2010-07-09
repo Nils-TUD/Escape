@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
-#include <mem/paging.h>
-#include <mem/kheap.h>
-#include <mem/sharedmem.h>
-#include <mem/vmm.h>
-#include <syscalls/mem.h>
-#include <syscalls.h>
+#include <sys/common.h>
+#include <sys/task/proc.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/sharedmem.h>
+#include <sys/mem/vmm.h>
+#include <sys/syscalls/mem.h>
+#include <sys/syscalls.h>
 #include <errors.h>
 
 void sysc_changeSize(sIntrptStackFrame *stack) {

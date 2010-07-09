@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <ksymbols.h>
-#include <video.h>
+#include <sys/common.h>
+#include <sys/ksymbols.h>
+#include <sys/video.h>
 
 static sSymbol ksymbols[] = {
 	/* add dummy-entry to prevent empty array */

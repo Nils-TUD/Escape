@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/pmem.h>
+#include <sys/common.h>
+#include <sys/mem/pmem.h>
 #include <test.h>
 #include "tmm.h"
 

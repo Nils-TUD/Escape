@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/paging.h>
-#include <syscalls.h>
-#include <syscalls/io.h>
-#include <syscalls/mem.h>
-#include <syscalls/proc.h>
-#include <syscalls/thread.h>
-#include <syscalls/other.h>
-#include <syscalls/driver.h>
-#include <syscalls/signals.h>
+#include <sys/common.h>
+#include <sys/mem/paging.h>
+#include <sys/syscalls.h>
+#include <sys/syscalls/io.h>
+#include <sys/syscalls/mem.h>
+#include <sys/syscalls/proc.h>
+#include <sys/syscalls/thread.h>
+#include <sys/syscalls/other.h>
+#include <sys/syscalls/driver.h>
+#include <sys/syscalls/signals.h>
 #include <errors.h>
 
 /* syscall-handlers */

@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <vfs/vfs.h>
-#include <vfs/node.h>
-#include <vfs/info.h>
-#include <vfs/driver.h>
-#include <vfs/rw.h>
-#include <mem/paging.h>
-#include <mem/kheap.h>
-#include <mem/pmem.h>
-#include <util.h>
-#include <video.h>
+#include <sys/common.h>
+#include <sys/vfs/vfs.h>
+#include <sys/vfs/node.h>
+#include <sys/vfs/info.h>
+#include <sys/vfs/driver.h>
+#include <sys/vfs/rw.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/pmem.h>
+#include <sys/util.h>
+#include <sys/video.h>
 #include <string.h>
 #include <assert.h>
 #include <errors.h>

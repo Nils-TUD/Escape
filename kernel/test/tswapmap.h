@@ -20,7 +20,7 @@
 #ifndef TSWAPMAP_H_
 #define TSWAPMAP_H_
 
-#include <common.h>
+#include <sys/common.h>
 #include <test.h>
 
 extern sTestModule tModSwapMap;

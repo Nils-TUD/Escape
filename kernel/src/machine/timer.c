@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <machine/timer.h>
-#include <mem/kheap.h>
-#include <task/sched.h>
-#include <video.h>
-#include <util.h>
+#include <sys/common.h>
+#include <sys/machine/timer.h>
+#include <sys/mem/kheap.h>
+#include <sys/task/sched.h>
+#include <sys/video.h>
+#include <sys/util.h>
 #include <sllist.h>
 #include <errors.h>
 

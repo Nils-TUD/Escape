@@ -17,19 +17,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <task/proc.h>
-#include <task/thread.h>
-#include <task/sched.h>
-#include <mem/paging.h>
-#include <mem/sharedmem.h>
-#include <mem/kheap.h>
-#include <mem/swap.h>
-#include <mem/swapmap.h>
-#include <video.h>
+#include <sys/common.h>
+#include <sys/task/proc.h>
+#include <sys/task/thread.h>
+#include <sys/task/sched.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/sharedmem.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/swap.h>
+#include <sys/mem/swapmap.h>
+#include <sys/video.h>
 #include <string.h>
 #include <assert.h>
-#include <config.h>
+#include <sys/config.h>
 
 #define SWAP_SIZE			(10 * M)
 #define HIGH_WATER			40

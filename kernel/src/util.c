@@ -17,20 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <machine/intrpt.h>
-#include <machine/cpu.h>
-#include <task/proc.h>
-#include <mem/pmem.h>
-#include <mem/paging.h>
-#include <mem/kheap.h>
-#include <mem/vmm.h>
-#include <ksymbols.h>
-#include <video.h>
+#include <sys/common.h>
+#include <sys/machine/intrpt.h>
+#include <sys/machine/cpu.h>
+#include <sys/task/proc.h>
+#include <sys/mem/pmem.h>
+#include <sys/mem/paging.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/vmm.h>
+#include <sys/ksymbols.h>
+#include <sys/video.h>
 #include <stdarg.h>
 #include <string.h>
 #include <register.h>
-#include <util.h>
+#include <sys/util.h>
 
 /* for reading from kb */
 #define IOPORT_KB_DATA				0x60

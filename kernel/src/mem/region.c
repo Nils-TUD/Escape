@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <common.h>
-#include <mem/pmem.h>
-#include <mem/kheap.h>
-#include <mem/region.h>
+#include <sys/common.h>
+#include <sys/mem/pmem.h>
+#include <sys/mem/kheap.h>
+#include <sys/mem/region.h>
 #include <string.h>
 #include <assert.h>
-#include <video.h>
+#include <sys/video.h>
 
 /**
  * The region-module implements the abstraction 'region' which is simply a group of pages that

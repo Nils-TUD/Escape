@@ -21,7 +21,7 @@
 #include <sys/mem/kheap.h>
 #include <stdarg.h>
 #include <string.h>
-#include <width.h>
+#include <esc/width.h>
 #include <sys/printf.h>
 
 /* format flags */

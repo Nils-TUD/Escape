@@ -24,7 +24,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/task/proc.h>
 #include <sys/video.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <string.h>
 #include <errors.h>
 

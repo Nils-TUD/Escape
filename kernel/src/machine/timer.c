@@ -23,7 +23,7 @@
 #include <sys/task/sched.h>
 #include <sys/video.h>
 #include <sys/util.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <errors.h>
 
 #define TIMER_BASE_FREQUENCY	1193182

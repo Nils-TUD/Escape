@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/conf.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

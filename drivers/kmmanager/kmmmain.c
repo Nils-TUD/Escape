@@ -22,10 +22,10 @@
 #include <esc/proc.h>
 #include <esc/io.h>
 #include <stdio.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <errors.h>
 #include <stdlib.h>
-#include <ringbuffer.h>
+#include <esc/ringbuffer.h>
 #include "keymap.h"
 #include "events.h"
 

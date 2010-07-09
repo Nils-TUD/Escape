@@ -21,7 +21,7 @@
 #define FILE_H_
 
 #include <esc/common.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 #include <esc/util/vector.h>
 
 typedef struct sFile sFile;

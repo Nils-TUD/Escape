@@ -26,7 +26,7 @@
 #include <esc/exceptions/cmdargs.h>
 #include <esc/util/cmdargs.h>
 #include <string.h>
-#include <messages.h>
+#include <esc/messages.h>
 
 #define KEYMAP_DIR		"/etc/keymaps"
 

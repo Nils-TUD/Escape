@@ -34,10 +34,10 @@
 #include <sys/video.h>
 #include <sys/kevent.h>
 #include <string.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <assert.h>
 #include <errors.h>
-#include <messages.h>
+#include <esc/messages.h>
 
 /* max number of open files */
 #define FILE_COUNT					(PROC_COUNT * 16)

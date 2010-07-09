@@ -21,8 +21,8 @@
 #define VFS_H_
 
 #include <sys/common.h>
-#include <sllist.h>
-#include <fsinterface.h>
+#include <esc/sllist.h>
+#include <esc/fsinterface.h>
 
 #define MAX_VFS_FILE_SIZE			(64 * K)
 

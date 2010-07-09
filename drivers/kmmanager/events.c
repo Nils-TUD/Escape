@@ -20,8 +20,8 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/driver.h>
-#include <messages.h>
-#include <sllist.h>
+#include <esc/messages.h>
+#include <esc/sllist.h>
 #include <stdlib.h>
 #include <errors.h>
 #include <string.h>

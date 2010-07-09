@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <errors.h>
 #include <string.h>
 

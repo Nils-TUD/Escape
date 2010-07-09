@@ -21,7 +21,7 @@
 #define TRINGBUFFER_H_
 
 #include <sys/common.h>
-#include <test.h>
+#include <esc/test.h>
 
 extern sTestModule tModRBuffer;
 

@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 #include <errors.h>
 #include <string.h>
 #include <stdlib.h>

@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <assert.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include "object.h"
 #include "objlist.h"
 #include "game.h"

@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/dir.h>
 #include <stdio.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 #include "../mem.h"
 #include "../completion.h"
 #include "subcmd.h"

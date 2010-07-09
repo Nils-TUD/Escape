@@ -20,7 +20,7 @@
 #ifndef TSIGNALS_H_
 #define TSIGNALS_H_
 
-#include <test.h>
+#include <esc/test.h>
 
 extern sTestModule tModSignals;
 

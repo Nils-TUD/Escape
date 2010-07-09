@@ -22,7 +22,7 @@
 #include <sys/task/sched.h>
 #include <sys/util.h>
 #include <sys/video.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <assert.h>
 
 /**

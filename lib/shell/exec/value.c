@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/util/string.h>
 #include <stdlib.h>
-#include <width.h>
+#include <esc/width.h>
 #include "value.h"
 #include "../mem.h"
 #include "../ast/cmpexpr.h"

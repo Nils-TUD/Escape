@@ -21,7 +21,7 @@
 #include <esc/cmdargs.h>
 #include <stdio.h>
 #include <string.h>
-#include <messages.h>
+#include <esc/messages.h>
 
 #include "modules/speed.h"
 #include "modules/printf.h"

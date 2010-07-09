@@ -21,7 +21,7 @@
 #include <esc/io/console.h>
 #include <esc/proc.h>
 #include <stdio.h>
-#include <messages.h>
+#include <esc/messages.h>
 
 int main(void) {
 	sVTSize consSize;

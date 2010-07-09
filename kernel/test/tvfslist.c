@@ -21,7 +21,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/listeners.h>
-#include <test.h>
+#include <esc/test.h>
 
 static void test_vfslist(void);
 static void test_vfslist_t1(void);

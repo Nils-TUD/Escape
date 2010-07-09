@@ -27,7 +27,7 @@
 #include <errors.h>
 
 #include "tvfs.h"
-#include <test.h>
+#include <esc/test.h>
 
 /* forward declarations */
 static void test_vfs(void);

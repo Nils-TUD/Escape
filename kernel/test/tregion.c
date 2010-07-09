@@ -21,7 +21,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/region.h>
 #include <sys/video.h>
-#include <test.h>
+#include <esc/test.h>
 #include "tregion.h"
 
 /* forward declarations */

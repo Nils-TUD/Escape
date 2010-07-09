@@ -21,7 +21,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/node.h>
 #include "tvfsnode.h"
-#include <test.h>
+#include <esc/test.h>
 #include <string.h>
 #include <errors.h>
 

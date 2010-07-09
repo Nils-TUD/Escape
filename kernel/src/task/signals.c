@@ -25,7 +25,7 @@
 #include <sys/util.h>
 #include <sys/kevent.h>
 #include <sys/video.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <errors.h>
 #include <assert.h>
 

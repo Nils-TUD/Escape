@@ -30,7 +30,7 @@
 #include <esc/gui/font.h>
 #include <esc/gui/color.h>
 #include <esc/string.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <stdlib.h>
 
 namespace esc {

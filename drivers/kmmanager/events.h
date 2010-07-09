@@ -21,7 +21,7 @@
 #define EVENTS_H_
 
 #include <esc/common.h>
-#include <messages.h>
+#include <esc/messages.h>
 
 /**
  * Inits the events-system

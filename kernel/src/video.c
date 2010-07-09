@@ -23,7 +23,7 @@
 #include <sys/util.h>
 #include <string.h>
 #include <stdarg.h>
-#include <esccodes.h>
+#include <esc/esccodes.h>
 #include <sys/log.h>
 #include <sys/printf.h>
 

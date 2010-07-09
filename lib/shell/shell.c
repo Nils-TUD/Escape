@@ -22,13 +22,13 @@
 #include <esc/proc.h>
 #include <esc/io.h>
 #include <esc/keycodes.h>
-#include <fsinterface.h>
-#include <messages.h>
+#include <esc/fsinterface.h>
+#include <esc/messages.h>
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <esccodes.h>
+#include <esc/esccodes.h>
 #include <ctype.h>
 #include <errors.h>
 

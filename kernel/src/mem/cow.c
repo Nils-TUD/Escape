@@ -26,7 +26,7 @@
 #include <sys/video.h>
 #include <assert.h>
 #include <string.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 
 typedef struct {
 	u32 frameNumber;

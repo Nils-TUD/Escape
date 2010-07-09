@@ -22,9 +22,9 @@
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <string.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include "buffer.h"
 #include "mem.h"
 #include "display.h"

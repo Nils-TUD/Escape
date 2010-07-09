@@ -20,7 +20,7 @@
 #ifndef LIMITS_H_
 #define LIMITS_H_
 
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 
 #define CHAR_BIT		8
 #define CHAR_MAX		SCHAR_MAX

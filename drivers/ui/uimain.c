@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <esc/keycodes.h>
 #include <string.h>
-#include <messages.h>
+#include <esc/messages.h>
 
 #define GUI_INDEX			6
 #define MAX_RETRY_COUNT		500

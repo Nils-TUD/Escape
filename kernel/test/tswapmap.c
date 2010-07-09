@@ -20,8 +20,8 @@
 #include <sys/common.h>
 #include <sys/mem/swapmap.h>
 #include <sys/mem/paging.h>
-#include <sllist.h>
-#include <test.h>
+#include <esc/sllist.h>
+#include <esc/test.h>
 
 #include "tswapmap.h"
 

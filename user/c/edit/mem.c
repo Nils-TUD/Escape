@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include "mem.h"
 
 void *emalloc(u32 size) {

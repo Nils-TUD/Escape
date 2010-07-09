@@ -23,11 +23,11 @@
 #include <esc/proc.h>
 #include <esc/io.h>
 #include <esc/ports.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <stdio.h>
 #include <signal.h>
 #include <errors.h>
-#include <test.h>
+#include <esc/test.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>

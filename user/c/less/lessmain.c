@@ -31,8 +31,8 @@
 #include <esc/util/vector.h>
 #include <string.h>
 #include <stdlib.h>
-#include <messages.h>
-#include <esccodes.h>
+#include <esc/messages.h>
+#include <esc/esccodes.h>
 
 #define BUFFER_SIZE			1024
 #define TAB_WIDTH			4

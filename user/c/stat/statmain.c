@@ -22,7 +22,7 @@
 #include <esc/dir.h>
 #include <esc/date.h>
 #include <esc/cmdargs.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 #include <stdio.h>
 
 #define MAX_DATE_LEN	64

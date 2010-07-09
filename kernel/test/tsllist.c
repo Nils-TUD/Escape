@@ -20,8 +20,8 @@
 #include <sys/common.h>
 #include <sys/mem/kheap.h>
 #include <sys/video.h>
-#include <sllist.h>
-#include <test.h>
+#include <esc/sllist.h>
+#include <esc/test.h>
 #include "tsllist.h"
 
 /* forward declarations */

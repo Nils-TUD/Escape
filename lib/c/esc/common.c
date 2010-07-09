@@ -21,7 +21,7 @@
 #include <esc/debug.h>
 #include <esc/proc.h>
 #include <esc/dir.h>
-#include <register.h>
+#include <esc/register.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>

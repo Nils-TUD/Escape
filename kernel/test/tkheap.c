@@ -22,7 +22,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include "tkheap.h"
-#include <test.h>
+#include <esc/test.h>
 #include <sys/video.h>
 #include <stdarg.h>
 

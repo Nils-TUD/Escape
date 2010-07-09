@@ -23,7 +23,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/pmem.h>
 #include <sys/video.h>
-#include <test.h>
+#include <esc/test.h>
 #include "tshm.h"
 
 /* forward declarations */

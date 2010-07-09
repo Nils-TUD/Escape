@@ -20,7 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/sched.h>
 
-#include <test.h>
+#include <esc/test.h>
 #include "tsched.h"
 
 /* forward declarations */

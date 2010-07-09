@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/exceptions/io.h>
 #include <esc/exceptions/outofmemory.h>
-#include <test.h>
+#include <esc/test.h>
 #include <errors.h>
 #include <stdlib.h>
 #include <assert.h>

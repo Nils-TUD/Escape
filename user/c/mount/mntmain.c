@@ -24,7 +24,7 @@
 #include <esc/dir.h>
 #include <stdio.h>
 #include <string.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 
 #define FS_NAME_LEN	12
 

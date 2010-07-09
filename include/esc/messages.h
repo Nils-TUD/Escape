@@ -22,7 +22,7 @@
 
 #include <types.h>
 #include <stddef.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 
 /* general */
 #define MAX_MSG_ARGS				10

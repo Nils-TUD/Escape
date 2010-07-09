@@ -25,11 +25,11 @@
 #include <esc/mem.h>
 #include <esc/rect.h>
 #include <esc/proc.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <stdio.h>
 #include <errors.h>
 #include <string.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <stdlib.h>
 
 #include "vesa.h"

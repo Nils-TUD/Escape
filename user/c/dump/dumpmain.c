@@ -24,7 +24,7 @@
 #include <esc/exceptions/io.h>
 #include <esc/exceptions/cmdargs.h>
 #include <esc/util/cmdargs.h>
-#include <width.h>
+#include <esc/width.h>
 #include <ctype.h>
 
 #define BUF_SIZE		512

@@ -24,7 +24,7 @@
 #include <esc/dir.h>
 #include <string.h>
 #include <stdarg.h>
-#include <messages.h>
+#include <esc/messages.h>
 
 #define MAX_RETRY_COUNT	500
 

@@ -22,7 +22,7 @@
 
 #include <sys/common.h>
 #include <sys/vfs/vfs.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 
 /*
  * dirs: /, /fs, /system, /system/processes, /system/dev

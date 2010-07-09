@@ -22,7 +22,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/paging.h>
 #include <sys/video.h>
-#include <test.h>
+#include <esc/test.h>
 #include "tvmm.h"
 
 /* forward declarations */

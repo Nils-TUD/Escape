@@ -21,7 +21,7 @@
 #include <esc/proc.h>
 #include <string.h>
 #include <stdlib.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include "envintern.h"
 
 bool getenvto(char *value,u32 valSize,const char *name) {

@@ -22,7 +22,7 @@
 #include <esc/io/inputstream.h>
 #include <esc/exceptions/io.h>
 #include <esc/util/string.h>
-#include <esccodes.h>
+#include <esc/esccodes.h>
 #include <errors.h>
 #include <string.h>
 #include <ctype.h>

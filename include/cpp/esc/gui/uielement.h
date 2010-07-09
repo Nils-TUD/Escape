@@ -21,7 +21,7 @@
 #define UIELEMENT_H_
 
 #include <esc/common.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <esc/gui/common.h>
 #include <esc/gui/graphics.h>
 #include <esc/gui/event.h>

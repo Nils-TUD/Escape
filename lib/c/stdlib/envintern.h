@@ -21,7 +21,7 @@
 #define ENVINTERN_H_
 
 #include <esc/common.h>
-#include <messages.h>
+#include <esc/messages.h>
 
 /**
  * Opens the env-driver

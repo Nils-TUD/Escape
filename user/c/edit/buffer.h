@@ -21,7 +21,7 @@
 #define BUFFER_H_
 
 #include <esc/common.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 
 typedef struct {
 	sSLList *lines;

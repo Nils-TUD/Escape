@@ -23,11 +23,11 @@
 #include <esc/ports.h>
 #include <esc/debug.h>
 #include <esc/proc.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <stdio.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <string.h>
-#include <ringbuffer.h>
+#include <esc/ringbuffer.h>
 #include <errors.h>
 #include <stdlib.h>
 

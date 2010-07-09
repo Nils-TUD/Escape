@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <stdlib.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <assert.h>
 #include "running.h"
 

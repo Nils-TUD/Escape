@@ -21,7 +21,7 @@
 #define EXECENV_H_
 
 #include <esc/common.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include "value.h"
 
 /* an environment */

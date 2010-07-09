@@ -21,7 +21,7 @@
 #include <sys/task/signals.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
-#include "test.h"
+#include "esc/test.h"
 #include "tsignals.h"
 
 static void test_signals(void);

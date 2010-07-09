@@ -18,7 +18,7 @@
  */
 
 #include <types.h>
-#include <esccodes.h>
+#include <esc/esccodes.h>
 #include <string.h>
 
 #define MAX_ARG_COUNT		3

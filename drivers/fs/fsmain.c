@@ -26,11 +26,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <errors.h>
 #include <string.h>
 #include <assert.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 
 #include "ext2/ext2.h"
 #include "iso9660/iso9660.h"

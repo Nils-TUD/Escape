@@ -20,7 +20,7 @@
 
 #include <types.h>
 #include <assert.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 
 #ifdef IN_KERNEL
 #	include <sys/mem/kheap.h>

@@ -22,7 +22,7 @@
 
 #include <sys/common.h>
 #include <sys/printf.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 
 #define PF_COPYONWRITE		1
 #define PF_DEMANDLOAD		2

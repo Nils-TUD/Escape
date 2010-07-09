@@ -21,7 +21,7 @@
 #include <esc/io.h>
 #include <esc/cmdargs.h>
 #include <signal.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <stdio.h>
 #include <stdlib.h>
 

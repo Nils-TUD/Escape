@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/mem/pmem.h>
-#include <test.h>
+#include <esc/test.h>
 #include "tmm.h"
 
 #define FRAME_COUNT 50

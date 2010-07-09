@@ -18,7 +18,7 @@
  */
 
 #include <stddef.h>
-#include <width.h>
+#include <esc/width.h>
 
 u8 getnwidth(s32 n) {
 	/* we have at least one char */

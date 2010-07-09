@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 
 #ifdef __cplusplus
 extern "C" {

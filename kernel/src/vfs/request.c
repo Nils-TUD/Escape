@@ -31,8 +31,8 @@
 #include <errors.h>
 #include <sys/video.h>
 
-#include <fsinterface.h>
-#include <messages.h>
+#include <esc/fsinterface.h>
+#include <esc/messages.h>
 
 #define REQUEST_COUNT		1024
 #define HANDLER_COUNT		32

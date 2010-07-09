@@ -21,7 +21,7 @@
 #define COMMAND_H_
 
 #include <esc/common.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include "node.h"
 #include "../exec/env.h"
 

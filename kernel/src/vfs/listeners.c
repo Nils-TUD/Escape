@@ -22,7 +22,7 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/listeners.h>
 #include <sys/mem/kheap.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <errors.h>
 
 #define LISTEN_MAP_SIZE		64

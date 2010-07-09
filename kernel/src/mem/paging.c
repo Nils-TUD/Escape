@@ -31,7 +31,7 @@
 #include <sys/task/thread.h>
 #include <sys/util.h>
 #include <sys/video.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <string.h>
 #include <assert.h>
 #include <sys/printf.h>

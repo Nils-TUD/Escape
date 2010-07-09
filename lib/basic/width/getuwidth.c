@@ -18,7 +18,7 @@
  */
 
 #include <stddef.h>
-#include <width.h>
+#include <esc/width.h>
 
 u8 getuwidth(u32 n,u8 base) {
 	u8 width = 1;

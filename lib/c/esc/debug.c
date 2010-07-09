@@ -21,7 +21,7 @@
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/dir.h>
-#include <width.h>
+#include <esc/width.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>

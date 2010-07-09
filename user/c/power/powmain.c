@@ -22,7 +22,7 @@
 #include <esc/io/console.h>
 #include <esc/io.h>
 #include <esc/proc.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <stdio.h>
 #include <string.h>
 

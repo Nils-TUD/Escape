@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <stdlib.h>
 #include "envintern.h"
 

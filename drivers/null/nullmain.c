@@ -21,7 +21,7 @@
 #include <esc/driver.h>
 #include <esc/io.h>
 #include <stdio.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <errors.h>
 
 static sMsg msg;

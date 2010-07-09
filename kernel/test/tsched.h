@@ -20,7 +20,7 @@
 #ifndef TESTSCHED_H_
 #define TESTSCHED_H_
 
-#include <test.h>
+#include <esc/test.h>
 
 extern sTestModule tModSched;
 

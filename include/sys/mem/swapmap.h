@@ -21,7 +21,7 @@
 #define SWAPMAP_H_
 
 #include <sys/common.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 
 #define INVALID_BLOCK		0xFFFFFFFF
 

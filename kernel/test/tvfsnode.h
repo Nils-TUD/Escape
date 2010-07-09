@@ -20,7 +20,7 @@
 #ifndef TVFSN_H_
 #define TVFSN_H_
 
-#include <test.h>
+#include <esc/test.h>
 
 extern sTestModule tModVFSn;
 

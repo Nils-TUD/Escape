@@ -21,7 +21,7 @@
 #define ISO9660_H_
 
 #include <esc/common.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 #include "../mount.h"
 #include "../blockcache.h"
 

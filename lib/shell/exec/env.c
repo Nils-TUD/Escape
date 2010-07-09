@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <string.h>
 #include "env.h"
 #include "../mem.h"

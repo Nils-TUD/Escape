@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <string.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include "elf.h"
 #include "lookup.h"
 #include "loader.h"

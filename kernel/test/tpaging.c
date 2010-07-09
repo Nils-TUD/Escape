@@ -22,7 +22,7 @@
 #include <sys/mem/pmem.h>
 #include <sys/video.h>
 #include <string.h>
-#include <test.h>
+#include <esc/test.h>
 #include "tpaging.h"
 
 /* forward declarations */

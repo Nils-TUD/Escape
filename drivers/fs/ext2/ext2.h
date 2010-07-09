@@ -21,8 +21,8 @@
 #define EXT2_H_
 
 #include <esc/common.h>
-#include <sllist.h>
-#include <fsinterface.h>
+#include <esc/sllist.h>
+#include <esc/fsinterface.h>
 #include "../mount.h"
 #include "../blockcache.h"
 

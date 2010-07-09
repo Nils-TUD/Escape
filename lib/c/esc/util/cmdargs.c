@@ -23,7 +23,7 @@
 #include <esc/exceptions/outofmemory.h>
 #include <esc/exceptions/cmdargs.h>
 #include <assert.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <string.h>
 #include <ctype.h>
 

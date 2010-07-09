@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <string>
-#include <test.h>
+#include <esc/test.h>
 
 /* forward declarations */
 static void test_string(void);

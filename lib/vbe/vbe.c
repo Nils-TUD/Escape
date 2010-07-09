@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <assert.h>
 #include <limits.h>
 #include "vbe.h"

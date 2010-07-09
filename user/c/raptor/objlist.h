@@ -21,7 +21,7 @@
 #define OBJLIST_H_
 
 #include <esc/common.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include "object.h"
 
 void objlist_create(void);

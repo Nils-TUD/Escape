@@ -25,7 +25,7 @@
 #include <esc/debug.h>
 #include <esc/proc.h>
 #include <esc/vm86.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

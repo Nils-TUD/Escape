@@ -24,9 +24,9 @@
 #include <esc/driver.h>
 #include <stdio.h>
 #include <signal.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <stdlib.h>
-#include <ringbuffer.h>
+#include <esc/ringbuffer.h>
 #include <errors.h>
 
 /* FIXME: THIS MAY CAUSE TROUBLE SINCE WE'RE USING AN IO-PORT THAT IS USED BY THE

@@ -21,7 +21,7 @@
 #define DISPLAY_H_
 
 #include <esc/common.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 
 /* the movement-types for mvCurHor */
 #define HOR_MOVE_HOME	0

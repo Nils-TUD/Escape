@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/util/iterator.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <stdarg.h>
 
 #define CA_NO_DASHES	1		/* disallow '-' or '--' for arguments */

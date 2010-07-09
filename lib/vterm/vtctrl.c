@@ -26,14 +26,14 @@
 #include <esc/lock.h>
 #include <esc/thread.h>
 #include <esc/date.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <string.h>
 #include <errors.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-#include <ringbuffer.h>
+#include <esc/ringbuffer.h>
 
 #include "vtctrl.h"
 

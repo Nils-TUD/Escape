@@ -29,7 +29,7 @@
 #include <sys/video.h>
 #include <stdarg.h>
 #include <string.h>
-#include <register.h>
+#include <esc/register.h>
 #include <sys/util.h>
 
 /* for reading from kb */

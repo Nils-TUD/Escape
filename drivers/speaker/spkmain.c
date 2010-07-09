@@ -25,7 +25,7 @@
 #include <esc/proc.h>
 #include <signal.h>
 #include <esc/conf.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <errors.h>
 
 #define PIC_FREQUENCY				1193180

@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include "tesccodes.h"
-#include <esccodes.h>
-#include <test.h>
+#include <esc/esccodes.h>
+#include <esc/test.h>
 
 /* forward declarations */
 static void test_esccodes(void);

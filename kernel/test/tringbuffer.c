@@ -20,8 +20,8 @@
 #include <sys/common.h>
 #include <sys/mem/kheap.h>
 #include <sys/video.h>
-#include <ringbuffer.h>
-#include <test.h>
+#include <esc/ringbuffer.h>
+#include <esc/test.h>
 #include "tringbuffer.h"
 
 /* forward declarations */

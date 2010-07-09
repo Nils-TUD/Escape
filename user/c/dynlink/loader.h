@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/mem.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include "elf.h"
 
 #define TEXT_BEGIN		0x1000

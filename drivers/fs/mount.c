@@ -18,11 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 #include <assert.h>
 #include <errors.h>
 #include <string.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <stdlib.h>
 #include "mount.h"
 

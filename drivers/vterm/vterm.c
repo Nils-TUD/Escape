@@ -29,7 +29,7 @@
 #include <esc/conf.h>
 #include <esc/exceptions/date.h>
 #include <stdio.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <string.h>
 
 #include <vterm/vtctrl.h>

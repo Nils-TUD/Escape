@@ -38,7 +38,7 @@
 #include <sys/debug.h>
 #include <sys/kevent.h>
 #include <sys/video.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <assert.h>
 #include <string.h>
 #include <errors.h>

@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <esc/keycodes.h>
 #include <esc/dir.h>
-#include <esccodes.h>
+#include <esc/esccodes.h>
 #include <ctype.h>
 #include <limits.h>
 #include "buffer.h"

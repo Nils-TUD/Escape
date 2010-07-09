@@ -21,9 +21,9 @@
 #define VTCTRL_H_
 
 #include <esc/common.h>
-#include <ringbuffer.h>
-#include <esccodes.h>
-#include <messages.h>
+#include <esc/ringbuffer.h>
+#include <esc/esccodes.h>
+#include <esc/messages.h>
 
 #ifdef __cplusplus
 extern "C" {

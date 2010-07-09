@@ -21,7 +21,7 @@
 #define THEAP_H_
 
 #include <esc/common.h>
-#include <test.h>
+#include <esc/test.h>
 
 extern sTestModule tModHeap;
 

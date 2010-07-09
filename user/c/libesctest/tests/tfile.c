@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/exceptions/io.h>
 #include <esc/io/file.h>
-#include <test.h>
+#include <esc/test.h>
 #include <string.h>
 #include <stdlib.h>
 #include "tfile.h"

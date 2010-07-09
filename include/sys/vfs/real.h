@@ -21,7 +21,7 @@
 #define VFSREAL_H_
 
 #include <sys/common.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 
 /**
  * Inits vfs-real

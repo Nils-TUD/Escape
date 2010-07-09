@@ -22,7 +22,7 @@
 #include <sys/task/thread.h>
 #include <sys/mem/kheap.h>
 #include <errors.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 
 #define LOCK_MAP_SIZE	128
 

@@ -25,10 +25,10 @@
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
 #include <string.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <errors.h>
 
-#include <messages.h>
+#include <esc/messages.h>
 
 static void vfsdrv_openReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
 static void vfsdrv_readReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);

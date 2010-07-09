@@ -27,7 +27,7 @@
 #include <esc/thread.h>
 #include <esc/lock.h>
 #include <errors.h>
-#include <messages.h>
+#include <esc/messages.h>
 
 #define IOPORT_CMOS_INDEX	0x70
 #define IOPORT_CMOS_DATA	0x71

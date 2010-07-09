@@ -21,8 +21,8 @@
 #include <esc/keycodes.h>
 #include <esc/io.h>
 #include <esc/ports.h>
-#include <messages.h>
-#include <esccodes.h>
+#include <esc/messages.h>
+#include <esc/esccodes.h>
 #include <stdlib.h>
 #include <string.h>
 #include "vtout.h"

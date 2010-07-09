@@ -20,7 +20,7 @@
 #ifndef TVMM_H_
 #define TVMM_H_
 
-#include <test.h>
+#include <esc/test.h>
 
 extern sTestModule tModVmm;
 

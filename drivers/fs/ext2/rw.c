@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <esc/io.h>
 #include <stdio.h>
 #include <esc/proc.h>

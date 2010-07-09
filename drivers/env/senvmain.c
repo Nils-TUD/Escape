@@ -22,13 +22,13 @@
 #include <esc/proc.h>
 #include <esc/debug.h>
 #include <esc/io.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <errors.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 
 #define MAP_SIZE 64
 

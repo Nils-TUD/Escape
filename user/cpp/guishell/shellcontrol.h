@@ -27,8 +27,8 @@
 #include <esc/debug.h>
 #include <esc/string.h>
 #include <stdlib.h>
-#include <ringbuffer.h>
-#include <esccodes.h>
+#include <esc/ringbuffer.h>
+#include <esc/esccodes.h>
 
 #include <vterm/vtctrl.h>
 

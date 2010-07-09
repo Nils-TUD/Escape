@@ -28,8 +28,8 @@
 #include <esc/io/console.h>
 #include <esc/util/cmdargs.h>
 #include <esc/util/vector.h>
-#include <width.h>
-#include <messages.h>
+#include <esc/width.h>
+#include <esc/messages.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

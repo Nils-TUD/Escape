@@ -40,7 +40,7 @@
 #include <sys/video.h>
 #include <assert.h>
 #include <string.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 
 #define DEBUG_PAGEFAULTS		0
 

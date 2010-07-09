@@ -31,8 +31,8 @@
 #include <string.h>
 #include <errors.h>
 
-#include <fsinterface.h>
-#include <messages.h>
+#include <esc/fsinterface.h>
+#include <esc/messages.h>
 
 #define FS_PATH				"/dev/fs"
 #define R2V_MAP_SIZE		64

@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/keycodes.h>
 #include <esc/io.h>
-#include <esccodes.h>
+#include <esc/esccodes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

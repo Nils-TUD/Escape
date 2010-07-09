@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/util/vector.h>
-#include <test.h>
+#include <esc/test.h>
 #include <stdlib.h>
 #include "tstring.h"
 

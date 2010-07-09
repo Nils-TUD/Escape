@@ -25,12 +25,12 @@
 #include <esc/proc.h>
 #include <esc/lock.h>
 #include <esc/keycodes.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-#include <ringbuffer.h>
+#include <esc/ringbuffer.h>
 #include <errors.h>
 
 #include "set1.h"

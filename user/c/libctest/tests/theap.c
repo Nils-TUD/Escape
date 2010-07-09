@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <test.h>
+#include <esc/test.h>
 #include <stdarg.h>
 #include "theap.h"
 

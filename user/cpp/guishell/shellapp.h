@@ -24,7 +24,7 @@
 #include <esc/dir.h>
 #include <esc/gui/common.h>
 #include <esc/gui/application.h>
-#include <ringbuffer.h>
+#include <esc/ringbuffer.h>
 #include "shellcontrol.h"
 
 // the min-size of the buffer before we pass it to the shell-control

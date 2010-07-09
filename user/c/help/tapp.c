@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <test.h>
+#include <esc/test.h>
 #include "app.h"
 #include "tapp.h"
 

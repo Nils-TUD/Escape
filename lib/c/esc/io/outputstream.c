@@ -21,7 +21,7 @@
 #include <esc/mem/heap.h>
 #include <esc/io/outputstream.h>
 #include <string.h>
-#include <width.h>
+#include <esc/width.h>
 #include <stdarg.h>
 
 /* format flags */

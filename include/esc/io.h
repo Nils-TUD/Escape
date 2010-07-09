@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 #include <stdarg.h>
-#include <fsinterface.h>
+#include <esc/fsinterface.h>
 
 /* IO flags */
 #define IO_ACCESSMODE	   		3

@@ -18,7 +18,7 @@
  */
 
 #include <types.h>
-#include <test.h>
+#include <esc/test.h>
 #include <stdarg.h>
 #include <assert.h>
 

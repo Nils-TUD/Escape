@@ -45,7 +45,7 @@
 #include <sys/multiboot.h>
 #include <sys/kevent.h>
 #include <sys/video.h>
-#include <test.h>
+#include <esc/test.h>
 #include <sys/log.h>
 #include <string.h>
 

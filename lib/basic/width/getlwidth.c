@@ -18,7 +18,7 @@
  */
 
 #include <stddef.h>
-#include <width.h>
+#include <esc/width.h>
 
 u8 getlwidth(s64 l) {
 	u8 c = 0;

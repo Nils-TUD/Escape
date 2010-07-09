@@ -24,7 +24,7 @@
 #include <math.h>
 
 #include "tstring.h"
-#include <test.h>
+#include <esc/test.h>
 
 /* forward declarations */
 static void test_string(void);

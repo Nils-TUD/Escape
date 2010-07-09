@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <messages.h>
+#include <esc/messages.h>
 
 #define WIDTH				(ssize.width)
 #define HEIGHT				(ssize.height)

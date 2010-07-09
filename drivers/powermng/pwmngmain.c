@@ -24,7 +24,7 @@
 #include <esc/io.h>
 #include <esc/ports.h>
 #include <esc/proc.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>

@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <stdio.h>
-#include <test.h>
+#include <esc/test.h>
 #include <stdarg.h>
 #include <string.h>
 #include "tfileio.h"

@@ -27,7 +27,7 @@
 #include <esc/util/vector.h>
 #include <esc/mem/heap.h>
 #include <string.h>
-#include <width.h>
+#include <esc/width.h>
 
 #include "iparser.h"
 #include "idriver.h"

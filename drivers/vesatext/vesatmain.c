@@ -25,7 +25,7 @@
 #include <esc/mem.h>
 #include <esc/rect.h>
 #include <esc/vm86.h>
-#include <messages.h>
+#include <esc/messages.h>
 #include <errors.h>
 #include <string.h>
 #include <assert.h>

@@ -26,7 +26,7 @@
 #include <esc/exceptions/cmdargs.h>
 #include <esc/util/vector.h>
 #include <esc/util/cmdargs.h>
-#include <width.h>
+#include <esc/width.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

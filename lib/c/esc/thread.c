@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/thread.h>
 #include <stdlib.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 
 #define HASHMAP_SIZE	64
 

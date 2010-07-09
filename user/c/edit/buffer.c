@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <stdio.h>
 #include <esc/dir.h>
-#include <sllist.h>
+#include <esc/sllist.h>
 #include <assert.h>
 #include <string.h>
 #include "mem.h"

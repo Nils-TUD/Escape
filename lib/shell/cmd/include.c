@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <stdio.h>
-#include "../shell.h"
+#include <shell/shell.h>
 #include "include.h"
 
 s32 shell_cmdInclude(u32 argc,char **argv) {

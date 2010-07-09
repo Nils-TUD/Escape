@@ -25,9 +25,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "vtctrl.h"
-#include "vtin.h"
-#include "vtout.h"
+
+#include <vterm/vtctrl.h>
+#include <vterm/vtin.h>
+#include <vterm/vtout.h>
 
 #define RLBUF_INCR			20
 

@@ -173,7 +173,7 @@
 	#include "ast/property.h"
 	#include "exec/env.h"
 	#include "mem.h"
-	#include "shell.h"
+	extern sEnv *curEnv;
 
 
 

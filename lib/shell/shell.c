@@ -32,8 +32,8 @@
 #include <ctype.h>
 #include <errors.h>
 
-#include "shell.h"
-#include "history.h"
+#include <shell/shell.h>
+#include <shell/history.h>
 #include "completion.h"
 #include "parser.h"
 #include "exec/running.h"

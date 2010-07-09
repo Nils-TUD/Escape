@@ -577,9 +577,9 @@ char *yytext;
 #line 7 "<stdin>"
 	#include <string.h>
 	#include <stdio.h>
+	#include <shell/shell.h>
 	#include "parser.h"
 	#include "lang.h"
-	#include "shell.h"
 #line 15 "<stdin>"
 	extern YYLTYPE yylloc;
 	YYLTYPE yylastloc;

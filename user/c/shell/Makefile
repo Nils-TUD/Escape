@@ -1,9 +1,8 @@
 NAME = shell
 ifeq ($(LINKTYPE),static)
 	ADDLIBS += $(BUILD)/libshell.a
-	ADDFLAGS = -I../../../lib
 else
-	ADDFLAGS = -I../../../lib -lshell
+	ADDFLAGS = -lshell
 endif
 
 -include ../DefMakefile.mk

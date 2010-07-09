@@ -21,7 +21,8 @@
 #define COMMANDS_H_
 
 #include <esc/common.h>
-#include "shell.h"
+#include <shell/shell.h>
+#include "exec/env.h"
 
 #define TYPE_BUILTIN		0
 #define TYPE_EXTERN			1

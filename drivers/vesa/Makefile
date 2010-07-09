@@ -1,9 +1,8 @@
 NAME=vesa
 ifeq ($(LINKTYPE),static)
 	ADDLIBS += $(BUILD)/libvbe.a
-	ADDFLAGS = -I../../lib
 else
-	ADDFLAGS = -I../../lib -lvbe
+	ADDFLAGS = -lvbe
 endif
 
 -include ../ShlibMakefile.mk

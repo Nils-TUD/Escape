@@ -20,14 +20,15 @@
 #include <esc/common.h>
 #include <esc/vm86.h>
 #include <esc/debug.h>
+#include <esc/sllist.h>
 #include <esc/mem.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <esc/sllist.h>
 #include <assert.h>
 #include <limits.h>
-#include "vbe.h"
+
+#include <vbe/vbe.h>
 
 /* This is mostly borrowed from doc/vbecore.pdf */
 

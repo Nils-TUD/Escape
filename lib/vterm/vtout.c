@@ -25,9 +25,10 @@
 #include <esc/esccodes.h>
 #include <stdlib.h>
 #include <string.h>
-#include "vtout.h"
-#include "vtin.h"
-#include "vtctrl.h"
+
+#include <vterm/vtout.h>
+#include <vterm/vtin.h>
+#include <vterm/vtctrl.h>
 
 /**
  * Inserts a new line

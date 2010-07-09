@@ -6,9 +6,9 @@
 %{
 	#include <string.h>
 	#include <stdio.h>
+	#include <shell/shell.h>
 	#include "parser.h"
 	#include "lang.h"
-	#include "shell.h"
 %}
 
 %{

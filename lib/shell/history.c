@@ -22,7 +22,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "history.h"
+
+#include <shell/history.h>
 
 #define HISTORY_SIZE		30
 

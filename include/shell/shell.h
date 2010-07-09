@@ -22,7 +22,6 @@
 
 #include <esc/common.h>
 #include <stdio.h>
-#include "exec/env.h"
 
 #define MAX_ARG_COUNT		10
 #define ERR_CMD_NOT_FOUND	-100
@@ -37,7 +36,6 @@ extern "C" {
 extern FILE *curStream;
 extern bool curIsStream;
 extern char *curLine;
-extern sEnv *curEnv;
 
 /**
  * Inits the shell; announces the signal-handler for SIG_INTRPT and creates the environment with

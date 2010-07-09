@@ -13,7 +13,7 @@ APPCPY = $(BUILD)/apps/$(APP)
 LIBCA = $(BUILD)/libc.a
 
 CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(ROOT)/include \
 	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS) $(ADDFLAGS)
 
 ifeq ($(LINKTYPE),static)

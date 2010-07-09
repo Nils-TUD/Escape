@@ -12,8 +12,8 @@ DYNLIB = $(BUILD)/$(DYNLIBNAME)
 SHLDCONF = ../shld.conf
 
 CC = g++
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CPPDEFFLAGS) -Iinclude -I$(LIBDIR)/h \
-	-I$(LIBCDIR)/include
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CPPDEFFLAGS) -I$(ROOT)/include \
+	-I$(ROOT)/include/cpp
 
 # sources
 CSRC = $(shell find src -name "*.cpp")

@@ -38,8 +38,8 @@ WARNOPTS	:= -Wall -Wextra -Wpointer-arith -Wcast-qual -Wsynth \
 #TGTOPTS		:= -mmmx -msse -mfpmath=sse -msse2
 INLINEOPTS	:= -fvisibility-inlines-hidden -fno-threadsafe-statics -fno-enforce-eh-specs
 
-CXXFLAGS	:= ${WARNOPTS} ${TGTOPTS} -ffreestanding -nostdlib -fno-builtin -I../../../lib/c/include \
-	-I../../../lib/basic/h
+CXXFLAGS	:= ${WARNOPTS} ${TGTOPTS} -ffreestanding -nostdlib -fno-builtin -I../../../include \
+	-I../../../include/cpp
 LDFLAGS		:= -nostdlib -Wl,--build-id=none
 LIBS		:=
 ifdef DEBUG

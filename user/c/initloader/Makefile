@@ -11,7 +11,7 @@ DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 CC = gcc
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS) \
-	-I$(ROOT)/lib/h -I$(LIBC)/include
+	-I$(ROOT)/include
 
 # sources
 ASRC = $(wildcard *.s)

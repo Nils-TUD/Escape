@@ -13,7 +13,7 @@ APPCPY = $(BUILD)/apps/$(APP)
 CC = gcc
 # Note: we need -Wl,--build-id=none atm to prevent ld to generate the .note.gnu.build-id
 # This seems to be put at the beginning of the binary and therefore the entry-point changes
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(ROOT)/include \
 	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS) $(ADDFLAGS)
 
 # sources

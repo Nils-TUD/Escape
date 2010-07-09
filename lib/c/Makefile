@@ -12,7 +12,7 @@ DYNLIB = $(BUILD)/$(DYNLIBNAME)
 SHLDCONF = ../shld.conf
 
 CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -Iinclude -I$(LIBDIR)/h
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -I$(ROOT)/include
 
 # sources
 CSRC = $(shell find src -name "*.c")

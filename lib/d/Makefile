@@ -9,8 +9,7 @@ DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 LIB = $(BUILD)/libd.a
 
 CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -Iinclude -I$(LIBDIR)/h \
-	-I$(LIBCDIR)/include
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -I$(ROOT)/include
 DC = dmd
 DFLAGS = $(DDEFFLAGS) -version=Escape -I. -Itango/core -Itango/core/vendor \
 	-Itango/core/rt/compiler/dmd

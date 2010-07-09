@@ -10,7 +10,7 @@ BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(LIBC)/include -I$(LIB)/h \
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(ROOT)/include \
 	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS)
 
 # sources

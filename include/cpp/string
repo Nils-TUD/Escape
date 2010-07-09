@@ -544,6 +544,6 @@ namespace std {
 	bool operator>=(const basic_string<T>& lhs,const T* rhs);
 }
 
-#include "../src/string.cc"
+#include "../../lib/cpp/src/string.cc"
 
 #endif /* STRING_ */

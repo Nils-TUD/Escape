@@ -9,7 +9,7 @@ LIB = $(BUILD)/libsupc++.a
 
 CPP = g++
 CPPFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CPPDEFFLAGS) \
-	-I. -I$(LIBDIR)/h -I$(LIBCDIR)/include
+	-I. -I$(ROOT)/include
 
 # sources
 CPPSRC = $(shell find . -name "*.cc")

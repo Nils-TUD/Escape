@@ -6,7 +6,6 @@ SHLIBNAME = lib$(NAME).so
 SECLIBNAME = lib$(NAME)2.so
 SHLIB = $(BUILD)/$(SHLIBNAME)
 SECLIB = $(BUILD)/$(SECLIBNAME)
-LIB = $(ROOT)/lib/basic
 LIBC = $(ROOT)/lib/c
 LDCONF = $(ROOT)/lib/ld.conf
 SHLDCONF = $(ROOT)/lib/shld.conf

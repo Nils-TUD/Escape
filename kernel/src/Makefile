@@ -6,20 +6,20 @@ LDCONF = ../ld.conf
 LIB = $(ROOT)/lib/basic
 GCCLIBDIR = $(ROOT)/lib/gcc
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
-LSUBDIRS = $(filter-out $(wildcard $(LIB)/src/*.*),$(wildcard $(LIB)/src/*))
+LSUBDIRS = $(filter-out $(wildcard $(LIB)/*.*),$(wildcard $(LIB)/*))
 BUILDDIRS = $(addprefix $(BUILDK)/,$(SUBDIRS)) $(patsubst $(LIB)/%,$(BUILDK)/lib/%,$(LSUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 CC = gcc
 CFLAGS =  -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
-	-D IN_KERNEL=1 -I$(ROOT)/include -I$(LIB)/h
+	-D IN_KERNEL=1 -I$(ROOT)/include
 # for profiling:
 # -finstrument-functions -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/src/profile.c
 
 # sources
 ASRC = ../kernel.asm
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
-LSRC = $(shell find $(LIB)/src -name "*.c")
+LSRC = $(shell find $(LIB) -name "*.c")
 
 # objects
 AOBJ = $(BUILDK)/kernela.o

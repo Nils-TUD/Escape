@@ -2,7 +2,6 @@ NAME = dynlink
 ROOT = ../../..
 BUILDL = $(BUILD)/user/c/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
-LIB = $(ROOT)/lib/basic
 LIBC = $(ROOT)/lib/c
 LDCONF = ld.conf
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))

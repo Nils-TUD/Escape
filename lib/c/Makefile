@@ -3,7 +3,7 @@ BUILDL = $(BUILD)/lib/c
 LIBDIR = $(ROOT)/lib/basic
 GCCLIBDIR = $(ROOT)/lib/gcc
 SUBDIRS = $(filter-out $(shell find . -name "*.*"),$(shell find . -name "*"))
-LSUBDIRS = $(filter-out $(wildcard $(LIBDIR)/src/*.*),$(wildcard $(LIBDIR)/src/*))
+LSUBDIRS = $(filter-out $(wildcard $(LIBDIR)/*.*),$(wildcard $(LIBDIR)/*))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS)) $(patsubst $(LIBDIR)/%,$(BUILDL)/lib/%,$(LSUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 STLIB = $(BUILD)/libc.a
@@ -17,7 +17,7 @@ CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -I$(ROOT)/include
 # sources
 CSRC = $(shell find . -name "*.c")
 ASRC = $(filter-out startup.s,$(shell find . -name "*.s"))
-LSRC = $(shell find $(LIBDIR)/src -name "*.c")
+LSRC = $(shell find $(LIBDIR) -name "*.c")
 START = startup.s
 SYSCALLS = syscalls.s
 

@@ -1,7 +1,6 @@
 ROOT = ../../..
 BUILDL = $(BUILD)/user/cpp/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
-LIB = $(ROOT)/lib/basic
 LIBC = $(ROOT)/lib/c
 LIBCPP = $(ROOT)/lib/cpp
 LDCONF = $(ROOT)/lib/ld.conf

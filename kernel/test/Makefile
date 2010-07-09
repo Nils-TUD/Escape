@@ -8,17 +8,17 @@ LIB = $(ROOT)/lib/basic
 GCCLIBDIR = $(ROOT)/lib/gcc
 DEPS = $(wildcard $(BUILDT)/*.d)
 SUBDIRS = ../src $(filter-out ../src/Makefile $(wildcard ../src/*.*),$(wildcard ../src/*))
-LSUBDIRS = $(filter-out $(wildcard $(LIB)/src/*.*),$(wildcard $(LIB)/src/*))
+LSUBDIRS = $(filter-out $(wildcard $(LIB)/*.*),$(wildcard $(LIB)/*))
 BUILDDIRS = $(BUILDT) $(patsubst $(LIB)/%,$(BUILDT)/lib/%,$(LSUBDIRS))
 
 CC = gcc
 CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
-	-D TESTING=1 -D IN_KERNEL=1 -I$(ROOT)/include -I$(LIB)/h
+	-D TESTING=1 -D IN_KERNEL=1 -I$(ROOT)/include
 
 # sources
 TSRC = $(wildcard *.c)
 KSRC = $(filter-out ../src/kernel.c,$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
-LSRC = $(shell find $(LIB)/src -name "*.c")
+LSRC = $(shell find $(LIB) -name "*.c")
 
 # objects
 AOBJ = $(BUILDK)/kernela.o

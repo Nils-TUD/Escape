@@ -2,7 +2,6 @@ NAME=calc
 ROOT = ../../..
 BUILDL = $(BUILD)/user/c/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
-LIB = $(ROOT)/lib/basic
 LIBC = $(ROOT)/lib/c
 LDCONF = $(ROOT)/lib/ld.conf
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))

@@ -1,6 +1,5 @@
 ROOT = ../..
 BUILDL = $(BUILD)/lib/supc++
-LIBDIR = $(ROOT)/lib/basic
 LIBCDIR = $(ROOT)/lib/c
 SUBDIRS = .
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))

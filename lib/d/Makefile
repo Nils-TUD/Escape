@@ -1,6 +1,5 @@
 ROOT = ../..
 BUILDL = $(BUILD)/lib/d
-LIBDIR = $(ROOT)/lib/basic
 LIBCDIR = $(ROOT)/lib/c
 GCCLIBDIR = $(ROOT)/lib/gcc
 SUBDIRS = $(filter-out Makefile $(shell find . -name "*.*"),$(shell find . -name "*"))

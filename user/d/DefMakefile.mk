@@ -1,7 +1,6 @@
 ROOT = ../../..
 BUILDL = $(BUILD)/user/d/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
-LIB = $(ROOT)/lib/basic
 LIBC = $(ROOT)/lib/c
 LIBD = $(ROOT)/lib/d
 LDCONF = $(LIBD)/ld.conf

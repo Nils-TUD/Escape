@@ -1,6 +1,5 @@
 ROOT = ../..
 BUILDL = $(BUILD)/lib/cpp
-LIBDIR = $(ROOT)/lib/basic
 LIBCDIR = $(ROOT)/lib/c
 GCCLIBDIR = $(ROOT)/lib/gcc
 SUBDIRS = $(filter-out $(shell find src -name "*.*"),$(shell find src -name "*"))

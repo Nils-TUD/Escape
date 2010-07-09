@@ -1,6 +1,5 @@
 ROOT = ../..
 BUILDL = $(BUILD)/lib/$(NAME)
-LIB = $(ROOT)/lib/basic
 LIBC = $(ROOT)/lib/c
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))

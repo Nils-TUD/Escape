@@ -93,6 +93,8 @@ typedef struct {
 	/* for the waiting parent */
 	s32 exitCode;
 	tSig exitSig;
+	/* the address of the sigRet "function" */
+	u32 sigRetAddr;
 	/* the io-map (NULL by default) */
 	u8 *ioMap;
 	/* start-command */

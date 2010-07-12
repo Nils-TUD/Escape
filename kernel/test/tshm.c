@@ -85,9 +85,9 @@ static void test_2(void) {
 
 	/* create dummy-regions to force vmm to extend the regions-array. this way we can check
 	 * wether all memory is freed correctly */
-	reg1 = vmm_add(child1,NULL,0,PAGE_SIZE,REG_SHM);
+	reg1 = vmm_add(child1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg1 >= 0);
-	reg2 = vmm_add(child2,NULL,0,PAGE_SIZE,REG_SHM);
+	reg2 = vmm_add(child2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg2 >= 0);
 
 	test_init();

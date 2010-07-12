@@ -84,7 +84,7 @@ s32 shm_create(sProc *p,const char *name,u32 pageCount) {
 	mem->users = sll_create();
 	if(mem == NULL)
 		goto errMem;
-	reg = vmm_add(p,NULL,0,pageCount * PAGE_SIZE,REG_SHM);
+	reg = vmm_add(p,NULL,0,pageCount * PAGE_SIZE,pageCount * PAGE_SIZE,REG_SHM);
 	if(reg < 0)
 		goto errUList;
 	if(!shm_addUser(mem,p,reg))

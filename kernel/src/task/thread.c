@@ -467,7 +467,8 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 			goto errThread;
 
 		/* add a new stack-region */
-		t->stackRegion = vmm_add(p,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
+		t->stackRegion = vmm_add(p,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+				INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
 		if(t->stackRegion < 0)
 			goto errThread;
 		/* add kernel-stack */
@@ -478,7 +479,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 		if(src->tlsRegion >= 0) {
 			u32 tlsStart,tlsEnd;
 			vmm_getRegRange(src->proc,src->tlsRegion,&tlsStart,&tlsEnd);
-			t->tlsRegion = vmm_add(p,NULL,0,tlsEnd - tlsStart,REG_TLS);
+			t->tlsRegion = vmm_add(p,NULL,0,tlsEnd - tlsStart,tlsEnd - tlsStart,REG_TLS);
 			if(t->tlsRegion < 0)
 				goto errStack;
 		}

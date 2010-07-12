@@ -66,13 +66,9 @@ void sysc_addRegion(sIntrptStackFrame *stack) {
 		case REG_DATA:
 			rno = RNO_DATA;
 			break;
-		case REG_BSS:
-			rno = RNO_BSS;
-			break;
 		case REG_RODATA:
 			rno = RNO_RODATA;
 			break;
-		case REG_SHLIBBSS:
 		case REG_SHLIBDATA:
 		case REG_SHLIBTEXT:
 		case REG_SHM:
@@ -92,7 +88,8 @@ void sysc_addRegion(sIntrptStackFrame *stack) {
 	}
 
 	/* add region */
-	rno = vmm_add(p,bin,binOffset,byteCount,type);
+	/* TODO */
+	rno = vmm_add(p,bin,binOffset,byteCount,0,type);
 	if(rno < 0)
 		SYSC_ERROR(stack,rno);
 	/* save tls-region-number */

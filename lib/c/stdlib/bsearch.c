@@ -20,16 +20,16 @@
 #include <esc/common.h>
 #include <stdlib.h>
 
-void *bsearch(const void *key,const void *base,u32 num,u32 size,fCompare cmp) {
-	u32 from = 0;
-	u32 to = num - 1;
-	u32 m;
-	s32 res;
+void *bsearch(const void *key,const void *base,size_t num,size_t size,fCompare cmp) {
+	size_t from = 0;
+	size_t to = num - 1;
+	size_t m;
+	int res;
 	void *val;
 
 	while(from <= to) {
 		m = (from + to) / 2;
-		val = (void*)((u32)base + m * size);
+		val = (void*)((size_t)base + m * size);
 
 		/* compare */
 		res = cmp(val,key);

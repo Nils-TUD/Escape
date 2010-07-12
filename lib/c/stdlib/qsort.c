@@ -31,12 +31,11 @@
 static void _qsort(void *base,size_t size,fCompare cmp,s32 left,s32 right);
 static s32 divide(void *base,size_t size,fCompare cmp,s32 left,s32 right);
 
-
-void qsort(void *base,u32 nmemb,u32 size,fCompare cmp) {
+void qsort(void *base,size_t nmemb,size_t size,fCompare cmp) {
 	_qsort(base,size,cmp,0,nmemb - 1);
 }
 
-static void _qsort(void *base,u32 size,fCompare cmp,s32 left,s32 right) {
+static void _qsort(void *base,size_t size,fCompare cmp,s32 left,s32 right) {
 	/* TODO someday we should provide a better implementation which uses another sort-algo
 	 * for small arrays, don't uses recursion and so on */
 	if(left < right) {
@@ -46,7 +45,7 @@ static void _qsort(void *base,u32 size,fCompare cmp,s32 left,s32 right) {
 	}
 }
 
-static s32 divide(void *base,u32 size,fCompare cmp,s32 left,s32 right) {
+static s32 divide(void *base,size_t size,fCompare cmp,s32 left,s32 right) {
 	char *pleft = (char*)base + left * size;
 	char *piv = (char*)base + right * size;
 	char *i = pleft;

@@ -26,7 +26,7 @@ $(BUILDDIRS):
 
 $(BUILDL)/%.o:		%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 -include $(DEPS)
 

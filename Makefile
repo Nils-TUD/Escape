@@ -36,7 +36,8 @@ export CC = gcc
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
-				 -Wstrict-prototypes -ffreestanding -fno-builtin -fms-extensions
+				 -Wstrict-prototypes -fms-extensions -fno-builtin
+				 #-Wstrict-prototypes -ffreestanding -fno-builtin -fms-extensions
 export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long

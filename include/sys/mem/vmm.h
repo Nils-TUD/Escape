@@ -26,27 +26,24 @@
 #include <sys/task/thread.h>
 #include <sys/printf.h>
 
-#define DISABLE_DEMLOAD		0
+#define DISABLE_DEMLOAD		1
 
 #define MAX_REGUSE_COUNT	(PROC_COUNT * 8)
 
 #define RNO_TEXT			0
 #define RNO_RODATA			1
-#define RNO_BSS				2
-#define RNO_DATA			3
+#define RNO_DATA			2
 
 #define REG_TEXT			0
 #define REG_RODATA			1
 #define REG_DATA			2
-#define REG_BSS				3
-#define REG_STACK			4
-#define REG_SHM				5
-#define REG_PHYS			6
-#define REG_TLS				7
-#define REG_SHLIBTEXT		8
-#define REG_SHLIBDATA		9
-#define REG_SHLIBBSS		10
-#define REG_DLDATA			11
+#define REG_STACK			3
+#define REG_SHM				4
+#define REG_PHYS			5
+#define REG_TLS				6
+#define REG_SHLIBTEXT		7
+#define REG_SHLIBDATA		8
+#define REG_DLDATA			9
 
 typedef struct {
 	sRegion *reg;
@@ -84,10 +81,11 @@ u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount);
  * @param bin the binary (may be NULL; in this case no demand-loading is supported)
  * @param binOffset the offset in the binary from where to load the region (ignored if bin is NULL)
  * @param bCount the number of bytes
+ * @param lCount number of bytes to load from disk (the rest is zero'ed)
  * @param type the type of region
  * @return the region-number on success or a negative error-code
  */
-tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type);
+tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 type);
 
 /**
  * Tests wether the region with given number exists

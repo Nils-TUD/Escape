@@ -50,7 +50,7 @@
 static void proc_notifyProcDied(tPid parent,tPid pid);
 static s32 proc_finishClone(sThread *nt,u32 stackFrame);
 static bool proc_setupThreadStack(sIntrptStackFrame *frame,void *arg,u32 tentryPoint);
-static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint);
+static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint,bool newThread);
 
 /* our processes */
 static tPid nextPid = 1;
@@ -79,6 +79,7 @@ void proc_init(void) {
 	p->unswappable = 0;
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
+	p->sigRetAddr = 0;
 	p->flags = 0;
 	memcpy(p->command,"initloader",11);
 
@@ -257,6 +258,7 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->parentPid = cur->pid;
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
+	p->sigRetAddr = cur->sigRetAddr;
 	if(isVM86)
 		p->flags |= P_VM86;
 	/* give the process the same name (may be changed by exec) */
@@ -638,7 +640,7 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 	*esp-- = (u32)argv;
 	*esp-- = argc;
 	/* add TLS args and entrypoint */
-	esp = proc_addStartArgs(t,esp,tentryPoint);
+	esp = proc_addStartArgs(t,esp,tentryPoint,false);
 
 	frame->uesp = (u32)esp;
 	frame->ebp = frame->uesp;
@@ -697,14 +699,14 @@ static bool proc_setupThreadStack(sIntrptStackFrame *frame,void *arg,u32 tentryP
 	esp--;
 	*esp-- = (u32)arg;
 	/* add TLS args and entrypoint */
-	esp = proc_addStartArgs(t,esp,tentryPoint);
+	esp = proc_addStartArgs(t,esp,tentryPoint,true);
 
 	frame->uesp = (u32)esp;
 	frame->ebp = frame->uesp;
 	return true;
 }
 
-static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint) {
+static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint,bool newThread) {
 	/* put address and size of the tls-region on the stack */
 	if(t->tlsRegion >= 0) {
 		u32 tlsStart,tlsEnd;
@@ -718,7 +720,7 @@ static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint) {
 		*esp-- = 0;
 	}
 
-	*esp = tentryPoint == TEXT_BEGIN ? 0 : tentryPoint;
+	*esp = newThread ? tentryPoint : 0;
 	return esp;
 }
 

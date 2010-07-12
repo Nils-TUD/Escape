@@ -35,10 +35,10 @@
  * swapped, demand-load or demand-zero.
  */
 
-sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u8 pgFlags,u32 flags) {
+sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 pgFlags,u32 flags) {
 	u32 i,pageCount;
 	sRegion *reg;
-	assert(pgFlags == PF_DEMANDLOAD || pgFlags == PF_DEMANDZERO || pgFlags == 0);
+	assert(pgFlags == PF_DEMANDLOAD || pgFlags == 0);
 	assert((flags & ~(RF_GROWABLE | RF_SHAREABLE | RF_WRITABLE | RF_STACK | RF_NOFREE | RF_TLS)) == 0);
 
 	reg = (sRegion*)kheap_alloc(sizeof(sRegion));
@@ -61,6 +61,7 @@ sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u8 pgFlags,u32 flags)
 	}
 	reg->flags = flags;
 	reg->byteCount = bCount;
+	reg->loadCount = lCount;
 	pageCount = BYTES_2_PAGES(bCount);
 	reg->pfSize = pageCount;
 	reg->pageFlags = (u8*)kheap_alloc(pageCount);
@@ -88,7 +89,7 @@ u32 reg_presentPageCount(sRegion *reg) {
 	u32 i,c = 0;
 	assert(reg != NULL);
 	for(i = 0; i < reg->pfSize; i++) {
-		if((reg->pageFlags[i] & (PF_DEMANDLOAD | PF_DEMANDZERO | PF_LOADINPROGRESS)) == 0)
+		if((reg->pageFlags[i] & (PF_DEMANDLOAD | PF_LOADINPROGRESS)) == 0)
 			c++;
 	}
 	return c;
@@ -145,7 +146,7 @@ bool reg_grow(sRegion *reg,s32 amount) {
 sRegion *reg_clone(const void *p,sRegion *reg) {
 	sRegion *clone;
 	assert(reg != NULL && !(reg->flags & RF_SHAREABLE));
-	clone = reg_create(&reg->binary,reg->binOffset,reg->byteCount,0,reg->flags);
+	clone = reg_create(&reg->binary,reg->binOffset,reg->byteCount,reg->loadCount,0,reg->flags);
 	if(clone) {
 		memcpy(clone->pageFlags,reg->pageFlags,reg->pfSize);
 		reg_addTo(clone,p);
@@ -168,6 +169,7 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt) {
 		{"TLS",RF_TLS}
 	};
 	prf_sprintf(buf,"\tSize: %u bytes\n",reg->byteCount);
+	prf_sprintf(buf,"\tLoad: %u bytes\n",reg->loadCount);
 	prf_sprintf(buf,"\tflags: ");
 	for(i = 0; i < ARRAY_SIZE(flagNames); i++) {
 		if(reg->flags & flagNames[i].no)
@@ -187,7 +189,6 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt) {
 		prf_sprintf(buf,"\t\t%d: (%#08x) %c%c%c\n",i,virt + i * PAGE_SIZE,
 				reg->pageFlags[i] & PF_COPYONWRITE ? 'c' : '-',
 				reg->pageFlags[i] & PF_DEMANDLOAD ? 'l' : '-',
-				reg->pageFlags[i] & PF_DEMANDZERO ? 'z' : '-',
 				reg->pageFlags[i] & PF_SWAPPED ? 's' : '-');
 	}
 }

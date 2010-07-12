@@ -2,32 +2,29 @@ NAME = dynlink
 ROOT = ../../..
 BUILDL = $(BUILD)/user/c/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
-LIBC = $(ROOT)/lib/c
 LDCONF = ld.conf
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
-CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(ROOT)/include \
-	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS)
+CC = $(ROOT)/build/dist/bin/i586-elf-escape-gcc
+CFLAGS = -Wl,-Bstatic -nostartfiles $(CDEFFLAGS) $(ADDFLAGS)
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
 ASTART = startup.s
 
 # objects
-LIBCA = $(BUILD)/libc.a
-START = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASTART))
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
+START = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASTART))
 
 .PHONY: all clean
 
 all:	$(BIN)
 
-$(BIN):	$(BUILDDIRS) $(LDCONF) $(COBJ) $(START) $(LIBCA)
+$(BIN):	$(BUILDDIRS) $(LDCONF) $(COBJ) $(START)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(LIBCA);
+		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ)
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 
@@ -38,7 +35,7 @@ $(BUILDDIRS):
 
 $(BUILDL)/%.o:		%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 $(BUILDL)/%.s.o:	%.s
 		@echo "	" AS $<

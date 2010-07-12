@@ -21,6 +21,7 @@
 #include <esc/lock.h>
 #include <esc/thread.h>
 #include <esc/debug.h>
+#include <signal.h>
 #include <errors.h>
 
 #define MAX_EXIT_FUNCS		32
@@ -33,8 +34,8 @@ typedef struct {
 } sGlobalObj;
 
 void __libc_init(void);
-extern fConstr __libcpp_constr_start;
-extern fConstr __libcpp_constr_end;
+/*extern fConstr __libcpp_constr_start;
+extern fConstr __libcpp_constr_end;*/
 
 static tULock exitLock = 0;
 static s16 exitFuncCount = 0;
@@ -75,10 +76,17 @@ void __cxa_finalize(void *d) {
 	}
 }
 
+extern void sigRetFunc(void);
+extern void streamConstr(void);
+
 void __libc_init(void) {
-	fConstr *constr = &__libcpp_constr_start;
+	/* TODO */
+	if(setSigHandler(SIG_RET,(fSigHandler)&sigRetFunc) < 0)
+		error("Unable to tell kernel sigRet-address");
+	streamConstr();
+	/*fConstr *constr = &__libcpp_constr_start;
 	while(constr < &__libcpp_constr_end) {
 		(*constr)();
 		constr++;
-	}
+	}*/
 }

@@ -30,7 +30,7 @@
 typedef void (*fConstr)(void);
 typedef void (*fStreamClose)(void *);
 
-static void streamConstr(void);
+/*static */void streamConstr(void);
 static void streamDestr(void);
 
 fConstr constr[1] __attribute__((section(".ctors"))) = {
@@ -45,7 +45,7 @@ FILE *stdin = NULL;
 FILE *stdout = NULL;
 FILE *stderr = NULL;
 
-static void streamConstr(void) {
+/*TODO static */void streamConstr(void) {
 	cin = ifstream_openfd(STDIN_FILENO);
 	cout = ofstream_openfd(STDOUT_FILENO);
 	cerr = ofstream_openfd(STDERR_FILENO);

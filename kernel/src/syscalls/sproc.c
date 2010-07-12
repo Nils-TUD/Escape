@@ -196,7 +196,7 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	char **args = (char**)SYSC_ARG2(stack);
 	char *argBuffer;
 	s32 argc,pathLen,res;
-	u32 argSize,entryPoint;
+	u32 argSize,entryPoint,dynLnkEntry;
 	tInodeNo nodeNo;
 	sThread *t = thread_getRunning();
 	sProc *p = t->proc;
@@ -235,25 +235,21 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	proc_removeRegions(p,false);
 
 	/* load program */
-	entryPoint = elf_loadFromFile(path);
-	if(entryPoint != TEXT_BEGIN && entryPoint != INTERP_TEXT_BEGIN) {
-		/* there is no undo for proc_removeRegions() :/ */
-		goto error;
-	}
+	entryPoint = elf_loadFromFile(path,&dynLnkEntry);
 
 	/* copy path so that we can identify the process */
 	memcpy(p->command,pathSave + (pathLen > MAX_PROC_NAME_LEN ? (pathLen - MAX_PROC_NAME_LEN) : 0),
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
-	/* make process ready; entrypoint is always TEXT_BEGIN, even for the dynamic linker
+	/* make process ready; its always entrypoint, even for the dynamic linker
 	 * (in this case for the program to load) */
-	if(!proc_setupUserStack(stack,argc,argBuffer,argSize,TEXT_BEGIN))
+	if(!proc_setupUserStack(stack,argc,argBuffer,argSize,entryPoint))
 		goto error;
 	proc_setupStart(stack,entryPoint);
 
 	/* if its the dynamic linker, open the program to exec and give him the filedescriptor,
 	 * so that he can load it including all shared libraries */
-	if(entryPoint == INTERP_TEXT_BEGIN) {
+	if(dynLnkEntry != 0) {
 		u32 *esp = (u32*)stack->uesp;
 		tFileNo file;
 		tFD fd = thread_getFreeFd();

@@ -45,7 +45,7 @@ $(BUILDDIRS):
 
 $(BUILDL)/%.o: %.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -MMD -c -o $@ $<
+		@$(CC) $(CFLAGS) -MD -c -o $@ $<
 
 $(BUILDL)/%.o: %.d
 		@echo "	" DC $<

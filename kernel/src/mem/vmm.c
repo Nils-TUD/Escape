@@ -25,11 +25,11 @@
 #include <sys/mem/kheap.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/real.h>
+#include <sys/video.h>
+#include <sys/util.h>
 #include <errors.h>
 #include <string.h>
-#include <sys/video.h>
 #include <assert.h>
-#include <sys/util.h>
 
 /**
  * The vmm-module manages the user-part of a process's virtual addressspace. That means it
@@ -72,7 +72,7 @@ u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount) {
 	u32 *frames = (u32*)kheap_alloc(sizeof(u32) * pages);
 	if(frames == NULL)
 		return 0;
-	reg = vmm_add(p,NULL,0,bCount,REG_PHYS);
+	reg = vmm_add(p,NULL,0,bCount,bCount,REG_PHYS);
 	if(reg < 0) {
 		kheap_free(frames);
 		return 0;
@@ -91,7 +91,7 @@ u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount) {
 	return vm->virt;
 }
 
-tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
+tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 type) {
 	sRegion *reg;
 	sVMRegion *vm;
 	tVMRegNo rno;
@@ -115,7 +115,7 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
 	}
 
 	/* create region */
-	reg = reg_create(bin,binOffset,bCount,pgFlags,flags);
+	reg = reg_create(bin,binOffset,bCount,lCount,pgFlags,flags);
 	if(!reg)
 		return ERR_NOT_ENOUGH_MEM;
 	if(!reg_addTo(reg,p))
@@ -132,7 +132,7 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u8 type) {
 		sAllocStats stats;
 		u8 mapFlags = 0;
 		u32 pageCount = BYTES_2_PAGES(vm->reg->byteCount);
-		if(!(pgFlags & (PF_DEMANDLOAD | PF_DEMANDZERO)))
+		if(!(pgFlags & PF_DEMANDLOAD))
 			mapFlags |= PG_PRESENT;
 		if(flags & (RF_WRITABLE))
 			mapFlags |= PG_WRITABLE;
@@ -254,15 +254,6 @@ bool vmm_pagefault(u32 addr) {
 			*flags &= ~PF_DEMANDLOAD;
 			return true;
 		}
-	}
-	else if(*flags & PF_DEMANDZERO) {
-		sAllocStats stats = paging_map(addr,NULL,1,PG_PRESENT | PG_WRITABLE);
-		assert(!(vm->reg->flags & RF_SHAREABLE));
-		p->ownFrames += stats.frames;
-		/* TODO actually we may have to clear less */
-		memclear((void*)addr,PAGE_SIZE);
-		*flags &= ~PF_DEMANDZERO;
-		return true;
 	}
 	else if(*flags & PF_SWAPPED) {
 		/* TODO */
@@ -419,7 +410,7 @@ s32 vmm_cloneAll(sProc *dst) {
 				u32 virt = nvm->virt;
 				for(j = 0; j < pageCount; j++) {
 					/* not when using demand-loading since we've not loaded it from disk yet */
-					if(!(vm->reg->pageFlags[j] & (PF_DEMANDLOAD | PF_DEMANDZERO))) {
+					if(!(vm->reg->pageFlags[j] & PF_DEMANDLOAD)) {
 						u32 frameNo = paging_getFrameNo(src->pagedir,virt);
 						/* if not already done, mark as cow for parent */
 						if(!(vm->reg->pageFlags[j] & PF_COPYONWRITE)) {
@@ -543,6 +534,13 @@ static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
 	sFileInfo info;
 	sThread *t = thread_getRunning();
 	tFileNo file;
+	/* calculate the number of bytes to load and zero */
+	u32 loadCount = 0, zeroCount;
+	if(addr - vm->virt < vm->reg->loadCount)
+		loadCount = MIN(PAGE_SIZE,vm->reg->loadCount - (addr - vm->virt));
+	else
+		res = true;
+	zeroCount = MIN(PAGE_SIZE,vm->reg->byteCount - (addr - vm->virt)) - loadCount;
 
 	/* if another thread already loads it, wait here until he's done */
 	if(*flags & PF_LOADINPROGRESS) {
@@ -555,58 +553,74 @@ static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
 	}
 
 	*flags |= PF_LOADINPROGRESS;
-	file = vfsr_openInode(t->tid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
-	if(file >= 0) {
-		/* file not present or modified? */
-		if((err = vfs_fstat(t->tid,file,&info)) >= 0 && info.modifytime == vm->reg->binary.modifytime) {
-			if((err = vfs_seek(t->tid,file,vm->reg->binOffset + (addr - vm->virt),SEEK_SET)) >= 0) {
-				/* first read into a temp-buffer because we can't mark the page as present until
-				 * its read from disk. and we can't use a temporary mapping when switching threads. */
-				u8 *tempBuf = (u8*)kheap_alloc(PAGE_SIZE);
-				if(tempBuf != NULL) {
-					/* TODO actually we may have to read less */
-					if((err = vfs_readFile(t->tid,file,(u8*)tempBuf,PAGE_SIZE)) >= 0) {
-						sSLNode *n;
-						u32 temp;
-						u32 frame = mm_allocateFrame(MM_DEF);
-						u8 mapFlags = PG_PRESENT;
-						if(vm->reg->flags & RF_WRITABLE)
-							mapFlags |= PG_WRITABLE;
-						/* copy into frame */
-						temp = paging_mapToTemp(&frame,1);
-						memcpy((void*)temp,tempBuf,PAGE_SIZE);
-						paging_unmapFromTemp(1);
-						/* map into all pagedirs */
-						for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
-							sProc *mp = (sProc*)n->data;
-							/* the region may be mapped to a different virtual address */
-							tVMRegNo mprno = vmm_getRNoByRegion(mp,vm->reg);
-							sVMRegion *mpreg = REG(mp,mprno);
-							assert(mprno != -1);
-							paging_mapTo(mp->pagedir,mpreg->virt + (addr - vm->virt),&frame,1,mapFlags);
-							if(vm->reg->flags & RF_SHAREABLE)
-								mp->sharedFrames++;
-							else
-								mp->ownFrames++;
+	if(loadCount) {
+		file = vfsr_openInode(t->tid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
+		if(file >= 0) {
+			/* file not present or modified? */
+			if((err = vfs_fstat(t->tid,file,&info)) >= 0 && info.modifytime ==
+					vm->reg->binary.modifytime) {
+				if((err = vfs_seek(t->tid,file,vm->reg->binOffset + (addr - vm->virt),SEEK_SET)) >= 0) {
+					/* first read into a temp-buffer because we can't mark the page as present until
+					 * its read from disk. and we can't use a temporary mapping when switching
+					 * threads. */
+					u8 *tempBuf = (u8*)kheap_alloc(loadCount);
+					if(tempBuf != NULL) {
+						if((err = vfs_readFile(t->tid,file,(u8*)tempBuf,loadCount)) >= 0) {
+							sSLNode *n;
+							u32 temp;
+							u32 frame = mm_allocateFrame(MM_DEF);
+							u8 mapFlags = PG_PRESENT;
+							if(vm->reg->flags & RF_WRITABLE)
+								mapFlags |= PG_WRITABLE;
+							/* copy into frame */
+							temp = paging_mapToTemp(&frame,1);
+							memcpy((void*)temp,tempBuf,loadCount);
+							paging_unmapFromTemp(1);
+							/* map into all pagedirs */
+							for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
+								sProc *mp = (sProc*)n->data;
+								/* the region may be mapped to a different virtual address */
+								tVMRegNo mprno = vmm_getRNoByRegion(mp,vm->reg);
+								sVMRegion *mpreg = REG(mp,mprno);
+								assert(mprno != -1);
+								paging_mapTo(mp->pagedir,mpreg->virt + (addr - vm->virt),&frame,1,
+										mapFlags);
+								if(vm->reg->flags & RF_SHAREABLE)
+									mp->sharedFrames++;
+								else
+									mp->ownFrames++;
+							}
+							res = true;
 						}
-						res = true;
+						else
+							vid_printf("Demandload for proc %s: Unable to read: %d\n",
+									t->proc->command,err);
+						kheap_free(tempBuf);
 					}
 					else
-						vid_printf("Demandload for proc %s: Unable to read: %d\n",t->proc->command,err);
-					kheap_free(tempBuf);
+						vid_printf("Demandload for proc %s: Not enough memory\n",t->proc->command);
 				}
 				else
-					vid_printf("Demandload for proc %s: Not enough memory\n",t->proc->command);
+					vid_printf("Demandload for proc %s: Unable to seek: %d\n",t->proc->command,err);
 			}
 			else
-				vid_printf("Demandload for proc %s: Unable to seek: %d\n",t->proc->command,err);
+				vid_printf("Demandload for proc %s: Stat failed: %d\n",t->proc->command,err);
+			vfs_closeFile(t->tid,file);
 		}
 		else
-			vid_printf("Demandload for proc %s: Stat failed: %d\n",t->proc->command,err);
-		vfs_closeFile(t->tid,file);
+			vid_printf("Demandload for proc %s: Unable to open file: %d\n",t->proc->command,file);
 	}
-	else
-		vid_printf("Demandload for proc %s: Unable to open file: %d\n",t->proc->command,file);
+
+	/* zero the rest, if necessary */
+	if(res && zeroCount) {
+		assert(!(vm->reg->flags & RF_SHAREABLE));
+		if(!loadCount) {
+			sAllocStats stats = paging_map(addr,NULL,1,PG_PRESENT | PG_WRITABLE);
+			t->proc->ownFrames += stats.frames;
+		}
+		memclear((void*)(addr + loadCount),zeroCount);
+	}
+
 	/* wakeup all waiting processes */
 	*flags &= ~PF_LOADINPROGRESS;
 	thread_wakeupAll(vm->reg,EV_VMM_DONE);
@@ -754,12 +768,6 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 			*virt = vmm_getFirstUsableAddr(p,true);
 			*rno = RNO_RODATA;
 			break;
-		case REG_BSS:
-			*pgFlags = PF_DEMANDZERO;
-			*flags = RF_WRITABLE;
-			*virt = vmm_getFirstUsableAddr(p,true);
-			*rno = RNO_BSS;
-			break;
 		case REG_DATA:
 			*pgFlags = PF_DEMANDLOAD;
 			*flags = RF_GROWABLE | RF_WRITABLE;
@@ -775,7 +783,6 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 			break;
 
 		case REG_SHLIBTEXT:
-		case REG_SHLIBBSS:
 		case REG_SHLIBDATA:
 		case REG_DLDATA:
 		case REG_TLS:
@@ -805,10 +812,6 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 				*flags = RF_WRITABLE;
 				*pgFlags = PF_DEMANDLOAD;
 			}
-			else if(type == REG_SHLIBBSS) {
-				*flags = RF_WRITABLE;
-				*pgFlags = PF_DEMANDZERO;
-			}
 			*virt = vmm_findFreeAddr(p,bCount);
 			if(*virt == 0)
 				return ERR_NOT_ENOUGH_MEM;
@@ -835,15 +838,11 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 		case REG_RODATA:
 			assert(REG(p,RNO_RODATA) == NULL);
 			/* fall through */
-		case REG_BSS:
-			assert(REG(p,RNO_BSS) == NULL);
-			/* fall through */
 		case REG_DATA:
 			assert(REG(p,RNO_DATA) == NULL);
 			break;
 
 		case REG_SHLIBTEXT:
-		case REG_SHLIBBSS:
 		case REG_SHLIBDATA:
 		case REG_DLDATA:
 		case REG_TLS:

@@ -19,12 +19,14 @@
 
 [BITS 32]
 
+[global _start]
 [global init]
 
 ALIGN 4
 
 %include "../../../lib/c/syscalls.s"
 
+_start:
 init:
 	; load modules first
 	mov		eax,SYSCALL_LOADMODS

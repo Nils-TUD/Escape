@@ -23,7 +23,7 @@
 /* the assembler-routine */
 extern u32 _changeSize(s32 count);
 extern u32 _mapPhysical(u32 phys,u32 count);
-extern u32 _addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u8 type);
+extern u32 _addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u32 loadCount,u8 type);
 extern u32 _createSharedMem(const char *name,u32 byteCount);
 extern u32 _joinSharedMem(const char *name);
 
@@ -43,8 +43,8 @@ void *mapPhysical(u32 phys,u32 count) {
 	return (void*)addr;
 }
 
-void *addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u8 type) {
-	u32 addr = _addRegion(bin,binOffset,byteCount,type);
+void *addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u32 loadCount,u8 type) {
+	u32 addr = _addRegion(bin,binOffset,byteCount,loadCount,type);
 	/* FIXME workaround until we have TLS */
 	if((s32)addr >= -200 && (s32)addr < 0)
 		return NULL;

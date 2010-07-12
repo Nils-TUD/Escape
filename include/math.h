@@ -20,7 +20,7 @@
 #ifndef MATH_H_
 #define MATH_H_
 
-#include <stddef.h>
+#include <esc/common.h>
 
 typedef float float_t;
 typedef double double_t;

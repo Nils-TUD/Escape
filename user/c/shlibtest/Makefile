@@ -60,15 +60,15 @@ $(BUILDDIRS):
 
 $(BUILDL)/lib2%.o:		%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
 $(BUILDL)/lib%.o:		%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
 $(BUILDL)/%.o:		%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 -include $(DEPS)
 

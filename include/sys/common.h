@@ -17,11 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef COMMON_H_
-#define COMMON_H_
+#ifndef SYS_COMMON_H_
+#define SYS_COMMON_H_
 
 #include <types.h>
 #include <stddef.h>
+#include <esc/defines.h>
 
 /* file-number (in global file table) */
 typedef s32 tFileNo;
@@ -40,4 +41,4 @@ typedef s32 tVMRegNo;
 #define DBG_PGCLONEPD(s)
 #define DBG_KMALLOC(s)
 
-#endif /*COMMON_H_*/
+#endif /*SYS_COMMON_H_*/

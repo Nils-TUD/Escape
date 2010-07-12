@@ -20,6 +20,8 @@
 [BITS 32]
 
 [global init]
+[global _start]
+[global sigRetFunc]
 [extern main]
 [extern exit]
 [extern init_tls]
@@ -45,6 +47,7 @@ ALIGN 4
 ;  +------------------+
 
 init:
+_start:
 	; first call init_tls(entryPoint,TLSStart,TLSSize)
 	call	init_tls
 	; remove args from stack
@@ -70,7 +73,7 @@ threadExit:
 	; just to be sure
 	jmp		$
 
-; all signal-handler return to this "function" (address 0x102b)
+; all signal-handler return to this "function"
 sigRetFunc:
 	mov		eax,SYSCALL_ACKSIG
 	int		SYSCALL_IRQ

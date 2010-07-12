@@ -33,7 +33,7 @@ $(BUILDDIRS):
 
 $(BUILDL)/%.o: %.cc
 		@echo "	" CC $<
-		@$(CPP) $(CPPFLAGS) -o $@ -c $< -MMD
+		@$(CPP) $(CPPFLAGS) -o $@ -c $< -MD
 
 -include $(DEPS)
 

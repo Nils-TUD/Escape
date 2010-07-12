@@ -46,7 +46,7 @@ $(BUILDDIRS):
 
 $(BUILDL)/%.o:		%.cpp
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 -include $(DEPS)
 

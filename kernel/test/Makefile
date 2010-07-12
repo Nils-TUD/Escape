@@ -5,15 +5,14 @@ BUILDT = $(BUILD)/kernel/test
 BIN = $(BUILD)/kernel_test.bin
 LDCONF = ../ld.conf
 LIB = $(ROOT)/lib/basic
-GCCLIBDIR = $(ROOT)/lib/gcc
 DEPS = $(wildcard $(BUILDT)/*.d)
 SUBDIRS = ../src $(filter-out ../src/Makefile $(wildcard ../src/*.*),$(wildcard ../src/*))
 LSUBDIRS = $(filter-out $(wildcard $(LIB)/*.*),$(wildcard $(LIB)/*))
 BUILDDIRS = $(BUILDT) $(patsubst $(LIB)/%,$(BUILDT)/lib/%,$(LSUBDIRS))
 
-CC = gcc
+CC = $(ROOT)/build/dist/bin/i586-elf-escape-gcc
 CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
-	-D TESTING=1 -D IN_KERNEL=1 -I$(ROOT)/include
+	-D TESTING=1 -D IN_KERNEL=1
 
 # sources
 TSRC = $(wildcard *.c)
@@ -25,11 +24,6 @@ AOBJ = $(BUILDK)/kernela.o
 TOBJ = $(patsubst %.c,$(BUILDT)/%.o,$(TSRC))
 KOBJ = $(patsubst %.c,$(BUILDK)/%.o,$(KSRC))
 LOBJ = $(patsubst $(LIB)/%.c,$(BUILDT)/lib/%.o,$(LSRC))
-# for long long arithmetic
-GCCLIB = $(GCCLIBDIR)/_divdi3.object \
-	$(GCCLIBDIR)/_moddi3.object \
-	$(GCCLIBDIR)/_udivdi3.object \
-	$(GCCLIBDIR)/_umoddi3.object
 
 SYMBOLS = $(BUILD)/kernelt_symbols.txt
 SYMBOLSCRIPT = $(ROOT)/tools/gensymbols.sh
@@ -40,9 +34,9 @@ SYMBOLOBJ = $(patsubst ../src/%.c,$(BUILDT)/%.o,$(SYMBOLSRC))
 
 all: $(BIN)
 
-$(BIN):	$(BUILDDIRS) $(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(GCCLIB)
+$(BIN):	$(BUILDDIRS) $(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		@echo "	" LINKING $(BIN)
-		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(GCCLIB);
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) -lgcc;
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 		@# since it's size is 0 at the first time. In the second pass the size is correct
 		@# and therefore the symbol-table will be generated correctly in the third pass :)
@@ -51,13 +45,13 @@ $(BIN):	$(BUILDDIRS) $(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(GCCLIB)
 		@echo "	" CC $(SYMBOLSRC)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
-		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(GCCLIB);
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) -lgcc;
 		@echo "	" BUILDING SYMBOL-FILE
 		@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "	" CC $(SYMBOLSRC)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
-		@ld -T $(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) $(GCCLIB);
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) -lgcc;
 		@echo "	" COPYING BINARY
 		$(ROOT)/tools/disk.sh copy $(BIN) /boot
 
@@ -68,11 +62,11 @@ $(BUILDDIRS):
 
 $(BUILDT)/%.o:		%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 $(BUILDT)/lib/%.o:	$(LIB)/%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 -include $(DEPS)
 

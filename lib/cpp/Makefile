@@ -36,13 +36,13 @@ STARTO = $(BUILD)/libcpp_startup.o
 
 .PHONY:		all clean
 
-all: $(STLIB) $(DYNLIB) $(STARTO)
+all: $(BUILDDIRS) $(STLIB) $(DYNLIB) $(STARTO)
 
-$(STLIB): $(BUILDDIRS) $(COBJS) $(LIBCOBJS)
+$(STLIB): $(COBJS) $(LIBCOBJS)
 		@echo "	" AR $(STLIB)
 		@ar rcs $(STLIB) $(LIBCOBJS) $(COBJS)
 
-$(DYNLIB): $(BUILDDIRS) $(CPICOBJS) $(LIBCPICOBJS)
+$(DYNLIB): $(CPICOBJS) $(LIBCPICOBJS)
 		@echo "	" LINKING $(DYNLIB)
 		@$(CC) $(CFLAGS) -shared -Wl,--build-id=none -Wl,-T,$(SHLDCONF) -Wl,-soname,$(DYNLIBNAME) \
 			-o $(DYNLIB) $(LIBCPICOBJS) $(CPICOBJS);
@@ -55,11 +55,11 @@ $(BUILDDIRS):
 
 $(BUILDL)/%.o: %.cpp
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 $(BUILDL)/%_pic.o: %.cpp
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
 $(STARTO): $(START)
 		@echo "	" AS $(START)

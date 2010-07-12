@@ -29,6 +29,7 @@
 #define SIG_ERR				((fSigHandler)-1)		/* error-return */
 
 /* the signals */
+#define SIG_RET				-1						/* used to tell the kernel the addr of sigRet */
 #define SIG_KILL			0
 #define SIG_TERM			1
 #define SIG_ILL_INSTR		2

@@ -64,27 +64,25 @@ static void test_1(void) {
 	test_caseStart("Testing vmm_add() and vmm_remove()");
 
 	test_init();
-	rno = vmm_add(p,NULL,0,PAGE_SIZE,REG_DATA);
+	rno = vmm_add(p,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_DATA);
 	test_assertInt(rno,RNO_DATA);
 	vmm_remove(p,rno);
 	test_finish();
 
 	test_init();
-	rno = vmm_add(p,NULL,0,PAGE_SIZE * 2,REG_TEXT);
+	rno = vmm_add(p,NULL,0,PAGE_SIZE * 2,PAGE_SIZE * 2,REG_TEXT);
 	test_assertInt(rno,RNO_TEXT);
-	rno = vmm_add(p,NULL,0,PAGE_SIZE * 3,REG_RODATA);
+	rno = vmm_add(p,NULL,0,PAGE_SIZE * 3,PAGE_SIZE * 3,REG_RODATA);
 	test_assertInt(rno,RNO_RODATA);
-	rno = vmm_add(p,NULL,0,PAGE_SIZE * 4,REG_BSS);
-	test_assertInt(rno,RNO_BSS);
-	rno = vmm_add(p,NULL,0,PAGE_SIZE * 5,REG_DATA);
+	rno = vmm_add(p,NULL,0,PAGE_SIZE * 4,PAGE_SIZE * 4,REG_DATA);
 	test_assertInt(rno,RNO_DATA);
 	proc_removeRegions(p,false);
 	test_finish();
 
 	test_init();
-	rno = vmm_add(p,NULL,0,PAGE_SIZE,REG_STACK);
+	rno = vmm_add(p,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_STACK);
 	test_assertTrue(rno >= 0);
-	rno2 = vmm_add(p,NULL,0,PAGE_SIZE * 2,REG_STACK);
+	rno2 = vmm_add(p,NULL,0,PAGE_SIZE * 2,PAGE_SIZE * 2,REG_STACK);
 	test_assertTrue(rno2 >= 0);
 	vmm_remove(p,rno);
 	vmm_remove(p,rno2);
@@ -95,7 +93,7 @@ static void test_1(void) {
 	clone = proc_getByPid(pid);
 
 	test_init();
-	rno = vmm_add(p,NULL,0,PAGE_SIZE * 4,REG_SHM);
+	rno = vmm_add(p,NULL,0,PAGE_SIZE * 4,PAGE_SIZE * 4,REG_SHM);
 	test_assertTrue(rno >= 0);
 	rno2 = vmm_join(p,rno,clone);
 	test_assertTrue(rno2 >= 0);
@@ -115,7 +113,7 @@ static void test_2(void) {
 	test_caseStart("Testing vmm_grow()");
 
 	test_init();
-	rno = vmm_add(p,NULL,0,PAGE_SIZE,REG_DATA);
+	rno = vmm_add(p,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_DATA);
 	test_assertTrue(rno >= 0);
 	vmm_getRegRange(p,rno,&start,&end);
 	test_assertInt(vmm_grow(p,rno,3),end / PAGE_SIZE);
@@ -129,7 +127,7 @@ static void test_2(void) {
 	test_finish();
 
 	test_init();
-	rno = vmm_add(p,NULL,0,PAGE_SIZE,REG_STACK);
+	rno = vmm_add(p,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_STACK);
 	test_assertTrue(rno >= 0);
 	vmm_getRegRange(p,rno,&start,&end);
 	test_assertInt(vmm_grow(p,rno,3),start / PAGE_SIZE);

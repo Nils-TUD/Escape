@@ -17,12 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef COMMON_H_
-#define COMMON_H_
+#ifndef ESC_COMMON_H_
+#define ESC_COMMON_H_
 
 #include <types.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <esc/defines.h>
 
 #ifndef NDEBUG
 #define DEBUGGING 1
@@ -63,4 +64,4 @@ void printStackTrace(void);
 }
 #endif
 
-#endif /*COMMON_H_*/
+#endif /*ESC_COMMON_H_*/

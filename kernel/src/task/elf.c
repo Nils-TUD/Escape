@@ -34,11 +34,12 @@
 #define ELF_TYPE_PROG		0
 #define ELF_TYPE_INTERP		1
 
-static s32 elf_doLoadFromFile(const char *path,u8 type);
+static s32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry);
 static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,u8 type);
 
-s32 elf_loadFromFile(const char *path) {
-	return elf_doLoadFromFile(path,ELF_TYPE_PROG);
+s32 elf_loadFromFile(const char *path,u32 *dynLnkEntry) {
+	*dynLnkEntry = 0;
+	return elf_doLoadFromFile(path,ELF_TYPE_PROG,dynLnkEntry);
 }
 
 s32 elf_loadFromMem(u8 *code,u32 length) {
@@ -74,7 +75,7 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 	return (u32)eheader->e_entry;
 }
 
-static s32 elf_doLoadFromFile(const char *path,u8 type) {
+static s32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry) {
 	sThread *t = thread_getRunning();
 	tFileNo file;
 	u32 j,loadSeg = 0;
@@ -115,7 +116,6 @@ static s32 elf_doLoadFromFile(const char *path,u8 type) {
 
 		if(pheader.p_type == PT_INTERP) {
 			char *interpName;
-			u32 entryPoint;
 			/* has to be the first segment and is not allowed for the dynamic linker */
 			if(loadSeg > 0 || type != ELF_TYPE_PROG)
 				goto failed;
@@ -134,9 +134,9 @@ static s32 elf_doLoadFromFile(const char *path,u8 type) {
 			vfs_closeFile(t->tid,file);
 			/* now load him and return the entry-point; the caller can distinguish the dynamic linker
 			 * from others by the entrypoint */
-			entryPoint = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP);
+			*dynLnkEntry = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP,NULL);
 			kheap_free(interpName);
-			return entryPoint;
+			return (u32)eheader.e_entry;
 		}
 
 		if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
@@ -196,12 +196,8 @@ static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,u8
 			return ERR_INVALID_ELF_BIN;
 		stype = REG_RODATA;
 	}
-	else if(pheader->p_flags == (PF_R | PF_W)) {
-		if(pheader->p_filesz == 0)
-			stype = type == ELF_TYPE_INTERP ? REG_SHLIBBSS : REG_BSS;
-		else
-			stype = type == ELF_TYPE_INTERP ? REG_DLDATA : REG_DATA;
-	}
+	else if(pheader->p_flags == (PF_R | PF_W))
+		stype = type == ELF_TYPE_INTERP ? REG_DLDATA : REG_DATA;
 	else
 		return ERR_INVALID_ELF_BIN;
 
@@ -209,11 +205,11 @@ static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,u8
 	if(pheader->p_filesz > pheader->p_memsz)
 		return ERR_INVALID_ELF_BIN;
 
-	/* bss and tls need no binary */
-	if(stype == REG_BSS || stype == REG_SHLIBBSS || stype == REG_TLS)
+	/* tls needs no binary */
+	if(stype == REG_TLS)
 		bindesc = NULL;
 	/* add the region */
-	if((res = vmm_add(t->proc,bindesc,pheader->p_offset,pheader->p_memsz,stype)) < 0)
+	if((res = vmm_add(t->proc,bindesc,pheader->p_offset,pheader->p_memsz,pheader->p_filesz,stype)) < 0)
 		return res;
 	if(stype == REG_TLS)
 		t->tlsRegion = res;

@@ -27,9 +27,10 @@
  * Loads the program at given path from fs into the user-space
  *
  * @param path the path to the program
+ * @param dynLnkEntry the entry-point of the dynamic-linker (0 if no dynlinker to use)
  * @return entry-point on success, ERR_INVALID_ELF_BIN on failure
  */
-s32 elf_loadFromFile(const char *path);
+s32 elf_loadFromFile(const char *path,u32 *dynLnkEntry);
 
 /**
  * Loads the given code into the user-space. This is just intended for loading initloader

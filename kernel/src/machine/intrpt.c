@@ -84,9 +84,6 @@
 /* the maximum length of messages (for interrupt-listeners) */
 #define MSG_MAX_LEN				8
 
-/* the address of the return-from-signal "function" in the startup.s */
-#define SIGRETFUNC_ADDR			(TEXT_BEGIN + 0x2b)
-
 /* represents an IDT-entry */
 typedef struct {
 	/* The address[0..15] of the ISR */
@@ -472,7 +469,7 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 		*--esp = signalData.sig;
 		/* sigRet will remove the argument, restore the register,
 		 * acknoledge the signal and return to eip */
-		*--esp = SIGRETFUNC_ADDR;
+		*--esp = t->proc->sigRetAddr;
 		stack->eip = (u32)handler;
 		stack->uesp = (u32)esp;
 	}

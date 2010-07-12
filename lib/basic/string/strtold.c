@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
+#include <esc/common.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
@@ -87,7 +87,7 @@ long double strtold(const char *nptr,char **endptr) {
 		/* handle exponent */
 		if((base == 10 && tolower(*nptr) == 'e') ||
 			(base == 16 && tolower(*nptr) == 'p')) {
-			s32 exp = 0;
+			s32 expo = 0;
 			bool negExp = *++nptr == '-';
 			if(*nptr == '-' || *nptr == '+')
 				nptr++;
@@ -95,16 +95,16 @@ long double strtold(const char *nptr,char **endptr) {
 				s32 val = getDigitVal(c,base);
 				if(val == -1)
 					break;
-				exp = exp * base + val;
+				expo = expo * base + val;
 				nptr++;
 			}
 			base = base == 10 ? 10 : 2;
 			if(negExp) {
-				while(exp-- > 0)
+				while(expo-- > 0)
 					res /= base;
 			}
 			else {
-				while(exp-- > 0)
+				while(expo-- > 0)
 					res *= base;
 			}
 		}

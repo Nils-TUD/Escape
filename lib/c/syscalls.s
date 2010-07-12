@@ -199,6 +199,28 @@ SYSCALL_IRQ						equ	0x30
 	ret
 %endmacro
 
+%macro SYSC_RET_5ARGS_ERR 2
+[global %1:function]
+%1:
+	push	ebp
+	mov		ebp,esp
+	mov		ecx,[ebp + 8]					; set arg1
+	mov		edx,[ebp + 12]				; set arg2
+	push	DWORD [ebp + 24]			; push arg5
+	push	DWORD [ebp + 20]			; push arg4
+	push	DWORD [ebp + 16]			; push arg3
+	mov		eax,%2								; set syscall-number
+	int		SYSCALL_IRQ
+	add		esp,12								; remove arg3, arg4 and arg5
+	test	ecx,ecx
+	jz		.return								; no-error?
+	STORE_ERRNO
+	mov		eax,ecx								; return error-code
+.return:
+	leave
+	ret
+%endmacro
+
 %macro SYSC_RET_7ARGS_ERR 2
 [global %1:function]
 %1:

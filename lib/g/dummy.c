@@ -1,5 +1,5 @@
 /**
- * $Id: stddef.h 630 2010-04-29 18:41:09Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,17 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STDDEF_H_
-#define STDDEF_H_
+void __dummy__(void);
 
-#include <esc/defines.h>
+void __dummy__(void) {
 
-#define offsetof(type,field)	((size_t)(&((type *)0)->field))
-
-#ifdef __cplusplus
-#	define NULL					0
-#else
-#	define NULL					(void*)0
-#endif
-
-#endif /* STDDEF_H_ */
+}

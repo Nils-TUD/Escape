@@ -1,17 +1,17 @@
 NAME = shell
 ROOT = ../..
 BUILDL = $(BUILD)/lib/$(NAME)
-LIBC = $(ROOT)/lib/c
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 STLIB = $(BUILD)/lib$(NAME).a
 DYNLIBNAME = lib$(NAME).so
 DYNLIB = $(BUILD)/$(DYNLIBNAME)
-SHLDCONF = ../shld.conf
 
-CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -I$(ROOT)/include
+AR = $(ROOT)/build/dist/bin/i586-elf-escape-ar
+CC = $(ROOT)/build/dist/bin/i586-elf-escape-gcc
+LD = $(ROOT)/build/dist/bin/i586-elf-escape-ld
+CFLAGS = $(CDEFFLAGS)
 
 # sources 
 LEXSRC = script.l
@@ -22,8 +22,7 @@ BISONDEBUG = parser.out
 CSRC = $(filter-out ./$(BISONGEN) ./$(LEXGEN),\
 	$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
 
-# put all libc-object-files into the archive
-LIBCOBJ = $(shell find $(BUILD)/lib/c -mindepth 0 -maxdepth 5 -name "*.o")
+# objects
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 CPICOBJS = $(patsubst %.c,$(BUILDL)/%_pic.o,$(CSRC))
 GENOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN) $(BISONGEN))
@@ -33,14 +32,13 @@ PICGENOBJ = $(patsubst %.c,$(BUILDL)/%_pic.o,$(LEXGEN) $(BISONGEN))
 
 all:	$(BUILDDIRS) $(BISONGEN) $(LEXGEN) $(STLIB) $(DYNLIB)
 
-$(STLIB): $(COBJ) $(GENOBJ) $(LIBCOBJ)
+$(STLIB): $(COBJ) $(GENOBJ)
 		@echo "	" AR $(STLIB)
-		@ar rcs $(STLIB) $(COBJ) $(GENOBJ) $(LIBCOBJ)
+		@$(AR) rcs $(STLIB) $(COBJ) $(GENOBJ)
 
 $(DYNLIB):	$(CPICOBJS) $(PICGENOBJ) $(SHLDCONF)
 		@echo "	" LINKING $(DYNLIB)
-		@$(CC) $(CFLAGS) $(DLNKFLAGS) -shared -Wl,--build-id=none -Wl,-T,$(SHLDCONF) \
-			-Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(PICGENOBJ) -lc;
+		@$(LD) -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(PICGENOBJ);
 		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
 
 $(LEXGEN):	$(LEXSRC)
@@ -58,11 +56,11 @@ $(BUILDDIRS):
 
 $(BUILDL)/%.o:		%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -D YYERROR_VERBOSE -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -D YYERROR_VERBOSE -o $@ -c $< -MD
 
 $(BUILDL)/%_pic.o: %.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -D YYERROR_VERBOSE -fPIC -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -D YYERROR_VERBOSE -fPIC -o $@ -c $< -MD
 
 -include $(DEPS)
 

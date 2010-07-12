@@ -35,16 +35,24 @@ void sysc_setSigHandler(sIntrptStackFrame *stack) {
 	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isRangeUserReadable((u32)handler,1))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	/* check signal */
-	if(!sig_canHandle(signal))
-		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
+	if((s8)signal == SIG_RET)
+		t->proc->sigRetAddr = (u32)handler;
+	else {
+		/* no signal-ret-address known yet? */
+		if(t->proc->sigRetAddr == 0)
+			SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	if(handler == SIG_DFL)
-		sig_unsetHandler(t->tid,signal);
-	else
-		err = sig_setHandler(t->tid,signal,handler);
-	if(err < 0)
-		SYSC_ERROR(stack,err);
+		/* check signal */
+		if(!sig_canHandle(signal))
+			SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
+
+		if(handler == SIG_DFL)
+			sig_unsetHandler(t->tid,signal);
+		else
+			err = sig_setHandler(t->tid,signal,handler);
+		if(err < 0)
+			SYSC_ERROR(stack,err);
+	}
 	SYSC_RET1(stack,err);
 }
 

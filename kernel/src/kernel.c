@@ -176,7 +176,8 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	entryPoint = elf_loadFromMem(initloader,sizeof(initloader));
 	t = thread_getRunning();
 	/* give the process some stack pages */
-	t->stackRegion = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
+	t->stackRegion = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
+			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
 	assert(t->stackRegion >= 0);
 	return entryPoint;
 #else

@@ -26,9 +26,8 @@
 
 #define PF_COPYONWRITE		1
 #define PF_DEMANDLOAD		2
-#define PF_DEMANDZERO		4
-#define PF_SWAPPED			8
-#define PF_LOADINPROGRESS	16
+#define PF_SWAPPED			4
+#define PF_LOADINPROGRESS	8
 
 #define RF_GROWABLE			1
 #define RF_SHAREABLE		2
@@ -48,6 +47,7 @@ typedef struct {
 	sBinDesc binary;	/* the source-binary (for demand-paging) */
 	u32 binOffset;		/* offset in the binary */
 	u32 byteCount;		/* number of bytes */
+	u32 loadCount;		/* number of bytes to load from disk (the rest is zero'ed) */
 	u32 pfSize;			/* size of pageFlags */
 	u8 *pageFlags;		/* flags for each page */
 	sSLList *procs;		/* linked list of processes that use this region */
@@ -60,11 +60,12 @@ typedef struct {
  * @param bin the binary (may be NULL)
  * @param binOffset the offset in the binary (ignored if bin is NULL)
  * @param bCount the number of bytes
+ * @param lCount number of bytes to load from disk (the rest is zero'ed)
  * @param pgFlags the flags of the pages (PF_*)
  * @param flags the flags of the region (RF_*)
  * @return the region or NULL if failed
  */
-sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u8 pgFlags,u32 flags);
+sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 pgFlags,u32 flags);
 
 /**
  * Destroys the given region (regardless of the number of users!)

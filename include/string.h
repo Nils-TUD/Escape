@@ -20,7 +20,7 @@
 #ifndef STRING_H_
 #define STRING_H_
 
-#include <types.h>
+#include <esc/common.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -126,7 +126,7 @@ void memclear(void *addr,u32 count);
  * @param value the value to set
  * @param count the number of bytes
  */
-void memset(void *addr,u8 value,u32 count);
+void memset(void *addr,int value,u32 count);
 
 /**
  * Copies the values of num bytes from the location pointed by source to the memory block pointed

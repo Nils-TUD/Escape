@@ -35,9 +35,9 @@
 #endif
 
 #if DEBUG_ADD_GUARDS
-void *_malloc(u32 size);
-void *_calloc(u32 num,u32 size);
-void * _realloc(void *addr,u32 size);
+void *_malloc(size_t size);
+void *_calloc(size_t num,size_t size);
+void * _realloc(void *addr,size_t size);
 void _free(void *addr);
 #	define malloc_guard(size)			malloc(size)
 #	define calloc_guard(num,size)		calloc(num,size)
@@ -94,7 +94,7 @@ static u32 getHash(void *addr);
 static tULock mlock = 0;
 
 #if DEBUG_ADD_GUARDS
-void *malloc_guard(u32 size) {
+void *malloc_guard(size_t size) {
 	void *a = _malloc(size + sizeof(u32) * 3);
 	if(a) {
 		*((u32*)a) = 0xDEADBEEF;
@@ -105,7 +105,7 @@ void *malloc_guard(u32 size) {
 	return NULL;
 }
 
-void *calloc_guard(u32 num,u32 size) {
+void *calloc_guard(size_t num,size_t size) {
 	void *a = _malloc(num * size + sizeof(u32) * 3);
 	if(a) {
 		void *res;
@@ -119,7 +119,7 @@ void *calloc_guard(u32 num,u32 size) {
 	return NULL;
 }
 
-void *realloc_guard(void *addr,u32 size) {
+void *realloc_guard(void *addr,size_t size) {
 	void *a;
 	if(addr) {
 		assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
@@ -144,7 +144,7 @@ void free_guard(void *addr) {
 }
 #endif
 
-void *_malloc(u32 size) {
+void *_malloc(size_t size) {
 	sMemArea *area,*prev,*narea;
 	sMemArea **list;
 
@@ -226,7 +226,7 @@ void *_malloc(u32 size) {
 	return area->address;
 }
 
-void *_calloc(u32 num,u32 size) {
+void *_calloc(size_t num,size_t size) {
 	void *a = _malloc(num * size);
 	if(a == NULL)
 		return NULL;
@@ -358,7 +358,7 @@ void _free(void *addr) {
 	unlocku(&mlock);
 }
 
-void *_realloc(void *addr,u32 size) {
+void *_realloc(void *addr,size_t size) {
 	sMemArea *area,*a,*prev;
 	if(addr == NULL)
 		return _malloc(size);

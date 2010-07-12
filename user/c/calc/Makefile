@@ -2,21 +2,17 @@ NAME=calc
 ROOT = ../../..
 BUILDL = $(BUILD)/user/c/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
-LIBC = $(ROOT)/lib/c
-LDCONF = $(ROOT)/lib/ld.conf
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 APP = $(NAME).app
 APPCPY = $(BUILD)/apps/$(APP)
-LIBCA = $(BUILD)/libc.a
 
-CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(ROOT)/include \
-	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CDEFFLAGS) $(ADDFLAGS)
+CC = $(ROOT)/build/dist/bin/i586-elf-escape-gcc
+CFLAGS = $(CDEFFLAGS) $(ADDFLAGS)
 
 ifeq ($(LINKTYPE),static)
-	ADDLIBS += $(LIBCA)
+	CFLAGS += -Wl,-Bstatic
 endif
 
 # sources
@@ -28,7 +24,6 @@ CSRC = $(filter-out ./$(BISONGEN) ./$(LEXGEN),\
 	$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
 
 # objects
-START = $(BUILD)/libc_startup.o
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 GENOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN) $(BISONGEN))
 
@@ -36,12 +31,12 @@ GENOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN) $(BISONGEN))
 
 all:	$(APPCPY) $(BISONGEN) $(LEXGEN) $(BIN)
 
-$(BIN):	$(BUILDDIRS) $(APPDST) $(LDCONF) $(COBJ) $(GENOBJ) $(START) $(ADDLIBS)
+$(BIN):	$(BUILDDIRS) $(APPDST) $(COBJ) $(GENOBJ) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
 ifeq ($(LINKTYPE),static)
-		$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ) $(GENOBJ) $(ADDLIBS);
+		$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(GENOBJ) $(ADDLIBS);
 else
-		$(CC) $(CFLAGS) $(DLNKFLAGS) -o $(BIN) -lc $(START) $(COBJ) $(GENOBJ) $(ADDLIBS);
+		$(CC) $(CFLAGS) $(DLNKFLAGS) -o $(BIN) $(COBJ) $(GENOBJ) $(ADDLIBS);
 endif
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
@@ -63,7 +58,7 @@ $(BUILDDIRS):
 
 $(BUILDL)/%.o:		%.c
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MMD
+		@$(CC) $(CFLAGS) -o $@ -c $< -MD
 
 -include $(DEPS)
 

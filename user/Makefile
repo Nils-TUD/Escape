@@ -1,4 +1,5 @@
-DIRS = $(filter-out $(wildcard *.*) Makefile,$(wildcard *))
+# TODO
+DIRS = $(filter-out $(wildcard *.*) cpp d Makefile,$(wildcard *))
 
 .PHONY:  all clean
 

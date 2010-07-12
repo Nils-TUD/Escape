@@ -1,0 +1,83 @@
+diff -rcN src/gcc_org/config.sub src/gcc/config.sub
+*** src/gcc_org/config.sub	2009-11-23 00:09:41.000000000 +0100
+--- src/gcc/config.sub	2010-07-05 21:46:54.000000000 +0200
+***************
+*** 1280,1286 ****
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
+  	      | -kopensolaris* \
+  	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+! 	      | -aos* | -aros* \
+  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+--- 1280,1286 ----
+  	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -solaris* | -sym* \
+  	      | -kopensolaris* \
+  	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
+! 	      | -aos* | -aros* | -escape* \
+  	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
+  	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
+  	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
+diff -rcN src/gcc_org/gcc/config/escape.h src/gcc/gcc/config/escape.h
+*** src/gcc_org/gcc/config/escape.h	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/escape.h	2010-07-05 21:46:54.000000000 +0200
+***************
+*** 0 ****
+--- 1,11 ----
++   #undef TARGET_OS_CPP_BUILTINS
++   #define TARGET_OS_CPP_BUILTINS()      \
++     do {                                \
++       builtin_define_std ("escape");      \
++       builtin_define_std ("unix");      \
++       builtin_assert ("system=escape");   \
++       builtin_assert ("system=unix");   \
++     } while(0);
++ 
++   #undef TARGET_VERSION
++   #define TARGET_VERSION fprintf(stderr, " (i386 escape)");
+diff -rcN src/gcc_org/gcc/config.gcc src/gcc/gcc/config.gcc
+*** src/gcc_org/gcc/config.gcc	2010-01-04 16:13:08.000000000 +0100
+--- src/gcc/gcc/config.gcc	2010-07-05 21:46:54.000000000 +0200
+***************
+*** 407,412 ****
+--- 407,418 ----
+  
+  # Common parts for widely ported systems.
+  case ${target} in
++ *-*-escape*)
++   extra_parts="crtbegin.o crtend.o"
++   gas=yes
++   gnu_ld=yes
++   default_use_cxa_atexit=yes
++   ;;
+  *-*-darwin*)
+    tm_file="${tm_file} darwin.h"
+    case ${target} in
+***************
+*** 592,597 ****
+--- 598,608 ----
+  
+  case ${target} in
+  # Support site-specific machine types.
++ i[3-7]86-*-escape*)
++   tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h i386/i386elf.h escape.h"
++   tmake_file="i386/t-i386elf t-svr4"
++   use_fixproto=yes
++   ;;
+  *local*)
+  	rest=`echo ${target} | sed -e "s/$cpu_type-//"`
+  	tm_file=${cpu_type}/$rest.h
+diff -rcN src/gcc_org/libgcc/config.host src/gcc/libgcc/config.host
+*** src/gcc_org/libgcc/config.host	2009-04-17 13:58:41.000000000 +0200
+--- src/gcc/libgcc/config.host	2010-07-05 21:46:54.000000000 +0200
+***************
+*** 166,171 ****
+--- 166,173 ----
+  
+  case ${host} in
+  # Support site-specific machine types.
++ i[3-7]86-*-escape*)
++ 	;;
+  *local*)
+  	rest=`echo ${host} | sed -e "s/$cpu_type-//"`
+  	if test -f $srcdir/config/${cpu_type}/t-$rest

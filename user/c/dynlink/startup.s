@@ -19,13 +19,17 @@
 
 [BITS 32]
 
+[global sigRetFunc]
 [global init]
+[global _start]
 [global lookup_resolveStart]
 [extern __libc_init]
 [extern lookup_resolve]
 [extern load_setupProg]
 
 ALIGN 4
+
+%include "../../../lib/c/syscalls.s"
 
 ;  Initial stack:
 ;  +------------------+  <- top
@@ -45,6 +49,7 @@ ALIGN 4
 ;  |    fd for prog   |
 ;  +------------------+
 
+_start:
 init:
 	; we have no TLS, so don't waste time
 	call	__libc_init
@@ -59,3 +64,9 @@ lookup_resolveStart:
 	add		esp,8
 	; jump to function
 	jmp		eax
+
+; all signal-handler return to this "function"
+sigRetFunc:
+	mov		eax,SYSCALL_ACKSIG
+	int		SYSCALL_IRQ
+	; never reached

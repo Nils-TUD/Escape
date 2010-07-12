@@ -269,8 +269,17 @@ static void load_relocLib(sSharedLib *l) {
 						sym->st_value + l->loadAddr);
 				*ptr += sym->st_value + l->loadAddr;
 			}
+			else if(relType == R_386_PC32) {
+				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
+				Elf32_Sym *sym = l->symbols + ELF32_R_SYM(rel[x].r_info);
+				DBGDL("Rel (PC32) off=%x orgoff=%x symval=%x org=%x reloc=%x\n",
+						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr,
+						(u32)ptr - (sym->st_value + l->loadAddr));
+				*ptr = (u32)ptr - (sym->st_value + l->loadAddr);
+			}
 			else
-				error("Unknown relocation: off=%x info=%x\n",rel[x].r_offset,rel[x].r_info);
+				error("In library %s: Unknown relocation: off=%x info=%x\n",
+						l->name ? l->name : "<main>",rel[x].r_offset,rel[x].r_info);
 		}
 	}
 
@@ -485,12 +494,8 @@ static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadS
 	}
 	else if(pheader->p_flags == PF_R)
 		stype = REG_RODATA;
-	else if(pheader->p_flags == (PF_R | PF_W)) {
-		if(pheader->p_filesz == 0)
-			stype = isLib ? REG_SHLIBBSS : REG_BSS;
-		else
-			stype = isLib ? REG_SHLIBDATA : REG_DATA;
-	}
+	else if(pheader->p_flags == (PF_R | PF_W))
+		stype = isLib ? REG_SHLIBDATA : REG_DATA;
 	else
 		return 0;
 
@@ -498,11 +503,11 @@ static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadS
 	if(pheader->p_filesz > pheader->p_memsz)
 		return 0;
 
-	/* bss and tls need no binary */
-	if(stype == REG_BSS || stype == REG_SHLIBBSS || stype == REG_TLS)
+	/* tls needs no binary */
+	if(stype == REG_TLS)
 		bindesc = NULL;
 	/* add the region */
-	if((addr = addRegion(bindesc,pheader->p_offset,pheader->p_memsz,stype)) == NULL)
+	if((addr = addRegion(bindesc,pheader->p_offset,pheader->p_memsz,pheader->p_filesz,stype)) == NULL)
 		return 0;
 	if(stype == REG_TLS) {
 		/* read tdata and clear tbss */

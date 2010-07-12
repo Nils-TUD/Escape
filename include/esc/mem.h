@@ -37,15 +37,13 @@ typedef struct {
 #define REG_TEXT			0
 #define REG_RODATA			1
 #define REG_DATA			2
-#define REG_BSS				3
-#define REG_STACK			4
-#define REG_SHM				5
-#define REG_PHYS			6
-#define REG_TLS				7
-#define REG_SHLIBTEXT		8
-#define REG_SHLIBDATA		9
-#define REG_SHLIBBSS		10
-#define REG_DLDATA			11
+#define REG_STACK			3
+#define REG_SHM				4
+#define REG_PHYS			5
+#define REG_TLS				6
+#define REG_SHLIBTEXT		7
+#define REG_SHLIBDATA		8
+#define REG_DLDATA			9
 
 /**
  * Changes the size of the process's data-area. If <count> is positive <count> pages
@@ -64,10 +62,11 @@ void *changeSize(s32 count) A_CHECKRET;
  * @param bin the binary (may be NULL; means: no demand-loading possible)
  * @param binOffset the offset of the region in the binary (for demand-loading)
  * @param byteCount the number of bytes of the region
+ * @param loadCount number of bytes to load from disk (the rest is zero'ed)
  * @param type the region-type (see REG_*)
  * @return the address of the region on success, NULL on failure
  */
-void *addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u8 type);
+void *addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u32 loadCount,u8 type);
 
 /**
  * Maps <count> bytes at <phys> into the virtual user-space and returns the start-address.

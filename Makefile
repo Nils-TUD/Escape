@@ -1,5 +1,5 @@
 # general
-BUILDDIR = $(abspath build/debug)
+BUILDDIR = $(abspath build/release)
 DISKMOUNT = disk
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso
@@ -25,7 +25,7 @@ else
 endif
 
 # wether to link drivers and user-apps statically or dynamically
-export LINKTYPE = static
+export LINKTYPE = dynamic
 
 # number of jobs passing to make
 export JOBS =

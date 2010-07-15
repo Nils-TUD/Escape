@@ -25,6 +25,7 @@ all: $(LIB)
 $(LIB): $(BUILDDIRS) $(CPPOBJS) $(LIBCOBJS)
 		@echo "	" AR $(LIB)
 		@ar rcs $(LIB) $(CPPOBJS) $(LIBCOBJS)
+		$(ROOT)/tools/linklib.sh $(LIB)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

@@ -36,12 +36,14 @@ $(SECLIB): $(SECLIBOBJ)
 		@echo "	" LINKING $(SECSHLIB)
 		@$(LD) -shared -soname $(SECLIBNAME) -o $(SECLIB) $(SECLIBOBJ);
 		@echo "	" COPYING ON DISK
+		$(ROOT)/tools/linklib.sh $(SECLIB)
 		$(ROOT)/tools/disk.sh copy $(SECLIB) /lib/$(SECLIBNAME)
 
 $(SHLIB): $(LIBOBJ)
 		@echo "	" LINKING $(SHLIB)
 		@$(LD) -shared -soname $(SHLIBNAME) -o $(SHLIB) $(LIBOBJ);
 		@echo "	" COPYING ON DISK
+		$(ROOT)/tools/linklib.sh $(SHLIB)
 		$(ROOT)/tools/disk.sh copy $(SHLIB) /lib/$(SHLIBNAME)
 
 $(BUILDDIRS):

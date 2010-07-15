@@ -23,10 +23,12 @@ all: $(BUILDDIRS) $(STLIB) $(DYNLIB)
 $(STLIB): $(COBJS)
 		@echo "	" AR $(STLIB)
 		@ar rcs $(STLIB) $(COBJS)
+		$(ROOT)/tools/linklib.sh $(STLIB)
 
 $(DYNLIB): $(CPICOBJS)
 		@echo "	" LINKING $(DYNLIB)
 		@$(LD) -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS);
+		$(ROOT)/tools/linklib.sh $(DYNLIB)
 		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
 		
 $(BUILDDIRS):

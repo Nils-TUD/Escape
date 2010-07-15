@@ -19,7 +19,7 @@ ASRC = $(filter-out ./$(START),$(shell find . -name "*.s"))
 LSRC = $(shell find $(LIBDIR) -name "*.c")
 
 # objects
-STARTO = $(BUILD)/libc_startup.o
+STARTO = $(BUILD)/crt0.o
 COBJS = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 CPICOBJS = $(patsubst %.c,$(BUILDL)/%_pic.o,$(CSRC))
 AOBJS = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
@@ -34,11 +34,13 @@ all: $(BUILDDIRS) $(STLIB) $(DYNLIB) $(STARTO)
 $(STLIB): $(COBJS) $(AOBJS) $(LOBJ)
 		@echo "	" AR $(STLIB)
 		@$(AR) rcs $(STLIB) $(COBJS) $(AOBJS) $(LOBJ)
+		$(ROOT)/tools/linklib.sh $(STLIB)
 
 $(DYNLIB): $(CPICOBJS) $(APICOBJS) $(LPICOBJ)
 		@echo "	" LINKING $(DYNLIB)
 		@$(LD) -shared -soname $(DYNLIBNAME) -o $(DYNLIB) \
 			$(CPICOBJS) $(APICOBJS) $(LPICOBJ)
+		$(ROOT)/tools/linklib.sh $(DYNLIB)
 		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
 		
 $(BUILDDIRS):
@@ -73,6 +75,7 @@ $(BUILDL)/lib/%_pic.o:	$(LIBDIR)/%.c
 $(STARTO): $(START)
 		@echo "	" AS $(START)
 		@nasm $(ASMFLAGS) -o $(STARTO) $(START)
+		$(ROOT)/tools/linklib.sh $(STARTO)
 
 -include $(DEPS)
 

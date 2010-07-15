@@ -37,6 +37,7 @@ all: $(LIB)
 $(LIB): $(BUILDDIRS) $(COBJS) $(DOBJS) $(STARTO) $(LIBCOBJS)
 		@echo "	" AR $(LIB)
 		@ar rcs $(LIB) $(LIBCOBJS) $(COBJS) $(DOBJS)
+		$(ROOT)/tools/linklib.sh $(LIB)
 		
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

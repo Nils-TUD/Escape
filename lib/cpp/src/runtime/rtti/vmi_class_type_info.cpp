@@ -34,7 +34,7 @@ namespace __cxxabiv1 {
 		if (obj_ptr == src_ptr && *this == *src_type)
 			return __contained_public;
 
-		for (std::size_t i = __base_count; i--;)
+		for (size_t i = __base_count; i--;)
 		{
 			if (!__base_info[i].__is_public_p ())
 				continue; // Not public, can't be here.
@@ -99,7 +99,7 @@ namespace __cxxabiv1 {
 		}
 
 		bool result_ambig = false;
-		for (std::size_t i = __base_count; i--;)
+		for (size_t i = __base_count; i--;)
 		{
 			__dyncast_result result2 (result.whole_details);
 			void const *base = obj_ptr;
@@ -271,7 +271,7 @@ namespace __cxxabiv1 {
 		if (src_details & __flags_unknown_mask)
 			src_details = __flags;
 
-		for (std::size_t i = __base_count; i--;)
+		for (size_t i = __base_count; i--;)
 		{
 			__upcast_result result2 (src_details);
 			const void *base = obj_ptr;

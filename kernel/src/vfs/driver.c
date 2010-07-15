@@ -24,8 +24,8 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
-#include <string.h>
 #include <esc/sllist.h>
+#include <string.h>
 #include <errors.h>
 
 #include <esc/messages.h>

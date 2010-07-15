@@ -22,11 +22,9 @@
 #include "shltlib.h"
 #include "seclib.h"
 
-int main(int argc,char *argv[]) {
-	UNUSED(argc);
-	UNUSED(argv);
+int main(void) {
 	double r1 = 10;
-	double r2 = 3.5;
+	double r2 = 3;
 	double c1 = circumfenceDoubled(r1);
 	double c2 = circumfenceSquared(r2);
 	printf("c1=%f, c2=%f, c=%f\n",c1,c2,circumfence(r1));

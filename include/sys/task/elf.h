@@ -30,7 +30,7 @@
  * @param dynLnkEntry the entry-point of the dynamic-linker (0 if no dynlinker to use)
  * @return entry-point on success, ERR_INVALID_ELF_BIN on failure
  */
-s32 elf_loadFromFile(const char *path,u32 *dynLnkEntry);
+u32 elf_loadFromFile(const char *path,u32 *dynLnkEntry);
 
 /**
  * Loads the given code into the user-space. This is just intended for loading initloader
@@ -39,7 +39,7 @@ s32 elf_loadFromFile(const char *path,u32 *dynLnkEntry);
  * @param length the length of the binary
  * @return entry-point on success, ERR_INVALID_ELF_BIN on failure
  */
-s32 elf_loadFromMem(u8 *code,u32 length);
+u32 elf_loadFromMem(u8 *code,u32 length);
 
 /* Standard ELF types.  */
 

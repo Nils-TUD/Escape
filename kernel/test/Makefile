@@ -10,7 +10,6 @@ SUBDIRS = ../src $(filter-out ../src/Makefile $(wildcard ../src/*.*),$(wildcard 
 LSUBDIRS = $(filter-out $(wildcard $(LIB)/*.*),$(wildcard $(LIB)/*))
 BUILDDIRS = $(BUILDT) $(patsubst $(LIB)/%,$(BUILDT)/lib/%,$(LSUBDIRS))
 
-CC = $(ROOT)/build/dist/bin/i586-elf-escape-gcc
 CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
 	-D TESTING=1 -D IN_KERNEL=1
 

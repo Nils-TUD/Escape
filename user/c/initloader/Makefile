@@ -8,7 +8,6 @@ SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
-CC = $(ROOT)/build/dist/bin/i586-elf-escape-gcc
 CFLAGS = -Wl,-Bstatic -nostartfiles $(CDEFFLAGS)
 
 ASRC = $(wildcard *.s)

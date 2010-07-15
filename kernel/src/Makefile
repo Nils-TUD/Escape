@@ -9,7 +9,6 @@ LSUBDIRS = $(filter-out $(wildcard $(LIB)/*.*),$(wildcard $(LIB)/*))
 BUILDDIRS = $(addprefix $(BUILDK)/,$(SUBDIRS)) $(patsubst $(LIB)/%,$(BUILDK)/lib/%,$(LSUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
-CC = $(ROOT)/build/dist/bin/i586-elf-escape-gcc
 CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D IN_KERNEL=1
 # for profiling:
 # -finstrument-functions -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/src/profile.c

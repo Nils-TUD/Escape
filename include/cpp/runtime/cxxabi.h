@@ -203,7 +203,7 @@ namespace __cxxabiv1
 
 #ifdef __cplusplus
 
-#include <typeinfo>
+#include <runtime/typeinfo>
 
 namespace __cxxabiv1
 {

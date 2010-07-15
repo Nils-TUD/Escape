@@ -7,9 +7,7 @@ DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 APP = $(NAME).app
 APPCPY = $(BUILD)/apps/$(APP)
 
-CC = $(ROOT)/build/dist/bin/i586-elf-escape-gcc
 CFLAGS = $(CDEFFLAGS) $(ADDFLAGS)
-
 ifeq ($(LINKTYPE),static)
 	CFLAGS += -Wl,-Bstatic
 endif
@@ -26,11 +24,7 @@ all:	$(APPCPY) $(BIN)
 
 $(BIN):	$(BUILDDIRS) $(APPDST) $(COBJ) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-ifeq ($(LINKTYPE),static)
 		@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(ADDLIBS);
-else
-		@$(CC) $(CFLAGS) $(DLNKFLAGS) -o $(BIN) $(COBJ) $(ADDLIBS);
-endif
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 

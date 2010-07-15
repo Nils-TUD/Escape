@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/machine/serial.h>
-#include <assert.h>
 #include <sys/util.h>
+#include <assert.h>
 
 static int ser_isTransmitEmpty(u16 port);
 static void ser_initPort(u16 port);

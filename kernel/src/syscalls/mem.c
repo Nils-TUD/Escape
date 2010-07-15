@@ -48,7 +48,8 @@ void sysc_addRegion(sIntrptStackFrame *stack) {
 	sBinDesc *bin = (sBinDesc*)SYSC_ARG1(stack);
 	u32 binOffset = SYSC_ARG2(stack);
 	u32 byteCount = SYSC_ARG3(stack);
-	u8 type = (u8)SYSC_ARG4(stack);
+	u32 loadCount = SYSC_ARG4(stack);
+	u8 type = (u8)SYSC_ARG5(stack);
 	sThread *t = thread_getRunning();
 	sProc *p = t->proc;
 	tVMRegNo rno = -1;
@@ -74,7 +75,7 @@ void sysc_addRegion(sIntrptStackFrame *stack) {
 		case REG_SHM:
 		case REG_PHYS:
 		case REG_TLS:
-		/* the user can't create a new stack here */
+			/* the user can't create a new stack here */
 			break;
 		default:
 			SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -88,8 +89,7 @@ void sysc_addRegion(sIntrptStackFrame *stack) {
 	}
 
 	/* add region */
-	/* TODO */
-	rno = vmm_add(p,bin,binOffset,byteCount,0,type);
+	rno = vmm_add(p,bin,binOffset,byteCount,loadCount,type);
 	if(rno < 0)
 		SYSC_ERROR(stack,rno);
 	/* save tls-region-number */

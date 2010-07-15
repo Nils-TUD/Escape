@@ -7,7 +7,6 @@ DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 APP = $(NAME).app
 APPCPY = $(BUILD)/apps/$(APP)
 
-CC = $(ROOT)/build/dist/bin/i586-elf-escape-gcc
 CFLAGS = -Wl,-Bstatic $(CDEFFLAGS) $(ADDFLAGS)
 
 # sources

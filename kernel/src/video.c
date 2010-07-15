@@ -21,11 +21,11 @@
 #include <sys/video.h>
 #include <sys/machine/serial.h>
 #include <sys/util.h>
-#include <string.h>
-#include <stdarg.h>
-#include <esc/esccodes.h>
 #include <sys/log.h>
 #include <sys/printf.h>
+#include <esc/esccodes.h>
+#include <string.h>
+#include <stdarg.h>
 
 #define VIDEO_BASE			0xC00B8000
 #define TAB_WIDTH			4

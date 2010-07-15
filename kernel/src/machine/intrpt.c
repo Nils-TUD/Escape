@@ -38,9 +38,9 @@
 #include <sys/util.h>
 #include <sys/syscalls.h>
 #include <sys/video.h>
+#include <esc/sllist.h>
 #include <assert.h>
 #include <string.h>
-#include <esc/sllist.h>
 
 #define DEBUG_PAGEFAULTS		0
 

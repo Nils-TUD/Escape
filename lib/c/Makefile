@@ -8,11 +8,7 @@ DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 STLIB = $(BUILD)/libc.a
 DYNLIBNAME = libc.so
 DYNLIB = $(BUILD)/$(DYNLIBNAME)
-SHLDCONF = ../shld.conf
 
-AR = $(ROOT)/build/dist/bin/i586-elf-escape-ar
-CC = $(ROOT)/build/dist/bin/i586-elf-escape-gcc
-LD = $(ROOT)/build/dist/bin/i586-elf-escape-ld
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS)
 
 # sources
@@ -39,7 +35,7 @@ $(STLIB): $(COBJS) $(AOBJS) $(LOBJ)
 		@echo "	" AR $(STLIB)
 		@$(AR) rcs $(STLIB) $(COBJS) $(AOBJS) $(LOBJ)
 
-$(DYNLIB): $(CPICOBJS) $(APICOBJS) $(LPICOBJ) $(SHLDCONF)
+$(DYNLIB): $(CPICOBJS) $(APICOBJS) $(LPICOBJ)
 		@echo "	" LINKING $(DYNLIB)
 		@$(LD) -shared -soname $(DYNLIBNAME) -o $(DYNLIB) \
 			$(CPICOBJS) $(APICOBJS) $(LPICOBJ)

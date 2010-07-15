@@ -28,11 +28,10 @@
 #include <sys/vfs/real.h>
 #include <sys/kevent.h>
 #include <sys/util.h>
-#include <string.h>
-#include <errors.h>
-
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
+#include <string.h>
+#include <errors.h>
 
 #define FS_PATH				"/dev/fs"
 #define R2V_MAP_SIZE		64

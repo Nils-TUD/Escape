@@ -21,9 +21,9 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/region.h>
+#include <sys/video.h>
 #include <string.h>
 #include <assert.h>
-#include <sys/video.h>
 
 /**
  * The region-module implements the abstraction 'region' which is simply a group of pages that

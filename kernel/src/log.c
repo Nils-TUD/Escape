@@ -24,11 +24,11 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/rw.h>
 #include <sys/printf.h>
+#include <sys/log.h>
 #include <esc/esccodes.h>
 #include <stdarg.h>
 #include <assert.h>
 #include <string.h>
-#include <sys/log.h>
 
 #define VID_COLS		80
 #define TAB_WIDTH		4

@@ -236,10 +236,9 @@ static void load_relocLib(sSharedLib *l) {
 					*ptr = value;
 				}
 				else
-					*ptr = l->symbols[symIndex].st_value + l->loadAddr;
+					*ptr = sym->st_value + l->loadAddr;
 				DBGDL("Rel (GLOB_DAT) off=%x orgoff=%x reloc=%x orgval=%x\n",
-						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr,
-						l->symbols[symIndex].st_value);
+						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr,sym->st_value);
 			}
 			else if(relType == R_386_COPY) {
 				u32 value;
@@ -269,14 +268,14 @@ static void load_relocLib(sSharedLib *l) {
 						sym->st_value + l->loadAddr);
 				*ptr += sym->st_value + l->loadAddr;
 			}
-			else if(relType == R_386_PC32) {
+			/*else if(relType == R_386_PC32) {
 				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
 				Elf32_Sym *sym = l->symbols + ELF32_R_SYM(rel[x].r_info);
 				DBGDL("Rel (PC32) off=%x orgoff=%x symval=%x org=%x reloc=%x\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr,
 						(u32)ptr - (sym->st_value + l->loadAddr));
 				*ptr = (u32)ptr - (sym->st_value + l->loadAddr);
-			}
+			}*/
 			else
 				error("In library %s: Unknown relocation: off=%x info=%x\n",
 						l->name ? l->name : "<main>",rel[x].r_offset,rel[x].r_info);
@@ -294,17 +293,22 @@ static void load_relocLib(sSharedLib *l) {
 			 * TODO i can't imagine that this is the intended way. why is the address 0 in
 			 * this case??? (instead of the offset from the beginning of the shared lib,
 			 * so that we can simply add the loadAddr) */
-			if(LD_BIND_NOW || *addr == 0) {
+			if(true || LD_BIND_NOW || *addr == 0) {
 				u32 value;
 				u32 symIndex = ELF32_R_SYM(l->jmprel[x].r_info);
 				const char *name = l->strtbl + l->symbols[symIndex].st_name;
 				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
-				if(!foundSym && !LD_BIND_NOW)
+				/* TODO there must be a better way... */
+				/*if(!foundSym && !LD_BIND_NOW)
 					error("Unable to find symbol %s",name);
-				else if(foundSym)
+				else */if(foundSym)
 					*addr = value;
-				else
-					*addr += l->loadAddr;
+				else {
+					foundSym = lookup_byName(NULL,name,&value);
+					if(!foundSym)
+						error("Unable to find symbol %s",name);
+					*addr = value;
+				}
 				DBGDL("JmpRel off=%x addr=%x reloc=%x (%s)\n",l->jmprel[x].r_offset,addr,value,name);
 			}
 			else {
@@ -316,6 +320,7 @@ static void load_relocLib(sSharedLib *l) {
 
 	/* store pointer to library and lookup-function into GOT */
 	got = (u32*)load_getDyn(l->dyn,DT_PLTGOT);
+	DBGDL("GOT-Address of %s: %x\n",l->name ? l->name : "<main>",got);
 	if(got) {
 		got = (Elf32_Addr*)((u32)got + l->loadAddr);
 		got[1] = (Elf32_Addr)l;

@@ -34,15 +34,15 @@
 #define ELF_TYPE_PROG		0
 #define ELF_TYPE_INTERP		1
 
-static s32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry);
+static u32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry);
 static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,u8 type);
 
-s32 elf_loadFromFile(const char *path,u32 *dynLnkEntry) {
+u32 elf_loadFromFile(const char *path,u32 *dynLnkEntry) {
 	*dynLnkEntry = 0;
 	return elf_doLoadFromFile(path,ELF_TYPE_PROG,dynLnkEntry);
 }
 
-s32 elf_loadFromMem(u8 *code,u32 length) {
+u32 elf_loadFromMem(u8 *code,u32 length) {
 	u32 loadSegNo = 0;
 	u32 j;
 	u8 const *datPtr;
@@ -75,7 +75,7 @@ s32 elf_loadFromMem(u8 *code,u32 length) {
 	return (u32)eheader->e_entry;
 }
 
-static s32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry) {
+static u32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry) {
 	sThread *t = thread_getRunning();
 	tFileNo file;
 	u32 j,loadSeg = 0;
@@ -136,6 +136,8 @@ static s32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry) {
 			 * from others by the entrypoint */
 			*dynLnkEntry = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP,NULL);
 			kheap_free(interpName);
+			if((s32)*dynLnkEntry == ERR_INVALID_ELF_BIN)
+				return ERR_INVALID_ELF_BIN;
 			return (u32)eheader.e_entry;
 		}
 

@@ -27,10 +27,10 @@
 #include <sys/mem/vmm.h>
 #include <sys/ksymbols.h>
 #include <sys/video.h>
+#include <sys/util.h>
+#include <esc/register.h>
 #include <stdarg.h>
 #include <string.h>
-#include <esc/register.h>
-#include <sys/util.h>
 
 /* for reading from kb */
 #define IOPORT_KB_DATA				0x60

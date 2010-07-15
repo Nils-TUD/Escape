@@ -5,6 +5,8 @@ SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 
+CC = gcc
+
 # sources
 CSRC = $(shell find $(SUBDIRS) -name "*.c")
 

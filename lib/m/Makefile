@@ -1,3 +1,3 @@
-NAME = g
+NAME = m
 
 -include ../DefMakefile.mk

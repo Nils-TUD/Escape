@@ -52,7 +52,7 @@ cd $BUILD/gcc
 if [ $REBUILD -eq 1 ]; then
 	$SRC/gcc/configure --target=$TARGET --prefix=$PREFIX --disable-nls \
 		  --enable-languages=c,c++ --with-headers=$HEADER --enable-shared \
-		  --disable-linker-build-id
+		  --disable-linker-build-id --with-gxx-include-dir=$HEADER/cpp
 fi
 make all-gcc
 make install-gcc
@@ -61,11 +61,7 @@ make install-gcc
 make all-target-libgcc
 make install-target-libgcc
 
-# create some symlinks
+# create basic symlinks
 rm -Rf $DIST/$TARGET/sys-include
 ln -sf $ROOT/../include $DIST/$TARGET/sys-include
-ln -sf $ROOT/../build/debug/libc.so $DIST/$TARGET/lib/libc.so
-ln -sf $ROOT/../build/debug/libc.a $DIST/$TARGET/lib/libc.a
-ln -sf $ROOT/../build/debug/libg.a $DIST/lib/gcc/$TARGET/4.4.3/libg.a
-ln -sf $ROOT/../build/debug/libc_startup.o $DIST/lib/gcc/$TARGET/4.4.3/crt0.o
 

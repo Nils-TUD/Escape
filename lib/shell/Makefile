@@ -8,9 +8,6 @@ STLIB = $(BUILD)/lib$(NAME).a
 DYNLIBNAME = lib$(NAME).so
 DYNLIB = $(BUILD)/$(DYNLIBNAME)
 
-AR = $(ROOT)/build/dist/bin/i586-elf-escape-ar
-CC = $(ROOT)/build/dist/bin/i586-elf-escape-gcc
-LD = $(ROOT)/build/dist/bin/i586-elf-escape-ld
 CFLAGS = $(CDEFFLAGS)
 
 # sources 

@@ -31,10 +31,10 @@
 #include <sys/task/thread.h>
 #include <sys/util.h>
 #include <sys/video.h>
+#include <sys/printf.h>
 #include <esc/sllist.h>
 #include <string.h>
 #include <assert.h>
-#include <sys/printf.h>
 #include <errors.h>
 
 /* to shift a flag down to the first bit */

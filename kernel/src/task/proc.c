@@ -38,8 +38,8 @@
 #include <sys/util.h>
 #include <sys/syscalls.h>
 #include <sys/video.h>
-#include <string.h>
 #include <esc/sllist.h>
+#include <string.h>
 #include <assert.h>
 #include <limits.h>
 #include <errors.h>

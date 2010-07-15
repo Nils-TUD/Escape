@@ -1,5 +1,5 @@
 # TODO
-DIRS = $(filter-out $(wildcard *.*) shlibtest Makefile,$(wildcard *))
+DIRS = $(filter-out $(wildcard *.*) Makefile,$(wildcard *))
 
 .PHONY:  all clean
 

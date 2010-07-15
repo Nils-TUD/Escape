@@ -19,10 +19,10 @@
 
 #include <sys/common.h>
 #include <sys/mem/kheap.h>
+#include <sys/printf.h>
+#include <esc/width.h>
 #include <stdarg.h>
 #include <string.h>
-#include <esc/width.h>
-#include <sys/printf.h>
 
 /* format flags */
 #define FFL_PADRIGHT		1

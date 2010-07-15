@@ -22,8 +22,8 @@
 #include <sys/kevent.h>
 #include <sys/util.h>
 #include <sys/video.h>
-#include <errors.h>
 #include <esc/sllist.h>
+#include <errors.h>
 
 /* a kevent */
 typedef struct {

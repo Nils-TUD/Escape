@@ -27,9 +27,9 @@
 #include <sys/mem/swap.h>
 #include <sys/mem/swapmap.h>
 #include <sys/video.h>
+#include <sys/config.h>
 #include <string.h>
 #include <assert.h>
-#include <sys/config.h>
 
 #define SWAP_SIZE			(10 * M)
 #define HIGH_WATER			40

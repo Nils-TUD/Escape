@@ -22,9 +22,9 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
 #include <sys/video.h>
+#include <sys/util.h>
 #include <assert.h>
 #include <string.h>
-#include <sys/util.h>
 
 /* the number of entries in the occupied map */
 #define OCC_MAP_SIZE			1024

@@ -7,7 +7,6 @@ SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
-CC = $(ROOT)/build/dist/bin/i586-elf-escape-gcc
 CFLAGS = -Wl,-Bstatic -nostartfiles $(CDEFFLAGS) $(ADDFLAGS)
 
 # sources
@@ -24,7 +23,7 @@ all:	$(BIN)
 
 $(BIN):	$(BUILDDIRS) $(LDCONF) $(COBJ) $(START)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(COBJ)
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(START) $(COBJ)
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 

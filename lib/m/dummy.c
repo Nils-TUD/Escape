@@ -1,5 +1,5 @@
 /**
- * $Id: memset.c 332 2009-09-17 09:39:40Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,19 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
-#include <string.h>
+void __dummy__(void);
 
-void memset(void *addr,s32 value,u32 count) {
-	u8 *baddr;
-	u32 dwval = (value << 24) | (value << 16) | (value << 8) | value;
-	u32 *dwaddr = (u32*)addr;
-	while(count >= sizeof(u32)) {
-		*dwaddr++ = dwval;
-		count -= sizeof(u32);
-	}
+void __dummy__(void) {
 
-	baddr = (u8*)dwaddr;
-	while(count-- > 0)
-		*baddr++ = value;
 }

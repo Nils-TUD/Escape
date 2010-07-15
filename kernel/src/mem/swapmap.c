@@ -22,8 +22,8 @@
 #include <sys/mem/paging.h>
 #include <sys/task/proc.h>
 #include <sys/video.h>
-#include <assert.h>
 #include <esc/sllist.h>
+#include <assert.h>
 
 /* The idea is:
  * Keeping track of all blocks of the swap-device would cost A LOT of memory (consider a 4GiB

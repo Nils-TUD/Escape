@@ -32,7 +32,10 @@ export JOBS =
 
 # flags for gcc
 export BUILD = $(BUILDDIR)
-export CC = gcc
+export CC = $(abspath build/dist/bin/i586-elf-escape-gcc)
+export CPPC = $(abspath build/dist/bin/i586-elf-escape-g++)
+export LD = $(abspath build/dist/bin/i586-elf-escape-ld)
+export AR = $(abspath build/dist/bin/i586-elf-escape-ar)
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
@@ -42,8 +45,6 @@ export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long
 export DWFLAGS=-w -wi
-# flags for programs that want to link dynamic libraries
-export DLNKFLAGS=-Wl,--dynamic-linker=/bin/dynlink -L$(BUILD)
 ifeq ($(BUILDDIR),$(abspath build/debug))
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g -D LOGSERIAL
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL

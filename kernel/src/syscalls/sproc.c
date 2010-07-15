@@ -196,7 +196,7 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	char **args = (char**)SYSC_ARG2(stack);
 	char *argBuffer;
 	s32 argc,pathLen,res;
-	u32 argSize,entryPoint,dynLnkEntry;
+	u32 argSize,dynLnkEntry,entryPoint;
 	tInodeNo nodeNo;
 	sThread *t = thread_getRunning();
 	sProc *p = t->proc;
@@ -236,6 +236,8 @@ void sysc_exec(sIntrptStackFrame *stack) {
 
 	/* load program */
 	entryPoint = elf_loadFromFile(path,&dynLnkEntry);
+	if((s32)entryPoint == ERR_INVALID_ELF_BIN)
+		goto error;
 
 	/* copy path so that we can identify the process */
 	memcpy(p->command,pathSave + (pathLen > MAX_PROC_NAME_LEN ? (pathLen - MAX_PROC_NAME_LEN) : 0),
@@ -245,7 +247,7 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	 * (in this case for the program to load) */
 	if(!proc_setupUserStack(stack,argc,argBuffer,argSize,entryPoint))
 		goto error;
-	proc_setupStart(stack,entryPoint);
+	proc_setupStart(stack,dynLnkEntry ? dynLnkEntry : entryPoint);
 
 	/* if its the dynamic linker, open the program to exec and give him the filedescriptor,
 	 * so that he can load it including all shared libraries */

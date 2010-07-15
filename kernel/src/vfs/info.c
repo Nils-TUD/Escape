@@ -32,9 +32,9 @@
 #include <sys/vfs/real.h>
 #include <sys/multiboot.h>
 #include <sys/util.h>
+#include <sys/printf.h>
 #include <assert.h>
 #include <string.h>
-#include <sys/printf.h>
 
 /* VFS-directory-entry (equal to the direntry of ext2) */
 typedef struct {

@@ -27,12 +27,12 @@
 #include <sys/vfs/request.h>
 #include <sys/kevent.h>
 #include <sys/util.h>
-#include <string.h>
-#include <errors.h>
 #include <sys/video.h>
-
 #include <esc/fsinterface.h>
 #include <esc/messages.h>
+#include <string.h>
+#include <errors.h>
+
 
 #define REQUEST_COUNT		1024
 #define HANDLER_COUNT		32

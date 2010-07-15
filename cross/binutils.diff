@@ -85,7 +85,7 @@ diff -rcN src/binutils_org/ld/emulparams/escape_i386.sh src/binutils/ld/emulpara
 --- src/binutils/ld/emulparams/escape_i386.sh	2010-07-05 21:43:58.000000000 +0200
 ***************
 *** 0 ****
---- 1,14 ----
+--- 1,15 ----
 + SCRIPT_NAME=elf
 + OUTPUT_FORMAT=elf32-i386
 + TEXT_START_ADDR=0x00001000
@@ -100,6 +100,7 @@ diff -rcN src/binutils_org/ld/emulparams/escape_i386.sh src/binutils/ld/emulpara
 + NO_SMALL_DATA=yes
 + SEPARATE_GOTPLT=12
 + DATA_ADDR="ALIGN(${MAXPAGESIZE})"
++ SHLIB_DATA_ADDR="ALIGN(${MAXPAGESIZE})"
 diff -rcN src/binutils_org/ld/Makefile.in src/binutils/ld/Makefile.in
 *** src/binutils_org/ld/Makefile.in	2009-09-07 14:10:24.000000000 +0200
 --- src/binutils/ld/Makefile.in	2010-07-05 21:43:58.000000000 +0200

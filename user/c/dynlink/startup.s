@@ -21,7 +21,6 @@
 
 [global sigRetFunc]
 [global init]
-[global _start]
 [global lookup_resolveStart]
 [extern __libc_init]
 [extern lookup_resolve]
@@ -49,7 +48,6 @@ ALIGN 4
 ;  |    fd for prog   |
 ;  +------------------+
 
-_start:
 init:
 	; we have no TLS, so don't waste time
 	call	__libc_init

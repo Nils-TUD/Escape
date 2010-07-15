@@ -28,8 +28,8 @@
 #include <sys/syscalls.h>
 #include <sys/log.h>
 #include <sys/config.h>
-#include <errors.h>
 #include <sys/video.h>
+#include <errors.h>
 
 void sysc_loadMods(sIntrptStackFrame *stack) {
 	UNUSED(stack);

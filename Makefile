@@ -1,5 +1,5 @@
 # general
-BUILDDIR = $(abspath build/release)
+BUILDDIR = $(abspath build/debug)
 DISKMOUNT = disk
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso
@@ -40,7 +40,6 @@ export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
 				 -Wstrict-prototypes -fms-extensions -fno-builtin
-				 #-Wstrict-prototypes -ffreestanding -fno-builtin -fms-extensions
 export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long

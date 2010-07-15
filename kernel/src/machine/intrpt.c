@@ -477,7 +477,7 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 
 void intrpt_handler(sIntrptStackFrame *stack) {
 	u64 cycles = cpu_rdtsc();
-	u32 pfaddr;
+	u32 pfaddr = 0;
 	sThread *t = thread_getRunning();
 	curIntrptStack = stack;
 	intrptCount++;

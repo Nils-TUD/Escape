@@ -51,7 +51,8 @@ else
 endif
 ifdef NOLIBSTDCPP
     LD		:= gcc
-    STAL_LIBS	:= $(BUILD)/libsupc++.a ../../../lib/gcc/libgcc_eh.a
+    #STAL_LIBS	:= $(BUILD)/libsupc++.a ../../../lib/gcc/libgcc_eh.a
+    STAL_LIBS	:= $(BUILD)/libsupc++.a
     LIBS	:= ${STAL_LIBS}
 endif
 O		:= $(BUILD)/lib/cpp/ustl/

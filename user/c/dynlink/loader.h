@@ -29,6 +29,7 @@
 
 #define LD_BIND_NOW		0
 #define DEBUG_LOADER	0
+#define PRINT_LOADADDR	0
 #if DEBUG_LOADER
 #	define DBGDL(x,...)	debugf(x,## __VA_ARGS__)
 #else

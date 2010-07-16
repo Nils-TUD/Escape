@@ -1,80 +1,76 @@
-;
-; $Id: startup.s 632 2010-04-30 23:04:20Z nasmussen $
-; Copyright (C) 2008 - 2009 Nils Asmussen
-;
-; This program is free software; you can redistribute it and/or
-; modify it under the terms of the GNU General Public License
-; as published by the Free Software Foundation; either version 2
-; of the License, or (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program; if not, write to the Free Software
-; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-;
+#
+# $Id: startup.s 632 2010-04-30 23:04:20Z nasmussen $
+# Copyright (C) 2008 - 2009 Nils Asmussen
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
 
-[BITS 32]
+.section .text
 
-[global init]
-[global _start]
-[global sigRetFunc]
-[extern main]
-[extern exit]
-[extern init_tls]
+.global _start
+.global sigRetFunc
+.extern main
+.extern exit
+.extern init_tls
 
-ALIGN 4
+.include "syscalls.s"
 
-%include "syscalls.s"
+#  Initial stack:
+#  +------------------+  <- top
+#  |     arguments    |
+#  |        ...       |
+#  +------------------+
+#  |       argv       |
+#  +------------------+
+#  |       argc       |
+#  +------------------+
+#  |     TLSSize      |  0 if not present
+#  +------------------+
+#  |     TLSStart     |  0 if not present
+#  +------------------+
+#  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
+#  +------------------+
 
-;  Initial stack:
-;  +------------------+  <- top
-;  |     arguments    |
-;  |        ...       |
-;  +------------------+
-;  |       argv       |
-;  +------------------+
-;  |       argc       |
-;  +------------------+
-;  |     TLSSize      |  0 if not present
-;  +------------------+
-;  |     TLSStart     |  0 if not present
-;  +------------------+
-;  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
-;  +------------------+
-
-init:
 _start:
-	; first call init_tls(entryPoint,TLSStart,TLSSize)
+	# first call init_tls(entryPoint,TLSStart,TLSSize)
 	call	init_tls
-	; remove args from stack
-	add		esp,12
-	; it returns the entrypoint; 0 if we're the initial thread
-	test	eax,eax
+	# remove args from stack
+	add		$12,%esp
+	# it returns the entrypoint; 0 if we're the initial thread
+	test	%eax,%eax
 	je		initialThread
-	; we're an additional thread, so call the desired function
-	call	eax
+	# we're an additional thread, so call the desired function
+	call	*%eax
 	jmp		threadExit
 
-	; initial thread calls main
+	# initial thread calls main
 initialThread:
-%ifndef SHAREDLIB
-	[extern __libc_init]
+.ifndef SHAREDLIB
+	.extern __libc_init
 	call	__libc_init
-%endif
+.endif
 	call	main
 
 threadExit:
-	push	eax
+	push	%eax
 	call	exit
-	; just to be sure
-	jmp		$
+	# just to be sure
+	1: jmp		1b
 
-; all signal-handler return to this "function"
+# all signal-handler return to this "function"
 sigRetFunc:
-	mov		eax,SYSCALL_ACKSIG
-	int		SYSCALL_IRQ
-	; never reached
+	mov		$SYSCALL_ACKSIG,%eax
+	int		$SYSCALL_IRQ
+	# never reached

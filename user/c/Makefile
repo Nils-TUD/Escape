@@ -1,4 +1,3 @@
-# TODO
 DIRS = $(filter-out $(wildcard *.*) Makefile,$(wildcard *))
 
 .PHONY:  all clean

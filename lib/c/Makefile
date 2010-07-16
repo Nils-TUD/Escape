@@ -58,11 +58,11 @@ $(BUILDL)/%_pic.o: %.c
 
 $(BUILDL)/%_pic.s.o: %.s $(SYSCALLS)
 		@echo "	" AS $<
-		@nasm $(ASMFLAGS) -D SHAREDLIB -o $@ $<
+		@$(AS) $(ASFLAGS) --defsym SHAREDLIB=1 -o $@ $<
 
 $(BUILDL)/%.s.o: %.s $(SYSCALLS)
 		@echo "	" AS $<
-		@nasm $(ASMFLAGS) -o $@ $<
+		@$(AS) $(ASFLAGS) -o $@ $<
 
 $(BUILDL)/lib/%.o:	$(LIBDIR)/%.c
 		@echo "	" CC $<
@@ -74,7 +74,7 @@ $(BUILDL)/lib/%_pic.o:	$(LIBDIR)/%.c
 
 $(STARTO): $(START)
 		@echo "	" AS $(START)
-		@nasm $(ASMFLAGS) -o $(STARTO) $(START)
+		@$(AS) $(ASFLAGS) -o $(STARTO) $(START)
 		$(ROOT)/tools/linklib.sh $(STARTO)
 
 -include $(DEPS)

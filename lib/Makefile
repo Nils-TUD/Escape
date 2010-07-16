@@ -1,4 +1,5 @@
-DIRS = g m c supc++ cpp cpp/ustl d shell vbe vterm
+# TODO
+DIRS = g m c supc++ cpp cpp/ustl shell vbe vterm
 
 .PHONY:  all clean
 

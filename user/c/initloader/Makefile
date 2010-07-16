@@ -29,7 +29,7 @@ $(BUILDDIRS):
 
 $(BUILDL)/a%.o: %.s	$(SYSCALLS)
 		@echo "	" AS $<
-		@nasm $(ASMFLAGS) -o $@ $<
+		@$(AS) $(ASFLAGS) -o $@ $<
 
 $(DUMP):	$(BIN)
 		@echo "	" GENERATING DUMP

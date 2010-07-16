@@ -1,27 +1,27 @@
-;
-; $Id: ports.s 624 2010-04-19 21:52:37Z nasmussen $
-; Copyright (C) 2008 - 2009 Nils Asmussen
-;
-; This program is free software; you can redistribute it and/or
-; modify it under the terms of the GNU General Public License
-; as published by the Free Software Foundation; either version 2
-; of the License, or (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program; if not, write to the Free Software
-; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-;
+#
+# $Id: ports.s 624 2010-04-19 21:52:37Z nasmussen $
+# Copyright (C) 2008 - 2009 Nils Asmussen
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
 
-[BITS 32]
+.section .text
 
-%include "syscalls.s"
+.include "syscalls.s"
 
-[extern errno]
+.extern errno
 
-SYSC_RET_2ARGS_ERR requestIOPorts,SYSCALL_REQIOPORTS
-SYSC_RET_2ARGS_ERR releaseIOPorts,SYSCALL_RELIOPORTS
+SYSC_RET_2ARGS_ERR requestIOPorts,$SYSCALL_REQIOPORTS
+SYSC_RET_2ARGS_ERR releaseIOPorts,$SYSCALL_RELIOPORTS

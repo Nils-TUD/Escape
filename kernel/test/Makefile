@@ -16,12 +16,13 @@ CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
 # sources
 TSRC = $(wildcard *.c)
 KSRC = $(filter-out ../src/kernel.c,$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
+KASRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.s")
 LSRC = $(shell find $(LIB) -name "*.c")
 
 # objects
-AOBJ = $(BUILDK)/kernela.o
 TOBJ = $(patsubst %.c,$(BUILDT)/%.o,$(TSRC))
 KOBJ = $(patsubst %.c,$(BUILDK)/%.o,$(KSRC))
+KAOBJ = $(patsubst %.s,$(BUILDK)/%.s.o,$(KASRC))
 LOBJ = $(patsubst $(LIB)/%.c,$(BUILDT)/lib/%.o,$(LSRC))
 
 SYMBOLS = $(BUILD)/kernelt_symbols.txt
@@ -33,9 +34,9 @@ SYMBOLOBJ = $(patsubst ../src/%.c,$(BUILDT)/%.o,$(SYMBOLSRC))
 
 all: $(BIN)
 
-$(BIN):	$(BUILDDIRS) $(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
+$(BIN):	$(BUILDDIRS) $(LDCONF) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) -lgcc;
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ) -lgcc;
 		@# Note that we link 2 additional times because otherwise the symbol-table is incorrect
 		@# since it's size is 0 at the first time. In the second pass the size is correct
 		@# and therefore the symbol-table will be generated correctly in the third pass :)
@@ -44,13 +45,13 @@ $(BIN):	$(BUILDDIRS) $(LDCONF) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		@echo "	" CC $(SYMBOLSRC)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) -lgcc;
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ) -lgcc;
 		@echo "	" BUILDING SYMBOL-FILE
 		@$(SYMBOLSCRIPT) $(BIN) > $(SYMBOLS)
 		@echo "	" CC $(SYMBOLSRC)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(KOBJ) $(TOBJ) $(LOBJ) -lgcc;
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ) -lgcc;
 		@echo "	" COPYING BINARY
 		$(ROOT)/tools/disk.sh copy $(BIN) /boot
 

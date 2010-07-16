@@ -67,21 +67,21 @@ u32 load_setupProg(tFD binFd) {
 	/* load program including shared libraries into linked list */
 	load_doLoad(binFd,main);
 
-#if DEBUG_LOADER
+	/* load segments into memory */
+	entryPoint = load_addSegments();
+
+#if PRINT_LOADADDR
 	sSLNode *n,*m;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
-		DBGDL("Loaded %s with deps:\n",l->name ? l->name : "-Main-");
+		debugf("Loaded %s @ %x with deps: ",l->name ? l->name : "-Main-",l->loadAddr);
 		for(m = sll_begin(l->deps); m != NULL; m = m->next) {
 			sSharedLib *dl = (sSharedLib*)m->data;
-			DBGDL(" %s",dl->name);
+			debugf("%s ",dl->name);
 		}
-		DBGDL("\n");
+		debugf("\n");
 	}
 #endif
-
-	/* load segments into memory */
-	entryPoint = load_addSegments();
 
 	/* relocate everything we need so that the program can start */
 	load_reloc();

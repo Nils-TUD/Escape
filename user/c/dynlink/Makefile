@@ -38,7 +38,7 @@ $(BUILDL)/%.o:		%.c
 
 $(BUILDL)/%.s.o:	%.s
 		@echo "	" AS $<
-		@nasm $(ASMFLAGS) -o $@ $<
+		@$(AS) $(ASFLAGS) -o $@ $<
 
 -include $(DEPS)
 

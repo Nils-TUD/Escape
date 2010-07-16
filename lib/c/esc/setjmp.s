@@ -1,68 +1,70 @@
-;
-; $Id: setjmp.s 634 2010-05-01 12:20:20Z nasmussen $
-; Copyright (C) 2008 - 2009 Nils Asmussen
-;
-; This program is free software; you can redistribute it and/or
-; modify it under the terms of the GNU General Public License
-; as published by the Free Software Foundation; either version 2
-; of the License, or (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License
-; along with this program; if not, write to the Free Software
-; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-;
+#
+# $Id: setjmp.s 634 2010-05-01 12:20:20Z nasmussen $
+# Copyright (C) 2008 - 2009 Nils Asmussen
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
 
-[BITS 32]
+.section .text
 
-[global setjmp:function]
-[global longjmp:function]
+.global setjmp
+.global longjmp
 
-; s32 setjmp(sJumpEnv *env);
+# s32 setjmp(sJumpEnv *env);
+.type setjmp, @function
 setjmp:
-	push	ebp
-	mov		ebp,esp
+	push	%ebp
+	mov		%esp,%ebp
 
-	; save regs (callee-save)
-	mov		eax,[ebp + 8]									; get env
-	mov		[eax + 0],ebx
-	mov		[eax + 4],esp
-	mov		[eax + 8],edi
-	mov		[eax + 12],esi
-	mov		ecx,[ebp]											; store ebp of the caller stack-frame
-	mov		[eax + 16],ecx
-	pushfd															; load eflags
-	pop		DWORD [eax + 20]							; store
-	mov		ecx,[ebp + 4]									; store return-address
-	mov		[eax + 24],ecx
+	# save regs (callee-save)
+	mov		8(%ebp),%eax									# get env
+	mov		%ebx, 0(%eax)
+	mov		%esp, 4(%eax)
+	mov		%edi, 8(%eax)
+	mov		%esi,12(%eax)
+	mov		(%ebp),%ecx										# store ebp of the caller stack-frame
+	mov		%ecx,16(%eax)
+	pushfl															# load eflags
+	popl	20(%eax)											# store
+	mov		4(%ebp),%ecx									# store return-address
+	mov		%ecx,24(%eax)
 
-	mov		eax,0													; return 0
+	mov		$0,%eax												# return 0
 	leave
 	ret
 
-; s32 longjmp(sJumpEnv *env,s32 val);
+# s32 longjmp(sJumpEnv *env,s32 val);
+.type longjmp, @function
 longjmp:
-	push	ebp
-	mov		ebp,esp
-	mov		ecx,[ebp + 12]								; get val
+	push	%ebp
+	mov		%esp,%ebp
+	mov		12(%ebp),%ecx									# get val
 
-	; restore registers (callee-save)
-	mov		eax,[ebp + 8]									; get env
-	mov		edi,[eax + 8]
-	mov		esi,[eax + 12]
-	mov		ebp,[eax + 16]
-	mov		esp,[eax + 4]
-	add		esp,4													; undo 'push ebp'
-	mov		ebx,[eax + 0]
-	push	DWORD [eax + 20]							; get eflags
-	popfd																; restore
-	mov		eax,[eax + 24]								; get return-address
-	mov		[esp],eax											; set return-address
+	# restore registers (callee-save)
+	mov		8(%ebp),%eax									# get env
+	mov		8(%eax),%edi
+	mov		12(%eax),%esi
+	mov		16(%eax),%ebp
+	mov		4(%eax),%esp
+	add		$4,%esp												# undo 'push ebp'
+	mov		0(%eax),%ebx
+	pushl	20(%eax)											# get eflags
+	popfl																# restore
+	mov		24(%eax),%eax									# get return-address
+	mov		%eax,(%esp)										# set return-address
 
-	mov		eax,ecx												; return val
-	ret																	; no leave here because we've already restored the
-																			; ebp of the caller stack-frame
+	mov		%ecx,%eax											# return val
+	ret																	# no leave here because we've already restored the
+																			# ebp of the caller stack-frame

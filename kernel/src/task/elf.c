@@ -66,8 +66,10 @@ u32 elf_loadFromMem(u8 *code,u32 length) {
 				return ERR_INVALID_ELF_BIN;
 			if(elf_addSegment(NULL,pheader,loadSegNo,ELF_TYPE_PROG) < 0)
 				return ERR_INVALID_ELF_BIN;
-			/* copy the data; we zero on demand */
+			/* copy the data and zero the rest, if necessary */
 			memcpy((void*)pheader->p_vaddr,code + pheader->p_offset,pheader->p_filesz);
+			memclear((void*)(pheader->p_vaddr + pheader->p_filesz),
+					pheader->p_memsz - pheader->p_filesz);
 			loadSegNo++;
 		}
 	}

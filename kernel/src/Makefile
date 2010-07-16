@@ -14,12 +14,12 @@ CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D I
 # -finstrument-functions -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/src/profile.c
 
 # sources
-ASRC = ../kernel.asm
+ASRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.s")
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
 LSRC = $(shell find $(LIB) -name "*.c")
 
 # objects
-AOBJ = $(BUILDK)/kernela.o
+AOBJ = $(patsubst %.s,$(BUILDK)/%.s.o,$(ASRC))
 COBJ = $(patsubst %.c,$(BUILDK)/%.o,$(CSRC))
 LOBJ = $(patsubst $(LIB)/%.c,$(BUILDK)/lib/%.o,$(LSRC))
 
@@ -61,9 +61,9 @@ $(BUILDDIRS):
 			if [ ! -d $$i ]; then mkdir -p $$i; fi \
 		done;
 
-$(AOBJ):	$(ASRC)
-		@echo "	" AS $(ASRC)
-		@nasm $(ASMFLAGS) -o $(AOBJ) $(ASRC);
+$(BUILDK)/%.s.o: %.s
+		@echo "	" AS $<
+		@$(AS) $(ASFLAGS) -o $@ $<;
 
 $(BUILDK)/%.o:		%.c
 		@echo "	" CC $<

@@ -14,7 +14,7 @@ BUILDAPPS = $(BUILDDIR)/apps
 
 #KVM = -enable-kvm
 QEMU = /home/hrniels/Applications/qemu-0.12.2/bin/bin/qemu
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 32 \
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 64 \
 	-localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 
@@ -36,6 +36,7 @@ export CC = $(abspath build/dist/bin/i586-elf-escape-gcc)
 export CPPC = $(abspath build/dist/bin/i586-elf-escape-g++)
 export LD = $(abspath build/dist/bin/i586-elf-escape-ld)
 export AR = $(abspath build/dist/bin/i586-elf-escape-ar)
+export AS = $(abspath build/dist/bin/i586-elf-escape-as)
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
@@ -53,8 +54,8 @@ else
 	export CDEFFLAGS=$(CWFLAGS) -g0 -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 endif
-# flags for nasm
-export ASMFLAGS=-f elf
+# flags for gas
+export ASFLAGS = --warn
 # other
 export SUDO=sudo
 

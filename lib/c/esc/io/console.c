@@ -27,11 +27,11 @@
 #include <esc/io/iofilestream.h>
 #include <stdio.h>
 
-typedef void (*fConstr)(void);
+typedef void (*fConstr)(void *);
 typedef void (*fStreamClose)(void *);
 
-/*static */void streamConstr(void);
-static void streamDestr(void);
+static void streamConstr(void *);
+static void streamDestr(void *);
 
 fConstr constr[1] __attribute__((section(".ctors"))) = {
 	streamConstr
@@ -45,7 +45,8 @@ FILE *stdin = NULL;
 FILE *stdout = NULL;
 FILE *stderr = NULL;
 
-/*TODO static */void streamConstr(void) {
+static void streamConstr(void *d) {
+	UNUSED(d);
 	cin = ifstream_openfd(STDIN_FILENO);
 	cout = ofstream_openfd(STDOUT_FILENO);
 	cerr = ofstream_openfd(STDERR_FILENO);
@@ -55,7 +56,8 @@ FILE *stderr = NULL;
 	atexit(streamDestr);
 }
 
-static void streamDestr(void) {
+static void streamDestr(void *d) {
+	UNUSED(d);
 	u32 i;
 	fStreamClose funcs[3] = {
 		(fStreamClose)cin->close,(fStreamClose)cout->close,(fStreamClose)cerr->close

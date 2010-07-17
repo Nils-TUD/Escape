@@ -3,39 +3,28 @@ BUILDL = $(BUILD)/user/cpp/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
 LIBC = $(ROOT)/lib/c
 LIBCPP = $(ROOT)/lib/cpp
-LDCONF = $(ROOT)/lib/ld.conf
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
-CC = g++
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs -I$(ROOT)/include -I$(ROOT)/include/cpp \
-	-Wl,-T,$(LDCONF) -Wl,--build-id=none $(CPPDEFFLAGS) -fno-exceptions $(ADDFLAGS)
+CFLAGS = $(CPPDEFFLAGS) $(ADDFLAGS)
+ifeq ($(LINKTYPE),static)
+	CFLAGS += -Wl,-Bstatic
+endif
 
 # sources
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.cpp")
 
 # objects
-LIBCA = $(BUILD)/libc.a
-LIBCPPA = $(BUILD)/libcpp.a
-START = $(BUILD)/libcpp_startup.o
 COBJ = $(patsubst %.cpp,$(BUILDL)/%.o,$(CSRC))
-
-ifeq ($(LINKTYPE),static)
-	ADDLIBS += $(LIBCPPA)
-endif
 
 .PHONY: all clean
 
-all:	$(BIN)
+all:	$(BUILDDIRS) $(BIN)
 
-$(BIN):	$(BUILDDIRS) $(LDCONF) $(COBJ) $(START) $(ADDLIBS)
+$(BIN):	$(COBJ)
 		@echo "	" LINKING $(BIN)
-ifeq ($(LINKTYPE),static)
-		@$(CC) $(CFLAGS) -o $(BIN) $(START) $(LIBCA) $(COBJ) $(ADDLIBS);
-else
-		@$(CC) $(CFLAGS) $(DLNKFLAGS) -o $(BIN) -lcpp $(START) $(COBJ) $(ADDLIBS);
-endif
+		@$(CPPC) $(CFLAGS) -L$(ROOT)/build/dist/lib -o $(BIN) $(COBJ) -lsupc++;
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 
@@ -46,7 +35,7 @@ $(BUILDDIRS):
 
 $(BUILDL)/%.o:		%.cpp
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MD
+		@$(CPPC) $(CFLAGS) -o $@ -c $< -MD
 
 -include $(DEPS)
 

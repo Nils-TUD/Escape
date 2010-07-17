@@ -24,6 +24,7 @@
 .extern main
 .extern exit
 .extern init_tls
+.extern _init
 
 .include "syscalls.s"
 
@@ -60,6 +61,7 @@ initialThread:
 .ifndef SHAREDLIB
 	.extern __libc_init
 	call	__libc_init
+	call _init
 .endif
 	call	main
 

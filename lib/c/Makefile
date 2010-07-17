@@ -12,14 +12,14 @@ DYNLIB = $(BUILD)/$(DYNLIBNAME)
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS)
 
 # sources
-START = startup.s
+START = $(wildcard crt*.s)
 SYSCALLS = syscalls.s
 CSRC = $(shell find . -name "*.c")
 ASRC = $(filter-out ./$(START),$(shell find . -name "*.s"))
 LSRC = $(shell find $(LIBDIR) -name "*.c")
 
 # objects
-STARTO = $(BUILD)/crt0.o
+STARTO = $(patsubst %.s,$(BUILD)/%.o,$(START))
 COBJS = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 CPICOBJS = $(patsubst %.c,$(BUILDL)/%_pic.o,$(CSRC))
 AOBJS = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
@@ -72,10 +72,10 @@ $(BUILDL)/lib/%_pic.o:	$(LIBDIR)/%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
-$(STARTO): $(START)
-		@echo "	" AS $(START)
-		@$(AS) $(ASFLAGS) -o $(STARTO) $(START)
-		$(ROOT)/tools/linklib.sh $(STARTO)
+$(BUILD)/crt%.o : crt%.s
+		@echo "	" AS $<
+		@$(AS) $(ASFLAGS) -o $@ $<
+		$(ROOT)/tools/linklib.sh $@
 
 -include $(DEPS)
 

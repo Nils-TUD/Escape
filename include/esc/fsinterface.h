@@ -20,6 +20,7 @@
 #ifndef FSINTERFACE_H_
 #define FSINTERFACE_H_
 
+#include <esc/common.h>
 #include <types.h>
 #include <stddef.h>
 

@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <stdio.h>
 #include <string>
+//#include <vector>
 //#include <ustl.h>
 
 using namespace std;
@@ -82,6 +83,8 @@ int main(void) {
 		printf("Didn't work!\n");
 	}
 
+	delete[] (void*)0;
+
 	string abc;
 	abc.append("test");
 	string def(abc);
@@ -138,8 +141,7 @@ int main(void) {
 		out << i << ": " << v2[i] << endl;
 	}
 #else
-	/*
-    vector<int> v;
+	/*vector<int> v;
     v.resize (30);
     for (size_t i = 0; i < v.size(); ++ i)
     	v[i] = i;
@@ -149,14 +151,16 @@ int main(void) {
 
     cout << "Hello world!" << endl;
     cout << 456 << ios::hex << 0x1234 << endl;
-    //cerr.format ("You objects are at 0x%08X\n", &v);
+    //cerr.format ("You objects are at 0x%08X\n", &v);*/
 
     try {
     	throw 3;
+    	printf("hier\n");
     }
     catch(int &e) {
-    	cout << "Got " << e << endl;
-    }*/
+    	printf("Got %d\n",e);
+    }
+	printf("da\n");
 
 	/*
 	String s1 = "abc";

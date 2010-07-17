@@ -46,6 +46,8 @@ namespace esc {
 				_mouseListener(e._mouseListener), _keyListener(e._keyListener) {
 			}
 			virtual ~UIElement() {
+				delete _mouseListener;
+				delete _keyListener;
 				delete _g;
 			};
 			UIElement &operator=(const UIElement &e);

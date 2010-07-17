@@ -25,7 +25,7 @@ else
 endif
 
 # wether to link drivers and user-apps statically or dynamically
-export LINKTYPE = dynamic
+export LINKTYPE = static
 
 # number of jobs passing to make
 export JOBS =
@@ -128,9 +128,9 @@ swapbl:
 
 dis:
 ifeq ($(APP),)
-		objdump -dS -M intel $(BIN) | less
+		objdump -dSC -M intel $(BIN) | less
 else
-		objdump -dS -M intel $(BUILD)/$(APP) | less
+		objdump -dSC -M intel $(BUILD)/$(APP) | less
 endif
 
 qemu:	all prepareRun

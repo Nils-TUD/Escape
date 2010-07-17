@@ -34,13 +34,18 @@ typedef struct {
 } sGlobalObj;
 
 void __libc_init(void);
-/*extern fConstr __libcpp_constr_start;
-extern fConstr __libcpp_constr_end;*/
 
 static tULock exitLock = 0;
 static s16 exitFuncCount = 0;
 static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
 
+/*extern fConstr __CTOR_LIST__[1];
+extern fConstr __DTOR_LIST__[1];*/
+
+/**
+ * Some assembler-instructions to tell the kernel that we've handled a signal
+ */
+extern void sigRetFunc(void);
 /**
  * Will be called by gcc at the beginning for every global object to register the
  * destructor of the object
@@ -76,17 +81,17 @@ void __cxa_finalize(void *d) {
 	}
 }
 
-extern void sigRetFunc(void);
-extern void streamConstr(void);
+/*static void run_hooks(fConstr list[]) {
+	while(*++list)
+		(**list)();
+}*/
 
 void __libc_init(void) {
-	/* TODO */
+	/* tell kernel address of sigRetFunc */
 	if(setSigHandler(SIG_RET,(fSigHandler)&sigRetFunc) < 0)
 		error("Unable to tell kernel sigRet-address");
-	streamConstr();
-	/*fConstr *constr = &__libcpp_constr_start;
-	while(constr < &__libcpp_constr_end) {
-		(*constr)();
-		constr++;
-	}*/
+	/* call constructors */
+	/*run_hooks(__CTOR_LIST__);*/
+	/* announce destructor-calls before termination */
+	/*__cxa_atexit((void (*)(void*))run_hooks,(void*)__DTOR_LIST__,NULL);*/
 }

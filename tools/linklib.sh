@@ -8,7 +8,8 @@ if [ $# != 1 ]; then
 	exit 1
 fi
 
-if [ `basename $1` = "libg.a" -o `basename $1` = "crt0.o" ]; then
+if [ `basename $1` = "libg.a" -o `basename $1` = "crt0.o" -o \
+		 `basename $1` = "crt1.o" -o `basename $1` = "crtn.o" ]; then
 	DIR=$DIST/lib/gcc/$TARGET/4.4.3
 else
 	DIR=$DIST/$TARGET/lib

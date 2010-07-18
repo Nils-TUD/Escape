@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <list>
 //#include <ustl.h>
 
 using namespace std;
@@ -152,6 +153,13 @@ int main(void) {
     //cout << "Hello world!" << endl;
     //cout << 456 << ios::hex << 0x1234 << endl;
     //cerr.format ("You objects are at 0x%08X\n", &v);*/
+
+    list<int> l;
+    l.insert(l.begin(),10);
+    l.insert(l.begin(),11);
+    printf("size=%d\n",l.size());
+    for(list<int>::iterator it = l.begin(); it != l.end(); it++)
+    	printf(" %d\n",*it);
 
     try {
     	throw 3;

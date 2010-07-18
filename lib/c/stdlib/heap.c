@@ -30,7 +30,7 @@
 #define PAGE_SIZE				4096
 #if DEBUGGING
 #define DEBUG_ALLOC_N_FREE		0
-#define DEBUG_ALLOC_N_FREE_PID	18	/* -1 = all */
+#define DEBUG_ALLOC_N_FREE_PID	24	/* -1 = all */
 #define DEBUG_ADD_GUARDS		1
 #endif
 

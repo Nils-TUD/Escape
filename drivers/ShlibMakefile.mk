@@ -20,9 +20,11 @@ COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 
 .PHONY: all clean
 
-all:	$(APPCPY) $(BIN)
+-include $(ROOT)/sysdeps.mk
 
-$(BIN):	$(BUILDDIRS) $(APPDST) $(COBJ) $(ADDLIBS)
+all:	$(BUILDDIRS) $(APPCPY) $(BIN)
+
+$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
 		@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(ADDLIBS);
 		@echo "	" COPYING ON DISK

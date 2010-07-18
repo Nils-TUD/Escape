@@ -27,9 +27,11 @@ GENOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN) $(BISONGEN))
 
 .PHONY: all clean
 
-all:	$(APPCPY) $(BISONGEN) $(LEXGEN) $(BIN)
+-include $(ROOT)/sysdeps.mk
 
-$(BIN):	$(BUILDDIRS) $(APPDST) $(COBJ) $(GENOBJ) $(ADDLIBS)
+all:	$(BUILDDIRS) $(APPCPY) $(BISONGEN) $(LEXGEN) $(BIN)
+
+$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(GENOBJ) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
 		$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(GENOBJ) $(ADDLIBS);
 		@echo "	" COPYING ON DISK

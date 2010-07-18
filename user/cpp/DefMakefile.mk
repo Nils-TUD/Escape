@@ -20,9 +20,11 @@ COBJ = $(patsubst %.cpp,$(BUILDL)/%.o,$(CSRC))
 
 .PHONY: all clean
 
+-include $(ROOT)/sysdeps.mk
+
 all:	$(BUILDDIRS) $(BIN)
 
-$(BIN):	$(COBJ)
+$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ)
 		@echo "	" LINKING $(BIN)
 		@$(CPPC) $(CFLAGS) -o $(BIN) $(COBJ) -L$(ROOT)/build/dist/lib -lsupc++;
 		@echo "	" COPYING ON DISK

@@ -16,9 +16,11 @@ SYSCALLS = $(LIBC)/syscalls.s
 
 .PHONY: all clean
 
-all:	$(BIN) $(DUMP)
+-include $(ROOT)/sysdeps.mk
 
-$(BIN):	$(BUILDDIRS) $(AOBJ)
+all:	$(BUILDDIRS) $(BIN) $(DUMP)
+
+$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(AOBJ)
 		@echo "	" LINKING $(BIN)
 		@$(CC) $(CFLAGS) -o $(BIN) $(AOBJ);
 

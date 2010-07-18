@@ -19,9 +19,11 @@ START = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASTART))
 
 .PHONY: all clean
 
-all:	$(BIN)
+-include $(ROOT)/sysdeps.mk
 
-$(BIN):	$(BUILDDIRS) $(LDCONF) $(COBJ) $(START)
+all:	$(BUILDDIRS) $(BIN)
+
+$(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(LDCONF) $(COBJ) $(START)
 		@echo "	" LINKING $(BIN)
 		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(START) $(COBJ)
 		@echo "	" COPYING ON DISK

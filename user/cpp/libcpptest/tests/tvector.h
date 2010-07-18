@@ -1,5 +1,5 @@
 /**
- * $Id: cppmain.cpp 687 2010-07-04 10:01:20Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -17,15 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef TVECTOR_H_
+#define TVECTOR_H_
+
 #include <esc/common.h>
 #include <esc/test.h>
 
-#include "tests/tstring.h"
-#include "tests/tvector.h"
+extern sTestModule tModVector;
 
-int main(void) {
-	test_register(&tModString);
-	test_register(&tModVector);
-	test_start();
-	return EXIT_SUCCESS;
-}
+#endif /* TVECTOR_H_ */

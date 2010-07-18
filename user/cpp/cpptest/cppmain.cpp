@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <stdio.h>
 #include <string>
-//#include <vector>
+#include <vector>
 //#include <ustl.h>
 
 using namespace std;
@@ -141,16 +141,16 @@ int main(void) {
 		out << i << ": " << v2[i] << endl;
 	}
 #else
-	/*vector<int> v;
-    v.resize (30);
-    for (size_t i = 0; i < v.size(); ++ i)
+	vector<int> v;
+    v.resize(30);
+    for (size_t i = 0; i < v.capacity(); ++ i)
     	v[i] = i;
-    v.push_back (57);
-    v.insert (v.begin() + 20, 555);
-    v.erase (v.begin() + 3);
+    v.push_back(57);
+    //v.insert (v.begin() + 20, 555);
+    //v.erase (v.begin() + 3);
 
-    cout << "Hello world!" << endl;
-    cout << 456 << ios::hex << 0x1234 << endl;
+    //cout << "Hello world!" << endl;
+    //cout << 456 << ios::hex << 0x1234 << endl;
     //cerr.format ("You objects are at 0x%08X\n", &v);*/
 
     try {

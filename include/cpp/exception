@@ -1,0 +1,132 @@
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#ifndef EXCEPTION_
+#define EXCEPTION_
+
+#include <stddef.h>
+#include <string>
+
+/* Note: Borrowed from cross/src/gcc/libstdc++v3/libsupc++/exception and
+ * cross/src/gcc/libstdc++v3/include/stdexcept
+ */
+
+namespace std {
+	/**
+	 *  @brief Base class for all library exceptions.
+	 *
+	 *  This is the base class for all exceptions thrown by the standard
+	 *  library, and by certain language expressions.  You are free to derive
+	 *  your own %exception classes, or use a different hierarchy, or to
+	 *  throw non-class data (e.g., fundamental types).
+	 */
+	class exception {
+	public:
+		exception() throw ();
+		exception(const exception&) throw ();
+		exception & operator =(const exception&) throw ();
+		virtual ~exception() throw ();
+		virtual const char *what() const throw ();
+	};
+
+	/** Logic errors represent problems in the internal logic of a program;
+	 *  in theory, these are preventable, and even detectable before the
+	 *  program runs (e.g., violations of class invariants).
+	 *  @brief One of two subclasses of exception.
+	 */
+	class logic_error: public exception {
+		string _M_msg;
+
+	public:
+		/** Takes a character string describing the error.  */
+		explicit logic_error(const string& __arg);
+
+		virtual ~logic_error() throw ();
+
+		/** Returns a C-style character string describing the general cause of
+		 *  the current error (the same string passed to the ctor).  */
+		virtual const char* what() const throw ();
+	};
+
+	/** Thrown by the library, or by you, to report domain errors (domain in
+	 *  the mathematical sense).  */
+	class domain_error: public logic_error {
+	public:
+		explicit domain_error(const string& __arg);
+	};
+
+	/** Thrown to report invalid arguments to functions.  */
+	class invalid_argument: public logic_error {
+	public:
+		explicit invalid_argument(const string& __arg);
+	};
+
+	/** Thrown when an object is constructed that would exceed its maximum
+	 *  permitted size (e.g., a basic_string instance).  */
+	class length_error: public logic_error {
+	public:
+		explicit length_error(const string& __arg);
+	};
+
+	/** This represents an argument whose value is not within the expected
+	 *  range (e.g., boundary checks in basic_string).  */
+	class out_of_range: public logic_error {
+	public:
+		explicit out_of_range(const string& __arg);
+	};
+
+	/** Runtime errors represent problems outside the scope of a program;
+	 *  they cannot be easily predicted and can generally only be caught as
+	 *  the program executes.
+	 *  @brief One of two subclasses of exception.
+	 */
+	class runtime_error: public exception {
+		string _M_msg;
+
+	public:
+		/** Takes a character string describing the error.  */
+		explicit runtime_error(const string& __arg);
+
+		virtual ~runtime_error() throw ();
+
+		/** Returns a C-style character string describing the general cause of
+		 *  the current error (the same string passed to the ctor).  */
+		virtual const char* what() const throw ();
+	};
+
+	/** Thrown to indicate range errors in internal computations.  */
+	class range_error: public runtime_error {
+	public:
+		explicit range_error(const string& __arg);
+	};
+
+	/** Thrown to indicate arithmetic overflow.  */
+	class overflow_error: public runtime_error {
+	public:
+		explicit overflow_error(const string& __arg);
+	};
+
+	/** Thrown to indicate arithmetic underflow.  */
+	class underflow_error: public runtime_error {
+	public:
+		explicit underflow_error(const string& __arg);
+	};
+}
+
+#endif /* EXCEPTION_ */

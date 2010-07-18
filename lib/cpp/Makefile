@@ -7,7 +7,7 @@ STLIB = $(BUILD)/libstdc++.a
 DYNLIBNAME = libstdc++.so
 DYNLIB = $(BUILD)/$(DYNLIBNAME)
 
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CPPDEFFLAGS)
+CFLAGS = $(CPPDEFFLAGS)
 
 # sources
 CSRC = $(shell find src -name "*.cpp")
@@ -27,10 +27,11 @@ $(STLIB): $(COBJS)
 
 $(DYNLIB): $(CPICOBJS)
 		@echo "	" LINKING $(DYNLIB)
-		@$(LD) -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS);
+		$(CPPC) $(CFLAGS) -nodefaultlibs -shared -Wl,-soname,$(DYNLIBNAME) \
+			-o $(DYNLIB) $(CPICOBJS) -lc -lsupc++ -lgcc -L$(ROOT)/build/dist/lib;
 		$(ROOT)/tools/linklib.sh $(DYNLIB)
 		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
-		
+
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
 			if [ ! -d $$i ]; then mkdir -p $$i; fi \
@@ -38,11 +39,11 @@ $(BUILDDIRS):
 
 $(BUILDL)/%.o: %.cpp
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -o $@ -c $< -MD
+		@$(CPPC) $(CFLAGS) -o $@ -c $< -MD
 
 $(BUILDL)/%_pic.o: %.cpp
 		@echo "	" CC $<
-		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
+		@$(CPPC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
 -include $(DEPS)
 

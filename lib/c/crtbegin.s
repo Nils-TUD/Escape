@@ -16,19 +16,3 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-
-.section .init
-.ifndef SHAREDLIB
-.global _init
-_init:
-.endif
-	push	%ebp
-	mov		%esp,%ebp
-
-.section .fini
-.ifndef SHAREDLIB
-.global _fini
-_fini:
-.endif
-	push	%ebp
-	mov		%esp,%ebp

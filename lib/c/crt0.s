@@ -44,6 +44,7 @@
 #  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
 #  +------------------+
 
+.ifndef SHAREDLIB
 _start:
 	# first call init_tls(entryPoint,TLSStart,TLSSize)
 	call	init_tls
@@ -58,11 +59,9 @@ _start:
 
 	# initial thread calls main
 initialThread:
-.ifndef SHAREDLIB
 	.extern __libc_init
 	call	__libc_init
 	call _init
-.endif
 	call	main
 
 threadExit:
@@ -76,3 +75,4 @@ sigRetFunc:
 	mov		$SYSCALL_ACKSIG,%eax
 	int		$SYSCALL_IRQ
 	# never reached
+.endif

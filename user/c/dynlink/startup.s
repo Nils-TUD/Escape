@@ -66,12 +66,3 @@ sigRetFunc:
 	mov		$SYSCALL_ACKSIG,%eax
 	int		$SYSCALL_IRQ
 	# never reached
-
-# begin of .ctors-section
-.section .ctors
-.global __CTOR_LIST__
-__CTOR_LIST__:
-
-.section .dtors
-.global __DTOR_LIST__
-__DTOR_LIST__:

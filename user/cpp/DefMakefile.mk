@@ -24,9 +24,9 @@ all:	$(BUILDDIRS) $(BIN)
 
 $(BIN):	$(COBJ)
 		@echo "	" LINKING $(BIN)
-		@$(CPPC) $(CFLAGS) -L$(ROOT)/build/dist/lib -o $(BIN) $(COBJ) -lsupc++;
+		@$(CPPC) $(CFLAGS) -o $(BIN) $(COBJ) -L$(ROOT)/build/dist/lib -lsupc++;
 		@echo "	" COPYING ON DISK
-		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
+		@$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

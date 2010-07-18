@@ -39,9 +39,6 @@ static tULock exitLock = 0;
 static s16 exitFuncCount = 0;
 static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
 
-/*extern fConstr __CTOR_LIST__[1];
-extern fConstr __DTOR_LIST__[1];*/
-
 /**
  * Some assembler-instructions to tell the kernel that we've handled a signal
  */
@@ -81,17 +78,8 @@ void __cxa_finalize(void *d) {
 	}
 }
 
-/*static void run_hooks(fConstr list[]) {
-	while(*++list)
-		(**list)();
-}*/
-
 void __libc_init(void) {
 	/* tell kernel address of sigRetFunc */
 	if(setSigHandler(SIG_RET,(fSigHandler)&sigRetFunc) < 0)
 		error("Unable to tell kernel sigRet-address");
-	/* call constructors */
-	/*run_hooks(__CTOR_LIST__);*/
-	/* announce destructor-calls before termination */
-	/*__cxa_atexit((void (*)(void*))run_hooks,(void*)__DTOR_LIST__,NULL);*/
 }

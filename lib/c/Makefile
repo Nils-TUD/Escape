@@ -12,14 +12,17 @@ DYNLIB = $(BUILD)/$(DYNLIBNAME)
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS)
 
 # sources
-START = $(wildcard crt*.s)
+SHARED = crtbegin.s crtend.s
+START = $(filter-out $(SHARED),$(wildcard crt*.s))
 SYSCALLS = syscalls.s
 CSRC = $(shell find . -name "*.c")
 ASRC = $(filter-out ./$(START),$(shell find . -name "*.s"))
 LSRC = $(shell find $(LIBDIR) -name "*.c")
 
 # objects
+#SHAREDO = $(patsubst %.s,$(BUILD)/%S.o,$(SHARED))
 STARTO = $(patsubst %.s,$(BUILD)/%.o,$(START))
+STARTOPIC = $(patsubst %.s,$(BUILD)/%S.o,$(START))
 COBJS = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 CPICOBJS = $(patsubst %.c,$(BUILDL)/%_pic.o,$(CSRC))
 AOBJS = $(patsubst %.s,$(BUILDL)/%.s.o,$(ASRC))
@@ -29,7 +32,7 @@ LPICOBJ = $(patsubst $(LIBDIR)/%.c,$(BUILDL)/lib/%_pic.o,$(LSRC))
 
 .PHONY:		all clean
 
-all: $(BUILDDIRS) $(STLIB) $(DYNLIB) $(STARTO)
+all: $(BUILDDIRS) $(STLIB) $(DYNLIB) $(SHAREDO) $(STARTO) $(STARTOPIC)
 
 $(STLIB): $(COBJS) $(AOBJS) $(LOBJ)
 		@echo "	" AR $(STLIB)
@@ -72,6 +75,11 @@ $(BUILDL)/lib/%_pic.o:	$(LIBDIR)/%.c
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
+$(BUILD)/crt%S.o : crt%.s
+		@echo " " AS $<
+		@$(AS) $(ASFLAGS) -defsym SHAREDLIB=1 -o $@ $<
+		$(ROOT)/tools/linklib.sh $@
+
 $(BUILD)/crt%.o : crt%.s
 		@echo "	" AS $<
 		@$(AS) $(ASFLAGS) -o $@ $<
@@ -82,4 +90,4 @@ $(BUILD)/crt%.o : crt%.s
 clean:
 		@echo "===== REMOVING FILES =====";
 		rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(APICOBJS) $(LOBJ) $(LPICOBJ) $(STLIB) \
-			$(DEPS) $(STARTO) $(DYNLIB)
+			$(DEPS) $(SHAREDO) $(STARTO) $(STARTOPIC) $(DYNLIB)

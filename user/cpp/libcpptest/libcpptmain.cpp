@@ -23,11 +23,13 @@
 #include "tests/tstring.h"
 #include "tests/tvector.h"
 #include "tests/tlist.h"
+#include "tests/talgorithm.h"
 
 int main(void) {
 	test_register(&tModString);
 	test_register(&tModVector);
 	test_register(&tModList);
+	test_register(&tModAlgo);
 	test_start();
 	return EXIT_SUCCESS;
 }

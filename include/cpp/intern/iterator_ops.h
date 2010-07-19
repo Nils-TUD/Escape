@@ -17,12 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CPP_ITERATOR_
-#define CPP_ITERATOR_
+#ifndef ITERATOR_OPS_H_
+#define ITERATOR_OPS_H_
 
 #include <stddef.h>
-#include <intern/iterator_types.h>
-#include <intern/iterator_ops.h>
-#include <intern/reverse_iterator.h>
 
-#endif /* CPP_ITERATOR_ */
+namespace std {
+	template<class InputIterator,class Distance>
+	void advance(InputIterator& i,Distance n);
+
+	template<class InputIterator>
+	typename iterator_traits<InputIterator>::difference_type distance(
+			InputIterator first,InputIterator last);
+}
+
+#include "../../../lib/cpp/src/intern/iterator_ops.cc"
+
+#endif /* ITERATOR_OPS_H_ */

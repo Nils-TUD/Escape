@@ -24,6 +24,9 @@
 #include <iterator>
 
 namespace std {
+	/**
+	 * A ordered sequence of elements with random access
+	 */
 	template<class T>
 	class vector {
 	public:
@@ -39,58 +42,243 @@ namespace std {
 		typedef std::reverse_iterator<iterator> reverse_iterator;
 		typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-	public:
+	private:
+		/**
+		 * Default size at the beginning
+		 */
 		static const size_type INITIAL_SIZE = 8;
 
 	public:
+		/**
+		 * Creates an empty vector that has space for INITIAL_SIZE elements
+		 */
 		explicit vector();
+		/**
+		 * Creates a vector with <n> times <value>
+		 *
+		 * @param n the number of elements
+		 * @param value the value
+		 */
 		explicit vector(size_type n,const T& value = T());
+		/**
+		 * Creates a vector from the range [<first> .. <last>)
+		 *
+		 * @param first the start-position (inclusive)
+		 * @param last the end-position (exclusive)
+		 */
 		template<class InputIterator>
 		vector(InputIterator first,InputIterator last);
+		/**
+		 * Copy-constructor
+		 *
+		 * @param x the vector to clone
+		 */
 		vector(const vector<T>& x);
+		/**
+		 * Destructor
+		 */
 		~vector();
 
+		/**
+		 * Assignment-operator
+		 *
+		 * @param x the vector to assign
+		 * @return *this
+		 */
 		vector<T>& operator =(const vector<T>& x);
+		/**
+		 * Assigns the given range [<first> .. <last>) to this vector
+		 *
+		 * @param first the start-position (inclusive)
+		 * @param last the end-position (exclusive)
+		 */
 		template<class InputIterator>
 		void assign(InputIterator first,InputIterator last);
+		/**
+		 * Assigns <n> times <u> to this vector
+		 *
+		 * @param n the number of elements
+		 * @param u the value
+		 */
 		void assign(size_type n,const T& u);
 
+		/**
+		 * @return the beginning of the list
+		 */
 		iterator begin();
+		/**
+		 * @return the beginning of the list, as const-iterator
+		 */
 		const_iterator begin() const;
+		/**
+		 * @return the end of the list
+		 */
 		iterator end();
+		/**
+		 * @return the end of the list, as const-iterator
+		 */
 		const_iterator end() const;
+		/**
+		 * @return the beginning of the list for the reverse-iterator (i.e. the end)
+		 */
 		reverse_iterator rbegin();
+		/**
+		 * @return the beginning of the list for the const-reverse-iterator (i.e. the end)
+		 */
 		const_reverse_iterator rbegin() const;
+		/**
+		 * @return the end of the list for the reverse-iterator (i.e. the beginning)
+		 */
 		reverse_iterator rend();
+		/**
+		 * @return the end of the list for the const-reverse-iterator (i.e. the beginning)
+		 */
 		const_reverse_iterator rend() const;
 
+		/**
+		 * @return the number of elements in the vector
+		 */
 		size_type size() const;
+		/**
+		 * @return the max. number of supported elements
+		 */
 		size_type max_size() const;
+		/**
+		 * Resizes the list so that it contains <sz> elements. If <sz> is less than the current
+		 * number of elements, the elements at the end will be removed. If <sz> is greater than
+		 * the current number of elements, it appends elements with <c> to the end.
+		 *
+		 * @param sz the size to reach
+		 * @param c the fill-value
+		 */
 		void resize(size_type sz,T c = T());
+		/**
+		 * @return the number of elements the vector can currently hold without aquiring more memory
+		 */
 		size_type capacity() const;
+		/**
+		 * @return if the vector is empty
+		 */
 		bool empty() const;
+		/**
+		 * Ensures that the vector can hold <n> elements, i.e. capacity() will be at least <n>
+		 * afterwards.
+		 *
+		 * @param n the capacity to reach
+		 */
 		void reserve(size_type n);
 
+		/**
+		 * @param n the index
+		 * @return a reference to element at index <n>. Does NOT perform a bounds-check!
+		 */
 		reference operator[](size_type n);
+		/**
+		 * @param n the index
+		 * @return a const-reference to element at index <n>. Does NOT perform a bounds-check!
+		 */
 		const_reference operator[](size_type n) const;
+		/**
+		 * @param n the index
+		 * @return a reference to element at index <n>. Does perform a bounds-check!
+		 * @throws out_of_range if the index is out of range
+		 */
 		reference at(size_type n);
+		/**
+		 * @param n the index
+		 * @return a const-reference to element at index <n>. Does perform a bounds-check!
+		 * @throws out_of_range if the index is out of range
+		 */
 		const_reference at(size_type n) const;
+		/**
+		 * @return a reference to the first element in the vector
+		 */
 		reference front();
+		/**
+		 * @return a const-reference to the first element in the vector
+		 */
 		const_reference front() const;
+		/**
+		 * @return a reference to the last element in the vector
+		 */
 		reference back();
+		/**
+		 * @return a const-reference to the last element in the vector
+		 */
 		const_reference back() const;
+		/**
+		 * @return a pointer to the internal array
+		 */
 		pointer data();
+		/**
+		 * @return a const-pointer to the internal array
+		 */
 		const_pointer data() const;
 
+		/**
+		 * Appends the given element
+		 *
+		 * @param x the value
+		 */
 		void push_back(const T& x);
+		/**
+		 * Removes the last element from the vector
+		 */
 		void pop_back();
+		/**
+		 * Inserts <x> at <position> into the vector. I.e. [<position> .. <end()>) is moved
+		 * one step forward and <x> is inserted at <position>.
+		 *
+		 * @param position the position where to insert
+		 * @param x the element to insert
+		 * @return the position where it has been inserted (may be different if new memory has been
+		 * 	allocated)
+		 */
 		iterator insert(iterator position,const T& x);
+		/**
+		 * Inserts <n> times <x> at <position> into the vector. I.e. [<position> .. <end()>) is
+		 * moved <b> steps forward and the <x>'s are inserted at <position>.
+		 *
+		 * @param position the position where to insert
+		 * @param n the number of elements to insert
+		 * @param x the value
+		 */
 		void insert(iterator position,size_type n,const T& x);
+		/**
+		 * Inserts the range [<first> .. <last>) at <position> into the vector. I.e.
+		 * [<position> .. <end()>) is moved <last> - <first> steps forward and the range is
+		 * inserted at <position>.
+		 *
+		 * @param position the position where to insert
+		 * @param first the start-position (inclusive)
+		 * @param last the end-position (exclusive)
+		 */
 		template<class InputIterator>
 		void insert(iterator position,InputIterator first,InputIterator last);
+		/**
+		 * Erases the element at <position>
+		 *
+		 * @param position the position of the element to remove
+		 * @return the position of the next element (end() if it was the last)
+		 */
 		iterator erase(iterator position);
+		/**
+		 * Erases the elements in [<first> .. <last>)
+		 *
+		 * @param first the start-position (inclusive)
+		 * @param last the end-position (exclusive)
+		 * @return the position of the next element (end() if it were the last elements)
+		 */
 		iterator erase(iterator first,iterator last);
-		void swap(vector<T>&);
+		/**
+		 * Swaps this vector with the given one
+		 *
+		 * @param x the vector
+		 */
+		void swap(vector<T>& x);
+		/**
+		 * Clears this vector, i.e. all elements are removed
+		 */
 		void clear();
 
 	private:
@@ -99,6 +287,7 @@ namespace std {
 		T* _elements;
 	};
 
+	// compare-operators
 	template<class T>
 	bool operator ==(const vector<T>& x,const vector<T>& y);
 	template<class T>
@@ -112,6 +301,7 @@ namespace std {
 	template<class T>
 	bool operator <=(const vector<T>& x,const vector<T>& y);
 
+	// compare and swap
 	template<class T>
 	int compare(const vector<T>& x,const vector<T>& y);
 	template<class T>

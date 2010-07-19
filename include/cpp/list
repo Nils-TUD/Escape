@@ -24,6 +24,7 @@
 #include <iterator>
 
 namespace std {
+	// forward declarations to implementation-details
 	template<class T>
 	class listnode;
 	template<class T>
@@ -31,6 +32,9 @@ namespace std {
 	template<class T>
 	class const_listiterator;
 
+	/**
+	 * A double-linked-list
+	 */
 	template<class T>
 	class list {
 	public:
@@ -46,79 +50,316 @@ namespace std {
 		typedef std::reverse_iterator<iterator> reverse_iterator;
 		typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
+		/**
+		 * Creates an empty list
+		 */
 		explicit list();
+		/**
+		 * Creates a list with <n> times <value> as elements
+		 *
+		 * @param n the number of elements
+		 * @param value the value
+		 */
 		explicit list(size_type n,const T& value = T());
+		/**
+		 * Creates a list with the elements [<first> .. <last>)
+		 *
+		 * @param first the start-position (inclusive)
+		 * @param last the end-position (exclusive)
+		 */
 		template<class InputIterator>
 		list(InputIterator first,InputIterator last);
+		/**
+		 * Creates a copy from <x>
+		 *
+		 * @param x the list to copy
+		 */
 		list(const list<T>& x);
+		/**
+		 * Destructor
+		 */
 		~list();
 
+		/**
+		 * Assign operator
+		 *
+		 * @param x the list to assign
+		 * @return the list
+		 */
 		list<T>& operator =(const list<T>& x);
+		/**
+		 * Assigns the given range to this list
+		 *
+		 * @param first the start-position (inclusive)
+		 * @param last the end-position (exclusive)
+		 */
 		template<class InputIterator>
 		void assign(InputIterator first,InputIterator last);
+		/**
+		 * Assigns <n> times <value> to this list
+		 *
+		 * @param n the number of elements
+		 * @param value the value
+		 */
 		void assign(size_type n,const T& t);
 
+		/**
+		 * @return the beginning of the list
+		 */
 		iterator begin();
+		/**
+		 * @return the beginning of the list, as const-iterator
+		 */
 		const_iterator begin() const;
+		/**
+		 * @return the end of the list
+		 */
 		iterator end();
+		/**
+		 * @return the end of the list, as const-iterator
+		 */
 		const_iterator end() const;
+		/**
+		 * @return the beginning of the list for the reverse-iterator (i.e. the end)
+		 */
 		reverse_iterator rbegin();
+		/**
+		 * @return the beginning of the list for the const-reverse-iterator (i.e. the end)
+		 */
 		const_reverse_iterator rbegin() const;
+		/**
+		 * @return the end of the list for the reverse-iterator (i.e. the beginning)
+		 */
 		reverse_iterator rend();
+		/**
+		 * @return the end of the list for the const-reverse-iterator (i.e. the beginning)
+		 */
 		const_reverse_iterator rend() const;
 
+		/**
+		 * @return wether the list is empty
+		 */
 		bool empty() const;
+		/**
+		 * @return the number of elements in the list
+		 */
 		size_type size() const;
+		/**
+		 * @return the max number of elements supported
+		 */
 		size_type max_size() const;
+		/**
+		 * Resizes the list so that it contains <sz> elements. If <sz> is less than the current
+		 * number of elements, the elements at the end will be removed. If <sz> is greater than
+		 * the current number of elements, it appends elements with <c> to the end.
+		 *
+		 * @param sz the size to reach
+		 * @param c the fill-value
+		 */
 		void resize(size_type sz,T c = T());
 
+		/**
+		 * @return a reference to the first element
+		 */
 		reference front();
+		/**
+		 * @return a const-reference to the first element
+		 */
 		const_reference front() const;
+		/**
+		 * @return a reference to the last element
+		 */
 		reference back();
+		/**
+		 * @return a const-reference to the last element
+		 */
 		const_reference back() const;
 
+		/**
+		 * Inserts <x> at the beginning of the list
+		 */
 		void push_front(const T& x);
+		/**
+		 * Removes the first element of the list
+		 */
 		void pop_front();
+		/**
+		 * Inserts <x> at the end of the list
+		 */
 		void push_back(const T& x);
+		/**
+		 * Removes the last element of the list
+		 */
 		void pop_back();
 
+		/**
+		 * Inserts <x> at <position> into the list.
+		 *
+		 * @param position the position at which you want to insert
+		 * @param x the value to insert
+		 * @return the position of the inserted element
+		 */
 		iterator insert(iterator position,const T& x);
+		/**
+		 * Inserts <n> times <x> at <position> into the list.
+		 *
+		 * @param position the position at which you want to insert
+		 * @param n the number of elements
+		 * @param x the value to insert
+		 */
 		void insert(iterator position,size_type n,const T& x);
+		/**
+		 * Inserts the range [<first> .. <last>) at <position> into the list
+		 *
+		 * @param position the position at which you want to insert
+		 * @param first the first element to insert
+		 * @param last the element behind the last one to insert
+		 */
 		template<class InputIterator>
 		void insert(iterator position,InputIterator first,InputIterator last);
 
+		/**
+		 * Erases the element at <position>
+		 *
+		 * @param position the position of the element
+		 * @return the position of the element behind the removed one
+		 */
 		iterator erase(iterator position);
+		/**
+		 * Erases all elements in [<position> .. <last>)
+		 *
+		 * @param position the start-position (inclusive)
+		 * @param last the end-position (exclusive)
+		 * @return the position after the removed range
+		 */
 		iterator erase(iterator position,iterator last);
+		/**
+		 * Removes all elements from the list
+		 */
 		void clear();
 
+		/**
+		 * Moves all elements from <x> at <position> into this list. I.e. the elements are
+		 * removed from <x>.
+		 *
+		 * @param position the position where to insert
+		 * @param x the list
+		 */
 		void splice(iterator position,list<T>& x);
+		/**
+		 * Moves the element at <i> from <x> into this list. I.e. the element is removed from
+		 * <x>.
+		 *
+		 * @param position the position where to insert
+		 * @param x the list
+		 * @param i the position of the element to move
+		 */
 		void splice(iterator position,list<T>& x,iterator i);
+		/**
+		 * Moves the elements in range [<first> .. <last>) from <x> at <position> into this list.
+		 * I.e. the elements are removed from <x>.
+		 *
+		 * @param position the position where to insert
+		 * @param x the list
+		 * @param first the start-position (inclusive)
+		 * @param last the end-position (exclusive)
+		 */
 		void splice(iterator position,list<T>& x,iterator first,iterator last);
 
+		/**
+		 * Removes all elements with value <value>
+		 *
+		 * @param value the value to remove
+		 */
 		void remove(const T& value);
+		/**
+		 * Removes all elements that fulfill the given predicate
+		 *
+		 * @param pred the predicate
+		 */
 		template<class Predicate>
 		void remove_if(Predicate pred);
 
+		/**
+		 * Removes duplicate elements. I.e. if element <i> is the same as <i+1>, <i> will be
+		 * removed.
+		 */
 		void unique();
+		/**
+		 * Removes elements that fulfill the given binary-predicate. I.e. if binary_pred(<i>,<i+1>)
+		 * is true, <i> will be removed.
+		 *
+		 * @param binary_pred the predicate
+		 */
 		template<class BinaryPredicate>
 		void unique(BinaryPredicate binary_pred);
 
+		/**
+		 * Merges all elements from <x> at the corresponding positions into this list. So it assumes
+		 * that this list is sorted and inserts the elements in ascending order. They will be
+		 * removed from <x>
+		 *
+		 * @param x the list
+		 */
 		void merge(list<T>& x);
+		/**
+		 * Merges all elements from <x> at the corresponding positions into this list by using
+		 * the given compare-"function". So it assumes that this list is sorted and inserts the
+		 * elements in the order given by the compare-"function". They will be removed from <x>
+		 *
+		 * @param x the list
+		 * @param comp the compare-"function" (or object with operator() or whatever)
+		 */
 		template<class Compare>
 		void merge(list<T>& x,Compare comp);
 
+		/**
+		 * Sorts this list with default-compare-function
+		 */
 		void sort();
+		/**
+		 * Sorts this list with given compare-"function"
+		 *
+		 * @param comp the compare-"function" (or object with operator() or whatever)
+		 */
 		template<class Compare>
 		void sort(Compare comp);
 
+		/**
+		 * Reverses this list, i.e. the elements will be in the opposite order afterwards. All
+		 * iterators will remain valid.
+		 */
 		void reverse();
-		void swap(list<T>&);
+		/**
+		 * Swaps <x> and <this>
+		 *
+		 * @param x the list
+		 */
+		void swap(list<T>& x);
 
 	private:
 		size_type _count;
 		listnode<T> _head;
 		listnode<T> _foot;
 	};
+
+	// compare-operators
+	template<class T>
+	bool operator ==(const list<T>& x,const list<T>& y);
+	template<class T>
+	bool operator <(const list<T>& x,const list<T>& y);
+	template<class T>
+	bool operator !=(const list<T>& x,const list<T>& y);
+	template<class T>
+	bool operator >(const list<T>& x,const list<T>& y);
+	template<class T>
+	bool operator >=(const list<T>& x,const list<T>& y);
+	template<class T>
+	bool operator <=(const list<T>& x,const list<T>& y);
+
+	// specialized algorithms:
+	template<class T>
+	void swap(list<T>& x,list<T>& y);
 }
 
 #include "../../lib/cpp/src/list.cc"

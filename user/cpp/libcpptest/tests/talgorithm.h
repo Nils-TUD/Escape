@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CPP_ITERATOR_
-#define CPP_ITERATOR_
+#ifndef TALGORITHM_H_
+#define TALGORITHM_H_
 
-#include <stddef.h>
-#include <intern/iterator_types.h>
-#include <intern/iterator_ops.h>
-#include <intern/reverse_iterator.h>
+#include <esc/common.h>
+#include <esc/test.h>
 
-#endif /* CPP_ITERATOR_ */
+extern sTestModule tModAlgo;
+
+#endif /* TALGORITHM_H_ */

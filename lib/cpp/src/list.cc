@@ -19,6 +19,7 @@
 
 #include <stddef.h>
 #include <limits.h>
+#include <algorithm>
 #include <list>
 
 namespace std {
@@ -543,51 +544,21 @@ namespace std {
 	// === sort ===
 	template<class T>
 	inline void list<T>::sort() {
-		sort(defaultCompare<T>);
+		std::sort(begin(),end());
 	}
 	template<class T>
 	template<class Compare>
-	void list<T>::sort(Compare comp) {
-		// bubblesort is enough for now :P
-		iterator lend = end() - 1;
-		size_type n = _count;
-		bool swapped;
-		do {
-			swapped = false;
-			for(iterator it = begin(); it != lend; it++) {
-				if(comp(*it,*(it + 1)) > 0) {
-					listnode<T> *n1 = it.node();
-					listnode<T> *n2 = (it + 1).node();
-					T tmp = n1->data();
-					n1->data(n2->data());
-					n2->data(tmp);
-					swapped = true;
-				}
-			}
-		}
-		while(swapped && n > 1);
+	inline void list<T>::sort(Compare comp) {
+		std::sort(begin(),end(),comp);
 	}
 
 	// === reverse and swap ===
 	template<class T>
-	void list<T>::reverse() {
-		size_type n = _count;
-		if(n > 1) {
-			listnode<T> *s = begin().node();
-			listnode<T> *e = (end() - 1).node();
-			for(size_type i = 0; i < n / 2; i++) {
-				T tmp = s->data();
-				s->data(e->data());
-				e->data(tmp);
-				s = s->next();
-				e = e->prev();
-			}
-		}
+	inline void list<T>::reverse() {
+		std::reverse(begin(),end());
 	}
 	template<class T>
 	inline void list<T>::swap(list<T>& x) {
-		list<T> tmp = x;
-		x = *this;
-		*this = tmp;
+		std::swap<list<T> >(*this,x);
 	}
 }

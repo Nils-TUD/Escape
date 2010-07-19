@@ -147,6 +147,8 @@ int main(void) {
     for (size_t i = 0; i < v.capacity(); ++ i)
     	v[i] = i;
     v.push_back(57);
+    vector<int>::iterator vit = v.begin();
+    advance(vit,10);
     //v.insert (v.begin() + 20, 555);
     //v.erase (v.begin() + 3);
 

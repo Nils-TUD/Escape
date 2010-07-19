@@ -1,0 +1,499 @@
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#ifndef ALGORITHM_
+#define ALGORITHM_
+
+#include <stddef.h>
+#include <iterator>
+
+namespace std {
+	/**
+	 * Applies function <f> to each of the elements in the range [<first> .. <last>).
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param f the function
+	 */
+	template<class InputIterator,class Function>
+	Function for_each(InputIterator first,InputIterator last,Function f);
+
+	/**
+	 * Returns an iterator to the first element in the range [<first> .. <last>) that compares
+	 * equal to <value>, or <last> if not found.
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param value the value to find
+	 * @return the position or last
+	 */
+	template<class InputIterator,class T>
+	InputIterator find(InputIterator first,InputIterator last,const T& value);
+
+	/**
+	 * Returns an iterator to the first element in the range [<first> .. <last>) for which
+	 * applying pred to it, is true.
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param pred the predicate
+	 * @return the position or last
+	 */
+	template<class InputIterator,class Predicate>
+	InputIterator find_if(InputIterator first,InputIterator last,Predicate pred);
+
+	/**
+	 * Searches the range [<first1> .. <last1>) for the last occurrence of the sequence
+	 * defined by [<first2> .. <last2>), and returns an iterator to its first element.
+	 * The sequence of elements in [<first2> .. <last2>) is compared to the possible
+	 * subsequences of successive elements within [<first1> .. last1>) by either applying
+	 * the == comparison operator to each element, or the template parameter <comp>
+	 * (for the second version).
+	 *
+	 * @param first1 the start-position (inclusive) of the range to search in
+	 * @param last1 the end-position (exclusive) of the range to search in
+	 * @param first2 the start-position (inclusive) of the range to search
+	 * @param last2 the end-position (exclusive) of the range to search
+	 * @param pred the predicate
+	 * @return the position or last1
+	 */
+	template<class ForwardIterator1,class ForwardIterator2>
+	ForwardIterator1 find_end(ForwardIterator1 first1,ForwardIterator1 last1,
+			ForwardIterator2 first2,ForwardIterator2 last2);
+	template<class ForwardIterator1,class ForwardIterator2,class BinaryPredicate>
+	ForwardIterator1 find_end(ForwardIterator1 first1,ForwardIterator1 last1,
+			ForwardIterator2 first2,ForwardIterator2 last2,BinaryPredicate pred);
+
+	/**
+	 * Returns an iterator to the first occurrence in the range [<first1> .. <last1>) of any
+	 * of the elements in [<first2> .. <last2>).
+	 * All the elements in [<first2> .. <last2>) are compared to the each of the values in
+	 * [<first> .. <last>) until a match is found. The comparison is performed by either
+	 * applying the == operator, or the template parameter comp (for the second version).
+	 *
+	 * @param first1 the start-position (inclusive) of the range to search in
+	 * @param last1 the end-position (exclusive) of the range to search in
+	 * @param first2 the start-position (inclusive) of the range to search
+	 * @param last2 the end-position (exclusive) of the range to search
+	 * @param pred the predicate
+	 * @return the position or last1
+	 */
+	template<class ForwardIterator1,class ForwardIterator2>
+	ForwardIterator1 find_first_of(ForwardIterator1 first1,ForwardIterator1 last1,
+			ForwardIterator2 first2,ForwardIterator2 last2);
+	template<class ForwardIterator1,class ForwardIterator2,class BinaryPredicate>
+	ForwardIterator1 find_first_of(ForwardIterator1 first1,ForwardIterator1 last1,
+			ForwardIterator2 first2,ForwardIterator2 last2,BinaryPredicate pred);
+
+	/**
+	 * Returns the number of elements in the range [<first> .. <last>) that compare equal to value
+	 * or satisfy the given predicate, respectivly.
+	 *
+	 * @param first start-position (inclusive)
+	 * @param last end-position (exclusive)
+	 * @param value the value to count
+	 * @param pred the predicate
+	 * @return the number of matching elements
+	 */
+	template<class InputIterator,class T>
+	typename iterator_traits<InputIterator>::difference_type count(
+			InputIterator first,InputIterator last,const T& value);
+	template<class InputIterator,class Predicate>
+	typename iterator_traits<InputIterator>::difference_type count_if(
+			InputIterator first,InputIterator last,Predicate pred);
+
+	/**
+	 * Compares the elements in the range [<first1> .. <last1>) with those in the range beginning
+	 * at <first2>, and returns true if the elements in both ranges are considered equal.
+	 * The elements are compared by either applying the == comparison operator to each pair
+	 * of corresponding elements, or the template parameter comp (for the second version).
+	 *
+	 * @param first1 the start-position (inclusive) of the first range
+	 * @param last1 the end-position (exclusive) of the first range
+	 * @param first2 the start-position (inclusive) of the second range
+	 * @param pred the predicate
+	 * @return true if equal
+	 */
+	template<class InputIterator1,class InputIterator2>
+	bool equal(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2);
+	template<class InputIterator1,class InputIterator2,class BinaryPredicate>
+	bool equal(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
+			BinaryPredicate pred);
+
+	/**
+	 * Searches the range [<first1> .. <last1>) for the first occurrence of the sequence defined
+	 * by [<first2> .. <last2>), and returns an iterator to its first element.
+	 * The sequence of elements in [<first2> .. <last2>) is compared to the possible subsequences
+	 * of successive elements within [<first1> .. <last1>) by either applying the == comparison
+	 * operator or the template parameter comp (for the second version).
+	 *
+	 * @param first1 the start-position (inclusive) of the range to search in
+	 * @param last1 the end-position (exclusive) of the range to search in
+	 * @param first2 the start-position (inclusive) of the range to search
+	 * @param last2 the end-position (exclusive) of the range to search
+	 * @param pred the predicate
+	 * @return the position or last1
+	 */
+	template<class ForwardIterator1,class ForwardIterator2>
+	ForwardIterator1 search(ForwardIterator1 first1,ForwardIterator1 last1,ForwardIterator2 first2,
+			ForwardIterator2 last2);
+	template<class ForwardIterator1,class ForwardIterator2,class BinaryPredicate>
+	ForwardIterator1 search(ForwardIterator1 first1,ForwardIterator1 last1,ForwardIterator2 first2,
+			ForwardIterator2 last2,BinaryPredicate pred);
+
+	/**
+	 * Copies the elements in the range [<first> .. <last>) into a range beginning at result.
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param result the position to copy to
+	 * @return an iterator to the last element in the destination range.
+	 */
+	template<class InputIterator,class OutputIterator>
+	OutputIterator copy(InputIterator first,InputIterator last,OutputIterator result);
+
+	/**
+	 * Assigns the content of <a> to <b> and the content of <b> to <a>.
+	 *
+	 * @param a the first value
+	 * @param b the second value
+	 */
+	template<class T>
+	void swap(T& a,T& b);
+
+	/**
+	 * Exchange values of objects pointed by two iterators
+	 *
+	 * @param a the first position
+	 * @param b the second position
+	 */
+	template<class ForwardIterator1,class ForwardIterator2>
+	void iter_swap(ForwardIterator1 a,ForwardIterator2 b);
+
+	/**
+	 * The first version applies op to all the elements in the input range [<first1> .. <last1>)
+	 * and stores each returned value in the range beginning at <result>.
+	 *
+	 * The second version uses as argument for each call to <binary_op> one element from the first
+	 * input range [<first1> .. <last1>) and one element from the second input range (beginning
+	 * at <first2>).
+	 *
+	 * @param first1 the start-position (inclusive)
+	 * @param last1 the end-position (exclusive)
+	 * @param first2 the start-position in the second range (inclusive)
+	 * @param result the position at which you want to insert
+	 * @param op the operator to apply
+	 * @return An iterator pointing to the element that follows the last element written
+	 * 	in the result sequence.
+	 */
+	template<class InputIterator,class OutputIterator,class UnaryOperator>
+	OutputIterator transform(InputIterator first1,InputIterator last1,OutputIterator result,
+			UnaryOperator op);
+	template<class InputIterator1,class InputIterator2,class OutputIterator,class BinaryOperator>
+	OutputIterator transform(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
+			OutputIterator result,BinaryOperator binary_op);
+
+	/**
+	 * The first version sets all the elements in the range [<first> .. <last>) whose current
+	 * value equals <old_value> to a value of <new_value>.
+	 *
+	 * The second version sets all those elements in the range [<first> .. <last>) for which
+	 * <pred> returns true when applied to its value, to a value of <new_value>.
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param old_value the old value
+	 * @param new_value the new value
+	 */
+	template<class ForwardIterator,class T>
+	void replace(ForwardIterator first,ForwardIterator last,const T& old_value,const T& new_value);
+	template<class ForwardIterator,class Predicate,class T>
+	void replace_if(ForwardIterator first,ForwardIterator last,Predicate pred,const T& new_value);
+
+	/**
+	 * The first version sets <value> to all elements in the range [<first> .. <last>).
+	 * The second version sets <value> to the first <n> elements in the sequence pointed by <first>.
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param n the number of elements
+	 * @param value the value to fill with
+	 */
+	template<class ForwardIterator,class T>
+	void fill(ForwardIterator first,ForwardIterator last,const T& value);
+	template<class OutputIterator,class Size,class T>
+	void fill_n(OutputIterator first,Size n,const T& value);
+
+	/**
+	 * The first version sets the value of the elements in the range [<first> .. <last>) to the
+	 * value returned by successive calls to <gen>.
+	 * The second version sets the value of the first <n> elements in the sequence pointed by
+	 * <first> to the value returned by successive calls to <gen>.
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param n the number of elements
+	 * @param gen the generator
+	 */
+	template<class ForwardIterator,class Generator>
+	void generate(ForwardIterator first,ForwardIterator last,Generator gen);
+	template<class OutputIterator,class Size,class Generator>
+	void generate_n(OutputIterator first,Size n,Generator gen);
+
+	/**
+	 * The first version removes from the range [<first> .. <last>) the elements with a value equal
+	 * to <value> and returns an iterator to the new end of the range.
+	 * The second version removes from the range [<first> .. <last>) the elements for which <pred>
+	 * applied to its value is true, and returns an iterator to the new end of the range.
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param value the value
+	 * @param pred the predicate
+	 * @return an iterator to the new end of the range
+	 */
+	template<class ForwardIterator,class T>
+	ForwardIterator remove(ForwardIterator first,ForwardIterator last,const T& value);
+	template<class ForwardIterator,class Predicate>
+	ForwardIterator remove_if(ForwardIterator first,ForwardIterator last,Predicate pred);
+
+	/**
+	 * The first version reverses the order of the elements in the range [<first> .. <last>).
+	 * The second version copies the values of the elements in the range [<first> .. <last>) to
+	 * the range positions beginning at <result>, but reversing its order.
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param result where to put the result
+	 * @return An output iterator pointing to the end of the copied range
+	 */
+	template<class BidirectionalIterator>
+	void reverse(BidirectionalIterator first,BidirectionalIterator last);
+	template<class BidirectionalIterator,class OutputIterator>
+	OutputIterator reverse_copy(BidirectionalIterator first,BidirectionalIterator last,
+			OutputIterator result);
+
+	/**
+	 * Sorts the elements in the range [<first> .. <last>) into ascending order.
+	 * The elements are compared using operator< for the first version, and <comp> for the second.
+	 * Elements that would compare equal to each other are not guaranteed to keep their original
+	 * relative order.
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param comp the compare-"function"
+	 */
+	template<class RandomAccessIterator>
+	void sort(RandomAccessIterator first,RandomAccessIterator last);
+	template<class RandomAccessIterator,class Compare>
+	void sort(RandomAccessIterator first,RandomAccessIterator last,Compare comp);
+
+	/**
+	 * Returns an iterator pointing to the first element in the sorted range [<first> .. <last>)
+	 * which does not compare less than <value>. The comparison is done using either operator<
+	 * for the first version, or <comp> for the second.
+	 * For the function to yield the expected result, the elements in the range shall already be
+	 * ordered according to the same criterion (operator< or <comp>).
+	 * Unlike upper_bound, this function returns an iterator to the element also if it
+	 * compares equivalent to <value> and not only if it compares greater.
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param value the value
+	 * @param comp the compare-"function" that returns true if a is less than b
+	 * @return Iterator to the lower bound position for <value> in the range.
+	 */
+	template<class ForwardIterator,class T>
+	ForwardIterator lower_bound(ForwardIterator first,ForwardIterator last,const T& value);
+	template<class ForwardIterator,class T,class Compare>
+	ForwardIterator lower_bound(ForwardIterator first,ForwardIterator last,const T& value,
+			Compare comp);
+
+	/**
+	 * Returns an iterator pointing to the first element in the sorted range [<first> .. <last>)
+	 * which compares greater than <value>. The comparison is done using either operator< for
+	 * the first version, or <comp> for the second.
+	 * For the function to yield the expected result, the elements in the range shall already be
+	 * ordered according to the same criterion (operator< or <comp>).
+	 * Unlike lower_bound, this function does not return an iterator to the element if it compares
+	 * equivalent to <value>, but only if it compares strictly greater.
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param value the value
+	 * @param comp the compare-"function" that returns true if a is less than b
+	 * @return Iterator to the upper bound position for value in the range.
+	 */
+	template<class ForwardIterator,class T>
+	ForwardIterator upper_bound(ForwardIterator first,ForwardIterator last,const T& value);
+	template<class ForwardIterator,class T,class Compare>
+	ForwardIterator upper_bound(ForwardIterator first,ForwardIterator last,const T& value,
+			Compare comp);
+
+	/**
+	 * Returns true if an element in the range [<first> .. <last>) is equivalent to <value>, and
+	 * false otherwise.
+	 * The comparison is performed using either operator< for the first version, or <comp> for the
+	 * second: A value, a, is considered equivalent to another, b, when (!(a<b) && !(b<a)) or
+	 * (!comp(a,b) && !comp(b,a))
+	 * For the function to yield the expected result, the elements in the range shall already be
+	 * ordered according to the same criterion (operator< or <comp>).
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param value the value
+	 * @param comp the compare-"function" that returns true if a is less than b
+	 * @return true if the element was found
+	 */
+	template<class ForwardIterator,class T>
+	bool binary_search(ForwardIterator first,ForwardIterator last,const T& value);
+	template<class ForwardIterator,class T,class Compare>
+	bool binary_search(ForwardIterator first,ForwardIterator last,const T& value,Compare comp);
+
+	/**
+	 * Combines the elements in the sorted ranges [<first1> .. <last1>) and [<first2> .. <last2>),
+	 * into a new range beginning at <result> with its elements sorted. The comparison for
+	 * sorting uses either operator< for the first version, or <comp> for the second.
+	 * For the function to yield the expected result, the elements in the both ranges shall already
+	 * be ordered according to the same strict weak ordering criterion (operator< or comp).
+	 * The resulting range is also sorted according to it.
+	 *
+	 * @param first1 the start-position in the first range (inclusive)
+	 * @param last1 the end-position in the first range (exclusive)
+	 * @param first2 the start-position in the second range (inclusive)
+	 * @param last2 the end-position in the second range (exclusive)
+	 * @param comp the compare-"function" that returns true if a is less than b
+	 * @return An iterator pointing to the past-the-end element in the resulting sequence.
+	 */
+	template<class InputIterator1,class InputIterator2,class OutputIterator>
+	OutputIterator merge(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
+			InputIterator2 last2,OutputIterator result);
+	template<class InputIterator1,class InputIterator2,class OutputIterator,class Compare>
+	OutputIterator merge(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
+			InputIterator2 last2,OutputIterator result,Compare comp);
+
+	/**
+	 * Returns true if all the elements in the range [<first2> .. <last2>) are equivalent to some
+	 * element in [<first1> .. <last1>). The comparison uses either operator< for the first
+	 * version, or <comp> for the second to test this; The value of an element, a, is equivalent
+	 * to another one, b, when (!a<b && !b<a) or (!comp(a,b) && !comp(b,a)).
+	 * For the function to yield the expected result, the elements in the ranges shall be already
+	 * ordered according to the same strict weak ordering criterion (operator< or <comp>).
+	 *
+	 * @param first1 the start-position in the first range (inclusive)
+	 * @param last1 the end-position in the first range (exclusive)
+	 * @param first2 the start-position in the second range (inclusive)
+	 * @param last2 the end-position in the second range (exclusive)
+	 * @param comp the compare-"function" that returns true if a is less than b
+	 * @return true if range [<first2> .. <last2>) is contained in [<first1> .. <last1>)
+	 */
+	template<class InputIterator1,class InputIterator2>
+	bool includes(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
+			InputIterator2 last2);
+	template<class InputIterator1,class InputIterator2,class Compare>
+	bool includes(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
+			InputIterator2 last2,Compare comp);
+
+	/**
+	 * Returns the lesser of <a> and <b>.
+	 * The comparison uses operator< for the first version, and <comp> for the second.
+	 *
+	 * @param a the first value
+	 * @param b the second value
+	 * @param comp function object that returns true if the first arg is lesser than the second
+	 * @return the lesser one
+	 */
+	template<class T>
+	const T& min(const T& a,const T& b);
+	template<class T,class Compare>
+	const T& min(const T& a,const T& b,Compare comp);
+
+	/**
+	 * Returns the greater of <a> and <b>.
+	 * The comparison uses operator< (<b> < <a>) for the first version, and <comp> for the second.
+	 *
+	 * @param a the first value
+	 * @param b the second value
+	 * @param comp function object that returns true if the first arg is lesser than the second
+	 * @return the larger one
+	 */
+	template<class T>
+	const T& max(const T& a,const T& b);
+	template<class T,class Compare>
+	const T& max(const T& a,const T& b,Compare comp);
+
+	/**
+	 * Returns an iterator pointing to the element with the smallest value in the range
+	 * [<first> .. <last>). The comparisons are performed using either operator<  for the first
+	 * version, or <comp> for the second; An element is the smallest if no other element compares
+	 * less than it (it may compare equal, though).
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param comp function object that returns true if the first arg is lesser than the second
+	 * @return Iterator to smallest value in the range.
+	 */
+	template<class ForwardIterator>
+	ForwardIterator min_element(ForwardIterator first,ForwardIterator last);
+	template<class ForwardIterator,class Compare>
+	ForwardIterator min_element(ForwardIterator first,ForwardIterator last,Compare comp);
+
+	/**
+	 * Returns an iterator pointing to the element with the largest value in the range
+	 * [<first> .. <last>). The comparisons are performed using either operator<  for the first
+	 * version, or <comp> for the second; An element is the largest if it does not compare less
+	 * than any other element (it may compare equal, though).
+	 *
+	 * @param first the start-position (inclusive)
+	 * @param last the end-position (exclusive)
+	 * @param comp function object that returns true if the first arg is lesser than the second
+	 * @return Iterator to largest value in the range.
+	 */
+	template<class ForwardIterator>
+	ForwardIterator max_element(ForwardIterator first,ForwardIterator last);
+	template<class ForwardIterator,class Compare>
+	ForwardIterator max_element(ForwardIterator first,ForwardIterator last,Compare comp);
+
+	/**
+	 * Returns true if range [<first1> .. <last1>) compares lexicographically less than the range
+	 * [<first2> .. <last2>).
+	 * Lexicographical comparison is used for example to sort words alphabetically in dictionaries
+	 * (or in the list of algorithms right here on the left); It involves comparing sequentially
+	 * the elements that have the same position in both ranges against each other until one
+	 * element is not equivalent to the other. The result of comparing these first
+	 * non-matching elements is the result of the lexicographical comparison.
+	 *
+	 * @param first1 the start-position in the first range (inclusive)
+	 * @param last1 the end-position in the first range (exclusive)
+	 * @param first2 the start-position in the second range (inclusive)
+	 * @param last2 the end-position in the second range (exclusive)
+	 * @param comp function object that returns true if the first arg is lesser than the second
+	 * @return true if the first range compares lexicographically less than than the second.
+	 */
+	template<class InputIterator1,class InputIterator2>
+	bool lexicographical_compare(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
+			InputIterator2 last2);
+	template<class InputIterator1,class InputIterator2,class Compare>
+	bool lexicographical_compare(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
+			InputIterator2 last2,Compare comp);
+}
+
+#include "../../lib/cpp/src/algorithm.cc"
+
+#endif /* ALGORITHM_ */

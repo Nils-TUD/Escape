@@ -17,10 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXCEPTION_
-#define EXCEPTION_
+#ifndef STREAM_TYPES_H_
+#define STREAM_TYPES_H_
 
-#include <iexception/exception.h>
-#include <stdexcept>
+#include <esc/defines.h>
 
-#endif /* EXCEPTION_ */
+namespace std {
+	typedef off_t streamoff;
+	typedef size_t streamsize;
+}
+
+#endif /* STREAM_TYPES_H_ */

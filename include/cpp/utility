@@ -17,10 +17,43 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXCEPTION_
-#define EXCEPTION_
+#ifndef STD_UTILITY_
+#define STD_UTILITY_
 
-#include <iexception/exception.h>
-#include <stdexcept>
+#include <stddef.h>
 
-#endif /* EXCEPTION_ */
+namespace std {
+	template<class T1,class T2>
+	struct pair {
+		typedef T1 first_type;
+		typedef T2 second_type;
+
+		T1 first;
+		T2 second;
+
+		pair();
+		pair(const T1& x,const T2& y);
+		template<class U,class V>
+		pair(const pair<U,V> &p);
+
+		pair& operator=(const pair<T1,T2>& p2);
+	};
+
+	template<class T1,class T2>
+	pair<T1,T2> make_pair(T1 x,T2 y);
+
+	namespace rel_ops {
+		template<class T>
+		bool operator!=(const T& x,const T& y);
+		template<class T>
+		bool operator>(const T& x,const T& y);
+		template<class T>
+		bool operator<=(const T& x,const T& y);
+		template<class T>
+		bool operator>=(const T& x,const T& y);
+	}
+}
+
+#include "../../lib/cpp/src/utility.cc"
+
+#endif /* STD_UTILITY_ */

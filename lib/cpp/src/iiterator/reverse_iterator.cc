@@ -18,7 +18,7 @@
  */
 
 #include <stddef.h>
-#include <intern/reverse_iterator.h>
+#include <iiterator/reverse_iterator.h>
 
 namespace std {
 	// === constructors ===

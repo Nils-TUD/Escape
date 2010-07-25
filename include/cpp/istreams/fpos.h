@@ -17,10 +17,35 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXCEPTION_
-#define EXCEPTION_
+#ifndef FPOS_H_
+#define FPOS_H_
 
-#include <iexception/exception.h>
-#include <stdexcept>
+#include <stddef.h>
+#include <istreams/ios_types.h>
 
-#endif /* EXCEPTION_ */
+namespace std {
+	template<class stateT>
+	class fpos {
+	public:
+		fpos();
+		fpos(streamoff off);
+		~fpos();
+
+		stateT state() const;
+		void state(stateT st);
+
+		operator streamoff() const;
+	    fpos& operator+=(streamoff off);
+		fpos& operator-=(streamoff off);
+		fpos operator+(streamoff off) const;
+		fpos operator-(streamoff off) const;
+		streamoff operator-(const fpos& pos) const;
+	private:
+		stateT _st;
+		streamoff _off;
+	};
+}
+
+#include "../../../lib/cpp/src/istreams/fpos.cc"
+
+#endif /* FPOS_H_ */

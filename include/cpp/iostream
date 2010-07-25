@@ -17,20 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ITERATOR_OPS_H_
-#define ITERATOR_OPS_H_
+#ifndef IOSTREAM_
+#define IOSTREAM_
 
-#include <stddef.h>
+#include <iosfwd>
 
 namespace std {
-	template<class InputIterator,class Distance>
-	void advance(InputIterator& i,Distance n);
-
-	template<class InputIterator>
-	typename iterator_traits<InputIterator>::difference_type distance(
-			InputIterator first,InputIterator last);
+	extern istream cin;
+	extern ostream cout;
+	extern ostream cerr;
+	extern ostream clog;
 }
 
-#include "../../../lib/cpp/src/intern/iterator_ops.cc"
-
-#endif /* ITERATOR_OPS_H_ */
+#endif /* IOSTREAM_ */

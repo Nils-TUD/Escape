@@ -17,10 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXCEPTION_
-#define EXCEPTION_
+#ifndef IOS_
+#define IOS_
 
-#include <iexception/exception.h>
-#include <stdexcept>
+#include <iosfwd>
+#include <istreams/ios_types.h>
+#include <istreams/ios_base.h>
+#include <istreams/fpos.h>
+#include <istreams/basic_ios.h>
 
-#endif /* EXCEPTION_ */
+#endif /* IOS_ */

@@ -21,8 +21,8 @@
 #define CPP_ITERATOR_
 
 #include <stddef.h>
-#include <intern/iterator_types.h>
-#include <intern/iterator_ops.h>
-#include <intern/reverse_iterator.h>
+#include <iiterator/iterator_types.h>
+#include <iiterator/iterator_ops.h>
+#include <iiterator/reverse_iterator.h>
 
 #endif /* CPP_ITERATOR_ */

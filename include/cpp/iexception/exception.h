@@ -17,10 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXCEPTION_
-#define EXCEPTION_
+#ifndef EXCEPTION_H_
+#define EXCEPTION_H_
 
-#include <iexception/exception.h>
-#include <stdexcept>
+#include <stddef.h>
+#include <string>
 
-#endif /* EXCEPTION_ */
+namespace std {
+	/**
+	 * The base-exception
+	 */
+	class exception {
+	public:
+		exception() throw ();
+		exception(const exception&) throw ();
+		exception & operator =(const exception&) throw ();
+		virtual ~exception() throw ();
+		virtual const char *what() const throw ();
+	};
+}
+
+#endif /* EXCEPTION_H_ */

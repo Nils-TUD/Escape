@@ -18,7 +18,7 @@
  */
 
 #include <stddef.h>
-#include <exception>
+#include <stdexcept>
 
 namespace std {
 	logic_error::logic_error(const string& msg)

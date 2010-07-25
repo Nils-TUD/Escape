@@ -17,10 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef EXCEPTION_
-#define EXCEPTION_
+#ifndef IOS_TYPES_H_
+#define IOS_TYPES_H_
 
-#include <iexception/exception.h>
-#include <stdexcept>
+#include <stddef.h>
+#include <esc/defines.h>
+#include <istreams/stream_types.h>
+#include <string>
 
-#endif /* EXCEPTION_ */
+namespace std {
+	template<class stateT>
+	class fpos;
+	class ios_base;
+	//template<class charT,class traits = char_traits<charT> >
+	//class basic_ios;
+}
+
+#endif /* IOS_TYPES_H_ */

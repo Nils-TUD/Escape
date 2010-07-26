@@ -24,9 +24,7 @@
 #include <string>
 
 namespace std {
-	template<class charT> class char_traits;
-	template<> class char_traits<char>;
-	template<class T> class allocator;
+	//template<> struct char_traits<char>;
 
 	template<class charT,class traits = char_traits<charT> >
 	class basic_ios;
@@ -38,13 +36,13 @@ namespace std {
 	class basic_ostream;
 	template<class charT,class traits = char_traits<charT> >
 	class basic_iostream;
-	template<class charT,class traits = char_traits<charT> ,class Allocator = allocator<charT> >
+	template<class charT,class traits = char_traits<charT> >
 	class basic_stringbuf;
-	template<class charT,class traits = char_traits<charT> ,class Allocator = allocator<charT> >
+	template<class charT,class traits = char_traits<charT> >
 	class basic_istringstream;
-	template<class charT,class traits = char_traits<charT> ,class Allocator = allocator<charT> >
+	template<class charT,class traits = char_traits<charT> >
 	class basic_ostringstream;
-	template<class charT,class traits = char_traits<charT> ,class Allocator = allocator<charT> >
+	template<class charT,class traits = char_traits<charT> >
 	class basic_stringstream;
 	template<class charT,class traits = char_traits<charT> >
 	class basic_filebuf;

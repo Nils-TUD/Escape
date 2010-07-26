@@ -17,32 +17,35 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BASIC_STREAMBUF_H_
-#define BASIC_STREAMBUF_H_
+#ifndef BASIC_STRINGBUF_H_
+#define BASIC_STRINGBUF_H_
 
 #include <stddef.h>
+#include <istreams/basic_streambuf.h>
 
 namespace std {
 	template<class charT,class traits = char_traits<charT> >
-	class basic_streambuf {
+	class basic_stringbuf: public basic_streambuf<charT,traits> {
 	public:
-		typedef charT char_type;
-		typedef typename traits::int_type int_type;
-		typedef typename traits::pos_type pos_type;
-		typedef typename traits::off_type off_type;
-		typedef traits traits_type;
+		typedef typename basic_streambuf<charT,traits>::char_type char_type;
+		typedef typename basic_streambuf<charT,traits>::pos_type pos_type;
 
-		basic_streambuf();
-		virtual ~basic_streambuf();
+		explicit basic_stringbuf(string& str,ios_base::openmode which = ios_base::in | ios_base::out);
+		virtual ~basic_stringbuf();
 
-		virtual char_type peek() const = 0;
-		virtual char_type get() = 0;
-		virtual bool unget() = 0;
+		virtual char_type peek() const;
+		virtual char_type get();
+		virtual bool unget();
 
-		virtual bool put(char_type c) = 0;
+		virtual bool put(char_type c);
+
+	private:
+		pos_type _pos;
+		ios_base::openmode _mode;
+		string &_str;
 	};
 }
 
-#include "../../../lib/cpp/src/istreams/basic_streambuf.cc"
+#include "../../../lib/cpp/src/istreams/basic_stringbuf.cc"
 
-#endif /* BASIC_STREAMBUF_H_ */
+#endif /* BASIC_STRINGBUF_H_ */

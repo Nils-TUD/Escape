@@ -17,10 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stdio.h>
-#include <istring/char_traits.h>
-#include <algorithm>
-
 namespace std {
 	template<typename CharT>
 	void char_traits<CharT>::assign(char_type& c1,const char_type& c2) {

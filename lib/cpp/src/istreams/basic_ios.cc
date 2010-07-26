@@ -17,8 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <istreams/basic_ios.h>
-
 namespace std {
 	template<class charT,class traits>
 	inline basic_ios<charT,traits>::basic_ios(basic_streambuf<charT,traits>* sb) {
@@ -36,13 +34,13 @@ namespace std {
 	template<class charT,class traits>
 	void basic_ios<charT,traits>::init(basic_streambuf<charT,traits>* sb) {
 		rdbuf(sb);
-		tie(NULL);
+		//tie(NULL);
 		_rdst = sb ? goodbit : badbit;
 		exceptions(goodbit);
 		flags(skipws | dec);
 		width(0);
 		precision(6);
-		fill(widen(' '));
+		fill(' ');
 	}
 
 	template<class charT,class traits>
@@ -99,7 +97,7 @@ namespace std {
 		clear(rdstate());
 	}
 
-	template<class charT,class traits>
+	/*template<class charT,class traits>
 	inline basic_ostream<charT,traits>* basic_ios<charT,traits>::tie() const {
 		return _tie;
 	}
@@ -109,7 +107,7 @@ namespace std {
 		basic_ostream<charT,traits>* old = _tie;
 		_tie = tiestr;
 		return old;
-	}
+	}*/
 
 	template<class charT,class traits>
 	inline basic_streambuf<charT,traits>* basic_ios<charT,traits>::rdbuf() const {
@@ -132,7 +130,7 @@ namespace std {
 			precision(rhs.precision());
 			width(rhs.width());
 			fill(rhs.fill());
-			tie(rhs.tie());
+			//tie(rhs.tie());
 			raise_event(copyfmt_event);
 			exceptions(rhs.exceptions());
 		}
@@ -148,16 +146,5 @@ namespace std {
 		char_type old = _fill;
 		_fill = ch;
 		return old;
-	}
-
-	template<class charT,class traits>
-	char basic_ios<charT,traits>::narrow(char_type c,char dfault) const {
-		// TODO this is not the required behaviour, but should work for now :)
-		return static_cast<char>(c > 0xFF ? dfault : c);
-	}
-	template<class charT,class traits>
-	typename basic_ios<charT,traits>::char_type basic_ios<charT,traits>::widen(char c) const {
-		// TODO this is not the required behaviour, but should work for now :)
-		return static_cast<char_type>(c);
 	}
 }

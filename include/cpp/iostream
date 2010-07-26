@@ -20,8 +20,6 @@
 #ifndef IOSTREAM_
 #define IOSTREAM_
 
-#include <iosfwd>
-
 namespace std {
 	extern istream cin;
 	extern ostream cout;

@@ -71,42 +71,42 @@ namespace std {
 		// do nothing here
 	}
 
-	inline ios_base::fmtflags ios_base::flags() const {
+	ios_base::fmtflags ios_base::flags() const {
 		return _flags;
 	}
-	inline ios_base::fmtflags ios_base::flags(fmtflags fmtfl) {
+	ios_base::fmtflags ios_base::flags(fmtflags fmtfl) {
 		fmtflags old = _flags;
 		_flags = fmtfl;
 		return old;
 	}
-	inline ios_base::fmtflags ios_base::setf(fmtflags fmtfl) {
+	ios_base::fmtflags ios_base::setf(fmtflags fmtfl) {
 		fmtflags old = _flags;
 		_flags |= fmtfl;
 		return old;
 	}
-	inline ios_base::fmtflags ios_base::setf(fmtflags fmtfl,fmtflags mask) {
+	ios_base::fmtflags ios_base::setf(fmtflags fmtfl,fmtflags mask) {
 		fmtflags old = _flags;
 		_flags &= ~mask;
 		_flags |= fmtfl & mask;
 		return old;
 	}
-	inline void ios_base::unsetf(fmtflags mask) {
+	void ios_base::unsetf(fmtflags mask) {
 		_flags &= ~mask;
 	}
 
-	inline streamsize ios_base::precision() const {
+	streamsize ios_base::precision() const {
 		return _prec;
 	}
-	inline streamsize ios_base::precision(streamsize prec) {
+	streamsize ios_base::precision(streamsize prec) {
 		streamsize old = _prec;
 		_prec = prec;
 		return old;
 	}
 
-	inline streamsize ios_base::width() const {
+	streamsize ios_base::width() const {
 		return _width;
 	}
-	inline streamsize ios_base::width(streamsize wide) {
+	streamsize ios_base::width(streamsize wide) {
 		streamsize old = _width;
 		_width = wide;
 		return old;

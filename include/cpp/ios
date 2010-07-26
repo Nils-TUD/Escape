@@ -20,7 +20,6 @@
 #ifndef IOS_
 #define IOS_
 
-#include <iosfwd>
 #include <istreams/ios_types.h>
 #include <istreams/ios_base.h>
 #include <istreams/fpos.h>

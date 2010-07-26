@@ -17,32 +17,29 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BASIC_STREAMBUF_H_
-#define BASIC_STREAMBUF_H_
+#ifndef SSTREAM_
+#define SSTREAM_
 
 #include <stddef.h>
+#include <istreams/ios_base.h>
+#include <istreams/ios_ops.h>
+#include <istreams/ios_types.h>
+#include <istreams/basic_stringbuf.h>
 
 namespace std {
-	template<class charT,class traits = char_traits<charT> >
-	class basic_streambuf {
-	public:
-		typedef charT char_type;
-		typedef typename traits::int_type int_type;
-		typedef typename traits::pos_type pos_type;
-		typedef typename traits::off_type off_type;
-		typedef traits traits_type;
+	typedef basic_stringbuf<char> stringbuf;
 
-		basic_streambuf();
-		virtual ~basic_streambuf();
+	//template<class charT,class traits>
+	//class basic_istringstream;
+	//typedef basic_istringstream<char> istringstream;
 
-		virtual char_type peek() const = 0;
-		virtual char_type get() = 0;
-		virtual bool unget() = 0;
+	//template<class charT,class traits>
+	//class basic_ostringstream;
+	//typedef basic_ostringstream<char> ostringstream;
 
-		virtual bool put(char_type c) = 0;
-	};
+	//template<class charT,class traits>
+	//class basic_stringstream;
+	//typedef basic_stringstream<char> stringstream;
 }
 
-#include "../../../lib/cpp/src/istreams/basic_streambuf.cc"
-
-#endif /* BASIC_STREAMBUF_H_ */
+#endif /* SSTREAM_ */

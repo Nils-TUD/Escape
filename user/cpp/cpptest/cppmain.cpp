@@ -22,6 +22,8 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <istream>
+#include <sstream>
 //#include <ustl.h>
 
 using namespace std;
@@ -171,6 +173,14 @@ int main(void) {
     	printf("Got %d\n",e);
     }
 	printf("da\n");
+
+	string teststr("123 456 abc 1");
+	stringbuf buf(teststr);
+	istream istr(&buf);
+	int i1,i2,i3;
+	bool b1;
+	istr >> i1 >> i2 >> hex >> i3 >> dec >> b1;
+	printf("i1=%d, i2=%d, i3=%d, b1=%d\n",i1,i2,i3,b1);
 
 	/*
 	String s1 = "abc";

@@ -23,4 +23,43 @@
 #include <iexception/exception.h>
 #include <stdexcept>
 
+namespace std {
+	/**
+	 * Type of terminate-handlers
+	 */
+	typedef void (*terminate_handler)(void);
+	/**
+	 * Type of unexpected-handlers
+	 */
+	typedef void (*unexpected_handler)(void);
+
+	/**
+	 * Sets the terminate-handler
+	 *
+	 * @param pHandler the new one
+	 * @return the old one
+	 */
+	terminate_handler set_terminate(terminate_handler pHandler) throw ();
+	/**
+	 * Is called by the runtime if exception-handling must be aborted
+	 */
+	void terminate(void) __attribute__ ((__noreturn__));
+	/**
+	 * Sets the unexpected-handler
+	 *
+	 * @param pHandler the new one
+	 * @return the old one
+	 */
+	unexpected_handler set_unexpected(unexpected_handler pHandler) throw ();
+	/**
+	 * Is called by the runtime if an exception is thrown which violates the functions exception
+	 * specification
+	 */
+	void unexpected(void) __attribute__ ((__noreturn__));
+	/**
+	 * @return true if the caught exception violates the throw specification.
+	 */
+	bool uncaught_exception() throw ();
+}
+
 #endif /* EXCEPTION_ */

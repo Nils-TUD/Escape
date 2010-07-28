@@ -17,14 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef STREAM_TYPES_H_
-#define STREAM_TYPES_H_
+#ifndef BASIC_STRINGSTREAM_H_
+#define BASIC_STRINGSTREAM_H_
 
-#include <esc/defines.h>
+#include <istreams/basic_iostream.h>
 
 namespace std {
-	typedef off_t streamoff;
-	typedef size_t streamsize;
+	template<class charT,class traits = char_traits<charT> >
+	class basic_stringstream: public basic_iostream<charT,traits> {
+	public:
+		explicit basic_stringstream(basic_string<charT>& str,
+				ios_base::openmode which = ios_base::out | ios_base::in);
+		virtual ~basic_stringstream();
+
+		basic_stringbuf<charT,traits>* rdbuf() const;
+		basic_string<charT>& str() const;
+		void str(basic_string<charT>& s);
+	};
 }
 
-#endif /* STREAM_TYPES_H_ */
+#include "../../../lib/cpp/src/istreams/basic_stringstream.cc"
+
+#endif /* BASIC_STRINGSTREAM_H_ */

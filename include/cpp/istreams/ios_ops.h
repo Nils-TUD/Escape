@@ -21,7 +21,7 @@
 #define IOS_OPS_H_
 
 #include <stddef.h>
-#include <istreams/ios_types.h>
+#include <istreams/ios_base.h>
 
 namespace std {
 	// 27.4.5, manipulators:

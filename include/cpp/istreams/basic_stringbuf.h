@@ -24,25 +24,76 @@
 #include <istreams/basic_streambuf.h>
 
 namespace std {
+	/**
+	 * Uses a string as buffer to read from and write to
+	 */
 	template<class charT,class traits = char_traits<charT> >
 	class basic_stringbuf: public basic_streambuf<charT,traits> {
 	public:
 		typedef typename basic_streambuf<charT,traits>::char_type char_type;
 		typedef typename basic_streambuf<charT,traits>::pos_type pos_type;
 
-		explicit basic_stringbuf(string& str,ios_base::openmode which = ios_base::in | ios_base::out);
+		/**
+		 * Creates a new stringbuffer with given string and openmode
+		 *
+		 * @param str the string
+		 * @param which the open-mode ((in | out) by default)
+		 */
+		explicit basic_stringbuf(basic_string<charT>& str,
+				ios_base::openmode which = ios_base::in | ios_base::out);
+		/**
+		 * Destructor
+		 */
 		virtual ~basic_stringbuf();
 
-		virtual char_type peek() const;
-		virtual char_type get();
-		virtual bool unget();
+		/**
+		 * @return the used string
+		 */
+		basic_string<charT>& str() const;
+		/**
+		 * Sets the string to use for read/write
+		 *
+		 * @param s the string
+		 */
+		void str(basic_string<charT>& s);
 
-		virtual bool put(char_type c);
+		/**
+		 * @return the char at the current position
+		 * @throws eof_reached if EOF is reached
+		 * @throws bad_state if reading is not allowed
+		 */
+		virtual char_type peek() const;
+		/**
+		 * Moves the position-pointer forward
+		 *
+		 * @return the char at the current position
+		 * @throws eof_reached if EOF is reached
+		 * @throws bad_state if reading is not allowed
+		 */
+		virtual char_type get();
+		/**
+		 * Moves the position-pointer one step backwards
+		 *
+		 * @throws bad_state if reading is not allowed or we're at position 0
+		 */
+		virtual void unget();
+
+		/**
+		 * Puts the given character into the buffer
+		 *
+		 * @param c the character
+		 * @throws bad_state if writing is not allowed
+		 */
+		virtual void put(char_type c);
+		/**
+		 * Does nothing
+		 */
+		virtual void flush() throw();
 
 	private:
 		pos_type _pos;
 		ios_base::openmode _mode;
-		string &_str;
+		basic_string<charT>& _str;
 	};
 }
 

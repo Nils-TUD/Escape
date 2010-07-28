@@ -17,14 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ISTREAM_
-#define ISTREAM_
-
-#include <stddef.h>
-#include <istreams/basic_istream.h>
-
 namespace std {
-	typedef basic_istream<char> istream;
+	template<class charT,class traits>
+	basic_iostream<charT,traits>::basic_iostream(basic_streambuf<charT,traits>* sb)
+		: basic_istream<charT,traits>(sb), basic_ostream<charT,traits>(sb) {
+	}
+	template<class charT,class traits>
+	basic_iostream<charT,traits>::~basic_iostream() {
+	}
 }
-
-#endif /* ISTREAM_ */

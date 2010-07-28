@@ -85,10 +85,10 @@ namespace std {
 	struct numeric_limits<char> {
 		static const bool is_specialized = true;
 
-		static bool min() throw () {
+		static char min() throw () {
 			return SCHAR_MIN;
 		}
-		static bool max() throw () {
+		static char max() throw () {
 			return SCHAR_MAX;
 		}
 
@@ -104,10 +104,10 @@ namespace std {
 	struct numeric_limits<unsigned char> {
 		static const bool is_specialized = true;
 
-		static bool min() throw () {
+		static unsigned char min() throw () {
 			return 0;
 		}
-		static bool max() throw () {
+		static unsigned char max() throw () {
 			return UCHAR_MAX;
 		}
 
@@ -123,10 +123,10 @@ namespace std {
 	struct numeric_limits<short> {
 		static const bool is_specialized = true;
 
-		static bool min() throw () {
+		static short min() throw () {
 			return SHRT_MIN;
 		}
-		static bool max() throw () {
+		static short max() throw () {
 			return SHRT_MAX;
 		}
 
@@ -142,10 +142,10 @@ namespace std {
 	struct numeric_limits<unsigned short> {
 		static const bool is_specialized = true;
 
-		static bool min() throw () {
+		static unsigned short min() throw () {
 			return 0;
 		}
-		static bool max() throw () {
+		static unsigned short max() throw () {
 			return USHRT_MAX;
 		}
 
@@ -161,10 +161,10 @@ namespace std {
 	struct numeric_limits<int> {
 		static const bool is_specialized = true;
 
-		static bool min() throw () {
+		static int min() throw () {
 			return INT_MIN;
 		}
-		static bool max() throw () {
+		static int max() throw () {
 			return INT_MAX;
 		}
 
@@ -180,10 +180,10 @@ namespace std {
 	struct numeric_limits<unsigned int> {
 		static const bool is_specialized = true;
 
-		static bool min() throw () {
+		static unsigned int min() throw () {
 			return 0;
 		}
-		static bool max() throw () {
+		static unsigned int max() throw () {
 			return UINT_MAX;
 		}
 
@@ -199,10 +199,10 @@ namespace std {
 	struct numeric_limits<long> {
 		static const bool is_specialized = true;
 
-		static bool min() throw () {
+		static long min() throw () {
 			return LONG_MIN;
 		}
-		static bool max() throw () {
+		static long max() throw () {
 			return LONG_MAX;
 		}
 
@@ -218,10 +218,10 @@ namespace std {
 	struct numeric_limits<unsigned long> {
 		static const bool is_specialized = true;
 
-		static bool min() throw () {
+		static unsigned long min() throw () {
 			return 0;
 		}
-		static bool max() throw () {
+		static unsigned long max() throw () {
 			return ULONG_MAX;
 		}
 
@@ -237,10 +237,10 @@ namespace std {
 	struct numeric_limits<long long> {
 		static const bool is_specialized = true;
 
-		static bool min() throw () {
+		static long long min() throw () {
 			return LLONG_MIN;
 		}
-		static bool max() throw () {
+		static long long max() throw () {
 			return LLONG_MAX;
 		}
 
@@ -256,10 +256,10 @@ namespace std {
 	struct numeric_limits<unsigned long long> {
 		static const bool is_specialized = true;
 
-		static bool min() throw () {
+		static unsigned long long min() throw () {
 			return 0;
 		}
-		static bool max() throw () {
+		static unsigned long long max() throw () {
 			return ULLONG_MAX;
 		}
 

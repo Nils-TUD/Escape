@@ -23,6 +23,7 @@
 #include <vector>
 #include <list>
 #include <istream>
+#include <ostream>
 #include <sstream>
 //#include <ustl.h>
 
@@ -174,13 +175,28 @@ int main(void) {
     }
 	printf("da\n");
 
-	string teststr("123 456 abc 1");
-	stringbuf buf(teststr);
-	istream istr(&buf);
+	const string teststr("123 456 abc 1 myteststringfoo");
+	char buf[10];
+	istringstream istr(teststr);
 	int i1,i2,i3;
 	bool b1;
 	istr >> i1 >> i2 >> hex >> i3 >> dec >> b1;
-	printf("i1=%d, i2=%d, i3=%d, b1=%d\n",i1,i2,i3,b1);
+	istr.width(10);
+	istr >> buf;
+	printf("i1=%d, i2=%d, i3=%d, b1=%d buf='%s'\n",i1,i2,i3,b1,buf);
+
+	string outstr;
+	ostringstream ostr(outstr);
+	char bla[] = "foo";
+	ostr << 1234 << ' ';
+	ostr << 14u << ' ';
+	ostr << &ostr << ' ';
+	ostr << 1.412f << ' ';
+	ostr << 1.412 << bla;
+	ostr << 1.412L << endl;
+	ostr.width(10);
+	ostr << hex << showbase << '\'' << 0xabcdefu << '\'';
+	printf("str=%s\n",outstr.c_str());
 
 	/*
 	String s1 = "abc";

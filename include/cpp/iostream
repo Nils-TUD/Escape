@@ -20,7 +20,11 @@
 #ifndef IOSTREAM_
 #define IOSTREAM_
 
+#include <istreams/basic_iostream.h>
+
 namespace std {
+	typedef basic_iostream<char> iostream;
+
 	extern istream cin;
 	extern ostream cout;
 	extern ostream cerr;

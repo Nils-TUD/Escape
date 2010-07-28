@@ -34,10 +34,10 @@ namespace std {
 	template<class charT,class traits>
 	void basic_ios<charT,traits>::init(basic_streambuf<charT,traits>* sb) {
 		rdbuf(sb);
-		//tie(NULL);
+		tie(NULL);
 		_rdst = sb ? goodbit : badbit;
 		exceptions(goodbit);
-		flags(skipws | dec);
+		flags(skipws | dec | left);
 		width(0);
 		precision(6);
 		fill(' ');
@@ -97,7 +97,7 @@ namespace std {
 		clear(rdstate());
 	}
 
-	/*template<class charT,class traits>
+	template<class charT,class traits>
 	inline basic_ostream<charT,traits>* basic_ios<charT,traits>::tie() const {
 		return _tie;
 	}
@@ -107,7 +107,7 @@ namespace std {
 		basic_ostream<charT,traits>* old = _tie;
 		_tie = tiestr;
 		return old;
-	}*/
+	}
 
 	template<class charT,class traits>
 	inline basic_streambuf<charT,traits>* basic_ios<charT,traits>::rdbuf() const {
@@ -130,7 +130,7 @@ namespace std {
 			precision(rhs.precision());
 			width(rhs.width());
 			fill(rhs.fill());
-			//tie(rhs.tie());
+			tie(rhs.tie());
 			raise_event(copyfmt_event);
 			exceptions(rhs.exceptions());
 		}

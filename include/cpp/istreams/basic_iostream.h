@@ -17,20 +17,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef IOS_TYPES_H_
-#define IOS_TYPES_H_
+#ifndef BASIC_IOSTREAM_H_
+#define BASIC_IOSTREAM_H_
 
-#include <stddef.h>
-#include <esc/defines.h>
-#include <istreams/stream_types.h>
-#include <string>
+#include <istreams/basic_istream.h>
+#include <istreams/basic_ostream.h>
 
 namespace std {
-	template<class stateT>
-	class fpos;
-	class ios_base;
-	//template<class charT,class traits = char_traits<charT> >
-	//class basic_ios;
+	template<class charT,class traits = char_traits<charT> >
+	class basic_iostream : public basic_istream<charT,traits>, public basic_ostream<charT,traits> {
+	public:
+		explicit basic_iostream(basic_streambuf<charT,traits>* sb);
+		virtual ~basic_iostream();
+	};
 }
 
-#endif /* IOS_TYPES_H_ */
+#include "../../../lib/cpp/src/istreams/basic_iostream.cc"
+
+#endif /* BASIC_IOSTREAM_H_ */

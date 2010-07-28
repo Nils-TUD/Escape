@@ -17,14 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ISTREAM_
-#define ISTREAM_
+#ifndef BASIC_ISTRINGSTREAM_H_
+#define BASIC_ISTRINGSTREAM_H_
 
-#include <stddef.h>
 #include <istreams/basic_istream.h>
 
 namespace std {
-	typedef basic_istream<char> istream;
+	template<class charT,class traits = char_traits<charT> >
+	class basic_istringstream: public basic_istream<charT,traits> {
+	public:
+		explicit basic_istringstream(const basic_string<charT>& str,
+				ios_base::openmode which = ios_base::in);
+		virtual ~basic_istringstream();
+
+		basic_stringbuf<charT,traits>* rdbuf() const;
+		const basic_string<charT>& str() const;
+		void str(const basic_string<charT>& s);
+	};
 }
 
-#endif /* ISTREAM_ */
+#include "../../../lib/cpp/src/istreams/basic_istringstream.cc"
+
+#endif /* BASIC_ISTRINGSTREAM_H_ */

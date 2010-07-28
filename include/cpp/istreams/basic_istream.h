@@ -27,6 +27,7 @@
 #include <ctype.h>
 
 namespace std {
+	// TODO consider width()
 	template<class charT,class traits = char_traits<charT> >
 	class basic_istream: virtual public basic_ios<charT,traits> {
 	public:
@@ -67,6 +68,7 @@ namespace std {
 
 		private:
 			bool _ok;
+			basic_istream<charT,traits>& _is;
 		};
 
 		basic_istream<charT,traits>& operator >>(
@@ -213,17 +215,30 @@ namespace std {
 	};
 
 	template<class charT,class traits>
-	basic_istream<charT,traits>& operator >>(basic_istream<charT,traits>&,charT &);
+	basic_istream<charT,traits>& operator >>(basic_istream<charT,traits>& in,charT& c);
 	template<class traits>
-	basic_istream<char,traits>& operator >>(basic_istream<char,traits>&,unsigned char &);
+	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,unsigned char& c);
 	template<class traits>
-	basic_istream<char,traits>& operator >>(basic_istream<char,traits>&,signed char &);
+	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,signed char& c);
 	template<class charT,class traits>
-	basic_istream<charT,traits>& operator >>(basic_istream<charT,traits>&,charT *);
+	basic_istream<charT,traits>& operator >>(basic_istream<charT,traits>& in,charT* s);
 	template<class traits>
-	basic_istream<char,traits>& operator >>(basic_istream<char,traits>&,unsigned char *);
+	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,unsigned char* s);
 	template<class traits>
-	basic_istream<char,traits>& operator >>(basic_istream<char,traits>&,signed char *);
+	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,signed char* s);
+
+	/**
+	 * Behaves as an unformatted input function, except that it does not count the number of
+	 * characters extracted and does not affect the value returned by subsequent calls to is.gcount().
+	 * After constructing a sentry object extracts characters as long as the next available
+	 * character c is whitespace or until there are no more characters in the sequence. Whitespace
+	 * characters are distinguished with the same criterion as used by sentry::sentry. If ws stops
+	 * extracting characters because there are no more available it sets eofbit, but not failbit.
+	 *
+	 * @return is
+	 */
+	template<class charT,class traits>
+	basic_istream<charT,traits>& ws(basic_istream<charT,traits>& is);
 }
 
 #include "../../../lib/cpp/src/istreams/basic_istream.cc"

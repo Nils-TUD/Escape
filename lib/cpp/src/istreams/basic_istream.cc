@@ -21,20 +21,21 @@ namespace std {
 	// === basic_istream::sentry ===
 	template<class charT,class traits>
 	basic_istream<charT,traits>::sentry::sentry(basic_istream<charT,traits>& is,bool noskipws)
-		: _ok(false) {
+		: _ok(false), _is(is) {
 		if(is.good()) {
-			//TODO if(is.tie())
-			//	is.tie()->flush();
+			if(is.tie())
+				is.tie()->flush();
 			if(noskipws == 0 && (is.flags() & ios_base::skipws)) {
+				basic_streambuf<charT,traits>* buf = is.rdbuf();
 				while(true) {
-					int_type c = is.peek();
+					int_type c = buf->peek();
 					if(c == traits::eof()) {
 						is.setstate(basic_ios<charT,traits>::failbit | basic_ios<charT,traits>::eofbit);
 						break;
 					}
 					if(!isspace(c))
 						break;
-					is.get();
+					buf->get();
 				}
 			}
 		}
@@ -129,42 +130,48 @@ namespace std {
 	void basic_istream<charT,traits>::readInteger(long &n,bool sign) {
 		sentry se(*this,false);
 		if(se) {
-			const char *numTable = "0123456789abcdef";
 			bool neg = false;
-			int base = 10;
-			if(ios_base::flags() & ios_base::oct)
-				base = 8;
-			else if(ios_base::flags() & ios_base::dec)
-				base = 10;
-			else if(ios_base::flags() & ios_base::hex)
-				base = 16;
+			try {
+				static const char *numTable = "0123456789abcdef";
+				int base = ios_base::get_base();
 
-			/* handle '-' */
-			if(sign) {
-				char_type rc = _sb->peek();
-				if(traits::eq(rc,'-')) {
-					neg = true;
-					_sb->get();
+				// handle '-'
+				if(sign) {
+					char_type rc = _sb->peek();
+					if(traits::eq(rc,'-')) {
+						neg = true;
+						_sb->get();
+					}
+				}
+
+				// read until an invalid char is found or the max length is reached
+				n = 0;
+				int remain = ios_base::width();
+				if(remain == 0)
+					remain = -1;
+				while(remain < 0 || remain-- > 0) {
+					char_type tc = tolower(_sb->get());
+					if(tc >= '0' && tc <= numTable[base - 1]) {
+						if(base > 10 && tc >= 'a')
+							n = n * base + (10 + tc - 'a');
+						else
+							n = n * base + (tc - '0');
+					}
+					else {
+						_sb->unget();
+						break;
+					}
 				}
 			}
-
-			/* read until an invalid char is found or the max length is reached */
-			n = 0;
-			while(true) {
-				char_type tc = tolower(_sb->get());
-				if(tc >= '0' && tc <= numTable[base - 1]) {
-					if(base > 10 && tc >= 'a')
-						n = n * base + (10 + tc - 'a');
-					else
-						n = n * base + (tc - '0');
-				}
-				else {
-					_sb->unget();
-					break;
-				}
+			catch(eof_reached&) {
+				basic_ios<charT,traits>::setstate(ios_base::eofbit);
+			}
+			catch(...) {
+				basic_ios<charT,traits>::setstate(ios_base::badbit);
 			}
 			if(neg)
 				n = -n;
+			ios_base::width(0);
 		}
 	}
 
@@ -174,15 +181,24 @@ namespace std {
 	}
 	template<class charT,class traits>
 	typename basic_istream<charT,traits>::char_type basic_istream<charT,traits>::get() {
+		_lastcount = 0;
 		sentry se(*this,true);
 		char_type c = traits::eof();
 		if(se) {
-			c = _sb->get();
-			if(traits::eq(c,traits::eof()))
-				basic_ios<charT,traits>::setstate(ios_base::failbit);
-			else
+			try {
+				c = _sb->get();
 				_lastcount = 1;
+			}
+			catch(eof_reached&) {
+				basic_ios<charT,traits>::setstate(ios_base::eofbit);
+			}
+			catch(...) {
+				basic_ios<charT,traits>::setstate(ios_base::badbit);
+			}
 		}
+		if(_lastcount == 0)
+			basic_ios<charT,traits>::setstate(ios_base::failbit);
+		ios_base::width(0);
 		return c;
 	}
 
@@ -196,23 +212,28 @@ namespace std {
 		_lastcount = 0;
 		sentry se(*this,true);
 		if(se) {
-			while(n > 1) {
-				char_type c = _sb->peek();
-				if(traits::eq(c,traits::eof())) {
-					basic_ios<charT,traits>::setstate(ios_base::eofbit);
-					break;
+			try {
+				while(n > 1) {
+					char_type c = _sb->peek();
+					if(traits::eq(c,delim))
+						break;
+					_sb->get();
+					*s++ = c;
+					n--;
+					_lastcount++;
 				}
-				else if(traits::eq(c,delim))
-					break;
-				_sb->get();
-				*s++ = c;
-				n--;
-				_lastcount++;
+			}
+			catch(eof_reached&) {
+				basic_ios<charT,traits>::setstate(ios_base::eofbit);
+			}
+			catch(...) {
+				basic_ios<charT,traits>::setstate(ios_base::badbit);
 			}
 			*s = charT();
 		}
 		if(_lastcount == 0)
 			basic_ios<charT,traits>::setstate(ios_base::failbit);
+		ios_base::width(0);
 		return *this;
 	}
 	template<class charT,class traits>
@@ -226,26 +247,26 @@ namespace std {
 		_lastcount = 0;
 		sentry se(*this,true);
 		if(se) {
-			while(true) {
-				try {
+			try {
+				while(true) {
 					char_type c = _sb->peek();
-					if(traits::eq(c,traits::eof())) {
-						basic_ios<charT,traits>::setstate(ios_base::eofbit);
-						break;
-					}
-					else if(traits::eq(c,delim))
+					if(traits::eq(c,delim))
 						break;
 					_sb->get();
 					sb.put(c);
 					_lastcount++;
 				}
-				catch(...) {
-					break;
-				}
+			}
+			catch(eof_reached&) {
+				basic_ios<charT,traits>::setstate(ios_base::eofbit);
+			}
+			catch(...) {
+				basic_ios<charT,traits>::setstate(ios_base::badbit);
 			}
 		}
 		if(_lastcount == 0)
 			basic_ios<charT,traits>::setstate(ios_base::failbit);
+		ios_base::width(0);
 		return *this;
 	}
 
@@ -260,22 +281,27 @@ namespace std {
 		_lastcount = 0;
 		sentry se(*this,true);
 		if(se) {
-			while(n > 1) {
-				char_type c = _sb->get();
-				if(traits::eq(c,traits::eof())) {
-					basic_ios<charT,traits>::setstate(ios_base::eofbit);
-					break;
+			try {
+				while(n > 1) {
+					char_type c = _sb->get();
+					if(traits::eq(c,delim))
+						break;
+					*s++ = c;
+					n--;
+					_lastcount++;
 				}
-				else if(traits::eq(c,delim))
-					break;
-				*s++ = c;
-				n--;
-				_lastcount++;
+			}
+			catch(eof_reached&) {
+				basic_ios<charT,traits>::setstate(ios_base::eofbit);
+			}
+			catch(...) {
+				basic_ios<charT,traits>::setstate(ios_base::badbit);
 			}
 			*s = charT();
 		}
 		if(_lastcount == 0)
 			basic_ios<charT,traits>::setstate(ios_base::failbit);
+		ios_base::width(0);
 		return *this;
 	}
 
@@ -284,24 +310,29 @@ namespace std {
 		_lastcount = 0;
 		sentry se(*this,true);
 		if(se) {
-			while(true) {
-				if(n != numeric_limits<streamsize>::max()) {
-					if(n == 0)
+			try {
+				while(true) {
+					if(n != numeric_limits<streamsize>::max()) {
+						if(n == 0)
+							break;
+						n--;
+						_lastcount++;
+					}
+					char_type c = _sb->get();
+					if(traits::eq(c,delim))
 						break;
-					n--;
-					_lastcount++;
 				}
-				char_type c = _sb->get();
-				if(traits::eq(c,traits::eof())) {
-					basic_ios<charT,traits>::setstate(ios_base::eofbit);
-					break;
-				}
-				else if(traits::eq(c,delim))
-					break;
+			}
+			catch(eof_reached&) {
+				basic_ios<charT,traits>::setstate(ios_base::eofbit);
+			}
+			catch(...) {
+				basic_ios<charT,traits>::setstate(ios_base::badbit);
 			}
 		}
 		if(_lastcount == 0)
 			basic_ios<charT,traits>::setstate(ios_base::failbit);
+		ios_base::width(0);
 		return *this;
 	}
 
@@ -309,9 +340,15 @@ namespace std {
 	typename basic_istream<charT,traits>::char_type basic_istream<charT,traits>::peek() {
 		sentry se(*this,true);
 		if(se) {
-			if(!basic_ios<charT,traits>::good())
-				return traits::eof();
-			return _sb->peek();
+			try {
+				return _sb->peek();
+			}
+			catch(eof_reached&) {
+				basic_ios<charT,traits>::setstate(ios_base::eofbit);
+			}
+			catch(...) {
+				basic_ios<charT,traits>::setstate(ios_base::failbit | ios_base::badbit);
+			}
 		}
 		return traits::eof();
 	}
@@ -319,13 +356,59 @@ namespace std {
 	basic_istream<charT,traits>& basic_istream<charT,traits>::unget() {
 		sentry se(*this,true);
 		if(se) {
-			if(!basic_ios<charT,traits>::good())
-				basic_ios<charT,traits>::setstate(ios_base::failbit);
-			else {
-				if(!_sb->unget())
-					basic_ios<charT,traits>::setstate(ios_base::badbit);
+			try {
+				_sb->unget();
+			}
+			catch(eof_reached&) {
+				basic_ios<charT,traits>::setstate(ios_base::eofbit);
+			}
+			catch(...) {
+				basic_ios<charT,traits>::setstate(ios_base::failbit | ios_base::badbit);
 			}
 		}
 		return *this;
+	}
+
+	template<class charT,class traits>
+	basic_istream<charT,traits>& operator >>(basic_istream<charT,traits>& in,charT& c) {
+		ws(in);
+		c = in.get();
+		return in;
+	}
+	template<class traits>
+	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,unsigned char& c) {
+		ws(in);
+		c = in.get();
+		return in;
+	}
+	template<class traits>
+	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,signed char& c) {
+		ws(in);
+		c = in.get();
+		return in;
+	}
+	template<class charT,class traits>
+	basic_istream<charT,traits>& operator >>(basic_istream<charT,traits>& in,charT* s) {
+		ws(in);
+		streamsize w = in.width();
+		return in.getline(s,w > 0 ? w : numeric_limits<streamsize>::max());
+	}
+	template<class traits>
+	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,unsigned char* s) {
+		ws(in);
+		streamsize w = in.width();
+		return in.getline(s,w > 0 ? w : numeric_limits<streamsize>::max());
+	}
+	template<class traits>
+	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,signed char* s) {
+		ws(in);
+		streamsize w = in.width();
+		return in.getline(s,w > 0 ? w : numeric_limits<streamsize>::max());
+	}
+
+	template<class charT,class traits>
+	basic_istream<charT,traits>& ws(basic_istream<charT,traits>& is) {
+		typename basic_istream<charT,traits>::sentry se(is,false);
+		return is;
 	}
 }

@@ -18,22 +18,27 @@
  */
 
 namespace std {
-	eof_reached::eof_reached() {
+	template<class charT,class traits>
+	basic_ostringstream<charT,traits>::basic_ostringstream(basic_string<charT>& str,
+			ios_base::openmode which)
+		: basic_ostream<charT,traits>(new basic_stringbuf<charT,traits>(str,which)) {
 	}
-	const char* eof_reached::what() const throw() {
-		return "EOF reached";
-	}
-
-	bad_state::bad_state(const string &msg) : _msg(msg.c_str()) {
-	}
-	const char* bad_state::what() const throw() {
-		return _msg;
+	template<class charT,class traits>
+	basic_ostringstream<charT,traits>::~basic_ostringstream() {
 	}
 
 	template<class charT,class traits>
-	inline basic_streambuf<charT,traits>::basic_streambuf() {
+	basic_stringbuf<charT,traits>* basic_ostringstream<charT,traits>::rdbuf() const {
+		return static_cast<basic_stringbuf<charT,traits>*>(basic_ios<charT,traits>::rdbuf());
 	}
 	template<class charT,class traits>
-	inline basic_streambuf<charT,traits>::~basic_streambuf() {
+	basic_string<charT>& basic_ostringstream<charT,traits>::str() const {
+		basic_stringbuf<charT,traits>* buf = rdbuf();
+		return buf->str();
+	}
+	template<class charT,class traits>
+	void basic_ostringstream<charT,traits>::str(basic_string<charT>& s) {
+		basic_stringbuf<charT,traits>* buf = rdbuf();
+		buf->str(s);
 	}
 }

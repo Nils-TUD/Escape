@@ -19,7 +19,7 @@
 
 namespace std {
 	template<class charT,class traits>
-	basic_stringbuf<charT,traits>::basic_stringbuf(string& str,ios_base::openmode which)
+	basic_stringbuf<charT,traits>::basic_stringbuf(basic_string<charT>& str,ios_base::openmode which)
 		: basic_streambuf<charT,traits>(), _pos(0), _mode(which), _str(str) {
 		if(_mode & ios_base::trunc)
 			_str.clear();
@@ -31,32 +31,49 @@ namespace std {
 	}
 
 	template<class charT,class traits>
+	basic_string<charT>& basic_stringbuf<charT,traits>::str() const {
+		return _str;
+	}
+	template<class charT,class traits>
+	void basic_stringbuf<charT,traits>::str(basic_string<charT>& s) {
+		// reset position
+		_pos = 0;
+		_str = s;
+	}
+
+	template<class charT,class traits>
 	typename basic_stringbuf<charT,traits>::char_type basic_stringbuf<charT,traits>::peek() const {
-		if(!(_mode & ios_base::in) || _pos >= _str.length())
-			return traits::eof();
+		if(!(_mode & ios_base::in))
+			throw bad_state(string("No read-permission"));
+		if(_pos >= _str.length())
+			throw eof_reached();
 		return _str[_pos];
 	}
 	template<class charT,class traits>
 	typename basic_stringbuf<charT,traits>::char_type basic_stringbuf<charT,traits>::get() {
-		if(!(_mode & ios_base::in) || _pos >= _str.length())
-			return traits::eof();
+		if(!(_mode & ios_base::in))
+			throw bad_state(string("No read-permission"));
+		if(_pos >= _str.length())
+			throw eof_reached();
 		return _str[_pos++];
 	}
 	template<class charT,class traits>
-	bool basic_stringbuf<charT,traits>::unget() {
+	void basic_stringbuf<charT,traits>::unget() {
 		if(!(_mode & ios_base::in) || _pos == 0)
-			return false;
+			throw bad_state(string("No read-permission or unable to move back"));
 		_pos--;
-		return true;
 	}
 
 	template<class charT,class traits>
-	bool basic_stringbuf<charT,traits>::put(char_type c) {
+	void basic_stringbuf<charT,traits>::put(char_type c) {
 		if(!(_mode & ios_base::out))
-			return false;
+			throw bad_state(string("No write-permission"));
 		if(_mode & ios_base::app)
 			_pos = _str.length();
 		_str.insert(_pos++,&c,1);
-		return true;
+	}
+
+	template<class charT,class traits>
+	void basic_stringbuf<charT,traits>::flush() {
 	}
 }

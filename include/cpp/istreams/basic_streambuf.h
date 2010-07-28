@@ -23,6 +23,29 @@
 #include <stddef.h>
 
 namespace std {
+	/**
+	 * The exception that should be thrown if a buffer is at EOF
+	 */
+	class eof_reached : public exception {
+	public:
+		explicit eof_reached();
+		virtual const char* what() const throw();
+	};
+
+	/**
+	 * The exception that should be thrown if a buffer is in an invalid state for an operation
+	 */
+	class bad_state : public exception {
+	public:
+		explicit bad_state(const string & msg);
+		virtual const char* what() const throw();
+	private:
+		const char *_msg;
+	};
+
+	/**
+	 * The base-class for all stream-buffers
+	 */
 	template<class charT,class traits = char_traits<charT> >
 	class basic_streambuf {
 	public:
@@ -32,14 +55,40 @@ namespace std {
 		typedef typename traits::off_type off_type;
 		typedef traits traits_type;
 
+		/**
+		 * Creates a stream-buffer (does nothing)
+		 */
 		basic_streambuf();
+		/**
+		 * Destructor (does nothing)
+		 */
 		virtual ~basic_streambuf();
 
+		/**
+		 * @return the char at the current position
+		 */
 		virtual char_type peek() const = 0;
+		/**
+		 * Moves the position-pointer forward.
+		 *
+		 * @return the char at the current position
+		 */
 		virtual char_type get() = 0;
-		virtual bool unget() = 0;
+		/**
+		 * Moves the position-pointer one step backwards
+		 */
+		virtual void unget() = 0;
 
-		virtual bool put(char_type c) = 0;
+		/**
+		 * Puts the given character into the buffer
+		 *
+		 * @param c the character
+		 */
+		virtual void put(char_type c) = 0;
+		/**
+		 * Flushes the buffer (whatever that means for a specific buffer-implementation)
+		 */
+		virtual void flush() = 0;
 	};
 }
 

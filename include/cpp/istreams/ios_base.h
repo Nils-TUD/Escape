@@ -22,12 +22,14 @@
 
 #include <stddef.h>
 #include <string>
-#include <istreams/ios_types.h>
 #include <exception>
 #include <vector>
 #include <utility>
 
 namespace std {
+	typedef off_t streamoff;
+	typedef size_t streamsize;
+
 	class ios_base {
 	public:
 		class failure: public exception {
@@ -200,6 +202,10 @@ namespace std {
 		 * Calls all registers callbacks with <event>
 		 */
 		void raise_event(event ev);
+		/**
+		 * @return the base to use for input/output (depending on basefield)
+		 */
+		int get_base();
 		/**
 		 * Each ios_base member has an indeterminate value after construction. These members
 		 * shall be initialized by calling basic_ios::init. If an ios_base object is destroyed

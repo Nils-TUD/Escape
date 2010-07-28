@@ -23,23 +23,17 @@
 #include <stddef.h>
 #include <istreams/ios_base.h>
 #include <istreams/ios_ops.h>
-#include <istreams/ios_types.h>
 #include <istreams/basic_stringbuf.h>
+#include <istreams/basic_istringstream.h>
+#include <istreams/basic_ostringstream.h>
+#include <istreams/basic_stringstream.h>
 
 namespace std {
 	typedef basic_stringbuf<char> stringbuf;
 
-	//template<class charT,class traits>
-	//class basic_istringstream;
-	//typedef basic_istringstream<char> istringstream;
-
-	//template<class charT,class traits>
-	//class basic_ostringstream;
-	//typedef basic_ostringstream<char> ostringstream;
-
-	//template<class charT,class traits>
-	//class basic_stringstream;
-	//typedef basic_stringstream<char> stringstream;
+	typedef basic_istringstream<char> istringstream;
+	typedef basic_ostringstream<char> ostringstream;
+	typedef basic_stringstream<char> stringstream;
 }
 
 #endif /* SSTREAM_ */

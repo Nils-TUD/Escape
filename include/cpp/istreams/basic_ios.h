@@ -21,10 +21,12 @@
 #define BASIC_IOS_H_
 
 #include <istreams/ios_base.h>
-#include <istreams/ios_types.h>
 #include <istreams/basic_streambuf.h>
 
 namespace std {
+	template<class charT,class traits>
+	class basic_ostream;
+
 	template<class charT,class traits>
 	class basic_ios: public ios_base {
 	public:
@@ -98,13 +100,13 @@ namespace std {
 		 * An output sequence that is tied to (synchronized with) the sequence controlled by the
 		 * stream buffer.
 		 */
-		//basic_ostream<charT,traits>* tie() const;
+		basic_ostream<charT,traits>* tie() const;
 		/**
 		 * Sets tie() to <tiestr>.
 		 *
 		 * @return the previous value of tie()
 		 */
-		//basic_ostream<charT,traits>* tie(basic_ostream<charT,traits>* tiestr);
+		basic_ostream<charT,traits>* tie(basic_ostream<charT,traits>* tiestr);
 		/**
 		 * @return a pointer to the streambuf associated with the stream.
 		 */
@@ -152,7 +154,7 @@ namespace std {
 		char_type _fill;
 		iostate _rdst;
 		iostate _exceptions;
-		//basic_ostream<charT,traits>* _tie;
+		basic_ostream<charT,traits>* _tie;
 		basic_streambuf<charT,traits>* _rdbuf;
 	};
 }

@@ -120,4 +120,13 @@ namespace std {
 		for(; it != _callbacks.rend(); ++it)
 			it->first(ev,*this,it->second);
 	}
+
+	int ios_base::get_base() {
+		int base = 10;
+		if(flags() & oct)
+			base = 8;
+		else if(flags() & hex)
+			base = 16;
+		return base;
+	}
 }

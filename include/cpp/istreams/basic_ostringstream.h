@@ -17,35 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef FPOS_H_
-#define FPOS_H_
+#ifndef BASIC_OSTRINGSTREAM_H_
+#define BASIC_OSTRINGSTREAM_H_
 
-#include <stddef.h>
-#include <istreams/ios_types.h>
+#include <istreams/basic_ostream.h>
 
 namespace std {
-	template<class stateT>
-	class fpos {
+	template<class charT,class traits = char_traits<charT> >
+	class basic_ostringstream: public basic_ostream<charT,traits> {
 	public:
-		fpos();
-		fpos(streamoff off);
-		~fpos();
+		explicit basic_ostringstream(basic_string<charT>& str,
+				ios_base::openmode which = ios_base::out | ios_base::in);
+		virtual ~basic_ostringstream();
 
-		stateT state() const;
-		void state(stateT st);
-
-		operator streamoff() const;
-	    fpos& operator+=(streamoff off);
-		fpos& operator-=(streamoff off);
-		fpos operator+(streamoff off) const;
-		fpos operator-(streamoff off) const;
-		streamoff operator-(const fpos& pos) const;
-	private:
-		stateT _st;
-		streamoff _off;
+		basic_stringbuf<charT,traits>* rdbuf() const;
+		basic_string<charT>& str() const;
+		void str(basic_string<charT>& s);
 	};
 }
 
-#include "../../../lib/cpp/src/istreams/fpos.cc"
+#include "../../../lib/cpp/src/istreams/basic_ostringstream.cc"
 
-#endif /* FPOS_H_ */
+#endif /* BASIC_OSTRINGSTREAM_H_ */

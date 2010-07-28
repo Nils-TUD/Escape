@@ -24,8 +24,6 @@
 #include <string>
 
 namespace std {
-	//template<> struct char_traits<char>;
-
 	template<class charT,class traits = char_traits<charT> >
 	class basic_ios;
 	template<class charT,class traits = char_traits<charT> >
@@ -74,9 +72,6 @@ namespace std {
 	typedef basic_ifstream<char> ifstream;
 	typedef basic_ofstream<char> ofstream;
 	typedef basic_fstream<char> fstream;
-
-	template<class state> class fpos;
-	//typedef fpos<char_traits<char>::state_type> streampos;
 }
 
 #endif /* IOSFWD_ */

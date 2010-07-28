@@ -23,16 +23,45 @@
 #include <istreams/basic_ostream.h>
 
 namespace std {
+	/**
+	 * A string-stream for output-operations
+	 */
 	template<class charT,class traits = char_traits<charT> >
 	class basic_ostringstream: public basic_ostream<charT,traits> {
 	public:
-		explicit basic_ostringstream(basic_string<charT>& str,
-				ios_base::openmode which = ios_base::out | ios_base::in);
+		/**
+		 * Builds a new output-string-stream with given openmode
+		 *
+		 * @param which the openmode (out by default)
+		 */
+		explicit basic_ostringstream(ios_base::openmode which = ios_base::out);
+		/**
+		 * Builds a new output-string-stream with given string and openmode
+		 *
+		 * @param str the string (will be cloned)
+		 * @param which the openmode (out by default)
+		 */
+		explicit basic_ostringstream(const basic_string<charT>& str,
+				ios_base::openmode which = ios_base::out);
+		/**
+		 * Destructor
+		 */
 		virtual ~basic_ostringstream();
 
+		/**
+		 * @return the string-buffer
+		 */
 		basic_stringbuf<charT,traits>* rdbuf() const;
-		basic_string<charT>& str() const;
-		void str(basic_string<charT>& s);
+		/**
+		 * @return a copy of the string used by the string-buffer
+		 */
+		basic_string<charT> str() const;
+		/**
+		 * Sets the string used by the string-buffer
+		 *
+		 * @param s the string (will be cloned)
+		 */
+		void str(const basic_string<charT>& s);
 	};
 }
 

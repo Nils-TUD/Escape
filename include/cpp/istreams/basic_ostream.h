@@ -27,6 +27,9 @@
 #include <esc/width.h>
 
 namespace std {
+	/**
+	 * The basic output-stream that provides formated- and unformated-output-methods.
+	 */
 	template<class charT,class traits = char_traits<charT> >
 	class basic_ostream: virtual public basic_ios<charT,traits> {
 	public:
@@ -36,9 +39,18 @@ namespace std {
 		typedef typename basic_ios<charT,traits>::pos_type pos_type;
 		typedef typename basic_ios<charT,traits>::off_type off_type;
 
+		/**
+		 * Constructs a new output-stream with given streambuffer
+		 */
 		explicit basic_ostream(basic_streambuf<char_type,traits>* sb);
+		/**
+		 * Destructor
+		 */
 		virtual ~basic_ostream();
 
+		/**
+		 * For pre- and post-operations
+		 */
 		class sentry {
 		public:
 			/**
@@ -62,12 +74,22 @@ namespace std {
 			basic_ostream<charT,traits>& _os;
 		};
 
+		/**
+		 * Calls pf(*this) and returns *this
+		 */
 		basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>& (*pf)(basic_ostream<
 				charT,traits>&));
 		basic_ostream<charT,traits>& operator <<(basic_ios<charT,traits>& (*pf)(basic_ios<charT,
 				traits>&));
 		basic_ostream<charT,traits>& operator <<(ios_base & (*pf)(ios_base &));
 
+		/**
+		 * Writes the given integer or floating-point-number into the output-stream
+		 *
+		 * @param n the integer
+		 * @param f the floating-point-number
+		 * @param p the pointer
+		 */
 		basic_ostream<charT,traits>& operator <<(bool n);
 		basic_ostream<charT,traits>& operator <<(short n);
 		basic_ostream<charT,traits>& operator <<(unsigned short n);
@@ -80,15 +102,33 @@ namespace std {
 		basic_ostream<charT,traits>& operator <<(long double f);
 		basic_ostream<charT,traits>& operator <<(const void * p);
 
-		basic_ostream<charT,traits>& operator <<(basic_streambuf<char_type,traits>* sb);
+		/* TODO
+		 * basic_ostream<charT,traits>& operator <<(basic_streambuf<char_type,traits>* sb);*/
 
+		/**
+		 * Writes the given character into the output-stream
+		 *
+		 * @param c the character
+		 * @return *this
+		 */
 		basic_ostream<charT,traits>& put(char_type c);
+		/**
+		 * Writes <n> characters from the given string into the stream
+		 *
+		 * @param s the string
+		 * @param n the number of chars to write
+		 * @return *this
+		 */
 		basic_ostream<charT,traits>& write(const char_type * s,streamsize n);
+		/**
+		 * Flushes the buffer
+		 */
 		basic_ostream<charT,traits>& flush();
 
-		pos_type tellp();
+		/* TODO
+		 * pos_type tellp();
 		basic_ostream<charT,traits>& seekp(pos_type);
-		basic_ostream<charT,traits>& seekp(off_type,ios_base::seekdir);
+		basic_ostream<charT,traits>& seekp(off_type,ios_base::seekdir);*/
 
 	private:
 		void writeSigned(signed long n);
@@ -103,36 +143,47 @@ namespace std {
 		basic_streambuf<charT,traits>* _sb;
 	};
 
-	// character inserters
+	/**
+	 * Writes the given character into the given stream
+	 */
 	template<class charT,class traits>
 	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>&,charT);
 	template<class charT,class traits>
 	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>&,char);
 	template<class traits>
 	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>&,char);
-
-	// signed and unsigned
 	template<class traits>
 	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>&,signed char);
 	template<class traits>
 	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>&,unsigned char);
+
+	/**
+	 * Writes the given string into the given stream
+	 */
 	template<class charT,class traits>
 	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>&,const charT *);
 	template<class charT,class traits>
 	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>&,const char *);
 	template<class traits>
 	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>&,const char *);
-
-	// signed and unsigned
 	template<class traits>
 	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>&,const signed char *);
 	template<class traits>
 	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>&,const unsigned char *);
 
+	/**
+	 * Writes a newline into the given stream
+	 */
 	template<class charT,class traits>
 	basic_ostream<charT,traits>& endl(basic_ostream<charT,traits>& os);
+	/**
+	 * Writes a null-character into the given stream
+	 */
 	template<class charT,class traits>
 	basic_ostream<charT,traits>& ends(basic_ostream<charT,traits>& os);
+	/**
+	 * Flushes the given stream
+	 */
 	template<class charT,class traits>
 	basic_ostream<charT,traits>& flush(basic_ostream<charT,traits>& os);
 }

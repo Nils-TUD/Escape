@@ -34,12 +34,18 @@ namespace std {
 		typedef typename basic_streambuf<charT,traits>::pos_type pos_type;
 
 		/**
-		 * Creates a new stringbuffer with given string and openmode
+		 * Creates a new stringbuffer with given openmode
 		 *
-		 * @param str the string
 		 * @param which the open-mode ((in | out) by default)
 		 */
-		explicit basic_stringbuf(basic_string<charT>& str,
+		explicit basic_stringbuf(ios_base::openmode which = ios_base::in | ios_base::out);
+		/**
+		 * Creates a new stringbuffer with given string and openmode
+		 *
+		 * @param str the string (will be cloned)
+		 * @param which the open-mode ((in | out) by default)
+		 */
+		explicit basic_stringbuf(const basic_string<charT>& str,
 				ios_base::openmode which = ios_base::in | ios_base::out);
 		/**
 		 * Destructor
@@ -47,15 +53,15 @@ namespace std {
 		virtual ~basic_stringbuf();
 
 		/**
-		 * @return the used string
+		 * @return a copy of the used string
 		 */
-		basic_string<charT>& str() const;
+		basic_string<charT> str() const;
 		/**
 		 * Sets the string to use for read/write
 		 *
-		 * @param s the string
+		 * @param s the string (will be cloned)
 		 */
-		void str(basic_string<charT>& s);
+		void str(const basic_string<charT>& s);
 
 		/**
 		 * @return the char at the current position
@@ -93,7 +99,7 @@ namespace std {
 	private:
 		pos_type _pos;
 		ios_base::openmode _mode;
-		basic_string<charT>& _str;
+		basic_string<charT> _str;
 	};
 }
 

@@ -19,7 +19,11 @@
 
 namespace std {
 	template<class charT,class traits>
-	basic_stringbuf<charT,traits>::basic_stringbuf(basic_string<charT>& str,ios_base::openmode which)
+	basic_stringbuf<charT,traits>::basic_stringbuf(ios_base::openmode which)
+		: basic_streambuf<charT,traits>(), _pos(0), _mode(which), _str(basic_string<charT>()) {
+	}
+	template<class charT,class traits>
+	basic_stringbuf<charT,traits>::basic_stringbuf(const basic_string<charT>& str,ios_base::openmode which)
 		: basic_streambuf<charT,traits>(), _pos(0), _mode(which), _str(str) {
 		if(_mode & ios_base::trunc)
 			_str.clear();
@@ -31,11 +35,11 @@ namespace std {
 	}
 
 	template<class charT,class traits>
-	basic_string<charT>& basic_stringbuf<charT,traits>::str() const {
+	basic_string<charT> basic_stringbuf<charT,traits>::str() const {
 		return _str;
 	}
 	template<class charT,class traits>
-	void basic_stringbuf<charT,traits>::str(basic_string<charT>& s) {
+	void basic_stringbuf<charT,traits>::str(const basic_string<charT>& s) {
 		// reset position
 		_pos = 0;
 		_str = s;

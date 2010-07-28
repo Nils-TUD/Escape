@@ -23,16 +23,45 @@
 #include <istreams/basic_iostream.h>
 
 namespace std {
+	/**
+	 * A string-stream for input- and output-operations
+	 */
 	template<class charT,class traits = char_traits<charT> >
 	class basic_stringstream: public basic_iostream<charT,traits> {
 	public:
-		explicit basic_stringstream(basic_string<charT>& str,
+		/**
+		 * Builds a new string-stream with given openmode
+		 *
+		 * @param which the openmode (in|out by default)
+		 */
+		explicit basic_stringstream(ios_base::openmode which = ios_base::out | ios_base::in);
+		/**
+		 * Builds a new string-stream with given string and openmode
+		 *
+		 * @param str the string (makes a clone)
+		 * @param which the openmode (in|out by default)
+		 */
+		explicit basic_stringstream(const basic_string<charT>& str,
 				ios_base::openmode which = ios_base::out | ios_base::in);
+		/**
+		 * Destructor
+		 */
 		virtual ~basic_stringstream();
 
+		/**
+		 * @return the string-buffer
+		 */
 		basic_stringbuf<charT,traits>* rdbuf() const;
-		basic_string<charT>& str() const;
-		void str(basic_string<charT>& s);
+		/**
+		 * @return a copy of the string used by the string-buffer
+		 */
+		basic_string<charT> str() const;
+		/**
+		 * Sets the string used by the string-buffer
+		 *
+		 * @param s the string (makes a clone)
+		 */
+		void str(const basic_string<charT>& s);
 	};
 }
 

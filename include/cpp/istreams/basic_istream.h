@@ -27,7 +27,9 @@
 #include <ctype.h>
 
 namespace std {
-	// TODO consider width()
+	/**
+	 * The basic input-stream that provides formated- and unformated-input-methods.
+	 */
 	template<class charT,class traits = char_traits<charT> >
 	class basic_istream: virtual public basic_ios<charT,traits> {
 	public:
@@ -36,17 +38,17 @@ namespace std {
 		typedef typename basic_ios<charT,traits>::size_type size_type;
 
 		/**
-		 * Constructs an object of class basic_istream, assigning initial values to the base class#
-		 * by calling basic_ios::init(sb)
-		 * Postcondition: gcount() == 0
+		 * Constructs an object of class basic_istream with given stream-buffer
 		 */
 		explicit basic_istream(basic_streambuf<charT,traits>* sb);
 		/**
-		 * Effects: Destroys an object of class basic_istream.
-		 * Remarks: Does not perform any operations of rdbuf().
+		 * Destructor. Does not perform any operations of rdbuf().
 		 */
 		virtual ~basic_istream();
 
+		/**
+		 * For pre- and post-operations
+		 */
 		class sentry {
 		public:
 			/**
@@ -68,15 +70,28 @@ namespace std {
 
 		private:
 			bool _ok;
-			basic_istream<charT,traits>& _is;
 		};
 
+		/**
+		 * Calls pf(*this) and returns *this
+		 */
 		basic_istream<charT,traits>& operator >>(
 				basic_istream<charT,traits>& (*pf)(basic_istream<charT,traits>&));
 		basic_istream<charT,traits>& operator >>(
 				basic_ios<charT,traits>& (*pf)(basic_ios<charT,traits>&));
 		basic_istream<charT,traits>& operator >>(ios_base & (*pf)(ios_base &));
 
+		/**
+		 * Reads an integer or floating-point-number from the stream into the given integer-
+		 * or floating-point-variable.
+		 * Sets ios_base::badbit if something went wrong and ios_base::eofbit if EOF has been
+		 * reached. This may throw an exception (depending on basic_ios::exceptions())
+		 *
+		 * @param n the integer to write into
+		 * @param f the floating-point-number to write into
+		 * @param p the pointer to write into
+		 * @return *this
+		 */
 		basic_istream<charT,traits>& operator >>(bool& n);
 		basic_istream<charT,traits>& operator >>(short& n);
 		basic_istream<charT,traits>& operator >>(unsigned short& n);
@@ -84,10 +99,11 @@ namespace std {
 		basic_istream<charT,traits>& operator >>(unsigned int& n);
 		basic_istream<charT,traits>& operator >>(long& n);
 		basic_istream<charT,traits>& operator >>(unsigned long& n);
-		basic_istream<charT,traits>& operator >>(float& f);
+		/* TODO
+		 * basic_istream<charT,traits>& operator >>(float& f);
 		basic_istream<charT,traits>& operator >>(double& f);
 		basic_istream<charT,traits>& operator >>(long double& f);
-		basic_istream<charT,traits>& operator >>(void*& p);
+		basic_istream<charT,traits>& operator >>(void*& p);*/
 
 		/**
 		 * @return the number of characters extracted by the last unformatted input member
@@ -106,15 +122,9 @@ namespace std {
 		 */
 		basic_istream<charT,traits>& get(char_type* s,size_type n);
 		/**
-		 * Behaves as an unformatted input function. After constructing a sentry object, extracts
-		 * characters and stores them into successive locations of an array whose first element is
-		 * designated by s. Characters are extracted and stored until any of the following occurs:
-		 * - n - 1 characters are stored;
-		 * - end-of-file occurs on the input sequence (in which case the function calls
-		 * 	setstate(eofbit));
-		 * - traits::eq(c,delim) for the next available input character c (in which case c is not
-		 * 	extracted).
-		 *
+		 * Extracts characters and stores them into successive locations of an array whose first
+		 * element is designated by <s>. The method stops if <n>-1 characters are stored, EOF occurrs
+		 * or <delim> is found.
 		 * If the function stores no characters, it calls setstate(failbit) (which may throw
 		 * ios_base::failure). In any case, it then stores a null character into the next
 		 * successive location of the array.
@@ -127,18 +137,10 @@ namespace std {
 		 */
 		basic_istream<charT,traits>& get(basic_streambuf<char_type,traits>& sb);
 		/**
-		 * Behaves as an unformatted input function. After constructing a sentry object, extracts
-		 * characters and inserts them in the output sequence controlled by sb . Characters are
-		 * extracted and inserted until any of the following occurs:
-		 * - end-of-file occurs on the input sequence;
-		 * - inserting in the output sequence fails (in which case the character to be inserted is
-		 * 	not extracted);
-		 * - traits::eq(c,delim) for the next available input character c (in which case c is not
-		 * 	extracted);
-		 * - an exception occurs (in which case, the exception is caught but not rethrown).
-		 *
+		 * Extracts characters and inserts them in the output sequence controlled by <sb>. The method
+		 * stops if inserting fails, EOF is reached, an exception occurs or <delim> is found.
 		 * If the function inserts no characters, it calls setstate(failbit), which may throw
-		 * ios_base::failure
+		 * ios_base::failure. Note that <delim> is NOT extracted and NOT stored!
 		 *
 		 * @return *this
 		 */
@@ -148,50 +150,33 @@ namespace std {
 		 */
 		basic_istream<charT,traits>& getline(char_type* s,size_type n);
 		/**
-		 * Behaves as an unformatted input function. After constructing a sentry object, extracts
-		 * characters and stores them into successive locations of an array whose first element is
-		 * designated by s. Characters are extracted and stored until one of the following occurs:
-		 * 1. end-of-file occurs on the input sequence (in which case the function calls
-		 * 	setstate(eofbit));
-		 * 2. traits::eq(c,delim) for the next available input character c (in which case the input
-		 * 	character is extracted but not stored);
-		 * 3. n - 1 characters are stored (in which case the function calls setstate(failbit)).
-		 *
-		 * These conditions are tested in the order shown.
+		 * Extracts characters and stores them into successive locations of an array whose first
+		 * element is designated by <s>. The method stops if <n>-1 characters are stored, EOF is
+		 * reached, or <delim> is found.
 		 * If the function extracts no characters, it calls setstate(failbit) (which may throw
-		 * ios_base::failure)
-		 * In any case, it then stores a null character (using charT()) into the next successive
-		 * location of the array.
+		 * ios_base::failure). In any case, it then stores a null character into the next
+		 * successive location of the array.
+		 * Note that <delim> is extracted but NOT stored!
 		 *
 		 * @return *this
 		 */
 		basic_istream<charT,traits>& getline(char_type* s,size_type n,char_type delim);
 		/**
-		 * Behaves as an unformatted input function. After constructing a sentry object, extracts
-		 * characters and discards them. Characters are extracted until any of the following occurs:
-		 * - if n != numeric_limits<streamsize>::max(), n characters are extracted
-		 * - end-of-file occurs on the input sequence (in which case the function calls
-		 * 	setstate(eofbit), which may throw ios_base::failure);
-		 * - traits::eq_int_type(traits::to_int_type(c ), delim ) for the next available input
-		 * 	character c (in which case c is extracted).
-		 *
-		 * The last condition will never occur if traits::eq_int_type(delim , traits::eof()).
+		 * Extracts characters and discards them until <n> characters have been discarded (n =
+		 * numeric_limits<streamsize>::max() means unlimited) or EOF is reached or <delim>
+		 * is found. Note that <delim> is extracted!
 		 *
 		 * @return *this
 		 */
 		basic_istream<charT,traits>& ignore(size_type n = 1,char_type delim = traits::eof());
 		/**
-		 * Behaves as an unformatted input function. After constructing a sentry object, reads
-		 * but does not extract the current input character.
+		 * Reads but does not extract the current input character.
 		 *
-		 * @return traits::eof() if good() is false. Otherwise, returns rdbuf()->sgetc().
+		 * @return traits::eof() if good() is false. Otherwise the character
 		 */
 		char_type peek();
 		/**
-		 * Behaves as an unformatted input function. After constructing a sentry object, if !good()
-		 * calls setstate(failbit) which may throw an exception, and return. If rdbuf() is not
-		 * null, calls rdbuf()->sungetc(). If rdbuf() is null, or if sungetc() returns
-		 * traits::eof(), calls setstate(badbit) (which may throw ios_base::failure).
+		 * Moves the stream one position back
 		 *
 		 * @return *this
 		 */
@@ -208,18 +193,37 @@ namespace std {
 
 	private:
 		void readInteger(long &n,bool sign);
+		bool readAlphaBool();
+		bool readString(const charT *exp);
 
 	private:
 		size_type _lastcount;
 		basic_streambuf<charT,traits>* _sb;
 	};
 
+	/**
+	 * Reads and extracts the current character and stores it into <c>
+	 *
+	 * @param in the stream
+	 * @param c the reference to the character
+	 * @return in
+	 */
 	template<class charT,class traits>
 	basic_istream<charT,traits>& operator >>(basic_istream<charT,traits>& in,charT& c);
 	template<class traits>
 	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,unsigned char& c);
 	template<class traits>
 	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,signed char& c);
+
+	/**
+	 * Reads and extracts characters until either EOF is reached, an error occurrs or a
+	 * whitespace-character is found. If width() is not 0, it stops when width() is reached.
+	 * In any case, <s> is terminated by a null-character
+	 *
+	 * @param in the stream
+	 * @param s the string to store the characters in
+	 * @return *this
+	 */
 	template<class charT,class traits>
 	basic_istream<charT,traits>& operator >>(basic_istream<charT,traits>& in,charT* s);
 	template<class traits>
@@ -228,13 +232,9 @@ namespace std {
 	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,signed char* s);
 
 	/**
-	 * Behaves as an unformatted input function, except that it does not count the number of
-	 * characters extracted and does not affect the value returned by subsequent calls to is.gcount().
-	 * After constructing a sentry object extracts characters as long as the next available
-	 * character c is whitespace or until there are no more characters in the sequence. Whitespace
-	 * characters are distinguished with the same criterion as used by sentry::sentry. If ws stops
-	 * extracting characters because there are no more available it sets eofbit, but not failbit.
+	 * Discards whitespace
 	 *
+	 * @param is the stream
 	 * @return is
 	 */
 	template<class charT,class traits>

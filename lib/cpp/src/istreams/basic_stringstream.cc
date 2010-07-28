@@ -19,7 +19,11 @@
 
 namespace std {
 	template<class charT,class traits>
-	basic_stringstream<charT,traits>::basic_stringstream(basic_string<charT>& str,
+	basic_stringstream<charT,traits>::basic_stringstream(ios_base::openmode which)
+		: basic_iostream<charT,traits>(new basic_stringbuf<charT,traits>(which)) {
+	}
+	template<class charT,class traits>
+	basic_stringstream<charT,traits>::basic_stringstream(const basic_string<charT>& str,
 			ios_base::openmode which)
 		: basic_iostream<charT,traits>(new basic_stringbuf<charT,traits>(str,which)) {
 	}
@@ -32,12 +36,12 @@ namespace std {
 		return static_cast<basic_stringbuf<charT,traits>*>(basic_ios<charT,traits>::rdbuf());
 	}
 	template<class charT,class traits>
-	basic_string<charT>& basic_stringstream<charT,traits>::str() const {
+	basic_string<charT> basic_stringstream<charT,traits>::str() const {
 		basic_stringbuf<charT,traits>* buf = rdbuf();
 		return buf->str();
 	}
 	template<class charT,class traits>
-	void basic_stringstream<charT,traits>::str(basic_string<charT>& s) {
+	void basic_stringstream<charT,traits>::str(const basic_string<charT>& s) {
 		basic_stringbuf<charT,traits>* buf = rdbuf();
 		buf->str(s);
 	}

@@ -68,7 +68,10 @@ namespace std {
 
 	template<class charT,class traits>
 	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(bool n) {
-		writeUnsigned(n);
+		if(ios_base::flags() & ios_base::boolalpha)
+			write(n ? "true" : "false",n ? SSTRLEN("true") : SSTRLEN("false"));
+		else
+			writeUnsigned(n);
 		return *this;
 	}
 	template<class charT,class traits>
@@ -132,11 +135,11 @@ namespace std {
 		if(se) {
 			streamsize pwidth = ios_base::width();
 			try {
-				if((ios_base::flags() & ios_base::left) && pwidth > n)
+				if((ios_base::flags() & ios_base::right) && pwidth > n)
 					writePad(pwidth - n);
 				while(n-- > 0)
 					_sb->put(*s++);
-				if((ios_base::flags() & ios_base::right) && pwidth > n)
+				if((ios_base::flags() & ios_base::left) && pwidth > n)
 					writePad(pwidth - n);
 			}
 			catch(...) {
@@ -160,6 +163,11 @@ namespace std {
 
 	template<class charT,class traits>
 	void basic_ostream<charT,traits>::writeSigned(signed long n) {
+		// write as unsigned if oct or hex is desired
+		if(!(ios_base::flags() & ios_base::dec)) {
+			writeUnsigned(static_cast<unsigned long>(n));
+			return;
+		}
 		sentry se(*this);
 		if(se) {
 			try {
@@ -168,19 +176,19 @@ namespace std {
 				// determine width
 				if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
 					width = getnwidth(n);
-					if(n > 0 && (ios_base::flags() & ios_base::showpos))
+					if(ios_base::flags() & ios_base::showpos)
 						width++;
 				}
 				// pad left
-				if((ios_base::flags() & ios_base::left) && pwidth > width)
+				if((ios_base::flags() & ios_base::right) && pwidth > width)
 					writePad(pwidth - width);
 				// print '+' or ' ' instead of '-'
-				if(n > 0 && (ios_base::flags() & ios_base::showpos))
+				if(ios_base::flags() & ios_base::showpos)
 					_sb->put('+');
 				// print number
 				writeSChars(n);
 				// pad right
-				if((ios_base::flags() & ios_base::right) && pwidth > width)
+				if((ios_base::flags() & ios_base::left) && pwidth > width)
 					writePad(pwidth - width);
 			}
 			catch(...) {
@@ -203,7 +211,7 @@ namespace std {
 				streamsize pwidth = basic_ios<charT,traits>::width();
 				if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
 					width = getuwidth(u,base);
-					if(ios_base::flags() & ios_base::showbase) {
+					if(u > 0 && (ios_base::flags() & ios_base::showbase)) {
 						switch(base) {
 							case 16:
 								width += 2;
@@ -215,9 +223,9 @@ namespace std {
 					}
 				}
 				// pad left - spaces
-				if((ios_base::flags() & ios_base::left) && pwidth > width)
+				if((ios_base::flags() & ios_base::right) && pwidth > width)
 					writePad(pwidth - width);
-				if(ios_base::flags() & ios_base::showbase) {
+				if(u > 0 && (ios_base::flags() & ios_base::showbase)) {
 					switch(base) {
 						case 16:
 							_sb->put('0');
@@ -234,7 +242,7 @@ namespace std {
 				else
 					writeUChars(u,base,numTableSmall);
 				// pad right
-				if((ios_base::flags() & ios_base::right) && pwidth > width)
+				if((ios_base::flags() & ios_base::left) && pwidth > width)
 					writePad(pwidth - width);
 			}
 			catch(...) {
@@ -254,18 +262,18 @@ namespace std {
 				streamsize pwidth = basic_ios<charT,traits>::width();
 				if(!(ios_base::flags() & (ios_base::right | ios_base::left)) && pwidth > 0) {
 					width = getlwidth(pre) + basic_ios<charT,traits>::precision() + 1;
-					if(pre > 0 && (ios_base::flags() & ios_base::showpos))
+					if(d >= 0 && (ios_base::flags() & ios_base::showpos))
 						width++;
 				}
 				// pad left
-				if((ios_base::flags() & ios_base::left) && pwidth > width)
+				if((ios_base::flags() & ios_base::right) && pwidth > width)
 					writePad(pwidth - width);
-				if(pre > 0 && (ios_base::flags() & ios_base::showpos))
+				if(d >= 0 && (ios_base::flags() & ios_base::showpos))
 					_sb->put('+');
 				// print number
 				writeDoubleChars(d);
 				// pad right
-				if((ios_base::flags() & ios_base::right) && pwidth > width)
+				if((ios_base::flags() & ios_base::left) && pwidth > width)
 					writePad(pwidth - width);
 			}
 			catch(...) {
@@ -283,7 +291,7 @@ namespace std {
 		}
 		if(n >= 10)
 			writeSChars(n / 10);
-		_sb->put('0' + n % 10);
+		_sb->put('0' + (n % 10));
 	}
 
 	template<class charT,class traits>

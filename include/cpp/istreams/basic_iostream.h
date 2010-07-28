@@ -24,10 +24,21 @@
 #include <istreams/basic_ostream.h>
 
 namespace std {
+	/**
+	 * A stream for input- and output-operations
+	 */
 	template<class charT,class traits = char_traits<charT> >
 	class basic_iostream : public basic_istream<charT,traits>, public basic_ostream<charT,traits> {
 	public:
+		/**
+		 * Builds a new iostream with given stream-buffer
+		 *
+		 * @param sb the stream-buffer
+		 */
 		explicit basic_iostream(basic_streambuf<charT,traits>* sb);
+		/**
+		 * Destructor
+		 */
 		virtual ~basic_iostream();
 	};
 }

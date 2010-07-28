@@ -37,7 +37,7 @@ namespace std {
 		tie(NULL);
 		_rdst = sb ? goodbit : badbit;
 		exceptions(goodbit);
-		flags(skipws | dec | left);
+		flags(skipws | dec | right);
 		width(0);
 		precision(6);
 		fill(' ');

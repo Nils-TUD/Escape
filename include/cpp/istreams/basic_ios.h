@@ -27,6 +27,10 @@ namespace std {
 	template<class charT,class traits>
 	class basic_ostream;
 
+	/**
+	 * The base-class for all input- and output-streams. Provides a state, an exception-mask,
+	 * a fill-character, a stream-buffer and a tie-stream.
+	 */
 	template<class charT,class traits>
 	class basic_ios: public ios_base {
 	public:

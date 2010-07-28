@@ -23,15 +23,44 @@
 #include <istreams/basic_istream.h>
 
 namespace std {
+	/**
+	 * A string-stream for input-operations
+	 */
 	template<class charT,class traits = char_traits<charT> >
 	class basic_istringstream: public basic_istream<charT,traits> {
 	public:
+		/**
+		 * Builds a new input-string-stream with given openmode
+		 *
+		 * @param which the openmode (in by default)
+		 */
+		explicit basic_istringstream(ios_base::openmode which = ios_base::in);
+		/**
+		 * Builds a new input-string-stream with given string and openmode
+		 *
+		 * @param str the string (will be cloned)
+		 * @param which the openmode (in by default)
+		 */
 		explicit basic_istringstream(const basic_string<charT>& str,
 				ios_base::openmode which = ios_base::in);
+		/**
+		 * Destructor
+		 */
 		virtual ~basic_istringstream();
 
+		/**
+		 * @return the string-buffer
+		 */
 		basic_stringbuf<charT,traits>* rdbuf() const;
-		const basic_string<charT>& str() const;
+		/**
+		 * @return a copy of the string used by the string-buffer
+		 */
+		basic_string<charT> str() const;
+		/**
+		 * Sets the string used by the string-buffer
+		 *
+		 * @param s the string (will be cloned)
+		 */
 		void str(const basic_string<charT>& s);
 	};
 }

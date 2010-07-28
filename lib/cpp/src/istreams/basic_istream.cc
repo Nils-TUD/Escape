@@ -21,7 +21,7 @@ namespace std {
 	// === basic_istream::sentry ===
 	template<class charT,class traits>
 	basic_istream<charT,traits>::sentry::sentry(basic_istream<charT,traits>& is,bool noskipws)
-		: _ok(false), _is(is) {
+		: _ok(false) {
 		if(is.good()) {
 			if(is.tie())
 				is.tie()->flush();
@@ -82,9 +82,13 @@ namespace std {
 
 	template<class charT,class traits>
 	inline basic_istream<charT,traits>& basic_istream<charT,traits>::operator >>(bool& n) {
-		long l;
-		readInteger(l,false);
-		n = static_cast<bool>(l);
+		if(ios_base::flags() & ios_base::boolalpha)
+			n = readAlphaBool();
+		else {
+			long l;
+			readInteger(l,false);
+			n = static_cast<bool>(l);
+		}
 		return *this;
 	}
 	template<class charT,class traits>
@@ -124,6 +128,38 @@ namespace std {
 	inline basic_istream<charT,traits>& basic_istream<charT,traits>::operator >>(unsigned long& n) {
 		readInteger(static_cast<long&>(n),false);
 		return *this;
+	}
+
+	template<class charT,class traits>
+	bool basic_istream<charT,traits>::readAlphaBool() {
+		char_type c = _sb->peek();
+		if(c == 't')
+			return readString("true");
+		readString("false");
+		return false;
+	}
+
+	template<class charT,class traits>
+	bool basic_istream<charT,traits>::readString(const charT *exp) {
+		sentry se(*this,false);
+		if(se) {
+			try {
+				while(*exp) {
+					char_type c = _sb->get();
+					if(!traits::eq(c,*exp))
+						return false;
+					exp++;
+				}
+				return true;
+			}
+			catch(eof_reached&) {
+				basic_ios<charT,traits>::setstate(ios_base::eofbit);
+			}
+			catch(...) {
+				basic_ios<charT,traits>::setstate(ios_base::badbit);
+			}
+		}
+		return false;
 	}
 
 	template<class charT,class traits>

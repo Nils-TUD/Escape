@@ -1,5 +1,5 @@
 /**
- * $Id: font.cpp 521 2010-02-23 19:24:20Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

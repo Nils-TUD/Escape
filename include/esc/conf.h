@@ -1,5 +1,5 @@
 /**
- * $Id: conf.h 630 2010-04-29 18:41:09Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

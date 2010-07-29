@@ -1,5 +1,5 @@
 /**
- * $Id: stream.cpp 647 2010-05-05 17:27:58Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

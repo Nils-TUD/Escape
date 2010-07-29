@@ -1,5 +1,5 @@
 /**
- * $Id: strncasecmp.c 355 2009-09-26 16:18:32Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

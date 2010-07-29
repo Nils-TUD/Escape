@@ -1,5 +1,5 @@
 /**
- * $Id: control.cpp 510 2010-02-20 18:51:36Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

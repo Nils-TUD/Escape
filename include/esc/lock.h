@@ -1,5 +1,5 @@
 /**
- * $Id: lock.h 387 2010-01-02 21:59:07Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

@@ -1,5 +1,5 @@
 /**
- * $Id: memmove.c 439 2010-02-02 00:23:24Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

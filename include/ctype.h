@@ -1,5 +1,5 @@
 /**
- * $Id: ctype.h 207 2009-04-19 16:02:28Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

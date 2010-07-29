@@ -1,5 +1,5 @@
 /**
- * $Id: combobox.cpp 538 2010-02-28 17:06:49Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

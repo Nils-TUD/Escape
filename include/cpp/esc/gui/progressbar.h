@@ -1,5 +1,5 @@
 /**
- * $Id: progressbar.h 240 2009-05-25 20:54:30Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

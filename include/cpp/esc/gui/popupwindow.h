@@ -1,5 +1,5 @@
 /**
- * $Id: popupwindow.h 222 2009-05-10 15:03:43Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

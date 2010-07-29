@@ -1,5 +1,5 @@
 /**
- * $Id: memclear.c 494 2010-02-13 15:42:14Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

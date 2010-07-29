@@ -1,5 +1,5 @@
 /**
- * $Id: graphics24.cpp 598 2010-04-05 14:42:09Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

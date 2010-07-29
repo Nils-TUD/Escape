@@ -1,5 +1,5 @@
 /**
- * $Id: esccodes.c 443 2010-02-02 16:39:58Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

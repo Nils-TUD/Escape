@@ -1,5 +1,5 @@
 /**
- * $Id: event.h 244 2009-06-20 16:35:38Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

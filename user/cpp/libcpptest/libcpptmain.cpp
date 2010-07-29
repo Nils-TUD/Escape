@@ -1,5 +1,5 @@
 /**
- * $Id: cppmain.cpp 687 2010-07-04 10:01:20Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

@@ -1,5 +1,5 @@
 /**
- * $Id: font.h 550 2010-03-03 18:18:59Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

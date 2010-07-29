@@ -1,5 +1,5 @@
 /**
- * $Id: strndup.c 652 2010-05-07 10:58:50Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

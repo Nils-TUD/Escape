@@ -1,5 +1,5 @@
 /**
- * $Id: button.h 519 2010-02-22 18:57:49Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

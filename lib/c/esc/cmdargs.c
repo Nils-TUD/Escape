@@ -1,5 +1,5 @@
 /**
- * $Id: cmdargs.c 256 2009-08-23 16:37:14Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

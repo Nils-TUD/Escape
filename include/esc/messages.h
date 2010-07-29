@@ -1,5 +1,5 @@
 /**
- * $Id: messages.h 603 2010-04-08 23:21:32Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

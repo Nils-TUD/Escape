@@ -1,5 +1,5 @@
 /**
- * $Id: isalnum.c 332 2009-09-17 09:39:40Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

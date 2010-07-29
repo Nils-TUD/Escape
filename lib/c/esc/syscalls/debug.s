@@ -1,5 +1,5 @@
 #
-# $Id: debug.s 623 2010-04-19 21:21:59Z nasmussen $
+# $Id$
 # Copyright (C) 2008 - 2009 Nils Asmussen
 #
 # This program is free software; you can redistribute it and/or

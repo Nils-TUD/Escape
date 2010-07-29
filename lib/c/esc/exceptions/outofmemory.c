@@ -1,5 +1,5 @@
 /**
- * $Id: outofmemory.c 640 2010-05-02 14:34:01Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

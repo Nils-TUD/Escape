@@ -25,6 +25,7 @@
 #include <istream>
 #include <ostream>
 #include <sstream>
+#include <fstream>
 //#include <ustl.h>
 
 using namespace std;
@@ -185,8 +186,7 @@ int main(void) {
 	istr >> buf;
 	printf("i1=%d, i2=%d, i3=%d, b1=%d buf='%s'\n",i1,i2,i3,b1,buf);
 
-	string outstr;
-	ostringstream ostr(outstr);
+	ostringstream ostr;
 	char bla[] = "foo";
 	ostr << 1234 << ' ';
 	ostr << 14u << ' ';
@@ -196,7 +196,27 @@ int main(void) {
 	ostr << 1.412L << endl;
 	ostr.width(10);
 	ostr << hex << showbase << '\'' << 0xabcdefu << '\'';
-	printf("str=%s\n",outstr.c_str());
+	printf("str=%s\n",ostr.str().c_str());
+
+	ofstream f;
+	f.open("/myfile");
+	if(f.is_open())
+		f << "foo" << "bar" << endl;
+	else
+		printf("Unable to open '/myfile'\n");
+	f.close();
+
+	ifstream f2;
+	f2.open("/myfile");
+	if(f2.is_open()) {
+		char fbuf[10];
+		f2.width(10);
+		f2 >> fbuf;
+		printf("myfile='%s'\n",fbuf);
+	}
+	else
+		printf("Unable to open '/myfile'\n");
+	f2.close();
 
 	/*
 	String s1 = "abc";

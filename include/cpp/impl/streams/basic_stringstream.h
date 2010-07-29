@@ -17,36 +17,36 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BASIC_ISTRINGSTREAM_H_
-#define BASIC_ISTRINGSTREAM_H_
+#ifndef BASIC_STRINGSTREAM_H_
+#define BASIC_STRINGSTREAM_H_
 
-#include <istreams/basic_istream.h>
+#include <impl/streams/basic_iostream.h>
 
 namespace std {
 	/**
-	 * A string-stream for input-operations
+	 * A string-stream for input- and output-operations
 	 */
 	template<class charT,class traits = char_traits<charT> >
-	class basic_istringstream: public basic_istream<charT,traits> {
+	class basic_stringstream: public basic_iostream<charT,traits> {
 	public:
 		/**
-		 * Builds a new input-string-stream with given openmode
+		 * Builds a new string-stream with given openmode
 		 *
-		 * @param which the openmode (in by default)
+		 * @param which the openmode (in|out by default)
 		 */
-		explicit basic_istringstream(ios_base::openmode which = ios_base::in);
+		explicit basic_stringstream(ios_base::openmode which = ios_base::out | ios_base::in);
 		/**
-		 * Builds a new input-string-stream with given string and openmode
+		 * Builds a new string-stream with given string and openmode
 		 *
-		 * @param str the string (will be cloned)
-		 * @param which the openmode (in by default)
+		 * @param str the string (makes a clone)
+		 * @param which the openmode (in|out by default)
 		 */
-		explicit basic_istringstream(const basic_string<charT>& str,
-				ios_base::openmode which = ios_base::in);
+		explicit basic_stringstream(const basic_string<charT>& str,
+				ios_base::openmode which = ios_base::out | ios_base::in);
 		/**
 		 * Destructor
 		 */
-		virtual ~basic_istringstream();
+		virtual ~basic_stringstream();
 
 		/**
 		 * @return the string-buffer
@@ -59,12 +59,12 @@ namespace std {
 		/**
 		 * Sets the string used by the string-buffer
 		 *
-		 * @param s the string (will be cloned)
+		 * @param s the string (makes a clone)
 		 */
 		void str(const basic_string<charT>& s);
 	};
 }
 
-#include "../../../lib/cpp/src/istreams/basic_istringstream.cc"
+#include "../../../../lib/cpp/src/impl/streams/basic_stringstream.cc"
 
-#endif /* BASIC_ISTRINGSTREAM_H_ */
+#endif /* BASIC_STRINGSTREAM_H_ */

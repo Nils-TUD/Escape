@@ -17,14 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ISTREAM_
-#define ISTREAM_
+#ifndef FSTREAM_
+#define FSTREAM_
 
-#include <stddef.h>
-#include <impl/streams/basic_istream.h>
+#include <impl/streams/basic_filebuf.h>
+#include <impl/streams/basic_fstream.h>
+#include <impl/streams/basic_ifstream.h>
+#include <impl/streams/basic_ofstream.h>
 
 namespace std {
-	typedef basic_istream<char> istream;
+	typedef basic_filebuf<char> filebuf;
+
+	typedef basic_fstream<char> fstream;
+	typedef basic_ifstream<char> ifstream;
+	typedef basic_ofstream<char> ofstream;
 }
 
-#endif /* ISTREAM_ */
+#endif /* FSTREAM_ */

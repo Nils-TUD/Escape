@@ -21,7 +21,7 @@
 #define STRING_
 
 #include <stddef.h>
-#include <istring/char_traits.h>
+#include <impl/string/char_traits.h>
 
 namespace std {
 	template<typename T>

@@ -21,8 +21,8 @@
 #define BASIC_OSTREAM_H_
 
 #include <stddef.h>
-#include <istreams/basic_ios.h>
-#include <istreams/ios_base.h>
+#include <impl/streams/basic_ios.h>
+#include <impl/streams/ios_base.h>
 #include <exception>
 #include <esc/width.h>
 
@@ -188,6 +188,6 @@ namespace std {
 	basic_ostream<charT,traits>& flush(basic_ostream<charT,traits>& os);
 }
 
-#include "../../../lib/cpp/src/istreams/basic_ostream.cc"
+#include "../../../../lib/cpp/src/impl/streams/basic_ostream.cc"
 
 #endif /* BASIC_OSTREAM_H_ */

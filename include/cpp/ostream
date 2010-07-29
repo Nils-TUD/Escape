@@ -21,7 +21,7 @@
 #define OSTREAM_
 
 #include <stddef.h>
-#include <istreams/basic_ostream.h>
+#include <impl/streams/basic_ostream.h>
 
 namespace std {
 	typedef basic_ostream<char> ostream;

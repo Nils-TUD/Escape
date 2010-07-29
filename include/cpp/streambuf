@@ -22,7 +22,7 @@
 
 #include <stddef.h>
 #include <string>
-#include <istreams/basic_streambuf.h>
+#include <impl/streams/basic_streambuf.h>
 
 namespace std {
 	typedef basic_streambuf<char> streambuf;

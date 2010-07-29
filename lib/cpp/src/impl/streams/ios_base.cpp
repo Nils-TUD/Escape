@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <istreams/ios_base.h>
+#include <impl/streams/ios_base.h>
 #include <stdio.h>
 
 namespace std {

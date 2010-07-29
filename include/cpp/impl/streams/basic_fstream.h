@@ -17,54 +17,58 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BASIC_STRINGSTREAM_H_
-#define BASIC_STRINGSTREAM_H_
+#ifndef BASIC_FSTREAM_H_
+#define BASIC_FSTREAM_H_
 
-#include <istreams/basic_iostream.h>
+#include <impl/streams/basic_filebuf.h>
+#include <impl/streams/basic_iostream.h>
 
 namespace std {
 	/**
-	 * A string-stream for input- and output-operations
+	 * A file-stream for input- and output-operations
 	 */
 	template<class charT,class traits = char_traits<charT> >
-	class basic_stringstream: public basic_iostream<charT,traits> {
+	class basic_fstream: public basic_iostream<charT,traits> {
 	public:
 		/**
-		 * Builds a new string-stream with given openmode
-		 *
-		 * @param which the openmode (in|out by default)
+		 * Builds a new file-stream
 		 */
-		explicit basic_stringstream(ios_base::openmode which = ios_base::out | ios_base::in);
+		basic_fstream();
 		/**
-		 * Builds a new string-stream with given string and openmode
+		 * Builds a new file-stream and opens the given file
 		 *
-		 * @param str the string (makes a clone)
+		 * @param filename the file to open
 		 * @param which the openmode (in|out by default)
 		 */
-		explicit basic_stringstream(const basic_string<charT>& str,
+		explicit basic_fstream(const char* filename,
 				ios_base::openmode which = ios_base::out | ios_base::in);
 		/**
 		 * Destructor
 		 */
-		virtual ~basic_stringstream();
+		virtual ~basic_fstream();
 
 		/**
-		 * @return the string-buffer
+		 * @return the file-buffer
 		 */
-		basic_stringbuf<charT,traits>* rdbuf() const;
+		basic_filebuf<charT,traits>* rdbuf() const;
 		/**
-		 * @return a copy of the string used by the string-buffer
-		 */
-		basic_string<charT> str() const;
-		/**
-		 * Sets the string used by the string-buffer
+		 * Opens the file <s> with given open-mode
 		 *
-		 * @param s the string (makes a clone)
+		 * @param s the file
+		 * @param mode the mode
 		 */
-		void str(const basic_string<charT>& s);
+		void open(const char* s,ios_base::openmode mode = ios_base::out | ios_base::in);
+		/**
+		 * @return if a file has been opened successfully
+		 */
+		bool is_open() const;
+		/**
+		 * Closes the file
+		 */
+		void close();
 	};
 }
 
-#include "../../../lib/cpp/src/istreams/basic_stringstream.cc"
+#include "../../../../lib/cpp/src/impl/streams/basic_fstream.cc"
 
-#endif /* BASIC_STRINGSTREAM_H_ */
+#endif /* BASIC_FSTREAM_H_ */

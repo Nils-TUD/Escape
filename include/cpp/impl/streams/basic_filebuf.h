@@ -17,51 +17,55 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BASIC_STRINGBUF_H_
-#define BASIC_STRINGBUF_H_
+#ifndef BASIC_FILEBUF_H_
+#define BASIC_FILEBUF_H_
 
 #include <stddef.h>
-#include <istreams/basic_streambuf.h>
+#include <esc/io.h>
+#include <impl/streams/basic_streambuf.h>
 
 namespace std {
 	/**
-	 * Uses a string as buffer to read from and write to
+	 * Read/write from/to a file
 	 */
 	template<class charT,class traits = char_traits<charT> >
-	class basic_stringbuf: public basic_streambuf<charT,traits> {
+	class basic_filebuf: public basic_streambuf<charT,traits> {
+	private:
+		static const int IN_BUF_SIZE = 512;
+		static const int OUT_BUF_SIZE = 512;
+
 	public:
 		typedef typename basic_streambuf<charT,traits>::char_type char_type;
 		typedef typename basic_streambuf<charT,traits>::pos_type pos_type;
 
 		/**
-		 * Creates a new stringbuffer with given openmode
-		 *
-		 * @param which the open-mode ((in | out) by default)
+		 * Creates a new filebuf
 		 */
-		explicit basic_stringbuf(ios_base::openmode which = ios_base::in | ios_base::out);
-		/**
-		 * Creates a new stringbuffer with given string and openmode
-		 *
-		 * @param str the string (will be cloned)
-		 * @param which the open-mode ((in | out) by default)
-		 */
-		explicit basic_stringbuf(const basic_string<charT>& str,
-				ios_base::openmode which = ios_base::in | ios_base::out);
+		explicit basic_filebuf();
 		/**
 		 * Destructor
 		 */
-		virtual ~basic_stringbuf();
+		virtual ~basic_filebuf();
 
 		/**
-		 * @return a copy of the used string
-		 */
-		basic_string<charT> str() const;
-		/**
-		 * Sets the string to use for read/write
+		 * Opens the file <s> with given open-mode
 		 *
-		 * @param s the string (will be cloned)
+		 * @param s the file
+		 * @param mode the mode
+		 * @return this on success, a null-pointer on failure
 		 */
-		void str(const basic_string<charT>& s);
+		basic_filebuf<charT,traits>* open(const char* s,ios_base::openmode mode);
+
+		/**
+		 * @return if a file has been opened successfully
+		 */
+		bool is_open() const;
+
+		/**
+		 * Closes the file
+		 * @return this on success, a null-pointer on failure
+		 */
+		basic_filebuf<charT,traits>* close();
 
 		/**
 		 * @return the char at the current position
@@ -92,17 +96,24 @@ namespace std {
 		 */
 		virtual void put(char_type c);
 		/**
-		 * Does nothing
+		 * Writes all pending output to file
 		 */
-		virtual void flush() throw();
+		virtual void flush();
 
 	private:
-		pos_type _pos;
+		bool fillBuffer() const;
+
+	private:
+		tFD _fd;
+		mutable pos_type _inPos;
+		mutable pos_type _inMax;
+		mutable charT* _inBuf;
+		pos_type _outPos;
+		charT* _outBuf;
 		ios_base::openmode _mode;
-		basic_string<charT> _str;
 	};
 }
 
-#include "../../../lib/cpp/src/istreams/basic_stringbuf.cc"
+#include "../../../../lib/cpp/src/impl/streams/basic_filebuf.cc"
 
-#endif /* BASIC_STRINGBUF_H_ */
+#endif /* BASIC_FILEBUF_H_ */

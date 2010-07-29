@@ -92,6 +92,6 @@ namespace std {
 	};
 }
 
-#include "../../../lib/cpp/src/istreams/basic_streambuf.cc"
+#include "../../../../lib/cpp/src/impl/streams/basic_streambuf.cc"
 
 #endif /* BASIC_STREAMBUF_H_ */

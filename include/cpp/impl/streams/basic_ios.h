@@ -20,8 +20,8 @@
 #ifndef BASIC_IOS_H_
 #define BASIC_IOS_H_
 
-#include <istreams/ios_base.h>
-#include <istreams/basic_streambuf.h>
+#include <impl/streams/ios_base.h>
+#include <impl/streams/basic_streambuf.h>
 
 namespace std {
 	template<class charT,class traits>
@@ -163,6 +163,6 @@ namespace std {
 	};
 }
 
-#include "../../../lib/cpp/src/istreams/basic_ios.cc"
+#include "../../../../lib/cpp/src/impl/streams/basic_ios.cc"
 
 #endif /* BASIC_IOS_H_ */

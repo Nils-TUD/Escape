@@ -20,8 +20,8 @@
 #ifndef BASIC_IOSTREAM_H_
 #define BASIC_IOSTREAM_H_
 
-#include <istreams/basic_istream.h>
-#include <istreams/basic_ostream.h>
+#include <impl/streams/basic_istream.h>
+#include <impl/streams/basic_ostream.h>
 
 namespace std {
 	/**
@@ -43,6 +43,6 @@ namespace std {
 	};
 }
 
-#include "../../../lib/cpp/src/istreams/basic_iostream.cc"
+#include "../../../../lib/cpp/src/impl/streams/basic_iostream.cc"
 
 #endif /* BASIC_IOSTREAM_H_ */

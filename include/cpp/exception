@@ -20,7 +20,7 @@
 #ifndef EXCEPTION_
 #define EXCEPTION_
 
-#include <iexception/exception.h>
+#include <impl/exception/exception.h>
 #include <stdexcept>
 
 namespace std {

@@ -20,7 +20,7 @@
 #ifndef IOS_
 #define IOS_
 
-#include <istreams/ios_base.h>
-#include <istreams/basic_ios.h>
+#include <impl/streams/ios_base.h>
+#include <impl/streams/basic_ios.h>
 
 #endif /* IOS_ */

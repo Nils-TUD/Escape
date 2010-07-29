@@ -21,12 +21,12 @@
 #define SSTREAM_
 
 #include <stddef.h>
-#include <istreams/ios_base.h>
-#include <istreams/ios_ops.h>
-#include <istreams/basic_stringbuf.h>
-#include <istreams/basic_istringstream.h>
-#include <istreams/basic_ostringstream.h>
-#include <istreams/basic_stringstream.h>
+#include <impl/streams/ios_base.h>
+#include <impl/streams/ios_ops.h>
+#include <impl/streams/basic_stringbuf.h>
+#include <impl/streams/basic_istringstream.h>
+#include <impl/streams/basic_ostringstream.h>
+#include <impl/streams/basic_stringstream.h>
 
 namespace std {
 	typedef basic_stringbuf<char> stringbuf;

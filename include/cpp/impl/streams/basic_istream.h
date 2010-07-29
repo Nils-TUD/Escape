@@ -21,8 +21,8 @@
 #define BASIC_ISTREAM_H_
 
 #include <stddef.h>
-#include <istreams/basic_ios.h>
-#include <istreams/ios_base.h>
+#include <impl/streams/basic_ios.h>
+#include <impl/streams/ios_base.h>
 #include <limits>
 #include <ctype.h>
 
@@ -241,6 +241,6 @@ namespace std {
 	basic_istream<charT,traits>& ws(basic_istream<charT,traits>& is);
 }
 
-#include "../../../lib/cpp/src/istreams/basic_istream.cc"
+#include "../../../../lib/cpp/src/impl/streams/basic_istream.cc"
 
 #endif /* BASIC_ISTREAM_H_ */

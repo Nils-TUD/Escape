@@ -20,7 +20,7 @@
 #ifndef IOSTREAM_
 #define IOSTREAM_
 
-#include <istreams/basic_iostream.h>
+#include <impl/streams/basic_iostream.h>
 
 namespace std {
 	typedef basic_iostream<char> iostream;

@@ -72,6 +72,6 @@ namespace std {
 #endif
 }
 
-#include "../../../lib/cpp/src/iiterator/reverse_iterator.cc"
+#include "../../../../lib/cpp/src/impl/iterator/reverse_iterator.cc"
 
 #endif /* REVERSE_ITERATOR_H_ */

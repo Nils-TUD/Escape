@@ -21,14 +21,15 @@
 #define IOSTREAM_
 
 #include <impl/streams/basic_iostream.h>
+#include <fstream>
 
 namespace std {
 	typedef basic_iostream<char> iostream;
 
-	extern istream cin;
-	extern ostream cout;
-	extern ostream cerr;
-	extern ostream clog;
+	extern ifstream cin;
+	extern ofstream cout;
+	extern ofstream cerr;
+	extern ofstream clog;
 }
 
 #endif /* IOSTREAM_ */

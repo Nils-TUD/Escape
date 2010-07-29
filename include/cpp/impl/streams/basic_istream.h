@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 #include <impl/streams/basic_ios.h>
+#include <impl/streams/basic_stringbuf.h>
 #include <impl/streams/ios_base.h>
 #include <limits>
 #include <ctype.h>
@@ -104,6 +105,15 @@ namespace std {
 		basic_istream<charT,traits>& operator >>(double& f);
 		basic_istream<charT,traits>& operator >>(long double& f);
 		basic_istream<charT,traits>& operator >>(void*& p);*/
+
+		/**
+		 * Extracts characters and stores them into the given streambuffer. The method stops
+		 * if EOF occurrs, inserting fails or an exception occurs.
+		 *
+		 * @param sb the streambuffer
+		 * @return *this
+		 */
+		// TODO basic_istream<charT,traits>& operator >>(basic_streambuf<charT,traits>* sb);
 
 		/**
 		 * @return the number of characters extracted by the last unformatted input member
@@ -230,6 +240,8 @@ namespace std {
 	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,unsigned char* s);
 	template<class traits>
 	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,signed char* s);
+	template<class charT,class traits>
+	basic_istream<charT,traits>& operator >>(basic_istream<charT,traits>& in,basic_string<charT>& s);
 
 	/**
 	 * Discards whitespace

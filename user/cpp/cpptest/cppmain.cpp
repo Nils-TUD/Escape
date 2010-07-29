@@ -18,10 +18,12 @@
  */
 
 #include <esc/common.h>
+#include <esc/debug.h>
 #include <stdio.h>
 #include <string>
 #include <vector>
 #include <list>
+#include <iostream>
 #include <istream>
 #include <ostream>
 #include <sstream>
@@ -39,7 +41,7 @@ public:
 		fflush(stdout);
 	};
 	~my() {
-		printf("Destructor for %x...\n",this);
+		printf("Destructor for %p...\n",this);
 		fflush(stdout);
 		abc = 0;
 	};
@@ -71,29 +73,32 @@ int main(void) {
 	A *a = new C();
 	C *c = dynamic_cast<C*>(a);
 	if(c) {
-		printf("Worked!\n");
+		cout << "Worked" << endl;
 		c->myMethod();
 	}
 	else {
-		printf("Didn't work!\n");
+		cout << "Didn't work!" << endl;
 	}
 
 	A *a2 = new B();
 	C *c2 = dynamic_cast<C*>(a2);
 	if(c2) {
-		printf("Worked!\n");
+		cout << "Worked!" << endl;
 		c2->myMethod();
 	}
 	else {
-		printf("Didn't work!\n");
+		cout << "Didn't work!" << endl;
 	}
 
-	delete[] (void*)0;
+	string name;
+	cout << "Enter your Name: ";
+	cin >> name;
+	cout << "Hi " << name << "!" << endl;
 
 	string abc;
 	abc.append("test");
 	string def(abc);
-	printf("len=%d, cap=%d, str=%s\n",def.length(),def.capacity(),def.c_str());
+	cout << "len=" << def.length() << ", cap=" << def.capacity() << ", str=" << def.c_str() << endl;
 
 #if 0
 	/*startThread(threadFunc);
@@ -163,18 +168,18 @@ int main(void) {
     list<int> l;
     l.insert(l.begin(),10);
     l.insert(l.begin(),11);
-    printf("size=%d\n",l.size());
+    cout << "size=" << l.size() << endl;
     for(list<int>::iterator it = l.begin(); it != l.end(); it++)
-    	printf(" %d\n",*it);
+    	cout << "	" << *it << endl;
 
     try {
     	throw 3;
-    	printf("hier\n");
+    	cout << "hier" << endl;
     }
     catch(int &e) {
-    	printf("Got %d\n",e);
+    	cout << "Got " << e << endl;
     }
-	printf("da\n");
+    cout << "da" << endl;
 
 	const string teststr("123 456 abc 1 myteststringfoo");
 	char buf[10];
@@ -184,7 +189,7 @@ int main(void) {
 	istr >> i1 >> i2 >> hex >> i3 >> dec >> b1;
 	istr.width(10);
 	istr >> buf;
-	printf("i1=%d, i2=%d, i3=%d, b1=%d buf='%s'\n",i1,i2,i3,b1,buf);
+	cout.format("i1=%d, i2=%4d, i3=%#-8x, b1=%d buf='%s'\n",i1,i2,i3,b1,buf);
 
 	ostringstream ostr;
 	char bla[] = "foo";
@@ -196,14 +201,14 @@ int main(void) {
 	ostr << 1.412L << endl;
 	ostr.width(10);
 	ostr << hex << showbase << '\'' << 0xabcdefu << '\'';
-	printf("str=%s\n",ostr.str().c_str());
+	cout << "str=" << ostr.str() << endl;
 
 	ofstream f;
 	f.open("/myfile");
 	if(f.is_open())
 		f << "foo" << "bar" << endl;
 	else
-		printf("Unable to open '/myfile'\n");
+		cerr << "Unable to open '/myfile'" << endl;
 	f.close();
 
 	ifstream f2;
@@ -212,10 +217,10 @@ int main(void) {
 		char fbuf[10];
 		f2.width(10);
 		f2 >> fbuf;
-		printf("myfile='%s'\n",fbuf);
+		cout << "myfile='" << fbuf << "'" << endl;
 	}
 	else
-		printf("Unable to open '/myfile'\n");
+		cerr << "Unable to open '/myfile'" << endl;
 	f2.close();
 
 	/*

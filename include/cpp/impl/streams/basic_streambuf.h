@@ -21,6 +21,7 @@
 #define BASIC_STREAMBUF_H_
 
 #include <stddef.h>
+#include <exception>
 
 namespace std {
 	/**
@@ -63,6 +64,11 @@ namespace std {
 		 * Destructor (does nothing)
 		 */
 		virtual ~basic_streambuf();
+
+		/**
+		 * @return the number of available characters
+		 */
+		virtual pos_type available() const = 0;
 
 		/**
 		 * @return the char at the current position

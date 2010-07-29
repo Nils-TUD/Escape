@@ -17,6 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#define FFL_SHORT			1
+#define FFL_LONG			2
+
 namespace std {
 	template<class charT,class traits>
 	basic_ostream<charT,traits>::sentry::sentry(basic_ostream<charT,traits>& os)
@@ -45,6 +48,188 @@ namespace std {
 	}
 	template<class charT,class traits>
 	basic_ostream<charT,traits>::~basic_ostream() {
+	}
+
+	template<class charT,class traits>
+	basic_ostream<charT,traits>& basic_ostream<charT,traits>::format(const char *fmt,...) {
+		va_list ap;
+		va_start(ap,fmt);
+		basic_ostream<charT,traits>& res = format(fmt,ap);
+		va_end(ap);
+		return res;
+	}
+
+	template<class charT,class traits>
+	basic_ostream<charT,traits>& basic_ostream<charT,traits>::format(const char *fmt,va_list ap) {
+		sentry se(*this);
+		if(se) {
+			bool readFlags;
+			ios_base::fmtflags flags;
+			s16 precision;
+			char c,*str,b;
+			s32 n;
+			u32 u;
+			double d;
+			u8 intsize,pad;
+
+			ios_base::fmtflags oldflags = ios_base::flags();
+			streamsize oldprec = ios_base::precision();
+			streamsize oldwidth = ios_base::width();
+			char_type oldfill = basic_ios<charT,traits>::fill();
+
+			try {
+				while(1) {
+					/* wait for a '%' */
+					while((c = *fmt++) != '%') {
+						/* finished? */
+						if(c == '\0')
+							goto done;
+						_sb->put(c);
+					}
+
+					/* read flags */
+					flags = ios_base::dec | ios_base::right | ios_base::skipws;
+					pad = 0;
+					readFlags = true;
+					while(readFlags) {
+						switch(*fmt) {
+							case '-':
+								flags &= ~ios_base::right;
+								flags |= ios_base::left;
+								fmt++;
+								break;
+							case '+':
+								flags |= ios_base::showpos;
+								fmt++;
+								break;
+							case '#':
+								flags |= ios_base::showbase;
+								fmt++;
+								break;
+							case '0':
+								basic_ios<charT,traits>::fill('0');
+								fmt++;
+								break;
+							case '*':
+								pad = (u8)va_arg(ap, u32);
+								fmt++;
+								break;
+							default:
+								readFlags = false;
+								break;
+						}
+					}
+
+					/* read pad-width */
+					if(pad == 0) {
+						while(*fmt >= '0' && *fmt <= '9') {
+							pad = pad * 10 + (*fmt - '0');
+							fmt++;
+						}
+					}
+
+					/* read precision */
+					precision = 6;
+					if(*fmt == '.') {
+						fmt++;
+						precision = 0;
+						while(*fmt >= '0' && *fmt <= '9') {
+							precision = precision * 10 + (*fmt - '0');
+							fmt++;
+						}
+					}
+
+					// set formatting settings
+					ios_base::precision(precision);
+					ios_base::width(pad);
+					ios_base::flags(flags);
+
+					/* read length */
+					intsize = 0;
+					switch(*fmt) {
+						case 'l':
+							intsize |= FFL_LONG;
+							fmt++;
+							break;
+						case 'h':
+							intsize |= FFL_SHORT;
+							fmt++;
+							break;
+					}
+
+					/* format */
+					switch((c = *fmt++)) {
+						/* signed integer */
+						case 'd':
+						case 'i':
+							n = va_arg(ap, s32);
+							if(flags & FFL_SHORT)
+								n &= 0xFFFF;
+							writeSigned(n);
+							break;
+
+						/* pointer */
+						case 'p':
+							u = va_arg(ap, u32);
+							// TODO
+							writeUnsigned(u);
+							break;
+
+						/* floating points */
+						case 'f':
+							/* 'float' is promoted to 'double' when passed through '...' */
+							d = va_arg(ap, double);
+							writeDouble(d);
+							break;
+
+						/* unsigned integer */
+						case 'b':
+						case 'u':
+						case 'o':
+						case 'x':
+						case 'X':
+							if(c == 'o')
+								ios_base::setf(ios_base::oct);
+							else if(c == 'x' || c == 'X') {
+								if(c == 'X')
+									ios_base::setf(ios_base::uppercase);
+								ios_base::setf(ios_base::hex);
+							}
+							u = va_arg(ap, u32);
+							if(intsize & FFL_SHORT)
+								u &= 0xFFFF;
+							writeUnsigned(u);
+							break;
+
+						/* string */
+						case 's':
+							str = va_arg(ap, char*);
+							write(str,strlen(str));
+							break;
+
+						/* character */
+						case 'c':
+							b = (char)va_arg(ap, u32);
+							_sb->put(b);
+							break;
+
+						default:
+							_sb->put(c);
+							break;
+					}
+				}
+			}
+			catch(...) {
+				basic_ios<charT,traits>::setstate(ios_base::badbit);
+			}
+
+			done:
+			ios_base::flags(oldflags);
+			ios_base::width(oldwidth);
+			ios_base::precision(oldprec);
+			basic_ios<charT,traits>::fill(oldfill);
+		}
+		return *this;
 	}
 
 	template<class charT,class traits>
@@ -126,6 +311,35 @@ namespace std {
 	}
 
 	template<class charT,class traits>
+	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(
+			basic_streambuf<charT,traits>* sb) {
+		sentry se(*this);
+		if(se) {
+			streamsize n = sb->available();
+			streamsize m = n;
+			streamsize pwidth = ios_base::width();
+			try {
+				if((ios_base::flags() & ios_base::right) && pwidth > n)
+					writePad(pwidth - n);
+				try {
+					while(m-- > 0)
+						_sb->put(sb->get());
+				}
+				catch(eof_reached&) {
+					// simply stop
+				}
+				if((ios_base::flags() & ios_base::left) && pwidth > n)
+					writePad(pwidth - n);
+			}
+			catch(...) {
+				basic_ios<charT,traits>::setstate(ios_base::badbit);
+			}
+			ios_base::width(0);
+		}
+		return *this;
+	}
+
+	template<class charT,class traits>
 	basic_ostream<charT,traits>& basic_ostream<charT,traits>::put(char_type c) {
 		return write(&c,1);
 	}
@@ -135,9 +349,10 @@ namespace std {
 		if(se) {
 			streamsize pwidth = ios_base::width();
 			try {
+				streamsize m = n;
 				if((ios_base::flags() & ios_base::right) && pwidth > n)
 					writePad(pwidth - n);
-				while(n-- > 0)
+				while(m-- > 0)
 					_sb->put(*s++);
 				if((ios_base::flags() & ios_base::left) && pwidth > n)
 					writePad(pwidth - n);
@@ -343,6 +558,14 @@ namespace std {
 	template<class traits>
 	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>& os,char c) {
 		os.put(c);
+		return os;
+	}
+
+	template<class charT,class traits>
+	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>& os,
+			const basic_string<charT>& s) {
+		basic_stringbuf<charT,traits> sb(s);
+		os << &sb;
 		return os;
 	}
 

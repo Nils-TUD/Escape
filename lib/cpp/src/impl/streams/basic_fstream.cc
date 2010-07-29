@@ -24,7 +24,8 @@ namespace std {
 	}
 	template<class charT,class traits>
 	basic_fstream<charT,traits>::basic_fstream(const char* filename,ios_base::openmode which)
-		: basic_iostream<charT,traits>(new basic_filebuf<charT,traits>(filename,which)) {
+		: basic_iostream<charT,traits>(new basic_filebuf<charT,traits>()) {
+		rdbuf()->open(filename,which);
 	}
 	template<class charT,class traits>
 	basic_fstream<charT,traits>::~basic_fstream() {

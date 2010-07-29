@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <impl/streams/basic_ios.h>
 #include <impl/streams/ios_base.h>
+#include <impl/streams/basic_stringbuf.h>
 #include <exception>
 #include <esc/width.h>
 
@@ -75,6 +76,16 @@ namespace std {
 		};
 
 		/**
+		 * Provides printf()-like formatting.
+		 *
+		 * @param fmt the format
+		 * @param ap the argument-pointer
+		 * @return *this
+		 */
+		basic_ostream<charT,traits>& format(const char *fmt,...);
+		basic_ostream<charT,traits>& format(const char *fmt,va_list ap);
+
+		/**
 		 * Calls pf(*this) and returns *this
 		 */
 		basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>& (*pf)(basic_ostream<
@@ -102,8 +113,7 @@ namespace std {
 		basic_ostream<charT,traits>& operator <<(long double f);
 		basic_ostream<charT,traits>& operator <<(const void * p);
 
-		/* TODO
-		 * basic_ostream<charT,traits>& operator <<(basic_streambuf<char_type,traits>* sb);*/
+		basic_ostream<charT,traits>& operator <<(basic_streambuf<charT,traits>* sb);
 
 		/**
 		 * Writes the given character into the output-stream
@@ -156,6 +166,12 @@ namespace std {
 	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>&,signed char);
 	template<class traits>
 	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>&,unsigned char);
+
+	/**
+	 * Writes a string into the given stream
+	 */
+	template<class charT,class traits>
+	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>&,const basic_string<charT>&);
 
 	/**
 	 * Writes the given string into the given stream

@@ -17,11 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <impl/streams/basic_streambuf.h>
+
 namespace std {
-	template<class charT,class traits>
-	inline basic_streambuf<charT,traits>::basic_streambuf() {
+	eof_reached::eof_reached() {
 	}
-	template<class charT,class traits>
-	inline basic_streambuf<charT,traits>::~basic_streambuf() {
+	const char* eof_reached::what() const throw() {
+		return "EOF reached";
+	}
+
+	bad_state::bad_state(const string &msg) : _msg(msg.c_str()) {
+	}
+	const char* bad_state::what() const throw() {
+		return _msg;
 	}
 }

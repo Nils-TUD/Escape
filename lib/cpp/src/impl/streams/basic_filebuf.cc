@@ -20,7 +20,8 @@
 namespace std {
 	template<class charT,class traits>
 	basic_filebuf<charT,traits>::basic_filebuf()
-		: _fd(-1), _inPos(0), _inMax(0), _inBuf(NULL), _outPos(0), _outBuf(NULL), _mode(0) {
+		: _fd(-1), _inPos(0), _inMax(0), _inBuf(NULL), _totalInPos(0), _outPos(0),
+		  _outBuf(NULL), _mode(0) {
 	}
 	template<class charT,class traits>
 	basic_filebuf<charT,traits>::~basic_filebuf() {
@@ -31,6 +32,32 @@ namespace std {
 	basic_filebuf<charT,traits>* basic_filebuf<charT,traits>::open(
 			const char* s,ios_base::openmode mode) {
 		close();
+		unsigned char omode = getMode(mode);
+		_fd = ::open(s,omode);
+		if(_fd < 0)
+			return NULL;
+		_mode = mode;
+		_totalInPos = 0;
+		_inPos = 0;
+		_inMax = 0;
+		_outPos = 0;
+		return this;
+	}
+
+	template<class charT,class traits>
+	basic_filebuf<charT,traits>* basic_filebuf<charT,traits>::open(tFD fd,ios_base::openmode mode) {
+		close();
+		_fd = fd;
+		_mode = mode;
+		_totalInPos = 0;
+		_inPos = 0;
+		_inMax = 0;
+		_outPos = 0;
+		return this;
+	}
+
+	template<class charT,class traits>
+	unsigned char basic_filebuf<charT,traits>::getMode(ios_base::openmode mode) {
 		unsigned char omode = 0;
 		if(mode & ios_base::in)
 			omode |= IO_READ;
@@ -41,14 +68,7 @@ namespace std {
 		// TODO ?
 		if(mode & (ios_base::app | ios_base::ate))
 			omode |= IO_APPEND;
-		_fd = ::open(s,omode);
-		if(_fd < 0)
-			return NULL;
-		_mode = mode;
-		_inPos = 0;
-		_inMax = 0;
-		_outPos = 0;
-		return this;
+		return omode;
 	}
 
 	template<class charT,class traits>
@@ -74,6 +94,13 @@ namespace std {
 	}
 
 	template<class charT,class traits>
+	typename basic_filebuf<charT,traits>::pos_type basic_filebuf<charT,traits>::available() const {
+		sFileInfo info;
+		::fstat(_fd,&info);
+		return info.size - _totalInPos;
+	}
+
+	template<class charT,class traits>
 	typename basic_filebuf<charT,traits>::char_type basic_filebuf<charT,traits>::peek() const {
 		if(_fd < 0 || !(_mode & ios_base::in))
 			throw bad_state("file not open for reading");
@@ -85,6 +112,7 @@ namespace std {
 	typename basic_filebuf<charT,traits>::char_type basic_filebuf<charT,traits>::get() {
 		char_type c = peek();
 		_inPos++;
+		_totalInPos++;
 		return c;
 	}
 	template<class charT,class traits>
@@ -94,6 +122,7 @@ namespace std {
 		if(_inPos == 0 || _inPos >= _inMax)
 			throw bad_state("unget() not possible");
 		_inPos--;
+		_totalInPos--;
 	}
 
 	template<class charT,class traits>
@@ -108,7 +137,7 @@ namespace std {
 	void basic_filebuf<charT,traits>::flush() {
 		if(_fd < 0 || !(_mode & ios_base::out))
 			throw bad_state("file not open for writing");
-		if(_outBuf) {
+		if(_outBuf && _outPos > 0) {
 			long res = ::write(_fd,_outBuf,_outPos);
 			if(res < 0)
 				throw bad_state("flush() failed");

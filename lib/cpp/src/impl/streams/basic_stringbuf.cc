@@ -46,6 +46,11 @@ namespace std {
 	}
 
 	template<class charT,class traits>
+	typename basic_stringbuf<charT,traits>::pos_type basic_stringbuf<charT,traits>::available() const {
+		return _str.length() - _pos;
+	}
+
+	template<class charT,class traits>
 	typename basic_stringbuf<charT,traits>::char_type basic_stringbuf<charT,traits>::peek() const {
 		if(!(_mode & ios_base::in))
 			throw bad_state(string("No read-permission"));

@@ -57,6 +57,15 @@ namespace std {
 		basic_filebuf<charT,traits>* open(const char* s,ios_base::openmode mode);
 
 		/**
+		 * Uses the given file-descriptor with given open-mode
+		 *
+		 * @param fd the file-descriptor
+		 * @param mode the mode
+		 * @return this on success, a null-pointer on failure
+		 */
+		basic_filebuf<charT,traits>* open(tFD fd,ios_base::openmode mode);
+
+		/**
 		 * @return if a file has been opened successfully
 		 */
 		bool is_open() const;
@@ -66,6 +75,11 @@ namespace std {
 		 * @return this on success, a null-pointer on failure
 		 */
 		basic_filebuf<charT,traits>* close();
+
+		/**
+		 * @return the number of available characters
+		 */
+		virtual pos_type available() const;
 
 		/**
 		 * @return the char at the current position
@@ -101,6 +115,7 @@ namespace std {
 		virtual void flush();
 
 	private:
+		unsigned char getMode(ios_base::openmode mode);
 		bool fillBuffer() const;
 
 	private:
@@ -108,6 +123,7 @@ namespace std {
 		mutable pos_type _inPos;
 		mutable pos_type _inMax;
 		mutable charT* _inBuf;
+		pos_type _totalInPos;
 		pos_type _outPos;
 		charT* _outBuf;
 		ios_base::openmode _mode;

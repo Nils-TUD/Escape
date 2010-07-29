@@ -64,6 +64,11 @@ namespace std {
 		void str(const basic_string<charT>& s);
 
 		/**
+		 * @return the number of available characters
+		 */
+		virtual pos_type available() const;
+
+		/**
 		 * @return the char at the current position
 		 * @throws eof_reached if EOF is reached
 		 * @throws bad_state if reading is not allowed

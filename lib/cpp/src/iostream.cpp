@@ -17,11 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <impl/streams/ios_base.h>
+#include <fstream>
+
 namespace std {
-	template<class charT,class traits>
-	inline basic_streambuf<charT,traits>::basic_streambuf() {
-	}
-	template<class charT,class traits>
-	inline basic_streambuf<charT,traits>::~basic_streambuf() {
-	}
+	ifstream cin;
+	ofstream cout;
+	ofstream cerr;
+	ofstream clog;
+	ios_base::Init init;
 }

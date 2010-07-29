@@ -21,5 +21,10 @@
 #include <stdio.h>
 
 s32 puts(const char *str) {
-	return fputs(str,stdout);
+	s32 res = fputs(str,stdout);
+	if(res != EOF) {
+		if(putc('\n',stdout) != EOF)
+			res++;
+	}
+	return res;
 }

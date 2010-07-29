@@ -18,7 +18,9 @@
  */
 
 #include <impl/streams/ios_base.h>
+#include <iostream>
 #include <stdio.h>
+#include <esc/debug.h>
 
 namespace std {
 	ios_base::failure::failure(const string& msg)
@@ -26,6 +28,26 @@ namespace std {
 	}
 	const char* ios_base::failure::what() const {
 		return _msg;
+	}
+
+	int ios_base::Init::init_cnt = 0;
+
+	ios_base::Init::Init() {
+		if(init_cnt++ == 0) {
+			cin.open((tFD)STDIN_FILENO);
+			cin.tie(&cout);
+			cout.open((tFD)STDOUT_FILENO);
+			cerr.open((tFD)STDERR_FILENO);
+			cerr.tie(&cout);
+			clog.open((tFD)STDERR_FILENO);
+		}
+	}
+	ios_base::Init::~Init() {
+		if(--init_cnt == 0) {
+			cout.flush();
+			cerr.flush();
+			clog.flush();
+		}
 	}
 
 	const ios_base::fmtflags ios_base::boolalpha	= 1 << 0;

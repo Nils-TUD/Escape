@@ -24,7 +24,8 @@ namespace std {
 	}
 	template<class charT,class traits>
 	basic_ifstream<charT,traits>::basic_ifstream(const char* filename,ios_base::openmode which)
-		: basic_istream<charT,traits>(new basic_filebuf<charT,traits>(filename,which)) {
+		: basic_istream<charT,traits>(new basic_filebuf<charT,traits>()) {
+		rdbuf()->open(filename,which);
 	}
 	template<class charT,class traits>
 	basic_ifstream<charT,traits>::~basic_ifstream() {
@@ -33,6 +34,10 @@ namespace std {
 	template<class charT,class traits>
 	basic_filebuf<charT,traits>* basic_ifstream<charT,traits>::rdbuf() const {
 		return static_cast<basic_filebuf<charT,traits>*>(basic_ios<charT,traits>::rdbuf());
+	}
+	template<class charT,class traits>
+	void basic_ifstream<charT,traits>::open(tFD fd,ios_base::openmode which) {
+		rdbuf()->open(fd,which);
 	}
 	template<class charT,class traits>
 	void basic_ifstream<charT,traits>::open(const char* s,ios_base::openmode mode) {

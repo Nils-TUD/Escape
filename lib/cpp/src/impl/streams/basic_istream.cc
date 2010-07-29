@@ -441,6 +441,15 @@ namespace std {
 		streamsize w = in.width();
 		return in.getline(s,w > 0 ? w : numeric_limits<streamsize>::max());
 	}
+	template<class charT,class traits>
+	basic_istream<charT,traits>& operator >>(basic_istream<charT,traits>& in,basic_string<charT>& s) {
+		ws(in);
+		streamsize w = in.width();
+		basic_stringbuf<charT,traits> sb(s);
+		in.get(sb);
+		s = sb.str();
+		return in;
+	}
 
 	template<class charT,class traits>
 	basic_istream<charT,traits>& ws(basic_istream<charT,traits>& is) {

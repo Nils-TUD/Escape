@@ -22,6 +22,7 @@
 
 #include <impl/streams/basic_filebuf.h>
 #include <impl/streams/basic_ostream.h>
+#include <esc/io.h>
 
 namespace std {
 	/**
@@ -50,6 +51,13 @@ namespace std {
 		 * @return the file-buffer
 		 */
 		basic_filebuf<charT,traits>* rdbuf() const;
+		/**
+		 * Uses the given file-descriptor
+		 *
+		 * @param fd the file-descriptor
+		 * @param which the open-mode (out by default)
+		 */
+		void open(tFD fd,ios_base::openmode which = ios_base::out);
 		/**
 		 * Opens the file <s> with given open-mode
 		 *

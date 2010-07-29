@@ -180,6 +180,10 @@ namespace std {
 		void register_callback(event_callback fn,int index);
 
 		/**
+		 * @return wether we should sync stdio
+		 */
+		static bool sync_with_stdio();
+		/**
 		 * If any input or output operation has occurred using the standard streams prior to the
 		 * call, the effect is implementation-defined. Otherwise, called with a false argument,
 		 * it allows the standard streams to operate independently of the standard C streams.
@@ -188,7 +192,7 @@ namespace std {
 		 * 	synchronized and otherwise returns false. The first time it is called, the function
 		 * 	returns true.
 		 */
-		static bool sync_with_stdio(bool sync = true);
+		static bool sync_with_stdio(bool sync);
 
 		/**
 		 * Destroys an object of class ios_base. Calls each registered callback pair (fn , index )

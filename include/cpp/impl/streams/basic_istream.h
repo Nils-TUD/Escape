@@ -156,6 +156,23 @@ namespace std {
 		 */
 		basic_istream<charT,traits>& get(basic_streambuf<char_type,traits>& sb,char_type delim);
 		/**
+		 * Reads and extracts characters until either EOF is reached, an error occurrs or a
+		 * whitespace-character is found. If width() is not 0, it stops when width() is reached.
+		 * In any case, <s> is terminated by a null-character
+		 *
+		 * @param s the string to store the characters in
+		 * @return *this
+		 */
+		basic_istream<charT,traits>& getword(char_type* s);
+		/**
+		 * Reads and extracts characters until either EOF is reached, an error occurrs or a
+		 * whitespace-character is found. If width() is not 0, it stops when width() is reached.
+		 *
+		 * @param sb the streambuffer
+		 * @return *this
+		 */
+		basic_istream<charT,traits>& getword(basic_streambuf<char_type,traits>& sb);
+		/**
 		 * @return getline(s ,n ,widen('\n'))
 		 */
 		basic_istream<charT,traits>& getline(char_type* s,size_type n);
@@ -171,6 +188,7 @@ namespace std {
 		 * @return *this
 		 */
 		basic_istream<charT,traits>& getline(char_type* s,size_type n,char_type delim);
+		basic_istream<charT,traits>& getline(basic_stringbuf<charT>& sb,char_type delim);
 		/**
 		 * Extracts characters and discards them until <n> characters have been discarded (n =
 		 * numeric_limits<streamsize>::max() means unlimited) or EOF is reached or <delim>
@@ -240,8 +258,6 @@ namespace std {
 	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,unsigned char* s);
 	template<class traits>
 	basic_istream<char,traits>& operator >>(basic_istream<char,traits>& in,signed char* s);
-	template<class charT,class traits>
-	basic_istream<charT,traits>& operator >>(basic_istream<charT,traits>& in,basic_string<charT>& s);
 
 	/**
 	 * Discards whitespace

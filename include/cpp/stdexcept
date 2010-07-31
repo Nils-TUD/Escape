@@ -22,17 +22,15 @@
 
 #include <stddef.h>
 #include <impl/exception/exception.h>
-#include <string>
+#include <impl/string/basic_string.h>
 
 namespace std {
-	/** Logic errors represent problems in the internal logic of a program;
-	 *  in theory, these are preventable, and even detectable before the
-	 *  program runs (e.g., violations of class invariants).
-	 *  @brief One of two subclasses of exception.
+	/**
+	 * Logic errors represent problems in the internal logic of a program;
+	 * in theory, these are preventable, and even detectable before the
+	 * program runs (e.g., violations of class invariants).
 	 */
 	class logic_error: public exception {
-		string _M_msg;
-
 	public:
 		/** Takes a character string describing the error.  */
 		explicit logic_error(const string& arg);
@@ -42,6 +40,8 @@ namespace std {
 		/** Returns a C-style character string describing the general cause of
 		 *  the current error (the same string passed to the ctor).  */
 		virtual const char* what() const throw ();
+	private:
+		string _msg;
 	};
 
 	/** Thrown by the library, or by you, to report domain errors (domain in
@@ -77,8 +77,6 @@ namespace std {
 	 *  @brief One of two subclasses of exception.
 	 */
 	class runtime_error: public exception {
-		string _M_msg;
-
 	public:
 		/** Takes a character string describing the error.  */
 		explicit runtime_error(const string& arg);
@@ -88,6 +86,8 @@ namespace std {
 		/** Returns a C-style character string describing the general cause of
 		 *  the current error (the same string passed to the ctor).  */
 		virtual const char* what() const throw ();
+	private:
+		string _msg;
 	};
 
 	/** Thrown to indicate range errors in internal computations.  */

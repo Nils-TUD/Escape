@@ -101,7 +101,7 @@ int main(void) {
 
 	string name;
 	cout << "Enter your Name: ";
-	cin >> name;
+	getline(cin,name);
 	cout << "Hi " << name << "!" << endl;
 
 	string abc;

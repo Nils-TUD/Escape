@@ -17,21 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <string>
-
 namespace std {
 	// === constructors ===
 	template<typename T>
 	inline basic_string<T>::basic_string()
-		: _str(new char[INIT_SIZE]), _size(INIT_SIZE), _length(0) {
+		: _str(new T[INIT_SIZE]), _size(INIT_SIZE), _length(0) {
 		_str[0] = '\0';
 	}
 	template<typename T>
 	basic_string<T>::basic_string(const basic_string<T>& str)
-		: _str(new char[str._size]), _size(str._size), _length(str._length) {
-		memcpy(_str,str._str,_size);
+		: _str(new T[str._size]), _size(str._size), _length(str._length) {
+		memcpy(_str,str._str,_size * sizeof(T));
 	}
 	template<typename T>
 	basic_string<T>::basic_string(const basic_string<T>& str,size_type pos,size_type n)
@@ -42,7 +38,7 @@ namespace std {
 	}
 	template<typename T>
 	basic_string<T>::basic_string(const T* s,size_type n)
-		: _str(new char[n + 1]), _size(n + 1), _length(n) {
+		: _str(new T[n + 1]), _size(n + 1), _length(n) {
 		memcpy(_str,s,n);
 		_str[n] = '\0';
 	}
@@ -50,18 +46,24 @@ namespace std {
 	basic_string<T>::basic_string(const T* s)
 		: _str(NULL), _size(0), _length(0) {
 		size_type len = strlen(s);
-		_str = new char[len + 1];
+		_str = new T[len + 1];
 		_size = len + 1;
 		_length = len;
-		memcpy(_str,s,len);
+		memcpy(_str,s,len * sizeof(T));
 		_str[len] = '\0';
 	}
 	template<typename T>
 	basic_string<T>::basic_string(size_type n,T c)
-		: _str(new char[n + 1]), _size(n + 1), _length(n) {
+		: _str(new T[n + 1]), _size(n + 1), _length(n) {
 		_str[n] = '\0';
 		for(; n > 0; n--)
 			_str[n - 1] = c;
+	}
+	template<typename T>
+	template<class InputIterator>
+	basic_string<T>::basic_string(InputIterator begin,InputIterator end)
+		: _str(NULL), _size(0), _length(0) {
+		append(begin,end);
 	}
 
 	// === destructor ===
@@ -84,10 +86,44 @@ namespace std {
 		delete[] _str;
 		_length = 1;
 		_size = 2;
-		_str = new char[_size];
+		_str = new T[_size];
 		_str[0] = c;
 		_str[1] = '\0';
 		return *this;
+	}
+
+	// === iterator stuff ===
+	template<typename T>
+	inline typename basic_string<T>::iterator basic_string<T>::begin() {
+		return _str;
+	}
+	template<typename T>
+	inline typename basic_string<T>::const_iterator basic_string<T>::begin() const {
+		return _str;
+	}
+	template<typename T>
+	inline typename basic_string<T>::iterator basic_string<T>::end() {
+		return _str + _length;
+	}
+	template<typename T>
+	inline typename basic_string<T>::const_iterator basic_string<T>::end() const {
+		return _str + _length;
+	}
+	template<typename T>
+	inline typename basic_string<T>::reverse_iterator basic_string<T>::rbegin() {
+		return reverse_iterator(_str + _length);
+	}
+	template<typename T>
+	inline typename basic_string<T>::const_reverse_iterator basic_string<T>::rbegin() const {
+		return const_reverse_iterator(_str + _length);
+	}
+	template<typename T>
+	inline typename basic_string<T>::reverse_iterator basic_string<T>::rend() {
+		return reverse_iterator(_str);
+	}
+	template<typename T>
+	inline typename basic_string<T>::const_reverse_iterator basic_string<T>::rend() const {
+		return const_reverse_iterator(_str);
 	}
 
 	// === sizes ===
@@ -119,9 +155,9 @@ namespace std {
 			}
 		}
 		else if(n + 1 > _size) {
-			T *tmp = new char[n + 1];
+			T *tmp = new T[n + 1];
 			if(_size > 0) {
-				memcpy(tmp,_str,_size - 1);
+				memcpy(tmp,_str,(_size - 1) * sizeof(T));
 				tmp[_size - 1] = c;
 			}
 			for(size_type i = _size; i < n; i++)
@@ -145,9 +181,9 @@ namespace std {
 	// === clear() and empty() ===
 	template<typename T>
 	void basic_string<T>::clear() {
-		if(_size > INIT_SIZE) {
+		if(_size > INIT_SIZE || !_str) {
 			delete[] _str;
-			_str = new char[INIT_SIZE];
+			_str = new T[INIT_SIZE];
 			_size = INIT_SIZE;
 		}
 		_str[0] = '\0';
@@ -162,13 +198,13 @@ namespace std {
 	template<typename T>
 	inline typename basic_string<T>::const_reference basic_string<T>::operator[](size_type pos) const {
 		if(pos >= _length)
-			exit(1); // TODO throw exception
+			throw out_of_range("Index out of range");
 		return _str[pos];
 	}
 	template<typename T>
 	inline typename basic_string<T>::reference basic_string<T>::operator[](size_type pos) {
 		if(pos >= _length)
-			exit(1); // TODO throw exception
+			throw out_of_range("Index out of range");
 		return _str[pos];
 	}
 
@@ -219,57 +255,53 @@ namespace std {
 		return insert(_length,n,c);
 	}
 	template<typename T>
+	template<class InputIterator>
+	basic_string<T>& basic_string<T>::append(InputIterator first,InputIterator last) {
+		reserve(length() + distance(first,last));
+		for(; first != last; ++first)
+			append(first,1);
+	}
+	template<typename T>
 	inline void basic_string<T>::push_back(T c) {
-		append(c);
+		append(&c,1);
 	}
 
 	// === assign() ===
 	template<typename T>
-	basic_string<T>& basic_string<T>::assign(const basic_string<T>& str) {
-		delete[] _str;
-		_length = str._length;
-		_size = str._size;
-		_str = new char[_size];
-		memcpy(_str,str._str,_size);
+	inline basic_string<T>& basic_string<T>::assign(const basic_string<T>& str) {
+		clear();
+		append(str);
 		return *this;
 	}
 	template<typename T>
 	basic_string<T>& basic_string<T>::assign(const basic_string<T>& str,size_type pos,size_type n) {
-		delete[] _str;
 		if(pos > str._length || (n != npos && pos + n < pos))
-			exit(1); // TODO throw exception
-		if(n == npos || pos + n > str._length)
-			n = str._length - pos;
-		_size = n + 1;
-		_str = new char[_size];
-		memcpy(_str,str._str + pos,n);
-		_length = n;
-		_str[_length] = '\0';
+			throw out_of_range("Index out of range");
+		clear();
+		append(str,pos,n);
 		return *this;
 	}
 	template<typename T>
-	basic_string<T>& basic_string<T>::assign(const T* s,size_type n) {
-		delete[] _str;
-		_size = n + 1;
-		_str = new char[_size];
-		memcpy(_str,s,n);
-		_length = n;
-		_str[_length] = '\0';
+	inline basic_string<T>& basic_string<T>::assign(const T* s,size_type n) {
+		clear();
+		append(s,n);
 		return *this;
 	}
 	template<typename T>
-	basic_string<T>& basic_string<T>::assign(const T* s) {
+	inline basic_string<T>& basic_string<T>::assign(const T* s) {
 		return assign(s,strlen(s));
 	}
 	template<typename T>
-	basic_string<T>& basic_string<T>::assign(size_type n,T c) {
-		delete[] _str;
-		_size = n + 1;
-		_str = new char[_size];
-		for(size_type i = 0; i < n; i++)
-			_str[i] = c;
-		_length = n;
+	inline basic_string<T>& basic_string<T>::assign(size_type n,T c) {
+		clear();
+		append(n,c);
 		return *this;
+	}
+	template<typename T>
+	template<class InputIterator>
+	inline basic_string<T>& basic_string<T>::assign(InputIterator first,InputIterator last) {
+		clear();
+		append(first,last);
 	}
 
 	// === insert() ===
@@ -281,15 +313,15 @@ namespace std {
 	basic_string<T>& basic_string<T>::insert(size_type pos1,const basic_string<T>& str,
 			size_type pos2,size_type n) {
 		if(pos1 > _length)
-			exit(1); // TODO throw exception
+			throw out_of_range("pos1 out of range");
 		if(pos2 > str._length)
-			exit(1); // TODO throw exception
+			throw out_of_range("pos2 out of range");
 		if(pos2 + n > str._length)
 			n = pos2 - str._length;
 		reserve(_length + n);
 		if(pos1 < _length)
-			memmove(_str + pos1 + n,_str + pos1,_length - pos1);
-		memcpy(_str + pos1,str._str + pos2,n);
+			memmove(_str + pos1 + n,_str + pos1,(_length - pos1) * sizeof(T));
+		memcpy(_str + pos1,str._str + pos2,n * sizeof(T));
 		_length += n;
 		_str[_length] = '\0';
 		return *this;
@@ -308,21 +340,38 @@ namespace std {
 		string tmp(n,c);
 		return insert(pos1,tmp);
 	}
+	template<typename T>
+	template<class InputIterator>
+	void basic_string<T>::insert(iterator p,InputIterator first,InputIterator last) {
+		reserve(_length + distance(first,last));
+		for(; first != last; ++first)
+			insert(p++,first,1);
+	}
 
 	// === erase() ===
 	template<typename T>
 	basic_string<T>& basic_string<T>::erase(size_type pos,size_type n) {
 		if(pos > _length)
-			exit(1); // TODO throw exception
+			throw out_of_range("Index out of range");
 		if(n == npos)
 			n = _length - pos;
 		if(pos + n > _length)
 			n = _length - pos;
 		if(pos + n < _length)
-			memmove(_str + pos,_str + pos + n,_length - (pos + n));
+			memmove(_str + pos,_str + pos + n,(_length - (pos + n)) * sizeof(T));
 		_length -= n;
 		_str[_length] = '\0';
 		return *this;
+	}
+	template<typename T>
+	typename basic_string<T>::iterator basic_string<T>::erase(iterator position) {
+		return erase(position,position + 1);
+	}
+	template<typename T>
+	typename basic_string<T>::iterator basic_string<T>::erase(iterator first,iterator last) {
+		size_type n = distance(begin(),first);
+		erase(size_type(first - begin()),distance(first,last));
+		return begin() + n;
 	}
 
 	// === replace() ===
@@ -357,10 +406,10 @@ namespace std {
 	template<typename T>
 	typename basic_string<T>::size_type basic_string<T>::copy(T* s,size_type n,size_type pos) const {
 		if(pos > _length)
-			exit(1); // TODO throw exception
+			throw out_of_range("Index out of range");
 		if(pos + n > _length)
 			n = _length - pos;
-		memcpy(s,_str + pos,n);
+		memcpy(s,_str + pos,n * sizeof(T));
 		return n;
 	}
 	template<typename T>
@@ -708,5 +757,36 @@ namespace std {
 	template<typename T>
 	bool operator>=(const basic_string<T>& lhs,const T* rhs) {
 		return lhs.compare(rhs) >= 0;
+	}
+
+	// === stream stuff ===
+	template<class charT,class traits>
+	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>& os,
+			const basic_string<charT>& s) {
+		basic_stringbuf<charT,traits> sb(s);
+		os << &sb;
+		return os;
+	}
+	template<class charT,class traits>
+	basic_istream<charT,traits>& operator >>(basic_istream<charT,traits>& in,basic_string<charT>& s) {
+		ws(in);
+		basic_stringbuf<charT,traits> sb(s);
+		in.getword(sb);
+		s = sb.str();
+		return in;
+	}
+
+	template<class charT,class traits>
+	inline basic_istream<charT,traits>& getline(basic_istream<charT,traits>& is,
+			basic_string<charT>& str) {
+		return getline(is,str,'\n');
+	}
+	template<class charT,class traits>
+	basic_istream<charT,traits>& getline(basic_istream<charT,traits>& is,basic_string<charT>& str,
+			charT delim) {
+		basic_stringbuf<charT,traits> sb(str);
+		is.getline(sb,delim);
+		str = sb.str();
+		return is;
 	}
 }

@@ -561,14 +561,6 @@ namespace std {
 		return os;
 	}
 
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>& os,
-			const basic_string<charT>& s) {
-		basic_stringbuf<charT,traits> sb(s);
-		os << &sb;
-		return os;
-	}
-
 	template<class traits>
 	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>& os,signed char c) {
 		os.put(c);

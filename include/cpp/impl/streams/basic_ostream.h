@@ -168,12 +168,6 @@ namespace std {
 	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>&,unsigned char);
 
 	/**
-	 * Writes a string into the given stream
-	 */
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>&,const basic_string<charT>&);
-
-	/**
 	 * Writes the given string into the given stream
 	 */
 	template<class charT,class traits>

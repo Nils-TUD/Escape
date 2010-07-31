@@ -21,7 +21,6 @@
 #define EXCEPTION_H_
 
 #include <stddef.h>
-#include <string>
 
 namespace std {
 	/**

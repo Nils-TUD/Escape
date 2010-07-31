@@ -19,15 +19,16 @@
 
 #include <stddef.h>
 #include <stdexcept>
+#include <string>
 
 namespace std {
 	logic_error::logic_error(const string& msg)
-		: _M_msg(msg) {
+		: _msg(msg) {
 	}
 	logic_error::~logic_error() throw() {
 	}
 	const char* logic_error::what() const throw() {
-		return _M_msg.c_str();
+		return _msg.c_str();
 	}
 
 	domain_error::domain_error(const string& msg)
@@ -47,12 +48,12 @@ namespace std {
 	}
 
 	runtime_error::runtime_error(const string& msg)
-		: _M_msg(msg) {
+		: _msg(msg) {
 	}
 	runtime_error::~runtime_error() {
 	}
 	const char* runtime_error::what() const throw() {
-		return _M_msg.c_str();
+		return _msg.c_str();
 	}
 
 	range_error::range_error(const string& msg)

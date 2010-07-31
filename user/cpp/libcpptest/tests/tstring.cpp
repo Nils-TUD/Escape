@@ -24,6 +24,7 @@
 /* forward declarations */
 static void test_string(void);
 static void test_constr(void);
+static void test_iterators(void);
 static void test_assign(void);
 static void test_resize(void);
 static void test_clear(void);
@@ -46,6 +47,7 @@ sTestModule tModString = {
 
 static void test_string(void) {
 	test_constr();
+	test_iterators();
 	test_assign();
 	test_resize();
 	test_clear();
@@ -113,6 +115,20 @@ static void test_constr(void) {
 	string s13(12,'a');
 	test_assertStr(s13.c_str(),"aaaaaaaaaaaa");
 	test_assertUInt(s13.length(),12);
+
+	test_caseSucceded();
+}
+
+static void test_iterators(void) {
+	test_caseStart("Testing iterators");
+
+	string s1("0123456789");
+	int i = '0';
+	for(string::iterator it = s1.begin(); it != s1.end(); ++it)
+		test_assertInt(*it,i++);
+	i = '9';
+	for(string::reverse_iterator it = s1.rbegin(); it != s1.rend(); ++it)
+		test_assertInt(*it,i--);
 
 	test_caseSucceded();
 }
@@ -275,6 +291,23 @@ static void test_erase(void) {
 	s3.erase(2,2);
 	test_assertStr(s3.c_str(),"fo");
 	test_assertUInt(s3.length(),2);
+
+	string::iterator it;
+	string s4("barfoo");
+	it = s4.erase(s4.begin() + 3,s4.begin() + 5);
+	test_assertInt(*it,'o');
+	test_assertStr(s4.c_str(),"baro");
+	test_assertUInt(s4.length(),4);
+
+	it = s4.erase(s4.end() - 1);
+	test_assertUInt((u32)it,(u32)s4.end());
+	test_assertStr(s4.c_str(),"bar");
+	test_assertUInt(s4.length(),3);
+
+	it = s4.erase(s4.begin());
+	test_assertInt(*it,'a');
+	test_assertStr(s4.c_str(),"ar");
+	test_assertUInt(s4.length(),2);
 
 	test_caseSucceded();
 }

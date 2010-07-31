@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 #include <iterator>
+#include <utility>
 
 namespace std {
 	/**
@@ -117,6 +118,29 @@ namespace std {
 	template<class InputIterator,class Predicate>
 	typename iterator_traits<InputIterator>::difference_type count_if(
 			InputIterator first,InputIterator last,Predicate pred);
+
+	/**
+	 * Compares the elements in the range [<first1> .. <last1>) against those in the range
+	 * beginning at first2 sequentially, and returns where the first mismatch happens.
+	 * The elements are compared by either applying the == comparison operator to each pair of
+	 * corresponding elements, or the template parameter comp (for the second version).
+	 * The function returns a pair of iterators to the first element in each range which differs
+	 * in both sequences.
+	 *
+	 * @param first1 the start-position (inclusive) of the first range
+	 * @param last1 the end-position (exclusive) of the first range
+	 * @param first2 the start-position (inclusive) of the second range
+	 * @param pred the predicate
+	 * @return the pair with the missmatch. If all elements matched, it returns
+	 * 	make_pair<last1,last2>, where last2 is the element in the second sequence at the
+	 * 	corresponding position
+	 */
+	template<class InputIterator1,class InputIterator2>
+	pair<InputIterator1,InputIterator2> mismatch(InputIterator1 first1,
+			InputIterator1 last1,InputIterator2 first2);
+	template<class InputIterator1,class InputIterator2,class BinaryPredicate>
+	pair<InputIterator1,InputIterator2> mismatch(InputIterator1 first1,
+			InputIterator1 last1,InputIterator2 first2,BinaryPredicate pred);
 
 	/**
 	 * Compares the elements in the range [<first1> .. <last1>) with those in the range beginning

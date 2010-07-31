@@ -184,19 +184,19 @@ static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 					if(sendSignalTo(vt->shellPid,SIG_INTRPT,0) < 0)
 						printe("[VTERM] Unable to send SIG_INTRPT to %d",vt->shellPid);
 				}
-				break;
+				/* put EOF in and flush so that the shell gets directly notified (its possible
+				 * in a read-operation now and we won't interrupt it for a signal) */
+				vterm_rlPutchar(vt,EOF);
+				vterm_rlFlushBuf(vt);
+				return false;
 			case VK_D:
 				if(vt->readLine) {
 					vt->inbufEOF = true;
 					vterm_rlFlushBuf(vt);
 				}
-				break;
-		}
-		/* notify the shell (otherwise it won't get the signal directly) */
-		if(keycode == VK_C || keycode == VK_D) {
-			if(rb_length(vt->inbuf) == 0)
-				setDataReadable(vt->sid,true);
-			return false;
+				if(rb_length(vt->inbuf) == 0)
+					setDataReadable(vt->sid,true);
+				return false;
 		}
 	}
 	return true;

@@ -25,5 +25,5 @@ s32 feof(FILE *stream) {
 	sIOStream *s = (sIOStream*)stream;
 	if(s->in)
 		return s->in->eof(s->in);
-	return s->out->eof(s->out);
+	return false;
 }

@@ -23,20 +23,24 @@ namespace std {
 	basic_istream<charT,traits>::sentry::sentry(basic_istream<charT,traits>& is,bool noskipws)
 		: _ok(false) {
 		if(is.good()) {
-			if(is.tie())
-				is.tie()->flush();
-			if(noskipws == 0 && (is.flags() & ios_base::skipws)) {
-				basic_streambuf<charT,traits>* buf = is.rdbuf();
-				while(true) {
-					int_type c = buf->peek();
-					if(c == traits::eof()) {
-						is.setstate(basic_ios<charT,traits>::failbit | basic_ios<charT,traits>::eofbit);
-						break;
+			try {
+				if(is.tie())
+					is.tie()->flush();
+				if(noskipws == 0 && (is.flags() & ios_base::skipws)) {
+					basic_streambuf<charT,traits>* buf = is.rdbuf();
+					while(true) {
+						int_type c = buf->peek();
+						if(!isspace(c))
+							break;
+						buf->get();
 					}
-					if(!isspace(c))
-						break;
-					buf->get();
 				}
+			}
+			catch(eof_reached&) {
+				is.setstate(basic_ios<charT,traits>::failbit | basic_ios<charT,traits>::eofbit);
+			}
+			catch(...) {
+				is.setstate(basic_ios<charT,traits>::failbit);
 			}
 		}
 		if(is.good())

@@ -35,6 +35,7 @@ typedef struct {
 	tFD fd;
 	s32 pos;
 	s32 length;
+	u8 eof;
 	char *buffer;
 } sIFStream;
 
@@ -74,6 +75,7 @@ sIStream *ifstream_openfd(tFD fd) {
 	s->buffer = (char*)heap_alloc(BUF_SIZE);
 	s->length = 0;
 	s->pos = 0;
+	s->eof = false;
 	return in;
 }
 
@@ -98,6 +100,8 @@ static s32 ifstream_read(sIStream *s,void *buffer,u32 count) {
 		s32 readRes = read(fs->fd,buffer,count);
 		if(readRes < 0)
 			THROW(IOException,readRes);
+		if(readRes == 0)
+			fs->eof = true;
 		res += readRes;
 	}
 	return res;
@@ -120,7 +124,7 @@ static bool ifstream_eof(sIStream *s) {
 	/* anything left in the buffer? */
 	if(fs->length - fs->pos > 0)
 		return false;
-	return eof(fs->fd);
+	return fs->eof;
 }
 
 static void ifstream_close(sIStream *s) {
@@ -148,13 +152,19 @@ static char ifstream_getc(sIStream *s) {
 
 static char ifstream_readc(sIStream *s) {
 	sIFStream *fs = (sIFStream*)s->_obj;
+	if(fs->eof)
+		THROW(IOException,ERR_EOF);
 	/* flush stdout if we're stdin */
 	if(s == cin)
 		cout->flush(cout);
 	if(fs->pos >= fs->length) {
 		s32 count = read(fs->fd,fs->buffer,BUF_SIZE);
-		if(count <= 0)
-			THROW(IOException,count == 0 ? ERR_EOF : count);
+		if(count < 0)
+			THROW(IOException,count);
+		if(count == 0) {
+			fs->eof = true;
+			return EOF;
+		}
 		fs->pos = 0;
 		fs->length = count;
 	}

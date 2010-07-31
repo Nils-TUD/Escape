@@ -609,6 +609,7 @@ namespace std {
 	template<class charT,class traits>
 	basic_ostream<charT,traits>& endl(basic_ostream<charT,traits>& os) {
 		os.put('\n');
+		os.flush();
 		return os;
 	}
 	template<class charT,class traits>

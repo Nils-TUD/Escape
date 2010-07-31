@@ -45,7 +45,7 @@ namespace std {
 
 	template<class charT,class traits>
 	inline basic_ios<charT,traits>::operator void*() const {
-		return fail() ? NULL : this;
+		return fail() ? NULL : const_cast<basic_ios<charT,traits>*>(this);
 	}
 	template<class charT,class traits>
 	inline bool basic_ios<charT,traits>::operator !() const {

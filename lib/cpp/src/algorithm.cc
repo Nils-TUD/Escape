@@ -129,6 +129,29 @@ namespace std {
 	}
 
 	template<class InputIterator1,class InputIterator2>
+	pair<InputIterator1,InputIterator2> mismatch(InputIterator1 first1,
+			InputIterator1 last1,InputIterator2 first2) {
+		while(first1 != last1) {
+			if(*first1 != *first2)
+				break;
+			++first1;
+			++first2;
+		}
+		return make_pair(first1,first2);
+	}
+	template<class InputIterator1,class InputIterator2,class BinaryPredicate>
+	pair<InputIterator1,InputIterator2> mismatch(InputIterator1 first1,
+			InputIterator1 last1,InputIterator2 first2,BinaryPredicate pred) {
+		while(first1 != last1) {
+			if(!pred(*first1,*first2))
+				break;
+			++first1;
+			++first2;
+		}
+		return make_pair(first1,first2);
+	}
+
+	template<class InputIterator1,class InputIterator2>
 	inline bool equal(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2) {
 	    typedef typename std::iterator_traits<InputIterator1>::value_type T1;
 	    typedef typename std::iterator_traits<InputIterator2>::value_type T2;

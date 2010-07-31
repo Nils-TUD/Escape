@@ -67,7 +67,7 @@ namespace std {
 	// === destructor ===
 	template<typename T>
 	inline basic_string<T>::~basic_string() {
-		delete _str;
+		delete[] _str;
 	}
 
 	// === operator=() ===
@@ -81,7 +81,7 @@ namespace std {
 	}
 	template<typename T>
 	basic_string<T>& basic_string<T>::operator=(T c) {
-		delete _str;
+		delete[] _str;
 		_length = 1;
 		_size = 2;
 		_str = new char[_size];
@@ -127,7 +127,7 @@ namespace std {
 			for(size_type i = _size; i < n; i++)
 				tmp[i] = c;
 			tmp[n] = '\0';
-			delete _str;
+			delete[] _str;
 			_str = tmp;
 			_size = n + 1;
 		}
@@ -146,7 +146,7 @@ namespace std {
 	template<typename T>
 	void basic_string<T>::clear() {
 		if(_size > INIT_SIZE) {
-			delete _str;
+			delete[] _str;
 			_str = new char[INIT_SIZE];
 			_size = INIT_SIZE;
 		}
@@ -226,7 +226,7 @@ namespace std {
 	// === assign() ===
 	template<typename T>
 	basic_string<T>& basic_string<T>::assign(const basic_string<T>& str) {
-		delete _str;
+		delete[] _str;
 		_length = str._length;
 		_size = str._size;
 		_str = new char[_size];
@@ -235,7 +235,7 @@ namespace std {
 	}
 	template<typename T>
 	basic_string<T>& basic_string<T>::assign(const basic_string<T>& str,size_type pos,size_type n) {
-		delete _str;
+		delete[] _str;
 		if(pos > str._length || (n != npos && pos + n < pos))
 			exit(1); // TODO throw exception
 		if(n == npos || pos + n > str._length)
@@ -249,7 +249,7 @@ namespace std {
 	}
 	template<typename T>
 	basic_string<T>& basic_string<T>::assign(const T* s,size_type n) {
-		delete _str;
+		delete[] _str;
 		_size = n + 1;
 		_str = new char[_size];
 		memcpy(_str,s,n);
@@ -263,7 +263,7 @@ namespace std {
 	}
 	template<typename T>
 	basic_string<T>& basic_string<T>::assign(size_type n,T c) {
-		delete _str;
+		delete[] _str;
 		_size = n + 1;
 		_str = new char[_size];
 		for(size_type i = 0; i < n; i++)

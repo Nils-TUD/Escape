@@ -17,23 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef TFUNCTIONAL_H_
+#define TFUNCTIONAL_H_
+
 #include <esc/common.h>
 #include <esc/test.h>
 
-#include "tests/tstring.h"
-#include "tests/tvector.h"
-#include "tests/tlist.h"
-#include "tests/talgorithm.h"
-#include "tests/tstreams.h"
-#include "tests/tfunctional.h"
+extern sTestModule tModFunctional;
 
-int main(void) {
-	test_register(&tModString);
-	test_register(&tModVector);
-	test_register(&tModList);
-	test_register(&tModAlgo);
-	test_register(&tModStreams);
-	test_register(&tModFunctional);
-	test_start();
-	return EXIT_SUCCESS;
-}
+#endif /* TFUNCTIONAL_H_ */

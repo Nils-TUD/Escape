@@ -104,8 +104,8 @@ static s32 ofstream_seek(sOStream *s,s32 offset,u32 whence) {
 }
 
 static bool ofstream_eof(sOStream *s) {
-	sOFStream *fs = (sOFStream*)s->_obj;
-	return eof(fs->fd);
+	UNUSED(s);
+	return false;
 }
 
 static void ofstream_flush(sOStream *s) {

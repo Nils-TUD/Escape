@@ -115,8 +115,8 @@ int main(int argc,const char *argv[]) {
 
 static void countFile(sIStream *in) {
 	u32 bufPos = 0;
-	while(!in->eof(in)) {
-		char c = in->readc(in);
+	char c;
+	while((c = in->readc(in)) != EOF) {
 		if(isspace(c)) {
 			if(bufPos > 0) {
 				if(c == '\n')

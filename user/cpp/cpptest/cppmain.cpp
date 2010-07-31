@@ -28,6 +28,7 @@
 #include <ostream>
 #include <sstream>
 #include <fstream>
+#include <memory>
 //#include <ustl.h>
 
 using namespace std;
@@ -37,12 +38,10 @@ private:
 	u32 abc;
 public:
 	my() : abc(4) {
-		printf("Constructor for %p...\n",this);
-		fflush(stdout);
+		cout << "Constructor for " << this << endl;
 	};
 	~my() {
-		printf("Destructor for %p...\n",this);
-		fflush(stdout);
+		cout << "Destructor for " << this << endl;
 		abc = 0;
 	};
 
@@ -51,27 +50,37 @@ public:
 
 class A {
 public:
-	virtual ~A() {}
+	virtual ~A() { cout << "Destructing A" << endl; }
 };
 class B : public A {
 public:
-	virtual ~B() {}
+	virtual ~B() { cout << "Destructing B" << endl; }
 };
 class C : public B {
 public:
-	virtual ~C() {}
-	inline void myMethod() { printf("hi!\n"); }
+	virtual ~C() { cout << "Destructing C" << endl; }
+	inline void myMethod() { cout << "hi!" << endl; }
 };
 
 my myobj;
 
 void my::doIt() {
-	printf("Ich bins: %d\n",abc);
+	cout << "Ich bins: " << abc << endl;
 }
 
 int main(void) {
-	A *a = new C();
-	C *c = dynamic_cast<C*>(a);
+	int x;
+	int i = 0;
+	ifstream dummy;
+	while(cin >> x) {
+		++i;
+		cout << "Entered: " << x << endl;
+	}
+	cout << "Done (" << i << ")" << endl;
+	cin.clear();
+
+	auto_ptr<A> a(new C());
+	C *c = dynamic_cast<C*>(a.get());
 	if(c) {
 		cout << "Worked" << endl;
 		c->myMethod();
@@ -80,8 +89,8 @@ int main(void) {
 		cout << "Didn't work!" << endl;
 	}
 
-	A *a2 = new B();
-	C *c2 = dynamic_cast<C*>(a2);
+	auto_ptr<A> a2(new B());
+	C *c2 = dynamic_cast<C*>(a2.get());
 	if(c2) {
 		cout << "Worked!" << endl;
 		c2->myMethod();
@@ -151,13 +160,13 @@ int main(void) {
 		out << i << ": " << v2[i] << endl;
 	}
 #else
-	vector<int> v;
-    v.resize(30);
-    for (size_t i = 0; i < v.capacity(); ++ i)
-    	v[i] = i;
-    v.push_back(57);
-    vector<int>::iterator vit = v.begin();
-    advance(vit,10);
+	//vector<int> v;
+    //v.resize(30);
+    //for (size_t i = 0; i < v.capacity(); ++ i)
+    //	v[i] = i;
+    //v.push_back(57);
+    //vector<int>::iterator vit = v.begin();
+    //advance(vit,10);
     //v.insert (v.begin() + 20, 555);
     //v.erase (v.begin() + 3);
 
@@ -165,6 +174,7 @@ int main(void) {
     //cout << 456 << ios::hex << 0x1234 << endl;
     //cerr.format ("You objects are at 0x%08X\n", &v);*/
 
+#if 0
     list<int> l;
     l.insert(l.begin(),10);
     l.insert(l.begin(),11);
@@ -223,6 +233,7 @@ int main(void) {
 		cerr << "Unable to open '/myfile'" << endl;
 	f2.close();
 
+#else
 	/*
 	String s1 = "abc";
 	String s2 = "def";
@@ -254,6 +265,6 @@ int main(void) {
 	m->doIt();
 	delete m;
 	delete y;*/
-
+#endif
 	return EXIT_SUCCESS;
 }

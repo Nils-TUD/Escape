@@ -119,7 +119,7 @@ namespace std {
 	void basic_filebuf<charT,traits>::unget() {
 		if(_fd < 0 || !(_mode & ios_base::in))
 			throw bad_state("file not open for reading");
-		if(_inPos == 0 || _inPos >= _inMax)
+		if(_inPos == 0)
 			throw bad_state("unget() not possible");
 		_inPos--;
 		_totalInPos--;
@@ -153,7 +153,7 @@ namespace std {
 			if(!_inBuf)
 				_inBuf = new charT[IN_BUF_SIZE];
 			_inMax = ::read(_fd,_inBuf,IN_BUF_SIZE);
-			if(_inMax < 0)
+			if(_inMax <= 0)
 				return false;
 			_inPos = 0;
 		}

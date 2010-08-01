@@ -343,9 +343,15 @@ namespace std {
 	template<typename T>
 	template<class InputIterator>
 	void basic_string<T>::insert(iterator p,InputIterator first,InputIterator last) {
-		reserve(_length + distance(first,last));
+		size_type pos1 = distance(begin(),p);
+		size_type n = distance(first,last);
+		reserve(_length + n);
+		if(pos1 < _length)
+			memmove(_str + pos1 + n,_str + pos1,(_length - pos1) * sizeof(T));
 		for(; first != last; ++first)
-			insert(p++,first,1);
+			_str[pos1++] = *first;
+		_length += n;
+		_str[_length] = '\0';
 	}
 
 	// === erase() ===
@@ -381,6 +387,11 @@ namespace std {
 		return replace(pos1,n1,str,0,str._length);
 	}
 	template<typename T>
+	inline basic_string<T>& basic_string<T>::replace(iterator i1,iterator i2,
+			const basic_string<T>& str) {
+		return replace(distance(begin(),i1),distance(i1,i2),str,0,str._length);
+	}
+	template<typename T>
 	inline basic_string<T>& basic_string<T>::replace(size_type pos1,size_type n1,
 			const basic_string& str,size_type pos2,size_type n2) {
 		erase(pos1,n1);
@@ -393,13 +404,35 @@ namespace std {
 		return replace(pos1,n1,tmp,0,n2);
 	}
 	template<typename T>
+	inline basic_string<T>& basic_string<T>::replace(iterator i1,iterator i2,const T* s,
+			size_type n2) {
+		string tmp(s);
+		return replace(distance(begin(),i1),distance(i1,i2),tmp,0,n2);
+	}
+	template<typename T>
 	inline basic_string<T>& basic_string<T>::replace(size_type pos1,size_type n1,const T* s) {
 		return replace(pos1,n1,s,strlen(s));
+	}
+	template<typename T>
+	inline basic_string<T>& basic_string<T>::replace(iterator i1,iterator i2,const T* s) {
+		return replace(distance(begin(),i1),distance(i1,i2),s,strlen(s));
 	}
 	template<typename T>
 	inline basic_string<T>& basic_string<T>::replace(size_type pos1,size_type n1,size_type n2,T c) {
 		string tmp(n2,c);
 		return replace(pos1,n1,tmp);
+	}
+	template<typename T>
+	inline basic_string<T>& basic_string<T>::replace(iterator i1,iterator i2,size_type n2,T c) {
+		string tmp(n2,c);
+		return replace(distance(begin(),i1),distance(i1,i2),tmp);
+	}
+	template<typename T>
+	template<class InputIterator>
+	basic_string<T>& basic_string<T>::replace(iterator i1,iterator i2,InputIterator j1,InputIterator j2) {
+		iterator pos = erase(i1,i2);
+		insert(pos,j1,j2);
+		return *this;
 	}
 
 	// === copy() and swap ===

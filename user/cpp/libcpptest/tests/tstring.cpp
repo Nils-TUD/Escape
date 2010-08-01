@@ -320,7 +320,7 @@ static void test_replace(void) {
 	test_assertStr(s1.c_str(),"foost");
 	test_assertUInt(s1.length(),5);
 
-	s1.replace(0,0,"bar");
+	s1.replace((size_t)0,0,"bar");
 	test_assertStr(s1.c_str(),"barfoost");
 	test_assertUInt(s1.length(),8);
 
@@ -331,6 +331,27 @@ static void test_replace(void) {
 	s1.replace(11,12,"a");
 	test_assertStr(s1.c_str(),"barfoostesta");
 	test_assertUInt(s1.length(),12);
+
+	s1.replace(s1.begin(),s1.end(),string("foobar"));
+	test_assertStr(s1.c_str(),"foobar");
+	test_assertUInt(s1.length(),6);
+
+	s1.replace(s1.begin() + 1,s1.end() - 1,"foo",2);
+	test_assertStr(s1.c_str(),"ffor");
+	test_assertUInt(s1.length(),4);
+
+	s1.replace(s1.begin() + 1,s1.end(),"foo");
+	test_assertStr(s1.c_str(),"ffoo");
+	test_assertUInt(s1.length(),4);
+
+	s1.replace(s1.begin() + 2,s1.begin() + 3,3,'a');
+	test_assertStr(s1.c_str(),"ffaaao");
+	test_assertUInt(s1.length(),6);
+
+	string s2("bar");
+	s1.replace(s1.begin(),s1.end(),s2.begin(),s2.end());
+	test_assertStr(s1.c_str(),"bar");
+	test_assertUInt(s1.length(),3);
 
 	test_caseSucceded();
 }

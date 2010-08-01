@@ -355,6 +355,7 @@ namespace std {
 		 * The section is replaced by a copy of the entire string object str.
 		 */
 		basic_string& replace(size_type pos1,size_type n1,const basic_string& str);
+		basic_string& replace(iterator i1,iterator i2,const basic_string& str);
 		/**
 		 * The section is replaced by a copy of a substring of str. The substring is the portion
 		 * of str that begins at the character position pos2 and takes up to n2 characters
@@ -367,16 +368,26 @@ namespace std {
 		 * the array of characters pointed by s.
 		 */
 		basic_string& replace(size_type pos1,size_type n1,const T* s,size_type n2);
+		basic_string& replace(iterator i1,iterator i2,const T* s,size_type n2);
 		/**
 		 * The section is replaced by a copy of the string formed by the null-terminated character
 		 * sequence (C string) pointed by s. The length of this caracter sequence is determined
 		 * by the first ocurrence of a null character (as determined by traits.length(s)).
 		 */
 		basic_string& replace(size_type pos1,size_type n1,const T* s);
+		basic_string& replace(iterator i1,iterator i2,const T* s);
 		/**
 		 * The section is replaced by a repetition of character c, n2  times.
 		 */
 		basic_string& replace(size_type pos1,size_type n1,size_type n2,T c);
+		basic_string& replace(iterator i1,iterator i2,size_type n2,T c);
+		/**
+		 * The section is replaced by the content made up of the characters that go from the
+		 * element referred by iterator j1 to the element right before the one referred by
+		 * iterator j2.
+		 */
+		template<class InputIterator>
+		basic_string& replace(iterator i1,iterator i2,InputIterator j1,InputIterator j2);
 
 		/**
 		 * Copies a sequence of characters from the string content to the array pointed by s.

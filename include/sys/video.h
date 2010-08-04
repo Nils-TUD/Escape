@@ -28,10 +28,25 @@ typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eC
 #define VID_COLS				80
 #define VID_ROWS				25
 
+#define TARGET_SCREEN			1
+#define TARGET_LOG				2
+
 /**
  * Inits the video-stuff
  */
 void vid_init(void);
+
+/**
+ * Sets the targets of the printing
+ *
+ * @param targets the targets (TARGET_*)
+ */
+void vid_setTargets(u8 targets);
+
+/**
+ * Clears the screen
+ */
+void vid_clearScreen(void);
 
 /**
  * Prints the given character to the current position on the screen

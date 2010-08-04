@@ -18,11 +18,11 @@
  */
 
 #include <sys/common.h>
-#include <sys/video.h>
 #include <sys/machine/serial.h>
 #include <sys/util.h>
 #include <sys/log.h>
 #include <sys/printf.h>
+#include <sys/video.h>
 #include <esc/esccodes.h>
 #include <string.h>
 #include <stdarg.h>
@@ -30,7 +30,6 @@
 #define VIDEO_BASE			0xC00B8000
 #define TAB_WIDTH			4
 
-static void vid_clearScreen(void);
 static void vid_move(void);
 static u8 vid_handlePipePad(void);
 static void vid_handleColorCode(const char **str);
@@ -39,11 +38,21 @@ static void vid_removeBIOSCursor(void);
 static u16 col = 0;
 static u16 row = 0;
 static u8 color = 0;
+static u8 targets = TARGET_SCREEN | TARGET_LOG;
 
 void vid_init(void) {
 	vid_removeBIOSCursor();
 	vid_clearScreen();
 	color = (BLACK << 4) | WHITE;
+}
+
+void vid_setTargets(u8 ntargets) {
+	targets = ntargets;
+}
+
+void vid_clearScreen(void) {
+	memclear((void*)VIDEO_BASE,VID_COLS * 2 * VID_ROWS);
+	col = row = 0;
 }
 
 void vid_putchar(char c) {
@@ -87,12 +96,10 @@ void vid_vprintf(const char *fmt,va_list ap) {
 	env.print = vid_putchar;
 	env.escape = vid_handleColorCode;
 	env.pipePad = vid_handlePipePad;
-	prf_vprintf(&env,fmt,ap);
-	log_vprintf(fmt,ap);
-}
-
-static void vid_clearScreen(void) {
-	memclear((void*)VIDEO_BASE,VID_COLS * 2 * VID_ROWS);
+	if(targets & TARGET_SCREEN)
+		prf_vprintf(&env,fmt,ap);
+	if(targets & TARGET_LOG)
+		log_vprintf(fmt,ap);
 }
 
 /**

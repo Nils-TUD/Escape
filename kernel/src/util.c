@@ -52,6 +52,16 @@ void util_panic(const char *fmt,...) {
 	sThread *t = thread_getRunning();
 	va_list ap;
 
+	/* enter video-mode 0x2 to be sure that the user can see the panic :) */
+	/* actually it may fail depending on what caused the panic. this may make it more difficult
+	 * to find the real reason for a failure. so it might be a good idea to turn it off during
+	 * kernel-debugging :)  */
+	sVM86Regs vmregs;
+	memset(&regs,0,sizeof(regs));
+	vmregs.ax = 0x2;
+	vm86_int(0x10,&vmregs,NULL,0);
+	vid_clearScreen();
+
 	/* print message */
 	vid_printf("\n");
 	vid_printf("\033[co;7;4]PANIC: ");
@@ -86,13 +96,16 @@ void util_panic(const char *fmt,...) {
 	}
 
 #if DEBUGGING
+	/* write into log only */
+	vid_setTargets(TARGET_LOG);
 	vmm_dbg_print(t->proc);
 	paging_dbg_printCur(PD_PART_USER);
 #endif
-	intrpt_setEnabled(false);
+
 	/* TODO vmware seems to shutdown if we disable interrupts and htl?? */
-	while(1);
-	/*util_halt();*/
+	intrpt_setEnabled(false);
+	while(1)
+		util_halt();
 }
 
 u8 util_waitForKeyPress(void) {

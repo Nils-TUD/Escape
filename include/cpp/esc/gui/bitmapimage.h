@@ -24,7 +24,7 @@
 #include <esc/gui/common.h>
 #include <esc/gui/image.h>
 #include <esc/gui/graphics.h>
-#include <esc/string.h>
+#include <string>
 
 namespace esc {
 	namespace gui {
@@ -80,7 +80,7 @@ namespace esc {
 			} A_PACKED sBMInfoHeader;
 
 		public:
-			BitmapImage(const String &filename)
+			BitmapImage(const string &filename)
 				: _fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL), _tableSize(0),
 					_data(NULL), _dataSize(0) {
 				loadFromFile(filename);
@@ -137,7 +137,7 @@ namespace esc {
 			};
 
 		private:
-			void loadFromFile(const String &filename);
+			void loadFromFile(const string &filename);
 
 			sBMFileHeader *_fileHeader;
 			sBMInfoHeader *_infoHeader;

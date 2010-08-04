@@ -21,7 +21,6 @@
 #define GRAPHICS_H_
 
 #include <esc/common.h>
-#include <esc/stream.h>
 #include <esc/io.h>
 #include <esc/proc.h>
 #include <esc/mem.h>
@@ -29,9 +28,10 @@
 #include <esc/gui/application.h>
 #include <esc/gui/font.h>
 #include <esc/gui/color.h>
-#include <esc/string.h>
 #include <esc/messages.h>
 #include <stdlib.h>
+#include <string>
+#include <ostream>
 
 namespace esc {
 	namespace gui {
@@ -151,7 +151,7 @@ namespace esc {
 			 * @param y the y-coordinate
 			 * @param str the string
 			 */
-			virtual void drawString(tCoord x,tCoord y,const String &str);
+			virtual void drawString(tCoord x,tCoord y,const string &str);
 
 			/**
 			 * Draws the given part of the given string at the given position. Note that the
@@ -163,7 +163,7 @@ namespace esc {
 			 * @param start the start-position in the string
 			 * @param count the number of characters
 			 */
-			virtual void drawString(tCoord x,tCoord y,const String &str,u32 start,u32 count);
+			virtual void drawString(tCoord x,tCoord y,const string &str,u32 start,u32 count);
 
 			/**
 			 * Draws a line from (x0,y0) to (xn,yn)

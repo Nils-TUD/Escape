@@ -22,30 +22,30 @@
 
 #include <stddef.h>
 #include <esc/io.h>
-#include <impl/streams/basic_streambuf.h>
+#include <impl/streams/ios_base.h>
+#include <streambuf>
 
-namespace std {
+namespace esc {
 	/**
 	 * Read/write from/to a file
 	 */
-	template<class charT,class traits = char_traits<charT> >
-	class basic_filebuf: public basic_streambuf<charT,traits> {
+	class filebuf: public streambuf {
 	private:
-		static const int IN_BUF_SIZE = 512;
-		static const int OUT_BUF_SIZE = 512;
+		static const pos_type IN_BUF_SIZE = 512;
+		static const pos_type OUT_BUF_SIZE = 512;
 
 	public:
-		typedef typename basic_streambuf<charT,traits>::char_type char_type;
-		typedef typename basic_streambuf<charT,traits>::pos_type pos_type;
+		typedef streambuf::char_type char_type;
+		typedef streambuf::pos_type pos_type;
 
 		/**
 		 * Creates a new filebuf
 		 */
-		explicit basic_filebuf();
+		explicit filebuf();
 		/**
 		 * Destructor
 		 */
-		virtual ~basic_filebuf();
+		virtual ~filebuf();
 
 		/**
 		 * Opens the file <s> with given open-mode
@@ -54,7 +54,7 @@ namespace std {
 		 * @param mode the mode
 		 * @return this on success, a null-pointer on failure
 		 */
-		basic_filebuf<charT,traits>* open(const char* s,ios_base::openmode mode);
+		filebuf* open(const char* s,ios_base::openmode mode);
 
 		/**
 		 * Uses the given file-descriptor with given open-mode
@@ -63,7 +63,7 @@ namespace std {
 		 * @param mode the mode
 		 * @return this on success, a null-pointer on failure
 		 */
-		basic_filebuf<charT,traits>* open(tFD fd,ios_base::openmode mode);
+		filebuf* open(tFD fd,ios_base::openmode mode);
 
 		/**
 		 * @return if a file has been opened successfully
@@ -74,7 +74,7 @@ namespace std {
 		 * Closes the file
 		 * @return this on success, a null-pointer on failure
 		 */
-		basic_filebuf<charT,traits>* close();
+		filebuf* close();
 
 		/**
 		 * @return the number of available characters
@@ -122,14 +122,12 @@ namespace std {
 		tFD _fd;
 		mutable pos_type _inPos;
 		mutable pos_type _inMax;
-		mutable charT* _inBuf;
+		mutable char* _inBuf;
 		pos_type _totalInPos;
 		pos_type _outPos;
-		charT* _outBuf;
+		char* _outBuf;
 		ios_base::openmode _mode;
 	};
 }
-
-#include "../../../../lib/cpp/src/impl/streams/basic_filebuf.cc"
 
 #endif /* BASIC_FILEBUF_H_ */

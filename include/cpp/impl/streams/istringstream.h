@@ -17,54 +17,52 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BASIC_OSTRINGSTREAM_H_
-#define BASIC_OSTRINGSTREAM_H_
+#ifndef BASIC_ISTRINGSTREAM_H_
+#define BASIC_ISTRINGSTREAM_H_
 
-#include <impl/streams/basic_ostream.h>
+#include <impl/streams/stringbuf.h>
+#include <istream>
+#include <string>
 
-namespace std {
+namespace esc {
 	/**
-	 * A string-stream for output-operations
+	 * A string-stream for input-operations
 	 */
-	template<class charT,class traits = char_traits<charT> >
-	class basic_ostringstream: public basic_ostream<charT,traits> {
+	class istringstream: public istream {
 	public:
 		/**
-		 * Builds a new output-string-stream with given openmode
+		 * Builds a new input-string-stream with given openmode
 		 *
-		 * @param which the openmode (out by default)
+		 * @param which the openmode (in by default)
 		 */
-		explicit basic_ostringstream(ios_base::openmode which = ios_base::out);
+		explicit istringstream(ios_base::openmode which = ios_base::in);
 		/**
-		 * Builds a new output-string-stream with given string and openmode
+		 * Builds a new input-string-stream with given string and openmode
 		 *
 		 * @param str the string (will be cloned)
-		 * @param which the openmode (out by default)
+		 * @param which the openmode (in by default)
 		 */
-		explicit basic_ostringstream(const basic_string<charT>& str,
-				ios_base::openmode which = ios_base::out);
+		explicit istringstream(const string& str,ios_base::openmode which = ios_base::in);
 		/**
 		 * Destructor
 		 */
-		virtual ~basic_ostringstream();
+		virtual ~istringstream();
 
 		/**
 		 * @return the string-buffer
 		 */
-		basic_stringbuf<charT,traits>* rdbuf() const;
+		stringbuf* rdbuf() const;
 		/**
 		 * @return a copy of the string used by the string-buffer
 		 */
-		basic_string<charT> str() const;
+		string str() const;
 		/**
 		 * Sets the string used by the string-buffer
 		 *
 		 * @param s the string (will be cloned)
 		 */
-		void str(const basic_string<charT>& s);
+		void str(const string& s);
 	};
 }
 
-#include "../../../../lib/cpp/src/impl/streams/basic_ostringstream.cc"
-
-#endif /* BASIC_OSTRINGSTREAM_H_ */
+#endif /* BASIC_ISTRINGSTREAM_H_ */

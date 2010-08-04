@@ -21,11 +21,79 @@
 #define STREAMBUF_
 
 #include <stddef.h>
-#include <string>
-#include <impl/streams/basic_streambuf.h>
+#include <exception>
 
-namespace std {
-	typedef basic_streambuf<char> streambuf;
+namespace esc {
+	/**
+	 * The exception that should be thrown if a buffer is at EOF
+	 */
+	class eof_reached : public std::exception {
+	public:
+		explicit eof_reached();
+		virtual const char* what() const throw();
+	};
+
+	/**
+	 * The exception that should be thrown if a buffer is in an invalid state for an operation
+	 */
+	class bad_state : public std::exception {
+	public:
+		explicit bad_state(const string & msg);
+		virtual const char* what() const throw();
+	private:
+		const char *_msg;
+	};
+
+	/**
+	 * The base-class for all stream-buffers
+	 */
+	class streambuf {
+	public:
+		typedef char char_type;
+		typedef long int_type;
+		typedef unsigned long pos_type;
+		typedef unsigned long off_type;
+
+		/**
+		 * Creates a stream-buffer (does nothing)
+		 */
+		streambuf();
+		/**
+		 * Destructor (does nothing)
+		 */
+		virtual ~streambuf();
+
+		/**
+		 * @return the number of available characters
+		 */
+		virtual pos_type available() const = 0;
+
+		/**
+		 * @return the char at the current position
+		 */
+		virtual char_type peek() const = 0;
+		/**
+		 * Moves the position-pointer forward.
+		 *
+		 * @return the char at the current position
+		 */
+		virtual char_type get() = 0;
+		/**
+		 * Moves the position-pointer one step backwards
+		 */
+		virtual void unget() = 0;
+
+		/**
+		 * Puts the given character into the buffer
+		 *
+		 * @param c the character
+		 */
+		virtual void put(char_type c) = 0;
+		/**
+		 * Flushes the buffer (whatever that means for a specific buffer-implementation)
+		 */
+		virtual void flush() = 0;
+	};
 }
 
 #endif /* STREAMBUF_ */

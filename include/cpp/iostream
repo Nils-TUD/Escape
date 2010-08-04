@@ -20,16 +20,34 @@
 #ifndef IOSTREAM_
 #define IOSTREAM_
 
-#include <impl/streams/basic_iostream.h>
-#include <fstream>
+#include <istream>
+#include <ostream>
 
-namespace std {
-	typedef basic_iostream<char> iostream;
+namespace esc {
+	/**
+	 * A stream for input- and output-operations
+	 */
+	class iostream : public istream, public ostream {
+	public:
+		/**
+		 * Builds a new iostream with given stream-buffer
+		 *
+		 * @param sb the stream-buffer
+		 */
+		explicit iostream(streambuf* sb);
+		/**
+		 * Destructor
+		 */
+		virtual ~iostream();
+	};
 
-	extern ifstream cin;
-	extern ofstream cout;
-	extern ofstream cerr;
-	extern ofstream clog;
+	class istream;
+	class ostream;
+
+	extern istream &cin;
+	extern ostream &cout;
+	extern ostream &cerr;
+	extern ostream &clog;
 }
 
 #endif /* IOSTREAM_ */

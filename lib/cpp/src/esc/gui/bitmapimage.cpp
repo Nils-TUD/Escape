@@ -19,9 +19,9 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include <esc/stream.h>
 #include <esc/gui/common.h>
 #include <esc/gui/bitmapimage.h>
+#include <fstream>
 
 namespace esc {
 	namespace gui {
@@ -84,12 +84,13 @@ namespace esc {
 			}
 		}
 
-		void BitmapImage::loadFromFile(const String &filename) {
+		void BitmapImage::loadFromFile(const string &filename) {
 			// read header
 			u32 headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);
 			u8 *header = new u8[headerSize];
-			FileStream f(filename.c_str(),FileStream::READ);
-			if(f.read(header,headerSize) != (s32)headerSize) {
+			ifstream f(filename.c_str());
+			f.unsetf(ifstream::skipws);
+			if(!f.get((char*)header,headerSize)) {
 				// TODO throw exception
 				printe("Invalid image '%s'",filename.c_str());
 				return;
@@ -118,7 +119,7 @@ namespace esc {
 			// read color-table, if present
 			if(_tableSize > 0) {
 				_colorTable = new u32[_tableSize];
-				if(f.read(_colorTable,_tableSize * sizeof(u32)) != (s32)(_tableSize * sizeof(u32))) {
+				if(!f.get((char*)_colorTable,_tableSize * sizeof(u32))) {
 					// TODO throw exception
 					printe("Invalid image '%s'",filename.c_str());
 					return;
@@ -135,7 +136,7 @@ namespace esc {
 			else
 				_dataSize = _infoHeader->sizeImage;
 			_data = new u8[_dataSize];
-			if(f.read(_data,_dataSize * sizeof(u8)) != (s32)(_dataSize * sizeof(u8))) {
+			if(!f.get((char*)_data,_dataSize * sizeof(u8))) {
 				// TODO throw exception
 				printe("Invalid image '%s'",filename.c_str());
 				return;

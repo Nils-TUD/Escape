@@ -220,7 +220,7 @@ namespace esc {
 			UIElement::onKeyPressed(e);
 			if(e.isPrintable()) {
 				deleteSelection();
-				_str.insert(_cursor,e.getCharacter());
+				_str.insert(_cursor,1,e.getCharacter());
 				moveCursor(1);
 				repaint();
 			}

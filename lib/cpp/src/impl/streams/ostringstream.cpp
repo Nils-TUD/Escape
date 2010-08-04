@@ -17,30 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <impl/streams/ios_base.h>
-#include <fstream>
-#include <iostream>
+#include <impl/streams/ostringstream.h>
 
 namespace esc {
-	iostream::iostream(streambuf* sb)
-		: istream(sb), ostream(sb) {
+	ostringstream::ostringstream(ios_base::openmode which)
+		: ostream(new stringbuf(which)) {
 	}
-	iostream::~iostream() {
+	ostringstream::ostringstream(const string& str,ios_base::openmode which)
+		: ostream(new stringbuf(str,which)) {
+	}
+	ostringstream::~ostringstream() {
 	}
 
-	// a trick to "publish" cin, cout, ... as istream/ostream/... instead of their real type
-	// ifstream/ofstream/... the reason is that otherwise we would have to cast them to
-	// ostream/istream for some >>-operators. therefore we put here the real objects as _* with
-	// their real type and publish a reference to them.
-
-	ifstream _cin;
-	ofstream _cout;
-	ofstream _cerr;
-	ofstream _clog;
-
-	istream &cin = _cin;
-	ostream &cout = _cout;
-	ostream &cerr = _cerr;
-	ostream &clog = _clog;
-	ios_base::Init init;
+	stringbuf* ostringstream::rdbuf() const {
+		return static_cast<stringbuf*>(ios::rdbuf());
+	}
+	string ostringstream::str() const {
+		return rdbuf()->str();
+	}
+	void ostringstream::str(const string& s) {
+		rdbuf()->str(s);
+	}
 }

@@ -17,12 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
-#include <limits.h>
-#include <algorithm>
-#include <list>
-
-namespace std {
+namespace esc {
 	// === listnode ===
 	template<class T>
 	class listnode {
@@ -544,21 +539,21 @@ namespace std {
 	// === sort ===
 	template<class T>
 	inline void list<T>::sort() {
-		std::sort(begin(),end());
+		esc::sort(begin(),end());
 	}
 	template<class T>
 	template<class Compare>
 	inline void list<T>::sort(Compare comp) {
-		std::sort(begin(),end(),comp);
+		esc::sort(begin(),end(),comp);
 	}
 
 	// === reverse and swap ===
 	template<class T>
 	inline void list<T>::reverse() {
-		std::reverse(begin(),end());
+		esc::reverse(begin(),end());
 	}
 	template<class T>
 	inline void list<T>::swap(list<T>& x) {
-		std::swap<list<T> >(*this,x);
+		esc::swap<list<T> >(*this,x);
 	}
 }

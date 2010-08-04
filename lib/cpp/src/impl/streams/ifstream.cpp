@@ -17,30 +17,32 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <impl/streams/ios_base.h>
-#include <fstream>
-#include <iostream>
+#include <impl/streams/ifstream.h>
 
 namespace esc {
-	iostream::iostream(streambuf* sb)
-		: istream(sb), ostream(sb) {
+	ifstream::ifstream()
+		: istream(new filebuf()) {
 	}
-	iostream::~iostream() {
+	ifstream::ifstream(const char* filename,ios_base::openmode which)
+		: istream(new filebuf()) {
+		rdbuf()->open(filename,which);
+	}
+	ifstream::~ifstream() {
 	}
 
-	// a trick to "publish" cin, cout, ... as istream/ostream/... instead of their real type
-	// ifstream/ofstream/... the reason is that otherwise we would have to cast them to
-	// ostream/istream for some >>-operators. therefore we put here the real objects as _* with
-	// their real type and publish a reference to them.
-
-	ifstream _cin;
-	ofstream _cout;
-	ofstream _cerr;
-	ofstream _clog;
-
-	istream &cin = _cin;
-	ostream &cout = _cout;
-	ostream &cerr = _cerr;
-	ostream &clog = _clog;
-	ios_base::Init init;
+	filebuf* ifstream::rdbuf() const {
+		return static_cast<filebuf*>(ios::rdbuf());
+	}
+	void ifstream::open(tFD fd,ios_base::openmode which) {
+		rdbuf()->open(fd,which);
+	}
+	void ifstream::open(const char* s,ios_base::openmode mode) {
+		rdbuf()->open(s,mode);
+	}
+	bool ifstream::is_open() const {
+		return rdbuf()->is_open();
+	}
+	void ifstream::close() {
+		rdbuf()->close();
+	}
 }

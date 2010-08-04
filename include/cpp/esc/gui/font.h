@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/gui/common.h>
-#include <esc/string.h>
+#include <string>
 
 namespace esc {
 	namespace gui {
@@ -50,7 +50,7 @@ namespace esc {
 			inline tSize getHeight() {
 				return charHeight;
 			};
-			inline tSize getStringWidth(const String &str) {
+			inline tSize getStringWidth(const esc::string& str) {
 				return str.length() * charWidth;
 			};
 			inline bool isPixelSet(char c,tCoord x,tCoord y) {

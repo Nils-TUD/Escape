@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
+/*#include <esc/common.h>
 #include <esc/debug.h>
 #include <stdio.h>
 #include <string>
@@ -28,11 +28,14 @@
 #include <ostream>
 #include <sstream>
 #include <fstream>
-#include <memory>
+#include <memory>*/
 //#include <ustl.h>
+//#include <iostream>
+#include <fstream>
 
-using namespace std;
+//using namespace esc;
 
+#if 0
 class my {
 private:
 	u32 abc;
@@ -67,11 +70,15 @@ my myobj;
 void my::doIt() {
 	cout << "Ich bins: " << abc << endl;
 }
+#endif
 
 int main(void) {
+	esc::ifstream f("foo");
+	f.close();
+
+#if 0
 	int x;
 	int i = 0;
-	ifstream dummy;
 	while(cin >> x) {
 		++i;
 		cout << "Entered: " << x << endl;
@@ -109,57 +116,6 @@ int main(void) {
 	string def(abc);
 	cout << "len=" << def.length() << ", cap=" << def.capacity() << ", str=" << def.c_str() << endl;
 
-#if 0
-	/*startThread(threadFunc);
-	startThread(threadFunc);*/
-
-	char str[10];
-	char buffer[1024];
-	const char *test = "ein test";
-	StringStream s(str,sizeof(str));
-	FileStream f("/file.txt",FileStream::READ);
-	s << 'a' << 'b';
-	s.write(test);
-	printf("%s\n",str);
-	/*char c;
-	esc::in >> c;
-	esc::out << c;*/
-	f.read(buffer,sizeof(buffer));
-	out << buffer << endl;
-
-	out << "test" << endl;
-	out << -1234 << endl;
-	out << 'a' << 'b' << 'c' << endl;
-	out.format("das=%d, bin=%x, ich=%s\n",-193,0xABC,"test");
-	out.format("out.pos=%d\n",out.getPos());
-
-	String mystr = "ich";
-	mystr += "test";
-	mystr += 'a';
-	mystr += String("abc");
-	String abc("test");
-	out << "str=" << mystr << ", length=" << mystr.length() << endl;
-	out << abc << endl;
-
-	out << "offset of a=" << mystr.find('a') << endl;
-	out << "offset of test=" << mystr.find("test") << endl;
-
-	Vector<s32> v;
-	for(s32 i = 0; i < 20; i++)
-		v.add(i);
-	Vector<s32> v2 = v;
-	v.insert(4,1024);
-	v.insert(0,123);
-	v.insert(v.size(),0);
-	v.insert(v.size() - 1,456);
-
-	for(u32 i = 0; i < v.size(); i++) {
-		out << i << ": " << v[i] << endl;
-	}
-	for(u32 i = 0; i < v2.size(); i++) {
-		out << i << ": " << v2[i] << endl;
-	}
-#else
 	//vector<int> v;
     //v.resize(30);
     //for (size_t i = 0; i < v.capacity(); ++ i)
@@ -232,27 +188,6 @@ int main(void) {
 	else
 		cerr << "Unable to open '/myfile'" << endl;
 	f2.close();
-
-#else
-	/*
-	String s1 = "abc";
-	String s2 = "def";
-	String s3 = "ghi";
-	String s4("testtest");
-	s1.erase(1);
-	s2.erase(0);
-	s3.erase(1,1);
-	s4.erase(4,3);
-	s1.insert(0,s2);
-	s1.insert(1,'a');
-	s1.insert(4,"blub");
-	s2.insert(3,"vier");
-	s3.insert(5,'b');
-	s3.insert(2,"hier");
-	out << s1 << endl;
-	out << s2 << endl;
-	out << s3 << endl;
-	out << s4 << endl;*/
 #endif
 	/*unsigned int a = 0;
 	a++;
@@ -266,5 +201,5 @@ int main(void) {
 	delete m;
 	delete y;*/
 #endif
-	return EXIT_SUCCESS;
+	return 0;
 }

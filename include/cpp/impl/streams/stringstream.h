@@ -20,51 +20,50 @@
 #ifndef BASIC_STRINGSTREAM_H_
 #define BASIC_STRINGSTREAM_H_
 
-#include <impl/streams/basic_iostream.h>
+#include <impl/streams/stringbuf.h>
+#include <iostream>
+#include <string>
 
-namespace std {
+namespace esc {
 	/**
 	 * A string-stream for input- and output-operations
 	 */
-	template<class charT,class traits = char_traits<charT> >
-	class basic_stringstream: public basic_iostream<charT,traits> {
+	class stringstream: public iostream {
 	public:
 		/**
 		 * Builds a new string-stream with given openmode
 		 *
 		 * @param which the openmode (in|out by default)
 		 */
-		explicit basic_stringstream(ios_base::openmode which = ios_base::out | ios_base::in);
+		explicit stringstream(ios_base::openmode which = ios_base::out | ios_base::in);
 		/**
 		 * Builds a new string-stream with given string and openmode
 		 *
 		 * @param str the string (makes a clone)
 		 * @param which the openmode (in|out by default)
 		 */
-		explicit basic_stringstream(const basic_string<charT>& str,
+		explicit stringstream(const string& str,
 				ios_base::openmode which = ios_base::out | ios_base::in);
 		/**
 		 * Destructor
 		 */
-		virtual ~basic_stringstream();
+		virtual ~stringstream();
 
 		/**
 		 * @return the string-buffer
 		 */
-		basic_stringbuf<charT,traits>* rdbuf() const;
+		stringbuf* rdbuf() const;
 		/**
 		 * @return a copy of the string used by the string-buffer
 		 */
-		basic_string<charT> str() const;
+		string str() const;
 		/**
 		 * Sets the string used by the string-buffer
 		 *
 		 * @param s the string (makes a clone)
 		 */
-		void str(const basic_string<charT>& s);
+		void str(const string& s);
 	};
 }
-
-#include "../../../../lib/cpp/src/impl/streams/basic_stringstream.cc"
 
 #endif /* BASIC_STRINGSTREAM_H_ */

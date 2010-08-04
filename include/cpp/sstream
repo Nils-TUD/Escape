@@ -23,17 +23,9 @@
 #include <stddef.h>
 #include <impl/streams/ios_base.h>
 #include <impl/streams/ios_ops.h>
-#include <impl/streams/basic_stringbuf.h>
-#include <impl/streams/basic_istringstream.h>
-#include <impl/streams/basic_ostringstream.h>
-#include <impl/streams/basic_stringstream.h>
-
-namespace std {
-	typedef basic_stringbuf<char> stringbuf;
-
-	typedef basic_istringstream<char> istringstream;
-	typedef basic_ostringstream<char> ostringstream;
-	typedef basic_stringstream<char> stringstream;
-}
+#include <impl/streams/stringbuf.h>
+#include <impl/streams/istringstream.h>
+#include <impl/streams/ostringstream.h>
+#include <impl/streams/stringstream.h>
 
 #endif /* SSTREAM_ */

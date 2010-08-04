@@ -23,7 +23,7 @@
 #include <stddef.h>
 #include <impl/streams/ios_base.h>
 
-namespace std {
+namespace esc {
 	// 27.4.5, manipulators:
 	/**
 	 * Calls str .setf(ios_base::boolalpha).

@@ -17,30 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <impl/streams/ios_base.h>
-#include <fstream>
-#include <iostream>
+#include <new>
 
-namespace esc {
-	iostream::iostream(streambuf* sb)
-		: istream(sb), ostream(sb) {
-	}
-	iostream::~iostream() {
-	}
-
-	// a trick to "publish" cin, cout, ... as istream/ostream/... instead of their real type
-	// ifstream/ofstream/... the reason is that otherwise we would have to cast them to
-	// ostream/istream for some >>-operators. therefore we put here the real objects as _* with
-	// their real type and publish a reference to them.
-
-	ifstream _cin;
-	ofstream _cout;
-	ofstream _cerr;
-	ofstream _clog;
-
-	istream &cin = _cin;
-	ostream &cout = _cout;
-	ostream &cerr = _cerr;
-	ostream &clog = _clog;
-	ios_base::Init init;
+/*void* operator new(size_t size) throw (std::bad_alloc) {
+	return NULL;
 }
+
+void* operator new[](size_t size) throw (std::bad_alloc) {
+	return NULL;
+}
+
+void operator delete[](void* ptr) throw () {
+
+}*/

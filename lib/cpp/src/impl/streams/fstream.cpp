@@ -17,18 +17,29 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <impl/streams/basic_streambuf.h>
+#include <impl/streams/fstream.h>
 
-namespace std {
-	eof_reached::eof_reached() {
+namespace esc {
+	fstream::fstream()
+		: iostream(new filebuf()) {
 	}
-	const char* eof_reached::what() const throw() {
-		return "EOF reached";
+	fstream::fstream(const char* filename,ios_base::openmode which)
+		: iostream(new filebuf()) {
+		rdbuf()->open(filename,which);
+	}
+	fstream::~fstream() {
 	}
 
-	bad_state::bad_state(const string &msg) : _msg(msg.c_str()) {
+	filebuf* fstream::rdbuf() const {
+		return static_cast<filebuf*>(ios::rdbuf());
 	}
-	const char* bad_state::what() const throw() {
-		return _msg;
+	void fstream::open(const char* s,ios_base::openmode mode) {
+		rdbuf()->open(s,mode);
+	}
+	bool fstream::is_open() const {
+		return rdbuf()->is_open();
+	}
+	void fstream::close() {
+		rdbuf()->close();
 	}
 }

@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-namespace std {
+namespace esc {
 	template<class Y>
 	auto_ptr_ref<Y>::auto_ptr_ref(Y *p)
 		: _p(p) {

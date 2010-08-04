@@ -19,10 +19,17 @@
 
 #include <impl/streams/ios_base.h>
 #include <iostream>
-#include <stdio.h>
+#include <fstream>
 #include <esc/debug.h>
+#include <stdio.h>
+#include <string.h>
 
-namespace std {
+namespace esc {
+	extern ifstream _cin;
+	extern ofstream _cout;
+	extern ofstream _cerr;
+	extern ofstream _clog;
+
 	ios_base::failure::failure(const string& msg)
 		: _msg(msg.c_str()) {
 	}
@@ -34,12 +41,12 @@ namespace std {
 
 	ios_base::Init::Init() {
 		if(init_cnt++ == 0) {
-			cin.open((tFD)STDIN_FILENO);
-			cin.tie(&cout);
-			cout.open((tFD)STDOUT_FILENO);
-			cerr.open((tFD)STDERR_FILENO);
-			cerr.tie(&cout);
-			clog.open((tFD)STDERR_FILENO);
+			_cin.open((tFD)STDIN_FILENO);
+			_cin.tie(&cout);
+			_cout.open((tFD)STDOUT_FILENO);
+			_cerr.open((tFD)STDERR_FILENO);
+			_cerr.tie(&cout);
+			_clog.open((tFD)STDERR_FILENO);
 		}
 	}
 	ios_base::Init::~Init() {

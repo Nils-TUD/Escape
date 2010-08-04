@@ -23,8 +23,9 @@
 #include <esc/debug.h>
 #include <esc/gui/graphics.h>
 #include <esc/gui/window.h>
-#include <esc/string.h>
+#include <string>
 #include <string.h>
+#include <iostream>
 
 namespace esc {
 	namespace gui {
@@ -59,12 +60,12 @@ namespace esc {
 					_pixels = (u8*)calloc(_width * _height,2);
 					break;
 				default:
-					err << "Unsupported color-depth: " << (u32)_bpp << endl;
+					cerr << "Unsupported color-depth: " << (u32)_bpp << endl;
 					exit(EXIT_FAILURE);
 					break;
 			}
 			if(!_pixels) {
-				err << "Not enough memory" << endl;
+				cerr << "Not enough memory" << endl;
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -105,11 +106,11 @@ namespace esc {
 			}
 		}
 
-		void Graphics::drawString(tCoord x,tCoord y,const String &str) {
+		void Graphics::drawString(tCoord x,tCoord y,const string &str) {
 			drawString(x,y,str,0,str.length());
 		}
 
-		void Graphics::drawString(tCoord x,tCoord y,const String &str,u32 start,u32 count) {
+		void Graphics::drawString(tCoord x,tCoord y,const string &str,u32 start,u32 count) {
 			u32 charWidth = _font.getWidth();
 			u32 end = start + MIN(str.length(),count);
 			for(u32 i = start; i < end; i++) {
@@ -301,7 +302,7 @@ namespace esc {
 			msg.args.arg3 = width;
 			msg.args.arg4 = height;
 			if(send(vesaFd,MSG_VESA_UPDATE,&msg,sizeof(msg.args)) < 0)
-				err << "Unable to send update-request to VESA" << endl;
+				cerr << "Unable to send update-request to VESA" << endl;
 		}
 
 		void Graphics::moveTo(tCoord x,tCoord y) {

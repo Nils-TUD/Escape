@@ -17,64 +17,56 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-namespace std {
-	template<class charT,class traits>
-	basic_stringbuf<charT,traits>::basic_stringbuf(ios_base::openmode which)
-		: basic_streambuf<charT,traits>(), _pos(0), _mode(which), _str(basic_string<charT>()) {
+#include <impl/streams/stringbuf.h>
+
+namespace esc {
+	stringbuf::stringbuf(ios_base::openmode which)
+		: streambuf(), _pos(0), _mode(which), _str(string()) {
 	}
-	template<class charT,class traits>
-	basic_stringbuf<charT,traits>::basic_stringbuf(const basic_string<charT>& str,ios_base::openmode which)
-		: basic_streambuf<charT,traits>(), _pos(0), _mode(which), _str(str) {
+	stringbuf::stringbuf(const string& s,ios_base::openmode which)
+		: streambuf(), _pos(0), _mode(which), _str(s) {
 		if(_mode & ios_base::trunc)
 			_str.clear();
 		if(_mode & ios_base::ate)
 			_pos = _str.length();
 	}
-	template<class charT,class traits>
-	basic_stringbuf<charT,traits>::~basic_stringbuf() {
+	stringbuf::~stringbuf() {
 	}
 
-	template<class charT,class traits>
-	basic_string<charT> basic_stringbuf<charT,traits>::str() const {
+	string stringbuf::str() const {
 		return _str;
 	}
-	template<class charT,class traits>
-	void basic_stringbuf<charT,traits>::str(const basic_string<charT>& s) {
+	void stringbuf::str(const string& s) {
 		// reset position
 		_pos = 0;
 		_str = s;
 	}
 
-	template<class charT,class traits>
-	typename basic_stringbuf<charT,traits>::pos_type basic_stringbuf<charT,traits>::available() const {
+	stringbuf::pos_type stringbuf::available() const {
 		return _str.length() - _pos;
 	}
 
-	template<class charT,class traits>
-	typename basic_stringbuf<charT,traits>::char_type basic_stringbuf<charT,traits>::peek() const {
+	stringbuf::char_type stringbuf::peek() const {
 		if(!(_mode & ios_base::in))
 			throw bad_state(string("No read-permission"));
 		if(_pos >= _str.length())
 			throw eof_reached();
 		return _str[_pos];
 	}
-	template<class charT,class traits>
-	typename basic_stringbuf<charT,traits>::char_type basic_stringbuf<charT,traits>::get() {
+	stringbuf::char_type stringbuf::get() {
 		if(!(_mode & ios_base::in))
 			throw bad_state(string("No read-permission"));
 		if(_pos >= _str.length())
 			throw eof_reached();
 		return _str[_pos++];
 	}
-	template<class charT,class traits>
-	void basic_stringbuf<charT,traits>::unget() {
+	void stringbuf::unget() {
 		if(!(_mode & ios_base::in) || _pos == 0)
 			throw bad_state(string("No read-permission or unable to move back"));
 		_pos--;
 	}
 
-	template<class charT,class traits>
-	void basic_stringbuf<charT,traits>::put(char_type c) {
+	void stringbuf::put(char_type c) {
 		if(!(_mode & ios_base::out))
 			throw bad_state(string("No write-permission"));
 		if(_mode & ios_base::app)
@@ -82,7 +74,6 @@ namespace std {
 		_str.insert(_pos++,&c,1);
 	}
 
-	template<class charT,class traits>
-	void basic_stringbuf<charT,traits>::flush() {
+	void stringbuf::flush() {
 	}
 }

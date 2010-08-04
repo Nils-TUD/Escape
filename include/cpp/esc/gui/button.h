@@ -24,6 +24,7 @@
 #include <esc/gui/common.h>
 #include <esc/gui/control.h>
 #include <esc/gui/color.h>
+#include <string>
 
 namespace esc {
 	namespace gui {
@@ -36,9 +37,9 @@ namespace esc {
 
 		public:
 			Button(tCoord x,tCoord y,tSize width,tSize height)
-				: Control(x,y,width,height), _focused(false), _pressed(false), _text(String()) {
+				: Control(x,y,width,height), _focused(false), _pressed(false), _text(string()) {
 			};
-			Button(const String &text,tCoord x,tCoord y,tSize width,tSize height)
+			Button(const string &text,tCoord x,tCoord y,tSize width,tSize height)
 				: Control(x,y,width,height), _focused(false), _pressed(false), _text(text) {
 			};
 			Button(const Button &b)
@@ -52,10 +53,10 @@ namespace esc {
 			inline bool isPressed() const {
 				return _pressed;
 			};
-			inline String getText() const {
+			inline string getText() const {
 				return _text;
 			};
-			inline void setText(const String &text) {
+			inline void setText(const string &text) {
 				_text = text;
 				repaint();
 			};
@@ -74,7 +75,7 @@ namespace esc {
 		private:
 			bool _focused;
 			bool _pressed;
-			String _text;
+			string _text;
 		};
 	}
 }

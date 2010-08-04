@@ -17,20 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-namespace std {
-	template<class charT,class traits>
-	basic_filebuf<charT,traits>::basic_filebuf()
+#include <impl/streams/filebuf.h>
+
+namespace esc {
+	filebuf::filebuf()
 		: _fd(-1), _inPos(0), _inMax(0), _inBuf(NULL), _totalInPos(0), _outPos(0),
 		  _outBuf(NULL), _mode(0) {
 	}
-	template<class charT,class traits>
-	basic_filebuf<charT,traits>::~basic_filebuf() {
+	filebuf::~filebuf() {
 		close();
 	}
 
-	template<class charT,class traits>
-	basic_filebuf<charT,traits>* basic_filebuf<charT,traits>::open(
-			const char* s,ios_base::openmode mode) {
+	filebuf* filebuf::open(const char* s,ios_base::openmode mode) {
 		close();
 		unsigned char omode = getMode(mode);
 		_fd = ::open(s,omode);
@@ -44,8 +42,7 @@ namespace std {
 		return this;
 	}
 
-	template<class charT,class traits>
-	basic_filebuf<charT,traits>* basic_filebuf<charT,traits>::open(tFD fd,ios_base::openmode mode) {
+	filebuf* filebuf::open(tFD fd,ios_base::openmode mode) {
 		close();
 		_fd = fd;
 		_mode = mode;
@@ -56,8 +53,7 @@ namespace std {
 		return this;
 	}
 
-	template<class charT,class traits>
-	unsigned char basic_filebuf<charT,traits>::getMode(ios_base::openmode mode) {
+	unsigned char filebuf::getMode(ios_base::openmode mode) {
 		unsigned char omode = 0;
 		if(mode & ios_base::in)
 			omode |= IO_READ;
@@ -71,13 +67,11 @@ namespace std {
 		return omode;
 	}
 
-	template<class charT,class traits>
-	bool basic_filebuf<charT,traits>::is_open() const {
+	bool filebuf::is_open() const {
 		return _fd >= 0;
 	}
 
-	template<class charT,class traits>
-	basic_filebuf<charT,traits>* basic_filebuf<charT,traits>::close() {
+	filebuf* filebuf::close() {
 		if(_inBuf) {
 			delete[] _inBuf;
 			_inBuf = NULL;
@@ -91,32 +85,30 @@ namespace std {
 			::close(_fd);
 			_fd = -1;
 		}
+		return this;
 	}
 
-	template<class charT,class traits>
-	typename basic_filebuf<charT,traits>::pos_type basic_filebuf<charT,traits>::available() const {
+	filebuf::pos_type filebuf::available() const {
 		sFileInfo info;
-		::fstat(_fd,&info);
+		if(::fstat(_fd,&info) < 0)
+			throw bad_state("fstat() failed");
 		return info.size - _totalInPos;
 	}
 
-	template<class charT,class traits>
-	typename basic_filebuf<charT,traits>::char_type basic_filebuf<charT,traits>::peek() const {
+	filebuf::char_type filebuf::peek() const {
 		if(_fd < 0 || !(_mode & ios_base::in))
 			throw bad_state("file not open for reading");
 		if(!fillBuffer())
 			throw eof_reached();
 		return _inBuf[_inPos];
 	}
-	template<class charT,class traits>
-	typename basic_filebuf<charT,traits>::char_type basic_filebuf<charT,traits>::get() {
+	filebuf::char_type filebuf::get() {
 		char_type c = peek();
 		_inPos++;
 		_totalInPos++;
 		return c;
 	}
-	template<class charT,class traits>
-	void basic_filebuf<charT,traits>::unget() {
+	void filebuf::unget() {
 		if(_fd < 0 || !(_mode & ios_base::in))
 			throw bad_state("file not open for reading");
 		if(_inPos == 0)
@@ -125,16 +117,14 @@ namespace std {
 		_totalInPos--;
 	}
 
-	template<class charT,class traits>
-	void basic_filebuf<charT,traits>::put(char_type c) {
+	void filebuf::put(char_type c) {
 		if(_fd < 0 || !(_mode & ios_base::out))
 			throw bad_state("file not open for writing");
 		if(!_outBuf || _outPos >= OUT_BUF_SIZE)
 			flush();
 		_outBuf[_outPos++] = c;
 	}
-	template<class charT,class traits>
-	void basic_filebuf<charT,traits>::flush() {
+	void filebuf::flush() {
 		if(_fd < 0 || !(_mode & ios_base::out))
 			throw bad_state("file not open for writing");
 		if(_outBuf && _outPos > 0) {
@@ -143,15 +133,14 @@ namespace std {
 				throw bad_state("flush() failed");
 		}
 		else
-			_outBuf = new charT[OUT_BUF_SIZE];
+			_outBuf = new char[OUT_BUF_SIZE];
 		_outPos = 0;
 	}
 
-	template<class charT,class traits>
-	bool basic_filebuf<charT,traits>::fillBuffer() const {
+	bool filebuf::fillBuffer() const {
 		if(_inPos >= _inMax) {
 			if(!_inBuf)
-				_inBuf = new charT[IN_BUF_SIZE];
+				_inBuf = new char[IN_BUF_SIZE];
 			_inMax = ::read(_fd,_inBuf,IN_BUF_SIZE);
 			if(_inMax <= 0)
 				return false;

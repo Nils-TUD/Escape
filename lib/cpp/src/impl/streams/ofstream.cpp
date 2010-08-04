@@ -17,32 +17,32 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BASIC_IOSTREAM_H_
-#define BASIC_IOSTREAM_H_
+#include <impl/streams/ofstream.h>
 
-#include <impl/streams/basic_istream.h>
-#include <impl/streams/basic_ostream.h>
+namespace esc {
+	ofstream::ofstream()
+		: ostream(new filebuf) {
+	}
+	ofstream::ofstream(const char* filename,ios_base::openmode which)
+		: ostream(new filebuf) {
+		rdbuf()->open(filename,which);
+	}
+	ofstream::~ofstream() {
+	}
 
-namespace std {
-	/**
-	 * A stream for input- and output-operations
-	 */
-	template<class charT,class traits = char_traits<charT> >
-	class basic_iostream : public basic_istream<charT,traits>, public basic_ostream<charT,traits> {
-	public:
-		/**
-		 * Builds a new iostream with given stream-buffer
-		 *
-		 * @param sb the stream-buffer
-		 */
-		explicit basic_iostream(basic_streambuf<charT,traits>* sb);
-		/**
-		 * Destructor
-		 */
-		virtual ~basic_iostream();
-	};
+	filebuf* ofstream::rdbuf() const {
+		return static_cast<filebuf*>(ios::rdbuf());
+	}
+	void ofstream::open(tFD fd,ios_base::openmode which) {
+		rdbuf()->open(fd,which);
+	}
+	void ofstream::open(const char* s,ios_base::openmode mode) {
+		rdbuf()->open(s,mode);
+	}
+	bool ofstream::is_open() const {
+		return rdbuf()->is_open();
+	}
+	void ofstream::close() {
+		rdbuf()->close();
+	}
 }
-
-#include "../../../../lib/cpp/src/impl/streams/basic_iostream.cc"
-
-#endif /* BASIC_IOSTREAM_H_ */

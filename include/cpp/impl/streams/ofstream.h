@@ -17,54 +17,53 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef BASIC_IFSTREAM_H_
-#define BASIC_IFSTREAM_H_
+#ifndef BASIC_OFSTREAM_H_
+#define BASIC_OFSTREAM_H_
 
-#include <impl/streams/basic_filebuf.h>
-#include <impl/streams/basic_istream.h>
+#include <impl/streams/filebuf.h>
+#include <ostream>
 #include <esc/io.h>
 
-namespace std {
+namespace esc {
 	/**
 	 * A file-stream for input-operations
 	 */
-	template<class charT,class traits = char_traits<charT> >
-	class basic_ifstream: public basic_istream<charT,traits> {
+	class ofstream: public ostream {
 	public:
 		/**
 		 * Builds a new file-stream
 		 */
-		basic_ifstream();
+		ofstream();
 		/**
 		 * Builds a new file-stream and opens the given file
 		 *
 		 * @param filename the file to open
-		 * @param which the openmode (in by default)
+		 * @param which the openmode (out by default)
 		 */
-		explicit basic_ifstream(const char* filename,ios_base::openmode which = ios_base::in);
+		explicit ofstream(const char* filename,ios_base::openmode which = ios_base::out);
 		/**
 		 * Destructor
 		 */
-		virtual ~basic_ifstream();
+		virtual ~ofstream();
 
 		/**
 		 * @return the file-buffer
 		 */
-		basic_filebuf<charT,traits>* rdbuf() const;
+		filebuf* rdbuf() const;
 		/**
 		 * Uses the given file-descriptor
 		 *
 		 * @param fd the file-descriptor
-		 * @param which the open-mode (in by default)
+		 * @param which the open-mode (out by default)
 		 */
-		void open(tFD fd,ios_base::openmode which = ios_base::in);
+		void open(tFD fd,ios_base::openmode which = ios_base::out);
 		/**
 		 * Opens the file <s> with given open-mode
 		 *
 		 * @param s the file
 		 * @param mode the mode
 		 */
-		void open(const char* s,ios_base::openmode mode = ios_base::in);
+		void open(const char* s,ios_base::openmode mode = ios_base::out);
 		/**
 		 * @return if a file has been opened successfully
 		 */
@@ -76,6 +75,4 @@ namespace std {
 	};
 }
 
-#include "../../../../lib/cpp/src/impl/streams/basic_ifstream.cc"
-
-#endif /* BASIC_IFSTREAM_H_ */
+#endif /* BASIC_OFSTREAM_H_ */

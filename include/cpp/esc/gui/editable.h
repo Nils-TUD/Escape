@@ -23,6 +23,7 @@
 #include <esc/common.h>
 #include <esc/gui/common.h>
 #include <esc/gui/control.h>
+#include <string>
 
 namespace esc {
 	namespace gui {
@@ -46,7 +47,7 @@ namespace esc {
 		public:
 			Editable(tCoord x,tCoord y,tSize width,tSize height)
 				: Control(x,y,width,height), _cursor(0), _begin(0), _focused(false), _selecting(false),
-				  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str(String()) {
+				  _startSel(false), _selDir(DIR_NONE), _selStart(-1), _selEnd(-1), _str(string()) {
 			};
 			Editable(const Editable &e)
 				: Control(e), _cursor(e._cursor), _begin(0), _focused(false), _selecting(false),
@@ -56,10 +57,10 @@ namespace esc {
 			};
 			Editable &operator=(const Editable &e);
 
-			inline String getText() const {
+			inline string getText() const {
 				return _str;
 			};
-			inline void setText(const String &text) {
+			inline void setText(const string &text) {
 				_str = text;
 				_cursor = text.length();
 				repaint();
@@ -93,7 +94,7 @@ namespace esc {
 			u8 _selDir;
 			s32 _selStart;
 			s32 _selEnd;
-			String _str;
+			string _str;
 		};
 	}
 }

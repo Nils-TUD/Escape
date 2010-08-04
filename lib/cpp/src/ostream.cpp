@@ -17,12 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <ostream>
+#include <esc/width.h>
+#include <string.h>
+
 #define FFL_SHORT			1
 #define FFL_LONG			2
 
-namespace std {
-	template<class charT,class traits>
-	basic_ostream<charT,traits>::sentry::sentry(basic_ostream<charT,traits>& os)
+namespace esc {
+	ostream::sentry::sentry(ostream& os)
 			: _ok(false), _os(os) {
 		if(os.good()) {
 			if(os.tie())
@@ -31,41 +34,35 @@ namespace std {
 		if(os.good())
 			_ok = true;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>::sentry::~sentry() {
-		if((_os.flags() & ios_base::unitbuf) && !uncaught_exception())
+	ostream::sentry::~sentry() {
+		if((_os.flags() & ios_base::unitbuf) && !std::uncaught_exception())
 			_os.flush();
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>::sentry::operator bool() const {
+	ostream::sentry::operator bool() const {
 		return _ok;
 	}
 
-	template<class charT,class traits>
-	basic_ostream<charT,traits>::basic_ostream(basic_streambuf<char_type,traits>* sb)
+	ostream::ostream(streambuf* sb)
 			: _sb(sb) {
-		basic_ios<charT,traits>::init(sb);
+		ios::init(sb);
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>::~basic_ostream() {
+	ostream::~ostream() {
 	}
 
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::format(const char *fmt,...) {
+	ostream& ostream::format(const char *fmt,...) {
 		va_list ap;
 		va_start(ap,fmt);
-		basic_ostream<charT,traits>& res = format(fmt,ap);
+		ostream& res = format(fmt,ap);
 		va_end(ap);
 		return res;
 	}
 
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::format(const char *fmt,va_list ap) {
+	ostream& ostream::format(const char *fmt,va_list ap) {
 		sentry se(*this);
 		if(se) {
 			bool readFlags;
-			ios_base::fmtflags flags;
-			s16 precision;
+			ios_base::fmtflags fflags;
+			s16 prec;
 			char c,*str,b;
 			s32 n;
 			u32 u;
@@ -75,7 +72,7 @@ namespace std {
 			ios_base::fmtflags oldflags = ios_base::flags();
 			streamsize oldprec = ios_base::precision();
 			streamsize oldwidth = ios_base::width();
-			char_type oldfill = basic_ios<charT,traits>::fill();
+			char_type oldfill = ios::fill();
 
 			try {
 				while(1) {
@@ -88,26 +85,26 @@ namespace std {
 					}
 
 					/* read flags */
-					flags = ios_base::dec | ios_base::right | ios_base::skipws;
+					fflags = ios_base::dec | ios_base::right | ios_base::skipws;
 					pad = 0;
 					readFlags = true;
 					while(readFlags) {
 						switch(*fmt) {
 							case '-':
-								flags &= ~ios_base::right;
-								flags |= ios_base::left;
+								fflags &= ~ios_base::right;
+								fflags |= ios_base::left;
 								fmt++;
 								break;
 							case '+':
-								flags |= ios_base::showpos;
+								fflags |= ios_base::showpos;
 								fmt++;
 								break;
 							case '#':
-								flags |= ios_base::showbase;
+								fflags |= ios_base::showbase;
 								fmt++;
 								break;
 							case '0':
-								basic_ios<charT,traits>::fill('0');
+								ios::fill('0');
 								fmt++;
 								break;
 							case '*':
@@ -129,20 +126,20 @@ namespace std {
 					}
 
 					/* read precision */
-					precision = 6;
+					prec = 6;
 					if(*fmt == '.') {
 						fmt++;
-						precision = 0;
+						prec = 0;
 						while(*fmt >= '0' && *fmt <= '9') {
-							precision = precision * 10 + (*fmt - '0');
+							prec = prec * 10 + (*fmt - '0');
 							fmt++;
 						}
 					}
 
 					// set formatting settings
-					ios_base::precision(precision);
+					ios_base::precision(prec);
 					ios_base::width(pad);
-					ios_base::flags(flags);
+					ios_base::flags(fflags);
 
 					/* read length */
 					intsize = 0;
@@ -163,7 +160,7 @@ namespace std {
 						case 'd':
 						case 'i':
 							n = va_arg(ap, s32);
-							if(flags & FFL_SHORT)
+							if(fflags & FFL_SHORT)
 								n &= 0xFFFF;
 							writeSigned(n);
 							break;
@@ -220,99 +217,80 @@ namespace std {
 				}
 			}
 			catch(...) {
-				basic_ios<charT,traits>::setstate(ios_base::badbit);
+				ios::setstate(ios_base::badbit);
 			}
 
 			done:
 			ios_base::flags(oldflags);
 			ios_base::width(oldwidth);
 			ios_base::precision(oldprec);
-			basic_ios<charT,traits>::fill(oldfill);
+			ios::fill(oldfill);
 		}
 		return *this;
 	}
 
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(
-			basic_ostream<charT,traits>& (*pf)(basic_ostream<charT,traits>&)) {
+	ostream& ostream::operator <<(ostream& (*pf)(ostream&)) {
 		pf(*this);
 		return *this;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(
-			basic_ios<charT,traits>& (*pf)(basic_ios<charT,traits>&)) {
+	ostream& ostream::operator <<(ios& (*pf)(ios&)) {
 		pf(*this);
 		return *this;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(
-			ios_base & (*pf)(ios_base &)) {
+	ostream& ostream::operator <<(ios_base & (*pf)(ios_base &)) {
 		pf(*this);
 		return *this;
 	}
 
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(bool n) {
+	ostream& ostream::operator <<(bool n) {
 		if(ios_base::flags() & ios_base::boolalpha)
 			write(n ? "true" : "false",n ? SSTRLEN("true") : SSTRLEN("false"));
 		else
 			writeUnsigned(n);
 		return *this;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(short n) {
+	ostream& ostream::operator <<(short n) {
 		writeSigned(n);
 		return *this;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(unsigned short n) {
+	ostream& ostream::operator <<(unsigned short n) {
 		writeUnsigned(n);
 		return *this;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(int n) {
+	ostream& ostream::operator <<(int n) {
 		writeSigned(n);
 		return *this;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(unsigned int n) {
+	ostream& ostream::operator <<(unsigned int n) {
 		writeUnsigned(n);
 		return *this;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(long n) {
+	ostream& ostream::operator <<(long n) {
 		writeSigned(n);
 		return *this;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(unsigned long n) {
+	ostream& ostream::operator <<(unsigned long n) {
 		writeUnsigned(n);
 		return *this;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(float f) {
+	ostream& ostream::operator <<(float f) {
 		writeDouble(f);
 		return *this;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(double f) {
+	ostream& ostream::operator <<(double f) {
 		writeDouble(f);
 		return *this;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(long double f) {
+	ostream& ostream::operator <<(long double f) {
 		writeDouble(f);
 		return *this;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(const void* p) {
+	ostream& ostream::operator <<(const void* p) {
 		writeUnsigned((unsigned long)(p));
 		return *this;
 	}
 
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::operator <<(
-			basic_streambuf<charT,traits>* sb) {
+	ostream& ostream::operator <<(streambuf* sb) {
 		sentry se(*this);
 		if(se) {
 			streamsize n = sb->available();
@@ -332,19 +310,17 @@ namespace std {
 					writePad(pwidth - n);
 			}
 			catch(...) {
-				basic_ios<charT,traits>::setstate(ios_base::badbit);
+				ios::setstate(ios_base::badbit);
 			}
 			ios_base::width(0);
 		}
 		return *this;
 	}
 
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::put(char_type c) {
+	ostream& ostream::put(char_type c) {
 		return write(&c,1);
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::write(const char_type* s,streamsize n) {
+	ostream& ostream::write(const char_type* s,streamsize n) {
 		sentry se(*this);
 		if(se) {
 			streamsize pwidth = ios_base::width();
@@ -358,26 +334,24 @@ namespace std {
 					writePad(pwidth - n);
 			}
 			catch(...) {
-				basic_ios<charT,traits>::setstate(ios_base::badbit);
+				ios::setstate(ios_base::badbit);
 			}
 			ios_base::width(0);
 		}
 		return *this;
 	}
 
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& basic_ostream<charT,traits>::flush() {
+	ostream& ostream::flush() {
 		try {
 			_sb->flush();
 		}
 		catch(...) {
-			basic_ios<charT,traits>::setstate(ios_base::badbit);
+			ios::setstate(ios_base::badbit);
 		}
 		return *this;
 	}
 
-	template<class charT,class traits>
-	void basic_ostream<charT,traits>::writeSigned(signed long n) {
+	void ostream::writeSigned(signed long n) {
 		// write as unsigned if oct or hex is desired
 		if(!(ios_base::flags() & ios_base::dec)) {
 			writeUnsigned(static_cast<unsigned long>(n));
@@ -386,35 +360,34 @@ namespace std {
 		sentry se(*this);
 		if(se) {
 			try {
-				streamsize width = 0;
-				streamsize pwidth = basic_ios<charT,traits>::width();
+				streamsize nwidth = 0;
+				streamsize pwidth = ios::width();
 				// determine width
 				if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
-					width = getnwidth(n);
+					nwidth = getnwidth(n);
 					if(ios_base::flags() & ios_base::showpos)
-						width++;
+						nwidth++;
 				}
 				// pad left
-				if((ios_base::flags() & ios_base::right) && pwidth > width)
-					writePad(pwidth - width);
+				if((ios_base::flags() & ios_base::right) && pwidth > nwidth)
+					writePad(pwidth - nwidth);
 				// print '+' or ' ' instead of '-'
 				if(ios_base::flags() & ios_base::showpos)
 					_sb->put('+');
 				// print number
 				writeSChars(n);
 				// pad right
-				if((ios_base::flags() & ios_base::left) && pwidth > width)
-					writePad(pwidth - width);
+				if((ios_base::flags() & ios_base::left) && pwidth > nwidth)
+					writePad(pwidth - nwidth);
 			}
 			catch(...) {
-				basic_ios<charT,traits>::setstate(ios_base::badbit);
+				ios::setstate(ios_base::badbit);
 			}
 			ios_base::width(0);
 		}
 	}
 
-	template<class charT,class traits>
-	void basic_ostream<charT,traits>::writeUnsigned(unsigned long u) {
+	void ostream::writeUnsigned(unsigned long u) {
 		static const char *numTableSmall = "0123456789abcdef";
 		static const char *numTableBig = "0123456789ABCDEF";
 		sentry se(*this);
@@ -422,24 +395,24 @@ namespace std {
 			try {
 				int base = ios_base::get_base();
 				// determine width
-				streamsize width = 0;
-				streamsize pwidth = basic_ios<charT,traits>::width();
+				streamsize nwidth = 0;
+				streamsize pwidth = ios::width();
 				if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
-					width = getuwidth(u,base);
+					nwidth = getuwidth(u,base);
 					if(u > 0 && (ios_base::flags() & ios_base::showbase)) {
 						switch(base) {
 							case 16:
-								width += 2;
+								nwidth += 2;
 								break;
 							case 8:
-								width += 1;
+								nwidth += 1;
 								break;
 						}
 					}
 				}
 				// pad left - spaces
-				if((ios_base::flags() & ios_base::right) && pwidth > width)
-					writePad(pwidth - width);
+				if((ios_base::flags() & ios_base::right) && pwidth > nwidth)
+					writePad(pwidth - nwidth);
 				if(u > 0 && (ios_base::flags() & ios_base::showbase)) {
 					switch(base) {
 						case 16:
@@ -457,49 +430,47 @@ namespace std {
 				else
 					writeUChars(u,base,numTableSmall);
 				// pad right
-				if((ios_base::flags() & ios_base::left) && pwidth > width)
-					writePad(pwidth - width);
+				if((ios_base::flags() & ios_base::left) && pwidth > nwidth)
+					writePad(pwidth - nwidth);
 			}
 			catch(...) {
-				basic_ios<charT,traits>::setstate(ios_base::badbit);
+				ios::setstate(ios_base::badbit);
 			}
 			ios_base::width(0);
 		}
 	}
 
-	template<class charT,class traits>
-	void basic_ostream<charT,traits>::writeDouble(long double d) {
+	void ostream::writeDouble(long double d) {
 		sentry se(*this);
 		if(se) {
 			try {
 				long long pre = (long long)d;
-				streamsize width = 0;
-				streamsize pwidth = basic_ios<charT,traits>::width();
+				streamsize nwidth = 0;
+				streamsize pwidth = ios::width();
 				if(!(ios_base::flags() & (ios_base::right | ios_base::left)) && pwidth > 0) {
-					width = getlwidth(pre) + basic_ios<charT,traits>::precision() + 1;
+					nwidth = getlwidth(pre) + ios::precision() + 1;
 					if(d >= 0 && (ios_base::flags() & ios_base::showpos))
-						width++;
+						nwidth++;
 				}
 				// pad left
-				if((ios_base::flags() & ios_base::right) && pwidth > width)
-					writePad(pwidth - width);
+				if((ios_base::flags() & ios_base::right) && pwidth > nwidth)
+					writePad(pwidth - nwidth);
 				if(d >= 0 && (ios_base::flags() & ios_base::showpos))
 					_sb->put('+');
 				// print number
 				writeDoubleChars(d);
 				// pad right
-				if((ios_base::flags() & ios_base::left) && pwidth > width)
-					writePad(pwidth - width);
+				if((ios_base::flags() & ios_base::left) && pwidth > nwidth)
+					writePad(pwidth - nwidth);
 			}
 			catch(...) {
-				basic_ios<charT,traits>::setstate(ios_base::badbit);
+				ios::setstate(ios_base::badbit);
 			}
 			ios_base::width(0);
 		}
 	}
 
-	template<class charT,class traits>
-	void basic_ostream<charT,traits>::writeSChars(signed long n) {
+	void ostream::writeSChars(signed long n) {
 		if(n < 0) {
 			_sb->put('-');
 			n = -n;
@@ -509,15 +480,13 @@ namespace std {
 		_sb->put('0' + (n % 10));
 	}
 
-	template<class charT,class traits>
-	void basic_ostream<charT,traits>::writeUChars(unsigned long u,int base,const char *hexchars) {
+	void ostream::writeUChars(unsigned long u,unsigned int base,const char *hexchars) {
 		if(u >= base)
 			writeUChars(u / base,base,hexchars);
 		_sb->put(hexchars[(u % base)]);
 	}
 
-	template<class charT,class traits>
-	void basic_ostream<charT,traits>::writeDoubleChars(long double d) {
+	void ostream::writeDoubleChars(long double d) {
 		long long val = 0;
 
 		// Note: this is probably not a really good way of converting IEEE754-floating point numbers
@@ -529,8 +498,8 @@ namespace std {
 		if(d < 0)
 			d = -d;
 		_sb->put('.');
-		streamsize precision = basic_ios<charT,traits>::precision();
-		while(precision-- > 0) {
+		streamsize prec = ios::precision();
+		while(prec-- > 0) {
 			d *= 10;
 			val = (long long)d;
 			_sb->put((val % 10) + '0');
@@ -538,79 +507,31 @@ namespace std {
 		}
 	}
 
-	template<class charT,class traits>
-	void basic_ostream<charT,traits>::writePad(streamsize count) {
-		char_type c = basic_ios<charT,traits>::fill();
+	void ostream::writePad(streamsize count) {
+		char_type c = ios::fill();
 		while(count-- > 0)
 			_sb->put(c);
 	}
 
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>& os,charT c) {
+	ostream& operator <<(ostream& os,char c) {
 		os.put(c);
 		return os;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>& os,char c) {
-		os.put(c);
-		return os;
-	}
-	template<class traits>
-	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>& os,char c) {
-		os.put(c);
-		return os;
-	}
-
-	template<class traits>
-	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>& os,signed char c) {
-		os.put(c);
-		return os;
-	}
-	template<class traits>
-	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>& os,unsigned char c) {
-		os.put(c);
-		return os;
-	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>& os,const charT* s) {
-		os.write(s,strlen(s));
-		return os;
-	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& operator <<(basic_ostream<charT,traits>& os,const char* s) {
-		os.write(s,strlen(s));
-		return os;
-	}
-	template<class traits>
-	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>& os,const char* s) {
+	ostream& operator <<(ostream& os,const char* s) {
 		os.write(s,strlen(s));
 		return os;
 	}
 
-	template<class traits>
-	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>& os,const signed char* s) {
-		os.write(s,strlen(s));
-		return os;
-	}
-	template<class traits>
-	basic_ostream<char,traits>& operator <<(basic_ostream<char,traits>& os,const unsigned char* s) {
-		os.write(s,strlen(s));
-		return os;
-	}
-
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& endl(basic_ostream<charT,traits>& os) {
+	ostream& endl(ostream& os) {
 		os.put('\n');
 		os.flush();
 		return os;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& ends(basic_ostream<charT,traits>& os) {
-		os.put(charT());
+	ostream& ends(ostream& os) {
+		os.put('\0');
 		return os;
 	}
-	template<class charT,class traits>
-	basic_ostream<charT,traits>& flush(basic_ostream<charT,traits>& os) {
+	ostream& flush(ostream& os) {
 		os.flush();
 		return os;
 	}

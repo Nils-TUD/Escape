@@ -21,6 +21,6 @@
 #define IOS_
 
 #include <impl/streams/ios_base.h>
-#include <impl/streams/basic_ios.h>
+#include <impl/streams/ios.h>
 
 #endif /* IOS_ */

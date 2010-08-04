@@ -29,7 +29,8 @@
 #include <esc/gui/application.h>
 #include <esc/gui/control.h>
 #include <esc/gui/color.h>
-#include <esc/string.h>
+#include <string>
+#include <ostream>
 
 namespace esc {
 	namespace gui {
@@ -59,7 +60,7 @@ namespace esc {
 			static const u8 STYLE_POPUP = 1;
 
 		public:
-			Window(const String &title,tCoord x,tCoord y,tSize width,tSize height,
+			Window(const string &title,tCoord x,tCoord y,tSize width,tSize height,
 					u8 style = STYLE_DEFAULT);
 			Window(const Window &w);
 			virtual ~Window();
@@ -80,10 +81,10 @@ namespace esc {
 			inline tSize getTitleBarHeight() const {
 				return _titleBarHeight;
 			};
-			inline String getTitle() const {
+			inline string getTitle() const {
 				return _title;
 			};
-			inline void setTitle(const String &title) {
+			inline void setTitle(const string &title) {
 				_title = title;
 				repaint();
 			};
@@ -120,7 +121,7 @@ namespace esc {
 			tWinId _id;
 			bool _created;
 			u8 _style;
-			String _title;
+			string _title;
 			tSize _titleBarHeight;
 			bool _inTitle;
 			bool _inResizeLeft;
@@ -132,7 +133,7 @@ namespace esc {
 			Vector<Control*> _controls;
 		};
 
-		Stream &operator<<(Stream &s,const Window &w);
+		ostream &operator<<(ostream &s,const Window &w);
 	}
 }
 

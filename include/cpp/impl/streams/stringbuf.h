@@ -21,47 +21,48 @@
 #define BASIC_STRINGBUF_H_
 
 #include <stddef.h>
-#include <impl/streams/basic_streambuf.h>
+#include <impl/streams/ios_base.h>
+#include <streambuf>
+#include <string>
 
-namespace std {
+namespace esc {
 	/**
 	 * Uses a string as buffer to read from and write to
 	 */
-	template<class charT,class traits = char_traits<charT> >
-	class basic_stringbuf: public basic_streambuf<charT,traits> {
+	class stringbuf: public streambuf {
 	public:
-		typedef typename basic_streambuf<charT,traits>::char_type char_type;
-		typedef typename basic_streambuf<charT,traits>::pos_type pos_type;
+		typedef streambuf::char_type char_type;
+		typedef streambuf::pos_type pos_type;
 
 		/**
 		 * Creates a new stringbuffer with given openmode
 		 *
 		 * @param which the open-mode ((in | out) by default)
 		 */
-		explicit basic_stringbuf(ios_base::openmode which = ios_base::in | ios_base::out);
+		explicit stringbuf(ios_base::openmode which = ios_base::in | ios_base::out);
 		/**
 		 * Creates a new stringbuffer with given string and openmode
 		 *
 		 * @param str the string (will be cloned)
 		 * @param which the open-mode ((in | out) by default)
 		 */
-		explicit basic_stringbuf(const basic_string<charT>& str,
+		explicit stringbuf(const string& str,
 				ios_base::openmode which = ios_base::in | ios_base::out);
 		/**
 		 * Destructor
 		 */
-		virtual ~basic_stringbuf();
+		virtual ~stringbuf();
 
 		/**
 		 * @return a copy of the used string
 		 */
-		basic_string<charT> str() const;
+		string str() const;
 		/**
 		 * Sets the string to use for read/write
 		 *
 		 * @param s the string (will be cloned)
 		 */
-		void str(const basic_string<charT>& s);
+		void str(const string& s);
 
 		/**
 		 * @return the number of available characters
@@ -104,10 +105,8 @@ namespace std {
 	private:
 		pos_type _pos;
 		ios_base::openmode _mode;
-		basic_string<charT> _str;
+		string _str;
 	};
 }
-
-#include "../../../../lib/cpp/src/impl/streams/basic_stringbuf.cc"
 
 #endif /* BASIC_STRINGBUF_H_ */

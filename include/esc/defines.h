@@ -91,4 +91,22 @@ typedef u16 mode_t;
 }
 #endif
 
+#ifdef __cplusplus
+namespace esc {
+#ifndef _PTRDIFF_T
+#define _PTRDIFF_T
+typedef s32 ptrdiff_t;
+#endif
+
+#ifndef __SIZE_T__
+#define __SIZE_T__
+typedef u32 size_t;
+#endif
+
+typedef s32 ssize_t;
+typedef s32 off_t;
+typedef u16 mode_t;
+}
+#endif
+
 #endif /* DEFINES_H_ */

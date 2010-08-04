@@ -17,10 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
-#include <algorithm>
-
-namespace std {
+namespace esc {
 	template<class T1,class T2>
 	static bool defEqual(T1 a,T2 b) {
 		return a == b;
@@ -58,8 +55,8 @@ namespace std {
 	template<class ForwardIterator1,class ForwardIterator2>
 	inline ForwardIterator1 find_end(ForwardIterator1 first1,ForwardIterator1 last1,
 			ForwardIterator2 first2,ForwardIterator2 last2) {
-	    typedef typename std::iterator_traits<ForwardIterator1>::value_type T1;
-	    typedef typename std::iterator_traits<ForwardIterator2>::value_type T2;
+	    typedef typename esc::iterator_traits<ForwardIterator1>::value_type T1;
+	    typedef typename esc::iterator_traits<ForwardIterator2>::value_type T2;
 		return find_end(first1,last1,first2,last2,defEqual<T1,T2>);
 	}
 	template<class ForwardIterator1,class ForwardIterator2,class Predicate>
@@ -91,8 +88,8 @@ namespace std {
 	template<class ForwardIterator1,class ForwardIterator2>
 	inline ForwardIterator1 find_first_of(ForwardIterator1 first1,ForwardIterator1 last1,
 			ForwardIterator2 first2,ForwardIterator2 last2) {
-	    typedef typename std::iterator_traits<ForwardIterator1>::value_type T1;
-	    typedef typename std::iterator_traits<ForwardIterator2>::value_type T2;
+	    typedef typename esc::iterator_traits<ForwardIterator1>::value_type T1;
+	    typedef typename esc::iterator_traits<ForwardIterator2>::value_type T2;
 		return find_first_of(first1,last1,first2,last2,defEqual<T1,T2>);
 	}
 	template<class ForwardIterator1,class ForwardIterator2,class BinaryPredicate>
@@ -153,8 +150,8 @@ namespace std {
 
 	template<class InputIterator1,class InputIterator2>
 	inline bool equal(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2) {
-	    typedef typename std::iterator_traits<InputIterator1>::value_type T1;
-	    typedef typename std::iterator_traits<InputIterator2>::value_type T2;
+	    typedef typename esc::iterator_traits<InputIterator1>::value_type T1;
+	    typedef typename esc::iterator_traits<InputIterator2>::value_type T2;
 		return equal(first1,last1,first2,defEqual<T1,T2>);
 	}
 	template<class InputIterator1,class InputIterator2,class BinaryPredicate>
@@ -170,8 +167,8 @@ namespace std {
 	template<class ForwardIterator1,class ForwardIterator2>
 	ForwardIterator1 search(ForwardIterator1 first1,ForwardIterator1 last1,ForwardIterator2 first2,
 			ForwardIterator2 last2) {
-	    typedef typename std::iterator_traits<ForwardIterator1>::value_type T1;
-	    typedef typename std::iterator_traits<ForwardIterator2>::value_type T2;
+	    typedef typename esc::iterator_traits<ForwardIterator1>::value_type T1;
+	    typedef typename esc::iterator_traits<ForwardIterator2>::value_type T2;
 		return search(first1,last1,first2,last2,defEqual<T1,T2>);
 	}
 	template<class ForwardIterator1,class ForwardIterator2,class BinaryPredicate>
@@ -300,7 +297,7 @@ namespace std {
 
 	template<class RandomAccessIterator>
 	inline void sort(RandomAccessIterator first,RandomAccessIterator last) {
-	    typedef typename std::iterator_traits<RandomAccessIterator>::value_type T;
+	    typedef typename esc::iterator_traits<RandomAccessIterator>::value_type T;
 		sort(first,last,defLessThan<T,T>);
 	}
 	template<class RandomAccessIterator,class Compare>
@@ -409,8 +406,8 @@ namespace std {
 	template<class InputIterator1,class InputIterator2>
 	bool includes(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
 			InputIterator2 last2) {
-		typedef typename std::iterator_traits<InputIterator1>::value_type T1;
-		typedef typename std::iterator_traits<InputIterator2>::value_type T2;
+		typedef typename esc::iterator_traits<InputIterator1>::value_type T1;
+		typedef typename esc::iterator_traits<InputIterator2>::value_type T2;
 		return includes(first1,last1,first2,last2,defLessThan<T1,T2>);
 	}
 	template<class InputIterator1,class InputIterator2,class Compare>
@@ -494,8 +491,8 @@ namespace std {
 	template<class InputIterator1,class InputIterator2>
 	bool lexicographical_compare(InputIterator1 first1,InputIterator1 last1,InputIterator2 first2,
 			InputIterator2 last2) {
-	    typedef typename std::iterator_traits<InputIterator1>::value_type T1;
-	    typedef typename std::iterator_traits<InputIterator2>::value_type T2;
+	    typedef typename esc::iterator_traits<InputIterator1>::value_type T1;
+	    typedef typename esc::iterator_traits<InputIterator2>::value_type T2;
 		return lexicographical_compare(first1,last1,first2,last2,defLessThan<T1,T2>);
 	}
 	template<class InputIterator1,class InputIterator2,class Compare>

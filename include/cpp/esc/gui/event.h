@@ -23,13 +23,13 @@
 #include <esc/common.h>
 #include <esc/gui/common.h>
 #include <esc/keycodes.h>
-#include <esc/stream.h>
 #include <ctype.h>
+#include <ostream>
 
 namespace esc {
 	namespace gui {
 		class MouseEvent {
-			friend Stream &operator<<(Stream &s,const MouseEvent &e);
+			friend ostream &operator<<(ostream &s,const MouseEvent &e);
 
 		public:
 			static const u8 MOUSE_MOVED		= 0;
@@ -97,7 +97,7 @@ namespace esc {
 		};
 
 		class KeyEvent {
-			friend Stream &operator<<(Stream &s,const KeyEvent &e);
+			friend ostream &operator<<(ostream &s,const KeyEvent &e);
 
 		public:
 			static const u8 KEY_PRESSED		= 0;
@@ -151,8 +151,8 @@ namespace esc {
 			u8 _modifier;
 		};
 
-		Stream &operator<<(Stream &s,const MouseEvent &e);
-		Stream &operator<<(Stream &s,const KeyEvent &e);
+		ostream &operator<<(ostream &s,const MouseEvent &e);
+		ostream &operator<<(ostream &s,const KeyEvent &e);
 	}
 }
 

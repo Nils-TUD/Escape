@@ -20,7 +20,6 @@
 #include <esc/common.h>
 #include <esc/gui/common.h>
 #include <esc/gui/color.h>
-#include <esc/stream.h>
 
 namespace esc {
 	namespace gui {
@@ -37,7 +36,7 @@ namespace esc {
 			return val;
 		}
 
-		Stream &operator<<(Stream &s,const Color &c) {
+		ostream &operator<<(ostream &s,const Color &c) {
 			s << "Color[" << c.getRed() << "," << c.getGreen() << "," << c.getBlue();
 			s << "," << c.getAlpha() << "]";
 			return s;

@@ -21,25 +21,32 @@
 #define BASIC_IOS_H_
 
 #include <impl/streams/ios_base.h>
-#include <impl/streams/basic_streambuf.h>
+#include <streambuf>
 
-namespace std {
-	template<class charT,class traits>
-	class basic_ostream;
+namespace esc {
+	class ostream;
 
 	/**
 	 * The base-class for all input- and output-streams. Provides a state, an exception-mask,
 	 * a fill-character, a stream-buffer and a tie-stream.
 	 */
-	template<class charT,class traits>
-	class basic_ios: public ios_base {
+	class ios: public ios_base {
 	public:
-		typedef charT char_type;
-		typedef typename traits::int_type int_type;
-		typedef typename traits::pos_type pos_type;
-		typedef typename traits::off_type off_type;
+		typedef char char_type;
+		typedef long int_type;
+		typedef unsigned long pos_type;
+		typedef unsigned long off_type;
 		typedef streamsize size_type;
-		typedef traits traits_type;
+
+		/**
+		 * Constructs an object of class ios, assigning initial values to its member
+		 * objects by calling init(sb).
+		 */
+		explicit ios(streambuf* sb);
+		/**
+		 * Destructor. Does not destroy rdbuf().
+		 */
+		virtual ~ios();
 
 		/**
 		 * @return If fail() then a null pointer; otherwise some non-null pointer to indicate
@@ -60,7 +67,7 @@ namespace std {
 		void clear(iostate state = goodbit);
 
 		/**
-		 * Calls clear(rdstate() | state ) (which may throw basic_ios::failure (27.4.2.1.1)).
+		 * Calls clear(rdstate() | state ) (which may throw ios::failure (27.4.2.1.1)).
 		 */
 		void setstate(iostate state);
 		/**
@@ -91,43 +98,33 @@ namespace std {
 		void exceptions(iostate except);
 
 		/**
-		 * Constructs an object of class basic_ios, assigning initial values to its member
-		 * objects by calling init(sb).
-		 */
-		explicit basic_ios(basic_streambuf<charT,traits>* sb);
-		/**
-		 * Destructor. Does not destroy rdbuf().
-		 */
-		virtual ~basic_ios();
-
-		/**
 		 * An output sequence that is tied to (synchronized with) the sequence controlled by the
 		 * stream buffer.
 		 */
-		basic_ostream<charT,traits>* tie() const;
+		ostream* tie() const;
 		/**
 		 * Sets tie() to <tiestr>.
 		 *
 		 * @return the previous value of tie()
 		 */
-		basic_ostream<charT,traits>* tie(basic_ostream<charT,traits>* tiestr);
+		ostream* tie(ostream* tiestr);
 		/**
 		 * @return a pointer to the streambuf associated with the stream.
 		 */
-		basic_streambuf<charT,traits>* rdbuf() const;
+		streambuf* rdbuf() const;
 		/**
 		 * Sets rdbuf() to <sb> and calls clear().
 		 *
 		 * @return the previous value of rdbuf()
 		 */
-		basic_streambuf<charT,traits>* rdbuf(basic_streambuf<charT,traits>* sb);
+		streambuf* rdbuf(streambuf* sb);
 		/**
 		 * Copies the state from the given stream to this one. Leaves rdstate() and rdbuf()
 		 * unchanged. Raises the event copyfmt_event.
 		 *
 		 * @return *this
 		 */
-		basic_ios& copyfmt(const basic_ios& rhs);
+		ios& copyfmt(const ios& rhs);
 		/**
 		 * @return the character used to pad (fill) an output conversion to the specified field width.
 		 */
@@ -144,25 +141,23 @@ namespace std {
 		 * shall be initialized by calling its init member function.
 		 * If it is destroyed before it has been initialized the behavior is undefined.
 		 */
-		basic_ios();
+		ios();
 		/**
 		 * Initializes the object
 		 */
-		void init(basic_streambuf<charT,traits>* sb);
+		void init(streambuf* sb);
 
 	private:
-		basic_ios(const basic_ios &); // not defined
-		basic_ios& operator =(const basic_ios &); // not defined
+		ios(const ios &); // not defined
+		ios& operator =(const ios &); // not defined
 
 	private:
 		char_type _fill;
 		iostate _rdst;
 		iostate _exceptions;
-		basic_ostream<charT,traits>* _tie;
-		basic_streambuf<charT,traits>* _rdbuf;
+		ostream* _tie;
+		streambuf* _rdbuf;
 	};
 }
-
-#include "../../../../lib/cpp/src/impl/streams/basic_ios.cc"
 
 #endif /* BASIC_IOS_H_ */

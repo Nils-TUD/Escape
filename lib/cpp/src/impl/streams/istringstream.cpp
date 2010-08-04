@@ -17,12 +17,25 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-namespace std {
-	template<class charT,class traits>
-	basic_iostream<charT,traits>::basic_iostream(basic_streambuf<charT,traits>* sb)
-		: basic_istream<charT,traits>(sb), basic_ostream<charT,traits>(sb) {
+#include <impl/streams/istringstream.h>
+
+namespace esc {
+	istringstream::istringstream(ios_base::openmode which)
+		: istream(new stringbuf(which)) {
 	}
-	template<class charT,class traits>
-	basic_iostream<charT,traits>::~basic_iostream() {
+	istringstream::istringstream(const string& s,ios_base::openmode which)
+		: istream(new stringbuf(s,which)) {
+	}
+	istringstream::~istringstream() {
+	}
+
+	stringbuf* istringstream::rdbuf() const {
+		return static_cast<stringbuf*>(ios::rdbuf());
+	}
+	string istringstream::str() const {
+		return rdbuf()->str();
+	}
+	void istringstream::str(const string& s) {
+		rdbuf()->str(s);
 	}
 }

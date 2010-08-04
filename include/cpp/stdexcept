@@ -22,15 +22,15 @@
 
 #include <stddef.h>
 #include <impl/exception/exception.h>
-#include <impl/string/basic_string.h>
+#include <string>
 
-namespace std {
+namespace esc {
 	/**
 	 * Logic errors represent problems in the internal logic of a program;
 	 * in theory, these are preventable, and even detectable before the
 	 * program runs (e.g., violations of class invariants).
 	 */
-	class logic_error: public exception {
+	class logic_error: public std::exception {
 	public:
 		/** Takes a character string describing the error.  */
 		explicit logic_error(const string& arg);
@@ -76,7 +76,7 @@ namespace std {
 	 *  the program executes.
 	 *  @brief One of two subclasses of exception.
 	 */
-	class runtime_error: public exception {
+	class runtime_error: public std::exception {
 	public:
 		/** Takes a character string describing the error.  */
 		explicit runtime_error(const string& arg);

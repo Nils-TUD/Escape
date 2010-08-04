@@ -20,7 +20,7 @@
 #include <impl/streams/ios_ops.h>
 #include <impl/streams/ios_base.h>
 
-namespace std {
+namespace esc {
 	ios_base& boolalpha(ios_base& str) {
 		str.setf(ios_base::boolalpha);
 		return str;

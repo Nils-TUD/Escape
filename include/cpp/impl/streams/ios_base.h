@@ -21,20 +21,21 @@
 #define IOS_BASE_H_
 
 #include <stddef.h>
-#include <string>
 #include <exception>
 #include <vector>
 #include <utility>
+#include <string>
+#include <new>
 
-namespace std {
-	typedef off_t streamoff;
+namespace esc {
+	typedef std::off_t streamoff;
 	typedef size_t streamsize;
 
 	class ios_base {
 	public:
-		class failure: public exception {
+		class failure: public std::exception {
 		public:
-			explicit failure(const string & msg);
+			explicit failure(const string& msg);
 			virtual const char* what() const throw();
 		private:
 			const char *_msg;
@@ -54,7 +55,7 @@ namespace std {
 			 * in init_cnt and, if the resulting stored value is one, calls cout.flush(),
 			 * cerr.flush(), clog.flush(), wcout.flush(), wcerr.flush(), wclog.flush().
 			 */
-			~ Init();
+			~Init();
 		private:
 			// counts the number of constructor and destructor calls for class Init,
 			// initialized to zero.
@@ -212,7 +213,7 @@ namespace std {
 		int get_base();
 		/**
 		 * Each ios_base member has an indeterminate value after construction. These members
-		 * shall be initialized by calling basic_ios::init. If an ios_base object is destroyed
+		 * shall be initialized by calling ios::init. If an ios_base object is destroyed
 		 * before these initializations have taken place, the behavior is undefined.
 		 */
 		ios_base();

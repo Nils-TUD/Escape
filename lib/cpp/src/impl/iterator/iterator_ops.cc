@@ -17,10 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
-#include <iterator>
-
-namespace std {
+namespace esc {
 	// returns the iterator-category for the given iterator
 	template<typename Iter>
 	static inline typename iterator_traits<Iter>::iterator_category iterator_category(const Iter&) {

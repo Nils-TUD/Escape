@@ -32,6 +32,7 @@
 #include <esc/gui/progressbar.h>
 #include <esc/gui/bitmapimage.h>
 #include <esc/date.h>
+
 using namespace esc::gui;
 
 ProgressBar *pb = NULL;

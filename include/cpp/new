@@ -1,0 +1,56 @@
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#ifndef NEW_
+#define NEW_
+
+#include <stddef.h>
+#include <exception>
+
+namespace std {
+	class bad_alloc: public exception {
+	public:
+		explicit bad_alloc();
+	};
+
+	typedef void (*new_handler)();
+
+	struct nothrow_t {
+	};
+}
+
+void* operator new(size_t size) throw (std::bad_alloc);
+void* operator new(size_t size,const std::nothrow_t& nothrow_constant) throw ();
+void* operator new(size_t size,void* ptr) throw ();
+
+void* operator new[](size_t size) throw (std::bad_alloc);
+void* operator new[](size_t size,const std::nothrow_t& nothrow_constant) throw ();
+void* operator new[](size_t size,void* ptr) throw ();
+
+void operator delete(void* ptr) throw ();
+void operator delete(void* ptr,const std::nothrow_t& nothrow_constant) throw ();
+void operator delete(void* ptr,void* voidptr2) throw ();
+
+void operator delete[](void* ptr) throw ();
+void operator delete[](void* ptr,const std::nothrow_t& nothrow_constant) throw ();
+void operator delete[](void* ptr,void* voidptr2) throw ();
+
+std::new_handler set_new_handler(std::new_handler new_p) throw ();
+
+#endif /* NEW_ */

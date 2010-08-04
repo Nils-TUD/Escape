@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <list>
 
-using namespace std;
+using namespace esc;
 
 /* forward declarations */
 static void test_list(void);

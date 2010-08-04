@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-namespace std {
+namespace esc {
 	template<class T>
 	inline T plus<T>::operator()(const T& x,const T& y) {
 		return x + y;

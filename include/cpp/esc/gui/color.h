@@ -23,7 +23,7 @@
 #include <esc/common.h>
 #include <esc/gui/common.h>
 #include <esc/gui/application.h>
-#include <esc/stream.h>
+#include <ostream>
 
 namespace esc {
 	namespace gui {
@@ -72,7 +72,7 @@ namespace esc {
 			u32 _color;
 		};
 
-		Stream &operator<<(Stream &s,const Color &c);
+		ostream &operator<<(ostream &s,const Color &c);
 	}
 }
 

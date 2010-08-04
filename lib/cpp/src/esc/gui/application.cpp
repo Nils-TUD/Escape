@@ -24,10 +24,10 @@
 #include <esc/messages.h>
 #include <esc/mem.h>
 #include <esc/thread.h>
-#include <esc/stream.h>
 #include <esc/gui/application.h>
 #include <esc/gui/window.h>
 #include <esc/gui/popupwindow.h>
+
 namespace esc {
 	namespace gui {
 		Application *Application::_inst = NULL;

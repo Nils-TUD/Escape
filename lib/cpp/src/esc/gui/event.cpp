@@ -20,18 +20,17 @@
 #include <esc/common.h>
 #include <esc/gui/common.h>
 #include <esc/gui/event.h>
-#include <esc/stream.h>
 
 namespace esc {
 	namespace gui {
-		Stream &operator<<(Stream &s,const MouseEvent &e) {
+		ostream &operator<<(ostream &s,const MouseEvent &e) {
 			s << "MouseEvent[mx=" << e._movedx << ",my=" << e._movedy;
 			s << ",x=" << e._x << ",y=" << e._y;
 			s.format(",buttons=%#x]",e._buttons);
 			return s;
 		}
 
-		Stream &operator<<(Stream &s,const KeyEvent &e) {
+		ostream &operator<<(ostream &s,const KeyEvent &e) {
 			s << "KeyEvent[keycode=" << e._keycode << ",char=" << e._character;
 			s.format(",modifier=%#x]",e._modifier);
 			return s;

@@ -21,10 +21,154 @@
 #define OSTREAM_
 
 #include <stddef.h>
-#include <impl/streams/basic_ostream.h>
+#include <impl/streams/ios.h>
+#include <impl/streams/ios_base.h>
 
-namespace std {
-	typedef basic_ostream<char> ostream;
+namespace esc {
+	/**
+	 * The basic output-stream that provides formated- and unformated-output-methods.
+	 */
+	class ostream: virtual public ios {
+	public:
+		typedef ios::char_type char_type;
+		typedef ios::int_type int_type;
+		typedef ios::size_type size_type;
+		typedef ios::pos_type pos_type;
+		typedef ios::off_type off_type;
+
+		/**
+		 * Constructs a new output-stream with given streambuffer
+		 */
+		explicit ostream(streambuf* sb);
+		/**
+		 * Destructor
+		 */
+		virtual ~ostream();
+
+		/**
+		 * For pre- and post-operations
+		 */
+		class sentry {
+		public:
+			/**
+			 * If os.good() is nonzero, prepares for formatted or unformatted output.
+			 */
+			explicit sentry(ostream& os);
+			/**
+			 * Destructor
+			 */
+			~sentry();
+			/**
+			 * @return wether everything is ok
+			 */
+			operator bool() const;
+		private:
+			sentry(const sentry &); // not defined
+			sentry & operator =(const sentry &); // not defined
+
+		private:
+			bool _ok;
+			ostream& _os;
+		};
+
+		/**
+		 * Provides printf()-like formatting.
+		 *
+		 * @param fmt the format
+		 * @param ap the argument-pointer
+		 * @return *this
+		 */
+		ostream& format(const char *fmt,...);
+		ostream& format(const char *fmt,va_list ap);
+
+		/**
+		 * Calls pf(*this) and returns *this
+		 */
+		ostream& operator <<(ostream& (*pf)(ostream&));
+		ostream& operator <<(ios& (*pf)(ios&));
+		ostream& operator <<(ios_base & (*pf)(ios_base &));
+
+		/**
+		 * Writes the given integer or floating-point-number into the output-stream
+		 *
+		 * @param n the integer
+		 * @param f the floating-point-number
+		 * @param p the pointer
+		 */
+		ostream& operator <<(bool n);
+		ostream& operator <<(short n);
+		ostream& operator <<(unsigned short n);
+		ostream& operator <<(int n);
+		ostream& operator <<(unsigned int n);
+		ostream& operator <<(long n);
+		ostream& operator <<(unsigned long n);
+		ostream& operator <<(float f);
+		ostream& operator <<(double f);
+		ostream& operator <<(long double f);
+		ostream& operator <<(const void * p);
+
+		ostream& operator <<(streambuf* sb);
+
+		/**
+		 * Writes the given character into the output-stream
+		 *
+		 * @param c the character
+		 * @return *this
+		 */
+		ostream& put(char_type c);
+		/**
+		 * Writes <n> characters from the given string into the stream
+		 *
+		 * @param s the string
+		 * @param n the number of chars to write
+		 * @return *this
+		 */
+		ostream& write(const char_type * s,streamsize n);
+		/**
+		 * Flushes the buffer
+		 */
+		ostream& flush();
+
+		/* TODO
+		 * pos_type tellp();
+		ostream& seekp(pos_type);
+		ostream& seekp(off_type,ios_base::seekdir);*/
+
+	private:
+		void writeSigned(signed long n);
+		void writeUnsigned(unsigned long u);
+		void writeDouble(long double d);
+		void writeSChars(signed long n);
+		void writeUChars(unsigned long u,unsigned int base,const char *hexchars);
+		void writeDoubleChars(long double d);
+		void writePad(streamsize count);
+
+	private:
+		streambuf* _sb;
+	};
+
+	/**
+	 * Writes the given character into the given stream
+	 */
+	ostream& operator <<(ostream&,char);
+
+	/**
+	 * Writes the given string into the given stream
+	 */
+	ostream& operator <<(ostream&,const char *);
+
+	/**
+	 * Writes a newline into the given stream
+	 */
+	ostream& endl(ostream& os);
+	/**
+	 * Writes a null-character into the given stream
+	 */
+	ostream& ends(ostream& os);
+	/**
+	 * Flushes the given stream
+	 */
+	ostream& flush(ostream& os);
 }
 
 #endif /* OSTREAM_ */

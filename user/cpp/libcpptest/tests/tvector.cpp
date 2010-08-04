@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <vector>
 
-using namespace std;
+using namespace esc;
 
 /* forward declarations */
 static void test_vector(void);

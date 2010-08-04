@@ -24,6 +24,7 @@
 #include <esc/gui/common.h>
 #include <esc/gui/control.h>
 #include <esc/gui/color.h>
+#include <string>
 
 namespace esc {
 	namespace gui {
@@ -38,7 +39,7 @@ namespace esc {
 			ProgressBar(tCoord x,tCoord y,tSize width,tSize height)
 				: Control(x,y,width,height), _position(0), _text("") {
 			};
-			ProgressBar(const String &text,tCoord x,tCoord y,tSize width,tSize height)
+			ProgressBar(const esc::string &text,tCoord x,tCoord y,tSize width,tSize height)
 				: Control(x,y,width,height), _position(0), _text(text) {
 			};
 			ProgressBar(const ProgressBar &b)
@@ -56,10 +57,10 @@ namespace esc {
 				_position = MIN(100,pos);
 				repaint();
 			};
-			inline String getText() const {
+			inline esc::string getText() const {
 				return _text;
 			};
-			inline void setText(const String &text) {
+			inline void setText(const esc::string &text) {
 				_text = text;
 				repaint();
 			};
@@ -68,7 +69,7 @@ namespace esc {
 
 		private:
 			u32 _position;
-			String _text;
+			esc::string _text;
 		};
 	}
 }

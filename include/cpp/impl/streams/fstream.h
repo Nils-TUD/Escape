@@ -20,37 +20,36 @@
 #ifndef BASIC_FSTREAM_H_
 #define BASIC_FSTREAM_H_
 
-#include <impl/streams/basic_filebuf.h>
-#include <impl/streams/basic_iostream.h>
+#include <impl/streams/filebuf.h>
+#include <iostream>
 
-namespace std {
+namespace esc {
 	/**
 	 * A file-stream for input- and output-operations
 	 */
-	template<class charT,class traits = char_traits<charT> >
-	class basic_fstream: public basic_iostream<charT,traits> {
+	class fstream: public iostream {
 	public:
 		/**
 		 * Builds a new file-stream
 		 */
-		basic_fstream();
+		fstream();
 		/**
 		 * Builds a new file-stream and opens the given file
 		 *
 		 * @param filename the file to open
 		 * @param which the openmode (in|out by default)
 		 */
-		explicit basic_fstream(const char* filename,
+		explicit fstream(const char* filename,
 				ios_base::openmode which = ios_base::out | ios_base::in);
 		/**
 		 * Destructor
 		 */
-		virtual ~basic_fstream();
+		virtual ~fstream();
 
 		/**
 		 * @return the file-buffer
 		 */
-		basic_filebuf<charT,traits>* rdbuf() const;
+		filebuf* rdbuf() const;
 		/**
 		 * Opens the file <s> with given open-mode
 		 *
@@ -68,7 +67,5 @@ namespace std {
 		void close();
 	};
 }
-
-#include "../../../../lib/cpp/src/impl/streams/basic_fstream.cc"
 
 #endif /* BASIC_FSTREAM_H_ */

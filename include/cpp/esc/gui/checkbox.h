@@ -24,6 +24,7 @@
 #include <esc/gui/common.h>
 #include <esc/gui/control.h>
 #include <esc/gui/color.h>
+#include <string>
 
 namespace esc {
 	namespace gui {
@@ -39,9 +40,9 @@ namespace esc {
 
 		public:
 			Checkbox(tCoord x,tCoord y,tSize width,tSize height)
-				: Control(x,y,width,height), _focused(false), _checked(false), _text(String()) {
+				: Control(x,y,width,height), _focused(false), _checked(false), _text(string()) {
 			};
-			Checkbox(const String &text,tCoord x,tCoord y,tSize width,tSize height)
+			Checkbox(const string &text,tCoord x,tCoord y,tSize width,tSize height)
 				: Control(x,y,width,height), _focused(false), _checked(false), _text(text) {
 			};
 			Checkbox(const Checkbox &b)
@@ -55,10 +56,10 @@ namespace esc {
 			inline bool isChecked() const {
 				return _checked;
 			};
-			inline String getText() const {
+			inline string getText() const {
 				return _text;
 			};
-			inline void setText(const String &text) {
+			inline void setText(const string &text) {
 				_text = text;
 				repaint();
 			};
@@ -75,7 +76,7 @@ namespace esc {
 		private:
 			bool _focused;
 			bool _checked;
-			String _text;
+			string _text;
 		};
 	}
 }

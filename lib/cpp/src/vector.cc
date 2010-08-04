@@ -17,12 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stddef.h>
-#include <limits.h>
-#include <exception>
-#include <vector>
-
-namespace std {
+namespace esc {
 	// === constructors ===
 	template<class T>
 	inline vector<T>::vector()

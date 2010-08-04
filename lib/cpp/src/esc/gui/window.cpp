@@ -26,7 +26,9 @@
 #include <esc/gui/uielement.h>
 #include <esc/gui/color.h>
 #include <esc/gui/graphicfactory.h>
-#include <esc/string.h>
+#include <string>
+#include <ostream>
+
 namespace esc {
 	namespace gui {
 		Color Window::BGCOLOR = Color(0x88,0x88,0x88);
@@ -37,7 +39,7 @@ namespace esc {
 
 		tWinId Window::NEXT_TMP_ID = 0xFFFF;
 
-		Window::Window(const String &title,tCoord x,tCoord y,tSize width,tSize height,u8 style)
+		Window::Window(const string &title,tCoord x,tCoord y,tSize width,tSize height,u8 style)
 			: UIElement(x,y,MAX(MIN_WIDTH,width),MAX(MIN_HEIGHT,height)),
 				_id(NEXT_TMP_ID--), _created(false), _style(style),
 				_title(title), _titleBarHeight(20), _inTitle(false), _inResizeLeft(false),
@@ -348,8 +350,8 @@ namespace esc {
 			repaint();
 		}
 
-		Stream &operator<<(Stream &s,const Window &w) {
-			String title = w.getTitle();
+		ostream &operator<<(ostream &s,const Window &w) {
+			string title = w.getTitle();
 			s << "Window[id=" << w.getId() << " @" << w.getX() << "," << w.getY();
 			s << " size=" << w.getWidth() << ",";
 			s << w.getHeight() << " title=" << title << "]";

@@ -46,6 +46,11 @@ static u8 util_waitForKey(void);
 extern u32 kernelStack;
 static u64 profStart;
 
+/* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */
+static u32 randa = 1103515245;
+static u32 randc = 12345;
+static u32 lastRand = 0;
+
 void util_panic(const char *fmt,...) {
 	u32 regs[REG_COUNT];
 	sIntrptStackFrame *istack = intrpt_getCurStack();
@@ -106,6 +111,17 @@ void util_panic(const char *fmt,...) {
 	intrpt_setEnabled(false);
 	while(1)
 		util_halt();
+}
+
+s32 util_rand(void) {
+	s32 res;
+	lastRand = randa * lastRand + randc;
+	res = (s32)((u32)(lastRand / 65536) % 32768);
+	return res;
+}
+
+void util_srand(u32 seed) {
+	lastRand = seed;
 }
 
 u8 util_waitForKeyPress(void) {
@@ -219,8 +235,9 @@ sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 rend,u32 mstart,u32 mend) 
 
 	for(i = 0; i < MAX_STACK_DEPTH; i++) {
 		/* adjust it if we're in the kernel-stack but are using the temp-area (to print the trace
-		 * for another thread) */
-		if((u32)ebp >= rstart && (u32)ebp < rend + PAGE_SIZE)
+		 * for another thread). don't do this for the temp-kernel-stack */
+		if(rstart != ((u32)&kernelStack) - TMP_STACK_SIZE &&
+				(u32)ebp >= rstart && (u32)ebp < rend + PAGE_SIZE)
 			ebp = (u32*)(mstart + ((u32)ebp & (PAGE_SIZE - 1)));
 		/* prevent page-fault */
 		if((u32)ebp < mstart || (u32)ebp >= mend)

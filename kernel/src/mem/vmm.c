@@ -46,7 +46,6 @@
 static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr);
 static u8 *vmm_getPageFlag(sVMRegion *reg,u32 addr);
 static tVMRegNo vmm_getRNoByRegion(sProc *p,sRegion *reg);
-static tVMRegNo vmm_getRegionOf(sProc *p,u32 addr);
 static s32 vmm_findRegIndex(sProc *p,bool text);
 static u32 vmm_findFreeStack(sProc *p,u32 byteCount);
 static sVMRegion *vmm_isOccupied(sProc *p,u32 start,u32 end);
@@ -97,22 +96,21 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 t
 	tVMRegNo rno;
 	s32 res;
 	u32 virt,pgFlags,flags;
-	/* first, get the attributes of the region (depending on type) */
+
+	/* for text and shared-library-text: try to find another process with that text */
+	if(bin && (type == REG_TEXT || type == REG_SHLIBTEXT)) {
+		tVMRegNo prno;
+		sProc *binowner = proc_getProcWithBin(bin,&prno);
+		if(binowner)
+			return vmm_join(binowner,prno,p);
+	}
+
+	/* get the attributes of the region (depending on type) */
 	if((res = vmm_getAttr(p,type,bCount,&pgFlags,&flags,&virt,&rno)) < 0)
 		return res;
-
 	/* no demand-loading if the binary isn't present */
 	if(bin == NULL)
 		pgFlags &= ~PF_DEMANDLOAD;
-	else {
-		/* for text and shared-library-text: try to find another process with that text */
-		if(type == REG_TEXT || type == REG_SHLIBTEXT) {
-			tVMRegNo prno;
-			sProc *binowner = proc_getProcWithBin(bin,&prno);
-			if(binowner)
-				return vmm_join(binowner,prno,p);
-		}
-	}
 
 	/* create region */
 	reg = reg_create(bin,binOffset,bCount,lCount,pgFlags,flags);
@@ -155,6 +153,61 @@ errAdd:
 errReg:
 	reg_destroy(reg);
 	return ERR_NOT_ENOUGH_MEM;
+}
+
+void vmm_swapOut(sProc *p,tVMRegNo rno,u32 addr) {
+	sSLNode *n;
+	sVMRegion *vm = REG(p,rno);
+	u32 index = (addr - vm->virt) / PAGE_SIZE;
+	vm->reg->pageFlags[index] |= PF_SWAPPED;
+	u32 frameNo = paging_getFrameNo(p->pagedir,addr);
+	for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
+		sProc *mp = (sProc*)n->data;
+		/* the region may be mapped to a different virtual address */
+		tVMRegNo mprno = vmm_getRNoByRegion(mp,vm->reg);
+		sVMRegion *mpreg = REG(mp,mprno);
+		assert(mprno != -1);
+		sAllocStats stats = paging_unmapFrom(mp->pagedir,mpreg->virt + (addr - vm->virt),1,false);
+		/* one more for the frame, that we'll free manually */
+		if(vm->reg->flags & RF_SHAREABLE)
+			mp->sharedFrames -= stats.frames + 1;
+		else
+			mp->ownFrames -= stats.frames + 1;
+		mp->ownFrames -= stats.ptables;
+	}
+	mm_freeFrame(frameNo,MM_DEF);
+}
+
+u32 vmm_countSwappablePages(sProc *p) {
+	u32 i,count = 0;
+	for(i = 0; i < p->regSize; i++) {
+		sVMRegion *vm = REG(p,i);
+		if(vm && !(vm->reg->flags & RF_NOFREE)) {
+			u32 j,pages = BYTES_2_PAGES(vm->reg->byteCount);
+			for(j = 0; j < pages; j++) {
+				if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_COPYONWRITE)))
+					count++;
+			}
+		}
+	}
+	return count;
+}
+
+u32 vmm_getAddrForSwap(sProc *p,u32 index) {
+	u32 i;
+	for(i = 0; i < p->regSize; i++) {
+		sVMRegion *vm = REG(p,i);
+		if(vm && !(vm->reg->flags & RF_NOFREE)) {
+			u32 j,pages = BYTES_2_PAGES(vm->reg->byteCount);
+			for(j = 0; j < pages; j++) {
+				if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_COPYONWRITE))) {
+					if(index-- == 0)
+						return vm->virt + j * PAGE_SIZE;
+				}
+			}
+		}
+	}
+	return 0;
 }
 
 bool vmm_exists(sProc *p,tVMRegNo reg) {
@@ -211,6 +264,20 @@ void vmm_getMemUsage(sProc *p,u32 *paging,u32 *data) {
 	*data = pdata;
 	/* + pagedir, page-table for kstack and kstack */
 	*paging = ppaging + 3;
+}
+
+sSLList *vmm_getUsersOf(sProc *p,tVMRegNo rno) {
+	return REG(p,rno)->reg->procs;
+}
+
+tVMRegNo vmm_getRegionOf(sProc *p,u32 addr) {
+	u32 i;
+	for(i = 0; i < p->regSize; i++) {
+		sVMRegion *vm = REG(p,i);
+		if(vm && addr >= vm->virt && addr < vm->virt + ROUNDUP(vm->reg->byteCount))
+			return i;
+	}
+	return -1;
 }
 
 void vmm_getRegRange(sProc *p,tVMRegNo reg,u32 *start,u32 *end) {
@@ -373,6 +440,9 @@ s32 vmm_cloneAll(sProc *dst) {
 	sThread *t = thread_getRunning();
 	sProc *src = proc_getRunning();
 	assert(dst && dst->regions == NULL && dst->regSize == 0);
+	/* nothing to do? */
+	if(src->regSize == 0)
+		return 0;
 	/* create array */
 	regs = (sVMRegion **)kheap_calloc(src->regSize,sizeof(sVMRegion*));
 	if(regs == NULL)
@@ -636,16 +706,6 @@ static tVMRegNo vmm_getRNoByRegion(sProc *p,sRegion *reg) {
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
 		if(vm && vm->reg == reg)
-			return i;
-	}
-	return -1;
-}
-
-static tVMRegNo vmm_getRegionOf(sProc *p,u32 addr) {
-	u32 i;
-	for(i = 0; i < p->regSize; i++) {
-		sVMRegion *vm = REG(p,i);
-		if(vm && addr >= vm->virt && addr < vm->virt + ROUNDUP(vm->reg->byteCount))
 			return i;
 	}
 	return -1;

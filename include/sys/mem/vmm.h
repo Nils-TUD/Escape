@@ -88,6 +88,36 @@ u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount);
 tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 type);
 
 /**
+ * Swaps the page at given address in given region from process <p> out. I.e. it marks the page
+ * as swapped in the region and unmaps it from all affected processes.
+ *
+ * @param p the process
+ * @param rno the region-number in which the address is
+ * @param addr the address (page-aligned!)
+ */
+void vmm_swapOut(sProc *p,tVMRegNo rno,u32 addr);
+
+/**
+ * Counts the number of pages of the given process that can still be swapped out, i.e. are not
+ * already swapped out and its possible for the pages.
+ *
+ * @param p the process
+ * @return the number of pages
+ */
+u32 vmm_countSwappablePages(sProc *p);
+
+/**
+ * Determines the virtual address for given process with the given index. I.e. it walks through
+ * all swappable pages (see vmm_countSwappablePages()) and returns the address of the page when
+ * the desired index is reached.
+ *
+ * @param p the process
+ * @param index the index of the page (in the swappable pages)
+ * @return the virtual address. 0 indicates failure
+ */
+u32 vmm_getAddrForSwap(sProc *p,u32 index);
+
+/**
  * Tests wether the region with given number exists
  *
  * @param p the process
@@ -112,6 +142,20 @@ tVMRegNo vmm_getDLDataReg(sProc *p);
  * @param data the number of data-pages
  */
 void vmm_getMemUsage(sProc *p,u32 *paging,u32 *data);
+
+/**
+ * @param p the process
+ * @param rno the region-number
+ * @return a linked list with all processes that use the given region
+ */
+sSLList *vmm_getUsersOf(sProc *p,tVMRegNo rno);
+
+/**
+ * @param p the process
+ * @param addr the virtual address
+ * @return the region-number to which the given virtual address belongs
+ */
+tVMRegNo vmm_getRegionOf(sProc *p,u32 addr);
 
 /**
  * Queries the start- and end-address of a region

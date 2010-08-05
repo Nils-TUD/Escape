@@ -51,6 +51,14 @@ extern "C" {
 sSLList *sll_create(void);
 
 /**
+ * Clones the given list
+ *
+ * @param list the list
+ * @return a clone of it
+ */
+sSLList *sll_clone(sSLList *list);
+
+/**
  * Destroyes the given list
  *
  * @param list the list

@@ -269,12 +269,16 @@ void *_kheap_alloc(u32 size) {
 
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
-		u32* ebp = (u32*)getStackFrameStart();
-		u32 symaddr = *(ebp + 1) - 5;
-		sSymbol *sym = ksym_getSymbolAt(symaddr);
-		vid_printf("[A] p=%s a=%08x s=%d c=%s\n",proc_getRunning()->command,area->address,area->size,
-				sym->funcName);
-		util_printStackTrace(util_getKernelStackTrace());
+		sFuncCall *trace = util_getKernelStackTrace();
+		u32 i = 0;
+		vid_printf("[A] %x %d ",area->address,area->size);
+		while(trace->addr != 0 && i++ < 10) {
+			vid_printf("%x",trace->addr);
+			trace++;
+			if(trace->addr)
+				vid_printf(" ");
+		}
+		vid_printf("\n");
 	}
 #endif
 
@@ -347,11 +351,16 @@ void _kheap_free(void *addr) {
 
 #if DEBUG_ALLOC_N_FREE
 	if(aafEnabled) {
-		u32* ebp = (u32*)getStackFrameStart();
-		u32 symaddr = *(ebp + 1) - 5;
-		sSymbol *sym = ksym_getSymbolAt(symaddr);
-		vid_printf("[F] p=%s a=%08x s=%d c=%s\n",
-				proc_getRunning()->command,addr,area->size,sym->funcName);
+		sFuncCall *trace = util_getKernelStackTrace();
+		u32 i = 0;
+		vid_printf("[F] %x %d ",addr,area->size);
+		while(trace->addr != 0 && i++ < 10) {
+			vid_printf("%x",trace->addr);
+			trace++;
+			if(trace->addr)
+				vid_printf(" ");
+		}
+		vid_printf("\n");
 	}
 #endif
 

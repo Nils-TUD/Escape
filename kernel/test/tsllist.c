@@ -35,6 +35,7 @@ static void test_6(void);
 static void test_7(void);
 static void test_8(void);
 static void test_9(void);
+static void test_10(void);
 
 /* our test-module */
 sTestModule tModSLList = {
@@ -52,6 +53,7 @@ static void test_sllist(void) {
 	test_7();
 	test_8();
 	test_9();
+	test_10();
 }
 
 static void test_1(void) {
@@ -287,6 +289,29 @@ static void test_9(void) {
 	test_assertPtr(sll_nodeWith(list,(void*)0x456),sll_nodeAt(list,1));
 	test_assertPtr(sll_nodeWith(list,(void*)0x789),sll_nodeAt(list,2));
 	test_assertPtr(sll_nodeWith(list,(void*)0x123123),NULL);
+
+	test_caseSucceded();
+}
+
+static void test_10(void) {
+	sSLList *l1,*l2;
+	test_caseStart("Testing sll_clone");
+
+	l1 = sll_create();
+	sll_append(l1,(void*)4);
+	sll_append(l1,(void*)3);
+	sll_append(l1,(void*)2);
+	l2 = sll_clone(l1);
+	test_assertUInt(sll_length(l2),3);
+	test_assertInt((s32)sll_get(l2,0),4);
+	test_assertInt((s32)sll_get(l2,1),3);
+	test_assertInt((s32)sll_get(l2,2),2);
+	sll_destroy(l1,false);
+	sll_destroy(l2,false);
+
+	l1 = sll_create();
+	l2 = sll_clone(l1);
+	test_assertUInt(sll_length(l2),0);
 
 	test_caseSucceded();
 }

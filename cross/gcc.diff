@@ -23,7 +23,13 @@ diff -rcN src/gcc_org/gcc/config/escape.h src/gcc/gcc/config/escape.h
 --- src/gcc/gcc/config/escape.h	2010-07-05 21:46:54.000000000 +0200
 ***************
 *** 0 ****
---- 1,11 ----
+--- 1,17 ----
++   #undef   STARTFILE_SPEC
++   #define STARTFILE_SPEC "%{shared|pie:crt0S.o%s;:crt0.o%s} %{shared:crt1S.o%s;:crt1.o%s} %{static:crtbeginT.o%s;shared|pie:crtbeginS.o%s;:crtbegin.o%s}"
++   
++   #undef   ENDFILE_SPEC
++   #define ENDFILE_SPEC "%{shared|pie:crtendS.o%s;:crtend.o%s} %{shared:crtnS.o%s;:crtn.o%s}"
++   
 +   #undef TARGET_OS_CPP_BUILTINS
 +   #define TARGET_OS_CPP_BUILTINS()      \
 +     do {                                \
@@ -45,7 +51,7 @@ diff -rcN src/gcc_org/gcc/config.gcc src/gcc/gcc/config.gcc
   # Common parts for widely ported systems.
   case ${target} in
 + *-*-escape*)
-+   extra_parts="crtbegin.o crtend.o"
++   extra_parts="crtbegin.o crtbeginS.o crtend.o crtendS.o"
 +   gas=yes
 +   gnu_ld=yes
 +   default_use_cxa_atexit=yes

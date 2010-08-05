@@ -64,6 +64,7 @@ ln -sf $DIST/bin/$TARGET-gcc $DIST/bin/$TARGET-cc
 make all-target-libgcc
 make install-target-libgcc
 
+if [ false ]; then
 # newlib
 cd $ROOT
 if [ $REBUILD -eq 1 ]; then
@@ -108,6 +109,7 @@ if [ $REBUILD -eq 1 ]; then
 fi
 make
 make install
+fi
 
 # libstdc++
 export PATH=$PATH:$PREFIX/bin
@@ -126,6 +128,5 @@ make install
 
 
 # create basic symlinks
-#rm -Rf $DIST/$TARGET/sys-include
-#ln -sf $ROOT/../include $DIST/$TARGET/sys-include
-
+rm -Rf $DIST/$TARGET/sys-include
+ln -sf $ROOT/../include $DIST/$TARGET/sys-include

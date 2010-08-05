@@ -210,7 +210,7 @@ void *_malloc(size_t size) {
 		while(*trace && i++ < 10) {
 			debugf("%x",*trace);
 			if(trace[1])
-				debugf(",");
+				debugf(" ");
 			trace++;
 		}
 		debugf("\n");
@@ -296,7 +296,7 @@ void _free(void *addr) {
 		while(*trace && i++ < 10) {
 			debugf("%x",*trace);
 			if(trace[1])
-				debugf(",");
+				debugf(" ");
 			trace++;
 		}
 		debugf("\n");

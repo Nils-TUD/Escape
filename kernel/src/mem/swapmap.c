@@ -61,7 +61,7 @@ struct sSwMapArea {
 	/* a linked list of processes that use this area; if no text-sharing and no shared-mem the list
 	 * is NULL. otherwise it is the list that is managed by text or shared-mem (no copy!!) */
 	sSLList *procs;
-	/* the process that allocated the area */
+	/* the process that allocated the area; TODO we can remove that */
 	tPid pid;
 	/* whether this area is free or not (16bit to fill the whole) */
 	u16 free;

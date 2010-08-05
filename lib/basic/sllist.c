@@ -72,6 +72,20 @@ sSLList *sll_create(void) {
 	return (sSLList*)l;
 }
 
+sSLList *sll_clone(sSLList *list) {
+	sSLNode *n;
+	sSLList *l = sll_create();
+	if(!l)
+		return NULL;
+	for(n = sll_begin(list); n != NULL; n = n->next) {
+		if(!sll_append(l,n->data)) {
+			sll_destroy(l,false);
+			return NULL;
+		}
+	}
+	return l;
+}
+
 void sll_destroy(sSLList *list,bool freeData) {
 	/* free nodes */
 	sList *l = (sList*)list;

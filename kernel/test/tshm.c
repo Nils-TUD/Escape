@@ -83,39 +83,50 @@ static void test_2(void) {
 	test_assertInt(proc_clone(pid2,false),0);
 	child2 = proc_getByPid(pid2);
 
+	test_init();
 	/* create dummy-regions to force vmm to extend the regions-array. this way we can check
 	 * wether all memory is freed correctly */
 	reg1 = vmm_add(child1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg1 >= 0);
 	reg2 = vmm_add(child2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
 	test_assertTrue(reg2 >= 0);
-
-	test_init();
 	test_assertTrue(shm_create(p,"myshm",3) >= 0);
 	test_assertTrue(shm_join(child1,"myshm") >= 0);
 	test_assertTrue(shm_join(child2,"myshm") >= 0);
 	test_assertTrue(shm_leave(child1,"myshm") >= 0);
 	test_assertTrue(shm_leave(child2,"myshm") >= 0);
 	test_assertTrue(shm_destroy(p,"myshm") == 0);
+	vmm_remove(child2,reg2);
+	vmm_remove(child1,reg1);
 	test_finish();
 
 	test_init();
+	reg1 = vmm_add(child1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
+	test_assertTrue(reg1 >= 0);
+	reg2 = vmm_add(child2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
+	test_assertTrue(reg2 >= 0);
 	test_assertTrue(shm_create(p,"myshm",3) >= 0);
 	test_assertTrue(shm_join(child1,"myshm") >= 0);
 	test_assertTrue(shm_join(child2,"myshm") >= 0);
 	test_assertTrue(shm_destroy(p,"myshm") == 0);
+	vmm_remove(child2,reg2);
+	vmm_remove(child1,reg1);
 	test_finish();
 
 	test_init();
+	reg1 = vmm_add(child1,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
+	test_assertTrue(reg1 >= 0);
+	reg2 = vmm_add(child2,NULL,0,PAGE_SIZE,PAGE_SIZE,REG_SHM);
+	test_assertTrue(reg2 >= 0);
 	test_assertTrue(shm_create(p,"myshm",6) >= 0);
 	test_assertTrue(shm_join(child1,"myshm") >= 0);
 	test_assertTrue(shm_join(child2,"myshm") >= 0);
 	shm_remProc(child2);
 	shm_remProc(p);
-	test_finish();
-
 	vmm_remove(child2,reg2);
 	vmm_remove(child1,reg1);
+	test_finish();
+
 	proc_kill(child1);
 	proc_kill(child2);
 

@@ -33,6 +33,7 @@
 
 /* for marking unused */
 #define INVALID_PID			(PROC_COUNT + 2)
+#define ATA_PID				1
 
 /* the events we can wait for */
 #define EV_NOEVENT			0
@@ -152,6 +153,16 @@ u32 proc_getCount(void);
  * @return the process with the binary or NULL if not found
  */
 sProc *proc_getProcWithBin(sBinDesc *bin,tVMRegNo *rno);
+
+/**
+ * Collects all processes that are candicates for swapping.
+ * Note that YOU HAVE TO free the memory if the return-value is not 0!
+ *
+ * @param p a pointer to an array of processes
+ * @param pages a pointer to an array with the number of pages available for swapping for each process
+ * @return the number of processes found
+ */
+u32 proc_getProcsForSwap(sProc ***p,u32 **pages);
 
 /**
  * Finds the least recently used process where something can be swapped. The current one is excluded.

@@ -104,6 +104,19 @@ extern u32 getStackFrameStart(void);
 void util_panic(const char *fmt,...);
 
 /**
+ * Rand will generate a random number between 0 and 'RAND_MAX' (at least 32767).
+ *
+ * @return the random number
+ */
+s32 util_rand(void);
+
+/**
+ * Srand seeds the random number generation function rand so it does not produce the same
+ * sequence of numbers.
+ */
+void util_srand(u32 seed);
+
+/**
  * Waits until any key is pressed (make-code)
  *
  * @return the scancode

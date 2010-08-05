@@ -162,6 +162,34 @@ sProc *proc_getProcWithBin(sBinDesc *bin,tVMRegNo *rno) {
 	return NULL;
 }
 
+u32 proc_getProcsForSwap(sProc ***p,u32 **pages) {
+	u32 i,count = 0;
+	for(i = 0; i < PROC_COUNT; i++) {
+		if(procs[i].pid != INVALID_PID && i != ATA_PID)
+			count++;
+	}
+	*p = (sProc**)kheap_alloc(count * sizeof(sProc*));
+	*pages = (u32*)kheap_alloc(count * sizeof(u32));
+	if(!*p || !*pages)
+		return 0;
+	count = 0;
+	for(i = 0; i < PROC_COUNT; i++) {
+		if(procs[i].pid != INVALID_PID && i != ATA_PID) {
+			u32 pgcount = vmm_countSwappablePages(procs + i);
+			if(pgcount) {
+				(*p)[count] = procs + i;
+				(*pages)[count] = pgcount;
+				count++;
+			}
+		}
+	}
+	if(count == 0) {
+		kheap_free(*p);
+		kheap_free(*pages);
+	}
+	return count;
+}
+
 sProc *proc_getLRUProc(void) {
 	u32 i;
 	sProc *cur = proc_getRunning();

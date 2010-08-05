@@ -26,6 +26,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/swap.h>
 #include <sys/mem/swapmap.h>
+#include <sys/mem/vmm.h>
 #include <sys/video.h>
 #include <sys/config.h>
 #include <string.h>
@@ -42,14 +43,14 @@
 
 #define MAX_SWAP_AT_ONCE	10
 
-#define vid_printf(...)
+/*#define vid_printf(...)*/
 
 static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr);
 static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr);
-static sSLList *swap_getAffectedProcs(sProc *p,u32 addr,u8 *type);
-static void swap_freeAffectedProcs(sSLList *procs,u8 type);
+static sSLList *swap_getAffectedProcs(sProc *p,tVMRegNo *rno,u32 addr);
+static void swap_freeAffectedProcs(sSLList *procs);
 static u32 swap_getPageAddr(sProc *p,sProc *other,u32 addr,u8 type);
-static void swap_setBlocked(sSLList *procs,bool blocked);
+static void swap_setSuspended(sSLList *procs,bool blocked);
 static bool swap_findVictim(sProc **p,u32 *addr);
 
 static bool enabled = false;
@@ -88,7 +89,7 @@ void swap_start(void) {
 	tFileNo swapFile = -1;
 	sThread *t = thread_getRunning();
 	tInodeNo swapIno;
-	const char *dev = NULL;/*conf_getStr(CONF_SWAP_DEVICE);*/
+	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
 	/* if there is no valid swap-dev specified, don't even try... */
 	if(dev == NULL || vfsn_resolvePath(dev,&swapIno,NULL,VFS_CONNECT) < 0) {
 		while(1) {
@@ -209,6 +210,8 @@ bool swap_in(sProc *p,u32 addr) {
 }
 
 static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
+	util_panic("We shouldn't get here");
+#if 0
 	sThread *t = thread_getRunning();
 	sSLNode *n;
 	sSLList *procs;
@@ -267,83 +270,50 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 
 	vid_printf("Done\n");
 	swap_freeAffectedProcs(procs,type);
+#endif
 }
 
 static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	sSLList *procs;
-	sSLNode *n;
-	u8 type;
-	u32 block;
+	tVMRegNo rno;
+	u32 block,frameNo,temp;
 
-	procs = swap_getAffectedProcs(p,addr,&type);
-	block = swmap_alloc(p->pid,type == SW_TYPE_DEF ? NULL : procs,addr,1);
+	procs = swap_getAffectedProcs(p,&rno,addr);
+	block = swmap_alloc(p->pid,procs,addr,1);
 	vid_printf("[%d] Swap %p of %s(%d) out to blk %d...",tid,addr,p->command,p->pid,block);
 	assert(block != INVALID_BLOCK);
 
-	/* mark page as 'swapped out' and 'not-present' and do the actual swapping */
-	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *sp = (sProc*)n->data;
-		/* TODO */
-		u32 phys = 0;/*paging_swapOut(sp,swap_getPageAddr(p,sp,addr,type)) >> PAGE_SIZE_SHIFT;*/
+	/* copy to a temporary buffer because we can't use the temp-area when switching threads */
+	frameNo = paging_getFrameNo(p->pagedir,addr);
+	temp = paging_mapToTemp(&frameNo,1);
+	memcpy(buffer,(void*)temp,PAGE_SIZE);
+	paging_unmapFromTemp(1);
 
-		/* if the first one, do the actual swapping */
-		if(n == sll_begin(procs)) {
-			/* copy to a temporary buffer because we can't use the temp-area when switching
-			 * threads */
-			u32 temp = paging_mapToTemp(&phys,1);
-			memcpy(buffer,(void*)temp,PAGE_SIZE);
-			paging_unmapFromTemp(1);
-			/* frame is no longer needed, so free it */
-			mm_freeFrame(phys,MM_DEF);
+	/* mark as swapped and unmap from processes */
+	vmm_swapOut(p,rno,addr);
 
-			assert(vfs_seek(tid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
-			assert(vfs_writeFile(tid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
-		}
-
-		/* we've swapped one page */
-		sp->swapped++;
-	}
+	/* write out on disk */
+	assert(vfs_seek(tid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
+	assert(vfs_writeFile(tid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 	vid_printf("Done\n");
-	swap_freeAffectedProcs(procs,type);
+	swap_freeAffectedProcs(procs);
 }
 
-static sSLList *swap_getAffectedProcs(sProc *p,u32 addr,u8 *type) {
+static sSLList *swap_getAffectedProcs(sProc *p,tVMRegNo *rno,u32 addr) {
 	sSLList *procs;
-	/* belongs to text? so we have to change the mapping for all users of the text */
-	/* TODO */
-	if(false/*addr < p->textPages * PAGE_SIZE*/) {
-		/*vassert(p->text,"Process %d (%s) has textpages but no text!?",p->pid,p->command);
-		procs = p->text->procs;*/
-		*type = SW_TYPE_TEXT;
-	}
-	else {
-		/* check whether it belongs to a shared-memory-region */
-		/* TODO */
-		procs = NULL/*shm_getMembers(p,addr)*/;
-		if(!procs) {
-			/* default case: create a linked list just with the process */
-			procs = sll_create();
-			if(procs == NULL)
-				util_panic("Not enough kheap-mem");
-			if(!sll_append(procs,p))
-				util_panic("Not enough kheap-mem");
-			*type = SW_TYPE_DEF;
-		}
-		else
-			*type = SW_TYPE_SHM;
-	}
+	*rno = vmm_getRegionOf(p,addr);
+	procs = vmm_getUsersOf(p,*rno);
+	/* TODO handle copy-on-write */
+	assert(procs);
 	/* block all threads that are affected of the swap-operation */
-	swap_setBlocked(procs,true);
+	swap_setSuspended(procs,true);
 	return procs;
 }
 
-static void swap_freeAffectedProcs(sSLList *procs,u8 type) {
+static void swap_freeAffectedProcs(sSLList *procs) {
 	/* threads can continue now */
-	swap_setBlocked(procs,false);
-	/* if default, destroy the list */
-	if(type == SW_TYPE_DEF)
-		sll_destroy(procs,false);
+	swap_setSuspended(procs,false);
 }
 
 static u32 swap_getPageAddr(sProc *p,sProc *other,u32 addr,u8 type) {
@@ -355,25 +325,37 @@ static u32 swap_getPageAddr(sProc *p,sProc *other,u32 addr,u8 type) {
 	return addr;
 }
 
-static void swap_setBlocked(sSLList *procs,bool blocked) {
+static void swap_setSuspended(sSLList *procs,bool blocked) {
 	sSLNode *n,*tn;
 	sProc *p;
+	sThread *cur = thread_getRunning();
 	sThread *t;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		p = (sProc*)n->data;
 		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
 			t = (sThread*)tn->data;
-			thread_setSuspended(t->tid,blocked);
+			if(t->tid != cur->tid)
+				thread_setSuspended(t->tid,blocked);
 		}
 	}
 }
 
 static bool swap_findVictim(sProc **p,u32 *addr) {
-	sProc *vp = proc_getLRUProc();
-	if(vp == NULL)
+	sProc **procs = NULL;
+	u32 *pages = NULL;
+	u32 proci,pagei,count = proc_getProcsForSwap(&procs,&pages);
+	if(!count)
 		return false;
-	*p = vp;
-	/* TODO */
-	*addr = 0;/*paging_swapGetNextAddr(vp);*/
+	proci = util_rand() % count;
+	pagei = util_rand() % pages[proci];
+	*addr = vmm_getAddrForSwap(procs[proci],pagei);
+	if(!*addr) {
+		kheap_free(procs);
+		kheap_free(pages);
+		return false;
+	}
+	*p = procs[proci];
+	kheap_free(procs);
+	kheap_free(pages);
 	return true;
 }

@@ -194,6 +194,7 @@ static void initDrives(void) {
 				if(drivers[drvCount] < 0)
 					printf("Drive %d, Partition %d: Unable to register driver '%s'\n",i,p + 1,name);
 				else {
+					ATA_LOG("Registered driver '%s' (drive %d, partition %d)",name,i,p + 1);
 					/* we're a block-device, so always data available */
 					setDataReadable(drivers[drvCount],true);
 					createVFSEntry(drives + i,drives[i].partTable + p,name);

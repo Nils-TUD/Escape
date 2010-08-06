@@ -266,6 +266,15 @@ s32 paging_cloneKernelspace(u32 *stackFrame,tPageDir *pdir);
 sAllocStats paging_destroyPDir(tPageDir pdir);
 
 /**
+ * Determines wether the given page is present
+ *
+ * @param pdir the page-dir
+ * @param virt the virtual address
+ * @return true if so
+ */
+bool paging_isPresent(tPageDir pdir,u32 virt);
+
+/**
  * Returns the frame-number of the given virtual address in the given pagedir. Assumes that
  * its present.
  *

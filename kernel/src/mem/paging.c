@@ -417,6 +417,16 @@ sAllocStats paging_destroyPDir(tPageDir pdir) {
 	return stats;
 }
 
+bool paging_isPresent(tPageDir pdir,u32 virt) {
+	u32 ptables = paging_getPTables(pdir);
+	sPTEntry *pt;
+	sPDEntry *pde = (sPDEntry*)PAGEDIR(ptables) + ADDR_TO_PDINDEX(virt);
+	if(!pde->present || !pde->exists)
+		return false;
+	pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);
+	return pt->present && pt->exists;
+}
+
 u32 paging_getFrameNo(tPageDir pdir,u32 virt) {
 	u32 ptables = paging_getPTables(pdir);
 	sPTEntry *pt = (sPTEntry*)ADDR_TO_MAPPED_CUSTOM(ptables,virt);

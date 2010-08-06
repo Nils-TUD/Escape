@@ -98,6 +98,17 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 t
 void vmm_swapOut(sProc *p,tVMRegNo rno,u32 addr);
 
 /**
+ * Swaps the page at given address in given region from process <p> in. I.e. it marks the page
+ * as not-swapped in the region and maps it with given frame-number for all affected processes.
+ *
+ * @param p the process
+ * @param rno the region-number in which the address is
+ * @param addr the address (page-aligned!)
+ * @param frameNo the frame-number
+ */
+void vmm_swapIn(sProc *p,tVMRegNo rno,u32 addr,u32 frameNo);
+
+/**
  * Counts the number of pages of the given process that can still be swapped out, i.e. are not
  * already swapped out and its possible for the pages.
  *
@@ -152,10 +163,26 @@ sSLList *vmm_getUsersOf(sProc *p,tVMRegNo rno);
 
 /**
  * @param p the process
+ * @param rno the region-number
+ * @return the vm-region with given number
+ */
+sVMRegion *vmm_getRegion(sProc *p,tVMRegNo rno);
+
+/**
+ * @param p the process
  * @param addr the virtual address
  * @return the region-number to which the given virtual address belongs
  */
 tVMRegNo vmm_getRegionOf(sProc *p,u32 addr);
+
+/**
+ * Determines the vm-region-number of the given region for the given process
+ *
+ * @param p the process
+ * @param reg the region
+ * @return the vm-region-number or -1 if not found
+ */
+tVMRegNo vmm_getRNoByRegion(sProc *p,sRegion *reg);
 
 /**
  * Queries the start- and end-address of a region

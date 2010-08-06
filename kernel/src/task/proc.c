@@ -522,6 +522,8 @@ void proc_kill(sProc *p) {
 	sig_addSignal(SIG_PROC_DIED,p->pid);
 	sig_addSignalFor(p->parentPid,SIG_CHILD_DIED,p->pid);
 
+	vid_printf("Process %d (%s) killed\n",p->pid,p->command);
+
 	/* mark as unused */
 	p->pid = INVALID_PID;
 	p->pagedir = 0;
@@ -830,8 +832,10 @@ void proc_dbg_print(sProc *p) {
 	vid_printf("\tppid=%d, cmd=%s, pdir=%x\n",p->parentPid,p->command,p->pagedir);
 	vid_printf("\townFrames=%u, sharedFrames=%u\n",p->ownFrames,p->sharedFrames);
 	vid_printf("\tunswappable=%u, swapped=%u\n",p->unswappable,p->swapped);
-	for(n = sll_begin(p->threads); n != NULL; n = n->next)
-		thread_dbg_print((sThread*)n->data);
+	if(p->threads) {
+		for(n = sll_begin(p->threads); n != NULL; n = n->next)
+			thread_dbg_print((sThread*)n->data);
+	}
 	vid_printf("\n");
 }
 

@@ -67,6 +67,9 @@ void util_panic(const char *fmt,...) {
 	vm86_int(0x10,&vmregs,NULL,0);
 	vid_clearScreen();
 
+	/* disable interrupts so that nothing fancy can happen */
+	intrpt_setEnabled(false);
+
 	/* print message */
 	vid_printf("\n");
 	vid_printf("\033[co;7;4]PANIC: ");
@@ -103,12 +106,12 @@ void util_panic(const char *fmt,...) {
 #if DEBUGGING
 	/* write into log only */
 	vid_setTargets(TARGET_LOG);
-	vmm_dbg_print(t->proc);
-	paging_dbg_printCur(PD_PART_USER);
+	proc_dbg_printAllPDs(PD_PART_USER,true);
+	/*vmm_dbg_print(t->proc);
+	paging_dbg_printCur(PD_PART_USER);*/
 #endif
 
 	/* TODO vmware seems to shutdown if we disable interrupts and htl?? */
-	intrpt_setEnabled(false);
 	while(1)
 		util_halt();
 }
@@ -185,6 +188,10 @@ sFuncCall *util_getUserStackTraceOf(sThread *t) {
 			u32 temp,i,startCpy = start;
 			frames[0] = t->kstackFrame;
 			for(i = 0; startCpy < end; i++) {
+				if(!paging_isPresent(t->proc->pagedir,startCpy)) {
+					kheap_free(frames);
+					return NULL;
+				}
 				frames[i + 1] = paging_getFrameNo(t->proc->pagedir,startCpy);
 				startCpy += PAGE_SIZE;
 			}

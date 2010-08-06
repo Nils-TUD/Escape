@@ -49,7 +49,6 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr);
 static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr);
 static sSLList *swap_getAffectedProcs(sProc *p,tVMRegNo *rno,u32 addr);
 static void swap_freeAffectedProcs(sSLList *procs);
-static u32 swap_getPageAddr(sProc *p,sProc *other,u32 addr,u8 type);
 static void swap_setSuspended(sSLList *procs,bool blocked);
 static bool swap_findVictim(sProc **p,u32 *addr);
 
@@ -210,24 +209,41 @@ bool swap_in(sProc *p,u32 addr) {
 }
 
 static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
-	util_panic("We shouldn't get here");
-#if 0
 	sThread *t = thread_getRunning();
 	sSLNode *n;
+	tVMRegNo rno;
+	sVMRegion *vmreg;
 	sSLList *procs;
-	u32 temp,frame;
-	u8 type;
-	u32 block;
+	u32 temp,frame,block;
 	addr &= ~(PAGE_SIZE - 1);
 
-	vid_printf("[%d] Swap %p of %s(%d) in ",t->tid,addr,p->command,p->pid);
-	procs = swap_getAffectedProcs(p,addr,&type);
+	procs = swap_getAffectedProcs(p,&rno,addr);
+	vmreg = vmm_getRegion(p,rno);
+
+	/* not swapped anymore? so probably another process has already swapped it in */
+	/* this may actually happen if we want to swap a page of one process in but can't because
+	 * we're swapping out for example. if another process that shares the page with the first
+	 * one wants to swap this page in, too, it will wait as well. When we're done with
+	 * swapping out, one of the processes swaps in. Then the second one wants to swap in
+	 * the same page but doesn't find it in the swapmap since it has already been swapped in */
+	if(!(vmreg->reg->pageFlags[(addr - vmreg->virt) / PAGE_SIZE] & PF_SWAPPED)) {
+		swap_freeAffectedProcs(procs);
+		return;
+	}
+
+	vid_printf("[%d] Swapin %p of %s(%d) ",t->tid,addr,p->command,p->pid);
 
 	/* we have to look through all processes because the one that swapped it out is not necessary
-	 * the process that aquires it first again (text-sharing, ...) */
+	 * the process that aquires it first again (region-sharing) */
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *sp = (sProc*)n->data;
-		block = swmap_find(sp->pid,swap_getPageAddr(p,sp,addr,type));
+		if(sp != p) {
+			tVMRegNo srno = vmm_getRNoByRegion(sp,vmreg->reg);
+			sVMRegion *sreg = vmm_getRegion(sp,srno);
+			block = swmap_find(sp->pid,sreg->virt + (addr - vmreg->virt));
+		}
+		else
+			block = swmap_find(sp->pid,addr);
 		if(block != INVALID_BLOCK) {
 			vid_printf("(alloc by %d) ",sp->pid);
 			swmap_free(sp->pid,block,1);
@@ -235,14 +251,8 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 		}
 	}
 	if(block == INVALID_BLOCK) {
-		/* this may actually happen if we want to swap a page of one process in but can't because
-		 * we're swapping out for example. if another process that shares the page with the first
-		 * one wants to swap this page in, too, it will wait as well. When we're done with
-		 * swapping out, one of the processes swaps in. Then the second one wants to swap in
-		 * the same page but doesn't find it in the swapmap since it has already been swapped in */
-		vid_printf("Seems already do be swapped in -> skipping (%d @ %p)\n",p->pid,addr);
-		swap_freeAffectedProcs(procs,type);
-		return;
+		swmap_dbg_print();
+		util_panic("Page still swapped out but not found in swapmap!?");
 	}
 
 	vid_printf("from blk %d...",block);
@@ -259,18 +269,11 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	memcpy((void*)temp,buffer,PAGE_SIZE);
 	paging_unmapFromTemp(1);
 
-	/* mark page as 'not swapped' and 'present' and do the actual swapping */
-	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *sp = (sProc*)n->data;
-		/* TODO */
-		/*paging_swapIn(sp,swap_getPageAddr(p,sp,addr,type),frame);*/
-		/* we've swapped in one page */
-		sp->swapped--;
-	}
+	/* mark as not-swapped and map into all affected processes */
+	vmm_swapIn(p,rno,addr,frame);
 
 	vid_printf("Done\n");
-	swap_freeAffectedProcs(procs,type);
-#endif
+	swap_freeAffectedProcs(procs);
 }
 
 static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr) {
@@ -280,7 +283,7 @@ static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr) {
 
 	procs = swap_getAffectedProcs(p,&rno,addr);
 	block = swmap_alloc(p->pid,procs,addr,1);
-	vid_printf("[%d] Swap %p of %s(%d) out to blk %d...",tid,addr,p->command,p->pid,block);
+	vid_printf("[%d] Swapout %p of %s(%d) to blk %d...",tid,addr,p->command,p->pid,block);
 	assert(block != INVALID_BLOCK);
 
 	/* copy to a temporary buffer because we can't use the temp-area when switching threads */
@@ -314,15 +317,6 @@ static sSLList *swap_getAffectedProcs(sProc *p,tVMRegNo *rno,u32 addr) {
 static void swap_freeAffectedProcs(sSLList *procs) {
 	/* threads can continue now */
 	swap_setSuspended(procs,false);
-}
-
-static u32 swap_getPageAddr(sProc *p,sProc *other,u32 addr,u8 type) {
-	if(type == SW_TYPE_SHM) {
-		u32 otherAddr = shm_getAddrOfOther(p,addr,other);
-		assert(otherAddr != 0);
-		return otherAddr;
-	}
-	return addr;
 }
 
 static void swap_setSuspended(sSLList *procs,bool blocked) {

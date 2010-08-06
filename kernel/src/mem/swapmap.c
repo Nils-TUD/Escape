@@ -59,7 +59,10 @@ struct sSwMapArea {
 	/* position in virtual memory of the process */
 	u32 virt;
 	/* a linked list of processes that use this area; if no text-sharing and no shared-mem the list
-	 * is NULL. otherwise it is the list that is managed by text or shared-mem (no copy!!) */
+	 * is NULL. otherwise it is the list that is managed by text or shared-mem (no copy!!)
+	 * TODO perhaps we can store for COW a (not-cloned) list of processes that had the frame on
+	 * swapout? because we have just one process in this case anyway since COW is not used
+	 * when something is shared */
 	sSLList *procs;
 	/* the process that allocated the area; TODO we can remove that */
 	tPid pid;
@@ -369,8 +372,14 @@ void swmap_dbg_print(void) {
 	vid_printf("SwapMap:\n");
 	while(a != NULL) {
 		if(!a->free) {
-			vid_printf("\t%04u-%04u: p%02u (%p - %p)\n",a->block,a->block + a->size - 1,
-					a->pid,a->virt,a->virt + a->size * PAGE_SIZE - 1);
+			sSLNode *n;
+			vid_printf("\t%04u-%04u: ",a->block,a->block + a->size - 1);
+			for(n = sll_begin(a->procs); n != NULL; n = n->next) {
+				vid_printf("%d",((sProc*)n->data)->pid);
+				if(n->next)
+					vid_printf(",");
+			}
+			vid_printf(" (%p - %p)\n",a->virt,a->virt + a->size * PAGE_SIZE - 1);
 		}
 		else
 			vid_printf("\t%04u-%04u: free\n",a->block,a->block + a->size - 1);

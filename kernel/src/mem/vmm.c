@@ -23,6 +23,7 @@
 #include <sys/mem/vmm.h>
 #include <sys/mem/cow.h>
 #include <sys/mem/kheap.h>
+#include <sys/mem/swap.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/real.h>
 #include <sys/video.h>
@@ -45,7 +46,6 @@
 
 static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr);
 static u8 *vmm_getPageFlag(sVMRegion *reg,u32 addr);
-static tVMRegNo vmm_getRNoByRegion(sProc *p,sRegion *reg);
 static s32 vmm_findRegIndex(sProc *p,bool text);
 static u32 vmm_findFreeStack(sProc *p,u32 byteCount);
 static sVMRegion *vmm_isOccupied(sProc *p,u32 start,u32 end);
@@ -167,7 +167,7 @@ void vmm_swapOut(sProc *p,tVMRegNo rno,u32 addr) {
 		tVMRegNo mprno = vmm_getRNoByRegion(mp,vm->reg);
 		sVMRegion *mpreg = REG(mp,mprno);
 		assert(mprno != -1);
-		sAllocStats stats = paging_unmapFrom(mp->pagedir,mpreg->virt + (addr - vm->virt),1,false);
+		sAllocStats stats = paging_mapTo(mp->pagedir,mpreg->virt + (addr - vm->virt),NULL,1,0);
 		/* one more for the frame, that we'll free manually */
 		if(vm->reg->flags & RF_SHAREABLE)
 			mp->sharedFrames -= stats.frames + 1;
@@ -178,6 +178,29 @@ void vmm_swapOut(sProc *p,tVMRegNo rno,u32 addr) {
 	mm_freeFrame(frameNo,MM_DEF);
 }
 
+void vmm_swapIn(sProc *p,tVMRegNo rno,u32 addr,u32 frameNo) {
+	sSLNode *n;
+	sVMRegion *vm = REG(p,rno);
+	u32 index = (addr - vm->virt) / PAGE_SIZE;
+	u8 flags = PG_PRESENT;
+	if(vm->reg->flags & (RF_WRITABLE))
+		flags |= PG_WRITABLE;
+	vm->reg->pageFlags[index] &= ~PF_SWAPPED;
+	for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
+		sProc *mp = (sProc*)n->data;
+		/* the region may be mapped to a different virtual address */
+		tVMRegNo mprno = vmm_getRNoByRegion(mp,vm->reg);
+		sVMRegion *mpreg = REG(mp,mprno);
+		assert(mprno != -1);
+		sAllocStats stats = paging_mapTo(mp->pagedir,mpreg->virt + (addr - vm->virt),&frameNo,1,flags);
+		if(vm->reg->flags & RF_SHAREABLE)
+			mp->sharedFrames += stats.frames;
+		else
+			mp->ownFrames += stats.frames;
+		mp->ownFrames += stats.ptables;
+	}
+}
+
 u32 vmm_countSwappablePages(sProc *p) {
 	u32 i,count = 0;
 	for(i = 0; i < p->regSize; i++) {
@@ -185,7 +208,7 @@ u32 vmm_countSwappablePages(sProc *p) {
 		if(vm && !(vm->reg->flags & RF_NOFREE)) {
 			u32 j,pages = BYTES_2_PAGES(vm->reg->byteCount);
 			for(j = 0; j < pages; j++) {
-				if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_COPYONWRITE)))
+				if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD)))
 					count++;
 			}
 		}
@@ -200,7 +223,7 @@ u32 vmm_getAddrForSwap(sProc *p,u32 index) {
 		if(vm && !(vm->reg->flags & RF_NOFREE)) {
 			u32 j,pages = BYTES_2_PAGES(vm->reg->byteCount);
 			for(j = 0; j < pages; j++) {
-				if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_COPYONWRITE))) {
+				if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD))) {
 					if(index-- == 0)
 						return vm->virt + j * PAGE_SIZE;
 				}
@@ -270,11 +293,25 @@ sSLList *vmm_getUsersOf(sProc *p,tVMRegNo rno) {
 	return REG(p,rno)->reg->procs;
 }
 
+sVMRegion *vmm_getRegion(sProc *p,tVMRegNo rno) {
+	return REG(p,rno);
+}
+
 tVMRegNo vmm_getRegionOf(sProc *p,u32 addr) {
 	u32 i;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
 		if(vm && addr >= vm->virt && addr < vm->virt + ROUNDUP(vm->reg->byteCount))
+			return i;
+	}
+	return -1;
+}
+
+tVMRegNo vmm_getRNoByRegion(sProc *p,sRegion *reg) {
+	u32 i;
+	for(i = 0; i < p->regSize; i++) {
+		sVMRegion *vm = REG(p,i);
+		if(vm && vm->reg == reg)
 			return i;
 	}
 	return -1;
@@ -322,10 +359,8 @@ bool vmm_pagefault(u32 addr) {
 			return true;
 		}
 	}
-	else if(*flags & PF_SWAPPED) {
-		/* TODO */
-		util_panic("No swapping yet");
-	}
+	else if(*flags & PF_SWAPPED)
+		return swap_in(p,addr);
 	else if(*flags & PF_COPYONWRITE) {
 		u32 frmCount = cow_pagefault(addr);
 		p->ownFrames += frmCount;
@@ -479,8 +514,9 @@ s32 vmm_cloneAll(sProc *dst) {
 			else {
 				u32 virt = nvm->virt;
 				for(j = 0; j < pageCount; j++) {
-					/* not when using demand-loading since we've not loaded it from disk yet */
-					if(!(vm->reg->pageFlags[j] & PF_DEMANDLOAD)) {
+					/* not when demand-load or swapping is outstanding since we've not loaded it
+					 * from disk yet */
+					if(!(vm->reg->pageFlags[j] & (PF_DEMANDLOAD | PF_SWAPPED))) {
 						u32 frameNo = paging_getFrameNo(src->pagedir,virt);
 						/* if not already done, mark as cow for parent */
 						if(!(vm->reg->pageFlags[j] & PF_COPYONWRITE)) {
@@ -536,7 +572,14 @@ s32 vmm_growStackTo(sThread *t,u32 addr) {
 
 s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 	u32 oldSize,oldVirt,virt;
-	sVMRegion *vm = REG(p,reg);
+	sVMRegion *vm;
+
+	/* swap out, if necessary; do it here to because caching some values before may cause trouble
+	 * if they're changed by another thread */
+	if(!swap_outUntil(amount))
+		return ERR_NOT_ENOUGH_MEM;
+
+	vm = REG(p,reg);
 	assert(p && reg >= 0 && reg < (s32)p->regSize && vm != NULL);
 	assert((vm->reg->flags & RF_GROWABLE) && !(vm->reg->flags & RF_SHAREABLE));
 
@@ -549,9 +592,6 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 	oldSize = vm->reg->byteCount;
 	if(amount != 0) {
 		sAllocStats stats;
-		/* not enough mem? TODO we should use swapping later */
-		if(amount > 0 && (s32)mm_getFreeFrmCount(MM_DEF) < amount)
-			return ERR_NOT_ENOUGH_MEM;
 		/* check wether the space is free */
 		if(amount > 0) {
 			if(vm->reg->flags & RF_STACK) {
@@ -699,16 +739,6 @@ static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
 
 static u8 *vmm_getPageFlag(sVMRegion *reg,u32 addr) {
 	return reg->reg->pageFlags + (addr - reg->virt) / PAGE_SIZE;
-}
-
-static tVMRegNo vmm_getRNoByRegion(sProc *p,sRegion *reg) {
-	u32 i;
-	for(i = 0; i < p->regSize; i++) {
-		sVMRegion *vm = REG(p,i);
-		if(vm && vm->reg == reg)
-			return i;
-	}
-	return -1;
 }
 
 static tVMRegNo vmm_findRegIndex(sProc *p,bool text) {

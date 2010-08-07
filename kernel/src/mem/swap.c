@@ -32,6 +32,7 @@
 #include <string.h>
 #include <assert.h>
 
+/* TODO we need a way to ask ata for a partition-size */
 #define SWAP_SIZE			(10 * M)
 #define HIGH_WATER			40
 #define LOW_WATER			20

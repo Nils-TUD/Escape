@@ -714,18 +714,21 @@ void paging_dbg_printPDir(tPageDir pdir,u8 parts) {
 	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
 	vid_printf("page-dir @ 0x%08x:\n",pdirAddr);
 	for(i = 0; i < PT_ENTRY_COUNT; i++) {
-		if(pdirAddr[i].present) {
-			if(parts == PD_PART_ALL ||
-				(i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) && (parts & PD_PART_USER)) ||
-				(i >= ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) && i < ADDR_TO_PDINDEX(KERNEL_HEAP_START)
-						&& (parts & PD_PART_KERNEL)) ||
-				(i >= ADDR_TO_PDINDEX(TEMP_MAP_AREA) && i < ADDR_TO_PDINDEX(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE)
-						&& (parts & PD_PART_TEMPMAP)) ||
-				(i >= ADDR_TO_PDINDEX(KERNEL_HEAP_START) && i < ADDR_TO_PDINDEX(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
-						&& (parts & PD_PART_KHEAP)) ||
-				(i >= ADDR_TO_PDINDEX(MAPPED_PTS_START) && (parts & PD_PART_PTBLS))) {
-				paging_dbg_printPageTable(ptables,i,pdirAddr + i);
-			}
+		if(!pdirAddr[i].present)
+			continue;
+		if(parts == PD_PART_ALL ||
+			(i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) && (parts & PD_PART_USER)) ||
+			(i >= ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR) &&
+					i < ADDR_TO_PDINDEX(KERNEL_HEAP_START) &&
+					(parts & PD_PART_KERNEL)) ||
+			(i >= ADDR_TO_PDINDEX(TEMP_MAP_AREA) &&
+					i < ADDR_TO_PDINDEX(TEMP_MAP_AREA + TEMP_MAP_AREA_SIZE) &&
+					(parts & PD_PART_TEMPMAP)) ||
+			(i >= ADDR_TO_PDINDEX(KERNEL_HEAP_START) &&
+					i < ADDR_TO_PDINDEX(KERNEL_HEAP_START + KERNEL_HEAP_SIZE) &&
+					(parts & PD_PART_KHEAP)) ||
+			(i >= ADDR_TO_PDINDEX(MAPPED_PTS_START) && (parts & PD_PART_PTBLS))) {
+			paging_dbg_printPageTable(ptables,i,pdirAddr + i);
 		}
 	}
 	vid_printf("\n");

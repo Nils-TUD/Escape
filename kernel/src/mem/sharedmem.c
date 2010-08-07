@@ -103,18 +103,6 @@ errMem:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-u32 shm_getAddrOfOther(sProc *p,u32 addr,sProc *other) {
-	/* TODO */
-	/*sShMemUsage *use = shm_getUser(NULL,p);
-	if(use && addr >= use->startPage * PAGE_SIZE &&
-		addr < (use->startPage + use->mem->pageCount) * PAGE_SIZE) {
-		sShMemUsage *useOther = shm_getUser(NULL,other);
-		if(useOther)
-			return useOther->startPage * PAGE_SIZE + (addr - use->startPage * PAGE_SIZE);
-	}*/
-	return 0;
-}
-
 s32 shm_join(sProc *p,const char *name) {
 	u32 start;
 	tVMRegNo reg;

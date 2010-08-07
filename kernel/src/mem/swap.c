@@ -225,6 +225,8 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 
 	/* mark as not-swapped and map into all affected processes */
 	vmm_swapIn(vmreg->reg,index,frame);
+	/* free swap-block */
+	swmap_free(block);
 
 	vid_printf("Done\n");
 	swap_setSuspended(vmreg->reg->procs,false);
@@ -239,7 +241,7 @@ static void swap_doSwapOut(tTid tid,tFileNo file,sRegion *reg,u32 index) {
 	swap_setSuspended(reg->procs,true);
 	rno = vmm_getRNoByRegion(first,reg);
 	vmreg = vmm_getRegion(first,rno);
-	block = swmap_alloc(1);
+	block = swmap_alloc();
 	vid_printf("Swapout %x:%d (first=%p %s:%d) to blk %d...",
 			reg,index,vmreg->virt + index * PAGE_SIZE,first->command,first->pid,block);
 	assert(block != INVALID_BLOCK);

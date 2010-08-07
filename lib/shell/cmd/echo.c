@@ -31,7 +31,7 @@ s32 shell_cmdEcho(u32 argc,char *argv[]) {
 		i++;
 	}
 	for(; i < argc; i++) {
-		puts(argv[i]);
+		fputs(argv[i],stdout);
 		if(i < argc - 1)
 			putchar(' ');
 	}

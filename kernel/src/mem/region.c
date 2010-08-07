@@ -87,7 +87,7 @@ void reg_destroy(sRegion *reg) {
 	/* first free the swapped out blocks */
 	for(i = 0; i < pcount; i++) {
 		if(reg->pageFlags[i] & PF_SWAPPED)
-			swmap_free(reg_getSwapBlock(reg,i),1);
+			swmap_free(reg_getSwapBlock(reg,i));
 	}
 	kheap_free(reg->pageFlags);
 	sll_destroy(reg->procs,false);
@@ -159,7 +159,7 @@ bool reg_grow(sRegion *reg,s32 amount) {
 		/* free swapped pages */
 		for(i = count + amount; i < count; i++) {
 			if(reg->pageFlags[i] & PF_SWAPPED)
-				swmap_free(reg_getSwapBlock(reg,i),1);
+				swmap_free(reg_getSwapBlock(reg,i));
 		}
 		if(reg->flags & RF_STACK)
 			memmove(reg->pageFlags,reg->pageFlags + -amount,(count + amount) * sizeof(u32));

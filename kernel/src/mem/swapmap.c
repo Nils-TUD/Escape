@@ -37,6 +37,7 @@
 static u8 *bitmap = NULL;
 static u32 totalBlocks = 0;
 static u32 freeBlocks = 0;
+static u32 nextBlock = 0;
 
 void swmap_init(u32 swapSize) {
 	totalBlocks = swapSize / PAGE_SIZE;
@@ -46,30 +47,29 @@ void swmap_init(u32 swapSize) {
 		util_panic("Unable to allocate swap-bitmap");
 }
 
-u32 swmap_alloc(u32 count) {
-	u32 i,j;
-	for(i = 0; i < totalBlocks; ) {
+u32 swmap_alloc(void) {
+	u32 i;
+begin:
+	for(i = nextBlock; i < totalBlocks; ) {
+		u32 idx = i / 8;
 		/* skip this byte if its completly used */
-		if(bitmap[i / 8] == 0xFF)
-			i += 8;
+		if(bitmap[idx] == 0xFF)
+			i += 8 - (i % 8);
 		else {
-			/* check if we find <count> free blocks in a row */
-			u32 c = 0;
-			for(j = 0; j < count; j++) {
-				if(!(bitmap[(i + j) / 8] & (1 << ((i + j) % 8))))
-					c++;
-				else
-					break;
-			}
-			if(c == count) {
+			u32 bit = 1 << (i % 8);
+			if(!(bitmap[idx] & bit)) {
 				/* mark used */
-				for(j = 0; j < count; j++)
-					bitmap[(i + j) / 8] |= 1 << ((i + j) % 8);
-				freeBlocks -= count;
+				bitmap[idx] |= bit;
+				freeBlocks--;
+				nextBlock = i + 1;
 				return i;
 			}
 			i++;
 		}
+	}
+	if(nextBlock != 0) {
+		nextBlock = 0;
+		goto begin;
 	}
 	return INVALID_BLOCK;
 }
@@ -79,12 +79,11 @@ bool swmap_isUsed(u32 block) {
 	return bitmap[block / 8] & (1 << (block % 8));
 }
 
-void swmap_free(u32 block,u32 count) {
-	u32 j;
-	assert(block + count <= totalBlocks);
-	for(j = 0; j < count; j++)
-		bitmap[(block + j) / 8] &= ~(1 << ((block + j) % 8));
-	freeBlocks += count;
+void swmap_free(u32 block) {
+	assert(block < totalBlocks);
+	bitmap[block / 8] &= ~(1 << (block % 8));
+	nextBlock = block;
+	freeBlocks++;
 }
 
 u32 swmap_freeSpace(void) {

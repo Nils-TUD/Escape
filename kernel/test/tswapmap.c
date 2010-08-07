@@ -28,8 +28,6 @@
 static void test_swapmap(void);
 static void test_swapmap1(void);
 static void test_swapmap2(void);
-static void test_swapmap3(void);
-static void test_swapmap4(void);
 static void test_swapmap5(void);
 static void test_swapmap6(void);
 static void test_doStart(const char *title);
@@ -46,8 +44,6 @@ static u32 spaceBefore;
 static void test_swapmap(void) {
 	test_swapmap1();
 	test_swapmap2();
-	test_swapmap3();
-	test_swapmap4();
 	test_swapmap5();
 	test_swapmap6();
 }
@@ -56,28 +52,25 @@ static void test_swapmap1(void) {
 	u32 blocks[5];
 	test_doStart("Testing alloc & free");
 
-	blocks[0] = swmap_alloc(1);
-	blocks[1] = swmap_alloc(3);
-	blocks[2] = swmap_alloc(1);
-	blocks[3] = swmap_alloc(1);
-	blocks[4] = swmap_alloc(1);
+	blocks[0] = swmap_alloc();
+	blocks[1] = swmap_alloc();
+	blocks[2] = swmap_alloc();
+	blocks[3] = swmap_alloc();
+	blocks[4] = swmap_alloc();
 
 	test_assertTrue(swmap_isUsed(blocks[0]));
 	test_assertTrue(swmap_isUsed(blocks[1]));
-	test_assertTrue(swmap_isUsed(blocks[1] + 1));
-	test_assertTrue(swmap_isUsed(blocks[1] + 2));
+	test_assertTrue(swmap_isUsed(blocks[2]));
 	test_assertTrue(swmap_isUsed(blocks[3]));
 	test_assertTrue(swmap_isUsed(blocks[4]));
 	test_assertFalse(swmap_isUsed(blocks[4] + 1));
 	test_assertFalse(swmap_isUsed(blocks[4] + 2));
 
-	swmap_free(blocks[0],1);
-	swmap_free(blocks[1] + 1,1);
-	swmap_free(blocks[1] + 2,1);
-	swmap_free(blocks[1],1);
-	swmap_free(blocks[2],1);
-	swmap_free(blocks[3],1);
-	swmap_free(blocks[4],1);
+	swmap_free(blocks[0]);
+	swmap_free(blocks[1]);
+	swmap_free(blocks[2]);
+	swmap_free(blocks[3]);
+	swmap_free(blocks[4]);
 
 	test_finish();
 }
@@ -86,76 +79,17 @@ static void test_swapmap2(void) {
 	u32 blocks[5];
 	test_doStart("Testing alloc & reverse free");
 
-	blocks[0] = swmap_alloc(1);
-	blocks[1] = swmap_alloc(2);
-	blocks[2] = swmap_alloc(1);
-	blocks[3] = swmap_alloc(1);
-	blocks[4] = swmap_alloc(1);
+	blocks[0] = swmap_alloc();
+	blocks[1] = swmap_alloc();
+	blocks[2] = swmap_alloc();
+	blocks[3] = swmap_alloc();
+	blocks[4] = swmap_alloc();
 
-	swmap_free(blocks[4],1);
-	swmap_free(blocks[3],1);
-	swmap_free(blocks[2],1);
-	swmap_free(blocks[1],2);
-	swmap_free(blocks[0],1);
-
-	test_finish();
-}
-
-static void test_swapmap3(void) {
-	test_doStart("Testing alloc & area free");
-
-	swmap_alloc(1);
-	swmap_alloc(2);
-	swmap_alloc(1);
-	swmap_alloc(1);
-	swmap_alloc(1);
-
-	swmap_free(0,3);
-	swmap_free(3,1);
-	swmap_free(5,1);
-	swmap_free(4,1);
-
-	test_finish();
-}
-
-static void test_swapmap4(void) {
-	u32 blocks[8];
-	test_doStart("Testing alloc & random free");
-
-	blocks[0] = swmap_alloc(1);
-	blocks[1] = swmap_alloc(2);
-	blocks[2] = swmap_alloc(4);
-	blocks[3] = swmap_alloc(1);
-	blocks[4] = swmap_alloc(1);
-	blocks[5] = swmap_alloc(3);
-	blocks[6] = swmap_alloc(1);
-	blocks[7] = swmap_alloc(1);
-
-	test_assertTrue(swmap_isUsed(blocks[0]));
-	test_assertTrue(swmap_isUsed(blocks[1]));
-	test_assertTrue(swmap_isUsed(blocks[1] + 1));
-	test_assertTrue(swmap_isUsed(blocks[2]));
-	test_assertTrue(swmap_isUsed(blocks[2] + 1));
-	test_assertTrue(swmap_isUsed(blocks[2] + 2));
-	test_assertTrue(swmap_isUsed(blocks[2] + 3));
-	test_assertTrue(swmap_isUsed(blocks[3]));
-	test_assertTrue(swmap_isUsed(blocks[4]));
-	test_assertTrue(swmap_isUsed(blocks[5]));
-	test_assertTrue(swmap_isUsed(blocks[5] + 1));
-	test_assertTrue(swmap_isUsed(blocks[5] + 2));
-	test_assertTrue(swmap_isUsed(blocks[6]));
-	test_assertTrue(swmap_isUsed(blocks[7]));
-
-	swmap_free(blocks[5],2);
-	swmap_free(blocks[5] + 2,1);
-	swmap_free(blocks[7],1);
-	swmap_free(blocks[0],1);
-	swmap_free(blocks[6],1);
-	swmap_free(blocks[4],1);
-	swmap_free(blocks[1],1);
-	swmap_free(blocks[1] + 1,1);
-	swmap_free(blocks[2],4);
-	swmap_free(blocks[3],1);
+	swmap_free(blocks[4]);
+	swmap_free(blocks[3]);
+	swmap_free(blocks[2]);
+	swmap_free(blocks[1]);
+	swmap_free(blocks[0]);
 
 	test_finish();
 }
@@ -164,63 +98,66 @@ static void test_swapmap5(void) {
 	u32 blocks[8];
 	test_doStart("Testing alloc & free mixed");
 
-	blocks[0] = swmap_alloc(2);
-	blocks[1] = swmap_alloc(1);
-	blocks[2] = swmap_alloc(1);
-	blocks[3] = swmap_alloc(1);
+	blocks[0] = swmap_alloc();
+	blocks[1] = swmap_alloc();
+	blocks[2] = swmap_alloc();
+	blocks[3] = swmap_alloc();
 
 	test_assertTrue(swmap_isUsed(blocks[0]));
-	test_assertTrue(swmap_isUsed(blocks[0] + 1));
 	test_assertTrue(swmap_isUsed(blocks[1]));
 	test_assertTrue(swmap_isUsed(blocks[2]));
 	test_assertTrue(swmap_isUsed(blocks[3]));
 
-	swmap_free(blocks[2],1);
+	swmap_free(blocks[2]);
 
 	test_assertTrue(swmap_isUsed(blocks[0]));
-	test_assertTrue(swmap_isUsed(blocks[0] + 1));
 	test_assertTrue(swmap_isUsed(blocks[1]));
 	test_assertFalse(swmap_isUsed(blocks[2]));
 	test_assertTrue(swmap_isUsed(blocks[3]));
 
-	blocks[4] = swmap_alloc(1);
-	blocks[5] = swmap_alloc(1);
-	blocks[6] = swmap_alloc(1);
-	blocks[7] = swmap_alloc(1);
+	blocks[4] = swmap_alloc();
+	blocks[5] = swmap_alloc();
+	blocks[6] = swmap_alloc();
+	blocks[7] = swmap_alloc();
 
 	test_assertTrue(swmap_isUsed(blocks[4]));
 	test_assertTrue(swmap_isUsed(blocks[5]));
 	test_assertTrue(swmap_isUsed(blocks[6]));
 	test_assertTrue(swmap_isUsed(blocks[7]));
 
-	swmap_free(blocks[6],1);
+	swmap_free(blocks[6]);
 
 	test_assertTrue(swmap_isUsed(blocks[4]));
 	test_assertTrue(swmap_isUsed(blocks[5]));
 	test_assertFalse(swmap_isUsed(blocks[6]));
 	test_assertTrue(swmap_isUsed(blocks[7]));
 
-	blocks[8] = swmap_alloc(1);
+	blocks[8] = swmap_alloc();
 
 	test_assertTrue(swmap_isUsed(blocks[8]));
 
-	swmap_free(blocks[5],1);
-	swmap_free(blocks[8],2);
-	swmap_free(blocks[0],5);
+	swmap_free(blocks[5]);
+	swmap_free(blocks[3]);
+	swmap_free(blocks[8]);
+	swmap_free(blocks[4]);
+	swmap_free(blocks[0]);
+	swmap_free(blocks[1]);
+	swmap_free(blocks[7]);
 
 	test_finish();
 }
 
 static void test_swapmap6(void) {
-	u32 addr;
+	s32 count;
 	test_doStart("Testing alloc all & free");
 
-	addr = 0;
+	count = 0;
 	while(swmap_freeSpace() > 1 * PAGE_SIZE) {
-		test_assertTrue(swmap_alloc(1) != INVALID_BLOCK);
-		addr += PAGE_SIZE;
+		test_assertTrue(swmap_alloc() != INVALID_BLOCK);
+		count++;
 	}
-	swmap_free(0,addr / PAGE_SIZE);
+	while(--count >= 0)
+		swmap_free(count);
 
 	test_finish();
 }

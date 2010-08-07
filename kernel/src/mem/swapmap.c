@@ -94,7 +94,7 @@ u32 swmap_freeSpace(void) {
 #if DEBUGGING
 
 void swmap_dbg_print(void) {
-	/*sSwMapArea *a = used;
+	/* TODO sSwMapArea *a = used;
 	vid_printf("SwapMap:\n");
 	while(a != NULL) {
 		if(!a->free) {

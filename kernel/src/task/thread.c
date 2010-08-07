@@ -46,10 +46,6 @@
 #define THREAD_MAP_SIZE		1024
 
 /**
- * Sets the current timestamp for the given thread and increases the schedCount
- */
-static void thread_setUsed(sThread *t);
-/**
  * For creating the init-thread and idle-thread
  *
  * @param p the process
@@ -96,9 +92,6 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->signal = 0;
 	t->schedCount = 0;
 	t->tlsRegion = -1;
-	/* pretend that we've been scheduled now the last time to prevent that we'll be the first victim
-	 * for swapping */
-	t->lastSched = timer_getTimestamp();
 	/* init fds */
 	for(i = 0; i < MAX_FD_COUNT; i++)
 		t->fileDescs[i] = -1;
@@ -188,7 +181,9 @@ void thread_switchTo(tTid tid) {
 			old = cur;
 			cur = t;
 
-			thread_setUsed(cur);
+			/* set used */
+			cur->schedCount++;
+			vmm_setTimestamp(cur,timer_getTimestamp());
 
 			/* if it is the idle-thread, stay here and wait for an interrupt */
 			if(cur->tid == IDLE_TID) {
@@ -249,29 +244,6 @@ void thread_switchTo(tTid tid) {
 	}
 }
 
-static void thread_setUsed(sThread *t) {
-	sSLNode *n;
-	t->schedCount++;
-	t->lastSched = timer_getTimestamp();
-	/* TODO */
-#if 0
-	if(t->proc->text) {
-		/* set this for all that use the same text, too. this is a small trick for swapping
-		 * because this way we won't swap the text of one of those processes out because
-		 * it has not been used recently and swap it in again because another user of this
-		 * text is currently used (e.g. the shells). */
-		/* of course this means that we won't consider the _whole_ processes which isn't perfect.
-		 * since we could swap out for example the data and stack of the not-used ones. */
-		/* TODO perhaps there is a better way? */
-		for(n = sll_begin(t->proc->text->procs); n != NULL; n = n->next) {
-			sProc *tp = (sProc*)n->data;
-			/* one thread is enough */
-			((sThread*)sll_get(tp->threads,0))->lastSched = t->lastSched;
-		}
-	}
-#endif
-}
-
 void thread_switchNoSigs(void) {
 	/* remember that the current thread waits in the kernel */
 	/* atm this is just used by the signal-module to check whether we can send a signal to a
@@ -312,14 +284,14 @@ bool thread_setReady(tTid tid) {
 	assert(t != NULL && t != cur);
 	if(!t->waitsInKernel)
 		sched_setReady(t);
-	return t->state == ST_READY || t->state == ST_READY_SUSP;
+	return t->state == ST_READY;
 }
 
 bool thread_setBlocked(tTid tid) {
 	sThread *t = thread_getById(tid);
 	assert(t != NULL);
 	sched_setBlocked(t);
-	return t->state == ST_BLOCKED || t->state == ST_BLOCKED_SUSP;
+	return t->state == ST_BLOCKED;
 }
 
 void thread_setSuspended(tTid tid,bool blocked) {
@@ -446,9 +418,6 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	t->proc = p;
 	t->signal = 0;
 	t->schedCount = 0;
-	/* pretend that we're scheduled now the last time to prevent that we'll be the first victim
-	 * for swapping */
-	t->lastSched = timer_getTimestamp();
 	if(cloneProc) {
 		/* proc_clone() sets t->kstackFrame in this case */
 		t->stackRegion = src->stackRegion;

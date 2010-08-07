@@ -24,6 +24,7 @@
 #include <sys/printf.h>
 #include <esc/sllist.h>
 
+#define PF_BITCOUNT			4	/* number of bits occupied by real flags */
 #define PF_COPYONWRITE		1
 #define PF_DEMANDLOAD		2
 #define PF_SWAPPED			4
@@ -48,8 +49,9 @@ typedef struct {
 	u32 binOffset;		/* offset in the binary */
 	u32 byteCount;		/* number of bytes */
 	u32 loadCount;		/* number of bytes to load from disk (the rest is zero'ed) */
+	u32 timestamp;		/* timestamp of last usage (for swapping) */
 	u32 pfSize;			/* size of pageFlags */
-	u8 *pageFlags;		/* flags for each page */
+	u32 *pageFlags;		/* flags for each page; upper bits: swap-block, if swapped */
 	sSLList *procs;		/* linked list of processes that use this region */
 } sRegion;
 
@@ -87,6 +89,24 @@ u32 reg_presentPageCount(sRegion *reg);
  * @return the number of references of the given region
  */
 u32 reg_refCount(sRegion *reg);
+
+/**
+ * Returns the swap-block in which the page with given index is stored
+ *
+ * @param reg the region
+ * @param pageIndex the index of the page in the region
+ * @return the swap-block
+ */
+u32 reg_getSwapBlock(sRegion *reg,u32 pageIndex);
+
+/**
+ * Sets the swap-block in which the page with given index is stored to <swapBlock>.
+ *
+ * @param reg the region
+ * @param pageIndex the index of the page in the region
+ * @param swapBlock the swap-block
+ */
+void reg_setSwapBlock(sRegion *reg,u32 pageIndex,u32 swapBlock);
 
 /**
  * Adds the given process as user to the region

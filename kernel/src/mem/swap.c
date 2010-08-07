@@ -46,11 +46,9 @@
 /*#define vid_printf(...)*/
 
 static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr);
-static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr);
-static sSLList *swap_getAffectedProcs(sProc *p,tVMRegNo *rno,u32 addr);
-static void swap_freeAffectedProcs(sSLList *procs);
+static void swap_doSwapOut(tTid tid,tFileNo file,sRegion *reg,u32 index);
 static void swap_setSuspended(sSLList *procs,bool blocked);
-static bool swap_findVictim(sProc **p,u32 *addr);
+static sRegion *swap_findVictim(u32 *index);
 
 static bool enabled = false;
 static bool swapping = false;
@@ -61,28 +59,6 @@ static tTid swapperTid = INVALID_TID;
 static u32 neededFrames = HIGH_WATER;
 /* no heap-usage here */
 static u8 buffer[PAGE_SIZE];
-
-/* TODO we have problems with shared memory. like text-sharing we have to check which
- * processes use it and give all the same "last-usage-time". otherwise we have trashing... */
-/* TODO additionally copy-on-write is not swapped */
-/* TODO a problem is also that we can't yet clone processes that have swapped something out, right? */
-
-/* concept:
- *
- * - swapmap stores a list of processes that use the memory (not an own list, but the list
- * 		from text-sharing or shared-memory)
- * - swmap_remProc() will be called BEFORE removing the process from shmem / textsharing. This way
- * 		the list remains valid. If just one process is in the list and thats the process to remove,
- * 		we can remove it from swap. Otherwise its either not our memory or we're not the last one.
- * - shared memory can't use the nofree flag since paging needs this as indicator to decide whether
- * 		a page can be swapped or not. So we need a different way to keep track of the shared-memory
- * 		regions. The nofree-flag was just used for removing on process-destroy anyway, so thats
- * 		the only part we've to change.
- * - shmem will not just store one entry per shmem-area but one for each usage and store whether
- * 		its the owner or not. This way we can save the location of it in virtual memory for all
- * 		users.
- * - additionally shmem will put the owner into the memberlist, too. That makes it easier.
- */
 
 void swap_start(void) {
 	tFileNo swapFile = -1;
@@ -108,14 +84,16 @@ void swap_start(void) {
 	while(1) {
 		/* swapping out is more important than swapping in to prevent that we run out of memory */
 		if(mm_getFreeFrmCount(MM_DEF) < LOW_WATER || neededFrames > HIGH_WATER) {
+			vid_printf("Starting to swap out (%d free frames; %d needed)\n",
+					mm_getFreeFrmCount(MM_DEF),neededFrames);
 			u32 count = 0;
 			swapping = true;
 			while(count < MAX_SWAP_AT_ONCE && mm_getFreeFrmCount(MM_DEF) < neededFrames) {
-				sProc *p;
-				u32 addr,free;
-				if(!swap_findVictim(&p,&addr))
+				u32 index,free;
+				sRegion *reg = swap_findVictim(&index);
+				if(reg == NULL)
 					util_panic("No process to swap out");
-				swap_doSwapOut(swapperTid,swapFile,p,addr);
+				swap_doSwapOut(swapperTid,swapFile,reg,index);
 				/* notify the threads that require the currently available frame-count */
 				free = mm_getFreeFrmCount(MM_DEF);
 				if(free > HIGH_WATER)
@@ -150,7 +128,7 @@ bool swap_outUntil(u32 frameCount) {
 	sThread *t = thread_getRunning();
 	if(free >= frameCount)
 		return true;
-	if(t->tid == ATA_TID || t->tid == swapperTid)
+	if(!enabled || t->tid == ATA_TID || t->tid == swapperTid)
 		return false;
 	do {
 		/* notify swapper-thread */
@@ -172,12 +150,12 @@ void swap_check(void) {
 		return;
 
 	freeFrm = mm_getFreeFrmCount(MM_DEF);
-	if(freeFrm < LOW_WATER) {
+	if(freeFrm < LOW_WATER/* || neededFrames < HIGH_WATER*/) {
 		/* notify swapper-thread */
-		if(!swapping)
+		if(/*freeFrm < LOW_WATER && */!swapping)
 			thread_wakeup(swapperTid,EV_SWAP_WORK);
 		/* if we have VERY few frames left, better block this thread until we have high water */
-		if(freeFrm < CRIT_WATER) {
+		if(freeFrm < CRIT_WATER/* || neededFrames < HIGH_WATER*/) {
 			sThread *t = thread_getRunning();
 			/* but its not really helpfull to block ata ;) */
 			if(t->tid != ATA_TID) {
@@ -209,16 +187,13 @@ bool swap_in(sProc *p,u32 addr) {
 }
 
 static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
-	sThread *t = thread_getRunning();
-	sSLNode *n;
-	tVMRegNo rno;
-	sVMRegion *vmreg;
-	sSLList *procs;
-	u32 temp,frame,block;
+	tVMRegNo rno = vmm_getRegionOf(p,addr);
+	sVMRegion *vmreg = vmm_getRegion(p,rno);
+	u32 temp,frame,block,index;
 	addr &= ~(PAGE_SIZE - 1);
 
-	procs = swap_getAffectedProcs(p,&rno,addr);
-	vmreg = vmm_getRegion(p,rno);
+	index = (addr - vmreg->virt) / PAGE_SIZE;
+	swap_setSuspended(vmreg->reg->procs,true);
 
 	/* not swapped anymore? so probably another process has already swapped it in */
 	/* this may actually happen if we want to swap a page of one process in but can't because
@@ -226,36 +201,15 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	 * one wants to swap this page in, too, it will wait as well. When we're done with
 	 * swapping out, one of the processes swaps in. Then the second one wants to swap in
 	 * the same page but doesn't find it in the swapmap since it has already been swapped in */
-	if(!(vmreg->reg->pageFlags[(addr - vmreg->virt) / PAGE_SIZE] & PF_SWAPPED)) {
-		swap_freeAffectedProcs(procs);
+	if(!(vmreg->reg->pageFlags[index] & PF_SWAPPED)) {
+		swap_setSuspended(vmreg->reg->procs,false);
 		return;
 	}
 
-	vid_printf("[%d] Swapin %p of %s(%d) ",t->tid,addr,p->command,p->pid);
+	block = reg_getSwapBlock(vmreg->reg,index);
 
-	/* we have to look through all processes because the one that swapped it out is not necessary
-	 * the process that aquires it first again (region-sharing) */
-	for(n = sll_begin(procs); n != NULL; n = n->next) {
-		sProc *sp = (sProc*)n->data;
-		if(sp != p) {
-			tVMRegNo srno = vmm_getRNoByRegion(sp,vmreg->reg);
-			sVMRegion *sreg = vmm_getRegion(sp,srno);
-			block = swmap_find(sp->pid,sreg->virt + (addr - vmreg->virt));
-		}
-		else
-			block = swmap_find(sp->pid,addr);
-		if(block != INVALID_BLOCK) {
-			vid_printf("(alloc by %d) ",sp->pid);
-			swmap_free(sp->pid,block,1);
-			break;
-		}
-	}
-	if(block == INVALID_BLOCK) {
-		swmap_dbg_print();
-		util_panic("Page still swapped out but not found in swapmap!?");
-	}
-
-	vid_printf("from blk %d...",block);
+	vid_printf("Swapin %x:%d (first=%p %s:%d) from blk %d...",
+			vmreg->reg,index,addr,p->command,p->pid,block);
 
 	/* read into buffer */
 	assert(vfs_seek(tid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
@@ -270,53 +224,43 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	paging_unmapFromTemp(1);
 
 	/* mark as not-swapped and map into all affected processes */
-	vmm_swapIn(p,rno,addr,frame);
+	vmm_swapIn(vmreg->reg,index,frame);
 
 	vid_printf("Done\n");
-	swap_freeAffectedProcs(procs);
+	swap_setSuspended(vmreg->reg->procs,false);
 }
 
-static void swap_doSwapOut(tTid tid,tFileNo file,sProc *p,u32 addr) {
-	sSLList *procs;
+static void swap_doSwapOut(tTid tid,tFileNo file,sRegion *reg,u32 index) {
 	tVMRegNo rno;
+	sVMRegion *vmreg;
 	u32 block,frameNo,temp;
+	sProc *first = (sProc*)sll_get(reg->procs,0);
 
-	procs = swap_getAffectedProcs(p,&rno,addr);
-	block = swmap_alloc(p->pid,procs,addr,1);
-	vid_printf("[%d] Swapout %p of %s(%d) to blk %d...",tid,addr,p->command,p->pid,block);
+	swap_setSuspended(reg->procs,true);
+	rno = vmm_getRNoByRegion(first,reg);
+	vmreg = vmm_getRegion(first,rno);
+	block = swmap_alloc(1);
+	vid_printf("Swapout %x:%d (first=%p %s:%d) to blk %d...",
+			reg,index,vmreg->virt + index * PAGE_SIZE,first->command,first->pid,block);
 	assert(block != INVALID_BLOCK);
 
 	/* copy to a temporary buffer because we can't use the temp-area when switching threads */
-	frameNo = paging_getFrameNo(p->pagedir,addr);
+	frameNo = paging_getFrameNo(first->pagedir,vmreg->virt + index * PAGE_SIZE);
 	temp = paging_mapToTemp(&frameNo,1);
 	memcpy(buffer,(void*)temp,PAGE_SIZE);
 	paging_unmapFromTemp(1);
 
 	/* mark as swapped and unmap from processes */
-	vmm_swapOut(p,rno,addr);
+	reg_setSwapBlock(reg,index,block);
+	vmm_swapOut(reg,index);
+	mm_freeFrame(frameNo,MM_DEF);
 
 	/* write out on disk */
 	assert(vfs_seek(tid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
 	assert(vfs_writeFile(tid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 	vid_printf("Done\n");
-	swap_freeAffectedProcs(procs);
-}
-
-static sSLList *swap_getAffectedProcs(sProc *p,tVMRegNo *rno,u32 addr) {
-	sSLList *procs;
-	*rno = vmm_getRegionOf(p,addr);
-	procs = vmm_getUsersOf(p,*rno);
-	/* TODO handle copy-on-write */
-	assert(procs);
-	/* block all threads that are affected of the swap-operation */
-	swap_setSuspended(procs,true);
-	return procs;
-}
-
-static void swap_freeAffectedProcs(sSLList *procs) {
-	/* threads can continue now */
-	swap_setSuspended(procs,false);
+	swap_setSuspended(reg->procs,false);
 }
 
 static void swap_setSuspended(sSLList *procs,bool blocked) {
@@ -334,22 +278,10 @@ static void swap_setSuspended(sSLList *procs,bool blocked) {
 	}
 }
 
-static bool swap_findVictim(sProc **p,u32 *addr) {
-	sProc **procs = NULL;
-	u32 *pages = NULL;
-	u32 proci,pagei,count = proc_getProcsForSwap(&procs,&pages);
-	if(!count)
-		return false;
-	proci = util_rand() % count;
-	pagei = util_rand() % pages[proci];
-	*addr = vmm_getAddrForSwap(procs[proci],pagei);
-	if(!*addr) {
-		kheap_free(procs);
-		kheap_free(pages);
-		return false;
-	}
-	*p = procs[proci];
-	kheap_free(procs);
-	kheap_free(pages);
-	return true;
+static sRegion *swap_findVictim(u32 *index) {
+	sRegion *reg = proc_getLRURegion();
+	if(reg == NULL)
+		return NULL;
+	*index = vmm_getPgIdxForSwap(reg);
+	return reg;
 }

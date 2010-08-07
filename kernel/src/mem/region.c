@@ -21,6 +21,7 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/region.h>
+#include <sys/mem/swapmap.h>
 #include <sys/video.h>
 #include <string.h>
 #include <assert.h>
@@ -32,7 +33,8 @@
  * processes (and of course the virtual address to which it is mapped may be different).
  * A region has some flags that specify what operations are allowed and it has an array of
  * page-flags (flags for each page). So that each page can have different flags like copy-on-write,
- * swapped, demand-load or demand-zero.
+ * swapped, demand-load or demand-zero. Additionally the page-flags store the swap-block if a
+ * page is swapped out.
  */
 
 sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 pgFlags,u32 flags) {
@@ -62,9 +64,10 @@ sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 pgFlags
 	reg->flags = flags;
 	reg->byteCount = bCount;
 	reg->loadCount = lCount;
+	reg->timestamp = 0;
 	pageCount = BYTES_2_PAGES(bCount);
 	reg->pfSize = pageCount;
-	reg->pageFlags = (u8*)kheap_alloc(pageCount);
+	reg->pageFlags = (u32*)kheap_alloc(pageCount * sizeof(u32));
 	if(reg->pageFlags == NULL)
 		goto errPDirs;
 	for(i = 0; i < pageCount; i++)
@@ -79,20 +82,36 @@ errReg:
 }
 
 void reg_destroy(sRegion *reg) {
+	u32 i,pcount = BYTES_2_PAGES(reg->byteCount);
 	assert(reg != NULL);
+	/* first free the swapped out blocks */
+	for(i = 0; i < pcount; i++) {
+		if(reg->pageFlags[i] & PF_SWAPPED)
+			swmap_free(reg_getSwapBlock(reg,i),1);
+	}
 	kheap_free(reg->pageFlags);
 	sll_destroy(reg->procs,false);
 	kheap_free(reg);
 }
 
 u32 reg_presentPageCount(sRegion *reg) {
-	u32 i,c = 0;
+	u32 i,c = 0,pcount = BYTES_2_PAGES(reg->byteCount);
 	assert(reg != NULL);
-	for(i = 0; i < reg->pfSize; i++) {
+	for(i = 0; i < pcount; i++) {
 		if((reg->pageFlags[i] & (PF_DEMANDLOAD | PF_LOADINPROGRESS)) == 0)
 			c++;
 	}
 	return c;
+}
+
+u32 reg_getSwapBlock(sRegion *reg,u32 pageIndex) {
+	assert(reg->pageFlags[pageIndex] & PF_SWAPPED);
+	return reg->pageFlags[pageIndex] >> PF_BITCOUNT;
+}
+
+void reg_setSwapBlock(sRegion *reg,u32 pageIndex,u32 swapBlock) {
+	reg->pageFlags[pageIndex] &= (1 << PF_BITCOUNT) - 1;
+	reg->pageFlags[pageIndex] |= swapBlock << PF_BITCOUNT;
 }
 
 u32 reg_refCount(sRegion *reg) {
@@ -116,13 +135,13 @@ bool reg_grow(sRegion *reg,s32 amount) {
 	assert(reg != NULL && (reg->flags & RF_GROWABLE));
 	if(amount > 0) {
 		s32 i;
-		u8 *pf = (u8*)kheap_realloc(reg->pageFlags,reg->pfSize + amount);
+		u32 *pf = (u32*)kheap_realloc(reg->pageFlags,(reg->pfSize + amount) * sizeof(u32));
 		if(pf == NULL)
 			return false;
 		reg->pfSize += amount;
 		/* stack grows downwards */
 		if(reg->flags & RF_STACK) {
-			memmove(pf + amount,pf,count);
+			memmove(pf + amount,pf,count * sizeof(u32));
 			for(i = 0; i < amount; i++)
 				pf[i] = 0;
 		}
@@ -134,10 +153,16 @@ bool reg_grow(sRegion *reg,s32 amount) {
 		reg->byteCount += amount * PAGE_SIZE;
 	}
 	else {
+		u32 i;
 		if(reg->byteCount < (u32)-amount * PAGE_SIZE)
 			return false;
+		/* free swapped pages */
+		for(i = count + amount; i < count; i++) {
+			if(reg->pageFlags[i] & PF_SWAPPED)
+				swmap_free(reg_getSwapBlock(reg,i),1);
+		}
 		if(reg->flags & RF_STACK)
-			memmove(reg->pageFlags,reg->pageFlags + -amount,count + amount);
+			memmove(reg->pageFlags,reg->pageFlags + -amount,(count + amount) * sizeof(u32));
 		reg->byteCount -= -amount * PAGE_SIZE;
 	}
 	return true;
@@ -148,7 +173,7 @@ sRegion *reg_clone(const void *p,sRegion *reg) {
 	assert(reg != NULL && !(reg->flags & RF_SHAREABLE));
 	clone = reg_create(&reg->binary,reg->binOffset,reg->byteCount,reg->loadCount,0,reg->flags);
 	if(clone) {
-		memcpy(clone->pageFlags,reg->pageFlags,reg->pfSize);
+		memcpy(clone->pageFlags,reg->pageFlags,reg->pfSize * sizeof(u32));
 		reg_addTo(clone,p);
 	}
 	return clone;
@@ -180,13 +205,15 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt) {
 		prf_sprintf(buf,"\tbinary: ino=%d dev=%d modified=%u offset=%#x\n",
 				reg->binary.ino,reg->binary.dev,reg->binary.modifytime,reg->binOffset);
 	}
+	prf_sprintf(buf,"\tTimestamp: %d\n",reg->timestamp);
 	prf_sprintf(buf,"\tProcesses: ");
 	for(n = sll_begin(reg->procs); n != NULL; n = n->next)
 		prf_sprintf(buf,"%d ",((sProc*)n->data)->pid);
 	prf_sprintf(buf,"\n");
-	prf_sprintf(buf,"\tPages (%d):\n",reg->pfSize);
+	prf_sprintf(buf,"\tPages (%d):\n",BYTES_2_PAGES(reg->byteCount));
 	for(i = 0, x = BYTES_2_PAGES(reg->byteCount); i < x; i++) {
-		prf_sprintf(buf,"\t\t%d: (%#08x) %c%c%c\n",i,virt + i * PAGE_SIZE,
+		prf_sprintf(buf,"\t\t%d: (%#08x) (swblk %d) %c%c%c\n",i,virt + i * PAGE_SIZE,
+				(reg->pageFlags[i] & PF_SWAPPED) ? reg_getSwapBlock(reg,i) : 0,
 				reg->pageFlags[i] & PF_COPYONWRITE ? 'c' : '-',
 				reg->pageFlags[i] & PF_DEMANDLOAD ? 'l' : '-',
 				reg->pageFlags[i] & PF_SWAPPED ? 's' : '-');

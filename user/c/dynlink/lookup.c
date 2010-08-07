@@ -31,13 +31,13 @@ static u32 lookup_getHash(const unsigned char *name);
 u32 lookup_resolve(sSharedLib *lib,u32 offset) {
 	Elf32_Sym *foundSym;
 	Elf32_Rel *rel = (Elf32_Rel*)((u32)lib->jmprel + offset);
-	Elf32_Sym *sym = lib->symbols + ELF32_R_SYM(rel->r_info);
+	Elf32_Sym *sym = lib->dynsyms + ELF32_R_SYM(rel->r_info);
 	u32 value,*addr;
-	DBGDL("Lookup symbol @ %x (%s) in lib %s\n",offset,lib->strtbl + sym->st_name,
+	DBGDL("Lookup symbol @ %x (%s) in lib %s\n",offset,lib->dynstrtbl + sym->st_name,
 			lib->name ? lib->name : "-Main-");
-	foundSym = lookup_byName(NULL,lib->strtbl + sym->st_name,&value);
+	foundSym = lookup_byName(NULL,lib->dynstrtbl + sym->st_name,&value);
 	if(foundSym == NULL)
-		error("Unable to find symbol %s",lib->strtbl + sym->st_name);
+		error("Unable to find symbol %s",lib->dynstrtbl + sym->st_name);
 	addr = (u32*)(rel->r_offset + lib->loadAddr);
 	DBGDL("Found: %x, GOT-entry: %x\n",value,addr);
 	*addr = value;
@@ -77,8 +77,8 @@ static Elf32_Sym *lookup_byNameIntern(sSharedLib *lib,const char *name,u32 hash)
 		return NULL;
 	symindex = lib->hashTbl[(hash % nhash) + 2];
 	while(symindex != STN_UNDEF) {
-		sym = lib->symbols + symindex;
-		if(sym->st_shndx != STN_UNDEF && strcmp(name,lib->strtbl + sym->st_name) == 0)
+		sym = lib->dynsyms + symindex;
+		if(sym->st_shndx != STN_UNDEF && strcmp(name,lib->dynstrtbl + sym->st_name) == 0)
 			return sym;
 		symindex = lib->hashTbl[2 + nhash + symindex];
 	}

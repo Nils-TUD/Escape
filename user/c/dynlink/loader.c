@@ -43,26 +43,35 @@ static u32 load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag);
 static void load_read(tFD binFd,u32 offset,void *buffer,u32 count);
 static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,bool isLib);
 
+static void dlerror(const char *fmt,...) {
+	va_list ap;
+	va_start(ap,fmt);
+	debugf("Error: ");
+	vdebugf(fmt,ap);
+	va_end(ap);
+	exit(1);
+}
+
 sSLList *libs = NULL;
 
 u32 load_setupProg(tFD binFd) {
 	u32 entryPoint;
 	libs = sll_create();
 	if(!libs)
-		error("Not enough mem!");
+		dlerror("Not enough mem!");
 
 	/* create entry for program */
 	sSharedLib *main = (sSharedLib*)malloc(sizeof(sSharedLib));
 	if(!main)
-		error("Not enough mem!");
+		dlerror("Not enough mem!");
 	main->relocated = false;
 	main->initialized = false;
-	main->strtbl = NULL;
+	main->dynstrtbl = NULL;
 	main->dyn = NULL;
 	main->name = NULL;
 	main->deps = sll_create();
 	if(!main->deps || !sll_append(libs,main))
-		error("Not enough mem!");
+		dlerror("Not enough mem!");
 
 	/* load program including shared libraries into linked list */
 	load_doLoad(binFd,main);
@@ -116,7 +125,7 @@ static u32 load_addSegments(void) {
 			if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
 				u32 addr = load_addSeg(l->fd,&l->bin,&pheader,loadSeg,l->name != NULL);
 				if(addr == 0)
-					error("Unable to add segment %d (type %d)",j,pheader.p_type);
+					dlerror("Unable to add segment %d (type %d)",j,pheader.p_type);
 				/* store load-address of text */
 				if(loadSeg == 0 && l->name != NULL)
 					l->loadAddr = addr;
@@ -125,22 +134,20 @@ static u32 load_addSegments(void) {
 		}
 
 		/* store some shortcuts */
-		/* TODO just temporary; later we should access the strtbl always in .text */
-		free(l->strtbl);
-		l->strtbl = (char*)load_getDyn(l->dyn,DT_STRTAB);
+		/* TODO just temporary; later we should access the dynstrtbl always in .text */
+		free(l->dynstrtbl);
+		l->dynstrtbl = (char*)load_getDyn(l->dyn,DT_STRTAB);
 		l->hashTbl = (Elf32_Word*)load_getDyn(l->dyn,DT_HASH);
-		l->symbols = (Elf32_Sym*)load_getDyn(l->dyn,DT_SYMTAB);
+		l->dynsyms = (Elf32_Sym*)load_getDyn(l->dyn,DT_SYMTAB);
 		l->jmprel = (Elf32_Rel*)load_getDyn(l->dyn,DT_JMPREL);
-		if(l->strtbl)
-			l->strtbl = (char*)((u32)l->strtbl + l->loadAddr);
+		if(l->dynstrtbl)
+			l->dynstrtbl = (char*)((u32)l->dynstrtbl + l->loadAddr);
 		if(l->hashTbl)
 			l->hashTbl = (Elf32_Word*)((u32)l->hashTbl + l->loadAddr);
-		if(l->symbols)
-			l->symbols = (Elf32_Sym*)((u32)l->symbols + l->loadAddr);
+		if(l->dynsyms)
+			l->dynsyms = (Elf32_Sym*)((u32)l->dynsyms + l->loadAddr);
 		if(l->jmprel)
 			l->jmprel = (Elf32_Rel*)((u32)l->jmprel + l->loadAddr);
-
-		close(l->fd);
 	}
 	return entryPoint;
 }
@@ -155,9 +162,10 @@ static void load_init(void) {
 
 static void load_initLib(sSharedLib *l) {
 	sSLNode *n;
-	u32 constrStart,constrEnd;
-	Elf32_Sym *symStart,*symEnd;
-	fConstr *constr;
+	Elf32_Ehdr eheader;
+	Elf32_Shdr sheader;
+	u8 const *datPtr;
+	u32 j;
 
 	/* already initialized? */
 	if(l->initialized)
@@ -169,25 +177,37 @@ static void load_initLib(sSharedLib *l) {
 		load_initLib(dl);
 	}
 
-	/* lookup symbols */
-	symStart = lookup_byNameIn(l,"__libcpp_constr_start",&constrStart);
-	if(!symStart)
-		return;
-	symEnd = lookup_byNameIn(l,"__libcpp_constr_end",&constrEnd);
-	if(!symEnd)
-		return;
+	/* read header */
+	load_read(l->fd,0,&eheader,sizeof(Elf32_Ehdr));
 
-	DBGDL("Calling global constructors of %s\n",l->name ? l->name : "-Main-");
+	/* find .ctors section */
+	datPtr = (u8 const*)(eheader.e_shoff);
+	for(j = 0; j < eheader.e_shnum; datPtr += eheader.e_shentsize, j++) {
+		/* read sheader */
+		load_read(l->fd,(u32)datPtr,&sheader,sizeof(Elf32_Shdr));
+		if(sheader.sh_type == SHT_PROGBITS && strcmp(l->shsymbols + sheader.sh_name,".ctors") == 0)
+			break;
+	}
 
-	/* call constructors */
-	constr = (fConstr*)constrStart;
-	while(constr < (fConstr*)constrEnd) {
-		DBGDL("Calling constructor %x\n",*constr);
-		(*constr)();
-		constr++;
+	if(j != eheader.e_shnum) {
+		/* determine start and end */
+		u32 constrStart = l->loadAddr + sheader.sh_addr;
+		u32 constrEnd = constrStart + sheader.sh_size;
+		fConstr *constr;
+
+		DBGDL("Calling global constructors of %s\n",l->name ? l->name : "-Main-");
+
+		/* call constructors */
+		constr = (fConstr*)constrStart;
+		while(constr < (fConstr*)constrEnd && *constr != (fConstr)-1) {
+			DBGDL("Calling constructor %x\n",*constr);
+			(*constr)();
+			constr++;
+		}
 	}
 
 	l->initialized = true;
+	close(l->fd);
 }
 
 static void load_reloc(void) {
@@ -226,13 +246,13 @@ static void load_relocLib(sSharedLib *l) {
 			if(relType == R_386_GLOB_DAT) {
 				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
 				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
-				Elf32_Sym *sym = l->symbols + symIndex;
+				Elf32_Sym *sym = l->dynsyms + symIndex;
 				/* if the symbol-value is 0, it seems that we have to lookup the symbol now and
 				 * store that value instead. TODO I'm not sure if thats correct */
 				if(sym->st_value == 0) {
 					u32 value;
-					if(!lookup_byName(l,l->strtbl + sym->st_name,&value))
-						error("Unable to find symbol %s",l->strtbl + sym->st_name);
+					if(!lookup_byName(l,l->dynstrtbl + sym->st_name,&value))
+						dlerror("Unable to find symbol %s",l->dynstrtbl + sym->st_name);
 					*ptr = value;
 				}
 				else
@@ -243,10 +263,10 @@ static void load_relocLib(sSharedLib *l) {
 			else if(relType == R_386_COPY) {
 				u32 value;
 				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
-				const char *name = l->strtbl + l->symbols[symIndex].st_name;
+				const char *name = l->dynstrtbl + l->dynsyms[symIndex].st_name;
 				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
 				if(foundSym == NULL)
-					error("Unable to find symbol %s",name);
+					dlerror("Unable to find symbol %s",name);
 				memcpy((void*)(rel[x].r_offset),(void*)value,foundSym->st_size);
 				/* set the GOT-Entry in the library of the symbol to the address we've copied
 				 * the value to. TODO I'm not sure if that's the intended way... */
@@ -262,7 +282,7 @@ static void load_relocLib(sSharedLib *l) {
 			}
 			else if(relType == R_386_32) {
 				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
-				Elf32_Sym *sym = l->symbols + ELF32_R_SYM(rel[x].r_info);
+				Elf32_Sym *sym = l->dynsyms + ELF32_R_SYM(rel[x].r_info);
 				DBGDL("Rel (32) off=%x orgoff=%x symval=%x org=%x reloc=%x\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr,
 						sym->st_value + l->loadAddr);
@@ -270,14 +290,14 @@ static void load_relocLib(sSharedLib *l) {
 			}
 			/*else if(relType == R_386_PC32) {
 				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
-				Elf32_Sym *sym = l->symbols + ELF32_R_SYM(rel[x].r_info);
+				Elf32_Sym *sym = l->dynsyms + ELF32_R_SYM(rel[x].r_info);
 				DBGDL("Rel (PC32) off=%x orgoff=%x symval=%x org=%x reloc=%x\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr,
 						(u32)ptr - (sym->st_value + l->loadAddr));
 				*ptr = (u32)ptr - (sym->st_value + l->loadAddr);
 			}*/
 			else
-				error("In library %s: Unknown relocation: off=%x info=%x\n",
+				dlerror("In library %s: Unknown relocation: off=%x info=%x\n",
 						l->name ? l->name : "<main>",rel[x].r_offset,rel[x].r_info);
 		}
 	}
@@ -296,17 +316,17 @@ static void load_relocLib(sSharedLib *l) {
 			if(true || LD_BIND_NOW || *addr == 0) {
 				u32 value;
 				u32 symIndex = ELF32_R_SYM(l->jmprel[x].r_info);
-				const char *name = l->strtbl + l->symbols[symIndex].st_name;
+				const char *name = l->dynstrtbl + l->dynsyms[symIndex].st_name;
 				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
 				/* TODO there must be a better way... */
 				/*if(!foundSym && !LD_BIND_NOW)
-					error("Unable to find symbol %s",name);
+					dlerror("Unable to find symbol %s",name);
 				else */if(foundSym)
 					*addr = value;
 				else {
 					foundSym = lookup_byName(NULL,name,&value);
 					if(!foundSym)
-						error("Unable to find symbol %s",name);
+						dlerror("Unable to find symbol %s",name);
 					*addr = value;
 				}
 				DBGDL("JmpRel off=%x addr=%x reloc=%x (%s)\n",l->jmprel[x].r_offset,addr,value,name);
@@ -352,7 +372,7 @@ static void load_adjustCopyGotEntry(const char *name,u32 copyAddr) {
 				for(x = 0; x < relCount; x++) {
 					if(ELF32_R_TYPE(rel[x].r_info) == R_386_GLOB_DAT) {
 						u32 symIndex = ELF32_R_SYM(rel[x].r_info);
-						if(l->symbols[symIndex].st_value + l->loadAddr == address) {
+						if(l->dynsyms[symIndex].st_value + l->loadAddr == address) {
 							u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
 							*ptr = copyAddr;
 							break;
@@ -370,20 +390,21 @@ static void load_library(sSharedLib *dst) {
 	snprintf(path,sizeof(path),"/lib/%s",dst->name);
 	fd = open(path,IO_READ);
 	if(fd < 0)
-		error("Unable to open '%s'",path);
+		dlerror("Unable to open '%s'",path);
 	load_doLoad(fd,dst);
 }
 
 static void load_doLoad(tFD binFd,sSharedLib *dst) {
 	Elf32_Ehdr eheader;
 	Elf32_Phdr pheader;
+	Elf32_Shdr sheader;
 	sFileInfo info;
 	u8 const *datPtr;
 	u32 j,loadSeg,textOffset = 0xFFFFFFFF;
 
 	/* build bindesc */
 	if(fstat(binFd,&info) < 0)
-		error("stat() for binary failed");
+		dlerror("stat() for binary failed");
 	dst->bin.ino = info.inodeNo;
 	dst->bin.dev = info.device;
 	dst->bin.modifytime = info.modifytime;
@@ -395,7 +416,13 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 
 	/* check magic-number */
 	if(eheader.e_ident.dword != *(u32*)ELFMAG)
-		error("Invalid ELF-magic");
+		dlerror("Invalid ELF-magic");
+
+	/* load section-header symbols */
+	datPtr = (u8 const*)(eheader.e_shoff + eheader.e_shstrndx * eheader.e_shentsize);
+	load_read(binFd,(u32)datPtr,&sheader,sizeof(Elf32_Shdr));
+	dst->shsymbols = (char*)malloc(sheader.sh_size);
+	load_read(binFd,sheader.sh_offset,dst->shsymbols,sheader.sh_size);
 
 	loadSeg = 0;
 	datPtr = (u8 const*)(eheader.e_phoff);
@@ -418,30 +445,30 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 			/* read dynamic-entries */
 			dst->dyn = (Elf32_Dyn*)malloc(pheader.p_filesz);
 			if(!dst->dyn)
-				error("Not enough mem!");
+				dlerror("Not enough mem!");
 			load_read(binFd,pheader.p_offset,dst->dyn,pheader.p_filesz);
 
 			/* read string-table */
 			strtblSize = load_getDyn(dst->dyn,DT_STRSZ);
-			dst->strtbl = (char*)malloc(strtblSize);
-			if(!dst->strtbl)
-				error("Not enough mem!");
-			load_read(binFd,load_getDyn(dst->dyn,DT_STRTAB) + textOffset,dst->strtbl,strtblSize);
+			dst->dynstrtbl = (char*)malloc(strtblSize);
+			if(!dst->dynstrtbl)
+				dlerror("Not enough mem!");
+			load_read(binFd,load_getDyn(dst->dyn,DT_STRTAB) + textOffset,dst->dynstrtbl,strtblSize);
 
 			for(i = 0; i < (pheader.p_filesz / sizeof(Elf32_Dyn)); i++) {
 				if(dst->dyn[i].d_tag == DT_NEEDED) {
 					sSharedLib *nlib,*lib = (sSharedLib*)malloc(sizeof(sSharedLib));
 					if(!lib)
-						error("Not enough mem!");
+						dlerror("Not enough mem!");
 					lib->relocated = false;
 					lib->initialized = false;
 					lib->dyn = NULL;
-					lib->strtbl = NULL;
-					lib->name = dst->strtbl + dst->dyn[i].d_un.d_val;
+					lib->dynstrtbl = NULL;
+					lib->name = dst->dynstrtbl + dst->dyn[i].d_un.d_val;
 					lib->loadAddr = 0;
 					lib->deps = sll_create();
 					if(!lib->deps)
-						error("Not enough mem!");
+						dlerror("Not enough mem!");
 					nlib = load_addLib(lib);
 					if(nlib == NULL) {
 						load_library(lib);
@@ -464,13 +491,13 @@ static sSharedLib *load_addLib(sSharedLib *lib) {
 			return l;
 	}
 	if(!sll_append(libs,lib))
-		error("Not enough mem!");
+		dlerror("Not enough mem!");
 	return NULL;
 }
 
 static u32 load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
 	if(dyn == NULL)
-		error("No dynamic entries");
+		dlerror("No dynamic entries");
 	while(dyn->d_tag != DT_NULL) {
 		if(dyn->d_tag == tag)
 			return dyn->d_un.d_val;
@@ -524,7 +551,7 @@ static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadS
 
 static void load_read(tFD binFd,u32 offset,void *buffer,u32 count) {
 	if(seek(binFd,(u32)offset,SEEK_SET) < 0)
-		error("Unable to seek to %x",offset);
+		dlerror("Unable to seek to %x",offset);
 	if(read(binFd,buffer,count) != (s32)count)
-		error("Unable to read %d bytes @ %x",count,offset);
+		dlerror("Unable to read %d bytes @ %x",count,offset);
 }

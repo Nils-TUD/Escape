@@ -88,45 +88,48 @@ u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount);
 tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 type);
 
 /**
- * Swaps the page at given address in given region from process <p> out. I.e. it marks the page
- * as swapped in the region and unmaps it from all affected processes.
+ * Swaps the page at given index in given region out. I.e. it marks the page as swapped in the
+ * region and unmaps it from all affected processes.
+ * Does NOT free the frame!
  *
- * @param p the process
- * @param rno the region-number in which the address is
- * @param addr the address (page-aligned!)
+ * @param reg the region
+ * @param index the page-index in the region
  */
-void vmm_swapOut(sProc *p,tVMRegNo rno,u32 addr);
+void vmm_swapOut(sRegion *reg,u32 index);
 
 /**
- * Swaps the page at given address in given region from process <p> in. I.e. it marks the page
- * as not-swapped in the region and maps it with given frame-number for all affected processes.
+ * Swaps the page at given index in given region in. I.e. it marks the page as not-swapped in
+ * the region and maps it with given frame-number for all affected processes.
  *
- * @param p the process
- * @param rno the region-number in which the address is
- * @param addr the address (page-aligned!)
+ * @param reg tje region
+ * @param index the page-index in the region
  * @param frameNo the frame-number
  */
-void vmm_swapIn(sProc *p,tVMRegNo rno,u32 addr,u32 frameNo);
+void vmm_swapIn(sRegion *reg,u32 index,u32 frameNo);
 
 /**
- * Counts the number of pages of the given process that can still be swapped out, i.e. are not
- * already swapped out and its possible for the pages.
+ * Sets the timestamp for all regions that are used by the given thread
  *
- * @param p the process
- * @return the number of pages
+ * @param t the thread
+ * @param timestamp the timestamp to set
  */
-u32 vmm_countSwappablePages(sProc *p);
+void vmm_setTimestamp(sThread *t,u32 timestamp);
 
 /**
- * Determines the virtual address for given process with the given index. I.e. it walks through
- * all swappable pages (see vmm_countSwappablePages()) and returns the address of the page when
- * the desired index is reached.
+ * Returns the least recently used region of the given process that contains swappable pages
  *
  * @param p the process
- * @param index the index of the page (in the swappable pages)
- * @return the virtual address. 0 indicates failure
+ * @return the LRU region (may be NULL)
  */
-u32 vmm_getAddrForSwap(sProc *p,u32 index);
+sRegion *vmm_getLRURegion(sProc *p);
+
+/**
+ * Returns a random page-index in the given region that may be swapped out
+ *
+ * @param reg the region
+ * @return the page-index (-1 if failed)
+ */
+u32 vmm_getPgIdxForSwap(sRegion *reg);
 
 /**
  * Tests wether the region with given number exists

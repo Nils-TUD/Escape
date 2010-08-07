@@ -96,10 +96,6 @@ typedef struct {
 	sProc *proc;
 	/* the number of times we got chosen so far */
 	u32 schedCount;
-	/* kernel-internal timestamp of last scheduling; note that this is not really correct
-	 * since its just used for swapping (we'll set the same timestamp for a thread of all
-	 * procs that use the same text) */
-	u64 lastSched;
 	/* the stack-region for this thread */
 	tVMRegNo stackRegion;
 	/* the TLS-region for this thread (-1 if not present) */

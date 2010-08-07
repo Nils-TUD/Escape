@@ -33,35 +33,18 @@
 void swmap_init(u32 swapSize);
 
 /**
- * Removes all areas of the given process (that of course are not needed anymore by anyone else)
- * IMPORTANT: You HAVE TO call this function before you remove a process from the text-sharing-
- * or shared-memory-list!
+ * Allocates <count> continuous blocks on the swap-device
  *
- * @param pid the process-id
- * @param procs the list of processes that use the area (this HAS TO be the list of shm, text-sharing
- * 	or NULL to remove all stuff that is owned by the process)
- */
-void swmap_remProc(tPid pid,sSLList *procs);
-
-/**
- * Allocates a place in the swap-device for the given virtual-memory-part
- *
- * @param pid the pid
- * @param procs a linked lists with processes that use this area (NULL if just <pid>)
- * @param virt the virtual address
  * @param count the number of pages to swap
  * @return the starting block on the swap-device or INVALID_BLOCK if no free space is left
  */
-u32 swmap_alloc(tPid pid,sSLList *procs,u32 virt,u32 count);
+u32 swmap_alloc(u32 count);
 
 /**
- * Searches for the block on the swap-device which has the content of the given page
- *
- * @param pid the pid
- * @param virt the virtual address of the page
- * @return the block of it or INVALID_BLOCK
+ * @param block the block-number
+ * @return true if the given block is used
  */
-u32 swmap_find(tPid pid,u32 virt);
+bool swmap_isUsed(u32 block);
 
 /**
  * Determines the free space in the swapmap
@@ -71,13 +54,12 @@ u32 swmap_find(tPid pid,u32 virt);
 u32 swmap_freeSpace(void);
 
 /**
- * Free's the given blocks owned by the given process
+ * Free's the given blocks
  *
- * @param pid the pid
  * @param block the starting block
  * @param count the number of blocks
  */
-void swmap_free(tPid pid,u32 block,u32 count);
+void swmap_free(u32 block,u32 count);
 
 
 #if DEBUGGING

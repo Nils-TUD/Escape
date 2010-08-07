@@ -84,13 +84,11 @@ typedef struct {
 	u32 ownFrames;
 	/* the number of frames the process uses, but maybe other processes as well */
 	u32 sharedFrames;
+	/* pages that are in swap */
+	u32 swapped;
 	/* the regions */
 	u32 regSize;
 	void *regions;
-	/* pages that are in swap */
-	u32 swapped;
-	/* the number of pages that can't be swapped (shared mem and mapped physical) */
-	u32 unswappable;
 	/* for the waiting parent */
 	s32 exitCode;
 	tSig exitSig;
@@ -155,27 +153,11 @@ u32 proc_getCount(void);
 sProc *proc_getProcWithBin(sBinDesc *bin,tVMRegNo *rno);
 
 /**
- * Collects all processes that are candicates for swapping.
- * Note that YOU HAVE TO free the memory if the return-value is not 0!
+ * Determines the least recently used region of all processes
  *
- * @param p a pointer to an array of processes
- * @param pages a pointer to an array with the number of pages available for swapping for each process
- * @return the number of processes found
+ * @return the region (may be NULL)
  */
-u32 proc_getProcsForSwap(sProc ***p,u32 **pages);
-
-/**
- * Finds the least recently used process where something can be swapped. The current one is excluded.
- *
- * @return the process or NULL if no one found
- */
-sProc *proc_getLRUProc(void);
-
-/**
- * @param p the process
- * @return the number of pages that can be swapped
- */
-u32 proc_getSwapCount(sProc *p);
+sRegion *proc_getLRURegion(void);
 
 /**
  * Determines the mem-usage of all processes

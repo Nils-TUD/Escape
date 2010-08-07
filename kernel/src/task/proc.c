@@ -76,7 +76,6 @@ void proc_init(void) {
 	p->ownFrames = 1 + 1 + 1;
 	/* the first process has no text, data and stack */
 	p->swapped = 0;
-	p->unswappable = 0;
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
 	p->sigRetAddr = 0;
@@ -162,70 +161,19 @@ sProc *proc_getProcWithBin(sBinDesc *bin,tVMRegNo *rno) {
 	return NULL;
 }
 
-u32 proc_getProcsForSwap(sProc ***p,u32 **pages) {
-	u32 i,count = 0;
-	for(i = 0; i < PROC_COUNT; i++) {
-		if(procs[i].pid != INVALID_PID && i != ATA_PID)
-			count++;
-	}
-	*p = (sProc**)kheap_alloc(count * sizeof(sProc*));
-	*pages = (u32*)kheap_alloc(count * sizeof(u32));
-	if(!*p || !*pages)
-		return 0;
-	count = 0;
+sRegion *proc_getLRURegion(void) {
+	u32 i,ts = ULONG_MAX;
+	sRegion *lru = NULL;
 	for(i = 0; i < PROC_COUNT; i++) {
 		if(procs[i].pid != INVALID_PID && i != ATA_PID) {
-			u32 pgcount = vmm_countSwappablePages(procs + i);
-			if(pgcount) {
-				(*p)[count] = procs + i;
-				(*pages)[count] = pgcount;
-				count++;
-			}
-		}
-	}
-	if(count == 0) {
-		kheap_free(*p);
-		kheap_free(*pages);
-	}
-	return count;
-}
-
-sProc *proc_getLRUProc(void) {
-	u32 i;
-	sProc *cur = proc_getRunning();
-	sProc *lru = NULL;
-	u64 lruTime = LLONG_MAX;
-	for(i = 0; i < PROC_COUNT; i++) {
-		/* we don't want to swap the current one */
-		if(procs[i].pid != INVALID_PID && procs + i != cur && proc_getSwapCount(procs + i) > 0) {
-			sSLNode *n;
-			u64 time = 0;
-			/* find last used thread */
-			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
-				sThread *t = (sThread*)n->data;
-				/* don't swap out ata because ata performs the swapping ;) */
-				if(t->tid == ATA_TID) {
-					time = LLONG_MAX;
-					break;
-				}
-				if(t->lastSched > time)
-					time = t->lastSched;
-			}
-
-			/* if it was used before the current one, its our LRU */
-			if(time < lruTime) {
-				lruTime = time;
-				lru = procs + i;
+			sRegion *reg = vmm_getLRURegion(procs + i);
+			if(reg && reg->timestamp < ts) {
+				ts = reg->timestamp;
+				lru = reg;
 			}
 		}
 	}
 	return lru;
-}
-
-u32 proc_getSwapCount(sProc *p) {
-	assert(p->pid != INVALID_PID);
-	/* TODO */
-	return 0/*(p->textPages + p->dataPages + p->stackPages - p->unswappable) - p->swapped*/;
 }
 
 void proc_getMemUsage(u32 *paging,u32 *data) {
@@ -272,9 +220,7 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	if(p->threadDir == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
-	/* unswappable may be changed in clonePageDir() */
 	p->swapped = 0;
-	p->unswappable = 0;
 
 	/* clone page-dir */
 	if((res = paging_cloneKernelspace(&stackFrame,&p->pagedir)) < 0)
@@ -817,7 +763,9 @@ void proc_dbg_printAllPDs(u8 parts,bool regions) {
 	u32 i;
 	for(i = 0; i < PROC_COUNT; i++) {
 		if(procs[i].pid != INVALID_PID) {
-			vid_printf("Process %d (%s):\n",procs[i].pid,procs[i].command);
+			vid_printf("Process %d (%s) (%d own, %d sh, %d sw):\n",
+					procs[i].pid,procs[i].command,procs[i].ownFrames,procs[i].sharedFrames,
+					procs[i].swapped);
 			if(regions)
 				vmm_dbg_print(procs + i);
 			paging_dbg_printPDir(procs[i].pagedir,parts);
@@ -831,7 +779,7 @@ void proc_dbg_print(sProc *p) {
 	vid_printf("proc %d:\n",p->pid);
 	vid_printf("\tppid=%d, cmd=%s, pdir=%x\n",p->parentPid,p->command,p->pagedir);
 	vid_printf("\townFrames=%u, sharedFrames=%u\n",p->ownFrames,p->sharedFrames);
-	vid_printf("\tunswappable=%u, swapped=%u\n",p->unswappable,p->swapped);
+	vid_printf("\tswapped=%u\n",p->swapped);
 	if(p->threads) {
 		for(n = sll_begin(p->threads); n != NULL; n = n->next)
 			thread_dbg_print((sThread*)n->data);

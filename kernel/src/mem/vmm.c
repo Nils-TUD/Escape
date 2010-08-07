@@ -29,6 +29,7 @@
 #include <sys/video.h>
 #include <sys/util.h>
 #include <errors.h>
+#include <limits.h>
 #include <string.h>
 #include <assert.h>
 
@@ -44,8 +45,8 @@
 #define REG(p,i)			(((sVMRegion**)(p)->regions)[(i)])
 #define ROUNDUP(bytes)		(((bytes) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
-static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr);
-static u8 *vmm_getPageFlag(sVMRegion *reg,u32 addr);
+static bool vmm_demandLoad(sVMRegion *vm,u32 *flags,u32 addr);
+static u32 *vmm_getPageFlag(sVMRegion *reg,u32 addr);
 static s32 vmm_findRegIndex(sProc *p,bool text);
 static u32 vmm_findFreeStack(sProc *p,u32 byteCount);
 static sVMRegion *vmm_isOccupied(sProc *p,u32 start,u32 end);
@@ -155,81 +156,99 @@ errReg:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-void vmm_swapOut(sProc *p,tVMRegNo rno,u32 addr) {
+void vmm_swapOut(sRegion *reg,u32 index) {
 	sSLNode *n;
-	sVMRegion *vm = REG(p,rno);
-	u32 index = (addr - vm->virt) / PAGE_SIZE;
-	vm->reg->pageFlags[index] |= PF_SWAPPED;
-	u32 frameNo = paging_getFrameNo(p->pagedir,addr);
-	for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
+	u32 offset = index * PAGE_SIZE;
+	reg->pageFlags[index] |= PF_SWAPPED;
+	for(n = sll_begin(reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
 		/* the region may be mapped to a different virtual address */
-		tVMRegNo mprno = vmm_getRNoByRegion(mp,vm->reg);
+		tVMRegNo mprno = vmm_getRNoByRegion(mp,reg);
 		sVMRegion *mpreg = REG(mp,mprno);
 		assert(mprno != -1);
-		sAllocStats stats = paging_mapTo(mp->pagedir,mpreg->virt + (addr - vm->virt),NULL,1,0);
-		/* one more for the frame, that we'll free manually */
-		if(vm->reg->flags & RF_SHAREABLE)
-			mp->sharedFrames -= stats.frames + 1;
+		paging_mapTo(mp->pagedir,mpreg->virt + offset,NULL,1,0);
+		if(reg->flags & RF_SHAREABLE)
+			mp->sharedFrames--;
 		else
-			mp->ownFrames -= stats.frames + 1;
-		mp->ownFrames -= stats.ptables;
+			mp->ownFrames--;
+		mp->swapped++;
 	}
-	mm_freeFrame(frameNo,MM_DEF);
 }
 
-void vmm_swapIn(sProc *p,tVMRegNo rno,u32 addr,u32 frameNo) {
+void vmm_swapIn(sRegion *reg,u32 index,u32 frameNo) {
 	sSLNode *n;
-	sVMRegion *vm = REG(p,rno);
-	u32 index = (addr - vm->virt) / PAGE_SIZE;
+	u32 offset = index * PAGE_SIZE;
 	u8 flags = PG_PRESENT;
-	if(vm->reg->flags & (RF_WRITABLE))
+	if(reg->flags & (RF_WRITABLE))
 		flags |= PG_WRITABLE;
-	vm->reg->pageFlags[index] &= ~PF_SWAPPED;
-	for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
+	reg->pageFlags[index] &= ~PF_SWAPPED;
+	for(n = sll_begin(reg->procs); n != NULL; n = n->next) {
 		sProc *mp = (sProc*)n->data;
 		/* the region may be mapped to a different virtual address */
-		tVMRegNo mprno = vmm_getRNoByRegion(mp,vm->reg);
+		tVMRegNo mprno = vmm_getRNoByRegion(mp,reg);
 		sVMRegion *mpreg = REG(mp,mprno);
 		assert(mprno != -1);
-		sAllocStats stats = paging_mapTo(mp->pagedir,mpreg->virt + (addr - vm->virt),&frameNo,1,flags);
-		if(vm->reg->flags & RF_SHAREABLE)
-			mp->sharedFrames += stats.frames;
+		paging_mapTo(mp->pagedir,mpreg->virt + offset,&frameNo,1,flags);
+		if(reg->flags & RF_SHAREABLE)
+			mp->sharedFrames++;
 		else
-			mp->ownFrames += stats.frames;
-		mp->ownFrames += stats.ptables;
+			mp->ownFrames++;
+		mp->swapped--;
 	}
 }
 
-u32 vmm_countSwappablePages(sProc *p) {
-	u32 i,count = 0;
-	for(i = 0; i < p->regSize; i++) {
-		sVMRegion *vm = REG(p,i);
-		if(vm && !(vm->reg->flags & RF_NOFREE)) {
-			u32 j,pages = BYTES_2_PAGES(vm->reg->byteCount);
-			for(j = 0; j < pages; j++) {
-				if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD)))
-					count++;
+void vmm_setTimestamp(sThread *t,u32 timestamp) {
+	u32 i;
+	for(i = 0; i < t->proc->regSize; i++) {
+		sVMRegion *vm = REG(t->proc,i);
+		if(vm) {
+			/* for stack and tls: just mark the ones of the given thread used */
+			if((!(vm->reg->flags & RF_TLS) || i == (u32)t->tlsRegion) &&
+				(!(vm->reg->flags & RF_STACK) || i == (u32)t->stackRegion)) {
+				vm->reg->timestamp = timestamp;
 			}
 		}
 	}
-	return count;
 }
 
-u32 vmm_getAddrForSwap(sProc *p,u32 index) {
-	u32 i;
+sRegion *vmm_getLRURegion(sProc *p) {
+	sRegion *lru = NULL;
+	u32 i,ts = ULONG_MAX;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
-		if(vm && !(vm->reg->flags & RF_NOFREE)) {
-			u32 j,pages = BYTES_2_PAGES(vm->reg->byteCount);
+		if(vm && !(vm->reg->flags & RF_NOFREE) && vm->reg->timestamp < ts) {
+			u32 j,count = 0,pages = BYTES_2_PAGES(vm->reg->byteCount);
 			for(j = 0; j < pages; j++) {
 				if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD))) {
-					if(index-- == 0)
-						return vm->virt + j * PAGE_SIZE;
+					count++;
+					break;
 				}
+			}
+			if(count > 0) {
+				ts = vm->reg->timestamp;
+				lru = vm->reg;
 			}
 		}
 	}
+	return lru;
+}
+
+u32 vmm_getPgIdxForSwap(sRegion *reg) {
+	u32 i,pages = BYTES_2_PAGES(reg->byteCount);
+	u32 index,count = 0;
+	for(i = 0; i < pages; i++) {
+		if(!(reg->pageFlags[i] & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD)))
+			count++;
+	}
+	index = util_rand() % count;
+	for(i = 0; i < pages; i++) {
+		if(!(reg->pageFlags[i] & (PF_SWAPPED | PF_COPYONWRITE | PF_DEMANDLOAD))) {
+			if(index-- == 0)
+				return i;
+		}
+	}
+	/* should never happen */
+	assert(false);
 	return 0;
 }
 
@@ -347,7 +366,7 @@ bool vmm_pagefault(u32 addr) {
 	sProc *p = proc_getRunning();
 	tVMRegNo rno = vmm_getRegionOf(p,addr);
 	sVMRegion *vm;
-	u8 *flags;
+	u32 *flags;
 	if(rno < 0)
 		return false;
 	vm = REG(p,rno);
@@ -574,16 +593,20 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 	u32 oldSize,oldVirt,virt;
 	sVMRegion *vm;
 
-	/* swap out, if necessary; do it here to because caching some values before may cause trouble
-	 * if they're changed by another thread */
-	if(!swap_outUntil(amount))
-		return ERR_NOT_ENOUGH_MEM;
-
 	vm = REG(p,reg);
 	assert(p && reg >= 0 && reg < (s32)p->regSize && vm != NULL);
 	assert((vm->reg->flags & RF_GROWABLE) && !(vm->reg->flags & RF_SHAREABLE));
 
 	/* check wether we've reached the max stack-pages */
+	if(vm->reg->flags & RF_STACK && BYTES_2_PAGES(vm->reg->byteCount) + amount >= MAX_STACK_PAGES - 1)
+		return ERR_NOT_ENOUGH_MEM;
+
+	/* swap out, if necessary */
+	if(amount > 0 && !swap_outUntil(amount))
+		return ERR_NOT_ENOUGH_MEM;
+
+	/* check again to be sure */
+	vm = REG(p,reg);
 	if(vm->reg->flags & RF_STACK && BYTES_2_PAGES(vm->reg->byteCount) + amount >= MAX_STACK_PAGES - 1)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -638,7 +661,7 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount) {
 	return ((vm->reg->flags & RF_STACK) ? oldVirt : oldVirt + ROUNDUP(oldSize)) / PAGE_SIZE;
 }
 
-static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
+static bool vmm_demandLoad(sVMRegion *vm,u32 *flags,u32 addr) {
 	bool res = false;
 	s32 err;
 	sFileInfo info;
@@ -737,7 +760,7 @@ static bool vmm_demandLoad(sVMRegion *vm,u8 *flags,u32 addr) {
 	return res;
 }
 
-static u8 *vmm_getPageFlag(sVMRegion *reg,u32 addr) {
+static u32 *vmm_getPageFlag(sVMRegion *reg,u32 addr) {
 	return reg->reg->pageFlags + (addr - reg->virt) / PAGE_SIZE;
 }
 

@@ -18,11 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/debug.h>
-#include <esc/messages.h>
-#include <esc/io.h>
-#include <esc/thread.h>
 #include <esc/gui/application.h>
 #include <esc/gui/window.h>
 #include <esc/gui/button.h>
@@ -31,7 +26,13 @@
 #include <esc/gui/checkbox.h>
 #include <esc/gui/progressbar.h>
 #include <esc/gui/bitmapimage.h>
+#include <esc/proc.h>
+#include <esc/debug.h>
+#include <esc/messages.h>
+#include <esc/io.h>
+#include <esc/thread.h>
 #include <esc/date.h>
+#include <iostream>
 
 using namespace esc::gui;
 
@@ -78,7 +79,7 @@ int main(void) {
 		pb = new ProgressBar("Progress...",10,160,200,25);
 		w1->add(*pb);
 		if(startThread(pbThread,NULL) < 0)
-			printe("[GUITEST] Unable to start thread");
+			std::cerr << "[GUITEST] Unable to start thread" << std::endl;
 		return app->run();
 	}
 

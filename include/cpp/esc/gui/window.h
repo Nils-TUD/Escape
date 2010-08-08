@@ -31,6 +31,7 @@
 #include <esc/gui/color.h>
 #include <string>
 #include <ostream>
+#include <vector>
 
 namespace esc {
 	namespace gui {
@@ -130,10 +131,10 @@ namespace esc {
 			bool _isActive;
 		protected:
 			s32 _focus;
-			Vector<Control*> _controls;
+			vector<Control*> _controls;
 		};
 
-		ostream &operator<<(ostream &s,const Window &w);
+		std::ostream &operator<<(std::ostream &s,const Window &w);
 	}
 }
 

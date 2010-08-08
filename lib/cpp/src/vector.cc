@@ -257,6 +257,15 @@ namespace std {
 		return first;
 	}
 	template<class T>
+	bool vector<T>::erase_first(const T& x) {
+		iterator it = find(begin(),end(),x);
+		if(it != end()) {
+			erase(it);
+			return true;
+		}
+		return false;
+	}
+	template<class T>
 	void vector<T>::swap(vector<T>& v) {
 		vector<T> tmp(v);
 		v.assign(*this);

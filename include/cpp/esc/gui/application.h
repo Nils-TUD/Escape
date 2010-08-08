@@ -21,9 +21,9 @@
 #define APPLICATION_H_
 
 #include <esc/common.h>
-#include <esc/vector.h>
 #include <esc/messages.h>
 #include <esc/gui/common.h>
+#include <vector>
 
 namespace esc {
 	namespace gui {
@@ -96,7 +96,7 @@ namespace esc {
 			tFD _vesaFd;
 			void *_vesaMem;
 			sVESAInfo _vesaInfo;
-			Vector<Window*> _windows;
+			std::vector<Window*> _windows;
 		};
 	}
 }

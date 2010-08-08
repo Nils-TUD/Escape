@@ -72,7 +72,7 @@ namespace esc {
 			u32 _color;
 		};
 
-		ostream &operator<<(ostream &s,const Color &c);
+		std::ostream &operator<<(std::ostream &s,const Color &c);
 	}
 }
 

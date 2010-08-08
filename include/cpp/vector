@@ -24,6 +24,7 @@
 #include <limits.h>
 #include <iterator>
 #include <stdexcept>
+#include <algorithm>
 
 namespace std {
 	/**
@@ -272,6 +273,16 @@ namespace std {
 		 * @return the position of the next element (end() if it were the last elements)
 		 */
 		iterator erase(iterator first,iterator last);
+		/**
+		 * Removes the first item that matches x. This is a convenience method for:
+		 * iterator it = find(begin(),end(),x);
+		 * if(it != end())
+		 * 	erase(it);
+		 *
+		 * @param x the element to erase
+		 * @return true if successfull
+		 */
+		bool erase_first(const T& x);
 		/**
 		 * Swaps this vector with the given one
 		 *

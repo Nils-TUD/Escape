@@ -22,6 +22,7 @@
 #include <esc/gui/combobox.h>
 #include <esc/gui/control.h>
 #include <esc/gui/color.h>
+#include <iterator>
 
 namespace esc {
 	namespace gui {
@@ -59,13 +60,13 @@ namespace esc {
 			g.setColor(ITEM_FGCOLOR);
 			tSize itemHeight = g.getFont().getHeight();
 			tCoord y = 0;
-			for(u32 i = 0; i < _cb->_items.size(); i++) {
-				if(_highlighted == (s32)i) {
+			for(vector<string>::iterator it = _cb->_items.begin(); it != _cb->_items.end(); ++it) {
+				if(_highlighted == (s32)std::distance(_cb->_items.begin(),it)) {
 					g.setColor(SEL_BGCOLOR);
 					g.fillRect(1,y + 1,getWidth() - 2,itemHeight + PADDING * 2 - 2);
 					g.setColor(SEL_FGCOLOR);
 				}
-				g.drawString(PADDING,y + PADDING,_cb->_items[i]);
+				g.drawString(PADDING,y + PADDING,*it);
 				g.setColor(ITEM_FGCOLOR);
 				y += itemHeight + PADDING * 2;
 			}

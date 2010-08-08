@@ -18,22 +18,23 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <stdio.h>
-#include <esc/debug.h>
-#include <esc/messages.h>
-#include <esc/mem.h>
-#include <esc/thread.h>
 #include <esc/gui/application.h>
 #include <esc/gui/window.h>
 #include <esc/gui/popupwindow.h>
+#include <esc/messages.h>
+#include <esc/thread.h>
+#include <esc/debug.h>
+#include <esc/io.h>
+#include <esc/mem.h>
+#include <algorithm>
+#include <stdio.h>
 
 namespace esc {
 	namespace gui {
 		Application *Application::_inst = NULL;
 
 		Application::Application()
-				: _winFd(-1), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL), _windows(Vector<Window*>()) {
+				: _winFd(-1), _mouseBtns(0), _vesaFd(-1), _vesaMem(NULL), _windows(vector<Window*>()) {
 			tMsgId mid;
 			_winFd = open("/dev/winmanager",IO_READ | IO_WRITE);
 			if(_winFd < 0) {
@@ -194,8 +195,8 @@ namespace esc {
 		}
 
 		void Application::closePopups(tWinId id,tCoord x,tCoord y) {
-			for(u32 i = 0; i < _windows.size(); i++) {
-				Window *pw = _windows[i];
+			for(vector<Window*>::iterator it = _windows.begin(); it != _windows.end(); ++it) {
+				Window *pw = *it;
 				if(pw->getId() != id && pw->getStyle() == Window::STYLE_POPUP) {
 					((PopupWindow*)pw)->close(x,y);
 					break;
@@ -225,7 +226,7 @@ namespace esc {
 		}
 
 		void Application::addWindow(Window *win) {
-			_windows.add(win);
+			_windows.push_back(win);
 
 			_msg.args.arg1 = (win->getX() << 16) | win->getY();
 			_msg.args.arg2 = (win->getWidth() << 16) | win->getHeight();
@@ -239,13 +240,13 @@ namespace esc {
 		}
 
 		void Application::removeWindow(Window *win) {
-			_windows.removeFirst(win);
-
-			// let window-manager destroy our window
-			_msg.args.arg1 = win->getId();
-			if(send(_winFd,MSG_WIN_DESTROY,&_msg,sizeof(_msg.args)) < 0) {
-				printe("Unable to destroy window");
-				exit(EXIT_FAILURE);
+			if(_windows.erase_first(win)) {
+				// let window-manager destroy our window
+				_msg.args.arg1 = win->getId();
+				if(send(_winFd,MSG_WIN_DESTROY,&_msg,sizeof(_msg.args)) < 0) {
+					printe("Unable to destroy window");
+					exit(EXIT_FAILURE);
+				}
 			}
 		}
 
@@ -270,11 +271,9 @@ namespace esc {
 		}
 
 		Window *Application::getWindowById(tWinId id) {
-			Window *w;
-			for(u32 i = 0; i < _windows.size(); i++) {
-				w = _windows[i];
-				if(w->getId() == id)
-					return w;
+			for(vector<Window*>::iterator it = _windows.begin(); it != _windows.end(); ++it) {
+				if((*it)->getId() == id)
+					return *it;
 			}
 			return NULL;
 		}

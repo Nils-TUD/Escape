@@ -18,14 +18,14 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <esc/debug.h>
-#include <esc/messages.h>
-#include <esc/proc.h>
 #include <esc/gui/window.h>
 #include <esc/gui/uielement.h>
 #include <esc/gui/color.h>
 #include <esc/gui/graphicfactory.h>
+#include <esc/messages.h>
+#include <esc/debug.h>
+#include <esc/proc.h>
+#include <esc/io.h>
 #include <string>
 #include <ostream>
 
@@ -44,7 +44,7 @@ namespace esc {
 				_id(NEXT_TMP_ID--), _created(false), _style(style),
 				_title(title), _titleBarHeight(20), _inTitle(false), _inResizeLeft(false),
 				_inResizeRight(false), _inResizeBottom(false), _isActive(false), _focus(-1),
-				_controls(Vector<Control*>()) {
+				_controls(vector<Control*>()) {
 			init();
 		}
 
@@ -203,20 +203,19 @@ namespace esc {
 				return;
 			}
 
-			Control *c;
 			tCoord x = e.getX();
 			tCoord y = e.getY();
 			y -= _titleBarHeight;
-			for(u32 i = 0; i < _controls.size(); i++) {
-				c = _controls[i];
+			for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it) {
+				Control *c = *it;
 				if(x >= c->getX() && x < c->getX() + c->getWidth() &&
 					y >= c->getY() && y < c->getY() + c->getHeight()) {
 					/* change focus */
-					if((s32)i != _focus) {
+					if(_focus < 0 || c != _controls[_focus]) {
 						if(_focus >= 0)
 							_controls[_focus]->onFocusLost();
-						_controls[i]->onFocusGained();
-						_focus = i;
+						c->onFocusGained();
+						_focus = distance(_controls.begin(),it);
 					}
 					c->onMousePressed(e);
 					return;
@@ -244,8 +243,8 @@ namespace esc {
 			height = MIN(screenHeight,height);
 			if(width != getWidth() || height != getHeight()) {
 				_g->resizeTo(width,height);
-				for(u32 i = 0; i < _controls.size(); i++)
-					_controls[i]->getGraphics()->resizeTo(width,height);
+				for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
+					(*it)->getGraphics()->resizeTo(width,height);
 				setWidth(width);
 				setHeight(height);
 				Application::getInstance()->resizeWindow(this);
@@ -322,8 +321,8 @@ namespace esc {
 			}
 
 			// now paint controls
-			for(u32 i = 0; i < _controls.size(); i++)
-				_controls[i]->repaint();
+			for(vector<Control*>::iterator it = _controls.begin(); it != _controls.end(); ++it)
+				(*it)->repaint();
 		}
 
 		void Window::update(tCoord x,tCoord y,tSize width,tSize height) {
@@ -332,7 +331,7 @@ namespace esc {
 		}
 
 		void Window::add(Control &c) {
-			_controls.add(&c);
+			_controls.push_back(&c);
 			c.setWindow(this);
 		}
 

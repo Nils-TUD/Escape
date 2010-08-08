@@ -26,6 +26,7 @@
 #include <esc/gui/graphics.h>
 #include <esc/gui/popupwindow.h>
 #include <string>
+#include <vector>
 
 namespace esc {
 	namespace gui {
@@ -74,11 +75,11 @@ namespace esc {
 
 		public:
 			ComboBox(tCoord x,tCoord y,tSize width,tSize height)
-				: Control(x,y,width,height), _items(Vector<string>()), _selected(-1),
+				: Control(x,y,width,height), _items(vector<string>()), _selected(-1),
 					_pressed(false), _win(NULL) {
 			};
 			ComboBox(const ComboBox &cb)
-				: Control(cb), _items(Vector<string>(cb._items)), _selected(cb._selected),
+				: Control(cb), _items(vector<string>(cb._items)), _selected(cb._selected),
 					_pressed(false), _win(NULL) {
 			};
 			virtual ~ComboBox() {
@@ -87,7 +88,7 @@ namespace esc {
 			ComboBox &operator=(const ComboBox &cb);
 
 			inline void addItem(const string &s) {
-				_items.add(s);
+				_items.push_back(s);
 			};
 			inline s32 getSelectedIndex() const {
 				return _selected;
@@ -105,7 +106,7 @@ namespace esc {
 			virtual void paint(Graphics &g);
 
 		private:
-			Vector<string> _items;
+			vector<string> _items;
 			s32 _selected;
 			bool _pressed;
 			ItemWindow *_win;

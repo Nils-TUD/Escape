@@ -27,7 +27,7 @@
 #include <esc/gui/event.h>
 #include <esc/gui/mouselistener.h>
 #include <esc/gui/keylistener.h>
-#include <esc/vector.h>
+#include <vector>
 
 namespace esc {
 	namespace gui {
@@ -38,16 +38,16 @@ namespace esc {
 
 		public:
 			UIElement(tCoord x,tCoord y,tSize width,tSize height)
-				: _g(NULL), _x(x), _y(y), _width(width), _height(height), _mouseListener(NULL),
-				_keyListener(NULL) {
+				: _g(NULL), _x(x), _y(y), _width(width), _height(height), _mlist(NULL),
+				_klist(NULL) {
 			};
 			UIElement(const UIElement &e)
 				: _g(NULL), _x(e._x), _y(e._y), _width(e._width), _height(e._height),
-				_mouseListener(e._mouseListener), _keyListener(e._keyListener) {
+				_mlist(e._mlist), _klist(e._klist) {
 			}
 			virtual ~UIElement() {
-				delete _mouseListener;
-				delete _keyListener;
+				delete _mlist;
+				delete _klist;
 				delete _g;
 			};
 			UIElement &operator=(const UIElement &e);
@@ -110,8 +110,8 @@ namespace esc {
 			tCoord _y;
 			tSize _width;
 			tSize _height;
-			Vector<MouseListener*> *_mouseListener;
-			Vector<KeyListener*> *_keyListener;
+			vector<MouseListener*> *_mlist;
+			vector<KeyListener*> *_klist;
 		};
 	}
 }

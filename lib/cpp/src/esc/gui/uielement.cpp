@@ -28,8 +28,8 @@ namespace esc {
 			// ignore self-assignments
 			if(this == &e)
 				return *this;
-			_keyListener = e._keyListener;
-			_mouseListener = e._mouseListener;
+			_klist = e._klist;
+			_mlist = e._mlist;
 			_g = NULL;
 			_x = e._x;
 			_y = e._y;
@@ -39,25 +39,25 @@ namespace esc {
 		}
 
 		void UIElement::addMouseListener(MouseListener *l) {
-			if(_mouseListener == NULL)
-				_mouseListener = new Vector<MouseListener*>();
-			_mouseListener->add(l);
+			if(_mlist == NULL)
+				_mlist = new vector<MouseListener*>();
+			_mlist->push_back(l);
 		}
 		void UIElement::removeMouseListener(MouseListener *l) {
-			if(_mouseListener == NULL)
+			if(_mlist == NULL)
 				return;
-			_mouseListener->removeFirst(l);
+			_mlist->erase_first(l);
 		}
 
 		void UIElement::addKeyListener(KeyListener *l) {
-			if(_keyListener == NULL)
-				_keyListener = new Vector<KeyListener*>();
-			_keyListener->add(l);
+			if(_klist == NULL)
+				_klist = new vector<KeyListener*>();
+			_klist->push_back(l);
 		}
 		void UIElement::removeKeyListener(KeyListener *l) {
-			if(_keyListener == NULL)
+			if(_klist == NULL)
 				return;
-			_keyListener->removeFirst(l);
+			_klist->erase_first(l);
 		}
 
 		void UIElement::onMouseMoved(const MouseEvent &e) {
@@ -77,11 +77,11 @@ namespace esc {
 		}
 
 		void UIElement::notifyListener(const MouseEvent &e) {
-			if(_mouseListener == NULL)
+			if(_mlist == NULL)
 				return;
 			u8 type = e.getType();
-			for(u32 i = 0; i < _mouseListener->size(); i++) {
-				MouseListener *l = (*_mouseListener)[i];
+			for(vector<MouseListener*>::iterator it = _mlist->begin(); it != _mlist->end(); ++it) {
+				MouseListener *l = *it;
 				switch(type) {
 					case MouseEvent::MOUSE_MOVED:
 						l->mouseMoved(e);
@@ -96,11 +96,11 @@ namespace esc {
 			}
 		}
 		void UIElement::notifyListener(const KeyEvent &e) {
-			if(_keyListener == NULL)
+			if(_klist == NULL)
 				return;
 			u8 type = e.getType();
-			for(u32 i = 0; i < _keyListener->size(); i++) {
-				KeyListener *l = (*_keyListener)[i];
+			for(vector<KeyListener*>::iterator it = _klist->begin(); it != _klist->end(); ++it) {
+				KeyListener *l = *it;
 				switch(type) {
 					case KeyEvent::KEY_PRESSED:
 						l->keyPressed(e);

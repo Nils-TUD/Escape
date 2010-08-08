@@ -28,6 +28,7 @@
 #include <esc/ringbuffer.h>
 #include <esc/esccodes.h>
 #include <stdlib.h>
+#include <iostream>
 
 #include <vterm/vtctrl.h>
 
@@ -86,11 +87,11 @@ public:
 
 		// request ports for qemu and bochs
 		if(requestIOPort(0xe9) < 0)
-			printe("Unable to request io-port 0xe9");
+			std::cerr << "Unable to request io-port 0xe9" << std::endl;
 		if(requestIOPort(0x3f8) < 0)
-			printe("Unable to request io-port 0x3f8");
+			std::cerr << "Unable to request io-port 0x3f8" << std::endl;
 		if(requestIOPort(0x3fd) < 0)
-			printe("Unable to request io-port 0x3fd");
+			std::cerr << "Unable to request io-port 0x3fd" << std::endl;
 	};
 	virtual ~ShellControl() {
 		vterm_destroy(_vt);

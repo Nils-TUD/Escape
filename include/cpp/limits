@@ -23,7 +23,7 @@
 #include <stddef.h>
 #include <limits.h>
 
-namespace esc {
+namespace std {
 	template<typename T>
 	struct numeric_limits {
 		/** This will be true for all fundamental types (which have

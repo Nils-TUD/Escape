@@ -19,7 +19,7 @@
 
 #include <impl/streams/ifstream.h>
 
-namespace esc {
+namespace std {
 	ifstream::ifstream()
 		: istream(new filebuf()) {
 	}

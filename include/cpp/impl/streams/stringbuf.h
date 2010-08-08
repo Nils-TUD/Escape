@@ -25,7 +25,7 @@
 #include <streambuf>
 #include <string>
 
-namespace esc {
+namespace std {
 	/**
 	 * Uses a string as buffer to read from and write to
 	 */

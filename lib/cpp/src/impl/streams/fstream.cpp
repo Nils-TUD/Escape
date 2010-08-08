@@ -19,7 +19,7 @@
 
 #include <impl/streams/fstream.h>
 
-namespace esc {
+namespace std {
 	fstream::fstream()
 		: iostream(new filebuf()) {
 	}

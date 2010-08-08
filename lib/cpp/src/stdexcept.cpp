@@ -21,7 +21,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace esc {
+namespace std {
 	logic_error::logic_error(const string& msg)
 		: _msg(msg) {
 	}

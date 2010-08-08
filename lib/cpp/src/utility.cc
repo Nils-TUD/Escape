@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-namespace esc {
+namespace std {
 	template<typename T1,typename T2>
 	pair<T1,T2>::pair()
 		: first(T1()), second(T2()) {

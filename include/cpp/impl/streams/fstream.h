@@ -23,7 +23,7 @@
 #include <impl/streams/filebuf.h>
 #include <iostream>
 
-namespace esc {
+namespace std {
 	/**
 	 * A file-stream for input- and output-operations
 	 */

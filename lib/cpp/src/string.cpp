@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <sstream>
 
-namespace esc {
+namespace std {
 	// === constructors ===
 	string::string()
 		: _str(new char[INIT_SIZE]), _size(INIT_SIZE), _length(0) {
@@ -58,11 +58,6 @@ namespace esc {
 		_str[n] = '\0';
 		for(; n > 0; n--)
 			_str[n - 1] = c;
-	}
-	template<class InputIterator>
-	string::string(InputIterator b,InputIterator e)
-		: _str(NULL), _size(0), _length(0) {
-		append(b,e);
 	}
 
 	// === destructor ===
@@ -220,13 +215,6 @@ namespace esc {
 	string& string::append(size_type n,char c) {
 		return insert(_length,n,c);
 	}
-	template<class InputIterator>
-	string& string::append(InputIterator first,InputIterator last) {
-		reserve(length() + distance(first,last));
-		for(; first != last; ++first)
-			append(first,1);
-		return *this;
-	}
 	void string::push_back(char c) {
 		append(&c,1);
 	}
@@ -256,11 +244,6 @@ namespace esc {
 		clear();
 		append(n,c);
 		return *this;
-	}
-	template<class InputIterator>
-	string& string::assign(InputIterator first,InputIterator last) {
-		clear();
-		return append(first,last);
 	}
 
 	// === insert() ===
@@ -293,18 +276,6 @@ namespace esc {
 	string& string::insert(size_type pos1,size_type n,char c) {
 		string tmp(n,c);
 		return insert(pos1,tmp);
-	}
-	template<class InputIterator>
-	void string::insert(iterator p,InputIterator first,InputIterator last) {
-		size_type pos1 = distance(begin(),p);
-		size_type n = distance(first,last);
-		reserve(_length + n);
-		if(pos1 < _length)
-			memmove(_str + pos1 + n,_str + pos1,(_length - pos1) * sizeof(char));
-		for(; first != last; ++first)
-			_str[pos1++] = *first;
-		_length += n;
-		_str[_length] = '\0';
 	}
 
 	// === erase() ===
@@ -367,12 +338,6 @@ namespace esc {
 	string& string::replace(iterator i1,iterator i2,size_type n2,char c) {
 		string tmp(n2,c);
 		return replace(distance(begin(),i1),distance(i1,i2),tmp);
-	}
-	template<class InputIterator>
-	string& string::replace(iterator i1,iterator i2,InputIterator j1,InputIterator j2) {
-		iterator pos = erase(i1,i2);
-		insert(pos,j1,j2);
-		return *this;
 	}
 
 	// === copy() and swap ===

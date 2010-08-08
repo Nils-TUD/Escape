@@ -19,7 +19,7 @@
 
 #include <impl/streams/stringbuf.h>
 
-namespace esc {
+namespace std {
 	stringbuf::stringbuf(ios_base::openmode which)
 		: streambuf(), _pos(0), _mode(which), _str(string()) {
 	}

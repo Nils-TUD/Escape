@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-namespace esc {
+namespace std {
 	// === listnode ===
 	template<class T>
 	class listnode {
@@ -539,21 +539,21 @@ namespace esc {
 	// === sort ===
 	template<class T>
 	inline void list<T>::sort() {
-		esc::sort(begin(),end());
+		std::sort(begin(),end());
 	}
 	template<class T>
 	template<class Compare>
 	inline void list<T>::sort(Compare comp) {
-		esc::sort(begin(),end(),comp);
+		std::sort(begin(),end(),comp);
 	}
 
 	// === reverse and swap ===
 	template<class T>
 	inline void list<T>::reverse() {
-		esc::reverse(begin(),end());
+		std::reverse(begin(),end());
 	}
 	template<class T>
 	inline void list<T>::swap(list<T>& x) {
-		esc::swap<list<T> >(*this,x);
+		std::swap<list<T> >(*this,x);
 	}
 }

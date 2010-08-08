@@ -24,7 +24,7 @@
 #include <ostream>
 #include <string>
 
-namespace esc {
+namespace std {
 	/**
 	 * A string-stream for output-operations
 	 */

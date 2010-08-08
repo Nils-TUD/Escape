@@ -50,7 +50,7 @@ namespace esc {
 			inline tSize getHeight() {
 				return charHeight;
 			};
-			inline tSize getStringWidth(const esc::string& str) {
+			inline tSize getStringWidth(const std::string& str) {
 				return str.length() * charWidth;
 			};
 			inline bool isPixelSet(char c,tCoord x,tCoord y) {

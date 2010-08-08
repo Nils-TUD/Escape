@@ -25,7 +25,7 @@
 #include <iterator>
 #include <stdexcept>
 
-namespace esc {
+namespace std {
 	/**
 	 * A ordered sequence of elements with random access
 	 */
@@ -41,8 +41,8 @@ namespace esc {
 		typedef const_pointer const_iterator;
 		typedef size_t size_type;
 		typedef ptrdiff_t difference_type;
-		typedef esc::reverse_iterator<iterator> reverse_iterator;
-		typedef esc::reverse_iterator<const_iterator> const_reverse_iterator;
+		typedef std::reverse_iterator<iterator> reverse_iterator;
+		typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
 	private:
 		/**

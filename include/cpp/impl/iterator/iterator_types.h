@@ -22,7 +22,7 @@
 
 #include <stddef.h>
 
-namespace esc {
+namespace std {
 	struct input_iterator_tag {
 	};
 	struct output_iterator_tag {

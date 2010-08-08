@@ -22,7 +22,7 @@
 
 #include <stddef.h>
 
-namespace esc {
+namespace std {
 	// === base classes ===
 	template<class Arg,class Result>
 	struct unary_function {

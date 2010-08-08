@@ -24,7 +24,7 @@
 #include <impl/exception/exception.h>
 #include <string>
 
-namespace esc {
+namespace std {
 	/**
 	 * Logic errors represent problems in the internal logic of a program;
 	 * in theory, these are preventable, and even detectable before the

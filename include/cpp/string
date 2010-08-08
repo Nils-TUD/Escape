@@ -22,8 +22,9 @@
 
 #include <stddef.h>
 #include <iterator>
+#include <string.h>
 
-namespace esc {
+namespace std {
 	class istream;
 	class ostream;
 
@@ -37,8 +38,8 @@ namespace esc {
 		typedef const char* const_pointer;
 		typedef pointer iterator;
 		typedef const_pointer const_iterator;
-		typedef esc::reverse_iterator<iterator> reverse_iterator;
-		typedef esc::reverse_iterator<const_iterator> const_reverse_iterator;
+		typedef std::reverse_iterator<iterator> reverse_iterator;
+		typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
 	private:
 		static const size_type INIT_SIZE = 8;
@@ -615,5 +616,7 @@ namespace esc {
 	bool operator>=(const char* lhs,const string& rhs);
 	bool operator>=(const string& lhs,const char* rhs);
 }
+
+#include "../../lib/cpp/src/string.cc"
 
 #endif /* CPPSTRING_H_ */

@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-namespace esc {
+namespace std {
 	template<typename CharT>
 	void char_traits<CharT>::assign(char_type& c1,const char_type& c2) {
 		c1 = c2;
@@ -65,13 +65,13 @@ namespace esc {
 	template<typename CharT>
 	typename char_traits<CharT>::char_type* char_traits<CharT>::copy(
 			char_type* s1,const char_type* s2,size_t n) {
-		esc::copy(s2,s2 + n,s1);
+		std::copy(s2,s2 + n,s1);
 		return s1;
 	}
 	template<typename CharT>
 	typename char_traits<CharT>::char_type* char_traits<CharT>::assign(
 			char_type* s,size_t n,char_type a) {
-		esc::fill_n(s,n,a);
+		std::fill_n(s,n,a);
 		return s;
 	}
 

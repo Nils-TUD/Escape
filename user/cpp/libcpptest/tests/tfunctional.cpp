@@ -25,7 +25,7 @@
 #include <vector>
 #include <utility>
 
-using namespace esc;
+using namespace std;
 
 /* forward declarations */
 static void test_functional(void);

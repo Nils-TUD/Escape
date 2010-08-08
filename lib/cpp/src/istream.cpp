@@ -22,7 +22,7 @@
 #include <limits>
 #include <ctype.h>
 
-namespace esc {
+namespace std {
 	// === istream::sentry ===
 	istream::sentry::sentry(istream& is,bool noskipws)
 		: _ok(false) {

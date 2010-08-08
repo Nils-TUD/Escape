@@ -24,7 +24,7 @@
 #include <ostream>
 #include <esc/io.h>
 
-namespace esc {
+namespace std {
 	/**
 	 * A file-stream for input-operations
 	 */

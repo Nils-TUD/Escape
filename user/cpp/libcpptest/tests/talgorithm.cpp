@@ -24,7 +24,7 @@
 #include <list>
 #include <vector>
 
-using namespace esc;
+using namespace std;
 
 /* forward declarations */
 static void test_algo(void);

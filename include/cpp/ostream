@@ -24,7 +24,7 @@
 #include <impl/streams/ios.h>
 #include <impl/streams/ios_base.h>
 
-namespace esc {
+namespace std {
 	/**
 	 * The basic output-stream that provides formated- and unformated-output-methods.
 	 */

@@ -22,7 +22,7 @@ all: $(BUILDDIRS) $(STLIB) $(DYNLIB)
 
 $(STLIB): $(COBJS)
 		@echo "	" AR $(STLIB)
-		@ar rcs $(STLIB) $(COBJS) $(ROOT)/build/dist/lib/libsupc++.a
+		@ar rcs $(STLIB) $(COBJS)
 		$(ROOT)/tools/linklib.sh $(STLIB)
 
 #$(DYNLIB): $(CPICOBJS)

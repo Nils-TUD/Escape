@@ -29,7 +29,7 @@
 namespace esc {
 	namespace gui {
 		class MouseEvent {
-			friend ostream &operator<<(ostream &s,const MouseEvent &e);
+			friend std::ostream &operator<<(std::ostream &s,const MouseEvent &e);
 
 		public:
 			static const u8 MOUSE_MOVED		= 0;
@@ -97,7 +97,7 @@ namespace esc {
 		};
 
 		class KeyEvent {
-			friend ostream &operator<<(ostream &s,const KeyEvent &e);
+			friend std::ostream &operator<<(std::ostream &s,const KeyEvent &e);
 
 		public:
 			static const u8 KEY_PRESSED		= 0;
@@ -151,8 +151,8 @@ namespace esc {
 			u8 _modifier;
 		};
 
-		ostream &operator<<(ostream &s,const MouseEvent &e);
-		ostream &operator<<(ostream &s,const KeyEvent &e);
+		std::ostream &operator<<(std::ostream &s,const MouseEvent &e);
+		std::ostream &operator<<(std::ostream &s,const KeyEvent &e);
 	}
 }
 

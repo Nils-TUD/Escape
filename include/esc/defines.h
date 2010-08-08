@@ -92,7 +92,7 @@ typedef u16 mode_t;
 #endif
 
 #ifdef __cplusplus
-namespace esc {
+namespace std {
 #ifndef _PTRDIFF_T
 #define _PTRDIFF_T
 typedef s32 ptrdiff_t;

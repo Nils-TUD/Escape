@@ -25,7 +25,7 @@
 #include <string.h>
 #include <algorithm>
 
-namespace esc {
+namespace std {
 	template<typename CharT>
 	struct char_traits {
 		typedef CharT char_type;

@@ -23,7 +23,7 @@
 #include <istream>
 #include <ostream>
 
-namespace esc {
+namespace std {
 	/**
 	 * A stream for input- and output-operations
 	 */

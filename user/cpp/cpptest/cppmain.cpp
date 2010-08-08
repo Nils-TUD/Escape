@@ -33,7 +33,7 @@
 //#include <iostream>
 #include <fstream>
 
-//using namespace esc;
+//using namespace std;
 
 #if 0
 class my {
@@ -73,7 +73,7 @@ void my::doIt() {
 #endif
 
 int main(void) {
-	esc::ifstream f("foo");
+	std::ifstream f("foo");
 	f.close();
 
 #if 0

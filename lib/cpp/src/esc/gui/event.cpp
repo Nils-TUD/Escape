@@ -23,14 +23,14 @@
 
 namespace esc {
 	namespace gui {
-		ostream &operator<<(ostream &s,const MouseEvent &e) {
+		std::ostream &operator<<(std::ostream &s,const MouseEvent &e) {
 			s << "MouseEvent[mx=" << e._movedx << ",my=" << e._movedy;
 			s << ",x=" << e._x << ",y=" << e._y;
 			s.format(",buttons=%#x]",e._buttons);
 			return s;
 		}
 
-		ostream &operator<<(ostream &s,const KeyEvent &e) {
+		std::ostream &operator<<(std::ostream &s,const KeyEvent &e) {
 			s << "KeyEvent[keycode=" << e._keycode << ",char=" << e._character;
 			s.format(",modifier=%#x]",e._modifier);
 			return s;

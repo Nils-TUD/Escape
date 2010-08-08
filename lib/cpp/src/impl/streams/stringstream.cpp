@@ -19,7 +19,7 @@
 
 #include <impl/streams/stringstream.h>
 
-namespace esc {
+namespace std {
 	stringstream::stringstream(ios_base::openmode which)
 		: iostream(new stringbuf(which)) {
 	}

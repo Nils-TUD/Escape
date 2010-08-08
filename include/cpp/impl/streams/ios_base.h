@@ -27,7 +27,7 @@
 #include <string>
 #include <new>
 
-namespace esc {
+namespace std {
 	typedef std::off_t streamoff;
 	typedef size_t streamsize;
 

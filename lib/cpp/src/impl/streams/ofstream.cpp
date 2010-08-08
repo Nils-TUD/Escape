@@ -19,7 +19,7 @@
 
 #include <impl/streams/ofstream.h>
 
-namespace esc {
+namespace std {
 	ofstream::ofstream()
 		: ostream(new filebuf) {
 	}

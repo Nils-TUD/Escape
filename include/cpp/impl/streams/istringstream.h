@@ -24,7 +24,7 @@
 #include <istream>
 #include <string>
 
-namespace esc {
+namespace std {
 	/**
 	 * A string-stream for input-operations
 	 */

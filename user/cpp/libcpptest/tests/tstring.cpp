@@ -18,8 +18,10 @@
  */
 
 #include <esc/common.h>
-#include <string>
 #include <esc/test.h>
+#include <string>
+
+using namespace std;
 
 /* forward declarations */
 static void test_string(void);

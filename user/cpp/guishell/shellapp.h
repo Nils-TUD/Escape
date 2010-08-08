@@ -21,10 +21,10 @@
 #define SHELLAPP_H_
 
 #include <esc/common.h>
-#include <esc/dir.h>
 #include <esc/gui/common.h>
 #include <esc/gui/application.h>
 #include <esc/ringbuffer.h>
+#include <esc/dir.h>
 #include "shellcontrol.h"
 
 // the min-size of the buffer before we pass it to the shell-control

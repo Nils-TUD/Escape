@@ -39,7 +39,7 @@ namespace esc {
 			ProgressBar(tCoord x,tCoord y,tSize width,tSize height)
 				: Control(x,y,width,height), _position(0), _text("") {
 			};
-			ProgressBar(const esc::string &text,tCoord x,tCoord y,tSize width,tSize height)
+			ProgressBar(const std::string &text,tCoord x,tCoord y,tSize width,tSize height)
 				: Control(x,y,width,height), _position(0), _text(text) {
 			};
 			ProgressBar(const ProgressBar &b)
@@ -57,10 +57,10 @@ namespace esc {
 				_position = MIN(100,pos);
 				repaint();
 			};
-			inline esc::string getText() const {
+			inline std::string getText() const {
 				return _text;
 			};
-			inline void setText(const esc::string &text) {
+			inline void setText(const std::string &text) {
 				_text = text;
 				repaint();
 			};
@@ -69,7 +69,7 @@ namespace esc {
 
 		private:
 			u32 _position;
-			esc::string _text;
+			std::string _text;
 		};
 	}
 }

@@ -19,7 +19,7 @@
 
 #include <streambuf>
 
-namespace esc {
+namespace std {
 	eof_reached::eof_reached() {
 	}
 	const char* eof_reached::what() const throw() {

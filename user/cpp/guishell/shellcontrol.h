@@ -21,14 +21,13 @@
 #define SHELLCONTROL_H_
 
 #include <esc/common.h>
-#include <esc/ports.h>
 #include <esc/gui/common.h>
 #include <esc/gui/control.h>
+#include <esc/ports.h>
 #include <esc/debug.h>
-#include <esc/string.h>
-#include <stdlib.h>
 #include <esc/ringbuffer.h>
 #include <esc/esccodes.h>
+#include <stdlib.h>
 
 #include <vterm/vtctrl.h>
 

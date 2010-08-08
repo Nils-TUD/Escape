@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 
-namespace esc {
+namespace std {
 	extern ifstream _cin;
 	extern ofstream _cout;
 	extern ofstream _cerr;

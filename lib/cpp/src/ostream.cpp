@@ -24,7 +24,7 @@
 #define FFL_SHORT			1
 #define FFL_LONG			2
 
-namespace esc {
+namespace std {
 	ostream::sentry::sentry(ostream& os)
 			: _ok(false), _os(os) {
 		if(os.good()) {

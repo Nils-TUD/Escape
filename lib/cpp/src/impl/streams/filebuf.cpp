@@ -19,7 +19,7 @@
 
 #include <impl/streams/filebuf.h>
 
-namespace esc {
+namespace std {
 	filebuf::filebuf()
 		: _fd(-1), _inPos(0), _inMax(0), _inBuf(NULL), _totalInPos(0), _outPos(0),
 		  _outBuf(NULL), _mode(0) {

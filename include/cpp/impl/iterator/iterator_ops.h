@@ -22,7 +22,7 @@
 
 #include <stddef.h>
 
-namespace esc {
+namespace std {
 	template<class InputIterator,class Distance>
 	void advance(InputIterator& i,Distance n);
 

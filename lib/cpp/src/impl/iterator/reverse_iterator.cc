@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-namespace esc {
+namespace std {
 	// === constructors ===
 	template<class Iterator>
 	inline reverse_iterator<Iterator>::reverse_iterator() : _it() {

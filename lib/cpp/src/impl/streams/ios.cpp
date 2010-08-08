@@ -19,7 +19,7 @@
 
 #include <impl/streams/ios.h>
 
-namespace esc {
+namespace std {
 	ios::ios(streambuf* sb) {
 		init(sb);
 	}

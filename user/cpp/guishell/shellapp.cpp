@@ -21,9 +21,9 @@
 #include <esc/messages.h>
 #include <esc/driver.h>
 #include <esc/io.h>
-#include <signal.h>
 #include <esc/gui/common.h>
 #include <esc/esccodes.h>
+#include <signal.h>
 #include <errors.h>
 
 #include <vterm/vtin.h>

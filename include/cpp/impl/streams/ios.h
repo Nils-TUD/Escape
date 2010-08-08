@@ -23,7 +23,7 @@
 #include <impl/streams/ios_base.h>
 #include <streambuf>
 
-namespace esc {
+namespace std {
 	class ostream;
 
 	/**

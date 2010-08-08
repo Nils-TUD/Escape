@@ -21,7 +21,7 @@
 #include <fstream>
 #include <iostream>
 
-namespace esc {
+namespace std {
 	iostream::iostream(streambuf* sb)
 		: istream(sb), ostream(sb) {
 	}

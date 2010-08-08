@@ -31,6 +31,6 @@ namespace std {
 			InputIterator first,InputIterator last);
 }
 
-#include "../../../../lib/cpp/src/impl/iterator/iterator_ops.cc"
+#include "../../../../lib/cpp/impl/iterator/iterator_ops.cc"
 
 #endif /* ITERATOR_OPS_H_ */

@@ -273,6 +273,6 @@ namespace std {
 	const_mem_fun1_ref_t<S,T,A> mem_fun_ref(S(T::*f)(A) const);
 }
 
-#include "../../lib/cpp/src/functional.cc"
+#include "../../lib/cpp/functional.cc"
 
 #endif /* FUNCTIONAL_ */

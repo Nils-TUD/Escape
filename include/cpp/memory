@@ -62,6 +62,6 @@ namespace std {
 	};
 }
 
-#include "../../lib/cpp/src/memory.cc"
+#include "../../lib/cpp/memory.cc"
 
 #endif /* MEMORY_ */

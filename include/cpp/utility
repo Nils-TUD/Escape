@@ -54,6 +54,6 @@ namespace std {
 	}
 }
 
-#include "../../lib/cpp/src/utility.cc"
+#include "../../lib/cpp/utility.cc"
 
 #endif /* STD_UTILITY_ */

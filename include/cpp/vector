@@ -321,6 +321,6 @@ namespace std {
 	void swap(vector<T>& x,vector<T>& y);
 }
 
-#include "../../lib/cpp/src/vector.cc"
+#include "../../lib/cpp/vector.cc"
 
 #endif /* STD_VECTOR_ */

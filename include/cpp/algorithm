@@ -518,6 +518,6 @@ namespace std {
 			InputIterator2 last2,Compare comp);
 }
 
-#include "../../lib/cpp/src/algorithm.cc"
+#include "../../lib/cpp/algorithm.cc"
 
 #endif /* ALGORITHM_ */

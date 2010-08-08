@@ -1,6 +1,6 @@
 ROOT = ../..
 BUILDL = $(BUILD)/lib/cpp
-SUBDIRS = $(filter-out $(shell find src -name "*.*"),$(shell find src -name "*"))
+SUBDIRS = $(filter-out $(shell find . -name "*.*"),$(shell find . -name "*"))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 STLIB = $(BUILD)/libstdc++.a
@@ -10,7 +10,7 @@ STLIB = $(BUILD)/libstdc++.a
 CFLAGS = $(CPPDEFFLAGS)
 
 # sources
-CSRC = $(shell find src -name "*.cpp")
+CSRC = $(shell find . -name "*.cpp")
 
 # objects
 COBJS = $(patsubst %.cpp,$(BUILDL)/%.o,$(CSRC))

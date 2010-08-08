@@ -363,6 +363,6 @@ namespace std {
 	void swap(list<T>& x,list<T>& y);
 }
 
-#include "../../lib/cpp/src/list.cc"
+#include "../../lib/cpp/list.cc"
 
 #endif /* STD_LIST_ */

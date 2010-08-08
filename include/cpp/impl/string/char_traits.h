@@ -116,6 +116,6 @@ namespace std {
 	};
 }
 
-#include "../../../../lib/cpp/src/impl/string/char_traits.cc"
+#include "../../../../lib/cpp/impl/string/char_traits.cc"
 
 #endif /* CHAR_TRAITS_H_ */

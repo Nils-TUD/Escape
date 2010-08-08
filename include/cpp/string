@@ -617,6 +617,6 @@ namespace std {
 	bool operator>=(const string& lhs,const char* rhs);
 }
 
-#include "../../lib/cpp/src/string.cc"
+#include "../../lib/cpp/string.cc"
 
 #endif /* CPPSTRING_H_ */

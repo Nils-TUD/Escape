@@ -33,12 +33,11 @@
 void swmap_init(u32 swapSize);
 
 /**
- * Allocates <count> continuous blocks on the swap-device
+ * Allocates 1 block on the swap-device
  *
- * @param count the number of pages to swap
  * @return the starting block on the swap-device or INVALID_BLOCK if no free space is left
  */
-u32 swmap_alloc(u32 count);
+u32 swmap_alloc(void);
 
 /**
  * @param block the block-number
@@ -54,12 +53,11 @@ bool swmap_isUsed(u32 block);
 u32 swmap_freeSpace(void);
 
 /**
- * Free's the given blocks
+ * Free's the given block
  *
- * @param block the starting block
- * @param count the number of blocks
+ * @param block the block to free
  */
-void swmap_free(u32 block,u32 count);
+void swmap_free(u32 block);
 
 
 #if DEBUGGING

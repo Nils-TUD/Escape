@@ -14,7 +14,7 @@ BUILDAPPS = $(BUILDDIR)/apps
 
 KVM = -enable-kvm
 QEMU = /home/hrniels/Applications/qemu-0.12.2/bin/bin/qemu
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 20 \
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 40 \
 	-localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 

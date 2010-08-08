@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CPPSTRING_
-#define CPPSTRING_
+#ifndef CPPSTRING_H_
+#define CPPSTRING_H_
 
 #include <stddef.h>
 #include <iterator>
@@ -616,4 +616,4 @@ namespace esc {
 	bool operator>=(const string& lhs,const char* rhs);
 }
 
-#endif /* CPPSTRING_ */
+#endif /* CPPSTRING_H_ */

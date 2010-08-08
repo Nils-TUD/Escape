@@ -21,9 +21,7 @@
 #include <sys/mem/swapmap.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
-#include <sys/task/proc.h>
 #include <sys/video.h>
-#include <esc/sllist.h>
 #include <assert.h>
 
 /* The idea is:

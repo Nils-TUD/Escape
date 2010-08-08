@@ -17,47 +17,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef SHELLAPP_H_
-#define SHELLAPP_H_
+#ifndef IMAGE_H_
+#define IMAGE_H_
 
 #include <esc/common.h>
 #include <gui/common.h>
-#include <gui/application.h>
-#include <esc/ringbuffer.h>
-#include <esc/dir.h>
-#include "shellcontrol.h"
+#include <gui/graphics.h>
 
-// the min-size of the buffer before we pass it to the shell-control
-#define UPDATE_BUF_SIZE		256
-// the total size of the buffer
-#define READ_BUF_SIZE		512
+namespace gui {
+	class Image {
+	public:
+		Image() {};
+		virtual ~Image() {};
 
-using namespace gui;
+		virtual tSize getWidth() const = 0;
+		virtual tSize getHeight() const = 0;
 
-class ShellApplication : public Application {
-public:
-	ShellApplication(tDrvId sid,ShellControl *sh);
-	virtual ~ShellApplication();
+		virtual void paint(Graphics &g,tCoord x,tCoord y) = 0;
+	};
+}
 
-protected:
-	void doEvents();
-
-private:
-	/* no cloning */
-	ShellApplication(const ShellApplication &app);
-	ShellApplication &operator=(const ShellApplication &app);
-
-	void putIn(char *s,u32 len);
-	void handleKbMsg();
-	void handleKeycode();
-	void driverMain();
-
-private:
-	tDrvId _sid;
-	ShellControl *_sh;
-	sVTermCfg _cfg;
-	char *rbuffer;
-	u32 rbufPos;
-};
-
-#endif /* SHELLAPP_H_ */
+#endif /* IMAGE_H_ */

@@ -19,8 +19,8 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include <esc/gui/common.h>
-#include <esc/gui/color.h>
+#include <gui/common.h>
+#include <gui/color.h>
 #include <esc/driver.h>
 #include <signal.h>
 #include <errors.h>
@@ -29,8 +29,7 @@
 #include <vterm/vtin.h>
 #include <vterm/vtctrl.h>
 
-using namespace esc;
-using namespace esc::gui;
+using namespace gui;
 
 Color ShellControl::COLORS[16] = {
 	Color(0,0,0),

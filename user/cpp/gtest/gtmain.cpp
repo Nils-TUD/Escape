@@ -18,14 +18,14 @@
  */
 
 #include <esc/common.h>
-#include <esc/gui/application.h>
-#include <esc/gui/window.h>
-#include <esc/gui/button.h>
-#include <esc/gui/editable.h>
-#include <esc/gui/combobox.h>
-#include <esc/gui/checkbox.h>
-#include <esc/gui/progressbar.h>
-#include <esc/gui/bitmapimage.h>
+#include <gui/application.h>
+#include <gui/window.h>
+#include <gui/button.h>
+#include <gui/editable.h>
+#include <gui/combobox.h>
+#include <gui/checkbox.h>
+#include <gui/progressbar.h>
+#include <gui/bitmapimage.h>
 #include <esc/proc.h>
 #include <esc/debug.h>
 #include <esc/messages.h>
@@ -34,7 +34,7 @@
 #include <esc/date.h>
 #include <iostream>
 
-using namespace esc::gui;
+using namespace gui;
 
 ProgressBar *pb = NULL;
 Window *w1 = NULL;

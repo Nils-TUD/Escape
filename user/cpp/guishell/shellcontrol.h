@@ -21,8 +21,8 @@
 #define SHELLCONTROL_H_
 
 #include <esc/common.h>
-#include <esc/gui/common.h>
-#include <esc/gui/control.h>
+#include <gui/common.h>
+#include <gui/control.h>
 #include <esc/ports.h>
 #include <esc/debug.h>
 #include <esc/ringbuffer.h>
@@ -32,8 +32,7 @@
 
 #include <vterm/vtctrl.h>
 
-using namespace esc;
-using namespace esc::gui;
+using namespace gui;
 
 class ShellApplication;
 

@@ -25,8 +25,8 @@
 #include <esc/dir.h>
 #include <esc/thread.h>
 #include <esc/lock.h>
-#include <esc/gui/application.h>
-#include <esc/gui/window.h>
+#include <gui/application.h>
+#include <gui/window.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -39,7 +39,7 @@
 #define GUI_SHELL_LOCK		0x4129927
 #define MAX_VTERM_NAME_LEN	10
 
-using namespace esc::gui;
+using namespace gui;
 
 static char *drvName;
 

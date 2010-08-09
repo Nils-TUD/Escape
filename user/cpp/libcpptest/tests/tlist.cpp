@@ -436,6 +436,7 @@ static void test_reverse(void) {
 		list<int> l4;
 		l4.swap(l3);
 		l4.reverse();
+		l3 == l4;
 		check_content(l4,3,1,2,3);
 	}
 

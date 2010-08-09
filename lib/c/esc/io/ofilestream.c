@@ -139,7 +139,7 @@ static s32 ofstream_writec(sOStream *s,char c) {
 			s->flush(s);
 		fs->buffer[fs->pos++] = c;
 		/* flush stderr on '\n' */
-		if(s == cerr && c == '\n')
+		if((s == cerr || s == cout) && c == '\n')
 			s->flush(s);
 		return 1;
 	}

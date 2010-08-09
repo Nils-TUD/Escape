@@ -17,27 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef TBINTREE_H_
+#define TBINTREE_H_
+
 #include <esc/common.h>
 #include <esc/test.h>
 
-#include "tests/tstring.h"
-#include "tests/tvector.h"
-#include "tests/tlist.h"
-#include "tests/talgorithm.h"
-#include "tests/tstreams.h"
-#include "tests/tfunctional.h"
-#include "tests/tbintree.h"
-#include "tests/tmap.h"
+extern sTestModule tModBintree;
 
-int main(void) {
-	/*test_register(&tModString);
-	test_register(&tModVector);
-	test_register(&tModList);
-	test_register(&tModAlgo);
-	test_register(&tModStreams);
-	test_register(&tModFunctional);*/
-	test_register(&tModBintree);
-	test_register(&tModMap);
-	test_start();
-	return EXIT_SUCCESS;
-}
+#endif /* TBINTREE_H_ */

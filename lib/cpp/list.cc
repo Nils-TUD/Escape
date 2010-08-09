@@ -556,4 +556,35 @@ namespace std {
 	inline void list<T>::swap(list<T>& x) {
 		std::swap<list<T> >(*this,x);
 	}
+
+	// === global operators ===
+	template<class T>
+	inline bool operator ==(const list<T>& x,const list<T>& y) {
+		return x.size() == y.size() && std::equal(x.begin(),x.end(),y.begin());
+	}
+	template<class T>
+	inline bool operator <(const list<T>& x,const list<T>& y) {
+		return std::lexicographical_compare(x.begin(),x.end(),y.begin(),y.end());
+	}
+	template<class T>
+	inline bool operator !=(const list<T>& x,const list<T>& y) {
+		return !(x == y);
+	}
+	template<class T>
+	inline bool operator >(const list<T>& x,const list<T>& y) {
+		return y < x;
+	}
+	template<class T>
+	inline bool operator >=(const list<T>& x,const list<T>& y) {
+		return !(x < y);
+	}
+	template<class T>
+	inline bool operator <=(const list<T>& x,const list<T>& y) {
+		return !(y < x);
+	}
+
+	template<class T>
+	void swap(list<T>& x,list<T>& y) {
+		x.swap(y);
+	}
 }

@@ -30,12 +30,12 @@
 #include "tests/tmap.h"
 
 int main(void) {
-	/*test_register(&tModString);
+	test_register(&tModString);
 	test_register(&tModVector);
 	test_register(&tModList);
 	test_register(&tModAlgo);
 	test_register(&tModStreams);
-	test_register(&tModFunctional);*/
+	test_register(&tModFunctional);
 	test_register(&tModBintree);
 	test_register(&tModMap);
 	test_start();

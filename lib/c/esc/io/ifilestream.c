@@ -42,6 +42,7 @@ typedef struct {
 static tFD ifstream_fileno(sIStream *s);
 static s32 ifstream_read(sIStream *s,void *buffer,u32 count);
 static s32 ifstream_seek(sIStream *s,s32 offset,u32 whence);
+static bool ifstream_available(sIStream *s);
 static bool ifstream_eof(sIStream *s);
 static void ifstream_close(sIStream *s);
 static void ifstream_unread(sIStream *s,char c);
@@ -68,6 +69,7 @@ sIStream *ifstream_openfd(tFD fd) {
 	in->readc = ifstream_readc;
 	in->unread = ifstream_unread;
 	in->fileno = ifstream_fileno;
+	in->available = ifstream_available;
 	in->eof = ifstream_eof;
 	in->seek = ifstream_seek;
 	in->close = ifstream_close;
@@ -117,6 +119,14 @@ static s32 ifstream_seek(sIStream *s,s32 offset,u32 whence) {
 	if(res < 0)
 		THROW(IOException,res);
 	return res;
+}
+
+static bool ifstream_available(sIStream *s) {
+	sIFStream *fs = (sIFStream*)s->_obj;
+	/* anything left in the buffer? */
+	if(fs->length - fs->pos > 0)
+		return true;
+	return !eof(fs->fd);
 }
 
 static bool ifstream_eof(sIStream *s) {

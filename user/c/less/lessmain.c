@@ -269,7 +269,7 @@ static void readLines(u32 end) {
 		}
 
 		/* check whether the user has pressed a key */
-		while(!vt->eof(vt) && (c = vt->readc(vt)) != EOF) {
+		while(vt->available(vt) && (c = vt->readc(vt)) != EOF) {
 			if(c == '\033') {
 				s32 n1,n2,n3;
 				s32 cmd = vt->readEsc(vt,&n1,&n2,&n3);

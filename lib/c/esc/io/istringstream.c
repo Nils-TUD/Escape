@@ -50,6 +50,8 @@ sIStream *isstream_open(const char *str) {
 	in->readc = isstream_readc;
 	in->unread = isstream_unread;
 	in->fileno = isstream_fileno;
+	/* available and eof is the same here */
+	in->available = isstream_eof;
 	in->eof = isstream_eof;
 	in->seek = isstream_seek;
 	in->close = isstream_close;

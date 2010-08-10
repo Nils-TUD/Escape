@@ -69,18 +69,17 @@ bool vfsreq_setHandler(tMsgId id,fReqHandler f);
 void vfsreq_sendMsg(tMsgId id,sVFSNode *node,tTid tid,const u8 *data,u32 size);
 
 /**
- * Waits for a reply
+ * Allocates a new request-object with given properties
  *
  * @param tid the thread to block
  * @param buffer optional, the buffer (stored in data)
  * @param size optional, the buffer-size (stored in dsize)
- * @param allowSigs wether the thread should be interruptable by signals
  * @return the request or NULL if not enough mem
  */
-sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size,bool allowSigs);
+sRequest *vfsreq_getRequest(tTid tid,void *buffer,u32 size);
 
 /**
- * Like waitForReply(), but intended for the driver-function read()
+ * Like vfsreq_getRequest(), but intended for the driver-function read()
  *
  * @param tid the thread to block
  * @param bufSize the buffer-size (stored in dsize)
@@ -89,7 +88,18 @@ sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size,bool allowSigs);
  * @param offset the offset in the first page where to copy the data to
  * @return the request or NULL if not enough mem
  */
-sRequest *vfsreq_waitForReadReply(tTid tid,u32 bufSize,u32 *frameNos,u32 frameNoCount,u32 offset);
+sRequest *vfsreq_getReadRequest(tTid tid,u32 bufSize,u32 *frameNos,u32 frameNoCount,u32 offset);
+
+/**
+ * Waits for the given request. You may get interrupted even if you don't allow signals since
+ * a driver can be deregistered which leads to notifying all possibly affected threads. In this
+ * case req->count will be ERR_DRIVER_DIED. Please check in this case if you are affected and
+ * retry the request if not.
+ *
+ * @param req the request
+ * @param allowSigs wether the thread should be interruptable by signals
+ */
+void vfsreq_waitForReply(sRequest *req,bool allowSigs);
 
 /**
  * Searches for the request of the given thread
@@ -97,7 +107,7 @@ sRequest *vfsreq_waitForReadReply(tTid tid,u32 bufSize,u32 *frameNos,u32 frameNo
  * @param tid the thread-id
  * @return the request or NULL
  */
-sRequest *vfsreq_getRequestByPid(tTid tid);
+sRequest *vfsreq_getRequestByTid(tTid tid);
 
 /**
  * Marks the given request as finished

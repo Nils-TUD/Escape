@@ -45,6 +45,7 @@ void vfsdrv_init(void) {
 
 s32 vfsdrv_open(tTid tid,tFileNo file,sVFSNode *node,u32 flags) {
 	s32 res;
+	volatile sVFSNode *n = node;
 	sRequest *req;
 
 	/* if the driver doesn't implement open, its ok */
@@ -57,10 +58,13 @@ s32 vfsdrv_open(tTid tid,tFileNo file,sVFSNode *node,u32 flags) {
 	if(res < 0)
 		return res;
 
-	/* wait for a reply */
-	req = vfsreq_waitForReply(tid,NULL,0,false);
+	/* repeat until it succeded or OUR driver died */
+	req = vfsreq_getRequest(tid,NULL,0);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
+	do
+		vfsreq_waitForReply(req,false);
+	while((s32)req->count == ERR_DRIVER_DIED && n->owner == tid);
 
 	res = (s32)req->count;
 	vfsreq_remRequest(req);
@@ -86,7 +90,7 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 			return ERR_INTERRUPTED;
 		/* if we waked up and the node is not our, the node has been destroyed (driver died, ...) */
 		if(n->owner != tid)
-			return ERR_INVALID_FILE;
+			return ERR_DRIVER_DIED;
 	}
 
 	/* send msg to driver */
@@ -108,9 +112,13 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 	/* wait for a reply */
 	req = vfsreq_waitForReadReply(tid,count,frameNos,pcount,(u32)buffer % PAGE_SIZE);
 #endif
-	req = vfsreq_waitForReply(tid,buffer,count,true);
+	/* repeat until it succeded or OUR driver died */
+	req = vfsreq_getRequest(tid,buffer,count);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
+	do
+		vfsreq_waitForReply(req,true);
+	while((s32)req->count == ERR_DRIVER_DIED && n->owner == tid);
 
 	res = req->count;
 	frameNos = req->readFrNos;
@@ -126,6 +134,7 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 
 s32 vfsdrv_write(tTid tid,tFileNo file,sVFSNode *node,const void *buffer,u32 offset,u32 count) {
 	sRequest *req;
+	volatile sVFSNode *n = node;
 	s32 res;
 
 	/* if the driver doesn't implement open, its an error */
@@ -143,10 +152,14 @@ s32 vfsdrv_write(tTid tid,tFileNo file,sVFSNode *node,const void *buffer,u32 off
 	if(res < 0)
 		return res;
 
-	/* wait for a reply TODO interruptable? */
-	req = vfsreq_waitForReply(tid,NULL,0,false);
+	/* repeat until it succeded or OUR driver died */
+	req = vfsreq_getRequest(tid,NULL,0);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
+	/* wait for a reply TODO interruptable? */
+	do
+		vfsreq_waitForReply(req,false);
+	while((s32)req->count == ERR_DRIVER_DIED && n->owner == tid);
 
 	res = req->count;
 	vfsreq_remRequest(req);
@@ -169,7 +182,7 @@ static void vfsdrv_openReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 siz
 		return;
 
 	/* find the request for the tid */
-	req = vfsreq_getRequestByPid(tid);
+	req = vfsreq_getRequestByTid(tid);
 	if(req != NULL) {
 		/* remove request and give him the result */
 		req->state = REQ_STATE_FINISHED;
@@ -181,7 +194,7 @@ static void vfsdrv_openReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 siz
 
 static void vfsdrv_readReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size) {
 	/* find the request for the tid */
-	sRequest *req = vfsreq_getRequestByPid(tid);
+	sRequest *req = vfsreq_getRequestByTid(tid);
 	if(req != NULL) {
 		/* the first one is the message */
 		if(req->state == REQ_STATE_WAITING) {
@@ -244,7 +257,7 @@ static void vfsdrv_writeReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 si
 		return;
 
 	/* find the request for the tid */
-	req = vfsreq_getRequestByPid(tid);
+	req = vfsreq_getRequestByTid(tid);
 	if(req != NULL) {
 		/* remove request and give him the inode-number */
 		req->state = REQ_STATE_FINISHED;

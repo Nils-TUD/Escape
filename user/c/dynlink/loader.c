@@ -20,10 +20,11 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <esc/io.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <esc/proc.h>
 #include <esc/sllist.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "elf.h"
 #include "lookup.h"
 #include "loader.h"
@@ -46,8 +47,12 @@ static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadS
 static void dlerror(const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
-	debugf("Error: ");
+	printStackTrace();
+	debugf("[%d] Error: ",getpid());
 	vdebugf(fmt,ap);
+	if(errno < 0)
+		debugf(": %s",strerror(errno));
+	debugf("\n");
 	va_end(ap);
 	exit(1);
 }
@@ -61,20 +66,20 @@ u32 load_setupProg(tFD binFd) {
 		dlerror("Not enough mem!");
 
 	/* create entry for program */
-	sSharedLib *main = (sSharedLib*)malloc(sizeof(sSharedLib));
-	if(!main)
+	sSharedLib *prog = (sSharedLib*)malloc(sizeof(sSharedLib));
+	if(!prog)
 		dlerror("Not enough mem!");
-	main->relocated = false;
-	main->initialized = false;
-	main->dynstrtbl = NULL;
-	main->dyn = NULL;
-	main->name = NULL;
-	main->deps = sll_create();
-	if(!main->deps || !sll_append(libs,main))
+	prog->relocated = false;
+	prog->initialized = false;
+	prog->dynstrtbl = NULL;
+	prog->dyn = NULL;
+	prog->name = NULL;
+	prog->deps = sll_create();
+	if(!prog->deps || !sll_append(libs,prog))
 		dlerror("Not enough mem!");
 
 	/* load program including shared libraries into linked list */
-	load_doLoad(binFd,main);
+	load_doLoad(binFd,prog);
 
 	/* load segments into memory */
 	entryPoint = load_addSegments();
@@ -83,7 +88,7 @@ u32 load_setupProg(tFD binFd) {
 	sSLNode *n,*m;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
-		debugf("Loaded %s @ %x with deps: ",l->name ? l->name : "-Main-",l->loadAddr);
+		debugf("[%d] Loaded %s @ %x with deps: ",getpid(),l->name ? l->name : "-Main-",l->loadAddr);
 		for(m = sll_begin(l->deps); m != NULL; m = m->next) {
 			sSharedLib *dl = (sSharedLib*)m->data;
 			debugf("%s ",dl->name);

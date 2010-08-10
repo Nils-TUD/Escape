@@ -31,7 +31,7 @@
 #define DEBUG_LOADER	0
 #define PRINT_LOADADDR	0
 #if DEBUG_LOADER
-#	define DBGDL(x,...)	debugf(x,## __VA_ARGS__)
+#	define DBGDL(x,...)	debugf("[%d] " x,getpid(),## __VA_ARGS__)
 #else
 #	define DBGDL(x,...)
 #endif

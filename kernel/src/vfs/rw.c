@@ -192,7 +192,7 @@ s32 vfsrw_readDrvUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u3
 			return ERR_INTERRUPTED;
 		/* if we waked up and the node is not our, the node has been destroyed (driver died, ...) */
 		if(event == EV_RECEIVED_MSG && node->owner != tid)
-			return ERR_INVALID_FILE;
+			return ERR_DRIVER_DIED;
 	}
 
 	/* get first element and copy data to buffer */

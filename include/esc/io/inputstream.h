@@ -141,7 +141,15 @@ typedef struct sIStream sIStream;
 	s32 (*seek)(sIStream *s,s32 offset,u32 whence);
 
 	/**
-	 * Checks wether the stream is at EOF
+	 * Checks wether data is available
+	 *
+	 * @param s the stream
+	 * @return true if so
+	 */
+	bool (*available)(sIStream *s);
+
+	/**
+	 * Checks wether the stream is at EOF, i.e. it has been detected while reading
 	 *
 	 * @param s the stream
 	 * @return true if so

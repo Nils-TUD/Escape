@@ -87,6 +87,7 @@
 #define ERR_NO_VM86_TASK			-66
 #define ERR_LISTENER_EXISTS			-67
 #define ERR_EOF						-68
+#define ERR_DRIVER_DIED				-69
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

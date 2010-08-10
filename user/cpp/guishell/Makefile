@@ -1,4 +1,8 @@
 NAME = guishell
-ADDFLAGS = -lshell -lvterm
+ifeq ($(LINKTYPE),static)
+	ADDLIBS += $(BUILD)/libvterm.a $(BUILD)/libshell.a
+else
+	ADDFLAGS = -lvterm -lshell
+endif
 
 -include ../DefMakefile.mk

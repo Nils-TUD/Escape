@@ -291,6 +291,10 @@ char *strerror(s32 errnum) {
 			strcpy(msg,"EOF reached!");
 			break;
 
+		case ERR_DRIVER_DIED:
+			strcpy(msg,"The driver died!");
+			break;
+
 		default:
 			strcpy(msg,"No error");
 			break;

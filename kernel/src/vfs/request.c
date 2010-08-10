@@ -39,10 +39,10 @@
 #define HANDLER_COUNT		32
 
 /**
- * The internal function to add a request and wait for the reply
+ * The internal function to get a request
  */
-static sRequest *vfsreq_waitForReplyIntern(tTid tid,void *buffer,u32 size,u32 *frameNos,
-		u32 frameNoCount,u32 offset,bool allowSigs);
+static sRequest *vfsreq_getReqIntern(tTid tid,void *buffer,u32 size,u32 *frameNos,
+		u32 frameNoCount,u32 offset);
 
 /* the vfs-driver-file */
 static sRequest requests[REQUEST_COUNT];
@@ -71,16 +71,31 @@ void vfsreq_sendMsg(tMsgId id,sVFSNode *node,tTid tid,const u8 *data,u32 size) {
 		handler[id](tid,node,data,size);
 }
 
-sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size,bool allowSigs) {
-	return vfsreq_waitForReplyIntern(tid,buffer,size,NULL,0,0,allowSigs);
+sRequest *vfsreq_getRequest(tTid tid,void *buffer,u32 size) {
+	return vfsreq_getReqIntern(tid,buffer,size,NULL,0,0);
 }
 
-sRequest *vfsreq_waitForReadReply(tTid tid,u32 bufSize,u32 *frameNos,u32 frameNoCount,u32 offset) {
-	return vfsreq_waitForReplyIntern(tid,NULL,bufSize,frameNos,frameNoCount,offset,true);
+sRequest *vfsreq_getReadRequest(tTid tid,u32 bufSize,u32 *frameNos,u32 frameNoCount,u32 offset) {
+	return vfsreq_getReqIntern(tid,NULL,bufSize,frameNos,frameNoCount,offset);
 }
 
-static sRequest *vfsreq_waitForReplyIntern(tTid tid,void *buffer,u32 size,u32 *frameNos,
-		u32 frameNoCount,u32 offset,bool allowSigs) {
+void vfsreq_waitForReply(sRequest *req,bool allowSigs) {
+	/* wait */
+	thread_wait(req->tid,0,EV_REQ_REPLY);
+	if(allowSigs)
+		thread_switch();
+	else
+		thread_switchNoSigs();
+	/* if we waked up and the request is not finished, the driver probably died or we received
+	 * a signal (if allowSigs is true) */
+	if(req->state != REQ_STATE_FINISHED) {
+		/* indicate an error */
+		req->count = (allowSigs && sig_hasSignalFor(req->tid)) ? ERR_INTERRUPTED : ERR_DRIVER_DIED;
+	}
+}
+
+static sRequest *vfsreq_getReqIntern(tTid tid,void *buffer,u32 size,u32 *frameNos,
+		u32 frameNoCount,u32 offset) {
 	u32 i;
 	sRequest *req = requests;
 	for(i = 0; i < REQUEST_COUNT; i++) {
@@ -101,24 +116,10 @@ static sRequest *vfsreq_waitForReplyIntern(tTid tid,void *buffer,u32 size,u32 *f
 	req->readFrNoCount = frameNoCount;
 	req->readOffset = offset;
 	req->count = 0;
-
-	/* wait */
-	thread_wait(tid,0,EV_REQ_REPLY);
-	if(allowSigs)
-		thread_switch();
-	else
-		thread_switchNoSigs();
-	/* if we waked up and the request is not finished, the driver probably died or we received
-	 * a signal (if allowSigs is true) */
-	if(req->state != REQ_STATE_FINISHED) {
-		/* indicate an error */
-		req->count = (allowSigs && sig_hasSignalFor(tid)) ? ERR_INTERRUPTED : ERR_INVALID_FILE;
-		req->state = REQ_STATE_FINISHED;
-	}
 	return req;
 }
 
-sRequest *vfsreq_getRequestByPid(tTid tid) {
+sRequest *vfsreq_getRequestByTid(tTid tid) {
 	u32 i;
 	sRequest *req = requests;
 	for(i = 0; i < REQUEST_COUNT; i++) {

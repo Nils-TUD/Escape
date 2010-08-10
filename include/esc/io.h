@@ -128,7 +128,7 @@ s32 seek(tFD fd,s32 offset,u32 whence) A_CHECKRET;
 
 /**
  * Reads count bytes from the given file-descriptor into the given buffer and returns the
- * actual read number of bytes.
+ * actual read number of bytes. You may be interrupted by a signal (ERR_INTERRUPTED)!
  *
  * @param fd the file-descriptor
  * @param buffer the buffer to fill
@@ -161,6 +161,7 @@ s32 send(tFD fd,tMsgId id,const void *msg,u32 size);
 
 /**
  * Receives a message from the driver identified by <fd>. Blocks if no message is available.
+ * You may be interrupted by a signal (ERR_INTERRUPTED)!
  *
  * @param fd the file-descriptor
  * @param id will be set to the msg-id (may be NULL to skip the message)

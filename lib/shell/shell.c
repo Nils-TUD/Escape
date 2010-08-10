@@ -126,7 +126,6 @@ u32 shell_readLine(char *buffer,u32 max) {
 		/* use read to interrupt for signals; ensure that stdout is flushed */
 		fflush(stdout);
 		read(STDIN_FILENO,&c,1);
-		/*c = getchar();*/
 		/* maybe we've received a ^C. if so do a reset */
 		if(resetReadLine) {
 			i = 0;

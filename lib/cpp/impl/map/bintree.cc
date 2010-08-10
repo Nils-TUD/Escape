@@ -316,63 +316,23 @@ namespace std {
 
 	// === manipulation ===
 	template<class Key,class T,class Cmp>
+	typename bintree<Key,T,Cmp>::iterator bintree<Key,T,Cmp>::insert(iterator pos,const Key& k,
+			const T& v,bool replace) {
+		bintree_node<Key,T,Cmp>* node = pos.node();
+		// head and foot are not allowed
+		if(node == &_head || node == &_foot)
+			node = _head.right();
+		else {
+			// while the parent is less than k, move upwards
+			while(node->parent() && _cmp(k,node->parent()->key()))
+				node = node->parent();
+		}
+		return do_insert(node,k,v,replace);
+	}
+	template<class Key,class T,class Cmp>
 	typename bintree<Key,T,Cmp>::iterator bintree<Key,T,Cmp>::insert(const Key& k,const T& v,
 			bool replace) {
-		bool left = false;
-		bintree_node<Key,T,Cmp>* prev = NULL;
-		bintree_node<Key,T,Cmp>* node = _head.right();
-		while(node != NULL) {
-			prev = node;
-			// less?
-			if(_cmp(k,node->key())) {
-				left = true;
-				node = node->left();
-			}
-			// equal, so just replace the value
-			else if(k == node->key()) {
-				if(replace)
-					node->value(v);
-				return iterator(node);
-			}
-			else {
-				left = false;
-				node = node->right();
-			}
-		}
-
-		// node is null, so create a new node
-		node = new bintree_node<Key,T,Cmp>(k,NULL,NULL);
-		node->value(v);
-		if(!prev)
-			prev = &_head;
-		node->parent(prev);
-
-		// insert into tree
-		if(left)
-			prev->left(node);
-		else
-			prev->right(node);
-
-		// insert into sequence
-		// note that its always directly behind or before the found node when we want to keep
-		// the keys in ascending order!
-		if(left) {
-			// insert before prev
-			prev->prev()->next(node);
-			node->prev(prev->prev());
-			prev->prev(node);
-			node->next(prev);
-		}
-		else {
-			// insert behind prev
-			node->next(prev->next());
-			node->prev(prev);
-			prev->next()->prev(node);
-			prev->next(node);
-		}
-
-		_elCount++;
-		return iterator(node);
+		return do_insert(_head.right(),k,v,replace);
 	}
 	template<class Key,class T,class Cmp>
 	inline typename bintree<Key,T,Cmp>::iterator bintree<Key,T,Cmp>::insert(const pair<Key,T>& p,
@@ -483,6 +443,64 @@ namespace std {
 	}
 
 	// === helper ===
+	template<class Key,class T,class Cmp>
+	typename bintree<Key,T,Cmp>::iterator bintree<Key,T,Cmp>::do_insert(bintree_node<Key,T,Cmp>* node,
+			const Key& k,const T& v,bool replace) {
+		bool left = false;
+		bintree_node<Key,T,Cmp>* prev = node ? node->parent() : NULL;
+		while(node != NULL) {
+			prev = node;
+			// less?
+			if(_cmp(k,node->key())) {
+				left = true;
+				node = node->left();
+			}
+			// equal, so just replace the value
+			else if(k == node->key()) {
+				if(replace)
+					node->value(v);
+				return iterator(node);
+			}
+			else {
+				left = false;
+				node = node->right();
+			}
+		}
+
+		// node is null, so create a new node
+		node = new bintree_node<Key,T,Cmp>(k,NULL,NULL);
+		node->value(v);
+		if(!prev)
+			prev = &_head;
+		node->parent(prev);
+
+		// insert into tree
+		if(left)
+			prev->left(node);
+		else
+			prev->right(node);
+
+		// insert into sequence
+		// note that its always directly behind or before the found node when we want to keep
+		// the keys in ascending order!
+		if(left) {
+			// insert before prev
+			prev->prev()->next(node);
+			node->prev(prev->prev());
+			prev->prev(node);
+			node->next(prev);
+		}
+		else {
+			// insert behind prev
+			node->next(prev->next());
+			node->prev(prev);
+			prev->next()->prev(node);
+			prev->next(node);
+		}
+
+		_elCount++;
+		return iterator(node);
+	}
 	template<class Key,class T,class Cmp>
 	bintree_node<Key,T,Cmp>* bintree<Key,T,Cmp>::find_min(bintree_node<Key,T,Cmp>* n) {
 		bintree_node<Key,T,Cmp>* current = n;

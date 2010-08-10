@@ -155,6 +155,18 @@ namespace std {
 		 */
 		iterator insert(const Key& k,const T& v,bool replace = true);
 		iterator insert(const pair<Key,T>& p,bool replace = true);
+		/**
+		 * Inserts the key <k> with value <v> into the tree and gives the insert-algorithm a hint
+		 * with <pos>. I.e. it tries to start at this node, if possible, which can speed up
+		 * the insert a lot.
+		 *
+		 * @param pos the position where to start
+		 * @param k the key
+		 * @param v the value
+		 * @param replace wether the value should be replaced if the key exists
+		 * @return a iterator, pointing to the inserted element
+		 */
+		iterator insert(iterator pos,const Key& k,const T& v,bool replace = true);
 
 		/**
 		 * Searches for the given key and returns the position as iterator
@@ -208,6 +220,16 @@ namespace std {
 		void clear();
 
 	private:
+		/**
+		 * Does the actual inserting, starting at <node>
+		 *
+		 * @param node the start-node
+		 * @param k the key
+		 * @param v the value
+		 * @param replace wether to replace existing elements
+		 * @return the insert-position
+		 */
+		iterator do_insert(bintree_node<Key,T,Cmp>* node,const Key& k,const T& v,bool replace);
 		/**
 		 * Finds the node with the minimum key in the subtree of <n>.
 		 *

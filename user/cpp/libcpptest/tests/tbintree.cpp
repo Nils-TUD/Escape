@@ -115,6 +115,37 @@ static void test_insert(void) {
 	after = heapspace();
 	test_assertUInt(after,before);
 
+	before = heapspace();
+	{
+		bintree<int,int> t;
+		t.insert(t.begin(),3,3);
+		t.insert(4,4);
+		t.insert(1,1);
+		t.insert(2,2);
+		it = t.find(4);
+		t.insert(it,5,5);
+		it = t.find(4);
+		t.insert(it,0,0);
+		it = t.find(2);
+		t.insert(it,2,3);
+
+		test_assertUInt(t.size(),6);
+		it = t.find(0);
+		test_assertTrue(*it == make_pair(0,0));
+		it = t.find(1);
+		test_assertTrue(*it == make_pair(1,1));
+		it = t.find(2);
+		test_assertTrue(*it == make_pair(2,3));
+		it = t.find(3);
+		test_assertTrue(*it == make_pair(3,3));
+		it = t.find(4);
+		test_assertTrue(*it == make_pair(4,4));
+		it = t.find(5);
+		test_assertTrue(*it == make_pair(5,5));
+	}
+	after = heapspace();
+	test_assertUInt(after,before);
+
 	test_caseSucceded();
 }
 

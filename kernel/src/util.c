@@ -106,9 +106,8 @@ void util_panic(const char *fmt,...) {
 #if DEBUGGING
 	/* write into log only */
 	vid_setTargets(TARGET_LOG);
-	proc_dbg_printAllPDs(PD_PART_USER,true);
-	/*vmm_dbg_print(t->proc);
-	paging_dbg_printCur(PD_PART_USER);*/
+	vmm_dbg_print(t->proc);
+	paging_dbg_printCur(PD_PART_USER);
 #endif
 
 	/* TODO vmware seems to shutdown if we disable interrupts and htl?? */

@@ -159,6 +159,17 @@ namespace std {
 		 */
 		pair<iterator,bool> insert(const value_type& x);
 		/**
+		 * Inserts <x> into the map and returns an iterator to the insertion-point. Gives the
+		 * insert-algorithm a hint with <pos>. I.e. it tries to start at this node, if possible,
+		 * which can speed up the insert a lot.
+		 * If the key does already exists, nothing is done.
+		 *
+		 * @param pos the position where to start
+		 * @param x the element to insert
+		 * @return the iterator
+		 */
+		iterator insert(iterator pos,const value_type& x);
+		/**
 		 * Inserts all elements in the range [<first> .. <last>) into the map
 		 *
 		 * @param first the beginning (inclusive)

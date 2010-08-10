@@ -58,7 +58,7 @@ namespace gui {
 			printe("Unable to send get-mode-request to vesa");
 			exit(EXIT_FAILURE);
 		}
-		if(receive(_vesaFd,&mid,&_msg,sizeof(_msg)) < 0 || mid != MSG_VESA_GETMODE_RESP ||
+		if(RETRY(receive(_vesaFd,&mid,&_msg,sizeof(_msg))) < 0 || mid != MSG_VESA_GETMODE_RESP ||
 				_msg.data.arg1 != 0) {
 			printe("Unable to read the get-mode-response from vesa");
 			exit(EXIT_FAILURE);
@@ -81,7 +81,7 @@ namespace gui {
 
 	void Application::doEvents() {
 		tMsgId mid;
-		if(receive(_winFd,&mid,&_msg,sizeof(_msg)) < 0) {
+		if(RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg))) < 0) {
 			printe("Read from window-manager failed");
 			exit(EXIT_FAILURE);
 		}

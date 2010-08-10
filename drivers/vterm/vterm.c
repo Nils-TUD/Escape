@@ -181,13 +181,10 @@ static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 			case VK_C:
 				/* send interrupt to shell */
 				if(vt->shellPid) {
-					if(sendSignalTo(vt->shellPid,SIG_INTRPT,0) < 0)
+					/* data=1 to distinguish it from other SIG_INTRPT-sources */
+					if(sendSignalTo(vt->shellPid,SIG_INTRPT,1) < 0)
 						printe("[VTERM] Unable to send SIG_INTRPT to %d",vt->shellPid);
 				}
-				/* put EOF in and flush so that the shell gets directly notified (its possible
-				 * in a read-operation now and we won't interrupt it for a signal) */
-				vterm_rlPutchar(vt,EOF);
-				vterm_rlFlushBuf(vt);
 				return false;
 			case VK_D:
 				if(vt->readLine) {

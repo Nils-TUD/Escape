@@ -74,9 +74,10 @@ void vfsreq_sendMsg(tMsgId id,sVFSNode *node,tTid tid,const u8 *data,u32 size);
  * @param tid the thread to block
  * @param buffer optional, the buffer (stored in data)
  * @param size optional, the buffer-size (stored in dsize)
+ * @param allowSigs wether the thread should be interruptable by signals
  * @return the request or NULL if not enough mem
  */
-sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size);
+sRequest *vfsreq_waitForReply(tTid tid,void *buffer,u32 size,bool allowSigs);
 
 /**
  * Like waitForReply(), but intended for the driver-function read()

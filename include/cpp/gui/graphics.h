@@ -34,14 +34,6 @@
 #include <ostream>
 
 namespace gui {
-	// TODO wrong place
-	template<class T>
-	void swap(T *a,T *b) {
-		T t = *a;
-		*a = *b;
-		*b = t;
-	}
-
 	/**
 	 * The graphics-class is responsible for drawing on a buffer, copying it to the shared-
 	 * memory-region offered by vesa and notifying vesa for updates. It offers several

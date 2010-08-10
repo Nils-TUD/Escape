@@ -85,7 +85,7 @@ int mod_speed(int argc,char *argv[]) {
 	t = getTime();
 	start = cpu_rdtsc();
 	for(i = 0; i < COUNT; i++) {
-		if(read(fd,buffer,sizeof(buffer)) < 0) {
+		if(RETRY(read(fd,buffer,sizeof(buffer))) < 0) {
 			printe("read");
 			break;
 		}

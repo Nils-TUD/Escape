@@ -24,6 +24,7 @@
 #include <sys/vfs/request.h>
 #include <sys/mem/kheap.h>
 #include <sys/task/thread.h>
+#include <sys/task/signals.h>
 #include <esc/messages.h>
 #include <string.h>
 #include <errors.h>
@@ -118,7 +119,9 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 	/* don't cache the list here, because the pointer changes if the list is NULL */
 	while(sll_length(n->data.pipe.list) == 0) {
 		thread_wait(tid,node,EV_PIPE_FULL);
-		thread_switchNoSigs();
+		thread_switch();
+		if(sig_hasSignalFor(tid))
+			return ERR_INTERRUPTED;
 	}
 
 	list = node->data.pipe.list;
@@ -151,6 +154,9 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 			 * we may cause a deadlock here */
 			thread_wakeupAll(node,EV_PIPE_EMPTY);
 			thread_wait(tid,node,EV_PIPE_FULL);
+			/* TODO we can't accept signals here, right? since we've already read something, which
+			 * we have to deliver to the user. the only way I can imagine would be to put it back..
+			 */
 			thread_switchNoSigs();
 		}
 		data = sll_get(list,0);
@@ -181,7 +187,9 @@ s32 vfsrw_readDrvUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u3
 	}
 	while(sll_length(*list) == 0) {
 		thread_wait(tid,0,event);
-		thread_switchNoSigs();
+		thread_switch();
+		if(sig_hasSignalFor(tid))
+			return ERR_INTERRUPTED;
 		/* if we waked up and the node is not our, the node has been destroyed (driver died, ...) */
 		if(event == EV_RECEIVED_MSG && node->owner != tid)
 			return ERR_INVALID_FILE;

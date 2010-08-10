@@ -42,7 +42,7 @@ ShellApplication::~ShellApplication() {
 void ShellApplication::doEvents() {
 	tMsgId mid;
 	if(hasMsg(_winFd)) {
-		if(receive(_winFd,&mid,&_msg,sizeof(_msg)) < 0) {
+		if(RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg))) < 0) {
 			printe("Read from window-manager failed");
 			exit(EXIT_FAILURE);
 		}
@@ -119,7 +119,7 @@ void ShellApplication::driverMain() {
 				data = (char*)malloc(c + 1);
 				_msg.args.arg1 = 0;
 				if(data) {
-					if(receive(fd,&mid,data,c + 1) >= 0) {
+					if(RETRY(receive(fd,&mid,data,c + 1)) >= 0) {
 						char *dataWork = data;
 						_msg.args.arg1 = c;
 						dataWork[c] = '\0';

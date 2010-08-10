@@ -61,7 +61,7 @@ int main(int argc,const char **argv) {
 			error("Unable to open keymap-manager");
 		len = snprintf(path,sizeof(path),KEYMAP_DIR"/%s",kmname);
 		if(sendMsgData(fd,MSG_KM_SET,path,len + 1) < 0 ||
-				receive(fd,NULL,&msg,sizeof(msg)) < 0 || (s32)msg.args.arg1 < 0)
+				RETRY(receive(fd,NULL,&msg,sizeof(msg))) < 0 || (s32)msg.args.arg1 < 0)
 			cerr->writef(cerr,"Setting the keymap '%s' failed\n",kmname);
 		else
 			cout->writef(cout,"Successfully changed keymap to '%s'\n",kmname);

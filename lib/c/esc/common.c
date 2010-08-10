@@ -92,7 +92,7 @@ static char *getProcName(void) {
 	snprintf(path,sizeof(path),"/system/processes/%d/info",getpid());
 	fd = open(path,IO_READ);
 	if(fd >= 0) {
-		if(read(fd,buffer,PROCINFO_BUF_SIZE - 1) < 0) {
+		if(RETRY(read(fd,buffer,PROCINFO_BUF_SIZE - 1)) < 0) {
 			close(fd);
 			return NULL;
 		}

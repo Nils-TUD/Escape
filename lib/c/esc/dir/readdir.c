@@ -64,7 +64,7 @@ tFD opendir(const char *path) {
 		}
 		/* read the first bytes */
 		cpos = 0;
-		csize = read(fd,cache,CACHE_SIZE);
+		csize = RETRY(read(fd,cache,CACHE_SIZE));
 		if((s32)csize < 0) {
 			unlocku(&dirLock);
 			close(fd);
@@ -114,14 +114,14 @@ bool readdir(sDirEntry *e,tFD dir) {
 	unlocku(&dirLock);
 
 	/* default way; read the entry without name first */
-	if(read(dir,(u8*)e,DIRE_SIZE) > 0) {
+	if(RETRY(read(dir,(u8*)e,DIRE_SIZE)) > 0) {
 		len = e->nameLen;
 		/* ensure that the name is short enough */
 		if(len >= MAX_NAME_LEN)
 			return false;
 
 		/* now read the name */
-		if(read(dir,(u8*)e->name,len) > 0) {
+		if(RETRY(read(dir,(u8*)e->name,len)) > 0) {
 			/* if the record is longer, we have to skip the stuff until the next record */
 			if(e->recLen - DIRE_SIZE > len) {
 				len = (e->recLen - DIRE_SIZE - len);
@@ -159,7 +159,7 @@ static void incCache(tFD fd) {
 		free(cache);
 	cache = dup;
 	if(cache) {
-		res = read(fd,cache + csize,nsize - csize);
+		res = RETRY(read(fd,cache + csize,nsize - csize));
 		if(res >= 0) {
 			csize += res;
 			return;

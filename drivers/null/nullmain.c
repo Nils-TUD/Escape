@@ -52,7 +52,7 @@ int main(void) {
 					break;
 				case MSG_DRV_WRITE:
 					/* skip the data-message */
-					if(receive(fd,NULL,NULL,0) < 0)
+					if(RETRY(receive(fd,NULL,NULL,0)) < 0)
 						printe("[NULL] Unable to skip data-msg");
 					/* write response and pretend that we've written everything */
 					msg.args.arg1 = msg.args.arg2;

@@ -94,7 +94,7 @@ s32 vfsr_openFile(tTid tid,u16 flags,const char *path) {
 	}
 
 	/* wait for a reply */
-	req = vfsreq_waitForReply(tid,NULL,0);
+	req = vfsreq_waitForReply(tid,NULL,0,false);
 	if(req == NULL) {
 		vfsr_destroy(tid,virtFile);
 		return ERR_NOT_ENOUGH_MEM;
@@ -179,7 +179,7 @@ static s32 vfsr_doStat(tTid tid,const char *path,tInodeNo ino,tDevNo devNo,sFile
 	}
 
 	/* wait for a reply */
-	req = vfsreq_waitForReply(tid,NULL,0);
+	req = vfsreq_waitForReply(tid,NULL,0,false);
 	if(req == NULL) {
 		vfsr_destroy(tid,virtFile);
 		return ERR_NOT_ENOUGH_MEM;
@@ -234,7 +234,7 @@ s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,u8 *buffer
 	/* wait for a reply */
 	req = vfsreq_waitForReadReply(tid,count,frameNos,pcount,(u32)buffer % PAGE_SIZE);
 #endif
-	req = vfsreq_waitForReply(tid,buffer,count);
+	req = vfsreq_waitForReply(tid,buffer,count,true);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -270,8 +270,8 @@ s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,const u8 
 	if(res < 0)
 		return res;
 
-	/* wait for a reply */
-	req = vfsreq_waitForReply(tid,NULL,0);
+	/* wait for a reply TODO interruptable */
+	req = vfsreq_waitForReply(tid,NULL,0,false);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -354,7 +354,7 @@ static s32 vfsr_pathReqHandler(tTid tid,const char *path1,const char *path2,u32 
 		return res;
 
 	/* wait for a reply */
-	req = vfsreq_waitForReply(tid,NULL,0);
+	req = vfsreq_waitForReply(tid,NULL,0,false);
 	vfsr_destroy(tid,virtFile);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;

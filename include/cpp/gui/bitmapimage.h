@@ -83,14 +83,6 @@ namespace gui {
 			: _fileHeader(NULL), _infoHeader(NULL), _colorTable(NULL), _tableSize(0),
 				_data(NULL), _dataSize(0) {
 			loadFromFile(filename);
-			/*printf("FileHeader:\n");
-			dumpBytes(_fileHeader,sizeof(sBMFileHeader));
-			printf("\nInfoHeader:\n");
-			dumpBytes(_infoHeader,sizeof(sBMInfoHeader));
-			printf("\nColorTable:\n");
-			dumpDwords(_colorTable,_tableSize);
-			printf("\nData:\n");
-			dumpBytes(_data,_dataSize);*/
 		};
 		virtual ~BitmapImage() {
 			delete[] _fileHeader;

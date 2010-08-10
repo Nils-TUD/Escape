@@ -56,7 +56,7 @@ int main(void) {
 	while(1) {
 		if(wait(EV_DATA_READABLE) != ERR_INTERRUPTED) {
 			while(!eof(keymap)) {
-				if(read(keymap,&kmdata,sizeof(kmdata)) < 0)
+				if(RETRY(read(keymap,&kmdata,sizeof(kmdata))) < 0)
 					qerror("Unable to read from keymap");
 				game_handleKey(kmdata.keycode,kmdata.modifier,kmdata.isBreak,kmdata.character);
 			}

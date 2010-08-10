@@ -100,7 +100,7 @@ int main(void) {
 				/* don't block here since there may be waiting clients.. */
 				if(!eof(kbFd)) {
 					sKmData *kmsg = kmData;
-					s32 count = read(kbFd,kmData,sizeof(kmData));
+					s32 count = RETRY(read(kbFd,kmData,sizeof(kmData)));
 					if(count < 0)
 						printe("[VTERM] Unable to read from km-manager");
 					else {
@@ -156,7 +156,7 @@ int main(void) {
 					data = (char*)malloc(c + 1);
 					msg.args.arg1 = 0;
 					if(data) {
-						if(receive(fd,&mid,data,c + 1) >= 0) {
+						if(RETRY(receive(fd,&mid,data,c + 1)) >= 0) {
 							data[c] = '\0';
 							vterm_puts(vt,data,c,true);
 							vterm_update(vt);

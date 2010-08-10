@@ -42,9 +42,8 @@ namespace gui {
 	}
 
 	tWinId Control::getWindowId() const {
-		// TODO throw exception?
 		if(_w == NULL)
-			return -1;
+			throw std::logic_error("No window yet");
 		return _w->getId();
 	}
 

@@ -63,7 +63,8 @@ bool win_init(tDrvId sid) {
 	/* request screen infos from vesa */
 	if(send(vesa,MSG_VESA_GETMODE_REQ,&msg,sizeof(msg.args)) < 0)
 		error("Unable to send get-mode-request to vesa");
-	if(receive(vesa,&mid,&msg,sizeof(msg)) < 0 || mid != MSG_VESA_GETMODE_RESP || msg.data.arg1 != 0)
+	if(RETRY(receive(vesa,&mid,&msg,sizeof(msg))) < 0 ||
+			mid != MSG_VESA_GETMODE_RESP || msg.data.arg1 != 0)
 		error("Unable to read the get-mode-response from vesa");
 
 	/* store */

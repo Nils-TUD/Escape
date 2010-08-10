@@ -36,7 +36,7 @@ s32 recvMsgData(tFD fd,tMsgId id,void *data,u32 size) {
 	s32 res;
 	if((res = send(fd,id,NULL,0)) < 0)
 		return res;
-	if((res = receive(fd,NULL,&msg,sizeof(msg))) < 0)
+	if((res = RETRY(receive(fd,NULL,&msg,sizeof(msg)))) < 0)
 		return res;
 	res = (s32)msg.data.arg1;
 	if(res > (s32)size)

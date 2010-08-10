@@ -91,7 +91,7 @@ int main(void) {
 			/* don't block here since there may be waiting clients.. */
 			while(!eof(kbFd)) {
 				sKbData *kbd = kbData;
-				s32 count = read(kbFd,kbData,sizeof(kbData));
+				s32 count = RETRY(read(kbFd,kbData,sizeof(kbData)));
 				if(count >= 0) {
 					count /= sizeof(sKbData);
 					while(count-- > 0) {

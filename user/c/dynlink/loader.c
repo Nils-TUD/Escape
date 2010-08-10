@@ -552,6 +552,6 @@ static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadS
 static void load_read(tFD binFd,u32 offset,void *buffer,u32 count) {
 	if(seek(binFd,(u32)offset,SEEK_SET) < 0)
 		dlerror("Unable to seek to %x",offset);
-	if(read(binFd,buffer,count) != (s32)count)
+	if(RETRY(read(binFd,buffer,count)) != (s32)count)
 		dlerror("Unable to read %d bytes @ %x",count,offset);
 }

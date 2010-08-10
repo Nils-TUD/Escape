@@ -23,9 +23,10 @@
 #include <esc/debug.h>
 #include <gui/graphics.h>
 #include <gui/window.h>
+#include <algorithm>
 #include <string>
-#include <string.h>
 #include <iostream>
+#include <string.h>
 
 namespace gui {
 	Graphics::Graphics(Graphics &g,tCoord x,tCoord y)
@@ -153,12 +154,12 @@ namespace gui {
 		}
 		// handle 45° < x < 90°
 		if(dx < dy) {
-			swap<tCoord>(&x,&y);
-			swap<tCoord*>(&px,&py);
-			swap<s32>(&dx,&dy);
-			swap<tCoord>(&x0,&y0);
-			swap<tCoord>(&xn,&yn);
-			swap<s32>(&incx,&incy);
+			std::swap(x,y);
+			std::swap(px,py);
+			std::swap(dx,dy);
+			std::swap(x0,y0);
+			std::swap(xn,yn);
+			std::swap(incx,incy);
 		}
 
 		d = 2 * dy - dx;
@@ -184,7 +185,7 @@ namespace gui {
 		updateMinMax(x,y1);
 		updateMinMax(x,y2);
 		if(y1 > y2)
-			swap<tCoord>(&y1,&y2);
+			std::swap(y1,y2);
 		for(; y1 < y2; y1++)
 			doSetPixel(x,y1);
 	}
@@ -195,7 +196,7 @@ namespace gui {
 		updateMinMax(x1,y);
 		updateMinMax(x2,y);
 		if(x1 > x2)
-			swap<tCoord>(&x1,&x2);
+			std::swap(x1,x2);
 		for(; x1 < x2; x1++)
 			doSetPixel(x1,y);
 	}

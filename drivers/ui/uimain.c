@@ -51,7 +51,7 @@ int main(void) {
 
 	while(1) {
 		sKmData *km = (sKmData*)&msg.data.d;
-		if(receive(fd,&mid,&msg,sizeof(msg.data)) < 0)
+		if(RETRY(receive(fd,&mid,&msg,sizeof(msg.data))) < 0)
 			printe("[UI] Unable to receive event from keyevents");
 		else
 			switchTo(km->keycode - VK_1);
@@ -166,6 +166,6 @@ static void addListener(tFD fd,u8 flags,u8 key,u8 modifiers) {
 	msg.args.arg4 = modifiers;
 	if(send(fd,MSG_KE_ADDLISTENER,&msg,sizeof(msg.args)) < 0)
 		error("Unable to send msg to keyevents");
-	if(receive(fd,&mid,&msg,sizeof(msg.args)) < 0 || (s32)msg.args.arg1 < 0)
+	if(RETRY(receive(fd,&mid,&msg,sizeof(msg.args))) < 0 || (s32)msg.args.arg1 < 0)
 		error("Unable to receive reply or invalid reply from keyevents");
 }

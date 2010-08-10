@@ -20,7 +20,6 @@
 #include <esc/common.h>
 #include <esc/debug.h>
 #include <esc/io.h>
-#include <signal.h>
 #include <esc/driver.h>
 #include <esc/dir.h>
 #include <esc/thread.h>
@@ -29,6 +28,7 @@
 #include <gui/window.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #include <shell/shell.h>
 #include <shell/history.h>
@@ -42,11 +42,17 @@
 using namespace gui;
 
 static char *drvName;
+static s32 childPid = -1;
 
 /**
  * The shell-Thread
  */
 static int shell_main(void);
+
+static void childKiller(void*) {
+	if(childPid >= 0)
+		(void)sendSignalTo(childPid,SIG_KILL,0);
+}
 
 int main(int argc,char **argv) {
 	shell_init(argc,(const char**)argv);
@@ -86,7 +92,7 @@ int main(int argc,char **argv) {
 	setenv("TERM",drvName);
 
 	// the child handles the GUI
-	if(fork() == 0) {
+	if((childPid = fork()) == 0) {
 		// re-register driver
 		sid = regDriver(drvName,DRV_READ | DRV_WRITE | DRV_TERM);
 		unlockg(GUI_SHELL_LOCK);
@@ -101,6 +107,9 @@ int main(int argc,char **argv) {
 		w.add(*sh);
 		return app->run();
 	}
+
+	/* before exiting, kill our child */
+	atexit(&childKiller);
 
 	// wait until the driver is announced
 	delete drvName;

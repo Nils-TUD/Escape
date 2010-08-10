@@ -43,9 +43,8 @@ namespace gui {
 		_mlist->push_back(l);
 	}
 	void UIElement::removeMouseListener(MouseListener *l) {
-		if(_mlist == NULL)
-			return;
-		_mlist->erase_first(l);
+		if(_mlist != NULL)
+			_mlist->erase_first(l);
 	}
 
 	void UIElement::addKeyListener(KeyListener *l) {
@@ -54,9 +53,8 @@ namespace gui {
 		_klist->push_back(l);
 	}
 	void UIElement::removeKeyListener(KeyListener *l) {
-		if(_klist == NULL)
-			return;
-		_klist->erase_first(l);
+		if(_klist != NULL)
+			_klist->erase_first(l);
 	}
 
 	void UIElement::onMouseMoved(const MouseEvent &e) {

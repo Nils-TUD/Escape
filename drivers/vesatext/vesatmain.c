@@ -158,7 +158,7 @@ int main(void) {
 						char *str = (char*)malloc(count);
 						vassert(str,"Unable to alloc mem");
 						msg.args.arg1 = 0;
-						if(receive(fd,&mid,str,count) >= 0) {
+						if(RETRY(receive(fd,&mid,str,count)) >= 0) {
 							vesa_drawStr((offset / 2) % cols,(offset / 2) / cols,str,count / 2);
 							msg.args.arg1 = count;
 						}

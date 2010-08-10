@@ -181,7 +181,7 @@ static void getProcName(tPid pid,char *name) {
 	/* maybe the process has just been terminated */
 	if(fd < 0)
 		return;
-	if(read(fd,buffer,ARRAY_SIZE(buffer) - 1) < 0) {
+	if(RETRY(read(fd,buffer,ARRAY_SIZE(buffer) - 1)) < 0) {
 		close(fd);
 		return;
 	}

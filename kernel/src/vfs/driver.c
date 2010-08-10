@@ -24,6 +24,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
+#include <sys/task/signals.h>
 #include <esc/sllist.h>
 #include <string.h>
 #include <errors.h>
@@ -57,7 +58,7 @@ s32 vfsdrv_open(tTid tid,tFileNo file,sVFSNode *node,u32 flags) {
 		return res;
 
 	/* wait for a reply */
-	req = vfsreq_waitForReply(tid,NULL,0);
+	req = vfsreq_waitForReply(tid,NULL,0,false);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -80,7 +81,9 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 	/* wait until data is readable */
 	while(n->parent->data.driver.isEmpty) {
 		thread_wait(tid,node->parent,EV_DATA_READABLE);
-		thread_switchNoSigs();
+		thread_switch();
+		if(sig_hasSignalFor(tid))
+			return ERR_INTERRUPTED;
 		/* if we waked up and the node is not our, the node has been destroyed (driver died, ...) */
 		if(n->owner != tid)
 			return ERR_INVALID_FILE;
@@ -105,7 +108,7 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 	/* wait for a reply */
 	req = vfsreq_waitForReadReply(tid,count,frameNos,pcount,(u32)buffer % PAGE_SIZE);
 #endif
-	req = vfsreq_waitForReply(tid,buffer,count);
+	req = vfsreq_waitForReply(tid,buffer,count,true);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
@@ -140,8 +143,8 @@ s32 vfsdrv_write(tTid tid,tFileNo file,sVFSNode *node,const void *buffer,u32 off
 	if(res < 0)
 		return res;
 
-	/* wait for a reply */
-	req = vfsreq_waitForReply(tid,NULL,0);
+	/* wait for a reply TODO interruptable? */
+	req = vfsreq_waitForReply(tid,NULL,0,false);
 	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 

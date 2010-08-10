@@ -141,7 +141,7 @@ int main(void) {
 					msg.args.arg1 = 0;
 					if(offset + count <= part->size * drive->secSize && offset + count > offset) {
 						if(count <= MAX_RW_SIZE) {
-							if(receive(fd,&mid,buffer,count) > 0) {
+							if(RETRY(receive(fd,&mid,buffer,count)) > 0) {
 								ATA_PR2("Writing %d bytes @ %x to drive 0x%x",count,offset,drive->basePort);
 								if(drive->rwHandler(drive,true,buffer,
 										offset / drive->secSize + part->start,count / drive->secSize)) {

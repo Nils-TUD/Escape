@@ -75,6 +75,9 @@ bool shell_prompt(void) {
 static void shell_sigIntrpt(tSig sig,u32 data) {
 	UNUSED(sig);
 	UNUSED(data);
+	/* if data is not 1 the source is not vterm so that we should exit now */
+	if(data != 1)
+		exit(1);
 	lang_setInterrupted();
 	/* ensure that we start a new readline */
 	resetReadLine = true;
@@ -120,7 +123,10 @@ u32 shell_readLine(char *buffer,u32 max) {
 	while(i < max) {
 		char c;
 		s32 cmd,n1,n2,n3;
-		c = getchar();
+		/* use read to interrupt for signals; ensure that stdout is flushed */
+		fflush(stdout);
+		read(STDIN_FILENO,&c,1);
+		/*c = getchar();*/
 		/* maybe we've received a ^C. if so do a reset */
 		if(resetReadLine) {
 			i = 0;

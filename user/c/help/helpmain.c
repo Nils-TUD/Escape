@@ -226,7 +226,7 @@ static char *readApp(char *path) {
 		return NULL;
 	}
 
-	while((count = read(fileFd,app + appPos,incSize)) > 0) {
+	while((count = RETRY(read(fileFd,app + appPos,incSize))) > 0) {
 		appPos += count;
 		appSize += incSize;
 		app = (char*)realloc(app,appSize);

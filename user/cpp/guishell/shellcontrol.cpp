@@ -61,21 +61,18 @@ bool handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 		switch(keycode) {
 			case VK_C:
 				/* send interrupt to shell (our parent) */
-				if(sendSignalTo(getppid(),SIG_INTRPT,0) < 0)
+				/* data=1 to distinguish it from other SIG_INTRPT-sources */
+				if(sendSignalTo(getppid(),SIG_INTRPT,1) < 0)
 					printe("Unable to send SIG_INTRPT to %d",getppid());
-				break;
+				return false;
 			case VK_D:
 				if(vt->readLine) {
 					vt->inbufEOF = true;
 					vterm_rlFlushBuf(vt);
 				}
-				break;
-		}
-		/* notify the shell (otherwise it won't get the signal directly) */
-		if(keycode == VK_C || keycode == VK_D) {
-			if(rb_length(vt->inbuf) == 0)
-				setDataReadable(vt->sid,true);
-			return false;
+				if(rb_length(vt->inbuf) == 0)
+					setDataReadable(vt->sid,true);
+				return false;
 		}
 	}
 	return true;

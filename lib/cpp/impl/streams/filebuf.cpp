@@ -141,7 +141,7 @@ namespace std {
 		if(_inPos >= _inMax) {
 			if(!_inBuf)
 				_inBuf = new char[IN_BUF_SIZE];
-			_inMax = ::read(_fd,_inBuf,IN_BUF_SIZE);
+			_inMax = RETRY(::read(_fd,_inBuf,IN_BUF_SIZE));
 			if(_inMax <= 0)
 				return false;
 			_inPos = 0;

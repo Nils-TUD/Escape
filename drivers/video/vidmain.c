@@ -106,7 +106,7 @@ int main(void) {
 					u32 count = msg.args.arg2;
 					msg.args.arg1 = 0;
 					if(offset + count <= mode->rows * mode->cols * 2 && offset + count > offset) {
-						if(receive(fd,&mid,videoData + offset,count) >= 0)
+						if(RETRY(receive(fd,&mid,videoData + offset,count)) >= 0)
 							msg.args.arg1 = count;
 					}
 					send(fd,MSG_DRV_WRITE_RESP,&msg,sizeof(msg.args));

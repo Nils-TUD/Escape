@@ -30,11 +30,13 @@ bool ext2_rw_readBlocks(sExt2 *e,void *buffer,u32 start,u16 blockCount) {
 }
 
 bool ext2_rw_readSectors(sExt2 *e,void *buffer,u64 lba,u16 secCount) {
+	s32 res;
 	if(seek(e->ataFd,lba * ATA_SECTOR_SIZE,SEEK_SET) < 0) {
 		printe("Unable to seek to %x",lba * ATA_SECTOR_SIZE);
 		return false;
 	}
-	if(read(e->ataFd,buffer,secCount * ATA_SECTOR_SIZE) != secCount * ATA_SECTOR_SIZE) {
+	res = RETRY(read(e->ataFd,buffer,secCount * ATA_SECTOR_SIZE));
+	if(res != secCount * ATA_SECTOR_SIZE) {
 		printe("Unable to read %d sectors @ %x",secCount,lba * ATA_SECTOR_SIZE);
 		return false;
 	}

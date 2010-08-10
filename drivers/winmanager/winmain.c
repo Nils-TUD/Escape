@@ -158,7 +158,7 @@ int main(void) {
 		/* don't use the blocking read() here */
 		else if(enabled && !eof(mouse)) {
 			sMouseData *msd = mouseData;
-			u32 count = read(mouse,mouseData,sizeof(mouseData));
+			u32 count = RETRY(read(mouse,mouseData,sizeof(mouseData)));
 			count /= sizeof(sMouseData);
 			while(count-- > 0) {
 				handleMouseMessage(drvId,msd);
@@ -169,7 +169,7 @@ int main(void) {
 		else if(enabled && !eof(kmmng)) {
 			sKmData *kbd = kbData;
 			sWindow *active = win_getActive();
-			u32 count = read(kmmng,kbData,sizeof(kbData));
+			u32 count = RETRY(read(kmmng,kbData,sizeof(kbData)));
 			if(active) {
 				count /= sizeof(sKmData);
 				while(count-- > 0) {

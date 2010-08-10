@@ -75,7 +75,7 @@ static void pipeReadChild(void) {
 	else if(child > 0) {
 		/* parent */
 		close(fd[1]);
-		while((c = read(fd[0],buf,9)) > 0) {
+		while((c = RETRY(read(fd[0],buf,9))) > 0) {
 			buf[c] = '\0';
 			printf("Read '%s'\n",buf);
 		}
@@ -98,7 +98,7 @@ static void pipeReadParent(void) {
 	if(child == 0) {
 		/* child */
 		close(fd[1]);
-		while((c = read(fd[0],buf,9)) > 0) {
+		while((c = RETRY(read(fd[0],buf,9))) > 0) {
 			buf[c] = '\0';
 			printf("Read '%s'\n",buf);
 		}
@@ -200,7 +200,7 @@ static void pipeThrough(void) {
 			char buf[10];
 			close(fd[0]);
 			close(fd[3]);
-			while((c = read(fd[2],buf,9)) > 0) {
+			while((c = RETRY(read(fd[2],buf,9))) > 0) {
 				buf[c] = '\0';
 				printf("Read '%s'\n",buf);
 			}

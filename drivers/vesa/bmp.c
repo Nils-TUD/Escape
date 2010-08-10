@@ -50,6 +50,7 @@ sBitmap *bmp_loadFromFile(const char *filename) {
 	/* read header */
 	char apath[MAX_PATH_LEN];
 	tFD fd;
+	s32 res;
 	sBitmap *bmp = NULL;
 	u32 headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);
 	u8 *header = malloc(headerSize);
@@ -64,7 +65,7 @@ sBitmap *bmp_loadFromFile(const char *filename) {
 	fd = open(apath,IO_READ);
 	if(fd < 0)
 		goto errorBmp;
-	if(read(fd,header,headerSize) != (s32)headerSize) {
+	if(RETRY(read(fd,header,headerSize)) != (s32)headerSize) {
 		printe("Invalid image '%s'",filename);
 		goto errorClose;
 	}
@@ -93,7 +94,8 @@ sBitmap *bmp_loadFromFile(const char *filename) {
 		bmp->colorTable = (u32*)malloc(bmp->tableSize * sizeof(u32));
 		if(bmp->colorTable == NULL)
 			goto errorClose;
-		if(read(fd,bmp->colorTable,bmp->tableSize * sizeof(u32)) != (s32)(bmp->tableSize * sizeof(u32))) {
+		res = RETRY(read(fd,bmp->colorTable,bmp->tableSize * sizeof(u32)));
+		if(res != (s32)(bmp->tableSize * sizeof(u32))) {
 			printe("Invalid image '%s'",filename);
 			goto errorColorTbl;
 		}
@@ -111,7 +113,8 @@ sBitmap *bmp_loadFromFile(const char *filename) {
 	bmp->data = (u8*)malloc(bmp->dataSize);
 	if(bmp->data == NULL)
 		goto errorColorTbl;
-	if(read(fd,bmp->data,bmp->dataSize * sizeof(u8)) != (s32)(bmp->dataSize * sizeof(u8))) {
+	res = RETRY(read(fd,bmp->data,bmp->dataSize * sizeof(u8)));
+	if(res != (s32)(bmp->dataSize * sizeof(u8))) {
 		printe("Invalid image '%s'",filename);
 		goto errorData;
 	}

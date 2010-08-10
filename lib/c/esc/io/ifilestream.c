@@ -97,7 +97,7 @@ static s32 ifstream_read(sIStream *s,void *buffer,u32 count) {
 	}
 	/* now read from OS, if anything left */
 	if(count) {
-		s32 readRes = read(fs->fd,buffer,count);
+		s32 readRes = RETRY(read(fs->fd,buffer,count));
 		if(readRes < 0)
 			THROW(IOException,readRes);
 		if(readRes == 0)
@@ -158,7 +158,7 @@ static char ifstream_readc(sIStream *s) {
 	if(s == cin)
 		cout->flush(cout);
 	if(fs->pos >= fs->length) {
-		s32 count = read(fs->fd,fs->buffer,BUF_SIZE);
+		s32 count = RETRY(read(fs->fd,fs->buffer,BUF_SIZE));
 		if(count < 0)
 			THROW(IOException,count);
 		if(count == 0) {

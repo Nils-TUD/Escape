@@ -21,6 +21,7 @@
 #define DEFINES_H_
 
 #include <types.h>
+#include <errors.h>
 
 /* exit-codes */
 #define EXIT_FAILURE			1
@@ -50,6 +51,16 @@
 #define A_ALIGNED(x)			__attribute__((aligned (x)))
 #define A_CHECKRET				__attribute__((__warn_unused_result__))
 #define A_NORETURN				__attribute__((noreturn))
+
+/* retry a syscall until it succeded, skipping tries that failed because of a signal */
+#define RETRY(expr)				({ \
+		s32 __err; \
+		do { \
+			__err = (expr); \
+		} \
+		while(__err == ERR_INTERRUPTED); \
+		__err; \
+	})
 
 /* process id */
 typedef u16 tPid;

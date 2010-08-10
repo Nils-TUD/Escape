@@ -45,7 +45,7 @@ int mod_driver(int argc,char *argv[]) {
 		if(fd < 0)
 			printe("open");
 		printf("Reading...\n");
-		if(read(fd,buf,10) < 0)
+		if(RETRY(read(fd,buf,10)) < 0)
 			printe("read");
 		printf("Res: %s\n",buf);
 		printf("Writing %s...\n",buf);
@@ -79,7 +79,7 @@ int mod_driver(int argc,char *argv[]) {
 					char *buf = (char*)malloc(msg.args.arg2);
 					printf("Write: offset=%d, count=%d\n",msg.args.arg1,msg.args.arg2);
 					msg.args.arg1 = 0;
-					if(receive(cfd,&mid,buf,msg.args.arg2) >= 0) {
+					if(RETRY(receive(cfd,&mid,buf,msg.args.arg2)) >= 0) {
 						printf("Got %s\n",buf);
 						msg.args.arg1 = msg.args.arg2;
 					}

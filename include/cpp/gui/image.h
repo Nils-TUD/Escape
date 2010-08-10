@@ -23,8 +23,23 @@
 #include <esc/common.h>
 #include <gui/common.h>
 #include <gui/graphics.h>
+#include <exception>
 
 namespace gui {
+	class img_load_error : public exception {
+	public:
+		img_load_error(const string& str) throw ()
+			: exception(), _str(str) {
+		}
+		~img_load_error() throw () {
+		}
+		virtual const char *what() const throw () {
+			return _str.c_str();
+		}
+	private:
+		string _str;
+	};
+
 	class Image {
 	public:
 		Image() {};

@@ -12,15 +12,13 @@ DYNLIB = $(BUILD)/$(DYNLIBNAME)
 CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS)
 
 # sources
-SHARED = crtbegin.s crtend.s
-START = $(filter-out $(SHARED),$(wildcard crt*.s))
+START = $(wildcard crt*.s)
 SYSCALLS = syscalls.s
 CSRC = $(shell find . -name "*.c")
 ASRC = $(filter-out ./$(START),$(shell find . -name "*.s"))
 LSRC = $(shell find $(LIBDIR) -name "*.c")
 
 # objects
-#SHAREDO = $(patsubst %.s,$(BUILD)/%S.o,$(SHARED))
 STARTO = $(patsubst %.s,$(BUILD)/%.o,$(START))
 STARTOPIC = $(patsubst %.s,$(BUILD)/%S.o,$(START))
 COBJS = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
@@ -32,7 +30,7 @@ LPICOBJ = $(patsubst $(LIBDIR)/%.c,$(BUILDL)/lib/%_pic.o,$(LSRC))
 
 .PHONY:		all clean
 
-all: $(BUILDDIRS) $(STLIB) $(DYNLIB) $(SHAREDO) $(STARTO) $(STARTOPIC)
+all: $(BUILDDIRS) $(STLIB) $(DYNLIB) $(STARTO) $(STARTOPIC)
 
 $(STLIB): $(COBJS) $(AOBJS) $(LOBJ)
 		@echo "	" AR $(STLIB)
@@ -90,4 +88,4 @@ $(BUILD)/crt%.o : crt%.s
 clean:
 		@echo "===== REMOVING FILES =====";
 		rm -f $(COBJS) $(CPICOBJS) $(AOBJS) $(APICOBJS) $(LOBJ) $(LPICOBJ) $(STLIB) \
-			$(DEPS) $(SHAREDO) $(STARTO) $(STARTOPIC) $(DYNLIB)
+			$(DEPS) $(STARTO) $(STARTOPIC) $(DYNLIB)

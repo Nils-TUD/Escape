@@ -157,6 +157,43 @@ errReg:
 	return ERR_NOT_ENOUGH_MEM;
 }
 
+s32 vmm_setRegProt(sProc *p,tVMRegNo rno,u8 flags) {
+	u32 i,pgcount;
+	sSLNode *n;
+	sVMRegion *vmreg = REG(p,rno);
+	if(!(flags & RF_WRITABLE) && flags != 0)
+		return ERR_INVALID_ARGS;
+	if(!vmreg || (vmreg->reg->flags & (RF_NOFREE | RF_STACK | RF_TLS)))
+		return ERR_SETPROT_IMPOSSIBLE;
+	/* check if COW is enabled for a page */
+	pgcount = BYTES_2_PAGES(vmreg->reg->byteCount);
+	for(i = 0; i < pgcount; i++) {
+		if(vmreg->reg->pageFlags[i] & PF_COPYONWRITE)
+			return ERR_SETPROT_IMPOSSIBLE;
+	}
+	/* change reg flags */
+	vmreg->reg->flags &= ~RF_WRITABLE;
+	vmreg->reg->flags |= flags;
+	/* change mapping */
+	for(n = sll_begin(vmreg->reg->procs); n != NULL; n = n->next) {
+		sProc *mp = (sProc*)n->data;
+		/* the region may be mapped to a different virtual address */
+		tVMRegNo mprno = vmm_getRNoByRegion(mp,vmreg->reg);
+		sVMRegion *mpreg = REG(mp,mprno);
+		assert(mprno != -1);
+		for(i = 0; i < pgcount; i++) {
+			/* determine flags; we can't always mark it present.. */
+			u8 mapFlags = PG_KEEPFRM;
+			if(!(vmreg->reg->pageFlags[i] & (PF_DEMANDLOAD | PF_LOADINPROGRESS | PF_SWAPPED)))
+				mapFlags |= PG_PRESENT;
+			if(flags & RF_WRITABLE)
+				mapFlags |= PG_WRITABLE;
+			paging_mapTo(mp->pagedir,mpreg->virt + i * PAGE_SIZE,NULL,1,mapFlags);
+		}
+	}
+	return 0;
+}
+
 void vmm_swapOut(sRegion *reg,u32 index) {
 	sSLNode *n;
 	u32 offset = index * PAGE_SIZE;

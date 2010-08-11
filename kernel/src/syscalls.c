@@ -103,6 +103,7 @@ static sSyscall syscalls[] = {
 	/* 60 */	{sysc_resume,				1},
 	/* 61 */	{sysc_fstat,				2},
 	/* 62 */	{sysc_addRegion,			4},
+	/* 63 */	{sysc_setRegProt,			2},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {

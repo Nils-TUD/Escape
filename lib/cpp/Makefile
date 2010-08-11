@@ -4,10 +4,10 @@ SUBDIRS = $(filter-out $(shell find . -name "*.*"),$(shell find . -name "*"))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 STLIB = $(BUILD)/libstdc++.a
-#DYNLIBNAME = libstdc++.so
-#DYNLIB = $(BUILD)/$(DYNLIBNAME)
+DYNLIBNAME = libstdc++.so
+DYNLIB = $(BUILD)/$(DYNLIBNAME)
 
-CFLAGS = $(CPPDEFFLAGS)
+CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CPPDEFFLAGS)
 
 # sources
 CSRC = $(shell find . -name "*.cpp")
@@ -25,12 +25,11 @@ $(STLIB): $(COBJS)
 		@ar rcs $(STLIB) $(COBJS)
 		$(ROOT)/tools/linklib.sh $(STLIB)
 
-#$(DYNLIB): $(CPICOBJS)
-#		@echo "	" LINKING $(DYNLIB)
-#		@$(CPPC) $(CFLAGS) -nodefaultlibs -shared -Wl,-soname,$(DYNLIBNAME) \
-#			-o $(DYNLIB) $(CPICOBJS) -lc -lsupc++ -lgcc -L$(ROOT)/build/dist/lib;
-#		$(ROOT)/tools/linklib.sh $(DYNLIB)
-#		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
+$(DYNLIB): $(CPICOBJS)
+		@echo "	" LINKING $(DYNLIB)
+		@$(LD) -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) -lc;
+		$(ROOT)/tools/linklib.sh $(DYNLIB)
+		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

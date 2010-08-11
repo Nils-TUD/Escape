@@ -133,6 +133,13 @@ else
 		objdump -dSC -M intel $(BUILD)/$(APP) | less
 endif
 
+elf:
+ifeq ($(APP),)
+		readelf -a $(BIN) | less
+else
+		readelf -a $(BUILD)/$(APP) | less
+endif
+
 qemu:	all prepareRun
 		sudo /etc/init.d/qemu-kvm start || true
 		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1

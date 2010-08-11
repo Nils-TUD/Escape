@@ -22,6 +22,10 @@
 
 #include <sys/machine/intrpt.h>
 
+/* protection-flags */
+#define PROT_READ			1
+#define PROT_WRITE			2
+
 /**
  * Changes the process-size
  *
@@ -41,6 +45,15 @@ void sysc_changeSize(sIntrptStackFrame *stack);
  * @return void* the address of the region on success, NULL on failure
  */
 void sysc_addRegion(sIntrptStackFrame *stack);
+
+/**
+ * Changes the protection of the region denoted by the given address.
+ *
+ * @param u32 the virtual address
+ * @param u8 the new protection-setting (PROT_*)
+ * @return s32 0 on success
+ */
+void sysc_setRegProt(sIntrptStackFrame *stack);
 
 /**
  * Maps physical memory in the virtual user-space

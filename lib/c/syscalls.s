@@ -98,6 +98,7 @@ __i686.get_pc_thunk.bx:
 .set SYSCALL_RESUME,				60
 .set SYSCALL_FSTAT,					61
 .set SYSCALL_ADDREGION,			62
+.set SYSCALL_SETREGPROT,		63
 
 # the IRQ for syscalls
 .set SYSCALL_IRQ,						0x30

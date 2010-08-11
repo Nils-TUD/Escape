@@ -99,6 +99,29 @@ void sysc_addRegion(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,start);
 }
 
+void sysc_setRegProt(sIntrptStackFrame *stack) {
+	sProc *p = proc_getRunning();
+	u32 addr = SYSC_ARG1(stack);
+	u8 prot = (u8)SYSC_ARG2(stack);
+	u8 flags = 0;
+	tVMRegNo rno;
+	s32 res;
+
+	if(!(prot & (PROT_WRITE | PROT_READ)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(prot & PROT_WRITE)
+		flags |= RF_WRITABLE;
+
+	rno = vmm_getRegionOf(p,addr);
+	if(rno < 0)
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	res = vmm_setRegProt(p,rno,flags);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,0);
+}
+
 void sysc_mapPhysical(sIntrptStackFrame *stack) {
 	u32 phys = SYSC_ARG1(stack);
 	u32 bytes = SYSC_ARG2(stack);

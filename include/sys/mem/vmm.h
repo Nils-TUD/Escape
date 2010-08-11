@@ -88,6 +88,17 @@ u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount);
 tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 type);
 
 /**
+ * Changes the protection-settings of the given region. This is not possible for TLS-, stack-
+ * and nofree-regions.
+ *
+ * @param p the process
+ * @param rno the region-number
+ * @param flags the new flags (RF_WRITABLE or 0)
+ * @return 0 on success
+ */
+s32 vmm_setRegProt(sProc *p,tVMRegNo rno,u8 flags);
+
+/**
  * Swaps the page at given index in given region out. I.e. it marks the page as swapped in the
  * region and unmaps it from all affected processes.
  * Does NOT free the frame!

@@ -368,7 +368,7 @@ bool isalnumstr(const char *str);
  * @param errnum the error-code
  * @return the error-message
  */
-char *strerror(s32 errnum);
+const char *strerror(s32 errnum);
 
 /**
  * The strdup() function returns a pointer to a new string which is a duplicate of the string s.

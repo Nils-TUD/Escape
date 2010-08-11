@@ -238,7 +238,12 @@ static void load_relocLib(sSharedLib *l) {
 		load_relocLib(dl);
 	}
 
-	DBGDL("Relocating stuff of %s (loaded @ %x)\n",l->name ? l->name : "-Main-",l->loadAddr);
+	/* make text writable because we may have to change something in it */
+	if(setRegProt(l->loadAddr ? l->loadAddr : TEXT_BEGIN,PROT_READ | PROT_WRITE) < 0)
+		dlerror("Unable to make text (@ %x) of %s writable",l->loadAddr,l->name ? l->name : "-Main-");
+
+	DBGDL("Relocating stuff of %s (loaded @ %x)\n",
+			l->name ? l->name : "-Main-",l->loadAddr ? l->loadAddr : TEXT_BEGIN);
 
 	rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
 	if(rel) {
@@ -248,6 +253,8 @@ static void load_relocLib(sSharedLib *l) {
 		rel = (Elf32_Rel*)((u32)rel + l->loadAddr);
 		for(x = 0; x < relCount; x++) {
 			u32 relType = ELF32_R_TYPE(rel[x].r_info);
+			if(relType == R_386_NONE)
+				continue;
 			if(relType == R_386_GLOB_DAT) {
 				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
 				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
@@ -293,19 +300,24 @@ static void load_relocLib(sSharedLib *l) {
 						sym->st_value + l->loadAddr);
 				*ptr += sym->st_value + l->loadAddr;
 			}
-			/*else if(relType == R_386_PC32) {
+			else if(relType == R_386_PC32) {
 				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
 				Elf32_Sym *sym = l->dynsyms + ELF32_R_SYM(rel[x].r_info);
 				DBGDL("Rel (PC32) off=%x orgoff=%x symval=%x org=%x reloc=%x\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr,
-						(u32)ptr - (sym->st_value + l->loadAddr));
-				*ptr = (u32)ptr - (sym->st_value + l->loadAddr);
-			}*/
+						sym->st_value - rel[x].r_offset - 4);
+				*ptr = sym->st_value - rel[x].r_offset - 4;
+			}
 			else
 				dlerror("In library %s: Unknown relocation: off=%x info=%x\n",
 						l->name ? l->name : "<main>",rel[x].r_offset,rel[x].r_info);
 		}
 	}
+
+	/* make text non-writable again */
+	if(setRegProt(l->loadAddr ? l->loadAddr : TEXT_BEGIN,PROT_READ) < 0)
+		dlerror("Unable to make text (@ %x) of %s non-writable",
+				l->loadAddr ? l->loadAddr : TEXT_BEGIN,l->name ? l->name : "-Main-");
 
 	/* adjust addresses in PLT-jumps */
 	if(l->jmprel) {

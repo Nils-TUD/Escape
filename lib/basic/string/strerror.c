@@ -21,283 +21,83 @@
 #include <errors.h>
 #include <string.h>
 
-#define MAX_ERR_LEN		255
-
-char *strerror(s32 errnum) {
-	static char msg[MAX_ERR_LEN + 1];
-	switch(errnum) {
-		case ERR_FILE_IN_USE:
-			strcpy(msg,"The file is already in use!");
-			break;
-
-		case ERR_INVALID_ARGS:
-			strcpy(msg,"Invalid arguments!");
-			break;
-
-		case ERR_MAX_PROC_FDS:
-			strcpy(msg,"You have reached the max. possible file-descriptors!");
-			break;
-
-		case ERR_NO_FREE_FILE:
-			strcpy(msg,"The max. global, open files have been reached!");
-			break;
-
-		case ERR_INVALID_FD:
-			strcpy(msg,"Invalid file-descriptor!");
-			break;
-
-		case ERR_INVALID_FILE:
-			strcpy(msg,"Invalid file!");
-			break;
-
-		case ERR_NO_READ_PERM:
-			strcpy(msg,"No read-permission!");
-			break;
-
-		case ERR_NO_WRITE_PERM:
-			strcpy(msg,"No write-permission!");
-			break;
-
-		case ERR_INV_DRIVER_NAME:
-			strcpy(msg,"Invalid driver name. Alphanumeric, not empty name expected!");
-			break;
-
-		case ERR_NOT_ENOUGH_MEM:
-			strcpy(msg,"Not enough memory!");
-			break;
-
-		case ERR_DRIVER_EXISTS:
-			strcpy(msg,"The driver with desired name does already exist!");
-			break;
-
-		case ERR_NOT_OWN_DRIVER:
-			strcpy(msg,"The driver-node is not your own!");
-			break;
-
-		case ERR_IOMAP_RESERVED:
-			strcpy(msg,"The given io-port range is reserved!");
-			break;
-
-		case ERR_IOMAP_NOT_PRESENT:
-			strcpy(msg,"The io-port-map is not present (have you reserved ports?)!");
-			break;
-
-		case ERR_INVALID_IRQ_NUMBER:
-			strcpy(msg,"The given IRQ-number is invalid!");
-			break;
-
-		case ERR_NO_CLIENT_WAITING:
-			strcpy(msg,"No client is currently waiting!");
-			break;
-
-		case ERR_INVALID_SIGNAL:
-			strcpy(msg,"Invalid signal!");
-			break;
-
-		case ERR_INVALID_PID:
-			strcpy(msg,"Invalid process-id!");
-			break;
-
-		case ERR_NO_DIRECTORY:
-			strcpy(msg,"A part of the path is no directory!");
-			break;
-
-		case ERR_PATH_NOT_FOUND:
-			strcpy(msg,"Path not found!");
-			break;
-
-		case ERR_INVALID_PATH:
-			strcpy(msg,"Invalid path!");
-			break;
-
-		case ERR_INVALID_INODENO:
-			strcpy(msg,"Invalid inode-number!");
-			break;
-
-		case ERR_DRVUSE_SEEK:
-			strcpy(msg,"seek() with SEEK_SET is not supported for driver-usages!");
-			break;
-
-		case ERR_NO_FREE_PROCS:
-			strcpy(msg,"No free process-slots!");
-			break;
-
-		case ERR_INVALID_ELF_BIN:
-			strcpy(msg,"The ELF-binary is invalid!");
-			break;
-
-		case ERR_SHARED_MEM_EXISTS:
-			strcpy(msg,"The shared memory with specified name or address-range does already exist!");
-			break;
-
-		case ERR_SHARED_MEM_NAME:
-			strcpy(msg,"The shared memory name is invalid!");
-			break;
-
-		case ERR_SHARED_MEM_INVALID:
-			strcpy(msg,"The shared memory is invalid!");
-			break;
-
-		case ERR_LOCK_NOT_FOUND:
-			strcpy(msg,"Lock not found!");
-			break;
-
-		case ERR_INVALID_TID:
-			strcpy(msg,"Invalid thread-id!");
-			break;
-
-		case ERR_UNSUPPORTED_OP:
-			strcpy(msg,"Unsupported operation!");
-			break;
-
-		case ERR_INO_ALLOC:
-			strcpy(msg,"Inode-allocation failed!");
-			break;
-
-		case ERR_INO_REQ_FAILED:
-			strcpy(msg,"Inode-request failed!");
-			break;
-
-		case ERR_IS_DIR:
-			strcpy(msg,"Its a directory!");
-			break;
-
-		case ERR_FILE_EXISTS:
-			strcpy(msg,"The file exists!");
-			break;
-
-		case ERR_DIR_NOT_EMPTY:
-			strcpy(msg,"Directory is not empty!");
-			break;
-
-		case ERR_MNTPNT_EXISTS:
-			strcpy(msg,"Mount-point exists!");
-			break;
-
-		case ERR_DEV_NOT_FOUND:
-			strcpy(msg,"Device not found!");
-			break;
-
-		case ERR_NO_MNTPNT:
-			strcpy(msg,"No mount-point!");
-			break;
-
-		case ERR_FS_INIT_FAILED:
-			strcpy(msg,"Initialisation of filesystem failed!");
-			break;
-
-		case ERR_LINK_DEVICE:
-			strcpy(msg,"Hardlink to a different device not possible!");
-			break;
-
-		case ERR_MOUNT_VIRT_PATH:
-			strcpy(msg,"Mount in virtual directories not supported!");
-			break;
-
-		case ERR_NO_FILE_OR_LINK:
-			strcpy(msg,"No file or link!");
-			break;
-
-		case ERR_BLO_REQ_FAILED:
-			strcpy(msg,"Block-request failed!");
-			break;
-
-		case ERR_INVALID_DRVID:
-			strcpy(msg,"Invalid driver-id!");
-			break;
-
-		case ERR_INVALID_APP:
-			strcpy(msg,"Invalid application!");
-			break;
-
-		case ERR_APP_NOT_FOUND:
-			strcpy(msg,"Application not found in AppsDB (maybe not installed?)!");
-			break;
-
-		case ERR_APP_IOPORTS_NO_PERM:
-			strcpy(msg,"Application has no permission for the requested io-ports!");
-			break;
-
-		case ERR_APPS_SIGNAL_NO_PERM:
-			strcpy(msg,"Application has no permission to announce a signal-handler for "
-					"the specified signal!");
-			break;
-
-		case ERR_APP_CRTSHMEM_NO_PERM:
-			strcpy(msg,"Application has no permission to create the shared-memory with specified name!");
-			break;
-
-		case ERR_APP_JOINSHMEM_NO_PERM:
-			strcpy(msg,"Application has no permission to join the shared-memory with specified name!");
-			break;
-
-		case ERR_APPS_CRTDRV_NO_PERM:
-			strcpy(msg,"Application has no permission to create a driver!");
-			break;
-
-		case ERR_APPS_CRTFS_NO_PERM:
-			strcpy(msg,"Application has no permission to create a fs!");
-			break;
-
-		case ERR_APPS_DRV_NO_PERM:
-			strcpy(msg,"Application has no permission to use the desired driver!");
-			break;
-
-		case ERR_APPS_FS_NO_PERM:
-			strcpy(msg,"Application has no permission to use the filesystem for the desired operations!");
-			break;
-
-		case ERR_NO_CHILD:
-			strcpy(msg,"You don't have a child-process!");
-			break;
-
-		case ERR_THREAD_WAITING:
-			strcpy(msg,"Another thread of your process waits for childs!");
-			break;
-
-		case ERR_INTERRUPTED:
-			strcpy(msg,"Interrupted by signal!");
-			break;
-
-		case ERR_PIPE_SEEK:
-			strcpy(msg,"You can't use seek() for pipes!");
-			break;
-
-		case ERR_MAX_EXIT_FUNCS:
-			strcpy(msg,"You've reached the max. number of exit-functions!");
-			break;
-
-		case ERR_INVALID_KEYMAP:
-			strcpy(msg,"Invalid keymap-path or content!");
-			break;
-
-		case ERR_VESA_SETMODE_FAILED:
-			strcpy(msg,"Unable to set VESA-mode!");
-			break;
-
-		case ERR_VESA_MODE_NOT_FOUND:
-			strcpy(msg,"Unable to find the requested VESA-mode!");
-			break;
-
-		case ERR_NO_VM86_TASK:
-			strcpy(msg,"A VM86-task doesn't exist (maybe killed?)!");
-			break;
-
-		case ERR_LISTENER_EXISTS:
-			strcpy(msg,"The keylistener does already exist!");
-			break;
-
-		case ERR_EOF:
-			strcpy(msg,"EOF reached!");
-			break;
-
-		case ERR_DRIVER_DIED:
-			strcpy(msg,"The driver died!");
-			break;
-
-		default:
-			strcpy(msg,"No error");
-			break;
-	}
-	return msg;
+static const char *msgs[] = {
+	/* 0 (No error) */						"No error",
+	/* -1 (ERR_FILE_IN_USE) */				"The file is already in use!",
+	/* -2 (ERR_NO_FREE_FILE) */				"The max. global, open files have been reached!",
+	/* -3 (ERR_MAX_PROC_FDS) */				"You have reached the max. possible file-descriptors!",
+	/* -4 (ERR_INVALID_ARGS) */				"Invalid arguments!",
+	/* -5 (ERR_INVALID_FD) */				"Invalid file-descriptor!",
+	/* -6 (ERR_INVALID_FILE) */				"Invalid file!",
+	/* -7 (ERR_NO_READ_PERM) */				"No read-permission!",
+	/* -8 (ERR_NO_WRITE_PERM) */			"No write-permission!",
+	/* -9 (ERR_INV_DRIVER_NAME) */			"Invalid driver name. Alphanumeric, not empty name expected!",
+	/* -10 (ERR_NOT_ENOUGH_MEM) */			"Not enough memory!",
+	/* -11 (ERR_DRIVER_EXISTS) */			"The driver with desired name does already exist!",
+	/* -12 (ERR_NOT_OWN_DRIVER) */			"The driver-node is not your own!",
+	/* -13 (ERR_IOMAP_RESERVED) */			"The given io-port range is reserved!",
+	/* -14 (ERR_IOMAP_NOT_PRESENT) */		"The io-port-map is not present (have you reserved ports?)!",
+	/* -15 (ERR_INVALID_IRQ_NUMBER) */		"The given IRQ-number is invalid!",
+	/* -16 (ERR_NO_CLIENT_WAITING) */		"No client is currently waiting!",
+	/* -17 (ERR_INVALID_SIGNAL) */			"Invalid signal!",
+	/* -18 (ERR_INVALID_PID) */				"Invalid process-id!",
+	/* -19 (ERR_NO_DIRECTORY) */			"A part of the path is no directory!",
+	/* -20 (ERR_PATH_NOT_FOUND) */			"Path not found!",
+	/* -21 (ERR_INVALID_PATH) */			"Invalid path!",
+	/* -22 (ERR_INVALID_INODENO) */			"Invalid inode-number!",
+	/* -23 (ERR_DRVUSE_SEEK) */				"seek() with SEEK_SET is not supported for driver-usages!",
+	/* -24 (ERR_NO_FREE_PROCS) */			"No free process-slots!",
+	/* -25 (ERR_INVALID_ELF_BIN) */			"The ELF-binary is invalid!",
+	/* -26 (ERR_SHARED_MEM_EXISTS) */		"The shared memory with specified name or address-range does already exist!",
+	/* -27 (ERR_SHARED_MEM_NAME) */			"The shared memory name is invalid!",
+	/* -28 (ERR_SHARED_MEM_INVALID) */		"The shared memory is invalid!",
+	/* -29 (ERR_LOCK_NOT_FOUND) */			"Lock not found!",
+	/* -30 (ERR_INVALID_TID) */				"Invalid thread-id!",
+	/* -31 (ERR_UNSUPPORTED_OP) */			"Unsupported operation!",
+	/* -32 (ERR_INO_ALLOC) */				"Inode-allocation failed!",
+	/* -33 (ERR_INO_REQ_FAILED) */			"Inode-request failed!",
+	/* -34 (ERR_IS_DIR) */					"Its a directory!",
+	/* -35 (ERR_FILE_EXISTS) */				"The file exists!",
+	/* -36 (ERR_DIR_NOT_EMPTY) */			"Directory is not empty!",
+	/* -37 (ERR_MNTPNT_EXISTS) */			"Mount-point exists!",
+	/* -38 (ERR_DEV_NOT_FOUND) */			"Device not found!",
+	/* -39 (ERR_NO_MNTPNT) */				"No mount-point!",
+	/* -40 (ERR_FS_INIT_FAILED) */			"Initialisation of filesystem failed!",
+	/* -41 (ERR_LINK_DEVICE) */				"Hardlink to a different device not possible!",
+	/* -42 (ERR_MOUNT_VIRT_PATH) */			"Mount in virtual directories not supported!",
+	/* -43 (ERR_NO_FILE_OR_LINK) */			"No file or link!",
+	/* -44 (ERR_BLO_REQ_FAILED) */			"Block-request failed!",
+	/* -45 (ERR_INVALID_DRVID) */			"Invalid driver-id!",
+	/* -46 (ERR_INVALID_APP) */				"Invalid application!",
+	/* -47 (ERR_APP_NOT_FOUND) */			"Application not found in AppsDB (maybe not installed?)!",
+	/* -48 (ERR_APP_IOPORTS_NO_PERM) */		"Application has no permission for the requested io-ports!",
+	/* -49 (ERR_APPS_SIGNAL_NO_PERM) */		"Application has no permission to announce a signal-handler for the specified signal!",
+	/* -50 (ERR_APP_CRTSHMEM_NO_PERM) */	"Application has no permission to create the shared-memory with specified name!",
+	/* -51 (ERR_APP_JOINSHMEM_NO_PERM) */	"Application has no permission to join the shared-memory with specified name!",
+	/* -52 (ERR_APPS_CRTDRV_NO_PERM) */		"Application has no permission to create a driver!",
+	/* -53 (ERR_APPS_CRTFS_NO_PERM) */		"Application has no permission to create a fs!",
+	/* -54 (--) */							"",
+	/* -55 (ERR_APPS_DRV_NO_PERM) */		"Application has no permission to use the desired driver!",
+	/* -56 (--) */							"",
+	/* -57 (ERR_APPS_FS_NO_PERM) */			"Application has no permission to use the filesystem for the desired operations!",
+	/* -58 (ERR_NO_CHILD) */				"You don't have a child-process!",
+	/* -59 (ERR_THREAD_WAITING) */			"Another thread of your process waits for childs!",
+	/* -60 (ERR_INTERRUPTED) */				"Interrupted by signal!",
+	/* -61 (ERR_PIPE_SEEK) */				"You can't use seek() for pipes!",
+	/* -62 (ERR_MAX_EXIT_FUNCS) */			"You've reached the max. number of exit-functions!",
+	/* -63 (ERR_INVALID_KEYMAP) */			"Invalid keymap-path or content!",
+	/* -64 (ERR_VESA_SETMODE_FAILED) */		"Unable to set VESA-mode!",
+	/* -65 (ERR_VESA_MODE_NOT_FOUND) */		"Unable to find the requested VESA-mode!",
+	/* -66 (ERR_NO_VM86_TASK) */			"A VM86-task doesn't exist (maybe killed?)!",
+	/* -67 (ERR_LISTENER_EXISTS) */			"The keylistener does already exist!",
+	/* -68 (ERR_EOF) */						"EOF reached!",
+	/* -69 (ERR_DRIVER_DIED) */				"The driver died!",
+	/* -70 (ERR_SETPROT_IMPOSSIBLE) */		"Setting the region-protection is not possible for the chosen region",
+};
+
+const char *strerror(s32 errnum) {
+	if((u32)-errnum < ARRAY_SIZE(msgs))
+		return msgs[-errnum];
+	else
+		return msgs[0];
 }

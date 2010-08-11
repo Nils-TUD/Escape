@@ -45,6 +45,10 @@ typedef struct {
 #define REG_SHLIBDATA		8
 #define REG_DLDATA			9
 
+/* protection-flags */
+#define PROT_READ			1
+#define PROT_WRITE			2
+
 /**
  * Changes the size of the process's data-area. If <count> is positive <count> pages
  * will be added to the end of the data-area. Otherwise <count> pages will be removed at the
@@ -67,6 +71,15 @@ void *changeSize(s32 count) A_CHECKRET;
  * @return the address of the region on success, NULL on failure
  */
 void *addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u32 loadCount,u8 type);
+
+/**
+ * Changes the protection of the region denoted by the given address.
+ *
+ * @param addr the virtual address
+ * @param prot the new protection-setting (PROT_*)
+ * @return 0 on success
+ */
+s32 setRegProt(u32 addr,u8 prot);
 
 /**
  * Maps <count> bytes at <phys> into the virtual user-space and returns the start-address.

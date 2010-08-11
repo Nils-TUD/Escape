@@ -88,6 +88,7 @@
 #define ERR_LISTENER_EXISTS			-67
 #define ERR_EOF						-68
 #define ERR_DRIVER_DIED				-69
+#define ERR_SETPROT_IMPOSSIBLE		-70
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

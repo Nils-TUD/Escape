@@ -425,8 +425,10 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 	proc_removeRegions(p,true);
 
 	/* free io-map, if present */
-	if(p->ioMap != NULL)
+	if(p->ioMap != NULL) {
 		kheap_free(p->ioMap);
+		p->ioMap = NULL;
+	}
 
 	/* store exit-conditions */
 	p->exitCode = exitCode;

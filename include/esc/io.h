@@ -23,6 +23,7 @@
 #include <esc/common.h>
 #include <stdarg.h>
 #include <esc/fsinterface.h>
+#include <errors.h>
 
 /* IO flags */
 #define IO_ACCESSMODE	   		3
@@ -41,6 +42,16 @@
 #define SEEK_SET				0
 #define SEEK_CUR				1
 #define SEEK_END				2
+
+/* retry a syscall until it succeded, skipping tries that failed because of a signal */
+#define RETRY(expr)				({ \
+		s32 __err; \
+		do { \
+			__err = (expr); \
+		} \
+		while(__err == ERR_INTERRUPTED); \
+		__err; \
+	})
 
 #ifdef __cplusplus
 extern "C" {

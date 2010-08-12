@@ -132,6 +132,10 @@ static bool startGUI(void) {
 		return false;
 	if(!startDriver("winmanager","/dev/winmanager"))
 		return false;
+	if(fork() == 0) {
+		exec("/bin/desktop",NULL);
+		error("Unable to start desktop");
+	}
 	/* TODO temporary */
 	if(fork() == 0) {
 		exec("/bin/gtest",NULL);

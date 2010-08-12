@@ -226,10 +226,12 @@ static void handleMouseMessage(tDrvId drvId,sMouseData *mdata) {
 		buttons = mdata->buttons;
 		if(buttons) {
 			w = win_getAt(curX,curY);
-			if(w)
-				win_setActive(w->id,true,curX,curY);
-			else
-				win_setActive(WINDOW_COUNT,false,curX,curY);
+			if(w->style != WIN_STYLE_DESKTOP) {
+				if(w)
+					win_setActive(w->id,true,curX,curY);
+				else
+					win_setActive(WINDOW_COUNT,false,curX,curY);
+			}
 			mouseWin = w;
 		}
 	}
@@ -238,7 +240,7 @@ static void handleMouseMessage(tDrvId drvId,sMouseData *mdata) {
 	if(!buttons) {
 		w = mouseWin ? mouseWin : win_getAt(curX,curY);
 		cursor = CURSOR_DEFAULT;
-		if(w && w->style != WIN_STYLE_POPUP) {
+		if(w && w->style != WIN_STYLE_POPUP && w->style != WIN_STYLE_DESKTOP) {
 			bool left = curX < w->x + CURSOR_RESIZE_WIDTH;
 			bool right = curX >= w->x + w->width - CURSOR_RESIZE_WIDTH;
 			bool bottom = curY >= w->y + w->height - CURSOR_RESIZE_WIDTH;

@@ -105,7 +105,7 @@ tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tPid owner,u8 style
 			windows[i].x = x;
 			windows[i].y = y;
 			/* TODO determine z */
-			windows[i].z = i;
+			windows[i].z = (style == WIN_STYLE_DESKTOP) ? 0 : i;
 			windows[i].width = width;
 			windows[i].height = height;
 			windows[i].owner = owner;

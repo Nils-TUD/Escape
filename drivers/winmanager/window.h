@@ -30,6 +30,7 @@
 
 #define WIN_STYLE_DEFAULT				0
 #define WIN_STYLE_POPUP					1
+#define WIN_STYLE_DESKTOP				2
 
 typedef u16 tSize;
 typedef s16 tCoord;

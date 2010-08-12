@@ -413,6 +413,12 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 	vassert(p->pid != 0 && p->pid != INVALID_PID,
 			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
 
+	/* if its already a zombie and we don't want to kill ourself, kill the process */
+	if((p->flags & P_ZOMBIE) && p != proc_getRunning()) {
+		proc_kill(p);
+		return;
+	}
+
 	/* remove all threads */
 	for(tn = sll_begin(p->threads); tn != NULL; ) {
 		sThread *t = (sThread*)tn->data;
@@ -444,7 +450,7 @@ void proc_kill(sProc *p) {
 	sProc *cur = proc_getRunning();
 	vassert(p->pid != 0 && p->pid != INVALID_PID,
 			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
-	vassert(p->pid != cur->pid,"We can't kill the current process!");
+	vassert(p != cur,"We can't kill the current process!");
 
 	/* give childs the ppid 0 */
 	cp = procs;

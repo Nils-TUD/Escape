@@ -31,7 +31,8 @@
 #include "shellapp.h"
 
 ShellApplication::ShellApplication(tDrvId sid,ShellControl *sh)
-		: Application(), _sid(sid), _sh(sh), rbuffer(new char[READ_BUF_SIZE]), rbufPos(0) {
+		: Application(), _sid(sid), _sh(sh), _cfg(sVTermCfg()),
+		  rbuffer(new char[READ_BUF_SIZE]), rbufPos(0) {
 	_inst = this;
 }
 
@@ -41,11 +42,10 @@ ShellApplication::~ShellApplication() {
 
 void ShellApplication::doEvents() {
 	tMsgId mid;
-	if(hasMsg(_winFd)) {
-		if(RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg))) < 0) {
-			printe("Read from window-manager failed");
-			exit(EXIT_FAILURE);
-		}
+	s32 res;
+	if((res = hasMsg(_winFd)) == 1) {
+		if(RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg))) < 0)
+			error("Read from window-manager failed");
 
 		switch(mid) {
 			case MSG_WIN_KEYBOARD:
@@ -57,6 +57,8 @@ void ShellApplication::doEvents() {
 				break;
 		}
 	}
+	else if(res < 0)
+		error("Unable to ask window-manager for a msg");
 	else
 		driverMain();
 }

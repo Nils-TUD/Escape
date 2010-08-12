@@ -304,6 +304,9 @@ bool vfs_eof(tTid tid,tFileNo file) {
 
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = nodes + e->nodeNo;
+		/* node not present anymore */
+		if(n->name == NULL)
+			return ERR_INVALID_FILE;
 
 		if(IS_DRVUSE(n->mode))
 			eof = n->parent->data.driver.isEmpty;
@@ -358,6 +361,9 @@ s32 vfs_hasMsg(tTid tid,tFileNo file) {
 	vassert(e->flags != 0,"Invalid file %d",file);
 	if(e->devNo != VFS_DEV_NO || !IS_DRVUSE(n->mode))
 		return ERR_INVALID_FILE;
+	/* node not present anymore */
+	if(n->name == NULL)
+		return ERR_INVALID_FILE;
 	if(n->parent->owner == tid)
 		return sll_length(n->data.drvuse.sendList) > 0;
 	return sll_length(n->data.drvuse.recvList) > 0;
@@ -369,6 +375,9 @@ bool vfs_isterm(tTid tid,tFileNo file) {
 	UNUSED(tid);
 	vassert(e->flags != 0,"Invalid file %d",file);
 	if(e->devNo != VFS_DEV_NO)
+		return false;
+	/* node not present anymore */
+	if(n->name == NULL)
 		return false;
 	return IS_DRVUSE(n->mode) && (n->parent->data.driver.funcs & DRV_TERM);
 }
@@ -397,6 +406,9 @@ s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence) {
 
 	if(e->devNo == VFS_DEV_NO) {
 		sVFSNode *n = nodes + e->nodeNo;
+		/* node not present anymore */
+		if(n->name == NULL)
+			return ERR_INVALID_FILE;
 		/* no seek for pipes */
 		if(IS_PIPE(n->mode))
 			return ERR_PIPE_SEEK;
@@ -939,7 +951,7 @@ s32 vfs_removeDriver(tTid tid,tInodeNo nodeNo) {
 	/* wakeup all threads that may be waiting for this node so they can check
 	 * whether they are affected by the remove of this driver and perform the corresponding
 	 * action */
-	thread_wakeupAll(0,EV_RECEIVED_MSG | EV_REQ_REPLY | EV_DATA_READABLE);
+	thread_wakeupAll(n,EV_RECEIVED_MSG | EV_REQ_REPLY | EV_DATA_READABLE);
 
 	/* remove driver-node including all driver-usages */
 	vfsn_removeNode(n);

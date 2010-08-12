@@ -77,6 +77,11 @@ bool win_init(tDrvId sid) {
 	return true;
 }
 
+void win_setVesaEnabled(bool enabled) {
+	if(send(vesa,enabled ? MSG_VESA_ENABLE : MSG_VESA_DISABLE,NULL,0))
+		error("Unable to enable/disable vesa");
+}
+
 tCoord win_getScreenWidth(void) {
 	return vesaInfo.width;
 }

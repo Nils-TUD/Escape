@@ -21,16 +21,18 @@
 #include <esc/io.h>
 #include <esc/thread.h>
 #include <esc/proc.h>
-#include <stdio.h>
-#include <esc/keycodes.h>
-#include <string.h>
 #include <esc/messages.h>
+#include <esc/keycodes.h>
+#include <stdio.h>
+#include <string.h>
+#include <signal.h>
 
 #define GUI_INDEX			6
 #define MAX_RETRY_COUNT		500
 
 static void switchTo(u32 index);
 static bool startGUI(void);
+static bool exists(const char *name);
 static bool startDriver(const char *name,const char *waitDev);
 static void addListener(tFD fd,u8 flags,u8 key,u8 modifiers);
 
@@ -41,11 +43,20 @@ static u8 keys[] = {
 	VK_1,VK_2,VK_3,VK_4,VK_5,VK_6,VK_7
 };
 
+static void childTermHandler(tSig sig,u32 data) {
+	UNUSED(sig);
+	UNUSED(data);
+	RETRY(waitChild(NULL));
+}
+
 int main(void) {
 	tMsgId mid;
 	u32 i;
-	tFD fd = open("/dev/keyevents",IO_READ | IO_WRITE);
+	if(setSigHandler(SIG_CHILD_TERM,&childTermHandler) < 0)
+		error("Unable to set SIG_CHILD_TERM-handler");
 
+	/* announce listener */
+	tFD fd = open("/dev/keyevents",IO_READ | IO_WRITE);
 	for(i = 0; i < ARRAY_SIZE(keys); i++)
 		addListener(fd,KE_EV_KEYCODE | KE_EV_PRESSED,keys[i],CTRL_MASK);
 
@@ -109,8 +120,12 @@ static void switchTo(u32 index) {
 }
 
 static bool startGUI(void) {
-	if(guiStarted)
-		return true;
+	if(guiStarted) {
+		/* check if its still running */
+		if(exists("/dev/vesa") && exists("/dev/mouse") && exists("/dev/winmanager"))
+			return true;
+		/* if not restart the missing ones now */
+	}
 	if(!startDriver("vesa","/dev/vesa"))
 		return false;
 	if(!startDriver("mouse","/dev/mouse"))
@@ -124,6 +139,15 @@ static bool startGUI(void) {
 	}
 	guiStarted = true;
 	return true;
+}
+
+static bool exists(const char *name) {
+	tFD fd;
+	if((fd = open(name,IO_READ)) >= 0) {
+		close(fd);
+		return true;
+	}
+	return false;
 }
 
 static bool startDriver(const char *name,const char *waitDev) {

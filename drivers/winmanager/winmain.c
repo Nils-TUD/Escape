@@ -50,7 +50,7 @@ static tCoord curX = 0;
 static tCoord curY = 0;
 static u8 cursor = CURSOR_DEFAULT;
 
-static bool enabled = true;
+static bool enabled = false;
 static sMsg msg;
 static tSize screenWidth;
 static tSize screenHeight;
@@ -144,12 +144,14 @@ int main(void) {
 				break;
 
 				case MSG_WIN_ENABLE:
+					win_setVesaEnabled(true);
 					if(!enabled)
 						win_updateScreen();
 					enabled = true;
 					break;
 
 				case MSG_WIN_DISABLE:
+					win_setVesaEnabled(false);
 					enabled = false;
 					break;
 			}

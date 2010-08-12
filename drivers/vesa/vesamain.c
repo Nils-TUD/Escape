@@ -47,10 +47,6 @@
 #define RESOLUTION_Y					768
 #define BITS_PER_PIXEL					24
 
-#define CURSOR_LEN						2
-#define CURSOR_COLOR					0xFFFFFF
-#define CURSOR_SIZE						(CURSOR_LEN * 2 + 1)
-
 #define MERGE_TOLERANCE					40
 #define MAX_REQC						30
 
@@ -92,6 +88,7 @@ int main(void) {
 	tDrvId id;
 	tMsgId mid;
 	u32 reqc;
+	bool enabled = true;
 
 	cursor[0] = bmp_loadFromFile(CURSOR_DEFAULT_FILE);
 	if(cursor[0] == NULL)
@@ -138,7 +135,8 @@ int main(void) {
 					tCoord y = (tCoord)msg.args.arg2;
 					tSize width = (tSize)msg.args.arg3;
 					tSize height = (tSize)msg.args.arg4;
-					if(x >= 0 && y >= 0 && x < minfo->xResolution && y < minfo->yResolution &&
+					if(enabled &&
+							x >= 0 && y >= 0 && x < minfo->xResolution && y < minfo->yResolution &&
 							x + width <= minfo->xResolution && y + height <= minfo->yResolution &&
 							/* check for overflow */
 							x + width > x && y + height > y) {
@@ -204,6 +202,14 @@ int main(void) {
 					send(fd,MSG_VESA_GETMODE_RESP,&msg,sizeof(msg.data));
 				}
 				break;
+
+				case MSG_VESA_ENABLE:
+					enabled = true;
+					break;
+
+				case MSG_VESA_DISABLE:
+					enabled = false;
+					break;
 			}
 			close(fd);
 		}

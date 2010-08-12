@@ -57,6 +57,13 @@ typedef struct {
 bool win_init(tDrvId sid);
 
 /**
+ * Enables or disables VESA
+ *
+ * @param enable wether to enable or disable the VESA-driver
+ */
+void win_setVesaEnabled(bool enabled);
+
+/**
  * @return the screen-width
  */
 tCoord win_getScreenWidth(void);

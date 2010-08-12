@@ -72,9 +72,9 @@ s32 shell_executeCmd(char *line,bool isFile);
  *
  * @param buffer the buffer in which the characters should be put
  * @param max the maximum number of chars
- * @return the number of read chars
+ * @return the number of read chars, < 0 if an error occurred
  */
-u32 shell_readLine(char *buffer,u32 max);
+s32 shell_readLine(char *buffer,u32 max);
 
 /**
  * Handles the given keycode for the shell

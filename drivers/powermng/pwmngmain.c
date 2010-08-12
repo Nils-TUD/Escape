@@ -31,6 +31,8 @@
 #include <string.h>
 #include <errors.h>
 
+#define VIDEO_DRIVER				"/dev/video"
+
 #define IOPORT_KB_DATA				0x60
 #define IOPORT_KB_CTRL				0x64
 #define KBC_CMD_RESET				0xFE
@@ -105,6 +107,13 @@ static void killProcs(void) {
 	tPid pid,own = getpid();
 	u32 i,pidSize = ARRAY_INC_SIZE;
 	u32 pidPos = 0;
+
+	/* first set 80x25-video-mode so that the user is able to see the messages */
+	fd = open(VIDEO_DRIVER,IO_READ | IO_WRITE);
+	if(fd >= 0) {
+		send(fd,MSG_VID_SETMODE,NULL,0);
+		close(fd);
+	}
 
 	tPid *pids = (tPid*)malloc(sizeof(tPid) * pidSize);
 	if(pids == NULL)

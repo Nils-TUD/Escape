@@ -33,6 +33,7 @@ export JOBS =
 # flags for gcc
 export BUILD = $(BUILDDIR)
 export CC = $(abspath build/dist/bin/i586-elf-escape-gcc)
+#export CC = /home/hrniels/Applications/llvm/dist/bin/clang
 export CPPC = $(abspath build/dist/bin/i586-elf-escape-g++)
 export LD = $(abspath build/dist/bin/i586-elf-escape-ld)
 export AR = $(abspath build/dist/bin/i586-elf-escape-ar)
@@ -41,6 +42,7 @@ export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
 				 -Wstrict-prototypes -fms-extensions -fno-builtin
+# -march=i486 -I$(BUILDDIR)/../../include
 export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long

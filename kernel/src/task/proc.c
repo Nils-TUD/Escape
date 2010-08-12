@@ -470,8 +470,6 @@ void proc_kill(sProc *p) {
 	sig_addSignal(SIG_PROC_DIED,p->pid);
 	sig_addSignalFor(p->parentPid,SIG_CHILD_DIED,p->pid);
 
-	vid_printf("Process %d (%s) killed\n",p->pid,p->command);
-
 	/* mark as unused */
 	p->pid = INVALID_PID;
 	p->pagedir = 0;

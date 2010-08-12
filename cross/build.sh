@@ -11,9 +11,7 @@ GCCGPP_ARCH=gcc-g++-4.4.3.tar.bz2
 BINUTILS_ARCH=binutils-2.20.tar.bz2
 NEWLIB_ARCH=newlib-1.15.0.tar.gz
 
-if [ "$1" == "--rebuild" ]; then
-	REBUILD=1
-elif [ ! -d $DIST ]; then
+if [ "$1" == "--rebuild" ] || [ ! -d $DIST ]; then
 	REBUILD=1
 else
 	REBUILD=0
@@ -35,7 +33,7 @@ if [ $REBUILD -eq 1 ]; then
 	patch -p0 < binutils.diff
 fi
 cd $BUILD/binutils
-if [ $REBUILD -eq 1 -o ! -f $BUILD/binutils/Makefile ]; then
+if [ $REBUILD -eq 1 ] || [ ! -f $BUILD/binutils/Makefile ]; then
 	$SRC/binutils/configure --target=$TARGET --prefix=$PREFIX --disable-nls
 fi
 make all
@@ -51,7 +49,7 @@ if [ $REBUILD -eq 1 ]; then
 fi
 export PATH=$PATH:$PREFIX/bin
 cd $BUILD/gcc
-if [ $REBUILD -eq 1 -o ! -f $BUILD/gcc/Makefile ]; then
+if [ $REBUILD -eq 1 ] || [ ! -f $BUILD/gcc/Makefile ]; then
 	$SRC/gcc/configure --target=$TARGET --prefix=$PREFIX --disable-nls \
 		  --enable-languages=c,c++ --with-headers=$HEADER --enable-shared \
 		  --disable-linker-build-id --with-gxx-include-dir=$HEADER/cpp
@@ -66,7 +64,7 @@ make install-target-libgcc
 
 # newlib
 cd $ROOT
-if [ $REBUILD -eq 1 -o ! -d $SRC/newlib ]; then
+if [ $REBUILD -eq 1 ] || [ ! -d $SRC/newlib ]; then
 	rm -Rf $SRC/newlib
 	cat $NEWLIB_ARCH | gunzip | tar -C $SRC -xf -
 	mv $SRC/newlib-1.15.0 $SRC/newlib
@@ -100,7 +98,7 @@ if [ $REBUILD -eq 1 -o ! -d $SRC/newlib ]; then
 fi
 
 cd $BUILD/newlib
-if [ $REBUILD -eq 1 -o ! -f Makefile ]; then
+if [ $REBUILD -eq 1 ] || [ ! -f Makefile ]; then
 	rm -Rf $BUILD/newlib/*
 	$SRC/newlib/configure --target=$TARGET --prefix=$PREFIX
 	# to prevent problems with makeinfo
@@ -113,7 +111,7 @@ make install
 export PATH=$PATH:$PREFIX/bin
 mkdir -p $BUILD/gcc/libstdc++-v3
 cd $BUILD/gcc/libstdc++-v3
-if [ $REBUILD -eq 1 -o ! -f Makefile ]; then
+if [ $REBUILD -eq 1 ] || [ ! -f Makefile ]; then
 	# pretend that we're using newlib. without it I can't find a way to build libsupc++
 	CPP=$TARGET-cpp $SRC/gcc/libstdc++-v3/configure --host=$TARGET --prefix=$PREFIX \
 		--disable-hosted-libstdcxx --disable-nls --with-newlib

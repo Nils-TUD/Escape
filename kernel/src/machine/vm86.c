@@ -71,7 +71,7 @@ static void vm86_copyPtrResult(sVM86Memarea *areas,u16 areaCount);
 static sVM86Info *vm86_createInfo(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount);
 static void vm86_destroyInfo(sVM86Info *i);
 
-static u32 *frameNos = NULL;
+static u32 frameNos[(1024 * K) / PAGE_SIZE];
 static tTid vm86Tid = INVALID_TID;
 static tTid caller = INVALID_TID;
 static sVM86Info *info = NULL;
@@ -87,10 +87,6 @@ s32 vm86_create(void) {
 	pid = proc_getFreePid();
 	if(pid == INVALID_PID)
 		return ERR_NO_FREE_PROCS;
-
-	frameNos = (u32*)kheap_alloc(((1024 * K) / PAGE_SIZE) * sizeof(u32));
-	if(frameNos == NULL)
-		return ERR_NOT_ENOUGH_MEM;
 
 	/* create child */
 	/* Note that it is really necessary to set whether we're a VM86-task or not BEFORE we get
@@ -233,7 +229,8 @@ bool vm86_handleGPF(sIntrptStackFrame *stack) {
 	switch(opCode) {
 		case X86OP_INT: {
 			u16 *sp;
-			u32 *ivt,intno = *ops;
+			volatile u32 *ivt; /* has to be volatile to prevent llvm from optimizing it away */
+			u32 intno = *ops;
 			stack->uesp -= sizeof(u16) * 3;
 			sp = (u16*)(stack->uesp + (stack->uss << 4));
 			/* save eflags and ip on stack */
@@ -355,7 +352,7 @@ static void vm86_pushl(sIntrptStackFrame *stack,u32 l) {
 }
 
 static void vm86_start(void) {
-	u32 *ivt;
+	volatile u32 *ivt; /* has to be volatile to prevent llvm from optimizing it away */
 	u32 i,j,frameCnt;
 	sIntrptStackFrame *istack;
 	assert(caller != INVALID_TID);

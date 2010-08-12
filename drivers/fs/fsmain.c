@@ -150,8 +150,10 @@ int main(int argc,char *argv[]) {
 
 	while(run) {
 		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
-		if(fd < 0)
-			printe("[FS] Unable to get work");
+		if(fd < 0) {
+			if(fd != ERR_INTERRUPTED)
+				printe("[FS] Unable to get work");
+		}
 		else {
 			if(mid < MSG_FS_OPEN || mid > MSG_FS_ISTAT)
 				printf("[FS] Illegal command %d\n",mid);

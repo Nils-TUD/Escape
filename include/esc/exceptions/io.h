@@ -24,7 +24,13 @@
 #include <esc/exceptions/exception.h>
 
 typedef struct {
-	sException;
+	/*sException;*/
+	s32 _handled;
+	s32 _id;
+	const s32 line;
+	const char *const file;
+	const char *(*toString)(void *e);
+	void (*destroy)(void *e);
 	s32 error;
 } sIOException;
 

@@ -112,6 +112,9 @@ static void ofstream_flush(sOStream *s) {
 	sOFStream *fs = (sOFStream*)s->_obj;
 	if(fs->pos > 0) {
 		s32 res;
+		/* flush stdout first if we're stderr */
+		if(s == cerr)
+			cout->flush(cout);
 		locku(&fs->lck);
 		if((res = write(fs->fd,fs->buffer,fs->pos * sizeof(char))) < 0) {
 			unlocku(&fs->lck);

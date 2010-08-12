@@ -85,6 +85,9 @@ void sysc_sendSignalTo(sIntrptStackFrame *stack) {
 	tSig signal = (tSig)SYSC_ARG2(stack);
 	u32 data = SYSC_ARG3(stack);
 	sThread *t = thread_getRunning();
+	/* store tid and check via thread_getById() because if the thread is destroyed, we can't access
+	 * it anymore */
+	tTid tid = t->tid;
 
 	if(!sig_canSend(signal))
 		SYSC_ERROR(stack,ERR_INVALID_SIGNAL);
@@ -97,7 +100,7 @@ void sysc_sendSignalTo(sIntrptStackFrame *stack) {
 		sig_addSignal(signal,data);
 
 	/* choose another thread if we've killed ourself */
-	if(t->state != ST_RUNNING)
+	if(thread_getById(tid) == NULL)
 		thread_switch();
 
 	SYSC_RET1(stack,0);

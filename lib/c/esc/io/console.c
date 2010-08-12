@@ -69,7 +69,7 @@ static void streamDestr(void *d) {
 			funcs[i](streams[i]);
 		}
 		CATCH(IOException,e) {
-			debugf("Got an IO-Exception when destroying std-stream %d: %s\n",i,e->toString(e));
+			/* ignore */
 		}
 		ENDCATCH
 	}

@@ -108,9 +108,10 @@ s32 shell_executeCmd(char *line,bool isFile) {
 	return res;
 }
 
-u32 shell_readLine(char *buffer,u32 max) {
+s32 shell_readLine(char *buffer,u32 max) {
 	u32 cursorPos = 0;
 	u32 i = 0;
+	s32 res;
 	resetReadLine = false;
 
 	/* disable "readline", enable "echo", enable "navi" (just to be sure) */
@@ -121,11 +122,13 @@ u32 shell_readLine(char *buffer,u32 max) {
 	/* ensure that the line is empty */
 	*buffer = '\0';
 	while(i < max) {
-		char c;
+		char c = 0;
 		s32 cmd,n1,n2,n3;
 		/* use read to interrupt for signals; ensure that stdout is flushed */
 		fflush(stdout);
-		read(STDIN_FILENO,&c,1);
+		/* stop if we were unable to read from stdin */
+		if((res = read(STDIN_FILENO,&c,1)) < 0 && res != ERR_INTERRUPTED)
+			return res;
 		/* maybe we've received a ^C. if so do a reset */
 		if(resetReadLine) {
 			i = 0;
@@ -141,7 +144,6 @@ u32 shell_readLine(char *buffer,u32 max) {
 		/* skip other escape-codes */
 		if(cmd != ESCC_KEYCODE)
 			continue;
-
 
 		if(n3 != 0 || (n1 != '\t' && n1 != '\n' && !isprint(n1))) {
 			if(shell_handleSpecialKey(buffer,n2,n3,&cursorPos,&i) || !isprint(n1))

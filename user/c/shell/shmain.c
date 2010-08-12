@@ -103,7 +103,8 @@ int main(int argc,char **argv) {
 			return EXIT_FAILURE;
 
 		/* read command */
-		shell_readLine(buffer,MAX_CMD_LEN);
+		if(shell_readLine(buffer,MAX_CMD_LEN) < 0)
+			error("Unable to read from STDIN");
 
 		/* execute it */
 		shell_executeCmd(buffer,false);

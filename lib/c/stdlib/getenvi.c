@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include <esc/fsinterface.h>
 #include <stdlib.h>
 
 char *getenvi(u32 index) {

@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string>
 
-namespace esc {
+namespace std {
 	/**
 	 * A class to use the "raw"-IO-functions open,seek,read,write and close in a exception-safe way.
 	 * I.e. you can allocate the instance of it on the stack, so that, if an exception is thrown,
@@ -57,7 +57,7 @@ namespace esc {
 		 * @param mode the mode (READ | WRITE | APPEND)
 		 * @throws ios_base::failure if it goes wrong
 		 */
-		rawfile(const std::string& filename,open_type mode);
+		rawfile(const string& filename,open_type mode);
 		/**
 		 * Closes the file, if still open
 		 */
@@ -70,7 +70,7 @@ namespace esc {
 		 * @param mode the mode (READ | WRITE | APPEND)
 		 * @throws ios_base::failure if it goes wrong
 		 */
-		void open(const std::string& filename,open_type mode);
+		void open(const string& filename,open_type mode);
 		/**
 		 * Calls ::seek(fd,<offset>,<whence>)
 		 *

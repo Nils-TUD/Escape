@@ -21,7 +21,7 @@
 #include <esc/debug.h>
 #include <gui/common.h>
 #include <gui/bitmapimage.h>
-#include <esc/rawfile.h>
+#include <rawfile.h>
 
 namespace gui {
 	void BitmapImage::paint(Graphics &g,tCoord x,tCoord y) {
@@ -80,10 +80,10 @@ namespace gui {
 		// read header
 		u32 headerSize = sizeof(sBMFileHeader) + sizeof(sBMInfoHeader);
 		u8 *header = new u8[headerSize];
-		esc::rawfile f;
+		rawfile f;
 
 		try {
-			f.open(filename,esc::rawfile::READ);
+			f.open(filename,rawfile::READ);
 			f.read(header,sizeof(u8),headerSize);
 		}
 		catch(std::ios_base::failure &e) {

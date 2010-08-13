@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/rawfile.h>
+#include <rawfile.h>
 #include <ios>
 
-namespace esc {
+namespace std {
 	rawfile::rawfile()
 		: _mode(0), _fd(-1) {
 	}
-	rawfile::rawfile(const std::string& filename,open_type mode)
+	rawfile::rawfile(const string& filename,open_type mode)
 		: _mode(0), _fd(-1) {
 		open(filename,mode);
 	}
@@ -32,7 +32,7 @@ namespace esc {
 		close();
 	}
 
-	void rawfile::open(const std::string& filename,open_type mode) {
+	void rawfile::open(const string& filename,open_type mode) {
 		u8 flags = 0;
 		if(mode & READ)
 			flags |= IO_READ;
@@ -42,30 +42,30 @@ namespace esc {
 			flags |= IO_APPEND;
 		_fd = ::open(filename.c_str(),flags);
 		if(_fd < 0)
-			throw std::ios_base::failure(strerror(_fd));
+			throw ios_base::failure(strerror(_fd));
 		_mode = mode;
 	}
 	void rawfile::seek(off_type offset,int whence) {
 		if(_fd < 0)
-			throw std::ios_base::failure("File not opened");
+			throw ios_base::failure("File not opened");
 		s32 res;
 		if((res = ::seek(_fd,offset,whence)) < 0)
-			throw std::ios_base::failure(std::string("Unable to seek: ") + strerror((s32)res));
+			throw ios_base::failure(string("Unable to seek: ") + strerror((s32)res));
 	}
 	rawfile::size_type rawfile::read(void *data,size_type size,size_type count) {
 		if(_fd < 0 || !(_mode & READ))
-			throw std::ios_base::failure("File not opened for reading");
+			throw ios_base::failure("File not opened for reading");
 		size_type res = RETRY(::read(_fd,data,size * count));
 		if((s32)res < 0)
-			throw std::ios_base::failure(std::string("Unable to read: ") + strerror((s32)res));
+			throw ios_base::failure(string("Unable to read: ") + strerror((s32)res));
 		return res / size;
 	}
 	rawfile::size_type rawfile::write(const void *data,size_type size,size_type count) {
 		if(_fd < 0 || !(_mode & WRITE))
-			throw std::ios_base::failure("File not opened for writing");
+			throw ios_base::failure("File not opened for writing");
 		size_type res = ::write(_fd,data,size * count);
 		if((s32)res < 0)
-			throw std::ios_base::failure(std::string("Unable to write: ") + strerror((s32)res));
+			throw ios_base::failure(string("Unable to write: ") + strerror((s32)res));
 		return res / size;
 	}
 	void rawfile::close() {

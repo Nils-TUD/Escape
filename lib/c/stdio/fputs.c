@@ -31,7 +31,7 @@ s32 fputs(const char *str,FILE *file) {
 		res = s->out->writes(s->out,str);
 	}
 	CATCH(IOException,e) {
-		s->_error = e->error;
+		s->_error = e->getErrno(e);
 		res = EOF;
 	}
 	ENDCATCH

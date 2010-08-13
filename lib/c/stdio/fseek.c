@@ -32,7 +32,7 @@ s32 fseek(FILE *stream,s32 offset,s32 whence) {
 			res = s->out->seek(s->out,offset,whence);
 	}
 	CATCH(IOException,e) {
-		s->_error = e->error;
+		s->_error = e->getErrno(e);
 		res = EOF;
 	}
 	ENDCATCH;

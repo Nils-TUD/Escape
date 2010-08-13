@@ -73,7 +73,7 @@
 										else {
 
 #define CATCH(name,obj)				} { __curEx = __ex; \
-										s##name *(obj) = (s##name*)__ex; \
+										sException *(obj) = (sException*)__ex; \
 										if((obj) && (obj)->_id == (ID_##name) && ((obj)->_handled = 1))
 
 #define FINALLY						} {
@@ -94,23 +94,22 @@
 											__curEx->destroy(__curEx); \
 											__curEx = NULL; \
 										} \
-										ex_unwind((__exPtr = (sException*) \
+										ex_unwind((__exPtr = \
 												ex_create##name(ID_##name,__LINE__, \
 													__FILE__,## __VA_ARGS__))); \
 									}
 
 #define RETHROW(exObj)				{ \
-										(__ex = (sException*)(exObj))->_handled = 0; \
+										(__ex = (exObj))->_handled = 0; \
 										ex_unwind(__ex); \
 									}
 
-typedef const char *(*fExToString)(void *e);
-typedef void (*fExDestroy)(void *e);
-
-typedef struct {
+typedef struct sException sException;
+struct sException {
 /* private: */
 	s32 _handled;
 	s32 _id;
+	void *_obj;
 
 /* public: */
 	/**
@@ -123,20 +122,25 @@ typedef struct {
 	const char *const file;
 
 	/**
+	 * @return the error that occurred (may be 0)
+	 */
+	s32 (*getErrno)(sException *e);
+
+	/**
 	 * Returns the message of the exception
 	 *
 	 * @param e the exception
 	 * @return the message
 	 */
-	const char *(*toString)(void *e);
+	const char *(*toString)(sException *e);
 
 	/**
 	 * Destroys this exception
 	 *
 	 * @param e the exception
 	 */
-	void (*destroy)(void *e);
-} sException;
+	void (*destroy)(sException *e);
+};
 
 
 /* DON'T USE the following variables and functions directly. They are just necessary for
@@ -151,10 +155,9 @@ extern sException *__exPtr;
  * @param id the exception-id
  * @param line the line
  * @param file the file
- * @param size the size of your struct
  * @return the exception
  */
-sException *ex_create(s32 id,s32 line,const char *file,u32 size);
+sException *ex_create(s32 id,s32 line,const char *file);
 
 /**
  * Pushes a jump-env on the stack and returns it
@@ -171,8 +174,8 @@ void ex_pop(void);
 /**
  * Unwinds the stack with the given exception
  *
- * @param exObj the exception
+ * @param e the exception
  */
-void ex_unwind(void *exObj);
+void ex_unwind(sException *e);
 
 #endif /* EXCEPTION_H_ */

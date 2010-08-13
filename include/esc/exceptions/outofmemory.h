@@ -23,8 +23,6 @@
 #include <esc/common.h>
 #include <esc/exceptions/exception.h>
 
-typedef sException sOutOfMemoryException;
-
 /**
  * Constructor for the out-of-memory-exception
  *
@@ -33,6 +31,6 @@ typedef sException sOutOfMemoryException;
  * @param file the file
  * @return the exception
  */
-sOutOfMemoryException *ex_createOutOfMemoryException(s32 id,s32 line,const char *file);
+sException *ex_createOutOfMemoryException(s32 id,s32 line,const char *file);
 
 #endif /* OUTOFMEMORY_H_ */

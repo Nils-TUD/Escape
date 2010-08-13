@@ -23,17 +23,6 @@
 #include <esc/common.h>
 #include <esc/exceptions/exception.h>
 
-typedef struct {
-	/*sException;*/
-	s32 _handled;
-	s32 _id;
-	const s32 line;
-	const char *const file;
-	const char *(*toString)(void *e);
-	void (*destroy)(void *e);
-	s32 error;
-} sIOException;
-
 /**
  * Constructor for the io-exception
  *
@@ -43,6 +32,6 @@ typedef struct {
  * @param errorNo the error-number
  * @return the exception
  */
-sIOException *ex_createIOException(s32 id,s32 line,const char *file,s32 errorNo);
+sException *ex_createIOException(s32 id,s32 line,const char *file,s32 errorNo);
 
 #endif /* IOEXCEPTION_H_ */

@@ -23,8 +23,6 @@
 #include <esc/common.h>
 #include <esc/exceptions/exception.h>
 
-typedef sException sDateException;
-
 /**
  * Constructor for the date-exception
  *
@@ -33,6 +31,6 @@ typedef sException sDateException;
  * @param file the file
  * @return the exception
  */
-sDateException *ex_createDateException(s32 id,s32 line,const char *file);
+sException *ex_createDateException(s32 id,s32 line,const char *file);
 
 #endif /* EXDATE_H_ */

@@ -32,7 +32,7 @@ s32 vfscanf(FILE *file,const char *fmt,va_list ap) {
 		res = s->in->vreadf(s->in,fmt,ap);
 	}
 	CATCH(IOException,e) {
-		s->_error = e->error;
+		s->_error = e->getErrno(e);
 		res = EOF;
 	}
 	ENDCATCH;

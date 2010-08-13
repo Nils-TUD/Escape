@@ -31,7 +31,7 @@ size_t fread(void *ptr,size_t size,size_t count,FILE *file) {
 		res = s->in->read(s->in,ptr,size * count) / size;
 	}
 	CATCH(IOException,e) {
-		s->_error = e->error;
+		s->_error = e->getErrno(e);
 		res = 0;
 	}
 	ENDCATCH;

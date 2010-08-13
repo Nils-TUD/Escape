@@ -31,7 +31,7 @@ s32 ungetc(s32 c,FILE *file) {
 		s->in->unread(s->in,c);
 	}
 	CATCH(IOException,e) {
-		s->_error = e->error;
+		s->_error = e->getErrno(e);
 		res = EOF;
 	}
 	ENDCATCH

@@ -21,15 +21,21 @@
 #include <esc/exceptions/io.h>
 #include <string.h>
 
-static const char *ex_printIOException(sIOException *e);
+static s32 ex_getErrno(sException *e);
+static const char *ex_toString(sException *e);
 
-sIOException *ex_createIOException(s32 id,s32 line,const char *file,s32 errorNo) {
-	sIOException *e = (sIOException*)ex_create(id,line,file,sizeof(sIOException));
-	e->error = errorNo;
-	e->toString = (fExToString)ex_printIOException;
+sException *ex_createIOException(s32 id,s32 line,const char *file,s32 errorNo) {
+	sException *e = (sException*)ex_create(id,line,file);
+	e->_obj = (void*)errorNo;
+	e->getErrno = ex_getErrno;
+	e->toString = ex_toString;
 	return e;
 }
 
-static const char *ex_printIOException(sIOException *e) {
-	return strerror(e->error);
+static s32 ex_getErrno(sException *e) {
+	return (s32)e->_obj;
+}
+
+static const char *ex_toString(sException *e) {
+	return strerror((s32)e->_obj);
 }

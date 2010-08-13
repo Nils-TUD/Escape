@@ -31,7 +31,7 @@ s32 fgetc(FILE *stream) {
 		res = s->in->readc(s->in);
 	}
 	CATCH(IOException,e) {
-		s->_error = e->error;
+		s->_error = e->getErrno(e);
 		res = EOF;
 	}
 	ENDCATCH;

@@ -58,6 +58,7 @@ namespace gui {
 	public:
 		static const u8 STYLE_DEFAULT = 0;
 		static const u8 STYLE_POPUP = 1;
+		static const u8 STYLE_DESKTOP = 2;
 
 	public:
 		Window(const string &title,tCoord x,tCoord y,tSize width,tSize height,

@@ -59,7 +59,7 @@ static s32 istream_reads(sIStream *s,char *str,u32 size) {
 			*str++ = s->readc(s);
 	}
 	CATCH(IOException,e) {
-		if(e->error != ERR_EOF)
+		if(e->getErrno(e) != ERR_EOF)
 			RETHROW(e);
 		/* do nothing */
 	}
@@ -77,7 +77,7 @@ static s32 istream_readline(sIStream *s,char *str,u32 size) {
 			*str++ = c;
 	}
 	CATCH(IOException,e) {
-		if(e->error != ERR_EOF)
+		if(e->getErrno(e) != ERR_EOF)
 			RETHROW(e);
 		/* do nothing */
 	}
@@ -262,7 +262,7 @@ static s32 istream_readfstr(sIStream *s,s32 length,char *volatile str) {
 	}
 	CATCH(IOException,e) {
 		/* IO_EOF is ok if the stream ends and we've already got a valid number */
-		if(e->error != ERR_EOF)
+		if(e->getErrno(e) != ERR_EOF)
 			RETHROW(e);
 	}
 	ENDCATCH
@@ -331,7 +331,7 @@ static s32 istream_readfnum(sIStream *s,s32 length,char c,s32 *res) {
 	}
 	CATCH(IOException,e) {
 		/* IO_EOF is ok if the stream ends and we've already got a valid number */
-		if(e->error != ERR_EOF)
+		if(e->getErrno(e) != ERR_EOF)
 			RETHROW(e);
 	}
 	ENDCATCH

@@ -31,7 +31,7 @@ s32 fputc(s32 c,FILE *file) {
 		res = s->out->writec(s->out,c);
 	}
 	CATCH(IOException,e) {
-		s->_error = e->error;
+		s->_error = e->getErrno(e);
 		res = EOF;
 	}
 	ENDCATCH

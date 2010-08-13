@@ -23,6 +23,7 @@
 
 #define MAX_TRIES					16
 
+static s32 ex_getErrno(sException *e);
 static void ex_destroy(sException *e);
 static const char *ex_toString(sException *e);
 
@@ -31,16 +32,18 @@ sException *__exPtr = NULL;
 static int tryNo = 0;
 static sJumpEnv tries[MAX_TRIES];
 
-sException *ex_create(s32 id,s32 line,const char *file,u32 size) {
-	sException *e = (sException*)malloc(size);
+sException *ex_create(s32 id,s32 line,const char *file) {
+	sException *e = (sException*)malloc(sizeof(sException));
 	if(!e)
 		error("Unable to create exception-object (%s:%d)",file,line);
 	e->_handled = 0;
 	e->_id = id;
+	e->_obj = NULL;
 	*(s32*)&e->line = line;
 	*(const char**)&e->file = file;
-	e->destroy = (fExDestroy)ex_destroy;
-	e->toString = (fExToString)ex_toString;
+	e->getErrno = ex_getErrno;
+	e->destroy = ex_destroy;
+	e->toString = ex_toString;
 	return e;
 }
 
@@ -53,13 +56,16 @@ void ex_pop(void) {
 		tryNo--;
 }
 
-void ex_unwind(void *exObj) {
+void ex_unwind(sException *e) {
 	if(tryNo > 0)
 		longjmp(tries + --tryNo,1);
-	else {
-		sException *e = (sException*)exObj;
+	else
 		error("Unhandled exception in %s line %d: %s",e->file,e->line,e->toString(e));
-	}
+}
+
+static s32 ex_getErrno(sException *e) {
+	UNUSED(e);
+	return 0;
 }
 
 static void ex_destroy(sException *e) {

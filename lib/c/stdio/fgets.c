@@ -31,7 +31,7 @@ char *fgets(char *str,s32 max,FILE *file) {
 		s->in->readline(s->in,str,max);
 	}
 	CATCH(IOException,e) {
-		s->_error = e->error;
+		s->_error = e->getErrno(e);
 		res = NULL;
 	}
 	ENDCATCH;

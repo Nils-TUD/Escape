@@ -23,19 +23,6 @@
 #include <esc/common.h>
 #include <esc/exceptions/exception.h>
 
-typedef struct {
-	/*sException;*/
-	s32 _handled;
-	s32 _id;
-	const s32 line;
-	const char *const file;
-	const char *(*toString)(void *e);
-	void (*destroy)(void *e);
-
-/* private: */
-	char *_msg;
-} sCmdArgsException;
-
 /**
  * Constructor for the command-argument-exception
  *
@@ -45,6 +32,6 @@ typedef struct {
  * @param msg a message to display (with variable arguments)
  * @return the exception
  */
-sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file,const char *msg,...);
+sException *ex_createCmdArgsException(s32 id,s32 line,const char *file,const char *msg,...);
 
 #endif /* CMDARGSEXCEPTION_H_ */

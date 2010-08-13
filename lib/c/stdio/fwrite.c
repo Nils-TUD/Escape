@@ -31,7 +31,7 @@ size_t fwrite(const void *ptr,size_t size,size_t count,FILE *file) {
 		res = (size_t)s->out->write(s->out,ptr,size * count) / count;
 	}
 	CATCH(IOException,e) {
-		s->_error = e->error;
+		s->_error = e->getErrno(e);
 		res = 0;
 	}
 	ENDCATCH;

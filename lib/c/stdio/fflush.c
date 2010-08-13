@@ -29,7 +29,7 @@ s32 fflush(FILE *stream) {
 		s->out->flush(s->out);
 	}
 	CATCH(IOException,e) {
-		s->_error = e->error;
+		s->_error = e->getErrno(e);
 		res = EOF;
 	}
 	ENDCATCH

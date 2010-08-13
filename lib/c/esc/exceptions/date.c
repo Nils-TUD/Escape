@@ -20,6 +20,6 @@
 #include <esc/common.h>
 #include <esc/exceptions/date.h>
 
-sDateException *ex_createDateException(s32 id,s32 line,const char *file) {
-	return (sDateException*)ex_create(id,line,file,sizeof(sDateException));
+sException *ex_createDateException(s32 id,s32 line,const char *file) {
+	return ex_create(id,line,file);
 }

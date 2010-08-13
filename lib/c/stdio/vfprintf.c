@@ -32,7 +32,7 @@ s32 vfprintf(FILE *file,const char *fmt,va_list ap) {
 		res = s->out->vwritef(s->out,fmt,ap);
 	}
 	CATCH(IOException,e) {
-		s->_error = e->error;
+		s->_error = e->getErrno(e);
 		res = EOF;
 	}
 	ENDCATCH

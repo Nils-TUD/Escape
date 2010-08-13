@@ -25,29 +25,29 @@
 
 #define MAX_EXMSG_LEN	64
 
-static void ex_destroyCmdArgsException(sCmdArgsException *e);
-static const char *ex_printCmdArgsException(sCmdArgsException *e);
+static void ex_destroy(sException *e);
+static const char *ex_toString(sException *e);
 
-sCmdArgsException *ex_createCmdArgsException(s32 id,s32 line,const char *file,const char *msg,...) {
+sException *ex_createCmdArgsException(s32 id,s32 line,const char *file,const char *msg,...) {
 	va_list ap;
-	sCmdArgsException *e = (sCmdArgsException*)ex_create(id,line,file,sizeof(sCmdArgsException));
-	e->_msg = malloc(MAX_EXMSG_LEN);
-	if(!e->_msg)
+	sException *e = (sException*)ex_create(id,line,file);
+	e->_obj = malloc(MAX_EXMSG_LEN);
+	if(!e->_obj)
 		error("Unable to alloc memory for exception-msg (%s:%d)",file,line);
 	va_start(ap,msg);
-	vsnprintf(e->_msg,MAX_EXMSG_LEN,msg,ap);
+	vsnprintf((char*)e->_obj,MAX_EXMSG_LEN,msg,ap);
 	va_end(ap);
-	e->destroy = (fExDestroy)ex_destroyCmdArgsException;
-	e->toString = (fExToString)ex_printCmdArgsException;
+	e->destroy = ex_destroy;
+	e->toString = ex_toString;
 	return e;
 }
 
-static void ex_destroyCmdArgsException(sCmdArgsException *e) {
-	free(e->_msg);
+static void ex_destroy(sException *e) {
+	free(e->_obj);
 	free(e);
 }
 
-static const char *ex_printCmdArgsException(sCmdArgsException *e) {
+static const char *ex_toString(sException *e) {
 	UNUSED(e);
-	return e->_msg;
+	return e->_obj;
 }

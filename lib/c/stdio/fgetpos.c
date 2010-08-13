@@ -32,7 +32,7 @@ s32 fgetpos(FILE *stream,fpos_t *pos) {
 			*pos = s->out->seek(s->out,0,SEEK_CUR);
 	}
 	CATCH(IOException,e) {
-		s->_error = e->error;
+		s->_error = e->getErrno(e);
 		res = EOF;
 	}
 	ENDCATCH

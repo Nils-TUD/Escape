@@ -51,6 +51,12 @@ namespace std {
 		 */
 		rawfile();
 		/**
+		 * Uses the given file-descriptor (assumes read- and write-support)
+		 *
+		 * @param fd the file-descriptor
+		 */
+		rawfile(tFD fd);
+		/**
 		 * Opens the given file with given mode
 		 *
 		 * @param filename the filename

@@ -17,12 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/dir.h>
 #include <rawfile.h>
 #include <ios>
 
 namespace std {
 	rawfile::rawfile()
 		: _mode(0), _fd(-1) {
+	}
+	rawfile::rawfile(tFD fd)
+		: _mode(READ | WRITE), _fd(fd) {
 	}
 	rawfile::rawfile(const string& filename,open_type mode)
 		: _mode(0), _fd(-1) {
@@ -33,6 +37,7 @@ namespace std {
 	}
 
 	void rawfile::open(const string& filename,open_type mode) {
+		char tmp[MAX_PATH_LEN];
 		u8 flags = 0;
 		if(mode & READ)
 			flags |= IO_READ;
@@ -40,7 +45,8 @@ namespace std {
 			flags |= IO_WRITE;
 		if(mode & APPEND)
 			flags |= IO_APPEND;
-		_fd = ::open(filename.c_str(),flags);
+		abspath(tmp,sizeof(tmp),filename.c_str());
+		_fd = ::open(tmp,flags);
 		if(_fd < 0)
 			throw ios_base::failure(strerror(_fd));
 		_mode = mode;

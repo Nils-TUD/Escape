@@ -35,9 +35,11 @@ fi
 cd $BUILD/binutils
 if [ $REBUILD -eq 1 ] || [ ! -f $BUILD/binutils/Makefile ]; then
 	$SRC/binutils/configure --target=$TARGET --prefix=$PREFIX --disable-nls
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
 fi
-make all
-make install
+make all && make install
 
 # gcc
 cd $ROOT
@@ -53,14 +55,15 @@ if [ $REBUILD -eq 1 ] || [ ! -f $BUILD/gcc/Makefile ]; then
 	$SRC/gcc/configure --target=$TARGET --prefix=$PREFIX --disable-nls \
 		  --enable-languages=c,c++ --with-headers=$HEADER --enable-shared \
 		  --disable-linker-build-id --with-gxx-include-dir=$HEADER/cpp
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
 fi
-make all-gcc
-make install-gcc
+make all-gcc && make install-gcc
 ln -sf $DIST/bin/$TARGET-gcc $DIST/bin/$TARGET-cc
 
 # libgcc
-make all-target-libgcc
-make install-target-libgcc
+make all-target-libgcc && make install-target-libgcc
 
 # newlib
 cd $ROOT
@@ -97,15 +100,20 @@ if [ $REBUILD -eq 1 ] || [ ! -d $SRC/newlib ]; then
 	autoreconf
 fi
 
+# newlib will create this dir again, so remove it, let newlib put its stuff in there and remove it
+# again afterwards & replace it with a symlink to our include
+rm -f $DIST/$TARGET/include
 cd $BUILD/newlib
 if [ $REBUILD -eq 1 ] || [ ! -f Makefile ]; then
 	rm -Rf $BUILD/newlib/*
 	$SRC/newlib/configure --target=$TARGET --prefix=$PREFIX
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
 	# to prevent problems with makeinfo
 	echo "MAKEINFO = :" >> $BUILD/newlib/Makefile
 fi
-make
-make install
+make && make install
 
 # libstdc++
 export PATH=$PATH:$PREFIX/bin
@@ -115,15 +123,17 @@ if [ $REBUILD -eq 1 ] || [ ! -f Makefile ]; then
 	# pretend that we're using newlib. without it I can't find a way to build libsupc++
 	CPP=$TARGET-cpp $SRC/gcc/libstdc++-v3/configure --host=$TARGET --prefix=$PREFIX \
 		--disable-hosted-libstdcxx --disable-nls --with-newlib
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
 fi
 cd include
-make
-make install
+make && make install
 cd ../libsupc++
-make
-make install
+make && make install
 
 
 # create basic symlinks
-rm -Rf $DIST/$TARGET/sys-include
+rm -Rf $DIST/$TARGET/sys-include $DIST/$TARGET/include
 ln -sf $ROOT/../include $DIST/$TARGET/sys-include
+ln -sf $ROOT/../include $DIST/$TARGET/include

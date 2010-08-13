@@ -87,3 +87,75 @@ diff -rcN src/gcc_org/libgcc/config.host src/gcc/libgcc/config.host
   *local*)
   	rest=`echo ${host} | sed -e "s/$cpu_type-//"`
   	if test -f $srcdir/config/${cpu_type}/t-$rest
+diff -rcN src/gcc_org/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/libsupc++/vterminate.cc
+*** src/gcc_org/libstdc++-v3/libsupc++/vterminate.cc	2009-04-10 01:23:07.000000000 +0200
+--- src/gcc/libstdc++-v3/libsupc++/vterminate.cc	2010-08-14 01:03:23.000000000 +0200
+***************
+*** 24,35 ****
+  
+  #include <bits/c++config.h>
+  
+! #if _GLIBCXX_HOSTED
+  #include <cstdlib>
+  #include <exception>
+  #include <exception_defines.h>
+  #include <cxxabi.h>
+! # include <cstdio>
+  
+  using namespace std;
+  using namespace abi;
+--- 24,40 ----
+  
+  #include <bits/c++config.h>
+  
+! #if 1 //_GLIBCXX_HOSTED
+  #include <cstdlib>
+  #include <exception>
+  #include <exception_defines.h>
+  #include <cxxabi.h>
+! // don't include cstdio here because thats too much trouble
+! //# include <cstdio>
+! extern "C" void abort(void);
+! extern "C" int fputs(const char*,void*);
+! extern "C" void *free(void*);
+! extern void *stderr;
+  
+  using namespace std;
+  using namespace abi;
+***************
+*** 60,66 ****
+  	  int status = -1;
+  	  char *dem = 0;
+  	  
+! 	  dem = __cxa_demangle(name, 0, 0, &status);
+  
+  	  fputs("terminate called after throwing an instance of '", stderr);
+  	  if (status == 0)
+--- 65,71 ----
+  	  int status = -1;
+  	  char *dem = 0;
+  	  
+! 	  //dem = __cxa_demangle(name, 0, 0, &status);
+  
+  	  fputs("terminate called after throwing an instance of '", stderr);
+  	  if (status == 0)
+diff -rcN src/gcc_org/libstdc++-v3/libsupc++/eh_term_handler.cc src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc
+*** src/gcc_org/libstdc++-v3/libsupc++/eh_term_handler.cc	2009-04-10 01:23:07.000000000 +0200
+--- src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc	2010-08-14 00:35:04.000000000 +0200
+***************
+*** 38,44 ****
+  
+  /* The current installed user handler.  */
+  std::terminate_handler __cxxabiv1::__terminate_handler =
+! #if _GLIBCXX_HOSTED
+  	__gnu_cxx::__verbose_terminate_handler;
+  #else
+  	std::abort;
+--- 38,44 ----
+  
+  /* The current installed user handler.  */
+  std::terminate_handler __cxxabiv1::__terminate_handler =
+! #if 1 //_GLIBCXX_HOSTED
+  	__gnu_cxx::__verbose_terminate_handler;
+  #else
+  	std::abort;

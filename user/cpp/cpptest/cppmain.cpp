@@ -31,7 +31,9 @@
 #include <memory>*/
 //#include <ustl.h>
 //#include <iostream>
-#include <fstream>
+#include <iostream>
+#include <stdlib.h>
+#include <cmdargs.h>
 
 //using namespace std;
 
@@ -72,9 +74,39 @@ void my::doIt() {
 }
 #endif
 
-int main(void) {
-	std::ifstream f("foo");
-	f.close();
+static void usage(const char *name) {
+	cerr << "Usage: " << name << " -f <fields> [-d <delim>] [<file>]\n" << endl;
+	cerr << "	-f: <fields> may be:\n" << endl;
+	cerr << "		N		N'th field, counted from 1\n" << endl;
+	cerr << "		N-		from N'th field, to end of line\n" << endl;
+	cerr << "		N-M		from N'th to M'th (included) field\n" << endl;
+	cerr << "		-M		from first to M'th (included) field\n" << endl;
+	cerr << "	-d: use <delim> as delimiter instead of TAB\n" << endl;
+	exit(EXIT_FAILURE);
+}
+
+int main(int argc,char **argv) {
+	string fields;
+	string delim("\t");
+	cmdargs args(argc,argv,0);
+	try {
+		args.parse("f=s* d=s",&fields,&delim);
+		if(args.is_help())
+			usage(argv[0]);
+	}
+	catch(const cmdargs_error& e) {
+		cerr << "Invalid arguments: " << e.what() << endl;
+		usage(argv[0]);
+	}
+
+	cout << "fields=" << fields << endl;
+	cout << "delim=" << delim << endl;
+
+	cout << "Free args:" << endl;
+	const vector<string*> &fargs = args.get_free();
+	for(vector<string*>::const_iterator it = fargs.begin(); it != fargs.end(); ++it)
+		cout << **it << endl;
+	cout << "Done" << endl;
 
 #if 0
 	int x;

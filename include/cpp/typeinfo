@@ -17,29 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/test.h>
+#ifndef TYPEINFO_
+#define TYPEINFO_
 
-#include "tests/tstring.h"
-#include "tests/tvector.h"
-#include "tests/tlist.h"
-#include "tests/talgorithm.h"
-#include "tests/tstreams.h"
-#include "tests/tfunctional.h"
-#include "tests/tbintree.h"
-#include "tests/tmap.h"
-#include "tests/tcmdargs.h"
+#include <stddef.h>
 
-int main(void) {
-	/*test_register(&tModString);
-	test_register(&tModVector);
-	test_register(&tModList);
-	test_register(&tModAlgo);
-	test_register(&tModStreams);
-	test_register(&tModFunctional);
-	test_register(&tModBintree);
-	test_register(&tModMap);*/
-	test_register(&tModCmdArgs);
-	test_start();
-	return EXIT_SUCCESS;
+namespace std {
+	class type_info {
+	public:
+		virtual ~type_info();
+		bool operator==(const type_info& rhs) const;
+		bool operator!=(const type_info& rhs) const;
+		bool before(const type_info& rhs) const;
+		const char* name() const;
+	private:
+		type_info(const type_info& rhs);
+		type_info& operator=(const type_info& rhs);
+	};
 }
+
+#endif /* TYPEINFO_ */

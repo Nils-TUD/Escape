@@ -23,9 +23,9 @@ namespace std {
 	stringstream::stringstream(ios_base::openmode which)
 		: iostream(new stringbuf(which)) {
 	}
-	stringstream::stringstream(const string& str,
+	stringstream::stringstream(const string& s,
 			ios_base::openmode which)
-		: iostream(new stringbuf(str,which)) {
+		: iostream(new stringbuf(s,which)) {
 	}
 	stringstream::~stringstream() {
 	}

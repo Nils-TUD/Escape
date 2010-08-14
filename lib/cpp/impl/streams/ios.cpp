@@ -20,11 +20,12 @@
 #include <impl/streams/ios.h>
 
 namespace std {
-	ios::ios(streambuf* sb) {
+	ios::ios(streambuf* sb)
+		: _fill(char_type()), _rdst(iostate()), _exceptions(iostate()), _tie(NULL), _rdbuf(NULL) {
 		init(sb);
 	}
-	ios::ios() {
-		// do nothing
+	ios::ios()
+		: _fill(char_type()), _rdst(iostate()), _exceptions(iostate()), _tie(NULL), _rdbuf(NULL) {
 	}
 	ios::~ios() {
 		// do nothing

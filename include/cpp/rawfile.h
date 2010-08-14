@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string>
+#include <stdexcept>
 
 namespace std {
 	/**
@@ -61,7 +62,7 @@ namespace std {
 		 *
 		 * @param filename the filename
 		 * @param mode the mode (READ | WRITE | APPEND)
-		 * @throws ios_base::failure if it goes wrong
+		 * @throws io_exception if it goes wrong
 		 */
 		rawfile(const string& filename,open_type mode);
 		/**
@@ -74,7 +75,7 @@ namespace std {
 		 *
 		 * @param filename the filename
 		 * @param mode the mode (READ | WRITE | APPEND)
-		 * @throws ios_base::failure if it goes wrong
+		 * @throws io_exception if it goes wrong
 		 */
 		void open(const string& filename,open_type mode);
 		/**
@@ -82,7 +83,7 @@ namespace std {
 		 *
 		 * @param offset the offset to seek to
 		 * @param whence the point where to start (SET | CUR | END)
-		 * @throws ios_base::failure if it goes wrong
+		 * @throws io_exception if it goes wrong
 		 */
 		void seek(off_type offset,seek_type whence);
 		/**
@@ -92,7 +93,7 @@ namespace std {
 		 * @param size the size of each element
 		 * @param count the number of elements to read
 		 * @return the number of elements read
-		 * @throws ios_base::failure if it goes wrong
+		 * @throws io_exception if it goes wrong
 		 */
 		size_type read(void *data,size_type size,size_type count);
 		/**
@@ -102,7 +103,7 @@ namespace std {
 		 * @param size the size of each element
 		 * @param count the number of elements to write
 		 * @return the number of elements written
-		 * @throws ios_base::failure if it goes wrong
+		 * @throws io_exception if it goes wrong
 		 */
 		size_type write(const void *data,size_type size,size_type count);
 		/**

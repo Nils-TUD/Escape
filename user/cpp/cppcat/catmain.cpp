@@ -58,7 +58,7 @@ int main(int argc,char *argv[]) {
 					printStream(rw);
 				}
 			}
-			catch(const file_error& e) {
+			catch(const io_exception& e) {
 				cerr << "Unable to read file '" << **it << "': " << e.what() << endl;
 			}
 		}

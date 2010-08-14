@@ -93,11 +93,13 @@ namespace std {
 	const ios_base::seekdir ios_base::cur			= SEEK_CUR;
 	const ios_base::seekdir ios_base::end			= SEEK_END;
 
+	ios_base::ios_base()
+		: _flags(fmtflags()), _prec(streamsize()), _width(streamsize()),
+		  _callbacks(vector<pair<event_callback,int> >()) {
+		// do nothing here
+	}
 	ios_base::~ios_base() {
 		raise_event(erase_event);
-	}
-	ios_base::ios_base() {
-		// do nothing here
 	}
 
 	ios_base::fmtflags ios_base::flags() const {

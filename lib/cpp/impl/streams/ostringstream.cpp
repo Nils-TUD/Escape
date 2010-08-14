@@ -23,8 +23,8 @@ namespace std {
 	ostringstream::ostringstream(ios_base::openmode which)
 		: ostream(new stringbuf(which)) {
 	}
-	ostringstream::ostringstream(const string& str,ios_base::openmode which)
-		: ostream(new stringbuf(str,which)) {
+	ostringstream::ostringstream(const string& s,ios_base::openmode which)
+		: ostream(new stringbuf(s,which)) {
 	}
 	ostringstream::~ostringstream() {
 	}

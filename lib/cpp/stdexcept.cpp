@@ -67,4 +67,16 @@ namespace std {
 	underflow_error::underflow_error(const string& msg)
 		: runtime_error(msg) {
 	}
+
+	io_exception::io_exception(const string& s,s32 err)
+		: _error(err), _msg(s + ": " + strerror(err)) {
+	}
+	io_exception::~io_exception() throw () {
+	}
+	s32 io_exception::error() const {
+		return _error;
+	}
+	const char* io_exception::what() const throw () {
+		return _msg.c_str();
+	}
 }

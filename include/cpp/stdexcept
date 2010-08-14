@@ -30,7 +30,7 @@ namespace std {
 	 * in theory, these are preventable, and even detectable before the
 	 * program runs (e.g., violations of class invariants).
 	 */
-	class logic_error: public std::exception {
+	class logic_error: public exception {
 	public:
 		/** Takes a character string describing the error.  */
 		explicit logic_error(const string& arg);
@@ -80,7 +80,6 @@ namespace std {
 	public:
 		/** Takes a character string describing the error.  */
 		explicit runtime_error(const string& arg);
-
 		virtual ~runtime_error() throw ();
 
 		/** Returns a C-style character string describing the general cause of
@@ -106,6 +105,21 @@ namespace std {
 	class underflow_error: public runtime_error {
 	public:
 		explicit underflow_error(const string& arg);
+	};
+
+	/**
+	 * For IO-errors
+	 */
+	class io_exception : public exception {
+	public:
+		explicit io_exception(const string& s,s32 err);
+		virtual ~io_exception() throw ();
+
+		s32 error() const;
+		virtual const char* what() const throw ();
+	private:
+		s32 _error;
+		string _msg;
 	};
 }
 

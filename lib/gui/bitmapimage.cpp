@@ -86,7 +86,7 @@ namespace gui {
 			f.open(filename,rawfile::READ);
 			f.read(header,sizeof(u8),headerSize);
 		}
-		catch(std::ios_base::failure &e) {
+		catch(io_exception &e) {
 			throw img_load_error(filename + ": Unable to open or read header: " + e.what());
 		}
 
@@ -117,7 +117,7 @@ namespace gui {
 			try {
 				f.read(_colorTable,sizeof(u32),_tableSize);
 			}
-			catch(std::ios_base::failure &e) {
+			catch(io_exception &e) {
 				throw img_load_error(filename + ": Unable to read color-table: " + e.what());
 			}
 		}
@@ -135,7 +135,7 @@ namespace gui {
 		try {
 			f.read(_data,sizeof(u8),_dataSize);
 		}
-		catch(std::ios_base::failure &e) {
+		catch(io_exception &e) {
 			throw img_load_error(filename + ": Unable to read image-data: " + e.what());
 		}
 	}

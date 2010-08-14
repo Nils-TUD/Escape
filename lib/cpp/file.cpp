@@ -44,9 +44,11 @@ namespace std {
 	vector<sDirEntry> file::list_files(bool showHidden,const string& pattern) {
 		vector<sDirEntry> v;
 		sDirEntry e;
+		if(!is_dir())
+			throw io_exception("list_files failed: No directory");
 		tFD dir = opendir(_path.c_str());
 		if(dir < 0)
-			throw file_error("opendir failed",dir);
+			throw io_exception("opendir failed",dir);
 		bool res;
 		while((res = readdir(&e,dir))) {
 			if((pattern.empty() || strmatch(pattern.c_str(),e.name)) &&
@@ -85,6 +87,6 @@ namespace std {
 		_path = tmp;
 		s32 res = stat(tmp,&_info);
 		if(res < 0)
-			throw file_error("stat failed",res);
+			throw io_exception("stat failed",res);
 	}
 }

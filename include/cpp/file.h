@@ -22,33 +22,11 @@
 
 #include <esc/io.h>
 #include <esc/date.h>
-#include <exception>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace std {
-	/**
-	 * The exception that is thrown if an error occurred (= invalid arguments)
-	 */
-	class file_error : public exception {
-	public:
-		explicit file_error(const string& arg,s32 error)
-			: _error(error), _msg(string(_msg + ": " + strerror(error))) {
-		};
-		virtual ~file_error() throw () {
-		};
-
-		s32 error() const {
-			return _error;
-		};
-		virtual const char* what() const throw () {
-			return _msg.c_str();
-		};
-	private:
-		s32 _error;
-		string _msg;
-	};
-
 	class file {
 	public:
 		typedef size_t size_type;
@@ -64,6 +42,7 @@ namespace std {
 		 * Builds a file-object for given path
 		 *
 		 * @param path the path (has not to be absolute)
+		 * @throws io_exception if stat fails
 		 */
 		file(const string& path);
 		/**
@@ -71,6 +50,7 @@ namespace std {
 		 *
 		 * @param parent the parent-path (has not to be absolute)
 		 * @param name the filename
+		 * @throws io_exception if stat fails
 		 */
 		file(const string& parent,const string& name);
 		/**
@@ -193,6 +173,7 @@ namespace std {
 		 *
 		 * @param parent the parent-path
 		 * @param name the filename
+		 * @throws io_exception if stat fails
 		 */
 		void init(const string& parent,const string& name);
 

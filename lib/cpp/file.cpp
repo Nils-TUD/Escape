@@ -23,30 +23,31 @@
 
 namespace std {
 	file::file(const string& p)
-		: _info(sFileInfo()), _path(string()) {
+		: _info(sFileInfo()), _parent(string()), _name(string()) {
 		init(p,"");
 	}
 	file::file(const string& p,const string& n)
-		: _info(sFileInfo()), _path(string()) {
+		: _info(sFileInfo()), _parent(string()), _name(string()) {
 		init(p,n);
 	}
 	file::file(const file& f)
-		: _info(f._info), _path(f._path) {
+		: _info(f._info), _parent(f._parent), _name(f._name) {
 	}
 	file& file::operator =(const file& f) {
 		_info = f._info;
-		_path = f._path;
+		_parent = f._parent;
+		_name = f._name;
 		return *this;
 	}
 	file::~file() {
 	}
 
-	vector<sDirEntry> file::list_files(bool showHidden,const string& pattern) {
+	vector<sDirEntry> file::list_files(bool showHidden,const string& pattern) const {
 		vector<sDirEntry> v;
 		sDirEntry e;
 		if(!is_dir())
 			throw io_exception("list_files failed: No directory",0);
-		tFD dir = opendir(_path.c_str());
+		tFD dir = opendir(path().c_str());
 		if(dir < 0)
 			throw io_exception("opendir failed",dir);
 		bool res;
@@ -59,32 +60,26 @@ namespace std {
 		return v;
 	}
 
-	string file::name() const {
-		string::size_type pos = _path.rfind('/');
-		if(pos == 0)
-			return "";
-		return string(_path.begin() + pos + 1,_path.end());
-	}
-	string file::parent() const {
-		string::size_type pos2,pos1 = _path.rfind('/');
-		if(pos1 == 0)
-			return "/";
-		pos2 = _path.rfind('/',pos1);
-		return string(_path.begin() + pos2 + 1,_path.begin() + pos1);
-	}
-
 	void file::init(const string& p,const string& n) {
 		char tmp[MAX_PATH_LEN];
-		if(!n.empty()) {
-			_path = p;
-			if(!_path.empty() && _path[_path.size() - 1] == '/')
-				_path.erase(_path.end() - 1,_path.end());
-			_path += n;
-		}
+		string apath(p);
+		apath += '/';
+		apath += n;
+		// TODO this does not work for "." and ".." because abspath "resolves" them
+		// this way we would for example stat "/" for "/boot/.." instead
+		u32 len = abspath(tmp,sizeof(tmp),apath.c_str());
+		if(len > 1)
+			tmp[len - 1] = '\0';
+		char *last = strrchr(tmp,'/');
+		string::size_type pos = last - tmp;
+		if(pos == 0)
+			_parent = '/';
 		else
-			_path = p;
-		abspath(tmp,sizeof(tmp),_path.c_str());
-		_path = tmp;
+			_parent = string(tmp,tmp + pos);
+		if(n == "." || n == "..")
+			_name = n;
+		else
+			_name = string(tmp + pos + 1,tmp + len);
 		s32 res = stat(tmp,&_info);
 		if(res < 0)
 			throw io_exception("stat failed",res);

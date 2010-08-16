@@ -222,7 +222,7 @@ namespace std {
 		else {
 			bool *b = (bool*)ptr;
 			*b = !arg.empty();
-			if(!*b)
+			if(*b)
 				_free.erase_first(*pos);
 		}
 	}

@@ -64,7 +64,7 @@ namespace std {
 		/**
 		 * Destructor
 		 */
-		~file();
+		virtual ~file();
 
 		/**
 		 * Builds a vector with all entries in the directory denoted by this file-object.
@@ -73,7 +73,7 @@ namespace std {
 		 * @param showHidden wether to include hidden files/folders
 		 * @return the vector
 		 */
-		vector<sDirEntry> list_files(bool showHidden,const string& pattern = string());
+		vector<sDirEntry> list_files(bool showHidden,const string& pattern = string()) const;
 
 		/**
 		 * @return the mode of the file
@@ -155,16 +155,20 @@ namespace std {
 		/**
 		 * @return the filename
 		 */
-		string name() const;
+		const string &name() const {
+			return _name;
+		}
 		/**
 		 * @return the parent-path
 		 */
-		string parent() const;
+		const string &parent() const {
+			return _parent;
+		}
 		/**
 		 * @return the absolute path
 		 */
 		string path() const {
-			return _path;
+			return _parent + "/" + _name;
 		}
 
 	private:
@@ -179,7 +183,8 @@ namespace std {
 
 	private:
 		sFileInfo _info;
-		string _path;
+		string _parent;
+		string _name;
 	};
 }
 

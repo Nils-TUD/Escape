@@ -74,39 +74,43 @@ void my::doIt() {
 }
 #endif
 
-static void usage(const char *name) {
-	cerr << "Usage: " << name << " -f <fields> [-d <delim>] [<file>]\n" << endl;
-	cerr << "	-f: <fields> may be:\n" << endl;
-	cerr << "		N		N'th field, counted from 1\n" << endl;
-	cerr << "		N-		from N'th field, to end of line\n" << endl;
-	cerr << "		N-M		from N'th to M'th (included) field\n" << endl;
-	cerr << "		-M		from first to M'th (included) field\n" << endl;
-	cerr << "	-d: use <delim> as delimiter instead of TAB\n" << endl;
-	exit(EXIT_FAILURE);
+class foo : public exception {
+public:
+	foo(const string& msg) : _msg(msg) {}
+	virtual ~foo() throw() {}
+	virtual const char* what() const throw() {
+		return _msg.c_str();
+	}
+
+private:
+	string _msg;
+};
+
+static void myfunc() {
+	throw cmdargs_error("test");
 }
 
 int main(int argc,char **argv) {
 	string fields;
-	string delim("\t");
 	cmdargs args(argc,argv,0);
 	try {
-		args.parse("f=s* d=s",&fields,&delim);
-		if(args.is_help())
-			usage(argv[0]);
+		//args.parse("f=s*",&fields);
+		throw cmdargs_error("foo");
+	}
+	catch(const cmdargs_error& f) {
+		cerr << "Catched exception" << endl;
+	}
+	catch(...) {
+		cerr << "Catchall" << endl;
+	}
+	/*string fields;
+	cmdargs args(argc,argv,0);
+	try {
+		args.parse("f=s*",&fields);
 	}
 	catch(const cmdargs_error& e) {
 		cerr << "Invalid arguments: " << e.what() << endl;
-		usage(argv[0]);
-	}
-
-	cout << "fields=" << fields << endl;
-	cout << "delim=" << delim << endl;
-
-	cout << "Free args:" << endl;
-	const vector<string*> &fargs = args.get_free();
-	for(vector<string*>::const_iterator it = fargs.begin(); it != fargs.end(); ++it)
-		cout << **it << endl;
-	cout << "Done" << endl;
+	}*/
 
 #if 0
 	int x;

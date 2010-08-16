@@ -27,7 +27,7 @@
 s32 vfprintf(FILE *file,const char *fmt,va_list ap) {
 	s32 res = 0;
 	sIOStream *s = (sIOStream*)file;
-	assert(s->out);
+	assert(s && s->out);
 	TRY {
 		res = s->out->vwritef(s->out,fmt,ap);
 	}

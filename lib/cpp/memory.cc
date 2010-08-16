@@ -19,7 +19,7 @@
 
 namespace std {
 	template<class Y>
-	auto_ptr_ref<Y>::auto_ptr_ref(Y *p)
+	inline auto_ptr_ref<Y>::auto_ptr_ref(Y *p)
 		: _p(p) {
 	}
 
@@ -56,7 +56,7 @@ namespace std {
 
 	template<class X>
 	inline auto_ptr<X>::~auto_ptr() throw() {
-		delete _p;
+		reset(NULL);
 	}
 
 	template<class X>
@@ -79,31 +79,48 @@ namespace std {
 	}
 	template<class X>
 	void auto_ptr<X>::reset(X* p) throw() {
-		if(_p != p)
+		if(_p != p) {
 			delete _p;
-		_p = p;
+			_p = p;
+		}
 	}
 
 	template<class X>
-	auto_ptr<X>::auto_ptr(auto_ptr_ref<X> r) throw()
+	inline auto_ptr<X>::auto_ptr(auto_ptr_ref<X> r) throw()
 		: _p(r._p) {
 	}
 	template<class X>
 	template<class Y>
-	auto_ptr<X>::operator auto_ptr_ref<Y>() throw() {
+	inline auto_ptr<X>::operator auto_ptr_ref<Y>() throw() {
 		return auto_ptr_ref<Y>(release());
 	}
 	template<class X>
 	template<class Y>
-	auto_ptr<X>::operator auto_ptr<Y>() throw() {
+	inline auto_ptr<X>::operator auto_ptr<Y>() throw() {
 		return auto_ptr<Y>(release());
 	}
 	template<class X>
 	auto_ptr<X>& auto_ptr<X>::operator =(auto_ptr_ref<X> r) throw() {
-		if(r._p != _p) {
-			delete _p;
-			_p = r._p;
-		}
+		reset(r._p);
 		return *this;
+	}
+
+	template<class X>
+	inline auto_array<X>::auto_array(X* p) throw()
+		: auto_ptr<X>(p) {
+	}
+	template<class X>
+	inline auto_array<X>::~auto_array() throw() {
+	}
+	template<class X>
+	inline X& auto_array<X>::operator [](int index) const throw() {
+		return this->_p[index];
+	}
+	template<class X>
+	void auto_array<X>::reset(X* p) throw() {
+		if(this->_p != p) {
+			delete[] this->_p;
+			this->_p = p;
+		}
 	}
 }

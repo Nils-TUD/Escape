@@ -18,6 +18,7 @@
  */
 
 #include <impl/streams/stringbuf.h>
+#include <stdio.h>
 
 namespace std {
 	stringbuf::stringbuf(ios_base::openmode which)
@@ -50,14 +51,14 @@ namespace std {
 		if(!(_mode & ios_base::in))
 			throw bad_state(string("No read-permission"));
 		if(_pos >= _str.length())
-			throw eof_reached();
+			return EOF;
 		return _str[_pos];
 	}
 	stringbuf::char_type stringbuf::get() {
 		if(!(_mode & ios_base::in))
 			throw bad_state(string("No read-permission"));
 		if(_pos >= _str.length())
-			throw eof_reached();
+			return EOF;
 		return _str[_pos++];
 	}
 	void stringbuf::unget() {

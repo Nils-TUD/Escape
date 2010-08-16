@@ -40,6 +40,7 @@ static void test_find_first_of(void);
 static void test_find_last_of(void);
 static void test_find_first_not_of(void);
 static void test_find_last_not_of(void);
+static void test_trim(void);
 
 /* our test-module */
 sTestModule tModString = {
@@ -63,6 +64,7 @@ static void test_string(void) {
 	test_find_last_of();
 	test_find_first_not_of();
 	test_find_last_not_of();
+	test_trim();
 }
 
 static void test_constr(void) {
@@ -462,6 +464,61 @@ static void test_find_last_not_of(void) {
 	test_assertUInt(s1.find_last_not_of("abc"),6);
 	test_assertUInt(s1.find_last_not_of(""),6);
 	test_assertUInt(s1.find_last_not_of("b"),6);
+
+	test_caseSucceded();
+}
+
+static void test_trim(void) {
+	test_caseStart("Testing trim()");
+
+	{
+		string s("mystring");
+		string::size_type count = s.trim();
+		test_assertStr(s.c_str(),"mystring");
+		test_assertUInt(count,0);
+	}
+	{
+		string s(" foo ");
+		string::size_type count = s.trim();
+		test_assertStr(s.c_str(),"foo");
+		test_assertUInt(count,2);
+	}
+	{
+		string s("\t\t a");
+		string::size_type count = s.trim();
+		test_assertStr(s.c_str(),"a");
+		test_assertUInt(count,3);
+	}
+	{
+		string s("   \t");
+		string::size_type count = s.trim();
+		test_assertStr(s.c_str(),"");
+		test_assertUInt(count,4);
+	}
+	{
+		string s("foo    ");
+		string::size_type count = s.ltrim();
+		test_assertStr(s.c_str(),"foo    ");
+		test_assertUInt(count,0);
+	}
+	{
+		string s("foo    ");
+		string::size_type count = s.rtrim();
+		test_assertStr(s.c_str(),"foo");
+		test_assertUInt(count,4);
+	}
+	{
+		string s("   foo");
+		string::size_type count = s.rtrim();
+		test_assertStr(s.c_str(),"   foo");
+		test_assertUInt(count,0);
+	}
+	{
+		string s("   foo");
+		string::size_type count = s.ltrim();
+		test_assertStr(s.c_str(),"foo");
+		test_assertUInt(count,3);
+	}
 
 	test_caseSucceded();
 }

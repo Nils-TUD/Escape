@@ -56,13 +56,59 @@ _start:
 	jmp		*%eax
 
 lookup_resolveStart:
+.ifndef CALLTRACE_PID
 	call	lookup_resolve
-	add		$8,%esp
-	# jump to function
-	jmp		*%eax
+	add		$8,%esp												# remove args of lookup_resolve from stack
+	jmp		*%eax													# jump to function
+.else
+	push	8(%esp)												# push ret-addr for the call
+	call	lookup_resolve
+	add		$12,%esp											# remove args of lookup_resolve from stack
+	push	%eax
+	call	getpid												# get pid
+	cmp		$CALLTRACE_PID,%eax						# if not the requested pid skip the whole stuff
+	pop		%eax
+	jne		1f
+	mov		(lookupDepth),%ecx
+	cmp		$100,%ecx											# we have only 100 places...
+	jae		1f
+	mov		$lookupStack,%edx
+	lea		(%edx,%ecx,4),%edx						# load addr to store ret-addr at
+	add		$1,%ecx												# inc depth
+	mov		%ecx,(lookupDepth)						# store
+	mov		(%esp),%ecx										# get real return-addr
+	mov		%ecx,(%edx)										# save
+	mov		$lookup_resolveFinish,%ecx		# replace with our own
+	mov		%ecx,(%esp)
+1:
+	jmp		*%eax													# jump to function
+
+lookup_resolveFinish:
+	.extern lookup_tracePop
+	push	%eax
+	call	lookup_tracePop
+	pop		%eax
+	mov		(lookupDepth),%ecx						# load depth
+	sub		$1,%ecx												# decrement
+	mov		%ecx,(lookupDepth)						# store
+	mov		$lookupStack,%edx							# get stack
+	lea		(%edx,%ecx,4),%edx						# build addr to our ret-addr
+	mov		(%edx),%ecx										# get ret-addr
+	jmp		*%ecx													# jump to that addr
+.endif
 
 # all signal-handler return to this "function"
 sigRetFunc:
 	mov		$SYSCALL_ACKSIG,%eax
 	int		$SYSCALL_IRQ
 	# never reached
+
+.ifdef CALLTRACE_PID
+.section .data
+lookupDepth:
+	.long 0
+lookupStack:
+	.rept 100
+		.long 0
+	.endr
+.endif

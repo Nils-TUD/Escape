@@ -27,6 +27,8 @@
 
 #define TEXT_BEGIN		0x1000
 
+/*#define CALLTRACE_PID	24*/
+
 #define LD_BIND_NOW		0
 #define DEBUG_LOADER	0
 #define PRINT_LOADADDR	0
@@ -42,6 +44,7 @@ struct sSharedLib {
 	tFD fd;
 	sBinDesc bin;
 	u32 loadAddr;
+	u32 textSize;
 	Elf32_Dyn *dyn;
 	Elf32_Word *hashTbl;
 	Elf32_Rel *jmprel;

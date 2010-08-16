@@ -40,7 +40,11 @@ extern void lookup_resolveStart(void);
  * @param offset the offset (in bytes) in the DT_JMPREL-table.
  * @return the address of the symbol
  */
+#ifdef CALLTRACE_PID
+u32 lookup_resolve(u32 retAddr,sSharedLib *lib,u32 offset);
+#else
 u32 lookup_resolve(sSharedLib *lib,u32 offset);
+#endif
 
 /**
  * Resolves a symbol by name

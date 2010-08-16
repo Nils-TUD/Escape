@@ -26,7 +26,7 @@
 s32 fputs(const char *str,FILE *file) {
 	s32 res = 0;
 	sIOStream *s = (sIOStream*)file;
-	assert(s->out);
+	assert(s && s->out);
 	TRY {
 		res = s->out->writes(s->out,str);
 	}

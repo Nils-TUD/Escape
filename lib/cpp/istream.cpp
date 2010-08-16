@@ -36,12 +36,13 @@ namespace std {
 						int_type c = buf->peek();
 						if(!isspace(c))
 							break;
+						if(c == EOF) {
+							is.setstate(ios::failbit | ios::eofbit);
+							break;
+						}
 						buf->get();
 					}
 				}
-			}
-			catch(eof_reached&) {
-				is.setstate(ios::failbit | ios::eofbit);
 			}
 			catch(...) {
 				is.setstate(ios::failbit);
@@ -135,14 +136,15 @@ namespace std {
 			try {
 				while(*exp) {
 					char_type c = _sb->get();
+					if(c == EOF) {
+						ios::setstate(ios_base::eofbit);
+						return false;
+					}
 					if(c != *exp)
 						return false;
 					exp++;
 				}
 				return true;
-			}
-			catch(eof_reached&) {
-				ios::setstate(ios_base::eofbit);
 			}
 			catch(...) {
 				ios::setstate(ios_base::badbit);
@@ -162,6 +164,10 @@ namespace std {
 				// handle '-'
 				if(sign) {
 					char_type rc = _sb->peek();
+					if(rc == EOF) {
+						ios::setstate(ios_base::eofbit);
+						goto done;
+					}
 					if(rc == '-') {
 						neg = true;
 						_sb->get();
@@ -174,7 +180,12 @@ namespace std {
 				if(remain == 0)
 					remain = -1;
 				while(remain < 0 || remain-- > 0) {
-					char_type tc = tolower(_sb->get());
+					char_type tc = _sb->get();
+					if(tc == EOF) {
+						ios::setstate(ios_base::eofbit);
+						break;
+					}
+					tc = tolower(tc);
 					if(tc >= '0' && tc <= numTable[base - 1]) {
 						if(base > 10 && tc >= 'a')
 							n = n * base + (10 + tc - 'a');
@@ -187,12 +198,10 @@ namespace std {
 					}
 				}
 			}
-			catch(eof_reached&) {
-				ios::setstate(ios_base::eofbit);
-			}
 			catch(...) {
 				ios::setstate(ios_base::badbit);
 			}
+			done:
 			if(neg)
 				n = -n;
 			ios_base::width(0);
@@ -209,10 +218,10 @@ namespace std {
 		if(se) {
 			try {
 				c = _sb->get();
-				_lastcount = 1;
-			}
-			catch(eof_reached&) {
-				ios::setstate(ios_base::eofbit);
+				if(c == EOF)
+					ios::setstate(ios_base::eofbit);
+				else
+					_lastcount = 1;
 			}
 			catch(...) {
 				ios::setstate(ios_base::badbit);
@@ -234,6 +243,10 @@ namespace std {
 			try {
 				while(n > 1) {
 					char_type c = _sb->peek();
+					if(c == EOF) {
+						ios::setstate(ios_base::eofbit);
+						break;
+					}
 					if(c == delim)
 						break;
 					_sb->get();
@@ -241,9 +254,6 @@ namespace std {
 					n--;
 					_lastcount++;
 				}
-			}
-			catch(eof_reached&) {
-				ios::setstate(ios_base::eofbit);
 			}
 			catch(...) {
 				ios::setstate(ios_base::badbit);
@@ -265,15 +275,16 @@ namespace std {
 			try {
 				while(true) {
 					char_type c = _sb->peek();
+					if(c == EOF) {
+						ios::setstate(ios_base::eofbit);
+						break;
+					}
 					if(c == delim)
 						break;
-					_sb->get();
 					sb.put(c);
+					_sb->get();
 					_lastcount++;
 				}
-			}
-			catch(eof_reached&) {
-				ios::setstate(ios_base::eofbit);
 			}
 			catch(...) {
 				ios::setstate(ios_base::badbit);
@@ -293,14 +304,15 @@ namespace std {
 			try {
 				while(n == 0 || n-- > 1) {
 					char_type c = _sb->get();
+					if(c == EOF) {
+						ios::setstate(ios_base::eofbit);
+						break;
+					}
+					_lastcount++;
 					if(isspace(c))
 						break;
 					*s++ = c;
-					_lastcount++;
 				}
-			}
-			catch(eof_reached&) {
-				ios::setstate(ios_base::eofbit);
 			}
 			catch(...) {
 				ios::setstate(ios_base::badbit);
@@ -321,14 +333,15 @@ namespace std {
 			try {
 				while(n == 0 || n-- > 1) {
 					char_type c = _sb->get();
+					if(c == EOF) {
+						ios::setstate(ios_base::eofbit);
+						break;
+					}
+					_lastcount++;
 					if(isspace(c))
 						break;
 					sb.put(c);
-					_lastcount++;
 				}
-			}
-			catch(eof_reached&) {
-				ios::setstate(ios_base::eofbit);
 			}
 			catch(...) {
 				ios::setstate(ios_base::badbit);
@@ -351,15 +364,16 @@ namespace std {
 			try {
 				while(n > 1) {
 					char_type c = _sb->get();
+					if(c == EOF) {
+						ios::setstate(ios_base::eofbit);
+						break;
+					}
+					_lastcount++;
 					if(c == delim)
 						break;
 					*s++ = c;
 					n--;
-					_lastcount++;
 				}
-			}
-			catch(eof_reached&) {
-				ios::setstate(ios_base::eofbit);
 			}
 			catch(...) {
 				ios::setstate(ios_base::badbit);
@@ -380,14 +394,15 @@ namespace std {
 				streamsize n = ios_base::width();
 				while(n == 0 || n-- > 1) {
 					char_type c = _sb->get();
+					if(c == EOF) {
+						ios::setstate(ios_base::eofbit);
+						break;
+					}
+					_lastcount++;
 					if(c == delim)
 						break;
 					sb.put(c);
-					_lastcount++;
 				}
-			}
-			catch(eof_reached&) {
-				ios::setstate(ios_base::eofbit);
 			}
 			catch(...) {
 				ios::setstate(ios_base::badbit);
@@ -412,12 +427,13 @@ namespace std {
 						_lastcount++;
 					}
 					char_type c = _sb->get();
+					if(c == EOF) {
+						ios::setstate(ios_base::eofbit);
+						break;
+					}
 					if(c == delim)
 						break;
 				}
-			}
-			catch(eof_reached&) {
-				ios::setstate(ios_base::eofbit);
 			}
 			catch(...) {
 				ios::setstate(ios_base::badbit);
@@ -430,28 +446,25 @@ namespace std {
 	}
 
 	istream::char_type istream::peek() {
+		char_type c = EOF;
 		sentry se(*this,true);
 		if(se) {
 			try {
-				return _sb->peek();
-			}
-			catch(eof_reached&) {
-				ios::setstate(ios_base::eofbit);
+				c = _sb->peek();
+				if(c == EOF)
+					ios::setstate(ios_base::eofbit);
 			}
 			catch(...) {
 				ios::setstate(ios_base::failbit | ios_base::badbit);
 			}
 		}
-		return EOF;
+		return c;
 	}
 	istream& istream::unget() {
 		sentry se(*this,true);
 		if(se) {
 			try {
 				_sb->unget();
-			}
-			catch(eof_reached&) {
-				ios::setstate(ios_base::eofbit);
 			}
 			catch(...) {
 				ios::setstate(ios_base::failbit | ios_base::badbit);

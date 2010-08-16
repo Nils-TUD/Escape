@@ -40,7 +40,8 @@ $(BUILDL)/%.o:		%.c
 
 $(BUILDL)/%.s.o:	%.s
 		@echo "	" AS $<
-		@$(AS) $(ASFLAGS) -o $@ $<
+		#@$(AS) $(ASFLAGS) --defsym CALLTRACE_PID=24 -o $@ $< -MD $(BUILDL)/startup.d
+		@$(AS) $(ASFLAGS) -o $@ $< -MD $(BUILDL)/startup.d
 
 -include $(DEPS)
 

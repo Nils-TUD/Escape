@@ -118,4 +118,15 @@ namespace std {
 	bool operator <=(const reverse_iterator<Iterator1>& x,const reverse_iterator<Iterator2>& y) {
 		return x.base() <= y.base();
 	}
+
+	template<class Iterator1,class Iterator2>
+	typename reverse_iterator<Iterator1>::difference_type operator -(
+			const reverse_iterator<Iterator1>& x,const reverse_iterator<Iterator2>& y) {
+		return y.base() - x.base();
+	}
+	template<class Iterator>
+	reverse_iterator<Iterator> operator +(typename reverse_iterator<Iterator>::difference_type n,
+			const reverse_iterator<Iterator>& x) {
+		return reverse_iterator<Iterator>(x.base() - n);
+	}
 }

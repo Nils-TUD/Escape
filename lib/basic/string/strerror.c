@@ -95,9 +95,9 @@ static const char *msgs[] = {
 	/* -70 (ERR_SETPROT_IMPOSSIBLE) */		"Setting the region-protection is not possible for the chosen region",
 };
 
-const char *strerror(s32 errnum) {
+char *strerror(s32 errnum) {
 	if((u32)-errnum < ARRAY_SIZE(msgs))
-		return msgs[-errnum];
+		return (char*)msgs[-errnum];
 	else
-		return msgs[0];
+		return (char*)msgs[0];
 }

@@ -26,7 +26,7 @@
 s32 fgetc(FILE *stream) {
 	s32 res = 0;
 	sIOStream *s = (sIOStream*)stream;
-	assert(s->in);
+	assert(s && s->in);
 	TRY {
 		res = s->in->readc(s->in);
 	}

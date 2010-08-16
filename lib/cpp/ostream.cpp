@@ -273,6 +273,14 @@ namespace std {
 		writeUnsigned(n);
 		return *this;
 	}
+	ostream& ostream::operator <<(long long n) {
+		writeSigned(n);
+		return *this;
+	}
+	ostream& ostream::operator <<(unsigned long long n) {
+		writeUnsigned(n);
+		return *this;
+	}
 	ostream& ostream::operator <<(float f) {
 		writeDouble(f);
 		return *this;
@@ -303,8 +311,8 @@ namespace std {
 					while(m-- > 0)
 						_sb->put(sb->get());
 				}
-				catch(eof_reached&) {
-					// simply stop
+				catch(...) {
+					ios::setstate(ios_base::badbit);
 				}
 				if((ios_base::flags() & ios_base::left) && pwidth > n)
 					writePad(pwidth - n);
@@ -351,7 +359,8 @@ namespace std {
 		return *this;
 	}
 
-	void ostream::writeSigned(signed long n) {
+	template<class T>
+	void ostream::writeSigned(T n) {
 		// write as unsigned if oct or hex is desired
 		if(!(ios_base::flags() & ios_base::dec)) {
 			writeUnsigned(static_cast<unsigned long>(n));
@@ -364,7 +373,7 @@ namespace std {
 				streamsize pwidth = ios::width();
 				// determine width
 				if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
-					nwidth = getnwidth(n);
+					nwidth = getlwidth(n);
 					if(ios_base::flags() & ios_base::showpos)
 						nwidth++;
 				}
@@ -387,7 +396,8 @@ namespace std {
 		}
 	}
 
-	void ostream::writeUnsigned(unsigned long u) {
+	template<class T>
+	void ostream::writeUnsigned(T u) {
 		static const char *numTableSmall = "0123456789abcdef";
 		static const char *numTableBig = "0123456789ABCDEF";
 		sentry se(*this);
@@ -398,7 +408,7 @@ namespace std {
 				streamsize nwidth = 0;
 				streamsize pwidth = ios::width();
 				if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
-					nwidth = getuwidth(u,base);
+					nwidth = getulwidth(u,base);
 					if(u > 0 && (ios_base::flags() & ios_base::showbase)) {
 						switch(base) {
 							case 16:
@@ -470,7 +480,8 @@ namespace std {
 		}
 	}
 
-	void ostream::writeSChars(signed long n) {
+	template<class T>
+	void ostream::writeSChars(T n) {
 		if(n < 0) {
 			_sb->put('-');
 			n = -n;
@@ -480,7 +491,8 @@ namespace std {
 		_sb->put('0' + (n % 10));
 	}
 
-	void ostream::writeUChars(unsigned long u,unsigned int base,const char *hexchars) {
+	template<class T>
+	void ostream::writeUChars(T u,unsigned int base,const char *hexchars) {
 		if(u >= base)
 			writeUChars(u / base,base,hexchars);
 		_sb->put(hexchars[(u % base)]);

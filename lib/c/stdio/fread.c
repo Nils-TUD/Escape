@@ -26,7 +26,7 @@
 size_t fread(void *ptr,size_t size,size_t count,FILE *file) {
 	size_t res = 0;
 	sIOStream *s = (sIOStream*)file;
-	assert(s->in);
+	assert(s && s->in);
 	TRY {
 		res = s->in->read(s->in,ptr,size * count) / size;
 	}

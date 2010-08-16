@@ -26,7 +26,7 @@
 s32 freadesc(FILE *f,s32 *n1,s32 *n2,s32 *n3) {
 	s32 res = 0;
 	sIOStream *s = (sIOStream*)f;
-	assert(s->in);
+	assert(s && s->in);
 	TRY {
 		res = s->in->readEsc(s->in,n1,n2,n3);
 	}

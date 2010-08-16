@@ -45,7 +45,7 @@ namespace std {
 		vector<sDirEntry> v;
 		sDirEntry e;
 		if(!is_dir())
-			throw io_exception("list_files failed: No directory");
+			throw io_exception("list_files failed: No directory",0);
 		tFD dir = opendir(_path.c_str());
 		if(dir < 0)
 			throw io_exception("opendir failed",dir);

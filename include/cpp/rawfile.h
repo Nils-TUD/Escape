@@ -42,6 +42,7 @@ namespace std {
 		static const open_type READ		= 1;
 		static const open_type WRITE	= 2;
 		static const open_type APPEND	= 4;
+		static const open_type TRUNCATE	= 8;
 		static const seek_type SET		= SEEK_SET;
 		static const seek_type CUR		= SEEK_CUR;
 		static const seek_type END		= SEEK_END;
@@ -78,6 +79,12 @@ namespace std {
 		 * @throws io_exception if it goes wrong
 		 */
 		void open(const string& filename,open_type mode);
+		/**
+		 * Uses the given file-descriptor. Assumes it to be valid
+		 *
+		 * @param fd the file-descriptor
+		 */
+		void use(tFD fd);
 		/**
 		 * Calls ::seek(fd,<offset>,<whence>)
 		 *

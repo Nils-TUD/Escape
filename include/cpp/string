@@ -531,6 +531,16 @@ namespace std {
 					size_type n2) const;
 		int compare(size_type pos1,size_type n1,const char* s,size_type n2) const;
 
+		/**
+		 * Trims the string, i.e. it removes all whitespace determined by ::isspace() at the
+		 * beginning, at the end or both.
+		 *
+		 * @return number of removed characters
+		 */
+		size_type trim();
+		size_type ltrim();
+		size_type rtrim();
+
 	private:
 		char* _str;
 		size_type _size;

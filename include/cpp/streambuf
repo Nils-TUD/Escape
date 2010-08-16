@@ -25,15 +25,6 @@
 
 namespace std {
 	/**
-	 * The exception that should be thrown if a buffer is at EOF
-	 */
-	class eof_reached : public std::exception {
-	public:
-		explicit eof_reached();
-		virtual const char* what() const throw();
-	};
-
-	/**
 	 * The exception that should be thrown if a buffer is in an invalid state for an operation
 	 */
 	class bad_state : public std::exception {

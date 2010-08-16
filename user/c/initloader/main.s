@@ -42,4 +42,4 @@ args:
 	.long			progName,0
 
 progName:
-	.ascii		"/bin/init"
+	.ascii		"/bin/cppinit"

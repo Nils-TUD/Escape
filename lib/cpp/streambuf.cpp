@@ -20,12 +20,6 @@
 #include <streambuf>
 
 namespace std {
-	eof_reached::eof_reached() {
-	}
-	const char* eof_reached::what() const throw() {
-		return "EOF reached";
-	}
-
 	bad_state::bad_state(const string &msg) : _msg(msg.c_str()) {
 	}
 	const char* bad_state::what() const throw() {

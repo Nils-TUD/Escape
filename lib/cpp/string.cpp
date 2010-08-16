@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sstream>
+#include <ctype.h>
 
 namespace std {
 	// === constructors ===
@@ -539,6 +540,31 @@ namespace std {
 		return strncmp(substr(pos1,n1)._str,s,n2);
 	}
 
+	// === trim ===
+	string::size_type string::trim() {
+		return ltrim() + rtrim();
+	}
+	string::size_type string::ltrim() {
+		iterator it = begin();
+		for(; it != end(); ++it) {
+			if(!::isspace(*it))
+				break;
+		}
+		size_type count = distance(begin(),it);
+		erase(begin(),it);
+		return count;
+	}
+	string::size_type string::rtrim() {
+		reverse_iterator it = rbegin();
+		for(; it != rend(); ++it) {
+			if(!::isspace(*it))
+				break;
+		}
+		size_type count = distance(rbegin(),it);
+		erase(end() - count,end());
+		return count;
+	}
+
 	// === global operator+ ===
 	string operator+(const string& lhs,const string& rhs) {
 		return string(lhs).append(rhs);
@@ -635,7 +661,7 @@ namespace std {
 		return getline(is,str,'\n');
 	}
 	istream& getline(istream& is,string& str,char delim) {
-		stringbuf sb(str);
+		stringbuf sb("");
 		is.getline(sb,delim);
 		str = sb.str();
 		return is;

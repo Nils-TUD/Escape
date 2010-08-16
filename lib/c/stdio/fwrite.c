@@ -26,7 +26,7 @@
 size_t fwrite(const void *ptr,size_t size,size_t count,FILE *file) {
 	size_t res = 0;
 	sIOStream *s = (sIOStream*)file;
-	assert(s->out);
+	assert(s && s->out);
 	TRY {
 		res = (size_t)s->out->write(s->out,ptr,size * count) / count;
 	}

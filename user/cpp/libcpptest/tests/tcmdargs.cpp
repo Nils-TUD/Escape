@@ -22,6 +22,7 @@
 #include <esc/test.h>
 #include <errors.h>
 #include <stdlib.h>
+#include <iostream>
 #include "tcmdargs.h"
 
 /* forward declarations */
@@ -149,7 +150,7 @@ static void test_reqNFree(void) {
 	// one exception before to allocate mem for exception-stuff
 	// this way we can test wether everything that we've under control is free'd
 	try {
-		throw cmdargs_error("foo");
+		throw cmdargs_error("");
 	}
 	catch(...) {
 	}
@@ -230,7 +231,7 @@ static void test_reqNFree(void) {
 		catch(const cmdargs_error& e) {
 			ex = true;
 		}
-		const vector<string*> fargs = a->get_free();
+		const vector<string*>& fargs = a->get_free();
 		test_assertUInt(fargs.size(),3);
 		test_assertStr(fargs[0]->c_str(),"free1");
 		test_assertStr(fargs[1]->c_str(),"-free2");

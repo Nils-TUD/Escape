@@ -37,30 +37,38 @@ namespace std {
 	}
 
 	void rawfile::open(const string& filename,open_type mode) {
-		char tmp[MAX_PATH_LEN];
+		close();
 		u8 flags = 0;
 		if(mode & READ)
 			flags |= IO_READ;
 		if(mode & WRITE)
-			flags |= IO_WRITE;
+			flags |= IO_WRITE | IO_CREATE;
 		if(mode & APPEND)
 			flags |= IO_APPEND;
+		if(mode & TRUNCATE)
+			flags |= IO_TRUNCATE;
+		char tmp[MAX_PATH_LEN];
 		abspath(tmp,sizeof(tmp),filename.c_str());
 		_fd = ::open(tmp,flags);
 		if(_fd < 0)
 			throw io_exception("Unable to open",_fd);
 		_mode = mode;
 	}
+	void rawfile::use(tFD fd) {
+		close();
+		_fd = fd;
+		_mode = READ | WRITE;
+	}
 	void rawfile::seek(off_type offset,int whence) {
 		if(_fd < 0)
-			throw io_exception("File not opened");
+			throw io_exception("File not opened",0);
 		s32 res;
 		if((res = ::seek(_fd,offset,whence)) < 0)
 			throw io_exception("Unable to seek",res);
 	}
 	rawfile::size_type rawfile::read(void *data,size_type size,size_type count) {
 		if(_fd < 0 || !(_mode & READ))
-			throw io_exception("File not opened for reading");
+			throw io_exception("File not opened for reading",0);
 		size_type res = RETRY(::read(_fd,data,size * count));
 		if((s32)res < 0)
 			throw io_exception("Unable to read",res);
@@ -68,7 +76,7 @@ namespace std {
 	}
 	rawfile::size_type rawfile::write(const void *data,size_type size,size_type count) {
 		if(_fd < 0 || !(_mode & WRITE))
-			throw io_exception("File not opened for writing");
+			throw io_exception("File not opened for writing",0);
 		size_type res = ::write(_fd,data,size * count);
 		if((s32)res < 0)
 			throw io_exception("Unable to write",res);

@@ -102,6 +102,8 @@ namespace std {
 		ostream& operator <<(unsigned int n);
 		ostream& operator <<(long n);
 		ostream& operator <<(unsigned long n);
+		ostream& operator <<(long long n);
+		ostream& operator <<(unsigned long long n);
 		ostream& operator <<(float f);
 		ostream& operator <<(double f);
 		ostream& operator <<(long double f);
@@ -135,11 +137,15 @@ namespace std {
 		ostream& seekp(off_type,ios_base::seekdir);*/
 
 	private:
-		void writeSigned(signed long n);
-		void writeUnsigned(unsigned long u);
+		template<class T>
+		void writeSigned(T n);
+		template<class T>
+		void writeUnsigned(T u);
+		template<class T>
+		void writeSChars(T n);
+		template<class T>
+		void writeUChars(T u,unsigned int base,const char *hexchars);
 		void writeDouble(long double d);
-		void writeSChars(signed long n);
-		void writeUChars(unsigned long u,unsigned int base,const char *hexchars);
 		void writeDoubleChars(long double d);
 		void writePad(streamsize count);
 

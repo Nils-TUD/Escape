@@ -25,7 +25,12 @@
 
 namespace std {
 	template<class Iterator>
-	class reverse_iterator {
+	class reverse_iterator: public iterator<
+			typename iterator_traits<Iterator>::iterator_category,
+			typename iterator_traits<Iterator>::value_type,
+			typename iterator_traits<Iterator>::difference_type,
+			typename iterator_traits<Iterator>::pointer,
+			typename iterator_traits<Iterator>::reference> {
 	protected:
 		Iterator _it;
 	public:
@@ -62,14 +67,13 @@ namespace std {
 	bool operator >=(const reverse_iterator<Iterator1>& x,const reverse_iterator<Iterator2>& y);
 	template<class Iterator1,class Iterator2>
 	bool operator <=(const reverse_iterator<Iterator1>& x,const reverse_iterator<Iterator2>& y);
-#if 0
+
 	template<class Iterator1,class Iterator2>
-	typename reverse_iterator<Iterator1>::difference_type operator -(const reverse_iterator<
-			Iterator1>& x,const reverse_iterator<Iterator2>& y);
+	typename reverse_iterator<Iterator1>::difference_type operator -(
+			const reverse_iterator<Iterator1>& x,const reverse_iterator<Iterator2>& y);
 	template<class Iterator>
 	reverse_iterator<Iterator> operator +(typename reverse_iterator<Iterator>::difference_type n,
 			const reverse_iterator<Iterator>& x);
-#endif
 }
 
 #include "../../../../lib/cpp/impl/iterator/reverse_iterator.cc"

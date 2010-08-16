@@ -21,21 +21,32 @@
 #include <ctype.h>
 
 namespace std {
+	cmdargs_error::cmdargs_error(const string& arg)
+		: _msg(arg) {
+	}
+	cmdargs_error::~cmdargs_error() throw () {
+	}
+	const char* cmdargs_error::what() const throw () {
+		return _msg.c_str();
+	}
+
 	cmdargs::~cmdargs() {
 		for(vector<string*>::iterator it = _args.begin(); it != _args.end(); ++it)
 			delete *it;
 	}
 
 	void cmdargs::parse(const char *fmt,...) {
-		const char *helps[] = {"h","help","?"};
+		const char *helps[] = {"-h","--help","-?"};
 
 		// copy arguments to vector of strings
 		for(int i = 0; i < _argc; i++) {
 			// check if its a help-request
-			for(unsigned int j = 0; j < ARRAY_SIZE(helps); j++) {
-				if(strcmp(_argv[i],helps[j]) == 0) {
-					_ishelp = true;
-					break;
+			if(i > 0 && !_ishelp) {
+				for(unsigned int j = 0; j < ARRAY_SIZE(helps); j++) {
+					if(strcmp(_argv[i],helps[j]) == 0) {
+						_ishelp = true;
+						break;
+					}
 				}
 			}
 			_args.push_back(new string(_argv[i]));
@@ -49,25 +60,24 @@ namespace std {
 		// loop through the argument-specification and set the variables to the given arguments
 		va_list ap;
 		va_start(ap,fmt);
-		char *f = (char*)fmt;
-		while(*f) {
+		while(*fmt) {
 			string name;
 			bool required = false;
 			bool hasVal = false;
 			char c,type = '\0';
 			// first read the name
-			while((c = *f) && c != '=' && c != ' ' && c != '*') {
+			while((c = *fmt) && c != '=' && c != ' ' && c != '*') {
 				name += c;
-				f++;
+				fmt++;
 			}
 
 			// has it a value?
-			if(*f == '=') {
+			if(*fmt == '=') {
 				hasVal = true;
-				f++;
+				fmt++;
 				/* read val-type and if its required */
-				while(*f && *f != ' ') {
-					switch(*f) {
+				while(*fmt && *fmt != ' ') {
+					switch(*fmt) {
 						case 's':
 						case 'd':
 						case 'i':
@@ -75,13 +85,13 @@ namespace std {
 						case 'X':
 						case 'k':
 						case 'c':
-							type = *f;
+							type = *fmt;
 							break;
 						case '*':
 							required = true;
 							break;
 					}
-					f++;
+					fmt++;
 				}
 			}
 
@@ -93,7 +103,7 @@ namespace std {
 			setval(arg,pos,hasVal,type,va_arg(ap,void*));
 
 			/* to next */
-			while(*f && *f++ != ' ');
+			while(*fmt && *fmt++ != ' ');
 		}
 		va_end(ap);
 

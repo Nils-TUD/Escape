@@ -26,7 +26,7 @@
 s32 fputc(s32 c,FILE *file) {
 	s32 res = 0;
 	sIOStream *s = (sIOStream*)file;
-	assert(s->out);
+	assert(s && s->out);
 	TRY {
 		res = s->out->writec(s->out,c);
 	}

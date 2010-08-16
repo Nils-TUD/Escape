@@ -27,7 +27,7 @@
 s32 vfscanf(FILE *file,const char *fmt,va_list ap) {
 	s32 res = 0;
 	sIOStream *s = (sIOStream*)file;
-	assert(s->in);
+	assert(s && s->in);
 	TRY {
 		res = s->in->vreadf(s->in,fmt,ap);
 	}

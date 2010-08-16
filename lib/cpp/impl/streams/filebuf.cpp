@@ -18,6 +18,8 @@
  */
 
 #include <impl/streams/filebuf.h>
+#include <esc/dir.h>
+#include <stdio.h>
 
 namespace std {
 	filebuf::filebuf()
@@ -29,9 +31,11 @@ namespace std {
 	}
 
 	filebuf* filebuf::open(const char* s,ios_base::openmode mode) {
+		char path[MAX_PATH_LEN];
 		close();
 		unsigned char omode = getMode(mode);
-		_fd = ::open(s,omode);
+		abspath(path,sizeof(path),s);
+		_fd = ::open(path,omode);
 		if(_fd < 0)
 			return NULL;
 		_mode = mode;
@@ -99,7 +103,7 @@ namespace std {
 		if(_fd < 0 || !(_mode & ios_base::in))
 			throw bad_state("file not open for reading");
 		if(!fillBuffer())
-			throw eof_reached();
+			return EOF;
 		return _inBuf[_inPos];
 	}
 	filebuf::char_type filebuf::get() {

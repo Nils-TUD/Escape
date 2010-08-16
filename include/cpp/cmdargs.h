@@ -49,14 +49,9 @@ namespace std {
 	 */
 	class cmdargs_error : public exception {
 	public:
-		explicit cmdargs_error(const string& arg)
-			: _msg(arg) {
-		};
-		virtual ~cmdargs_error() throw () {
-		};
-		virtual const char* what() const throw () {
-			return _msg.c_str();
-		};
+		explicit cmdargs_error(const string& arg);
+		virtual ~cmdargs_error() throw ();
+		virtual const char* what() const throw ();
 	private:
 		string _msg;
 	};

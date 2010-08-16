@@ -25,7 +25,7 @@ else
 endif
 
 # wether to link drivers and user-apps statically or dynamically
-export LINKTYPE = static
+export LINKTYPE = dynamic
 
 # number of jobs passing to make
 export JOBS =
@@ -130,9 +130,9 @@ swapbl:
 
 dis:
 ifeq ($(APP),)
-		objdump -dSC -M intel $(BIN) | less
+		objdump -dSC $(BIN) | less
 else
-		objdump -dSC -M intel $(BUILD)/$(APP) | less
+		objdump -dSC $(BUILD)/$(APP) | less
 endif
 
 elf:

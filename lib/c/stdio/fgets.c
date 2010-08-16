@@ -26,7 +26,7 @@
 char *fgets(char *str,s32 max,FILE *file) {
 	char *res = str;
 	sIOStream *s = (sIOStream*)file;
-	assert(s->in);
+	assert(s && s->in);
 	TRY {
 		s->in->readline(s->in,str,max);
 	}

@@ -26,7 +26,7 @@
 s32 ungetc(s32 c,FILE *file) {
 	s32 res = 0;
 	sIOStream *s = (sIOStream*)file;
-	assert(s->in);
+	assert(s && s->in);
 	TRY {
 		s->in->unread(s->in,c);
 	}

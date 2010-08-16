@@ -88,7 +88,8 @@ u32 load_setupProg(tFD binFd) {
 	sSLNode *n,*m;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
-		debugf("[%d] Loaded %s @ %x with deps: ",getpid(),l->name ? l->name : "-Main-",l->loadAddr);
+		debugf("[%d] Loaded %s @ %x .. %x with deps: ",
+				getpid(),l->name ? l->name : "-Main-",l->loadAddr,l->loadAddr + l->textSize);
 		for(m = sll_begin(l->deps); m != NULL; m = m->next) {
 			sSharedLib *dl = (sSharedLib*)m->data;
 			debugf("%s ",dl->name);
@@ -132,8 +133,10 @@ static u32 load_addSegments(void) {
 				if(addr == 0)
 					dlerror("Unable to add segment %d (type %d)",j,pheader.p_type);
 				/* store load-address of text */
-				if(loadSeg == 0 && l->name != NULL)
+				if(loadSeg == 0 && l->name != NULL) {
 					l->loadAddr = addr;
+					l->textSize = pheader.p_memsz;
+				}
 				loadSeg++;
 			}
 		}
@@ -295,10 +298,24 @@ static void load_relocLib(sSharedLib *l) {
 			else if(relType == R_386_32) {
 				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
 				Elf32_Sym *sym = l->dynsyms + ELF32_R_SYM(rel[x].r_info);
-				DBGDL("Rel (32) off=%x orgoff=%x symval=%x org=%x reloc=%x\n",
-						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr,
-						sym->st_value + l->loadAddr);
-				*ptr += sym->st_value + l->loadAddr;
+				/* TODO well, again I can't explain why this is needed. If I understand
+				 * the code in glibc/sysdeps/i386/dl-machine.h correct, they just do a
+				 * *ptr += sym->st_value + l->loadAddr. But resolving the symbol when the
+				 * address is 0 seems to be the only way to get exception-throwing in c++
+				 * working. Because otherwise the typeinfo-stuff doesn't get relocated
+				 * correctly. And of course the elf-format-specification does not tell
+				 * anything about this.. :D
+				 */
+				if(sym->st_value == 0) {
+					u32 value;
+					if(!lookup_byName(l,l->dynstrtbl + sym->st_name,&value))
+						dlerror("Unable to find symbol %s",l->dynstrtbl + sym->st_name);
+					*ptr += value;
+				}
+				else
+					*ptr += sym->st_value + l->loadAddr;
+				DBGDL("Rel (32) off=%x orgoff=%x symval=%x reloc=%x\n",
+						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr);
 			}
 			else if(relType == R_386_PC32) {
 				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
@@ -330,7 +347,7 @@ static void load_relocLib(sSharedLib *l) {
 			 * TODO i can't imagine that this is the intended way. why is the address 0 in
 			 * this case??? (instead of the offset from the beginning of the shared lib,
 			 * so that we can simply add the loadAddr) */
-			if(true || LD_BIND_NOW || *addr == 0) {
+			if(LD_BIND_NOW || *addr == 0) {
 				u32 value;
 				u32 symIndex = ELF32_R_SYM(l->jmprel[x].r_info);
 				const char *name = l->dynstrtbl + l->dynsyms[symIndex].st_name;

@@ -70,16 +70,14 @@ namespace std {
 		virtual pos_type available() const;
 
 		/**
-		 * @return the char at the current position
-		 * @throws eof_reached if EOF is reached
+		 * @return the char at the current position (or EOF)
 		 * @throws bad_state if reading is not allowed
 		 */
 		virtual char_type peek() const;
 		/**
 		 * Moves the position-pointer forward
 		 *
-		 * @return the char at the current position
-		 * @throws eof_reached if EOF is reached
+		 * @return the char at the current position (or EOF)
 		 * @throws bad_state if reading is not allowed
 		 */
 		virtual char_type get();

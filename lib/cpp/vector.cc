@@ -52,7 +52,7 @@ namespace std {
 	// === assignment ===
 	template<class T>
 	vector<T>& vector<T>::operator =(const vector<T>& x) {
-		delete _elements;
+		delete[] _elements;
 		_elements = new T[x._count];
 		_count = x._count;
 		_size = x._count;
@@ -63,7 +63,7 @@ namespace std {
 	template<class T>
 	template<class InputIterator>
 	void vector<T>::assign(InputIterator first,InputIterator last) {
-		delete _elements;
+		delete[] _elements;
 		size_type count = last - first;
 		_elements = new T[count];
 		_count = count;
@@ -73,7 +73,7 @@ namespace std {
 	}
 	template<class T>
 	void vector<T>::assign(size_type n,const T& u) {
-		delete _elements;
+		delete[] _elements;
 		_elements = new T[n];
 		_count = n;
 		_size = n;
@@ -136,7 +136,7 @@ namespace std {
 			memcpy(tmp,_elements,_size * sizeof(T));
 			for(size_type i = _size; i < sz; i++)
 				tmp[i] = c;
-			delete _elements;
+			delete[] _elements;
 			_elements = tmp;
 			_size = sz;
 		}
@@ -273,7 +273,7 @@ namespace std {
 	}
 	template<class T>
 	void vector<T>::clear() {
-		delete _elements;
+		delete[] _elements;
 		_size = INITIAL_SIZE;
 		_elements = new T[INITIAL_SIZE];
 		_count = 0;

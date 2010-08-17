@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <iterator>
 #include <string.h>
+#include <limits.h>
 
 namespace std {
 	class istream;
@@ -59,11 +60,17 @@ namespace std {
 		/**
 		 * Content is initialized to an empty string.
 		 */
-		explicit string();
+		explicit string()
+			: _str(new char[INIT_SIZE]), _size(INIT_SIZE), _length(0) {
+			_str[0] = '\0';
+		}
 		/**
 		 * Content is initialized to a copy of the string object str.
 		 */
-		string(const string& str);
+		string(const string& str)
+			: _str(new char[str._size]), _size(str._size), _length(str._length) {
+			memcpy(_str,str._str,_size * sizeof(char));
+		}
 		/**
 		 * Content is initialized to a copy of a substring of str. The substring is the portion of
 		 * str that begins at the character position pos and takes up to n characters (it takes
@@ -97,64 +104,94 @@ namespace std {
 		/**
 		 * Destructor
 		 */
-		~string();
+		~string() {
+			delete[] _str;
+		}
 
 		/**
 		 * Sets a copy of the argument as the new content for the string object. The previous
 		 * content is dropped.
 		 * The assign member function provides a similar functionality with additional options.
 		 */
-		string& operator=(const string& str);
-		string& operator=(const char* s);
+		string& operator=(const string& str) {
+			return assign(str);
+		}
+		string& operator=(const char* s) {
+			return assign(s);
+		}
 		string& operator=(char c);
 
 		/**
 		 * @return the beginning of the string
 		 */
-		iterator begin();
+		iterator begin() {
+			return _str;
+		}
 		/**
 		 * @return the beginning of the string, as const-iterator
 		 */
-		const_iterator begin() const;
+		const_iterator begin() const {
+			return _str;
+		}
 		/**
 		 * @return the end of the string
 		 */
-		iterator end();
+		iterator end() {
+			return _str + _length;
+		}
 		/**
 		 * @return the end of the string, as const-iterator
 		 */
-		const_iterator end() const;
+		const_iterator end() const {
+			return _str + _length;
+		}
 		/**
 		 * @return the beginning of the string for the reverse-iterator (i.e. the end)
 		 */
-		reverse_iterator rbegin();
+		reverse_iterator rbegin() {
+			return reverse_iterator(_str + _length);
+		}
 		/**
 		 * @return the beginning of the string for the const-reverse-iterator (i.e. the end)
 		 */
-		const_reverse_iterator rbegin() const;
+		const_reverse_iterator rbegin() const {
+			return const_reverse_iterator(_str + _length);
+		}
 		/**
 		 * @return the end of the string for the reverse-iterator (i.e. the beginning)
 		 */
-		reverse_iterator rend();
+		reverse_iterator rend() {
+			return reverse_iterator(_str);
+		}
 		/**
 		 * @return the end of the string for the const-reverse-iterator (i.e. the beginning)
 		 */
-		const_reverse_iterator rend() const;
+		const_reverse_iterator rend() const {
+			return const_reverse_iterator(_str);
+		}
 
 		/**
 		 * @return a count of the number of characters in the string.
 		 */
-		size_type size() const;
-		size_type length() const;
+		size_type size() const {
+			return _length;
+		}
+		size_type length() const {
+			return _length;
+		}
 		/**
 		 * @return the maximum number of characters that the string object can hold.
 		 */
-		size_type max_size() const;
+		size_type max_size() const {
+			return ULONG_MAX;
+		}
 		/**
 		 * @return the size of the allocated storage space in the string object.
 		 * 	The real limit on the size a string  object can reach is returned by member max_size.
 		 */
-		size_type capacity() const;
+		size_type capacity() const {
+			return _size;
+		}
 
 		/**
 		 * Resizes the string content to n characters.
@@ -169,7 +206,9 @@ namespace std {
 		 * filled with the default value of a char, which is the null character.
 		 */
 		void resize(size_type n,char c);
-		void resize(size_type n);
+		void resize(size_type n) {
+			resize(n,'\0');
+		}
 
 		/**
 		 * Requests that the capacity  of the allocated storage space in the string be at least
@@ -181,7 +220,10 @@ namespace std {
 		 * library implementation. In any case, it never trims the string content (for that
 		 * purposes, see resize or clear, which modify the content).
 		 */
-		void reserve(size_type res_arg = 0);
+		void reserve(size_type res_arg = 0) {
+			if(_size < res_arg + 1)
+				resize(res_arg);
+		}
 
 		/**
 		 * The string content is set to an empty string, erasing any previous content and thus
@@ -192,7 +234,9 @@ namespace std {
 		/**
 		 * @return whether the string is empty, i.e. whether its size is 0.
 		 */
-		bool empty() const;
+		bool empty() const {
+			return _length == 0;
+		}
 
 		/**
 		 * Returns a reference to the character at position pos in the string.
@@ -200,8 +244,12 @@ namespace std {
 		 * The at member function has the same behavior as this operator function, except that at
 		 * also performs a range check.
 		 */
-		const_reference operator[](size_type pos) const;
-		reference operator[](size_type pos);
+		const_reference operator[](size_type pos) const {
+			return _str[pos];
+		}
+		reference operator[](size_type pos) {
+			return _str[pos];
+		}
 
 		/**
 		 * Returns the character at position pos in the string.
@@ -218,36 +266,52 @@ namespace std {
 		 * followed by the content of the argument.
 		 * The append member function provides a similar functionality with additional options.
 		 */
-		string& operator+=(const string& str);
-		string& operator+=(const char* s);
-		string& operator+=(char c);
+		string& operator+=(const string& str) {
+			return append(str);
+		}
+		string& operator+=(const char* s) {
+			return append(s);
+		}
+		string& operator+=(char c) {
+			return append(&c,1);
+		}
 
 		/**
 		 * Appends a copy of str.
 		 */
-		string& append(const string& str);
+		string& append(const string& str) {
+			return insert(_length,str);
+		}
 		/**
 		 * Appends a copy of a substring of str. The substring is the portion of str that begins
 		 * at the character position pos and takes up to n characters (it takes less than n if
 		 * the end of string is reached before).
 		 * If the position passed is past the end of str, an out_of_range exception is thrown.
 		 */
-		string& append(const string& str,size_type pos,size_type n);
+		string& append(const string& str,size_type pos,size_type n) {
+			return insert(_length,str,pos,n);
+		}
 		/**
 		 * Appends a copy of the string formed by the first n characters in the array of
 		 * characters pointed by s.
 		 */
-		string& append(const char* s,size_type n);
+		string& append(const char* s,size_type n) {
+			return insert(_length,s,n);
+		}
 		/**
 		 * Appends a copy of the string formed by the null-terminated character sequence (C string)
 		 * pointed by s. The length of this character sequence is determined by the first ocurrence
 		 * of a null character (as determined by traits.length(s)).
 		 */
-		string& append(const char* s);
+		string& append(const char* s) {
+			return append(s,strlen(s));
+		}
 		/**
 		 * Appends a string formed by the repetition n times of character c.
 		 */
-		string& append(size_type n,char c);
+		string& append(size_type n,char c) {
+			return insert(_length,n,c);
+		}
 		/**
 		 * The parameters are considered iterators and the content is appended by the
 		 * that go from element referred by iterator first to the element right before the
@@ -259,7 +323,9 @@ namespace std {
 		/**
 		 * Appends a single character to the string content, increasing its size by one.
 		 */
-		void push_back(char c);
+		void push_back(char c) {
+			append(&c,1);
+		}
 
 		/**
 		 * Sets a copy of str as the new content.
@@ -281,7 +347,9 @@ namespace std {
 		 * pointed by s as the new content. The length of the caracter sequence is determined by
 		 * the first ocurrence of a null character (as determined by traits.length(s)).
 		 */
-		string& assign(const char* s);
+		string& assign(const char* s) {
+			return assign(s,strlen(s));
+		}
 		/**
 		 * Sets a string formed by a repetition of character c, n times, as the new content.
 		 */
@@ -297,7 +365,9 @@ namespace std {
 		/**
 		 * Inserts a copy of the entire string  object str at character position pos1.
 		 */
-		string& insert(size_type pos1,const string& str);
+		string& insert(size_type pos1,const string& str) {
+			return insert(pos1,str,0,str._length);
+		}
 		/**
 		 * Inserts a copy of a substring of str at character position pos1. The substring is the
 		 * portion of str that begins at the character position pos2 and takes up to n characters
@@ -308,18 +378,26 @@ namespace std {
 		 * Inserts at the character position pos1, a copy of the string formed by the first n
 		 * characters in the array of characters pointed by s.
 		 */
-		string& insert(size_type pos1,const char* s,size_type n);
+		string& insert(size_type pos1,const char* s,size_type n) {
+			return insert(pos1,string(s),0,n);
+		}
 		/**
 		 * Inserts at character position pos1, a copy of the string formed by the null-terminated
 		 * character sequence (C string) pointed by s. The length of this caracter sequence is
 		 * determined by the first ocurrence of a null character (as determined by traits.length(s)).
 		 */
-		string& insert(size_type pos1,const char* s);
+		string& insert(size_type pos1,const char* s) {
+			string tmp(s);
+			return insert(pos1,tmp,0,tmp._length);
+		}
 		/**
 		 * Inserts a string formed by a repetition of character c, n times, at the character
 		 * position pos1.
 		 */
-		string& insert(size_type pos1,size_type n,char c);
+		string& insert(size_type pos1,size_type n,char c) {
+			string tmp(n,c);
+			return insert(pos1,tmp);
+		}
 		/**
 		 * Inserts at the internal position referred by p the content made up of the characters
 		 * that go from the element referred by iterator first to the element right before the
@@ -338,7 +416,9 @@ namespace std {
 		/**
 		 * Erases the character referred by the iterator position. Only one character is affected.
 		 */
-		iterator erase(iterator position);
+		iterator erase(iterator position) {
+			return erase(position,position + 1);
+		}
 		/**
 		 * Erases all the characters between first and last.
 		 */
@@ -347,33 +427,56 @@ namespace std {
 		/**
 		 * The section is replaced by a copy of the entire string object str.
 		 */
-		string& replace(size_type pos1,size_type n1,const string& str);
-		string& replace(iterator i1,iterator i2,const string& str);
+		string& replace(size_type pos1,size_type n1,const string& str) {
+			return replace(pos1,n1,str,0,str._length);
+		}
+		string& replace(iterator i1,iterator i2,const string& str) {
+			return replace(distance(begin(),i1),distance(i1,i2),str,0,str._length);
+		}
 		/**
 		 * The section is replaced by a copy of a substring of str. The substring is the portion
 		 * of str that begins at the character position pos2 and takes up to n2 characters
 		 * (it takes less than n2 if the end of the string is reached before).
 		 */
 		string& replace(size_type pos1,size_type n1,const string& str,size_type pos2,
-				size_type n2);
+				size_type n2) {
+			erase(pos1,n1);
+			return insert(pos1,str,pos2,n2);
+		}
 		/**
 		 * The section is replaced by a copy of the string formed by the first n2  characters in
 		 * the array of characters pointed by s.
 		 */
-		string& replace(size_type pos1,size_type n1,const char* s,size_type n2);
-		string& replace(iterator i1,iterator i2,const char* s,size_type n2);
+		string& replace(size_type pos1,size_type n1,const char* s,size_type n2) {
+			string tmp(s);
+			return replace(pos1,n1,tmp,0,n2);
+		}
+		string& replace(iterator i1,iterator i2,const char* s,size_type n2) {
+			string tmp(s);
+			return replace(distance(begin(),i1),distance(i1,i2),tmp,0,n2);
+		}
 		/**
 		 * The section is replaced by a copy of the string formed by the null-terminated character
 		 * sequence (C string) pointed by s. The length of this caracter sequence is determined
 		 * by the first ocurrence of a null character (as determined by traits.length(s)).
 		 */
-		string& replace(size_type pos1,size_type n1,const char* s);
-		string& replace(iterator i1,iterator i2,const char* s);
+		string& replace(size_type pos1,size_type n1,const char* s) {
+			return replace(pos1,n1,s,strlen(s));
+		}
+		string& replace(iterator i1,iterator i2,const char* s) {
+			return replace(distance(begin(),i1),distance(i1,i2),s,strlen(s));
+		}
 		/**
 		 * The section is replaced by a repetition of character c, n2  times.
 		 */
-		string& replace(size_type pos1,size_type n1,size_type n2,char c);
-		string& replace(iterator i1,iterator i2,size_type n2,char c);
+		string& replace(size_type pos1,size_type n1,size_type n2,char c) {
+			string tmp(n2,c);
+			return replace(pos1,n1,tmp);
+		}
+		string& replace(iterator i1,iterator i2,size_type n2,char c) {
+			string tmp(n2,c);
+			return replace(distance(begin(),i1),distance(i1,i2),tmp);
+		}
 		/**
 		 * The section is replaced by the content made up of the characters that go from the
 		 * element referred by iterator j1 to the element right before the one referred by
@@ -415,7 +518,9 @@ namespace std {
 		 * in this array should not be modified in the program and are only granted to remain
 		 * unchanged until the next call to a non-constant member function of the string object.
 		 */
-		const_pointer c_str() const;
+		const_pointer c_str() const {
+			return _str;
+		}
 
 		/**
 		 * Returns a pointer to an array of characters with the same content as the string.
@@ -425,7 +530,9 @@ namespace std {
 		 * in the program. Its contents are guaranteed to remain unchanged only until the next
 		 * call to a non-constant member function of the string object.
 		 */
-		const_pointer data() const;
+		const_pointer data() const {
+			return _str;
+		}
 
 		/**
 		 * Searches the string for the content specified in either str, s  or c, and returns the
@@ -436,10 +543,16 @@ namespace std {
 		 * searched for, it is not enough that only one of these characters match, but the
 		 * entire sequence of characters to find must be matched.
 		 */
-		size_type find(const string& str,size_type pos = 0) const;
+		size_type find(const string& str,size_type pos = 0) const {
+			return find(str._str,pos,str._length);
+		}
 		size_type find(const char* s,size_type pos,size_type n) const;
-		size_type find(const char* s,size_type pos = 0) const;
-		size_type find(char c,size_type pos = 0) const;
+		size_type find(const char* s,size_type pos = 0) const {
+			return find(s,pos,strlen(s));
+		}
+		size_type find(char c,size_type pos = 0) const {
+			return find(&c,pos,1);
+		}
 
 		/**
 		 * Searches the string for the content specified in either str, s  or c, and returns the
@@ -447,10 +560,16 @@ namespace std {
 		 * When pos is specified, the search only includes characters between the beginning of
 		 * the string and position pos, ignoring any possible occurrences after pos.
 		 */
-		size_type rfind(const string& str,size_type pos = npos) const;
+		size_type rfind(const string& str,size_type pos = npos) const {
+			return rfind(str._str,pos,str._length);
+		}
 		size_type rfind(const char* s,size_type pos,size_type n) const;
-		size_type rfind(const char* s,size_type pos = npos) const;
-		size_type rfind(char c,size_type pos = npos) const;
+		size_type rfind(const char* s,size_type pos = npos) const {
+			return rfind(s,pos,strlen(s));
+		}
+		size_type rfind(char c,size_type pos = npos) const {
+			return rfind(&c,pos,1);
+		}
 
 		/**
 		 * Searches the string for any of the characters that are part of either str, s or c,
@@ -461,10 +580,16 @@ namespace std {
 		 * the string (any of them). To search for an entire sequence of characters use find
 		 * instead.
 		 */
-		size_type find_first_of(const string& str,size_type pos = 0) const;
+		size_type find_first_of(const string& str,size_type pos = 0) const {
+			return find_first_of(str._str,pos,str._length);
+		}
 		size_type find_first_of(const char* s,size_type pos,size_type n) const;
-		size_type find_first_of(const char* s,size_type pos = 0) const;
-		size_type find_first_of(char c,size_type pos = 0) const;
+		size_type find_first_of(const char* s,size_type pos = 0) const {
+			return find_first_of(s,pos,strlen(s));
+		}
+		size_type find_first_of(char c,size_type pos = 0) const {
+			return find_first_of(&c,pos,1);
+		}
 
 		/**
 		 * Searches the string from the end for any of the characters that are part of either
@@ -475,10 +600,16 @@ namespace std {
 		 * string (any of them). To search from the end for an entire sequence of characters use
 		 * rfind instead.
 		 */
-		size_type find_last_of(const string& str,size_type pos = npos) const;
+		size_type find_last_of(const string& str,size_type pos = npos) const {
+			return find_last_of(str._str,pos,str._length);
+		}
 		size_type find_last_of(const char* s,size_type pos,size_type n) const;
-		size_type find_last_of(const char* s,size_type pos = npos) const;
-		size_type find_last_of(char c,size_type pos = npos) const;
+		size_type find_last_of(const char* s,size_type pos = npos) const {
+			return find_last_of(s,pos,strlen(s));
+		}
+		size_type find_last_of(char c,size_type pos = npos) const {
+			return find_last_of(&c,pos,1);
+		}
 
 		/**
 		 * Searches for the first character in the object which is not part of either str, s or c,
@@ -486,10 +617,16 @@ namespace std {
 		 * When pos is specified the search only includes characters on or after position pos,
 		 * ignoring any content in the previous character positions.
 		 */
-		size_type find_first_not_of(const string& str,size_type pos = 0) const;
+		size_type find_first_not_of(const string& str,size_type pos = 0) const {
+			return find_first_not_of(str._str,pos,str._length);
+		}
 		size_type find_first_not_of(const char* s,size_type pos,size_type n) const;
-		size_type find_first_not_of(const char* s,size_type pos = 0) const;
-		size_type find_first_not_of(char c,size_type pos = 0) const;
+		size_type find_first_not_of(const char* s,size_type pos = 0) const {
+			return find_first_not_of(s,pos,strlen(s));
+		}
+		size_type find_first_not_of(char c,size_type pos = 0) const {
+			return find_first_not_of(&c,pos,1);
+		}
 
 		/**
 		 * Searches for the last character in the object which is not part of either str, s or
@@ -497,10 +634,16 @@ namespace std {
 		 * When pos is specified the search only includes characters on or before position pos,
 		 * ignoring any content in the character positions after it.
 		 */
-		size_type find_last_not_of(const string& str,size_type pos = npos) const;
+		size_type find_last_not_of(const string& str,size_type pos = npos) const {
+			return find_last_not_of(str._str,pos,str._length);
+		}
 		size_type find_last_not_of(const char* s,size_type pos,size_type n) const;
-		size_type find_last_not_of(const char* s,size_type pos = npos) const;
-		size_type find_last_not_of(char c,size_type pos = npos) const;
+		size_type find_last_not_of(const char* s,size_type pos = npos) const {
+			return find_last_not_of(s,pos,strlen(s));
+		}
+		size_type find_last_not_of(char c,size_type pos = npos) const {
+			return find_last_not_of(&c,pos,1);
+		}
 
 		/**
 		 * Returns a string object with its contents initialized to a substring of the current
@@ -508,7 +651,9 @@ namespace std {
 		 * This substring is the character sequence that starts at character position pos and
 		 * has a length of n characters.
 		 */
-		string substr(size_type pos = 0,size_type n = npos) const;
+		string substr(size_type pos = 0,size_type n = npos) const {
+			return string(*this,pos,n);
+		}
 
 		/**
 		 * Compares the content of this object (or a substring of it, known as compared
@@ -523,13 +668,25 @@ namespace std {
 		 * For other string class instantitations, the comparison depends on the
 		 * specific traits::compare function, where traits is one of the class template parameters.
 		 */
-		int compare(const string& str) const;
-		int compare(const char* s) const;
-		int compare(size_type pos1,size_type n1,const string& str) const;
-		int compare(size_type pos1,size_type n1,const char* s) const;
+		int compare(const string& str) const {
+			return strcmp(_str,str._str);
+		}
+		int compare(const char* s) const {
+			return strcmp(_str,s);
+		}
+		int compare(size_type pos1,size_type n1,const string& str) const {
+			return strncmp(_str + pos1,str._str,n1);
+		}
+		int compare(size_type pos1,size_type n1,const char* s) const {
+			return strncmp(_str + pos1,s,n1);
+		}
 		int compare(size_type pos1,size_type n1,const string& str,size_type pos2,
-					size_type n2) const;
-		int compare(size_type pos1,size_type n1,const char* s,size_type n2) const;
+					size_type n2) const {
+			return substr(pos1,n1).compare(str.substr(pos2,n2));
+		}
+		int compare(size_type pos1,size_type n1,const char* s,size_type n2) const {
+			return strncmp(substr(pos1,n1)._str,s,n2);
+		}
 
 		/**
 		 * Trims the string, i.e. it removes all whitespace determined by ::isspace() at the
@@ -537,7 +694,9 @@ namespace std {
 		 *
 		 * @return number of removed characters
 		 */
-		size_type trim();
+		size_type trim() {
+			return ltrim() + rtrim();
+		}
 		size_type ltrim();
 		size_type rtrim();
 
@@ -553,11 +712,21 @@ namespace std {
 	 * Because the diversity of left-hand parameter types, this function is implemented as an
 	 * overload of the global operator+ function.
 	 */
-	string operator+(const string& lhs,const string& rhs);
-	string operator+(const char* lhs,const string& rhs);
-	string operator+(char lhs,const string& rhs);
-	string operator+(const string& lhs,const char* rhs);
-	string operator+(const string& lhs,char rhs);
+	inline string operator+(const string& lhs,const string& rhs) {
+		return string(lhs).append(rhs);
+	}
+	inline string operator+(const char* lhs,const string& rhs) {
+		return string(lhs).append(rhs);
+	}
+	inline string operator+(char lhs,const string& rhs) {
+		return string(1,lhs).append(rhs);
+	}
+	inline string operator+(const string& lhs,const char* rhs) {
+		return string(lhs).append(rhs);
+	}
+	inline string operator+(const string& lhs,char rhs) {
+		return string(lhs).append(&rhs,1);
+	}
 
 	/**
 	 * Inserts the string object str  into the output stream os.
@@ -584,7 +753,9 @@ namespace std {
 	 * global function effectively calls:
 	 * lhs.swap(rhs);
 	 */
-	void swap(string& lhs,string& rhs);
+	inline void swap(string& lhs,string& rhs) {
+		lhs.swap(rhs);
+	}
 
 	/**
 	 * Extracts characters from <is> and stores them into <str> until a delimitation character is
@@ -600,31 +771,69 @@ namespace std {
 	 * @return is
 	 */
 	istream& getline(istream& is,string& str,char delim);
-	istream& getline(istream& is,string& str);
+	inline istream& getline(istream& is,string& str) {
+		return getline(is,str,'\n');
+	}
 
 	/**
 	 * These overloaded global operator functions perform the appropriate comparison operation,
 	 * between lhs and rhs.
 	 * These function depend on the value returned by string member compare.
 	 */
-	bool operator==(const string& lhs,const string& rhs);
-	bool operator==(const char* lhs,const string& rhs);
-	bool operator==(const string& lhs,const char* rhs);
-	bool operator!=(const string& lhs,const string& rhs);
-	bool operator!=(const char* lhs,const string& rhs);
-	bool operator!=(const string& lhs,const char* rhs);
-	bool operator<(const string& lhs,const string& rhs);
-	bool operator<(const char* lhs,const string& rhs);
-	bool operator<(const string& lhs,const char* rhs);
-	bool operator>(const string& lhs,const string& rhs);
-	bool operator>(const char* lhs,const string& rhs);
-	bool operator>(const string& lhs,const char* rhs);
-	bool operator<=(const string& lhs,const string& rhs);
-	bool operator<=(const char* lhs,const string& rhs);
-	bool operator<=(const string& lhs,const char* rhs);
-	bool operator>=(const string& lhs,const string& rhs);
-	bool operator>=(const char* lhs,const string& rhs);
-	bool operator>=(const string& lhs,const char* rhs);
+	inline bool operator==(const string& lhs,const string& rhs) {
+		return lhs.compare(rhs) == 0;
+	}
+	inline bool operator==(const char* lhs,const string& rhs) {
+		return rhs.compare(lhs) == 0;
+	}
+	inline bool operator==(const string& lhs,const char* rhs) {
+		return lhs.compare(rhs) == 0;
+	}
+	inline bool operator!=(const string& lhs,const string& rhs) {
+		return lhs.compare(rhs) != 0;
+	}
+	inline bool operator!=(const char* lhs,const string& rhs) {
+		return rhs.compare(lhs) != 0;
+	}
+	inline bool operator!=(const string& lhs,const char* rhs) {
+		return lhs.compare(rhs) != 0;
+	}
+	inline bool operator<(const string& lhs,const string& rhs) {
+		return lhs.compare(rhs) < 0;
+	}
+	inline bool operator<(const char* lhs,const string& rhs) {
+		return rhs.compare(lhs) > 0;
+	}
+	inline bool operator<(const string& lhs,const char* rhs) {
+		return lhs.compare(rhs) < 0;
+	}
+	inline bool operator>(const string& lhs,const string& rhs) {
+		return lhs.compare(rhs) > 0;
+	}
+	inline bool operator>(const char* lhs,const string& rhs) {
+		return rhs.compare(lhs) < 0;
+	}
+	inline bool operator>(const string& lhs,const char* rhs) {
+		return lhs.compare(rhs) > 0;
+	}
+	inline bool operator<=(const string& lhs,const string& rhs) {
+		return lhs.compare(rhs) <= 0;
+	}
+	inline bool operator<=(const char* lhs,const string& rhs) {
+		return rhs.compare(lhs) >= 0;
+	}
+	inline bool operator<=(const string& lhs,const char* rhs) {
+		return lhs.compare(rhs) <= 0;
+	}
+	inline bool operator>=(const string& lhs,const string& rhs) {
+		return lhs.compare(rhs) >= 0;
+	}
+	inline bool operator>=(const char* lhs,const string& rhs) {
+		return rhs.compare(lhs) <= 0;
+	}
+	inline bool operator>=(const string& lhs,const char* rhs) {
+		return lhs.compare(rhs) >= 0;
+	}
 }
 
 #include "../../lib/cpp/string.cc"

@@ -22,12 +22,6 @@
 #include <iostream>
 
 namespace std {
-	iostream::iostream(streambuf* sb)
-		: istream(sb), ostream(sb) {
-	}
-	iostream::~iostream() {
-	}
-
 	// a trick to "publish" cin, cout, ... as istream/ostream/... instead of their real type
 	// ifstream/ofstream/... the reason is that otherwise we would have to cast them to
 	// ostream/istream for some >>-operators. therefore we put here the real objects as _* with

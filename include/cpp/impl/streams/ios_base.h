@@ -35,8 +35,12 @@ namespace std {
 	public:
 		class failure: public std::exception {
 		public:
-			explicit failure(const string& msg);
-			virtual const char* what() const throw();
+			explicit failure(const string& msg)
+				: _msg(msg.c_str()) {
+			}
+			virtual const char* what() const throw() {
+				return _msg;
+			}
 		private:
 			const char *_msg;
 		};
@@ -111,21 +115,31 @@ namespace std {
 		/**
 		 * @return The format control information for both input and output.
 		 */
-		fmtflags flags() const;
+		fmtflags flags() const {
+			return _flags;
+		}
 		/**
 		 * Sets the format flags to <fmtfl>.
 		 *
 		 * @param fmtfl the flags to set
 		 * @return the previous flags
 		 */
-		fmtflags flags(fmtflags fmtfl);
+		fmtflags flags(fmtflags fmtfl) {
+			fmtflags old = _flags;
+			_flags = fmtfl;
+			return old;
+		}
 		/**
 		 * Sets <fmtfl> in flags()
 		 *
 		 * @param fmtfl the flag to set
 		 * @return the previous flags
 		 */
-		fmtflags setf(fmtflags fmtfl);
+		fmtflags setf(fmtflags fmtfl) {
+			fmtflags old = _flags;
+			_flags |= fmtfl;
+			return old;
+		}
 		/**
 		 * Clears <mask> in flags(), sets <fmtfl> & <mask> in flags().
 		 *
@@ -133,37 +147,56 @@ namespace std {
 		 * @param mask the mask
 		 * @return the previous flags
 		 */
-		fmtflags setf(fmtflags fmtfl,fmtflags mask);
+		fmtflags setf(fmtflags fmtfl,fmtflags mask) {
+			fmtflags old = _flags;
+			_flags &= ~mask;
+			_flags |= fmtfl & mask;
+			return old;
+		}
 		/**
 		 * Clears mask in flags().
 		 *
 		 * @param mask the mask to clear
 		 */
-		void unsetf(fmtflags mask);
+		void unsetf(fmtflags mask) {
+			_flags &= ~mask;
+		}
 
 		/**
 		 * @return the precision to generate on certain output conversions.
 		 */
-		streamsize precision() const;
+		streamsize precision() const {
+			return _prec;
+		}
 		/**
 		 * Sets the precision to <prec>.
 		 *
 		 * @param prec the precision to set
 		 * @return the previous value of precision().
 		 */
-		streamsize precision(streamsize prec);
+		streamsize precision(streamsize prec) {
+			streamsize old = _prec;
+			_prec = prec;
+			return old;
+		}
 		/**
 		 * @return the minimum field width (number of characters) to generate on certain output
 		 * 	conversions.
 		 */
-		streamsize width() const;
+		streamsize width() const {
+			return _width;
+		}
 		/**
 		 * Sets the width to <wide>.
 		 *
 		 * @param wide the width to set
 		 * @return the previous value of width().
 		 */
-		streamsize width(streamsize wide);
+		streamsize width(streamsize wide) {
+			streamsize old = _width;
+			_width = wide;
+			return old;
+		}
 
 		// 27.4.2.6 callbacks;
 		enum event {
@@ -178,7 +211,9 @@ namespace std {
 		 * until the next event.
 		 * The function fn shall not throw exceptions.
 		 */
-		void register_callback(event_callback fn,int index);
+		void register_callback(event_callback fn,int index) {
+			_callbacks.push_back(make_pair(fn,index));
+		}
 
 		/**
 		 * @return wether we should sync stdio
@@ -200,7 +235,9 @@ namespace std {
 		 * (27.4.2.6) as (*fn )(erase_event, *this, index ) at such time that any ios_base member
 		 * function called from within fn has well defined results.
 		 */
-		virtual ~ios_base();
+		virtual ~ios_base() {
+			raise_event(erase_event);
+		}
 
 	protected:
 		/**

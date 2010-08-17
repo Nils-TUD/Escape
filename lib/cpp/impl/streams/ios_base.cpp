@@ -30,13 +30,6 @@ namespace std {
 	extern ofstream _cerr;
 	extern ofstream _clog;
 
-	ios_base::failure::failure(const string& msg)
-		: _msg(msg.c_str()) {
-	}
-	const char* ios_base::failure::what() const {
-		return _msg;
-	}
-
 	int ios_base::Init::init_cnt = 0;
 
 	ios_base::Init::Init() {
@@ -98,54 +91,7 @@ namespace std {
 		  _callbacks(vector<pair<event_callback,int> >()) {
 		// do nothing here
 	}
-	ios_base::~ios_base() {
-		raise_event(erase_event);
-	}
 
-	ios_base::fmtflags ios_base::flags() const {
-		return _flags;
-	}
-	ios_base::fmtflags ios_base::flags(fmtflags fmtfl) {
-		fmtflags old = _flags;
-		_flags = fmtfl;
-		return old;
-	}
-	ios_base::fmtflags ios_base::setf(fmtflags fmtfl) {
-		fmtflags old = _flags;
-		_flags |= fmtfl;
-		return old;
-	}
-	ios_base::fmtflags ios_base::setf(fmtflags fmtfl,fmtflags mask) {
-		fmtflags old = _flags;
-		_flags &= ~mask;
-		_flags |= fmtfl & mask;
-		return old;
-	}
-	void ios_base::unsetf(fmtflags mask) {
-		_flags &= ~mask;
-	}
-
-	streamsize ios_base::precision() const {
-		return _prec;
-	}
-	streamsize ios_base::precision(streamsize prec) {
-		streamsize old = _prec;
-		_prec = prec;
-		return old;
-	}
-
-	streamsize ios_base::width() const {
-		return _width;
-	}
-	streamsize ios_base::width(streamsize wide) {
-		streamsize old = _width;
-		_width = wide;
-		return old;
-	}
-
-	void ios_base::register_callback(event_callback fn,int index) {
-		_callbacks.push_back(make_pair(fn,index));
-	}
 	void ios_base::raise_event(event ev) {
 		vector<pair<event_callback,int> >::reverse_iterator it = _callbacks.rbegin();
 		for(; it != _callbacks.rend(); ++it)

@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <iostream>
+#include <string>
 #include <cmdargs.h>
 #include <file.h>
 #include <rawfile.h>

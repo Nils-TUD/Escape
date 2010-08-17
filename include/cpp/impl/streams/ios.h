@@ -42,25 +42,35 @@ namespace std {
 		 * Constructs an object of class ios, assigning initial values to its member
 		 * objects by calling init(sb).
 		 */
-		explicit ios(streambuf* sb);
+		explicit ios(streambuf* sb)
+			: _fill(char_type()), _rdst(iostate()), _exceptions(iostate()), _tie(NULL), _rdbuf(NULL) {
+			init(sb);
+		}
 		/**
 		 * Destructor. Does not destroy rdbuf().
 		 */
-		virtual ~ios();
+		virtual ~ios() {
+		}
 
 		/**
 		 * @return If fail() then a null pointer; otherwise some non-null pointer to indicate
 		 * success
 		 */
-		operator void*() const;	// void* unspecified
+		operator void*() const {
+			return fail() ? NULL : const_cast<ios*>(this);
+		}
 		/**
 		 * @return fail()
 		 */
-		bool operator !() const;
+		bool operator !() const {
+			return fail();
+		}
 		/**
 		 * @return the error state of the stream buffer.
 		 */
-		iostate rdstate() const;
+		iostate rdstate() const {
+			return _rdst;
+		}
 		/**
 		 * Clears the state
 		 */
@@ -69,55 +79,83 @@ namespace std {
 		/**
 		 * Calls clear(rdstate() | state ) (which may throw ios::failure (27.4.2.1.1)).
 		 */
-		void setstate(iostate state);
+		void setstate(iostate state) {
+			clear(rdstate() | state);
+		}
 		/**
 		 * @return rdstate() == 0
 		 */
-		bool good() const;
+		bool good() const {
+			return rdstate() == 0;
+		}
 		/**
 		 * @return true if eofbit is set in rdstate().
 		 */
-		bool eof() const;
+		bool eof() const {
+			return rdstate() & eofbit;
+		}
 		/**
 		 * @return true if failbit or badbit is set in rdstate()
 		 */
-		bool fail() const;
+		bool fail() const {
+			return rdstate() & (failbit | badbit);
+		}
 		/**
 		 * @return true if badbit is set in rdstate().
 		 */
-		bool bad() const;
+		bool bad() const {
+			return rdstate() & badbit;
+		}
 
 		/**
 		 * @return a mask that determines what elements set in rdstate() cause exceptions to be
 		 * 	thrown.
 		 */
-		iostate exceptions() const;
+		iostate exceptions() const {
+			return _exceptions;
+		}
 		/**
 		 * Sets exceptions() to <except>. Calls clear(rdstate()).
 		 */
-		void exceptions(iostate except);
+		void exceptions(iostate except) {
+			_exceptions = except;
+			clear(rdstate());
+		}
 
 		/**
 		 * An output sequence that is tied to (synchronized with) the sequence controlled by the
 		 * stream buffer.
 		 */
-		ostream* tie() const;
+		ostream* tie() const {
+			return _tie;
+		}
 		/**
 		 * Sets tie() to <tiestr>.
 		 *
 		 * @return the previous value of tie()
 		 */
-		ostream* tie(ostream* tiestr);
+		ostream* tie(ostream* tiestr) {
+			ostream* old = _tie;
+			_tie = tiestr;
+			return old;
+		}
 		/**
 		 * @return a pointer to the streambuf associated with the stream.
 		 */
-		streambuf* rdbuf() const;
+		streambuf* rdbuf() const {
+			return _rdbuf;
+		}
 		/**
 		 * Sets rdbuf() to <sb> and calls clear().
 		 *
 		 * @return the previous value of rdbuf()
 		 */
-		streambuf* rdbuf(streambuf* sb);
+		streambuf* rdbuf(streambuf* sb) {
+			streambuf* old = _rdbuf;
+			_rdbuf = sb;
+			clear();
+			return old;
+		}
 		/**
 		 * Copies the state from the given stream to this one. Leaves rdstate() and rdbuf()
 		 * unchanged. Raises the event copyfmt_event.
@@ -128,20 +166,28 @@ namespace std {
 		/**
 		 * @return the character used to pad (fill) an output conversion to the specified field width.
 		 */
-		char_type fill() const;
+		char_type fill() const {
+			return _fill;
+		}
 		/**
 		 * Sets fill() to <fillch>
 		 *
 		 * @return the previous value of fill()
 		 */
-		char_type fill(char_type ch);
+		char_type fill(char_type ch) {
+			char_type old = _fill;
+			_fill = ch;
+			return old;
+		}
 	protected:
 		/**
 		 * Constructs an object of this class eaving its member objects uninitialized. The object
 		 * shall be initialized by calling its init member function.
 		 * If it is destroyed before it has been initialized the behavior is undefined.
 		 */
-		ios();
+		ios()
+			: _fill(char_type()), _rdst(iostate()), _exceptions(iostate()), _tie(NULL), _rdbuf(NULL) {
+		}
 		/**
 		 * Initializes the object
 		 */

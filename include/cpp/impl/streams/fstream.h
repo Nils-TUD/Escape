@@ -32,7 +32,9 @@ namespace std {
 		/**
 		 * Builds a new file-stream
 		 */
-		fstream();
+		fstream()
+			: iostream(new filebuf()) {
+		}
 		/**
 		 * Builds a new file-stream and opens the given file
 		 *
@@ -40,31 +42,43 @@ namespace std {
 		 * @param which the openmode (in|out by default)
 		 */
 		explicit fstream(const char* filename,
-				ios_base::openmode which = ios_base::out | ios_base::in);
+				ios_base::openmode which = ios_base::out | ios_base::in)
+			: iostream(new filebuf()) {
+			rdbuf()->open(filename,which);
+		}
 		/**
 		 * Destructor
 		 */
-		virtual ~fstream();
+		virtual ~fstream() {
+		}
 
 		/**
 		 * @return the file-buffer
 		 */
-		filebuf* rdbuf() const;
+		filebuf* rdbuf() const {
+			return static_cast<filebuf*>(ios::rdbuf());
+		}
 		/**
 		 * Opens the file <s> with given open-mode
 		 *
 		 * @param s the file
 		 * @param mode the mode
 		 */
-		void open(const char* s,ios_base::openmode mode = ios_base::out | ios_base::in);
+		void open(const char* s,ios_base::openmode mode = ios_base::out | ios_base::in) {
+			rdbuf()->open(s,mode);
+		}
 		/**
 		 * @return if a file has been opened successfully
 		 */
-		bool is_open() const;
+		bool is_open() const {
+			return rdbuf()->is_open();
+		}
 		/**
 		 * Closes the file
 		 */
-		void close();
+		void close() {
+			rdbuf()->close();
+		}
 	};
 }
 

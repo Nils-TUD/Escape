@@ -41,11 +41,16 @@ namespace std {
 		/**
 		 * Creates a new filebuf
 		 */
-		explicit filebuf();
+		explicit filebuf()
+			: _fd(-1), _inPos(0), _inMax(0), _inBuf(NULL), _totalInPos(0), _outPos(0),
+			  _outBuf(NULL), _mode(0) {
+		}
 		/**
 		 * Destructor
 		 */
-		virtual ~filebuf();
+		virtual ~filebuf() {
+			close();
+		}
 
 		/**
 		 * Opens the file <s> with given open-mode
@@ -68,7 +73,9 @@ namespace std {
 		/**
 		 * @return if a file has been opened successfully
 		 */
-		bool is_open() const;
+		bool is_open() const {
+			return _fd >= 0;
+		}
 
 		/**
 		 * Closes the file

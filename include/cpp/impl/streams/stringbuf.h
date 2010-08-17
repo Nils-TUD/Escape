@@ -39,7 +39,9 @@ namespace std {
 		 *
 		 * @param which the open-mode ((in | out) by default)
 		 */
-		explicit stringbuf(ios_base::openmode which = ios_base::in | ios_base::out);
+		explicit stringbuf(ios_base::openmode which = ios_base::in | ios_base::out)
+			: streambuf(), _pos(0), _mode(which), _str(string()) {
+		}
 		/**
 		 * Creates a new stringbuffer with given string and openmode
 		 *
@@ -51,23 +53,32 @@ namespace std {
 		/**
 		 * Destructor
 		 */
-		virtual ~stringbuf();
+		virtual ~stringbuf() {
+		}
 
 		/**
 		 * @return a copy of the used string
 		 */
-		string str() const;
+		string str() const {
+			return _str;
+		}
 		/**
 		 * Sets the string to use for read/write
 		 *
 		 * @param s the string (will be cloned)
 		 */
-		void str(const string& s);
+		void str(const string& s) {
+			// reset position
+			_pos = 0;
+			_str = s;
+		}
 
 		/**
 		 * @return the number of available characters
 		 */
-		virtual pos_type available() const;
+		virtual pos_type available() const {
+			return _str.length() - _pos;
+		}
 
 		/**
 		 * @return the char at the current position (or EOF)
@@ -98,7 +109,8 @@ namespace std {
 		/**
 		 * Does nothing
 		 */
-		virtual void flush();
+		virtual void flush() {
+		}
 
 	private:
 		pos_type _pos;

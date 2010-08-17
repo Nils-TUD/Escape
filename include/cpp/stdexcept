@@ -33,13 +33,18 @@ namespace std {
 	class logic_error: public exception {
 	public:
 		/** Takes a character string describing the error.  */
-		explicit logic_error(const string& arg);
+		explicit logic_error(const string& arg)
+			: _msg(arg) {
+		}
 
-		virtual ~logic_error() throw ();
+		virtual ~logic_error() throw () {
+		}
 
 		/** Returns a C-style character string describing the general cause of
 		 *  the current error (the same string passed to the ctor).  */
-		virtual const char* what() const throw ();
+		virtual const char* what() const throw () {
+			return _msg.c_str();
+		}
 	private:
 		string _msg;
 	};
@@ -48,27 +53,35 @@ namespace std {
 	 *  the mathematical sense).  */
 	class domain_error: public logic_error {
 	public:
-		explicit domain_error(const string& arg);
+		explicit domain_error(const string& arg)
+			: logic_error(arg) {
+		}
 	};
 
 	/** Thrown to report invalid arguments to functions.  */
 	class invalid_argument: public logic_error {
 	public:
-		explicit invalid_argument(const string& arg);
+		explicit invalid_argument(const string& arg)
+			: logic_error(arg) {
+		}
 	};
 
 	/** Thrown when an object is constructed that would exceed its maximum
 	 *  permitted size (e.g., a basic_string instance).  */
 	class length_error: public logic_error {
 	public:
-		explicit length_error(const string& arg);
+		explicit length_error(const string& arg)
+			: logic_error(arg) {
+		}
 	};
 
 	/** This represents an argument whose value is not within the expected
 	 *  range (e.g., boundary checks in basic_string).  */
 	class out_of_range: public logic_error {
 	public:
-		explicit out_of_range(const string& arg);
+		explicit out_of_range(const string& arg)
+			: logic_error(arg) {
+		}
 	};
 
 	/** Runtime errors represent problems outside the scope of a program;
@@ -79,12 +92,17 @@ namespace std {
 	class runtime_error: public std::exception {
 	public:
 		/** Takes a character string describing the error.  */
-		explicit runtime_error(const string& arg);
-		virtual ~runtime_error() throw ();
+		explicit runtime_error(const string& arg)
+			: _msg(arg) {
+		}
+		virtual ~runtime_error() throw () {
+		}
 
 		/** Returns a C-style character string describing the general cause of
 		 *  the current error (the same string passed to the ctor).  */
-		virtual const char* what() const throw ();
+		virtual const char* what() const throw () {
+			return _msg.c_str();
+		}
 	private:
 		string _msg;
 	};
@@ -92,19 +110,25 @@ namespace std {
 	/** Thrown to indicate range errors in internal computations.  */
 	class range_error: public runtime_error {
 	public:
-		explicit range_error(const string& arg);
+		explicit range_error(const string& arg)
+			: runtime_error(arg) {
+		}
 	};
 
 	/** Thrown to indicate arithmetic overflow.  */
 	class overflow_error: public runtime_error {
 	public:
-		explicit overflow_error(const string& arg);
+		explicit overflow_error(const string& arg)
+			: runtime_error(arg) {
+		}
 	};
 
 	/** Thrown to indicate arithmetic underflow.  */
 	class underflow_error: public runtime_error {
 	public:
-		explicit underflow_error(const string& arg);
+		explicit underflow_error(const string& arg)
+			: runtime_error(arg) {
+		}
 	};
 
 	/**
@@ -112,11 +136,18 @@ namespace std {
 	 */
 	class io_exception : public exception {
 	public:
-		explicit io_exception(const string& s,s32 err);
-		virtual ~io_exception() throw ();
+		explicit io_exception(const string& s,s32 err)
+			: _error(err), _msg(s + ": " + strerror(err)) {
+		}
+		virtual ~io_exception() throw () {
+		}
 
-		s32 error() const;
-		virtual const char* what() const throw ();
+		s32 error() const {
+			return _error;
+		}
+		virtual const char* what() const throw () {
+			return _msg.c_str();
+		}
 	private:
 		s32 _error;
 		string _msg;

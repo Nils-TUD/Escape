@@ -35,34 +35,45 @@ namespace std {
 		 *
 		 * @param which the openmode (in|out by default)
 		 */
-		explicit stringstream(ios_base::openmode which = ios_base::out | ios_base::in);
+		explicit stringstream(ios_base::openmode which = ios_base::out | ios_base::in)
+			: iostream(new stringbuf(which)) {
+		}
 		/**
 		 * Builds a new string-stream with given string and openmode
 		 *
 		 * @param str the string (makes a clone)
 		 * @param which the openmode (in|out by default)
 		 */
-		explicit stringstream(const string& str,
-				ios_base::openmode which = ios_base::out | ios_base::in);
+		explicit stringstream(const string& s,
+				ios_base::openmode which = ios_base::out | ios_base::in)
+			: iostream(new stringbuf(s,which)) {
+		}
 		/**
 		 * Destructor
 		 */
-		virtual ~stringstream();
+		virtual ~stringstream() {
+		}
 
 		/**
 		 * @return the string-buffer
 		 */
-		stringbuf* rdbuf() const;
+		stringbuf* rdbuf() const {
+			return static_cast<stringbuf*>(ios::rdbuf());
+		}
 		/**
 		 * @return a copy of the string used by the string-buffer
 		 */
-		string str() const;
+		string str() const {
+			return rdbuf()->str();
+		}
 		/**
 		 * Sets the string used by the string-buffer
 		 *
 		 * @param s the string (makes a clone)
 		 */
-		void str(const string& s);
+		void str(const string& s) {
+			rdbuf()->str(s);
+		}
 	};
 }
 

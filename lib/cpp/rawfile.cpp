@@ -22,20 +22,6 @@
 #include <stdexcept>
 
 namespace std {
-	rawfile::rawfile()
-		: _mode(0), _fd(-1) {
-	}
-	rawfile::rawfile(tFD fd)
-		: _mode(READ | WRITE), _fd(fd) {
-	}
-	rawfile::rawfile(const string& filename,open_type mode)
-		: _mode(0), _fd(-1) {
-		open(filename,mode);
-	}
-	rawfile::~rawfile() {
-		close();
-	}
-
 	void rawfile::open(const string& filename,open_type mode) {
 		close();
 		u8 flags = 0;

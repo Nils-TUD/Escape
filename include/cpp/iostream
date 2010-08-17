@@ -34,11 +34,14 @@ namespace std {
 		 *
 		 * @param sb the stream-buffer
 		 */
-		explicit iostream(streambuf* sb);
+		explicit iostream(streambuf* sb)
+			: istream(sb), ostream(sb) {
+		}
 		/**
 		 * Destructor
 		 */
-		virtual ~iostream();
+		virtual ~iostream() {
+		}
 	};
 
 	class istream;

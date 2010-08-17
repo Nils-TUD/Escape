@@ -38,16 +38,6 @@ namespace std {
 		if((_os.flags() & ios_base::unitbuf) && !std::uncaught_exception())
 			_os.flush();
 	}
-	ostream::sentry::operator bool() const {
-		return _ok;
-	}
-
-	ostream::ostream(streambuf* sb)
-			: _sb(sb) {
-		ios::init(sb);
-	}
-	ostream::~ostream() {
-	}
 
 	ostream& ostream::format(const char *fmt,...) {
 		va_list ap;
@@ -229,72 +219,11 @@ namespace std {
 		return *this;
 	}
 
-	ostream& ostream::operator <<(ostream& (*pf)(ostream&)) {
-		pf(*this);
-		return *this;
-	}
-	ostream& ostream::operator <<(ios& (*pf)(ios&)) {
-		pf(*this);
-		return *this;
-	}
-	ostream& ostream::operator <<(ios_base & (*pf)(ios_base &)) {
-		pf(*this);
-		return *this;
-	}
-
 	ostream& ostream::operator <<(bool n) {
 		if(ios_base::flags() & ios_base::boolalpha)
 			write(n ? "true" : "false",n ? SSTRLEN("true") : SSTRLEN("false"));
 		else
 			writeUnsigned(n);
-		return *this;
-	}
-	ostream& ostream::operator <<(short n) {
-		writeSigned(n);
-		return *this;
-	}
-	ostream& ostream::operator <<(unsigned short n) {
-		writeUnsigned(n);
-		return *this;
-	}
-	ostream& ostream::operator <<(int n) {
-		writeSigned(n);
-		return *this;
-	}
-	ostream& ostream::operator <<(unsigned int n) {
-		writeUnsigned(n);
-		return *this;
-	}
-	ostream& ostream::operator <<(long n) {
-		writeSigned(n);
-		return *this;
-	}
-	ostream& ostream::operator <<(unsigned long n) {
-		writeUnsigned(n);
-		return *this;
-	}
-	ostream& ostream::operator <<(long long n) {
-		writeSigned(n);
-		return *this;
-	}
-	ostream& ostream::operator <<(unsigned long long n) {
-		writeUnsigned(n);
-		return *this;
-	}
-	ostream& ostream::operator <<(float f) {
-		writeDouble(f);
-		return *this;
-	}
-	ostream& ostream::operator <<(double f) {
-		writeDouble(f);
-		return *this;
-	}
-	ostream& ostream::operator <<(long double f) {
-		writeDouble(f);
-		return *this;
-	}
-	ostream& ostream::operator <<(const void* p) {
-		writeUnsigned((unsigned long)(p));
 		return *this;
 	}
 
@@ -325,9 +254,6 @@ namespace std {
 		return *this;
 	}
 
-	ostream& ostream::put(char_type c) {
-		return write(&c,1);
-	}
 	ostream& ostream::write(const char_type* s,streamsize n) {
 		sentry se(*this);
 		if(se) {
@@ -359,96 +285,6 @@ namespace std {
 		return *this;
 	}
 
-	template<class T>
-	void ostream::writeSigned(T n) {
-		// write as unsigned if oct or hex is desired
-		if(!(ios_base::flags() & ios_base::dec)) {
-			writeUnsigned(static_cast<unsigned long>(n));
-			return;
-		}
-		sentry se(*this);
-		if(se) {
-			try {
-				streamsize nwidth = 0;
-				streamsize pwidth = ios::width();
-				// determine width
-				if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
-					nwidth = getlwidth(n);
-					if(ios_base::flags() & ios_base::showpos)
-						nwidth++;
-				}
-				// pad left
-				if((ios_base::flags() & ios_base::right) && pwidth > nwidth)
-					writePad(pwidth - nwidth);
-				// print '+' or ' ' instead of '-'
-				if(ios_base::flags() & ios_base::showpos)
-					_sb->put('+');
-				// print number
-				writeSChars(n);
-				// pad right
-				if((ios_base::flags() & ios_base::left) && pwidth > nwidth)
-					writePad(pwidth - nwidth);
-			}
-			catch(...) {
-				ios::setstate(ios_base::badbit);
-			}
-			ios_base::width(0);
-		}
-	}
-
-	template<class T>
-	void ostream::writeUnsigned(T u) {
-		static const char *numTableSmall = "0123456789abcdef";
-		static const char *numTableBig = "0123456789ABCDEF";
-		sentry se(*this);
-		if(se) {
-			try {
-				int base = ios_base::get_base();
-				// determine width
-				streamsize nwidth = 0;
-				streamsize pwidth = ios::width();
-				if((ios_base::flags() & (ios_base::left | ios_base::right)) && pwidth > 0) {
-					nwidth = getulwidth(u,base);
-					if(u > 0 && (ios_base::flags() & ios_base::showbase)) {
-						switch(base) {
-							case 16:
-								nwidth += 2;
-								break;
-							case 8:
-								nwidth += 1;
-								break;
-						}
-					}
-				}
-				// pad left - spaces
-				if((ios_base::flags() & ios_base::right) && pwidth > nwidth)
-					writePad(pwidth - nwidth);
-				if(u > 0 && (ios_base::flags() & ios_base::showbase)) {
-					switch(base) {
-						case 16:
-							_sb->put('0');
-							_sb->put((ios_base::flags() & ios_base::uppercase) ? 'X' : 'x');
-							break;
-						case 8:
-							_sb->put('0');
-							break;
-					}
-				}
-				// print number
-				if(ios_base::flags() & ios_base::uppercase)
-					writeUChars(u,base,numTableBig);
-				else
-					writeUChars(u,base,numTableSmall);
-				// pad right
-				if((ios_base::flags() & ios_base::left) && pwidth > nwidth)
-					writePad(pwidth - nwidth);
-			}
-			catch(...) {
-				ios::setstate(ios_base::badbit);
-			}
-			ios_base::width(0);
-		}
-	}
 
 	void ostream::writeDouble(long double d) {
 		sentry se(*this);
@@ -480,24 +316,6 @@ namespace std {
 		}
 	}
 
-	template<class T>
-	void ostream::writeSChars(T n) {
-		if(n < 0) {
-			_sb->put('-');
-			n = -n;
-		}
-		if(n >= 10)
-			writeSChars(n / 10);
-		_sb->put('0' + (n % 10));
-	}
-
-	template<class T>
-	void ostream::writeUChars(T u,unsigned int base,const char *hexchars) {
-		if(u >= base)
-			writeUChars(u / base,base,hexchars);
-		_sb->put(hexchars[(u % base)]);
-	}
-
 	void ostream::writeDoubleChars(long double d) {
 		long long val = 0;
 
@@ -523,28 +341,5 @@ namespace std {
 		char_type c = ios::fill();
 		while(count-- > 0)
 			_sb->put(c);
-	}
-
-	ostream& operator <<(ostream& os,char c) {
-		os.put(c);
-		return os;
-	}
-	ostream& operator <<(ostream& os,const char* s) {
-		os.write(s,strlen(s));
-		return os;
-	}
-
-	ostream& endl(ostream& os) {
-		os.put('\n');
-		os.flush();
-		return os;
-	}
-	ostream& ends(ostream& os) {
-		os.put('\0');
-		return os;
-	}
-	ostream& flush(ostream& os) {
-		os.flush();
-		return os;
 	}
 }

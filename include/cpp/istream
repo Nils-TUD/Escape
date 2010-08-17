@@ -24,6 +24,7 @@
 #include <impl/streams/ios.h>
 #include <impl/streams/ios_base.h>
 #include <stdio.h>
+#include <ctype.h>
 
 namespace std {
 	/**
@@ -38,11 +39,15 @@ namespace std {
 		/**
 		 * Constructs an object of class istream with given stream-buffer
 		 */
-		explicit istream(streambuf* sb);
+		explicit istream(streambuf* sb)
+			: _lastcount(0), _sb(sb) {
+			ios::init(sb);
+		}
 		/**
 		 * Destructor. Does not perform any operations of rdbuf().
 		 */
-		virtual ~istream();
+		virtual ~istream() {
+		}
 
 		/**
 		 * For pre- and post-operations
@@ -57,11 +62,14 @@ namespace std {
 			/**
 			 * Does nothing
 			 */
-			~sentry();
+			~sentry() {
+			}
 			/**
 			 * @return wether everything is ok
 			 */
-			operator bool() const;
+			operator bool() const {
+				return _ok;
+			}
 		private:
 			sentry(const sentry &); // not defined
 			sentry & operator =(const sentry &); // not defined
@@ -73,9 +81,18 @@ namespace std {
 		/**
 		 * Calls pf(*this) and returns *this
 		 */
-		istream& operator >>(istream& (*pf)(istream&));
-		istream& operator >>(ios& (*pf)(ios&));
-		istream& operator >>(ios_base & (*pf)(ios_base &));
+		istream& operator >>(istream& (*pf)(istream&)) {
+			pf(*this);
+			return *this;
+		}
+		istream& operator >>(ios& (*pf)(ios&)) {
+			pf(*this);
+			return *this;
+		}
+		istream& operator >>(ios_base & (*pf)(ios_base &)) {
+			pf(*this);
+			return *this;
+		}
 
 		/**
 		 * Reads an integer or floating-point-number from the stream into the given integer-
@@ -89,12 +106,30 @@ namespace std {
 		 * @return *this
 		 */
 		istream& operator >>(bool& n);
-		istream& operator >>(short& n);
-		istream& operator >>(unsigned short& n);
-		istream& operator >>(int& n);
-		istream& operator >>(unsigned int& n);
-		istream& operator >>(long& n);
-		istream& operator >>(unsigned long& n);
+		istream& operator >>(short& n) {
+			readInteger(n,true);
+			return *this;
+		}
+		istream& operator >>(unsigned short& n) {
+			readInteger(n,false);
+			return *this;
+		}
+		istream& operator >>(int& n) {
+			readInteger(n,true);
+			return *this;
+		}
+		istream& operator >>(unsigned int& n) {
+			readInteger(n,false);
+			return *this;
+		}
+		istream& operator >>(long& n) {
+			readInteger(n,true);
+			return *this;
+		}
+		istream& operator >>(unsigned long& n) {
+			readInteger(n,false);
+			return *this;
+		}
 		/* TODO
 		 * istream& operator >>(float& f);
 		istream& operator >>(double& f);
@@ -114,7 +149,9 @@ namespace std {
 		 * @return the number of characters extracted by the last unformatted input member
 		 * 	function called for the object.
 		 */
-		size_type lastcount() const;
+		size_type lastcount() const {
+			return _lastcount;
+		}
 		/**
 		 * Extracts a character c, if one is available. Otherwise, the function calls
 		 * setstate(failbit), which may throw ios_base::failure.
@@ -125,7 +162,9 @@ namespace std {
 		/**
 		 * @return get(s ,n ,widen('\n'))
 		 */
-		istream& get(char_type* s,size_type n);
+		istream& get(char_type* s,size_type n) {
+			return get(s,n,'\n');
+		}
 		/**
 		 * Extracts characters and stores them into successive locations of an array whose first
 		 * element is designated by <s>. The method stops if <n>-1 characters are stored, EOF occurrs
@@ -140,7 +179,9 @@ namespace std {
 		/**
 		 * @return get(sb , widen('\n'))
 		 */
-		istream& get(streambuf& sb);
+		istream& get(streambuf& sb) {
+			return get(sb,'\n');
+		}
 		/**
 		 * Extracts characters and inserts them in the output sequence controlled by <sb>. The method
 		 * stops if inserting fails, EOF is reached, an exception occurs or <delim> is found.
@@ -170,7 +211,9 @@ namespace std {
 		/**
 		 * @return getline(s ,n ,widen('\n'))
 		 */
-		istream& getline(char_type* s,size_type n);
+		istream& getline(char_type* s,size_type n) {
+			return getline(s,n,'\n');
+		}
 		/**
 		 * Extracts characters and stores them into successive locations of an array whose first
 		 * element is designated by <s>. The method stops if <n>-1 characters are stored, EOF is
@@ -215,7 +258,8 @@ namespace std {
 		int sync();
 
 	private:
-		void readInteger(long &n,bool sign);
+		template<class T>
+		void readInteger(T &n,bool sign);
 		bool readAlphaBool();
 		bool readString(const char *exp);
 
@@ -225,13 +269,28 @@ namespace std {
 	};
 
 	/**
+	 * Discards whitespace
+	 *
+	 * @param is the stream
+	 * @return is
+	 */
+	inline istream& ws(istream& is) {
+		istream::sentry se(is,false);
+		return is;
+	}
+
+	/**
 	 * Reads and extracts the current character and stores it into <c>
 	 *
 	 * @param in the stream
 	 * @param c the reference to the character
 	 * @return in
 	 */
-	istream& operator >>(istream& in,char& c);
+	inline istream& operator >>(istream& in,char& c) {
+		ws(in);
+		c = in.get();
+		return in;
+	}
 
 	/**
 	 * Reads and extracts characters until either EOF is reached, an error occurrs or a
@@ -242,15 +301,12 @@ namespace std {
 	 * @param s the string to store the characters in
 	 * @return *this
 	 */
-	istream& operator >>(istream& in,char* s);
-
-	/**
-	 * Discards whitespace
-	 *
-	 * @param is the stream
-	 * @return is
-	 */
-	istream& ws(istream& is);
+	inline istream& operator >>(istream& in,char* s) {
+		ws(in);
+		return in.getword(s);
+	}
 }
+
+#include "../../lib/cpp/istream.cc"
 
 #endif /* ISTREAM_ */

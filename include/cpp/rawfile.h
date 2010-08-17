@@ -51,13 +51,17 @@ namespace std {
 		/**
 		 * Does nothing
 		 */
-		rawfile();
+		rawfile()
+			: _mode(0), _fd(-1) {
+		}
 		/**
 		 * Uses the given file-descriptor (assumes read- and write-support)
 		 *
 		 * @param fd the file-descriptor
 		 */
-		rawfile(tFD fd);
+		rawfile(tFD fd)
+			: _mode(READ | WRITE), _fd(fd) {
+		}
 		/**
 		 * Opens the given file with given mode
 		 *
@@ -65,11 +69,16 @@ namespace std {
 		 * @param mode the mode (READ | WRITE | APPEND)
 		 * @throws io_exception if it goes wrong
 		 */
-		rawfile(const string& filename,open_type mode);
+		rawfile(const string& filename,open_type mode)
+			: _mode(0), _fd(-1) {
+			open(filename,mode);
+		}
 		/**
 		 * Closes the file, if still open
 		 */
-		~rawfile();
+		~rawfile() {
+			close();
+		}
 
 		/**
 		 * Opens the given file with given mode

@@ -48,7 +48,7 @@ export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wno-long-long
 export DWFLAGS=-w -wi
 ifeq ($(BUILDDIR),$(abspath build/debug))
-	export CPPDEFFLAGS=$(CPPWFLAGS) -g -D LOGSERIAL
+	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g -D LOGSERIAL
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 else

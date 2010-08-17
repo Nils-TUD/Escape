@@ -33,45 +33,61 @@ namespace std {
 		/**
 		 * Builds a new file-stream
 		 */
-		ifstream();
+		ifstream()
+			: istream(new filebuf()) {
+		}
 		/**
 		 * Builds a new file-stream and opens the given file
 		 *
 		 * @param filename the file to open
 		 * @param which the openmode (in by default)
 		 */
-		explicit ifstream(const char* filename,ios_base::openmode which = ios_base::in);
+		explicit ifstream(const char* filename,ios_base::openmode which = ios_base::in)
+			: istream(new filebuf()) {
+			rdbuf()->open(filename,which);
+		}
 		/**
 		 * Destructor
 		 */
-		virtual ~ifstream();
+		virtual ~ifstream() {
+		}
 
 		/**
 		 * @return the file-buffer
 		 */
-		filebuf* rdbuf() const;
+		filebuf* rdbuf() const {
+			return static_cast<filebuf*>(ios::rdbuf());
+		}
 		/**
 		 * Uses the given file-descriptor
 		 *
 		 * @param fd the file-descriptor
 		 * @param which the open-mode (in by default)
 		 */
-		void open(tFD fd,ios_base::openmode which = ios_base::in);
+		void open(tFD fd,ios_base::openmode which = ios_base::in) {
+			rdbuf()->open(fd,which);
+		}
 		/**
 		 * Opens the file <s> with given open-mode
 		 *
 		 * @param s the file
 		 * @param mode the mode
 		 */
-		void open(const char* s,ios_base::openmode mode = ios_base::in);
+		void open(const char* s,ios_base::openmode mode = ios_base::in) {
+			rdbuf()->open(s,mode);
+		}
 		/**
 		 * @return if a file has been opened successfully
 		 */
-		bool is_open() const;
+		bool is_open() const {
+			return rdbuf()->is_open();
+		}
 		/**
 		 * Closes the file
 		 */
-		void close();
+		void close() {
+			rdbuf()->close();
+		}
 	};
 }
 

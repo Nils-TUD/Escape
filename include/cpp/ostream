@@ -21,6 +21,7 @@
 #define OSTREAM_
 
 #include <stddef.h>
+#include <esc/width.h>
 #include <impl/streams/ios.h>
 #include <impl/streams/ios_base.h>
 
@@ -39,11 +40,15 @@ namespace std {
 		/**
 		 * Constructs a new output-stream with given streambuffer
 		 */
-		explicit ostream(streambuf* sb);
+		explicit ostream(streambuf* sb)
+			: _sb(sb) {
+			ios::init(sb);
+		}
 		/**
 		 * Destructor
 		 */
-		virtual ~ostream();
+		virtual ~ostream() {
+		}
 
 		/**
 		 * For pre- and post-operations
@@ -61,7 +66,9 @@ namespace std {
 			/**
 			 * @return wether everything is ok
 			 */
-			operator bool() const;
+			operator bool() const {
+				return _ok;
+			}
 		private:
 			sentry(const sentry &); // not defined
 			sentry & operator =(const sentry &); // not defined
@@ -84,9 +91,18 @@ namespace std {
 		/**
 		 * Calls pf(*this) and returns *this
 		 */
-		ostream& operator <<(ostream& (*pf)(ostream&));
-		ostream& operator <<(ios& (*pf)(ios&));
-		ostream& operator <<(ios_base & (*pf)(ios_base &));
+		ostream& operator <<(ostream& (*pf)(ostream&)) {
+			pf(*this);
+			return *this;
+		}
+		ostream& operator <<(ios& (*pf)(ios&)) {
+			pf(*this);
+			return *this;
+		}
+		ostream& operator <<(ios_base & (*pf)(ios_base &)) {
+			pf(*this);
+			return *this;
+		}
 
 		/**
 		 * Writes the given integer or floating-point-number into the output-stream
@@ -96,18 +112,54 @@ namespace std {
 		 * @param p the pointer
 		 */
 		ostream& operator <<(bool n);
-		ostream& operator <<(short n);
-		ostream& operator <<(unsigned short n);
-		ostream& operator <<(int n);
-		ostream& operator <<(unsigned int n);
-		ostream& operator <<(long n);
-		ostream& operator <<(unsigned long n);
-		ostream& operator <<(long long n);
-		ostream& operator <<(unsigned long long n);
-		ostream& operator <<(float f);
-		ostream& operator <<(double f);
-		ostream& operator <<(long double f);
-		ostream& operator <<(const void * p);
+		ostream& operator <<(short n) {
+			writeSigned(n);
+			return *this;
+		}
+		ostream& operator <<(unsigned short n) {
+			writeUnsigned(n);
+			return *this;
+		}
+		ostream& operator <<(int n) {
+			writeSigned(n);
+			return *this;
+		}
+		ostream& operator <<(unsigned int n) {
+			writeUnsigned(n);
+			return *this;
+		}
+		ostream& operator <<(long n) {
+			writeSigned(n);
+			return *this;
+		}
+		ostream& operator <<(unsigned long n) {
+			writeUnsigned(n);
+			return *this;
+		}
+		ostream& operator <<(long long n) {
+			writeSigned(n);
+			return *this;
+		}
+		ostream& operator <<(unsigned long long n) {
+			writeUnsigned(n);
+			return *this;
+		}
+		ostream& operator <<(float f) {
+			writeDouble(f);
+			return *this;
+		}
+		ostream& operator <<(double f) {
+			writeDouble(f);
+			return *this;
+		}
+		ostream& operator <<(long double f) {
+			writeDouble(f);
+			return *this;
+		}
+		ostream& operator <<(const void * p) {
+			writeUnsigned((unsigned long)(p));
+			return *this;
+		}
 
 		ostream& operator <<(streambuf* sb);
 
@@ -117,7 +169,9 @@ namespace std {
 		 * @param c the character
 		 * @return *this
 		 */
-		ostream& put(char_type c);
+		ostream& put(char_type c) {
+			return write(&c,1);
+		}
 		/**
 		 * Writes <n> characters from the given string into the stream
 		 *
@@ -156,25 +210,42 @@ namespace std {
 	/**
 	 * Writes the given character into the given stream
 	 */
-	ostream& operator <<(ostream&,char);
-
+	inline ostream& operator <<(ostream& os,char c) {
+		os.put(c);
+		return os;
+	}
 	/**
 	 * Writes the given string into the given stream
 	 */
-	ostream& operator <<(ostream&,const char *);
+	inline ostream& operator <<(ostream& os,const char* s) {
+		os.write(s,strlen(s));
+		return os;
+	}
 
 	/**
 	 * Writes a newline into the given stream
 	 */
-	ostream& endl(ostream& os);
+	inline ostream& endl(ostream& os) {
+		os.put('\n');
+		os.flush();
+		return os;
+	}
 	/**
 	 * Writes a null-character into the given stream
 	 */
-	ostream& ends(ostream& os);
+	inline ostream& ends(ostream& os) {
+		os.put('\0');
+		return os;
+	}
 	/**
 	 * Flushes the given stream
 	 */
-	ostream& flush(ostream& os);
+	inline ostream& flush(ostream& os) {
+		os.flush();
+		return os;
+	}
 }
+
+#include "../../lib/cpp/ostream.cc"
 
 #endif /* OSTREAM_ */

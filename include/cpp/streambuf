@@ -29,8 +29,11 @@ namespace std {
 	 */
 	class bad_state : public std::exception {
 	public:
-		explicit bad_state(const string & msg);
-		virtual const char* what() const throw();
+		explicit bad_state(const string & msg) : _msg(msg.c_str()) {
+		}
+		virtual const char* what() const throw() {
+			return _msg;
+		}
 	private:
 		const char *_msg;
 	};
@@ -48,11 +51,13 @@ namespace std {
 		/**
 		 * Creates a stream-buffer (does nothing)
 		 */
-		streambuf();
+		streambuf() {
+		}
 		/**
 		 * Destructor (does nothing)
 		 */
-		virtual ~streambuf();
+		virtual ~streambuf() {
+		}
 
 		/**
 		 * @return the number of available characters

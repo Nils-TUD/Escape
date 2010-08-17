@@ -51,74 +51,14 @@ namespace std {
 		if(is.good())
 			_ok = true;
 	}
-	istream::sentry::~sentry() {
-	}
-	istream::sentry::operator bool() const {
-		return _ok;
-	}
 
 	// === istream ===
-	istream::istream(streambuf* sb)
-		: _lastcount(0), _sb(sb) {
-		ios::init(sb);
-	}
-	istream::~istream() {
-		// TODO what to do?
-	}
-
-	istream& istream::operator >>(istream& (*pf)(istream&)) {
-		pf(*this);
-		return *this;
-	}
-	istream& istream::operator >>(ios& (*pf)(ios&)) {
-		pf(*this);
-		return *this;
-	}
-	istream& istream::operator >>(ios_base & (*pf)(ios_base &)) {
-		pf(*this);
-		return *this;
-	}
 
 	istream& istream::operator >>(bool& n) {
 		if(ios_base::flags() & ios_base::boolalpha)
 			n = readAlphaBool();
-		else {
-			long l;
-			readInteger(l,false);
-			n = static_cast<bool>(l);
-		}
-		return *this;
-	}
-	istream& istream::operator >>(short& n) {
-		long l;
-		readInteger(l,true);
-		n = static_cast<short>(l);
-		return *this;
-	}
-	istream& istream::operator >>(unsigned short& n) {
-		long l;
-		readInteger(l,false);
-		n = static_cast<unsigned short>(l);
-		return *this;
-	}
-	istream& istream::operator >>(int& n) {
-		long l;
-		readInteger(l,true);
-		n = static_cast<int>(l);
-		return *this;
-	}
-	istream& istream::operator >>(unsigned int& n) {
-		long l;
-		readInteger(l,false);
-		n = static_cast<unsigned int>(l);
-		return *this;
-	}
-	istream& istream::operator >>(long& n) {
-		readInteger(n,true);
-		return *this;
-	}
-	istream& istream::operator >>(unsigned long& n) {
-		readInteger((long&)(n),false);
+		else
+			readInteger(n,false);
 		return *this;
 	}
 
@@ -153,64 +93,6 @@ namespace std {
 		return false;
 	}
 
-	void istream::readInteger(long &n,bool sign) {
-		sentry se(*this,false);
-		if(se) {
-			bool neg = false;
-			try {
-				static const char *numTable = "0123456789abcdef";
-				int base = ios_base::get_base();
-
-				// handle '-'
-				if(sign) {
-					char_type rc = _sb->peek();
-					if(rc == EOF) {
-						ios::setstate(ios_base::eofbit);
-						goto done;
-					}
-					if(rc == '-') {
-						neg = true;
-						_sb->get();
-					}
-				}
-
-				// read until an invalid char is found or the max length is reached
-				n = 0;
-				int remain = ios_base::width();
-				if(remain == 0)
-					remain = -1;
-				while(remain < 0 || remain-- > 0) {
-					char_type tc = _sb->get();
-					if(tc == EOF) {
-						ios::setstate(ios_base::eofbit);
-						break;
-					}
-					tc = tolower(tc);
-					if(tc >= '0' && tc <= numTable[base - 1]) {
-						if(base > 10 && tc >= 'a')
-							n = n * base + (10 + tc - 'a');
-						else
-							n = n * base + (tc - '0');
-					}
-					else {
-						_sb->unget();
-						break;
-					}
-				}
-			}
-			catch(...) {
-				ios::setstate(ios_base::badbit);
-			}
-			done:
-			if(neg)
-				n = -n;
-			ios_base::width(0);
-		}
-	}
-
-	istream::size_type istream::lastcount() const {
-		return _lastcount;
-	}
 	istream::char_type istream::get() {
 		_lastcount = 0;
 		sentry se(*this,true);
@@ -233,9 +115,6 @@ namespace std {
 		return c;
 	}
 
-	istream& istream::get(char_type* s,size_type n) {
-		return get(s,n,'\n');
-	}
 	istream& istream::get(char_type* s,size_type n,char_type delim) {
 		_lastcount = 0;
 		sentry se(*this,true);
@@ -264,9 +143,6 @@ namespace std {
 			ios::setstate(ios_base::failbit);
 		ios_base::width(0);
 		return *this;
-	}
-	istream& istream::get(streambuf& sb) {
-		return get(sb,'\n');
 	}
 	istream& istream::get(streambuf& sb,char_type delim) {
 		_lastcount = 0;
@@ -353,9 +229,6 @@ namespace std {
 		return *this;
 	}
 
-	istream& istream::getline(char_type* s,size_type n) {
-		return getline(s,n,'\n');
-	}
 	istream& istream::getline(char_type* s,size_type n,
 			char_type delim) {
 		_lastcount = 0;
@@ -471,20 +344,5 @@ namespace std {
 			}
 		}
 		return *this;
-	}
-
-	istream& operator >>(istream& in,char& c) {
-		ws(in);
-		c = in.get();
-		return in;
-	}
-	istream& operator >>(istream& in,char* s) {
-		ws(in);
-		return in.getword(s);
-	}
-
-	istream& ws(istream& is) {
-		istream::sentry se(is,false);
-		return is;
 	}
 }

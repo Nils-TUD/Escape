@@ -21,30 +21,12 @@
 #include <stdio.h>
 
 namespace std {
-	stringbuf::stringbuf(ios_base::openmode which)
-		: streambuf(), _pos(0), _mode(which), _str(string()) {
-	}
 	stringbuf::stringbuf(const string& s,ios_base::openmode which)
 		: streambuf(), _pos(0), _mode(which), _str(s) {
 		if(_mode & ios_base::trunc)
 			_str.clear();
 		if(_mode & ios_base::ate)
 			_pos = _str.length();
-	}
-	stringbuf::~stringbuf() {
-	}
-
-	string stringbuf::str() const {
-		return _str;
-	}
-	void stringbuf::str(const string& s) {
-		// reset position
-		_pos = 0;
-		_str = s;
-	}
-
-	stringbuf::pos_type stringbuf::available() const {
-		return _str.length() - _pos;
 	}
 
 	stringbuf::char_type stringbuf::peek() const {
@@ -73,8 +55,5 @@ namespace std {
 		if(_mode & ios_base::app)
 			_pos = _str.length();
 		_str.insert(_pos++,&c,1);
-	}
-
-	void stringbuf::flush() {
 	}
 }

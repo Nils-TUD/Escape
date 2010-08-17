@@ -22,14 +22,6 @@
 #include <stdio.h>
 
 namespace std {
-	filebuf::filebuf()
-		: _fd(-1), _inPos(0), _inMax(0), _inBuf(NULL), _totalInPos(0), _outPos(0),
-		  _outBuf(NULL), _mode(0) {
-	}
-	filebuf::~filebuf() {
-		close();
-	}
-
 	filebuf* filebuf::open(const char* s,ios_base::openmode mode) {
 		char path[MAX_PATH_LEN];
 		close();
@@ -69,10 +61,6 @@ namespace std {
 		if(mode & (ios_base::app | ios_base::ate))
 			omode |= IO_APPEND;
 		return omode;
-	}
-
-	bool filebuf::is_open() const {
-		return _fd >= 0;
 	}
 
 	filebuf* filebuf::close() {

@@ -293,7 +293,7 @@ namespace std {
 				long long pre = (long long)d;
 				streamsize nwidth = 0;
 				streamsize pwidth = ios::width();
-				if(!(ios_base::flags() & (ios_base::right | ios_base::left)) && pwidth > 0) {
+				if((ios_base::flags() & (ios_base::right | ios_base::left)) && pwidth > 0) {
 					nwidth = getlwidth(pre) + ios::precision() + 1;
 					if(d >= 0 && (ios_base::flags() & ios_base::showpos))
 						nwidth++;

@@ -94,8 +94,8 @@ int main(int argc,char **argv) {
 	string fields;
 	cmdargs args(argc,argv,0);
 	try {
-		//args.parse("f=s*",&fields);
-		throw cmdargs_error("foo");
+		args.parse("f=s*",&fields);
+		//throw cmdargs_error("foo");
 	}
 	catch(const cmdargs_error& f) {
 		cerr << "Catched exception" << endl;

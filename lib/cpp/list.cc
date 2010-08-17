@@ -539,12 +539,30 @@ namespace std {
 	// === sort ===
 	template<class T>
 	inline void list<T>::sort() {
-		std::sort(begin(),end());
+		sort(less<T>());
 	}
 	template<class T>
 	template<class Compare>
 	inline void list<T>::sort(Compare comp) {
-		std::sort(begin(),end(),comp);
+		// bubblesort is enough for now :P
+		iterator first = begin();
+		iterator last = end();
+		iterator lend = last - 1;
+		size_t n = distance(first,last);
+		bool swapped;
+		do {
+			swapped = false;
+			for(iterator it = first; it != lend; it++) {
+				value_type& t1 = *it;
+				value_type& t2 = *(it + 1);
+				// t1 > t2 <=> t2 < t1
+				if(comp(t2,t1)) {
+					std::swap(t1,t2);
+					swapped = true;
+				}
+			}
+		}
+		while(swapped && n > 1);
 	}
 
 	// === reverse and swap ===

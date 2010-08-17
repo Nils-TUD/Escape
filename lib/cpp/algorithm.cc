@@ -295,6 +295,43 @@ namespace std {
 		return result;
 	}
 
+	template<class RandAccIt,class Compare>
+	static RandAccIt divide(RandAccIt ileft,RandAccIt ipiv,Compare comp) {
+		RandAccIt i = ileft;
+		RandAccIt j = ipiv - 1;
+		do {
+			// right until the element is > piv
+			while(!comp(*ipiv,*i) && i < ipiv)
+				++i;
+			// left until the element is < piv
+			while(!comp(*j,*ipiv) && j > ileft)
+				--j;
+
+			// swap
+			if(i < j) {
+				swap(*i,*j);
+				++i;
+				--j;
+			}
+		}
+		while(i < j);
+
+		// swap piv with element i
+		if(comp(*ipiv,*i))
+			swap(*i,*ipiv);
+		return i;
+	}
+	template<class RandAccIt,class Compare>
+	static void qsort(RandAccIt left,RandAccIt right,Compare comp) {
+		// TODO someday we should provide a better implementation which uses another sort-algo
+		// for small arrays, don't uses recursion and so on
+		if(left < right) {
+			RandAccIt i = divide(left,right,comp);
+			qsort(left,i - 1,comp);
+			qsort(i + 1,right,comp);
+		}
+	}
+
 	template<class RandomAccessIterator>
 	inline void sort(RandomAccessIterator first,RandomAccessIterator last) {
 	    typedef typename std::iterator_traits<RandomAccessIterator>::value_type T;
@@ -302,23 +339,7 @@ namespace std {
 	}
 	template<class RandomAccessIterator,class Compare>
 	void sort(RandomAccessIterator first,RandomAccessIterator last,Compare comp) {
-		// bubblesort is enough for now :P
-		typedef typename iterator_traits<RandomAccessIterator>::value_type T;
-		RandomAccessIterator lend = last - 1;
-		size_t n = distance(first,last);
-		bool swapped;
-		do {
-			swapped = false;
-			for(RandomAccessIterator it = first; it != lend; it++) {
-				T& t1 = *it;
-				T& t2 = *(it + 1);
-				if(!comp(t1,t2) && t1 != t2) {
-					swap(t1,t2);
-					swapped = true;
-				}
-			}
-		}
-		while(swapped && n > 1);
+		qsort(first,last - 1,comp);
 	}
 
 	template<class ForwardIterator,class T>

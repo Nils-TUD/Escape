@@ -21,9 +21,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* macro to get a pointer to element <elNo> from <array> with a size of <elSize> per element */
-#define QSORT_AGET(array,elSize,elNo) (((char*)(array)) + (elSize) * (elNo))
-
 /**
  * Quicksort-implementation
  * source: http://de.wikipedia.org/wiki/Quicksort

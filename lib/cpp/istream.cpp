@@ -297,9 +297,9 @@ namespace std {
 						if(n == 0)
 							break;
 						n--;
-						_lastcount++;
 					}
 					char_type c = _sb->get();
+					_lastcount++;
 					if(c == EOF) {
 						ios::setstate(ios_base::eofbit);
 						break;

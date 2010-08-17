@@ -137,8 +137,10 @@ void *realloc_guard(void *addr,size_t size) {
 
 void free_guard(void *addr) {
 	if(addr) {
-		assert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF);
-		assert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF);
+		vassert(*(u32*)((u32)addr - sizeof(u32) * 2) == 0xDEADBEEF,
+				"Actually: %x",*(u32*)((u32)addr - sizeof(u32) * 2));
+		vassert(*(u32*)((u32)addr + *((u32*)addr - 1)) == 0xDEADBEEF,
+				"Actually: %x",*(u32*)((u32)addr + *((u32*)addr - 1)));
 		_free((void*)((u32)addr - sizeof(u32) * 2));
 	}
 }

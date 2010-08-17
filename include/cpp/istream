@@ -130,6 +130,14 @@ namespace std {
 			readInteger(n,false);
 			return *this;
 		}
+		istream& operator >>(long long& n) {
+			readInteger(n,true);
+			return *this;
+		}
+		istream& operator >>(unsigned long long& n) {
+			readInteger(n,false);
+			return *this;
+		}
 		/* TODO
 		 * istream& operator >>(float& f);
 		istream& operator >>(double& f);

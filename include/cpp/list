@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <iterator>
 #include <algorithm>
+#include <functional>
 
 namespace std {
 	// forward declarations to implementation-details

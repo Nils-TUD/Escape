@@ -36,7 +36,7 @@ $(STLIB): $(COBJ) $(GENOBJ)
 
 $(DYNLIB):	$(CPICOBJS) $(PICGENOBJ) $(SHLDCONF)
 		@echo "	" LINKING $(DYNLIB)
-		@$(LD) -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(PICGENOBJ);
+		@$(LD) --eh-frame-hdr -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(PICGENOBJ);
 		$(ROOT)/tools/linklib.sh $(DYNLIB)
 		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
 

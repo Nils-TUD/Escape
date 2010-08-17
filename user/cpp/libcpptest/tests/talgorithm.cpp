@@ -156,7 +156,7 @@ static void test_transform(void) {
 	test_caseSucceded();
 }
 
-static bool greater(int a) {
+static bool myGreater(int a) {
 	return a > 10;
 }
 
@@ -169,7 +169,7 @@ static void test_replace(void) {
 	replace(l.begin(),l.end(),20,99);
 	check_content(l,8,10,99,30,30,99,10,10,99);
 
-	replace_if(l.begin(),l.end(),greater,12);
+	replace_if(l.begin(),l.end(),myGreater,12);
 	check_content(l,8,10,12,12,12,12,10,10,12);
 
 	test_caseSucceded();

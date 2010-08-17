@@ -27,7 +27,7 @@ $(STLIB): $(COBJS)
 
 $(DYNLIB): $(CPICOBJS)
 		@echo "	" LINKING $(DYNLIB)
-		@$(LD) -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(ADDLIBS);
+		@$(LD) --eh-frame-hdr -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(ADDLIBS);
 		@#$(CPPC) -shared -nostartfiles -nostdlib -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(ADDLIBS);
 		$(ROOT)/tools/linklib.sh $(DYNLIB)
 		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)

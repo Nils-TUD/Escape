@@ -17,9 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/dir.h>
 #include <file.h>
 #include <string.h>
-#include <esc/dir.h>
+#include <env.h>
 
 namespace std {
 	file::file(const string& p)
@@ -61,26 +62,22 @@ namespace std {
 	}
 
 	void file::init(const string& p,const string& n) {
-		char tmp[MAX_PATH_LEN];
 		string apath(p);
-		apath += '/';
-		apath += n;
-		// TODO this does not work for "." and ".." because abspath "resolves" them
-		// this way we would for example stat "/" for "/boot/.." instead
-		u32 len = abspath(tmp,sizeof(tmp),apath.c_str());
-		if(len > 1)
-			tmp[len - 1] = '\0';
-		char *last = strrchr(tmp,'/');
-		string::size_type pos = last - tmp;
-		if(pos == 0)
-			_parent = '/';
-		else
-			_parent = string(tmp,tmp + pos);
-		if(n == "." || n == "..")
+		env::absolutify(apath);
+		if(apath.size() > 1 && apath[apath.size() - 1] == '/')
+			apath.erase(apath.end() - 1);
+		if(!n.empty()) {
+			if(apath.size() > 1)
+				apath += "/";
+			apath += n;
+		}
+		string::size_type pos = apath.rfind('/');
+		if(!n.empty())
 			_name = n;
 		else
-			_name = string(tmp + pos + 1,tmp + len);
-		s32 res = stat(tmp,&_info);
+			_name = string(apath.begin() + pos + 1,apath.end());
+		_parent = string(apath.begin(),apath.begin() + pos + 1);
+		s32 res = stat(apath.c_str(),&_info);
 		if(res < 0)
 			throw io_exception("stat failed",res);
 	}

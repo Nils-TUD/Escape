@@ -31,6 +31,11 @@ namespace std {
 		}
 		return res;
 	}
+	string& env::absolutify(string& path) {
+		if(path.size() == 0 || path[0] != '/')
+			path.insert(0,env::get("CWD"));
+		return path;
+	}
 	string env::get(const string& name) {
 		char *val = getenv(name.c_str());
 		if(!val)

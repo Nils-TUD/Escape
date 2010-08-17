@@ -69,7 +69,7 @@ public:
 		_rsize = f._rsize;
 		return *this;
 	}
-	~lsfile() {
+	virtual ~lsfile() {
 	}
 
 	size_type rsize() const {
@@ -126,8 +126,10 @@ int main(int argc,char *argv[]) {
 
 	// use CWD or given path
 	string path;
-	if(!args.get_free().empty())
+	if(!args.get_free().empty()) {
 		path = *(args.get_free()[0]);
+		env::absolutify(path);
+	}
 	else
 		path = env::get("CWD");
 
@@ -228,15 +230,15 @@ static bool compareEntries(const lsfile* a,const lsfile* b) {
 }
 
 static vector<lsfile*> getEntries(const string& path) {
-	lsfile* dir = new lsfile(path);
+	file dir(path);
 	vector<lsfile*> res;
-	if(dir->is_dir()) {
-		vector<sDirEntry> files = dir->list_files(flags & F_ALL);
+	if(dir.is_dir()) {
+		vector<sDirEntry> files = dir.list_files(flags & F_ALL);
 		for(vector<sDirEntry>::const_iterator it = files.begin(); it != files.end(); ++it)
 			res.push_back(buildFile(file(path,it->name)));
 	}
 	else
-		res.push_back(dir);
+		res.push_back(buildFile(dir));
 	return res;
 }
 

@@ -37,6 +37,15 @@ namespace std {
 		static map<string,string> list();
 
 		/**
+		 * Changes the given path to an absolute path one. That means it prepends CWD if path
+		 * does not start with a '/'.
+		 *
+		 * @param path your possibly relative path (will be changed)
+		 * @return the absolute path
+		 */
+		static string& absolutify(string& path);
+
+		/**
 		 * Fetches the value of the env-variable with given name
 		 *
 		 * @param name the name

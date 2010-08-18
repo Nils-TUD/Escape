@@ -130,8 +130,10 @@ namespace std {
 				index = (_flags & NO_DASHES) ? 1 : 2;
 				if(!(_flags & NO_DASHES) && (arg->size() == 0 || arg->at(0) != '-'))
 					continue;
-				// multiple flags may be passed with one argument
-				if(!hasVal && arg->find(name[0],index - 1) != string::npos) {
+				// multiple flags may be passed with one argument; don't search in args with
+				// because this can't be flag-arguments.
+				if(!hasVal && arg->find('=') == string::npos &&
+						arg->find(name[0],index - 1) != string::npos) {
 					pos = it;
 					return string(1,name[0]);
 				}

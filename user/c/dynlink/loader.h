@@ -21,9 +21,9 @@
 #define LOADER_H_
 
 #include <esc/common.h>
+#include <sys/task/elf.h>
 #include <esc/mem.h>
 #include <esc/sllist.h>
-#include "elf.h"
 
 #define TEXT_BEGIN		0x1000
 
@@ -45,6 +45,8 @@ struct sSharedLib {
 	sBinDesc bin;
 	u32 loadAddr;
 	u32 textSize;
+	u32 phdr;
+	u32 phdrNum;
 	Elf32_Dyn *dyn;
 	Elf32_Word *hashTbl;
 	Elf32_Rel *jmprel;

@@ -35,6 +35,7 @@ namespace std {
 		typedef ios::char_type char_type;
 		typedef ios::int_type int_type;
 		typedef ios::size_type size_type;
+		typedef s32 esc_type;
 
 		/**
 		 * Constructs an object of class istream with given stream-buffer
@@ -243,6 +244,15 @@ namespace std {
 		 * @return *this
 		 */
 		istream& ignore(size_type n = 1,char_type delim = EOF);
+		/**
+		 * Reads an escape-code from the stream. Assumes that the last read char was '\033'.
+		 *
+		 * @param n1 will be set to the first argument (ESCC_ARG_UNUSED if unused)
+		 * @param n2 will be set to the second argument (ESCC_ARG_UNUSED if unused)
+		 * @param n3 will be set to the third argument (ESCC_ARG_UNUSED if unused)
+		 * @return the scanned escape-code (ESCC_*)
+		 */
+		esc_type getesc(esc_type& n1,esc_type& n2,esc_type& n3);
 		/**
 		 * Reads but does not extract the current input character.
 		 *

@@ -34,15 +34,14 @@
 #define ELF_TYPE_PROG		0
 #define ELF_TYPE_INTERP		1
 
-static u32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry);
+static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info);
 static s32 elf_addSegment(sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,u8 type);
 
-u32 elf_loadFromFile(const char *path,u32 *dynLnkEntry) {
-	*dynLnkEntry = 0;
-	return elf_doLoadFromFile(path,ELF_TYPE_PROG,dynLnkEntry);
+s32 elf_loadFromFile(const char *path,sStartupInfo *info) {
+	return elf_doLoadFromFile(path,ELF_TYPE_PROG,info);
 }
 
-u32 elf_loadFromMem(u8 *code,u32 length) {
+s32 elf_loadFromMem(u8 *code,u32 length,sStartupInfo *info) {
 	u32 loadSegNo = 0;
 	u32 j;
 	u8 const *datPtr;
@@ -74,17 +73,20 @@ u32 elf_loadFromMem(u8 *code,u32 length) {
 		}
 	}
 
-	return (u32)eheader->e_entry;
+	info->linkerEntry = info->progEntry = eheader->e_entry;
+	info->phdr = TEXT_BEGIN + eheader->e_phoff;
+	info->phdrSize = eheader->e_phentsize * eheader->e_phnum;
+	return 0;
 }
 
-static u32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry) {
+static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 	sThread *t = thread_getRunning();
 	tFileNo file;
 	u32 j,loadSeg = 0;
 	u8 const *datPtr;
 	Elf32_Ehdr eheader;
 	Elf32_Phdr pheader;
-	sFileInfo info;
+	sFileInfo finfo;
 	sBinDesc bindesc;
 
 	file = vfsr_openFile(t->tid,VFS_READ,path);
@@ -92,11 +94,11 @@ static u32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry) {
 		return ERR_INVALID_ELF_BIN;
 
 	/* fill bindesc */
-	if(vfs_fstat(t->tid,file,&info) < 0)
+	if(vfs_fstat(t->tid,file,&finfo) < 0)
 		goto failed;
-	bindesc.ino = info.inodeNo;
-	bindesc.dev = info.device;
-	bindesc.modifytime = info.modifytime;
+	bindesc.ino = finfo.inodeNo;
+	bindesc.dev = finfo.device;
+	bindesc.modifytime = finfo.modifytime;
 
 	/* first read the header */
 	if(vfs_readFile(t->tid,file,(u8*)&eheader,sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr))
@@ -105,6 +107,15 @@ static u32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry) {
 	/* check magic */
 	if(eheader.e_ident.dword != *(u32*)ELFMAG)
 		goto failed;
+
+	if(type == ELF_TYPE_PROG) {
+		/* by default set the same; the dl will overwrite it when needed */
+		info->linkerEntry = info->progEntry = eheader.e_entry;
+		info->phdr = TEXT_BEGIN + eheader.e_phoff;
+		info->phdrSize = eheader.e_phentsize * eheader.e_phnum;
+	}
+	else
+		info->linkerEntry = eheader.e_entry;
 
 	/* load the LOAD segments. */
 	datPtr = (u8 const*)(eheader.e_phoff);
@@ -117,6 +128,7 @@ static u32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry) {
 			goto failed;
 
 		if(pheader.p_type == PT_INTERP) {
+			s32 res;
 			char *interpName;
 			/* has to be the first segment and is not allowed for the dynamic linker */
 			if(loadSeg > 0 || type != ELF_TYPE_PROG)
@@ -134,13 +146,10 @@ static u32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry) {
 				goto failed;
 			}
 			vfs_closeFile(t->tid,file);
-			/* now load him and return the entry-point; the caller can distinguish the dynamic linker
-			 * from others by the entrypoint */
-			*dynLnkEntry = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP,NULL);
+			/* now load him and stop loading the 'real' program */
+			res = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP,info);
 			kheap_free(interpName);
-			if((s32)*dynLnkEntry == ERR_INVALID_ELF_BIN)
-				return ERR_INVALID_ELF_BIN;
-			return (u32)eheader.e_entry;
+			return res;
 		}
 
 		if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
@@ -164,7 +173,7 @@ static u32 elf_doLoadFromFile(const char *path,u8 type,u32 *dynLnkEntry) {
 	}
 
 	vfs_closeFile(t->tid,file);
-	return (u32)eheader.e_entry;
+	return 0;
 
 failed:
 	vfs_closeFile(t->tid,file);

@@ -33,8 +33,10 @@ typedef struct {
 	void *d;
 } sGlobalObj;
 
-void __libc_init(void);
+void __libc_init(u32 phdr,u32 phdrSize);
 
+u32 progHeader = 0;
+u32 progHeaderSize = 0;
 static tULock exitLock = 0;
 static s16 exitFuncCount = 0;
 static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
@@ -78,7 +80,10 @@ void __cxa_finalize(void *d) {
 	}
 }
 
-void __libc_init(void) {
+void __libc_init(u32 phdr,u32 phdrSize) {
+	/* store for libstdc++ */
+	progHeader = phdr;
+	progHeaderSize = phdrSize;
 	/* tell kernel address of sigRetFunc */
 	if(setSigHandler(SIG_RET,(fSigHandler)&sigRetFunc) < 0)
 		error("Unable to tell kernel sigRet-address");

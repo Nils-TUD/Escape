@@ -80,7 +80,7 @@ static u8 initloader[] = {
 };
 
 s32 main(sMultiBoot *mbp,u32 magic) {
-	u32 entryPoint;
+	sStartupInfo info;
 	sThread *t;
 
 	UNUSED(magic);
@@ -173,13 +173,14 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 #if 1
 	/* load initloader */
-	entryPoint = elf_loadFromMem(initloader,sizeof(initloader));
+	if(elf_loadFromMem(initloader,sizeof(initloader),&info) < 0)
+		util_panic("Unable to load initloader");
 	t = thread_getRunning();
 	/* give the process some stack pages */
 	t->stackRegion = vmm_add(t->proc,NULL,0,INITIAL_STACK_PAGES * PAGE_SIZE,
 			INITIAL_STACK_PAGES * PAGE_SIZE,REG_STACK);
 	assert(t->stackRegion >= 0);
-	return entryPoint;
+	return info.progEntry;
 #else
 	while(1);
 	return 0;

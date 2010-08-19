@@ -83,7 +83,7 @@ u32 mboot_getModuleSize(void) {
 }
 
 void mboot_loadModules(sIntrptStackFrame *stack) {
-	u32 i,entryPoint;
+	u32 i;
 	tPid pid;
 	sProc *p;
 	char *name,*space,*driver;
@@ -111,6 +111,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 
 		if(proc_clone(pid,false)) {
 			/* build args */
+			sStartupInfo info;
 			s32 argc;
 			u32 argSize = 0;
 			char *argBuffer = NULL;
@@ -133,15 +134,15 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			proc_removeRegions(p,false);
 			/* now load driver */
 			memcpy(p->command,name,strlen(name) + 1);
-			entryPoint = elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart);
-			if((s32)entryPoint < 0)
+			if(elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart,&info) < 0)
 				util_panic("Loading multiboot-module %s failed",p->command);
 			argc = proc_buildArgs(args,&argBuffer,&argSize,false);
 			if(argc < 0)
 				util_panic("Building args for multiboot-module %s failed: %d",p->command,argc);
-			vassert(proc_setupUserStack(stack,argc,argBuffer,argSize,entryPoint),
+			vassert(proc_setupUserStack(stack,argc,argBuffer,argSize,&info),
 					"Unable to setup user-stack for multiboot module %s",p->command);
-			proc_setupStart(stack,entryPoint);
+			/* no dynamic linking here */
+			proc_setupStart(stack,info.progEntry);
 			kheap_free(argBuffer);
 			/* we don't want to continue the loop ;) */
 			return;

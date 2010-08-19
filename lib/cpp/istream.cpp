@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/esccodes.h>
 #include <istream>
 #include <ostream>
 #include <limits>
@@ -316,6 +317,35 @@ namespace std {
 			ios::setstate(ios_base::failbit);
 		ios_base::width(0);
 		return *this;
+	}
+
+	istream::esc_type istream::getesc(esc_type& n1,esc_type& n2,esc_type& n3) {
+		esc_type cmd = ESCC_INVALID;
+		sentry se(*this,true);
+		if(se) {
+			try {
+				int i;
+				char ec,escape[MAX_ESCC_LENGTH] = {0};
+				const char *escPtr = (const char*)escape;
+				for(i = 0; i < MAX_ESCC_LENGTH - 1 && (ec = _sb->get()) != ']'; i++)
+					escape[i] = ec;
+				if(ec == EOF)
+					ios::setstate(ios_base::eofbit);
+				else if(i < MAX_ESCC_LENGTH - 1 && ec == ']')
+					escape[i] = ec;
+				if(ec != EOF) {
+					esc_type ln1,ln2,ln3;
+					cmd = escc_get(&escPtr,&ln1,&ln2,&ln3);
+					n1 = ln1;
+					n2 = ln2;
+					n3 = ln3;
+				}
+			}
+			catch(...) {
+				ios::setstate(ios_base::failbit | ios_base::badbit);
+			}
+		}
+		return cmd;
 	}
 
 	istream::char_type istream::peek() {

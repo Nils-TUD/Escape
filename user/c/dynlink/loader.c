@@ -25,7 +25,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "elf.h"
 #include "lookup.h"
 #include "loader.h"
 
@@ -500,6 +499,8 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 					lib->dynstrtbl = NULL;
 					lib->name = dst->dynstrtbl + dst->dyn[i].d_un.d_val;
 					lib->loadAddr = 0;
+					lib->phdr = TEXT_BEGIN + eheader.e_phoff;
+					lib->phdrNum = eheader.e_phnum;
 					lib->deps = sll_create();
 					if(!lib->deps)
 						dlerror("Not enough mem!");

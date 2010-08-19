@@ -22,6 +22,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
 #include <sys/task/sched.h>
+#include <sys/task/elf.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/kheap.h>
@@ -549,7 +550,8 @@ s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser) {
 	return argc;
 }
 
-bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize,u32 tentryPoint) {
+bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize,
+		sStartupInfo *info) {
 	u32 *esp;
 	char **argv;
 	u32 totalSize;
@@ -566,6 +568,10 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 	 * +------------------+
 	 * |       argc       |
 	 * +------------------+
+	 * |     phdrSize     |  the size of the program-headers (for eh)
+	 * +------------------+
+	 * |       phdr       |  the address of the program-headers (for eh)
+	 * +------------------+
 	 * |     TLSSize      |  0 if not present
 	 * +------------------+
 	 * |     TLSStart     |  0 if not present
@@ -581,8 +587,8 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 		totalSize += (argsSize + sizeof(u32) - 1) & ~(sizeof(u32) - 1);
 		totalSize += sizeof(u32) * (argc + 1);
 	}
-	/* finally we need argc, argv, tlsSize, tlsStart and entryPoint */
-	totalSize += sizeof(u32) * 5;
+	/* finally we need argc, argv, phdrSize, phdr, tlsSize, tlsStart and entryPoint */
+	totalSize += sizeof(u32) * 7;
 
 	/* get esp */
 	vmm_getRegRange(t->proc,t->stackRegion,NULL,(u32*)&esp);
@@ -621,8 +627,11 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 	/* store argc and argv */
 	*esp-- = (u32)argv;
 	*esp-- = argc;
-	/* add TLS args and entrypoint */
-	esp = proc_addStartArgs(t,esp,tentryPoint,false);
+	*esp-- = info->phdrSize;
+	*esp-- = info->phdr;
+	/* add TLS args and entrypoint; use prog-entry here because its always the entry of the
+	 * program, not the dynamic-linker */
+	esp = proc_addStartArgs(t,esp,info->progEntry,false);
 
 	frame->uesp = (u32)esp;
 	frame->ebp = frame->uesp;

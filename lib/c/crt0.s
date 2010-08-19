@@ -37,6 +37,10 @@
 #  +------------------+
 #  |       argc       |
 #  +------------------+
+#  |     phdrSize     |  the size of the program-headers (for eh); just for initial thread!
+#  +------------------+
+#  |       phdr       |  the address of the program-headers (for eh); just for initial thread!
+#  +------------------+
 #  |     TLSSize      |  0 if not present
 #  +------------------+
 #  |     TLSStart     |  0 if not present
@@ -59,8 +63,11 @@ _start:
 
 	# initial thread calls main
 initialThread:
+	# call __libc_init(phdr,phdrSize)
 	.extern __libc_init
 	call	__libc_init
+	# remove args
+	add		$8,%esp
 	call _init
 	call	main
 

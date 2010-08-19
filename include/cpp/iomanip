@@ -45,11 +45,11 @@ namespace std {
 		}
 	};
 	std::ostream& operator<<(std::ostream& s,resetflagsobj manip) {
-		s.unsetf(manip._mask);
+		s.setf(ios_base::fmtflags(0),manip._mask);
 		return s;
 	}
 	std::istream& operator>>(std::istream& s,resetflagsobj manip) {
-		s.unsetf(manip._mask);
+		s.setf(ios_base::fmtflags(0),manip._mask);
 		return s;
 	}
 
@@ -61,12 +61,18 @@ namespace std {
 	};
 	std::ostream& operator<<(std::ostream& s,setbaseobj manip) {
 		int base = manip._base;
-		s.setf(base == 16 ? ios::hex : (base == 8 ? ios::oct : ios::dec));
+		s.setf(base == 8 ? ios_base::oct
+				: base == 10 ? ios_base::dec
+				: base == 16 ? ios_base::hex
+				: ios_base::fmtflags(0),ios_base::basefield);
 		return s;
 	}
 	std::istream& operator>>(std::istream& s,setbaseobj manip) {
 		int base = manip._base;
-		s.setf(base == 16 ? ios::hex : (base == 8 ? ios::oct : ios::dec));
+		s.setf(base == 8 ? ios_base::oct
+				: base == 10 ? ios_base::dec
+				: base == 16 ? ios_base::hex
+				: ios_base::fmtflags(0),ios_base::basefield);
 		return s;
 	}
 

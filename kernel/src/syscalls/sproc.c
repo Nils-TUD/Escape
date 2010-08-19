@@ -195,8 +195,9 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	char **args = (char**)SYSC_ARG2(stack);
 	char *argBuffer;
+	sStartupInfo info;
 	s32 argc,pathLen,res;
-	u32 argSize,dynLnkEntry,entryPoint;
+	u32 argSize;
 	tInodeNo nodeNo;
 	sThread *t = thread_getRunning();
 	sProc *p = t->proc;
@@ -235,23 +236,22 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	proc_removeRegions(p,false);
 
 	/* load program */
-	entryPoint = elf_loadFromFile(path,&dynLnkEntry);
-	if((s32)entryPoint == ERR_INVALID_ELF_BIN)
+	if(elf_loadFromFile(path,&info) < 0)
 		goto error;
 
 	/* copy path so that we can identify the process */
 	memcpy(p->command,pathSave + (pathLen > MAX_PROC_NAME_LEN ? (pathLen - MAX_PROC_NAME_LEN) : 0),
 			MIN(MAX_PROC_NAME_LEN,pathLen) + 1);
 
-	/* make process ready; its always entrypoint, even for the dynamic linker
-	 * (in this case for the program to load) */
-	if(!proc_setupUserStack(stack,argc,argBuffer,argSize,entryPoint))
+	/* make process ready */
+	if(!proc_setupUserStack(stack,argc,argBuffer,argSize,&info))
 		goto error;
-	proc_setupStart(stack,dynLnkEntry ? dynLnkEntry : entryPoint);
+	/* for starting use the linker-entry, which will be progEntry if no dl is present */
+	proc_setupStart(stack,info.linkerEntry);
 
 	/* if its the dynamic linker, open the program to exec and give him the filedescriptor,
 	 * so that he can load it including all shared libraries */
-	if(dynLnkEntry != 0) {
+	if(info.linkerEntry != info.progEntry) {
 		u32 *esp = (u32*)stack->uesp;
 		tFileNo file;
 		tFD fd = thread_getFreeFd();

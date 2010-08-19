@@ -25,7 +25,7 @@ else
 endif
 
 # wether to link drivers and user-apps statically or dynamically
-export LINKTYPE = static
+export LINKTYPE = dynamic
 
 # number of jobs passing to make
 export JOBS =

@@ -25,6 +25,7 @@
 #include <sys/machine/fpu.h>
 #include <sys/machine/vm86.h>
 #include <sys/mem/region.h>
+#include <sys/task/elf.h>
 #include <sys/vfs/node.h>
 
 /* max number of processes */
@@ -260,10 +261,11 @@ s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser);
  * @param argc the argument-count
  * @param args the arguments on after another, allocated on the heap; may be NULL
  * @param argsSize the total number of bytes for the arguments (just the data)
- * @param tentryPoint the entry-point for the thread
+ * @param info startup-info
  * @return true if successfull
  */
-bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize,u32 tentryPoint);
+bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize,
+		sStartupInfo *info);
 
 /**
  * Setups the start of execution in user-mode for given interrupt-stack

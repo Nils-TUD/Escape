@@ -25,6 +25,7 @@
 .extern __libc_init
 .extern lookup_resolve
 .extern load_setupProg
+.extern load_regFrameInfo
 
 .include "../../../lib/c/syscalls.s"
 
@@ -48,10 +49,15 @@
 
 _start:
 	# we have no TLS, so don't waste time
+	push	$0
+	# call __libc_init(0); no exceptions here
 	call	__libc_init
+	add		$4,%esp
 	call	load_setupProg
 	# first, remove fd from stack
 	add		$4,%esp
+	# push the address of load_regFrameInfo on the stack to pass it to crt0.s
+	push	$load_regFrameInfo
 	# load_setupProg returns the entrypoint
 	jmp		*%eax
 

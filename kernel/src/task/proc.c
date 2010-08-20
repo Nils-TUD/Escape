@@ -568,10 +568,6 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 	 * +------------------+
 	 * |       argc       |
 	 * +------------------+
-	 * |     phdrSize     |  the size of the program-headers (for eh)
-	 * +------------------+
-	 * |       phdr       |  the address of the program-headers (for eh)
-	 * +------------------+
 	 * |     TLSSize      |  0 if not present
 	 * +------------------+
 	 * |     TLSStart     |  0 if not present
@@ -587,8 +583,8 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 		totalSize += (argsSize + sizeof(u32) - 1) & ~(sizeof(u32) - 1);
 		totalSize += sizeof(u32) * (argc + 1);
 	}
-	/* finally we need argc, argv, phdrSize, phdr, tlsSize, tlsStart and entryPoint */
-	totalSize += sizeof(u32) * 7;
+	/* finally we need argc, argv, tlsSize, tlsStart and entryPoint */
+	totalSize += sizeof(u32) * 5;
 
 	/* get esp */
 	vmm_getRegRange(t->proc,t->stackRegion,NULL,(u32*)&esp);
@@ -627,8 +623,6 @@ bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSi
 	/* store argc and argv */
 	*esp-- = (u32)argv;
 	*esp-- = argc;
-	*esp-- = info->phdrSize;
-	*esp-- = info->phdr;
 	/* add TLS args and entrypoint; use prog-entry here because its always the entry of the
 	 * program, not the dynamic-linker */
 	esp = proc_addStartArgs(t,esp,info->progEntry,false);

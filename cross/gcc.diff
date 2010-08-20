@@ -23,7 +23,7 @@ diff -rcN src/gcc_org/gcc/config/escape.h src/gcc/gcc/config/escape.h
 --- src/gcc/gcc/config/escape.h	2010-07-05 21:46:54.000000000 +0200
 ***************
 *** 0 ****
---- 1,25 ----
+--- 1,21 ----
 +   #undef   STARTFILE_SPEC
 +   #define STARTFILE_SPEC "%{shared|pie:crt0S.o%s;:crt0.o%s} %{shared:crt1S.o%s;:crt1.o%s} %{static:crtbeginT.o%s;shared|pie:crtbeginS.o%s;:crtbegin.o%s}"
 +   
@@ -38,10 +38,6 @@ diff -rcN src/gcc_org/gcc/config/escape.h src/gcc/gcc/config/escape.h
 +       builtin_assert ("system=escape");   \
 +       builtin_assert ("system=unix");   \
 +     } while(0);
-+
-+   #if defined(HAVE_LD_EH_FRAME_HDR)
-+   #define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
-+   #endif
 +   
 +   #undef LINK_GCC_C_SEQUENCE_SPEC
 +   #define LINK_GCC_C_SEQUENCE_SPEC \
@@ -49,71 +45,6 @@ diff -rcN src/gcc_org/gcc/config/escape.h src/gcc/gcc/config/escape.h
 +   
 +   #undef TARGET_VERSION
 +   #define TARGET_VERSION fprintf(stderr, " (i386 escape)");
-diff -rcN src/gcc_org/gcc/config/t-escape src/gcc/gcc/config/t-escape
-*** src/gcc_org/gcc/config/t-escape	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/t-escape	2010-07-05 21:46:54.000000000 +0200
-***************
-*** 0 ****
---- 1,13 ----
-+# Compile crtbeginS.o and crtendS.o with pic.
-+CRTSTUFF_T_CFLAGS_S = $(CRTSTUFF_T_CFLAGS) -fPIC
-+# Compile libgcc2.a with pic.
-+#TARGET_LIBGCC2_CFLAGS = -fPIC
-+
-+# Override t-slibgcc-elf-ver to export some libgcc symbols with
-+# the symbol versions that glibc used.
-+#SHLIB_MAPFILES += $(srcdir)/config/libgcc-glibc.ver
-+
-+# Use unwind-dw2-fde-glibc
-+LIB2ADDEH = $(srcdir)/unwind-dw2.c $(srcdir)/unwind-dw2-fde-glibc.c \
-+  $(srcdir)/unwind-sjlj.c $(srcdir)/gthr-gnat.c $(srcdir)/unwind-c.c
-+LIB2ADDEHDEP = unwind.inc unwind-dw2-fde.h unwind-dw2-fde.c
-diff -rcN src/gcc_org/gcc/unwind-dw2-fde-glibc.c src/gcc/gcc/unwind-dw2-fde-glibc.c
-*** src/gcc_org/gcc/unwind-dw2-fde-glibc.c	2009-04-10 01:23:07.000000000 +0200
---- src/gcc/gcc/unwind-dw2-fde-glibc.c	2010-08-18 17:38:12.000000000 +0200
-***************
-*** 33,39 ****
-  #include "tconfig.h"
-  #include "tsystem.h"
-  #ifndef inhibit_libc
-! #include <link.h>
-  #endif
-  #include "coretypes.h"
-  #include "tm.h"
---- 33,40 ----
-  #include "tconfig.h"
-  #include "tsystem.h"
-  #ifndef inhibit_libc
-! /*#include <link.h>*/
-! #include <sys/task/elf.h>
-  #endif
-  #include "coretypes.h"
-  #include "tm.h"
-***************
-*** 45,53 ****
-  #include "unwind-compat.h"
-  #include "gthr.h"
-  
-! #if !defined(inhibit_libc) && defined(HAVE_LD_EH_FRAME_HDR) \
-      && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
-! 	|| (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)))
-  
-  #ifndef __RELOC_POINTER
-  # define __RELOC_POINTER(ptr, base) ((ptr) + (base))
---- 46,58 ----
-  #include "unwind-compat.h"
-  #include "gthr.h"
-  
-! /*#if !defined(inhibit_libc) && defined(HAVE_LD_EH_FRAME_HDR) \
-      && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
-! 	|| (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)))*/
-! #if !defined(inhibit_libc) && defined(HAVE_LD_EH_FRAME_HDR)
-! #define ElfW(type)	_ElfW (Elf, 32, type)
-! #define _ElfW(e,w,t)	_ElfW_1 (e, w, _##t)
-! #define _ElfW_1(e,w,t)	e##w##t
-  
-  #ifndef __RELOC_POINTER
-  # define __RELOC_POINTER(ptr, base) ((ptr) + (base))
 diff -rcN src/gcc_org/gcc/config.gcc src/gcc/gcc/config.gcc
 *** src/gcc_org/gcc/config.gcc	2010-01-04 16:13:08.000000000 +0100
 --- src/gcc/gcc/config.gcc	2010-07-05 21:46:54.000000000 +0200
@@ -140,7 +71,7 @@ diff -rcN src/gcc_org/gcc/config.gcc src/gcc/gcc/config.gcc
   # Support site-specific machine types.
 + i[3-7]86-*-escape*)
 +   tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h i386/i386elf.h escape.h"
-+   tmake_file="i386/t-i386elf t-svr4 t-escape"
++   tmake_file="i386/t-i386elf t-svr4"
 +   use_fixproto=yes
 +   ;;
   *local*)

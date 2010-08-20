@@ -23,7 +23,7 @@ all:	$(BUILDDIRS) $(APPCPY) $(BIN)
 
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(ADDLIBS);
+		@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) -Wl,--start-group -lgcc -lc -Wl,--end-group $(ADDLIBS);
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /sbin/$(NAME)
 

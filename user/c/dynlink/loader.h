@@ -24,6 +24,7 @@
 #include <sys/task/elf.h>
 #include <esc/mem.h>
 #include <esc/sllist.h>
+#include "unwind.h"
 
 #define TEXT_BEGIN		0x1000
 
@@ -45,8 +46,6 @@ struct sSharedLib {
 	sBinDesc bin;
 	u32 loadAddr;
 	u32 textSize;
-	u32 phdr;
-	u32 phdrNum;
 	Elf32_Dyn *dyn;
 	Elf32_Word *hashTbl;
 	Elf32_Rel *jmprel;
@@ -56,6 +55,9 @@ struct sSharedLib {
 	sSLList *deps;
 	bool relocated;
 	bool initialized;
+	const void *ehFrameAddr;
+	u32 ehFrameSize;
+	void *dataAddr;
 };
 
 extern sSLList *libs;
@@ -67,5 +69,12 @@ extern sSLList *libs;
  * @return the entryPoint to jump at
  */
 u32 load_setupProg(tFD binFd);
+
+/**
+ * Registers exception-frames for shared libraries. Is called by the crt0.s
+ *
+ * @param func the function __register_frame_info_bases from the program
+ */
+void load_regFrameInfo(fRegFrameInfoBases func);
 
 #endif /* LOADER_H_ */

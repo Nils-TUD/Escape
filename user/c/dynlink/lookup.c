@@ -26,7 +26,6 @@
 
 #include "lookup.h"
 #include "loader.h"
-#include "dl-phdr.h"
 
 static Elf32_Sym *lookup_byNameIntern(sSharedLib *lib,const char *name,u32 hash);
 static u32 lookup_getHash(const unsigned char *name);
@@ -49,16 +48,9 @@ u32 lookup_resolve(sSharedLib *lib,u32 offset) {
 	DBGDL("Lookup symbol @ %x (%s) in lib %s\n",offset,lib->dynstrtbl + sym->st_name,
 			lib->name ? lib->name : "-Main-");
 #endif
-	/* if its dl_iterate_phdr don't use the one of libstdc++ but our own version */
-	/* this way we can use the one of libstdc++ when linking statically, and this one
-	 * when linking dynamically */
-	if(strcmp(lib->dynstrtbl + sym->st_name,"dl_iterate_phdr") == 0)
-		value = (u32)&dl_iterate_phdr;
-	else {
-		foundSym = lookup_byName(NULL,lib->dynstrtbl + sym->st_name,&value);
-		if(foundSym == NULL)
-			error("Unable to find symbol %s",lib->dynstrtbl + sym->st_name);
-	}
+	foundSym = lookup_byName(NULL,lib->dynstrtbl + sym->st_name,&value);
+	if(foundSym == NULL)
+		error("Unable to find symbol %s",lib->dynstrtbl + sym->st_name);
 	addr = (u32*)(rel->r_offset + lib->loadAddr);
 #ifdef CALLTRACE_PID
 	if(pid == -1)

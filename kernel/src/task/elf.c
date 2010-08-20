@@ -74,8 +74,6 @@ s32 elf_loadFromMem(u8 *code,u32 length,sStartupInfo *info) {
 	}
 
 	info->linkerEntry = info->progEntry = eheader->e_entry;
-	info->phdr = TEXT_BEGIN + eheader->e_phoff;
-	info->phdrSize = eheader->e_phentsize * eheader->e_phnum;
 	return 0;
 }
 
@@ -108,12 +106,9 @@ static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 	if(eheader.e_ident.dword != *(u32*)ELFMAG)
 		goto failed;
 
-	if(type == ELF_TYPE_PROG) {
-		/* by default set the same; the dl will overwrite it when needed */
+	/* by default set the same; the dl will overwrite it when needed */
+	if(type == ELF_TYPE_PROG)
 		info->linkerEntry = info->progEntry = eheader.e_entry;
-		info->phdr = TEXT_BEGIN + eheader.e_phoff;
-		info->phdrSize = eheader.e_phentsize * eheader.e_phnum;
-	}
 	else
 		info->linkerEntry = eheader.e_entry;
 

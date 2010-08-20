@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include "lookup.h"
 #include "loader.h"
+#include "unwind.h"
 
 typedef void (*fConstr)(void);
 
@@ -106,6 +107,48 @@ u32 load_setupProg(tFD binFd) {
 	return entryPoint;
 }
 
+static const struct dwarf_cie *get_cie(const struct dwarf_fde *f) {
+	return (const void *)&f->CIE_delta - f->CIE_delta;
+}
+
+static const fde *next_fde(const fde *f) {
+	return (const fde *)((const char *)f + f->length + sizeof(f->length));
+}
+
+static int last_fde(__attribute__ ((__unused__)) struct object *obj,const fde *f) {
+	return f->length == 0;
+}
+
+static size_t classify_object_over_fdes(struct object *ob,const fde *this_fde) {
+	size_t count = 0;
+
+	for(; !last_fde(ob,this_fde); this_fde = next_fde(this_fde)) {
+		debugf("this_fde=%x, length=%x\n",this_fde,this_fde->length);
+		/* Skip CIEs.  */
+		if(this_fde->CIE_delta == 0)
+			continue;
+	}
+
+	return count;
+}
+
+void load_regFrameInfo(fRegFrameInfoBases func) {
+	sSLNode *n;
+	for(n = sll_begin(libs); n != NULL; n = n->next) {
+		sSharedLib *l = (sSharedLib*)n->data;
+		/* register exception-frames */
+		if(l->ehFrameAddr) {
+			struct object *obj = (struct object*)malloc(sizeof(struct object));
+			if(!obj)
+				dlerror("Not enough memory for exception-object (for register_frame_info)");
+			debugf("%s : ehFrameAddr=%x, end=%x\n",l->name ? l->name : "-Main-",
+					l->ehFrameAddr,(char*)l->ehFrameAddr + l->ehFrameSize - 1);
+			func(l->ehFrameAddr,obj,0,0);
+			classify_object_over_fdes(obj,obj->u.single);
+		}
+	}
+}
+
 static u32 load_addSegments(void) {
 	sSLNode *n;
 	u32 entryPoint = 0;
@@ -155,6 +198,11 @@ static u32 load_addSegments(void) {
 			l->dynsyms = (Elf32_Sym*)((u32)l->dynsyms + l->loadAddr);
 		if(l->jmprel)
 			l->jmprel = (Elf32_Rel*)((u32)l->jmprel + l->loadAddr);
+
+		if(l->ehFrameAddr)
+			l->ehFrameAddr = (const void*)((u32)l->ehFrameAddr + l->loadAddr);
+		if(l->dataAddr)
+			l->dataAddr = (void*)((u32)l->dataAddr + l->loadAddr);
 	}
 	return entryPoint;
 }
@@ -171,6 +219,7 @@ static void load_initLib(sSharedLib *l) {
 	sSLNode *n;
 	Elf32_Ehdr eheader;
 	Elf32_Shdr sheader;
+	u32 constrAddr = 0,constrSize;
 	u8 const *datPtr;
 	u32 j;
 
@@ -192,14 +241,24 @@ static void load_initLib(sSharedLib *l) {
 	for(j = 0; j < eheader.e_shnum; datPtr += eheader.e_shentsize, j++) {
 		/* read sheader */
 		load_read(l->fd,(u32)datPtr,&sheader,sizeof(Elf32_Shdr));
-		if(sheader.sh_type == SHT_PROGBITS && strcmp(l->shsymbols + sheader.sh_name,".ctors") == 0)
-			break;
+		if(sheader.sh_type == SHT_PROGBITS) {
+			if(strcmp(l->shsymbols + sheader.sh_name,".ctors") == 0) {
+				constrAddr = sheader.sh_addr;
+				constrSize = sheader.sh_size;
+			}
+			else if(strcmp(l->shsymbols + sheader.sh_name,".eh_frame") == 0) {
+				l->ehFrameAddr = (const void*)(l->loadAddr + sheader.sh_addr);
+				l->ehFrameSize = sheader.sh_size;
+			}
+			if(l->ehFrameAddr && constrAddr)
+				break;
+		}
 	}
 
-	if(j != eheader.e_shnum) {
+	if(constrAddr) {
 		/* determine start and end */
-		u32 constrStart = l->loadAddr + sheader.sh_addr;
-		u32 constrEnd = constrStart + sheader.sh_size;
+		u32 constrStart = l->loadAddr + constrAddr;
+		u32 constrEnd = constrStart + constrSize;
 		fConstr *constr;
 
 		DBGDL("Calling global constructors of %s\n",l->name ? l->name : "-Main-");
@@ -433,7 +492,7 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 	Elf32_Shdr sheader;
 	sFileInfo info;
 	u8 const *datPtr;
-	u32 j,loadSeg,textOffset = 0xFFFFFFFF;
+	u32 j,textOffset = 0xFFFFFFFF;
 
 	/* build bindesc */
 	if(fstat(binFd,&info) < 0)
@@ -443,6 +502,8 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 	dst->bin.modifytime = info.modifytime;
 	dst->fd = binFd;
 	dst->loadAddr = 0;
+	dst->ehFrameAddr = 0;
+	dst->dataAddr = 0;
 
 	/* read header */
 	load_read(binFd,0,&eheader,sizeof(Elf32_Ehdr));
@@ -457,7 +518,6 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 	dst->shsymbols = (char*)malloc(sheader.sh_size);
 	load_read(binFd,sheader.sh_offset,dst->shsymbols,sheader.sh_size);
 
-	loadSeg = 0;
 	datPtr = (u8 const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* read pheader */
@@ -499,8 +559,6 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 					lib->dynstrtbl = NULL;
 					lib->name = dst->dynstrtbl + dst->dyn[i].d_un.d_val;
 					lib->loadAddr = 0;
-					lib->phdr = TEXT_BEGIN + eheader.e_phoff;
-					lib->phdrNum = eheader.e_phnum;
 					lib->deps = sll_create();
 					if(!lib->deps)
 						dlerror("Not enough mem!");
@@ -515,6 +573,8 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 				}
 			}
 		}
+		else if(pheader.p_type == PT_LOAD && pheader.p_flags == (PF_R | PF_W))
+			dst->dataAddr = (void*)(pheader.p_vaddr);
 	}
 }
 

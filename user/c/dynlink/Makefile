@@ -25,7 +25,7 @@ all:	$(BUILDDIRS) $(BIN)
 
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(LDCONF) $(COBJ) $(START)
 		@echo "	" LINKING $(BIN)
-		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(START) $(COBJ)
+		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(START) $(COBJ) -Wl,--start-group -lgcc -lc -Wl,--end-group
 		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 

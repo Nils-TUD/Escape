@@ -28,10 +28,6 @@ typedef struct {
 	u32 progEntry;
 	/* entry-point of the dynamic-linker; will be the same as progEntry if no dl is used */
 	u32 linkerEntry;
-	/* address of program-headers (needed for exception-handling) */
-	u32 phdr;
-	/* size of program-headers (needed for exception-handling) */
-	u32 phdrSize;
 } sStartupInfo;
 
 /**

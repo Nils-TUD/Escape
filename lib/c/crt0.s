@@ -26,6 +26,8 @@
 .extern init_tls
 .extern _init
 
+.set DYNAMIC_LINKER_ADDR,	0xa0000000
+
 .include "syscalls.s"
 
 #  Initial stack:
@@ -37,10 +39,6 @@
 #  +------------------+
 #  |       argc       |
 #  +------------------+
-#  |     phdrSize     |  the size of the program-headers (for eh); just for initial thread!
-#  +------------------+
-#  |       phdr       |  the address of the program-headers (for eh); just for initial thread!
-#  +------------------+
 #  |     TLSSize      |  0 if not present
 #  +------------------+
 #  |     TLSStart     |  0 if not present
@@ -50,25 +48,33 @@
 
 .ifndef SHAREDLIB
 _start:
-	# first call init_tls(entryPoint,TLSStart,TLSSize)
+	cmpl	$DYNAMIC_LINKER_ADDR,(%esp)
+	ja		1f
+	# when its not the address of load_regInfoFrames, push zero to indicate that we're statically
+	# linked
+	push	$0
+1:
+	# call init_tls(entryPoint,TLSStart,TLSSize)
 	call	init_tls
-	# remove args from stack
-	add		$12,%esp
 	# it returns the entrypoint; 0 if we're the initial thread
 	test	%eax,%eax
 	je		initialThread
+	# remove args from stack
+	add		$12,%esp
 	# we're an additional thread, so call the desired function
 	call	*%eax
 	jmp		threadExit
 
 	# initial thread calls main
 initialThread:
-	# call __libc_init(phdr,phdrSize)
 	.extern __libc_init
+	# call __libc_init(addr of load_regInfoFrames)
 	call	__libc_init
-	# remove args
-	add		$8,%esp
+	# call function in .init-section
 	call _init
+	# remove args from stack
+	add		$16,%esp
+	# finally, call main
 	call	main
 
 threadExit:

@@ -38,6 +38,8 @@ export CPPC = $(abspath build/dist/bin/i586-elf-escape-g++)
 export LD = $(abspath build/dist/bin/i586-elf-escape-ld)
 export AR = $(abspath build/dist/bin/i586-elf-escape-ar)
 export AS = $(abspath build/dist/bin/i586-elf-escape-as)
+export READELF = $(abspath build/dist/bin/i586-elf-escape-readelf)
+export OBJDUMP = $(abspath build/dist/bin/i586-elf-escape-objdump)
 export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
@@ -130,16 +132,16 @@ swapbl:
 
 dis:
 ifeq ($(APP),)
-		objdump -dSC $(BIN) | less
+		$(OBJDUMP) -dSC $(BIN) | less
 else
-		objdump -dSC $(BUILD)/$(APP) | less
+		$(OBJDUMP) -dSC $(BUILD)/$(APP) | less
 endif
 
 elf:
 ifeq ($(APP),)
-		readelf -a $(BIN) | less
+		$(READELF) -a $(BIN) | less
 else
-		readelf -a $(BUILD)/$(APP) | less
+		$(READELF) -a $(BUILD)/$(APP) | less
 endif
 
 qemu:	all prepareRun

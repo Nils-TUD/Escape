@@ -8,7 +8,7 @@ if [ $# != 1 ]; then
 	exit 1
 fi
 
-if [[ `basename $1` =~ ^(libg\.a)|(crt(0|1|n|begin|end)S?\.o)$ ]]; then
+if [[ `basename $1` =~ ^crt(0|1|n|begin|end)S?\.o$ ]]; then
 	DIR=$DIST/lib/gcc/$TARGET/4.4.3
 else
 	DIR=$DIST/$TARGET/lib

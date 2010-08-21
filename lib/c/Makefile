@@ -9,13 +9,13 @@ STLIB = $(BUILD)/libc.a
 DYNLIBNAME = libc.so
 DYNLIB = $(BUILD)/$(DYNLIBNAME)
 
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS)
+CFLAGS = -nodefaultlibs $(CDEFFLAGS)
 
 # sources
 START = $(wildcard crt*.s)
 SYSCALLS = syscalls.s
 CSRC = $(shell find . -name "*.c")
-ASRC = $(filter-out ./$(START),$(shell find . -name "*.s"))
+ASRC = $(filter-out $(addprefix ./,$(START)),$(shell find . -name "*.s"))
 LSRC = $(shell find $(LIBDIR) -name "*.c")
 
 # objects
@@ -30,7 +30,7 @@ LPICOBJ = $(patsubst $(LIBDIR)/%.c,$(BUILDL)/lib/%_pic.o,$(LSRC))
 
 .PHONY:		all clean
 
-all: $(BUILDDIRS) $(STLIB) $(DYNLIB) $(STARTO) $(STARTOPIC)
+all: $(BUILDDIRS) $(STARTO) $(STARTOPIC) $(STLIB) $(DYNLIB)
 
 $(STLIB): $(COBJS) $(AOBJS) $(LOBJ)
 		@echo "	" AR $(STLIB)
@@ -39,8 +39,9 @@ $(STLIB): $(COBJS) $(AOBJS) $(LOBJ)
 
 $(DYNLIB): $(CPICOBJS) $(APICOBJS) $(LPICOBJ)
 		@echo "	" LINKING $(DYNLIB)
-		@$(LD) --eh-frame-hdr -shared -soname $(DYNLIBNAME) -o $(DYNLIB) \
-			$(CPICOBJS) $(APICOBJS) $(LPICOBJ)
+		@#$(LD) -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(APICOBJS) $(LPICOBJ)
+		@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) \
+			$(APICOBJS) $(LPICOBJ)
 		$(ROOT)/tools/linklib.sh $(DYNLIB)
 		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
 		

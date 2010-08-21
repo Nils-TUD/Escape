@@ -9,7 +9,7 @@ DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 CFLAGS = $(CPPDEFFLAGS) $(ADDFLAGS)
 ifeq ($(LINKTYPE),static)
-	CFLAGS += -Wl,-Bstatic
+	CFLAGS += -static -Wl,-Bstatic
 endif
 
 # sources

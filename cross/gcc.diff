@@ -25,7 +25,7 @@ diff -rcN src/gcc_org/gcc/config/escape.h src/gcc/gcc/config/escape.h
 *** 0 ****
 --- 1,21 ----
 +   #undef   STARTFILE_SPEC
-+   #define STARTFILE_SPEC "%{shared|pie:crt0S.o%s;:crt0.o%s} %{shared:crt1S.o%s;:crt1.o%s} %{static:crtbeginT.o%s;shared|pie:crtbeginS.o%s;:crtbegin.o%s}"
++   #define STARTFILE_SPEC "%{shared|pie:crt0S.o%s;:crt0.o%s} %{shared:crt1S.o%s;:crt1.o%s} %{shared|pie:crtbeginS.o%s;:crtbegin.o%s}"
 +   
 +   #undef   ENDFILE_SPEC
 +   #define ENDFILE_SPEC "%{shared|pie:crtendS.o%s;:crtend.o%s} %{shared:crtnS.o%s;:crtn.o%s}"
@@ -82,11 +82,12 @@ diff -rcN src/gcc_org/libgcc/config.host src/gcc/libgcc/config.host
 --- src/gcc/libgcc/config.host	2010-07-05 21:46:54.000000000 +0200
 ***************
 *** 166,171 ****
---- 166,173 ----
+--- 166,174 ----
   
   case ${host} in
   # Support site-specific machine types.
 + i[3-7]86-*-escape*)
++	extra_parts="crtbegin.o crtbeginS.o crtend.o crtendS.o"
 + 	;;
   *local*)
   	rest=`echo ${host} | sed -e "s/$cpu_type-//"`

@@ -133,20 +133,23 @@ static size_t classify_object_over_fdes(struct object *ob,const fde *this_fde) {
 }
 
 void load_regFrameInfo(fRegFrameInfoBases func) {
+#if 0
 	sSLNode *n;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
 		/* register exception-frames */
-		if(l->ehFrameAddr) {
+		/* TODO remove the second check */
+		if(l->ehFrameAddr && l->ehFrameSize > 4) {
 			struct object *obj = (struct object*)malloc(sizeof(struct object));
 			if(!obj)
 				dlerror("Not enough memory for exception-object (for register_frame_info)");
 			debugf("%s : ehFrameAddr=%x, end=%x\n",l->name ? l->name : "-Main-",
 					l->ehFrameAddr,(char*)l->ehFrameAddr + l->ehFrameSize - 1);
 			func(l->ehFrameAddr,obj,0,0);
-			classify_object_over_fdes(obj,obj->u.single);
+			/*classify_object_over_fdes(obj,obj->u.single);*/
 		}
 	}
+#endif
 }
 
 static u32 load_addSegments(void) {
@@ -233,6 +236,15 @@ static void load_initLib(sSharedLib *l) {
 		load_initLib(dl);
 	}
 
+	if(l->name) {
+		u32 initAddr = load_getDyn(l->dyn,DT_INIT);
+		if(initAddr) {
+			void (*initFunc)(void) = initAddr + l->loadAddr;
+			initFunc();
+		}
+	}
+
+#if 0
 	/* read header */
 	load_read(l->fd,0,&eheader,sizeof(Elf32_Ehdr));
 
@@ -271,6 +283,7 @@ static void load_initLib(sSharedLib *l) {
 			constr++;
 		}
 	}
+#endif
 
 	l->initialized = true;
 	close(l->fd);
@@ -325,8 +338,9 @@ static void load_relocLib(sSharedLib *l) {
 				if(sym->st_value == 0) {
 					u32 value;
 					if(!lookup_byName(l,l->dynstrtbl + sym->st_name,&value))
-						dlerror("Unable to find symbol %s",l->dynstrtbl + sym->st_name);
-					*ptr = value;
+						debugf("Unable to find symbol %s\n",l->dynstrtbl + sym->st_name);
+					else
+						*ptr = value;
 				}
 				else
 					*ptr = sym->st_value + l->loadAddr;
@@ -364,13 +378,14 @@ static void load_relocLib(sSharedLib *l) {
 				 * correctly. And of course the elf-format-specification does not tell
 				 * anything about this.. :D
 				 */
-				if(sym->st_value == 0) {
+				/*if(sym->st_value == 0) {
 					u32 value;
 					if(!lookup_byName(l,l->dynstrtbl + sym->st_name,&value))
 						dlerror("Unable to find symbol %s",l->dynstrtbl + sym->st_name);
 					*ptr += value;
 				}
-				else
+				else*/
+				if(sym->st_value != 0)
 					*ptr += sym->st_value + l->loadAddr;
 				DBGDL("Rel (32) off=%x orgoff=%x symval=%x reloc=%x\n",
 						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr);

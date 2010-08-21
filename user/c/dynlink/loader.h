@@ -28,11 +28,11 @@
 
 #define TEXT_BEGIN		0x1000
 
-/*#define CALLTRACE_PID	24*/
+/*#define CALLTRACE_PID	10*/
 
 #define LD_BIND_NOW		0
 #define DEBUG_LOADER	0
-#define PRINT_LOADADDR	0
+#define PRINT_LOADADDR	1
 #if DEBUG_LOADER
 #	define DBGDL(x,...)	debugf("[%d] " x,getpid(),## __VA_ARGS__)
 #else

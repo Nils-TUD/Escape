@@ -9,7 +9,7 @@ APPCPY = $(BUILD)/apps/$(APP)
 
 CFLAGS = $(CDEFFLAGS) $(ADDFLAGS)
 ifeq ($(LINKTYPE),static)
-	CFLAGS += -Wl,-Bstatic
+	CFLAGS += -static -Wl,-Bstatic
 endif
 
 # sources

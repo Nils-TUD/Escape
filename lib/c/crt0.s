@@ -25,6 +25,7 @@
 .extern exit
 .extern init_tls
 .extern _init
+.extern _fini
 
 .set DYNAMIC_LINKER_ADDR,	0xa0000000
 
@@ -46,8 +47,8 @@
 #  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
 #  +------------------+
 
-.ifndef SHAREDLIB
 _start:
+.ifndef SHAREDLIB
 	cmpl	$DYNAMIC_LINKER_ADDR,(%esp)
 	ja		1f
 	# when its not the address of load_regInfoFrames, push zero to indicate that we're statically

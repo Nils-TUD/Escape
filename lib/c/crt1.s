@@ -18,17 +18,13 @@
 #
 
 .section .init
-.ifndef SHAREDLIB
 .global _init
 _init:
-.endif
 	push	%ebp
 	mov		%esp,%ebp
 
 .section .fini
-.ifndef SHAREDLIB
 .global _fini
 _fini:
-.endif
 	push	%ebp
 	mov		%esp,%ebp

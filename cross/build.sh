@@ -137,3 +137,7 @@ make && make install
 rm -Rf $DIST/$TARGET/sys-include $DIST/$TARGET/include
 ln -sf $ROOT/../include $DIST/$TARGET/sys-include
 ln -sf $ROOT/../include $DIST/$TARGET/include
+
+# copy crt* to basic gcc-stuff
+cp -f $BUILD/gcc/$TARGET/libgcc/crt*.o $DIST/lib/gcc/$TARGET/4.4.3
+

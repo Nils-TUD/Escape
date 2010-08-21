@@ -20,6 +20,7 @@
 .section .text
 
 .global _start
+.global sigRetFunc
 
 .include "../../../lib/c/syscalls.s"
 
@@ -37,6 +38,10 @@ _start:
 	# we should not reach this
 1:
 	jmp		1b
+
+# provide just a dummy
+sigRetFunc:
+	jmp		sigRetFunc
 
 args:
 	.long			progName,0

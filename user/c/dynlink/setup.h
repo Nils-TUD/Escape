@@ -51,7 +51,6 @@ struct sSharedLib {
 	Elf32_Word *hashTbl;
 	Elf32_Rel *jmprel;
 	Elf32_Sym *dynsyms;
-	char *shsymbols;
 	char *dynstrtbl;
 	sSLList *deps;
 	bool relocated;

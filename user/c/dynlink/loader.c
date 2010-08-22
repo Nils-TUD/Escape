@@ -37,7 +37,6 @@ static void load_read(tFD binFd,u32 offset,void *buffer,u32 count);
 void load_doLoad(tFD binFd,sSharedLib *dst) {
 	Elf32_Ehdr eheader;
 	Elf32_Phdr pheader;
-	Elf32_Shdr sheader;
 	sFileInfo info;
 	u8 const *datPtr;
 	u32 j,textOffset = 0xFFFFFFFF;
@@ -57,12 +56,6 @@ void load_doLoad(tFD binFd,sSharedLib *dst) {
 	/* check magic-number */
 	if(eheader.e_ident.dword != *(u32*)ELFMAG)
 		load_error("Invalid ELF-magic");
-
-	/* load section-header symbols */
-	datPtr = (u8 const*)(eheader.e_shoff + eheader.e_shstrndx * eheader.e_shentsize);
-	load_read(binFd,(u32)datPtr,&sheader,sizeof(Elf32_Shdr));
-	dst->shsymbols = (char*)malloc(sheader.sh_size);
-	load_read(binFd,sheader.sh_offset,dst->shsymbols,sheader.sh_size);
 
 	datPtr = (u8 const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {

@@ -44,6 +44,8 @@ for i in $BUILD/lib*.so; do
 	BASE=`basename $i`
 	cp $i $TMPDIR/lib/$BASE
 done;
+# copy libgcc; its in a different dir
+cp $ROOT/build/dist/i586-elf-escape/lib/libgcc_s.so.1 $TMPDIR/lib/libgcc_s.so.1
 for i in $BUILD/driver_*.bin ; do
 	BASE=`basename $i .bin`
 	cp $i $TMPDIR/sbin/`echo $BASE | sed "s/driver_\(.*\)/\1/g"`

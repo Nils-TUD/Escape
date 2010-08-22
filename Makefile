@@ -1,12 +1,12 @@
 # general
-BUILDDIR = $(abspath build/debug)
+BUILDDIR = $(abspath build/release)
 DISKMOUNT = disk
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso
 VBHDDTMP = $(BUILDDIR)/vbhd.bin
 VBHDD = $(BUILDDIR)/vbhd.vdi
 VMDISK = $(abspath vmware/vmwarehddimg.vmdk)
-VBOXOSTITLE = "Escape v0.1"
+VBOXOSTITLE = Escape v0.1
 BINNAME = kernel.bin
 BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
@@ -18,14 +18,10 @@ QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga s
 	-localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 
-ifeq ($(BUILDDIR),$(abspath build/debug))
-	DIRS = tools lib drivers user kernel/src kernel/test
-else
-	DIRS = tools lib drivers user kernel/src
-endif
-
 # wether to link drivers and user-apps statically or dynamically
-export LINKTYPE = static
+export LINKTYPE = dynamic
+# if LINKTYPE = dynamic: wether to use the static or dynamic libgcc (and libgcc_eh)
+export LIBGCC = dynamic
 
 # number of jobs passing to make
 export JOBS =
@@ -49,19 +45,24 @@ export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long
 export DWFLAGS=-w -wi
+export ASFLAGS = --warn
+ifeq ($(LIBGCC),static)
+	CWFLAGS += -static-libgcc
+	CPPWFLAGS += -static-libgcc
+endif
+export SUDO=sudo
+
 ifeq ($(BUILDDIR),$(abspath build/debug))
+	DIRS = tools lib drivers user kernel/src kernel/test
 	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g -D LOGSERIAL
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 else
+	DIRS = tools lib drivers user kernel/src
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -O3 -D NDEBUG
 	export CDEFFLAGS=$(CWFLAGS) -g0 -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 endif
-# flags for gas
-export ASFLAGS = --warn
-# other
-export SUDO=sudo
 
 .PHONY: all debughdd mountp1 mountp2 umountp debugp1 debugp2 checkp1 checkp2 createhdd \
 	dis qemu bochs debug debugu debugm debugt test clean updatehdd
@@ -148,17 +149,14 @@ qemu:	all prepareRun
 		sudo /etc/init.d/qemu-kvm start || true
 		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1
 
-bochs: all prepareRun
+bochs: all prepareRun prepareBochs
 		bochs -f bochs.cfg -q
 
-vmware: all prepareRun $(ISO) $(VMDISK)
-		sudo /etc/init.d/qemu-kvm stop || true # vmware doesn't like kvm :/
+vmware: all prepareRun prepareVmware
 		vmplayer vmware/escape.vmx
 
-vbox: all prepareRun $(ISO) $(VMDISK)
-		sudo /etc/init.d/qemu-kvm stop || true # vbox doesn't like kvm :/
-		tools/vboxhddupd.sh $(VBOXOSTITLE) $(VMDISK)
-		VBoxSDL --evdevkeymap -startvm $(VBOXOSTITLE)
+vbox: all prepareRun prepareVbox
+		VBoxSDL --evdevkeymap -startvm "$(VBOXOSTITLE)"
 
 debug: all prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
@@ -182,15 +180,26 @@ debugt: all prepareTest
 test: all prepareTest
 		$(QEMU) $(QEMUARGS) > log.txt 2>&1
 
-testbochs: all prepareTest
+testbochs: all prepareTest prepareBochs
 		bochs -f bochs.cfg -q
 
-testvbox: all prepareTest $(VMDISK)
-		tools/vboxhddupd.sh $(VBOXOSTITLE) $(VMDISK)
-		VBoxSDL --evdevkeymap -startvm $(VBOXOSTITLE)
+testvbox: all prepareTest prepareVbox
+		VBoxSDL --evdevkeymap -startvm "$(VBOXOSTITLE)"
 
-testvmware:	all prepareTest $(VMDISK)
+testvmware:	all prepareTest prepareVmware
 		vmplayer vmware/escape.vmx
+
+prepareVmware: $(ISO)
+		sudo /etc/init.d/qemu-kvm stop || true # vmware doesn't like kvm :/
+		tools/vmwarecd.sh vmware/escape.vmx $(ISO)
+
+prepareBochs:
+		tools/bochshdd.sh bochs.cfg $(HDD)
+
+prepareVbox: $(ISO) $(VMDISK)
+		sudo /etc/init.d/qemu-kvm stop || true # vbox doesn't like kvm :/
+		tools/vboxcd.sh $(ISO) "$(VBOXOSTITLE)"
+		tools/vboxhddupd.sh "$(VBOXOSTITLE)" $(VMDISK)
 
 prepareTest:
 		tools/disk.sh mountp1

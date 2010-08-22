@@ -1,5 +1,8 @@
 NAME = stdc++
 ADDFLAGS = -nodefaultlibs
-ADDLIBS = -lc -lgcc_s
+ADDLIBS = -lc
+ifeq ($(LIBGCC),static)
+	ADDLIBS += -lgcc -lgcc_eh
+endif
 
 -include ../DefCppMakefile.mk

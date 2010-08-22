@@ -10,6 +10,9 @@ DYNLIBNAME = libc.so
 DYNLIB = $(BUILD)/$(DYNLIBNAME)
 
 CFLAGS = -nodefaultlibs $(CDEFFLAGS)
+ifeq ($(LIBGCC),static)
+	ADDLIBS = -lgcc 
+endif
 
 # sources
 START = $(wildcard crt*.s)
@@ -40,7 +43,7 @@ $(STLIB): $(COBJS) $(AOBJS) $(LOBJ)
 $(DYNLIB): $(CPICOBJS) $(APICOBJS) $(LPICOBJ)
 		@echo "	" LINKING $(DYNLIB)
 		@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) \
-			$(APICOBJS) $(LPICOBJ)
+			$(APICOBJS) $(LPICOBJ) $(ADDLIBS)
 		$(ROOT)/tools/linklib.sh $(DYNLIB)
 		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
 		

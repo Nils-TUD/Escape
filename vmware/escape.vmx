@@ -11,7 +11,6 @@ memsize = "128"
 MemAllowAutoScaleDown = "FALSE"
 ide1:0.present = "TRUE"
 ide1:0.fileName = "/home/hrniels/escape/source/build/release/cd.iso"
-#ide1:0.fileName = "/home/hrniels/Data/Apps/damnsmalllinux/dsl-4.2.5.iso"
 ide1:0.deviceType = "cdrom-image"
 ide1:0.autodetect = "TRUE"
 floppy0.present = "FALSE"
@@ -46,7 +45,7 @@ extendedConfigFile = "escape.vmxf"
 virtualHW.productCompatibility = "hosted"
 tools.upgrade.policy = "manual"
 
-vmotion.checkpointFBSize = "16777216"
+vmotion.checkpointFBSize = "19005440"
 
 debugStub.linuxOffsets = "0x0,0xffffffff,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0"
 

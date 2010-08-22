@@ -17,18 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
+#ifndef RELOC_H_
+#define RELOC_H_
 
-s32 vprinte(const char *prefix,va_list ap) {
-	char *msg;
-	vfprintf(stderr,prefix,ap);
-	if(errno < 0) {
-		msg = strerror(errno);
-		fprintf(stderr,": %s",msg);
-	}
-	fprintf(stderr,"\n");
-	return 0;
-}
+#include <esc/common.h>
+
+/**
+ * Relocates all shared libraries
+ */
+void load_reloc(void);
+
+#endif /* RELOC_H_ */

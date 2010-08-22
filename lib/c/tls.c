@@ -44,10 +44,9 @@ static u32 *tlsCopy = NULL;
  */
 
 /* make gcc happy */
-u32 init_tls(void *dummy,u32 entryPoint,u32 *tlsStart,u32 tlsSize);
+u32 init_tls(u32 entryPoint,u32 *tlsStart,u32 tlsSize);
 
-u32 init_tls(void *dummy,u32 entryPoint,u32 *tlsStart,u32 tlsSize) {
-	UNUSED(dummy);
+u32 init_tls(u32 entryPoint,u32 *tlsStart,u32 tlsSize) {
 	if(tlsSize) {
 		u32 i;
 		locku(&tlsLock);

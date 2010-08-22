@@ -66,8 +66,11 @@ sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 pgFlags
 	reg->loadCount = lCount;
 	reg->timestamp = 0;
 	pageCount = BYTES_2_PAGES(bCount);
-	reg->pfSize = pageCount;
-	reg->pageFlags = (u32*)kheap_alloc(pageCount * sizeof(u32));
+	/* if we have no pages, create the page-array with 1; using 0 will fail and this may actually
+	 * happen for data-regions of zero-size. We want to be able to increase their size, so they
+	 * must exist. */
+	reg->pfSize = MAX(1,pageCount);
+	reg->pageFlags = (u32*)kheap_alloc(reg->pfSize * sizeof(u32));
 	if(reg->pageFlags == NULL)
 		goto errPDirs;
 	for(i = 0; i < pageCount; i++)

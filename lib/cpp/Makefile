@@ -1,5 +1,5 @@
 NAME = stdc++
 ADDFLAGS = -nodefaultlibs
-ADDLIBS = -lc
+ADDLIBS = -lc -lgcc_s
 
 -include ../DefCppMakefile.mk

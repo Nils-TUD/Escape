@@ -39,7 +39,6 @@ $(STLIB): $(COBJS) $(AOBJS) $(LOBJ)
 
 $(DYNLIB): $(CPICOBJS) $(APICOBJS) $(LPICOBJ)
 		@echo "	" LINKING $(DYNLIB)
-		@#$(LD) -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(APICOBJS) $(LPICOBJ)
 		@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) \
 			$(APICOBJS) $(LPICOBJ)
 		$(ROOT)/tools/linklib.sh $(DYNLIB)

@@ -25,9 +25,6 @@
 .extern exit
 .extern init_tls
 .extern _init
-.extern _fini
-
-.set DYNAMIC_LINKER_ADDR,	0xa0000000
 
 .include "syscalls.s"
 
@@ -47,21 +44,15 @@
 #  |    entryPoint    |  0 for initial thread, thread-entrypoint for others
 #  +------------------+
 
-_start:
 .ifndef SHAREDLIB
-	cmpl	$DYNAMIC_LINKER_ADDR,(%esp)
-	ja		1f
-	# when its not the address of load_regInfoFrames, push zero to indicate that we're statically
-	# linked
-	push	$0
-1:
+_start:
 	# call init_tls(entryPoint,TLSStart,TLSSize)
 	call	init_tls
+	# remove args from stack
+	add		$12,%esp
 	# it returns the entrypoint; 0 if we're the initial thread
 	test	%eax,%eax
 	je		initialThread
-	# remove args from stack
-	add		$12,%esp
 	# we're an additional thread, so call the desired function
 	call	*%eax
 	jmp		threadExit
@@ -69,12 +60,9 @@ _start:
 	# initial thread calls main
 initialThread:
 	.extern __libc_init
-	# call __libc_init(addr of load_regInfoFrames)
 	call	__libc_init
 	# call function in .init-section
 	call _init
-	# remove args from stack
-	add		$16,%esp
 	# finally, call main
 	call	main
 

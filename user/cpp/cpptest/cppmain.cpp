@@ -31,9 +31,6 @@
 #include <memory>*/
 //#include <ustl.h>
 //#include <iostream>
-#include <iostream>
-#include <stdlib.h>
-#include <cmdargs.h>
 
 //using namespace std;
 
@@ -74,43 +71,7 @@ void my::doIt() {
 }
 #endif
 
-class foo : public exception {
-public:
-	foo(const string& msg) : _msg(msg) {}
-	virtual ~foo() throw() {}
-	virtual const char* what() const throw() {
-		return _msg.c_str();
-	}
-
-private:
-	string _msg;
-};
-
-static void myfunc() {
-	throw cmdargs_error("test");
-}
-
 int main(int argc,char **argv) {
-	string fields;
-	cmdargs args(argc,argv,0);
-	try {
-		args.parse("f=s*",&fields);
-		//throw cmdargs_error("foo");
-	}
-	catch(const cmdargs_error& f) {
-		cerr << "Catched exception" << endl;
-	}
-	catch(...) {
-		cerr << "Catchall" << endl;
-	}
-	/*string fields;
-	cmdargs args(argc,argv,0);
-	try {
-		args.parse("f=s*",&fields);
-	}
-	catch(const cmdargs_error& e) {
-		cerr << "Invalid arguments: " << e.what() << endl;
-	}*/
 
 #if 0
 	int x;

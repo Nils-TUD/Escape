@@ -40,6 +40,9 @@ if [ $REBUILD -eq 1 ] || [ ! -f $BUILD/binutils/Makefile ]; then
 	fi
 fi
 make all && make install
+if [ $? -ne 0 ]; then
+	exit 1
+fi
 
 # gcc
 cd $ROOT
@@ -53,17 +56,58 @@ export PATH=$PATH:$PREFIX/bin
 cd $BUILD/gcc
 if [ $REBUILD -eq 1 ] || [ ! -f $BUILD/gcc/Makefile ]; then
 	$SRC/gcc/configure --target=$TARGET --prefix=$PREFIX --disable-nls \
-		  --enable-languages=c,c++ --with-headers=$HEADER --enable-shared \
+		  --enable-languages=c,c++ --with-headers=$HEADER \
 		  --disable-linker-build-id --with-gxx-include-dir=$HEADER/cpp
 	if [ $? -ne 0 ]; then
 		exit 1
 	fi
 fi
 make all-gcc && make install-gcc
+if [ $? -ne 0 ]; then
+	exit 1
+fi
 ln -sf $DIST/bin/$TARGET-gcc $DIST/bin/$TARGET-cc
 
 # libgcc
+# first, generate crt*S.o and libc for libgcc_s. Its not necessary to have a full libc (we'll have
+# one later). But at least its necessary to provide the correct startup-files
+TMPCRT0=`tempfile`
+TMPCRT1=`tempfile`
+TMPCRTN=`tempfile`
+# crt0 can be empty
+echo ".section .init" >> $TMPCRT1
+echo ".global _init" >> $TMPCRT1
+echo "_init:" >> $TMPCRT1
+echo "	push	%ebp" >> $TMPCRT1
+echo "	mov		%esp,%ebp" >> $TMPCRT1
+echo ".section .fini" >> $TMPCRT1
+echo ".global _fini" >> $TMPCRT1
+echo "_fini:" >> $TMPCRT1
+echo "	push	%ebp" >> $TMPCRT1
+echo "	mov		%esp,%ebp" >> $TMPCRT1
+
+echo ".section .init" >> $TMPCRTN
+echo "	leave" >> $TMPCRTN
+echo "	ret" >> $TMPCRTN
+echo ".section .fini" >> $TMPCRTN
+echo "	leave" >> $TMPCRTN
+echo "	ret" >> $TMPCRTN
+
+# assemble them
+$TARGET-as -defsym SHAREDLIB=1 -o $DIST/$TARGET/lib/crt0S.o $TMPCRT0
+$TARGET-as -defsym SHAREDLIB=1 -o $DIST/$TARGET/lib/crt1S.o $TMPCRT1
+$TARGET-as -defsym SHAREDLIB=1 -o $DIST/$TARGET/lib/crtnS.o $TMPCRTN
+# build empty libc
+$TARGET-gcc -nodefaultlibs -shared -Wl,-shared -Wl,-soname,libc.so \
+  -o $DIST/$TARGET/lib/libc.so $DIST/$TARGET/lib/crt0S.o
+# cleanup
+rm -f $TMPCRT0 $TMPCRT1 $TMPCRTN
+
+# now build libgcc
 make all-target-libgcc && make install-target-libgcc
+if [ $? -ne 0 ]; then
+	exit 1
+fi
 
 # newlib
 cd $ROOT
@@ -114,6 +158,9 @@ if [ $REBUILD -eq 1 ] || [ ! -f Makefile ]; then
 	echo "MAKEINFO = :" >> $BUILD/newlib/Makefile
 fi
 make && make install
+if [ $? -ne 0 ]; then
+	exit 1
+fi
 
 # libstdc++
 export PATH=$PATH:$PREFIX/bin
@@ -129,8 +176,14 @@ if [ $REBUILD -eq 1 ] || [ ! -f Makefile ]; then
 fi
 cd include
 make && make install
+if [ $? -ne 0 ]; then
+	exit 1
+fi
 cd ../libsupc++
 make && make install
+if [ $? -ne 0 ]; then
+	exit 1
+fi
 
 
 # create basic symlinks

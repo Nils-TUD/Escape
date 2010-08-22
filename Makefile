@@ -25,7 +25,7 @@ else
 endif
 
 # wether to link drivers and user-apps statically or dynamically
-export LINKTYPE = dynamic
+export LINKTYPE = static
 
 # number of jobs passing to make
 export JOBS =
@@ -202,6 +202,7 @@ prepareTest:
 		tools/disk.sh unmount
 
 prepareRun:
+		tools/disk.sh copy $(BUILD)/../dist/i586-elf-escape/lib/libgcc_s.so.1 /lib/libgcc_s.so.1
 		tools/disk.sh mountp1
 		@if [ "`cat $(DISKMOUNT)/boot/grub/menu.lst | grep kernel_test.bin`" != "" ]; then \
 			$(SUDO) sed --in-place -e "s/kernel_test\.bin\(.*\)/kernel.bin\\1/g" \

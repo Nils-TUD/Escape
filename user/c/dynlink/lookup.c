@@ -45,8 +45,7 @@ u32 lookup_resolve(sSharedLib *lib,u32 offset) {
 	Elf32_Sym *sym = lib->dynsyms + ELF32_R_SYM(rel->r_info);
 	u32 value,*addr;
 #ifndef CALLTRACE_PID
-	DBGDL("Lookup symbol @ %x (%s) in lib %s\n",offset,lib->dynstrtbl + sym->st_name,
-			lib->name ? lib->name : "-Main-");
+	DBGDL("Lookup symbol @ %x (%s) in lib %s\n",offset,lib->dynstrtbl + sym->st_name,lib->name);
 #endif
 	foundSym = lookup_byName(NULL,lib->dynstrtbl + sym->st_name,&value);
 	if(foundSym == NULL)
@@ -67,7 +66,7 @@ u32 lookup_resolve(sSharedLib *lib,u32 offset) {
 				}
 			}
 			debugf("%*s\\ %x(%s) -> %s (%x)\n",depth,"",retAddr - calling->loadAddr,
-					calling->name ? calling->name : "-Main-",lib->dynstrtbl + sym->st_name,value);
+					calling->name,lib->dynstrtbl + sym->st_name,value);
 			depth++;
 		}
 	}

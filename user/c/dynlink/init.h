@@ -17,18 +17,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
+#ifndef INIT_H_
+#define INIT_H_
 
-s32 vprinte(const char *prefix,va_list ap) {
-	char *msg;
-	vfprintf(stderr,prefix,ap);
-	if(errno < 0) {
-		msg = strerror(errno);
-		fprintf(stderr,": %s",msg);
-	}
-	fprintf(stderr,"\n");
-	return 0;
-}
+#include <esc/common.h>
+
+/**
+ * Calls the init-function in all libraries
+ */
+void load_init(void);
+
+#endif /* INIT_H_ */

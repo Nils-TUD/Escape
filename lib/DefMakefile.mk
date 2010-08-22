@@ -7,7 +7,7 @@ STLIB = $(BUILD)/lib$(NAME).a
 DYNLIBNAME = lib$(NAME).so
 DYNLIB = $(BUILD)/$(DYNLIBNAME)
 
-CFLAGS = $(CDEFFLAGS)
+CFLAGS = $(CDEFFLAGS) $(ADDFLAGS)
 
 CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
 COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
@@ -24,8 +24,8 @@ $(STLIB): $(COBJ)
 
 $(DYNLIB):	$(CPICOBJS)
 		@echo "	" LINKING $(DYNLIB)
-		@#$(LD) -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS)
-		@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS)
+		@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) \
+			$(CPICOBJS) $(ADDLIBS)
 		$(ROOT)/tools/linklib.sh $(DYNLIB)
 		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
 

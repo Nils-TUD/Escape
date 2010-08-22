@@ -21,60 +21,21 @@
 #define LOADER_H_
 
 #include <esc/common.h>
-#include <sys/task/elf.h>
-#include <esc/mem.h>
-#include <esc/sllist.h>
-#include "unwind.h"
-
-#define TEXT_BEGIN		0x1000
-
-/*#define CALLTRACE_PID	10*/
-
-#define LD_BIND_NOW		0
-#define DEBUG_LOADER	0
-#define PRINT_LOADADDR	1
-#if DEBUG_LOADER
-#	define DBGDL(x,...)	debugf("[%d] " x,getpid(),## __VA_ARGS__)
-#else
-#	define DBGDL(x,...)
-#endif
-
-typedef struct sSharedLib sSharedLib;
-struct sSharedLib {
-	char *name;
-	tFD fd;
-	sBinDesc bin;
-	u32 loadAddr;
-	u32 textSize;
-	Elf32_Dyn *dyn;
-	Elf32_Word *hashTbl;
-	Elf32_Rel *jmprel;
-	Elf32_Sym *dynsyms;
-	char *shsymbols;
-	char *dynstrtbl;
-	sSLList *deps;
-	bool relocated;
-	bool initialized;
-	const void *ehFrameAddr;
-	u32 ehFrameSize;
-	void *dataAddr;
-};
-
-extern sSLList *libs;
+#include "setup.h"
 
 /**
- * The start-function. Gets the file-descriptor for the program to load from the kernel
+ * Loads the given library with given file-descriptor, including all dependencies
  *
- * @param binFd the file-descriptor
- * @return the entryPoint to jump at
+ * @param binFd the file-desc
+ * @param dst the library
  */
-u32 load_setupProg(tFD binFd);
+void load_doLoad(tFD binFd,sSharedLib *dst);
 
 /**
- * Registers exception-frames for shared libraries. Is called by the crt0.s
+ * Loads all segments from all libraries into memory
  *
- * @param func the function __register_frame_info_bases from the program
+ * @return the entry-point of the executable
  */
-void load_regFrameInfo(fRegFrameInfoBases func);
+u32 load_addSegments(void);
 
 #endif /* LOADER_H_ */

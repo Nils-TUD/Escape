@@ -34,16 +34,12 @@ typedef struct {
 	void *d;
 } sGlobalObj;
 
-void __libc_init(fRegFrameInfo regFunc);
+void __libc_init(void);
 
 static tULock exitLock = 0;
 static s16 exitFuncCount = 0;
 static sGlobalObj exitFuncs[MAX_EXIT_FUNCS];
 
-/**
- * Function from libgcc to register exception-frames
- */
-extern void __register_frame_info_bases(void *begin,void *ob,void *tbase,void *dbase);
 /**
  * Some assembler-instructions to tell the kernel that we've handled a signal
  */
@@ -83,12 +79,7 @@ void __cxa_finalize(void *d) {
 	}
 }
 
-void __libc_init(fRegFrameInfo regFunc) {
-	if(regFunc) {
-		/* let the dynamic linker register the exception-frames from shared-libraries */
-		regFunc(&__register_frame_info_bases);
-	}
-
+void __libc_init(void) {
 	/* tell kernel address of sigRetFunc */
 	if(setSigHandler(SIG_RET,(fSigHandler)&sigRetFunc) < 0)
 		error("Unable to tell kernel sigRet-address");

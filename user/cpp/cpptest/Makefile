@@ -1,3 +1,3 @@
-NAME=cpptest
+NAME = cpptest
 
 -include ../DefMakefile.mk

@@ -18,17 +18,42 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
+#include <sys/task/elf.h>
+#include <esc/sllist.h>
+#include "init.h"
+#include "setup.h"
 
-s32 vprinte(const char *prefix,va_list ap) {
-	char *msg;
-	vfprintf(stderr,prefix,ap);
-	if(errno < 0) {
-		msg = strerror(errno);
-		fprintf(stderr,": %s",msg);
+static void load_initLib(sSharedLib *l);
+
+void load_init(void) {
+	sSLNode *n;
+	for(n = sll_begin(libs); n != NULL; n = n->next) {
+		sSharedLib *l = (sSharedLib*)n->data;
+		load_initLib(l);
 	}
-	fprintf(stderr,"\n");
-	return 0;
+}
+
+static void load_initLib(sSharedLib *l) {
+	sSLNode *n;
+
+	/* already initialized? */
+	if(l->initialized)
+		return;
+
+	/* first go through the dependencies */
+	for(n = sll_begin(l->deps); n != NULL; n = n->next) {
+		sSharedLib *dl = (sSharedLib*)n->data;
+		load_initLib(dl);
+	}
+
+	/* if its not the executable, call the init-function */
+	if(l->isDSO) {
+		u32 initAddr = load_getDyn(l->dyn,DT_INIT);
+		if(initAddr) {
+			void (*initFunc)(void) = (void (*)(void))(initAddr + l->loadAddr);
+			initFunc();
+		}
+	}
+
+	l->initialized = true;
 }

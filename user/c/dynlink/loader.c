@@ -27,481 +27,14 @@
 #include <stdlib.h>
 #include "lookup.h"
 #include "loader.h"
-#include "unwind.h"
+#include "setup.h"
 
-typedef void (*fConstr)(void);
-
-static u32 load_addSegments(void);
-static void load_init(void);
-static void load_initLib(sSharedLib *l);
-static void load_reloc(void);
-static void load_relocLib(sSharedLib *l);
-static void load_adjustCopyGotEntry(const char *name,u32 copyAddr);
 static void load_library(sSharedLib *dst);
-static void load_doLoad(tFD binFd,sSharedLib *dst);
 static sSharedLib *load_addLib(sSharedLib *lib);
-static u32 load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag);
-static void load_read(tFD binFd,u32 offset,void *buffer,u32 count);
 static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,bool isLib);
+static void load_read(tFD binFd,u32 offset,void *buffer,u32 count);
 
-static void dlerror(const char *fmt,...) {
-	va_list ap;
-	va_start(ap,fmt);
-	printStackTrace();
-	debugf("[%d] Error: ",getpid());
-	vdebugf(fmt,ap);
-	if(errno < 0)
-		debugf(": %s",strerror(errno));
-	debugf("\n");
-	va_end(ap);
-	exit(1);
-}
-
-sSLList *libs = NULL;
-
-u32 load_setupProg(tFD binFd) {
-	u32 entryPoint;
-	libs = sll_create();
-	if(!libs)
-		dlerror("Not enough mem!");
-
-	/* create entry for program */
-	sSharedLib *prog = (sSharedLib*)malloc(sizeof(sSharedLib));
-	if(!prog)
-		dlerror("Not enough mem!");
-	prog->relocated = false;
-	prog->initialized = false;
-	prog->dynstrtbl = NULL;
-	prog->dyn = NULL;
-	prog->name = NULL;
-	prog->deps = sll_create();
-	if(!prog->deps || !sll_append(libs,prog))
-		dlerror("Not enough mem!");
-
-	/* load program including shared libraries into linked list */
-	load_doLoad(binFd,prog);
-
-	/* load segments into memory */
-	entryPoint = load_addSegments();
-
-#if PRINT_LOADADDR
-	sSLNode *n,*m;
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
-		debugf("[%d] Loaded %s @ %x .. %x with deps: ",
-				getpid(),l->name ? l->name : "-Main-",l->loadAddr,l->loadAddr + l->textSize);
-		for(m = sll_begin(l->deps); m != NULL; m = m->next) {
-			sSharedLib *dl = (sSharedLib*)m->data;
-			debugf("%s ",dl->name);
-		}
-		debugf("\n");
-	}
-#endif
-
-	/* relocate everything we need so that the program can start */
-	load_reloc();
-
-	/* call global constructors */
-	load_init();
-
-	return entryPoint;
-}
-
-static const struct dwarf_cie *get_cie(const struct dwarf_fde *f) {
-	return (const void *)&f->CIE_delta - f->CIE_delta;
-}
-
-static const fde *next_fde(const fde *f) {
-	return (const fde *)((const char *)f + f->length + sizeof(f->length));
-}
-
-static int last_fde(__attribute__ ((__unused__)) struct object *obj,const fde *f) {
-	return f->length == 0;
-}
-
-static size_t classify_object_over_fdes(struct object *ob,const fde *this_fde) {
-	size_t count = 0;
-
-	for(; !last_fde(ob,this_fde); this_fde = next_fde(this_fde)) {
-		debugf("this_fde=%x, length=%x\n",this_fde,this_fde->length);
-		/* Skip CIEs.  */
-		if(this_fde->CIE_delta == 0)
-			continue;
-	}
-
-	return count;
-}
-
-void load_regFrameInfo(fRegFrameInfoBases func) {
-#if 0
-	sSLNode *n;
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
-		/* register exception-frames */
-		/* TODO remove the second check */
-		if(l->ehFrameAddr && l->ehFrameSize > 4) {
-			struct object *obj = (struct object*)malloc(sizeof(struct object));
-			if(!obj)
-				dlerror("Not enough memory for exception-object (for register_frame_info)");
-			debugf("%s : ehFrameAddr=%x, end=%x\n",l->name ? l->name : "-Main-",
-					l->ehFrameAddr,(char*)l->ehFrameAddr + l->ehFrameSize - 1);
-			func(l->ehFrameAddr,obj,0,0);
-			/*classify_object_over_fdes(obj,obj->u.single);*/
-		}
-	}
-#endif
-}
-
-static u32 load_addSegments(void) {
-	sSLNode *n;
-	u32 entryPoint = 0;
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
-		Elf32_Ehdr eheader;
-		Elf32_Phdr pheader;
-		u8 const *datPtr;
-		u32 j,loadSeg;
-
-		/* read header */
-		load_read(l->fd,0,&eheader,sizeof(Elf32_Ehdr));
-
-		if(l->name == NULL)
-			entryPoint = eheader.e_entry;
-
-		loadSeg = 0;
-		datPtr = (u8 const*)(eheader.e_phoff);
-		for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
-			/* read pheader */
-			load_read(l->fd,(u32)datPtr,&pheader,sizeof(Elf32_Phdr));
-			if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
-				u32 addr = load_addSeg(l->fd,&l->bin,&pheader,loadSeg,l->name != NULL);
-				if(addr == 0)
-					dlerror("Unable to add segment %d (type %d)",j,pheader.p_type);
-				/* store load-address of text */
-				if(loadSeg == 0 && l->name != NULL) {
-					l->loadAddr = addr;
-					l->textSize = pheader.p_memsz;
-				}
-				loadSeg++;
-			}
-		}
-
-		/* store some shortcuts */
-		/* TODO just temporary; later we should access the dynstrtbl always in .text */
-		free(l->dynstrtbl);
-		l->dynstrtbl = (char*)load_getDyn(l->dyn,DT_STRTAB);
-		l->hashTbl = (Elf32_Word*)load_getDyn(l->dyn,DT_HASH);
-		l->dynsyms = (Elf32_Sym*)load_getDyn(l->dyn,DT_SYMTAB);
-		l->jmprel = (Elf32_Rel*)load_getDyn(l->dyn,DT_JMPREL);
-		if(l->dynstrtbl)
-			l->dynstrtbl = (char*)((u32)l->dynstrtbl + l->loadAddr);
-		if(l->hashTbl)
-			l->hashTbl = (Elf32_Word*)((u32)l->hashTbl + l->loadAddr);
-		if(l->dynsyms)
-			l->dynsyms = (Elf32_Sym*)((u32)l->dynsyms + l->loadAddr);
-		if(l->jmprel)
-			l->jmprel = (Elf32_Rel*)((u32)l->jmprel + l->loadAddr);
-
-		if(l->ehFrameAddr)
-			l->ehFrameAddr = (const void*)((u32)l->ehFrameAddr + l->loadAddr);
-		if(l->dataAddr)
-			l->dataAddr = (void*)((u32)l->dataAddr + l->loadAddr);
-	}
-	return entryPoint;
-}
-
-static void load_init(void) {
-	sSLNode *n;
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
-		load_initLib(l);
-	}
-}
-
-static void load_initLib(sSharedLib *l) {
-	sSLNode *n;
-	Elf32_Ehdr eheader;
-	Elf32_Shdr sheader;
-	u32 constrAddr = 0,constrSize;
-	u8 const *datPtr;
-	u32 j;
-
-	/* already initialized? */
-	if(l->initialized)
-		return;
-
-	/* first go through the dependencies */
-	for(n = sll_begin(l->deps); n != NULL; n = n->next) {
-		sSharedLib *dl = (sSharedLib*)n->data;
-		load_initLib(dl);
-	}
-
-	if(l->name) {
-		u32 initAddr = load_getDyn(l->dyn,DT_INIT);
-		if(initAddr) {
-			void (*initFunc)(void) = initAddr + l->loadAddr;
-			initFunc();
-		}
-	}
-
-#if 0
-	/* read header */
-	load_read(l->fd,0,&eheader,sizeof(Elf32_Ehdr));
-
-	/* find .ctors section */
-	datPtr = (u8 const*)(eheader.e_shoff);
-	for(j = 0; j < eheader.e_shnum; datPtr += eheader.e_shentsize, j++) {
-		/* read sheader */
-		load_read(l->fd,(u32)datPtr,&sheader,sizeof(Elf32_Shdr));
-		if(sheader.sh_type == SHT_PROGBITS) {
-			if(strcmp(l->shsymbols + sheader.sh_name,".ctors") == 0) {
-				constrAddr = sheader.sh_addr;
-				constrSize = sheader.sh_size;
-			}
-			else if(strcmp(l->shsymbols + sheader.sh_name,".eh_frame") == 0) {
-				l->ehFrameAddr = (const void*)(l->loadAddr + sheader.sh_addr);
-				l->ehFrameSize = sheader.sh_size;
-			}
-			if(l->ehFrameAddr && constrAddr)
-				break;
-		}
-	}
-
-	if(constrAddr) {
-		/* determine start and end */
-		u32 constrStart = l->loadAddr + constrAddr;
-		u32 constrEnd = constrStart + constrSize;
-		fConstr *constr;
-
-		DBGDL("Calling global constructors of %s\n",l->name ? l->name : "-Main-");
-
-		/* call constructors */
-		constr = (fConstr*)constrStart;
-		while(constr < (fConstr*)constrEnd && *constr != (fConstr)-1) {
-			DBGDL("Calling constructor %x\n",*constr);
-			(*constr)();
-			constr++;
-		}
-	}
-#endif
-
-	l->initialized = true;
-	close(l->fd);
-}
-
-static void load_reloc(void) {
-	sSLNode *n;
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
-		load_relocLib(l);
-	}
-}
-
-static void load_relocLib(sSharedLib *l) {
-	Elf32_Addr *got;
-	Elf32_Rel *rel;
-	sSLNode *n;
-
-	/* already relocated? */
-	if(l->relocated)
-		return;
-
-	/* first go through the dependencies; this may be required for the R_386_COPY-relocation */
-	for(n = sll_begin(l->deps); n != NULL; n = n->next) {
-		sSharedLib *dl = (sSharedLib*)n->data;
-		load_relocLib(dl);
-	}
-
-	/* make text writable because we may have to change something in it */
-	if(setRegProt(l->loadAddr ? l->loadAddr : TEXT_BEGIN,PROT_READ | PROT_WRITE) < 0)
-		dlerror("Unable to make text (@ %x) of %s writable",l->loadAddr,l->name ? l->name : "-Main-");
-
-	DBGDL("Relocating stuff of %s (loaded @ %x)\n",
-			l->name ? l->name : "-Main-",l->loadAddr ? l->loadAddr : TEXT_BEGIN);
-
-	rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
-	if(rel) {
-		u32 x;
-		u32 relCount = load_getDyn(l->dyn,DT_RELSZ);
-		relCount /= sizeof(Elf32_Rel);
-		rel = (Elf32_Rel*)((u32)rel + l->loadAddr);
-		for(x = 0; x < relCount; x++) {
-			u32 relType = ELF32_R_TYPE(rel[x].r_info);
-			if(relType == R_386_NONE)
-				continue;
-			if(relType == R_386_GLOB_DAT) {
-				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
-				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
-				Elf32_Sym *sym = l->dynsyms + symIndex;
-				/* if the symbol-value is 0, it seems that we have to lookup the symbol now and
-				 * store that value instead. TODO I'm not sure if thats correct */
-				if(sym->st_value == 0) {
-					u32 value;
-					if(!lookup_byName(l,l->dynstrtbl + sym->st_name,&value))
-						debugf("Unable to find symbol %s\n",l->dynstrtbl + sym->st_name);
-					else
-						*ptr = value;
-				}
-				else
-					*ptr = sym->st_value + l->loadAddr;
-				DBGDL("Rel (GLOB_DAT) off=%x orgoff=%x reloc=%x orgval=%x\n",
-						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr,sym->st_value);
-			}
-			else if(relType == R_386_COPY) {
-				u32 value;
-				u32 symIndex = ELF32_R_SYM(rel[x].r_info);
-				const char *name = l->dynstrtbl + l->dynsyms[symIndex].st_name;
-				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
-				if(foundSym == NULL)
-					dlerror("Unable to find symbol %s",name);
-				memcpy((void*)(rel[x].r_offset),(void*)value,foundSym->st_size);
-				/* set the GOT-Entry in the library of the symbol to the address we've copied
-				 * the value to. TODO I'm not sure if that's the intended way... */
-				load_adjustCopyGotEntry(name,rel[x].r_offset);
-				DBGDL("Rel (COPY) off=%x sym=%s addr=%x val=%x\n",rel[x].r_offset,name,
-						value,*(u32*)value);
-			}
-			else if(relType == R_386_RELATIVE) {
-				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
-				*ptr += l->loadAddr;
-				DBGDL("Rel (RELATIVE) off=%x orgoff=%x reloc=%x\n",
-						rel[x].r_offset + l->loadAddr,rel[x].r_offset,*ptr);
-			}
-			else if(relType == R_386_32) {
-				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
-				Elf32_Sym *sym = l->dynsyms + ELF32_R_SYM(rel[x].r_info);
-				/* TODO well, again I can't explain why this is needed. If I understand
-				 * the code in glibc/sysdeps/i386/dl-machine.h correct, they just do a
-				 * *ptr += sym->st_value + l->loadAddr. But resolving the symbol when the
-				 * address is 0 seems to be the only way to get exception-throwing in c++
-				 * working. Because otherwise the typeinfo-stuff doesn't get relocated
-				 * correctly. And of course the elf-format-specification does not tell
-				 * anything about this.. :D
-				 */
-				/*if(sym->st_value == 0) {
-					u32 value;
-					if(!lookup_byName(l,l->dynstrtbl + sym->st_name,&value))
-						dlerror("Unable to find symbol %s",l->dynstrtbl + sym->st_name);
-					*ptr += value;
-				}
-				else*/
-				if(sym->st_value != 0)
-					*ptr += sym->st_value + l->loadAddr;
-				DBGDL("Rel (32) off=%x orgoff=%x symval=%x reloc=%x\n",
-						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr);
-			}
-			else if(relType == R_386_PC32) {
-				u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
-				Elf32_Sym *sym = l->dynsyms + ELF32_R_SYM(rel[x].r_info);
-				DBGDL("Rel (PC32) off=%x orgoff=%x symval=%x org=%x reloc=%x\n",
-						rel[x].r_offset + l->loadAddr,rel[x].r_offset,sym->st_value,*ptr,
-						sym->st_value - rel[x].r_offset - 4);
-				*ptr = sym->st_value - rel[x].r_offset - 4;
-			}
-			else
-				dlerror("In library %s: Unknown relocation: off=%x info=%x\n",
-						l->name ? l->name : "<main>",rel[x].r_offset,rel[x].r_info);
-		}
-	}
-
-	/* make text non-writable again */
-	if(setRegProt(l->loadAddr ? l->loadAddr : TEXT_BEGIN,PROT_READ) < 0)
-		dlerror("Unable to make text (@ %x) of %s non-writable",
-				l->loadAddr ? l->loadAddr : TEXT_BEGIN,l->name ? l->name : "-Main-");
-
-	/* adjust addresses in PLT-jumps */
-	if(l->jmprel) {
-		u32 x,jmpCount = load_getDyn(l->dyn,DT_PLTRELSZ);
-		jmpCount /= sizeof(Elf32_Rel);
-		for(x = 0; x < jmpCount; x++) {
-			u32 *addr = (u32*)(l->jmprel[x].r_offset + l->loadAddr);
-			/* if the address is 0 (should be the next instruction at the beginning),
-			 * do the symbol-lookup immediatly.
-			 * TODO i can't imagine that this is the intended way. why is the address 0 in
-			 * this case??? (instead of the offset from the beginning of the shared lib,
-			 * so that we can simply add the loadAddr) */
-			if(LD_BIND_NOW || *addr == 0) {
-				u32 value;
-				u32 symIndex = ELF32_R_SYM(l->jmprel[x].r_info);
-				const char *name = l->dynstrtbl + l->dynsyms[symIndex].st_name;
-				Elf32_Sym *foundSym = lookup_byName(l,name,&value);
-				/* TODO there must be a better way... */
-				/*if(!foundSym && !LD_BIND_NOW)
-					dlerror("Unable to find symbol %s",name);
-				else */if(foundSym)
-					*addr = value;
-				else {
-					foundSym = lookup_byName(NULL,name,&value);
-					if(!foundSym)
-						dlerror("Unable to find symbol %s",name);
-					*addr = value;
-				}
-				DBGDL("JmpRel off=%x addr=%x reloc=%x (%s)\n",l->jmprel[x].r_offset,addr,value,name);
-			}
-			else {
-				*addr += l->loadAddr;
-				DBGDL("JmpRel off=%x addr=%x reloc=%x\n",l->jmprel[x].r_offset,addr,*addr);
-			}
-		}
-	}
-
-	/* store pointer to library and lookup-function into GOT */
-	got = (u32*)load_getDyn(l->dyn,DT_PLTGOT);
-	DBGDL("GOT-Address of %s: %x\n",l->name ? l->name : "<main>",got);
-	if(got) {
-		got = (Elf32_Addr*)((u32)got + l->loadAddr);
-		got[1] = (Elf32_Addr)l;
-		got[2] = (Elf32_Addr)&lookup_resolveStart;
-	}
-
-	l->relocated = true;
-}
-
-static void load_adjustCopyGotEntry(const char *name,u32 copyAddr) {
-	sSLNode *n;
-	u32 address;
-	/* go through all libraries and copy the address of the object (copy-relocated) to
-	 * the corresponding GOT-entry. this ensures that all DSO's use the same object */
-	for(n = sll_begin(libs); n != NULL; n = n->next) {
-		sSharedLib *l = (sSharedLib*)n->data;
-		/* don't do that in the executable */
-		if(l->name == NULL)
-			continue;
-
-		if(lookup_byNameIn(l,name,&address)) {
-			/* TODO we should store DT_REL and DT_RELSZ */
-			Elf32_Rel *rel = (Elf32_Rel*)load_getDyn(l->dyn,DT_REL);
-			if(rel) {
-				u32 x;
-				u32 relCount = load_getDyn(l->dyn,DT_RELSZ);
-				relCount /= sizeof(Elf32_Rel);
-				rel = (Elf32_Rel*)((u32)rel + l->loadAddr);
-				for(x = 0; x < relCount; x++) {
-					if(ELF32_R_TYPE(rel[x].r_info) == R_386_GLOB_DAT) {
-						u32 symIndex = ELF32_R_SYM(rel[x].r_info);
-						if(l->dynsyms[symIndex].st_value + l->loadAddr == address) {
-							u32 *ptr = (u32*)(rel[x].r_offset + l->loadAddr);
-							*ptr = copyAddr;
-							break;
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
-static void load_library(sSharedLib *dst) {
-	char path[MAX_PATH_LEN];
-	tFD fd;
-	snprintf(path,sizeof(path),"/lib/%s",dst->name);
-	fd = open(path,IO_READ);
-	if(fd < 0)
-		dlerror("Unable to open '%s'",path);
-	load_doLoad(fd,dst);
-}
-
-static void load_doLoad(tFD binFd,sSharedLib *dst) {
+void load_doLoad(tFD binFd,sSharedLib *dst) {
 	Elf32_Ehdr eheader;
 	Elf32_Phdr pheader;
 	Elf32_Shdr sheader;
@@ -511,21 +44,19 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 
 	/* build bindesc */
 	if(fstat(binFd,&info) < 0)
-		dlerror("stat() for binary failed");
+		load_error("stat() for binary failed");
 	dst->bin.ino = info.inodeNo;
 	dst->bin.dev = info.device;
 	dst->bin.modifytime = info.modifytime;
 	dst->fd = binFd;
 	dst->loadAddr = 0;
-	dst->ehFrameAddr = 0;
-	dst->dataAddr = 0;
 
 	/* read header */
 	load_read(binFd,0,&eheader,sizeof(Elf32_Ehdr));
 
 	/* check magic-number */
 	if(eheader.e_ident.dword != *(u32*)ELFMAG)
-		dlerror("Invalid ELF-magic");
+		load_error("Invalid ELF-magic");
 
 	/* load section-header symbols */
 	datPtr = (u8 const*)(eheader.e_shoff + eheader.e_shstrndx * eheader.e_shentsize);
@@ -553,30 +84,31 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 			/* read dynamic-entries */
 			dst->dyn = (Elf32_Dyn*)malloc(pheader.p_filesz);
 			if(!dst->dyn)
-				dlerror("Not enough mem!");
+				load_error("Not enough mem!");
 			load_read(binFd,pheader.p_offset,dst->dyn,pheader.p_filesz);
 
 			/* read string-table */
 			strtblSize = load_getDyn(dst->dyn,DT_STRSZ);
 			dst->dynstrtbl = (char*)malloc(strtblSize);
 			if(!dst->dynstrtbl)
-				dlerror("Not enough mem!");
+				load_error("Not enough mem!");
 			load_read(binFd,load_getDyn(dst->dyn,DT_STRTAB) + textOffset,dst->dynstrtbl,strtblSize);
 
 			for(i = 0; i < (pheader.p_filesz / sizeof(Elf32_Dyn)); i++) {
 				if(dst->dyn[i].d_tag == DT_NEEDED) {
 					sSharedLib *nlib,*lib = (sSharedLib*)malloc(sizeof(sSharedLib));
 					if(!lib)
-						dlerror("Not enough mem!");
+						load_error("Not enough mem!");
 					lib->relocated = false;
 					lib->initialized = false;
 					lib->dyn = NULL;
 					lib->dynstrtbl = NULL;
+					lib->isDSO = true;
 					lib->name = dst->dynstrtbl + dst->dyn[i].d_un.d_val;
 					lib->loadAddr = 0;
 					lib->deps = sll_create();
 					if(!lib->deps)
-						dlerror("Not enough mem!");
+						load_error("Not enough mem!");
 					nlib = load_addLib(lib);
 					if(nlib == NULL) {
 						load_library(lib);
@@ -588,32 +120,82 @@ static void load_doLoad(tFD binFd,sSharedLib *dst) {
 				}
 			}
 		}
-		else if(pheader.p_type == PT_LOAD && pheader.p_flags == (PF_R | PF_W))
-			dst->dataAddr = (void*)(pheader.p_vaddr);
 	}
+}
+
+u32 load_addSegments(void) {
+	sSLNode *n;
+	u32 entryPoint = 0;
+	for(n = sll_begin(libs); n != NULL; n = n->next) {
+		sSharedLib *l = (sSharedLib*)n->data;
+		Elf32_Ehdr eheader;
+		Elf32_Phdr pheader;
+		u8 const *datPtr;
+		u32 j,loadSeg;
+
+		/* read header */
+		load_read(l->fd,0,&eheader,sizeof(Elf32_Ehdr));
+
+		if(!l->isDSO)
+			entryPoint = eheader.e_entry;
+
+		loadSeg = 0;
+		datPtr = (u8 const*)(eheader.e_phoff);
+		for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
+			/* read pheader */
+			load_read(l->fd,(u32)datPtr,&pheader,sizeof(Elf32_Phdr));
+			if(pheader.p_type == PT_LOAD || pheader.p_type == PT_TLS) {
+				u32 addr = load_addSeg(l->fd,&l->bin,&pheader,loadSeg,l->isDSO);
+				if(addr == 0)
+					load_error("Unable to add segment %d (type %d)",j,pheader.p_type);
+				/* store load-address of text */
+				if(loadSeg == 0 && l->isDSO) {
+					l->loadAddr = addr;
+					l->textSize = pheader.p_memsz;
+				}
+				loadSeg++;
+			}
+		}
+
+		/* store some shortcuts */
+		/* TODO just temporary; later we should access the dynstrtbl always in .text */
+		free(l->dynstrtbl);
+		l->dynstrtbl = (char*)load_getDyn(l->dyn,DT_STRTAB);
+		l->hashTbl = (Elf32_Word*)load_getDyn(l->dyn,DT_HASH);
+		l->dynsyms = (Elf32_Sym*)load_getDyn(l->dyn,DT_SYMTAB);
+		l->jmprel = (Elf32_Rel*)load_getDyn(l->dyn,DT_JMPREL);
+		if(l->dynstrtbl)
+			l->dynstrtbl = (char*)((u32)l->dynstrtbl + l->loadAddr);
+		if(l->hashTbl)
+			l->hashTbl = (Elf32_Word*)((u32)l->hashTbl + l->loadAddr);
+		if(l->dynsyms)
+			l->dynsyms = (Elf32_Sym*)((u32)l->dynsyms + l->loadAddr);
+		if(l->jmprel)
+			l->jmprel = (Elf32_Rel*)((u32)l->jmprel + l->loadAddr);
+	}
+	return entryPoint;
+}
+
+static void load_library(sSharedLib *dst) {
+	char path[MAX_PATH_LEN];
+	tFD fd;
+	snprintf(path,sizeof(path),"/lib/%s",dst->name);
+	fd = open(path,IO_READ);
+	if(fd < 0)
+		load_error("Unable to open '%s'",path);
+	load_doLoad(fd,dst);
 }
 
 static sSharedLib *load_addLib(sSharedLib *lib) {
 	sSLNode *n;
 	for(n = sll_begin(libs); n != NULL; n = n->next) {
 		sSharedLib *l = (sSharedLib*)n->data;
-		if(l->name && strcmp(l->name,lib->name) == 0)
+		if(strcmp(l->name,lib->name) == 0)
 			return l;
 	}
 	if(!sll_append(libs,lib))
-		dlerror("Not enough mem!");
+		load_error("Not enough mem!");
 	return NULL;
-}
-
-static u32 load_getDyn(Elf32_Dyn *dyn,Elf32_Sword tag) {
-	if(dyn == NULL)
-		dlerror("No dynamic entries");
-	while(dyn->d_tag != DT_NULL) {
-		if(dyn->d_tag == tag)
-			return dyn->d_un.d_val;
-		dyn++;
-	}
-	return 0;
 }
 
 static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadSegNo,bool isLib) {
@@ -661,7 +243,7 @@ static u32 load_addSeg(tFD binFd,sBinDesc *bindesc,Elf32_Phdr *pheader,u32 loadS
 
 static void load_read(tFD binFd,u32 offset,void *buffer,u32 count) {
 	if(seek(binFd,(u32)offset,SEEK_SET) < 0)
-		dlerror("Unable to seek to %x",offset);
+		load_error("Unable to seek to %x",offset);
 	if(RETRY(read(binFd,buffer,count)) != (s32)count)
-		dlerror("Unable to read %d bytes @ %x",count,offset);
+		load_error("Unable to read %d bytes @ %x",count,offset);
 }

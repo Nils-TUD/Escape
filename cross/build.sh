@@ -94,12 +94,12 @@ echo "	leave" >> $TMPCRTN
 echo "	ret" >> $TMPCRTN
 
 # assemble them
-$TARGET-as -defsym SHAREDLIB=1 -o $DIST/$TARGET/lib/crt0S.o $TMPCRT0
-$TARGET-as -defsym SHAREDLIB=1 -o $DIST/$TARGET/lib/crt1S.o $TMPCRT1
-$TARGET-as -defsym SHAREDLIB=1 -o $DIST/$TARGET/lib/crtnS.o $TMPCRTN
+$TARGET-as -defsym SHAREDLIB=1 -o $DIST/$TARGET/lib/crt0S.o $TMPCRT0 || exit 1
+$TARGET-as -defsym SHAREDLIB=1 -o $DIST/$TARGET/lib/crt1S.o $TMPCRT1 || exit 1
+$TARGET-as -defsym SHAREDLIB=1 -o $DIST/$TARGET/lib/crtnS.o $TMPCRTN || exit 1
 # build empty libc
-$TARGET-gcc -nodefaultlibs -shared -Wl,-shared -Wl,-soname,libc.so \
-  -o $DIST/$TARGET/lib/libc.so $DIST/$TARGET/lib/crt0S.o
+$TARGET-gcc -nodefaultlibs -nostartfiles -shared -Wl,-shared -Wl,-soname,libc.so \
+  -o $DIST/$TARGET/lib/libc.so $DIST/$TARGET/lib/crt0S.o || exit 1
 # cleanup
 rm -f $TMPCRT0 $TMPCRT1 $TMPCRTN
 

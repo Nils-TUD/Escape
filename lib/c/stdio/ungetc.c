@@ -18,10 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/io/iofilestream.h>
-#include <esc/exceptions/io.h>
 #include <stdio.h>
-#include <assert.h>
 
 s32 ungetc(s32 c,FILE *file) {
 	if(file->in.buffer == NULL || file->in.pos == 0)

@@ -291,8 +291,6 @@ static void test_unregDriver(void) {
 static void test_changeSize(void) {
 	test_caseStart("Testing changeSize()");
 	test_assertInt(_changeSize(-1000),ERR_NOT_ENOUGH_MEM);
-	test_assertInt(_changeSize(0xC0000000 / (4 * 1024)),ERR_NOT_ENOUGH_MEM);
-	test_assertInt(_changeSize(0x7FFFFFFF),ERR_NOT_ENOUGH_MEM);
 	test_caseSucceded();
 }
 
@@ -443,7 +441,7 @@ static void test_wait(void) {
 
 static void test_setSigHandler(void) {
 	test_caseStart("Testing setSigHandler()");
-	test_assertInt(_setSigHandler(-1,0x1000),ERR_INVALID_SIGNAL);
+	test_assertInt(_setSigHandler(-4,0x1000),ERR_INVALID_SIGNAL);
 	test_assertInt(_setSigHandler(SIG_COUNT,0x1000),ERR_INVALID_SIGNAL);
 	test_assertInt(_setSigHandler(0,0x1000),ERR_INVALID_SIGNAL);
 	test_assertInt(_setSigHandler(1,0xC0000000),ERR_INVALID_ARGS);

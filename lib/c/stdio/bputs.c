@@ -25,5 +25,5 @@ s32 bputs(FILE *f,const char *str) {
 	const char *begin = str;
 	while((c = *str++))
 		RETERR(bputc(f,c));
-	return str - begin;
+	return str - begin - 1;
 }

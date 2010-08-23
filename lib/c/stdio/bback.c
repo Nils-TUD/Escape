@@ -19,29 +19,11 @@
 
 #include <esc/common.h>
 #include <stdio.h>
-#include <ctype.h>
 
-s32 breads(FILE *f,s32 length,char *str) {
-	s32 rc;
-	while(length != 0) {
-		rc = bgetc(f);
-		if(rc == EOF)
-			break;
-		if(!isspace(rc)) {
-			if(str)
-				*str++ = rc;
-			if(length > 0)
-				length--;
-		}
-		else {
-			bback(f);
-			break;
-		}
-	}
-
-	if(str) {
-		*str = '\0';
-		return 1;
-	}
+s32 bback(FILE *file) {
+	if(file->in.buffer == NULL || file->in.pos == 0)
+		return EOF;
+	file->eof = false;
+	file->in.pos--;
 	return 0;
 }

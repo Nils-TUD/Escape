@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-s32 breadn(FILE *f,s32 length,char c) {
+s32 breadn(FILE *f,s32 *num,s32 length,char c) {
 	bool neg = false;
 	s32 val = 0;
 	u8 base;
@@ -33,7 +33,7 @@ s32 breadn(FILE *f,s32 length,char c) {
 			length--;
 		}
 		else
-			ungetc(rc,f);
+			bback(f);
 	}
 
 	/* determine base */
@@ -55,7 +55,10 @@ s32 breadn(FILE *f,s32 length,char c) {
 
 	/* read until an invalid char is found or the max length is reached */
 	while(length != 0) {
-		s32 tc = tolower(RETERR(bgetc(f)));
+		s32 tc = bgetc(f);
+		if(tc == EOF)
+			break;
+		tc = tolower(tc);
 		if(tc >= '0' && tc <= hexCharsSmall[base - 1]) {
 			if(base > 10 && tc >= 'a')
 				val = val * base + (10 + tc - 'a');
@@ -65,11 +68,12 @@ s32 breadn(FILE *f,s32 length,char c) {
 				length--;
 		}
 		else {
-			ungetc(tc,f);
+			bback(f);
 			break;
 		}
 	}
 	if(neg)
 		val = -val;
-	return val;
+	*num = val;
+	return 0;
 }

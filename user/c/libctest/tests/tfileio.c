@@ -105,7 +105,7 @@ static bool test_fileio_checkScan(u32 recvRes,u32 expRes,const char *fmt,...) {
 }
 
 static void test_fileio_print(void) {
-	char str[200],tmp[200],c;
+	char str[200],c;
 	u32 tmplen,i;
 	s32 res;
 
@@ -146,23 +146,6 @@ static void test_fileio_print(void) {
 	res = snprintf(str,sizeof(str),"%02d, % 4x, %08b",9,0xff,0xf);
 	if(!test_fileio_checkPrint(res,-1,str,"09,   ff, 00001111"))
 		return;
-
-	strcpy(tmp,"09,   ff, AB , 0x12, 0X0AB,   +12,  13, 00000123, 00001111");
-
-	res = snprintf(NULL,0,"%02d, %4x, %-3X, %#2x, %#03X, %+5d, % 3d, %0*x, %08b",9,0xff,0xab,
-			0x12,0xAB,12,13,8,0x123,0xf);
-	test_assertInt(res,strlen(tmp));
-
-	tmplen = strlen(tmp);
-	for(i = 1; i <= strlen(tmp); i++) {
-		c = tmp[i];
-		tmp[i] = '\0';
-		res = snprintf(str,i + 1,"%02d, %4x, %-3X, %#2x, %#03X, %+5d, % 3d, %0*x, %08b",9,0xff,0xab,
-				0x12,0xAB,12,13,8,0x123,0xf);
-		if(!test_fileio_checkPrint(res,tmplen,str,tmp))
-			return;
-		tmp[i] = c;
-	}
 
 	res = snprintf(str,sizeof(str),"%p%n, %hx",0xdeadbeef,&i,0x12345678);
 	if(!test_fileio_checkPrint(res,-1,str,"dead:beef, 5678") || !test_assertUInt(i,9))

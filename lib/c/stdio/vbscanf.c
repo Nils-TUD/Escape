@@ -54,7 +54,7 @@ s32 vbscanf(FILE *f,const char *fmt,va_list ap) {
 			rc = READERR(count,bgetc(f));
 		}
 		while(isspace(rc));
-		READERR(count,ungetc(rc,f));
+		READERR(count,bback(f));
 
 		/* read flags */
 		shortPtr = false;
@@ -94,7 +94,8 @@ s32 vbscanf(FILE *f,const char *fmt,va_list ap) {
 			case 'X':
 			case 'u':
 			case 'd': {
-				s32 val = READERR(count,breadn(f,length,c));
+				s32 val = 0;
+				READERR(count,breadn(f,&val,length,c));
 				/* store value */
 				if(!discard) {
 					if(c == 'd') {

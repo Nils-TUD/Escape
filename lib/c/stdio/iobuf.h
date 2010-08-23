@@ -104,9 +104,10 @@ s32 bprintdbl(FILE *f,double d,u32 precision);
 s32 bprintdblpad(FILE *f,double d,u8 pad,u16 flags,u32 precision);
 s32 vbprintf(FILE *f,const char *fmt,va_list ap);
 
+s32 bback(FILE *file);
 s32 bgetc(FILE *f);
 char *bgets(FILE *f,char *str,s32 size);
-s32 breadn(FILE *f,s32 length,char c);
+s32 breadn(FILE *f,s32 *num,s32 length,char c);
 s32 breads(FILE *f,s32 length,char *str);
 s32 vbscanf(FILE *f,const char *fmt,va_list ap);
 

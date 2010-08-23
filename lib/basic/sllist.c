@@ -69,7 +69,7 @@ sSLList *sll_create(void) {
 	sList *l = (sList*)sllmalloc(sizeof(sList));
 	if(l == NULL)
 		return NULL;
-	sll_init((sSLList*)l,sllmalloc,sllfree);
+	sll_init((sSLList*)l,(fNodeAlloc)sllmalloc,(fNodeFree)sllfree);
 	return (sSLList*)l;
 }
 
@@ -304,7 +304,7 @@ void *sll_removeIndex(sSLList *list,u32 index) {
 	if(n == NULL)
 		return NULL;
 
-	res = n->data;
+	res = (void*)n->data;
 	sll_removeNode(list,(sSLNode*)n,(sSLNode*)ln);
 	return res;
 }

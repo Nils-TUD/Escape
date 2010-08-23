@@ -1,5 +1,5 @@
 /**
- * $Id: vbprintf.c 576 2010-03-29 14:55:59Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

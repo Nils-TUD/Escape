@@ -1,5 +1,5 @@
 /**
- * $Id: lessmain.c 743 2010-08-10 13:21:11Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

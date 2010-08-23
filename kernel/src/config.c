@@ -121,9 +121,6 @@ s32 conf_get(u32 id) {
 		case CONF_MAX_PROCS:
 			res = PROC_COUNT;
 			break;
-		case CONF_MAX_THREADS:
-			res = THREAD_COUNT;
-			break;
 		case CONF_MAX_FDS:
 			res = MAX_FD_COUNT;
 			break;

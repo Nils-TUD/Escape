@@ -28,9 +28,8 @@ extern "C" {
 
 #define CONF_TIMER_FREQ			0
 #define CONF_MAX_PROCS			1
-#define CONF_MAX_THREADS		2
-#define CONF_MAX_FDS			3
-#define CONF_BOOT_VIDEOMODE		4
+#define CONF_MAX_FDS			2
+#define CONF_BOOT_VIDEOMODE		3
 
 #define CONF_VIDMODE_VGATEXT	0
 #define CONF_VIDMODE_VESATEXT	1

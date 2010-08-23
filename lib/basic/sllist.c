@@ -28,14 +28,16 @@
 /* for util_panic (vassert) */
 #	include <sys/util.h>
 #	define sllprintf	vid_printf
-#	define free(x)		kheap_free(x)
-#	define malloc(x)	kheap_alloc(x)
+#	define sllfree		kheap_free
+#	define sllmalloc	kheap_alloc
 #else
 /* for exit (vassert) */
 #	include <esc/proc.h>
 #	include <stdio.h>
 #	include <stdlib.h>
 #	define sllprintf	printf
+#	define sllfree		free
+#	define sllmalloc	malloc
 #endif
 
 /* a node in a list */
@@ -47,6 +49,8 @@ struct sNode {
 
 /* represents a list */
 typedef struct {
+	fNodeAlloc falloc;
+	fNodeFree ffree;
 	sNode *first;
 	sNode *last;
 	u32 length;
@@ -62,18 +66,28 @@ typedef struct {
 static sNode *sll_getNode(sSLList *list,u32 index);
 
 sSLList *sll_create(void) {
-	sList *l = (sList*)malloc(sizeof(sList));
+	sList *l = (sList*)sllmalloc(sizeof(sList));
 	if(l == NULL)
 		return NULL;
-	sll_init((sSLList*)l);
+	sll_init((sSLList*)l,sllmalloc,sllfree);
 	return (sSLList*)l;
 }
 
-void sll_init(sSLList *list) {
+sSLList *sll_createExtern(fNodeAlloc falloc,fNodeFree ffree) {
+	sList *l = (sList*)sllmalloc(sizeof(sList));
+	if(l == NULL)
+		return NULL;
+	sll_init((sSLList*)l,falloc,ffree);
+	return (sSLList*)l;
+}
+
+void sll_init(sSLList *list,fNodeAlloc falloc,fNodeFree ffree) {
 	sList *l = (sList*)list;
 	l->first = NULL;
 	l->last = NULL;
 	l->length = 0;
+	l->falloc = falloc;
+	l->ffree = ffree;
 }
 
 sSLList *sll_clone(sSLList *list) {
@@ -101,12 +115,12 @@ void sll_destroy(sSLList *list,bool freeData) {
 	while(n != NULL) {
 		nn = n->next;
 		if(freeData)
-			free((void*)n->data);
-		free(n);
+			sllfree((void*)n->data);
+		l->ffree(n);
 		n = nn;
 	}
 	/* free list */
-	free(list);
+	sllfree(list);
 }
 
 sSLNode *sll_begin(sSLList *list) {
@@ -189,7 +203,7 @@ bool sll_insertAfter(sSLList *list,sSLNode *prev,const void *data) {
 	vassert(list != NULL,"list == NULL");
 
 	/* allocate node? */
-	nn = (sNode*)malloc(sizeof(sNode));
+	nn = (sNode*)l->falloc(sizeof(sNode));
 	if(nn == NULL)
 		return false;
 
@@ -219,7 +233,7 @@ void sll_removeAll(sSLList *list) {
 	/* free all nodes */
 	while(n != NULL) {
 		m = n->next;
-		free(n);
+		l->ffree(n);
 		n = m;
 	}
 
@@ -247,7 +261,7 @@ void sll_removeNode(sSLList *list,sSLNode *node,sSLNode *prev) {
 	l->length--;
 
 	/* free */
-	free(n);
+	l->ffree(n);
 }
 
 bool sll_removeFirst(sSLList *list,const void *data) {
@@ -273,9 +287,10 @@ bool sll_removeFirst(sSLList *list,const void *data) {
 	return true;
 }
 
-bool sll_removeIndex(sSLList *list,u32 index) {
+void *sll_removeIndex(sSLList *list,u32 index) {
 	sList *l = (sList*)list;
 	sNode *n = l->first,*ln = NULL;
+	void *res = NULL;
 
 	vassert(list != NULL,"list == NULL");
 
@@ -287,10 +302,11 @@ bool sll_removeIndex(sSLList *list,u32 index) {
 
 	/* ignore */
 	if(n == NULL)
-		return false;
+		return NULL;
 
+	res = n->data;
 	sll_removeNode(list,(sSLNode*)n,(sSLNode*)ln);
-	return true;
+	return res;
 }
 
 static sNode *sll_getNode(sSLList *list,u32 index) {

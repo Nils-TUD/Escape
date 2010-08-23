@@ -41,7 +41,7 @@ FILE *stderr = stdBufs + STDERR_FILENO;
 sSLList iostreams;
 
 static void initStdio(void) {
-	sll_init(&iostreams);
+	sll_init(&iostreams,malloc,free);
 	atexit(deinitStdio);
 
 	stdin->eof = false;

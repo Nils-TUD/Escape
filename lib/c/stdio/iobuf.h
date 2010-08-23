@@ -24,9 +24,9 @@
 #include <esc/lock.h>
 #include <esc/sllist.h>
 
-#define IN_BUFFER_SIZE		128
-#define OUT_BUFFER_SIZE		512
-#define ERR_BUFFER_SIZE		64
+#define IN_BUFFER_SIZE		1024
+#define OUT_BUFFER_SIZE		1024
+#define ERR_BUFFER_SIZE		128
 
 /* format flags */
 #define FFL_PADRIGHT		1

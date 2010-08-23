@@ -199,7 +199,7 @@ errorRemNode:
 
 void sysc_tell(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	s32 *pos = (u32*)SYSC_ARG2(stack);
+	s32 *pos = (s32*)SYSC_ARG2(stack);
 	sThread *t = thread_getRunning();
 	tFileNo file;
 

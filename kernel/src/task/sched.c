@@ -20,10 +20,12 @@
 #include <sys/common.h>
 #include <sys/task/thread.h>
 #include <sys/task/sched.h>
+#include <sys/mem/kheap.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
 #include <assert.h>
+#include <string.h>
 
 /**
  * The scheduling-algorithm is very simple atm. Basically it is round-robin.
@@ -35,26 +37,16 @@
  * the timer noticed that the thread no longer wants to sleep, will be put at the beginning
  * of the ready-queue so that they will be chosen on the next resched.
  *
- * Note that we're using our own linked-list-implementation here instead of the SLL because we
- * don't want to waste time with allocating and freeing stuff on the heap.
- * Since we're storing the beginning and end of the list we can schedule in O(1). But changing
- * the thread-state (ready <-> blocked) takes a bit more because we have to search
- * in the queue.
+ * Each thread has a prev- and next-pointer with which we build two double-linked list: one
+ * ready-queue and one blocked-queue. For both we store the beginning and end.
+ * Therefore we can dequeue the first, prepend, append and remove a thread in O(1).
+ * Additionally the number of threads is limited by the kernel-heap (i.e. we don't need a static
+ * storage of nodes for the linked list; we use the threads itself)
  */
 
-/* a queue-node */
-typedef struct sQueueNode sQueueNode;
-struct sQueueNode {
-	sQueueNode *next;
-	sThread *t;
-};
-
-/* all stuff we need for a queue */
 typedef struct {
-	sQueueNode nodes[THREAD_COUNT];
-	sQueueNode *free;
-	sQueueNode *first;
-	sQueueNode *last;
+	sThread *first;
+	sThread *last;
 } sQueue;
 
 static bool sched_setReadyState(sThread *t);
@@ -64,7 +56,6 @@ static void sched_qDequeueThread(sQueue *q,sThread *t);
 static void sched_qAppend(sQueue *q,sThread *t);
 static void sched_qPrepend(sQueue *q,sThread *t);
 
-/* the queues */
 static sQueue readyQueue;
 static sQueue blockedQueue;
 
@@ -183,14 +174,9 @@ void sched_setBlocked(sThread *t) {
 }
 
 void sched_unblockAll(u16 mask,u16 event) {
-	sQueueNode *n,*prev,*tmp;
-	sThread *t;
+	sThread *t,*tmp;
 	u16 tmask;
-
-	prev = NULL;
-	n = blockedQueue.first;
-	while(n != NULL) {
-		t = (sThread*)n->t;
+	for(t = blockedQueue.first; t != NULL; ) {
 		tmask = t->events >> 16;
 		/* if suspended, just remember that it should be ready when done */
 		if((tmask == 0 || tmask == mask) && (t->events & event)) {
@@ -201,29 +187,14 @@ void sched_unblockAll(u16 mask,u16 event) {
 			else if(t->state != ST_READY_SUSP) {
 				t->state = ST_READY;
 				t->events = EV_NOEVENT;
+				tmp = t->next;
+				sched_qDequeueThread(&blockedQueue,t);
 				sched_qAppend(&readyQueue,t);
-
-				/* dequeue */
-				if(prev == NULL)
-					tmp = blockedQueue.first = n->next;
-				else {
-					tmp = prev;
-					prev->next = n->next;
-				}
-				if(n->next == NULL)
-					blockedQueue.last = tmp;
-
-				/* put n on the free-list and continue */
-				tmp = n->next;
-				n->next = blockedQueue.free;
-				blockedQueue.free = n;
-				n = tmp;
+				t = tmp;
 				continue;
 			}
 		}
-
-		prev = n;
-		n = n->next;
+		t = t->next;
 	}
 }
 
@@ -297,98 +268,52 @@ void sched_removeThread(sThread *t) {
 }
 
 static void sched_qInit(sQueue *q) {
-	s32 i;
-	sQueueNode *node;
-	/* put all on the free-queue */
-	node = &q->nodes[THREAD_COUNT - 1];
-	node->next = NULL;
-	node--;
-	for(i = THREAD_COUNT - 2; i >= 0; i--) {
-		node->next = node + 1;
-		node--;
-	}
-	/* all free atm */
-	q->free = &q->nodes[0];
 	q->first = NULL;
 	q->last = NULL;
 }
 
 static sThread *sched_qDequeue(sQueue *q) {
-	sQueueNode *node;
-	if(q->first == NULL)
+	sThread *t = q->first;
+	if(t == NULL)
 		return NULL;
 
-	/* put in free-queue & remove from queue */
-	node = q->first;
-	q->first = q->first->next;
-	if(q->first == NULL)
+	if(t->next)
+		t->next->prev = NULL;
+	if(t == q->last)
 		q->last = NULL;
-	node->next = q->free;
-	q->free = node;
-
-	return node->t;
+	q->first = t->next;
+	return t;
 }
 
 static void sched_qDequeueThread(sQueue *q,sThread *t) {
-	sQueueNode *n = q->first,*l = NULL;
-	vassert(t != NULL,"t == NULL");
-
-	while(n != NULL) {
-		/* found it? */
-		if(n->t == t) {
-			/* dequeue */
-			if(l == NULL)
-				l = q->first = n->next;
-			else
-				l->next = n->next;
-			if(n->next == NULL)
-				q->last = l;
-			n->next = q->free;
-			q->free = n;
-			return;
-		}
-		/* to next */
-		l = n;
-		n = n->next;
-	}
+	if(q->first == t)
+		q->first = t->next;
+	else
+		t->prev->next = t->next;
+	if(q->last == t)
+		q->last = t->prev;
+	else
+		t->next->prev = t->prev;
 }
 
 static void sched_qAppend(sQueue *q,sThread *t) {
-	sQueueNode *nn,*n;
-	vassert(t != NULL,"p == NULL");
-	vassert(q->free != NULL,"No free slots in the queue!?");
-
-	/* use first free node */
-	nn = q->free;
-	q->free = q->free->next;
-	nn->t = t;
-	nn->next = NULL;
-
-	/* put at the end of the queue */
-	n = q->first;
-	if(n != NULL) {
-		q->last->next = nn;
-		q->last = nn;
-	}
-	else {
-		q->first = nn;
-		q->last = nn;
-	}
+	t->prev = q->last;
+	t->next = NULL;
+	if(t->prev)
+		t->prev->next = t;
+	else
+		q->first = t;
+	q->last = t;
 }
 
 static void sched_qPrepend(sQueue *q,sThread *t) {
-	sQueueNode *nn;
-	vassert(t != NULL,"p == NULL");
-
-	/* use first free node */
-	nn = q->free;
-	q->free = q->free->next;
-	nn->t = t;
-	/* put at the beginning of the queue */
-	nn->next = q->first;
-	q->first = nn;
-	if(q->last == NULL)
-		q->last = nn;
+	t->prev = NULL;
+	t->next = q->first;
+	if(t->next)
+		t->next->prev = t;
+	else
+		q->last = t;
+	q->first = t;
 }
 
 
@@ -396,11 +321,17 @@ static void sched_qPrepend(sQueue *q,sThread *t) {
 #if DEBUGGING
 
 static void sched_qPrint(sQueue *q) {
-	sQueueNode *n = q->first;
-	vid_printf("Queue: first=0x%x, last=0x%x, free=0x%x\n",q->first,q->last,q->free);
-	while(n != NULL) {
-		vid_printf("\t[0x%x]: t=0x%x, tid=%d, next=0x%x\n",n,n->t,n->t->tid,n->next);
-		n = n->next;
+	char name1[12];
+	char name2[12];
+	sThread *t = q->first;
+	vid_printf("Queue: first=%s, last=%s\n",
+			q->first ? itoa(name1,sizeof(name1),q->first->tid) : "-",
+			q->last ? itoa(name2,sizeof(name2),q->last->tid) : "-");
+	while(t != NULL) {
+		vid_printf("\ttid=%d, prev=%s, next=%s\n",
+				t->tid,t->prev ? itoa(name1,sizeof(name1),t->prev->tid) : "-",
+				t->next ? itoa(name2,sizeof(name2),t->next->tid) : "-");
+		t = t->next;
 	}
 }
 

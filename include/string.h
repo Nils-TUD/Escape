@@ -68,8 +68,9 @@ s64 atoll(const char *nptr);
  * @param target the target-string (needs max. 12 elements)
  * @param targetSize the size of <target>
  * @param n the integer
+ * @return the target-string
  */
-void itoa(char *target,u32 targetSize,s32 n);
+char *itoa(char *target,u32 targetSize,s32 n);
 
 /**
  * The memchr() function looks for the first occurrence of c within count characters in

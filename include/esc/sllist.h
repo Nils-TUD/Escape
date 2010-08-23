@@ -27,16 +27,22 @@ typedef struct sSLNode sSLNode;
 struct sSLNode {
 	/* the user should not be able to change them */
 	sSLNode *const next;
-	void *const data;
+	void *data;
 };
+
+/* callbacks for allocating and free'ing nodes */
+typedef void *(*fNodeAlloc)(size_t size);
+typedef void (*fNodeFree)(void *n);
 
 /* our list (the user should not know about the internal structure) */
 /*typedef void* sSLList;*/
 /* but for debugging, it is helpful :) */
 typedef struct {
-	sSLNode *first;
-	sSLNode *last;
-	u32 length;
+	const fNodeAlloc falloc;
+	const fNodeFree ffree;
+	const sSLNode *const first;
+	const sSLNode *const last;
+	const u32 length;
 } sSLList;
 
 #ifdef __cplusplus
@@ -44,19 +50,30 @@ extern "C" {
 #endif
 
 /**
- * Creates a new list
+ * Creates a new list with default-allocation (i.e. on heap with malloc/free)
  *
  * @return the list or NULL if there is not enough mem
  */
 sSLList *sll_create(void);
 
 /**
+ * Creates a new list that calls <falloc> to allocate a new node and <ffree> to free a node
+ *
+ * @param falloc the allocate-function
+ * @param ffree the free-function
+ * @return the list
+ */
+sSLList *sll_createExtern(fNodeAlloc falloc,fNodeFree ffree);
+
+/**
  * Inits the given list. This is usefull when allocating a list on the stack / in the
  * data-segment.
  *
  * @param l the list
+ * @param falloc the allocate-function
+ * @param ffree the free-function
  */
-void sll_init(sSLList *l);
+void sll_init(sSLList *l,fNodeAlloc falloc,fNodeFree ffree);
 
 /**
  * Clones the given list
@@ -205,9 +222,9 @@ bool sll_removeFirst(sSLList *list,const void *data);
  *
  * @param list the list
  * @param index the index
- * @return true if the index has been removed
+ * @return the data of the removed node or NULL if not found
  */
-bool sll_removeIndex(sSLList *list,u32 index);
+void *sll_removeIndex(sSLList *list,u32 index);
 
 #if DEBUGGING
 

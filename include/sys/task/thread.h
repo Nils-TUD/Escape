@@ -24,8 +24,6 @@
 #include <sys/machine/fpu.h>
 #include <sys/task/proc.h>
 
-/* TODO we need the thread-count for sched, atm */
-#define THREAD_COUNT			1024
 #define MAX_STACK_PAGES			128
 #define MAX_FD_COUNT			64
 
@@ -36,9 +34,9 @@
 #define ATA_TID					2
 #define FS_TID					5
 
-#define INVALID_TID				THREAD_COUNT
-/* use an invalid pid to identify the kernel */
-#define KERNEL_TID				(THREAD_COUNT + 1)
+#define INVALID_TID				0xFFFF
+/* use an invalid tid to identify the kernel */
+#define KERNEL_TID				0xFFFE
 
 /* the thread-state which will be saved for context-switching */
 typedef struct {
@@ -81,7 +79,8 @@ typedef enum {
 } eThreadState;
 
 /* represents a thread */
-typedef struct {
+typedef struct sThread sThread;
+struct sThread {
 	/* thread state. see eThreadState */
 	u8 state;
 	/* whether this thread waits somewhere in the kernel (not directly triggered by the user) */
@@ -112,7 +111,10 @@ typedef struct {
 	uLongLong ucycleCount;
 	u64 kcycleStart;
 	uLongLong kcycleCount;
-} sThread;
+	/* for the scheduler */
+	sThread *prev;
+	sThread *next;
+};
 
 /**
  * Saves the state of the current thread in the given area

@@ -21,11 +21,12 @@
 #include <esc/driver.h>
 #include <esc/proc.h>
 #include <esc/io.h>
-#include <stdio.h>
+#include <esc/ringbuffer.h>
 #include <esc/messages.h>
+#include <esc/keycodes.h>
+#include <stdio.h>
 #include <errors.h>
 #include <stdlib.h>
-#include <esc/ringbuffer.h>
 #include "keymap.h"
 #include "events.h"
 
@@ -45,6 +46,7 @@ static sKbData kbData[KB_DATA_BUF_SIZE];
 
 int main(void) {
 	char path[MAX_PATH_LEN];
+	char *newline;
 	tDrvId ids[2];
 	tDrvId drv;
 	tMsgId mid;
@@ -72,6 +74,8 @@ int main(void) {
 	if(f == NULL)
 		error("Unable to open %s",KEYMAP_FILE);
 	fgets(path,MAX_PATH_LEN,f);
+	if((newline = strchr(path,'\n')))
+		*newline = '\0';
 	fclose(f);
 
 	/* load default map */

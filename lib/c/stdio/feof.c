@@ -18,12 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
 
 s32 feof(FILE *stream) {
-	sIOStream *s = (sIOStream*)stream;
-	if(s->in)
-		return s->in->eof(s->in);
-	return false;
+	return stream->eof;
 }

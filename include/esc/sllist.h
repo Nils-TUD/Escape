@@ -51,6 +51,14 @@ extern "C" {
 sSLList *sll_create(void);
 
 /**
+ * Inits the given list. This is usefull when allocating a list on the stack / in the
+ * data-segment.
+ *
+ * @param l the list
+ */
+void sll_init(sSLList *l);
+
+/**
  * Clones the given list
  *
  * @param list the list

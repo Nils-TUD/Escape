@@ -18,23 +18,17 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/outofmemory.h>
-#include <esc/io/ostringstream.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 s32 vsnprintf(char *str,size_t n,const char *fmt,va_list ap) {
-	s32 res = 0;
-	sOStream *s = NULL;
-	TRY {
-		s = osstream_open(str,n);
-		res = s->vwritef(s,fmt,ap);
-	}
-	/* no io-exception here */
-	CATCH(OutOfMemoryException,e) {
-		res = EOF;
-	}
-	ENDCATCH
-	if(s)
-		s->close(s);
+	s32 res;
+	FILE *sbuf = bcreate(-1,IO_WRITE,str,n - 1);
+	if(!sbuf)
+		return EOF;
+	res = vbprintf(sbuf,fmt,ap);
+	/* null-termination */
+	sbuf->out.buffer[sbuf->out.pos] = '\0';
+	free(sbuf);
 	return res;
 }

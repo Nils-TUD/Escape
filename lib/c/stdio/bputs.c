@@ -20,7 +20,10 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-void clearerr(FILE *stream) {
-	stream->error = 0;
-	stream->eof = false;
+s32 bputs(FILE *f,const char *str) {
+	char c;
+	const char *begin = str;
+	while((c = *str++))
+		RETERR(bputc(f,c));
+	return str - begin;
 }

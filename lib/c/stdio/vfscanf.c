@@ -18,23 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
-#include <assert.h>
 #include <stdarg.h>
 
 s32 vfscanf(FILE *file,const char *fmt,va_list ap) {
-	s32 res = 0;
-	sIOStream *s = (sIOStream*)file;
-	assert(s && s->in);
-	TRY {
-		res = s->in->vreadf(s->in,fmt,ap);
-	}
-	CATCH(IOException,e) {
-		s->_error = e->getErrno(e);
-		res = EOF;
-	}
-	ENDCATCH;
-	return res;
+	return vbscanf(file,fmt,ap);
 }

@@ -19,8 +19,25 @@
 
 #include <esc/common.h>
 #include <stdio.h>
+#include "iobuf.h"
 
-void clearerr(FILE *stream) {
-	stream->error = 0;
-	stream->eof = false;
+s32 bflush(FILE *f) {
+	sIOBuf *buf = &f->out;
+	if(buf->fd >= 0) {
+		if(buf->pos > 0) {
+			s32 res;
+			/* flush stdout first if we're stderr */
+			if(f == stderr)
+				fflush(stdout);
+			locku(&buf->lck);
+			if((res = write(buf->fd,buf->buffer,buf->pos * sizeof(char))) < 0) {
+				unlocku(&buf->lck);
+				f->error = res;
+				return EOF;
+			}
+			buf->pos = 0;
+			unlocku(&buf->lck);
+		}
+	}
+	return 0;
 }

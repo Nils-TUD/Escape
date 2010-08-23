@@ -18,22 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
-#include <assert.h>
 
 s32 fgetc(FILE *stream) {
-	s32 res = 0;
-	sIOStream *s = (sIOStream*)stream;
-	assert(s && s->in);
-	TRY {
-		res = s->in->readc(s->in);
-	}
-	CATCH(IOException,e) {
-		s->_error = e->getErrno(e);
-		res = EOF;
-	}
-	ENDCATCH;
-	return res;
+	return bgetc(stream);
 }

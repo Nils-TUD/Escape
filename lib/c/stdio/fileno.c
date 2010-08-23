@@ -18,12 +18,10 @@
  */
 
 #include <esc/common.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
 
 tFD fileno(FILE *stream) {
-	sIOStream *s = (sIOStream*)stream;
-	if(s->in)
-		return s->in->fileno(s->in);
-	return s->out->fileno(s->out);
+	if(stream->in.fd >= 0)
+		return stream->in.fd;
+	return stream->out.fd;
 }

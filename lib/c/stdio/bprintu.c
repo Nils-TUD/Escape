@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: bprintu.c 332 2009-09-17 09:39:40Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -20,7 +20,10 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-void clearerr(FILE *stream) {
-	stream->error = 0;
-	stream->eof = false;
+s32 bprintu(FILE *f,u32 u,u8 base,const char *hexchars) {
+	s32 c = 0;
+	if(u >= base)
+		c += RETERR(bprintu(f,u / base,base,hexchars));
+	RETERR(bputc(f,hexchars[(u % base)]));
+	return c + 1;
 }

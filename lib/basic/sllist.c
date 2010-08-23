@@ -65,11 +65,15 @@ sSLList *sll_create(void) {
 	sList *l = (sList*)malloc(sizeof(sList));
 	if(l == NULL)
 		return NULL;
+	sll_init((sSLList*)l);
+	return (sSLList*)l;
+}
 
+void sll_init(sSLList *list) {
+	sList *l = (sList*)list;
 	l->first = NULL;
 	l->last = NULL;
 	l->length = 0;
-	return (sSLList*)l;
 }
 
 sSLList *sll_clone(sSLList *list) {

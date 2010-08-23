@@ -26,7 +26,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#define FFL_PADZEROS	1
+#define DBG_FFL_PADZEROS	1
 
 static void debugPad(s32 count,u16 flags);
 static void debugStringn(char *s,u32 precision);
@@ -141,7 +141,7 @@ void vdebugf(const char *fmt,va_list ap) {
 		while(readFlags) {
 			switch(*fmt) {
 				case '0':
-					flags |= FFL_PADZEROS;
+					flags |= DBG_FFL_PADZEROS;
 					fmt++;
 					break;
 				case '*':
@@ -209,7 +209,7 @@ void vdebugf(const char *fmt,va_list ap) {
 }
 
 static void debugPad(s32 count,u16 flags) {
-	char c = flags & FFL_PADZEROS ? '0' : ' ';
+	char c = flags & DBG_FFL_PADZEROS ? '0' : ' ';
 	while(count-- > 0)
 		debugChar(c);
 }

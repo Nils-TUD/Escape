@@ -18,23 +18,17 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
 
 s32 fseek(FILE *stream,s32 offset,s32 whence) {
-	s32 res = 0;
-	sIOStream *s = (sIOStream*)stream;
-	TRY {
-		if(s->in)
-			res = s->in->seek(s->in,offset,whence);
-		else
-			res = s->out->seek(s->out,offset,whence);
+	s32 res;
+	if(stream->in.fd >= 0)
+		res = seek(stream->in.fd,offset,whence);
+	else
+		res = seek(stream->out.fd,offset,whence);
+	if(res < 0) {
+		stream->error = res;
+		return res;
 	}
-	CATCH(IOException,e) {
-		s->_error = e->getErrno(e);
-		res = EOF;
-	}
-	ENDCATCH;
-	return res;
+	return 0;
 }

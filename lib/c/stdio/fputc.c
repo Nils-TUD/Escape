@@ -18,22 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
-#include <assert.h>
+#include "iobuf.h"
 
 s32 fputc(s32 c,FILE *file) {
-	s32 res = 0;
-	sIOStream *s = (sIOStream*)file;
-	assert(s && s->out);
-	TRY {
-		res = s->out->writec(s->out,c);
-	}
-	CATCH(IOException,e) {
-		s->_error = e->getErrno(e);
-		res = EOF;
-	}
-	ENDCATCH
-	return res;
+	return bputc(file,c);
 }

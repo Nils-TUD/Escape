@@ -41,18 +41,18 @@ sIStream *cin = NULL;
 sOStream *cout = NULL;
 sOStream *cerr = NULL;
 
-FILE *stdin = NULL;
+/*FILE *stdin = NULL;
 FILE *stdout = NULL;
-FILE *stderr = NULL;
+FILE *stderr = NULL;*/
 
 static void streamConstr(void *d) {
 	UNUSED(d);
 	cin = ifstream_openfd(STDIN_FILENO);
 	cout = ofstream_openfd(STDOUT_FILENO);
 	cerr = ofstream_openfd(STDERR_FILENO);
-	stdin = (FILE*)iofstream_linkin(cin);
+	/*stdin = (FILE*)iofstream_linkin(cin);
 	stdout = (FILE*)iofstream_linkout(cout);
-	stderr = (FILE*)iofstream_linkout(cerr);
+	stderr = (FILE*)iofstream_linkout(cerr);*/
 	atexit(streamDestr);
 }
 

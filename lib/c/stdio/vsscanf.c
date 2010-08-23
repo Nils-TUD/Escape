@@ -18,26 +18,15 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/exceptions/outofmemory.h>
-#include <esc/io/istringstream.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 s32 vsscanf(const char *str,const char *fmt,va_list ap) {
-	s32 res = 0;
-	sIStream *s = NULL;
-	TRY {
-		s = isstream_open(str);
-		res = s->vreadf(s,fmt,ap);
-	}
-	CATCH(IOException,e) {
-		res = EOF;
-	}
-	CATCH(OutOfMemoryException,e) {
-		res = EOF;
-	}
-	ENDCATCH
-	if(s)
-		s->close(s);
+	s32 res;
+	FILE *sbuf = bcreate(-1,IO_READ,(char*)str,strlen(str));
+	if(!sbuf)
+		return EOF;
+	res = vbscanf(sbuf,fmt,ap);
+	free(sbuf);
 	return res;
 }

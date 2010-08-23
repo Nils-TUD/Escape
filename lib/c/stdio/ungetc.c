@@ -24,16 +24,9 @@
 #include <assert.h>
 
 s32 ungetc(s32 c,FILE *file) {
-	s32 res = 0;
-	sIOStream *s = (sIOStream*)file;
-	assert(s && s->in);
-	TRY {
-		s->in->unread(s->in,c);
-	}
-	CATCH(IOException,e) {
-		s->_error = e->getErrno(e);
-		res = EOF;
-	}
-	ENDCATCH
-	return res;
+	if(file->in.buffer == NULL || file->in.pos == 0)
+		return EOF;
+	file->eof = false;
+	file->in.buffer[--file->in.pos] = c;
+	return c;
 }

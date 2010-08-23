@@ -20,7 +20,20 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-void clearerr(FILE *stream) {
-	stream->error = 0;
-	stream->eof = false;
+char *bgets(FILE *f,char *str,s32 size) {
+	char *res = str;
+	/* wait for one char left (\0) or a newline or error/EOF */
+	while(size-- > 1) {
+		s32 c = bgetc(f);
+		if(c == EOF) {
+			if(str == res)
+				res = NULL;
+			break;
+		}
+		*str++ = c;
+		if(c == '\n')
+			break;
+	}
+	*str = '\0';
+	return res;
 }

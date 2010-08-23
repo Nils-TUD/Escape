@@ -23,6 +23,20 @@
 #include <errors.h>
 #include <string.h>
 
+bool is_file(const char *path) {
+	sFileInfo info;
+	if(stat(path,&info) < 0)
+		return false;
+	return MODE_IS_FILE(info.mode);
+}
+
+bool is_dir(const char *path) {
+	sFileInfo info;
+	if(stat(path,&info) < 0)
+		return false;
+	return MODE_IS_DIR(info.mode);
+}
+
 s32 sendMsgData(tFD fd,tMsgId id,const void *data,u32 size) {
 	sMsg msg;
 	if(size > sizeof(msg.data.d))

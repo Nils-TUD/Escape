@@ -18,23 +18,20 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 s32 fclose(FILE *stream) {
 	s32 res = 0;
-	sIOStream *s = (sIOStream*)stream;
-	/* just the output-stream may throw an exception when the output is flushed */
-	if(s->in)
-		s->in->close(s->in);
-	TRY {
-		if(s->out)
-			s->out->close(s->out);
-	}
-	CATCH(IOException,e) {
-		res = EOF;
-	}
-	ENDCATCH
+	fflush(stream);
+	if(stream->in.fd)
+		close(stream->in.fd);
+	else
+		close(stream->out.fd);
+	free(stream->in.buffer);
+	free(stream->out.buffer);
+	if(!sll_removeFirst(&iostreams,stream))
+		res = -1;
+	free(stream);
 	return res;
 }

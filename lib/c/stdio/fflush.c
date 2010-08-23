@@ -18,20 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
 
 s32 fflush(FILE *stream) {
-	s32 res = 0;
-	sIOStream *s = (sIOStream*)stream;
-	TRY {
-		s->out->flush(s->out);
-	}
-	CATCH(IOException,e) {
-		s->_error = e->getErrno(e);
-		res = EOF;
-	}
-	ENDCATCH
-	return res;
+	return bflush(stream);
 }

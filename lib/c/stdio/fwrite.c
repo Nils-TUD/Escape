@@ -18,22 +18,18 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
+#include <esc/io.h>
 #include <stdio.h>
-#include <assert.h>
 
 size_t fwrite(const void *ptr,size_t size,size_t count,FILE *file) {
-	size_t res = 0;
-	sIOStream *s = (sIOStream*)file;
-	assert(s && s->out);
-	TRY {
-		res = (size_t)s->out->write(s->out,ptr,size * count) / count;
+	/* first flush the output */
+	s32 res = fflush(file);
+	if(file->out.fd < 0 || res < 0)
+		return 0;
+	res = write(file->out.fd,ptr,count * size);
+	if(res < 0) {
+		file->error = res;
+		return 0;
 	}
-	CATCH(IOException,e) {
-		s->_error = e->getErrno(e);
-		res = 0;
-	}
-	ENDCATCH;
-	return res;
+	return res / size;
 }

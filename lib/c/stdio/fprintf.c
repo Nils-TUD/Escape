@@ -18,11 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <assert.h>
 
 s32 fprintf(FILE *file,const char *fmt,...) {
 	s32 res;

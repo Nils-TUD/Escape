@@ -18,22 +18,18 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
+#include <esc/io.h>
 #include <stdio.h>
-#include <assert.h>
 
 size_t fread(void *ptr,size_t size,size_t count,FILE *file) {
-	size_t res = 0;
-	sIOStream *s = (sIOStream*)file;
-	assert(s && s->in);
-	TRY {
-		res = s->in->read(s->in,ptr,size * count) / size;
-	}
-	CATCH(IOException,e) {
-		s->_error = e->getErrno(e);
-		res = 0;
-	}
-	ENDCATCH;
-	return res;
+	if(file->in.fd < 0 || file->eof)
+		return 0;
+	s32 res = read(file->in.fd,ptr,count * size);
+	if(res == 0)
+		file->eof = true;
+	else if(res < 0)
+		file->error = res;
+	else
+		return res / size;
+	return 0;
 }

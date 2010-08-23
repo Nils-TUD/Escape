@@ -18,22 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
-#include <assert.h>
 
 char *fgets(char *str,s32 max,FILE *file) {
-	char *res = str;
-	sIOStream *s = (sIOStream*)file;
-	assert(s && s->in);
-	TRY {
-		s->in->readline(s->in,str,max);
-	}
-	CATCH(IOException,e) {
-		s->_error = e->getErrno(e);
-		res = NULL;
-	}
-	ENDCATCH;
-	return res;
+	return bgets(file,str,max);
 }

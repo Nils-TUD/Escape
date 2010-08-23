@@ -19,8 +19,27 @@
 
 #include <esc/common.h>
 #include <stdio.h>
+#include <ctype.h>
 
-void clearerr(FILE *stream) {
-	stream->error = 0;
-	stream->eof = false;
+s32 breads(FILE *f,s32 length,char *str) {
+	s32 rc;
+	while(length != 0) {
+		rc = RETERR(bgetc(f));
+		if(!isspace(rc)) {
+			if(str)
+				*str++ = rc;
+			if(length > 0)
+				length--;
+		}
+		else {
+			ungetc(rc,f);
+			break;
+		}
+	}
+
+	if(str) {
+		*str = '\0';
+		return 1;
+	}
+	return 0;
 }

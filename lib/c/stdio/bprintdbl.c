@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: bprintdbl.c 332 2009-09-17 09:39:40Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -20,7 +20,26 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-void clearerr(FILE *stream) {
-	stream->error = 0;
-	stream->eof = false;
+s32 bprintdbl(FILE *f,double d,u32 precision) {
+	s32 c = 0;
+	s64 val = 0;
+
+	/* Note: this is probably not a really good way of converting IEEE754-floating point numbers
+	 * to string. But its simple and should be enough for my purposes :) */
+
+	val = (s64)d;
+	c += bprintl(f,val);
+	d -= val;
+	if(d < 0)
+		d = -d;
+	RETERR(bputc(f,'.'));
+	c++;
+	while(precision-- > 0) {
+		d *= 10;
+		val = (s64)d;
+		RETERR(bputc(f,(val % 10) + '0'));
+		d -= val;
+		c++;
+	}
+	return c;
 }

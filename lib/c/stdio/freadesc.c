@@ -18,21 +18,16 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
+#include <esc/esccodes.h>
 #include <stdio.h>
-#include <assert.h>
 
 s32 freadesc(FILE *f,s32 *n1,s32 *n2,s32 *n3) {
-	s32 res = 0;
-	sIOStream *s = (sIOStream*)f;
-	assert(s && s->in);
-	TRY {
-		res = s->in->readEsc(s->in,n1,n2,n3);
-	}
-	CATCH(IOException,e) {
-		res = EOF;
-	}
-	ENDCATCH
-	return res;
+	u32 i;
+	char ec,escape[MAX_ESCC_LENGTH] = {0};
+	const char *escPtr = (const char*)escape;
+	for(i = 0; i < MAX_ESCC_LENGTH - 1 && (ec = RETERR(bgetc(f))) != ']'; i++)
+		escape[i] = ec;
+	if(i < MAX_ESCC_LENGTH - 1 && ec == ']')
+		escape[i] = ec;
+	return escc_get(&escPtr,n1,n2,n3);
 }

@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: bprintlpad.c 332 2009-09-17 09:39:40Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -18,9 +18,24 @@
  */
 
 #include <esc/common.h>
+#include <esc/width.h>
 #include <stdio.h>
 
-void clearerr(FILE *stream) {
-	stream->error = 0;
-	stream->eof = false;
+s32 bprintlpad(FILE *f,s64 n,u8 pad,u16 flags) {
+	s32 count = 0;
+	/* pad left */
+	if(!(flags & FFL_PADRIGHT) && pad > 0) {
+		u32 width = getlwidth(n);
+		if(n > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
+			width++;
+		count += RETERR(bprintpad(f,pad - width,flags));
+	}
+	/* print '+' or ' ' instead of '-' */
+	PRINT_SIGNED_PREFIX(count,f,n,flags);
+	/* print number */
+	count += RETERR(bprintl(f,n));
+	/* pad right */
+	if((flags & FFL_PADRIGHT) && pad > 0)
+		count += RETERR(bprintpad(f,pad - count,flags));
+	return count;
 }

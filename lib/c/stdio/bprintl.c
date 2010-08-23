@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: bprintl.c 332 2009-09-17 09:39:40Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -20,7 +20,15 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-void clearerr(FILE *stream) {
-	stream->error = 0;
-	stream->eof = false;
+s32 bprintl(FILE *f,s64 l) {
+	s32 c = 0;
+	if(l < 0) {
+		RETERR(bputc(f,'-'));
+		l = -l;
+		c++;
+	}
+	if(l >= 10)
+		c += RETERR(bprintl(f,l / 10));
+	RETERR(bputc(f,(l % 10) + '0'));
+	return c + 1;
 }

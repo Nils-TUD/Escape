@@ -18,20 +18,21 @@
  */
 
 #include <esc/common.h>
-#include <esc/io/console.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 int main(void) {
 	u32 i,j;
-	cout->writes(cout,"    ");
+	fputs("    ",stdout);
 	for(i = 0; i < 16; i++)
-		cout->writef(cout,"%02x ",i << 4);
-	cout->writec(cout,'\n');
+		printf("%02x ",i << 4);
+	fputc('\n',stdout);
 
 	for(i = 0; i < 16; i++) {
-		cout->writef(cout,"%02x: ",i);
+		printf("%02x: ",i);
 		for(j = 0; j < 16; j++)
-			cout->writef(cout,"\033[co;%d;%d]##\033[co] ",i,j);
-		cout->writec(cout,'\n');
+			printf("\033[co;%d;%d]##\033[co] ",i,j);
+		fputc('\n',stdout);
 	}
 	return EXIT_SUCCESS;
 }

@@ -20,7 +20,29 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-void clearerr(FILE *stream) {
-	stream->error = 0;
-	stream->eof = false;
+s32 bgetc(FILE *f) {
+	sIOBuf *buf = &f->in;
+	if(f->eof || buf->buffer == NULL)
+		return EOF;
+	if(buf->fd >= 0) {
+		/* flush stdout if we're stdin */
+		if(f == stdin)
+			fflush(stdout);
+		if(buf->pos >= buf->max) {
+			s32 count = RETRY(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
+			if(count < 0) {
+				f->error = count;
+				return EOF;
+			}
+			if(count == 0) {
+				f->eof = true;
+				return EOF;
+			}
+			buf->pos = 0;
+			buf->max = count;
+		}
+	}
+	else if(buf->pos >= buf->max)
+		return EOF;
+	return buf->buffer[buf->pos++];
 }

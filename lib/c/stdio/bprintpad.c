@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: bprintpad.c 332 2009-09-17 09:39:40Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -20,7 +20,12 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-void clearerr(FILE *stream) {
-	stream->error = 0;
-	stream->eof = false;
+s32 bprintpad(FILE *f,s32 count,u16 flags) {
+	s32 x = 0;
+	char c = flags & FFL_PADZEROS ? '0' : ' ';
+	while(count-- > 0) {
+		RETERR(bputc(f,c));
+		x++;
+	}
+	return x;
 }

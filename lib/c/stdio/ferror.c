@@ -18,10 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
 
 s32 ferror(FILE *stream) {
-	sIOStream *s = (sIOStream*)stream;
-	return s->_error;
+	return stream->error;
 }

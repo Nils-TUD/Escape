@@ -20,7 +20,22 @@
 #include <esc/common.h>
 #include <stdio.h>
 
-void clearerr(FILE *stream) {
-	stream->error = 0;
-	stream->eof = false;
+s32 bputc(FILE *f,char c) {
+	sIOBuf *buf = &f->out;
+	if(buf->buffer == NULL)
+		return EOF;
+	if(buf->fd >= 0) {
+		if(buf->pos >= buf->max)
+			RETERR(bflush(f));
+		buf->buffer[buf->pos++] = c;
+		/* flush stderr on '\n' */
+		if(f == stderr && c == '\n')
+			RETERR(bflush(f));
+	}
+	else {
+		if(buf->pos >= buf->max)
+			return EOF;
+		buf->buffer[buf->pos++] = c;
+	}
+	return c;
 }

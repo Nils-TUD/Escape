@@ -18,49 +18,56 @@
  */
 
 #include <esc/common.h>
-#include <esc/sllist.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-FILE *fopen(const char *filename,const char *mode) {
-	char c;
-	tFD fd;
-	u8 flags = 0;
-	FILE *f = NULL;
+FILE *bcreate(tFD fd,u8 flags,char *buffer,u32 size) {
+	FILE *f = (FILE*)malloc(sizeof(FILE));
+	if(!f)
+		return NULL;
 
-	/* parse mode */
-	while((c = *mode++)) {
-		switch(c) {
-			case 'r':
-				flags |= IO_READ;
-				break;
-			case 'w':
-				flags |= IO_WRITE | IO_CREATE | IO_TRUNCATE;
-				break;
-			case '+':
-				if(flags & IO_READ)
-					flags |= IO_WRITE;
-				else if(flags & IO_WRITE)
-					flags |= IO_READ;
-				break;
-			case 'a':
-				flags |= IO_APPEND | IO_WRITE;
-				break;
+	f->eof = false;
+	f->error = 0;
+	f->in.buffer = NULL;
+	f->out.buffer = NULL;
+
+	if(flags & IO_READ) {
+		f->in.fd = fd;
+		if(buffer)
+			f->in.buffer = buffer;
+		else {
+			f->in.buffer = (char*)malloc(IN_BUFFER_SIZE + 1);
+			if(f->in.buffer == NULL)
+				goto error;
 		}
+		f->in.pos = 0;
+		f->in.max = buffer ? size : 0;
+		f->in.lck = 0;
 	}
-	if((flags & (IO_READ | IO_WRITE)) == 0)
-		return NULL;
-
-	/* open */
-	fd = open(filename,flags);
-	if(fd < 0)
-		return NULL;
-
-	/* create file */
-	if(!(f = bcreate(fd,flags,NULL,0)) || !sll_append(&iostreams,f)) {
-		close(fd);
-		free(f);
-		return NULL;
+	else
+		f->in.fd = -1;
+	if(flags & IO_WRITE) {
+		f->out.fd = fd;
+		if(buffer)
+			f->out.buffer = buffer;
+		else {
+			f->out.buffer = (char*)malloc(OUT_BUFFER_SIZE + 1);
+			if(f->out.buffer == NULL)
+				goto error;
+		}
+		f->out.pos = 0;
+		f->out.max = buffer ? size : OUT_BUFFER_SIZE;
+		f->out.lck = 0;
 	}
+	else
+		f->out.fd = -1;
 	return f;
+
+error:
+	if(!buffer) {
+		free(f->out.buffer);
+		free(f->in.buffer);
+	}
+	free(f);
+	return NULL;
 }

@@ -18,23 +18,17 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
 
 s32 fgetpos(FILE *stream,fpos_t *pos) {
-	s32 res = 0;
-	sIOStream *s = (sIOStream*)stream;
-	TRY {
-		if(s->in)
-			*pos = s->in->seek(s->in,0,SEEK_CUR);
-		else
-			*pos = s->out->seek(s->out,0,SEEK_CUR);
+	s32 res;
+	if(stream->in.fd >= 0)
+		res = tell(stream->in.fd,pos);
+	else
+		res = tell(stream->out.fd,pos);
+	if(res < 0) {
+		stream->error = res;
+		return res;
 	}
-	CATCH(IOException,e) {
-		s->_error = e->getErrno(e);
-		res = EOF;
-	}
-	ENDCATCH
-	return res;
+	return 0;
 }

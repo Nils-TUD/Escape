@@ -18,49 +18,58 @@
  */
 
 #include <esc/common.h>
-#include <esc/sllist.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <ctype.h>
 
-FILE *fopen(const char *filename,const char *mode) {
-	char c;
-	tFD fd;
-	u8 flags = 0;
-	FILE *f = NULL;
+s32 breadn(FILE *f,s32 length,char c) {
+	bool neg = false;
+	s32 val = 0;
+	u8 base;
+	/* handle '-' */
+	if(c == 'd') {
+		s32 rc = RETERR(bgetc(f));
+		if(rc == '-') {
+			neg = true;
+			length--;
+		}
+		else
+			ungetc(rc,f);
+	}
 
-	/* parse mode */
-	while((c = *mode++)) {
-		switch(c) {
-			case 'r':
-				flags |= IO_READ;
-				break;
-			case 'w':
-				flags |= IO_WRITE | IO_CREATE | IO_TRUNCATE;
-				break;
-			case '+':
-				if(flags & IO_READ)
-					flags |= IO_WRITE;
-				else if(flags & IO_WRITE)
-					flags |= IO_READ;
-				break;
-			case 'a':
-				flags |= IO_APPEND | IO_WRITE;
-				break;
+	/* determine base */
+	switch(c) {
+		case 'b':
+			base = 2;
+			break;
+		case 'o':
+			base = 8;
+			break;
+		case 'x':
+		case 'X':
+			base = 16;
+			break;
+		default:
+			base = 10;
+			break;
+	}
+
+	/* read until an invalid char is found or the max length is reached */
+	while(length != 0) {
+		s32 tc = tolower(RETERR(bgetc(f)));
+		if(tc >= '0' && tc <= hexCharsSmall[base - 1]) {
+			if(base > 10 && tc >= 'a')
+				val = val * base + (10 + tc - 'a');
+			else
+				val = val * base + (tc - '0');
+			if(length > 0)
+				length--;
+		}
+		else {
+			ungetc(tc,f);
+			break;
 		}
 	}
-	if((flags & (IO_READ | IO_WRITE)) == 0)
-		return NULL;
-
-	/* open */
-	fd = open(filename,flags);
-	if(fd < 0)
-		return NULL;
-
-	/* create file */
-	if(!(f = bcreate(fd,flags,NULL,0)) || !sll_append(&iostreams,f)) {
-		close(fd);
-		free(f);
-		return NULL;
-	}
-	return f;
+	if(neg)
+		val = -val;
+	return val;
 }

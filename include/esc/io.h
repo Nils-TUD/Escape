@@ -100,7 +100,7 @@ s32 fstat(tFD fd,sFileInfo *info) A_CHECKRET;
  * @param pos will point to the current file-position on success
  * @return 0 on success
  */
-s32 tell(tFD fd,u32 *pos) A_CHECKRET;
+s32 tell(tFD fd,s32 *pos) A_CHECKRET;
 
 /**
  * Checks whether we are at EOF
@@ -287,6 +287,22 @@ s32 sync(void) A_CHECKRET;
  * @param fd the file-descriptor
  */
 void close(tFD fd);
+
+/**
+ * Checks wether the given path points to a regular file
+ *
+ * @param path the (absolute!) path
+ * @return true if its a file; false if not or an error occurred
+ */
+bool is_file(const char *path);
+
+/**
+ * Checks wether the given path points to a directory
+ *
+ * @param path the (absolute!) path
+ * @return true if its a directory; false if not or an error occurred
+ */
+bool is_dir(const char *path);
 
 #ifdef __cplusplus
 }

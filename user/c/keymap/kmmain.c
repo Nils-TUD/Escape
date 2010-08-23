@@ -18,38 +18,31 @@
  */
 
 #include <esc/common.h>
-#include <esc/io.h>
-#include <stdio.h>
 #include <esc/proc.h>
-#include <esc/io/file.h>
-#include <esc/io/console.h>
-#include <esc/exceptions/cmdargs.h>
-#include <esc/util/cmdargs.h>
-#include <string.h>
 #include <esc/messages.h>
+#include <esc/cmdargs.h>
+#include <esc/dir.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define KEYMAP_DIR		"/etc/keymaps"
 
 static void usage(const char *name) {
-	cerr->writef(cerr,"Usage: %s [--set <name>]\n",name);
+	fprintf(stderr,"Usage: %s [--set <name>]\n",name);
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,const char **argv) {
 	char *kmname = NULL;
-	sCmdArgs *args;
 
-	TRY {
-		args = cmdargs_create(argc,argv,CA_NO_FREE);
-		args->parse(args,"set=s",&kmname);
-		if(args->isHelp)
-			usage(argv[0]);
-	}
-	CATCH(CmdArgsException,e) {
-		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
+	s32 res = ca_parse(argc,argv,CA_NO_FREE,"set=s",&kmname);
+	if(res < 0) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);
 	}
-	ENDCATCH
+	if(ca_hasHelp())
+		usage(argv[0]);
 
 	/* set keymap? */
 	if(kmname != NULL) {
@@ -62,20 +55,22 @@ int main(int argc,const char **argv) {
 		len = snprintf(path,sizeof(path),KEYMAP_DIR"/%s",kmname);
 		if(sendMsgData(fd,MSG_KM_SET,path,len + 1) < 0 ||
 				RETRY(receive(fd,NULL,&msg,sizeof(msg))) < 0 || (s32)msg.args.arg1 < 0)
-			cerr->writef(cerr,"Setting the keymap '%s' failed\n",kmname);
+			fprintf(stderr,"Setting the keymap '%s' failed\n",kmname);
 		else
-			cout->writef(cout,"Successfully changed keymap to '%s'\n",kmname);
+			printf("Successfully changed keymap to '%s'\n",kmname);
 		close(fd);
 	}
 	/* list all keymaps */
 	else {
-		sDirEntry *e;
-		sFile *f = file_get(KEYMAP_DIR);
-		sVector *files = f->listFiles(f,false);
-		vforeach(files,e)
-			cout->writeln(cout,e->name);
-		vec_destroy(files,true);
-		f->destroy(f);
+		sDirEntry e;
+		tFD fd = opendir(KEYMAP_DIR);
+		if(fd < 0)
+			error("Unable to open '%s'",KEYMAP_DIR);
+		while(readdir(&e,fd)) {
+			if(strcmp(e.name,".") != 0 && strcmp(e.name,"..") != 0)
+				printf("%s\n",e.name);
+		}
+		closedir(fd);
 	}
 	return EXIT_SUCCESS;
 }

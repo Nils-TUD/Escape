@@ -18,10 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/io/console.h>
+#include <esc/messages.h>
 #include <esc/proc.h>
 #include <stdio.h>
-#include <esc/messages.h>
 
 int main(void) {
 	sVTSize consSize;
@@ -31,25 +30,25 @@ int main(void) {
 		error("Unable to get vterm-size");
 	maxWidth = consSize.width - 3;
 
-	cout->writes(cout,"Waiting for fun...\n");
+	printf("Waiting for fun...\n");
 	for(p = 0; p <= 100; p++) {
 		/* percent to console width */
 		j = p == 0 ? 0 : maxWidth / (100. / p);
 
-		cout->writes(cout,"\r[");
+		printf("\r[");
 		/* completed */
 		for(i = 0; i < j; i++)
-			cout->writec(cout,'=');
-		cout->writec(cout,'>');
+			putchar('=');
+		putchar('>');
 		/* uncompleted */
 		for(i = j + 1; i <= maxWidth; i++)
-			cout->writec(cout,' ');
-		cout->writec(cout,']');
-		cout->flush(cout);
+			putchar(' ');
+		putchar(']');
+		fflush(stdout);
 
 		/* wait a little bit */
 		sleep(100);
 	}
-	cout->writes(cout,"Ready!\n");
+	printf("Ready!\n");
 	return EXIT_SUCCESS;
 }

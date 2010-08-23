@@ -19,12 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
-#include <esc/io/console.h>
-#include <esc/io/ifilestream.h>
-#include <esc/exceptions/io.h>
-#include <esc/exceptions/cmdargs.h>
-#include <esc/util/cmdargs.h>
+#include <esc/cmdargs.h>
+#include <esc/dir.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 
 #define MAX_LINE_LEN		512
@@ -32,9 +31,9 @@
 static bool matches(const char *line,const char *pattern);
 static void strtolower(char *s);
 static void usage(const char *name) {
-	cerr->writef(cerr,"Usage: %s <pattern> [<file>]\n",name);
-	cerr->writef(cerr,"	<pattern> will be treated case-insensitive and is NOT a\n");
-	cerr->writef(cerr,"	regular expression because we have no regexp-library yet ;)\n");
+	fprintf(stderr,"Usage: %s <pattern> [<file>]\n",name);
+	fprintf(stderr,"	<pattern> will be treated case-insensitive and is NOT a\n");
+	fprintf(stderr,"	regular expression because we have no regexp-library yet ;)\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -42,44 +41,37 @@ static char buffer[MAX_LINE_LEN];
 static char lbuffer[MAX_LINE_LEN];
 
 int main(int argc,const char *argv[]) {
-	sIStream *in = cin;
+	FILE *in = stdin;
 	char *pattern = NULL;
-	sCmdArgs *args;
+	const char **args;
 
-	TRY {
-		args = cmdargs_create(argc,argv,CA_MAX1_FREE);
-		args->parse(args,"=s*",&pattern);
-		if(args->isHelp)
-			usage(argv[0]);
-	}
-	CATCH(CmdArgsException,e) {
-		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
+	s32 res = ca_parse(argc,argv,CA_MAX1_FREE,"=s*",&pattern);
+	if(res < 0) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);
 	}
-	ENDCATCH
+	if(ca_hasHelp())
+		usage(argv[0]);
 
-	TRY {
-		s32 count;
-		const char *inFile = args->getFirstFree(args);
-		if(inFile)
-			in = ifstream_open(inFile,IO_READ);
-
-		strtolower(pattern);
-		while(!in->eof(in)) {
-			count = in->readline(in,buffer,MAX_LINE_LEN);
-			if(count) {
-				if(matches(buffer,pattern))
-					cout->writef(cout,"%s\n",buffer);
-			}
-		}
+	args = ca_getfree();
+	if(args[0]) {
+		char apath[MAX_PATH_LEN];
+		abspath(apath,sizeof(apath),args[0]);
+		in = fopen(apath,"r");
+		if(!in)
+			error("Unable to open '%s'",apath);
 	}
-	CATCH(IOException,e) {
-		error("Got IOException: %s",e->toString(e));
-	}
-	ENDCATCH
 
-	in->close(in);
-	args->destroy(args);
+	strtolower(pattern);
+	while(fgetl(buffer,MAX_LINE_LEN,in)) {
+		if(matches(buffer,pattern))
+			puts(buffer);
+	}
+	if(ferror(in))
+		error("Read failed");
+
+	if(args[0])
+		fclose(in);
 	return EXIT_SUCCESS;
 }
 
@@ -91,8 +83,7 @@ static bool matches(const char *line,const char *pattern) {
 
 static void strtolower(char *s) {
 	while(*s) {
-		if(isupper(*s))
-			*s = tolower(*s);
+		*s = tolower(*s);
 		s++;
 	}
 }

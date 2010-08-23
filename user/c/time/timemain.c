@@ -79,8 +79,10 @@ int main(int argc,char **argv) {
 		printf("Process %d (%s) terminated with exit-code %d\n",state.pid,path,state.exitCode);
 		if(state.signal != SIG_COUNT)
 			printf("It was terminated by signal %d\n",state.signal);
-		printf("User-Cycles:	%08x%08x\n",state.ucycleCount.val32.upper,state.ucycleCount.val32.lower);
-		printf("Kernel-Cycles:	%08x%08x\n",state.kcycleCount.val32.upper,state.kcycleCount.val32.lower);
+		printf("User-Cycles:	%08x%08x\n",state.ucycleCount.val32.upper,
+				state.ucycleCount.val32.lower);
+		printf("Kernel-Cycles:	%08x%08x\n",state.kcycleCount.val32.upper,
+				state.kcycleCount.val32.lower);
 		printf("Time:			%u ms\n",ms);
 		printf("Memory:			%u KiB\n",state.memory / 1024);
 	}

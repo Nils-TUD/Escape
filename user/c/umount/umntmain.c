@@ -20,20 +20,30 @@
 #include <esc/common.h>
 #include <esc/cmdargs.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/dir.h>
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
-int main(int argc,char *argv[]) {
+static void usage(const char *name) {
+	fprintf(stderr,"Usage: %s <path>\n",name);
+	exit(EXIT_FAILURE);
+}
+
+int main(int argc,const char *argv[]) {
 	char rpath[MAX_PATH_LEN];
-	if(argc != 2 || isHelpCmd(argc,argv)) {
-		fprintf(stderr,"Usage: %s <path>\n",argv[0]);
-		return EXIT_FAILURE;
-	}
+	char *path = NULL;
 
-	abspath(rpath,MAX_PATH_LEN,argv[1]);
+	s32 res = ca_parse(argc,argv,CA_NO_FREE,"=s*",&path);
+	if(res < 0) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
+		usage(argv[0]);
+	}
+	if(ca_hasHelp())
+		usage(argv[0]);
+
+	abspath(rpath,MAX_PATH_LEN,path);
 	if(unmount(rpath) < 0)
 		error("Unable to unmount '%s'",rpath);
-
 	return EXIT_SUCCESS;
 }

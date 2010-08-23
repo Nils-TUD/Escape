@@ -18,35 +18,23 @@
  */
 
 #include <esc/common.h>
-#include <esc/cmdargs.h>
-#include <esc/dir.h>
-#include <esc/io.h>
 #include <stdio.h>
-#include <stdlib.h>
 
-static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <path> ...\n",name);
-	exit(EXIT_FAILURE);
-}
-
-int main(int argc,const char *argv[]) {
-	char path[MAX_PATH_LEN];
-	const char **args;
-
-	s32 res = ca_parse(argc,argv,0,"");
-	if(res < 0) {
-		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
-		usage(argv[0]);
+char *fgetl(char *str,s32 max,FILE *f) {
+	char *res = str;
+	/* wait for one char left (\0) or a newline or error/EOF */
+	while(max-- > 1) {
+		s32 c = bgetc(f);
+		if(c == EOF) {
+			if(str == res)
+				res = NULL;
+			break;
+		}
+		/* don't include '\n' */
+		if(c == '\n')
+			break;
+		*str++ = c;
 	}
-	if(ca_hasHelp())
-		usage(argv[0]);
-
-	args = ca_getfree();
-	while(*args) {
-		abspath(path,sizeof(path),*args);
-		if(mkdir(path) < 0)
-			fprintf(stderr,"Unable to create directory '%s'\n",path);
-		args++;
-	}
-	return EXIT_SUCCESS;
+	*str = '\0';
+	return res;
 }

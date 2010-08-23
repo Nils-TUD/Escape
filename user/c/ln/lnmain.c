@@ -18,15 +18,14 @@
  */
 
 #include <esc/common.h>
-#include <esc/io/console.h>
-#include <esc/exceptions/cmdargs.h>
-#include <esc/util/cmdargs.h>
 #include <esc/io.h>
 #include <esc/dir.h>
+#include <esc/cmdargs.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static void usage(const char *name) {
-	cerr->writef(cerr,"Usage: %s <target> <linkName>\n",name);
+	fprintf(stderr,"Usage: %s <target> <linkName>\n",name);
 	exit(EXIT_FAILURE);
 }
 
@@ -35,17 +34,13 @@ int main(int argc,const char *argv[]) {
 	char newPath[MAX_PATH_LEN];
 	char *oldp,*newp;
 
-	TRY {
-		sCmdArgs *args = cmdargs_create(argc,argv,CA_NO_FREE);
-		args->parse(args,"=s =s",&oldp,&newp);
-		if(args->isHelp)
-			usage(argv[0]);
-	}
-	CATCH(CmdArgsException,e) {
-		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
+	s32 res = ca_parse(argc,argv,CA_NO_FREE,"=s =s",&oldp,&newp);
+	if(res < 0) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);
 	}
-	ENDCATCH
+	if(ca_hasHelp())
+		usage(argv[0]);
 
 	abspath(oldPath,MAX_PATH_LEN,oldp);
 	abspath(newPath,MAX_PATH_LEN,newp);

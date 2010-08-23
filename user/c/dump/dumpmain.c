@@ -19,12 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
-#include <esc/io/console.h>
-#include <esc/io/ifilestream.h>
-#include <esc/exceptions/io.h>
-#include <esc/exceptions/cmdargs.h>
-#include <esc/util/cmdargs.h>
 #include <esc/width.h>
+#include <esc/cmdargs.h>
+#include <esc/dir.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 
 #define BUF_SIZE		512
@@ -38,12 +37,12 @@ static char ascii[MAX_BASE];
 static u8 buffer[BUF_SIZE];
 
 static void usage(const char *name) {
-	cerr->writef(cerr,"Usage: %s [-n <bytes>] [-f o|h|d] [<file>]\n",name);
-	cerr->writef(cerr,"	-n <bytes>	: Read the first <bytes> bytes\n");
-	cerr->writef(cerr,"	-f o|h|d	: The base to print the bytes in:\n");
-	cerr->writef(cerr,"					o = octal\n");
-	cerr->writef(cerr,"					h = hexadecimal\n");
-	cerr->writef(cerr,"					d = decimal\n");
+	fprintf(stderr,"Usage: %s [-n <bytes>] [-f o|h|d] [<file>]\n",name);
+	fprintf(stderr,"	-n <bytes>	: Read the first <bytes> bytes\n");
+	fprintf(stderr,"	-f o|h|d	: The base to print the bytes in:\n");
+	fprintf(stderr,"					o = octal\n");
+	fprintf(stderr,"					h = hexadecimal\n");
+	fprintf(stderr,"					d = decimal\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -52,35 +51,31 @@ static void printAscii(u8 base,s32 pos) {
 	if(pos > 0) {
 		while(pos % base != 0) {
 			ascii[pos % base] = ' ';
-			cout->writef(cout,"%*s ",getuwidth(0xFF,base)," ");
+			printf("%*s ",getuwidth(0xFF,base)," ");
 			pos++;
 		}
-		cout->writec(cout,'|');
+		putchar('|');
 		for(j = 0; j < base; j++)
-			cout->writec(cout,ascii[j]);
-		cout->writec(cout,'|');
+			putchar(ascii[j]);
+		putchar('|');
 	}
-	cout->writec(cout,'\n');
+	putchar('\n');
 }
 
 int main(int argc,const char *argv[]) {
-	sIStream *in = cin;
+	FILE *in = stdin;
 	u8 base = 16;
 	char format = OUT_FORMAT_HEX;
-	s32 count = -1;
-	sCmdArgs *args;
+	s32 i,count = -1;
+	const char **args;
 
-	TRY {
-		args = cmdargs_create(argc,argv,CA_MAX1_FREE);
-		args->parse(args,"n=d f=c",&count,&format);
-		if(args->isHelp)
-			usage(argv[0]);
-	}
-	CATCH(CmdArgsException,e) {
-		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
+	s32 res = ca_parse(argc,argv,CA_MAX1_FREE,"n=d f=c",&count,&format);
+	if(res < 0) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);
 	}
-	ENDCATCH
+	if(ca_hasHelp())
+		usage(argv[0]);
 
 	/* TODO perhaps cmdargs should provide a possibility to restrict the values of an option */
 	/* like 'arg=[ohd]' */
@@ -100,56 +95,56 @@ int main(int argc,const char *argv[]) {
 			break;
 	}
 
-	TRY {
-		s32 i;
-		const char *path = args->getFirstFree(args);
-		if(path != NULL)
-			in = ifstream_open(path,IO_READ);
+	args = ca_getfree();
+	if(args[0]) {
+		char apath[MAX_PATH_LEN];
+		abspath(apath,sizeof(apath),args[0]);
+		in = fopen(apath,"r");
+		if(!in)
+			error("Unable to open '%s'",apath);
+	}
 
-		i = 0;
-		while(count < 0 || count > 0) {
-			s32 x,c;
-			c = count >= 0 ? MIN(count,BUF_SIZE) : BUF_SIZE;
-			c = in->read(in,buffer,c);
-			if(c == 0)
-				break;
+	i = 0;
+	while(count < 0 || count > 0) {
+		size_t x,c;
+		c = count >= 0 ? MIN(count,BUF_SIZE) : BUF_SIZE;
+		c = fread(buffer,sizeof(char),c,in);
+		if(c == 0)
+			break;
 
-			for(x = 0; x < c; x++, i++) {
-				if(i % base == 0) {
-					if(i > 0)
-						printAscii(base,i);
-					cout->writef(cout,"%08x: ",i);
-				}
-
-				if(isprint(buffer[x]) && buffer[x] < 0x80 && !isspace(buffer[x]))
-					ascii[i % base] = buffer[x];
-				else
-					ascii[i % base] = NPRINT_CHAR;
-				switch(format) {
-					case OUT_FORMAT_DEC:
-						cout->writef(cout,"%03d ",buffer[x]);
-						break;
-					case OUT_FORMAT_HEX:
-						cout->writef(cout,"%02x ",buffer[x]);
-						break;
-					case OUT_FORMAT_OCT:
-						cout->writef(cout,"%03o ",buffer[x]);
-						break;
-				}
+		for(x = 0; x < c; x++, i++) {
+			if(i % base == 0) {
+				if(i > 0)
+					printAscii(base,i);
+				printf("%08x: ",i);
 			}
 
-			if(count >= 0)
-				count -= c;
+			if(isprint(buffer[x]) && buffer[x] < 0x80 && !isspace(buffer[x]))
+				ascii[i % base] = buffer[x];
+			else
+				ascii[i % base] = NPRINT_CHAR;
+			switch(format) {
+				case OUT_FORMAT_DEC:
+					printf("%03d ",buffer[x]);
+					break;
+				case OUT_FORMAT_HEX:
+					printf("%02x ",buffer[x]);
+					break;
+				case OUT_FORMAT_OCT:
+					printf("%03o ",buffer[x]);
+					break;
+			}
 		}
 
-		printAscii(base,i);
+		if(count >= 0)
+			count -= c;
 	}
-	CATCH(IOException,e) {
-		error("Got an IOException: %s",e->toString(e));
-	}
-	ENDCATCH
+	if(ferror(in))
+		error("Read failed");
 
-	in->close(in);
-	args->destroy(args);
+	printAscii(base,i);
+
+	if(args[0])
+		fclose(in);
 	return EXIT_SUCCESS;
 }

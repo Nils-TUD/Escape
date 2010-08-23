@@ -18,10 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <esc/io/console.h>
-#include <esc/exceptions/cmdargs.h>
-#include <esc/util/cmdargs.h>
+#include <esc/cmdargs.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <string.h>
 
@@ -40,8 +39,8 @@ static sSigName signals[] = {
 };
 
 static void usage(const char *name) {
-	cerr->writef(cerr,"Usage: %s [-L] [-s <signal>] <pid>...\n",name);
-	cerr->writef(cerr,"	<signal> may be: SIGKILL, SIGTERM, SIGINT, KILL, TERM, INT\n");
+	fprintf(stderr,"Usage: %s [-L] [-s <signal>] <pid>...\n",name);
+	fprintf(stderr,"	<signal> may be: SIGKILL, SIGTERM, SIGINT, KILL, TERM, INT\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -49,50 +48,46 @@ int main(int argc,const char *argv[]) {
 	tSig sig = SIG_KILL;
 	char *ssig = NULL;
 	bool list = false;
-	sCmdArgs *args;
 	u32 i;
 
-	TRY {
-		args = cmdargs_create(argc,argv,0);
-		args->parse(args,"L s=s",&list,&ssig);
-		if(args->isHelp)
-			usage(argv[0]);
-		/* translate signal-name to signal-number */
-		if(ssig) {
-			for(i = 0; i < ARRAY_SIZE(signals); i++) {
-				if(strcmp(ssig,signals[i].name) == 0 ||
-					strcmp(ssig,signals[i].name + 3) == 0) {
-					sig = signals[i].signal;
-					break;
-				}
+	s32 res = ca_parse(argc,argv,0,"L s=s",&list,&ssig);
+	if(res < 0) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
+		usage(argv[0]);
+	}
+	if(ca_hasHelp())
+		usage(argv[0]);
+
+	/* translate signal-name to signal-number */
+	if(ssig) {
+		for(i = 0; i < ARRAY_SIZE(signals); i++) {
+			if(strcmp(ssig,signals[i].name) == 0 ||
+				strcmp(ssig,signals[i].name + 3) == 0) {
+				sig = signals[i].signal;
+				break;
 			}
 		}
 	}
-	CATCH(CmdArgsException,e) {
-		cerr->writef(cerr,"Invalid arguments: %s\n",e->toString(e));
-		usage(argv[0]);
-	}
-	ENDCATCH
 
 	/* print signals */
 	if(list) {
 		for(i = 0; i < ARRAY_SIZE(signals); i++)
-			cout->writef(cout,"%10s - %d\n",signals[i].name,signals[i].signal);
+			printf("%10s - %d\n",signals[i].name,signals[i].signal);
 	}
 	else {
 		/* kill processes */
-		sIterator it = args->getFreeArgs(args);
-		while(it.hasNext(&it)) {
-			const char *spid = (const char*)it.next(&it);
-			tPid pid = atoi(spid);
+		const char **args = ca_getfree();
+		while(*args) {
+			tPid pid = atoi(*args);
 			if(pid > 0) {
 				if(sendSignalTo(pid,sig,0) < 0)
-					cerr->writef(cerr,"Unable to send signal %d to %d",sig,pid);
+					fprintf(stderr,"Unable to send signal %d to %d\n",sig,pid);
 			}
-			else if(strcmp(spid,"0") != 0)
-				cerr->writef(cerr,"Unable to kill process with pid '%s'\n",spid);
+			else if(strcmp(*args,"0") != 0)
+				fprintf(stderr,"Unable to kill process with pid '%s'\n",*args);
 			else
-				cerr->writef(cerr,"You can't kill 'init'\n");
+				fprintf(stderr,"You can't kill 'init'\n");
+			args++;
 		}
 	}
 	return EXIT_SUCCESS;

@@ -18,39 +18,42 @@
  */
 
 #include <esc/common.h>
-#include <esc/cmdargs.h>
-#include <esc/io/console.h>
 #include <esc/io.h>
 #include <esc/proc.h>
 #include <esc/messages.h>
+#include <esc/cmdargs.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define POWER_DRV		"/dev/powermng"
 
-static sMsg msg;
-
 static void usage(const char *name) {
-	cerr->writef(cerr,"Usage: %s -r|-s\n",name);
+	fprintf(stderr,"Usage: %s -r|-s\n",name);
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,char *argv[]) {
+int main(int argc,const char *argv[]) {
+	bool reboot = false;
+	bool shutdown = false;
+	sMsg msg;
 	tFD fd;
-	if(argc < 2 || isHelpCmd(argc,argv))
+
+	s32 res = ca_parse(argc,argv,CA_NO_FREE,"r s",&reboot,&shutdown);
+	if(res < 0 || (!reboot && !shutdown) || (reboot && shutdown)) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
+		usage(argv[0]);
+	}
+	if(ca_hasHelp())
 		usage(argv[0]);
 
 	fd = open(POWER_DRV,IO_READ | IO_WRITE);
 	if(fd < 0)
 		error("Unable to open '%s'",POWER_DRV);
-
-	if(strcmp(argv[1],"-r") == 0)
+	if(reboot)
 		send(fd,MSG_POWER_REBOOT,&msg,sizeof(msg.args));
-	else if(strcmp(argv[1],"-s") == 0)
+	else if(shutdown)
 		send(fd,MSG_POWER_SHUTDOWN,&msg,sizeof(msg.args));
-	else
-		usage(argv[0]);
-
 	close(fd);
 	return EXIT_SUCCESS;
 }

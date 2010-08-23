@@ -18,12 +18,10 @@
  */
 
 #include <esc/common.h>
-#include <esc/io/console.h>
-#include <esc/io.h>
+#include <esc/messages.h>
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
-#include <esc/messages.h>
 
 #define USERNAME	"hrniels"
 #define PASSWORD	"test"
@@ -39,20 +37,20 @@ int main(void) {
 		error("Unable to announce term-signal-handler");
 
 	while(1) {
-		cout->writes(cout,"Username: ");
-		cin->readline(cin,un,sizeof(un));
+		printf("Username: ");
+		fgetl(un,sizeof(un),stdin);
 		send(STDOUT_FILENO,MSG_VT_DIS_ECHO,NULL,0);
-		cout->writes(cout,"Password: ");
-		cin->readline(cin,pw,sizeof(pw));
+		printf("Password: ");
+		fgetl(pw,sizeof(pw),stdin);
 		send(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0);
-		cout->writec(cout,'\n');
+		putchar('\n');
 
 		if(strcmp(un,USERNAME) != 0)
-			cout->writef(cout,"\033[co;4]Sorry, invalid username. Try again!\033[co]\n");
+			printf("\033[co;4]Sorry, invalid username. Try again!\033[co]\n");
 		else if(strcmp(pw,PASSWORD) != 0)
-			cout->writef(cout,"\033[co;4]Sorry, invalid password. Try again!\033[co]\n");
+			printf("\033[co;4]Sorry, invalid password. Try again!\033[co]\n");
 		else {
-			cout->writef(cout,"\033[co;2]Login successfull.\033[co]\n");
+			printf("\033[co;2]Login successfull.\033[co]\n");
 			break;
 		}
 	}
@@ -62,5 +60,5 @@ int main(void) {
 static void termHandler(tSig sig,u32 data) {
 	UNUSED(sig);
 	UNUSED(data);
-	cout->writef(cout,"Got TERM-signal but I don't want to die :P\n");
+	printf("Got TERM-signal but I don't want to die :P\n");
 }

@@ -18,13 +18,13 @@
  */
 
 #include <esc/common.h>
-#include <esc/io/console.h>
+#include <esc/fsinterface.h>
 #include <esc/cmdargs.h>
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <stdio.h>
 #include <string.h>
-#include <esc/fsinterface.h>
+#include <stdlib.h>
 
 #define FS_NAME_LEN	12
 
@@ -38,25 +38,37 @@ static sFSType types[] = {
 	{FS_TYPE_ISO9660,"iso9660"},
 };
 
-int main(int argc,char *argv[]) {
+static void usage(const char *name) {
 	u32 i;
-	u16 type;
+	fprintf(stderr,"Usage: %s <device> <path> <type>\n",name);
+	fprintf(stderr,"	Types: ");
+	for(i = 0; i < ARRAY_SIZE(types); i++)
+		fprintf(stderr,"%s ",types[i].name);
+	fprintf(stderr,"\n");
+	exit(EXIT_FAILURE);
+}
+
+int main(int argc,const char *argv[]) {
 	char rpath[MAX_PATH_LEN];
 	char rdev[MAX_PATH_LEN];
-	if(argc != 4 || isHelpCmd(argc,argv)) {
-		cerr->writef(cerr,"Usage: %s <device> <path> <type>\n",argv[0]);
-		cerr->writef(cerr,"	Types: ");
-		for(i = 0; i < ARRAY_SIZE(types); i++)
-			cerr->writef(cerr,"%s ",types[i].name);
-		cerr->writef(cerr,"\n");
-		return EXIT_FAILURE;
-	}
+	char *path = NULL;
+	char *dev = NULL;
+	char *stype = NULL;
+	u32 type,i;
 
-	abspath(rdev,MAX_PATH_LEN,argv[1]);
-	abspath(rpath,MAX_PATH_LEN,argv[2]);
+	s32 res = ca_parse(argc,argv,CA_NO_FREE,"=s* =s* =s*",&dev,&path,&stype);
+	if(res < 0) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
+		usage(argv[0]);
+	}
+	if(ca_hasHelp())
+		usage(argv[0]);
+
+	abspath(rdev,MAX_PATH_LEN,dev);
+	abspath(rpath,MAX_PATH_LEN,path);
 
 	for(i = 0; i < ARRAY_SIZE(types); i++) {
-		if(strcmp(types[i].name,argv[3]) == 0) {
+		if(strcmp(types[i].name,stype) == 0) {
 			type = types[i].type;
 			break;
 		}
@@ -66,6 +78,5 @@ int main(int argc,char *argv[]) {
 
 	if(mount(rdev,rpath,type) < 0)
 		error("Unable to mount '%s' @ '%s' with type %d",rdev,rpath,type);
-
 	return EXIT_SUCCESS;
 }

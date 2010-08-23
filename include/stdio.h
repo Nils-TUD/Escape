@@ -257,6 +257,16 @@ s32 fgetc(FILE *stream);
 char *fgets(char *str,s32 max,FILE *file);
 
 /**
+ * The same as fgets(), except that it don't includes the newline into the string
+ *
+ * @param str the buffer
+ * @param max the maximum number of chars to read
+ * @param file the file
+ * @return str on success or NULL
+ */
+char *fgetl(char *str,s32 max,FILE *f);
+
+/**
  * Prints the given character to <file>
  *
  * @param c the character

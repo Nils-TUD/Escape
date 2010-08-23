@@ -26,6 +26,28 @@
 extern "C" {
 #endif
 
+#define CA_NO_DASHES				1		/* disallow '-' or '--' for arguments */
+#define CA_REQ_EQ					2		/* require '=' for arguments */
+#define CA_NO_EQ					4		/* disallow '=' for arguments */
+#define CA_NO_FREE					8		/* throw exception if free arguments are found */
+#define CA_MAX1_FREE				16		/* max. 1 free argument */
+
+#define CA_ERR_REQUIRED_MISSING		-1
+#define CA_ERR_EQ_REQUIRED			-2
+#define CA_ERR_EQ_IN_FLAGARG		-3
+#define CA_ERR_EQ_DISALLOWED		-4
+#define CA_ERR_FREE_DISALLOWED		-5
+#define CA_ERR_MAX1_FREE			-6
+#define CA_ERR_NO_FREE				-7
+
+const char *ca_error(s32 err);
+
+bool ca_hasHelp(void);
+
+const char **ca_getfree(void);
+
+s32 ca_parse(int argcnt,const char **args,u16 aflags,const char *fmt,...);
+
 /**
  * Checks whether the given arguments may be a kind of help-request. That means one of:
  * <prog> --help

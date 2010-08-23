@@ -19,10 +19,9 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
-#include <esc/exceptions/cmdargs.h>
-#include <esc/util/cmdargs.h>
 #include <esc/io.h>
 #include <esc/dir.h>
+#include <esc/cmdargs.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -48,33 +47,27 @@ int main(int argc,const char **argv) {
 	s32 first = 1,last = -1;
 	char *fields = NULL;
 	char *delim = (char*)"\t";
-	sCmdArgs *args = NULL;
 
-	TRY {
-		args = cmdargs_create(argc,argv,0);
-		args->parse(args,"f=s* d=s",&fields,&delim);
-		if(args->isHelp)
-			usage(argv[0]);
-	}
-	CATCH(CmdArgsException,e) {
-		fprintf(stderr,"Invalid arguments: %s\n",e->toString(e));
+	s32 res = ca_parse(argc,argv,0,"f=s* d=s",&fields,&delim);
+	if(res < 0) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
 		usage(argv[0]);
 	}
-	ENDCATCH
+	if(ca_hasHelp())
+		usage(argv[0]);
 
 	parseFields(fields,&first,&last);
 
-	sIterator it = args->getFreeArgs(args);
-	if(!it.hasNext(&it)) {
-		while(fgets(line,sizeof(line),stdin))
+	const char **args = ca_getfree();
+	if(args[0] == NULL) {
+		while(fgetl(line,sizeof(line),stdin))
 			printFields(line,delim,first,last);
 	}
 	else {
 		FILE *f;
 		char apath[MAX_PATH_LEN];
-		while(it.hasNext(&it)) {
-			const char *arg = (const char*)it.next(&it);
-			abspath(apath,sizeof(apath),arg);
+		while(*args) {
+			abspath(apath,sizeof(apath),*args);
 			if(is_dir(apath)) {
 				printe("'%s' is a directory!",apath);
 				continue;
@@ -84,12 +77,12 @@ int main(int argc,const char **argv) {
 				printe("Unable to open '%s'",apath);
 				continue;
 			}
-			while(fgets(line,sizeof(line),f))
+			while(fgetl(line,sizeof(line),f))
 				printFields(line,delim,first,last);
 			fclose(f);
+			args++;
 		}
 	}
-	args->destroy(args);
 	return EXIT_SUCCESS;
 }
 

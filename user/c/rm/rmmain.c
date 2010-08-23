@@ -19,23 +19,34 @@
 
 #include <esc/common.h>
 #include <esc/cmdargs.h>
-#include <esc/io/console.h>
-#include <esc/io.h>
 #include <esc/dir.h>
+#include <esc/io.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-int main(int argc,char *argv[]) {
-	s32 i;
+static void usage(const char *name) {
+	fprintf(stderr,"Usage: %s <path> ...\n",name);
+	exit(EXIT_FAILURE);
+}
+
+int main(int argc,const char *argv[]) {
 	char rPath[MAX_PATH_LEN];
-	if(argc < 2 || isHelpCmd(argc,argv)) {
-		cerr->writef(cerr,"Usage: %s <path> ...\n",argv[0]);
-		return EXIT_FAILURE;
-	}
+	const char **args;
 
-	for(i = 1; i < argc; i++) {
-		abspath(rPath,MAX_PATH_LEN,argv[i]);
+	s32 res = ca_parse(argc,argv,0,"");
+	if(res < 0) {
+		fprintf(stderr,"Invalid arguments: %s\n",ca_error(res));
+		usage(argv[0]);
+	}
+	if(ca_hasHelp())
+		usage(argv[0]);
+
+	args = ca_getfree();
+	while(*args) {
+		abspath(rPath,MAX_PATH_LEN,*args);
 		if(unlink(rPath) < 0)
-			error("Unable to remove '%s'",rPath);
+			fprintf(stderr,"Unable to remove '%s'\n",rPath);
+		args++;
 	}
-
 	return EXIT_SUCCESS;
 }

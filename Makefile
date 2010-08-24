@@ -52,6 +52,11 @@ ifeq ($(LIBGCC),static)
 endif
 export SUDO=sudo
 
+# for profiling:
+# ADDFLAGS = -finstrument-functions -DPROFILE\
+#		-finstrument-functions-exclude-file-list=../../../lib/basic/profile.c
+# ADDLIBS = ../../../lib/basic/profile.c
+
 ifeq ($(BUILDDIR),$(abspath build/debug))
 	DIRS = tools lib drivers user kernel/src kernel/test
 	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g -D LOGSERIAL

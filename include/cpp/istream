@@ -235,6 +235,7 @@ namespace std {
 		 * @return *this
 		 */
 		istream& getline(char_type* s,size_type n,char_type delim);
+		istream& getline(string& s,char_type delim);
 		istream& getline(streambuf& sb,char_type delim);
 		/**
 		 * Extracts characters and discards them until <n> characters have been discarded (n =

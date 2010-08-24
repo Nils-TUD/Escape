@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/common.h>
+#include <esc/debug.h>
 #include <string>
 #include <exception>
 #include <string.h>
@@ -74,6 +76,8 @@ namespace std {
 			}
 		}
 		else if(n + 1 > _size) {
+			// reserve at least the double of the current size to prevent reallocations
+			n = max(_size * 2 - 1,n);
 			char *tmp = new char[n + 1];
 			if(_size > 0) {
 				memcpy(tmp,_str,(_size - 1) * sizeof(char));
@@ -90,8 +94,7 @@ namespace std {
 
 	// === clear() and empty() ===
 	void string::clear() {
-		if(_size > INIT_SIZE || !_str) {
-			delete[] _str;
+		if(!_str) {
 			_str = new char[INIT_SIZE];
 			_size = INIT_SIZE;
 		}
@@ -322,9 +325,8 @@ namespace std {
 	}
 
 	istream& getline(istream& is,string& str,char delim) {
-		stringbuf sb("");
-		is.getline(sb,delim);
-		str = sb.str();
+		str.clear();
+		is.getline(str,delim);
 		return is;
 	}
 }

@@ -20,25 +20,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "symbols.h"
 
-#define MAX_FUNC_LEN	255
-
-typedef struct sFuncCall sFuncCall;
 struct sFuncCall {
 	sFuncCall *parent;
 	sFuncCall *next;
 	sFuncCall *child;
 	char name[MAX_FUNC_LEN + 1];
-	unsigned int time;
-	unsigned int calls;
+	unsigned long long time;
+	unsigned long calls;
 };
+
+static const char *resolve(const char *name) {
+	static char resolved[MAX_FUNC_LEN];
+	unsigned long addr;
+	char *end;
+	addr = strtoul(name,&end,16);
+	strcpy(resolved,name);
+	if(addr) {
+		strcat(resolved,": ");
+		strcat(resolved,sym_resolve(addr));
+	}
+	return resolved;
+}
 
 static sFuncCall *getFunc(sFuncCall *cur,const char *name) {
 	if(!cur->child)
 		return NULL;
+	const char *rname = resolve(name);
 	sFuncCall *c = cur->child;
 	while(c != NULL) {
-		if(strcmp(c->name,name) == 0)
+		if(strcmp(c->name,rname) == 0)
 			return c;
 		c = c->next;
 	}
@@ -55,7 +67,7 @@ static sFuncCall *append(sFuncCall *cur,const char *name) {
 	call->parent = cur;
 	call->child = NULL;
 	call->next = NULL;
-	strcpy(call->name,name);
+	strcpy(call->name,resolve(name));
 
 	c = cur->child;
 	if(c) {
@@ -78,8 +90,8 @@ static void printFunc(sFuncCall *f,int layer) {
 			printf("%*s  <file>dummyFile</file>\n",layer * 2," ");
 			printf("%*s  <line>0</line>\n",layer * 2," ");
 			printf("%*s  <mem>0</mem>\n",layer * 2," ");
-			printf("%*s  <time>%d</time>\n",layer * 2," ",c->time);
-			printf("%*s  <calls>1</calls>\n",layer * 2," ",c->calls);
+			printf("%*s  <time>%Lu</time>\n",layer * 2," ",c->time);
+			printf("%*s  <calls>%ld</calls>\n",layer * 2," ",c->calls);
 			printf("%*s  <subFunctions>\n",layer * 2," ");
 			printFunc(c,layer + 1);
 			printf("%*s  </subFunctions>\n",layer * 2," ");
@@ -89,9 +101,14 @@ static void printFunc(sFuncCall *f,int layer) {
 	}
 }
 
+static char *getSymName(unsigned long addr) {
+	/*readelf -sW build/debug/user_cppsort.bin | grep 2fff | xargs | cut -d ' ' -f 8 | c++filt*/
+}
+
 int main(int argc,char *argv[]) {
 	char funcName[MAX_FUNC_LEN + 1];
-	unsigned int time;
+	unsigned long long totalTime;
+	unsigned long long time;
 	char c;
 	int layer;
 	sFuncCall *cur;
@@ -102,14 +119,24 @@ int main(int argc,char *argv[]) {
 	strcpy(root.name,"main");
 	root.time = 0;
 	root.calls = 0;
+	FILE *f = stdin;
+
+	if(strcmp(argv[1],"-f") == 0) {
+		f = fopen(argv[2],"r");
+		if(!f)
+			perror("fopen");
+		sym_init(argc > 3 ? argv[3] : NULL);
+	}
+	else
+		sym_init(argc > 1 ? argv[1] : NULL);
 
 	cur = &root;
 	layer = 0;
-	while((c = getchar()) != EOF) {
+	while((c = getc(f)) != EOF) {
 		sFuncCall *call;
 		/* function-enter */
 		if(c == '>') {
-			scanf("%s",funcName);
+			fscanf(f,"%s",funcName);
 			call = getFunc(cur,funcName);
 			if(call == NULL)
 				cur = append(cur,funcName);
@@ -120,18 +147,28 @@ int main(int argc,char *argv[]) {
 		}
 		/* function-return */
 		else if(c == '<' && layer > 0) {
-			scanf("%d",&time);
+			fscanf(f,"%Lu",&time);
 			cur->time += time;
 			cur = cur->parent;
 			layer--;
 		}
 	}
 
+	if(strcmp(argv[1],"-f") == 0)
+		fclose(f);
+
+	/* calculate total time via sum of the root-child-times */
+	totalTime = 0;
+	cur = root.child;
+	while(cur != NULL) {
+		totalTime += cur->time;
+		cur = cur->next;
+	}
 	/* print header */
 	printf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
 	printf("<functionCalls>\n");
 	printf("  <fileName>dummyFile</fileName>\n");
-	printf("  <totalTime>0</totalTime>\n");
+	printf("  <totalTime>%Lu</totalTime>\n",totalTime);
 	printf("  <totalMem>0</totalMem>\n");
 	printFunc(&root,0);
 	printf("</functionCalls>\n");

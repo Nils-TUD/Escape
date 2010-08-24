@@ -132,6 +132,7 @@ namespace std {
 				_count = sz;
 		}
 		else if(sz > _size) {
+			sz = max(_size * 2,sz);
 			T *tmp = new T[sz];
 			memcpy(tmp,_elements,_size * sizeof(T));
 			for(size_type i = _size; i < sz; i++)

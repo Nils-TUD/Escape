@@ -44,7 +44,7 @@ namespace std {
 		 */
 		explicit ofstream(const char* filename,ios_base::openmode which = ios_base::out)
 			: ostream(new filebuf) {
-			rdbuf()->open(filename,which);
+			open(filename,which);
 		}
 		/**
 		 * Destructor
@@ -65,7 +65,8 @@ namespace std {
 		 * @param which the open-mode (out by default)
 		 */
 		void open(tFD fd,ios_base::openmode which = ios_base::out) {
-			rdbuf()->open(fd,which);
+			if(!rdbuf()->open(fd,which))
+				setf(failbit);
 		}
 		/**
 		 * Opens the file <s> with given open-mode
@@ -74,7 +75,8 @@ namespace std {
 		 * @param mode the mode
 		 */
 		void open(const char* s,ios_base::openmode mode = ios_base::out) {
-			rdbuf()->open(s,mode);
+			if(!rdbuf()->open(s,mode))
+				setf(failbit);
 		}
 		/**
 		 * @return if a file has been opened successfully

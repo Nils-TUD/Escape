@@ -230,8 +230,7 @@ namespace std {
 		return *this;
 	}
 
-	istream& istream::getline(char_type* s,size_type n,
-			char_type delim) {
+	istream& istream::getline(char_type* s,size_type n,char_type delim) {
 		_lastcount = 0;
 		sentry se(*this,true);
 		if(se) {
@@ -253,6 +252,34 @@ namespace std {
 				ios::setstate(ios_base::badbit);
 			}
 			*s = '\0';
+		}
+		if(_lastcount == 0)
+			ios::setstate(ios_base::failbit);
+		ios_base::width(0);
+		return *this;
+	}
+
+	istream& istream::getline(string& s,char_type delim) {
+		_lastcount = 0;
+		sentry se(*this,true);
+		if(se) {
+			try {
+				streamsize n = ios_base::width();
+				while(n == 0 || n-- > 1) {
+					char_type c = _sb->get();
+					if(c == EOF) {
+						ios::setstate(ios_base::eofbit);
+						break;
+					}
+					_lastcount++;
+					if(c == delim)
+						break;
+					s += c;
+				}
+			}
+			catch(...) {
+				ios::setstate(ios_base::badbit);
+			}
 		}
 		if(_lastcount == 0)
 			ios::setstate(ios_base::failbit);

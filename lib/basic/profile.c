@@ -27,6 +27,7 @@
 #	define inb			util_inByte
 #else
 #	include <esc/ports.h>
+#	include <esc/debug.h>
 #	include <stdio.h>
 #	define outb			outByte
 #	define inb			inByte
@@ -36,7 +37,7 @@
 
 #ifdef PROFILE
 static void logStr(const char *s);
-static void logUnsigned(u32 n,u8 base);
+static void logUnsigned(u64 n,u8 base);
 static void logChar(char c);
 
 static bool initialized = false;
@@ -71,7 +72,7 @@ void __cyg_profile_func_enter(void *this_fn,void *call_site) {
 	sym = ksym_getSymbolAt((u32)this_fn);
 	logStr(sym->funcName);
 #else
-	logUnsigned((u32)this_fn,16);
+	logUnsigned((u64)this_fn,16);
 #endif
 	logChar('\n');
 	callStack[stackPos++] = cpu_rdtsc();
@@ -86,7 +87,7 @@ void __cyg_profile_func_exit(void *this_fn,void *call_site) {
 	now = cpu_rdtsc();
 	stackPos--;
 	logChar('<');
-	logUnsigned((u32)(now - callStack[stackPos]),10);
+	logUnsigned(now - callStack[stackPos],10);
 	logChar('\n');
 }
 
@@ -95,7 +96,7 @@ static void logStr(const char *s) {
 		logChar(*s++);
 }
 
-static void logUnsigned(u32 n,u8 base) {
+static void logUnsigned(u64 n,u8 base) {
 	if(n >= base)
 		logUnsigned(n / base,base);
 	logChar("0123456789ABCDEF"[(n % base)]);

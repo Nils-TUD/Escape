@@ -5,13 +5,14 @@ SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 
-CC = gcc
+CC = g++
+CFLAGS = $(CPPDEFFLAGS)
 
 # sources
-CSRC = $(shell find $(SUBDIRS) -name "*.c")
+CSRC = $(shell find $(SUBDIRS) -name "*.cpp")
 
 # objects
-COBJ = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
+COBJ = $(patsubst %.cpp,$(BUILDL)/%.o,$(CSRC))
 
 .PHONY: all clean
 
@@ -19,14 +20,14 @@ all:	$(BIN)
 
 $(BIN):	$(BUILDDIRS) $(COBJ)
 		@echo "	" LD $(BIN);
-		$(CC) $(CDEFFLAGS) -o $(BIN) $(COBJ);
+		$(CC) $(CFLAGS) -o $(BIN) $(COBJ);
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
 			if [ ! -d $$i ]; then mkdir -p $$i; fi \
 		done;
 
-$(BUILDL)/%.o:		%.c
+$(BUILDL)/%.o:		%.cpp
 		@echo "	" CC $<
 		@$(CC) $(CFLAGS) -o $@ -c $< -MD
 

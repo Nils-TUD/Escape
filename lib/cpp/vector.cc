@@ -264,9 +264,9 @@ namespace std {
 	}
 	template<class T>
 	void vector<T>::swap(vector<T>& v) {
-		vector<T> tmp(v);
-		v.assign(*this);
-		this.assign(tmp);
+		std::swap(_elements,v._elements);
+		std::swap(_size,v._size);
+		std::swap(_count,v._count);
 	}
 	template<class T>
 	void vector<T>::clear() {

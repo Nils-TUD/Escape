@@ -200,9 +200,9 @@ namespace std {
 		return n;
 	}
 	void string::swap(string& str) {
-		string tmp(str);
-		str.assign(*this);
-		this->assign(tmp);
+		std::swap(_str,str._str);
+		std::swap(_length,str._length);
+		std::swap(_size,str._size);
 	}
 
 	// === find() ===

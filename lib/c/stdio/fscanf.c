@@ -18,10 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/exceptions/io.h>
-#include <esc/io/iofilestream.h>
 #include <stdio.h>
-#include <assert.h>
 #include <stdarg.h>
 
 s32 fscanf(FILE *file,const char *fmt,...) {

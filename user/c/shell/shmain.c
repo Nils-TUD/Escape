@@ -20,10 +20,10 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/cmdargs.h>
-#include <signal.h>
 #include <esc/messages.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #include <shell/shell.h>
 #include <shell/history.h>

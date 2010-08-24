@@ -1,3 +1,3 @@
-NAME=cppps
+NAME=init
 
 -include ../DefMakefile.mk

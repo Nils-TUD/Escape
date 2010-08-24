@@ -59,6 +59,12 @@ namespace std {
 			return static_cast<filebuf*>(ios::rdbuf());
 		}
 		/**
+		 * @return the file-descriptor
+		 */
+		int filedesc() const {
+			return rdbuf()->fd();
+		}
+		/**
 		 * Opens the file <s> with given open-mode
 		 *
 		 * @param s the file

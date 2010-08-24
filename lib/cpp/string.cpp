@@ -60,7 +60,7 @@ namespace std {
 		delete[] _str;
 		_length = 1;
 		_size = 2;
-		_str = new char[_size];
+		_str = new char[2];
 		_str[0] = c;
 		_str[1] = '\0';
 		return *this;
@@ -68,27 +68,24 @@ namespace std {
 
 	// === resize() and reserve() ===
 	void string::resize(size_type n,char c) {
-		if(n + 1 < _size) {
-			_size = n + 1;
-			if(n < _length) {
-				_length = n;
-				_str[_length] = '\0';
-			}
+		if(n < _length) {
+			_length = n;
+			_str[_length] = '\0';
 		}
-		else if(n + 1 > _size) {
+		else if(n > _length)
+			append(n - _length,c);
+	}
+	void string::reserve(size_type n) {
+		if(n + 1 > _size) {
 			// reserve at least the double of the current size to prevent reallocations
-			n = max(_size * 2 - 1,n);
-			char *tmp = new char[n + 1];
-			if(_size > 0) {
-				memcpy(tmp,_str,(_size - 1) * sizeof(char));
-				tmp[_size - 1] = c;
-			}
-			for(size_type i = _size; i < n; i++)
-				tmp[i] = c;
-			tmp[n] = '\0';
+			n = max(_size * 2,n + 1);
+			char *tmp = new char[n];
+			if(_size > 0)
+				memcpy(tmp,_str,_size * sizeof(char));
+			memclear(tmp + _size,n - _size);
 			delete[] _str;
 			_str = tmp;
-			_size = n + 1;
+			_size = n;
 		}
 	}
 
@@ -117,30 +114,25 @@ namespace std {
 	// === assign() ===
 	string& string::assign(const string& str) {
 		clear();
-		append(str);
-		return *this;
+		return append(str);
 	}
 	string& string::assign(const string& str,size_type pos,size_type n) {
 		if(pos > str._length || (n != npos && pos + n < pos))
 			throw out_of_range("Index out of range");
 		clear();
-		append(str,pos,n);
-		return *this;
+		return append(str,pos,n);
 	}
 	string& string::assign(const char* s,size_type n) {
 		clear();
-		append(s,n);
-		return *this;
+		return append(s,n);
 	}
 	string& string::assign(size_type n,char c) {
 		clear();
-		append(n,c);
-		return *this;
+		return append(n,c);
 	}
 
 	// === insert() ===
-	string& string::insert(size_type pos1,const string& str,
-			size_type pos2,size_type n) {
+	string& string::insert(size_type pos1,const string& str,size_type pos2,size_type n) {
 		if(pos1 > _length)
 			throw out_of_range("pos1 out of range");
 		if(pos2 > str._length)
@@ -151,6 +143,28 @@ namespace std {
 		if(pos1 < _length)
 			memmove(_str + pos1 + n,_str + pos1,(_length - pos1) * sizeof(char));
 		memcpy(_str + pos1,str._str + pos2,n * sizeof(char));
+		_length += n;
+		_str[_length] = '\0';
+		return *this;
+	}
+	string& string::insert(size_type pos1,const char *s,size_type n) {
+		if(pos1 > _length)
+			throw out_of_range("pos1 out of range");
+		reserve(_length + n);
+		if(pos1 < _length)
+			memmove(_str + pos1 + n,_str + pos1,(_length - pos1) * sizeof(char));
+		memcpy(_str + pos1,s,n * sizeof(char));
+		_length += n;
+		_str[_length] = '\0';
+		return *this;
+	}
+	string& string::insert(size_type pos1,size_type n,char c) {
+		if(pos1 > _length)
+			throw out_of_range("pos1 out of range");
+		reserve(_length + n);
+		if(pos1 < _length)
+			memmove(_str + pos1 + n,_str + pos1,(_length - pos1) * sizeof(char));
+		memset(_str + pos1,c,n * sizeof(char));
 		_length += n;
 		_str[_length] = '\0';
 		return *this;
@@ -308,6 +322,16 @@ namespace std {
 		size_type count = distance(rbegin(),it);
 		erase(end() - count,end());
 		return count;
+	}
+
+	// === format ===
+	void string::format(const char *fmt,...) {
+		va_list ap;
+		ostringstream os;
+		va_start(ap,fmt);
+		os.format(fmt,ap);
+		va_end(ap);
+		assign(os.str());
 	}
 
 	// === stream stuff ===

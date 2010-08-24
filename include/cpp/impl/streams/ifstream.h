@@ -59,6 +59,12 @@ namespace std {
 			return static_cast<filebuf*>(ios::rdbuf());
 		}
 		/**
+		 * @return the file-descriptor
+		 */
+		int filedesc() const {
+			return rdbuf()->fd();
+		}
+		/**
 		 * Uses the given file-descriptor
 		 *
 		 * @param fd the file-descriptor

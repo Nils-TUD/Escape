@@ -1,3 +1,3 @@
-NAME=cppls
+NAME=ps
 
 -include ../DefMakefile.mk

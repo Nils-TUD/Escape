@@ -168,22 +168,21 @@ static void test_resize(void) {
 	s1.resize(3);
 	test_assertStr(s1.c_str(),"abc");
 	test_assertUInt(s1.length(),3);
-	test_assertTrue(s1.capacity() >= 3);
 
 	s1.resize(2);
 	test_assertStr(s1.c_str(),"ab");
 	test_assertUInt(s1.length(),2);
-	test_assertTrue(s1.capacity() >= 2);
 
 	s1.resize(0);
 	test_assertStr(s1.c_str(),"");
 	test_assertUInt(s1.length(),0);
-	test_assertTrue(s1.capacity() >= 0);
 
 	s1.resize(12);
 	test_assertStr(s1.c_str(),"");
-	test_assertUInt(s1.length(),0);
-	test_assertTrue(s1.capacity() >= 12);
+	test_assertUInt(s1.length(),12);
+
+	s1.reserve(3);
+	test_assertTrue(s1.capacity() >= 3);
 
 	s1.reserve(16);
 	test_assertTrue(s1.capacity() >= 16);

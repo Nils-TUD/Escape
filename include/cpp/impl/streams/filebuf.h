@@ -76,6 +76,12 @@ namespace std {
 		bool is_open() const {
 			return _fd >= 0;
 		}
+		/**
+		 * @return the file-descriptor
+		 */
+		int fd() const {
+			return _fd;
+		}
 
 		/**
 		 * Closes the file

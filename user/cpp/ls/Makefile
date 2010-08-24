@@ -1,3 +1,3 @@
-NAME=cppless
+NAME=ls
 
 -include ../DefMakefile.mk

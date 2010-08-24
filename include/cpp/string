@@ -220,10 +220,7 @@ namespace std {
 		 * library implementation. In any case, it never trims the string content (for that
 		 * purposes, see resize or clear, which modify the content).
 		 */
-		void reserve(size_type res_arg = 0) {
-			if(_size < res_arg + 1)
-				resize(res_arg);
-		}
+		void reserve(size_type res_arg = 0);
 
 		/**
 		 * The string content is set to an empty string, erasing any previous content and thus
@@ -273,7 +270,10 @@ namespace std {
 			return append(s);
 		}
 		string& operator+=(char c) {
-			return append(&c,1);
+			reserve(_length + 1);
+			_str[_length++] = c;
+			_str[_length] = '\0';
+			return *this;
 		}
 
 		/**
@@ -378,26 +378,20 @@ namespace std {
 		 * Inserts at the character position pos1, a copy of the string formed by the first n
 		 * characters in the array of characters pointed by s.
 		 */
-		string& insert(size_type pos1,const char* s,size_type n) {
-			return insert(pos1,string(s),0,n);
-		}
+		string& insert(size_type pos1,const char* s,size_type n);
 		/**
 		 * Inserts at character position pos1, a copy of the string formed by the null-terminated
 		 * character sequence (C string) pointed by s. The length of this caracter sequence is
 		 * determined by the first ocurrence of a null character (as determined by traits.length(s)).
 		 */
 		string& insert(size_type pos1,const char* s) {
-			string tmp(s);
-			return insert(pos1,tmp,0,tmp._length);
+			return insert(pos1,s,strlen(s));
 		}
 		/**
 		 * Inserts a string formed by a repetition of character c, n times, at the character
 		 * position pos1.
 		 */
-		string& insert(size_type pos1,size_type n,char c) {
-			string tmp(n,c);
-			return insert(pos1,tmp);
-		}
+		string& insert(size_type pos1,size_type n,char c);
 		/**
 		 * Inserts at the internal position referred by p the content made up of the characters
 		 * that go from the element referred by iterator first to the element right before the
@@ -699,6 +693,14 @@ namespace std {
 		}
 		size_type ltrim();
 		size_type rtrim();
+
+		/**
+		 * Formats this string according to the given format. This is a shorthand for using
+		 * ostringstream with this string
+		 *
+		 * @param fmt the format
+		 */
+		void format(const char *fmt,...);
 
 	private:
 		char* _str;

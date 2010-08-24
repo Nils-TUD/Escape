@@ -126,21 +126,10 @@ namespace std {
 	}
 	template<class T>
 	void vector<T>::resize(size_type sz,T c) {
-		if(sz < _size) {
-			_size = sz;
-			if(sz < _count)
-				_count = sz;
-		}
-		else if(sz > _size) {
-			sz = max(_size * 2,sz);
-			T *tmp = new T[sz];
-			memcpy(tmp,_elements,_size * sizeof(T));
-			for(size_type i = _size; i < sz; i++)
-				tmp[i] = c;
-			delete[] _elements;
-			_elements = tmp;
-			_size = sz;
-		}
+		if(sz < _count)
+			_count = sz;
+		else if(sz > _count)
+			insert(_count,sz - _count,c);
 	}
 	template<class T>
 	inline typename vector<T>::size_type vector<T>::capacity() const {
@@ -152,8 +141,15 @@ namespace std {
 	}
 	template<class T>
 	inline void vector<T>::reserve(size_type n) {
-		if(_size < n)
-			resize(n);
+		if(n > _size) {
+			n = max(_size * 2,n);
+			T *tmp = new T[n];
+			for(size_type i = 0; i < _size; ++i)
+				tmp[i] = _elements[i];
+			delete[] _elements;
+			_elements = tmp;
+			_size = n;
+		}
 	}
 
 	// === data-access ===

@@ -18,12 +18,17 @@
  */
 
 #include <esc/common.h>
-#include <esc/date.h>
 #include <time.h>
+#include "timeintern.h"
 
 time_t time(time_t *timer) {
-	time_t res = (time_t)getTime();
+	time_t ts;
+	struct tm t;
+	s32 res = readdate(&t);
+	if(res < 0)
+		return 0;
+	ts = mktime(&t);
 	if(timer)
-		*timer = res;
-	return res;
+		*timer = ts;
+	return ts;
 }

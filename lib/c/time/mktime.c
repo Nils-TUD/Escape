@@ -18,11 +18,28 @@
  */
 
 #include <esc/common.h>
-#include <esc/date.h>
 #include <time.h>
 #include "timeintern.h"
 
 time_t mktime(struct tm *t) {
-	sDate date = tmtodate(t);
-	return date.timestamp;
+	int m,y,yearType;
+	time_t ts = 0;
+	/* add full years */
+	for(y = 70; y < t->tm_year; y++) {
+		if(IS_LEAP_YEAR(y + 1900))
+			ts += SECS_PER_LEAPYEAR;
+		else
+			ts += SECS_PER_YEAR;
+	}
+	/* add full months */
+	yearType = IS_LEAP_YEAR(t->tm_year + 1900) ? LEAP_YEAR : DEF_YEAR;
+	for(m = t->tm_mon - 1; m >= 0; m--)
+		ts += daysPerMonth[yearType][m] * SECS_PER_DAY;
+	/* add full days */
+	ts += t->tm_mday * SECS_PER_DAY;
+	/* add hours, mins and secs */
+	ts += t->tm_hour * SECS_PER_HOUR;
+	ts += t->tm_min * SECS_PER_MIN;
+	ts += t->tm_sec;
+	return ts;
 }

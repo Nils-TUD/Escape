@@ -20,9 +20,10 @@
 #include <esc/common.h>
 #include <esc/conf.h>
 #include <esc/keycodes.h>
-#include <esc/date.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+
 #include "game.h"
 #include "bar.h"
 #include "objlist.h"
@@ -53,7 +54,7 @@ bool game_init(void) {
 	score = 0;
 	if(!displ_init())
 		return false;
-	srand(getTime());
+	srand(time(NULL));
 	bar_init();
 	objlist_create();
 	return true;

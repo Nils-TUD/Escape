@@ -20,10 +20,10 @@
 #include <esc/common.h>
 #include <esc/driver.h>
 #include <esc/io.h>
-#include <esc/date.h>
 #include <esc/messages.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include <errors.h>
 
 static sMsg msg;
@@ -39,7 +39,7 @@ int main(void) {
 	/* random numbers are always available ;) */
 	if(setDataReadable(id,true) < 0)
 		error("setDataReadable");
-	srand(getTime());
+	srand(time(NULL));
 
     /* wait for commands */
 	while(1) {

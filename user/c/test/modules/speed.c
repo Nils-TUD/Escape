@@ -19,11 +19,12 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/dir.h>
 #include <esc/debug.h>
-#include <esc/date.h>
+#include <stdio.h>
+#include <time.h>
 #include <errors.h>
+
 #include "speed.h"
 
 /*#define BUF_SIZE	4096 * 32
@@ -54,7 +55,7 @@ int mod_speed(int argc,char *argv[]) {
 
 #if 0
 	/* write */
-	t = getTime();
+	t = time(NULL);
 	start = cpu_rdtsc();
 	for(i = 0; i < COUNT; i++) {
 		if(write(fd,buffer,sizeof(buffer)) < 0) {
@@ -66,14 +67,14 @@ int mod_speed(int argc,char *argv[]) {
 			break;
 		}
 		if(i % (COUNT / 1000) == 0) {
-			diff = getTime() - t;
+			diff = time(NULL) - t;
 			printf("\rWriting with	%07d KiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / 1024));
 			flush();
 		}
 	}
 
 	total.val64 = cpu_rdtsc() - start;
-	diff = getTime() - t;
+	diff = time(NULL) - t;
 	printf("\n");
 	printf("Instructions:	%08x%08x\n",total.val32.upper,total.val32.lower);
 	printf("Speed:			%07d KiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / 1024));
@@ -82,7 +83,7 @@ int mod_speed(int argc,char *argv[]) {
 
 	/* read */
 	debug();
-	t = getTime();
+	t = time(NULL);
 	start = cpu_rdtsc();
 	for(i = 0; i < COUNT; i++) {
 		if(RETRY(read(fd,buffer,sizeof(buffer))) < 0) {
@@ -95,7 +96,7 @@ int mod_speed(int argc,char *argv[]) {
 			break;
 		}
 		if(i % (COUNT / 1000) == 0) {
-			diff = getTime() - t;
+			diff = time(NULL) - t;
 			printf("\rReading with	%07d KiB/s",diff == 0 ? 0 : ((i * sizeof(buffer) / diff) / 1024));
 			flush();
 		}
@@ -104,7 +105,7 @@ int mod_speed(int argc,char *argv[]) {
 	debug();
 
 	total.val64 = cpu_rdtsc() - start;
-	diff = getTime() - t;
+	diff = time(NULL) - t;
 	printf("\n");
 	printf("Instructions:	%08x%08x\n",total.val32.upper,total.val32.lower);
 	printf("Speed:			%07d KiB/s\n",diff == 0 ? 0 : ((i * sizeof(buffer) / (double)diff) / 1024));

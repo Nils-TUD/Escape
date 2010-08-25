@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: getdate.c 741 2010-08-10 12:46:17Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -18,16 +18,17 @@
  */
 
 #include <esc/common.h>
-#include <esc/date.h>
 #include <esc/io.h>
+#include <time.h>
+#include "timeintern.h"
 
-s32 getDate(sCMOSDate *date) {
+s32 readdate(struct tm *t) {
 	/* open CMOS and read date */
 	s32 err;
 	tFD fd = open("/dev/cmos",IO_READ);
 	if(fd < 0)
 		return fd;
-	if((err = RETRY(read(fd,date,sizeof(sCMOSDate)))) < 0)
+	if((err = RETRY(read(fd,t,sizeof(struct tm)))) < 0)
 		return err;
 	close(fd);
 	return 0;

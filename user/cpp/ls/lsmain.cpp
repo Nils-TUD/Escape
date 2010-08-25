@@ -18,15 +18,15 @@
  */
 
 #include <esc/common.h>
-#include <esc/date.h>
 #include <esc/width.h>
 #include <esc/messages.h>
-#include <stdlib.h>
 #include <iostream>
 #include <vector>
 #include <file.h>
 #include <cmdargs.h>
 #include <env.h>
+#include <stdlib.h>
+#include <time.h>
 
 using namespace std;
 
@@ -186,8 +186,9 @@ int main(int argc,char *argv[]) {
 			cout.format("%*d ",widths[W_SIZE],f->rsize());
 			{
 				char dateStr[DATE_LEN];
-				sDate date = date_getOfTS(f->modified());
-				date.format(&date,dateStr,DATE_LEN,"%Y-%m-%d %H:%M");
+				file::time_type ts = f->modified();
+				struct tm *date = gmtime(&ts);
+				strftime(dateStr,sizeof(dateStr),"%Y-%m-%d %H:%M",date);
 				cout << dateStr << ' ';
 			}
 			if(f->is_dir())

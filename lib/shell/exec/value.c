@@ -110,13 +110,9 @@ static void val_destroyValue(sValue *v) {
 		case VAL_TYPE_STR:
 			efree(v->v.strval);
 			break;
-		case VAL_TYPE_ARRAY: {
-			sValue *el;
-			vforeach(v->v.vec,el)
-				val_destroy(el);
-			vec_destroy(v->v.vec,false);
-		}
-		break;
+		case VAL_TYPE_ARRAY:
+			vec_destroy(v->v.vec,true);
+			break;
 	}
 }
 

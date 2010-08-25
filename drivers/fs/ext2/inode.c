@@ -20,9 +20,10 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <stdio.h>
-#include <esc/date.h>
 #include <string.h>
 #include <errors.h>
+#include <time.h>
+
 #include "ext2.h"
 #include "inode.h"
 #include "superblock.h"
@@ -71,7 +72,7 @@ s32 ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir
 	for(i = 0; i < EXT2_DIRBLOCK_COUNT; i++)
 		cnode->inode.dBlocks[i] = 0;
 	cnode->inode.blocks = 0;
-	now = getTime();
+	now = time(NULL);
 	cnode->inode.accesstime = now;
 	cnode->inode.createtime = now;
 	cnode->inode.modifytime = now;
@@ -89,7 +90,7 @@ s32 ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode) {
 	/* just set the delete-time and reset link-count. the block-numbers in the inode
 	 * are still present, so that it may be possible to restore the file, if the blocks
 	 * have not been overwritten in the meantime. */
-	cnode->inode.deletetime = getTime();
+	cnode->inode.deletetime = time(NULL);
 	cnode->inode.linkCount = 0;
 	cnode->dirty = true;
 	return 0;

@@ -21,16 +21,16 @@
 #define FILE_H_
 
 #include <esc/io.h>
-#include <esc/date.h>
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <time.h>
 
 namespace std {
 	class file {
 	public:
 		typedef size_t size_type;
-		typedef tTime time_type;
+		typedef time_t time_type;
 		typedef u16 user_type;
 		typedef u16 group_type;
 		typedef tInodeNo inode_type;

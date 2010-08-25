@@ -21,16 +21,15 @@
 #include <esc/lock.h>
 #include <esc/thread.h>
 #include <esc/io.h>
-#include <esc/date.h>
 #include <esc/keycodes.h>
-#include <signal.h>
 #include <esc/driver.h>
 #include <esc/proc.h>
 #include <esc/conf.h>
-#include <esc/exceptions/date.h>
-#include <stdio.h>
 #include <esc/messages.h>
+#include <stdio.h>
+#include <signal.h>
 #include <string.h>
+#include <time.h>
 
 #include <vterm/vtctrl.h>
 #include <vterm/vtin.h>
@@ -215,31 +214,26 @@ static int vterm_dateThread(void *arg) {
 	while(1) {
 		if(config->enabled) {
 			/* get date and format it */
-			TRY {
-				sDate date = date_get();
-				len = date.format(&date,dateStr,30,"%a, %d. %b %Y, %H:%M:%S");
+			time_t now = time(NULL);
+			struct tm *date = gmtime(&now);
+			len = strftime(dateStr,sizeof(dateStr),"%a, %d. %b %Y, %H:%M:%S",date);
 
-				/* update all vterm-title-bars; use a lock to prevent race-conditions */
-				locku(&titleBarLock);
-				for(i = 0; i < VTERM_COUNT; i++) {
-					char *title = vterms[i].titleBar + (vterms[i].cols - len) * 2;
-					for(j = 0; j < len; j++) {
-						*title++ = dateStr[j];
-						*title++ = LIGHTGRAY | (BLUE << 4);
-					}
-					if(vterms[i].active) {
-						if(seek(vterms[i].video,(vterms[i].cols - len) * 2,SEEK_SET) < 0)
-							printe("[VTERM] Unable to seek in video-driver");
-						if(write(vterms[i].video,vterms[i].titleBar + (vterms[i].cols - len) * 2,len * 2) < 0)
-							printe("[VTERM] Unable to write to video-driver");
-					}
+			/* update all vterm-title-bars; use a lock to prevent race-conditions */
+			locku(&titleBarLock);
+			for(i = 0; i < VTERM_COUNT; i++) {
+				char *title = vterms[i].titleBar + (vterms[i].cols - len) * 2;
+				for(j = 0; j < len; j++) {
+					*title++ = dateStr[j];
+					*title++ = LIGHTGRAY | (BLUE << 4);
 				}
-				unlocku(&titleBarLock);
+				if(vterms[i].active) {
+					if(seek(vterms[i].video,(vterms[i].cols - len) * 2,SEEK_SET) < 0)
+						printe("[VTERM] Unable to seek in video-driver");
+					if(write(vterms[i].video,vterms[i].titleBar + (vterms[i].cols - len) * 2,len * 2) < 0)
+						printe("[VTERM] Unable to write to video-driver");
+				}
 			}
-			CATCH(DateException,e) {
-
-			}
-			ENDCATCH
+			unlocku(&titleBarLock);
 		}
 
 		/* wait a second */

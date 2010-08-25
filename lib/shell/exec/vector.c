@@ -107,7 +107,7 @@ void vec_destroy(sVector *v,bool freeElements) {
 	if(freeElements) {
 		s32 i,count = v->count;
 		for(i = 0; i < count; i++)
-			efree((char*)v->_elements + i * v->_elSize);
+			efree(*(void**)((char*)v->_elements + i * v->_elSize));
 	}
 	efree(v->_elements);
 	efree(v);

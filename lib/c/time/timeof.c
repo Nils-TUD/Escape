@@ -18,11 +18,15 @@
  */
 
 #include <esc/common.h>
-#include <esc/date.h>
+#include <time.h>
 
-u32 getTime(void) {
-	sCMOSDate date;
-	if(getDate(&date) == 0)
-		return date.timestamp;
-	return 0;
+time_t timeof(int month,int day,int year,int hour,int min,int sec) {
+	struct tm t;
+	t.tm_hour = hour;
+	t.tm_min = min;
+	t.tm_sec = sec;
+	t.tm_mday = day;
+	t.tm_mon = month;
+	t.tm_year = year;
+	return mktime(&t);
 }

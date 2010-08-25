@@ -21,9 +21,9 @@
 #include <esc/fsinterface.h>
 #include <esc/io.h>
 #include <esc/dir.h>
-#include <esc/date.h>
 #include <esc/cmdargs.h>
 #include <stdio.h>
+#include <time.h>
 
 #define MAX_DATE_LEN	64
 
@@ -63,8 +63,8 @@ int main(int argc,char *argv[]) {
 
 static void stat_printDate(const char *title,u32 timestamp) {
 	static char dateStr[MAX_DATE_LEN];
-	sDate date = date_getOfTS(timestamp);
-	date.format(&date,dateStr,MAX_DATE_LEN,"%a, %m/%d/%Y %H:%M:%S");
+	struct tm *date = gmtime(&timestamp);
+	strftime(dateStr,sizeof(dateStr),"%a, %m/%d/%Y %H:%M:%S",date);
 	printf("%-15s%s\n",title,dateStr);
 }
 

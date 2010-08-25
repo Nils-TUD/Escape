@@ -19,11 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include <esc/date.h>
 #include <string.h>
 #include <errors.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "ext2.h"
 #include "rw.h"
@@ -183,7 +183,7 @@ s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) 
 	}
 
 	/* mark accessed */
-	cnode->inode.accesstime = getTime();
+	cnode->inode.accesstime = time(NULL);
 	cnode->dirty = true;
 	ext2_icache_release(e,cnode);
 
@@ -248,7 +248,7 @@ s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 
 	}
 
 	/* finally, update the inode */
-	now = getTime();
+	now = time(NULL);
 	cnode->inode.accesstime = now;
 	cnode->inode.modifytime = now;
 	cnode->inode.size = MAX((s32)(orgOff + count),cnode->inode.size);

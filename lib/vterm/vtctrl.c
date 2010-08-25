@@ -25,7 +25,6 @@
 #include <esc/driver.h>
 #include <esc/lock.h>
 #include <esc/thread.h>
-#include <esc/date.h>
 #include <esc/messages.h>
 #include <esc/ringbuffer.h>
 #include <string.h>

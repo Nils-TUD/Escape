@@ -21,21 +21,7 @@
 #define UTILVECTOR_H_
 
 #include <esc/common.h>
-#include <esc/util/iterator.h>
 #include <stdlib.h>
-
-/**
- * A convenience-foreach for the vector. For example:
- * sVector *myVector = vec_create(sizeof(u32));
- * u32 e;
- * vforeach(myVector,e)
- *   cout->writef(cout,"%u ",e);
- * vec_destroy(myVector,false);
- */
-#define vforeach(v,eName)	\
-	sIterator __it##eName = vec_iterator(v); \
-	while((__it##eName).hasNext(&__it##eName) && \
-			(eName = (__typeof__(eName))(__it##eName).next(&(__it##eName))))
 
 typedef struct {
 /* private: */
@@ -73,25 +59,6 @@ sVector *vec_createSize(u32 elSize,u32 count);
 sVector *vec_copy(const sVector *v);
 
 /**
- * Returns an iterator (allocated on the stack, nothing to free) for the given vector
- *
- * @param v the vector
- * @return the iterator
- */
-sIterator vec_iterator(sVector *v);
-
-/**
- * Returns an iterator (allocated on the stack, nothing to free) for the given vector between
- * <start> and <start> + <count>, i.e. the element at <start> + <count> is not included.
- *
- * @param v the vector
- * @param start the start-position
- * @param count the number of items to iterate
- * @return the iterator
- */
-sIterator vec_iteratorIn(sVector *v,u32 start,u32 count);
-
-/**
  * Returns the element with index <i>
  *
  * @param v the vector
@@ -101,35 +68,12 @@ sIterator vec_iteratorIn(sVector *v,u32 start,u32 count);
 void *vec_get(sVector *v,u32 i);
 
 /**
- * Adds an integer to the vector. This makes just sense if your vector contains elements with
- * size <= sizeof(u32). This is just a convenience-function for:
- * u32 i = 1234;
- * vec_add(v,&i);
- *
- * @param v the vector
- * @param val the value
- */
-void vec_addInt(sVector *v,u32 val);
-
-/**
  * Adds the given element to the vector, i.e. the memory at <p> will be copied into the vector.
  *
  * @param v the vector
  * @param p the pointer to the element to insert
  */
 void vec_add(sVector *v,const void *p);
-
-/**
- * Sets the integer at <index> to <val>. This makes just sense if your vector contains
- * elements with size <= sizeof(u32). This is just a convenience-function for:
- * u32 i = 1234;
- * vec_set(v,index,&i);
- *
- * @param v the vector
- * @param index the index
- * @param p the value
- */
-void vec_setInt(sVector *v,u32 index,u32 val);
 
 /**
  * Sets the value at <index> to <p>.
@@ -141,18 +85,6 @@ void vec_setInt(sVector *v,u32 index,u32 val);
 void vec_set(sVector *v,u32 index,const void *p);
 
 /**
- * Inserts an integer at given index into the vector. This makes just sense if your vector contains
- * elements with size <= sizeof(u32). This is just a convenience-function for:
- * u32 i = 1234;
- * vec_insert(v,index,&i);
- *
- * @param v the vector
- * @param index the index
- * @param val the value
- */
-void vec_insertInt(sVector *v,u32 index,u32 val);
-
-/**
  * Inserts the given element at the given index, i.e. the memory at <p> will be copied into the
  * vector.
  *
@@ -161,17 +93,6 @@ void vec_insertInt(sVector *v,u32 index,u32 val);
  * @param p the pointer to the element to insert
  */
 void vec_insert(sVector *v,u32 index,const void *p);
-
-/**
- * Removes the given integer from the vector. This makes just sense if your vector contains
- * elements with size <= sizeof(u32). This is just a convenience-function for:
- * u32 i = 1234;
- * vec_removeObj(v,&i);
- *
- * @param v the vector
- * @param val the value
- */
-void vec_removeInt(sVector *v,u32 val);
 
 /**
  * Removes the given object from the vector, i.e. the memory at <p> will be compared with all
@@ -192,18 +113,6 @@ void vec_removeObj(sVector *v,const void *p);
 void vec_remove(sVector *v,u32 start,u32 count);
 
 /**
- * Searches for the given integer in the vector. This makes just sense if your vector contains
- * elements with size <= sizeof(u32). This is just a convenience-function for:
- * u32 i = 1234;
- * vec_find(v,&i);
- *
- * @param v the vector
- * @param val the value
- * @return the index or -1 if not found
- */
-s32 vec_findInt(sVector *v,u32 val);
-
-/**
  * Searches for the given element in the vector, i.e. the memory at <p> will be compared with all
  * elements and the first matching index will be returned
  *
@@ -212,25 +121,6 @@ s32 vec_findInt(sVector *v,u32 val);
  * @return the index or -1 if not found
  */
 s32 vec_find(sVector *v,const void *p);
-
-/**
- * Sorts the given vector with qsort() and the default-compare-function, that looks like this:
- * static int defCmp(const void *a,const void *b) {
- *   return memcmp(a,b,sortElSize);
- * }
- * Note that this function is currently not thread-safe!
- *
- * @param v the vector
- */
-void vec_sort(sVector *v);
-
-/**
- * Sorts the given vector with qsort() and the given compare-function
- *
- * @param the vector
- * @param cmp the compare-function
- */
-void vec_sortCustom(sVector *v,fCompare cmp);
 
 /**
  * Destroys the given vector

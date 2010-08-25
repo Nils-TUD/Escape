@@ -22,6 +22,9 @@
 
 #include <types.h>
 
+/* TODO */
+#define CLOCKS_PER_SEC		(clock_t)0
+
 /* timestamp */
 typedef u32 time_t;
 typedef u32 clock_t;
@@ -80,6 +83,19 @@ time_t mktime(struct tm *timeptr);
  * @return the timestamp
  */
 time_t time(time_t *timer);
+
+/**
+ * Builds the timestamp for the given date
+ *
+ * @param month the month (0..11)
+ * @param day the day (0..30)
+ * @param year the year (00..99)
+ * @param hour the hour
+ * @param min the minute
+ * @param sec the second
+ * @return the timestamp
+ */
+time_t timeof(int month,int day,int year,int hour,int min,int sec);
 
 /**
  * Convert tm structure to string. Interprets the contents of the tm structure pointed by timeptr

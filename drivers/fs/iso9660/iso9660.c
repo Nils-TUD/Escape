@@ -21,11 +21,12 @@
 #include <esc/debug.h>
 #include <esc/io.h>
 #include <esc/proc.h>
-#include <esc/date.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errors.h>
 #include <string.h>
+#include <time.h>
+
 #include "iso9660.h"
 #include "rw.h"
 #include "dir.h"
@@ -204,9 +205,8 @@ s32 iso_read(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
 
 u32 iso_dirDate2Timestamp(sISO9660 *h,sISODirDate *ddate) {
 	UNUSED(h);
-	sDate date = date_getOfDateTime(ddate->month,ddate->day,ddate->year + 1900,
+	return timeof(ddate->month - 1,ddate->day - 1,ddate->year,
 			ddate->hour,ddate->minute,ddate->second);
-	return date.timestamp;
 }
 
 #if DEBUGGING

@@ -31,7 +31,6 @@
 #include <esc/messages.h>
 #include <esc/io.h>
 #include <esc/thread.h>
-#include <esc/date.h>
 #include <iostream>
 
 using namespace gui;

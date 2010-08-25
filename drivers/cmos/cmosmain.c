@@ -20,14 +20,14 @@
 #include <esc/common.h>
 #include <esc/proc.h>
 #include <esc/driver.h>
+#include <esc/messages.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/ports.h>
-#include <esc/date.h>
 #include <esc/thread.h>
 #include <esc/lock.h>
+#include <stdio.h>
 #include <errors.h>
-#include <esc/messages.h>
+#include <time.h>
 
 #define IOPORT_CMOS_INDEX	0x70
 #define IOPORT_CMOS_DATA	0x71
@@ -48,7 +48,7 @@ static u8 cmos_read(u8 reg);
 
 static tULock dlock;
 static sMsg msg;
-static sCMOSDate date;
+static struct tm date;
 
 int main(void) {
 	tMsgId mid;
@@ -81,7 +81,7 @@ int main(void) {
 					u32 count = msg.args.arg2;
 					msg.args.arg1 = count;
 					msg.args.arg2 = true;
-					if(offset + count <= offset || offset + count > sizeof(sCMOSDate))
+					if(offset + count <= offset || offset + count > sizeof(struct tm))
 						msg.args.arg1 = 0;
 					send(fd,MSG_DRV_READ_RESP,&msg,sizeof(msg.args));
 					if(msg.args.arg1) {
@@ -117,18 +117,15 @@ static int refreshThread(void *arg) {
 }
 
 static void cmos_refresh(void) {
-	date.monthDay = cmos_decodeBCD(cmos_read(CMOS_REG_MONTHDAY));
-	date.month = cmos_decodeBCD(cmos_read(CMOS_REG_MONTH));
-	date.year = cmos_decodeBCD(cmos_read(CMOS_REG_YEAR)) + 2000;
-	date.hour = cmos_decodeBCD(cmos_read(CMOS_REG_HOUR));
-	date.min = cmos_decodeBCD(cmos_read(CMOS_REG_MIN));
-	date.sec = cmos_decodeBCD(cmos_read(CMOS_REG_SEC));
-	date.weekDay = cmos_decodeBCD(cmos_read(CMOS_REG_WEEKDAY));
-	{
-		sDate edate = date_getOfDateTime(date.month,date.monthDay,date.year,date.hour,date.min,date.sec);
-		date.timestamp = edate.timestamp;
-		date.yearDay = edate.yearDay;
-	}
+	date.tm_mday = cmos_decodeBCD(cmos_read(CMOS_REG_MONTHDAY)) - 1;
+	date.tm_mon = cmos_decodeBCD(cmos_read(CMOS_REG_MONTH)) - 1;
+	date.tm_year = cmos_decodeBCD(cmos_read(CMOS_REG_YEAR));
+	if(date.tm_year < 70)
+		date.tm_year += 100;
+	date.tm_hour = cmos_decodeBCD(cmos_read(CMOS_REG_HOUR));
+	date.tm_min = cmos_decodeBCD(cmos_read(CMOS_REG_MIN));
+	date.tm_sec = cmos_decodeBCD(cmos_read(CMOS_REG_SEC));
+	date.tm_wday = cmos_decodeBCD(cmos_read(CMOS_REG_WEEKDAY)) - 1;
 }
 
 static u32 cmos_decodeBCD(u8 val) {

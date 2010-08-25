@@ -31,6 +31,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errors.h>
+#include <ctype.h>
 
 #define IS_ON_HEAP(addr) ((u32)(addr) >= KERNEL_HEAP_START && \
 		(u32)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
@@ -171,7 +172,7 @@ char *vfsn_getPath(tInodeNo nodeNo) {
 s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) {
 	sVFSNode *dir,*n = nodes;
 	sThread *t = thread_getRunning();
-	s32 pos,depth = 0;
+	s32 pos,depth,lastdepth;
 	if(created)
 		*created = false;
 
@@ -189,10 +190,23 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 		return 0;
 	}
 
-	pos = strchri(path,'/');
+	depth = 0;
+	lastdepth = -1;
 	dir = n;
 	n = NODE_FIRST_CHILD(n);
 	while(n != NULL) {
+		/* go to next '/' and check for invalid chars */
+		if(depth != lastdepth) {
+			char c;
+			pos = 0;
+			while((c = path[pos]) && c != '/') {
+				if((c != ' ' && isspace(c)) || !isprint(c))
+					return ERR_INVALID_PATH;
+				pos++;
+			}
+			lastdepth = depth;
+		}
+
 		if((s32)strlen(n->name) == pos && strncmp(n->name,path,pos) == 0) {
 			path += pos;
 			/* finished? */
@@ -211,7 +225,6 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 				break;
 
 			/* move to childs of this node */
-			pos = strchri(path,'/');
 			dir = n;
 			n = NODE_FIRST_CHILD(n);
 			depth++;

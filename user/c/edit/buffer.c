@@ -186,11 +186,15 @@ void buf_store(const char *file) {
 	char absDstFile[MAX_PATH_LEN];
 	abspath(absDstFile,MAX_PATH_LEN,file);
 	f = fopen(absDstFile,"w");
-	for(n = sll_begin(buf.lines); n != NULL; n = n->next) {
-		line = (sLine*)n->data;
-		fwrite(line->str,sizeof(char),line->length,f);
-		if(n->next != NULL)
-			fwrite("\n",sizeof(char),1,f);
+	if(!f)
+		fprintf(stderr,"Unable to store to '%s'\n",file);
+	else {
+		for(n = sll_begin(buf.lines); n != NULL; n = n->next) {
+			line = (sLine*)n->data;
+			fwrite(line->str,sizeof(char),line->length,f);
+			if(n->next != NULL)
+				fwrite("\n",sizeof(char),1,f);
+		}
+		fclose(f);
 	}
-	fclose(f);
 }

@@ -186,7 +186,7 @@ s32 displ_getSaveFile(char *file,u32 bufSize) {
 	printf("\033[co;0;7]Save to file:\033[co] ");
 	if(buffer->filename)
 		printf("\033[si;1]%s\033[si;0]",buffer->filename);
-	res = fgets(file,bufSize,stdin);
+	res = fgetl(file,bufSize,stdin);
 	send(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
 	displ_markDirty(firstLine + consSize.height - 1,1);
 	displ_update();

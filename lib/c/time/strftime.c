@@ -121,9 +121,6 @@ size_t strftime(char *str,size_t max,const char *fmt,const struct tm *t) {
 			case 'S':
 				number = t->tm_sec;
 				break;
-			case 'y':
-				number = t->tm_year;
-				break;
 			case 'U':
 				/* TODO is this correct? */
 				wDay = t->tm_wday;
@@ -172,6 +169,12 @@ size_t strftime(char *str,size_t max,const char *fmt,const struct tm *t) {
 				if(snprintf(str,end - str,"%d",t->tm_wday) < 1)
 					return 0;
 				str++;
+				break;
+			case 'y':
+				/* do it here because 2010 is "encoded" as 110, i.e. 3 chars */
+				if(snprintf(str,end - str,"%03d",t->tm_year) < 3)
+					return 0;
+				str += 3;
 				break;
 			case 'Y':
 				if(snprintf(str,end - str,"%04d",t->tm_year + 1900) < 4)

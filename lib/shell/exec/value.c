@@ -18,10 +18,10 @@
  */
 
 #include <esc/common.h>
-#include <esc/util/string.h>
-#include <stdlib.h>
 #include <esc/width.h>
+#include <stdlib.h>
 #include "value.h"
+#include "vector.h"
 #include "../mem.h"
 #include "../ast/cmpexpr.h"
 #include "../ast/functionstmt.h"
@@ -408,21 +408,30 @@ sVector *val_getArray(const sValue *v) {
 }
 
 static char *val_arr2Str(const sValue *v,bool brackets) {
+	u32 count = 0,size = 16;
+	char *str = (char*)emalloc(size);
 	u32 i,len = v->v.vec->count;
-	sString *str = str_create();
 	if(brackets)
-		str_appendc(str,'[');
+		str[count++] = '[';
 	for(i = 0; i < len; i++) {
+		u32 slen;
 		sValue *el = vec_get(v->v.vec,i);
 		char *elstr = val_getStr(el);
-		str_append(str,elstr);
+		if(4 + count + (slen = strlen(elstr)) >= size) {
+			/* allocate for ", ", "]" and '\0' as well */
+			size = MAX(size * 2,count + slen + 4);
+			str = (char*)erealloc(str,size);
+		}
+		strcpy(str + count,elstr);
+		count += slen;
 		efree(elstr);
-		if(i < len - 1)
-			str_append(str,brackets ? ", " : " ");
+		if(i < len - 1) {
+			strcpy(str + count,brackets ? ", " : " ");
+			count += brackets ? 2 : 1;
+		}
 	}
 	if(brackets)
-		str_appendc(str,']');
-	/* TODO maybe we should provide a method for extracting the string and freeing sString? */
-	efree(str);
-	return str->str;
+		str[count++] = ']';
+	str[count] = '\0';
+	return str;
 }

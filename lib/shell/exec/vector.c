@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: vector.c 716 2010-07-29 09:39:46Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -19,30 +19,25 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include <esc/mem/heap.h>
-#include <esc/util/vector.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "../mem.h"
+#include "vector.h"
 
 #define INIT_SIZE		16
 
-static int vec_sortCmp(const void *a,const void *b);
-static void *vec_itNext(sIterator *it);
-static bool vec_itHasNext(sIterator *it);
 static void vec_grow(sVector *v,u32 reqSize);
-
-/* TODO this is not thread-safe atm! */
-static u32 sortElSize;
 
 sVector *vec_create(u32 elSize) {
 	return vec_createSize(elSize,INIT_SIZE);
 }
 
 sVector *vec_createSize(u32 elSize,u32 count) {
-	sVector *v = (sVector*)heap_alloc(sizeof(sVector));
+	sVector *v = (sVector*)emalloc(sizeof(sVector));
 	v->_elSize = elSize;
 	v->_size = elSize * count;
-	v->_elements = heap_alloc(elSize * count);
+	v->_elements = emalloc(elSize * count);
 	v->count = 0;
 	return v;
 }
@@ -54,34 +49,9 @@ sVector *vec_copy(const sVector *v) {
 	return cpy;
 }
 
-sIterator vec_iterator(sVector *v) {
-	sIterator it;
-	it._con = v;
-	it._pos = 0;
-	it._end = v->count;
-	it.next = vec_itNext;
-	it.hasNext = vec_itHasNext;
-	return it;
-}
-
-sIterator vec_iteratorIn(sVector *v,u32 start,u32 count) {
-	sIterator it;
-	it._con = v;
-	it._pos = start;
-	it._end = MIN(v->count,start + count);
-	it.next = vec_itNext;
-	it.hasNext = vec_itHasNext;
-	return it;
-}
-
 void *vec_get(sVector *v,u32 i) {
 	assert(i < v->count);
 	return *(void**)((char*)v->_elements + i * v->_elSize);
-}
-
-void vec_addInt(sVector *v,u32 val) {
-	assert(v->_elSize <= sizeof(u32));
-	vec_add(v,&val);
 }
 
 void vec_add(sVector *v,const void *p) {
@@ -90,19 +60,9 @@ void vec_add(sVector *v,const void *p) {
 	v->count++;
 }
 
-void vec_setInt(sVector *v,u32 index,u32 val) {
-	assert(v->_elSize <= sizeof(u32));
-	vec_set(v,index,&val);
-}
-
 void vec_set(sVector *v,u32 index,const void *p) {
 	assert(index < v->count);
 	memcpy((char*)v->_elements + index * v->_elSize,p,v->_elSize);
-}
-
-void vec_insertInt(sVector *v,u32 index,u32 val) {
-	assert(v->_elSize <= sizeof(u32));
-	vec_insert(v,index,&val);
 }
 
 void vec_insert(sVector *v,u32 index,const void *p) {
@@ -113,11 +73,6 @@ void vec_insert(sVector *v,u32 index,const void *p) {
 		memmove(dst + v->_elSize,dst,(v->count - index) * v->_elSize);
 	memcpy(dst,p,v->_elSize);
 	v->count++;
-}
-
-void vec_removeInt(sVector *v,u32 val) {
-	assert(v->_elSize <= sizeof(u32));
-	vec_removeObj(v,&val);
 }
 
 void vec_removeObj(sVector *v,const void *p) {
@@ -138,11 +93,6 @@ void vec_remove(sVector *v,u32 start,u32 count) {
 	v->count -= count;
 }
 
-s32 vec_findInt(sVector *v,u32 val) {
-	assert(v->_elSize <= sizeof(u32));
-	return vec_find(v,&val);
-}
-
 s32 vec_find(sVector *v,const void *p) {
 	s32 i,count = v->count;
 	for(i = 0; i < count; i++) {
@@ -153,44 +103,20 @@ s32 vec_find(sVector *v,const void *p) {
 	return -1;
 }
 
-void vec_sort(sVector *v) {
-	sortElSize = v->_elSize;
-	qsort(v->_elements,v->count,v->_elSize,vec_sortCmp);
-}
-
-void vec_sortCustom(sVector *v,fCompare cmp) {
-	qsort(v->_elements,v->count,v->_elSize,cmp);
-}
-
 void vec_destroy(sVector *v,bool freeElements) {
 	if(freeElements) {
-		sIterator it = vec_iterator(v);
-		while(it.hasNext(&it))
-			heap_free(it.next(&it));
+		s32 i,count = v->count;
+		for(i = 0; i < count; i++)
+			efree((char*)v->_elements + i * v->_elSize);
 	}
-	heap_free(v->_elements);
-	heap_free(v);
-}
-
-static int vec_sortCmp(const void *a,const void *b) {
-	return memcmp(a,b,sortElSize);
-}
-
-static void *vec_itNext(sIterator *it) {
-	sVector *v = (sVector*)it->_con;
-	if(it->_pos >= it->_end)
-		return NULL;
-	return *(void**)((char*)v->_elements + it->_pos++ * v->_elSize);
-}
-
-static bool vec_itHasNext(sIterator *it) {
-	return it->_pos < it->_end;
+	efree(v->_elements);
+	efree(v);
 }
 
 static void vec_grow(sVector *v,u32 reqSize) {
 	if(v->_size < reqSize) {
 		v->_size = MAX(v->_size * 2,reqSize);
-		v->_elements = heap_realloc(v->_elements,v->_size);
+		v->_elements = erealloc(v->_elements,v->_size);
 	}
 }
 

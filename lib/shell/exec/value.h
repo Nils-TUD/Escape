@@ -21,9 +21,9 @@
 #define VALUE_H_
 
 #include <esc/common.h>
-#include <esc/util/vector.h>
 #include <string.h>
 #include <assert.h>
+#include "vector.h"
 #include "../lang.h"
 
 #define VAL_TYPE_INT	0

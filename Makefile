@@ -1,6 +1,6 @@
 # general
 BUILDDIR = $(abspath build/debug)
-DISKMOUNT = disk
+DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso
 VBHDDTMP = $(BUILDDIR)/vbhd.bin
@@ -10,10 +10,10 @@ VBOXOSTITLE = Escape v0.1
 BINNAME = kernel.bin
 BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
-BUILDAPPS = $(BUILDDIR)/apps
 
-#KVM = -enable-kvm
-QEMU = /home/hrniels/Applications/qemu-0.12.2/bin/bin/qemu
+KVM = -enable-kvm
+#QEMU = /home/hrniels/Applications/qemu-0.12.2/bin/bin/qemu
+QEMU = qemu
 QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 40 \
 	-localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
@@ -22,9 +22,6 @@ BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 export LINKTYPE = static
 # if LINKTYPE = dynamic: wether to use the static or dynamic libgcc (and libgcc_eh)
 export LIBGCC = dynamic
-
-# number of jobs passing to make
-export JOBS =
 
 # flags for gcc
 export BUILD = $(BUILDDIR)
@@ -72,21 +69,24 @@ endif
 .PHONY: all debughdd mountp1 mountp2 umountp debugp1 debugp2 checkp1 checkp2 createhdd \
 	dis qemu bochs debug debugu debugm debugt test clean updatehdd
 
-all: $(BUILD) $(BUILDAPPS)
-		@[ -f $(HDD) ] || make createhdd;
+all: $(BUILD)
+		@[ -f $(HDD) ] || $(MAKE) createhdd;
 		@for i in $(DIRS); do \
-			make $(JOBS) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
+			$(MAKE) -C $$i all || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
 
 $(BUILD):
 		[ -d $(BUILD) ] || mkdir -p $(BUILD);
 
-$(BUILDAPPS):
-		[ -d $(BUILDAPPS) ] || mkdir -p $(BUILDAPPS);
+hdd:
+		$(MAKE) -C dist $(HDD)
+
+cd:
+		$(MAKE) -C dist $(ISO)
 
 debughdd:
 		tools/disk.sh mkdiskdev
-		$(SUDO) fdisk /dev/loop0
+		$(SUDO) fdisk /dev/loop0 -C 180 -S 63 -H 16
 		tools/disk.sh rmdiskdev
 
 mountp1:
@@ -120,17 +120,17 @@ umountp:
 
 createhdd:
 		tools/disk.sh build
+		$(MAKE) -C dist $(HDD)
 
 updatehdd:
 		tools/disk.sh update
+		$(MAKE) -C dist $(HDD)
 
 createcd:	all
 		tools/iso.sh
+		$(MAKE) -C dist $(ISO)
 
-$(ISO):	all
-		tools/iso.sh
-
-$(VMDISK): $(HDD)
+$(VMDISK): hdd
 		qemu-img convert -f raw $(HDD) -O vmdk $(VMDISK)
 
 swapbl:
@@ -150,61 +150,63 @@ else
 		$(READELF) -a $(BUILD)/$(APP) | less
 endif
 
-qemu:	all prepareRun
-		sudo /etc/init.d/qemu-kvm start || true
+qemu:	all prepareQemu prepareRun
 		$(QEMU) $(QEMUARGS) $(KVM) > log.txt 2>&1
 
-bochs: all prepareRun prepareBochs
+bochs: all prepareBochs prepareRun
 		bochs -f bochs.cfg -q
 
-vmware: all prepareRun prepareVmware
+vmware: all prepareVmware prepareRun
 		vmplayer vmware/escape.vmx
 
-vbox: all prepareRun prepareVbox
-		VBoxSDL --evdevkeymap -startvm "$(VBOXOSTITLE)"
+vbox: all prepareVbox prepareRun
+		VBoxSDL -startvm "$(VBOXOSTITLE)"
 
-debug: all prepareRun
+debug: all prepareQemu prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 		sleep 1;
 		/usr/local/bin/gdbtui --command=gdb.start
 
-debugb:	all prepareRun
+debugb:	all prepareBochs prepareRun
 		$(BOCHSDBG) -f bochsgdb.cfg -q
 
-debugbt:
+debugbt:	all prepareBochs prepareRun
 		$(BOCHSDBG) -f bochsgdb.cfg -q &
 		sleep 1;
 		/usr/local/bin/gdbtui --command=gdb.start --symbols $(BUILD)/kernel.bin
 
-debugm: all prepareRun
+debugm: all prepareQemu prepareRun
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 
-debugt: all prepareTest
+debugt: all prepareQemu prepareTest
 		$(QEMU) $(QEMUARGS) -S -s > log.txt 2>&1 &
 
-test: all prepareTest
+test: all prepareQemu prepareTest
 		$(QEMU) $(QEMUARGS) > log.txt 2>&1
 
-testbochs: all prepareTest prepareBochs
+testbochs: all prepareBochs prepareTest
 		bochs -f bochs.cfg -q
 
-testvbox: all prepareTest prepareVbox
-		VBoxSDL --evdevkeymap -startvm "$(VBOXOSTITLE)"
+testvbox: all prepareVbox prepareTest
+		VBoxSDL -startvm "$(VBOXOSTITLE)"
 
-testvmware:	all prepareTest prepareVmware
+testvmware:	all prepareVmware prepareTest
 		vmplayer vmware/escape.vmx
 
-prepareVmware: $(ISO)
-		sudo /etc/init.d/qemu-kvm stop || true # vmware doesn't like kvm :/
-		tools/vmwarecd.sh vmware/escape.vmx $(ISO)
+prepareQemu:	hdd cd
+		sudo service qemu-kvm start || true
 
-prepareBochs:
+prepareBochs:	hdd
 		tools/bochshdd.sh bochs.cfg $(HDD)
 
-prepareVbox: $(ISO) $(VMDISK)
-		sudo /etc/init.d/qemu-kvm stop || true # vbox doesn't like kvm :/
+prepareVbox: cd $(VMDISK)
+		sudo service qemu-kvm stop || true # vbox doesn't like kvm :/
 		tools/vboxcd.sh $(ISO) "$(VBOXOSTITLE)"
 		tools/vboxhddupd.sh "$(VBOXOSTITLE)" $(VMDISK)
+
+prepareVmware: cd
+		sudo service qemu-kvm stop || true # vmware doesn't like kvm :/
+		tools/vmwarecd.sh vmware/escape.vmx $(ISO)
 
 prepareTest:
 		tools/disk.sh mountp1
@@ -216,7 +218,6 @@ prepareTest:
 		tools/disk.sh unmount
 
 prepareRun:
-		tools/disk.sh copy $(BUILD)/../dist/i586-elf-escape/lib/libgcc_s.so.1 /lib/libgcc_s.so.1
 		tools/disk.sh mountp1
 		@if [ "`cat $(DISKMOUNT)/boot/grub/menu.lst | grep kernel_test.bin`" != "" ]; then \
 			$(SUDO) sed --in-place -e "s/kernel_test\.bin\(.*\)/kernel.bin\\1/g" \
@@ -227,6 +228,5 @@ prepareRun:
 
 clean:
 		@for i in $(DIRS); do \
-			make $(JOBS) -C $$i clean || { echo "Make: Error (`pwd`)"; exit 1; } ; \
+			$(MAKE) -C $$i clean || { echo "Make: Error (`pwd`)"; exit 1; } ; \
 		done
-		rm -f $(APPSDB)

@@ -5,8 +5,6 @@ BIN = $(BUILD)/user_$(NAME).bin
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
-APP = $(NAME).app
-APPCPY = $(BUILD)/apps/$(APP)
 
 CFLAGS = $(CDEFFLAGS) $(ADDFLAGS)
 ifeq ($(LINKTYPE),static)
@@ -29,23 +27,17 @@ GENOBJ = $(patsubst %.c,$(BUILDL)/%.o,$(LEXGEN) $(BISONGEN))
 
 -include $(ROOT)/sysdeps.mk
 
-all:	$(BUILDDIRS) $(APPCPY) $(BISONGEN) $(LEXGEN) $(BIN)
+all:	$(BUILDDIRS) $(BISONGEN) $(LEXGEN) $(BIN)
 
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(GENOBJ) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
 		$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(GENOBJ) $(ADDLIBS);
-		@echo "	" COPYING ON DISK
-		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 
 $(LEXGEN):	$(LEXSRC)
 		flex -o $(LEXGEN) --nounistd < $(LEXSRC)
 
 $(BISONGEN):	$(BISONSRC)
 		bison -d -o $(BISONGEN) $(BISONSRC)
-
-$(APPCPY):	$(APP)
-		$(ROOT)/tools/disk.sh copy $(APP) /apps/$(NAME)
-		cp $(APP) $(APPCPY)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
@@ -59,4 +51,4 @@ $(BUILDL)/%.o:		%.c
 -include $(DEPS)
 
 clean:
-		rm -f $(APPCPY) $(BIN) $(COBJ) $(DEPS) $(LEXGEN) $(BISONGEN) $(GENOBJ)
+		rm -f $(BIN) $(COBJ) $(DEPS) $(LEXGEN) $(BISONGEN) $(GENOBJ)

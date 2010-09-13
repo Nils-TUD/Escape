@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/sllist.h>
+#include "iobuf.h"
 #include <stdio.h>
 #include <stdlib.h>
 

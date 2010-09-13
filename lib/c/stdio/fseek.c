@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include "iobuf.h"
 #include <stdio.h>
 
 s32 fseek(FILE *stream,s32 offset,s32 whence) {

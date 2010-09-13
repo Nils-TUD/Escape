@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include "iobuf.h"
 #include <stdio.h>
 
 s32 fgetpos(FILE *stream,fpos_t *pos) {

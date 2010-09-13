@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include "iobuf.h"
 #include <stdio.h>
 
 char *fgets(char *str,s32 max,FILE *file) {

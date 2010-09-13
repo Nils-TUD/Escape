@@ -5,10 +5,13 @@
  */
 module rt.compiler.dmd.rt.invariant_;
 
+private {
+    extern(C) int debugf(char*,...);
+}
 extern (C) void _d_invariant(Object o)
 {   ClassInfo c;
 
-    //printf("__d_invariant(%p)\n", o);
+    debugf("__d_invariant_(%x)\n", o);
 
     // BUG: needs to be filename/line of caller, not library routine
     assert(o !is null); // just do null check, not invariant check

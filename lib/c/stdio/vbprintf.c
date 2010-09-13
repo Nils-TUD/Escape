@@ -18,10 +18,10 @@
  */
 
 #include <esc/common.h>
+#include "iobuf.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-#include "iobuf.h"
 
 s32 vbprintf(FILE *f,const char *fmt,va_list ap) {
 	char c,b,pad;

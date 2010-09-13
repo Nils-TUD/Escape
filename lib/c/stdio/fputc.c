@@ -18,8 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
 #include "iobuf.h"
+#include <stdio.h>
 
 s32 fputc(s32 c,FILE *file) {
 	return bputc(file,c);

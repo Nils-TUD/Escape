@@ -30,7 +30,6 @@ $(DYNLIB): $(CPICOBJS)
 		@$(CPPC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) \
 			$(CPICOBJS) $(ADDLIBS)
 		$(ROOT)/tools/linklib.sh $(DYNLIB)
-		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

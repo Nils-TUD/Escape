@@ -4,7 +4,7 @@ ISO=$BUILD/cd.iso
 OSTITLE="Escape v0.3"
 BINNAME=kernel.bin
 KERNELBIN=$BUILD/$BINNAME
-TMPDIR=$ROOT/disk
+TMPDIR=$ROOT/diskmnt
 
 mkdir -p $TMPDIR/boot/grub
 mkdir $TMPDIR/apps
@@ -59,7 +59,7 @@ cp $ROOT/kernel/src/mem/paging.c $TMPDIR/paging.c
 # add some test-data
 mkdir $TMPDIR/testdir
 echo "Das ist ein Test-String!!" > $TMPDIR/file.txt
-cp -R dist/scripts $DISKMOUNT
+cp -R $ROOT/dist/scripts $TMPDIR
 cp $ROOT/dist/test.bmp $TMPDIR
 cp $ROOT/dist/bbc.bmp $TMPDIR
 cp $ROOT/dist/test.bmp $TMPDIR/bla.bmp

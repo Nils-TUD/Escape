@@ -140,8 +140,8 @@ private
     {
     	extern (C)
     	{
-    		extern int start_data;
-    		extern int end_data;
+    		extern int etext;
+    		extern int _end;
     	}
     }
     else version( linux )
@@ -194,7 +194,8 @@ extern (C) void rt_scanStaticData( scanFn scan )
     }
     else version(Escape)
     {
-    	scan( &start_data, &end_data );
+    	int start = (etext + 4096 - 1) &  ~(0xfff);
+    	scan( &start, &_end );
     }
     else version( linux )
     {

@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include "iobuf.h"
 #include <stdio.h>
 
 size_t fwrite(const void *ptr,size_t size,size_t count,FILE *file) {

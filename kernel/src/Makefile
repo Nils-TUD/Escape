@@ -50,8 +50,6 @@ $(BIN):	$(BUILDDIRS) $(SYMBOLS) $(DRIVERS) $(LDCONF) $(AOBJ) $(COBJ) $(LOBJ)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
 		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(AOBJ) $(COBJ) $(LOBJ) -lgcc;
-		@echo "	" COPYING BINARY
-		$(ROOT)/tools/disk.sh copy $(BIN) /boot
 
 $(SYMBOLS):
 		@if [ ! -f $(SYMBOLS) ]; then echo "" > $(SYMBOLS); fi

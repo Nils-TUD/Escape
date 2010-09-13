@@ -5,12 +5,15 @@
  */
 
 private {
-    extern(C) int printf(char*,...);
+    extern(C) int debugf(char*,...);
+    extern(C) void printStackTrace();
 }
 void _d_invariant(Object o)
 {   ClassInfo c;
 
-    //printf("__d_invariant(%p)\n", o);
+    debugf("__d_invariant(%x)\n", o);
+    if(cast(void*)o == cast(void*)0x98e00)
+    	printStackTrace();
 
     // BUG: needs to be filename/line of caller, not library routine
     assert(o !is null); // just do null check, not invariant check

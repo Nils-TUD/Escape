@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/esccodes.h>
+#include "iobuf.h"
 #include <stdio.h>
 
 s32 freadesc(FILE *f,s32 *n1,s32 *n2,s32 *n3) {

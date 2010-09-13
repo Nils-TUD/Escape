@@ -24,7 +24,6 @@
 
 #include <types.h>
 #include <esc/io.h>
-#include "../lib/c/stdio/iobuf.h"
 
 #define _IOFBF			0	/* fully buffered */
 #define _IOLBF			1	/* line buffered */
@@ -52,6 +51,11 @@ typedef s32 fpos_t;
 #ifdef __cplusplus
 extern "C" {
 using namespace std;
+#endif
+
+/* hack to provide FILE without including ../lib/c/stdio/iobuf.h */
+#ifndef IOBUF_H_
+typedef void FILE;
 #endif
 
 /* std-streams */

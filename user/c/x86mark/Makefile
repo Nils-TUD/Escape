@@ -24,8 +24,6 @@ all:	$(BUILDDIRS) $(BIN)
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(ASM) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
 		@$(CC) $(CFLAGS) -o $(BIN) $(COBJ) $(ASM) $(ADDLIBS);
-		@echo "	" COPYING ON DISK
-		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

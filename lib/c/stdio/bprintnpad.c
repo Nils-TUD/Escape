@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/width.h>
+#include "iobuf.h"
 #include <stdio.h>
 
 s32 bprintnpad(FILE *f,s32 n,u8 pad,u16 flags) {

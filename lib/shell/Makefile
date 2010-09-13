@@ -38,7 +38,6 @@ $(DYNLIB):	$(CPICOBJS) $(PICGENOBJ) $(SHLDCONF)
 		@echo "	" LINKING $(DYNLIB)
 		@$(LD) --eh-frame-hdr -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(PICGENOBJ);
 		$(ROOT)/tools/linklib.sh $(DYNLIB)
-		$(ROOT)/tools/disk.sh copy $(DYNLIB) /lib/$(DYNLIBNAME)
 
 $(LEXGEN):	$(LEXSRC)
 		@echo "	" GEN $@

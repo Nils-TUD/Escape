@@ -18,9 +18,9 @@
  */
 
 #include <esc/common.h>
+#include "iobuf.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "iobuf.h"
 
 typedef void (*fConstr)(void);
 static void initStdio(void);

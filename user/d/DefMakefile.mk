@@ -1,36 +1,34 @@
 ROOT = ../../..
 BUILDL = $(BUILD)/user/d/$(NAME)
 BIN = $(BUILD)/user_$(NAME).bin
-LIBC = $(ROOT)/lib/c
 LIBD = $(ROOT)/lib/d
-LDCONF = $(LIBD)/ld.conf
 SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 DC = dmd
+CFLAGS = $(CDEFFLAGS)
 DFLAGS = $(DDEFFLAGS) -version=Escape -I$(LIBD) -I$(LIBD)/tango/core -I$(LIBD)/tango/core/vendor \
 	-I$(LIBD)/tango/core/rt/compiler/dmd -L-L$(BUILD)
-LINKER = ld
-LFLAGS = -T$(LDCONF) --build-id=none $(ADDFLAGS)
+ifeq ($(LINKTYPE),static)
+	CFLAGS += -static -Wl,-Bstatic
+endif
 
 # sources
 DSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
 
 # objects
-LIBDA = $(BUILD)/libd.a
-START = $(BUILD)/libd_startup.o
 DOBJ = $(patsubst %.d,$(BUILDL)/%.o,$(DSRC))
 
 .PHONY: all clean
 
-all:	$(BIN)
+-include $(ROOT)/sysdeps.mk
 
-$(BIN):	$(BUILDDIRS) $(LDCONF) $(DOBJ) $(START) $(LIBDA) $(ADDLIBS)
+all:	$(BUILDDIRS) $(BIN)
+
+$(BIN): $(DEP_START) $(DEP_DEFLIBS) $(DOBJ) $(ADDLIBS)
 		@echo "	" LINKING $(BIN)
-		@$(LINKER) $(LFLAGS) -o $(BIN) $(START) $(DOBJ) $(LIBDA) $(ADDLIBS);
-		@echo "	" COPYING ON DISK
-		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
+		@$(CC) $(CFLAGS) -o $(BIN) $(DOBJ) -ld $(ADDLIBS);
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

@@ -31,22 +31,16 @@ all:	$(BUILDDIRS) $(APPCPY) $(BIN)
 $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(SHLIB) $(SECLIB)
 		@echo "	" LINKING $(BIN)
 		@$(CC) $(CFLAGS) -o $(BIN) -l$(NAME) -l$(NAME)2 $(COBJ);
-		@echo "	" COPYING ON DISK
-		$(ROOT)/tools/disk.sh copy $(BIN) /bin/$(NAME)
 
 $(SECLIB): $(DEP_START) $(DEP_DEFLIBS) $(SECLIBOBJ)
 		@echo "	" LINKING $(SECSHLIB)
 		@$(LD) -shared -soname $(SECLIBNAME) -o $(SECLIB) $(SECLIBOBJ);
-		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/linklib.sh $(SECLIB)
-		$(ROOT)/tools/disk.sh copy $(SECLIB) /lib/$(SECLIBNAME)
 
 $(SHLIB): $(DEP_START) $(DEP_DEFLIBS) $(LIBOBJ)
 		@echo "	" LINKING $(SHLIB)
 		@$(LD) -shared -soname $(SHLIBNAME) -o $(SHLIB) $(LIBOBJ);
-		@echo "	" COPYING ON DISK
 		$(ROOT)/tools/linklib.sh $(SHLIB)
-		$(ROOT)/tools/disk.sh copy $(SHLIB) /lib/$(SHLIBNAME)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

@@ -52,8 +52,6 @@ $(BIN):	$(BUILDDIRS) $(LDCONF) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ)
 		@$(CC) $(CFLAGS) -o $(SYMBOLOBJ) -c $(SYMBOLSRC)
 		@echo "	" LINKING $(BIN)
 		@$(CC) $(CFLAGS) -Wl,-T,$(LDCONF) -o $(BIN) $(KAOBJ) $(KOBJ) $(TOBJ) $(LOBJ) -lgcc;
-		@echo "	" COPYING BINARY
-		$(ROOT)/tools/disk.sh copy $(BIN) /boot
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

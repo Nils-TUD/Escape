@@ -28,7 +28,7 @@ static D_CRITICAL_SECTION critical_section;
 void _d_criticalenter(D_CRITICAL_SECTION *dcs);
 void _d_criticalexit(D_CRITICAL_SECTION *dcs);
 void _STI_critical_init(void);
-void _STD_critical_term(void);
+void _STD_critical_term(void*);
 
 void _d_criticalenter(D_CRITICAL_SECTION *dcs) {
 	if(!dcs_list) {
@@ -58,7 +58,8 @@ void _STI_critical_init(void) {
 		dcs_list = &critical_section;
 }
 
-void _STD_critical_term(void) {
+void _STD_critical_term(void *dummy) {
+	UNUSED(dummy);
 	if(dcs_list)
 		dcs_list = NULL;
 }

@@ -5,6 +5,7 @@ DIST=$ROOT/../build/dist
 SRC=$ROOT/src
 HEADER=$ROOT/../include
 LIBC=$ROOT/../lib/c
+MAKE_ARGS=-j8
 
 GCCCORE_ARCH=gcc-core-4.4.3.tar.bz2
 GCCGPP_ARCH=gcc-g++-4.4.3.tar.bz2
@@ -39,7 +40,7 @@ if [ $REBUILD -eq 1 ] || [ ! -f $BUILD/binutils/Makefile ]; then
 		exit 1
 	fi
 fi
-make all && make install
+make $MAKE_ARGS all && make install
 if [ $? -ne 0 ]; then
 	exit 1
 fi
@@ -62,7 +63,7 @@ if [ $REBUILD -eq 1 ] || [ ! -f $BUILD/gcc/Makefile ]; then
 		exit 1
 	fi
 fi
-make all-gcc && make install-gcc
+make $MAKE_ARGS all-gcc && make install-gcc
 if [ $? -ne 0 ]; then
 	exit 1
 fi
@@ -104,7 +105,7 @@ $TARGET-gcc -nodefaultlibs -nostartfiles -shared -Wl,-shared -Wl,-soname,libc.so
 rm -f $TMPCRT0 $TMPCRT1 $TMPCRTN
 
 # now build libgcc
-make all-target-libgcc && make install-target-libgcc
+make $MAKE_ARGS all-target-libgcc && make install-target-libgcc
 if [ $? -ne 0 ]; then
 	exit 1
 fi
@@ -157,7 +158,7 @@ if [ $REBUILD -eq 1 ] || [ ! -f Makefile ]; then
 	# to prevent problems with makeinfo
 	echo "MAKEINFO = :" >> $BUILD/newlib/Makefile
 fi
-make && make install
+make $MAKE_ARGS && make install
 if [ $? -ne 0 ]; then
 	exit 1
 fi
@@ -175,12 +176,12 @@ if [ $REBUILD -eq 1 ] || [ ! -f Makefile ]; then
 	fi
 fi
 cd include
-make && make install
+make $MAKE_ARGS && make install
 if [ $? -ne 0 ]; then
 	exit 1
 fi
 cd ../libsupc++
-make && make install
+make $MAKE_ARGS && make install
 if [ $? -ne 0 ]; then
 	exit 1
 fi
@@ -193,4 +194,3 @@ ln -sf $ROOT/../include $DIST/$TARGET/include
 
 # copy crt* to basic gcc-stuff
 cp -f $BUILD/gcc/$TARGET/libgcc/crt*.o $DIST/lib/gcc/$TARGET/4.4.3
-

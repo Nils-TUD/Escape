@@ -1,13 +1,11 @@
 ROOT = ../..
 BUILDL = $(BUILD)/lib/d
-LIBCDIR = $(ROOT)/lib/c
 SUBDIRS = $(filter-out Makefile $(shell find . -name "*.*"),$(shell find . -name "*"))
 BUILDDIRS = $(addprefix $(BUILDL)/,$(SUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 LIB = $(BUILD)/libd.a
 
-CC = gcc
-CFLAGS = -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -I$(ROOT)/include
+CFLAGS = $(CDEFFLAGS)
 DC = dmd
 DFLAGS = $(DDEFFLAGS) -version=Escape -I. -Itango/core -Itango/core/vendor \
 	-Itango/core/rt/compiler/dmd
@@ -15,16 +13,14 @@ DFLAGS = $(DDEFFLAGS) -version=Escape -I. -Itango/core -Itango/core/vendor \
 # sources
 CSRC = $(shell find $(SUBDIRS) -name "*.c")
 DSRC = $(shell find $(SUBDIRS) -name "*.d")
-START = startup.s
 
 # objects
 COBJS = $(patsubst %.c,$(BUILDL)/%.o,$(CSRC))
 DOBJS = $(patsubst %.d,$(BUILDL)/%.o,$(DSRC))
-STARTO = $(BUILD)/libd_startup.o
 
 .PHONY:		all clean
 
-all: $(BUILDDIRS) $(LIB) $(STARTO)
+all: $(BUILDDIRS) $(LIB)
 
 $(LIB): $(COBJS) $(DOBJS)
 		@echo "	" AR $(LIB)
@@ -44,12 +40,8 @@ $(BUILDL)/%.o: %.d
 		@echo "	" DC $<
 		@$(DC) $(DFLAGS) -c -of$@ $<
 
-$(STARTO): $(START)
-		@echo "	" AS $(START)
-		@nasm $(ASMFLAGS) -o $(STARTO) $(START)
-
 -include $(DEPS)
 
 clean:
 		@echo "===== REMOVING FILES =====";
-		rm -f $(COBJS) $(DOBJS) $(LIB) $(DEPS) $(STARTO)
+		rm -f $(COBJS) $(DOBJS) $(LIB) $(DEPS)

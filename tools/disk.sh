@@ -1,7 +1,7 @@
 #!/bin/bash
 ROOT=$(dirname $(dirname $(readlink -f $0)))
 HDD=$BUILD/hd.img
-DISKMOUNT=$ROOT/disk
+DISKMOUNT=$ROOT/diskmnt
 TMPFILE=$BUILD/disktmp
 BINNAME=kernel.bin
 OSTITLE="Escape v0.3"
@@ -38,8 +38,6 @@ if [ $# -lt 1 ]; then
 	echo "Usage: $0 mountp1" 1>&2
 	echo "Usage: $0 mountp2" 1>&2
 	echo "Usage: $0 unmount" 1>&2
-	echo "Usage: $0 copy <src> <dst>" 1>&2
-	echo "Usage: $0 appsdb <src> <dst>" 1>&2
 	echo "Usage: $0 swapbl <block>" 1>&2
 	exit 1
 fi;
@@ -183,6 +181,8 @@ if [ "$1" == "build" ]; then
 		echo "3" >> $TMPFILE && \
 		echo "" >> $TMPFILE && \
 		echo "" >> $TMPFILE && \
+		echo "a" >> $TMPFILE && \
+		echo "1" >> $TMPFILE && \
 		echo "w" >> $TMPFILE;
 	$SUDO fdisk -u -C $HDDCYL -S $HDDTRACKSECS -H $HDDHEADS /dev/loop0 < $TMPFILE || true
 	rmDiskDev
@@ -203,29 +203,6 @@ if [ "$1" == "build" ]; then
 	rm -f $BUILD/*.bin $BUILD/apps/* $BUILD/*.so*
 	# now rebuild and copy it
 	make all
-fi
-
-# copy something to disk?
-if [ "$1" == "copy" ]; then
-	if [ $# -ne 3 ]; then
-		echo "Usage: $0 copy <src> <dst>" 1>&2
-		exit 1
-	fi;
-	
-	SRC=$2
-	DST=$3
-	
-	# mount partition1
-	mountDisk $PART1OFFSET
-	
-	# copy file
-	$SUDO cp $SRC $DISKMOUNT/$DST
-	
-	# unmount
-	unmountDisk
-	
-	# update modify-timestamp of disk-image
-	touch $HDD
 fi
 
 # copy all files (except programs etc.) to disk

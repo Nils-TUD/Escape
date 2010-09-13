@@ -18,8 +18,8 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
 #include "iobuf.h"
+#include <stdio.h>
 
 s32 bflush(FILE *f) {
 	sIOBuf *buf = &f->out;

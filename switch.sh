@@ -22,5 +22,5 @@ sed --in-place -e \
 
 # now relink everything so that the symlinks in build/dist are changed
 rm -f build/$NEW/*.{a,o,so,bin}
-make
+make -j8
 

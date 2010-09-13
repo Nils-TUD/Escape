@@ -18,6 +18,7 @@
  */
 
 #include <esc/common.h>
+#include "iobuf.h"
 #include <stdio.h>
 
 s32 bprintul(FILE *f,u64 u,u8 base,const char *hexchars) {

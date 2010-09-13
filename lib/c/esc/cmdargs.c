@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/cmdargs.h>
+#include <esc/sllist.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>

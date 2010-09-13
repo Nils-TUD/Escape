@@ -48,10 +48,8 @@
 
 _start:
 	# we have no TLS, so don't waste time
-	push	$0
-	# call __libc_init(0); no exceptions here
+	# call __libc_init()
 	call	__libc_init
-	add		$4,%esp
 	call	load_setupProg
 	# first, remove fd from stack
 	add		$4,%esp

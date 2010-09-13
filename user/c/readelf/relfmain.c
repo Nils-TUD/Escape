@@ -150,7 +150,6 @@ static const char *getSectionFlags(Elf32_Word flags);
 static void printProgHeaders(void);
 static const char *getProgFlags(Elf32_Word flags);
 static void printDynSection(void);
-static u32 getDynEntry(Elf32_Sword tag);
 static void printRelocations(void);
 static void printRelocTable(Elf32_Rel *rel,s32 relCount);
 static void readat(u32 offset,void *buffer,u32 count);
@@ -244,14 +243,11 @@ static void loadShSyms(void) {
 
 static void loadDynSection(void) {
 	Elf32_Phdr pheader;
-	u32 textOffset = 0xFFFFFFFF;
 	u8 *datPtr = (u8*)(eheader.e_phoff);
 	s32 i;
 	/* find dynamic-section */
 	for(i = 0; i < eheader.e_phnum; datPtr += eheader.e_phentsize, i++) {
 		readat((u32)datPtr,&pheader,sizeof(Elf32_Phdr));
-		if(textOffset == 0xFFFFFFFF && pheader.p_type == PT_LOAD)
-			textOffset = pheader.p_offset - pheader.p_vaddr;
 		if(pheader.p_type == PT_DYNAMIC)
 			break;
 	}
@@ -264,11 +260,11 @@ static void loadDynSection(void) {
 		readat(pheader.p_offset,dyn,pheader.p_filesz);
 
 		/* load dyn strings */
-		u32 strtblSize = getDynEntry(DT_STRSZ);
-		dynstrtbl = (char*)malloc(strtblSize);
+		Elf32_Shdr *strtabSec = getSecByName(".dynstr");
+		dynstrtbl = (char*)malloc(strtabSec->sh_size);
 		if(!dynstrtbl)
 			error("Not enough mem for dyn-strings!");
-		readat(getDynEntry(DT_STRTAB) + textOffset,dynstrtbl,strtblSize);
+		readat(strtabSec->sh_offset,dynstrtbl,strtabSec->sh_size);
 
 		/* load dyn syms */
 		Elf32_Shdr *dynSymSec = getSecByName(".dynsym");
@@ -277,7 +273,7 @@ static void loadDynSection(void) {
 		dynsyms = (Elf32_Sym*)malloc(dynSymSec->sh_size);
 		if(dynsyms == NULL)
 			error("Not enough mem for dyn-syms");
-		readat(getDynEntry(DT_SYMTAB),dynsyms,dynSymSec->sh_size);
+		readat(dynSymSec->sh_offset,dynsyms,dynSymSec->sh_size);
 	}
 }
 
@@ -430,23 +426,11 @@ static void printDynSection(void) {
 	printf("\n");
 }
 
-static u32 getDynEntry(Elf32_Sword tag) {
-	Elf32_Dyn *dwalk = dyn;
-	if(dyn == NULL)
-		return 0;
-	while(dwalk->d_tag != DT_NULL) {
-		if(dwalk->d_tag == tag)
-			return dwalk->d_un.d_val;
-		dwalk++;
-	}
-	return 0;
-}
-
 static void printRelocations(void) {
-	u32 addr = getDynEntry(DT_REL);
-	u32 relCount = getDynEntry(DT_RELSZ) / sizeof(Elf32_Rel);
+	Elf32_Shdr *relSec = getSecByName(".rel.dyn");
+	u32 relCount = relSec ? relSec->sh_size / sizeof(Elf32_Rel) : 0;
 	Elf32_Rel *rel;
-	if(addr == 0 || relCount == 0) {
+	if(relSec == NULL || relCount == 0) {
 		printf("There are no relocations in this file.\n\n");
 		return;
 	}
@@ -455,22 +439,24 @@ static void printRelocations(void) {
 	rel = (Elf32_Rel*)malloc(relCount * sizeof(Elf32_Rel));
 	if(!rel)
 		error("Not enough mem for relocations");
-	readat(addr,rel,relCount * sizeof(Elf32_Rel));
+	readat(relSec->sh_offset,rel,relCount * sizeof(Elf32_Rel));
 	/* TODO there are different relocation-sections */
-	printf("Relocation section '.rel.dyn' at offset %#x contains %d entries:\n",addr,relCount);
+	printf("Relocation section '.rel.dyn' at offset %#x contains %d entries:\n",
+			relSec->sh_offset,relCount);
 	printf(" %-10s %-7s %-15s %-10s %s\n","Offset","Info","Type","Sym.Value","Sym. Name");
 	printRelocTable(rel,relCount);
 	printf("\n");
 	free(rel);
 
 	/* jump-relocs */
-	addr = getDynEntry(DT_JMPREL);
-	relCount = getDynEntry(DT_PLTRELSZ) / sizeof(Elf32_Rel);
+	relSec = getSecByName(".rel.plt");
+	relCount = relSec->sh_size / sizeof(Elf32_Rel);
 	rel = (Elf32_Rel*)malloc(relCount * sizeof(Elf32_Rel));
 	if(!rel)
 		error("Not enough mem for jump-relocations");
-	readat(addr,rel,relCount * sizeof(Elf32_Rel));
-	printf("Relocation section '.rel.plt' at offset %#x contains %d entries:\n",addr,relCount);
+	readat(relSec->sh_offset,rel,relCount * sizeof(Elf32_Rel));
+	printf("Relocation section '.rel.plt' at offset %#x contains %d entries:\n",
+			relSec->sh_offset,relCount);
 	printf(" %-10s %-7s %-15s %-10s %s\n","Offset","Info","Type","Sym.Value","Sym. Name");
 	printRelocTable(rel,relCount);
 	printf("\n");
@@ -488,8 +474,11 @@ static void printRelocTable(Elf32_Rel *rel,s32 relCount) {
 		if(symIndex != 0) {
 			Elf32_Sym *sym = dynsyms + symIndex;
 			const char *symName = dynstrtbl + sym->st_name;
-			u32 len = MIN(strlen(symName),MAX_SYM_LEN - 1);
-			strncpy(symcopy,symName,len);
+			u32 len = 0;
+			if(symName) {
+				len = MIN(strlen(symName),MAX_SYM_LEN - 1);
+				strncpy(symcopy,symName,len);
+			}
 			symcopy[len] = '\0';
 			printf(" %08x   %-25s",sym->st_value,symcopy);
 		}

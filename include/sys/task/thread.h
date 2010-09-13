@@ -93,8 +93,6 @@ struct sThread {
 	u32 events;
 	/* the process we belong to */
 	sProc *proc;
-	/* the number of times we got chosen so far */
-	u32 schedCount;
 	/* the stack-region for this thread */
 	tVMRegNo stackRegion;
 	/* the TLS-region for this thread (-1 if not present) */
@@ -106,11 +104,18 @@ struct sThread {
 	tFileNo fileDescs[MAX_FD_COUNT];
 	/* FPU-state; initially NULL */
 	sFPUState *fpuState;
-	/* number of cpu-cycles the thread has used so far */
-	u64 ucycleStart;
-	uLongLong ucycleCount;
-	u64 kcycleStart;
-	uLongLong kcycleCount;
+	struct {
+		/* number of cpu-cycles the thread has used so far */
+		u64 ucycleStart;
+		uLongLong ucycleCount;
+		u64 kcycleStart;
+		uLongLong kcycleCount;
+		/* the number of times we got chosen so far */
+		u32 schedCount;
+		/* I/O stats */
+		u32 input;
+		u32 output;
+	} stats;
 	/* for the scheduler */
 	sThread *prev;
 	sThread *next;

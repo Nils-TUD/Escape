@@ -46,6 +46,8 @@
 
 .ifndef SHAREDLIB
 _start:
+	# mark the beginning of the call-trace
+	mov		$0,%ebp
 	# call init_tls(entryPoint,TLSStart,TLSSize)
 	call	init_tls
 	# remove args from stack

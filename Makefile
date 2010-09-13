@@ -19,7 +19,7 @@ QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga s
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 
 # wether to link drivers and user-apps statically or dynamically
-export LINKTYPE = static
+export LINKTYPE = dynamic
 # if LINKTYPE = dynamic: wether to use the static or dynamic libgcc (and libgcc_eh)
 export LIBGCC = dynamic
 

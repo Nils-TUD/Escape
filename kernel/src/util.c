@@ -242,8 +242,7 @@ sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 rend,u32 mstart,u32 mend) 
 	for(i = 0; i < MAX_STACK_DEPTH; i++) {
 		/* adjust it if we're in the kernel-stack but are using the temp-area (to print the trace
 		 * for another thread). don't do this for the temp-kernel-stack */
-		if(rstart != ((u32)&kernelStack) - TMP_STACK_SIZE &&
-				(u32)ebp >= rstart && (u32)ebp < rend + PAGE_SIZE)
+		if(rstart != ((u32)&kernelStack) - TMP_STACK_SIZE && rstart != mstart)
 			ebp = (u32*)(mstart + ((u32)ebp & (PAGE_SIZE - 1)));
 		/* prevent page-fault */
 		if((u32)ebp < mstart || (u32)ebp >= mend)

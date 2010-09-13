@@ -84,13 +84,15 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->tid = nextTid++;
 	t->proc = p;
 	/* we'll give the thread a stack later */
-	t->ucycleCount.val64 = 0;
-	t->ucycleStart = 0;
-	t->kcycleCount.val64 = 0;
-	t->kcycleStart = 0;
+	t->stats.ucycleCount.val64 = 0;
+	t->stats.ucycleStart = 0;
+	t->stats.kcycleCount.val64 = 0;
+	t->stats.kcycleStart = 0;
+	t->stats.schedCount = 0;
+	t->stats.input = 0;
+	t->stats.output = 0;
 	t->fpuState = NULL;
 	t->signal = 0;
-	t->schedCount = 0;
 	t->tlsRegion = -1;
 	/* init fds */
 	for(i = 0; i < MAX_FD_COUNT; i++)
@@ -162,10 +164,10 @@ void thread_switchTo(tTid tid) {
 
 	/* finish kernel-time here since we're switching the process */
 	if(tid != cur->tid) {
-		u64 kcstart = cur->kcycleStart;
+		u64 kcstart = cur->stats.kcycleStart;
 		if(kcstart > 0) {
 			u64 cycles = cpu_rdtsc();
-			cur->kcycleCount.val64 += cycles - kcstart;
+			cur->stats.kcycleCount.val64 += cycles - kcstart;
 		}
 
 		if(!thread_save(&cur->save)) {
@@ -182,13 +184,13 @@ void thread_switchTo(tTid tid) {
 			cur = t;
 
 			/* set used */
-			cur->schedCount++;
+			cur->stats.schedCount++;
 			vmm_setTimestamp(cur,timer_getTimestamp());
 
 			/* if it is the idle-thread, stay here and wait for an interrupt */
 			if(cur->tid == IDLE_TID) {
 				/* user-mode starts here */
-				cur->ucycleStart = cpu_rdtsc();
+				cur->stats.ucycleStart = cpu_rdtsc();
 				/* idle until there is another thread to run */
 				__asm__("sti");
 				while(runnableThread == INVALID_TID)
@@ -225,7 +227,7 @@ void thread_switchTo(tTid tid) {
 		}
 
 		/* now start kernel-time again */
-		cur->kcycleStart = cpu_rdtsc();
+		cur->stats.kcycleStart = cpu_rdtsc();
 	}
 
 	/* destroy threads, if there are any */
@@ -411,13 +413,15 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	t->events = src->events;
 	t->waitsInKernel = 0;
 	fpu_cloneState(&(t->fpuState),src->fpuState);
-	t->kcycleCount.val64 = 0;
-	t->kcycleStart = 0;
-	t->ucycleCount.val64 = 0;
-	t->ucycleStart = 0;
+	t->stats.kcycleCount.val64 = 0;
+	t->stats.kcycleStart = 0;
+	t->stats.ucycleCount.val64 = 0;
+	t->stats.ucycleStart = 0;
+	t->stats.input = 0;
+	t->stats.output = 0;
+	t->stats.schedCount = 0;
 	t->proc = p;
 	t->signal = 0;
-	t->schedCount = 0;
 	if(cloneProc) {
 		/* proc_clone() sets t->kstackFrame in this case */
 		t->stackRegion = src->stackRegion;
@@ -600,10 +604,10 @@ void thread_dbg_print(sThread *t) {
 	vid_printf("\t\tstate=%s\n",states[t->state]);
 	vid_printf("\t\tevents=%x\n",t->events);
 	vid_printf("\t\tkstackFrame=0x%x\n",t->kstackFrame);
-	vid_printf("\t\tucycleCount = 0x%08x%08x\n",t->ucycleCount.val32.upper,
-			t->ucycleCount.val32.lower);
-	vid_printf("\t\tkcycleCount = 0x%08x%08x\n",t->kcycleCount.val32.upper,
-			t->kcycleCount.val32.lower);
+	vid_printf("\t\tucycleCount = 0x%08x%08x\n",t->stats.ucycleCount.val32.upper,
+			t->stats.ucycleCount.val32.lower);
+	vid_printf("\t\tkcycleCount = 0x%08x%08x\n",t->stats.kcycleCount.val32.upper,
+			t->stats.kcycleCount.val32.lower);
 	vid_printf("\t\tfileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(t->fileDescs[i] != -1) {

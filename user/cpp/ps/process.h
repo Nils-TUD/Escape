@@ -42,6 +42,8 @@ private:
 	size_type _ownFrames;
 	size_type _sharedFrames;
 	size_type _swapped;
+	mutable size_type _input;
+	mutable size_type _output;
 	mutable cycle_type _ucycles;
 	mutable cycle_type _kcycles;
 	std::vector<thread*> _threads;
@@ -50,12 +52,14 @@ private:
 public:
 	process()
 		: _pid(0), _ppid(0), _pages(0), _ownFrames(0), _sharedFrames(0), _swapped(0),
-		  _ucycles(-1), _kcycles(-1), _threads(std::vector<thread*>()), _cmd(std::string()) {
+		  _input(-1), _output(-1), _ucycles(-1), _kcycles(-1), _threads(std::vector<thread*>()),
+		  _cmd(std::string()) {
 	}
 	process(const process& p)
 		: _pid(p._pid), _ppid(p._ppid), _pages(p._pages), _ownFrames(p._ownFrames),
-		  _sharedFrames(p._sharedFrames), _swapped(p._swapped), _ucycles(-1), _kcycles(-1),
-		  _threads(p._threads), _cmd(p._cmd) {
+		  _sharedFrames(p._sharedFrames), _swapped(p._swapped), _input(p._input),
+		  _output(p._output), _ucycles(p._ucycles), _kcycles(p._kcycles), _threads(p._threads),
+		  _cmd(p._cmd) {
 	}
 	process& operator =(const process& p) {
 		_pid = p._pid;
@@ -67,6 +71,8 @@ public:
 		_ucycles = p._ucycles;
 		_kcycles = p._kcycles;
 		_threads = p._threads;
+		_input = p._input;
+		_output = p._output;
 		_cmd = p._cmd;
 		return *this;
 	}
@@ -91,6 +97,8 @@ public:
 	size_type swapped() const {
 		return _swapped;
 	}
+	size_type input() const;
+	size_type output() const;
 	cycle_type totalCycles() const {
 		return userCycles() + kernelCycles();
 	}

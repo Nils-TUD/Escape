@@ -485,10 +485,10 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	/* increase user-space cycles (not when coming from kernel-space) */
 	if(t->tid == IDLE_TID || stack->eip < KERNEL_AREA_V_ADDR) {
 		cycles = cpu_rdtsc();
-		if(t->ucycleStart > 0)
-			t->ucycleCount.val64 += cycles - t->ucycleStart;
+		if(t->stats.ucycleStart > 0)
+			t->stats.ucycleCount.val64 += cycles - t->stats.ucycleStart;
 		/* kernel-mode starts here */
-		t->kcycleStart = cycles;
+		t->stats.kcycleStart = cycles;
 	}
 
 	/* add signal */
@@ -639,10 +639,10 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 	if(t->tid == IDLE_TID || stack->eip < KERNEL_AREA_V_ADDR) {
 		t = thread_getRunning();
 		cycles = cpu_rdtsc();
-		if(t->kcycleStart > 0)
-			t->kcycleCount.val64 += cycles - t->kcycleStart;
+		if(t->stats.kcycleStart > 0)
+			t->stats.kcycleCount.val64 += cycles - t->stats.kcycleStart;
 		/* user-mode starts here */
-		t->ucycleStart = cycles;
+		t->stats.ucycleStart = cycles;
 	}
 }
 

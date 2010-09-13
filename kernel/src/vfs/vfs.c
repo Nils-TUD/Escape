@@ -478,6 +478,11 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 			e->position += readBytes;
 	}
 
+	if(readBytes > 0 && tid != KERNEL_TID) {
+		sThread *t = thread_getById(tid);
+		t->stats.input += readBytes;
+	}
+
 	return readBytes;
 }
 
@@ -515,6 +520,11 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 			e->position += writtenBytes;
 	}
 
+	if(writtenBytes > 0 && tid != KERNEL_TID) {
+		sThread *t = thread_getById(tid);
+		t->stats.output += writtenBytes;
+	}
+
 	return writtenBytes;
 }
 
@@ -537,7 +547,12 @@ s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
 		return ERR_INVALID_FILE;
 
 	/* send the message */
-	return vfsrw_writeDrvUse(tid,file,n,id,data,size);
+	err = vfsrw_writeDrvUse(tid,file,n,id,data,size);
+	if(err == 0 && tid != KERNEL_TID) {
+		sThread *t = thread_getById(tid);
+		t->stats.output += size;
+	}
+	return err;
 }
 
 s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
@@ -558,8 +573,13 @@ s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
 	if(n->name == NULL)
 		return ERR_INVALID_FILE;
 
-	/* send the message */
-	return vfsrw_readDrvUse(tid,file,n,id,data,size);
+	/* receive the message */
+	err = vfsrw_readDrvUse(tid,file,n,id,data,size);
+	if(err >= 0 && tid != KERNEL_TID) {
+		sThread *t = thread_getById(tid);
+		t->stats.input += err;
+	}
+	return err;
 }
 
 void vfs_closeFile(tTid tid,tFileNo file) {

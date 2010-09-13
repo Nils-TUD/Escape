@@ -19,6 +19,8 @@
 
 #include <esc/common.h>
 #include <esc/width.h>
+#include <esc/messages.h>
+#include <esc/debug.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -117,6 +119,9 @@ int main(int argc,char **argv) {
 	process::size_type maxVmem = 100;
 	process::size_type maxSmem = 100;
 	process::size_type maxShmem = 100;
+	process::size_type maxInput = 10000;
+	process::size_type maxOutput = 10000;
+	process::cycle_type totalCycles = 0;
 	for(vector<process*>::const_iterator it = procs.begin(); it != procs.end(); ++it) {
 		process *p = *it;
 		if(p->pid() > maxPid)
@@ -131,6 +136,10 @@ int main(int argc,char **argv) {
 			maxSmem = p->swapped();
 		if(p->pages() > maxVmem)
 			maxVmem = p->pages();
+		if(p->input() > maxInput)
+			maxInput = p->input();
+		if(p->output() > maxOutput)
+			maxOutput = p->output();
 		if(printThreads) {
 			const vector<thread*>& threads = p->threads();
 			for(vector<thread*>::const_iterator tit = threads.begin(); tit != threads.end(); ++tit) {
@@ -139,6 +148,7 @@ int main(int argc,char **argv) {
 					maxPpid = t->tid();
 			}
 		}
+		totalCycles += (*it)->userCycles() + (*it)->kernelCycles();
 	}
 	maxPid = getuwidth(maxPid,10);
 	maxPpid = getuwidth(maxPpid,10);
@@ -147,20 +157,26 @@ int main(int argc,char **argv) {
 	maxVmem = getuwidth(maxVmem * 4,10);
 	maxSmem = getuwidth(maxSmem * 4,10);
 	maxShmem = getuwidth(maxShmem * 4,10);
+	// display in KiB, its in bytes
+	maxInput = getuwidth(maxInput / 1024,10);
+	maxOutput = getuwidth(maxOutput / 1024,10);
 
 	// sort
 	std::sort(procs.begin(),procs.end(),compareProcs);
 
 	// print header
 	cout.format(
-		"%*sPID%*sPPID%*sPMEM%*sSHMEM%*sVMEM%*sSMEM STATE  %%CPU (USER,KERNEL) COMMAND\n",
-		maxPid - 3,"",maxPpid - 1,"",maxPmem - 2,"",maxShmem - 2,"",maxVmem - 2,"",maxSmem - 2,""
+		"%*sPID%*sPPID%*sPMEM%*sSHMEM%*sVMEM%*sSMEM%*sIN%*sOUT STATE  %%CPU (USER,KERNEL) COMMAND\n",
+		maxPid - 3,"",maxPpid - 1,"",maxPmem - 2,"",maxShmem - 2,"",maxVmem - 2,"",
+		maxSmem - 2,"",maxInput,"",maxOutput - 1,""
 	);
 
-	// sum up total cycles
-	process::cycle_type totalCycles = 0;
-	for(vector<process*>::const_iterator it = procs.begin(); it != procs.end(); ++it)
-		totalCycles += (*it)->userCycles() + (*it)->kernelCycles();
+	// calc with to the process-command
+	size_t width2cmd = 49 + maxPid + maxPmem + maxShmem + maxSmem + maxInput + maxOutput;
+	// get console-size
+	sVTSize consSize;
+	if(recvMsgData(STDIN_FILENO,MSG_VT_GETSIZE,&consSize,sizeof(sVTSize)) < 0)
+		error("Unable to determine screensize");
 
 	// print processes (and threads)
 	vector<process*>::const_iterator end = procs.begin() + numProcs;
@@ -174,13 +190,18 @@ int main(int argc,char **argv) {
 		cyclePercent = (float)(100. / (totalCycles / (double)procCycles));
 		userPercent = (int)(100. / (procCycles / (double)p->userCycles()));
 		kernelPercent = (int)(100. / (procCycles / (double)p->kernelCycles()));
-		cout.format("%*u   %*u %*uK  %*uK %*uK %*uK -     %4.1f%% (%3d%%,%3d%%)   %s\n",
+		size_t cmdwidth = min(consSize.width - width2cmd,p->command().length());
+		string cmd = p->command().substr(0,cmdwidth);
+		cout.format("%*u   %*u %*uK  %*uK %*uK %*uK %*uK %*uK -     %4.1f%% (%3d%%,%3d%%)   %s\n",
 				maxPid,p->pid(),maxPpid,p->ppid(),
 				maxPmem,p->ownFrames() * 4,
 				maxShmem,p->sharedFrames() * 4,
 				maxVmem,p->pages() * 4,
 				maxSmem,p->swapped() * 4,
-				cyclePercent,userPercent,kernelPercent,p->command().c_str());
+				maxInput,p->input() / 1024,
+				maxOutput,p->output() / 1024,
+				cyclePercent,userPercent,kernelPercent,
+				cmd.c_str());
 
 		if(printThreads) {
 			const vector<thread*>& threads = p->threads();
@@ -190,10 +211,12 @@ int main(int argc,char **argv) {
 				float tcyclePercent = (float)(100. / (totalCycles / (double)threadCycles));
 				int tuserPercent = (int)(100. / (threadCycles / (double)t->userCycles()));
 				int tkernelPercent = (int)(100. / (threadCycles / (double)t->kernelCycles()));
-				cout.format("  %c\xC4%*s%*d%*s%s  %4.1f%% (%3d%%,%3d%%)\n",
+				cout.format("  %c\xC4%*s%*d%*s%*uK %*uK %s  %4.1f%% (%3d%%,%3d%%)\n",
 						(tit + 1 != threads.end()) ? 0xC3 : 0xC0,
 						maxPid - 3,"",maxPpid,t->tid(),
 						12 + maxPmem + maxShmem + maxVmem + maxSmem,"",
+						maxInput,t->input() / 1024,
+						maxOutput,t->output() / 1024,
 						states[t->state()],tcyclePercent,tuserPercent,tkernelPercent);
 			}
 		}

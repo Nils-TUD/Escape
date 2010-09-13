@@ -726,8 +726,8 @@ void proc_dbg_startProf(void) {
 		if(procs[i].pid != INVALID_PID) {
 			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
 				t = (sThread*)n->data;
-				ucycles[i] += t->ucycleCount.val64;
-				kcycles[i] += t->kcycleCount.val64;
+				ucycles[i] += t->stats.ucycleCount.val64;
+				kcycles[i] += t->stats.kcycleCount.val64;
 			}
 		}
 	}
@@ -745,8 +745,8 @@ void proc_dbg_stopProf(void) {
 			curKcycles.val64 = 0;
 			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
 				t = (sThread*)n->data;
-				curUcycles.val64 += t->ucycleCount.val64;
-				curKcycles.val64 += t->kcycleCount.val64;
+				curUcycles.val64 += t->stats.ucycleCount.val64;
+				curKcycles.val64 += t->stats.kcycleCount.val64;
 			}
 			curUcycles.val64 -= ucycles[i];
 			curKcycles.val64 -= kcycles[i];

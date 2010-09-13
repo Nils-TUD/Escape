@@ -320,7 +320,7 @@ void sysc_vm86int(sIntrptStackFrame *stack) {
 void sysc_getCycles(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
 	uLongLong cycles;
-	cycles.val64 = t->kcycleCount.val64 + t->ucycleCount.val64;
+	cycles.val64 = t->stats.kcycleCount.val64 + t->stats.ucycleCount.val64;
 	SYSC_RET1(stack,cycles.val32.lower);
 	SYSC_RET2(stack,cycles.val32.upper);
 }

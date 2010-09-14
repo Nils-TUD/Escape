@@ -424,7 +424,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 		/* TODO */
 		u32 neededFrms = 0;/*paging_countFramesForMap(t->ustackBegin - t->ustackPages * PAGE_SIZE,
 				INITIAL_STACK_PAGES);*/
-		if(mm_getFreeFrmCount(MM_DEF) < 1 + neededFrms)
+		if(mm_getFreeFrames(MM_DEF) < 1 + neededFrms)
 			goto errThread;
 
 		/* add a new stack-region */
@@ -433,7 +433,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 		if(t->stackRegion < 0)
 			goto errThread;
 		/* add kernel-stack */
-		*stackFrame = t->kstackFrame = mm_allocateFrame(MM_DEF);
+		*stackFrame = t->kstackFrame = mm_allocate();
 		p->ownFrames++;
 		/* add a new tls-region, if its present in the src-thread */
 		t->tlsRegion = -1;
@@ -473,7 +473,7 @@ errClone:
 		sig_removeHandlerFor(t->tid);
 errStack:
 	if(!cloneProc) {
-		mm_freeFrame(t->kstackFrame,MM_DEF);
+		mm_free(t->kstackFrame);
 		p->ownFrames--;
 		vmm_remove(p,t->stackRegion);
 	}
@@ -513,7 +513,7 @@ void thread_kill(sThread *t) {
 		t->stackRegion = -1;
 	}
 	/* free kernel-stack */
-	mm_freeFrame(t->kstackFrame,MM_DEF);
+	mm_free(t->kstackFrame);
 	t->proc->ownFrames--;
 
 	/* release file-descriptors */

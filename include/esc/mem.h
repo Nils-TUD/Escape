@@ -39,7 +39,7 @@ typedef struct {
 #define REG_DATA			2
 #define REG_STACK			3
 #define REG_SHM				4
-#define REG_PHYS			5
+#define REG_DEVICE			5
 #define REG_TLS				6
 #define REG_SHLIBTEXT		7
 #define REG_SHLIBDATA		8
@@ -86,9 +86,19 @@ s32 setRegProt(u32 addr,u8 prot);
  *
  * @param phys the physical start-address to map
  * @param count the number of bytes to map
- * @return the start-address or NULL if an error occurred
+ * @return the virtual address where it has been mapped or NULL if an error occurred
  */
 void *mapPhysical(u32 phys,u32 count) A_CHECKRET;
+
+/**
+ * Allocates <count> bytes contiguous physical memory, <align>-bytes aligned.
+ *
+ * @param phys will be set to the chosen physical address
+ * @param count the byte-count
+ * @param aligh the alignment (in bytes)
+ * @return the virtual address where it has been mapped or NULL if an error occurred
+ */
+void *allocPhysical(u32 *phys,u32 count,u32 align) A_CHECKRET;
 
 /**
  * Creates a shared-memory region

@@ -23,8 +23,34 @@
 #include <sys/common.h>
 #include <sys/multiboot.h>
 
-#define DEBUG_CHECK_DUPFREE		0
-#define DEBUG_FRAME_USAGE		0
+/**
+ * Physical memory layout:
+ * 0x00000000: +-----------------------------------+   -----
+ *             |                                   |     |
+ *             |                VM86               |  unmanaged
+ *             |                                   |     |
+ * 0x00100000: +-----------------------------------+   -----
+ *             |                                   |     |
+ *             |          kernel code+data         |     |
+ *             |                                   |     |
+ *             +-----------------------------------+     |
+ *             |         multiboot-modules         |     |
+ *             +-----------------------------------+
+ *             |              MM-stack             |  bitmap managed (6 MiB)
+ *             +-----------------------------------+
+ *             |                                   |     |
+ *             |                                   |     |
+ *             |                ...                |     |
+ *             |                                   |     |
+ *             |                                   |     |
+ * 0x00700000: +-----------------------------------+   -----
+ *             |                                   |     |
+ *             |                                   |
+ *             |                ...                |  stack managed (remaining)
+ *             |                                   |
+ *             |                                   |     |
+ * 0xFFFFFFFF: +-----------------------------------+   -----
+ */
 
 /* the physical start-address of the kernel-area */
 #define KERNEL_AREA_P_ADDR		0x0
@@ -38,7 +64,7 @@
 #define BYTES_2_PAGES(b)		(((u32)(b) + (PAGE_SIZE - 1)) >> PAGE_SIZE_SHIFT)
 
 /* set values to support bit-masks of the types */
-typedef enum {MM_DMA = 1,MM_DEF = 2} eMemType;
+typedef enum {MM_CONT = 1,MM_DEF = 2} eMemType;
 
 /**
  * Initializes the memory-management
@@ -55,59 +81,52 @@ u32 mm_getStackSize(void);
 /**
  * Counts the number of free frames. This is primarly intended for debugging!
  *
- * @param types a bit-mask with all types (MM_DMA,MM_DEF) to use for counting
+ * @param types a bit-mask with all types (MM_CONT,MM_DEF) to use for counting
  * @return the number of free frames
  */
-u32 mm_getFreeFrmCount(u32 types);
+u32 mm_getFreeFrames(u32 types);
 
 /**
- * A convenience-method to allocate multiple frames. Simply calls <count> times
- * mm_allocateFrame(<type>) and stores the frames in <frames>.
+ * Allocates <count> contiguous frames from the MM-bitmap
  *
- * @param type the frame-type: MM_DMA or MM_DEF
- * @param frames the array for <count> frames
- * @param count the number of frames you want to get
+ * @param count the number of frames
+ * @param align the alignment of the memory (in pages)
+ * @return the first allocated frame or negative if an error occurred
  */
-void mm_allocateFrames(eMemType type,u32 *frames,u32 count);
+s32 mm_allocateContiguous(u32 count,u32 align);
 
 /**
- * Allocates a frame of the given type and returns the frame-number
+ * Free's <count> contiguous frames, starting at <first> in the MM-bitmap
+ *
+ * @param first the first frame-number
+ * @param count the number of frames
+ */
+void mm_freeContiguous(u32 first,u32 count);
+
+/**
+ * Allocates a frame and returns the frame-number
  *
  * @panic if there is no frame left anymore
- *
- * @param type the frame-type: MM_DMA or MM_DEF
  * @return the frame-number
  */
-u32 mm_allocateFrame(eMemType type);
+u32 mm_allocate(void);
 
 /**
- * A convenience-method to free multiple frames. Simply calls <count> times
- * mm_freeFrame(<frame>,<type>).
- *
- * @param type the frame-type: MM_DMA or MM_DEF
- * @param frames the array with <count> frames
- * @param count the number of frames you want to free
- */
-void mm_freeFrames(eMemType type,u32 *frames,u32 count);
-
-/**
- * Frees the given frame of the given type
+ * Frees the given frame. Note that you can free frames allocated with mm_allocate() and
+ * mm_allocateContiguous() with this function!
  *
  * @param frame the frame-number
- * @param type the frame-type: MM_DMA or MM_DEF
  */
-void mm_freeFrame(u32 frame,eMemType type);
+void mm_free(u32 frame);
 
 #if DEBUGGING
 
-#if DEBUG_FRAME_USAGE
-void mm_dbg_printFrameUsage(void);
-#endif
-
 /**
  * Prints all free frames
+ *
+ * @param types a bit-mask with all types (MM_CONT,MM_DEF) to use for counting
  */
-void mm_dbg_printFreeFrames(void);
+void mm_dbg_printFreeFrames(u32 types);
 
 #endif
 

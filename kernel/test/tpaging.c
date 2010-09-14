@@ -64,7 +64,7 @@ static void test_paging_foreign(void) {
 	test_assertInt(proc_clone(pid,false),0);
 	child = proc_getByPid(pid);
 
-	oldFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
+	oldFF = mm_getFreeFrames(MM_CONT | MM_DEF);
 	test_caseStart("Mapping %d pages to %#08x into pdir %#x",3,0,child->pagedir);
 	stats = paging_mapTo(child->pagedir,0,NULL,3,PG_PRESENT | PG_WRITABLE);
 	test_assertUInt(stats.frames,3);
@@ -72,13 +72,13 @@ static void test_paging_foreign(void) {
 	stats = paging_unmapFrom(child->pagedir,0,3,true);
 	test_assertUInt(stats.frames,3);
 	test_assertUInt(stats.ptables,1);
-	newFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
+	newFF = mm_getFreeFrames(MM_CONT | MM_DEF);
 	if(oldFF != newFF)
 		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
 	else
 		test_caseSucceded();
 
-	oldFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
+	oldFF = mm_getFreeFrames(MM_CONT | MM_DEF);
 	test_caseStart("Mapping %d pages to %#08x into pdir %#x, separatly",6,0x40000000,child->pagedir);
 	stats = paging_mapTo(child->pagedir,0x40000000,NULL,3,PG_PRESENT | PG_WRITABLE);
 	test_assertUInt(stats.frames,3);
@@ -92,7 +92,7 @@ static void test_paging_foreign(void) {
 	stats = paging_unmapFrom(child->pagedir,0x40001000,5,true);
 	test_assertUInt(stats.frames,5);
 	test_assertUInt(stats.ptables,1);
-	newFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
+	newFF = mm_getFreeFrames(MM_CONT | MM_DEF);
 	if(oldFF != newFF)
 		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
 	else
@@ -106,14 +106,14 @@ static bool test_paging_cycle(u32 addr,u32 count) {
 	test_caseStart("Mapping %d pages to 0x%08x",count,addr);
 
 	oldPC = paging_dbg_getPageCount();
-	oldFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
+	oldFF = mm_getFreeFrames(MM_CONT | MM_DEF);
 
 	test_paging_allocate(addr,count);
 	test_paging_access(addr,count);
 	test_paging_free(addr,count);
 
 	newPC = paging_dbg_getPageCount();
-	newFF = mm_getFreeFrmCount(MM_DMA | MM_DEF);
+	newFF = mm_getFreeFrames(MM_CONT | MM_DEF);
 
 	if(oldFF != newFF || oldPC != newPC) {
 		test_caseFailed("oldPC=%d, oldFF=%d, newPC=%d, newFF=%d",oldPC,oldFF,newPC,newFF);
@@ -126,8 +126,7 @@ static bool test_paging_cycle(u32 addr,u32 count) {
 }
 
 static void test_paging_allocate(u32 addr,u32 count) {
-	mm_allocateFrames(MM_DEF,frames,count);
-	paging_map(addr,frames,count,PG_PRESENT | PG_WRITABLE);
+	paging_map(addr,NULL,count,PG_PRESENT | PG_WRITABLE);
 }
 
 static void test_paging_access(u32 addr,u32 count) {

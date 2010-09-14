@@ -43,11 +43,11 @@ static u32 heapAfter;
 
 static void test_init(void) {
 	heapBefore = kheap_getFreeMem();
-	framesBefore = mm_getFreeFrmCount(MM_DEF);
+	framesBefore = mm_getFreeFrames(MM_DEF);
 }
 static void test_finish(void) {
 	heapAfter = kheap_getFreeMem();
-	framesAfter = mm_getFreeFrmCount(MM_DEF);
+	framesAfter = mm_getFreeFrames(MM_DEF);
 	test_assertUInt(heapAfter,heapBefore);
 	test_assertUInt(framesAfter,framesBefore);
 }

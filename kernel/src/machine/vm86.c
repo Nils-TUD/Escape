@@ -379,7 +379,7 @@ start:
 	/* if there is not enough mem, stop here */
 	/* Note that we can't determine that before because the amount of physmem may change in the
 	 * meanwhile */
-	if(mm_getFreeFrmCount(MM_DEF) < frameCnt) {
+	if(mm_getFreeFrames(MM_DEF) < frameCnt) {
 		vm86Res = ERR_NOT_ENOUGH_MEM;
 		/* make caller ready, block us and do a switch */
 		thread_setReady(caller);
@@ -395,7 +395,7 @@ start:
 			u32 start = info->areas[i].data.direct.dst / PAGE_SIZE;
 			u32 pages = BYTES_2_PAGES(info->areas[i].data.direct.size);
 			for(j = 0; j < pages; j++)
-				frameNos[start + j] = mm_allocateFrame(MM_DEF);
+				frameNos[start + j] = mm_allocate();
 			paging_map(info->areas[i].data.direct.dst,frameNos + start,pages,PG_PRESENT | PG_WRITABLE);
 		}
 	}

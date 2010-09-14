@@ -298,7 +298,7 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buf
 	/* kernel-page-tables are shared */
 	kptbls = (KERNEL_STACK - (KERNEL_AREA_V_ADDR + (PAGE_SIZE * PT_ENTRY_COUNT))) / PT_ENTRY_COUNT;
 
-	free = mm_getFreeFrmCount(MM_DEF | MM_DMA) << PAGE_SIZE_SHIFT;
+	free = mm_getFreeFrames(MM_DEF | MM_CONT) << PAGE_SIZE_SHIFT;
 	total = mboot_getUsableMemCount();
 	ksize = mboot_getKernelSize();
 	msize = mboot_getModuleSize();

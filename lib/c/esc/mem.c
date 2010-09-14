@@ -22,7 +22,7 @@
 
 /* the assembler-routine */
 extern u32 _changeSize(s32 count);
-extern u32 _mapPhysical(u32 phys,u32 count);
+extern u32 _mapPhysical(u32 *phys,u32 count,u32 align);
 extern u32 _addRegion(sBinDesc *bin,u32 binOffset,u32 byteCount,u32 loadCount,u8 type);
 extern u32 _createSharedMem(const char *name,u32 byteCount);
 extern u32 _joinSharedMem(const char *name);
@@ -30,13 +30,22 @@ extern u32 _joinSharedMem(const char *name);
 /* just a convenience for the user because the return-value is negative if an error occurred */
 void *changeSize(s32 count) {
 	u32 addr = _changeSize(count);
+	/* FIXME workaround until we have TLS */
 	if((s32)addr >= -200 && (s32)addr < 0)
 		return NULL;
 	return (void*)addr;
 }
 
 void *mapPhysical(u32 phys,u32 count) {
-	u32 addr = _mapPhysical(phys,count);
+	u32 addr = _mapPhysical(&phys,count,1);
+	/* FIXME workaround until we have TLS */
+	if((s32)addr >= -200 && (s32)addr < 0)
+		return NULL;
+	return (void*)addr;
+}
+
+void *allocPhysical(u32 *phys,u32 count,u32 align) {
+	u32 addr = _mapPhysical(phys,count,align);
 	/* FIXME workaround until we have TLS */
 	if((s32)addr >= -200 && (s32)addr < 0)
 		return NULL;

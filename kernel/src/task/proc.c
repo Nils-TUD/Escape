@@ -100,7 +100,7 @@ void proc_init(void) {
 
 	paging_exchangePDir(p->pagedir);
 	/* setup kernel-stack for us */
-	stackFrame = mm_allocateFrame(MM_DEF);
+	stackFrame = mm_allocate();
 	paging_map(KERNEL_STACK,&stackFrame,1,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 
 	/* set kernel-stack for first thread */

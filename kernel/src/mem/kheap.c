@@ -111,7 +111,7 @@ static void kheap_init(void) {
 	for(i = 0; i < AREA_PAGE_COUNT; i++)
 		kheap_loadNewAreas();
 
-	freeMem = mm_getFreeFrmCount(MM_DEF);
+	freeMem = mm_getFreeFrames(MM_DEF);
 	if(freeMem * PAGE_SIZE < KERNEL_HEAP_SIZE)
 		freeMem = (freeMem / 2) * PAGE_SIZE;
 	else
@@ -488,8 +488,7 @@ void *_kheap_realloc(void *addr,u32 size) {
 
 static bool kheap_loadNewSpace(u32 size) {
 	sMemArea *area;
-	u32 addr,frmBuf[8];
-	s32 count,remaining;
+	s32 count;
 
 	if(initialized)
 		return false;
@@ -510,16 +509,8 @@ static bool kheap_loadNewSpace(u32 size) {
 	count = BYTES_2_PAGES(size);
 	if((pages + count) * PAGE_SIZE > KERNEL_HEAP_SIZE)
 		return false;
-	/* don't use NULL for paging_map here to prevent swapping */
-	remaining = count;
-	addr = KERNEL_HEAP_START + pages * PAGE_SIZE;
-	while(remaining > 0) {
-		u32 amount = MIN((s32)ARRAY_SIZE(frmBuf),remaining);
-		mm_allocateFrames(MM_DEF,frmBuf,amount);
-		paging_map(addr,frmBuf,amount,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL);
-		addr += amount * PAGE_SIZE;
-		remaining -= amount;
-	}
+	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,NULL,count,
+			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL);
 
 	/* take one area from the freelist and put the memory in it */
 	area = freeList;
@@ -546,7 +537,7 @@ static bool kheap_loadNewAreas(void) {
 
 	/* allocate one page for area-structs */
 	/* don't use NULL for paging_map here to prevent swapping */
-	frameNo = mm_allocateFrame(MM_DEF);
+	frameNo = mm_allocate();
 	paging_map(KERNEL_HEAP_START + pages * PAGE_SIZE,&frameNo,1,
 			PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR | PG_GLOBAL);
 

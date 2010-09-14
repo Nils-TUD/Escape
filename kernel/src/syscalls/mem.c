@@ -73,7 +73,7 @@ void sysc_addRegion(sIntrptStackFrame *stack) {
 		case REG_SHLIBDATA:
 		case REG_SHLIBTEXT:
 		case REG_SHM:
-		case REG_PHYS:
+		case REG_DEVICE:
 		case REG_TLS:
 			/* the user can't create a new stack here */
 			break;
@@ -123,19 +123,25 @@ void sysc_setRegProt(sIntrptStackFrame *stack) {
 }
 
 void sysc_mapPhysical(sIntrptStackFrame *stack) {
-	u32 phys = SYSC_ARG1(stack);
+	u32 *phys = (u32*)SYSC_ARG1(stack);
 	u32 bytes = SYSC_ARG2(stack);
+	u32 align = SYSC_ARG3(stack);
 	u32 pages = BYTES_2_PAGES(bytes);
 	sProc *p = proc_getRunning();
 	u32 addr;
 
+	/* check phys */
+	if(!paging_isRangeUserReadable((u32)phys,sizeof(u32)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
 	/* trying to map memory in kernel area? */
 	/* TODO is this ok? */
 	/* TODO I think we should check here wether it is in a used-region, according to multiboot-memmap */
-	if(OVERLAPS(phys,phys + pages,KERNEL_P_ADDR,KERNEL_P_ADDR + PAGE_SIZE * PT_ENTRY_COUNT))
+	if(*phys &&
+			OVERLAPS(*phys,*phys + pages,KERNEL_P_ADDR,KERNEL_P_ADDR + PAGE_SIZE * PT_ENTRY_COUNT))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	addr = vmm_addPhys(p,phys,bytes);
+	addr = vmm_addPhys(p,phys,bytes,align);
 	if(addr == 0)
 		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	SYSC_RET1(stack,addr);

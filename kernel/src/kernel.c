@@ -167,8 +167,8 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 #if DEBUGGING
-	vid_printf("%d free frames (%d KiB)\n",mm_getFreeFrmCount(MM_DMA | MM_DEF),
-			mm_getFreeFrmCount(MM_DMA | MM_DEF) * PAGE_SIZE / K);
+	vid_printf("%d free frames (%d KiB)\n",mm_getFreeFrames(MM_CONT | MM_DEF),
+			mm_getFreeFrames(MM_CONT | MM_DEF) * PAGE_SIZE / K);
 #endif
 
 #if 1

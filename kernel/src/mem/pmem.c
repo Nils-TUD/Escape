@@ -24,9 +24,9 @@
 #include <sys/video.h>
 #include <assert.h>
 #include <string.h>
+#include <errors.h>
 
-#define L16M_PAGE_COUNT			((16 * M - KERNEL_P_ADDR) / PAGE_SIZE)
-#define L16M_CACHE_SIZE			16
+#define BITMAP_PAGE_COUNT			((6 * M - KERNEL_P_ADDR) / PAGE_SIZE)
 
 /**
  * Marks the given range as used or not used
@@ -35,7 +35,7 @@
  * @param to the end-address
  * @param used whether the frame is used
  */
-static void mm_markAddrRangeUsed(u32 from,u32 to,bool used);
+static void mm_markRangeUsed(u32 from,u32 to,bool used);
 
 /**
  * Marks the given frame-number as used or not used
@@ -43,239 +43,146 @@ static void mm_markAddrRangeUsed(u32 from,u32 to,bool used);
  * @param frame the frame-number
  * @param used whether the frame is used
  */
-static void mm_markFrameUsed(u32 frame,bool used);
-
-#if DEBUG_CHECK_DUPFREE
-
-/**
- * Checks whether the given frame of given type is free
- *
- * @param type the type: MM_DEF or MM_DMA
- * @param frame the frame-number
- * @return true if it is free
- */
-static bool mm_dbg_isFrameFree(eMemType type,u32 frame);
-
-#endif
+static void mm_markUsed(u32 frame,bool used);
 
 /* start-address of the kernel */
 extern u32 KernelStart;
 
-/* the bitmap for the frames of the lower 16MB
+/* the bitmap for the frames of the lowest few MB
  * 0 = free, 1 = used
  */
-static u32 l16mBitmap[L16M_PAGE_COUNT / 32];
-static u32 l16mCache[L16M_CACHE_SIZE];
-static u32 l16mCachePos = 0;
-static u32 l16mSearchPos = 0;
+static u32 bitmap[BITMAP_PAGE_COUNT / 32];
+static u32 bitmapBegin;
+static u32 freeCont;
 
-/* We use a stack for the memory at 16MB .. MAX.
+/* We use a stack for the remaining memory
  * TODO Currently we don't free the frames for the stack
  */
 
-/* the number of frames we need for our stack */
-static u32 u16mStackFrameCount = 0;
-static u32 u16mStackStart = 0;
-static u32 *u16mStack = NULL;
-
-#if DEBUG_FRAME_USAGE
-typedef struct {
-	bool free;
-	sProc *p;
-	u32 frame;
-} sFrameUsage;
-
-#define FRAME_USAGE_COUNT 2048
-
-static u32 frameUsagePos = 0;
-static sFrameUsage frameUsages[FRAME_USAGE_COUNT];
-#endif
+static u32 stackSize = 0;
+static u32 stackBegin = 0;
+static u32 *stack = NULL;
 
 void mm_init(const sMultiBoot *mb) {
 	sMemMap *mmap;
-	u32 memSize = mb->memUpper * K - KERNEL_P_ADDR;
-	u32 u16mPageCount = (memSize / PAGE_SIZE) - L16M_PAGE_COUNT;
-
-	/* init stack */
-	u16mStackFrameCount = (u16mPageCount + (PAGE_SIZE - 1) / sizeof(u32)) / (PAGE_SIZE / sizeof(u32));
+	u32 memSize,defPageCount;
 
 	/* put the MM-stack behind the last multiboot-module */
 	if(mb->modsCount == 0)
 		util_panic("No multiboot-modules found");
-	u16mStack = (u32*)(mb->modsAddr[mb->modsCount - 1].modEnd);
-	u16mStackStart = (u32)u16mStack;
+	stack = (u32*)(mb->modsAddr[mb->modsCount - 1].modEnd);
+	stackBegin = (u32)stack;
 
-	/* at first we mark all frames as used in the bitmap for 0..16M */
-	memset(l16mBitmap,0xFF,L16M_PAGE_COUNT / 8);
+	/* calculate mm-stack-size */
+	memSize = mb->memUpper * K;
+	defPageCount = (memSize / PAGE_SIZE) - (BITMAP_PAGE_COUNT + KERNEL_P_ADDR / PAGE_SIZE);
+	stackSize = (defPageCount + (PAGE_SIZE - 1) / sizeof(u32)) / (PAGE_SIZE / sizeof(u32));
+
+	/* the first usable frame in the bitmap is behind the mm-stack */
+	bitmapBegin = (stackBegin - KERNEL_P_ADDR) + (stackSize + 1) * PAGE_SIZE;
+	bitmapBegin &= ~KERNEL_AREA_V_ADDR;
+	bitmapBegin /= PAGE_SIZE;
+
+	/* at first we mark all frames as used in the bitmap */
+	memset(bitmap,0xFF,BITMAP_PAGE_COUNT / 8);
+	freeCont = 0;
 
 	/* now walk through the memory-map and mark all free areas as free */
-	for(mmap = mb->mmapAddr;
-		(u32)mmap < (u32)mb->mmapAddr + mb->mmapLength;
-		mmap = (sMemMap*)((u32)mmap + mmap->size + sizeof(mmap->size))) {
-		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE) {
-			mm_markAddrRangeUsed(mmap->baseAddr,mmap->baseAddr + mmap->length,false);
-		}
+	for(mmap = mb->mmapAddr; (u32)mmap < (u32)mb->mmapAddr + mb->mmapLength;
+			mmap = (sMemMap*)((u32)mmap + mmap->size + sizeof(mmap->size))) {
+		if(mmap != NULL && mmap->type == MMAP_TYPE_AVAILABLE)
+			mm_markRangeUsed(mmap->baseAddr,mmap->baseAddr + mmap->length,false);
 	}
-
-	/* mark the first MiB as used because we need it for VM86 */
-	mm_markAddrRangeUsed(0x00000000,KERNEL_AREA_P_ADDR,true);
 
 	/* mark the kernel-code and data (including stack for free frames) as used */
 	/* Note that we have to remove the 0xC0000000 since we want to work with physical addresses */
 	/* TODO we can use a little bit more because the kernel does not use the last few frames */
-	mm_markAddrRangeUsed((u32)&KernelStart & ~KERNEL_AREA_V_ADDR,
-			(u32)((u16mStackStart & ~KERNEL_AREA_V_ADDR) + u16mStackFrameCount * PAGE_SIZE),true);
+	mm_markRangeUsed((u32)&KernelStart & ~KERNEL_AREA_V_ADDR,
+			(u32)((stackBegin & ~KERNEL_AREA_V_ADDR) + stackSize * PAGE_SIZE),true);
 }
 
 u32 mm_getStackSize(void) {
-	return u16mStackFrameCount * PAGE_SIZE;
+	return stackSize * PAGE_SIZE;
 }
 
-/* TODO may be we should store and manipulate the current number of free frames? */
-u32 mm_getFreeFrmCount(u32 types) {
+u32 mm_getFreeFrames(u32 types) {
 	u32 count = 0;
-
-	vassert(types & (MM_DMA | MM_DEF),"types is empty");
-	vassert(!(types & ~(MM_DMA | MM_DEF)),"types contains invalid bits");
-
-	if(types & MM_DMA) {
-		/* count < 16MB frames */
-		u32 i;
-		for(i = 0; i < L16M_PAGE_COUNT; i++) {
-			if((l16mBitmap[i >> 5] & (1 << (i & 0x1f))) == 0)
-				count++;
-		}
-	}
-	if(types & MM_DEF) {
-		/* count > 16MB frames */
-		count += ((u32)u16mStack - u16mStackStart) / sizeof(u32*);
-	}
+	if(types & MM_CONT)
+		count += freeCont;
+	if(types & MM_DEF)
+		count += ((u32)stack - stackBegin) / sizeof(u32*);
 	return count;
 }
 
-void mm_allocateFrames(eMemType type,u32 *frames,u32 count) {
-	vassert(type == MM_DEF || type == MM_DMA,"Invalid type");
-	vassert(frames != NULL,"frames == NULL");
-
-	while(count-- > 0) {
-		*(frames++) = mm_allocateFrame(type);
-	}
-}
-
-u32 mm_allocateFrame(eMemType type) {
-	u32 bmIndex;
-
-	vassert(type == MM_DEF || type == MM_DMA,"Invalid type");
-
-	/* TODO what do we need for DMA? */
-	if(type == MM_DMA) {
-		/* is there a frame in the cache? */
-		if(l16mCachePos > 0) {
-			mm_markFrameUsed(l16mCache[l16mCachePos - 1],true);
-			return l16mCache[--l16mCachePos];
-		}
-
-		/* fill the cache */
-		for(; l16mSearchPos < L16M_PAGE_COUNT; l16mSearchPos++) {
-			bmIndex = l16mSearchPos >> 5;
-			if((l16mBitmap[bmIndex] & (1 << (l16mSearchPos & 0x1f))) == 0) {
-				l16mCache[l16mCachePos++] = l16mSearchPos;
-				if(l16mCachePos >= L16M_CACHE_SIZE) {
-					break;
-				}
-			}
-		}
-
-		/* no frame found? */
-		if(l16mCachePos == 0) {
-			util_panic("Not enough memory :(");
-		}
-
-		mm_markFrameUsed(l16mCache[l16mCachePos - 1],true);
-		return l16mCache[--l16mCachePos];
-	}
-	else {
-		/* no more frames free? */
-		if((u32)u16mStack == u16mStackStart) {
-			util_panic("Not enough memory :(");
-		}
-
-#if DEBUG_FRAME_USAGE
-		frameUsages[frameUsagePos].frame = *(u16mStack - 1);
-		frameUsages[frameUsagePos].p = proc_getRunning();
-		frameUsages[frameUsagePos].free = false;
-		frameUsagePos++;
-		vid_printf("a: %x of %d\n",*(u16mStack - 1),proc_getRunning()->pid);
-		util_printStackTrace(util_getKernelStackTrace());
-#endif
-		return *(--u16mStack);
-	}
-
-	return 0;
-}
-
-void mm_freeFrames(eMemType type,u32 *frames,u32 count) {
-	vassert(type == MM_DEF || type == MM_DMA,"Invalid type");
-	vassert(frames != NULL,"frames == NULL");
-
-	while(count-- > 0) {
-		mm_freeFrame(*(frames++),type);
-	}
-}
-
-void mm_freeFrame(u32 frame,eMemType type) {
-	u32 *bitmapEntry;
-
-#if DEBUG_CHECK_DUPFREE
-	vassert(!mm_dbg_isFrameFree(type,frame),"Frame 0x%x (type %d) is already free",frame,type);
-#endif
-
-	/* TODO what do we need for DMA? */
-	if(type == MM_DMA) {
-		bitmapEntry = (u32*)(l16mBitmap + (frame >> 5));
-		*bitmapEntry = *bitmapEntry & ~(1 << (frame & 0x1f));
-		/* remember free frame in cache */
-		if(l16mCachePos < L16M_CACHE_SIZE) {
-			l16mCache[l16mCachePos++] = frame;
-		}
-	}
-	else {
-#if DEBUG_FRAME_USAGE
-		u32 i;
-		for(i = 0;i < FRAME_USAGE_COUNT;i++) {
-			if(frameUsages[i].frame == frame && !frameUsages[i].free) {
-				frameUsages[i].free = true;
+s32 mm_allocateContiguous(u32 count,u32 align) {
+	u32 i,c = 0;
+	/* start at bitmapBegin. the stuff before that is always occupied; but align it as specified */
+	i = (bitmapBegin + align - 1) & ~(align - 1);
+	for(; i < BITMAP_PAGE_COUNT; ) {
+		/* walk forward until we find an occupied frame */
+		u32 j = i;
+		for(c = 0; c < count; j++,c++) {
+			u32 dword = bitmap[j / 32];
+			u32 bit = 31 - (j % 32);
+			if(dword & (1 << bit))
 				break;
-			}
 		}
-		vid_printf("f: %x\n",frame);
-#endif
-		*(u16mStack++) = frame;
+		/* found enough? */
+		if(c == count)
+			break;
+		/* ok, to next aligned frame */
+		i = (j + 1 + align - 1) & ~(align - 1);
 	}
+
+	if(c != count)
+		return ERR_NOT_ENOUGH_MEM;
+
+	/* add the phys-address of the kernel, since our bitmap starts there */
+	i += KERNEL_P_ADDR / PAGE_SIZE;
+	mm_markRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
+	return i;
 }
 
-static void mm_markAddrRangeUsed(u32 from,u32 to,bool used) {
+void mm_freeContiguous(u32 first,u32 count) {
+	mm_markRangeUsed(first * PAGE_SIZE,(first + count) * PAGE_SIZE,false);
+}
+
+u32 mm_allocate(void) {
+	/* no more frames free? */
+	if((u32)stack == stackBegin)
+		util_panic("Not enough memory :(");
+	return *(--stack);
+}
+
+void mm_free(u32 frame) {
+	mm_markUsed(frame,false);
+}
+
+static void mm_markRangeUsed(u32 from,u32 to,bool used) {
 	/* ensure that we start at a page-start */
-	from &= ~PAGE_SIZE;
-	for(; from < to; from += PAGE_SIZE) {
-		mm_markFrameUsed(from >> PAGE_SIZE_SHIFT,used);
-	}
+	from &= ~(PAGE_SIZE - 1);
+	for(; from < to; from += PAGE_SIZE)
+		mm_markUsed(from >> PAGE_SIZE_SHIFT,used);
 }
 
-static void mm_markFrameUsed(u32 frame,bool used) {
-	u32 *bitmapEntry;
-	/* we use a bitmap for the lower 16MB */
-	if(frame < L16M_PAGE_COUNT) {
-		bitmapEntry = (u32*)(l16mBitmap + (frame >> 5));
+static void mm_markUsed(u32 frame,bool used) {
+	/* ignore the stuff before; we don't manage it */
+	if(frame < KERNEL_P_ADDR / PAGE_SIZE)
+		return;
+	/* we use a bitmap for the lowest few MB */
+	if(frame < (KERNEL_P_ADDR / PAGE_SIZE) + BITMAP_PAGE_COUNT) {
+		u32 bit,*bitmapEntry;
+		/* normalize, since our bitmap starts at the kernel-beginning */
+		frame -= KERNEL_P_ADDR / PAGE_SIZE;
+		bitmapEntry = (u32*)(bitmap + (frame / 32));
+		bit = 31 - (frame % 32);
 		if(used) {
-			*bitmapEntry = *bitmapEntry | 1 << (frame & 0x1f);
+			*bitmapEntry = *bitmapEntry | (1 << bit);
+			freeCont--;
 		}
 		else {
-			*bitmapEntry = *bitmapEntry & ~(1 << (frame & 0x1f));
-			/* remember free frame in cache */
-			if(l16mCachePos < L16M_CACHE_SIZE) {
-				l16mCache[l16mCachePos++] = frame;
-			}
+			*bitmapEntry = *bitmapEntry & ~(1 << bit);
+			freeCont++;
 		}
 	}
 	/* use a stack for the remaining memory */
@@ -283,11 +190,10 @@ static void mm_markFrameUsed(u32 frame,bool used) {
 		/* we don't mark frames as used since this function is just used for initializing the
 		 * memory-management */
 		if(!used) {
-			if((u32)u16mStack >= KERNEL_HEAP_START)
+			if((u32)stack >= KERNEL_HEAP_START)
 				util_panic("MM-Stack too small for physical memory!");
-			/* Note that we assume that the kernel is not in the lower 16MB! */
-			*u16mStack = frame;
-			u16mStack++;
+			*stack = frame;
+			stack++;
 		}
 	}
 }
@@ -296,56 +202,23 @@ static void mm_markFrameUsed(u32 frame,bool used) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-#if DEBUG_FRAME_USAGE
-void mm_dbg_printFrameUsage(void) {
-	u32 i;
-	vid_printf("Currently used frames:\n");
-	for(i = 0; i < FRAME_USAGE_COUNT; i++) {
-		if(frameUsages[i].free == false && frameUsages[i].p)
-			vid_printf("\tframe %x used by %d\n",frameUsages[i].frame,frameUsages[i].p->pid);
-	}
-}
-#endif
-
-#if DEBUG_CHECK_DUPFREE
-static bool mm_dbg_isFrameFree(eMemType type,u32 frame) {
+void mm_dbg_printFreeFrames(u32 types) {
+	u32 i,pos = KERNEL_P_ADDR;
 	u32 *ptr;
-	if(type == MM_DEF) {
-		ptr = u16mStack - 1;
-		while((u32)ptr > u16mStackStart) {
-			if(*ptr == frame)
-				return true;
-			ptr--;
+	if(types & MM_CONT) {
+		vid_printf("Bitmap:\n");
+		for(i = 0; i < ARRAY_SIZE(bitmap); i++) {
+			vid_printf("%08x..%08x: %032b\n",pos,pos + PAGE_SIZE * 32 - 1,bitmap[i]);
+			pos += PAGE_SIZE * 32;
 		}
-		return false;
 	}
-
-	ptr = (u32*)(l16mBitmap + (frame >> 5));
-	return (*ptr & (1 << (frame & 0x1f))) == 0;
-}
-#endif
-
-void mm_dbg_printFreeFrames(void) {
-	u32 i,pos = 0;
-	u32 *ptr;
-	for(i = 0; i < ARRAY_SIZE(l16mBitmap); i++) {
-		if(l16mBitmap[i] != ~0u)
-			vid_printf("%08x..%08x: %032b\n",pos,pos + PAGE_SIZE * 32 - 1,l16mBitmap[i]);
-		pos += PAGE_SIZE * 32;
-	}
-
-	vid_printf("Free frames cache:\n");
-	for(i = 0;i < l16mCachePos; i++) {
-		vid_printf("0x%08x, ",l16mCache[i]);
-		if(i % 4 == 3)
-			vid_printf("\n");
-	}
-
-	vid_printf("Free frames > 16MB:\n");
-	for(i = 0,ptr = u16mStack - 1;(u32)ptr >= u16mStackStart; i++,ptr--) {
-		vid_printf("0x%08x, ",*ptr);
-		if(i % 4 == 3)
-			vid_printf("\n");
+	if(types & MM_DEF) {
+		vid_printf("Stack:\n");
+		for(i = 0,ptr = stack - 1;(u32)ptr >= stackBegin; i++,ptr--) {
+			vid_printf("0x%08x, ",*ptr);
+			if(i % 4 == 3)
+				vid_printf("\n");
+		}
 	}
 }
 

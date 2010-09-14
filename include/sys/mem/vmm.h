@@ -39,11 +39,12 @@
 #define REG_DATA			2
 #define REG_STACK			3
 #define REG_SHM				4
-#define REG_PHYS			5
+#define REG_DEVICE			5
 #define REG_TLS				6
 #define REG_SHLIBTEXT		7
 #define REG_SHLIBDATA		8
 #define REG_DLDATA			9
+#define REG_PHYS			10
 
 typedef struct {
 	sRegion *reg;
@@ -56,15 +57,17 @@ typedef struct {
 void vmm_init(void);
 
 /**
- * Adds a region for physical memory mapped into the virtual memory (e.g. vga text-mode).
+ * Adds a region for physical memory mapped into the virtual memory (e.g. for vga text-mode or DMA).
  * Please use this function instead of vmm_add() because this one maps the pages!
  *
  * @param p the process
- * @param phys the physical memory to map
+ * @param phys a pointer to the physical memory to map; if *phys is 0, the function allocates
+ * 	contiguous physical memory itself and stores the address in *phys
  * @param bCount the number of bytes to map
- * @return the address or 0 if failed
+ * @param align the alignment for the allocated physical-memory (just if *phys = 0)
+ * @return the virtual address or 0 if failed
  */
-u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount);
+u32 vmm_addPhys(sProc *p,u32 *phys,u32 bCount,u32 align);
 
 /**
  * Adds a region of given type to the given process. Note that you can't add regions in arbitrary

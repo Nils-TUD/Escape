@@ -52,6 +52,7 @@ typedef struct {
 	u8 subClass;
 	u8 progInterface;
 	u8 revId;
+	u32 bars[6];
 } sCPCIDevice;
 
 static sPCIDevice *pci_getDevice(sCPCIDevice *dev);
@@ -93,6 +94,14 @@ int main(void) {
 							device.progInterface,pclass ? pclass->baseDesc : "?",
 							pclass ? pclass->subDesc : "?",pclass ? pclass->progDesc : "?");
 					fprintf(f,"  type: 		%x\n",device.type);
+					if(device.type == 0x00) {
+						u32 i;
+						fprintf(f,"  bars: 		");
+						for(i = 0; i < 6; i++)
+							fprintf(f,"%08x ",device.bars[i]);
+						fprintf(f,"\n");
+					}
+					fprintf(f,"\n");
 				}
 			}
 		}
@@ -148,6 +157,11 @@ static void pci_fillDev(sCPCIDevice *dev) {
 	dev->progInterface = (val >> 8) & 0xFF;
 	val = pci_read(dev->bus,dev->dev,dev->func,0xC);
 	dev->type = (val >> 16) & 0xFF;
+	if(dev->type == 0x00) {
+		u32 i;
+		for(i = 0; i < 6; i++)
+			dev->bars[i] = pci_read(dev->bus,dev->dev,dev->func,0x10 + i * 4);
+	}
 }
 
 static u32 pci_read(u32 bus,u32 dev,u32 func,u32 offset) {

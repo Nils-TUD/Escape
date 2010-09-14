@@ -65,7 +65,7 @@ void vmm_init(void) {
 	/* nothing to do */
 }
 
-u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount) {
+u32 vmm_addPhys(sProc *p,u32 *phys,u32 bCount,u32 align) {
 	tVMRegNo reg;
 	sVMRegion *vm;
 	sAllocStats stats;
@@ -73,21 +73,47 @@ u32 vmm_addPhys(sProc *p,u32 phys,u32 bCount) {
 	u32 *frames = (u32*)kheap_alloc(sizeof(u32) * pages);
 	if(frames == NULL)
 		return 0;
-	reg = vmm_add(p,NULL,0,bCount,bCount,REG_PHYS);
+
+	/* if *phys is not set yet, we should allocate physical contiguous memory */
+	if(*phys == 0) {
+		s32 first = mm_allocateContiguous(pages,align / PAGE_SIZE);
+		if(first < 0)
+			return 0;
+		for(i = 0; i < pages; i++)
+			frames[i] = first + i;
+	}
+	/* otherwise use the specified one */
+	else {
+		for(i = 0; i < pages; i++) {
+			frames[i] = *phys / PAGE_SIZE;
+			*phys += PAGE_SIZE;
+		}
+	}
+
+	/* create region */
+	reg = vmm_add(p,NULL,0,bCount,bCount,*phys ? REG_DEVICE : REG_PHYS);
 	if(reg < 0) {
+		if(!*phys)
+			mm_freeContiguous(frames[0],pages);
 		kheap_free(frames);
 		return 0;
 	}
+
+	/* map memory */
 	vm = REG(p,reg);
-	for(i = 0; i < pages; i++) {
-		frames[i] = phys / PAGE_SIZE;
-		phys += PAGE_SIZE;
-	}
 	/* TODO we have to check somehow wether we have enough mem for the page-tables */
 	stats = paging_mapTo(p->pagedir,vm->virt,frames,pages,PG_PRESENT | PG_WRITABLE);
-	/* the page-tables are ours, the pages may be used by others, too */
-	p->ownFrames += stats.ptables;
-	p->sharedFrames += pages;
+	if(*phys) {
+		/* the page-tables are ours, the pages may be used by others, too */
+		p->ownFrames += stats.ptables;
+		p->sharedFrames += pages;
+	}
+	else {
+		/* its our own mem; store physical address for the caller */
+		p->ownFrames += stats.ptables + stats.frames;
+		*phys = frames[0] * PAGE_SIZE;
+	}
+
 	kheap_free(frames);
 	return vm->virt;
 }
@@ -128,7 +154,7 @@ tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 t
 	REG(p,rno) = vm;
 
 	/* map into process */
-	if(type != REG_PHYS) {
+	if(type != REG_DEVICE && type != REG_PHYS) {
 		sAllocStats stats;
 		u8 mapFlags = 0;
 		u32 pageCount = BYTES_2_PAGES(vm->reg->byteCount);
@@ -783,7 +809,7 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,u32 addr,u32 loadCount) {
 			!(vm->reg->pageFlags[(addr - vm->virt) / PAGE_SIZE] & PF_DEMANDLOAD))
 		goto errorFree;
 
-	frame = mm_allocateFrame(MM_DEF);
+	frame = mm_allocate();
 	mapFlags = PG_PRESENT;
 	if(vm->reg->flags & RF_WRITABLE)
 		mapFlags |= PG_WRITABLE;
@@ -961,13 +987,16 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 		case REG_SHLIBDATA:
 		case REG_DLDATA:
 		case REG_TLS:
+		case REG_DEVICE:
 		case REG_PHYS:
 		case REG_SHM:
 			*pgFlags = 0;
 			if(type == REG_TLS)
 				*flags = RF_WRITABLE | RF_TLS;
-			else if(type == REG_PHYS)
+			else if(type == REG_DEVICE)
 				*flags = RF_WRITABLE | RF_NOFREE;
+			else if(type == REG_PHYS)
+				*flags = RF_WRITABLE;
 			else if(type == REG_SHM)
 				*flags = RF_SHAREABLE | RF_WRITABLE;
 			/* Note that this assumes for the dynamic linker that everything is put one after
@@ -1022,6 +1051,7 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 		case REG_DLDATA:
 		case REG_TLS:
 		case REG_STACK:
+		case REG_DEVICE:
 		case REG_PHYS:
 		case REG_SHM:
 			*rno = vmm_findRegIndex(p,false);

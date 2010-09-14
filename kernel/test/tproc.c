@@ -45,14 +45,14 @@ static void test_init(const char *fmt,...) {
 	test_caseStartv(fmt,ap);
 	va_end(ap);
 
-	oldFF = mm_getFreeFrmCount(MM_DEF);
+	oldFF = mm_getFreeFrames(MM_DEF);
 }
 
 /**
  * Checks whether the page-count and free-frames are still the same and finishes the test-case
  */
 static void test_check(void) {
-	newFF = mm_getFreeFrmCount(MM_DEF);
+	newFF = mm_getFreeFrames(MM_DEF);
 	if(oldFF != newFF) {
 		test_caseFailed("oldFF=%d, newFF=%d",oldFF,newFF);
 	}

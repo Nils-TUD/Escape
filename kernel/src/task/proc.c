@@ -472,6 +472,10 @@ void proc_kill(sProc *p) {
 	sig_addSignal(SIG_PROC_DIED,p->pid);
 	sig_addSignalFor(p->parentPid,SIG_CHILD_DIED,p->pid);
 
+	/* free exit-state, if not already done */
+	if(p->exitState)
+		kheap_free(p->exitState);
+
 	/* remove and free */
 	hm_remove(procs,p);
 	kheap_free(p);

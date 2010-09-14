@@ -40,7 +40,7 @@
 #include <errors.h>
 
 /* max number of open files */
-#define FILE_COUNT					(PROC_COUNT * 16)
+#define FILE_COUNT					(16 * 1024)
 /* the processes node */
 #define PROCESSES()					(nodes + 7)
 /* the drivers-node */

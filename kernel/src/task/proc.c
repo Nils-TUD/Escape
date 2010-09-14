@@ -39,12 +39,13 @@
 #include <sys/util.h>
 #include <sys/syscalls.h>
 #include <sys/video.h>
-#include <esc/sllist.h>
+#include <esc/hashmap.h>
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
 #include <errors.h>
 
+#define PROC_MAP_SIZE					1024
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
@@ -53,16 +54,26 @@ static s32 proc_finishClone(sThread *nt,u32 stackFrame);
 static bool proc_setupThreadStack(sIntrptStackFrame *frame,void *arg,u32 tentryPoint);
 static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint,bool newThread);
 
+/* we have to put the first one here because we need a process before we can allocate
+ * something on the kernel-heap. sounds strange, but the kheap-init stuff uses paging and
+ * this wants to have the current process. So, I guess the cleanest way is to simply put
+ * the first process in the data-area (we can't free the first one anyway) */
+static sProc first;
 /* our processes */
+static sHashMap *procs;
+static sSLList *procMap[PROC_MAP_SIZE] = {NULL};
 static tPid nextPid = 1;
-static sProc procs[PROC_COUNT];
+
+static u32 proc_getkey(const void *data) {
+	return ((sProc*)data)->pid;
+}
 
 void proc_init(void) {
-	/* init the first process */
-	sProc *p = procs + 0;
-	tPid pid;
 	sThread *t;
 	u32 stackFrame;
+	
+	/* init the first process */
+	sProc *p = &first;
 
 	/* do this first because vfs_createProcess may use the kheap so that the kheap needs paging
 	 * and paging refers to the current process's pagedir */
@@ -97,28 +108,19 @@ void proc_init(void) {
 	t = (sThread*)sll_get(p->threads,0);
 	t->kstackFrame = stackFrame;
 
-	/* mark all other processes unused */
-	for(pid = 1; pid < PROC_COUNT; pid++)
-		procs[pid].pid = INVALID_PID;
+	/* insert into proc-map; create the map here to ensure that the first process is initialized */
+	procs = hm_create(procMap,PROC_MAP_SIZE,proc_getkey);
+	assert(procs && hm_add(procs,p));
 }
 
 tPid proc_getFreePid(void) {
-	tPid pid;
-	/* start with the first possibly usable pid */
-	for(pid = nextPid; pid < PROC_COUNT; pid++) {
-		if(procs[pid].pid == INVALID_PID) {
-			/* go to the next one; note that its ok here to use pid 0 since its occupied anyway */
-			nextPid = (pid + 1) % PROC_COUNT;
-			return pid;
-		}
-	}
-	/* if we're here all pids starting from nextPid to PROC_COUNT - 1 are in use. so start at the
-	 * beginning */
-	for(pid = 1; pid < nextPid; pid++) {
-		if(procs[pid].pid == INVALID_PID) {
-			nextPid = (pid + 1) % PROC_COUNT;
-			return pid;
-		}
+	u32 count = 0;
+	while(count++ < MAX_PROC_COUNT) {
+		if(nextPid == INVALID_PID)
+			nextPid++;
+		if(proc_getByPid(nextPid) == NULL)
+			return nextPid++;
+		nextPid++;
 	}
 	return INVALID_PID;
 }
@@ -127,47 +129,41 @@ sProc *proc_getRunning(void) {
 	sThread *t = thread_getRunning();
 	if(t)
 		return t->proc;
-	return &procs[0];
+	/* just needed at the beginning */
+	return &first;
 }
 
 sProc *proc_getByPid(tPid pid) {
-	vassert(pid < PROC_COUNT,"pid >= PROC_COUNT");
-	return &procs[pid];
+	return hm_get(procs,pid);
 }
 
 bool proc_exists(tPid pid) {
-	return pid < PROC_COUNT && procs[pid].pid != INVALID_PID;
+	return hm_get(procs,pid) != NULL;
 }
 
 u32 proc_getCount(void) {
-	u32 i,count = 0;
-	for(i = 0; i < PROC_COUNT; i++) {
-		if(procs[i].pid != INVALID_PID)
-			count++;
-	}
-	return count;
+	return hm_getCount(procs);
 }
 
 sProc *proc_getProcWithBin(sBinDesc *bin,tVMRegNo *rno) {
-	u32 i;
-	for(i = 0; i < PROC_COUNT; i++) {
-		if(procs[i].pid != INVALID_PID) {
-			tVMRegNo res = vmm_hasBinary(procs + i,bin);
-			if(res != -1) {
-				*rno = res;
-				return procs + i;
-			}
+	sProc *p;
+	for(hm_begin(procs); (p = hm_next(procs)); ) {
+		tVMRegNo res = vmm_hasBinary(p,bin);
+		if(res != -1) {
+			*rno = res;
+			return p;
 		}
 	}
 	return NULL;
 }
 
 sRegion *proc_getLRURegion(void) {
-	u32 i,ts = ULONG_MAX;
+	u32 ts = ULONG_MAX;
+	sProc *p;
 	sRegion *lru = NULL;
-	for(i = 0; i < PROC_COUNT; i++) {
-		if(procs[i].pid != INVALID_PID && i != ATA_PID) {
-			sRegion *reg = vmm_getLRURegion(procs + i);
+	for(hm_begin(procs); (p = hm_next(procs)); ) {
+		if(p->pid != ATA_PID) {
+			sRegion *reg = vmm_getLRURegion(p);
 			if(reg && reg->timestamp < ts) {
 				ts = reg->timestamp;
 				lru = reg;
@@ -179,26 +175,22 @@ sRegion *proc_getLRURegion(void) {
 
 void proc_getMemUsage(u32 *paging,u32 *data) {
 	u32 pmem = 0,dmem = 0;
-	u32 i;
-	for(i = 0; i < PROC_COUNT; i++) {
-		if(procs[i].pid != INVALID_PID) {
-			u32 ptmp,dtmp;
-			vmm_getMemUsage(procs + i,&ptmp,&dtmp);
-			dmem += dtmp;
-			pmem += ptmp;
-		}
+	sProc *p;
+	for(hm_begin(procs); (p = hm_next(procs)); ) {
+		u32 ptmp,dtmp;
+		vmm_getMemUsage(p,&ptmp,&dtmp);
+		dmem += dtmp;
+		pmem += ptmp;
 	}
 	*paging = pmem * PAGE_SIZE;
 	*data = dmem * PAGE_SIZE;
 }
 
 bool proc_hasChild(tPid pid) {
-	tPid i;
-	sProc *p = procs;
-	for(i = 0; i < PROC_COUNT; i++) {
-		if(p->pid != INVALID_PID && p->parentPid == pid)
+	sProc *p;
+	for(hm_begin(procs); (p = hm_next(procs)); ) {
+		if(p->parentPid == pid)
 			return true;
-		p++;
 	}
 	return false;
 }
@@ -211,17 +203,16 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	sThread *nt;
 	s32 res;
 
-	vassert(newPid < PROC_COUNT,"newPid >= PROC_COUNT");
-	vassert((procs + newPid)->pid == INVALID_PID,"The process slot 0x%x is already in use!",
-			procs + newPid);
-
-	p = procs + newPid;
+	p = (sProc*)kheap_alloc(sizeof(sProc));
+	if(!p)
+		return ERR_NOT_ENOUGH_MEM;
 	/* first create the VFS node (we may not have enough mem) */
 	p->threadDir = vfs_createProcess(newPid,&vfsinfo_procReadHandler);
 	if(p->threadDir == NULL)
-		return ERR_NOT_ENOUGH_MEM;
+		goto errorProc;
 
 	p->swapped = 0;
+	p->sharedFrames = 0;
 
 	/* clone page-dir */
 	if((res = paging_cloneKernelspace(&stackFrame,&p->pagedir)) < 0)
@@ -234,6 +225,8 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->exitCode = 0;
 	p->exitSig = SIG_COUNT;
 	p->sigRetAddr = cur->sigRetAddr;
+	p->ioMap = NULL;
+	p->flags = 0;
 	if(isVM86)
 		p->flags |= P_VM86;
 	/* give the process the same name (may be changed by exec) */
@@ -260,6 +253,9 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 		goto errorThread;
 	/* set kernel-stack-frame; thread_clone() doesn't do it for us */
 	nt->kstackFrame = stackFrame;
+	/* add to proc-map */
+	if(!hm_add(procs,p))
+		goto errorThread;
 	/* make thread ready */
 	thread_setReady(nt->tid);
 
@@ -283,6 +279,8 @@ errorPDir:
 	paging_destroyPDir(p->pagedir);
 errorVFS:
 	vfs_removeProcess(newPid);
+errorProc:
+	kheap_free(p);
 	return ERR_NOT_ENOUGH_MEM;
 }
 
@@ -382,14 +380,14 @@ void proc_removeRegions(sProc *p,bool remStack) {
 }
 
 s32 proc_getExitState(tPid ppid,sExitState *state) {
-	u32 i;
-	for(i = 0; i < PROC_COUNT; i++) {
-		if(procs[i].pid != INVALID_PID && procs[i].parentPid == ppid) {
-			if(procs[i].flags & P_ZOMBIE) {
+	sProc *p;
+	for(hm_begin(procs); (p = hm_next(procs)); ) {
+		if(p->parentPid == ppid) {
+			if(p->flags & P_ZOMBIE) {
 				if(state) {
-					state->pid = procs[i].pid;
-					state->exitCode = procs[i].exitCode;
-					state->signal = procs[i].exitSig;
+					state->pid = p->pid;
+					state->exitCode = p->exitCode;
+					state->signal = p->exitSig;
 					/* TODO */
 					state->memory = 0;/*(procs[i].textPages + procs[i].dataPages +
 							procs[i].stackPages) * PAGE_SIZE;*/
@@ -402,7 +400,7 @@ s32 proc_getExitState(tPid ppid,sExitState *state) {
 						state->kcycleCount.val64 += t->kcycleCount.val64;
 					}*/
 				}
-				return procs[i].pid;
+				return p->pid;
 			}
 		}
 	}
@@ -411,8 +409,7 @@ s32 proc_getExitState(tPid ppid,sExitState *state) {
 
 void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 	sSLNode *tn,*tmpn;
-	vassert(p->pid != 0 && p->pid != INVALID_PID,
-			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
+	vassert(p->pid != 0,"You can't terminate the initial process");
 
 	/* if its already a zombie and we don't want to kill ourself, kill the process */
 	if((p->flags & P_ZOMBIE) && p != proc_getRunning()) {
@@ -446,24 +443,20 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 }
 
 void proc_kill(sProc *p) {
-	u32 i;
 	sProc *cp;
 	sProc *cur = proc_getRunning();
-	vassert(p->pid != 0 && p->pid != INVALID_PID,
-			"The process @ 0x%x with pid=%d is unused or the initial process",p,p->pid);
+	vassert(p->pid != 0,"You can't kill the initial process");
 	vassert(p != cur,"We can't kill the current process!");
 
 	/* give childs the ppid 0 */
-	cp = procs;
-	for(i = 0; i < PROC_COUNT; i++) {
-		if(cp->pid != INVALID_PID && cp->parentPid == p->pid) {
+	for(hm_begin(procs); (cp = hm_next(procs)); ) {
+		if(cp->parentPid == p->pid) {
 			cp->parentPid = 0;
 			/* if this process has already died, the parent can't wait for it since its dying
 			 * right now. therefore notify init of it */
 			if(cp->flags & P_ZOMBIE)
 				proc_notifyProcDied(0,cp->pid);
 		}
-		cp++;
 	}
 
 	/* remove pagedir; TODO we can do that on terminate, too (if we delay it when its the current) */
@@ -477,9 +470,9 @@ void proc_kill(sProc *p) {
 	sig_addSignal(SIG_PROC_DIED,p->pid);
 	sig_addSignalFor(p->parentPid,SIG_CHILD_DIED,p->pid);
 
-	/* mark as unused */
-	p->pid = INVALID_PID;
-	p->pagedir = 0;
+	/* remove and free */
+	hm_remove(procs,p);
+	kheap_free(p);
 }
 
 static void proc_notifyProcDied(tPid parent,tPid pid) {
@@ -713,73 +706,68 @@ static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint,bool newThread
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-static u64 ucycles[PROC_COUNT];
-static u64 kcycles[PROC_COUNT];
+#define PROF_PROC_COUNT		128
+
+static u64 ucycles[PROF_PROC_COUNT];
+static u64 kcycles[PROF_PROC_COUNT];
 
 void proc_dbg_startProf(void) {
-	u32 i;
 	sSLNode *n;
 	sThread *t;
-	for(i = 0; i < PROC_COUNT; i++) {
-		ucycles[i] = 0;
-		kcycles[i] = 0;
-		if(procs[i].pid != INVALID_PID) {
-			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
-				t = (sThread*)n->data;
-				ucycles[i] += t->stats.ucycleCount.val64;
-				kcycles[i] += t->stats.kcycleCount.val64;
-			}
+	sProc *p;
+	for(hm_begin(procs); (p = hm_next(procs)); ) {
+		assert(p->pid < PROF_PROC_COUNT);
+		ucycles[p->pid] = 0;
+		kcycles[p->pid] = 0;
+		for(n = sll_begin(p->threads); n != NULL; n = n->next) {
+			t = (sThread*)n->data;
+			ucycles[p->pid] += t->stats.ucycleCount.val64;
+			kcycles[p->pid] += t->stats.kcycleCount.val64;
 		}
 	}
 }
 
 void proc_dbg_stopProf(void) {
-	u32 i;
 	sSLNode *n;
 	sThread *t;
-	for(i = 0; i < PROC_COUNT; i++) {
-		if(procs[i].pid != INVALID_PID) {
-			uLongLong curUcycles;
-			uLongLong curKcycles;
-			curUcycles.val64 = 0;
-			curKcycles.val64 = 0;
-			for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
-				t = (sThread*)n->data;
-				curUcycles.val64 += t->stats.ucycleCount.val64;
-				curKcycles.val64 += t->stats.kcycleCount.val64;
-			}
-			curUcycles.val64 -= ucycles[i];
-			curKcycles.val64 -= kcycles[i];
-			if(curUcycles.val64 > 0 || curKcycles.val64 > 0) {
-				vid_printf("Process %3d (%18s): u=%08x%08x k=%08x%08x\n",
-					procs[i].pid,procs[i].command,
-					curUcycles.val32.upper,curUcycles.val32.lower,
-					curKcycles.val32.upper,curKcycles.val32.lower);
-			}
+	sProc *p;
+	for(hm_begin(procs); (p = hm_next(procs)); ) {
+		assert(p->pid < PROF_PROC_COUNT);
+		uLongLong curUcycles;
+		uLongLong curKcycles;
+		curUcycles.val64 = 0;
+		curKcycles.val64 = 0;
+		for(n = sll_begin(p->threads); n != NULL; n = n->next) {
+			t = (sThread*)n->data;
+			curUcycles.val64 += t->stats.ucycleCount.val64;
+			curKcycles.val64 += t->stats.kcycleCount.val64;
+		}
+		curUcycles.val64 -= ucycles[p->pid];
+		curKcycles.val64 -= kcycles[p->pid];
+		if(curUcycles.val64 > 0 || curKcycles.val64 > 0) {
+			vid_printf("Process %3d (%18s): u=%08x%08x k=%08x%08x\n",
+				p->pid,p->command,
+				curUcycles.val32.upper,curUcycles.val32.lower,
+				curKcycles.val32.upper,curKcycles.val32.lower);
 		}
 	}
 }
 
 void proc_dbg_printAll(void) {
-	u32 i;
-	for(i = 0; i < PROC_COUNT; i++) {
-		if(procs[i].pid != INVALID_PID)
-			proc_dbg_print(procs + i);
-	}
+	sProc *p;
+	for(hm_begin(procs); (p = hm_next(procs)); )
+		proc_dbg_print(p);
 }
 
 void proc_dbg_printAllPDs(u8 parts,bool regions) {
-	u32 i;
-	for(i = 0; i < PROC_COUNT; i++) {
-		if(procs[i].pid != INVALID_PID) {
-			vid_printf("Process %d (%s) (%d own, %d sh, %d sw):\n",
-					procs[i].pid,procs[i].command,procs[i].ownFrames,procs[i].sharedFrames,
-					procs[i].swapped);
-			if(regions)
-				vmm_dbg_print(procs + i);
-			paging_dbg_printPDir(procs[i].pagedir,parts);
-			vid_printf("\n");
-		}
+	sProc *p;
+	for(hm_begin(procs); (p = hm_next(procs)); ) {
+		vid_printf("Process %d (%s) (%d own, %d sh, %d sw):\n",
+				p->pid,p->command,p->ownFrames,p->sharedFrames,p->swapped);
+		if(regions)
+			vmm_dbg_print(p);
+		paging_dbg_printPDir(p->pagedir,parts);
+		vid_printf("\n");
 	}
 }
 

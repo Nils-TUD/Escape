@@ -38,7 +38,7 @@
 #include <sys/debug.h>
 #include <sys/kevent.h>
 #include <sys/video.h>
-#include <esc/sllist.h>
+#include <esc/hashmap.h>
 #include <assert.h>
 #include <string.h>
 #include <errors.h>
@@ -54,7 +54,8 @@
  */
 static sThread *thread_createInitial(sProc *p,eThreadState state);
 
-/* our map for the threads. key is (tid % THREAD_MAP_SIZE) */
+/* our map for the threads */
+static sHashMap *threads;
 static sSLList *threadMap[THREAD_MAP_SIZE] = {NULL};
 static sThread *cur = NULL;
 static tTid nextTid = 0;
@@ -63,7 +64,14 @@ static volatile tTid runnableThread = INVALID_TID;
 /* list of dead threads that should be destroyed */
 static sSLList* deadThreads = NULL;
 
+static u32 thread_getkey(const void *data) {
+	return ((sThread*)data)->tid;
+}
+
 sThread *thread_init(sProc *p) {
+	threads = hm_create(threadMap,THREAD_MAP_SIZE,thread_getkey);
+	assert(threads);
+
 	/* create idle-thread */
 	thread_createInitial(p,ST_BLOCKED);
 	/* create thread for init */
@@ -73,7 +81,6 @@ sThread *thread_init(sProc *p) {
 
 static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	tFD i;
-	sSLList *list;
 	sThread *t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
@@ -99,13 +106,8 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 		t->fileDescs[i] = -1;
 
 	/* create list */
-	list = threadMap[t->tid % THREAD_MAP_SIZE] = sll_create();
-	if(list == NULL)
-		util_panic("Unable to allocate mem for initial thread-list");
-
-	/* append */
-	if(!sll_append(list,t))
-		util_panic("Unable to append initial thread");
+	if(!hm_add(threads,t))
+		util_panic("Unable to put initial thread into the thread-map");
 
 	/* insert in VFS; thread needs to be inserted for it */
 	if(!vfs_createThread(t->tid))
@@ -115,10 +117,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 }
 
 u32 thread_getCount(void) {
-	u32 i,count = 0;
-	for(i = 0; i < THREAD_MAP_SIZE; i++)
-		count += sll_length(threadMap[i]);
-	return count;
+	return hm_getCount(threads);
 }
 
 sThread *thread_getRunning(void) {
@@ -126,17 +125,7 @@ sThread *thread_getRunning(void) {
 }
 
 sThread *thread_getById(tTid tid) {
-	sSLNode *n;
-	sThread *t;
-	sSLList *list = threadMap[tid % THREAD_MAP_SIZE];
-	if(list == NULL)
-		return NULL;
-	for(n = sll_begin(list); n != NULL; n = n->next) {
-		t = (sThread*)n->data;
-		if(t->tid == tid)
-			return t;
-	}
-	return NULL;
+	return hm_get(threads,tid);
 }
 
 void thread_switch(void) {
@@ -402,7 +391,6 @@ s32 thread_extendStack(u32 address) {
 
 s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc) {
 	tFD i;
-	sSLList *list;
 	sThread *t = *dst;
 	t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
@@ -458,16 +446,8 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 		}
 	}
 
-	/* create thread-list if necessary */
-	list = threadMap[t->tid % THREAD_MAP_SIZE];
-	if(list == NULL) {
-		list = threadMap[t->tid % THREAD_MAP_SIZE] = sll_create();
-		if(list == NULL)
-			goto errClone;
-	}
-
-	/* insert */
-	if(!sll_append(list,t))
+	/* insert into thread-map */
+	if(!hm_add(threads,t))
 		goto errClone;
 
 	/* insert in VFS; thread needs to be inserted for it */
@@ -485,7 +465,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	return 0;
 
 errAppend:
-	sll_removeFirst(list,t);
+	hm_remove(threads,t);
 errClone:
 	if(t->tlsRegion >= 0)
 		vmm_remove(p,t->tlsRegion);
@@ -504,7 +484,6 @@ errThread:
 
 void thread_kill(sThread *t) {
 	tFD i;
-	sSLList *list;
 	/* we can't destroy the current thread */
 	if(t == cur) {
 		/* put it in the dead-thread-queue to destroy it later */
@@ -522,9 +501,6 @@ void thread_kill(sThread *t) {
 		t->state = ST_ZOMBIE;
 		return;
 	}
-
-	list = threadMap[t->tid % THREAD_MAP_SIZE];
-	vassert(list != NULL,"Thread %d not found in thread-map",t->tid);
 
 	/* remove tls */
 	if(t->tlsRegion >= 0) {
@@ -571,7 +547,7 @@ void thread_kill(sThread *t) {
 	thread_wakeupAll(t->proc,EV_THREAD_DIED);
 
 	/* finally, destroy thread */
-	sll_removeFirst(list,t);
+	hm_remove(threads,t);
 	kheap_free(t);
 }
 
@@ -579,19 +555,10 @@ void thread_kill(sThread *t) {
 #if DEBUGGING
 
 void thread_dbg_printAll(void) {
-	sSLList *list;
-	sSLNode *n;
-	u32 i;
+	sThread *t;
 	vid_printf("Threads:\n");
-	for(i = 0; i < THREAD_MAP_SIZE; i++) {
-		list = threadMap[i];
-		if(list) {
-			for(n = sll_begin(list); n != NULL; n = n->next) {
-				sThread *t = (sThread*)n->data;
-				thread_dbg_print(t);
-			}
-		}
-	}
+	for(hm_begin(threads); (t = hm_next(threads)); )
+		thread_dbg_print(t);
 }
 
 void thread_dbg_print(sThread *t) {

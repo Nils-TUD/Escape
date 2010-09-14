@@ -28,7 +28,7 @@
 
 #define DISABLE_DEMLOAD		0
 
-#define MAX_REGUSE_COUNT	(PROC_COUNT * 8)
+#define MAX_REGUSE_COUNT	8192
 
 #define RNO_TEXT			0
 #define RNO_RODATA			1

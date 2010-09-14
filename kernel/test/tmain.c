@@ -66,6 +66,7 @@
 #include "tregion.h"
 #include "tvmm.h"
 #include "tshm.h"
+#include "thashmap.h"
 
 s32 main(sMultiBoot *mbp,u32 magic) {
 	UNUSED(magic);
@@ -160,7 +161,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 	/* start tests */
 	test_register(&tModMM);
-	/*test_register(&tModPaging);*/
+	test_register(&tModPaging);
 	test_register(&tModProc);
 	test_register(&tModKHeap);
 	test_register(&tModSched);
@@ -176,6 +177,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	test_register(&tModRegion);
 	test_register(&tModVmm);
 	test_register(&tModShm);
+	test_register(&tModHashMap);
 	test_start();
 
 

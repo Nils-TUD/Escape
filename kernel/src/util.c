@@ -240,6 +240,8 @@ sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 rend,u32 mstart,u32 mend) 
 	sSymbol *sym;
 
 	for(i = 0; i < MAX_STACK_DEPTH; i++) {
+		if(ebp == NULL)
+			break;
 		/* adjust it if we're in the kernel-stack but are using the temp-area (to print the trace
 		 * for another thread). don't do this for the temp-kernel-stack */
 		if(rstart != ((u32)&kernelStack) - TMP_STACK_SIZE && rstart != mstart)

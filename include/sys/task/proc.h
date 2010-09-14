@@ -28,12 +28,12 @@
 #include <sys/task/elf.h>
 #include <sys/vfs/node.h>
 
-/* max number of processes */
-#define PROC_COUNT			1024
+/* max number of processes (2^16 since tPid is 2 byte long; but leave one slot for an invalid pid) */
+#define MAX_PROC_COUNT		(64 * 1024 - 1)
 #define MAX_PROC_NAME_LEN	30
 
 /* for marking unused */
-#define INVALID_PID			(PROC_COUNT + 2)
+#define INVALID_PID			MAX_PROC_COUNT
 #define ATA_PID				1
 
 /* the events we can wait for */
@@ -53,6 +53,7 @@
 #define EV_VMM_DONE			4096 /* kernel-intern */
 #define EV_THREAD_DIED		8192 /* kernel-intern */
 
+/* process flags */
 #define P_ZOMBIE			1
 #define P_VM86				2
 

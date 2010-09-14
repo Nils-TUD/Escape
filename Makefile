@@ -11,7 +11,7 @@ BINNAME = kernel.bin
 BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 
-KVM = -enable-kvm
+#KVM = -enable-kvm
 #QEMU = /home/hrniels/Applications/qemu-0.12.2/bin/bin/qemu
 QEMU = qemu
 QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 40 \

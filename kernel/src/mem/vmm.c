@@ -711,8 +711,6 @@ static bool vmm_demandLoad(sVMRegion *vm,u32 *flags,u32 addr) {
 		res = true;
 	zeroCount = MIN(PAGE_SIZE,vm->reg->byteCount - (addr - vm->virt)) - loadCount;
 
-	/* TODO we have to ensure that one frame is available here! */
-
 	/* if another thread already loads it, wait here until he's done */
 	if(*flags & PF_LOADINPROGRESS) {
 		do {

@@ -119,7 +119,7 @@ s32 conf_get(u32 id) {
 			res = TIMER_FREQUENCY;
 			break;
 		case CONF_MAX_PROCS:
-			res = PROC_COUNT;
+			res = MAX_PROC_COUNT;
 			break;
 		case CONF_MAX_FDS:
 			res = MAX_FD_COUNT;

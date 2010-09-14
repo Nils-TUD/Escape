@@ -67,7 +67,19 @@ static sMsg msg;
 
 int main(void) {
 	u32 i;
+	s32 res;
 	tMsgId mid;
+	sPCIDevice device;
+
+	tFD fd = open("/dev/pci",IO_READ | IO_WRITE);
+	if(fd < 0)
+		error("Unable to open '/dev/pci'");
+	res = vrecvMsgData(fd,MSG_PCI_GET_BY_CLASS,&device,sizeof(sPCIDevice),2,0x01,0x01);
+	if(res < 0)
+		error("Unable to find IDE-controller (%d:%d)",0x01,0x01);
+	ATA_LOG("Found IDE-controller (%d.%d.%d): vendorId %x, deviceId %x, rev %x",
+			device.bus,device.dev,device.func,device.vendorId,device.deviceId,device.revId);
+	close(fd);
 
 	/* request ports */
 	/* for some reason virtualbox requires an additional port (9 instead of 8). Otherwise

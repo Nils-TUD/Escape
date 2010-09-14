@@ -1,3 +1,3 @@
 NAME=pci
 
--include ../ShlibMakefile.mk
+-include ../StlibMakefile.mk

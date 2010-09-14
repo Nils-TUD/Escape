@@ -10,5 +10,4 @@ zero; /dev/zero;
 random; /dev/random;
 null; /dev/null;
 powermng; /dev/powermng;
-pci; ;
 ui; ;

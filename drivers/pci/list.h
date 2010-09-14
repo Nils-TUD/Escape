@@ -17,25 +17,37 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include "iobuf.h"
-#include <stdio.h>
+#ifndef LIST_H_
+#define LIST_H_
 
-char *fgetl(char *str,s32 max,FILE *f) {
-	char *res = str;
-	/* wait for one char left (\0) or a newline or error/EOF */
-	while(max-- > 1) {
-		s32 c = bgetc(f);
-		if(c == EOF) {
-			if(str == res)
-				res = NULL;
-			break;
-		}
-		/* don't include '\n' */
-		if(c == '\n')
-			break;
-		*str++ = c;
-	}
-	*str = '\0';
-	return res;
-}
+#include <esc/common.h>
+#include <esc/messages.h>
+
+#define IOPORT_PCI_CFG_DATA			0xCFC
+#define IOPORT_PCI_CFG_ADDR			0xCF8
+
+/**
+ * Detects PCI-devices
+ */
+void list_init(void);
+
+/**
+ * Finds a PCI-device by the class and subclass
+ *
+ * @param baseClass the class
+ * @param subClass the subclass
+ * @return the device or NULL
+ */
+sPCIDevice *list_getByClass(u8 baseClass,u8 subClass);
+
+/**
+ * Finds a PCI-device by bus, dev and func
+ *
+ * @param bus the bus
+ * @param dev the device
+ * @param func the function
+ * @return the device or NULL
+ */
+sPCIDevice *list_getById(u8 bus,u8 dev,u8 func);
+
+#endif /* LIST_H_ */

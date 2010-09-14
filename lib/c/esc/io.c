@@ -22,6 +22,7 @@
 #include <esc/messages.h>
 #include <errors.h>
 #include <string.h>
+#include <stdarg.h>
 
 bool is_file(const char *path) {
 	sFileInfo info;
@@ -55,6 +56,31 @@ s32 recvMsgData(tFD fd,tMsgId id,void *data,u32 size) {
 	res = (s32)msg.data.arg1;
 	if(res > (s32)size)
 		res = size;
-	memcpy(data,msg.data.d,res);
+	if(res > 0)
+		memcpy(data,msg.data.d,res);
+	return res;
+}
+
+s32 vrecvMsgData(tFD fd,tMsgId id,void *data,u32 size,u32 argc,...) {
+	sMsg msg;
+	s32 res;
+	va_list ap;
+	va_start(ap,argc);
+	msg.args.arg1 = argc >= 1 ? va_arg(ap,u32) : 0;
+	msg.args.arg2 = argc >= 2 ? va_arg(ap,u32) : 0;
+	msg.args.arg3 = argc >= 3 ? va_arg(ap,u32) : 0;
+	msg.args.arg4 = argc >= 4 ? va_arg(ap,u32) : 0;
+	msg.args.arg5 = argc >= 5 ? va_arg(ap,u32) : 0;
+	msg.args.arg6 = argc >= 6 ? va_arg(ap,u32) : 0;
+	va_end(ap);
+	if((res = send(fd,id,&msg,sizeof(msg.args))) < 0)
+		return res;
+	if((res = RETRY(receive(fd,NULL,&msg,sizeof(msg)))) < 0)
+		return res;
+	res = (s32)msg.data.arg1;
+	if(res > (s32)size)
+		res = size;
+	if(res > 0)
+		memcpy(data,msg.data.d,res);
 	return res;
 }

@@ -57,7 +57,7 @@ typedef struct {
 	u16 deviceId;
 	const char *chip;
 	const char *chipDesc;
-} sPCIDevice;
+} sPCIDeviceInfo;
 
 typedef struct {
 	u8 baseClass;
@@ -1569,7 +1569,7 @@ sPCIVendor pciVendors[] = {
 	{ 0xFA57, "Interagon", "Interagon AS" } ,
 };
 
-sPCIDevice pciDevices[] = {
+sPCIDeviceInfo pciDevices[] = {
 	{ 0x165C, 0x0002, "FT232BL", "FT232BL" } ,
 	{ 0x16AE, 0x1141, "SafeXcel-1141", "???" } ,
 	{ 0x11DB, 0x1234, "", "Dreamcast Broadband Adapter" } ,

@@ -138,6 +138,10 @@
 #define MSG_KE_ADDLISTENER			1700
 #define MSG_KE_REMLISTENER			1701
 
+#define MSG_PCI_GET_BY_CLASS		1800
+#define MSG_PCI_GET_BY_ID			1801
+#define MSG_PCI_DEVICE_RESP			1802
+
 /* the possible km-events to listen to; KE_EV_PRESSED, KE_EV_RELEASED and KE_EV_KEYCODE,
  * KE_EV_CHARACTER are mutually exclusive, each */
 #define KE_EV_PRESSED				1
@@ -192,6 +196,20 @@ typedef struct {
 	u32 width;
 	u32 height;
 } sVTSize;
+
+typedef struct {
+	u8 bus;
+	u8 dev;
+	u8 func;
+	u8 type;
+	u16 deviceId;
+	u16 vendorId;
+	u8 baseClass;
+	u8 subClass;
+	u8 progInterface;
+	u8 revId;
+	u32 bars[6];
+} sPCIDevice;
 
 /* the message we're using for communication */
 typedef union {

@@ -206,6 +206,19 @@ s32 sendMsgData(tFD fd,tMsgId id,const void *data,u32 size);
 s32 recvMsgData(tFD fd,tMsgId id,void *data,u32 size) A_CHECKRET;
 
 /**
+ * The same as recvMsgData, except that it expects <argc> arguments behind <argc>, which are
+ * put in the given order into an argument-message. This message is send to the driver.
+ *
+ * @param fd the file-descriptor
+ * @param id the msg-id
+ * @param data the buffer where to copy the received data to
+ * @param size the size of the buffer
+ * @param argc the number of args
+ * @return the number of copied bytes on success
+ */
+s32 vrecvMsgData(tFD fd,tMsgId id,void *data,u32 size,u32 argc,...) A_CHECKRET;
+
+/**
  * Duplicates the given file-descriptor
  *
  * @param fd the file-descriptor

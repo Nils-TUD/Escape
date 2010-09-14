@@ -34,7 +34,7 @@
 
 /* for marking unused */
 #define INVALID_PID			MAX_PROC_COUNT
-#define ATA_PID				1
+#define ATA_PID				2
 
 /* the events we can wait for */
 #define EV_NOEVENT			0

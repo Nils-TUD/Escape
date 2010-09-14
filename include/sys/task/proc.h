@@ -63,8 +63,10 @@ typedef struct {
 	tSig signal;
 	/* exit-code the process gave us via exit() */
 	s32 exitCode;
-	/* total amount of memory it has used */
-	u32 memory;
+	/* memory it has used */
+	u32 ownFrames;
+	u32 sharedFrames;
+	u32 swapped;
 	/* cycle-count */
 	uLongLong ucycleCount;
 	uLongLong kcycleCount;
@@ -92,8 +94,7 @@ typedef struct {
 	u32 regSize;
 	void *regions;
 	/* for the waiting parent */
-	s32 exitCode;
-	tSig exitSig;
+	sExitState *exitState;
 	/* the address of the sigRet "function" */
 	u32 sigRetAddr;
 	/* the io-map (NULL by default) */

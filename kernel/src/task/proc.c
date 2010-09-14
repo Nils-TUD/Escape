@@ -88,8 +88,7 @@ void proc_init(void) {
 	p->ownFrames = 1 + 1 + 1;
 	/* the first process has no text, data and stack */
 	p->swapped = 0;
-	p->exitCode = 0;
-	p->exitSig = SIG_COUNT;
+	p->exitState = NULL;
 	p->sigRetAddr = 0;
 	p->flags = 0;
 	memcpy(p->command,"initloader",11);
@@ -222,8 +221,7 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	/* set basic attributes */
 	p->pid = newPid;
 	p->parentPid = cur->pid;
-	p->exitCode = 0;
-	p->exitSig = SIG_COUNT;
+	p->exitState = NULL;
 	p->sigRetAddr = cur->sigRetAddr;
 	p->ioMap = NULL;
 	p->flags = 0;
@@ -385,20 +383,10 @@ s32 proc_getExitState(tPid ppid,sExitState *state) {
 		if(p->parentPid == ppid) {
 			if(p->flags & P_ZOMBIE) {
 				if(state) {
-					state->pid = p->pid;
-					state->exitCode = p->exitCode;
-					state->signal = p->exitSig;
-					/* TODO */
-					state->memory = 0;/*(procs[i].textPages + procs[i].dataPages +
-							procs[i].stackPages) * PAGE_SIZE;*/
-					state->ucycleCount.val64 = 0;
-					state->kcycleCount.val64 = 0;
-					/* TODO
-					for(n = sll_begin(procs[i].threads); n != NULL; n = n->next) {
-						t = (sThread*)n->data;
-						state->ucycleCount.val64 += t->ucycleCount.val64;
-						state->kcycleCount.val64 += t->kcycleCount.val64;
-					}*/
+					if(p->exitState) {
+						memcpy(state,p->exitState,sizeof(sExitState));
+						kheap_free(p->exitState);
+					}
 				}
 				return p->pid;
 			}
@@ -415,6 +403,24 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 	if((p->flags & P_ZOMBIE) && p != proc_getRunning()) {
 		proc_kill(p);
 		return;
+	}
+
+	/* store exit-conditions */
+	p->exitState = (sExitState*)kheap_alloc(sizeof(sExitState));
+	if(p->exitState) {
+		p->exitState->pid = p->pid;
+		p->exitState->exitCode = exitCode;
+		p->exitState->signal = signal;
+		p->exitState->ucycleCount.val64 = 0;
+		p->exitState->kcycleCount.val64 = 0;
+		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
+			sThread *t = (sThread*)tn->data;
+			p->exitState->ucycleCount.val64 += t->stats.ucycleCount.val64;
+			p->exitState->kcycleCount.val64 += t->stats.kcycleCount.val64;
+		}
+		p->exitState->ownFrames = p->ownFrames;
+		p->exitState->sharedFrames = p->sharedFrames;
+		p->exitState->swapped = p->swapped;
 	}
 
 	/* remove all threads */
@@ -434,11 +440,7 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 		p->ioMap = NULL;
 	}
 
-	/* store exit-conditions */
-	p->exitCode = exitCode;
-	p->exitSig = signal;
 	p->flags |= P_ZOMBIE;
-
 	proc_notifyProcDied(p->parentPid,p->pid);
 }
 

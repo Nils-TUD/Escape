@@ -84,7 +84,9 @@ int main(int argc,char **argv) {
 		printf("Kernel-Cycles:	%08x%08x\n",state.kcycleCount.val32.upper,
 				state.kcycleCount.val32.lower);
 		printf("Time:			%u ms\n",ms);
-		printf("Memory:			%u KiB\n",state.memory / 1024);
+		printf("Own mem:		%u KiB\n",state.ownFrames * 4);
+		printf("Shared mem:		%u KiB\n",state.sharedFrames * 4);
+		printf("Swap mem:		%u KiB\n",state.swapped * 4);
 	}
 
 	return EXIT_SUCCESS;

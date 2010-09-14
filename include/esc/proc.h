@@ -39,8 +39,10 @@ typedef struct {
 	tSig signal;
 	/* exit-code the process gave us via exit() */
 	s32 exitCode;
-	/* total amount of memory it has used */
-	u32 memory;
+	/* memory it has used */
+	u32 ownFrames;
+	u32 sharedFrames;
+	u32 swapped;
 	/* cycle-count */
 	uLongLong ucycleCount;
 	uLongLong kcycleCount;

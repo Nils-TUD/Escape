@@ -52,7 +52,6 @@
  *             |           shared memory           |     |
  *             |         shared libraries          |     |
  *             |          shared lib data          |     |
- *             |           shared memory           |     |
  *             |       thread local storage        |     |
  *             |        memory mapped stuff        |     |
  *             |        (in arbitrary order)       |     |
@@ -182,11 +181,6 @@ void paging_gdtFinished(void);
 tPageDir paging_getProc0PD(void);
 
 /**
- * Assembler routine to flush the TLB
- */
-extern void paging_flushTLB(void);
-
-/**
  * Assembler routine to exchange the page-directory to the given one
  *
  * @param physAddr the physical address of the page-directory
@@ -305,7 +299,7 @@ u32 paging_getFrameNo(tPageDir pdir,u32 virt);
 sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,u32 count,bool share);
 
 /**
- * Maps <count> virtual addresses starting at <virt> to the given frames in the CURRENT page-directory.
+ * Maps <count> pages starting at <virt> to the given frames in the CURRENT page-directory.
  * Note that the frame-number will just be set (and thus, <frames> used) when the flag PG_PRESENT
  * is specified.
  *
@@ -319,7 +313,7 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,
 sAllocStats paging_map(u32 virt,u32 *frames,u32 count,u8 flags);
 
 /**
- * Maps <count> virtual addresses starting at <virt> to the given frames in the given page-directory.
+ * Maps <count> pages starting at <virt> to the given frames in the given page-directory.
  * Note that the frame-number will just be set (and thus, <frames> used) when the flag PG_PRESENT
  * is specified.
  *

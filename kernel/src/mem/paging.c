@@ -127,6 +127,11 @@ typedef struct {
 extern void paging_enable(void);
 
 /**
+ * Assembler routine to flush the TLB
+ */
+extern void paging_flushTLB(void);
+
+/**
  * Flushes the whole page-table including the page in the mapped page-table-area
  *
  * @param virt a virtual address in the page-table

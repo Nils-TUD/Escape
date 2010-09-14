@@ -91,7 +91,7 @@ void proc_init(void) {
 	p->exitState = NULL;
 	p->sigRetAddr = 0;
 	p->flags = 0;
-	memcpy(p->command,"initloader",11);
+	strcpy(p->command,"initloader");
 
 	/* create first thread */
 	p->threads = sll_create();

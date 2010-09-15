@@ -17,30 +17,36 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef ATAPI_H_
-#define ATAPI_H_
+#ifndef CTRL_H_
+#define CTRL_H_
 
 #include <esc/common.h>
 #include "device.h"
 
-/**
- * Reads from an ATAPI-device
- *
- * @param device the device
- * @param opWrite true if writing (not supported here ;))
- * @param buffer the buffer to write to
- * @param lba the block-address to start at
- * @param secCount number of sectors
- * @return true on success
- */
-bool atapi_read(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
+#define DEVICE_PRIMARY				0
+#define DEVICE_SECONDARY			1
 
-/**
- * Determines the capacity for the given device
- *
- * @param device the device
- * @return the capacity or 0 if failed
- */
-u32 atapi_getCapacity(sATADevice *device);
+#define DEVICE_COUNT				4
 
-#endif /* ATAPI_H_ */
+/* device-identifier */
+#define DEVICE_PRIM_MASTER			0
+#define DEVICE_PRIM_SLAVE			1
+#define DEVICE_SEC_MASTER			2
+#define DEVICE_SEC_SLAVE			3
+
+void ctrl_init(void);
+
+sATADevice *ctrl_getDevice(u8 id);
+sATAController *ctrl_getCtrl(u8 id);
+
+void ctrl_outb(sATAController *ctrl,u16 reg,u8 value);
+void ctrl_outwords(sATAController *ctrl,u16 reg,const u16 *buf,u32 count);
+
+u8 ctrl_inb(sATAController *ctrl,u16 reg);
+void ctrl_inwords(sATAController *ctrl,u16 reg,u16 *buf,u32 count);
+
+void ctrl_resetIrq(sATAController *ctrl);
+void ctrl_waitIntrpt(sATAController *ctrl);
+void ctrl_wait(sATAController *ctrl);
+
+#endif /* CTRL_H_ */

@@ -24,11 +24,13 @@
 #include "partition.h"
 
 /* port-bases */
-#define REG_BASE_PRIMARY			0x1F0
-#define REG_BASE_SECONDARY			0x170
+#define ATA_REG_BASE_PRIMARY			0x1F0
+#define ATA_REG_BASE_SECONDARY			0x170
 
 #define DRIVE_MASTER				0xA0
 #define DRIVE_SLAVE					0xB0
+
+#define SLAVE_BIT					0x1
 
 #define COMMAND_IDENTIFY			0xEC
 #define COMMAND_IDENTIFY_PACKET		0xA1
@@ -42,24 +44,17 @@
 #define SCSI_CMD_READ_CAPACITY		0x25
 
 /* io-ports, offsets from base */
-#define REG_DATA					0x0
-#define REG_ERROR					0x1
-#define REG_FEATURES				0x1
-#define REG_SECTOR_COUNT			0x2
-#define REG_ADDRESS1				0x3
-#define REG_ADDRESS2				0x4
-#define REG_ADDRESS3				0x5
-#define REG_DRIVE_SELECT			0x6
-#define REG_COMMAND					0x7
-#define REG_STATUS					0x7
-#define REG_CONTROL					0x206
-
-/* drive-identifier */
-#define DRIVE_COUNT					4
-#define DRIVE_PRIM_MASTER			0
-#define DRIVE_PRIM_SLAVE			1
-#define DRIVE_SEC_MASTER			2
-#define DRIVE_SEC_SLAVE				3
+#define ATA_REG_DATA				0x0
+#define ATA_REG_ERROR				0x1
+#define ATA_REG_FEATURES			0x1
+#define ATA_REG_SECTOR_COUNT		0x2
+#define ATA_REG_ADDRESS1			0x3
+#define ATA_REG_ADDRESS2			0x4
+#define ATA_REG_ADDRESS3			0x5
+#define ATA_REG_DRIVE_SELECT		0x6
+#define ATA_REG_COMMAND				0x7
+#define ATA_REG_STATUS				0x7
+#define ATA_REG_CONTROL				0x206
 
 #define ATAPI_SEC_SIZE				2048
 #define ATA_SEC_SIZE				512
@@ -68,13 +63,13 @@
  * clears, do a Software Reset. Technically, when BSY is set, the other bits in the
  * Status byte are meaningless. */
 #define CMD_ST_BUSY					(1 << 7)	/* 0x80 */
-/* Bit is clear when drive is spun down, or after an error. Set otherwise. */
+/* Bit is clear when device is spun down, or after an error. Set otherwise. */
 #define CMD_ST_READY				(1 << 6)	/* 0x40 */
 /* Drive Fault Error (does not set ERR!) */
 #define CMD_ST_DISK_FAULT			(1 << 5)	/* 0x20 */
 /* Overlapped Mode Service Request */
 #define CMD_ST_OVERLAPPED_REQ		(1 << 4)	/* 0x10 */
-/* Set when the drive has PIO data to transfer, or is ready to accept PIO data. */
+/* Set when the device has PIO data to transfer, or is ready to accept PIO data. */
 #define CMD_ST_DRQ					(1 << 3)	/* 0x08 */
 /* Error flag (when set). Send a new command to clear it (or nuke it with a Software Reset). */
 #define CMD_ST_ERROR				(1 << 0)	/* 0x01 */
@@ -246,40 +241,61 @@ typedef struct {
 	u16 reserved[172];
 } A_PACKED sATAIdentify;
 
-struct sATADrive;
-typedef bool (*fReadWrite)(struct sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
+typedef struct sATAController sATAController;
+typedef struct sATADevice sATADevice;
+typedef bool (*fReadWrite)(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
 
-typedef struct sATADrive {
-	/* whether the drive exists and we can use it */
+struct sATADevice {
+	/* the identifier; 0-3; bit0 set means slave */
+	u8 id;
+	/* whether the device exists and we can use it */
 	u8 present;
 	/* master / slave */
 	u8 slaveBit;
-	/* primary / secondary */
-	u16 basePort;
 	/* the sector-size */
 	u32 secSize;
+	/* the ata-controller to which the device belongs */
+	sATAController *ctrl;
 	/* handler-function for reading / writing */
 	fReadWrite rwHandler;
 	/* various informations we got via IDENTIFY-command */
 	sATAIdentify info;
 	/* the partition-table */
 	sPartition partTable[PARTITION_COUNT];
-} sATADrive;
+};
+
+/* the controller is declared here, because otherwise device.h needs controller.h and the other way
+ * around */
+struct sATAController {
+	u8 id;
+	u8 useIrq;
+	u8 useDma;
+	volatile u8 gotIrq;
+	/* I/O-ports for the controllers */
+	u16 portBase;
+	/* I/O-ports for bus-mastering */
+	u16 bmrBase;
+	tSig irq;
+	u64 *dma_prdt_phys;
+	u64 *dma_prdt_virt;
+	void *dma_buf_phys;
+	void *dma_buf_virt;
+	sATADevice devices[2];
+};
 
 /**
- * Detects the given drives
+ * Inits the given device
  *
- * @param drives the drives
- * @param count the number of drives
+ * @param device the device
  */
-void drive_detect(sATADrive *drives,u32 count);
+void device_init(sATADevice *device);
 
 #if DEBUGGING
 
 /**
- * Prints information about the given drive
+ * Prints information about the given device
  */
-void drive_dbg_printInfo(sATADrive *drive);
+void device_dbg_printInfo(sATADevice *device);
 
 #endif
 

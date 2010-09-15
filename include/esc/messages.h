@@ -198,6 +198,12 @@ typedef struct {
 } sVTSize;
 
 typedef struct {
+	enum {BAR_MEM,BAR_IO} type;
+	u32 addr;
+	u32 size;
+} sPCIBar;
+
+typedef struct {
 	u8 bus;
 	u8 dev;
 	u8 func;
@@ -208,7 +214,8 @@ typedef struct {
 	u8 subClass;
 	u8 progInterface;
 	u8 revId;
-	u32 bars[6];
+	u8 irq;
+	sPCIBar bars[6];
 } sPCIDevice;
 
 /* the message we're using for communication */

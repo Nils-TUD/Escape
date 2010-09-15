@@ -22,7 +22,7 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include "drive.h"
+#include "device.h"
 
 /* for printing debug-infos */
 #define ATA_PR1(fmt,...) /*debugf("[ATA] " #fmt "\n",## __VA_ARGS__)*/
@@ -34,35 +34,15 @@
 	} while(0);
 
 /**
- * Announces signal-handler for the ATA-interrupts
- */
-void ata_init(void);
-
-/**
- * Sets the interrupt-waiting-flag to false
- */
-void ata_unsetIntrpt(void);
-
-/**
- * Waits until the interrupt-waiting-flag is set
- */
-void ata_waitIntrpt(void);
-
-/**
- * Waits a bit. Can be used after switching the drive
- */
-void ata_wait(sATADrive *drive);
-
-/**
- * Reads or writes from/to an ATA-drive
+ * Reads or writes from/to an ATA-device
  *
- * @param drive the drive
+ * @param device the device
  * @param opWrite true if writing
  * @param buffer the buffer to write to
  * @param lba the block-address to start at
  * @param secCount number of sectors
  * @return true on success
  */
-bool ata_readWrite(sATADrive *drive,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
+bool ata_readWrite(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
 
 #endif /* ATA_H_ */

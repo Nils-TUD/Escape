@@ -1,5 +1,5 @@
 /**
- * $Id: getdate.c 741 2010-08-10 12:46:17Z nasmussen $
+ * $Id$
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or

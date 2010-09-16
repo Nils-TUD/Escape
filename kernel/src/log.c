@@ -126,7 +126,7 @@ static void log_printc(char c) {
 			case '\t':
 				col = (col + (TAB_WIDTH - col % TAB_WIDTH)) % VID_COLS;
 				if(col == 0)
-					log_printc('\n');
+					log_printc(' ');
 				break;
 			default:
 				col = (col + 1) % VID_COLS;

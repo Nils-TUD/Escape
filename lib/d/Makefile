@@ -25,7 +25,7 @@ all: $(BUILDDIRS) $(LIB)
 $(LIB): $(COBJS) $(DOBJS)
 		@echo "	" AR $(LIB)
 		@ar rcs $(LIB) $(COBJS) $(DOBJS)
-		$(ROOT)/tools/linklib.sh $(LIB)
+		@$(ROOT)/tools/linklib.sh $(LIB)
 		
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

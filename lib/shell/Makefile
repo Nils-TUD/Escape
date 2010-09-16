@@ -32,12 +32,12 @@ all:	$(BUILDDIRS) $(BISONGEN) $(LEXGEN) $(STLIB) $(DYNLIB)
 $(STLIB): $(COBJ) $(GENOBJ)
 		@echo "	" AR $(STLIB)
 		@$(AR) rcs $(STLIB) $(COBJ) $(GENOBJ)
-		$(ROOT)/tools/linklib.sh $(STLIB)
+		@$(ROOT)/tools/linklib.sh $(STLIB)
 
 $(DYNLIB):	$(CPICOBJS) $(PICGENOBJ) $(SHLDCONF)
 		@echo "	" LINKING $(DYNLIB)
 		@$(LD) --eh-frame-hdr -shared -soname $(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) $(PICGENOBJ);
-		$(ROOT)/tools/linklib.sh $(DYNLIB)
+		@$(ROOT)/tools/linklib.sh $(DYNLIB)
 
 $(LEXGEN):	$(LEXSRC)
 		@echo "	" GEN $@

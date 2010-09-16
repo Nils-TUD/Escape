@@ -35,12 +35,12 @@ $(BIN):	$(DEP_START) $(DEP_DEFLIBS) $(COBJ) $(SHLIB) $(SECLIB)
 $(SECLIB): $(DEP_START) $(DEP_DEFLIBS) $(SECLIBOBJ)
 		@echo "	" LINKING $(SECSHLIB)
 		@$(LD) -shared -soname $(SECLIBNAME) -o $(SECLIB) $(SECLIBOBJ);
-		$(ROOT)/tools/linklib.sh $(SECLIB)
+		@$(ROOT)/tools/linklib.sh $(SECLIB)
 
 $(SHLIB): $(DEP_START) $(DEP_DEFLIBS) $(LIBOBJ)
 		@echo "	" LINKING $(SHLIB)
 		@$(LD) -shared -soname $(SHLIBNAME) -o $(SHLIB) $(LIBOBJ);
-		$(ROOT)/tools/linklib.sh $(SHLIB)
+		@$(ROOT)/tools/linklib.sh $(SHLIB)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

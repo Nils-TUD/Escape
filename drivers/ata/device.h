@@ -24,8 +24,8 @@
 #include "partition.h"
 
 /* port-bases */
-#define ATA_REG_BASE_PRIMARY			0x1F0
-#define ATA_REG_BASE_SECONDARY			0x170
+#define ATA_REG_BASE_PRIMARY		0x1F0
+#define ATA_REG_BASE_SECONDARY		0x170
 
 #define DRIVE_MASTER				0xA0
 #define DRIVE_SLAVE					0xB0
@@ -38,6 +38,10 @@
 #define COMMAND_READ_SEC_EXT		0x24
 #define COMMAND_WRITE_SEC			0x30
 #define COMMAND_WRITE_SEC_EXT		0x34
+#define COMMAND_READ_DMA			0xC8
+#define COMMAND_READ_DMA_EXT		0x25
+#define COMMAND_WRITE_DMA			0xCA
+#define COMMAND_WRITE_DMA_EXT		0x35
 #define COMMAND_PACKET				0xA0
 
 #define SCSI_CMD_READ_SECTORS		0xA8
@@ -59,6 +63,9 @@
 #define ATAPI_SEC_SIZE				2048
 #define ATA_SEC_SIZE				512
 
+/* the LBA-flag for the device-register */
+#define DEVICE_LBA					0x40
+
 /* Drive is preparing to accept/send data -- wait until this bit clears. If it never
  * clears, do a Software Reset. Technically, when BSY is set, the other bits in the
  * Status byte are meaningless. */
@@ -79,7 +86,7 @@
 /* Software Reset -- set this to reset all ATA drives on a bus, if one is misbehaving. */
 #define CTRL_SOFTWARE_RESET			(1 << 2)	/* 0x04 */
 /* Set this to stop the current device from sending interrupts. */
-#define CTRL_INTRPTS_ENABLED		(1 << 1)	/* 0x02 */
+#define CTRL_NIEN					(1 << 1)	/* 0x02 */
 
 typedef struct {
 	struct {
@@ -243,7 +250,7 @@ typedef struct {
 
 typedef struct sATAController sATAController;
 typedef struct sATADevice sATADevice;
-typedef bool (*fReadWrite)(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
+typedef bool (*fReadWrite)(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secSize,u16 secCount);
 
 struct sATADevice {
 	/* the identifier; 0-3; bit0 set means slave */
@@ -264,6 +271,14 @@ struct sATADevice {
 	sPartition partTable[PARTITION_COUNT];
 };
 
+/* physical region descriptor */
+typedef struct {
+	void *buffer;
+	u16 byteCount;
+	u16 : 15;
+	u16 last : 1;
+} A_PACKED sPRD;
+
 /* the controller is declared here, because otherwise device.h needs controller.h and the other way
  * around */
 struct sATAController {
@@ -276,8 +291,8 @@ struct sATAController {
 	/* I/O-ports for bus-mastering */
 	u16 bmrBase;
 	tSig irq;
-	u64 *dma_prdt_phys;
-	u64 *dma_prdt_virt;
+	sPRD *dma_prdt_phys;
+	sPRD *dma_prdt_virt;
 	void *dma_buf_phys;
 	void *dma_buf_virt;
 	sATADevice devices[2];

@@ -172,10 +172,6 @@ void thread_switchTo(tTid tid) {
 			old = cur;
 			cur = t;
 
-			/* set used */
-			cur->stats.schedCount++;
-			vmm_setTimestamp(cur,timer_getTimestamp());
-
 			/* if it is the idle-thread, stay here and wait for an interrupt */
 			if(cur->tid == IDLE_TID) {
 				/* user-mode starts here */
@@ -191,6 +187,9 @@ void thread_switchTo(tTid tid) {
 				runnableThread = INVALID_TID;
 			}
 
+			/* set used */
+			cur->stats.schedCount++;
+			vmm_setTimestamp(cur,timer_getTimestamp());
 			sched_setRunning(cur);
 
 			if(old->proc != cur->proc) {
@@ -272,7 +271,8 @@ void thread_wakeup(tTid tid,u16 event) {
 
 bool thread_setReady(tTid tid) {
 	sThread *t = thread_getById(tid);
-	assert(t != NULL && t != cur);
+	vassert(t != NULL && t != cur,"tid=%d, pid=%d, cmd=%s",
+			t ? t->tid : 0,t ? t->proc->pid : 0,t ? t->proc->command : "?");
 	if(!t->waitsInKernel)
 		sched_setReady(t);
 	return t->state == ST_READY;

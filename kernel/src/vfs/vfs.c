@@ -252,21 +252,15 @@ static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 	for(i = 0; i < FILE_COUNT; i++) {
 		/* used slot and same node? */
 		if(e->flags != 0) {
-			/* we don't want to share files with different threads */
-			/* this is allowed only if we create a child-threads. he will inherit the files.
-			 * in this case we trust the threads that they know what they do :) */
-			if(e->devNo == devNo && e->nodeNo == nodeNo && e->owner == tid) {
+			/* same file? */
+			if(e->devNo == devNo && e->nodeNo == nodeNo) {
+				/* two threads that want to write at the same time? no! */
+				if(!isDrvUse && e->owner != tid && (rwFlags & VFS_WRITE) && (e->flags & VFS_WRITE))
+					return ERR_FILE_IN_USE;
 				/* driver-usages may use a file twice for reading and writing because we
 				 * will prevent trouble anyway */
 				if(isDrvUse && (e->flags & (VFS_READ | VFS_WRITE)) == rwFlags)
 					return i;
-
-				/* someone does already write to this file? so it's not really good
-				 * to use it atm, right? */
-				/* TODO this means that a different thread could open the same file for reading
-				 * or writing while another one is writing!? */
-				if(!isDrvUse && e->flags & VFS_WRITE)
-					return ERR_FILE_IN_USE;
 
 				/* if the flags are different we need a different slot */
 				if((e->flags & (VFS_READ | VFS_WRITE)) == rwFlags)
@@ -280,7 +274,9 @@ static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 			 * use this slot because it doesn't really matter whether we use a new file or an
 			 * existing one (if there even is any) */
 			/* note: we can share a file for writing in this case! */
-			if(isDrvUse)
+			/* when we don't write, we don't need to wait since it doesn't hurt if there are other
+			 * users of that file */
+			if(isDrvUse || !(rwFlags & VFS_WRITE))
 				break;
 		}
 

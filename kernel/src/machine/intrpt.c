@@ -524,6 +524,17 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		case IRQ_ATA1:
 		case IRQ_ATA2:
 		case IRQ_MOUSE:
+#if DEBUGGING
+			/* in debug-mode, start the logviewer when the keyboard is not present yet */
+			/* (with a present keyboard-driver we would steal him the scancodes) */
+			/* this way, we can debug the system in the startup-phase without affecting timings
+			 * (before viewing the log ;)) */
+			if(stack->intrptNo == IRQ_KEYBOARD && proc_getByPid(KEYBOARD_PID) == NULL) {
+				u8 sc = util_getScanCode();
+				if(sc == 0x58) /* F12 */
+					util_logViewer();
+			}
+#endif
 			/* don't print info about intrpt */
 			break;
 

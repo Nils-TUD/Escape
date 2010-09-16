@@ -104,6 +104,11 @@ extern u32 getStackFrameStart(void);
 void util_panic(const char *fmt,...);
 
 /**
+ * Starts the log-viewer
+ */
+void util_logViewer(void);
+
+/**
  * Rand will generate a random number between 0 and 'RAND_MAX' (at least 32767).
  *
  * @return the random number
@@ -115,6 +120,11 @@ s32 util_rand(void);
  * sequence of numbers.
  */
 void util_srand(u32 seed);
+
+/**
+ * @return If available, the scancode, otherwise 0
+ */
+u8 util_getScanCode(void);
 
 /**
  * Waits until any key is pressed (make-code)

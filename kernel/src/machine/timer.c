@@ -183,15 +183,17 @@ void timer_intrpt(void) {
 
 void timer_dbg_print(void) {
 	u32 time;
-	sSLNode *n;
+	sSLNode *n = sll_begin(listener);
 	sTimerListener *l;
-	vid_printf("Timer-Listener:\n");
-	time = 0;
-	for(n = sll_begin(listener); n != NULL; n = n->next) {
-		l = (sTimerListener*)n->data;
-		time += l->time;
-		vid_printf("	diff=%d ms, rem=%d ms, tid=%d (%s)\n",l->time,time,l->tid,
-				thread_getById(l->tid)->proc->command);
+	if(n != NULL) {
+		vid_printf("Timer-Listener: cur=%s\n",proc_getRunning()->command);
+		time = 0;
+		for(; n != NULL; n = n->next) {
+			l = (sTimerListener*)n->data;
+			time += l->time;
+			vid_printf("	diff=%d ms, rem=%d ms, tid=%d (%s)\n",l->time,time,l->tid,
+					thread_getById(l->tid)->proc->command);
+		}
 	}
 }
 

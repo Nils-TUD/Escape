@@ -20,13 +20,13 @@ all:	$(BUILDDIRS) $(STLIB) $(DYNLIB)
 $(STLIB): $(COBJ)
 		@echo "	" AR $(STLIB)
 		@$(AR) rcs $(STLIB) $(COBJ)
-		$(ROOT)/tools/linklib.sh $(STLIB)
+		@$(ROOT)/tools/linklib.sh $(STLIB)
 
 $(DYNLIB):	$(CPICOBJS)
 		@echo "	" LINKING $(DYNLIB)
 		@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) \
 			$(CPICOBJS) $(ADDLIBS)
-		$(ROOT)/tools/linklib.sh $(DYNLIB)
+		@$(ROOT)/tools/linklib.sh $(DYNLIB)
 
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \

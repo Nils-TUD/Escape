@@ -51,7 +51,7 @@ void device_init(sATADevice *device) {
 		device->secSize = ATA_SEC_SIZE;
 		device->rwHandler = ata_readWrite;
 		ATA_LOG("Device %d is an ATA-device",device->id);
-		if(!ata_readWrite(device,false,buffer,0,1)) {
+		if(!ata_readWrite(device,false,buffer,0,device->secSize,1)) {
 			device->present = 0;
 			ATA_LOG("Device %d: Unable to read partition-table!",device->id);
 			return;
@@ -82,7 +82,7 @@ static bool device_identify(sATADevice *device,u8 cmd) {
 	ctrl_wait(ctrl);
 
 	/* disable interrupts */
-	ctrl_outb(ctrl,ATA_REG_CONTROL,CTRL_INTRPTS_ENABLED);
+	ctrl_outb(ctrl,ATA_REG_CONTROL,CTRL_NIEN);
 
 	/* check whether the device exists */
 	ctrl_outb(ctrl,ATA_REG_COMMAND,cmd);

@@ -34,16 +34,34 @@
 #define DEVICE_SEC_MASTER			2
 #define DEVICE_SEC_SLAVE			3
 
+#define BMR_REG_COMMAND				0x0
+#define BMR_REG_STATUS				0x2
+#define BMR_REG_PRDT				0x4
+
+#define BMR_STATUS_IRQ				0x4
+#define BMR_STATUS_ERROR			0x2
+#define BMR_STATUS_DMA				0x1
+
+#define BMR_CMD_START				0x1
+#define BMR_CMD_READ				0x8
+
 void ctrl_init(void);
 
 sATADevice *ctrl_getDevice(u8 id);
 sATAController *ctrl_getCtrl(u8 id);
+
+void ctrl_outbmrb(sATAController *ctrl,u16 reg,u8 value);
+void ctrl_outbmrl(sATAController *ctrl,u16 reg,u32 value);
+
+u8 ctrl_inbmrb(sATAController *ctrl,u16 reg);
 
 void ctrl_outb(sATAController *ctrl,u16 reg,u8 value);
 void ctrl_outwords(sATAController *ctrl,u16 reg,const u16 *buf,u32 count);
 
 u8 ctrl_inb(sATAController *ctrl,u16 reg);
 void ctrl_inwords(sATAController *ctrl,u16 reg,u16 *buf,u32 count);
+
+void ctrl_softReset(sATAController *ctrl);
 
 void ctrl_resetIrq(sATAController *ctrl);
 void ctrl_waitIntrpt(sATAController *ctrl);

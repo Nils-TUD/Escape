@@ -105,7 +105,8 @@ int main(void) {
 							ATA_PR2("Reading %d bytes @ %x from device %d",
 									rcount,offset,device->id);
 							if(device->rwHandler(device,false,buffer,
-									offset / device->secSize + part->start,rcount / device->secSize)) {
+									offset / device->secSize + part->start,
+									device->secSize,rcount / device->secSize)) {
 								msg.data.arg1 = count;
 							}
 						}
@@ -127,7 +128,8 @@ int main(void) {
 								ATA_PR2("Writing %d bytes @ %x to device %d",
 										count,offset,device->id);
 								if(device->rwHandler(device,true,buffer,
-										offset / device->secSize + part->start,count / device->secSize)) {
+										offset / device->secSize + part->start,
+										device->secSize,count / device->secSize)) {
 									msg.args.arg1 = count;
 								}
 							}
@@ -138,7 +140,7 @@ int main(void) {
 				break;
 			}
 			close(fd);
-			ATA_PR2("Done");
+			ATA_PR2("Done\n");
 		}
 	}
 

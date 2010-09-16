@@ -27,7 +27,7 @@
 
 static bool atapi_request(sATADevice *device,u16 *cmd,u16 *buffer,u32 bufSize);
 
-bool atapi_read(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secCount) {
+bool atapi_read(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secSize,u16 secCount) {
 	u8 cmd[] = {SCSI_CMD_READ_SECTORS,0,0,0,0,0,0,0,0,0,0,0};
 	/* no writing here ;) */
 	if(opWrite)
@@ -42,7 +42,7 @@ bool atapi_read(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secCount
     cmd[3] = (lba >> 16) & 0xFF;
     cmd[4] = (lba >> 8) & 0xFF;
     cmd[5] = (lba >> 0) & 0xFF;
-	return atapi_request(device,(u16*)cmd,buffer,secCount * device->secSize);
+    return atapi_request(device,(u16*)cmd,buffer,secCount * device->secSize);
 }
 
 u32 atapi_getCapacity(sATADevice *device) {
@@ -60,6 +60,10 @@ static bool atapi_request(sATADevice *device,u16 *cmd,u16 *buffer,u32 bufSize) {
 	u16 size;
 	sATAController *ctrl = device->ctrl;
 
+#if 1
+    if(!ata_readWrite(device,true,cmd,0xFFFF00,12,1))
+    	return false;
+#else
 	ATA_PR2("Selecting device %d",device->id);
 
 	/* select device */
@@ -95,10 +99,16 @@ static bool atapi_request(sATADevice *device,u16 *cmd,u16 *buffer,u32 bufSize) {
 
 	/* send words */
 	ctrl_outwords(ctrl,ATA_REG_DATA,cmd,6);
+#endif
 	/*ata_waitIntrpt();*/
 	/* TODO actually we should wait for an interrupt here, but unfortunatly real hardware (my
 	 * notebook) doesn't send us any. I don't know why yet :/ */
 	/* but it works if we're doing busy-waiting here... */
+
+#if 1
+	if(ctrl->useDma && device->info.capabilities.DMA)
+		return ata_transferDMA(device,false,buffer,device->secSize,bufSize / device->secSize);
+
 	ATA_PR2("Waiting while busy");
 	while(ctrl_inb(ctrl,ATA_REG_STATUS) & CMD_ST_BUSY)
 		;
@@ -107,6 +117,16 @@ static bool atapi_request(sATADevice *device,u16 *cmd,u16 *buffer,u32 bufSize) {
 		;
 
 	ATA_PR2("Reading response-size");
+	size = ((u16)ctrl_inb(ctrl,ATA_REG_ADDRESS3) << 8) | (u16)ctrl_inb(ctrl,ATA_REG_ADDRESS2);
+	ATA_PR2("Got %u -> %u sectors",size,bufSize / size);
+	return ata_transferPIO(device,false,buffer,size,bufSize / size,false);
+#else
+	ATA_PR2("Waiting while busy");
+	while(ctrl_inb(ctrl,ATA_REG_STATUS) & CMD_ST_BUSY)
+		;
+	ATA_PR2("Waiting until DRQ or ERROR set");
+	while((!((status = ctrl_inb(ctrl,ATA_REG_STATUS)) & CMD_ST_DRQ)) && !(status & CMD_ST_ERROR))
+		;
 
 	/* read actual size */
 	ctrl_resetIrq(ctrl);
@@ -137,5 +157,10 @@ static bool atapi_request(sATADevice *device,u16 *cmd,u16 *buffer,u32 bufSize) {
 	while(ctrl_inb(ctrl,ATA_REG_STATUS) & (CMD_ST_BUSY | CMD_ST_DRQ))
 		;
 	ATA_PR2("Done");
+
+	/*dumpDwords(buffer,bufSize / 4);
+	printf("\n");*/
+
 	return true;
+#endif
 }

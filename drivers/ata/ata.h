@@ -22,15 +22,29 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
+#include <stdio.h>
 #include "device.h"
 
 /* for printing debug-infos */
-#define ATA_PR1(fmt,...) /*debugf("[ATA] " #fmt "\n",## __VA_ARGS__)*/
-#define ATA_PR2(fmt,...) /*debugf("[ATA] " #fmt "\n",## __VA_ARGS__)*/
+#define ATA_PR1(fmt,...)	/*do { \
+		printf("[ATA] "); \
+		printf(fmt,## __VA_ARGS__); \
+		printf("\n"); \
+		fflush(stdout); \
+	} while(0);*/
+
+#define ATA_PR2(fmt,...)	/*do { \
+		printf("[ATA] "); \
+		printf(fmt,## __VA_ARGS__); \
+		printf("\n"); \
+		fflush(stdout); \
+	} while(0);*/
+
 #define ATA_LOG(fmt,...)	do { \
 		printf("[ATA] "); \
 		printf(fmt,## __VA_ARGS__); \
 		printf("\n"); \
+		fflush(stdout); \
 	} while(0);
 
 /**
@@ -40,9 +54,13 @@
  * @param opWrite true if writing
  * @param buffer the buffer to write to
  * @param lba the block-address to start at
+ * @param secSize the size of a sector
  * @param secCount number of sectors
  * @return true on success
  */
-bool ata_readWrite(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
+bool ata_readWrite(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secSize,u16 secCount);
+
+bool ata_transferPIO(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16 secCount,bool waitFirst);
+bool ata_transferDMA(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16 secCount);
 
 #endif /* ATA_H_ */

@@ -14,7 +14,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 #KVM = -enable-kvm
 #QEMU = /home/hrniels/Applications/qemu-0.12.2/bin/bin/qemu
 QEMU = qemu
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(BUILD)/cd.iso -boot order=c -vga std -m 40 \
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot order=d -vga std -m 40 \
 	-localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 
@@ -196,7 +196,7 @@ testvmware:	all prepareVmware prepareTest
 prepareQemu:	hdd cd
 		sudo service qemu-kvm start || true
 
-prepareBochs:	hdd
+prepareBochs:	hdd cd
 		tools/bochshdd.sh bochs.cfg $(HDD)
 
 prepareVbox: cd $(VMDISK)
@@ -204,7 +204,7 @@ prepareVbox: cd $(VMDISK)
 		tools/vboxcd.sh $(ISO) "$(VBOXOSTITLE)"
 		tools/vboxhddupd.sh "$(VBOXOSTITLE)" $(VMDISK)
 
-prepareVmware: cd
+prepareVmware: cd $(VMDISK)
 		sudo service qemu-kvm stop || true # vmware doesn't like kvm :/
 		tools/vmwarecd.sh vmware/escape.vmx $(ISO)
 

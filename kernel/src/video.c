@@ -58,12 +58,18 @@ void vid_clearScreen(void) {
 void vid_putchar(char c) {
 	u32 i;
 	char *video;
+	/* do an explicit newline if necessary */
+	if(col >= VID_COLS) {
+		row++;
+		col = 0;
+	}
 	vid_move();
 	video = (char*)(VIDEO_BASE + row * VID_COLS * 2 + col * 2);
 
+
 	if(c == '\n') {
 		row++;
-		vid_putchar('\r');
+		col = 0;
 	}
 	else if(c == '\r')
 		col = 0;
@@ -77,10 +83,7 @@ void vid_putchar(char c) {
 		video++;
 		*video = color;
 
-		/* do an explicit newline if necessary */
 		col++;
-		if(col >= VID_COLS)
-			vid_putchar('\n');
 	}
 }
 
@@ -108,6 +111,7 @@ void vid_vprintf(const char *fmt,va_list ap) {
 static void vid_move(void) {
 	/* last line? */
 	if(row >= VID_ROWS) {
+		/*util_waitForKeyPress();*/
 		/* copy all chars one line back */
 		memmove((void*)VIDEO_BASE,(u8*)VIDEO_BASE + VID_COLS * 2,VID_ROWS * VID_COLS * 2);
 		row--;

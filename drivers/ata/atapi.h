@@ -30,10 +30,11 @@
  * @param opWrite true if writing (not supported here ;))
  * @param buffer the buffer to write to
  * @param lba the block-address to start at
+ * @param secSize the size of a sector
  * @param secCount number of sectors
  * @return true on success
  */
-bool atapi_read(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secCount);
+bool atapi_read(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secSize,u16 secCount);
 
 /**
  * Determines the capacity for the given device

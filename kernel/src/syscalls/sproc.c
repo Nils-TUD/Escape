@@ -141,8 +141,13 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 void sysc_sleep(sIntrptStackFrame *stack) {
 	u32 msecs = SYSC_ARG1(stack);
 	sThread *t = thread_getRunning();
-	timer_sleepFor(t->tid,msecs);
+	s32 res;
+	if((res = timer_sleepFor(t->tid,msecs)) < 0)
+		SYSC_ERROR(stack,res);
 	thread_switch();
+	/* ensure that we're no longer in the timer-list. this may for example happen if we get a signal
+	 * and the sleep-time was not over yet. */
+	timer_removeThread(t->tid);
 	if(sig_hasSignalFor(t->tid))
 		SYSC_ERROR(stack,ERR_INTERRUPTED);
 	SYSC_RET1(stack,0);

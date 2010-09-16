@@ -38,13 +38,13 @@ all: $(BUILDDIRS) $(STARTO) $(STARTOPIC) $(STLIB) $(DYNLIB)
 $(STLIB): $(COBJS) $(AOBJS) $(LOBJ)
 		@echo "	" AR $(STLIB)
 		@$(AR) rcs $(STLIB) $(COBJS) $(AOBJS) $(LOBJ)
-		$(ROOT)/tools/linklib.sh $(STLIB)
+		@$(ROOT)/tools/linklib.sh $(STLIB)
 
 $(DYNLIB): $(CPICOBJS) $(APICOBJS) $(LPICOBJ)
 		@echo "	" LINKING $(DYNLIB)
 		@$(CC) $(CFLAGS) -shared -Wl,-shared -Wl,-soname,$(DYNLIBNAME) -o $(DYNLIB) $(CPICOBJS) \
 			$(APICOBJS) $(LPICOBJ) $(ADDLIBS)
-		$(ROOT)/tools/linklib.sh $(DYNLIB)
+		@$(ROOT)/tools/linklib.sh $(DYNLIB)
 		
 $(BUILDDIRS):
 		@for i in $(BUILDDIRS); do \
@@ -76,14 +76,14 @@ $(BUILDL)/lib/%_pic.o:	$(LIBDIR)/%.c
 		@$(CC) $(CFLAGS) -fPIC -o $@ -c $< -MD
 
 $(BUILD)/crt%S.o : crt%.s
-		@echo " " AS $<
+		@echo "	" AS $<
 		@$(AS) $(ASFLAGS) -defsym SHAREDLIB=1 -o $@ $<
-		$(ROOT)/tools/linklib.sh $@
+		@$(ROOT)/tools/linklib.sh $@
 
 $(BUILD)/crt%.o : crt%.s
 		@echo "	" AS $<
 		@$(AS) $(ASFLAGS) -o $@ $<
-		$(ROOT)/tools/linklib.sh $@
+		@$(ROOT)/tools/linklib.sh $@
 
 -include $(DEPS)
 

@@ -36,7 +36,12 @@
 #define IDE_CTRL_SUBCLASS			0x01
 #define IDE_CTRL_BAR				4
 
+#define BMR_SEC_OFFSET				0x8
+
 #define DMA_BUF_SIZE				(64 * 1024)
+
+#define IRQ_POLL_INTERVAL			20		/* in ms */
+#define IRQ_TIMEOUT					200		/* in ms */
 
 static void ctrl_intrptHandler(tSig sig,u32 data);
 static bool ctrl_isBusResponding(sATAController* ctrl);
@@ -77,25 +82,10 @@ void ctrl_init(void) {
 	}
 
 	for(i = 0; i < 2; i++) {
-		ctrls[i].useIrq = false;
+		ATA_PR2("Initializing controller %d",ctrls[i].id);
+		ctrls[i].useIrq = true;
 		ctrls[i].useDma = false;
 		ctrls[i].gotIrq = false;
-		ctrls[i].bmrBase = ideCtrl.bars[IDE_CTRL_BAR].addr;
-		if(ctrls[i].bmrBase) {
-			/* allocate memory for PRDT and buffer */
-			ctrls[i].dma_prdt_virt = allocPhysical((u32*)&ctrls[i].dma_prdt_phys,8,4096);
-			if(!ctrls[i].dma_prdt_virt)
-				error("Unable to allocate PRDT for controller %d",ctrls[i].id);
-			ctrls[i].dma_buf_virt = allocPhysical((u32*)&ctrls[i].dma_buf_phys,
-					DMA_BUF_SIZE,DMA_BUF_SIZE);
-			if(!ctrls[i].dma_buf_virt)
-				error("Unable to allocate dma-buffer for controller %d",ctrls[i].id);
-			ctrls[i].useDma = true;
-		}
-
-		/* set interrupt-handler */
-		if(setSigHandler(ctrls[i].irq,ctrl_intrptHandler) < 0)
-			error("Unable to announce sig-handler ctrls %d (%d)",ctrls[i].id,ctrls[i].irq);
 
 		/* request ports */
 		/* for some reason virtualbox requires an additional port (9 instead of 8). Otherwise
@@ -109,7 +99,26 @@ void ctrl_init(void) {
 		ATA_PR1("Checking if bus %d is floating",ctrls[i].id);
 		if(!ctrl_isBusResponding(ctrls + i)) {
 			ATA_LOG("Bus %d is floating",ctrls[i].id);
-			return;
+			continue;
+		}
+
+		/* set interrupt-handler */
+		if(setSigHandler(ctrls[i].irq,ctrl_intrptHandler) < 0)
+			error("Unable to announce sig-handler ctrls %d (%d)",ctrls[i].id,ctrls[i].irq);
+
+		/* init DMA */
+		ctrls[i].bmrBase = ideCtrl.bars[IDE_CTRL_BAR].addr;
+		if(ctrls[i].bmrBase) {
+			ctrls[i].bmrBase += i * BMR_SEC_OFFSET;
+			/* allocate memory for PRDT and buffer */
+			ctrls[i].dma_prdt_virt = allocPhysical((u32*)&ctrls[i].dma_prdt_phys,8,4096);
+			if(!ctrls[i].dma_prdt_virt)
+				error("Unable to allocate PRDT for controller %d",ctrls[i].id);
+			ctrls[i].dma_buf_virt = allocPhysical((u32*)&ctrls[i].dma_buf_phys,
+					DMA_BUF_SIZE,DMA_BUF_SIZE);
+			if(!ctrls[i].dma_buf_virt)
+				error("Unable to allocate dma-buffer for controller %d",ctrls[i].id);
+			/*ctrls[i].useDma = true;*/
 		}
 
 		/* init attached devices; begin with slave */
@@ -120,6 +129,7 @@ void ctrl_init(void) {
 			device_init(ctrls[i].devices + j);
 		}
 	}
+	ATA_PR2("All controller initialized");
 }
 
 sATADevice *ctrl_getDevice(u8 id) {
@@ -128,6 +138,18 @@ sATADevice *ctrl_getDevice(u8 id) {
 
 sATAController *ctrl_getCtrl(u8 id) {
 	return ctrls + id;
+}
+
+void ctrl_outbmrb(sATAController *ctrl,u16 reg,u8 value) {
+	outByte(ctrl->bmrBase + reg,value);
+}
+
+void ctrl_outbmrl(sATAController *ctrl,u16 reg,u32 value) {
+	outDWord(ctrl->bmrBase + reg,value);
+}
+
+u8 ctrl_inbmrb(sATAController *ctrl,u16 reg) {
+	return inByte(ctrl->bmrBase + reg);
 }
 
 void ctrl_outb(sATAController *ctrl,u16 reg,u8 value) {
@@ -146,13 +168,36 @@ void ctrl_inwords(sATAController *ctrl,u16 reg,u16 *buf,u32 count) {
 	inWordStr(ctrl->portBase + reg,buf,count);
 }
 
+void ctrl_softReset(sATAController *ctrl) {
+	u8 status;
+	ctrl_outb(ctrl,ATA_REG_CONTROL,4);
+	ctrl_outb(ctrl,ATA_REG_CONTROL,0);
+	ctrl_wait(ctrl);
+	do {
+		status = ctrl_inb(ctrl,ATA_REG_STATUS);
+	}
+	while((status & (CMD_ST_BUSY | CMD_ST_READY)) != CMD_ST_READY);
+}
+
 void ctrl_resetIrq(sATAController *ctrl) {
 	ctrl->gotIrq = false;
 }
 
 void ctrl_waitIntrpt(sATAController *ctrl) {
-	while(!ctrl->gotIrq)
-		wait(EV_NOEVENT);
+	u32 time = 0;
+	if(!ctrl->useIrq)
+		return;
+	while(!ctrl->gotIrq) {
+		/* if we reached the timeout, it seems that waiting for interrupts does not work for
+		 * this controller. so disable it */
+		if(time > IRQ_TIMEOUT) {
+			ATA_LOG("IRQ-Timeout reached; stopping to use interrupts");
+			ctrl->useIrq = false;
+			return;
+		}
+		sleep(IRQ_POLL_INTERVAL);
+		time += IRQ_POLL_INTERVAL;
+	}
 }
 
 static void ctrl_intrptHandler(tSig sig,u32 data) {

@@ -118,7 +118,7 @@ void ctrl_init(void) {
 					DMA_BUF_SIZE,DMA_BUF_SIZE);
 			if(!ctrls[i].dma_buf_virt)
 				error("Unable to allocate dma-buffer for controller %d",ctrls[i].id);
-			/*ctrls[i].useDma = true;*/
+			ctrls[i].useDma = true;
 		}
 
 		/* init attached devices; begin with slave */
@@ -191,7 +191,7 @@ void ctrl_waitIntrpt(sATAController *ctrl) {
 		/* if we reached the timeout, it seems that waiting for interrupts does not work for
 		 * this controller. so disable it */
 		if(time > IRQ_TIMEOUT) {
-			ATA_LOG("IRQ-Timeout reached; stopping to use interrupts");
+			ATA_LOG("Controller %d: IRQ-Timeout reached; stopping to use interrupts",ctrl->id);
 			ctrl->useIrq = false;
 			return;
 		}

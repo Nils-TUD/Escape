@@ -28,16 +28,24 @@
 static bool atapi_request(sATADevice *device,u16 *cmd,u16 *buffer,u32 bufSize);
 
 bool atapi_read(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secSize,u16 secCount) {
-	u8 cmd[] = {SCSI_CMD_READ_SECTORS,0,0,0,0,0,0,0,0,0,0,0};
+	u8 cmd[] = {SCSI_CMD_READ_SECTORS_EXT,0,0,0,0,0,0,0,0,0,0,0};
+	if(!device->info.features.lba48)
+		cmd[0] = SCSI_CMD_READ_SECTORS;
 	/* no writing here ;) */
 	if(opWrite)
 		return false;
 	if(secCount == 0)
 		return false;
-    cmd[6] = (secCount >> 24) & 0xFF;
-    cmd[7] = (secCount >> 16) & 0xFF;
-    cmd[8] = (secCount >> 8) & 0xFF;
-    cmd[9] = (secCount >> 0) & 0xFF;
+	if(cmd == SCSI_CMD_READ_SECTORS_EXT) {
+		cmd[6] = (secCount >> 24) & 0xFF;
+		cmd[7] = (secCount >> 16) & 0xFF;
+		cmd[8] = (secCount >> 8) & 0xFF;
+		cmd[9] = (secCount >> 0) & 0xFF;
+	}
+	else {
+		cmd[7] = (secCount >> 8) & 0xFF;
+		cmd[8] = (secCount >> 0) & 0xFF;
+	}
     cmd[2] = (lba >> 24) & 0xFF;
     cmd[3] = (lba >> 16) & 0xFF;
     cmd[4] = (lba >> 8) & 0xFF;
@@ -56,59 +64,18 @@ u32 atapi_getCapacity(sATADevice *device) {
 
 static bool atapi_request(sATADevice *device,u16 *cmd,u16 *buffer,u32 bufSize) {
 	u8 status;
-	u32 off,count;
 	u16 size;
 	sATAController *ctrl = device->ctrl;
 
-#if 1
+	/* send PACKET command to drive */
     if(!ata_readWrite(device,true,cmd,0xFFFF00,12,1))
     	return false;
-#else
-	ATA_PR2("Selecting device %d",device->id);
 
-	/* select device */
-	ctrl_resetIrq(ctrl);
-	ctrl_outb(ctrl,ATA_REG_DRIVE_SELECT,(device->id & SLAVE_BIT) << 4);
-	ctrl_wait(ctrl);
-
-	/* reset control-register */
-	ctrl_outb(ctrl,ATA_REG_CONTROL,0);
-
-	/* PIO mode */
-	ctrl_outb(ctrl,ATA_REG_FEATURES,0x0);
-	/* in PIO-mode the device has to know the size of the buffer */
-	ctrl_outb(ctrl,ATA_REG_ADDRESS2,bufSize & 0xFF);
-	ctrl_outb(ctrl,ATA_REG_ADDRESS3,bufSize >> 8);
-	/* now tell the device the command */
-	ctrl_outb(ctrl,ATA_REG_COMMAND,COMMAND_PACKET);
-
-	ATA_PR2("Waiting while busy");
-	/* wait while busy */
-	while(ctrl_inb(ctrl,ATA_REG_STATUS) & CMD_ST_BUSY)
-		;
-	ATA_PR2("Waiting until DRQ or ERROR set");
-	/* wait until DRQ or ERROR set */
-	while((!((status = ctrl_inb(ctrl,ATA_REG_STATUS)) & CMD_ST_DRQ)) && !(status & CMD_ST_ERROR))
-		;
-	if(status & CMD_ST_ERROR) {
-		ATA_PR1("ERROR-bit set");
-		return false;
-	}
-
-	ATA_PR2("Sending PACKET-command %d",((u8*)cmd)[0]);
-
-	/* send words */
-	ctrl_outwords(ctrl,ATA_REG_DATA,cmd,6);
-#endif
-	/*ata_waitIntrpt();*/
-	/* TODO actually we should wait for an interrupt here, but unfortunatly real hardware (my
-	 * notebook) doesn't send us any. I don't know why yet :/ */
-	/* but it works if we're doing busy-waiting here... */
-
-#if 1
+    /* now transfer the data */
 	if(ctrl->useDma && device->info.capabilities.DMA)
 		return ata_transferDMA(device,false,buffer,device->secSize,bufSize / device->secSize);
 
+	/* ok, no DMA, so wait first until the drive is ready */
 	ATA_PR2("Waiting while busy");
 	while(ctrl_inb(ctrl,ATA_REG_STATUS) & CMD_ST_BUSY)
 		;
@@ -116,51 +83,10 @@ static bool atapi_request(sATADevice *device,u16 *cmd,u16 *buffer,u32 bufSize) {
 	while((!((status = ctrl_inb(ctrl,ATA_REG_STATUS)) & CMD_ST_DRQ)) && !(status & CMD_ST_ERROR))
 		;
 
+	/* read the actual size per transfer */
 	ATA_PR2("Reading response-size");
 	size = ((u16)ctrl_inb(ctrl,ATA_REG_ADDRESS3) << 8) | (u16)ctrl_inb(ctrl,ATA_REG_ADDRESS2);
 	ATA_PR2("Got %u -> %u sectors",size,bufSize / size);
+	/* do the PIO-transfer (no check at the beginning; seems to cause trouble on some machines) */
 	return ata_transferPIO(device,false,buffer,size,bufSize / size,false);
-#else
-	ATA_PR2("Waiting while busy");
-	while(ctrl_inb(ctrl,ATA_REG_STATUS) & CMD_ST_BUSY)
-		;
-	ATA_PR2("Waiting until DRQ or ERROR set");
-	while((!((status = ctrl_inb(ctrl,ATA_REG_STATUS)) & CMD_ST_DRQ)) && !(status & CMD_ST_ERROR))
-		;
-
-	/* read actual size */
-	ctrl_resetIrq(ctrl);
-	size = ((u16)ctrl_inb(ctrl,ATA_REG_ADDRESS3) << 8) | (u16)ctrl_inb(ctrl,ATA_REG_ADDRESS2);
-	count = 0;
-	off = 0;
-	ATA_PR2("Got %d; starting to read",size);
-	while(count < bufSize) {
-		u32 end = MIN(size,bufSize - off * sizeof(u16)) / sizeof(u16);
-		/* read data */
-		ctrl_inwords(ctrl,ATA_REG_DATA,buffer + off,end);
-		off += end;
-		count += end * sizeof(u16);
-		if(count >= bufSize)
-			break;
-		ATA_PR2("Waiting until DRQ set");
-		/* wait until DRQ set */
-		while((ctrl_inb(ctrl,ATA_REG_STATUS) & (CMD_ST_BUSY | CMD_ST_DRQ)) != CMD_ST_DRQ)
-			;
-	}
-
-	/* TODO: according to http://wiki.osdev.org/ATAPI we should wait for an interrupt here.
-	 * But somehow we don't get an interrupt. We get one if we read 256 bytes instead of 2048. I
-	 * have no idea why. However, it seems to work everywhere without waiting... */
-	/*ata_waitIntrpt();*/
-	/* wait while busy or data-available */
-	ATA_PR2("Waiting while busy or DRQ set");
-	while(ctrl_inb(ctrl,ATA_REG_STATUS) & (CMD_ST_BUSY | CMD_ST_DRQ))
-		;
-	ATA_PR2("Done");
-
-	/*dumpDwords(buffer,bufSize / 4);
-	printf("\n");*/
-
-	return true;
-#endif
 }

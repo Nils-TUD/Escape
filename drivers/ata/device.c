@@ -70,6 +70,13 @@ void device_init(sATADevice *device) {
 		device->partTable[0].size = atapi_getCapacity(device);
 		ATA_LOG("Device %d is an ATAPI-device",device->id);
 	}
+
+	if(device->ctrl->useDma && device->info.capabilities.DMA) {
+		ATA_LOG("Device %d uses DMA",device->id);
+	}
+	else {
+		ATA_LOG("Device %d uses PIO",device->id);
+	}
 }
 
 static bool device_identify(sATADevice *device,u8 cmd) {

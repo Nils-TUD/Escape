@@ -44,7 +44,8 @@
 #define COMMAND_WRITE_DMA_EXT		0x35
 #define COMMAND_PACKET				0xA0
 
-#define SCSI_CMD_READ_SECTORS		0xA8
+#define SCSI_CMD_READ_SECTORS		0x28
+#define SCSI_CMD_READ_SECTORS_EXT	0xA8
 #define SCSI_CMD_READ_CAPACITY		0x25
 
 /* io-ports, offsets from base */

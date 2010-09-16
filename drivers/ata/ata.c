@@ -198,7 +198,7 @@ static bool ata_setupCommand(sATADevice *device,u64 lba,u16 secCount,u8 cmd) {
 	ATA_PR2("Resetting control-register");
 	ctrl_resetIrq(ctrl);
 	/* reset control-register */
-	ctrl_outb(ctrl,ATA_REG_CONTROL,0);
+	ctrl_outb(ctrl,ATA_REG_CONTROL,device->ctrl->useIrq ? 0 : CTRL_NIEN);
 
 	/* needed for ATAPI */
 	if(device->info.general.isATAPI)

@@ -34,12 +34,6 @@
 #include <errors.h>
 
 #define FS_PATH				"/dev/fs"
-#define R2V_MAP_SIZE		64
-
-typedef struct {
-	tFileNo virtFile;
-	tFileNo realFile;
-} sReal2Virt;
 
 static s32 vfsr_doStat(tTid tid,const char *path,tInodeNo ino,tDevNo devNo,sFileInfo *info);
 /* The request-handler for sending a path and receiving a result */
@@ -49,14 +43,9 @@ static void vfsr_openRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size
 static void vfsr_readRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
 static void vfsr_statRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
 static void vfsr_defRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
-static tFileNo vfsr_create(tTid tid);
-static s32 vfsr_add(tFileNo virtFile,tFileNo realFile);
-static sReal2Virt *vfsr_get(tTid tid,tFileNo real,s32 *err);
-static void vfsr_remove(tTid tid,tFileNo real);
-static void vfsr_destroy(tTid tid,tFileNo virt);
+static tFileNo vfsr_getFSFile(tTid tid);
 
 static sMsg msg;
-static sSLList *real2virt[R2V_MAP_SIZE] = {NULL};
 
 void vfsr_init(void) {
 	vfsreq_setHandler(MSG_FS_OPEN_RESP,vfsr_openRespHandler);
@@ -72,6 +61,14 @@ void vfsr_init(void) {
 	vfsreq_setHandler(MSG_FS_UNMOUNT_RESP,vfsr_defRespHandler);
 }
 
+void vfsr_removeThread(tTid tid) {
+	sThread *t = thread_getById(tid);
+	if(t->fsClient >= 0) {
+		vfs_closeFile(t->tid,t->fsClient);
+		t->fsClient = -1;
+	}
+}
+
 s32 vfsr_openFile(tTid tid,u16 flags,const char *path) {
 	s32 res;
 	u32 pathLen = strlen(path);
@@ -80,7 +77,7 @@ s32 vfsr_openFile(tTid tid,u16 flags,const char *path) {
 
 	if(pathLen > MAX_MSGSTR_LEN)
 		return ERR_INVALID_ARGS;
-	virtFile = vfsr_create(tid);
+	virtFile = vfsr_getFSFile(tid);
 	if(virtFile < 0)
 		return virtFile;
 
@@ -88,17 +85,13 @@ s32 vfsr_openFile(tTid tid,u16 flags,const char *path) {
 	msg.str.arg1 = flags;
 	memcpy(msg.str.s1,path,pathLen + 1);
 	res = vfs_sendMsg(tid,virtFile,MSG_FS_OPEN,(u8*)&msg,sizeof(msg.str));
-	if(res < 0) {
-		vfsr_destroy(tid,virtFile);
+	if(res < 0)
 		return res;
-	}
 
 	/* wait for a reply; when fs dies we're dead anyway, so assume that fs is never affected */
 	req = vfsreq_getRequest(tid,NULL,0);
-	if(req == NULL) {
-		vfsr_destroy(tid,virtFile);
+	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	}
 	do
 		vfsreq_waitForReply(req,false);
 	while((s32)req->count == ERR_DRIVER_DIED);
@@ -110,37 +103,19 @@ s32 vfsr_openFile(tTid tid,u16 flags,const char *path) {
 	if((s32)req->count < 0) {
 		tInodeNo no = req->count;
 		vfsreq_remRequest(req);
-		vfsr_destroy(tid,virtFile);
 		return no;
 	}
 
 	/* now open the file */
 	realFile = vfs_openFile(tid,flags,(tInodeNo)req->count,(tDevNo)req->val1);
 	vfsreq_remRequest(req);
-	if((res = vfsr_add(virtFile,realFile)) < 0) {
-		vfsr_destroy(tid,virtFile);
-		return res;
-	}
 	return realFile;
 }
 
 s32 vfsr_openInode(tTid tid,u16 flags,tInodeNo ino,tDevNo dev) {
-	s32 res;
-	tFileNo virtFile,realFile;
-
-	virtFile = vfsr_create(tid);
-	if(virtFile < 0)
-		return virtFile;
-
-	/* TODO maybe we should send an open-msg to fs, too but in a different form? */
-
-	/* now open the file */
-	realFile = vfs_openFile(tid,flags,ino,dev);
-	if((res = vfsr_add(virtFile,realFile)) < 0) {
-		vfsr_destroy(tid,virtFile);
-		return res;
-	}
-	return realFile;
+	/* TODO maybe we should send an open-msg to fs, too, but in a different form? */
+	/* open the file */
+	return vfs_openFile(tid,flags,ino,dev);
 }
 
 s32 vfsr_istat(tTid tid,tInodeNo ino,tDevNo devNo,sFileInfo *info) {
@@ -162,7 +137,7 @@ static s32 vfsr_doStat(tTid tid,const char *path,tInodeNo ino,tDevNo devNo,sFile
 		if(pathLen > MAX_MSGSTR_LEN)
 			return ERR_INVALID_ARGS;
 	}
-	virtFile = vfsr_create(tid);
+	virtFile = vfsr_getFSFile(tid);
 	if(virtFile < 0)
 		return virtFile;
 
@@ -176,23 +151,18 @@ static s32 vfsr_doStat(tTid tid,const char *path,tInodeNo ino,tDevNo devNo,sFile
 		msg.args.arg2 = devNo;
 		res = vfs_sendMsg(tid,virtFile,MSG_FS_ISTAT,(u8*)&msg,sizeof(msg.args));
 	}
-	if(res < 0) {
-		vfsr_destroy(tid,virtFile);
+	if(res < 0)
 		return res;
-	}
 
 	/* wait for a reply */
 	req = vfsreq_getRequest(tid,NULL,0);
-	if(req == NULL) {
-		vfsr_destroy(tid,virtFile);
+	if(req == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	}
 	do
 		vfsreq_waitForReply(req,false);
 	while((s32)req->count == ERR_DRIVER_DIED);
 
 	/* error? */
-	vfsr_destroy(tid,virtFile);
 	if((s32)req->count < 0) {
 		s32 no = req->count;
 		vfsreq_remRequest(req);
@@ -208,23 +178,20 @@ static s32 vfsr_doStat(tTid tid,const char *path,tInodeNo ino,tDevNo devNo,sFile
 	return 0;
 }
 
-s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,
-		u32 count) {
+s32 vfsr_readFile(tTid tid,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,u32 count) {
 	sRequest *req;
-	sReal2Virt *r2v;
 	u32 pcount,*frameNos;
 	s32 res;
-
-	r2v = vfsr_get(tid,file,&res);
-	if(r2v == NULL)
-		return res;
+	tFileNo fs = vfsr_getFSFile(tid);
+	if(fs < 0)
+		return fs;
 
 	/* send msg to fs */
 	msg.args.arg1 = inodeNo;
 	msg.args.arg2 = devNo;
 	msg.args.arg3 = offset;
 	msg.args.arg4 = count;
-	res = vfs_sendMsg(tid,r2v->virtFile,MSG_FS_READ,(u8*)&msg,sizeof(msg.args));
+	res = vfs_sendMsg(tid,fs,MSG_FS_READ,(u8*)&msg,sizeof(msg.args));
 	if(res < 0)
 		return res;
 
@@ -256,26 +223,23 @@ s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,u8 *buffer
 	return res;
 }
 
-s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,const u8 *buffer,u32 offset,
-		u32 count) {
+s32 vfsr_writeFile(tTid tid,tInodeNo inodeNo,tDevNo devNo,const u8 *buffer,u32 offset,u32 count) {
 	sRequest *req;
-	sReal2Virt *r2v;
 	s32 res;
-
-	r2v = vfsr_get(tid,file,&res);
-	if(r2v == NULL)
-		return res;
+	tFileNo fs = vfsr_getFSFile(tid);
+	if(fs < 0)
+		return fs;
 
 	/* send msg first */
 	msg.data.arg1 = inodeNo;
 	msg.args.arg2 = devNo;
 	msg.args.arg3 = offset;
 	msg.args.arg4 = count;
-	res = vfs_sendMsg(tid,r2v->virtFile,MSG_FS_WRITE,(u8*)&msg,sizeof(msg.data));
+	res = vfs_sendMsg(tid,fs,MSG_FS_WRITE,(u8*)&msg,sizeof(msg.data));
 	if(res < 0)
 		return res;
 	/* now send data */
-	res = vfs_sendMsg(tid,r2v->virtFile,MSG_FS_WRITE,buffer,count);
+	res = vfs_sendMsg(tid,fs,MSG_FS_WRITE,buffer,count);
 	if(res < 0)
 		return res;
 
@@ -317,51 +281,43 @@ s32 vfsr_unmount(tTid tid,const char *path) {
 }
 
 s32 vfsr_sync(tTid tid) {
-	s32 res;
-	tFileNo virtFile = vfsr_create(tid);
-	if(virtFile < 0)
-		return virtFile;
-
-	res = vfs_sendMsg(tid,virtFile,MSG_FS_SYNC,(u8*)&msg,sizeof(msg.args));
-	vfsr_destroy(tid,virtFile);
-	return res;
+	tFileNo fs = vfsr_getFSFile(tid);
+	if(fs < 0)
+		return fs;
+	return vfs_sendMsg(tid,fs,MSG_FS_SYNC,(u8*)&msg,sizeof(msg.args));
 }
 
-void vfsr_closeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo) {
-	s32 res;
-	sReal2Virt *r2v;
-	r2v = vfsr_get(tid,file,&res);
-	if(r2v == NULL)
+void vfsr_closeFile(tTid tid,tInodeNo inodeNo,tDevNo devNo) {
+	tFileNo fs = vfsr_getFSFile(tid);
+	if(fs < 0)
 		return;
 
 	/* write message to fs */
 	msg.args.arg1 = inodeNo;
 	msg.args.arg2 = devNo;
-	vfs_sendMsg(tid,r2v->virtFile,MSG_FS_CLOSE,(u8*)&msg,sizeof(msg.args));
+	vfs_sendMsg(tid,fs,MSG_FS_CLOSE,(u8*)&msg,sizeof(msg.args));
 	/* no response necessary, therefore no wait, too */
-
-	/* remove the stuff for the communication */
-	vfsr_remove(tid,file);
 }
 
 static s32 vfsr_pathReqHandler(tTid tid,const char *path1,const char *path2,u32 arg1,u32 cmd) {
 	s32 res;
 	sRequest *req;
-	tFileNo virtFile;
+	tFileNo fs;
 
 	if(strlen(path1) > MAX_MSGSTR_LEN)
 		return ERR_INVALID_ARGS;
 	if(path2 && strlen(path2) > MAX_MSGSTR_LEN)
 		return ERR_INVALID_ARGS;
 
-	if((virtFile = vfsr_create(tid)) < 0)
-		return virtFile;
+	fs = vfsr_getFSFile(tid);
+	if(fs < 0)
+		return fs;
 
 	strcpy(msg.str.s1,path1);
 	if(path2)
 		strcpy(msg.str.s2,path2);
 	msg.str.arg1 = arg1;
-	res = vfs_sendMsg(tid,virtFile,cmd,(u8*)&msg,sizeof(msg.str));
+	res = vfs_sendMsg(tid,fs,cmd,(u8*)&msg,sizeof(msg.str));
 	if(res < 0)
 		return res;
 
@@ -372,7 +328,6 @@ static s32 vfsr_pathReqHandler(tTid tid,const char *path1,const char *path2,u32 
 	do
 		vfsreq_waitForReply(req,false);
 	while((s32)req->count == ERR_DRIVER_DIED);
-	vfsr_destroy(tid,virtFile);
 
 	res = req->count;
 	vfsreq_remRequest(req);
@@ -480,99 +435,19 @@ static void vfsr_defRespHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size)
 	}
 }
 
-static tFileNo vfsr_create(tTid tid) {
-	s32 res;
-	tInodeNo nodeNo;
-
-	/* create a virtual node for communication with fs */
-	if((res = vfsn_resolvePath(FS_PATH,&nodeNo,NULL,VFS_CONNECT)) != 0)
-		return res;
-	/* open the file */
-	return vfs_openFile(tid,VFS_READ | VFS_WRITE,nodeNo,VFS_DEV_NO);
-}
-
-static s32 vfsr_add(tFileNo virtFile,tFileNo realFile) {
-	sReal2Virt *r2v;
-	sSLList *list;
-
-	/* determine list */
-	list = real2virt[realFile % R2V_MAP_SIZE];
-	if(list == NULL) {
-		list = real2virt[realFile % R2V_MAP_SIZE] = sll_create();
-		if(list == NULL)
-			return ERR_NOT_ENOUGH_MEM;
+static tFileNo vfsr_getFSFile(tTid tid) {
+	sThread *t = thread_getById(tid);
+	if(t->fsClient < 0) {
+		s32 res;
+		tInodeNo nodeNo;
+		/* create a virtual node for communication with fs */
+		if((res = vfsn_resolvePath(FS_PATH,&nodeNo,NULL,VFS_CONNECT)) != 0)
+			return res;
+		/* open the file */
+		res = vfs_openFile(tid,VFS_READ | VFS_WRITE,nodeNo,VFS_DEV_NO);
+		if(res < 0)
+			return res;
+		t->fsClient = res;
 	}
-
-	/* create storage for real->virt */
-	r2v = (sReal2Virt*)kheap_alloc(sizeof(sReal2Virt));
-	if(r2v == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-
-	r2v->realFile = realFile;
-	r2v->virtFile = virtFile;
-
-	/* append to list */
-	if(!sll_append(list,r2v)) {
-		kheap_free(r2v);
-		return ERR_NOT_ENOUGH_MEM;
-	}
-	return 0;
-}
-
-static sReal2Virt *vfsr_get(tTid tid,tFileNo real,s32 *err) {
-	sSLNode *n;
-	sReal2Virt *r2v;
-	s32 owner;
-	sSLList *list = real2virt[real % R2V_MAP_SIZE];
-	bool foundReal = false;
-	*err = ERR_INVALID_INODENO;
-	if(list == NULL)
-		return NULL;
-	for(n = sll_begin(list); n != NULL; n = n->next) {
-		r2v = (sReal2Virt*)n->data;
-		if(r2v->realFile == real) {
-			owner = vfs_getOwner(r2v->virtFile);
-			/* if we're not the owner, we can't use the file but remember that the real-file exists */
-			if(owner != tid) {
-				foundReal = true;
-				continue;
-			}
-			*err = 0;
-			return (sReal2Virt*)n->data;
-		}
-	}
-	/* if we're here and have found the real-file, we were not the owner.
-	 * that means that this file has been inherited, so we have to create a new virt-file and
-	 * use that (for accessing the fs-driver). */
-	if(foundReal) {
-		tFileNo virt = vfsr_create(tid);
-		if(virt >= 0) {
-			if(vfsr_add(virt,real) == 0)
-				return vfsr_get(tid,real,err);
-		}
-	}
-	return NULL;
-}
-
-static void vfsr_remove(tTid tid,tFileNo real) {
-	sReal2Virt *r2v;
-	sSLNode *n,*p;
-	sSLList *list = real2virt[real % R2V_MAP_SIZE];
-	if(list == NULL)
-		return;
-
-	p = NULL;
-	for(n = sll_begin(list); n != NULL; p = n, n = n->next) {
-		r2v = (sReal2Virt*)n->data;
-		if(r2v->realFile == real) {
-			vfsr_destroy(tid,r2v->virtFile);
-			kheap_free(r2v);
-			sll_removeNode(list,n,p);
-			return;
-		}
-	}
-}
-
-static void vfsr_destroy(tTid tid,tFileNo virt) {
-	vfs_closeFile(tid,virt);
+	return t->fsClient;
 }

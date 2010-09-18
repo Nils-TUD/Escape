@@ -102,6 +102,8 @@ struct sThread {
 	sThreadRegs save;
 	/* file descriptors: indices of the global file table */
 	tFileNo fileDescs[MAX_FD_COUNT];
+	/* the file to send/receive messages to fs (needed in vfs/real.c) */
+	tFileNo fsClient;
 	/* FPU-state; initially NULL */
 	sFPUState *fpuState;
 	struct {

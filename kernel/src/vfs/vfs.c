@@ -466,7 +466,7 @@ s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count) {
 	}
 	else {
 		/* query the fs-driver to read from the inode */
-		readBytes = vfsr_readFile(tid,file,e->nodeNo,e->devNo,buffer,e->position,count);
+		readBytes = vfsr_readFile(tid,e->nodeNo,e->devNo,buffer,e->position,count);
 		if(readBytes > 0)
 			e->position += readBytes;
 	}
@@ -508,7 +508,7 @@ s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count) {
 	}
 	else {
 		/* query the fs-driver to write to the inode */
-		writtenBytes = vfsr_writeFile(tid,file,e->nodeNo,e->devNo,buffer,e->position,count);
+		writtenBytes = vfsr_writeFile(tid,e->nodeNo,e->devNo,buffer,e->position,count);
 		if(writtenBytes > 0)
 			e->position += writtenBytes;
 	}
@@ -621,7 +621,7 @@ void vfs_closeFile(tTid tid,tFileNo file) {
 			}
 		}
 		else
-			vfsr_closeFile(tid,file,e->nodeNo,e->devNo);
+			vfsr_closeFile(tid,e->nodeNo,e->devNo);
 
 		/* mark unused */
 		e->flags = 0;

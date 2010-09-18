@@ -29,6 +29,13 @@
 void vfsr_init(void);
 
 /**
+ * Removes the given thread (closes fs-communication-file)
+ *
+ * @param tid the thread-id
+ */
+void vfsr_removeThread(tTid tid);
+
+/**
  * Opens the given path with given flags for given thread
  *
  * @param tid the thread-id
@@ -74,7 +81,6 @@ s32 vfsr_istat(tTid tid,tInodeNo ino,tDevNo devNo,sFileInfo *info);
  * Reads from the given inode at <offset> <count> bytes into the given buffer
  *
  * @param tid the thread-id
- * @param file the 'real' file
  * @param inodeNo the inode
  * @param devNo the device-number
  * @param buffer the buffer to fill
@@ -82,14 +88,12 @@ s32 vfsr_istat(tTid tid,tInodeNo ino,tDevNo devNo,sFileInfo *info);
  * @param count the number of bytes to copy
  * @return the number of read bytes
  */
-s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,
-		u32 count);
+s32 vfsr_readFile(tTid tid,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,u32 count);
 
 /**
  * Writes to the given inode at <offset> <count> bytes from the given buffer
  *
  * @param tid the thread-id
- * @param file the 'real' file
  * @param inodeNo the inode
  * @param devNo the device-number
  * @param buffer the buffer
@@ -97,8 +101,7 @@ s32 vfsr_readFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,u8 *buffer
  * @param count the number of bytes to copy
  * @return the number of written bytes
  */
-s32 vfsr_writeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo,const u8 *buffer,u32 offset,
-		u32 count);
+s32 vfsr_writeFile(tTid tid,tInodeNo inodeNo,tDevNo devNo,const u8 *buffer,u32 offset,u32 count);
 
 /**
  * Creates a hardlink at <newPath> which points to <oldPath>
@@ -170,10 +173,9 @@ s32 vfsr_sync(tTid tid);
  * Closes the given inode
  *
  * @param tid the thread-id
- * @param file the 'real' file
  * @param inodeNo the inode
  * @param devNo the device-number
  */
-void vfsr_closeFile(tTid tid,tFileNo file,tInodeNo inodeNo,tDevNo devNo);
+void vfsr_closeFile(tTid tid,tInodeNo inodeNo,tDevNo devNo);
 
 #endif /* VFSREAL_H_ */

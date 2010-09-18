@@ -27,6 +27,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/info.h>
 #include <sys/vfs/node.h>
+#include <sys/vfs/real.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
@@ -101,6 +102,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->fpuState = NULL;
 	t->signal = 0;
 	t->tlsRegion = -1;
+	t->fsClient = -1;
 	/* init fds */
 	for(i = 0; i < MAX_FD_COUNT; i++)
 		t->fileDescs[i] = -1;
@@ -410,6 +412,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	t->stats.schedCount = 0;
 	t->proc = p;
 	t->signal = 0;
+	t->fsClient = -1;
 	if(cloneProc) {
 		/* proc_clone() sets t->kstackFrame in this case */
 		t->stackRegion = src->stackRegion;
@@ -523,6 +526,8 @@ void thread_kill(sThread *t) {
 			t->fileDescs[i] = -1;
 		}
 	}
+	/* close file for communication with fs */
+	vfsr_removeThread(t->tid);
 
 	/* remove from process */
 	sll_removeFirst(t->proc->threads,t);

@@ -104,7 +104,7 @@ int main(void) {
 						if(rcount <= MAX_RW_SIZE) {
 							ATA_PR2("Reading %d bytes @ %x from device %d",
 									rcount,offset,device->id);
-							if(device->rwHandler(device,false,buffer,
+							if(device->rwHandler(device,OP_READ,buffer,
 									offset / device->secSize + part->start,
 									device->secSize,rcount / device->secSize)) {
 								msg.data.arg1 = count;
@@ -127,7 +127,7 @@ int main(void) {
 							if(RETRY(receive(fd,&mid,buffer,count)) > 0) {
 								ATA_PR2("Writing %d bytes @ %x to device %d",
 										count,offset,device->id);
-								if(device->rwHandler(device,true,buffer,
+								if(device->rwHandler(device,OP_WRITE,buffer,
 										offset / device->secSize + part->start,
 										device->secSize,count / device->secSize)) {
 									msg.args.arg1 = count;

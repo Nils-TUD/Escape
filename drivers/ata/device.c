@@ -28,8 +28,6 @@
 #include "ata.h"
 #include "atapi.h"
 
-#define ATA_WAIT_TIMEOUT	500	/* ms */
-
 static bool device_identify(sATADevice *device,u8 cmd);
 
 void device_init(sATADevice *device) {
@@ -51,7 +49,7 @@ void device_init(sATADevice *device) {
 		device->secSize = ATA_SEC_SIZE;
 		device->rwHandler = ata_readWrite;
 		ATA_LOG("Device %d is an ATA-device",device->id);
-		if(!ata_readWrite(device,false,buffer,0,device->secSize,1)) {
+		if(!ata_readWrite(device,OP_READ,buffer,0,device->secSize,1)) {
 			device->present = 0;
 			ATA_LOG("Device %d: Unable to read partition-table!",device->id);
 			return;
@@ -98,27 +96,20 @@ static bool device_identify(sATADevice *device,u8 cmd) {
 	if(status == 0)
 		return false;
 	else {
-		u32 time = 0;
-		ATA_PR2("Waiting for ATA-device");
 		/* wait while busy; the other bits aren't valid while busy is set */
-		while((ctrl_inb(ctrl,ATA_REG_STATUS) & CMD_ST_BUSY) && time < ATA_WAIT_TIMEOUT) {
-			time += 20;
-			sleep(20);
-		}
+		s32 res = ctrl_waitUntil(ctrl,ATA_WAIT_TIMEOUT,ATA_WAIT_SLEEPTIME,0,CMD_ST_BUSY);
+		if(res != 0)
+			return false;
 		/* wait a bit */
 		ctrl_wait(ctrl);
 		/* wait until ready (or error) */
-		while(((status = ctrl_inb(ctrl,ATA_REG_STATUS)) & (CMD_ST_BUSY | CMD_ST_DRQ)) != CMD_ST_DRQ &&
-				time < ATA_WAIT_TIMEOUT) {
-			if(status & CMD_ST_ERROR) {
-				ATA_PR1("Error-bit in status set");
-				return false;
-			}
-			time += 20;
-			sleep(20);
+		res = ctrl_waitUntil(ctrl,ATA_WAIT_TIMEOUT,ATA_WAIT_SLEEPTIME,CMD_ST_DRQ,CMD_ST_BUSY);
+		if(res == -1) {
+			ATA_LOG("Device %d: Timeout reached, assuming its not present",device->id);
+			return false;
 		}
-		if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) != CMD_ST_DRQ) {
-			ATA_PR1("Timeout (%d ms)",ATA_WAIT_TIMEOUT);
+		if(res != 0) {
+			ATA_LOG("Device %d: Error %#x. Assuming its not present",device->id,res);
 			return false;
 		}
 

@@ -31,10 +31,10 @@
 /*static bool ata_transferPIO(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16 secCount);
 static bool ata_transferDMA(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16 secCount);*/
 static bool ata_setupCommand(sATADevice *device,u64 lba,u16 secCount,u8 cmd);
-static u8 ata_getCommand(sATADevice *device,bool opWrite,u16 secSize);
+static u8 ata_getCommand(sATADevice *device,u8 op,u16 secSize);
 
-bool ata_readWrite(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secSize,u16 secCount) {
-	u8 cmd = ata_getCommand(device,opWrite,secSize);
+bool ata_readWrite(sATADevice *device,u8 op,u16 *buffer,u64 lba,u16 secSize,u16 secCount) {
+	u8 cmd = ata_getCommand(device,op,secSize);
 	if(!ata_setupCommand(device,lba,secCount,cmd))
 		return false;
 
@@ -44,72 +44,54 @@ bool ata_readWrite(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secSi
 		case COMMAND_READ_SEC_EXT:
 		case COMMAND_WRITE_SEC:
 		case COMMAND_WRITE_SEC_EXT:
-			return ata_transferPIO(device,opWrite,buffer,secSize,secCount,true);
+			return ata_transferPIO(device,op,buffer,secSize,secCount,true);
 		case COMMAND_READ_DMA:
 		case COMMAND_READ_DMA_EXT:
 		case COMMAND_WRITE_DMA:
 		case COMMAND_WRITE_DMA_EXT:
-			return ata_transferDMA(device,opWrite,buffer,secSize,secCount);
+			return ata_transferDMA(device,op,buffer,secSize,secCount);
 	}
 	return false;
 }
 
-bool ata_transferPIO(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16 secCount,bool waitFirst) {
-	s32 i;
+bool ata_transferPIO(sATADevice *device,u8 op,u16 *buffer,u16 secSize,u16 secCount,bool waitFirst) {
+	s32 i,res;
 	u16 *buf = buffer;
 	sATAController *ctrl = device->ctrl;
 	for(i = 0; i < secCount; i++) {
-		u8 status;
 		if(i > 0 || waitFirst) {
-			do {
-				if(opWrite) {
-					ATA_PR2("Writing: wait until not busy");
-					status = ctrl_inb(ctrl,ATA_REG_STATUS);
-					while(status & CMD_ST_BUSY) {
-						sleep(20);
-						status = ctrl_inb(ctrl,ATA_REG_STATUS);
-					}
-				}
-				else {
-					ATA_PR2("Reading: wait for interrupt");
-					ctrl_waitIntrpt(ctrl);
-					status = ctrl_inb(ctrl,ATA_REG_STATUS);
-				}
-
-				if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == CMD_ST_DRQ)
-					break;
-				if((status & CMD_ST_ERROR) != 0) {
-					printf("[ata] error: %#x\n",ctrl_inb(ctrl,ATA_REG_ERROR));
-					return false;
-				}
-
-	#if 0
-				if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == 0)
-					ctrl_softReset(ctrl);
-	#endif
+			if(op == OP_READ)
+				ctrl_waitIntrpt(ctrl);
+			res = ctrl_waitUntil(ctrl,PIO_TRANSFER_TIMEOUT,PIO_TRANSFER_SLEEPTIME,
+					CMD_ST_DRQ,CMD_ST_BUSY);
+			if(res == -1) {
+				ATA_LOG("Device %d: Timeout before PIO-transfer",device->id);
+				return false;
 			}
-			while(true);
+			if(res != 0) {
+				/* TODO ctrl_softReset(ctrl);*/
+				ATA_LOG("Device %d: PIO-transfer failed: %#x",device->id,res);
+				return false;
+			}
 		}
 
 		/* now read / write the data */
 		ATA_PR2("Ready, starting read/write");
-		if(opWrite) {
-			ctrl_outwords(ctrl,ATA_REG_DATA,buf,secSize / sizeof(u16));
-			buf += secSize / sizeof(u16);
-		}
-		else {
+		if(op == OP_READ)
 			ctrl_inwords(ctrl,ATA_REG_DATA,buf,secSize / sizeof(u16));
-			buf += secSize / sizeof(u16);
-		}
+		else
+			ctrl_outwords(ctrl,ATA_REG_DATA,buf,secSize / sizeof(u16));
+		buf += secSize / sizeof(u16);
 		ATA_PR2("Transfer done");
 	}
 	ATA_PR2("All sectors done");
 	return true;
 }
 
-bool ata_transferDMA(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16 secCount) {
+bool ata_transferDMA(sATADevice *device,u8 op,u16 *buffer,u16 secSize,u16 secCount) {
 	sATAController* ctrl = device->ctrl;
 	u8 status;
+	s32 res;
 	u32 size = secCount * secSize;
 
 	/* setup PRDT */
@@ -129,7 +111,7 @@ bool ata_transferDMA(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16
 
 	/* write data to buffer, if we should write */
 	/* TODO we should use the buffer directly when reading from the client */
-	if(opWrite)
+	if(op == OP_WRITE || op == OP_PACKET)
 		memcpy(ctrl->dma_buf_virt,buffer,size);
 
 	/* it seems to be necessary to read those ports here */
@@ -137,7 +119,7 @@ bool ata_transferDMA(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16
 	ctrl_inbmrb(ctrl,BMR_REG_COMMAND);
 	ctrl_inbmrb(ctrl,BMR_REG_STATUS);
     /* start bus-mastering */
-	if(!opWrite)
+	if(op == OP_READ)
 		ctrl_outbmrb(ctrl,BMR_REG_COMMAND,BMR_CMD_START | BMR_CMD_READ);
 	else
 		ctrl_outbmrb(ctrl,BMR_REG_COMMAND,BMR_CMD_START);
@@ -148,22 +130,22 @@ bool ata_transferDMA(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16
 	ATA_PR2("Waiting for an interrupt");
 	ctrl_waitIntrpt(ctrl);
 
-	while(true) {
-		status = ctrl_inb(ctrl,ATA_REG_STATUS);
-		ATA_PR2("Checking status (%x)",status);
-		if(status & CMD_ST_ERROR)
-			return false;
-		if((status & (CMD_ST_BUSY | CMD_ST_DRQ)) == 0) {
-			ATA_PR2("Status OK");
-			ctrl_inbmrb(ctrl,BMR_REG_STATUS);
-			ctrl_outbmrb(ctrl,BMR_REG_COMMAND,0);
-			/* copy data when reading */
-			if(!opWrite)
-				memcpy(buffer,ctrl->dma_buf_virt,size);
-			return true;
-		}
+	res = ctrl_waitUntil(ctrl,DMA_TRANSFER_TIMEOUT,DMA_TRANSFER_SLEEPTIME,0,CMD_ST_BUSY | CMD_ST_DRQ);
+	if(res == -1) {
+		ATA_LOG("Device %d: Timeout after DMA-transfer",device->id);
+		return false;
 	}
-	return false;
+	if(res != 0) {
+		ATA_LOG("Device %d: DMA-Transfer failed: %#x",device->id,res);
+		return false;
+	}
+
+	ctrl_inbmrb(ctrl,BMR_REG_STATUS);
+	ctrl_outbmrb(ctrl,BMR_REG_COMMAND,0);
+	/* copy data when reading */
+	if(op == OP_READ)
+		memcpy(buffer,ctrl->dma_buf_virt,size);
+	return true;
 }
 
 static bool ata_setupCommand(sATADevice *device,u64 lba,u16 secCount,u8 cmd) {
@@ -175,11 +157,11 @@ static bool ata_setupCommand(sATADevice *device,u64 lba,u16 secCount,u8 cmd) {
 
 	if(!device->info.features.lba48) {
 		if(lba & 0xFFFFFFFFF0000000LL) {
-			printf("[ata] Trying to read from sector > 2^28-1\n");
+			ATA_LOG("Trying to read from %#Lx with LBA28",lba);
 			return false;
 		}
 		if(secCount & 0xFF00) {
-			printf("[ata] Trying to read %u sectors with LBA28\n",secCount);
+			ATA_LOG("Trying to read %u sectors with LBA28",secCount);
 			return false;
 		}
 
@@ -237,7 +219,7 @@ static bool ata_setupCommand(sATADevice *device,u64 lba,u16 secCount,u8 cmd) {
 	return true;
 }
 
-static u8 ata_getCommand(sATADevice *device,bool opWrite,u16 secSize) {
+static u8 ata_getCommand(sATADevice *device,u8 op,u16 secSize) {
 	static u8 commands[4][2] = {
 		{COMMAND_READ_SEC,COMMAND_READ_SEC_EXT},
 		{COMMAND_WRITE_SEC,COMMAND_WRITE_SEC_EXT},
@@ -245,10 +227,10 @@ static u8 ata_getCommand(sATADevice *device,bool opWrite,u16 secSize) {
 		{COMMAND_WRITE_DMA,COMMAND_WRITE_DMA_EXT}
 	};
 	u8 offset;
-	if(device->secSize != secSize)
+	if(op == OP_PACKET)
 		return COMMAND_PACKET;
 	offset = (device->ctrl->useDma && device->info.capabilities.DMA) ? 2 : 0;
-	if(opWrite)
+	if(op == OP_WRITE)
 		offset++;
 	if(device->info.features.lba48)
 		return commands[offset][1];

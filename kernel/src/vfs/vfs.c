@@ -254,17 +254,14 @@ static tFileNo vfs_getFreeFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 		if(e->flags != 0) {
 			/* same file? */
 			if(e->devNo == devNo && e->nodeNo == nodeNo) {
+				if(e->owner == tid) {
+					/* if the flags are the same we don't need a new file */
+					if((e->flags & (VFS_READ | VFS_WRITE)) == rwFlags)
+						return i;
+				}
 				/* two threads that want to write at the same time? no! */
-				if(!isDrvUse && e->owner != tid && (rwFlags & VFS_WRITE) && (e->flags & VFS_WRITE))
+				else if(!isDrvUse && (rwFlags & VFS_WRITE) && (e->flags & VFS_WRITE))
 					return ERR_FILE_IN_USE;
-				/* driver-usages may use a file twice for reading and writing because we
-				 * will prevent trouble anyway */
-				if(isDrvUse && (e->flags & (VFS_READ | VFS_WRITE)) == rwFlags)
-					return i;
-
-				/* if the flags are different we need a different slot */
-				if((e->flags & (VFS_READ | VFS_WRITE)) == rwFlags)
-					return i;
 			}
 		}
 		/* remember free slot */

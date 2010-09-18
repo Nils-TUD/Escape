@@ -118,7 +118,7 @@ void ctrl_init(void) {
 					DMA_BUF_SIZE,DMA_BUF_SIZE);
 			if(!ctrls[i].dma_buf_virt)
 				error("Unable to allocate dma-buffer for controller %d",ctrls[i].id);
-			ctrls[i].useDma = true;
+			/*ctrls[i].useDma = true;*/
 		}
 
 		/* init attached devices; begin with slave */
@@ -157,6 +157,8 @@ void ctrl_outb(sATAController *ctrl,u16 reg,u8 value) {
 }
 
 void ctrl_outwords(sATAController *ctrl,u16 reg,const u16 *buf,u32 count) {
+	/* TODO according to the wiki, we shouldn't use that because the device needs a small delay
+	 * between the words */
 	outWordStr(ctrl->portBase + reg,buf,count);
 }
 
@@ -198,6 +200,24 @@ void ctrl_waitIntrpt(sATAController *ctrl) {
 		sleep(IRQ_POLL_INTERVAL);
 		time += IRQ_POLL_INTERVAL;
 	}
+}
+
+s32 ctrl_waitUntil(sATAController *ctrl,u32 timeout,u32 sleepTime,u8 set,u8 unset) {
+	u32 time = 0;
+	while(time < timeout) {
+		u8 status = ctrl_inb(ctrl,ATA_REG_STATUS);
+		if(status & CMD_ST_ERROR)
+			return ctrl_inb(ctrl,ATA_REG_ERROR);
+		if((status & set) == set && !(status & unset))
+			return 0;
+		if(sleepTime) {
+			sleep(sleepTime);
+			time += sleepTime;
+		}
+		else
+			time++;
+	}
+	return -1;
 }
 
 static void ctrl_intrptHandler(tSig sig,u32 data) {

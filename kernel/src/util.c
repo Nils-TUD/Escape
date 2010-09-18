@@ -46,6 +46,7 @@
 static u8 util_waitForKey(void);
 
 #if DEBUGGING
+static char buffer[512];
 static char backup[VID_ROWS * VID_COLS * 2];
 #endif
 
@@ -59,7 +60,7 @@ static u32 randc = 12345;
 static u32 lastRand = 0;
 
 void util_panic(const char *fmt,...) {
-	u32 regs[REG_COUNT];
+	static u32 regs[REG_COUNT];
 	sIntrptStackFrame *istack = intrpt_getCurStack();
 	sThread *t = thread_getRunning();
 	va_list ap;
@@ -131,12 +132,10 @@ void util_panic(const char *fmt,...) {
 }
 
 void util_logViewer(void) {
-	char buffer[512];
 	tInodeNo nodeNo;
 	tFileNo file;
 	u8 scanCode;
-	s32 i,res,start,end,lineCount = 0;
-	u32 linePos = 0,lineSize = 16;
+	s32 i,res,start,end,lineCount = 0,linePos = 0,lineSize = 16;
 	char **lines = (char**)kheap_alloc(lineSize * sizeof(char*));
 	if(!lines)
 		goto error;

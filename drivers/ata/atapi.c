@@ -27,16 +27,16 @@
 
 static bool atapi_request(sATADevice *device,u16 *cmd,u16 *buffer,u32 bufSize);
 
-bool atapi_read(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secSize,u16 secCount) {
+bool atapi_read(sATADevice *device,u8 op,u16 *buffer,u64 lba,u16 secSize,u16 secCount) {
 	u8 cmd[] = {SCSI_CMD_READ_SECTORS_EXT,0,0,0,0,0,0,0,0,0,0,0};
 	if(!device->info.features.lba48)
 		cmd[0] = SCSI_CMD_READ_SECTORS;
 	/* no writing here ;) */
-	if(opWrite)
+	if(op != OP_READ)
 		return false;
 	if(secCount == 0)
 		return false;
-	if(cmd == SCSI_CMD_READ_SECTORS_EXT) {
+	if(cmd[0] == SCSI_CMD_READ_SECTORS_EXT) {
 		cmd[6] = (secCount >> 24) & 0xFF;
 		cmd[7] = (secCount >> 16) & 0xFF;
 		cmd[8] = (secCount >> 8) & 0xFF;
@@ -63,30 +63,33 @@ u32 atapi_getCapacity(sATADevice *device) {
 }
 
 static bool atapi_request(sATADevice *device,u16 *cmd,u16 *buffer,u32 bufSize) {
-	u8 status;
+	s32 res;
 	u16 size;
 	sATAController *ctrl = device->ctrl;
 
 	/* send PACKET command to drive */
-    if(!ata_readWrite(device,true,cmd,0xFFFF00,12,1))
+    if(!ata_readWrite(device,OP_PACKET,cmd,0xFFFF00,12,1))
     	return false;
 
     /* now transfer the data */
 	if(ctrl->useDma && device->info.capabilities.DMA)
-		return ata_transferDMA(device,false,buffer,device->secSize,bufSize / device->secSize);
+		return ata_transferDMA(device,OP_READ,buffer,device->secSize,bufSize / device->secSize);
 
 	/* ok, no DMA, so wait first until the drive is ready */
-	ATA_PR2("Waiting while busy");
-	while(ctrl_inb(ctrl,ATA_REG_STATUS) & CMD_ST_BUSY)
-		;
-	ATA_PR2("Waiting until DRQ or ERROR set");
-	while((!((status = ctrl_inb(ctrl,ATA_REG_STATUS)) & CMD_ST_DRQ)) && !(status & CMD_ST_ERROR))
-		;
+	res = ctrl_waitUntil(ctrl,ATAPI_TRANSFER_TIMEOUT,ATAPI_TRANSFER_SLEEPTIME,
+			CMD_ST_DRQ,CMD_ST_BUSY);
+	if(res == -1) {
+		ATA_LOG("Device %d: Timeout before ATAPI-PIO-transfer",device->id);
+		return false;
+	}
+	if(res != 0) {
+		ATA_LOG("Device %d: ATAPI-PIO-transfer failed: %#x",device->id,res);
+		return false;
+	}
 
 	/* read the actual size per transfer */
 	ATA_PR2("Reading response-size");
 	size = ((u16)ctrl_inb(ctrl,ATA_REG_ADDRESS3) << 8) | (u16)ctrl_inb(ctrl,ATA_REG_ADDRESS2);
-	ATA_PR2("Got %u -> %u sectors",size,bufSize / size);
 	/* do the PIO-transfer (no check at the beginning; seems to cause trouble on some machines) */
-	return ata_transferPIO(device,false,buffer,size,bufSize / size,false);
+	return ata_transferPIO(device,OP_READ,buffer,size,bufSize / size,false);
 }

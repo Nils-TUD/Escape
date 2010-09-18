@@ -65,6 +65,7 @@ void ctrl_softReset(sATAController *ctrl);
 
 void ctrl_resetIrq(sATAController *ctrl);
 void ctrl_waitIntrpt(sATAController *ctrl);
+s32 ctrl_waitUntil(sATAController *ctrl,u32 timeout,u32 sleepTime,u8 set,u8 unset);
 void ctrl_wait(sATAController *ctrl);
 
 #endif /* CTRL_H_ */

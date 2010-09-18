@@ -547,6 +547,7 @@ void vfsn_removeNode(sVFSNode *n) {
 s32 vfsn_createDriverUse(tTid tid,sVFSNode *n,sVFSNode **child) {
 	char *name;
 	sVFSNode *m;
+	assert(tid != n->owner);
 
 	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
 	name = (char*)kheap_alloc(12);

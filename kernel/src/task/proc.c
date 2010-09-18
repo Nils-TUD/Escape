@@ -386,6 +386,7 @@ s32 proc_getExitState(tPid ppid,sExitState *state) {
 					if(p->exitState) {
 						memcpy(state,p->exitState,sizeof(sExitState));
 						kheap_free(p->exitState);
+						p->exitState = NULL;
 					}
 				}
 				return p->pid;

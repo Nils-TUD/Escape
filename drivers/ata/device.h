@@ -23,6 +23,26 @@
 #include <esc/common.h>
 #include "partition.h"
 
+#define OP_READ						0
+#define OP_WRITE					1
+#define OP_PACKET					2
+
+/* no sleep here */
+#define DMA_TRANSFER_TIMEOUT		1000
+#define DMA_TRANSFER_SLEEPTIME		0
+
+/* sleep for 20ms (just for writes; when reading we wait for an interrupt; the status should be ok
+ * afterwards) */
+#define PIO_TRANSFER_TIMEOUT		1000
+#define PIO_TRANSFER_SLEEPTIME		20
+
+/* no sleep here */
+#define ATAPI_TRANSFER_TIMEOUT		1000
+#define ATAPI_TRANSFER_SLEEPTIME	0
+
+#define ATA_WAIT_TIMEOUT			500
+#define ATA_WAIT_SLEEPTIME			20
+
 /* port-bases */
 #define ATA_REG_BASE_PRIMARY		0x1F0
 #define ATA_REG_BASE_SECONDARY		0x170
@@ -251,7 +271,7 @@ typedef struct {
 
 typedef struct sATAController sATAController;
 typedef struct sATADevice sATADevice;
-typedef bool (*fReadWrite)(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secSize,u16 secCount);
+typedef bool (*fReadWrite)(sATADevice *device,u8 op,u16 *buffer,u64 lba,u16 secSize,u16 secCount);
 
 struct sATADevice {
 	/* the identifier; 0-3; bit0 set means slave */

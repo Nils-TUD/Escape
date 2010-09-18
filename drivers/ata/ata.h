@@ -51,16 +51,16 @@
  * Reads or writes from/to an ATA-device
  *
  * @param device the device
- * @param opWrite true if writing
+ * @param op the operation: OP_READ, OP_WRITE or OP_PACKET
  * @param buffer the buffer to write to
  * @param lba the block-address to start at
  * @param secSize the size of a sector
  * @param secCount number of sectors
  * @return true on success
  */
-bool ata_readWrite(sATADevice *device,bool opWrite,u16 *buffer,u64 lba,u16 secSize,u16 secCount);
+bool ata_readWrite(sATADevice *device,u8 op,u16 *buffer,u64 lba,u16 secSize,u16 secCount);
 
-bool ata_transferPIO(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16 secCount,bool waitFirst);
-bool ata_transferDMA(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16 secCount);
+bool ata_transferPIO(sATADevice *device,u8 op,u16 *buffer,u16 secSize,u16 secCount,bool waitFirst);
+bool ata_transferDMA(sATADevice *device,u8 op,u16 *buffer,u16 secSize,u16 secCount);
 
 #endif /* ATA_H_ */

@@ -17,37 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CONSOLE_H_
-#define CONSOLE_H_
-
 #include <sys/common.h>
-#include <sys/dbg/lines.h>
-#include <sys/video.h>
+#include <sys/dbg/console.h>
+#include <sys/dbg/cmd/log.h>
+#include <string.h>
 
-/* to make a screen-backup */
-typedef struct {
-	char screen[VID_COLS * VID_ROWS * 2];
-	u16 row;
-	u16 col;
-} sScreenBackup;
+s32 cons_cmd_log(s32 argc,char **argv) {
+	if(argc != 2) {
+		vid_printf("Usage: %s on|off\n",argv[0]);
+		return 0;
+	}
 
-/**
- * Starts the debugging-console
- */
-void cons_start(void);
-
-/**
- * Enables/disables writing to log
- *
- * @param enabled the new value
- */
-void cons_setLogEnabled(bool enabled);
-
-/**
- * Displays the given lines and provides a navigation through them
- *
- * @param l the lines
- */
-void cons_viewLines(sLines *l);
-
-#endif /* CONSOLE_H_ */
+	cons_setLogEnabled(strcmp(argv[1],"on") == 0);
+	return 0;
+}

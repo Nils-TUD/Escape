@@ -12,10 +12,8 @@ BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 
 #KVM = -enable-kvm
-#QEMU = /home/hrniels/Applications/qemu-0.12.2/bin/bin/qemu
 QEMU = qemu
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot order=d -vga std -m 40 \
-	-localtime
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot order=d -vga std -m 350 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 
 # wether to link drivers and user-apps statically or dynamically
@@ -26,7 +24,6 @@ export LIBGCC = dynamic
 # flags for gcc
 export BUILD = $(BUILDDIR)
 export CC = $(abspath build/dist/bin/i586-elf-escape-gcc)
-#export CC = /home/hrniels/Applications/llvm/dist/bin/clang
 export CPPC = $(abspath build/dist/bin/i586-elf-escape-g++)
 export LD = $(abspath build/dist/bin/i586-elf-escape-ld)
 export AR = $(abspath build/dist/bin/i586-elf-escape-ar)
@@ -37,7 +34,6 @@ export CWFLAGS=-Wall -ansi \
 				 -Wextra -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes \
 				 -Wmissing-declarations -Wnested-externs -Winline -Wno-long-long \
 				 -Wstrict-prototypes -fms-extensions -fno-builtin
-# -march=i486 -I$(BUILDDIR)/../../include
 export CPPWFLAGS=-Wall -Wextra -Weffc++ -ansi \
 				-Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations \
 				-Wno-long-long

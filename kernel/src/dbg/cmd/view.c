@@ -62,6 +62,8 @@ static void view_pdirall(void);
 static void view_pdiruser(void);
 static void view_pdirkernel(void);
 static void view_pmem(void);
+static void view_pmemcont(void);
+static void view_pmemstack(void);
 static void view_shm(void);
 static void view_cpu(void);
 static void view_gdt(void);
@@ -69,6 +71,7 @@ static void view_timer(void);
 static void view_kevents(void);
 static void view_multiboot(void);
 
+static s32 err = 0;
 static sLines lines;
 static sScreenBackup backup;
 static sView views[] = {
@@ -86,6 +89,8 @@ static sView views[] = {
 	{"pdiruser",view_pdiruser},
 	{"pdirkernel",view_pdirkernel},
 	{"pmem",view_pmem},
+	{"pmemcont",view_pmemcont},
+	{"pmemstack",view_pmemstack},
 	{"shm",view_shm},
 	{"cpu",view_cpu},
 	{"gdt",view_gdt},
@@ -101,7 +106,7 @@ s32 cons_cmd_view(s32 argc,char **argv) {
 		vid_printf("Usage: %s <what>\n",argv[0]);
 		vid_printf("Available 'whats':\n");
 		for(i = 0; i < ARRAY_SIZE(views); i++) {
-			if(i % 4 == 0) {
+			if(i % 6 == 0) {
 				if(i > 0)
 					vid_printf("\n");
 				vid_printf("\t");
@@ -118,7 +123,13 @@ s32 cons_cmd_view(s32 argc,char **argv) {
 			if((res = lines_create(&lines)) < 0)
 				return res;
 			vid_setPrintFunc(view_printc);
+			err = 0;
 			views[i].func();
+			if(err < 0) {
+				vid_unsetPrintFunc();
+				lines_destroy(&lines);
+				return err;
+			}
 			lines_end(&lines);
 			vid_unsetPrintFunc();
 			break;
@@ -136,8 +147,10 @@ s32 cons_cmd_view(s32 argc,char **argv) {
 }
 
 static void view_printc(char c) {
+	if(err < 0)
+		return;
 	if(c == '\n')
-		lines_newline(&lines);
+		err = lines_newline(&lines);
 	else
 		lines_append(&lines,c);
 }
@@ -183,6 +196,12 @@ static void view_pdirkernel(void) {
 }
 static void view_pmem(void) {
 	mm_dbg_printFreeFrames(MM_DEF | MM_CONT);
+}
+static void view_pmemcont(void) {
+	mm_dbg_printFreeFrames(MM_CONT);
+}
+static void view_pmemstack(void) {
+	mm_dbg_printFreeFrames(MM_DEF);
 }
 static void view_shm(void) {
 	shm_dbg_print();

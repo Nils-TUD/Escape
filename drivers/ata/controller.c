@@ -40,9 +40,6 @@
 
 #define DMA_BUF_SIZE				(64 * 1024)
 
-#define IRQ_POLL_INTERVAL			20		/* in ms */
-#define IRQ_TIMEOUT					200		/* in ms */
-
 static void ctrl_intrptHandler(tSig sig,u32 data);
 static bool ctrl_isBusResponding(sATAController* ctrl);
 
@@ -118,7 +115,7 @@ void ctrl_init(void) {
 					DMA_BUF_SIZE,DMA_BUF_SIZE);
 			if(!ctrls[i].dma_buf_virt)
 				error("Unable to allocate dma-buffer for controller %d",ctrls[i].id);
-			/*ctrls[i].useDma = true;*/
+			ctrls[i].useDma = true;
 		}
 
 		/* init attached devices; begin with slave */
@@ -210,6 +207,7 @@ s32 ctrl_waitUntil(sATAController *ctrl,u32 timeout,u32 sleepTime,u8 set,u8 unse
 			return ctrl_inb(ctrl,ATA_REG_ERROR);
 		if((status & set) == set && !(status & unset))
 			return 0;
+		ATA_PR1("Status %#x",status);
 		if(sleepTime) {
 			sleep(sleepTime);
 			time += sleepTime;

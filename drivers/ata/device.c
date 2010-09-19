@@ -23,6 +23,7 @@
 #include <esc/driver.h>
 #include <esc/proc.h>
 #include <esc/ports.h>
+#include <string.h>
 #include "device.h"
 #include "controller.h"
 #include "ata.h"
@@ -41,6 +42,14 @@ void device_init(sATADevice *device) {
 			ATA_LOG("Device %d not present",device->id);
 			return;
 		}
+	}
+
+	/* TODO for now we simply disable DMA for the ATAPI-drive in my notebook, since
+	 * it doesn't work there. no idea why yet :/ */
+	/* note that in each word the bytes are in little endian order */
+	if(strstr(device->info.modelNo,"STTSocpr")) {
+		ATA_LOG("Device %d: Detected TSSTcorp-device. Disabling DMA");
+		device->info.capabilities.DMA = 0;
 	}
 
 	/* if it is present, read the partition-table */
@@ -93,13 +102,22 @@ static bool device_identify(sATADevice *device,u8 cmd) {
 	ctrl_outb(ctrl,ATA_REG_COMMAND,cmd);
 	status = ctrl_inb(ctrl,ATA_REG_STATUS);
 	ATA_PR1("Got 0x%x from status-port",status);
-	if(status == 0)
+	if(status == 0) {
+		ATA_LOG("Device %d: Got 0x00 from status-port, device seems not to be present",device->id);
 		return false;
+	}
 	else {
+		s32 res;
+		/* TODO from the wiki: Because of some ATAPI drives that do not follow spec, at this point
+		 * you need to check the LBAmid and LBAhi ports (0x1F4 and 0x1F5) to see if they are
+		 * non-zero. If so, the drive is not ATA, and you should stop polling. */
+
 		/* wait while busy; the other bits aren't valid while busy is set */
-		s32 res = ctrl_waitUntil(ctrl,ATA_WAIT_TIMEOUT,ATA_WAIT_SLEEPTIME,0,CMD_ST_BUSY);
-		if(res != 0)
-			return false;
+		u32 time = 0;
+		while((ctrl_inb(ctrl,ATA_REG_STATUS) & CMD_ST_BUSY) && time < ATA_WAIT_TIMEOUT) {
+			time += 20;
+			sleep(20);
+		}
 		/* wait a bit */
 		ctrl_wait(ctrl);
 		/* wait until ready (or error) */

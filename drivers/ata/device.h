@@ -27,21 +27,22 @@
 #define OP_WRITE					1
 #define OP_PACKET					2
 
-/* no sleep here */
 #define DMA_TRANSFER_TIMEOUT		1000
-#define DMA_TRANSFER_SLEEPTIME		0
+#define DMA_TRANSFER_SLEEPTIME		20
 
 /* sleep for 20ms (just for writes; when reading we wait for an interrupt; the status should be ok
  * afterwards) */
 #define PIO_TRANSFER_TIMEOUT		1000
 #define PIO_TRANSFER_SLEEPTIME		20
 
-/* no sleep here */
 #define ATAPI_TRANSFER_TIMEOUT		1000
-#define ATAPI_TRANSFER_SLEEPTIME	0
+#define ATAPI_TRANSFER_SLEEPTIME	20
 
 #define ATA_WAIT_TIMEOUT			500
 #define ATA_WAIT_SLEEPTIME			20
+
+#define IRQ_POLL_INTERVAL			20		/* in ms */
+#define IRQ_TIMEOUT					5000	/* in ms */
 
 /* port-bases */
 #define ATA_REG_BASE_PRIMARY		0x1F0

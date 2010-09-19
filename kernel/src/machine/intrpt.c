@@ -554,6 +554,10 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 
 		/* exceptions */
 		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
+			/* for exceptions in kernel: ensure that we have the default print-function */
+			if(stack->eip >= KERNEL_AREA_V_ADDR)
+				vid_unsetPrintFunc();
+
 			/* #PF */
 			if(stack->intrptNo == EX_PAGE_FAULT) {
 #if DEBUG_PAGEFAULTS

@@ -60,7 +60,29 @@
  */
 bool ata_readWrite(sATADevice *device,u8 op,u16 *buffer,u64 lba,u16 secSize,u16 secCount);
 
+/**
+ * Performs a PIO-transfer
+ *
+ * @param device the device
+ * @param op the operation: OP_READ, OP_WRITE or OP_PACKET
+ * @param buffer the buffer to write to
+ * @param secSize the size of a sector
+ * @param secCount number of sectors
+ * @param waitFirst wether you want to wait until the device is ready BEFORE the first read
+ * @return true if successfull
+ */
 bool ata_transferPIO(sATADevice *device,u8 op,u16 *buffer,u16 secSize,u16 secCount,bool waitFirst);
+
+/**
+ * Performs a DMA-transfer
+ *
+ * @param device the device
+ * @param op the operation: OP_READ, OP_WRITE or OP_PACKET
+ * @param buffer the buffer to write to
+ * @param secSize the size of a sector
+ * @param secCount number of sectors
+ * @return true if successfull
+ */
 bool ata_transferDMA(sATADevice *device,u8 op,u16 *buffer,u16 secSize,u16 secCount);
 
 #endif /* ATA_H_ */

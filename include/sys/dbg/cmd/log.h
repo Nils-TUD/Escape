@@ -17,37 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CONSOLE_H_
-#define CONSOLE_H_
+#ifndef LOG_H_
+#define LOG_H_
 
 #include <sys/common.h>
-#include <sys/dbg/lines.h>
-#include <sys/video.h>
-
-/* to make a screen-backup */
-typedef struct {
-	char screen[VID_COLS * VID_ROWS * 2];
-	u16 row;
-	u16 col;
-} sScreenBackup;
 
 /**
- * Starts the debugging-console
- */
-void cons_start(void);
-
-/**
- * Enables/disables writing to log
+ * Lets the user enable/disable logging
  *
- * @param enabled the new value
+ * @param argc the number of args
+ * @param argv the arguments
+ * @return 0 on success
  */
-void cons_setLogEnabled(bool enabled);
+s32 cons_cmd_log(s32 argc,char **argv);
 
-/**
- * Displays the given lines and provides a navigation through them
- *
- * @param l the lines
- */
-void cons_viewLines(sLines *l);
-
-#endif /* CONSOLE_H_ */
+#endif /* LOG_H_ */

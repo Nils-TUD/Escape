@@ -21,6 +21,7 @@
 #include <sys/dbg/console.h>
 #include <sys/dbg/cmd/file.h>
 #include <sys/dbg/cmd/view.h>
+#include <sys/dbg/cmd/log.h>
 #include <sys/dbg/kb.h>
 #include <sys/mem/kheap.h>
 #include <sys/video.h>
@@ -54,6 +55,7 @@ static sCommand commands[] = {
 	{"exit",NULL},
 	{"file",cons_cmd_file},
 	{"view",cons_cmd_view},
+	{"log",cons_cmd_log},
 };
 
 void cons_start(void) {
@@ -105,6 +107,13 @@ void cons_start(void) {
 		kheap_free(history[i]);
 	vid_restore(backup.screen,backup.row,backup.col);
 	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+}
+
+void cons_setLogEnabled(bool enabled) {
+	if(enabled)
+		vid_setTargets(TARGET_SCREEN | TARGET_LOG);
+	else
+		vid_setTargets(TARGET_SCREEN);
 }
 
 void cons_viewLines(sLines *l) {

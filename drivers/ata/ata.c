@@ -28,8 +28,6 @@
 #include "controller.h"
 #include "ata.h"
 
-/*static bool ata_transferPIO(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16 secCount);
-static bool ata_transferDMA(sATADevice *device,bool opWrite,u16 *buffer,u16 secSize,u16 secCount);*/
 static bool ata_setupCommand(sATADevice *device,u64 lba,u16 secCount,u8 cmd);
 static u8 ata_getCommand(sATADevice *device,u8 op,u16 secSize);
 

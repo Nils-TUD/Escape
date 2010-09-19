@@ -34,7 +34,7 @@ static char buffer[512];
 
 s32 cons_cmd_file(s32 argc,char **argv) {
 	tInodeNo nodeNo;
-	tFileNo file;
+	tFileNo file = -1;
 	s32 i,res;
 	sLines lines;
 

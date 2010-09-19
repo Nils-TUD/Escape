@@ -26,7 +26,9 @@
 #include <string.h>
 #include <errors.h>
 
-#define BITMAP_PAGE_COUNT			((6 * M - KERNEL_P_ADDR) / PAGE_SIZE)
+#define BITMAP_PAGE_COUNT			((2 * M) / PAGE_SIZE)
+#define BITMAP_START_FRAME			(BITMAP_START / PAGE_SIZE)
+#define BITMAP_START				((u32)bitmap - KERNEL_AREA_V_ADDR)
 
 /**
  * Marks the given range as used or not used
@@ -51,8 +53,7 @@ extern u32 KernelStart;
 /* the bitmap for the frames of the lowest few MB
  * 0 = free, 1 = used
  */
-static u32 bitmap[BITMAP_PAGE_COUNT / 32];
-static u32 bitmapBegin;
+static u32 *bitmap;
 static u32 freeCont;
 
 /* We use a stack for the remaining memory
@@ -75,15 +76,13 @@ void mm_init(const sMultiBoot *mb) {
 
 	/* calculate mm-stack-size */
 	memSize = mb->memUpper * K;
-	defPageCount = (memSize / PAGE_SIZE) - (BITMAP_PAGE_COUNT + KERNEL_P_ADDR / PAGE_SIZE);
+	defPageCount = (memSize / PAGE_SIZE) - (BITMAP_PAGE_COUNT / PAGE_SIZE);
 	stackSize = (defPageCount + (PAGE_SIZE - 1) / sizeof(u32)) / (PAGE_SIZE / sizeof(u32));
 
 	/* the first usable frame in the bitmap is behind the mm-stack */
-	bitmapBegin = (stackBegin - KERNEL_P_ADDR) + (stackSize + 1) * PAGE_SIZE;
-	bitmapBegin &= ~KERNEL_AREA_V_ADDR;
-	bitmapBegin /= PAGE_SIZE;
-
-	/* at first we mark all frames as used in the bitmap */
+	bitmap = (u32*)(stackBegin + (stackSize + 1) * PAGE_SIZE);
+	bitmap = (u32*)(((u32)bitmap + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
+	/* mark all free */
 	memset(bitmap,0xFF,BITMAP_PAGE_COUNT / 8);
 	freeCont = 0;
 
@@ -94,11 +93,8 @@ void mm_init(const sMultiBoot *mb) {
 			mm_markRangeUsed(mmap->baseAddr,mmap->baseAddr + mmap->length,false);
 	}
 
-	/* mark the kernel-code and data (including stack for free frames) as used */
-	/* Note that we have to remove the 0xC0000000 since we want to work with physical addresses */
-	/* TODO we can use a little bit more because the kernel does not use the last few frames */
-	mm_markRangeUsed((u32)&KernelStart & ~KERNEL_AREA_V_ADDR,
-			(u32)((stackBegin & ~KERNEL_AREA_V_ADDR) + stackSize * PAGE_SIZE),true);
+	/* mark the bitmap used in itself */
+	mm_markRangeUsed(BITMAP_START,BITMAP_START + BYTES_2_PAGES(BITMAP_PAGE_COUNT / 8),true);
 }
 
 u32 mm_getStackSize(void) {
@@ -116,8 +112,9 @@ u32 mm_getFreeFrames(u32 types) {
 
 s32 mm_allocateContiguous(u32 count,u32 align) {
 	u32 i,c = 0;
-	/* start at bitmapBegin. the stuff before that is always occupied; but align it as specified */
-	i = (bitmapBegin + align - 1) & ~(align - 1);
+	/* align in physical memory */
+	i = (BITMAP_START_FRAME + align - 1) & ~(align - 1);
+	i -= BITMAP_START_FRAME;
 	for(; i < BITMAP_PAGE_COUNT; ) {
 		/* walk forward until we find an occupied frame */
 		u32 j = i;
@@ -137,8 +134,8 @@ s32 mm_allocateContiguous(u32 count,u32 align) {
 	if(c != count)
 		return ERR_NOT_ENOUGH_MEM;
 
-	/* add the phys-address of the kernel, since our bitmap starts there */
-	i += KERNEL_P_ADDR / PAGE_SIZE;
+	/* the bitmap starts managing the memory at itself */
+	i += BITMAP_START_FRAME;
 	mm_markRangeUsed(i * PAGE_SIZE,(i + count) * PAGE_SIZE,true);
 	return i;
 }
@@ -167,13 +164,13 @@ static void mm_markRangeUsed(u32 from,u32 to,bool used) {
 
 static void mm_markUsed(u32 frame,bool used) {
 	/* ignore the stuff before; we don't manage it */
-	if(frame < KERNEL_P_ADDR / PAGE_SIZE)
+	if(frame < BITMAP_START_FRAME)
 		return;
 	/* we use a bitmap for the lowest few MB */
-	if(frame < (KERNEL_P_ADDR / PAGE_SIZE) + BITMAP_PAGE_COUNT) {
+	if(frame < BITMAP_START_FRAME + BITMAP_PAGE_COUNT) {
 		u32 bit,*bitmapEntry;
-		/* normalize, since our bitmap starts at the kernel-beginning */
-		frame -= KERNEL_P_ADDR / PAGE_SIZE;
+		/* the bitmap starts managing the memory at itself */
+		frame -= BITMAP_START_FRAME;
 		bitmapEntry = (u32*)(bitmap + (frame / 32));
 		bit = 31 - (frame % 32);
 		if(used) {
@@ -203,11 +200,11 @@ static void mm_markUsed(u32 frame,bool used) {
 #if DEBUGGING
 
 void mm_dbg_printFreeFrames(u32 types) {
-	u32 i,pos = KERNEL_P_ADDR;
+	u32 i,pos = BITMAP_START;
 	u32 *ptr;
 	if(types & MM_CONT) {
 		vid_printf("Bitmap:\n");
-		for(i = 0; i < ARRAY_SIZE(bitmap); i++) {
+		for(i = 0; i < BITMAP_PAGE_COUNT / 8; i++) {
 			vid_printf("%08x..%08x: %032b\n",pos,pos + PAGE_SIZE * 32 - 1,bitmap[i]);
 			pos += PAGE_SIZE * 32;
 		}

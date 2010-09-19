@@ -182,7 +182,6 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	assert(t->stackRegion >= 0);
 	return info.progEntry;
 #else
-	cons_start();
 	while(1);
 	return 0;
 #endif

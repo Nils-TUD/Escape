@@ -132,7 +132,6 @@ void vid_vprintf(const char *fmt,va_list ap) {
 static void vid_move(void) {
 	/* last line? */
 	if(row >= VID_ROWS) {
-		/*util_waitForKeyPress();*/
 		/* copy all chars one line back */
 		memmove((void*)VIDEO_BASE,(u8*)VIDEO_BASE + VID_COLS * 2,VID_ROWS * VID_COLS * 2);
 		row--;

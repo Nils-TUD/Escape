@@ -22,6 +22,14 @@
 
 #include <sys/common.h>
 
+/**
+ * Lets the user view various kind of information about the current state of the system. This works
+ * by calling *_dbg_print() or similar, capture the output and display it via cons_viewLines().
+ *
+ * @param argc the number of args
+ * @param argv the arguments
+ * @return 0 on success
+ */
 s32 cons_cmd_view(s32 argc,char **argv);
 
 #endif /* VIEW_H_ */

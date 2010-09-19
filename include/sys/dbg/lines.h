@@ -29,10 +29,44 @@ typedef struct {
 	s32 lineSize;
 } sLines;
 
+/**
+ * Initializes the given lines-struct
+ *
+ * @param l the lines
+ * @return 0 on success
+ */
 s32 lines_create(sLines *l);
+
+/**
+ * Appends the character to the current line, if possible
+ *
+ * @param l the lines
+ * @param c the character
+ */
 void lines_append(sLines *l,char c);
+
+/**
+ * Adds a new line
+ *
+ * @param l the lines
+ * @return 0 on success
+ */
 s32 lines_newline(sLines *l);
+
+/**
+ * Ends the current line. This is intended for finalizing, i.e. you should call it when everything
+ * has been added. It will finish the current line and increase the l->lineCount by 1, so that its
+ * really the number of lines and not the index of the current line.
+ *
+ * @param l the lines
+ */
 void lines_end(sLines *l);
+
+/**
+ * Free's the memory of the given lines
+ *
+ * @param l the lines
+ */
 void lines_destroy(sLines *l);
 
 #endif /* LINES_H_ */

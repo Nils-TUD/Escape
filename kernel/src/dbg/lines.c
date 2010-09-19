@@ -76,7 +76,7 @@ void lines_end(sLines *l) {
 
 void lines_destroy(sLines *l) {
 	if(l->lines) {
-		u32 i;
+		s32 i;
 		for(i = 0; i < l->lineCount; i++)
 			kheap_free(l->lines[i]);
 		kheap_free(l->lines);

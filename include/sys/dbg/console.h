@@ -24,13 +24,23 @@
 #include <sys/dbg/lines.h>
 #include <sys/video.h>
 
+/* to make a screen-backup */
 typedef struct {
 	char screen[VID_COLS * VID_ROWS * 2];
 	u16 row;
 	u16 col;
 } sScreenBackup;
 
+/**
+ * Starts the debugging-console
+ */
 void cons_start(void);
+
+/**
+ * Displays the given lines and provides a navigation through them
+ *
+ * @param l the lines
+ */
 void cons_viewLines(sLines *l);
 
 #endif /* CONSOLE_H_ */

@@ -22,6 +22,13 @@
 
 #include <sys/common.h>
 
+/**
+ * Reads a file and displays them via cons_viewLines()
+ *
+ * @param argc the number of args
+ * @param argv the arguments
+ * @return 0 on success
+ */
 s32 cons_cmd_file(s32 argc,char **argv);
 
 #endif /* FILE_H_ */

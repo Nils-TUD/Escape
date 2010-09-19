@@ -59,11 +59,13 @@ ifeq ($(BUILDDIR),$(abspath build/debug))
 	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g -D LOGSERIAL
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
+	export BUILDTYPE=debug
 else
 	DIRS = tools lib drivers user kernel/src
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -O3 -D NDEBUG
 	export CDEFFLAGS=$(CWFLAGS) -g0 -O3 -D NDEBUG
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
+	export BUILDTYPE=release
 endif
 
 .PHONY: all debughdd mountp1 mountp2 umountp debugp1 debugp2 checkp1 checkp2 createhdd \

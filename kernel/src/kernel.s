@@ -125,10 +125,10 @@ higherhalf:
 	pushl	$0x23													# ss
 	pushl	$USER_STACK - 4								# esp
 	pushfl															# eflags
-	mov		(%esp),%ebx
-	or		$1 << 9,%ebx									# enable IF-flag
-	and		$~((1 << 12) | (1 << 13)),%ebx	# set IOPL=0 (if CPL <= IOPL the user can change eflags..)
-	mov		%ebx,(%esp)
+	mov		(%esp),%ecx
+	or		$1 << 9,%ecx									# enable IF-flag
+	and		$~((1 << 12) | (1 << 13)),%ecx	# set IOPL=0 (if CPL <= IOPL the user can change eflags..)
+	mov		%ecx,(%esp)
 	pushl	$0x1B													# cs
 	push	%eax													# eip (entry-point)
 	mov		$0x23,%eax										# set the value for the segment-registers
@@ -215,15 +215,15 @@ getStackFrameStart:
 cpu_cpuidSupported:
 	pushfl
 	pop		%eax													# load eflags into eax
-	mov		%eax,%ebx											# make copy
+	mov		%eax,%ecx											# make copy
 	xor		$0x200000,%eax								# swap cpuid-bit
-	and		$0x200000,%ebx								# isolate cpuid-bit
+	and		$0x200000,%ecx								# isolate cpuid-bit
 	push	%eax
 	popfl																# store eflags
 	pushfl
 	pop		%eax													# load again to eax
 	and		$0x200000,%eax								# isolate cpuid-bit
-	xor		%ebx,%eax											# check whether the bit has been set
+	xor		%ecx,%eax											# check whether the bit has been set
 	shr		$21,%eax											# if so, return 1 (cpuid supported)
 	ret
 
@@ -401,14 +401,14 @@ paging_exchangePDir:
 intrpt_setEnabled:
 	push	%ebp
 	mov		%esp,%ebp
-	mov		8(%esp),%ebx
-	shl		$9,%ebx
+	mov		8(%esp),%eax
+	shl		$9,%eax
 	pushfl
 	mov		(%esp),%ecx
 	mov		%ecx,%eax
 	and		$1 << 9,%eax									# extract IF-flag
 	shr		$9,%eax
-	or		%ebx,%ecx											# set new value
+	or		%eax,%ecx											# set new value
 	mov		%ecx,(%esp)
 	popfl
 	leave

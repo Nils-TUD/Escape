@@ -35,7 +35,7 @@
 /* for marking unused */
 #define INVALID_PID			MAX_PROC_COUNT
 #define ATA_PID				2
-#define KEYBOARD_PID		7	/* just for debugging */
+#define KEYBOARD_PID		12	/* just for debugging */
 
 /* the events we can wait for */
 #define EV_NOEVENT			0

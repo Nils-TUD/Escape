@@ -79,7 +79,7 @@ u32 kev_notify(u32 event,u32 param) {
 
 #if DEBUGGING
 
-void kev_print(void) {
+void kev_dbg_print(void) {
 	sKEvent *ev;
 	sSLNode *n;
 	sSymbol *sym;

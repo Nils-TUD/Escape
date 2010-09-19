@@ -13,6 +13,7 @@ mkdir $TMPDIR/sbin
 mkdir $TMPDIR/lib
 mkdir $TMPDIR/etc
 mkdir $TMPDIR/etc/keymaps
+mkdir $TMPDIR/testdir
 
 # copy / create boot-stuff
 cp $ROOT/dist/boot/* $TMPDIR/boot/grub/
@@ -37,9 +38,11 @@ echo 'module /sbin/fs /dev/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 cp $KERNELBIN $TMPDIR/boot/escape.bin
 
 # copy driver-deps, apps, drivers and user-apps
-cp $ROOT/dist/drivers.txt $TMPDIR/etc/drivers
-cp $ROOT/dist/keymap-ger.map $TMPDIR/etc/keymaps/ger
-cp $ROOT/dist/keymap-us.map $TMPDIR/etc/keymaps/us
+cp $ROOT/dist/boot/* $TMPDIR/boot/grub
+cp $ROOT/dist/etc/* $TMPDIR/etc
+cp $ROOT/dist/etc/keymaps/* $TMPDIR/etc/keymaps
+cp $ROOT/dist/scripts/* $TMPDIR/scripts
+cp $ROOT/dist/testdir/* $TMPDIR/testdir
 echo "/etc/keymaps/ger" > $TMPDIR/etc/keymap
 cp $BUILD/apps/* $TMPDIR/apps
 for i in $BUILD/lib*.so; do
@@ -59,19 +62,8 @@ done;
 cp $ROOT/kernel/src/mem/paging.c $TMPDIR/paging.c
 
 # add some test-data
-mkdir $TMPDIR/testdir
 echo "Das ist ein Test-String!!" > $TMPDIR/file.txt
 cp -R $ROOT/dist/scripts $TMPDIR
-cp $ROOT/dist/test.bmp $TMPDIR
-cp $ROOT/dist/bbc.bmp $TMPDIR
-cp $ROOT/dist/test.bmp $TMPDIR/bla.bmp
-cp $ROOT/dist/cursor_def.bmp $TMPDIR/etc
-cp $ROOT/dist/cursor_resbr.bmp $TMPDIR/etc
-cp $ROOT/dist/cursor_resl.bmp $TMPDIR/etc
-cp $ROOT/dist/cursor_resr.bmp $TMPDIR/etc
-cp $ROOT/dist/cursor_resbl.bmp $TMPDIR/etc
-cp $ROOT/dist/cursor_resvert.bmp $TMPDIR/etc
-cp $TMPDIR/file.txt $TMPDIR/testdir/file.txt
 dd if=/dev/zero of=$TMPDIR/zeros bs=1024 count=1024
 echo -n "" > $TMPDIR/bigfile
 i=0

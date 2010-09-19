@@ -21,9 +21,8 @@
 #define VIDEO_H_
 
 #include <sys/common.h>
+#include <sys/printf.h>
 #include <stdarg.h>
-
-typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
 
 #define VID_COLS				80
 #define VID_ROWS				25
@@ -31,10 +30,32 @@ typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eC
 #define TARGET_SCREEN			1
 #define TARGET_LOG				2
 
+typedef enum {BLACK,BLUE,GREEN,CYAN,RED,MARGENTA,ORANGE,WHITE,GRAY,LIGHTBLUE} eColor;
+
 /**
  * Inits the video-stuff
  */
 void vid_init(void);
+
+/**
+ * Backups the screen to the given buffer. Assumes (!) that the buffer is large enough to contain
+ * VID_COLS * VID_ROWS * 2 bytes!
+ *
+ * @param buffer the buffer to write to
+ * @param row pointer to the row to set
+ * @param col pointer to the col to set
+ */
+void vid_backup(char *buffer,u16 *row,u16 *col);
+
+/**
+ * Restores the screen from the given buffer. Assumes (!) that the buffer is large enough to contain
+ * VID_COLS * VID_ROWS * 2 bytes!
+ *
+ * @param buffer the buffer to read from
+ * @param row the row to set
+ * @param col the col to set
+ */
+void vid_restore(const char *buffer,u16 row,u16 col);
 
 /**
  * Sets the targets of the printing
@@ -47,6 +68,19 @@ void vid_setTargets(u8 targets);
  * Clears the screen
  */
 void vid_clearScreen(void);
+
+/**
+ * Sets the given function as callback for every character to print (instead of the default one
+ * for printing to screen)
+ *
+ * @param func the function
+ */
+void vid_setPrintFunc(fPrintc func);
+
+/**
+ * Resets the print-function to the default one
+ */
+void vid_unsetPrintFunc(void);
 
 /**
  * Prints the given character to the current position on the screen

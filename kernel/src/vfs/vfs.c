@@ -1137,11 +1137,18 @@ void vfs_dbg_printGFT(void) {
 			vid_printf("\t\tdevNo: %d\n",e->devNo);
 			vid_printf("\t\tpos: %d\n",e->position);
 			vid_printf("\t\trefCount: %d\n",e->refCount);
-			vid_printf("\t\towner: %d\n",e->owner);
+			if(e->owner == KERNEL_TID)
+				vid_printf("\t\towner: %d (kernel)\n",e->owner);
+			else {
+				sThread *t = thread_getById(e->owner);
+				vid_printf("\t\towner: %d (%d:%s)\n",e->owner,t->proc->pid,t->proc->command);
+			}
 			if(e->devNo == VFS_DEV_NO) {
 				sVFSNode *n = vfsn_getNode(e->nodeNo);
 				if(IS_DRVUSE(n->mode))
-					vid_printf("\t\tDriver-Usage of %s @ %s\n",n->name,n->parent->name);
+					vid_printf("\t\tDriver-Usage: %s @ %s\n",n->name,n->parent->name);
+				else
+					vid_printf("\t\tFile: '%s'\n",vfsn_getPath(vfsn_getNodeNo(n)));
 			}
 		}
 		e++;

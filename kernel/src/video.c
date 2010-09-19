@@ -35,6 +35,7 @@ static u8 vid_handlePipePad(void);
 static void vid_handleColorCode(const char **str);
 static void vid_removeBIOSCursor(void);
 
+static fPrintc printFunc = vid_putchar;
 static u16 col = 0;
 static u16 row = 0;
 static u8 color = 0;
@@ -46,6 +47,18 @@ void vid_init(void) {
 	color = (BLACK << 4) | WHITE;
 }
 
+void vid_backup(char *buffer,u16 *r,u16 *c) {
+	memcpy(buffer,(void*)VIDEO_BASE,VID_ROWS * VID_COLS * 2);
+	*r = row;
+	*c = col;
+}
+
+void vid_restore(const char *buffer,u16 r,u16 c) {
+	memcpy((void*)VIDEO_BASE,buffer,VID_ROWS * VID_COLS * 2);
+	row = r;
+	col = c;
+}
+
 void vid_setTargets(u8 ntargets) {
 	targets = ntargets;
 }
@@ -53,6 +66,14 @@ void vid_setTargets(u8 ntargets) {
 void vid_clearScreen(void) {
 	memclear((void*)VIDEO_BASE,VID_COLS * 2 * VID_ROWS);
 	col = row = 0;
+}
+
+void vid_setPrintFunc(fPrintc func) {
+	printFunc = func;
+}
+
+void vid_unsetPrintFunc(void) {
+	printFunc = vid_putchar;
 }
 
 void vid_putchar(char c) {
@@ -96,7 +117,7 @@ void vid_printf(const char *fmt,...) {
 
 void vid_vprintf(const char *fmt,va_list ap) {
 	sPrintEnv env;
-	env.print = vid_putchar;
+	env.print = printFunc;
 	env.escape = vid_handleColorCode;
 	env.pipePad = vid_handlePipePad;
 	if(targets & TARGET_SCREEN)

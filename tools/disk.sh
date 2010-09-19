@@ -92,27 +92,18 @@ addTestData() {
 	$SUDO mkdir $DISKMOUNT/lib
 	$SUDO mkdir $DISKMOUNT/etc
 	$SUDO mkdir $DISKMOUNT/etc/keymaps
-	$SUDO cp dist/drivers.txt $DISKMOUNT/etc/drivers
-	$SUDO cp dist/keymap-ger.map $DISKMOUNT/etc/keymaps/ger
-	$SUDO cp dist/keymap-us.map $DISKMOUNT/etc/keymaps/us
+	$SUDO mkdir $DISKMOUNT/testdir
+	$SUDO cp $ROOT/dist/boot/* $DISKMOUNT/boot/grub
+	$SUDO cp $ROOT/dist/etc/* $DISKMOUNT/etc
+	$SUDO cp $ROOT/dist/etc/keymaps/* $DISKMOUNT/etc/keymaps
+	$SUDO cp $ROOT/dist/scripts/* $DISKMOUNT/scripts
+	$SUDO cp $ROOT/dist/testdir/* $DISKMOUNT/testdir
 	$SUDO touch $DISKMOUNT/etc/keymap
 	$SUDO chmod 0666 $DISKMOUNT/etc/keymap
 	echo "/etc/keymaps/ger" > $DISKMOUNT/etc/keymap
-	$SUDO cp dist/test.bmp $DISKMOUNT
-	$SUDO cp dist/bbc.bmp $DISKMOUNT
-	$SUDO cp dist/test.bmp $DISKMOUNT/bla.bmp
-	$SUDO cp -R dist/scripts $DISKMOUNT
-	$SUDO cp dist/cursor_def.bmp $DISKMOUNT/etc
-	$SUDO cp dist/cursor_resl.bmp $DISKMOUNT/etc
-	$SUDO cp dist/cursor_resr.bmp $DISKMOUNT/etc
-	$SUDO cp dist/cursor_resbr.bmp $DISKMOUNT/etc
-	$SUDO cp dist/cursor_resbl.bmp $DISKMOUNT/etc
-	$SUDO cp dist/cursor_resvert.bmp $DISKMOUNT/etc
-	$SUDO mkdir $DISKMOUNT/testdir
 	$SUDO touch $DISKMOUNT/file.txt
 	$SUDO chmod 0666 $DISKMOUNT/file.txt
 	echo "This is a test-string!!!" > $DISKMOUNT/file.txt
-	$SUDO cp $DISKMOUNT/file.txt $DISKMOUNT/testdir/file.txt
 	$SUDO dd if=/dev/zero of=$DISKMOUNT/zeros bs=1024 count=1024
 	$SUDO touch $DISKMOUNT/bigfile
 	$SUDO chmod 0666 $DISKMOUNT/bigfile

@@ -35,10 +35,13 @@
 #include <sys/task/sched.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/real.h>
+#include <sys/dbg/kb.h>
+#include <sys/dbg/console.h>
 #include <sys/util.h>
 #include <sys/syscalls.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
+#include <esc/keycodes.h>
 #include <assert.h>
 #include <string.h>
 
@@ -530,9 +533,9 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 			/* this way, we can debug the system in the startup-phase without affecting timings
 			 * (before viewing the log ;)) */
 			if(stack->intrptNo == IRQ_KEYBOARD && proc_getByPid(KEYBOARD_PID) == NULL) {
-				u8 sc = util_getScanCode();
-				if(sc == 0x58) /* F12 */
-					util_logViewer();
+				sKeyEvent ev;
+				if(kb_get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
+					cons_start();
 			}
 #endif
 			/* don't print info about intrpt */

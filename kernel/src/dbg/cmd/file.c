@@ -1,0 +1,89 @@
+/**
+ * $Id$
+ * Copyright (C) 2008 - 2009 Nils Asmussen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#include <sys/common.h>
+#include <sys/dbg/console.h>
+#include <sys/dbg/kb.h>
+#include <sys/dbg/lines.h>
+#include <sys/dbg/cmd/file.h>
+#include <sys/task/thread.h>
+#include <sys/mem/kheap.h>
+#include <sys/vfs/vfs.h>
+#include <sys/video.h>
+#include <esc/keycodes.h>
+#include <errors.h>
+
+static sScreenBackup backup;
+static char buffer[512];
+
+s32 cons_cmd_file(s32 argc,char **argv) {
+	tInodeNo nodeNo;
+	tFileNo file;
+	s32 i,res;
+	sLines lines;
+
+	if(argc != 2) {
+		vid_printf("Usage: %s <file>\n",argv[0]);
+		return 0;
+	}
+
+	vid_backup(backup.screen,&backup.row,&backup.col);
+
+	if((res = lines_create(&lines)) < 0)
+		goto error;
+
+	/* don't write the following to the log ;) */
+	res = vfsn_resolvePath(argv[1],&nodeNo,NULL,VFS_READ);
+	if(res < 0)
+		goto error;
+	file = vfs_openFile(KERNEL_TID,VFS_READ,nodeNo,VFS_DEV_NO);
+	if(file < 0) {
+		res = file;
+		goto error;
+	}
+	while((res = vfs_readFile(KERNEL_TID,file,(u8*)buffer,sizeof(buffer))) > 0) {
+		/* build lines from the read data */
+		for(i = 0; i < res; i++) {
+			if(buffer[i] == '\n') {
+				if(lines_newline(&lines) < 0) {
+					res = ERR_NOT_ENOUGH_MEM;
+					goto error;
+				}
+			}
+			else
+				lines_append(&lines,buffer[i]);
+		}
+	}
+	lines_end(&lines);
+	vfs_closeFile(KERNEL_TID,file);
+	file = -1;
+
+	/* now display lines */
+	cons_viewLines(&lines);
+	res = 0;
+
+error:
+	/* clean up */
+	lines_destroy(&lines);
+	if(file >= 0)
+		vfs_closeFile(KERNEL_TID,file);
+
+	vid_restore(backup.screen,backup.row,backup.col);
+	return res;
+}

@@ -54,7 +54,7 @@ s32 kev_add(u32 event,fKEvCallback callback);
 u32 kev_notify(u32 event,u32 param);
 
 #if DEBUGGING
-void kev_print(void);
+void kev_dbg_print(void);
 #endif
 
 #endif /* KEVENT_H_ */

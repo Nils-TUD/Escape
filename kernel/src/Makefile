@@ -4,19 +4,25 @@ BUILDK = $(BUILD)/kernel/src
 BIN = $(BUILD)/kernel.bin
 LDCONF = ../ld.conf
 LIB = $(ROOT)/lib/basic
-SUBDIRS = . $(filter-out Makefile $(wildcard *.*),$(wildcard *))
-LSUBDIRS = $(filter-out $(wildcard $(LIB)/*.*),$(wildcard $(LIB)/*))
+SUBDIRS = $(shell find . -type d | grep -v '\.svn')
+LSUBDIRS = $(shell find $(LIB) -type d | grep -v '\.svn')
 BUILDDIRS = $(addprefix $(BUILDK)/,$(SUBDIRS)) $(patsubst $(LIB)/%,$(BUILDK)/lib/%,$(LSUBDIRS))
-DEPS = $(shell find $(BUILDDIRS) -mindepth 0 -maxdepth 1 -name "*.d")
+DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 
 CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D IN_KERNEL=1
 # for profiling:
 # -finstrument-functions -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/src/profile.c
 
 # sources
-ASRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.s")
-CSRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c")
-LSRC = $(shell find $(LIB) -name "*.c")
+ASRC = $(shell find . -name "*.s" | grep -v '\.svn')
+ifeq ($(BUILDTYPE),release)
+# remove dbg-files in release-mode
+CSRC = $(filter-out $(shell find . -name "*.c" | grep '/dbg/'), \
+	$(shell find . -name "*.c" | grep -v '\.svn'))
+else
+CSRC = $(shell find . -name "*.c" | grep -v '\.svn')
+endif
+LSRC = $(shell find $(LIB) -name "*.c" | grep -v '\.svn')
 
 # objects
 AOBJ = $(patsubst %.s,$(BUILDK)/%.s.o,$(ASRC))

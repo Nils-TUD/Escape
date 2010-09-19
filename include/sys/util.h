@@ -122,25 +122,6 @@ s32 util_rand(void);
 void util_srand(u32 seed);
 
 /**
- * @return If available, the scancode, otherwise 0
- */
-u8 util_getScanCode(void);
-
-/**
- * Waits until any key is pressed (make-code)
- *
- * @return the scancode
- */
-u8 util_waitForKeyPress(void);
-
-/**
- * Waits until any key is released (break-code)
- *
- * @return the scancode
- */
-u8 util_waitForKeyRelease(void);
-
-/**
  * Starts the timer
  */
 void util_startTimer(void);

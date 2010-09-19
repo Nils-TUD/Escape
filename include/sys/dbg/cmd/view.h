@@ -17,22 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include "iobuf.h"
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef VIEW_H_
+#define VIEW_H_
 
-s32 fclose(FILE *stream) {
-	s32 res = 0;
-	fflush(stream);
-	if(stream->in.fd >= 0)
-		close(stream->in.fd);
-	else
-		close(stream->out.fd);
-	free(stream->in.buffer);
-	free(stream->out.buffer);
-	if(!sll_removeFirst(&iostreams,stream))
-		res = -1;
-	free(stream);
-	return res;
-}
+#include <sys/common.h>
+
+s32 cons_cmd_view(s32 argc,char **argv);
+
+#endif /* VIEW_H_ */

@@ -19,7 +19,9 @@
 
 #include <sys/common.h>
 #include <sys/machine/cpu.h>
+#include <sys/mem/kheap.h>
 #include <sys/printf.h>
+#include <sys/video.h>
 #include <string.h>
 
 /* based on http://forum.osdev.org/viewtopic.php?t=11998 */
@@ -275,3 +277,19 @@ void cpu_sprintf(sStringBuffer *buf) {
 			break;
 	}
 }
+
+
+#if DEBUGGING
+
+void cpu_dbg_print(void) {
+	sStringBuffer buf;
+	buf.dynamic = true;
+	buf.len = 0;
+	buf.size = 0;
+	buf.str = NULL;
+	cpu_sprintf(&buf);
+	vid_printf("%s",buf.str);
+	kheap_free(buf.str);
+}
+
+#endif

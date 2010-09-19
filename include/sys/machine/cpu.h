@@ -140,7 +140,7 @@ extern void cpu_setCR4(u32 cr4);
 
 #if DEBUGGING
 
-void cpu_print(void);
+void cpu_dbg_print(void);
 
 #endif
 

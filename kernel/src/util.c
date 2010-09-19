@@ -21,6 +21,8 @@
 #include <sys/machine/intrpt.h>
 #include <sys/machine/cpu.h>
 #include <sys/task/proc.h>
+#include <sys/dbg/kb.h>
+#include <sys/dbg/console.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
@@ -30,25 +32,12 @@
 #include <sys/util.h>
 #include <sys/log.h>
 #include <esc/register.h>
+#include <esc/keycodes.h>
 #include <stdarg.h>
 #include <string.h>
 
-/* for reading from kb */
-#define IOPORT_KB_DATA				0x60
-#define IOPORT_KB_CTRL				0x64
-#define STATUS_OUTBUF_FULL			(1 << 0)
-
-#define VIDEO_BASE					0xC00B8000
-
 /* the x86-call instruction is 5 bytes long */
 #define CALL_INSTR_SIZE			5
-
-static u8 util_waitForKey(void);
-
-#if DEBUGGING
-static char buffer[512];
-static char backup[VID_ROWS * VID_COLS * 2];
-#endif
 
 /* the beginning of the kernel-stack */
 extern u32 kernelStack;
@@ -119,114 +108,16 @@ void util_panic(const char *fmt,...) {
 	vmm_dbg_print(t->proc);
 	paging_dbg_printCur(PD_PART_USER);
 	vid_setTargets(TARGET_SCREEN);
-	vid_printf("Done\n\nPress any key to view log");
+	vid_printf("Done\n\nPress any key to start debugger");
 	while(1) {
-		util_waitForKeyPress();
-		util_logViewer();
+		kb_get(NULL,KEV_PRESS,true);
+		cons_start();
 	}
 #else
 	/* TODO vmware seems to shutdown if we disable interrupts and htl?? */
 	while(1)
 		util_halt();
 #endif
-}
-
-void util_logViewer(void) {
-	tInodeNo nodeNo;
-	tFileNo file;
-	u8 scanCode;
-	s32 i,res,start,end,lineCount = 0,linePos = 0,lineSize = 16;
-	char **lines = (char**)kheap_alloc(lineSize * sizeof(char*));
-	if(!lines)
-		goto error;
-	lines[lineCount] = kheap_alloc(VID_COLS + 1);
-	if(!lines[lineCount])
-		goto error;
-
-	/* make a screen-backup */
-	memcpy(backup,(void*)VIDEO_BASE,VID_ROWS * VID_COLS * 2);
-
-	/* don't write the following to the log ;) */
-	vid_setTargets(TARGET_SCREEN);
-	res = vfsn_resolvePath("/system/log",&nodeNo,NULL,VFS_READ);
-	if(res < 0)
-		goto error;
-	file = vfs_openFile(KERNEL_TID,VFS_READ,nodeNo,VFS_DEV_NO);
-	if(file < 0)
-		goto error;
-	while((res = vfs_readFile(KERNEL_TID,file,(u8*)buffer,sizeof(buffer))) > 0) {
-		/* build lines from the read data */
-		for(i = 0; i < res; i++) {
-			if(buffer[i] == '\n') {
-				/* fill up with spaces */
-				for(; linePos < VID_COLS; linePos++)
-					lines[lineCount][linePos] = ' ';
-				lines[lineCount][linePos] = '\0';
-				/* to next line */
-				linePos = 0;
-				lineCount++;
-				/* allocate more lines if necessary */
-				if(lineCount >= lineSize) {
-					lineSize *= 2;
-					lines = (char**)kheap_realloc(lines,lineSize * sizeof(char*));
-					if(!lines)
-						goto error;
-				}
-				/* allocate new line */
-				lines[lineCount] = kheap_alloc(VID_COLS + 1);
-				if(!lines[lineCount])
-					goto error;
-			}
-			/* append */
-			else if(linePos < VID_COLS)
-				lines[lineCount][linePos++] = buffer[i];
-		}
-	}
-	/* end last line */
-	for(; linePos < VID_COLS; linePos++)
-		lines[lineCount][linePos] = ' ';
-	lines[lineCount][linePos] = '\0';
-	lineCount++;
-	vfs_closeFile(KERNEL_TID,file);
-
-	/* start viewing */
-	start = 0;
-	while(true) {
-		/* print lines */
-		vid_clearScreen();
-		for(i = start, end = MIN(lineCount,start + VID_ROWS); i < end; i++)
-			vid_printf("%s\r",lines[i]);
-		for(; (i - start) < VID_ROWS; i++)
-			vid_printf("\n");
-		/* print info-line */
-		vid_printf("\033[co;0;7]LogViewer%|s\033[co]",
-				"Navigation: a=up, y/z=down, s=page up, x=page down, q=quit");
-		/* wait for key */
-		scanCode = util_waitForKeyPress();
-		if(scanCode == 0x1E && start > 0)					/* a */
-			start--;
-		else if(scanCode == 0x2C && start < lineCount - VID_ROWS - 1)	/* y/z */
-			start++;
-		else if(scanCode == 0x1F)							/* s */
-			start = MAX(start - (VID_ROWS - 1),0);
-		else if(scanCode == 0x2D)							/* x */
-			start = MIN(start + (VID_ROWS - 1),lineCount - VID_ROWS - 1);
-		else if(scanCode == 0x10)							/* q */
-			break;
-	}
-
-	/* clean up */
-	for(i = 0; i < lineCount; i++)
-		kheap_free(lines[i]);
-	kheap_free(lines);
-	vid_setTargets(TARGET_SCREEN | TARGET_LOG);
-
-	/* restore screen-backup */
-	memcpy((void*)VIDEO_BASE,backup,VID_ROWS * VID_COLS * 2);
-	return;
-
-error:
-	vid_printf("Viewing log failed\n");
 }
 
 s32 util_rand(void) {
@@ -238,38 +129,6 @@ s32 util_rand(void) {
 
 void util_srand(u32 seed) {
 	lastRand = seed;
-}
-
-u8 util_getScanCode(void) {
-	if(util_inByte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL)
-		return util_inByte(IOPORT_KB_DATA);
-	return 0;
-}
-
-u8 util_waitForKeyPress(void) {
-	u8 scanCode;
-	while(1) {
-		scanCode = util_waitForKey();
-		if(!(scanCode & 0x80))
-			break;
-	}
-	return scanCode;
-}
-
-u8 util_waitForKeyRelease(void) {
-	u8 scanCode;
-	while(1) {
-		scanCode = util_waitForKey();
-		if(scanCode & 0x80)
-			break;
-	}
-	return scanCode & ~0x80;
-}
-
-static u8 util_waitForKey(void) {
-	while(!(util_inByte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
-		;
-	return util_inByte(IOPORT_KB_DATA);
 }
 
 void util_startTimer(void) {

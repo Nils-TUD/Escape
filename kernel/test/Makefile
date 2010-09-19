@@ -6,8 +6,8 @@ BIN = $(BUILD)/kernel_test.bin
 LDCONF = ../ld.conf
 LIB = $(ROOT)/lib/basic
 DEPS = $(wildcard $(BUILDT)/*.d)
-SUBDIRS = ../src $(filter-out ../src/Makefile $(wildcard ../src/*.*),$(wildcard ../src/*))
-LSUBDIRS = $(filter-out $(wildcard $(LIB)/*.*),$(wildcard $(LIB)/*))
+SUBDIRS = $(shell find ../src -type d | grep -v '\.svn')
+LSUBDIRS = $(shell find $(LIB) -type d | grep -v '\.svn')
 BUILDDIRS = $(BUILDT) $(patsubst $(LIB)/%,$(BUILDT)/lib/%,$(LSUBDIRS))
 
 CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
@@ -15,9 +15,9 @@ CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) \
 
 # sources
 TSRC = $(wildcard *.c)
-KSRC = $(filter-out ../src/kernel.c,$(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.c"))
-KASRC = $(shell find $(SUBDIRS) -mindepth 0 -maxdepth 1 -name "*.s")
-LSRC = $(shell find $(LIB) -name "*.c")
+KSRC = $(filter-out ../src/kernel.c,$(shell find ../src -name "*.c" | grep -v '\.svn'))
+KASRC = $(shell find ../src -name "*.s" | grep -v '\.svn')
+LSRC = $(shell find $(LIB) -name "*.c" | grep -v '\.svn')
 
 # objects
 TOBJ = $(patsubst %.c,$(BUILDT)/%.o,$(TSRC))

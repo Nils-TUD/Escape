@@ -17,22 +17,34 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include "iobuf.h"
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef KB_H_
+#define KB_H_
 
-s32 fclose(FILE *stream) {
-	s32 res = 0;
-	fflush(stream);
-	if(stream->in.fd >= 0)
-		close(stream->in.fd);
-	else
-		close(stream->out.fd);
-	free(stream->in.buffer);
-	free(stream->out.buffer);
-	if(!sll_removeFirst(&iostreams,stream))
-		res = -1;
-	free(stream);
-	return res;
-}
+#include <sys/common.h>
+
+#define KEV_PRESS	1
+#define KEV_RELEASE	2
+
+#define KE_SHIFT	1
+#define KE_CTRL		2
+#define KE_ALT		4
+#define KE_BREAK	8
+
+typedef struct {
+	u8 keycode;
+	char character;
+	u8 flags;
+} sKeyEvent;
+
+/**
+ * Fills the given keyevent. If <wait> is true, it waits until a scancode is present. Otherwise
+ * it just checks wether one is present. If no, it gives up.
+ *
+ * @param ev the event to fill (may be NULL if you just want to wait for a keypress/-release)
+ * @param events a mask of events to react on (KEV_*)
+ * @param wait wether to wait until a scancode is present
+ * @return true if a key could be read. false if not (always true, when <wait> is true)
+ */
+bool kb_get(sKeyEvent *ev,u8 events,bool wait);
+
+#endif /* KB_H_ */

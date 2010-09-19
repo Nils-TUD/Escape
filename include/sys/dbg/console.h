@@ -17,22 +17,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include "iobuf.h"
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef CONSOLE_H_
+#define CONSOLE_H_
 
-s32 fclose(FILE *stream) {
-	s32 res = 0;
-	fflush(stream);
-	if(stream->in.fd >= 0)
-		close(stream->in.fd);
-	else
-		close(stream->out.fd);
-	free(stream->in.buffer);
-	free(stream->out.buffer);
-	if(!sll_removeFirst(&iostreams,stream))
-		res = -1;
-	free(stream);
-	return res;
-}
+#include <sys/common.h>
+#include <sys/dbg/lines.h>
+#include <sys/video.h>
+
+typedef struct {
+	char screen[VID_COLS * VID_ROWS * 2];
+	u16 row;
+	u16 col;
+} sScreenBackup;
+
+void cons_start(void);
+void cons_viewLines(sLines *l);
+
+#endif /* CONSOLE_H_ */

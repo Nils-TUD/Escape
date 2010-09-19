@@ -17,22 +17,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include "iobuf.h"
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef LINES_H_
+#define LINES_H_
 
-s32 fclose(FILE *stream) {
-	s32 res = 0;
-	fflush(stream);
-	if(stream->in.fd >= 0)
-		close(stream->in.fd);
-	else
-		close(stream->out.fd);
-	free(stream->in.buffer);
-	free(stream->out.buffer);
-	if(!sll_removeFirst(&iostreams,stream))
-		res = -1;
-	free(stream);
-	return res;
-}
+#include <sys/common.h>
+
+typedef struct {
+	char **lines;
+	s32 lineCount;
+	s32 linePos;
+	s32 lineSize;
+} sLines;
+
+s32 lines_create(sLines *l);
+void lines_append(sLines *l,char c);
+s32 lines_newline(sLines *l);
+void lines_end(sLines *l);
+void lines_destroy(sLines *l);
+
+#endif /* LINES_H_ */

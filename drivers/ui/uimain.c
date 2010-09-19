@@ -57,6 +57,8 @@ int main(void) {
 
 	/* announce listener */
 	tFD fd = open("/dev/keyevents",IO_READ | IO_WRITE);
+	if(fd < 0)
+		error("[UI] Unable to open '/dev/keyevents'");
 	for(i = 0; i < ARRAY_SIZE(keys); i++)
 		addListener(fd,KE_EV_KEYCODE | KE_EV_PRESSED,keys[i],CTRL_MASK);
 

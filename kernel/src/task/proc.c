@@ -91,6 +91,7 @@ void proc_init(void) {
 	p->exitState = NULL;
 	p->sigRetAddr = 0;
 	p->flags = 0;
+	p->entryPoint = 0;
 	strcpy(p->command,"initloader");
 
 	/* create first thread */
@@ -225,6 +226,7 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->sigRetAddr = cur->sigRetAddr;
 	p->ioMap = NULL;
 	p->flags = 0;
+	p->entryPoint = cur->entryPoint;
 	if(isVM86)
 		p->flags |= P_VM86;
 	/* give the process the same name (may be changed by exec) */
@@ -310,10 +312,7 @@ s32 proc_startThread(u32 entryPoint,void *arg) {
 			/* never reached */
 			return ERR_NOT_ENOUGH_MEM;
 		}
-		proc_setupStart(istack,entryPoint);
-
-		/* child */
-		return 0;
+		proc_setupStart(istack,p->entryPoint);
 	}
 
 	return nt->tid;
@@ -752,10 +751,8 @@ void proc_dbg_stopProf(void) {
 		curUcycles.val64 -= ucycles[p->pid];
 		curKcycles.val64 -= kcycles[p->pid];
 		if(curUcycles.val64 > 0 || curKcycles.val64 > 0) {
-			vid_printf("Process %3d (%18s): u=%08x%08x k=%08x%08x\n",
-				p->pid,p->command,
-				curUcycles.val32.upper,curUcycles.val32.lower,
-				curKcycles.val32.upper,curKcycles.val32.lower);
+			vid_printf("Process %3d (%18s): u=%016Lx k=%016Lx\n",
+				p->pid,p->command,curUcycles.val64,curKcycles.val64);
 		}
 	}
 }
@@ -789,9 +786,17 @@ void proc_dbg_printAllPDs(u8 parts,bool regions) {
 void proc_dbg_print(sProc *p) {
 	sSLNode *n;
 	vid_printf("proc %d:\n",p->pid);
-	vid_printf("\tppid=%d, cmd=%s, pdir=%x\n",p->parentPid,p->command,p->pagedir);
+	vid_printf("\tppid=%d, cmd=%s, pdir=%x, entry=%x\n",
+			p->parentPid,p->command,p->pagedir,p->entryPoint);
 	vid_printf("\townFrames=%u, sharedFrames=%u\n",p->ownFrames,p->sharedFrames);
 	vid_printf("\tswapped=%u\n",p->swapped);
+	if(p->flags & P_ZOMBIE) {
+		vid_printf("\tExitstate: code=%d, signal=%d\n",p->exitState->exitCode,p->exitState->signal);
+		vid_printf("\t\town=%u, shared=%u, swap=%u\n",
+				p->exitState->ownFrames,p->exitState->sharedFrames,p->exitState->swapped);
+		vid_printf("\t\tucycles=%016Lx, kcycles=%016Lx\n",
+				p->exitState->ucycleCount,p->exitState->kcycleCount);
+	}
 	if(p->threads) {
 		for(n = sll_begin(p->threads); n != NULL; n = n->next)
 			thread_dbg_print((sThread*)n->data);

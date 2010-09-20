@@ -83,7 +83,7 @@ void sysc_yield(sIntrptStackFrame *stack) {
 }
 
 void sysc_wait(sIntrptStackFrame *stack) {
-	u16 events = (u8)SYSC_ARG1(stack);
+	u16 events = (u16)SYSC_ARG1(stack);
 	sThread *t = thread_getRunning();
 
 	if((events & ~EV_USER_WAIT_MASK) != 0)
@@ -102,7 +102,7 @@ void sysc_wait(sIntrptStackFrame *stack) {
 
 void sysc_notify(sIntrptStackFrame *stack) {
 	tTid tid = (tTid)SYSC_ARG1(stack);
-	u16 events = (u8)SYSC_ARG2(stack);
+	u16 events = (u16)SYSC_ARG2(stack);
 
 	if((events & ~EV_USER_NOTIFY_MASK) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);

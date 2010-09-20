@@ -52,7 +52,7 @@ u32 getThreadCount(void);
  *
  * @param entryPoint the entry-point of the thread
  * @param arg the argument to pass (just the pointer)
- * @return new tid for current thread, 0 for new thread, < 0 if failed
+ * @return the new tid, < 0 if failed
  */
 s32 startThread(fThreadEntry entryPoint,void *arg) A_CHECKRET;
 
@@ -89,7 +89,7 @@ s32 sleep(u32 msecs);
  * @param events the events on which you want to wake up
  * @return 0 on success and a negative error-code if failed
  */
-s32 wait(u8 events);
+s32 wait(u16 events);
 
 /**
  * Notifies the given thread about the given events. If it was waiting for them, it will be
@@ -99,7 +99,7 @@ s32 wait(u8 events);
  * @param events the events on which you want to wake up
  * @return 0 on success and a negative error-code if failed
  */
-s32 notify(tTid tid,u8 events);
+s32 notify(tTid tid,u16 events);
 
 /**
  * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)

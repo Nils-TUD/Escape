@@ -142,6 +142,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			vassert(proc_setupUserStack(stack,argc,argBuffer,argSize,&info),
 					"Unable to setup user-stack for multiboot module %s",p->command);
 			/* no dynamic linking here */
+			p->entryPoint = info.progEntry;
 			proc_setupStart(stack,info.progEntry);
 			kheap_free(argBuffer);
 			/* we don't want to continue the loop ;) */
@@ -164,7 +165,7 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	}
 
 	/* start the swapper-thread. it will never return */
-	if(proc_startThread(0,NULL) == 0) {
+	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
 		swap_start();
 		util_panic("Swapper reached this");
 	}

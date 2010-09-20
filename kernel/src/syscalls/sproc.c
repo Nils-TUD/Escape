@@ -207,6 +207,8 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	/* make process ready */
 	if(!proc_setupUserStack(stack,argc,argBuffer,argSize,&info))
 		goto error;
+	/* the entry-point is the one of the process, since threads don't start with the dl again */
+	p->entryPoint = info.progEntry;
 	/* for starting use the linker-entry, which will be progEntry if no dl is present */
 	proc_setupStart(stack,info.linkerEntry);
 

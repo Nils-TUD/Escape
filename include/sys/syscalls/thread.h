@@ -39,7 +39,7 @@ void sysc_getThreadCount(sIntrptStackFrame *stack);
  *
  * @param entryPoint the entry-point
  * @param void* argument
- * @return tTid 0 for the new thread, the new thread-id for the current thread
+ * @return tTid the new thread-id or < 0
  */
 void sysc_startThread(sIntrptStackFrame *stack);
 

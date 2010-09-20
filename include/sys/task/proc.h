@@ -77,6 +77,8 @@ typedef struct {
 	/* the regions */
 	u32 regSize;
 	void *regions;
+	/* the entrypoint of the binary */
+	u32 entryPoint;
 	/* for the waiting parent */
 	sExitState *exitState;
 	/* the address of the sigRet "function" */
@@ -179,7 +181,7 @@ s32 proc_clone(tPid newPid,bool isVM86);
  *
  * @param entryPoint the address where to start
  * @param arg the argument
- * @return < 0 if an error occurred, new tid for current thread, 0 for new thread
+ * @return < 0 if an error occurred or the new tid
  */
 s32 proc_startThread(u32 entryPoint,void *arg);
 

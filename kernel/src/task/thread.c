@@ -576,10 +576,8 @@ void thread_dbg_print(sThread *t) {
 	vid_printf("\t\tstate=%s\n",states[t->state]);
 	vid_printf("\t\tevents=%x\n",t->events);
 	vid_printf("\t\tkstackFrame=0x%x\n",t->kstackFrame);
-	vid_printf("\t\tucycleCount = 0x%08x%08x\n",t->stats.ucycleCount.val32.upper,
-			t->stats.ucycleCount.val32.lower);
-	vid_printf("\t\tkcycleCount = 0x%08x%08x\n",t->stats.kcycleCount.val32.upper,
-			t->stats.kcycleCount.val32.lower);
+	vid_printf("\t\tucycleCount = 0x%016Lx\n",t->stats.ucycleCount.val64);
+	vid_printf("\t\tkcycleCount = 0x%016Lx\n",t->stats.kcycleCount.val64);
 	vid_printf("\t\tfileDescs:\n");
 	for(i = 0; i < MAX_FD_COUNT; i++) {
 		if(t->fileDescs[i] != -1) {

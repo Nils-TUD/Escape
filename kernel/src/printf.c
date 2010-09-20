@@ -31,15 +31,16 @@
 #define FFL_PRINTBASE		8
 #define FFL_PADZEROS		16
 #define FFL_CAPHEX			32
+#define FFL_LONGLONG		64
 
 /* the minimum space-increase-size in prf_aprintc() */
 #define SPRINTF_INC_SIZE	10
 
-static void prf_printnpad(sPrintEnv *env,s32 n,u8 pad,u16 flags);
-static void prf_printupad(sPrintEnv *env,u32 u,u8 base,u8 pad,u16 flags);
+static void prf_printnpad(sPrintEnv *env,s64 n,u8 pad,u16 flags);
+static void prf_printupad(sPrintEnv *env,u64 u,u8 base,u8 pad,u16 flags);
 static s32 prf_printpad(sPrintEnv *env,s32 count,u16 flags);
-static s32 prf_printu(sPrintEnv *env,u32 n,u8 base,char *chars);
-static s32 prf_printn(sPrintEnv *env,s32 n);
+static s32 prf_printu(sPrintEnv *env,u64 n,u8 base,char *chars);
+static s32 prf_printn(sPrintEnv *env,s64 n);
 static s32 prf_puts(sPrintEnv *env,const char *str);
 static void prf_aprintc(char c);
 
@@ -98,8 +99,8 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 	char c,b;
 	char *s;
 	u8 pad;
-	s32 n;
-	u32 u;
+	s64 n;
+	u64 u;
 	u8 width,base;
 	bool readFlags;
 	u16 flags;
@@ -167,18 +168,32 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 			}
 		}
 
+		/* read length */
+		switch(*fmt) {
+			case 'L':
+				flags |= FFL_LONGLONG;
+				fmt++;
+				break;
+		}
+
 		/* determine format */
 		switch(c = *fmt++) {
 			/* signed integer */
 			case 'd':
 			case 'i':
-				n = va_arg(ap, s32);
+				if(flags & FFL_LONGLONG)
+					n = va_arg(ap, s64);
+				else
+					n = va_arg(ap, s32);
 				prf_printnpad(env,n,pad,flags);
 				break;
 
 			/* pointer */
 			case 'p':
-				u = va_arg(ap, u32);
+				if(flags & FFL_LONGLONG)
+					u = va_arg(ap, u64);
+				else
+					u = va_arg(ap, u32);
 				flags |= FFL_PADZEROS;
 				pad = 9;
 				prf_printupad(env,u >> 16,16,pad - 5,flags);
@@ -195,7 +210,10 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 				base = c == 'o' ? 8 : ((c == 'x' || c == 'X') ? 16 : (c == 'b' ? 2 : 10));
 				if(c == 'X')
 					flags |= FFL_CAPHEX;
-				u = va_arg(ap, u32);
+				if(flags & FFL_LONGLONG)
+					u = va_arg(ap, u64);
+				else
+					u = va_arg(ap, u32);
 				prf_printupad(env,u,base,pad,flags);
 				break;
 
@@ -224,11 +242,11 @@ void prf_vprintf(sPrintEnv *env,const char *fmt,va_list ap) {
 	}
 }
 
-static void prf_printnpad(sPrintEnv *env,s32 n,u8 pad,u16 flags) {
+static void prf_printnpad(sPrintEnv *env,s64 n,u8 pad,u16 flags) {
 	s32 count = 0;
 	/* pad left */
 	if(!(flags & FFL_PADRIGHT) && pad > 0) {
-		u32 width = getnwidth(n);
+		u32 width = getlwidth(n);
 		if(n > 0 && (flags & (FFL_FORCESIGN | FFL_SPACESIGN)))
 			width++;
 		count += prf_printpad(env,pad - width,flags);
@@ -251,11 +269,11 @@ static void prf_printnpad(sPrintEnv *env,s32 n,u8 pad,u16 flags) {
 		prf_printpad(env,pad - count,flags);
 }
 
-static void prf_printupad(sPrintEnv *env,u32 u,u8 base,u8 pad,u16 flags) {
+static void prf_printupad(sPrintEnv *env,u64 u,u8 base,u8 pad,u16 flags) {
 	s32 count = 0;
 	/* pad left - spaces */
 	if(!(flags & FFL_PADRIGHT) && !(flags & FFL_PADZEROS) && pad > 0) {
-		u32 width = getuwidth(u,base);
+		u32 width = getulwidth(u,base);
 		count += prf_printpad(env,pad - width,flags);
 	}
 	/* print base-prefix */
@@ -272,7 +290,7 @@ static void prf_printupad(sPrintEnv *env,u32 u,u8 base,u8 pad,u16 flags) {
 	}
 	/* pad left - zeros */
 	if(!(flags & FFL_PADRIGHT) && (flags & FFL_PADZEROS) && pad > 0) {
-		u32 width = getuwidth(u,base);
+		u32 width = getulwidth(u,base);
 		count += prf_printpad(env,pad - width,flags);
 	}
 	/* print number */
@@ -293,7 +311,7 @@ static s32 prf_printpad(sPrintEnv *env,s32 count,u16 flags) {
 	return res;
 }
 
-static s32 prf_printu(sPrintEnv *env,u32 n,u8 base,char *chars) {
+static s32 prf_printu(sPrintEnv *env,u64 n,u8 base,char *chars) {
 	s32 res = 0;
 	if(n >= base)
 		res += prf_printu(env,n / base,base,chars);
@@ -301,7 +319,7 @@ static s32 prf_printu(sPrintEnv *env,u32 n,u8 base,char *chars) {
 	return res + 1;
 }
 
-static s32 prf_printn(sPrintEnv *env,s32 n) {
+static s32 prf_printn(sPrintEnv *env,s64 n) {
 	s32 res = 0;
 	if(n < 0) {
 		env->print('-');

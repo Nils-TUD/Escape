@@ -31,11 +31,11 @@
 #  Initial stack:
 #  +------------------+  <- top
 #  |     arguments    |
-#  |        ...       |
+#  |        ...       |  not present for threads
 #  +------------------+
-#  |       argv       |
+#  |       argv       |  not present for threads
 #  +------------------+
-#  |       argc       |
+#  |       argc       |  or the argument for threads
 #  +------------------+
 #  |     TLSSize      |  0 if not present
 #  +------------------+

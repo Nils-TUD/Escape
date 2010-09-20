@@ -766,6 +766,14 @@ void proc_dbg_printAll(void) {
 		proc_dbg_print(p);
 }
 
+void proc_dbg_printAllRegions(void) {
+	sProc *p;
+	for(hm_begin(procs); (p = hm_next(procs)); ) {
+		vmm_dbg_print(p);
+		vid_printf("\n");
+	}
+}
+
 void proc_dbg_printAllPDs(u8 parts,bool regions) {
 	sProc *p;
 	for(hm_begin(procs); (p = hm_next(procs)); ) {

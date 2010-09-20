@@ -1,5 +1,7 @@
 %locations
 %code top {
+	/* reduce the initial stack-size a bit (default=200) */
+	#define YYINITDEPTH		30
 	#define YYDEBUG 1
 	#include <stdio.h>
 	int yylex (void);

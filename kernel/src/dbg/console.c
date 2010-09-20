@@ -127,22 +127,22 @@ void cons_viewLines(sLines *l) {
 		for(; (i - start) < VID_ROWS - 1; i++)
 			vid_printf("\n");
 		/* print info-line */
-		vid_printf("\033[co;0;7]%|s\033[co]",
+		vid_printf("\033[co;0;7]Lines %d..%d of %d%|s\033[co]",start + 1,end,l->lineCount,
 				"Navigation: up/down, pageup/-down, home/end, q=quit");
 		/* wait for key */
 		kb_get(&ev,KEV_PRESS,true);
 		if(ev.keycode == VK_UP && start > 0)
 			start--;
-		else if(ev.keycode == VK_DOWN && start < l->lineCount - VID_ROWS)
+		else if(ev.keycode == VK_DOWN && start < l->lineCount - VID_ROWS + 1)
 			start++;
 		else if(ev.keycode == VK_PGUP)
 			start = MAX(start - (VID_ROWS - 1),0);
 		else if(ev.keycode == VK_PGDOWN)
-			start = MAX(0,MIN(start + (VID_ROWS - 1),l->lineCount - VID_ROWS));
+			start = MAX(0,MIN(start + (VID_ROWS - 1),l->lineCount - VID_ROWS + 1));
 		else if(ev.keycode == VK_HOME)
 			start = 0;
 		else if(ev.keycode == VK_END)
-			start = MAX(0,l->lineCount - VID_ROWS);
+			start = MAX(0,l->lineCount - VID_ROWS + 1);
 		else if(ev.keycode == VK_Q)
 			break;
 	}

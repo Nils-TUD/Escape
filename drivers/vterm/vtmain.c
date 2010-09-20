@@ -196,6 +196,8 @@ int main(void) {
 					msg.data.arg1 = vterm_ctl(vt,&cfg,mid,msg.data.d);
 					/* reenable mode, if necessary */
 					if(mid == MSG_VT_ENABLE) {
+						/* always use the active one here */
+						vt = vterm_getActive();
 						send(vt->video,MSG_VID_SETMODE,NULL,0);
 						vterm_markScrDirty(vt);
 					}

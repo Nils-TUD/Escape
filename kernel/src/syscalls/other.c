@@ -24,6 +24,7 @@
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
 #include <sys/task/lock.h>
+#include <sys/dbg/console.h>
 #include <sys/syscalls/other.h>
 #include <sys/syscalls.h>
 #include <sys/log.h>
@@ -45,9 +46,7 @@ void sysc_debugc(sIntrptStackFrame *stack) {
 void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
 #if DEBUGGING
-	proc_dbg_printAll();
-	/*vfsn_dbg_printTree();
-	paging_dbg_printOwnPageDir(PD_PART_USER);*/
+	cons_start();
 #endif
 }
 

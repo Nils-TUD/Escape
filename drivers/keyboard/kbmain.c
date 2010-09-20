@@ -26,11 +26,12 @@
 #include <esc/lock.h>
 #include <esc/keycodes.h>
 #include <esc/messages.h>
+#include <esc/ringbuffer.h>
+#include <esc/vm86.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-#include <esc/ringbuffer.h>
 #include <errors.h>
 
 #include "set1.h"
@@ -249,6 +250,29 @@ static void kbIntrptHandler(tSig sig,u32 d) {
 	/* so, simply skip the scancode in this case */
 	if(!moving) {
 		if(kb_set1_getKeycode(&data.isBreak,&data.keycode,scanCode)) {
+#if DEBUGGING
+			/* F12 starts the kernel-debugging-console */
+			if(!data.isBreak && data.keycode == VK_F12) {
+				/* switch to vga-text-mode */
+				sVM86Regs vmregs;
+				memset(&vmregs,0,sizeof(vmregs));
+				vmregs.ax = 0x2;
+				vm86int(0x10,&vmregs,NULL,0);
+
+				/* start debugger */
+				debug();
+
+				/* restore video-mode */
+				/* TODO this is not perfect since it causes problems when we're in GUI-mode.
+				 * But its for debugging, so its ok, I think :) */
+				tFD fd = open("/dev/vterm0",IO_WRITE);
+				if(fd >= 0) {
+					send(fd,MSG_VT_ENABLE,NULL,0);
+					close(fd);
+				}
+				return;
+			}
+#endif
 			/* write in buffer */
 			rb_write(ibuf,&data);
 		}

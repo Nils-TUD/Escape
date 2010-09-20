@@ -32,7 +32,6 @@ typedef int (*fThreadEntry)(void *arg);
 #define EV_DATA_READABLE		(1 << 3)	/* if we can read from a driver (data available) */
 #define EV_USER1				(1 << 14)	/* an event we can send */
 #define EV_USER2				(1 << 15)	/* an event we can send */
-#define EV_USER3				(1 << 16)	/* an event we can send */
 
 #ifdef __cplusplus
 extern "C" {

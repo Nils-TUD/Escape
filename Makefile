@@ -77,10 +77,10 @@ $(BUILD):
 		[ -d $(BUILD) ] || mkdir -p $(BUILD);
 
 hdd:
-		$(MAKE) -C dist $(HDD)
+		$(MAKE) -C dist hdd
 
 cd:
-		$(MAKE) -C dist $(ISO)
+		$(MAKE) -C dist cd
 
 debughdd:
 		tools/disk.sh mkdiskdev
@@ -118,15 +118,15 @@ umountp:
 
 createhdd:
 		tools/disk.sh build
-		$(MAKE) -C dist $(HDD)
+		$(MAKE) -C dist hdd
 
 updatehdd:
 		tools/disk.sh update
-		$(MAKE) -C dist $(HDD)
+		$(MAKE) -C dist hdd
 
 createcd:	all
 		tools/iso.sh
-		$(MAKE) -C dist $(ISO)
+		$(MAKE) -C dist cd
 
 $(VMDISK): hdd
 		qemu-img convert -f raw $(HDD) -O vmdk $(VMDISK)

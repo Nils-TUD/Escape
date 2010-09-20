@@ -56,12 +56,11 @@
 #define EV_THREAD_DIED			(1 << 13)	/* kernel-intern */
 #define EV_USER1				(1 << 14)
 #define EV_USER2				(1 << 15)
-#define EV_USER3				(1 << 16)
 /* the events a user-thread can wait for */
 #define EV_USER_WAIT_MASK		(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE | \
-								EV_USER1 | EV_USER2 | EV_USER3)
+								EV_USER1 | EV_USER2)
 /* the events a user-thread can fire */
-#define EV_USER_NOTIFY_MASK		(EV_USER1 | EV_USER2 | EV_USER3)
+#define EV_USER_NOTIFY_MASK		(EV_USER1 | EV_USER2)
 
 /* the thread-state which will be saved for context-switching */
 typedef struct {

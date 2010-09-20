@@ -18,9 +18,13 @@ DISK_LIB=$(patsubst $(BUILD)/lib%.so,$(DISKMNT)/lib/lib%.so,$(BUILD_LIB))
 DISK_LIBGCC=$(DISKMNT)/lib/libgcc_s.so.1
 DISK_ETC=$(patsubst $(ROOT)/dist,$(DISKMNT),$(BUILD_ETC))
 
-.PHONY: all clean
+.PHONY: all cd hdd clean
 
 all:	$(HDD) $(CD)
+
+cd:	$(CD)
+
+hdd:	$(HDD)
 
 $(CD): $(BUILD_KERNEL) $(BUILD_BIN) $(BUILD_SBIN) $(BUILD_LIB) $(BUILD_LIBGCC) $(BUILD_ETC)
 		@echo "	" UPDATING $(CD)

@@ -21,6 +21,7 @@
 #include <esc/driver.h>
 #include <esc/mem.h>
 #include <esc/proc.h>
+#include <esc/thread.h>
 #include <esc/io.h>
 #include <esc/ports.h>
 #include <esc/messages.h>

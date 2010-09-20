@@ -93,6 +93,7 @@ addTestData() {
 	$SUDO mkdir $DISKMOUNT/etc
 	$SUDO mkdir $DISKMOUNT/etc/keymaps
 	$SUDO mkdir $DISKMOUNT/testdir
+	$SUDO mkdir $DISKMOUNT/scripts
 	$SUDO cp $ROOT/dist/boot/* $DISKMOUNT/boot/grub
 	$SUDO cp $ROOT/dist/etc/* $DISKMOUNT/etc
 	$SUDO cp $ROOT/dist/etc/keymaps/* $DISKMOUNT/etc/keymaps

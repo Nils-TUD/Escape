@@ -19,10 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
-#include <stdio.h>
-#include <esc/io.h>
-#include <signal.h>
+#include <esc/thread.h>
 #include <esc/messages.h>
+#include <esc/io.h>
+#include <stdio.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <errors.h>
 #include "game.h"

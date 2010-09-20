@@ -19,10 +19,11 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include <stdio.h>
 #include <esc/driver.h>
 #include <esc/proc.h>
+#include <esc/thread.h>
 #include <esc/ports.h>
+#include <stdio.h>
 #include <string.h>
 #include "device.h"
 #include "controller.h"

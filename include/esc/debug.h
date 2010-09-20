@@ -29,11 +29,6 @@ extern "C" {
 extern u64 cpu_rdtsc(void);
 
 /**
- * @return the cpu-cycles of the current thread
- */
-u64 getCycles(void);
-
-/**
  * Starts the timer, i.e. reads the current cpu-cycle count for this thread
  */
 void dbg_startUTimer(void);

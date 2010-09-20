@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/io.h>
 #include <esc/proc.h>
+#include <esc/thread.h>
 #include <stdio.h>
 #include <fstream>
 #include "iparser.h"

@@ -25,12 +25,6 @@
 #define MAX_PROC_NAME_LEN	30
 #define INVALID_PID			1026
 
-/* the events we can wait for */
-#define EV_NOEVENT			0	/* just wakeup on signals */
-#define EV_CLIENT			1	/* wakeup when we have a client to be served (for drivers) */
-#define EV_RECEIVED_MSG		2	/* wakeup if a driver we're connected to (fd) has a msg for us */
-#define EV_DATA_READABLE	8	/* wakeup if we can read from a driver (data available) */
-
 typedef void (*fExitFunc)(void *arg);
 
 typedef struct {
@@ -87,28 +81,6 @@ s32 fork(void) A_CHECKRET;
 s32 exec(const char *path,const char **args);
 
 /**
- * Releases the CPU (reschedule)
- */
-void yield(void);
-
-/**
- * Puts the process to sleep for <msecs> milliseconds. If interrupted, ERR_INTERRUPTED is returned
- *
- * @param msecs the number of milliseconds to wait
- * @return 0 on success
- */
-s32 sleep(u32 msecs);
-
-/**
- * Puts the process to sleep until one of the given events occurrs. Note that you will
- * always be waked up for signals!
- *
- * @param events the events on which you want to wake up
- * @return a negative error-code if failed
- */
-s32 wait(u8 events);
-
-/**
  * Waits until a child terminates and stores information about it into <state>.
  * Note that a child-process is required and only one thread can wait for a child-process!
  * You may get interrupted by a signal (and may want to call waitChild() again in this case). If so
@@ -140,13 +112,6 @@ s32 system(const char *cmd);
  * @return 0 if successfull
  */
 s32 atexit(fExitFunc func);
-
-/**
- * The syscall exit
- *
- * @param errorCode the error-code for the parent
- */
-void _exit(s32 exitCode) A_NORETURN;
 
 /**
  * Calls atexit-functions and then _exit()

@@ -1,5 +1,5 @@
 /**
- * $Id$
+ * $Id: dir.c 797 2010-09-16 22:03:37Z nasmussen $
  * Copyright (C) 2008 - 2009 Nils Asmussen
  *
  * This program is free software; you can redistribute it and/or
@@ -140,7 +140,8 @@ s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	buffer = NULL;
 
 	/* ok, diretory is empty, so remove '.' and '..' */
-	if((res = ext2_link_delete(e,delIno,".",true)) < 0 || (res = ext2_link_delete(e,delIno,"..",true)) < 0)
+	if((res = ext2_link_delete(e,delIno,".",true)) < 0 ||
+			(res = ext2_link_delete(e,delIno,"..",true)) < 0)
 		goto error;
 	/* now remove directory from parent, which will delete it because of no more references */
 	res = ext2_link_delete(e,dir,name,true);

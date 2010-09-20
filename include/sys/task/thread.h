@@ -38,6 +38,31 @@
 /* use an invalid tid to identify the kernel */
 #define KERNEL_TID				0xFFFE
 
+/* the events we can wait for */
+#define EV_NOEVENT				0
+#define EV_CLIENT				(1 << 0)
+#define EV_RECEIVED_MSG			(1 << 1)
+#define EV_CHILD_DIED			(1 << 2)	/* kernel-intern */
+#define EV_DATA_READABLE		(1 << 3)
+#define EV_UNLOCK				(1 << 4)	/* kernel-intern */
+#define EV_PIPE_FULL			(1 << 5)	/* kernel-intern */
+#define EV_PIPE_EMPTY			(1 << 6)	/* kernel-intern */
+#define EV_VM86_READY			(1 << 7)	/* kernel-intern */
+#define EV_REQ_REPLY			(1 << 8)	/* kernel-intern */
+#define EV_SWAP_DONE			(1 << 9)	/* kernel-intern */
+#define EV_SWAP_WORK			(1 << 10)	/* kernel-intern */
+#define EV_SWAP_FREE			(1 << 11)	/* kernel-intern */
+#define EV_VMM_DONE				(1 << 12)	/* kernel-intern */
+#define EV_THREAD_DIED			(1 << 13)	/* kernel-intern */
+#define EV_USER1				(1 << 14)
+#define EV_USER2				(1 << 15)
+#define EV_USER3				(1 << 16)
+/* the events a user-thread can wait for */
+#define EV_USER_WAIT_MASK		(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE | \
+								EV_USER1 | EV_USER2 | EV_USER3)
+/* the events a user-thread can fire */
+#define EV_USER_NOTIFY_MASK		(EV_USER1 | EV_USER2 | EV_USER3)
+
 /* the thread-state which will be saved for context-switching */
 typedef struct {
 	u32 esp;

@@ -18,14 +18,15 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
 #include <esc/io.h>
 #include <esc/debug.h>
 #include <esc/driver.h>
 #include <esc/keycodes.h>
-#include <signal.h>
 #include <esc/proc.h>
+#include <esc/thread.h>
 #include <esc/messages.h>
+#include <signal.h>
+#include <stdio.h>
 #include "window.h"
 
 #define MOUSE_DATA_BUF_SIZE	128

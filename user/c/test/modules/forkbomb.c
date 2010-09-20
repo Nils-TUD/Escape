@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
+#include <esc/thread.h>
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>

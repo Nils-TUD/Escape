@@ -18,11 +18,12 @@
  */
 
 #include <esc/common.h>
+#include <gui/common.h>
 #include <esc/messages.h>
 #include <esc/driver.h>
 #include <esc/io.h>
-#include <gui/common.h>
 #include <esc/esccodes.h>
+#include <esc/thread.h>
 #include <signal.h>
 #include <errors.h>
 

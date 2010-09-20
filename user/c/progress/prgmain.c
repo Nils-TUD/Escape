@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/messages.h>
 #include <esc/proc.h>
+#include <esc/thread.h>
 #include <stdio.h>
 
 int main(void) {

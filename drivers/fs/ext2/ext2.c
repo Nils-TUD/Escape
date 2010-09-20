@@ -47,24 +47,22 @@ void *ext2_init(const char *driver,char **usedDev) {
 	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
 	if(e == NULL)
 		return NULL;
+	e->ataFd = -1;
+	e->blockCache.blockCache = NULL;
 
 	/* open the driver */
 	fd = open(driver,IO_WRITE | IO_READ);
 	if(fd < 0) {
 		printe("Unable to find driver '%s'",driver);
-		return NULL;
+		goto error;
 	}
 
 	e->ataFd = fd;
-	if(!ext2_super_init(e)) {
-		close(e->ataFd);
-		free(e);
-		return NULL;
-	}
+	if(!ext2_super_init(e))
+		goto error;
 
 	/* Note: we don't need it in ext2_super_init() and we can't use EXT2_BLK_SIZE() without
 	 * super-block! */
-	e->blockCache.blockCache = NULL;
 	e->blockCache.blockCacheSize = EXT2_BCACHE_SIZE;
 	e->blockCache.blockSize = EXT2_BLK_SIZE(e);
 	e->blockCache.freeBlocks = NULL;
@@ -77,10 +75,8 @@ void *ext2_init(const char *driver,char **usedDev) {
 	e->blockCache.write = (fWriteBlocks)ext2_rw_writeBlocks;
 
 	/* init block-groups */
-	if(!ext2_bg_init(e)) {
-		free(e);
-		return NULL;
-	}
+	if(!ext2_bg_init(e))
+		goto error;
 
 	/* init caches */
 	ext2_icache_init(e);
@@ -90,12 +86,18 @@ void *ext2_init(const char *driver,char **usedDev) {
 	*usedDev = malloc(strlen(driver) + 1);
 	if(!*usedDev) {
 		printe("Not enough mem for driver-name");
-		bcache_destroy(&e->blockCache);
-		free(e);
-		return NULL;
+		goto error;
 	}
 	strcpy(*usedDev,driver);
 	return e;
+
+error:
+	if(e->blockCache.blockCache)
+		bcache_destroy(&e->blockCache);
+	if(e->ataFd >= 0)
+		close(e->ataFd);
+	free(e);
+	return NULL;
 }
 
 void ext2_deinit(void *h) {

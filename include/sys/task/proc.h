@@ -37,23 +37,6 @@
 #define ATA_PID				2
 #define KEYBOARD_PID		12	/* just for debugging */
 
-/* the events we can wait for */
-#define EV_NOEVENT			0
-#define EV_CLIENT			1
-#define EV_RECEIVED_MSG		2
-#define EV_CHILD_DIED		4	/* kernel-intern */
-#define EV_DATA_READABLE	8
-#define EV_UNLOCK			16	/* kernel-intern */
-#define EV_PIPE_FULL		32	/* kernel-intern */
-#define EV_PIPE_EMPTY		64	/* kernel-intern */
-#define EV_VM86_READY		128	/* kernel-intern */
-#define EV_REQ_REPLY		256	/* kernel-intern */
-#define EV_SWAP_DONE		512 /* kernel-intern */
-#define EV_SWAP_WORK		1024 /* kernel-intern */
-#define EV_SWAP_FREE		2048 /* kernel-intern */
-#define EV_VMM_DONE			4096 /* kernel-intern */
-#define EV_THREAD_DIED		8192 /* kernel-intern */
-
 /* process flags */
 #define P_ZOMBIE			1
 #define P_VM86				2

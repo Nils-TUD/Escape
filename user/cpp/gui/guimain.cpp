@@ -19,12 +19,13 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
+#include <esc/thread.h>
+#include <esc/messages.h>
 #include <esc/io.h>
-#include <stdio.h>
 #include <esc/dir.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-#include <esc/messages.h>
 
 #define MAX_RETRY_COUNT	500
 

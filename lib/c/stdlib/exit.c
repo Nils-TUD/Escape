@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/proc.h>
+#include <esc/thread.h>
 #include <stdlib.h>
 
 int __cxa_atexit(void (*f)(void *),void *p,void *d);

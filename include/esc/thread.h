@@ -25,6 +25,15 @@
 /* the thread-entry-point-function */
 typedef int (*fThreadEntry)(void *arg);
 
+/* the events we can wait for */
+#define EV_NOEVENT				0			/* just wakeup on signals */
+#define EV_CLIENT				(1 << 0)	/* if there's a client to be served */
+#define EV_RECEIVED_MSG			(1 << 1)	/* if a driver has a msg for us */
+#define EV_DATA_READABLE		(1 << 3)	/* if we can read from a driver (data available) */
+#define EV_USER1				(1 << 14)	/* an event we can send */
+#define EV_USER2				(1 << 15)	/* an event we can send */
+#define EV_USER3				(1 << 16)	/* an event we can send */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,6 +56,51 @@ u32 getThreadCount(void);
  * @return new tid for current thread, 0 for new thread, < 0 if failed
  */
 s32 startThread(fThreadEntry entryPoint,void *arg) A_CHECKRET;
+
+/**
+ * The syscall exit
+ *
+ * @param errorCode the error-code for the parent
+ */
+void _exit(s32 exitCode) A_NORETURN;
+
+/**
+ * @return the cpu-cycles of the current thread
+ */
+u64 getCycles(void);
+
+/**
+ * Releases the CPU (reschedule)
+ */
+void yield(void);
+
+/**
+ * Puts the current thread to sleep for <msecs> milliseconds. If interrupted, ERR_INTERRUPTED
+ * is returned.
+ *
+ * @param msecs the number of milliseconds to wait
+ * @return 0 on success
+ */
+s32 sleep(u32 msecs);
+
+/**
+ * Puts the current thread to sleep until one of the given events occurrs. Note that you will
+ * always be waked up for signals!
+ *
+ * @param events the events on which you want to wake up
+ * @return 0 on success and a negative error-code if failed
+ */
+s32 wait(u8 events);
+
+/**
+ * Notifies the given thread about the given events. If it was waiting for them, it will be
+ * waked up.
+ *
+ * @param tid the thread-id to notify
+ * @param events the events on which you want to wake up
+ * @return 0 on success and a negative error-code if failed
+ */
+s32 notify(tTid tid,u8 events);
 
 /**
  * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)

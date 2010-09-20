@@ -22,6 +22,7 @@
 #include <esc/io.h>
 #include <esc/dir.h>
 #include <esc/width.h>
+#include <esc/thread.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>

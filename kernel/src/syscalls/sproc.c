@@ -73,30 +73,6 @@ void sysc_fork(sIntrptStackFrame *stack) {
 		SYSC_RET1(stack,newPid);
 }
 
-void sysc_exit(sIntrptStackFrame *stack) {
-	s32 exitCode = (s32)SYSC_ARG1(stack);
-	proc_destroyThread(exitCode);
-	thread_switch();
-	util_panic("We shouldn't get here...");
-}
-
-void sysc_wait(sIntrptStackFrame *stack) {
-	u16 events = (u8)SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
-
-	if((events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) != 0)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	/* check whether there is a chance that we'll wake up again */
-	if(!vfs_msgAvailableFor(t->tid,events)) {
-		thread_wait(t->tid,0,events);
-		thread_switch();
-		if(sig_hasSignalFor(t->tid))
-			SYSC_ERROR(stack,ERR_INTERRUPTED);
-	}
-	SYSC_RET1(stack,0);
-}
-
 void sysc_waitChild(sIntrptStackFrame *stack) {
 	sExitState *state = (sExitState*)SYSC_ARG1(stack);
 	sSLNode *n;
@@ -136,26 +112,6 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 	/* finally kill the process */
 	proc_kill(proc_getByPid(res));
 	SYSC_RET1(stack,0);
-}
-
-void sysc_sleep(sIntrptStackFrame *stack) {
-	u32 msecs = SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
-	s32 res;
-	if((res = timer_sleepFor(t->tid,msecs)) < 0)
-		SYSC_ERROR(stack,res);
-	thread_switch();
-	/* ensure that we're no longer in the timer-list. this may for example happen if we get a signal
-	 * and the sleep-time was not over yet. */
-	timer_removeThread(t->tid);
-	if(sig_hasSignalFor(t->tid))
-		SYSC_ERROR(stack,ERR_INTERRUPTED);
-	SYSC_RET1(stack,0);
-}
-
-void sysc_yield(sIntrptStackFrame *stack) {
-	UNUSED(stack);
-	thread_switch();
 }
 
 void sysc_requestIOPorts(sIntrptStackFrame *stack) {
@@ -320,12 +276,4 @@ void sysc_vm86int(sIntrptStackFrame *stack) {
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
-}
-
-void sysc_getCycles(sIntrptStackFrame *stack) {
-	sThread *t = thread_getRunning();
-	uLongLong cycles;
-	cycles.val64 = t->stats.kcycleCount.val64 + t->stats.ucycleCount.val64;
-	SYSC_RET1(stack,cycles.val32.lower);
-	SYSC_RET2(stack,cycles.val32.upper);
 }

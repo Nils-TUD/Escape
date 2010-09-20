@@ -44,6 +44,51 @@ void sysc_getThreadCount(sIntrptStackFrame *stack);
 void sysc_startThread(sIntrptStackFrame *stack);
 
 /**
+ * Destroys the process and issues a context-switch
+ *
+ * @param u32 the exit-code
+ */
+void sysc_exit(sIntrptStackFrame *stack);
+
+/**
+ * Returns the cpu-cycles for the current thread
+ *
+ * @return u64 the cpu-cycles
+ */
+void sysc_getCycles(sIntrptStackFrame *stack);
+
+/**
+ * Blocks the process for a given number of milliseconds
+ *
+ * @param u32 the number of msecs
+ * @return s32 0 on success or a negative error-code
+ */
+void sysc_sleep(sIntrptStackFrame *stack);
+
+/**
+ * Releases the CPU (reschedule)
+ */
+void sysc_yield(sIntrptStackFrame *stack);
+
+/**
+ * Blocks the thread until one of the given events occurrs
+ *
+ * @param u16 events the events to wait for
+ * @return s32 0 on success
+ */
+void sysc_wait(sIntrptStackFrame *stack);
+
+/**
+ * Notifies the given thread about the given events. If it was waiting for them, it will be
+ * waked up.
+ *
+ * @param tTid the thread-id
+ * @param u16 events the events to notify about
+ * @return s32 0 on success
+ */
+void sysc_notify(sIntrptStackFrame *stack);
+
+/**
  * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)
  *
  * @param tTid the thread-id

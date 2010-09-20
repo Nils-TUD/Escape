@@ -19,6 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/proc.h>
+#include <esc/thread.h>
 #include <esc/ports.h>
 #include <esc/messages.h>
 #include <esc/io.h>

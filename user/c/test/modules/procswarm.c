@@ -18,8 +18,9 @@
  */
 
 #include <esc/common.h>
-#include <stdio.h>
 #include <esc/proc.h>
+#include <esc/thread.h>
+#include <stdio.h>
 #include <string.h>
 #include "procswarm.h"
 

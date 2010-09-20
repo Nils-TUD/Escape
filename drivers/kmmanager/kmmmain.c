@@ -20,6 +20,7 @@
 #include <esc/common.h>
 #include <esc/driver.h>
 #include <esc/proc.h>
+#include <esc/thread.h>
 #include <esc/io.h>
 #include <esc/ringbuffer.h>
 #include <esc/messages.h>

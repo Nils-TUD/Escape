@@ -45,37 +45,12 @@ void sysc_getppid(sIntrptStackFrame *stack);
 void sysc_fork(sIntrptStackFrame *stack);
 
 /**
- * Destroys the process and issues a context-switch
- *
- * @param u32 the exit-code
- */
-void sysc_exit(sIntrptStackFrame *stack);
-
-/**
- * Blocks the process until an event occurrs
- */
-void sysc_wait(sIntrptStackFrame *stack);
-
-/**
  * Waits until a child has terminated
  *
  * @param sExitState* will be filled with information about the terminated process
- * @return s32 o on success
+ * @return s32 0 on success
  */
 void sysc_waitChild(sIntrptStackFrame *stack);
-
-/**
- * Blocks the process for a given number of milliseconds
- *
- * @param u32 the number of msecs
- * @return s32 0 on success or a negative error-code
- */
-void sysc_sleep(sIntrptStackFrame *stack);
-
-/**
- * Releases the CPU (reschedule)
- */
-void sysc_yield(sIntrptStackFrame *stack);
 
 /**
  * Exchanges the process-data with another program
@@ -114,12 +89,5 @@ void sysc_releaseIOPorts(sIntrptStackFrame *stack);
  * @return 0 on success
  */
 void sysc_vm86int(sIntrptStackFrame *stack);
-
-/**
- * Returns the cpu-cycles for the current thread
- *
- * @return u64 the cpu-cycles
- */
-void sysc_getCycles(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_PROC_H_ */

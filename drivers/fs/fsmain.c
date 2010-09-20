@@ -65,10 +65,6 @@ static void cmdUnmount(tFD fd);
 static void cmdIstat(tFD fd);
 
 static bool run = true;
-static sFSType types[] = {
-	{FS_TYPE_EXT2,"ext2"},
-	{FS_TYPE_ISO9660,"iso9660"},
-};
 
 static fFSCmd commands[] = {
 	/* MSG_FS_OPEN */		cmdOpen,
@@ -93,6 +89,10 @@ static void sigTermHndl(tSig sig,u32 data) {
 }
 
 int main(int argc,char *argv[]) {
+	static sFSType types[] = {
+		{FS_TYPE_EXT2,"ext2"},
+		{FS_TYPE_ISO9660,"iso9660"},
+	};
 	tFD fd;
 	tMsgId mid;
 	u32 i,fstype;

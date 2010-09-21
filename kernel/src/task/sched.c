@@ -173,13 +173,13 @@ void sched_setBlocked(sThread *t) {
 	sched_qAppend(&blockedQueue,t);
 }
 
-void sched_unblockAll(u16 mask,u16 event) {
+void sched_unblockAll(void *obj,u32 event) {
 	sThread *t,*tmp;
-	u16 tmask;
+	void *tobj;
 	for(t = blockedQueue.first; t != NULL; ) {
-		tmask = t->events >> 16;
+		tobj = t->eventObj;
 		/* if suspended, just remember that it should be ready when done */
-		if((tmask == 0 || tmask == mask) && (t->events & event)) {
+		if((tobj == NULL || tobj == obj) && (t->events & event)) {
 			if(t->state == ST_BLOCKED_SUSP) {
 				t->state = ST_READY_SUSP;
 				t->events = EV_NOEVENT;

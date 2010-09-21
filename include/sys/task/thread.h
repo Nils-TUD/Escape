@@ -25,14 +25,13 @@
 #include <sys/task/proc.h>
 
 #define MAX_STACK_PAGES			128
-#define MAX_FD_COUNT			64
 
 #define INITIAL_STACK_PAGES		1
 
 #define IDLE_TID				0
 #define INIT_TID				1
 #define ATA_TID					2
-#define FS_TID					5
+#define FS_TID					6
 
 #define INVALID_TID				0xFFFF
 /* use an invalid tid to identify the kernel */
@@ -56,6 +55,8 @@
 #define EV_THREAD_DIED			(1 << 13)	/* kernel-intern */
 #define EV_USER1				(1 << 14)
 #define EV_USER2				(1 << 15)
+#define EV_REQ_FREE				(1 << 16)	/* kernel-intern */
+
 /* the events a user-thread can wait for */
 #define EV_USER_WAIT_MASK		(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE | \
 								EV_USER1 | EV_USER2)
@@ -115,6 +116,8 @@ struct sThread {
 	tTid tid;
 	/* the events the thread waits for (if waiting) */
 	u32 events;
+	/* optionally an object (pointer) to be able to make a wakeup more unique */
+	void *eventObj;
 	/* the process we belong to */
 	sProc *proc;
 	/* the stack-region for this thread */
@@ -124,10 +127,6 @@ struct sThread {
 	/* the frame mapped at KERNEL_STACK */
 	u32 kstackFrame;
 	sThreadRegs save;
-	/* file descriptors: indices of the global file table */
-	tFileNo fileDescs[MAX_FD_COUNT];
-	/* the file to send/receive messages to fs (needed in vfs/real.c) */
-	tFileNo fsClient;
 	/* FPU-state; initially NULL */
 	sFPUState *fpuState;
 	struct {
@@ -215,18 +214,18 @@ void thread_switchNoSigs(void);
  * Puts the given thraed to sleep with given wake-up-events
  *
  * @param tid the thread to put to sleep
- * @param mask the mask (to use an event for different purposes)
+ * @param obj the object (to use an event for different purposes and make a wakeup more unique)
  * @param events the events on which the thread should wakeup
  */
-void thread_wait(tTid tid,void *mask,u16 events);
+void thread_wait(tTid tid,void *obj,u32 events);
 
 /**
  * Wakes up all blocked threads that wait for the given event
  *
- * @param mask the mask that has to match
+ * @param obj the object that has to match (pointer-compare)
  * @param event the event
  */
-void thread_wakeupAll(void *mask,u16 event);
+void thread_wakeupAll(void *obj,u32 event);
 
 /**
  * Wakes up the given thread with the given event. If the thread is not waiting for it
@@ -235,7 +234,7 @@ void thread_wakeupAll(void *mask,u16 event);
  * @param tid the thread to wakeup
  * @param event the event to send
  */
-void thread_wakeup(tTid tid,u16 event);
+void thread_wakeup(tTid tid,u32 event);
 
 /**
  * Marks the given thread as ready (if the thread hasn't said that he don't wants to be interrupted)
@@ -260,55 +259,6 @@ bool thread_setBlocked(tTid tid);
  * @param blocked wether to suspend or "unsuspend" the thread
  */
 void thread_setSuspended(tTid tid,bool blocked);
-
-/**
- * Returns the file-number for the given file-descriptor
- *
- * @param fd the file-descriptor
- * @return the file-number or < 0 if the fd is invalid
- */
-tFileNo thread_fdToFile(tFD fd);
-
-/**
- * Searches for a free file-descriptor
- *
- * @return the file-descriptor or the error-code (< 0)
- */
-tFD thread_getFreeFd(void);
-
-/**
- * Associates the given file-descriptor with the given file-number
- *
- * @param fd the file-descriptor
- * @param fileNo the file-number
- * @return 0 on success
- */
-s32 thread_assocFd(tFD fd,tFileNo fileNo);
-
-/**
- * Duplicates the given file-descriptor
- *
- * @param fd the file-descriptor
- * @return the error-code or the new file-descriptor
- */
-tFD thread_dupFd(tFD fd);
-
-/**
- * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
- *
- * @param src the source-file-descriptor
- * @param dst the destination-file-descriptor
- * @return the error-code or 0 if successfull
- */
-s32 thread_redirFd(tFD src,tFD dst);
-
-/**
- * Releases the given file-descriptor (marks it unused)
- *
- * @param fd the file-descriptor
- * @return the file-number that was associated with the fd (or ERR_INVALID_FD)
- */
-tFileNo thread_unassocFd(tFD fd);
 
 /**
  * Extends the stack of the current thread so that the given address is accessible. If that

@@ -185,15 +185,15 @@ static bool startDriver(const char *name,const char *waitDev) {
 		printe("Haven't found '%s' after %d retries",waitDev,i);
 		return false;
 	}
+	close(fd);
 	return true;
 }
 
 static void addListener(tFD fd,u8 flags,u8 key,u8 modifiers) {
 	tMsgId mid;
-	msg.args.arg1 = gettid();
-	msg.args.arg2 = flags;
-	msg.args.arg3 = key;
-	msg.args.arg4 = modifiers;
+	msg.args.arg1 = flags;
+	msg.args.arg2 = key;
+	msg.args.arg3 = modifiers;
 	if(send(fd,MSG_KE_ADDLISTENER,&msg,sizeof(msg.args)) < 0)
 		error("Unable to send msg to keyevents");
 	if(RETRY(receive(fd,&mid,&msg,sizeof(msg.args))) < 0 || (s32)msg.args.arg1 < 0)

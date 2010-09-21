@@ -40,7 +40,7 @@
 static void log_printc(char c);
 static u8 log_pipePad(void);
 static void log_escape(const char **str);
-static s32 log_write(tTid tid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count);
+static s32 log_write(tPid pid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count);
 static void log_flush(void);
 
 /* don't use a heap here to prevent problems */
@@ -63,7 +63,7 @@ void log_vfsIsReady(void) {
 	tFileNo inFile;
 	tFD in,out,err;
 	char *nameCpy;
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 
 	/* open log-file */
 	assert(vfsn_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);
@@ -78,13 +78,13 @@ void log_vfsIsReady(void) {
 	/* stdin is just a dummy file. init will remove these fds before starting the shells which will
 	 * create new ones (for the vterm of the shell) */
 	assert(vfsn_resolvePath(DUMMY_STDIN,&inodeNo,NULL,VFS_CREATE) == 0);
-	assert((inFile = vfs_openFile(t->tid,VFS_READ,inodeNo,VFS_DEV_NO)) >= 0);
-	in = thread_getFreeFd();
-	assert(in == 0 && thread_assocFd(in,inFile) == 0);
-	out = thread_getFreeFd();
-	assert(out == 1 && thread_assocFd(out,logFile) == 0);
-	err = thread_getFreeFd();
-	assert(err == 2 && thread_assocFd(err,logFile) == 0);
+	assert((inFile = vfs_openFile(p->pid,VFS_READ,inodeNo,VFS_DEV_NO)) >= 0);
+	in = proc_getFreeFd();
+	assert(in == 0 && proc_assocFd(in,inFile) == 0);
+	out = proc_getFreeFd();
+	assert(out == 1 && proc_assocFd(out,logFile) == 0);
+	err = proc_getFreeFd();
+	assert(err == 2 && proc_assocFd(err,logFile) == 0);
 
 	/* now write the stuff we've saved so far to the log-file */
 	vfsIsReady = true;
@@ -146,7 +146,7 @@ static void log_escape(const char **str) {
 	escc_get(str,&n1,&n2,&n3);
 }
 
-static s32 log_write(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count) {
+static s32 log_write(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count) {
 #ifdef LOGSERIAL
 	if(logToSer) {
 		char *str = (char*)buffer;
@@ -159,12 +159,12 @@ static s32 log_write(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 o
 		}
 	}
 #endif
-	return vfsrw_writeDef(tid,file,node,buffer,offset,count);
+	return vfsrw_writeDef(pid,file,node,buffer,offset,count);
 }
 
 static void log_flush(void) {
 	if(vfsIsReady && bufPos) {
-		vfs_writeFile(KERNEL_TID,logFile,(u8*)buf,bufPos);
+		vfs_writeFile(KERNEL_PID,logFile,(u8*)buf,bufPos);
 		bufPos = 0;
 	}
 }

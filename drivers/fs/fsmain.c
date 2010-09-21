@@ -161,7 +161,7 @@ int main(int argc,char *argv[]) {
 			if(mid < MSG_FS_OPEN || mid > MSG_FS_ISTAT)
 				printf("[FS] Illegal command %d\n",mid);
 			else {
-				void *data = NULL;
+				/*void *data = NULL;
 				while(!tpool_hasFreeSlot())
 					wait(EV_USER2);
 				if(mid == MSG_FS_WRITE) {
@@ -173,9 +173,9 @@ int main(int argc,char *argv[]) {
 					}
 				}
 				if(!tpool_addRequest(commands[mid - MSG_FS_OPEN],fd,&msg,sizeof(msg),data))
-					printf("[FS] Not enough mem for request %d\n",mid);
-				/*commands[mid - MSG_FS_OPEN](fd,&msg);
-				close(fd);*/
+					printf("[FS] Not enough mem for request %d\n",mid);*/
+				commands[mid - MSG_FS_OPEN](fd,&msg);
+				close(fd);
 			}
 		}
 	}

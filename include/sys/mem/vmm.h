@@ -26,7 +26,7 @@
 #include <sys/task/thread.h>
 #include <sys/printf.h>
 
-#define DISABLE_DEMLOAD		0
+#define DISABLE_DEMLOAD		1
 
 #define MAX_REGUSE_COUNT	8192
 

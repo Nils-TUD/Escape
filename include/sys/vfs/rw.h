@@ -30,13 +30,13 @@ typedef void (*fReadCallBack)(sVFSNode *node,u32 *dataSize,void **buffer);
 /**
  * The default-read-handler
  */
-s32 vfsrw_readDef(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfsrw_readDef(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * Creates space, calls the callback which should fill the space
  * with data and writes the corresponding part to the buffer of the user
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param node the vfs-node
  * @param buffer the buffer
  * @param offset the offset
@@ -44,32 +44,32 @@ s32 vfsrw_readDef(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32
  * @param dataSize the total size of the data
  * @param callback the callback-function
  */
-s32 vfsrw_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
+s32 vfsrw_readHelper(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
 		fReadCallBack callback);
 
 /**
  * The read-handler for pipes
  */
-s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfsrw_readPipe(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * Read-handler for driver-usages (receive a message)
  */
-s32 vfsrw_readDrvUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size);
+s32 vfsrw_readDrvUse(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size);
 
 /**
  * The default write-handler for the VFS
  */
-s32 vfsrw_writeDef(tTid tid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count);
+s32 vfsrw_writeDef(tPid pid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count);
 
 /**
  * The write-handler for pipes
  */
-s32 vfsrw_writePipe(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
+s32 vfsrw_writePipe(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
 
 /**
  * Write-handler for driver-usages (send a message)
  */
-s32 vfsrw_writeDrvUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size);
+s32 vfsrw_writeDrvUse(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size);
 
 #endif /* VFSRW_H_ */

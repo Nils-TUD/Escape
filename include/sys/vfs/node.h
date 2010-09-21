@@ -95,7 +95,7 @@ s32 vfsn_getNodeInfo(tInodeNo nodeNo,sFileInfo *info);
  * @param nodeNo the node-number for that path (will be set)
  * @param created will be set to true if the (virtual) node didn't exist and has been created (may
  * 	be NULL if you don't care about it)
- * @param flags the flags (VFS_*) with which to resolve the path (create file, connect to pipe etc.)
+ * @param flags the flags (VFS_*) with which to resolve the path (create file,...)
  * @return 0 if successfull or the error-code
  */
 s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags);
@@ -148,6 +148,21 @@ sVFSNode *vfsn_createNodeAppend(sVFSNode *parent,char *name);
 sVFSNode *vfsn_createNode(char *name);
 
 /**
+ * Creates an info-node
+ *
+ * @param pid the owner
+ * @param parent the parent-node
+ * @param prev the previous node
+ * @param name the node-name
+ * @param rwHandler the read-handler
+ * @param wrHandler the write-handler
+ * @param generated wether the content is generated and therefore the size is not available
+ * @return the node
+ */
+sVFSNode *vfsn_createFile(tPid pid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler,
+		bool generated);
+
+/**
  * Creates a directory-node
  *
  * @param parent the parent-node
@@ -168,15 +183,6 @@ sVFSNode *vfsn_createDir(sVFSNode *parent,char *name);
 sVFSNode *vfsn_createLink(sVFSNode *node,char *name,sVFSNode *target);
 
 /**
- * Creates a pipe
- *
- * @param n the parent-node
- * @param child will be set to the created child
- * @return 0 on success
- */
-s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child);
-
-/**
  * Creates a pipe-container
  *
  * @param parent the parent-node
@@ -186,43 +192,16 @@ s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child);
 sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name);
 
 /**
- * Creates an info-node
- *
- * @param tid the owner
- * @param parent the parent-node
- * @param prev the previous node
- * @param name the node-name
- * @param rwHandler the read-handler
- * @param wrHandler the write-handler
- * @param generated wether the content is generated and therefore the size is not available
- * @return the node
- */
-sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler,
-		bool generated);
-
-/**
  * Creates a driver-node
  *
- * @param tid the thread-id to use
+ * @param pid the process-id to use
  * @param parent the parent-node
  * @param prev the previous node
  * @param name the node-name
  * @param flags the flags
  * @return the node
  */
-sVFSNode *vfsn_createDriverNode(tTid tid,sVFSNode *parent,char *name,u32 flags);
-
-/**
- * Creates a driver-use-node
- *
- * @param tid the thread-id to use
- * @param parent the parent node
- * @param name the name
- * @param rhdlr the read-handler
- * @param whdlr the write-handler
- * @return the node or NULL
- */
-sVFSNode *vfsn_createDriverUseNode(tTid tid,sVFSNode *parent,char *name,fRead rhdlr,fWrite whdlr);
+sVFSNode *vfsn_createDriverNode(tPid pid,sVFSNode *parent,char *name,u32 flags);
 
 /**
  * Appends the given node as last child to the parent
@@ -241,15 +220,15 @@ void vfsn_appendChild(sVFSNode *parent,sVFSNode *node);
 void vfsn_removeNode(sVFSNode *n);
 
 /**
- * Appends a driver-usage-node to the given node and stores the pointer to the new node
- * at <child>.
+ * Appends a usage-node to the given node and stores the pointer to the new node
+ * at <child>. Can be used for driver-usage and pipe-usages.
  *
- * @param tid the thread for which the usage should be created
+ * @param pid the process for which the usage should be created
  * @param n the node to which the new node should be appended
  * @param child will contain the pointer to the new node, if successfull
  * @return the error-code if negative or 0 if successfull
  */
-s32 vfsn_createDriverUse(tTid tid,sVFSNode *n,sVFSNode **child);
+s32 vfsn_createUse(tPid pid,sVFSNode *n,sVFSNode **child);
 
 #if DEBUGGING
 

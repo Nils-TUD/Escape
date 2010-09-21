@@ -37,14 +37,14 @@
 		(u32)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
 
 /**
- * Creates a pipe-node for given thread
+ * Creates a node for driver-usage or pipe-usage
  *
- * @param tid the thread-id
- * @param parent the parent-node
- * @param name the node-name
+ * @param pid the process-id to use
+ * @param parent the parent node
+ * @param name the name
  * @return the node or NULL
  */
-static sVFSNode *vfsn_createPipeNode(tTid tid,sVFSNode *parent,char *name);
+static sVFSNode *vfsn_createUseNode(tPid pid,sVFSNode *parent,char *name);
 
 /**
  * Requests a new node and returns the pointer to it. Panics if there are no free nodes anymore.
@@ -60,22 +60,11 @@ static sVFSNode *vfsn_requestNode(void);
  */
 static void vfsn_releaseNode(sVFSNode *node);
 
-#if DEBUGGING
-/**
- * The recursive function to print the VFS-tree
- *
- * @param level the current recursion level
- * @param parent the parent node
- */
-static void vfsn_dbg_doPrintTree(u32 level,sVFSNode *parent);
-#endif
-
-
 /* all nodes */
 sVFSNode nodes[NODE_COUNT];
 /* a pointer to the first free node (which points to the next and so on) */
 static sVFSNode *freeList;
-static u32 nextPipeId = 0;
+static u32 nextUsageId = 0;
 
 void vfsn_init(void) {
 	tInodeNo i;
@@ -93,9 +82,9 @@ bool vfsn_isValidNodeNo(tInodeNo nodeNo) {
 }
 
 bool vfsn_isOwnDriverNode(tInodeNo nodeNo) {
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	sVFSNode *node = nodes + nodeNo;
-	return node->owner == t->tid && IS_DRIVER(node->mode);
+	return node->owner == p->pid && IS_DRIVER(node->mode);
 }
 
 tInodeNo vfsn_getNodeNo(sVFSNode *node) {
@@ -274,23 +263,9 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 		return ERR_PATH_NOT_FOUND;
 	}
 
-	/* handle special node-types */
-	if((flags & VFS_CONNECT) && IS_DRIVER(n->mode)) {
-		sVFSNode *child;
-		/* create driver-use */
-		s32 err = vfsn_createDriverUse(t->tid,n,&child);
-		if(err < 0)
-			return err;
-
-		/* set new node as resolved one */
-		*nodeNo = NADDR_TO_VNNO(child);
-		return 0;
-	}
-
-	if(!(flags & VFS_NOLINKRES) && MODE_IS_LINK(n->mode)) {
-		/* resolve link */
+	/* resolve link */
+	if(!(flags & VFS_NOLINKRES) && MODE_IS_LINK(n->mode))
 		n = (sVFSNode*)n->data.def.cache;
-	}
 
 	/* virtual node */
 	*nodeNo = NADDR_TO_VNNO(n);
@@ -361,7 +336,7 @@ sVFSNode *vfsn_createNode(char *name) {
 	/* ensure that all values are initialized properly */
 	node->name = name;
 	node->mode = 0;
-	node->owner = INVALID_TID;
+	node->owner = INVALID_PID;
 	node->refCount = 0;
 	node->next = NULL;
 	node->prev = NULL;
@@ -372,6 +347,24 @@ sVFSNode *vfsn_createNode(char *name) {
 	node->data.def.cache = NULL;
 	node->data.def.size = 0;
 	node->data.def.pos = 0;
+	return node;
+}
+
+sVFSNode *vfsn_createFile(tPid pid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler,
+		bool generated) {
+	sVFSNode *node = vfsn_createNodeAppend(parent,name);
+	if(node == NULL)
+		return NULL;
+
+	node->owner = pid;
+	/* TODO we need write-permissions for other because we have no real user-/group-based
+	 * permission-system */
+	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ
+		| MODE_OTHER_WRITE;
+	node->readHandler = rwHandler;
+	node->writeHandler = wrHandler;
+	if(generated)
+		node->data.def.pos = -1;
 	return node;
 }
 
@@ -419,49 +412,18 @@ sVFSNode *vfsn_createPipeCon(sVFSNode *parent,char *name) {
 	return node;
 }
 
-sVFSNode *vfsn_createFile(tTid tid,sVFSNode *parent,char *name,fRead rwHandler,fWrite wrHandler,
-		bool generated) {
+sVFSNode *vfsn_createDriverNode(tPid pid,sVFSNode *parent,char *name,u32 flags) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
-	node->owner = tid;
-	/* TODO we need write-permissions for other because we have no real user-/group-based
-	 * permission-system */
-	node->mode = MODE_TYPE_FILE | MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ
-		| MODE_OTHER_WRITE;
-	node->readHandler = rwHandler;
-	node->writeHandler = wrHandler;
-	if(generated)
-		node->data.def.pos = -1;
-	return node;
-}
-
-sVFSNode *vfsn_createDriverNode(tTid tid,sVFSNode *parent,char *name,u32 flags) {
-	sVFSNode *node = vfsn_createNodeAppend(parent,name);
-	if(node == NULL)
-		return NULL;
-
-	node->owner = tid;
+	node->owner = pid;
 	node->mode = MODE_TYPE_DRIVER | MODE_OWNER_READ | MODE_OTHER_READ;
 	node->readHandler = NULL;
 	node->writeHandler = NULL;
 	node->data.driver.funcs = flags;
 	node->data.driver.isEmpty = true;
 	node->data.driver.lastClient = NULL;
-	return node;
-}
-
-sVFSNode *vfsn_createDriverUseNode(tTid tid,sVFSNode *parent,char *name,fRead rhdlr,fWrite whdlr) {
-	sVFSNode *node = vfsn_createNodeAppend(parent,name);
-	if(node == NULL)
-		return NULL;
-
-	node->owner = tid;
-	node->mode = MODE_TYPE_DRVUSE | MODE_OWNER_READ | MODE_OWNER_WRITE |
-		MODE_OTHER_READ | MODE_OTHER_WRITE;
-	node->readHandler = rhdlr;
-	node->writeHandler = whdlr;
 	return node;
 }
 
@@ -544,62 +506,27 @@ void vfsn_removeNode(sVFSNode *n) {
 	vfsn_releaseNode(n);
 }
 
-s32 vfsn_createDriverUse(tTid tid,sVFSNode *n,sVFSNode **child) {
-	char *name;
-	sVFSNode *m;
-	assert(tid != n->owner);
-
-	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
-	name = (char*)kheap_alloc(12);
-	if(name == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-
-	/* create usage-node */
-	itoa(name,12,tid);
-
-	/* check duplicate usage */
-	m = NODE_FIRST_CHILD(n);
-	while(m != NULL) {
-		if(strcmp(m->name,name) == 0) {
-			kheap_free(name);
-			*child = m;
-			return 0;
-		}
-		m = m->next;
-	}
-
-	/* ok, create a driver-usage-node */
-	m = vfsn_createDriverUseNode(tid,n,name,(fRead)vfsdrv_read,(fWrite)vfsdrv_write);
-	if(m == NULL) {
-		kheap_free(name);
-		return ERR_NOT_ENOUGH_MEM;
-	}
-
-	*child = m;
-	return 0;
-}
-
-s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child) {
+s32 vfsn_createUse(tPid pid,sVFSNode *n,sVFSNode **child) {
 	char *name;
 	sVFSNode *m;
 	u32 len,size;
-	sThread *t = thread_getRunning();
+	assert(pid != n->owner);
 
-	/* 32 bit signed int => min -2^31 => 10 digits + minus sign + null-termination = 12 bytes */
-	/* we want to have to form <pid>.<x>, therefore two ints and a '.' */
-	size = 11 * 2 + 2;
+	/* 32 bit signed int => min -2^31 => 10 digits + minus sign = 11 bytes */
+	/* we want to have to form <pid>.<x>, therefore two ints, a '.' and \0 */
+	size = 11 * 2 + 1 + 1;
 	name = (char*)kheap_alloc(size);
 	if(name == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* create usage-node */
-	itoa(name,size,t->tid);
+	itoa(name,size,pid);
 	len = strlen(name);
 	*(name + len) = '.';
-	itoa(name + len + 1,size - (len + 1),nextPipeId++);
+	itoa(name + len + 1,size - (len + 1),nextUsageId++);
 
-	/* ok, create a pipe-node */
-	m = vfsn_createPipeNode(t->tid,n,name);
+	/* create a driver-usage-node */
+	m = vfsn_createUseNode(pid,n,name);
 	if(m == NULL) {
 		kheap_free(name);
 		return ERR_NOT_ENOUGH_MEM;
@@ -609,18 +536,27 @@ s32 vfsn_createPipe(sVFSNode *n,sVFSNode **child) {
 	return 0;
 }
 
-static sVFSNode *vfsn_createPipeNode(tTid tid,sVFSNode *parent,char *name) {
+static sVFSNode *vfsn_createUseNode(tPid pid,sVFSNode *parent,char *name) {
 	sVFSNode *node = vfsn_createNodeAppend(parent,name);
 	if(node == NULL)
 		return NULL;
 
-	node->owner = tid;
-	node->mode = MODE_TYPE_PIPE | MODE_OWNER_READ | MODE_OWNER_WRITE |
-		MODE_OTHER_READ | MODE_OTHER_WRITE;
-	node->readHandler = vfsrw_readPipe;
-	node->writeHandler = vfsrw_writePipe;
-	node->data.pipe.list = NULL;
-	node->data.pipe.total = 0;
+	node->owner = pid;
+	if(IS_DRIVER(parent->mode))
+		node->mode = MODE_TYPE_DRVUSE;
+	else
+		node->mode = MODE_TYPE_PIPE;
+	node->mode |= MODE_OWNER_READ | MODE_OWNER_WRITE | MODE_OTHER_READ | MODE_OTHER_WRITE;
+	if(IS_DRIVER(parent->mode)) {
+		node->readHandler = (fRead)vfsdrv_read;
+		node->writeHandler = (fWrite)vfsdrv_write;
+	}
+	else {
+		node->readHandler = vfsrw_readPipe;
+		node->writeHandler = vfsrw_writePipe;
+		node->data.pipe.list = NULL;
+		node->data.pipe.total = 0;
+	}
 	return node;
 }
 
@@ -638,7 +574,7 @@ static void vfsn_releaseNode(sVFSNode *node) {
 	vassert(node != NULL,"node == NULL");
 	/* mark unused */
 	node->name = NULL;
-	node->owner = INVALID_TID;
+	node->owner = INVALID_PID;
 	node->next = freeList;
 	freeList = node;
 }
@@ -646,12 +582,6 @@ static void vfsn_releaseNode(sVFSNode *node) {
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
-
-void vfsn_dbg_printTree(void) {
-	vid_printf("VFS:\n");
-	vid_printf("/\n");
-	vfsn_dbg_doPrintTree(1,&nodes[0]);
-}
 
 static void vfsn_dbg_doPrintTree(u32 level,sVFSNode *parent) {
 	u32 i;
@@ -665,6 +595,12 @@ static void vfsn_dbg_doPrintTree(u32 level,sVFSNode *parent) {
 			vfsn_dbg_doPrintTree(level + 1,n);
 		n = n->next;
 	}
+}
+
+void vfsn_dbg_printTree(void) {
+	vid_printf("VFS:\n");
+	vid_printf("/\n");
+	vfsn_dbg_doPrintTree(1,&nodes[0]);
 }
 
 void vfsn_dbg_printNode(sVFSNode *node) {

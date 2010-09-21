@@ -46,9 +46,9 @@ typedef struct {
 	u8 data[];
 } sPipeData;
 
-s32 vfsrw_readDef(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+s32 vfsrw_readDef(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	s32 byteCount;
-	UNUSED(tid);
+	UNUSED(pid);
 	UNUSED(file);
 	/* no data available? */
 	if(node->data.def.cache == NULL)
@@ -64,11 +64,11 @@ s32 vfsrw_readDef(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32
 	return byteCount;
 }
 
-s32 vfsrw_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
+s32 vfsrw_readHelper(tPid pid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32 dataSize,
 		fReadCallBack callback) {
 	void *mem = NULL;
 
-	UNUSED(tid);
+	UNUSED(pid);
 	vassert(node != NULL,"node == NULL");
 	vassert(buffer != NULL,"buffer == NULL");
 
@@ -109,18 +109,20 @@ s32 vfsrw_readHelper(tTid tid,sVFSNode *node,u8 *buffer,u32 offset,u32 count,u32
 	return count;
 }
 
-s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
+s32 vfsrw_readPipe(tTid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	s32 byteCount,total;
+	sThread *t = thread_getRunning();
 	sPipeData *data;
 	sSLList *list;
-	UNUSED(file);
 	volatile sVFSNode *n = node;
+	UNUSED(pid);
+	UNUSED(file);
 	/* wait until data is available */
 	/* don't cache the list here, because the pointer changes if the list is NULL */
 	while(sll_length(n->data.pipe.list) == 0) {
-		thread_wait(tid,node,EV_PIPE_FULL);
+		thread_wait(t->tid,node,EV_PIPE_FULL);
 		thread_switch();
-		if(sig_hasSignalFor(tid))
+		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
 	}
 
@@ -153,7 +155,7 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 			/* before we go to sleep we have to notify others that we've read data. otherwise
 			 * we may cause a deadlock here */
 			thread_wakeupAll(node,EV_PIPE_EMPTY);
-			thread_wait(tid,node,EV_PIPE_FULL);
+			thread_wait(t->tid,node,EV_PIPE_FULL);
 			/* TODO we can't accept signals here, right? since we've already read something, which
 			 * we have to deliver to the user. the only way I can imagine would be to put it back..
 			 */
@@ -169,15 +171,16 @@ s32 vfsrw_readPipe(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 	return total;
 }
 
-s32 vfsrw_readDrvUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
+s32 vfsrw_readDrvUse(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u32 size) {
 	sSLList **list;
+	sThread *t = thread_getRunning();
 	sMessage *msg;
-	u16 event;
+	u32 event;
 	s32 res;
 	UNUSED(file);
 
 	/* wait until a message arrives */
-	if(node->parent->owner == tid) {
+	if(node->parent->owner == pid) {
 		event = EV_CLIENT;
 		list = &node->data.drvuse.sendList;
 	}
@@ -186,12 +189,12 @@ s32 vfsrw_readDrvUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u3
 		list = &node->data.drvuse.recvList;
 	}
 	while(sll_length(*list) == 0) {
-		thread_wait(tid,0,event);
+		thread_wait(t->tid,node,event);
 		thread_switch();
-		if(sig_hasSignalFor(tid))
+		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
-		/* if we waked up and the node is not our, the node has been destroyed (driver died, ...) */
-		if(event == EV_RECEIVED_MSG && node->owner != tid)
+		/* if we waked up and there is no message, the driver probably died */
+		if(event == EV_RECEIVED_MSG && sll_length(*list) == 0)
 			return ERR_DRIVER_DIED;
 	}
 
@@ -219,11 +222,11 @@ s32 vfsrw_readDrvUse(tTid tid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u3
 	return res;
 }
 
-s32 vfsrw_writeDef(tTid tid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count) {
+s32 vfsrw_writeDef(tPid pid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset,u32 count) {
 	void *cache,*oldCache;
 	u32 newSize = 0;
 
-	UNUSED(tid);
+	UNUSED(pid);
 	UNUSED(file);
 
 	cache = n->data.def.cache;
@@ -269,14 +272,17 @@ s32 vfsrw_writeDef(tTid tid,tFileNo file,sVFSNode *n,const u8 *buffer,u32 offset
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-s32 vfsrw_writePipe(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count) {
+s32 vfsrw_writePipe(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count) {
 	sPipeData *data;
-	UNUSED(file);
+	sThread *t = thread_getRunning();
 	volatile sVFSNode *n = node;
+	UNUSED(pid);
+	UNUSED(file);
+
 	/* wait while our node is full */
 	if(count) {
 		while((n->data.pipe.total + count) >= MAX_VFS_FILE_SIZE) {
-			thread_wait(tid,node,EV_PIPE_EMPTY);
+			thread_wait(t->tid,node,EV_PIPE_EMPTY);
 			thread_switchNoSigs();
 		}
 	}
@@ -309,22 +315,22 @@ s32 vfsrw_writePipe(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 of
 	return count;
 }
 
-s32 vfsrw_writeDrvUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
+s32 vfsrw_writeDrvUse(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size) {
 	sSLList **list;
 	sMessage *msg;
 
 	UNUSED(file);
 
-	/*vid_printf("%s sent msg %d with %d bytes to %s\n",
-			thread_getById(tid)->proc->command,id,size,n->parent->name);*/
+	/*vid_printf("%d:%s sent msg %d with %d bytes to %s\n",pid,proc_getByPid(pid)->command,id,size,
+			n->parent->owner == pid ? n->name : n->parent->name);*/
 
 	/* drivers write to the receive-list (which will be read by other processes) */
-	if(n->parent->owner == tid) {
+	if(n->parent->owner == pid) {
 		/* if it is from a driver or fs, don't enqueue it but pass it directly to
 		 * the corresponding handler */
 		if(DRV_IS_FS(n->parent->data.driver.funcs) ||
 			(id == MSG_DRV_OPEN_RESP || id == MSG_DRV_READ_RESP || id == MSG_DRV_WRITE_RESP)) {
-			vfsreq_sendMsg(id,n->parent,n->owner,data,size);
+			vfsreq_sendMsg(id,n,data,size);
 			return 0;
 		}
 
@@ -355,9 +361,9 @@ s32 vfsrw_writeDrvUse(tTid tid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data
 
 	/* notify the driver */
 	if(list == &(n->data.drvuse.sendList))
-		thread_wakeup(n->parent->owner,EV_CLIENT);
-	/* notify the process that there is a message */
+		proc_wakeup(n->parent->owner,n->parent,EV_CLIENT);
+	/* notify all threads that wait on this node for a msg */
 	else
-		thread_wakeup(n->owner,EV_RECEIVED_MSG);
+		thread_wakeupAll(n,EV_RECEIVED_MSG);
 	return 0;
 }

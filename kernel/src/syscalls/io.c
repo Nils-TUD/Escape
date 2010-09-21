@@ -31,12 +31,10 @@ void sysc_open(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	s32 pathLen;
 	u16 flags;
-	tInodeNo nodeNo = 0;
-	bool created,isVirt = false;
 	tFileNo file;
 	tFD fd;
 	s32 err;
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 
 	/* at first make sure that we'll cause no page-fault */
 	if(!sysc_isStringReadable(path))
@@ -51,81 +49,29 @@ void sysc_open(sIntrptStackFrame *stack) {
 	if((flags & (VFS_READ | VFS_WRITE)) == 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	/* resolve path */
-	err = vfsn_resolvePath(path,&nodeNo,&created,flags | VFS_CONNECT);
-	if(err == ERR_REAL_PATH) {
-		/* unfortunatly we have to check for the thread-ids of ata and fs here. because e.g.
-		 * if the user tries to mount the device "/realfile" the userspace has no opportunity
-		 * to distinguish between virtual and real files. therefore fs will try to open this
-		 * path and shoot itself in the foot... */
-		if(t->tid == ATA_TID || t->tid == FS_TID)
-			SYSC_ERROR(stack,ERR_PATH_NOT_FOUND);
+	/* open the path */
+	file = vfs_openPath(p->pid,flags,path);
+	if(file < 0)
+		SYSC_ERROR(stack,file);
 
-		/* send msg to fs and wait for reply */
-		file = vfsr_openFile(t->tid,flags,path);
-		if(file < 0)
-			SYSC_ERROR(stack,file);
-
-		/* get free fd */
-		fd = thread_getFreeFd();
-		if(fd < 0) {
-			vfs_closeFile(t->tid,file);
-			SYSC_ERROR(stack,fd);
-		}
-	}
-	else {
-		/* handle virtual files */
-		if(err < 0)
-			SYSC_ERROR(stack,err);
-
-		/* get free fd */
-		fd = thread_getFreeFd();
-		if(fd < 0)
-			SYSC_ERROR(stack,fd);
-		/* store whether we have created the node */
-		if(created)
-			flags |= VFS_CREATED;
-		/* open file */
-		file = vfs_openFile(t->tid,flags,nodeNo,VFS_DEV_NO);
-		if(file < 0)
-			SYSC_ERROR(stack,file);
-		isVirt = true;
+	/* get free fd */
+	fd = proc_getFreeFd();
+	if(fd < 0) {
+		vfs_closeFile(p->pid,file);
+		SYSC_ERROR(stack,fd);
 	}
 
 	/* assoc fd with file */
-	err = thread_assocFd(fd,file);
+	err = proc_assocFd(fd,file);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
-
-	/* if it is a driver, call the driver open-command */
-	if(isVirt) {
-		sVFSNode *node = vfsn_getNode(nodeNo);
-		if((node->mode & MODE_TYPE_DRVUSE)) {
-			err = vfsdrv_open(t->tid,file,node,flags);
-			/* if this went wrong, undo everything and report an error to the user */
-			if(err < 0) {
-				thread_unassocFd(fd);
-				vfs_closeFile(t->tid,file);
-				SYSC_ERROR(stack,err);
-			}
-		}
-	}
-
-	/* append? */
-	if(flags & VFS_APPEND) {
-		err = vfs_seek(t->tid,file,0,SEEK_END);
-		if(err < 0)
-			SYSC_ERROR(stack,err);
-	}
-
-	/* return fd */
 	SYSC_RET1(stack,fd);
 }
 
 void sysc_pipe(sIntrptStackFrame *stack) {
 	tFD *readFd = (tFD*)SYSC_ARG1(stack);
 	tFD *writeFd = (tFD*)SYSC_ARG2(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	bool created;
 	sVFSNode *pipeNode;
 	tInodeNo nodeNo,pipeNodeNo;
@@ -139,43 +85,43 @@ void sysc_pipe(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* resolve pipe-path */
-	err = vfsn_resolvePath("/system/pipe",&nodeNo,&created,VFS_READ | VFS_CONNECT);
+	err = vfsn_resolvePath("/system/pipe",&nodeNo,&created,VFS_READ);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 
 	/* create pipe */
-	err = vfsn_createPipe(vfsn_getNode(nodeNo),&pipeNode);
+	err = vfsn_createUse(p->pid,vfsn_getNode(nodeNo),&pipeNode);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 
 	pipeNodeNo = NADDR_TO_VNNO(pipeNode);
 	/* get free fd for reading */
-	*readFd = thread_getFreeFd();
+	*readFd = proc_getFreeFd();
 	if(*readFd < 0) {
 		err = *readFd;
 		goto errorRemNode;
 	}
 	/* open file for reading */
-	readFile = vfs_openFile(t->tid,VFS_READ,pipeNodeNo,VFS_DEV_NO);
+	readFile = vfs_openFile(p->pid,VFS_READ,pipeNodeNo,VFS_DEV_NO);
 	if(readFile < 0) {
 		err = readFile;
 		goto errorRemNode;
 	}
 	/* assoc fd with file */
-	err = thread_assocFd(*readFd,readFile);
+	err = proc_assocFd(*readFd,readFile);
 	if(err < 0)
 		goto errorCloseReadFile;
 
 	/* get free fd for writing */
-	*writeFd = thread_getFreeFd();
+	*writeFd = proc_getFreeFd();
 	if(*writeFd < 0)
 		goto errorUnAssocReadFd;
 	/* open file for writing */
-	writeFile = vfs_openFile(t->tid,VFS_WRITE,pipeNodeNo,VFS_DEV_NO);
+	writeFile = vfs_openFile(p->pid,VFS_WRITE,pipeNodeNo,VFS_DEV_NO);
 	if(writeFile < 0)
 		goto errorUnAssocReadFd;
 	/* assoc fd with file */
-	err = thread_assocFd(*writeFd,writeFile);
+	err = proc_assocFd(*writeFd,writeFile);
 	if(err < 0)
 		goto errorCloseWriteFile;
 
@@ -185,11 +131,11 @@ void sysc_pipe(sIntrptStackFrame *stack) {
 
 	/* error-handling */
 errorCloseWriteFile:
-	vfs_closeFile(t->tid,writeFile);
+	vfs_closeFile(p->pid,writeFile);
 errorUnAssocReadFd:
-	thread_unassocFd(*readFd);
+	proc_unassocFd(*readFd);
 errorCloseReadFile:
-	vfs_closeFile(t->tid,readFile);
+	vfs_closeFile(p->pid,readFile);
 	/* vfs_closeFile() will already remove the node, so we can't do this again! */
 	SYSC_ERROR(stack,err);
 errorRemNode:
@@ -200,33 +146,33 @@ errorRemNode:
 void sysc_tell(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	s32 *pos = (s32*)SYSC_ARG2(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	tFileNo file;
 
 	if(!paging_isRangeUserWritable((u32)pos,sizeof(u32)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = thread_fdToFile(fd);
+	file = proc_fdToFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
-	*pos = vfs_tell(t->tid,file);
+	*pos = vfs_tell(p->pid,file);
 	SYSC_RET1(stack,0);
 }
 
 void sysc_eof(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	tFileNo file;
 	bool eof;
 
 	/* get file */
-	file = thread_fdToFile(fd);
+	file = proc_fdToFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
-	eof = vfs_eof(t->tid,file);
+	eof = vfs_eof(p->pid,file);
 	SYSC_RET1(stack,eof);
 }
 
@@ -234,7 +180,7 @@ void sysc_seek(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	s32 offset = (s32)SYSC_ARG2(stack);
 	u32 whence = SYSC_ARG3(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	tFileNo file;
 	s32 res;
 
@@ -242,11 +188,11 @@ void sysc_seek(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = thread_fdToFile(fd);
+	file = proc_fdToFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
-	res = vfs_seek(t->tid,file,offset,whence);
+	res = vfs_seek(p->pid,file,offset,whence);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -256,7 +202,7 @@ void sysc_read(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	u8 *buffer = (u8*)SYSC_ARG2(stack);
 	u32 count = SYSC_ARG3(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	s32 readBytes;
 	tFileNo file;
 
@@ -267,12 +213,12 @@ void sysc_read(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = thread_fdToFile(fd);
+	file = proc_fdToFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* read */
-	readBytes = vfs_readFile(t->tid,file,buffer,count);
+	readBytes = vfs_readFile(p->pid,file,buffer,count);
 	if(readBytes < 0)
 		SYSC_ERROR(stack,readBytes);
 
@@ -283,7 +229,7 @@ void sysc_write(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	u8 *buffer = (u8*)SYSC_ARG2(stack);
 	u32 count = SYSC_ARG3(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	s32 writtenBytes;
 	tFileNo file;
 
@@ -294,12 +240,12 @@ void sysc_write(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = thread_fdToFile(fd);
+	file = proc_fdToFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* read */
-	writtenBytes = vfs_writeFile(t->tid,file,buffer,count);
+	writtenBytes = vfs_writeFile(p->pid,file,buffer,count);
 	if(writtenBytes < 0)
 		SYSC_ERROR(stack,writtenBytes);
 
@@ -308,17 +254,17 @@ void sysc_write(sIntrptStackFrame *stack) {
 
 void sysc_hasMsg(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	tFileNo file;
 	s32 res;
 
 	/* get file */
-	file = thread_fdToFile(fd);
+	file = proc_fdToFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* perform io-control */
-	res = vfs_hasMsg(t->tid,file);
+	res = vfs_hasMsg(p->pid,file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -326,16 +272,16 @@ void sysc_hasMsg(sIntrptStackFrame *stack) {
 
 void sysc_isterm(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	tFileNo file;
 	bool res;
 
 	/* get file */
-	file = thread_fdToFile(fd);
+	file = proc_fdToFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
-	res = vfs_isterm(t->tid,file);
+	res = vfs_isterm(p->pid,file);
 	SYSC_RET1(stack,res);
 }
 
@@ -344,7 +290,7 @@ void sysc_send(sIntrptStackFrame *stack) {
 	tMsgId id = (tMsgId)SYSC_ARG2(stack);
 	u8 *data = (u8*)SYSC_ARG3(stack);
 	u32 size = SYSC_ARG4(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	tFileNo file;
 	s32 res;
 
@@ -353,12 +299,12 @@ void sysc_send(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = thread_fdToFile(fd);
+	file = proc_fdToFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* send msg */
-	res = vfs_sendMsg(t->tid,file,id,data,size);
+	res = vfs_sendMsg(p->pid,file,id,data,size);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
@@ -370,7 +316,7 @@ void sysc_receive(sIntrptStackFrame *stack) {
 	tMsgId *id = (tMsgId*)SYSC_ARG2(stack);
 	u8 *data = (u8*)SYSC_ARG3(stack);
 	u32 size = SYSC_ARG4(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	tFileNo file;
 	s32 res;
 
@@ -380,12 +326,12 @@ void sysc_receive(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = thread_fdToFile(fd);
+	file = proc_fdToFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* send msg */
-	res = vfs_receiveMsg(t->tid,file,id,data,size);
+	res = vfs_receiveMsg(p->pid,file,id,data,size);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
@@ -396,10 +342,9 @@ void sysc_dupFd(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	tFD res;
 
-	res = thread_dupFd(fd);
+	res = proc_dupFd(fd);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-
 	SYSC_RET1(stack,res);
 }
 
@@ -408,30 +353,29 @@ void sysc_redirFd(sIntrptStackFrame *stack) {
 	tFD dst = (tFD)SYSC_ARG2(stack);
 	s32 err;
 
-	err = thread_redirFd(src,dst);
+	err = proc_redirFd(src,dst);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
-
 	SYSC_RET1(stack,err);
 }
 
 void sysc_close(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 
 	/* unassoc fd */
-	tFileNo fileNo = thread_unassocFd(fd);
+	tFileNo fileNo = proc_unassocFd(fd);
 	if(fileNo < 0)
 		return;
 
 	/* close file */
-	vfs_closeFile(t->tid,fileNo);
+	vfs_closeFile(p->pid,fileNo);
 }
 
 void sysc_stat(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	u32 len;
 	s32 res;
 
@@ -442,7 +386,7 @@ void sysc_stat(sIntrptStackFrame *stack) {
 	if(len == 0 || len >= MAX_PATH_LEN)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_stat(t->tid,path,info);
+	res = vfs_stat(p->pid,path,info);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -451,7 +395,7 @@ void sysc_stat(sIntrptStackFrame *stack) {
 void sysc_fstat(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	sFileInfo *info = (sFileInfo*)SYSC_ARG2(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	tFileNo file;
 	s32 res;
 
@@ -459,11 +403,11 @@ void sysc_fstat(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* get file */
-	file = thread_fdToFile(fd);
+	file = proc_fdToFile(fd);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 	/* get info */
-	res = vfs_fstat(t->tid,file,info);
+	res = vfs_fstat(p->pid,file,info);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);
@@ -471,8 +415,8 @@ void sysc_fstat(sIntrptStackFrame *stack) {
 
 void sysc_sync(sIntrptStackFrame *stack) {
 	s32 res;
-	sThread *t = thread_getRunning();
-	res = vfsr_sync(t->tid);
+	sProc *p = proc_getRunning();
+	res = vfsr_sync(p->pid);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -480,13 +424,13 @@ void sysc_sync(sIntrptStackFrame *stack) {
 
 void sysc_link(sIntrptStackFrame *stack) {
 	s32 res;
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	char *oldPath = (char*)SYSC_ARG1(stack);
 	char *newPath = (char*)SYSC_ARG2(stack);
 	if(!sysc_isStringReadable(oldPath) || !sysc_isStringReadable(newPath))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_link(t->tid,oldPath,newPath);
+	res = vfs_link(p->pid,oldPath,newPath);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -494,12 +438,12 @@ void sysc_link(sIntrptStackFrame *stack) {
 
 void sysc_unlink(sIntrptStackFrame *stack) {
 	s32 res;
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	char *path = (char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_unlink(t->tid,path);
+	res = vfs_unlink(p->pid,path);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -507,12 +451,12 @@ void sysc_unlink(sIntrptStackFrame *stack) {
 
 void sysc_mkdir(sIntrptStackFrame *stack) {
 	s32 res;
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	char *path = (char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_mkdir(t->tid,path);
+	res = vfs_mkdir(p->pid,path);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -520,12 +464,12 @@ void sysc_mkdir(sIntrptStackFrame *stack) {
 
 void sysc_rmdir(sIntrptStackFrame *stack) {
 	s32 res;
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	char *path = (char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_rmdir(t->tid,path);
+	res = vfs_rmdir(p->pid,path);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -534,7 +478,7 @@ void sysc_rmdir(sIntrptStackFrame *stack) {
 void sysc_mount(sIntrptStackFrame *stack) {
 	s32 res;
 	tInodeNo ino;
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	char *device = (char*)SYSC_ARG1(stack);
 	char *path = (char*)SYSC_ARG2(stack);
 	u16 type = (u16)SYSC_ARG3(stack);
@@ -543,7 +487,7 @@ void sysc_mount(sIntrptStackFrame *stack) {
 	if(vfsn_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
 		SYSC_ERROR(stack,ERR_MOUNT_VIRT_PATH);
 
-	res = vfsr_mount(t->tid,device,path,type);
+	res = vfsr_mount(p->pid,device,path,type);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -552,14 +496,14 @@ void sysc_mount(sIntrptStackFrame *stack) {
 void sysc_unmount(sIntrptStackFrame *stack) {
 	s32 res;
 	tInodeNo ino;
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	char *path = (char*)SYSC_ARG1(stack);
 	if(!sysc_isStringReadable(path))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	if(vfsn_resolvePath(path,&ino,NULL,VFS_READ) != ERR_REAL_PATH)
 		SYSC_ERROR(stack,ERR_MOUNT_VIRT_PATH);
 
-	res = vfsr_unmount(t->tid,path);
+	res = vfsr_unmount(p->pid,path);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

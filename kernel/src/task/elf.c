@@ -79,6 +79,7 @@ s32 elf_loadFromMem(u8 *code,u32 length,sStartupInfo *info) {
 
 static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 	sThread *t = thread_getRunning();
+	sProc *p = t->proc;
 	tFileNo file;
 	u32 j,loadSeg = 0;
 	u8 const *datPtr;
@@ -87,19 +88,19 @@ static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 	sFileInfo finfo;
 	sBinDesc bindesc;
 
-	file = vfsr_openFile(t->tid,VFS_READ,path);
+	file = vfsr_openFile(p->pid,VFS_READ,path);
 	if(file < 0)
 		return ERR_INVALID_ELF_BIN;
 
 	/* fill bindesc */
-	if(vfs_fstat(t->tid,file,&finfo) < 0)
+	if(vfs_fstat(p->pid,file,&finfo) < 0)
 		goto failed;
 	bindesc.ino = finfo.inodeNo;
 	bindesc.dev = finfo.device;
 	bindesc.modifytime = finfo.modifytime;
 
 	/* first read the header */
-	if(vfs_readFile(t->tid,file,(u8*)&eheader,sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr))
+	if(vfs_readFile(p->pid,file,(u8*)&eheader,sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr))
 		goto failed;
 
 	/* check magic */
@@ -116,10 +117,10 @@ static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 	datPtr = (u8 const*)(eheader.e_phoff);
 	for(j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* go to header */
-		if(vfs_seek(t->tid,file,(u32)datPtr,SEEK_SET) < 0)
+		if(vfs_seek(p->pid,file,(u32)datPtr,SEEK_SET) < 0)
 			goto failed;
 		/* read pheader */
-		if(vfs_readFile(t->tid,file,(u8*)&pheader,sizeof(Elf32_Phdr)) != sizeof(Elf32_Phdr))
+		if(vfs_readFile(p->pid,file,(u8*)&pheader,sizeof(Elf32_Phdr)) != sizeof(Elf32_Phdr))
 			goto failed;
 
 		if(pheader.p_type == PT_INTERP) {
@@ -132,15 +133,15 @@ static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 			interpName = (char*)kheap_alloc(pheader.p_filesz);
 			if(interpName == NULL)
 				goto failed;
-			if(vfs_seek(t->tid,file,pheader.p_offset,SEEK_SET) < 0) {
+			if(vfs_seek(p->pid,file,pheader.p_offset,SEEK_SET) < 0) {
 				kheap_free(interpName);
 				goto failed;
 			}
-			if(vfs_readFile(t->tid,file,(u8*)interpName,pheader.p_filesz) != (s32)pheader.p_filesz) {
+			if(vfs_readFile(p->pid,file,(u8*)interpName,pheader.p_filesz) != (s32)pheader.p_filesz) {
 				kheap_free(interpName);
 				goto failed;
 			}
-			vfs_closeFile(t->tid,file);
+			vfs_closeFile(p->pid,file);
 			/* now load him and stop loading the 'real' program */
 			res = elf_doLoadFromFile(interpName,ELF_TYPE_INTERP,info);
 			kheap_free(interpName);
@@ -154,11 +155,11 @@ static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 				goto failed;
 			if(stype == REG_TLS) {
 				u32 tlsStart,tlsEnd;
-				vmm_getRegRange(t->proc,t->tlsRegion,&tlsStart,&tlsEnd);
+				vmm_getRegRange(p,t->tlsRegion,&tlsStart,&tlsEnd);
 				/* read tdata */
-				if(vfs_seek(t->tid,file,(u32)pheader.p_offset,SEEK_SET) < 0)
+				if(vfs_seek(p->pid,file,(u32)pheader.p_offset,SEEK_SET) < 0)
 					goto failed;
-				if(vfs_readFile(t->tid,file,(u8*)tlsStart,pheader.p_filesz) < 0)
+				if(vfs_readFile(p->pid,file,(u8*)tlsStart,pheader.p_filesz) < 0)
 					goto failed;
 				/* clear tbss */
 				memclear((void*)(tlsStart + pheader.p_filesz),pheader.p_memsz - pheader.p_filesz);
@@ -167,11 +168,11 @@ static s32 elf_doLoadFromFile(const char *path,u8 type,sStartupInfo *info) {
 		}
 	}
 
-	vfs_closeFile(t->tid,file);
+	vfs_closeFile(p->pid,file);
 	return 0;
 
 failed:
-	vfs_closeFile(t->tid,file);
+	vfs_closeFile(p->pid,file);
 	return ERR_INVALID_ELF_BIN;
 }
 

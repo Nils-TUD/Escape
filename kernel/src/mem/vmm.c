@@ -770,6 +770,7 @@ static bool vmm_demandLoad(sVMRegion *vm,u32 *flags,u32 addr) {
 
 static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,u32 addr,u32 loadCount) {
 	s32 err;
+	tPid pid = t->proc->pid;
 	sFileInfo info;
 	u8 *tempBuf;
 	tFileNo file;
@@ -777,16 +778,16 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,u32 addr,u32 loadCount) {
 	u32 temp,frame;
 	u8 mapFlags;
 
-	file = vfsr_openInode(t->tid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
+	file = vfsr_openInode(pid,VFS_READ,vm->reg->binary.ino,vm->reg->binary.dev);
 	if(file < 0) {
 		err = file;
 		goto error;
 	}
 
 	/* file not present or modified? */
-	if((err = vfs_fstat(t->tid,file,&info)) < 0 || info.modifytime != vm->reg->binary.modifytime)
+	if((err = vfs_fstat(pid,file,&info)) < 0 || info.modifytime != vm->reg->binary.modifytime)
 		goto errorClose;
-	if((err = vfs_seek(t->tid,file,vm->reg->binOffset + (addr - vm->virt),SEEK_SET)) < 0)
+	if((err = vfs_seek(pid,file,vm->reg->binOffset + (addr - vm->virt),SEEK_SET)) < 0)
 		goto errorClose;
 
 	/* first read into a temp-buffer because we can't mark the page as present until
@@ -797,7 +798,7 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,u32 addr,u32 loadCount) {
 		err = ERR_NOT_ENOUGH_MEM;
 		goto errorClose;
 	}
-	if((err = vfs_readFile(t->tid,file,(u8*)tempBuf,loadCount)) < 0)
+	if((err = vfs_readFile(pid,file,(u8*)tempBuf,loadCount)) < 0)
 		goto errorFree;
 
 	/* ensure that a frame is available; note that its easy here since no one else can demand load
@@ -820,7 +821,7 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,u32 addr,u32 loadCount) {
 
 	/* free resources not needed anymore */
 	kheap_free(tempBuf);
-	vfs_closeFile(t->tid,file);
+	vfs_closeFile(pid,file);
 
 	/* map into all pagedirs */
 	for(n = sll_begin(vm->reg->procs); n != NULL; n = n->next) {
@@ -840,7 +841,7 @@ static bool vmm_loadFromFile(sThread *t,sVMRegion *vm,u32 addr,u32 loadCount) {
 errorFree:
 	kheap_free(tempBuf);
 errorClose:
-	vfs_closeFile(t->tid,file);
+	vfs_closeFile(pid,file);
 error:
 #if DEBUGGING
 	vid_printf("Demandload for proc %s: %s (%d)\n",t->proc->command,strerror(err),err);

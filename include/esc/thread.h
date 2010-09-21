@@ -89,7 +89,7 @@ s32 sleep(u32 msecs);
  * @param events the events on which you want to wake up
  * @return 0 on success and a negative error-code if failed
  */
-s32 wait(u16 events);
+s32 wait(u32 events);
 
 /**
  * Notifies the given thread about the given events. If it was waiting for them, it will be
@@ -99,12 +99,12 @@ s32 wait(u16 events);
  * @param events the events on which you want to wake up
  * @return 0 on success and a negative error-code if failed
  */
-s32 notify(tTid tid,u16 events);
+s32 notify(tTid tid,u32 events);
 
 /**
  * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)
  *
- * @param tid the thread-id
+ * @param tid the thread-id (0 = wait until all other threads died)
  * @return 0 on success
  */
 s32 join(tTid tid);

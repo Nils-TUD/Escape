@@ -95,10 +95,9 @@ int main(void) {
 					tSize width = (tSize)(msg.args.arg2 >> 16);
 					tSize height = (tSize)(msg.args.arg2 & 0xFFFF);
 					tWinId tmpWinId = (tWinId)msg.args.arg3;
-					tPid owner = (tPid)msg.args.arg4;
-					u8 style = (u8)msg.args.arg5;
+					u8 style = (u8)msg.args.arg4;
 					msg.args.arg1 = tmpWinId;
-					msg.args.arg2 = win_create(x,y,width,height,owner,style);
+					msg.args.arg2 = win_create(x,y,width,height,getClientId(fd),style);
 					send(fd,MSG_WIN_CREATE_RESP,&msg,sizeof(msg.args));
 					if(style == WIN_STYLE_POPUP)
 						win_setActive(msg.args.arg2,false,curX,curY);
@@ -184,7 +183,7 @@ int main(void) {
 			}
 		}
 		else {
-			wait(EV_RECEIVED_MSG | EV_CLIENT);
+			wait(EV_DATA_READABLE | EV_CLIENT);
 		}
 	}
 
@@ -207,7 +206,7 @@ static void handleKbMessage(tDrvId drvId,sWindow *active,u8 keycode,bool isBreak
 	msg.args.arg3 = active->id;
 	msg.args.arg4 = c;
 	msg.args.arg5 = modifier;
-	aWin = getClientThread(drvId,active->owner);
+	aWin = getClient(drvId,active->owner);
 	if(aWin >= 0) {
 		send(aWin,MSG_WIN_KEYBOARD,&msg,sizeof(msg.args));
 		close(aWin);
@@ -265,7 +264,7 @@ static void handleMouseMessage(tDrvId drvId,sMouseData *mdata) {
 	/* send to window */
 	w = mouseWin ? mouseWin : win_getActive();
 	if(w) {
-		tFD aWin = getClientThread(drvId,w->owner);
+		tFD aWin = getClient(drvId,w->owner);
 		if(aWin >= 0) {
 			msg.args.arg1 = curX;
 			msg.args.arg2 = curY;

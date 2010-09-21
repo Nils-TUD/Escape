@@ -29,58 +29,58 @@
 void vfsr_init(void);
 
 /**
- * Removes the given thread (closes fs-communication-file)
+ * Removes the given process (closes fs-communication-file)
  *
- * @param tid the thread-id
+ * @param pid the process-id
  */
-void vfsr_removeThread(tTid tid);
+void vfsr_removeProc(tPid pid);
 
 /**
- * Opens the given path with given flags for given thread
+ * Opens the given path with given flags for given process
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param flags read / write
  * @param path the path
  * @return 0 on success or the error-code
  */
-s32 vfsr_openFile(tTid tid,u16 flags,const char *path);
+s32 vfsr_openFile(tPid pid,u16 flags,const char *path);
 
 /**
- * Opens the given inode+devno with given flags for given thread
+ * Opens the given inode+devno with given flags for given process
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param flags read / write
  * @param ino the inode-number
  * @param dev the dev-number
  * @return 0 on success or the error-code
  */
-s32 vfsr_openInode(tTid tid,u16 flags,tInodeNo ino,tDevNo dev);
+s32 vfsr_openInode(tPid pid,u16 flags,tInodeNo ino,tDevNo dev);
 
 /**
  * Retrieves information about the given (real!) path
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param path the path in the real filesystem
  * @param info should be filled
  * @return 0 on success
  */
-s32 vfsr_stat(tTid tid,const char *path,sFileInfo *info);
+s32 vfsr_stat(tPid pid,const char *path,sFileInfo *info);
 
 /**
  * Retrieves information about the given inode on given device
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param ino the inode-number
  * @param devNo the device-number
  * @param info should be filled
  * @return 0 on success
  */
-s32 vfsr_istat(tTid tid,tInodeNo ino,tDevNo devNo,sFileInfo *info);
+s32 vfsr_istat(tPid pid,tInodeNo ino,tDevNo devNo,sFileInfo *info);
 
 /**
  * Reads from the given inode at <offset> <count> bytes into the given buffer
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param inodeNo the inode
  * @param devNo the device-number
  * @param buffer the buffer to fill
@@ -88,12 +88,12 @@ s32 vfsr_istat(tTid tid,tInodeNo ino,tDevNo devNo,sFileInfo *info);
  * @param count the number of bytes to copy
  * @return the number of read bytes
  */
-s32 vfsr_readFile(tTid tid,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,u32 count);
+s32 vfsr_readFile(tPid pid,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,u32 count);
 
 /**
  * Writes to the given inode at <offset> <count> bytes from the given buffer
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param inodeNo the inode
  * @param devNo the device-number
  * @param buffer the buffer
@@ -101,81 +101,81 @@ s32 vfsr_readFile(tTid tid,tInodeNo inodeNo,tDevNo devNo,u8 *buffer,u32 offset,u
  * @param count the number of bytes to copy
  * @return the number of written bytes
  */
-s32 vfsr_writeFile(tTid tid,tInodeNo inodeNo,tDevNo devNo,const u8 *buffer,u32 offset,u32 count);
+s32 vfsr_writeFile(tPid pid,tInodeNo inodeNo,tDevNo devNo,const u8 *buffer,u32 offset,u32 count);
 
 /**
  * Creates a hardlink at <newPath> which points to <oldPath>
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param oldPath the link-target
  * @param newPath the link-path
  * @return 0 on success
  */
-s32 vfsr_link(tTid tid,const char *oldPath,const char *newPath);
+s32 vfsr_link(tPid pid,const char *oldPath,const char *newPath);
 
 /**
  * Unlinks the given path. That means, the directory-entry will be removed and if there are no
  * more references to the inode, it will be removed.
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param path the path
  * @return 0 on success
  */
-s32 vfsr_unlink(tTid tid,const char *path);
+s32 vfsr_unlink(tPid pid,const char *path);
 
 /**
  * Creates the given directory. Expects that all except the last path-component exist.
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param path the path
  * @return 0 on success
  */
-s32 vfsr_mkdir(tTid tid,const char *path);
+s32 vfsr_mkdir(tPid pid,const char *path);
 
 /**
  * Removes the given directory. Expects that the directory is empty (except '.' and '..')
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param path the path
  * @return 0 on success
  */
-s32 vfsr_rmdir(tTid tid,const char *path);
+s32 vfsr_rmdir(tPid pid,const char *path);
 
 /**
  * Mounts <device> at <path> with fs <type>
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param device the device-path
  * @param path the path to mount at
  * @param type the fs-type
  * @return 0 on success
  */
-s32 vfsr_mount(tTid tid,const char *device,const char *path,u16 type);
+s32 vfsr_mount(tPid pid,const char *device,const char *path,u16 type);
 
 /**
  * Unmounts the device mounted at <path>
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param path the path
  * @return 0 on success
  */
-s32 vfsr_unmount(tTid tid,const char *path);
+s32 vfsr_unmount(tPid pid,const char *path);
 
 /**
  * Writes all dirty objects of the filesystem to disk
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @return 0 on success
  */
-s32 vfsr_sync(tTid tid);
+s32 vfsr_sync(tPid pid);
 
 /**
  * Closes the given inode
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param inodeNo the inode
  * @param devNo the device-number
  */
-void vfsr_closeFile(tTid tid,tInodeNo inodeNo,tDevNo devNo);
+void vfsr_closeFile(tPid pid,tInodeNo inodeNo,tDevNo devNo);
 
 #endif /* VFSREAL_H_ */

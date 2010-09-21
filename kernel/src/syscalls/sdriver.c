@@ -34,7 +34,7 @@
 void sysc_regDriver(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	u32 flags = SYSC_ARG2(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	tDrvId res;
 
 	/* check flags */
@@ -43,7 +43,7 @@ void sysc_regDriver(sIntrptStackFrame *stack) {
 	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = vfs_createDriver(t->tid,name,flags);
+	res = vfs_createDriver(p->pid,name,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -51,7 +51,7 @@ void sysc_regDriver(sIntrptStackFrame *stack) {
 
 void sysc_unregDriver(sIntrptStackFrame *stack) {
 	tDrvId id = SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	s32 err;
 
 	/* check node-number */
@@ -59,7 +59,7 @@ void sysc_unregDriver(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* remove the driver */
-	err = vfs_removeDriver(t->tid,id);
+	err = vfs_removeDriver(p->pid,id);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,0);
@@ -68,45 +68,58 @@ void sysc_unregDriver(sIntrptStackFrame *stack) {
 void sysc_setDataReadable(sIntrptStackFrame *stack) {
 	tDrvId id = SYSC_ARG1(stack);
 	bool readable = (bool)SYSC_ARG2(stack);
-	sThread *t = thread_getRunning();
+	sProc *p = proc_getRunning();
 	s32 err;
 
 	/* check node-number */
 	if(!vfsn_isValidNodeNo(id))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	err = vfs_setDataReadable(t->tid,id,readable);
+	err = vfs_setDataReadable(p->pid,id,readable);
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,0);
 }
 
-void sysc_getClientThread(sIntrptStackFrame *stack) {
-	tDrvId id = (tDrvId)SYSC_ARG1(stack);
-	tTid tid = (tPid)SYSC_ARG2(stack);
-	sThread *t = thread_getRunning();
+void sysc_getClientId(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
+	tFileNo file;
+	tInodeNo id;
+	sProc *p = proc_getRunning();
+
+	file = proc_fdToFile(fd);
+	if(file < 0)
+		SYSC_ERROR(stack,file);
+
+	id = vfs_getClientId(p->pid,file);
+	if(id < 0)
+		SYSC_ERROR(stack,id);
+	SYSC_RET1(stack,id);
+}
+
+void sysc_getClient(sIntrptStackFrame *stack) {
+	tDrvId did = (tDrvId)SYSC_ARG1(stack);
+	tInodeNo cid = (tInodeNo)SYSC_ARG2(stack);
+	sProc *p = proc_getRunning();
 	tFD fd;
 	tFileNo file;
 	s32 res;
 
-	if(thread_getById(tid) == NULL)
-		SYSC_ERROR(stack,ERR_INVALID_TID);
-
 	/* we need a file-desc */
-	fd = thread_getFreeFd();
+	fd = proc_getFreeFd();
 	if(fd < 0)
 		SYSC_ERROR(stack,fd);
 
 	/* open client */
-	file = vfs_openClientThread(t->tid,id,tid);
+	file = vfs_openClient(p->pid,did,cid);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* associate fd with file */
-	res = thread_assocFd(fd,file);
+	res = proc_assocFd(fd,file);
 	if(res < 0) {
 		/* we have already opened the file */
-		vfs_closeFile(t->tid,file);
+		vfs_closeFile(p->pid,file);
 		SYSC_ERROR(stack,res);
 	}
 
@@ -142,7 +155,7 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 
 	/* open a client */
 	while(1) {
-		client = vfs_getClient(t->tid,(tInodeNo*)ids,idCount);
+		client = vfs_getClient(t->proc->pid,(tInodeNo*)ids,idCount);
 		if(client != ERR_NO_CLIENT_WAITING)
 			break;
 
@@ -151,7 +164,7 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 			SYSC_ERROR(stack,client);
 
 		/* otherwise wait for a client (accept signals) */
-		thread_wait(t->tid,0,EV_CLIENT);
+		thread_wait(t->tid,NULL,EV_CLIENT);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			SYSC_ERROR(stack,ERR_INTERRUPTED);
@@ -160,28 +173,28 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,client);
 
 	/* get fd for communication with the client */
-	fd = thread_getFreeFd();
+	fd = proc_getFreeFd();
 	if(fd < 0)
 		SYSC_ERROR(stack,fd);
 
 	/* open file */
-	file = vfs_openFile(t->tid,VFS_READ | VFS_WRITE,client,VFS_DEV_NO);
+	file = vfs_openFile(t->proc->pid,VFS_READ | VFS_WRITE,client,VFS_DEV_NO);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
 	/* assoc with fd */
-	res = thread_assocFd(fd,file);
+	res = proc_assocFd(fd,file);
 	if(res < 0) {
-		vfs_closeFile(t->tid,file);
+		vfs_closeFile(t->proc->pid,file);
 		SYSC_ERROR(stack,res);
 	}
 
 	/* receive a message */
 	cnode = vfsn_getNode(client);
-	res = vfsrw_readDrvUse(t->tid,file,cnode,id,data,size);
+	res = vfsrw_readDrvUse(t->proc->pid,file,cnode,id,data,size);
 	if(res < 0) {
-		thread_unassocFd(fd);
-		vfs_closeFile(t->tid,file);
+		proc_unassocFd(fd);
+		vfs_closeFile(t->proc->pid,file);
 		SYSC_ERROR(stack,res);
 	}
 

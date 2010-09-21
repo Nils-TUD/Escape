@@ -81,13 +81,13 @@ sThread *thread_init(sProc *p) {
 }
 
 static sThread *thread_createInitial(sProc *p,eThreadState state) {
-	tFD i;
 	sThread *t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
 		util_panic("Unable to allocate mem for initial thread");
 
 	t->state = state;
 	t->events = EV_NOEVENT;
+	t->eventObj = NULL;
 	t->waitsInKernel = 0;
 	t->tid = nextTid++;
 	t->proc = p;
@@ -102,10 +102,6 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->fpuState = NULL;
 	t->signal = 0;
 	t->tlsRegion = -1;
-	t->fsClient = -1;
-	/* init fds */
-	for(i = 0; i < MAX_FD_COUNT; i++)
-		t->fileDescs[i] = -1;
 
 	/* create list */
 	if(!hm_add(threads,t))
@@ -246,18 +242,19 @@ void thread_switchNoSigs(void) {
 	kev_notify(KEV_KWAIT_DONE,cur->tid);
 }
 
-void thread_wait(tTid tid,void *mask,u16 events) {
+void thread_wait(tTid tid,void *obj,u32 events) {
 	sThread *t = thread_getById(tid);
 	vassert(t != NULL,"Thread with id %d not found",tid);
-	t->events = ((u32)mask << 16) | events;
+	t->events = events;
+	t->eventObj = obj;
 	sched_setBlocked(t);
 }
 
-void thread_wakeupAll(void *mask,u16 event) {
-	sched_unblockAll((u32)mask & 0xFFFF,event);
+void thread_wakeupAll(void *obj,u32 event) {
+	sched_unblockAll(obj,event);
 }
 
-void thread_wakeup(tTid tid,u16 event) {
+void thread_wakeup(tTid tid,u32 event) {
 	sThread *t = thread_getById(tid);
 	/* ignore the wakeup if the thread doesn't exist */
 	if(t == NULL)
@@ -293,106 +290,11 @@ void thread_setSuspended(tTid tid,bool blocked) {
 	sched_setSuspended(t,blocked);
 }
 
-tFileNo thread_fdToFile(tFD fd) {
-	tFileNo fileNo;
-	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
-
-	fileNo = cur->fileDescs[fd];
-	if(fileNo == -1)
-		return ERR_INVALID_FD;
-
-	return fileNo;
-}
-
-tFD thread_getFreeFd(void) {
-	tFD i;
-	tFileNo *fds = cur->fileDescs;
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(fds[i] == -1)
-			return i;
-	}
-
-	return ERR_MAX_PROC_FDS;
-}
-
-s32 thread_assocFd(tFD fd,tFileNo fileNo) {
-	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
-
-	if(cur->fileDescs[fd] != -1)
-		return ERR_INVALID_FD;
-
-	cur->fileDescs[fd] = fileNo;
-	return 0;
-}
-
-tFD thread_dupFd(tFD fd) {
-	tFileNo f;
-	s32 err,nfd;
-	/* check fd */
-	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
-
-	f = cur->fileDescs[fd];
-	if(f == -1)
-		return ERR_INVALID_FD;
-
-	nfd = thread_getFreeFd();
-	if(nfd < 0)
-		return nfd;
-
-	/* increase references */
-	if((err = vfs_incRefs(f)) < 0)
-		return err;
-
-	cur->fileDescs[nfd] = f;
-	return nfd;
-}
-
-s32 thread_redirFd(tFD src,tFD dst) {
-	tFileNo fSrc,fDst;
-	s32 err;
-
-	/* check fds */
-	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
-
-	fSrc = cur->fileDescs[src];
-	fDst = cur->fileDescs[dst];
-	if(fSrc == -1 || fDst == -1)
-		return ERR_INVALID_FD;
-
-	if((err = vfs_incRefs(fDst)) < 0)
-		return err;
-
-	/* we have to close the source because no one else will do it anymore... */
-	vfs_closeFile(cur->tid,fSrc);
-
-	/* now redirect src to dst */
-	cur->fileDescs[src] = fDst;
-	return 0;
-}
-
-tFileNo thread_unassocFd(tFD fd) {
-	tFileNo fileNo;
-	if(fd < 0 || fd >= MAX_FD_COUNT)
-		return ERR_INVALID_FD;
-
-	fileNo = cur->fileDescs[fd];
-	if(fileNo == -1)
-		return ERR_INVALID_FD;
-
-	cur->fileDescs[fd] = -1;
-	return fileNo;
-}
-
 s32 thread_extendStack(u32 address) {
 	return vmm_growStackTo(cur,address);
 }
 
 s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc) {
-	tFD i;
 	sThread *t = *dst;
 	t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
@@ -401,6 +303,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	t->tid = nextTid++;
 	t->state = ST_RUNNING;
 	t->events = src->events;
+	t->eventObj = src->eventObj;
 	t->waitsInKernel = 0;
 	fpu_cloneState(&(t->fpuState),src->fpuState);
 	t->stats.kcycleCount.val64 = 0;
@@ -412,7 +315,6 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	t->stats.schedCount = 0;
 	t->proc = p;
 	t->signal = 0;
-	t->fsClient = -1;
 	if(cloneProc) {
 		/* proc_clone() sets t->kstackFrame in this case */
 		t->stackRegion = src->stackRegion;
@@ -457,13 +359,6 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	if(!vfs_createThread(t->tid))
 		goto errAppend;
 
-	/* inherit file-descriptors */
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		t->fileDescs[i] = src->fileDescs[i];
-		if(t->fileDescs[i] != -1)
-			t->fileDescs[i] = vfs_inheritFileNo(t->tid,t->fileDescs[i]);
-	}
-
 	*dst = t;
 	return 0;
 
@@ -486,7 +381,6 @@ errThread:
 }
 
 void thread_kill(sThread *t) {
-	tFD i;
 	/* we can't destroy the current thread */
 	if(t == cur) {
 		/* put it in the dead-thread-queue to destroy it later */
@@ -518,16 +412,6 @@ void thread_kill(sThread *t) {
 	/* free kernel-stack */
 	mm_free(t->kstackFrame);
 	t->proc->ownFrames--;
-
-	/* release file-descriptors */
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(t->fileDescs[i] != -1) {
-			vfs_closeFile(t->tid,t->fileDescs[i]);
-			t->fileDescs[i] = -1;
-		}
-	}
-	/* close file for communication with fs */
-	vfsr_removeThread(t->tid);
 
 	/* remove from process */
 	sll_removeFirst(t->proc->threads,t);
@@ -571,26 +455,12 @@ void thread_dbg_print(sThread *t) {
 	static const char *states[] = {
 		"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE","BLOCKEDSWAP","READYSWAP"
 	};
-	tFD i;
 	vid_printf("\tthread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 	vid_printf("\t\tstate=%s\n",states[t->state]);
-	vid_printf("\t\tevents=%x\n",t->events);
-	vid_printf("\t\tkstackFrame=0x%x\n",t->kstackFrame);
-	vid_printf("\t\tucycleCount = 0x%016Lx\n",t->stats.ucycleCount.val64);
-	vid_printf("\t\tkcycleCount = 0x%016Lx\n",t->stats.kcycleCount.val64);
-	vid_printf("\t\tfileDescs:\n");
-	for(i = 0; i < MAX_FD_COUNT; i++) {
-		if(t->fileDescs[i] != -1) {
-			tInodeNo ino;
-			tDevNo dev;
-			if(vfs_getFileId(t->fileDescs[i],&ino,&dev) == 0) {
-				vid_printf("\t\t\t%d : %d",i,t->fileDescs[i]);
-				if(dev == VFS_DEV_NO && vfsn_isValidNodeNo(ino))
-					vid_printf(" (%s)",vfsn_getPath(ino));
-				vid_printf("\n");
-			}
-		}
-	}
+	vid_printf("\t\tevents=%#x (obj=%#x)\n",t->events,t->eventObj);
+	vid_printf("\t\tkstackFrame=%#x\n",t->kstackFrame);
+	vid_printf("\t\tucycleCount = %#016Lx\n",t->stats.ucycleCount.val64);
+	vid_printf("\t\tkcycleCount = %#016Lx\n",t->stats.kcycleCount.val64);
 	vid_printf("\t\tkernel-trace:\n");
 	calls = util_getKernelStackTraceOf(t);
 	while(calls->addr != 0) {
@@ -601,7 +471,8 @@ void thread_dbg_print(sThread *t) {
 	if(calls) {
 		vid_printf("\t\tuser-trace:\n");
 		while(calls->addr != 0) {
-			vid_printf("\t\t\t%#08x -> %#08x (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
+			vid_printf("\t\t\t%#08x -> %#08x (%s)\n",
+					(calls + 1)->addr,calls->funcAddr,calls->funcName);
 			calls++;
 		}
 	}
@@ -609,11 +480,11 @@ void thread_dbg_print(sThread *t) {
 
 void thread_dbg_printState(sThreadRegs *state) {
 	vid_printf("\tState:\n",state);
-	vid_printf("\t\tesp = 0x%08x\n",state->esp);
-	vid_printf("\t\tedi = 0x%08x\n",state->edi);
-	vid_printf("\t\tesi = 0x%08x\n",state->esi);
-	vid_printf("\t\tebp = 0x%08x\n",state->ebp);
-	vid_printf("\t\teflags = 0x%08x\n",state->eflags);
+	vid_printf("\t\tesp = %#08x\n",state->esp);
+	vid_printf("\t\tedi = %#08x\n",state->edi);
+	vid_printf("\t\tesi = %#08x\n",state->esi);
+	vid_printf("\t\tebp = %#08x\n",state->ebp);
+	vid_printf("\t\teflags = %#08x\n",state->eflags);
 }
 
 #endif

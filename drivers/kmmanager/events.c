@@ -30,7 +30,7 @@
 
 /* a listener */
 typedef struct {
-	tTid tid;
+	tInodeNo id;
 	u8 flags;
 	u8 key;
 	u8 modifier;
@@ -39,7 +39,7 @@ typedef struct {
 /**
  * Searches for the given listener
  */
-static sEventListener *events_find(tTid tid,u8 flags,u8 key,u8 modifier);
+static sEventListener *events_find(tInodeNo id,u8 flags,u8 key,u8 modifier);
 
 /* all announced listeners */
 static sSLList *listener;
@@ -62,7 +62,7 @@ bool events_send(tDrvId driver,sKmData *km) {
 			/* character/keycode equal? */
 			if(((l->flags & KE_EV_KEYCODE) && l->key == km->keycode) ||
 					((l->flags & KE_EV_CHARACTER) && l->key == km->character)) {
-				tFD fd = getClientThread(driver,l->tid);
+				tFD fd = getClient(driver,l->id);
 				if(fd >= 0) {
 					if(!copied) {
 						memcpy(&msg.data.d,km,sizeof(sKmData));
@@ -77,13 +77,13 @@ bool events_send(tDrvId driver,sKmData *km) {
 	return copied;
 }
 
-s32 events_add(tTid tid,u8 flags,u8 key,u8 modifier) {
+s32 events_add(tInodeNo id,u8 flags,u8 key,u8 modifier) {
 	sEventListener *l;
-	if(events_find(tid,flags,key,modifier) != NULL)
+	if(events_find(id,flags,key,modifier) != NULL)
 		return ERR_LISTENER_EXISTS;
 
 	l = (sEventListener*)malloc(sizeof(sEventListener));
-	l->tid = tid;
+	l->id = id;
 	l->flags = flags;
 	l->key = key;
 	l->modifier = modifier;
@@ -94,19 +94,19 @@ s32 events_add(tTid tid,u8 flags,u8 key,u8 modifier) {
 	return 0;
 }
 
-void events_remove(tTid tid,u8 flags,u8 key,u8 modifier) {
-	sEventListener *l = events_find(tid,flags,key,modifier);
+void events_remove(tInodeNo id,u8 flags,u8 key,u8 modifier) {
+	sEventListener *l = events_find(id,flags,key,modifier);
 	if(l) {
 		sll_removeFirst(listener,l);
 		free(l);
 	}
 }
 
-static sEventListener *events_find(tTid tid,u8 flags,u8 key,u8 modifier) {
+static sEventListener *events_find(tInodeNo id,u8 flags,u8 key,u8 modifier) {
 	sSLNode *n;
 	for(n = sll_begin(listener); n != NULL; n = n->next) {
 		sEventListener *l = (sEventListener*)n->data;
-		if(l->tid == tid && l->flags == flags && l->key == key && l->modifier == modifier)
+		if(l->id == id && l->flags == flags && l->key == key && l->modifier == modifier)
 			return l;
 	}
 	return NULL;

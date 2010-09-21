@@ -41,22 +41,22 @@ bool events_send(tDrvId driver,sKmData *km);
 /**
  * Adds the given listener
  *
- * @param tid the thread-id of the listener
+ * @param id the client-id of the listener
  * @param flags the flags
  * @param key the key (keycode or character, depending on the flags)
  * @param modifier the modifiers
  * @return 0 if successfull
  */
-s32 events_add(tTid tid,u8 flags,u8 key,u8 modifier);
+s32 events_add(tInodeNo id,u8 flags,u8 key,u8 modifier);
 
 /**
  * Removes the given listener
  *
- * @param tid the thread-id of the listener
+ * @param id the client-id of the listener
  * @param flags the flags
  * @param key the key (keycode or character, depending on the flags)
  * @param modifier the modifiers
  */
-void events_remove(tTid tid,u8 flags,u8 key,u8 modifier);
+void events_remove(tInodeNo id,u8 flags,u8 key,u8 modifier);
 
 #endif /* EVENTS_H_ */

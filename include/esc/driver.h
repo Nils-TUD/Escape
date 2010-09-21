@@ -72,13 +72,21 @@ s32 unregDriver(tDrvId driver);
 s32 setDataReadable(tDrvId driver,bool readable);
 
 /**
- * Opens a file for the client with given thread-id.
+ * Fetches the client-id from the given file-descriptor
  *
- * @param id the driver-id
- * @param tid the client-thread-id
+ * @param fd the file-descriptor
+ * @return the id or an error
+ */
+tInodeNo getClientId(tFD fd);
+
+/**
+ * Opens a file for the client with given client-id.
+ *
+ * @param did the driver-id
+ * @param cid the client-id
  * @return the file-descriptor or a negative error-code
  */
-tFD getClientThread(tDrvId id,tTid tid) A_CHECKRET;
+tFD getClient(tDrvId did,tInodeNo cid) A_CHECKRET;
 
 /**
  * For drivers: Looks whether a client wants to be served. If not and GW_NOBLOCK is not provided

@@ -73,7 +73,7 @@ static sSyscall syscalls[] = {
 	/* 30 */	{sysc_joinSharedMem,		1},
 	/* 31 */	{sysc_leaveSharedMem,		1},
 	/* 32 */	{sysc_destroySharedMem,		1},
-	/* 33 */	{sysc_getClientThread,		2},
+	/* 33 */	{sysc_getClient,		2},
 	/* 34 */	{sysc_lock,					1},
 	/* 35 */	{sysc_unlock,				1},
 	/* 36 */	{sysc_startThread,			2},
@@ -105,6 +105,7 @@ static sSyscall syscalls[] = {
 	/* 62 */	{sysc_addRegion,			4},
 	/* 63 */	{sysc_setRegProt,			2},
 	/* 64 */	{sysc_notify,				2},
+	/* 65 */	{sysc_getClientId,			1},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {

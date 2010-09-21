@@ -97,7 +97,7 @@ void win_setCursor(tCoord x,tCoord y,u8 cursor) {
 	send(vesa,MSG_VESA_CURSOR,&msg,sizeof(msg.args));
 }
 
-tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tPid owner,u8 style) {
+tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tInodeNo owner,u8 style) {
 	tWinId i;
 	for(i = 0; i < WINDOW_COUNT; i++) {
 		if(windows[i].id == WINID_UNSED) {
@@ -121,10 +121,10 @@ void win_updateScreen(void) {
 	win_notifyVesa(0,0,vesaInfo.width,vesaInfo.height);
 }
 
-void win_destroyWinsOf(tTid tid,tCoord mouseX,tCoord mouseY) {
+void win_destroyWinsOf(tInodeNo cid,tCoord mouseX,tCoord mouseY) {
 	tWinId id;
 	for(id = 0; id < WINDOW_COUNT; id++) {
-		if(windows[id].id != WINID_UNSED && windows[id].owner == tid)
+		if(windows[id].id != WINID_UNSED && windows[id].owner == cid)
 			win_destroy(id,mouseX,mouseY);
 	}
 }
@@ -332,7 +332,7 @@ static void win_repaint(sRectangle *r,sWindow *win,s16 z) {
 }
 
 static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY) {
-	tFD aWin = getClientThread(drvId,windows[id].owner);
+	tFD aWin = getClient(drvId,windows[id].owner);
 	if(aWin >= 0) {
 		msg.args.arg1 = id;
 		msg.args.arg2 = isActive;
@@ -344,7 +344,7 @@ static void win_sendActive(tWinId id,bool isActive,tCoord mouseX,tCoord mouseY) 
 }
 
 static void win_sendRepaint(tCoord x,tCoord y,tSize width,tSize height,tWinId id) {
-	tFD aWin = getClientThread(drvId,windows[id].owner);
+	tFD aWin = getClient(drvId,windows[id].owner);
 	if(aWin >= 0) {
 		if(x - windows[id].x < 0) {
 			width += x - windows[id].x;

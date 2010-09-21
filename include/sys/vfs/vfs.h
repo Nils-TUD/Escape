@@ -56,7 +56,7 @@ enum {
 	VFS_CREATE = 4,
 	VFS_TRUNCATE = 8,
 	VFS_APPEND = 16,
-	VFS_CONNECT = 32,		/* kernel-intern: connect to driver/driver */
+	VFS_CONNECT = 32,		/* kernel-intern: connect to driver */
 	VFS_NOLINKRES = 64,		/* kernel-intern: don't resolve last link in path */
 	VFS_CREATED = 128,		/* kernel-intern: whether a new node has been created */
 	VFS_MODIFIED = 256		/* kernel-intern: whether it has been written to the file */
@@ -70,8 +70,8 @@ enum {
 /* a node in our virtual file system */
 typedef struct sVFSNode sVFSNode;
 /* the function for read-requests on info-nodes */
-typedef s32 (*fRead)(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
-typedef s32 (*fWrite)(tTid tid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
+typedef s32 (*fRead)(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+typedef s32 (*fWrite)(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
 
 struct sVFSNode {
 	char *name;
@@ -89,7 +89,7 @@ struct sVFSNode {
 	fRead readHandler;
 	fWrite writeHandler;
 	/* the owner of this node: used for driver-usages */
-	tTid owner;
+	tPid owner;
 	/* a list of listeners for created, modified or deleted */
 	sSLList *listeners;
 	union {
@@ -131,23 +131,14 @@ struct sVFSNode {
 void vfs_init(void);
 
 /**
- * Checks whether the thread with given tid has the permission to do the given stuff with <nodeNo>.
+ * Checks whether the process with given pid has the permission to do the given stuff with <nodeNo>.
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param nodeNo the node-number
  * @param flags specifies what you want to do (VFS_READ | VFS_WRITE)
- * @return 0 if the thread has permission or the error-code
+ * @return 0 if the process has permission or the error-code
  */
-s32 vfs_hasAccess(tTid tid,tInodeNo nodeNo,u16 flags);
-
-/**
- * Inherits the given file for the current thread
- *
- * @param tid the thread-id
- * @param file the file
- * @return file the file to use (may be the same)
- */
-tFileNo vfs_inheritFileNo(tTid tid,tFileNo file);
+s32 vfs_hasAccess(tPid pid,tInodeNo nodeNo,u16 flags);
 
 /**
  * Increases the references of the given file
@@ -159,7 +150,7 @@ s32 vfs_incRefs(tFileNo file);
 
 /**
  * @param file the file-number
- * @return the owner-tid of the given file
+ * @return the owner-pid of the given file
  */
 s32 vfs_getOwner(tFileNo file);
 
@@ -174,243 +165,272 @@ s32 vfs_getOwner(tFileNo file);
 s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev);
 
 /**
+ * Opens the given path with given flags. That means it walks through the global
+ * file table and searches for a free entry or an entry for that file.
+ * Note that multiple processs may read from the same file simultaneously but NOT write!
+ *
+ * @param pid the process-id with which the file should be opened
+ * @param flags whether it is a virtual or real file and whether you want to read or write
+ * @param path the path
+ * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FILE)
+ */
+tFileNo vfs_openPath(tPid pid,u16 flags,const char *path);
+
+/**
  * Opens the file with given number and given flags. That means it walks through the global
  * file table and searches for a free entry or an entry for that file.
- * Note that multiple threads may read from the same file simultaneously but NOT write!
+ * Note that multiple processs may read from the same file simultaneously but NOT write!
  *
- * @param tid the thread-id with which the file should be opened
+ * @param pid the process-id with which the file should be opened
  * @param flags whether it is a virtual or real file and whether you want to read or write
  * @param nodeNo the node-number (in the virtual or real environment)
  * @param devNo the device-number
  * @return the file if successfull or < 0 (ERR_FILE_IN_USE, ERR_NO_FREE_FILE)
  */
-tFileNo vfs_openFile(tTid tid,u16 flags,tInodeNo nodeNo,tDevNo devNo);
+tFileNo vfs_openFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo);
 
 /**
  * Returns the current file-position
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param file the file
  * @return the current file-position
  */
-u32 vfs_tell(tTid tid,tFileNo file);
+u32 vfs_tell(tPid pid,tFileNo file);
 
 /**
  * Checks whether we are at EOF in the given file
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param file the file
  * @return true if at EOF
  */
-bool vfs_eof(tTid tid,tFileNo file);
+bool vfs_eof(tPid pid,tFileNo file);
 
 /**
  * Retrieves information about the given path
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param path the path
  * @param info the info to fill
  * @return 0 on success
  */
-s32 vfs_stat(tTid tid,const char *path,sFileInfo *info);
+s32 vfs_stat(tPid pid,const char *path,sFileInfo *info);
 
 /**
  * Retrieves information about the given file
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param file the file
  * @param info the info to fill
  * @return 0 on success
  */
-s32 vfs_fstat(tTid tid,tFileNo file,sFileInfo *info);
+s32 vfs_fstat(tPid pid,tFileNo file,sFileInfo *info);
 
 /**
  * Checks whether a message is available
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param file the file
  * @return 1 if so, 0 if not, < 0 if an error occurred
  */
-s32 vfs_hasMsg(tTid tid,tFileNo file);
+s32 vfs_hasMsg(tPid pid,tFileNo file);
 
 /**
  * Checks whether the given file links to a terminal. That means it has to be a virtual file
  * that acts as a driver-client for a terminal-driver.
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param file the file
  * @return true if so
  */
-bool vfs_isterm(tTid tid,tFileNo file);
+bool vfs_isterm(tPid pid,tFileNo file);
 
 /**
  * Sets the position for the given file
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param file the file
  * @param offset the offset
  * @param whence the seek-type
  * @return the new position on success
  */
-s32 vfs_seek(tTid tid,tFileNo file,s32 offset,u32 whence);
+s32 vfs_seek(tPid pid,tFileNo file,s32 offset,u32 whence);
 
 /**
  * Reads max. count bytes from the given file into the given buffer and returns the number
  * of read bytes.
  *
- * @param tid will be used to check whether the driver writes or a driver-user
+ * @param pid will be used to check whether the driver writes or a driver-user
  * @param file the file
  * @param buffer the buffer to write to
  * @param count the max. number of bytes to read
  * @return the number of bytes read
  */
-s32 vfs_readFile(tTid tid,tFileNo file,u8 *buffer,u32 count);
+s32 vfs_readFile(tPid pid,tFileNo file,u8 *buffer,u32 count);
 
 /**
  * Writes count bytes from the given buffer into the given file and returns the number of written
  * bytes.
  *
- * @param tid will be used to check whether the driver writes or a driver-user
+ * @param pid will be used to check whether the driver writes or a driver-user
  * @param file the file
  * @param buffer the buffer to read from
  * @param count the number of bytes to write
  * @return the number of bytes written
  */
-s32 vfs_writeFile(tTid tid,tFileNo file,const u8 *buffer,u32 count);
+s32 vfs_writeFile(tPid pid,tFileNo file,const u8 *buffer,u32 count);
 
 /**
  * Sends a message to the corresponding driver
  *
- * @param tid the sender-thread-id
+ * @param pid the sender-process-id
  * @param file the file to send the message to
  * @param id the message-id
  * @param data the message
  * @param size the message-size
  * @return 0 on success
  */
-s32 vfs_sendMsg(tTid tid,tFileNo file,tMsgId id,const u8 *data,u32 size);
+s32 vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const u8 *data,u32 size);
 
 /**
  * Receives a message from the corresponding driver
  *
- * @param tid the receiver-thread-id
+ * @param pid the receiver-process-id
  * @param file the file to receive the message from
  * @param id will be set to the fetched msg-id
  * @param data the message to write to
  * @return the number of written bytes (or < 0 if an error occurred)
  */
-s32 vfs_receiveMsg(tTid tid,tFileNo file,tMsgId *id,u8 *data,u32 size);
+s32 vfs_receiveMsg(tPid pid,tFileNo file,tMsgId *id,u8 *data,u32 size);
 
 /**
  * Closes the given file. That means it calls proc_closeFile() and decrements the reference-count
  * in the global file table. If there are no references anymore it releases the slot.
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param file the file
  */
-void vfs_closeFile(tTid tid,tFileNo file);
+void vfs_closeFile(tPid pid,tFileNo file);
 
 /**
  * Creates a link @ <newPath> to <oldPath>
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param oldPath the link-target
  * @param newPath the link-name
  * @return 0 on success
  */
-s32 vfs_link(tTid tid,const char *oldPath,const char *newPath);
+s32 vfs_link(tPid pid,const char *oldPath,const char *newPath);
 
 /**
  * Removes the given file
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param path the path
  * @return 0 on success
  */
-s32 vfs_unlink(tTid tid,const char *path);
+s32 vfs_unlink(tPid pid,const char *path);
 
 /**
  * Creates the directory <path>
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param path the path
  * @return 0 on success
  */
-s32 vfs_mkdir(tTid tid,const char *path);
+s32 vfs_mkdir(tPid pid,const char *path);
 
 /**
  * Removes the given directory
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param path the path
  * @return 0 on success
  */
-s32 vfs_rmdir(tTid tid,const char *path);
+s32 vfs_rmdir(tPid pid,const char *path);
 
 /**
- * Creates a driver-node for the given thread and given name
+ * Creates a driver-node for the given process and given name
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param name the driver-name
  * @param flags the specified flags (implemented functions)
  * @return 0 if ok, negative if an error occurred
  */
-s32 vfs_createDriver(tTid tid,const char *name,u32 flags);
+s32 vfs_createDriver(tPid pid,const char *name,u32 flags);
 
 /**
  * Sets whether data is currently readable or not
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param nodeNo the driver-node-number
  * @param readable whether there is data or not
  * @return 0 on success
  */
-s32 vfs_setDataReadable(tTid tid,tInodeNo nodeNo,bool readable);
+s32 vfs_setDataReadable(tPid pid,tInodeNo nodeNo,bool readable);
 
 /**
- * Checks whether there is a message for the given thread. That if the thread is a driver
- * and should serve a client or if the thread has got a message from a driver.
+ * Checks whether there is a message for the given process. That if the process is a driver
+ * and should serve a client or if the process has got a message from a driver.
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param events the events to wait for
  * @return true if there is a message
  */
-bool vfs_msgAvailableFor(tTid tid,u8 events);
+bool vfs_msgAvailableFor(tPid pid,u32 events);
+
+/**
+ * Wakes up all clients of the given node for given events
+ *
+ * @param node the node of the driver
+ * @param events the events
+ */
+void vfs_wakeupClients(sVFSNode *node,u32 events);
 
 /**
  * For drivers: Looks whether a client wants to be served and return the node-number
  *
- * @param tid the driver-thread-id
+ * @param pid the driver-process-id
  * @param vfsNodes an array of VFS-nodes to check for clients
  * @param count the size of <sys/vfsNodes>
  * @return the error-code or the node-number of the client
  */
-s32 vfs_getClient(tTid tid,tInodeNo *vfsNodes,u32 count);
+s32 vfs_getClient(tPid pid,tInodeNo *vfsNodes,u32 count);
+
+/***
+ * Fetches the client-id from the given file
+ *
+ * @param pid the process-id (driver-owner)
+ * @param file the file for the client
+ * @return the client-id or the error-code
+ */
+tInodeNo vfs_getClientId(tPid pid,tFileNo file);
 
 /**
- * Opens a file for the client with given thread-id.
+ * Opens a file for the client with given process-id.
  *
- * @param tid the own thread-id
+ * @param pid the own process-id
  * @param nodeNo the driver-node-number
- * @param clientId the thread-id of the desired client
+ * @param clientId the id of the desired client
  * @return the file or a negative error-code
  */
-tFileNo vfs_openClientThread(tTid tid,tInodeNo nodeNo,tTid clientId);
+tFileNo vfs_openClient(tPid pid,tInodeNo nodeNo,tInodeNo clientId);
 
 /**
  * Removes the driver with given node-number
  *
- * @param tid the thread-id
+ * @param pid the process-id
  * @param nodeNo the node-number of the driver
  */
-s32 vfs_removeDriver(tTid tid,tInodeNo nodeNo);
+s32 vfs_removeDriver(tPid pid,tInodeNo nodeNo);
 
 /**
  * Creates a process-node with given pid and handler-function
  *
  * @param pid the process-id
  * @param handler the read-handler
- * @return the thread-directory-node on success
+ * @return the process-directory-node on success
  */
 sVFSNode *vfs_createProcess(tPid pid,fRead handler);
 

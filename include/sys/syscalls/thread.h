@@ -91,7 +91,7 @@ void sysc_notify(sIntrptStackFrame *stack);
 /**
  * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)
  *
- * @param tTid the thread-id
+ * @param tTid the thread-id (0 = wait until all other threads died)
  * @return 0 on success
  */
 void sysc_join(sIntrptStackFrame *stack);

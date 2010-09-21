@@ -40,15 +40,6 @@ void sysc_regDriver(sIntrptStackFrame *stack);
 void sysc_unregDriver(sIntrptStackFrame *stack);
 
 /**
- * For drivers: Returns the file-descriptor for a specific client
- *
- * @param tDrvId the driver-id
- * @param tTid the thread-id
- * @return tFD the file-descriptor
- */
-void sysc_getClientThread(sIntrptStackFrame *stack);
-
-/**
  * For drivers: Sets whether read() has currently something to read or not
  *
  * @param tDrvId the driver-id
@@ -56,6 +47,23 @@ void sysc_getClientThread(sIntrptStackFrame *stack);
  * @return s32 0 on success
  */
 void sysc_setDataReadable(sIntrptStackFrame *stack);
+
+/**
+ * Fetches the client-id from the given file-descriptor
+ *
+ * @param tFD the file-descriptor
+ * @return tInodeNo the id or an error
+ */
+void sysc_getClientId(sIntrptStackFrame *stack);
+
+/**
+ * For drivers: Returns the file-descriptor for a specific client
+ *
+ * @param tDrvId the driver-id
+ * @param tInodeNo the client-id
+ * @return tFD the file-descriptor
+ */
+void sysc_getClient(sIntrptStackFrame *stack);
 
 /**
  * For drivers: Looks whether a client wants to be served. If not and WG_NOBLOCK is not provided

@@ -175,21 +175,19 @@ static void handleKeymap(tMsgId mid,tFD fd) {
 static void handleKeyevents(tMsgId mid,tFD fd) {
 	switch(mid) {
 		case MSG_KE_ADDLISTENER: {
-			tTid tid = (tTid)msg.args.arg1;
-			u8 flags = (u8)msg.args.arg2;
-			u8 key = (u8)msg.args.arg3;
-			u8 modifier = (u8)msg.args.arg4;
-			msg.args.arg1 = events_add(tid,flags,key,modifier);
+			u8 flags = (u8)msg.args.arg1;
+			u8 key = (u8)msg.args.arg2;
+			u8 modifier = (u8)msg.args.arg3;
+			msg.args.arg1 = events_add(getClientId(fd),flags,key,modifier);
 			send(fd,MSG_KE_ADDLISTENER,&msg,sizeof(msg.args));
 		}
 		break;
 
 		case MSG_KE_REMLISTENER: {
-			tTid tid = (tTid)msg.args.arg1;
-			u8 flags = (u8)msg.args.arg2;
-			u8 key = (u8)msg.args.arg3;
-			u8 modifier = (u8)msg.args.arg4;
-			events_remove(tid,flags,key,modifier);
+			u8 flags = (u8)msg.args.arg1;
+			u8 key = (u8)msg.args.arg2;
+			u8 modifier = (u8)msg.args.arg3;
+			events_remove(getClientId(fd),flags,key,modifier);
 		}
 		break;
 	}

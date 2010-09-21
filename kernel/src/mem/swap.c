@@ -56,7 +56,7 @@ static bool swapping = false;
 static sProc *swapinProc = NULL;
 static u32 swapinAddr = 0;
 static tTid swapinTid = INVALID_TID;
-static tTid swapperTid = INVALID_TID;
+static sThread *swapper = NULL;
 static u32 neededFrames = HIGH_WATER;
 /* no heap-usage here */
 static u8 buffer[PAGE_SIZE];
@@ -67,17 +67,17 @@ void swap_start(void) {
 	tInodeNo swapIno;
 	const char *dev = conf_getStr(CONF_SWAP_DEVICE);
 	/* if there is no valid swap-dev specified, don't even try... */
-	if(dev == NULL || vfsn_resolvePath(dev,&swapIno,NULL,VFS_CONNECT) < 0) {
+	if(dev == NULL || vfsn_resolvePath(dev,&swapIno,NULL,0) < 0) {
 		while(1) {
 			/* wait for ever */
-			thread_wait(t->tid,0,EV_NOEVENT);
+			thread_wait(t->tid,NULL,EV_NOEVENT);
 			thread_switchNoSigs();
 		}
 	}
 
 	swmap_init(SWAP_SIZE);
-	swapperTid = t->tid;
-	swapFile = vfs_openFile(swapperTid,VFS_READ | VFS_WRITE,swapIno,VFS_DEV_NO);
+	swapper = t;
+	swapFile = vfs_openPath(swapper->proc->pid,VFS_READ | VFS_WRITE,dev);
 	assert(swapFile >= 0);
 	enabled = true;
 
@@ -94,7 +94,7 @@ void swap_start(void) {
 				sRegion *reg = swap_findVictim(&index);
 				if(reg == NULL)
 					util_panic("No process to swap out");
-				swap_doSwapOut(swapperTid,swapFile,reg,index);
+				swap_doSwapOut(swapper->proc->pid,swapFile,reg,index);
 				/* notify the threads that require the currently available frame-count */
 				free = mm_getFreeFrames(MM_DEF);
 				if(free > HIGH_WATER)
@@ -108,7 +108,7 @@ void swap_start(void) {
 		}
 		if(swapinProc != NULL) {
 			swapping = true;
-			swap_doSwapin(swapperTid,swapFile,swapinProc,swapinAddr);
+			swap_doSwapin(swapper->proc->pid,swapFile,swapinProc,swapinAddr);
 			thread_wakeup(swapinTid,EV_SWAP_DONE);
 			swapinProc = NULL;
 			swapping = false;
@@ -116,12 +116,12 @@ void swap_start(void) {
 
 		if(mm_getFreeFrames(MM_DEF) >= LOW_WATER && neededFrames == HIGH_WATER) {
 			/* we may receive new work now */
-			thread_wakeupAll(0,EV_SWAP_FREE);
-			thread_wait(swapperTid,0,EV_SWAP_WORK);
+			thread_wakeupAll(NULL,EV_SWAP_FREE);
+			thread_wait(swapper->tid,NULL,EV_SWAP_WORK);
 			thread_switch();
 		}
 	}
-	vfs_closeFile(swapperTid,swapFile);
+	vfs_closeFile(swapper->proc->pid,swapFile);
 }
 
 bool swap_outUntil(u32 frameCount) {
@@ -129,12 +129,12 @@ bool swap_outUntil(u32 frameCount) {
 	sThread *t = thread_getRunning();
 	if(free >= frameCount)
 		return true;
-	if(!enabled || t->tid == ATA_TID || t->tid == swapperTid)
+	if(!enabled || t->tid == ATA_TID || t->tid == swapper->tid)
 		return false;
 	do {
 		/* notify swapper-thread */
 		if(!swapping)
-			thread_wakeup(swapperTid,EV_SWAP_WORK);
+			thread_wakeup(swapper->tid,EV_SWAP_WORK);
 		neededFrames += frameCount - free;
 		thread_wait(t->tid,(void*)(frameCount - free),EV_SWAP_FREE);
 		thread_switchNoSigs();
@@ -154,13 +154,13 @@ void swap_check(void) {
 	if(freeFrm < LOW_WATER/* || neededFrames < HIGH_WATER*/) {
 		/* notify swapper-thread */
 		if(/*freeFrm < LOW_WATER && */!swapping)
-			thread_wakeup(swapperTid,EV_SWAP_WORK);
+			thread_wakeup(swapper->tid,EV_SWAP_WORK);
 		/* if we have VERY few frames left, better block this thread until we have high water */
 		if(freeFrm < CRIT_WATER/* || neededFrames < HIGH_WATER*/) {
 			sThread *t = thread_getRunning();
 			/* but its not really helpfull to block ata ;) */
 			if(t->tid != ATA_TID) {
-				thread_wait(t->tid,0,EV_SWAP_FREE);
+				thread_wait(t->tid,NULL,EV_SWAP_FREE);
 				thread_switchNoSigs();
 			}
 		}
@@ -173,7 +173,7 @@ bool swap_in(sProc *p,u32 addr) {
 		return false;
 	/* wait here until we're alone */
 	while(swapping || swapinProc) {
-		thread_wait(t->tid,0,EV_SWAP_FREE);
+		thread_wait(t->tid,NULL,EV_SWAP_FREE);
 		thread_switchNoSigs();
 	}
 
@@ -181,13 +181,13 @@ bool swap_in(sProc *p,u32 addr) {
 	swapinProc = p;
 	swapinAddr = addr;
 	swapinTid = t->tid;
-	thread_wait(t->tid,0,EV_SWAP_DONE);
-	thread_wakeup(swapperTid,EV_SWAP_WORK);
+	thread_wait(t->tid,NULL,EV_SWAP_DONE);
+	thread_wakeup(swapper->tid,EV_SWAP_WORK);
 	thread_switchNoSigs();
 	return true;
 }
 
-static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
+static void swap_doSwapin(tPid pid,tFileNo file,sProc *p,u32 addr) {
 	tVMRegNo rno = vmm_getRegionOf(p,addr);
 	sVMRegion *vmreg = vmm_getRegion(p,rno);
 	u32 temp,frame,block,index;
@@ -213,8 +213,8 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 			vmreg->reg,index,addr,p->command,p->pid,block);
 
 	/* read into buffer */
-	assert(vfs_seek(tid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
-	assert(vfs_readFile(tid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
+	assert(vfs_seek(pid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
+	assert(vfs_readFile(pid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 	/* copy into a new frame */
 	if(mm_getFreeFrames(MM_DEF) == 0)
@@ -233,7 +233,7 @@ static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr) {
 	swap_setSuspended(vmreg->reg->procs,false);
 }
 
-static void swap_doSwapOut(tTid tid,tFileNo file,sRegion *reg,u32 index) {
+static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,u32 index) {
 	tVMRegNo rno;
 	sVMRegion *vmreg;
 	u32 block,frameNo,temp;
@@ -259,8 +259,8 @@ static void swap_doSwapOut(tTid tid,tFileNo file,sRegion *reg,u32 index) {
 	mm_free(frameNo);
 
 	/* write out on disk */
-	assert(vfs_seek(tid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
-	assert(vfs_writeFile(tid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
+	assert(vfs_seek(pid,file,block * PAGE_SIZE,SEEK_SET) >= 0);
+	assert(vfs_writeFile(pid,file,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 	vid_printf("Done\n");
 	swap_setSuspended(reg->procs,false);

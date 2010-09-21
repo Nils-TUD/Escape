@@ -25,7 +25,7 @@
 
 #include "modules/speed.h"
 #include "modules/printf.h"
-#include "modules/driver.h"
+#include "modules/tdriver.h"
 #include "modules/debug.h"
 #include "modules/fault.h"
 #include "modules/thread.h"

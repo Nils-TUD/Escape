@@ -29,11 +29,13 @@
 #include <sys/vfs/node.h>
 
 /* max number of processes (2^16 since tPid is 2 byte long; but leave one slot for an invalid pid) */
-#define MAX_PROC_COUNT		(64 * 1024 - 1)
+#define MAX_PROC_COUNT		(64 * 1024 - 2)
 #define MAX_PROC_NAME_LEN	30
+#define MAX_FD_COUNT		64
 
 /* for marking unused */
-#define INVALID_PID			MAX_PROC_COUNT
+#define INVALID_PID			(MAX_PROC_COUNT + 1)
+#define KERNEL_PID			MAX_PROC_COUNT
 #define ATA_PID				2
 #define KEYBOARD_PID		12	/* just for debugging */
 
@@ -79,6 +81,10 @@ typedef struct {
 	void *regions;
 	/* the entrypoint of the binary */
 	u32 entryPoint;
+	/* file descriptors: indices of the global file table */
+	tFileNo fileDescs[MAX_FD_COUNT];
+	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */
+	sSLList *fsChans;
 	/* for the waiting parent */
 	sExitState *exitState;
 	/* the address of the sigRet "function" */
@@ -131,6 +137,64 @@ bool proc_exists(tPid pid);
  * @return the number of existing processes
  */
 u32 proc_getCount(void);
+
+/**
+ * Wakes up all threads of the given process for the given events
+ *
+ * @param pid the process-id
+ * @param obj the event-object
+ * @param events the event-mask
+ */
+void proc_wakeup(tPid pid,void *obj,u32 events);
+
+/**
+ * Returns the file-number for the given file-descriptor
+ *
+ * @param fd the file-descriptor
+ * @return the file-number or < 0 if the fd is invalid
+ */
+tFileNo proc_fdToFile(tFD fd);
+
+/**
+ * Searches for a free file-descriptor
+ *
+ * @return the file-descriptor or the error-code (< 0)
+ */
+tFD proc_getFreeFd(void);
+
+/**
+ * Associates the given file-descriptor with the given file-number
+ *
+ * @param fd the file-descriptor
+ * @param fileNo the file-number
+ * @return 0 on success
+ */
+s32 proc_assocFd(tFD fd,tFileNo fileNo);
+
+/**
+ * Duplicates the given file-descriptor
+ *
+ * @param fd the file-descriptor
+ * @return the error-code or the new file-descriptor
+ */
+tFD proc_dupFd(tFD fd);
+
+/**
+ * Redirects <src> to <dst>. <src> will be closed. Note that both fds have to exist!
+ *
+ * @param src the source-file-descriptor
+ * @param dst the destination-file-descriptor
+ * @return the error-code or 0 if successfull
+ */
+s32 proc_redirFd(tFD src,tFD dst);
+
+/**
+ * Releases the given file-descriptor (marks it unused)
+ *
+ * @param fd the file-descriptor
+ * @return the file-number that was associated with the fd (or ERR_INVALID_FD)
+ */
+tFileNo proc_unassocFd(tFD fd);
 
 /**
  * Searches for a process with given binary

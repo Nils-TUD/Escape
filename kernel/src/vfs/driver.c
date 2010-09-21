@@ -31,9 +31,10 @@
 
 #include <esc/messages.h>
 
-static void vfsdrv_openReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
-static void vfsdrv_readReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
-static void vfsdrv_writeReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size);
+static void vfsdrv_wait(sRequest *req);
+static void vfsdrv_openReqHandler(sVFSNode *node,const u8 *data,u32 size);
+static void vfsdrv_readReqHandler(sVFSNode *node,const u8 *data,u32 size);
+static void vfsdrv_writeReqHandler(sVFSNode *node,const u8 *data,u32 size);
 
 static sMsg msg;
 
@@ -43,39 +44,37 @@ void vfsdrv_init(void) {
 	vfsreq_setHandler(MSG_DRV_WRITE_RESP,vfsdrv_writeReqHandler);
 }
 
-s32 vfsdrv_open(tTid tid,tFileNo file,sVFSNode *node,u32 flags) {
+s32 vfsdrv_open(tPid pid,tFileNo file,sVFSNode *node,u32 flags) {
 	s32 res;
-	volatile sVFSNode *n = node;
 	sRequest *req;
 
 	/* if the driver doesn't implement open, its ok */
 	if(!DRV_IMPL(node->parent->data.driver.funcs,DRV_OPEN))
 		return 0;
 
+	/* get request; maybe we have to wait */
+	req = vfsreq_getRequest(node,NULL,0);
+
 	/* send msg to driver */
 	msg.args.arg1 = flags;
-	res = vfs_sendMsg(tid,file,MSG_DRV_OPEN,(u8*)&msg,sizeof(msg.args));
-	if(res < 0)
+	res = vfs_sendMsg(pid,file,MSG_DRV_OPEN,(u8*)&msg,sizeof(msg.args));
+	if(res < 0) {
+		vfsreq_remRequest(req);
 		return res;
+	}
 
-	/* repeat until it succeded or OUR driver died */
-	req = vfsreq_getRequest(tid,NULL,0);
-	if(req == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-	do
-		vfsreq_waitForReply(req,false);
-	while((s32)req->count == ERR_DRIVER_DIED && n->owner == tid);
-
+	/* wait for response */
+	vfsdrv_wait(req);
 	res = (s32)req->count;
 	vfsreq_remRequest(req);
 	return res;
 }
 
-s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count) {
+s32 vfsdrv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32 count) {
 	sRequest *req;
+	sThread *t = thread_getRunning();
 	volatile sVFSNode *n = node;
-	u32 pcount,*frameNos;
-	bool wasReadable;
+	void *data;
 	s32 res;
 
 	/* if the driver doesn't implement open, its an error */
@@ -83,186 +82,174 @@ s32 vfsdrv_read(tTid tid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 		return ERR_UNSUPPORTED_OP;
 
 	/* wait until data is readable */
-	while(n->parent->data.driver.isEmpty) {
-		thread_wait(tid,node->parent,EV_DATA_READABLE);
+	if(n->parent->data.driver.isEmpty) {
+		thread_wait(t->tid,node->parent,EV_DATA_READABLE);
 		thread_switch();
-		if(sig_hasSignalFor(tid))
+		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
-		/* if we waked up and the node is not our, the node has been destroyed (driver died, ...) */
-		if(n->owner != tid)
+		/* if we waked up and got no signal, the driver probably died */
+		if(n->parent->data.driver.isEmpty)
 			return ERR_DRIVER_DIED;
 	}
+
+	/* get request; maybe we have to wait */
+	req = vfsreq_getRequest(node,NULL,count);
 
 	/* send msg to driver */
 	msg.args.arg1 = offset;
 	msg.args.arg2 = count;
-	res = vfs_sendMsg(tid,file,MSG_DRV_READ,(u8*)&msg,sizeof(msg.args));
-	if(res < 0)
+	res = vfs_sendMsg(pid,file,MSG_DRV_READ,(u8*)&msg,sizeof(msg.args));
+	if(res < 0) {
+		vfsreq_remRequest(req);
 		return res;
+	}
 
-#if 0
-	/* get the frame-numbers which we'll map later to write the reply directly to the calling
-	 * process */
-	pcount = BYTES_2_PAGES(((u32)buffer & (PAGE_SIZE - 1)) + count);
-	frameNos = kheap_alloc(pcount * sizeof(u32));
-	if(frameNos == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-	paging_getFrameNos(frameNos,(u32)buffer,count);
-
-	/* wait for a reply */
-	req = vfsreq_waitForReadReply(tid,count,frameNos,pcount,(u32)buffer % PAGE_SIZE);
-#endif
-	/* repeat until it succeded or OUR driver died */
-	req = vfsreq_getRequest(tid,buffer,count);
-	if(req == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-	do
-		vfsreq_waitForReply(req,true);
-	while((s32)req->count == ERR_DRIVER_DIED && n->owner == tid);
-
+	/* wait for response */
+	vfsdrv_wait(req);
 	res = req->count;
-	frameNos = req->readFrNos;
+	data = req->data;
 	/* Better release the request before the memcpy so that it can be reused. Because memcpy might
 	 * cause a page-fault which leads to swapping -> thread-switch. */
 	vfsreq_remRequest(req);
-	if(frameNos) {
-		memcpy(buffer,frameNos,res);
-		kheap_free(frameNos);
+	if(data) {
+		memcpy(buffer,data,res);
+		kheap_free(data);
 	}
 	return res;
 }
 
-s32 vfsdrv_write(tTid tid,tFileNo file,sVFSNode *node,const void *buffer,u32 offset,u32 count) {
+s32 vfsdrv_write(tPid pid,tFileNo file,sVFSNode *node,const void *buffer,u32 offset,u32 count) {
 	sRequest *req;
-	volatile sVFSNode *n = node;
 	s32 res;
 
 	/* if the driver doesn't implement open, its an error */
 	if(!DRV_IMPL(node->parent->data.driver.funcs,DRV_WRITE))
 		return ERR_UNSUPPORTED_OP;
 
+	/* get request; maybe we have to wait */
+	req = vfsreq_getRequest(node,NULL,0);
+
 	/* send msg to driver */
 	msg.args.arg1 = offset;
 	msg.args.arg2 = count;
-	res = vfs_sendMsg(tid,file,MSG_DRV_WRITE,(u8*)&msg,sizeof(msg.args));
-	if(res < 0)
+	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,(u8*)&msg,sizeof(msg.args));
+	if(res < 0) {
+		vfsreq_remRequest(req);
 		return res;
+	}
 	/* now send data */
-	res = vfs_sendMsg(tid,file,MSG_DRV_WRITE,(u8*)buffer,count);
-	if(res < 0)
+	res = vfs_sendMsg(pid,file,MSG_DRV_WRITE,(u8*)buffer,count);
+	if(res < 0) {
+		vfsreq_remRequest(req);
 		return res;
+	}
 
-	/* repeat until it succeded or OUR driver died */
-	req = vfsreq_getRequest(tid,NULL,0);
-	if(req == NULL)
-		return ERR_NOT_ENOUGH_MEM;
-	/* wait for a reply TODO interruptable? */
-	do
-		vfsreq_waitForReply(req,false);
-	while((s32)req->count == ERR_DRIVER_DIED && n->owner == tid);
-
+	/* wait for response */
+	vfsdrv_wait(req);
 	res = req->count;
 	vfsreq_remRequest(req);
 	return res;
 }
 
-void vfsdrv_close(tTid tid,tFileNo file,sVFSNode *node) {
+void vfsdrv_close(tPid pid,tFileNo file,sVFSNode *node) {
 	/* if the driver doesn't implement open, stop here */
 	if(!DRV_IMPL(node->parent->data.driver.funcs,DRV_CLOSE))
 		return;
 
-	vfs_sendMsg(tid,file,MSG_DRV_CLOSE,(u8*)&msg,sizeof(msg.args));
+	vfs_sendMsg(pid,file,MSG_DRV_CLOSE,(u8*)&msg,sizeof(msg.args));
 }
 
-static void vfsdrv_openReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size) {
-	UNUSED(node);
+static void vfsdrv_wait(sRequest *req) {
+	/* repeat until it succeded or the driver died */
+	volatile sRequest *r = req;
+	do
+		vfsreq_waitForReply(req,false);
+	while((s32)r->count == ERR_INTERRUPTED);
+}
+
+static void vfsdrv_openReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(!data || size < sizeof(rmsg->args))
 		return;
 
-	/* find the request for the tid */
-	req = vfsreq_getRequestByTid(tid);
+	/* find the request for the node */
+	req = vfsreq_getRequestByNode(node);
 	if(req != NULL) {
 		/* remove request and give him the result */
 		req->state = REQ_STATE_FINISHED;
 		req->count = (u32)rmsg->args.arg1;
 		/* the thread can continue now */
-		thread_wakeup(tid,EV_REQ_REPLY);
+		thread_wakeup(req->tid,EV_REQ_REPLY);
 	}
 }
 
-static void vfsdrv_readReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size) {
-	/* find the request for the tid */
-	sRequest *req = vfsreq_getRequestByTid(tid);
+static void vfsdrv_readReqHandler(sVFSNode *node,const u8 *data,u32 size) {
+	/* find the request for the node */
+	sRequest *req = vfsreq_getRequestByNode(node);
 	if(req != NULL) {
+		sVFSNode *drv = node->parent;
 		/* the first one is the message */
 		if(req->state == REQ_STATE_WAITING) {
-			bool wasEmpty = node->data.driver.isEmpty;
+			bool wasEmpty = drv->data.driver.isEmpty;
 			sMsg *rmsg = (sMsg*)data;
 			/* an error? */
 			if(!data || size < sizeof(rmsg->args) || (s32)rmsg->args.arg1 <= 0) {
 				if(data && size >= sizeof(rmsg->args)) {
-					node->data.driver.isEmpty = !rmsg->args.arg2;
+					drv->data.driver.isEmpty = !rmsg->args.arg2;
 					req->count = rmsg->args.arg1;
 				}
 				else {
-					node->data.driver.isEmpty = false;
+					drv->data.driver.isEmpty = false;
 					req->count = 0;
 				}
-				if(wasEmpty && !node->data.driver.isEmpty)
-					thread_wakeupAll(node,EV_DATA_READABLE | EV_RECEIVED_MSG);
+				if(wasEmpty && !drv->data.driver.isEmpty) {
+					vfs_wakeupClients(drv,EV_RECEIVED_MSG);
+					thread_wakeupAll(drv,EV_DATA_READABLE);
+				}
 				req->state = REQ_STATE_FINISHED;
-				thread_wakeup(tid,EV_REQ_REPLY);
+				thread_wakeup(req->tid,EV_REQ_REPLY);
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
 			/* set whether data is readable; do this here because a thread-switch may cause
 			 * the driver to set that data is readable although arg2 was 0 here (= no data) */
-			node->data.driver.isEmpty = !rmsg->args.arg2;
+			drv->data.driver.isEmpty = !rmsg->args.arg2;
 			req->count = MIN(req->dsize,rmsg->args.arg1);
 			req->state = REQ_STATE_WAIT_DATA;
-			if(wasEmpty && !node->data.driver.isEmpty)
-				thread_wakeupAll(node,EV_DATA_READABLE | EV_RECEIVED_MSG);
+			if(wasEmpty && !drv->data.driver.isEmpty) {
+				vfs_wakeupClients(drv,EV_RECEIVED_MSG);
+				thread_wakeupAll(drv,EV_DATA_READABLE);
+			}
 		}
 		else if(req->state == REQ_STATE_WAIT_DATA) {
 			/* ok, it's the data */
 			if(data) {
 				/* map the buffer we have to copy it to */
-				req->readFrNos = (u32*)kheap_alloc(req->count);
-				if(req->readFrNos)
-					memcpy(req->readFrNos,data,req->count);
+				req->data = (u32*)kheap_alloc(req->count);
+				if(req->data)
+					memcpy(req->data,data,req->count);
 			}
-#if 0
-			u8 *addr = (u8*)TEMP_MAP_AREA;
-			paging_map(TEMP_MAP_AREA,req->readFrNos,req->readFrNoCount,
-					PG_PRESENT | PG_SUPERVISOR | PG_WRITABLE);
-			memcpy(addr + req->readOffset,data,req->count);
-			/* unmap it and free the frame-nos */
-			paging_unmap(TEMP_MAP_AREA,req->readFrNoCount,false);
-			kheap_free(req->readFrNos);
-#endif
 			req->state = REQ_STATE_FINISHED;
 			/* the thread can continue now */
-			thread_wakeup(tid,EV_REQ_REPLY);
+			thread_wakeup(req->tid,EV_REQ_REPLY);
 		}
 	}
 }
 
-static void vfsdrv_writeReqHandler(tTid tid,sVFSNode *node,const u8 *data,u32 size) {
-	UNUSED(node);
+static void vfsdrv_writeReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 	sMsg *rmsg = (sMsg*)data;
 	sRequest *req;
 	if(!data || size < sizeof(rmsg->args))
 		return;
 
-	/* find the request for the tid */
-	req = vfsreq_getRequestByTid(tid);
+	/* find the request for the node */
+	req = vfsreq_getRequestByNode(node);
 	if(req != NULL) {
 		/* remove request and give him the inode-number */
 		req->state = REQ_STATE_FINISHED;
 		req->count = rmsg->args.arg1;
 		/* the thread can continue now */
-		thread_wakeup(tid,EV_REQ_REPLY);
+		thread_wakeup(req->tid,EV_REQ_REPLY);
 	}
 }

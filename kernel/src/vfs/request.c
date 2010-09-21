@@ -34,15 +34,9 @@
 #include <string.h>
 #include <errors.h>
 
-
+#define FS_RESERVED			32
 #define REQUEST_COUNT		1024
 #define HANDLER_COUNT		32
-
-/**
- * The internal function to get a request
- */
-static sRequest *vfsreq_getReqIntern(tTid tid,void *buffer,u32 size,u32 *frameNos,
-		u32 frameNoCount,u32 offset);
 
 /* the vfs-driver-file */
 static sRequest requests[REQUEST_COUNT];
@@ -54,7 +48,12 @@ void vfsreq_init(void) {
 
 	req = requests;
 	for(i = 0; i < REQUEST_COUNT; i++) {
-		req->tid = INVALID_TID;
+		/* a few slots are reserved for fs; because we need driver-requests to handle fs-requests */
+		if(i < FS_RESERVED)
+			req->tid = FS_TID;
+		else
+			req->tid = INVALID_TID;
+		req->node = NULL;
 		req++;
 	}
 }
@@ -66,22 +65,49 @@ bool vfsreq_setHandler(tMsgId id,fReqHandler f) {
 	return true;
 }
 
-void vfsreq_sendMsg(tMsgId id,sVFSNode *node,tTid tid,const u8 *data,u32 size) {
+void vfsreq_sendMsg(tMsgId id,sVFSNode *node,const u8 *data,u32 size) {
+	assert(node != NULL);
 	if(id < HANDLER_COUNT && handler[id])
-		handler[id](tid,node,data,size);
+		handler[id](node,data,size);
 }
 
-sRequest *vfsreq_getRequest(tTid tid,void *buffer,u32 size) {
-	return vfsreq_getReqIntern(tid,buffer,size,NULL,0,0);
-}
+sRequest *vfsreq_getRequest(sVFSNode *node,void *buffer,u32 size) {
+	u32 i;
+	sThread *t = thread_getRunning();
+	sRequest *req = NULL;
+	assert(node != NULL);
 
-sRequest *vfsreq_getReadRequest(tTid tid,u32 bufSize,u32 *frameNos,u32 frameNoCount,u32 offset) {
-	return vfsreq_getReqIntern(tid,NULL,bufSize,frameNos,frameNoCount,offset);
+retry:
+	for(i = 0; i < REQUEST_COUNT; i++) {
+		/* another request with that node? wait! */
+		if(requests[i].node == node) {
+			req = NULL;
+			break;
+		}
+		if(!req && requests[i].node == NULL && (t->tid == FS_TID || requests[i].tid != FS_TID))
+			req = requests + i;
+	}
+	/* if there is no free slot or another one is using that node, wait */
+	if(!req) {
+		thread_wait(t->tid,NULL,EV_REQ_FREE);
+		thread_switch();
+		goto retry;
+	}
+
+	req->tid = t->tid;
+	req->node = node;
+	req->state = REQ_STATE_WAITING;
+	req->val1 = 0;
+	req->val2 = 0;
+	req->data = buffer;
+	req->dsize = size;
+	req->count = 0;
+	return req;
 }
 
 void vfsreq_waitForReply(sRequest *req,bool allowSigs) {
 	/* wait */
-	thread_wait(req->tid,0,EV_REQ_REPLY);
+	thread_wait(req->tid,req->node,EV_REQ_REPLY);
 	if(allowSigs)
 		thread_switch();
 	else
@@ -94,38 +120,14 @@ void vfsreq_waitForReply(sRequest *req,bool allowSigs) {
 	}
 }
 
-static sRequest *vfsreq_getReqIntern(tTid tid,void *buffer,u32 size,u32 *frameNos,
-		u32 frameNoCount,u32 offset) {
+sRequest *vfsreq_getRequestByNode(sVFSNode *node) {
 	u32 i;
 	sRequest *req = requests;
+	assert(node != NULL);
 	for(i = 0; i < REQUEST_COUNT; i++) {
-		if(req->tid == INVALID_TID)
-			break;
-		req++;
-	}
-	if(i == REQUEST_COUNT)
-		return NULL;
-
-	req->tid = tid;
-	req->state = REQ_STATE_WAITING;
-	req->val1 = 0;
-	req->val2 = 0;
-	req->data = buffer;
-	req->dsize = size;
-	req->readFrNos = frameNos;
-	req->readFrNoCount = frameNoCount;
-	req->readOffset = offset;
-	req->count = 0;
-	return req;
-}
-
-sRequest *vfsreq_getRequestByTid(tTid tid) {
-	u32 i;
-	sRequest *req = requests;
-	for(i = 0; i < REQUEST_COUNT; i++) {
-		if(req->tid == tid) {
+		if(req->node == node) {
 			/* the thread may have been terminated... */
-			if(thread_getById(tid) == NULL) {
+			if(thread_getById(req->tid) == NULL) {
 				vfsreq_remRequest(req);
 				return NULL;
 			}
@@ -137,23 +139,30 @@ sRequest *vfsreq_getRequestByTid(tTid tid) {
 }
 
 void vfsreq_remRequest(sRequest *r) {
-	r->tid = INVALID_TID;
+	r->node = NULL;
+	thread_wakeupAll(NULL,EV_REQ_FREE);
 }
 
 #if DEBUGGING
 
+void vfsreq_dbg_printAll(void) {
+	u32 i;
+	vid_printf("Active requests:\n");
+	for(i = 0; i < REQUEST_COUNT; i++) {
+		if(requests[i].node != NULL)
+			vfsreq_dbg_print(requests + i);
+	}
+}
+
 void vfsreq_dbg_print(sRequest *r) {
-	vid_printf("Request:\n");
-	vid_printf("	tid: %d\n",r->tid);
-	vid_printf("	state: %d\n",r->state);
-	vid_printf("	val1: %d\n",r->val1);
-	vid_printf("	val2: %d\n",r->val2);
-	vid_printf("	data: %d\n",r->data);
-	vid_printf("	dsize: %d\n",r->dsize);
-	vid_printf("	readFrNos: %d\n",r->readFrNos);
-	vid_printf("	readFrNoCount: %d\n",r->readFrNoCount);
-	vid_printf("	readOffset: %d\n",r->readOffset);
-	vid_printf("	count: %d\n",r->count);
+	vid_printf("\tRequest with %#08x (%s):\n",r->node,vfsn_getPath(vfsn_getNodeNo(r->node)));
+	vid_printf("\t\ttid: %d\n",r->tid);
+	vid_printf("\t\tstate: %d\n",r->state);
+	vid_printf("\t\tval1: %d\n",r->val1);
+	vid_printf("\t\tval2: %d\n",r->val2);
+	vid_printf("\t\tdata: %d\n",r->data);
+	vid_printf("\t\tdsize: %d\n",r->dsize);
+	vid_printf("\t\tcount: %d\n",r->count);
 }
 
 #endif

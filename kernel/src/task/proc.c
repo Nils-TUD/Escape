@@ -36,6 +36,7 @@
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/info.h>
 #include <sys/vfs/node.h>
+#include <sys/vfs/real.h>
 #include <sys/util.h>
 #include <sys/syscalls.h>
 #include <sys/video.h>
@@ -70,7 +71,7 @@ static u32 proc_getkey(const void *data) {
 
 void proc_init(void) {
 	sThread *t;
-	u32 stackFrame;
+	u32 i,stackFrame;
 	
 	/* init the first process */
 	sProc *p = &first;
@@ -92,7 +93,12 @@ void proc_init(void) {
 	p->sigRetAddr = 0;
 	p->flags = 0;
 	p->entryPoint = 0;
+	p->fsChans = NULL;
 	strcpy(p->command,"initloader");
+
+	/* init fds */
+	for(i = 0; i < MAX_FD_COUNT; i++)
+		p->fileDescs[i] = -1;
 
 	/* create first thread */
 	p->threads = sll_create();
@@ -143,6 +149,116 @@ bool proc_exists(tPid pid) {
 
 u32 proc_getCount(void) {
 	return hm_getCount(procs);
+}
+
+void proc_wakeup(tPid pid,void *obj,u32 events) {
+	sSLNode *n;
+	sProc *p = proc_getByPid(pid);
+	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
+		sThread *t = (sThread*)n->data;
+		if(t->events & events && (t->eventObj == NULL || t->eventObj == obj))
+			thread_wakeup(t->tid,events);
+	}
+}
+
+tFileNo proc_fdToFile(tFD fd) {
+	tFileNo fileNo;
+	sProc *p = proc_getRunning();
+	if(fd < 0 || fd >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	fileNo = p->fileDescs[fd];
+	if(fileNo == -1)
+		return ERR_INVALID_FD;
+
+	return fileNo;
+}
+
+tFD proc_getFreeFd(void) {
+	tFD i;
+	sProc *p = proc_getRunning();
+	tFileNo *fds = p->fileDescs;
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(fds[i] == -1)
+			return i;
+	}
+
+	return ERR_MAX_PROC_FDS;
+}
+
+s32 proc_assocFd(tFD fd,tFileNo fileNo) {
+	sProc *p = proc_getRunning();
+	if(fd < 0 || fd >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	if(p->fileDescs[fd] != -1)
+		return ERR_INVALID_FD;
+
+	p->fileDescs[fd] = fileNo;
+	return 0;
+}
+
+tFD proc_dupFd(tFD fd) {
+	tFileNo f;
+	s32 err,nfd;
+	sProc *p = proc_getRunning();
+	/* check fd */
+	if(fd < 0 || fd >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	f = p->fileDescs[fd];
+	if(f == -1)
+		return ERR_INVALID_FD;
+
+	nfd = proc_getFreeFd();
+	if(nfd < 0)
+		return nfd;
+
+	/* increase references */
+	if((err = vfs_incRefs(f)) < 0)
+		return err;
+
+	p->fileDescs[nfd] = f;
+	return nfd;
+}
+
+s32 proc_redirFd(tFD src,tFD dst) {
+	tFileNo fSrc,fDst;
+	s32 err;
+	sProc *p = proc_getRunning();
+
+	/* check fds */
+	if(src < 0 || src >= MAX_FD_COUNT || dst < 0 || dst >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	fSrc = p->fileDescs[src];
+	fDst = p->fileDescs[dst];
+	if(fSrc == -1 || fDst == -1)
+		return ERR_INVALID_FD;
+
+	if((err = vfs_incRefs(fDst)) < 0)
+		return err;
+
+	/* we have to close the source because no one else will do it anymore... */
+	vfs_closeFile(p->pid,fSrc);
+
+	/* now redirect src to dst */
+	p->fileDescs[src] = fDst;
+	return 0;
+}
+
+tFileNo proc_unassocFd(tFD fd) {
+	tFileNo fileNo;
+	sProc *p = proc_getRunning();
+	if(fd < 0 || fd >= MAX_FD_COUNT)
+		return ERR_INVALID_FD;
+
+	fileNo = p->fileDescs[fd];
+	if(fileNo == -1)
+		return ERR_INVALID_FD;
+
+	p->fileDescs[fd] = -1;
+	return fileNo;
 }
 
 sProc *proc_getProcWithBin(sBinDesc *bin,tVMRegNo *rno) {
@@ -196,7 +312,7 @@ bool proc_hasChild(tPid pid) {
 }
 
 s32 proc_clone(tPid newPid,bool isVM86) {
-	u32 dummy,stackFrame;
+	u32 i,dummy,stackFrame;
 	sProc *p;
 	sProc *cur = proc_getRunning();
 	sThread *curThread = thread_getRunning();
@@ -227,6 +343,7 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->ioMap = NULL;
 	p->flags = 0;
 	p->entryPoint = cur->entryPoint;
+	p->fsChans = NULL;
 	if(isVM86)
 		p->flags |= P_VM86;
 	/* give the process the same name (may be changed by exec) */
@@ -256,6 +373,14 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	/* add to proc-map */
 	if(!hm_add(procs,p))
 		goto errorThread;
+
+	/* inherit file-descriptors */
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		p->fileDescs[i] = cur->fileDescs[i];
+		if(p->fileDescs[i] != -1)
+			vfs_incRefs(p->fileDescs[i]);
+	}
+
 	/* make thread ready */
 	thread_setReady(nt->tid);
 
@@ -397,6 +522,7 @@ s32 proc_getExitState(tPid ppid,sExitState *state) {
 
 void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 	sSLNode *tn,*tmpn;
+	u32 i;
 	vassert(p->pid != 0,"You can't terminate the initial process");
 
 	/* if its already a zombie and we don't want to kill ourself, kill the process */
@@ -423,6 +549,14 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 		p->exitState->swapped = p->swapped;
 	}
 
+	/* release file-descriptors */
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(p->fileDescs[i] != -1) {
+			vfs_closeFile(p->pid,p->fileDescs[i]);
+			p->fileDescs[i] = -1;
+		}
+	}
+
 	/* remove all threads */
 	for(tn = sll_begin(p->threads); tn != NULL; ) {
 		sThread *t = (sThread*)tn->data;
@@ -433,6 +567,9 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 
 	/* remove all regions */
 	proc_removeRegions(p,true);
+
+	/* close file for communication with fs */
+	vfsr_removeProc(p->pid);
 
 	/* free io-map, if present */
 	if(p->ioMap != NULL) {
@@ -784,9 +921,10 @@ void proc_dbg_printAllPDs(u8 parts,bool regions) {
 }
 
 void proc_dbg_print(sProc *p) {
+	u32 i;
 	sSLNode *n;
 	vid_printf("proc %d:\n",p->pid);
-	vid_printf("\tppid=%d, cmd=%s, pdir=%x, entry=%x\n",
+	vid_printf("\tppid=%d, cmd=%s, pdir=%#x, entry=%#x\n",
 			p->parentPid,p->command,p->pagedir,p->entryPoint);
 	vid_printf("\townFrames=%u, sharedFrames=%u\n",p->ownFrames,p->sharedFrames);
 	vid_printf("\tswapped=%u\n",p->swapped);
@@ -794,8 +932,21 @@ void proc_dbg_print(sProc *p) {
 		vid_printf("\tExitstate: code=%d, signal=%d\n",p->exitState->exitCode,p->exitState->signal);
 		vid_printf("\t\town=%u, shared=%u, swap=%u\n",
 				p->exitState->ownFrames,p->exitState->sharedFrames,p->exitState->swapped);
-		vid_printf("\t\tucycles=%016Lx, kcycles=%016Lx\n",
+		vid_printf("\t\tucycles=%#016Lx, kcycles=%#016Lx\n",
 				p->exitState->ucycleCount,p->exitState->kcycleCount);
+	}
+	vid_printf("\tfileDescs:\n");
+	for(i = 0; i < MAX_FD_COUNT; i++) {
+		if(p->fileDescs[i] != -1) {
+			tInodeNo ino;
+			tDevNo dev;
+			if(vfs_getFileId(p->fileDescs[i],&ino,&dev) == 0) {
+				vid_printf("\t\t%d : %d",i,p->fileDescs[i]);
+				if(dev == VFS_DEV_NO && vfsn_isValidNodeNo(ino))
+					vid_printf(" (%s)",vfsn_getPath(ino));
+				vid_printf("\n");
+			}
+		}
 	}
 	if(p->threads) {
 		for(n = sll_begin(p->threads); n != NULL; n = n->next)

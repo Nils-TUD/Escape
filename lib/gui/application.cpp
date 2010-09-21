@@ -218,8 +218,7 @@ namespace gui {
 		_msg.args.arg1 = (win->getX() << 16) | win->getY();
 		_msg.args.arg2 = (win->getWidth() << 16) | win->getHeight();
 		_msg.args.arg3 = win->getId();
-		_msg.args.arg4 = gettid();
-		_msg.args.arg5 = win->getStyle();
+		_msg.args.arg4 = win->getStyle();
 		if(send(_winFd,MSG_WIN_CREATE_REQ,&_msg,sizeof(_msg.args)) < 0)
 			error("Unable to announce window to window-manager");
 	}

@@ -52,12 +52,12 @@ s32 cons_cmd_file(s32 argc,char **argv) {
 	res = vfsn_resolvePath(argv[1],&nodeNo,NULL,VFS_READ);
 	if(res < 0)
 		goto error;
-	file = vfs_openFile(KERNEL_TID,VFS_READ,nodeNo,VFS_DEV_NO);
+	file = vfs_openFile(KERNEL_PID,VFS_READ,nodeNo,VFS_DEV_NO);
 	if(file < 0) {
 		res = file;
 		goto error;
 	}
-	while((res = vfs_readFile(KERNEL_TID,file,(u8*)buffer,sizeof(buffer))) > 0) {
+	while((res = vfs_readFile(KERNEL_PID,file,(u8*)buffer,sizeof(buffer))) > 0) {
 		/* build lines from the read data */
 		for(i = 0; i < res; i++) {
 			if(buffer[i] == '\n') {
@@ -71,7 +71,7 @@ s32 cons_cmd_file(s32 argc,char **argv) {
 		}
 	}
 	lines_end(&lines);
-	vfs_closeFile(KERNEL_TID,file);
+	vfs_closeFile(KERNEL_PID,file);
 	file = -1;
 
 	/* now display lines */
@@ -82,7 +82,7 @@ error:
 	/* clean up */
 	lines_destroy(&lines);
 	if(file >= 0)
-		vfs_closeFile(KERNEL_TID,file);
+		vfs_closeFile(KERNEL_PID,file);
 
 	vid_restore(backup.screen,backup.row,backup.col);
 	return res;

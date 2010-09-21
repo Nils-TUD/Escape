@@ -29,19 +29,17 @@
 /* an entry in the request-list */
 typedef struct {
 	tTid tid;
+	sVFSNode *node;
 	u8 state;
 	u32 val1;
 	u32 val2;
 	u32 count;
 	void *data;
 	u32 dsize;
-	u32 *readFrNos;
-	u32 readFrNoCount;
-	u32 readOffset;
 } sRequest;
 
 /* a request-handler */
-typedef void (*fReqHandler)(tTid tid,sVFSNode *node,const u8 *data,u32 size);
+typedef void (*fReqHandler)(sVFSNode *node,const u8 *data,u32 size);
 
 /**
  * Inits the vfs-requests
@@ -62,33 +60,20 @@ bool vfsreq_setHandler(tMsgId id,fReqHandler f);
  *
  * @param id the message-id
  * @param node the driver-node
- * @param tid the receiver-tid
  * @param data the message
  * @param size the size of the message
  */
-void vfsreq_sendMsg(tMsgId id,sVFSNode *node,tTid tid,const u8 *data,u32 size);
+void vfsreq_sendMsg(tMsgId id,sVFSNode *node,const u8 *data,u32 size);
 
 /**
  * Allocates a new request-object with given properties
  *
- * @param tid the thread to block
+ * @param node the vfs-node over which the request is handled
  * @param buffer optional, the buffer (stored in data)
  * @param size optional, the buffer-size (stored in dsize)
  * @return the request or NULL if not enough mem
  */
-sRequest *vfsreq_getRequest(tTid tid,void *buffer,u32 size);
-
-/**
- * Like vfsreq_getRequest(), but intended for the driver-function read()
- *
- * @param tid the thread to block
- * @param bufSize the buffer-size (stored in dsize)
- * @param frameNos the array of frame-numbers which have been saved for later mapping
- * @param frameNoCount the number of frame-numbers
- * @param offset the offset in the first page where to copy the data to
- * @return the request or NULL if not enough mem
- */
-sRequest *vfsreq_getReadRequest(tTid tid,u32 bufSize,u32 *frameNos,u32 frameNoCount,u32 offset);
+sRequest *vfsreq_getRequest(sVFSNode *node,void *buffer,u32 size);
 
 /**
  * Waits for the given request. You may get interrupted even if you don't allow signals since
@@ -102,12 +87,12 @@ sRequest *vfsreq_getReadRequest(tTid tid,u32 bufSize,u32 *frameNos,u32 frameNoCo
 void vfsreq_waitForReply(sRequest *req,bool allowSigs);
 
 /**
- * Searches for the request of the given thread
+ * Searches for the request of the given node
  *
- * @param tid the thread-id
+ * @param node the vfs-node over which the request is handled
  * @return the request or NULL
  */
-sRequest *vfsreq_getRequestByTid(tTid tid);
+sRequest *vfsreq_getRequestByNode(sVFSNode *node);
 
 /**
  * Marks the given request as finished
@@ -117,6 +102,11 @@ sRequest *vfsreq_getRequestByTid(tTid tid);
 void vfsreq_remRequest(sRequest *r);
 
 #if DEBUGGING
+
+/**
+ * Prints all active requests
+ */
+void vfsreq_dbg_printAll(void);
 
 /**
  * Prints the given request

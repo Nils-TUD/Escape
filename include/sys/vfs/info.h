@@ -30,31 +30,31 @@ void vfsinfo_init(void);
 /**
  * The trace-read-handler
  */
-s32 vfsinfo_traceReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfsinfo_traceReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * The proc-read-handler
  */
-s32 vfsinfo_procReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfsinfo_procReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * The thread-read-handler
  */
-s32 vfsinfo_threadReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfsinfo_threadReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * The regions-read-handler
  */
-s32 vfsinfo_regionsReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfsinfo_regionsReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * The virtual-memory-read-handler
  */
-s32 vfsinfo_virtMemReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfsinfo_virtMemReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 /**
  * The read-handler for directories
  */
-s32 vfsinfo_dirReadHandler(tTid tid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
+s32 vfsinfo_dirReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 
 #endif /* VFSINFO_H_ */

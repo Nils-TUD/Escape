@@ -83,7 +83,7 @@ void sysc_yield(sIntrptStackFrame *stack) {
 }
 
 void sysc_wait(sIntrptStackFrame *stack) {
-	u16 events = (u16)SYSC_ARG1(stack);
+	u32 events = SYSC_ARG1(stack);
 	sThread *t = thread_getRunning();
 
 	if((events & ~EV_USER_WAIT_MASK) != 0)
@@ -91,18 +91,27 @@ void sysc_wait(sIntrptStackFrame *stack) {
 
 	/* check whether there is a chance that we'll wake up again; if we already have a message
 	 * that we should wait for, don't start waiting */
-	if(!vfs_msgAvailableFor(t->tid,events)) {
-		thread_wait(t->tid,0,events);
+	if(vfs_msgAvailableFor(t->proc->pid,events)) {
+		SYSC_RET1(stack,0);
+		return;
+	}
+	while(true) {
+		thread_wait(t->tid,NULL,events);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			SYSC_ERROR(stack,ERR_INTERRUPTED);
+		/* if we wait for other events than received-msg and client, always wakeup (since we can't
+		 * check that) */
+		/* otherwise check, whether it really was an event for us => something is available */
+		if((events & ~(EV_RECEIVED_MSG | EV_CLIENT)) || vfs_msgAvailableFor(t->proc->pid,events))
+			break;
 	}
 	SYSC_RET1(stack,0);
 }
 
 void sysc_notify(sIntrptStackFrame *stack) {
 	tTid tid = (tTid)SYSC_ARG1(stack);
-	u16 events = (u16)SYSC_ARG2(stack);
+	u32 events = SYSC_ARG2(stack);
 
 	if((events & ~EV_USER_NOTIFY_MASK) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
@@ -113,17 +122,20 @@ void sysc_notify(sIntrptStackFrame *stack) {
 void sysc_join(sIntrptStackFrame *stack) {
 	tTid tid = (tTid)SYSC_ARG1(stack);
 	sThread *t = thread_getRunning();
-	sThread *tt = thread_getById(tid);
-	/* just threads from the own process */
-	if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	if(tid != 0) {
+		sThread *tt = thread_getById(tid);
+		/* just threads from the own process */
+		if(tt == NULL || tt->tid == t->tid || tt->proc->pid != t->proc->pid)
+			SYSC_ERROR(stack,ERR_INVALID_ARGS);
+	}
 
-	/* wait until this thread doesn't exist anymore */
+	/* wait until this thread doesn't exist anymore or there are no other threads than ourself */
 	do {
 		thread_wait(t->tid,t->proc,EV_THREAD_DIED);
 		thread_switchNoSigs();
 	}
-	while(thread_getById(tid) != NULL);
+	while((tid == 0 && sll_length(t->proc->threads) > 1) ||
+		(tid != 0 && thread_getById(tid) != NULL));
 
 	SYSC_RET1(stack,0);
 }

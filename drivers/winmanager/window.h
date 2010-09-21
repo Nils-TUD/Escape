@@ -90,11 +90,11 @@ void win_setCursor(tCoord x,tCoord y,u8 cursor);
  * @param y the y-coordinate
  * @param width the width
  * @param height the height
- * @param owner the owner-pid
+ * @param owner the owner-id
  * @param style style-attributes
  * @return the window-id or WINID_UNUSED if no slot is free
  */
-tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tPid owner,u8 style);
+tWinId win_create(tCoord x,tCoord y,tSize width,tSize height,tInodeNo owner,u8 style);
 
 /**
  * Updates the whole screen
@@ -104,11 +104,11 @@ void win_updateScreen(void);
 /**
  * Destroys all windows of the given thread
  *
- * @param tid the thread-id
+ * @param cid the client-id
  * @param mouseX the current x-coordinate of the mouse
  * @param mouseY the current y-coordinate of the mouse
  */
-void win_destroyWinsOf(tTid tid,tCoord mouseX,tCoord mouseY);
+void win_destroyWinsOf(tInodeNo cid,tCoord mouseX,tCoord mouseY);
 
 /**
  * Destroys the given window

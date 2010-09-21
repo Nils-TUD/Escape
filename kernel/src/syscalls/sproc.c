@@ -95,7 +95,7 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 	res = proc_getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
-		thread_wait(t->tid,0,EV_CHILD_DIED);
+		thread_wait(t->tid,NULL,EV_CHILD_DIED);
 		thread_switch();
 
 		/* we're back again :) */
@@ -160,8 +160,7 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	s32 argc,pathLen,res;
 	u32 argSize;
 	tInodeNo nodeNo;
-	sThread *t = thread_getRunning();
-	sProc *p = t->proc;
+	sProc *p = proc_getRunning();
 
 	argc = 0;
 	argBuffer = NULL;
@@ -217,13 +216,13 @@ void sysc_exec(sIntrptStackFrame *stack) {
 	if(info.linkerEntry != info.progEntry) {
 		u32 *esp = (u32*)stack->uesp;
 		tFileNo file;
-		tFD fd = thread_getFreeFd();
+		tFD fd = proc_getFreeFd();
 		if(fd < 0)
 			goto error;
-		file = vfsr_openFile(t->tid,VFS_READ,path);
+		file = vfsr_openFile(p->pid,VFS_READ,path);
 		if(file < 0)
 			goto error;
-		assert(thread_assocFd(fd,file) == 0);
+		assert(proc_assocFd(fd,file) == 0);
 		*--esp = fd;
 		stack->uesp = (u32)esp;
 	}

@@ -41,18 +41,14 @@ private:
 	size_type _schedCount;
 	cycle_type _ucycles;
 	cycle_type _kcycles;
-	size_type _input;
-	size_type _output;
 
 public:
 	thread()
-		: _tid(0), _pid(0), _state(0), _stackPages(0), _schedCount(0), _ucycles(0), _kcycles(0),
-		  _input(0), _output(0) {
+		: _tid(0), _pid(0), _state(0), _stackPages(0), _schedCount(0), _ucycles(0), _kcycles(0) {
 	}
 	thread(const thread& t)
 		: _tid(t._tid), _pid(t._pid), _state(t._state), _stackPages(t._stackPages),
-		  _schedCount(t._schedCount), _ucycles(t._ucycles), _kcycles(t._kcycles), _input(t._input),
-		  _output(t._output) {
+		  _schedCount(t._schedCount), _ucycles(t._ucycles), _kcycles(t._kcycles) {
 	}
 	thread& operator =(const thread& t) {
 		clone(t);
@@ -82,12 +78,6 @@ public:
 	cycle_type kernelCycles() const {
 		return _kcycles;
 	}
-	size_type input() const {
-		return _input;
-	}
-	size_type output() const {
-		return _output;
-	}
 
 private:
 	void clone(const thread& t) {
@@ -98,8 +88,6 @@ private:
 		_schedCount = t._schedCount;
 		_ucycles = t._ucycles;
 		_kcycles = t._kcycles;
-		_input = t._input;
-		_output = t._output;
 	}
 };
 

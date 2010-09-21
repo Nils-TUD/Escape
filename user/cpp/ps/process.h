@@ -52,7 +52,7 @@ private:
 public:
 	process()
 		: _pid(0), _ppid(0), _pages(0), _ownFrames(0), _sharedFrames(0), _swapped(0),
-		  _input(-1), _output(-1), _ucycles(-1), _kcycles(-1), _threads(std::vector<thread*>()),
+		  _input(0), _output(0), _ucycles(-1), _kcycles(-1), _threads(std::vector<thread*>()),
 		  _cmd(std::string()) {
 	}
 	process(const process& p)
@@ -97,13 +97,17 @@ public:
 	size_type swapped() const {
 		return _swapped;
 	}
-	size_type input() const;
-	size_type output() const;
 	cycle_type totalCycles() const {
 		return userCycles() + kernelCycles();
 	}
 	cycle_type userCycles() const;
 	cycle_type kernelCycles() const;
+	size_type input() const {
+		return _input;
+	}
+	size_type output() const {
+		return _output;
+	}
 	const std::vector<thread*>& threads() const {
 		return _threads;
 	}

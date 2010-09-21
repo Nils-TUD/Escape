@@ -148,7 +148,7 @@ s32 vfsinfo_procReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 
 	/* (if the process doesn't call close() the cache will not be invalidated and therefore
 	 * other processes might miss changes) */
 	return vfsrw_readHelper(pid,node,buffer,offset,count,
-			17 * 7 + 6 * 10 + MAX_PROC_NAME_LEN + 1,
+			17 * 9 + 8 * 10 + MAX_PROC_NAME_LEN + 1,
 			vfsinfo_procReadCallback);
 }
 
@@ -158,7 +158,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 	u32 paging,pages;
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
-	buf.size = 17 * 7 + 6 * 10 + MAX_PROC_NAME_LEN + 1;
+	buf.size = 17 * 9 + 8 * 10 + MAX_PROC_NAME_LEN + 1;
 	buf.len = 0;
 	vmm_getMemUsage(p,&paging,&pages);
 
@@ -171,6 +171,8 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
+		"%-16s%u\n"
+		"%-16s%u\n"
 		,
 		"Pid:",p->pid,
 		"ParentPid:",p->parentPid,
@@ -178,7 +180,9 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 		"Pages:",pages,
 		"OwnFrames:",p->ownFrames,
 		"SharedFrames:",p->sharedFrames,
-		"Swapped:",p->swapped
+		"Swapped:",p->swapped,
+		"Read:",p->stats.input,
+		"Write:",p->stats.output
 	);
 	*dataSize = buf.len;
 }
@@ -186,7 +190,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 s32 vfsinfo_threadReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	UNUSED(file);
 	return vfsrw_readHelper(pid,node,buffer,offset,count,
-			17 * 9 + 7 * 10 + 2 * 16 + 1,vfsinfo_threadReadCallback);
+			17 * 7 + 5 * 10 + 2 * 16 + 1,vfsinfo_threadReadCallback);
 }
 
 static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
@@ -195,7 +199,7 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffe
 	u32 stackBegin = 0,stackEnd = 0;
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
-	buf.size = 17 * 9 + 7 * 10 + 2 * 16 + 1;
+	buf.size = 17 * 7 + 5 * 10 + 2 * 16 + 1;
 	buf.len = 0;
 	if(t->stackRegion >= 0)
 		vmm_getRegRange(t->proc,t->stackRegion,&stackBegin,&stackEnd);
@@ -209,8 +213,6 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffe
 		"%-16s%u\n"
 		"%-16s%08x%08x\n"
 		"%-16s%08x%08x\n"
-		"%-16s%u\n"
-		"%-16s%u\n"
 		,
 		"Tid:",t->tid,
 		"Pid:",t->proc->pid,
@@ -218,9 +220,7 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffe
 		"StackPages:",(stackEnd - stackBegin) / PAGE_SIZE,
 		"SchedCount:",t->stats.schedCount,
 		"UCPUCycles:",t->stats.ucycleCount.val32.upper,t->stats.ucycleCount.val32.lower,
-		"KCPUCycles:",t->stats.kcycleCount.val32.upper,t->stats.kcycleCount.val32.lower,
-		"Read:",t->stats.input,
-		"Write:",t->stats.output
+		"KCPUCycles:",t->stats.kcycleCount.val32.upper,t->stats.kcycleCount.val32.lower
 	);
 	*dataSize = buf.len;
 }

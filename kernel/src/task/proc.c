@@ -94,6 +94,8 @@ void proc_init(void) {
 	p->flags = 0;
 	p->entryPoint = 0;
 	p->fsChans = NULL;
+	p->stats.input = 0;
+	p->stats.output = 0;
 	strcpy(p->command,"initloader");
 
 	/* init fds */
@@ -344,6 +346,8 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->flags = 0;
 	p->entryPoint = cur->entryPoint;
 	p->fsChans = NULL;
+	p->stats.input = 0;
+	p->stats.output = 0;
 	if(isVM86)
 		p->flags |= P_VM86;
 	/* give the process the same name (may be changed by exec) */

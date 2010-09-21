@@ -97,8 +97,6 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->stats.kcycleCount.val64 = 0;
 	t->stats.kcycleStart = 0;
 	t->stats.schedCount = 0;
-	t->stats.input = 0;
-	t->stats.output = 0;
 	t->fpuState = NULL;
 	t->signal = 0;
 	t->tlsRegion = -1;
@@ -310,8 +308,6 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	t->stats.kcycleStart = 0;
 	t->stats.ucycleCount.val64 = 0;
 	t->stats.ucycleStart = 0;
-	t->stats.input = 0;
-	t->stats.output = 0;
 	t->stats.schedCount = 0;
 	t->proc = p;
 	t->signal = 0;

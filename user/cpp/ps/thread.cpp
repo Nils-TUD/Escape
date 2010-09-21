@@ -30,8 +30,5 @@ std::istream& operator >>(std::istream& is,thread& t) {
 	is.setf(istream::hex);
 	is.ignore(unlimited,' ') >> t._ucycles;
 	is.ignore(unlimited,' ') >> t._kcycles;
-	is.setf(istream::dec);
-	is.ignore(unlimited,' ') >> t._input;
-	is.ignore(unlimited,' ') >> t._output;
 	return is;
 }

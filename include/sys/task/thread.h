@@ -137,9 +137,6 @@ struct sThread {
 		uLongLong kcycleCount;
 		/* the number of times we got chosen so far */
 		u32 schedCount;
-		/* I/O stats */
-		u32 input;
-		u32 output;
 	} stats;
 	/* for the scheduler */
 	sThread *prev;

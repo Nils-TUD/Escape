@@ -20,22 +20,6 @@
 #include "process.h"
 #include "thread.h"
 
-process::size_type process::input() const {
-	if((long)_input == -1) {
-		_input = 0;
-		for(std::vector<thread*>::const_iterator it = _threads.begin(); it != _threads.end(); ++it)
-			_input += (*it)->input();
-	}
-	return _input;
-}
-process::size_type process::output() const {
-	if((long)_output == -1) {
-		_output = 0;
-		for(std::vector<thread*>::const_iterator it = _threads.begin(); it != _threads.end(); ++it)
-			_output += (*it)->output();
-	}
-	return _output;
-}
 process::cycle_type process::userCycles() const {
 	if((long long)_ucycles == -1) {
 		_ucycles = 0;
@@ -62,5 +46,7 @@ std::istream& operator >>(std::istream& is,process& p) {
 	is.ignore(unlimited,' ') >> p._ownFrames;
 	is.ignore(unlimited,' ') >> p._sharedFrames;
 	is.ignore(unlimited,' ') >> p._swapped;
+	is.ignore(unlimited,' ') >> p._input;
+	is.ignore(unlimited,' ') >> p._output;
 	return is;
 }

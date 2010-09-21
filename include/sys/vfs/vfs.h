@@ -56,10 +56,9 @@ enum {
 	VFS_CREATE = 4,
 	VFS_TRUNCATE = 8,
 	VFS_APPEND = 16,
-	VFS_CONNECT = 32,		/* kernel-intern: connect to driver */
-	VFS_NOLINKRES = 64,		/* kernel-intern: don't resolve last link in path */
-	VFS_CREATED = 128,		/* kernel-intern: whether a new node has been created */
-	VFS_MODIFIED = 256		/* kernel-intern: whether it has been written to the file */
+	VFS_NOLINKRES = 32,		/* kernel-intern: don't resolve last link in path */
+	VFS_CREATED = 64,		/* kernel-intern: whether a new node has been created */
+	VFS_MODIFIED = 128		/* kernel-intern: whether it has been written to the file */
 };
 
 /* seek-types */

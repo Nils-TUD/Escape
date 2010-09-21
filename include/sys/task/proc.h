@@ -37,6 +37,7 @@
 #define INVALID_PID			(MAX_PROC_COUNT + 1)
 #define KERNEL_PID			MAX_PROC_COUNT
 #define ATA_PID				2
+#define FS_PID				4
 #define KEYBOARD_PID		12	/* just for debugging */
 
 /* process flags */
@@ -97,6 +98,11 @@ typedef struct {
 	sSLList *threads;
 	/* the directory-node in the VFS of this process */
 	sVFSNode *threadDir;
+	struct {
+		/* I/O stats */
+		u32 input;
+		u32 output;
+	} stats;
 } sProc;
 
 /* the area for proc_changeSize() */

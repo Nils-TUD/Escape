@@ -211,12 +211,10 @@ int main(int argc,char **argv) {
 				float tcyclePercent = (float)(100. / (totalCycles / (double)threadCycles));
 				int tuserPercent = (int)(100. / (threadCycles / (double)t->userCycles()));
 				int tkernelPercent = (int)(100. / (threadCycles / (double)t->kernelCycles()));
-				cout.format("  %c\xC4%*s%*d%*s%*uK %*uK %s  %4.1f%% (%3d%%,%3d%%)\n",
+				cout.format("  %c\xC4%*s%*d%*s %s  %4.1f%% (%3d%%,%3d%%)\n",
 						(tit + 1 != threads.end()) ? 0xC3 : 0xC0,
 						maxPid - 3,"",maxPpid,t->tid(),
-						12 + maxPmem + maxShmem + maxVmem + maxSmem,"",
-						maxInput,t->input() / 1024,
-						maxOutput,t->output() / 1024,
+						15 + maxPmem + maxShmem + maxVmem + maxSmem + maxInput + maxOutput,"",
 						states[t->state()],tcyclePercent,tuserPercent,tkernelPercent);
 			}
 		}

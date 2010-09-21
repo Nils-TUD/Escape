@@ -172,13 +172,12 @@ tFileNo vfs_openPath(tPid pid,u16 flags,const char *path) {
 	/* resolve path */
 	s32 err = vfsn_resolvePath(path,&nodeNo,&created,flags);
 	if(err == ERR_REAL_PATH) {
-		/* unfortunatly we have to check for the thread-ids of ata and fs here. because e.g.
+		/* unfortunatly we have to check for the process-ids of ata and fs here. because e.g.
 		 * if the user tries to mount the device "/realfile" the userspace has no opportunity
 		 * to distinguish between virtual and real files. therefore fs will try to open this
 		 * path and shoot itself in the foot... */
-		/* TODO they could use stat() and check the device-number */
-		/*if(t->tid == ATA_TID || t->tid == FS_TID)
-			return ERR_PATH_NOT_FOUND;*/
+		if(pid == ATA_PID || pid == FS_PID)
+			return ERR_PATH_NOT_FOUND;
 
 		/* send msg to fs and wait for reply */
 		file = vfsr_openFile(pid,flags,path);
@@ -510,13 +509,10 @@ s32 vfs_readFile(tPid pid,tFileNo file,u8 *buffer,u32 count) {
 			e->position += readBytes;
 	}
 
-#if 0
-	/* TODO */
 	if(readBytes > 0 && pid != KERNEL_PID) {
-		sThread *t = thread_getById(pid);
-		t->stats.input += readBytes;
+		sProc *p = proc_getByPid(pid);
+		p->stats.input += readBytes;
 	}
-#endif
 	return readBytes;
 }
 
@@ -554,13 +550,10 @@ s32 vfs_writeFile(tPid pid,tFileNo file,const u8 *buffer,u32 count) {
 			e->position += writtenBytes;
 	}
 
-#if 0
-	/* TODO */
 	if(writtenBytes > 0 && pid != KERNEL_PID) {
-		sThread *t = thread_getById(pid);
-		t->stats.output += writtenBytes;
+		sProc *p = proc_getByPid(pid);
+		p->stats.output += writtenBytes;
 	}
-#endif
 	return writtenBytes;
 }
 
@@ -584,13 +577,11 @@ s32 vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
 
 	/* send the message */
 	err = vfsrw_writeDrvUse(pid,file,n,id,data,size);
-#if 0
-	/* TODO */
+
 	if(err == 0 && pid != KERNEL_PID) {
-		sThread *t = thread_getById(pid);
-		t->stats.output += size;
+		sProc *p = proc_getByPid(pid);
+		p->stats.output += size;
 	}
-#endif
 	return err;
 }
 
@@ -614,13 +605,11 @@ s32 vfs_receiveMsg(tPid pid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
 
 	/* receive the message */
 	err = vfsrw_readDrvUse(pid,file,n,id,data,size);
-#if 0
-	/* TODO */
-	if(err >= 0 && pid != KERNEL_PID) {
-		sThread *t = thread_getById(pid);
-		t->stats.input += err;
+
+	if(err > 0 && pid != KERNEL_PID) {
+		sProc *p = proc_getByPid(pid);
+		p->stats.input += err;
 	}
-#endif
 	return err;
 }
 

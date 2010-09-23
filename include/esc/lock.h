@@ -26,33 +26,37 @@
 extern "C" {
 #endif
 
+#define LOCK_EXCLUSIVE	1
+#define LOCK_KEEP		2
+
 typedef u32 tULock;
 
 /**
- * Aquires the process-local lock with ident. If it exists and is locked, the process waits until
- * it's unlocked
+ * Aquires a process-local lock with ident. You can specify with the flags whether it should
+ * be an exclusive lock and whether it should be free'd if it is no longer needed (no waits atm)
  *
  * @param ident to identify the lock
+ * @param flags flags (LOCK_*)
  * @return 0 on success
  */
-s32 lock(u32 ident);
+s32 lock(u32 ident,u16 flags);
 
 /**
  * Aquires a process-local lock in user-space. If the given lock is in use, the process waits
- * (actively) until the lock is unused.
+ * (actively, i.e. spinlock) until the lock is unused.
  *
  * @param lock the lock
  */
 void locku(tULock *lock);
 
 /**
- * Aquires a global lock with given ident. If it exists and is locked, the process waits until
- * it's unlocked
+ * Aquires a global lock with given ident. You can specify with the flags whether it should
+ * be an exclusive lock and whether it should be free'd if it is no longer needed (no waits atm)
  *
  * @param ident to identify the lock
  * @return 0 on success
  */
-s32 lockg(u32 ident);
+s32 lockg(u32 ident,u16 flags);
 
 /**
  * Releases the process-local lock with given ident

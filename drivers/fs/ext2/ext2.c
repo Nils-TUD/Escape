@@ -43,21 +43,23 @@
 static bool ext2_isPowerOf(u32 x,u32 y);
 
 void *ext2_init(const char *driver,char **usedDev) {
-	tFD fd;
+	u32 i;
 	sExt2 *e = (sExt2*)calloc(1,sizeof(sExt2));
 	if(e == NULL)
 		return NULL;
-	e->ataFd = -1;
+	for(i = 0; i <= REQ_THREAD_COUNT; i++)
+		e->drvFds[i] = -1;
 	e->blockCache.blockCache = NULL;
 
 	/* open the driver */
-	fd = open(driver,IO_WRITE | IO_READ);
-	if(fd < 0) {
-		printe("Unable to find driver '%s'",driver);
-		goto error;
+	for(i = 0; i <= REQ_THREAD_COUNT; i++) {
+		e->drvFds[i] = open(driver,IO_WRITE | IO_READ);
+		if(e->drvFds[i] < 0) {
+			printe("Unable to find driver '%s'",driver);
+			goto error;
+		}
 	}
 
-	e->ataFd = fd;
 	if(!ext2_super_init(e))
 		goto error;
 
@@ -94,15 +96,31 @@ void *ext2_init(const char *driver,char **usedDev) {
 error:
 	if(e->blockCache.blockCache)
 		bcache_destroy(&e->blockCache);
-	if(e->ataFd >= 0)
-		close(e->ataFd);
+	for(i = 0; i <= REQ_THREAD_COUNT; i++) {
+		if(e->drvFds[i] >= 0) {
+			close(e->drvFds[i]);
+			e->drvFds[i] = -1;
+		}
+	}
 	free(e);
 	return NULL;
 }
 
 void ext2_deinit(void *h) {
+	u32 i;
 	sExt2 *e = (sExt2*)h;
+	/* write pending changes */
 	ext2_sync(e);
+	/* clean up */
+	ext2_bg_destroy(e);
+	bcache_destroy(&e->blockCache);
+	for(i = 0; i <= REQ_THREAD_COUNT; i++) {
+		if(e->drvFds[i] >= 0) {
+			close(e->drvFds[i]);
+			e->drvFds[i] = -1;
+		}
+	}
+	free(e);
 }
 
 sFileSystem *ext2_getFS(void) {
@@ -134,10 +152,10 @@ s32 ext2_open(void *h,tInodeNo ino,u8 flags) {
 	sExt2 *e = (sExt2*)h;
 	/* truncate? */
 	if(flags & IO_TRUNCATE) {
-		sExt2CInode *cnode = ext2_icache_request(e,ino);
+		sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_WRITE);
 		if(cnode != NULL) {
 			ext2_file_truncate(e,cnode,false);
-			ext2_icache_release(e,cnode);
+			ext2_icache_release(cnode);
 		}
 	}
 	/*ext2_icache_printStats();
@@ -152,7 +170,7 @@ void ext2_close(void *h,tInodeNo ino) {
 
 s32 ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	sExt2 *e = (sExt2*)h;
-	sExt2CInode *cnode = ext2_icache_request(e,ino);
+	const sExt2CInode *cnode = ext2_icache_request(e,ino,IMODE_READ);
 	if(cnode == NULL)
 		return ERR_INO_REQ_FAILED;
 
@@ -168,7 +186,7 @@ s32 ext2_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	info->linkCount = cnode->inode.linkCount;
 	info->mode = cnode->inode.mode;
 	info->size = cnode->inode.size;
-	ext2_icache_release(e,cnode);
+	ext2_icache_release(cnode);
 	return 0;
 }
 
@@ -184,52 +202,52 @@ s32 ext2_link(void *h,tInodeNo dstIno,tInodeNo dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
 	s32 res;
 	sExt2CInode *dir,*ino;
-	dir = ext2_icache_request(e,dirIno);
-	ino = ext2_icache_request(e,dstIno);
+	dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
+	ino = ext2_icache_request(e,dstIno,IMODE_WRITE);
 	if(dir == NULL || ino == NULL)
 		res = ERR_INO_REQ_FAILED;
 	else if(MODE_IS_DIR(ino->inode.mode))
 		res = ERR_IS_DIR;
 	else
 		res = ext2_link_create(e,dir,ino,name);
-	ext2_icache_release(e,dir);
-	ext2_icache_release(e,ino);
+	ext2_icache_release(dir);
+	ext2_icache_release(ino);
 	return res;
 }
 
 s32 ext2_unlink(void *h,tInodeNo dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
 	s32 res;
-	sExt2CInode *dir = ext2_icache_request(e,dirIno);
+	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	if(dir == NULL)
 		return ERR_INO_REQ_FAILED;
 
-	res = ext2_link_delete(e,dir,name,false);
-	ext2_icache_release(e,dir);
+	res = ext2_link_delete(e,NULL,dir,name,false);
+	ext2_icache_release(dir);
 	return res;
 }
 
 s32 ext2_mkdir(void *h,tInodeNo dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
 	s32 res;
-	sExt2CInode *dir = ext2_icache_request(e,dirIno);
+	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	if(dir == NULL)
 		return ERR_INO_REQ_FAILED;
 	res = ext2_dir_create(e,dir,name);
-	ext2_icache_release(e,dir);
+	ext2_icache_release(dir);
 	return res;
 }
 
 s32 ext2_rmdir(void *h,tInodeNo dirIno,const char *name) {
 	sExt2 *e = (sExt2*)h;
 	s32 res;
-	sExt2CInode *dir = ext2_icache_request(e,dirIno);
+	sExt2CInode *dir = ext2_icache_request(e,dirIno,IMODE_WRITE);
 	if(dir == NULL)
 		return ERR_INO_REQ_FAILED;
 	if(!MODE_IS_DIR(dir->inode.mode))
 		return ERR_NO_DIRECTORY;
 	res = ext2_dir_delete(e,dir,name);
-	ext2_icache_release(e,dir);
+	ext2_icache_release(dir);
 	return res;
 }
 
@@ -268,11 +286,6 @@ bool ext2_bgHasBackups(sExt2 *e,u32 i) {
 	if(i == 1)
 		return true;
 	return ext2_isPowerOf(i,3) || ext2_isPowerOf(i,5) || ext2_isPowerOf(i,7);
-}
-
-void ext2_destroy(sExt2 *e) {
-	free(e->groups);
-	close(e->ataFd);
 }
 
 static bool ext2_isPowerOf(u32 x,u32 y) {

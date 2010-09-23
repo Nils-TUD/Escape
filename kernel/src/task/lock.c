@@ -21,134 +21,150 @@
 #include <sys/task/lock.h>
 #include <sys/task/thread.h>
 #include <sys/mem/kheap.h>
+#include <sys/video.h>
 #include <esc/sllist.h>
 #include <errors.h>
 
-#define LOCK_MAP_SIZE	128
+#define LOCK_USED		4
 
 /* a lock-entry */
 typedef struct {
-	u8 locked;
 	u32 ident;
-	tTid owner;
+	u16 flags;
 	tPid pid;
-	u32 waitCount;
+	u16 readRefs;
+	u16 writeRef;
+	u16 waitCount;
 } sLock;
 
-
-/**
- * Releases the given lock
- */
-static void lock_relLock(sLock *l);
 /**
  * Searches the lock-entry for the given ident and process-id
- *
- * @param pid the process-id
- * @param ident the ident to search for
- * @return the lock for the given ident or NULL
  */
-static sLock *lock_get(tPid pid,u32 ident);
+static sLock *lock_get(tPid pid,u32 ident,bool free);
 
-/* our lock-map; key = ident % LOCK_MAP_SIZE */
-static sSLList *locks[LOCK_MAP_SIZE] = {NULL};
+static u32 lockCount = 0;
+static sLock *locks = NULL;
 
 /* fortunatly interrupts are disabled in kernel, so the whole stuff here is easy :) */
 
-s32 lock_aquire(tTid tid,tPid pid,u32 ident) {
-	sLock *l = lock_get(pid,ident);
+static bool lock_isLocked(sLock *l,u16 flags) {
+	if((flags & LOCK_EXCLUSIVE) && (l->readRefs > 0 || l->writeRef))
+		return true;
+	if(!(flags & LOCK_EXCLUSIVE) && l->writeRef)
+		return true;
+	return false;
+}
 
-	/* if it exists and is locked, wait */
-	if(l && l->locked) {
-		volatile sLock *myl = l;
-		myl->waitCount++;
-		do {
-			thread_wait(tid,(void*)ident,EV_UNLOCK);
+s32 lock_aquire(tPid pid,u32 ident,u16 flags) {
+	sThread *t = thread_getRunning();
+	sLock *l = lock_get(pid,ident,true);
+	if(!l)
+		return ERR_NOT_ENOUGH_MEM;
+
+	if(l->flags) {
+		/* if it exists and is locked, wait */
+		u32 event = (flags & LOCK_EXCLUSIVE) ? EV_UNLOCK_EX : EV_UNLOCK_SH;
+		while(lock_isLocked(l,flags)) {
+			l->waitCount++;
+			thread_wait(t->tid,(void*)ident,event);
 			thread_switchNoSigs();
+			l->waitCount--;
 		}
-		while(myl->locked);
-		/* it is unlocked now, so we can stop waiting and use it */
-		myl->waitCount--;
 	}
-	else if(!l) {
-		sSLList *list = locks[ident % LOCK_MAP_SIZE];
-		/* create list if not already done */
-		if(list == NULL) {
-			list = locks[ident % LOCK_MAP_SIZE] = sll_create();
-			if(list == NULL)
-				return ERR_NOT_ENOUGH_MEM;
-		}
-
-		/* create lock */
-		l = (sLock*)kheap_alloc(sizeof(sLock));
-		if(l == NULL)
-			return ERR_NOT_ENOUGH_MEM;
-		/* init and append */
-		l->pid = pid;
+	else {
 		l->ident = ident;
+		l->pid = pid;
+		l->readRefs = 0;
+		l->writeRef = 0;
 		l->waitCount = 0;
-		if(!sll_append(list,l)) {
-			kheap_free(l);
-			return ERR_NOT_ENOUGH_MEM;
-		}
 	}
 
 	/* lock it */
-	l->owner = tid;
-	l->locked = true;
+	l->flags = flags | LOCK_USED;
+	if(flags & LOCK_EXCLUSIVE)
+		l->writeRef = 1;
+	else
+		l->readRefs++;
 	return 0;
 }
 
 s32 lock_release(tPid pid,u32 ident) {
-	sLock *l = lock_get(pid,ident);
+	sLock *l = lock_get(pid,ident,false);
 	if(!l)
 		return ERR_LOCK_NOT_FOUND;
 
-	lock_relLock(l);
+	/* unlock */
+	if(l->flags & LOCK_EXCLUSIVE) {
+		assert(l->writeRef == 1);
+		l->writeRef = 0;
+	}
+	else {
+		assert(l->readRefs > 0);
+		l->readRefs--;
+	}
+	/* write-refs can't be > 0 here (either we were the writer -> free now, or we wouldn't
+	 * have got the read-lock before) */
+	assert(l->writeRef == 0);
+
+	/* are there waiting threads? */
+	if(l->waitCount) {
+		/* if there are no reads and writes, notify all.
+		 * otherwise notify just the threads that wait for a shared lock */
+		if(l->readRefs == 0)
+			thread_wakeupAll((void*)ident,EV_UNLOCK_EX | EV_UNLOCK_SH);
+		else
+			thread_wakeupAll((void*)ident,EV_UNLOCK_SH);
+	}
+	/* if there are no waits and refs anymore and we shouldn't keep it, free the lock */
+	else if(l->readRefs == 0 && !(l->flags & LOCK_KEEP))
+		l->flags = 0;
 	return 0;
 }
 
 void lock_releaseAll(tTid tid) {
-	sSLNode *n;
-	sSLList **list = locks;
-	sLock *l;
+	/* TODO change to proc; remove all for pid */
+}
+
+static sLock *lock_get(tPid pid,u32 ident,bool free) {
 	u32 i;
-	for(i = 0; i < LOCK_MAP_SIZE; i++) {
-		if(list[i]) {
-			for(n = sll_begin(list[i]); n != NULL; ) {
-				l = (sLock*)n->data;
-				/* store next here because lock_relLock() may delete this node */
-				n = n->next;
-				if(l->owner == tid)
-					lock_relLock(l);
-			}
+	sLock *fl = NULL;
+	for(i = 0; i < lockCount; i++) {
+		if(free && !fl && locks[i].flags == 0)
+			fl = locks + i;
+		else if(locks[i].ident == ident && (locks[i].pid == INVALID_PID || locks[i].pid == pid))
+			return locks + i;
+	}
+	if(!fl && free) {
+		sLock *nlocks;
+		u32 oldCount = lockCount;
+		if(lockCount == 0)
+			lockCount = 8;
+		else
+			lockCount *= 2;
+		nlocks = kheap_realloc(locks,lockCount * sizeof(sLock));
+		if(nlocks == NULL) {
+			lockCount = oldCount;
+			return NULL;
+		}
+		locks = nlocks;
+		memset(locks + oldCount,0,(lockCount - oldCount) * sizeof(sLock));
+		return locks + oldCount;
+	}
+	return fl;
+}
+
+#if DEBUGGING
+
+void lock_dbg_print(void) {
+	u32 i;
+	vid_printf("Locks:\n");
+	for(i = 0; i < lockCount; i++) {
+		sLock *l = locks + i;
+		if(l->flags) {
+			vid_printf("\t%08x: pid=%u, flags=%#x, reads=%u, writes=%u, waits=%d\n",
+					l->ident,l->pid,l->flags,l->readRefs,l->writeRef,l->waitCount);
 		}
 	}
 }
 
-static void lock_relLock(sLock *l) {
-	/* unlock it */
-	l->locked = false;
-	l->owner = INVALID_TID;
-	thread_wakeupAll((void*)l->ident,EV_UNLOCK);
-
-	/* if nobody is waiting, we can free the lock-entry */
-	if(l->waitCount == 0) {
-		sll_removeFirst(locks[l->ident % LOCK_MAP_SIZE],l);
-		kheap_free(l);
-	}
-}
-
-static sLock *lock_get(tPid pid,u32 ident) {
-	sSLNode *n;
-	sSLList *list;
-	sLock *l;
-	list = locks[ident % LOCK_MAP_SIZE];
-	if(list == NULL)
-		return NULL;
-	for(n = sll_begin(list); n != NULL; n = n->next) {
-		l = (sLock*)n->data;
-		if((l->pid == INVALID_PID || l->pid == pid) && l->ident == ident)
-			return l;
-	}
-	return NULL;
-}
+#endif

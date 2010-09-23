@@ -55,7 +55,8 @@ s32 ext2_file_delete(sExt2 *e,sExt2CInode *cnode);
 s32 ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete);
 
 /**
- * Reads <count> bytes at <offset> into <buffer> from the inode with given number
+ * Reads <count> bytes at <offset> into <buffer> from the inode with given number. Sets
+ * the access-time of the inode!
  *
  * @param e the ext2-handle
  * @param inodeNo the inode-number
@@ -68,7 +69,22 @@ s32 ext2_file_truncate(sExt2 *e,sExt2CInode *cnode,bool delete);
 s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
 
 /**
- * Writes <count> bytes at <offset> from <buffer> to the inode with given number
+ * Reads <count> bytes at <offset> into <buffer> from the given cached inode. It will not
+ * set the access-time of it!
+ *
+ * @param e the ext2-handle
+ * @param cnode the cached inode
+ * @param buffer the buffer; if NULL the data will be fetched from disk (if not in cache) but
+ * 	not copied anywhere
+ * @param offset the offset
+ * @param count the number of bytes to read
+ * @return the number of read bytes
+ */
+s32 ext2_file_readIno(sExt2 *e,const sExt2CInode *cnode,void *buffer,u32 offset,u32 count);
+
+/**
+ * Writes <count> bytes at <offset> from <buffer> to the inode with given number. Will
+ * set the modification-time!
  *
  * @param e the ext2-handle
  * @param inodeNo the inode-number
@@ -78,5 +94,18 @@ s32 ext2_file_read(sExt2 *e,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
  * @return the number of written bytes
  */
 s32 ext2_file_write(sExt2 *e,tInodeNo inodeNo,const void *buffer,u32 offset,u32 count);
+
+/**
+ * Writes <count> bytes at <offset> from <buffer> to given cached inode. Will
+ * set the modification-time! (-> cnode has to be writable)
+ *
+ * @param e the ext2-handle
+ * @param cnode the cached inode
+ * @param buffer the buffer
+ * @param offset the offset
+ * @param count the number of bytes to write
+ * @return the number of written bytes
+ */
+s32 ext2_file_writeIno(sExt2 *e,sExt2CInode *cnode,const void *buffer,u32 offset,u32 count);
 
 #endif /* FILE_H_ */

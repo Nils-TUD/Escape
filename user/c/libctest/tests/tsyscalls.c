@@ -458,7 +458,6 @@ static void test_sendSignalTo(void) {
 	test_assertInt(_sendSignalTo(0,SIG_INTRPT_ATA1,0),ERR_INVALID_SIGNAL);
 	test_assertInt(_sendSignalTo(0,SIG_INTRPT_MOUSE,0),ERR_INVALID_SIGNAL);
 	test_assertInt(_sendSignalTo(0,SIG_INTRPT_COM2,0),ERR_INVALID_SIGNAL);
-	test_assertInt(_sendSignalTo(-1,0,0),ERR_INVALID_PID);
 	test_assertInt(_sendSignalTo(1024,0,0),ERR_INVALID_PID);
 	test_assertInt(_sendSignalTo(1025,0,0),ERR_INVALID_PID);
 	test_caseSucceded();

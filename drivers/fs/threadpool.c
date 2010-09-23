@@ -30,24 +30,13 @@
 #define RT_STATE_IDLE		0
 #define RT_STATE_HASWORK	1
 #define RT_STATE_BUSY		2
+#define RT_STATE_SHUTDOWN	3
 
-typedef struct {
-	fReqHandler handler;
-	tFD fd;
-	sMsg msg;
-	void *data;
-} sFSRequest;
-
-typedef struct {
-	tTid tid;
-	volatile u8 state;
-	sFSRequest *req;
-} sReqThread;
+#define TMP_IDENT			0x67321224
 
 static int tpool_idle(sReqThread *t);
 
 static tTid acceptTid;
-static tULock tmpLock;
 static sReqThread threads[REQ_THREAD_COUNT];
 
 void tpool_init(void) {
@@ -57,8 +46,19 @@ void tpool_init(void) {
 		s32 tid = startThread((fThreadEntry)tpool_idle,threads + i);
 		if(tid < 0)
 			error("[FS] Unable to start request-thread %d\n",i);
+		threads[i].id = i + 1;
 		threads[i].tid = tid;
 		threads[i].state = RT_STATE_IDLE;
+	}
+}
+
+void tpool_shutdown(void) {
+	u32 i;
+	for(i = 0; i < REQ_THREAD_COUNT; i++) {
+		while(threads[i].state != RT_STATE_IDLE)
+			wait(EV_USER2);
+		threads[i].state = RT_STATE_SHUTDOWN;
+		notify(threads[i].tid,EV_USER1);
 	}
 }
 
@@ -69,6 +69,16 @@ bool tpool_hasFreeSlot(void) {
 			return true;
 	}
 	return false;
+}
+
+u32 tpool_tidToId(tTid tid) {
+	u32 i;
+	for(i = 0; i < REQ_THREAD_COUNT; i++) {
+		if(threads[i].tid == tid)
+			return threads[i].id;
+	}
+	/* then its the initial thread */
+	return 0;
 }
 
 bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,u32 msgSize,void *data) {
@@ -94,14 +104,16 @@ bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,u32 msgSize,voi
 static int tpool_idle(sReqThread *t) {
 	while(1) {
 		/* wait until we have work */
-		while(t->state != RT_STATE_HASWORK)
+		while(t->state == RT_STATE_IDLE)
 			wait(EV_USER1);
+		if(t->state == RT_STATE_SHUTDOWN)
+			break;
 
 		/* handle request */
 		t->state = RT_STATE_BUSY;
-		locku(&tmpLock);
-		t->req->handler(t->req->fd,&t->req->msg);
-		unlocku(&tmpLock);
+		/*lockg(TMP_IDENT);*/
+		t->req->handler(t->req->fd,&t->req->msg,t->req->data);
+		/*unlockg(TMP_IDENT);*/
 
 		/* clean up */
 		close(t->req->fd);

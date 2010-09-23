@@ -24,6 +24,7 @@
 #include <sys/task/sched.h>
 #include <sys/task/signals.h>
 #include <sys/task/thread.h>
+#include <sys/task/lock.h>
 #include <sys/vfs/node.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/request.h>
@@ -74,6 +75,7 @@ static void view_timer(void);
 static void view_kevents(void);
 static void view_multiboot(void);
 static void view_requests(void);
+static void view_locks(void);
 
 static sProc *view_getProc(s32 argc,char **argv);
 static sThread *view_getThread(s32 argc,char **argv);
@@ -106,6 +108,7 @@ static sView views[] = {
 	{"kevents",(fView)view_kevents},
 	{"multiboot",(fView)view_multiboot},
 	{"requests",(fView)view_requests},
+	{"locks",(fView)view_locks},
 };
 
 s32 cons_cmd_view(s32 argc,char **argv) {
@@ -251,6 +254,9 @@ static void view_multiboot(void) {
 }
 static void view_requests(void) {
 	vfsreq_dbg_printAll();
+}
+static void view_locks(void) {
+	lock_dbg_print();
 }
 
 static sProc *view_getProc(s32 argc,char **argv) {

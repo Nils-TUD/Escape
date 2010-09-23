@@ -38,6 +38,6 @@ void iso_direc_init(sISO9660 *h);
  * @param id the id
  * @return the cached directory-entry or NULL if failed
  */
-sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id);
+const sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id);
 
 #endif /* DIRECACHE_H_ */

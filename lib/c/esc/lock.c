@@ -23,12 +23,12 @@
 /**
  * Assembler-routines
  */
-extern s32 _lock(u32 ident,bool global);
+extern s32 _lock(u32 ident,bool global,u16 flags);
 extern s32 _unlock(u32 ident,bool global);
 
-s32 lock(u32 ident) {
+s32 lock(u32 ident,u16 flags) {
 	/* nasm doesn't like "lock" as label... */
-	return _lock(ident,false);
+	return _lock(ident,false,flags);
 }
 
 void locku(tULock *l) {
@@ -43,8 +43,8 @@ void locku(tULock *l) {
 	);
 }
 
-s32 lockg(u32 ident) {
-	return _lock(ident,true);
+s32 lockg(u32 ident,u16 flags) {
+	return _lock(ident,true,flags);
 }
 
 s32 unlock(u32 ident) {

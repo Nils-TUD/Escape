@@ -175,7 +175,7 @@ void iso_close(void *h,tInodeNo ino) {
 s32 iso_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	u32 ts;
 	sISO9660 *i = (sISO9660*)h;
-	sISOCDirEntry *e = iso_direc_get(i,ino);
+	const sISOCDirEntry *e = iso_direc_get(i,ino);
 	if(e == NULL)
 		return ERR_INO_REQ_FAILED;
 
@@ -190,11 +190,11 @@ s32 iso_stat(void *h,tInodeNo ino,sFileInfo *info) {
 	info->gid = 0;
 	info->inodeNo = e->id;
 	info->linkCount = 1;
-	info->mode = 0777;
+	/* readonly here */
 	if(e->entry.flags & ISO_FILEFL_DIR)
-		info->mode |= MODE_TYPE_DIR;
+		info->mode = MODE_TYPE_DIR | 0555;
 	else
-		info->mode |= MODE_TYPE_FILE;
+		info->mode = MODE_TYPE_FILE | 0555;
 	info->size = e->entry.extentSize.littleEndian;
 	return 0;
 }
@@ -203,7 +203,7 @@ s32 iso_read(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
 	return iso_file_read((sISO9660*)h,inodeNo,buffer,offset,count);
 }
 
-u32 iso_dirDate2Timestamp(sISO9660 *h,sISODirDate *ddate) {
+u32 iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate) {
 	UNUSED(h);
 	return timeof(ddate->month - 1,ddate->day - 1,ddate->year,
 			ddate->hour,ddate->minute,ddate->second);

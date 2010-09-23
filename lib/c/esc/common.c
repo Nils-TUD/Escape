@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#define MAX_STACK_PAGES		128
+#define PAGE_SIZE			4096
 #define PROCINFO_BUF_SIZE	256
 #define MAX_STACK_DEPTH		20
 /* the x86-call instruction is 5 bytes long */
@@ -51,14 +53,14 @@ void error(const char *fmt,...) {
 
 u32 *getStackTrace(void) {
 	static u32 frames[MAX_STACK_DEPTH];
-	u32 i;
+	u32 i,end,start;
 	u32 *ebp;
-	/* TODO just temporary */
-	u32 end = 0xA0000000;
-	u32 start = end - 0x1000 * 64;
 	u32 *frame = &frames[0];
+	GET_REG("ebp",ebp);
+	/* TODO just temporary */
+	end = ((u32)ebp + (MAX_STACK_PAGES * PAGE_SIZE - 1)) & ~(MAX_STACK_PAGES * PAGE_SIZE - 1);
+	start = end - PAGE_SIZE * MAX_STACK_PAGES;
 
-	GET_REG("ebp",ebp)
 	for(i = 0; i < MAX_STACK_DEPTH; i++) {
 		/* prevent page-fault */
 		if((u32)ebp < start || (u32)ebp >= end)

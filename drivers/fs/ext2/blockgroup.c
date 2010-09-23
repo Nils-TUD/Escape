@@ -19,6 +19,8 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
+#include <esc/lock.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -44,17 +46,22 @@ bool ext2_bg_init(sExt2 *e) {
 	return true;
 }
 
+void ext2_bg_destroy(sExt2 *e) {
+	free(e->groups);
+}
+
 void ext2_bg_update(sExt2 *e) {
 	u32 i,bno,count,bcount;
-	if(!e->groupsDirty)
-		return;
+	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
+	if(!e->groupsDirty)
+		goto done;
 	bcount = EXT2_BYTES_TO_BLKS(e,ext2_getBlockGroupCount(e));
 
 	/* update main block-group-descriptor-table */
 	if(!ext2_rw_writeBlocks(e,e->groups,e->superBlock.firstDataBlock + 1,bcount)) {
 		printe("Unable to update block-group-descriptor-table in blockgroup 0");
-		return;
+		goto done;
 	}
 
 	/* update block-group-descriptor backups */
@@ -64,7 +71,7 @@ void ext2_bg_update(sExt2 *e) {
 		if(ext2_bgHasBackups(e,i)) {
 			if(!ext2_rw_writeBlocks(e,e->groups,bno,bcount)) {
 				printe("Unable to update block-group-descriptor-table in blockgroup %d",i);
-				return;
+				goto done;
 			}
 		}
 		bno += e->superBlock.blocksPerGroup;
@@ -72,6 +79,8 @@ void ext2_bg_update(sExt2 *e) {
 
 	/* now we're in sync */
 	e->groupsDirty = false;
+done:
+	assert(unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 }
 
 #if DEBUGGING
@@ -82,6 +91,10 @@ void ext2_bg_update(sExt2 *e) {
 static void ext2_bg_printRanges(sExt2 *e,const char *name,u32 first,u32 max,u8 *bitmap);
 
 void ext2_bg_print(sExt2 *e,u32 no,sExt2BlockGrp *bg) {
+	sCBlock *bbitmap = bcache_request(&e->blockCache,bg->blockBitmap,BMODE_READ);
+	sCBlock *ibitmap = bcache_request(&e->blockCache,bg->inodeBitmap,BMODE_READ);
+	if(!bbitmap || !ibitmap)
+		return;
 	printf("	blockBitmapStart = %d\n",bg->blockBitmap);
 	printf("	inodeBitmapStart = %d\n",bg->inodeBitmap);
 	printf("	inodeTableStart = %d\n",bg->inodeTable);
@@ -89,11 +102,13 @@ void ext2_bg_print(sExt2 *e,u32 no,sExt2BlockGrp *bg) {
 	printf("	freeInodes = %d\n",bg->freeInodeCount);
 	printf("	usedDirCount = %d\n",bg->usedDirCount);
 	ext2_bg_printRanges(e,"Blocks",no * e->superBlock.blocksPerGroup,
-			MIN(e->superBlock.blocksPerGroup,e->superBlock.blockCount - (no * e->superBlock.blocksPerGroup)),
-			bcache_request(&e->blockCache,bg->blockBitmap)->buffer);
+			MIN(e->superBlock.blocksPerGroup,
+			e->superBlock.blockCount - (no * e->superBlock.blocksPerGroup)),bbitmap->buffer);
 	ext2_bg_printRanges(e,"Inodes",no * e->superBlock.inodesPerGroup,
-			MIN(e->superBlock.inodesPerGroup,e->superBlock.inodeCount - (no * e->superBlock.inodesPerGroup)),
-			bcache_request(&e->blockCache,bg->inodeBitmap)->buffer);
+			MIN(e->superBlock.inodesPerGroup,
+			e->superBlock.inodeCount - (no * e->superBlock.inodesPerGroup)),ibitmap->buffer);
+	bcache_release(ibitmap);
+	bcache_release(bbitmap);
 }
 
 static void ext2_bg_printRanges(sExt2 *e,const char *name,u32 first,u32 max,u8 *bitmap) {

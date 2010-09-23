@@ -43,7 +43,7 @@ tInodeNo ext2_path_resolve(sExt2 *e,const char *path,u8 flags,tDevNo *dev,bool r
 	while(*p == '/')
 		p++;
 
-	cnode = ext2_icache_request(e,EXT2_ROOT_INO);
+	cnode = ext2_icache_request(e,EXT2_ROOT_INO,IMODE_READ);
 	if(cnode == NULL)
 		return ERR_INO_REQ_FAILED;
 
@@ -52,8 +52,8 @@ tInodeNo ext2_path_resolve(sExt2 *e,const char *path,u8 flags,tDevNo *dev,bool r
 		res = ext2_dir_find(e,cnode,p,pos);
 		if(res >= 0) {
 			p += pos;
-			ext2_icache_release(e,cnode);
-			cnode = ext2_icache_request(e,res);
+			ext2_icache_release(cnode);
+			cnode = ext2_icache_request(e,res,IMODE_READ);
 			if(cnode == NULL)
 				return ERR_INO_REQ_FAILED;
 
@@ -69,7 +69,7 @@ tInodeNo ext2_path_resolve(sExt2 *e,const char *path,u8 flags,tDevNo *dev,bool r
 			if(mntDev >= 0) {
 				sFSInst *inst = mount_get(mntDev);
 				*dev = mntDev;
-				ext2_icache_release(e,cnode);
+				ext2_icache_release(cnode);
 				return inst->fs->resPath(inst->handle,p,flags,dev,resLastMnt);
 			}
 			if(!*p)
@@ -78,7 +78,7 @@ tInodeNo ext2_path_resolve(sExt2 *e,const char *path,u8 flags,tDevNo *dev,bool r
 			/* move to childs of this node */
 			pos = strchri(p,'/');
 			if((cnode->inode.mode & EXT2_S_IFDIR) == 0) {
-				ext2_icache_release(e,cnode);
+				ext2_icache_release(cnode);
 				return ERR_NO_DIRECTORY;
 			}
 		}
@@ -87,24 +87,30 @@ tInodeNo ext2_path_resolve(sExt2 *e,const char *path,u8 flags,tDevNo *dev,bool r
 			char *slash = strchr(p,'/');
 			/* should we create a new file? */
 			if((slash == NULL || *(slash + 1) == '\0') && (flags & IO_CREATE)) {
+				/* rerequest inode for writing */
+				res = cnode->inodeNo;
+				ext2_icache_release(cnode);
+				cnode = ext2_icache_request(e,res,IMODE_WRITE);
+				if(cnode == NULL)
+					return ERR_PATH_NOT_FOUND;
 				/* ensure that there is no '/' in the name */
 				if(slash)
 					*slash = '\0';
 				err = ext2_file_create(e,cnode,p,&res,false);
-				ext2_icache_release(e,cnode);
+				ext2_icache_release(cnode);
 				if(err < 0)
 					return err;
 				return res;
 			}
 			else {
-				ext2_icache_release(e,cnode);
+				ext2_icache_release(cnode);
 				return ERR_PATH_NOT_FOUND;
 			}
 		}
 	}
 
 	res = cnode->inodeNo;
-	ext2_icache_release(e,cnode);
+	ext2_icache_release(cnode);
 	if(res != EXT2_BAD_INO)
 		return res;
 	return ERR_PATH_NOT_FOUND;

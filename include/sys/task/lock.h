@@ -23,16 +23,19 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 
+#define LOCK_EXCLUSIVE	1
+#define LOCK_KEEP		2
+
 /**
- * Aquires the lock with given thread, pid and ident. If it exists and is locked,
- * the thread waits here until it's unlocked
+ * Aquires the lock with given pid and ident. You can specify with the flags whether it should
+ * be an exclusive lock and whether it should be free'd if it is no longer needed (no waits atm)
  *
- * @param tid the thread-id
  * @param pid the process-id (INVALID_PID to lock it globally)
  * @param ident to identify the lock
+ * @param flags flags (LOCK_*)
  * @return 0 on success
  */
-s32 lock_aquire(tTid tid,tPid pid,u32 ident);
+s32 lock_aquire(tPid pid,u32 ident,u16 flags);
 
 /**
  * Releases the lock with given ident and pid
@@ -49,5 +52,14 @@ s32 lock_release(tPid pid,u32 ident);
  * @param tid the thread-id
  */
 void lock_releaseAll(tTid tid);
+
+#if DEBUGGING
+
+/**
+ * Prints all locks
+ */
+void lock_dbg_print(void);
+
+#endif
 
 #endif /* LOCK_H_ */

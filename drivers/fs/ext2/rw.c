@@ -20,8 +20,8 @@
 #include <esc/common.h>
 #include <esc/messages.h>
 #include <esc/io.h>
+#include <esc/thread.h>
 #include <stdio.h>
-#include <esc/proc.h>
 #include "rw.h"
 #include "ext2.h"
 
@@ -31,11 +31,12 @@ bool ext2_rw_readBlocks(sExt2 *e,void *buffer,u32 start,u16 blockCount) {
 
 bool ext2_rw_readSectors(sExt2 *e,void *buffer,u64 lba,u16 secCount) {
 	s32 res;
-	if(seek(e->ataFd,lba * ATA_SECTOR_SIZE,SEEK_SET) < 0) {
+	tFD fd = e->drvFds[tpool_tidToId(gettid())];
+	if(seek(fd,lba * ATA_SECTOR_SIZE,SEEK_SET) < 0) {
 		printe("Unable to seek to %x",lba * ATA_SECTOR_SIZE);
 		return false;
 	}
-	res = RETRY(read(e->ataFd,buffer,secCount * ATA_SECTOR_SIZE));
+	res = RETRY(read(fd,buffer,secCount * ATA_SECTOR_SIZE));
 	if(res != secCount * ATA_SECTOR_SIZE) {
 		printe("Unable to read %d sectors @ %x",secCount,lba * ATA_SECTOR_SIZE);
 		return false;
@@ -49,11 +50,12 @@ bool ext2_rw_writeBlocks(sExt2 *e,const void *buffer,u32 start,u16 blockCount) {
 }
 
 bool ext2_rw_writeSectors(sExt2 *e,const void *buffer,u64 lba,u16 secCount) {
-	if(seek(e->ataFd,lba * ATA_SECTOR_SIZE,SEEK_SET) < 0) {
+	tFD fd = e->drvFds[tpool_tidToId(gettid())];
+	if(seek(fd,lba * ATA_SECTOR_SIZE,SEEK_SET) < 0) {
 		printe("Unable to seek to %x",lba * ATA_SECTOR_SIZE);
 		return false;
 	}
-	if(write(e->ataFd,buffer,secCount * ATA_SECTOR_SIZE) != secCount * ATA_SECTOR_SIZE) {
+	if(write(fd,buffer,secCount * ATA_SECTOR_SIZE) != secCount * ATA_SECTOR_SIZE) {
 		printe("Unable to write %d sectors @ %x",secCount,lba * ATA_SECTOR_SIZE);
 		return false;
 	}

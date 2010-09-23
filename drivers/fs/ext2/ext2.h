@@ -25,12 +25,15 @@
 #include <esc/fsinterface.h>
 #include "../mount.h"
 #include "../blockcache.h"
+#include "../threadpool.h"
 
 #define ATA_SECTOR_SIZE						512
 #define EXT2_BLK_SIZE(e)					(ATA_SECTOR_SIZE << ((e)->superBlock.logBlockSize + 1))
 #define EXT2_BLKS_TO_SECS(e,x)				((x) << ((e)->superBlock.logBlockSize + 1))
 #define EXT2_SECS_TO_BLKS(e,x)				((x) >> ((e)->superBlock.logBlockSize + 1))
 #define EXT2_BYTES_TO_BLKS(e,b)				(((b) + (EXT2_BLK_SIZE(e) - 1)) / EXT2_BLK_SIZE(e))
+
+#define EXT2_SUPERBLOCK_LOCK				0xF7180002
 
 /* first sector of the super-block in the first block-group */
 #define EXT2_SUPERBLOCK_SECNO				2
@@ -330,8 +333,8 @@ typedef struct {
 } sExt2CInode;
 
 typedef struct {
-	/* the file-desc for ATA */
-	tFD ataFd;
+	/* the file-descs for the driver (one for each thread and one for the initial) */
+	tFD drvFds[REQ_THREAD_COUNT + 1];
 
 	/* superblock and blockgroups of that ext2-fs */
 	bool sbDirty;
@@ -521,13 +524,6 @@ u32 ext2_getBlockGroupCount(sExt2 *e);
  * @return true if so
  */
 bool ext2_bgHasBackups(sExt2 *e,u32 i);
-
-/**
- * Destroys the given ext2-filesystem
- *
- * @param e the ext2-data
- */
-void ext2_destroy(sExt2 *e);
 
 
 #if DEBUGGING

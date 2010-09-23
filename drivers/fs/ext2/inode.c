@@ -32,6 +32,11 @@
 #include "bitmap.h"
 
 /**
+ * Performs the actual get-block-request. If <req> is true, it will allocate a new block, if
+ * necessary. In this case cnode may be changed. Otherwise no changes will be made.
+ */
+static u32 ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block,bool req);
+/**
  * Puts a new block in cblock->buffer if cblock->buffer[index] is 0. Marks the cblock dirty,
  * if necessary. Sets <added> to true or false, depending on whether a block was allocated.
  */
@@ -45,7 +50,7 @@ s32 ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir
 	tInodeNo inodeNo = ext2_bm_allocInode(e,dirNode,isDir);
 	if(inodeNo == 0)
 		return ERR_INO_ALLOC;
-	cnode = ext2_icache_request(e,inodeNo);
+	cnode = ext2_icache_request(e,inodeNo,IMODE_WRITE);
 	if(cnode == NULL) {
 		ext2_bm_freeInode(e,inodeNo,isDir);
 		return ERR_INO_REQ_FAILED;
@@ -77,7 +82,7 @@ s32 ext2_inode_create(sExt2 *e,sExt2CInode *dirNode,sExt2CInode **ino,bool isDir
 	cnode->inode.createtime = now;
 	cnode->inode.modifytime = now;
 	cnode->inode.deletetime = 0;
-	cnode->dirty = true;
+	ext2_icache_markDirty(cnode);
 	*ino = cnode;
 	return 0;
 }
@@ -92,12 +97,21 @@ s32 ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode) {
 	 * have not been overwritten in the meantime. */
 	cnode->inode.deletetime = time(NULL);
 	cnode->inode.linkCount = 0;
-	cnode->dirty = true;
+	ext2_icache_markDirty(cnode);
 	return 0;
 }
 
-u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
+u32 ext2_inode_reqDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
+	return ext2_inode_doGetDataBlock(e,cnode,block,true);
+}
+
+u32 ext2_inode_getDataBlock(sExt2 *e,const sExt2CInode *cnode,u32 block) {
+	return ext2_inode_doGetDataBlock(e,(sExt2CInode*)cnode,block,false);
+}
+
+static u32 ext2_inode_doGetDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block,bool req) {
 	u32 i,blockSize,blocksPerBlock,blperBlSq;
+	u8 bmode = req ? BMODE_WRITE : BMODE_READ;
 	bool added = false;
 	sCBlock *cblock;
 
@@ -107,7 +121,7 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 	/* direct block */
 	if(block < EXT2_DIRBLOCK_COUNT) {
 		/* alloc a new block if necessary */
-		if(cnode->inode.dBlocks[block] == 0) {
+		if(req && cnode->inode.dBlocks[block] == 0) {
 			cnode->inode.dBlocks[block] = ext2_bm_allocBlock(e,cnode);
 			if(cnode->inode.dBlocks[block] != 0)
 				cnode->inode.blocks += EXT2_BLKS_TO_SECS(e,1);
@@ -120,8 +134,11 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 	blockSize = EXT2_BLK_SIZE(e);
 	blocksPerBlock = blockSize / sizeof(u32);
 	if(block < blocksPerBlock) {
+		added = false;
 		/* no singly-indirect-block present yet? */
 		if(cnode->inode.singlyIBlock == 0) {
+			if(!req)
+				return 0;
 			cnode->inode.singlyIBlock = ext2_bm_allocBlock(e,cnode);
 			if(cnode->inode.singlyIBlock == 0)
 				return 0;
@@ -129,16 +146,19 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 			added = true;
 		}
 
-		cblock = bcache_request(&e->blockCache,cnode->inode.singlyIBlock);
+		cblock = bcache_request(&e->blockCache,cnode->inode.singlyIBlock,bmode);
 		if(cblock == NULL)
 			return 0;
 		if(added) {
 			memclear(cblock->buffer,EXT2_BLK_SIZE(e));
-			cblock->dirty = true;
+			bcache_markDirty(cblock);
 		}
-		if(ext2_inode_extend(e,cnode,cblock,block,&added) != 1)
+		if(req && ext2_inode_extend(e,cnode,cblock,block,&added) != 1) {
+			bcache_release(cblock);
 			return 0;
+		}
 		i = *((u32*)(cblock->buffer) + block);
+		bcache_release(cblock);
 		return i;
 	}
 
@@ -148,8 +168,11 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 	block -= blocksPerBlock;
 	blperBlSq = blocksPerBlock * blocksPerBlock;
 	if(block < blperBlSq) {
+		added = false;
 		/* no doubly-indirect-block present yet? */
 		if(cnode->inode.doublyIBlock == 0) {
+			if(!req)
+				return 0;
 			cnode->inode.doublyIBlock = ext2_bm_allocBlock(e,cnode);
 			if(cnode->inode.doublyIBlock == 0)
 				return 0;
@@ -158,28 +181,38 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 		}
 
 		/* read the first block with block-numbers of the indirect blocks */
-		cblock = bcache_request(&e->blockCache,cnode->inode.doublyIBlock);
+		cblock = bcache_request(&e->blockCache,cnode->inode.doublyIBlock,bmode);
 		if(cblock == NULL)
 			return 0;
 		if(added) {
 			memclear(cblock->buffer,EXT2_BLK_SIZE(e));
-			cblock->dirty = true;
+			bcache_markDirty(cblock);
 		}
-		if(ext2_inode_extend(e,cnode,cblock,block / blocksPerBlock,&added) != 1)
+		if(req && ext2_inode_extend(e,cnode,cblock,block / blocksPerBlock,&added) != 1) {
+			bcache_release(cblock);
 			return 0;
+		}
 		i = *((u32*)(cblock->buffer) + block / blocksPerBlock);
+		bcache_release(cblock);
+
+		/* may happen if we should not request new blocks */
+		if(i == 0)
+			return 0;
 
 		/* read the indirect block */
-		cblock = bcache_request(&e->blockCache,i);
+		cblock = bcache_request(&e->blockCache,i,bmode);
 		if(cblock == NULL)
 			return 0;
 		if(added) {
 			memclear(cblock->buffer,EXT2_BLK_SIZE(e));
-			cblock->dirty = true;
+			bcache_markDirty(cblock);
 		}
-		if(ext2_inode_extend(e,cnode,cblock,block % blocksPerBlock,&added) != 1)
+		if(req && ext2_inode_extend(e,cnode,cblock,block % blocksPerBlock,&added) != 1) {
+			bcache_release(cblock);
 			return 0;
+		}
 		i = *((u32*)(cblock->buffer) + block % blocksPerBlock);
+		bcache_release(cblock);
 
 		return i;
 	}
@@ -187,8 +220,11 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 	/* triply indirect */
 	block -= blperBlSq;
 
+	added = false;
 	/* no triply-indirect-block present yet? */
 	if(cnode->inode.triplyIBlock == 0) {
+		if(!req)
+			return 0;
 		cnode->inode.triplyIBlock = ext2_bm_allocBlock(e,cnode);
 		if(cnode->inode.triplyIBlock == 0)
 			return 0;
@@ -197,41 +233,56 @@ u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block) {
 	}
 
 	/* read the first block with block-numbers of the indirect blocks of indirect-blocks */
-	cblock = bcache_request(&e->blockCache,cnode->inode.triplyIBlock);
+	cblock = bcache_request(&e->blockCache,cnode->inode.triplyIBlock,bmode);
 	if(cblock == NULL)
 		return 0;
 	if(added) {
 		memclear(cblock->buffer,EXT2_BLK_SIZE(e));
-		cblock->dirty = true;
+		bcache_markDirty(cblock);
 	}
-	if(ext2_inode_extend(e,cnode,cblock,block / blperBlSq,&added) != 1)
+	if(req && ext2_inode_extend(e,cnode,cblock,block / blperBlSq,&added) != 1) {
+		bcache_release(cblock);
 		return 0;
+	}
 	i = *((u32*)(cblock->buffer) + block / blperBlSq);
+	bcache_release(cblock);
+
+	if(i == 0)
+		return 0;
 
 	/* read the indirect block of indirect blocks */
 	block %= blperBlSq;
-	cblock = bcache_request(&e->blockCache,i);
+	cblock = bcache_request(&e->blockCache,i,bmode);
 	if(cblock == NULL)
 		return 0;
 	if(added) {
 		memclear(cblock->buffer,EXT2_BLK_SIZE(e));
-		cblock->dirty = true;
+		bcache_markDirty(cblock);
 	}
-	if(ext2_inode_extend(e,cnode,cblock,block / blocksPerBlock,&added) != 1)
+	if(req && ext2_inode_extend(e,cnode,cblock,block / blocksPerBlock,&added) != 1) {
+		bcache_release(cblock);
 		return 0;
+	}
 	i = *((u32*)(cblock->buffer) + block / blocksPerBlock);
+	bcache_release(cblock);
+
+	if(i == 0)
+		return 0;
 
 	/* read the indirect block */
-	cblock = bcache_request(&e->blockCache,i);
+	cblock = bcache_request(&e->blockCache,i,bmode);
 	if(cblock == NULL)
 		return 0;
 	if(added) {
 		memclear(cblock->buffer,EXT2_BLK_SIZE(e));
-		cblock->dirty = true;
+		bcache_markDirty(cblock);
 	}
-	if(ext2_inode_extend(e,cnode,cblock,block % blocksPerBlock,&added) != 1)
+	if(req && ext2_inode_extend(e,cnode,cblock,block % blocksPerBlock,&added) != 1) {
+		bcache_release(cblock);
 		return 0;
+	}
 	i = *((u32*)(cblock->buffer) + block % blocksPerBlock);
+	bcache_release(cblock);
 
 	return i;
 }
@@ -244,7 +295,7 @@ static u32 ext2_inode_extend(sExt2 *e,sExt2CInode *cnode,sCBlock *cblock,u32 ind
 			return 0;
 		blockNos[index] = bno;
 		cnode->inode.blocks += EXT2_BLKS_TO_SECS(e,1);
-		cblock->dirty = true;
+		bcache_markDirty(cblock);
 		*added = true;
 	}
 	else

@@ -17,23 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/common.h>
-#include <esc/test.h>
+#ifndef FSREADS_H_
+#define FSREADS_H_
 
-#include "tests/theap.h"
-#include "tests/tfileio.h"
-#include "tests/tdir.h"
-#include "tests/tenv.h"
-#include "tests/tsyscalls.h"
-#include "tests/tfs.h"
+int mod_fsreads(int argc,char *argv[]);
 
-int main(void) {
-	test_register(&tModHeap);
-	test_register(&tModFileio);
-	test_register(&tModDir);
-	test_register(&tModEnv);
-	test_register(&tModSyscalls);
-	test_register(&tModFs);
-	test_start();
-	return EXIT_SUCCESS;
-}
+#endif /* FSREADS_H_ */

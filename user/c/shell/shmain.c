@@ -93,6 +93,11 @@ int main(int argc,char **argv) {
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");
 
+	if(vterm == 0) {
+		shell_executeCmd("time test fsreads",false);
+		return 0;
+	}
+
 	while(1) {
 		/* create buffer (history will free it) */
 		buffer = (char*)malloc((MAX_CMD_LEN + 1) * sizeof(char));

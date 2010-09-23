@@ -32,8 +32,8 @@ void iso_direc_init(sISO9660 *h) {
 	h->direcNextFree = 0;
 }
 
-sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id) {
-	sISODirEntry *e;
+const sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id) {
+	const sISODirEntry *e;
 	sCBlock *blk;
 	u32 i,blockLBA,blockSize,offset;
 	s32 unused = -1;
@@ -41,7 +41,7 @@ sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id) {
 	/* search in the cache */
 	for(i = 0; i < ISO_DIRE_CACHE_SIZE; i++) {
 		if(h->direcache[i].id == id)
-			return h->direcache + i;
+			return (const sISOCDirEntry*)(h->direcache + i);
 		if(unused < 0 && h->direcache[i].id == 0)
 			unused = i;
 	}
@@ -53,7 +53,7 @@ sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id) {
 	}
 
 	if(id == ISO_ROOT_DIR_ID(h)) {
-		e = &h->primary.data.primary.rootDir;
+		e = (const sISODirEntry*)&h->primary.data.primary.rootDir;
 		memcpy(&(h->direcache[unused].entry),e,sizeof(sISODirEntry));
 		h->direcache[unused].id = id;
 	}
@@ -62,13 +62,14 @@ sISOCDirEntry *iso_direc_get(sISO9660 *h,tInodeNo id) {
 		blockSize = ISO_BLK_SIZE(h);
 		offset = id & (blockSize - 1);
 		blockLBA = id / blockSize + offset / blockSize;
-		blk = bcache_request(&h->blockCache,blockLBA);
+		blk = bcache_request(&h->blockCache,blockLBA,BMODE_READ);
 		if(blk == NULL)
 			return NULL;
-		e = (sISODirEntry*)(blk->buffer + (offset % blockSize));
+		e = (const sISODirEntry*)(blk->buffer + (offset % blockSize));
 		/* don't copy the name! */
 		memcpy(&(h->direcache[unused].entry),e,sizeof(sISODirEntry));
 		h->direcache[unused].id = id;
+		bcache_release(blk);
 	}
-	return h->direcache + unused;
+	return (const sISOCDirEntry*)(h->direcache + unused);
 }

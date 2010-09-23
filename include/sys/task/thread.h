@@ -43,7 +43,7 @@
 #define EV_RECEIVED_MSG			(1 << 1)
 #define EV_CHILD_DIED			(1 << 2)	/* kernel-intern */
 #define EV_DATA_READABLE		(1 << 3)
-#define EV_UNLOCK				(1 << 4)	/* kernel-intern */
+#define EV_UNLOCK_SH			(1 << 4)	/* kernel-intern */
 #define EV_PIPE_FULL			(1 << 5)	/* kernel-intern */
 #define EV_PIPE_EMPTY			(1 << 6)	/* kernel-intern */
 #define EV_VM86_READY			(1 << 7)	/* kernel-intern */
@@ -56,6 +56,7 @@
 #define EV_USER1				(1 << 14)
 #define EV_USER2				(1 << 15)
 #define EV_REQ_FREE				(1 << 16)	/* kernel-intern */
+#define EV_UNLOCK_EX			(1 << 17)	/* kernel-intern */
 
 /* the events a user-thread can wait for */
 #define EV_USER_WAIT_MASK		(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE | \

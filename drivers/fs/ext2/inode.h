@@ -47,14 +47,27 @@ s32 ext2_inode_destroy(sExt2 *e,sExt2CInode *cnode);
 /**
  * Determines which block should be read from disk for <block> of the given inode.
  * That means you give a linear block-number and this function figures out in which block
- * it's stored on the disk.
+ * it's stored on the disk. If there is no block yet, it will create it.
+ * Note that cnode will not be marked dirty!
  *
  * @param e the ext2-handle
  * @param cnode the cached inode
  * @param block the linear-block-number
  * @return the block to fetch from disk
  */
-u32 ext2_inode_getDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block);
+u32 ext2_inode_reqDataBlock(sExt2 *e,sExt2CInode *cnode,u32 block);
+
+/**
+ * Determines which block should be read from disk for <block> of the given inode.
+ * That means you give a linear block-number and this function figures out in which block
+ * it's stored on the disk. If there is no block yet, it returns 0.
+ *
+ * @param e the ext2-handle
+ * @param cnode the cached inode
+ * @param block the linear-block-number
+ * @return the block to fetch from disk
+ */
+u32 ext2_inode_getDataBlock(sExt2 *e,const sExt2CInode *cnode,u32 block);
 
 #if DEBUGGING
 

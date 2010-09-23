@@ -38,25 +38,25 @@ s32 ext2_dir_create(sExt2 *e,sExt2CInode *dir,const char *name) {
 		return res;
 
 	/* get created inode */
-	cnode = ext2_icache_request(e,ino);
+	cnode = ext2_icache_request(e,ino,IMODE_WRITE);
 	vassert(cnode != NULL,"Unable to load inode %d\n",ino);
 
 	/* create '.' and '..' */
 	if((res = ext2_link_create(e,cnode,cnode,".")) < 0) {
 		ext2_file_delete(e,cnode);
-		ext2_icache_release(e,cnode);
+		ext2_icache_release(cnode);
 		return res;
 	}
 	if((res = ext2_link_create(e,cnode,dir,"..")) < 0) {
-		ext2_link_delete(e,cnode,".",true);
+		ext2_link_delete(e,dir,cnode,".",true);
 		ext2_file_delete(e,cnode);
-		ext2_icache_release(e,cnode);
+		ext2_icache_release(cnode);
 		return res;
 	}
 
 	/* just to be sure */
-	cnode->dirty = true;
-	ext2_icache_release(e,cnode);
+	ext2_icache_markDirty(cnode);
+	ext2_icache_release(cnode);
 	return 0;
 }
 
@@ -68,7 +68,7 @@ tInodeNo ext2_dir_find(sExt2 *e,sExt2CInode *dir,const char *name,u32 nameLen) {
 		return ERR_NOT_ENOUGH_MEM;
 
 	/* read the directory */
-	if((res = ext2_file_read(e,dir->inodeNo,buffer,0,size)) < 0) {
+	if((res = ext2_file_readIno(e,dir,buffer,0,size)) < 0) {
 		free(buffer);
 		return res;
 	}
@@ -108,7 +108,7 @@ s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	if(ino < 0)
 		return ino;
 	/* get inode of directory to delete */
-	delIno = ext2_icache_request(e,ino);
+	delIno = ext2_icache_request(e,ino,IMODE_WRITE);
 	if(delIno == NULL)
 		return ERR_INO_REQ_FAILED;
 
@@ -118,7 +118,7 @@ s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 		res = ERR_NOT_ENOUGH_MEM;
 		goto error;
 	}
-	if((res = ext2_file_read(e,ino,buffer,0,size)) < 0)
+	if((res = ext2_file_readIno(e,delIno,buffer,0,size)) < 0)
 		goto error;
 
 	/* search for other entries than '.' and '..' */
@@ -139,15 +139,19 @@ s32 ext2_dir_delete(sExt2 *e,sExt2CInode *dir,const char *name) {
 	free(buffer);
 	buffer = NULL;
 
-	/* ok, diretory is empty, so remove '.' and '..' */
-	if((res = ext2_link_delete(e,delIno,".",true)) < 0 ||
-			(res = ext2_link_delete(e,delIno,"..",true)) < 0)
+	/* ok, directory is empty, so remove '.' and '..' */
+	if((res = ext2_link_delete(e,dir,delIno,".",true)) < 0 ||
+			(res = ext2_link_delete(e,dir,delIno,"..",true)) < 0)
 		goto error;
+	/* first release the del-inode, since ext2_link_delete will request it again */
+	ext2_icache_release(delIno);
 	/* now remove directory from parent, which will delete it because of no more references */
-	res = ext2_link_delete(e,dir,name,true);
+	res = ext2_link_delete(e,NULL,dir,name,true);
+	free(buffer);
+	return res;
 
 error:
 	free(buffer);
-	ext2_icache_release(e,delIno);
+	ext2_icache_release(delIno);
 	return res;
 }

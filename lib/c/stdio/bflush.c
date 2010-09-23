@@ -29,15 +29,12 @@ s32 bflush(FILE *f) {
 			/* flush stdout first if we're stderr */
 			if(f == stderr)
 				fflush(stdout);
-			/*locku(&buf->lck);*/
 			res = buf->pos;
 			buf->pos = 0;
 			if((res = write(buf->fd,buf->buffer,res * sizeof(char))) < 0) {
-				/*unlocku(&buf->lck);*/
 				f->error = res;
 				return EOF;
 			}
-			/*unlocku(&buf->lck);*/
 		}
 	}
 	return 0;

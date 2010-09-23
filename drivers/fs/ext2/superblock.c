@@ -19,6 +19,8 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
+#include <esc/lock.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "ext2.h"
@@ -52,15 +54,17 @@ bool ext2_super_init(sExt2 *e) {
 
 void ext2_super_update(sExt2 *e) {
 	u32 i,count,bno;
+	assert(lock(EXT2_SUPERBLOCK_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+
 	if(!e->sbDirty)
-		return;
+		goto done;
 
 	/* update main superblock; sector-based because we want to update the super-block without
 	 * anything else (this would happen if the superblock is in the block 0 together with
 	 * the bootrecord) */
 	if(!ext2_rw_writeSectors(e,&(e->superBlock),EXT2_SUPERBLOCK_SECNO,2)) {
 		printe("Unable to update superblock in blockgroup 0");
-		return;
+		goto done;
 	}
 
 	/* update superblock backups */
@@ -70,7 +74,7 @@ void ext2_super_update(sExt2 *e) {
 		if(ext2_bgHasBackups(e,i)) {
 			if(!ext2_rw_writeBlocks(e,&(e->superBlock),bno,1)) {
 				printe("Unable to update superblock in blockgroup %d",i);
-				return;
+				goto done;
 			}
 		}
 		bno += e->superBlock.blocksPerGroup;
@@ -78,4 +82,6 @@ void ext2_super_update(sExt2 *e) {
 
 	/* now we're in sync */
 	e->sbDirty = false;
+done:
+	assert(unlock(EXT2_SUPERBLOCK_LOCK) == 0);
 }

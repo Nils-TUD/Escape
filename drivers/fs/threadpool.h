@@ -25,10 +25,26 @@
 
 #define REQ_THREAD_COUNT	8
 
-typedef void (*fReqHandler)(tFD fd,sMsg *msg);
+typedef void (*fReqHandler)(tFD fd,sMsg *msg,void *data);
+
+typedef struct {
+	fReqHandler handler;
+	tFD fd;
+	sMsg msg;
+	void *data;
+} sFSRequest;
+
+typedef struct {
+	u32 id;
+	tTid tid;
+	volatile u8 state;
+	sFSRequest *req;
+} sReqThread;
 
 void tpool_init(void);
+void tpool_shutdown(void);
 bool tpool_hasFreeSlot(void);
+u32 tpool_tidToId(tTid tid);
 bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,u32 msgSize,void *data);
 
 #endif /* THREADPOOL_H_ */

@@ -53,6 +53,7 @@ int main(int argc,char **argv) {
 	if(setSigHandler(SIG_INTRPT_TIMER,sigTimer) < 0)
 		error("Unable to set sig-handler for signal %d",SIG_INTRPT_TIMER);
 
+	debug();
 	if((waitingPid = fork()) == 0) {
 		s32 i;
 		argv[0] = path;
@@ -88,6 +89,7 @@ int main(int argc,char **argv) {
 		printf("Shared mem:		%u KiB\n",state.sharedFrames * 4);
 		printf("Swap mem:		%u KiB\n",state.swapped * 4);
 	}
+	debug();
 
 	return EXIT_SUCCESS;
 }

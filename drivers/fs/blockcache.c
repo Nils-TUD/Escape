@@ -19,18 +19,29 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
+#include <esc/lock.h>
 #include <stdlib.h>
 #include <assert.h>
 #include "blockcache.h"
+
+#define ALLOC_LOCK	0xF7180000
 
 /* for statistics */
 static u32 cacheHits = 0;
 static u32 cacheMisses = 0;
 
 /**
+ * Aquires the lock, depending on <mode>, for the given block
+ */
+static void bcache_aquire(sCBlock *b,u8 mode);
+/**
+ * Releases the lock for given block
+ */
+static void bcache_doRelease(sCBlock *b,bool unlockAlloc);
+/**
  * Requests the given block and reads it from disk if desired
  */
-static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool doRead);
+static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool doRead,u8 mode);
 /**
  * Fetches a block-cache-entry
  */
@@ -49,6 +60,7 @@ void bcache_init(sBlockCache *c) {
 		bentry->blockNo = 0;
 		bentry->buffer = NULL;
 		bentry->dirty = false;
+		bentry->refs = 0;
 		bentry->prev = (i < c->blockCacheSize - 1) ? bentry + 1 : NULL;
 		bentry->next = c->freeBlocks;
 		c->freeBlocks = bentry;
@@ -66,25 +78,55 @@ void bcache_destroy(sBlockCache *c) {
 void bcache_flush(sBlockCache *c) {
 	sCBlock *bentry = c->usedBlocks;
 	while(bentry != NULL) {
+		assert(lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 		if(bentry->dirty) {
 			vassert(c->write != NULL,"Block %d dirty, but no write-function",bentry->blockNo);
+			bcache_aquire(bentry,BMODE_READ);
 			c->write(c->handle,bentry->buffer,bentry->blockNo,1);
 			bentry->dirty = false;
+			bcache_doRelease(bentry,false);
 		}
+		assert(unlock(ALLOC_LOCK) == 0);
 		bentry = bentry->next;
 	}
 }
 
+void bcache_markDirty(sCBlock *b) {
+	/*vassert(b->writeRef > 0,"Block %d is read-only!",b->blockNo);*/
+	b->dirty = true;
+}
+
 sCBlock *bcache_create(sBlockCache *c,u32 blockNo) {
-	return bcache_doRequest(c,blockNo,false);
+	return bcache_doRequest(c,blockNo,false,BMODE_WRITE);
 }
 
-sCBlock *bcache_request(sBlockCache *c,u32 blockNo) {
-	return bcache_doRequest(c,blockNo,true);
+sCBlock *bcache_request(sBlockCache *c,u32 blockNo,u8 mode) {
+	return bcache_doRequest(c,blockNo,true,mode);
 }
 
-static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool doRead) {
+static void bcache_aquire(sCBlock *b,u8 mode) {
+	b->refs++;
+	assert(unlock(ALLOC_LOCK) == 0);
+	assert(lock((u32)b,(mode & BMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
+}
+
+static void bcache_doRelease(sCBlock *b,bool unlockAlloc) {
+	assert(lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	b->refs--;
+	if(unlockAlloc)
+		assert(unlock(ALLOC_LOCK) == 0);
+	assert(unlock((u32)b) == 0);
+}
+
+void bcache_release(sCBlock *b) {
+	bcache_doRelease(b,true);
+}
+
+static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool doRead,u8 mode) {
 	sCBlock *block,*bentry;
+
+	/* aquire lock for getting a block */
+	assert(lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
 
 	/* search for the block. perhaps it's already in cache */
 	bentry = c->usedBlocks;
@@ -106,6 +148,7 @@ static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool doRead) {
 				bentry->next->prev = bentry;
 				c->usedBlocks = bentry;
 			}
+			bcache_aquire(bentry,mode);
 			cacheHits++;
 			return bentry;
 		}
@@ -116,18 +159,28 @@ static sCBlock *bcache_doRequest(sBlockCache *c,u32 blockNo,bool doRead) {
 	block = bcache_getBlock(c);
 	if(block->buffer == NULL) {
 		block->buffer = (u8*)malloc(c->blockSize);
-		if(block->buffer == NULL)
+		if(block->buffer == NULL) {
+			assert(unlock(ALLOC_LOCK) == 0);
 			return NULL;
+		}
 	}
 	block->blockNo = blockNo;
 	block->dirty = false;
+	block->refs = 0;
 
 	/* now read from disk */
-	if(doRead && !c->read(c->handle,block->buffer,blockNo,1)) {
-		block->blockNo = 0;
-		return NULL;
+	if(doRead) {
+		/* we need always a write-lock because we have to read the content into it */
+		bcache_aquire(block,BMODE_WRITE);
+		if(!c->read(c->handle,block->buffer,blockNo,1)) {
+			block->blockNo = 0;
+			bcache_doRelease(block,true);
+			return NULL;
+		}
+		bcache_doRelease(block,false);
 	}
 
+	bcache_aquire(block,mode);
 	cacheMisses++;
 	return block;
 }
@@ -152,6 +205,7 @@ static sCBlock *bcache_getBlock(sBlockCache *c) {
 
 	/* take the oldest one */
 	block = c->oldestBlock;
+	assert(block->refs == 0);
 	c->oldestBlock = block->prev;
 	c->oldestBlock->next = NULL;
 	/* put at beginning of usedlist */
@@ -163,7 +217,9 @@ static sCBlock *bcache_getBlock(sBlockCache *c) {
 	/* if it is dirty we have to write it first to disk */
 	if(block->dirty) {
 		vassert(c->write != NULL,"Block %d dirty, but no write-function",block->blockNo);
+		bcache_aquire(block,BMODE_READ);
 		c->write(c->handle,block->buffer,block->blockNo,1);
+		bcache_doRelease(block,false);
 	}
 	return block;
 }

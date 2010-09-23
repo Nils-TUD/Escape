@@ -18,7 +18,7 @@ DISK_LIB=$(patsubst $(BUILD)/lib%.so,$(DISKMNT)/lib/lib%.so,$(BUILD_LIB))
 DISK_LIBGCC=$(DISKMNT)/lib/libgcc_s.so.1
 DISK_ETC=$(patsubst $(ROOT)/dist,$(DISKMNT),$(BUILD_ETC))
 
-.PHONY: all cd hdd clean
+.PHONY: all cd hdd
 
 all:	$(HDD) $(CD)
 
@@ -41,30 +41,28 @@ post-hdd:
 		@touch $(HDD)
 
 $(DISKMNT)/etc/%:	$(ROOT)/dist/etc/%
-		@$(SUDO) cp $< $@
+		$(SUDO) cp $< $@
 		
 $(DISKMNT)/scripts/%:	$(ROOT)/dist/scripts/%
-		@$(SUDO) cp $< $@
+		$(SUDO) cp $< $@
 		
 $(DISKMNT)/testdir/%:	$(ROOT)/dist/testdir/%
-		@$(SUDO) cp $< $@
+		$(SUDO) cp $< $@
 		
 $(DISKMNT)/boot/kernel.bin:	$(BUILD)/kernel.bin
-		@$(SUDO) cp $< $@
+		$(SUDO) cp $< $@
 
 $(DISKMNT)/boot/kernel_test.bin:	$(BUILD)/kernel_test.bin
-		@$(SUDO) cp $< $@
+		$(SUDO) cp $< $@
 
 $(DISKMNT)/bin/%:	$(BUILD)/user_%.bin
-		@$(SUDO) cp $< $@
+		$(SUDO) cp $< $@
 
 $(DISKMNT)/sbin/%:	$(BUILD)/driver_%.bin
-		@$(SUDO) cp $< $@
+		$(SUDO) cp $< $@
 
 $(DISKMNT)/lib/lib%.so:	$(BUILD)/lib%.so
-		@$(SUDO) cp $< $@
+		$(SUDO) cp $< $@
 
 $(DISKMNT)/lib/libgcc_s.so.1:	$(BUILD_LIBGCC)
-		@$(SUDO) cp $< $@
-
-clean:
+		$(SUDO) cp $< $@

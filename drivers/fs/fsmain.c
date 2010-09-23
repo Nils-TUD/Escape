@@ -43,8 +43,6 @@
 static tDevNo rootDev;
 static sFSInst *root;
 
-typedef void (*fFSCmd)(tFD fd,sMsg *msg);
-
 typedef struct {
 	u16 type;
 	char name[FS_NAME_LEN];
@@ -53,7 +51,7 @@ typedef struct {
 static void shutdown(void);
 static void cmdOpen(tFD fd,sMsg *msg);
 static void cmdRead(tFD fd,sMsg *msg);
-static void cmdWrite(tFD fd,sMsg *msg);
+static void cmdWrite(tFD fd,sMsg *msg,void *data);
 static void cmdClose(tFD fd,sMsg *msg);
 static void cmdStat(tFD fd,sMsg *msg);
 static void cmdSync(tFD fd,sMsg *msg);
@@ -65,22 +63,22 @@ static void cmdMount(tFD fd,sMsg *msg);
 static void cmdUnmount(tFD fd,sMsg *msg);
 static void cmdIstat(tFD fd,sMsg *msg);
 
-static bool run = true;
+static volatile bool run = true;
 
-static fFSCmd commands[] = {
-	/* MSG_FS_OPEN */		cmdOpen,
-	/* MSG_FS_READ */		cmdRead,
-	/* MSG_FS_WRITE */		cmdWrite,
-	/* MSG_FS_CLOSE */		cmdClose,
-	/* MSG_FS_STAT */		cmdStat,
-	/* MSG_FS_SYNC */		cmdSync,
-	/* MSG_FS_LINK */		cmdLink,
-	/* MSG_FS_UNLINK */		cmdUnlink,
-	/* MSG_FS_MKDIR */		cmdMkdir,
-	/* MSG_FS_RMDIR */		cmdRmdir,
-	/* MSG_FS_MOUNT */		cmdMount,
-	/* MSG_FS_UNMOUNT */	cmdUnmount,
-	/* MSG_FS_ISTAT */		cmdIstat,
+static fReqHandler commands[] = {
+	/* MSG_FS_OPEN */		(fReqHandler)cmdOpen,
+	/* MSG_FS_READ */		(fReqHandler)cmdRead,
+	/* MSG_FS_WRITE */		(fReqHandler)cmdWrite,
+	/* MSG_FS_CLOSE */		(fReqHandler)cmdClose,
+	/* MSG_FS_STAT */		(fReqHandler)cmdStat,
+	/* MSG_FS_SYNC */		(fReqHandler)cmdSync,
+	/* MSG_FS_LINK */		(fReqHandler)cmdLink,
+	/* MSG_FS_UNLINK */		(fReqHandler)cmdUnlink,
+	/* MSG_FS_MKDIR */		(fReqHandler)cmdMkdir,
+	/* MSG_FS_RMDIR */		(fReqHandler)cmdRmdir,
+	/* MSG_FS_MOUNT */		(fReqHandler)cmdMount,
+	/* MSG_FS_UNMOUNT */	(fReqHandler)cmdUnmount,
+	/* MSG_FS_ISTAT */		(fReqHandler)cmdIstat,
 };
 
 static void sigTermHndl(tSig sig,u32 data) {
@@ -151,17 +149,21 @@ int main(int argc,char *argv[]) {
 	if(id < 0)
 		error("Unable to register driver 'fs'");
 
-	while(run) {
-		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
+	while(true) {
+		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),!run ? GW_NOBLOCK : 0);
 		if(fd < 0) {
-			if(fd != ERR_INTERRUPTED)
+			if(fd != ERR_INTERRUPTED) {
+				/* no requests anymore and we should shutdown? */
+				if(!run)
+					break;
 				printe("[FS] Unable to get work");
+			}
 		}
 		else {
 			if(mid < MSG_FS_OPEN || mid > MSG_FS_ISTAT)
 				printf("[FS] Illegal command %d\n",mid);
 			else {
-				/*void *data = NULL;
+				void *data = NULL;
 				while(!tpool_hasFreeSlot())
 					wait(EV_USER2);
 				if(mid == MSG_FS_WRITE) {
@@ -173,14 +175,15 @@ int main(int argc,char *argv[]) {
 					}
 				}
 				if(!tpool_addRequest(commands[mid - MSG_FS_OPEN],fd,&msg,sizeof(msg),data))
-					printf("[FS] Not enough mem for request %d\n",mid);*/
-				commands[mid - MSG_FS_OPEN](fd,&msg);
-				close(fd);
+					printf("[FS] Not enough mem for request %d\n",mid);
+				/*commands[mid - MSG_FS_OPEN](fd,&msg);
+				close(fd);*/
 			}
 		}
 	}
 
 	/* clean up */
+	tpool_shutdown();
 	shutdown();
 	unregDriver(id);
 
@@ -274,28 +277,19 @@ static void cmdRead(tFD fd,sMsg *msg) {
 		ext2_file_read(&ext2,data.inodeNo,NULL,data.offset + count,data.count);*/
 }
 
-static void cmdWrite(tFD fd,sMsg *msg) {
-	tMsgId mid;
+static void cmdWrite(tFD fd,sMsg *msg,void *data) {
 	tInodeNo ino = (tInodeNo)msg->args.arg1;
 	tDevNo devNo = (tDevNo)msg->args.arg2;
 	u32 offset = msg->args.arg3;
 	u32 count = msg->args.arg4;
 	sFSInst *inst = mount_get(devNo);
-	u8 *buffer;
 	if(inst == NULL)
 		msg->args.arg1 = ERR_NO_MNTPNT;
 	else if(inst->fs->write == NULL)
 		msg->args.arg1 = ERR_UNSUPPORTED_OP;
-	else {
-		/* write to file */
-		msg->args.arg1 = 0;
-		buffer = malloc(count);
-		if(buffer) {
-			if(RETRY(receive(fd,&mid,buffer,count)) >= 0)
-				msg->args.arg1 = inst->fs->write(inst->handle,ino,buffer,offset,count);
-			free(buffer);
-		}
-	}
+	/* write to file */
+	else
+		msg->args.arg1 = inst->fs->write(inst->handle,ino,data,offset,count);
 	/* send response */
 	send(fd,MSG_FS_WRITE_RESP,msg,sizeof(msg->args));
 }

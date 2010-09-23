@@ -49,7 +49,7 @@ static void printffl(const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
 	vprintf(fmt,ap);
-	lockg(MY_LOCK);
+	lockg(MY_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
 	fflush(stdout);
 	unlockg(MY_LOCK);
 	va_end(ap);

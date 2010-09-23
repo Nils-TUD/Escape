@@ -71,7 +71,7 @@ int main(int argc,char **argv) {
 	}
 
 	// use a lock here to ensure that no one uses our guiterm-number
-	lockg(GUI_SHELL_LOCK);
+	lockg(GUI_SHELL_LOCK,LOCK_EXCLUSIVE);
 
 	// announce driver; try to find an unused driver-name because maybe a user wants
 	// to start us multiple times

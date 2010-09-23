@@ -47,7 +47,7 @@ s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 	buf = malloc(dirSize + tlen);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	if((res = ext2_file_read(e,dir->inodeNo,buf,0,dirSize)) != dirSize) {
+	if((res = ext2_file_readIno(e,dir,buf,0,dirSize)) != dirSize) {
 		free(buf);
 		return res;
 	}
@@ -86,7 +86,7 @@ s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 	memcpy(dire->name,name,len);
 
 	/* write it back */
-	if((res = ext2_file_write(e,dir->inodeNo,buf,0,dirSize)) != dirSize) {
+	if((res = ext2_file_writeIno(e,dir,buf,0,dirSize)) != dirSize) {
 		free(buf);
 		return res;
 	}
@@ -94,11 +94,11 @@ s32 ext2_link_create(sExt2 *e,sExt2CInode *dir,sExt2CInode *cnode,const char *na
 
 	/* increase link-count */
 	cnode->inode.linkCount++;
-	cnode->dirty = true;
+	ext2_icache_markDirty(cnode);
 	return 0;
 }
 
-s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name,bool delDir) {
+s32 ext2_link_delete(sExt2 *e,sExt2CInode *pdir,sExt2CInode *dir,const char *name,bool delDir) {
 	u8 *buf;
 	u32 nameLen;
 	tInodeNo ino = -1;
@@ -110,7 +110,7 @@ s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name,bool delDir) {
 	buf = malloc(dirSize);
 	if(buf == NULL)
 		return ERR_NOT_ENOUGH_MEM;
-	if((res = ext2_file_read(e,dir->inodeNo,buf,0,dirSize)) != dirSize) {
+	if((res = ext2_file_readIno(e,dir,buf,0,dirSize)) != dirSize) {
 		free(buf);
 		return res;
 	}
@@ -122,12 +122,20 @@ s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name,bool delDir) {
 	while((u8*)dire < buf + dirSize) {
 		if(nameLen == dire->nameLen && strncmp(dire->name,name,nameLen) == 0) {
 			ino = dire->inode;
-			cnode = ext2_icache_request(e,ino);
-			if(cnode == NULL) {
-				free(buf);
-				return ERR_INO_REQ_FAILED;
+			if(pdir && ino == pdir->inodeNo)
+				cnode = pdir;
+			else if(ino == dir->inodeNo)
+				cnode = dir;
+			else {
+				cnode = ext2_icache_request(e,ino,IMODE_WRITE);
+				if(cnode == NULL) {
+					free(buf);
+					return ERR_INO_REQ_FAILED;
+				}
 			}
 			if(!delDir && MODE_IS_DIR(cnode->inode.mode)) {
+				if(cnode != pdir && cnode != dir)
+					ext2_icache_release(cnode);
 				free(buf);
 				return ERR_IS_DIR;
 			}
@@ -152,7 +160,9 @@ s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name,bool delDir) {
 	}
 
 	/* write it back */
-	if((res = ext2_file_write(e,dir->inodeNo,buf,0,dirSize)) != dirSize) {
+	if((res = ext2_file_writeIno(e,dir,buf,0,dirSize)) != dirSize) {
+		if(cnode && cnode != pdir && cnode != dir)
+			ext2_icache_release(cnode);
 		free(buf);
 		return res;
 	}
@@ -161,15 +171,17 @@ s32 ext2_link_delete(sExt2 *e,sExt2CInode *dir,const char *name,bool delDir) {
 	/* update inode */
 	if(cnode != NULL) {
 		/* decrease link-count */
-		cnode->dirty = true;
+		ext2_icache_markDirty(cnode);
 		if(--cnode->inode.linkCount == 0) {
 			/* delete the file if there are no references anymore */
 			if((res = ext2_file_delete(e,cnode)) < 0) {
-				ext2_icache_release(e,cnode);
+				if(cnode != pdir && cnode != dir)
+					ext2_icache_release(cnode);
 				return res;
 			}
 		}
-		ext2_icache_release(e,cnode);
+		if(cnode != pdir && cnode != dir)
+			ext2_icache_release(cnode);
 	}
 	return 0;
 }

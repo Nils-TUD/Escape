@@ -314,7 +314,7 @@ s32 iso_read(void *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count);
  * @param ddate the dir-date
  * @return the timestamp
  */
-u32 iso_dirDate2Timestamp(sISO9660 *h,sISODirDate *ddate);
+u32 iso_dirDate2Timestamp(sISO9660 *h,const sISODirDate *ddate);
 
 #if DEBUGGING
 

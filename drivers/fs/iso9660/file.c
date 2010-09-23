@@ -31,10 +31,10 @@
 /**
  * Builds the required dir-entries for the fs-interface from the ISO9660-dir-entries
  */
-static void iso_file_buildDirEntries(sISO9660 *h,u32 lba,u8 *dst,u8 *src,u32 offset,u32 count);
+static void iso_file_buildDirEntries(sISO9660 *h,u32 lba,u8 *dst,const u8 *src,u32 offset,u32 count);
 
 s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count) {
-	sISOCDirEntry *e;
+	const sISOCDirEntry *e;
 	sCBlock *blk;
 	u8 *bufWork;
 	u32 c,i,blockSize,startBlock,blockCount,leftBytes;
@@ -63,7 +63,7 @@ s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count
 	bufWork = (u8*)buffer;
 	for(i = 0; i < blockCount; i++) {
 		/* read block */
-		blk = bcache_request(&h->blockCache,startBlock + i);
+		blk = bcache_request(&h->blockCache,startBlock + i,BMODE_READ);
 		if(blk == NULL)
 			return ERR_BLO_REQ_FAILED;
 
@@ -71,11 +71,13 @@ s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count
 			/* copy the requested part */
 			c = MIN(leftBytes,blockSize - offset);
 			if(e->entry.flags & ISO_FILEFL_DIR)
-				iso_file_buildDirEntries(h,e->entry.extentLoc.littleEndian,bufWork,blk->buffer,offset,c);
+				iso_file_buildDirEntries(h,e->entry.extentLoc.littleEndian,bufWork,
+						blk->buffer,offset,c);
 			else
 				memcpy(bufWork,blk->buffer + offset,c);
 			bufWork += c;
 		}
+		bcache_release(blk);
 
 		/* we substract to much, but it matters only if we read an additional block. In this
 		 * case it is correct */
@@ -87,8 +89,8 @@ s32 iso_file_read(sISO9660 *h,tInodeNo inodeNo,void *buffer,u32 offset,u32 count
 	return count;
 }
 
-static void iso_file_buildDirEntries(sISO9660 *h,u32 lba,u8 *dst,u8 *src,u32 offset,u32 count) {
-	sISODirEntry *e;
+static void iso_file_buildDirEntries(sISO9660 *h,u32 lba,u8 *dst,const u8 *src,u32 offset,u32 count) {
+	const sISODirEntry *e;
 	sDirEntry *de,*lastDe;
 	u32 i,blockSize = ISO_BLK_SIZE(h);
 	u8 *cdst;
@@ -101,7 +103,7 @@ static void iso_file_buildDirEntries(sISO9660 *h,u32 lba,u8 *dst,u8 *src,u32 off
 	else
 		cdst = dst;
 
-	e = (sISODirEntry*)src;
+	e = (const sISODirEntry*)src;
 	lastDe = NULL;
 	de = (sDirEntry*)cdst;
 	while((u8*)e < (u8*)src + blockSize) {
@@ -129,7 +131,7 @@ static void iso_file_buildDirEntries(sISO9660 *h,u32 lba,u8 *dst,u8 *src,u32 off
 		de->recLen = (sizeof(sDirEntry) - (MAX_NAME_LEN + 1)) + de->nameLen;
 		lastDe = de;
 		de = (sDirEntry*)((u8*)de + de->recLen);
-		e = (sISODirEntry*)((u8*)e + e->length);
+		e = (const sISODirEntry*)((const u8*)e + e->length);
 	}
 
 	if(offset != 0 || count != blockSize) {

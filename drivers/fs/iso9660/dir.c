@@ -54,20 +54,21 @@ tInodeNo iso_dir_resolve(sISO9660 *h,const char *path,u8 flags,tDevNo *dev,bool 
 
 	pos = strchri(p,'/');
 	while(*p) {
-		sISODirEntry *e;
+		const sISODirEntry *e;
 		i = 0;
-		blk = bcache_request(&h->blockCache,extLoc);
+		blk = bcache_request(&h->blockCache,extLoc,BMODE_READ);
 		if(blk == NULL)
 			return ERR_BLO_REQ_FAILED;
 
-		e = (sISODirEntry*)blk->buffer;
+		e = (const sISODirEntry*)blk->buffer;
 		while((u8*)e < blk->buffer + blockSize) {
 			/* continue with next block? */
 			if(e->length == 0) {
-				blk = bcache_request(&h->blockCache,extLoc + ++i);
+				bcache_release(blk);
+				blk = bcache_request(&h->blockCache,extLoc + ++i,BMODE_READ);
 				if(blk == NULL)
 					return ERR_BLO_REQ_FAILED;
-				e = (sISODirEntry*)blk->buffer;
+				e = (const sISODirEntry*)blk->buffer;
 				continue;
 			}
 
@@ -86,6 +87,7 @@ tInodeNo iso_dir_resolve(sISO9660 *h,const char *path,u8 flags,tDevNo *dev,bool 
 				if(mntDev >= 0) {
 					sFSInst *inst = mount_get(mntDev);
 					*dev = mntDev;
+					bcache_release(blk);
 					return inst->fs->resPath(inst->handle,p,flags,dev,resLastMnt);
 				}
 				if(!*p)
@@ -93,21 +95,25 @@ tInodeNo iso_dir_resolve(sISO9660 *h,const char *path,u8 flags,tDevNo *dev,bool 
 
 				/* move to childs of this node */
 				pos = strchri(p,'/');
-				if((e->flags & ISO_FILEFL_DIR) == 0)
+				if((e->flags & ISO_FILEFL_DIR) == 0) {
+					bcache_release(blk);
 					return ERR_NO_DIRECTORY;
+				}
 				extLoc = e->extentLoc.littleEndian;
 				extSize = e->extentSize.littleEndian;
 				break;
 			}
-			e = (sISODirEntry*)((u8*)e + e->length);
+			e = (const sISODirEntry*)((u8*)e + e->length);
 		}
 		/* no match? */
 		if((u8*)e >= blk->buffer + blockSize || e->length == 0) {
+			bcache_release(blk);
 			if(flags & IO_CREATE)
 				return ERR_UNSUPPORTED_OP;
 			return ERR_PATH_NOT_FOUND;
 		}
 		res = GET_INODENO(extLoc + i,blockSize,(u8*)e - blk->buffer);
+		bcache_release(blk);
 	}
 	return res;
 }

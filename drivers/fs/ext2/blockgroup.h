@@ -32,6 +32,11 @@
 bool ext2_bg_init(sExt2 *e);
 
 /**
+ * Destroys the blockgroups
+ */
+void ext2_bg_destroy(sExt2 *e);
+
+/**
  * Updates the block-group-descriptor-table, if it is dirty
  *
  * @param e the ext2-data

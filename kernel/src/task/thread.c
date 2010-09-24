@@ -425,7 +425,6 @@ void thread_kill(sThread *t) {
 	fpu_freeState(&t->fpuState);
 	sig_removeHandlerFor(t->tid);
 	vfs_removeThread(t->tid);
-	lock_releaseAll(t->tid);
 
 	/* notify others that wait for dying threads */
 	sig_addSignal(SIG_THREAD_DIED,t->tid);

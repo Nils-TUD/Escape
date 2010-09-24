@@ -115,9 +115,12 @@ s32 shell_readLine(char *buffer,u32 max) {
 	resetReadLine = false;
 
 	/* disable "readline", enable "echo", enable "navi" (just to be sure) */
-	send(STDOUT_FILENO,MSG_VT_EN_NAVI,NULL,0);
-	send(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
-	send(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0);
+	if(sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_NAVI,NULL,0) < 0)
+		error("Unable to enable navi");
+	if(sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0) < 0)
+		error("Unable to disable readline");
+	if(sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0) < 0)
+		error("Unable to enable echo");
 
 	/* ensure that the line is empty */
 	*buffer = '\0';
@@ -188,7 +191,8 @@ s32 shell_readLine(char *buffer,u32 max) {
 	}
 
 	/* enable "readline" */
-	send(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
+	if(sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0) < 0)
+		error("Unable to reenable readline");
 
 	buffer[i] = '\0';
 	return i;

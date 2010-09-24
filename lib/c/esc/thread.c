@@ -19,8 +19,8 @@
 
 #include <esc/common.h>
 #include <esc/thread.h>
-#include <stdlib.h>
 #include <esc/sllist.h>
+#include <stdlib.h>
 
 #define HASHMAP_SIZE	64
 
@@ -29,6 +29,13 @@ typedef struct {
 	u32 key;
 	void *val;
 } sThreadVal;
+
+/**
+ * Assembler-routines
+ */
+extern s32 _lock(u32 ident,bool global,u16 flags);
+extern s32 _unlock(u32 ident,bool global);
+extern s32 _waitUnlock(u32 events,u32 ident,bool global);
 
 static sSLList *tvalmap[HASHMAP_SIZE];
 
@@ -70,4 +77,45 @@ void *getThreadVal(u32 key) {
 			return tval->val;
 	}
 	return NULL;
+}
+
+s32 lock(u32 ident,u16 flags) {
+	/* nasm doesn't like "lock" as label... */
+	return _lock(ident,false,flags);
+}
+
+void locku(tULock *l) {
+	__asm__ (
+		"mov $1,%%ecx;"				/* ecx=1 to lock it for others */
+		"lockuLoop:"
+		"	xor	%%eax,%%eax;"		/* clear eax */
+		"	lock;"					/* lock next instruction */
+		"	cmpxchg %%ecx,(%0);"	/* compare ecx with eax; if equal exchange ecx with l */
+		"	jnz		lockuLoop;"		/* try again if not equal */
+		: : "D" (l)
+	);
+}
+
+s32 lockg(u32 ident,u16 flags) {
+	return _lock(ident,true,flags);
+}
+
+s32 waitUnlock(u32 events,u32 ident) {
+	return _waitUnlock(events,ident,false);
+}
+
+s32 waitUnlockg(u32 events,u32 ident) {
+	return _waitUnlock(events,ident,true);
+}
+
+s32 unlock(u32 ident) {
+	return _unlock(ident,false);
+}
+
+void unlocku(tULock *l) {
+	*l = false;
+}
+
+s32 unlockg(u32 ident) {
+	return _unlock(ident,true);
 }

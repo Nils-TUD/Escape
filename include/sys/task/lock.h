@@ -47,11 +47,11 @@ s32 lock_aquire(tPid pid,u32 ident,u16 flags);
 s32 lock_release(tPid pid,u32 ident);
 
 /**
- * Releases all locks of the given thread
+ * Releases all locks of the given process
  *
- * @param tid the thread-id
+ * @param pid the process-id
  */
-void lock_releaseAll(tTid tid);
+void lock_releaseAll(tPid pid);
 
 #if DEBUGGING
 

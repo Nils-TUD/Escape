@@ -25,6 +25,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
+#include <sys/video.h>
 #include <esc/messages.h>
 #include <string.h>
 #include <errors.h>
@@ -367,3 +368,12 @@ s32 vfsrw_writeDrvUse(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data
 		thread_wakeupAll(n,EV_RECEIVED_MSG);
 	return 0;
 }
+
+#if DEBUGGING
+
+void vfsrw_dbg_printMessage(void *m) {
+	sMessage *msg = (sMessage*)m;
+	vid_printf("\t\t\tid=%u len=%u\n",msg->id,msg->length);
+}
+
+#endif

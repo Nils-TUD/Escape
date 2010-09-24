@@ -59,6 +59,7 @@ static void view_thread(s32 argc,char **argv);
 static void view_threads(void);
 static void view_vfstree(void);
 static void view_gft(void);
+static void view_msgs(void);
 static void view_cow(void);
 static void view_kheap(void);
 static void view_pdirall(s32 argc,char **argv);
@@ -92,6 +93,7 @@ static sView views[] = {
 	{"threads",(fView)view_threads},
 	{"vfstree",(fView)view_vfstree},
 	{"gft",(fView)view_gft},
+	{"msgs",(fView)view_msgs},
 	{"cow",(fView)view_cow},
 	{"kheap",(fView)view_kheap},
 	{"pdirall",(fView)view_pdirall},
@@ -194,6 +196,9 @@ static void view_vfstree(void) {
 }
 static void view_gft(void) {
 	vfs_dbg_printGFT();
+}
+static void view_msgs(void) {
+	vfs_dbg_printMsgs();
 }
 static void view_cow(void) {
 	cow_dbg_print();

@@ -23,6 +23,7 @@
 #include <sys/task/signals.h>
 #include <sys/task/sched.h>
 #include <sys/task/elf.h>
+#include <sys/task/lock.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/kheap.h>
@@ -569,13 +570,10 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 		tn = tmpn;
 	}
 
-	/* remove all regions */
+	/* remove other stuff */
 	proc_removeRegions(p,true);
-
-	/* close file for communication with fs */
 	vfsr_removeProc(p->pid);
-
-	/* free io-map, if present */
+	lock_releaseAll(p->pid);
 	if(p->ioMap != NULL) {
 		kheap_free(p->ioMap);
 		p->ioMap = NULL;

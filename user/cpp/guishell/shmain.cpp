@@ -23,7 +23,6 @@
 #include <esc/driver.h>
 #include <esc/dir.h>
 #include <esc/thread.h>
-#include <esc/lock.h>
 #include <gui/application.h>
 #include <gui/window.h>
 #include <stdio.h>

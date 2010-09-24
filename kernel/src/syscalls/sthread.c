@@ -22,11 +22,14 @@
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <sys/task/sched.h>
+#include <sys/task/lock.h>
 #include <sys/machine/timer.h>
 #include <sys/mem/kheap.h>
 #include <sys/syscalls/thread.h>
 #include <sys/syscalls.h>
 #include <errors.h>
+
+static s32 sysc_doWait(u32 events);
 
 void sysc_gettid(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
@@ -84,29 +87,37 @@ void sysc_yield(sIntrptStackFrame *stack) {
 
 void sysc_wait(sIntrptStackFrame *stack) {
 	u32 events = SYSC_ARG1(stack);
-	sThread *t = thread_getRunning();
+	s32 res;
 
 	if((events & ~EV_USER_WAIT_MASK) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	/* check whether there is a chance that we'll wake up again; if we already have a message
-	 * that we should wait for, don't start waiting */
-	if(vfs_msgAvailableFor(t->proc->pid,events)) {
-		SYSC_RET1(stack,0);
-		return;
-	}
-	while(true) {
-		thread_wait(t->tid,NULL,events);
-		thread_switch();
-		if(sig_hasSignalFor(t->tid))
-			SYSC_ERROR(stack,ERR_INTERRUPTED);
-		/* if we wait for other events than received-msg and client, always wakeup (since we can't
-		 * check that) */
-		/* otherwise check, whether it really was an event for us => something is available */
-		if((events & ~(EV_RECEIVED_MSG | EV_CLIENT)) || vfs_msgAvailableFor(t->proc->pid,events))
-			break;
-	}
-	SYSC_RET1(stack,0);
+	res = sysc_doWait(events);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+void sysc_waitUnlock(sIntrptStackFrame *stack) {
+	u32 events = SYSC_ARG1(stack);
+	u32 ident = SYSC_ARG2(stack);
+	bool global = (bool)SYSC_ARG3(stack);
+	sProc *p = proc_getRunning();
+	s32 res;
+
+	if((events & ~EV_USER_WAIT_MASK) != 0)
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	/* release the lock */
+	res = lock_release(global ? INVALID_PID : p->pid,ident);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+
+	/* now wait */
+	res = sysc_doWait(events);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
 }
 
 void sysc_notify(sIntrptStackFrame *stack) {
@@ -117,6 +128,31 @@ void sysc_notify(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	thread_wakeup(tid,events);
 	SYSC_RET1(stack,0);
+}
+
+void sysc_lock(sIntrptStackFrame *stack) {
+	u32 ident = SYSC_ARG1(stack);
+	bool global = (bool)SYSC_ARG2(stack);
+	u16 flags = (u16)SYSC_ARG3(stack);
+	sProc *p = proc_getRunning();
+	s32 res;
+
+	res = lock_aquire(global ? INVALID_PID : p->pid,ident,flags);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+void sysc_unlock(sIntrptStackFrame *stack) {
+	u32 ident = SYSC_ARG1(stack);
+	bool global = (bool)SYSC_ARG2(stack);
+	sProc *p = proc_getRunning();
+	s32 res;
+
+	res = lock_release(global ? INVALID_PID : p->pid,ident);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
 }
 
 void sysc_join(sIntrptStackFrame *stack) {
@@ -162,4 +198,24 @@ void sysc_resume(sIntrptStackFrame *stack) {
 	/* resume it */
 	thread_setSuspended(tt->tid,false);
 	SYSC_RET1(stack,0);
+}
+
+static s32 sysc_doWait(u32 events) {
+	sThread *t = thread_getRunning();
+	/* check whether there is a chance that we'll wake up again; if we already have a message
+	 * that we should wait for, don't start waiting */
+	if(vfs_msgAvailableFor(t->proc->pid,events))
+		return 0;
+	while(true) {
+		thread_wait(t->tid,NULL,events);
+		thread_switch();
+		if(sig_hasSignalFor(t->tid))
+			return ERR_INTERRUPTED;
+		/* if we wait for other events than received-msg and client, always wakeup (since we can't
+		 * check that) */
+		/* otherwise check, whether it really was an event for us => something is available */
+		if((events & ~(EV_RECEIVED_MSG | EV_CLIENT)) || vfs_msgAvailableFor(t->proc->pid,events))
+			break;
+	}
+	return 0;
 }

@@ -79,6 +79,27 @@ void sysc_yield(sIntrptStackFrame *stack);
 void sysc_wait(sIntrptStackFrame *stack);
 
 /**
+ * First it releases the specified lock. After that it blocks the thread until one of the
+ * given events occurrs. This gives user-threads the chance to ensure that a notify() arrives
+ * AFTER a thread has called wait. So they can do:
+ * thread1:
+ *  lock(...);
+ *  ...
+ *  waitUnlock(...);
+ *
+ * thread2:
+ *  lock(...);
+ *  notify(thread1,...);
+ *  unlock(...);
+ *
+ *  @param u32 events the events to wait for
+ *  @param u32 ident the ident to unlock
+ *  @param bool global whether the ident is global
+ *  @return s32 0 on success
+ */
+void sysc_waitUnlock(sIntrptStackFrame *stack);
+
+/**
  * Notifies the given thread about the given events. If it was waiting for them, it will be
  * waked up.
  *
@@ -87,6 +108,22 @@ void sysc_wait(sIntrptStackFrame *stack);
  * @return s32 0 on success
  */
 void sysc_notify(sIntrptStackFrame *stack);
+
+/**
+ * Aquire a lock; wait until its unlocked, if necessary
+ *
+ * @param ident the lock-ident
+ * @return s32 0 on success
+ */
+void sysc_lock(sIntrptStackFrame *stack);
+
+/**
+ * Releases a lock
+ *
+ * @param ident the lock-ident
+ * @return s32 0 on success
+ */
+void sysc_unlock(sIntrptStackFrame *stack);
 
 /**
  * Joins a thread, i.e. it waits until a thread with given tid has died (from the own process)

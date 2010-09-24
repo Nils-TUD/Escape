@@ -34,16 +34,20 @@
 #include "direcache.h"
 #include "../mount.h"
 #include "../blockcache.h"
+#include "../threadpool.h"
 
 #define MAX_DRIVER_OPEN_RETRIES		1000
 
 static bool iso_setup(const char *driver,sISO9660 *iso);
 
 void *iso_init(const char *driver,char **usedDev) {
+	u32 i;
 	sISO9660 *iso = (sISO9660*)malloc(sizeof(sISO9660));
 	if(iso == NULL)
 		return NULL;
 
+	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++)
+		iso->drvFds[i] = -1;
 	iso->blockCache.handle = iso;
 	iso->blockCache.blockCache = NULL;
 	iso->blockCache.blockCacheSize = ISO_BCACHE_SIZE;
@@ -66,7 +70,6 @@ void *iso_init(const char *driver,char **usedDev) {
 	}
 	/* otherwise try all possible ATAPI-drives */
 	else {
-		u32 i;
 		/* just needed if we would have a mount-point on the cd. this can't happen at this point */
 		tDevNo dev = 0x1234;
 		tInodeNo ino;
@@ -111,11 +114,12 @@ void *iso_init(const char *driver,char **usedDev) {
 static bool iso_setup(const char *driver,sISO9660 *iso) {
 	u32 i;
 	/* now open the driver */
-	tFD fd = open(driver,IO_WRITE | IO_READ);
-	if(fd < 0)
-		return false;
+	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++) {
+		iso->drvFds[i] = open(driver,IO_WRITE | IO_READ);
+		if(iso->drvFds[i] < 0)
+			return false;
+	}
 
-	iso->driverFd = fd;
 	/* read volume descriptors */
 	for(i = 0; ; i++) {
 		if(!iso_rw_readSectors(iso,&iso->primary,ISO_VOL_DESC_START + i,1))
@@ -133,7 +137,13 @@ static bool iso_setup(const char *driver,sISO9660 *iso) {
 }
 
 void iso_deinit(void *h) {
-	UNUSED(h);
+	u32 i;
+	sISO9660 *iso = (sISO9660*)h;
+	for(i = 0; i < ARRAY_SIZE(iso->drvFds); i++) {
+		if(iso->drvFds[i] >= 0)
+			close(iso->drvFds[i]);
+	}
+	bcache_destroy(&iso->blockCache);
 }
 
 sFileSystem *iso_getFS(void) {

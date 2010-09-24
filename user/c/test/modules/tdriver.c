@@ -23,7 +23,6 @@
 #include <esc/driver.h>
 #include <esc/messages.h>
 #include <esc/thread.h>
-#include <esc/lock.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>

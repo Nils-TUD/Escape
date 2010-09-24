@@ -8,7 +8,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/lock.h>
+#include <esc/thread.h>
 #include <stdlib.h>
 #include <assert.h>
 #include "mars.h"

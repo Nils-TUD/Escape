@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/lock.h>
 #include <esc/thread.h>
 #include <esc/debug.h>
 #include <signal.h>

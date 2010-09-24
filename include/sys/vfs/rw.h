@@ -72,4 +72,16 @@ s32 vfsrw_writePipe(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 of
  */
 s32 vfsrw_writeDrvUse(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32 size);
 
+
+#if DEBUGGING
+
+/**
+ * Prints the given message
+ *
+ * @param m the message
+ */
+void vfsrw_dbg_printMessage(void *m);
+
+#endif
+
 #endif /* VFSRW_H_ */

@@ -463,7 +463,12 @@ void vfs_removeThread(tTid tid);
 void vfs_dbg_printGFT(void);
 
 /**
- * Prints the avaiable messages for the given driver-node
+ * Prints all messages of all drivers
+ */
+void vfs_dbg_printMsgs(void);
+
+/**
+ * Prints all messages for the given driver-node
  */
 void vfs_dbg_printMsgsOf(sVFSNode *n);
 

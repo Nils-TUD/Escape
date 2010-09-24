@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/lock.h>
+#include <esc/thread.h>
 #include <assert.h>
 #include "ext2.h"
 #include "bitmap.h"

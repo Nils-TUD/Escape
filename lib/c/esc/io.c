@@ -38,6 +38,19 @@ bool is_dir(const char *path) {
 	return MODE_IS_DIR(info.mode);
 }
 
+s32 sendRecvMsgData(tFD fd,tMsgId id,const void *data,u32 size) {
+	tMsgId mid;
+	sMsg msg;
+	s32 res;
+	if(data)
+		memcpy(msg.data.d,data,size);
+	if((res = send(fd,id,data,size)) < 0)
+		return res;
+	if((res = receive(fd,&mid,&msg,sizeof(msg))) < 0)
+		return res;
+	return (s32)msg.args.arg1;
+}
+
 s32 sendMsgData(tFD fd,tMsgId id,const void *data,u32 size) {
 	sMsg msg;
 	if(size > sizeof(msg.data.d))

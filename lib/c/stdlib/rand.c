@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/lock.h>
+#include <esc/thread.h>
 #include <stdlib.h>
 
 /* source: http://en.wikipedia.org/wiki/Linear_congruential_generator */

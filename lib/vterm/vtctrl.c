@@ -23,7 +23,6 @@
 #include <esc/proc.h>
 #include <esc/keycodes.h>
 #include <esc/driver.h>
-#include <esc/lock.h>
 #include <esc/thread.h>
 #include <esc/messages.h>
 #include <esc/ringbuffer.h>

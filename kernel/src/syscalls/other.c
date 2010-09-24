@@ -44,9 +44,9 @@ void sysc_debugc(sIntrptStackFrame *stack) {
 }
 
 void sysc_debug(sIntrptStackFrame *stack) {
-	static u32 foo = 0;
 	UNUSED(stack);
 #if DEBUGGING
+	/*static u32 foo = 0;
 	if(foo == 0) {
 		proc_dbg_startProf();
 		foo = 1;
@@ -54,39 +54,14 @@ void sysc_debug(sIntrptStackFrame *stack) {
 	else {
 		proc_dbg_stopProf();
 		foo = 0;
-	}
-	/*cons_start();*/
+	}*/
+	cons_start();
 #endif
 }
 
 void sysc_getConf(sIntrptStackFrame *stack) {
 	u32 id = SYSC_ARG1(stack);
 	s32 res = conf_get(id);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
-}
-
-void sysc_lock(sIntrptStackFrame *stack) {
-	u32 ident = SYSC_ARG1(stack);
-	bool global = (bool)SYSC_ARG2(stack);
-	u16 flags = (u16)SYSC_ARG3(stack);
-	sProc *p = proc_getRunning();
-	s32 res;
-
-	res = lock_aquire(global ? INVALID_PID : p->pid,ident,flags);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
-}
-
-void sysc_unlock(sIntrptStackFrame *stack) {
-	u32 ident = SYSC_ARG1(stack);
-	bool global = (bool)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
-	s32 res;
-
-	res = lock_release(global ? INVALID_PID : p->pid,ident);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);

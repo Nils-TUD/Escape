@@ -21,7 +21,7 @@
 #define IOBUF_H_
 
 #include <esc/common.h>
-#include <esc/lock.h>
+#include <esc/thread.h>
 #include <esc/sllist.h>
 
 #define IN_BUFFER_SIZE		1024

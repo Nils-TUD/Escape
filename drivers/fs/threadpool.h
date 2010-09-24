@@ -43,7 +43,6 @@ typedef struct {
 
 void tpool_init(void);
 void tpool_shutdown(void);
-bool tpool_hasFreeSlot(void);
 u32 tpool_tidToId(tTid tid);
 bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,u32 msgSize,void *data);
 

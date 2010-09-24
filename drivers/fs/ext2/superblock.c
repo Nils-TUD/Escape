@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/io.h>
-#include <esc/lock.h>
+#include <esc/thread.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

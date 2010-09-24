@@ -19,7 +19,7 @@
 
 #include <esc/common.h>
 #include <esc/debug.h>
-#include <esc/lock.h>
+#include <esc/thread.h>
 #include <stdlib.h>
 #include <assert.h>
 #include "blockcache.h"
@@ -105,6 +105,7 @@ sCBlock *bcache_request(sBlockCache *c,u32 blockNo,u8 mode) {
 }
 
 static void bcache_aquire(sCBlock *b,u8 mode) {
+	assert(!(mode & BMODE_WRITE) || b->refs == 0);
 	b->refs++;
 	assert(unlock(ALLOC_LOCK) == 0);
 	assert(lock((u32)b,(mode & BMODE_WRITE) ? LOCK_EXCLUSIVE : 0) == 0);
@@ -112,6 +113,7 @@ static void bcache_aquire(sCBlock *b,u8 mode) {
 
 static void bcache_doRelease(sCBlock *b,bool unlockAlloc) {
 	assert(lock(ALLOC_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP) == 0);
+	assert(b->refs > 0);
 	b->refs--;
 	if(unlockAlloc)
 		assert(unlock(ALLOC_LOCK) == 0);

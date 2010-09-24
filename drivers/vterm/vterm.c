@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/lock.h>
 #include <esc/thread.h>
 #include <esc/io.h>
 #include <esc/keycodes.h>

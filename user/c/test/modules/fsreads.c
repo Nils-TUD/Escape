@@ -18,7 +18,6 @@
  */
 
 #include <esc/common.h>
-#include <esc/lock.h>
 #include <esc/thread.h>
 #include <esc/dir.h>
 #include <stdio.h>
@@ -52,6 +51,7 @@ int mod_fsreads(int argc,char *argv[]) {
 		if(startThread(threadFunc,(void*)"/zeros") < 0)
 			error("Unable to start thread");
 	}
+#if 0
 	sDirEntry e;
 	tFD dir = opendir("/bin");
 	for(i = 0; i < THREAD_COUNT; i++) {
@@ -67,6 +67,7 @@ int mod_fsreads(int argc,char *argv[]) {
 			error("Unable to start thread");
 	}
 	closedir(dir);
+#endif
 	join(0);
 	return 0;
 }

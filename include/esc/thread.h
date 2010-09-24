@@ -33,6 +33,11 @@ typedef int (*fThreadEntry)(void *arg);
 #define EV_USER1				(1 << 14)	/* an event we can send */
 #define EV_USER2				(1 << 15)	/* an event we can send */
 
+#define LOCK_EXCLUSIVE			1
+#define LOCK_KEEP				2
+
+typedef u32 tULock;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -141,6 +146,96 @@ bool setThreadVal(u32 key,void *val);
  * @return the value or NULL if not found
  */
 void *getThreadVal(u32 key);
+
+/**
+ * Aquires a process-local lock with ident. You can specify with the flags whether it should
+ * be an exclusive lock and whether it should be free'd if it is no longer needed (no waits atm)
+ *
+ * @param ident to identify the lock
+ * @param flags flags (LOCK_*)
+ * @return 0 on success
+ */
+s32 lock(u32 ident,u16 flags);
+
+/**
+ * Aquires a process-local lock in user-space. If the given lock is in use, the process waits
+ * (actively, i.e. spinlock) until the lock is unused.
+ *
+ * @param lock the lock
+ */
+void locku(tULock *lock);
+
+/**
+ * Aquires a global lock with given ident. You can specify with the flags whether it should
+ * be an exclusive lock and whether it should be free'd if it is no longer needed (no waits atm)
+ *
+ * @param ident to identify the lock
+ * @return 0 on success
+ */
+s32 lockg(u32 ident,u16 flags);
+
+/**
+ * First it releases the specified process-local lock. After that it blocks the thread until
+ * one of the given events occurrs. This gives user-threads the chance to ensure that a
+ * notify() arrives AFTER a thread has called wait. So they can do:
+ * thread1:
+ *  lock(...);
+ *  ...
+ *  waitUnlock(...);
+ *
+ * thread2:
+ *  lock(...);
+ *  notify(thread1,...);
+ *  unlock(...);
+ *
+ *  @param events the events to wait for
+ *  @param ident the ident to unlock
+ *  @return 0 on success
+ */
+s32 waitUnlock(u32 events,u32 ident);
+
+/**
+ * First it releases the specified global lock. After that it blocks the thread until one of the
+ * given events occurrs. This gives user-threads the chance to ensure that a notify() arrives
+ * AFTER a thread has called wait. So they can do:
+ * thread1:
+ *  lock(...);
+ *  ...
+ *  waitUnlock(...);
+ *
+ * thread2:
+ *  lock(...);
+ *  notify(thread1,...);
+ *  unlock(...);
+ *
+ *  @param events the events to wait for
+ *  @param ident the ident to unlock
+ *  @return 0 on success
+ */
+s32 waitUnlockg(u32 events,u32 ident);
+
+/**
+ * Releases the process-local lock with given ident
+ *
+ * @param ident to identify the lock
+ * @return 0 on success
+ */
+s32 unlock(u32 ident);
+
+/**
+ * Releases the process-local lock that is locked in user-space
+ *
+ * @param lock the lock
+ */
+void unlocku(tULock *lock);
+
+/**
+ * Releases the global lock with given ident
+ *
+ * @param ident to identify the lock
+ * @return 0 on success
+ */
+s32 unlockg(u32 ident);
 
 #ifdef __cplusplus
 }

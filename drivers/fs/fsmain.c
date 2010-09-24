@@ -164,8 +164,6 @@ int main(int argc,char *argv[]) {
 				printf("[FS] Illegal command %d\n",mid);
 			else {
 				void *data = NULL;
-				while(!tpool_hasFreeSlot())
-					wait(EV_USER2);
 				if(mid == MSG_FS_WRITE) {
 					data = malloc(msg.args.arg4);
 					if(!data || RETRY(receive(fd,NULL,data,msg.args.arg4)) < 0) {

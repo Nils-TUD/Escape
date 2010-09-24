@@ -18,7 +18,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/lock.h>
+#include <esc/thread.h>
 #include <esc/io.h>
 #include <stdlib.h>
 #include "envintern.h"

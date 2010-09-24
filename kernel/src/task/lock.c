@@ -23,6 +23,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
+#include <string.h>
 #include <errors.h>
 
 #define LOCK_USED		4
@@ -32,17 +33,17 @@ typedef struct {
 	u32 ident;
 	u16 flags;
 	tPid pid;
-	u16 readRefs;
-	u16 writeRef;
+	volatile u16 readRefs;
+	volatile u16 writeRef;
 	u16 waitCount;
 } sLock;
 
 /**
  * Searches the lock-entry for the given ident and process-id
  */
-static sLock *lock_get(tPid pid,u32 ident,bool free);
+static s32 lock_get(tPid pid,u32 ident,bool free);
 
-static u32 lockCount = 0;
+static s32 lockCount = 0;
 static sLock *locks = NULL;
 
 /* fortunatly interrupts are disabled in kernel, so the whole stuff here is easy :) */
@@ -57,19 +58,24 @@ static bool lock_isLocked(sLock *l,u16 flags) {
 
 s32 lock_aquire(tPid pid,u32 ident,u16 flags) {
 	sThread *t = thread_getRunning();
-	sLock *l = lock_get(pid,ident,true);
-	if(!l)
+	s32 i = lock_get(pid,ident,true);
+	sLock *l;
+	if(i < 0)
 		return ERR_NOT_ENOUGH_MEM;
 
+	/* note that we have to use the index here since locks can chance if another threads reallocates
+	 * it in the meanwhile */
+	l = locks + i;
 	if(l->flags) {
 		/* if it exists and is locked, wait */
 		u32 event = (flags & LOCK_EXCLUSIVE) ? EV_UNLOCK_EX : EV_UNLOCK_SH;
-		while(lock_isLocked(l,flags)) {
-			l->waitCount++;
+		while(lock_isLocked(locks + i,flags)) {
+			locks[i].waitCount++;
 			thread_wait(t->tid,(void*)ident,event);
 			thread_switchNoSigs();
-			l->waitCount--;
+			locks[i].waitCount--;
 		}
+		l = locks + i;
 	}
 	else {
 		l->ident = ident;
@@ -89,17 +95,18 @@ s32 lock_aquire(tPid pid,u32 ident,u16 flags) {
 }
 
 s32 lock_release(tPid pid,u32 ident) {
-	sLock *l = lock_get(pid,ident,false);
-	if(!l)
+	s32 i = lock_get(pid,ident,false);
+	sLock *l = locks + i;
+	if(i < 0)
 		return ERR_LOCK_NOT_FOUND;
 
 	/* unlock */
 	if(l->flags & LOCK_EXCLUSIVE) {
-		assert(l->writeRef == 1);
+		vassert(l->writeRef == 1,"ident=%#08x, pid=%d",l->ident,l->pid);
 		l->writeRef = 0;
 	}
 	else {
-		assert(l->readRefs > 0);
+		vassert(l->readRefs > 0,"ident=%#08x, pid=%d",l->ident,l->pid);
 		l->readRefs--;
 	}
 	/* write-refs can't be > 0 here (either we were the writer -> free now, or we wouldn't
@@ -121,22 +128,26 @@ s32 lock_release(tPid pid,u32 ident) {
 	return 0;
 }
 
-void lock_releaseAll(tTid tid) {
-	/* TODO change to proc; remove all for pid */
+void lock_releaseAll(tPid pid) {
+	s32 i;
+	for(i = 0; i < lockCount; i++) {
+		if(locks[i].flags && locks[i].pid == pid)
+			locks[i].flags = 0;
+	}
 }
 
-static sLock *lock_get(tPid pid,u32 ident,bool free) {
-	u32 i;
-	sLock *fl = NULL;
+static s32 lock_get(tPid pid,u32 ident,bool free) {
+	s32 i,freeIdx = -1;
 	for(i = 0; i < lockCount; i++) {
-		if(free && !fl && locks[i].flags == 0)
-			fl = locks + i;
-		else if(locks[i].ident == ident && (locks[i].pid == INVALID_PID || locks[i].pid == pid))
-			return locks + i;
+		if(free && freeIdx == -1 && locks[i].flags == 0)
+			freeIdx = i;
+		else if(locks[i].flags && locks[i].ident == ident &&
+				(locks[i].pid == INVALID_PID || locks[i].pid == pid))
+			return i;
 	}
-	if(!fl && free) {
+	if(freeIdx == -1 && free) {
 		sLock *nlocks;
-		u32 oldCount = lockCount;
+		s32 oldCount = lockCount;
 		if(lockCount == 0)
 			lockCount = 8;
 		else
@@ -144,19 +155,19 @@ static sLock *lock_get(tPid pid,u32 ident,bool free) {
 		nlocks = kheap_realloc(locks,lockCount * sizeof(sLock));
 		if(nlocks == NULL) {
 			lockCount = oldCount;
-			return NULL;
+			return ERR_NOT_ENOUGH_MEM;
 		}
 		locks = nlocks;
 		memset(locks + oldCount,0,(lockCount - oldCount) * sizeof(sLock));
-		return locks + oldCount;
+		return oldCount;
 	}
-	return fl;
+	return freeIdx;
 }
 
 #if DEBUGGING
 
 void lock_dbg_print(void) {
-	u32 i;
+	s32 i;
 	vid_printf("Locks:\n");
 	for(i = 0; i < lockCount; i++) {
 		sLock *l = locks + i;

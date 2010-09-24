@@ -5,7 +5,7 @@
  */
 
 #include <esc/common.h>
-#include <esc/lock.h>
+#include <esc/thread.h>
 #include <esc/proc.h>
 
 /******************************************

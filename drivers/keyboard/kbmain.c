@@ -24,7 +24,6 @@
 #include <esc/debug.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
-#include <esc/lock.h>
 #include <esc/keycodes.h>
 #include <esc/messages.h>
 #include <esc/ringbuffer.h>

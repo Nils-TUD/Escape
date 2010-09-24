@@ -24,6 +24,7 @@
 #include <esc/fsinterface.h>
 #include "../mount.h"
 #include "../blockcache.h"
+#include "../threadpool.h"
 
 #define ATAPI_SECTOR_SIZE			2048
 #define ISO_BLK_SIZE(iso)			((iso)->primary.data.primary.logBlkSize.littleEndian)
@@ -226,7 +227,8 @@ typedef struct {
 
 /* the iso9660-handle (all information we need when working with it) */
 typedef struct {
-	tFD driverFd;
+	/* the file-descs for the driver (one for each thread and one for the initial) */
+	tFD drvFds[REQ_THREAD_COUNT + 1];
 	sISOVolDesc primary;
 	u32 direcNextFree;
 	sISOCDirEntry direcache[ISO_DIRE_CACHE_SIZE];

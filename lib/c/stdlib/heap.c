@@ -20,7 +20,7 @@
 #include <esc/common.h>
 #include <esc/mem.h>
 #include <esc/debug.h>
-#include <esc/lock.h>
+#include <esc/thread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

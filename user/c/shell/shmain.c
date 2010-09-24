@@ -83,7 +83,8 @@ int main(int argc,char **argv) {
 
 	/* give vterm our pid */
 	pid = getpid();
-	sendMsgData(fd,MSG_VT_SHELLPID,(u8*)&pid,sizeof(tPid));
+	if(sendRecvMsgData(fd,MSG_VT_SHELLPID,&pid,sizeof(tPid)) < 0)
+		error("Unable to send pid to vterm");
 
 	/* set vterm as env-variable */
 	setenv("TERM",argv[1]);
@@ -92,11 +93,6 @@ int main(int argc,char **argv) {
 	printf("\n");
 	printf("Try 'help' to see the current features :)\n");
 	printf("\n");
-
-	if(vterm == 0) {
-		shell_executeCmd("time test fsreads",false);
-		return 0;
-	}
 
 	while(1) {
 		/* create buffer (history will free it) */

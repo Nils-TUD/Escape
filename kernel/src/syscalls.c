@@ -106,6 +106,7 @@ static sSyscall syscalls[] = {
 	/* 63 */	{sysc_setRegProt,			2},
 	/* 64 */	{sysc_notify,				2},
 	/* 65 */	{sysc_getClientId,			1},
+	/* 66 */	{sysc_waitUnlock,			3},
 };
 
 void sysc_handle(sIntrptStackFrame *stack) {

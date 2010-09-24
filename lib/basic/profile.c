@@ -27,12 +27,14 @@
 #	define inb			util_inByte
 #else
 #	include <esc/ports.h>
+#	include <esc/thread.h>
 #	include <esc/debug.h>
 #	include <stdio.h>
 #	define outb			outByte
 #	define inb			inByte
 #endif
 
+#define PROFILE
 #define STACK_SIZE	1024
 
 #ifdef PROFILE
@@ -72,10 +74,14 @@ void __cyg_profile_func_enter(void *this_fn,void *call_site) {
 	sym = ksym_getSymbolAt((u32)this_fn);
 	logStr(sym->funcName);
 #else
-	logUnsigned((u64)this_fn,16);
+	logUnsigned((u32)this_fn,16);
 #endif
 	logChar('\n');
+#if IN_KERNEL
 	callStack[stackPos++] = cpu_rdtsc();
+#else
+	callStack[stackPos++] = getCycles();
+#endif
 }
 
 void __cyg_profile_func_exit(void *this_fn,void *call_site) {
@@ -84,7 +90,11 @@ void __cyg_profile_func_exit(void *this_fn,void *call_site) {
 	u64 now;
 	if(stackPos <= 0)
 		return;
+#if IN_KERNEL
 	now = cpu_rdtsc();
+#else
+	now = getCycles();
+#endif
 	stackPos--;
 	logChar('<');
 	logUnsigned(now - callStack[stackPos],10);

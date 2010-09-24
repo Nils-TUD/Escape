@@ -24,7 +24,6 @@
 #include <esc/io.h>
 #include <esc/ports.h>
 #include <esc/thread.h>
-#include <esc/lock.h>
 #include <stdio.h>
 #include <errors.h>
 #include <time.h>

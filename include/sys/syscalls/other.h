@@ -47,20 +47,4 @@ void sysc_debug(sIntrptStackFrame *stack);
  */
 void sysc_getConf(sIntrptStackFrame *stack);
 
-/**
- * Aquire a lock; wait until its unlocked, if necessary
- *
- * @param ident the lock-ident
- * @return s32 0 on success
- */
-void sysc_lock(sIntrptStackFrame *stack);
-
-/**
- * Releases a lock
- *
- * @param ident the lock-ident
- * @return s32 0 on success
- */
-void sysc_unlock(sIntrptStackFrame *stack);
-
 #endif /* SYSCALLS_OTHER_H_ */

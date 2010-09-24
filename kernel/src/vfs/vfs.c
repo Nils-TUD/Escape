@@ -1181,13 +1181,31 @@ u32 vfs_dbg_getGFTEntryCount(void) {
 	return count;
 }
 
-void vfs_dbg_printMsgsOf(sVFSNode *n) {
-	sVFSNode *child = NODE_FIRST_CHILD(n);
-	vid_printf("Msgs for %s:\n",n->name);
-	while(child != NULL) {
-		vid_printf("	%d: %d\n",child->owner,sll_length(child->data.drvuse.sendList));
-		child = child->next;
+void vfs_dbg_printMsgs(void) {
+	sVFSNode *drv = NODE_FIRST_CHILD(DRIVERS());
+	vid_printf("Messages:\n");
+	while(drv != NULL) {
+		if(IS_DRIVER(drv->mode))
+			vfs_dbg_printMsgsOf(drv);
+		drv = drv->next;
 	}
+}
+
+void vfs_dbg_printMsgsOf(sVFSNode *n) {
+	sVFSNode *chan = NODE_FIRST_CHILD(n);
+	vid_printf("\t%s:\n",n->name);
+	while(chan != NULL) {
+		u32 i;
+		sSLList *lists[] = {chan->data.drvuse.sendList,chan->data.drvuse.recvList};
+		for(i = 0; i < ARRAY_SIZE(lists); i++) {
+			u32 j,count = sll_length(lists[i]);
+			vid_printf("\t\tChannel %s %s: (%d)\n",chan->name,i ? "recvs" : "sends",count);
+			for(j = 0; j < count; j++)
+				vfsrw_dbg_printMessage(sll_get(lists[i],j));
+		}
+		chan = chan->next;
+	}
+	vid_printf("\n");
 }
 
 void vfs_dbg_printGFT(void) {

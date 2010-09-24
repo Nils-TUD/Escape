@@ -194,6 +194,18 @@ s32 receive(tFD fd,tMsgId *id,void *msg,u32 size) A_CHECKRET;
 s32 sendMsgData(tFD fd,tMsgId id,const void *data,u32 size);
 
 /**
+ * Sends a message with given id and optionally data to the given driver. Afterwards it receives
+ * the response and returns the result in msg.args.arg1.
+ *
+ * @param fd the file-descriptor
+ * @param id the message-id
+ * @param data the data (NULL = no data)
+ * @param size if data is not NULL, the size of data
+ * @return the result
+ */
+s32 sendRecvMsgData(tFD fd,tMsgId id,const void *data,u32 size) A_CHECKRET;
+
+/**
  * Sends a message with given id and no data to the given driver, receives a message and
  * copies the data-part of size msg.data.arg1 into <data> with at most <size> bytes.
  *

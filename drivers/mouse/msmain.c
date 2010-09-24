@@ -20,13 +20,13 @@
 #include <esc/common.h>
 #include <esc/ports.h>
 #include <esc/io.h>
-#include <esc/lock.h>
+#include <esc/thread.h>
 #include <esc/driver.h>
+#include <esc/ringbuffer.h>
+#include <esc/messages.h>
 #include <stdio.h>
 #include <signal.h>
-#include <esc/messages.h>
 #include <stdlib.h>
-#include <esc/ringbuffer.h>
 #include <errors.h>
 
 /* FIXME: THIS MAY CAUSE TROUBLE SINCE WE'RE USING AN IO-PORT THAT IS USED BY THE

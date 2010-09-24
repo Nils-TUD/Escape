@@ -22,7 +22,6 @@
 #include <esc/thread.h>
 #include <esc/sllist.h>
 #include <esc/io.h>
-#include <esc/lock.h>
 #include <string.h>
 #include <stdlib.h>
 #include "threadpool.h"
@@ -30,12 +29,12 @@
 #define RT_STATE_IDLE		0
 #define RT_STATE_HASWORK	1
 #define RT_STATE_BUSY		2
-#define RT_STATE_SHUTDOWN	3
 
-#define TMP_IDENT			0x67321224
+#define STATE_LOCK			0xF7180003
 
 static int tpool_idle(sReqThread *t);
 
+static volatile bool run = true;
 static tTid acceptTid;
 static sReqThread threads[REQ_THREAD_COUNT];
 
@@ -54,21 +53,10 @@ void tpool_init(void) {
 
 void tpool_shutdown(void) {
 	u32 i;
-	for(i = 0; i < REQ_THREAD_COUNT; i++) {
-		while(threads[i].state != RT_STATE_IDLE)
-			wait(EV_USER2);
-		threads[i].state = RT_STATE_SHUTDOWN;
+	run = false;
+	for(i = 0; i < REQ_THREAD_COUNT; i++)
 		notify(threads[i].tid,EV_USER1);
-	}
-}
-
-bool tpool_hasFreeSlot(void) {
-	u32 i;
-	for(i = 0; i < REQ_THREAD_COUNT; i++) {
-		if(threads[i].state == RT_STATE_IDLE)
-			return true;
-	}
-	return false;
+	join(0);
 }
 
 u32 tpool_tidToId(tTid tid) {
@@ -83,37 +71,44 @@ u32 tpool_tidToId(tTid tid) {
 
 bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,u32 msgSize,void *data) {
 	u32 i;
-	for(i = 0; i < REQ_THREAD_COUNT; i++) {
-		if(threads[i].state == RT_STATE_IDLE) {
-			sFSRequest *req = (sFSRequest*)malloc(sizeof(sFSRequest));
-			if(!req)
-				return false;
-			req->handler = handler;
-			req->fd = fd;
-			req->data = data;
-			memcpy(&req->msg,msg,msgSize);
-			threads[i].req = req;
-			threads[i].state = RT_STATE_HASWORK;
-			notify(threads[i].tid,EV_USER1);
-			return true;
+	while(true) {
+		lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
+		for(i = 0; i < REQ_THREAD_COUNT; i++) {
+			if(threads[i].state == RT_STATE_IDLE) {
+				sFSRequest *req = (sFSRequest*)malloc(sizeof(sFSRequest));
+				if(!req) {
+					unlock(STATE_LOCK);
+					return false;
+				}
+				req->handler = handler;
+				req->fd = fd;
+				req->data = data;
+				memcpy(&req->msg,msg,msgSize);
+				threads[i].req = req;
+				threads[i].state = RT_STATE_HASWORK;
+				notify(threads[i].tid,EV_USER1);
+				unlock(STATE_LOCK);
+				return true;
+			}
 		}
+		/* wait until there is a free slot */
+		waitUnlock(EV_USER2,STATE_LOCK);
 	}
+	/* unreachable */
 	return false;
 }
 
 static int tpool_idle(sReqThread *t) {
-	while(1) {
+	while(run) {
 		/* wait until we have work */
-		while(t->state == RT_STATE_IDLE)
+		while(run && t->state == RT_STATE_IDLE)
 			wait(EV_USER1);
-		if(t->state == RT_STATE_SHUTDOWN)
+		if(!run)
 			break;
 
 		/* handle request */
 		t->state = RT_STATE_BUSY;
-		/*lockg(TMP_IDENT);*/
 		t->req->handler(t->req->fd,&t->req->msg,t->req->data);
-		/*unlockg(TMP_IDENT);*/
 
 		/* clean up */
 		close(t->req->fd);
@@ -122,8 +117,10 @@ static int tpool_idle(sReqThread *t) {
 		t->req = NULL;
 
 		/* we're ready for new requests */
+		lock(STATE_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
 		t->state = RT_STATE_IDLE;
 		notify(acceptTid,EV_USER2);
+		unlock(STATE_LOCK);
 	}
 	return 0;
 }

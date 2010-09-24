@@ -123,8 +123,6 @@ int main(void) {
 					pos->col = MIN(pos->col,mode->cols);
 					pos->row = MIN(pos->row,mode->rows);
 					vid_setCursor(pos->row,pos->col);
-					msg.data.arg1 = 0;
-					send(fd,MSG_DEF_RESPONSE,&msg,sizeof(msg.data));
 				}
 				break;
 

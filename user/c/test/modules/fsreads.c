@@ -25,23 +25,10 @@
 #include <string.h>
 #include "fsreads.h"
 
-#define MY_LOCK			0x487912ee
 #define THREAD_COUNT	16
 #define BUF_SIZE		4096
-#define PRINT			0
 
 static int threadFunc(void *arg);
-static void printffl(const char *fmt,...) {
-#if PRINT
-	va_list ap;
-	va_start(ap,fmt);
-	vprintf(fmt,ap);
-	lockg(MY_LOCK,LOCK_EXCLUSIVE | LOCK_KEEP);
-	fflush(stdout);
-	unlockg(MY_LOCK);
-	va_end(ap);
-#endif
-}
 
 int mod_fsreads(int argc,char *argv[]) {
 	UNUSED(argc);
@@ -51,7 +38,6 @@ int mod_fsreads(int argc,char *argv[]) {
 		if(startThread(threadFunc,(void*)"/zeros") < 0)
 			error("Unable to start thread");
 	}
-#if 0
 	sDirEntry e;
 	tFD dir = opendir("/bin");
 	for(i = 0; i < THREAD_COUNT; i++) {
@@ -67,25 +53,18 @@ int mod_fsreads(int argc,char *argv[]) {
 			error("Unable to start thread");
 	}
 	closedir(dir);
-#endif
 	join(0);
 	return 0;
 }
 
 static int threadFunc(void *arg) {
-	/*UNUSED(arg);
-	char zeros[BUF_SIZE] = {0};*/
 	char buffer[BUF_SIZE];
-	tTid tid = gettid();
 	FILE *f = fopen((char*)arg,"r");
 	s32 count;
 	if(!f)
 		error("Unable to open '%s'",(char*)arg);
-	while((count = fread(buffer,1,BUF_SIZE,f)) > 0) {
-		/*printffl("[%d] Read %d bytes (%s)\n",
-				tid,count,memcmp(zeros,buffer,count) == 0 ? "OK" : "ERROR");*/
-	}
-	/*printffl("[%d] Ready!\n",tid);*/
+	while((count = fread(buffer,1,BUF_SIZE,f)) > 0)
+		;
 	fclose(f);
 	return 0;
 }

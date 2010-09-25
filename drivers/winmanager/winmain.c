@@ -35,7 +35,7 @@
 /**
  * Destroys the windows of a died thread
  */
-static void deadThreadHandler(tSig sig,u32 data);
+static void deadThreadHandler(s32 sig);
 /**
  * Handles a message from kmmng
  */
@@ -193,10 +193,10 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void deadThreadHandler(tSig sig,u32 data) {
+static void deadThreadHandler(s32 sig) {
 	UNUSED(sig);
-	/* TODO this is dangerous! we can't use the heap in signal-handlers */
-	win_destroyWinsOf(data,curX,curY);
+	/* TODO this is dangerous! we can't use the heap in signal-handlers
+	win_destroyWinsOf(data,curX,curY);*/
 }
 
 static void handleKbMessage(tDrvId drvId,sWindow *active,u8 keycode,bool isBreak,u8 modifier,char c) {

@@ -80,6 +80,6 @@ void __cxa_finalize(void *d) {
 
 void __libc_init(void) {
 	/* tell kernel address of sigRetFunc */
-	if(setSigHandler(SIG_RET,(fSigHandler)&sigRetFunc) < 0)
+	if(setSigHandler(SIG_RET,(fSignal)&sigRetFunc) < 0)
 		error("Unable to tell kernel sigRet-address");
 }

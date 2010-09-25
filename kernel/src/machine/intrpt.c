@@ -114,8 +114,14 @@ typedef struct {
 	u8 active;
 	tTid tid;
 	tSig sig;
-	u32 data;
 } sSignalData;
+
+typedef void (*fIntrptHandler)(sIntrptStackFrame *stack);
+typedef struct {
+	fIntrptHandler handler;
+	const char *name;
+	tSig signal;
+} sInterrupt;
 
 /* isr prototype */
 typedef void (*fISR)(void);
@@ -213,62 +219,73 @@ static void intrpt_handleSignal(void);
  */
 static void intrpt_handleSignalFinish(sIntrptStackFrame *stack);
 
-/* interrupt -> name */
-static const char *intrptNo2Name[] = {
-	/* 0x00 */	"Divide by zero",
-	/* 0x01 */	"Single step",
-	/* 0x02 */	"Non maskable",
-	/* 0x03 */	"Breakpoint",
-	/* 0x04 */	"Overflow",
-	/* 0x05 */	"Bounds check",
-	/* 0x06 */	"Invalid opcode",
-	/* 0x07 */	"Co-processor not available",
-	/* 0x08 */	"Double fault",
-	/* 0x09 */	"Co-processor segment overrun",
-	/* 0x0A */	"Invalid TSS",
-	/* 0x0B */	"Segment not present",
-	/* 0x0C */	"Stack exception",
-	/* 0x0D */	"General protection fault",
-	/* 0x0E */	"Page fault",
-	/* 0x0F */	"<unknown>",
-	/* 0x10 */	"Co-processor error",
-	/* 0x11 */	"<unknown>",
-	/* 0x12 */	"<unknown>",
-	/* 0x13 */	"<unknown>",
-	/* 0x14 */	"<unknown>",
-	/* 0x15 */	"<unknown>",
-	/* 0x16 */	"<unknown>",
-	/* 0x17 */	"<unknown>",
-	/* 0x18 */	"<unknown>",
-	/* 0x19 */	"<unknown>",
-	/* 0x1A */	"<unknown>",
-	/* 0x1B */	"<unknown>",
-	/* 0x1C */	"<unknown>",
-	/* 0x1D */	"<unknown>",
-	/* 0x1E */	"<unknown>",
-	/* 0x1F */	"<unknown>",
-	/* 0x20 */	"Timer",
-	/* 0x21 */	"Keyboard",
-	/* 0x22 */	"<Cascade>",
-	/* 0x23 */	"COM2",
-	/* 0x24 */	"COM1",
-	/* 0x25 */	"<unknown>",
-	/* 0x26 */	"Floppy",
-	/* 0x27 */	"<unknown>",
-	/* 0x28 */	"CMOS real-time-clock",
-	/* 0x29 */	"<unknown>",
-	/* 0x2A */	"<unknown>",
-	/* 0x2B */	"<unknown>",
-	/* 0x2C */	"Mouse",
-	/* 0x2D */	"<unknown>",
-	/* 0x2E */	"ATA1",
-	/* 0x2F */	"ATA2",
-	/* 0x30 */	"Syscall"
+/**
+ * The exception and interrupt-handlers
+ */
+static void intrpt_exFatal(sIntrptStackFrame *stack);
+static void intrpt_exGenProtFault(sIntrptStackFrame *stack);
+static void intrpt_exCoProcNA(sIntrptStackFrame *stack);
+static void intrpt_exPageFault(sIntrptStackFrame *stack);
+static void intrpt_irqTimer(sIntrptStackFrame *stack);
+static void intrpt_irqIgnore(sIntrptStackFrame *stack);
+static void intrpt_syscall(sIntrptStackFrame *stack);
+
+static sInterrupt intrptList[] = {
+	/* 0x00: EX_DIVIDE_BY_ZERO */		{intrpt_exFatal,"Divide by zero",0},
+	/* 0x01: EX_SINGLE_STEP */			{intrpt_exFatal,"Single step",0},
+	/* 0x02: EX_NONMASKABLE */			{intrpt_exFatal,"Non maskable",0},
+	/* 0x03: EX_BREAKPOINT */			{intrpt_exFatal,"Breakpoint",0},
+	/* 0x04: EX_OVERFLOW */				{intrpt_exFatal,"Overflow",0},
+	/* 0x05: EX_BOUNDS_CHECK */			{intrpt_exFatal,"Bounds check",0},
+	/* 0x06: EX_INVALID_OPCODE */		{intrpt_exFatal,"Invalid opcode",0},
+	/* 0x07: EX_CO_PROC_NA */			{intrpt_exCoProcNA,"Co-processor not available",0},
+	/* 0x08: EX_DOUBLE_FAULT */			{intrpt_exFatal,"Double fault",0},
+	/* 0x09: EX_CO_PROC_SEG_OVR */		{intrpt_exFatal,"Co-processor segment overrun",0},
+	/* 0x0A: EX_INVALID_TSS */			{intrpt_exFatal,"Invalid TSS",0},
+	/* 0x0B: EX_SEG_NOT_PRESENT */		{intrpt_exFatal,"Segment not present",0},
+	/* 0x0C: EX_STACK */				{intrpt_exFatal,"Stack exception",0},
+	/* 0x0D: EX_GEN_PROT_FAULT */		{intrpt_exGenProtFault,"General protection fault",0},
+	/* 0x0E: EX_PAGE_FAULT */			{intrpt_exPageFault,"Page fault",0},
+	/* 0x0F: -- */						{NULL,"Unknown",0},
+	/* 0x10: EX_CO_PROC_ERROR */		{intrpt_exFatal,"Co-processor error",0},
+	/* 0x11: -- */						{NULL,"Unknown",0},
+	/* 0x12: -- */						{NULL,"Unknown",0},
+	/* 0x13: -- */						{NULL,"Unknown",0},
+	/* 0x14: -- */						{NULL,"Unknown",0},
+	/* 0x15: -- */						{NULL,"Unknown",0},
+	/* 0x16: -- */						{NULL,"Unknown",0},
+	/* 0x17: -- */						{NULL,"Unknown",0},
+	/* 0x18: -- */						{NULL,"Unknown",0},
+	/* 0x19: -- */						{NULL,"Unknown",0},
+	/* 0x1A: -- */						{NULL,"Unknown",0},
+	/* 0x1B: -- */						{NULL,"Unknown",0},
+	/* 0x1C: -- */						{NULL,"Unknown",0},
+	/* 0x1D: -- */						{NULL,"Unknown",0},
+	/* 0x1E: -- */						{NULL,"Unknown",0},
+	/* 0x1F: -- */						{NULL,"Unknown",0},
+	/* 0x20: IRQ_TIMER */				{intrpt_irqTimer,"Timer",SIG_INTRPT_TIMER},
+	/* 0x21: IRQ_KEYBOARD */			{intrpt_irqIgnore,"Keyboard",SIG_INTRPT_KB},
+	/* 0x22: -- */						{NULL,"Unknown",0},
+	/* 0x23: IRQ_COM2 */				{intrpt_irqIgnore,"COM2",SIG_INTRPT_COM2},
+	/* 0x24: IRQ_COM1 */				{intrpt_irqIgnore,"COM1",SIG_INTRPT_COM1},
+	/* 0x25: -- */						{NULL,"Unknown",0},
+	/* 0x26: IRQ_FLOPPY */				{intrpt_irqIgnore,"Floppy",SIG_INTRPT_FLOPPY},
+	/* 0x27: -- */						{NULL,"Unknown",0},
+	/* 0x28: IRQ_CMOS_RTC */			{intrpt_irqIgnore,"CMOS",SIG_INTRPT_CMOS},
+	/* 0x29: -- */						{NULL,"Unknown",0},
+	/* 0x2A: -- */						{NULL,"Unknown",0},
+	/* 0x2B: -- */						{NULL,"Unknown",0},
+	/* 0x2C: IRQ_MOUSE */				{intrpt_irqIgnore,"Mouse",SIG_INTRPT_MOUSE},
+	/* 0x2D: -- */						{NULL,"Unknown",0},
+	/* 0x2C: IRQ_ATA1 */				{intrpt_irqIgnore,"ATA1",SIG_INTRPT_ATA1},
+	/* 0x2C: IRQ_ATA2 */				{intrpt_irqIgnore,"ATA2",SIG_INTRPT_ATA2},
+	/* 0x30: syscall */					{intrpt_syscall,"Systemcall",0},
 };
 
 /* total number of interrupts */
 static u32 intrptCount = 0;
 
+static u32 pfaddr = 0;
 /* stuff to count exceptions */
 static u32 exCount = 0;
 static u32 lastEx = 0xFFFFFFFF;
@@ -280,39 +297,11 @@ static tPid lastPFProc = INVALID_PID;
 /* pointer to the current interrupt-stack */
 static sIntrptStackFrame *curIntrptStack = NULL;
 
-/* the signal for a irq. SIG_COUNT = invalid */
-static tSig irq2Signal[] = {
-	SIG_INTRPT_TIMER,
-	SIG_INTRPT_KB,
-	SIG_COUNT,
-	SIG_INTRPT_COM2,
-	SIG_INTRPT_COM1,
-	SIG_COUNT,
-	SIG_INTRPT_FLOPPY,
-	SIG_COUNT,
-	SIG_INTRPT_CMOS,
-	SIG_COUNT,
-	SIG_COUNT,
-	SIG_COUNT,
-	SIG_INTRPT_MOUSE,
-	SIG_COUNT,
-	SIG_INTRPT_ATA1,
-	SIG_INTRPT_ATA2
-};
-
 /* temporary storage for signal-handling */
 static sSignalData signalData;
 
 /* the interrupt descriptor table */
 static sIDTEntry idt[IDT_COUNT];
-
-const char *intrpt_no2Name(u32 intrptNo) {
-	if(intrptNo < ARRAY_SIZE(intrptNo2Name)) {
-		return intrptNo2Name[intrptNo];
-	}
-
-	return "Unknown interrupt";
-}
 
 void intrpt_init(void) {
 	u32 i;
@@ -400,11 +389,9 @@ sIntrptStackFrame *intrpt_getCurStack(void) {
 static void intrpt_handleSignal(void) {
 	tTid tid;
 	tSig sig;
-	u32 data;
-	if(sig_hasSignal(&sig,&tid,&data)) {
+	if(sig_hasSignal(&sig,&tid)) {
 		signalData.active = 1;
 		signalData.sig = sig;
-		signalData.data = data;
 		signalData.tid = tid;
 
 		/* a small trick: we store the signal to handle and manipulate the user-stack
@@ -430,7 +417,7 @@ static void intrpt_handleSignal(void) {
 
 static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
-	fSigHandler handler;
+	fSignal handler;
 	u32 *esp = (u32*)stack->uesp;
 
 	/* release signal-data */
@@ -456,36 +443,32 @@ static void intrpt_handleSignalFinish(sIntrptStackFrame *stack) {
 		return;
 
 	handler = sig_startHandling(signalData.tid,signalData.sig);
-	if(handler != NULL) {
-		/* the ret-instruction of sigRet() should go to the old eip */
-		*--esp = stack->eip;
-		/* save regs */
-		*--esp = stack->eflags;
-		*--esp = stack->eax;
-		*--esp = stack->ebx;
-		*--esp = stack->ecx;
-		*--esp = stack->edx;
-		*--esp = stack->edi;
-		*--esp = stack->esi;
-		/* signal-number and data as arguments */
-		*--esp = signalData.data;
-		*--esp = signalData.sig;
-		/* sigRet will remove the argument, restore the register,
-		 * acknoledge the signal and return to eip */
-		*--esp = t->proc->sigRetAddr;
-		stack->eip = (u32)handler;
-		stack->uesp = (u32)esp;
-	}
+	/* the ret-instruction of sigRet() should go to the old eip */
+	*--esp = stack->eip;
+	/* save regs */
+	*--esp = stack->eflags;
+	*--esp = stack->eax;
+	*--esp = stack->ebx;
+	*--esp = stack->ecx;
+	*--esp = stack->edx;
+	*--esp = stack->edi;
+	*--esp = stack->esi;
+	/* signal-number as arguments */
+	*--esp = signalData.sig;
+	/* sigRet will remove the argument, restore the register,
+	 * acknoledge the signal and return to eip */
+	*--esp = t->proc->sigRetAddr;
+	stack->eip = (u32)handler;
+	stack->uesp = (u32)esp;
 }
 
 void intrpt_handler(sIntrptStackFrame *stack) {
-	u64 cycles = cpu_rdtsc();
-	u32 pfaddr = 0;
+	u64 cycles;
 	sThread *t = thread_getRunning();
+	sInterrupt *intrpt = intrptList + stack->intrptNo;
 	curIntrptStack = stack;
 	intrptCount++;
 
-	/* increase user-space cycles (not when coming from kernel-space) */
 	if(t->tid == IDLE_TID || stack->eip < KERNEL_AREA_V_ADDR) {
 		cycles = cpu_rdtsc();
 		if(t->stats.ucycleStart > 0)
@@ -494,156 +477,17 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		t->stats.kcycleStart = cycles;
 	}
 
-	/* add signal */
-	switch(stack->intrptNo) {
-		case IRQ_KEYBOARD:
-		case IRQ_MOUSE:
-		case IRQ_TIMER:
-		case IRQ_ATA1:
-		case IRQ_ATA2:
-		case IRQ_CMOS_RTC:
-		case IRQ_FLOPPY:
-		case IRQ_COM1:
-		case IRQ_COM2: {
-			tSig sig = irq2Signal[stack->intrptNo - IRQ_MASTER_BASE];
-			if(sig != SIG_COUNT)
-				sig_addSignal(sig,0);
-		}
-		break;
-	}
-
-	/* send EOI to PIC */
-	if(stack->intrptNo != IRQ_SYSCALL)
-		intrpt_eoi(stack->intrptNo);
-
 	/* we need to save the page-fault address here because swapping may cause other ones */
 	if(stack->intrptNo == EX_PAGE_FAULT)
 		pfaddr = cpu_getCR2();
 
 	swap_check();
 
-	switch(stack->intrptNo) {
-		case IRQ_KEYBOARD:
-		case IRQ_ATA1:
-		case IRQ_ATA2:
-		case IRQ_MOUSE:
-#if DEBUGGING
-			/* in debug-mode, start the logviewer when the keyboard is not present yet */
-			/* (with a present keyboard-driver we would steal him the scancodes) */
-			/* this way, we can debug the system in the startup-phase without affecting timings
-			 * (before viewing the log ;)) */
-			if(stack->intrptNo == IRQ_KEYBOARD && proc_getByPid(KEYBOARD_PID) == NULL) {
-				sKeyEvent ev;
-				if(kb_get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
-					cons_start();
-			}
-#endif
-			/* don't print info about intrpt */
-			break;
-
-		case IRQ_TIMER:
-			timer_intrpt();
-			break;
-
-		/* syscall */
-		case IRQ_SYSCALL:
-			if(t->proc->flags & P_VM86)
-				util_panic("VM86-task wants to perform a syscall!?");
-			sysc_handle(stack);
-			break;
-
-		/* exceptions */
-		case EX_DIVIDE_BY_ZERO ... EX_CO_PROC_ERROR:
-			/* for exceptions in kernel: ensure that we have the default print-function */
-			if(stack->eip >= KERNEL_AREA_V_ADDR)
-				vid_unsetPrintFunc();
-
-			/* #PF */
-			if(stack->intrptNo == EX_PAGE_FAULT) {
-#if DEBUG_PAGEFAULTS
-				if(pfaddr == lastPFAddr && lastPFProc == proc_getRunning()->pid) {
-					exCount++;
-					if(exCount >= MAX_EX_COUNT)
-						util_panic("%d page-faults at the same address of the same process",exCount);
-				}
-				else
-					exCount = 0;
-				lastPFAddr = pfaddr;
-				lastPFProc = proc_getRunning()->pid;
-				vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
-						stack->eip,proc_getRunning()->pid);
-#endif
-
-				/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
-				if(!vmm_pagefault(pfaddr)) {
-					/* ok, now lets check if the thread wants more stack-pages */
-					if(thread_extendStack(pfaddr) < 0) {
-						vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
-											stack->eip,proc_getRunning()->pid);
-						vid_printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
-								(stack->errorCode & 0x1) ?
-									"page-level protection violation" : "not-present page",
-								(stack->errorCode & 0x2) ? "write" : "read",
-								(stack->errorCode & 0x4) ? "user-mode" : "kernel-mode",
-								(stack->errorCode & 0x8) ? "reserved bits set to 1\n\t" : "",
-								(stack->errorCode & 0x16) ? "instruction-fetch" : "");
-
-						/*proc_terminate(t->proc);
-						thread_switch();*/
-						/* hm...there is something wrong :) */
-						/* TODO later the process should be killed here */
-						util_panic("Page fault for address=0x%08x @ 0x%x",pfaddr,stack->eip);
-					}
-				}
-				break;
-			}
-
-			/* #NM */
-			if(stack->intrptNo == EX_CO_PROC_NA) {
-				fpu_handleCoProcNA(&t->fpuState);
-				break;
-			}
-
-			/* count consecutive occurrences */
-			if(lastEx == stack->intrptNo) {
-				exCount++;
-
-				/* stop here? */
-				if(exCount >= MAX_EX_COUNT) {
-					util_panic("Got this exception (0x%x) %d times. Stopping here (@ 0x%x)\n",
-							stack->intrptNo,exCount,stack->eip);
-				}
-			}
-			else {
-				exCount = 0;
-				lastEx = stack->intrptNo;
-			}
-
-			/* #GPF */
-			if(stack->intrptNo == EX_GEN_PROT_FAULT) {
-				/* io-map not loaded yet? */
-				if(t->proc->ioMap != NULL && !tss_ioMapPresent()) {
-					/* load it and give the process another try */
-					tss_setIOMap(t->proc->ioMap);
-					exCount = 0;
-					break;
-				}
-				/* vm86-task? */
-				if(t->proc->flags & P_VM86) {
-					vm86_handleGPF(stack);
-					exCount = 0;
-					break;
-				}
-				/* TODO later the process should be killed here */
-				util_panic("GPF @ 0x%x",stack->eip);
-				break;
-			}
-			/* fall through */
-
-		default:
-			vid_printf("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
-					intrpt_no2Name(stack->intrptNo),stack->eip,t->proc->pid,t->proc->command);
-			break;
+	if(intrpt->handler)
+		intrpt->handler(stack);
+	else {
+		vid_printf("Got interrupt %d (%s) @ 0x%x in process %d (%s)\n",stack->intrptNo,
+				intrpt->name,stack->eip,t->proc->pid,t->proc->command);
 	}
 
 	/* handle signal, if not already doing */
@@ -662,6 +506,129 @@ void intrpt_handler(sIntrptStackFrame *stack) {
 		/* user-mode starts here */
 		t->stats.ucycleStart = cycles;
 	}
+}
+
+static void intrpt_exFatal(sIntrptStackFrame *stack) {
+	/* count consecutive occurrences */
+	if(lastEx == stack->intrptNo) {
+		exCount++;
+
+		/* stop here? */
+		if(exCount >= MAX_EX_COUNT) {
+			/* for exceptions in kernel: ensure that we have the default print-function */
+			if(stack->eip >= KERNEL_AREA_V_ADDR)
+				vid_unsetPrintFunc();
+			util_panic("Got this exception (0x%x) %d times. Stopping here (@ 0x%x)\n",
+					stack->intrptNo,exCount,stack->eip);
+		}
+	}
+	else {
+		exCount = 0;
+		lastEx = stack->intrptNo;
+	}
+}
+
+static void intrpt_exGenProtFault(sIntrptStackFrame *stack) {
+	sThread *t = thread_getRunning();
+	/* for exceptions in kernel: ensure that we have the default print-function */
+	if(stack->eip >= KERNEL_AREA_V_ADDR)
+		vid_unsetPrintFunc();
+	/* io-map not loaded yet? */
+	if(t->proc->ioMap != NULL && !tss_ioMapPresent()) {
+		/* load it and give the process another try */
+		tss_setIOMap(t->proc->ioMap);
+		exCount = 0;
+		return;
+	}
+	/* vm86-task? */
+	if(t->proc->flags & P_VM86) {
+		vm86_handleGPF(stack);
+		exCount = 0;
+		return;
+	}
+	/* TODO later the process should be killed here */
+	util_panic("GPF @ 0x%x",stack->eip);
+}
+
+static void intrpt_exCoProcNA(sIntrptStackFrame *stack) {
+	sThread *t = thread_getRunning();
+	fpu_handleCoProcNA(&t->fpuState);
+}
+
+static void intrpt_exPageFault(sIntrptStackFrame *stack) {
+	/* for exceptions in kernel: ensure that we have the default print-function */
+	if(stack->eip >= KERNEL_AREA_V_ADDR)
+		vid_unsetPrintFunc();
+
+#if DEBUG_PAGEFAULTS
+	if(pfaddr == lastPFAddr && lastPFProc == proc_getRunning()->pid) {
+		exCount++;
+		if(exCount >= MAX_EX_COUNT)
+			util_panic("%d page-faults at the same address of the same process",exCount);
+	}
+	else
+		exCount = 0;
+	lastPFAddr = pfaddr;
+	lastPFProc = proc_getRunning()->pid;
+	vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
+			stack->eip,proc_getRunning()->pid);
+#endif
+
+	/* first let the vmm try to handle the page-fault (demand-loading, cow, swapping, ...) */
+	if(!vmm_pagefault(pfaddr)) {
+		/* ok, now lets check if the thread wants more stack-pages */
+		if(thread_extendStack(pfaddr) < 0) {
+			vid_printf("Page fault for address=0x%08x @ 0x%x, process %d\n",pfaddr,
+								stack->eip,proc_getRunning()->pid);
+			vid_printf("Occurred because:\n\t%s\n\t%s\n\t%s\n\t%s%s\n",
+					(stack->errorCode & 0x1) ?
+						"page-level protection violation" : "not-present page",
+					(stack->errorCode & 0x2) ? "write" : "read",
+					(stack->errorCode & 0x4) ? "user-mode" : "kernel-mode",
+					(stack->errorCode & 0x8) ? "reserved bits set to 1\n\t" : "",
+					(stack->errorCode & 0x16) ? "instruction-fetch" : "");
+
+			/*proc_terminate(t->proc);
+			thread_switch();*/
+			/* hm...there is something wrong :) */
+			/* TODO later the process should be killed here */
+			util_panic("Page fault for address=0x%08x @ 0x%x",pfaddr,stack->eip);
+		}
+	}
+}
+
+static void intrpt_irqTimer(sIntrptStackFrame *stack) {
+	sInterrupt *intrpt = intrptList + stack->intrptNo;
+	if(intrpt->signal)
+		sig_addSignal(intrpt->signal);
+	intrpt_eoi(stack->intrptNo);
+	timer_intrpt();
+}
+
+static void intrpt_irqIgnore(sIntrptStackFrame *stack) {
+	sInterrupt *intrpt = intrptList + stack->intrptNo;
+	if(intrpt->signal)
+		sig_addSignal(intrpt->signal);
+	intrpt_eoi(stack->intrptNo);
+#if DEBUGGING
+	/* in debug-mode, start the logviewer when the keyboard is not present yet */
+	/* (with a present keyboard-driver we would steal him the scancodes) */
+	/* this way, we can debug the system in the startup-phase without affecting timings
+	 * (before viewing the log ;)) */
+	if(stack->intrptNo == IRQ_KEYBOARD && proc_getByPid(KEYBOARD_PID) == NULL) {
+		sKeyEvent ev;
+		if(kb_get(&ev,KEV_PRESS,false) && ev.keycode == VK_F12)
+			cons_start();
+	}
+#endif
+}
+
+static void intrpt_syscall(sIntrptStackFrame *stack) {
+	sThread *t = thread_getRunning();
+	if(t->proc->flags & P_VM86)
+		util_panic("VM86-task wants to perform a syscall!?");
+	t->stats.syscalls++;
+	sysc_handle(stack);
 }
 
 static void intrpt_initPic(void) {

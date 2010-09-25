@@ -48,7 +48,7 @@ static void stopSound(void);
 /**
  * The timer-interrupt-handler
  */
-static void timerIntrptHandler(tSig sig,u32 data);
+static void timerIntrptHandler(s32 sig);
 
 static sMsg msg;
 static s32 timerFreq;
@@ -111,9 +111,8 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void timerIntrptHandler(tSig sig,u32 data) {
+static void timerIntrptHandler(s32 sig) {
 	UNUSED(sig);
-	UNUSED(data);
 	if(intrptTarget > 0) {
 		intrptCount += 1000 / timerFreq;
 		if(intrptCount >= intrptTarget) {

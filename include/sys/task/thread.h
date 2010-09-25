@@ -23,6 +23,8 @@
 #include <sys/common.h>
 #include <sys/machine/fpu.h>
 #include <sys/task/proc.h>
+#include <sys/task/signals.h>
+#include <esc/hashmap.h>
 
 #define MAX_STACK_PAGES			128
 
@@ -109,10 +111,8 @@ typedef struct sThread sThread;
 struct sThread {
 	/* thread state. see eThreadState */
 	u8 state;
-	/* whether this thread waits somewhere in the kernel (not directly triggered by the user) */
-	u8 waitsInKernel;
-	/* the signal that the thread is currently handling (if > 0) */
-	tSig signal;
+	/* whether signals should be ignored (while being blocked) */
+	u8 ignoreSignals;
 	/* thread id */
 	tTid tid;
 	/* the events the thread waits for (if waiting) */
@@ -138,6 +138,7 @@ struct sThread {
 		uLongLong kcycleCount;
 		/* the number of times we got chosen so far */
 		u32 schedCount;
+		u32 syscalls;
 	} stats;
 	/* for the scheduler */
 	sThread *prev;
@@ -169,6 +170,11 @@ extern bool thread_resume(u32 pageDir,sThreadRegs *saveArea,u32 kstackFrame);
  * @return the first thread
  */
 sThread *thread_init(sProc *p);
+
+/**
+ * @return the map of threads
+ */
+sHashMap *thread_getMap(void);
 
 /**
  * @return the number of existing threads

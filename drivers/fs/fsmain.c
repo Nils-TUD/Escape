@@ -81,9 +81,8 @@ static fReqHandler commands[] = {
 	/* MSG_FS_ISTAT */		(fReqHandler)cmdIstat,
 };
 
-static void sigTermHndl(tSig sig,u32 data) {
+static void sigTermHndl(s32 sig) {
 	UNUSED(sig);
-	UNUSED(data);
 	run = false;
 }
 
@@ -174,7 +173,7 @@ int main(int argc,char *argv[]) {
 				}
 				if(!tpool_addRequest(commands[mid - MSG_FS_OPEN],fd,&msg,sizeof(msg),data))
 					printf("[FS] Not enough mem for request %d\n",mid);
-				/*commands[mid - MSG_FS_OPEN](fd,&msg);
+				/*commands[mid - MSG_FS_OPEN](fd,&msg,data);
 				close(fd);*/
 			}
 		}

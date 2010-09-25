@@ -32,9 +32,8 @@ static tTid child = -1;
 static u32 parentCount = 0;
 static u32 childCount = 0;
 
-static void timerIRQ(tSig sig,u32 data) {
+static void timerIRQ(s32 sig) {
 	UNUSED(sig);
-	UNUSED(data);
 	if(gettid() == parent)
 		parentCount++;
 	else

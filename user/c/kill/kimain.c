@@ -80,7 +80,7 @@ int main(int argc,const char *argv[]) {
 		while(*args) {
 			tPid pid = atoi(*args);
 			if(pid > 0) {
-				if(sendSignalTo(pid,sig,0) < 0)
+				if(sendSignalTo(pid,sig) < 0)
 					fprintf(stderr,"Unable to send signal %d to %d\n",sig,pid);
 			}
 			else if(strcmp(*args,"0") != 0)

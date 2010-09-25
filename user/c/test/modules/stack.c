@@ -23,7 +23,7 @@
 #include <signal.h>
 #include "stack.h"
 
-static void sigHandler(tSig sig,u32 data);
+static void sigHandler(s32 sig);
 static void f(int a);
 
 int mod_stack(int argc,char *argv[]) {
@@ -35,15 +35,14 @@ int mod_stack(int argc,char *argv[]) {
 	return 0;
 }
 
-static void sigHandler(tSig sig,u32 data) {
+static void sigHandler(s32 sig) {
 	UNUSED(sig);
-	UNUSED(data);
 }
 
 static void f(int a) {
 	if(a % 128 == 0)
 		printf("&a = %08x\n",&a);
-	if(sendSignalTo(getpid(),SIG_TERM,a) < 0)
+	if(sendSignalTo(getpid(),SIG_TERM) < 0)
 		printe("Unable to send signal");
 	f(a + 1);
 }

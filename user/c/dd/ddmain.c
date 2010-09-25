@@ -32,9 +32,8 @@ static void usage(const char *name) {
 	fprintf(stderr,"	You can use the suffixes K, M and G to specify N\n");
 	exit(EXIT_FAILURE);
 }
-static void interrupted(tSig sig,u32 data) {
+static void interrupted(s32 sig) {
 	UNUSED(sig);
-	UNUSED(data);
 	run = false;
 }
 

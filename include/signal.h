@@ -25,8 +25,8 @@
 #define SIG_COUNT			18
 
 /* special signal-handler-addresses */
-#define SIG_IGN				((fSigHandler)-3)		/* ignore signal */
-#define SIG_DFL				((fSigHandler)-2)		/* reset to default behaviour */
+#define SIG_IGN				((fSignal)-3)			/* ignore signal */
+#define SIG_DFL				((fSignal)-2)			/* reset to default behaviour */
 #define SIG_ERR				-1						/* indicates an error */
 
 /* the signals */
@@ -59,9 +59,7 @@
 #define SIGSEGV				SIG_SEGFAULT
 #define SIGTERM				SIG_TERM
 
-/* the real signal-handler-signature */
-typedef void (*fSigHandler)(tSig sigNo,u32 data);
-/* the standard signature */
+/* the signature */
 typedef void (*fSignal)(s32);
 
 #ifdef __cplusplus
@@ -75,26 +73,24 @@ extern "C" {
  * @param handler the handler-function
  * @return 0 on success
  */
-s32 setSigHandler(tSig signal,fSigHandler handler) A_CHECKRET;
+s32 setSigHandler(tSig signal,fSignal handler) A_CHECKRET;
 
 /**
  * Sends the given signal to all process (that have announced a handler)
  *
  * @param signal the signal
- * @param data the data to send
  * @return 0 on success
  */
-s32 sendSignal(tSig signal,u32 data) A_CHECKRET;
+s32 sendSignal(tSig signal) A_CHECKRET;
 
 /**
  * Sends the given signal to given process (interrupts can't be sended)
  *
  * @param pid the process-id
  * @param signal the signal
- * @param data the data to send
  * @return 0 on success
  */
-s32 sendSignalTo(tPid pid,tSig signal,u32 data) A_CHECKRET;
+s32 sendSignalTo(tPid pid,tSig signal) A_CHECKRET;
 
 /**
  * The  signal  system call installs a new signal handler for#

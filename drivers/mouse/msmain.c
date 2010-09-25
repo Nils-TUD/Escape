@@ -67,7 +67,7 @@
 
 #define INPUT_BUF_SIZE				128
 
-static void irqHandler(tSig sig,u32 data);
+static void irqHandler(s32 sig);
 static void kb_init(void);
 static void kb_checkCmd(void);
 static u16 kb_read(void);
@@ -171,10 +171,9 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void irqHandler(tSig sig,u32 data) {
+static void irqHandler(s32 sig) {
 	u8 status;
 	UNUSED(sig);
-	UNUSED(data);
 
 	/* check if there is mouse-data */
 	status = inByte(IOPORT_KB_CTRL);

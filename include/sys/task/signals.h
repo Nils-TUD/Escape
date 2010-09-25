@@ -24,9 +24,9 @@
 
 #define SIG_COUNT			18
 
-#define SIG_IGN				((fSigHandler)-3)		/* ignore signal */
-#define SIG_DFL				((fSigHandler)-2)		/* reset to default behaviour */
-#define SIG_ERR				((fSigHandler)-1)		/* error-return */
+#define SIG_IGN				((fSignal)-3)			/* ignore signal */
+#define SIG_DFL				((fSignal)-2)			/* reset to default behaviour */
+#define SIG_ERR				((fSignal)-1)			/* error-return */
 
 /* the signals */
 #define SIG_RET				-1						/* used to tell the kernel the addr of sigRet */
@@ -50,10 +50,10 @@
 #define SIG_INTRPT_MOUSE	17
 
 /* signal-handler-signature */
-typedef void (*fSigHandler)(tSig sigNo,u32 data);
+typedef void (*fSignal)(s32);
 
 /**
- * Inits the signal-handling
+ * Initializes the signal-handling
  */
 void sig_init(void);
 
@@ -79,9 +79,9 @@ bool sig_canSend(tSig signal);
  * @param tid the thread-id
  * @param signal the signal
  * @param func the handler-function
- * @return 0 if successfull
+ * @return 0 on success
  */
-s32 sig_setHandler(tTid tid,tSig signal,fSigHandler func);
+s32 sig_setHandler(tTid tid,tSig signal,fSignal func);
 
 /**
  * Removes the signal-handler for <signal>
@@ -92,15 +92,6 @@ s32 sig_setHandler(tTid tid,tSig signal,fSigHandler func);
 void sig_unsetHandler(tTid tid,tSig signal);
 
 /**
- * Clones all handler of <parent> for <child>.
- *
- * @param parent the parent-thread-id
- * @param child the child-thread-id
- * @return 0 on success
- */
-s32 sig_cloneHandler(tTid parent,tTid child);
-
-/**
  * Removes all handler for the given thread
  *
  * @param tid the thread-id
@@ -108,15 +99,22 @@ s32 sig_cloneHandler(tTid parent,tTid child);
 void sig_removeHandlerFor(tTid tid);
 
 /**
- * Checks whether there is any signal to handle. If so <sig>,<tid> and <data> will be set
+ * Clones all handler of <parent> for <child>.
+ *
+ * @param parent the parent-thread-id
+ * @param child the child-thread-id
+ */
+void sig_cloneHandler(tTid parent,tTid child);
+
+/**
+ * Checks whether there is any signal to handle. If so <sig> and <tid> will be set
  * to the signal to handle.
  *
  * @param sig the signal (will be set on success)
  * @param tid the thread-id (will be set on success)
- * @param data the data to send (will be set on success)
  * @return true if there is a signal
  */
-bool sig_hasSignal(tSig *sig,tPid *tid,u32 *data);
+bool sig_hasSignal(tSig *sig,tTid *tid);
 
 /**
  * Checks whether <tid> has a signal
@@ -131,20 +129,18 @@ bool sig_hasSignalFor(tTid tid);
  *
  * @param pid the process-id
  * @param signal the signal
- * @param data the data to send
  * @return true if we should directly switch to the process (handle the signal) or false
  * 	if the process is active and we should do this later
  */
-bool sig_addSignalFor(tPid pid,tSig signal,u32 data);
+void sig_addSignalFor(tPid pid,tSig signal);
 
 /**
  * Adds the given signal to all threads that have announced a handler for it
  *
  * @param signal the signal
- * @param data the data to send
  * @return the thread-id to which we should switch now or INVALID_TID if we should do this later
  */
-tTid sig_addSignal(tSig signal,u32 data);
+void sig_addSignal(tSig signal);
 
 /**
  * Starts handling the given signal. That means the signal will be marked as "active" until
@@ -152,9 +148,9 @@ tTid sig_addSignal(tSig signal,u32 data);
  *
  * @param tid the thread-id
  * @param signal the signal
- * @return the handler-function or NULL
+ * @return the handler-function
  */
-fSigHandler sig_startHandling(tTid tid,tSig signal);
+fSignal sig_startHandling(tTid tid,tSig signal);
 
 /**
  * Acknoledges the current signal with given thread (marks handling as finished)

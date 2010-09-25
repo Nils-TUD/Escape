@@ -40,6 +40,9 @@ typedef struct {
 	/* cycle-count */
 	uLongLong ucycleCount;
 	uLongLong kcycleCount;
+	/* other stats */
+	u32 schedCount;
+	u32 syscalls;
 } sExitState;
 
 #ifdef __cplusplus

@@ -23,96 +23,37 @@
 #include <sys/task/signals.h>
 #include <sys/mem/kheap.h>
 #include <sys/util.h>
-#include <sys/kevent.h>
 #include <sys/video.h>
-#include <esc/sllist.h>
 #include <errors.h>
 #include <assert.h>
 
-/* the information we need about every announced handler */
+typedef struct {
+	fSignal handler;
+	u32 pending;
+} sSignalSlot;
+
 typedef struct {
 	tTid tid;
-	fSigHandler handler;
-	u8 active;
-	sSLList *pending;
-} sHandler;
-
-/* information about a signal to send; for the signal-queue */
-typedef struct {
-	sHandler *handler;
+	/* bitmask of pending signals */
+	u32 signalsPending;
+	/* signal handler */
+	sSignalSlot signals[SIG_COUNT];
+	/* the signal that the thread is currently handling (if > 0) */
 	tSig signal;
-	u32 data;
-} sSignal;
+} sSigThread;
 
-/**
- * Sends all queued signals, if possible
- */
-static void sig_sendQueued(void);
+static void sig_add(sSigThread *t,tSig sig);
+static void sig_remove(sSigThread *t,tSig sig);
+static void sig_unset(sSigThread *t,tSig sig);
+static sSigThread *sig_getThread(tTid tid,bool create);
 
-/**
- * Sends queued signals, if necessary, and checks if there are signals at all
- * @return false if there are definitly no signals
- */
-static bool sig_hasSigPre(void);
-
-/**
- * Adds the given signal to the queue to pass it later to the handler
- *
- * @param h the handler
- * @param signal the signal
- * @param data the data
- */
-static void sig_addToQueue(sHandler *h,tSig signal,u32 data);
-
-/**
- * Removes all queued signals for the given handler from the queue
- *
- * @param h the handler
- */
-static void sig_remFromQueue(sHandler *h);
-
-/**
- * Adds a signal to the given handler and performs the corresponding action for SIG_KILL, SIG_TERM
- * and so on.
- *
- * @param h the handler (may be NULL)
- * @param pid the pid (may be INVALID_PID)
- * @param signal the signal
- * @param data the data to send
- * @param add whether the signal should be added to the handler
- * @return true if the signal should be handled (now or later); false it should be ignored
- */
-static bool sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data,bool add);
-
-/**
- * Finds the handler for the given thread and signal
- *
- * @param tid the thread-id
- * @param signal the signal
- * @return the handler or NULL
- */
-static sHandler *sig_get(tTid tid,tSig signal);
-
-/**
- * Kevent-handler
- */
-static void sig_kWaitDone(u32 tid);
-
-/* to increase the speed of sig_hasSignal() store the total number of waiting signals */
-static u32 totalSigs = 0;
-/* a linked list of handlers for each signal */
-static sSLList *handler[SIG_COUNT - 1] = {NULL};
-/* whether our handler is already announced in kevents */
-static bool kevAdded = false;
-/* whether we should look in the queue which signals we can deliver now */
-static bool sendQueued = false;
-/* a queue for signals that can't be delivered atm */
-static sSLList *signalQueue = NULL;
+static u32 pendingSignals = 0;
+static sSLList *sigThreads = NULL;
 
 void sig_init(void) {
-	signalQueue = sll_create();
-	if(signalQueue == NULL)
-		util_panic("Unable to create signal-queue");
+	sigThreads = sll_create();
+	if(!sigThreads)
+		util_panic("Unable to create signal-thread-list");
 }
 
 bool sig_canHandle(tSig signal) {
@@ -124,407 +65,178 @@ bool sig_canSend(tSig signal) {
 	return signal < SIG_INTRPT_TIMER;
 }
 
-s32 sig_setHandler(tTid tid,tSig signal,fSigHandler func) {
-	sHandler *h;
-	bool handlerExisted = true;
+s32 sig_setHandler(tTid tid,tSig signal,fSignal func) {
+	sSigThread *t = sig_getThread(tid,true);
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
-
-	h = sig_get(tid,signal);
-	if(h == NULL) {
-		handlerExisted = false;
-		/* list not existing yet? */
-		if(handler[signal - 1] == NULL) {
-			handler[signal - 1] = sll_create();
-			if(handler[signal - 1] == NULL)
-				return ERR_NOT_ENOUGH_MEM;
-		}
-
-		/* no handler present, so allocate a new one */
-		h = (sHandler*)kheap_alloc(sizeof(sHandler));
-		if(h == NULL)
-			return ERR_NOT_ENOUGH_MEM;
-	}
-
+	if(!t)
+		return ERR_NOT_ENOUGH_MEM;
 	/* set / replace handler */
 	/* note that we discard not yet delivered signals here.. */
-	h->tid = tid;
-	h->handler = func;
-	h->pending = NULL;
-	h->active = 0;
-
-	/* don't add it twice */
-	if(!handlerExisted && !sll_append(handler[signal - 1],h)) {
-		kheap_free(h);
-		return ERR_NOT_ENOUGH_MEM;
-	}
-
+	t->signals[signal].handler = func;
+	sig_unset(t,signal);
 	return 0;
 }
 
 void sig_unsetHandler(tTid tid,tSig signal) {
-	sHandler *h;
+	sSigThread *t = sig_getThread(tid,false);
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
-
-	h = sig_get(tid,signal);
-	if(h != NULL) {
-		if(h->pending != NULL) {
-			totalSigs -= sll_length(h->pending);
-			sll_destroy(h->pending,false);
-		}
-		sig_remFromQueue(h);
-		sll_removeFirst(handler[signal - 1],h);
-		kheap_free(h);
-	}
-}
-
-s32 sig_cloneHandler(tTid parent,tTid child) {
-	s32 i,res;
-	sSLNode *n;
-	sHandler *h;
-	sSLList **list = handler;
-	for(i = 0; i < SIG_COUNT - 1; i++) {
-		if(*list != NULL) {
-			for(n = sll_begin(*list); n != NULL; n = n->next) {
-				h = (sHandler*)n->data;
-				if(h->tid == parent) {
-					if((res = sig_setHandler(child,i + 1,h->handler)) < 0) {
-						/* remove all handlers that we've added so far */
-						sig_removeHandlerFor(child);
-						return res;
-					}
-				}
-			}
-		}
-		list++;
-	}
-	return 0;
+	if(!t)
+		return;
+	t->signals[signal].handler = NULL;
+	sig_unset(t,signal);
 }
 
 void sig_removeHandlerFor(tTid tid) {
-	u32 i;
-	sSLNode *p,*n,*m;
-	sHandler *h;
-	sSLList **list = handler;
-	for(i = 0; i < SIG_COUNT - 1; i++) {
-		if(*list != NULL) {
-			p = NULL;
-			for(n = sll_begin(*list); n != NULL; ) {
-				h = (sHandler*)n->data;
-				if(h->tid == tid) {
-					if(h->pending != NULL) {
-						totalSigs -= sll_length(h->pending);
-						sll_destroy(h->pending,false);
-					}
-					sig_remFromQueue(h);
-					m = n->next;
-					/* remove node */
-					sll_removeNode(*list,n,p);
-					kheap_free(h);
-					n = m;
-				}
-				else {
-					p = n;
-					n = n->next;
-				}
-			}
-		}
-		list++;
+	s32 i;
+	sSigThread *t = sig_getThread(tid,false);
+	if(!t)
+		return;
+	for(i = 0; i < SIG_COUNT; i++)
+		sig_unset(t,i);
+	sll_removeFirst(sigThreads,t);
+	kheap_free(t);
+}
+
+void sig_cloneHandler(tTid parent,tTid child) {
+	s32 i;
+	sSigThread *p = sig_getThread(parent,false);
+	sSigThread *c;
+	if(!p)
+		return;
+	c = sig_getThread(child,true);
+	c->signalsPending = 0;
+	for(i = 0; i < SIG_COUNT; i++) {
+		c->signals[i].handler = p->signals[i].handler;
+		c->signals[i].pending = 0;
 	}
 }
 
-bool sig_hasSignal(tSig *sig,tTid *tid,u32 *data) {
-	u32 i;
+bool sig_hasSignal(tSig *sig,tTid *tid) {
 	sSLNode *n;
-	sHandler *h;
-	sSLList **list;
-	sThread *t;
-	if(!sig_hasSigPre())
+	if(pendingSignals == 0)
 		return false;
-
-	/* search through all signal-lists */
-	list = handler;
-	for(i = 0; i < SIG_COUNT - 1; i++) {
-		if(*list != NULL) {
-			for(n = sll_begin(*list); n != NULL; n = n->next) {
-				h = (sHandler*)n->data;
-				if(h->active == 0 && sll_length(h->pending) > 0) {
-					t = thread_getById(h->tid);
-					/* just handle the signal if the thread doesn't already handle one */
-					if(t->signal == 0) {
-						*data = (u32)sll_get(h->pending,0);
-						*tid = h->tid;
-						*sig = i + 1;
+	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
+		sSigThread *st = (sSigThread*)n->data;
+		if(st->signalsPending && st->signal == 0) {
+			sThread *t = thread_getById(st->tid);
+			if(!t->ignoreSignals) {
+				s32 i;
+				for(i = 0; i < SIG_COUNT; i++) {
+					if(st->signals[i].pending) {
+						*sig = i;
+						*tid = t->tid;
 						return true;
 					}
 				}
 			}
 		}
-		list++;
 	}
 	return false;
 }
 
 bool sig_hasSignalFor(tTid tid) {
-	u32 i;
-	sSLNode *n;
-	sHandler *h;
-	sSLList **list;
 	sThread *t;
-	if(!sig_hasSigPre())
+	sSigThread *st = sig_getThread(tid,false);
+	if(!st || !st->signalsPending || st->signal)
 		return false;
-
-	list = handler;
-	for(i = 0; i < SIG_COUNT - 1; i++) {
-		if(*list != NULL) {
-			for(n = sll_begin(*list); n != NULL; n = n->next) {
-				h = (sHandler*)n->data;
-				if(h->tid == tid && h->active == 0 && sll_length(h->pending) > 0) {
-					t = thread_getById(h->tid);
-					/* just handle the signal if the thread doesn't already handle one */
-					if(t->signal == 0)
-						return true;
-				}
-			}
-		}
-		list++;
-	}
-	return false;
+	t = thread_getById(tid);
+	return !t->ignoreSignals;
 }
 
-static bool sig_hasSigPre(void) {
-	/* send queued signals */
-	if(sendQueued) {
-		sig_sendQueued();
-		sendQueued = false;
-	}
-
-	/* no signals at all? */
-	if(totalSigs == 0)
-		return false;
-	return true;
-}
-
-bool sig_addSignalFor(tPid pid,tSig signal,u32 data) {
-	bool sent = false,res = false;
-	sSLList *list = handler[signal - 1];
-	sHandler *h;
-	sThread *t;
+void sig_addSignalFor(tPid pid,tSig signal) {
+	sProc *p = proc_getByPid(pid);
 	sSLNode *n;
-	vassert(signal < SIG_COUNT,"Unable to handle signal %d",signal);
-
-	if(list != NULL) {
-		for(n = sll_begin(list); n != NULL; n = n->next) {
-			h = (sHandler*)n->data;
-			t = thread_getById(h->tid);
-			if(t->proc->pid == pid) {
-				sent = true;
-				/* if we should not ignore the signal */
-				if(sig_addSig(h,pid,signal,data,t->waitsInKernel == 0)) {
-					/* ensure that the thread can handle the signal atm. if not, queue it */
-					if(t->waitsInKernel)
-						sig_addToQueue(h,signal,data);
-					else {
-						if(!h->active && t->signal == 0)
-							res = true;
-					}
-				}
-			}
-		}
+	assert(p != NULL);
+	assert(sig_canSend(signal));
+	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
+		sThread *t = (sThread*)n->data;
+		sSigThread *st = sig_getThread(t->tid,false);
+		if(st && st->signals[signal].handler)
+			sig_add(st,signal);
 	}
-	if(!sent)
-		sig_addSig(NULL,pid,signal,data,false);
-	return res;
 }
 
-tTid sig_addSignal(tSig signal,u32 data) {
-	sSLList *list;
-	sHandler *h;
+void sig_addSignal(tSig signal) {
 	sSLNode *n;
-	sThread *t;
-	tTid res = INVALID_TID;
-
-	vassert(signal < SIG_COUNT,"Unable to handle signal %d",signal);
-
-	list = handler[signal - 1];
-	if(list != NULL) {
-		for(n = sll_begin(list); n != NULL; n = n->next) {
-			h = (sHandler*)n->data;
-			t = thread_getById(h->tid);
-			/* if we should not ignore the signal */
-			if(sig_addSig(h,INVALID_PID,signal,data,t->waitsInKernel == 0)) {
-				if(t->waitsInKernel)
-					sig_addToQueue(h,signal,data);
-				/* remember first thread for direct notification */
-				else if(res == INVALID_TID && !h->active && t->signal == 0)
-					res = h->tid;
-			}
-		}
+	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
+		sSigThread *st = (sSigThread*)n->data;
+		if(st->signals[signal].handler)
+			sig_add(st,signal);
 	}
-
-	return res;
 }
 
-fSigHandler sig_startHandling(tTid tid,tSig signal) {
-	sHandler *h;
-	sThread *t = thread_getById(tid);
+fSignal sig_startHandling(tTid tid,tSig signal) {
+	sSigThread *t = sig_getThread(tid,false);
+	assert(t != NULL);
 	vassert(sig_canHandle(signal),"Unable to handle signal %d",signal);
+	assert(t->signals[signal].pending > 0);
 
-	h = sig_get(tid,signal);
-	if(h != NULL) {
-		vassert(totalSigs > 0,"We don't have any signals");
-		vassert(sll_length(h->pending) > 0,"Thread %d hasn't got signal %d",tid,signal);
-		sll_removeIndex(h->pending,0);
-		h->active = 1;
-		totalSigs--;
-		/* remember the signal */
-		t->signal = signal;
-		return h->handler;
-	}
-	return NULL;
+	sig_remove(t,signal);
+	t->signal = signal;
+	return t->signals[signal].handler;
 }
 
 void sig_ackHandling(tTid tid) {
-	sHandler *h;
-	sThread *t = thread_getById(tid);
+	sSigThread *t = sig_getThread(tid,false);
+	assert(t != NULL);
 	vassert(t->signal != 0,"No signal handling");
 	vassert(sig_canHandle(t->signal),"Unable to handle signal %d",t->signal);
-
-	h = sig_get(tid,t->signal);
-	if(h != NULL)
-		h->active = 0;
 	t->signal = 0;
 }
 
-static void sig_kWaitDone(u32 tid) {
-	UNUSED(tid);
-	sendQueued = true;
-	kevAdded = false;
+static void sig_add(sSigThread *t,tSig sig) {
+	t->signals[sig].pending++;
+	t->signalsPending |= 1 << sig;
+	pendingSignals++;
 }
 
-static void sig_sendQueued(void) {
-	sSignal *sig;
-	sThread *t;
-	sSLNode *n,*p,*tn;
-	p = NULL;
-	for(n = sll_begin(signalQueue); n != NULL; ) {
-		sig = (sSignal*)n->data;
-		t = thread_getById(sig->handler->tid);
-		/* thread ready now? */
-		if(!t->waitsInKernel) {
-			tn = n->next;
-			sig_addSig(sig->handler,INVALID_PID,sig->signal,sig->data,true);
-			/* remove node */
-			kheap_free(sig);
-			sll_removeNode(signalQueue,n,p);
-			n = tn;
-		}
-		else {
-			p = n;
-			n = n->next;
-		}
-	}
-
-	/* notify us again, if there are unsent signals */
-	if(sll_length(signalQueue) > 0 && !kevAdded) {
-		kevAdded = true;
-		kev_add(KEV_KWAIT_DONE,sig_kWaitDone);
-	}
+static void sig_remove(sSigThread *t,tSig sig) {
+	assert(pendingSignals > 0);
+	if(--t->signals[sig].pending == 0)
+		t->signalsPending &= ~(1 << sig);
+	pendingSignals--;
 }
 
-static void sig_addToQueue(sHandler *h,tSig signal,u32 data) {
-	sSignal *sig = (sSignal*)kheap_alloc(sizeof(sSignal));
-	/* ignore signal, if not enough mem */
-	if(sig == NULL)
-		return;
-	sig->handler = h;
-	sig->signal = signal;
-	sig->data = data;
-	if(!sll_append(signalQueue,sig))
-		kheap_free(sig);
-	else if(!kevAdded) {
-		kevAdded = true;
-		kev_add(KEV_KWAIT_DONE,sig_kWaitDone);
-	}
+static void sig_unset(sSigThread *t,tSig sig) {
+	assert(pendingSignals >= t->signals[sig].pending);
+	pendingSignals -= t->signals[sig].pending;
+	t->signals[sig].pending = 0;
+	t->signalsPending &= ~(1 << sig);
 }
 
-static void sig_remFromQueue(sHandler *h) {
-	sSignal *sig;
-	sSLNode *n,*p,*tn;
-	p = NULL;
-	for(n = sll_begin(signalQueue); n != NULL; ) {
-		sig = (sSignal*)n->data;
-		if(sig->handler == h) {
-			tn = n->next;
-			kheap_free(sig);
-			sll_removeNode(signalQueue,n,p);
-			n = tn;
-		}
-		else {
-			p = n;
-			n = n->next;
-		}
-	}
-}
-
-static bool sig_addSig(sHandler *h,tPid pid,tSig signal,u32 data,bool add) {
-	if(h != NULL && h->handler != SIG_IGN && add) {
-		if(h->pending == NULL) {
-			h->pending = sll_create();
-			if(h->pending == NULL)
-				return false;
-		}
-		if(!sll_append(h->pending,(void*)data))
-			return false;
-		totalSigs++;
-		return true;
-	}
-
-	if(pid != INVALID_PID) {
-		switch(signal) {
-			case SIG_INTRPT:
-			case SIG_TERM:
-			case SIG_KILL:
-			case SIG_SEGFAULT:
-				if(signal == SIG_KILL || h == NULL) {
-					proc_terminate(proc_getByPid(pid),1,signal);
-					return false;
-				}
-				break;
-		}
-	}
-	return h != NULL && h->handler != SIG_IGN;
-}
-
-static sHandler *sig_get(tTid tid,tSig signal) {
-	sSLList *list = handler[signal - 1];
-	sHandler *h;
+static sSigThread *sig_getThread(tTid tid,bool create) {
 	sSLNode *n;
-	if(list == NULL)
-		return NULL;
-	for(n = sll_begin(list); n != NULL; n = n->next) {
-		h = (sHandler*)n->data;
-		if(h->tid == tid)
-			return h;
+	sSigThread *t;
+	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
+		t = (sSigThread*)n->data;
+		if(t->tid == tid)
+			return t;
 	}
-	return NULL;
+	if(!create)
+		return NULL;
+	t = (sSigThread*)kheap_calloc(1,sizeof(sSigThread));
+	if(t == NULL)
+		return NULL;
+	t->tid = tid;
+	if(!sll_append(sigThreads,t)) {
+		kheap_free(t);
+		return NULL;
+	}
+	return t;
 }
 
 
 #if DEBUGGING
 
 u32 sig_dbg_getHandlerCount(void) {
-	u32 i,c;
 	sSLNode *n;
-	sSLList **list;
-
-	c = 0;
-	list = handler;
-	for(i = 0; i < SIG_COUNT - 1; i++) {
-		if(*list != NULL) {
-			for(n = sll_begin(*list); n != NULL; n = n->next)
+	u32 i,c = 0;
+	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
+		sSigThread *t = (sSigThread*)n->data;
+		for(i = 0; i < SIG_COUNT; i++) {
+			if(t->signals[i].handler)
 				c++;
 		}
-		list++;
 	}
 	return c;
 }
@@ -555,23 +267,19 @@ const char *sig_dbg_getName(tSig signal) {
 }
 
 void sig_dbg_print(void) {
-	u32 i;
+	s32 i;
 	sSLNode *n;
-	sHandler *h;
-	sSLList **list;
-
-	list = handler;
-	vid_printf("Announced signal-handlers:\n");
-	for(i = 1; i < SIG_COUNT - 1; i++) {
-		vid_printf("\t%s:\n",sig_dbg_getName(i));
-		if(*list != NULL) {
-			for(n = sll_begin(*list); n != NULL; n = n->next) {
-				h = (sHandler*)n->data;
-				vid_printf("\t\t(0x%08x): Tid=%d, handler=0x%x, active=%d, pending=%d\n",h,
-						h->tid,h->handler,h->active,sll_length(h->pending));
+	vid_printf("Signal handler:\n");
+	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
+		sSigThread *st = (sSigThread*)n->data;
+		sThread *t = thread_getById(st->tid);
+		vid_printf("\tThread %d (%d:%s)\n",t->tid,t->proc->pid,t->proc->command);
+		for(i = 0; i < SIG_COUNT; i++) {
+			if(st->signals[i].handler) {
+				vid_printf("\t\t%s: handler=%#08x pending=%u\n",
+						sig_dbg_getName(i),st->signals[i].handler,st->signals[i].pending);
 			}
 		}
-		list++;
 	}
 }
 

@@ -88,7 +88,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->state = state;
 	t->events = EV_NOEVENT;
 	t->eventObj = NULL;
-	t->waitsInKernel = 0;
+	t->ignoreSignals = 0;
 	t->tid = nextTid++;
 	t->proc = p;
 	/* we'll give the thread a stack later */
@@ -97,8 +97,8 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->stats.kcycleCount.val64 = 0;
 	t->stats.kcycleStart = 0;
 	t->stats.schedCount = 0;
+	t->stats.syscalls = 0;
 	t->fpuState = NULL;
-	t->signal = 0;
 	t->tlsRegion = -1;
 
 	/* create list */
@@ -110,6 +110,10 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 		util_panic("Unable to put first thread in vfs");
 
 	return t;
+}
+
+sHashMap *thread_getMap(void) {
+	return threads;
 }
 
 u32 thread_getCount(void) {
@@ -231,12 +235,10 @@ void thread_switchTo(tTid tid) {
 }
 
 void thread_switchNoSigs(void) {
-	/* remember that the current thread waits in the kernel */
-	/* atm this is just used by the signal-module to check whether we can send a signal to a
-	 * thread or not */
-	cur->waitsInKernel = 1;
+	/* remember that the current thread wants to ignore signals */
+	cur->ignoreSignals = 1;
 	thread_switch();
-	cur->waitsInKernel = 0;
+	cur->ignoreSignals = 0;
 	kev_notify(KEV_KWAIT_DONE,cur->tid);
 }
 
@@ -270,7 +272,7 @@ bool thread_setReady(tTid tid) {
 	sThread *t = thread_getById(tid);
 	vassert(t != NULL && t != cur,"tid=%d, pid=%d, cmd=%s",
 			t ? t->tid : 0,t ? t->proc->pid : 0,t ? t->proc->command : "?");
-	if(!t->waitsInKernel)
+	if(!t->ignoreSignals)
 		sched_setReady(t);
 	return t->state == ST_READY;
 }
@@ -302,23 +304,19 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	t->state = ST_RUNNING;
 	t->events = src->events;
 	t->eventObj = src->eventObj;
-	t->waitsInKernel = 0;
+	t->ignoreSignals = 0;
 	fpu_cloneState(&(t->fpuState),src->fpuState);
 	t->stats.kcycleCount.val64 = 0;
 	t->stats.kcycleStart = 0;
 	t->stats.ucycleCount.val64 = 0;
 	t->stats.ucycleStart = 0;
 	t->stats.schedCount = 0;
+	t->stats.syscalls = 0;
 	t->proc = p;
-	t->signal = 0;
 	if(cloneProc) {
 		/* proc_clone() sets t->kstackFrame in this case */
 		t->stackRegion = src->stackRegion;
 		t->tlsRegion = src->tlsRegion;
-
-		/* clone signal-handler */
-		if(sig_cloneHandler(src->tid,t->tid) < 0)
-			goto errThread;
 	}
 	else {
 		/* no swapping here because we don't want to make a thread-switch */
@@ -351,6 +349,10 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	if(!hm_add(threads,t))
 		goto errClone;
 
+	/* clone signal-handler (here because the thread needs to be in the map first) */
+	if(cloneProc)
+		sig_cloneHandler(src->tid,t->tid);
+
 	/* insert in VFS; thread needs to be inserted for it */
 	if(!vfs_createThread(t->tid))
 		goto errAppend;
@@ -363,8 +365,6 @@ errAppend:
 errClone:
 	if(t->tlsRegion >= 0)
 		vmm_remove(p,t->tlsRegion);
-	else if(cloneProc)
-		sig_removeHandlerFor(t->tid);
 errStack:
 	if(!cloneProc) {
 		mm_free(t->kstackFrame);
@@ -423,11 +423,10 @@ void thread_kill(sThread *t) {
 	sched_removeThread(t);
 	timer_removeThread(t->tid);
 	fpu_freeState(&t->fpuState);
-	sig_removeHandlerFor(t->tid);
 	vfs_removeThread(t->tid);
 
 	/* notify others that wait for dying threads */
-	sig_addSignal(SIG_THREAD_DIED,t->tid);
+	/* TODO sig_addSignal(SIG_THREAD_DIED,t->tid);*/
 	thread_wakeupAll(t->proc,EV_THREAD_DIED);
 
 	/* finally, destroy thread */

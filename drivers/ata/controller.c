@@ -41,7 +41,7 @@
 
 #define DMA_BUF_SIZE				(64 * 1024)
 
-static void ctrl_intrptHandler(tSig sig,u32 data);
+static void ctrl_intrptHandler(s32 sig);
 static bool ctrl_isBusResponding(sATAController* ctrl);
 
 static sPCIDevice ideCtrl;
@@ -219,8 +219,7 @@ s32 ctrl_waitUntil(sATAController *ctrl,u32 timeout,u32 sleepTime,u8 set,u8 unse
 	return -1;
 }
 
-static void ctrl_intrptHandler(tSig sig,u32 data) {
-	UNUSED(data);
+static void ctrl_intrptHandler(s32 sig) {
 	s32 i;
 	for(i = 0; i < 2; i++) {
 		if(ctrls[i].irq == sig) {

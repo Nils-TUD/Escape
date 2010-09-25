@@ -190,7 +190,7 @@ static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer)
 s32 vfsinfo_threadReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count) {
 	UNUSED(file);
 	return vfsrw_readHelper(pid,node,buffer,offset,count,
-			17 * 7 + 5 * 10 + 2 * 16 + 1,vfsinfo_threadReadCallback);
+			17 * 8 + 6 * 10 + 2 * 16 + 1,vfsinfo_threadReadCallback);
 }
 
 static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
@@ -199,13 +199,14 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffe
 	u32 stackBegin = 0,stackEnd = 0;
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
-	buf.size = 17 * 7 + 5 * 10 + 2 * 16 + 1;
+	buf.size = 17 * 8 + 6 * 10 + 2 * 16 + 1;
 	buf.len = 0;
 	if(t->stackRegion >= 0)
 		vmm_getRegRange(t->proc,t->stackRegion,&stackBegin,&stackEnd);
 
 	prf_sprintf(
 		&buf,
+		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
 		"%-16s%u\n"
@@ -219,6 +220,7 @@ static void vfsinfo_threadReadCallback(sVFSNode *node,u32 *dataSize,void **buffe
 		"State:",t->state,
 		"StackPages:",(stackEnd - stackBegin) / PAGE_SIZE,
 		"SchedCount:",t->stats.schedCount,
+		"Syscalls:",t->stats.syscalls,
 		"UCPUCycles:",t->stats.ucycleCount.val32.upper,t->stats.ucycleCount.val32.lower,
 		"KCPUCycles:",t->stats.kcycleCount.val32.upper,t->stats.kcycleCount.val32.lower
 	);

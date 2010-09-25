@@ -39,7 +39,7 @@ int mod_forkbomb(int argc,char *argv[]) {
 			printf("Fork() failed, so kill all childs...\n");
 			fflush(stdout);
 			while(i-- > 0) {
-				s32 res = sendSignalTo(pids[i],SIG_KILL,0);
+				s32 res = sendSignalTo(pids[i],SIG_KILL);
 				res = 1;
 				waitChild(NULL);
 			}

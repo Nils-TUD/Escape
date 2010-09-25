@@ -27,9 +27,8 @@
 
 void sysc_setSigHandler(sIntrptStackFrame *stack) {
 	tSig signal = (tSig)SYSC_ARG1(stack);
-	fSigHandler handler = (fSigHandler)SYSC_ARG2(stack);
+	fSignal handler = (fSignal)SYSC_ARG2(stack);
 	sThread *t = thread_getRunning();
-	s32 err = 0;
 
 	/* address should be valid */
 	if(handler != SIG_IGN && handler != SIG_DFL && !paging_isRangeUserReadable((u32)handler,1))
@@ -48,12 +47,13 @@ void sysc_setSigHandler(sIntrptStackFrame *stack) {
 
 		if(handler == SIG_DFL)
 			sig_unsetHandler(t->tid,signal);
-		else
-			err = sig_setHandler(t->tid,signal,handler);
-		if(err < 0)
-			SYSC_ERROR(stack,err);
+		else {
+			s32 res = sig_setHandler(t->tid,signal,handler);
+			if(res < 0)
+				SYSC_ERROR(stack,res);
+		}
 	}
-	SYSC_RET1(stack,err);
+	SYSC_RET1(stack,0);
 }
 
 void sysc_ackSignal(sIntrptStackFrame *stack) {
@@ -65,8 +65,8 @@ void sysc_ackSignal(sIntrptStackFrame *stack) {
 	if(!paging_isRangeUserReadable((u32)esp,sizeof(u32) * 9))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	/* remove args */
-	esp += 2;
+	/* remove arg */
+	esp += 1;
 	/* restore regs */
 	stack->esi = *esp++;
 	stack->edi = *esp++;
@@ -83,7 +83,6 @@ void sysc_ackSignal(sIntrptStackFrame *stack) {
 void sysc_sendSignalTo(sIntrptStackFrame *stack) {
 	tPid pid = (tPid)SYSC_ARG1(stack);
 	tSig signal = (tSig)SYSC_ARG2(stack);
-	u32 data = SYSC_ARG3(stack);
 	sThread *t = thread_getRunning();
 	/* store tid and check via thread_getById() because if the thread is destroyed, we can't access
 	 * it anymore */
@@ -95,9 +94,9 @@ void sysc_sendSignalTo(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_PID);
 
 	if(pid != INVALID_PID)
-		sig_addSignalFor(pid,signal,data);
+		sig_addSignalFor(pid,signal);
 	else
-		sig_addSignal(signal,data);
+		sig_addSignal(signal);
 
 	/* choose another thread if we've killed ourself */
 	if(thread_getById(tid) == NULL)

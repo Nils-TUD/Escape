@@ -28,7 +28,7 @@
 #include <errors.h>
 #include "game.h"
 
-static void sigTimer(tSig sig,u32 data);
+static void sigTimer(s32 sig);
 static void qerror(const char *msg,...);
 static void quit(void);
 
@@ -71,9 +71,8 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void sigTimer(tSig sig,u32 data) {
+static void sigTimer(s32 sig) {
 	UNUSED(sig);
-	UNUSED(data);
 	time++;
 }
 

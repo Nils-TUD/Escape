@@ -43,6 +43,6 @@ extern (C)
 	extern int exec(char *path,char **args);
 	extern int waitChild(ExitState *state);
 	extern int sendSignal(sig_t signal,uint data);
-	extern int sendSignalTo(pid_t pid,sig_t signal,uint data);
+	extern int sendSignalTo(pid_t pid,sig_t signal);
 	extern int sleep(uint ms);
 }

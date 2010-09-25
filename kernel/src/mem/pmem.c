@@ -128,7 +128,8 @@ s32 mm_allocateContiguous(u32 count,u32 align) {
 		if(c == count)
 			break;
 		/* ok, to next aligned frame */
-		i = (j + 1 + align - 1) & ~(align - 1);
+		i = (BITMAP_START_FRAME + j + 1 + align - 1) & ~(align - 1);
+		i -= BITMAP_START_FRAME;
 	}
 
 	if(c != count)

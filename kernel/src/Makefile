@@ -9,9 +9,8 @@ LSUBDIRS = $(shell find $(LIB) -type d | grep -v '\.svn')
 BUILDDIRS = $(addprefix $(BUILDK)/,$(SUBDIRS)) $(patsubst $(LIB)/%,$(BUILDK)/lib/%,$(LSUBDIRS))
 DEPS = $(shell find $(BUILDDIRS) -name "*.d")
 
-CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D IN_KERNEL=1
-# for profiling:
-# -finstrument-functions -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/src/profile.c
+CFLAGS = -ffreestanding -nostdlib -nostartfiles -nodefaultlibs $(CDEFFLAGS) -D IN_KERNEL=1 #\
+ -D PROFILE=1 -finstrument-functions -finstrument-functions-exclude-file-list=ksymbols.c,$(LIB)/profile.c
 
 # sources
 ASRC = $(shell find . -name "*.s" | grep -v '\.svn')

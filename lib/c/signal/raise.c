@@ -18,8 +18,9 @@
  */
 
 #include <esc/common.h>
+#include <esc/proc.h>
 #include <signal.h>
 
 s32 raise(s32 sig) {
-	return sendSignal(sig,0);
+	return sendSignalTo(getpid(),sig);
 }

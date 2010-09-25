@@ -43,7 +43,7 @@ typedef struct {
 /**
  * Our signal-handler for dead processes
  */
-static void procDiedHandler(tSig sig,u32 data);
+static void procDiedHandler(s32 sig);
 
 /**
  * Fetches the environment-variable with given name for the given process. If it does not exist
@@ -193,7 +193,8 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void procDiedHandler(tSig sig,u32 data) {
+static void procDiedHandler(s32 sig) {
+#if 0
 	UNUSED(sig);
 	/* mark all vars of this process as dead */
 	u32 i;
@@ -209,6 +210,7 @@ static void procDiedHandler(tSig sig,u32 data) {
 		}
 	}
 	deadVars = true;
+#endif
 }
 
 static sEnvVar *env_geti(tPid pid,u32 index) {

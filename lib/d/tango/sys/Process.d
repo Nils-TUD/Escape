@@ -1849,7 +1849,7 @@ class Process
 
                 assert(_pid > 0);
 
-                if (.sendSignalTo(cast(pid_t)_pid, SIG_TERM, 0) == 0)
+                if (.sendSignalTo(cast(pid_t)_pid, SIG_TERM) == 0)
                 {
                     // We clean up the process related data and set the _running
                     // flag to false once we're done waiting for the process to

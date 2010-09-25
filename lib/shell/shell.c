@@ -38,7 +38,7 @@
 #include "parser.h"
 #include "exec/running.h"
 
-static void shell_sigIntrpt(tSig sig,u32 data);
+static void shell_sigIntrpt(s32 sig);
 static u16 shell_toNextWord(char *buffer,u32 icharcount,u32 *icursorPos);
 static u16 shell_toPrevWord(char *buffer,u32 *icursorPos);
 static char *shell_getComplToken(char *line,u32 length,u32 *start,bool *searchPath);
@@ -72,12 +72,11 @@ bool shell_prompt(void) {
 	return true;
 }
 
-static void shell_sigIntrpt(tSig sig,u32 data) {
+static void shell_sigIntrpt(s32 sig) {
 	UNUSED(sig);
-	UNUSED(data);
 	/* if data is not 1 the source is not vterm so that we should exit now */
-	if(data != 1)
-		exit(1);
+	/* TODO if(data != 1)
+		exit(1);*/
 	lang_setInterrupted();
 	/* ensure that we start a new readline */
 	resetReadLine = true;

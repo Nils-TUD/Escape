@@ -61,7 +61,7 @@ static sSyscall syscalls[] = {
 	/* 18 */	{sysc_wait,					1},
 	/* 19 */	{sysc_setSigHandler,		2},
 	/* 20 */	{sysc_ackSignal,			0},
-	/* 21 */	{sysc_sendSignalTo,			3},
+	/* 21 */	{sysc_sendSignalTo,			2},
 	/* 22 */	{sysc_exec,					2},
 	/* 23 */	{sysc_eof,					1},
 	/* 24 */	{sysc_loadMods,				0},

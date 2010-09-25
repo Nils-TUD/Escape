@@ -39,16 +39,19 @@ private:
 	state_type _state;
 	size_type _stackPages;
 	size_type _schedCount;
+	size_type _syscalls;
 	cycle_type _ucycles;
 	cycle_type _kcycles;
 
 public:
 	thread()
-		: _tid(0), _pid(0), _state(0), _stackPages(0), _schedCount(0), _ucycles(0), _kcycles(0) {
+		: _tid(0), _pid(0), _state(0), _stackPages(0), _schedCount(0), _syscalls(0),
+		  _ucycles(0), _kcycles(0) {
 	}
 	thread(const thread& t)
 		: _tid(t._tid), _pid(t._pid), _state(t._state), _stackPages(t._stackPages),
-		  _schedCount(t._schedCount), _ucycles(t._ucycles), _kcycles(t._kcycles) {
+		  _schedCount(t._schedCount), _syscalls(t._syscalls),
+		  _ucycles(t._ucycles), _kcycles(t._kcycles) {
 	}
 	thread& operator =(const thread& t) {
 		clone(t);
@@ -72,6 +75,9 @@ public:
 	size_type schedCount() const {
 		return _schedCount;
 	}
+	size_type syscalls() const {
+		return _syscalls;
+	}
 	cycle_type userCycles() const {
 		return _ucycles;
 	}
@@ -86,6 +92,7 @@ private:
 		_state = t._state;
 		_stackPages = t._stackPages;
 		_schedCount = t._schedCount;
+		_syscalls = t._syscalls;
 		_ucycles = t._ucycles;
 		_kcycles = t._kcycles;
 	}

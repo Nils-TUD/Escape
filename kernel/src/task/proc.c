@@ -544,10 +544,14 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 		p->exitState->signal = signal;
 		p->exitState->ucycleCount.val64 = 0;
 		p->exitState->kcycleCount.val64 = 0;
+		p->exitState->schedCount = 0;
+		p->exitState->syscalls = 0;
 		for(tn = sll_begin(p->threads); tn != NULL; tn = tn->next) {
 			sThread *t = (sThread*)tn->data;
 			p->exitState->ucycleCount.val64 += t->stats.ucycleCount.val64;
 			p->exitState->kcycleCount.val64 += t->stats.kcycleCount.val64;
+			p->exitState->schedCount += t->stats.schedCount;
+			p->exitState->syscalls += t->stats.syscalls;
 		}
 		p->exitState->ownFrames = p->ownFrames;
 		p->exitState->sharedFrames = p->sharedFrames;
@@ -608,8 +612,8 @@ void proc_kill(sProc *p) {
 	/* remove from VFS */
 	vfs_removeProcess(p->pid);
 	/* notify processes that wait for dying procs */
-	sig_addSignal(SIG_PROC_DIED,p->pid);
-	sig_addSignalFor(p->parentPid,SIG_CHILD_DIED,p->pid);
+	/* TODO sig_addSignal(SIG_PROC_DIED,p->pid);*/
+	sig_addSignalFor(p->parentPid,SIG_CHILD_DIED);
 
 	/* free exit-state, if not already done */
 	if(p->exitState)
@@ -622,7 +626,7 @@ void proc_kill(sProc *p) {
 
 static void proc_notifyProcDied(tPid parent,tPid pid) {
 	sSLNode *tn;
-	sig_addSignalFor(parent,SIG_CHILD_TERM,pid);
+	sig_addSignalFor(parent,SIG_CHILD_TERM);
 
 	/* check whether there is a parent-thread that waits for a child */
 	for(tn = sll_begin(proc_getByPid(parent)->threads); tn != NULL; tn = tn->next) {
@@ -849,7 +853,6 @@ static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint,bool newThread
 
 
 /* #### TEST/DEBUG FUNCTIONS #### */
-#if DEBUGGING
 
 #define PROF_PROC_COUNT		128
 
@@ -895,6 +898,8 @@ void proc_dbg_stopProf(void) {
 		}
 	}
 }
+
+#if DEBUGGING
 
 void proc_dbg_printAll(void) {
 	sProc *p;

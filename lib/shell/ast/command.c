@@ -68,7 +68,7 @@ static void ast_termProcsOfCmd(void);
 /**
  * Signal-handler for processes in background
  */
-static void ast_sigChildHndl(tSig sig,u32 data);
+static void ast_sigChildHndl(s32 sig);
 /**
  * Removes the given proc (called in sigChildHndl)
  */
@@ -413,7 +413,7 @@ static void ast_termProcsOfCmd(void) {
 	p = run_getXProcOf(curCmd,i);
 	while(p != NULL) {
 		/* send SIG_INTRPT */
-		if(sendSignalTo(p->pid,SIG_INTRPT,0) < 0)
+		if(sendSignalTo(p->pid,SIG_INTRPT) < 0)
 			printe("Unable to send SIG_INTRPT to process %d",p->pid);
 		run_remProc(p->pid);
 		/* to next */
@@ -422,7 +422,7 @@ static void ast_termProcsOfCmd(void) {
 	}
 }
 
-static void ast_sigChildHndl(tSig sig,u32 data) {
+static void ast_sigChildHndl(s32 sig) {
 	UNUSED(sig);
 	sRunningProc *p;
 	sExitState state;
@@ -433,12 +433,12 @@ static void ast_sigChildHndl(tSig sig,u32 data) {
 	}
 	if(state.signal != SIG_COUNT)
 		printf("\nProcess %d was terminated by signal %d\n",state.pid,state.signal);
-	p = run_findProc(CMD_ID_ALL,(tPid)data);
+	p = run_findProc(CMD_ID_ALL,state.pid);
 	if(p)
 		ast_removeProc(p,res);
 	/* otherwise remember the pid */
 	else {
-		diedProc = data;
+		diedProc = state.pid;
 		diedRes = res;
 	}
 }

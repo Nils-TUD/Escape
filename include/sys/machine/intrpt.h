@@ -221,14 +221,6 @@ typedef struct {
 } A_PACKED sIntrptStackFrame;
 
 /**
- * Returns the name for the given interrupt-number
- *
- * @param intrptNo the interrupt-number
- * @return the name
- */
-const char *intrpt_no2Name(u32 intrptNo);
-
-/**
  * Enables / disables the interrupts
  *
  * @param enabled the new value

@@ -146,7 +146,7 @@ static void killProcs(void) {
 	for(i = 0; i < pidPos; i++) {
 		getProcName(pids[i],name);
 		debugf("Terminating process %d (%s)",pids[i],name);
-		if(sendSignalTo(pids[i],SIG_TERM,0) < 0)
+		if(sendSignalTo(pids[i],SIG_TERM) < 0)
 			printe("[PWMNG] Unable to send the term-signal to %d",pids[i]);
 		waitForProc(pids[i]);
 	}
@@ -171,7 +171,7 @@ static void waitForProc(tPid pid) {
 		close(fd);
 		if(time >= WAIT_TIMEOUT) {
 			debugf("\nProcess does still exist after %d ms; killing it",time,pid);
-			if(sendSignalTo(pid,SIG_KILL,0) < 0)
+			if(sendSignalTo(pid,SIG_KILL) < 0)
 				printe("[PWMNG] Unable to send the kill-signal to %d",pid);
 			break;
 		}

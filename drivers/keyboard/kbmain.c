@@ -72,7 +72,7 @@
 /**
  * The keyboard-interrupt handler
  */
-static void kbIntrptHandler(tSig sig,u32 data);
+static void kbIntrptHandler(s32 sig);
 static void kb_waitOutBuf(void);
 static void kb_waitInBuf(void);
 
@@ -237,11 +237,10 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
-static void kbIntrptHandler(tSig sig,u32 d) {
+static void kbIntrptHandler(s32 sig) {
 	u8 scanCode;
 	sKbData data;
 	UNUSED(sig);
-	UNUSED(d);
 
 	if(!(inByte(IOPORT_KB_CTRL) & STATUS_OUTBUF_FULL))
 		return;

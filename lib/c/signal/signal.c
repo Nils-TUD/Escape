@@ -21,7 +21,7 @@
 #include <signal.h>
 
 fSignal signal(s32 sig,fSignal handler) {
-	if(setSigHandler(sig,(fSigHandler)handler) < 0)
+	if(setSigHandler(sig,handler) < 0)
 		return (fSignal)SIG_ERR;
 	/* TODO return old handler */
 	return NULL;

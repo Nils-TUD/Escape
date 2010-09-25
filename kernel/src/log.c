@@ -108,11 +108,13 @@ void log_vprintf(const char *fmt,va_list ap) {
 
 static void log_printc(char c) {
 #ifdef LOGSERIAL
+#ifndef PROFILE
 	if(!vfsIsReady) {
 		/* write to COM1 (some chars make no sense here) */
 		if(c != '\r' && c != '\b')
 			ser_out(SER_COM1,c);
 	}
+#endif
 #endif
 	if(bufPos >= BUF_SIZE)
 		log_flush();
@@ -148,6 +150,7 @@ static void log_escape(const char **str) {
 
 static s32 log_write(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count) {
 #ifdef LOGSERIAL
+#ifndef PROFILE
 	if(logToSer) {
 		char *str = (char*)buffer;
 		u32 i;
@@ -158,6 +161,7 @@ static s32 log_write(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 o
 				ser_out(SER_COM1,c);
 		}
 	}
+#endif
 #endif
 	return vfsrw_writeDef(pid,file,node,buffer,offset,count);
 }

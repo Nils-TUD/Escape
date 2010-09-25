@@ -9,7 +9,7 @@ BUILD_BIN=$(wildcard $(BUILD)/user_*.bin)
 BUILD_SBIN=$(wildcard $(BUILD)/driver_*.bin)
 BUILD_LIB=$(wildcard $(BUILD)/lib*.so)
 BUILD_LIBGCC=$(BUILD)/../dist/i586-elf-escape/lib/libgcc_s.so.1
-BUILD_ETC=$(shell find $(ROOT)/dist | grep -v '\.svn\|Makefile')
+BUILD_ETC=$(shell find $(ROOT)/dist -type f | grep -v '\.svn\|Makefile\|/boot/')
 
 DISK_KERNEL=$(patsubst $(BUILD)/kernel%.bin,$(DISKMNT)/boot/kernel%.bin,$(BUILD_KERNEL))
 DISK_BIN=$(patsubst $(BUILD)/user_%.bin,$(DISKMNT)/bin/%,$(BUILD_BIN))

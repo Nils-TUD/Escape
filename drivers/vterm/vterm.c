@@ -180,7 +180,8 @@ static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 				/* send interrupt to shell */
 				if(vt->shellPid) {
 					/* data=1 to distinguish it from other SIG_INTRPT-sources */
-					if(sendSignalTo(vt->shellPid,SIG_INTRPT,1) < 0)
+					/* TODO */
+					if(sendSignalTo(vt->shellPid,SIG_INTRPT) < 0)
 						printe("[VTERM] Unable to send SIG_INTRPT to %d",vt->shellPid);
 				}
 				return false;

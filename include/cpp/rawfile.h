@@ -61,6 +61,7 @@ namespace std {
 		 */
 		rawfile(tFD fd)
 			: _mode(READ | WRITE), _fd(fd) {
+			/* TODO in this case we shouldn't close the file in the destructor */
 		}
 		/**
 		 * Opens the given file with given mode

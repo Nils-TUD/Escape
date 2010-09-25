@@ -1,5 +1,5 @@
 # general
-BUILDDIR = $(abspath build/debug)
+BUILDDIR = $(abspath build/release)
 DISKMOUNT = diskmnt
 HDD = $(BUILDDIR)/hd.img
 ISO = $(BUILDDIR)/cd.iso
@@ -11,7 +11,7 @@ BINNAME = kernel.bin
 BIN = $(BUILDDIR)/$(BINNAME)
 SYMBOLS = $(BUILDDIR)/kernel.symbols
 
-#KVM = -enable-kvm
+KVM = -enable-kvm
 QEMU = qemu
 QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot order=d -vga std -m 350 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
@@ -59,7 +59,7 @@ ifeq ($(BUILDDIR),$(abspath build/debug))
 else
 	DIRS = tools lib drivers user kernel/src
 	export CPPDEFFLAGS=$(CPPWFLAGS) -g0 -O3 -D NDEBUG
-	export CDEFFLAGS=$(CWFLAGS) -g0 -O3 -D NDEBUG
+	export CDEFFLAGS=$(CWFLAGS) -g0 -O3 -D NDEBUG -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -O -release -inline
 	export BUILDTYPE=release
 endif

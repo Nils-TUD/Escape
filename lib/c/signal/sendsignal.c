@@ -21,6 +21,6 @@
 #include <esc/proc.h>
 #include <signal.h>
 
-s32 sendSignal(tSig sig,u32 data) {
-	return sendSignalTo(INVALID_PID,sig,data);
+s32 sendSignal(tSig sig) {
+	return sendSignalTo(INVALID_PID,sig);
 }

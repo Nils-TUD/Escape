@@ -27,6 +27,7 @@ std::istream& operator >>(std::istream& is,thread& t) {
 	t._state = is.get() - '0';
 	is.ignore(unlimited,' ') >> t._stackPages;
 	is.ignore(unlimited,' ') >> t._schedCount;
+	is.ignore(unlimited,' ') >> t._syscalls;
 	is.setf(istream::hex);
 	is.ignore(unlimited,' ') >> t._ucycles;
 	is.ignore(unlimited,' ') >> t._kcycles;

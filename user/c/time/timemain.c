@@ -27,8 +27,8 @@
 #include <string.h>
 #include <errors.h>
 
-static void sigTimer(tSig sig,u32 data);
-static void sigHdlr(tSig sig,u32 data);
+static void sigTimer(s32 sig);
+static void sigHdlr(s32 sig);
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <program> [arguments...]\n",name);
 	exit(EXIT_FAILURE);
@@ -87,23 +87,23 @@ int main(int argc,char **argv) {
 		printf("Own mem:		%u KiB\n",state.ownFrames * 4);
 		printf("Shared mem:		%u KiB\n",state.sharedFrames * 4);
 		printf("Swap mem:		%u KiB\n",state.swapped * 4);
+		printf("Scheduled:		%u times\n",state.schedCount);
+		printf("Syscalls:		%u\n",state.syscalls);
 	}
 
 	return EXIT_SUCCESS;
 }
 
-static void sigTimer(tSig sig,u32 data) {
+static void sigTimer(s32 sig) {
 	UNUSED(sig);
-	UNUSED(data);
 	ms += 1000 / timerFreq;
 }
 
-static void sigHdlr(tSig sig,u32 data) {
+static void sigHdlr(s32 sig) {
 	UNUSED(sig);
-	UNUSED(data);
 	if(waitingPid > 0) {
 		/* send SIG_INTRPT to the child */
-		if(sendSignalTo(waitingPid,SIG_INTRPT,0) < 0)
+		if(sendSignalTo(waitingPid,SIG_INTRPT) < 0)
 			printe("Unable to send signal to %d",waitingPid);
 	}
 }

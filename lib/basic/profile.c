@@ -20,11 +20,20 @@
 #include <assert.h>
 #ifdef IN_KERNEL
 #	include <sys/machine/cpu.h>
+#	include <sys/task/thread.h>
+#	include <sys/mem/paging.h>
+#	include <sys/ksymbols.h>
 #	include <sys/video.h>
 #	include <sys/util.h>
-#	include <sys/ksymbols.h>
+#	include <esc/register.h>
 #	define outb			util_outByte
 #	define inb			util_inByte
+#	define gettid()		({ \
+	u32 __tid,__esp; \
+	GET_REG("esp",__esp); \
+	__tid = (__esp >= KERNEL_STACK - PAGE_SIZE) ? thread_getRunning()->tid : 0; \
+})
+#	define getCycles()	cpu_rdtsc()
 #else
 #	include <esc/ports.h>
 #	include <esc/thread.h>
@@ -34,16 +43,20 @@
 #	define inb			inByte
 #endif
 
+#ifndef PROFILE
 #define PROFILE
+#endif
 #define STACK_SIZE	1024
 
 #ifdef PROFILE
-static void logStr(const char *s);
 static void logUnsigned(u64 n,u8 base);
 static void logChar(char c);
 
+#if !IN_KERNEL
 static bool initialized = false;
+#endif
 static u32 stackPos = 0;
+static bool inProf = false;
 static u64 callStack[STACK_SIZE];
 
 #ifdef __cplusplus
@@ -59,9 +72,10 @@ void __cyg_profile_func_exit(void *this_fn,void *call_site);
 
 void __cyg_profile_func_enter(void *this_fn,void *call_site) {
 	UNUSED(call_site);
-#if IN_KERNEL
-	sSymbol *sym;
-#else
+	if(inProf)
+		return;
+	inProf = true;
+#if !IN_KERNEL
 	if(!initialized) {
 		requestIOPort(0xe9);
 		requestIOPort(0x3f8);
@@ -70,40 +84,29 @@ void __cyg_profile_func_enter(void *this_fn,void *call_site) {
 	}
 #endif
 	logChar('>');
-#if IN_KERNEL
-	sym = ksym_getSymbolAt((u32)this_fn);
-	logStr(sym->funcName);
-#else
+	logUnsigned((u32)gettid(),10);
+	logChar(':');
 	logUnsigned((u32)this_fn,16);
-#endif
 	logChar('\n');
-#if IN_KERNEL
-	callStack[stackPos++] = cpu_rdtsc();
-#else
 	callStack[stackPos++] = getCycles();
-#endif
+	inProf = false;
 }
 
 void __cyg_profile_func_exit(void *this_fn,void *call_site) {
 	UNUSED(this_fn);
 	UNUSED(call_site);
 	u64 now;
-	if(stackPos <= 0)
+	if(inProf || stackPos <= 0)
 		return;
-#if IN_KERNEL
-	now = cpu_rdtsc();
-#else
+	inProf = true;
 	now = getCycles();
-#endif
 	stackPos--;
 	logChar('<');
+	logUnsigned((u32)gettid(),10);
+	logChar(':');
 	logUnsigned(now - callStack[stackPos],10);
 	logChar('\n');
-}
-
-static void logStr(const char *s) {
-	while(*s)
-		logChar(*s++);
+	inProf = false;
 }
 
 static void logUnsigned(u64 n,u8 base) {

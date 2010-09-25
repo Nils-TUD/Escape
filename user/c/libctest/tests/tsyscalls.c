@@ -150,8 +150,8 @@ static s32 _wait(u32 ev) {
 static s32 _setSigHandler(u32 sig,u32 handler) {
 	return test_doSyscall(19,sig,handler,0);
 }
-static s32 _sendSignalTo(u32 pid,u32 sig,u32 data) {
-	return test_doSyscall(21,pid,sig,data);
+static s32 _sendSignalTo(u32 pid,u32 sig) {
+	return test_doSyscall(21,pid,sig,0);
 }
 static s32 _exec(const char *path,const char **args) {
 	return test_doSyscall(22,(u32)path,(u32)args,0);
@@ -453,13 +453,13 @@ static void test_setSigHandler(void) {
 
 static void test_sendSignalTo(void) {
 	test_caseStart("Testing sendSignalTo()");
-	test_assertInt(_sendSignalTo(0,-1,0),ERR_INVALID_SIGNAL);
-	test_assertInt(_sendSignalTo(0,SIG_COUNT,0),ERR_INVALID_SIGNAL);
-	test_assertInt(_sendSignalTo(0,SIG_INTRPT_ATA1,0),ERR_INVALID_SIGNAL);
-	test_assertInt(_sendSignalTo(0,SIG_INTRPT_MOUSE,0),ERR_INVALID_SIGNAL);
-	test_assertInt(_sendSignalTo(0,SIG_INTRPT_COM2,0),ERR_INVALID_SIGNAL);
-	test_assertInt(_sendSignalTo(1024,0,0),ERR_INVALID_PID);
-	test_assertInt(_sendSignalTo(1025,0,0),ERR_INVALID_PID);
+	test_assertInt(_sendSignalTo(0,-1),ERR_INVALID_SIGNAL);
+	test_assertInt(_sendSignalTo(0,SIG_COUNT),ERR_INVALID_SIGNAL);
+	test_assertInt(_sendSignalTo(0,SIG_INTRPT_ATA1),ERR_INVALID_SIGNAL);
+	test_assertInt(_sendSignalTo(0,SIG_INTRPT_MOUSE),ERR_INVALID_SIGNAL);
+	test_assertInt(_sendSignalTo(0,SIG_INTRPT_COM2),ERR_INVALID_SIGNAL);
+	test_assertInt(_sendSignalTo(1024,0),ERR_INVALID_PID);
+	test_assertInt(_sendSignalTo(1025,0),ERR_INVALID_PID);
 	test_caseSucceded();
 }
 

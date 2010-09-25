@@ -50,7 +50,7 @@ static int shell_main(void);
 
 static void childKiller(void*) {
 	if(childPid >= 0)
-		(void)sendSignalTo(childPid,SIG_KILL,0);
+		(void)sendSignalTo(childPid,SIG_KILL);
 }
 
 int main(int argc,char **argv) {

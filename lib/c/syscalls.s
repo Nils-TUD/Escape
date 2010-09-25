@@ -102,6 +102,9 @@ __i686.get_pc_thunk.bx:
 .set SYSCALL_NOTIFY,				64
 .set SYSCALL_GETCLIENTID,		65
 .set SYSCALL_WAITUNLOCK,		66
+.set SYSCALL_GETENVITO,			67
+.set SYSCALL_GETENVTO,			68
+.set SYSCALL_SETENV,				69
 
 # the IRQ for syscalls
 .set SYSCALL_IRQ,						0x30

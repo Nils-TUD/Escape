@@ -76,7 +76,7 @@ public:
 		_vt->sid = sid;
 		_vt->defForeground = BLACK;
 		_vt->defBackground = WHITE;
-		if(!getenvto(_vt->name,sizeof(_vt->name),"TERM"))
+		if(getenvto(_vt->name,sizeof(_vt->name),"TERM") < 0)
 			error("Unable to get env-var TERM");
 		if(!vterm_init(_vt,&size,-1,speakerFd))
 			error("Unable to init vterm");

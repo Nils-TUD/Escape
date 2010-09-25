@@ -313,13 +313,11 @@ error:
 
 static tFD ast_redirFromFile(sEnv *e,sRedirFile *redir) {
 	tFD fd;
-	char absFileName[MAX_PATH_LEN];
 	/* redirection to file */
 	u8 flags = IO_READ;
 	sValue *fileExpr = ast_execute(e,redir->expr);
 	char *filename = val_getStr(fileExpr);
-	abspath(absFileName,MAX_PATH_LEN,filename);
-	fd = open(absFileName,flags);
+	fd = open(filename,flags);
 	efree(filename);
 	val_destroy(fileExpr);
 	if(fd < 0) {
@@ -330,7 +328,6 @@ static tFD ast_redirFromFile(sEnv *e,sRedirFile *redir) {
 }
 
 static tFD ast_redirToFile(sEnv *e,sRedirFile *redir) {
-	char absFileName[MAX_PATH_LEN];
 	tFD fd;
 	/* redirection to file */
 	u8 flags = IO_WRITE;
@@ -340,8 +337,7 @@ static tFD ast_redirToFile(sEnv *e,sRedirFile *redir) {
 		flags |= IO_CREATE | IO_TRUNCATE;
 	else if(redir->type == REDIR_OUTAPPEND)
 		flags |= IO_APPEND;
-	abspath(absFileName,MAX_PATH_LEN,filename);
-	fd = open(absFileName,flags);
+	fd = open(filename,flags);
 	efree(filename);
 	val_destroy(fileExpr);
 	if(fd < 0) {

@@ -167,7 +167,6 @@ static char *shsymbols = NULL;
 static char *dynstrtbl = NULL;
 
 int main(int argc,char **argv) {
-	char path[MAX_PATH_LEN];
 	s32 i;
 	bool elfh = false,ph = false,sh = false,rel = false,dyns = false;
 	char *file = NULL;
@@ -191,10 +190,9 @@ int main(int argc,char **argv) {
 
 	if(file == NULL || (elfh + ph + sh + rel + dyns) == 0)
 		usage(argv[0]);
-	abspath(path,sizeof(path),file);
-	fd = open(path,IO_READ);
+	fd = open(file,IO_READ);
 	if(fd < 0)
-		error("Unable to open %s",path);
+		error("Unable to open %s",file);
 
 	readat(0,&eheader,sizeof(Elf32_Ehdr));
 	loadShSyms();

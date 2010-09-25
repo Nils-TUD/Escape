@@ -50,14 +50,12 @@ void buf_open(const char *file) {
 		esll_append(buf.lines,line);
 	}
 	else {
-		char absp[MAX_PATH_LEN];
 		FILE *f;
 		sLine *line;
 		bool reachedEOF = false;
-		abspath(absp,MAX_PATH_LEN,file);
-		f = fopen(absp,"r");
+		f = fopen(file,"r");
 		if(!f)
-			error("Unable to open '%s'",absp);
+			error("Unable to open '%s'",file);
 		while(!reachedEOF) {
 			line = buf_readLine(f,&reachedEOF);
 			esll_append(buf.lines,line);
@@ -183,9 +181,7 @@ void buf_store(const char *file) {
 	FILE *f;
 	sLine *line;
 	sSLNode *n;
-	char absDstFile[MAX_PATH_LEN];
-	abspath(absDstFile,MAX_PATH_LEN,file);
-	f = fopen(absDstFile,"w");
+	f = fopen(file,"w");
 	if(!f)
 		fprintf(stderr,"Unable to store to '%s'\n",file);
 	else {

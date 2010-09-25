@@ -30,8 +30,6 @@ static void usage(const char *name) {
 }
 
 int main(int argc,const char *argv[]) {
-	char oldPath[MAX_PATH_LEN];
-	char newPath[MAX_PATH_LEN];
 	char *oldp,*newp;
 
 	s32 res = ca_parse(argc,argv,CA_NO_FREE,"=s =s",&oldp,&newp);
@@ -42,9 +40,7 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	abspath(oldPath,MAX_PATH_LEN,oldp);
-	abspath(newPath,MAX_PATH_LEN,newp);
-	if(link(oldPath,newPath) < 0)
-		error("Unable to create the link '%s' to '%s'",newPath,oldPath);
+	if(link(oldp,newp) < 0)
+		error("Unable to create the link '%s' to '%s'",newp,oldp);
 	return EXIT_SUCCESS;
 }

@@ -27,7 +27,7 @@
 #include "cd.h"
 
 s32 shell_cmdCd(u32 argc,char **argv) {
-	char *path;
+	char path[MAX_PATH_LEN];
 	sFileInfo info;
 
 	if(argc != 2 || isHelpCmd(argc,argv)) {
@@ -35,12 +35,7 @@ s32 shell_cmdCd(u32 argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-	if(path == NULL) {
-		printe("Unable to allocate mem for path");
-		return EXIT_FAILURE;
-	}
-	abspath(path,MAX_PATH_LEN + 1,argv[1]);
+	abspath(path,sizeof(path),argv[1]);
 
 	/* retrieve file-info */
 	if(stat(path,&info) < 0) {
@@ -56,6 +51,5 @@ s32 shell_cmdCd(u32 argc,char **argv) {
 
 	/* finally change dir */
 	setenv("CWD",path);
-	free(path);
 	return EXIT_SUCCESS;
 }

@@ -112,10 +112,6 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	return t;
 }
 
-sHashMap *thread_getMap(void) {
-	return threads;
-}
-
 u32 thread_getCount(void) {
 	return hm_getCount(threads);
 }

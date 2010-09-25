@@ -35,7 +35,7 @@ s32 shell_cmdPwd(u32 argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	if(!getenvto(path,MAX_PATH_LEN + 1,"CWD")) {
+	if(getenvto(path,MAX_PATH_LEN + 1,"CWD") < 0) {
 		printe("Unable to get CWD");
 		return EXIT_FAILURE;
 	}

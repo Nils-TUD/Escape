@@ -19,11 +19,10 @@
 
 #include <esc/common.h>
 #include <stdlib.h>
-#include "envintern.h"
 
 char *getenv(const char *name) {
 	static char value[MAX_PATH_LEN];
-	if(getenvto(value,sizeof(value),name))
+	if(getenvto(value,sizeof(value),name) >= 0)
 		return value;
 	return NULL;
 }

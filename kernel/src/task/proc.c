@@ -24,6 +24,7 @@
 #include <sys/task/sched.h>
 #include <sys/task/elf.h>
 #include <sys/task/lock.h>
+#include <sys/task/env.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/kheap.h>
@@ -95,6 +96,7 @@ void proc_init(void) {
 	p->flags = 0;
 	p->entryPoint = 0;
 	p->fsChans = NULL;
+	p->env = NULL;
 	p->stats.input = 0;
 	p->stats.output = 0;
 	strcpy(p->command,"initloader");
@@ -347,6 +349,7 @@ s32 proc_clone(tPid newPid,bool isVM86) {
 	p->flags = 0;
 	p->entryPoint = cur->entryPoint;
 	p->fsChans = NULL;
+	p->env = NULL;
 	p->stats.input = 0;
 	p->stats.output = 0;
 	if(isVM86)
@@ -575,6 +578,7 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 	}
 
 	/* remove other stuff */
+	env_removeFor(p->pid);
 	proc_removeRegions(p,true);
 	vfsr_removeProc(p->pid);
 	lock_releaseAll(p->pid);

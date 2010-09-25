@@ -81,12 +81,10 @@ int main(int argc,char *argv[]) {
 
 	// open file or use stdin
 	if(args.get_free().size() > 0) {
-		char path[MAX_PATH_LEN];
 		filename = *args.get_free().at(0);
-		abspath(path,sizeof(path),filename.c_str());
-		in = fopen(path,"r");
+		in = fopen(filename.c_str(),"r");
 		if(in == NULL)
-			error("Unable to open '%s'",path);
+			error("Unable to open '%s'",filename.c_str());
 	}
 	else if(isterm(STDIN_FILENO))
 		error("Using a vterm as STDIN and have got no filename");

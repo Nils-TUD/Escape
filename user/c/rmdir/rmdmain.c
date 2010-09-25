@@ -30,7 +30,6 @@ static void usage(const char *name) {
 }
 
 int main(int argc,const char *argv[]) {
-	char rPath[MAX_PATH_LEN];
 	const char **args;
 
 	s32 res = ca_parse(argc,argv,0,"");
@@ -43,9 +42,8 @@ int main(int argc,const char *argv[]) {
 
 	args = ca_getfree();
 	while(*args) {
-		abspath(rPath,MAX_PATH_LEN,*args);
-		if(rmdir(rPath) < 0)
-			fprintf(stderr,"Unable to remove directory '%s'\n",rPath);
+		if(rmdir(*args) < 0)
+			fprintf(stderr,"Unable to remove directory '%s'\n",*args);
 		args++;
 	}
 	return EXIT_SUCCESS;

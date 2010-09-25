@@ -93,6 +93,7 @@ static const char *msgs[] = {
 	/* -68 (ERR_EOF) */						"EOF reached!",
 	/* -69 (ERR_DRIVER_DIED) */				"The driver died!",
 	/* -70 (ERR_SETPROT_IMPOSSIBLE) */		"Setting the region-protection is not possible for the chosen region",
+	/* -71 (ERR_ENVVAR_NOT_FOUND) */		"Environment-variable not found",
 };
 
 char *strerror(s32 errnum) {

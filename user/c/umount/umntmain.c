@@ -31,7 +31,6 @@ static void usage(const char *name) {
 }
 
 int main(int argc,const char *argv[]) {
-	char rpath[MAX_PATH_LEN];
 	char *path = NULL;
 
 	s32 res = ca_parse(argc,argv,CA_NO_FREE,"=s*",&path);
@@ -42,8 +41,7 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	abspath(rpath,MAX_PATH_LEN,path);
-	if(unmount(rpath) < 0)
-		error("Unable to unmount '%s'",rpath);
+	if(unmount(path) < 0)
+		error("Unable to unmount '%s'",path);
 	return EXIT_SUCCESS;
 }

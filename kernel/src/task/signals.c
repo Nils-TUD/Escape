@@ -33,7 +33,7 @@ typedef struct {
 } sSignalSlot;
 
 typedef struct {
-	tTid tid;
+	sThread *thread;
 	/* bitmask of pending signals */
 	u32 signalsPending;
 	/* signal handler */
@@ -117,16 +117,13 @@ bool sig_hasSignal(tSig *sig,tTid *tid) {
 		return false;
 	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
 		sSigThread *st = (sSigThread*)n->data;
-		if(st->signalsPending && st->signal == 0) {
-			sThread *t = thread_getById(st->tid);
-			if(!t->ignoreSignals) {
-				s32 i;
-				for(i = 0; i < SIG_COUNT; i++) {
-					if(st->signals[i].pending) {
-						*sig = i;
-						*tid = t->tid;
-						return true;
-					}
+		if(st->signalsPending && st->signal == 0 && !st->thread->ignoreSignals) {
+			s32 i;
+			for(i = 0; i < SIG_COUNT; i++) {
+				if(st->signals[i].pending) {
+					*sig = i;
+					*tid = st->thread->tid;
+					return true;
 				}
 			}
 		}
@@ -135,12 +132,8 @@ bool sig_hasSignal(tSig *sig,tTid *tid) {
 }
 
 bool sig_hasSignalFor(tTid tid) {
-	sThread *t;
 	sSigThread *st = sig_getThread(tid,false);
-	if(!st || !st->signalsPending || st->signal)
-		return false;
-	t = thread_getById(tid);
-	return !t->ignoreSignals;
+	return st && st->signalsPending && !st->signal && !st->thread->ignoreSignals;
 }
 
 void sig_addSignalFor(tPid pid,tSig signal) {
@@ -206,23 +199,23 @@ static void sig_unset(sSigThread *t,tSig sig) {
 
 static sSigThread *sig_getThread(tTid tid,bool create) {
 	sSLNode *n;
-	sSigThread *t;
+	sSigThread *st;
 	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
-		t = (sSigThread*)n->data;
-		if(t->tid == tid)
-			return t;
+		st = (sSigThread*)n->data;
+		if(st->thread->tid == tid)
+			return st;
 	}
 	if(!create)
 		return NULL;
-	t = (sSigThread*)kheap_calloc(1,sizeof(sSigThread));
-	if(t == NULL)
+	st = (sSigThread*)kheap_calloc(1,sizeof(sSigThread));
+	if(st == NULL)
 		return NULL;
-	t->tid = tid;
-	if(!sll_append(sigThreads,t)) {
-		kheap_free(t);
+	st->thread = thread_getById(tid);
+	if(!sll_append(sigThreads,st)) {
+		kheap_free(st);
 		return NULL;
 	}
-	return t;
+	return st;
 }
 
 
@@ -272,7 +265,7 @@ void sig_dbg_print(void) {
 	vid_printf("Signal handler:\n");
 	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
 		sSigThread *st = (sSigThread*)n->data;
-		sThread *t = thread_getById(st->tid);
+		sThread *t = st->thread;
 		vid_printf("\tThread %d (%d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 		for(i = 0; i < SIG_COUNT; i++) {
 			if(st->signals[i].handler) {

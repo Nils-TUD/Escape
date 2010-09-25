@@ -65,16 +65,14 @@ int main(int argc,const char **argv) {
 	}
 	else {
 		FILE *f;
-		char apath[MAX_PATH_LEN];
 		while(*args) {
-			abspath(apath,sizeof(apath),*args);
-			if(is_dir(apath)) {
-				printe("'%s' is a directory!",apath);
+			if(is_dir(*args)) {
+				printe("'%s' is a directory!",*args);
 				continue;
 			}
-			f = fopen(apath,"r");
+			f = fopen(*args,"r");
 			if(!f) {
-				printe("Unable to open '%s'",apath);
+				printe("Unable to open '%s'",*args);
 				continue;
 			}
 			while(fgetl(line,sizeof(line),f))

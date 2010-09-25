@@ -41,33 +41,27 @@ int main(int argc,char *argv[]) {
 	else {
 		s32 i;
 		FILE *file;
-		char *path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-		if(path == NULL)
-			error("Unable to allocate mem for path");
 		for(i = 1; i < argc; i++) {
-			sFileInfo info;
-			abspath(path,MAX_PATH_LEN + 1,argv[i]);
-
 			/* check if it's a directory */
-			if(stat(path,&info) < 0) {
-				printe("Unable to get info about '%s'",path);
+			sFileInfo info;
+			if(stat(argv[i],&info) < 0) {
+				printe("Unable to get info about '%s'",argv[i]);
 				continue;
 			}
 			if(MODE_IS_DIR(info.mode)) {
-				printe("'%s' is a directory!",path);
+				printe("'%s' is a directory!",argv[i]);
 				continue;
 			}
 
-			file = fopen(path,"r");
+			file = fopen(argv[i],"r");
 			if(file == NULL) {
-				printe("Unable to open '%s'",path);
+				printe("Unable to open '%s'",argv[i]);
 				continue;
 			}
 
-			printFile(path,file);
+			printFile(argv[i],file);
 			fclose(file);
 		}
-		free(path);
 	}
 
 	return EXIT_SUCCESS;

@@ -46,8 +46,8 @@ s32 shell_cmdEnv(u32 argc,char **argv) {
 	/* list all env-vars */
 	if(argc < 2) {
 		u32 i;
-		for(i = 0; getenvito(nameBuf,MAX_ENV_LEN + 1,i); i++) {
-			if(getenvto(valBuf,MAX_ENV_LEN + 1,nameBuf))
+		for(i = 0; getenvito(nameBuf,MAX_ENV_LEN + 1,i) >= 0; i++) {
+			if(getenvto(valBuf,MAX_ENV_LEN + 1,nameBuf) >= 0)
 				printf("%s=%s\n",nameBuf,valBuf);
 		}
 	}
@@ -55,14 +55,15 @@ s32 shell_cmdEnv(u32 argc,char **argv) {
 		/* set? */
 		u32 pos = strchri(argv[1],'=');
 		if(argv[1][pos] == '\0') {
-			if(getenvto(valBuf,MAX_ENV_LEN + 1,argv[1]))
+			if(getenvto(valBuf,MAX_ENV_LEN + 1,argv[1]) >= 0)
 				printf("%s=%s\n",argv[1],valBuf);
 		}
 		/* get */
 		else {
 			argv[1][pos] = '\0';
-			setenv(argv[1],argv[1] + pos + 1);
-			if(getenvto(valBuf,MAX_ENV_LEN + 1,argv[1]))
+			if(setenv(argv[1],argv[1] + pos + 1) < 0)
+				printe("Unable to set env-var '%s' to '%s'",argv[1],argv[1] + pos + 1);
+			else if(getenvto(valBuf,MAX_ENV_LEN + 1,argv[1]) >= 0)
 				printf("%s=%s\n",argv[1],valBuf);
 		}
 	}

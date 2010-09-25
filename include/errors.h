@@ -89,6 +89,7 @@
 #define ERR_EOF						-68
 #define ERR_DRIVER_DIED				-69
 #define ERR_SETPROT_IMPOSSIBLE		-70
+#define ERR_ENVVAR_NOT_FOUND		-71
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

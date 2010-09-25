@@ -30,7 +30,6 @@ static void usage(const char *name) {
 }
 
 int main(int argc,const char *argv[]) {
-	char path[MAX_PATH_LEN];
 	const char **args;
 
 	s32 res = ca_parse(argc,argv,0,"");
@@ -43,9 +42,8 @@ int main(int argc,const char *argv[]) {
 
 	args = ca_getfree();
 	while(*args) {
-		abspath(path,sizeof(path),*args);
-		if(mkdir(path) < 0)
-			fprintf(stderr,"Unable to create directory '%s'\n",path);
+		if(mkdir(*args) < 0)
+			fprintf(stderr,"Unable to create directory '%s'\n",*args);
 		args++;
 	}
 	return EXIT_SUCCESS;

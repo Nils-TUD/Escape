@@ -1,6 +1,5 @@
 # Format: "<serviceName> ';' [<waitFor> ',' ...] ';' [<dependency> ',' ...]"
 speaker ; /dev/speaker ;
-env; /dev/env;
 zero; /dev/zero;
 random; /dev/random;
 null; /dev/null;

@@ -272,9 +272,9 @@ void _Exit(s32 status);
  * @param value the buffer to write the value to
  * @param valSize the size of the buffer
  * @param name the environment-variable-name
- * @return true if successfull
+ * @return 0 if successfull
  */
-bool getenvto(char *value,u32 valSize,const char *name) A_CHECKRET;
+extern s32 getenvto(char *value,u32 valSize,const char *name) A_CHECKRET;
 
 /**
  * Returns the value of the given environment-variable
@@ -290,9 +290,9 @@ char *getenv(const char *name) A_CHECKRET;
  * @param name the buffer to write the name to
  * @param nameSize the size of the buffer
  * @param index the index
- * @return true on success
+ * @return 0 if successfull
  */
-bool getenvito(char *name,u32 nameSize,u32 index);
+extern s32 getenvito(char *name,u32 nameSize,u32 index);
 
 /**
  * Returns the env-variable-name with given index
@@ -309,7 +309,7 @@ char *getenvi(u32 index) A_CHECKRET;
  * @param value the value
  * @return 0 on success
  */
-s32 setenv(const char *name,const char *value);
+extern s32 setenv(const char *name,const char *value);
 
 /**
  * The system function is used to issue a command. Execution of your program will not

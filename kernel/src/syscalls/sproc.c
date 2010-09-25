@@ -23,6 +23,7 @@
 #include <sys/task/ioports.h>
 #include <sys/task/elf.h>
 #include <sys/task/signals.h>
+#include <sys/task/env.h>
 #include <sys/machine/timer.h>
 #include <sys/machine/gdt.h>
 #include <sys/machine/vm86.h>
@@ -35,6 +36,8 @@
 #include <sys/vfs/real.h>
 #include <errors.h>
 #include <string.h>
+
+static s32 sysc_copyEnv(const char *src,char *dst,u32 size);
 
 void sysc_getpid(sIntrptStackFrame *stack) {
 	sProc *p = proc_getRunning();
@@ -148,6 +151,56 @@ void sysc_releaseIOPorts(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,err);
 
 	tss_setIOMap(p->ioMap);
+	SYSC_RET1(stack,0);
+}
+
+void sysc_getenvito(sIntrptStackFrame *stack) {
+	char *buffer = (char*)SYSC_ARG1(stack);
+	u32 size = SYSC_ARG2(stack);
+	u32 index = SYSC_ARG3(stack);
+	sProc *p = proc_getRunning();
+	s32 res;
+
+	const char *name = env_geti(p->pid,index);
+	if(name == NULL)
+		SYSC_ERROR(stack,ERR_ENVVAR_NOT_FOUND);
+
+	res = sysc_copyEnv(name,buffer,size);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+void sysc_getenvto(sIntrptStackFrame *stack) {
+	char *buffer = (char*)SYSC_ARG1(stack);
+	u32 size = SYSC_ARG2(stack);
+	const char *name = (const char*)SYSC_ARG3(stack);
+	sProc *p = proc_getRunning();
+	s32 res;
+
+	if(!sysc_isStringReadable(name))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	const char *value = env_get(p->pid,name);
+	if(value == NULL)
+		SYSC_ERROR(stack,ERR_ENVVAR_NOT_FOUND);
+
+	res = sysc_copyEnv(value,buffer,size);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
+}
+
+void sysc_setenv(sIntrptStackFrame *stack) {
+	const char *name = (const char*)SYSC_ARG1(stack);
+	const char *value = (const char*)SYSC_ARG2(stack);
+	sProc *p = proc_getRunning();
+
+	if(!sysc_isStringReadable(name) || !sysc_isStringReadable(value))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	if(!env_set(p->pid,name,value))
+		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
 	SYSC_RET1(stack,0);
 }
 
@@ -277,4 +330,17 @@ void sysc_vm86int(sIntrptStackFrame *stack) {
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
+}
+
+static s32 sysc_copyEnv(const char *src,char *dst,u32 size) {
+	u32 len;
+	if(size == 0 || !paging_isRangeUserWritable((u32)dst,size))
+		return ERR_INVALID_ARGS;
+
+	/* copy to buffer */
+	len = strlen(src);
+	len = MIN(len,size - 1);
+	strncpy(dst,src,len);
+	dst[len] = '\0';
+	return len;
 }

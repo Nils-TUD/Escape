@@ -18,12 +18,11 @@
  */
 
 #include <esc/common.h>
-#include <esc/fsinterface.h>
 #include <stdlib.h>
 
 char *getenvi(u32 index) {
 	static char name[MAX_NAME_LEN];
-	if(getenvito(name,sizeof(name),index))
+	if(getenvito(name,sizeof(name),index) >= 0)
 		return name;
 	return NULL;
 }

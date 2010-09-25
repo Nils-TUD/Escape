@@ -64,7 +64,7 @@ void shell_init(s32 argc,const char **argv) {
 
 bool shell_prompt(void) {
 	char path[MAX_PATH_LEN + 1];
-	if(!getenvto(path,MAX_PATH_LEN + 1,"CWD")) {
+	if(getenvto(path,MAX_PATH_LEN + 1,"CWD") < 0) {
 		printe("Unable to get CWD");
 		return false;
 	}
@@ -86,9 +86,7 @@ s32 shell_executeCmd(char *line,bool isFile) {
 	s32 res;
 	curIsStream = isFile;
 	if(isFile) {
-		char absp[MAX_PATH_LEN];
-		abspath(absp,MAX_PATH_LEN,line);
-		curStream = fopen(absp,"r");
+		curStream = fopen(line,"r");
 		if(curStream == NULL)
 			return errno;
 		filename = line;

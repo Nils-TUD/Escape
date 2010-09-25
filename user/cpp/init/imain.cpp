@@ -21,6 +21,7 @@
 #include <esc/io.h>
 #include <esc/proc.h>
 #include <esc/thread.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <fstream>
 #include "iparser.h"
@@ -45,6 +46,12 @@ int main(void) {
 	if(fd < 0)
 		error("Unable to open /dev/fs after %d retries",retries);
 	close(fd);
+
+	/* set basic env-vars */
+	if(setenv("CWD","/") < 0)
+		error("Unable to set CWD");
+	if(setenv("PATH","/bin/") < 0)
+		error("Unable to set PATH");
 
 	try {
 		// read driver-spec from file

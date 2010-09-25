@@ -62,15 +62,13 @@ int main(int argc,const char *argv[]) {
 	if(!*args)
 		countFile(stdin);
 	else {
-		char apath[MAX_PATH_LEN];
 		while(*args) {
-			abspath(apath,sizeof(apath),*args);
-			if(is_dir(apath))
-				fprintf(stderr,"'%s' is a directory!\n",apath);
+			if(is_dir(*args))
+				fprintf(stderr,"'%s' is a directory!\n",*args);
 			else {
-				FILE *f = fopen(apath,"r");
+				FILE *f = fopen(*args,"r");
 				if(!f)
-					fprintf(stderr,"Unable to open '%s'\n",apath);
+					fprintf(stderr,"Unable to open '%s'\n",*args);
 				else {
 					countFile(f);
 					fclose(f);

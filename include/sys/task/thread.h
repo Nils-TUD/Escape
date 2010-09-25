@@ -172,11 +172,6 @@ extern bool thread_resume(u32 pageDir,sThreadRegs *saveArea,u32 kstackFrame);
 sThread *thread_init(sProc *p);
 
 /**
- * @return the map of threads
- */
-sHashMap *thread_getMap(void);
-
-/**
  * @return the number of existing threads
  */
 u32 thread_getCount(void);

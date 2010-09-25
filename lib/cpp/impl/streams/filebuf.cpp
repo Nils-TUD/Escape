@@ -23,11 +23,9 @@
 
 namespace std {
 	filebuf* filebuf::open(const char* s,ios_base::openmode mode) {
-		char path[MAX_PATH_LEN];
 		close();
 		unsigned char omode = getMode(mode);
-		abspath(path,sizeof(path),s);
-		_fd = ::open(path,omode);
+		_fd = ::open(s,omode);
 		if(_fd < 0)
 			return NULL;
 		_mode = mode;

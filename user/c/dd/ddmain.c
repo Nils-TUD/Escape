@@ -38,7 +38,6 @@ static void interrupted(s32 sig) {
 }
 
 int main(int argc,const char *argv[]) {
-	char apath[MAX_PATH_LEN];
 	u32 bs = 4096;
 	u32 count = 0;
 	u64 total = 0;
@@ -60,16 +59,14 @@ int main(int argc,const char *argv[]) {
 		error("Unable to set sig-handler for SIG_INTRPT");
 
 	if(inFile) {
-		abspath(apath,sizeof(apath),inFile);
-		in = fopen(apath,"r");
+		in = fopen(inFile,"r");
 		if(in == NULL)
-			error("Unable to open '%s'",apath);
+			error("Unable to open '%s'",inFile);
 	}
 	if(outFile) {
-		abspath(apath,sizeof(apath),outFile);
-		out = fopen(apath,"w");
+		out = fopen(outFile,"w");
 		if(out == NULL)
-			error("Unable to open '%s'",apath);
+			error("Unable to open '%s'",outFile);
 	}
 
 	size_t result;

@@ -17,18 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef ENV_H_
+#define ENV_H_
+
 #include <esc/common.h>
-#include <esc/proc.h>
-#include <esc/messages.h>
-#include <stdlib.h>
-#include "envintern.h"
 
-bool getenvito(char *name,u32 nameSize,u32 index) {
-	sMsg msg;
-	if(initEnv() < 0)
-		return false;
+const char *env_geti(tPid pid,u32 index);
 
-	msg.args.arg1 = getpid();
-	msg.args.arg2 = index;
-	return doGetEnv(name,&msg,nameSize,MSG_ENV_GETI,sizeof(msg.args));
-}
+const char *env_get(tPid pid,const char *name);
+
+bool env_set(tPid pid,const char *name,const char *value);
+
+void env_removeFor(tPid pid);
+
+#endif /* ENV_H_ */

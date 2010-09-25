@@ -32,7 +32,7 @@ u32 abspath(char *dst,u32 dstSize,const char *src) {
 	layer = 0;
 	if(*p != '/') {
 		char envPath[MAX_PATH_LEN + 1];
-		if(!getenvto(envPath,MAX_PATH_LEN + 1,"CWD"))
+		if(getenvto(envPath,MAX_PATH_LEN + 1,"CWD") < 0)
 			return count;
 		if(dstSize < strlen(envPath))
 			return count;

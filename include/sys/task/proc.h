@@ -73,7 +73,7 @@ typedef struct {
 	tPid parentPid;
 	/* the physical address for the page-directory of this process */
 	tPageDir pagedir;
-	/* the number of frames the process owns, i.e. no cow, no shm, no text, no mapPhysical.
+	/* the number of frames the process owns, i.e. no cow, no shared stuff, no mapPhysical.
 	 * paging-structures are counted, too */
 	u32 ownFrames;
 	/* the number of frames the process uses, but maybe other processes as well */
@@ -89,6 +89,8 @@ typedef struct {
 	tFileNo fileDescs[MAX_FD_COUNT];
 	/* channels to send/receive messages to/from fs (needed in vfs/real.c) */
 	sSLList *fsChans;
+	/* environment-variables of this process */
+	sSLList *env;
 	/* for the waiting parent */
 	sExitState *exitState;
 	/* the address of the sigRet "function" */

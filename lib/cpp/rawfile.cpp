@@ -33,9 +33,7 @@ namespace std {
 			flags |= IO_APPEND;
 		if(mode & TRUNCATE)
 			flags |= IO_TRUNCATE;
-		char tmp[MAX_PATH_LEN];
-		abspath(tmp,sizeof(tmp),filename.c_str());
-		_fd = ::open(tmp,flags);
+		_fd = ::open(filename.c_str(),flags);
 		if(_fd < 0)
 			throw io_exception("Unable to open",_fd);
 		_mode = mode;

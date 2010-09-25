@@ -48,7 +48,6 @@ void bmp_draw(sBitmap *bmp,tCoord x,tCoord y,fSetPixel func) {
 
 sBitmap *bmp_loadFromFile(const char *filename) {
 	/* read header */
-	char apath[MAX_PATH_LEN];
 	tFD fd;
 	s32 res;
 	sBitmap *bmp = NULL;
@@ -61,8 +60,7 @@ sBitmap *bmp_loadFromFile(const char *filename) {
 	if(bmp == NULL)
 		goto errorHeader;
 
-	abspath(apath,sizeof(apath),filename);
-	fd = open(apath,IO_READ);
+	fd = open(filename,IO_READ);
 	if(fd < 0)
 		goto errorBmp;
 	if(RETRY(read(fd,header,headerSize)) != (s32)headerSize) {

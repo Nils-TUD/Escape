@@ -55,11 +55,9 @@ int main(int argc,const char *argv[]) {
 
 	args = ca_getfree();
 	if(args[0]) {
-		char apath[MAX_PATH_LEN];
-		abspath(apath,sizeof(apath),args[0]);
-		in = fopen(apath,"r");
+		in = fopen(args[0],"r");
 		if(!in)
-			error("Unable to open '%s'",apath);
+			error("Unable to open '%s'",args[0]);
 	}
 
 	strtolower(pattern);

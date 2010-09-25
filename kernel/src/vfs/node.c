@@ -26,6 +26,7 @@
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/pmem.h>
+#include <sys/task/env.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <string.h>
@@ -159,6 +160,7 @@ char *vfsn_getPath(tInodeNo nodeNo) {
 }
 
 s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) {
+	static char apath[MAX_PATH_LEN];
 	sVFSNode *dir,*n = nodes;
 	sThread *t = thread_getRunning();
 	s32 pos,depth,lastdepth;
@@ -166,8 +168,26 @@ s32 vfsn_resolvePath(const char *path,tInodeNo *nodeNo,bool *created,u16 flags) 
 		*created = false;
 
 	/* no absolute path? */
-	if(*path != '/')
-		return ERR_INVALID_PATH;
+	if(*path != '/') {
+		u32 len;
+		const char *cwd = env_get(t->proc->pid,"CWD");
+		if(cwd) {
+			strcpy(apath,cwd);
+			len = strlen(apath);
+			if(apath[len - 1] != '/') {
+				apath[len++] = '/';
+				apath[len] = '\0';
+			}
+		}
+		else {
+			/* assume '/' */
+			len = 1;
+			apath[0] = '/';
+			apath[1] = '\0';
+		}
+		strcpy(apath + len,path);
+		path = apath;
+	}
 
 	/* skip slashes */
 	while(*path == '/')

@@ -49,8 +49,6 @@ static void usage(const char *name) {
 }
 
 int main(int argc,const char *argv[]) {
-	char rpath[MAX_PATH_LEN];
-	char rdev[MAX_PATH_LEN];
 	char *path = NULL;
 	char *dev = NULL;
 	char *stype = NULL;
@@ -64,9 +62,6 @@ int main(int argc,const char *argv[]) {
 	if(ca_hasHelp())
 		usage(argv[0]);
 
-	abspath(rdev,MAX_PATH_LEN,dev);
-	abspath(rpath,MAX_PATH_LEN,path);
-
 	for(i = 0; i < ARRAY_SIZE(types); i++) {
 		if(strcmp(types[i].name,stype) == 0) {
 			type = types[i].type;
@@ -76,7 +71,7 @@ int main(int argc,const char *argv[]) {
 	if(i >= ARRAY_SIZE(types))
 		error("Unknown type '%s'",argv[3]);
 
-	if(mount(rdev,rpath,type) < 0)
-		error("Unable to mount '%s' @ '%s' with type %d",rdev,rpath,type);
+	if(mount(dev,path,type) < 0)
+		error("Unable to mount '%s' @ '%s' with type %d",dev,path,type);
 	return EXIT_SUCCESS;
 }

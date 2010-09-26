@@ -21,16 +21,44 @@
 #include <esc/io.h>
 #include "iobuf.h"
 #include <stdio.h>
+#include <string.h>
 
 size_t fread(void *ptr,size_t size,size_t count,FILE *file) {
-	if(file->in.fd < 0 || file->eof)
+	sIOBuf *buf = &file->in;
+	s32 res = 1; /* for reading from buffer something > 0 */
+	size_t rem = size * count;
+	char *cptr = (char*)ptr;
+	if(buf->fd < 0 || file->eof)
 		return 0;
-	s32 res = read(file->in.fd,ptr,count * size);
+	/* at first, read from the buffer, if there is something left */
+	if(buf->pos < buf->max) {
+		size_t amount = MIN(rem,(u32)(buf->max - buf->pos));
+		memcpy(cptr,buf->buffer + buf->pos,amount);
+		buf->pos += amount;
+		cptr += amount;
+		rem -= amount;
+	}
+	/* if its more than the buffer-capacity, better read it at once without buffer */
+	if(rem > IN_BUFFER_SIZE) {
+		res = RETRY(read(buf->fd,cptr,rem));
+		if(res > 0)
+			rem -= res;
+	}
+	/* otherwise fill the buffer and copy the part the user wants */
+	else if(rem > 0) {
+		res = RETRY(read(buf->fd,buf->buffer,IN_BUFFER_SIZE));
+		if(res > 0) {
+			size_t amount = MIN((u32)res,rem);
+			memcpy(cptr,file->in.buffer,amount);
+			buf->pos = amount;
+			buf->max = res;
+			rem -= amount;
+		}
+	}
+	/* set eof and error */
 	if(res == 0)
 		file->eof = true;
 	else if(res < 0)
 		file->error = res;
-	else
-		return res / size;
-	return 0;
+	return ((count * size) - rem) / size;
 }

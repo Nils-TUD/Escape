@@ -21,8 +21,10 @@
 #define DIR_H_
 
 #include <esc/common.h>
-#include <esc/io.h>
 #include <esc/fsinterface.h>
+#include <stdio.h>
+
+typedef FILE DIR;
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,25 +53,25 @@ void dirname(char *path);
  * Opens the given directory
  *
  * @param path the path to the directory
- * @return the file-descriptor for the directory or a negative error-code
+ * @return the dir-pointer or NULL if it failed
  */
-tFD opendir(const char *path);
+DIR *opendir(const char *path);
 
 /**
  * Reads the next directory-entry from the given file-descriptor.
  *
  * @param e the dir-entry to read into
- * @param dir the file-descriptor
+ * @param dir the dir-pointer
  * @return false if the end has been reached
  */
-bool readdir(sDirEntry *e,tFD dir);
+bool readdir(DIR *dir,sDirEntry *e);
 
 /**
  * Closes the given directory
  *
- * @param dir the file-descriptor
+ * @param dir the dir-pointer
  */
-void closedir(tFD dir);
+void closedir(DIR *dir);
 
 #ifdef __cplusplus
 }

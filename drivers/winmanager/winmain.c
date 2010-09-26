@@ -72,10 +72,7 @@ int main(void) {
 	if(kmmng < 0)
 		error("Unable to open /dev/kmmanager");
 
-	if(setSigHandler(SIG_THREAD_DIED,deadThreadHandler) < 0)
-		error("Unable to set sig-handler for %d",SIG_THREAD_DIED);
-
-	drvId = regDriver("winmanager",0);
+	drvId = regDriver("winmanager",DRV_CLOSE);
 	if(drvId < 0)
 		error("Unable to create driver winmanager");
 
@@ -154,6 +151,10 @@ int main(void) {
 					win_setVesaEnabled(false);
 					enabled = false;
 					break;
+
+				case MSG_DRV_CLOSE:
+					win_destroyWinsOf(getClientId(fd),curX,curY);
+					break;
 			}
 			close(fd);
 		}
@@ -191,12 +192,6 @@ int main(void) {
 	close(kmmng);
 	close(mouse);
 	return EXIT_SUCCESS;
-}
-
-static void deadThreadHandler(s32 sig) {
-	UNUSED(sig);
-	/* TODO this is dangerous! we can't use the heap in signal-handlers
-	win_destroyWinsOf(data,curX,curY);*/
 }
 
 static void handleKbMessage(tDrvId drvId,sWindow *active,u8 keycode,bool isBreak,u8 modifier,char c) {

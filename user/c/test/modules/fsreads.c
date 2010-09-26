@@ -39,10 +39,10 @@ int mod_fsreads(int argc,char *argv[]) {
 			error("Unable to start thread");
 	}
 	sDirEntry e;
-	tFD dir = opendir("/bin");
+	DIR *dir = opendir("/bin");
 	for(i = 0; i < THREAD_COUNT; i++) {
 		char *path;
-		if(!readdir(&e,dir))
+		if(!readdir(dir,&e))
 			break;
 		if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
 			continue;

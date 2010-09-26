@@ -908,7 +908,7 @@ package struct FS
                 static int list (char[] folder, int delegate(ref FileInfo) dg, bool all=false)
                 {
                         int             ret;
-                        int	            dir;
+                        DIR*            dir;
                         dirent          entry;
                         stat_t          sbuf;
                         char[]          prefix;
@@ -927,7 +927,7 @@ package struct FS
                         // prepare our filename buffer
                         sfnbuf = prefix.dup;
                         
-                        while (.readdir(&entry,dir))
+                        while (.readdir(dir,&entry))
                               {
                               auto len = tango.stdc.string.strlen (entry.name.ptr);
                               auto str = entry.name.ptr [0 .. len];

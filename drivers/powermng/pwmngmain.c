@@ -105,6 +105,7 @@ static void killProcs(void) {
 	char name[MAX_PROC_NAME_LEN + 1];
 	sDirEntry e;
 	tFD fd;
+	DIR *dir;
 	tPid pid,own = getpid();
 	u32 i,pidSize = ARRAY_INC_SIZE;
 	u32 pidPos = 0;
@@ -120,13 +121,13 @@ static void killProcs(void) {
 	if(pids == NULL)
 		error("Unable to alloc mem for pids");
 
-	fd = opendir("/system/processes");
-	if(fd < 0) {
+	dir = opendir("/system/processes");
+	if(dir == NULL) {
 		free(pids);
 		error("Unable to open '/system/processes'");
 	}
 
-	while(readdir(&e,fd)) {
+	while(readdir(dir,&e)) {
 		if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
 			continue;
 		pid = atoi(e.name);
@@ -140,7 +141,7 @@ static void killProcs(void) {
 		}
 		pids[pidPos++] = pid;
 	}
-	closedir(fd);
+	closedir(dir);
 
 	qsort(pids,pidPos,sizeof(tPid),pidCompare);
 	for(i = 0; i < pidPos; i++) {

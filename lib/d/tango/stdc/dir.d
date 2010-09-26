@@ -10,10 +10,11 @@ struct dirent {
 	ushort nameLen;
 	char name[MAX_NAME_LEN + 1];
 }
+alias void DIR;
 
 extern (C)
 {
-	extern int opendir(char *path);
-	extern bool readdir(dirent *e,int fd);
-	extern void closedir(int fd);
+	extern DIR *opendir(char *path);
+	extern bool readdir(DIR *dir,dirent *e);
+	extern void closedir(DIR *dir);
 }

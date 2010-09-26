@@ -65,7 +65,7 @@ static sApp *apps[MAX_APPS];
 
 int main(int argc,char **argv) {
 	sDirEntry e;
-	tFD dirFd;
+	DIR *dir;
 	u32 i;
 	char *appdef;
 	char *pathEnd;
@@ -117,28 +117,28 @@ int main(int argc,char **argv) {
 			addApp(includeCmd,app,listUser,listSys);
 		}
 
-		dirFd = opendir("/apps");
-		if(dirFd < 0)
+		dir = opendir("/apps");
+		if(dir == NULL)
 			error("Unable to open /apps");
 		pathEnd = path + strlen(path);
-		while(readdir(&e,dirFd)) {
+		while(readdir(dir,&e)) {
 			if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
 				continue;
 			strcpy(pathEnd,e.name);
 			appdef = readApp(path);
 			if(!appdef) {
-				closedir(dirFd);
+				closedir(dir);
 				error("Unable to read '%s'",path);
 			}
 
 			if(!addApp(appdef,app,listUser,listSys)) {
 				free(appdef);
-				closedir(dirFd);
+				closedir(dir);
 				error("Unable to parse app in '%s'",path);
 			}
 			free(appdef);
 		}
-		closedir(dirFd);
+		closedir(dir);
 
 		qsort(apps,appCount,sizeof(sApp*),appCompare);
 

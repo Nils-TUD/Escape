@@ -63,14 +63,14 @@ int main(int argc,const char **argv) {
 	/* list all keymaps */
 	else {
 		sDirEntry e;
-		tFD fd = opendir(KEYMAP_DIR);
-		if(fd < 0)
+		DIR *dir = opendir(KEYMAP_DIR);
+		if(!dir)
 			error("Unable to open '%s'",KEYMAP_DIR);
-		while(readdir(&e,fd)) {
+		while(readdir(dir,&e)) {
 			if(strcmp(e.name,".") != 0 && strcmp(e.name,"..") != 0)
 				printf("%s\n",e.name);
 		}
-		closedir(fd);
+		closedir(dir);
 	}
 	return EXIT_SUCCESS;
 }

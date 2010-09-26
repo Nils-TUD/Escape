@@ -28,7 +28,7 @@
 
 static void printFile(const char *filename,FILE *file);
 
-static char buffer[BUF_SIZE];
+static char buffer[BUF_SIZE + 1];
 
 int main(int argc,char *argv[]) {
 	if(isHelpCmd(argc,argv)) {
@@ -69,7 +69,7 @@ int main(int argc,char *argv[]) {
 
 static void printFile(const char *filename,FILE *file) {
 	size_t count;
-	while((count = fread(buffer,sizeof(char),BUF_SIZE - 1,file)) > 0) {
+	while((count = fread(buffer,sizeof(char),BUF_SIZE,file)) > 0) {
 		*(buffer + count) = '\0';
 		fputs(buffer,stdout);
 	}

@@ -21,6 +21,7 @@
 #include <file.h>
 #include <string.h>
 #include <env.h>
+#include <errno.h>
 
 namespace std {
 	file::file(const string& p)
@@ -48,11 +49,11 @@ namespace std {
 		sDirEntry e;
 		if(!is_dir())
 			throw io_exception("list_files failed: No directory",0);
-		tFD dir = opendir(path().c_str());
-		if(dir < 0)
-			throw io_exception("opendir failed",dir);
+		DIR *dir = opendir(path().c_str());
+		if(dir == NULL)
+			throw io_exception("opendir failed",errno);
 		bool res;
-		while((res = readdir(&e,dir))) {
+		while((res = readdir(dir,&e))) {
 			if((pattern.empty() || strmatch(pattern.c_str(),e.name)) &&
 					(showHidden || e.name[0] != '.'))
 				v.push_back(e);

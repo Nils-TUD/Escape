@@ -55,7 +55,7 @@ static sShellCmd commands[] = {
 sShellCmd **compl_get(sEnv *e,char *str,u32 length,u32 max,bool searchCmd,bool searchPath) {
 	u32 arraySize,arrayPos;
 	u32 i,len,cmdlen,start,matchLen,pathLen;
-	tFD dd;
+	DIR *dd;
 	sDirEntry entry;
 	sShellCmd *cmd;
 	sShellCmd **matches;
@@ -159,14 +159,14 @@ sShellCmd **compl_get(sEnv *e,char *str,u32 length,u32 max,bool searchCmd,bool s
 			length = 0;
 		if(paths[i] == NULL)
 			continue;
-		if((dd = opendir(paths[i])) < 0)
+		if(!(dd = opendir(paths[i])))
 			continue;
 
 		/* copy path to the beginning of the file-path */
 		strcpy(filePath,paths[i]);
 		pathLen = strlen(paths[i]);
 
-		while(readdir(&entry,dd)) {
+		while(readdir(dd,&entry)) {
 			/* skip . and .. */
 			if(strcmp(entry.name,".") == 0 || strcmp(entry.name,"..") == 0)
 				continue;

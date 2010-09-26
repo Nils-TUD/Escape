@@ -27,6 +27,7 @@ size_t fwrite(const void *ptr,size_t size,size_t count,FILE *file) {
 	s32 res = fflush(file);
 	if(file->out.fd < 0 || res < 0)
 		return 0;
+	/* TODO like in fread, we could write to buffer if its less than the buffer-size and so on */
 	res = write(file->out.fd,ptr,count * size);
 	if(res < 0) {
 		file->error = res;

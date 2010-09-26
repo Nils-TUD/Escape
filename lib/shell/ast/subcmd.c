@@ -132,7 +132,7 @@ static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char 
 		 * the matching items */
 		if((hasStar = strchr(last,'*') != NULL) || wasNull) {
 			char apath[MAX_PATH_LEN + 1];
-			tFD dir;
+			DIR *dir;
 			/* determine path and search-pattern */
 			char *search,*pos;
 			if((pos = strrchr(last,'/')) != NULL) {
@@ -154,7 +154,7 @@ static char **ast_expandPathname(char **buf,u32 *bufSize,u32 *i,char *path,char 
 			if((dir = opendir(apath))) {
 				u32 apathlen = strlen(apath);
 				sDirEntry e;
-				while(readdir(&e,dir)) {
+				while(readdir(dir,&e)) {
 					if(strcmp(e.name,".") == 0 || strcmp(e.name,"..") == 0)
 						continue;
 					if(strmatch(search,e.name)) {

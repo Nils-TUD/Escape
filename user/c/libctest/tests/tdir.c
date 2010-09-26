@@ -43,18 +43,18 @@ static void test_dir(void) {
 }
 
 static void test_opendir(void) {
-	tFD fd;
+	DIR *dir;
 	sDirEntry e;
 	test_caseStart("Testing opendir, readdir and closedir");
 
-	fd = opendir("/bin");
-	if(fd < 0) {
+	dir = opendir("/bin");
+	if(dir == NULL) {
 		test_caseFailed("Unable to open '/bin'");
 		return;
 	}
 
-	while(readdir(&e,fd));
-	closedir(fd);
+	while(readdir(dir,&e));
+	closedir(dir);
 
 	test_caseSucceded();
 }

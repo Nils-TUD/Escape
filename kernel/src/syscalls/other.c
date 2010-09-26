@@ -45,6 +45,7 @@ void sysc_debugc(sIntrptStackFrame *stack) {
 
 void sysc_debug(sIntrptStackFrame *stack) {
 	UNUSED(stack);
+#if DEBUGGING
 #if 0
 	static u32 foo = 0;
 	if(foo == 0) {
@@ -57,6 +58,7 @@ void sysc_debug(sIntrptStackFrame *stack) {
 	}
 #else
 	cons_start();
+#endif
 #endif
 }
 

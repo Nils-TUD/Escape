@@ -51,7 +51,7 @@ void driver::load() {
 		do {
 			res = stat(it->c_str(),&info);
 			if(res < 0)
-				sleep(10);
+				sleep(40);
 		}
 		while(j++ < MAX_WAIT_RETRIES && res < 0);
 		if(res < 0)

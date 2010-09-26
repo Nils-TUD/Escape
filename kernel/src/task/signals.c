@@ -42,6 +42,7 @@ typedef struct {
 	tSig signal;
 } sSigThread;
 
+static bool sig_isFatal(tSig sig);
 static void sig_add(sSigThread *t,tSig sig);
 static void sig_remove(sSigThread *t,tSig sig);
 static void sig_unset(sSigThread *t,tSig sig);
@@ -139,21 +140,28 @@ bool sig_hasSignalFor(tTid tid) {
 void sig_addSignalFor(tPid pid,tSig signal) {
 	sProc *p = proc_getByPid(pid);
 	sSLNode *n;
+	bool sent = false;
 	assert(p != NULL);
 	assert(sig_canSend(signal));
 	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
 		sSigThread *st = sig_getThread(t->tid,false);
-		if(st && st->signals[signal].handler)
-			sig_add(st,signal);
+		if(st && st->signals[signal].handler) {
+			if(st->signals[signal].handler != SIG_IGN)
+				sig_add(st,signal);
+			sent = true;
+		}
 	}
+	/* no handler and fatal? terminate proc! */
+	if(!sent && sig_isFatal(signal))
+		proc_terminate(p,1,signal);
 }
 
 void sig_addSignal(tSig signal) {
 	sSLNode *n;
 	for(n = sll_begin(sigThreads); n != NULL; n = n->next) {
 		sSigThread *st = (sSigThread*)n->data;
-		if(st->signals[signal].handler)
+		if(st->signals[signal].handler && st->signals[signal].handler != SIG_IGN)
 			sig_add(st,signal);
 	}
 }
@@ -175,6 +183,10 @@ void sig_ackHandling(tTid tid) {
 	vassert(t->signal != 0,"No signal handling");
 	vassert(sig_canHandle(t->signal),"Unable to handle signal %d",t->signal);
 	t->signal = 0;
+}
+
+static bool sig_isFatal(tSig sig) {
+	return sig == SIG_INTRPT || sig == SIG_TERM || sig == SIG_KILL || sig == SIG_SEGFAULT;
 }
 
 static void sig_add(sSigThread *t,tSig sig) {

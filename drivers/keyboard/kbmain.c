@@ -37,6 +37,8 @@
 #include "set1.h"
 
 #define BUF_SIZE					128
+#define TIMEOUT						60
+#define SLEEP_TIME					20
 
 /* io-ports */
 #define IOPORT_PIC					0x20
@@ -281,17 +283,27 @@ static void kbIntrptHandler(s32 sig) {
 }
 
 static void kb_waitOutBuf(void) {
+	u32 time = 0;
 	u8 status;
 	do {
 		status = inByte(IOPORT_KB_CTRL);
+		if((status & STATUS_OUTBUF_FULL) == 0) {
+			sleep(SLEEP_TIME);
+			time += SLEEP_TIME;
+		}
 	}
-	while((status & STATUS_OUTBUF_FULL) == 0);
+	while((status & STATUS_OUTBUF_FULL) == 0 && time < TIMEOUT);
 }
 
 static void kb_waitInBuf(void) {
+	u32 time = 0;
 	u8 status;
 	do {
 		status = inByte(IOPORT_KB_CTRL);
+		if((status & STATUS_INBUF_FULL) != 0) {
+			sleep(SLEEP_TIME);
+			time += SLEEP_TIME;
+		}
 	}
-	while((status & STATUS_INBUF_FULL) != 0);
+	while((status & STATUS_INBUF_FULL) != 0 && time < TIMEOUT);
 }

@@ -43,9 +43,6 @@
 #	define inb			inByte
 #endif
 
-#ifndef PROFILE
-#define PROFILE
-#endif
 #define STACK_SIZE	1024
 
 #ifdef PROFILE

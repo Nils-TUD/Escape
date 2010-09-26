@@ -268,7 +268,7 @@ static void kbIntrptHandler(s32 sig) {
 				 * But its for debugging, so its ok, I think :) */
 				tFD fd = open("/dev/vterm0",IO_WRITE);
 				if(fd >= 0) {
-					send(fd,MSG_VT_ENABLE,NULL,0);
+					sendRecvMsgData(fd,MSG_VT_ENABLE,NULL,0);
 					close(fd);
 				}
 				return;

@@ -39,10 +39,10 @@ int main(void) {
 	while(1) {
 		printf("Username: ");
 		fgetl(un,sizeof(un),stdin);
-		send(STDOUT_FILENO,MSG_VT_DIS_ECHO,NULL,0);
+		sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_ECHO,NULL,0);
 		printf("Password: ");
 		fgetl(pw,sizeof(pw),stdin);
-		send(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0);
+		sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_ECHO,NULL,0);
 		putchar('\n');
 
 		if(strcmp(un,USERNAME) != 0)

@@ -83,7 +83,7 @@ static void switchTo(u32 index) {
 			/* enable vterm */
 			fd = open("/dev/vterm0",IO_WRITE);
 			if(fd >= 0) {
-				send(fd,MSG_VT_ENABLE,NULL,0);
+				sendRecvMsgData(fd,MSG_VT_ENABLE,NULL,0);
 				msg.args.arg1 = index;
 				send(fd,MSG_VT_SELECT,&msg,sizeof(msg.args));
 				close(fd);
@@ -96,7 +96,7 @@ static void switchTo(u32 index) {
 			tFD fd = open("/dev/vterm0",IO_WRITE);
 			if(fd >= 0) {
 				/* diable vterm */
-				send(fd,MSG_VT_DISABLE,NULL,0);
+				sendRecvMsgData(fd,MSG_VT_DISABLE,NULL,0);
 				close(fd);
 				/* enable winmanager */
 				fd = open("/dev/winmanager",IO_WRITE);

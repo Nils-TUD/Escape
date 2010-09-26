@@ -99,7 +99,7 @@ int main(int argc,char *argv[]) {
 	consSize.height--;
 
 	// backup screen
-	send(STDOUT_FILENO,MSG_VT_BACKUP,NULL,0);
+	sendRecvMsgData(STDOUT_FILENO,MSG_VT_BACKUP,NULL,0);
 
 	// create empty line
 	emptyLine.assign(consSize.width,' ');
@@ -113,8 +113,8 @@ int main(int argc,char *argv[]) {
 	readLines(consSize.height);
 
 	// stop readline and navigation
-	send(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
-	send(STDOUT_FILENO,MSG_VT_DIS_NAVI,NULL,0);
+	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
+	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_NAVI,NULL,0);
 
 	refreshScreen();
 
@@ -162,9 +162,9 @@ int main(int argc,char *argv[]) {
 
 static void resetVterm(void) {
 	cout << endl;
-	send(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
-	send(STDOUT_FILENO,MSG_VT_EN_NAVI,NULL,0);
-	send(STDOUT_FILENO,MSG_VT_RESTORE,NULL,0);
+	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
+	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_NAVI,NULL,0);
+	sendRecvMsgData(STDOUT_FILENO,MSG_VT_RESTORE,NULL,0);
 }
 
 static void scrollDown(long l) {

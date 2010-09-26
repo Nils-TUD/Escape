@@ -40,9 +40,9 @@ int main(void) {
 	}
 
 	// disable readline, stop reading from keyboard and stop date-refresh
-	send(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
-	send(STDOUT_FILENO,MSG_VT_DIS_RDKB,NULL,0);
-	send(STDOUT_FILENO,MSG_VT_DISABLE,NULL,0);
+	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDLINE,NULL,0);
+	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDKB,NULL,0);
+	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DISABLE,NULL,0);
 
 	// start gui drivers
 	startDriver("vesa","/dev/vesa");
@@ -87,9 +87,9 @@ static void startDriver(const char *name,const char *wait) {
 
 static void quit(const char *msg,...) {
 	va_list ap;
-	send(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
-	send(STDOUT_FILENO,MSG_VT_EN_RDKB,NULL,0);
-	send(STDOUT_FILENO,MSG_VT_ENABLE,NULL,0);
+	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDLINE,NULL,0);
+	sendRecvMsgData(STDOUT_FILENO,MSG_VT_EN_RDKB,NULL,0);
+	sendRecvMsgData(STDOUT_FILENO,MSG_VT_ENABLE,NULL,0);
 	va_start(ap,msg);
 	vprinte(msg,ap);
 	va_end(ap);

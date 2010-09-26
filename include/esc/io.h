@@ -203,7 +203,7 @@ s32 sendMsgData(tFD fd,tMsgId id,const void *data,u32 size);
  * @param size if data is not NULL, the size of data
  * @return the result
  */
-s32 sendRecvMsgData(tFD fd,tMsgId id,const void *data,u32 size) A_CHECKRET;
+s32 sendRecvMsgData(tFD fd,tMsgId id,const void *data,u32 size);
 
 /**
  * Sends a message with given id and no data to the given driver, receives a message and

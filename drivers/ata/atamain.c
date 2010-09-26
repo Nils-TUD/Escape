@@ -45,7 +45,7 @@ static sId2Drv *getDriver(tDrvId sid);
 static void initDrives(void);
 static void createVFSEntry(sATADevice *device,sPartition *part,const char *name);
 
-static u32 drvCount = 0;
+static s32 drvCount = 0;
 static tDrvId drivers[DEVICE_COUNT * PARTITION_COUNT];
 static sId2Drv id2drv[DEVICE_COUNT * PARTITION_COUNT];
 /* don't use dynamic memory here since this may cause trouble with swapping (which we do) */
@@ -55,12 +55,23 @@ static u16 buffer[MAX_RW_SIZE / sizeof(u16)];
 
 static sMsg msg;
 
-int main(void) {
-	u32 i;
+int main(int argc,char **argv) {
+	s32 i;
 	tMsgId mid;
+	bool useDma = true;
+
+	if(argc < 2) {
+		printe("Usage: %s <wait> [nodma]",argv[0]);
+		return EXIT_FAILURE;
+	}
+
+	for(i = 2; i < argc; i++) {
+		if(strcmp(argv[i],"nodma") == 0)
+			useDma = false;
+	}
 
 	/* detect and init all devices */
-	ctrl_init();
+	ctrl_init(useDma);
 	initDrives();
 	/* flush prints */
 	fflush(stdout);

@@ -26,6 +26,7 @@
 #include <esc/thread.h>
 #include <esc/messages.h>
 #include <esc/ringbuffer.h>
+#include <esc/conf.h>
 #include <string.h>
 #include <errors.h>
 #include <assert.h>
@@ -50,6 +51,8 @@
 							"0\x17" \
 							".\x17" \
 							"3\x17"
+
+static bool reqPorts = false;
 
 bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd) {
 	u32 i,len;
@@ -82,6 +85,13 @@ bool vterm_init(sVTerm *vt,sVTSize *vidSize,tFD vidFd,tFD speakerFd) {
 	vt->readLine = true;
 	vt->navigation = true;
 	vt->printToRL = false;
+	vt->printToCom1 = getConf(CONF_LOG_TO_COM1);
+	if(vt->printToCom1 && !reqPorts) {
+		/* request io-ports for qemu and bochs */
+		if(requestIOPort(0xe9) < 0 || requestIOPort(0x3f8) < 0 || requestIOPort(0x3fd) < 0)
+			error("Unable to request ports for qemu/bochs");
+		reqPorts = true;
+	}
 	vt->escapePos = -1;
 	vt->rlStartCol = 0;
 	vt->shellPid = 0;

@@ -227,7 +227,7 @@ sFuncCall *util_getStackTrace(u32 *ebp,u32 rstart,u32 rend,u32 mstart,u32 mend) 
 		if(rstart != ((u32)&kernelStack) - TMP_STACK_SIZE && rstart != mstart)
 			ebp = (u32*)(mstart + ((u32)ebp & (PAGE_SIZE - 1)));
 		/* prevent page-fault */
-		if((u32)ebp < mstart || (u32)(ebp + 1) >= mend)
+		if((u32)ebp < mstart || (((u32)(ebp + 1) + sizeof(u32) - 1) & ~(sizeof(u32) - 1)) >= mend)
 			break;
 		frame->addr = *(ebp + 1) - CALL_INSTR_SIZE;
 		if(isKernel) {

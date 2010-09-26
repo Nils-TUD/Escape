@@ -38,6 +38,14 @@ typedef struct {
 s32 lines_create(sLines *l);
 
 /**
+ * Appends the given string to the current line, if possible
+ *
+ * @param l the lines
+ * @param str the string
+ */
+void lines_appendStr(sLines *l,const char *str);
+
+/**
  * Appends the character to the current line, if possible
  *
  * @param l the lines

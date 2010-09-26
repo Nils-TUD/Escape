@@ -643,8 +643,9 @@ static void proc_notifyProcDied(tPid parent,tPid pid) {
 	}
 }
 
-s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser) {
-	char **arg,*bufPos;
+s32 proc_buildArgs(const char *const *args,char **argBuffer,u32 *size,bool fromUser) {
+	const char *const *arg;
+	char *bufPos;
 	u32 argc = 0;
 	s32 remaining = EXEC_MAX_ARGSIZE;
 	s32 len;

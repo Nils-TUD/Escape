@@ -25,6 +25,7 @@
 #include <sys/vfs/rw.h>
 #include <sys/printf.h>
 #include <sys/log.h>
+#include <sys/config.h>
 #include <esc/esccodes.h>
 #include <stdarg.h>
 #include <assert.h>
@@ -107,15 +108,11 @@ void log_vprintf(const char *fmt,va_list ap) {
 }
 
 static void log_printc(char c) {
-#ifdef LOGSERIAL
-#ifndef PROFILE
-	if(!vfsIsReady) {
+	if(conf_get(CONF_LOG_TO_COM1) && !vfsIsReady) {
 		/* write to COM1 (some chars make no sense here) */
 		if(c != '\r' && c != '\b')
 			ser_out(SER_COM1,c);
 	}
-#endif
-#endif
 	if(bufPos >= BUF_SIZE)
 		log_flush();
 	if(bufPos < BUF_SIZE) {
@@ -149,9 +146,7 @@ static void log_escape(const char **str) {
 }
 
 static s32 log_write(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count) {
-#ifdef LOGSERIAL
-#ifndef PROFILE
-	if(logToSer) {
+	if(conf_get(CONF_LOG_TO_COM1) && logToSer) {
 		char *str = (char*)buffer;
 		u32 i;
 		for(i = 0; i < count; i++) {
@@ -161,8 +156,6 @@ static s32 log_write(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 o
 				ser_out(SER_COM1,c);
 		}
 	}
-#endif
-#endif
 	return vfsrw_writeDef(pid,file,node,buffer,offset,count);
 }
 

@@ -47,7 +47,7 @@ static bool ctrl_isBusResponding(sATAController* ctrl);
 static sPCIDevice ideCtrl;
 static sATAController ctrls[2];
 
-void ctrl_init(void) {
+void ctrl_init(bool useDma) {
 	s32 i,j,res;
 	tFD fd;
 
@@ -72,7 +72,7 @@ void ctrl_init(void) {
 	ctrls[1].portBase = PORTBASE_SECONDARY;
 
 	/* request io-ports for bus-mastering */
-	if(ideCtrl.bars[IDE_CTRL_BAR].addr) {
+	if(useDma && ideCtrl.bars[IDE_CTRL_BAR].addr) {
 		if(requestIOPorts(ideCtrl.bars[IDE_CTRL_BAR].addr,ideCtrl.bars[IDE_CTRL_BAR].size) < 0) {
 			error("Unable to request ATA-ports %d .. %d",ideCtrl.bars[IDE_CTRL_BAR].addr,
 					ideCtrl.bars[IDE_CTRL_BAR].addr + ideCtrl.bars[IDE_CTRL_BAR].size - 1);
@@ -106,7 +106,7 @@ void ctrl_init(void) {
 
 		/* init DMA */
 		ctrls[i].bmrBase = ideCtrl.bars[IDE_CTRL_BAR].addr;
-		if(ctrls[i].bmrBase) {
+		if(useDma && ctrls[i].bmrBase) {
 			ctrls[i].bmrBase += i * BMR_SEC_OFFSET;
 			/* allocate memory for PRDT and buffer */
 			ctrls[i].dma_prdt_virt = allocPhysical((u32*)&ctrls[i].dma_prdt_phys,8,4096);

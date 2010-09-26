@@ -29,72 +29,31 @@
 #define MAX_BPNAME_LEN		16
 #define MAX_BPVAL_LEN		32
 
-#define STATE_NAME			0
-#define STATE_VAL			1
-#define STATE_IGNORE		2
-
 static void conf_set(const char *name,const char *value);
 
 static u8 bootVidMode;
+static u8 logToCom1 = true;
 static char swapDev[MAX_BPVAL_LEN + 1] = "";
 
-void conf_parseBootParams(const char *params) {
-	char name[MAX_BPNAME_LEN];
-	char value[MAX_BPVAL_LEN];
-	u8 nameLen = 0,valLen = 0;
-	u8 state = STATE_NAME;
-	const char *p = params;
-	/* skip path to kernel */
-	while(!isspace(*p++));
-	while(*p) {
-		char c = *p++;
-		switch(c) {
-			case ' ':
-			case '\t':
-			case '\n':
-				if(state == STATE_IGNORE || state == STATE_VAL) {
-					value[valLen] = '\0';
-					conf_set(name,value);
-					state = STATE_NAME;
-					nameLen = 0;
-					valLen = 0;
-				}
-				break;
-
-			case '=':
-				if(state == STATE_NAME) {
-					name[nameLen] = '\0';
-					state = STATE_VAL;
-				}
-				else if(state == STATE_VAL) {
-					value[valLen] = '\0';
-					state = STATE_IGNORE;
-				}
-				break;
-
-			default:
-				if(state == STATE_NAME) {
-					if(nameLen >= MAX_BPNAME_LEN - 1) {
-						name[nameLen] = '\0';
-						state = STATE_VAL;
-					}
-					else
-						name[nameLen++] = c;
-				}
-				else if(state == STATE_VAL) {
-					if(valLen >= MAX_BPVAL_LEN - 1) {
-						value[valLen] = '\0';
-						state = STATE_IGNORE;
-					}
-					else
-						value[valLen++] = c;
-				}
-				break;
+void conf_parseBootParams(s32 argc,const char *const *argv) {
+	char name[MAX_BPNAME_LEN + 1];
+	char value[MAX_BPVAL_LEN + 1];
+	s32 i;
+	for(i = 1; i < argc; i++) {
+		u32 len = strlen(argv[i]);
+		if(len > MAX_BPNAME_LEN + MAX_BPVAL_LEN + 1)
+			continue;
+		s32 eq = strchri(argv[i],'=');
+		if(eq > MAX_BPNAME_LEN || (len - eq) > MAX_BPVAL_LEN)
+			continue;
+		strncpy(name,argv[i],eq);
+		name[eq] = '\0';
+		if(eq != (s32)len) {
+			strncpy(value,argv[i] + eq + 1,len - eq - 1);
+			value[len - eq - 1] = '\0';
 		}
-	}
-
-	if(state == STATE_IGNORE || state == STATE_VAL) {
-		value[valLen] = '\0';
+		else
+			value[0] = '\0';
 		conf_set(name,value);
 	}
 }
@@ -124,6 +83,9 @@ s32 conf_get(u32 id) {
 		case CONF_MAX_FDS:
 			res = MAX_FD_COUNT;
 			break;
+		case CONF_LOG_TO_COM1:
+			res = logToCom1;
+			break;
 		default:
 			res = ERR_INVALID_ARGS;
 			break;
@@ -140,4 +102,6 @@ static void conf_set(const char *name,const char *value) {
 	}
 	else if(strcmp(name,"swapdev") == 0)
 		strcpy(swapDev,value);
+	else if(strcmp(name,"nolog") == 0)
+		logToCom1 = false;
 }

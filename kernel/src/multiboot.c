@@ -35,7 +35,11 @@
 #include <string.h>
 #include <assert.h>
 
+#define MAX_ARG_COUNT			8
+#define MAX_ARG_LEN				64
 #define CHECK_FLAG(flags,bit)	(flags & (1 << bit))
+
+static const char **mboot_parseArgs(const char *line,s32 *argc);
 
 extern u32 KernelStart;
 static sMultiBoot *mb;
@@ -44,6 +48,8 @@ static bool loadedMods = false;
 void mboot_init(sMultiBoot *mbp) {
 	u32 i;
 	sModule *mod;
+	s32 argc;
+	const char **argv;
 
 	/* save the multiboot-structure
 	 * (change to 0xC...0 since we get the address at 0x0...0 from GRUB) */
@@ -63,7 +69,8 @@ void mboot_init(sMultiBoot *mbp) {
 	}
 
 	/* parse the boot parameter */
-	conf_parseBootParams(mb->cmdLine);
+	argv = mboot_parseArgs(mb->cmdLine,&argc);
+	conf_parseBootParams(argc,argv);
 }
 
 const sMultiBoot *mboot_getInfo(void) {
@@ -85,8 +92,6 @@ u32 mboot_getModuleSize(void) {
 void mboot_loadModules(sIntrptStackFrame *stack) {
 	u32 i;
 	tPid pid;
-	sProc *p;
-	char *name,*space,*driver;
 	tInodeNo nodeNo;
 	sModule *mod = mb->modsAddr;
 
@@ -96,13 +101,11 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 
 	loadedMods = true;
 	for(i = 0; i < mb->modsCount; i++) {
-		name = mod->name;
-		space = strchr(name,' ');
-		driver = space + 1;
-		driver[-1] = '\0';
-		space = strchr(driver,' ');
-		if(space)
-			space[0] = '\0';
+		/* parse args */
+		s32 argc;
+		const char **argv = mboot_parseArgs(mod->name,&argc);
+		if(argc < 2)
+			util_panic("Invalid arguments for multiboot-module: %s\n",mod->name);
 
 		/* clone proc */
 		pid = proc_getFreePid();
@@ -110,37 +113,22 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 			util_panic("No free process-slots");
 
 		if(proc_clone(pid,false)) {
-			/* build args */
 			sStartupInfo info;
-			s32 argc;
 			u32 argSize = 0;
 			char *argBuffer = NULL;
-			char *args[] = {NULL,NULL,NULL,NULL};
-			args[0] = name;
-			/* just two arguments supported here */
-			if(space != NULL) {
-				char *nnspace = strchr(space + 1,' ');
-				if(nnspace) {
-					*nnspace = '\0';
-					if(strchr(nnspace + 1,' ') != NULL)
-						util_panic("Invalid arguments to multiboot-module %s",name);
-					args[2] = nnspace + 1;
-				}
-				args[1] = space + 1;
-			}
-			/* we'll reach this as soon as the scheduler has chosen the created process */
-			p = proc_getRunning();
+			sProc *p = proc_getRunning();
 			/* remove regions (except stack) */
 			proc_removeRegions(p,false);
-			/* now load driver */
-			memcpy(p->command,name,strlen(name) + 1);
+			/* now load module */
+			memcpy(p->command,argv[0],strlen(argv[0]) + 1);
 			if(elf_loadFromMem((u8*)mod->modStart,mod->modEnd - mod->modStart,&info) < 0)
 				util_panic("Loading multiboot-module %s failed",p->command);
-			argc = proc_buildArgs(args,&argBuffer,&argSize,false);
+			/* build args */
+			argc = proc_buildArgs(argv,&argBuffer,&argSize,false);
 			if(argc < 0)
 				util_panic("Building args for multiboot-module %s failed: %d",p->command,argc);
-			vassert(proc_setupUserStack(stack,argc,argBuffer,argSize,&info),
-					"Unable to setup user-stack for multiboot module %s",p->command);
+			if(!proc_setupUserStack(stack,argc,argBuffer,argSize,&info))
+				util_panic("Unable to setup user-stack for multiboot module %s",p->command);
 			/* no dynamic linking here */
 			p->entryPoint = info.progEntry;
 			proc_setupStart(stack,info.progEntry);
@@ -150,9 +138,9 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 		}
 
 		/* wait until the driver is registered */
-		vid_printf("Loading '%s'...\n",name);
+		vid_printf("Loading '%s'...\n",argv[0]);
 		/* don't create a pipe- or driver-usage-node here */
-		while(vfsn_resolvePath(driver,&nodeNo,NULL,VFS_NOACCESS) < 0) {
+		while(vfsn_resolvePath(argv[1],&nodeNo,NULL,VFS_NOACCESS) < 0) {
 			/* Note that we HAVE TO sleep here because we may be waiting for ata and fs is not
 			 * started yet. I.e. if ata calls sleep() there is no other runnable thread (except
 			 * idle, but its just chosen if nobody else wants to run), so that we wouldn't make
@@ -184,6 +172,31 @@ u32 mboot_getUsableMemCount(void) {
 			size += mmap->length;
 	}
 	return size;
+}
+
+static const char **mboot_parseArgs(const char *line,s32 *argc) {
+	static char argvals[MAX_ARG_COUNT][MAX_ARG_LEN];
+	static char *args[MAX_ARG_COUNT];
+	s32 i = 0,j = 0;
+	args[0] = argvals[0];
+	while(*line) {
+		if(*line == ' ') {
+			if(args[j][0]) {
+				if(j + 1 >= MAX_ARG_COUNT)
+					break;
+				args[j][i] = '\0';
+				j++;
+				i = 0;
+				args[j] = argvals[j];
+			}
+		}
+		else if(i < MAX_ARG_LEN)
+			args[j][i++] = *line;
+		line++;
+	}
+	*argc = j + 1;
+	args[j][i] = '\0';
+	return (const char**)args;
 }
 
 

@@ -207,7 +207,7 @@ void sysc_setenv(sIntrptStackFrame *stack) {
 void sysc_exec(sIntrptStackFrame *stack) {
 	char pathSave[MAX_PATH_LEN + 1];
 	char *path = (char*)SYSC_ARG1(stack);
-	char **args = (char**)SYSC_ARG2(stack);
+	const char *const *args = (const char *const *)SYSC_ARG2(stack);
 	char *argBuffer;
 	sStartupInfo info;
 	s32 argc,pathLen,res;

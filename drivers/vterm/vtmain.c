@@ -82,10 +82,6 @@ int main(void) {
 	if(kbFd < 0)
 		error("Unable to open '/dev/kmmanager'");
 
-	/* request io-ports for qemu and bochs */
-	if(requestIOPort(0xe9) < 0 || requestIOPort(0x3f8) < 0 || requestIOPort(0x3fd) < 0)
-		error("Unable to request ports for qemu/bochs");
-
 	/* select first vterm */
 	vterm_selectVTerm(0);
 
@@ -215,9 +211,6 @@ int main(void) {
 	}
 
 	/* clean up */
-	releaseIOPort(0xe9);
-	releaseIOPort(0x3f8);
-	releaseIOPort(0x3fd);
 	close(kbFd);
 	for(i = 0; i < VTERM_COUNT; i++) {
 		unregDriver(drvIds[i]);

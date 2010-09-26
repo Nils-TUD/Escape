@@ -27,6 +27,7 @@
 #define CONF_MAX_FDS			2
 #define CONF_BOOT_VIDEOMODE		3
 #define CONF_SWAP_DEVICE		4
+#define CONF_LOG_TO_COM1		5
 
 #define CONF_VIDMODE_VGATEXT	0
 #define CONF_VIDMODE_VESATEXT	1
@@ -34,9 +35,10 @@
 /**
  * Parses the given boot-parameter and sets the configuration-options correspondingly
  *
- * @param params the parameter
+ * @param argc the number of args
+ * @param argv the arguments
  */
-void conf_parseBootParams(const char *params);
+void conf_parseBootParams(s32 argc,const char *const *argv);
 
 /**
  * Returns the value for the given configuration-string-value

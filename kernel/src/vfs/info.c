@@ -396,7 +396,8 @@ s32 vfsinfo_dirReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 o
 
 		/* the root-directory is distributed on the fs-driver and the kernel */
 		/* therefore we have to read it from the fs-driver, too */
-		if(node->parent == NULL) {
+		/* but don't do that if we're the kernel (vfsr does not work then) */
+		if(node->parent == NULL && pid != KERNEL_PID) {
 			const u32 bufSize = 1024;
 			u32 c,curSize = bufSize;
 			fsBytes = (u8*)kheap_alloc(bufSize);

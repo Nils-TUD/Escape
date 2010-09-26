@@ -99,6 +99,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->stats.schedCount = 0;
 	t->stats.syscalls = 0;
 	t->fpuState = NULL;
+	t->stackRegion = -1;
 	t->tlsRegion = -1;
 
 	/* create list */
@@ -449,6 +450,7 @@ void thread_dbg_print(sThread *t) {
 	vid_printf("\t\tstate=%s\n",states[t->state]);
 	vid_printf("\t\tevents=%#x (obj=%#x)\n",t->events,t->eventObj);
 	vid_printf("\t\tkstackFrame=%#x\n",t->kstackFrame);
+	vid_printf("\t\ttlsRegion=%d, stackRegion=%d\n",t->tlsRegion,t->stackRegion);
 	vid_printf("\t\tucycleCount = %#016Lx\n",t->stats.ucycleCount.val64);
 	vid_printf("\t\tkcycleCount = %#016Lx\n",t->stats.kcycleCount.val64);
 	vid_printf("\t\tkernel-trace:\n");

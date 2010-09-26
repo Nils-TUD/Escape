@@ -17,34 +17,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef CONF_H_
-#define CONF_H_
+#ifndef LS_H_
+#define LS_H_
 
-#include <esc/common.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define CONF_TIMER_FREQ			0
-#define CONF_MAX_PROCS			1
-#define CONF_MAX_FDS			2
-#define CONF_BOOT_VIDEOMODE		3
-#define CONF_LOG_TO_COM1		5
-
-#define CONF_VIDMODE_VGATEXT	0
-#define CONF_VIDMODE_VESATEXT	1
+#include <sys/common.h>
 
 /**
- * Gets the value of a kernel-configuration
+ * Displays the content of an directory
  *
- * @param id the id of the config-value (CONF_*)
- * @return s32 the value or the negative error-code
+ * @param argc the number of args
+ * @param argv the arguments
+ * @return 0 on success
  */
-s32 getConf(u32 id);
+s32 cons_cmd_ls(s32 argc,char **argv);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* CONF_H_ */
+#endif /* LS_H_ */

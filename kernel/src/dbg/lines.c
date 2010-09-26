@@ -38,6 +38,11 @@ s32 lines_create(sLines *l) {
 	return 0;
 }
 
+void lines_appendStr(sLines *l,const char *str) {
+	while(*str)
+		lines_append(l,*str++);
+}
+
 void lines_append(sLines *l,char c) {
 	if(l->linePos < VID_COLS)
 		l->lines[l->lineCount][l->linePos++] = c;

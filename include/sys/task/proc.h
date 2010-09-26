@@ -315,7 +315,7 @@ void proc_kill(sProc *p);
  * @param fromUser whether the arguments are from user-space
  * @return the number of arguments on success or < 0
  */
-s32 proc_buildArgs(char **args,char **argBuffer,u32 *size,bool fromUser);
+s32 proc_buildArgs(const char *const *args,char **argBuffer,u32 *size,bool fromUser);
 
 /**
  * Setups the user-stack for given interrupt-stack of the current process

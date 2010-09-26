@@ -98,8 +98,8 @@ int main(int argc,char *argv[]) {
 	tDrvId id;
 	sFileSystem *fs;
 
-	if(argc < 3) {
-		printe("Usage: %s <driverPath> <fsType>",argv[0]);
+	if(argc < 4) {
+		printe("Usage: %s <wait> <driverPath> <fsType>",argv[0]);
 		return EXIT_FAILURE;
 	}
 
@@ -128,19 +128,19 @@ int main(int argc,char *argv[]) {
 	/* create root-fs */
 	fstype = 0;
 	for(i = 0; i < ARRAY_SIZE(types); i++) {
-		if(strcmp(types[i].name,argv[2]) == 0) {
+		if(strcmp(types[i].name,argv[3]) == 0) {
 			fstype = types[i].type;
 			break;
 		}
 	}
 
-	rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,argv[1],fstype);
+	rootDev = mount_addMnt(ROOT_MNT_DEV,ROOT_MNT_INO,argv[2],fstype);
 	if(rootDev < 0)
 		error("Unable to add root mount-point");
 	root = mount_get(rootDev);
 	if(root == NULL)
 		error("Unable to get root mount-point");
-	printf("[FS] Mounted '%s' with fs '%s' at '/'\n",root->driver,argv[2]);
+	printf("[FS] Mounted '%s' with fs '%s' at '/'\n",root->driver,argv[3]);
 	fflush(stdout);
 
 	/* register driver */

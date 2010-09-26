@@ -52,7 +52,7 @@ export SUDO=sudo
 
 ifeq ($(BUILDDIR),$(abspath build/debug))
 	DIRS = tools lib drivers user kernel/src kernel/test
-	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g -D LOGSERIAL
+	export CPPDEFFLAGS=$(CPPWFLAGS) -fno-inline -g
 	export CDEFFLAGS=$(CWFLAGS) -g -D LOGSERIAL
 	export DDEFFLAGS=$(DWFLAGS) -gc -debug
 	export BUILDTYPE=debug

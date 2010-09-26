@@ -90,6 +90,8 @@ struct sVTerm {
 	u8 navigation;
 	/* whether all output should be printed into the readline-buffer */
 	u8 printToRL;
+	/* whether all output should be printed to COM1 */
+	u8 printToCom1;
 	/* a backup of the screen; initially NULL */
 	char *screenBackup;
 	u16 backupCol;

@@ -33,13 +33,15 @@ static sScreenBackup backup;
 static char buffer[512];
 
 s32 cons_cmd_file(s32 argc,char **argv) {
-	tInodeNo nodeNo;
+	sProc *p = proc_getRunning();
 	tFileNo file = -1;
 	s32 i,res;
 	sLines lines;
 
 	if(argc != 2) {
 		vid_printf("Usage: %s <file>\n",argv[0]);
+		vid_printf("\tUses the current proc to be able to access the real-fs.\n");
+		vid_printf("\tSo, I hope, you know what you're doing ;)\n");
 		return 0;
 	}
 
@@ -48,16 +50,12 @@ s32 cons_cmd_file(s32 argc,char **argv) {
 	if((res = lines_create(&lines)) < 0)
 		goto error;
 
-	/* don't write the following to the log ;) */
-	res = vfsn_resolvePath(argv[1],&nodeNo,NULL,VFS_READ);
-	if(res < 0)
-		goto error;
-	file = vfs_openFile(KERNEL_PID,VFS_READ,nodeNo,VFS_DEV_NO);
+	file = vfs_openPath(p->pid,VFS_READ,argv[1]);
 	if(file < 0) {
 		res = file;
 		goto error;
 	}
-	while((res = vfs_readFile(KERNEL_PID,file,(u8*)buffer,sizeof(buffer))) > 0) {
+	while((res = vfs_readFile(p->pid,file,(u8*)buffer,sizeof(buffer))) > 0) {
 		/* build lines from the read data */
 		for(i = 0; i < res; i++) {
 			if(buffer[i] == '\n') {
@@ -71,7 +69,7 @@ s32 cons_cmd_file(s32 argc,char **argv) {
 		}
 	}
 	lines_end(&lines);
-	vfs_closeFile(KERNEL_PID,file);
+	vfs_closeFile(p->pid,file);
 	file = -1;
 
 	/* now display lines */
@@ -82,7 +80,7 @@ error:
 	/* clean up */
 	lines_destroy(&lines);
 	if(file >= 0)
-		vfs_closeFile(KERNEL_PID,file);
+		vfs_closeFile(p->pid,file);
 
 	vid_restore(backup.screen,backup.row,backup.col);
 	return res;

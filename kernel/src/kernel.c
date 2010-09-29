@@ -42,7 +42,6 @@
 #include <sys/util.h>
 #include <sys/multiboot.h>
 #include <sys/debug.h>
-#include <sys/kevent.h>
 #include <sys/log.h>
 #include <sys/video.h>
 #include <string.h>
@@ -154,11 +153,6 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 	/* signals */
 	vid_printf("Initializing signal-handling...");
 	sig_init();
-	vid_printf("\033[co;2]%|s\033[co]","DONE");
-
-	/* kevents */
-	vid_printf("Initializing KEvents...");
-	kev_init();
 	vid_printf("\033[co;2]%|s\033[co]","DONE");
 
 	/* cpu */

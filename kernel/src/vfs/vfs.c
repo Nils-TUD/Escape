@@ -32,7 +32,6 @@
 #include <sys/mem/kheap.h>
 #include <sys/util.h>
 #include <sys/video.h>
-#include <sys/kevent.h>
 #include <esc/messages.h>
 #include <esc/sllist.h>
 #include <string.h>

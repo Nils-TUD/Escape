@@ -37,7 +37,6 @@
 #include <sys/machine/cpu.h>
 #include <sys/machine/gdt.h>
 #include <sys/machine/timer.h>
-#include <sys/kevent.h>
 #include <sys/multiboot.h>
 #include <string.h>
 #include <errors.h>
@@ -73,7 +72,6 @@ static void view_shm(void);
 static void view_cpu(void);
 static void view_gdt(void);
 static void view_timer(void);
-static void view_kevents(void);
 static void view_multiboot(void);
 static void view_requests(void);
 static void view_locks(void);
@@ -107,7 +105,6 @@ static sView views[] = {
 	{"cpu",(fView)view_cpu},
 	{"gdt",(fView)view_gdt},
 	{"timer",(fView)view_timer},
-	{"kevents",(fView)view_kevents},
 	{"multiboot",(fView)view_multiboot},
 	{"requests",(fView)view_requests},
 	{"locks",(fView)view_locks},
@@ -250,9 +247,6 @@ static void view_gdt(void) {
 }
 static void view_timer(void) {
 	timer_dbg_print();
-}
-static void view_kevents(void) {
-	kev_dbg_print();
 }
 static void view_multiboot(void) {
 	mboot_dbg_print();

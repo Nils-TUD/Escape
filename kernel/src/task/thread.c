@@ -37,7 +37,6 @@
 #include <sys/task/lock.h>
 #include <sys/util.h>
 #include <sys/debug.h>
-#include <sys/kevent.h>
 #include <sys/video.h>
 #include <esc/hashmap.h>
 #include <assert.h>
@@ -227,7 +226,6 @@ void thread_switchNoSigs(void) {
 	cur->ignoreSignals = 1;
 	thread_switch();
 	cur->ignoreSignals = 0;
-	kev_notify(KEV_KWAIT_DONE,cur->tid);
 }
 
 void thread_wait(tTid tid,void *obj,u32 events) {

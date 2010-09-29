@@ -26,7 +26,6 @@
 #include <sys/vfs/node.h>
 #include <sys/vfs/request.h>
 #include <sys/vfs/real.h>
-#include <sys/kevent.h>
 #include <sys/util.h>
 #include <esc/fsinterface.h>
 #include <esc/messages.h>

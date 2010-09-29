@@ -90,6 +90,7 @@
 #define ERR_DRIVER_DIED				-69
 #define ERR_SETPROT_IMPOSSIBLE		-70
 #define ERR_ENVVAR_NOT_FOUND		-71
+#define ERR_NO_FREE_THREADS			-72
 
 #if IN_KERNEL
 #define ERR_REAL_PATH				-200

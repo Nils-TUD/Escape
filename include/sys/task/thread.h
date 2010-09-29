@@ -35,6 +35,7 @@
 #define ATA_TID					2
 #define FS_TID					6
 
+#define MAX_THREAD_COUNT		8192
 #define INVALID_TID				0xFFFF
 /* use an invalid tid to identify the kernel */
 #define KERNEL_TID				0xFFFE

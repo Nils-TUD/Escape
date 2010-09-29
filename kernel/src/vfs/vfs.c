@@ -910,8 +910,6 @@ bool vfs_msgAvailableFor(tPid pid,u32 events) {
 
 void vfs_wakeupClients(sVFSNode *node,u32 events) {
 	assert(IS_DRIVER(node->mode));
-
-	/* search for a slot that needs work */
 	node = NODE_FIRST_CHILD(node);
 	while(node != NULL) {
 		thread_wakeupAll(node,events);

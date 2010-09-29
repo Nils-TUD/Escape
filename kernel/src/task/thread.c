@@ -44,20 +44,14 @@
 #include <string.h>
 #include <errors.h>
 
-#define THREAD_MAP_SIZE		1024
-
-/**
- * For creating the init-thread and idle-thread
- *
- * @param p the process
- * @param state the desired state
- * @return the created thread
- */
 static sThread *thread_createInitial(sProc *p,eThreadState state);
+static tTid thread_getFreeTid(void);
+static bool thread_add(sThread *t);
+static void thread_remove(sThread *t);
 
-/* our map for the threads */
-static sHashMap *threads;
-static sSLList *threadMap[THREAD_MAP_SIZE] = {NULL};
+/* our threads */
+static sSLList *threads;
+static sThread *tidToThread[MAX_THREAD_COUNT];
 static sThread *cur = NULL;
 static tTid nextTid = 0;
 static volatile tTid runnableThread = INVALID_TID;
@@ -65,13 +59,10 @@ static volatile tTid runnableThread = INVALID_TID;
 /* list of dead threads that should be destroyed */
 static sSLList* deadThreads = NULL;
 
-static u32 thread_getkey(const void *data) {
-	return ((sThread*)data)->tid;
-}
-
 sThread *thread_init(sProc *p) {
-	threads = hm_create(threadMap,THREAD_MAP_SIZE,thread_getkey);
-	assert(threads);
+	threads = sll_create();
+	if(!threads)
+		util_panic("Unable to create thread-list");
 
 	/* create idle-thread */
 	thread_createInitial(p,ST_BLOCKED);
@@ -103,8 +94,8 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 	t->tlsRegion = -1;
 
 	/* create list */
-	if(!hm_add(threads,t))
-		util_panic("Unable to put initial thread into the thread-map");
+	if(!thread_add(t))
+		util_panic("Unable to put initial thread into the thread-list");
 
 	/* insert in VFS; thread needs to be inserted for it */
 	if(!vfs_createThread(t->tid))
@@ -114,7 +105,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 }
 
 u32 thread_getCount(void) {
-	return hm_getCount(threads);
+	return sll_length(threads);
 }
 
 sThread *thread_getRunning(void) {
@@ -122,7 +113,7 @@ sThread *thread_getRunning(void) {
 }
 
 sThread *thread_getById(tTid tid) {
-	return hm_get(threads,tid);
+	return tidToThread[tid];
 }
 
 void thread_switch(void) {
@@ -292,12 +283,18 @@ s32 thread_extendStack(u32 address) {
 }
 
 s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc) {
+	s32 err = ERR_NOT_ENOUGH_MEM;
 	sThread *t = *dst;
 	t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 
-	t->tid = nextTid++;
+	t->tid = thread_getFreeTid();
+	if(t->tid == INVALID_TID) {
+		err = ERR_NO_FREE_THREADS;
+		goto errThread;
+	}
+
 	t->state = ST_RUNNING;
 	t->events = src->events;
 	t->eventObj = src->eventObj;
@@ -342,8 +339,8 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 		}
 	}
 
-	/* insert into thread-map */
-	if(!hm_add(threads,t))
+	/* insert into thread-list */
+	if(!thread_add(t))
 		goto errClone;
 
 	/* clone signal-handler (here because the thread needs to be in the map first) */
@@ -358,7 +355,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	return 0;
 
 errAppend:
-	hm_remove(threads,t);
+	thread_remove(t);
 errClone:
 	if(t->tlsRegion >= 0)
 		vmm_remove(p,t->tlsRegion);
@@ -370,7 +367,7 @@ errStack:
 	}
 errThread:
 	kheap_free(t);
-	return ERR_NOT_ENOUGH_MEM;
+	return err;
 }
 
 void thread_kill(sThread *t) {
@@ -427,18 +424,44 @@ void thread_kill(sThread *t) {
 	thread_wakeupAll(t->proc,EV_THREAD_DIED);
 
 	/* finally, destroy thread */
-	hm_remove(threads,t);
+	thread_remove(t);
 	kheap_free(t);
+}
+
+static tTid thread_getFreeTid(void) {
+	u32 count = 0;
+	while(count < MAX_THREAD_COUNT) {
+		if(nextTid >= MAX_THREAD_COUNT)
+			nextTid = 0;
+		if(tidToThread[nextTid++] == NULL)
+			return nextTid - 1;
+		count++;
+	}
+	return INVALID_TID;
+}
+
+static bool thread_add(sThread *t) {
+	if(!sll_append(threads,t))
+		return false;
+	tidToThread[t->tid] = t;
+	return true;
+}
+
+static void thread_remove(sThread *t) {
+	sll_removeFirst(threads,t);
+	tidToThread[t->tid] = NULL;
 }
 
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
 void thread_dbg_printAll(void) {
-	sThread *t;
+	sSLNode *n;
 	vid_printf("Threads:\n");
-	for(hm_begin(threads); (t = hm_next(threads)); )
+	for(n = sll_begin(threads); n != NULL; n = n->next) {
+		sThread *t = (sThread*)n->data;
 		thread_dbg_print(t);
+	}
 }
 
 void thread_dbg_print(sThread *t) {

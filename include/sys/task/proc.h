@@ -28,8 +28,8 @@
 #include <sys/task/elf.h>
 #include <sys/vfs/node.h>
 
-/* max number of processes (2^16 since tPid is 2 byte long; but leave one slot for an invalid pid) */
-#define MAX_PROC_COUNT		(64 * 1024 - 2)
+/* max number of coexistent processes */
+#define MAX_PROC_COUNT		8192
 #define MAX_PROC_NAME_LEN	30
 #define MAX_FD_COUNT		64
 
@@ -63,7 +63,6 @@ typedef struct {
 } sExitState;
 
 /* represents a process */
-/* TODO move stuff for existing processes to the kernel-stack-page */
 typedef struct {
 	/* flags for vm86 and zombie */
 	u8 flags;

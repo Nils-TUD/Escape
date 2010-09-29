@@ -58,9 +58,6 @@ static sVMRegion *vmm_alloc(void);
 static void vmm_free(sVMRegion *vm);
 static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *virt,s32 *rno);
 
-static u32 nextFree = 0;
-static sVMRegion vmRegions[MAX_REGUSE_COUNT];
-
 void vmm_init(void) {
 	/* nothing to do */
 }
@@ -932,27 +929,11 @@ static bool vmm_extendRegions(sProc *p,u32 i) {
 }
 
 static sVMRegion *vmm_alloc(void) {
-	u32 i;
-	for(i = nextFree; i < MAX_REGUSE_COUNT; i++) {
-		if(vmRegions[i].reg == NULL) {
-			nextFree = i + 1;
-			return vmRegions + i;
-		}
-	}
-	for(i = 0; i < nextFree; i++) {
-		if(vmRegions[i].reg == NULL) {
-			nextFree = i + 1;
-			return vmRegions + i;
-		}
-	}
-	return NULL;
+	return kheap_alloc(sizeof(sVMRegion));
 }
 
 static void vmm_free(sVMRegion *vm) {
-	u32 i = vm - vmRegions;
-	vm->reg = NULL;
-	if(i < nextFree)
-		nextFree = i;
+	kheap_free(vm);
 }
 
 static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *virt,tVMRegNo *rno) {

@@ -330,43 +330,24 @@ tVMRegNo vmm_getDLDataReg(sProc *p) {
 	return -1;
 }
 
-void vmm_getMemUsage(sProc *p,u32 *paging,u32 *data) {
-	u32 i,maxPtbls = 0,ppaging = 0,pdata = 0;
+float vmm_getMemUsage(sProc *p,u32 *pages) {
+	u32 i;
+	float rpages = 0;
+	*pages = 0;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
 		if(vm) {
-			u32 pages = BYTES_2_PAGES(vm->reg->byteCount);
-			pdata += pages;
-			maxPtbls += PAGES_TO_PTS(pages);
-		}
-	}
-	if(maxPtbls > 0) {
-		u32 j,k,*ptbls = kheap_alloc(maxPtbls * sizeof(u32));
-		if(ptbls != NULL) {
-			for(i = 0; i < p->regSize; i++) {
-				sVMRegion *vm = REG(p,i);
-				if(vm) {
-					u32 rptbls = PAGES_TO_PTS(BYTES_2_PAGES(vm->reg->byteCount));
-					u32 pdi = ADDR_TO_PDINDEX(vm->virt);
-					for(j = 0; j < rptbls; j++) {
-						bool found = false;
-						for(k = 0; k < ppaging; k++) {
-							if(ptbls[k] == pdi + j) {
-								found = true;
-								break;
-							}
-						}
-						if(!found)
-							ptbls[ppaging++] = pdi + j;
-					}
-				}
+			u32 j,count = 0;
+			u32 pageCount = BYTES_2_PAGES(vm->reg->byteCount);
+			for(j = 0; j < pageCount; j++) {
+				if(!(vm->reg->pageFlags[j] & (PF_SWAPPED | PF_DEMANDLOAD | PF_COPYONWRITE)))
+					count++;
 			}
-			kheap_free(ptbls);
+			*pages += pageCount;
+			rpages += (float)count / reg_refCount(vm->reg);
 		}
 	}
-	*data = pdata;
-	/* + pagedir, page-table for kstack and kstack */
-	*paging = ppaging + 3;
+	return rpages;
 }
 
 sSLList *vmm_getUsersOf(sProc *p,tVMRegNo rno) {

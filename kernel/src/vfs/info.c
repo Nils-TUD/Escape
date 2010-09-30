@@ -104,11 +104,11 @@ void vfsinfo_init(void) {
 	vfsn_resolvePath("/system",&nodeNo,NULL,VFS_NOACCESS);
 	sysNode = vfsn_getNode(nodeNo);
 
-	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"memusage",
+	assert(vfsn_createFile(KERNEL_PID,sysNode,(char*)"memusage",
 			vfsinfo_memUsageReadHandler,NULL,true) != NULL);
-	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"cpu",
+	assert(vfsn_createFile(KERNEL_PID,sysNode,(char*)"cpu",
 			vfsinfo_cpuReadHandler,NULL,true) != NULL);
-	assert(vfsn_createFile(KERNEL_TID,sysNode,(char*)"stats",
+	assert(vfsn_createFile(KERNEL_PID,sysNode,(char*)"stats",
 			vfsinfo_statsReadHandler,NULL,true) != NULL);
 }
 
@@ -155,12 +155,12 @@ s32 vfsinfo_procReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 
 static void vfsinfo_procReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
 	sProc *p = proc_getByPid(atoi(node->parent->name));
 	sStringBuffer buf;
-	u32 paging,pages;
+	u32 pages;
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
 	buf.size = 17 * 9 + 8 * 10 + MAX_PROC_NAME_LEN + 1;
 	buf.len = 0;
-	vmm_getMemUsage(p,&paging,&pages);
+	vmm_getMemUsage(p,&pages);
 
 	prf_sprintf(
 		&buf,
@@ -283,22 +283,19 @@ static void vfsinfo_statsReadCallback(sVFSNode *node,u32 *dataSize,void **buffer
 static s32 vfsinfo_memUsageReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,
 		u32 offset,u32 count) {
 	UNUSED(file);
-	return vfsrw_readHelper(pid,node,buffer,offset,count,(11 + 10 + 1) * 11 + 1,
+	return vfsrw_readHelper(pid,node,buffer,offset,count,(11 + 10 + 1) * 13 + 1,
 			vfsinfo_memUsageReadCallback);
 }
 
 static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buffer) {
 	sStringBuffer buf;
 	u32 free,total;
-	u32 paging,userTotal,ksize,msize,kheap,pmem,kptbls;
+	u32 paging,dataShared,dataOwn,dataReal,ksize,msize,kheap,pmem;
 	UNUSED(node);
 	buf.dynamic = false;
 	buf.str = *(char**)buffer;
-	buf.size = (11 + 10 + 1) * 11 + 1;
+	buf.size = (11 + 10 + 1) * 13 + 1;
 	buf.len = 0;
-
-	/* kernel-page-tables are shared */
-	kptbls = (KERNEL_STACK - (KERNEL_AREA_V_ADDR + (PAGE_SIZE * PT_ENTRY_COUNT))) / PT_ENTRY_COUNT;
 
 	free = mm_getFreeFrames(MM_DEF | MM_CONT) << PAGE_SIZE_SHIFT;
 	total = mboot_getUsableMemCount();
@@ -306,9 +303,11 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buf
 	msize = mboot_getModuleSize();
 	kheap = kheap_getOccupiedMem();
 	pmem = mm_getStackSize();
-	proc_getMemUsage(&paging,&userTotal);
+	proc_getMemUsage(&paging,&dataShared,&dataOwn,&dataReal);
 	prf_sprintf(
 		&buf,
+		"%-11s%10u\n"
+		"%-11s%10u\n"
 		"%-11s%10u\n"
 		"%-11s%10u\n"
 		"%-11s%10u\n"
@@ -326,12 +325,14 @@ static void vfsinfo_memUsageReadCallback(sVFSNode *node,u32 *dataSize,void **buf
 		"Free:",free,
 		"Kernel:",ksize,
 		"Modules:",msize,
-		"UserTotal:",userTotal,
-		"UserReal:",(total - free) - (ksize + pmem + msize + paging + kheap + kptbls),
+		"UserShared:",dataShared,
+		"UserOwn:",dataOwn,
+		"UserReal:",dataReal,
 		"Paging:",paging,
 		"PhysMem:",pmem,
 		"KHeapSize:",kheap,
-		"KHeapUsage:",kheap_getUsedMem()
+		"KHeapUsage:",kheap_getUsedMem(),
+		"KernelMisc:",(total - free) - (ksize + msize + dataReal + paging + pmem + kheap)
 	);
 	*dataSize = buf.len;
 }
@@ -385,7 +386,7 @@ s32 vfsinfo_dirReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 o
 	if(node->data.def.cache == NULL) {
 		/* we need the number of bytes first */
 		u8 *fsBytes = NULL,*fsBytesDup;
-		sVFSNode *n = NODE_FIRST_CHILD(node);
+		sVFSNode *n = vfsn_getFirstChild(node);
 		byteCount = 0;
 		fsByteCount = 0;
 		while(n != NULL) {
@@ -444,14 +445,14 @@ s32 vfsinfo_dirReadHandler(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 o
 				u16 len;
 				sVFSDirEntry *dirEntry = (sVFSDirEntry*)(childs + fsByteCount);
 				node->data.def.cache = childs;
-				n = NODE_FIRST_CHILD(node);
+				n = vfsn_getFirstChild(node);
 				while(n != NULL) {
 					if(node->parent == NULL && (strcmp(n->name,".") == 0 || strcmp(n->name,"..") == 0)) {
 						n = n->next;
 						continue;
 					}
 					len = strlen(n->name);
-					dirEntry->nodeNo = NADDR_TO_VNNO(n);
+					dirEntry->nodeNo = vfsn_getNodeNo(n);
 					dirEntry->nameLen = len;
 					dirEntry->recLen = sizeof(sVFSDirEntry) + len;
 					memcpy(dirEntry + 1,n->name,len);

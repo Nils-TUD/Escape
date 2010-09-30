@@ -476,7 +476,9 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,
 
 sAllocStats paging_map(u32 virt,u32 *frames,u32 count,u8 flags) {
 	sProc *p = proc_getRunning();
-	return paging_mapTo(p->pagedir,virt,frames,count,flags);
+	/* for boot-phase: use the first page-dir, if the process has none */
+	tPageDir pdir = (p->pagedir == 0) ? (u32)proc0PD & ~KERNEL_AREA_V_ADDR : p->pagedir;
+	return paging_mapTo(pdir,virt,frames,count,flags);
 }
 
 sAllocStats paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags) {
@@ -545,7 +547,9 @@ sAllocStats paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags) 
 
 sAllocStats paging_unmap(u32 virt,u32 count,bool freeFrames) {
 	sProc *p = proc_getRunning();
-	return paging_unmapFrom(p->pagedir,virt,count,freeFrames);
+	/* for boot-phase: use the first page-dir, if the process has none */
+	tPageDir pdir = (p->pagedir == 0) ? (u32)proc0PD & ~KERNEL_AREA_V_ADDR : p->pagedir;
+	return paging_unmapFrom(pdir,virt,count,freeFrames);
 }
 
 sAllocStats paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames) {
@@ -585,6 +589,16 @@ sAllocStats paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames) {
 	if(pti != PT_ENTRY_COUNT && virt < KERNEL_AREA_V_ADDR)
 		stats.ptables += paging_remEmptyPt(ptables,pti);
 	return stats;
+}
+
+u32 paging_getPTableCount(tPageDir pdir) {
+	u32 i,count = 0,ptables = paging_getPTables(pdir);
+	sPDEntry *pdirAddr = (sPDEntry*)PAGEDIR(ptables);
+	for(i = 0; i < ADDR_TO_PDINDEX(KERNEL_AREA_V_ADDR); i++) {
+		if(pdirAddr[i].present)
+			count++;
+	}
+	return count;
 }
 
 void paging_sprintfVirtMem(sStringBuffer *buf,tPageDir pdir) {

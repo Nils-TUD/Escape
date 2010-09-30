@@ -71,6 +71,12 @@
  *             |           temp map area           |     e
  * 0xC2800000: +-----------------------------------+     a
  *             |                ...                |
+ * 0xD0000000: +-----------------------------------+     |      -----
+ *             |       VFS global file table       |     |        |
+ * 0xD0400000: +-----------------------------------+     |    dynamically extending regions
+ *             |             VFS nodes             |     |        |
+ * 0xD0800000: +-----------------------------------+     |      -----
+ *             |                ...                |     |
  * 0xFF7FF000: +-----------------------------------+     |      -----
  *             |            kernel-stack           |     |        |
  * 0xFF800000: +-----------------------------------+     |
@@ -107,6 +113,13 @@
 /* for mapping some pages of foreign processes */
 #define TEMP_MAP_AREA			(KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
 #define TEMP_MAP_AREA_SIZE		(PT_ENTRY_COUNT * PAGE_SIZE * 4)
+
+/* area for global-file-table */
+#define GFT_AREA				0xD0000000
+#define GFT_AREA_SIZE			(4 * M)
+/* area for vfs-nodes */
+#define NODE_AREA				(GFT_AREA + GFT_AREA_SIZE)
+#define NODE_AREA_SIZE			(4 * M)
 
 /* the size of the temporary stack we use at the beginning */
 #define TMP_STACK_SIZE			PAGE_SIZE
@@ -351,6 +364,14 @@ sAllocStats paging_unmap(u32 virt,u32 count,bool freeFrames);
  * @return the number of free'd frames and ptables
  */
 sAllocStats paging_unmapFrom(tPageDir pdir,u32 virt,u32 count,bool freeFrames);
+
+/**
+ * Determines the number of page-tables (in the user-area) in the given page-directory
+ *
+ * @param pdir the page-directory
+ * @return the number of present page-tables
+ */
+u32 paging_getPTableCount(tPageDir pdir);
 
 /**
  * Prints the user-part of the given page-directory to the given buffer

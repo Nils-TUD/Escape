@@ -29,6 +29,7 @@
 #include <sys/mem/pmem.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/vmm.h>
+#include <sys/mem/cow.h>
 #include <sys/mem/sharedmem.h>
 #include <sys/machine/intrpt.h>
 #include <sys/machine/fpu.h>
@@ -50,7 +51,7 @@
 /* the max. size we'll allow for exec()-arguments */
 #define EXEC_MAX_ARGSIZE				(2 * K)
 
-static void proc_notifyProcDied(tPid parent,tPid pid);
+static void proc_notifyProcDied(tPid parent);
 static s32 proc_finishClone(sThread *nt,u32 stackFrame);
 static bool proc_setupThreadStack(sIntrptStackFrame *frame,void *arg,u32 tentryPoint);
 static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint,bool newThread);
@@ -298,18 +299,22 @@ sRegion *proc_getLRURegion(void) {
 	return lru;
 }
 
-void proc_getMemUsage(u32 *paging,u32 *data) {
-	u32 pmem = 0,dmem = 0;
+void proc_getMemUsage(u32 *paging,u32 *dataShared,u32 *dataOwn,u32 *dataReal) {
+	u32 pages,pmem = 0,ownMem = 0,shMem = 0;
+	float dReal = 0;
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
-		u32 ptmp,dtmp;
-		vmm_getMemUsage(p,&ptmp,&dtmp);
-		dmem += dtmp;
-		pmem += ptmp;
+		ownMem += p->ownFrames;
+		shMem += p->sharedFrames;
+		/* + pagedir, page-table for kstack and kstack */
+		pmem += paging_getPTableCount(p->pagedir) + 3;
+		dReal += vmm_getMemUsage(p,&pages);
 	}
 	*paging = pmem * PAGE_SIZE;
-	*data = dmem * PAGE_SIZE;
+	*dataOwn = ownMem * PAGE_SIZE;
+	*dataShared = shMem * PAGE_SIZE;
+	*dataReal = (u32)(dReal + cow_getFrmCount()) * PAGE_SIZE;
 }
 
 bool proc_hasChild(tPid pid) {
@@ -603,7 +608,7 @@ void proc_terminate(sProc *p,s32 exitCode,tSig signal) {
 	}
 
 	p->flags |= P_ZOMBIE;
-	proc_notifyProcDied(p->parentPid,p->pid);
+	proc_notifyProcDied(p->parentPid);
 }
 
 void proc_kill(sProc *p) {
@@ -620,7 +625,7 @@ void proc_kill(sProc *p) {
 			/* if this process has already died, the parent can't wait for it since its dying
 			 * right now. therefore notify init of it */
 			if(cp->flags & P_ZOMBIE)
-				proc_notifyProcDied(0,cp->pid);
+				proc_notifyProcDied(0);
 		}
 	}
 
@@ -644,7 +649,7 @@ void proc_kill(sProc *p) {
 	kheap_free(p);
 }
 
-static void proc_notifyProcDied(tPid parent,tPid pid) {
+static void proc_notifyProcDied(tPid parent) {
 	sSLNode *tn;
 	sig_addSignalFor(parent,SIG_CHILD_TERM);
 

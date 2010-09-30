@@ -149,13 +149,35 @@ u32 cow_remove(sProc *p,u32 frameNo,bool *foundOther) {
 	return frmCount;
 }
 
+u32 cow_getFrmCount(void) {
+	sSLNode *n;
+	u32 i,count = 0;
+	u32 *frames = (u32*)kheap_calloc(sll_length(cowFrames),sizeof(u32));
+	if(!frames)
+		return 0;
+	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
+		sCOW *cow = (sCOW*)n->data;
+		bool found = false;
+		for(i = 0; i < count; i++) {
+			if(frames[i] == cow->frameNumber) {
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+			frames[count++] = cow->frameNumber;
+	}
+	kheap_free(frames);
+	return count;
+}
+
 
 #if DEBUGGING
 
 void cow_dbg_print(void) {
 	sSLNode *n;
 	sCOW *cow;
-	vid_printf("COW-Frames:\n");
+	vid_printf("COW-Frames: (%d frames)\n",cow_getFrmCount());
 	for(n = sll_begin(cowFrames); n != NULL; n = n->next) {
 		cow = (sCOW*)n->data;
 		vid_printf("\tframe=0x%x, proc=%d (%s)\n",cow->frameNumber,cow->proc->pid,cow->proc->command);

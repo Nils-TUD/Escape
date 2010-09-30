@@ -70,9 +70,9 @@ void log_vfsIsReady(void) {
 	assert(vfsn_resolvePath(LOG_DIR,&inodeNo,NULL,VFS_CREATE) == 0);
 	nameCpy = strdup(LOG_FILENAME);
 	assert(nameCpy != NULL);
-	logNode = vfsn_createFile(KERNEL_TID,vfsn_getNode(inodeNo),nameCpy,vfsrw_readDef,log_write,false);
+	logNode = vfsn_createFile(KERNEL_PID,vfsn_getNode(inodeNo),nameCpy,vfsrw_readDef,log_write,false);
 	assert(logNode != NULL);
-	logFile = vfs_openFile(KERNEL_TID,VFS_WRITE,NADDR_TO_VNNO(logNode),VFS_DEV_NO);
+	logFile = vfs_openFile(KERNEL_PID,VFS_WRITE,vfsn_getNodeNo(logNode),VFS_DEV_NO);
 	assert(logFile >= 0);
 
 	/* create stdin, stdout and stderr for initloader. out and err should write to the log-file */

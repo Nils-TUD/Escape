@@ -199,6 +199,6 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 	}
 
 	if(drv)
-		*drv = NADDR_TO_VNNO(cnode->parent);
+		*drv = vfsn_getNodeNo(cnode->parent);
 	SYSC_RET1(stack,fd);
 }

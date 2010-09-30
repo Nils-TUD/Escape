@@ -56,6 +56,13 @@ bool cow_add(sProc *p,u32 frameNo);
  */
 u32 cow_remove(sProc *p,u32 frameNo,bool *foundOther);
 
+/**
+ * Note that this is intended for debugging or similar only! (not very efficient)
+ *
+ * @return the number of different frames that are in the cow-list
+ */
+u32 cow_getFrmCount(void);
+
 #if DEBUGGING
 
 /**

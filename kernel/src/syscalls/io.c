@@ -94,7 +94,7 @@ void sysc_pipe(sIntrptStackFrame *stack) {
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 
-	pipeNodeNo = NADDR_TO_VNNO(pipeNode);
+	pipeNodeNo = vfsn_getNodeNo(pipeNode);
 	/* get free fd for reading */
 	*readFd = proc_getFreeFd();
 	if(*readFd < 0) {

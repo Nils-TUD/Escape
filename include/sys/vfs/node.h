@@ -24,19 +24,6 @@
 #include <sys/vfs/vfs.h>
 #include <esc/fsinterface.h>
 
-/*
- * dirs: /, /fs, /system, /system/processes, /system/dev
- * files: /system/processes/%, /system/dev/%
- */
-#define NODE_COUNT					(20 * K)
-
-/* determines the node-number (for a virtual node) from the given node-address */
-#define NADDR_TO_VNNO(naddr)		(((u32)(naddr) - (u32)&nodes[0]) / sizeof(sVFSNode))
-
-/* fetches the first-child from the given node, taking care of links */
-#define NODE_FIRST_CHILD(node)		(!MODE_IS_LINK((node)->mode) ? \
-	((node)->firstChild) : (((sVFSNode*)((node)->data.def.cache))->firstChild))
-
 /**
  * Initializes the nodes
  */
@@ -69,6 +56,14 @@ tInodeNo vfsn_getNodeNo(sVFSNode *node);
  * @return the node for given index
  */
 sVFSNode *vfsn_getNode(tInodeNo nodeNo);
+
+/**
+ * Fetches the first child from given nodes (taking care for links)
+ *
+ * @param node the node
+ * @return the first child
+ */
+sVFSNode *vfsn_getFirstChild(sVFSNode *node);
 
 /**
  * Determines the path for the given node. Note that static memory will be used for that!
@@ -243,9 +238,5 @@ void vfsn_dbg_printTree(void);
 void vfsn_dbg_printNode(sVFSNode *node);
 
 #endif
-
-
-/* all nodes */
-extern sVFSNode nodes[];
 
 #endif /* VFSNODE_H_ */

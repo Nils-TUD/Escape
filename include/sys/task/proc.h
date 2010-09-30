@@ -226,10 +226,11 @@ sRegion *proc_getLRURegion(void);
  * Determines the mem-usage of all processes
  *
  * @param paging will point to the number of bytes used for paging-structures
- * @param data will point to the number of bytes mapped for data (not frames because of COW,
- *  shmem, ...)
+ * @param dataShared will point to the number of shared bytes
+ * @param dataOwn will point to the number of own bytes
+ * @param dataReal will point to the number of really used bytes (considers sharing)
  */
-void proc_getMemUsage(u32 *paging,u32 *data);
+void proc_getMemUsage(u32 *paging,u32 *dataShared,u32 *dataOwn,u32 *dataReal);
 
 /**
  * Determines whether the given process has a child

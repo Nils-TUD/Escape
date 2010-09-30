@@ -30,6 +30,7 @@
 #include <sys/task/sched.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
+#include <sys/mem/dynarray.h>
 #include <sys/util.h>
 #include <sys/video.h>
 #include <esc/messages.h>
@@ -38,12 +39,12 @@
 #include <assert.h>
 #include <errors.h>
 
-/* max number of open files */
-#define FILE_COUNT					(16 * 1024)
+#define FILE_COUNT					((s32)(gftArray.objCount))
+
 /* the processes node */
-#define PROCESSES()					(nodes + 7)
+#define PROCESSES()					(vfsn_getNode(7))
 /* the drivers-node */
-#define DRIVERS()					(nodes + 13)
+#define DRIVERS()					(vfsn_getNode(13))
 
 /* an entry in the global file table */
 typedef struct {
@@ -72,11 +73,13 @@ typedef struct {
  */
 static tFileNo vfs_getFreeFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo);
 
-/* global file table */
-static sGFTEntry globalFileTable[FILE_COUNT];
+/* global file table (expands dynamically) */
+static sDynArray gftArray;
+static sGFTEntry *globalFileTable = (sGFTEntry*)GFT_AREA;
 
 void vfs_init(void) {
 	sVFSNode *root,*sys;
+	dyna_init(&gftArray,sizeof(sGFTEntry),GFT_AREA,GFT_AREA_SIZE);
 	vfsn_init();
 
 	/*
@@ -97,7 +100,7 @@ void vfs_init(void) {
 }
 
 s32 vfs_hasAccess(tPid pid,tInodeNo nodeNo,u16 flags) {
-	sVFSNode *n = nodes + nodeNo;
+	sVFSNode *n = vfsn_getNode(nodeNo);
 	/* kernel is allmighty :P */
 	if(pid == KERNEL_PID)
 		return 0;
@@ -244,7 +247,7 @@ tFileNo vfs_openFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) {
 
 	if(devNo == VFS_DEV_NO) {
 		s32 err;
-		n = nodes + nodeNo;
+		n = vfsn_getNode(nodeNo);
 		if((err = vfs_hasAccess(pid,nodeNo,flags)) < 0)
 			return err;
 	}
@@ -254,7 +257,7 @@ tFileNo vfs_openFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) {
 	if(e->flags == 0) {
 		/* count references of virtual nodes */
 		if(devNo == VFS_DEV_NO)
-			nodes[nodeNo].refCount++;
+			n->refCount++;
 		e->owner = pid;
 		e->flags = flags;
 		e->refCount = 1;
@@ -273,7 +276,7 @@ static tFileNo vfs_getFreeFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 	tFileNo freeSlot = ERR_NO_FREE_FILE;
 	u16 rwFlags = flags & (VFS_READ | VFS_WRITE);
 	bool isDrvUse = false;
-	sGFTEntry *e = &globalFileTable[0];
+	sGFTEntry *e = globalFileTable;
 
 	/* ensure that we don't increment usages of an unused slot */
 	vassert(flags & (VFS_READ | VFS_WRITE),"flags empty");
@@ -281,7 +284,7 @@ static tFileNo vfs_getFreeFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 
 	if(devNo == VFS_DEV_NO) {
 		sVFSNode *n = vfsn_getNode(nodeNo);
-		vassert(nodeNo < NODE_COUNT,"nodeNo invalid");
+		assert(vfsn_isValidNodeNo(nodeNo));
 		/* we can add pipes here, too, since every open() to a pipe will get a new node anyway */
 		isDrvUse = (n->mode & (MODE_TYPE_DRVUSE | MODE_TYPE_PIPE)) ? true : false;
 	}
@@ -316,6 +319,12 @@ static tFileNo vfs_getFreeFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 
 		e++;
 	}
+	/* if there is no free slot anymore, extend our dyn-array */
+	if(freeSlot == ERR_NO_FREE_FILE) {
+		if(!dyna_extend(&gftArray))
+			return ERR_NO_FREE_FILE;
+		freeSlot = i;
+	}
 
 	return freeSlot;
 }
@@ -323,17 +332,17 @@ static tFileNo vfs_getFreeFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 u32 vfs_tell(tPid pid,tFileNo file) {
 	UNUSED(pid);
 	sGFTEntry *e = globalFileTable + file;
-	vassert(e->flags != 0,"Invalid file %d",file);
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 	return e->position;
 }
 
 bool vfs_eof(tPid pid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
 	bool eof = true;
-	vassert(e->flags != 0,"Invalid file %d",file);
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	if(e->devNo == VFS_DEV_NO) {
-		sVFSNode *n = nodes + e->nodeNo;
+		sVFSNode *n = vfsn_getNode(e->nodeNo);
 		/* node not present anymore */
 		if(n->name == NULL)
 			return ERR_INVALID_FILE;
@@ -377,7 +386,7 @@ s32 vfs_stat(tPid pid,const char *path,sFileInfo *info) {
 s32 vfs_fstat(tPid pid,tFileNo file,sFileInfo *info) {
 	sGFTEntry *e = globalFileTable + file;
 	s32 res;
-	vassert(e->flags != 0,"Invalid file %d",file);
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 	if(e->devNo == VFS_DEV_NO)
 		res = vfsn_getNodeInfo(e->nodeNo,info);
 	else
@@ -387,8 +396,8 @@ s32 vfs_fstat(tPid pid,tFileNo file,sFileInfo *info) {
 
 s32 vfs_hasMsg(tPid pid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
-	sVFSNode *n = nodes + e->nodeNo;
-	vassert(e->flags != 0,"Invalid file %d",file);
+	sVFSNode *n = vfsn_getNode(e->nodeNo);
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 	if(e->devNo != VFS_DEV_NO || !IS_DRVUSE(n->mode))
 		return ERR_INVALID_FILE;
 	/* node not present anymore */
@@ -401,9 +410,9 @@ s32 vfs_hasMsg(tPid pid,tFileNo file) {
 
 bool vfs_isterm(tPid pid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
-	sVFSNode *n = nodes + e->nodeNo;
+	sVFSNode *n = vfsn_getNode(e->nodeNo);
 	UNUSED(pid);
-	vassert(e->flags != 0,"Invalid file %d",file);
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 	if(e->devNo != VFS_DEV_NO)
 		return false;
 	/* node not present anymore */
@@ -416,7 +425,7 @@ s32 vfs_seek(tPid pid,tFileNo file,s32 offset,u32 whence) {
 	sGFTEntry *e = globalFileTable + file;
 	s32 newPos;
 	UNUSED(pid);
-	vassert(e->flags != 0,"Invalid file %d",file);
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	switch(whence) {
 		case SEEK_SET:
@@ -435,7 +444,7 @@ s32 vfs_seek(tPid pid,tFileNo file,s32 offset,u32 whence) {
 		return ERR_INVALID_ARGS;
 
 	if(e->devNo == VFS_DEV_NO) {
-		sVFSNode *n = nodes + e->nodeNo;
+		sVFSNode *n = vfsn_getNode(e->nodeNo);
 		/* node not present anymore */
 		if(n->name == NULL)
 			return ERR_INVALID_FILE;
@@ -479,13 +488,13 @@ s32 vfs_seek(tPid pid,tFileNo file,s32 offset,u32 whence) {
 s32 vfs_readFile(tPid pid,tFileNo file,u8 *buffer,u32 count) {
 	s32 err,readBytes;
 	sGFTEntry *e = globalFileTable + file;
-	vassert(e->flags != 0,"Invalid file %d",file);
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	if(!(e->flags & VFS_READ))
 		return ERR_NO_READ_PERM;
 
 	if(e->devNo == VFS_DEV_NO) {
-		sVFSNode *n = nodes + e->nodeNo;
+		sVFSNode *n = vfsn_getNode(e->nodeNo);
 
 		if((err = vfs_hasAccess(pid,e->nodeNo,VFS_READ)) < 0)
 			return err;
@@ -518,13 +527,13 @@ s32 vfs_readFile(tPid pid,tFileNo file,u8 *buffer,u32 count) {
 s32 vfs_writeFile(tPid pid,tFileNo file,const u8 *buffer,u32 count) {
 	s32 err,writtenBytes;
 	sGFTEntry *e = globalFileTable + file;
-	vassert(e->flags != 0,"Invalid file %d",file);
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	if(!(e->flags & VFS_WRITE))
 		return ERR_NO_WRITE_PERM;
 
 	if(e->devNo == VFS_DEV_NO) {
-		sVFSNode *n = nodes + e->nodeNo;
+		sVFSNode *n = vfsn_getNode(e->nodeNo);
 
 		if((err = vfs_hasAccess(pid,e->nodeNo,VFS_WRITE)) < 0)
 			return err;
@@ -560,12 +569,12 @@ s32 vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n;
-	vassert(e->flags != 0,"Invalid file %d",file);
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
 
-	n = nodes + e->nodeNo;
+	n = vfsn_getNode(e->nodeNo);
 
 	if((err = vfs_hasAccess(pid,e->nodeNo,VFS_WRITE)) < 0)
 		return err;
@@ -588,12 +597,12 @@ s32 vfs_receiveMsg(tPid pid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
 	s32 err;
 	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n;
-	vassert(e->flags != 0,"Invalid file %d",file);
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	if(e->devNo != VFS_DEV_NO)
 		return ERR_INVALID_FILE;
 
-	n = nodes + e->nodeNo;
+	n = vfsn_getNode(e->nodeNo);
 
 	if((err = vfs_hasAccess(pid,e->nodeNo,VFS_READ)) < 0)
 		return err;
@@ -614,12 +623,12 @@ s32 vfs_receiveMsg(tPid pid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
 
 void vfs_closeFile(tPid pid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
-	vassert(e->flags != 0,"Invalid file %d",file);
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	/* decrement references */
 	if(--(e->refCount) == 0) {
 		if(e->devNo == VFS_DEV_NO) {
-			sVFSNode *n = nodes + e->nodeNo;
+			sVFSNode *n = vfsn_getNode(e->nodeNo);
 			if(n->name != NULL) {
 				/* notify listeners about creation/modification of files */
 				/* TODO what about links ? */
@@ -843,7 +852,7 @@ tDrvId vfs_createDriver(tPid pid,const char *name,u32 flags) {
 	/* create node */
 	n = vfsn_createDriverNode(pid,drv,hname,flags);
 	if(n != NULL)
-		return NADDR_TO_VNNO(n);
+		return vfsn_getNodeNo(n);
 
 	/* failed, so cleanup */
 	kheap_free(hname);
@@ -851,7 +860,7 @@ tDrvId vfs_createDriver(tPid pid,const char *name,u32 flags) {
 }
 
 s32 vfs_setDataReadable(tPid pid,tInodeNo nodeNo,bool readable) {
-	sVFSNode *n = nodes + nodeNo;
+	sVFSNode *n = vfsn_getNode(nodeNo);
 	if(n->name == NULL || !IS_DRIVER(n->mode) || !DRV_IMPL(n->data.driver.funcs,DRV_READ))
 		return ERR_INVALID_DRVID;
 	if(n->owner != pid)
@@ -873,10 +882,10 @@ bool vfs_msgAvailableFor(tPid pid,u32 events) {
 	/* at first we check whether the process is a driver */
 	if(events & EV_CLIENT) {
 		sVFSNode *rn = DRIVERS();
-		n = NODE_FIRST_CHILD(rn);
+		n = vfsn_getFirstChild(rn);
 		while(n != NULL) {
 			if(n->owner == pid) {
-				tInodeNo nodeNo = NADDR_TO_VNNO(n);
+				tInodeNo nodeNo = vfsn_getNodeNo(n);
 				tInodeNo client = vfs_getClient(pid,&nodeNo,1);
 				if(vfsn_isValidNodeNo(client))
 					return true;
@@ -909,7 +918,7 @@ bool vfs_msgAvailableFor(tPid pid,u32 events) {
 
 void vfs_wakeupClients(sVFSNode *node,u32 events) {
 	assert(IS_DRIVER(node->mode));
-	node = NODE_FIRST_CHILD(node);
+	node = vfsn_getFirstChild(node);
 	while(node != NULL) {
 		thread_wakeupAll(node,events);
 		node = node->next;
@@ -929,14 +938,14 @@ retry:
 		if(!vfsn_isValidNodeNo(vfsNodes[i]))
 			return ERR_INVALID_DRVID;
 
-		node = nodes + vfsNodes[i];
+		node = vfsn_getNode(vfsNodes[i]);
 		if(node->owner != pid || !IS_DRIVER(node->mode))
 			return ERR_NOT_OWN_DRIVER;
 
 		/* search for a slot that needs work */
 		last = node->data.driver.lastClient;
 		if(last == NULL)
-			n = NODE_FIRST_CHILD(node);
+			n = vfsn_getFirstChild(node);
 		else if(last->next == NULL) {
 			/* if we have checked all clients in this driver, give the other drivers
 			 * a chance (if there are any others) */
@@ -951,7 +960,7 @@ searchBegin:
 			/* data available? */
 			if(sll_length(n->data.drvuse.sendList) > 0) {
 				node->data.driver.lastClient = n;
-				return NADDR_TO_VNNO(n);
+				return vfsn_getNodeNo(n);
 			}
 			n = n->next;
 		}
@@ -960,7 +969,7 @@ searchBegin:
 		if(last && n == last && sll_length(n->data.drvuse.sendList) > 0)
 			match = n;
 		else if(node->data.driver.lastClient) {
-			n = NODE_FIRST_CHILD(node);
+			n = vfsn_getFirstChild(node);
 			node->data.driver.lastClient = NULL;
 			goto searchBegin;
 		}
@@ -968,7 +977,7 @@ searchBegin:
 	/* if we have a match, use this one */
 	if(match) {
 		node->data.driver.lastClient = match;
-		return NADDR_TO_VNNO(match);
+		return vfsn_getNodeNo(match);
 	}
 	/* if not and we've skipped a client, try another time */
 	if(skipped)
@@ -978,8 +987,8 @@ searchBegin:
 
 tInodeNo vfs_getClientId(tPid pid,tFileNo file) {
 	sGFTEntry *e = globalFileTable + file;
-	sVFSNode *n = nodes + e->nodeNo;
-	vassert(e->flags != 0,"Invalid file %d",file);
+	sVFSNode *n = vfsn_getNode(e->nodeNo);
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	if(e->devNo != VFS_DEV_NO || e->owner != pid)
 		return ERR_INVALID_FILE;
@@ -993,12 +1002,12 @@ tFileNo vfs_openClient(tPid pid,tInodeNo nodeNo,tInodeNo clientId) {
 	/* check if the node is valid */
 	if(!vfsn_isValidNodeNo(nodeNo))
 		return ERR_INVALID_DRVID;
-	node = nodes + nodeNo;
+	node = vfsn_getNode(nodeNo);
 	if(node->owner != pid || !IS_DRIVER(node->mode))
 		return ERR_NOT_OWN_DRIVER;
 
 	/* search for a slot that needs work */
-	n = NODE_FIRST_CHILD(node);
+	n = vfsn_getFirstChild(node);
 	while(n != NULL) {
 		if(vfsn_getNodeNo(n) == clientId)
 			break;
@@ -1010,11 +1019,11 @@ tFileNo vfs_openClient(tPid pid,tInodeNo nodeNo,tInodeNo clientId) {
 		return ERR_PATH_NOT_FOUND;
 
 	/* open file */
-	return vfs_openFile(pid,VFS_READ | VFS_WRITE,NADDR_TO_VNNO(n),VFS_DEV_NO);
+	return vfs_openFile(pid,VFS_READ | VFS_WRITE,vfsn_getNodeNo(n),VFS_DEV_NO);
 }
 
 s32 vfs_removeDriver(tPid pid,tInodeNo nodeNo) {
-	sVFSNode *n = nodes + nodeNo;
+	sVFSNode *n = vfsn_getNode(nodeNo);
 
 	vassert(vfsn_isValidNodeNo(nodeNo),"Invalid node number %d",nodeNo);
 
@@ -1093,11 +1102,11 @@ void vfs_removeProcess(tPid pid) {
 	sProc *p = proc_getByPid(pid);
 
 	/* check if the process has a driver */
-	n = NODE_FIRST_CHILD(rn->firstChild);
+	n = vfsn_getFirstChild(rn->firstChild);
 	while(n != NULL) {
 		if(IS_DRIVER(n->mode) && n->owner == pid) {
 			tn = n->next;
-			vfs_removeDriver(pid,NADDR_TO_VNNO(n));
+			vfs_removeDriver(pid,vfsn_getNodeNo(n));
 			n = tn;
 		}
 		else
@@ -1154,7 +1163,7 @@ void vfs_removeThread(tTid tid) {
 	itoa(name,12,tid);
 
 	/* search for thread-node and remove it */
-	n = NODE_FIRST_CHILD(t->proc->threadDir);
+	n = vfsn_getFirstChild(t->proc->threadDir);
 	while(n != NULL) {
 		if(strcmp(n->name,name) == 0) {
 			vfsn_removeNode(n);
@@ -1170,7 +1179,8 @@ void vfs_removeThread(tTid tid) {
 #if DEBUGGING
 
 u32 vfs_dbg_getGFTEntryCount(void) {
-	u32 i,count = 0;
+	s32 i;
+	u32 count = 0;
 	for(i = 0; i < FILE_COUNT; i++) {
 		if(globalFileTable[i].flags != 0)
 			count++;
@@ -1179,7 +1189,7 @@ u32 vfs_dbg_getGFTEntryCount(void) {
 }
 
 void vfs_dbg_printMsgs(void) {
-	sVFSNode *drv = NODE_FIRST_CHILD(DRIVERS());
+	sVFSNode *drv = vfsn_getFirstChild(DRIVERS());
 	vid_printf("Messages:\n");
 	while(drv != NULL) {
 		if(IS_DRIVER(drv->mode))
@@ -1189,7 +1199,7 @@ void vfs_dbg_printMsgs(void) {
 }
 
 void vfs_dbg_printMsgsOf(sVFSNode *n) {
-	sVFSNode *chan = NODE_FIRST_CHILD(n);
+	sVFSNode *chan = vfsn_getFirstChild(n);
 	vid_printf("\t%s:\n",n->name);
 	while(chan != NULL) {
 		u32 i;

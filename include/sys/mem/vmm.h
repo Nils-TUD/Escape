@@ -163,13 +163,17 @@ bool vmm_exists(sProc *p,tVMRegNo reg);
 tVMRegNo vmm_getDLDataReg(sProc *p);
 
 /**
- * Determines the memory-usage of the given process
+ * This is a helper-function for determining the real memory-usage of all processes. It counts
+ * the number of present frames in all regions of the given process and divides them for each
+ * region by the number of region-users. It does not count cow-pages!
+ * This way, we don't count shared regions multiple times (at the end the division sums up to
+ * one usage of the region).
  *
  * @param p the process
- * @param paging the number of frames allocated for paging-structures
- * @param data the number of data-pages
+ * @param pages will point to the number of pages (size of virtual-memory)
+ * @return the number of used frames for this process
  */
-void vmm_getMemUsage(sProc *p,u32 *paging,u32 *data);
+float vmm_getMemUsage(sProc *p,u32 *pages);
 
 /**
  * @param p the process

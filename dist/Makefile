@@ -16,7 +16,6 @@ DISK_BIN=$(patsubst $(BUILD)/user_%.bin,$(DISKMNT)/bin/%,$(BUILD_BIN))
 DISK_SBIN=$(patsubst $(BUILD)/driver_%.bin,$(DISKMNT)/sbin/%,$(BUILD_SBIN))
 DISK_LIB=$(patsubst $(BUILD)/lib%.so,$(DISKMNT)/lib/lib%.so,$(BUILD_LIB))
 DISK_LIBGCC=$(DISKMNT)/lib/libgcc_s.so.1
-DISK_ETC=$(patsubst $(ROOT)/dist,$(DISKMNT),$(BUILD_ETC))
 
 .PHONY: all cd hdd
 
@@ -30,39 +29,43 @@ $(CD): $(BUILD_KERNEL) $(BUILD_BIN) $(BUILD_SBIN) $(BUILD_LIB) $(BUILD_LIBGCC) $
 		@echo "	" UPDATING $(CD)
 		@$(ROOT)/tools/iso.sh
 
-$(HDD): pre-hdd $(DISK_KERNEL) $(DISK_BIN) $(DISK_SBIN) $(DISK_LIB) $(DISK_LIBGCC) $(DISK_ETC) post-hdd
-
-pre-hdd:
+$(HDD): $(BUILD_KERNEL) $(BUILD_BIN) $(BUILD_SBIN) $(BUILD_LIB) $(BUILD_LIBGCC)
 		@echo "	" UPDATING $(HDD)
 		@$(ROOT)/tools/disk.sh mountp1
-
-post-hdd:
+		@$(SUDO) cp $(BUILD_KERNEL) $(DISKMNT)/boot
+		@for i in $(BUILD_BIN); do \
+			$(SUDO) cp $$i $(DISKMNT)/bin/`echo $$i | sed "s/.*\/user_\(.*\)\.bin/\1/g"`; \
+		done;
+		@for i in $(BUILD_SBIN); do \
+			$(SUDO) cp $$i $(DISKMNT)/sbin/`echo $$i | sed "s/.*\/driver_\(.*\)\.bin/\1/g"`; \
+		done;
+		@$(SUDO) cp -f $(BUILD_LIB) $(DISKMNT)/lib
+		@$(SUDO) cp $(BUILD)/../dist/i586-elf-escape/lib/libgcc_s.so.1 $(DISKMNT)/lib/libgcc_s.so.1
 		@$(ROOT)/tools/disk.sh unmount
 		@touch $(HDD)
 
-$(DISKMNT)/etc/%:	$(ROOT)/dist/etc/%
-		$(SUDO) cp $< $@
-		
-$(DISKMNT)/scripts/%:	$(ROOT)/dist/scripts/%
-		$(SUDO) cp $< $@
-		
-$(DISKMNT)/testdir/%:	$(ROOT)/dist/testdir/%
-		$(SUDO) cp $< $@
-		
-$(DISKMNT)/boot/kernel.bin:	$(BUILD)/kernel.bin
-		$(SUDO) cp $< $@
+#pre-hdd:
+#		@echo "	" UPDATING $(HDD)
+#		@$(ROOT)/tools/disk.sh mountp1
 
-$(DISKMNT)/boot/kernel_test.bin:	$(BUILD)/kernel_test.bin
-		$(SUDO) cp $< $@
+#post-hdd:
+#		@$(ROOT)/tools/disk.sh unmount
+#		@touch $(HDD)
 
-$(DISKMNT)/bin/%:	$(BUILD)/user_%.bin
-		$(SUDO) cp $< $@
+#$(DISKMNT)/boot/kernel.bin:	$(BUILD)/kernel.bin
+#		$(SUDO) cp $< $@
 
-$(DISKMNT)/sbin/%:	$(BUILD)/driver_%.bin
-		$(SUDO) cp $< $@
+#$(DISKMNT)/boot/kernel_test.bin:	$(BUILD)/kernel_test.bin
+#		$(SUDO) cp $< $@
 
-$(DISKMNT)/lib/lib%.so:	$(BUILD)/lib%.so
-		$(SUDO) cp $< $@
+#$(DISKMNT)/bin/%:	$(BUILD)/user_%.bin
+#		$(SUDO) cp $< $@
 
-$(DISKMNT)/lib/libgcc_s.so.1:	$(BUILD_LIBGCC)
-		$(SUDO) cp $< $@
+#$(DISKMNT)/sbin/%:	$(BUILD)/driver_%.bin
+#		$(SUDO) cp $< $@
+
+#$(DISKMNT)/lib/lib%.so:	$(BUILD)/lib%.so
+#		$(SUDO) cp $< $@
+
+#$(DISKMNT)/lib/libgcc_s.so.1:	$(BUILD_LIBGCC)
+#		$(SUDO) cp $< $@

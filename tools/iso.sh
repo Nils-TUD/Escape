@@ -22,9 +22,9 @@ echo 'timeout 3' >> $TMPDIR/boot/grub/menu.lst;
 echo '' >> $TMPDIR/boot/grub/menu.lst;
 echo "title $OSTITLE - VESA-text" >> $TMPDIR/boot/grub/menu.lst;
 if [ "`echo $BUILD | grep '/release'`" != "" ]; then
-	echo "kernel /boot/escape.bin videomode=vesa nolog" >> $TMPDIR/boot/grub/menu.lst;
+	echo "kernel /boot/escape.bin videomode=vesa swapdev=/dev/hda3 nolog" >> $TMPDIR/boot/grub/menu.lst;
 else
-	echo "kernel /boot/escape.bin videomode=vesa" >> $TMPDIR/boot/grub/menu.lst;
+	echo "kernel /boot/escape.bin videomode=vesa swapdev=/dev/hda3 " >> $TMPDIR/boot/grub/menu.lst;
 fi
 echo 'module /sbin/pci /dev/pci' >> $TMPDIR/boot/grub/menu.lst;
 echo 'module /sbin/ata /system/devices/ata' >> $TMPDIR/boot/grub/menu.lst;
@@ -33,9 +33,9 @@ echo 'module /sbin/fs /dev/fs cdrom iso9660' >> $TMPDIR/boot/grub/menu.lst;
 echo '' >> $TMPDIR/boot/grub/menu.lst;
 echo "title $OSTITLE - VGA-text" >> $TMPDIR/boot/grub/menu.lst;
 if [ "`echo $BUILD | grep '/release'`" != "" ]; then
-	echo "kernel /boot/escape.bin videomode=vga nolog" >> $TMPDIR/boot/grub/menu.lst;
+	echo "kernel /boot/escape.bin videomode=vga swapdev=/dev/hda3 nolog" >> $TMPDIR/boot/grub/menu.lst;
 else
-	echo "kernel /boot/escape.bin videomode=vga" >> $TMPDIR/boot/grub/menu.lst;
+	echo "kernel /boot/escape.bin videomode=vga swapdev=/dev/hda3 " >> $TMPDIR/boot/grub/menu.lst;
 fi
 echo 'module /sbin/pci /dev/pci' >> $TMPDIR/boot/grub/menu.lst;
 echo 'module /sbin/ata /system/devices/ata' >> $TMPDIR/boot/grub/menu.lst;

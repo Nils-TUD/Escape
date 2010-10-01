@@ -53,7 +53,6 @@ static sSLList *threads;
 static sThread *tidToThread[MAX_THREAD_COUNT];
 static sThread *cur = NULL;
 static tTid nextTid = 0;
-static volatile tTid runnableThread = INVALID_TID;
 
 /* list of dead threads that should be destroyed */
 static sSLList* deadThreads = NULL;
@@ -63,8 +62,6 @@ sThread *thread_init(sProc *p) {
 	if(!threads)
 		util_panic("Unable to create thread-list");
 
-	/* create idle-thread */
-	thread_createInitial(p,ST_BLOCKED);
 	/* create thread for init */
 	cur = thread_createInitial(p,ST_RUNNING);
 	return cur;
@@ -120,24 +117,6 @@ void thread_switch(void) {
 }
 
 void thread_switchTo(tTid tid) {
-	/* if we're idling we have to leave this interrupt first and stop idling then */
-	if(cur->tid == IDLE_TID) {
-		/* ignore it if we should continue idling */
-		if(tid == IDLE_TID)
-			return;
-		/* if we've already stored a thread to run, it is no longer in the ready-queue of the
-		 * scheduler. so we have to put it back into it. */
-		if(runnableThread != INVALID_TID) {
-			sThread *last = thread_getById(runnableThread);
-			/* sched_setReady() will do nothing if state is ST_READY */
-			last->state = ST_RUNNING;
-			sched_setReady(last);
-		}
-		/* store to which thread we should switch */
-		runnableThread = tid;
-		return;
-	}
-
 	/* finish kernel-time here since we're switching the process */
 	if(tid != cur->tid) {
 		u64 kcstart = cur->stats.kcycleStart;
@@ -158,21 +137,6 @@ void thread_switchTo(tTid tid) {
 
 			old = cur;
 			cur = t;
-
-			/* if it is the idle-thread, stay here and wait for an interrupt */
-			if(cur->tid == IDLE_TID) {
-				/* user-mode starts here */
-				cur->stats.ucycleStart = cpu_rdtsc();
-				/* idle until there is another thread to run */
-				__asm__("sti");
-				while(runnableThread == INVALID_TID)
-					__asm__("hlt");
-
-				/* now a thread wants to run */
-				__asm__("cli");
-				cur = thread_getById(runnableThread);
-				runnableThread = INVALID_TID;
-			}
 
 			/* set used */
 			cur->stats.schedCount++;
@@ -218,6 +182,13 @@ void thread_switchTo(tTid tid) {
 		}
 		sll_destroy(deadThreads,false);
 		deadThreads = NULL;
+	}
+}
+
+void thread_idle(void) {
+	__asm__("sti");
+	while(true) {
+		__asm__("hlt");
 	}
 }
 
@@ -282,8 +253,7 @@ s32 thread_extendStack(u32 address) {
 
 s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc) {
 	s32 err = ERR_NOT_ENOUGH_MEM;
-	sThread *t = *dst;
-	t = (sThread*)kheap_alloc(sizeof(sThread));
+	sThread *t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
 		return ERR_NOT_ENOUGH_MEM;
 

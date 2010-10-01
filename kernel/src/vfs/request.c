@@ -49,7 +49,7 @@ void vfsreq_init(void) {
 	for(i = 0; i < REQUEST_COUNT; i++) {
 		/* a few slots are reserved for fs; because we need driver-requests to handle fs-requests */
 		if(i < FS_RESERVED)
-			req->tid = FS_TID;
+			req->tid = KERNEL_TID;
 		else
 			req->tid = INVALID_TID;
 		req->node = NULL;
@@ -83,7 +83,8 @@ retry:
 			req = NULL;
 			break;
 		}
-		if(!req && requests[i].node == NULL && (t->tid == FS_TID || requests[i].tid != FS_TID))
+		if(!req && requests[i].node == NULL &&
+				(t->proc->pid == FS_PID || requests[i].tid != KERNEL_TID))
 			req = requests + i;
 	}
 	/* if there is no free slot or another one is using that node, wait */

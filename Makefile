@@ -13,7 +13,7 @@ SYMBOLS = $(BUILDDIR)/kernel.symbols
 
 #KVM = -enable-kvm
 QEMU = qemu
-QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot order=d -vga std -m 25 -localtime
+QEMUARGS = -serial stdio -hda $(HDD) -cdrom $(ISO) -boot order=d -vga std -m 60 -localtime
 BOCHSDBG = /home/hrniels/Applications/bochs/bochs-2.4.2-gdb/bochs
 
 # wether to link drivers and user-apps statically or dynamically

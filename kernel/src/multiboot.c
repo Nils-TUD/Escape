@@ -99,6 +99,12 @@ void mboot_loadModules(sIntrptStackFrame *stack) {
 	if(loadedMods)
 		return;
 
+	/* start idle-thread */
+	if(proc_startThread(0,NULL) == thread_getRunning()->tid) {
+		thread_idle();
+		util_panic("Idle returned");
+	}
+
 	loadedMods = true;
 	for(i = 0; i < mb->modsCount; i++) {
 		/* parse args */

@@ -30,10 +30,9 @@
 
 #define INITIAL_STACK_PAGES		1
 
-#define IDLE_TID				0
-#define INIT_TID				1
-#define ATA_TID					2
-#define FS_TID					6
+#define INIT_TID				0
+#define IDLE_TID				1
+#define ATA_TID					3
 
 #define MAX_THREAD_COUNT		8192
 #define INVALID_TID				0xFFFF
@@ -202,6 +201,11 @@ void thread_switch(void);
  * @param tid the thread-id
  */
 void thread_switchTo(tTid tid);
+
+/**
+ * The start-function for the idle-thread
+ */
+void thread_idle(void);
 
 /**
  * Switches the thread and remembers that we are waiting in the kernel. That means if you want

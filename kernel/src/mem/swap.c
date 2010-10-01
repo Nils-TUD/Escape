@@ -34,20 +34,16 @@
 
 /* TODO we need a way to ask ata for a partition-size */
 #define SWAP_SIZE			(10 * M)
-#define HIGH_WATER			40
-#define LOW_WATER			20
-#define CRIT_WATER			10
-
-#define SW_TYPE_DEF			0
-#define SW_TYPE_SHM			1
-#define SW_TYPE_TEXT		2
+#define HIGH_WATER			70
+#define LOW_WATER			50
+#define CRIT_WATER			20
 
 #define MAX_SWAP_AT_ONCE	10
 
-/*#define vid_printf(...)*/
+#define vid_printf(...)
 
-static void swap_doSwapin(tTid tid,tFileNo file,sProc *p,u32 addr);
-static void swap_doSwapOut(tTid tid,tFileNo file,sRegion *reg,u32 index);
+static void swap_doSwapin(tPid pid,tFileNo file,sProc *p,u32 addr);
+static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,u32 index);
 static void swap_setSuspended(sSLList *procs,bool blocked);
 static sRegion *swap_findVictim(u32 *index);
 
@@ -129,7 +125,7 @@ bool swap_outUntil(u32 frameCount) {
 	sThread *t = thread_getRunning();
 	if(free >= frameCount)
 		return true;
-	if(!enabled || t->tid == ATA_TID || t->tid == swapper->tid)
+	if(!enabled || t->tid != IDLE_TID || t->tid == ATA_TID || t->tid == swapper->tid)
 		return false;
 	do {
 		/* notify swapper-thread */
@@ -158,8 +154,8 @@ void swap_check(void) {
 		/* if we have VERY few frames left, better block this thread until we have high water */
 		if(freeFrm < CRIT_WATER/* || neededFrames < HIGH_WATER*/) {
 			sThread *t = thread_getRunning();
-			/* but its not really helpfull to block ata ;) */
-			if(t->tid != ATA_TID) {
+			/* but its not really helpful to block ata ;) */
+			if(t->tid != ATA_TID && t->tid != IDLE_TID) {
 				thread_wait(t->tid,NULL,EV_SWAP_FREE);
 				thread_switchNoSigs();
 			}
@@ -243,8 +239,9 @@ static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,u32 index) {
 	rno = vmm_getRNoByRegion(first,reg);
 	vmreg = vmm_getRegion(first,rno);
 	block = swmap_alloc();
-	vid_printf("Swapout %x:%d (first=%p %s:%d) to blk %d...",
-			reg,index,vmreg->virt + index * PAGE_SIZE,first->command,first->pid,block);
+	vid_printf("Swapout free=%d %x:%d (first=%p %s:%d) to blk %d...",
+			mm_getFreeFrames(MM_DEF),reg,index,vmreg->virt + index * PAGE_SIZE,
+			first->command,first->pid,block);
 	assert(block != INVALID_BLOCK);
 
 	/* copy to a temporary buffer because we can't use the temp-area when switching threads */

@@ -451,8 +451,11 @@ s32 proc_startThread(u32 entryPoint,void *arg) {
 		return ERR_NOT_ENOUGH_MEM;
 	}
 
-	/* mark ready */
-	thread_setReady(nt->tid);
+	/* mark ready (idle is always blocked because we choose it explicitly when no other can run) */
+	if(nt->tid == IDLE_TID)
+		thread_setBlocked(IDLE_TID);
+	else
+		thread_setReady(nt->tid);
 
 	res = proc_finishClone(nt,stackFrame);
 	if(res == 1) {

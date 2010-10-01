@@ -58,16 +58,10 @@ static void sched_qPrepend(sQueue *q,sThread *t);
 
 static sQueue readyQueue;
 static sQueue blockedQueue;
-static sThread *idle;
-static sThread *init;
 
 void sched_init(void) {
 	sched_qInit(&readyQueue);
 	sched_qInit(&blockedQueue);
-	/* cache init and idle; they can't change and this way we avoid a hashmap-lookup every time
-	 * we choose them */
-	init = thread_getById(INIT_TID);
-	idle = thread_getById(IDLE_TID);
 }
 
 sThread *sched_perform(void) {
@@ -88,11 +82,11 @@ sThread *sched_perform(void) {
 			 * problem...
 			 * Therefore we choose the other thread of init to be sure (this may not be destroyed).
 			 */
-			t = init;
+			t = thread_getById(INIT_TID);
 		}
 		else {
 			/* otherwise choose the idle-thread */
-			t = idle;
+			t = thread_getById(IDLE_TID);
 		}
 	}
 	else
@@ -103,6 +97,8 @@ sThread *sched_perform(void) {
 
 void sched_setRunning(sThread *t) {
 	assert(t != NULL);
+	if(t->tid == IDLE_TID)
+		return;
 
 	switch(t->state) {
 		case ST_RUNNING:
@@ -123,12 +119,16 @@ void sched_setRunning(sThread *t) {
 
 void sched_setReady(sThread *t) {
 	assert(t != NULL);
+	if(t->tid == IDLE_TID)
+		return;
 	if(sched_setReadyState(t))
 		sched_qAppend(&readyQueue,t);
 }
 
 void sched_setReadyQuick(sThread *t) {
 	assert(t != NULL);
+	if(t->tid == IDLE_TID)
+		return;
 	if(sched_setReadyState(t))
 		sched_qPrepend(&readyQueue,t);
 }

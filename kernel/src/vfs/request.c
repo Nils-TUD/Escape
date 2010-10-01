@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
-#include <sys/task/sched.h>
+#include <sys/task/event.h>
 #include <sys/task/signals.h>
 #include <sys/mem/kheap.h>
 #include <sys/vfs/vfs.h>
@@ -90,7 +90,7 @@ retry:
 	/* if there is no free slot or another one is using that node, wait */
 	if(!req) {
 		/* TODO don't block here when VFS_NOBLOCK is set? */
-		thread_wait(t->tid,NULL,EV_REQ_FREE);
+		ev_wait(t->tid,EVI_REQ_FREE,NULL);
 		thread_switch();
 		goto retry;
 	}
@@ -108,7 +108,7 @@ retry:
 
 void vfsreq_waitForReply(sRequest *req,bool allowSigs) {
 	/* wait */
-	thread_wait(req->tid,req->node,EV_REQ_REPLY);
+	ev_wait(req->tid,EVI_REQ_REPLY,req->node);
 	if(allowSigs)
 		thread_switch();
 	else
@@ -141,7 +141,7 @@ sRequest *vfsreq_getRequestByNode(sVFSNode *node) {
 
 void vfsreq_remRequest(sRequest *r) {
 	r->node = NULL;
-	thread_wakeupAll(NULL,EV_REQ_FREE);
+	ev_wakeup(EVI_REQ_FREE,NULL);
 }
 
 #if DEBUGGING

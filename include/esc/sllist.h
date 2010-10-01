@@ -93,6 +93,13 @@ sSLList *sll_clone(sSLList *list);
 void sll_destroy(sSLList *list,bool freeData);
 
 /**
+ * Removes all elements from the list
+ *
+ * @param list the list
+ */
+void sll_clear(sSLList *list);
+
+/**
  * @param list the list
  * @return the number of elements in the list
  */
@@ -189,13 +196,6 @@ bool sll_insert(sSLList *list,const void *data,u32 index);
  * @return true if successfull (otherwise not enough mem)
  */
 bool sll_insertAfter(sSLList *list,sSLNode *prev,const void *data);
-
-/**
- * Removes all elements from the list
- *
- * @param list the list
- */
-void sll_removeAll(sSLList *list);
 
 /**
  * Removes the given node from the list. This is a faster alternative to sll_removeIndex()

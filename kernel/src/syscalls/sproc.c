@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/proc.h>
 #include <sys/task/thread.h>
+#include <sys/task/event.h>
 #include <sys/task/ioports.h>
 #include <sys/task/elf.h>
 #include <sys/task/signals.h>
@@ -90,7 +91,7 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 
 	/* check if there is another thread waiting */
 	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
-		if(((sThread*)n->data)->events & EV_CHILD_DIED)
+		if(((sThread*)n->data)->events & EVI_CHILD_DIED)
 			SYSC_ERROR(stack,ERR_THREAD_WAITING);
 	}
 
@@ -98,12 +99,12 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 	res = proc_getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
-		thread_wait(t->tid,NULL,EV_CHILD_DIED);
+		ev_wait(t->tid,EVI_CHILD_DIED,NULL);
 		thread_switch();
 
 		/* we're back again :) */
 		/* stop waiting for event; maybe we have been waked up for another reason */
-		thread_wakeup(t->tid,EV_CHILD_DIED);
+		ev_removeThread(t->tid);
 		/* don't continue here if we were interrupted by a signal */
 		if(sig_hasSignalFor(t->tid))
 			SYSC_ERROR(stack,ERR_INTERRUPTED);

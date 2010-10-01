@@ -24,6 +24,7 @@
 #include <sys/vfs/request.h>
 #include <sys/mem/kheap.h>
 #include <sys/task/thread.h>
+#include <sys/task/event.h>
 #include <sys/task/signals.h>
 #include <sys/video.h>
 #include <esc/messages.h>
@@ -121,7 +122,7 @@ s32 vfsrw_readPipe(tTid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 	/* wait until data is available */
 	/* don't cache the list here, because the pointer changes if the list is NULL */
 	while(sll_length(n->data.pipe.list) == 0) {
-		thread_wait(t->tid,node,EV_PIPE_FULL);
+		ev_wait(t->tid,EVI_PIPE_FULL,node);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
@@ -155,8 +156,8 @@ s32 vfsrw_readPipe(tTid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 		while(sll_length(n->data.pipe.list) == 0) {
 			/* before we go to sleep we have to notify others that we've read data. otherwise
 			 * we may cause a deadlock here */
-			thread_wakeupAll(node,EV_PIPE_EMPTY);
-			thread_wait(t->tid,node,EV_PIPE_FULL);
+			ev_wakeup(EVI_PIPE_EMPTY,node);
+			ev_wait(t->tid,EVI_PIPE_FULL,node);
 			/* TODO we can't accept signals here, right? since we've already read something, which
 			 * we have to deliver to the user. the only way I can imagine would be to put it back..
 			 */
@@ -168,7 +169,7 @@ s32 vfsrw_readPipe(tTid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u3
 			break;
 	}
 	/* wakeup all threads that wait for writing in this node */
-	thread_wakeupAll(node,EV_PIPE_EMPTY);
+	ev_wakeup(EVI_PIPE_EMPTY,node);
 	return total;
 }
 
@@ -182,22 +183,22 @@ s32 vfsrw_readDrvUse(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u3
 
 	/* wait until a message arrives */
 	if(node->parent->owner == pid) {
-		event = EV_CLIENT;
+		event = EVI_CLIENT;
 		list = &node->data.drvuse.sendList;
 	}
 	else {
-		event = EV_RECEIVED_MSG;
+		event = EVI_RECEIVED_MSG;
 		list = &node->data.drvuse.recvList;
 	}
 	while(sll_length(*list) == 0) {
 		if(!vfs_shouldBlock(file))
 			return ERR_WOULD_BLOCK;
-		thread_wait(t->tid,node,event);
+		ev_wait(t->tid,event,node);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
 		/* if we waked up and there is no message, the driver probably died */
-		if(event == EV_RECEIVED_MSG && sll_length(*list) == 0)
+		if(event == EVI_RECEIVED_MSG && sll_length(*list) == 0)
 			return ERR_DRIVER_DIED;
 	}
 
@@ -285,7 +286,7 @@ s32 vfsrw_writePipe(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 of
 	/* wait while our node is full */
 	if(count) {
 		while((n->data.pipe.total + count) >= MAX_VFS_FILE_SIZE) {
-			thread_wait(t->tid,node,EV_PIPE_EMPTY);
+			ev_wait(t->tid,EVI_PIPE_EMPTY,node);
 			thread_switchNoSigs();
 		}
 	}
@@ -314,7 +315,7 @@ s32 vfsrw_writePipe(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 of
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	node->data.pipe.total += count;
-	thread_wakeupAll(node,EV_PIPE_FULL);
+	ev_wakeup(EVI_PIPE_FULL,node);
 	return count;
 }
 
@@ -367,7 +368,7 @@ s32 vfsrw_writeDrvUse(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data
 		proc_wakeup(n->parent->owner,n->parent,EV_CLIENT);
 	/* notify all threads that wait on this node for a msg */
 	else
-		thread_wakeupAll(n,EV_RECEIVED_MSG);
+		ev_wakeup(EVI_RECEIVED_MSG,n);
 	return 0;
 }
 

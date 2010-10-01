@@ -20,6 +20,7 @@
 #include <sys/common.h>
 #include <sys/task/lock.h>
 #include <sys/task/thread.h>
+#include <sys/task/event.h>
 #include <sys/mem/kheap.h>
 #include <sys/video.h>
 #include <esc/sllist.h>
@@ -68,10 +69,10 @@ s32 lock_aquire(tPid pid,u32 ident,u16 flags) {
 	l = locks + i;
 	if(l->flags) {
 		/* if it exists and is locked, wait */
-		u32 event = (flags & LOCK_EXCLUSIVE) ? EV_UNLOCK_EX : EV_UNLOCK_SH;
+		u32 event = (flags & LOCK_EXCLUSIVE) ? EVI_UNLOCK_EX : EVI_UNLOCK_SH;
 		while(lock_isLocked(locks + i,flags)) {
 			locks[i].waitCount++;
-			thread_wait(t->tid,(void*)ident,event);
+			ev_wait(t->tid,event,(void*)ident);
 			thread_switchNoSigs();
 			locks[i].waitCount--;
 		}
@@ -117,10 +118,9 @@ s32 lock_release(tPid pid,u32 ident) {
 	if(l->waitCount) {
 		/* if there are no reads and writes, notify all.
 		 * otherwise notify just the threads that wait for a shared lock */
+		ev_wakeup(EVI_UNLOCK_SH,(void*)ident);
 		if(l->readRefs == 0)
-			thread_wakeupAll((void*)ident,EV_UNLOCK_EX | EV_UNLOCK_SH);
-		else
-			thread_wakeupAll((void*)ident,EV_UNLOCK_SH);
+			ev_wakeup(EVI_UNLOCK_EX,(void*)ident);
 	}
 	/* if there are no waits and refs anymore and we shouldn't keep it, free the lock */
 	else if(l->readRefs == 0 && !(l->flags & LOCK_KEEP))

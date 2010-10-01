@@ -24,20 +24,25 @@
 
 #ifdef IN_KERNEL
 #	include <sys/mem/kheap.h>
+#	include <sys/mem/sllnodes.h>
 #	include <sys/video.h>
 /* for util_panic (vassert) */
 #	include <sys/util.h>
 #	define sllprintf	vid_printf
-#	define sllfree		kheap_free
-#	define sllmalloc	kheap_alloc
+#	define heapalloc	kheap_alloc
+#	define heapfree		kheap_free
+#	define nodealloc	slln_allocNode
+#	define nodefree		slln_freeNode
 #else
 /* for exit (vassert) */
 #	include <esc/proc.h>
 #	include <stdio.h>
 #	include <stdlib.h>
 #	define sllprintf	printf
-#	define sllfree		free
-#	define sllmalloc	malloc
+#	define heapalloc	malloc
+#	define heapfree		free
+#	define nodealloc	malloc
+#	define nodefree		free
 #endif
 
 /* a node in a list */
@@ -66,15 +71,15 @@ typedef struct {
 static sNode *sll_getNode(sSLList *list,u32 index);
 
 sSLList *sll_create(void) {
-	sList *l = (sList*)sllmalloc(sizeof(sList));
+	sList *l = (sList*)heapalloc(sizeof(sList));
 	if(l == NULL)
 		return NULL;
-	sll_init((sSLList*)l,(fNodeAlloc)sllmalloc,(fNodeFree)sllfree);
+	sll_init((sSLList*)l,(fNodeAlloc)nodealloc,(fNodeFree)nodefree);
 	return (sSLList*)l;
 }
 
 sSLList *sll_createExtern(fNodeAlloc falloc,fNodeFree ffree) {
-	sList *l = (sList*)sllmalloc(sizeof(sList));
+	sList *l = (sList*)heapalloc(sizeof(sList));
 	if(l == NULL)
 		return NULL;
 	sll_init((sSLList*)l,falloc,ffree);
@@ -115,12 +120,12 @@ void sll_destroy(sSLList *list,bool freeData) {
 	while(n != NULL) {
 		nn = n->next;
 		if(freeData)
-			sllfree((void*)n->data);
+			heapfree((void*)n->data);
 		l->ffree(n);
 		n = nn;
 	}
 	/* free list */
-	sllfree(list);
+	heapfree(list);
 }
 
 sSLNode *sll_begin(sSLList *list) {
@@ -224,7 +229,7 @@ bool sll_insertAfter(sSLList *list,sSLNode *prev,const void *data) {
 	return true;
 }
 
-void sll_removeAll(sSLList *list) {
+void sll_clear(sSLList *list) {
 	sList *l = (sList*)list;
 	sNode *m,*n = (sNode*)l->first;
 

@@ -22,6 +22,7 @@
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
 #include <sys/task/sched.h>
+#include <sys/task/event.h>
 #include <sys/task/lock.h>
 #include <sys/machine/timer.h>
 #include <sys/mem/kheap.h>
@@ -126,7 +127,7 @@ void sysc_notify(sIntrptStackFrame *stack) {
 
 	if((events & ~EV_USER_NOTIFY_MASK) != 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-	thread_wakeup(tid,events);
+	ev_wakeupThread(tid,events);
 	SYSC_RET1(stack,0);
 }
 
@@ -167,7 +168,7 @@ void sysc_join(sIntrptStackFrame *stack) {
 
 	/* wait until this thread doesn't exist anymore or there are no other threads than ourself */
 	do {
-		thread_wait(t->tid,t->proc,EV_THREAD_DIED);
+		ev_wait(t->tid,EVI_THREAD_DIED,t->proc);
 		thread_switchNoSigs();
 	}
 	while((tid == 0 && sll_length(t->proc->threads) > 1) ||
@@ -207,7 +208,7 @@ static s32 sysc_doWait(u32 events) {
 	if(vfs_msgAvailableFor(t->proc->pid,events))
 		return 0;
 	while(true) {
-		thread_wait(t->tid,NULL,events);
+		ev_waitm(t->tid,events);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;

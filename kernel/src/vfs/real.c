@@ -19,7 +19,7 @@
 
 #include <sys/common.h>
 #include <sys/task/proc.h>
-#include <sys/task/sched.h>
+#include <sys/task/event.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>
 #include <sys/vfs/vfs.h>
@@ -373,7 +373,7 @@ static void vfsr_openRespHandler(sVFSNode *node,const u8 *data,u32 size) {
 		req->count = rmsg->args.arg1;
 		req->val1 = rmsg->args.arg2;
 		/* the thread can continue now */
-		thread_wakeup(req->tid,EV_REQ_REPLY);
+		ev_wakeupThread(req->tid,EV_REQ_REPLY);
 	}
 }
 
@@ -388,7 +388,7 @@ static void vfsr_readRespHandler(sVFSNode *node,const u8 *data,u32 size) {
 			if(!data || size < sizeof(rmsg->args) || (s32)rmsg->args.arg1 <= 0) {
 				req->count = 0;
 				req->state = REQ_STATE_FINISHED;
-				thread_wakeup(req->tid,EV_REQ_REPLY);
+				ev_wakeupThread(req->tid,EV_REQ_REPLY);
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
@@ -405,7 +405,7 @@ static void vfsr_readRespHandler(sVFSNode *node,const u8 *data,u32 size) {
 			}
 			req->state = REQ_STATE_FINISHED;
 			/* the thread can continue now */
-			thread_wakeup(req->tid,EV_REQ_REPLY);
+			ev_wakeupThread(req->tid,EV_REQ_REPLY);
 		}
 	}
 }
@@ -426,7 +426,7 @@ static void vfsr_statRespHandler(sVFSNode *node,const u8 *data,u32 size) {
 		if(req->data != NULL)
 			memcpy(req->data,rmsg->data.d,sizeof(sFileInfo));
 		/* the thread can continue now */
-		thread_wakeup(req->tid,EV_REQ_REPLY);
+		ev_wakeupThread(req->tid,EV_REQ_REPLY);
 	}
 }
 
@@ -443,7 +443,7 @@ static void vfsr_defRespHandler(sVFSNode *node,const u8 *data,u32 size) {
 		req->state = REQ_STATE_FINISHED;
 		req->count = rmsg->args.arg1;
 		/* the thread can continue now */
-		thread_wakeup(req->tid,EV_REQ_REPLY);
+		ev_wakeupThread(req->tid,EV_REQ_REPLY);
 	}
 }
 

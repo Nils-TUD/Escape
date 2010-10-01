@@ -21,6 +21,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/proc.h>
 #include <sys/task/signals.h>
+#include <sys/task/event.h>
 #include <sys/machine/cpu.h>
 #include <sys/machine/gdt.h>
 #include <sys/machine/timer.h>
@@ -73,8 +74,7 @@ static sThread *thread_createInitial(sProc *p,eThreadState state) {
 		util_panic("Unable to allocate mem for initial thread");
 
 	t->state = state;
-	t->events = EV_NOEVENT;
-	t->eventObj = NULL;
+	t->events = 0;
 	t->ignoreSignals = 0;
 	t->tid = nextTid++;
 	t->proc = p;
@@ -199,6 +199,7 @@ void thread_switchNoSigs(void) {
 	cur->ignoreSignals = 0;
 }
 
+#if 0
 void thread_wait(tTid tid,void *obj,u32 events) {
 	sThread *t = thread_getById(tid);
 	vassert(t != NULL,"Thread with id %d not found",tid);
@@ -224,6 +225,7 @@ void thread_wakeup(tTid tid,u32 event) {
 		t->events = EV_NOEVENT;
 	}
 }
+#endif
 
 bool thread_setReady(tTid tid) {
 	sThread *t = thread_getById(tid);
@@ -264,8 +266,7 @@ s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneP
 	}
 
 	t->state = ST_RUNNING;
-	t->events = src->events;
-	t->eventObj = src->eventObj;
+	t->events = 0;
 	t->ignoreSignals = 0;
 	fpu_cloneState(&(t->fpuState),src->fpuState);
 	t->stats.kcycleCount.val64 = 0;
@@ -389,7 +390,7 @@ void thread_kill(sThread *t) {
 
 	/* notify others that wait for dying threads */
 	/* TODO sig_addSignal(SIG_THREAD_DIED,t->tid);*/
-	thread_wakeupAll(t->proc,EV_THREAD_DIED);
+	ev_wakeup(EVI_THREAD_DIED,t->proc);
 
 	/* finally, destroy thread */
 	thread_remove(t);
@@ -439,7 +440,7 @@ void thread_dbg_print(sThread *t) {
 	};
 	vid_printf("\tthread %d: (process %d:%s)\n",t->tid,t->proc->pid,t->proc->command);
 	vid_printf("\t\tstate=%s\n",states[t->state]);
-	vid_printf("\t\tevents=%#x (obj=%#x)\n",t->events,t->eventObj);
+	vid_printf("\t\tevents=%#x\n",t->events);
 	vid_printf("\t\tkstackFrame=%#x\n",t->kstackFrame);
 	vid_printf("\t\ttlsRegion=%d, stackRegion=%d\n",t->tlsRegion,t->stackRegion);
 	vid_printf("\t\tucycleCount = %#016Lx\n",t->stats.ucycleCount.val64);

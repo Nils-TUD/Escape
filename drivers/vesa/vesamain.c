@@ -229,7 +229,7 @@ static void vesa_doUpdate(void) {
 		vesa_update(r->x,r->y,r->width,r->height);
 		free(r);
 	}
-	sll_removeAll(dirtyRects);
+	sll_clear(dirtyRects);
 
 	if(updCursor) {
 		vesa_setCursor(newCurX,newCurY);

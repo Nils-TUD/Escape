@@ -34,6 +34,7 @@
 #include <sys/task/elf.h>
 #include <sys/task/sched.h>
 #include <sys/task/signals.h>
+#include <sys/task/event.h>
 #include <sys/vfs/vfs.h>
 #include <sys/vfs/info.h>
 #include <sys/vfs/request.h>
@@ -127,6 +128,7 @@ s32 main(sMultiBoot *mbp,u32 magic) {
 
 	/* processes */
 	vid_printf("Initializing process-management...");
+	ev_init();
 	proc_init();
 	sched_init();
 	/* the process and thread-stuff has to be ready, too ... */

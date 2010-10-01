@@ -21,6 +21,7 @@
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
 #include <sys/task/signals.h>
+#include <sys/task/event.h>
 #include <sys/vfs/rw.h>
 #include <sys/syscalls/driver.h>
 #include <sys/syscalls.h>
@@ -164,7 +165,7 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 			SYSC_ERROR(stack,client);
 
 		/* otherwise wait for a client (accept signals) */
-		thread_wait(t->tid,NULL,EV_CLIENT);
+		ev_wait(t->tid,EVI_CLIENT,NULL);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			SYSC_ERROR(stack,ERR_INTERRUPTED);

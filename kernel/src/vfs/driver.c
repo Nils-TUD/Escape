@@ -24,6 +24,7 @@
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>
 #include <sys/task/thread.h>
+#include <sys/task/event.h>
 #include <sys/task/signals.h>
 #include <esc/sllist.h>
 #include <string.h>
@@ -85,7 +86,7 @@ s32 vfsdrv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 	if(n->parent->data.driver.isEmpty) {
 		if(!vfs_shouldBlock(file))
 			return ERR_WOULD_BLOCK;
-		thread_wait(t->tid,node->parent,EV_DATA_READABLE);
+		ev_wait(t->tid,EVI_DATA_READABLE,node->parent);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
@@ -182,7 +183,7 @@ static void vfsdrv_openReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 		req->state = REQ_STATE_FINISHED;
 		req->count = (u32)rmsg->args.arg1;
 		/* the thread can continue now */
-		thread_wakeup(req->tid,EV_REQ_REPLY);
+		ev_wakeupThread(req->tid,EV_REQ_REPLY);
 	}
 }
 
@@ -206,11 +207,11 @@ static void vfsdrv_readReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 					req->count = 0;
 				}
 				if(wasEmpty && !drv->data.driver.isEmpty) {
-					vfs_wakeupClients(drv,EV_RECEIVED_MSG);
-					thread_wakeupAll(drv,EV_DATA_READABLE);
+					vfs_wakeupClients(drv,EVI_RECEIVED_MSG);
+					ev_wakeup(EVI_DATA_READABLE,drv);
 				}
 				req->state = REQ_STATE_FINISHED;
-				thread_wakeup(req->tid,EV_REQ_REPLY);
+				ev_wakeupThread(req->tid,EV_REQ_REPLY);
 				return;
 			}
 			/* otherwise we'll receive the data with the next msg */
@@ -220,8 +221,8 @@ static void vfsdrv_readReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 			req->count = MIN(req->dsize,rmsg->args.arg1);
 			req->state = REQ_STATE_WAIT_DATA;
 			if(wasEmpty && !drv->data.driver.isEmpty) {
-				vfs_wakeupClients(drv,EV_RECEIVED_MSG);
-				thread_wakeupAll(drv,EV_DATA_READABLE);
+				vfs_wakeupClients(drv,EVI_RECEIVED_MSG);
+				ev_wakeup(EVI_DATA_READABLE,drv);
 			}
 		}
 		else if(req->state == REQ_STATE_WAIT_DATA) {
@@ -234,7 +235,7 @@ static void vfsdrv_readReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 			}
 			req->state = REQ_STATE_FINISHED;
 			/* the thread can continue now */
-			thread_wakeup(req->tid,EV_REQ_REPLY);
+			ev_wakeupThread(req->tid,EV_REQ_REPLY);
 		}
 	}
 }
@@ -252,6 +253,6 @@ static void vfsdrv_writeReqHandler(sVFSNode *node,const u8 *data,u32 size) {
 		req->state = REQ_STATE_FINISHED;
 		req->count = rmsg->args.arg1;
 		/* the thread can continue now */
-		thread_wakeup(req->tid,EV_REQ_REPLY);
+		ev_wakeupThread(req->tid,EV_REQ_REPLY);
 	}
 }

@@ -64,13 +64,13 @@ static void vfsn_releaseNode(sVFSNode *node);
 
 /* all nodes (expand dynamically) */
 static sDynArray nodeArray;
-static sVFSNode *nodes = (sVFSNode*)NODE_AREA;
+static sVFSNode *nodes = (sVFSNode*)VFSNODE_AREA;
 /* a pointer to the first free node (which points to the next and so on) */
 static sVFSNode *freeList = NULL;
 static u32 nextUsageId = 0;
 
 void vfsn_init(void) {
-	dyna_init(&nodeArray,sizeof(sVFSNode),NODE_AREA,NODE_AREA_SIZE);
+	dyna_init(&nodeArray,sizeof(sVFSNode),VFSNODE_AREA,VFSNODE_AREA_SIZE);
 }
 
 bool vfsn_isValidNodeNo(tInodeNo nodeNo) {

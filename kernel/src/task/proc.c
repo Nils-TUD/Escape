@@ -25,6 +25,7 @@
 #include <sys/task/elf.h>
 #include <sys/task/lock.h>
 #include <sys/task/env.h>
+#include <sys/task/event.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/pmem.h>
 #include <sys/mem/kheap.h>
@@ -166,8 +167,7 @@ void proc_wakeup(tPid pid,void *obj,u32 events) {
 	sProc *p = proc_getByPid(pid);
 	for(n = sll_begin(p->threads); n != NULL; n = n->next) {
 		sThread *t = (sThread*)n->data;
-		if(t->events & events && (t->eventObj == NULL || t->eventObj == obj))
-			thread_wakeup(t->tid,events);
+		ev_wakeupThread(t->tid,events);
 	}
 }
 
@@ -661,11 +661,9 @@ static void proc_notifyProcDied(tPid parent) {
 	/* check whether there is a parent-thread that waits for a child */
 	for(tn = sll_begin(proc_getByPid(parent)->threads); tn != NULL; tn = tn->next) {
 		sThread *t = (sThread*)tn->data;
-		if(t->events & EV_CHILD_DIED) {
-			/* wake the thread and delay the destruction until this read has got the exit-state */
-			thread_wakeup(t->tid,EV_CHILD_DIED);
+		/* wake the thread and delay the destruction until this read has got the exit-state */
+		if(ev_wakeupThread(t->tid,EV_CHILD_DIED))
 			return;
-		}
 	}
 }
 

@@ -73,9 +73,11 @@
  *             |                ...                |
  * 0xD0000000: +-----------------------------------+     |      -----
  *             |       VFS global file table       |     |        |
- * 0xD0400000: +-----------------------------------+     |    dynamically extending regions
- *             |             VFS nodes             |     |        |
- * 0xD0800000: +-----------------------------------+     |      -----
+ * 0xD0400000: +-----------------------------------+     |
+ *             |             VFS nodes             |     |    dynamically extending regions
+ * 0xD0800000: +-----------------------------------+     |
+ *             |             sll nodes             |     |        |
+ * 0xD2800000: +-----------------------------------+     |      -----
  *             |                ...                |     |
  * 0xFF7FF000: +-----------------------------------+     |      -----
  *             |            kernel-stack           |     |        |
@@ -118,8 +120,11 @@
 #define GFT_AREA				0xD0000000
 #define GFT_AREA_SIZE			(4 * M)
 /* area for vfs-nodes */
-#define NODE_AREA				(GFT_AREA + GFT_AREA_SIZE)
-#define NODE_AREA_SIZE			(4 * M)
+#define VFSNODE_AREA			(GFT_AREA + GFT_AREA_SIZE)
+#define VFSNODE_AREA_SIZE		(4 * M)
+/* area for sll-nodes */
+#define SLLNODE_AREA			(VFSNODE_AREA + VFSNODE_AREA_SIZE)
+#define SLLNODE_AREA_SIZE		(32 * M)
 
 /* the size of the temporary stack we use at the beginning */
 #define TMP_STACK_SIZE			PAGE_SIZE

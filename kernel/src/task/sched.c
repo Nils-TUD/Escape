@@ -179,6 +179,7 @@ void sched_setBlocked(sThread *t) {
 	sched_qAppend(&blockedQueue,t);
 }
 
+#if 0
 void sched_unblockAll(void *obj,u32 event) {
 	sThread *t,*tmp;
 	void *tobj;
@@ -203,6 +204,7 @@ void sched_unblockAll(void *obj,u32 event) {
 		t = t->next;
 	}
 }
+#endif
 
 void sched_setSuspended(sThread *t,bool blocked) {
 	assert(t != NULL);

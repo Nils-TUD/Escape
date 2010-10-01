@@ -27,7 +27,7 @@
 #include <sys/vfs/rw.h>
 #include <sys/vfs/listeners.h>
 #include <sys/task/proc.h>
-#include <sys/task/sched.h>
+#include <sys/task/event.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/dynarray.h>
@@ -837,8 +837,8 @@ s32 vfs_setDataReadable(tPid pid,tInodeNo nodeNo,bool readable) {
 
 	n->data.driver.isEmpty = !readable;
 	if(readable) {
-		vfs_wakeupClients(n,EV_RECEIVED_MSG);
-		thread_wakeupAll(n,EV_DATA_READABLE);
+		vfs_wakeupClients(n,EVI_RECEIVED_MSG);
+		ev_wakeup(EVI_DATA_READABLE,n);
 	}
 	return 0;
 }
@@ -889,7 +889,7 @@ void vfs_wakeupClients(sVFSNode *node,u32 events) {
 	assert(IS_DRIVER(node->mode));
 	node = vfsn_getFirstChild(node);
 	while(node != NULL) {
-		thread_wakeupAll(node,events);
+		ev_wakeup(events,node);
 		node = node->next;
 	}
 }
@@ -1002,8 +1002,9 @@ s32 vfs_removeDriver(tPid pid,tInodeNo nodeNo) {
 	/* wakeup all threads that may be waiting for this node so they can check
 	 * whether they are affected by the remove of this driver and perform the corresponding
 	 * action */
-	vfs_wakeupClients(n,EV_RECEIVED_MSG | EV_REQ_REPLY);
-	thread_wakeupAll(n,EV_DATA_READABLE);
+	vfs_wakeupClients(n,EVI_RECEIVED_MSG);
+	vfs_wakeupClients(n,EVI_REQ_REPLY);
+	ev_wakeup(EVI_DATA_READABLE,n);
 
 	/* remove driver-node including all driver-usages */
 	vfsn_removeNode(n);

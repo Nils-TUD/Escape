@@ -22,6 +22,7 @@
 #include <sys/task/thread.h>
 #include <sys/task/sched.h>
 #include <sys/task/signals.h>
+#include <sys/task/event.h>
 #include <sys/mem/kheap.h>
 #include <sys/mem/paging.h>
 #include <sys/mem/vmm.h>
@@ -167,7 +168,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	while(*volInfo != NULL) {
 		/* TODO we have a problem if the process that currently uses vm86 gets killed... */
 		/* because we'll never get notified that we can use vm86 */
-		thread_wait(t->tid,NULL,EV_VM86_READY);
+		ev_wait(t->tid,EVI_VM86_READY,NULL);
 		thread_switchNoSigs();
 	}
 
@@ -195,7 +196,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	vm86_destroyInfo(info);
 	info = NULL;
 	caller = INVALID_TID;
-	thread_wakeupAll(NULL,EV_VM86_READY);
+	ev_wakeup(EVI_VM86_READY,NULL);
 	return vm86Res;
 }
 

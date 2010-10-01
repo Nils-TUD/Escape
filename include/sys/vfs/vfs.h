@@ -78,7 +78,6 @@ typedef s32 (*fRead)(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,
 typedef s32 (*fWrite)(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
 #if 0
 typedef s32 (*fSeek)(tPid pid,tFileNo file,sVFSNode *node,s32 offset,u32 whence);
-typedef s32 (*fEof)(tPid pid,tFileNo file,sVFSNode *node);
 typedef s32 (*fStat)(tPid pid,tFileNo file,sVFSNode *node,sFileInfo *info);
 typedef s32 (*fSendMsg)(tPid pid,tFileNo file,tMsgId id,const u8 *data,u32 size);
 typedef s32 (*fReceiveMsg)(tPid pid,tFileNo file,tMsgId *id,u8 *data,u32 size);
@@ -102,7 +101,6 @@ struct sVFSNode {
 	fRead read;
 	fWrite write;
 	fSeek seek;
-	fEof eof;
 	fStat stat;
 	fSendMsg sendMsg;
 	fReceiveMsg recvMsg;

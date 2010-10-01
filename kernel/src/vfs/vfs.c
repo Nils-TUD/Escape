@@ -356,43 +356,6 @@ u32 vfs_tell(tPid pid,tFileNo file) {
 	return e->position;
 }
 
-bool vfs_eof(tPid pid,tFileNo file) {
-	sGFTEntry *e = globalFileTable + file;
-	bool eof = true;
-	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
-
-	if(e->devNo == VFS_DEV_NO) {
-		sVFSNode *n = vfsn_getNode(e->nodeNo);
-		/* node not present anymore */
-		if(n->name == NULL)
-			return ERR_INVALID_FILE;
-
-		if(IS_DRVUSE(n->mode))
-			eof = n->parent->data.driver.isEmpty;
-		/* we've read all from a pipe if there is one zero-length-entry left */
-		else if(IS_PIPE(n->mode))
-			eof = sll_length(n->data.pipe.list) == 1 && n->data.pipe.total == 0;
-		else {
-			/* -1 means the content is generated */
-			if((s32)n->data.def.pos == -1) {
-				/* TODO this is not a really good way since it means that we may have to generate
-				 * the whole content on every eof()-call */
-				u8 tmp[1];
-				eof = n->readHandler(pid,file,n,tmp,e->position,1) < 1;
-			}
-			else
-				eof = e->position >= n->data.def.pos;
-		}
-	}
-	else {
-		sFileInfo info;
-		vfsr_istat(pid,e->nodeNo,e->devNo,&info);
-		eof = (s32)e->position >= info.size;
-	}
-
-	return eof;
-}
-
 s32 vfs_stat(tPid pid,const char *path,sFileInfo *info) {
 	tInodeNo nodeNo;
 	s32 res = vfsn_resolvePath(path,&nodeNo,NULL,VFS_READ);
@@ -412,20 +375,6 @@ s32 vfs_fstat(tPid pid,tFileNo file,sFileInfo *info) {
 	else
 		res = vfsr_istat(pid,e->nodeNo,e->devNo,info);
 	return res;
-}
-
-s32 vfs_hasMsg(tPid pid,tFileNo file) {
-	sGFTEntry *e = globalFileTable + file;
-	sVFSNode *n = vfsn_getNode(e->nodeNo);
-	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
-	if(e->devNo != VFS_DEV_NO || !IS_DRVUSE(n->mode))
-		return ERR_INVALID_FILE;
-	/* node not present anymore */
-	if(n->name == NULL)
-		return ERR_INVALID_FILE;
-	if(n->parent->owner == pid)
-		return sll_length(n->data.drvuse.sendList) > 0;
-	return sll_length(n->data.drvuse.recvList) > 0;
 }
 
 bool vfs_isterm(tPid pid,tFileNo file) {

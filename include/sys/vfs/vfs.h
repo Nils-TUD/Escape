@@ -255,15 +255,6 @@ tFileNo vfs_openFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo);
 u32 vfs_tell(tPid pid,tFileNo file);
 
 /**
- * Checks whether we are at EOF in the given file
- *
- * @param pid the process-id
- * @param file the file
- * @return true if at EOF
- */
-bool vfs_eof(tPid pid,tFileNo file);
-
-/**
  * Retrieves information about the given path
  *
  * @param pid the process-id
@@ -282,15 +273,6 @@ s32 vfs_stat(tPid pid,const char *path,sFileInfo *info);
  * @return 0 on success
  */
 s32 vfs_fstat(tPid pid,tFileNo file,sFileInfo *info);
-
-/**
- * Checks whether a message is available
- *
- * @param pid the process-id
- * @param file the file
- * @return 1 if so, 0 if not, < 0 if an error occurred
- */
-s32 vfs_hasMsg(tPid pid,tFileNo file);
 
 /**
  * Checks whether the given file links to a terminal. That means it has to be a virtual file

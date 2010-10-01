@@ -108,14 +108,6 @@ s32 fstat(tFD fd,sFileInfo *info) A_CHECKRET;
 s32 tell(tFD fd,s32 *pos) A_CHECKRET;
 
 /**
- * Checks whether a message is available (for drivers)
- *
- * @param fd the file-descriptor
- * @return 1 if so, 0 if not, < 0 if an error occurred
- */
-s32 hasMsg(tFD fd);
-
-/**
  * Manipulates the given file-descriptor, depending on the command
  *
  * @param fd the file-descriptor

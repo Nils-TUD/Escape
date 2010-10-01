@@ -256,24 +256,6 @@ void sysc_write(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,writtenBytes);
 }
 
-void sysc_hasMsg(sIntrptStackFrame *stack) {
-	tFD fd = (tFD)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
-	tFileNo file;
-	s32 res;
-
-	/* get file */
-	file = proc_fdToFile(fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
-
-	/* perform io-control */
-	res = vfs_hasMsg(p->pid,file);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
-}
-
 void sysc_isterm(sIntrptStackFrame *stack) {
 	tFD fd = (tFD)SYSC_ARG1(stack);
 	sProc *p = proc_getRunning();

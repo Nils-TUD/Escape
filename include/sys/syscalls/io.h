@@ -144,14 +144,6 @@ void sysc_send(sIntrptStackFrame *stack);
 void sysc_receive(sIntrptStackFrame *stack);
 
 /**
- * Checks whether a message is available
- *
- * @param tFD the file-descriptor
- * @return s32 true if so, 0 otherwise or a negative error-code
- */
-void sysc_hasMsg(sIntrptStackFrame *stack);
-
-/**
  * Checks whether the given file links to a terminal. That means it has to be a virtual file
  * that acts as a driver-client for a terminal-driver.
  *

@@ -35,6 +35,8 @@ ShellApplication::ShellApplication(tDrvId sid,ShellControl *sh)
 		: Application(), _sid(sid), _sh(sh), _cfg(sVTermCfg()),
 		  rbuffer(new char[READ_BUF_SIZE]), rbufPos(0) {
 	_inst = this;
+	/* no blocking here since we want to check multiple things */
+	fcntl(_winFd,F_SETFL,IO_NOBLOCK);
 }
 
 ShellApplication::~ShellApplication() {
@@ -43,11 +45,10 @@ ShellApplication::~ShellApplication() {
 
 void ShellApplication::doEvents() {
 	tMsgId mid;
-	s32 res;
-	if((res = hasMsg(_winFd)) == 1) {
-		if(RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg))) < 0)
-			error("Read from window-manager failed");
-
+	s32 res = RETRY(receive(_winFd,&mid,&_msg,sizeof(_msg)));
+	if(res < 0 && res != ERR_WOULD_BLOCK)
+		error("Read from window-manager failed");
+	if(res > 0) {
 		switch(mid) {
 			case MSG_WIN_KEYBOARD:
 				handleKbMsg();
@@ -58,8 +59,6 @@ void ShellApplication::doEvents() {
 				break;
 		}
 	}
-	else if(res < 0)
-		error("Unable to ask window-manager for a msg");
 	else
 		driverMain();
 }

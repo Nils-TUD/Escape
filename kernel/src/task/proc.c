@@ -152,6 +152,8 @@ sProc *proc_getByPid(tPid pid) {
 }
 
 bool proc_exists(tPid pid) {
+	if(pid >= MAX_PROC_COUNT)
+		return false;
 	return pidToProc[pid] != NULL;
 }
 

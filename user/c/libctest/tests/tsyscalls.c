@@ -162,7 +162,7 @@ static s32 _stat(const char *path,sFileInfo *info) {
 	return test_doSyscall(27,(u32)path,(u32)info,0);
 }
 static s32 _getWork(tDrvId *ids,u32 count,tDrvId *client,tMsgId *mid,sMsg *msg,u32 size,u8 flags) {
-	return test_doSyscall7(56,(u32)ids,count,(u32)client,(u32)mid,(u32)msg,size,flags);
+	return test_doSyscall7(55,(u32)ids,count,(u32)client,(u32)mid,(u32)msg,size,flags);
 }
 
 /* our test-module */
@@ -217,9 +217,6 @@ static void test_open(void) {
 	test_assertInt(_open("abc",0),ERR_INVALID_ARGS);
 	test_assertInt(_open("abc",IO_READ << 4),ERR_INVALID_ARGS);
 	test_assertInt(_open(longName,IO_READ),ERR_INVALID_ARGS);
-	test_assertInt(_open("",IO_READ),ERR_INVALID_PATH);
-	test_assertInt(_open("BLA",IO_READ),ERR_INVALID_PATH);
-	test_assertInt(_open("myfile",IO_READ),ERR_INVALID_PATH);
 	test_assertInt(_open("/system/1234",IO_READ),ERR_PATH_NOT_FOUND);
 	free(longName);
 

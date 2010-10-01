@@ -83,6 +83,8 @@ s32 vfsdrv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 
 	/* wait until data is readable */
 	if(n->parent->data.driver.isEmpty) {
+		if(!vfs_shouldBlock(file))
+			return ERR_WOULD_BLOCK;
 		thread_wait(t->tid,node->parent,EV_DATA_READABLE);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))

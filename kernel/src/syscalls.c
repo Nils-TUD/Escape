@@ -63,7 +63,7 @@ static sSyscall syscalls[] = {
 	/* 20 */	{sysc_ackSignal,			0},
 	/* 21 */	{sysc_sendSignalTo,			2},
 	/* 22 */	{sysc_exec,					2},
-	/* 23 */	{sysc_eof,					1},
+	/* 23 */	{sysc_fcntl,				3},
 	/* 24 */	{sysc_loadMods,				0},
 	/* 25 */	{sysc_sleep,				1},
 	/* 26 */	{sysc_seek,					2},

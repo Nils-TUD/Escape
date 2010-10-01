@@ -29,8 +29,8 @@
 
 void sysc_open(sIntrptStackFrame *stack) {
 	char *path = (char*)SYSC_ARG1(stack);
+	u16 flags = (u16)SYSC_ARG2(stack);
 	s32 pathLen;
-	u16 flags;
 	tFileNo file;
 	tFD fd;
 	s32 err;
@@ -45,7 +45,7 @@ void sysc_open(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* check flags */
-	flags = ((u16)SYSC_ARG2(stack)) & (VFS_WRITE | VFS_READ | VFS_CREATE | VFS_TRUNCATE | VFS_APPEND);
+	flags &= VFS_WRITE | VFS_READ | VFS_CREATE | VFS_TRUNCATE | VFS_APPEND | VFS_NOBLOCK;
 	if((flags & (VFS_READ | VFS_WRITE)) == 0)
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
@@ -66,6 +66,25 @@ void sysc_open(sIntrptStackFrame *stack) {
 	if(err < 0)
 		SYSC_ERROR(stack,err);
 	SYSC_RET1(stack,fd);
+}
+
+void sysc_fcntl(sIntrptStackFrame *stack) {
+	tFD fd = (tFD)SYSC_ARG1(stack);
+	u32 cmd = SYSC_ARG2(stack);
+	s32 arg = (s32)SYSC_ARG3(stack);
+	sProc *p = proc_getRunning();
+	tFileNo file;
+	s32 res;
+
+	/* get file */
+	file = proc_fdToFile(fd);
+	if(file < 0)
+		SYSC_ERROR(stack,file);
+
+	res = vfs_fcntl(p->pid,file,cmd,arg);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,res);
 }
 
 void sysc_pipe(sIntrptStackFrame *stack) {
@@ -159,21 +178,6 @@ void sysc_tell(sIntrptStackFrame *stack) {
 
 	*pos = vfs_tell(p->pid,file);
 	SYSC_RET1(stack,0);
-}
-
-void sysc_eof(sIntrptStackFrame *stack) {
-	tFD fd = (tFD)SYSC_ARG1(stack);
-	sProc *p = proc_getRunning();
-	tFileNo file;
-	bool eof;
-
-	/* get file */
-	file = proc_fdToFile(fd);
-	if(file < 0)
-		SYSC_ERROR(stack,file);
-
-	eof = vfs_eof(p->pid,file);
-	SYSC_RET1(stack,eof);
 }
 
 void sysc_seek(sIntrptStackFrame *stack) {

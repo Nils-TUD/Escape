@@ -66,7 +66,7 @@ int main(void) {
 		error("Unable to create the ring-buffer");
 
 	/* open keyboard */
-	kbFd = open("/dev/keyboard",IO_READ);
+	kbFd = open("/dev/keyboard",IO_READ | IO_NOBLOCK);
 	if(kbFd < 0)
 		error("Unable to open '/dev/keyboard'");
 
@@ -93,29 +93,29 @@ int main(void) {
 		tFD fd = getWork(ids,2,&drv,&mid,&msg,sizeof(msg),GW_NOBLOCK);
 		if(fd < 0) {
 			/* read from keyboard */
+			sKbData *kbd = kbData;
+			s32 count;
+			bool readable = false;
 			/* don't block here since there may be waiting clients.. */
-			while(!eof(kbFd)) {
-				sKbData *kbd = kbData;
-				s32 count = RETRY(read(kbFd,kbData,sizeof(kbData)));
-				if(count >= 0) {
-					count /= sizeof(sKbData);
-					while(count-- > 0) {
-						data.isBreak = kbd->isBreak;
-						data.keycode = kbd->keycode;
-						data.character = km_translateKeycode(
-								map,kbd->isBreak,kbd->keycode,&(data.modifier));
-						/* if nobody has announced a global key-listener for it, add it to our rb */
-						if(!events_send(ids[1],&data))
-							rb_write(rbuf,&data);
-						kbd++;
+			while((count = RETRY(read(kbFd,kbData,sizeof(kbData)))) > 0) {
+				count /= sizeof(sKbData);
+				while(count-- > 0) {
+					data.isBreak = kbd->isBreak;
+					data.keycode = kbd->keycode;
+					data.character = km_translateKeycode(
+							map,kbd->isBreak,kbd->keycode,&(data.modifier));
+					/* if nobody has announced a global key-listener for it, add it to our rb */
+					if(!events_send(ids[1],&data)) {
+						rb_write(rbuf,&data);
+						readable = true;
 					}
+					kbd++;
 				}
-				else {
-					printe("Unable to read");
-					break;
-				}
-				setDataReadable(ids[0],true);
 			}
+			if(count < 0 && count != ERR_WOULD_BLOCK)
+				printe("Unable to read");
+			if(readable)
+				setDataReadable(ids[0],true);
 			wait(EV_CLIENT | EV_DATA_READABLE);
 		}
 		else {

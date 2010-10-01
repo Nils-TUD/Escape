@@ -41,7 +41,7 @@ int main(void) {
 	sendRecvMsgData(STDOUT_FILENO,MSG_VT_BACKUP,NULL,0);
 	sendRecvMsgData(STDOUT_FILENO,MSG_VT_DIS_RDKB,NULL,0);
 
-	keymap = open("/dev/kmmanager",IO_READ | IO_WRITE);
+	keymap = open("/dev/kmmanager",IO_READ | IO_WRITE | IO_NOBLOCK);
 	if(keymap < 0)
 		qerror("Unable to open keymap-driver");
 
@@ -56,11 +56,13 @@ int main(void) {
 	game_tick(time);
 	while(1) {
 		if(wait(EV_DATA_READABLE) != ERR_INTERRUPTED) {
-			while(!eof(keymap)) {
-				if(RETRY(read(keymap,&kmdata,sizeof(kmdata))) < 0)
+			s32 res = RETRY(read(keymap,&kmdata,sizeof(kmdata)));
+			if(res < 0) {
+				if(res != ERR_WOULD_BLOCK)
 					qerror("Unable to read from keymap");
-				game_handleKey(kmdata.keycode,kmdata.modifier,kmdata.isBreak,kmdata.character);
 			}
+			else if(res > 0)
+				game_handleKey(kmdata.keycode,kmdata.modifier,kmdata.isBreak,kmdata.character);
 		}
 
 		if(!game_tick(time))

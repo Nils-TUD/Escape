@@ -78,7 +78,7 @@ int main(void) {
 		error("Unable to init vterms");
 
 	/* open keyboard */
-	kbFd = open("/dev/kmmanager",IO_READ);
+	kbFd = open("/dev/kmmanager",IO_READ | IO_NOBLOCK);
 	if(kbFd < 0)
 		error("Unable to open '/dev/kmmanager'");
 
@@ -94,21 +94,20 @@ int main(void) {
 			reqc = 0;
 			if(cfg.enabled && cfg.readKb) {
 				/* read from keyboard */
-				/* don't block here since there may be waiting clients.. */
-				if(!eof(kbFd)) {
-					sKmData *kmsg = kmData;
-					s32 count = RETRY(read(kbFd,kmData,sizeof(kmData)));
-					if(count < 0)
+				s32 count = RETRY(read(kbFd,kmData,sizeof(kmData)));
+				if(count < 0) {
+					if(count != ERR_WOULD_BLOCK)
 						printe("[VTERM] Unable to read from km-manager");
-					else {
-						count /= sizeof(sKmData);
-						while(count-- > 0) {
-							if(!kmsg->isBreak) {
-								vterm_handleKey(vterm_getActive(),kmsg->keycode,kmsg->modifier,kmsg->character);
-								vterm_update(vterm_getActive());
-							}
-							kmsg++;
+				}
+				else {
+					sKmData *kmsg = kmData;
+					count /= sizeof(sKmData);
+					while(count-- > 0) {
+						if(!kmsg->isBreak) {
+							vterm_handleKey(vterm_getActive(),kmsg->keycode,kmsg->modifier,kmsg->character);
+							vterm_update(vterm_getActive());
 						}
+						kmsg++;
 					}
 				}
 			}

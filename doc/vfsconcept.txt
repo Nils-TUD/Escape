@@ -13,12 +13,12 @@ vfs:
 	
 	universal wait-syscall:
 		#define EV_FILE_CHANGED		1
-		#define EV_CLIENT			2
+		#define EV_CLIENT					2
 		#define EV_RECEIVED_MSG		4
 		#define EV_DATA_READABLE	8
 		
-		#define WAIT_OBJECT			0
-		#define WAIT_FILE			1
+		#define WAIT_OBJECT				0
+		#define WAIT_FILE					1
 		
 		typedef struct {
 			u16 type;

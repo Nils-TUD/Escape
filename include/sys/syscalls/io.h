@@ -33,6 +33,16 @@
 void sysc_open(sIntrptStackFrame *stack);
 
 /**
+ * Manipulates the given file-descriptor, depending on the command
+ *
+ * @param tFD the file-descriptor
+ * @param u32 the command (F_GETFL or F_SETFL)
+ * @param s32 the argument (just used for F_SETFL)
+ * @return s32 >= 0 on success
+ */
+void sysc_fcntl(sIntrptStackFrame *stack);
+
+/**
  * Creates a pipe with 2 separate files for reading and writing.
  *
  * @param tFD* will be set to the fd for reading

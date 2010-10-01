@@ -58,7 +58,7 @@ __i686.get_pc_thunk.bx:
 .set SYSCALL_ACKSIG,				20
 .set SYSCALL_SENDSIG,				21
 .set SYSCALL_EXEC,					22
-.set SYSCALL_EOF,						23
+.set SYSCALL_FCNTL,					23
 .set SYSCALL_LOADMODS,			24
 .set SYSCALL_SLEEP,					25
 .set SYSCALL_SEEK,					26

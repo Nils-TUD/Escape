@@ -190,6 +190,8 @@ s32 vfsrw_readDrvUse(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u3
 		list = &node->data.drvuse.recvList;
 	}
 	while(sll_length(*list) == 0) {
+		if(!vfs_shouldBlock(file))
+			return ERR_WOULD_BLOCK;
 		thread_wait(t->tid,node,event);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))

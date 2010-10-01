@@ -56,10 +56,15 @@ enum {
 	VFS_CREATE = 4,
 	VFS_TRUNCATE = 8,
 	VFS_APPEND = 16,
-	VFS_NOLINKRES = 32,		/* kernel-intern: don't resolve last link in path */
-	VFS_CREATED = 64,		/* kernel-intern: whether a new node has been created */
-	VFS_MODIFIED = 128		/* kernel-intern: whether it has been written to the file */
+	VFS_NOBLOCK = 32,
+	VFS_NOLINKRES = 64,		/* kernel-intern: don't resolve last link in path */
+	VFS_CREATED = 128,		/* kernel-intern: whether a new node has been created */
+	VFS_MODIFIED = 256,		/* kernel-intern: whether it has been written to the file */
 };
+
+/* fcntl-commands */
+#define F_GETFL						0
+#define F_SETFL						1
 
 /* seek-types */
 #define SEEK_SET					0
@@ -71,6 +76,41 @@ typedef struct sVFSNode sVFSNode;
 /* the function for read-requests on info-nodes */
 typedef s32 (*fRead)(tPid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32 count);
 typedef s32 (*fWrite)(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 offset,u32 count);
+#if 0
+typedef s32 (*fSeek)(tPid pid,tFileNo file,sVFSNode *node,s32 offset,u32 whence);
+typedef s32 (*fEof)(tPid pid,tFileNo file,sVFSNode *node);
+typedef s32 (*fStat)(tPid pid,tFileNo file,sVFSNode *node,sFileInfo *info);
+typedef s32 (*fSendMsg)(tPid pid,tFileNo file,tMsgId id,const u8 *data,u32 size);
+typedef s32 (*fReceiveMsg)(tPid pid,tFileNo file,tMsgId *id,u8 *data,u32 size);
+typedef void (*fClose)(tPid pid,tFileNo file);
+
+struct sVFSNode {
+	char *name;
+	/* number of open files for this node */
+	u16 refCount;
+	/* the owner of this node: used for driver-usages */
+	tPid owner;
+	/* 0 means unused; stores permissions and the type of node */
+	u32 mode;
+	/* for the vfs-structure */
+	sVFSNode *parent;
+	sVFSNode *prev;
+	sVFSNode *next;
+	sVFSNode *firstChild;
+	sVFSNode *lastChild;
+	/* handler for various operations; NULL = not supported */
+	fRead read;
+	fWrite write;
+	fSeek seek;
+	fEof eof;
+	fStat stat;
+	fSendMsg sendMsg;
+	fReceiveMsg recvMsg;
+	fClose close;
+	/* data in various forms, depending on the type */
+	void *data;
+};
+#endif
 
 struct sVFSNode {
 	char *name;
@@ -162,6 +202,23 @@ s32 vfs_getOwner(tFileNo file);
  * @return 0 on success
  */
 s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev);
+
+/**
+ * Manipulates the given file, depending on the command
+ *
+ * @param pid the process-id
+ * @param file the file
+ * @param cmd the command (F_GETFL or F_SETFL)
+ * @param arg the argument (just used for F_SETFL)
+ * @return >= 0 on success
+ */
+s32 vfs_fcntl(tPid pid,tFileNo file,u32 cmd,s32 arg);
+
+/**
+ * @param file the file
+ * @return wether the file should be used in blocking-mode
+ */
+bool vfs_shouldBlock(tFileNo file);
 
 /**
  * Opens the given path with given flags. That means it walks through the global

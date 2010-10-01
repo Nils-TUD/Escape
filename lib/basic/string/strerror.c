@@ -95,6 +95,7 @@ static const char *msgs[] = {
 	/* -70 (ERR_SETPROT_IMPOSSIBLE) */		"Setting the region-protection is not possible for the chosen region",
 	/* -71 (ERR_ENVVAR_NOT_FOUND) */		"Environment-variable not found",
 	/* -72 (ERR_NO_FREE_THREADS) */			"No free thread-slots",
+	/* -73 (ERR_WOULD_BLOCK) */				"Thread would block",
 };
 
 char *strerror(s32 errnum) {

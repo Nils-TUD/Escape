@@ -165,6 +165,26 @@ s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev) {
 	return 0;
 }
 
+s32 vfs_fcntl(tPid pid,tFileNo file,u32 cmd,s32 arg) {
+	sGFTEntry *e = globalFileTable + file;
+	assert(file >= 0 && file < FILE_COUNT);
+	switch(cmd) {
+		case F_GETFL:
+			return e->flags;
+		case F_SETFL:
+			e->flags &= VFS_READ | VFS_WRITE | VFS_CREATE;
+			e->flags |= arg & VFS_NOBLOCK;
+			return 0;
+	}
+	return ERR_INVALID_ARGS;
+}
+
+bool vfs_shouldBlock(tFileNo file) {
+	sGFTEntry *e = globalFileTable + file;
+	assert(file >= 0 && file < FILE_COUNT);
+	return !(e->flags & VFS_NOBLOCK);
+}
+
 tFileNo vfs_openPath(tPid pid,u16 flags,const char *path) {
 	tInodeNo nodeNo;
 	tFileNo file;
@@ -238,7 +258,7 @@ tFileNo vfs_openFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) {
 	tFileNo f;
 
 	/* cleanup flags */
-	flags &= VFS_READ | VFS_WRITE | VFS_CREATED;
+	flags &= VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_CREATED;
 
 	/* determine free file */
 	f = vfs_getFreeFile(pid,flags,nodeNo,devNo);
@@ -274,13 +294,13 @@ tFileNo vfs_openFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) {
 static tFileNo vfs_getFreeFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) {
 	tFileNo i;
 	tFileNo freeSlot = ERR_NO_FREE_FILE;
-	u16 rwFlags = flags & (VFS_READ | VFS_WRITE);
+	u16 rwFlags = flags & (VFS_READ | VFS_WRITE | VFS_NOBLOCK);
 	bool isDrvUse = false;
 	sGFTEntry *e = globalFileTable;
 
 	/* ensure that we don't increment usages of an unused slot */
-	vassert(flags & (VFS_READ | VFS_WRITE),"flags empty");
-	vassert(!(flags & ~(VFS_READ | VFS_WRITE | VFS_CREATED)),"flags contains invalid bits");
+	assert(flags & (VFS_READ | VFS_WRITE));
+	assert(!(flags & ~(VFS_READ | VFS_WRITE | VFS_NOBLOCK | VFS_CREATED)));
 
 	if(devNo == VFS_DEV_NO) {
 		sVFSNode *n = vfsn_getNode(nodeNo);
@@ -296,7 +316,7 @@ static tFileNo vfs_getFreeFile(tPid pid,u16 flags,tInodeNo nodeNo,tDevNo devNo) 
 			if(e->devNo == devNo && e->nodeNo == nodeNo) {
 				if(e->owner == pid) {
 					/* if the flags are the same we don't need a new file */
-					if((e->flags & (VFS_READ | VFS_WRITE)) == rwFlags)
+					if((e->flags & (VFS_READ | VFS_WRITE | VFS_NOBLOCK)) == rwFlags)
 						return i;
 				}
 				/* two procs that want to write at the same time? no! */
@@ -1222,8 +1242,14 @@ void vfs_dbg_printGFT(void) {
 	for(i = 0; i < FILE_COUNT; i++) {
 		if(e->flags != 0) {
 			vid_printf("\tfile @ index %d\n",i);
-			vid_printf("\t\tread: %d\n",(e->flags & VFS_READ) ? true : false);
-			vid_printf("\t\twrite: %d\n",(e->flags & VFS_WRITE) ? true : false);
+			vid_printf("\t\tflags: ");
+			if(e->flags & VFS_READ)
+				vid_printf("READ ");
+			if(e->flags & VFS_WRITE)
+				vid_printf("WRITE ");
+			if(e->flags & VFS_NOBLOCK)
+				vid_printf("NOBLOCK ");
+			vid_printf("\n");
 			vid_printf("\t\tnodeNo: %d\n",e->nodeNo);
 			vid_printf("\t\tdevNo: %d\n",e->devNo);
 			vid_printf("\t\tpos: %d\n",e->position);

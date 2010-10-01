@@ -89,6 +89,7 @@ retry:
 	}
 	/* if there is no free slot or another one is using that node, wait */
 	if(!req) {
+		/* TODO don't block here when VFS_NOBLOCK is set? */
 		thread_wait(t->tid,NULL,EV_REQ_FREE);
 		thread_switch();
 		goto retry;

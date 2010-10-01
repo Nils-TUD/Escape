@@ -33,6 +33,14 @@
 #define KB_DATA_BUF_SIZE	128
 
 /**
+ * Reads from the mouse-driver
+ */
+static bool readMouse(tFD drvId,tFD mouse);
+/**
+ * Reads from the km-manager
+ */
+static bool readKeyboard(tFD drvId,tFD kmmng);
+/**
  * Destroys the windows of a died thread
  */
 static void deadThreadHandler(s32 sig);
@@ -64,11 +72,11 @@ int main(void) {
 	tDrvId drvId;
 	tMsgId mid;
 
-	mouse = open("/dev/mouse",IO_READ);
+	mouse = open("/dev/mouse",IO_READ | IO_NOBLOCK);
 	if(mouse < 0)
 		error("Unable to open /dev/mouse");
 
-	kmmng = open("/dev/kmmanager",IO_READ);
+	kmmng = open("/dev/kmmanager",IO_READ | IO_NOBLOCK);
 	if(kmmng < 0)
 		error("Unable to open /dev/kmmanager");
 
@@ -158,33 +166,14 @@ int main(void) {
 			}
 			close(fd);
 		}
-		/* don't use the blocking read() here */
-		else if(enabled && !eof(mouse)) {
-			sMouseData *msd = mouseData;
-			u32 count = RETRY(read(mouse,mouseData,sizeof(mouseData)));
-			count /= sizeof(sMouseData);
-			while(count-- > 0) {
-				handleMouseMessage(drvId,msd);
-				msd++;
-			}
-		}
-		/* don't use the blocking read() here */
-		else if(enabled && !eof(kmmng)) {
-			sKmData *kbd = kbData;
-			sWindow *active = win_getActive();
-			u32 count = RETRY(read(kmmng,kbData,sizeof(kbData)));
-			if(active) {
-				count /= sizeof(sKmData);
-				while(count-- > 0) {
-					/*printf("kc=%d, brk=%d\n",kbd->keycode,kbd->isBreak);*/
-					handleKbMessage(drvId,active,kbd->keycode,kbd->isBreak,kbd->modifier,
-							kbd->character);
-					kbd++;
-				}
-			}
-		}
 		else {
-			wait(EV_DATA_READABLE | EV_CLIENT);
+			bool hasRead = false;
+			if(enabled) {
+				hasRead |= readMouse(drvId,mouse);
+				hasRead |= readKeyboard(drvId,kmmng);
+			}
+			if(!hasRead)
+				wait(EV_DATA_READABLE | EV_CLIENT);
 		}
 	}
 
@@ -192,6 +181,47 @@ int main(void) {
 	close(kmmng);
 	close(mouse);
 	return EXIT_SUCCESS;
+}
+
+static bool readMouse(tFD drvId,tFD mouse) {
+	s32 count = RETRY(read(mouse,mouseData,sizeof(mouseData)));
+	if(count < 0) {
+		if(count != ERR_WOULD_BLOCK)
+			printe("[WINM] Unable to read from mouse");
+	}
+	else {
+		sMouseData *msd = mouseData;
+		count /= sizeof(sMouseData);
+		while(count-- > 0) {
+			handleMouseMessage(drvId,msd);
+			msd++;
+		}
+		return true;
+	}
+	return false;
+}
+
+static bool readKeyboard(tFD drvId,tFD kmmng) {
+	sWindow *active = win_getActive();
+	if(active) {
+		s32 count = RETRY(read(kmmng,kbData,sizeof(kbData)));
+		if(count < 0) {
+			if(count != ERR_WOULD_BLOCK)
+				printe("[WINM] Unable to read from kmmanager");
+		}
+		else {
+			sKmData *kbd = kbData;
+			count /= sizeof(sKmData);
+			while(count-- > 0) {
+				/*printf("kc=%d, brk=%d\n",kbd->keycode,kbd->isBreak);*/
+				handleKbMessage(drvId,active,kbd->keycode,kbd->isBreak,kbd->modifier,
+						kbd->character);
+				kbd++;
+			}
+			return true;
+		}
+	}
+	return false;
 }
 
 static void handleKbMessage(tDrvId drvId,sWindow *active,u8 keycode,bool isBreak,u8 modifier,char c) {

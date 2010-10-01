@@ -81,6 +81,7 @@ namespace std {
 	const ios_base::openmode ios_base::in			= 1 << 3;
 	const ios_base::openmode ios_base::out			= 1 << 4;
 	const ios_base::openmode ios_base::trunc		= 1 << 5;
+	const ios_base::openmode ios_base::noblock		= 1 << 6;
 
 	const ios_base::seekdir ios_base::beg			= SEEK_SET;
 	const ios_base::seekdir ios_base::cur			= SEEK_CUR;

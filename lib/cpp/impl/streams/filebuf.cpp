@@ -55,6 +55,8 @@ namespace std {
 			omode |= IO_WRITE | IO_CREATE;
 		if(mode & ios_base::trunc)
 			omode |= IO_TRUNCATE;
+		if(mode & ios_base::noblock)
+			omode |= IO_NOBLOCK;
 		// TODO ?
 		if(mode & (ios_base::app | ios_base::ate))
 			omode |= IO_APPEND;
@@ -132,8 +134,10 @@ namespace std {
 			if(!_inBuf)
 				_inBuf = new char[IN_BUF_SIZE];
 			_inMax = RETRY(::read(_fd,_inBuf,IN_BUF_SIZE));
-			if(_inMax <= 0)
+			if((signed)_inMax <= 0) {
+				_inMax = 0;
 				return false;
+			}
 			_inPos = 0;
 		}
 		return true;

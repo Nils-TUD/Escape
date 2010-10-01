@@ -54,7 +54,6 @@ static void test_wait(void);
 static void test_setSigHandler(void);
 static void test_sendSignalTo(void);
 static void test_exec(void);
-static void test_eof(void);
 static void test_seek(void);
 static void test_stat(void);
 
@@ -156,9 +155,6 @@ static s32 _sendSignalTo(u32 pid,u32 sig) {
 static s32 _exec(const char *path,const char **args) {
 	return test_doSyscall(22,(u32)path,(u32)args,0);
 }
-static s32 _eof(u32 fd) {
-	return test_doSyscall(23,fd,0,0);
-}
 static s32 _seek(u32 fd,s32 pos,u32 whence) {
 	return test_doSyscall(26,fd,pos,whence);
 }
@@ -194,7 +190,6 @@ static void test_syscalls(void) {
 	test_setSigHandler();
 	test_sendSignalTo();
 	test_exec();
-	test_eof();
 	test_seek();
 	test_stat();
 }
@@ -486,16 +481,6 @@ static void test_exec(void) {
 	test_assertInt(_exec("p",a5),ERR_INVALID_ARGS);
 	test_caseSucceded();
 	free(longPath);
-}
-
-static void test_eof(void) {
-	test_caseStart("Testing eof()");
-	test_assertInt(_eof(-1),ERR_INVALID_FD);
-	test_assertInt(_eof(-2),ERR_INVALID_FD);
-	test_assertInt(_eof(0x7FFF),ERR_INVALID_FD);
-	test_assertInt(_eof(32),ERR_INVALID_FD);
-	test_assertInt(_eof(33),ERR_INVALID_FD);
-	test_caseSucceded();
 }
 
 static void test_seek(void) {

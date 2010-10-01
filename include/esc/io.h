@@ -32,11 +32,16 @@
 #define IO_CREATE				4
 #define IO_TRUNCATE				8
 #define IO_APPEND				16
+#define IO_NOBLOCK				32	/* don't block when reading or receiving a msg from drivers */
 
 /* file descriptors for stdin, stdout and stderr */
 #define STDIN_FILENO			0
 #define STDOUT_FILENO			1
 #define STDERR_FILENO			2
+
+/* fcntl-commands */
+#define F_GETFL					0
+#define F_SETFL					1
 
 /* seek-types */
 #define SEEK_SET				0
@@ -103,20 +108,22 @@ s32 fstat(tFD fd,sFileInfo *info) A_CHECKRET;
 s32 tell(tFD fd,s32 *pos) A_CHECKRET;
 
 /**
- * Checks whether we are at EOF
- *
- * @param fd the file-descriptor
- * @return 1 if at EOF
- */
-s32 eof(tFD fd);
-
-/**
  * Checks whether a message is available (for drivers)
  *
  * @param fd the file-descriptor
  * @return 1 if so, 0 if not, < 0 if an error occurred
  */
 s32 hasMsg(tFD fd);
+
+/**
+ * Manipulates the given file-descriptor, depending on the command
+ *
+ * @param fd the file-descriptor
+ * @param cmd the command (F_GETFL or F_SETFL)
+ * @param arg the argument (just used for F_SETFL)
+ * @return >= 0 on success
+ */
+s32 fcntl(tFD fd,u32 cmd,s32 arg);
 
 /**
  * The  isterm()  function  tests  whether  fd  is an open file descriptor

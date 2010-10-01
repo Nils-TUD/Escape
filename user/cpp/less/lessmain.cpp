@@ -246,16 +246,22 @@ static void readLines(size_t end) {
 		// check whether the user has pressed a key
 		if(lineCount++ % 100 == 0) {
 			char vtc;
-			while(!eof(vt.filedesc()) && (vtc = vt.get()) != EOF) {
+			fcntl(vt.filedesc(),F_SETFL,IO_NOBLOCK);
+			while((vtc = vt.get()) != EOF) {
 				if(vtc == '\033') {
 					istream::esc_type n1,n2,n3;
 					istream::esc_type cmd = vt.getesc(n1,n2,n3);
 					if(cmd != ESCC_KEYCODE)
 						continue;
-					if(n2 == VK_S)
+					if(n2 == VK_S) {
+						vt.clear();
+						fcntl(vt.filedesc(),F_SETFL,0);
 						return;
+					}
 				}
 			}
+			vt.clear();
+			fcntl(vt.filedesc(),F_SETFL,0);
 
 			cout << '\r';
 			printStatus(states[state]);

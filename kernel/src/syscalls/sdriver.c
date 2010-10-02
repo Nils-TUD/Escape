@@ -123,7 +123,8 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 	tFileNo file;
 	tInodeNo clientNo;
 	tFD fd;
-	s32 i,res,index;
+	u32 i;
+	s32 res,index;
 
 	/* validate driver-ids */
 	if(fdCount <= 0 || fdCount > MAX_GETWORK_DRIVERS || fds == NULL ||

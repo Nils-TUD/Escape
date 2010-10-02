@@ -68,8 +68,9 @@ static void vm86_pushl(sIntrptStackFrame *stack,u32 l);
 static void vm86_start(void);
 static void vm86_stop(sIntrptStackFrame *stack);
 static void vm86_copyRegResult(sIntrptStackFrame* stack);
-static void vm86_copyPtrResult(sVM86Memarea *areas,u16 areaCount);
-static sVM86Info *vm86_createInfo(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount);
+static void vm86_copyPtrResult(const sVM86Memarea *areas,u16 areaCount);
+static sVM86Info *vm86_createInfo(u16 interrupt,const sVM86Regs *regs,
+		const sVM86Memarea *areas,u16 areaCount);
 static void vm86_destroyInfo(sVM86Info *i);
 
 static u32 frameNos[(1024 * K) / PAGE_SIZE];
@@ -141,7 +142,7 @@ s32 vm86_create(void) {
 	return 0;
 }
 
-s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
+s32 vm86_int(u16 interrupt,sVM86Regs *regs,const sVM86Memarea *areas,u16 areaCount) {
 	u32 i;
 	sThread *t;
 	sThread *vm86t;
@@ -452,7 +453,7 @@ static void vm86_copyRegResult(sIntrptStackFrame *stack) {
 	info->regs.es = stack->vm86es;
 }
 
-static void vm86_copyPtrResult(sVM86Memarea *areas,u16 areaCount) {
+static void vm86_copyPtrResult(const sVM86Memarea *areas,u16 areaCount) {
 	u32 i;
 	for(i = 0; i < areaCount; i++) {
 		if(areas[i].type == VM86_MEM_PTR) {
@@ -486,7 +487,8 @@ static void vm86_copyPtrResult(sVM86Memarea *areas,u16 areaCount) {
 	}
 }
 
-static sVM86Info *vm86_createInfo(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
+static sVM86Info *vm86_createInfo(u16 interrupt,const sVM86Regs *regs,
+		const sVM86Memarea *areas,u16 areaCount) {
 	sVM86Info *i = (sVM86Info*)kheap_alloc(sizeof(sVM86Info));
 	if(i == NULL)
 		return NULL;

@@ -44,7 +44,7 @@ u32 cow_pagefault(u32 address);
  * @param frameNo the frame-number
  * @return true if successfull
  */
-bool cow_add(sProc *p,u32 frameNo);
+bool cow_add(const sProc *p,u32 frameNo);
 
 /**
  * Removes the given process and frame from the cow-list
@@ -54,7 +54,7 @@ bool cow_add(sProc *p,u32 frameNo);
  * @param foundOther will be set to true if another process still uses the frame
  * @return the number of frames to remove from <p>
  */
-u32 cow_remove(sProc *p,u32 frameNo,bool *foundOther);
+u32 cow_remove(const sProc *p,u32 frameNo,bool *foundOther);
 
 /**
  * Note that this is intended for debugging or similar only! (not very efficient)

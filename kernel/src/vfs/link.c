@@ -36,6 +36,6 @@ sVFSNode *vfs_link_create(tPid pid,sVFSNode *parent,char *name,const sVFSNode *t
 	return child;
 }
 
-sVFSNode *vfs_link_resolve(sVFSNode *node) {
+sVFSNode *vfs_link_resolve(const sVFSNode *node) {
 	return (sVFSNode*)node->data;
 }

@@ -48,6 +48,6 @@ void cons_setLogEnabled(bool enabled);
  *
  * @param l the lines
  */
-void cons_viewLines(sLines *l);
+void cons_viewLines(const sLines *l);
 
 #endif /* CONSOLE_H_ */

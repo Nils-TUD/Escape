@@ -360,7 +360,7 @@ bool vfs_hasData(tPid pid,tFileNo file);
  * @param index will be set to the index in <files> from which the client was chosen
  * @return the error-code or the node-number of the client
  */
-s32 vfs_getClient(tPid pid,tFileNo *files,u32 count,s32 *index);
+s32 vfs_getClient(tPid pid,const tFileNo *files,u32 count,s32 *index);
 
 /***
  * Fetches the client-id from the given file
@@ -423,11 +423,6 @@ void vfs_dbg_printGFT(void);
  * Prints all messages of all drivers
  */
 void vfs_dbg_printMsgs(void);
-
-/**
- * Prints all messages for the given driver-node
- */
-void vfs_dbg_printMsgsOf(sVFSNode *n);
 
 /**
  * @return the number of entries in the global file table

@@ -43,7 +43,7 @@ typedef struct {
 
 static void vfs_server_close(tPid pid,tFileNo file,sVFSNode *node);
 static void vfs_server_destroy(sVFSNode *node);
-static void vfs_server_wakeupClients(sVFSNode *node,u32 events);
+static void vfs_server_wakeupClients(const sVFSNode *node,u32 events);
 
 sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,u32 flags) {
 	sServer *srv;
@@ -88,30 +88,30 @@ static void vfs_server_destroy(sVFSNode *node) {
 	}
 }
 
-void vfs_server_clientRemoved(sVFSNode *node,sVFSNode *client) {
+void vfs_server_clientRemoved(sVFSNode *node,const sVFSNode *client) {
 	sServer *srv = (sServer*)node->data;
 	if(srv->lastClient == client)
 		srv->lastClient = NULL;
 }
 
-bool vfs_server_isterm(sVFSNode *node) {
+bool vfs_server_isterm(const sVFSNode *node) {
 	sServer *srv = (sServer*)node->data;
 	return srv->funcs & DRV_TERM;
 }
 
-bool vfs_server_accepts(sVFSNode *node,u32 id) {
+bool vfs_server_accepts(const sVFSNode *node,u32 id) {
 	sServer *srv = (sServer*)node->data;
 	if(DRV_IS_FS(srv->funcs))
 		return true;
 	return id == MSG_DRV_OPEN_RESP || id == MSG_DRV_READ_RESP || id == MSG_DRV_WRITE_RESP;
 }
 
-bool vfs_server_supports(sVFSNode *node,u32 funcs) {
+bool vfs_server_supports(const sVFSNode *node,u32 funcs) {
 	sServer *srv = (sServer*)node->data;
 	return DRV_IMPL(srv->funcs,funcs);
 }
 
-bool vfs_server_isReadable(sVFSNode *node) {
+bool vfs_server_isReadable(const sVFSNode *node) {
 	sServer *srv = (sServer*)node->data;
 	return !srv->isEmpty;
 }
@@ -170,7 +170,7 @@ searchBegin:
 	return NULL;
 }
 
-static void vfs_server_wakeupClients(sVFSNode *node,u32 events) {
+static void vfs_server_wakeupClients(const sVFSNode *node,u32 events) {
 	node = vfs_node_getFirstChild(node);
 	while(node != NULL) {
 		ev_wakeupm(events,(tEvObj)node);
@@ -180,7 +180,7 @@ static void vfs_server_wakeupClients(sVFSNode *node,u32 events) {
 
 #if DEBUGGING
 
-void vfs_server_dbg_print(sVFSNode *n) {
+void vfs_server_dbg_print(const sVFSNode *n) {
 	sVFSNode *chan = vfs_node_getFirstChild(n);
 	vid_printf("\t%s:\n",n->name);
 	while(chan != NULL) {

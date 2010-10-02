@@ -225,7 +225,7 @@ s32 thread_extendStack(u32 address) {
 	return vmm_growStackTo(cur,address);
 }
 
-s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc) {
+s32 thread_clone(const sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc) {
 	s32 err = ERR_NOT_ENOUGH_MEM;
 	sThread *t = (sThread*)kheap_alloc(sizeof(sThread));
 	if(t == NULL)
@@ -408,7 +408,7 @@ void thread_dbg_printAll(void) {
 	}
 }
 
-void thread_dbg_print(sThread *t) {
+void thread_dbg_print(const sThread *t) {
 	sFuncCall *calls;
 	static const char *states[] = {
 		"UNUSED","RUNNING","READY","BLOCKED","ZOMBIE","BLOCKEDSWAP","READYSWAP"
@@ -437,7 +437,7 @@ void thread_dbg_print(sThread *t) {
 	}
 }
 
-void thread_dbg_printState(sThreadRegs *state) {
+void thread_dbg_printState(const sThreadRegs *state) {
 	vid_printf("\tState:\n",state);
 	vid_printf("\t\tesp = %#08x\n",state->esp);
 	vid_printf("\t\tedi = %#08x\n",state->edi);

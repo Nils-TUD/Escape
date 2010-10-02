@@ -68,7 +68,7 @@ typedef struct {
  * @param index the index
  * @return the node
  */
-static sNode *sll_getNode(sSLList *list,u32 index);
+static sNode *sll_getNode(const sSLList *list,u32 index);
 
 sSLList *sll_create(void) {
 	sList *l = (sList*)heapalloc(sizeof(sList));
@@ -95,7 +95,7 @@ void sll_init(sSLList *list,fNodeAlloc falloc,fNodeFree ffree) {
 	l->ffree = ffree;
 }
 
-sSLList *sll_clone(sSLList *list) {
+sSLList *sll_clone(const sSLList *list) {
 	sSLNode *n;
 	sSLList *l = sll_create();
 	if(!l)
@@ -128,22 +128,22 @@ void sll_destroy(sSLList *list,bool freeData) {
 	heapfree(list);
 }
 
-sSLNode *sll_begin(sSLList *list) {
+sSLNode *sll_begin(const sSLList *list) {
 	return (sSLNode*)((sList*)list)->first;
 }
 
-sSLNode *sll_nodeAt(sSLList *list,u32 index) {
+sSLNode *sll_nodeAt(const sSLList *list,u32 index) {
 	return (sSLNode*)sll_getNode(list,index);
 }
 
-u32 sll_length(sSLList *list) {
+u32 sll_length(const sSLList *list) {
 	sList *l = (sList*)list;
 	if(l == NULL)
 		return 0;
 	return l->length;
 }
 
-s32 sll_indexOf(sSLList *list,const void *data) {
+s32 sll_indexOf(const sSLList *list,const void *data) {
 	sList *l = (sList*)list;
 	sNode *n = l->first;
 	s32 i;
@@ -155,7 +155,7 @@ s32 sll_indexOf(sSLList *list,const void *data) {
 	return -1;
 }
 
-sSLNode *sll_nodeWith(sSLList *list,const void *data) {
+sSLNode *sll_nodeWith(const sSLList *list,const void *data) {
 	sList *l = (sList*)list;
 	sNode *n = l->first;
 	while(n != NULL) {
@@ -166,7 +166,7 @@ sSLNode *sll_nodeWith(sSLList *list,const void *data) {
 	return NULL;
 }
 
-void *sll_get(sSLList *list,u32 index) {
+void *sll_get(const sSLList *list,u32 index) {
 	return (void*)sll_getNode(list,index)->data;
 }
 
@@ -314,7 +314,7 @@ void *sll_removeIndex(sSLList *list,u32 index) {
 	return res;
 }
 
-static sNode *sll_getNode(sSLList *list,u32 index) {
+static sNode *sll_getNode(const sSLList *list,u32 index) {
 	sList *l = (sList*)list;
 	sNode *n;
 
@@ -336,7 +336,7 @@ static sNode *sll_getNode(sSLList *list,u32 index) {
 /* #### TEST/DEBUG FUNCTIONS #### */
 #if DEBUGGING
 
-void sll_dbg_print(sSLList *list) {
+void sll_dbg_print(const sSLList *list) {
 	sList *l = (sList*)list;
 	if(l != NULL) {
 		sNode *n = l->first;

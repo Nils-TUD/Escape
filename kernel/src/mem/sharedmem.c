@@ -43,7 +43,7 @@ typedef struct {
 /**
  * Tests wether its the own (creator) shm
  */
-static bool shm_isOwn(sShMem *mem,sProc *p);
+static bool shm_isOwn(const sShMem *mem,const sProc *p);
 /**
  * Creates and adds a new user
  */
@@ -55,7 +55,7 @@ static sShMem *shm_get(const char *name);
 /**
  * Retrieve the usage of the shared-memory-area of the given process
  */
-static sShMemUser *shm_getUser(sShMem *mem,sProc *p);
+static sShMemUser *shm_getUser(const sShMem *mem,const sProc *p);
 
 /* list with all shared memories */
 static sSLList *shareList = NULL;
@@ -160,7 +160,7 @@ s32 shm_destroy(sProc *p,const char *name) {
 	return 0;
 }
 
-s32 shm_cloneProc(sProc *parent,sProc *child) {
+s32 shm_cloneProc(const sProc *parent,sProc *child) {
 	s32 res;
 	sSLNode *n;
 	for(n = sll_begin(shareList); n != NULL; n = n->next) {
@@ -195,7 +195,7 @@ void shm_remProc(sProc *p) {
 	}
 }
 
-static bool shm_isOwn(sShMem *mem,sProc *p) {
+static bool shm_isOwn(const sShMem *mem,const sProc *p) {
 	return ((sShMemUser*)sll_get(mem->users,0))->proc == p;
 }
 
@@ -224,7 +224,7 @@ static sShMem *shm_get(const char *name) {
 	return NULL;
 }
 
-static sShMemUser *shm_getUser(sShMem *mem,sProc *p) {
+static sShMemUser *shm_getUser(const sShMem *mem,const sProc *p) {
 	sSLNode *n;
 	for(n = sll_begin(mem->users); n != NULL; n = n->next) {
 		sShMemUser *user = (sShMemUser*)n->data;

@@ -70,7 +70,7 @@ bool tss_ioMapPresent(void);
  *
  * @param ioMap the io-map to set
  */
-void tss_setIOMap(u8 *ioMap);
+void tss_setIOMap(const u8 *ioMap);
 
 /**
  * Removes the io-map from the TSS so that an exception will be raised if a user-process

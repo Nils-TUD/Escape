@@ -38,6 +38,6 @@ sVFSNode *vfs_link_create(tPid pid,sVFSNode *parent,char *name,const sVFSNode *t
  * @param node the link-node
  * @return the link-target
  */
-sVFSNode *vfs_link_resolve(sVFSNode *node);
+sVFSNode *vfs_link_resolve(const sVFSNode *node);
 
 #endif /* LINK_H_ */

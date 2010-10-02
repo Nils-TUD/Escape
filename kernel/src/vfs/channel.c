@@ -128,13 +128,13 @@ static void vfs_chan_close(tPid pid,tFileNo file,sVFSNode *node) {
 	}
 }
 
-bool vfs_chan_hasReply(sVFSNode *node) {
+bool vfs_chan_hasReply(const sVFSNode *node) {
 	/* TODO temporary */
 	sChannel *chan = (sChannel*)node->data;
 	return sll_length(chan->recvList) > 0;
 }
 
-bool vfs_chan_hasWork(sVFSNode *node) {
+bool vfs_chan_hasWork(const sVFSNode *node) {
 	sChannel *chan = (sChannel*)node->data;
 	return sll_length(chan->sendList) > 0;
 }
@@ -254,7 +254,7 @@ static void vfs_chan_dbg_printMessage(void *m) {
 	vid_printf("\t\t\tid=%u len=%u\n",msg->id,msg->length);
 }
 
-void vfs_chan_dbg_print(sVFSNode *n) {
+void vfs_chan_dbg_print(const sVFSNode *n) {
 	u32 i;
 	sChannel *chan = (sChannel*)n->data;
 	sSLList *lists[] = {chan->sendList,chan->recvList};

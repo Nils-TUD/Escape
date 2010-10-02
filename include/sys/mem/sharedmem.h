@@ -50,7 +50,7 @@ s32 shm_create(sProc *p,const char *name,u32 pageCount);
  * @param other the other process
  * @return the virtual address of that page in <other> or 0 if not found
  */
-u32 shm_getAddrOfOther(sProc *p,u32 addr,sProc *other);
+u32 shm_getAddrOfOther(const sProc *p,u32 addr,const sProc *other);
 
 /**
  * Joins the shared-memory with given name
@@ -88,7 +88,7 @@ s32 shm_destroy(sProc *p,const char *name);
  * @param child the child-process
  * @return 0 on success
  */
-s32 shm_cloneProc(sProc *parent,sProc *child);
+s32 shm_cloneProc(const sProc *parent,sProc *child);
 
 /**
  * Removes the process from all shared-memory stuff

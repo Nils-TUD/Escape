@@ -253,7 +253,7 @@ bool paging_isRangeWritable(u32 virt,u32 count);
  * @param count the number of frames
  * @return the virtual start-address
  */
-u32 paging_mapToTemp(u32 *frames,u32 count);
+u32 paging_mapToTemp(const u32 *frames,u32 count);
 
 /**
  * Unmaps the temporary mappings
@@ -328,7 +328,7 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,
  * @param flags some flags for the pages (PG_*)
  * @return the number of allocated frames and page-tables
  */
-sAllocStats paging_map(u32 virt,u32 *frames,u32 count,u8 flags);
+sAllocStats paging_map(u32 virt,const u32 *frames,u32 count,u8 flags);
 
 /**
  * Maps <count> pages starting at <virt> to the given frames in the given page-directory.
@@ -343,7 +343,7 @@ sAllocStats paging_map(u32 virt,u32 *frames,u32 count,u8 flags);
  * @param flags some flags for the pages (PG_*)
  * @return the number of allocated frames and page-tables
  */
-sAllocStats paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags);
+sAllocStats paging_mapTo(tPageDir pdir,u32 virt,const u32 *frames,u32 count,u8 flags);
 
 /**
  * Removes <count> pages starting at <virt> from the page-tables in the CURRENT page-directory.

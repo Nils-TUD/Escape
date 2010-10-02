@@ -121,7 +121,7 @@ void vfs_req_waitForReply(sRequest *req,bool allowSigs) {
 	}
 }
 
-sRequest *vfs_req_getRequestByNode(sVFSNode *node) {
+sRequest *vfs_req_getRequestByNode(const sVFSNode *node) {
 	u32 i;
 	sRequest *req = requests;
 	assert(node != NULL);

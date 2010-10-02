@@ -295,7 +295,7 @@ bool tss_ioMapPresent(void) {
 	return tss.ioMapOffset != IO_MAP_OFFSET_INVALID;
 }
 
-void tss_setIOMap(u8 *ioMap) {
+void tss_setIOMap(const u8 *ioMap) {
 	tss.ioMapOffset = IO_MAP_OFFSET;
 	memcpy(tss.ioMap,ioMap,IO_MAP_SIZE / 8);
 }

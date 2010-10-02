@@ -146,7 +146,7 @@ sFuncCall *util_getUserStackTrace(void);
  * @param t the thread
  * @return the first function-call (for util_printStackTrace()) or NULL if failed
  */
-sFuncCall *util_getUserStackTraceOf(sThread *t);
+sFuncCall *util_getUserStackTraceOf(const sThread *t);
 
 /**
  * Builds the kernel-stack-trace of the given thread
@@ -154,7 +154,7 @@ sFuncCall *util_getUserStackTraceOf(sThread *t);
  * @param t the thread
  * @return the first function-call (for util_printStackTrace())
  */
-sFuncCall *util_getKernelStackTraceOf(sThread *t);
+sFuncCall *util_getKernelStackTraceOf(const sThread *t);
 
 /**
  * Builds the stack-trace for the kernel
@@ -168,7 +168,7 @@ sFuncCall *util_getKernelStackTrace(void);
  *
  * @param trace the first function-call (NULL-terminated)
  */
-void util_printStackTrace(sFuncCall *trace);
+void util_printStackTrace(const sFuncCall *trace);
 
 /**
  * Prints the memory from <addr> to <addr> + <dwordCount>
@@ -176,7 +176,7 @@ void util_printStackTrace(sFuncCall *trace);
  * @param addr the staring address
  * @param dwordCount the number of dwords to print
  */
-void util_dumpMem(void *addr,u32 dwordCount);
+void util_dumpMem(const void *addr,u32 dwordCount);
 
 /**
  * Prints <byteCount> bytes at <addr>
@@ -184,6 +184,6 @@ void util_dumpMem(void *addr,u32 dwordCount);
  * @param addr the start-address
  * @param byteCount the number of bytes
  */
-void util_dumpBytes(void *addr,u32 byteCount);
+void util_dumpBytes(const void *addr,u32 byteCount);
 
 #endif /*UTIL_H_*/

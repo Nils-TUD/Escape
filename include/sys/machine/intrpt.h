@@ -257,7 +257,7 @@ void intrpt_handler(sIntrptStackFrame *stack);
  *
  * @param stack the interrupt-stack
  */
-void intrpt_dbg_printStackFrame(sIntrptStackFrame *stack);
+void intrpt_dbg_printStackFrame(const sIntrptStackFrame *stack);
 
 #endif
 

@@ -204,7 +204,7 @@ tFileNo proc_unassocFd(tFD fd);
  * @param rno will be set to the region-number if found
  * @return the process with the binary or NULL if not found
  */
-sProc *proc_getProcWithBin(sBinDesc *bin,tVMRegNo *rno);
+sProc *proc_getProcWithBin(const sBinDesc *bin,tVMRegNo *rno);
 
 /**
  * Determines the least recently used region of all processes
@@ -249,7 +249,7 @@ s32 proc_clone(tPid newPid,bool isVM86);
  * @param arg the argument
  * @return < 0 if an error occurred or the new tid
  */
-s32 proc_startThread(u32 entryPoint,void *arg);
+s32 proc_startThread(u32 entryPoint,const void *arg);
 
 /**
  * Destroys the current thread. If it's the only thread in the process, the complete process will
@@ -318,8 +318,8 @@ s32 proc_buildArgs(const char *const *args,char **argBuffer,u32 *size,bool fromU
  * @param info startup-info
  * @return true if successfull
  */
-bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize,
-		sStartupInfo *info);
+bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,const char *args,u32 argsSize,
+		const sStartupInfo *info);
 
 /**
  * Setups the start of execution in user-mode for given interrupt-stack
@@ -364,7 +364,7 @@ void proc_dbg_printAllPDs(u8 parts,bool regions);
  *
  * @param p the pointer to the process
  */
-void proc_dbg_print(sProc *p);
+void proc_dbg_print(const sProc *p);
 
 #endif
 

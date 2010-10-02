@@ -38,7 +38,7 @@ sVFSNode *vfs_chan_create(tPid pid,sVFSNode *parent);
  * @param node the channel-node
  * @return true if so
  */
-bool vfs_chan_hasReply(sVFSNode *node);
+bool vfs_chan_hasReply(const sVFSNode *node);
 
 /**
  * Checks wether the given channel has work to do for the server
@@ -46,7 +46,7 @@ bool vfs_chan_hasReply(sVFSNode *node);
  * @param node the channel-node
  * @return true if so
  */
-bool vfs_chan_hasWork(sVFSNode *node);
+bool vfs_chan_hasWork(const sVFSNode *node);
 
 /**
  * Sends the given message to the channel
@@ -82,7 +82,7 @@ s32 vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u3
  *
  * @param n the channel-node
  */
-void vfs_chan_dbg_print(sVFSNode *n);
+void vfs_chan_dbg_print(const sVFSNode *n);
 
 #endif
 

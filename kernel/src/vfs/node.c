@@ -68,7 +68,7 @@ bool vfs_node_isValid(tInodeNo nodeNo) {
 	return nodeNo >= 0 && nodeNo < (tInodeNo)nodeArray.objCount;
 }
 
-tInodeNo vfs_node_getNo(sVFSNode *node) {
+tInodeNo vfs_node_getNo(const sVFSNode *node) {
 	return ((u32)node - (u32)&nodes[0]) / sizeof(sVFSNode);
 }
 
@@ -76,7 +76,7 @@ sVFSNode *vfs_node_get(tInodeNo nodeNo) {
 	return nodes + nodeNo;
 }
 
-sVFSNode *vfs_node_getFirstChild(sVFSNode *node) {
+sVFSNode *vfs_node_getFirstChild(const sVFSNode *node) {
 	if(!MODE_IS_LINK((node)->mode))
 		return node->firstChild;
 	return vfs_link_resolve(node)->firstChild;
@@ -307,7 +307,7 @@ void vfs_node_dirname(char *path,u32 len) {
 	*(p + 1) = '\0';
 }
 
-sVFSNode *vfs_node_findInDir(sVFSNode *node,const char *name,u32 nameLen) {
+sVFSNode *vfs_node_findInDir(const sVFSNode *node,const char *name,u32 nameLen) {
 	sVFSNode *n = vfs_node_getFirstChild(node);
 	while(n != NULL) {
 		if(strlen(n->name) == nameLen && strncmp(n->name,name,nameLen) == 0)
@@ -456,7 +456,7 @@ void vfs_node_dbg_printTree(void) {
 	vfs_node_dbg_doPrintTree(1,&nodes[0]);
 }
 
-void vfs_node_dbg_printNode(sVFSNode *node) {
+void vfs_node_dbg_printNode(const sVFSNode *node) {
 	vid_printf("VFSNode @ 0x%x:\n",node);
 	if(node) {
 		vid_printf("\tname: %s\n",node->name ? node->name : "NULL");

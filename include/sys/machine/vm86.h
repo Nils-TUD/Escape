@@ -76,7 +76,7 @@ s32 vm86_create(void);
  * @param areaCount the number of memareas
  * @return 0 on success
  */
-s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount);
+s32 vm86_int(u16 interrupt,sVM86Regs *regs,const sVM86Memarea *areas,u16 areaCount);
 
 /**
  * Handles a GPF

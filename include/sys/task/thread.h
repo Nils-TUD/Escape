@@ -132,7 +132,7 @@ extern bool thread_save(sThreadRegs *saveArea);
  * @param kstackFrame the frame-number of the kernel-stack (0 = don't change)
  * @return always true
  */
-extern bool thread_resume(u32 pageDir,sThreadRegs *saveArea,u32 kstackFrame);
+extern bool thread_resume(u32 pageDir,const sThreadRegs *saveArea,u32 kstackFrame);
 
 /**
  * Inits the threading-stuff. Uses <p> as first process
@@ -232,7 +232,7 @@ s32 thread_extendStack(u32 address);
  * @param cloneProc whether a process is cloned or just a thread
  * @return 0 on success
  */
-s32 thread_clone(sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc);
+s32 thread_clone(const sThread *src,sThread **dst,sProc *p,u32 *stackFrame,bool cloneProc);
 
 /**
  * Kills the given thread. If it is the current one it will be stored for later deletion.
@@ -255,14 +255,14 @@ void thread_dbg_printAll(void);
  *
  * @param t the thread
  */
-void thread_dbg_print(sThread *t);
+void thread_dbg_print(const sThread *t);
 
 /**
  * Prints the given thread-state
  *
  * @param state the pointer to the state-struct
  */
-void thread_dbg_printState(sThreadRegs *state);
+void thread_dbg_printState(const sThreadRegs *state);
 
 #endif
 

@@ -43,14 +43,14 @@
 
 #define vid_printf(...)
 
-static void swap_doSwapin(tPid pid,tFileNo file,sProc *p,u32 addr);
+static void swap_doSwapin(tPid pid,tFileNo file,const sProc *p,u32 addr);
 static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,u32 index);
-static void swap_setSuspended(sSLList *procs,bool blocked);
+static void swap_setSuspended(const sSLList *procs,bool blocked);
 static sRegion *swap_findVictim(u32 *index);
 
 static bool enabled = false;
 static bool swapping = false;
-static sProc *swapinProc = NULL;
+static const sProc *swapinProc = NULL;
 static u32 swapinAddr = 0;
 static tTid swapinTid = INVALID_TID;
 static sThread *swapper = NULL;
@@ -164,7 +164,7 @@ void swap_check(void) {
 	}
 }
 
-bool swap_in(sProc *p,u32 addr) {
+bool swap_in(const sProc *p,u32 addr) {
 	sThread *t = thread_getRunning();
 	if(!enabled)
 		return false;
@@ -184,7 +184,7 @@ bool swap_in(sProc *p,u32 addr) {
 	return true;
 }
 
-static void swap_doSwapin(tPid pid,tFileNo file,sProc *p,u32 addr) {
+static void swap_doSwapin(tPid pid,tFileNo file,const sProc *p,u32 addr) {
 	tVMRegNo rno = vmm_getRegionOf(p,addr);
 	sVMRegion *vmreg = vmm_getRegion(p,rno);
 	u32 temp,frame,block,index;
@@ -264,7 +264,7 @@ static void swap_doSwapOut(tPid pid,tFileNo file,sRegion *reg,u32 index) {
 	swap_setSuspended(reg->procs,false);
 }
 
-static void swap_setSuspended(sSLList *procs,bool blocked) {
+static void swap_setSuspended(const sSLList *procs,bool blocked) {
 	sSLNode *n,*tn;
 	sProc *p;
 	sThread *cur = thread_getRunning();

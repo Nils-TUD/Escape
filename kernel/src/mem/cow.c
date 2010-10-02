@@ -30,7 +30,7 @@
 
 typedef struct {
 	u32 frameNumber;
-	sProc *proc;
+	const sProc *proc;
 } sCOW;
 
 /**
@@ -100,7 +100,7 @@ u32 cow_pagefault(u32 address) {
 	return frmCount;
 }
 
-bool cow_add(sProc *p,u32 frameNo) {
+bool cow_add(const sProc *p,u32 frameNo) {
 	sCOW *cc;
 	cc = (sCOW*)kheap_alloc(sizeof(sCOW));
 	if(cc == NULL)
@@ -114,7 +114,7 @@ bool cow_add(sProc *p,u32 frameNo) {
 	return true;
 }
 
-u32 cow_remove(sProc *p,u32 frameNo,bool *foundOther) {
+u32 cow_remove(const sProc *p,u32 frameNo,bool *foundOther) {
 	sSLNode *n,*tn,*ln;
 	sCOW *cow;
 	u32 frmCount = 0;

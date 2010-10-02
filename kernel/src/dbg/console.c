@@ -118,7 +118,7 @@ void cons_setLogEnabled(bool enabled) {
 		vid_setTargets(TARGET_SCREEN);
 }
 
-void cons_viewLines(sLines *l) {
+void cons_viewLines(const sLines *l) {
 	sKeyEvent ev;
 	s32 i,end,start = 0;
 	while(true) {

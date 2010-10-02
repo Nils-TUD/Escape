@@ -26,7 +26,7 @@
 #include <string.h>
 #include <assert.h>
 
-static void reg_sprintfFlags(sStringBuffer *buf,sRegion *reg);
+static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg);
 
 /**
  * The region-module implements the abstraction 'region' which is simply a group of pages that
@@ -39,7 +39,7 @@ static void reg_sprintfFlags(sStringBuffer *buf,sRegion *reg);
  * page is swapped out.
  */
 
-sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 pgFlags,u32 flags) {
+sRegion *reg_create(const sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 pgFlags,u32 flags) {
 	u32 i,pageCount;
 	sRegion *reg;
 	assert(pgFlags == PF_DEMANDLOAD || pgFlags == 0);
@@ -99,7 +99,7 @@ void reg_destroy(sRegion *reg) {
 	kheap_free(reg);
 }
 
-u32 reg_presentPageCount(sRegion *reg) {
+u32 reg_presentPageCount(const sRegion *reg) {
 	u32 i,c = 0,pcount = BYTES_2_PAGES(reg->byteCount);
 	assert(reg != NULL);
 	for(i = 0; i < pcount; i++) {
@@ -109,7 +109,7 @@ u32 reg_presentPageCount(sRegion *reg) {
 	return c;
 }
 
-u32 reg_getSwapBlock(sRegion *reg,u32 pageIndex) {
+u32 reg_getSwapBlock(const sRegion *reg,u32 pageIndex) {
 	assert(reg->pageFlags[pageIndex] & PF_SWAPPED);
 	return reg->pageFlags[pageIndex] >> PF_BITCOUNT;
 }
@@ -119,7 +119,7 @@ void reg_setSwapBlock(sRegion *reg,u32 pageIndex,u32 swapBlock) {
 	reg->pageFlags[pageIndex] |= swapBlock << PF_BITCOUNT;
 }
 
-u32 reg_refCount(sRegion *reg) {
+u32 reg_refCount(const sRegion *reg) {
 	assert(reg != NULL);
 	return sll_length(reg->procs);
 }
@@ -173,7 +173,7 @@ bool reg_grow(sRegion *reg,s32 amount) {
 	return true;
 }
 
-sRegion *reg_clone(const void *p,sRegion *reg) {
+sRegion *reg_clone(const void *p,const sRegion *reg) {
 	sRegion *clone;
 	assert(reg != NULL && !(reg->flags & RF_SHAREABLE));
 	clone = reg_create(&reg->binary,reg->binOffset,reg->byteCount,reg->loadCount,0,reg->flags);
@@ -184,7 +184,7 @@ sRegion *reg_clone(const void *p,sRegion *reg) {
 	return clone;
 }
 
-void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt) {
+void reg_sprintf(sStringBuffer *buf,const sRegion *reg,u32 virt) {
 	u32 i,x;
 	sSLNode *n;
 	prf_sprintf(buf,"\tSize: %u bytes\n",reg->byteCount);
@@ -211,7 +211,7 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt) {
 	}
 }
 
-static void reg_sprintfFlags(sStringBuffer *buf,sRegion *reg) {
+static void reg_sprintfFlags(sStringBuffer *buf,const sRegion *reg) {
 	struct {
 		const char *name;
 		u32 no;
@@ -233,7 +233,7 @@ static void reg_sprintfFlags(sStringBuffer *buf,sRegion *reg) {
 
 #if DEBUGGING
 
-void reg_dbg_printFlags(sRegion *reg) {
+void reg_dbg_printFlags(const sRegion *reg) {
 	sStringBuffer buf;
 	buf.dynamic = true;
 	buf.len = 0;
@@ -246,7 +246,7 @@ void reg_dbg_printFlags(sRegion *reg) {
 	}
 }
 
-void reg_dbg_print(sRegion *reg,u32 virt) {
+void reg_dbg_print(const sRegion *reg,u32 virt) {
 	sStringBuffer buf;
 	buf.dynamic = true;
 	buf.len = 0;

@@ -323,7 +323,7 @@ bool paging_isRangeWritable(u32 virt,u32 count) {
 	return true;
 }
 
-u32 paging_mapToTemp(u32 *frames,u32 count) {
+u32 paging_mapToTemp(const u32 *frames,u32 count) {
 	assert(count <= TEMP_MAP_AREA_SIZE / PAGE_SIZE);
 	paging_map(TEMP_MAP_AREA,frames,count,PG_PRESENT | PG_WRITABLE | PG_SUPERVISOR);
 	return TEMP_MAP_AREA;
@@ -474,14 +474,14 @@ sAllocStats paging_clonePages(tPageDir src,tPageDir dst,u32 virtSrc,u32 virtDst,
 	return stats;
 }
 
-sAllocStats paging_map(u32 virt,u32 *frames,u32 count,u8 flags) {
+sAllocStats paging_map(u32 virt,const u32 *frames,u32 count,u8 flags) {
 	sProc *p = proc_getRunning();
 	/* for boot-phase: use the first page-dir, if the process has none */
 	tPageDir pdir = (p->pagedir == 0) ? (u32)proc0PD & ~KERNEL_AREA_V_ADDR : p->pagedir;
 	return paging_mapTo(pdir,virt,frames,count,flags);
 }
 
-sAllocStats paging_mapTo(tPageDir pdir,u32 virt,u32 *frames,u32 count,u8 flags) {
+sAllocStats paging_mapTo(tPageDir pdir,u32 virt,const u32 *frames,u32 count,u8 flags) {
 	sAllocStats stats = {0,0};
 	u32 ptables = paging_getPTables(pdir);
 	u32 pdirAddr = PAGEDIR(ptables);

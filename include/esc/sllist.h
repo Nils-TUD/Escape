@@ -81,7 +81,7 @@ void sll_init(sSLList *l,fNodeAlloc falloc,fNodeFree ffree);
  * @param list the list
  * @return a clone of it
  */
-sSLList *sll_clone(sSLList *list);
+sSLList *sll_clone(const sSLList *list);
 
 /**
  * Destroyes the given list
@@ -103,7 +103,7 @@ void sll_clear(sSLList *list);
  * @param list the list
  * @return the number of elements in the list
  */
-u32 sll_length(sSLList *list);
+u32 sll_length(const sSLList *list);
 
 /**
  * Returns the first node in the list. That allows you to iterate through it:
@@ -117,7 +117,7 @@ u32 sll_length(sSLList *list);
  * @param list the list
  * @return the first node (NULL if the list is empty)
  */
-sSLNode *sll_begin(sSLList *list);
+sSLNode *sll_begin(const sSLList *list);
 
 /**
  * Returns the node at given index. See sll_begin().
@@ -127,7 +127,7 @@ sSLNode *sll_begin(sSLList *list);
  * @param index the index
  * @return the node at given index
  */
-sSLNode *sll_nodeAt(sSLList *list,u32 index);
+sSLNode *sll_nodeAt(const sSLList *list,u32 index);
 
 /**
  * Determines the index of the given data
@@ -136,7 +136,7 @@ sSLNode *sll_nodeAt(sSLList *list,u32 index);
  * @param data the data to search for
  * @return the index of the first matching node or -1 if not found
  */
-s32 sll_indexOf(sSLList *list,const void *data);
+s32 sll_indexOf(const sSLList *list,const void *data);
 
 /**
  * Determines the node with given data
@@ -145,7 +145,7 @@ s32 sll_indexOf(sSLList *list,const void *data);
  * @param data the data to search for
  * @return the first matching node or NULL if not found
  */
-sSLNode *sll_nodeWith(sSLList *list,const void *data);
+sSLNode *sll_nodeWith(const sSLList *list,const void *data);
 
 /**
  * Searches for the element at given index. First and last one can be found in O(1).
@@ -154,7 +154,7 @@ sSLNode *sll_nodeWith(sSLList *list,const void *data);
  * @param index the index
  * @return the data at the given index
  */
-void *sll_get(sSLList *list,u32 index);
+void *sll_get(const sSLList *list,u32 index);
 
 /**
  * Searches for the element at given index and sets the data to the given one. First and last
@@ -233,7 +233,7 @@ void *sll_removeIndex(sSLList *list,u32 index);
  *
  * @param list the list
  */
-void sll_dbg_print(sSLList *list);
+void sll_dbg_print(const sSLList *list);
 
 #endif
 

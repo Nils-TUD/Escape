@@ -41,33 +41,33 @@ sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,u32 flags);
  * @param node the server-node
  * @param client the client-node
  */
-void vfs_server_clientRemoved(sVFSNode *node,sVFSNode *client);
+void vfs_server_clientRemoved(sVFSNode *node,const sVFSNode *client);
 
 /**
  * @param node the server-node
  * @return true if its a terminal
  */
-bool vfs_server_isterm(sVFSNode *node);
+bool vfs_server_isterm(const sVFSNode *node);
 
 /**
  * @param node the server-node
  * @param funcs the functions to check
  * @return true if the server supports the given functions
  */
-bool vfs_server_supports(sVFSNode *node,u32 funcs);
+bool vfs_server_supports(const sVFSNode *node,u32 funcs);
 
 /**
  * @param node the server-node
  * @param id the msg-id to check
  * @return true if the server accepts the given message
  */
-bool vfs_server_accepts(sVFSNode *node,u32 id);
+bool vfs_server_accepts(const sVFSNode *node,u32 id);
 
 /**
  * @param node the server-node
  * @return true if data can be read from the server (is available)
  */
-bool vfs_server_isReadable(sVFSNode *node);
+bool vfs_server_isReadable(const sVFSNode *node);
 
 /**
  * Sets wether data is available
@@ -97,7 +97,7 @@ sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry);
  *
  * @param n the server-node
  */
-void vfs_server_dbg_print(sVFSNode *n);
+void vfs_server_dbg_print(const sVFSNode *n);
 
 #endif
 

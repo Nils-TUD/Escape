@@ -212,7 +212,7 @@ void fpu_handleCoProcNA(sFPUState **state);
  * @param dst the destination-fpu-state
  * @param src the source-fpu-state
  */
-void fpu_cloneState(sFPUState **dst,sFPUState *src);
+void fpu_cloneState(sFPUState **dst,const sFPUState *src);
 
 /**
  * Free's the given FPU-state

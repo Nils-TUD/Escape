@@ -88,7 +88,7 @@ u32 vmm_addPhys(sProc *p,u32 *phys,u32 bCount,u32 align);
  * @param type the type of region
  * @return the region-number on success or a negative error-code
  */
-tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 type);
+tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 type);
 
 /**
  * Changes the protection-settings of the given region. This is not possible for TLS-, stack-
@@ -127,7 +127,7 @@ void vmm_swapIn(sRegion *reg,u32 index,u32 frameNo);
  * @param t the thread
  * @param timestamp the timestamp to set
  */
-void vmm_setTimestamp(sThread *t,u32 timestamp);
+void vmm_setTimestamp(const sThread *t,u32 timestamp);
 
 /**
  * Returns the least recently used region of the given process that contains swappable pages
@@ -135,7 +135,7 @@ void vmm_setTimestamp(sThread *t,u32 timestamp);
  * @param p the process
  * @return the LRU region (may be NULL)
  */
-sRegion *vmm_getLRURegion(sProc *p);
+sRegion *vmm_getLRURegion(const sProc *p);
 
 /**
  * Returns a random page-index in the given region that may be swapped out
@@ -143,7 +143,7 @@ sRegion *vmm_getLRURegion(sProc *p);
  * @param reg the region
  * @return the page-index (-1 if failed)
  */
-u32 vmm_getPgIdxForSwap(sRegion *reg);
+u32 vmm_getPgIdxForSwap(const sRegion *reg);
 
 /**
  * Tests wether the region with given number exists
@@ -152,7 +152,7 @@ u32 vmm_getPgIdxForSwap(sRegion *reg);
  * @param reg the region-number
  * @return true if so
  */
-bool vmm_exists(sProc *p,tVMRegNo reg);
+bool vmm_exists(const sProc *p,tVMRegNo reg);
 
 /**
  * Searches for the dynamic-link-data-region (growable)
@@ -160,7 +160,7 @@ bool vmm_exists(sProc *p,tVMRegNo reg);
  * @param p the process
  * @return the region-number of -1 if not found
  */
-tVMRegNo vmm_getDLDataReg(sProc *p);
+tVMRegNo vmm_getDLDataReg(const sProc *p);
 
 /**
  * This is a helper-function for determining the real memory-usage of all processes. It counts
@@ -173,28 +173,28 @@ tVMRegNo vmm_getDLDataReg(sProc *p);
  * @param pages will point to the number of pages (size of virtual-memory)
  * @return the number of used frames for this process
  */
-float vmm_getMemUsage(sProc *p,u32 *pages);
+float vmm_getMemUsage(const sProc *p,u32 *pages);
 
 /**
  * @param p the process
  * @param rno the region-number
  * @return a linked list with all processes that use the given region
  */
-sSLList *vmm_getUsersOf(sProc *p,tVMRegNo rno);
+sSLList *vmm_getUsersOf(const sProc *p,tVMRegNo rno);
 
 /**
  * @param p the process
  * @param rno the region-number
  * @return the vm-region with given number
  */
-sVMRegion *vmm_getRegion(sProc *p,tVMRegNo rno);
+sVMRegion *vmm_getRegion(const sProc *p,tVMRegNo rno);
 
 /**
  * @param p the process
  * @param addr the virtual address
  * @return the region-number to which the given virtual address belongs
  */
-tVMRegNo vmm_getRegionOf(sProc *p,u32 addr);
+tVMRegNo vmm_getRegionOf(const sProc *p,u32 addr);
 
 /**
  * Determines the vm-region-number of the given region for the given process
@@ -203,7 +203,7 @@ tVMRegNo vmm_getRegionOf(sProc *p,u32 addr);
  * @param reg the region
  * @return the vm-region-number or -1 if not found
  */
-tVMRegNo vmm_getRNoByRegion(sProc *p,sRegion *reg);
+tVMRegNo vmm_getRNoByRegion(const sProc *p,const sRegion *reg);
 
 /**
  * Queries the start- and end-address of a region
@@ -214,7 +214,7 @@ tVMRegNo vmm_getRNoByRegion(sProc *p,sRegion *reg);
  * @param end will be set to the end-address (exclusive; i.e. 0x1000 means 0xfff is the last
  *  accessible byte)
  */
-void vmm_getRegRange(sProc *p,tVMRegNo reg,u32 *start,u32 *end);
+void vmm_getRegRange(const sProc *p,tVMRegNo reg,u32 *start,u32 *end);
 
 /**
  * Checks wether the given process has the given binary as text-region
@@ -223,7 +223,7 @@ void vmm_getRegRange(sProc *p,tVMRegNo reg,u32 *start,u32 *end);
  * @param bin the binary
  * @return the region-number if so or -1
  */
-tVMRegNo vmm_hasBinary(sProc *p,sBinDesc *bin);
+tVMRegNo vmm_hasBinary(const sProc *p,const sBinDesc *bin);
 
 /**
  * Tries to handle a page-fault for the given address. That means, loads a page on demand, zeros
@@ -251,7 +251,7 @@ void vmm_remove(sProc *p,tVMRegNo reg);
  * @param dst the destination-process
  * @return the region-number on success or the negative error-code
  */
-tVMRegNo vmm_join(sProc *src,tVMRegNo rno,sProc *dst);
+tVMRegNo vmm_join(const sProc *src,tVMRegNo rno,sProc *dst);
 
 /**
  * Clones all regions of the current process into the given one
@@ -287,7 +287,7 @@ s32 vmm_grow(sProc *p,tVMRegNo reg,s32 amount);
  * @param buf the buffer
  * @param p the process
  */
-void vmm_sprintfRegions(sStringBuffer *buf,sProc *p);
+void vmm_sprintfRegions(sStringBuffer *buf,const sProc *p);
 
 #if DEBUGGING
 
@@ -296,14 +296,14 @@ void vmm_sprintfRegions(sStringBuffer *buf,sProc *p);
  *
  * @param p the process
  */
-void vmm_dbg_printShort(sProc *p);
+void vmm_dbg_printShort(const sProc *p);
 
 /**
  * Prints all regions of the given process
  *
  * @param p the process
  */
-void vmm_dbg_print(sProc *p);
+void vmm_dbg_print(const sProc *p);
 
 #endif
 

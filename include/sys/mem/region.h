@@ -67,7 +67,7 @@ typedef struct {
  * @param flags the flags of the region (RF_*)
  * @return the region or NULL if failed
  */
-sRegion *reg_create(sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 pgFlags,u32 flags);
+sRegion *reg_create(const sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 pgFlags,u32 flags);
 
 /**
  * Destroys the given region (regardless of the number of users!)
@@ -82,13 +82,13 @@ void reg_destroy(sRegion *reg);
  * @param reg the region
  * @return the number of present pages
  */
-u32 reg_presentPageCount(sRegion *reg);
+u32 reg_presentPageCount(const sRegion *reg);
 
 /**
  * @param reg the region
  * @return the number of references of the given region
  */
-u32 reg_refCount(sRegion *reg);
+u32 reg_refCount(const sRegion *reg);
 
 /**
  * Returns the swap-block in which the page with given index is stored
@@ -97,7 +97,7 @@ u32 reg_refCount(sRegion *reg);
  * @param pageIndex the index of the page in the region
  * @return the swap-block
  */
-u32 reg_getSwapBlock(sRegion *reg,u32 pageIndex);
+u32 reg_getSwapBlock(const sRegion *reg,u32 pageIndex);
 
 /**
  * Sets the swap-block in which the page with given index is stored to <swapBlock>.
@@ -146,7 +146,7 @@ bool reg_grow(sRegion *reg,s32 amount);
  * @param reg the region
  * @return the created region or NULL if failed
  */
-sRegion *reg_clone(const void *p,sRegion *reg);
+sRegion *reg_clone(const void *p,const sRegion *reg);
 
 /**
  * Prints information about the given region in the given buffer
@@ -155,7 +155,7 @@ sRegion *reg_clone(const void *p,sRegion *reg);
  * @param reg the region
  * @param virt the virtual-address at which the region is mapped
  */
-void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt);
+void reg_sprintf(sStringBuffer *buf,const sRegion *reg,u32 virt);
 
 
 #if DEBUGGING
@@ -165,7 +165,7 @@ void reg_sprintf(sStringBuffer *buf,sRegion *reg,u32 virt);
  *
  * @param reg the region
  */
-void reg_dbg_printFlags(sRegion *reg);
+void reg_dbg_printFlags(const sRegion *reg);
 
 /**
  * Prints the given region
@@ -173,7 +173,7 @@ void reg_dbg_printFlags(sRegion *reg);
  * @param reg the region
  * @param virt the virtual-address at which the region is mapped
  */
-void reg_dbg_print(sRegion *reg,u32 virt);
+void reg_dbg_print(const sRegion *reg,u32 virt);
 
 #endif
 

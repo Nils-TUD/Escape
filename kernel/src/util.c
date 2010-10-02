@@ -159,7 +159,7 @@ sFuncCall *util_getUserStackTrace(void) {
 	return util_getStackTrace((u32*)stack->ebp,start,start,end);
 }
 
-sFuncCall *util_getUserStackTraceOf(sThread *t) {
+sFuncCall *util_getUserStackTraceOf(const sThread *t) {
 	u32 start,end,pcount;
 	sFuncCall *calls;
 	u32 *frames;
@@ -191,7 +191,7 @@ sFuncCall *util_getUserStackTraceOf(sThread *t) {
 	return NULL;
 }
 
-sFuncCall *util_getKernelStackTraceOf(sThread *t) {
+sFuncCall *util_getKernelStackTraceOf(const sThread *t) {
 	u32 ebp = t->save.ebp;
 	u32 temp = paging_mapToTemp(&t->kstackFrame,1);
 	sFuncCall *calls = util_getStackTrace((u32*)ebp,KERNEL_STACK,temp,temp + PAGE_SIZE);
@@ -216,7 +216,7 @@ sFuncCall *util_getKernelStackTrace(void) {
 	return util_getStackTrace(ebp,start,start,end);
 }
 
-void util_printStackTrace(sFuncCall *trace) {
+void util_printStackTrace(const sFuncCall *trace) {
 	if(trace->addr < KERNEL_AREA_V_ADDR)
 		vid_printf("User-Stacktrace:\n");
 	else
@@ -228,7 +228,7 @@ void util_printStackTrace(sFuncCall *trace) {
 	}
 }
 
-void util_dumpMem(void *addr,u32 dwordCount) {
+void util_dumpMem(const void *addr,u32 dwordCount) {
 	u32 *ptr = (u32*)addr;
 	while(dwordCount-- > 0) {
 		vid_printf("0x%x: 0x%08x\n",ptr,*ptr);
@@ -236,7 +236,7 @@ void util_dumpMem(void *addr,u32 dwordCount) {
 	}
 }
 
-void util_dumpBytes(void *addr,u32 byteCount) {
+void util_dumpBytes(const void *addr,u32 byteCount) {
 	u32 i = 0;
 	u8 *ptr = (u8*)addr;
 	for(i = 0; byteCount-- > 0; i++) {

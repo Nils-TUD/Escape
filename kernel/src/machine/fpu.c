@@ -99,7 +99,7 @@ void fpu_handleCoProcNA(sFPUState **state) {
 		cpu_setCR0(cpu_getCR0() & ~CR0_TASK_SWITCHED);
 }
 
-void fpu_cloneState(sFPUState **dst,sFPUState *src) {
+void fpu_cloneState(sFPUState **dst,const sFPUState *src) {
 	if(src != NULL) {
 		*dst = (sFPUState*)kheap_alloc(sizeof(sFPUState));
 		/* simply ignore it here if alloc fails */

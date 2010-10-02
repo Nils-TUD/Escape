@@ -54,7 +54,7 @@
 
 static void proc_notifyProcDied(tPid parent);
 static s32 proc_finishClone(sThread *nt,u32 stackFrame);
-static bool proc_setupThreadStack(sIntrptStackFrame *frame,void *arg,u32 tentryPoint);
+static bool proc_setupThreadStack(sIntrptStackFrame *frame,const void *arg,u32 tentryPoint);
 static u32 *proc_addStartArgs(sThread *t,u32 *esp,u32 tentryPoint,bool newThread);
 static bool proc_add(sProc *p);
 static void proc_remove(sProc *p);
@@ -262,7 +262,7 @@ tFileNo proc_unassocFd(tFD fd) {
 	return fileNo;
 }
 
-sProc *proc_getProcWithBin(sBinDesc *bin,tVMRegNo *rno) {
+sProc *proc_getProcWithBin(const sBinDesc *bin,tVMRegNo *rno) {
 	sSLNode *n;
 	for(n = sll_begin(procs); n != NULL; n = n->next) {
 		sProc *p = (sProc*)n->data;
@@ -429,7 +429,7 @@ errorProc:
 	return res;
 }
 
-s32 proc_startThread(u32 entryPoint,void *arg) {
+s32 proc_startThread(u32 entryPoint,const void *arg) {
 	u32 stackFrame;
 	sProc *p = proc_getRunning();
 	sThread *t = thread_getRunning();
@@ -712,8 +712,8 @@ s32 proc_buildArgs(const char *const *args,char **argBuffer,u32 *size,bool fromU
 	return argc;
 }
 
-bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,char *args,u32 argsSize,
-		sStartupInfo *info) {
+bool proc_setupUserStack(sIntrptStackFrame *frame,u32 argc,const char *args,u32 argsSize,
+		const sStartupInfo *info) {
 	u32 *esp;
 	char **argv;
 	u32 totalSize;
@@ -815,7 +815,7 @@ void proc_setupStart(sIntrptStackFrame *frame,u32 entryPoint) {
 	frame->edi = 0;
 }
 
-static bool proc_setupThreadStack(sIntrptStackFrame *frame,void *arg,u32 tentryPoint) {
+static bool proc_setupThreadStack(sIntrptStackFrame *frame,const void *arg,u32 tentryPoint) {
 	u32 *esp;
 	u32 totalSize = 3 * sizeof(u32) + sizeof(void*);
 	sThread *t = thread_getRunning();
@@ -963,7 +963,7 @@ void proc_dbg_printAllPDs(u8 parts,bool regions) {
 	}
 }
 
-void proc_dbg_print(sProc *p) {
+void proc_dbg_print(const sProc *p) {
 	u32 i;
 	sSLNode *n;
 	vid_printf("Proc %d:\n",p->pid);

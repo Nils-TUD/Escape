@@ -41,7 +41,7 @@ s32 elf_loadFromFile(const char *path,sStartupInfo *info) {
 	return elf_doLoadFromFile(path,ELF_TYPE_PROG,info);
 }
 
-s32 elf_loadFromMem(u8 *code,u32 length,sStartupInfo *info) {
+s32 elf_loadFromMem(const u8 *code,u32 length,sStartupInfo *info) {
 	u32 loadSegNo = 0;
 	u32 j;
 	u8 const *datPtr;

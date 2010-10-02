@@ -93,7 +93,7 @@ void vfs_req_waitForReply(sRequest *req,bool allowSigs);
  * @param node the vfs-node over which the request is handled
  * @return the request or NULL
  */
-sRequest *vfs_req_getRequestByNode(sVFSNode *node);
+sRequest *vfs_req_getRequestByNode(const sVFSNode *node);
 
 /**
  * Marks the given request as finished

@@ -765,7 +765,7 @@ bool vfs_hasData(tPid pid,tFileNo file) {
 	return n->name != NULL && IS_DRIVER(n->parent->mode) && vfs_server_isReadable(n->parent);
 }
 
-s32 vfs_getClient(tPid pid,tFileNo *files,u32 count,s32 *index) {
+s32 vfs_getClient(tPid pid,const tFileNo *files,u32 count,s32 *index) {
 	UNUSED(pid);
 	sVFSNode *node = NULL,*client,*match = NULL;
 	u32 i;

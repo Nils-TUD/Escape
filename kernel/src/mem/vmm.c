@@ -116,7 +116,7 @@ u32 vmm_addPhys(sProc *p,u32 *phys,u32 bCount,u32 align) {
 	return vm->virt;
 }
 
-tVMRegNo vmm_add(sProc *p,sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 type) {
+tVMRegNo vmm_add(sProc *p,const sBinDesc *bin,u32 binOffset,u32 bCount,u32 lCount,u8 type) {
 	sRegion *reg;
 	sVMRegion *vm;
 	tVMRegNo rno;
@@ -259,7 +259,7 @@ void vmm_swapIn(sRegion *reg,u32 index,u32 frameNo) {
 	}
 }
 
-void vmm_setTimestamp(sThread *t,u32 timestamp) {
+void vmm_setTimestamp(const sThread *t,u32 timestamp) {
 	u32 i;
 	for(i = 0; i < t->proc->regSize; i++) {
 		sVMRegion *vm = REG(t->proc,i);
@@ -273,7 +273,7 @@ void vmm_setTimestamp(sThread *t,u32 timestamp) {
 	}
 }
 
-sRegion *vmm_getLRURegion(sProc *p) {
+sRegion *vmm_getLRURegion(const sProc *p) {
 	sRegion *lru = NULL;
 	u32 i,ts = ULONG_MAX;
 	for(i = 0; i < p->regSize; i++) {
@@ -295,7 +295,7 @@ sRegion *vmm_getLRURegion(sProc *p) {
 	return lru;
 }
 
-u32 vmm_getPgIdxForSwap(sRegion *reg) {
+u32 vmm_getPgIdxForSwap(const sRegion *reg) {
 	u32 i,pages = BYTES_2_PAGES(reg->byteCount);
 	u32 index,count = 0;
 	for(i = 0; i < pages; i++) {
@@ -314,12 +314,12 @@ u32 vmm_getPgIdxForSwap(sRegion *reg) {
 	return 0;
 }
 
-bool vmm_exists(sProc *p,tVMRegNo reg) {
+bool vmm_exists(const sProc *p,tVMRegNo reg) {
 	assert(p);
 	return reg >= 0 && reg < (s32)p->regSize && REG(p,reg);
 }
 
-tVMRegNo vmm_getDLDataReg(sProc *p) {
+tVMRegNo vmm_getDLDataReg(const sProc *p) {
 	u32 i;
 	assert(p);
 	for(i = 0; i < p->regSize; i++) {
@@ -331,7 +331,7 @@ tVMRegNo vmm_getDLDataReg(sProc *p) {
 	return -1;
 }
 
-float vmm_getMemUsage(sProc *p,u32 *pages) {
+float vmm_getMemUsage(const sProc *p,u32 *pages) {
 	u32 i;
 	float rpages = 0;
 	*pages = 0;
@@ -351,15 +351,15 @@ float vmm_getMemUsage(sProc *p,u32 *pages) {
 	return rpages;
 }
 
-sSLList *vmm_getUsersOf(sProc *p,tVMRegNo rno) {
+sSLList *vmm_getUsersOf(const sProc *p,tVMRegNo rno) {
 	return REG(p,rno)->reg->procs;
 }
 
-sVMRegion *vmm_getRegion(sProc *p,tVMRegNo rno) {
+sVMRegion *vmm_getRegion(const sProc *p,tVMRegNo rno) {
 	return REG(p,rno);
 }
 
-tVMRegNo vmm_getRegionOf(sProc *p,u32 addr) {
+tVMRegNo vmm_getRegionOf(const sProc *p,u32 addr) {
 	u32 i;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
@@ -369,7 +369,7 @@ tVMRegNo vmm_getRegionOf(sProc *p,u32 addr) {
 	return -1;
 }
 
-tVMRegNo vmm_getRNoByRegion(sProc *p,sRegion *reg) {
+tVMRegNo vmm_getRNoByRegion(const sProc *p,const sRegion *reg) {
 	u32 i;
 	for(i = 0; i < p->regSize; i++) {
 		sVMRegion *vm = REG(p,i);
@@ -379,7 +379,7 @@ tVMRegNo vmm_getRNoByRegion(sProc *p,sRegion *reg) {
 	return -1;
 }
 
-void vmm_getRegRange(sProc *p,tVMRegNo reg,u32 *start,u32 *end) {
+void vmm_getRegRange(const sProc *p,tVMRegNo reg,u32 *start,u32 *end) {
 	sVMRegion *vm = REG(p,reg);
 	assert(p && reg >= 0 && reg < (s32)p->regSize && vm);
 	if(start)
@@ -388,7 +388,7 @@ void vmm_getRegRange(sProc *p,tVMRegNo reg,u32 *start,u32 *end) {
 		*end = vm->virt + vm->reg->byteCount;
 }
 
-tVMRegNo vmm_hasBinary(sProc *p,sBinDesc *bin) {
+tVMRegNo vmm_hasBinary(const sProc *p,const sBinDesc *bin) {
 	sVMRegion *vm;
 	u32 i;
 	if(p->regSize == 0 || p->regions == NULL)
@@ -493,7 +493,7 @@ void vmm_remove(sProc *p,tVMRegNo reg) {
 	}
 }
 
-tVMRegNo vmm_join(sProc *src,tVMRegNo rno,sProc *dst) {
+tVMRegNo vmm_join(const sProc *src,tVMRegNo rno,sProc *dst) {
 	sVMRegion *vm = REG(src,rno),*nvm;
 	tVMRegNo nrno;
 	sAllocStats stats;
@@ -1026,7 +1026,7 @@ static s32 vmm_getAttr(sProc *p,u8 type,u32 bCount,u32 *pgFlags,u32 *flags,u32 *
 	return 0;
 }
 
-void vmm_sprintfRegions(sStringBuffer *buf,sProc *p) {
+void vmm_sprintfRegions(sStringBuffer *buf,const sProc *p) {
 	u32 i,c = 0;
 	sVMRegion *reg;
 	for(i = 0; i < p->regSize; i++) {
@@ -1045,7 +1045,7 @@ void vmm_sprintfRegions(sStringBuffer *buf,sProc *p) {
 
 #if DEBUGGING
 
-void vmm_dbg_printShort(sProc *p) {
+void vmm_dbg_printShort(const sProc *p) {
 	sVMRegion *reg;
 	u32 i;
 	for(i = 0; i < p->regSize; i++) {
@@ -1060,7 +1060,7 @@ void vmm_dbg_printShort(sProc *p) {
 	}
 }
 
-void vmm_dbg_print(sProc *p) {
+void vmm_dbg_print(const sProc *p) {
 	sStringBuffer buf;
 	buf.dynamic = true;
 	buf.len = 0;

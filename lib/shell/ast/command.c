@@ -386,7 +386,7 @@ static s32 ast_waitForCmd() {
 		ast_termProcsOfCmd();
 	else {
 		while(curWaitCount > 0) {
-			res = wait(EV_NOEVENT);
+			res = wait(EV_NOEVENT,0);
 			if(res == ERR_INTERRUPTED) {
 				if(lang_isInterrupted()) {
 					ast_termProcsOfCmd();

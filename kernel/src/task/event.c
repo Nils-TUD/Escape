@@ -28,7 +28,7 @@
 
 typedef struct {
 	tTid tid;
-	void *object;
+	u32 object;
 } sWait;
 
 static sSLList evlists[EV_COUNT];
@@ -39,7 +39,7 @@ void ev_init(void) {
 		sll_init(evlists + i,slln_allocNode,slln_freeNode);
 }
 
-bool ev_wait(tTid tid,u32 evi,void *object) {
+bool ev_wait(tTid tid,u32 evi,u32 object) {
 	sThread *t = thread_getById(tid);
 	sSLList *list = evlists + evi;
 	sWait *w = (sWait*)kheap_alloc(sizeof(sWait));
@@ -63,7 +63,7 @@ bool ev_waitm(tTid tid,u32 events) {
 	else {
 		for(e = 0; e < EV_COUNT; e++) {
 			if(events & (1 << e)) {
-				if(!ev_wait(tid,e,NULL)) {
+				if(!ev_wait(tid,e,0)) {
 					ev_removeThread(tid);
 					return false;
 				}
@@ -73,14 +73,18 @@ bool ev_waitm(tTid tid,u32 events) {
 	return true;
 }
 
-bool ev_waitObjects(tTid tid,sWaitObject *objects,u32 objCount) {
+bool ev_waitObjects(tTid tid,const sWaitObject *objects,u32 objCount) {
 	u32 i,e;
 	for(i = 0; i < objCount; i++) {
-		for(e = 0; e < EV_COUNT; e++) {
-			if(objects[i].events & (1 << e)) {
-				if(!ev_wait(tid,e,objects[i].object)) {
-					ev_removeThread(tid);
-					return false;
+		if(objects[i].events == 0)
+			sched_setBlocked(thread_getById(tid));
+		else {
+			for(e = 0; e < EV_COUNT; e++) {
+				if(objects[i].events & (1 << e)) {
+					if(!ev_wait(tid,e,objects[i].object)) {
+						ev_removeThread(tid);
+						return false;
+					}
 				}
 			}
 		}
@@ -88,17 +92,18 @@ bool ev_waitObjects(tTid tid,sWaitObject *objects,u32 objCount) {
 	return true;
 }
 
-void ev_wakeup(u32 evi,void *object) {
+void ev_wakeup(u32 evi,u32 object) {
 	sSLList *list = evlists + evi;
 	sSLNode *n,*p;
 	p = NULL;
 	for(n = sll_begin(list); n != NULL; ) {
 		sWait *w = (sWait*)n->data;
-		if(w->object == NULL || w->object == object) {
-			n = n->next;
-			/* note that this will remove this node and all others of this thread. but it can't
-			 * remove anything before us in this list */
+		if(w->object == 0 || w->object == object) {
 			ev_removeThread(w->tid);
+			/* we have to start at the beginning again, since its possible that the thread
+			 * is before this node for a different object */
+			p = NULL;
+			n = sll_begin(list);
 		}
 		else {
 			p = n;

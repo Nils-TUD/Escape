@@ -95,7 +95,7 @@ void swap_start(void) {
 				/* notify the threads that require the currently available frame-count */
 				free = mm_getFreeFrames(MM_DEF);
 				if(free > HIGH_WATER)
-					ev_wakeup(EVI_SWAP_FREE,(void*)(free - HIGH_WATER));
+					ev_wakeup(EVI_SWAP_FREE,(tEvObj)(free - HIGH_WATER));
 				count++;
 			}
 			/* if we've reached the needed frame-count, reset it */
@@ -113,8 +113,8 @@ void swap_start(void) {
 
 		if(mm_getFreeFrames(MM_DEF) >= LOW_WATER && neededFrames == HIGH_WATER) {
 			/* we may receive new work now */
-			ev_wakeup(EVI_SWAP_FREE,NULL);
-			ev_wait(swapper->tid,EVI_SWAP_WORK,NULL);
+			ev_wakeup(EVI_SWAP_FREE,0);
+			ev_wait(swapper->tid,EVI_SWAP_WORK,0);
 			thread_switch();
 		}
 	}
@@ -133,7 +133,7 @@ bool swap_outUntil(u32 frameCount) {
 		if(!swapping)
 			ev_wakeupThread(swapper->tid,EV_SWAP_WORK);
 		neededFrames += frameCount - free;
-		ev_wait(t->tid,EVI_SWAP_FREE,(void*)(frameCount - free));
+		ev_wait(t->tid,EVI_SWAP_FREE,(tEvObj)(frameCount - free));
 		thread_switchNoSigs();
 		/* TODO report error if swap-space is full or nothing left to swap */
 		free = mm_getFreeFrames(MM_DEF);
@@ -157,7 +157,7 @@ void swap_check(void) {
 			sThread *t = thread_getRunning();
 			/* but its not really helpful to block ata ;) */
 			if(t->tid != ATA_TID && t->tid != IDLE_TID) {
-				ev_wait(t->tid,EVI_SWAP_FREE,NULL);
+				ev_wait(t->tid,EVI_SWAP_FREE,0);
 				thread_switchNoSigs();
 			}
 		}
@@ -170,7 +170,7 @@ bool swap_in(sProc *p,u32 addr) {
 		return false;
 	/* wait here until we're alone */
 	while(swapping || swapinProc) {
-		ev_wait(t->tid,EVI_SWAP_FREE,NULL);
+		ev_wait(t->tid,EVI_SWAP_FREE,0);
 		thread_switchNoSigs();
 	}
 
@@ -178,7 +178,7 @@ bool swap_in(sProc *p,u32 addr) {
 	swapinProc = p;
 	swapinAddr = addr;
 	swapinTid = t->tid;
-	ev_wait(t->tid,EVI_SWAP_DONE,NULL);
+	ev_wait(t->tid,EVI_SWAP_DONE,0);
 	ev_wakeupThread(swapper->tid,EV_SWAP_WORK);
 	thread_switchNoSigs();
 	return true;

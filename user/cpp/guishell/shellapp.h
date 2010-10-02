@@ -54,6 +54,7 @@ private:
 
 private:
 	tFD _sid;
+	sWaitObject _waits[2];
 	ShellControl *_sh;
 	sVTermCfg _cfg;
 	char *rbuffer;

@@ -92,7 +92,7 @@ bool tpool_addRequest(fReqHandler handler,tFD fd,const sMsg *msg,u32 msgSize,voi
 			}
 		}
 		/* wait until there is a free slot */
-		waitUnlock(EV_USER2,STATE_LOCK);
+		waitUnlock(EV_USER2,0,STATE_LOCK);
 	}
 	/* unreachable */
 	return false;
@@ -102,7 +102,7 @@ static int tpool_idle(sReqThread *t) {
 	while(run) {
 		/* wait until we have work */
 		while(run && t->state == RT_STATE_IDLE)
-			wait(EV_USER1);
+			wait(EV_USER1,0);
 		if(!run)
 			break;
 

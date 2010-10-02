@@ -26,11 +26,13 @@
 #include <sys/task/lock.h>
 #include <sys/machine/timer.h>
 #include <sys/mem/kheap.h>
+#include <sys/mem/paging.h>
 #include <sys/syscalls/thread.h>
 #include <sys/syscalls.h>
+#include <string.h>
 #include <errors.h>
 
-static s32 sysc_doWait(u32 events);
+static s32 sysc_doWait(sWaitObject *uobjects,u32 objCount);
 
 void sysc_gettid(sIntrptStackFrame *stack) {
 	sThread *t = thread_getRunning();
@@ -87,81 +89,27 @@ void sysc_yield(sIntrptStackFrame *stack) {
 }
 
 void sysc_wait(sIntrptStackFrame *stack) {
-	u32 events = SYSC_ARG1(stack);
-	s32 res;
+	sWaitObject *uobjects = (sWaitObject*)SYSC_ARG1(stack);
+	u32 objCount = SYSC_ARG2(stack);
 
-	if((events & ~EV_USER_WAIT_MASK) != 0)
+	if(objCount == 0 || !paging_isRangeUserReadable((u32)uobjects,objCount * sizeof(sWaitObject)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
-	res = sysc_doWait(events);
+	s32 res = sysc_doWait(uobjects,objCount);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
 }
 
-#if 0
-void sysc_wait(sIntrptStackFrame *stack) {
-	sWaitObject *uobjects = (sWaitObject*)SYSC_ARG1(stack);
-	u32 i,objCount = SYSC_ARG2(stack);
-	sWaitObject *kobjects;
-	sThread *t = thread_getRunning();
-	s32 res = ERR_INVALID_ARGS;
-
-	if(!paging_isRangeUserReadable((u32)uobjects,objCount * sizeof(sWaitObject)))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	kobjects = (sWaitObject*)kheap_alloc(objCount * sizeof(sWaitObject));
-	if(kobjects == NULL)
-		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
-	memcpy(kobjects,uobjects,objCount * sizeof(sWaitObject));
-
-	for(i = 0; i < objCount; i++) {
-		if(kobjects[i].events & ~(EV_USER_WAIT_MASK))
-			goto error;
-		if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
-			/* check flags */
-			tFD fd;
-			tFileNo file;
-			if(kobjects[i].events & EV_CLIENT) {
-				if(kobjects[i].events & ~(EV_CLIENT))
-					goto error;
-			}
-			else if(kobjects[i].events & ~(EV_RECEIVED_MSG | EV_DATA_READABLE))
-				goto error;
-			/* translate fd to node-number */
-			fd = (tFD)kobjects[i].object;
-			file = proc_fdToFile(fd);
-			if(file < 0)
-				goto error;
-			kobjects[i].object = vfs_getVNode(file);
-			if(!kobjects[i].object)
-				goto error;
-		}
-	}
-
-	if(!ev_waitObjects(t->tid,kobjects,objCount)) {
-		res = ERR_NOT_ENOUGH_MEM;
-		goto error;
-	}
-
-	kheap_free(kobjects);
-	SYSC_RET1(stack,0);
-	return;
-
-error:
-	kheap_free(kobjects);
-	SYSC_ERROR(stack,res);
-}
-#endif
-
 void sysc_waitUnlock(sIntrptStackFrame *stack) {
-	u32 events = SYSC_ARG1(stack);
-	u32 ident = SYSC_ARG2(stack);
-	bool global = (bool)SYSC_ARG3(stack);
+	sWaitObject *uobjects = (sWaitObject*)SYSC_ARG1(stack);
+	u32 objCount = SYSC_ARG2(stack);
+	u32 ident = SYSC_ARG3(stack);
+	bool global = (bool)SYSC_ARG4(stack);
 	sProc *p = proc_getRunning();
 	s32 res;
 
-	if((events & ~EV_USER_WAIT_MASK) != 0)
+	if(objCount == 0 || !paging_isRangeUserReadable((u32)uobjects,objCount * sizeof(sWaitObject)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
 	/* release the lock */
@@ -170,7 +118,7 @@ void sysc_waitUnlock(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 
 	/* now wait */
-	res = sysc_doWait(events);
+	res = sysc_doWait(uobjects,objCount);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,res);
@@ -223,7 +171,7 @@ void sysc_join(sIntrptStackFrame *stack) {
 
 	/* wait until this thread doesn't exist anymore or there are no other threads than ourself */
 	do {
-		ev_wait(t->tid,EVI_THREAD_DIED,t->proc);
+		ev_wait(t->tid,EVI_THREAD_DIED,(tEvObj)t->proc);
 		thread_switchNoSigs();
 	}
 	while((tid == 0 && sll_length(t->proc->threads) > 1) ||
@@ -256,22 +204,71 @@ void sysc_resume(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,0);
 }
 
-static s32 sysc_doWait(u32 events) {
+static s32 sysc_doWait(sWaitObject *uobjects,u32 objCount) {
 	sThread *t = thread_getRunning();
-	/* check whether there is a chance that we'll wake up again; if we already have a message
-	 * that we should wait for, don't start waiting */
-	if(vfs_msgAvailableFor(t->proc->pid,events))
-		return 0;
-	while(true) {
-		ev_waitm(t->tid,events);
-		thread_switch();
-		if(sig_hasSignalFor(t->tid))
-			return ERR_INTERRUPTED;
-		/* if we wait for other events than received-msg and client, always wakeup (since we can't
-		 * check that) */
-		/* otherwise check, whether it really was an event for us => something is available */
-		if((events & ~(EV_RECEIVED_MSG | EV_CLIENT)) || vfs_msgAvailableFor(t->proc->pid,events))
-			break;
+	s32 res = ERR_INVALID_ARGS;
+	u32 i;
+	sWaitObject *kobjects = (sWaitObject*)kheap_alloc(objCount * sizeof(sWaitObject));
+	if(kobjects == NULL)
+		return ERR_NOT_ENOUGH_MEM;
+	memcpy(kobjects,uobjects,objCount * sizeof(sWaitObject));
+
+	/* copy to kobjects and check */
+	for(i = 0; i < objCount; i++) {
+		if(kobjects[i].events & ~(EV_USER_WAIT_MASK))
+			goto error;
+		if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
+			/* translate fd to node-number */
+			tFileNo file = proc_fdToFile((tFD)kobjects[i].object);
+			if(file < 0)
+				goto error;
+			/* check flags */
+			if(kobjects[i].events & EV_CLIENT) {
+				if(kobjects[i].events & ~(EV_CLIENT))
+					goto error;
+			}
+			else if(kobjects[i].events & ~(EV_RECEIVED_MSG | EV_DATA_READABLE))
+				goto error;
+			kobjects[i].object = (tEvObj)vfs_getVNode(file);
+			if(!kobjects[i].object)
+				goto error;
+		}
 	}
+
+	while(true) {
+		/* check wether we can wait */
+		for(i = 0; i < objCount; i++) {
+			if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
+				tFileNo file = proc_fdToFile((tFD)uobjects[i].object);
+				if((kobjects[i].events & EV_CLIENT) && vfs_getClient(t->proc->pid,&file,1,NULL) >= 0)
+					goto done;
+				else if((kobjects[i].events & EV_RECEIVED_MSG) && vfs_hasMsg(t->proc->pid,file))
+					goto done;
+				else if((kobjects[i].events & EV_DATA_READABLE) && vfs_hasData(t->proc->pid,file))
+					goto done;
+			}
+		}
+
+		/* wait */
+		if(!ev_waitObjects(t->tid,kobjects,objCount)) {
+			res = ERR_NOT_ENOUGH_MEM;
+			goto error;
+		}
+		thread_switch();
+		if(sig_hasSignalFor(t->tid)) {
+			res = ERR_INTERRUPTED;
+			goto error;
+		}
+		/* if we're waiting for other events, too, we have to wake up */
+		if((kobjects[i].events & ~(EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)))
+			goto done;
+	}
+
+done:
+	kheap_free(kobjects);
 	return 0;
+
+error:
+	kheap_free(kobjects);
+	return res;
 }

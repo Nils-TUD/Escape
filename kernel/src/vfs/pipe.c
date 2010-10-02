@@ -107,7 +107,7 @@ s32 vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32
 	/* wait until data is available */
 	/* don't cache the list here, because the pointer changes if the list is NULL */
 	while(sll_length(vpipe->list) == 0) {
-		ev_wait(t->tid,EVI_PIPE_FULL,node);
+		ev_wait(t->tid,EVI_PIPE_FULL,(tEvObj)node);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;
@@ -140,8 +140,8 @@ s32 vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32
 		while(sll_length(vpipe->list) == 0) {
 			/* before we go to sleep we have to notify others that we've read data. otherwise
 			 * we may cause a deadlock here */
-			ev_wakeup(EVI_PIPE_EMPTY,node);
-			ev_wait(t->tid,EVI_PIPE_FULL,node);
+			ev_wakeup(EVI_PIPE_EMPTY,(tEvObj)node);
+			ev_wait(t->tid,EVI_PIPE_FULL,(tEvObj)node);
 			/* TODO we can't accept signals here, right? since we've already read something, which
 			 * we have to deliver to the user. the only way I can imagine would be to put it back..
 			 */
@@ -153,7 +153,7 @@ s32 vfs_pipe_read(tTid pid,tFileNo file,sVFSNode *node,u8 *buffer,u32 offset,u32
 			break;
 	}
 	/* wakeup all threads that wait for writing in this node */
-	ev_wakeup(EVI_PIPE_EMPTY,node);
+	ev_wakeup(EVI_PIPE_EMPTY,(tEvObj)node);
 	return total;
 }
 
@@ -168,7 +168,7 @@ s32 vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 off
 	/* wait while our node is full */
 	if(count) {
 		while((vpipe->total + count) >= MAX_VFS_FILE_SIZE) {
-			ev_wait(t->tid,EVI_PIPE_EMPTY,node);
+			ev_wait(t->tid,EVI_PIPE_EMPTY,(tEvObj)node);
 			thread_switchNoSigs();
 		}
 	}
@@ -197,6 +197,6 @@ s32 vfs_pipe_write(tPid pid,tFileNo file,sVFSNode *node,const u8 *buffer,u32 off
 		return ERR_NOT_ENOUGH_MEM;
 	}
 	pipe->total += count;
-	ev_wakeup(EVI_PIPE_FULL,node);
+	ev_wakeup(EVI_PIPE_FULL,(tEvObj)node);
 	return count;
 }

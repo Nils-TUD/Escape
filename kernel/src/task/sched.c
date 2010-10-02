@@ -54,7 +54,6 @@ static void sched_qInit(sQueue *q);
 static sThread *sched_qDequeue(sQueue *q);
 static void sched_qDequeueThread(sQueue *q,sThread *t);
 static void sched_qAppend(sQueue *q,sThread *t);
-static void sched_qPrepend(sQueue *q,sThread *t);
 
 static sQueue readyQueue;
 static sQueue blockedQueue;
@@ -125,14 +124,6 @@ void sched_setReady(sThread *t) {
 		sched_qAppend(&readyQueue,t);
 }
 
-void sched_setReadyQuick(sThread *t) {
-	assert(t != NULL);
-	if(t->tid == IDLE_TID)
-		return;
-	if(sched_setReadyState(t))
-		sched_qPrepend(&readyQueue,t);
-}
-
 static bool sched_setReadyState(sThread *t) {
 	switch(t->state) {
 		case ST_READY:
@@ -178,33 +169,6 @@ void sched_setBlocked(sThread *t) {
 	/* insert in blocked-list */
 	sched_qAppend(&blockedQueue,t);
 }
-
-#if 0
-void sched_unblockAll(void *obj,u32 event) {
-	sThread *t,*tmp;
-	void *tobj;
-	for(t = blockedQueue.first; t != NULL; ) {
-		tobj = t->eventObj;
-		/* if suspended, just remember that it should be ready when done */
-		if((tobj == NULL || tobj == obj) && (t->events & event)) {
-			if(t->state == ST_BLOCKED_SUSP) {
-				t->state = ST_READY_SUSP;
-				t->events = EV_NOEVENT;
-			}
-			else if(t->state != ST_READY_SUSP) {
-				t->state = ST_READY;
-				t->events = EV_NOEVENT;
-				tmp = t->next;
-				sched_qDequeueThread(&blockedQueue,t);
-				sched_qAppend(&readyQueue,t);
-				t = tmp;
-				continue;
-			}
-		}
-		t = t->next;
-	}
-}
-#endif
 
 void sched_setSuspended(sThread *t,bool blocked) {
 	assert(t != NULL);
@@ -312,16 +276,6 @@ static void sched_qAppend(sQueue *q,sThread *t) {
 	else
 		q->first = t;
 	q->last = t;
-}
-
-static void sched_qPrepend(sQueue *q,sThread *t) {
-	t->prev = NULL;
-	t->next = q->first;
-	if(t->next)
-		t->next->prev = t;
-	else
-		q->last = t;
-	q->first = t;
 }
 
 

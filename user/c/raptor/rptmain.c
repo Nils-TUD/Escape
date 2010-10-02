@@ -55,7 +55,7 @@ int main(void) {
 
 	game_tick(time);
 	while(1) {
-		if(wait(EV_DATA_READABLE) != ERR_INTERRUPTED) {
+		if(wait(EV_DATA_READABLE,keymap) != ERR_INTERRUPTED) {
 			s32 res = RETRY(read(keymap,&kmdata,sizeof(kmdata)));
 			if(res < 0) {
 				if(res != ERR_WOULD_BLOCK)

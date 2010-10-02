@@ -168,7 +168,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	while(*volInfo != NULL) {
 		/* TODO we have a problem if the process that currently uses vm86 gets killed... */
 		/* because we'll never get notified that we can use vm86 */
-		ev_wait(t->tid,EVI_VM86_READY,NULL);
+		ev_wait(t->tid,EVI_VM86_READY,0);
 		thread_switchNoSigs();
 	}
 
@@ -196,7 +196,7 @@ s32 vm86_int(u16 interrupt,sVM86Regs *regs,sVM86Memarea *areas,u16 areaCount) {
 	vm86_destroyInfo(info);
 	info = NULL;
 	caller = INVALID_TID;
-	ev_wakeup(EVI_VM86_READY,NULL);
+	ev_wakeup(EVI_VM86_READY,0);
 	return vm86Res;
 }
 

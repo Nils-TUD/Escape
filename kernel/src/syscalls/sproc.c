@@ -99,7 +99,7 @@ void sysc_waitChild(sIntrptStackFrame *stack) {
 	res = proc_getExitState(p->pid,state);
 	if(res < 0) {
 		/* wait for child */
-		ev_wait(t->tid,EVI_CHILD_DIED,NULL);
+		ev_wait(t->tid,EVI_CHILD_DIED,0);
 		thread_switch();
 
 		/* we're back again :) */

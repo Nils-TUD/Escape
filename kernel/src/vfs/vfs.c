@@ -753,44 +753,33 @@ tFileNo vfs_createDriver(tPid pid,const char *name,u32 flags) {
 	return ERR_NOT_ENOUGH_MEM;
 }
 
-bool vfs_msgAvailableFor(tPid pid,u32 events) {
+bool vfs_hasMsg(tPid pid,tFileNo file) {
+	UNUSED(pid);
+	sGFTEntry *e = globalFileTable + file;
 	sVFSNode *n;
-	sProc *p = proc_getByPid(pid);
-	tFD i;
+	assert(file >= 0 && file < FILE_COUNT);
+	if(e->devNo != VFS_DEV_NO)
+		return false;
+	n = vfs_node_get(e->nodeNo);
+	return n->name != NULL && IS_DRVUSE(n->mode) && vfs_chan_hasReply(n);
+}
 
-	/* now search through the file-descriptors if there is any message */
-	if(events & (EV_RECEIVED_MSG | EV_CLIENT)) {
-		for(i = 0; i < MAX_FD_COUNT; i++) {
-			if(p->fileDescs[i] != -1) {
-				sGFTEntry *e = globalFileTable + p->fileDescs[i];
-				if(e->devNo == VFS_DEV_NO) {
-					n = vfs_node_get(e->nodeNo);
-					if((events & EV_CLIENT) && IS_DRIVER(n->mode)) {
-						s32 index;
-						tInodeNo client = vfs_getClient(pid,p->fileDescs + i,1,&index);
-						if(vfs_node_isValid(client))
-							return true;
-					}
-					/* driver-usage and a message in the receive-list? */
-					/* we don't want to check that if it is our own driver. because it makes no
-					 * sense to read from ourself ;) */
-					if((events & EV_RECEIVED_MSG) && IS_DRVUSE(n->mode) && n->parent->owner != pid) {
-						if(vfs_chan_hasReply(n))
-							return true;
-					}
-				}
-			}
-		}
-	}
-
-	return false;
+bool vfs_hasData(tPid pid,tFileNo file) {
+	UNUSED(pid);
+	sGFTEntry *e = globalFileTable + file;
+	sVFSNode *n;
+	assert(file >= 0 && file < FILE_COUNT);
+	if(e->devNo != VFS_DEV_NO)
+		return false;
+	n = vfs_node_get(e->nodeNo);
+	return n->name != NULL && IS_DRIVER(n->parent->mode) && vfs_server_isReadable(n->parent);
 }
 
 void vfs_wakeupClients(sVFSNode *node,u32 events) {
 	assert(IS_DRIVER(node->mode));
 	node = vfs_node_getFirstChild(node);
 	while(node != NULL) {
-		ev_wakeup(events,node);
+		ev_wakeup(events,(tEvObj)node);
 		node = node->next;
 	}
 }
@@ -812,7 +801,8 @@ start:
 
 		client = vfs_server_getWork(node,&cont,&retry);
 		if(client) {
-			*index = i;
+			if(index)
+				*index = i;
 			if(cont)
 				match = client;
 			else

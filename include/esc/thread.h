@@ -22,9 +22,6 @@
 
 #include <esc/common.h>
 
-/* the thread-entry-point-function */
-typedef int (*fThreadEntry)(void *arg);
-
 /* the events we can wait for */
 #define EV_NOEVENT				0			/* just wakeup on signals */
 #define EV_CLIENT				(1 << 0)	/* if there's a client to be served */
@@ -35,6 +32,15 @@ typedef int (*fThreadEntry)(void *arg);
 
 #define LOCK_EXCLUSIVE			1
 #define LOCK_KEEP				2
+
+/* the thread-entry-point-function */
+typedef int (*fThreadEntry)(void *arg);
+
+/* an object to wait for */
+typedef struct {
+	u32 events;
+	tEvObj object;
+} sWaitObject;
 
 typedef u32 tULock;
 
@@ -90,11 +96,22 @@ s32 sleep(u32 msecs);
 /**
  * Puts the current thread to sleep until one of the given events occurrs. Note that you will
  * always be waked up for signals!
+ * For EV_RECEIVED_MSG, EV_DATA_READABLE and EV_CLIENT the object is the file-descriptor!
  *
- * @param events the events on which you want to wake up
+ * @param objects the objects to wait for
+ * @param objCount the number of objects
  * @return 0 on success and a negative error-code if failed
  */
-s32 wait(u32 events);
+s32 waitm(sWaitObject *objects,u32 objCount);
+
+/**
+ * Does the same as waitm(), but waits for only one object
+ *
+ * @param events the events to wait for
+ * @param object the object to wait for
+ * @return 0 on success and a negative error-code if failed
+ */
+s32 wait(u32 events,tEvObj object);
 
 /**
  * Notifies the given thread about the given events. If it was waiting for them, it will be
@@ -188,11 +205,12 @@ s32 lockg(u32 ident,u16 flags);
  *  notify(thread1,...);
  *  unlock(...);
  *
- *  @param events the events to wait for
- *  @param ident the ident to unlock
- *  @return 0 on success
+ * @param events the events to wait for
+ * @param object the object to wait for
+ * @param ident the ident to unlock
+ * @return 0 on success
  */
-s32 waitUnlock(u32 events,u32 ident);
+s32 waitUnlock(u32 events,tEvObj object,u32 ident);
 
 /**
  * First it releases the specified global lock. After that it blocks the thread until one of the
@@ -208,11 +226,12 @@ s32 waitUnlock(u32 events,u32 ident);
  *  notify(thread1,...);
  *  unlock(...);
  *
- *  @param events the events to wait for
- *  @param ident the ident to unlock
- *  @return 0 on success
+ * @param events the events to wait for
+ * @param object the object to wait for
+ * @param ident the ident to unlock
+ * @return 0 on success
  */
-s32 waitUnlockg(u32 events,u32 ident);
+s32 waitUnlockg(u32 events,tEvObj object,u32 ident);
 
 /**
  * Releases the process-local lock with given ident

@@ -57,7 +57,7 @@ int main(void) {
 
 	// wait here
 	while(true)
-		wait(EV_NOEVENT);
+		wait(EV_NOEVENT,NULL);
 	return EXIT_SUCCESS;
 }
 

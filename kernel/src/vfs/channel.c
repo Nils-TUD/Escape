@@ -188,7 +188,7 @@ s32 vfs_chan_send(tPid pid,tFileNo file,sVFSNode *n,tMsgId id,const u8 *data,u32
 		proc_wakeup(n->parent->owner,n->parent,EV_CLIENT);
 	/* notify all threads that wait on this node for a msg */
 	else
-		ev_wakeup(EVI_RECEIVED_MSG,n);
+		ev_wakeup(EVI_RECEIVED_MSG,(tEvObj)n);
 	return 0;
 }
 
@@ -213,7 +213,7 @@ s32 vfs_chan_receive(tPid pid,tFileNo file,sVFSNode *node,tMsgId *id,u8 *data,u3
 	while(sll_length(*list) == 0) {
 		if(!vfs_shouldBlock(file))
 			return ERR_WOULD_BLOCK;
-		ev_wait(t->tid,event,node);
+		ev_wait(t->tid,event,(tEvObj)node);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;

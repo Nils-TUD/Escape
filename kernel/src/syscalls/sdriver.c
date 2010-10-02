@@ -156,7 +156,8 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 			SYSC_ERROR(stack,clientNo);
 
 		/* otherwise wait for a client (accept signals) */
-		ev_wait(t->tid,EVI_CLIENT,NULL);
+		/* TODO wait for specific drivers! */
+		ev_wait(t->tid,EVI_CLIENT,0);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			SYSC_ERROR(stack,ERR_INTERRUPTED);

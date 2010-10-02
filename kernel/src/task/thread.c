@@ -199,34 +199,6 @@ void thread_switchNoSigs(void) {
 	cur->ignoreSignals = 0;
 }
 
-#if 0
-void thread_wait(tTid tid,void *obj,u32 events) {
-	sThread *t = thread_getById(tid);
-	vassert(t != NULL,"Thread with id %d not found",tid);
-	t->events = events;
-	t->eventObj = obj;
-	sched_setBlocked(t);
-}
-
-void thread_wakeupAll(void *obj,u32 event) {
-	sched_unblockAll(obj,event);
-}
-
-void thread_wakeup(tTid tid,u32 event) {
-	sThread *t = thread_getById(tid);
-	/* ignore the wakeup if the thread doesn't exist */
-	if(t == NULL)
-		return;
-	if(t->events & event) {
-		/* TODO somehow it is by far slower to use setReadyQuick() here. I can't really
-		 * explain this behaviour :/ */
-		/*sched_setReadyQuick(t);*/
-		sched_setReady(t);
-		t->events = EV_NOEVENT;
-	}
-}
-#endif
-
 bool thread_setReady(tTid tid) {
 	sThread *t = thread_getById(tid);
 	vassert(t != NULL && t != cur,"tid=%d, pid=%d, cmd=%s",
@@ -395,7 +367,7 @@ void thread_kill(sThread *t) {
 
 	/* notify others that wait for dying threads */
 	/* TODO sig_addSignal(SIG_THREAD_DIED,t->tid);*/
-	ev_wakeup(EVI_THREAD_DIED,t->proc);
+	ev_wakeup(EVI_THREAD_DIED,(tEvObj)t->proc);
 
 	/* finally, destroy thread */
 	thread_remove(t);

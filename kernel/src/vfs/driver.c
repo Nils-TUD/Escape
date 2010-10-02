@@ -87,7 +87,7 @@ s32 vfsdrv_read(tPid pid,tFileNo file,sVFSNode *node,void *buffer,u32 offset,u32
 	if(!vfs_server_isReadable(n->parent)) {
 		if(!vfs_shouldBlock(file))
 			return ERR_WOULD_BLOCK;
-		ev_wait(t->tid,EVI_DATA_READABLE,node->parent);
+		ev_wait(t->tid,EVI_DATA_READABLE,(tEvObj)node);
 		thread_switch();
 		if(sig_hasSignalFor(t->tid))
 			return ERR_INTERRUPTED;

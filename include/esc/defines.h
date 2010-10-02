@@ -66,6 +66,7 @@ typedef s32 tDevNo;
 typedef u8 tSig;
 /* msg-id */
 typedef u32 tMsgId;
+typedef u32 tEvObj;
 
 #ifdef __cplusplus
 namespace std {

@@ -72,7 +72,7 @@ s32 lock_aquire(tPid pid,u32 ident,u16 flags) {
 		u32 event = (flags & LOCK_EXCLUSIVE) ? EVI_UNLOCK_EX : EVI_UNLOCK_SH;
 		while(lock_isLocked(locks + i,flags)) {
 			locks[i].waitCount++;
-			ev_wait(t->tid,event,(void*)ident);
+			ev_wait(t->tid,event,(tEvObj)ident);
 			thread_switchNoSigs();
 			locks[i].waitCount--;
 		}
@@ -118,9 +118,9 @@ s32 lock_release(tPid pid,u32 ident) {
 	if(l->waitCount) {
 		/* if there are no reads and writes, notify all.
 		 * otherwise notify just the threads that wait for a shared lock */
-		ev_wakeup(EVI_UNLOCK_SH,(void*)ident);
+		ev_wakeup(EVI_UNLOCK_SH,(tEvObj)ident);
 		if(l->readRefs == 0)
-			ev_wakeup(EVI_UNLOCK_EX,(void*)ident);
+			ev_wakeup(EVI_UNLOCK_EX,(tEvObj)ident);
 	}
 	/* if there are no waits and refs anymore and we shouldn't keep it, free the lock */
 	else if(l->readRefs == 0 && !(l->flags & LOCK_KEEP))

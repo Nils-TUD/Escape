@@ -73,7 +73,8 @@ void sysc_yield(sIntrptStackFrame *stack);
 /**
  * Blocks the thread until one of the given events occurrs
  *
- * @param u16 events the events to wait for
+ * @param sWaitObject* the objects to wait for
+ * @param u32 the number of objects
  * @return s32 0 on success
  */
 void sysc_wait(sIntrptStackFrame *stack);
@@ -92,10 +93,11 @@ void sysc_wait(sIntrptStackFrame *stack);
  *  notify(thread1,...);
  *  unlock(...);
  *
- *  @param u32 events the events to wait for
- *  @param u32 ident the ident to unlock
- *  @param bool global whether the ident is global
- *  @return s32 0 on success
+ * @param sWaitObject* the objects to wait for
+ * @param u32 the number of objects
+ * @param u32 ident the ident to unlock
+ * @param bool global whether the ident is global
+ * @return s32 0 on success
  */
 void sysc_waitUnlock(sIntrptStackFrame *stack);
 

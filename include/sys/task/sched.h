@@ -54,26 +54,11 @@ void sched_setRunning(sThread *t);
 void sched_setReady(sThread *t);
 
 /**
- * Puts the given thread to the beginning of the ready-queue and sets the state to ST_READY
- *
- * @param t the thread
- */
-void sched_setReadyQuick(sThread *t);
-
-/**
  * Sets the thread in the blocked-state
  *
  * @param t the thread
  */
 void sched_setBlocked(sThread *t);
-
-/**
- * Unblocks all blocked threads that are waiting for the given event
- *
- * @param obj the object that has to match (pointer-compare)
- * @param event the event
- */
-void sched_unblockAll(void *obj,u32 event);
 
 /**
  * Suspends / resumes the given thread. That means it will be put into a state

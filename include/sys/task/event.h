@@ -24,7 +24,7 @@
 
 typedef struct {
 	u32 events;
-	void *object;
+	tEvObj object;
 } sWaitObject;
 
 #define EVI_CLIENT				0
@@ -75,10 +75,10 @@ typedef struct {
 #define EV_USER_NOTIFY_MASK		(EV_USER1 | EV_USER2)
 
 void ev_init(void);
-bool ev_wait(tTid tid,u32 evi,void *object);
+bool ev_wait(tTid tid,u32 evi,tEvObj object);
 bool ev_waitm(tTid tid,u32 events);
-bool ev_waitObjects(tTid tid,sWaitObject *objects,u32 objCount);
-void ev_wakeup(u32 evi,void *object);
+bool ev_waitObjects(tTid tid,const sWaitObject *objects,u32 objCount);
+void ev_wakeup(u32 evi,tEvObj object);
 bool ev_wakeupThread(tTid tid,u32 events);
 void ev_removeThread(tTid tid);
 

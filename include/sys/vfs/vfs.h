@@ -329,14 +329,22 @@ s32 vfs_rmdir(tPid pid,const char *path);
 tFileNo vfs_createDriver(tPid pid,const char *name,u32 flags);
 
 /**
- * Checks whether there is a message for the given process. That if the process is a driver
- * and should serve a client or if the process has got a message from a driver.
+ * Checks wether the file has a receivable message
  *
  * @param pid the process-id
- * @param events the events to wait for
- * @return true if there is a message
+ * @param file the file
+ * @return true if so
  */
-bool vfs_msgAvailableFor(tPid pid,u32 events);
+bool vfs_hasMsg(tPid pid,tFileNo file);
+
+/**
+ * Checks wether the file can be read (driver has data to read)
+ *
+ * @param pid the process-id
+ * @param file the file
+ * @return true if so
+ */
+bool vfs_hasData(tPid pid,tFileNo file);
 
 /**
  * Wakes up all clients of the given node for given events

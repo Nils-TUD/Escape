@@ -35,7 +35,7 @@ typedef struct {
  */
 extern s32 _lock(u32 ident,bool global,u16 flags);
 extern s32 _unlock(u32 ident,bool global);
-extern s32 _waitUnlock(u32 events,u32 ident,bool global);
+extern s32 _waitUnlock(u32 events,tEvObj object,u32 ident,bool global);
 
 static sSLList *tvalmap[HASHMAP_SIZE];
 
@@ -79,6 +79,13 @@ void *getThreadVal(u32 key) {
 	return NULL;
 }
 
+s32 wait(u32 events,u32 object) {
+	sWaitObject obj;
+	obj.events = events;
+	obj.object = object;
+	return waitm(&obj,1);
+}
+
 s32 lock(u32 ident,u16 flags) {
 	/* nasm doesn't like "lock" as label... */
 	return _lock(ident,false,flags);
@@ -100,12 +107,12 @@ s32 lockg(u32 ident,u16 flags) {
 	return _lock(ident,true,flags);
 }
 
-s32 waitUnlock(u32 events,u32 ident) {
-	return _waitUnlock(events,ident,false);
+s32 waitUnlock(u32 events,tEvObj object,u32 ident) {
+	return _waitUnlock(events,object,ident,false);
 }
 
-s32 waitUnlockg(u32 events,u32 ident) {
-	return _waitUnlock(events,ident,true);
+s32 waitUnlockg(u32 events,tEvObj object,u32 ident) {
+	return _waitUnlock(events,object,ident,true);
 }
 
 s32 unlock(u32 ident) {

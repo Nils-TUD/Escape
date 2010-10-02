@@ -90,7 +90,7 @@ retry:
 	/* if there is no free slot or another one is using that node, wait */
 	if(!req) {
 		/* TODO don't block here when VFS_NOBLOCK is set? */
-		ev_wait(t->tid,EVI_REQ_FREE,NULL);
+		ev_wait(t->tid,EVI_REQ_FREE,0);
 		thread_switch();
 		goto retry;
 	}
@@ -108,7 +108,7 @@ retry:
 
 void vfs_req_waitForReply(sRequest *req,bool allowSigs) {
 	/* wait */
-	ev_wait(req->tid,EVI_REQ_REPLY,req->node);
+	ev_wait(req->tid,EVI_REQ_REPLY,(tEvObj)req->node);
 	if(allowSigs)
 		thread_switch();
 	else
@@ -141,7 +141,7 @@ sRequest *vfs_req_getRequestByNode(sVFSNode *node) {
 
 void vfs_req_remRequest(sRequest *r) {
 	r->node = NULL;
-	ev_wakeup(EVI_REQ_FREE,NULL);
+	ev_wakeup(EVI_REQ_FREE,0);
 }
 
 #if DEBUGGING

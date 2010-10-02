@@ -48,6 +48,7 @@ static sKbData kbData[KB_DATA_BUF_SIZE];
 int main(void) {
 	char path[MAX_PATH_LEN];
 	char *newline;
+	sWaitObject waits[3];
 	tFD ids[2];
 	tFD drv;
 	tMsgId mid;
@@ -88,6 +89,13 @@ int main(void) {
 	if(ids[1] < 0)
 		error("Unable to register driver 'keyevents'");
 
+	waits[0].events = EV_CLIENT;
+	waits[0].object = ids[0];
+	waits[1].events = EV_CLIENT;
+	waits[1].object = ids[1];
+	waits[2].events = EV_DATA_READABLE;
+	waits[2].object = kbFd;
+
     /* wait for commands */
 	while(1) {
 		tFD fd = getWork(ids,2,&drv,&mid,&msg,sizeof(msg),GW_NOBLOCK);
@@ -116,7 +124,7 @@ int main(void) {
 				printe("Unable to read");
 			if(readable)
 				fcntl(ids[0],F_SETDATA,true);
-			wait(EV_CLIENT | EV_DATA_READABLE);
+			waitm(waits,ARRAY_SIZE(waits));
 		}
 		else {
 			if(drv == ids[0])

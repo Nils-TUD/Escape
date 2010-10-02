@@ -68,6 +68,7 @@ static sKmData kbData[KB_DATA_BUF_SIZE];
 static sWindow *mouseWin = NULL;
 
 int main(void) {
+	sWaitObject waits[3];
 	tFD mouse,kmmng;
 	tFD drvId;
 	tMsgId mid;
@@ -83,6 +84,13 @@ int main(void) {
 	drvId = regDriver("winmanager",DRV_CLOSE);
 	if(drvId < 0)
 		error("Unable to create driver winmanager");
+
+	waits[0].events = EV_CLIENT;
+	waits[0].object = drvId;
+	waits[1].events = EV_DATA_READABLE;
+	waits[1].object = kmmng;
+	waits[2].events = EV_DATA_READABLE;
+	waits[2].object = mouse;
 
 	if(!win_init(drvId))
 		return EXIT_FAILURE;
@@ -172,8 +180,12 @@ int main(void) {
 				hasRead |= readMouse(drvId,mouse);
 				hasRead |= readKeyboard(drvId,kmmng);
 			}
-			if(!hasRead)
-				wait(EV_DATA_READABLE | EV_CLIENT);
+			if(!hasRead) {
+				if(enabled)
+					waitm(waits,ARRAY_SIZE(waits));
+				else
+					waitm(waits,1);
+			}
 		}
 	}
 
@@ -184,48 +196,48 @@ int main(void) {
 }
 
 static bool readMouse(tFD drvId,tFD mouse) {
-	s32 count = RETRY(read(mouse,mouseData,sizeof(mouseData)));
-	if(count < 0) {
-		if(count != ERR_WOULD_BLOCK)
-			printe("[WINM] Unable to read from mouse");
-	}
-	else {
+	s32 count;
+	while((count = RETRY(read(mouse,mouseData,sizeof(mouseData)))) > 0) {
 		sMouseData *msd = mouseData;
 		count /= sizeof(sMouseData);
 		while(count-- > 0) {
 			handleMouseMessage(drvId,msd);
 			msd++;
 		}
-		return true;
 	}
-	return false;
+	if(count < 0) {
+		if(count != ERR_WOULD_BLOCK)
+			printe("[WINM] Unable to read from mouse");
+		return false;
+	}
+	return true;
 }
 
 static bool readKeyboard(tFD drvId,tFD kmmng) {
 	sWindow *active = win_getActive();
-	if(active) {
-		s32 count = RETRY(read(kmmng,kbData,sizeof(kbData)));
-		if(count < 0) {
-			if(count != ERR_WOULD_BLOCK)
-				printe("[WINM] Unable to read from kmmanager");
-		}
-		else {
-			sKmData *kbd = kbData;
-			count /= sizeof(sKmData);
-			while(count-- > 0) {
-				/*printf("kc=%d, brk=%d\n",kbd->keycode,kbd->isBreak);*/
-				handleKbMessage(drvId,active,kbd->keycode,kbd->isBreak,kbd->modifier,
-						kbd->character);
-				kbd++;
-			}
-			return true;
+	s32 count;
+	while((count = RETRY(read(kmmng,kbData,sizeof(kbData)))) > 0) {
+		sKmData *kbd = kbData;
+		count /= sizeof(sKmData);
+		while(count-- > 0) {
+			/*printf("kc=%d, brk=%d\n",kbd->keycode,kbd->isBreak);*/
+			handleKbMessage(drvId,active,kbd->keycode,kbd->isBreak,kbd->modifier,
+					kbd->character);
+			kbd++;
 		}
 	}
-	return false;
+	if(count < 0) {
+		if(count != ERR_WOULD_BLOCK)
+			printe("[WINM] Unable to read from kmmanager");
+		return false;
+	}
+	return true;
 }
 
 static void handleKbMessage(tFD drvId,sWindow *active,u8 keycode,bool isBreak,u8 modifier,char c) {
 	tFD aWin;
+	if(!active)
+		return;
 	msg.args.arg1 = keycode;
 	msg.args.arg2 = isBreak;
 	msg.args.arg3 = active->id;

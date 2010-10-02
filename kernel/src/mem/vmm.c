@@ -719,7 +719,7 @@ static bool vmm_demandLoad(sVMRegion *vm,u32 *flags,u32 addr) {
 	/* if another thread already loads it, wait here until he's done */
 	if(*flags & PF_LOADINPROGRESS) {
 		do {
-			ev_wait(t->tid,EVI_VMM_DONE,vm->reg);
+			ev_wait(t->tid,EVI_VMM_DONE,(tEvObj)vm->reg);
 			thread_switchNoSigs();
 		}
 		while(*flags & PF_LOADINPROGRESS);
@@ -743,7 +743,7 @@ static bool vmm_demandLoad(sVMRegion *vm,u32 *flags,u32 addr) {
 
 	/* wakeup all waiting processes */
 	*flags &= ~PF_LOADINPROGRESS;
-	ev_wakeup(EVI_VMM_DONE,vm->reg);
+	ev_wakeup(EVI_VMM_DONE,(tEvObj)vm->reg);
 	return res;
 }
 

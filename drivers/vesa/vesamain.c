@@ -127,7 +127,7 @@ int main(void) {
 			vesa_doUpdate();
 		}
 		if(fd < 0)
-			wait(EV_CLIENT);
+			wait(EV_CLIENT,id);
 		else {
 			reqc++;
 			switch(mid) {

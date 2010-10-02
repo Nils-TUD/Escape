@@ -185,34 +185,6 @@ void thread_idle(void);
  */
 void thread_switchNoSigs(void);
 
-#if 0
-/**
- * Puts the given thraed to sleep with given wake-up-events
- *
- * @param tid the thread to put to sleep
- * @param obj the object (to use an event for different purposes and make a wakeup more unique)
- * @param events the events on which the thread should wakeup
- */
-void thread_wait(tTid tid,void *obj,u32 events);
-
-/**
- * Wakes up all blocked threads that wait for the given event
- *
- * @param obj the object that has to match (pointer-compare)
- * @param event the event
- */
-void thread_wakeupAll(void *obj,u32 event);
-
-/**
- * Wakes up the given thread with the given event. If the thread is not waiting for it
- * the event is ignored
- *
- * @param tid the thread to wakeup
- * @param event the event to send
- */
-void thread_wakeup(tTid tid,u32 event);
-#endif
-
 /**
  * Marks the given thread as ready (if the thread hasn't said that he don't wants to be interrupted)
  *

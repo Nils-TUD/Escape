@@ -37,6 +37,11 @@ ShellApplication::ShellApplication(tFD sid,ShellControl *sh)
 	_inst = this;
 	/* no blocking here since we want to check multiple things */
 	fcntl(_winFd,F_SETFL,IO_NOBLOCK);
+
+	_waits[0].events = EV_RECEIVED_MSG;
+	_waits[0].object = _winFd;
+	_waits[1].events = EV_CLIENT;
+	_waits[1].object = _sid;
 }
 
 ShellApplication::~ShellApplication() {
@@ -90,7 +95,7 @@ void ShellApplication::driverMain() {
 			_sh->update();
 			rbufPos = 0;
 		}
-		wait(EV_CLIENT | EV_RECEIVED_MSG);
+		waitm(_waits,ARRAY_SIZE(_waits));
 	}
 	else {
 		switch(mid) {

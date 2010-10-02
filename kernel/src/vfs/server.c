@@ -83,7 +83,7 @@ static void vfs_server_destroy(sVFSNode *node) {
 		 * action */
 		vfs_wakeupClients(node,EVI_RECEIVED_MSG);
 		vfs_wakeupClients(node,EVI_REQ_REPLY);
-		ev_wakeup(EVI_DATA_READABLE,node);
+		vfs_wakeupClients(node,EVI_DATA_READABLE);
 		kheap_free(node->data);
 		node->data = NULL;
 	}
@@ -125,7 +125,7 @@ s32 vfs_server_setReadable(sVFSNode *node,bool readable) {
 	srv->isEmpty = !readable;
 	if(wasEmpty && readable) {
 		vfs_wakeupClients(node,EVI_RECEIVED_MSG);
-		ev_wakeup(EVI_DATA_READABLE,node);
+		vfs_wakeupClients(node,EVI_DATA_READABLE);
 	}
 	return 0;
 }

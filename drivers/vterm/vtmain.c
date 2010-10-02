@@ -60,6 +60,7 @@ int main(void) {
 	tFD kbFd;
 	tFD client;
 	tMsgId mid;
+	sWaitObject waits[VTERM_COUNT + 1];
 	char name[MAX_VT_NAME_LEN + 1];
 
 	cfg.readKb = true;
@@ -71,6 +72,8 @@ int main(void) {
 		drvIds[i] = regDriver(name,DRV_READ | DRV_WRITE | DRV_TERM);
 		if(drvIds[i] < 0)
 			error("Unable to register driver '%s'",name);
+		waits[i].events = EV_CLIENT;
+		waits[i].object = drvIds[i];
 	}
 
 	/* init vterms */
@@ -81,6 +84,9 @@ int main(void) {
 	kbFd = open("/dev/kmmanager",IO_READ | IO_NOBLOCK);
 	if(kbFd < 0)
 		error("Unable to open '/dev/kmmanager'");
+
+	waits[VTERM_COUNT].events = EV_DATA_READABLE;
+	waits[VTERM_COUNT].object = kbFd;
 
 	/* select first vterm */
 	vterm_selectVTerm(0);
@@ -115,9 +121,9 @@ int main(void) {
 			 * HAVE TO handle it of course */
 			if(fd < 0) {
 				if(cfg.enabled && cfg.readKb)
-					wait(EV_CLIENT | EV_DATA_READABLE);
+					waitm(waits,VTERM_COUNT + 1);
 				else
-					wait(EV_CLIENT);
+					waitm(waits,VTERM_COUNT);
 				continue;
 			}
 		}

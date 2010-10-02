@@ -29,9 +29,6 @@
 /* the initial size of the write-cache for driver-usage-nodes */
 #define VFS_INITIAL_WRITECACHE		128
 
-#define IS_ON_HEAP(addr)			((u32)(addr) >= KERNEL_HEAP_START && \
-		(u32)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
-
 typedef struct {
 	/* size of the buffer */
 	u32 size;

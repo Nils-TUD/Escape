@@ -30,9 +30,6 @@
 #include <assert.h>
 #include <string.h>
 
-#define IS_ON_HEAP(addr)			((u32)(addr) >= KERNEL_HEAP_START && \
-		(u32)(addr) < KERNEL_HEAP_START + KERNEL_HEAP_SIZE)
-
 /* VFS-directory-entry (equal to the direntry of ext2) */
 typedef struct {
 	tInodeNo nodeNo;

@@ -98,7 +98,6 @@ void vfs_init(void) {
 	 *     |-pipe
 	 *     |-processes
 	 *     |-devices
-	 *     |-bin
 	 *   dev
 	 */
 	root = vfs_dir_create(KERNEL_PID,NULL,(char*)"");

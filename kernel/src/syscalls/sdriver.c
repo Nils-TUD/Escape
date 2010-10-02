@@ -27,6 +27,7 @@
 #include <errors.h>
 
 /* implementable functions */
+#define MAX_GETWORK_DRIVERS			16
 #define DRV_ALL						(DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE | DRV_TERM)
 
 #define GW_NOBLOCK					1
@@ -35,7 +36,8 @@ void sysc_regDriver(sIntrptStackFrame *stack) {
 	const char *name = (const char*)SYSC_ARG1(stack);
 	u32 flags = SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
-	tDrvId res;
+	tFD fd;
+	tFileNo res;
 
 	/* check flags */
 	if((flags & ~DRV_ALL) != 0 && flags != DRV_FS)
@@ -43,38 +45,19 @@ void sysc_regDriver(sIntrptStackFrame *stack) {
 	if(!sysc_isStringReadable(name))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 
+	/* create driver and open it */
 	res = vfs_createDriver(p->pid,name,flags);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
-}
 
-void sysc_unregDriver(sIntrptStackFrame *stack) {
-	tDrvId id = SYSC_ARG1(stack);
-
-	/* check node-number */
-	if(!vfs_node_isOwnDriver(id))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	/* remove the driver */
-	vfs_node_destroy(vfs_node_get(id));
-	SYSC_RET1(stack,0);
-}
-
-void sysc_setDataReadable(sIntrptStackFrame *stack) {
-	tDrvId id = SYSC_ARG1(stack);
-	bool readable = (bool)SYSC_ARG2(stack);
-	sProc *p = proc_getRunning();
-	s32 err;
-
-	/* check node-number */
-	if(!vfs_node_isValid(id))
-		SYSC_ERROR(stack,ERR_INVALID_ARGS);
-
-	err = vfs_setDataReadable(p->pid,id,readable);
-	if(err < 0)
-		SYSC_ERROR(stack,err);
-	SYSC_RET1(stack,0);
+	/* assoc fd with it */
+	fd = proc_getFreeFd();
+	if(fd < 0)
+		SYSC_ERROR(stack,fd);
+	res = proc_assocFd(fd,res);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+	SYSC_RET1(stack,fd);
 }
 
 void sysc_getClientId(sIntrptStackFrame *stack) {
@@ -94,12 +77,17 @@ void sysc_getClientId(sIntrptStackFrame *stack) {
 }
 
 void sysc_getClient(sIntrptStackFrame *stack) {
-	tDrvId did = (tDrvId)SYSC_ARG1(stack);
+	tFD drvFd = (tFD)SYSC_ARG1(stack);
 	tInodeNo cid = (tInodeNo)SYSC_ARG2(stack);
 	sProc *p = proc_getRunning();
 	tFD fd;
-	tFileNo file;
+	tFileNo file,drvFile;
 	s32 res;
+
+	/* get driver-file */
+	drvFile = proc_fdToFile(drvFd);
+	if(drvFile < 0)
+		SYSC_ERROR(stack,drvFile);
 
 	/* we need a file-desc */
 	fd = proc_getFreeFd();
@@ -107,7 +95,7 @@ void sysc_getClient(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,fd);
 
 	/* open client */
-	file = vfs_openClient(p->pid,did,cid);
+	file = vfs_openClient(p->pid,drvFile,cid);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
@@ -123,40 +111,48 @@ void sysc_getClient(sIntrptStackFrame *stack) {
 }
 
 void sysc_getWork(sIntrptStackFrame *stack) {
-	tDrvId *ids = (tDrvId*)SYSC_ARG1(stack);
-	u32 idCount = SYSC_ARG2(stack);
-	tDrvId *drv = (tDrvId*)SYSC_ARG3(stack);
+	tFileNo files[MAX_GETWORK_DRIVERS];
+	tFD *fds = (tFD*)SYSC_ARG1(stack);
+	u32 fdCount = SYSC_ARG2(stack);
+	tFD *drv = (tFD*)SYSC_ARG3(stack);
 	tMsgId *id = (tMsgId*)SYSC_ARG4(stack);
 	u8 *data = (u8*)SYSC_ARG5(stack);
 	u32 size = SYSC_ARG6(stack);
 	u8 flags = (u8)SYSC_ARG7(stack);
 	sThread *t = thread_getRunning();
 	tFileNo file;
+	tInodeNo clientNo;
 	tFD fd;
-	tInodeNo client;
-	s32 res;
+	s32 i,res,index;
 
 	/* validate driver-ids */
-	if(idCount <= 0 || idCount > 32 || ids == NULL ||
-			!paging_isRangeUserReadable((u32)ids,idCount * sizeof(tDrvId)))
+	if(fdCount <= 0 || fdCount > MAX_GETWORK_DRIVERS || fds == NULL ||
+			!paging_isRangeUserReadable((u32)fds,fdCount * sizeof(tFD)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	/* validate id and data */
 	if(!paging_isRangeUserWritable((u32)id,sizeof(tMsgId)) ||
 			!paging_isRangeUserWritable((u32)data,size))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
 	/* check drv */
-	if(drv != NULL && !paging_isRangeUserWritable((u32)drv,sizeof(tDrvId)))
+	if(drv != NULL && !paging_isRangeUserWritable((u32)drv,sizeof(tFD)))
 		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	/* translate to files */
+	for(i = 0; i < fdCount; i++) {
+		files[i] = proc_fdToFile(fds[i]);
+		if(files[i] < 0)
+			SYSC_ERROR(stack,files[i]);
+	}
 
 	/* open a client */
 	while(1) {
-		client = vfs_getClient(t->proc->pid,(tInodeNo*)ids,idCount);
-		if(client != ERR_NO_CLIENT_WAITING)
+		clientNo = vfs_getClient(t->proc->pid,files,fdCount,&index);
+		if(clientNo != ERR_NO_CLIENT_WAITING)
 			break;
 
 		/* if we shouldn't block, stop here */
 		if(flags & GW_NOBLOCK)
-			SYSC_ERROR(stack,client);
+			SYSC_ERROR(stack,clientNo);
 
 		/* otherwise wait for a client (accept signals) */
 		ev_wait(t->tid,EVI_CLIENT,NULL);
@@ -164,8 +160,8 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 		if(sig_hasSignalFor(t->tid))
 			SYSC_ERROR(stack,ERR_INTERRUPTED);
 	}
-	if(client < 0)
-		SYSC_ERROR(stack,client);
+	if(clientNo < 0)
+		SYSC_ERROR(stack,clientNo);
 
 	/* get fd for communication with the client */
 	fd = proc_getFreeFd();
@@ -173,7 +169,7 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 		SYSC_ERROR(stack,fd);
 
 	/* open file */
-	file = vfs_openFile(t->proc->pid,VFS_READ | VFS_WRITE,client,VFS_DEV_NO);
+	file = vfs_openFile(t->proc->pid,VFS_READ | VFS_WRITE,clientNo,VFS_DEV_NO);
 	if(file < 0)
 		SYSC_ERROR(stack,file);
 
@@ -192,6 +188,6 @@ void sysc_getWork(sIntrptStackFrame *stack) {
 	}
 
 	if(drv)
-		*drv = vfs_node_getNo(vfs_node_get(client)->parent);
+		*drv = fds[index];
 	SYSC_RET1(stack,fd);
 }

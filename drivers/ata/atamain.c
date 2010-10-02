@@ -39,15 +39,15 @@
 typedef struct {
 	u32 device;
 	u32 partition;
-} sId2Drv;
+} sId2Fd;
 
-static sId2Drv *getDriver(tDrvId sid);
+static sId2Fd *getDriver(tFD sid);
 static void initDrives(void);
 static void createVFSEntry(sATADevice *device,sPartition *part,const char *name);
 
 static s32 drvCount = 0;
-static tDrvId drivers[DEVICE_COUNT * PARTITION_COUNT];
-static sId2Drv id2drv[DEVICE_COUNT * PARTITION_COUNT];
+static tFD drivers[DEVICE_COUNT * PARTITION_COUNT];
+static sId2Fd id2Fd[DEVICE_COUNT * PARTITION_COUNT];
 /* don't use dynamic memory here since this may cause trouble with swapping (which we do) */
 /* because if the heap hasn't enough memory and we request more when we should swap the kernel
  * may not have more memory and can't do anything about it */
@@ -81,14 +81,14 @@ int main(int argc,char **argv) {
 	fclose(f);
 
 	while(1) {
-		tDrvId drv;
-		tFD fd = getWork(drivers,drvCount,&drv,&mid,&msg,sizeof(msg),0);
+		tFD drvFd;
+		tFD fd = getWork(drivers,drvCount,&drvFd,&mid,&msg,sizeof(msg),0);
 		if(fd < 0) {
 			if(fd != ERR_INTERRUPTED)
-				printe("[ata] Unable to get client");
+				printe("[ATA] Unable to get client");
 		}
 		else {
-			sId2Drv *driver = getDriver(drv);
+			sId2Fd *driver = getDriver(drvFd);
 			sATADevice *device = NULL;
 			sPartition *part = NULL;
 			if(driver) {
@@ -98,7 +98,7 @@ int main(int argc,char **argv) {
 			}
 			if(device == NULL || part == NULL || device->present == 0 || part->present == 0) {
 				/* should never happen */
-				printe("[ata] Invalid device");
+				printe("[ATA] Invalid device");
 				continue;
 			}
 
@@ -161,7 +161,7 @@ int main(int argc,char **argv) {
 	releaseIOPort(ATA_REG_BASE_PRIMARY + ATA_REG_CONTROL);
 	releaseIOPort(ATA_REG_BASE_SECONDARY + ATA_REG_CONTROL);
 	for(i = 0; i < drvCount; i++)
-		unregDriver(drivers[i]);
+		close(drivers[i]);
 	return EXIT_SUCCESS;
 }
 
@@ -197,10 +197,10 @@ static void initDrives(void) {
 					ATA_LOG("Registered driver '%s' (device %d, partition %d)",
 							name,device->id,p + 1);
 					/* we're a block-device, so always data available */
-					setDataReadable(drivers[drvCount],true);
+					fcntl(drivers[drvCount],F_SETDATA,true);
 					createVFSEntry(device,device->partTable + p,name);
-					id2drv[drvCount].device = device->id;
-					id2drv[drvCount].partition = p;
+					id2Fd[drvCount].device = device->id;
+					id2Fd[drvCount].partition = p;
 					drvCount++;
 				}
 			}
@@ -257,11 +257,11 @@ static void createVFSEntry(sATADevice *device,sPartition *part,const char *name)
 	fclose(f);
 }
 
-static sId2Drv *getDriver(tDrvId sid) {
-	u32 i;
+static sId2Fd *getDriver(tFD sid) {
+	s32 i;
 	for(i = 0; i < drvCount; i++) {
 		if(drivers[i] == sid)
-			return id2drv + i;
+			return id2Fd + i;
 	}
 	return NULL;
 }

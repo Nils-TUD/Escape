@@ -95,7 +95,7 @@ int main(int argc,char *argv[]) {
 	tFD fd;
 	tMsgId mid;
 	u32 i,fstype;
-	tDrvId id;
+	tFD id;
 	sFileSystem *fs;
 
 	if(argc < 4) {
@@ -182,7 +182,7 @@ int main(int argc,char *argv[]) {
 	/* clean up */
 	tpool_shutdown();
 	shutdown();
-	unregDriver(id);
+	close(id);
 
 	return EXIT_SUCCESS;
 }

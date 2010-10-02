@@ -51,7 +51,7 @@ static struct tm date;
 
 int main(void) {
 	tMsgId mid;
-	tDrvId id;
+	tFD id;
 
 	/* request io-ports */
 	if(requestIOPorts(IOPORT_CMOS_INDEX,2) < 0)
@@ -65,8 +65,8 @@ int main(void) {
 		error("Unable to register driver 'cmos'");
 
 	/* there is always data available */
-	if(setDataReadable(id,true) < 0)
-		error("setDataReadable");
+	if(fcntl(id,F_SETDATA,true) < 0)
+		error("fcntl");
 
 	/* wait for commands */
 	while(1) {
@@ -98,7 +98,7 @@ int main(void) {
 	}
 
 	/* clean up */
-	unregDriver(id);
+	close(id);
 	releaseIOPorts(IOPORT_CMOS_INDEX,2);
 	return EXIT_SUCCESS;
 }

@@ -40,7 +40,7 @@ typedef struct {
 
 static u32 respId = 1;
 static sMsg msg;
-static tDrvId id;
+static tFD id;
 
 static int getRequests(void *arg);
 static int handleRequest(void *arg);
@@ -89,13 +89,13 @@ int mod_driver(int argc,char *argv[]) {
 	id = regDriver("bla",DRV_OPEN | DRV_READ | DRV_WRITE | DRV_CLOSE);
 	if(id < 0)
 		error("regDriver");
-	setDataReadable(id,true);
+	fcntl(id,F_SETDATA,true);
 
 	if(startThread(getRequests,NULL) < 0)
 		error("Unable to start thread");
 
 	join(0);
-	unregDriver(id);
+	close(id);
 	return EXIT_SUCCESS;
 }
 

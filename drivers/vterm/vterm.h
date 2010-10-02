@@ -30,7 +30,7 @@
  * @param cfg the global config
  * @return true if successfull
  */
-bool vterm_initAll(tDrvId *ids,sVTermCfg *cfg);
+bool vterm_initAll(tFD *ids,sVTermCfg *cfg);
 
 /**
  * @param index the index

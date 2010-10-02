@@ -49,7 +49,7 @@ void events_init(void) {
 	assert(listener);
 }
 
-bool events_send(tDrvId driver,sKmData *km) {
+bool events_send(tFD driver,sKmData *km) {
 	sSLNode *n;
 	sMsg msg;
 	bool copied = false;

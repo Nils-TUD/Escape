@@ -27,26 +27,9 @@
  *
  * @param const char* name of the driver
  * @param u32 flags: what functions are implemented
- * @return tDrvId the driver-id if successfull
+ * @return tFD the file-desc if successfull
  */
 void sysc_regDriver(sIntrptStackFrame *stack);
-
-/**
- * Unregisters a driver
- *
- * @param tDrvId the driver-id
- * @return s32 0 on success or a negative error-code
- */
-void sysc_unregDriver(sIntrptStackFrame *stack);
-
-/**
- * For drivers: Sets whether read() has currently something to read or not
- *
- * @param tDrvId the driver-id
- * @param bool whether there is data to read
- * @return s32 0 on success
- */
-void sysc_setDataReadable(sIntrptStackFrame *stack);
 
 /**
  * Fetches the client-id from the given file-descriptor
@@ -59,7 +42,7 @@ void sysc_getClientId(sIntrptStackFrame *stack);
 /**
  * For drivers: Returns the file-descriptor for a specific client
  *
- * @param tDrvId the driver-id
+ * @param tFD the file-descriptor for the driver
  * @param tInodeNo the client-id
  * @return tFD the file-descriptor
  */
@@ -71,26 +54,15 @@ void sysc_getClient(sIntrptStackFrame *stack);
  * If a client wants to be served, the message is fetched from him and the client-id is returned.
  * You can use the client-id for writing a reply.
  *
- * @param tDrvId* an array with driver-ids to check
- * @param u32 the number of driver-ids
- * @param tDrvId* will be set to the driver from which the client has been taken
+ * @param tFD* an array of file-descriptors to check
+ * @param u32 the number of fds
+ * @param tFD* will be set to the file-desc from which the client has been taken
  * @param tMsgId* will be set to the msg-id
  * @param sMsg* the message
  * @param u32 the (max) size of the message
  * @param u8 flags
- * @return tDrvId the client-id or a negative error-code
+ * @return tFD the file-desc to serve the client or a negative error-code
  */
 void sysc_getWork(sIntrptStackFrame *stack);
-
-/**
- * Sends a reply to the given client.
- *
- * @param tDrvId the client-id
- * @param tMsgId the msg-id
- * @param sMsg* the message
- * @param u32 the size of the message
- * @return s32 0 on success
- */
-void sysc_reply(sIntrptStackFrame *stack);
 
 #endif /* SYSCALLS_DRIVER_H_ */

@@ -55,7 +55,7 @@ typedef struct {
  * @param sid the driver-id
  * @return true on success
  */
-bool win_init(tDrvId sid);
+bool win_init(tFD sid);
 
 /**
  * Enables or disables VESA

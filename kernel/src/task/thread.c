@@ -231,8 +231,10 @@ bool thread_setReady(tTid tid) {
 	sThread *t = thread_getById(tid);
 	vassert(t != NULL && t != cur,"tid=%d, pid=%d, cmd=%s",
 			t ? t->tid : 0,t ? t->proc->pid : 0,t ? t->proc->command : "?");
-	if(!t->ignoreSignals)
+	if(!t->ignoreSignals) {
 		sched_setReady(t);
+		ev_removeThread(tid);
+	}
 	return t->state == ST_READY;
 }
 

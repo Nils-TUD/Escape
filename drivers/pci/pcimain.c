@@ -29,7 +29,7 @@ static sMsg msg;
 
 int main(void) {
 	tMsgId mid;
-	tDrvId id;
+	tFD id;
 
 	list_init();
 
@@ -71,6 +71,6 @@ int main(void) {
 		}
 	}
 
-	unregDriver(id);
+	close(id);
 	return EXIT_SUCCESS;
 }

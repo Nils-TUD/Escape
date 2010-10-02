@@ -58,7 +58,7 @@ static u16 intrptTarget = 0;
 int main(void) {
 	tFD fd;
 	tMsgId mid;
-	tDrvId id;
+	tFD id;
 
 	/* register driver */
 	id = regDriver("speaker",0);
@@ -106,7 +106,7 @@ int main(void) {
 	/* clean up */
 	releaseIOPorts(IOPORT_KB_CTRL_B,2);
 	releaseIOPorts(IOPORT_PIT_SPEAKER,2);
-	unregDriver(id);
+	close(id);
 
 	return EXIT_SUCCESS;
 }

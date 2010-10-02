@@ -41,6 +41,7 @@ typedef struct {
 	sVFSNode *lastClient;
 } sServer;
 
+static void vfs_server_close(tPid pid,tFileNo file,sVFSNode *node);
 static void vfs_server_destroy(sVFSNode *node);
 
 sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,u32 flags) {
@@ -54,7 +55,7 @@ sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,u32 flags) {
 	node->readHandler = NULL;
 	node->writeHandler = NULL;
 	node->seek = NULL;
-	node->close = NULL;
+	node->close = vfs_server_close;
 	node->destroy = vfs_server_destroy;
 	node->data = NULL;
 	srv = (sServer*)kheap_alloc(sizeof(sServer));
@@ -67,6 +68,12 @@ sVFSNode *vfs_server_create(tPid pid,sVFSNode *parent,char *name,u32 flags) {
 	srv->lastClient = NULL;
 	node->data = srv;
 	return node;
+}
+
+static void vfs_server_close(tPid pid,tFileNo file,sVFSNode *node) {
+	UNUSED(pid);
+	UNUSED(file);
+	vfs_node_destroy(node);
 }
 
 static void vfs_server_destroy(sVFSNode *node) {
@@ -110,14 +117,17 @@ bool vfs_server_isReadable(sVFSNode *node) {
 	return !srv->isEmpty;
 }
 
-void vfs_server_setReadable(sVFSNode *node,bool readable) {
+s32 vfs_server_setReadable(sVFSNode *node,bool readable) {
 	sServer *srv = (sServer*)node->data;
+	if(!DRV_IMPL(srv->funcs,DRV_READ))
+		return ERR_UNSUPPORTED_OP;
 	bool wasEmpty = srv->isEmpty;
 	srv->isEmpty = !readable;
 	if(wasEmpty && readable) {
 		vfs_wakeupClients(node,EVI_RECEIVED_MSG);
 		ev_wakeup(EVI_DATA_READABLE,node);
 	}
+	return 0;
 }
 
 sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry) {

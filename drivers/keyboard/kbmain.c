@@ -85,7 +85,7 @@ static sRingBuf *ibuf;
 static bool moving = false;
 
 int main(void) {
-	tDrvId id;
+	tFD id;
 	tMsgId mid;
 	u8 kbdata;
 
@@ -198,7 +198,7 @@ int main(void) {
 		moving = true;
 		rb_move(rbuf,ibuf,rb_length(ibuf));
 		if(rb_length(rbuf) > 0)
-			setDataReadable(id,true);
+			fcntl(id,F_SETDATA,true);
 		moving = false;
 
 		fd = getWork(&id,1,NULL,&mid,&msg,sizeof(msg),0);
@@ -234,7 +234,7 @@ int main(void) {
 	releaseIOPort(IOPORT_KB_CTRL);
 	rb_destroy(ibuf);
 	rb_destroy(rbuf);
-	unregDriver(id);
+	close(id);
 
 	return EXIT_SUCCESS;
 }

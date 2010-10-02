@@ -64,8 +64,6 @@ typedef s32 tInodeNo;
 typedef s32 tDevNo;
 /* signal-number */
 typedef u8 tSig;
-/* driver-id */
-typedef s32 tDrvId;
 /* msg-id */
 typedef u32 tMsgId;
 

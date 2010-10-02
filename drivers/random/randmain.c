@@ -29,7 +29,7 @@
 static sMsg msg;
 
 int main(void) {
-	tDrvId id;
+	tFD id;
 	tMsgId mid;
 
 	id = regDriver("random",DRV_READ);
@@ -37,8 +37,8 @@ int main(void) {
 		error("Unable to register driver 'random'");
 
 	/* random numbers are always available ;) */
-	if(setDataReadable(id,true) < 0)
-		error("setDataReadable");
+	if(fcntl(id,F_SETDATA,true) < 0)
+		error("fcntl");
 	srand(time(NULL));
 
     /* wait for commands */
@@ -74,6 +74,6 @@ int main(void) {
 	}
 
 	/* clean up */
-	unregDriver(id);
+	close(id);
 	return EXIT_SUCCESS;
 }

@@ -92,7 +92,7 @@ typedef struct {
 } sMousePacket;
 
 static u8 byteNo = 0;
-static tDrvId sid;
+static tFD sid;
 static sMsg msg;
 static sRingBuf *ibuf;
 static sRingBuf *rbuf;
@@ -132,7 +132,7 @@ int main(void) {
 		moving = true;
 		rb_move(rbuf,ibuf,rb_length(ibuf));
 		if(rb_length(rbuf) > 0)
-			setDataReadable(sid,true);
+			fcntl(sid,F_SETDATA,true);
 		moving = false;
 
 		fd = getWork(&sid,1,NULL,&mid,&msg,sizeof(msg),0);
@@ -167,7 +167,7 @@ int main(void) {
 	rb_destroy(rbuf);
 	releaseIOPort(IOPORT_KB_CTRL);
 	releaseIOPort(IOPORT_KB_DATA);
-	unregDriver(sid);
+	close(sid);
 	return EXIT_SUCCESS;
 }
 

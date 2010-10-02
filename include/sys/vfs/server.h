@@ -40,7 +40,7 @@ bool vfs_server_isterm(sVFSNode *node);
 bool vfs_server_supports(sVFSNode *node,u32 funcs);
 bool vfs_server_accepts(sVFSNode *node,u32 id);
 bool vfs_server_isReadable(sVFSNode *node);
-void vfs_server_setReadable(sVFSNode *node,bool readable);
+s32 vfs_server_setReadable(sVFSNode *node,bool readable);
 sVFSNode *vfs_server_getWork(sVFSNode *node,bool *cont,bool *retry);
 
 #if DEBUGGING

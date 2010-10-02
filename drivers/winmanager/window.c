@@ -38,7 +38,7 @@ static void win_clearRegion(u8 *mem,tCoord x,tCoord y,tSize width,tSize height);
 static void win_notifyVesa(tCoord x,tCoord y,tSize width,tSize height);
 
 static tFD vesa;
-static tDrvId drvId;
+static tFD drvId;
 static sVESAInfo vesaInfo;
 
 static sMsg msg;	/* TODO we already have a msg in winmain.c */
@@ -46,7 +46,7 @@ static u8 *shmem;
 static u16 activeWindow = WINDOW_COUNT;
 static sWindow windows[WINDOW_COUNT];
 
-bool win_init(tDrvId sid) {
+bool win_init(tFD sid) {
 	tMsgId mid;
 	tWinId i;
 

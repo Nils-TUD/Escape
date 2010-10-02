@@ -132,29 +132,29 @@ static s32 vfs_hasAccess(tPid pid,tInodeNo nodeNo,u16 flags) {
 }
 
 s32 vfs_incRefs(tFileNo file) {
-	sGFTEntry *e;
-	/* invalid file-number? */
-	if(file < 0 || file >= FILE_COUNT)
+	sGFTEntry *e = globalFileTable + file;
+	if(file < 0 || file >= FILE_COUNT || e->flags == 0)
 		return ERR_INVALID_FILE;
-
-	e = globalFileTable + file;
-	if(e->flags == 0)
-		return ERR_INVALID_FILE;
-
 	e->refCount++;
 	return 0;
 }
 
+sVFSNode *vfs_getVNode(tFileNo file) {
+	sVFSNode *n;
+	sGFTEntry *e = globalFileTable + file;
+	if(file < 0 || file >= FILE_COUNT || e->flags == 0)
+		return NULL;
+	if(e->devNo != VFS_DEV_NO)
+		return NULL;
+	n = vfs_node_get(e->nodeNo);
+	if(n->name == NULL)
+		return NULL;
+	return n;
+}
+
 s32 vfs_getFileId(tFileNo file,tInodeNo *ino,tDevNo *dev) {
-	sGFTEntry *e;
-
-	/* invalid file-number? */
-	if(file < 0 || file >= FILE_COUNT)
-		return ERR_INVALID_FILE;
-
-	/* not in use? */
-	e = globalFileTable + file;
-	if(e->flags == 0)
+	sGFTEntry *e = globalFileTable + file;
+	if(file < 0 || file >= FILE_COUNT || e->flags == 0)
 		return ERR_INVALID_FILE;
 
 	*ino = e->nodeNo;
@@ -173,6 +173,12 @@ s32 vfs_fcntl(tPid pid,tFileNo file,u32 cmd,s32 arg) {
 			e->flags &= VFS_READ | VFS_WRITE | VFS_CREATE;
 			e->flags |= arg & VFS_NOBLOCK;
 			return 0;
+		case F_SETDATA: {
+			sVFSNode *n = vfs_node_get(e->nodeNo);
+			if(e->devNo != VFS_DEV_NO || n->name == NULL || !IS_DRIVER(n->mode))
+				return ERR_INVALID_ARGS;
+			return vfs_server_setReadable(n,(bool)arg);
+		}
 	}
 	return ERR_INVALID_ARGS;
 }
@@ -507,6 +513,8 @@ s32 vfs_sendMsg(tPid pid,tFileNo file,tMsgId id,const u8 *data,u32 size) {
 
 	/* send the message */
 	n = vfs_node_get(e->nodeNo);
+	if(!IS_DRVUSE(n->mode))
+		return ERR_UNSUPPORTED_OP;
 	err = vfs_chan_send(pid,file,n,id,data,size);
 
 	if(err == 0 && pid != KERNEL_PID) {
@@ -530,6 +538,8 @@ s32 vfs_receiveMsg(tPid pid,tFileNo file,tMsgId *id,u8 *data,u32 size) {
 
 	/* receive the message */
 	n = vfs_node_get(e->nodeNo);
+	if(!IS_DRVUSE(n->mode))
+		return ERR_UNSUPPORTED_OP;
 	err = vfs_chan_receive(pid,file,n,id,data,size);
 
 	if(err > 0 && pid != KERNEL_PID) {
@@ -708,7 +718,7 @@ s32 vfs_rmdir(tPid pid,const char *path) {
 	return 0;
 }
 
-tDrvId vfs_createDriver(tPid pid,const char *name,u32 flags) {
+tFileNo vfs_createDriver(tPid pid,const char *name,u32 flags) {
 	sVFSNode *drv = devNode;
 	sVFSNode *n = drv->firstChild;
 	u32 len;
@@ -736,22 +746,11 @@ tDrvId vfs_createDriver(tPid pid,const char *name,u32 flags) {
 	/* create node */
 	n = vfs_server_create(pid,drv,hname,flags);
 	if(n != NULL)
-		return vfs_node_getNo(n);
+		return vfs_openFile(pid,VFS_READ,vfs_node_getNo(n),VFS_DEV_NO);
 
 	/* failed, so cleanup */
 	kheap_free(hname);
 	return ERR_NOT_ENOUGH_MEM;
-}
-
-s32 vfs_setDataReadable(tPid pid,tInodeNo nodeNo,bool readable) {
-	sVFSNode *n = vfs_node_get(nodeNo);
-	if(n->name == NULL || !IS_DRIVER(n->mode) || !vfs_server_supports(n,DRV_READ))
-		return ERR_INVALID_DRVID;
-	if(n->owner != pid)
-		return ERR_NOT_OWN_DRIVER;
-
-	vfs_server_setReadable(n,readable);
-	return 0;
 }
 
 bool vfs_msgAvailableFor(tPid pid,u32 events) {
@@ -759,32 +758,23 @@ bool vfs_msgAvailableFor(tPid pid,u32 events) {
 	sProc *p = proc_getByPid(pid);
 	tFD i;
 
-	/* at first we check whether the process is a driver */
-	if(events & EV_CLIENT) {
-		sVFSNode *rn = devNode;
-		n = vfs_node_getFirstChild(rn);
-		while(n != NULL) {
-			if(n->owner == pid) {
-				tInodeNo nodeNo = vfs_node_getNo(n);
-				tInodeNo client = vfs_getClient(pid,&nodeNo,1);
-				if(vfs_node_isValid(client))
-					return true;
-			}
-			n = n->next;
-		}
-	}
-
 	/* now search through the file-descriptors if there is any message */
-	if(events & EV_RECEIVED_MSG) {
+	if(events & (EV_RECEIVED_MSG | EV_CLIENT)) {
 		for(i = 0; i < MAX_FD_COUNT; i++) {
 			if(p->fileDescs[i] != -1) {
 				sGFTEntry *e = globalFileTable + p->fileDescs[i];
 				if(e->devNo == VFS_DEV_NO) {
 					n = vfs_node_get(e->nodeNo);
+					if((events & EV_CLIENT) && IS_DRIVER(n->mode)) {
+						s32 index;
+						tInodeNo client = vfs_getClient(pid,p->fileDescs + i,1,&index);
+						if(vfs_node_isValid(client))
+							return true;
+					}
 					/* driver-usage and a message in the receive-list? */
 					/* we don't want to check that if it is our own driver. because it makes no
 					 * sense to read from ourself ;) */
-					if(IS_DRVUSE(n->mode) && n->parent->owner != pid) {
+					if((events & EV_RECEIVED_MSG) && IS_DRVUSE(n->mode) && n->parent->owner != pid) {
 						if(vfs_chan_hasReply(n))
 							return true;
 					}
@@ -805,22 +795,24 @@ void vfs_wakeupClients(sVFSNode *node,u32 events) {
 	}
 }
 
-s32 vfs_getClient(tPid pid,tInodeNo *vfsNodes,u32 count) {
+s32 vfs_getClient(tPid pid,tFileNo *files,u32 count,s32 *index) {
 	sVFSNode *node = NULL,*client,*match = NULL;
 	u32 i;
 	bool retry,cont = true;
 start:
 	retry = false;
 	for(i = 0; cont && i < count; i++) {
-		if(!vfs_node_isValid(vfsNodes[i]))
-			return ERR_INVALID_DRVID;
+		sGFTEntry *e = globalFileTable + files[i];
+		if(files[i] < 0 || files[i] >= FILE_COUNT || e->devNo != VFS_DEV_NO)
+			return ERR_INVALID_FILE;
 
-		node = vfs_node_get(vfsNodes[i]);
+		node = vfs_node_get(e->nodeNo);
 		if(node->owner != pid || !IS_DRIVER(node->mode))
 			return ERR_NOT_OWN_DRIVER;
 
 		client = vfs_server_getWork(node,&cont,&retry);
 		if(client) {
+			*index = i;
 			if(cont)
 				match = client;
 			else
@@ -848,17 +840,13 @@ tInodeNo vfs_getClientId(tPid pid,tFileNo file) {
 	return e->nodeNo;
 }
 
-tFileNo vfs_openClient(tPid pid,tInodeNo nodeNo,tInodeNo clientId) {
-	sVFSNode *n,*node;
-	/* check if the node is valid */
-	if(!vfs_node_isValid(nodeNo))
-		return ERR_INVALID_DRVID;
-	node = vfs_node_get(nodeNo);
-	if(node->owner != pid || !IS_DRIVER(node->mode))
-		return ERR_NOT_OWN_DRIVER;
+tFileNo vfs_openClient(tPid pid,tFileNo file,tInodeNo clientId) {
+	sGFTEntry *e = globalFileTable + file;
+	sVFSNode *n;
+	vassert(file >= 0 && file < FILE_COUNT && e->flags != 0,"Invalid file %d",file);
 
 	/* search for the client */
-	n = vfs_node_getFirstChild(node);
+	n = vfs_node_getFirstChild(vfs_node_get(e->nodeNo));
 	while(n != NULL) {
 		if(vfs_node_getNo(n) == clientId)
 			break;

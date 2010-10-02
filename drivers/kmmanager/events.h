@@ -36,7 +36,7 @@ void events_init(void);
  * @param km the keymap-data
  * @return true if we've sent it to somebody
  */
-bool events_send(tDrvId driver,sKmData *km);
+bool events_send(tFD driver,sKmData *km);
 
 /**
  * Adds the given listener

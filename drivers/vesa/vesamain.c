@@ -86,7 +86,7 @@ static fSetPixel setPixel[] = {
 };
 
 int main(void) {
-	tDrvId id;
+	tFD id;
 	tMsgId mid;
 	u32 reqc;
 	bool enabled = true;
@@ -216,7 +216,7 @@ int main(void) {
 		}
 	}
 
-	unregDriver(id);
+	close(id);
 	free(cursorCopy);
 	destroySharedMem("vesa");
 	return EXIT_SUCCESS;

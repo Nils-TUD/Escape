@@ -50,7 +50,7 @@ static void getProcName(tPid pid,char *name);
 static sMsg msg;
 
 int main(void) {
-	tDrvId id;
+	tFD id;
 	tMsgId mid;
 	bool run = true;
 
@@ -97,7 +97,7 @@ int main(void) {
 	/* clean up */
 	releaseIOPort(IOPORT_KB_DATA);
 	releaseIOPort(IOPORT_KB_CTRL);
-	unregDriver(id);
+	close(id);
 	return EXIT_SUCCESS;
 }
 

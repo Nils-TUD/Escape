@@ -56,7 +56,7 @@ private:
 	static const Color CURSOR_COLOR;
 
 public:
-	ShellControl(tDrvId sid,tCoord x,tCoord y,tSize width,tSize height) :
+	ShellControl(tFD sid,tCoord x,tCoord y,tSize width,tSize height) :
 		Control(x,y,width,height), _lastCol(0), _lastRow(0), _vt(NULL) {
 		tFD speakerFd;
 		sVTSize size;

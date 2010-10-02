@@ -61,7 +61,7 @@ sVTerm *vterm_get(u32 index) {
 	return vterms + index;
 }
 
-bool vterm_initAll(tDrvId *ids,sVTermCfg *cfg) {
+bool vterm_initAll(tFD *ids,sVTermCfg *cfg) {
 	tFD vidFd,speakerFd;
 	sVTSize vidSize;
 	char name[MAX_VT_NAME_LEN + 1];
@@ -191,7 +191,7 @@ static bool vterm_handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 					vterm_rlFlushBuf(vt);
 				}
 				if(rb_length(vt->inbuf) == 0)
-					setDataReadable(vt->sid,true);
+					fcntl(vt->sid,F_SETDATA,true);
 				return false;
 		}
 	}

@@ -41,7 +41,6 @@ static void test_open(void);
 static void test_close(void);
 static void test_read(void);
 static void test_regDriver(void);
-static void test_unregDriver(void);
 static void test_changeSize(void);
 static void test_mapPhysical(void);
 static void test_write(void);
@@ -119,50 +118,47 @@ static s32 _read(u32 fd,void *buffer,u32 count) {
 static s32 _regDriver(const char *name,u32 type) {
 	return test_doSyscall(8,(u32)name,type,0);
 }
-static s32 _unregDriver(u32 id) {
-	return test_doSyscall(9,id,0,0);
-}
 static s32 _changeSize(u32 change) {
-	return test_doSyscall(10,change,0,0);
+	return test_doSyscall(9,change,0,0);
 }
 static s32 __mapPhysical(u32 addr,u32 count) {
-	return test_doSyscall(11,addr,count,0);
+	return test_doSyscall(10,addr,count,0);
 }
 static s32 _write(u32 fd,void *buffer,u32 count) {
-	return test_doSyscall(12,fd,(u32)buffer,count);
+	return test_doSyscall(11,fd,(u32)buffer,count);
 }
 static s32 _requestIOPorts(u32 start,u32 count) {
-	return test_doSyscall(14,start,count,0);
+	return test_doSyscall(13,start,count,0);
 }
 static s32 _releaseIOPorts(u32 start,u32 count) {
-	return test_doSyscall(15,start,count,0);
+	return test_doSyscall(14,start,count,0);
 }
 static s32 _dupFd(u32 fd) {
-	return test_doSyscall(16,fd,0,0);
+	return test_doSyscall(15,fd,0,0);
 }
 static s32 _redirFd(u32 src,u32 dst) {
-	return test_doSyscall(17,src,dst,0);
+	return test_doSyscall(16,src,dst,0);
 }
 static s32 _wait(u32 ev) {
-	return test_doSyscall(18,ev,0,0);
+	return test_doSyscall(17,ev,0,0);
 }
 static s32 _setSigHandler(u32 sig,u32 handler) {
-	return test_doSyscall(19,sig,handler,0);
+	return test_doSyscall(18,sig,handler,0);
 }
 static s32 _sendSignalTo(u32 pid,u32 sig) {
-	return test_doSyscall(21,pid,sig,0);
+	return test_doSyscall(20,pid,sig,0);
 }
 static s32 _exec(const char *path,const char **args) {
-	return test_doSyscall(22,(u32)path,(u32)args,0);
+	return test_doSyscall(21,(u32)path,(u32)args,0);
 }
 static s32 _seek(u32 fd,s32 pos,u32 whence) {
-	return test_doSyscall(26,fd,pos,whence);
+	return test_doSyscall(25,fd,pos,whence);
 }
 static s32 _stat(const char *path,sFileInfo *info) {
-	return test_doSyscall(27,(u32)path,(u32)info,0);
+	return test_doSyscall(26,(u32)path,(u32)info,0);
 }
-static s32 _getWork(tDrvId *ids,u32 count,tDrvId *client,tMsgId *mid,sMsg *msg,u32 size,u8 flags) {
-	return test_doSyscall7(55,(u32)ids,count,(u32)client,(u32)mid,(u32)msg,size,flags);
+static s32 _getWork(tFD *ids,u32 count,tFD *client,tMsgId *mid,sMsg *msg,u32 size,u8 flags) {
+	return test_doSyscall7(53,(u32)ids,count,(u32)client,(u32)mid,(u32)msg,size,flags);
 }
 
 /* our test-module */
@@ -177,7 +173,6 @@ static void test_syscalls(void) {
 	test_close();
 	test_read();
 	test_regDriver();
-	test_unregDriver();
 	test_changeSize();
 	test_mapPhysical();
 	test_write();
@@ -273,14 +268,6 @@ static void test_regDriver(void) {
 	test_caseSucceded();
 }
 
-static void test_unregDriver(void) {
-	test_caseStart("Testing unregDriver()");
-	test_assertInt(_unregDriver(-1),ERR_INVALID_ARGS);
-	test_assertInt(_unregDriver(12345678),ERR_INVALID_ARGS);
-	test_assertInt(_unregDriver(0x7FFFFFFF),ERR_INVALID_ARGS);
-	test_caseSucceded();
-}
-
 static void test_changeSize(void) {
 	test_caseStart("Testing changeSize()");
 	test_assertInt(_changeSize(-1000),ERR_NOT_ENOUGH_MEM);
@@ -323,8 +310,8 @@ static void test_write(void) {
 }
 
 static void test_getWork(void) {
-	tDrvId drvs[3];
-	tDrvId s;
+	tFD drvs[3];
+	tFD s;
 	tMsgId mid;
 	sMsg msg;
 	test_caseStart("Testing getWork()");
@@ -344,10 +331,10 @@ static void test_getWork(void) {
 	test_assertInt(_getWork((void*)0xBFFFFFFF,8 * 1024 - 1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork((void*)0xFFFFFFFF,1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test driver-id */
-	test_assertInt(_getWork(drvs,1,(tDrvId*)0x12345678,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,1,(tDrvId*)0xC0000000,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,1,(tDrvId*)0xBFFFFFFF,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
-	test_assertInt(_getWork(drvs,1,(tDrvId*)0xFFFFFFFF,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,(tFD*)0x12345678,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,(tFD*)0xC0000000,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,(tFD*)0xBFFFFFFF,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
+	test_assertInt(_getWork(drvs,1,(tFD*)0xFFFFFFFF,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	/* test drv-array size */
 	test_assertInt(_getWork(drvs,-1,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);
 	test_assertInt(_getWork(drvs,4 * 1024,&s,&mid,&msg,sizeof(msg),0),ERR_INVALID_ARGS);

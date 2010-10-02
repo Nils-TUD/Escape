@@ -47,18 +47,18 @@
  * @param sid the driver-id
  * @return the vterm or NULL
  */
-static sVTerm *getVTerm(tDrvId sid);
+static sVTerm *getVTerm(tFD sid);
 
 static sMsg msg;
 static sVTermCfg cfg;
 static sKmData kmData[KB_DATA_BUF_SIZE];
 /* vterms */
-static tDrvId drvIds[VTERM_COUNT] = {-1};
+static tFD drvIds[VTERM_COUNT] = {-1};
 
 int main(void) {
 	u32 i,reqc;
 	tFD kbFd;
-	tDrvId client;
+	tFD client;
 	tMsgId mid;
 	char name[MAX_VT_NAME_LEN + 1];
 
@@ -212,13 +212,13 @@ int main(void) {
 	/* clean up */
 	close(kbFd);
 	for(i = 0; i < VTERM_COUNT; i++) {
-		unregDriver(drvIds[i]);
+		close(drvIds[i]);
 		vterm_destroy(vterm_get(i));
 	}
 	return EXIT_SUCCESS;
 }
 
-static sVTerm *getVTerm(tDrvId sid) {
+static sVTerm *getVTerm(tFD sid) {
 	u32 i;
 	for(i = 0; i < VTERM_COUNT; i++) {
 		if(drvIds[i] == sid)

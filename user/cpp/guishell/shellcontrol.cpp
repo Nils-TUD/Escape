@@ -71,7 +71,7 @@ bool handleShortcut(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 					vterm_rlFlushBuf(vt);
 				}
 				if(rb_length(vt->inbuf) == 0)
-					setDataReadable(vt->sid,true);
+					fcntl(vt->sid,F_SETDATA,true);
 				return false;
 		}
 	}

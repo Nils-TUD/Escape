@@ -28,7 +28,7 @@
 static sMsg msg;
 
 int main(void) {
-	tDrvId id;
+	tFD id;
 	tMsgId mid;
 
 	id = regDriver("zero",DRV_READ);
@@ -36,8 +36,8 @@ int main(void) {
 		error("Unable to register driver 'zero'");
 
 	/* 0's are always available ;) */
-	if(setDataReadable(id,true) < 0)
-		error("setDataReadable");
+	if(fcntl(id,F_SETDATA,true) < 0)
+		error("fcntl");
 
     /* wait for commands */
 	while(1) {
@@ -69,6 +69,6 @@ int main(void) {
 	}
 
 	/* clean up */
-	unregDriver(id);
+	close(id);
 	return EXIT_SUCCESS;
 }

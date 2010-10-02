@@ -73,7 +73,7 @@ static u8 *videoData;
 static sMsg msg;
 
 int main(void) {
-	tDrvId id;
+	tFD id;
 	tMsgId mid;
 
 	id = regDriver("video",DRV_WRITE);
@@ -141,7 +141,7 @@ int main(void) {
 
 	/* clean up */
 	releaseIOPorts(CURSOR_PORT_INDEX,2);
-	unregDriver(id);
+	close(id);
 	return EXIT_SUCCESS;
 }
 

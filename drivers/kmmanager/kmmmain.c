@@ -48,8 +48,8 @@ static sKbData kbData[KB_DATA_BUF_SIZE];
 int main(void) {
 	char path[MAX_PATH_LEN];
 	char *newline;
-	tDrvId ids[2];
-	tDrvId drv;
+	tFD ids[2];
+	tFD drv;
 	tMsgId mid;
 	tFD kbFd;
 	FILE *f;
@@ -115,7 +115,7 @@ int main(void) {
 			if(count < 0 && count != ERR_WOULD_BLOCK)
 				printe("Unable to read");
 			if(readable)
-				setDataReadable(ids[0],true);
+				fcntl(ids[0],F_SETDATA,true);
 			wait(EV_CLIENT | EV_DATA_READABLE);
 		}
 		else {
@@ -130,10 +130,10 @@ int main(void) {
 	}
 
 	/* clean up */
-	unregDriver(ids[1]);
+	close(ids[1]);
 	free(map);
 	rb_destroy(rbuf);
-	unregDriver(ids[0]);
+	close(ids[0]);
 
 	return EXIT_SUCCESS;
 }

@@ -74,7 +74,7 @@ int main(int argc,char **argv) {
 
 	// announce driver; try to find an unused driver-name because maybe a user wants
 	// to start us multiple times
-	tDrvId sid;
+	tFD sid;
 	u32 no = 0;
 	drvName = new char[MAX_PATH_LEN + 1];
 	do {
@@ -85,7 +85,7 @@ int main(int argc,char **argv) {
 		no++;
 	}
 	while(sid < 0);
-	unregDriver(sid);
+	close(sid);
 
 	// set term as env-variable
 	setenv("TERM",drvName);

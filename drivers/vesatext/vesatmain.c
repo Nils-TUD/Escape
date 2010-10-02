@@ -126,7 +126,7 @@ static fSetPixel setPixel[] = {
 };
 
 int main(void) {
-	tDrvId id;
+	tFD id;
 	tMsgId mid;
 
 	/* load available modes etc. */
@@ -198,7 +198,7 @@ int main(void) {
 		}
 	}
 
-	unregDriver(id);
+	close(id);
 	return EXIT_SUCCESS;
 }
 

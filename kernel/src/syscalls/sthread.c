@@ -99,6 +99,61 @@ void sysc_wait(sIntrptStackFrame *stack) {
 	SYSC_RET1(stack,res);
 }
 
+#if 0
+void sysc_wait(sIntrptStackFrame *stack) {
+	sWaitObject *uobjects = (sWaitObject*)SYSC_ARG1(stack);
+	u32 i,objCount = SYSC_ARG2(stack);
+	sWaitObject *kobjects;
+	sThread *t = thread_getRunning();
+	s32 res = ERR_INVALID_ARGS;
+
+	if(!paging_isRangeUserReadable((u32)uobjects,objCount * sizeof(sWaitObject)))
+		SYSC_ERROR(stack,ERR_INVALID_ARGS);
+
+	kobjects = (sWaitObject*)kheap_alloc(objCount * sizeof(sWaitObject));
+	if(kobjects == NULL)
+		SYSC_ERROR(stack,ERR_NOT_ENOUGH_MEM);
+	memcpy(kobjects,uobjects,objCount * sizeof(sWaitObject));
+
+	for(i = 0; i < objCount; i++) {
+		if(kobjects[i].events & ~(EV_USER_WAIT_MASK))
+			goto error;
+		if(kobjects[i].events & (EV_CLIENT | EV_RECEIVED_MSG | EV_DATA_READABLE)) {
+			/* check flags */
+			tFD fd;
+			tFileNo file;
+			if(kobjects[i].events & EV_CLIENT) {
+				if(kobjects[i].events & ~(EV_CLIENT))
+					goto error;
+			}
+			else if(kobjects[i].events & ~(EV_RECEIVED_MSG | EV_DATA_READABLE))
+				goto error;
+			/* translate fd to node-number */
+			fd = (tFD)kobjects[i].object;
+			file = proc_fdToFile(fd);
+			if(file < 0)
+				goto error;
+			kobjects[i].object = vfs_getVNode(file);
+			if(!kobjects[i].object)
+				goto error;
+		}
+	}
+
+	if(!ev_waitObjects(t->tid,kobjects,objCount)) {
+		res = ERR_NOT_ENOUGH_MEM;
+		goto error;
+	}
+
+	kheap_free(kobjects);
+	SYSC_RET1(stack,0);
+	return;
+
+error:
+	kheap_free(kobjects);
+	SYSC_ERROR(stack,res);
+}
+#endif
+
 void sysc_waitUnlock(sIntrptStackFrame *stack) {
 	u32 events = SYSC_ARG1(stack);
 	u32 ident = SYSC_ARG2(stack);

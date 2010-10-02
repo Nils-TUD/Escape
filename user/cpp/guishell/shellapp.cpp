@@ -31,7 +31,7 @@
 #include <vterm/vtout.h>
 #include "shellapp.h"
 
-ShellApplication::ShellApplication(tDrvId sid,ShellControl *sh)
+ShellApplication::ShellApplication(tFD sid,ShellControl *sh)
 		: Application(), _sid(sid), _sh(sh), _cfg(sVTermCfg()),
 		  rbuffer(new char[READ_BUF_SIZE]), rbufPos(0) {
 	_inst = this;

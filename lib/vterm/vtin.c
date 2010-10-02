@@ -86,7 +86,7 @@ void vterm_handleKey(sVTerm *vt,u32 keycode,u8 modifier,char c) {
 		snprintf(escape,sizeof(escape),"\033[kc;%u;%u;%u]",code,keycode,modifier);
 		rb_writen(vt->inbuf,escape,strlen(escape));
 		if(empty)
-			setDataReadable(vt->sid,true);
+			fcntl(vt->sid,F_SETDATA,true);
 	}
 	if(vt->echo && vt->setCursor)
 		vt->setCursor(vt);
@@ -101,7 +101,7 @@ void vterm_rlFlushBuf(sVTerm *vt) {
 	}
 
 	if(len == 0)
-		setDataReadable(vt->sid,true);
+		fcntl(vt->sid,F_SETDATA,true);
 }
 
 void vterm_rlPutchar(sVTerm *vt,char c) {

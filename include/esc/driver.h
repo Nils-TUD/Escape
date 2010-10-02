@@ -50,26 +50,9 @@ extern "C" {
  *
  * @param name the driver-name. Should be alphanumeric!
  * @param flags what functions do you want to implement (DRV_*) ?
- * @return the driver-id if successfull, < 0 if an error occurred
+ * @return the file-desc if successfull, < 0 if an error occurred
  */
-tDrvId regDriver(const char *name,u32 flags) A_CHECKRET;
-
-/**
- * Unregisters your driver
- *
- * @param driver the driver-id
- * @return 0 on success or a negative error-code
- */
-s32 unregDriver(tDrvId driver);
-
-/**
- * For drivers: Sets whether currently data is readable or not
- *
- * @param driver the driver-id
- * @param readable whether there is data to read
- * @return 0 on success
- */
-s32 setDataReadable(tDrvId driver,bool readable);
+tFD regDriver(const char *name,u32 flags) A_CHECKRET;
 
 /**
  * Fetches the client-id from the given file-descriptor
@@ -82,11 +65,11 @@ tInodeNo getClientId(tFD fd);
 /**
  * Opens a file for the client with given client-id.
  *
- * @param did the driver-id
+ * @param fd the file-descriptor for the driver
  * @param cid the client-id
  * @return the file-descriptor or a negative error-code
  */
-tFD getClient(tDrvId did,tInodeNo cid) A_CHECKRET;
+tFD getClient(tFD fd,tInodeNo cid) A_CHECKRET;
 
 /**
  * For drivers: Looks whether a client wants to be served. If not and GW_NOBLOCK is not provided
@@ -94,16 +77,16 @@ tFD getClient(tDrvId did,tInodeNo cid) A_CHECKRET;
  * If a client wants to be served, the message is fetched from him and a file-descriptor is returned.
  * Note that you may be interrupted by a signal!
  *
- * @param ids an array with driver-ids to check
- * @param idCount the number of driver-ids
- * @param drv will be set to the driver from which the client has been taken
+ * @param fds an array with file-descs to check
+ * @param fdCount the number of file-descs
+ * @param drv will be set to the file-desc from which the client has been taken
  * @param mid will be set to the msg-id
  * @param msg the message
  * @param size the (max) size of the message
  * @param flags the flags
  * @return the file-descriptor for the communication with the client
  */
-tFD getWork(tDrvId *ids,u32 idCount,tDrvId *drv,tMsgId *mid,void *msg,u32 size,u8 flags) A_CHECKRET;
+tFD getWork(tFD *fds,u32 fdCount,tFD *drv,tMsgId *mid,void *msg,u32 size,u8 flags) A_CHECKRET;
 
 #ifdef __cplusplus
 }

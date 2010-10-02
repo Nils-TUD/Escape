@@ -27,7 +27,7 @@
 static sMsg msg;
 
 int main(void) {
-	tDrvId id;
+	tFD id;
 	tMsgId mid;
 
 	id = regDriver("null",DRV_READ | DRV_WRITE);
@@ -35,8 +35,8 @@ int main(void) {
 		error("Unable to register driver 'null'");
 
 	/* /dev/null produces no output, so always available to prevent blocking */
-	if(setDataReadable(id,true) < 0)
-		error("setDataReadable");
+	if(fcntl(id,F_SETDATA,true) < 0)
+		error("fcntl");
 
     /* wait for commands */
 	while(1) {
@@ -64,6 +64,6 @@ int main(void) {
 	}
 
 	/* clean up */
-	unregDriver(id);
+	close(id);
 	return EXIT_SUCCESS;
 }

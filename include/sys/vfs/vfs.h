@@ -62,6 +62,7 @@ enum {
 /* fcntl-commands */
 #define F_GETFL						0
 #define F_SETFL						1
+#define F_SETDATA					2
 
 /* seek-types */
 #define SEEK_SET					0
@@ -115,6 +116,12 @@ void vfs_init(void);
  * @return 0 on success
  */
 s32 vfs_incRefs(tFileNo file);
+
+/**
+ * @param file the file-number
+ * @return the virtual node associated with the given file or NULL if failed
+ */
+sVFSNode *vfs_getVNode(tFileNo file);
 
 /**
  * Determines the node-number and device-number for the given file
@@ -312,24 +319,14 @@ s32 vfs_mkdir(tPid pid,const char *path);
 s32 vfs_rmdir(tPid pid,const char *path);
 
 /**
- * Creates a driver-node for the given process and given name
+ * Creates a driver-node for the given process and given name and opens a file for it
  *
  * @param pid the process-id
  * @param name the driver-name
  * @param flags the specified flags (implemented functions)
- * @return 0 if ok, negative if an error occurred
+ * @return the file-number if ok, negative if an error occurred
  */
-s32 vfs_createDriver(tPid pid,const char *name,u32 flags);
-
-/**
- * Sets whether data is currently readable or not
- *
- * @param pid the process-id
- * @param nodeNo the driver-node-number
- * @param readable whether there is data or not
- * @return 0 on success
- */
-s32 vfs_setDataReadable(tPid pid,tInodeNo nodeNo,bool readable);
+tFileNo vfs_createDriver(tPid pid,const char *name,u32 flags);
 
 /**
  * Checks whether there is a message for the given process. That if the process is a driver
@@ -353,11 +350,12 @@ void vfs_wakeupClients(sVFSNode *node,u32 events);
  * For drivers: Looks whether a client wants to be served and return the node-number
  *
  * @param pid the driver-process-id
- * @param vfsNodes an array of VFS-nodes to check for clients
- * @param count the size of <sys/vfsNodes>
+ * @param files an array of files to check for clients
+ * @param count the number of files
+ * @param index will be set to the index in <files> from which the client was chosen
  * @return the error-code or the node-number of the client
  */
-s32 vfs_getClient(tPid pid,tInodeNo *vfsNodes,u32 count);
+s32 vfs_getClient(tPid pid,tFileNo *files,u32 count,s32 *index);
 
 /***
  * Fetches the client-id from the given file
@@ -372,11 +370,11 @@ tInodeNo vfs_getClientId(tPid pid,tFileNo file);
  * Opens a file for the client with given process-id.
  *
  * @param pid the own process-id
- * @param nodeNo the driver-node-number
+ * @param file the file for the driver
  * @param clientId the id of the desired client
  * @return the file or a negative error-code
  */
-tFileNo vfs_openClient(tPid pid,tInodeNo nodeNo,tInodeNo clientId);
+tFileNo vfs_openClient(tPid pid,tFileNo file,tInodeNo clientId);
 
 /**
  * Creates a process-node with given pid and handler-function

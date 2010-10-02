@@ -42,6 +42,7 @@
 /* fcntl-commands */
 #define F_GETFL					0
 #define F_SETFL					1
+#define F_SETDATA				2
 
 /* seek-types */
 #define SEEK_SET				0

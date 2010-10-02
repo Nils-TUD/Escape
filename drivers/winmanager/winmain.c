@@ -47,11 +47,11 @@ static void deadThreadHandler(s32 sig);
 /**
  * Handles a message from kmmng
  */
-static void handleKbMessage(tDrvId drvId,sWindow *active,u8 keycode,bool isBreak,u8 modifier,char c);
+static void handleKbMessage(tFD drvId,sWindow *active,u8 keycode,bool isBreak,u8 modifier,char c);
 /**
  * Handles a message from the mouse
  */
-static void handleMouseMessage(tDrvId drvId,sMouseData *mdata);
+static void handleMouseMessage(tFD drvId,sMouseData *mdata);
 
 /* mouse state */
 static u8 buttons = 0;
@@ -69,7 +69,7 @@ static sWindow *mouseWin = NULL;
 
 int main(void) {
 	tFD mouse,kmmng;
-	tDrvId drvId;
+	tFD drvId;
 	tMsgId mid;
 
 	mouse = open("/dev/mouse",IO_READ | IO_NOBLOCK);
@@ -177,7 +177,7 @@ int main(void) {
 		}
 	}
 
-	unregDriver(drvId);
+	close(drvId);
 	close(kmmng);
 	close(mouse);
 	return EXIT_SUCCESS;
@@ -224,7 +224,7 @@ static bool readKeyboard(tFD drvId,tFD kmmng) {
 	return false;
 }
 
-static void handleKbMessage(tDrvId drvId,sWindow *active,u8 keycode,bool isBreak,u8 modifier,char c) {
+static void handleKbMessage(tFD drvId,sWindow *active,u8 keycode,bool isBreak,u8 modifier,char c) {
 	tFD aWin;
 	msg.args.arg1 = keycode;
 	msg.args.arg2 = isBreak;
@@ -238,7 +238,7 @@ static void handleKbMessage(tDrvId drvId,sWindow *active,u8 keycode,bool isBreak
 	}
 }
 
-static void handleMouseMessage(tDrvId drvId,sMouseData *mdata) {
+static void handleMouseMessage(tFD drvId,sMouseData *mdata) {
 	tCoord oldx = curX,oldy = curY;
 	bool btnChanged = false;
 	sWindow *w;
